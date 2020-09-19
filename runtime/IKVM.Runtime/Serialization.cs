@@ -170,7 +170,10 @@ namespace IKVM.Internal
 				new Type[] { JVM.Import(typeof(SerializationInfo)), JVM.Import(typeof(StreamingContext)) });
 			getObjectData.SetCustomAttribute(securityCriticalAttribute);
 			AttributeHelper.HideFromJava(getObjectData);
+			// AddDeclarativeSecurity does not exist in .net core
+#if NETFRAMEWORK
 			getObjectData.AddDeclarativeSecurity(SecurityAction.Demand, psetSerializationFormatter);
+#endif
 			tb.DefineMethodOverride(getObjectData, JVM.Import(typeof(ISerializable)).GetMethod("GetObjectData"));
 			CodeEmitter ilgen = CodeEmitter.Create(getObjectData);
 			ilgen.Emit(OpCodes.Ldarg_0);
@@ -187,7 +190,10 @@ namespace IKVM.Internal
 		{
 			MethodBuilder ctor = ReflectUtil.DefineConstructor(tb, MethodAttributes.Family, new Type[] { JVM.Import(typeof(SerializationInfo)), JVM.Import(typeof(StreamingContext)) });
 			AttributeHelper.HideFromJava(ctor);
+			// AddDeclarativeSecurity does not exist in .net core
+#if NETFRAMEWORK
 			ctor.AddDeclarativeSecurity(SecurityAction.Demand, psetSerializationFormatter);
+#endif
 			CodeEmitter ilgen = CodeEmitter.Create(ctor);
 			ilgen.Emit(OpCodes.Ldarg_0);
 			if (defaultConstructor != null)

@@ -55,18 +55,18 @@ public final class SocketUtil
         switch (x.get_ErrorCode())
         {
             case WSAEADDRINUSE:
-                return new BindException(x.getMessage());
+                return new BindException(x.get_Message());
             case WSAENETUNREACH:
             case WSAEHOSTUNREACH:
-                return new NoRouteToHostException(x.getMessage());
+                return new NoRouteToHostException(x.get_Message());
             case WSAETIMEDOUT:
-                return new SocketTimeoutException(x.getMessage());
+                return new SocketTimeoutException(x.get_Message());
             case WSAECONNREFUSED:
-                return new PortUnreachableException(x.getMessage());
+                return new PortUnreachableException(x.get_Message());
             case WSAHOST_NOT_FOUND:
-                return new UnknownHostException(x.getMessage());
+                return new UnknownHostException(x.get_Message());
             default:
-                return new SocketException(x.getMessage() + "\nError Code: " + x.get_ErrorCode());
+                return new SocketException(x.get_Message() + "\nError Code: " + x.get_ErrorCode());
         }
     }
 
@@ -146,7 +146,7 @@ public final class SocketUtil
         }
         catch (cli.System.Net.Sockets.SocketException x)
         {
-            throw new SocketException(x.getMessage());
+            throw new SocketException(x.get_Message());
         }
         catch (cli.System.ObjectDisposedException x1)
         {
@@ -180,7 +180,7 @@ public final class SocketUtil
         }
         catch (cli.System.Net.Sockets.SocketException x)
         {
-            throw new SocketException(x.getMessage());
+            throw new SocketException(x.get_Message());
         }
         catch (cli.System.ObjectDisposedException x1)
         {

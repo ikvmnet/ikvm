@@ -432,15 +432,22 @@ namespace IKVM.Internal
 		private static void SaveDebugAssembly(AssemblyBuilder ab)
 		{
 			Console.Error.WriteLine("Saving '{0}'", ab.GetName().Name + ".dll");
+#if NETFRAMEWORK
 			ab.Save(ab.GetName().Name + ".dll");
+#endif
 		}
 
 		internal static ModuleBuilder CreateJniProxyModuleBuilder()
 		{
 			AssemblyName name = new AssemblyName();
 			name.Name = "jniproxy";
+#if NETFRAMEWORK
 			jniProxyAssemblyBuilder = DefineDynamicAssembly(name, AssemblyBuilderAccess.RunAndSave, null);
 			return jniProxyAssemblyBuilder.DefineDynamicModule("jniproxy.dll", "jniproxy.dll");
+#else
+			jniProxyAssemblyBuilder = DefineDynamicAssembly(name, AssemblyBuilderAccess.Run, null);
+			return jniProxyAssemblyBuilder.DefineDynamicModule("jniproxy.dll");
+#endif
 		}
 #endif
 
@@ -560,7 +567,11 @@ namespace IKVM.Internal
 			AssemblyBuilderAccess access;
 			if(JVM.IsSaveDebugImage)
 			{
+#if NETFRAMEWORK
 				access = AssemblyBuilderAccess.RunAndSave;
+#else
+				access = AssemblyBuilderAccess.Run;
+#endif
 			}
 #if CLASSGC
 			else if(JVM.classUnloading
@@ -574,7 +585,7 @@ namespace IKVM.Internal
 			{
 				access = AssemblyBuilderAccess.Run;
 			}
-#if NET_4_0
+#if NETFRAMEWORK
 			if(!AppDomain.CurrentDomain.IsFullyTrusted)
 			{
 				attribs.Add(new CustomAttributeBuilder(typeof(System.Security.SecurityTransparentAttribute).GetConstructor(Type.EmptyTypes), new object[0]));
@@ -585,17 +596,21 @@ namespace IKVM.Internal
 			bool debug = JVM.EmitSymbols;
 			CustomAttributeBuilder debugAttr = new CustomAttributeBuilder(typeof(DebuggableAttribute).GetConstructor(new Type[] { typeof(bool), typeof(bool) }), new object[] { true, debug });
 			assemblyBuilder.SetCustomAttribute(debugAttr);
+#if NETFRAMEWORK
 			ModuleBuilder moduleBuilder = JVM.IsSaveDebugImage ? assemblyBuilder.DefineDynamicModule(name.Name, name.Name + ".dll", debug) : assemblyBuilder.DefineDynamicModule(name.Name, debug);
+#else
+			ModuleBuilder moduleBuilder = assemblyBuilder.DefineDynamicModule(name.Name);
+#endif
 			moduleBuilder.SetCustomAttribute(new CustomAttributeBuilder(typeof(IKVM.Attributes.JavaModuleAttribute).GetConstructor(Type.EmptyTypes), new object[0]));
 			return moduleBuilder;
 		}
 
 		private static AssemblyBuilder DefineDynamicAssembly(AssemblyName name, AssemblyBuilderAccess access, IEnumerable<CustomAttributeBuilder> assemblyAttributes)
 		{
-#if NET_4_0
+#if NETFRAMEWORK
 			return AppDomain.CurrentDomain.DefineDynamicAssembly(name, access, null, true, assemblyAttributes);
 #else
-			return AppDomain.CurrentDomain.DefineDynamicAssembly(name, access, null, null, null, null, null, true, assemblyAttributes);
+			return AssemblyBuilder.DefineDynamicAssembly(name, access, assemblyAttributes);
 #endif
 		}
 #endif // !STATIC_COMPILER

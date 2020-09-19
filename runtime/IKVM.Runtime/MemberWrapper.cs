@@ -1552,7 +1552,12 @@ namespace IKVM.Internal
 			FieldBuilder fb = field as FieldBuilder;
 			if(fb != null)
 			{
+#if NETFRAMEWORK
 				field = fb.Module.ResolveField(fb.GetToken().Token);
+#else
+				int token = MemberInfoExtensions.GetMetadataToken(fb);
+				field = fb.Module.ResolveField(token);
+#endif
 			}
 		}
 

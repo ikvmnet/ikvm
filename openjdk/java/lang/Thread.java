@@ -1984,7 +1984,15 @@ class Thread implements Runnable {
     }
 
     private static StackTraceElement[][] dumpThreads(Thread[] threads) {
-        StackTraceElement[][] stacks = new StackTraceElement[threads.length][];
+        // Constructor StackTrace(Thread) is obsolete and does not exist in .net core.
+        // We only return a trace of the current thread until a reliable way for all
+        // threads is found.
+
+        StackTraceElement[][] stacks = new StackTraceElement[1][];
+        cli.System.Diagnostics.StackTrace stack;
+        stack = new cli.System.Diagnostics.StackTrace(true);
+        stacks[0] = getStackTrace(stack);
+        /*StackTraceElement[][] stacks = new StackTraceElement[threads.length][];
         for (int i = 0; i < threads.length; i++) {
             cli.System.Threading.Thread nativeThread = threads[i].nativeThread;
             if (nativeThread == null) {
@@ -2012,7 +2020,7 @@ class Thread implements Runnable {
                     stacks[i] = new StackTraceElement[0];
                 }
             }
-        }
+        }*/
         return stacks;
     }
     

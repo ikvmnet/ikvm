@@ -91,7 +91,10 @@ namespace IKVM.Internal
 			local = ilgen.DeclareLocal(type);
 			if (name != null)
 			{
+#if NETFRAMEWORK
+				// SetLocalSymInfo does not exist in .net core
 				local.SetLocalSymInfo(name);
+#endif
 			}
 		}
 	}
@@ -499,7 +502,10 @@ namespace IKVM.Internal
 				case CodeType.ReleaseTempLocal:
 					break;
 				case CodeType.SequencePoint:
+					// MarkSequencePoint does not exist in .net core
+#if NETFRAMEWORK
 					ilgen_real.MarkSequencePoint(symbols, (int)data, 0, (int)data + 1, 0);
+#endif
 					// we emit a nop to make sure we always have an instruction associated with the sequence point
 					ilgen_real.Emit(OpCodes.Nop);
 					break;
@@ -2368,7 +2374,9 @@ namespace IKVM.Internal
 
 		internal void DefineSymbolDocument(ModuleBuilder module, string url, Guid language, Guid languageVendor, Guid documentType)
 		{
+#if NETFRAMEWORK
 			symbols = module.DefineDocument(url, language, languageVendor, documentType);
+#endif
 		}
 
 		internal CodeEmitterLocal UnsafeAllocTempLocal(Type type)

@@ -1,8 +1,8 @@
 ﻿<Project Sdk="Microsoft.NET.Sdk">
 
   <PropertyGroup>
-    <TargetFrameworks>net461;netstandard2.0</TargetFrameworks>
-    <OutputPath>..\..\bin\$(Configuration)</OutputPath>
+    <!-- netstandard2.0 does not allow unmanaged calling conventions used by CodeEmitter.cs:638 -->
+    <TargetFrameworks>net461;netstandard2.1</TargetFrameworks>
     <DefineConstants>$(DefineConstants);EMITTERS;CLASSGC;FIRST_PASS</DefineConstants>
     <NoWarn>$(NoWarn);169;649</NoWarn>
     <AutoGenerateBindingRedirects>true</AutoGenerateBindingRedirects>
@@ -15,18 +15,21 @@
     <AssemblyName>IKVM.Runtime</AssemblyName>
   </PropertyGroup>
 
-  <ItemGroup Condition=" '$(TargetFramework)' == 'net461' ">
+  <ItemGroup Condition="$(TargetFramework.StartsWith('net4'))">
     <Reference Include="System.Configuration" />
   </ItemGroup>
 
-  <ItemGroup Condition="'$(TargetFramework)'=='netcoreapp3.1'">
+  <ItemGroup Condition="$(TargetFramework.StartsWith('netstandard')) Or $(TargetFramework.StartsWith('netcore'))">
     <PackageReference Include="Microsoft.Win32.Registry" Version="4.7.0" />
     <PackageReference Include="System.Configuration.ConfigurationManager" Version="4.7.0" />
+    <PackageReference Include="System.IO.FileSystem.AccessControl" Version="4.7.0" />
+    <PackageReference Include="System.Reflection.Emit" Version="4.7.0" />
+    <PackageReference Include="System.Reflection.Emit.Lightweight" Version="4.7.0" />
+    <PackageReference Include="System.Reflection.TypeExtensions" Version="4.7.0" />
     <PackageReference Include="System.Security.Permissions" Version="4.7.0" />
   </ItemGroup>
 
-
-  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|AnyCPU'">
+  <PropertyGroup Condition="'$(Configuration)'=='Debug'">
     <DebugSymbols>true</DebugSymbols>
   </PropertyGroup>
 
@@ -57,13 +60,20 @@
     </ItemGroup>
   </Target>
 
-  <Target Name="PostBuild" AfterTargets="PostBuildEvent">
-    <Copy SourceFiles="$(TargetPath)" DestinationFolder="." />
-    <Exec Command="..\..\bin\$(Configuration)\$(TargetFramework)\ikvmstub.exe -bootstrap IKVM.Runtime.dll -r:..\bin\$(Configuration)\$(TargetFramework)\IKVM.OpenJDK.Core.dll" />
-    <Copy SourceFiles="IKVM.Runtime.jar" DestinationFolder="..\..\bin\$(Configuration)\$(TargetFramework)" />
+  <PropertyGroup Condition="$(TargetFramework.StartsWith('net4'))">
+    <IkvmStub>..\..\ikvmstub\bin\$(Configuration)\$(TargetFramework)\ikvmstub.exe</IkvmStub>
+  </PropertyGroup>
+
+  <PropertyGroup Condition="$(TargetFramework.StartsWith('netstandard')) Or $(TargetFramework.StartsWith('netcore'))">
+    <IkvmStub>..\..\ikvmstub\bin\$(Configuration)\netcoreapp3.1\ikvmstub.exe</IkvmStub>
+  </PropertyGroup>
+
+  <Target Name="PostBuild" AfterTargets="CoreBuild">
+    <Exec Command="$(IkvmStub) -bootstrap $(OutputPath)IKVM.Runtime.dll -r:$(OutputPath)IKVM.OpenJDK.Core.dll -out:$(OutputPath)IKVM.Runtime.jar" />
   </Target>
-  <Target Name="AfterClean" AfterTargets="Clean">
-    <Delete Files="..\..\bin\$(Configuration)\$(TargetFramework)\IKVM.Runtime.dll;IKVM.Runtime.dll;..\..\bin\$(Configuration)\$(TargetFramework)\IKVM.Runtime.jar;IKVM.Runtime.jar" />
+
+  <Target Name="CustomClean" AfterTargets="CoreClean">
+    <Delete Files="$(OutputPath)IKVM.Runtime.jar" />
   </Target>
 
 </Project>

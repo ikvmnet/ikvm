@@ -1457,12 +1457,16 @@ namespace IKVM.Internal
 						tb.__AddDeclarativeSecurity(MakeCustomAttributeBuilder(loader, annotation));
 #elif STUB_GENERATOR
 #else
+
+#if NETFRAMEWORK
 						SecurityAction action;
 						PermissionSet permSet;
 						if (MakeDeclSecurity(type, annotation, out action, out permSet))
 						{
 							tb.AddDeclarativeSecurity(action, permSet);
 						}
+#endif
+
 #endif
 					}
 					else
@@ -1479,12 +1483,16 @@ namespace IKVM.Internal
 						mb.__AddDeclarativeSecurity(MakeCustomAttributeBuilder(loader, annotation));
 #elif STUB_GENERATOR
 #else
+
+#if NETFRAMEWORK
 						SecurityAction action;
 						PermissionSet permSet;
 						if (MakeDeclSecurity(type, annotation, out action, out permSet))
 						{
 							mb.AddDeclarativeSecurity(action, permSet);
 						}
+#endif
+
 #endif
 					}
 					else

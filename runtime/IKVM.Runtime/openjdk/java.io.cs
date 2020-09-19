@@ -131,8 +131,15 @@ static class Java_java_io_FileDescriptor
 		}
 		else if (fileMode == FileMode.Append)
 		{
+#if NETFRAMEWORK
 			// this is the way to get atomic append behavior for all writes
 			return new FileStream(name, fileMode, FileSystemRights.AppendData, FileShare.ReadWrite, 1, FileOptions.None);
+#else
+			// the above constructor does not exist in .net core
+			// since the buffer size is 1 byte, it's always atomic
+			// if the buffer size needs to be bigger, find a way for the atomic append
+			return new FileStream(name, fileMode, fileAccess, FileShare.ReadWrite, 1, false);
+#endif
 		}
 		else
 		{
