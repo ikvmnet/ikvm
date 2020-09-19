@@ -82,9 +82,6 @@ namespace IKVM.Internal
 			else
 			{
 				mscorlibVersion = universe.Load(Universe.CoreLibName).GetName().Version;
-#if NETSTANDARD
-				//universe.Load("System.Private.CoreLib");
-#endif
 			}
 #if STATIC_COMPILER
 			universe.AssemblyResolve += AssemblyResolve;

@@ -11,38 +11,18 @@
     <Description>JVM for Mono and .NET</Description>
   </PropertyGroup>
 
-  <ItemGroup Condition="'$(TargetFramework)'=='netstandard2.1'">
-    <PackageReference Include="System.Runtime" Version="4.3.1" />
-    <PackageReference Include="System.Runtime.Extensions" Version="4.3.1" />
-    <PackageReference Include="System.Diagnostics.Process" Version="4.3.0" />
-    <PackageReference Include="System.Diagnostics.FileVersionInfo" Version="4.3.0" />
-    <PackageReference Include="System.Net.Sockets" Version="4.3.0" />
+  <ItemGroup>
+    <ProjectReference Include="..\runtime\IKVM.Runtime.FirstPass\IKVM.Runtime.FirstPass.csproj" />
+  </ItemGroup>
+
+  <ItemGroup Condition="$(TargetFramework.StartsWith('netstandard')) Or $(TargetFramework.StartsWith('netcore'))">
     <PackageReference Include="System.Drawing.Common" Version="4.7.0" GeneratePathProperty="true" />
-    <PackageReference Include="System.IO.FileSystem" Version="4.3.0" />
-    <PackageReference Include="System.IO.FileSystem.DriveInfo" Version="4.3.1" />
     <PackageReference Include="Newtonsoft.Json" Version="12.0.3" />
-    <PackageReference Include="System.Data.Common" Version="4.3.0" />
     <PackageReference Include="System.Net.Mail" Version="1.0.0-rtm-00002" GeneratePathProperty="true" />
-    <PackageReference Include="System.Runtime.InteropServices" Version="4.3.0" />
-    <PackageReference Include="System.IO.FileSystem.Watcher" Version="4.3.0" />
     <PackageReference Include="System.IO.FileSystem.AccessControl" Version="4.7.0" />
-    <PackageReference Include="System.Net.Primitives" Version="4.3.1" />
-    <PackageReference Include="System.Threading.Thread" Version="4.3.0" />
-    <PackageReference Include="System.Net.NetworkInformation" Version="4.3.0" />
-    <PackageReference Include="System.Diagnostics.StackTrace" Version="4.3.0" />
     <PackageReference Include="System.Configuration.ConfigurationManager" Version="4.7.0" GeneratePathProperty="true" />
     <PackageReference Include="System.Security.Permissions" Version="4.7.0" GeneratePathProperty="true" />
-    <PackageReference Include="System.Xml.ReaderWriter" Version="4.3.1" />
-    <PackageReference Include="System.ComponentModel" Version="4.3.0" />
-    <PackageReference Include="System.Drawing.Primitives" Version="4.3.0" />
-    <PackageReference Include="System.Threading" Version="4.3.0" />
-    <PackageReference Include="System.Security.Cryptography.Csp" Version="4.3.0" />
-    <PackageReference Include="Microsoft.Win32.Primitives" Version="4.3.0" />
-    <PackageReference Include="System.Threading.ThreadPool" Version="4.3.0" />
-    <PackageReference Include="System.Console" Version="4.3.1" />
-    <PackageReference Include="System.ComponentModel.Primitives" Version="4.3.0" />
-    <PackageReference Include="System.Collections.Specialized" Version="4.3.0" />
-    <PackageReference Include="System.Security.Cryptography.Algorithms" Version="4.3.1" />
+    <PackageReference Include="System.Data.Odbc" Version="4.7.0" GeneratePathProperty="true" />
   </ItemGroup>
 
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|AnyCPU'">
