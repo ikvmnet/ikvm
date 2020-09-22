@@ -615,9 +615,9 @@ namespace IKVM.Reflection
 			{
 				var foundType = FindTypeInAssemblies(type.FullName);
 				if (foundType != null)
-                {
+				{
 					return foundType;
-                }
+				}
 
 				// make sure mscorlib types always end up in our mscorlib
 				return ResolveType(Mscorlib, type.FullName);
