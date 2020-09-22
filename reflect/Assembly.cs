@@ -84,9 +84,9 @@ namespace IKVM.Reflection
 		{
 			var resolvedType = FindType(typeName);
 			if (resolvedType != null)
-            {
+			{
 				return resolvedType;
-            }
+			}
 			return universe.FindTypeInAssemblies(typeName.Namespace + "." + typeName.Name) ?? universe.GetMissingTypeOrThrow(requester, this.ManifestModule, null, typeName);
 		}
 
