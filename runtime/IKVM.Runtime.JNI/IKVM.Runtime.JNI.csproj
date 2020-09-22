@@ -1,7 +1,7 @@
 ﻿<Project Sdk="Microsoft.NET.Sdk">
 
   <PropertyGroup>
-    <TargetFrameworks>net461;netstandard2.1</TargetFrameworks>
+    <TargetFrameworks>net461;netcoreapp3.1</TargetFrameworks>
     <OutputPath>..\..\bin\$(Configuration)</OutputPath>
     <AutoGenerateBindingRedirects>true</AutoGenerateBindingRedirects>
     <DefineConstants>$(DefineConstants);WHIDBEY;OPENJDK</DefineConstants>
@@ -24,12 +24,18 @@
     </Reference>
   </ItemGroup>
 
-  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|AnyCPU'">
+  <PropertyGroup Condition="'$(Configuration)'=='Debug'">
     <DebugSymbols>true</DebugSymbols>
   </PropertyGroup>
 
   <ItemGroup>
+    <AssemblyAttribute Include="System.Runtime.CompilerServices.InternalsVisibleTo">
+      <_Parameter1>IKVM.Runtime</_Parameter1>
+    </AssemblyAttribute>
+    <!-- InternalsVisibleTo element does not work for some reason. -->
+    <!--
     <InternalsVisibleTo Include="IKVM.Runtime" />
+    -->
   </ItemGroup>
 
 </Project>

@@ -1006,23 +1006,6 @@
     @OPENJDK@/jdk/src/share/classes/sun/net/spi/nameservice/dns/*.class
 }
 {
-    -out:IKVM.OpenJDK.Jdbc.dll
-    -baseaddress:0x5C0F0000
-    -resource:META-INF/services/java.sql.Driver=resources/META-INF/services/java.sql.Driver
-    -recurse:resources.zip/com/sun/rowset/*
-    -recurse:resources.zip/javax/sql/*
-    -r:System.Data.dll
-    sun/jdbc/odbc/*.class
-    @OPENJDK@/jdk/src/share/classes/com/sun/rowset/*.class
-    @OPENJDK@/jdk/src/share/classes/com/sun/rowset/internal/*.class
-    @OPENJDK@/jdk/src/share/classes/com/sun/rowset/providers/*.class
-    @OPENJDK@/jdk/src/share/classes/java/sql/*.class
-    @OPENJDK@/jdk/src/share/classes/javax/sql/*.class
-    @OPENJDK@/jdk/src/share/classes/javax/sql/rowset/*.class
-    @OPENJDK@/jdk/src/share/classes/javax/sql/rowset/serial/*.class
-    @OPENJDK@/jdk/src/share/classes/javax/sql/rowset/spi/*.class
-}
-{
     -out:IKVM.OpenJDK.Remoting.dll
     -baseaddress:0x5C240000
     -recurse:resources.zip/sun/rmi/*

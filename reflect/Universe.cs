@@ -250,7 +250,11 @@ namespace IKVM.Reflection
 
 		internal Assembly Mscorlib
 		{
+#if NETFRAMEWORK
 			get { return Load(CoreLibName); }
+#else
+			get { return LoadFile(AppDomain.CurrentDomain.BaseDirectory + @"refs\System.Runtime.dll"); }
+#endif
 		}
 
 		private Type ImportMscorlibType(string ns, string name)
@@ -609,6 +613,12 @@ namespace IKVM.Reflection
 			}
 			else if (TypeUtil.GetAssembly(type) == TypeUtil.GetAssembly(typeof(object)))
 			{
+				var foundType = FindTypeInAssemblies(type.FullName);
+				if (foundType != null)
+                {
+					return foundType;
+                }
+
 				// make sure mscorlib types always end up in our mscorlib
 				return ResolveType(Mscorlib, type.FullName);
 			}
@@ -912,7 +922,13 @@ namespace IKVM.Reflection
 			{
 				return null;
 			}
-			return parser.GetType(this, context == null ? null : context.ManifestModule, false, assemblyQualifiedTypeName, true, false);
+
+			var resolvedType = parser.GetType(this, context == null ? null : context.ManifestModule, false, assemblyQualifiedTypeName, true, false);
+			if (resolvedType != null)
+			{
+				return resolvedType;
+			}
+			return FindTypeInAssemblies(assemblyQualifiedTypeName);
 		}
 
 		public Type GetBuiltInType(string ns, string name)
@@ -978,6 +994,12 @@ namespace IKVM.Reflection
 			return array;
 		}
 
+		public void CleanupForCore()
+		{
+			assemblies.Clear();
+			assembliesByName.Clear();
+		}
+
 		// this is equivalent to the Fusion CompareAssemblyIdentity API
 		public bool CompareAssemblyIdentity(string assemblyIdentity1, bool unified1, string assemblyIdentity2, bool unified2, out AssemblyComparisonResult result)
 		{
@@ -1030,7 +1052,7 @@ namespace IKVM.Reflection
 		internal void RegisterDynamicAssembly(AssemblyBuilder asm)
 		{
 			dynamicAssemblies.Add(asm);
- 		}
+		}
 
 		internal void RenameAssembly(Assembly assembly, AssemblyName oldName)
 		{
@@ -1308,6 +1330,21 @@ namespace IKVM.Reflection
 		internal bool Deterministic
 		{
 			get { return (options & UniverseOptions.DeterministicOutput) != 0; }
+		}
+
+		internal Type FindTypeInAssemblies(string fullName)
+		{
+			foreach (var assembly in assemblies)
+			{
+				foreach (var typeInfo in assembly.DefinedTypes)
+				{
+					if (typeInfo.FullName.Equals(fullName))
+					{
+						return typeInfo.AsType();
+					}
+				}
+			}
+			return null;
 		}
 	}
 }

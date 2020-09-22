@@ -62,13 +62,40 @@ namespace IKVM.Internal
 		internal void Init(Universe universe, bool nostdlib, IList<string> references, IList<string> userLibPaths)
 		{
 			this.universe = universe;
+
+#if NETSTANDARD
+			universe.CleanupForCore();
+			var executingDirectory = AppDomain.CurrentDomain.BaseDirectory;
+			var coreLibNameWithExt = Universe.CoreLibName + ".dll";
+			if (Directory.Exists(Path.Combine(executingDirectory, "publish", "refs")))
+			{
+				LoadFile(Path.Combine(executingDirectory, "publish", "refs", coreLibNameWithExt));
+			}
+			else if (Directory.Exists(Path.Combine(executingDirectory, "refs")))
+			{
+				LoadFile(Path.Combine(executingDirectory, "refs", coreLibNameWithExt));
+			}
+#endif
+
 			// like the C# compiler, the references are loaded from:
 			// current directory, CLR directory, -lib: option, %LIB% environment
 			// (note that, unlike the C# compiler, we don't add the CLR directory if -nostdlib has been specified)
 			libpath.Add(Environment.CurrentDirectory);
 			if (!nostdlib)
 			{
+#if NETFRAMEWORK
 				libpath.Add(System.Runtime.InteropServices.RuntimeEnvironment.GetRuntimeDirectory());
+#else
+				libpath.Add(executingDirectory);
+				if (Directory.Exists(Path.Combine(executingDirectory, "publish", "refs")))
+				{
+					libpath.Add(Path.Combine(executingDirectory, "publish", "refs"));
+				}
+				else if (Directory.Exists(Path.Combine(executingDirectory, "refs")))
+				{
+					libpath.Add(Path.Combine(executingDirectory, "refs"));
+				}
+#endif
 			}
 			foreach (string str in userLibPaths)
 			{
@@ -261,7 +288,9 @@ namespace IKVM.Internal
 			{
 				if (previousMatchLevel == 2)
 				{
+#if NETFRAMEWORK
 					EmitWarning(WarningId.HigherVersion, "assuming assembly reference \"{0}\" matches \"{1}\", you may need to supply runtime policy", previousMatch.FullName, name.FullName);
+#endif
 					return universe.Load(previousMatch.FullName);
 				}
 				else if (args.RequestingAssembly != null)

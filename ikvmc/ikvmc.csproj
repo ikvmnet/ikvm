@@ -4,6 +4,8 @@
     <TargetFrameworks>net461;netcoreapp3.1</TargetFrameworks>
     <DefineConstants>$(DefineConstants);STATIC_COMPILER;EMITTERS</DefineConstants>
     <AllowUnsafeBlocks>true</AllowUnsafeBlocks>
+    <PreserveCompilationContext>true</PreserveCompilationContext>
+    <OutputPath>..\bin\$(Configuration)</OutputPath>
   </PropertyGroup>
 
   <PropertyGroup Label="NuGet Package/Assembly Settings">
@@ -28,6 +30,7 @@
 
   <ItemGroup Condition="$(TargetFramework.StartsWith('netstandard')) Or $(TargetFramework.StartsWith('netcore'))">
     <PackageReference Include="System.Configuration.ConfigurationManager" Version="4.7.0" />
+    <PackageReference Include="System.IO.FileSystem.AccessControl" Version="4.7.0" />
   </ItemGroup>
 
   <PropertyGroup Condition="'$(Configuration)'=='Debug'">
@@ -67,6 +70,10 @@
     <ItemGroup Condition="$(TargetFramework.StartsWith('net4'))">
       <AssemblyAttribute Include="System.Security.AllowPartiallyTrustedCallers" />
     </ItemGroup>
+  </Target>
+
+  <Target Name="PostBuild" AfterTargets="CoreBuild">
+    <Exec Command="dotnet publish --no-build -f netcoreapp3.1 ikvmc.csproj" Condition="$(TargetFramework.StartsWith('netstandard')) Or $(TargetFramework.StartsWith('netcore'))"/>
   </Target>
 
 </Project>
