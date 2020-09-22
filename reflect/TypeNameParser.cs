@@ -482,20 +482,20 @@ namespace IKVM.Reflection
 #else
 				Assembly asm = null;
 				if (throwOnError)
-                {
+				{
 					asm = universe.Load(assemblyName, context, false);
 					if (asm == null)
-                    {
+					{
 						type = universe.FindTypeInAssemblies(name.Namespace + "." + name.Name);
 						if (type == null)
-                        {
+						{
 							throw new System.IO.FileNotFoundException(originalName);
 						}
 						return Expand(type, context, throwOnError, originalName, resolve, ignoreCase);
-                    }
+					}
 				}
 				else
-                {
+				{
 					asm = universe.Load(assemblyName, context, throwOnError);
 				}
 #endif
