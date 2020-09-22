@@ -360,8 +360,13 @@ namespace IKVM.Internal
 				AssemblyName name = Types.Object.Assembly.GetName();
 				name.Name = "System";
 				Universe u = StaticCompiler.Universe;
+#if NETFRAMEWORK
 				Type typeofEditorBrowsableAttribute = u.ResolveType(Types.Object.Assembly, "System.ComponentModel.EditorBrowsableAttribute, " + name.FullName);
 				Type typeofEditorBrowsableState = u.ResolveType(Types.Object.Assembly, "System.ComponentModel.EditorBrowsableState, " + name.FullName);
+#else
+				Type typeofEditorBrowsableAttribute = u.ResolveType(Types.Object.Assembly, "System.ComponentModel.EditorBrowsableAttribute");
+				Type typeofEditorBrowsableState = u.ResolveType(Types.Object.Assembly, "System.ComponentModel.EditorBrowsableState");
+#endif
 				u.MissingTypeIsValueType += delegate(Type type) { return type == typeofEditorBrowsableState; };
 				ConstructorInfo ctor = (ConstructorInfo)typeofEditorBrowsableAttribute.__CreateMissingMethod(ConstructorInfo.ConstructorName,
 					CallingConventions.Standard | CallingConventions.HasThis, null, default(CustomModifiers), new Type[] { typeofEditorBrowsableState }, null);
@@ -3061,7 +3066,11 @@ namespace IKVM.Internal
 				return true;
 			}
 			TypeWrapper subType = this;
+#if NETFRAMEWORK
 			while(subType != baseType)
+#else
+			while (subType != baseType && subType.Name != baseType.Name)
+#endif
 			{
 				subType = subType.BaseTypeWrapper;
 				if(subType == null)

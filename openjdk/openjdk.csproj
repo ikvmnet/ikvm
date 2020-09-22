@@ -1,7 +1,7 @@
 ﻿<Project Sdk="Microsoft.NET.Sdk">
 
   <PropertyGroup>
-    <TargetFrameworks>net461;netstandard2.1</TargetFrameworks>
+    <TargetFrameworks>net461;netcoreapp3.1</TargetFrameworks>
   </PropertyGroup>
 
   <PropertyGroup Label="NuGet Package/Assembly Settings">
@@ -21,11 +21,10 @@
     <PackageReference Include="System.Net.Mail" Version="1.0.0-rtm-00002" GeneratePathProperty="true" />
     <PackageReference Include="System.IO.FileSystem.AccessControl" Version="4.7.0" />
     <PackageReference Include="System.Configuration.ConfigurationManager" Version="4.7.0" GeneratePathProperty="true" />
-    <PackageReference Include="System.Security.Permissions" Version="4.7.0" GeneratePathProperty="true" />
     <PackageReference Include="System.Data.Odbc" Version="4.7.0" GeneratePathProperty="true" />
   </ItemGroup>
 
-  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|AnyCPU'">
+  <PropertyGroup Condition="'$(Configuration)'=='Debug'">
     <DebugSymbols>true</DebugSymbols>
   </PropertyGroup>
   

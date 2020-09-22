@@ -2,10 +2,11 @@
 
   <PropertyGroup>
     <!-- netstandard2.0 does not allow unmanaged calling conventions used by CodeEmitter.cs:638 -->
-    <TargetFrameworks>net461;netstandard2.1</TargetFrameworks>
+    <TargetFrameworks>net461;netcoreapp3.1</TargetFrameworks>
     <DefineConstants>$(DefineConstants);EMITTERS;CLASSGC;FIRST_PASS</DefineConstants>
     <NoWarn>$(NoWarn);169;649</NoWarn>
     <AutoGenerateBindingRedirects>true</AutoGenerateBindingRedirects>
+    <OutputPath>..\..\bin\$(Configuration)</OutputPath>
   </PropertyGroup>
 
   <PropertyGroup Label="NuGet Package/Assembly Settings">
@@ -34,15 +35,21 @@
   </PropertyGroup>
 
   <ItemGroup>
-    <ProjectReference Include="../DummyLibrary/DummyLibrary.csproj" />
+    <ProjectReference Include="..\DummyLibrary\DummyLibrary.csproj" />
   </ItemGroup>
 
   <ItemGroup>
-    <Compile Include="../IKVM.Runtime/**/*.cs" Exclude="../IKVM.Runtime/obj/**/*.cs" />
+    <Compile Include="..\IKVM.Runtime\**\*.cs" Exclude="..\IKVM.Runtime\obj\**\*.cs" />
   </ItemGroup>
 
   <ItemGroup>
+    <AssemblyAttribute Include="System.Runtime.CompilerServices.InternalsVisibleTo">
+      <_Parameter1>IKVM.Runtime.JNI</_Parameter1>
+    </AssemblyAttribute>
+    <!-- InternalsVisibleTo element does not work for some reason. -->
+    <!--
     <InternalsVisibleTo Include="IKVM.Runtime.JNI" />
+    -->
     <InternalsVisibleTo Include="IKVM.OpenJDK.Core" />
     <InternalsVisibleTo Include="IKVM.OpenJDK.Util" />
     <InternalsVisibleTo Include="IKVM.OpenJDK.Security" />
@@ -61,15 +68,15 @@
   </Target>
 
   <PropertyGroup Condition="$(TargetFramework.StartsWith('net4'))">
-    <IkvmStub>..\..\ikvmstub\bin\$(Configuration)\$(TargetFramework)\ikvmstub.exe</IkvmStub>
+    <IkvmStub>..\..\bin\$(Configuration)\$(TargetFramework)\ikvmstub.exe</IkvmStub>
   </PropertyGroup>
 
   <PropertyGroup Condition="$(TargetFramework.StartsWith('netstandard')) Or $(TargetFramework.StartsWith('netcore'))">
-    <IkvmStub>..\..\ikvmstub\bin\$(Configuration)\netcoreapp3.1\ikvmstub.exe</IkvmStub>
+    <IkvmStub>..\..\bin\$(Configuration)\netcoreapp3.1\ikvmstub.exe</IkvmStub>
   </PropertyGroup>
 
   <Target Name="PostBuild" AfterTargets="CoreBuild">
-    <Exec Command="$(IkvmStub) -bootstrap $(OutputPath)IKVM.Runtime.dll -r:$(OutputPath)IKVM.OpenJDK.Core.dll -out:$(OutputPath)IKVM.Runtime.jar" />
+    <Exec Command="$(IkvmStub) -bootstrap $(OutputPath)IKVM.Runtime.dll -r:..\bin\$(Configuration)\$(TargetFramework)\IKVM.OpenJDK.Core.dll" />
   </Target>
 
   <Target Name="CustomClean" AfterTargets="CoreClean">

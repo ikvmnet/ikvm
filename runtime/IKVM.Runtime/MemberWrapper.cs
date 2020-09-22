@@ -782,7 +782,12 @@ namespace IKVM.Internal
 			MethodBuilder mb = method as MethodBuilder;
 			if (mb != null)
 			{
+#if NETFRAMEWORK
 				method = mb.Module.ResolveMethod(mb.GetToken().Token);
+#else
+				int token = MemberInfoExtensions.GetMetadataToken(mb);
+				method = mb.Module.ResolveMethod(token);
+#endif
 			}
 #endif
 		}
