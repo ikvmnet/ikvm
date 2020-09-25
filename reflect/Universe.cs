@@ -144,7 +144,38 @@ namespace IKVM.Reflection
 #if NETFRAMEWORK
 		public static readonly string CoreLibName = "mscorlib";
 #else
-		public static readonly string CoreLibName = "System.Runtime";
+		public static readonly string CoreLibName = "netstandard";
+
+		public static string ReferenceAssembliesDirectory
+		{
+			get
+			{
+				return BuildRefDirFrom(System.Runtime.InteropServices.RuntimeEnvironment.GetRuntimeDirectory());
+			}
+		}
+
+		private static string BuildRefDirFrom(string runtimeDir)
+		{
+			// transform a thing like
+			// C:\Program Files\dotnet\shared\Microsoft.NETCore.App\3.1.7
+			// to
+			// C:\Program Files\dotnet\packs\Microsoft.NETCore.App.Ref\3.1.0\ref\netcoreapp3.1
+
+			var parts = runtimeDir.Split(Path.DirectorySeparatorChar);
+			var n = string.IsNullOrEmpty(parts[parts.Length - 1]) ? parts.Length - 2 : parts.Length - 1;
+			var versionDir = parts[n--];
+			var frameworkDir = parts[n--];
+			var newParts = new string[n + 5];
+			Array.Copy(parts, newParts, n);
+			var suffixParts = new string[] {"packs", frameworkDir + ".Ref", "3.1.0", "ref", "netcoreapp3.1"};
+			Array.Copy(suffixParts, 0, newParts, n, suffixParts.Length);
+			var dir = Path.Combine(newParts);
+			if (!Directory.Exists(dir))
+			{
+				throw new FileNotFoundException("Reference assemblies directory: " + dir);
+			}
+			return dir;
+		}
 #endif
 
 		internal static readonly bool MonoRuntime = System.Type.GetType("Mono.Runtime") != null;
@@ -250,11 +281,7 @@ namespace IKVM.Reflection
 
 		internal Assembly Mscorlib
 		{
-#if NETFRAMEWORK
 			get { return Load(CoreLibName); }
-#else
-			get { return LoadFile(AppDomain.CurrentDomain.BaseDirectory + @"refs\System.Runtime.dll"); }
-#endif
 		}
 
 		private Type ImportMscorlibType(string ns, string name)
@@ -613,12 +640,6 @@ namespace IKVM.Reflection
 			}
 			else if (TypeUtil.GetAssembly(type) == TypeUtil.GetAssembly(typeof(object)))
 			{
-				var foundType = FindTypeInAssemblies(type.FullName);
-				if (foundType != null)
-				{
-					return foundType;
-				}
-
 				// make sure mscorlib types always end up in our mscorlib
 				return ResolveType(Mscorlib, type.FullName);
 			}
@@ -823,18 +844,16 @@ namespace IKVM.Reflection
 				return asm;
 			}
 #if NETSTANDARD
-			string dir = Path.GetDirectoryName(TypeUtil.GetAssembly(typeof(object)).ManifestModule.FullyQualifiedName);
-			string filepath = Path.Combine(dir, GetSimpleAssemblyName(refname) + ".dll");
+			string filepath = Path.Combine(ReferenceAssembliesDirectory, GetSimpleAssemblyName(refname) + ".dll");
 			if (File.Exists(filepath))
 			{
 				using (RawModule module = OpenRawModule(filepath))
 				{
-					return LoadAssembly(module);
-					//AssemblyComparisonResult result;
-					//if (module.IsManifestModule && CompareAssemblyIdentity(refname, false, module.GetAssemblyName().FullName, false, out result))
-					//{
-					//	return LoadAssembly(module);
-					//}
+					AssemblyComparisonResult result;
+					if (module.IsManifestModule && CompareAssemblyIdentity(refname, false, module.GetAssemblyName().FullName, false, out result))
+					{
+						return LoadAssembly(module);
+					}
 				}
 			}
 			return null;
@@ -922,13 +941,7 @@ namespace IKVM.Reflection
 			{
 				return null;
 			}
-
-			var resolvedType = parser.GetType(this, context == null ? null : context.ManifestModule, false, assemblyQualifiedTypeName, true, false);
-			if (resolvedType != null)
-			{
-				return resolvedType;
-			}
-			return FindTypeInAssemblies(assemblyQualifiedTypeName);
+			return parser.GetType(this, context == null ? null : context.ManifestModule, false, assemblyQualifiedTypeName, true, false);
 		}
 
 		public Type GetBuiltInType(string ns, string name)
@@ -992,12 +1005,6 @@ namespace IKVM.Reflection
 				array[j] = dynamicAssemblies[i];
 			}
 			return array;
-		}
-
-		public void CleanupForCore()
-		{
-			assemblies.Clear();
-			assembliesByName.Clear();
 		}
 
 		// this is equivalent to the Fusion CompareAssemblyIdentity API
@@ -1330,21 +1337,6 @@ namespace IKVM.Reflection
 		internal bool Deterministic
 		{
 			get { return (options & UniverseOptions.DeterministicOutput) != 0; }
-		}
-
-		internal Type FindTypeInAssemblies(string fullName)
-		{
-			foreach (var assembly in assemblies)
-			{
-				foreach (var typeInfo in assembly.DefinedTypes)
-				{
-					if (typeInfo.FullName.Equals(fullName))
-					{
-						return typeInfo.AsType();
-					}
-				}
-			}
-			return null;
 		}
 	}
 }

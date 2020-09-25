@@ -3923,11 +3923,7 @@ sealed class MethodAnalyzer
 
 	private string CheckLoaderConstraints(ClassFile.ConstantPoolItemMI cpi, MethodWrapper mw)
 	{
-#if NETFRAMEWORK
 		if(cpi.GetRetType() != mw.ReturnType && !cpi.GetRetType().IsUnloadable && !mw.ReturnType.IsUnloadable)
-#else
-		if(cpi.GetRetType() != mw.ReturnType && cpi.GetRetType().Name != mw.ReturnType.Name && !cpi.GetRetType().IsUnloadable && !mw.ReturnType.IsUnloadable)
-#endif
 		{
 #if STATIC_COMPILER
 			StaticCompiler.LinkageError("Method \"{2}.{3}{4}\" has a return type \"{0}\" instead of type \"{1}\" as expected by \"{5}\"", mw.ReturnType, cpi.GetRetType(), cpi.GetClassType().Name, cpi.Name, cpi.Signature, classFile.Name);
@@ -3938,11 +3934,7 @@ sealed class MethodAnalyzer
 		TypeWrapper[] there = mw.GetParameters();
 		for(int i = 0; i < here.Length; i++)
 		{
-#if NETFRAMEWORK
 			if(here[i] != there[i] && !here[i].IsUnloadable && !there[i].IsUnloadable)
-#else
-			if(here[i] != there[i] && here[i].Name != there[i].Name && !here[i].IsUnloadable && !there[i].IsUnloadable)
-#endif
 			{
 #if STATIC_COMPILER
 				StaticCompiler.LinkageError("Method \"{2}.{3}{4}\" has a argument type \"{0}\" instead of type \"{1}\" as expected by \"{5}\"", there[i], here[i], cpi.GetClassType().Name, cpi.Name, cpi.Signature, classFile.Name);
