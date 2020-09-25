@@ -1549,6 +1549,9 @@ namespace IKVM.Internal.MapXml
 			// HACK if the class name contains a comma, we assume it is a .NET type
 			if(Class.IndexOf(',') >= 0)
 			{
+#if NETSTANDARD
+				Class = Class.Replace("mscorlib", Universe.CoreLibName);
+#endif
 				Type type = StaticCompiler.Universe.GetType(Class, true);
 				MethodInfo mi = type.GetMethod(Name, redirParamTypes);
 				if(mi == null)

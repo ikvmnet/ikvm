@@ -5,7 +5,6 @@
     <DefineConstants>$(DefineConstants);STUB_GENERATOR</DefineConstants>
     <AllowUnsafeBlocks>true</AllowUnsafeBlocks>
     <OutputPath>..\bin\$(Configuration)</OutputPath>
-    <PreserveCompilationContext>true</PreserveCompilationContext>
   </PropertyGroup>
 
   <PropertyGroup Label="NuGet Package/Assembly Settings">

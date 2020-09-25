@@ -63,20 +63,6 @@ namespace IKVM.Internal
 		{
 			this.universe = universe;
 
-#if NETSTANDARD
-			universe.CleanupForCore();
-			var executingDirectory = AppDomain.CurrentDomain.BaseDirectory;
-			var coreLibNameWithExt = Universe.CoreLibName + ".dll";
-			if (Directory.Exists(Path.Combine(executingDirectory, "publish", "refs")))
-			{
-				LoadFile(Path.Combine(executingDirectory, "publish", "refs", coreLibNameWithExt));
-			}
-			else if (Directory.Exists(Path.Combine(executingDirectory, "refs")))
-			{
-				LoadFile(Path.Combine(executingDirectory, "refs", coreLibNameWithExt));
-			}
-#endif
-
 			// like the C# compiler, the references are loaded from:
 			// current directory, CLR directory, -lib: option, %LIB% environment
 			// (note that, unlike the C# compiler, we don't add the CLR directory if -nostdlib has been specified)
@@ -86,15 +72,7 @@ namespace IKVM.Internal
 #if NETFRAMEWORK
 				libpath.Add(System.Runtime.InteropServices.RuntimeEnvironment.GetRuntimeDirectory());
 #else
-				libpath.Add(executingDirectory);
-				if (Directory.Exists(Path.Combine(executingDirectory, "publish", "refs")))
-				{
-					libpath.Add(Path.Combine(executingDirectory, "publish", "refs"));
-				}
-				else if (Directory.Exists(Path.Combine(executingDirectory, "refs")))
-				{
-					libpath.Add(Path.Combine(executingDirectory, "refs"));
-				}
+				libpath.Add(Universe.ReferenceAssembliesDirectory);
 #endif
 			}
 			foreach (string str in userLibPaths)
