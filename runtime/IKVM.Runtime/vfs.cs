@@ -709,7 +709,11 @@ namespace IKVM.Internal
 			internal override System.IO.Stream Open()
 			{
 				//return new System.IO.FileStream("c:\\ikvm\\openjdk\\vfs.zip", System.IO.FileMode.Open);
+#if NETFRAMEWORK
 				return Assembly.GetExecutingAssembly().GetManifestResourceStream("vfs.zip");
+#else
+				return Assembly.GetExecutingAssembly().GetManifestResourceStream("IKVM.Runtime.vfs.zip");
+#endif
 			}
 		}
 
