@@ -785,8 +785,10 @@ namespace IKVM.Internal
 #if NETFRAMEWORK
 				method = mb.Module.ResolveMethod(mb.GetToken().Token);
 #else
-				int token = MemberInfoExtensions.GetMetadataToken(mb);
-				method = mb.Module.ResolveMethod(token);
+				BindingFlags flags = BindingFlags.DeclaredOnly;
+				flags |= mb.IsPublic ? BindingFlags.Public : BindingFlags.NonPublic;
+				flags |= mb.IsStatic ? BindingFlags.Static : BindingFlags.Instance;
+				method = DeclaringType.TypeAsTBD.GetMethod(mb.Name, flags, null, GetParametersForDefineMethod(), null);
 #endif
 			}
 #endif
@@ -1560,8 +1562,10 @@ namespace IKVM.Internal
 #if NETFRAMEWORK
 				field = fb.Module.ResolveField(fb.GetToken().Token);
 #else
-				int token = MemberInfoExtensions.GetMetadataToken(fb);
-				field = fb.Module.ResolveField(token);
+				BindingFlags flags = BindingFlags.DeclaredOnly;
+				flags |= fb.IsPublic ? BindingFlags.Public : BindingFlags.NonPublic;
+				flags |= fb.IsStatic ? BindingFlags.Static : BindingFlags.Instance;
+				field = DeclaringType.TypeAsTBD.GetField(fb.Name, flags);
 #endif
 			}
 		}
