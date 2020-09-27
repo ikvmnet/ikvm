@@ -39,6 +39,7 @@ using System.Diagnostics;
 using System.Security;
 using System.Security.Permissions;
 using IKVM.Attributes;
+using System.Linq;
 
 namespace IKVM.Internal
 {
@@ -7024,7 +7025,11 @@ namespace IKVM.Internal
 #if NETFRAMEWORK
 				return mbld.GetToken().Token;
 #else
-				return MemberInfoExtensions.GetMetadataToken(mbld);
+				BindingFlags flags = BindingFlags.DeclaredOnly;
+				flags |= mbld.IsPublic ? BindingFlags.Public : BindingFlags.NonPublic;
+				flags |= mbld.IsStatic ? BindingFlags.Static : BindingFlags.Instance;
+				MethodInfo mi = TypeAsTBD.GetMethod(mbld.Name, flags, null, mbld.GetParameters().Select(p => p.ParameterType).ToArray(), null);
+				return mi.MetadataToken;
 #endif
 			}
 			return mb.MetadataToken;
