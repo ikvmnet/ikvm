@@ -1068,6 +1068,16 @@ public class FileChannelImpl
             IntPtr p = MapViewOfFile(hFileMapping, mapAccess, (int)(position >> 32), (int)position, IntPtr.op_Explicit(length));
             err = cli.System.Runtime.InteropServices.Marshal.GetLastWin32Error();
             hFileMapping.Close();
+            //
+            // In Framework IntPtr extends Object (eventually).  In Core it also implements IEquatable.
+            // IKVM compiler generates a bad IL when being compiled for the Core.  It makes a call to IEquatable.Equals.
+            // The C# compiler generates the Object.Equals call.
+            // So, when we need to compare to IntPtr objects we do an explicit cast to Object.  This way
+            // the IKVM compiler produces the expected Object.Equals call.
+            //
+            // A better way would be to fix this problem inside the code emitter part.  But that requires a deeper
+            // knowledge of IKVM compiler internals.
+            //
             if (p.Equals((cli.System.Object)IntPtr.Zero))
             {
                 if (err == 8 /*ERROR_NOT_ENOUGH_MEMORY*/)
