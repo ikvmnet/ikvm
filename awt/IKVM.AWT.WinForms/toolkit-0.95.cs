@@ -69,6 +69,42 @@ using System.Drawing.Drawing2D;
 
 namespace ikvm.awt
 {
+#if NETSTANDARD
+	// .NET Core does not implement the menu functionality.
+
+	class MenuItemCollection
+	{
+		internal void Add(MenuItem item) {}
+		internal void RemoveAt(int i) {}
+		internal MenuItem this[int i] { get { return null; } }
+	}
+
+	class Menu
+	{
+		internal void Show(Control control, Point pt) {}
+		internal void Dispose() {}
+		internal MenuItemCollection MenuItems { get { return null; } }
+		internal object Tag { get { return null; } set {} }
+	}
+
+	class MainMenu : Menu {}
+
+	class ContextMenu : Menu {}
+
+	class MenuItem
+	{
+		internal MenuItem() {}
+		internal MenuItem(string s) {}
+		internal bool Checked { get { return false; } set {} }
+		internal bool Enabled { get { return false; } set {} }
+		internal string Text { get { return ""; } set {} }
+		internal object Tag { get { return null; } set {} }
+		internal event EventHandler Click;
+		internal MenuItemCollection MenuItems { get { return null; } }
+		internal void Dispose() {}
+	}
+#endif
+
     internal delegate TResult Func<TResult>();
     internal delegate void Action<T>(T t);
 
@@ -2008,8 +2044,10 @@ namespace ikvm.awt
 			control.LostFocus += new EventHandler(OnLostFocus);
 			//control.Leave += new EventHandler(OnBoundsChanged);
 			control.Paint += new PaintEventHandler(OnPaint);
+#if NETFRAMEWORK
 			control.ContextMenu = new ContextMenu();
 			control.ContextMenu.Popup += new EventHandler(OnPopupMenu);
+#endif
 		    control.AllowDrop = true;
 		    control.DragDrop += new DragEventHandler(OnDragDrop);
             control.DragOver += new DragEventHandler(OnDragOver);
@@ -2039,8 +2077,10 @@ namespace ikvm.awt
             control.DragOver -= new DragEventHandler(OnDragOver);
             control.DragLeave -= new EventHandler(OnDragLeave);
             control.DragEnter -= new DragEventHandler(OnDragEnter);
+#if NETFRAMEWORK
             if (control.ContextMenu != null)
                 control.ContextMenu.Popup -= new EventHandler(OnPopupMenu);
+#endif
         }
 
 		protected void SendEvent(java.awt.AWTEvent evt)
@@ -4107,10 +4147,12 @@ namespace ikvm.awt
 			_insets.top = y;
 			_insets.left = x;
 			_insets.bottom = control.Height - client.Height - y;
+#if NETFRAMEWORK
 			if (control.Menu != null)
 			{
 				_insets.bottom += SystemInformation.MenuHeight;
 			}
+#endif
 			_insets.right = control.Width - client.Width - x;
 		}
 
@@ -4348,7 +4390,9 @@ namespace ikvm.awt
 			{
 				NetToolkit.Invoke(delegate
 				{
+#if NETFRAMEWORK
 					control.Menu = null;
+#endif
 					CalcInsetsImpl();
 				});
 			}
@@ -4357,7 +4401,9 @@ namespace ikvm.awt
 				mb.addNotify();
 				NetToolkit.Invoke(delegate
 				{
+#if NETFRAMEWORK
 					control.Menu = ((NetMenuBarPeer)mb.getPeer()).menu;
+#endif
 					CalcInsetsImpl();
 				});
 			}
