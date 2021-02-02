@@ -1,6 +1,6 @@
 @echo off
 
-set CONFIGURATION=Debug
+set CONFIGURATION=Release
 
 dotnet build --no-dependencies -c %CONFIGURATION% -f netcoreapp3.1 tools\updbaseaddresses\updbaseaddresses.csproj
 dotnet build --no-dependencies -c %CONFIGURATION% -f netcoreapp3.1 tools\depcheck\depcheck.csproj
@@ -16,8 +16,8 @@ dotnet build --no-dependencies -c %CONFIGURATION% -f netcoreapp3.1 openjdk\openj
 dotnet build --no-dependencies -c %CONFIGURATION% -f netcoreapp3.1 runtime\IKVM.Runtime.JNI\IKVM.Runtime.JNI.csproj
 dotnet build --no-dependencies -c %CONFIGURATION% -f netcoreapp3.1 runtime\IKVM.Runtime\IKVM.Runtime.csproj
 dotnet build --no-dependencies -c %CONFIGURATION% -f netcoreapp3.1 openjdk\openjdk.tools.csproj
+dotnet build --no-dependencies -c %CONFIGURATION% -f netcoreapp3.1 awt\IKVM.AWT.WinForms\IKVM.AWT.WinForms.csproj
 
-rem dotnet build --no-dependencies -c %CONFIGURATION% -f netcoreapp3.1 awt\IKVM.AWT.WinForms\IKVM.AWT.WinForms.csproj
 rem dotnet build --no-dependencies -c %CONFIGURATION% -f netcoreapp3.1 tools\implib\implib.csproj
 rem dotnet build --no-dependencies -c %CONFIGURATION% -f netcoreapp3.1 ikvm\ikvm.csproj
 rem dotnet build --no-dependencies -c %CONFIGURATION% -f netcoreapp3.1 jvm\jvm.csproj
