@@ -15,8 +15,8 @@ dotnet build --no-dependencies -c %CONFIGURATION% -f netcoreapp3.1 ikvmc\ikvmc.c
 dotnet build --no-dependencies -c %CONFIGURATION% -f netcoreapp3.1 openjdk\openjdk.csproj
 dotnet build --no-dependencies -c %CONFIGURATION% -f netcoreapp3.1 runtime\IKVM.Runtime.JNI\IKVM.Runtime.JNI.csproj
 dotnet build --no-dependencies -c %CONFIGURATION% -f netcoreapp3.1 runtime\IKVM.Runtime\IKVM.Runtime.csproj
+dotnet build --no-dependencies -c %CONFIGURATION% -f netcoreapp3.1 openjdk\openjdk.tools.csproj
 
-rem dotnet build --no-dependencies -c %CONFIGURATION% -f netcoreapp3.1 openjdk\openjdk.tools.csproj
 rem dotnet build --no-dependencies -c %CONFIGURATION% -f netcoreapp3.1 awt\IKVM.AWT.WinForms\IKVM.AWT.WinForms.csproj
 rem dotnet build --no-dependencies -c %CONFIGURATION% -f netcoreapp3.1 tools\implib\implib.csproj
 rem dotnet build --no-dependencies -c %CONFIGURATION% -f netcoreapp3.1 ikvm\ikvm.csproj
