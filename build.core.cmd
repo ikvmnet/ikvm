@@ -1,21 +1,23 @@
 @echo off
 
-dotnet build --no-dependencies -f netcoreapp3.1 tools\updbaseaddresses\updbaseaddresses.csproj
-dotnet build --no-dependencies -f netcoreapp3.1 tools\depcheck\depcheck.csproj
-dotnet build --no-dependencies -f netcoreapp3.1 tools\pubkey\pubkey.csproj
-dotnet build --no-dependencies -f netcoreapp3.1 tools\SourceLicenseAnalyzer\SourceLicenseAnalyzer.csproj
-dotnet build --no-dependencies -f netcoreapp3.1 reflect\IKVM.Reflection.csproj
-dotnet build --no-dependencies -f netcoreapp3.1 ikvmstub\ikvmstub.csproj
-dotnet build --no-dependencies -f netcoreapp3.1 runtime\DummyLibrary\DummyLibrary.csproj
-dotnet build --no-dependencies -f netcoreapp3.1 runtime\IKVM.Runtime.FirstPass\IKVM.Runtime.FirstPass.csproj
-dotnet build --no-dependencies -f netcoreapp3.1 awt\IKVM.AWT.WinForms.FirstPass\IKVM.AWT.WinForms.FirstPass.csproj
-dotnet build --no-dependencies -f netcoreapp3.1 ikvmc\ikvmc.csproj
-dotnet build --no-dependencies -f netcoreapp3.1 openjdk\openjdk.csproj
-dotnet build --no-dependencies -f netcoreapp3.1 runtime\IKVM.Runtime.JNI\IKVM.Runtime.JNI.csproj
-dotnet build --no-dependencies -f netcoreapp3.1 runtime\IKVM.Runtime\IKVM.Runtime.csproj
+set CONFIGURATION=Debug
 
-rem dotnet build --no-dependencies -f netcoreapp3.1 openjdk\openjdk.tools.csproj
-rem dotnet build --no-dependencies -f netcoreapp3.1 awt\IKVM.AWT.WinForms\IKVM.AWT.WinForms.csproj
-rem dotnet build --no-dependencies -f netcoreapp3.1 tools\implib\implib.csproj
-rem dotnet build --no-dependencies -f netcoreapp3.1 ikvm\ikvm.csproj
-rem dotnet build --no-dependencies -f netcoreapp3.1 jvm\jvm.csproj
+dotnet build --no-dependencies -c %CONFIGURATION% -f netcoreapp3.1 tools\updbaseaddresses\updbaseaddresses.csproj
+dotnet build --no-dependencies -c %CONFIGURATION% -f netcoreapp3.1 tools\depcheck\depcheck.csproj
+dotnet build --no-dependencies -c %CONFIGURATION% -f netcoreapp3.1 tools\pubkey\pubkey.csproj
+dotnet build --no-dependencies -c %CONFIGURATION% -f netcoreapp3.1 tools\SourceLicenseAnalyzer\SourceLicenseAnalyzer.csproj
+dotnet build --no-dependencies -c %CONFIGURATION% -f netcoreapp3.1 reflect\IKVM.Reflection.csproj
+dotnet build --no-dependencies -c %CONFIGURATION% -f netcoreapp3.1 ikvmstub\ikvmstub.csproj
+dotnet build --no-dependencies -c %CONFIGURATION% -f netcoreapp3.1 runtime\DummyLibrary\DummyLibrary.csproj
+dotnet build --no-dependencies -c %CONFIGURATION% -f netcoreapp3.1 runtime\IKVM.Runtime.FirstPass\IKVM.Runtime.FirstPass.csproj
+dotnet build --no-dependencies -c %CONFIGURATION% -f netcoreapp3.1 awt\IKVM.AWT.WinForms.FirstPass\IKVM.AWT.WinForms.FirstPass.csproj
+dotnet build --no-dependencies -c %CONFIGURATION% -f netcoreapp3.1 ikvmc\ikvmc.csproj
+dotnet build --no-dependencies -c %CONFIGURATION% -f netcoreapp3.1 openjdk\openjdk.csproj
+dotnet build --no-dependencies -c %CONFIGURATION% -f netcoreapp3.1 runtime\IKVM.Runtime.JNI\IKVM.Runtime.JNI.csproj
+dotnet build --no-dependencies -c %CONFIGURATION% -f netcoreapp3.1 runtime\IKVM.Runtime\IKVM.Runtime.csproj
+
+rem dotnet build --no-dependencies -c %CONFIGURATION% -f netcoreapp3.1 openjdk\openjdk.tools.csproj
+rem dotnet build --no-dependencies -c %CONFIGURATION% -f netcoreapp3.1 awt\IKVM.AWT.WinForms\IKVM.AWT.WinForms.csproj
+rem dotnet build --no-dependencies -c %CONFIGURATION% -f netcoreapp3.1 tools\implib\implib.csproj
+rem dotnet build --no-dependencies -c %CONFIGURATION% -f netcoreapp3.1 ikvm\ikvm.csproj
+rem dotnet build --no-dependencies -c %CONFIGURATION% -f netcoreapp3.1 jvm\jvm.csproj
