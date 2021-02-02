@@ -16,7 +16,8 @@
       </TransformOpenJdkDir>
     </ItemGroup>
     <RegexTransform Items="@(TransformOpenJdkDir)" />
-    <Exec Command="$(IkvmcExe) -r:mscorlib.dll -version:$(AssemblyVersion) -warnaserror -w4 -noparameterreflection @tools.gen.rsp" />
+    <Exec Command="$(IkvmcExe) -r:mscorlib.dll -version:$(AssemblyVersion) -warnaserror -w4 -noparameterreflection @tools.gen.rsp" Condition="$(TargetFramework.StartsWith('net4'))" />
+    <Exec Command="$(IkvmcExe) -r:System.Threading.Thread.dll -r:System.Threading.dll -r:System.Runtime.dll -r:System.Runtime.Extensions.dll -version:$(AssemblyVersion) -warnaserror -w4 -noparameterreflection @tools.gen.rsp" Condition="$(TargetFramework.StartsWith('netstandard')) Or $(TargetFramework.StartsWith('netcore'))" />
     <Copy SourceFiles="$([System.IO.Path]::GetFullPath('$(MSBuildThisFileDirectory)\..\bin\IKVM.OpenJDK.Tools.dll'))" DestinationFolder="$([System.IO.Path]::GetFullPath('$(MSBuildThisFileDirectory)\..\bin\$(Configuration)\$(TargetFramework)'))" />
   </Target>
 
