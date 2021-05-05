@@ -19,6 +19,9 @@ rem Build fails if there is IKVM.Runtime.dll
 del /F /Q bin\%CONFIGURATION%\netcoreapp3.1\IKVM.Runtime.dll bin\%CONFIGURATION%\netcoreapp3.1\IKVM.Runtime.deps.json bin\%CONFIGURATION%\netcoreapp3.1\IKVM.Runtime.xml bin\%CONFIGURATION%\netcoreapp3.1\IKVM.Runtime.pdb
 dotnet build --no-dependencies -c %CONFIGURATION% -f netcoreapp3.1 runtime\IKVM.Runtime\IKVM.Runtime.csproj
 dotnet build --no-dependencies -c %CONFIGURATION% -f netcoreapp3.1 openjdk\openjdk.tools.csproj
+rem Remove first-pass awt binaries.
+rem Build fails if there is IKVM.AWT.WinForms.dll
+del /F /Q bin\%CONFIGURATION%\netcoreapp3.1\IKVM.AWT.WinForms.dll bin\%CONFIGURATION%\netcoreapp3.1\IKVM.AWT.WinForms.deps.json bin\%CONFIGURATION%\netcoreapp3.1\IKVM.AWT.WinForms.xml bin\%CONFIGURATION%\netcoreapp3.1\IKVM.AWT.WinForms.pdb
 dotnet build --no-dependencies -c %CONFIGURATION% -f netcoreapp3.1 awt\IKVM.AWT.WinForms\IKVM.AWT.WinForms.csproj
 
 rem dotnet build --no-dependencies -c %CONFIGURATION% -f netcoreapp3.1 tools\implib\implib.csproj
