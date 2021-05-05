@@ -100,6 +100,7 @@
     <Exec Command="$(IkvmStub) -forwarders -bootstrap System.IO.FileSystem" Condition="$(TargetFramework.StartsWith('netstandard')) Or $(TargetFramework.StartsWith('netcore'))" />
     <Exec Command="$(IkvmStub) -forwarders -bootstrap System.IO.FileSystem.DriveInfo" Condition="$(TargetFramework.StartsWith('netstandard')) Or $(TargetFramework.StartsWith('netcore'))" />
     <Exec Command="$(IkvmStub) -forwarders -bootstrap System.IO.FileSystem.Watcher" Condition="$(TargetFramework.StartsWith('netstandard')) Or $(TargetFramework.StartsWith('netcore'))" />
+    <Exec Command="$(IkvmStub) -forwarders -bootstrap System.Net.Mail" Condition="$(TargetFramework.StartsWith('netstandard')) Or $(TargetFramework.StartsWith('netcore'))" />
     <Exec Command="$(IkvmStub) -forwarders -bootstrap System.Net.NetworkInformation" Condition="$(TargetFramework.StartsWith('netstandard')) Or $(TargetFramework.StartsWith('netcore'))" />
     <Exec Command="$(IkvmStub) -forwarders -bootstrap System.Net.Primitives" Condition="$(TargetFramework.StartsWith('netstandard')) Or $(TargetFramework.StartsWith('netcore'))" />
     <Exec Command="$(IkvmStub) -forwarders -bootstrap System.Net.Sockets" Condition="$(TargetFramework.StartsWith('netstandard')) Or $(TargetFramework.StartsWith('netcore'))" />
@@ -117,7 +118,6 @@
     <Exec Command="$(IkvmStub) -forwarders -bootstrap -r:$(PkgSystem_Security_Permissions)\ref\netstandard2.0\System.Security.Permissions.dll $(PkgSystem_Configuration_ConfigurationManager)\ref\netstandard2.0\System.Configuration.ConfigurationManager.dll" Condition="$(TargetFramework.StartsWith('netstandard')) Or $(TargetFramework.StartsWith('netcore'))" />
     <Exec Command="$(IkvmStub) -forwarders -bootstrap $(PkgSystem_Data_Odbc)\ref\netstandard2.0\System.Data.Odbc.dll" Condition="$(TargetFramework.StartsWith('netstandard')) Or $(TargetFramework.StartsWith('netcore'))" />
     <Exec Command="$(IkvmStub) -forwarders -bootstrap $(PkgSystem_Drawing_Common)\ref\netcoreapp3.0\System.Drawing.Common.dll" Condition="$(TargetFramework.StartsWith('netstandard')) Or $(TargetFramework.StartsWith('netcore'))" />
-    <Exec Command="$(IkvmStub) -forwarders -bootstrap $(PkgSystem_Net_Mail)\lib\netstandard1.3\System.Net.Mail.dll" Condition="$(TargetFramework.StartsWith('netstandard')) Or $(TargetFramework.StartsWith('netcore'))" />
     <Exec Command="$(IkvmStub) -forwarders -bootstrap -r:$(PkgSystem_Security_AccessControl)\ref\netstandard2.0\System.Security.AccessControl.dll $(PkgSystem_Security_Permissions)\ref\netstandard2.0\System.Security.Permissions.dll" Condition="$(TargetFramework.StartsWith('netstandard')) Or $(TargetFramework.StartsWith('netcore'))" />
   </Target>
 
