@@ -37,6 +37,7 @@ bin/*.dll
 bin-x64/*.dll
 bin-x86/*.dll
 openjdk/*.dll
+openjdk/*.pdb
 openjdk/*.zip
 openjdk/*.jar
 openjdk/*.rsp
