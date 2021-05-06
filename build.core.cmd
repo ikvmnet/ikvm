@@ -30,3 +30,6 @@ dotnet build %BUILDFLAGS% awt\IKVM.AWT.WinForms\IKVM.AWT.WinForms.csproj
 rem dotnet build %BUILDFLAGS% tools\implib\implib.csproj
 rem dotnet build %BUILDFLAGS% ikvm\ikvm.csproj
 rem dotnet build %BUILDFLAGS% jvm\jvm.csproj
+
+dotnet publish --no-build -f %TARGETFRAMEWORK% ikvmc\ikvmc.csproj
+dotnet publish --no-build -f %TARGETFRAMEWORK% ikvmstub\ikvmstub.csproj

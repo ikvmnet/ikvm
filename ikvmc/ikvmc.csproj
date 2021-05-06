@@ -89,8 +89,4 @@
     </ItemGroup>
   </Target>
 
-  <Target Name="PostBuild" AfterTargets="CoreBuild">
-    <Exec Command="dotnet publish --no-build -f netcoreapp3.1 ikvmc.csproj" Condition="$(TargetFramework.StartsWith('netstandard')) Or $(TargetFramework.StartsWith('netcore'))"/>
-  </Target>
-
 </Project>
