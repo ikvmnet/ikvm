@@ -789,6 +789,10 @@ namespace IKVM.Internal
 				flags |= mb.IsPublic ? BindingFlags.Public : BindingFlags.NonPublic;
 				flags |= mb.IsStatic ? BindingFlags.Static : BindingFlags.Instance;
 				method = DeclaringType.TypeAsTBD.GetMethod(mb.Name, flags, null, GetParametersForDefineMethod(), null);
+				if (method == null)
+                {
+					method = DeclaringType.TypeAsTBD.GetConstructor(flags, null, GetParametersForDefineMethod(), null);
+				}
 #endif
 			}
 #endif
