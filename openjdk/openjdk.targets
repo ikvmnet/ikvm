@@ -8,6 +8,7 @@
     <OpenJdkImplementationVersion>1.8.0</OpenJdkImplementationVersion>
     <OpenJdkSpecificationVersion>1.8</OpenJdkSpecificationVersion>
     <OpenJdkFullVersion>1.8.0_45-b14</OpenJdkFullVersion>
+    <OpenJdkVersion>OpenJDK 8u45 b14</OpenJdkVersion>
   </PropertyGroup>
 
   <PropertyGroup Condition="$(TargetFramework.StartsWith('net4'))">
@@ -185,6 +186,30 @@
 
   <Target Name="PropertyConstantsJava">
     <Copy SourceFiles="java\lang\PropertyConstants.java.in" DestinationFiles="java\lang\PropertyConstants.java" />
+    <ItemGroup>
+      <TransformOpenJdkVersion Include="java\lang\PropertyConstants.java">
+        <Find>@OPENJDK_VERSION@</Find>
+        <ReplaceWith>$(OpenJdkVersion)</ReplaceWith>
+        <Options>Singleline</Options>
+      </TransformOpenJdkVersion>
+    </ItemGroup>
+    <RegexTransform Items="@(TransformOpenJdkVersion)" />
+    <ItemGroup>
+      <TransformAssemblyInfoVersion Include="java\lang\PropertyConstants.java">
+        <Find>@VERSION@</Find>
+        <ReplaceWith>$(AssemblyVersion)</ReplaceWith>
+        <Options>Singleline</Options>
+      </TransformAssemblyInfoVersion>
+    </ItemGroup>
+    <RegexTransform Items="@(TransformAssemblyInfoVersion)" />
+    <ItemGroup>
+      <TransformAwtAssembly Include="java\lang\PropertyConstants.java">
+        <Find>@AWTASSEMBLY@</Find>
+        <ReplaceWith>IKVM.AWT.WinForms, Version=$(AssemblyVersion), Culture=neutral</ReplaceWith>
+        <Options>Singleline</Options>
+      </TransformAwtAssembly>
+    </ItemGroup>
+    <RegexTransform Items="@(TransformAwtAssembly)" />
   </Target>
 
   <PropertyGroup Condition="$(TargetFramework.StartsWith('net4'))">
