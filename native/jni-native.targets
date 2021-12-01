@@ -112,7 +112,7 @@
     <MakeDir Directories="$(NativeObjDir)" />
 
     <!-- Compile ikvm-native binary -->
-    <Exec Command="&quot;gcc&quot; -o &quot;$(CompiledResult)&quot; $(CompilerArgs) `pkg-config --cflags --libs gmodule-2.0` $(SourceFiles)"
+    <Exec Command="&quot;gcc&quot; -o &quot;$(CompiledResult)&quot; $(CompilerArgs) `pkg-config --cflags gmodule-2.0` $(SourceFiles) `pkg-config --libs gmodule-2.0`"
         WorkingDirectory="$(NativeObjDir)"
         ConsoleToMSBuild="true" />
 
