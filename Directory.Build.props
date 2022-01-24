@@ -8,9 +8,9 @@
   
   <PropertyGroup Label="Assembly Signing">
     <!-- Optional Parameter: Supplying this will enable strong naming -->
-    <AssemblyOriginatorKeyFile></AssemblyOriginatorKeyFile>
-    <!-- Optional Parameter: Required for strong naming (could automate if we check in sn.exe) -->
-    <PublicKey></PublicKey>
+    <AssemblyOriginatorKeyFile>$(RepositoryRoot).build\ikvm.snk</AssemblyOriginatorKeyFile>
+    <!-- Optional Parameter: Required for strong naming -->
+    <PublicKey>0024000004800000940000000602000000240000525341310004000001000100dd6b140e5209cae3d1c710030021ef589d0f00d05aca8771101a7e99e10ee063e66040df96e6f842f717bfc5b62d2ec2b62ceb0282e4649790dacb424db29b68adc7eaeab0356fce04702379f84400b8427edbb33dab8720b9f16a42e2cdb87f885ef413dbc4229f2bd157c9b8dc2cd14866dec5f31c764bfb9394cc3c60e6c0</PublicKey>
     <SignAssembly Condition=" '$(AssemblyOriginatorKeyFile)' != '' ">true</SignAssembly>
   </PropertyGroup>
 
