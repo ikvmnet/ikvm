@@ -1,6 +1,6 @@
 <Project>
   <Import Project="version.props" Condition="Exists('version.props')" />
-  <Import Project="build\dependencies.props" Condition="Exists('build\dependencies.props')" />
+  <Import Project=".build\dependencies.props" Condition="Exists('.build\dependencies.props')" />
   
   <PropertyGroup>
     <RepositoryRoot>$(MSBuildThisFileDirectory)</RepositoryRoot>
