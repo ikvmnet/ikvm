@@ -60,33 +60,15 @@
   </ItemGroup>
 
   <ItemGroup>
-    <AssemblyAttribute Include="System.Runtime.CompilerServices.InternalsVisibleTo">
-      <_Parameter1>IKVM.Runtime.JNI</_Parameter1>
-    </AssemblyAttribute>
-    <AssemblyAttribute Include="System.Runtime.CompilerServices.InternalsVisibleTo">
-      <_Parameter1>IKVM.OpenJDK.Core</_Parameter1>
-    </AssemblyAttribute>
-    <AssemblyAttribute Include="System.Runtime.CompilerServices.InternalsVisibleTo">
-      <_Parameter1>IKVM.OpenJDK.Util</_Parameter1>
-    </AssemblyAttribute>
-    <AssemblyAttribute Include="System.Runtime.CompilerServices.InternalsVisibleTo">
-      <_Parameter1>IKVM.OpenJDK.Security</_Parameter1>
-    </AssemblyAttribute>
-    <AssemblyAttribute Include="System.Runtime.CompilerServices.InternalsVisibleTo">
-      <_Parameter1>IKVM.OpenJDK.Management</_Parameter1>
-    </AssemblyAttribute>
-    <AssemblyAttribute Include="System.Runtime.CompilerServices.InternalsVisibleTo">
-      <_Parameter1>IKVM.OpenJDK.Media</_Parameter1>
-    </AssemblyAttribute>
-    <AssemblyAttribute Include="System.Runtime.CompilerServices.InternalsVisibleTo">
-      <_Parameter1>IKVM.OpenJDK.Misc</_Parameter1>
-    </AssemblyAttribute>
-    <AssemblyAttribute Include="System.Runtime.CompilerServices.InternalsVisibleTo">
-      <_Parameter1>IKVM.OpenJDK.Remoting</_Parameter1>
-    </AssemblyAttribute>
-    <AssemblyAttribute Include="System.Runtime.CompilerServices.InternalsVisibleTo">
-      <_Parameter1>IKVM.OpenJDK.SwingAWT</_Parameter1>
-    </AssemblyAttribute>
+    <InternalsVisibleTo Include="IKVM.OpenJDK.Core" />
+    <InternalsVisibleTo Include="IKVM.OpenJDK.Management" />
+    <InternalsVisibleTo Include="IKVM.OpenJDK.Media" />
+    <InternalsVisibleTo Include="IKVM.OpenJDK.Misc" />
+    <InternalsVisibleTo Include="IKVM.OpenJDK.Remoting" />
+    <InternalsVisibleTo Include="IKVM.OpenJDK.Security" />
+    <InternalsVisibleTo Include="IKVM.OpenJDK.SwingAWT" />
+    <InternalsVisibleTo Include="IKVM.OpenJDK.Util" />
+    <InternalsVisibleTo Include="IKVM.Runtime.JNI" />
   </ItemGroup>
 
   <Target Name="AddAllowPartiallyTrustedCallers" BeforeTargets="Build">

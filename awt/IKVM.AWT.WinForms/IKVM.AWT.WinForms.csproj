@@ -53,9 +53,7 @@
   </PropertyGroup>
 
   <ItemGroup>
-    <AssemblyAttribute Include="System.Runtime.CompilerServices.InternalsVisibleTo">
-      <_Parameter1>IKVM.OpenJDK.SwingAWT</_Parameter1>
-    </AssemblyAttribute>
+    <InternalsVisibleTo Include="IKVM.OpenJDK.SwingAWT" />
   </ItemGroup>
 
   <Target Name="AddAllowPartiallyTrustedCallers" BeforeTargets="Build">

@@ -29,9 +29,7 @@
   </PropertyGroup>
 
   <ItemGroup>
-    <AssemblyAttribute Include="System.Runtime.CompilerServices.InternalsVisibleTo">
-      <_Parameter1>IKVM.Runtime</_Parameter1>
-    </AssemblyAttribute>
+    <InternalsVisibleTo Include="IKVM.Runtime" />
   </ItemGroup>
 
 </Project>
