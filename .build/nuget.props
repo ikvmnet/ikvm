@@ -1,7 +1,7 @@
 <Project>
   <PropertyGroup Label="NuGet Package Properties">
     <IsPackable>true</IsPackable>
-    <PackageDescription>IKVM.NET is an implementation of Java for Mono and the Microsoft .NET Framework.</PackageDescription>
+    <PackageDescription>IKVM.NET is an implementation of Java for the .NET platform.</PackageDescription>
     <PackageTags>IKVM.NET;java;.NET;dotnet;ikvm;jdk;jni</PackageTags>
     <Authors>Jeroen Frijters</Authors>
     <RepositoryUrl>https://github.com/ikvm-revived/ikvm/</RepositoryUrl>
