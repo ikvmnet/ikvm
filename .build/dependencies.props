@@ -1,6 +1,7 @@
 <Project>
   <PropertyGroup Label="NuGet Package Reference Versions">
     <MicrosoftCSharpPackageVersion>4.4.0</MicrosoftCSharpPackageVersion>
+    <MicrosoftNETFrameworkReferenceAssembliesPackageReferenceVersion>1.0.2</MicrosoftNETFrameworkReferenceAssembliesPackageReferenceVersion>
     <MicrosoftWindowsCompatibilityPackageVersion>3.1.1</MicrosoftWindowsCompatibilityPackageVersion>
     <MicrosoftWin32RegistryPackageVersion>4.7.0</MicrosoftWin32RegistryPackageVersion>
     <NerdBankGitVersioningPackageVersion>[3.5.73-alpha]</NerdBankGitVersioningPackageVersion>
