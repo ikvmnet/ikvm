@@ -42,6 +42,8 @@ openjdk/*.zip
 openjdk/*.jar
 openjdk/*.rsp
 openjdk/*.gen.*
+openjdk/openjdk-*/**/*
+openjdk-*/**/*
 runtime/**/*.jar
 runtime/**/*.dll
 tools/*.exe
