@@ -1,8 +1,22 @@
 <Project>
   <PropertyGroup Label="NuGet Package Reference Versions">
     <MicrosoftCSharpPackageVersion>4.4.0</MicrosoftCSharpPackageVersion>
+    <MicrosoftWindowsCompatibilityPackageVersion>3.1.1</MicrosoftWindowsCompatibilityPackageVersion>
+    <MicrosoftWin32RegistryPackageVersion>4.7.0</MicrosoftWin32RegistryPackageVersion>
     <NerdBankGitVersioningPackageVersion>[3.5.73-alpha]</NerdBankGitVersioningPackageVersion>
+    <NewtonsoftJsonPackageVersion>12.0.3</NewtonsoftJsonPackageVersion>
     <SharpZipLibPackageVersion>1.2.0</SharpZipLibPackageVersion>
+    <SystemConfigurationConfigurationManagerPackageVersion>4.7.0</SystemConfigurationConfigurationManagerPackageVersion>
+    <SystemDataOdbcPackageVersion>4.7.0</SystemDataOdbcPackageVersion>
+    <SystemDrawingCommonPackageVersion>4.7.0</SystemDrawingCommonPackageVersion>
+    <SystemIOFileSystemAccessControlPackageVersion>4.7.0</SystemIOFileSystemAccessControlPackageVersion>
+    <SystemReflectionEmitPackageVersion>4.7.0</SystemReflectionEmitPackageVersion>
+    <SystemReflectionEmitLightweightPackageVersion>4.7.0</SystemReflectionEmitLightweightPackageVersion>
+    <SystemReflectionTypeExtensionsPackageVersion>4.7.0</SystemReflectionTypeExtensionsPackageVersion>
+    <SystemRuntimeExtensionsPackageVersion>4.3.1</SystemRuntimeExtensionsPackageVersion>
+    <SystemSecurityAccessControlPackageVersion>4.7.0</SystemSecurityAccessControlPackageVersion>
     <SystemSecurityCryptographyPkcsPackageVersion>4.7.0</SystemSecurityCryptographyPkcsPackageVersion>
+    <SystemSecurityPrincipalWindowsPackageVersion>4.7.0</SystemSecurityPrincipalWindowsPackageVersion>
+    <SystemSecurityPermissionsPackageVersion>4.7.0</SystemSecurityPermissionsPackageVersion>
   </PropertyGroup>
 </Project>
