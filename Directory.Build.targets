@@ -98,4 +98,12 @@
       </Code>
     </Task>
   </UsingTask>
+
+  <!-- Global PackageReferences -->
+
+  <ItemGroup>
+    <!-- This is to allow the .NET Framework references to be machine-indepenedent so builds can happen without installing prerequisites -->
+    <PackageReference Include="Microsoft.NETFramework.ReferenceAssemblies" Version="$(MicrosoftNETFrameworkReferenceAssembliesPackageReferenceVersion)" PrivateAssets="All" />
+  </ItemGroup>
+  
 </Project>
