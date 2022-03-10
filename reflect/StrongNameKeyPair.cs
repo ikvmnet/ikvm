@@ -201,12 +201,12 @@ namespace IKVM.Reflection
 				// Read Modulus
 				byte[] modulus = br.ReadBytes(
 					(int)keyBitLength / 8);
-				// Read Private Key Paremeters
 				Array.Reverse(modulus);
 				rsaParameters.Modulus = modulus;
 
 				if (keyType == 7)
 				{
+					// Read Private Key Parameters
 					byte[] prime1 = br.ReadBytes(
 						(int)keyBitLength / 16);
 					byte[] prime2 = br.ReadBytes(
