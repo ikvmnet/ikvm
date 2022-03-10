@@ -85,7 +85,8 @@ namespace IKVM.Reflection
 #endif
 				using (RSACryptoServiceProvider rsa = CreateRSA())
 				{
-					byte[] cspBlob = rsa.ExportCspBlob(false);
+					var rsaParameters = rsa.ExportParameters(false);
+					byte[] cspBlob = ExportPublicKey(rsaParameters);
 					byte[] publicKey = new byte[12 + cspBlob.Length];
 					Buffer.BlockCopy(cspBlob, 0, publicKey, 12, cspBlob.Length);
 					publicKey[1] = 36;
@@ -107,7 +108,9 @@ namespace IKVM.Reflection
 				if (keyPairArray != null)
 				{
 					RSACryptoServiceProvider rsa = new RSACryptoServiceProvider();
-					rsa.ImportCspBlob(keyPairArray);
+					// we import from parameters, as using ImportCspBlob
+					// causes the exception "KeySet not found" when signing a hash later.
+					rsa.ImportParameters(RSAParametersFromByteArray(keyPairArray));
 					return rsa;
 				}
 				else
@@ -127,6 +130,112 @@ namespace IKVM.Reflection
 			{
 				throw new ArgumentException("Unable to obtain public key for StrongNameKeyPair.");
 			}
+		}
+
+		// helper functions ExportPublicKey, RSAParametersFromStream and RSAParametersFromByteArray
+		// based on code in the following article:-
+		// https://www.developerfusion.com/article/84422/the-key-to-strong-names/
+		static byte[] ExportPublicKey(RSAParameters rsaParameters)
+		{
+			if (rsaParameters.Modulus == null || rsaParameters.Exponent == null)
+			{
+				throw new ArgumentNullException(nameof(rsaParameters));
+			}
+
+			using (MemoryStream ms = new MemoryStream())
+			{
+				using (BinaryWriter bw = new BinaryWriter(ms))
+				{
+					var keyBitLength = rsaParameters.Modulus.Length * 8;
+					bw.Write((byte)0x06);
+					bw.Write((byte)0x02);
+					bw.Write((UInt16)0x0000);
+					bw.Write((UInt32)0x2400);
+					bw.Write("RSA1".ToCharArray());
+					bw.Write((UInt32)keyBitLength);
+					bw.Write(rsaParameters.Exponent);
+					bw.Write((byte)0x00);
+					byte[] modulus = (byte[])rsaParameters.Modulus.Clone();
+					Array.Reverse(modulus);
+					bw.Write(modulus);
+
+					return ms.ToArray();
+				}
+			}
+		}
+
+		static RSAParameters RSAParametersFromByteArray(byte[] array)
+		{
+			using (MemoryStream ms = new MemoryStream(array))
+			{
+				return RSAParametersFromStream(ms);
+			}
+		}
+
+		static RSAParameters RSAParametersFromStream(Stream str)
+		{
+			RSAParameters rsaParameters = new RSAParameters();
+
+			using (var br = new BinaryReader(str))
+			{
+				// Read BLOBHEADER
+				byte keyType = br.ReadByte();
+				if (keyType != 6 && keyType != 7)
+				{
+					throw new CryptographicException("SNK file not in correct format");
+				}
+				byte blobVersion = br.ReadByte();
+				UInt16 reserverd = br.ReadUInt16();
+				UInt32 algorithmID = br.ReadUInt32();
+				// Read RSAPUBKEY
+				string magic = new string(br.ReadChars(4));
+				if (!magic.Equals("RSA1") && !magic.Equals("RSA2"))
+				{
+					throw new CryptographicException("SNK file not in correct format");
+				}
+				UInt32 keyBitLength = br.ReadUInt32();
+				byte[] publicExponent = br.ReadBytes(3);
+				br.ReadByte();
+				rsaParameters.Exponent = publicExponent;
+
+				// Read Modulus
+				byte[] modulus = br.ReadBytes(
+					(int)keyBitLength / 8);
+				// Read Private Key Paremeters
+				Array.Reverse(modulus);
+				rsaParameters.Modulus = modulus;
+
+				if (keyType == 7)
+				{
+					byte[] prime1 = br.ReadBytes(
+						(int)keyBitLength / 16);
+					byte[] prime2 = br.ReadBytes(
+						(int)keyBitLength / 16);
+					byte[] exponent1 = br.ReadBytes(
+						(int)keyBitLength / 16);
+					byte[] exponent2 = br.ReadBytes(
+						(int)keyBitLength / 16);
+					byte[] coefficient = br.ReadBytes(
+						(int)keyBitLength / 16);
+					byte[] privateExponent = br.ReadBytes(
+						(int)keyBitLength / 8);
+
+					Array.Reverse(prime1);
+					Array.Reverse(prime2);
+					Array.Reverse(exponent1);
+					Array.Reverse(exponent2);
+					Array.Reverse(coefficient);
+					Array.Reverse(privateExponent);
+					rsaParameters.P = prime1;
+					rsaParameters.Q = prime2;
+					rsaParameters.DP = exponent1;
+					rsaParameters.DQ = exponent2;
+					rsaParameters.InverseQ = coefficient;
+					rsaParameters.D = privateExponent;
+				}
+			}
+
+			return rsaParameters;
 		}
 
 #if !NETSTANDARD
