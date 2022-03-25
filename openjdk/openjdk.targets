@@ -146,7 +146,9 @@
   <Target Name="AssemblyInfoJava">
     <PropertyGroup>
       <IKVMRuntime>IKVM.Runtime</IKVMRuntime>
+      <IKVMRuntime Condition=" '$(SignAssembly)' == 'true' And '$(PublicKey)' != '' ">$(IKVMRuntime), PublicKey=$(PublicKey)</IKVMRuntime>
       <IKVMAWTWinForms>IKVM.AWT.WinForms</IKVMAWTWinForms>
+      <IKVMAWTWinForms Condition=" '$(SignAssembly)' == 'true' And '$(PublicKey)' != '' ">$(IKVMAWTWinForms), PublicKey=$(PublicKey)</IKVMAWTWinForms>
       <Copyright>Copyright</Copyright>
     </PropertyGroup>
     <Copy SourceFiles="AssemblyInfo.java.in" DestinationFiles="AssemblyInfo.java" />
