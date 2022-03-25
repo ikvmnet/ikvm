@@ -2,7 +2,9 @@
 
   <PropertyGroup>
     <RepositoryRoot>$(MSBuildThisFileDirectory)</RepositoryRoot>
-    <LangVersion>8.0</LangVersion>
+    <!-- IMPORTANT: CAS is only supported on .NET Framework when using LangVersion 7.0 or prior
+         https://docs.microsoft.com/en-us/previous-versions/dotnet/framework/code-access-security/using-libraries-from-partially-trusted-code -->
+    <LangVersion>7.0</LangVersion>
     <NoWarn>$(NoWarn);1591;1573</NoWarn>
   </PropertyGroup>
   
