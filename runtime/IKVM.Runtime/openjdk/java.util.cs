@@ -27,7 +27,7 @@ static class Java_java_util_TimeZone
 {
 	private static string GetCurrentTimeZoneID()
 	{
-#if NET_4_0
+#if NET40_OR_GREATER || NETCOREAPP || NETSTANDARD
 		return TimeZoneInfo.Local.Id;
 #else
 		// we don't want a static dependency on System.Core (to be able to run on .NET 2.0)
@@ -323,7 +323,7 @@ static class Java_java_util_TimeZone
 
 	public static string getSystemGMTOffsetID()
 	{
-		TimeSpan sp = TimeZone.CurrentTimeZone.GetUtcOffset(DateTime.Now);
+		TimeSpan sp = TimeZoneInfo.Local.GetUtcOffset(DateTime.Now);
 		int hours = sp.Hours;
 		int mins = sp.Minutes;
 		if (hours >= 0 && mins >= 0)
