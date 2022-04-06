@@ -71,11 +71,4 @@
     <InternalsVisibleTo Include="IKVM.Runtime.JNI" />
   </ItemGroup>
 
-  <Target Name="AddAllowPartiallyTrustedCallers" BeforeTargets="Build">
-    <!-- Handle AllowPartiallyTrustedCallers (.NET Framework only) -->
-    <ItemGroup Condition="$(TargetFramework.StartsWith('net4'))">
-      <AssemblyAttribute Include="System.Security.AllowPartiallyTrustedCallers" />
-    </ItemGroup>
-  </Target>
-
 </Project>
