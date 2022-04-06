@@ -54,13 +54,6 @@
     <InternalsVisibleTo Include="IKVM.Runtime.JNI" />
   </ItemGroup>
 
-  <Target Name="AddAllowPartiallyTrustedCallers" BeforeTargets="Build">
-    <!-- Handle AllowPartiallyTrustedCallers (.NET Framework only) -->
-    <ItemGroup Condition="$(TargetFramework.StartsWith('net4'))">
-      <AssemblyAttribute Include="System.Security.AllowPartiallyTrustedCallers" />
-    </ItemGroup>
-  </Target>
-
   <PropertyGroup Condition="$(TargetFramework.StartsWith('net4'))">
     <IkvmStub>..\..\bin\$(Configuration)\$(TargetFramework)\ikvmstub.exe</IkvmStub>
   </PropertyGroup>

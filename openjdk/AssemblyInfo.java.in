@@ -37,7 +37,8 @@
     @cli.System.Runtime.CompilerServices.InternalsVisibleToAttribute.Annotation("@AWTWINFORMS@")
 })
 
-@cli.System.Security.AllowPartiallyTrustedCallersAttribute.Annotation
+// ikvm-revived: Partial trust is obsolete, so we aren't supporting it
+//@cli.System.Security.AllowPartiallyTrustedCallersAttribute.Annotation
 
 // type to collect Assembly attributes applicable to all core library assemblies
 interface commonAttributes {}
