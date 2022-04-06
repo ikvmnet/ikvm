@@ -1102,14 +1102,22 @@ static class Java_java_io_WinNTFileSystem
 		return ok;
 	}
 
+	/// <summary>
+	/// The .NET ticks representing January 1, 1970 0:00:00, also known as the "epoch".
+	/// </summary>
+	private const long UnixEpochTicks = 621355968000000000L;
+
+	private const long UnixEpochMilliseconds = UnixEpochTicks / TimeSpan.TicksPerMillisecond; // 62,135,596,800,000
+
 	private static long DateTimeToJavaLongTime(DateTime datetime)
 	{
-		return (TimeZone.CurrentTimeZone.ToUniversalTime(datetime) - new DateTime(1970, 1, 1)).Ticks / 10000L;
+		long milliseconds = datetime.ToUniversalTime().Ticks / TimeSpan.TicksPerMillisecond;
+		return milliseconds - UnixEpochMilliseconds;
 	}
 
 	private static DateTime JavaLongTimeToDateTime(long datetime)
 	{
-		return TimeZone.CurrentTimeZone.ToLocalTime(new DateTime(new DateTime(1970, 1, 1).Ticks + datetime * 10000L));
+		return DateTimeOffset.FromUnixTimeMilliseconds(datetime).LocalDateTime;
 	}
 
 	public static long getLastModifiedTime(object _this, java.io.File f)
