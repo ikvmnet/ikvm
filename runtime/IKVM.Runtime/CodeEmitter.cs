@@ -114,7 +114,9 @@ namespace IKVM.Internal
 #endif
 		private IKVM.Attributes.LineNumberTableAttribute.LineNumberWriter linenums;
 		private CodeEmitterLocal[] tempLocals = new CodeEmitterLocal[32];
+#if NETFRAMEWORK
 		private ISymbolDocumentWriter symbols;
+#endif
 		private List<OpCodeWrapper> code = new List<OpCodeWrapper>(10);
 		private readonly Type declaringType;
 #if LABELCHECK
@@ -2695,10 +2697,12 @@ namespace IKVM.Internal
 
 		internal void SetLineNumber(ushort line)
 		{
+#if NETFRAMEWORK
 			if (symbols != null)
 			{
 				EmitPseudoOpCode(CodeType.SequencePoint, (int)line);
 			}
+#endif
 			EmitPseudoOpCode(CodeType.LineNumber, (int)line);
 		}
 
