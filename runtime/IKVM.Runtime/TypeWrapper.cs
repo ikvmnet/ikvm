@@ -1286,6 +1286,35 @@ namespace IKVM.Internal
 				internalsVisibleToAttribute.GetConstructor(new Type[] { Types.String }), new object[] { assemblyName });
 			assemblyBuilder.SetCustomAttribute(cab);
 		}
+
+		private static string GetFrameworkName()
+		{
+			System.Reflection.Assembly asm = System.Reflection.Assembly.GetEntryAssembly();
+			object[] targetFrameworks = asm.GetCustomAttributes(typeof(System.Runtime.Versioning.TargetFrameworkAttribute), false);
+			if (targetFrameworks.Length == 1)
+			{
+				return ((System.Runtime.Versioning.TargetFrameworkAttribute)targetFrameworks[0]).FrameworkName;
+			}
+			return "";
+		}
+
+		internal static void SetTargetFrameworkAttribute(AssemblyBuilder assemblyBuilder)
+		{
+			// NOTE: This syncs up the target framework with the command line tool that is used to generate the assembly.
+			// If we target .NET Standard or another portable target in the future, this logic will need to change to output
+			// the correct portable target framework based on the current target framework.
+			string frameworkName = GetFrameworkName();
+			if (frameworkName != string.Empty)
+				SetTargetFrameworkAttribute(assemblyBuilder, frameworkName);
+		}
+
+		internal static void SetTargetFrameworkAttribute(AssemblyBuilder assemblyBuilder, string frameworkName)
+		{
+			Type internalsVisibleToAttribute = JVM.Import(typeof(System.Runtime.Versioning.TargetFrameworkAttribute));
+			CustomAttributeBuilder cab = new CustomAttributeBuilder(
+				internalsVisibleToAttribute.GetConstructor(new Type[] { Types.String }), new object[] { frameworkName });
+			assemblyBuilder.SetCustomAttribute(cab);
+		}
 	}
 
 	static class EnumHelper

@@ -153,6 +153,7 @@ namespace IKVM.Internal
 				assemblyBuilder.SetCustomAttribute(debugAttr);
 			}
 			AttributeHelper.SetRuntimeCompatibilityAttribute(assemblyBuilder);
+			AttributeHelper.SetTargetFrameworkAttribute(assemblyBuilder);
 			if(options.baseAddress != 0)
 			{
 				moduleBuilder.__ImageBase = options.baseAddress;
