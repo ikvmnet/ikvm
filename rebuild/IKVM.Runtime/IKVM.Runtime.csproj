@@ -1,0 +1,39 @@
+﻿<Project Sdk="Microsoft.NET.Sdk">
+
+    <PropertyGroup>
+        <TargetFrameworks>net461;netcoreapp3.1</TargetFrameworks>
+        <DefineConstants>$(DefineConstants);EMITTERS</DefineConstants>
+        <NoWarn>$(NoWarn);169;649</NoWarn>
+        <AutoGenerateBindingRedirects>true</AutoGenerateBindingRedirects>
+    </PropertyGroup>
+
+    <PropertyGroup Label="NuGet Package/Assembly Settings">
+        <AssemblyTitle>IKVM.NET Runtime</AssemblyTitle>
+        <Description>JVM for Mono and .NET</Description>
+    </PropertyGroup>
+
+    <ItemGroup>
+        <InternalsVisibleTo Include="IKVM.OpenJDK" />
+    </ItemGroup>
+
+    <ItemGroup>
+        <PackageReference Include="System.Security.Cryptography.Pkcs" Version="$(SystemSecurityCryptographyPkcsPackageVersion)" />
+    </ItemGroup>
+
+    <ItemGroup Condition="$(TargetFramework.StartsWith('net4'))">
+        <Reference Include="System.Configuration" />
+    </ItemGroup>
+
+    <ItemGroup Condition="$(TargetFramework.StartsWith('netstandard')) Or $(TargetFramework.StartsWith('netcore'))">
+        <PackageReference Include="Microsoft.Win32.Registry" Version="$(MicrosoftWin32RegistryPackageVersion)" />
+        <PackageReference Include="System.Security.Permissions" Version="$(SystemSecurityPermissionsPackageVersion)" />
+        <PackageReference Include="System.Configuration.ConfigurationManager" Version="$(SystemConfigurationConfigurationManagerPackageVersion)" />
+        <PackageReference Include="System.Runtime.Extensions" Version="$(SystemRuntimeExtensionsPackageVersion)" />
+    </ItemGroup>
+
+    <ItemGroup>
+      <ProjectReference Include="..\IKVM.OpenJDK\IKVM.OpenJDK.csproj" />
+      <ProjectReference Include="..\IKVM.Runtime.JNI-sigs\IKVM.Runtime.JNI-sigs.csproj" />
+    </ItemGroup>
+
+</Project>

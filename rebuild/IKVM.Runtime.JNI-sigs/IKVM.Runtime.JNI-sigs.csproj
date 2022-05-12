@@ -1,0 +1,12 @@
+﻿<Project Sdk="Microsoft.NET.Sdk">
+
+    <PropertyGroup>
+        <TargetFrameworks>net461;netcoreapp3.1</TargetFrameworks>
+        <AssemblyName>IKVM.Runtime.JNI</AssemblyName>
+        <DefineConstants>$(DefineConstants);WHIDBEY;OPENJDK</DefineConstants>
+        <NoWarn>$(NoWarn);169;649</NoWarn>
+        <AutoGenerateBindingRedirects>true</AutoGenerateBindingRedirects>
+        <AllowUnsafeBlocks>true</AllowUnsafeBlocks>
+    </PropertyGroup>
+
+</Project>

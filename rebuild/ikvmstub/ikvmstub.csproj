@@ -1,0 +1,45 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+    <PropertyGroup>
+        <TargetFrameworks>net461;netcoreapp3.1</TargetFrameworks>
+        <DefineConstants>$(DefineConstants);STUB_GENERATOR</DefineConstants>
+        <AllowUnsafeBlocks>true</AllowUnsafeBlocks>
+    </PropertyGroup>
+
+    <PropertyGroup Label="NuGet Package/Assembly Settings">
+        <OutputType>Exe</OutputType>
+        <AssemblyName>ikvmstub</AssemblyName>
+        <RootNamespace>ikvmstub</RootNamespace>
+        <AssemblyTitle>IKVM.NET Stub Generator</AssemblyTitle>
+        <Description></Description>
+    </PropertyGroup>
+
+    <ItemGroup>
+        <PackageReference Include="SharpZipLib" Version="$(SharpZipLibPackageVersion)" />
+    </ItemGroup>
+
+    <ItemGroup Condition="$(TargetFramework.StartsWith('netstandard')) Or $(TargetFramework.StartsWith('netcore'))">
+        <PackageReference Include="System.Configuration.ConfigurationManager" Version="$(SystemConfigurationConfigurationManagerPackageVersion)" />
+    </ItemGroup>
+
+    <ItemGroup>
+        <Compile Include="..\IKVM.Runtime\stubgen\ClassFileWriter.cs" />
+        <Compile Include="..\ikvmc\AssemblyResolver.cs" />
+        <Compile Include="..\IKVM.Runtime\AssemblyClassLoader.cs" />
+        <Compile Include="..\IKVM.Runtime\attributes.cs" />
+        <Compile Include="..\IKVM.Runtime\ClassLoaderWrapper.cs" />
+        <Compile Include="..\IKVM.Runtime\CoreClasses.cs" />
+        <Compile Include="..\IKVM.Runtime\DotNetTypeWrapper.cs" />
+        <Compile Include="..\IKVM.Runtime\JavaException.cs" />
+        <Compile Include="..\IKVM.Runtime\MemberWrapper.cs" />
+        <Compile Include="..\IKVM.Runtime\profiler.cs" />
+        <Compile Include="..\IKVM.Runtime\ReflectUtil.cs" />
+        <Compile Include="..\IKVM.Runtime\tracer.cs" />
+        <Compile Include="..\IKVM.Runtime\Types.cs" />
+        <Compile Include="..\IKVM.Runtime\TypeWrapper.cs" />
+        <Compile Include="..\IKVM.Runtime\vm.cs" />
+        <Compile Include="..\IKVM.Runtime\stubgen\SerialVersionUID.cs" />
+        <Compile Include="..\IKVM.Runtime\stubgen\StubGenerator.cs" />
+    </ItemGroup>
+
+</Project>
