@@ -1,0 +1,3 @@
+[submodule "rebuild/IKVM.OpenJDK/openjdk"]
+	path = rebuild/IKVM.OpenJDK/openjdk
+	url = https://github.com/openjdk/jdk.git
