@@ -4,7 +4,6 @@
         <TargetFrameworks>net461;netcoreapp3.1</TargetFrameworks>
         <DefineConstants>$(DefineConstants);EMITTERS</DefineConstants>
         <NoWarn>$(NoWarn);169;649</NoWarn>
-        <AutoGenerateBindingRedirects>true</AutoGenerateBindingRedirects>
     </PropertyGroup>
 
     <PropertyGroup Label="NuGet Package/Assembly Settings">
@@ -13,6 +12,7 @@
     </PropertyGroup>
 
     <ItemGroup>
+        <InternalsVisibleTo Include="IKVM.Runtime.JNI" />
         <InternalsVisibleTo Include="IKVM.OpenJDK" />
     </ItemGroup>
 
@@ -32,8 +32,12 @@
     </ItemGroup>
 
     <ItemGroup>
-      <ProjectReference Include="..\IKVM.OpenJDK\IKVM.OpenJDK.csproj" />
-      <ProjectReference Include="..\IKVM.Runtime.JNI-sigs\IKVM.Runtime.JNI-sigs.csproj" />
+        <ProjectReference Include="..\IKVM.OpenJDK\IKVM.OpenJDK.csproj">
+            <ExcludeAssets>All</ExcludeAssets>
+        </ProjectReference>
+        <ProjectReference Include="..\IKVM.Runtime.JNI-sig\IKVM.Runtime.JNI-sig.csproj">
+            <ExcludeAssets>All</ExcludeAssets>
+        </ProjectReference>
     </ItemGroup>
 
 </Project>

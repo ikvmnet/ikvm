@@ -1,0 +1,18 @@
+﻿<Project Sdk="Microsoft.NET.Sdk">
+
+    <PropertyGroup>
+        <TargetFrameworks>net461;netcoreapp3.1</TargetFrameworks>
+        <DefineConstants>$(DefineConstants);EMITTERS</DefineConstants>
+        <NoWarn>$(NoWarn);169;649</NoWarn>
+    </PropertyGroup>
+
+    <PropertyGroup Label="NuGet Package/Assembly Settings">
+        <AssemblyTitle>IKVM.Reflection</AssemblyTitle>
+        <Description>Alternative implementation of System.Reflection[.Emit]</Description>
+    </PropertyGroup>
+
+    <ItemGroup>
+        <PackageReference Include="System.Security.Cryptography.Pkcs" Version="$(SystemSecurityCryptographyPkcsPackageVersion)" />
+    </ItemGroup>
+
+</Project>

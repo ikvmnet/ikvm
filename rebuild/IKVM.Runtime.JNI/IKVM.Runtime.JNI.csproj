@@ -4,7 +4,6 @@
         <TargetFrameworks>net461;netcoreapp3.1</TargetFrameworks>
         <DefineConstants>$(DefineConstants);WHIDBEY;OPENJDK</DefineConstants>
         <NoWarn>$(NoWarn);169;649</NoWarn>
-        <AutoGenerateBindingRedirects>true</AutoGenerateBindingRedirects>
         <AllowUnsafeBlocks>true</AllowUnsafeBlocks>
     </PropertyGroup>
 
@@ -14,7 +13,7 @@
     </PropertyGroup>
 
     <ItemGroup>
-        <ProjectReference Include="..\IKVM.OpenJDK-sigs\IKVM.OpenJDK-sigs.csproj" />
+      <ProjectReference Include="..\IKVM.Runtime-ref\IKVM.Runtime-ref.csproj" />
     </ItemGroup>
 
 </Project>

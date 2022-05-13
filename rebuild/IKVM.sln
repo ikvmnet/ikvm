@@ -3,25 +3,31 @@ Microsoft Visual Studio Solution File, Format Version 12.00
 # Visual Studio Version 17
 VisualStudioVersion = 17.2.32505.173
 MinimumVisualStudioVersion = 10.0.40219.1
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "IKVM.Runtime", "IKVM.Runtime\IKVM.Runtime.csproj", "{1DAD30CB-7FF9-47AC-92B2-0F46003EB6A4}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "IKVM.Runtime", "IKVM.Runtime\IKVM.Runtime.csproj", "{1DAD30CB-7FF9-47AC-92B2-0F46003EB6A4}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "IKVM.Runtime-ikvmstub", "IKVM.Runtime-ikvmstub\IKVM.Runtime-ikvmstub.csproj", "{818F812B-B77D-4739-94B5-C45B65E60CE9}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "IKVM.OpenJDK", "IKVM.OpenJDK\IKVM.OpenJDK.csproj", "{FAC669CD-03A2-4120-8B06-68D34E047C1C}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "IKVM.OpenJDK", "IKVM.OpenJDK\IKVM.OpenJDK.csproj", "{FAC669CD-03A2-4120-8B06-68D34E047C1C}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "IKVM.Runtime-ref", "IKVM.Runtime-ref\IKVM.Runtime-ref.csproj", "{197EF0EC-63E2-4644-AF25-054B931DDB55}"
 EndProject
-Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "IKVM.Runtime-firstpass", "IKVM.Runtime-firstpass\IKVM.Runtime-firstpass.csproj", "{197EF0EC-63E2-4644-AF25-054B931DDB55}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "IKVM.OpenJDK-sig", "IKVM.OpenJDK-sig\IKVM.OpenJDK-sig.csproj", "{2A7A3AB6-5CE3-4400-8F49-4B0196258214}"
 EndProject
-Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "IKVM.OpenJDK-sigs", "IKVM.OpenJDK-sigs\IKVM.OpenJDK-sigs.csproj", "{2A7A3AB6-5CE3-4400-8F49-4B0196258214}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "IKVM.Runtime.JNI", "IKVM.Runtime.JNI\IKVM.Runtime.JNI.csproj", "{E4E508BF-7ADF-413F-83E2-908A3C9F7F8D}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "IKVM.Runtime.JNI", "IKVM.Runtime.JNI\IKVM.Runtime.JNI.csproj", "{E4E508BF-7ADF-413F-83E2-908A3C9F7F8D}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "IKVM.Runtime.JNI-sig", "IKVM.Runtime.JNI-sig\IKVM.Runtime.JNI-sig.csproj", "{C228A283-0F5A-43DF-B2DC-E521DF53A059}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "IKVM.Runtime.JNI-sigs", "IKVM.Runtime.JNI-sigs\IKVM.Runtime.JNI-sigs.csproj", "{C228A283-0F5A-43DF-B2DC-E521DF53A059}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "ikvmstub", "ikvmstub\ikvmstub.csproj", "{0A87FF49-AC9D-479A-ACBB-F4028A0BE1F7}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "ikvmstub", "ikvmstub\ikvmstub.csproj", "{0A87FF49-AC9D-479A-ACBB-F4028A0BE1F7}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "ikvmc", "ikvmc\ikvmc.csproj", "{2F29E48C-63C3-4E47-BCBA-A7454B9119CF}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "ikvmc", "ikvmc\ikvmc.csproj", "{2F29E48C-63C3-4E47-BCBA-A7454B9119CF}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "ikvm", "ikvm\ikvm.csproj", "{D13E6D52-AF13-423D-B29D-A935BA32E67C}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "ikvm", "ikvm\ikvm.csproj", "{D13E6D52-AF13-423D-B29D-A935BA32E67C}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "IKVM.Reflection", "IKVM.Reflection\IKVM.Reflection.csproj", "{01A67032-A76E-400D-9DA8-A58CE10A5FCD}"
+EndProject
+Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Solution Items", "Solution Items", "{90150B24-0F40-41BB-95EF-D95F50BF06BE}"
+	ProjectSection(SolutionItems) = preProject
+		Directory.Build.props = Directory.Build.props
+		Directory.Build.targets = Directory.Build.targets
+	EndProjectSection
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
@@ -33,10 +39,6 @@ Global
 		{1DAD30CB-7FF9-47AC-92B2-0F46003EB6A4}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{1DAD30CB-7FF9-47AC-92B2-0F46003EB6A4}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{1DAD30CB-7FF9-47AC-92B2-0F46003EB6A4}.Release|Any CPU.Build.0 = Release|Any CPU
-		{818F812B-B77D-4739-94B5-C45B65E60CE9}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
-		{818F812B-B77D-4739-94B5-C45B65E60CE9}.Debug|Any CPU.Build.0 = Debug|Any CPU
-		{818F812B-B77D-4739-94B5-C45B65E60CE9}.Release|Any CPU.ActiveCfg = Release|Any CPU
-		{818F812B-B77D-4739-94B5-C45B65E60CE9}.Release|Any CPU.Build.0 = Release|Any CPU
 		{FAC669CD-03A2-4120-8B06-68D34E047C1C}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
 		{FAC669CD-03A2-4120-8B06-68D34E047C1C}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{FAC669CD-03A2-4120-8B06-68D34E047C1C}.Release|Any CPU.ActiveCfg = Release|Any CPU
@@ -69,6 +71,10 @@ Global
 		{D13E6D52-AF13-423D-B29D-A935BA32E67C}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{D13E6D52-AF13-423D-B29D-A935BA32E67C}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{D13E6D52-AF13-423D-B29D-A935BA32E67C}.Release|Any CPU.Build.0 = Release|Any CPU
+		{01A67032-A76E-400D-9DA8-A58CE10A5FCD}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{01A67032-A76E-400D-9DA8-A58CE10A5FCD}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{01A67032-A76E-400D-9DA8-A58CE10A5FCD}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{01A67032-A76E-400D-9DA8-A58CE10A5FCD}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE

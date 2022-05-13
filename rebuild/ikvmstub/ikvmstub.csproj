@@ -1,9 +1,9 @@
-<Project Sdk="Microsoft.NET.Sdk">
+﻿<Project Sdk="Microsoft.NET.Sdk">
 
     <PropertyGroup>
         <TargetFrameworks>net461;netcoreapp3.1</TargetFrameworks>
         <DefineConstants>$(DefineConstants);STUB_GENERATOR</DefineConstants>
-        <AllowUnsafeBlocks>true</AllowUnsafeBlocks>
+        <AutoGenerateBindingRedirects>true</AutoGenerateBindingRedirects>
     </PropertyGroup>
 
     <PropertyGroup Label="NuGet Package/Assembly Settings">
@@ -23,23 +23,27 @@
     </ItemGroup>
 
     <ItemGroup>
-        <Compile Include="..\IKVM.Runtime\stubgen\ClassFileWriter.cs" />
-        <Compile Include="..\ikvmc\AssemblyResolver.cs" />
-        <Compile Include="..\IKVM.Runtime\AssemblyClassLoader.cs" />
-        <Compile Include="..\IKVM.Runtime\attributes.cs" />
-        <Compile Include="..\IKVM.Runtime\ClassLoaderWrapper.cs" />
-        <Compile Include="..\IKVM.Runtime\CoreClasses.cs" />
-        <Compile Include="..\IKVM.Runtime\DotNetTypeWrapper.cs" />
-        <Compile Include="..\IKVM.Runtime\JavaException.cs" />
-        <Compile Include="..\IKVM.Runtime\MemberWrapper.cs" />
-        <Compile Include="..\IKVM.Runtime\profiler.cs" />
-        <Compile Include="..\IKVM.Runtime\ReflectUtil.cs" />
-        <Compile Include="..\IKVM.Runtime\tracer.cs" />
-        <Compile Include="..\IKVM.Runtime\Types.cs" />
-        <Compile Include="..\IKVM.Runtime\TypeWrapper.cs" />
-        <Compile Include="..\IKVM.Runtime\vm.cs" />
-        <Compile Include="..\IKVM.Runtime\stubgen\SerialVersionUID.cs" />
-        <Compile Include="..\IKVM.Runtime\stubgen\StubGenerator.cs" />
+        <ProjectReference Include="..\IKVM.Reflection\IKVM.Reflection.csproj" />
+    </ItemGroup>
+
+    <ItemGroup>
+        <Compile Include="..\IKVM.Runtime\stubgen\ClassFileWriter.cs" LinkBase="runtime" />
+        <Compile Include="..\ikvmc\AssemblyResolver.cs" LinkBase="ikvmc" />
+        <Compile Include="..\IKVM.Runtime\AssemblyClassLoader.cs" LinkBase="runtime" />
+        <Compile Include="..\IKVM.Runtime\attributes.cs" LinkBase="runtime" />
+        <Compile Include="..\IKVM.Runtime\ClassLoaderWrapper.cs" LinkBase="runtime" />
+        <Compile Include="..\IKVM.Runtime\CoreClasses.cs" LinkBase="runtime" />
+        <Compile Include="..\IKVM.Runtime\DotNetTypeWrapper.cs" LinkBase="runtime" />
+        <Compile Include="..\IKVM.Runtime\JavaException.cs" LinkBase="runtime" />
+        <Compile Include="..\IKVM.Runtime\MemberWrapper.cs" LinkBase="runtime" />
+        <Compile Include="..\IKVM.Runtime\profiler.cs" LinkBase="runtime" />
+        <Compile Include="..\IKVM.Runtime\ReflectUtil.cs" LinkBase="runtime" />
+        <Compile Include="..\IKVM.Runtime\tracer.cs" LinkBase="runtime" />
+        <Compile Include="..\IKVM.Runtime\Types.cs" LinkBase="runtime" />
+        <Compile Include="..\IKVM.Runtime\TypeWrapper.cs" LinkBase="runtime" />
+        <Compile Include="..\IKVM.Runtime\vm.cs" LinkBase="runtime" />
+        <Compile Include="..\IKVM.Runtime\stubgen\SerialVersionUID.cs" LinkBase="runtime" />
+        <Compile Include="..\IKVM.Runtime\stubgen\StubGenerator.cs" LinkBase="runtime" />
     </ItemGroup>
 
 </Project>

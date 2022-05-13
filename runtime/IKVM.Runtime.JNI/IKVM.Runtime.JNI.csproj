@@ -18,10 +18,6 @@
       <SpecificVersion>False</SpecificVersion>
       <HintPath>..\..\bin\$(Configuration)\$(TargetFramework)\IKVM.OpenJDK.Core.dll</HintPath>
     </Reference>
-    <Reference Include="IKVM.Runtime, Version=0.0.0.0, Culture=neutral, processorArchitecture=MSIL">
-      <SpecificVersion>False</SpecificVersion>
-      <HintPath>..\..\bin\$(Configuration)\$(TargetFramework)\IKVM.Runtime.dll</HintPath>
-    </Reference>
   </ItemGroup>
 
   <PropertyGroup Condition="'$(Configuration)'=='Debug'">
