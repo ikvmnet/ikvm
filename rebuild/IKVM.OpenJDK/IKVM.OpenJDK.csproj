@@ -9,8 +9,7 @@
     </PropertyGroup>
 
     <PropertyGroup>
-        <OpenJdkDirSlash>./openjdk</OpenJdkDirSlash>
-        <SkipSystemCoreDependency>false</SkipSystemCoreDependency>
+        <OpenJdkDir>..\..\..\openjdk-8u45-b14</OpenJdkDir>
         <OpenJdkImplementationVersion>1.8.0</OpenJdkImplementationVersion>
         <OpenJdkSpecificationVersion>1.8</OpenJdkSpecificationVersion>
         <OpenJdkFullVersion>1.8.0_45-b14</OpenJdkFullVersion>
@@ -34,96 +33,83 @@
         </ProjectReference>
     </ItemGroup>
 
-    <ItemGroup Condition="$(TargetFramework.StartsWith('netstandard')) Or $(TargetFramework.StartsWith('netcore'))">
-        <PackageReference Include="System.Security.Permissions" Version="$(SystemSecurityPermissionsPackageVersion)" GeneratePathProperty="true" />
-        <PackageReference Include="System.Configuration.ConfigurationManager" Version="$(SystemConfigurationConfigurationManagerPackageVersion)" GeneratePathProperty="true" />
-        <PackageReference Include="System.Drawing.Common" Version="$(SystemDrawingCommonPackageVersion)" GeneratePathProperty="true" />
-        <PackageReference Include="Newtonsoft.Json" Version="$(NewtonsoftJsonPackageVersion)" />
-        <PackageReference Include="System.IO.FileSystem.AccessControl" Version="$(SystemIOFileSystemAccessControlPackageVersion)" GeneratePathProperty="true" />
-        <PackageReference Include="System.Security.AccessControl" Version="$(SystemSecurityAccessControlPackageVersion)" GeneratePathProperty="true" />
-        <PackageReference Include="System.Security.Principal.Windows" Version="$(SystemSecurityPrincipalWindowsPackageVersion)" GeneratePathProperty="true" />
-        <PackageReference Include="System.Data.Odbc" Version="$(SystemDataOdbcPackageVersion)" GeneratePathProperty="true" />
+    <ItemGroup>
+        <PackageReference Include="System.CodeDom" Version="6.0.0" />
+        <PackageReference Include="System.Data.SqlClient" Version="4.8.3" />
+        <PackageReference Include="System.Diagnostics.PerformanceCounter" Version="6.0.1" />
+        <PackageReference Include="System.IO.Packaging" Version="6.0.0" />
+        <PackageReference Include="System.Security.Cryptography.Xml" Version="6.0.0" />
+        <PackageReference Include="System.Security.Permissions" Version="6.0.0" />
+        <PackageReference Include="System.Configuration.ConfigurationManager" Version="6.0.0" />
+        <PackageReference Include="System.Drawing.Primitives " Version="4.3.0" />
+        <PackageReference Include="System.Drawing.Common" Version="6.0.0" />
+        <PackageReference Include="System.IO.FileSystem.AccessControl" Version="5.0.0" />
+        <PackageReference Include="System.Security.AccessControl" Version="6.0.0" />
+        <PackageReference Include="System.Security.Principal.Windows" Version="5.0.0" />
+        <PackageReference Include="System.Security.Cryptography.Cng" Version="5.0.0" />
+        <PackageReference Include="System.ServiceModel.Syndication" Version="6.0.0" />
+        <PackageReference Include="System.ServiceProcess.ServiceController" Version="6.0.0" />
+        <PackageReference Include="System.Threading.AccessControl" Version="6.0.0" />
+        <PackageReference Include="System.Data.Odbc" Version="6.0.0" />
+        <PackageReference Include="Newtonsoft.Json" Version="12.0.3" />
     </ItemGroup>
 
     <ItemDefinitionGroup>
         <StubAssembly>
-            <Name></Name>
             <Args></Args>
         </StubAssembly>
     </ItemDefinitionGroup>
 
-    <ItemGroup Condition="$(TargetFramework.StartsWith('net4'))">
-        <StubAssembly Include="mscorlib" />
-        <StubAssembly Include="System" />
-        <StubAssembly Include="System.Core" />
-        <StubAssembly Include="System.Data" />
-        <StubAssembly Include="System.Xml" />
-    </ItemGroup>
-
-    <ItemGroup Condition="$(TargetFramework.StartsWith('netstandard')) Or $(TargetFramework.StartsWith('netcore'))">
-        <StubAssembly Include="Microsoft.Win32.Primitives" />
-        <StubAssembly Include="System.Collections.Specialized" />
-        <StubAssembly Include="System.ComponentModel" />
-        <StubAssembly Include="System.ComponentModel.Primitives" />
-        <StubAssembly Include="System.ComponentModel.TypeConverter" />
-        <StubAssembly Include="System.Console" />
-        <StubAssembly Include="System.Data.Common" />
-        <StubAssembly Include="System.Diagnostics.FileVersionInfo" />
-        <StubAssembly Include="System.Diagnostics.Process" />
-        <StubAssembly Include="System.Diagnostics.StackTrace" />
-        <StubAssembly Include="System.Drawing.Primitives" />
-        <StubAssembly Include="System.IO.FileSystem" />
-        <StubAssembly Include="System.IO.FileSystem.DriveInfo" />
-        <StubAssembly Include="System.IO.FileSystem.Watcher" />
-        <StubAssembly Include="System.Net.Mail" />
-        <StubAssembly Include="System.Net.NetworkInformation" />
-        <StubAssembly Include="System.Net.Primitives" />
-        <StubAssembly Include="System.Net.Sockets" />
-        <StubAssembly Include="System.Runtime" />
-        <StubAssembly Include="System.Runtime.Extensions" />
-        <StubAssembly Include="System.Runtime.InteropServices" />
-        <StubAssembly Include="System.Security.Cryptography.Algorithms" />
-        <StubAssembly Include="System.Security.Cryptography.Csp" />
-        <StubAssembly Include="System.Threading" />
-        <StubAssembly Include="System.Threading.Thread" />
-        <StubAssembly Include="System.Threading.ThreadPool" />
-        <StubAssembly Include="System.Xml.ReaderWriter" />
-
-        <StubAssembly Include="$(PkgSystem_IO_FileSystem_AccessControl)\ref\netstandard2.0\System.IO.FileSystem.AccessControl.dll">
-            <Name>System.IO.FileSystem.AccessControl</Name>
-            <Args>-r:$(PkgSystem_Security_AccessControl)\ref\netstandard2.0\System.Security.AccessControl.dll -r:$(PkgSystem_Security_Principal_Windows)\ref\netcoreapp3.0\System.Security.Principal.Windows.dll</Args>
-        </StubAssembly>
-
-        <StubAssembly Include="$(PkgSystem_Configuration_ConfigurationManager)\ref\netstandard2.0\System.Configuration.ConfigurationManager.dll">
-            <Name>System.Configuration.ConfigurationManager</Name>
-            <Args>-r:$(PkgSystem_Security_Permissions)\ref\netstandard2.0\System.Security.Permissions.dll</Args>
-        </StubAssembly>
-
-        <StubAssembly Include="$(PkgSystem_Data_Odbc)\ref\netstandard2.0\System.Data.Odbc.dll">
-            <Name>System.Data.Odbc</Name>
-        </StubAssembly>
-
-        <StubAssembly Include="$(PkgSystem_Drawing_Common)\ref\netcoreapp3.0\System.Drawing.Common.dll">
-            <Name>System.Drawing.Common</Name>
-        </StubAssembly>
-
-        <StubAssembly Include="$(PkgSystem_Security_Permissions)\ref\netstandard2.0\System.Security.Permissions.dll">
-            <Name>System.Security.Permissions</Name>
-            <Args>-r:$(PkgSystem_Security_AccessControl)\ref\netstandard2.0\System.Security.AccessControl.dll</Args>
-        </StubAssembly>
+    <ItemGroup>
+        <VfsIncludeFile Include="$(OpenJdkDir)\build\linux-x86_64-normal-server-release\jdk\**\lib\calendars.properties" />
+        <VfsIncludeFile Include="$(OpenJdkDir)\build\linux-x86_64-normal-server-release\jdk\**\lib\logging.properties" />
+        <VfsIncludeFile Include="$(OpenJdkDir)\build\linux-x86_64-normal-server-release\jdk\**\lib\net.properties" />
+        <VfsIncludeFile Include="$(OpenJdkDir)\build\linux-x86_64-normal-server-release\jdk\**\lib\psfontj2d.properties" />
+        <VfsIncludeFile Include="$(OpenJdkDir)\build\linux-x86_64-normal-server-release\jdk\**\lib\sound.properties" />
+        <VfsIncludeFile Include="$(OpenJdkDir)\build\linux-x86_64-normal-server-release\jdk\**\lib\tzdb.dat" />
+        <VfsIncludeFile Include="$(OpenJdkDir)\build\linux-x86_64-normal-server-release\jdk\**\lib\currency.data" />
+        <VfsIncludeFile Include="$(OpenJdkDir)\build\linux-x86_64-normal-server-release\jdk\**\lib\management\management.properties" />
+        <VfsIncludeFile Include="$(OpenJdkDir)\build\linux-x86_64-normal-server-release\jdk\**\lib\cmm\*" />
+        <VfsIncludeFile Include="$(OpenJdkDir)\build\linux-x86_64-normal-server-release\jdk\**\lib\security\java.policy" />
+        <VfsIncludeFile Include="$(OpenJdkDir)\build\linux-x86_64-normal-server-release\jdk\**\lib\security\java.security" />
+        <VfsIncludeFile Include="$(OpenJdkDir)\build\linux-x86_64-normal-server-release\jdk\**\lib\security\US_export_policy.jar" />
+        <VfsIncludeFile Include="$(OpenJdkDir)\jdk\src\windows\**\lib\flavormap.properties" />
+        <VfsIncludeFile Include="$(OpenJdkDir)\jdk\src\windows\**\lib\content-types.properties" />
     </ItemGroup>
 
     <ItemGroup>
-      <Service Include="{508349b6-6b84-4df5-91f0-309beebad82d}" />
+        <JavaSource Include="src\**\*.java" />
+        <JavaSource Update="src\**\*.netcoreapp3_1.java" TargetFramework="netcoreapp3.1" />
+        <JavaSource Update="src\**\*.net461.java" TargetFramework="net461" />
+        <JavaSourceTemplate Include="src\**\*.java.in" />
     </ItemGroup>
+
+    <ItemGroup>
+        <OpenJdkClasspath Include="$(OpenJdkDir)\jdk\src\share\classes" />
+        <OpenJdkClasspath Include="$(OpenJdkDir)\corba\src\share\classes" />
+        <OpenJdkClasspath Include="$(OpenJdkDir)\build\linux-x86_64-normal-server-release\jdk\gensrc" />
+    </ItemGroup>
+
+    <Import Project="openjdk.props" />
 
     <Import Project="Sdk.targets" Sdk="Microsoft.NET.Sdk" />
 
     <PropertyGroup>
-        <CoreCompileDependsOn>
-            $(CoreCompileDependsOn);
-            StubJars;
-        </CoreCompileDependsOn>
+        <TemplateOutputPath>$(IntermediateOutputPath)templates</TemplateOutputPath>
+        <StubOutputPath>$(IntermediateOutputPath)stubs</StubOutputPath>
+        <VfsOutputPath>$(IntermediateOutputPath)vfs</VfsOutputPath>
+        <VfsZipPath>$(IntermediateOutputPath)vfs.zip</VfsZipPath>
+        <OpenJdkClassDir>$(IntermediateOutputPath)classes</OpenJdkClassDir>
+        <OpenJdkJarPath>$(IntermediateOutputPath)openjdk.jar</OpenJdkJarPath>
+    </PropertyGroup>
+
+    <PropertyGroup>
+        <BuildDependsOn>
+            BuildStubs;
+            BuildVfsZip;
+            CompileJava;
+            $(BuildDependsOn);
+        </BuildDependsOn>
     </PropertyGroup>
 
     <Target Name="GetIkvmStubExe" DependsOnTargets="ResolveReferences">
@@ -135,12 +121,28 @@
         </PropertyGroup>
     </Target>
 
-    <Target Name="StubJars" DependsOnTargets="GetIkvmStubExe">
+    <Target Name="ResolveIkvmRuntimeAssembly">
+        <MSBuild Projects="@(_MSBuildProjectReferenceExistent)" Targets="GetTargetPath" BuildInParallel="$(BuildInParallel)" Properties="%(_MSBuildProjectReferenceExistent.SetConfiguration);%(_MSBuildProjectReferenceExistent.SetPlatform);%(_MSBuildProjectReferenceExistent.SetTargetFramework)" RemoveProperties="%(_MSBuildProjectReferenceExistent.GlobalPropertiesToRemove)$(_GlobalPropertiesToRemoveFromProjectReferences)" Condition=" '%(_MSBuildProjectReferenceExistent.Identity)' == '..\IKVM.Runtime-ref\IKVM.Runtime-ref.csproj' ">
+            <Output TaskParameter="TargetOutputs" ItemName="StubAssembly" />
+        </MSBuild>
+    </Target>
+
+    <Target Name="ResolveStubs" DependsOnTargets="ResolveIkvmRuntimeAssembly;ResolveProjectReferences;ResolveAssemblyReferences">
         <PropertyGroup>
-            <StubOutputPath>$(IntermediateOutputPath)\stubs</StubOutputPath>
+            <_StubArgs>@(_ResolveAssemblyReferenceResolvedFiles->'-r:"%(Identity)"', ' ')</_StubArgs>
         </PropertyGroup>
+        <ItemGroup>
+            <_StubAssembly Include="@(_ResolveAssemblyReferenceResolvedFiles)">
+                <JarPath>$(StubOutputPath)\%(Filename).jar</JarPath>
+                <Args>$(_StubArgs)</Args>
+            </_StubAssembly>
+        </ItemGroup>
+    </Target>
+
+    <Target Name="BuildStubs" DependsOnTargets="ResolveStubs;GetIkvmStubExe" Inputs="@(_StubAssembly)" Outputs="%(JarPath)">
         <MakeDir Directories="$(StubOutputPath)" />
 
+        <!-- this is wrong, determination of which version to use to build needs to be based on which platform we're running on -->
         <PropertyGroup Condition="$(TargetFramework.StartsWith('net4'))">
             <IkvmStubExec>$(IkvmStub)</IkvmStubExec>
         </PropertyGroup>
@@ -148,8 +150,135 @@
             <IkvmStubExec>dotnet exec $(IkvmStub)</IkvmStubExec>
         </PropertyGroup>
 
-        <Exec Command="$(IkvmStubExec) -forwarders -bootstrap @(StubAssembly) %(Args) -out:$(StubOutputPath)\%(Identity).jar" Condition=" '%(Name)' == '' " />
-        <Exec Command="$(IkvmStubExec) -forwarders -bootstrap @(StubAssembly) %(Args) -out:$(StubOutputPath)\%(Name).jar" Condition=" '%(Name)' != '' " />
+        <Message Text="$(IkvmStubExec) -forwarders -bootstrap &quot;@(_StubAssembly)&quot; %(Args) -out:%(JarPath)" Condition=" '%(Identity)' != '' " Importance="high" />
+        <Exec Command="$(IkvmStubExec) -forwarders -bootstrap &quot;@(_StubAssembly)&quot; %(Args) -out:%(JarPath)" Condition=" '%(Identity)' != '' " />
+
+        <ItemGroup>
+            <StubJar Include="@(_StubAssembly->'%(JarPath)')" />
+            <FileWrites Include="@(_StubAssembly->'%(JarPath)')" />
+        </ItemGroup>
+    </Target>
+
+    <Target Name="BuildVfsZip" Inputs="@(VfsIncludeFile)" Outputs="$(VfsZipPath)">
+        <Delete Files="$(VfsOutputPath)\**\*" />
+        <RemoveDir Directories="$(VfsOutputPath)" />
+        <MakeDir Directories="$(VfsOutputPath)" />
+        <Copy SourceFiles="@(VfsIncludeFile)" DestinationFolder="$(VfsOutputPath)\%(RecursiveDir)" />
+        <Delete Files="$(VfsZipPath)" />
+        <ZipDirectory SourceDirectory="$(VfsOutputPath)" DestinationFile="$(VfsZipPath)" />
+        <ItemGroup>
+            <FileWrites Include="$(VfsZipPath)" />
+        </ItemGroup>
+    </Target>
+
+    <UsingTask TaskName="TransformTemplate" TaskFactory="RoslynCodeTaskFactory" AssemblyFile="$(MSBuildToolsPath)\Microsoft.Build.Tasks.Core.dll">
+        <ParameterGroup>
+            <Items ParameterType="Microsoft.Build.Framework.ITaskItem[]" Required="true" />
+        </ParameterGroup>
+        <Task>
+            <Using Namespace="System" />
+            <Using Namespace="System.Collections.Generic" />
+            <Using Namespace="System.Text.RegularExpressions" />
+            <Code Type="Fragment" Language="cs">
+                <![CDATA[
+                foreach (var i in Items)
+                {
+                    var fullPath = i.GetMetadata("FullPath");
+                    var destPath = i.GetMetadata("Destination");
+                    Directory.CreateDirectory(Path.GetDirectoryName(destPath));
+                    File.Copy(fullPath, destPath, true);
+                }
+            ]]>
+            </Code>
+        </Task>
+    </UsingTask>
+
+    <UsingTask TaskName="DistinctSourceItems" TaskFactory="RoslynCodeTaskFactory" AssemblyFile="$(MSBuildToolsPath)\Microsoft.Build.Tasks.Core.dll">
+        <ParameterGroup>
+            <Source ParameterType="Microsoft.Build.Framework.ITaskItem[]" Required="true" />
+            <Output ParameterType="Microsoft.Build.Framework.ITaskItem[]" Output="true" />
+        </ParameterGroup>
+        <Task>
+            <Using Namespace="System" />
+            <Using Namespace="System.Collections.Generic" />
+            <Code Type="Fragment" Language="cs">
+                <![CDATA[
+                var hs = new Dictionary<string, ITaskItem>();
+                foreach (var i in Source)
+                    hs[i.GetMetadata("Key")] = i;
+                Output = hs.Values.ToArray();
+            ]]>
+            </Code>
+        </Task>
+    </UsingTask>
+
+    <Target Name="ResolveTransformJavaSourceTemplates">
+        <ItemGroup>
+            <TransformJavaSourceTemplate Include="@(JavaSourceTemplate)">
+                <Destination>$(TemplateOutputPath)\%(RecursiveDir)%(Filename)</Destination>
+            </TransformJavaSourceTemplate>
+        </ItemGroup>
+    </Target>
+
+    <Target Name="TransformJavaSourceTemplates" DependsOnTargets="ResolveTransformJavaSourceTemplates" Inputs="@(TransformJavaSourceTemplate)" Outputs="@(TransformJavaSourceTemplate->'%(Destination)')">
+        <Delete Files="$(TemplateOutputPath)\**\*" />
+        <RemoveDir Directories="$(TemplateOutputPath)" />
+        <MakeDir Directories="$(TemplateOutputPath)" />
+        <TransformTemplate Items="@(TransformJavaSourceTemplate)" />
+        <ItemGroup>
+            <JavaTemplateSource Include="@(TransformJavaSourceTemplate->'%(Destination)')" />
+            <FileWrites Include="@(TransformJavaSourceTemplate->'%(Destination)')" />
+        </ItemGroup>
+    </Target>
+
+    <Target Name="ResolveOpenJdkCompileItems" DependsOnTargets="TransformJavaSourceTemplates">
+        <ItemGroup>
+            <_OpenJdkCompileItems Include="@(OpenJdkCompile->'$(OpenJdkDir)\%(Identity)')" Condition=" '%(Extension)' == '.java' ">
+                <Key>%(Identity)</Key>
+            </_OpenJdkCompileItems>
+            <_OpenJdkCompileItems Include="@(JavaSource)" Condition=" '%(JavaSource.TargetFramework)' == '' Or '%(JavaSource.TargetFramework)' == '$(TargetFramework)' ">
+                <Key>%(RecursiveDir)%(Filename)%(Extension)</Key>
+            </_OpenJdkCompileItems>
+            <_OpenJdkCompileItems Include="@(JavaTemplateSource)">
+                <Key>%(RecursiveDir)%(Filename)%(Extension)</Key>
+            </_OpenJdkCompileItems>
+        </ItemGroup>
+        <DistinctSourceItems Source="@(_OpenJdkCompileItems)">
+            <Output TaskParameter="Output" ItemName="_OpenJdkCompileItemsDistinct" />
+        </DistinctSourceItems>
+        <ItemGroup>
+            <OpenJdkCompileItems Include="@(_OpenJdkCompileItemsDistinct)" />
+        </ItemGroup>
+    </Target>
+
+    <Target Name="ResolveCompileJavaClasspath" DependsOnTargets="BuildStubs">
+        <ItemGroup>
+            <CompileJavaClasspath Include="@(StubJar)" />
+            <CompileJavaClasspath Include="@(OpenJdkClasspath)" />
+        </ItemGroup>
+    </Target>
+
+    <Target Name="CompileJava" DependsOnTargets="ResolveOpenJdkCompileItems;ResolveCompileJavaClasspath">
+        <Delete Files="$(IntermediateOutputPath)sources.list" />
+        <WriteLinesToFile File="$(IntermediateOutputPath)sources.list" Lines="@(OpenJdkCompileItems)" />
+        <Delete Files="$(OpenJdkClassDir)\**\*" />
+        <RemoveDir Directories="$(OpenJdkClassDir)" />
+        <MakeDir Directories="$(OpenJdkClassDir)" />
+        <Message Text="javac -J-Xmx1536M -g -nowarn -implicit:none -parameters -cp dummy -bootclasspath @(CompileJavaClasspath) -d $(OpenJdkClassDir) @$(IntermediateOutputPath)sources.list" Importance="high" />
+        <Exec Command="javac -J-Xmx1536M -g -nowarn -implicit:none -parameters -cp dummy -bootclasspath @(CompileJavaClasspath) -d $(OpenJdkClassDir) @$(IntermediateOutputPath)sources.list" />
+        <ItemGroup>
+            <FileWrites Include="$(IntermediateOutputPath)sources.list" />
+            <FileWrites Include="$(OpenJdkClassDir)\**\*" />
+        </ItemGroup>
+    </Target>
+
+    <Target Name="GetIkvmcExe" DependsOnTargets="ResolveReferences">
+        <MSBuild Projects="@(_MSBuildProjectReferenceExistent)" Targets="GetTargetPath" BuildInParallel="$(BuildInParallel)" Properties="%(_MSBuildProjectReferenceExistent.SetConfiguration);%(_MSBuildProjectReferenceExistent.SetPlatform);%(_MSBuildProjectReferenceExistent.SetTargetFramework)" RemoveProperties="%(_MSBuildProjectReferenceExistent.GlobalPropertiesToRemove)$(_GlobalPropertiesToRemoveFromProjectReferences)" Condition=" '%(_MSBuildProjectReferenceExistent.Identity)' == '..\ikvmc\ikvmc.csproj' ">
+            <Output TaskParameter="TargetOutputs" ItemName="_Ikvmc" />
+        </MSBuild>
+        <PropertyGroup>
+            <Ikvmc>@(Ikvmc)</Ikvmc>
+        </PropertyGroup>
     </Target>
 
 </Project>
