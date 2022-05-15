@@ -1,32 +1,42 @@
 ﻿<Project>
     <Import Project="Sdk.props" Sdk="Microsoft.NET.Sdk" />
+    <Import Project="..\openjdk.props" />
 
     <PropertyGroup>
+        <PackageId>IKVM.OpenJDK</PackageId>
         <TargetFrameworks>net461</TargetFrameworks>
-        <AssemblyTitle>IKVM.NET Compiler</AssemblyTitle>
+        <AssemblyName>IKVM.OpenJDK</AssemblyName>
+        <AssemblyTitle>IKVM.NET OpenJDK Platform</AssemblyTitle>
         <Description>JVM for Mono and .NET</Description>
-        <AllowUnsafeBlocks>true</AllowUnsafeBlocks>
-    </PropertyGroup>
-
-    <PropertyGroup>
-        <OpenJdkDir>..\..\..\openjdk-8u45-b14</OpenJdkDir>
-        <OpenJdkImplementationVersion>1.8.0</OpenJdkImplementationVersion>
-        <OpenJdkSpecificationVersion>1.8</OpenJdkSpecificationVersion>
-        <OpenJdkFullVersion>1.8.0_45-b14</OpenJdkFullVersion>
-        <OpenJdkVersion>OpenJDK 8u45 b14</OpenJdkVersion>
     </PropertyGroup>
 
     <ItemGroup>
-        <ProjectReference Include="..\IKVM.Runtime-ref\IKVM.Runtime-ref.csproj" />
+        <InternalsVisibleTo Include="IKVM.Runtime" />
+        <InternalsVisibleTo Include="IKVM.Runtime.JNI" />
+    </ItemGroup>
+
+    <ItemGroup>
+        <ProjectReference Include="..\IKVM.Runtime-ref\IKVM.Runtime-ref.csproj">
+            <PrivateAssets>All</PrivateAssets>
+            <Private>False</Private>
+        </ProjectReference>
         <ProjectReference Include="..\ikvmc\ikvmc.csproj">
+            <PrivateAssets>All</PrivateAssets>
             <ReferenceOutputAssembly>false</ReferenceOutputAssembly>
+            <Private>False</Private>
         </ProjectReference>
         <ProjectReference Include="..\ikvmstub\ikvmstub.csproj">
+            <PrivateAssets>All</PrivateAssets>
             <ReferenceOutputAssembly>false</ReferenceOutputAssembly>
+            <Private>False</Private>
         </ProjectReference>
     </ItemGroup>
 
     <ItemGroup>
+        <PackageReference Include="ILRepack.Lib.MSBuild" Version="2.1.18" />
+    </ItemGroup>
+
+    <ItemGroup Condition=" '$(TargetFramework)' == 'netcoreapp3.1' ">
         <PackageReference Include="System.CodeDom" Version="6.0.0" />
         <PackageReference Include="System.Data.OleDb" Version="6.0.0" />
         <PackageReference Include="System.Data.SqlClient" Version="4.8.3" />
@@ -48,7 +58,6 @@
         <PackageReference Include="System.ServiceProcess.ServiceController" Version="6.0.0" />
         <PackageReference Include="System.Threading.AccessControl" Version="6.0.0" />
         <PackageReference Include="System.Data.Odbc" Version="6.0.0" />
-        <PackageReference Include="Newtonsoft.Json" Version="12.0.3" />
     </ItemGroup>
 
     <ItemDefinitionGroup>
@@ -64,64 +73,21 @@
     </ItemDefinitionGroup>
 
     <ItemGroup>
-        <VfsZipIncludeFile Include="$(OpenJdkDir)\build\linux-x86_64-normal-server-release\jdk\**\lib\calendars.properties" />
-        <VfsZipIncludeFile Include="$(OpenJdkDir)\build\linux-x86_64-normal-server-release\jdk\**\lib\logging.properties" />
-        <VfsZipIncludeFile Include="$(OpenJdkDir)\build\linux-x86_64-normal-server-release\jdk\**\lib\net.properties" />
-        <VfsZipIncludeFile Include="$(OpenJdkDir)\build\linux-x86_64-normal-server-release\jdk\**\lib\psfontj2d.properties" />
-        <VfsZipIncludeFile Include="$(OpenJdkDir)\build\linux-x86_64-normal-server-release\jdk\**\lib\sound.properties" />
-        <VfsZipIncludeFile Include="$(OpenJdkDir)\build\linux-x86_64-normal-server-release\jdk\**\lib\tzdb.dat" />
-        <VfsZipIncludeFile Include="$(OpenJdkDir)\build\linux-x86_64-normal-server-release\jdk\**\lib\currency.data" />
-        <VfsZipIncludeFile Include="$(OpenJdkDir)\build\linux-x86_64-normal-server-release\jdk\**\lib\management\management.properties" />
-        <VfsZipIncludeFile Include="$(OpenJdkDir)\build\linux-x86_64-normal-server-release\jdk\**\lib\cmm\*" />
-        <VfsZipIncludeFile Include="$(OpenJdkDir)\build\linux-x86_64-normal-server-release\jdk\**\lib\security\java.policy" />
-        <VfsZipIncludeFile Include="$(OpenJdkDir)\build\linux-x86_64-normal-server-release\jdk\**\lib\security\java.security" />
-        <VfsZipIncludeFile Include="$(OpenJdkDir)\build\linux-x86_64-normal-server-release\jdk\**\lib\security\US_export_policy.jar" />
-        <VfsZipIncludeFile Include="$(OpenJdkDir)\jdk\src\windows\**\lib\flavormap.properties" />
-        <VfsZipIncludeFile Include="$(OpenJdkDir)\jdk\src\windows\**\lib\content-types.properties" />
+        <JavaSource Include="src\**\*.java" SourcePath="%(RecursiveDir)%(Filename)%(Extension)" />
+        <JavaSource Update="src\**\*.netcoreapp3_1.java" SourcePath="%(RecursiveDir)%(Filename)" TargetFramework="netcoreapp3.1" />
+        <JavaSource Update="src\**\*.net461.java" SourcePath="%(RecursiveDir)%(Filename)" TargetFramework="net461" />
+        <JavaSourceTemplate Include="src\**\*.java.in" SourcePath="%(RecursiveDir)%(Filename)" />
+        <JavaSourceTemplate Update="src\**\*.netcoreapp3_1.java.in" SourcePath="%(RecursiveDir)%(Filename)" TargetFramework="netcoreapp3.1" />
+        <JavaSourceTemplate Update="src\**\*.net461.java.in" SourcePath="%(RecursiveDir)%(Filename)" TargetFramework="net461" />
     </ItemGroup>
 
     <ItemGroup>
-        <ResourcesZipIncludeFile Include="$(OpenJdkDir)\build\linux-x86_64-normal-server-release\jdk\classes\**\com\sun\corba\se\impl\orbutil\resources\*.properties" />
-        <ResourcesZipIncludeFile Include="$(OpenJdkDir)\build\linux-x86_64-normal-server-release\jdk\classes\**\com\sun\rowset\*.properties" />
-        <ResourcesZipIncludeFile Include="$(OpenJdkDir)\build\linux-x86_64-normal-server-release\jdk\classes\**\javax\swing\text\html\parser\html32.bdtd" />
-        <ResourcesZipIncludeFile Include="$(OpenJdkDir)\build\linux-x86_64-normal-server-release\jdk\classes\**\sun\rmi\registry\resources\*.properties" />
-        <ResourcesZipIncludeFile Include="$(OpenJdkDir)\build\linux-x86_64-normal-server-release\jdk\classes\**\sun\rmi\server\resources\*.properties" />
-        <ResourcesZipIncludeFile Include="$(OpenJdkDir)\build\linux-x86_64-normal-server-release\jdk\classes\**\sun\text\resources\*IteratorData" />
-        <ResourcesZipIncludeFile Include="$(OpenJdkDir)\build\linux-x86_64-normal-server-release\jdk\classes\**\sun\text\resources\th\*IteratorData_th" />
-        <ResourcesZipIncludeFile Include="$(OpenJdkDir)\build\linux-x86_64-normal-server-release\jdk\classes\**\sun\text\resources\th\thai_dict" />
-        <ResourcesZipIncludeFile Include="$(OpenJdkDir)\corba\src\share\classes\**\*.properties" />
-        <ResourcesZipIncludeFile Include="$(OpenJdkDir)\jdk\src\share\classes\**\*.properties" />
-        <ResourcesZipIncludeFile Include="$(OpenJdkDir)\jdk\src\share\classes\**\*.gif" />
-        <ResourcesZipIncludeFile Include="$(OpenJdkDir)\jdk\src\share\classes\**\*.png" />
-        <ResourcesZipIncludeFile Include="$(OpenJdkDir)\jdk\src\share\classes\**\*.wav" />
-        <ResourcesZipIncludeFile Include="$(OpenJdkDir)\jdk\src\share\classes\**\com\sun\org\apache\xml\internal\security\resource\config.*" />
-        <ResourcesZipIncludeFile Include="$(OpenJdkDir)\jdk\src\share\classes\**\com\sun\swing\internal\plaf\**\*" />
-        <ResourcesZipIncludeFile Include="$(OpenJdkDir)\jdk\src\share\classes\**\javax\swing\text\html\default.css" />
-        <ResourcesZipIncludeFile Include="$(OpenJdkDir)\jdk\src\share\classes\**\javax\swing\text\rtf\charsets\*.txt" />
-        <ResourcesZipIncludeFile Include="$(OpenJdkDir)\jdk\src\share\classes\**\sun\text\resources\**\*.icu" />
-        <ResourcesZipIncludeFile Include="$(OpenJdkDir)\jaxp\src\**\*.properties" />
-        <ResourcesZipIncludeFile Include="$(OpenJdkDir)\jaxp\src\**\*.res" />
-        <ResourcesZipIncludeFile Include="$(OpenJdkDir)\jaxws\src\share\jaf_classes\**\*.properties" />
-        <ResourcesZipIncludeFile Include="$(OpenJdkDir)\jaxws\src\share\jaxws_classes\**\*.properties" />
-        <ResourcesZipIncludeFile Include="$(OpenJdkDir)\jaxws\src\share\jaxws_classes\**\*.xml" />
-    </ItemGroup>
-
-    <ItemGroup>
-        <JavaSource Include="source\**\*.java" SourcePath="%(RecursiveDir)%(Filename)%(Extension)" />
-        <JavaSource Update="source\**\*.netcoreapp3_1.java" SourcePath="%(RecursiveDir)%(Filename)" TargetFramework="netcoreapp3.1" />
-        <JavaSource Update="source\**\*.net461.java" SourcePath="%(RecursiveDir)%(Filename)" TargetFramework="net461" />
-        <JavaSourceTemplate Include="source\**\*.java.in" SourcePath="%(RecursiveDir)%(Filename)" />
-        <JavaSourceTemplate Update="source\**\*.netcoreapp3_1.java.in" SourcePath="%(RecursiveDir)%(Filename)" TargetFramework="netcoreapp3.1" />
-        <JavaSourceTemplate Update="source\**\*.net461.java.in" SourcePath="%(RecursiveDir)%(Filename)" TargetFramework="net461" />
-    </ItemGroup>
-
-    <ItemGroup>
-        <JavaResource Include="resources\**\*" ResourcePath="%(RecursiveDir)%(Filename)%(Extension)" />
-        <JavaResource Update="resources\**\*.netcoreapp3_1" ResourcePath="%(RecursiveDir)%(Filename)" TargetFramework="netcoreapp3.1" />
-        <JavaResource Update="resources\**\*.net461" ResourcePath="%(RecursiveDir)%(Filename)" TargetFramework="net461" />
-        <JavaResourceTemplate Include="resources\**\*.in" ResourcePath="%(RecursiveDir)%(Filename)" />
-        <JavaResourceTemplate Update="source\**\*.netcoreapp3_1.in" ResourcePath="%(RecursiveDir)%(Filename)" TargetFramework="netcoreapp3.1" />
-        <JavaResourceTemplate Update="source\**\*.net461.in" ResourcePath="%(RecursiveDir)%(Filename)" TargetFramework="net461" />
+        <JavaResource Include="res\**\*" ResourcePath="%(RecursiveDir)%(Filename)%(Extension)" />
+        <JavaResource Update="res\**\*.netcoreapp3_1" ResourcePath="%(RecursiveDir)%(Filename)" TargetFramework="netcoreapp3.1" />
+        <JavaResource Update="res\**\*.net461" ResourcePath="%(RecursiveDir)%(Filename)" TargetFramework="net461" />
+        <JavaResourceTemplate Include="res\**\*.in" ResourcePath="%(RecursiveDir)%(Filename)" />
+        <JavaResourceTemplate Update="src\**\*.netcoreapp3_1.in" ResourcePath="%(RecursiveDir)%(Filename)" TargetFramework="netcoreapp3.1" />
+        <JavaResourceTemplate Update="src\**\*.net461.in" ResourcePath="%(RecursiveDir)%(Filename)" TargetFramework="net461" />
     </ItemGroup>
 
     <ItemGroup>
@@ -130,9 +96,39 @@
         <OpenJdkClasspath Include="$(OpenJdkDir)\build\linux-x86_64-normal-server-release\jdk\gensrc" />
     </ItemGroup>
 
-    <Import Project="openjdk.props" />
+    <PropertyGroup>
+        <TargetsTriggeredByCompilation>
+            $(TargetsTriggeredByCompilation);
+            MergeOpenJdkAssembly;
+        </TargetsTriggeredByCompilation>
+    </PropertyGroup>
 
     <Import Project="Sdk.targets" Sdk="Microsoft.NET.Sdk" />
+
+    <PropertyGroup>
+        <JavaSourceTemplateOutputPath>$(IntermediateOutputPath)src</JavaSourceTemplateOutputPath>
+        <JavaResourceTemplateOutputPath>$(IntermediateOutputPath)res</JavaResourceTemplateOutputPath>
+        <RefStubsOutputPath>$(IntermediateOutputPath)refstubs</RefStubsOutputPath>
+        <RmiStubsOutputPath>$(IntermediateOutputPath)rmistubs</RmiStubsOutputPath>
+        <VfsZipTempPath>$(IntermediateOutputPath)vfs_zip</VfsZipTempPath>
+        <VfsZipPath>$(IntermediateOutputPath)vfs.zip</VfsZipPath>
+        <ResourcesZipTempPath>$(IntermediateOutputPath)resources_zip</ResourcesZipTempPath>
+        <ResourcesZipPath>$(IntermediateOutputPath)resources.zip</ResourcesZipPath>
+        <JavaClassOutputPath>$(IntermediateOutputPath)classes</JavaClassOutputPath>
+        <OpenJdkAssemblyPath>$(IntermediateOutputPath)openjdk.dll</OpenJdkAssemblyPath>
+    </PropertyGroup>
+
+    <ItemGroup>
+        <UpToDateCheckInput Include="$(OpenJdkAssemblyPath)" />
+        <CustomAdditionalCompileInputs Include="$(OpenJdkAssemblyPath)" />
+    </ItemGroup>
+
+    <PropertyGroup>
+        <BuildDependsOn>
+            BuildOpenJdkAssembly;
+            $(BuildDependsOn);
+        </BuildDependsOn>
+    </PropertyGroup>
 
     <UsingTask TaskName="TransformTemplates" TaskFactory="RoslynCodeTaskFactory" AssemblyFile="$(MSBuildToolsPath)\Microsoft.Build.Tasks.Core.dll">
         <ParameterGroup>
@@ -175,26 +171,6 @@
         </Task>
     </UsingTask>
 
-    <PropertyGroup>
-        <JavaSourceTemplateOutputPath>$(IntermediateOutputPath)sources</JavaSourceTemplateOutputPath>
-        <JavaResourceTemplateOutputPath>$(IntermediateOutputPath)resources</JavaResourceTemplateOutputPath>
-        <StubsOutputPath>$(IntermediateOutputPath)stubs</StubsOutputPath>
-        <RmiStubsOutputPath>$(IntermediateOutputPath)rmistubs</RmiStubsOutputPath>
-        <VfsZipTempPath>$(IntermediateOutputPath)vfs_zip</VfsZipTempPath>
-        <VfsZipPath>$(IntermediateOutputPath)vfs.zip</VfsZipPath>
-        <ResourcesZipTempPath>$(IntermediateOutputPath)resources_zip</ResourcesZipTempPath>
-        <ResourcesZipPath>$(IntermediateOutputPath)resources.zip</ResourcesZipPath>
-        <JavaClassOutputPath>$(IntermediateOutputPath)classes</JavaClassOutputPath>
-        <OpenJdkAssemblyPath>$(IntermediateOutputPath)openjdk.dll</OpenJdkAssemblyPath>
-    </PropertyGroup>
-
-    <PropertyGroup>
-        <BuildDependsOn>
-            BuildOpenJdkAssembly;
-            $(BuildDependsOn);
-        </BuildDependsOn>
-    </PropertyGroup>
-
     <Target Name="GetIkvmStubExe" DependsOnTargets="ResolveProjectReferences">
         <MSBuild Projects="@(_MSBuildProjectReferenceExistent)" Targets="GetTargetPath" BuildInParallel="$(BuildInParallel)" Properties="%(_MSBuildProjectReferenceExistent.SetConfiguration);%(_MSBuildProjectReferenceExistent.SetPlatform);%(_MSBuildProjectReferenceExistent.SetTargetFramework)" RemoveProperties="%(_MSBuildProjectReferenceExistent.GlobalPropertiesToRemove)$(_GlobalPropertiesToRemoveFromProjectReferences)" Condition=" '%(_MSBuildProjectReferenceExistent.Identity)' == '..\ikvmstub\ikvmstub.csproj' ">
             <Output TaskParameter="TargetOutputs" ItemName="_IkvmStub" />
@@ -204,41 +180,43 @@
         </PropertyGroup>
     </Target>
 
-    <Target Name="ResolveIkvmRuntimeAssembly">
+    <Target Name="ResolveIkvmRuntimeAssembly" DependsOnTargets="ResolveProjectReferences">
         <MSBuild Projects="@(_MSBuildProjectReferenceExistent)" Targets="GetTargetPath" BuildInParallel="$(BuildInParallel)" Properties="%(_MSBuildProjectReferenceExistent.SetConfiguration);%(_MSBuildProjectReferenceExistent.SetPlatform);%(_MSBuildProjectReferenceExistent.SetTargetFramework)" RemoveProperties="%(_MSBuildProjectReferenceExistent.GlobalPropertiesToRemove)$(_GlobalPropertiesToRemoveFromProjectReferences)" Condition=" '%(_MSBuildProjectReferenceExistent.Identity)' == '..\IKVM.Runtime-ref\IKVM.Runtime-ref.csproj' ">
             <Output TaskParameter="TargetOutputs" ItemName="StubAssembly" />
         </MSBuild>
     </Target>
 
-    <Target Name="ResolveStubs" DependsOnTargets="ResolveIkvmRuntimeAssembly;ResolveProjectReferences;ResolveAssemblyReferences">
+    <Target Name="ResolveRefStubs" DependsOnTargets="ResolveIkvmRuntimeAssembly;ResolveProjectReferences;ResolveAssemblyReferences">
         <PropertyGroup>
-            <_StubArgs>@(_ResolveAssemblyReferenceResolvedFiles->'-r:"%(Identity)"', ' ')</_StubArgs>
+            <_RefStubArgs>@(_ResolveAssemblyReferenceResolvedFiles->'-r:"%(Identity)"', ' ')</_RefStubArgs>
         </PropertyGroup>
         <ItemGroup>
-            <_StubAssembly Include="@(_ResolveAssemblyReferenceResolvedFiles)">
-                <JarPath>$(StubsOutputPath)\%(Filename).jar</JarPath>
-                <Args>$(_StubArgs)</Args>
-            </_StubAssembly>
+            <_RefStubAssembly Include="@(_ResolveAssemblyReferenceResolvedFiles)">
+                <JarPath>$(RefStubsOutputPath)\%(Filename).jar</JarPath>
+                <Args>$(_RefStubArgs)</Args>
+            </_RefStubAssembly>
         </ItemGroup>
     </Target>
 
-    <Target Name="BuildStubs" DependsOnTargets="ResolveStubs;GetIkvmStubExe" Inputs="@(_StubAssembly)" Outputs="%(JarPath)">
-        <MakeDir Directories="$(StubsOutputPath)" />
+    <Target Name="BuildRefStubs" DependsOnTargets="ResolveRefStubs;GetIkvmStubExe" Inputs="@(_RefStubAssembly)" Outputs="%(JarPath)">
+        <MakeDir Directories="$(RefStubsOutputPath)" />
 
         <!-- this is wrong, determination of which version to use to build needs to be based on which platform we're running on -->
         <PropertyGroup Condition="$(TargetFramework.StartsWith('net4'))">
             <IkvmStubExec>$(IkvmStub)</IkvmStubExec>
         </PropertyGroup>
         <PropertyGroup Condition="$(TargetFramework.StartsWith('netstandard')) Or $(TargetFramework.StartsWith('netcore'))">
-            <IkvmStubExec>dotnet exec $(IkvmStub)</IkvmStubExec>
+            <IkvmStubExec>dotnet exec $(IkvmStub) -forwarders</IkvmStubExec>
         </PropertyGroup>
 
-        <Message Text="$(IkvmStubExec) -forwarders -bootstrap &quot;@(_StubAssembly)&quot; %(Args) -out:%(JarPath)" Condition=" '%(Identity)' != '' " Importance="high" />
-        <Exec Command="$(IkvmStubExec) -forwarders -bootstrap &quot;@(_StubAssembly)&quot; %(Args) -out:%(JarPath)" Condition=" '%(Identity)' != '' " />
+        <Message Text="$(IkvmStubExec) -bootstrap &quot;@(_RefStubAssembly)&quot; %(Args) -out:%(JarPath).tmp" Condition=" '%(Identity)' != '' " Importance="high" />
+        <Exec Command="$(IkvmStubExec) -bootstrap &quot;@(_RefStubAssembly)&quot; %(Args) -out:%(JarPath).tmp" Condition=" '%(Identity)' != '' " />
+        <Move SourceFiles="@(_RefStubAssembly->'%(JarPath).tmp')" DestinationFiles="@(_RefStubAssembly->'%(JarPath)')" OverwriteReadOnlyFiles="true" />
 
         <ItemGroup>
-            <StubJar Include="@(_StubAssembly->'%(JarPath)')" />
-            <FileWrites Include="@(_StubAssembly->'%(JarPath)')" />
+            <RefStubJar Include="@(_RefStubAssembly->'%(JarPath)')" />
+            <FileWrites Include="@(_RefStubAssembly->'%(JarPath).tmp')" />
+            <FileWrites Include="@(_RefStubAssembly->'%(JarPath)')" />
         </ItemGroup>
     </Target>
 
@@ -269,7 +247,6 @@
     </Target>
 
     <Target Name="ResolveTransformJavaSourceTemplates">
-        <Message Text="JavaSourceTemplate: @(JavaSourceTemplate)" Importance="high" />
         <ItemGroup>
             <TransformJavaSourceTemplate Include="@(JavaSourceTemplate)" Condition=" '%(JavaSourceTemplate.TargetFramework)' == '' Or '%(TargetFramework)' == '$(TargetFramework)' ">
                 <Destination>$(JavaSourceTemplateOutputPath)\%(SourcePath)</Destination>
@@ -278,7 +255,6 @@
     </Target>
 
     <Target Name="TransformJavaSourceTemplates" DependsOnTargets="ResolveTransformJavaSourceTemplates" Inputs="@(TransformJavaSourceTemplate)" Outputs="@(TransformJavaSourceTemplate->'%(Destination)')">
-        <Message Text="TransformJavaSourceTemplate: @(TransformJavaSourceTemplate)" Importance="high" />
         <MakeDir Directories="$(JavaSourceTemplateOutputPath)" />
         <TransformTemplates Items="@(TransformJavaSourceTemplate)" />
         <ItemGroup>
@@ -309,10 +285,10 @@
 
     <PropertyGroup>
         <ResolveJavaSourceItemsDependsOn>
+            $(ResolveJavaSourceItemsDependsOn);
             ResolveTransformJavaSourceTemplates;
             TransformJavaSourceTemplates;
             _ResolveJavaSourceItems;
-            $(ResolveJavaSourceItemsDependsOn);
         </ResolveJavaSourceItemsDependsOn>
     </PropertyGroup>
 
@@ -359,10 +335,10 @@
 
     <PropertyGroup>
         <ResolveJavaResourceItemsDependsOn>
+            $(ResolveJavaResourceItemsDependsOn);
             ResolveTransformJavaResourceTemplates;
             TransformJavaResourceTemplates;
             _ResolveJavaResourceItems;
-            $(ResolveJavaResourceItemsDependsOn);
         </ResolveJavaResourceItemsDependsOn>
     </PropertyGroup>
 
@@ -370,9 +346,9 @@
 
     </Target>
 
-    <Target Name="ResolveJavaClasspath" DependsOnTargets="BuildStubs">
+    <Target Name="ResolveJavaClasspath" DependsOnTargets="BuildRefStubs">
         <ItemGroup>
-            <JavaClasspath Include="@(StubJar)" />
+            <JavaClasspath Include="@(RefStubJar)" />
             <JavaClasspath Include="@(OpenJdkClasspath)" />
         </ItemGroup>
     </Target>
@@ -394,10 +370,10 @@
 
     <PropertyGroup>
         <BuildJavaClassesDependsOn>
+            $(BuildJavaClassesDependsOn)
             ResolveJavaSourceItems;
             ResolveJavaClasspath;
             _BuildJavaClasses;
-            $(BuildJavaClassesDependsOn)
         </BuildJavaClassesDependsOn>
     </PropertyGroup>
 
@@ -462,10 +438,7 @@
         </ItemGroup>
     </Target>
 
-    <Target Name="_BuildOpenJdkAssembly" DependsOnTargets="GetIkvmcExe;GetIkvmRuntimeDll;ResolveJavaClassItems;ResolveJavaResourceItems;BuildResourcesZip;BuildRmiStubs">
-        <Message Text="JavaClassItems: @(JavaClassItems)" Importance="high" />
-        <Message Text="JavaResourceItems: @(JavaResourceItems->'%(Identity)=&gt;%(ResourcePath)')" Importance="high" />
-
+    <Target Name="_BuildOpenJdkAssembly" DependsOnTargets="GetIkvmcExe;GetIkvmRuntimeDll;ResolveJavaClassItems;ResolveJavaResourceItems;BuildResourcesZip;BuildRmiStubs" Inputs="@(JavaClassItems);@(JavaResourceItems);$(IkvmRuntimeDll);$(Ikvmc);@(_ResolveAssemblyReferenceResolvedFiles);$(ResourcesZipPath);map.xml" Outputs="$(OpenJdkAssemblyPath)">
         <!-- this is wrong, determination of which version to use to build needs to be based on which platform we're running on -->
         <PropertyGroup Condition="$(TargetFramework.StartsWith('net4'))">
             <IkvmcExec>$(Ikvmc)</IkvmcExec>
@@ -479,30 +452,46 @@
 
         <ItemGroup>
             <JavaResourceItemsWithJavaSep Include="@(JavaResourceItems)" ResourcePath="$([System.String]::Copy(%(ResourcePath)).Replace('\', '/'))" />
+            <IkvmcArgs Include="-debug" Condition=" '$(DebugSymbols)' == 'true' " />
+            <IkvmcArgs Include="-assembly:IKVM.OpenJDK" />
+            <IkvmcArgs Include="-version:$(AssemblyVersion)" />
             <IkvmcArgs Include="-runtime:$(IkvmRuntimeDll)" />
+            <IkvmcArgs Include="-keyfile:$(AssemblyOriginatorKeyFile)" Condition=" '$(SignAssembly)' == 'true' " />
             <IkvmcArgs Include="-remap:map.xml" />
+            <IkvmcArgs Include="-compressresources" />
+            <IkvmcArgs Include="-opt:fields" />
+            <IkvmcArgs Include="-strictfinalfieldsemantics" />
+            <IkvmcArgs Include="-removeassertions" />
+            <IkvmcArgs Include="-target:library" />
+            <IkvmcArgs Include="-sharedclassloader" />
+            <IkvmcArgs Include="-nowarn:110" />
+            <IkvmcArgs Include="-w4" />
+            <IkvmcArgs Include="-noparameterreflection" />
             <IkvmcArgs Include="-exclude:$(IntermediateOutputPath)ikvmc.exclude.txt" />
             <IkvmcArgs Include="@(_ResolveAssemblyReferenceResolvedFiles->'-reference:%(Identity)')" />
             <IkvmcArgs Include="@(JavaResourceItemsWithJavaSep->'-resource:%(ResourcePath)=%(Identity)')" />
-            <!--<IkvmcArgs Include="-recurse:$(ResourcesZipPath.Replace('\', '/'))/*" />-->
+            <!--<IkvmcArgs Include="-recurse:$(ResourcesZipPath)\**\*" />-->
             <IkvmcArgs Include="@(JavaClassItems)" />
         </ItemGroup>
 
         <Delete Files="$(IntermediateOutputPath)ikvmc.args.txt" />
         <WriteLinesToFile File="$(IntermediateOutputPath)ikvmc.args.txt" Lines="@(IkvmcArgs)" />
-
-        <Message Text="$(IkvmcExec) -assembly:openjdk -version:0.0.0.0 -compressresources -opt:fields -strictfinalfieldsemantics -removeassertions -target:library -sharedclassloader -nowarn:110 -w4 -noparameterreflection -out:$(OpenJdkAssemblyPath) @$(IntermediateOutputPath)ikvmc.args.txt" Importance="high" />
-        <Exec Command="$(IkvmcExec) -assembly:openjdk -version:0.0.0.0 -compressresources -opt:fields -strictfinalfieldsemantics -removeassertions -target:library -sharedclassloader -nowarn:110 -w4 -noparameterreflection -out:$(OpenJdkAssemblyPath) @$(IntermediateOutputPath)ikvmc.args.txt" />
+        <Exec Command="$(IkvmcExec) -out:$(OpenJdkAssemblyPath).tmp @$(IntermediateOutputPath)ikvmc.args.txt" />
+        <Delete Files="$(OpenJdkAssemblyPath)" />
+        <Move SourceFiles="$(OpenJdkAssemblyPath).tmp" DestinationFiles="$(OpenJdkAssemblyPath)" OverwriteReadOnlyFiles="true" />
 
         <ItemGroup>
+            <CustomAdditionalCompileInputs Include="$(OpenJdkAssemblyPath)" />
             <FileWrites Include="$(IntermediateOutputPath)ikvmc.args.txt" />
             <FileWrites Include="$(IntermediateOutputPath)ikvmc.exclude.txt" />
+            <FileWrites Include="$(OpenJdkAssemblyPath).tmp" />
             <FileWrites Include="$(OpenJdkAssemblyPath)" />
         </ItemGroup>
     </Target>
 
     <PropertyGroup>
         <BuildOpenJdkAssemblyDependsOn>
+            $(BuildOpenJdkAssemblyDependsOn);
             GetIkvmcExe;
             GetIkvmRuntimeDll;
             ResolveJavaClassItems;
@@ -510,11 +499,50 @@
             BuildResourcesZip;
             BuildRmiStubs;
             _BuildOpenJdkAssembly;
-            $(BuildOpenJdkAssemblyDependsOn);
         </BuildOpenJdkAssemblyDependsOn>
     </PropertyGroup>
 
     <Target Name="BuildOpenJdkAssembly" DependsOnTargets="$(BuildOpenJdkAssemblyDependsOn)">
+
+    </Target>
+
+    <Target Name="_MergeOpenJdkAssembly" DependsOnTargets="BuildOpenJdkAssembly">
+        <ItemGroup>
+            <ILMergeReferences Include="@(ReferencePath)" />
+            <ILMergeReferencePaths Include="$([System.String]::Copy(%(ILMergeReferences.RelativeDir)).TrimEnd('\'))" />
+        </ItemGroup>
+
+        <RemoveDuplicates Inputs="@(ILMergeReferencePaths)">
+            <Output TaskParameter="Filtered" ItemName="ILMergeFilteredLibraryPaths" />
+        </RemoveDuplicates>
+
+        <MakeDir Directories="$(IntermediateOutputPath)merge" />
+        <ILRepack DebugInfo="true" AllowDuplicateResources="false" InputAssemblies="$(IntermediateOutputPath)$(TargetName)$(TargetExt);$(OpenJdkAssemblyPath)" TargetKind="SameAsPrimaryAssembly" LibraryPath="@(ILMergeFilteredLibraryPaths)" OutputFile="$(IntermediateOutputPath)merge\$(TargetName)$(TargetExt)" KeyFile="$(AssemblyOriginatorKeyFile)" Verbose="true" Condition=" '$(SignAssembly)' == 'true' " />
+        <ILRepack DebugInfo="true" AllowDuplicateResources="false" InputAssemblies="$(IntermediateOutputPath)$(TargetName)$(TargetExt);$(OpenJdkAssemblyPath)" TargetKind="SameAsPrimaryAssembly" LibraryPath="@(ILMergeFilteredLibraryPaths)" OutputFile="$(IntermediateOutputPath)merge\$(TargetName)$(TargetExt)" Verbose="true" Condition=" '$(SignAssembly)' != 'true' " />
+        <Delete Files="$(IntermediateOutputPath)$(TargetName)$(TargetExt)" />
+        <Move SourceFiles="$(IntermediateOutputPath)merge\$(TargetName)$(TargetExt)" DestinationFiles="$(IntermediateOutputPath)$(TargetName)$(TargetExt)" OverwriteReadOnlyFiles="true" />
+        <Delete Files="$(IntermediateOutputPath)$(TargetName).pdb" />
+        <Move SourceFiles="$(IntermediateOutputPath)merge\$(TargetName).pdb" DestinationFiles="$(IntermediateOutputPath)$(TargetName).pdb" OverwriteReadOnlyFiles="true" />
+
+        <ItemGroup>
+            <FileWrites Include="$(IntermediateOutputPath)merge\$(TargetName)$(TargetExt)" />
+            <FileWrites Include="$(IntermediateOutputPath)merge\$(TargetName).pdb" />
+        </ItemGroup>
+    </Target>
+
+    <Target Name="ILRepack">
+        <!-- disable -->
+    </Target>
+
+    <PropertyGroup>
+        <MergeOpenJdkAssemblyDependsOn>
+            $(MergeOpenJdkAssemblyDependsOn);
+            BuildOpenJdkAssembly;
+            _MergeOpenJdkAssembly;
+        </MergeOpenJdkAssemblyDependsOn>
+    </PropertyGroup>
+
+    <Target Name="MergeOpenJdkAssembly" DependsOnTargets="$(MergeOpenJdkAssemblyDependsOn)">
 
     </Target>
 

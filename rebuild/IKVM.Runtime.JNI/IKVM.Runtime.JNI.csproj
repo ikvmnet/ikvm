@@ -1,7 +1,8 @@
 ﻿<Project Sdk="Microsoft.NET.Sdk">
 
     <PropertyGroup>
-        <TargetFrameworks>net461;netcoreapp3.1</TargetFrameworks>
+        <TargetFrameworks>net461</TargetFrameworks>
+        <AssemblyName>IKVM.Runtime.JNI</AssemblyName>
         <AssemblyTitle>IKVM.NET Runtime JNI Layer</AssemblyTitle>
         <Description>JVM for Mono and .NET</Description>
         <DefineConstants>$(DefineConstants);WHIDBEY;OPENJDK</DefineConstants>
@@ -10,7 +11,17 @@
     </PropertyGroup>
 
     <ItemGroup>
-      <ProjectReference Include="..\IKVM.Runtime-ref\IKVM.Runtime-ref.csproj" />
+        <InternalsVisibleTo Include="IKVM.Runtime" />
+        <InternalsVisibleTo Include="IKVM.OpenJDK" />
+    </ItemGroup>
+
+    <ItemGroup>
+        <ProjectReference Include="..\IKVM.Runtime-ref\IKVM.Runtime-ref.csproj">
+            <PrivateAssets>All</PrivateAssets>
+        </ProjectReference>
+        <ProjectReference Include="..\IKVM.OpenJDK\IKVM.OpenJDK.csproj">
+            <PrivateAssets>All</PrivateAssets>
+        </ProjectReference>
     </ItemGroup>
 
 </Project>

@@ -22,12 +22,13 @@
   
 */
 
+using System;
 using System.Runtime.InteropServices;
 
 namespace IKVM.Runtime
 {
 
-	[StructLayout(LayoutKind.Sequential)]
+    [StructLayout(LayoutKind.Sequential)]
 	unsafe struct JavaVMOption
 	{
 
@@ -36,6 +37,59 @@ namespace IKVM.Runtime
 	[StructLayout(LayoutKind.Sequential)]
 	unsafe struct JavaVMInitArgs
 	{
+
+	}
+
+	public class JNI
+	{
+
+		public struct Frame
+		{
+
+			public IntPtr Enter(ikvm.@internal.CallerID callerID)
+			{
+				throw null;
+			}
+
+			public void Leave()
+			{
+				throw null;
+			}
+
+			public static IntPtr GetFuncPtr(ikvm.@internal.CallerID callerID, string clazz, string name, string sig)
+			{
+				throw null;
+			}
+
+			public IntPtr MakeLocalRef(object obj)
+			{
+				throw null;
+			}
+
+			// NOTE this method has the wrong name, it should unwrap *any* jobject reference type (local and global)
+			public object UnwrapLocalRef(IntPtr p)
+			{
+				throw null;
+			}
+
+		}
+
+	}
+
+	internal sealed class JniHelper
+	{
+
+		internal static readonly object JniLock;
+
+		internal unsafe static long LoadLibrary(string filename, object loader)
+		{
+			throw null;
+		}
+
+		internal static void UnloadLibrary(long handle, object loader)
+		{
+			throw null;
+		}
 
 	}
 

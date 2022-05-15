@@ -1,18 +1,19 @@
 ﻿<Project Sdk="Microsoft.NET.Sdk">
 
     <PropertyGroup>
-        <TargetFrameworks>net461;netcoreapp3.1</TargetFrameworks>
-        <AutoGenerateBindingRedirects>true</AutoGenerateBindingRedirects>
-    </PropertyGroup>
-
-    <PropertyGroup Label="NuGet Package/Assembly Settings">
+        <PackageId>dotnet-ikvm</PackageId>
+        <TargetFrameworks>net461</TargetFrameworks>
         <OutputType>Exe</OutputType>
         <AssemblyTitle>IKVM.NET Launcher</AssemblyTitle>
         <Description></Description>
+        <AutoGenerateBindingRedirects>true</AutoGenerateBindingRedirects>
+        <PackAsTool>true</PackAsTool>
     </PropertyGroup>
 
     <ItemGroup>
         <ProjectReference Include="..\IKVM.OpenJDK\IKVM.OpenJDK.csproj" />
+        <ProjectReference Include="..\IKVM.Runtime.JNI\IKVM.Runtime.JNI.csproj" />
+        <ProjectReference Include="..\IKVM.Runtime\IKVM.Runtime.csproj" />
     </ItemGroup>
 
 </Project>

@@ -31,6 +31,7 @@ using Type = IKVM.Reflection.Type;
 using System.Diagnostics;
 using IKVM.Attributes;
 using IKVM.Internal;
+using System.Linq;
 
 namespace IKVM.Internal.MapXml
 {
@@ -252,10 +253,19 @@ namespace IKVM.Internal.MapXml
                             argTypes[i] = StaticCompiler.GetTypeForMapXml(context.ClassLoader, types[i]);
                         }
                     }
-                    MethodInfo mi = StaticCompiler.GetTypeForMapXml(context.ClassLoader, type).GetMethod(Name, BindingFlags.Public | BindingFlags.NonPublic | BindingFlags.Instance | BindingFlags.Static, null, argTypes, null);
+
+                    Type ti = StaticCompiler.GetTypeForMapXml(context.ClassLoader, type);
+                    if (ti == null)
+                    {
+                        throw new InvalidOperationException("Missing type: " + type);
+                    }
+
+                    MethodInfo mi = ti.GetMethod(Name, BindingFlags.Public | BindingFlags.NonPublic | BindingFlags.Instance | BindingFlags.Static, null, argTypes, null);
                     if (mi == null)
                     {
-                        throw new InvalidOperationException("Missing method: " + type + "." + Name + Sig);
+                        var ta = argTypes.Select(i => i.AssemblyQualifiedName).ToArray();
+                        var m = ti.GetMethods().FirstOrDefault(i => i.Name == Name);
+                        throw new InvalidOperationException("Missing method: " + ti.FullName + "." + Name + Sig + $" -> ({string.Join("; ", ta)}). {(m != null ? string.Join(";", m.GetParameters().Select(i => i.ParameterType.AssemblyQualifiedName)) : null)}");
                     }
                     ilgen.Emit(opcode, mi);
                 }

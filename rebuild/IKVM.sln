@@ -23,11 +23,15 @@ Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Solution Items", "Solution 
 	ProjectSection(SolutionItems) = preProject
 		Directory.Build.props = Directory.Build.props
 		Directory.Build.targets = Directory.Build.targets
+		LICENSE = LICENSE
+		openjdk.props = openjdk.props
 	EndProjectSection
 EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "IKVM.OpenJDK-ref", "IKVM.OpenJDK-ref\IKVM.OpenJDK-ref.csproj", "{43BA164D-41F3-4563-BDB0-EEF56CE49309}"
 EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "IKVM.Runtime.JNI-ref", "IKVM.Runtime.JNI-ref\IKVM.Runtime.JNI-ref.csproj", "{01563AC3-AE6C-4297-9313-8B835B488738}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "IKVM-pkg", "IKVM-pkg\IKVM-pkg.csproj", "{504426DE-C5A8-490E-9616-16D2D59A9579}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
@@ -75,6 +79,10 @@ Global
 		{01563AC3-AE6C-4297-9313-8B835B488738}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{01563AC3-AE6C-4297-9313-8B835B488738}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{01563AC3-AE6C-4297-9313-8B835B488738}.Release|Any CPU.Build.0 = Release|Any CPU
+		{504426DE-C5A8-490E-9616-16D2D59A9579}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{504426DE-C5A8-490E-9616-16D2D59A9579}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{504426DE-C5A8-490E-9616-16D2D59A9579}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{504426DE-C5A8-490E-9616-16D2D59A9579}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE

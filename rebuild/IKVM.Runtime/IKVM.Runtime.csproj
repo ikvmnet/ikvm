@@ -1,14 +1,12 @@
 ﻿<Project Sdk="Microsoft.NET.Sdk">
 
     <PropertyGroup>
-        <TargetFrameworks>net461;netcoreapp3.1</TargetFrameworks>
-        <DefineConstants>$(DefineConstants);EMITTERS</DefineConstants>
-        <NoWarn>$(NoWarn);169;649</NoWarn>
-    </PropertyGroup>
-
-    <PropertyGroup Label="NuGet Package/Assembly Settings">
+        <TargetFrameworks>net461</TargetFrameworks>
+        <AssemblyName>IKVM.Runtime</AssemblyName>
         <AssemblyTitle>IKVM.NET Runtime</AssemblyTitle>
         <Description>JVM for Mono and .NET</Description>
+        <DefineConstants>$(DefineConstants);EMITTERS</DefineConstants>
+        <NoWarn>$(NoWarn);169;649</NoWarn>
     </PropertyGroup>
 
     <ItemGroup>
@@ -16,7 +14,12 @@
         <InternalsVisibleTo Include="IKVM.OpenJDK" />
     </ItemGroup>
 
-    <ItemGroup>
+    <ItemGroup Condition=" '$(TargetFramework)' == 'net461' ">
+        <Reference Include="System.Security" />
+        <Reference Include="System.Configuration" />
+    </ItemGroup>
+
+    <ItemGroup Condition=" '$(TargetFramework)' == 'netcoreapp3.1' ">
         <PackageReference Include="System.Security.Cryptography.Pkcs" Version="6.0.1" />
         <PackageReference Include="Microsoft.Win32.Registry" Version="5.0.0" />
         <PackageReference Include="System.Security.Permissions" Version="6.0.0" />
@@ -24,8 +27,12 @@
     </ItemGroup>
 
     <ItemGroup>
-        <ProjectReference Include="..\IKVM.OpenJDK\IKVM.OpenJDK.csproj" />
-        <ProjectReference Include="..\IKVM.Runtime.JNI-ref\IKVM.Runtime.JNI-ref.csproj" />
+        <ProjectReference Include="..\IKVM.OpenJDK\IKVM.OpenJDK.csproj">
+            <PrivateAssets>All</PrivateAssets>
+        </ProjectReference>
+        <ProjectReference Include="..\IKVM.Runtime.JNI-ref\IKVM.Runtime.JNI-ref.csproj">
+            <PrivateAssets>All</PrivateAssets>
+        </ProjectReference>
     </ItemGroup>
 
 </Project>

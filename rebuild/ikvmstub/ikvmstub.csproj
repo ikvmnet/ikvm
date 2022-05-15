@@ -1,18 +1,27 @@
 ﻿<Project Sdk="Microsoft.NET.Sdk">
 
     <PropertyGroup>
+        <PackageId>dotnet-ikvmstub</PackageId>
         <OutputType>Exe</OutputType>
-        <TargetFrameworks>net461;netcoreapp3.1</TargetFrameworks>
+        <TargetFrameworks>net461</TargetFrameworks>
         <AssemblyName>ikvmstub</AssemblyName>
         <AssemblyTitle>IKVM.NET Stub Generator</AssemblyTitle>
         <Description></Description>
         <RootNamespace>ikvmstub</RootNamespace>
         <DefineConstants>$(DefineConstants);STUB_GENERATOR</DefineConstants>
         <AutoGenerateBindingRedirects>true</AutoGenerateBindingRedirects>
+        <PackAsTool>true</PackAsTool>
     </PropertyGroup>
+
+    <ItemGroup Condition=" '$(TargetFramework)' == 'net461' ">
+        <Reference Include="System.Security" />
+    </ItemGroup>
 
     <ItemGroup>
         <PackageReference Include="SharpZipLib" Version="1.3.3" />
+    </ItemGroup>
+
+    <ItemGroup Condition=" '$(TargetFramework)' == 'netcoreapp3.1' ">
         <PackageReference Include="System.Configuration.ConfigurationManager" Version="6.0.0" />
     </ItemGroup>
 

@@ -1,0 +1,40 @@
+﻿<Project Sdk="Microsoft.Build.NoTargets/3.4.0">
+
+    <PropertyGroup>
+        <TargetFrameworks>net461</TargetFrameworks>
+        <PackageId>IKVM</PackageId>
+        <SuppressDependenciesWhenPacking>true</SuppressDependenciesWhenPacking>
+        <TargetsForTfmSpecificContentInPackage>$(TargetsForTfmSpecificContentInPackage);CopyProjectReferencesToPackage</TargetsForTfmSpecificContentInPackage>
+        <PackageLicenseFile>LICENSE</PackageLicenseFile>
+    </PropertyGroup>
+
+    <ItemGroup>
+        <ProjectReference Include="..\IKVM.OpenJDK\IKVM.OpenJDK.csproj">
+            <ReferenceOutputAssembly>True</ReferenceOutputAssembly>
+            <PrivateAssets>all</PrivateAssets>
+        </ProjectReference>
+        <ProjectReference Include="..\IKVM.Reflection\IKVM.Reflection.csproj">
+            <ReferenceOutputAssembly>True</ReferenceOutputAssembly>
+            <PrivateAssets>all</PrivateAssets>
+        </ProjectReference>
+        <ProjectReference Include="..\IKVM.Runtime.JNI\IKVM.Runtime.JNI.csproj">
+            <ReferenceOutputAssembly>True</ReferenceOutputAssembly>
+            <PrivateAssets>all</PrivateAssets>
+        </ProjectReference>
+        <ProjectReference Include="..\IKVM.Runtime\IKVM.Runtime.csproj">
+            <ReferenceOutputAssembly>True</ReferenceOutputAssembly>
+            <PrivateAssets>all</PrivateAssets>
+        </ProjectReference>
+    </ItemGroup>
+
+    <ItemGroup>
+        <None Include="..\LICENSE" Pack="true" PackagePath="." />
+    </ItemGroup>
+
+    <Target Name="CopyProjectReferencesToPackage" DependsOnTargets="ResolveReferences">
+        <ItemGroup>
+            <TfmSpecificPackageFile Include="@(ReferenceCopyLocalPaths-&gt;WithMetadataValue('ReferenceSourceTarget', 'ProjectReference')-&gt;WithMetadataValue('PrivateAssets', 'all'))" PackagePath="lib\$(TargetFramework)" />
+        </ItemGroup>
+    </Target>
+
+</Project>

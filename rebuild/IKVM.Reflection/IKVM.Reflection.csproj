@@ -2,17 +2,19 @@
 
     <PropertyGroup>
         <TargetFrameworks>net461;netcoreapp3.1</TargetFrameworks>
+        <AssemblyName>IKVM.Reflection</AssemblyName>
+        <AssemblyTitle>IKVM.NET Reflection Library</AssemblyTitle>
+        <Description>Alternative implementation of System.Reflection[.Emit]</Description>
         <DefineConstants>$(DefineConstants);EMITTERS</DefineConstants>
         <NoWarn>$(NoWarn);169;649</NoWarn>
     </PropertyGroup>
 
-    <PropertyGroup Label="NuGet Package/Assembly Settings">
-        <AssemblyTitle>IKVM.Reflection</AssemblyTitle>
-        <Description>Alternative implementation of System.Reflection[.Emit]</Description>
-    </PropertyGroup>
+    <ItemGroup Condition=" '$(TargetFramework)' == 'net461' ">
+        <Reference Include="System.Security" />
+    </ItemGroup>
 
-    <ItemGroup>
-      <PackageReference Include="System.Security.Cryptography.Pkcs" Version="6.0.1" />
+    <ItemGroup Condition=" '$(TargetFramework)' == 'netcoreapp3.1' ">
+        <PackageReference Include="System.Security.Cryptography.Pkcs" Version="6.0.1" />
     </ItemGroup>
 
 </Project>
