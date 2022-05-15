@@ -9,11 +9,7 @@ Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "IKVM.OpenJDK", "IKVM.OpenJD
 EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "IKVM.Runtime-ref", "IKVM.Runtime-ref\IKVM.Runtime-ref.csproj", "{197EF0EC-63E2-4644-AF25-054B931DDB55}"
 EndProject
-Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "IKVM.OpenJDK-sig", "IKVM.OpenJDK-sig\IKVM.OpenJDK-sig.csproj", "{2A7A3AB6-5CE3-4400-8F49-4B0196258214}"
-EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "IKVM.Runtime.JNI", "IKVM.Runtime.JNI\IKVM.Runtime.JNI.csproj", "{E4E508BF-7ADF-413F-83E2-908A3C9F7F8D}"
-EndProject
-Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "IKVM.Runtime.JNI-sig", "IKVM.Runtime.JNI-sig\IKVM.Runtime.JNI-sig.csproj", "{C228A283-0F5A-43DF-B2DC-E521DF53A059}"
 EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "ikvmstub", "ikvmstub\ikvmstub.csproj", "{0A87FF49-AC9D-479A-ACBB-F4028A0BE1F7}"
 EndProject
@@ -28,6 +24,10 @@ Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Solution Items", "Solution 
 		Directory.Build.props = Directory.Build.props
 		Directory.Build.targets = Directory.Build.targets
 	EndProjectSection
+EndProject
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "IKVM.OpenJDK-ref", "IKVM.OpenJDK-ref\IKVM.OpenJDK-ref.csproj", "{43BA164D-41F3-4563-BDB0-EEF56CE49309}"
+EndProject
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "IKVM.Runtime.JNI-ref", "IKVM.Runtime.JNI-ref\IKVM.Runtime.JNI-ref.csproj", "{01563AC3-AE6C-4297-9313-8B835B488738}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
@@ -47,18 +47,10 @@ Global
 		{197EF0EC-63E2-4644-AF25-054B931DDB55}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{197EF0EC-63E2-4644-AF25-054B931DDB55}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{197EF0EC-63E2-4644-AF25-054B931DDB55}.Release|Any CPU.Build.0 = Release|Any CPU
-		{2A7A3AB6-5CE3-4400-8F49-4B0196258214}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
-		{2A7A3AB6-5CE3-4400-8F49-4B0196258214}.Debug|Any CPU.Build.0 = Debug|Any CPU
-		{2A7A3AB6-5CE3-4400-8F49-4B0196258214}.Release|Any CPU.ActiveCfg = Release|Any CPU
-		{2A7A3AB6-5CE3-4400-8F49-4B0196258214}.Release|Any CPU.Build.0 = Release|Any CPU
 		{E4E508BF-7ADF-413F-83E2-908A3C9F7F8D}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
 		{E4E508BF-7ADF-413F-83E2-908A3C9F7F8D}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{E4E508BF-7ADF-413F-83E2-908A3C9F7F8D}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{E4E508BF-7ADF-413F-83E2-908A3C9F7F8D}.Release|Any CPU.Build.0 = Release|Any CPU
-		{C228A283-0F5A-43DF-B2DC-E521DF53A059}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
-		{C228A283-0F5A-43DF-B2DC-E521DF53A059}.Debug|Any CPU.Build.0 = Debug|Any CPU
-		{C228A283-0F5A-43DF-B2DC-E521DF53A059}.Release|Any CPU.ActiveCfg = Release|Any CPU
-		{C228A283-0F5A-43DF-B2DC-E521DF53A059}.Release|Any CPU.Build.0 = Release|Any CPU
 		{0A87FF49-AC9D-479A-ACBB-F4028A0BE1F7}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
 		{0A87FF49-AC9D-479A-ACBB-F4028A0BE1F7}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{0A87FF49-AC9D-479A-ACBB-F4028A0BE1F7}.Release|Any CPU.ActiveCfg = Release|Any CPU
@@ -75,6 +67,14 @@ Global
 		{01A67032-A76E-400D-9DA8-A58CE10A5FCD}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{01A67032-A76E-400D-9DA8-A58CE10A5FCD}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{01A67032-A76E-400D-9DA8-A58CE10A5FCD}.Release|Any CPU.Build.0 = Release|Any CPU
+		{43BA164D-41F3-4563-BDB0-EEF56CE49309}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{43BA164D-41F3-4563-BDB0-EEF56CE49309}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{43BA164D-41F3-4563-BDB0-EEF56CE49309}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{43BA164D-41F3-4563-BDB0-EEF56CE49309}.Release|Any CPU.Build.0 = Release|Any CPU
+		{01563AC3-AE6C-4297-9313-8B835B488738}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{01563AC3-AE6C-4297-9313-8B835B488738}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{01563AC3-AE6C-4297-9313-8B835B488738}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{01563AC3-AE6C-4297-9313-8B835B488738}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE

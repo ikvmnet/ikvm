@@ -2,7 +2,9 @@
     <Import Project="Sdk.props" Sdk="Microsoft.NET.Sdk" />
 
     <PropertyGroup>
-        <TargetFrameworks>net461;netcoreapp3.1</TargetFrameworks>
+        <TargetFrameworks>net461</TargetFrameworks>
+        <AssemblyTitle>IKVM.NET Compiler</AssemblyTitle>
+        <Description>JVM for Mono and .NET</Description>
         <AllowUnsafeBlocks>true</AllowUnsafeBlocks>
     </PropertyGroup>
 
@@ -12,13 +14,6 @@
         <OpenJdkSpecificationVersion>1.8</OpenJdkSpecificationVersion>
         <OpenJdkFullVersion>1.8.0_45-b14</OpenJdkFullVersion>
         <OpenJdkVersion>OpenJDK 8u45 b14</OpenJdkVersion>
-    </PropertyGroup>
-
-    <PropertyGroup Label="NuGet Package/Assembly Settings">
-        <RootNamespace>openjdk</RootNamespace>
-        <AssemblyName>openjdk</AssemblyName>
-        <AssemblyTitle>IKVM.NET Compiler</AssemblyTitle>
-        <Description>JVM for Mono and .NET</Description>
     </PropertyGroup>
 
     <ItemGroup>
@@ -57,6 +52,12 @@
     </ItemGroup>
 
     <ItemDefinitionGroup>
+        <JavaSource>
+            <TargetFramework></TargetFramework>
+        </JavaSource>
+        <JavaSourceTemplate>
+            <TargetFramework></TargetFramework>
+        </JavaSourceTemplate>
         <StubAssembly>
             <Args></Args>
         </StubAssembly>
@@ -106,17 +107,21 @@
     </ItemGroup>
 
     <ItemGroup>
-        <JavaSource Include="source\**\*.java" />
-        <JavaSource Update="source\**\*.netcoreapp3_1.java" TargetFramework="netcoreapp3.1" />
-        <JavaSource Update="source\**\*.net461.java" TargetFramework="net461" />
-        <JavaSourceTemplate Include="source\**\*.java.in" />
+        <JavaSource Include="source\**\*.java" SourcePath="%(RecursiveDir)%(Filename)%(Extension)" />
+        <JavaSource Update="source\**\*.netcoreapp3_1.java" SourcePath="%(RecursiveDir)%(Filename)" TargetFramework="netcoreapp3.1" />
+        <JavaSource Update="source\**\*.net461.java" SourcePath="%(RecursiveDir)%(Filename)" TargetFramework="net461" />
+        <JavaSourceTemplate Include="source\**\*.java.in" SourcePath="%(RecursiveDir)%(Filename)" />
+        <JavaSourceTemplate Update="source\**\*.netcoreapp3_1.java.in" SourcePath="%(RecursiveDir)%(Filename)" TargetFramework="netcoreapp3.1" />
+        <JavaSourceTemplate Update="source\**\*.net461.java.in" SourcePath="%(RecursiveDir)%(Filename)" TargetFramework="net461" />
     </ItemGroup>
 
     <ItemGroup>
         <JavaResource Include="resources\**\*" ResourcePath="%(RecursiveDir)%(Filename)%(Extension)" />
-        <JavaResource Update="resources\**\*.netcoreapp3_1" ResourcePath="%(RecursiveDir)%(Filename)%(Extension)" TargetFramework="netcoreapp3.1" />
+        <JavaResource Update="resources\**\*.netcoreapp3_1" ResourcePath="%(RecursiveDir)%(Filename)" TargetFramework="netcoreapp3.1" />
         <JavaResource Update="resources\**\*.net461" ResourcePath="%(RecursiveDir)%(Filename)" TargetFramework="net461" />
         <JavaResourceTemplate Include="resources\**\*.in" ResourcePath="%(RecursiveDir)%(Filename)" />
+        <JavaResourceTemplate Update="source\**\*.netcoreapp3_1.in" ResourcePath="%(RecursiveDir)%(Filename)" TargetFramework="netcoreapp3.1" />
+        <JavaResourceTemplate Update="source\**\*.net461.in" ResourcePath="%(RecursiveDir)%(Filename)" TargetFramework="net461" />
     </ItemGroup>
 
     <ItemGroup>
@@ -129,7 +134,7 @@
 
     <Import Project="Sdk.targets" Sdk="Microsoft.NET.Sdk" />
 
-    <UsingTask TaskName="TransformTemplate" TaskFactory="RoslynCodeTaskFactory" AssemblyFile="$(MSBuildToolsPath)\Microsoft.Build.Tasks.Core.dll">
+    <UsingTask TaskName="TransformTemplates" TaskFactory="RoslynCodeTaskFactory" AssemblyFile="$(MSBuildToolsPath)\Microsoft.Build.Tasks.Core.dll">
         <ParameterGroup>
             <Items ParameterType="Microsoft.Build.Framework.ITaskItem[]" Required="true" />
         </ParameterGroup>
@@ -173,12 +178,14 @@
     <PropertyGroup>
         <JavaSourceTemplateOutputPath>$(IntermediateOutputPath)sources</JavaSourceTemplateOutputPath>
         <JavaResourceTemplateOutputPath>$(IntermediateOutputPath)resources</JavaResourceTemplateOutputPath>
-        <StubOutputPath>$(IntermediateOutputPath)stubs</StubOutputPath>
+        <StubsOutputPath>$(IntermediateOutputPath)stubs</StubsOutputPath>
+        <RmiStubsOutputPath>$(IntermediateOutputPath)rmistubs</RmiStubsOutputPath>
         <VfsZipTempPath>$(IntermediateOutputPath)vfs_zip</VfsZipTempPath>
         <VfsZipPath>$(IntermediateOutputPath)vfs.zip</VfsZipPath>
         <ResourcesZipTempPath>$(IntermediateOutputPath)resources_zip</ResourcesZipTempPath>
-        <ResourceZipPath>$(IntermediateOutputPath)resources.zip</ResourceZipPath>
-        <OpenJdkClassDir>$(IntermediateOutputPath)classes</OpenJdkClassDir>
+        <ResourcesZipPath>$(IntermediateOutputPath)resources.zip</ResourcesZipPath>
+        <JavaClassOutputPath>$(IntermediateOutputPath)classes</JavaClassOutputPath>
+        <OpenJdkAssemblyPath>$(IntermediateOutputPath)openjdk.dll</OpenJdkAssemblyPath>
     </PropertyGroup>
 
     <PropertyGroup>
@@ -188,48 +195,7 @@
         </BuildDependsOn>
     </PropertyGroup>
 
-    <UsingTask TaskName="TransformTemplate" TaskFactory="RoslynCodeTaskFactory" AssemblyFile="$(MSBuildToolsPath)\Microsoft.Build.Tasks.Core.dll">
-        <ParameterGroup>
-            <Items ParameterType="Microsoft.Build.Framework.ITaskItem[]" Required="true" />
-        </ParameterGroup>
-        <Task>
-            <Using Namespace="System" />
-            <Using Namespace="System.Collections.Generic" />
-            <Using Namespace="System.Text.RegularExpressions" />
-            <Code Type="Fragment" Language="cs">
-                <![CDATA[
-                foreach (var i in Items)
-                {
-                    var fullPath = i.GetMetadata("FullPath");
-                    var destPath = i.GetMetadata("Destination");
-                    Directory.CreateDirectory(Path.GetDirectoryName(destPath));
-                    File.Copy(fullPath, destPath, true);
-                }
-            ]]>
-            </Code>
-        </Task>
-    </UsingTask>
-
-    <UsingTask TaskName="DistinctSourceItems" TaskFactory="RoslynCodeTaskFactory" AssemblyFile="$(MSBuildToolsPath)\Microsoft.Build.Tasks.Core.dll">
-        <ParameterGroup>
-            <Source ParameterType="Microsoft.Build.Framework.ITaskItem[]" Required="true" />
-            <Output ParameterType="Microsoft.Build.Framework.ITaskItem[]" Output="true" />
-        </ParameterGroup>
-        <Task>
-            <Using Namespace="System" />
-            <Using Namespace="System.Collections.Generic" />
-            <Code Type="Fragment" Language="cs">
-                <![CDATA[
-                var hs = new Dictionary<string, ITaskItem>();
-                foreach (var i in Source)
-                    hs[i.GetMetadata("Key")] = i;
-                Output = hs.Values.ToArray();
-            ]]>
-            </Code>
-        </Task>
-    </UsingTask>
-
-    <Target Name="GetIkvmStubExe" DependsOnTargets="ResolveReferences">
+    <Target Name="GetIkvmStubExe" DependsOnTargets="ResolveProjectReferences">
         <MSBuild Projects="@(_MSBuildProjectReferenceExistent)" Targets="GetTargetPath" BuildInParallel="$(BuildInParallel)" Properties="%(_MSBuildProjectReferenceExistent.SetConfiguration);%(_MSBuildProjectReferenceExistent.SetPlatform);%(_MSBuildProjectReferenceExistent.SetTargetFramework)" RemoveProperties="%(_MSBuildProjectReferenceExistent.GlobalPropertiesToRemove)$(_GlobalPropertiesToRemoveFromProjectReferences)" Condition=" '%(_MSBuildProjectReferenceExistent.Identity)' == '..\ikvmstub\ikvmstub.csproj' ">
             <Output TaskParameter="TargetOutputs" ItemName="_IkvmStub" />
         </MSBuild>
@@ -250,14 +216,14 @@
         </PropertyGroup>
         <ItemGroup>
             <_StubAssembly Include="@(_ResolveAssemblyReferenceResolvedFiles)">
-                <JarPath>$(StubOutputPath)\%(Filename).jar</JarPath>
+                <JarPath>$(StubsOutputPath)\%(Filename).jar</JarPath>
                 <Args>$(_StubArgs)</Args>
             </_StubAssembly>
         </ItemGroup>
     </Target>
 
     <Target Name="BuildStubs" DependsOnTargets="ResolveStubs;GetIkvmStubExe" Inputs="@(_StubAssembly)" Outputs="%(JarPath)">
-        <MakeDir Directories="$(StubOutputPath)" />
+        <MakeDir Directories="$(StubsOutputPath)" />
 
         <!-- this is wrong, determination of which version to use to build needs to be based on which platform we're running on -->
         <PropertyGroup Condition="$(TargetFramework.StartsWith('net4'))">
@@ -289,77 +255,69 @@
         </ItemGroup>
     </Target>
 
-    <Target Name="BuildResourcesZip" Inputs="@(ResourcesZipIncludeFile)" Outputs="$(ResourceZipPath)">
+    <Target Name="BuildResourcesZip" Inputs="@(ResourcesZipIncludeFile)" Outputs="$(ResourcesZipPath)">
         <Delete Files="$(ResourcesZipTempPath)\**\*" />
         <RemoveDir Directories="$(ResourcesZipTempPath)" />
         <MakeDir Directories="$(ResourcesZipTempPath)" />
         <Copy SourceFiles="@(ResourcesZipIncludeFile)" DestinationFolder="$(ResourcesZipTempPath)\%(RecursiveDir)" />
-        <Delete Files="$(ResourceZipPath)" />
-        <ZipDirectory SourceDirectory="$(ResourcesZipTempPath)" DestinationFile="$(ResourceZipPath)" />
+        <Delete Files="$(ResourcesZipPath)" />
+        <ZipDirectory SourceDirectory="$(ResourcesZipTempPath)" DestinationFile="$(ResourcesZipPath)" />
         <ItemGroup>
             <FileWrites Include="$(ResourcesZipTempPath)\**\*" />
-            <FileWrites Include="$(ResourceZipPath)" />
+            <FileWrites Include="$(ResourcesZipPath)" />
         </ItemGroup>
     </Target>
 
     <Target Name="ResolveTransformJavaSourceTemplates">
+        <Message Text="JavaSourceTemplate: @(JavaSourceTemplate)" Importance="high" />
         <ItemGroup>
-            <TransformJavaSourceTemplate Include="@(JavaSourceTemplate)">
-                <Destination>$(JavaSourceTemplateOutputPath)\%(RecursiveDir)%(Filename)</Destination>
+            <TransformJavaSourceTemplate Include="@(JavaSourceTemplate)" Condition=" '%(JavaSourceTemplate.TargetFramework)' == '' Or '%(TargetFramework)' == '$(TargetFramework)' ">
+                <Destination>$(JavaSourceTemplateOutputPath)\%(SourcePath)</Destination>
             </TransformJavaSourceTemplate>
         </ItemGroup>
     </Target>
 
     <Target Name="TransformJavaSourceTemplates" DependsOnTargets="ResolveTransformJavaSourceTemplates" Inputs="@(TransformJavaSourceTemplate)" Outputs="@(TransformJavaSourceTemplate->'%(Destination)')">
-        <Delete Files="$(JavaSourceTemplateOutputPath)\**\*" />
-        <RemoveDir Directories="$(JavaSourceTemplateOutputPath)" />
+        <Message Text="TransformJavaSourceTemplate: @(TransformJavaSourceTemplate)" Importance="high" />
         <MakeDir Directories="$(JavaSourceTemplateOutputPath)" />
-        <TransformTemplate Items="@(TransformJavaSourceTemplate)" />
+        <TransformTemplates Items="@(TransformJavaSourceTemplate)" />
         <ItemGroup>
-            <JavaSourceTemplateItem Include="@(TransformJavaSourceTemplate->'%(Destination)')" />
+            <JavaSourceTemplateItem Include="@(TransformJavaSourceTemplate->'%(Destination)')" SourcePath="%(SourcePath)" />
             <FileWrites Include="@(TransformJavaSourceTemplate->'%(Destination)')" />
         </ItemGroup>
     </Target>
 
-    <Target Name="ResolveOpenJdkSourceItems" DependsOnTargets="TransformJavaSourceTemplates">
+    <Target Name="_ResolveJavaSourceItems" DependsOnTargets="$(TransformJavaSourceTemplates)">
         <ItemGroup>
-            <_OpenJdkSourceItems Include="@(OpenJdkCompile)" Condition=" '%(Extension)' == '.java' ">
-                <Key>%(Identity)</Key>
-            </_OpenJdkSourceItems>
-            <_OpenJdkSourceItems Include="@(JavaSource)" Condition=" '%(JavaSource.TargetFramework)' == '' Or '%(JavaSource.TargetFramework)' == '$(TargetFramework)' ">
-                <Key>%(RecursiveDir)%(Filename)%(Extension)</Key>
-            </_OpenJdkSourceItems>
-            <_OpenJdkSourceItems Include="@(JavaSourceTemplateItem)">
-                <Key>%(RecursiveDir)%(Filename)%(Extension)</Key>
-            </_OpenJdkSourceItems>
+            <_JavaSourceItems Include="@(OpenJdkCompile)" Condition=" '%(Extension)' == '.java' ">
+                <Key>%(SourcePath)</Key>
+            </_JavaSourceItems>
+            <_JavaSourceItems Include="@(JavaSource)" Condition=" '%(JavaSource.TargetFramework)' == '' Or '%(JavaSource.TargetFramework)' == '$(TargetFramework)' ">
+                <Key>%(SourcePath)</Key>
+            </_JavaSourceItems>
+            <_JavaSourceItems Include="@(JavaSourceTemplateItem)">
+                <Key>%(SourcePath)</Key>
+            </_JavaSourceItems>
         </ItemGroup>
-        <DistinctSourceItems Source="@(_OpenJdkSourceItems)">
-            <Output TaskParameter="Output" ItemName="_OpenJdkSourceItemsDistinct" />
+        <DistinctSourceItems Source="@(_JavaSourceItems)">
+            <Output TaskParameter="Output" ItemName="_JavaSourceItemsDistinct" />
         </DistinctSourceItems>
         <ItemGroup>
-            <OpenJdkSourceItems Include="@(_OpenJdkSourceItemsDistinct)" />
+            <JavaSourceItems Include="@(_JavaSourceItemsDistinct)" />
         </ItemGroup>
     </Target>
 
-    <Target Name="ResolveJavaClasspath" DependsOnTargets="BuildStubs">
-        <ItemGroup>
-            <JavaClasspath Include="@(StubJar)" />
-            <JavaClasspath Include="@(OpenJdkClasspath)" />
-        </ItemGroup>
-    </Target>
+    <PropertyGroup>
+        <ResolveJavaSourceItemsDependsOn>
+            ResolveTransformJavaSourceTemplates;
+            TransformJavaSourceTemplates;
+            _ResolveJavaSourceItems;
+            $(ResolveJavaSourceItemsDependsOn);
+        </ResolveJavaSourceItemsDependsOn>
+    </PropertyGroup>
 
-    <Target Name="BuildOpenJdkClasses" DependsOnTargets="ResolveOpenJdkSourceItems;ResolveJavaClasspath" Inputs="@(OpenJdkSourceItems)" Outputs="$(IntermediateOutputPath)sources.list">
-        <Delete Files="$(IntermediateOutputPath)sources.list" />
-        <WriteLinesToFile File="$(IntermediateOutputPath)sources.list" Lines="@(OpenJdkSourceItems)" />
-        <Delete Files="$(OpenJdkClassDir)\**\*" />
-        <RemoveDir Directories="$(OpenJdkClassDir)" />
-        <MakeDir Directories="$(OpenJdkClassDir)" />
-        <Message Text="javac -J-Xmx1536M -g -nowarn -implicit:none -parameters -cp dummy -bootclasspath @(JavaClasspath) -d $(OpenJdkClassDir) @$(IntermediateOutputPath)sources.list" Importance="high" />
-        <Exec Command="javac -J-Xmx1536M -g -nowarn -implicit:none -parameters -cp dummy -bootclasspath @(JavaClasspath) -d $(OpenJdkClassDir) @$(IntermediateOutputPath)sources.list" />
-        <ItemGroup>
-            <FileWrites Include="$(IntermediateOutputPath)sources.list" />
-            <FileWrites Include="$(OpenJdkClassDir)\**\*" />
-        </ItemGroup>
+    <Target Name="ResolveJavaSourceItems" DependsOnTargets="$(ResolveJavaSourceItemsDependsOn)">
+
     </Target>
 
     <Target Name="ResolveTransformJavaResourceTemplates">
@@ -371,54 +329,193 @@
     </Target>
 
     <Target Name="TransformJavaResourceTemplates" DependsOnTargets="ResolveTransformJavaResourceTemplates" Inputs="@(TransformJavaResourceTemplate)" Outputs="@(TransformJavaResourceTemplate->'%(Destination)')">
-        <Delete Files="$(JavaResourceTemplateOutputPath)\**\*" />
-        <RemoveDir Directories="$(JavaResourceTemplateOutputPath)" />
         <MakeDir Directories="$(JavaResourceTemplateOutputPath)" />
-        <TransformTemplate Items="@(TransformJavaResourceTemplate)" />
+        <TransformTemplates Items="@(TransformJavaResourceTemplate)" />
         <ItemGroup>
-            <JavaResourceTemplateItem Include="@(TransformJavaResourceTemplate->'%(Destination)')" Path="%(TransformJavaResourceTemplate.Path)" />
+            <JavaResourceTemplateItem Include="@(TransformJavaResourceTemplate->'%(Destination)')" ResourcePath="%(ResourcePath)" />
             <FileWrites Include="@(TransformJavaResourceTemplate->'%(Destination)')" />
         </ItemGroup>
     </Target>
 
-    <Target Name="ResolveOpenJdkResourceItems" DependsOnTargets="TransformJavaResourceTemplates">
+    <Target Name="_ResolveJavaResourceItems" DependsOnTargets="TransformJavaResourceTemplates">
         <ItemGroup>
-            <_OpenJdkResourceItems Include="@(OpenJdkResource)">
+            <_JavaResourceItems Include="@(OpenJdkResource)">
                 <Key>%(ResourcePath)</Key>
-            </_OpenJdkResourceItems>
-            <_OpenJdkResourceItems Include="@(JavaResource)" Condition=" '%(JavaSource.TargetFramework)' == '' Or '%(JavaSource.TargetFramework)' == '$(TargetFramework)' ">
-                <Key>%(RecursiveDir)%(Filename)%(Extension)</Key>
-            </_OpenJdkResourceItems>
-            <_OpenJdkResourceItems Include="@(JavaResourceTemplateItem)">
-                <Key>%(RecursiveDir)%(Filename)%(Extension)</Key>
-            </_OpenJdkResourceItems>
+            </_JavaResourceItems>
+            <_JavaResourceItems Include="@(JavaResource)" Condition=" '%(JavaResource.TargetFramework)' == '' Or '%(JavaResource.TargetFramework)' == '$(TargetFramework)' ">
+                <Key>%(ResourcePath)</Key>
+            </_JavaResourceItems>
+            <_JavaResourceItems Include="@(JavaResourceTemplateItem)">
+                <Key>%(ResourcePath)</Key>
+            </_JavaResourceItems>
         </ItemGroup>
-        <DistinctSourceItems Source="@(_OpenJdkResourceItems)">
-            <Output TaskParameter="Output" ItemName="_OpenJdkResourceItemsDistinct" />
+        <DistinctSourceItems Source="@(_JavaResourceItems)">
+            <Output TaskParameter="Output" ItemName="_JavaResourceItemsDistinct" />
         </DistinctSourceItems>
         <ItemGroup>
-            <OpenJdkResourceItems Include="@(_OpenJdkResourceItemsDistinct)" />
+            <JavaResourceItems Include="@(_JavaResourceItemsDistinct)" />
         </ItemGroup>
     </Target>
 
-    <Target Name="GetIkvmcExe" DependsOnTargets="ResolveReferences">
+    <PropertyGroup>
+        <ResolveJavaResourceItemsDependsOn>
+            ResolveTransformJavaResourceTemplates;
+            TransformJavaResourceTemplates;
+            _ResolveJavaResourceItems;
+            $(ResolveJavaResourceItemsDependsOn);
+        </ResolveJavaResourceItemsDependsOn>
+    </PropertyGroup>
+
+    <Target Name="ResolveJavaResourceItems" DependsOnTargets="$(ResolveJavaResourceItemsDependsOn)">
+
+    </Target>
+
+    <Target Name="ResolveJavaClasspath" DependsOnTargets="BuildStubs">
+        <ItemGroup>
+            <JavaClasspath Include="@(StubJar)" />
+            <JavaClasspath Include="@(OpenJdkClasspath)" />
+        </ItemGroup>
+    </Target>
+
+    <Target Name="_BuildJavaClasses" DependsOnTargets="ResolveJavaSourceItems;ResolveJavaClasspath" Inputs="@(JavaSourceItems)" Outputs="$(JavaClassOutputPath)\stamp">
+        <Delete Files="$(IntermediateOutputPath)sources.list" />
+        <WriteLinesToFile File="$(IntermediateOutputPath)sources.list" Lines="@(JavaSourceItems)" />
+        <Delete Files="$(JavaClassOutputPath)\**\*" />
+        <RemoveDir Directories="$(JavaClassOutputPath)" />
+        <MakeDir Directories="$(JavaClassOutputPath)" />
+        <Message Text="javac -J-Xmx1536M -g -nowarn -implicit:none -parameters -cp dummy -bootclasspath @(JavaClasspath) -d $(JavaClassOutputPath) @$(IntermediateOutputPath)sources.list" Importance="high" />
+        <Exec Command="javac -J-Xmx1536M -g -nowarn -implicit:none -parameters -cp dummy -bootclasspath @(JavaClasspath) -d $(JavaClassOutputPath) @$(IntermediateOutputPath)sources.list" />
+        <Touch Files="$(JavaClassOutputPath)\stamp" AlwaysCreate="true" ForceTouch="true" />
+        <ItemGroup>
+            <FileWrites Include="$(IntermediateOutputPath)sources.list" />
+            <FileWrites Include="$(JavaClassOutputPath)\**\*" />
+        </ItemGroup>
+    </Target>
+
+    <PropertyGroup>
+        <BuildJavaClassesDependsOn>
+            ResolveJavaSourceItems;
+            ResolveJavaClasspath;
+            _BuildJavaClasses;
+            $(BuildJavaClassesDependsOn)
+        </BuildJavaClassesDependsOn>
+    </PropertyGroup>
+
+    <Target Name="BuildJavaClasses" DependsOnTargets="$(BuildJavaClassesDependsOn)">
+
+    </Target>
+
+    <Target Name="BuildRmiStubs" DependsOnTargets="BuildJavaClasses" Inputs="$(JavaClassOutputPath)\stamp" Outputs="$(RmiStubsOutputPath)\stamp">
+        <Delete Files="$(RmiStubsOutputPath)\**\*" />
+        <RemoveDir Directories="$(RmiStubsOutputPath)" />
+        <MakeDir Directories="$(RmiStubsOutputPath)" />
+
+        <PropertyGroup>
+            <RmiVmArgs>-J-client -J-Xmx896m -J-Xms128m</RmiVmArgs>
+            <RmiArgs>$(RmiVmArgs) -nowarn -bootclasspath @(JavaClasspath);$(JavaClassOutputPath) -d $(RmiStubsOutputPath)</RmiArgs>
+        </PropertyGroup>
+
+        <Exec Command="rmic $(RmiArgs) -v1.1 sun.rmi.registry.RegistryImpl" />
+        <Exec Command="rmic $(RmiArgs) -v1.1 sun.rmi.transport.DGCImpl" />
+        <Exec Command="rmic $(RmiArgs) -v1.2 sun.rmi.server.Activation$ActivationSystemImpl" />
+        <Exec Command="rmic $(RmiArgs) -v1.2 java.rmi.activation.ActivationGroup" />
+        <Exec Command="rmic $(RmiArgs) -v1.2 com.sun.jndi.rmi.registry.ReferenceWrapper" />
+        <Exec Command="rmic $(RmiArgs) -v1.2 javax.management.remote.rmi.RMIConnectionImpl" />
+        <Exec Command="rmic $(RmiArgs) -v1.2 -iiop javax.management.remote.rmi.RMIConnectionImpl" />
+        <Exec Command="rmic $(RmiArgs) -v1.2 -iiop -standardPackage javax.management.remote.rmi.RMIConnectionImpl" />
+        <Exec Command="rmic $(RmiArgs) -v1.2 javax.management.remote.rmi.RMIServerImpl" />
+        <Exec Command="rmic $(RmiArgs) -v1.2 -iiop javax.management.remote.rmi.RMIServerImpl" />
+        <Exec Command="rmic $(RmiArgs) -v1.2 -iiop -standardPackage javax.management.remote.rmi.RMIServerImpl" />
+        <Exec Command="rmic $(RmiArgs) -iiop javax.management.remote.rmi.RMIConnection" />
+        <Exec Command="rmic $(RmiArgs) -iiop -standardPackage javax.management.remote.rmi.RMIConnection" />
+        <Exec Command="rmic $(RmiArgs) -iiop javax.management.remote.rmi.RMIServer" />
+        <Exec Command="rmic $(RmiArgs) -iiop -standardPackage javax.management.remote.rmi.RMIServer" />
+        <Touch Files="$(RmiStubsOutputPath)\stamp" AlwaysCreate="true" ForceTouch="true" />
+
+        <ItemGroup>
+            <FileWrites Include="$(RmiStubsOutputPath)\**\*" />
+        </ItemGroup>
+    </Target>
+
+    <Target Name="GetIkvmcExe" DependsOnTargets="ResolveProjectReferences">
         <MSBuild Projects="@(_MSBuildProjectReferenceExistent)" Targets="GetTargetPath" BuildInParallel="$(BuildInParallel)" Properties="%(_MSBuildProjectReferenceExistent.SetConfiguration);%(_MSBuildProjectReferenceExistent.SetPlatform);%(_MSBuildProjectReferenceExistent.SetTargetFramework)" RemoveProperties="%(_MSBuildProjectReferenceExistent.GlobalPropertiesToRemove)$(_GlobalPropertiesToRemoveFromProjectReferences)" Condition=" '%(_MSBuildProjectReferenceExistent.Identity)' == '..\ikvmc\ikvmc.csproj' ">
             <Output TaskParameter="TargetOutputs" ItemName="_Ikvmc" />
         </MSBuild>
         <PropertyGroup>
-            <Ikvmc>@(Ikvmc)</Ikvmc>
+            <Ikvmc>@(_Ikvmc)</Ikvmc>
         </PropertyGroup>
     </Target>
-    
-    <Target Name="ResolveOpenJdkClassItems" DependsOnTargets="BuildOpenJdkClasses">
+
+    <Target Name="GetIkvmRuntimeDll" DependsOnTargets="ResolveProjectReferences">
+        <MSBuild Projects="@(_MSBuildProjectReferenceExistent)" Targets="GetTargetPath" BuildInParallel="$(BuildInParallel)" Properties="%(_MSBuildProjectReferenceExistent.SetConfiguration);%(_MSBuildProjectReferenceExistent.SetPlatform);%(_MSBuildProjectReferenceExistent.SetTargetFramework)" RemoveProperties="%(_MSBuildProjectReferenceExistent.GlobalPropertiesToRemove)$(_GlobalPropertiesToRemoveFromProjectReferences)" Condition=" '%(_MSBuildProjectReferenceExistent.Identity)' == '..\IKVM.Runtime-ref\IKVM.Runtime-ref.csproj' ">
+            <Output TaskParameter="TargetOutputs" ItemName="_IkvmRuntimeDll" />
+        </MSBuild>
+        <PropertyGroup>
+            <IkvmRuntimeDll>@(_IkvmRuntimeDll)</IkvmRuntimeDll>
+        </PropertyGroup>
+    </Target>
+
+    <Target Name="ResolveJavaClassItems" DependsOnTargets="BuildJavaClasses;BuildRmiStubs">
         <ItemGroup>
-            <OpenJdkClassItems Include="$(OpenJdkClassDir)\**\*.class" />
+            <JavaClassItems Include="$(JavaClassOutputPath)\**\*.class" />
+            <JavaClassItems Include="$(RmiStubsOutputPath)\**\*.class" />
         </ItemGroup>
     </Target>
 
-    <Target Name="BuildOpenJdkAssembly" DependsOnTargets="GetIkvmcExe;ResolveOpenJdkClassItems;ResolveOpenJdkResourceItems">
-        <Message Text="OpenJdkClassItems: @(OpenJdkClassItems)" Importance="high" />
-        <Message Text="OpenJdkResourceItems: @(OpenJdkResourceItems->'%(Identity)=&gt;%(ResourcePath)')" Importance="high" />
+    <Target Name="_BuildOpenJdkAssembly" DependsOnTargets="GetIkvmcExe;GetIkvmRuntimeDll;ResolveJavaClassItems;ResolveJavaResourceItems;BuildResourcesZip;BuildRmiStubs">
+        <Message Text="JavaClassItems: @(JavaClassItems)" Importance="high" />
+        <Message Text="JavaResourceItems: @(JavaResourceItems->'%(Identity)=&gt;%(ResourcePath)')" Importance="high" />
+
+        <!-- this is wrong, determination of which version to use to build needs to be based on which platform we're running on -->
+        <PropertyGroup Condition="$(TargetFramework.StartsWith('net4'))">
+            <IkvmcExec>$(Ikvmc)</IkvmcExec>
+        </PropertyGroup>
+        <PropertyGroup Condition="$(TargetFramework.StartsWith('netstandard')) Or $(TargetFramework.StartsWith('netcore'))">
+            <IkvmcExec>dotnet exec $(Ikvmc)</IkvmcExec>
+        </PropertyGroup>
+
+        <Delete Files="$(IntermediateOutputPath)ikvmc.exclude.txt" />
+        <WriteLinesToFile File="$(IntermediateOutputPath)ikvmc.exclude.txt" Lines="@(OpenJdkExcludeRegex)" />
+
+        <ItemGroup>
+            <JavaResourceItemsWithJavaSep Include="@(JavaResourceItems)" ResourcePath="$([System.String]::Copy(%(ResourcePath)).Replace('\', '/'))" />
+            <IkvmcArgs Include="-runtime:$(IkvmRuntimeDll)" />
+            <IkvmcArgs Include="-remap:map.xml" />
+            <IkvmcArgs Include="-exclude:$(IntermediateOutputPath)ikvmc.exclude.txt" />
+            <IkvmcArgs Include="@(_ResolveAssemblyReferenceResolvedFiles->'-reference:%(Identity)')" />
+            <IkvmcArgs Include="@(JavaResourceItemsWithJavaSep->'-resource:%(ResourcePath)=%(Identity)')" />
+            <!--<IkvmcArgs Include="-recurse:$(ResourcesZipPath.Replace('\', '/'))/*" />-->
+            <IkvmcArgs Include="@(JavaClassItems)" />
+        </ItemGroup>
+
+        <Delete Files="$(IntermediateOutputPath)ikvmc.args.txt" />
+        <WriteLinesToFile File="$(IntermediateOutputPath)ikvmc.args.txt" Lines="@(IkvmcArgs)" />
+
+        <Message Text="$(IkvmcExec) -assembly:openjdk -version:0.0.0.0 -compressresources -opt:fields -strictfinalfieldsemantics -removeassertions -target:library -sharedclassloader -nowarn:110 -w4 -noparameterreflection -out:$(OpenJdkAssemblyPath) @$(IntermediateOutputPath)ikvmc.args.txt" Importance="high" />
+        <Exec Command="$(IkvmcExec) -assembly:openjdk -version:0.0.0.0 -compressresources -opt:fields -strictfinalfieldsemantics -removeassertions -target:library -sharedclassloader -nowarn:110 -w4 -noparameterreflection -out:$(OpenJdkAssemblyPath) @$(IntermediateOutputPath)ikvmc.args.txt" />
+
+        <ItemGroup>
+            <FileWrites Include="$(IntermediateOutputPath)ikvmc.args.txt" />
+            <FileWrites Include="$(IntermediateOutputPath)ikvmc.exclude.txt" />
+            <FileWrites Include="$(OpenJdkAssemblyPath)" />
+        </ItemGroup>
+    </Target>
+
+    <PropertyGroup>
+        <BuildOpenJdkAssemblyDependsOn>
+            GetIkvmcExe;
+            GetIkvmRuntimeDll;
+            ResolveJavaClassItems;
+            ResolveJavaResourceItems;
+            BuildResourcesZip;
+            BuildRmiStubs;
+            _BuildOpenJdkAssembly;
+            $(BuildOpenJdkAssemblyDependsOn);
+        </BuildOpenJdkAssemblyDependsOn>
+    </PropertyGroup>
+
+    <Target Name="BuildOpenJdkAssembly" DependsOnTargets="$(BuildOpenJdkAssemblyDependsOn)">
+
     </Target>
 
 </Project>

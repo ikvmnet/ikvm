@@ -1,4 +1,10 @@
 ﻿<Project>
+    <ItemDefinitionGroup>
+        <OpenJdkCompile>
+            <SourcePath>%(Identity)</SourcePath>
+        </OpenJdkCompile>
+    </ItemDefinitionGroup>
+    
     <ItemGroup>
         <OpenJdkCompile Include="$(OpenJdkDir)\build\linux-x86_64-normal-server-release\corba\gensrc\com\sun\corba\se\spi\activation\_ActivatorImplBase.java" />
         <OpenJdkCompile Include="$(OpenJdkDir)\build\linux-x86_64-normal-server-release\corba\gensrc\com\sun\corba\se\spi\activation\_ActivatorStub.java" />
@@ -15937,6 +15943,32 @@
     </ItemGroup>
 
     <ItemGroup>
+        <OpenJdkResource Include="$(OpenJdkDir)\build\linux-x86_64-normal-server-release\jdk\classes\java\lang\uniName.dat" ResourcePath="java\lang\uniName.dat" />
+        <OpenJdkResource Include="$(OpenJdkDir)\build\linux-x86_64-normal-server-release\jdk\classes\sun\net\idn\uidna.spp" ResourcePath="sun\net\idn\uidna.spp" />
+        <OpenJdkResource Include="$(OpenJdkDir)\jdk\src\share\classes\sun\reflect\misc\Trampoline.class" ResourcePath="sun\reflect\misc\Trampoline.class" />
+        <OpenJdkResource Include="$(OpenJdkDir)\jdk\src\share\classes\java\lang\invoke\MethodHandleImpl$BindCaller$T.class" ResourcePath="java\lang\invoke\MethodHandleImpl$BindCaller$T.class" />
+        <OpenJdkResource Include="$(OpenJdkDir)\build\linux-x86_64-normal-server-release\jdk\classes\com\sun\corba\se\impl\logging\LogStrings.properties" ResourcePath="com\sun\corba\se\impl\logging\LogStrings.properties" />
+        <OpenJdkResource Include="$(OpenJdkDir)\jdk\src\share\classes\sun\util\xml\META-INF\services\sun.util.spi.XmlPropertiesProvider" ResourcePath="META-INF\services\sun.util.spi.XmlPropertiesProvider" />
+        <OpenJdkResource Include="$(OpenJdkDir)\jdk\src\share\classes\sun\java2d\cmm\lcms\META-INF\services\sun.java2d.cmm.CMMServiceProvider" ResourcePath="META-INF\services\sun.java2d.cmm.CMMServiceProvider" />
+        <OpenJdkResource Include="$(OpenJdkDir)\build\linux-x86_64-normal-server-release\jdk\gensrc\sun\nio\cs\ext\sjis0213.dat" ResourcePath="sun\nio\cs\ext\sjis0213.dat" />
+        <OpenJdkResource Include="$(OpenJdkDir)\jdk\src\share\demo\nio\zipfs\src\META-INF\services\java.nio.file.spi.FileSystemProvider" ResourcePath="META-INF\services\java.nio.file.spi.FileSystemProvider" />
+        <OpenJdkResource Include="$(OpenJdkDir)\jdk\src\share\classes\sun\net\spi\nameservice\dns\META-INF\services\sun.net.spi.nameservice.NameServiceDescriptor" ResourcePath="META-INF\services\sun.net.spi.nameservice.NameServiceDescriptor" />
+        <OpenJdkResource Include="$(OpenJdkDir)\jaxws\src\share\jaf_classes\META-INF\mailcap.default" ResourcePath="META-INF\mailcap.default" />
+        <OpenJdkResource Include="$(OpenJdkDir)\jaxws\src\share\jaf_classes\META-INF\mimetypes.default" ResourcePath="META-INF\mimetypes.default" />
+        <OpenJdkResource Include="$(OpenJdkDir)\jdk\src\windows\classes\sun\print\services\javax.print.PrintServiceLookup" ResourcePath="META-INF\services\javax.print.PrintServiceLookup" />
+        <OpenJdkResource Include="$(OpenJdkDir)\jdk\src\windows\classes\sun\print\services\javax.print.StreamPrintServiceFactory" ResourcePath="META-INF\services\javax.print.StreamPrintServiceFactory" />
+        <OpenJdkResource Include="$(OpenJdkDir)\jdk\src\share\classes\com\sun\media\sound\services\javax.sound.midi.spi.MidiDeviceProvider" ResourcePath="META-INF\services\javax.sound.midi.spi.MidiDeviceProvider" />
+        <OpenJdkResource Include="$(OpenJdkDir)\jdk\src\share\classes\com\sun\media\sound\services\javax.sound.midi.spi.MidiFileReader" ResourcePath="META-INF\services\javax.sound.midi.spi.MidiFileReader" />
+        <OpenJdkResource Include="$(OpenJdkDir)\jdk\src\share\classes\com\sun\media\sound\services\javax.sound.midi.spi.MidiFileWriter" ResourcePath="META-INF\services\javax.sound.midi.spi.MidiFileWriter" />
+        <OpenJdkResource Include="$(OpenJdkDir)\jdk\src\share\classes\com\sun\media\sound\services\javax.sound.midi.spi.SoundbankReader" ResourcePath="META-INF\services\javax.sound.midi.spi.SoundbankReader" />
+        <OpenJdkResource Include="$(OpenJdkDir)\jdk\src\share\classes\com\sun\media\sound\services\javax.sound.sampled.spi.AudioFileReader" ResourcePath="META-INF\services\javax.sound.sampled.spi.AudioFileReader" />
+        <OpenJdkResource Include="$(OpenJdkDir)\jdk\src\share\classes\com\sun\media\sound\services\javax.sound.sampled.spi.AudioFileWriter" ResourcePath="META-INF\services\javax.sound.sampled.spi.AudioFileWriter" />
+        <OpenJdkResource Include="$(OpenJdkDir)\jdk\src\share\classes\com\sun\media\sound\services\javax.sound.sampled.spi.FormatConversionProvider" ResourcePath="META-INF\services\javax.sound.sampled.spi.FormatConversionProvider" />
+        <OpenJdkResource Include="$(OpenJdkDir)\jdk\src\share\classes\com\sun\media\sound\services\javax.sound.sampled.spi.MixerProvider" ResourcePath="META-INF\services\javax.sound.sampled.spi.MixerProvider" />
+        <OpenJdkResource Include="$(OpenJdkDir)\nashorn\src\META-INF\services\javax.script.ScriptEngineFactory" ResourcePath="META-INF\services\javax.script.ScriptEngineFactory" />
+    </ItemGroup>
+
+    <ItemGroup>
         <OpenJdkExcludeRegex Include="^java\.lang\.AutoCloseable$" />
         <OpenJdkExcludeRegex Include="^java\.lang\.Comparable$" />
         <OpenJdkExcludeRegex Include="^java\.lang\.Object$" />
@@ -15944,30 +15976,5 @@
         <OpenJdkExcludeRegex Include="^java\.lang\.Throwable$" />
         <OpenJdkExcludeRegex Include="^sun\.reflect\.misc\.Trampoline$" />
     </ItemGroup>
-
-    <ItemGroup>
-        <OpenJdkIncludeResource Include="$(OpenJdkDir)\build\linux-x86_64-normal-server-release\jdk\classes\java\lang\uniName.dat" ResourcePath="java\lang\uniName.dat" />
-        <OpenJdkIncludeResource Include="$(OpenJdkDir)\build\linux-x86_64-normal-server-release\jdk\classes\sun\net\idn\uidna.spp" ResourcePath="sun\net\idn\uidna.spp" />
-        <OpenJdkIncludeResource Include="$(OpenJdkDir)\jdk\src\share\classes\sun\reflect\misc\Trampoline.class" ResourcePath="sun\reflect\misc\Trampoline.class" />
-        <OpenJdkIncludeResource Include="$(OpenJdkDir)\jdk\src\share\classes\java\lang\invoke\MethodHandleImpl$BindCaller$T.class" ResourcePath="java\lang\invoke\MethodHandleImpl$BindCaller$T.class" />
-        <OpenJdkIncludeResource Include="$(OpenJdkDir)\build\linux-x86_64-normal-server-release\jdk\classes\com\sun\corba\se\impl\logging\LogStrings.properties" ResourcePath="com\sun\corba\se\impl\logging\LogStrings.properties" />
-        <OpenJdkIncludeResource Include="$(OpenJdkDir)\jdk\src\share\classes\sun\util\xml\META-INF\services\sun.util.spi.XmlPropertiesProvider" ResourcePath="META-INF\services\sun.util.spi.XmlPropertiesProvider" />
-        <OpenJdkIncludeResource Include="$(OpenJdkDir)\jdk\src\share\classes\sun\java2d\cmm\lcms\META-INF\services\sun.java2d.cmm.CMMServiceProvider" ResourcePath="META-INF\services\sun.java2d.cmm.CMMServiceProvider" />
-        <OpenJdkIncludeResource Include="$(OpenJdkDir)\build\linux-x86_64-normal-server-release\jdk\gensrc\sun\nio\cs\ext\sjis0213.dat" ResourcePath="sun\nio\cs\ext\sjis0213.dat" />
-        <OpenJdkIncludeResource Include="$(OpenJdkDir)\jdk\src\share\demo\nio\zipfs\src\META-INF\services\java.nio.file.spi.FileSystemProvider" ResourcePath="META-INF\services\java.nio.file.spi.FileSystemProvider" />
-        <OpenJdkIncludeResource Include="$(OpenJdkDir)\jdk\src\share\classes\sun\net\spi\nameservice\dns\META-INF\services\sun.net.spi.nameservice.NameServiceDescriptor" ResourcePath="META-INF\services\sun.net.spi.nameservice.NameServiceDescriptor" />
-        <OpenJdkIncludeResource Include="$(OpenJdkDir)\jaxws\src\share\jaf_classes\META-INF\mailcap.default" ResourcePath="META-INF\mailcap.default" />
-        <OpenJdkIncludeResource Include="$(OpenJdkDir)\jaxws\src\share\jaf_classes\META-INF\mimetypes.default" ResourcePath="META-INF\mimetypes.default" />
-        <OpenJdkIncludeResource Include="$(OpenJdkDir)\jdk\src\windows\classes\sun\print\services\javax.print.PrintServiceLookup" ResourcePath="META-INF\services\javax.print.PrintServiceLookup" />
-        <OpenJdkIncludeResource Include="$(OpenJdkDir)\jdk\src\windows\classes\sun\print\services\javax.print.StreamPrintServiceFactory" ResourcePath="META-INF\services\javax.print.StreamPrintServiceFactory" />
-        <OpenJdkIncludeResource Include="$(OpenJdkDir)\jdk\src\share\classes\com\sun\media\sound\services\javax.sound.midi.spi.MidiDeviceProvider" ResourcePath="META-INF\services\javax.sound.midi.spi.MidiDeviceProvider" />
-        <OpenJdkIncludeResource Include="$(OpenJdkDir)\jdk\src\share\classes\com\sun\media\sound\services\javax.sound.midi.spi.MidiFileReader" ResourcePath="META-INF\services\javax.sound.midi.spi.MidiFileReader" />
-        <OpenJdkIncludeResource Include="$(OpenJdkDir)\jdk\src\share\classes\com\sun\media\sound\services\javax.sound.midi.spi.MidiFileWriter" ResourcePath="META-INF\services\javax.sound.midi.spi.MidiFileWriter" />
-        <OpenJdkIncludeResource Include="$(OpenJdkDir)\jdk\src\share\classes\com\sun\media\sound\services\javax.sound.midi.spi.SoundbankReader" ResourcePath="META-INF\services\javax.sound.midi.spi.SoundbankReader" />
-        <OpenJdkIncludeResource Include="$(OpenJdkDir)\jdk\src\share\classes\com\sun\media\sound\services\javax.sound.sampled.spi.AudioFileReader" ResourcePath="META-INF\services\javax.sound.sampled.spi.AudioFileReader" />
-        <OpenJdkIncludeResource Include="$(OpenJdkDir)\jdk\src\share\classes\com\sun\media\sound\services\javax.sound.sampled.spi.AudioFileWriter" ResourcePath="META-INF\services\javax.sound.sampled.spi.AudioFileWriter" />
-        <OpenJdkIncludeResource Include="$(OpenJdkDir)\jdk\src\share\classes\com\sun\media\sound\services\javax.sound.sampled.spi.FormatConversionProvider" ResourcePath="META-INF\services\javax.sound.sampled.spi.FormatConversionProvider" />
-        <OpenJdkIncludeResource Include="$(OpenJdkDir)\jdk\src\share\classes\com\sun\media\sound\services\javax.sound.sampled.spi.MixerProvider" ResourcePath="META-INF\services\javax.sound.sampled.spi.MixerProvider" />
-        <OpenJdkIncludeResource Include="$(OpenJdkDir)\nashorn\src\META-INF\services\javax.script.ScriptEngineFactory" ResourcePath="META-INF\services\javax.script.ScriptEngineFactory" />
-    </ItemGroup>
+    
 </Project>

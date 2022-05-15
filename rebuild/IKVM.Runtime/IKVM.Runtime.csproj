@@ -24,12 +24,8 @@
     </ItemGroup>
 
     <ItemGroup>
-        <ProjectReference Include="..\IKVM.OpenJDK\IKVM.OpenJDK.csproj">
-            <ExcludeAssets>All</ExcludeAssets>
-        </ProjectReference>
-        <ProjectReference Include="..\IKVM.Runtime.JNI-sig\IKVM.Runtime.JNI-sig.csproj">
-            <ExcludeAssets>All</ExcludeAssets>
-        </ProjectReference>
+        <ProjectReference Include="..\IKVM.OpenJDK\IKVM.OpenJDK.csproj" />
+        <ProjectReference Include="..\IKVM.Runtime.JNI-ref\IKVM.Runtime.JNI-ref.csproj" />
     </ItemGroup>
 
 </Project>

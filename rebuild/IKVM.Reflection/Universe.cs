@@ -1014,7 +1014,10 @@ namespace IKVM.Reflection
 #if NETCOREAPP
             return Fusion.CompareAssemblyIdentityPure(assemblyIdentity1, unified1, assemblyIdentity2, unified2, out result);
 #else
-			return useNativeFusion
+            Console.WriteLine(assemblyIdentity1);
+            Console.WriteLine(assemblyIdentity2);
+
+            return useNativeFusion
 				? Fusion.CompareAssemblyIdentityNative(assemblyIdentity1, unified1, assemblyIdentity2, unified2, out result)
 				: Fusion.CompareAssemblyIdentityPure(assemblyIdentity1, unified1, assemblyIdentity2, unified2, out result);
 #endif
