@@ -32,4 +32,9 @@
         <AssemblyVersion Condition=" '$(AssemblyVersion)' == '' ">$(Version)</AssemblyVersion>
     </PropertyGroup>
 
+    <PropertyGroup Label="Debug Info">
+        <IncludeSymbols>true</IncludeSymbols>
+        <SymbolPackageFormat>snupkg</SymbolPackageFormat>
+    </PropertyGroup>
+
 </Project>
