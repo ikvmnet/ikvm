@@ -192,7 +192,9 @@
 
     <Target Name="BuildResourcesZip" DependsOnTargets="_BuildResourcesZip">
         <ItemGroup>
-            <EmbeddedResource Include="$(ResourcesZipPath)" />
+            <EmbeddedResource Include="$(ResourcesZipPath)">
+                <LogicalName>resources.zip</LogicalName>
+            </EmbeddedResource>
         </ItemGroup>
     </Target>
 
