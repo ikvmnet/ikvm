@@ -1,4 +1,6 @@
-﻿<Project Sdk="Microsoft.NET.Sdk">
+﻿<Project>
+    <Import Project="Sdk.props" Sdk="Microsoft.NET.Sdk" />
+    <Import Project="..\openjdk.props" />
 
     <PropertyGroup>
         <TargetFrameworks>net461</TargetFrameworks>
@@ -34,5 +36,33 @@
             <PrivateAssets>All</PrivateAssets>
         </ProjectReference>
     </ItemGroup>
+    
+    <Import Project="Sdk.targets" Sdk="Microsoft.NET.Sdk" />
+
+    <PropertyGroup>
+        <VfsZipTempPath>$(IntermediateOutputPath)vfs_zip</VfsZipTempPath>
+        <VfsZipPath>$(IntermediateOutputPath)vfs.zip</VfsZipPath>
+    </PropertyGroup>
+
+    <Target Name="_BuildVfsZip" BeforeTargets="Compile" Inputs="@(VfsZipIncludeFile)" Outputs="$(VfsZipPath)">
+        <Delete Files="$(VfsZipTempPath)\**\*" />
+        <RemoveDir Directories="$(VfsZipTempPath)" />
+        <MakeDir Directories="$(VfsZipTempPath)" />
+        <Copy SourceFiles="@(VfsZipIncludeFile)" DestinationFolder="$(VfsZipTempPath)\%(RecursiveDir)" />
+        <Delete Files="$(VfsZipPath)" />
+        <ZipDirectory SourceDirectory="$(VfsZipTempPath)" DestinationFile="$(VfsZipPath)" />
+        <ItemGroup>
+            <FileWrites Include="$(VfsZipTempPath)\**\*" />
+            <FileWrites Include="$(VfsZipPath)" />
+        </ItemGroup>
+    </Target>
+
+    <Target Name="BuildVfsZip" BeforeTargets="PrepareForBuild" DependsOnTargets="_BuildVfsZip">
+        <ItemGroup>
+            <EmbeddedResource Include="$(VfsZipPath)">
+                <LogicalName>vfs.zip</LogicalName>
+            </EmbeddedResource>
+        </ItemGroup>
+    </Target>
 
 </Project>

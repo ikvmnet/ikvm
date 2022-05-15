@@ -110,8 +110,6 @@
         <JavaResourceTemplateOutputPath>$(IntermediateOutputPath)res</JavaResourceTemplateOutputPath>
         <RefStubsOutputPath>$(IntermediateOutputPath)refstubs</RefStubsOutputPath>
         <RmiStubsOutputPath>$(IntermediateOutputPath)rmistubs</RmiStubsOutputPath>
-        <VfsZipTempPath>$(IntermediateOutputPath)vfs_zip</VfsZipTempPath>
-        <VfsZipPath>$(IntermediateOutputPath)vfs.zip</VfsZipPath>
         <ResourcesZipTempPath>$(IntermediateOutputPath)resources_zip</ResourcesZipTempPath>
         <ResourcesZipPath>$(IntermediateOutputPath)resources.zip</ResourcesZipPath>
         <JavaClassOutputPath>$(IntermediateOutputPath)classes</JavaClassOutputPath>
@@ -125,6 +123,7 @@
 
     <PropertyGroup>
         <BuildDependsOn>
+            BuildResourcesZip;
             BuildOpenJdkAssembly;
             $(BuildDependsOn);
         </BuildDependsOn>
@@ -170,6 +169,32 @@
             </Code>
         </Task>
     </UsingTask>
+
+    <PropertyGroup>
+        <CompileDependsOn>
+            BuildResourcesZip;
+            $(CompileDependsOn);
+        </CompileDependsOn>
+    </PropertyGroup>
+
+    <Target Name="_BuildResourcesZip" Inputs="@(ResourcesZipIncludeFile)" Outputs="$(ResourcesZipPath)">
+        <Delete Files="$(ResourcesZipTempPath)\**\*" />
+        <RemoveDir Directories="$(ResourcesZipTempPath)" />
+        <MakeDir Directories="$(ResourcesZipTempPath)" />
+        <Copy SourceFiles="@(ResourcesZipIncludeFile)" DestinationFolder="$(ResourcesZipTempPath)\%(RecursiveDir)" />
+        <Delete Files="$(ResourcesZipPath)" />
+        <ZipDirectory SourceDirectory="$(ResourcesZipTempPath)" DestinationFile="$(ResourcesZipPath)" />
+        <ItemGroup>
+            <FileWrites Include="$(ResourcesZipTempPath)\**\*" />
+            <FileWrites Include="$(ResourcesZipPath)" />
+        </ItemGroup>
+    </Target>
+
+    <Target Name="BuildResourcesZip" DependsOnTargets="_BuildResourcesZip">
+        <ItemGroup>
+            <EmbeddedResource Include="$(ResourcesZipPath)" />
+        </ItemGroup>
+    </Target>
 
     <Target Name="GetIkvmStubExe" DependsOnTargets="ResolveProjectReferences">
         <MSBuild Projects="@(_MSBuildProjectReferenceExistent)" Targets="GetTargetPath" BuildInParallel="$(BuildInParallel)" Properties="%(_MSBuildProjectReferenceExistent.SetConfiguration);%(_MSBuildProjectReferenceExistent.SetPlatform);%(_MSBuildProjectReferenceExistent.SetTargetFramework)" RemoveProperties="%(_MSBuildProjectReferenceExistent.GlobalPropertiesToRemove)$(_GlobalPropertiesToRemoveFromProjectReferences)" Condition=" '%(_MSBuildProjectReferenceExistent.Identity)' == '..\ikvmstub\ikvmstub.csproj' ">
@@ -217,32 +242,6 @@
             <RefStubJar Include="@(_RefStubAssembly->'%(JarPath)')" />
             <FileWrites Include="@(_RefStubAssembly->'%(JarPath).tmp')" />
             <FileWrites Include="@(_RefStubAssembly->'%(JarPath)')" />
-        </ItemGroup>
-    </Target>
-
-    <Target Name="BuildVfsZip" Inputs="@(VfsZipIncludeFile)" Outputs="$(VfsZipPath)">
-        <Delete Files="$(VfsZipTempPath)\**\*" />
-        <RemoveDir Directories="$(VfsZipTempPath)" />
-        <MakeDir Directories="$(VfsZipTempPath)" />
-        <Copy SourceFiles="@(VfsZipIncludeFile)" DestinationFolder="$(VfsZipTempPath)\%(RecursiveDir)" />
-        <Delete Files="$(VfsZipPath)" />
-        <ZipDirectory SourceDirectory="$(VfsZipTempPath)" DestinationFile="$(VfsZipPath)" />
-        <ItemGroup>
-            <FileWrites Include="$(VfsZipTempPath)\**\*" />
-            <FileWrites Include="$(VfsZipPath)" />
-        </ItemGroup>
-    </Target>
-
-    <Target Name="BuildResourcesZip" Inputs="@(ResourcesZipIncludeFile)" Outputs="$(ResourcesZipPath)">
-        <Delete Files="$(ResourcesZipTempPath)\**\*" />
-        <RemoveDir Directories="$(ResourcesZipTempPath)" />
-        <MakeDir Directories="$(ResourcesZipTempPath)" />
-        <Copy SourceFiles="@(ResourcesZipIncludeFile)" DestinationFolder="$(ResourcesZipTempPath)\%(RecursiveDir)" />
-        <Delete Files="$(ResourcesZipPath)" />
-        <ZipDirectory SourceDirectory="$(ResourcesZipTempPath)" DestinationFile="$(ResourcesZipPath)" />
-        <ItemGroup>
-            <FileWrites Include="$(ResourcesZipTempPath)\**\*" />
-            <FileWrites Include="$(ResourcesZipPath)" />
         </ItemGroup>
     </Target>
 
@@ -438,7 +437,7 @@
         </ItemGroup>
     </Target>
 
-    <Target Name="_BuildOpenJdkAssembly" DependsOnTargets="GetIkvmcExe;GetIkvmRuntimeDll;ResolveJavaClassItems;ResolveJavaResourceItems;BuildResourcesZip;BuildRmiStubs" Inputs="@(JavaClassItems);@(JavaResourceItems);$(IkvmRuntimeDll);$(Ikvmc);@(_ResolveAssemblyReferenceResolvedFiles);$(ResourcesZipPath);map.xml" Outputs="$(OpenJdkAssemblyPath)">
+    <Target Name="_BuildOpenJdkAssembly" DependsOnTargets="GetIkvmcExe;GetIkvmRuntimeDll;ResolveJavaClassItems;ResolveJavaResourceItems;BuildRmiStubs" Inputs="@(JavaClassItems);@(JavaResourceItems);$(IkvmRuntimeDll);$(Ikvmc);@(_ResolveAssemblyReferenceResolvedFiles);$(ResourcesZipPath);map.xml" Outputs="$(OpenJdkAssemblyPath)">
         <!-- this is wrong, determination of which version to use to build needs to be based on which platform we're running on -->
         <PropertyGroup Condition="$(TargetFramework.StartsWith('net4'))">
             <IkvmcExec>$(Ikvmc)</IkvmcExec>
@@ -496,7 +495,6 @@
             GetIkvmRuntimeDll;
             ResolveJavaClassItems;
             ResolveJavaResourceItems;
-            BuildResourcesZip;
             BuildRmiStubs;
             _BuildOpenJdkAssembly;
         </BuildOpenJdkAssemblyDependsOn>

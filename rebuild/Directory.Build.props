@@ -5,6 +5,7 @@
     </PropertyGroup>
 
     <PropertyGroup Label="Copyright Info">
+        <ProductName>IKVM</ProductName>
         <Authors>Jeroen Frijters</Authors>
         <Company></Company>
         <CurrentYear Condition=" '$(CurrentYear)' == '' ">$([System.DateTime]::UtcNow.Year.ToString())</CurrentYear>
