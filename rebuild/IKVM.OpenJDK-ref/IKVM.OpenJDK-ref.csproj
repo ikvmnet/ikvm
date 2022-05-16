@@ -7,11 +7,4 @@
         <NoWarn>$(NoWarn);169;649</NoWarn>
     </PropertyGroup>
 
-    <ItemGroup Condition=" '$(TargetFramework)' == 'netcoreapp3.1' ">
-      <PackageReference Include="System.Configuration.ConfigurationManager" Version="6.0.0" />
-      <PackageReference Include="System.Drawing.Common" Version="6.0.0" />
-      <PackageReference Include="System.Drawing.Primitives" Version="4.3.0" />
-      <PackageReference Include="System.Security.Permissions" Version="6.0.0" />
-    </ItemGroup>
-
 </Project>

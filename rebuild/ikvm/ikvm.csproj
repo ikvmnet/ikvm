@@ -7,7 +7,6 @@
         <AssemblyTitle>IKVM.NET Launcher</AssemblyTitle>
         <Description></Description>
         <AutoGenerateBindingRedirects>true</AutoGenerateBindingRedirects>
-        <PackAsTool>true</PackAsTool>
     </PropertyGroup>
 
     <ItemGroup>

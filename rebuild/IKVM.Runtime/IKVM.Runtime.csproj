@@ -16,16 +16,9 @@
         <InternalsVisibleTo Include="IKVM.OpenJDK" />
     </ItemGroup>
 
-    <ItemGroup Condition=" '$(TargetFramework)' == 'net461' ">
+    <ItemGroup>
         <Reference Include="System.Security" />
         <Reference Include="System.Configuration" />
-    </ItemGroup>
-
-    <ItemGroup Condition=" '$(TargetFramework)' == 'netcoreapp3.1' ">
-        <PackageReference Include="System.Security.Cryptography.Pkcs" Version="6.0.1" />
-        <PackageReference Include="Microsoft.Win32.Registry" Version="5.0.0" />
-        <PackageReference Include="System.Security.Permissions" Version="6.0.0" />
-        <PackageReference Include="System.Configuration.ConfigurationManager" Version="6.0.0" />
     </ItemGroup>
 
     <ItemGroup>
@@ -44,11 +37,11 @@
         <VfsZipPath>$(IntermediateOutputPath)vfs.zip</VfsZipPath>
     </PropertyGroup>
 
-    <Target Name="_BuildVfsZip" BeforeTargets="Compile" Inputs="@(VfsZipIncludeFile)" Outputs="$(VfsZipPath)">
+    <Target Name="_BuildVfsZip" BeforeTargets="Compile" Inputs="@(VfsZipItem)" Outputs="$(VfsZipPath)">
         <Delete Files="$(VfsZipTempPath)\**\*" />
         <RemoveDir Directories="$(VfsZipTempPath)" />
         <MakeDir Directories="$(VfsZipTempPath)" />
-        <Copy SourceFiles="@(VfsZipIncludeFile)" DestinationFolder="$(VfsZipTempPath)\%(RecursiveDir)" />
+        <Copy SourceFiles="@(VfsZipItem)" DestinationFolder="$(VfsZipTempPath)\%(RecursiveDir)" />
         <Delete Files="$(VfsZipPath)" />
         <ZipDirectory SourceDirectory="$(VfsZipTempPath)" DestinationFile="$(VfsZipPath)" />
         <ItemGroup>
