@@ -22,11 +22,5 @@
   
 */
 
-// type to collect Assembly attributes applicable to all core library assemblies
-interface commonAttributes {}
-
 // Roslyn requires that assemblies that contain types that define extension methods have the attribute on the assembly as well
 @cli.System.Runtime.CompilerServices.ExtensionAttribute.Annotation
-
-// type to collect Assembly attributes specific to IKVM.OpenJDK.Core
-interface coreAttributes {}

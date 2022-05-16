@@ -33,7 +33,10 @@
     </ItemGroup>
 
     <ItemGroup>
-        <PackageReference Include="ILRepack.Lib.MSBuild" Version="2.1.18" />
+        <PackageReference Include="ILRepack.Lib.MSBuild" Version="2.1.18">
+            <PrivateAssets>All</PrivateAssets>
+            <Private>False</Private>
+        </PackageReference>
     </ItemGroup>
 
     <ItemGroup Condition=" '$(TargetFramework)' == 'netcoreapp3.1' ">
@@ -114,11 +117,17 @@
         <ResourcesZipPath>$(IntermediateOutputPath)resources.zip</ResourcesZipPath>
         <JavaClassOutputPath>$(IntermediateOutputPath)classes</JavaClassOutputPath>
         <OpenJdkAssemblyPath>$(IntermediateOutputPath)openjdk.dll</OpenJdkAssemblyPath>
+        <OpenJdkDebugSymbolsPath>$(IntermediateOutputPath)openjdk.pdb</OpenJdkDebugSymbolsPath>
     </PropertyGroup>
 
     <ItemGroup>
-        <UpToDateCheckInput Include="$(OpenJdkAssemblyPath)" />
-        <CustomAdditionalCompileInputs Include="$(OpenJdkAssemblyPath)" />
+        <UpToDateCheckInput Include="@(JavaSource)" />
+        <UpToDateCheckInput Include="@(JavaSourceTemplate)" />
+        <UpToDateCheckInput Include="@(JavaResource)" />
+        <UpToDateCheckInput Include="@(JavaResourceTemplate)" />
+        <UpToDateCheckInput Include="@(OpenJdkCompile)" />
+        <UpToDateCheckInput Include="@(OpenJdkResource)" />
+        <UpToDateCheckInput Include="@(ResourcesZipIncludeFile)" />
     </ItemGroup>
 
     <PropertyGroup>
@@ -184,6 +193,7 @@
         <Copy SourceFiles="@(ResourcesZipIncludeFile)" DestinationFolder="$(ResourcesZipTempPath)\%(RecursiveDir)" />
         <Delete Files="$(ResourcesZipPath)" />
         <ZipDirectory SourceDirectory="$(ResourcesZipTempPath)" DestinationFile="$(ResourcesZipPath)" />
+        <RemoveDir Directories="$(ResourcesZipTempPath)" />
         <ItemGroup>
             <FileWrites Include="$(ResourcesZipTempPath)\**\*" />
             <FileWrites Include="$(ResourcesZipPath)" />
@@ -355,17 +365,18 @@
     </Target>
 
     <Target Name="_BuildJavaClasses" DependsOnTargets="ResolveJavaSourceItems;ResolveJavaClasspath" Inputs="@(JavaSourceItems)" Outputs="$(JavaClassOutputPath)\stamp">
-        <Delete Files="$(IntermediateOutputPath)sources.list" />
-        <WriteLinesToFile File="$(IntermediateOutputPath)sources.list" Lines="@(JavaSourceItems)" />
+        <Delete Files="$(IntermediateOutputPath)javac.args.txt" />
+        <WriteLinesToFile File="$(IntermediateOutputPath)javac.args.txt" Lines="@(JavaSourceItems)" />
         <Delete Files="$(JavaClassOutputPath)\**\*" />
         <RemoveDir Directories="$(JavaClassOutputPath)" />
         <MakeDir Directories="$(JavaClassOutputPath)" />
-        <Message Text="javac -J-Xmx1536M -g -nowarn -implicit:none -parameters -cp dummy -bootclasspath @(JavaClasspath) -d $(JavaClassOutputPath) @$(IntermediateOutputPath)sources.list" Importance="high" />
-        <Exec Command="javac -J-Xmx1536M -g -nowarn -implicit:none -parameters -cp dummy -bootclasspath @(JavaClasspath) -d $(JavaClassOutputPath) @$(IntermediateOutputPath)sources.list" />
+        <Message Text="javac -J-Xmx1536M -g -nowarn -implicit:none -parameters -cp dummy -bootclasspath @(JavaClasspath) -d $(JavaClassOutputPath) @$(IntermediateOutputPath)javac.args.txt" Importance="high" />
+        <Exec Command="javac -J-Xmx1536M -g -nowarn -implicit:none -parameters -cp dummy -bootclasspath @(JavaClasspath) -d $(JavaClassOutputPath) @$(IntermediateOutputPath)javac.args.txt" />
         <Touch Files="$(JavaClassOutputPath)\stamp" AlwaysCreate="true" ForceTouch="true" />
         <ItemGroup>
-            <FileWrites Include="$(IntermediateOutputPath)sources.list" />
+            <FileWrites Include="$(IntermediateOutputPath)javac.args.txt" />
             <FileWrites Include="$(JavaClassOutputPath)\**\*" />
+            <FileWrites Include="$(JavaClassOutputPath)\stamp" />
         </ItemGroup>
     </Target>
 
@@ -439,7 +450,7 @@
         </ItemGroup>
     </Target>
 
-    <Target Name="_BuildOpenJdkAssembly" DependsOnTargets="GetIkvmcExe;GetIkvmRuntimeDll;ResolveJavaClassItems;ResolveJavaResourceItems;BuildRmiStubs" Inputs="@(JavaClassItems);@(JavaResourceItems);$(IkvmRuntimeDll);$(Ikvmc);@(_ResolveAssemblyReferenceResolvedFiles);$(ResourcesZipPath);map.xml" Outputs="$(OpenJdkAssemblyPath)">
+    <Target Name="_BuildOpenJdkAssembly" DependsOnTargets="GetIkvmcExe;GetIkvmRuntimeDll;ResolveJavaClassItems;ResolveJavaResourceItems;BuildRmiStubs" Inputs="@(JavaClassItems);@(JavaResourceItems);$(IkvmRuntimeDll);$(Ikvmc);@(_ResolveAssemblyReferenceResolvedFiles);$(ResourcesZipPath);map.xml" Outputs="$(OpenJdkAssemblyPath);$(OpenJdkDebugSymbolsPath)">
         <!-- this is wrong, determination of which version to use to build needs to be based on which platform we're running on -->
         <PropertyGroup Condition="$(TargetFramework.StartsWith('net4'))">
             <IkvmcExec>$(Ikvmc)</IkvmcExec>
@@ -454,7 +465,7 @@
         <ItemGroup>
             <JavaResourceItemsWithJavaSep Include="@(JavaResourceItems)" ResourcePath="$([System.String]::Copy(%(ResourcePath)).Replace('\', '/'))" />
             <IkvmcArgs Include="-debug" Condition=" '$(DebugSymbols)' == 'true' " />
-            <IkvmcArgs Include="-assembly:IKVM.OpenJDK" />
+            <IkvmcArgs Include="-assembly:$(AssemblyName)" />
             <IkvmcArgs Include="-version:$(AssemblyVersion)" />
             <IkvmcArgs Include="-runtime:$(IkvmRuntimeDll)" />
             <IkvmcArgs Include="-keyfile:$(AssemblyOriginatorKeyFile)" Condition=" '$(SignAssembly)' == 'true' " />
@@ -471,22 +482,22 @@
             <IkvmcArgs Include="-exclude:$(IntermediateOutputPath)ikvmc.exclude.txt" />
             <IkvmcArgs Include="@(_ResolveAssemblyReferenceResolvedFiles->'-reference:%(Identity)')" />
             <IkvmcArgs Include="@(JavaResourceItemsWithJavaSep->'-resource:%(ResourcePath)=%(Identity)')" />
-            <!--<IkvmcArgs Include="-recurse:$(ResourcesZipPath)\**\*" />-->
             <IkvmcArgs Include="@(JavaClassItems)" />
         </ItemGroup>
 
         <Delete Files="$(IntermediateOutputPath)ikvmc.args.txt" />
         <WriteLinesToFile File="$(IntermediateOutputPath)ikvmc.args.txt" Lines="@(IkvmcArgs)" />
-        <Exec Command="$(IkvmcExec) -out:$(OpenJdkAssemblyPath).tmp @$(IntermediateOutputPath)ikvmc.args.txt" />
-        <Delete Files="$(OpenJdkAssemblyPath)" />
-        <Move SourceFiles="$(OpenJdkAssemblyPath).tmp" DestinationFiles="$(OpenJdkAssemblyPath)" OverwriteReadOnlyFiles="true" />
+        <MakeDir Directories="$(IntermediateOutputPath)\tmp" />
+        <Exec Command="$(IkvmcExec) -out:$(IntermediateOutputPath)\tmp\openjdk.dll @$(IntermediateOutputPath)ikvmc.args.txt" />
+        <Delete Files="$(OpenJdkAssemblyPath);$(OpenJdkDebugSymbolsPath)" />
+        <Move SourceFiles="$(IntermediateOutputPath)\tmp\openjdk.dll;$(IntermediateOutputPath)\tmp\openjdk.pdb" DestinationFiles="$(OpenJdkAssemblyPath);$(OpenJdkDebugSymbolsPath)" OverwriteReadOnlyFiles="true" />
+        <Delete Files="$(IntermediateOutputPath)\tmp\openjdk.dll;$(IntermediateOutputPath)\tmp\openjdk.pdb" />
 
         <ItemGroup>
-            <CustomAdditionalCompileInputs Include="$(OpenJdkAssemblyPath)" />
             <FileWrites Include="$(IntermediateOutputPath)ikvmc.args.txt" />
             <FileWrites Include="$(IntermediateOutputPath)ikvmc.exclude.txt" />
-            <FileWrites Include="$(OpenJdkAssemblyPath).tmp" />
-            <FileWrites Include="$(OpenJdkAssemblyPath)" />
+            <FileWrites Include="$(IntermediateOutputPath)\tmp\openjdk.dll;$(IntermediateOutputPath)\tmp\openjdk.pdb" />
+            <FileWrites Include="$(OpenJdkAssemblyPath);$(OpenJdkDebugSymbolsPath)" />
         </ItemGroup>
     </Target>
 
@@ -516,18 +527,22 @@
             <Output TaskParameter="Filtered" ItemName="ILMergeFilteredLibraryPaths" />
         </RemoveDuplicates>
 
-        <MakeDir Directories="$(IntermediateOutputPath)merge" />
-        <ILRepack DebugInfo="true" AllowDuplicateResources="false" InputAssemblies="$(IntermediateOutputPath)$(TargetName)$(TargetExt);$(OpenJdkAssemblyPath)" TargetKind="SameAsPrimaryAssembly" LibraryPath="@(ILMergeFilteredLibraryPaths)" OutputFile="$(IntermediateOutputPath)merge\$(TargetName)$(TargetExt)" KeyFile="$(AssemblyOriginatorKeyFile)" Verbose="true" Condition=" '$(SignAssembly)' == 'true' " />
-        <ILRepack DebugInfo="true" AllowDuplicateResources="false" InputAssemblies="$(IntermediateOutputPath)$(TargetName)$(TargetExt);$(OpenJdkAssemblyPath)" TargetKind="SameAsPrimaryAssembly" LibraryPath="@(ILMergeFilteredLibraryPaths)" OutputFile="$(IntermediateOutputPath)merge\$(TargetName)$(TargetExt)" Verbose="true" Condition=" '$(SignAssembly)' != 'true' " />
-        <Delete Files="$(IntermediateOutputPath)$(TargetName)$(TargetExt)" />
-        <Move SourceFiles="$(IntermediateOutputPath)merge\$(TargetName)$(TargetExt)" DestinationFiles="$(IntermediateOutputPath)$(TargetName)$(TargetExt)" OverwriteReadOnlyFiles="true" />
-        <Delete Files="$(IntermediateOutputPath)$(TargetName).pdb" />
-        <Move SourceFiles="$(IntermediateOutputPath)merge\$(TargetName).pdb" DestinationFiles="$(IntermediateOutputPath)$(TargetName).pdb" OverwriteReadOnlyFiles="true" />
+        <!-- move the intermediate assembly to a temporary path, it's absense will cause CoreCompile to run again if we fail -->
+        <MakeDir Directories="$(IntermediateOutputPath)merge\tmp" />
+        <Delete Files="$(IntermediateOutputPath)merge\tmp\$(TargetName)$(TargetExt);$(IntermediateOutputPath)merge\tmp\$(TargetName).pdb" />
+        <Move SourceFiles="$(IntermediateOutputPath)$(TargetName)$(TargetExt)" DestinationFiles="$(IntermediateOutputPath)merge\tmp\$(TargetName)$(TargetExt)" OverwriteReadOnlyFiles="true" />
+        <Move SourceFiles="$(IntermediateOutputPath)$(TargetName).pdb" DestinationFiles="$(IntermediateOutputPath)merge\tmp\$(TargetName).pdb" OverwriteReadOnlyFiles="true" />
 
-        <ItemGroup>
-            <FileWrites Include="$(IntermediateOutputPath)merge\$(TargetName)$(TargetExt)" />
-            <FileWrites Include="$(IntermediateOutputPath)merge\$(TargetName).pdb" />
-        </ItemGroup>
+        <!-- repack assemblies -->
+        <ILRepack DebugInfo="true" AllowDuplicateResources="false" CopyAttributes="true" AllowMultiple="true" InputAssemblies="$(IntermediateOutputPath)merge\tmp\$(TargetName)$(TargetExt);$(OpenJdkAssemblyPath)" TargetKind="SameAsPrimaryAssembly" LibraryPath="@(ILMergeFilteredLibraryPaths)" OutputFile="$(IntermediateOutputPath)merge\$(TargetName)$(TargetExt)" KeyFile="$(AssemblyOriginatorKeyFile)" Verbose="true" Condition=" '$(SignAssembly)' == 'true' " />
+        <ILRepack DebugInfo="true" AllowDuplicateResources="false" CopyAttributes="true" AllowMultiple="true" InputAssemblies="$(IntermediateOutputPath)merge\tmp\$(TargetName)$(TargetExt);$(OpenJdkAssemblyPath)" TargetKind="SameAsPrimaryAssembly" LibraryPath="@(ILMergeFilteredLibraryPaths)" OutputFile="$(IntermediateOutputPath)merge\$(TargetName)$(TargetExt)" Verbose="true" Condition=" '$(SignAssembly)' != 'true' " />
+        <Delete Files="$(IntermediateOutputPath)merge\tmp\$(TargetName)$(TargetExt);$(IntermediateOutputPath)merge\tmp\$(TargetName).pdb" />
+        <RemoveDir Directories="$(IntermediateOutputPath)merge\tmp" />
+
+        <!-- replace original intermediate assembly -->
+        <Move SourceFiles="$(IntermediateOutputPath)merge\$(TargetName)$(TargetExt)" DestinationFiles="$(IntermediateOutputPath)$(TargetName)$(TargetExt)" OverwriteReadOnlyFiles="true" />
+        <Move SourceFiles="$(IntermediateOutputPath)merge\$(TargetName).pdb" DestinationFiles="$(IntermediateOutputPath)$(TargetName).pdb" OverwriteReadOnlyFiles="true" />
+        <RemoveDir Directories="$(IntermediateOutputPath)merge" />
     </Target>
 
     <Target Name="ILRepack">
