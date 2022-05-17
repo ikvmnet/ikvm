@@ -1,0 +1,28 @@
+name: IKVM
+
+on:
+  push:
+    branches: [ openjdk_msbuild ]
+  pull_request:
+    branches: [ msbuild ]
+
+jobs:
+  build:
+
+    runs-on: ubuntu-latest
+
+    steps:
+    - uses: actions/checkout@v3
+    - name: Setup .NET
+      uses: actions/setup-dotnet@v2
+      with:
+        dotnet-version: 3.1.x
+    - name: Restore dependencies
+      run: dotnet restore
+      working-directory: ./rebuild
+    - name: Build
+      run: dotnet build --no-restore
+      working-directory: ./rebuild
+    - name: Test
+      run: dotnet test --no-build --verbosity normal
+      working-directory: ./rebuild

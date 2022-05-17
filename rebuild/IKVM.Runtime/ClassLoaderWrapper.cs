@@ -103,7 +103,7 @@ namespace IKVM.Internal
         private static readonly object wrapperLock = new object();
         private static readonly Dictionary<Type, TypeWrapper> globalTypeToTypeWrapper = new Dictionary<Type, TypeWrapper>();
 #if STATIC_COMPILER || STUB_GENERATOR
-		private static ClassLoaderWrapper bootstrapClassLoader;
+        private static ClassLoaderWrapper bootstrapClassLoader;
 #else
         private static AssemblyClassLoader bootstrapClassLoader;
 #endif
@@ -125,14 +125,14 @@ namespace IKVM.Internal
         private static readonly Dictionary<Type, string> remappedTypes = new Dictionary<Type, string>();
 
 #if STATIC_COMPILER || STUB_GENERATOR
-		// HACK this is used by the ahead-of-time compiler to overrule the bootstrap classloader
-		// when we're compiling the core class libraries and by ikvmstub with the -bootstrap option
-		internal static void SetBootstrapClassLoader(ClassLoaderWrapper bootstrapClassLoader)
-		{
-			Debug.Assert(ClassLoaderWrapper.bootstrapClassLoader == null);
+        // HACK this is used by the ahead-of-time compiler to overrule the bootstrap classloader
+        // when we're compiling the core class libraries and by ikvmstub with the -bootstrap option
+        internal static void SetBootstrapClassLoader(ClassLoaderWrapper bootstrapClassLoader)
+        {
+            Debug.Assert(ClassLoaderWrapper.bootstrapClassLoader == null);
 
-			ClassLoaderWrapper.bootstrapClassLoader = bootstrapClassLoader;
-		}
+            ClassLoaderWrapper.bootstrapClassLoader = bootstrapClassLoader;
+        }
 #endif
 
         static ClassLoaderWrapper()
@@ -166,7 +166,7 @@ namespace IKVM.Internal
                 else
                 {
 #if STATIC_COMPILER
-					throw new FatalCompilerErrorException(Message.CoreClassesMissing);
+                    throw new FatalCompilerErrorException(Message.CoreClassesMissing);
 #else
                     JVM.CriticalFailure("Failed to find core classes in core library", null);
 #endif
@@ -188,18 +188,18 @@ namespace IKVM.Internal
         }
 
 #if STATIC_COMPILER || STUB_GENERATOR
-		internal void SetRemappedType(Type type, TypeWrapper tw)
-		{
-			lock(types)
-			{
-				types.Add(tw.Name, tw);
-			}
-			lock(globalTypeToTypeWrapper)
-			{
-				globalTypeToTypeWrapper.Add(type, tw);
-			}
-			remappedTypes.Add(type, tw.Name);
-		}
+        internal void SetRemappedType(Type type, TypeWrapper tw)
+        {
+            lock (types)
+            {
+                types.Add(tw.Name, tw);
+            }
+            lock (globalTypeToTypeWrapper)
+            {
+                globalTypeToTypeWrapper.Add(type, tw);
+            }
+            remappedTypes.Add(type, tw.Name);
+        }
 #endif
 
         // return the TypeWrapper if it is already loaded, this exists for DynamicTypeWrapper.SetupGhosts
@@ -540,10 +540,10 @@ namespace IKVM.Internal
                     return RegisterInitiatingLoader(tw);
                 }
 #if STATIC_COMPILER
-				if (!(name.Length > 1 && name[0] == '[') && ((mode & LoadMode.WarnClassNotFound) != 0) || WarningLevelHigh)
-				{
-					IssueMessage(Message.ClassNotFound, name);
-				}
+                if (!(name.Length > 1 && name[0] == '[') && ((mode & LoadMode.WarnClassNotFound) != 0) || WarningLevelHigh)
+                {
+                    IssueMessage(Message.ClassNotFound, name);
+                }
 #else
                 if (!(name.Length > 1 && name[0] == '['))
                 {
@@ -889,7 +889,7 @@ namespace IKVM.Internal
                 Profiler.Leave("ClassLoader.loadClass");
             }
 #else
-			return null;
+            return null;
 #endif
         }
 
@@ -1019,7 +1019,7 @@ namespace IKVM.Internal
         }
 
 #if STATIC_COMPILER || STUB_GENERATOR
-		internal static ClassLoaderWrapper GetBootstrapClassLoader()
+        internal static ClassLoaderWrapper GetBootstrapClassLoader()
 #else
         internal static AssemblyClassLoader GetBootstrapClassLoader()
 #endif
@@ -1086,10 +1086,10 @@ namespace IKVM.Internal
         internal static TypeWrapper GetWrapperFromType(Type type)
         {
 #if STATIC_COMPILER
-			if (type.__ContainsMissingType)
-			{
-				return new UnloadableTypeWrapper(type);
-			}
+            if (type.__ContainsMissingType)
+            {
+                return new UnloadableTypeWrapper(type);
+            }
 #endif
             //Tracer.Info(Tracer.Runtime, "GetWrapperFromType: {0}", type.AssemblyQualifiedName);
 #if !STATIC_COMPILER
@@ -1102,10 +1102,12 @@ namespace IKVM.Internal
             {
                 globalTypeToTypeWrapper.TryGetValue(type, out wrapper);
             }
+
             if (wrapper != null)
             {
                 return wrapper;
             }
+
 #if STUB_GENERATOR
 			if(type.__IsMissing || type.__ContainsMissingType)
 			{
@@ -1247,7 +1249,7 @@ namespace IKVM.Internal
                     }
                 }
 #if STATIC_COMPILER || STUB_GENERATOR || FIRST_PASS
-				GenericClassLoaderWrapper newLoader = new GenericClassLoaderWrapper(key, null);
+                GenericClassLoaderWrapper newLoader = new GenericClassLoaderWrapper(key, null);
 #else
                 java.lang.ClassLoader javaClassLoader = new ikvm.runtime.GenericClassLoader();
                 GenericClassLoaderWrapper newLoader = new GenericClassLoaderWrapper(key, javaClassLoader);
@@ -1366,12 +1368,12 @@ namespace IKVM.Internal
         internal static TypeWrapper LoadClassCritical(string name)
         {
 #if STATIC_COMPILER
-			TypeWrapper wrapper = GetBootstrapClassLoader().LoadClassByDottedNameFast(name);
-			if (wrapper == null)
-			{
-				throw new FatalCompilerErrorException(Message.CriticalClassNotFound, name);
-			}
-			return wrapper;
+            TypeWrapper wrapper = GetBootstrapClassLoader().LoadClassByDottedNameFast(name);
+            if (wrapper == null)
+            {
+                throw new FatalCompilerErrorException(Message.CriticalClassNotFound, name);
+            }
+            return wrapper;
 #else
             try
             {
@@ -1462,12 +1464,12 @@ namespace IKVM.Internal
 #endif
 
 #if STATIC_COMPILER
-		internal virtual void IssueMessage(Message msgId, params string[] values)
-		{
-			// it's not ideal when we end up here (because it means we're emitting a warning that is not associated with a specific output target),
-			// but it happens when we're decoding something in a referenced assembly that either doesn't make sense or contains an unloadable type
-			StaticCompiler.IssueMessage(msgId, values);
-		}
+        internal virtual void IssueMessage(Message msgId, params string[] values)
+        {
+            // it's not ideal when we end up here (because it means we're emitting a warning that is not associated with a specific output target),
+            // but it happens when we're decoding something in a referenced assembly that either doesn't make sense or contains an unloadable type
+            StaticCompiler.IssueMessage(msgId, values);
+        }
 #endif
 
         internal void CheckPackageAccess(TypeWrapper tw, ProtectionDomain pd)
@@ -1486,20 +1488,20 @@ namespace IKVM.Internal
             get
             {
 #if STATIC_COMPILER
-				ClassFileParseOptions cfp = ClassFileParseOptions.LocalVariableTable;
-				if (EmitStackTraceInfo)
-				{
-					cfp |= ClassFileParseOptions.LineNumberTable;
-				}
-				if (bootstrapClassLoader is CompilerClassLoader)
-				{
-					cfp |= ClassFileParseOptions.TrustedAnnotations;
-				}
-				if (RemoveAsserts)
-				{
-					cfp |= ClassFileParseOptions.RemoveAssertions;
-				}
-				return cfp;
+                ClassFileParseOptions cfp = ClassFileParseOptions.LocalVariableTable;
+                if (EmitStackTraceInfo)
+                {
+                    cfp |= ClassFileParseOptions.LineNumberTable;
+                }
+                if (bootstrapClassLoader is CompilerClassLoader)
+                {
+                    cfp |= ClassFileParseOptions.TrustedAnnotations;
+                }
+                if (RemoveAsserts)
+                {
+                    cfp |= ClassFileParseOptions.RemoveAssertions;
+                }
+                return cfp;
 #else
                 ClassFileParseOptions cfp = ClassFileParseOptions.LineNumberTable;
                 if (EmitDebugInfo)
@@ -1521,15 +1523,15 @@ namespace IKVM.Internal
 #endif
 
 #if STATIC_COMPILER
-		internal virtual bool WarningLevelHigh
-		{
-			get { return false; }
-		}
+        internal virtual bool WarningLevelHigh
+        {
+            get { return false; }
+        }
 
-		internal virtual bool NoParameterReflection
-		{
-			get { return false; }
-		}
+        internal virtual bool NoParameterReflection
+        {
+            get { return false; }
+        }
 #endif
     }
 
