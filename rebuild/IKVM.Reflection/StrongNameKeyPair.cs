@@ -27,7 +27,7 @@ using System.Security.Cryptography;
 
 namespace IKVM.Reflection
 {
-	public sealed class StrongNameKeyPair
+    public sealed class StrongNameKeyPair
 	{
 		private readonly byte[] keyPairArray;
 		private readonly string keyPairContainer;
@@ -38,12 +38,12 @@ namespace IKVM.Reflection
 			{
 				throw new ArgumentNullException("keyPairContainer");
 			}
-#if !NETSTANDARD
+
 			if (Universe.MonoRuntime && Environment.OSVersion.Platform == PlatformID.Win32NT)
 			{
 				throw new NotSupportedException("IKVM.Reflection does not support key containers when running on Mono");
 			}
-#endif
+
 			this.keyPairContainer = keyPairContainer;
 		}
 
@@ -76,13 +76,12 @@ namespace IKVM.Reflection
 		{
 			get
 			{
-#if !NETSTANDARD
 				if (Universe.MonoRuntime)
 				{
 					// MONOBUG workaround for https://bugzilla.xamarin.com/show_bug.cgi?id=5299
 					return MonoGetPublicKey();
 				}
-#endif
+
 				using (RSACryptoServiceProvider rsa = CreateRSA())
 				{
 					var rsaParameters = rsa.ExportParameters(false);
@@ -238,7 +237,6 @@ namespace IKVM.Reflection
 			return rsaParameters;
 		}
 
-#if !NETSTANDARD
 		[System.Runtime.CompilerServices.MethodImpl(System.Runtime.CompilerServices.MethodImplOptions.NoInlining)]
 		private byte[] MonoGetPublicKey()
 		{
@@ -246,6 +244,6 @@ namespace IKVM.Reflection
 				? new System.Reflection.StrongNameKeyPair(keyPairArray).PublicKey
 				: new System.Reflection.StrongNameKeyPair(keyPairContainer).PublicKey;
 		}
-#endif
+
 	}
 }

@@ -22,17 +22,16 @@
   
 */
 using System;
-using System.Runtime.InteropServices;
 using System.Collections.Generic;
-#if !NO_SYMBOL_WRITER
-using System.Diagnostics.SymbolStore;
-#endif
 using System.Diagnostics;
+using System.Diagnostics.SymbolStore;
+using System.Runtime.InteropServices;
+
 using IKVM.Reflection.Writer;
 
 namespace IKVM.Reflection.Emit
 {
-	public struct Label
+    public struct Label
 	{
 		// 1-based here, to make sure that an uninitialized Label isn't valid
 		private readonly int index1;
@@ -185,14 +184,12 @@ namespace IKVM.Reflection.Emit
 
 		private struct SequencePoint
 		{
-#if !NO_SYMBOL_WRITER
 			internal ISymbolDocumentWriter document;
 			internal int offset;
 			internal int startLine;
 			internal int startColumn;
 			internal int endLine;
 			internal int endColumn;
-#endif
 		}
 
 		private sealed class Scope
@@ -407,12 +404,10 @@ namespace IKVM.Reflection.Emit
 
 		public void UsingNamespace(string usingNamespace)
 		{
-#if !NO_SYMBOL_WRITER
 			if (scope != null)
 			{
 				scope.namespaces.Add(usingNamespace);
 			}
-#endif
 		}
 
 		public LocalBuilder DeclareLocal(Type localType)
@@ -889,7 +884,6 @@ namespace IKVM.Reflection.Emit
 			}
 		}
 
-#if !NO_SYMBOL_WRITER
 		public void MarkSequencePoint(ISymbolDocumentWriter document, int startLine, int startColumn, int endLine, int endColumn)
 		{
 			SequencePoint sp = new SequencePoint();
@@ -901,7 +895,6 @@ namespace IKVM.Reflection.Emit
 			sp.endColumn = endColumn;
 			sequencePoints.Add(sp);
 		}
-#endif
 
 		public void ThrowException(Type excType)
 		{
@@ -937,7 +930,6 @@ namespace IKVM.Reflection.Emit
 				rva = WriteFatHeaderAndCode(bb, localVarSigTok, initLocals);
 			}
 
-#if !NO_SYMBOL_WRITER
 			if (moduleBuilder.symbolWriter != null)
 			{
 				if (sequencePoints.Count != 0)
@@ -965,7 +957,6 @@ namespace IKVM.Reflection.Emit
 
 				WriteScope(scope, localVarSigTok);
 			}
-#endif
 			return rva;
 		}
 
@@ -1122,7 +1113,6 @@ namespace IKVM.Reflection.Emit
 			}
 		}
 
-#if !NO_SYMBOL_WRITER
 		private void WriteScope(Scope scope, int localVarSigTok)
 		{
 			moduleBuilder.symbolWriter.OpenScope(scope.startOffset);
@@ -1150,6 +1140,5 @@ namespace IKVM.Reflection.Emit
 			}
 			moduleBuilder.symbolWriter.CloseScope(scope.endOffset);
 		}
-#endif
 	}
 }

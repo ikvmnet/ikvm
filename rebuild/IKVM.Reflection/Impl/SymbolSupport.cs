@@ -22,82 +22,61 @@
   
 */
 using System;
-using System.Runtime.InteropServices;
-#if !NO_SYMBOL_WRITER
 using System.Diagnostics.SymbolStore;
-#endif
+using System.Runtime.InteropServices;
+
 using IKVM.Reflection.Emit;
 
 namespace IKVM.Reflection.Impl
 {
-	[StructLayout(LayoutKind.Sequential)]
-	struct IMAGE_DEBUG_DIRECTORY
-	{
-		public uint Characteristics;
-		public uint TimeDateStamp;
-		public ushort MajorVersion;
-		public ushort MinorVersion;
-		public uint Type;
-		public uint SizeOfData;
-		public uint AddressOfRawData;
-		public uint PointerToRawData;
-	}
+    [StructLayout(LayoutKind.Sequential)]
+    struct IMAGE_DEBUG_DIRECTORY
+    {
+        public uint Characteristics;
+        public uint TimeDateStamp;
+        public ushort MajorVersion;
+        public ushort MinorVersion;
+        public uint Type;
+        public uint SizeOfData;
+        public uint AddressOfRawData;
+        public uint PointerToRawData;
+    }
 
-#if NO_SYMBOL_WRITER
-	struct SymbolToken
-	{
-		internal SymbolToken(int value) { }
-	}
+    interface ISymbolWriterImpl : ISymbolWriter
+    {
+        byte[] GetDebugInfo(ref IMAGE_DEBUG_DIRECTORY idd);
+        void RemapToken(int oldToken, int newToken);
+        void DefineLocalVariable2(string name, FieldAttributes attributes, int signature, SymAddressKind addrKind, int addr1, int addr2, int addr3, int startOffset, int endOffset);
+        void OpenMethod(SymbolToken symbolToken, MethodBase mb);
+        bool IsDeterministic { get; }
+    }
 
-	interface ISymbolWriterImpl
-	{
-		byte[] GetDebugInfo(ref IMAGE_DEBUG_DIRECTORY idd);
-		void RemapToken(int oldToken, int newToken);
-		void DefineLocalVariable2(string name, FieldAttributes attributes, int signature, int addrKind, int addr1, int addr2, int addr3, int startOffset, int endOffset);
-		void OpenMethod(SymbolToken symbolToken, MethodBase mb);
-		bool IsDeterministic { get; }
-	}
-#else
-	interface ISymbolWriterImpl : ISymbolWriter
-	{
-		byte[] GetDebugInfo(ref IMAGE_DEBUG_DIRECTORY idd);
-		void RemapToken(int oldToken, int newToken);
-		void DefineLocalVariable2(string name, FieldAttributes attributes, int signature, SymAddressKind addrKind, int addr1, int addr2, int addr3, int startOffset, int endOffset);
-		void OpenMethod(SymbolToken symbolToken, MethodBase mb);
-		bool IsDeterministic { get; }
-	}
-#endif
-
-	static class SymbolSupport
-	{
-		internal static ISymbolWriterImpl CreateSymbolWriterFor(ModuleBuilder moduleBuilder)
-		{
-#if NO_SYMBOL_WRITER
-			throw new NotSupportedException("IKVM.Reflection compiled with NO_SYMBOL_WRITER does not support writing debugging symbols.");
-#else
-			if (Universe.MonoRuntime)
-			{
+    static class SymbolSupport
+    {
+        internal static ISymbolWriterImpl CreateSymbolWriterFor(ModuleBuilder moduleBuilder)
+        {
+            if (Universe.MonoRuntime)
+            {
 #if MONO
 				return new MdbWriter(moduleBuilder);
 #else
-				throw new NotSupportedException("IKVM.Reflection must be compiled with MONO defined to support writing Mono debugging symbols.");
+                throw new NotSupportedException("IKVM.Reflection must be compiled with MONO defined to support writing Mono debugging symbols.");
 #endif
-			}
-			else
-			{
-				return new PdbWriter(moduleBuilder);
-			}
-#endif
-		}
+            }
+            else
+            {
+                return new PdbWriter(moduleBuilder);
+            }
+        }
 
-		internal static byte[] GetDebugInfo(ISymbolWriterImpl writer, ref IMAGE_DEBUG_DIRECTORY idd)
-		{
-			return writer.GetDebugInfo(ref idd);
-		}
+        internal static byte[] GetDebugInfo(ISymbolWriterImpl writer, ref IMAGE_DEBUG_DIRECTORY idd)
+        {
+            return writer.GetDebugInfo(ref idd);
+        }
 
-		internal static void RemapToken(ISymbolWriterImpl writer, int oldToken, int newToken)
-		{
-			writer.RemapToken(oldToken, newToken);
-		}
-	}
+        internal static void RemapToken(ISymbolWriterImpl writer, int oldToken, int newToken)
+        {
+            writer.RemapToken(oldToken, newToken);
+        }
+    }
 }

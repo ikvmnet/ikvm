@@ -893,11 +893,7 @@ namespace IKVM.Reflection.Reader
 				{
 					return field;
 				}
-#if NETSTANDARD
-				throw new MissingFieldException(org.ToString() + "." + name);
-#else
 				throw new MissingFieldException(org.ToString(), name);
-#endif
 			}
 			else
 			{
@@ -916,11 +912,7 @@ namespace IKVM.Reflection.Reader
 				{
 					return method;
 				}
-#if NETSTANDARD
-				throw new MissingMethodException(org.ToString() + "." + name);
-#else
 				throw new MissingMethodException(org.ToString(), name);
-#endif
 			}
 		}
 

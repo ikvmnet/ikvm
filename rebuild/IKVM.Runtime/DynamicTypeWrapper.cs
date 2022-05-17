@@ -5717,7 +5717,7 @@ namespace IKVM.Internal
 
 			private static class BakedTypeCleanupHack
 			{
-#if NET40_OR_GREATER || NETSTANDARD || NETCOREAPP || STATIC_COMPILER
+#if NET40_OR_GREATER || NETCOREAPP || STATIC_COMPILER
 				internal static void Process(DynamicTypeWrapper wrapper) { }
 #elif NET20_OR_GREATER
 				private static readonly FieldInfo m_methodBuilder = typeof(ConstructorBuilder).GetField("m_methodBuilder", BindingFlags.Instance | BindingFlags.NonPublic);

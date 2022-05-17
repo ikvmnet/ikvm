@@ -23,22 +23,29 @@
 */
 using System;
 using System.Collections.Generic;
+using System.Diagnostics;
+using System.Security;
+using System.Security.Permissions;
+
+using IKVM.Attributes;
+
 #if STATIC_COMPILER || STUB_GENERATOR
 using IKVM.Reflection;
 using IKVM.Reflection.Emit;
+
 using Type = IKVM.Reflection.Type;
 #else
 using System.Reflection;
 using System.Reflection.Emit;
 #endif
-using System.Diagnostics;
-using System.Security;
-using System.Security.Permissions;
-using IKVM.Attributes;
+
+#if STATIC_COMPILER
+using ikvmc;
+#endif
 
 namespace IKVM.Internal
 {
-	sealed class DotNetTypeWrapper : TypeWrapper
+    sealed class DotNetTypeWrapper : TypeWrapper
 	{
 		private const string NamePrefix = "cli.";
 		internal const string DelegateInterfaceSuffix = "$Method";

@@ -1,7 +1,7 @@
 ﻿<Project Sdk="Microsoft.NET.Sdk">
 
     <PropertyGroup>
-        <TargetFrameworks>net461</TargetFrameworks>
+        <TargetFrameworks>net461;netcoreapp3.1</TargetFrameworks>
         <AssemblyName>IKVM.Reflection</AssemblyName>
         <AssemblyTitle>IKVM.NET Reflection Library</AssemblyTitle>
         <Description>Alternative implementation of System.Reflection[.Emit]</Description>
@@ -9,8 +9,16 @@
         <NoWarn>$(NoWarn);169;649</NoWarn>
     </PropertyGroup>
 
-    <ItemGroup>
+    <ItemGroup Condition=" '$(TargetFramework)' == 'net461' ">
         <Reference Include="System.Security" />
+    </ItemGroup>
+
+    <ItemGroup Condition=" '$(TargetFramework)' == 'netcoreapp3.1' ">
+        <PackageReference Include="System.Security.Cryptography.Pkcs" Version="6.0.1" />
+    </ItemGroup>
+
+    <ItemGroup>
+        <PackageReference Include="System.Runtime.InteropServices.RuntimeInformation" Version="4.3.0" />
     </ItemGroup>
 
 </Project>

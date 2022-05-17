@@ -3,7 +3,7 @@
     <Import Project="..\openjdk.props" />
 
     <PropertyGroup>
-        <TargetFrameworks>net461</TargetFrameworks>
+        <TargetFrameworks>net461;netcoreapp3.1</TargetFrameworks>
         <AssemblyName>IKVM.Runtime</AssemblyName>
         <AssemblyTitle>IKVM.NET Runtime</AssemblyTitle>
         <Description>JVM for Mono and .NET</Description>
@@ -16,9 +16,14 @@
         <InternalsVisibleTo Include="IKVM.OpenJDK" />
     </ItemGroup>
 
-    <ItemGroup>
+    <ItemGroup Condition=" '$(TargetFramework)' == 'net461' ">
         <Reference Include="System.Security" />
-        <Reference Include="System.Configuration" />
+    </ItemGroup>
+
+    <ItemGroup Condition=" '$(TargetFramework)' == 'netcoreapp3.1' ">
+        <PackageReference Include="Microsoft.Win32.Registry" Version="5.0.0" />
+        <PackageReference Include="System.Configuration.ConfigurationManager" Version="6.0.0" />
+        <PackageReference Include="System.Security.Permissions" Version="6.0.0" />
     </ItemGroup>
 
     <ItemGroup>

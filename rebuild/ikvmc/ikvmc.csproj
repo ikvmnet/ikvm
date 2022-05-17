@@ -3,7 +3,7 @@
     <PropertyGroup>
         <PackageId>dotnet-ikvmc</PackageId>
         <OutputType>Exe</OutputType>
-        <TargetFrameworks>net461</TargetFrameworks>
+        <TargetFrameworks>net461;netcoreapp3.1</TargetFrameworks>
         <AssemblyTitle>IKVM.NET Compiler</AssemblyTitle>
         <Description>JVM for Mono and .NET</Description>
         <DefineConstants>$(DefineConstants);STATIC_COMPILER;EMITTERS</DefineConstants>
@@ -21,6 +21,10 @@
 
     <ItemGroup>
         <PackageReference Include="SharpZipLib" Version="1.3.3" />
+    </ItemGroup>
+
+    <ItemGroup Condition=" '$(TargetFramework)' == 'netcoreapp3.1' ">
+        <PackageReference Include="System.Configuration.ConfigurationManager" Version="6.0.0" />
     </ItemGroup>
 
     <ItemGroup>

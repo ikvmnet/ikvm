@@ -27,14 +27,10 @@ using System.Runtime.InteropServices;
 
 namespace IKVM.Reflection
 {
-#if !NETSTANDARD
 	[Serializable]
-#endif
 	public sealed class MissingAssemblyException : InvalidOperationException
 	{
-#if !NETSTANDARD
 		[NonSerialized]
-#endif
 		private readonly MissingAssembly assembly;
 
 		internal MissingAssemblyException(MissingAssembly assembly)
@@ -43,12 +39,10 @@ namespace IKVM.Reflection
 			this.assembly = assembly;
 		}
 
-#if !NETSTANDARD
 		private MissingAssemblyException(System.Runtime.Serialization.SerializationInfo info, System.Runtime.Serialization.StreamingContext context)
 			: base(info, context)
 		{
 		}
-#endif
 
 		public Assembly Assembly
 		{
@@ -56,14 +50,10 @@ namespace IKVM.Reflection
 		}
 	}
 
-#if !NETSTANDARD
 	[Serializable]
-#endif
 	public sealed class MissingModuleException : InvalidOperationException
 	{
-#if !NETSTANDARD
 		[NonSerialized]
-#endif
 		private readonly MissingModule module;
 
 		internal MissingModuleException(MissingModule module)
@@ -72,12 +62,10 @@ namespace IKVM.Reflection
 			this.module = module;
 		}
 
-#if !NETSTANDARD
 		private MissingModuleException(System.Runtime.Serialization.SerializationInfo info, System.Runtime.Serialization.StreamingContext context)
 			: base(info, context)
 		{
 		}
-#endif
 
 		public Module Module
 		{
@@ -85,14 +73,10 @@ namespace IKVM.Reflection
 		}
 	}
 
-#if !NETSTANDARD
 	[Serializable]
-#endif
 	public sealed class MissingMemberException : InvalidOperationException
 	{
-#if !NETSTANDARD
 		[NonSerialized]
-#endif
 		private readonly MemberInfo member;
 
 		internal MissingMemberException(MemberInfo member)
@@ -101,12 +85,10 @@ namespace IKVM.Reflection
 			this.member = member;
 		}
 
-#if !NETSTANDARD
 		private MissingMemberException(System.Runtime.Serialization.SerializationInfo info, System.Runtime.Serialization.StreamingContext context)
 			: base(info, context)
 		{
 		}
-#endif
 
 		public MemberInfo MemberInfo
 		{
@@ -138,7 +120,6 @@ namespace IKVM.Reflection
 				method.signature.GenericParameterCount);
 		}
 
-#if !NETSTANDARD
 		[Obsolete("Please use SetSignature(Type, CustomModifiers, Type[], CustomModifiers[]) instead.")]
 		public void SetSignature(Type returnType, Type[] returnTypeRequiredCustomModifiers, Type[] returnTypeOptionalCustomModifiers, Type[] parameterTypes, Type[][] parameterTypeRequiredCustomModifiers, Type[][] parameterTypeOptionalCustomModifiers)
 		{
@@ -149,7 +130,6 @@ namespace IKVM.Reflection
 				method.signature.CallingConvention,
 				method.signature.GenericParameterCount);
 		}
-#endif
 
 		public MethodInfo Finish()
 		{

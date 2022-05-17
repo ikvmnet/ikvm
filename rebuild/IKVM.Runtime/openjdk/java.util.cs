@@ -27,7 +27,7 @@ static class Java_java_util_TimeZone
 {
 	private static string GetCurrentTimeZoneID()
 	{
-#if NET40_OR_GREATER || NETCOREAPP || NETSTANDARD
+#if NET40_OR_GREATER || NETCOREAPP
 		return TimeZoneInfo.Local.Id;
 #else
 		// we don't want a static dependency on System.Core (to be able to run on .NET 2.0)

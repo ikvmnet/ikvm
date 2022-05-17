@@ -24,6 +24,7 @@
 using System;
 using System.Collections.Generic;
 using System.IO;
+using System.Runtime.InteropServices;
 using System.Security;
 using System.Text;
 
@@ -141,9 +142,7 @@ namespace IKVM.Reflection
 
     public sealed class Universe : IDisposable
     {
-#if !NETCOREAPP
-		public static readonly string CoreLibName = "mscorlib";
-#else
+#if NETCOREAPP3_1
         public static readonly string CoreLibName = "netstandard";
 
         public static string ReferenceAssembliesDirectory
@@ -176,9 +175,12 @@ namespace IKVM.Reflection
             }
             return dir;
         }
+#elif NETFRAMEWORK || MONO
+		public static readonly string CoreLibName = "mscorlib";
 #endif
 
         internal static readonly bool MonoRuntime = System.Type.GetType("Mono.Runtime") != null;
+        internal static readonly bool CoreRuntime = Environment.Version.Major >= 5 || RuntimeInformation.FrameworkDescription.StartsWith(".NET Core", StringComparison.OrdinalIgnoreCase);
         private readonly Dictionary<Type, Type> canonicalizedTypes = new Dictionary<Type, Type>();
         private readonly List<AssemblyReader> assemblies = new List<AssemblyReader>();
         private readonly List<AssemblyBuilder> dynamicAssemblies = new List<AssemblyBuilder>();
@@ -187,9 +189,7 @@ namespace IKVM.Reflection
         private Dictionary<ScopedTypeName, Type> missingTypes;
         private bool resolveMissingMembers;
         private readonly bool enableFunctionPointers;
-#if !NETCOREAPP
-		private readonly bool useNativeFusion;
-#endif
+        private readonly bool useNativeFusion;
         private readonly bool returnPseudoCustomAttributes;
         private readonly bool automaticallyProvideDefaultConstructor;
         private readonly UniverseOptions options;
@@ -255,29 +255,23 @@ namespace IKVM.Reflection
         {
             this.options = options;
             enableFunctionPointers = (options & UniverseOptions.EnableFunctionPointers) != 0;
-#if !NETCOREAPP
-			useNativeFusion = (options & UniverseOptions.DisableFusion) == 0 && GetUseNativeFusion();
-#endif
+            useNativeFusion = (options & UniverseOptions.DisableFusion) == 0 && GetUseNativeFusion();
             returnPseudoCustomAttributes = (options & UniverseOptions.DisablePseudoCustomAttributeRetrieval) == 0;
             automaticallyProvideDefaultConstructor = (options & UniverseOptions.DontProvideAutomaticDefaultConstructor) == 0;
             resolveMissingMembers = (options & UniverseOptions.ResolveMissingMembers) != 0;
         }
 
-#if !NETCOREAPP
-		private static bool GetUseNativeFusion()
-		{
-			try
-			{
-				return Environment.OSVersion.Platform == PlatformID.Win32NT
-					&& !MonoRuntime
-					&& Environment.GetEnvironmentVariable("IKVM_DISABLE_FUSION") == null;
-			}
-			catch (System.Security.SecurityException)
-			{
-				return false;
-			}
-		}
-#endif
+        private static bool GetUseNativeFusion()
+        {
+            try
+            {
+                return Environment.OSVersion.Platform == PlatformID.Win32NT && !MonoRuntime && !CoreRuntime && Environment.GetEnvironmentVariable("IKVM_DISABLE_FUSION") == null;
+            }
+            catch (System.Security.SecurityException)
+            {
+                return false;
+            }
+        }
 
         internal Assembly Mscorlib
         {
@@ -652,17 +646,6 @@ namespace IKVM.Reflection
 
         private Assembly Import(System.Reflection.Assembly asm)
         {
-#if NETCOREAPP
-            if (resolvers.Count == 0)
-            {
-                Assembly result = GetLoadedAssembly(asm.FullName);
-                if (result != null)
-                {
-                    return result;
-                }
-                return LoadFile(asm.ManifestModule.FullyQualifiedName);
-            }
-#endif
             return Load(asm.FullName);
         }
 
@@ -844,7 +827,7 @@ namespace IKVM.Reflection
                 return asm;
             }
 
-#if NETCOREAPP
+#if NETCOREAPP3_1
             string filepath = Path.Combine(ReferenceAssembliesDirectory, GetSimpleAssemblyName(refname) + ".dll");
             if (File.Exists(filepath))
             {
@@ -1008,19 +991,11 @@ namespace IKVM.Reflection
             return array;
         }
 
-        // this is equivalent to the Fusion CompareAssemblyIdentity API
         public bool CompareAssemblyIdentity(string assemblyIdentity1, bool unified1, string assemblyIdentity2, bool unified2, out AssemblyComparisonResult result)
         {
-#if NETCOREAPP
-            return Fusion.CompareAssemblyIdentityPure(assemblyIdentity1, unified1, assemblyIdentity2, unified2, out result);
-#else
-            Console.WriteLine(assemblyIdentity1);
-            Console.WriteLine(assemblyIdentity2);
-
             return useNativeFusion
-				? Fusion.CompareAssemblyIdentityNative(assemblyIdentity1, unified1, assemblyIdentity2, unified2, out result)
-				: Fusion.CompareAssemblyIdentityPure(assemblyIdentity1, unified1, assemblyIdentity2, unified2, out result);
-#endif
+                ? Fusion.CompareAssemblyIdentityNative(assemblyIdentity1, unified1, assemblyIdentity2, unified2, out result)
+                : Fusion.CompareAssemblyIdentityPure(assemblyIdentity1, unified1, assemblyIdentity2, unified2, out result);
         }
 
         public AssemblyBuilder DefineDynamicAssembly(AssemblyName name, AssemblyBuilderAccess access)
@@ -1038,23 +1013,23 @@ namespace IKVM.Reflection
             return new AssemblyBuilder(this, name, dir, null);
         }
 
-		[Obsolete]
-		public AssemblyBuilder DefineDynamicAssembly(AssemblyName name, AssemblyBuilderAccess access, string dir, PermissionSet requiredPermissions, PermissionSet optionalPermissions, PermissionSet refusedPermissions)
-		{
-			AssemblyBuilder ab = new AssemblyBuilder(this, name, dir, null);
-			AddLegacyPermissionSet(ab, requiredPermissions, System.Security.Permissions.SecurityAction.RequestMinimum);
-			AddLegacyPermissionSet(ab, optionalPermissions, System.Security.Permissions.SecurityAction.RequestOptional);
-			AddLegacyPermissionSet(ab, refusedPermissions, System.Security.Permissions.SecurityAction.RequestRefuse);
-			return ab;
-		}
+        [Obsolete]
+        public AssemblyBuilder DefineDynamicAssembly(AssemblyName name, AssemblyBuilderAccess access, string dir, PermissionSet requiredPermissions, PermissionSet optionalPermissions, PermissionSet refusedPermissions)
+        {
+            AssemblyBuilder ab = new AssemblyBuilder(this, name, dir, null);
+            AddLegacyPermissionSet(ab, requiredPermissions, System.Security.Permissions.SecurityAction.RequestMinimum);
+            AddLegacyPermissionSet(ab, optionalPermissions, System.Security.Permissions.SecurityAction.RequestOptional);
+            AddLegacyPermissionSet(ab, refusedPermissions, System.Security.Permissions.SecurityAction.RequestRefuse);
+            return ab;
+        }
 
-		private static void AddLegacyPermissionSet(AssemblyBuilder ab, PermissionSet permissionSet, System.Security.Permissions.SecurityAction action)
-		{
-			if (permissionSet != null)
-			{
-				ab.__AddDeclarativeSecurity(CustomAttributeBuilder.__FromBlob(CustomAttributeBuilder.LegacyPermissionSet, (int)action, Encoding.Unicode.GetBytes(permissionSet.ToXml().ToString())));
-			}
-		}
+        private static void AddLegacyPermissionSet(AssemblyBuilder ab, PermissionSet permissionSet, System.Security.Permissions.SecurityAction action)
+        {
+            if (permissionSet != null)
+            {
+                ab.__AddDeclarativeSecurity(CustomAttributeBuilder.__FromBlob(CustomAttributeBuilder.LegacyPermissionSet, (int)action, Encoding.Unicode.GetBytes(permissionSet.ToXml().ToString())));
+            }
+        }
 
         internal void RegisterDynamicAssembly(AssemblyBuilder asm)
         {
@@ -1106,11 +1081,11 @@ namespace IKVM.Reflection
             return asm;
         }
 
-		[Obsolete("Please set UniverseOptions.ResolveMissingMembers instead.")]
-		public void EnableMissingMemberResolution()
-		{
-			resolveMissingMembers = true;
-		}
+        [Obsolete("Please set UniverseOptions.ResolveMissingMembers instead.")]
+        public void EnableMissingMemberResolution()
+        {
+            resolveMissingMembers = true;
+        }
 
         internal bool MissingMemberResolution
         {
@@ -1200,7 +1175,7 @@ namespace IKVM.Reflection
                 return method;
             }
 
-			throw new MissingMethodException(declaringType.ToString(), name);
+            throw new MissingMethodException(declaringType.ToString(), name);
         }
 
         internal FieldInfo GetMissingFieldOrThrow(Module requester, Type declaringType, string name, FieldSignature signature)
@@ -1215,7 +1190,7 @@ namespace IKVM.Reflection
                 return field;
             }
 
-			throw new MissingFieldException(declaringType.ToString(), name);
+            throw new MissingFieldException(declaringType.ToString(), name);
         }
 
         internal PropertyInfo GetMissingPropertyOrThrow(Module requester, Type declaringType, string name, PropertySignature propertySignature)
@@ -1232,7 +1207,7 @@ namespace IKVM.Reflection
                 return property;
             }
 
-			throw new System.MissingMemberException(declaringType.ToString(), name);
+            throw new System.MissingMemberException(declaringType.ToString(), name);
         }
 
         internal Type CanonicalizeType(Type type)

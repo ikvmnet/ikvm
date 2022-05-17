@@ -21,23 +21,18 @@
   jeroen@frijters.net
   
 */
-using System;
-using System.Collections.Generic;
+
 using System.Runtime.InteropServices;
 using System.Text;
+
 using IKVM.Reflection.Emit;
+using IKVM.Reflection.Metadata;
 using IKVM.Reflection.Reader;
 using IKVM.Reflection.Writer;
-using IKVM.Reflection.Metadata;
-
-#if NETSTANDARD
-// VarEnum, UnmanagedType.IDispatch and UnmanagedType.SafeArray are obsolete
-#pragma warning disable 618
-#endif
 
 namespace IKVM.Reflection
 {
-	public struct FieldMarshal
+    public struct FieldMarshal
 	{
 		private const UnmanagedType UnmanagedType_CustomMarshaler = (UnmanagedType)0x2c;
 		private const UnmanagedType NATIVE_TYPE_MAX = (UnmanagedType)0x50;

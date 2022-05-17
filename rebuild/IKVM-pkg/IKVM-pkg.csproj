@@ -1,8 +1,8 @@
 ﻿<Project Sdk="Microsoft.Build.NoTargets/3.4.0">
 
     <PropertyGroup>
-        <TargetFrameworks>net461</TargetFrameworks>
         <PackageId>IKVM</PackageId>
+        <TargetFrameworks>net461;netcoreapp3.1</TargetFrameworks>
         <SuppressDependenciesWhenPacking>true</SuppressDependenciesWhenPacking>
         <TargetsForTfmSpecificContentInPackage>$(TargetsForTfmSpecificContentInPackage);CopyProjectReferencesToPackage</TargetsForTfmSpecificContentInPackage>
         <PackageLicenseFile>LICENSE</PackageLicenseFile>

@@ -433,7 +433,7 @@ public final class Winsock
             }
             else
             {
-                socket.Connect(ep);
+                socket.Connect((cli.System.Net.EndPoint)ep);
             }
             return 0;
         }

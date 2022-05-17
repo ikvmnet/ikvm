@@ -41,7 +41,6 @@ namespace IKVM.Reflection
 		WindowsRuntime = 1,
 	}
 
-#if NETSTANDARD
 	public enum AssemblyHashAlgorithm
 	{
 		None = 0,
@@ -55,7 +54,6 @@ namespace IKVM.Reflection
 		SameProcess = 2,
 		SameDomain = 3,
 	}
-#endif
 
 	[Flags]
 	public enum BindingFlags

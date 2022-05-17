@@ -23,22 +23,19 @@
 */
 using System;
 using System.Collections.Generic;
-using System.IO;
 using System.Diagnostics;
-#if !NO_SYMBOL_WRITER
 using System.Diagnostics.SymbolStore;
-#endif
-using System.Security.Cryptography;
+using System.IO;
 using System.Resources;
-using System.Runtime.CompilerServices;
 using System.Runtime.InteropServices;
+
 using IKVM.Reflection.Impl;
 using IKVM.Reflection.Metadata;
 using IKVM.Reflection.Writer;
 
 namespace IKVM.Reflection.Emit
 {
-	public sealed class ModuleBuilder : Module, ITypeOwner
+    public sealed class ModuleBuilder : Module, ITypeOwner
 	{
 		private static readonly bool usePublicKeyAssemblyReference = false;
 		private Guid mvid;
@@ -79,23 +76,14 @@ namespace IKVM.Reflection.Emit
 		private struct ResourceWriterRecord
 		{
 			private readonly string name;
-#if !NETSTANDARD
 			private readonly ResourceWriter rw;
-#endif
 			private readonly Stream stream;
 			private readonly ResourceAttributes attributes;
 
-#if NETSTANDARD
-			internal ResourceWriterRecord(string name, Stream stream, ResourceAttributes attributes)
-			{
-				this.name = name;
-				this.stream = stream;
-				this.attributes = attributes;
-			}
-#else
 			internal ResourceWriterRecord(string name, Stream stream, ResourceAttributes attributes)
 				: this(name, null, stream, attributes)
 			{
+
 			}
 
 			internal ResourceWriterRecord(string name, ResourceWriter rw, Stream stream, ResourceAttributes attributes)
@@ -105,16 +93,14 @@ namespace IKVM.Reflection.Emit
 				this.stream = stream;
 				this.attributes = attributes;
 			}
-#endif
 
 			internal void Emit(ModuleBuilder mb, int offset)
 			{
-#if !NETSTANDARD
 				if (rw != null)
 				{
 					rw.Generate();
 				}
-#endif
+
 				ManifestResourceTable.Record rec = new ManifestResourceTable.Record();
 				rec.Offset = offset;
 				rec.Flags = (int)attributes;
@@ -142,12 +128,10 @@ namespace IKVM.Reflection.Emit
 
 			internal void Close()
 			{
-#if !NETSTANDARD
 				if (rw != null)
 				{
 					rw.Close();
 				}
-#endif
 			}
 		}
 
@@ -395,13 +379,11 @@ namespace IKVM.Reflection.Emit
 			return moduleType.__DefineField(name, type, customModifiers, attributes);
 		}
 
-#if !NETSTANDARD
 		[Obsolete("Please use __DefineField(string, Type, CustomModifiers, FieldAttributes) instead.")]
 		public FieldBuilder __DefineField(string name, Type type, Type[] requiredCustomModifiers, Type[] optionalCustomModifiers, FieldAttributes attributes)
 		{
 			return moduleType.DefineField(name, type, requiredCustomModifiers, optionalCustomModifiers, attributes);
 		}
-#endif
 
 		public ConstructorBuilder __DefineModuleInitializer(MethodAttributes visibility)
 		{
@@ -518,13 +500,11 @@ namespace IKVM.Reflection.Emit
 			this.DeclSecurity.AddRecord(rec);
 		}
 
-#if !NETSTANDARD
 		internal void AddDeclarativeSecurity(int token, System.Security.Permissions.SecurityAction securityAction, System.Security.PermissionSet permissionSet)
 		{
 			// like Ref.Emit, we're using the .NET 1.x xml format
 			AddDeclSecurityRecord(token, (int)securityAction, this.Blobs.Add(ByteBuffer.Wrap(System.Text.Encoding.Unicode.GetBytes(permissionSet.ToXml().ToString()))));
 		}
-#endif
 
 		internal void AddDeclarativeSecurity(int token, List<CustomAttributeBuilder> declarativeSecurity)
 		{
@@ -535,11 +515,7 @@ namespace IKVM.Reflection.Emit
 				// check for HostProtectionAttribute without SecurityAction
 				if (cab.ConstructorArgumentCount == 0)
 				{
-#if NETSTANDARD
-					action = 6;
-#else
 					action = (int)System.Security.Permissions.SecurityAction.LinkDemand;
-#endif
 				}
 				else
 				{
@@ -586,7 +562,6 @@ namespace IKVM.Reflection.Emit
 			resourceWriters.Add(new ResourceWriterRecord(name, stream, attribute));
 		}
 
-#if !NETSTANDARD
 		public IResourceWriter DefineResource(string name, string description)
 		{
 			return DefineResource(name, description, ResourceAttributes.Public);
@@ -601,7 +576,6 @@ namespace IKVM.Reflection.Emit
 			resourceWriters.Add(new ResourceWriterRecord(name, rw, mem, attribute));
 			return rw;
 		}
-#endif
 
 		internal void EmitResources()
 		{
@@ -691,12 +665,10 @@ namespace IKVM.Reflection.Emit
 			}
 		}
 
-#if !NO_SYMBOL_WRITER
 		public ISymbolDocumentWriter DefineDocument(string url, Guid language, Guid languageVendor, Guid documentType)
 		{
 			return symbolWriter.DefineDocument(url, language, languageVendor, documentType);
 		}
-#endif
 
 		public int __GetAssemblyToken(Assembly assembly)
 		{
@@ -1468,12 +1440,10 @@ namespace IKVM.Reflection.Emit
 			get { return moduleName; }
 		}
 
-#if !NO_SYMBOL_WRITER
 		public ISymbolWriter GetSymWriter()
 		{
 			return symbolWriter;
 		}
-#endif
 
 		public void DefineUnmanagedResource(string resourceFileName)
 		{
@@ -1495,12 +1465,10 @@ namespace IKVM.Reflection.Emit
 			{
 				token = -token | 0x06000000;
 			}
-#if !NO_SYMBOL_WRITER
 			if (symbolWriter != null)
 			{
 				symbolWriter.SetUserEntryPoint(new SymbolToken(token));
 			}
-#endif
 		}
 
 		public StringToken GetStringConstant(string str)
@@ -1568,13 +1536,11 @@ namespace IKVM.Reflection.Emit
 			return stackReserve;
 		}
 
-#if !NETSTANDARD
 		[Obsolete("Use __StackReserve property.")]
 		public void __SetStackReserve(long stackReserve)
 		{
 			__StackReserve = stackReserve;
 		}
-#endif
 
 		internal ulong GetStackReserve(ulong defaultValue)
 		{
