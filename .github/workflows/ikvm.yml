@@ -29,6 +29,7 @@ jobs:
       working-directory: openjdk8
     - name: Zip OpenJDK 8
       run: >
+        shopt -s globstar
         zip -r openjdk8-build-linux-x86_64-normal-server-release.zip
         openjdk8/build/linux-x86_64-normal-server-release/langtools/gensrc/**/*
         openjdk8/build/linux-x86_64-normal-server-release/corba/gensrc/**/*
