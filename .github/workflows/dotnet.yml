@@ -13,6 +13,11 @@ jobs:
     - uses: actions/checkout@v3
       with:
         submodules: recursive
+    - name: Cache Open JDK 8 Build
+      uses: actions/cache@v3
+      with:
+        path: openjdk8/build/linux-x86_64-normal-server-release
+        key: ${{ runner.os }}-${{ hashFiles('openjdk8/**') }}
     - name: Install JDK 8
       uses: actions/setup-java@v3
       with:
@@ -21,7 +26,7 @@ jobs:
     - name: Install JDK 8 Build Dependencies
       run: sudo apt-get install libx11-dev libxext-dev libxrender-dev libxtst-dev libxt-dev libcups2-dev libasound2-dev
     - name: Configure OpenJDK 8
-      run: bash ./configure --with-extra-cxxflags="-fno-lifetime-dse -fno-delete-null-pointer-checks"
+      run: bash ./configure --with-extra-cxxflags="-fno-lifetime-dse -fno-delete-null-pointer-checks" --with-import-hotspot=""
       working-directory: openjdk8
     - name: Build OpenJDK 8
       run: make
