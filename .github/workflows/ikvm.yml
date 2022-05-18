@@ -41,8 +41,8 @@ jobs:
       with:
         name: openjdk8-build-linux-x86_64
         path: openjdk8-build-linux-x86_64.zip
-  build-ikvm:
-    name: Build IKVM
+  build-ikvm-linux:
+    name: Build IKVM (Linux)
     needs:
       build-openjdk8
     runs-on: ubuntu-latest
@@ -65,12 +65,45 @@ jobs:
         path: openjdk8-build-linux-x86_64.zip
     - name: Restore OpenJDK 8 Build
       run: unzip -o openjdk8-build-linux-x86_64.zip
-    - name: Restore DotNet
+    - name: DotNet Restore
       run: dotnet restore
       working-directory: ./rebuild
-    - name: Build DotNet
+    - name: DotNet Build
       run: dotnet build --no-restore
       working-directory: ./rebuild
-    - name: Test DotNet
+    - name: DotNet Test
+      run: dotnet test --no-build --verbosity normal
+      working-directory: ./rebuild
+  build-ikvm-windows:
+    name: Build IKVM (Windows)
+    needs:
+      build-openjdk8
+    runs-on: windows-latest
+    steps:
+    - uses: actions/checkout@v3
+      with:
+        submodules: recursive
+    - name: Setup .NET 3.1
+      uses: actions/setup-dotnet@v2
+      with:
+        dotnet-version: 3.1.x
+    - name: Setup .NET 6.0
+      uses: actions/setup-dotnet@v2
+      with:
+        dotnet-version: 6.0.x
+    - name: Download OpenJDK 8 Build
+      uses: actions/download-artifact@v2
+      with:
+        name: openjdk8-build-linux-x86_64
+        path: openjdk8-build-linux-x86_64.zip
+    - name: Restore OpenJDK 8 Build
+      run: unzip -o openjdk8-build-linux-x86_64.zip
+    - name: DotNet Restore
+      run: dotnet restore
+      working-directory: ./rebuild
+    - name: DotNet Build
+      run: dotnet build --no-restore
+      working-directory: ./rebuild
+    - name: DotNet Test
       run: dotnet test --no-build --verbosity normal
       working-directory: ./rebuild
