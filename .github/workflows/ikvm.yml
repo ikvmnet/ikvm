@@ -29,7 +29,13 @@ jobs:
     - uses: actions/upload-artifact@v2
       with:
         name: openjdk8-build-linux-x86_64
-        path: openjdk8/build/linux-x86_64-normal-server-release
+        path: |
+          openjdk8/build/linux-x86_64-normal-server-release/langtools/gensrc
+          openjdk8/build/linux-x86_64-normal-server-release/corba/gensrc
+          openjdk8/build/linux-x86_64-normal-server-release/jdk/gensrc
+          openjdk8/build/linux-x86_64-normal-server-release/jdk/impsrc
+          openjdk8/build/linux-x86_64-normal-server-release/jdk/lib
+          openjdk8/build/linux-x86_64-normal-server-release/jdk/classes
   build-ikvm:
     needs:
       build-openjdk8
