@@ -20,13 +20,16 @@ jobs:
         java-version: '8'
     - name: Install JDK 8 Build Dependencies
       run: sudo apt-get install libx11-dev libxext-dev libxrender-dev libxtst-dev libxt-dev libcups2-dev libasound2-dev
-    - name: Build OpenJDK 8
+    - name: Configure OpenJDK 8
       run: bash ./configure
+      working-directory: openjdk8
+    - name: Build OpenJDK 8
+      run: make all
       working-directory: openjdk8
     - uses: actions/upload-artifact@v2
       with:
-        name: openjdk8-build
-        path: openjdk8/build
+        name: openjdk8-build-linux-x64
+        path: openjdk8/build/linux-x64-normal-server-release
   build-ikvm:
     needs:
       build-openjdk8
@@ -35,15 +38,14 @@ jobs:
     - uses: actions/checkout@v3
       with:
         submodules: recursive
-    - name: Install JDK 8
-      uses: actions/setup-java@v3
-      with:
-        distribution: 'temurin'
-        java-version: '8'
     - name: Setup .NET
       uses: actions/setup-dotnet@v2
       with:
         dotnet-version: 3.1.x
+    - uses: actions/download-artifact@v2
+      with:
+        name: openjdk8-build-linux-x64
+        path: openjdk8/build/linux-x64-normal-server-release
     - name: Restore dependencies
       run: dotnet restore
       working-directory: ./rebuild
