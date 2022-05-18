@@ -13,9 +13,9 @@ jobs:
     - uses: actions/checkout@v3
       with:
         submodules: recursive
-    - name: Install JDK 8 Build Dependencies
+    - name: Install OpenJDK 8 Tools
       run: sudo apt-get install openjdk-8-jdk-headless libx11-dev libxext-dev libxrender-dev libxtst-dev libxt-dev libcups2-dev libasound2-dev libfreetype6-dev libfontconfig1-dev
-    - name: Cache Open JDK 8 Build
+    - name: Cache OpenJDK 8 Build
       uses: actions/cache@v3
       with:
         path: openjdk8/build
@@ -26,8 +26,6 @@ jobs:
     - name: Build OpenJDK 8
       run: make langtools corba jdk
       working-directory: openjdk8
-      env:
-        DISABLE_HOTSPOT_OS_VERSION_CHECK: ok
     - uses: actions/upload-artifact@v2
       with:
         name: openjdk8-build-linux-x86_64
