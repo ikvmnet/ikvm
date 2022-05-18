@@ -4,7 +4,7 @@ on:
   push:
     branches: [ openjdk_msbuild ]
   pull_request:
-    branches: [ msbuild ]
+    branches: [ openjdk_msbuild ]
 
 jobs:
   build:
@@ -13,6 +13,8 @@ jobs:
 
     steps:
     - uses: actions/checkout@v3
+      with:
+        submodules: recursive
     - name: Setup .NET
       uses: actions/setup-dotnet@v2
       with:
