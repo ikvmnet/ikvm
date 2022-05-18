@@ -1,10 +1,10 @@
 ﻿<Project>
     <PropertyGroup>
-        <OpenJdkDir>$(MSBuildThisFileDirectory)..\..\openjdk-8u45-b14-stripped</OpenJdkDir>
+        <OpenJdkDir>$(MSBuildThisFileDirectory)..\openjdk-8</OpenJdkDir>
         <OpenJdkImplementationVersion>1.8.0</OpenJdkImplementationVersion>
         <OpenJdkSpecificationVersion>1.8</OpenJdkSpecificationVersion>
-        <OpenJdkFullVersion>1.8.0_45-b14</OpenJdkFullVersion>
-        <OpenJdkVersion>OpenJDK 8u45 b14</OpenJdkVersion>
+        <OpenJdkFullVersion>1.8.0_342-b02</OpenJdkFullVersion>
+        <OpenJdkVersion>OpenJDK 8u342 b02</OpenJdkVersion>
     </PropertyGroup>
     
     <ItemDefinitionGroup>
