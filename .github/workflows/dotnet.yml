@@ -21,7 +21,7 @@ jobs:
     - name: Install JDK 8 Build Dependencies
       run: sudo apt-get install libx11-dev libxext-dev libxrender-dev libxtst-dev libxt-dev libcups2-dev libasound2-dev
     - name: Configure OpenJDK 8
-      run: bash ./configure --with-extra-cflags="-fno-lifetime-dse -fno-delete-null-pointer-checks"
+      run: bash ./configure --with-extra-cxxflags="-fno-lifetime-dse -fno-delete-null-pointer-checks"
       working-directory: openjdk8
     - name: Build OpenJDK 8
       run: make
