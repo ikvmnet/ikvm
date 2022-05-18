@@ -14,10 +14,13 @@ jobs:
     - uses: actions/checkout@v3
       with:
         submodules: recursive
-    - uses: actions/setup-java@v3
+    - name: Install JDK 8
+      uses: actions/setup-java@v3
       with:
         distribution: 'temurin'
         java-version: '8'
+    - name: Install JDK 8 Build Dependencies
+      run: sudo apt-get install libX11-dev libxext-dev libxrender-dev libxtst-dev libxt-dev
     - name: Build OpenJDK 8u
       run: bash ./configure
       working-directory: openjdk-8u
