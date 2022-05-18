@@ -1,8 +1,8 @@
 Manifest-Version: 1.0
 Implementation-Vendor: Oracle Corporation & others
 Implementation-Title: IKVM.NET OpenJDK
-Implementation-Version: @IMPLEMENTATION_VERSION@
+Implementation-Version: @@OpenJdkImplementationVersion@@
 Specification-Vendor: Oracle Corporation
 Specification-Title: Java Platform API Specification
-Specification-Version: @SPECIFICATION_VERSION@
+Specification-Version: @@OpenJdkSpecificationVersion@@
 

@@ -1,2 +1,2 @@
-full=@FULL_VERSION@
-release=@IMPLEMENTATION_VERSION@
+full=@@OpenJdkFullVersion@@
+release=@@OpenJdkImplementationVersion@@

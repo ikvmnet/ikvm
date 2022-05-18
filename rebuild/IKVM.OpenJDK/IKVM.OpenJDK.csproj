@@ -140,6 +140,7 @@
         <JavaResource Update="res\**\*.netcoreapp3_1" ResourcePath="%(RecursiveDir)%(Filename)" TargetFramework="netcoreapp3.1" />
         <JavaResource Update="res\**\*.net461" ResourcePath="%(RecursiveDir)%(Filename)" TargetFramework="net461" />
         <JavaResourceTemplate Include="res\**\*.in" ResourcePath="%(RecursiveDir)%(Filename)" />
+        <JavaSource Remove="src\AssemblyInfo.java" />
         <JavaResourceTemplate Update="src\**\*.netcoreapp3_1.in" ResourcePath="%(RecursiveDir)%(Filename)" TargetFramework="netcoreapp3.1" />
         <JavaResourceTemplate Update="src\**\*.net461.in" ResourcePath="%(RecursiveDir)%(Filename)" TargetFramework="net461" />
     </ItemGroup>
@@ -178,6 +179,7 @@
     <UsingTask TaskName="TransformTemplates" TaskFactory="RoslynCodeTaskFactory" AssemblyFile="$(MSBuildToolsPath)\Microsoft.Build.Tasks.Core.dll">
         <ParameterGroup>
             <Items ParameterType="Microsoft.Build.Framework.ITaskItem[]" Required="true" />
+            <Variables ParameterType="Microsoft.Build.Framework.ITaskItem[]" Required="true" />
         </ParameterGroup>
         <Task>
             <Using Namespace="System" />
@@ -185,12 +187,24 @@
             <Using Namespace="System.Text.RegularExpressions" />
             <Code Type="Fragment" Language="cs">
                 <![CDATA[
-                foreach (var i in Items)
+                foreach (var item in Items)
                 {
-                    var fullPath = i.GetMetadata("FullPath");
-                    var destPath = i.GetMetadata("Destination");
+                    var fullPath = item.GetMetadata("FullPath");
+                    if (File.Exists(fullPath) == false)
+                        throw new FileNotFoundException(fullPath);
+                    
+                    var destPath = item.GetMetadata("TargetPath");
                     Directory.CreateDirectory(Path.GetDirectoryName(destPath));
-                    File.Copy(fullPath, destPath, true);
+                    
+                    var fileText = File.ReadAllText(fullPath);
+                    foreach (var variable in Variables)
+                    {
+                        var n = variable.ItemSpec;
+                        var v = variable.GetMetadata("Value");
+                        fileText = fileText.Replace("@@" + n + "@@", v);
+                    }
+                    
+                    File.WriteAllText(destPath, fileText);
                 }
             ]]>
             </Code>
@@ -374,19 +388,29 @@
         </CleanDependsOn>
     </PropertyGroup>
 
+    <Target Name="ResolveTransformTemplateVariables">
+        <ItemGroup>
+            <TransformTemplateVariables Include="OpenJdkImplementationVersion" Value="$(OpenJdkImplementationVersion)" />
+            <TransformTemplateVariables Include="OpenJdkSpecificationVersion" Value="$(OpenJdkSpecificationVersion)" />
+            <TransformTemplateVariables Include="OpenJdkFullVersion" Value="$(OpenJdkFullVersion)" />
+            <TransformTemplateVariables Include="OpenJdkVersion" Value="$(OpenJdkVersion)" />
+            <TransformTemplateVariables Include="Version" Value="$(Version)" />
+        </ItemGroup>
+    </Target>
+
     <Target Name="ResolveTransformJavaSourceTemplates">
         <ItemGroup>
             <TransformJavaSourceTemplate Include="@(JavaSourceTemplate)" Condition=" '%(JavaSourceTemplate.TargetFramework)' == '' Or '%(TargetFramework)' == '$(TargetFramework)' ">
-                <Destination>$(JavaSourceTemplateOutputPath)\%(SourcePath)</Destination>
+                <TargetPath>$(JavaSourceTemplateOutputPath)\%(SourcePath)</TargetPath>
             </TransformJavaSourceTemplate>
         </ItemGroup>
     </Target>
 
     <Target Name="TransformJavaSourceTemplates" DependsOnTargets="ResolveTransformJavaSourceTemplates" Inputs="@(TransformJavaSourceTemplate)" Outputs="@(TransformJavaSourceTemplate->'%(Destination)')">
         <MakeDir Directories="$(JavaSourceTemplateOutputPath)" />
-        <TransformTemplates Items="@(TransformJavaSourceTemplate)" />
+        <TransformTemplates Items="@(TransformJavaSourceTemplate)" Variables="@(TransformTemplateVariables)" />
         <ItemGroup>
-            <JavaSourceTemplateItem Include="@(TransformJavaSourceTemplate->'%(Destination)')" SourcePath="%(SourcePath)" />
+            <JavaSourceTemplateItem Include="@(TransformJavaSourceTemplate->'%(TargetPath)')" SourcePath="%(SourcePath)" />
         </ItemGroup>
     </Target>
 
@@ -426,6 +450,7 @@
         <ResolveJavaSourceItemsDependsOn>
             $(ResolveJavaSourceItemsDependsOn);
             ResolveTransformJavaSourceTemplates;
+            ResolveTransformTemplateVariables;
             TransformJavaSourceTemplates;
             _ResolveJavaSourceItems;
         </ResolveJavaSourceItemsDependsOn>
@@ -438,16 +463,16 @@
     <Target Name="ResolveTransformJavaResourceTemplates">
         <ItemGroup>
             <TransformJavaResourceTemplate Include="@(JavaResourceTemplate)">
-                <Destination>$(JavaResourceTemplateOutputPath)\%(RecursiveDir)%(Filename)</Destination>
+                <TargetPath>$(JavaResourceTemplateOutputPath)\%(RecursiveDir)%(Filename)</TargetPath>
             </TransformJavaResourceTemplate>
         </ItemGroup>
     </Target>
 
     <Target Name="TransformJavaResourceTemplates" DependsOnTargets="ResolveTransformJavaResourceTemplates" Inputs="@(TransformJavaResourceTemplate)" Outputs="@(TransformJavaResourceTemplate->'%(Destination)')">
         <MakeDir Directories="$(JavaResourceTemplateOutputPath)" />
-        <TransformTemplates Items="@(TransformJavaResourceTemplate)" />
+        <TransformTemplates Items="@(TransformJavaResourceTemplate)" Variables="@(TransformTemplateVariables)" />
         <ItemGroup>
-            <JavaResourceTemplateItem Include="@(TransformJavaResourceTemplate->'%(Destination)')" ResourcePath="%(ResourcePath)" />
+            <JavaResourceTemplateItem Include="@(TransformJavaResourceTemplate->'%(TargetPath)')" ResourcePath="%(ResourcePath)" />
         </ItemGroup>
     </Target>
 
@@ -487,6 +512,7 @@
         <ResolveJavaResourceItemsDependsOn>
             $(ResolveJavaResourceItemsDependsOn);
             ResolveTransformJavaResourceTemplates;
+            ResolveTransformTemplateVariables;
             TransformJavaResourceTemplates;
             _ResolveJavaResourceItems;
         </ResolveJavaResourceItemsDependsOn>
