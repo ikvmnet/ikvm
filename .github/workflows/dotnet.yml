@@ -26,7 +26,7 @@ jobs:
       run: bash ./configure
       working-directory: openjdk8
     - name: Build OpenJDK 8
-      run: make all
+      run: make
       working-directory: openjdk8
       env:
         DISABLE_HOTSPOT_OS_VERSION_CHECK: ok
