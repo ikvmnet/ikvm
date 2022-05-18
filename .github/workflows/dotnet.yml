@@ -19,10 +19,7 @@ jobs:
         distribution: 'temurin'
         java-version: '8'
     - name: Install JDK 8 Build Dependencies
-      run: sudo apt-get install libx11-dev libxext-dev libxrender-dev libxtst-dev libxt-dev libcups2-dev
-    - name: Build OpenJDK 8
-      run: bash ./configure
-      working-directory: openjdk8
+      run: sudo apt-get install libx11-dev libxext-dev libxrender-dev libxtst-dev libxt-dev libcups2-dev libasound2-dev
     - name: Build OpenJDK 8
       run: bash ./configure
       working-directory: openjdk8
