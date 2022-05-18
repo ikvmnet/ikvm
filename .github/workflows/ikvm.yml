@@ -8,6 +8,7 @@ on:
 
 jobs:
   build-openjdk8:
+    name: Build OpenJDK 8
     runs-on: ubuntu-latest
     steps:
     - uses: actions/checkout@v3
@@ -41,6 +42,7 @@ jobs:
         name: openjdk8-build-linux-x86_64
         path: openjdk8-build-linux-x86_64.zip
   build-ikvm:
+    name: Build IKVM
     needs:
       build-openjdk8
     runs-on: ubuntu-latest
