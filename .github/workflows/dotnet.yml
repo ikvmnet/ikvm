@@ -19,7 +19,7 @@ jobs:
         distribution: 'temurin'
         java-version: '8'
     - name: Build OpenJDK 8u
-      run: ./configure
+      run: bash ./configure
       working-directory: openjdk-8u
     - name: Setup .NET
       uses: actions/setup-dotnet@v2
