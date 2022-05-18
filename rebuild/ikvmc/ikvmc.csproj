@@ -8,6 +8,7 @@
         <Description>JVM for Mono and .NET</Description>
         <DefineConstants>$(DefineConstants);STATIC_COMPILER;EMITTERS</DefineConstants>
         <AutoGenerateBindingRedirects>true</AutoGenerateBindingRedirects>
+        <PreserveCompilationContext>true</PreserveCompilationContext>
     </PropertyGroup>
 
     <ItemGroup>
@@ -28,7 +29,9 @@
     </ItemGroup>
 
     <ItemGroup>
-        <ProjectReference Include="..\IKVM.Reflection\IKVM.Reflection.csproj" />
+        <ProjectReference Include="..\IKVM.Reflection\IKVM.Reflection.csproj">
+            <PrivateAssets>All</PrivateAssets>
+        </ProjectReference>
     </ItemGroup>
 
     <ItemGroup>

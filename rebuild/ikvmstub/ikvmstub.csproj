@@ -10,6 +10,7 @@
         <RootNamespace>ikvmstub</RootNamespace>
         <DefineConstants>$(DefineConstants);STUB_GENERATOR</DefineConstants>
         <AutoGenerateBindingRedirects>true</AutoGenerateBindingRedirects>
+        <PreserveCompilationContext>true</PreserveCompilationContext>
     </PropertyGroup>
 
     <ItemGroup Condition=" '$(TargetFramework)' == 'net461' ">
@@ -26,7 +27,9 @@
     </ItemGroup>
 
     <ItemGroup>
-        <ProjectReference Include="..\IKVM.Reflection\IKVM.Reflection.csproj" />
+        <ProjectReference Include="..\IKVM.Reflection\IKVM.Reflection.csproj">
+            <PrivateAssets>All</PrivateAssets>
+        </ProjectReference>
     </ItemGroup>
 
     <ItemGroup>
