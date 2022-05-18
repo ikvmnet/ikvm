@@ -22,10 +22,10 @@ jobs:
       run: sudo apt-get install libX11-dev libxext-dev libxrender-dev libxtst-dev libxt-dev
     - name: Build OpenJDK 8
       run: bash ./configure
-      working-directory: openjdk-8
+      working-directory: openjdk8
     - name: Build OpenJDK 8
       run: bash ./configure
-      working-directory: openjdk-8
+      working-directory: openjdk8
   build-ikvm:
     runs-on: ubuntu-latest
     steps:
