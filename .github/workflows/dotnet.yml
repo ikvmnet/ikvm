@@ -28,6 +28,8 @@ jobs:
     - name: Build OpenJDK 8
       run: make all
       working-directory: openjdk8
+      env:
+        DISABLE_HOTSPOT_OS_VERSION_CHECK: ok
     - uses: actions/upload-artifact@v2
       with:
         name: openjdk8-build-linux-x64
