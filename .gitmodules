@@ -1,0 +1,3 @@
+[submodule "openjdk-8u45-b14-stripped"]
+	path = openjdk-8u45-b14-stripped
+	url = https://github.com/joegana/openjdk-8u45-b14-stripped.git
