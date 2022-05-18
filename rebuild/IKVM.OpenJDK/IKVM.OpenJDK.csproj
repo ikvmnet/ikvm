@@ -609,10 +609,10 @@
 
     <Target Name="_BuildOpenJdkAssembly" DependsOnTargets="GetIkvmcExe;GetIkvmRuntimeDll;ResolveJavaClassItems;ResolveJavaResourceItems;BuildRmiStubs" Inputs="@(JavaClassItems);@(JavaResourceItems);$(IkvmRuntimeDll);$(Ikvmc);@(ReferencePathWithRefAssemblies);$(ResourcesZipPath);@(IkvmMapFile)" Outputs="$(OpenJdkAssemblyPath);$(OpenJdkDebugSymbolsPath)">
         <!-- this is wrong, determination of which version to use to build needs to be based on which platform we're running on -->
-        <PropertyGroup Condition="$(TargetFramework.StartsWith('net4'))">
+        <PropertyGroup Condition=" '$(TargetFramework)' == 'net461' ">
             <IkvmcExec>$(Ikvmc)</IkvmcExec>
         </PropertyGroup>
-        <PropertyGroup Condition="$(TargetFramework.StartsWith('netstandard')) Or $(TargetFramework.StartsWith('netcore'))">
+        <PropertyGroup Condition=" '$(TargetFramework)' == 'netcoreapp3.1' ">
             <IkvmcExec>dotnet exec $(Ikvmc)</IkvmcExec>
         </PropertyGroup>
 
