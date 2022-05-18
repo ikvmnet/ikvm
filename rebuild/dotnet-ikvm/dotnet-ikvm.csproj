@@ -1,0 +1,55 @@
+﻿<Project Sdk="Microsoft.NET.Sdk">
+
+    <PropertyGroup>
+        <PackageId>dotnet-ikvm</PackageId>
+        <AssemblyName>IKVM.Tool</AssemblyName>
+        <RootNamespace>IKVM.Tool</RootNamespace>
+        <TargetFrameworks>netcoreapp3.1</TargetFrameworks>
+        <PackageLicenseFile>LICENSE</PackageLicenseFile>
+        <PackAsTool>true</PackAsTool>
+        <ToolCommandName>ikvm</ToolCommandName>
+    </PropertyGroup>
+
+    <ItemGroup>
+        <PackageReference Include="CommandLineParser" Version="2.9.1" />
+        <PackageReference Include="Microsoft.Win32.Registry" Version="5.0.0" />
+        <PackageReference Include="System.Configuration.ConfigurationManager" Version="6.0.0" />
+        <PackageReference Include="System.Drawing.Common" Version="6.0.0" />
+        <PackageReference Include="System.Data.Odbc" Version="6.0.0" />
+        <PackageReference Include="System.IO.FileSystem.AccessControl" Version="5.0.0" />
+        <PackageReference Include="System.Runtime.InteropServices.RuntimeInformation" Version="4.3.0" />
+        <PackageReference Include="System.Security.AccessControl" Version="6.0.0" />
+        <PackageReference Include="System.Security.Permissions" Version="6.0.0" />
+        <PackageReference Include="System.Security.Principal.Windows" Version="5.0.0" />
+        <PackageReference Include="System.Threading.AccessControl" Version="6.0.0" />
+    </ItemGroup>
+
+    <ItemGroup>
+        <ProjectReference Include="..\IKVM.OpenJDK\IKVM.OpenJDK.csproj">
+            <PrivateAssets>all</PrivateAssets>
+        </ProjectReference>
+        <ProjectReference Include="..\IKVM.Reflection\IKVM.Reflection.csproj">
+            <PrivateAssets>all</PrivateAssets>
+        </ProjectReference>
+        <ProjectReference Include="..\IKVM.Runtime\IKVM.Runtime.csproj">
+            <PrivateAssets>all</PrivateAssets>
+        </ProjectReference>
+        <ProjectReference Include="..\IKVM.Runtime.JNI\IKVM.Runtime.JNI.csproj">
+            <PrivateAssets>all</PrivateAssets>
+        </ProjectReference>
+        <ProjectReference Include="..\ikvm\ikvm.csproj">
+            <PrivateAssets>all</PrivateAssets>
+        </ProjectReference>
+        <ProjectReference Include="..\ikvmc\ikvmc.csproj">
+            <PrivateAssets>all</PrivateAssets>
+        </ProjectReference>
+        <ProjectReference Include="..\ikvmstub\ikvmstub.csproj">
+            <PrivateAssets>all</PrivateAssets>
+        </ProjectReference>
+    </ItemGroup>
+
+    <ItemGroup>
+        <None Include="..\LICENSE" Pack="true" PackagePath="." />
+    </ItemGroup>
+
+</Project>

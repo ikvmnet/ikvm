@@ -35,7 +35,9 @@ Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "IKVM-pkg", "IKVM-pkg\IKVM-p
 EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "IKVM.Tests", "IKVM.Tests\IKVM.Tests.csproj", "{BE0445A8-947D-485D-A183-0686D2AE23F8}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "ikvmc.Tests", "ikvmc.Tests\ikvmc.Tests.csproj", "{FA88DEC2-6C98-4BD5-91C2-DD7185A82B81}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "ikvmc.Tests", "ikvmc.Tests\ikvmc.Tests.csproj", "{FA88DEC2-6C98-4BD5-91C2-DD7185A82B81}"
+EndProject
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "dotnet-ikvm", "dotnet-ikvm\dotnet-ikvm.csproj", "{390101F0-E5FA-4EC3-BF6E-4E6EFC8F0BDF}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
@@ -95,6 +97,10 @@ Global
 		{FA88DEC2-6C98-4BD5-91C2-DD7185A82B81}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{FA88DEC2-6C98-4BD5-91C2-DD7185A82B81}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{FA88DEC2-6C98-4BD5-91C2-DD7185A82B81}.Release|Any CPU.Build.0 = Release|Any CPU
+		{390101F0-E5FA-4EC3-BF6E-4E6EFC8F0BDF}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{390101F0-E5FA-4EC3-BF6E-4E6EFC8F0BDF}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{390101F0-E5FA-4EC3-BF6E-4E6EFC8F0BDF}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{390101F0-E5FA-4EC3-BF6E-4E6EFC8F0BDF}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
