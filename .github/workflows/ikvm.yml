@@ -94,10 +94,10 @@ jobs:
     - name: Download OpenJDK 8 Build
       uses: actions/download-artifact@v2
       with:
-        name: openjdk8-build-linux-x86_64
-        path: openjdk8-build-linux-x86_64.zip
+        name: openjdk8-build-linux-x86_64-normal-server-release
+        path: .
     - name: Restore OpenJDK 8 Build
-      run: unzip -o openjdk8-build-linux-x86_64.zip
+      run: unzip -o openjdk8-build-linux-x86_64-normal-server-release.zip
     - name: DotNet Restore
       run: dotnet restore
       working-directory: ./rebuild
