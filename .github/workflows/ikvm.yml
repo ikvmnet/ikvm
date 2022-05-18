@@ -19,7 +19,7 @@ jobs:
       uses: actions/cache@v3
       with:
         path: openjdk8/build
-        key: ${{ runner.os }}-${{ hashFiles('openjdk8/**') }}-1
+        key: openjdk8-build-linux-x86_64-${{ runner.os }}-${{ hashFiles('openjdk8/**') }}-1
     - name: Configure OpenJDK 8
       run: bash ./configure
       working-directory: openjdk8

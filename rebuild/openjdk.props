@@ -15986,20 +15986,20 @@
     </ItemGroup>
 
     <ItemGroup>
-        <VfsZipItem Include="$(OpenJdkDir)\build\linux-x86_64-normal-server-release\jdk\**\lib\calendars.properties" />
-        <VfsZipItem Include="$(OpenJdkDir)\build\linux-x86_64-normal-server-release\jdk\**\lib\logging.properties" />
-        <VfsZipItem Include="$(OpenJdkDir)\build\linux-x86_64-normal-server-release\jdk\**\lib\net.properties" />
-        <VfsZipItem Include="$(OpenJdkDir)\build\linux-x86_64-normal-server-release\jdk\**\lib\psfontj2d.properties" />
-        <VfsZipItem Include="$(OpenJdkDir)\build\linux-x86_64-normal-server-release\jdk\**\lib\sound.properties" />
-        <VfsZipItem Include="$(OpenJdkDir)\build\linux-x86_64-normal-server-release\jdk\**\lib\tzdb.dat" />
-        <VfsZipItem Include="$(OpenJdkDir)\build\linux-x86_64-normal-server-release\jdk\**\lib\currency.data" />
-        <VfsZipItem Include="$(OpenJdkDir)\build\linux-x86_64-normal-server-release\jdk\**\lib\management\management.properties" />
-        <VfsZipItem Include="$(OpenJdkDir)\build\linux-x86_64-normal-server-release\jdk\**\lib\cmm\*" />
-        <VfsZipItem Include="$(OpenJdkDir)\build\linux-x86_64-normal-server-release\jdk\**\lib\security\java.policy" />
-        <VfsZipItem Include="$(OpenJdkDir)\build\linux-x86_64-normal-server-release\jdk\**\lib\security\java.security" />
-        <VfsZipItem Include="$(OpenJdkDir)\build\linux-x86_64-normal-server-release\jdk\**\lib\security\US_export_policy.jar" />
-        <VfsZipItem Include="$(OpenJdkDir)\jdk\src\windows\**\lib\flavormap.properties" />
-        <VfsZipItem Include="$(OpenJdkDir)\jdk\src\windows\**\lib\content-types.properties" />
+        <VfsZipItem Include="$(OpenJdkDir)\build\linux-x86_64-normal-server-release\jdk\lib\calendars.properties" />
+        <VfsZipItem Include="$(OpenJdkDir)\build\linux-x86_64-normal-server-release\jdk\lib\logging.properties" />
+        <VfsZipItem Include="$(OpenJdkDir)\build\linux-x86_64-normal-server-release\jdk\lib\net.properties" />
+        <VfsZipItem Include="$(OpenJdkDir)\build\linux-x86_64-normal-server-release\jdk\lib\psfontj2d.properties" />
+        <VfsZipItem Include="$(OpenJdkDir)\build\linux-x86_64-normal-server-release\jdk\lib\sound.properties" />
+        <VfsZipItem Include="$(OpenJdkDir)\build\linux-x86_64-normal-server-release\jdk\lib\tzdb.dat" />
+        <VfsZipItem Include="$(OpenJdkDir)\build\linux-x86_64-normal-server-release\jdk\lib\currency.data" />
+        <VfsZipItem Include="$(OpenJdkDir)\build\linux-x86_64-normal-server-release\jdk\lib\management\management.properties" />
+        <VfsZipItem Include="$(OpenJdkDir)\build\linux-x86_64-normal-server-release\jdk\lib\cmm\*" />
+        <VfsZipItem Include="$(OpenJdkDir)\build\linux-x86_64-normal-server-release\jdk\lib\security\java.policy" />
+        <VfsZipItem Include="$(OpenJdkDir)\build\linux-x86_64-normal-server-release\jdk\lib\security\java.security" />
+        <VfsZipItem Include="$(OpenJdkDir)\build\linux-x86_64-normal-server-release\jdk\lib\security\US_export_policy.jar" />
+        <VfsZipItem Include="$(OpenJdkDir)\jdk\src\windows\lib\flavormap.properties" />
+        <VfsZipItem Include="$(OpenJdkDir)\jdk\src\windows\lib\content-types.properties" />
     </ItemGroup>
 
     <ItemGroup>
