@@ -1,3 +1,3 @@
-[submodule "openjdk-8u"]
-	path = openjdk-8u
+[submodule "openjdk8"]
+	path = openjdk8
 	url = https://github.com/openjdk/jdk8u.git
