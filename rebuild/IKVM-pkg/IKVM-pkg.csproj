@@ -9,6 +9,10 @@
     </PropertyGroup>
 
     <ItemGroup>
+      <Compile Include="FirstTest.cs" />
+    </ItemGroup>
+
+    <ItemGroup>
         <ProjectReference Include="..\IKVM.OpenJDK\IKVM.OpenJDK.csproj">
             <ReferenceOutputAssembly>True</ReferenceOutputAssembly>
             <PrivateAssets>all</PrivateAssets>

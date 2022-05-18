@@ -142,7 +142,9 @@ namespace IKVM.Reflection
 
     public sealed class Universe : IDisposable
     {
+
 #if NETCOREAPP3_1
+
         public static readonly string CoreLibName = "netstandard";
 
         public static string ReferenceAssembliesDirectory
@@ -175,8 +177,11 @@ namespace IKVM.Reflection
             }
             return dir;
         }
+
 #elif NETFRAMEWORK || MONO
+
 		public static readonly string CoreLibName = "mscorlib";
+
 #endif
 
         internal static readonly bool MonoRuntime = System.Type.GetType("Mono.Runtime") != null;

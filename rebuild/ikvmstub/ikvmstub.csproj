@@ -31,7 +31,7 @@
 
     <ItemGroup>
         <Compile Include="..\IKVM.Runtime\stubgen\ClassFileWriter.cs" LinkBase="runtime" />
-        <Compile Include="..\ikvmc\AssemblyResolver.cs" LinkBase="ikvmc" />
+        <Compile Include="..\ikvmc\IKVM\Internal\AssemblyResolver.cs" LinkBase="ikvmc" />
         <Compile Include="..\IKVM.Runtime\AssemblyClassLoader.cs" LinkBase="runtime" />
         <Compile Include="..\IKVM.Runtime\attributes.cs" LinkBase="runtime" />
         <Compile Include="..\IKVM.Runtime\ClassLoaderWrapper.cs" LinkBase="runtime" />

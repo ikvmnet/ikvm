@@ -240,6 +240,7 @@ namespace IKVM.Internal
                         Type type = GetType(modules[i], DotNetTypeWrapper.DemangleTypeName(name));
 
                         // type could be loaded from this assembly, but ended up forwarded to a different assembly
+                        // this class loader isn't responsible for it
                         if (type != null && type.Assembly != assembly)
                         {
                             return null;
