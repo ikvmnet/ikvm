@@ -7,7 +7,7 @@ on:
     branches: [ openjdk_msbuild ]
 
 jobs:
-  build-jdk8:
+  build-openjdk8:
     runs-on: ubuntu-latest
     steps:
     - uses: actions/checkout@v3
@@ -26,7 +26,13 @@ jobs:
     - name: Build OpenJDK 8
       run: bash ./configure
       working-directory: openjdk8
+    - uses: actions/upload-artifact@v2
+      with:
+        name: openjdk8-build
+        path: openjdk8/build
   build-ikvm:
+    needs:
+      build-openjdk8
     runs-on: ubuntu-latest
     steps:
     - uses: actions/checkout@v3
