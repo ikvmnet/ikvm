@@ -29,7 +29,7 @@ jobs:
       working-directory: openjdk8
     - name: Zip OpenJDK 8
       run: >
-        zip -r openjdk8-build-linux-x86_64.zip
+        zip -r openjdk8-build-linux-x86_64-normal-server-release.zip
         openjdk8/build/linux-x86_64-normal-server-release/langtools/gensrc/**/*
         openjdk8/build/linux-x86_64-normal-server-release/corba/gensrc/**/*
         openjdk8/build/linux-x86_64-normal-server-release/jdk/gensrc/**/*
@@ -39,8 +39,8 @@ jobs:
     - name: Upload OpenJDK 8
       uses: actions/upload-artifact@v2
       with:
-        name: openjdk8-build-linux-x86_64
-        path: openjdk8-build-linux-x86_64.zip
+        name: openjdk8-build-linux-x86_64-normal-server-release
+        path: openjdk8-build-linux-x86_64-normal-server-release.zip
   build-ikvm-linux:
     name: Build IKVM (Linux)
     needs:
@@ -61,10 +61,10 @@ jobs:
     - name: Download OpenJDK 8 Build
       uses: actions/download-artifact@v2
       with:
-        name: openjdk8-build-linux-x86_64
-        path: openjdk8-build-linux-x86_64.zip
+        name: openjdk8-build-linux-x86_64-normal-server-release
+        path: .
     - name: Restore OpenJDK 8 Build
-      run: unzip -o openjdk8-build-linux-x86_64.zip
+      run: unzip -o openjdk8-build-linux-x86_64-normal-server-release.zip
     - name: DotNet Restore
       run: dotnet restore
       working-directory: ./rebuild
