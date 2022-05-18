@@ -65,7 +65,6 @@
     </ItemGroup>
 
     <ItemGroup Condition=" '$(TargetFramework)' == 'netcoreapp3.1' ">
-        <RefStubAssembly Include="mscorlib" />
         <RefStubAssembly Include="netstandard" />
         <RefStubAssembly Include="Microsoft.Win32.Primitives" />
         <RefStubAssembly Include="System.Collections.Specialized" />
