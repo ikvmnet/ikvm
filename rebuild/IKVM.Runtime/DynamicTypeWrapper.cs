@@ -32,13 +32,15 @@ using ProtectionDomain = System.Object;
 #else
 using System.Reflection;
 using System.Reflection.Emit;
+
 using DynamicOrAotTypeWrapper = IKVM.Internal.DynamicTypeWrapper;
 using ProtectionDomain = java.security.ProtectionDomain;
+
 #endif
 using System.Diagnostics;
-using System.Security;
-using System.Security.Permissions;
+
 using IKVM.Attributes;
+
 using System.Linq;
 
 namespace IKVM.Internal
@@ -47,7 +49,7 @@ namespace IKVM.Internal
 	abstract class DynamicTypeWrapper : TypeWrapper
 #else
 #pragma warning disable 628 // don't complain about protected members in sealed type
-	sealed class DynamicTypeWrapper : TypeWrapper
+    sealed class DynamicTypeWrapper : TypeWrapper
 #endif
 	{
 #if STATIC_COMPILER
@@ -5717,7 +5719,7 @@ namespace IKVM.Internal
 
 			private static class BakedTypeCleanupHack
 			{
-#if NET40_OR_GREATER || NETCOREAPP || STATIC_COMPILER
+#if NET40_OR_GREATER || NETCOREAPP3_1_OR_GREATER || STATIC_COMPILER
 				internal static void Process(DynamicTypeWrapper wrapper) { }
 #elif NET20_OR_GREATER
 				private static readonly FieldInfo m_methodBuilder = typeof(ConstructorBuilder).GetField("m_methodBuilder", BindingFlags.Instance | BindingFlags.NonPublic);
