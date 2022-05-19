@@ -11,15 +11,11 @@ jobs:
     name: Build OpenJDK 8
     runs-on: ubuntu-18.04
     container:
-      image: debian/eol:squeeze
+      image: debian/eol:lenny
     steps:
-    - uses: actions/checkout@v1
-      with:
-        submodules: recursive
-    - name: Install OpenJDK 8 Tools
+    - name: Install Build Tools
       run: |
-        echo "deb     [trusted=yes] http://archive.debian.org/debian/ squeeze main"  > /etc/apt/sources.list &&
-        echo "deb-src [trusted=yes] http://archive.debian.org/debian/ squeeze main"  >> /etc/apt/sources.list &&
+        echo "deb     [trusted=yes] http://archive.debian.org/debian/ lenny main"  > /etc/apt/sources.list &&
         apt-get update &&
         apt-get dist-upgrade -y &&
         apt-get install -y \
@@ -34,10 +30,17 @@ jobs:
           libfontconfig1-dev \
           unzip \
           zip \
+          wget \
           gcc-4.3 \
-          g++-4.3 \
-          openjdk-7-jre-headless
+          g++-4.3 &&
+        cd $RUNNER_TEMP &&
+        wget 'https://files-cdn.liferay.com/mirrors/download.oracle.com/otn-pub/java/jdk/7u80-b15/jdk-7u80-linux-x64.tar.gz' -o jdk-7u80-linux-x64.tar.gz &&
+        tar xzvf jdk-7u80-linux-x64.tar.gz
       shell: bash
+    - name: Checkout Source
+      uses: actions/checkout@v1
+      with:
+        submodules: recursive
     - name: Cache OpenJDK 8 Build
       uses: actions/cache@v3
       with:
@@ -45,13 +48,20 @@ jobs:
         key: openjdk8-build-linux-x86_64-${{ hashFiles('openjdk8/**', '!openjdk/build/**') }}-1
     - name: Configure OpenJDK 8
       run: |
+        export JAVA_HOME=$RUNNER_TEMP/jdk1.7.0_80
         bash ./configure \
           --with-extra-cxxflags="-std=gnu++98 -Wno-error -fno-lifetime-dse -fno-delete-null-pointer-checks" \
           --with-extra-cflags="-std=gnu++98 -Wno-error -fno-lifetime-dse -fno-delete-null-pointer-checks" \
           --with-extra-ldflags=""
       working-directory: openjdk8
     - name: Build OpenJDK 8
-      run: DISABLE_HOTSPOT_OS_VERSION_CHECK=ok make langtools corba jdk
+      run: |
+        export JAVA_HOME=$RUNNER_TEMP/jdk1.7.0_80
+        make \
+          DISABLE_HOTSPOT_OS_VERSION_CHECK=ok
+          langtools \
+          corba \
+          jdk
       working-directory: openjdk8
     - name: Zip OpenJDK 8
       run: |
