@@ -16,6 +16,7 @@ jobs:
         submodules: recursive
     - name: Install OpenJDK 8 Tools
       run: sudo apt-get install openjdk-8-jdk-headless libx11-dev libxext-dev libxrender-dev libxtst-dev libxt-dev libcups2-dev libasound2-dev libfreetype6-dev libfontconfig1-dev
+      shell: bash
     - name: Cache OpenJDK 8 Build
       uses: actions/cache@v3
       with:
@@ -37,6 +38,7 @@ jobs:
         openjdk8/build/linux-x86_64-normal-server-release/jdk/impsrc/**
         openjdk8/build/linux-x86_64-normal-server-release/jdk/lib/**
         openjdk8/build/linux-x86_64-normal-server-release/jdk/classes/**
+      shell: bash
     - name: Upload OpenJDK 8
       uses: actions/upload-artifact@v2
       with:
