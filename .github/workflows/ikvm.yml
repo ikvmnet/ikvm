@@ -18,9 +18,10 @@ jobs:
         submodules: recursive
     - name: Install OpenJDK 8 Tools
       run: |
-        echo "deb [trusted=yes] http://archive.debian.org/debian/ squeeze main"  > /etc/apt/sources.list &&
+        echo "deb     [trusted=yes] http://archive.debian.org/debian/ squeeze main"  > /etc/apt/sources.list &&
+        echo "deb-src [trusted=yes] http://archive.debian.org/debian/ squeeze main"  >> /etc/apt/sources.list &&
         apt-get update &&
-        apt-get dist-upgrade -y \
+        apt-get dist-upgrade -y &&
         apt-get install -y \
           libx11-dev \
           libxext-dev \
