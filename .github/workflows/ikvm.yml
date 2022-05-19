@@ -46,15 +46,6 @@ jobs:
           libasound2-dev \
           libfreetype6-dev \
           libfontconfig1-dev
-    - name: Download OpenJDK 7
-      uses: actions/download-artifact@v1
-      with:
-        name: openjdk-7u75-b13-linux-x64-18_dec_2014.tar.gz
-        path: /tmp/openjdk-7u75-b13-linux-x64-18_dec_2014.tar.gz
-    - name: Extract OpenJDK 7
-      shell: bash
-      run: |
-        tar xzvf /tmp/openjdk-7u75-b13-linux-x64-18_dec_2014.tar.gz -C /tmp
     - name: Checkout Source
       uses: actions/checkout@v1
       with:
@@ -64,20 +55,17 @@ jobs:
       with:
         path: openjdk8/build/linux-x86_64-normal-server-release
         key: openjdk8-build-linux-x86_64-${{ hashFiles('openjdk8/**', '!openjdk/build/**') }}-1
+    - name: Download OpenJDK 7
+      uses: actions/download-artifact@v1
+      with:
+        name: openjdk-7u75-b13-linux-x64-18_dec_2014.tar.gz
+        path: openjdk8/build/openjdk-7u75-b13-linux-x64-18_dec_2014.tar.gz
+    - name: Extract OpenJDK 7
+      run: tar xzvf openjdk8/build/openjdk-7u75-b13-linux-x64-18_dec_2014.tar.gz -C openjdk8/build
     - name: Configure OpenJDK 8
-      run: |
-        export JAVA_HOME=/tmp/java-se-7u75-ri
-        bash ./configure
-      working-directory: openjdk8
+      run: cd openjdk8 && JAVA_HOME=openjdk8/build/java-se-7u75-ri bash ./configure
     - name: Build OpenJDK 8
-      run: |
-        export JAVA_HOME=/tmp/java-se-7u75-ri
-        make \
-          DISABLE_HOTSPOT_OS_VERSION_CHECK=ok
-          langtools \
-          corba \
-          jdk
-      working-directory: openjdk8
+      run: cd openjdk8 && make DISABLE_HOTSPOT_OS_VERSION_CHECK=oklangtools corba jdk
     - name: Zip OpenJDK 8
       run: |
         zip -r openjdk8-build-linux-x86_64-normal-server-release.zip \
