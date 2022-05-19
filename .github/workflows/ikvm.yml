@@ -50,7 +50,7 @@ jobs:
       uses: actions/download-artifact@v1
       with:
         name: openjdk-8u41-b04-linux-x64-14_jan_2020.tar.gz
-        path: $TEMP
+        path: $TEMP/openjdk-8u41-b04-linux-x64-14_jan_2020.tar.gz
     - name: Install OpenJDK 8
       shell: bash
       run: |
