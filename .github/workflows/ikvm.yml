@@ -30,14 +30,14 @@ jobs:
       working-directory: openjdk8
     - name: Zip OpenJDK 8
       run: >
-        shopt -s globstar
+        shopt -s globstar &&
         zip -r openjdk8-build-linux-x86_64-normal-server-release.zip
-        openjdk8/build/linux-x86_64-normal-server-release/langtools/gensrc/**
-        openjdk8/build/linux-x86_64-normal-server-release/corba/gensrc/**
-        openjdk8/build/linux-x86_64-normal-server-release/jdk/gensrc/**
-        openjdk8/build/linux-x86_64-normal-server-release/jdk/impsrc/**
-        openjdk8/build/linux-x86_64-normal-server-release/jdk/lib/**
-        openjdk8/build/linux-x86_64-normal-server-release/jdk/classes/**
+          openjdk8/build/linux-x86_64-normal-server-release/langtools/gensrc/**
+          openjdk8/build/linux-x86_64-normal-server-release/corba/gensrc/**
+          openjdk8/build/linux-x86_64-normal-server-release/jdk/gensrc/**
+          openjdk8/build/linux-x86_64-normal-server-release/jdk/impsrc/**
+          openjdk8/build/linux-x86_64-normal-server-release/jdk/lib/**
+          openjdk8/build/linux-x86_64-normal-server-release/jdk/classes/**
       shell: bash
     - name: Upload OpenJDK 8
       uses: actions/upload-artifact@v2
