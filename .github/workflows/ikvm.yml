@@ -11,20 +11,17 @@ jobs:
     name: Build OpenJDK 8
     runs-on: ubuntu-18.04
     container:
-      image: debian/eol:lenny
+      image: debian/eol:squeeze
     steps:
     - uses: actions/checkout@v1
       with:
         submodules: recursive
     - name: Install OpenJDK 8 Tools
       run: |
-        echo "APT::Cache-Limit \"100000000\";" >> /etc/apt/apt.conf.d/70debconf &&
-        echo "deb [trusted=yes] http://archive.debian.org/debian/ lenny   main"  > /etc/apt/sources.list &&
+        echo "deb [trusted=yes] http://archive.debian.org/debian/ squeeze main"  > /etc/apt/sources.list &&
         apt-get update &&
         apt-get dist-upgrade -y \
         apt-get install -y \
-          apt \
-          dpkg \
           libx11-dev \
           libxext-dev \
           libxrender-dev \
@@ -37,13 +34,7 @@ jobs:
           unzip \
           zip \
           gcc-4.3 \
-          g++-4.3 &&
-        echo "deb [trusted=yes] http://archive.debian.org/debian/ wheezy  main" >> /etc/apt/sources.list &&
-        apt-get update &&
-        apt-get install -y \
-          apt \
-          dpkg &&
-        apt-get install -y --force-yes \
+          g++-4.3 \
           openjdk-7-jre-headless
       shell: bash
     - name: Cache OpenJDK 8 Build
