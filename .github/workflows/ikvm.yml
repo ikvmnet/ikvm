@@ -20,8 +20,9 @@ jobs:
       run: |
         echo "deb http://archive.debian.org/debian/ lenny contrib main non-free" > /etc/apt/sources.list &
         apt-get update &&
+        apt-cache search openjdk &&
         apt-get install \
-          openjdk-7-jdk-headless \
+          openjdk-7-jdk \
           libx11-dev \
           libxext-dev \
           libxrender-dev \
