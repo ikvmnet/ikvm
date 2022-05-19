@@ -22,6 +22,7 @@ jobs:
         echo "deb [trusted=yes] http://archive.debian.org/debian/ lenny   main"  > /etc/apt/sources.list &&
         apt-get update &&
         apt-get install -y \
+          apt \
           libx11-dev \
           libxext-dev \
           libxrender-dev \
