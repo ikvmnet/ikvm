@@ -40,7 +40,7 @@ jobs:
         apt-get update &&
         apt-cache search openjdk &&
         apt-cache search gcc &&
-        apt-get install -y \
+        apt-get install -y --force-yes \
           openjdk-7-jre-headless
       shell: bash
     - name: Cache OpenJDK 8 Build
