@@ -24,6 +24,7 @@ jobs:
         apt-get dist-upgrade -y \
         apt-get install -y \
           apt \
+          dpkg \
           libx11-dev \
           libxext-dev \
           libxrender-dev \
@@ -39,6 +40,9 @@ jobs:
           g++-4.3 &&
         echo "deb [trusted=yes] http://archive.debian.org/debian/ wheezy  main" >> /etc/apt/sources.list &&
         apt-get update &&
+        apt-get install -y \
+          apt \
+          dpkg &&
         apt-get install -y --force-yes \
           openjdk-7-jre-headless
       shell: bash
