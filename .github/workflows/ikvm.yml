@@ -7,8 +7,20 @@ on:
     branches: [ openjdk_msbuild ]
 
 jobs:
+  download-openjdk8:
+    name: Download OpenJDK 8
+    runs-on: ubuntu-18.04
+    steps:
+    - name: Get
+      run: curl -o openjdk-8u41-b04-linux-x64-14_jan_2020.tar.gz "https://download.java.net/openjdk/jdk8u41/ri/openjdk-8u41-b04-linux-x64-14_jan_2020.tar.gz"
+    - name: Put
+      uses: actions/upload-artifact@v2
+      with:
+        name: openjdk-8u41-b04-linux-x64-14_jan_2020.tar.gz
+        path: openjdk-8u41-b04-linux-x64-14_jan_2020.tar.gz
   build-openjdk8:
     name: Build OpenJDK 8
+    needs: download-openjdk8
     runs-on: ubuntu-18.04
     container:
       image: debian/eol:lenny
@@ -33,12 +45,14 @@ jobs:
           libasound2-dev \
           libfreetype6-dev \
           libfontconfig1-dev
-    - name: Install OpenJDK 7
+    - name: Download OpenJDK 8
+      uses: actions/download-artifact@v1
+      with:
+        name: openjdk-8u41-b04-linux-x64-14_jan_2020.tar.gz
+        path: /tmp
+    - name: Install OpenJDK 8
       shell: bash
       run: |
-        find /__t
-        curl -o /tmp/curl-7.83.1.tar.gz 'https://curl.se/download/curl-7.83.1.tar.gz'
-        curl -o /tmp/openjdk-8u41-b04-linux-x64-14_jan_2020.tar.gz 'https://download.java.net/openjdk/jdk8u41/ri/openjdk-8u41-b04-linux-x64-14_jan_2020.tar.gz'
         tar xzvf /tmp/openjdk-8u41-b04-linux-x64-14_jan_2020.tar.gz -C /tmp
     - name: Checkout Source
       uses: actions/checkout@v1
