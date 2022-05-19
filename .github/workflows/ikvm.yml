@@ -13,12 +13,17 @@ jobs:
     container:
       image: debian/eol:lenny
     steps:
-    - name: Upgrade Debian
+    - name: Install Debian Build Tools
       shell: bash
       run: |
         echo "deb http://archive.debian.org/debian/ lenny main" > /etc/apt/sources.list &&
         apt-get update &&
         apt-get install -y \
+          unzip \
+          zip \
+          curl \
+          gcc-4.3 \
+          g++-4.3 \
           libx11-dev \
           libxext-dev \
           libxrender-dev \
@@ -27,17 +32,12 @@ jobs:
           libcups2-dev \
           libasound2-dev \
           libfreetype6-dev \
-          libfontconfig1-dev \
-          unzip \
-          zip \
-          wget \
-          gcc-4.3 \
-          g++-4.3
+          libfontconfig1-dev
     - name: Install OpenJDK 7
       shell: bash
       run: |
-        cd $RUNNER_TEMP &&
-        wget 'https://files-cdn.liferay.com/mirrors/download.oracle.com/otn-pub/java/jdk/7u80-b15/jdk-7u80-linux-x64.tar.gz' -o jdk-7u80-linux-x64.tar.gz &&
+        cd $RUNNER_TEMP
+        curl -o jdk-7u80-linux-x64.tar.gz 'https://files-cdn.liferay.com/mirrors/download.oracle.com/otn-pub/java/jdk/7u80-b15/jdk-7u80-linux-x64.tar.gz'
         tar xzvf jdk-7u80-linux-x64.tar.gz
     - name: Checkout Source
       uses: actions/checkout@v1
