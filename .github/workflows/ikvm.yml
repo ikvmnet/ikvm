@@ -13,7 +13,7 @@ jobs:
     container:
       image: ubuntu:12.04
     steps:
-    - uses: actions/checkout@v3
+    - uses: actions/checkout@v2
       with:
         submodules: recursive
     - name: Install OpenJDK 8 Tools
