@@ -30,7 +30,7 @@ jobs:
           --with-extra-ldflags=""
       working-directory: openjdk8
     - name: Build OpenJDK 8
-      run: DISABLE_HOTSPOT_OS_VERSION_CHECK=ok make langtools corba jdk
+      run: make CC="cc -Wno-error" langtools corba jdk
       working-directory: openjdk8
     - name: Zip OpenJDK 8
       run: |
