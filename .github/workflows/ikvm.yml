@@ -22,7 +22,7 @@ jobs:
         apt-get update &&
         apt-cache search openjdk &&
         apt-get install \
-          openjdk-7-jre \
+          openjdk-6-jre \
           libx11-dev \
           libxext-dev \
           libxrender-dev \
