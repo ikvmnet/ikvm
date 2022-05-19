@@ -109,12 +109,6 @@
     <UsingTask AssemblyFile="$(ILRepackToolsPath)\ILRepack.Lib.MSBuild.dll" TaskName="ILRepack" Condition=" Exists('$(ILRepackToolsPath)\ILRepack.Lib.MSBuild.dll') " />
 
     <ItemDefinitionGroup>
-        <JavaSource>
-            <TargetFramework></TargetFramework>
-        </JavaSource>
-        <JavaSourceTemplate>
-            <TargetFramework></TargetFramework>
-        </JavaSourceTemplate>
         <StubAssembly>
             <Args></Args>
         </StubAssembly>
@@ -125,24 +119,24 @@
     </ItemGroup>
 
     <ItemGroup>
-        <JavaSource Include="src\**\*.java" SourcePath="%(RecursiveDir)%(Filename)%(Extension)" />
-        <JavaSource Update="src\**\*.netcoreapp3_1.java" SourcePath="%(RecursiveDir)%(Filename)" TargetFramework="netcoreapp3.1" />
-        <JavaSource Update="src\**\*.net461.java" SourcePath="%(RecursiveDir)%(Filename)" TargetFramework="net461" />
-        <JavaSource Remove="src\**\*.java.in" />
-        <JavaSourceTemplate Include="src\**\*.java.in" SourcePath="%(RecursiveDir)%(Filename)" />
-        <JavaSourceTemplate Update="src\**\*.netcoreapp3_1.java.in" SourcePath="%(RecursiveDir)%(Filename)" TargetFramework="netcoreapp3.1" />
-        <JavaSourceTemplate Update="src\**\*.net461.java.in" SourcePath="%(RecursiveDir)%(Filename)" TargetFramework="net461" />
+        <JavaSource Include="src\classpath\**\*.java" PackagePath="$([System.String]::Copy('%(RecursiveDir)%(Filename)').Replace('\', '/'))" />
+        <JavaSource Include="src\icedtea_jce\**\*.java" PackagePath="$([System.String]::Copy('%(RecursiveDir)%(Filename)').Replace('\', '/'))" />
+        <JavaSource Include="src\icedtea_rt\**\*.java" PackagePath="$([System.String]::Copy('%(RecursiveDir)%(Filename)').Replace('\', '/'))" />
+        <JavaSource Include="src\local\**\*.java" PackagePath="$([System.String]::Copy('%(RecursiveDir)%(Filename)').Replace('\', '/'))" />
+        <JavaSource Remove="@(JavaSource)" Condition=" $([System.String]::Copy('%(Identity)').EndsWith('.net461.java')) And '$(TargetFramework)' != 'net461' " />
+        <JavaSource Remove="@(JavaSource)" Condition=" $([System.String]::Copy('%(Identity)').EndsWith('.netcoreapp3_1.java')) And '$(TargetFramework)' != 'netcoreapp3.1' " />
+        <JavaSource Update="@(JavaSource)" PackagePath="$([System.String]::Copy('%(PackagePath)').Replace('.net461', ''))" />
+        <JavaSource Update="@(JavaSource)" PackagePath="$([System.String]::Copy('%(PackagePath)').Replace('.netcoreapp3_1', ''))" />
+        <JavaSourceTemplate Include="src\local\**\*.java.in" SourcePath="$([System.String]::Copy('%(RecursiveDir)%(Filename)').Replace('.in', ''))" PackagePath="$([System.String]::Copy('%(RecursiveDir)%(Filename)').Replace('.in', '').Replace('\', '/'))" />
+        <JavaSourceTemplate Remove="@(JavaSourceTemplate)" Condition=" $([System.String]::Copy('%(Identity)').EndsWith('.net461.java.in')) And '$(TargetFramework)' != 'net461' " />
+        <JavaSourceTemplate Remove="@(JavaSourceTemplate)" Condition=" $([System.String]::Copy('%(Identity)').EndsWith('.netcoreapp3_1.java.in')) And '$(TargetFramework)' != 'netcoreapp3.1' " />
+        <JavaSourceTemplate Update="@(JavaSourceTemplate)" SourcePath="$([System.String]::Copy('%(SourcePath)').Replace('.net461', ''))" PackagePath="$([System.String]::Copy('%(PackagePath)').Replace('.net461', ''))" />
+        <JavaSourceTemplate Update="@(JavaSourceTemplate)" SourcePath="$([System.String]::Copy('%(SourcePath)').Replace('.netcoreapp3_1', ''))" PackagePath="$([System.String]::Copy('%(PackagePath)').Replace('.netcoreapp3_1', ''))" />
     </ItemGroup>
 
     <ItemGroup>
-        <JavaResource Include="res\**\*" ResourcePath="%(RecursiveDir)%(Filename)%(Extension)" />
-        <JavaResource Remove="res\**\*.in" />
-        <JavaResource Update="res\**\*.netcoreapp3_1" ResourcePath="%(RecursiveDir)%(Filename)" TargetFramework="netcoreapp3.1" />
-        <JavaResource Update="res\**\*.net461" ResourcePath="%(RecursiveDir)%(Filename)" TargetFramework="net461" />
-        <JavaResourceTemplate Include="res\**\*.in" ResourcePath="%(RecursiveDir)%(Filename)" />
-        <JavaSource Remove="src\AssemblyInfo.java" />
-        <JavaResourceTemplate Update="src\**\*.netcoreapp3_1.in" ResourcePath="%(RecursiveDir)%(Filename)" TargetFramework="netcoreapp3.1" />
-        <JavaResourceTemplate Update="src\**\*.net461.in" ResourcePath="%(RecursiveDir)%(Filename)" TargetFramework="net461" />
+        <JavaResource Include="res\**\*" ResourcePath="$([System.String]::Copy('%(RecursiveDir)%(Filename)%(Extension)').Replace('\', '/'))" />
+        <JavaResourceTemplate Include="res\**\*.in" ResourcePath="$([System.String]::Copy('%(RecursiveDir)%(Filename)%(Extension)').Replace('.in', '').Replace('\', '/'))" />
     </ItemGroup>
 
     <ItemGroup>
@@ -221,10 +215,16 @@
             <Using Namespace="System.Collections.Generic" />
             <Code Type="Fragment" Language="cs">
                 <![CDATA[
-                var hs = new Dictionary<string, ITaskItem>();
+                var ls = new List<ITaskItem>();
+                var hs = new HashSet<string>();
                 foreach (var i in Source)
-                    hs[i.GetMetadata("Key")] = i;
-                Output = hs.Values.ToArray();
+                {
+                    var key = i.GetMetadata("UniqueKey");
+                    if (key == null || hs.Add(key))
+                        ls.Add(i);
+                }
+                
+                Output = ls.ToArray();
             ]]>
             </Code>
         </Task>
@@ -297,6 +297,7 @@
         <PropertyGroup>
             <IkvmStub>@(_IkvmStub)</IkvmStub>
         </PropertyGroup>
+        <Message Text="Using ikvmstub executable at '$(IkvmStub)'." Importance="high" />
     </Target>
 
     <Target Name="ResolveIkvmRuntimeAssembly" DependsOnTargets="ResolveProjectReferences">
@@ -400,17 +401,17 @@
 
     <Target Name="ResolveTransformJavaSourceTemplates">
         <ItemGroup>
-            <TransformJavaSourceTemplate Include="@(JavaSourceTemplate)" Condition=" '%(JavaSourceTemplate.TargetFramework)' == '' Or '%(TargetFramework)' == '$(TargetFramework)' ">
+            <TransformJavaSourceTemplate Include="@(JavaSourceTemplate)">
                 <TargetPath>$(JavaSourceTemplateOutputPath)\%(SourcePath)</TargetPath>
             </TransformJavaSourceTemplate>
         </ItemGroup>
     </Target>
 
-    <Target Name="TransformJavaSourceTemplates" DependsOnTargets="ResolveTransformJavaSourceTemplates" Inputs="@(TransformJavaSourceTemplate)" Outputs="@(TransformJavaSourceTemplate->'%(Destination)')">
+    <Target Name="TransformJavaSourceTemplates" DependsOnTargets="ResolveTransformJavaSourceTemplates" Inputs="@(TransformJavaSourceTemplate)" Outputs="@(TransformJavaSourceTemplate->'%(TargetPath)')">
         <MakeDir Directories="$(JavaSourceTemplateOutputPath)" />
         <TransformTemplates Items="@(TransformJavaSourceTemplate)" Variables="@(TransformTemplateVariables)" />
         <ItemGroup>
-            <JavaSourceTemplateItem Include="@(TransformJavaSourceTemplate->'%(TargetPath)')" SourcePath="%(SourcePath)" />
+            <JavaSourceTemplateItem Include="@(TransformJavaSourceTemplate->'%(TargetPath)')" />
         </ItemGroup>
     </Target>
 
@@ -428,15 +429,9 @@
 
     <Target Name="_ResolveJavaSourceItems" DependsOnTargets="$(TransformJavaSourceTemplates)">
         <ItemGroup>
-            <_JavaSourceItems Include="@(OpenJdkSource)" Condition=" '%(Extension)' == '.java' ">
-                <Key>%(SourcePath)</Key>
-            </_JavaSourceItems>
-            <_JavaSourceItems Include="@(JavaSource)" Condition=" '%(JavaSource.TargetFramework)' == '' Or '%(JavaSource.TargetFramework)' == '$(TargetFramework)' ">
-                <Key>%(SourcePath)</Key>
-            </_JavaSourceItems>
-            <_JavaSourceItems Include="@(JavaSourceTemplateItem)">
-                <Key>%(SourcePath)</Key>
-            </_JavaSourceItems>
+            <_JavaSourceItems Include="@(JavaSourceTemplateItem)" UniqueKey="%(PackagePath)" />
+            <_JavaSourceItems Include="@(JavaSource)" UniqueKey="%(PackagePath)" />
+            <_JavaSourceItems Include="@(OpenJdkSource)" UniqueKey="%(PackagePath)" />
         </ItemGroup>
         <DistinctSourceItems Source="@(_JavaSourceItems)">
             <Output TaskParameter="Output" ItemName="_JavaSourceItemsDistinct" />
@@ -490,15 +485,9 @@
 
     <Target Name="_ResolveJavaResourceItems" DependsOnTargets="TransformJavaResourceTemplates">
         <ItemGroup>
-            <_JavaResourceItems Include="@(OpenJdkResource)">
-                <Key>%(ResourcePath)</Key>
-            </_JavaResourceItems>
-            <_JavaResourceItems Include="@(JavaResource)" Condition=" '%(JavaResource.TargetFramework)' == '' Or '%(JavaResource.TargetFramework)' == '$(TargetFramework)' ">
-                <Key>%(ResourcePath)</Key>
-            </_JavaResourceItems>
-            <_JavaResourceItems Include="@(JavaResourceTemplateItem)">
-                <Key>%(ResourcePath)</Key>
-            </_JavaResourceItems>
+            <_JavaResourceItems Include="@(JavaResourceTemplateItem)" UniqueKey="%(ResourcePath)" />
+            <_JavaResourceItems Include="@(JavaResource)" UniqueKey="%(ResourcePath)" />
+            <_JavaResourceItems Include="@(OpenJdkResource)" UniqueKey="%(ResourcePath)" />
         </ItemGroup>
         <DistinctSourceItems Source="@(_JavaResourceItems)">
             <Output TaskParameter="Output" ItemName="_JavaResourceItemsDistinct" />
@@ -615,6 +604,7 @@
         <PropertyGroup>
             <Ikvmc>@(_Ikvmc)</Ikvmc>
         </PropertyGroup>
+        <Message Text="Using ikvmc executable at '$(Ikvmc)'." Importance="high" />
     </Target>
 
     <Target Name="GetIkvmRuntimeDll" DependsOnTargets="ResolveProjectReferences">
@@ -650,7 +640,6 @@
         </RemoveDuplicates>
 
         <ItemGroup>
-            <JavaResourceItemsWithJavaSep Include="@(JavaResourceItems)" ResourcePath="$([System.String]::Copy(%(ResourcePath)).Replace('\', '/'))" />
             <IkvmcArgs Include="-debug" Condition=" '$(DebugSymbols)' == 'true' " />
             <IkvmcArgs Include="-assembly:$(AssemblyName)" />
             <IkvmcArgs Include="-version:$(AssemblyVersion)" />
@@ -669,7 +658,7 @@
             <IkvmcArgs Include="-noparameterreflection" />
             <IkvmcArgs Include="-exclude:$([System.IO.Path]::GetFullPath('$(MSBuildThisFileDirectory)$(IntermediateOutputPath)ikvmc.exclude.txt'))" />
             <IkvmcArgs Include="@(_BuildOpenJdkReferencePath->'-reference:%(FullPath)')" />
-            <IkvmcArgs Include="@(JavaResourceItemsWithJavaSep->'-resource:%(ResourcePath)=%(FullPath)')" />
+            <IkvmcArgs Include="@(JavaResourceItems->'-resource:%(ResourcePath)=%(FullPath)')" />
             <IkvmcArgs Include="@(JavaClassItems->'%(FullPath)')" />
         </ItemGroup>
 
