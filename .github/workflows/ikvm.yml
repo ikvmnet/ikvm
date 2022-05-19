@@ -50,32 +50,30 @@ jobs:
       uses: actions/checkout@v1
       with:
         submodules: recursive
-    - name: Cache OpenJDK 8 Build
-      uses: actions/cache@v3
-      with:
-        path: openjdk8/build/linux-x86_64-normal-server-release
-        key: openjdk8-build-linux-x86_64-${{ hashFiles('openjdk8/**', '!openjdk/build/**') }}-1
     - name: Download OpenJDK 7
       uses: actions/download-artifact@v1
       with:
         name: openjdk-7u75-b13-linux-x64-18_dec_2014.tar.gz
         path: openjdk8/build/openjdk-7u75-b13-linux-x64-18_dec_2014.tar.gz
     - name: Extract OpenJDK 7
-      run: tar xzvf openjdk8/build/openjdk-7u75-b13-linux-x64-18_dec_2014.tar.gz -C openjdk8/build
+      run: tar xzvf openjdk-7u75-b13-linux-x64-18_dec_2014.tar.gz
+      working-directory: openjdk8/build
     - name: Configure OpenJDK 8
-      run: cd openjdk8 && JAVA_HOME=openjdk8/build/java-se-7u75-ri bash ./configure
+      run: JAVA_HOME=build/java-se-7u75-ri bash ./configure
+      working-directory: openjdk8
     - name: Build OpenJDK 8
-      run: cd openjdk8 && make DISABLE_HOTSPOT_OS_VERSION_CHECK=oklangtools corba jdk
+      run: make DISABLE_HOTSPOT_OS_VERSION_CHECK=oklangtools corba jdk
+      working-directory: openjdk8
     - name: Zip OpenJDK 8
       run: |
         zip -r openjdk8-build-linux-x86_64-normal-server-release.zip \
-          openjdk8/build/linux-x86_64-normal-server-release/langtools/gensrc \
-          openjdk8/build/linux-x86_64-normal-server-release/corba/gensrc \
-          openjdk8/build/linux-x86_64-normal-server-release/jdk/gensrc \
-          openjdk8/build/linux-x86_64-normal-server-release/jdk/impsrc \
-          openjdk8/build/linux-x86_64-normal-server-release/jdk/lib \
-          openjdk8/build/linux-x86_64-normal-server-release/jdk/classes
-      shell: bash
+          build/linux-x86_64-normal-server-release/langtools/gensrc \
+          build/linux-x86_64-normal-server-release/corba/gensrc \
+          build/linux-x86_64-normal-server-release/jdk/gensrc \
+          build/linux-x86_64-normal-server-release/jdk/impsrc \
+          build/linux-x86_64-normal-server-release/jdk/lib \
+          build/linux-x86_64-normal-server-release/jdk/classes
+      working-directory: openjdk8
     - name: Upload OpenJDK 8
       uses: actions/upload-artifact@v2
       with:
@@ -105,6 +103,7 @@ jobs:
         path: .
     - name: Restore OpenJDK 8 Build
       run: unzip -o openjdk8-build-linux-x86_64-normal-server-release.zip
+      working-directory: openjdk8
     - name: DotNet Restore
       run: dotnet restore
       working-directory: ./rebuild
