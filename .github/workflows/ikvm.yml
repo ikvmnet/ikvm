@@ -9,7 +9,7 @@ on:
 jobs:
   build-openjdk8:
     name: Build OpenJDK 8
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-18.04
     steps:
     - uses: actions/checkout@v3
       with:
@@ -26,7 +26,7 @@ jobs:
       run: |
         bash ./configure \
           --with-extra-cxxflags="-std=gnu++98 -Wno-error -fno-lifetime-dse -fno-delete-null-pointer-checks" \
-          --with-extra-cflags="-Wno-error -fno-lifetime-dse -fno-delete-null-pointer-checks"
+          --with-extra-cflags="-std=gnu++98 -Wno-error -fno-lifetime-dse -fno-delete-null-pointer-checks"
       working-directory: openjdk8
     - name: Build OpenJDK 8
       run: DISABLE_HOTSPOT_OS_VERSION_CHECK=ok make langtools corba jdk
