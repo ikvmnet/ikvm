@@ -32,6 +32,7 @@ jobs:
         echo "deb http://archive.debian.org/debian/ lenny main" > /etc/apt/sources.list &&
         apt-get update &&
         apt-get install -y \
+          cpio \
           unzip \
           zip \
           curl \
