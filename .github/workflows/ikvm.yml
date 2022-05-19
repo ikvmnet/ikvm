@@ -21,9 +21,8 @@ jobs:
         echo "deb http://archive.debian.org/debian/ lenny contrib main non-free" > /etc/apt/sources.list &
         echo "deb http://archive.debian.org/debian/ squeeze contrib main non-free" >> /etc/apt/sources.list &
         apt-get update &&
-        apt-cache search jdk &&
         apt-get install \
-          openjdk-6-jre \
+          openjdk-7-jre \
           libx11-dev \
           libxext-dev \
           libxrender-dev \
