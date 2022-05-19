@@ -35,7 +35,6 @@ jobs:
           zip \
           gcc-4.3 \
           g++-4.3 &&
-        echo "deb [trusted=yes] http://archive.debian.org/debian/ squeeze main" >> /etc/apt/sources.list &&
         echo "deb [trusted=yes] http://archive.debian.org/debian/ wheezy  main" >> /etc/apt/sources.list &&
         apt-get update &&
         apt-cache search openjdk &&
