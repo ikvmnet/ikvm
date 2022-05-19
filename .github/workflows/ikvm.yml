@@ -19,7 +19,7 @@ jobs:
     - name: Install OpenJDK 8 Tools
       run: |
         apt-get install \
-          openjdk-8-jdk-headless \
+          openjdk-7-jdk-headless \
           libx11-dev \
           libxext-dev \
           libxrender-dev \
