@@ -36,8 +36,8 @@ jobs:
     - name: Install OpenJDK 7
       shell: bash
       run: |
-        curl -o /tmp/jdk-7u80-linux-x64.tar.gz 'https://files-cdn.liferay.com/mirrors/download.oracle.com/otn-pub/java/jdk/7u80-b15/jdk-7u80-linux-x64.tar.gz'
-        tar xzvf /tmp/jdk-7u80-linux-x64.tar.gz -C /tmp
+        curl -o /tmp/openjdk-8u41-b04-linux-x64-14_jan_2020.tar.gz 'https://download.java.net/openjdk/jdk8u41/ri/openjdk-8u41-b04-linux-x64-14_jan_2020.tar.gz'
+        tar xzvf /tmp/openjdk-8u41-b04-linux-x64-14_jan_2020.tar.gz -C /tmp
     - name: Checkout Source
       uses: actions/checkout@v1
       with:
@@ -49,7 +49,7 @@ jobs:
         key: openjdk8-build-linux-x86_64-${{ hashFiles('openjdk8/**', '!openjdk/build/**') }}-1
     - name: Configure OpenJDK 8
       run: |
-        export JAVA_HOME=/tmp/jdk1.7.0_80
+        export JAVA_HOME=/tmp/java-se-8u41-ri
         bash ./configure \
           --with-extra-cxxflags="-std=gnu++98 -Wno-error -fno-lifetime-dse -fno-delete-null-pointer-checks" \
           --with-extra-cflags="-std=gnu++98 -Wno-error -fno-lifetime-dse -fno-delete-null-pointer-checks" \
@@ -57,7 +57,7 @@ jobs:
       working-directory: openjdk8
     - name: Build OpenJDK 8
       run: |
-        export JAVA_HOME=/tmp/jdk1.7.0_80
+        export JAVA_HOME=/tmp/java-se-8u41-ri
         make \
           DISABLE_HOTSPOT_OS_VERSION_CHECK=ok
           langtools \
