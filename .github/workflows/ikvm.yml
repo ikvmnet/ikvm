@@ -10,12 +10,14 @@ jobs:
   build-openjdk8:
     name: Build OpenJDK 8
     runs-on: ubuntu-18.04
+    container:
+      image: ubuntu:12.04
     steps:
     - uses: actions/checkout@v3
       with:
         submodules: recursive
     - name: Install OpenJDK 8 Tools
-      run: sudo apt-get install openjdk-8-jdk-headless libx11-dev libxext-dev libxrender-dev libxtst-dev libxt-dev libcups2-dev libasound2-dev libfreetype6-dev libfontconfig1-dev
+      run: sudo apt-get install openjdk-8-jdk-headless libx11-dev libxext-dev libxrender-dev libxtst-dev libxt-dev libcups2-dev libasound2-dev libfreetype6-dev libfontconfig1-dev unzip zip
       shell: bash
     - name: Cache OpenJDK 8 Build
       uses: actions/cache@v3
