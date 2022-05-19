@@ -50,11 +50,11 @@ jobs:
       uses: actions/download-artifact@v1
       with:
         name: openjdk-8u41-b04-linux-x64-14_jan_2020.tar.gz
-        path: $TEMP/openjdk-8u41-b04-linux-x64-14_jan_2020.tar.gz
+        path: /tmp/openjdk-8u41-b04-linux-x64-14_jan_2020.tar.gz
     - name: Install OpenJDK 8
       shell: bash
       run: |
-        tar xzvf $TEMP/openjdk-8u41-b04-linux-x64-14_jan_2020.tar.gz -C $TEMP
+        tar xzvf /tmp/openjdk-8u41-b04-linux-x64-14_jan_2020.tar.gz -C $TEMP
     - name: Checkout Source
       uses: actions/checkout@v1
       with:
@@ -66,15 +66,12 @@ jobs:
         key: openjdk8-build-linux-x86_64-${{ hashFiles('openjdk8/**', '!openjdk/build/**') }}-1
     - name: Configure OpenJDK 8
       run: |
-        export JAVA_HOME=$TEMP/java-se-8u41-ri
-        bash ./configure \
-          --with-extra-cxxflags="-std=gnu++98 -Wno-error -fno-lifetime-dse -fno-delete-null-pointer-checks" \
-          --with-extra-cflags="-std=gnu++98 -Wno-error -fno-lifetime-dse -fno-delete-null-pointer-checks" \
-          --with-extra-ldflags=""
+        export JAVA_HOME=/tmp/java-se-8u41-ri
+        bash ./configure
       working-directory: openjdk8
     - name: Build OpenJDK 8
       run: |
-        export JAVA_HOME=$TEMP/java-se-8u41-ri
+        export JAVA_HOME=/tmp/java-se-8u41-ri
         make \
           DISABLE_HOTSPOT_OS_VERSION_CHECK=ok
           langtools \
