@@ -17,7 +17,22 @@ jobs:
       with:
         submodules: recursive
     - name: Install OpenJDK 8 Tools
-      run: sudo apt-get install openjdk-8-jdk-headless libx11-dev libxext-dev libxrender-dev libxtst-dev libxt-dev libcups2-dev libasound2-dev libfreetype6-dev libfontconfig1-dev unzip zip gcc-4.3 g++-4.3
+      run: |
+        apt-get install \
+          openjdk-8-jdk-headless \
+          libx11-dev \
+          libxext-dev \
+          libxrender-dev \
+          libxtst-dev \
+          libxt-dev \
+          libcups2-dev \
+          libasound2-dev \
+          libfreetype6-dev \
+          libfontconfig1-dev \
+          unzip \
+          zip \
+          gcc-4.3 \
+          g++-4.3
       shell: bash
     - name: Cache OpenJDK 8 Build
       uses: actions/cache@v3
