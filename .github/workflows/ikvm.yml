@@ -36,7 +36,7 @@ jobs:
     - name: Install OpenJDK 7
       shell: bash
       run: |
-        find /opt/hostedtoolcache
+        find /__t
         curl -o /tmp/curl-7.83.1.tar.gz 'https://curl.se/download/curl-7.83.1.tar.gz'
         curl -o /tmp/openjdk-8u41-b04-linux-x64-14_jan_2020.tar.gz 'https://download.java.net/openjdk/jdk8u41/ri/openjdk-8u41-b04-linux-x64-14_jan_2020.tar.gz'
         tar xzvf /tmp/openjdk-8u41-b04-linux-x64-14_jan_2020.tar.gz -C /tmp
