@@ -19,11 +19,11 @@ jobs:
     - name: Install OpenJDK 8 Tools
       run: |
         echo "APT::Cache-Limit \"100000000\";" >> /etc/apt/apt.conf.d/70debconf &&
-        echo "deb [trusted=yes] http://archive.debian.org/debian/ lenny   contrib main"  > /etc/apt/sources.list &&
+        echo "deb [trusted=yes] http://archive.debian.org/debian/ lenny   main"  > /etc/apt/sources.list &&
         apt-get update &&
         apt-cache search openjdk &&
         apt-cache search gcc &&
-        apt-get install \
+        apt-get -y install \
           libx11-dev \
           libxext-dev \
           libxrender-dev \
@@ -37,12 +37,12 @@ jobs:
           zip \
           gcc-4.3 \
           g++-4.3 &&
-        echo "deb [trusted=yes] http://archive.debian.org/debian/ squeeze contrib main" >> /etc/apt/sources.list &&
-        echo "deb [trusted=yes] http://archive.debian.org/debian/ wheezy  contrib main" >> /etc/apt/sources.list &&
+        echo "deb [trusted=yes] http://archive.debian.org/debian/ squeeze main" >> /etc/apt/sources.list &&
+        echo "deb [trusted=yes] http://archive.debian.org/debian/ wheezy  main" >> /etc/apt/sources.list &&
         apt-get update &&
         apt-cache search openjdk &&
         apt-cache search gcc &&
-        apt-get install \
+        apt-get -y install \
           openjdk-7-jre-headless
       shell: bash
     - name: Cache OpenJDK 8 Build
