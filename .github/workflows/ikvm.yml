@@ -21,9 +21,7 @@ jobs:
         echo "APT::Cache-Limit \"100000000\";" >> /etc/apt/apt.conf.d/70debconf &&
         echo "deb [trusted=yes] http://archive.debian.org/debian/ lenny   main"  > /etc/apt/sources.list &&
         apt-get update &&
-        apt-cache search openjdk &&
-        apt-cache search gcc &&
-        apt-get -y install \
+        apt-get install -y \
           libx11-dev \
           libxext-dev \
           libxrender-dev \
@@ -42,7 +40,7 @@ jobs:
         apt-get update &&
         apt-cache search openjdk &&
         apt-cache search gcc &&
-        apt-get -y install \
+        apt-get install -y \
           openjdk-7-jre-headless
       shell: bash
     - name: Cache OpenJDK 8 Build
