@@ -11,7 +11,7 @@ jobs:
     name: Build OpenJDK 8
     runs-on: ubuntu-18.04
     container:
-      image: debian/eol:squeeze
+      image: debian/eol:lenny
     steps:
     - uses: actions/checkout@v1
       with:
