@@ -18,6 +18,8 @@ jobs:
         submodules: recursive
     - name: Install OpenJDK 8 Tools
       run: |
+        echo "deb http://archive.debian.org/debian/ lenny contrib main non-free" > /etc/apt/sources.list &
+        apt-get update &&
         apt-get install \
           openjdk-7-jdk-headless \
           libx11-dev \
