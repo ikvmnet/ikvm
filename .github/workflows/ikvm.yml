@@ -20,7 +20,7 @@ jobs:
       run: |
         echo "deb http://archive.debian.org/debian/ lenny contrib main non-free" > /etc/apt/sources.list &
         apt-get update &&
-        apt-cache search openjdk &&
+        apt-cache search jdk &&
         apt-get install \
           openjdk-6-jre \
           libx11-dev \
