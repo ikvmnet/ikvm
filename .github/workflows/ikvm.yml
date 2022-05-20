@@ -77,11 +77,10 @@ jobs:
           linux-x86_64-normal-server-release/jdk/classes
       working-directory: openjdk8/build
     - name: Upload OpenJDK 8
-      uses: actions/upload-artifact@v1
+      uses: nanoufo/action-upload-artifacts-and-release-assets@main
       with:
-        name: openjdk8-build-linux-x86_64-normal-server-release
         path: openjdk/build/openjdk8-build-linux-x86_64-normal-server-release.zip
-  build-ikvm-linux:
+        upload-release-files: false
     name: Build IKVM (Linux)
     needs:
       build-openjdk8
