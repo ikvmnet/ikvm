@@ -220,7 +220,7 @@
                 foreach (var i in Source)
                 {
                     var key = i.GetMetadata("UniqueKey");
-                    if (key == null || hs.Add(key))
+                    if (string.IsNullOrEmpty(key) || hs.Add(key))
                         ls.Add(i);
                 }
                 
