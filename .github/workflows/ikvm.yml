@@ -89,6 +89,6 @@ jobs:
       run: unzip -o openjdk8-build-linux-x86_64-normal-server-release.zip
       working-directory: openjdk8/build
     - name: DotNet Build
-      run: dotnet build IKVM.sln
+      run: msbuild IKVM.sln & msbuild IKVM.artifacts.msbuildproj; 
     - name: DotNet Test
       run: dotnet test --no-build --verbosity normal IKVM.sln
