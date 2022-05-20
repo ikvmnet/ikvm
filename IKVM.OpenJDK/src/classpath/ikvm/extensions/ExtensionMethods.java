@@ -23,12 +23,13 @@
 */
 package ikvm.extensions;
 
-import cli.System.Runtime.CompilerServices.ExtensionAttribute;
 import java.io.PrintStream;
 import java.io.PrintWriter;
 import java.io.UnsupportedEncodingException;
 import java.nio.charset.Charset;
 import java.util.Locale;
+
+import cli.System.Runtime.CompilerServices.ExtensionAttribute;
 
 @ExtensionAttribute.Annotation
 public final class ExtensionMethods

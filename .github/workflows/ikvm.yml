@@ -55,8 +55,7 @@ jobs:
           linux-x86_64-normal-server-release/jdk/gensrc \
           linux-x86_64-normal-server-release/jdk/impsrc \
           linux-x86_64-normal-server-release/jdk/lib \
-          linux-x86_64-normal-server-release/jdk/classes \
-          linux-x86_64-normal-server-release/*
+          linux-x86_64-normal-server-release/jdk/classes
       working-directory: openjdk8/build
     - name: Upload OpenJDK 8
       uses: actions/upload-artifact@v1
