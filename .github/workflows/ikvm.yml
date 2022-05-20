@@ -61,7 +61,7 @@ jobs:
       uses: actions/upload-artifact@v1
       with:
         name: openjdk8-build-linux-x86_64-normal-server-release.zip
-        path: openjdk/build/openjdk8-build-linux-x86_64-normal-server-release.zip
+        path: openjdk8/build/openjdk8-build-linux-x86_64-normal-server-release.zip
   build-ikvm-linux:
     name: Build IKVM (Linux)
     needs:
