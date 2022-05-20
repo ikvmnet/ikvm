@@ -7,66 +7,48 @@ on:
     branches: [ openjdk_msbuild ]
 
 jobs:
-  download-openjdk8:
-    name: Download OpenJDK 7
-    runs-on: ubuntu-18.04
-    steps:
-    - name: Get
-      run: curl -o openjdk-7u75-b13-linux-x64-18_dec_2014.tar.gz "https://download.java.net/openjdk/jdk7u75/ri/openjdk-7u75-b13-linux-x64-18_dec_2014.tar.gz"
-    - name: Put
-      uses: actions/upload-artifact@v2
-      with:
-        name: openjdk-7u75-b13-linux-x64-18_dec_2014.tar.gz
-        path: openjdk-7u75-b13-linux-x64-18_dec_2014.tar.gz
   build-openjdk8:
     name: Build OpenJDK 8
-    needs:
-      download-openjdk8
     runs-on: ubuntu-18.04
     container:
       image: debian/eol:lenny
     steps:
-    - name: Install Debian Build Tools
-      shell: bash
-      run: |
-        echo "deb http://archive.debian.org/debian/ lenny main" > /etc/apt/sources.list &&
-        apt-get update &&
-        apt-get install -y \
-          build-essential \
-          unzip \
-          zip \
-          curl \
-          gcc-4.3 \
-          g++-4.3 \
-          libx11-dev \
-          libxext-dev \
-          libxrender-dev \
-          libxtst-dev \
-          libxt-dev \
-          libxi-dev \
-          libcups2-dev \
-          libasound2-dev \
-          libfreetype6-dev \
-          libfontconfig1-dev
     - name: Checkout Source
       uses: actions/checkout@v1
       with:
         submodules: recursive
-    - name: Download OpenJDK 7
-      uses: actions/download-artifact@v1
-      with:
-        name: openjdk-7u75-b13-linux-x64-18_dec_2014.tar.gz
-        path: openjdk8/build
+    - name: Fetch OpenJDK 7
+      run: curl -o openjdk-7u75-b13-linux-x64-18_dec_2014.tar.gz "https://download.java.net/openjdk/jdk7u75/ri/openjdk-7u75-b13-linux-x64-18_dec_2014.tar.gz"
+      working-directory: openjdk8/build
     - name: Extract OpenJDK 7
       run: tar xzvf openjdk-7u75-b13-linux-x64-18_dec_2014.tar.gz
       working-directory: openjdk8/build
-    - name: Configure OpenJDK 8
-      run: JAVA_HOME=build/java-se-7u75-ri bash ./configure
-      working-directory: openjdk8
     - name: Build OpenJDK 8
-      run: make DISABLE_HOTSPOT_OS_VERSION_CHECK=oklangtools corba jdk
-      working-directory: openjdk8
-    - name: Zip OpenJDK 8
+      uses: docker://debian/eol:lenny
+      with:
+        args: |
+          echo "deb http://archive.debian.org/debian/ lenny main" > /etc/apt/sources.list &&
+          apt-get update &&
+          apt-get install -y \
+            build-essential \
+            unzip \
+            zip \
+            curl \
+            gcc-4.3 \
+            g++-4.3 \
+            libx11-dev \
+            libxext-dev \
+            libxrender-dev \
+            libxtst-dev \
+            libxt-dev \
+            libxi-dev \
+            libcups2-dev \
+            libasound2-dev \
+            libfreetype6-dev \
+            libfontconfig1-dev &&
+          JAVA_HOME=build/java-se-7u75-ri bash ./configure &&
+          make DISABLE_HOTSPOT_OS_VERSION_CHECK=ok langtools corba jdk
+    - name: Package OpenJDK 8
       run: |
         zip -r openjdk8-build-linux-x86_64-normal-server-release.zip \
           linux-x86_64-normal-server-release/langtools/gensrc \
@@ -77,10 +59,11 @@ jobs:
           linux-x86_64-normal-server-release/jdk/classes
       working-directory: openjdk8/build
     - name: Upload OpenJDK 8
-      uses: nanoufo/action-upload-artifacts-and-release-assets@main
+      uses: actions/upload-artifact@v1
       with:
+        name: openjdk8-build-linux-x86_64-normal-server-release
         path: openjdk/build/openjdk8-build-linux-x86_64-normal-server-release.zip
-        upload-release-files: false
+  build-ikvm-linux:
     name: Build IKVM (Linux)
     needs:
       build-openjdk8
