@@ -24,27 +24,28 @@ jobs:
       uses: docker://debian/eol:lenny
       with:
         args: |
-          echo "deb http://archive.debian.org/debian/ lenny main" > /etc/apt/sources.list &&
-          apt-get update &&
-          apt-get install -y \
-            build-essential \
-            unzip \
-            zip \
-            curl \
-            gcc-4.3 \
-            g++-4.3 \
-            libx11-dev \
-            libxext-dev \
-            libxrender-dev \
-            libxtst-dev \
-            libxt-dev \
-            libxi-dev \
-            libcups2-dev \
-            libasound2-dev \
-            libfreetype6-dev \
-            libfontconfig1-dev &&
-          JAVA_HOME=build/java-se-7u75-ri bash ./configure &&
-          make DISABLE_HOTSPOT_OS_VERSION_CHECK=ok langtools corba jdk
+          bash -c '
+            echo "deb http://archive.debian.org/debian/ lenny main" > /etc/apt/sources.list &&
+            apt-get update &&
+            apt-get install -y \
+              build-essential \
+              unzip \
+              zip \
+              curl \
+              gcc-4.3 \
+              g++-4.3 \
+              libx11-dev \
+              libxext-dev \
+              libxrender-dev \
+              libxtst-dev \
+              libxt-dev \
+              libxi-dev \
+              libcups2-dev \
+              libasound2-dev \
+              libfreetype6-dev \
+              libfontconfig1-dev &&
+            JAVA_HOME=build/java-se-7u75-ri bash ./configure &&
+            make DISABLE_HOTSPOT_OS_VERSION_CHECK=ok langtools corba jdk'
     - name: Package OpenJDK 8
       run: |
         zip -r openjdk8-build-linux-x86_64-normal-server-release.zip \
