@@ -60,7 +60,7 @@ jobs:
     - name: Upload OpenJDK 8
       uses: actions/upload-artifact@v1
       with:
-        name: openjdk8-build-linux-x86_64-normal-server-release
+        name: openjdk8-build-linux-x86_64-normal-server-release.zip
         path: openjdk/build/openjdk8-build-linux-x86_64-normal-server-release.zip
   build-ikvm-linux:
     name: Build IKVM (Linux)
@@ -82,19 +82,19 @@ jobs:
     - name: Download OpenJDK 8 Build
       uses: actions/download-artifact@v2
       with:
-        name: openjdk8-build-linux-x86_64-normal-server-release
+        name: openjdk8-build-linux-x86_64-normal-server-release.zip
         path: openjdk/build
     - name: Restore OpenJDK 8 Build
       run: unzip -o openjdk8-build-linux-x86_64-normal-server-release.zip
       working-directory: openjdk8/build
     - name: DotNet Restore
-      run: dotnet restore
+      run: dotnet restore IKVM.sln
       working-directory: ./rebuild
     - name: DotNet Build
-      run: dotnet build --no-restore
+      run: dotnet build --no-restore IKVM.sln
       working-directory: ./rebuild
     - name: DotNet Test
-      run: dotnet test --no-build --verbosity normal
+      run: dotnet test --no-build --verbosity normal IKVM.sln
       working-directory: ./rebuild
   build-ikvm-windows:
     name: Build IKVM (Windows)
@@ -116,17 +116,17 @@ jobs:
     - name: Download OpenJDK 8 Build
       uses: actions/download-artifact@v2
       with:
-        name: openjdk8-build-linux-x86_64-normal-server-release
+        name: openjdk8-build-linux-x86_64-normal-server-release.zip
         path: openjdk/build
     - name: Restore OpenJDK 8 Build
       run: unzip -o openjdk8-build-linux-x86_64-normal-server-release.zip
       working-directory: openjdk8/build
     - name: DotNet Restore
-      run: dotnet restore
+      run: dotnet restore IKVM.sln
       working-directory: ./rebuild
     - name: DotNet Build
-      run: dotnet build --no-restore
+      run: dotnet build --no-restore IKVM.sln
       working-directory: ./rebuild
     - name: DotNet Test
-      run: dotnet test --no-build --verbosity normal
+      run: dotnet test --no-build --verbosity normal IKVM.sln
       working-directory: ./rebuild
