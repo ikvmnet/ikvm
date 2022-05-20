@@ -1,0 +1,28 @@
+<Project DefaultTargets="Publish">
+    <PropertyGroup>
+        <ArtifactStagingDirectory Condition="'$(ArtifactStagingDirectory)' == ''">$(BUILDDIR)</ArtifactStagingDirectory>
+        <ArtifactStagingDirectory Condition="'$(ArtifactStagingDirectory)' == ''">$(BUILD_ARTIFACTSTAGINGDIRECTORY)</ArtifactStagingDirectory>
+        <ArtifactStagingDirectory Condition="'$(ArtifactStagingDirectory)' == ''">$([System.IO.Path]::Combine('$(MSBuildThisFileDirectory)', 'build'))</ArtifactStagingDirectory>
+        <ArtifactStagingDirectory>$([System.IO.Path]::GetFullPath('$(ArtifactStagingDirectory)'))</ArtifactStagingDirectory>
+        <SolutionFile>$([System.IO.Path]::Combine('$(MSBuildThisFileDirectory)', 'IKVM.sln'))</SolutionFile>
+        <Version>$(Version)</Version>
+    </PropertyGroup>
+
+	<ItemGroup>
+		<TargetsForPublish Include="$(MSBuildThisFileDirectory)\IKVM.sln">
+			<Targets>IKVM-pkg:Pack</Targets>
+			<Properties>PackageOutputPath=$([System.IO.Path]::Combine('$(ArtifactStagingDirectory)', 'nuget'))</Properties>
+		</TargetsForPublish>
+	</ItemGroup>
+
+    <Target Name="Publish">
+        <ItemGroup>
+            <_TargetsForPublish Include="@(TargetsForPublish)">
+                <Properties>%(Properties);BuildInParallel=false</Properties>
+            </_TargetsForPublish>
+        </ItemGroup>
+
+        <MSBuild BuildInParallel="false" ContinueOnError="false" Projects="@(TargetsForPublish)" Targets="%(TargetsForPublish.Targets)" />
+    </Target>
+
+</Project>
