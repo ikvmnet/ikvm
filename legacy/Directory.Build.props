@@ -1,0 +1,40 @@
+<Project>
+
+  <PropertyGroup>
+    <RepositoryRoot>$(MSBuildThisFileDirectory)</RepositoryRoot>
+    <!-- IMPORTANT: CAS is only supported on .NET Framework when using LangVersion 7.0 or prior
+         https://docs.microsoft.com/en-us/previous-versions/dotnet/framework/code-access-security/using-libraries-from-partially-trusted-code -->
+    <LangVersion>7.0</LangVersion>
+    <NoWarn>$(NoWarn);1591;1573</NoWarn>
+  </PropertyGroup>
+  
+  <PropertyGroup Label="Assembly Signing">
+    <!-- Optional Parameter: Supplying this will enable strong naming -->
+    <AssemblyOriginatorKeyFile>$(RepositoryRoot).build\ikvm.snk</AssemblyOriginatorKeyFile>
+    <!-- Optional Parameter: Required for strong naming -->
+    <PublicKey>0024000004800000940000000602000000240000525341310004000001000100dd6b140e5209cae3d1c710030021ef589d0f00d05aca8771101a7e99e10ee063e66040df96e6f842f717bfc5b62d2ec2b62ceb0282e4649790dacb424db29b68adc7eaeab0356fce04702379f84400b8427edbb33dab8720b9f16a42e2cdb87f885ef413dbc4229f2bd157c9b8dc2cd14866dec5f31c764bfb9394cc3c60e6c0</PublicKey>
+    <SignAssembly Condition=" '$(AssemblyOriginatorKeyFile)' != '' ">true</SignAssembly>
+  </PropertyGroup>
+
+  <PropertyGroup Label="NuGet Package Defaults">
+    <IsPackable>false</IsPackable>
+    <IncludeSymbols>true</IncludeSymbols>
+    <!-- This is the new symbols format (the only one currently supported at NuGet.org) -->
+    <SymbolPackageFormat>snupkg</SymbolPackageFormat>
+  </PropertyGroup>
+  
+  <PropertyGroup Label="Copyright Info">
+    <Company>Windward Studios (based on work by Jeroen Frijters)</Company>
+    <CurrentYear Condition=" '$(CurrentYear)' == '' ">$([System.DateTime]::UtcNow.Year.ToString())</CurrentYear>
+    <BeginCopyrightYear>2002-2015, 2018</BeginCopyrightYear>
+    <CopyrightYearRange>$(BeginCopyrightYear)-$(CurrentYear)</CopyrightYearRange>
+    <CopyrightYearRange Condition=" '$(BeginCopyrightYear)' == '$(CurrentYear)' ">$(CurrentYear)</CopyrightYearRange>
+    <Copyright>Copyright © $(CopyrightYearRange) $(Company)</Copyright>
+  </PropertyGroup>
+
+  <PropertyGroup Label="Version Info">
+    <Version>8.5.0.3</Version>
+    <AssemblyVersion>$(Version)</AssemblyVersion>
+  </PropertyGroup>
+
+</Project>

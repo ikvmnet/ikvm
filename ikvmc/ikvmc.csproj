@@ -1,67 +1,53 @@
 ﻿<Project Sdk="Microsoft.NET.Sdk">
 
-  <PropertyGroup>
-    <TargetFrameworks>net461;netcoreapp3.1</TargetFrameworks>
-    <DefineConstants>$(DefineConstants);STATIC_COMPILER;EMITTERS</DefineConstants>
-    <AllowUnsafeBlocks>true</AllowUnsafeBlocks>
-    <OutputPath>..\bin\$(Configuration)</OutputPath>
-  </PropertyGroup>
+    <PropertyGroup>
+        <PackageId>ikvmc-exe</PackageId>
+        <OutputType>Exe</OutputType>
+        <TargetFrameworks>net461;netcoreapp3.1</TargetFrameworks>
+        <AssemblyTitle>IKVM.NET Compiler</AssemblyTitle>
+        <Description>JVM for Mono and .NET</Description>
+        <DefineConstants>$(DefineConstants);STATIC_COMPILER;EMITTERS</DefineConstants>
+        <AutoGenerateBindingRedirects>true</AutoGenerateBindingRedirects>
+        <PreserveCompilationContext>true</PreserveCompilationContext>
+    </PropertyGroup>
 
-  <PropertyGroup Label="NuGet Package/Assembly Settings">
-    <OutputType>Exe</OutputType>
-    <AssemblyName>ikvmc</AssemblyName>
-    <RootNamespace>ikvmc</RootNamespace>
-    <AssemblyTitle>IKVM.NET Compiler</AssemblyTitle>
-    <Description>JVM for Mono and .NET</Description>
-  </PropertyGroup>
+    <ItemGroup>
+        <InternalsVisibleTo Include="IKVM.OpenJDK" />
+    </ItemGroup>
 
-  <ItemGroup>
-    <PackageReference Include="SharpZipLib" Version="$(SharpZipLibPackageVersion)" />
-  </ItemGroup>
+    <ItemGroup Condition=" '$(TargetFramework)' == 'net461' ">
+        <Reference Include="System.Configuration" />
+        <Reference Include="System.Security" />
+    </ItemGroup>
 
-  <ItemGroup>
-    <ProjectReference Include="..\reflect\IKVM.Reflection.csproj" />
-  </ItemGroup>
+    <ItemGroup>
+        <PackageReference Include="SharpZipLib" Version="1.3.3" />
+    </ItemGroup>
 
-  <ItemGroup Condition="$(TargetFramework.StartsWith('net4'))">
-    <Reference Include="System.Configuration" />
-  </ItemGroup>
+    <ItemGroup Condition=" '$(TargetFramework)' == 'netcoreapp3.1' ">
+        <PackageReference Include="System.Configuration.ConfigurationManager" Version="6.0.0" />
+    </ItemGroup>
 
-  <ItemGroup Condition="$(TargetFramework.StartsWith('netstandard')) Or $(TargetFramework.StartsWith('netcore'))">
-    <PackageReference Include="System.Configuration.ConfigurationManager" Version="$(SystemConfigurationConfigurationManagerPackageVersion)" />
-    <PackageReference Include="System.IO.FileSystem.AccessControl" Version="$(SystemIOFileSystemAccessControlPackageVersion)" />
-  </ItemGroup>
+    <ItemGroup>
+        <ProjectReference Include="..\IKVM.Reflection\IKVM.Reflection.csproj">
+            <PrivateAssets>All</PrivateAssets>
+        </ProjectReference>
+    </ItemGroup>
 
-  <PropertyGroup Condition="'$(Configuration)'=='Debug'">
-    <DebugSymbols>true</DebugSymbols>
-  </PropertyGroup>
+    <ItemGroup>
+        <ExcludeFromCompile Include="..\IKVM.Runtime\AssemblyInfo.cs" />
+        <ExcludeFromCompile Include="..\IKVM.Runtime\Assertions.cs" />
+        <ExcludeFromCompile Include="..\IKVM.Runtime\ByteCodeHelper.cs" />
+        <ExcludeFromCompile Include="..\IKVM.Runtime\common.cs" />
+        <ExcludeFromCompile Include="..\IKVM.Runtime\Dummy.OpenJDK.Core.cs" />
+        <ExcludeFromCompile Include="..\IKVM.Runtime\DynamicMethodUtils.cs" />
+        <ExcludeFromCompile Include="..\IKVM.Runtime\ExceptionHelper.cs" />
+        <ExcludeFromCompile Include="..\IKVM.Runtime\PassiveWeakDictionary.cs" />
+        <ExcludeFromCompile Include="..\IKVM.Runtime\vfs.cs" />
+    </ItemGroup>
 
-  <ItemGroup>
-    <ExcludeFromCompile Include="..\runtime\IKVM.Runtime\AssemblyInfo.cs" />
-    <ExcludeFromCompile Include="..\runtime\IKVM.Runtime\Assertions.cs" />
-    <ExcludeFromCompile Include="..\runtime\IKVM.Runtime\ByteCodeHelper.cs" />
-    <ExcludeFromCompile Include="..\runtime\IKVM.Runtime\common.cs" />
-    <ExcludeFromCompile Include="..\runtime\IKVM.Runtime\Dummy.OpenJDK.Core.cs" />
-    <ExcludeFromCompile Include="..\runtime\IKVM.Runtime\DynamicMethodUtils.cs" />
-    <ExcludeFromCompile Include="..\runtime\IKVM.Runtime\ExceptionHelper.cs" />
-    <ExcludeFromCompile Include="..\runtime\IKVM.Runtime\PassiveWeakDictionary.cs" />
-    <ExcludeFromCompile Include="..\runtime\IKVM.Runtime\vfs.cs" />
-  </ItemGroup>
-
-  <ItemGroup>
-    <Compile Include="..\runtime\IKVM.Runtime\*.cs" LinkBase="runtime" Exclude="@(ExcludeFromCompile)" />
-  </ItemGroup>
-  
-  <ItemGroup>
-    <InternalsVisibleTo Include="IKVM.OpenJDK.Core" />
-    <InternalsVisibleTo Include="IKVM.OpenJDK.Management" />
-    <InternalsVisibleTo Include="IKVM.OpenJDK.Media" />
-    <InternalsVisibleTo Include="IKVM.OpenJDK.Misc" />
-    <InternalsVisibleTo Include="IKVM.OpenJDK.Remoting" />
-    <InternalsVisibleTo Include="IKVM.OpenJDK.Security" />
-    <InternalsVisibleTo Include="IKVM.OpenJDK.SwingAWT" />
-    <InternalsVisibleTo Include="IKVM.OpenJDK.Util" />
-    <InternalsVisibleTo Include="IKVM.Runtime.JNI" />
-  </ItemGroup>
+    <ItemGroup>
+        <Compile Include="..\IKVM.Runtime\*.cs" LinkBase="runtime" Exclude="@(ExcludeFromCompile)" />
+    </ItemGroup>
 
 </Project>
