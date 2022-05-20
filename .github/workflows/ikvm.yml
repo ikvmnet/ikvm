@@ -83,7 +83,7 @@ jobs:
       uses: actions/download-artifact@v2
       with:
         name: openjdk8-build-linux-x86_64-normal-server-release.zip
-        path: openjdk/build
+        path: openjdk8/build
     - name: Restore OpenJDK 8 Build
       run: unzip -o openjdk8-build-linux-x86_64-normal-server-release.zip
       working-directory: openjdk8/build
@@ -117,7 +117,7 @@ jobs:
       uses: actions/download-artifact@v2
       with:
         name: openjdk8-build-linux-x86_64-normal-server-release.zip
-        path: openjdk/build
+        path: openjdk8/build
     - name: Restore OpenJDK 8 Build
       run: unzip -o openjdk8-build-linux-x86_64-normal-server-release.zip
       working-directory: openjdk8/build
