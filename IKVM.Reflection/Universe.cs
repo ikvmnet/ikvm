@@ -33,8 +33,10 @@ using IKVM.Reflection.Reader;
 
 namespace IKVM.Reflection
 {
+
     public sealed class ResolveEventArgs : EventArgs
     {
+
         private readonly string name;
         private readonly Assembly requestingAssembly;
 

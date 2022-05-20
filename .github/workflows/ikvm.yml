@@ -62,36 +62,6 @@ jobs:
       with:
         name: openjdk8-build-linux-x86_64-normal-server-release
         path: openjdk8/build/openjdk8-build-linux-x86_64-normal-server-release.zip
-  build-ikvm-linux:
-    name: Build IKVM (Linux)
-    needs:
-      build-openjdk8
-    runs-on: ubuntu-latest
-    steps:
-    - name: Checkout Source
-      uses: actions/checkout@v3
-      with:
-        submodules: recursive
-    - name: Setup .NET 3.1
-      uses: actions/setup-dotnet@v2
-      with:
-        dotnet-version: 3.1.x
-    - name: Setup .NET 6.0
-      uses: actions/setup-dotnet@v2
-      with:
-        dotnet-version: 6.0.x
-    - name: Download OpenJDK 8 Build
-      uses: actions/download-artifact@v2
-      with:
-        name: openjdk8-build-linux-x86_64-normal-server-release
-        path: openjdk8/build
-    - name: Restore OpenJDK 8 Build
-      run: unzip -o openjdk8-build-linux-x86_64-normal-server-release.zip
-      working-directory: openjdk8/build
-    - name: DotNet Build
-      run: dotnet build IKVM.sln
-    - name: DotNet Test
-      run: dotnet test --no-build --verbosity normal IKVM.sln
   build-ikvm-windows:
     name: Build IKVM (Windows)
     needs:

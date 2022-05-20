@@ -52,13 +52,16 @@
     </ItemGroup>
 
     <Choose>
-        <When Condition=" '$(MSBuildRuntimeType)' == 'Core' ">
+        <!-- This is a major limitation which prevents building on Linux.
+             The version of the tool that is executed should be that of the current MSBuild platform, not that being targeted.
+             However, at present Frameworks builds of IKVM cannot generate Core version assemblies. -->
+        <When Condition=" '$(TargetFramework)' == 'netcoreapp3.1' ">
             <PropertyGroup>
                 <_IkvmToolTargetFramework>netcoreapp3.1</_IkvmToolTargetFramework>
                 <_IkvmToolExecPrefix>dotnet exec </_IkvmToolExecPrefix>
             </PropertyGroup>
         </When>
-        <When Condition=" '$(MSBuildRuntimeType)' != 'Core' ">
+        <When Condition=" '$(TargetFramework)' == 'net461' ">
             <PropertyGroup>
                 <_IkvmToolTargetFramework>net461</_IkvmToolTargetFramework>
                 <_IkvmToolExecPrefix></_IkvmToolExecPrefix>
