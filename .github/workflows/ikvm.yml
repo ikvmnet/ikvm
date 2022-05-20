@@ -24,7 +24,7 @@ jobs:
       uses: docker://debian/eol:lenny
       with:
         args: >
-          bash -c "
+          /bin/bash -c "
             echo 'deb http://archive.debian.org/debian/ lenny main' > /etc/apt/sources.list &&
             apt-get update &&
             apt-get install -y \
@@ -44,6 +44,7 @@ jobs:
               libasound2-dev \
               libfreetype6-dev \
               libfontconfig1-dev &&
+            cd openjdk8 &&
             JAVA_HOME=build/java-se-7u75-ri bash ./configure &&
             make DISABLE_HOTSPOT_OS_VERSION_CHECK=ok langtools corba jdk"
     - name: Package OpenJDK 8
