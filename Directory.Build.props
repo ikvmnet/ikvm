@@ -2,6 +2,7 @@
     <PropertyGroup>
         <LangVersion>7.0</LangVersion>
         <NoWarn>$(NoWarn);1591;1573;CS8002</NoWarn>
+        <GenerateDocumentation>true</GenerateDocumentation>
     </PropertyGroup>
 
     <PropertyGroup Label="Copyright Info">

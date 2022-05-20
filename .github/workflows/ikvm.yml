@@ -88,10 +88,8 @@ jobs:
     - name: Restore OpenJDK 8 Build
       run: unzip -o openjdk8-build-linux-x86_64-normal-server-release.zip
       working-directory: openjdk8/build
-    - name: DotNet Restore
-      run: dotnet restore IKVM.sln
     - name: DotNet Build
-      run: dotnet build --no-restore IKVM.sln
+      run: dotnet build IKVM.sln
     - name: DotNet Test
       run: dotnet test --no-build --verbosity normal IKVM.sln
   build-ikvm-windows:
@@ -120,9 +118,7 @@ jobs:
     - name: Restore OpenJDK 8 Build
       run: unzip -o openjdk8-build-linux-x86_64-normal-server-release.zip
       working-directory: openjdk8/build
-    - name: DotNet Restore
-      run: dotnet restore IKVM.sln
     - name: DotNet Build
-      run: dotnet build --no-restore IKVM.sln
+      run: dotnet build IKVM.sln
     - name: DotNet Test
       run: dotnet test --no-build --verbosity normal IKVM.sln
