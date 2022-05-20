@@ -43,6 +43,7 @@ jobs:
           libxrender-dev \
           libxtst-dev \
           libxt-dev \
+          libxi-dev \
           libcups2-dev \
           libasound2-dev \
           libfreetype6-dev \
