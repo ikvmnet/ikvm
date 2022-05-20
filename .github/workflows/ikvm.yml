@@ -69,18 +69,18 @@ jobs:
     - name: Zip OpenJDK 8
       run: |
         zip -r openjdk8-build-linux-x86_64-normal-server-release.zip \
-          build/linux-x86_64-normal-server-release/langtools/gensrc \
-          build/linux-x86_64-normal-server-release/corba/gensrc \
-          build/linux-x86_64-normal-server-release/jdk/gensrc \
-          build/linux-x86_64-normal-server-release/jdk/impsrc \
-          build/linux-x86_64-normal-server-release/jdk/lib \
-          build/linux-x86_64-normal-server-release/jdk/classes
-      working-directory: openjdk8
+          linux-x86_64-normal-server-release/langtools/gensrc \
+          linux-x86_64-normal-server-release/corba/gensrc \
+          linux-x86_64-normal-server-release/jdk/gensrc \
+          linux-x86_64-normal-server-release/jdk/impsrc \
+          linux-x86_64-normal-server-release/jdk/lib \
+          linux-x86_64-normal-server-release/jdk/classes
+      working-directory: openjdk8/build
     - name: Upload OpenJDK 8
       uses: actions/upload-artifact@v1
       with:
         name: openjdk8-build-linux-x86_64-normal-server-release
-        path: openjdk8-build-linux-x86_64-normal-server-release.zip
+        path: openjdk/build/openjdk8-build-linux-x86_64-normal-server-release.zip
   build-ikvm-linux:
     name: Build IKVM (Linux)
     needs:
@@ -102,10 +102,10 @@ jobs:
       uses: actions/download-artifact@v2
       with:
         name: openjdk8-build-linux-x86_64-normal-server-release
-        path: .
+        path: openjdk/build
     - name: Restore OpenJDK 8 Build
       run: unzip -o openjdk8-build-linux-x86_64-normal-server-release.zip
-      working-directory: openjdk8
+      working-directory: openjdk8/build
     - name: DotNet Restore
       run: dotnet restore
       working-directory: ./rebuild
@@ -136,9 +136,10 @@ jobs:
       uses: actions/download-artifact@v2
       with:
         name: openjdk8-build-linux-x86_64-normal-server-release
-        path: .
+        path: openjdk/build
     - name: Restore OpenJDK 8 Build
       run: unzip -o openjdk8-build-linux-x86_64-normal-server-release.zip
+      working-directory: openjdk8/build
     - name: DotNet Restore
       run: dotnet restore
       working-directory: ./rebuild
