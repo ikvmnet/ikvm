@@ -431,7 +431,7 @@
         <ItemGroup>
             <_JavaSourceItems Include="@(JavaSourceTemplateItem)" UniqueKey="%(PackagePath)" />
             <_JavaSourceItems Include="@(JavaSource)" UniqueKey="%(PackagePath)" />
-            <_JavaSourceItems Include="@(OpenJdkSource)" UniqueKey="%(PackagePath)" />
+            <_JavaSourceItems Include="@(OpenJdkSource)" UniqueKey="%(OpenJdkSource.PackagePath)" />
         </ItemGroup>
         <DistinctSourceItems Source="@(_JavaSourceItems)">
             <Output TaskParameter="Output" ItemName="_JavaSourceItemsDistinct" />
@@ -487,7 +487,7 @@
         <ItemGroup>
             <_JavaResourceItems Include="@(JavaResourceTemplateItem)" UniqueKey="%(ResourcePath)" />
             <_JavaResourceItems Include="@(JavaResource)" UniqueKey="%(ResourcePath)" />
-            <_JavaResourceItems Include="@(OpenJdkResource)" UniqueKey="%(ResourcePath)" />
+            <_JavaResourceItems Include="@(OpenJdkResource)" UniqueKey="%(OpenJdkResource.ResourcePath)" />
         </ItemGroup>
         <DistinctSourceItems Source="@(_JavaResourceItems)">
             <Output TaskParameter="Output" ItemName="_JavaResourceItemsDistinct" />
