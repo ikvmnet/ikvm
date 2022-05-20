@@ -119,24 +119,16 @@
     </ItemGroup>
 
     <ItemGroup>
-        <JavaSource Include="src\classpath\**\*.java" PackagePath="$([System.String]::Copy('%(RecursiveDir)%(Filename)').Replace('\', '/'))" />
-        <JavaSource Include="src\icedtea_jce\**\*.java" PackagePath="$([System.String]::Copy('%(RecursiveDir)%(Filename)').Replace('\', '/'))" />
-        <JavaSource Include="src\icedtea_rt\**\*.java" PackagePath="$([System.String]::Copy('%(RecursiveDir)%(Filename)').Replace('\', '/'))" />
-        <JavaSource Include="src\local\**\*.java" PackagePath="$([System.String]::Copy('%(RecursiveDir)%(Filename)').Replace('\', '/'))" />
-        <JavaSource Remove="@(JavaSource)" Condition=" $([System.String]::Copy('%(Identity)').EndsWith('.net461.java')) And '$(TargetFramework)' != 'net461' " />
-        <JavaSource Remove="@(JavaSource)" Condition=" $([System.String]::Copy('%(Identity)').EndsWith('.netcoreapp3_1.java')) And '$(TargetFramework)' != 'netcoreapp3.1' " />
-        <JavaSource Update="@(JavaSource)" PackagePath="$([System.String]::Copy('%(PackagePath)').Replace('.net461', ''))" />
-        <JavaSource Update="@(JavaSource)" PackagePath="$([System.String]::Copy('%(PackagePath)').Replace('.netcoreapp3_1', ''))" />
-        <JavaSourceTemplate Include="src\local\**\*.java.in" SourcePath="$([System.String]::Copy('%(RecursiveDir)%(Filename)').Replace('.in', ''))" PackagePath="$([System.String]::Copy('%(RecursiveDir)%(Filename)').Replace('.in', '').Replace('\', '/'))" />
-        <JavaSourceTemplate Remove="@(JavaSourceTemplate)" Condition=" $([System.String]::Copy('%(Identity)').EndsWith('.net461.java.in')) And '$(TargetFramework)' != 'net461' " />
-        <JavaSourceTemplate Remove="@(JavaSourceTemplate)" Condition=" $([System.String]::Copy('%(Identity)').EndsWith('.netcoreapp3_1.java.in')) And '$(TargetFramework)' != 'netcoreapp3.1' " />
-        <JavaSourceTemplate Update="@(JavaSourceTemplate)" SourcePath="$([System.String]::Copy('%(SourcePath)').Replace('.net461', ''))" PackagePath="$([System.String]::Copy('%(PackagePath)').Replace('.net461', ''))" />
-        <JavaSourceTemplate Update="@(JavaSourceTemplate)" SourcePath="$([System.String]::Copy('%(SourcePath)').Replace('.netcoreapp3_1', ''))" PackagePath="$([System.String]::Copy('%(PackagePath)').Replace('.netcoreapp3_1', ''))" />
+        <JavaSource Include="src\classpath\**\*.java" PackagePath="$([System.String]::new('%(RecursiveDir)%(Filename)').Replace('\', '/'))" />
+        <JavaSource Include="src\icedtea_jce\**\*.java" PackagePath="$([System.String]::new('%(RecursiveDir)%(Filename)').Replace('\', '/'))" />
+        <JavaSource Include="src\icedtea_rt\**\*.java" PackagePath="$([System.String]::new('%(RecursiveDir)%(Filename)').Replace('\', '/'))" />
+        <JavaSource Include="src\local\**\*.java" PackagePath="$([System.String]::new('%(RecursiveDir)%(Filename)').Replace('\', '/'))" />
+        <JavaSourceTemplate Include="src\local\**\*.java.in" SourcePath="$([System.String]::new('%(RecursiveDir)%(Filename)').Replace('.in', ''))" PackagePath="$([System.String]::new('%(RecursiveDir)%(Filename)').Replace('.in', '').Replace('\', '/'))" />
     </ItemGroup>
 
     <ItemGroup>
-        <JavaResource Include="res\**\*" ResourcePath="$([System.String]::Copy('%(RecursiveDir)%(Filename)%(Extension)').Replace('\', '/'))" />
-        <JavaResourceTemplate Include="res\**\*.in" ResourcePath="$([System.String]::Copy('%(RecursiveDir)%(Filename)%(Extension)').Replace('.in', '').Replace('\', '/'))" />
+        <JavaResource Include="res\**\*" ResourcePath="$([System.String]::new('%(RecursiveDir)%(Filename)%(Extension)').Replace('\', '/'))" />
+        <JavaResourceTemplate Include="res\**\*.in" ResourcePath="$([System.String]::new('%(RecursiveDir)%(Filename)%(Extension)').Replace('.in', '').Replace('\', '/'))" />
     </ItemGroup>
 
     <ItemGroup>
@@ -402,7 +394,7 @@
     <Target Name="ResolveTransformJavaSourceTemplates">
         <ItemGroup>
             <TransformJavaSourceTemplate Include="@(JavaSourceTemplate)">
-                <TargetPath>$(JavaSourceTemplateOutputPath)\%(SourcePath)</TargetPath>
+                <TargetPath>$(JavaSourceTemplateOutputPath)\$([System.String]::new('%(SourcePath)').Replace('/', '\'))</TargetPath>
             </TransformJavaSourceTemplate>
         </ItemGroup>
     </Target>
@@ -412,6 +404,7 @@
         <TransformTemplates Items="@(TransformJavaSourceTemplate)" Variables="@(TransformTemplateVariables)" />
         <ItemGroup>
             <JavaSourceTemplateItem Include="@(TransformJavaSourceTemplate->'%(TargetPath)')" />
+            <FileWrites Include="@(TransformJavaSourceTemplate->'%(TargetPath)')" />
         </ItemGroup>
     </Target>
 
@@ -458,16 +451,17 @@
     <Target Name="ResolveTransformJavaResourceTemplates">
         <ItemGroup>
             <TransformJavaResourceTemplate Include="@(JavaResourceTemplate)">
-                <TargetPath>$(JavaResourceTemplateOutputPath)\%(RecursiveDir)%(Filename)</TargetPath>
+                <TargetPath>$(JavaResourceTemplateOutputPath)\$([System.String]::new('%(ResourcePath)').Replace('/', '\'))</TargetPath>
             </TransformJavaResourceTemplate>
         </ItemGroup>
     </Target>
 
-    <Target Name="TransformJavaResourceTemplates" DependsOnTargets="ResolveTransformJavaResourceTemplates" Inputs="@(TransformJavaResourceTemplate)" Outputs="@(TransformJavaResourceTemplate->'%(Destination)')">
+    <Target Name="TransformJavaResourceTemplates" DependsOnTargets="ResolveTransformJavaResourceTemplates" Inputs="@(TransformJavaResourceTemplate)" Outputs="@(TransformJavaResourceTemplate->'%(TargetPath)')">
         <MakeDir Directories="$(JavaResourceTemplateOutputPath)" />
         <TransformTemplates Items="@(TransformJavaResourceTemplate)" Variables="@(TransformTemplateVariables)" />
         <ItemGroup>
             <JavaResourceTemplateItem Include="@(TransformJavaResourceTemplate->'%(TargetPath)')" ResourcePath="%(ResourcePath)" />
+            <FileWrites Include="@(TransformJavaResourceTemplate->'%(TargetPath)')" />
         </ItemGroup>
     </Target>
 
@@ -624,6 +618,7 @@
     </Target>
 
     <Target Name="_BuildOpenJdkAssembly" DependsOnTargets="GetIkvmcExe;GetIkvmRuntimeDll;ResolveJavaClassItems;ResolveJavaResourceItems;BuildRmiStubs" Inputs="@(JavaClassItems);@(JavaResourceItems);$(IkvmRuntimeDll);$(Ikvmc);@(ReferencePathWithRefAssemblies);$(ResourcesZipPath);@(IkvmMapFile)" Outputs="$(OpenJdkAssemblyPath);$(OpenJdkDebugSymbolsPath)">
+        
         <!-- this is wrong, determination of which version to use to build needs to be based on which platform we're running on -->
         <PropertyGroup Condition=" '$(TargetFramework)' == 'net461' ">
             <IkvmcExec>$(Ikvmc)</IkvmcExec>
@@ -728,7 +723,7 @@
         <!-- ILRepack requires that reference paths be directories. Find the directory of each reference item. -->
         <ItemGroup>
             <ILRepackReferences Include="@(ReferencePathWithRefAssemblies)" />
-            <ILRepackReferencePath Include="$([System.String]::Copy(%(ILRepackReferences.RelativeDir)).TrimEnd('\'))" />
+            <ILRepackReferencePath Include="$([System.String]::new(%(ILRepackReferences.RelativeDir)).TrimEnd('\'))" />
         </ItemGroup>
         <RemoveDuplicates Inputs="@(ILRepackReferencePath)">
             <Output TaskParameter="Filtered" ItemName="ILRepackFilteredLibraryPaths" />

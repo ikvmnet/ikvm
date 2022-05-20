@@ -15951,10 +15951,12 @@
     </ItemGroup>
 
     <ItemGroup>
+        <!-- OpenJDK resolves these from resources at runtime -->
+        <OpenJdkResource Include="$(OpenJdkDir)\build\linux-x86_64-normal-server-release\jdk\classes\sun\reflect\misc\Trampoline.class" ResourcePath="sun\reflect\misc\Trampoline.class" />
+        <OpenJdkResource Include="$(OpenJdkDir)\build\linux-x86_64-normal-server-release\jdk\classes\java\lang\invoke\MethodHandleImpl$BindCaller$T.class" ResourcePath="java\lang\invoke\MethodHandleImpl$BindCaller$T.class" />
+        
         <OpenJdkResource Include="$(OpenJdkDir)\build\linux-x86_64-normal-server-release\jdk\classes\java\lang\uniName.dat" ResourcePath="java\lang\uniName.dat" />
         <OpenJdkResource Include="$(OpenJdkDir)\build\linux-x86_64-normal-server-release\jdk\classes\sun\net\idn\uidna.spp" ResourcePath="sun\net\idn\uidna.spp" />
-        <OpenJdkResource Include="$(OpenJdkDir)\jdk\src\share\classes\sun\reflect\misc\Trampoline.class" ResourcePath="sun\reflect\misc\Trampoline.class" />
-        <OpenJdkResource Include="$(OpenJdkDir)\jdk\src\share\classes\java\lang\invoke\MethodHandleImpl$BindCaller$T.class" ResourcePath="java\lang\invoke\MethodHandleImpl$BindCaller$T.class" />
         <OpenJdkResource Include="$(OpenJdkDir)\build\linux-x86_64-normal-server-release\jdk\classes\com\sun\corba\se\impl\logging\LogStrings.properties" ResourcePath="com\sun\corba\se\impl\logging\LogStrings.properties" />
         <OpenJdkResource Include="$(OpenJdkDir)\jdk\src\share\classes\sun\util\xml\META-INF\services\sun.util.spi.XmlPropertiesProvider" ResourcePath="META-INF\services\sun.util.spi.XmlPropertiesProvider" />
         <OpenJdkResource Include="$(OpenJdkDir)\jdk\src\share\classes\sun\java2d\cmm\lcms\META-INF\services\sun.java2d.cmm.CMMServiceProvider" ResourcePath="META-INF\services\sun.java2d.cmm.CMMServiceProvider" />
@@ -15981,6 +15983,7 @@
         <OpenJdkExcludeRegex Include="^java\.lang\.Object$" />
         <OpenJdkExcludeRegex Include="^java\.lang\.String$" />
         <OpenJdkExcludeRegex Include="^java\.lang\.Throwable$" />
+        <OpenJdkExcludeRegex Include="^sun\.reflect\.misc\.Trampoline$" />
     </ItemGroup>
 
     <ItemGroup>

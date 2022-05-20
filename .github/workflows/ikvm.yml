@@ -61,7 +61,7 @@ jobs:
     - name: Upload OpenJDK 8
       uses: actions/upload-artifact@v1
       with:
-        name: openjdk8-build-linux-x86_64-normal-server-release.zip
+        name: openjdk8-build-linux-x86_64-normal-server-release
         path: openjdk8/build/openjdk8-build-linux-x86_64-normal-server-release.zip
   build-ikvm-linux:
     name: Build IKVM (Linux)
@@ -69,7 +69,8 @@ jobs:
       build-openjdk8
     runs-on: ubuntu-latest
     steps:
-    - uses: actions/checkout@v3
+    - name: Checkout Source
+      uses: actions/checkout@v3
       with:
         submodules: recursive
     - name: Setup .NET 3.1
@@ -83,7 +84,7 @@ jobs:
     - name: Download OpenJDK 8 Build
       uses: actions/download-artifact@v2
       with:
-        name: openjdk8-build-linux-x86_64-normal-server-release.zip
+        name: openjdk8-build-linux-x86_64-normal-server-release
         path: openjdk8/build
     - name: Restore OpenJDK 8 Build
       run: unzip -o openjdk8-build-linux-x86_64-normal-server-release.zip
@@ -100,7 +101,8 @@ jobs:
       build-openjdk8
     runs-on: windows-latest
     steps:
-    - uses: actions/checkout@v3
+    - name: Checkout Source
+      uses: actions/checkout@v3
       with:
         submodules: recursive
     - name: Setup .NET 3.1
@@ -114,7 +116,7 @@ jobs:
     - name: Download OpenJDK 8 Build
       uses: actions/download-artifact@v2
       with:
-        name: openjdk8-build-linux-x86_64-normal-server-release.zip
+        name: openjdk8-build-linux-x86_64-normal-server-release
         path: openjdk8/build
     - name: Restore OpenJDK 8 Build
       run: unzip -o openjdk8-build-linux-x86_64-normal-server-release.zip
