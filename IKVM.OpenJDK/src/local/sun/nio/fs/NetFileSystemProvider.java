@@ -25,12 +25,13 @@
 package sun.nio.fs;
 
 import ikvm.internal.NotYetImplementedError;
+import ikvm.internal.io.FileStreamExtensions;
 import static ikvm.internal.Util.WINDOWS;
+
 import cli.System.IO.Directory;
 import cli.System.IO.DirectoryInfo;
 import cli.System.IO.DriveInfo;
 import cli.System.IO.File;
-import cli.System.IO.FileAccess;
 import cli.System.IO.FileAttributes;
 import cli.System.IO.FileInfo;
 import cli.System.IO.FileMode;
@@ -40,7 +41,9 @@ import cli.System.IO.FileOptions;
 import cli.System.Runtime.InteropServices.DllImportAttribute;
 import cli.System.Runtime.InteropServices.Marshal;
 import cli.System.Security.AccessControl.FileSystemRights;
+
 import com.sun.nio.file.ExtendedOpenOption;
+
 import java.io.FileDescriptor;
 import java.io.IOException;
 import java.net.URI;
@@ -54,6 +57,7 @@ import java.util.HashMap;
 import java.util.Map;
 import java.util.NoSuchElementException;
 import java.util.Set;
+
 import sun.nio.ch.WindowsAsynchronousFileChannelImpl;
 import sun.nio.ch.FileChannelImpl;
 import sun.nio.ch.ThreadPool;
@@ -372,20 +376,7 @@ final class NetFileSystemProvider extends AbstractFileSystemProvider
             if (false) throw new cli.System.IO.IOException();
             if (false) throw new cli.System.Security.SecurityException();
             if (false) throw new cli.System.UnauthorizedAccessException();
-            int access = 0;
-            if ((rights & FileSystemRights.Read) != 0)
-            {
-                access |= FileAccess.Read;
-            }
-            if ((rights & (FileSystemRights.Write | FileSystemRights.AppendData)) != 0)
-            {
-                access |= FileAccess.Write;
-            }
-            if (access == 0)
-            {
-                access = FileAccess.ReadWrite;
-            }
-            return FileDescriptor.fromStream(new FileStream(path, FileMode.wrap(mode), FileAccess.wrap(access), FileShare.wrap(share), 8, FileOptions.wrap(options)));
+            return FileDescriptor.fromStream(FileStreamExtensions.create(path, FileMode.wrap(mode), FileSystemRights.wrap(rights), FileShare.wrap(share), 8, FileOptions.wrap(options)));
         }
         catch (cli.System.ArgumentException x)
         {

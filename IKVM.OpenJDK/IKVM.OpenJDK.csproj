@@ -38,16 +38,19 @@
         <ProjectReference Include="..\IKVM.Runtime-ref\IKVM.Runtime-ref.csproj">
             <PrivateAssets>All</PrivateAssets>
             <Private>False</Private>
+            <IsIkvmRuntimeDll>true</IsIkvmRuntimeDll>
         </ProjectReference>
         <ProjectReference Include="..\ikvmc\ikvmc.csproj">
             <PrivateAssets>All</PrivateAssets>
             <ReferenceOutputAssembly>false</ReferenceOutputAssembly>
             <Private>False</Private>
+            <IsIkvmc>true</IsIkvmc>
         </ProjectReference>
         <ProjectReference Include="..\ikvmstub\ikvmstub.csproj">
             <PrivateAssets>All</PrivateAssets>
             <ReferenceOutputAssembly>false</ReferenceOutputAssembly>
             <Private>False</Private>
+            <IsIkvmStub>true</IsIkvmStub>
         </ProjectReference>
     </ItemGroup>
 
@@ -283,7 +286,7 @@
     </PropertyGroup>
 
     <Target Name="GetIkvmStubExe" DependsOnTargets="ResolveProjectReferences">
-        <MSBuild Projects="@(_MSBuildProjectReferenceExistent)" Targets="GetTargetPath" BuildInParallel="$(BuildInParallel)" Properties="%(_MSBuildProjectReferenceExistent.SetConfiguration);%(_MSBuildProjectReferenceExistent.SetPlatform);%(_MSBuildProjectReferenceExistent.SetTargetFramework)" RemoveProperties="%(_MSBuildProjectReferenceExistent.GlobalPropertiesToRemove)$(_GlobalPropertiesToRemoveFromProjectReferences)" Condition=" '%(_MSBuildProjectReferenceExistent.Identity)' == '..\ikvmstub\ikvmstub.csproj' ">
+        <MSBuild Projects="@(_MSBuildProjectReferenceExistent)" Targets="GetTargetPath" BuildInParallel="$(BuildInParallel)" Properties="%(_MSBuildProjectReferenceExistent.SetConfiguration);%(_MSBuildProjectReferenceExistent.SetPlatform);%(_MSBuildProjectReferenceExistent.SetTargetFramework)" RemoveProperties="%(_MSBuildProjectReferenceExistent.GlobalPropertiesToRemove)$(_GlobalPropertiesToRemoveFromProjectReferences)" Condition=" '%(_MSBuildProjectReferenceExistent.IsIkvmStub)' == 'true' ">
             <Output TaskParameter="TargetOutputs" ItemName="_IkvmStub" />
         </MSBuild>
         <PropertyGroup>
@@ -513,16 +516,36 @@
     </Target>
 
     <Target Name="_BuildJavaClasses" DependsOnTargets="ResolveJavaSourceItems;ResolveJavaClasspath" Inputs="@(JavaSourceItems)" Outputs="$(JavaClassOutputPath)stamp">
+        <ItemGroup>
+            <JavacArgs Include="-g" />
+            <JavacArgs Include="-nowarn" />
+            <JavacArgs Include="-implicit:none" />
+            <JavacArgs Include="-parameters" />
+            <JavacArgs Include="-cp" />
+            <JavacArgs Include="dummy" />
+            <JavacArgs Include="-bootclasspath" />
+            <JavacArgs Include="@(JavaClasspath->'%(Identity)', '$([System.IO.Path]::PathSeparator)')" />
+            <JavacArgs Include="-source" />
+            <JavacArgs Include="1.8" />
+            <JavacArgs Include="-target" />
+            <JavacArgs Include="1.8" />
+            <JavacArgs Include="-d" />
+            <JavacArgs Include="$(JavaClassOutputPath)" />
+            <JavacArgs Include="@(JavaSourceItems->'%(FullPath)')" />
+        </ItemGroup>
         <Delete Files="$(IntermediateOutputPath)javac.args.txt" />
-        <WriteLinesToFile File="$(IntermediateOutputPath)javac.args.txt" Lines="@(JavaSourceItems)" />
+        <WriteLinesToFile File="$(IntermediateOutputPath)javac.args.txt" Lines="@(JavacArgs)" />
+        
         <Delete Files="$(JavaClassOutputPath)**\*" />
         <RemoveDir Directories="$(JavaClassOutputPath)" />
         <MakeDir Directories="$(JavaClassOutputPath)" />
-        <Message Text="javac -J-Xmx1536M -g -nowarn -implicit:none -parameters -cp dummy -bootclasspath @(JavaClasspath) -d $(JavaClassOutputPath) @$(IntermediateOutputPath)javac.args.txt" Importance="high" />
-        <Exec Command="javac -J-Xmx1536M -g -nowarn -implicit:none -parameters -cp dummy -bootclasspath @(JavaClasspath) -d $(JavaClassOutputPath) @$(IntermediateOutputPath)javac.args.txt" />
+        <Message Text="javac -J-Xmx1536M @(JavacArgs, ' ')" Importance="high" />
+        <Exec Command="javac -J-Xmx1536M @$(IntermediateOutputPath)javac.args.txt" />
         <Touch Files="$(JavaClassOutputPath)stamp" AlwaysCreate="true" ForceTouch="true" />
         <ItemGroup>
             <FileWrites Include="$(IntermediateOutputPath)javac.args.txt" />
+            <FileWrites Include="$(JavaClassOutputPath)\**\*.class" />
+            <FileWrites Include="$(JavaClassOutputPath)\stamp" />
         </ItemGroup>
     </Target>
 
@@ -552,7 +575,7 @@
         </CleanDependsOn>
     </PropertyGroup>
 
-    <Target Name="BuildRmiStubs" DependsOnTargets="BuildJavaClasses" Inputs="$(JavaClassOutputPath)stamp" Outputs="$(RmiStubsOutputPath)stamp">
+    <Target Name="BuildRmiStubs" DependsOnTargets="BuildJavaClasses" Inputs="$(JavaClassOutputPath)\**\*.class" Outputs="$(RmiStubsOutputPath)stamp">
         <Delete Files="$(RmiStubsOutputPath)**\*" />
         <RemoveDir Directories="$(RmiStubsOutputPath)" />
         <MakeDir Directories="$(RmiStubsOutputPath)" />
@@ -577,6 +600,11 @@
         <Exec Command="rmic $(RmiArgs) -iiop javax.management.remote.rmi.RMIServer" />
         <Exec Command="rmic $(RmiArgs) -iiop -standardPackage javax.management.remote.rmi.RMIServer" />
         <Touch Files="$(RmiStubsOutputPath)stamp" AlwaysCreate="true" ForceTouch="true" />
+
+        <ItemGroup>
+            <FileWrites Include="$(RmiStubsOutputPath)**\*.class" />
+            <FileWrites Include="$(RmiStubsOutputPath)stamp" />
+        </ItemGroup>
     </Target>
 
     <Target Name="CleanRmiStubs">
@@ -592,7 +620,7 @@
     </PropertyGroup>
 
     <Target Name="GetIkvmcExe" DependsOnTargets="ResolveProjectReferences">
-        <MSBuild Projects="@(_MSBuildProjectReferenceExistent)" Targets="GetTargetPath" BuildInParallel="$(BuildInParallel)" Properties="%(_MSBuildProjectReferenceExistent.SetConfiguration);%(_MSBuildProjectReferenceExistent.SetPlatform);%(_MSBuildProjectReferenceExistent.SetTargetFramework)" RemoveProperties="%(_MSBuildProjectReferenceExistent.GlobalPropertiesToRemove)$(_GlobalPropertiesToRemoveFromProjectReferences)" Condition=" '%(_MSBuildProjectReferenceExistent.Identity)' == '..\ikvmc\ikvmc.csproj' ">
+        <MSBuild Projects="@(_MSBuildProjectReferenceExistent)" Targets="GetTargetPath" BuildInParallel="$(BuildInParallel)" Properties="%(_MSBuildProjectReferenceExistent.SetConfiguration);%(_MSBuildProjectReferenceExistent.SetPlatform);%(_MSBuildProjectReferenceExistent.SetTargetFramework)" RemoveProperties="%(_MSBuildProjectReferenceExistent.GlobalPropertiesToRemove)$(_GlobalPropertiesToRemoveFromProjectReferences)" Condition=" '%(_MSBuildProjectReferenceExistent.IsIkvmc)' == 'true' ">
             <Output TaskParameter="TargetOutputs" ItemName="_Ikvmc" />
         </MSBuild>
         <PropertyGroup>
@@ -602,7 +630,7 @@
     </Target>
 
     <Target Name="GetIkvmRuntimeDll" DependsOnTargets="ResolveProjectReferences">
-        <MSBuild Projects="@(_MSBuildProjectReferenceExistent)" Targets="GetTargetPath" BuildInParallel="$(BuildInParallel)" Properties="%(_MSBuildProjectReferenceExistent.SetConfiguration);%(_MSBuildProjectReferenceExistent.SetPlatform);%(_MSBuildProjectReferenceExistent.SetTargetFramework)" RemoveProperties="%(_MSBuildProjectReferenceExistent.GlobalPropertiesToRemove)$(_GlobalPropertiesToRemoveFromProjectReferences)" Condition=" '%(_MSBuildProjectReferenceExistent.Identity)' == '..\IKVM.Runtime-ref\IKVM.Runtime-ref.csproj' ">
+        <MSBuild Projects="@(_MSBuildProjectReferenceExistent)" Targets="GetTargetPath" BuildInParallel="$(BuildInParallel)" Properties="%(_MSBuildProjectReferenceExistent.SetConfiguration);%(_MSBuildProjectReferenceExistent.SetPlatform);%(_MSBuildProjectReferenceExistent.SetTargetFramework)" RemoveProperties="%(_MSBuildProjectReferenceExistent.GlobalPropertiesToRemove)$(_GlobalPropertiesToRemoveFromProjectReferences)" Condition=" '%(_MSBuildProjectReferenceExistent.IsIkvmRuntimeDll)' == 'true' ">
             <Output TaskParameter="TargetOutputs" ItemName="_IkvmRuntimeDll" />
         </MSBuild>
         <PropertyGroup>
@@ -716,8 +744,8 @@
 
     <Target Name="_MergeOpenJdkAssembly" DependsOnTargets="BuildOpenJdkAssembly" Condition="'$(_MergeOpenJdkAssemblyTimestampBeforeCompile)' != '$(_MergeOpenJdkAssemblyTimestampAfterCompile)' Or Exists('$(_MergeOpenJdkAssemblyForceBuildFile)')">
         <!-- Create a file which will force the next build to run this target if the previous build failed. 
-         Failure between this point and the point where intermediate outputs are moved will make CoreCompile not run again (up-to-date outputs).
-         That in turn results in timestamps being equal, this target not running and untransformed assemblies being copied to the output. -->
+             Failure between this point and the point where intermediate outputs are moved will make CoreCompile not run again (up-to-date outputs).
+             That in turn results in timestamps being equal, this target not running and untransformed assemblies being copied to the output. -->
         <Touch Files="$(_MergeOpenJdkAssemblyForceBuildFile)" AlwaysCreate="true" ContinueOnError="true" />
 
         <!-- ILRepack requires that reference paths be directories. Find the directory of each reference item. -->

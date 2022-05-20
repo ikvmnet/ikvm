@@ -172,158 +172,160 @@ public class Handler extends URLStreamHandler
 
     protected URLConnection openConnection(URL url) throws IOException
     {
-	return new IkvmresURLConnection(url);
+	    return new IkvmresURLConnection(url);
     }
 
     protected void parseURL(URL url, String url_string, int start, int end)
     {
-	try
-	{
-	    // NOTE originally I wanted to use java.net.URI to handling parsing and constructing of these things,
-	    // but it turns out that URI uses regex and that depends on resource loading...
-	    url_string = url_string.substring(start, end);
-	    if(url_string.startsWith("//"))
+	    try
 	    {
-	        int slash = url_string.indexOf('/', 2);
-	        if(slash == -1)
+	        // NOTE originally I wanted to use java.net.URI to handling parsing and constructing of these things,
+	        // but it turns out that URI uses regex and that depends on resource loading...
+	        url_string = url_string.substring(start, end);
+	        if(url_string.startsWith("//"))
 	        {
-		    throw new RuntimeException("ikvmres: URLs must contain path");
-	        }
-	        String assembly = unquote(url_string.substring(2, slash));
-	        String file = unquote(url_string.substring(slash));
-	        setURL(url, "ikvmres", assembly, -1, file, null);
-            }
-            else if(url_string.startsWith("/"))
-            {
-                setURL(url, "ikvmres", url.getHost(), -1, url_string, null);
-            }
-            else
-            {
-                String[] baseparts = ((cli.System.String)(Object)url.getFile()).Split(new char[] { '/' });
-                String[] relparts = ((cli.System.String)(Object)url_string).Split(new char[] { '/' });
-                String[] target = new String[baseparts.length + relparts.length - 1];
-                for(int i = 1; i < baseparts.length; i++)
-                {
-                    target[i - 1] = baseparts[i];
+	            int slash = url_string.indexOf('/', 2);
+	            if(slash == -1)
+	            {
+		        throw new RuntimeException("ikvmres: URLs must contain path");
+	            }
+	            String assembly = unquote(url_string.substring(2, slash));
+	            String file = unquote(url_string.substring(slash));
+	            setURL(url, "ikvmres", assembly, -1, file, null);
                 }
-                int p = baseparts.length - 2;
-                for(int i = 0; i < relparts.length; i++)
+                else if(url_string.startsWith("/"))
                 {
-                    if(relparts[i].equals("."))
-                    {
-                    }
-                    else if(relparts[i].equals(".."))
-                    {
-                        p = Math.max(0, p - 1);
-                    }
-                    else
-                    {
-                        target[p++] = relparts[i];
-                    }
+                    setURL(url, "ikvmres", url.getHost(), -1, url_string, null);
                 }
-                StringBuffer file = new StringBuffer();
-                for(int i = 0; i < p; i++)
+                else
                 {
-                    file.append('/').append(target[i]);
+                    String[] baseparts = ((cli.System.String)(Object)url.getFile()).Split(new char[] { '/' });
+                    String[] relparts = ((cli.System.String)(Object)url_string).Split(new char[] { '/' });
+                    String[] target = new String[baseparts.length + relparts.length - 1];
+                    for(int i = 1; i < baseparts.length; i++)
+                    {
+                        target[i - 1] = baseparts[i];
+                    }
+                    int p = baseparts.length - 2;
+                    for(int i = 0; i < relparts.length; i++)
+                    {
+                        if(relparts[i].equals("."))
+                        {
+                        }
+                        else if(relparts[i].equals(".."))
+                        {
+                            p = Math.max(0, p - 1);
+                        }
+                        else
+                        {
+                            target[p++] = relparts[i];
+                        }
+                    }
+                    StringBuffer file = new StringBuffer();
+                    for(int i = 0; i < p; i++)
+                    {
+                        file.append('/').append(target[i]);
+                    }
+                    setURL(url, "ikvmres", url.getHost(), -1, file.toString(), null);
                 }
-                setURL(url, "ikvmres", url.getHost(), -1, file.toString(), null);
-            }
-	}
-	catch(URISyntaxException x)
-	{
-	    throw new RuntimeException(x.getMessage());
-	}
+	    }
+	    catch(URISyntaxException x)
+	    {
+	        throw new RuntimeException(x.getMessage());
+	    }
     }
 
     protected String toExternalForm(URL url)
     {
-	// NOTE originally I wanted to use java.net.URI to handle parsing and constructing of these things,
-	// but it turns out that URI uses regex and that depends on resource loading...
-	return "ikvmres://" + quote(url.getHost(), RFC2396_REG_NAME) + quote(url.getFile(), RFC2396_PATH_SEGMENTS);
+	    // NOTE originally I wanted to use java.net.URI to handle parsing and constructing of these things,
+	    // but it turns out that URI uses regex and that depends on resource loading...
+	    return "ikvmres://" + quote(url.getHost(), RFC2396_REG_NAME) + quote(url.getFile(), RFC2396_PATH_SEGMENTS);
     }
 
     protected InetAddress getHostAddress(URL url)
     {
-	return null;
+	    return null;
     }
 
     private static String quote (String str, String legalCharacters)
     {
-	StringBuffer sb = new StringBuffer(str.length());
-	for (int i = 0; i < str.length(); i++) 
-	{
-	    char c = str.charAt(i);
-	    if (legalCharacters.indexOf(c) == -1) 
+	    StringBuffer sb = new StringBuffer(str.length());
+	    for (int i = 0; i < str.length(); i++) 
 	    {
-		String hex = "0123456789ABCDEF";
-		if (c <= 127) 
-		{
-		    sb.append('%')
-			.append(hex.charAt(c / 16))
-			.append(hex.charAt(c % 16));
-		} 
-		else 
-		{
-		    try 
+	        char c = str.charAt(i);
+	        if (legalCharacters.indexOf(c) == -1) 
+	        {
+		    String hex = "0123456789ABCDEF";
+		    if (c <= 127) 
 		    {
-			// this is far from optimal, but it works
-			byte[] utf8 = str.substring(i, i + 1).getBytes("utf-8");
-			for (int j = 0; j < utf8.length; j++) 
-			{
-			    sb.append('%')
-				.append(hex.charAt((utf8[j] & 0xff) / 16))
-				.append(hex.charAt((utf8[j] & 0xff) % 16));
-			}
+		        sb.append('%')
+			    .append(hex.charAt(c / 16))
+			    .append(hex.charAt(c % 16));
 		    } 
-		    catch (java.io.UnsupportedEncodingException x) 
+		    else 
 		    {
-			throw (Error)new InternalError().initCause(x);
+		        try 
+		        {
+			    // this is far from optimal, but it works
+			    byte[] utf8 = str.substring(i, i + 1).getBytes("utf-8");
+			    for (int j = 0; j < utf8.length; j++) 
+			    {
+			        sb.append('%')
+				    .append(hex.charAt((utf8[j] & 0xff) / 16))
+				    .append(hex.charAt((utf8[j] & 0xff) % 16));
+			    }
+		        } 
+		        catch (java.io.UnsupportedEncodingException x) 
+		        {
+			    throw (Error)new InternalError().initCause(x);
+		        }
 		    }
-		}
-	    } 
-	    else 
-	    {
-		sb.append(c);
+	        } 
+	        else 
+	        {
+		    sb.append(c);
+	        }
 	    }
-	}
-	return sb.toString();
+	    return sb.toString();
     }
 
     private static String unquote (String str)
-	throws URISyntaxException
-    {
-	if (str == null)
-	    return null;
-	byte[] buf = new byte[str.length()];
-	int pos = 0;
-	for (int i = 0; i < str.length(); i++) 
-	{
-	    char c = str.charAt(i);
-	    if (c > 127)
-		throw new URISyntaxException(str, "Invalid character");
-	    if (c == '%') 
+	    throws URISyntaxException
+        {
+	    if (str == null)
+	        return null;
+	    byte[] buf = new byte[str.length()];
+	    int pos = 0;
+	    for (int i = 0; i < str.length(); i++) 
 	    {
-		if (i + 2 >= str.length())
-		    throw new URISyntaxException(str, "Invalid quoted character");
-		String hex = "0123456789ABCDEF";
-		int hi = hex.indexOf(str.charAt(++i));
-		int lo = hex.indexOf(str.charAt(++i));
-		if (lo < 0 || hi < 0)
-		    throw new URISyntaxException(str, "Invalid quoted character");
-		buf[pos++] = (byte)(hi * 16 + lo);
-	    } 
-	    else 
-	    {
-		buf[pos++] = (byte)c;
+	        char c = str.charAt(i);
+	        if (c > 127)
+		    throw new URISyntaxException(str, "Invalid character");
+	        if (c == '%') 
+	        {
+		    if (i + 2 >= str.length())
+		        throw new URISyntaxException(str, "Invalid quoted character");
+		    String hex = "0123456789ABCDEF";
+		    int hi = hex.indexOf(str.charAt(++i));
+		    int lo = hex.indexOf(str.charAt(++i));
+		    if (lo < 0 || hi < 0)
+		        throw new URISyntaxException(str, "Invalid quoted character");
+		    buf[pos++] = (byte)(hi * 16 + lo);
+	        } 
+	        else 
+	        {
+		    buf[pos++] = (byte)c;
+	        }
 	    }
-	}
-	try 
-	{
-	    return new String(buf, 0, pos, "utf-8");
-	} 
-	catch (java.io.UnsupportedEncodingException x2) 
-	{
-	    throw (Error)new InternalError().initCause(x2);
-	}
+	    try 
+	    {
+	        return new String(buf, 0, pos, "utf-8");
+	    } 
+	    catch (java.io.UnsupportedEncodingException x2) 
+	    {
+	        throw (Error)new InternalError().initCause(x2);
+	    }
+
     }
+
 }

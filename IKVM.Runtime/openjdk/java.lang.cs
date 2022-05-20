@@ -22,14 +22,15 @@
   
 */
 using System;
+using System.Collections.Generic;
 using System.Diagnostics;
 using System.IO;
-using System.Text;
-using System.Collections.Generic;
 using System.Reflection;
 using System.Runtime.CompilerServices;
 using System.Security;
+using System.Text;
 using System.Threading;
+
 using IKVM.Internal;
 
 static class Java_java_lang_Class
@@ -1444,15 +1445,6 @@ static class Java_java_lang_ProcessImpl
 		{
 			return false;
 		}
-	}
-
-	public static FileStream openForAtomicAppendFileStream(string path)
-    {
-#if NETCOREAPP3_1
-		return new FileStream(path, FileMode.Append, FileSystemAccess.Write, FileShare.ReadWrite, 1, FileOptions.None);
-#else
-		return new FileStream(path, FileMode.Append, FileAccess.Write, FileShare.ReadWrite, 1, FileOptions.None);
-#endif
 	}
 
 }

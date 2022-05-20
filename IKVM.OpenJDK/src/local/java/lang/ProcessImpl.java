@@ -46,6 +46,9 @@ import java.util.ArrayList;
 import java.util.concurrent.TimeUnit;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
+
+import ikvm.internal.io.FileStreamExtensions;
+
 import cli.System.AsyncCallback;
 import cli.System.IAsyncResult;
 import cli.System.Diagnostics.ProcessStartInfo;
@@ -796,7 +799,7 @@ final class ProcessImpl extends Process {
             if (false) throw new cli.System.IO.IOException();
             if (false) throw new cli.System.Security.SecurityException();
             if (false) throw new cli.System.UnauthorizedAccessException();
-            return FileDescriptor.fromStream(openForAtomicAppendFileStream(path));
+            return FileDescriptor.fromStream(FileStreamExtensions.create(path, FileMode.wrap(FileMode.Append), FileSystemRights.wrap(FileSystemRights.AppendData), FileShare.wrap(FileShare.ReadWrite), 1, FileOptions.wrap(FileOptions.None)));
         } catch (cli.System.ArgumentException x) {
             throw new IOException(x.getMessage());
         } catch (cli.System.IO.IOException x) {
@@ -807,8 +810,6 @@ final class ProcessImpl extends Process {
             throw new IOException(x.getMessage());
         }
     }
-
-    private static native int openForAtomicAppendFileStream(String path);
 
     private static void connectPipe(final Stream in, final Stream out) {
         final byte[] buf = new byte[4096];
