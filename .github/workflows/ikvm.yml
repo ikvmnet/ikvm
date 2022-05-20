@@ -23,8 +23,9 @@ jobs:
     - name: Build OpenJDK 8
       uses: docker://debian/eol:lenny
       with:
-        args: >-
-          /bin/bash -c '
+        entrypoint: /bin/bash
+        args: |-
+          -c '
             echo "deb http://archive.debian.org/debian/ lenny main" > /etc/apt/sources.list &&
             apt-get update &&
             apt-get install -y
