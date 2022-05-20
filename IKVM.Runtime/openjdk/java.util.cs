@@ -25,42 +25,10 @@ using System;
 
 static class Java_java_util_TimeZone
 {
-	private static string GetCurrentTimeZoneID()
+
+	static string GetCurrentTimeZoneID()
 	{
-#if NET40_OR_GREATER || NETCOREAPP
 		return TimeZoneInfo.Local.Id;
-#else
-		// we don't want a static dependency on System.Core (to be able to run on .NET 2.0)
-		Type typeofTimeZoneInfo = Type.GetType("System.TimeZoneInfo, System.Core, Version=3.5.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089");
-		if (typeofTimeZoneInfo != null)
-		{
-			try
-			{
-				return (string)typeofTimeZoneInfo.GetProperty("Id").GetValue(typeofTimeZoneInfo.GetProperty("Local").GetValue(null, null), null);
-			}
-			catch (Exception x)
-			{
-				// older Mono versions did not wrap the exception in a TargetInvocationExcception,
-				// so we check both x and x.InnerException
-				if (typeofTimeZoneInfo.Assembly.GetType("System.TimeZoneNotFoundException").IsInstanceOfType(x)
-					|| typeofTimeZoneInfo.Assembly.GetType("System.TimeZoneNotFoundException").IsInstanceOfType(x.InnerException))
-				{
-					// MONOBUG Mono's TimeZoneInfo.Local property throws a TimeZoneNotFoundException on Windows
-					// (https://bugzilla.novell.com/show_bug.cgi?id=622524)
-					return TimeZone.CurrentTimeZone.StandardName;
-				}
-				else
-				{
-					throw;
-				}
-			}
-		}
-		else
-		{
-			// HACK this is very lame and probably won't work on localized windows versions
-			return TimeZone.CurrentTimeZone.StandardName;
-		}
-#endif
 	}
 
 	public static string getSystemTimeZoneID(string javaHome)

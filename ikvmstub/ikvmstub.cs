@@ -33,7 +33,7 @@ using IKVM.Reflection;
 
 using Type = IKVM.Reflection.Type;
 
-static class NetExp
+public static class NetExp
 {
     private static int zipCount;
     private static ZipOutputStream zipFile;
@@ -46,7 +46,7 @@ static class NetExp
     private static bool includeParameterNames;
     private static List<string> namespaces = new List<string>();
 
-    static int Main(string[] args)
+    public static int Main(string[] args)
     {
         IKVM.Internal.Tracer.EnableTraceConsoleListener();
         IKVM.Internal.Tracer.EnableTraceForDebug();

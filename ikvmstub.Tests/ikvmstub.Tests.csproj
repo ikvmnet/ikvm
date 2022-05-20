@@ -13,7 +13,7 @@
     </ItemGroup>
 
     <ItemGroup>
-        <ProjectReference Include="..\ikvmc\ikvmc.csproj">
+        <ProjectReference Include="..\ikvmstub\ikvmstub.csproj">
             <PrivateAssets>All</PrivateAssets>
         </ProjectReference>
         <ProjectReference Include="..\IKVM.OpenJDK\IKVM.OpenJDK.csproj">
