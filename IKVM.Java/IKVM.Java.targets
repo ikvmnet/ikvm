@@ -422,8 +422,15 @@
             CleanJavaClasses;
         </CleanDependsOn>
     </PropertyGroup>
+    
+    <Target Name="ResolveRmiStubInputItems" DependsOnTargets="BuildJavaClasses">
+        <ItemGroup>
+            <RmiStubInputItem Include="@(JavaClasspathItem)" />
+            <RmiStubInputItem Include="$(JavaClassOutputPath)**\*.class" />
+        </ItemGroup>
+    </Target>
 
-    <Target Name="_BuildRmiStubs" DependsOnTargets="BuildJavaClasses" Inputs="@(JavaClasspathItem);$(JavaClassOutputPath)\**\*.class" Outputs="$(RmiStubsOutputPath)stamp">
+    <Target Name="_BuildRmiStubs" DependsOnTargets="ResolveRmiStubInputItems" Inputs="@(RmiStubInputItem)" Outputs="$(RmiStubsOutputPath)stamp">
         <ItemGroup>
             <RmicClasspath Include="@(JavaClasspath);$(JavaClassOutputPath)" />
             <RmicArgs Include="-J-client" />
@@ -454,8 +461,7 @@
     <PropertyGroup>
         <BuildRmiStubsDependsOn>
             $(BuildRmiStubsDependsOn)
-            ResolveJavaClasspath;
-            BuildJavaClasses;
+            ResolveRmiStubInputItems;
             _BuildRmiStubs;
         </BuildRmiStubsDependsOn>
     </PropertyGroup>

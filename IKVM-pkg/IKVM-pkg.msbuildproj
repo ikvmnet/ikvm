@@ -1,4 +1,4 @@
-﻿<Project Sdk="Microsoft.Build.NoTargets/3.4.0">
+﻿<Project Sdk="Microsoft.Build.NoTargets/3.5.0">
 
     <PropertyGroup>
         <PackageId>IKVM</PackageId>
