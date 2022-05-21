@@ -666,4 +666,13 @@
         </CompileDependsOn>
     </PropertyGroup>
 
+    <PropertyGroup>
+        <DesignTimeCompileDependsOn>
+            MergeOpenJdkAssemblyTimestampBeforeCompile;
+            $(DesignTimeCompileDependsOn);
+            MergeOpenJdkAssemblyTimestampAfterCompile;
+            MergeOpenJdkAssembly;
+        </DesignTimeCompileDependsOn>
+    </PropertyGroup>
+
 </Project>
