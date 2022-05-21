@@ -7,7 +7,7 @@
 
     <PropertyGroup Label="Copyright Info">
         <ProductName>IKVM</ProductName>
-        <Authors>Jeroen Frijters</Authors>
+        <Authors>Jeroen Frijters, Jerome Haltom</Authors>
         <CurrentYear Condition=" '$(CurrentYear)' == '' ">$([System.DateTime]::UtcNow.Year.ToString())</CurrentYear>
         <Copyright>Copyright © $(CurrentYear) $(Authors)</Copyright>
     </PropertyGroup>
