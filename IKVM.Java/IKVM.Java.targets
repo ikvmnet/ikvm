@@ -429,7 +429,7 @@
         </CleanDependsOn>
     </PropertyGroup>
 
-    <Target Name="_BuildRmiStubs" DependsOnTargets="BuildJavaClasses" Inputs="@(JavaClasspath);$(JavaClassOutputPath)\**\*.class" Outputs="$(RmiStubsOutputPath)stamp">
+    <Target Name="_BuildRmiStubs" DependsOnTargets="BuildJavaClasses" Inputs="@(JavaClasspath->Exists());$(JavaClassOutputPath)\**\*.class" Outputs="$(RmiStubsOutputPath)stamp">
         <ItemGroup>
             <RmicClasspath Include="@(JavaClasspath);$(JavaClassOutputPath)" />
             <RmicArgs Include="-J-client" />
