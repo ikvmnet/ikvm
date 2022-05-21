@@ -2,8 +2,6 @@
 
     <PropertyGroup>
         <PackageId>dotnet-ikvm</PackageId>
-        <AssemblyName>IKVM.Tool</AssemblyName>
-        <RootNamespace>IKVM.Tool</RootNamespace>
         <TargetFrameworks>netcoreapp3.1</TargetFrameworks>
         <PackageLicenseFile>LICENSE</PackageLicenseFile>
         <PackAsTool>true</PackAsTool>
