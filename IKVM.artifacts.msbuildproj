@@ -5,13 +5,12 @@
         <ArtifactStagingDirectory Condition="'$(ArtifactStagingDirectory)' == ''">$([System.IO.Path]::Combine('$(MSBuildThisFileDirectory)', 'build'))</ArtifactStagingDirectory>
         <ArtifactStagingDirectory>$([System.IO.Path]::GetFullPath('$(ArtifactStagingDirectory)'))</ArtifactStagingDirectory>
         <SolutionFile>$([System.IO.Path]::Combine('$(MSBuildThisFileDirectory)', 'IKVM.sln'))</SolutionFile>
-        <Version>$(Version)</Version>
     </PropertyGroup>
 
 	<ItemGroup>
 		<TargetsForPublish Include="$(SolutionFile)">
 			<Targets>IKVM-pkg:Pack</Targets>
-			<Properties>PackageOutputPath=$([System.IO.Path]::Combine('$(ArtifactStagingDirectory)', 'nuget'))</Properties>
+			<Properties>PackageOutputPath=$([System.IO.Path]::Combine('$(ArtifactStagingDirectory)', 'pkg'))</Properties>
 		</TargetsForPublish>
 	</ItemGroup>
 

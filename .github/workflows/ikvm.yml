@@ -94,10 +94,10 @@ jobs:
       run: dotnet restore IKVM.sln
     - name: Build IKVM
       run: msbuild /m:1 IKVM.sln
-    - name: Build IKVM Packages
+    - name: Build IKVM Artifacts
       run: msbuild /m:1 IKVM.artifacts.msbuildproj
     - name: Upload IKVM Packages
       uses: actions/upload-artifact@v3
       with:
-        name: nuget
-        path: build/nuget
+        name: pkg
+        path: build/pkg
