@@ -153,13 +153,7 @@
         <Message Text="Using ikvmstub executable at '$(IkvmStub)'." />
     </Target>
 
-    <Target Name="ResolveIkvmRuntimeAssembly" DependsOnTargets="ResolveProjectReferences">
-        <MSBuild Projects="@(_MSBuildProjectReferenceExistent)" Targets="Build" BuildInParallel="$(BuildInParallel)" Properties="%(_MSBuildProjectReferenceExistent.SetConfiguration);%(_MSBuildProjectReferenceExistent.SetPlatform);%(_MSBuildProjectReferenceExistent.SetTargetFramework)" RemoveProperties="%(_MSBuildProjectReferenceExistent.GlobalPropertiesToRemove)$(_GlobalPropertiesToRemoveFromProjectReferences)" Condition=" '%(_MSBuildProjectReferenceExistent.IsIkvmRuntimeDll)' == 'true' ">
-            <Output TaskParameter="TargetOutputs" ItemName="StubAssembly" />
-        </MSBuild>
-    </Target>
-
-    <Target Name="ResolveRefStubs" DependsOnTargets="ResolveIkvmRuntimeAssembly;ResolveReferences;FindReferenceAssembliesForReferences">
+    <Target Name="ResolveRefStubs" DependsOnTargets="ResolveReferences;FindReferenceAssembliesForReferences">
         <RemoveDuplicates Inputs="@(ReferencePathWithRefAssemblies)">
             <Output TaskParameter="Filtered" ItemName="RefStubReferencePath" />
         </RemoveDuplicates>
@@ -186,25 +180,22 @@
         </ItemGroup>
     </Target>
 
-    <Target Name="_BuildRefStubs" DependsOnTargets="GetIkvmStubExe;ResolveRefStubs" Inputs="@(_RefStubAssembly)" Outputs="%(JarPath)">
+    <Target Name="_BuildRefStubs" DependsOnTargets="GetIkvmStubExe;ResolveRefStubs" Inputs="$(IkvmStub);@(_RefStubAssembly)" Outputs="@(_RefStubAssembly->'%(JarPath)')">
         <ItemGroup>
-            <_RefStubAssemblyWithTempPath Include="@(_RefStubAssembly)">
+            <_RefStubAssemblyWithTempPath Include="@(_RefStubAssembly)" Condition=" '%(Identity)' != '' ">
                 <TmpPath>$(RefStubsOutputPath)tmp\$([System.IO.Path]::GetRandomFileName())</TmpPath>
             </_RefStubAssemblyWithTempPath>
         </ItemGroup>
 
-        <MakeDir Directories="$(RefStubsOutputPath)" />
-        <MakeDir Directories="$(RefStubsOutputPath)tmp" />
         <Delete Files="@(_RefStubAssemblyWithTempPath->'%(TmpPath)')" />
-        <Message Text="Beginning build of reference stub for @(_RefStubAssemblyWithTempPath)..." Importance="high" />
-        <Message Text="$(_IkvmToolExecPrefix)$(IkvmStub) -bootstrap &quot;@(_RefStubAssemblyWithTempPath, '$([System.IO.Path]::PathSeparator)')&quot; %(Args) -nostdlib -out:%(TmpPath)" Condition=" '%(Identity)' != '' " />
-        <Exec Command="$(_IkvmToolExecPrefix)$(IkvmStub) -bootstrap &quot;@(_RefStubAssemblyWithTempPath, '$([System.IO.Path]::PathSeparator)')&quot; %(Args) -nostdlib -out:%(TmpPath)" Condition=" '%(Identity)' != '' " />
-        <Delete Files="@(_RefStubAssemblyWithTempPath->'%(JarPath)')" />
+        <RemoveDir Directories="$(RefStubsOutputPath);$(RefStubsOutputPath)tmp" />
+        <MakeDir Directories="$(RefStubsOutputPath);$(RefStubsOutputPath)tmp" />
+        <Message Text="$(_IkvmToolExecPrefix)$(IkvmStub) -bootstrap &quot;%(_RefStubAssemblyWithTempPath.Identity)&quot; %(Args) -nostdlib -out:%(TmpPath)" />
+        <Exec Command="$(_IkvmToolExecPrefix)$(IkvmStub) -bootstrap &quot;%(_RefStubAssemblyWithTempPath.Identity)&quot; %(Args) -nostdlib -out:%(TmpPath)" />
         <Move SourceFiles="@(_RefStubAssemblyWithTempPath->'%(TmpPath)')" DestinationFiles="@(_RefStubAssemblyWithTempPath->'%(JarPath)')" OverwriteReadOnlyFiles="true" />
-        <Message Text="Finished build of reference stub for @(_RefStubAssemblyWithTempPath)." Importance="high" />
+        <RemoveDir Directories="$(RefStubsOutputPath)tmp" />
 
         <ItemGroup>
-            <FileWrites Include="@(_RefStubAssemblyWithTempPath->'%(TmpPath)')" />
             <FileWrites Include="@(_RefStubAssemblyWithTempPath->'%(JarPath)')" />
         </ItemGroup>
     </Target>
@@ -363,10 +354,13 @@
         <ItemGroup>
             <JavaClasspath Include="@(RefStub)" />
             <JavaClasspath Include="@(OpenJdkClasspath)" />
+            <JavaClasspathItem Include="@(RefStub)" />
+            <JavaClasspathItem Include="@(OpenJdkClasspath)" Condition=" '%(Extension)' == '.jar' " />
+            <JavaClasspathItem Include="%(OpenJdkClasspath.Identity)\**\*.class" Condition=" '%(Extension)' != '.jar' " />
         </ItemGroup>
     </Target>
 
-    <Target Name="_BuildJavaClasses" DependsOnTargets="ResolveJavaSourceItems;ResolveJavaClasspath" Inputs="@(JavaSourceItems)" Outputs="$(JavaClassOutputPath)stamp">
+    <Target Name="_BuildJavaClasses" DependsOnTargets="ResolveJavaSourceItems;ResolveJavaClasspath" Inputs="@(JavaClasspathItem);@(JavaSourceItems)" Outputs="$(JavaClassOutputPath)stamp">
         <ItemGroup>
             <JavacArgs Include="-g" />
             <JavacArgs Include="-nowarn" />
@@ -429,7 +423,7 @@
         </CleanDependsOn>
     </PropertyGroup>
 
-    <Target Name="_BuildRmiStubs" DependsOnTargets="BuildJavaClasses" Inputs="@(JavaClasspath->Exists());$(JavaClassOutputPath)\**\*.class" Outputs="$(RmiStubsOutputPath)stamp">
+    <Target Name="_BuildRmiStubs" DependsOnTargets="BuildJavaClasses" Inputs="@(JavaClasspathItem);$(JavaClassOutputPath)\**\*.class" Outputs="$(RmiStubsOutputPath)stamp">
         <ItemGroup>
             <RmicClasspath Include="@(JavaClasspath);$(JavaClassOutputPath)" />
             <RmicArgs Include="-J-client" />
@@ -576,7 +570,7 @@
     <Target Name="CleanOpenJdkAssembly">
         <Delete Files="$(IntermediateOutputPath)ikvmc.exclude.txt" />
         <Delete Files="$(IntermediateOutputPath)ikvmc.args.txt" />
-        <Delete Files="$(IntermediateOutputPath)\openjdk\openjdk.dll;$(IntermediateOutputPath)\openjdk\openjdk.pdb" />
+        <Delete Files="$(IntermediateOutputPath)openjdk\openjdk.dll;$(IntermediateOutputPath)openjdk\openjdk.pdb" />
         <Delete Files="$(OpenJdkAssemblyPath);$(OpenJdkDebugSymbolsPath)" />
     </Target>
 

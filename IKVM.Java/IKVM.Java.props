@@ -41,6 +41,7 @@
         <RefStubAssembly Include="System.Runtime" />
         <RefStubAssembly Include="System.Runtime.Extensions" />
         <RefStubAssembly Include="System.Runtime.InteropServices" />
+        <RefStubAssembly Include="System.Runtime.InteropServices.RuntimeInformation" />
         <RefStubAssembly Include="System.Security.Cryptography.Algorithms" />
         <RefStubAssembly Include="System.Security.Cryptography.Csp" />
         <RefStubAssembly Include="System.Security.Permissions" />
