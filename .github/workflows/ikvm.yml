@@ -93,9 +93,7 @@ jobs:
     - name: DotNet Restore
       run: dotnet restore IKVM.sln
     - name: DotNet Build
-      run: msbuild /m:1 IKVM.sln & msbuild /m:1 IKVM.artifacts.msbuildproj 
-    - name: DotNet Test
-      run: dotnet test --no-build --verbosity normal IKVM.sln
+      run: msbuild /m:1 IKVM.sln & msbuild /m:1 IKVM.artifacts.msbuildproj
     - name: Upload IKVM
       uses: actions/upload-artifact@v3
       with:
