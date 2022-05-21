@@ -46,7 +46,7 @@ jobs:
               libfontconfig1-dev &&
             cd openjdk8 &&
             JAVA_HOME=build/java-se-7u75-ri bash ./configure &&
-            make DISABLE_HOTSPOT_OS_VERSION_CHECK=ok images test"
+            make DISABLE_HOTSPOT_OS_VERSION_CHECK=ok images"
     - name: Package OpenJDK 8
       run: |
         zip -r openjdk8-build-linux-x86_64-normal-server-release.zip \
@@ -55,8 +55,7 @@ jobs:
           linux-x86_64-normal-server-release/jdk/gensrc \
           linux-x86_64-normal-server-release/jdk/impsrc \
           linux-x86_64-normal-server-release/jdk/lib \
-          linux-x86_64-normal-server-release/jdk/classes \
-          linux-x86_64-normal-server-release/
+          linux-x86_64-normal-server-release/jdk/classes
       working-directory: openjdk8/build
     - name: Upload OpenJDK 8
       uses: actions/upload-artifact@v3
