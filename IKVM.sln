@@ -5,7 +5,7 @@ VisualStudioVersion = 17.2.32505.173
 MinimumVisualStudioVersion = 10.0.40219.1
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "IKVM.Runtime", "IKVM.Runtime\IKVM.Runtime.csproj", "{1DAD30CB-7FF9-47AC-92B2-0F46003EB6A4}"
 EndProject
-Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "IKVM.Java", "IKVM.OpenJDK\IKVM.Java.csproj", "{FAC669CD-03A2-4120-8B06-68D34E047C1C}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "IKVM.Java", "IKVM.Java\IKVM.Java.csproj", "{FAC669CD-03A2-4120-8B06-68D34E047C1C}"
 EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "IKVM.Runtime-ref", "IKVM.Runtime-ref\IKVM.Runtime-ref.csproj", "{197EF0EC-63E2-4644-AF25-054B931DDB55}"
 EndProject
@@ -32,7 +32,7 @@ Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Solution Items", "Solution 
 		openjdk8.props = openjdk8.props
 	EndProjectSection
 EndProject
-Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "IKVM.Java-ref", "IKVM.OpenJDK-ref\IKVM.Java-ref.csproj", "{43BA164D-41F3-4563-BDB0-EEF56CE49309}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "IKVM.Java-ref", "IKVM.Java-ref\IKVM.Java-ref.csproj", "{43BA164D-41F3-4563-BDB0-EEF56CE49309}"
 EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "IKVM.Runtime.JNI-ref", "IKVM.Runtime.JNI-ref\IKVM.Runtime.JNI-ref.csproj", "{01563AC3-AE6C-4297-9313-8B835B488738}"
 EndProject
