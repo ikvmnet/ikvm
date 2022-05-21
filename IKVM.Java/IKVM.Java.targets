@@ -429,7 +429,7 @@
         </CleanDependsOn>
     </PropertyGroup>
 
-    <Target Name="BuildRmiStubs" DependsOnTargets="BuildJavaClasses" Inputs="@(JavaClasspath);$(JavaClassOutputPath)\**\*.class" Outputs="$(RmiStubsOutputPath)stamp">
+    <Target Name="_BuildRmiStubs" DependsOnTargets="BuildJavaClasses" Inputs="@(JavaClasspath);$(JavaClassOutputPath)\**\*.class" Outputs="$(RmiStubsOutputPath)stamp">
         <ItemGroup>
             <RmicClasspath Include="@(JavaClasspath);$(JavaClassOutputPath)" />
             <RmicArgs Include="-J-client" />
@@ -455,6 +455,19 @@
             <FileWrites Include="$(RmiStubsOutputPath)**\*.class" />
             <FileWrites Include="$(RmiStubsOutputPath)stamp" />
         </ItemGroup>
+    </Target>
+
+    <PropertyGroup>
+        <BuildRmiStubsDependsOn>
+            $(BuildRmiStubsDependsOn)
+            ResolveJavaClasspath;
+            BuildJavaClasses;
+            _BuildRmiStubs;
+        </BuildRmiStubsDependsOn>
+    </PropertyGroup>
+
+    <Target Name="BuildRmiStubs" DependsOnTargets="$(BuildRmiStubsDependsOn)">
+
     </Target>
 
     <Target Name="CleanRmiStubs">
