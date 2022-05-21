@@ -199,7 +199,7 @@ public static class NetExp
             {
                 StaticCompiler.LoadFile(typeof(NetExp).Assembly.Location);
                 StaticCompiler.runtimeAssembly = StaticCompiler.LoadFile(Path.GetFullPath(Path.Combine(typeof(NetExp).Assembly.Location, "../IKVM.Runtime.dll")));
-                JVM.CoreAssembly = StaticCompiler.LoadFile(Path.GetFullPath(Path.Combine(typeof(NetExp).Assembly.Location, "../IKVM.OpenJDK.dll")));
+                JVM.CoreAssembly = StaticCompiler.LoadFile(Path.GetFullPath(Path.Combine(typeof(NetExp).Assembly.Location, "../IKVM.Java.dll")));
             }
             if (AttributeHelper.IsJavaModule(assembly.ManifestModule))
             {
