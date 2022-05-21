@@ -9,7 +9,7 @@
     </PropertyGroup>
 
 	<ItemGroup>
-		<TargetsForPublish Include="$(MSBuildThisFileDirectory)\IKVM.sln">
+		<TargetsForPublish Include="$(SolutionFile)">
 			<Targets>IKVM-pkg:Pack</Targets>
 			<Properties>PackageOutputPath=$([System.IO.Path]::Combine('$(ArtifactStagingDirectory)', 'nuget'))</Properties>
 		</TargetsForPublish>

@@ -16,7 +16,7 @@
         <ProjectReference Include="..\ikvmc\ikvmc.csproj">
             <PrivateAssets>All</PrivateAssets>
         </ProjectReference>
-        <ProjectReference Include="..\IKVM.OpenJDK\IKVM.OpenJDK.csproj">
+        <ProjectReference Include="..\IKVM.OpenJDK\IKVM.Java.csproj">
             <PrivateAssets>All</PrivateAssets>
         </ProjectReference>
         <ProjectReference Include="..\IKVM.Runtime.JNI\IKVM.Runtime.JNI.csproj">

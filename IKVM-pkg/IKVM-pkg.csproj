@@ -26,7 +26,7 @@
     </ItemGroup>
 
     <ItemGroup>
-        <ProjectReference Include="..\IKVM.OpenJDK\IKVM.OpenJDK.csproj">
+        <ProjectReference Include="..\IKVM.OpenJDK\IKVM.Java.csproj">
             <ReferenceOutputAssembly>True</ReferenceOutputAssembly>
             <PrivateAssets>all</PrivateAssets>
         </ProjectReference>

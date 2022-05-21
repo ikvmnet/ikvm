@@ -150,7 +150,7 @@
         <PropertyGroup>
             <IkvmStub>@(_IkvmStub)</IkvmStub>
         </PropertyGroup>
-        <Message Text="Using ikvmstub executable at '$(IkvmStub)'." Importance="high" />
+        <Message Text="Using ikvmstub executable at '$(IkvmStub)'." />
     </Target>
 
     <Target Name="ResolveIkvmRuntimeAssembly" DependsOnTargets="ResolveProjectReferences">
@@ -197,8 +197,8 @@
         <MakeDir Directories="$(RefStubsOutputPath)tmp" />
         <Delete Files="@(_RefStubAssemblyWithTempPath->'%(TmpPath)')" />
         <Message Text="Beginning build of reference stub for @(_RefStubAssemblyWithTempPath)..." Importance="high" />
-        <Message Text="$(_IkvmToolExecPrefix)$(IkvmStub) -bootstrap &quot;@(_RefStubAssemblyWithTempPath)&quot; %(Args) -nostdlib -out:%(TmpPath)" Condition=" '%(Identity)' != '' " Importance="high" />
-        <Exec Command="$(_IkvmToolExecPrefix)$(IkvmStub) -bootstrap &quot;@(_RefStubAssemblyWithTempPath)&quot; %(Args) -nostdlib -out:%(TmpPath)" Condition=" '%(Identity)' != '' " />
+        <Message Text="$(_IkvmToolExecPrefix)$(IkvmStub) -bootstrap &quot;@(_RefStubAssemblyWithTempPath, '$([System.IO.Path]::PathSeparator)')&quot; %(Args) -nostdlib -out:%(TmpPath)" Condition=" '%(Identity)' != '' " />
+        <Exec Command="$(_IkvmToolExecPrefix)$(IkvmStub) -bootstrap &quot;@(_RefStubAssemblyWithTempPath, '$([System.IO.Path]::PathSeparator)')&quot; %(Args) -nostdlib -out:%(TmpPath)" Condition=" '%(Identity)' != '' " />
         <Delete Files="@(_RefStubAssemblyWithTempPath->'%(JarPath)')" />
         <Move SourceFiles="@(_RefStubAssemblyWithTempPath->'%(TmpPath)')" DestinationFiles="@(_RefStubAssemblyWithTempPath->'%(JarPath)')" OverwriteReadOnlyFiles="true" />
         <Message Text="Finished build of reference stub for @(_RefStubAssemblyWithTempPath)." Importance="high" />
