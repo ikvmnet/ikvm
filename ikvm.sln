@@ -21,6 +21,9 @@ Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "IKVM.Reflection", "IKVM.Ref
 EndProject
 Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Solution Items", "Solution Items", "{90150B24-0F40-41BB-95EF-D95F50BF06BE}"
 	ProjectSection(SolutionItems) = preProject
+		.gitattributes = .gitattributes
+		.gitignore = .gitignore
+		.gitmodules = .gitmodules
 		Directory.Build.props = Directory.Build.props
 		Directory.Build.targets = Directory.Build.targets
 		IKVM.artifacts.msbuildproj = IKVM.artifacts.msbuildproj
@@ -41,7 +44,7 @@ Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "ikvmc.Tests", "ikvmc.Tests\
 EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "dotnet-ikvm", "dotnet-ikvm\dotnet-ikvm.csproj", "{390101F0-E5FA-4EC3-BF6E-4E6EFC8F0BDF}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "ikvmstub.Tests", "ikvmstub.Tests\ikvmstub.Tests.csproj", "{6422631E-1D1A-4E7C-AE0F-71AFDE0AD04E}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "ikvmstub.Tests", "ikvmstub.Tests\ikvmstub.Tests.csproj", "{6422631E-1D1A-4E7C-AE0F-71AFDE0AD04E}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
