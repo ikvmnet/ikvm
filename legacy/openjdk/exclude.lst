@@ -1,6 +1,0 @@
-^java\.lang\.AutoCloseable$
-^java\.lang\.Comparable$
-^java\.lang\.Object$
-^java\.lang\.String$
-^java\.lang\.Throwable$
-^sun\.reflect\.misc\.Trampoline$
