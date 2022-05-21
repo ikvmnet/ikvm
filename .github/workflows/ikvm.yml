@@ -58,7 +58,7 @@ jobs:
           linux-x86_64-normal-server-release/jdk/classes
       working-directory: openjdk8/build
     - name: Upload OpenJDK 8
-      uses: actions/upload-artifact@v1
+      uses: actions/upload-artifact@v3
       with:
         name: openjdk8-build-linux-x86_64-normal-server-release
         path: openjdk8/build/openjdk8-build-linux-x86_64-normal-server-release.zip
@@ -80,6 +80,8 @@ jobs:
       uses: actions/setup-dotnet@v2
       with:
         dotnet-version: 6.0.x
+    - name: Add msbuild to PATH
+      uses: microsoft/setup-msbuild@v1.1
     - name: Download OpenJDK 8 Build
       uses: actions/download-artifact@v2
       with:
@@ -89,6 +91,11 @@ jobs:
       run: unzip -o openjdk8-build-linux-x86_64-normal-server-release.zip
       working-directory: openjdk8/build
     - name: DotNet Build
-      run: msbuild IKVM.sln & msbuild IKVM.artifacts.msbuildproj; 
+      run: msbuild IKVM.sln & msbuild IKVM.artifacts.msbuildproj 
     - name: DotNet Test
       run: dotnet test --no-build --verbosity normal IKVM.sln
+    - name: Upload IKVM
+      uses: actions/upload-artifact@v3
+      with:
+        name: build
+        path: build

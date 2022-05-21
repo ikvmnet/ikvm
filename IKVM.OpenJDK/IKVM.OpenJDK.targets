@@ -512,7 +512,7 @@
             <IkvmcArgs Include="-assembly:$(AssemblyName)" />
             <IkvmcArgs Include="-version:$(AssemblyVersion)" />
             <IkvmcArgs Include="-runtime:$(IkvmRuntimeDll)" />
-            <IkvmcArgs Include="-keyfile:$(AssemblyOriginatorKeyFile)" Condition=" '$(TargetFramework)' == 'net461' And '$(SignAssembly)' == 'true' " />
+            <IkvmcArgs Include="-keyfile:$(AssemblyOriginatorKeyFile)" Condition=" '$(SignAssembly)' == 'true' " />
             <IkvmcArgs Include="@(IkvmMapFile->'-remap:%(FullPath)')" />
             <IkvmcArgs Include="-compressresources" />
             <IkvmcArgs Include="-opt:fields" />
