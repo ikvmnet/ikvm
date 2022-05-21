@@ -96,11 +96,8 @@ jobs:
       run: msbuild /m:1 IKVM.sln
     - name: Build IKVM Packages
       run: msbuild /m:1 IKVM.artifacts.msbuildproj
-    - name: Upload IKVM Package
+    - name: Upload IKVM Packages
       uses: actions/upload-artifact@v3
       with:
-        path: build/nuget/IKVM.*.nupkg
-    - name: Upload IKVM Symbol Package
-      uses: actions/upload-artifact@v3
-      with:
-        path: build/nuget/IKVM.*.snupkg
+        name: nuget
+        path: build/nuget

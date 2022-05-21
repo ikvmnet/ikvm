@@ -15987,6 +15987,24 @@
     </ItemGroup>
 
     <ItemGroup>
+        <OpenJdkRmiStub Include="sun.rmi.registry.RegistryImpl" Flags="-v1.1" />
+        <OpenJdkRmiStub Include="sun.rmi.transport.DGCImpl" Flags="-v1.1" />
+        <OpenJdkRmiStub Include="sun.rmi.server.Activation$ActivationSystemImpl" Flags="-v1.2" />
+        <OpenJdkRmiStub Include="java.rmi.activation.ActivationGroup" Flags="-v1.2" />
+        <OpenJdkRmiStub Include="com.sun.jndi.rmi.registry.ReferenceWrapper" Flags="-v1.2" />
+        <OpenJdkRmiStub Include="javax.management.remote.rmi.RMIConnectionImpl" Flags="-v1.2" />
+        <OpenJdkRmiStub Include="javax.management.remote.rmi.RMIConnectionImpl" Flags="-v1.2 -iiop" />
+        <OpenJdkRmiStub Include="javax.management.remote.rmi.RMIConnectionImpl" Flags="-v1.2 -iiop -standardPackage" />
+        <OpenJdkRmiStub Include="javax.management.remote.rmi.RMIServerImpl" Flags="-v1.2" />
+        <OpenJdkRmiStub Include="javax.management.remote.rmi.RMIServerImpl" Flags="-v1.2 -iiop" />
+        <OpenJdkRmiStub Include="javax.management.remote.rmi.RMIServerImpl" Flags="-v1.2 -iiop -standardPackage" />
+        <OpenJdkRmiStub Include="javax.management.remote.rmi.RMIConnection" Flags="-iiop" />
+        <OpenJdkRmiStub Include="javax.management.remote.rmi.RMIConnection" Flags="-iiop -standardPackage" />
+        <OpenJdkRmiStub Include="javax.management.remote.rmi.RMIServer" Flags="-iiop" />
+        <OpenJdkRmiStub Include="javax.management.remote.rmi.RMIServer" Flags="-iiop -standardPackage" />
+    </ItemGroup>
+
+    <ItemGroup>
         <VfsZipItem Include="$(OpenJdkDir)\build\linux-x86_64-normal-server-release\jdk\lib\calendars.properties" />
         <VfsZipItem Include="$(OpenJdkDir)\build\linux-x86_64-normal-server-release\jdk\lib\logging.properties" />
         <VfsZipItem Include="$(OpenJdkDir)\build\linux-x86_64-normal-server-release\jdk\lib\net.properties" />

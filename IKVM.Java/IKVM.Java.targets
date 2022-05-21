@@ -429,30 +429,26 @@
         </CleanDependsOn>
     </PropertyGroup>
 
-    <Target Name="BuildRmiStubs" DependsOnTargets="BuildJavaClasses" Inputs="$(JavaClassOutputPath)\**\*.class" Outputs="$(RmiStubsOutputPath)stamp">
+    <Target Name="BuildRmiStubs" DependsOnTargets="BuildJavaClasses" Inputs="@(JavaClasspath);$(JavaClassOutputPath)\**\*.class" Outputs="$(RmiStubsOutputPath)stamp">
+        <ItemGroup>
+            <RmicClasspath Include="@(JavaClasspath);$(JavaClassOutputPath)" />
+            <RmicArgs Include="-J-client" />
+            <RmicArgs Include="-J-Xms128m" />
+            <RmicArgs Include="-nowarn" />
+            <RmicArgs Include="-bootclasspath" />
+            <RmicArgs Include="@(RmicClasspath, '$([System.IO.Path]::PathSeparator)')" />
+            <RmicArgs Include="-d" />
+            <RmicArgs Include="$(RmiStubsOutputPath)" />
+        </ItemGroup>
+
+        <PropertyGroup>
+            <_RmicArgs>@(RmicArgs, ' ')</_RmicArgs>
+        </PropertyGroup>
+
         <Delete Files="$(RmiStubsOutputPath)**\*" />
         <RemoveDir Directories="$(RmiStubsOutputPath)" />
         <MakeDir Directories="$(RmiStubsOutputPath)" />
-
-        <PropertyGroup>
-            <RmiArgs>-J-client -J-Xmx896m -J-Xms128m -nowarn -bootclasspath @(JavaClasspath);$(JavaClassOutputPath) -d $(RmiStubsOutputPath)</RmiArgs>
-        </PropertyGroup>
-
-        <Exec Command="rmic $(RmiArgs) -v1.1 sun.rmi.registry.RegistryImpl" />
-        <Exec Command="rmic $(RmiArgs) -v1.1 sun.rmi.transport.DGCImpl" />
-        <Exec Command="rmic $(RmiArgs) -v1.2 sun.rmi.server.Activation$ActivationSystemImpl" />
-        <Exec Command="rmic $(RmiArgs) -v1.2 java.rmi.activation.ActivationGroup" />
-        <Exec Command="rmic $(RmiArgs) -v1.2 com.sun.jndi.rmi.registry.ReferenceWrapper" />
-        <Exec Command="rmic $(RmiArgs) -v1.2 javax.management.remote.rmi.RMIConnectionImpl" />
-        <Exec Command="rmic $(RmiArgs) -v1.2 -iiop javax.management.remote.rmi.RMIConnectionImpl" />
-        <Exec Command="rmic $(RmiArgs) -v1.2 -iiop -standardPackage javax.management.remote.rmi.RMIConnectionImpl" />
-        <Exec Command="rmic $(RmiArgs) -v1.2 javax.management.remote.rmi.RMIServerImpl" />
-        <Exec Command="rmic $(RmiArgs) -v1.2 -iiop javax.management.remote.rmi.RMIServerImpl" />
-        <Exec Command="rmic $(RmiArgs) -v1.2 -iiop -standardPackage javax.management.remote.rmi.RMIServerImpl" />
-        <Exec Command="rmic $(RmiArgs) -iiop javax.management.remote.rmi.RMIConnection" />
-        <Exec Command="rmic $(RmiArgs) -iiop -standardPackage javax.management.remote.rmi.RMIConnection" />
-        <Exec Command="rmic $(RmiArgs) -iiop javax.management.remote.rmi.RMIServer" />
-        <Exec Command="rmic $(RmiArgs) -iiop -standardPackage javax.management.remote.rmi.RMIServer" />
+        <Exec Command="rmic $(_RmicArgs) %(OpenJdkRmiStub.Flags) %(OpenJdkRmiStub.Identity)" />
         <Touch Files="$(RmiStubsOutputPath)stamp" AlwaysCreate="true" ForceTouch="true" />
 
         <ItemGroup>
@@ -664,15 +660,6 @@
             MergeOpenJdkAssemblyTimestampAfterCompile;
             MergeOpenJdkAssembly;
         </CompileDependsOn>
-    </PropertyGroup>
-
-    <PropertyGroup>
-        <DesignTimeCompileDependsOn>
-            MergeOpenJdkAssemblyTimestampBeforeCompile;
-            $(DesignTimeCompileDependsOn);
-            MergeOpenJdkAssemblyTimestampAfterCompile;
-            MergeOpenJdkAssembly;
-        </DesignTimeCompileDependsOn>
     </PropertyGroup>
 
 </Project>
