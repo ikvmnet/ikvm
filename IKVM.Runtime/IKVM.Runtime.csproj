@@ -13,7 +13,7 @@
 
     <ItemGroup>
         <InternalsVisibleTo Include="IKVM.Runtime.JNI" />
-        <InternalsVisibleTo Include="IKVM.OpenJDK" />
+        <InternalsVisibleTo Include="IKVM.Java" />
     </ItemGroup>
 
     <ItemGroup Condition=" '$(TargetFramework)' == 'net461' ">
@@ -28,7 +28,7 @@
     </ItemGroup>
 
     <ItemGroup>
-        <ProjectReference Include="..\IKVM.OpenJDK\IKVM.Java.csproj">
+        <ProjectReference Include="..\IKVM.Java\IKVM.Java.csproj">
             <PrivateAssets>All</PrivateAssets>
         </ProjectReference>
         <ProjectReference Include="..\IKVM.Runtime.JNI-ref\IKVM.Runtime.JNI-ref.csproj">

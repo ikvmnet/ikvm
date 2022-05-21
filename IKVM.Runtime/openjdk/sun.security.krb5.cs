@@ -66,7 +66,7 @@ static class Java_sun_security_krb5_Credentials
             return null;
         }
         // we use reflection to instantiate the Credentials object,
-		// because we don't want a static dependency on IKVM.OpenJDK.Security.dll
+		// because we don't want a static dependency on IKVM.Java.Security.dll
         return java.lang.Class.forName("sun.security.krb5.Credentials")
             .getConstructor(typeof(byte[]),
                             typeof(string),

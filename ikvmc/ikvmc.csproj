@@ -12,7 +12,7 @@
     </PropertyGroup>
 
     <ItemGroup>
-        <InternalsVisibleTo Include="IKVM.OpenJDK" />
+        <InternalsVisibleTo Include="IKVM.Java" />
     </ItemGroup>
 
     <ItemGroup Condition=" '$(TargetFramework)' == 'net461' ">

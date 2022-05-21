@@ -13,11 +13,11 @@
 
     <ItemGroup>
         <InternalsVisibleTo Include="IKVM.Runtime" />
-        <InternalsVisibleTo Include="IKVM.OpenJDK" />
+        <InternalsVisibleTo Include="IKVM.Java" />
     </ItemGroup>
 
     <ItemGroup>
-        <ProjectReference Include="..\IKVM.OpenJDK-ref\IKVM.Java-ref.csproj">
+        <ProjectReference Include="..\IKVM.Java-ref\IKVM.Java-ref.csproj">
             <PrivateAssets>All</PrivateAssets>
         </ProjectReference>
     </ItemGroup>

@@ -1,9 +1,9 @@
 ﻿<Project Sdk="Microsoft.NET.Sdk">
 
     <PropertyGroup>
-        <PackageId>IKVM.OpenJDK-ref</PackageId>
+        <PackageId>IKVM.Java-ref</PackageId>
         <TargetFrameworks>net461;netcoreapp3.1</TargetFrameworks>
-        <AssemblyName>IKVM.OpenJDK</AssemblyName>
+        <AssemblyName>IKVM.Java</AssemblyName>
         <NoWarn>$(NoWarn);169;649</NoWarn>
     </PropertyGroup>
 
