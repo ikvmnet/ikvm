@@ -867,6 +867,7 @@ static class Java_java_io_RandomAccessFile
 
 static class Java_java_io_WinNTFileSystem
 {
+
 	internal const int ACCESS_READ = 0x04;
 	const int ACCESS_WRITE = 0x02;
 	const int ACCESS_EXECUTE = 0x01;
@@ -920,6 +921,7 @@ static class Java_java_io_WinNTFileSystem
 			catch (IOException)
 			{
 			}
+
 			return Path.Combine(dir, name);
 		}
 		catch (UnauthorizedAccessException)

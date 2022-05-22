@@ -5,6 +5,7 @@
         <AssemblyName>IKVM.Runtime.JNI</AssemblyName>
         <AssemblyTitle>IKVM.NET Runtime JNI Layer</AssemblyTitle>
         <Description>JVM for .NET</Description>
+        <LangVersion>7.0</LangVersion>
         <DefineConstants>$(DefineConstants);WHIDBEY;OPENJDK</DefineConstants>
         <NoWarn>$(NoWarn);169;649</NoWarn>
         <AllowUnsafeBlocks>true</AllowUnsafeBlocks>

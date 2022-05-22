@@ -99,4 +99,9 @@
         <OpenJdkClasspath Include="$(OpenJdkDir)\build\linux-x86_64-normal-server-release\jdk\gensrc" />
     </ItemGroup>
 
+    <PropertyGroup>
+        <ILRepackToolsPath Condition=" '$(MSBuildRuntimeType)' == 'Core' ">$(PkgILRepack_Lib_MSBuild)\tools\netcoreapp3.1</ILRepackToolsPath>
+        <ILRepackToolsPath Condition=" '$(MSBuildRuntimeType)' != 'Core' ">$(PkgILRepack_Lib_MSBuild)\tools\net461</ILRepackToolsPath>
+    </PropertyGroup>
+
 </Project>

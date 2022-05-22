@@ -4,6 +4,7 @@
         <TargetFrameworks>net461;netcoreapp3.1</TargetFrameworks>
         <AssemblyTitle>IKVM.NET Reflection Library</AssemblyTitle>
         <Description>Alternative implementation of System.Reflection[.Emit]</Description>
+        <LangVersion>7.0</LangVersion>
         <DefineConstants>$(DefineConstants);EMITTERS</DefineConstants>
         <NoWarn>$(NoWarn);169;649</NoWarn>
     </PropertyGroup>

@@ -1,0 +1,17 @@
+﻿<Project Sdk="Microsoft.NET.Sdk">
+
+    <PropertyGroup>
+        <OutputType>Exe</OutputType>
+        <TargetFrameworks>net461;netcoreapp3.1</TargetFrameworks>
+        <AssemblyTitle>IKVM.NET AWT Support</AssemblyTitle>
+        <Description>Winforms peers and 'native' code</Description>
+        <RootNamespace>awt</RootNamespace>
+        <DefineConstants>$(DefineConstants);WHIDBEY</DefineConstants>
+        <UseWindowsForms>true</UseWindowsForms>
+    </PropertyGroup>
+
+    <ItemGroup>
+        <ProjectReference Include="..\IKVM.Java\IKVM.Java.csproj" />
+    </ItemGroup>
+
+</Project>

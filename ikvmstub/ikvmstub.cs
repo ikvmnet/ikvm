@@ -24,6 +24,7 @@
 using System;
 using System.Collections.Generic;
 using System.IO;
+using System.Linq;
 
 using ICSharpCode.SharpZipLib.Zip;
 
@@ -337,6 +338,7 @@ public static class NetExp
         IKVM.StubGen.StubGenerator.WriteClass(mem, tw, includeNonPublicInterfaces, includeNonPublicMembers, includeSerialVersionUID, includeParameterNames);
         ZipEntry entry = new ZipEntry(tw.Name.Replace('.', '/') + ".class");
         entry.Size = mem.Position;
+        entry.DateTime = new DateTime(1980, 01, 01, 0, 0, 0, DateTimeKind.Utc);
         zipFile.PutNextEntry(entry);
         mem.WriteTo(zipFile);
     }
@@ -384,11 +386,12 @@ public static class NetExp
                 }
             }
         }
+
         bool keepGoing;
         do
         {
             keepGoing = false;
-            foreach (TypeWrapper c in new List<TypeWrapper>(todo.Values))
+            foreach (TypeWrapper c in new List<TypeWrapper>(todo.Values).OrderBy(i => i.Name))
             {
                 if (!done.ContainsKey(c.Name))
                 {
@@ -414,7 +417,9 @@ public static class NetExp
                     }
                 }
             }
-        } while (keepGoing);
+        }
+        while (keepGoing);
+
         return rc;
     }
 
