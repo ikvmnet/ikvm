@@ -7,11 +7,13 @@
         <AssemblyName>IKVM.Java</AssemblyName>
         <AssemblyTitle>IKVM.NET OpenJDK Platform</AssemblyTitle>
         <Description>JVM for .NET</Description>
+        <LangVersion>7.0</LangVersion>
     </PropertyGroup>
 
     <ItemGroup>
         <InternalsVisibleTo Include="IKVM.Runtime" />
         <InternalsVisibleTo Include="IKVM.Runtime.JNI" />
+        <InternalsVisibleTo Include="IKVM.AWT.WinForms" />
     </ItemGroup>
     
     <Import Project=".\IKVM.Java.props" />
