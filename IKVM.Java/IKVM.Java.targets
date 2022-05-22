@@ -238,10 +238,12 @@
     </UsingTask>
 
     <PropertyGroup>
-        <BuildRefStubsStateFile>$(IntermediateOutputPath)$(MSBuildThisFile).BuildRefStubs.state</BuildRefStubsStateFile>
+        <_BuildRefStubsStateFile>$(IntermediateOutputPath)$(MSBuildThisFile).BuildRefStubs.state</_BuildRefStubsStateFile>
+        <_BuildRefStubsStateStampFile>$(IntermediateOutputPath)$(MSBuildThisFile).BuildRefStubsState.stamp</_BuildRefStubsStateStampFile>
+        <_BuildRefStubsCoreStampFile>$(IntermediateOutputPath)$(MSBuildThisFile).BuildRefStubsCore.stamp</_BuildRefStubsCoreStampFile>
     </PropertyGroup>
 
-    <Target Name="BuildRefStubsState" DependsOnTargets="GetIkvmStubExe;ResolveRefStubs" Inputs="@(JavaClasspathItem);@(JavaSourceItems)" Outputs="$(IntermediateOutputPath)$(MSBuildThisFile).BuildRefStubsState.stamp">
+    <Target Name="BuildRefStubsState" DependsOnTargets="GetIkvmStubExe;ResolveRefStubs" Inputs="@(JavaClasspathItem);@(JavaSourceItems)" Outputs="$(_BuildRefStubsStateStampFile)">
         <ItemGroup>
             <_BuildRefStubsInputs Include="$(IkvmStub)" />
             <_BuildRefStubsInputs Include="@(ReferencePathWithRefAssemblies->Distinct())" />
@@ -256,16 +258,16 @@
         <ItemGroup>
             <_BuildRefStubsInputsStateLine Include="@(_BuildRefStubsInputsWithHash->'%(FileHash) %(Identity)')" />
         </ItemGroup>
-        <WriteLinesToFile File="$(BuildRefStubsStateFile)" Lines="@(_BuildRefStubsInputsStateLine)" Overwrite="true" WriteOnlyWhenDifferent="true" />
+        <WriteLinesToFile File="$(_BuildRefStubsStateFile)" Lines="@(_BuildRefStubsInputsStateLine)" Overwrite="true" WriteOnlyWhenDifferent="true" />
 
-        <Touch Files="$(IntermediateOutputPath)$(MSBuildThisFile).BuildRefStubsState.stamp" AlwaysCreate="true" ForceTouch="true" />
+        <Touch Files="$(_BuildRefStubsStateStampFile)" AlwaysCreate="true" ForceTouch="true" />
         <ItemGroup>
-            <FileWrites Include="$(IntermediateOutputPath)$(MSBuildThisFile).BuildRefStubsState.stamp" />
-            <FileWrites Include="$(BuildRefStubsStateFile)" />
+            <FileWrites Include="$(_BuildRefStubsStateStampFile)" />
+            <FileWrites Include="$(_BuildRefStubsStateFile)" />
         </ItemGroup>
     </Target>
 
-    <Target Name="BuildRefStubsCore" DependsOnTargets="BuildRefStubsState;GetIkvmStubExe;ResolveRefStubs" Inputs="$(BuildRefStubsStateFile)" Outputs="$(IntermediateOutputPath)$(MSBuildThisFile).BuildRefStubsCore.stamp">
+    <Target Name="BuildRefStubsCore" DependsOnTargets="BuildRefStubsState;GetIkvmStubExe;ResolveRefStubs" Inputs="$(_BuildRefStubsStateFile)" Outputs="$(_BuildRefStubsCoreStampFile)">
         <!--
         Because the Java compilation takes a significant amount of time we attempt to preserve incremental builds by
         not updating reference stubs unless necessary. Because the ikvmstub utility produces deterministic output, we
@@ -296,10 +298,10 @@
         <Move SourceFiles="@(_RefStubWorkItemToMove->'%(TmpFile)')" DestinationFiles="@(_RefStubWorkItemToMove)" />
         <RemoveDir Directories="$(RefStubsOutputPath)tmp" />
 
-        <Touch Files="$(IntermediateOutputPath)$(MSBuildThisFile).BuildRefStubsCore.stamp" AlwaysCreate="true" ForceTouch="true" />
+        <Touch Files="$(_BuildRefStubsCoreStampFile)" AlwaysCreate="true" ForceTouch="true" />
         <ItemGroup>
-            <FileWrites Include="$(IntermediateOutputPath)$(MSBuildThisFile).BuildRefStubsCore.stamp" />
-            <FileWrites Include="@(_RefStubAssemblyWorkItem)" />
+            <FileWrites Include="$(_BuildRefStubsCoreStampFile)" />
+            <FileWrites Include="@(RefStub)" />
         </ItemGroup>
     </Target>
 
@@ -472,8 +474,8 @@
 
     <Target Name="BuildJavaClassesState" DependsOnTargets="ResolveJavaSourceItems;ResolveJavaClasspath" Inputs="@(JavaClasspathItem);@(JavaSourceItems)" Outputs="$(_BuildJavaClassesStateStampFile)">
         <ItemGroup>
-            <_BuildJavaClassesInputs Include="@(JavaClasspathItem)" />
-            <_BuildJavaClassesInputs Include="@(JavaSourceItems)" />
+            <_BuildJavaClassesInputs Include="@(JavaClasspathItem->'%(FullPath)')" />
+            <_BuildJavaClassesInputs Include="@(JavaSourceItems->'%(FullPath)')" />
         </ItemGroup>
         <SortItems Source="@(_BuildJavaClassesInputs)">
             <Output TaskParameter="Output" ItemName="_BuildJavaClassesInputsSorted" />
@@ -501,7 +503,14 @@
         <_BuildJavaClassesCoreJavacArgFile>$(IntermediateOutputPath)$(MSBuildThisFile).BuildJavaClasses.javac.args.txt</_BuildJavaClassesCoreJavacArgFile>
     </PropertyGroup>
 
-    <Target Name="BuildJavaClassesCore" DependsOnTargets="BuildJavaClassesState;ResolveJavaSourceItems;ResolveJavaClasspath" Inputs="$(_BuildJavaClassesStateFile)" Outputs="$(_BuildJavaClassesCoreStampFile)">
+    <Target Name="GetJavacExe">
+        <PropertyGroup>
+            <Javac>javac</Javac>
+            <JavacArgs>-J-Xmx1536M</JavacArgs>
+        </PropertyGroup>
+    </Target>
+
+    <Target Name="BuildJavaClassesCore" DependsOnTargets="GetJavacExe;BuildJavaClassesState;ResolveJavaSourceItems;ResolveJavaClasspath" Inputs="$(_BuildJavaClassesStateFile)" Outputs="$(_BuildJavaClassesCoreStampFile)">
         <ItemGroup>
             <_JavacArgs Include="-g" />
             <_JavacArgs Include="-nowarn" />
@@ -510,7 +519,7 @@
             <_JavacArgs Include="-cp" />
             <_JavacArgs Include="dummy" />
             <_JavacArgs Include="-bootclasspath" />
-            <_JavacArgs Include="@(JavaClasspath->'%(Identity)', '$([System.IO.Path]::PathSeparator)')" />
+            <_JavacArgs Include="@(JavaClasspath, '$([System.IO.Path]::PathSeparator)')" />
             <_JavacArgs Include="-source" />
             <_JavacArgs Include="1.8" />
             <_JavacArgs Include="-target" />
@@ -524,8 +533,8 @@
         <Delete Files="$(JavaClassOutputPath)**\*" />
         <MakeDir Directories="$(JavaClassOutputPath)" />
         <Message Text="Beginning compilation of Java classes for OpenJDK..." Importance="high" />
-        <Message Text="javac -J-Xmx1536M @(_JavacArgs, ' ')" />
-        <Exec Command="javac -J-Xmx1536M @$(_BuildJavaClassesCoreJavacArgFile)" />
+        <Message Text="$(Javac) $(JavacArgs) @(_JavacArgs, ' ')" />
+        <Exec Command="$(Javac) $(JavacArgs) @$(_BuildJavaClassesCoreJavacArgFile)" />
         <Message Text="Finished compilation of Java classes for OpenJDK." Importance="high" />
 
         <Touch Files="$(_BuildJavaClassesCoreStampFile)" AlwaysCreate="true" ForceTouch="true" />
@@ -576,14 +585,20 @@
         <_BuildRmiStubsCoreStampFile>$(IntermediateOutputPath)$(MSBuildThisFile).BuildRmiStubsCore.stamp</_BuildRmiStubsCoreStampFile>
     </PropertyGroup>
 
-    <Target Name="BuildRmiStubsCore" DependsOnTargets="ResolveRmiStubInputItems" Inputs="@(RmiStubInputItem)" Outputs="$(_BuildRmiStubsCoreStampFile)">
+    <Target Name="GetRmicExe">
+        <PropertyGroup>
+            <Rmic>rmic</Rmic>
+        </PropertyGroup>
+    </Target>
+
+    <Target Name="BuildRmiStubsCore" DependsOnTargets="GetRmicExe;ResolveRmiStubInputItems" Inputs="@(RmiStubInputItem)" Outputs="$(_BuildRmiStubsCoreStampFile)">
         <ItemGroup>
             <_RmicClasspath Include="@(JavaClasspath);$(JavaClassOutputPath)" />
             <_RmicArgs Include="-J-client" />
             <_RmicArgs Include="-J-Xms128m" />
             <_RmicArgs Include="-nowarn" />
             <_RmicArgs Include="-bootclasspath" />
-            <_RmicArgs Include="@(RmicClasspath, '$([System.IO.Path]::PathSeparator)')" />
+            <_RmicArgs Include="@(_RmicClasspath, '$([System.IO.Path]::PathSeparator)')" />
             <_RmicArgs Include="-d" />
             <_RmicArgs Include="$(RmiStubsOutputPath)" />
         </ItemGroup>
@@ -593,7 +608,7 @@
 
         <Delete Files="$(RmiStubsOutputPath)**\*" />
         <MakeDir Directories="$(RmiStubsOutputPath)" />
-        <Exec Command="rmic $(_RmicArgs) %(OpenJdkRmiStub.Flags) %(OpenJdkRmiStub.Identity)" />
+        <Exec Command="$(Rmic) $(_RmicArgs) %(OpenJdkRmiStub.Flags) %(OpenJdkRmiStub.Identity)" />
 
         <Touch Files="$(_BuildRmiStubsCoreStampFile)" AlwaysCreate="true" ForceTouch="true" />
         <ItemGroup>
@@ -814,7 +829,7 @@
         <Move SourceFiles="$(IntermediateOutputPath)$(TargetName).pdb" DestinationFiles="$(_MergeJavaAssemblyCoreTempPath)$(TargetName).pdb" OverwriteReadOnlyFiles="true" />
 
         <!-- At this point original intermediate outputs are moved, so CoreCompile will always run if build fails after this point. -->
-        <Delete Files="$(_MergeJavaAssemblyForceBuildFile)" ContinueOnError="True" />
+        <Delete Files="$(_MergeJavaAssemblyCoreForceBuildFile)" ContinueOnError="True" />
 
         <!-- repack assemblies -->
         <ILRepack DebugInfo="true" AllowDuplicateResources="false" CopyAttributes="true" AllowMultiple="true" XmlDocumentation="true" InputAssemblies="$(_MergeJavaAssemblyCoreTempPath)$(TargetName)$(TargetExt);$(JavaAssemblyPath)" TargetKind="SameAsPrimaryAssembly" LibraryPath="@(_ILRepackFilteredLibraryPaths)" OutputFile="$(_MergeJavaAssemblyCorePath)$(TargetName)$(TargetExt)" KeyFile="$(AssemblyOriginatorKeyFile)" Verbose="true" Condition=" '$(SignAssembly)' == 'true' " />
