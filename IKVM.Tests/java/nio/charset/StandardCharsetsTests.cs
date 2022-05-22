@@ -1,6 +1,6 @@
-﻿using Microsoft.VisualStudio.TestTools.UnitTesting;
+﻿using FluentAssertions;
 
-using FluentAssertions;
+using Microsoft.VisualStudio.TestTools.UnitTesting;
 
 namespace IKVM.Tests.java.nio.charset
 {
@@ -9,6 +9,9 @@ namespace IKVM.Tests.java.nio.charset
     public class StandardCharsetsTests
     {
 
+        /// <summary>
+        /// Ensures we can initialize the standard character sets.
+        /// </summary>
         [TestMethod]
         public void Can_init_StandardCharsets()
         {
