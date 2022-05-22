@@ -1,13 +1,13 @@
 <Project>
     <PropertyGroup>
-        <LangVersion>7.0</LangVersion>
+        <LangVersion>8.0</LangVersion>
         <NoWarn>$(NoWarn);1591;1573;CS8002</NoWarn>
         <GenerateDocumentation>true</GenerateDocumentation>
     </PropertyGroup>
 
     <PropertyGroup Label="Copyright Info">
         <ProductName>IKVM</ProductName>
-        <Authors>Jeroen Frijters, Jerome Haltom</Authors>
+        <Authors>Jeroen Frijters, Windward Studios, Jerome Haltom</Authors>
         <CurrentYear Condition=" '$(CurrentYear)' == '' ">$([System.DateTime]::UtcNow.Year.ToString())</CurrentYear>
         <Copyright>Copyright © $(CurrentYear) $(Authors)</Copyright>
     </PropertyGroup>
