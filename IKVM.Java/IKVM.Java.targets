@@ -11,7 +11,6 @@
 
         <JavaAssemblyName>java.dll</JavaAssemblyName>
         <JavaDebugSymbolsName>java.pdb</JavaDebugSymbolsName>
-        <JavaBuildTempPath>$(IntermediateOutputPath)java\</JavaBuildTempPath>
         <JavaAssemblyPath>$(IntermediateOutputPath)$(JavaAssemblyName)</JavaAssemblyPath>
         <JavaDebugSymbolsPath>$(IntermediateOutputPath)$(JavaDebugSymbolsName)</JavaDebugSymbolsPath>
     </PropertyGroup>
@@ -488,7 +487,7 @@
             <_BuildJavaClassesInputsStateLine Include="$(AssemblyName)" />
             <_BuildJavaClassesInputsStateLine Include="@(_BuildJavaClassesInputsWithHash->'%(FileHash) %(Identity)')" />
         </ItemGroup>
-        <WriteLinesToFile File="$(BuildJavaClassesStateFile)" Lines="@(_BuildJavaClassesInputsStateLine)" Overwrite="true" WriteOnlyWhenDifferent="true" />
+        <WriteLinesToFile File="$(_BuildJavaClassesStateFile)" Lines="@(_BuildJavaClassesInputsStateLine)" Overwrite="true" WriteOnlyWhenDifferent="true" />
 
         <Touch Files="$(_BuildJavaClassesStateStampFile)" AlwaysCreate="true" ForceTouch="true" />
         <ItemGroup>
