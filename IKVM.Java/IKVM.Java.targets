@@ -858,4 +858,10 @@
         </CompileDependsOn>
     </PropertyGroup>
 
+    <Target Name="ResolveJavaAssemblyReferencesDesignTime" BeforeTargets="ResolveAssemblyReferencesDesignTime" DependsOnTargets="BuildJavaAssembly">
+        <ItemGroup>
+            <Reference Include="@(JavaAssemblyPath)" />
+        </ItemGroup>
+    </Target>
+
 </Project>
