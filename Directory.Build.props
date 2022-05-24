@@ -24,6 +24,7 @@
         <RepositoryType>git</RepositoryType>
         <PackageProjectUrl>https://github.com/ikvm-revived/ikvm</PackageProjectUrl>
         <PackageVersion Condition=" '$(PackageVersion)' == '' ">8.0.0-dev</PackageVersion>
+        <SymbolPackageFormat>snupkg</SymbolPackageFormat>
     </PropertyGroup>
 
     <PropertyGroup Label="Assembly Signing">
@@ -34,7 +35,7 @@
 
     <PropertyGroup Label="Debug Info">
         <IncludeSymbols>true</IncludeSymbols>
-        <SymbolPackageFormat>snupkg</SymbolPackageFormat>
+        <EmbedAllSources>true</EmbedAllSources>
     </PropertyGroup>
 
     <ItemGroup>
