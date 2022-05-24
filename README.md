@@ -14,10 +14,10 @@ Both of these issues are known and considered unacceptable.
   Main solution file for the project.
 + IKVM.artifacts.msbuildproj
   MSBuild project file that builds the output artifacts, including the NuGet packages.
-+ IKVM.Java
-  The OpenJDK distribution included with IKVM. This project is heavily customized to compile the OpenJDK Java source files and produce a .NET assembly from them.
 + IKVM.Runtime
   The main executable core of IKVM. Provides services used by IKVM.Java.
++ IKVM.Java
+  The OpenJDK distribution included with IKVM. This project is heavily customized to compile the OpenJDK Java source files and produce a .NET assembly from them.
 + ikvm
   `java` compatibility executable. Launches a JVM. Can be used to execute Java applications with entry points.
 + ikvmc
@@ -26,4 +26,9 @@ Both of these issues are known and considered unacceptable.
   `ikvmstub` executable. Generates Java JAR files for .NET assemblies. When building Java code that depends on .NET code, these stubs can be used as references.
 + IKVM.Tests
   Various unit tests against IKVM functionality.
-
++ IKVM.Runtime-ref
+  "Reference" version of the IKVM.Runtime project. Due to a circular dependency between IKVM.Java and IKVM.Runtime, IKVM.Java must build against a partial copy of IKVM.Runtime.
++ IKVM.Java-ref
+  "Reference" version of the IKVM.Java project. Due to the circular dependency between IKVM.Java and IKVM.Runtime, IKVM.Runtime must build against a partial copy of IKVM.Java.
++ IKVM-pkg
+  To untangle the ProjectReferences between the circular dependencies, this project generates the NuGet package output, including all of it's required dependencies, and the full version of the underlying IKVM assemblies.
