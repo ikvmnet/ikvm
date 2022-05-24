@@ -19,7 +19,7 @@ jobs:
       uses: actions/cache@v3
       with:
         path: openjdk8/build/linux-x86_64-normal-server-release
-        key: openjdk8-build-linux-x86_64-normal-server-release--${{ runner.os }}--${{ hashFiles('openjdk8/**', '!openjdk8/build') }}-2
+        key: openjdk8-build-linux-x86_64-normal-server-release--${{ runner.os }}--${{ hashFiles('openjdk8/**', '!openjdk8/build') }}-3
     - name: Check OpenJDK 8 Build Stamp
       id: openjdk8-build-stamp
       uses: andstor/file-existence-action@v1
