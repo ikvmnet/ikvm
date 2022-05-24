@@ -30,7 +30,7 @@ jobs:
       run: |
         mkdir -p openjdk8/build && 
         curl -o openjdk8/build/openjdk-7u75-b13-linux-x64-18_dec_2014.tar.gz "https://download.java.net/openjdk/jdk7u75/ri/openjdk-7u75-b13-linux-x64-18_dec_2014.tar.gz" &&
-        tar xzvf openjdk-7u75-b13-linux-x64-18_dec_2014.tar.gz -C openjdk8/build
+        tar xzvf openjdk8/build/openjdk-7u75-b13-linux-x64-18_dec_2014.tar.gz -C openjdk8/build
       working-directory: openjdk8/build
     - name: Build OpenJDK 8
       if: steps.openjdk8-build-stamp.outputs.files_exists != 'true'
