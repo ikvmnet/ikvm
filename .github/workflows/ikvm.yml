@@ -169,6 +169,5 @@ jobs:
         resultLogsArtifactName: vs-test-result-logs-netcoreapp3.1
     - name: Publish NuGet Packages To GitHub
       run: |
-        dotnet nuget add source --name github "https://nuget.pkg.github.com/${env:GITHUB_REPOSITORY_OWNER}/index.json"
-        dotnet nuget push build\pkg\IKVM.*.nupkg --source github --api-key ${{ secrets.GITHUB_TOKEN }}
-        dotnet nuget push build\pkg\IKVM.*.snupkg --source github --api-key ${{ secrets.GITHUB_TOKEN }}
+        dotnet nuget push build\pkg\IKVM.*.nupkg --source "https://nuget.pkg.github.com/${{ github.repository_owner }}/index.json" --api-key ${{ secrets.GITHUB_TOKEN }}
+        dotnet nuget push build\pkg\IKVM.*.snupkg --source "https://nuget.pkg.github.com/${{ github.repository_owner }}/index.json" --api-key ${{ secrets.GITHUB_TOKEN }}
