@@ -133,26 +133,27 @@
     <Target Name="GenerateJavaAssemblyInfo" DependsOnTargets="GetAssemblyAttributes;CreateGeneratedAssemblyInfoInputsCacheFile" Inputs="$(GeneratedAssemblyInfoInputsCacheFile)" Outputs="$(JavaAssemblyInfoFile)">
         <ItemGroup>
             <Compile Remove="$(JavaAssemblyInfoFile)" />
+            <JavaAssemblyAttribute Include="@(AssemblyAttribute)" />
         </ItemGroup>
         <ItemGroup>
-            <_AssemblyAttribute Include="@(AssemblyAttribute)" Condition=" '%(Identity)' == 'System.Runtime.CompilerServices.InternalsVisibleTo' " />
+            <_JavaAssemblyAttribute Include="@(JavaAssemblyAttribute)" Condition=" '%(Identity)' == 'System.Runtime.CompilerServices.InternalsVisibleTo' " />
             
             <!-- InternalsVisibleTo needs to be renamed with Attribute suffix -->
-            <AssemblyAttribute Remove="System.Runtime.CompilerServices.InternalsVisibleTo" />
-            <AssemblyAttribute Include="@(_AssemblyAttribute->'System.Runtime.CompilerServices.InternalsVisibleToAttribute')" Condition=" '%(Identity)' == 'System.Runtime.CompilerServices.InternalsVisibleTo' " />
+            <JavaAssemblyAttribute Remove="System.Runtime.CompilerServices.InternalsVisibleTo" />
+            <JavaAssemblyAttribute Include="@(_JavaAssemblyAttribute->'System.Runtime.CompilerServices.InternalsVisibleToAttribute')" Condition=" '%(Identity)' == 'System.Runtime.CompilerServices.InternalsVisibleTo' " />
         
             <!-- #55 not emitted by stub generator -->
-            <AssemblyAttribute Remove="System.Reflection.AssemblyMetadataAttribute" />
+            <JavaAssemblyAttribute Remove="System.Reflection.AssemblyMetadataAttribute" />
 
             <!-- Required by Roslyn -->
-            <AssemblyAttribute Include="System.Runtime.CompilerServices.ExtensionAttribute" />
+            <JavaAssemblyAttribute Include="System.Runtime.CompilerServices.ExtensionAttribute" />
         </ItemGroup>
         <ItemGroup>
             <_JavaAssemblyInfoLine Include="@cli.System.Runtime.Versioning.TargetFrameworkAttribute.Annotation(&quot;$(TargetFrameworkIdentifier),Version=$(TargetFrameworkVersion)&quot;)" />
-            <_JavaAssemblyInfoLine Include="@(AssemblyAttribute->'@cli.%(Identity).Annotation')" Condition=" '%(AssemblyAttribute._Parameter1)' == '' And '%(AssemblyAttribute._Parameter2)' == '' And '%(AssemblyAttribute._Parameter3)' == '' " />
-            <_JavaAssemblyInfoLine Include="@(AssemblyAttribute->'@cli.%(Identity).Annotation(&quot;%(_Parameter1)&quot;)')" Condition=" '%(AssemblyAttribute._Parameter1)' != '' And '%(AssemblyAttribute._Parameter2)' == '' And '%(AssemblyAttribute._Parameter3)' == '' " />
-            <_JavaAssemblyInfoLine Include="@(AssemblyAttribute->'@cli.%(Identity).Annotation(&quot;%(_Parameter1)&quot;, &quot;%(_Parameter2)&quot;)')" Condition=" '%(AssemblyAttribute._Parameter1)' != '' And '%(AssemblyAttribute._Parameter2)' != '' And '%(AssemblyAttribute._Parameter3)' == '' " />
-            <_JavaAssemblyInfoLine Include="@(AssemblyAttribute->'@cli.%(Identity).Annotation(&quot;%(_Parameter1)&quot;, &quot;%(_Parameter2)&quot;, &quot;%(_Parameter3)&quot;)')" Condition=" '%(AssemblyAttribute._Parameter1)' != '' And '%(AssemblyAttribute._Parameter2)' != '' And '%(AssemblyAttribute._Parameter3)' != '' " />
+            <_JavaAssemblyInfoLine Include="@(JavaAssemblyAttribute->'@cli.%(Identity).Annotation')" Condition=" '%(JavaAssemblyAttribute._Parameter1)' == '' And '%(JavaAssemblyAttribute._Parameter2)' == '' And '%(JavaAssemblyAttribute._Parameter3)' == '' " />
+            <_JavaAssemblyInfoLine Include="@(JavaAssemblyAttribute->'@cli.%(Identity).Annotation(&quot;%(_Parameter1)&quot;)')" Condition=" '%(JavaAssemblyAttribute._Parameter1)' != '' And '%(JavaAssemblyAttribute._Parameter2)' == '' And '%(JavaAssemblyAttribute._Parameter3)' == '' " />
+            <_JavaAssemblyInfoLine Include="@(JavaAssemblyAttribute->'@cli.%(Identity).Annotation(&quot;%(_Parameter1)&quot;, &quot;%(_Parameter2)&quot;)')" Condition=" '%(JavaAssemblyAttribute._Parameter1)' != '' And '%(JavaAssemblyAttribute._Parameter2)' != '' And '%(JavaAssemblyAttribute._Parameter3)' == '' " />
+            <_JavaAssemblyInfoLine Include="@(JavaAssemblyAttribute->'@cli.%(Identity).Annotation(&quot;%(_Parameter1)&quot;, &quot;%(_Parameter2)&quot;, &quot;%(_Parameter3)&quot;)')" Condition=" '%(JavaAssemblyAttribute._Parameter1)' != '' And '%(JavaAssemblyAttribute._Parameter2)' != '' And '%(JavaAssemblyAttribute._Parameter3)' != '' " />
             <_JavaAssemblyInfoLine Include="interface CompilerAssemblyInfo {}" />
         </ItemGroup>
         <WriteLinesToFile File="$(JavaAssemblyInfoFile)" Lines="@(_JavaAssemblyInfoLine)" Overwrite="true" WriteOnlyWhenDifferent="true" />
