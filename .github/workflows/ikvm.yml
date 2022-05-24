@@ -102,4 +102,4 @@ jobs:
         name: pkg
         path: build/pkg
     - name: Run Tests
-      uses: microsoft/vstest-action@v0
+      uses: microsoft/vstest-action@v0.1.0
