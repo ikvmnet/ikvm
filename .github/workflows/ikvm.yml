@@ -88,6 +88,8 @@ jobs:
         submodules: recursive
     - name: Install GitVersion
       uses: gittools/actions/gitversion/setup@v0.9.13
+      with:
+        versionSpec: 5.x
     - name: Execute GitVersion
       uses: gittools/actions/gitversion/execute@v0.9.13
       with:
