@@ -27,10 +27,10 @@ jobs:
         files: openjdk8/build/linux-x86_64-normal-server-release/stamp
     - name: Fetch OpenJDK 7
       if: steps.openjdk8-build-stamp.outputs.files_exists != 'true'
-      run: mkdir -p openjdk8/build && curl -o openjdk8/build/openjdk-7u75-b13-linux-x64-18_dec_2014.tar.gz "https://download.java.net/openjdk/jdk7u75/ri/openjdk-7u75-b13-linux-x64-18_dec_2014.tar.gz"
-    - name: Extract OpenJDK 7
-      if: steps.openjdk8-build-stamp.outputs.files_exists != 'true'
-      run: tar xzvf openjdk-7u75-b13-linux-x64-18_dec_2014.tar.gz
+      run: |
+        mkdir -p openjdk8/build && 
+        curl -o openjdk8/build/openjdk-7u75-b13-linux-x64-18_dec_2014.tar.gz "https://download.java.net/openjdk/jdk7u75/ri/openjdk-7u75-b13-linux-x64-18_dec_2014.tar.gz" &&
+        tar xzvf openjdk-7u75-b13-linux-x64-18_dec_2014.tar.gz -C openjdk8/build
       working-directory: openjdk8/build
     - name: Build OpenJDK 8
       if: steps.openjdk8-build-stamp.outputs.files_exists != 'true'
