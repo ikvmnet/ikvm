@@ -1,6 +1,6 @@
 <Project>
     <Import Project="..\openjdk8.props" />
-    
+
     <ItemGroup>
         <RefStubAssembly Include="IKVM.Runtime" />
     </ItemGroup>
@@ -11,6 +11,7 @@
         <RefStubAssembly Include="System.Core" />
         <RefStubAssembly Include="System.Data" />
         <RefStubAssembly Include="System.Drawing" />
+        <RefStubAssembly Include="System.Runtime" />
         <RefStubAssembly Include="System.Xml" />
     </ItemGroup>
 
@@ -89,8 +90,8 @@
     </ItemGroup>
 
     <ItemGroup>
-        <JavaResource Include="res\**\*" ResourcePath="$([System.String]::new('%(RecursiveDir)%(Filename)%(Extension)').Replace('\', '/'))" />
-        <JavaResourceTemplate Include="res\**\*.in" ResourcePath="$([System.String]::new('%(RecursiveDir)%(Filename)%(Extension)').Replace('.in', '').Replace('\', '/'))" />
+        <JavaResource Include="res\**\*" Exclude="res\**\*.in" ResourcePath="$([System.String]::new('%(RecursiveDir)%(Filename)%(Extension)'))" />
+        <JavaResourceTemplate Include="res\**\*.in" ResourcePath="$([System.String]::new('%(RecursiveDir)%(Filename)%(Extension)').Replace('.in', ''))" />
     </ItemGroup>
 
     <ItemGroup>

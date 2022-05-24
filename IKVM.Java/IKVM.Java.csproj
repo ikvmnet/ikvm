@@ -7,7 +7,6 @@
         <AssemblyName>IKVM.Java</AssemblyName>
         <AssemblyTitle>IKVM.NET OpenJDK Platform</AssemblyTitle>
         <Description>JVM for .NET</Description>
-        <LangVersion>7.0</LangVersion>
     </PropertyGroup>
 
     <ItemGroup>

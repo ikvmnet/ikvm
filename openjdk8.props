@@ -6,7 +6,7 @@
         <OpenJdkFullVersion>1.8.0_45-b14</OpenJdkFullVersion>
         <OpenJdkVersion>OpenJDK 8u45 b14</OpenJdkVersion>
     </PropertyGroup>
-    
+
     <ItemDefinitionGroup>
         <OpenJdkSource>
             <SourcePath>%(Identity)</SourcePath>
@@ -15954,28 +15954,57 @@
         <!-- OpenJDK resolves these from resources at runtime -->
         <OpenJdkResource Include="$(OpenJdkDir)\build\linux-x86_64-normal-server-release\jdk\classes\sun\reflect\misc\Trampoline.class" ResourcePath="sun\reflect\misc\Trampoline.class" />
         <OpenJdkResource Include="$(OpenJdkDir)\build\linux-x86_64-normal-server-release\jdk\classes\java\lang\invoke\MethodHandleImpl$BindCaller$T.class" ResourcePath="java\lang\invoke\MethodHandleImpl$BindCaller$T.class" />
+
+        <OpenJdkResource Include="$(OpenJdkDir)\build\linux-x86_64-normal-server-release\jdk\classes\java\lang\uniName.dat" ResourcePath="java/lang/uniName.dat" />
+        <OpenJdkResource Include="$(OpenJdkDir)\build\linux-x86_64-normal-server-release\jdk\classes\sun\net\idn\uidna.spp" ResourcePath="sun/net/idn/uidna.spp" />
+        <OpenJdkResource Include="$(OpenJdkDir)\build\linux-x86_64-normal-server-release\jdk\classes\com\sun\corba\se\impl\logging\LogStrings.properties" ResourcePath="com/sun/corba/se/impl/logging/LogStrings.properties" />
+        <OpenJdkResource Include="$(OpenJdkDir)\jdk\src\share\classes\sun\util\xml\META-INF\services\sun.util.spi.XmlPropertiesProvider" ResourcePath="META-INF/services/sun.util.spi.XmlPropertiesProvider" />
+        <OpenJdkResource Include="$(OpenJdkDir)\jdk\src\share\classes\sun\java2d\cmm\lcms\META-INF\services\sun.java2d.cmm.CMMServiceProvider" ResourcePath="META-INF/services/sun.java2d.cmm.CMMServiceProvider" />
+        <OpenJdkResource Include="$(OpenJdkDir)\build\linux-x86_64-normal-server-release\jdk\gensrc\sun\nio\cs\ext\sjis0213.dat" ResourcePath="sun/nio/cs/ext/sjis0213.dat" />
+        <OpenJdkResource Include="$(OpenJdkDir)\jdk\src\share\demo\nio\zipfs\src\META-INF\services\java.nio.file.spi.FileSystemProvider" ResourcePath="META-INF/services/java.nio.file.spi.FileSystemProvider" />
+        <OpenJdkResource Include="$(OpenJdkDir)\jdk\src\share\classes\sun\net\spi\nameservice\dns\META-INF\services\sun.net.spi.nameservice.NameServiceDescriptor" ResourcePath="META-INF/services/sun.net.spi.nameservice.NameServiceDescriptor" />
+        <OpenJdkResource Include="$(OpenJdkDir)\jaxws\src\share\jaf_classes\META-INF\mailcap.default" ResourcePath="META-INF/mailcap.default" />
+        <OpenJdkResource Include="$(OpenJdkDir)\jaxws\src\share\jaf_classes\META-INF\mimetypes.default" ResourcePath="META-INF/mimetypes.default" />
+        <OpenJdkResource Include="$(OpenJdkDir)\jdk\src\windows\classes\sun\print\services\javax.print.PrintServiceLookup" ResourcePath="META-INF/services/javax.print.PrintServiceLookup" />
+        <OpenJdkResource Include="$(OpenJdkDir)\jdk\src\windows\classes\sun\print\services\javax.print.StreamPrintServiceFactory" ResourcePath="META-INF/services/javax.print.StreamPrintServiceFactory" />
+        <OpenJdkResource Include="$(OpenJdkDir)\jdk\src\share\classes\com\sun\media\sound\services\javax.sound.midi.spi.MidiDeviceProvider" ResourcePath="META-INF/services/javax.sound.midi.spi.MidiDeviceProvider" />
+        <OpenJdkResource Include="$(OpenJdkDir)\jdk\src\share\classes\com\sun\media\sound\services\javax.sound.midi.spi.MidiFileReader" ResourcePath="META-INF/services/javax.sound.midi.spi.MidiFileReader" />
+        <OpenJdkResource Include="$(OpenJdkDir)\jdk\src\share\classes\com\sun\media\sound\services\javax.sound.midi.spi.MidiFileWriter" ResourcePath="META-INF/services\javax.sound.midi.spi.MidiFileWriter" />
+        <OpenJdkResource Include="$(OpenJdkDir)\jdk\src\share\classes\com\sun\media\sound\services\javax.sound.midi.spi.SoundbankReader" ResourcePath="META-INF/services/javax.sound.midi.spi.SoundbankReader" />
+        <OpenJdkResource Include="$(OpenJdkDir)\jdk\src\share\classes\com\sun\media\sound\services\javax.sound.sampled.spi.AudioFileReader" ResourcePath="META-INF/services/javax.sound.sampled.spi.AudioFileReader" />
+        <OpenJdkResource Include="$(OpenJdkDir)\jdk\src\share\classes\com\sun\media\sound\services\javax.sound.sampled.spi.AudioFileWriter" ResourcePath="META-INF/services/javax.sound.sampled.spi.AudioFileWriter" />
+        <OpenJdkResource Include="$(OpenJdkDir)\jdk\src\share\classes\com\sun\media\sound\services\javax.sound.sampled.spi.FormatConversionProvider" ResourcePath="META-INF/services/javax.sound.sampled.spi.FormatConversionProvider" />
+        <OpenJdkResource Include="$(OpenJdkDir)\jdk\src\share\classes\com\sun\media\sound\services\javax.sound.sampled.spi.MixerProvider" ResourcePath="META-INF/services/javax.sound.sampled.spi.MixerProvider" />
+        <OpenJdkResource Include="$(OpenJdkDir)\nashorn\src\META-INF\services\javax.script.ScriptEngineFactory" ResourcePath="META-INF/services/javax.script.ScriptEngineFactory" />
+
+        <OpenJdkResource Include="$(OpenJdkDir)\build\linux-x86_64-normal-server-release\jdk\classes\com\sun\corba\se\impl\orbutil\resources\**\*" ResourcePath="com/sun/corba/se/impl/orbutil/resources/%(RecursiveDir)%(Filename)%(Extension)" />
+        <OpenJdkResource Include="$(OpenJdkDir)\build\linux-x86_64-normal-server-release\jdk\classes\com\sun\rowset\*.properties" ResourcePath="com/sun/rowset/%(Filename)%(Extension)" />
+        <OpenJdkResource Include="$(OpenJdkDir)\build\linux-x86_64-normal-server-release\jdk\classes\javax\swing\text\html\parser\html32.bdtd" ResourcePath="javax\swing\text\html\parser\html32.bdtd" />
+        <OpenJdkResource Include="$(OpenJdkDir)\build\linux-x86_64-normal-server-release\jdk\classes\sun\rmi\registry\resources\**\*" ResourcePath="sun\rmi\registry\resources\%(RecursiveDir)%(Filename)%(Extension)" />
+        <OpenJdkResource Include="$(OpenJdkDir)\build\linux-x86_64-normal-server-release\jdk\classes\sun\rmi\server\resources\**\*" ResourcePath="sun\rmi\server\resources\%(RecursiveDir)%(Filename)%(Extension)" />
+        <OpenJdkResource Include="$(OpenJdkDir)\build\linux-x86_64-normal-server-release\jdk\classes\sun\text\resources\**\*" ResourcePath="sun\text\resources\%(RecursiveDir)%(Filename)%(Extension)" />
+        <OpenJdkResource Include="$(OpenJdkDir)\corba\src\share\classes\**\*.properties" ResourcePath="%(RecursiveDir)%(Filename)%(Extension)" />
+        <OpenJdkResource Include="$(OpenJdkDir)\jdk\src\share\classes\**\*.properties" ResourcePath="%(RecursiveDir)%(Filename)%(Extension)" />
+        <OpenJdkResource Include="$(OpenJdkDir)\jdk\src\share\classes\**\*.gif" ResourcePath="%(RecursiveDir)%(Filename)%(Extension)" />
+        <OpenJdkResource Include="$(OpenJdkDir)\jdk\src\share\classes\**\*.png" ResourcePath="%(RecursiveDir)%(Filename)%(Extension)" />
+        <OpenJdkResource Include="$(OpenJdkDir)\jdk\src\share\classes\**\*.wav" ResourcePath="%(RecursiveDir)%(Filename)%(Extension)" />
+        <OpenJdkResource Include="$(OpenJdkDir)\jdk\src\share\classes\**\*.css" ResourcePath="%(RecursiveDir)%(Filename)%(Extension)" />
+        <OpenJdkResource Include="$(OpenJdkDir)\jdk\src\share\classes\**\*.txt" ResourcePath="%(RecursiveDir)%(Filename)%(Extension)" />
+        <OpenJdkResource Include="$(OpenJdkDir)\jdk\src\share\classes\**\*.icu" ResourcePath="%(RecursiveDir)%(Filename)%(Extension)" />
+        <OpenJdkResource Include="$(OpenJdkDir)\jdk\src\share\classes\com\sun\org\apache\xml\internal\security\resource\**\*" ResourcePath="com\sun\org\apache\xml\internal\security\resource\%(RecursiveDir)%(Filename)%(Extension)" />
+        <OpenJdkResource Include="$(OpenJdkDir)\jdk\src\share\classes\com\sun\swing\internal\plaf\**\*" ResourcePath="com\sun\swing\internal\plaf\%(RecursiveDir)%(Filename)%(Extension)" />
         
-        <OpenJdkResource Include="$(OpenJdkDir)\build\linux-x86_64-normal-server-release\jdk\classes\java\lang\uniName.dat" ResourcePath="java\lang\uniName.dat" />
-        <OpenJdkResource Include="$(OpenJdkDir)\build\linux-x86_64-normal-server-release\jdk\classes\sun\net\idn\uidna.spp" ResourcePath="sun\net\idn\uidna.spp" />
-        <OpenJdkResource Include="$(OpenJdkDir)\build\linux-x86_64-normal-server-release\jdk\classes\com\sun\corba\se\impl\logging\LogStrings.properties" ResourcePath="com\sun\corba\se\impl\logging\LogStrings.properties" />
-        <OpenJdkResource Include="$(OpenJdkDir)\jdk\src\share\classes\sun\util\xml\META-INF\services\sun.util.spi.XmlPropertiesProvider" ResourcePath="META-INF\services\sun.util.spi.XmlPropertiesProvider" />
-        <OpenJdkResource Include="$(OpenJdkDir)\jdk\src\share\classes\sun\java2d\cmm\lcms\META-INF\services\sun.java2d.cmm.CMMServiceProvider" ResourcePath="META-INF\services\sun.java2d.cmm.CMMServiceProvider" />
-        <OpenJdkResource Include="$(OpenJdkDir)\build\linux-x86_64-normal-server-release\jdk\gensrc\sun\nio\cs\ext\sjis0213.dat" ResourcePath="sun\nio\cs\ext\sjis0213.dat" />
-        <OpenJdkResource Include="$(OpenJdkDir)\jdk\src\share\demo\nio\zipfs\src\META-INF\services\java.nio.file.spi.FileSystemProvider" ResourcePath="META-INF\services\java.nio.file.spi.FileSystemProvider" />
-        <OpenJdkResource Include="$(OpenJdkDir)\jdk\src\share\classes\sun\net\spi\nameservice\dns\META-INF\services\sun.net.spi.nameservice.NameServiceDescriptor" ResourcePath="META-INF\services\sun.net.spi.nameservice.NameServiceDescriptor" />
-        <OpenJdkResource Include="$(OpenJdkDir)\jaxws\src\share\jaf_classes\META-INF\mailcap.default" ResourcePath="META-INF\mailcap.default" />
-        <OpenJdkResource Include="$(OpenJdkDir)\jaxws\src\share\jaf_classes\META-INF\mimetypes.default" ResourcePath="META-INF\mimetypes.default" />
-        <OpenJdkResource Include="$(OpenJdkDir)\jdk\src\windows\classes\sun\print\services\javax.print.PrintServiceLookup" ResourcePath="META-INF\services\javax.print.PrintServiceLookup" />
-        <OpenJdkResource Include="$(OpenJdkDir)\jdk\src\windows\classes\sun\print\services\javax.print.StreamPrintServiceFactory" ResourcePath="META-INF\services\javax.print.StreamPrintServiceFactory" />
-        <OpenJdkResource Include="$(OpenJdkDir)\jdk\src\share\classes\com\sun\media\sound\services\javax.sound.midi.spi.MidiDeviceProvider" ResourcePath="META-INF\services\javax.sound.midi.spi.MidiDeviceProvider" />
-        <OpenJdkResource Include="$(OpenJdkDir)\jdk\src\share\classes\com\sun\media\sound\services\javax.sound.midi.spi.MidiFileReader" ResourcePath="META-INF\services\javax.sound.midi.spi.MidiFileReader" />
-        <OpenJdkResource Include="$(OpenJdkDir)\jdk\src\share\classes\com\sun\media\sound\services\javax.sound.midi.spi.MidiFileWriter" ResourcePath="META-INF\services\javax.sound.midi.spi.MidiFileWriter" />
-        <OpenJdkResource Include="$(OpenJdkDir)\jdk\src\share\classes\com\sun\media\sound\services\javax.sound.midi.spi.SoundbankReader" ResourcePath="META-INF\services\javax.sound.midi.spi.SoundbankReader" />
-        <OpenJdkResource Include="$(OpenJdkDir)\jdk\src\share\classes\com\sun\media\sound\services\javax.sound.sampled.spi.AudioFileReader" ResourcePath="META-INF\services\javax.sound.sampled.spi.AudioFileReader" />
-        <OpenJdkResource Include="$(OpenJdkDir)\jdk\src\share\classes\com\sun\media\sound\services\javax.sound.sampled.spi.AudioFileWriter" ResourcePath="META-INF\services\javax.sound.sampled.spi.AudioFileWriter" />
-        <OpenJdkResource Include="$(OpenJdkDir)\jdk\src\share\classes\com\sun\media\sound\services\javax.sound.sampled.spi.FormatConversionProvider" ResourcePath="META-INF\services\javax.sound.sampled.spi.FormatConversionProvider" />
-        <OpenJdkResource Include="$(OpenJdkDir)\jdk\src\share\classes\com\sun\media\sound\services\javax.sound.sampled.spi.MixerProvider" ResourcePath="META-INF\services\javax.sound.sampled.spi.MixerProvider" />
-        <OpenJdkResource Include="$(OpenJdkDir)\nashorn\src\META-INF\services\javax.script.ScriptEngineFactory" ResourcePath="META-INF\services\javax.script.ScriptEngineFactory" /> </ItemGroup>
+        <OpenJdkResource Include="$(OpenJdkDir)\jaxp\src\**\*.properties" ResourcePath="%(RecursiveDir)%(Filename)%(Extension)" />
+        <OpenJdkResource Include="$(OpenJdkDir)\jaxp\src\**\*.res" ResourcePath="%(RecursiveDir)%(Filename)%(Extension)" />
+        
+        <OpenJdkResource Include="$(OpenJdkDir)\jaxws\src\share\jaf_classes\**\*.default" ResourcePath="%(RecursiveDir)%(Filename)%(Extension)" />
+        <OpenJdkResource Include="$(OpenJdkDir)\jaxws\src\share\jaf_classes\**\*.properties" ResourcePath="%(RecursiveDir)%(Filename)%(Extension)" />
+        <OpenJdkResource Include="$(OpenJdkDir)\jaxws\src\share\jaf_classes\**\*.xml" ResourcePath="%(RecursiveDir)%(Filename)%(Extension)" />
+        
+        <OpenJdkResource Include="$(OpenJdkDir)\jaxws\src\share\jaxws_classes\**\*.default" ResourcePath="%(RecursiveDir)%(Filename)%(Extension)" />
+        <OpenJdkResource Include="$(OpenJdkDir)\jaxws\src\share\jaxws_classes\**\*.properties" ResourcePath="%(RecursiveDir)%(Filename)%(Extension)" />
+        <OpenJdkResource Include="$(OpenJdkDir)\jaxws\src\share\jaxws_classes\**\*.xml" ResourcePath="%(RecursiveDir)%(Filename)%(Extension)" />
+    </ItemGroup>
 
     <ItemGroup>
         <OpenJdkExcludeRegex Include="^java\.lang\.AutoCloseable$" />
@@ -16005,46 +16034,19 @@
     </ItemGroup>
 
     <ItemGroup>
-        <VfsZipItem Include="$(OpenJdkDir)\build\linux-x86_64-normal-server-release\jdk\lib\calendars.properties" />
-        <VfsZipItem Include="$(OpenJdkDir)\build\linux-x86_64-normal-server-release\jdk\lib\logging.properties" />
-        <VfsZipItem Include="$(OpenJdkDir)\build\linux-x86_64-normal-server-release\jdk\lib\net.properties" />
-        <VfsZipItem Include="$(OpenJdkDir)\build\linux-x86_64-normal-server-release\jdk\lib\psfontj2d.properties" />
-        <VfsZipItem Include="$(OpenJdkDir)\build\linux-x86_64-normal-server-release\jdk\lib\sound.properties" />
-        <VfsZipItem Include="$(OpenJdkDir)\build\linux-x86_64-normal-server-release\jdk\lib\tzdb.dat" />
-        <VfsZipItem Include="$(OpenJdkDir)\build\linux-x86_64-normal-server-release\jdk\lib\currency.data" />
-        <VfsZipItem Include="$(OpenJdkDir)\build\linux-x86_64-normal-server-release\jdk\lib\management\management.properties" />
-        <VfsZipItem Include="$(OpenJdkDir)\build\linux-x86_64-normal-server-release\jdk\lib\cmm\*" />
-        <VfsZipItem Include="$(OpenJdkDir)\build\linux-x86_64-normal-server-release\jdk\lib\security\java.policy" />
-        <VfsZipItem Include="$(OpenJdkDir)\build\linux-x86_64-normal-server-release\jdk\lib\security\java.security" />
-        <VfsZipItem Include="$(OpenJdkDir)\build\linux-x86_64-normal-server-release\jdk\lib\security\policy\**\*.jar" />
-        <VfsZipItem Include="$(OpenJdkDir)\jdk\src\windows\lib\flavormap.properties" />
-        <VfsZipItem Include="$(OpenJdkDir)\jdk\src\windows\lib\content-types.properties" />
+        <VfsItem Include="$(OpenJdkDir)\build\linux-x86_64-normal-server-release\jdk\lib\*.properties" VfsPath="lib\%(Filename)%(Extension)" />
+        <VfsItem Include="$(OpenJdkDir)\build\linux-x86_64-normal-server-release\jdk\lib\tzdb.dat" VfsPath="lib\tzdb.dat" />
+        <VfsItem Include="$(OpenJdkDir)\build\linux-x86_64-normal-server-release\jdk\lib\currency.data" VfsPath="lib\currency.data" />
+        <VfsItem Include="$(OpenJdkDir)\build\linux-x86_64-normal-server-release\jdk\lib\cmm\**\*" VfsPath="lib\cmm\%(RecursiveDir)%(Filename)%(Extension)" />
+        <VfsItem Include="$(OpenJdkDir)\build\linux-x86_64-normal-server-release\jdk\lib\images\**\*" VfsPath="lib\images\%(RecursiveDir)%(Filename)%(Extension)" />
+        <VfsItem Include="$(OpenJdkDir)\build\linux-x86_64-normal-server-release\jdk\lib\management\**\*" VfsPath="lib\management\%(RecursiveDir)%(Filename)%(Extension)" />
+        <VfsItem Include="$(OpenJdkDir)\build\linux-x86_64-normal-server-release\jdk\lib\security\java.policy" VfsPath="lib\security\java.policy" />
+        <VfsItem Include="$(OpenJdkDir)\build\linux-x86_64-normal-server-release\jdk\lib\security\java.security" VfsPath="lib\security\java.security" />
+        <VfsItem Include="$(OpenJdkDir)\build\linux-x86_64-normal-server-release\jdk\lib\security\*.jar" VfsPath="lib\security\%(Filename)%(Extension)" />
+        <VfsItem Include="$(OpenJdkDir)\jdk\src\windows\lib\**\*" VfsPath="lib\%(RecursiveDir)%(Filename)%(Extension)" />
     </ItemGroup>
 
     <ItemGroup>
-        <ResourcesZipItem Include="$(OpenJdkDir)\build\linux-x86_64-normal-server-release\jdk\classes\**\com\sun\corba\se\impl\orbutil\resources\*.properties" />
-        <ResourcesZipItem Include="$(OpenJdkDir)\build\linux-x86_64-normal-server-release\jdk\classes\**\com\sun\rowset\*.properties" />
-        <ResourcesZipItem Include="$(OpenJdkDir)\build\linux-x86_64-normal-server-release\jdk\classes\**\javax\swing\text\html\parser\html32.bdtd" />
-        <ResourcesZipItem Include="$(OpenJdkDir)\build\linux-x86_64-normal-server-release\jdk\classes\**\sun\rmi\registry\resources\*.properties" />
-        <ResourcesZipItem Include="$(OpenJdkDir)\build\linux-x86_64-normal-server-release\jdk\classes\**\sun\rmi\server\resources\*.properties" />
-        <ResourcesZipItem Include="$(OpenJdkDir)\build\linux-x86_64-normal-server-release\jdk\classes\**\sun\text\resources\*IteratorData" />
-        <ResourcesZipItem Include="$(OpenJdkDir)\build\linux-x86_64-normal-server-release\jdk\classes\**\sun\text\resources\th\*IteratorData_th" />
-        <ResourcesZipItem Include="$(OpenJdkDir)\build\linux-x86_64-normal-server-release\jdk\classes\**\sun\text\resources\th\thai_dict" />
-        <ResourcesZipItem Include="$(OpenJdkDir)\corba\src\share\classes\**\*.properties" />
-        <ResourcesZipItem Include="$(OpenJdkDir)\jdk\src\share\classes\**\*.properties" />
-        <ResourcesZipItem Include="$(OpenJdkDir)\jdk\src\share\classes\**\*.gif" />
-        <ResourcesZipItem Include="$(OpenJdkDir)\jdk\src\share\classes\**\*.png" />
-        <ResourcesZipItem Include="$(OpenJdkDir)\jdk\src\share\classes\**\*.wav" />
-        <ResourcesZipItem Include="$(OpenJdkDir)\jdk\src\share\classes\**\com\sun\org\apache\xml\internal\security\resource\config.*" />
-        <ResourcesZipItem Include="$(OpenJdkDir)\jdk\src\share\classes\**\com\sun\swing\internal\plaf\**\*" />
-        <ResourcesZipItem Include="$(OpenJdkDir)\jdk\src\share\classes\**\javax\swing\text\html\default.css" />
-        <ResourcesZipItem Include="$(OpenJdkDir)\jdk\src\share\classes\**\javax\swing\text\rtf\charsets\*.txt" />
-        <ResourcesZipItem Include="$(OpenJdkDir)\jdk\src\share\classes\**\sun\text\resources\**\*.icu" />
-        <ResourcesZipItem Include="$(OpenJdkDir)\jaxp\src\**\*.properties" />
-        <ResourcesZipItem Include="$(OpenJdkDir)\jaxp\src\**\*.res" />
-        <ResourcesZipItem Include="$(OpenJdkDir)\jaxws\src\share\jaf_classes\**\*.properties" />
-        <ResourcesZipItem Include="$(OpenJdkDir)\jaxws\src\share\jaxws_classes\**\*.properties" />
-        <ResourcesZipItem Include="$(OpenJdkDir)\jaxws\src\share\jaxws_classes\**\*.xml" />
     </ItemGroup>
-    
+
 </Project>

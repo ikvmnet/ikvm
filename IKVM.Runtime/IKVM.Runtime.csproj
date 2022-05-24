@@ -7,7 +7,6 @@
         <AssemblyName>IKVM.Runtime</AssemblyName>
         <AssemblyTitle>IKVM.NET Runtime</AssemblyTitle>
         <Description>JVM for .NET</Description>
-        <LangVersion>7.0</LangVersion>
         <DefineConstants>$(DefineConstants);EMITTERS</DefineConstants>
         <NoWarn>$(NoWarn);169;649</NoWarn>
     </PropertyGroup>
@@ -15,14 +14,19 @@
     <ItemGroup>
         <InternalsVisibleTo Include="IKVM.Runtime.JNI" />
         <InternalsVisibleTo Include="IKVM.Java" />
+        <InternalsVisibleTo Include="IKVM.Tests" />
     </ItemGroup>
 
     <ItemGroup>
+        <PackageReference Include="Microsoft.Extensions.DependencyModel" Version="6.0.0" />
         <PackageReference Include="Microsoft.Win32.Registry" Version="5.0.0" />
         <PackageReference Include="System.Configuration.ConfigurationManager" Version="6.0.0" />
+        <PackageReference Include="System.IO.Compression" Version="4.3.0" />
         <PackageReference Include="System.IO.FileSystem.AccessControl" Version="5.0.0" />
+        <PackageReference Include="System.Memory" Version="4.5.4" />
         <PackageReference Include="System.Runtime" Version="4.3.1" />
         <PackageReference Include="System.Runtime.InteropServices.RuntimeInformation" Version="4.3.0" />
+        <PackageReference Include="System.Runtime.Loader" Version="4.3.0" />
     </ItemGroup>
 
     <ItemGroup>
@@ -41,11 +45,10 @@
         <VfsZipPath>$(IntermediateOutputPath)vfs.zip</VfsZipPath>
     </PropertyGroup>
 
-    <Target Name="_BuildVfsZip" BeforeTargets="Compile" Inputs="@(VfsZipItem)" Outputs="$(VfsZipPath)">
+    <Target Name="_BuildVfsZip" BeforeTargets="Compile" Inputs="@(VfsItem)" Outputs="$(VfsZipPath)">
         <Delete Files="$(VfsZipTempPath)\**\*" />
-        <RemoveDir Directories="$(VfsZipTempPath)" />
         <MakeDir Directories="$(VfsZipTempPath)" />
-        <Copy SourceFiles="@(VfsZipItem)" DestinationFolder="$(VfsZipTempPath)\%(RecursiveDir)" />
+        <Copy SourceFiles="@(VfsItem)" DestinationFiles="@(VfsItem->'$(VfsZipTempPath)\%(VfsPath)')" />
         <Delete Files="$(VfsZipPath)" />
         <ZipDirectory SourceDirectory="$(VfsZipTempPath)" DestinationFile="$(VfsZipPath)" />
         <ItemGroup>

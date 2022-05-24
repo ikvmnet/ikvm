@@ -31,6 +31,7 @@ import java.util.LinkedHashMap;
 
 final class ClassStubZipEntry extends ZipEntry
 {
+
     private final String zipFilePath;
 
     ClassStubZipEntry(String zipFilePath, String name)
@@ -95,4 +96,5 @@ final class ClassStubZipEntry extends ZipEntry
     }
 
     static native void expandIkvmClasses(ZipFile zipFile, LinkedHashMap<String, ZipEntry> entries);
+
 }

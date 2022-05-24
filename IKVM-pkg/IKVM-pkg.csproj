@@ -14,8 +14,10 @@
         <PackageReference Include="System.Drawing.Common" Version="6.0.0" />
         <PackageReference Include="System.Data.Odbc" Version="6.0.0" />
         <PackageReference Include="System.IO.FileSystem.AccessControl" Version="5.0.0" />
+        <PackageReference Include="System.Memory" Version="4.5.4" />
         <PackageReference Include="System.Runtime" Version="4.3.1" />
         <PackageReference Include="System.Runtime.InteropServices.RuntimeInformation" Version="4.3.0" />
+        <PackageReference Include="System.Runtime.Loader" Version="4.3.0" />
         <PackageReference Include="System.Security.AccessControl" Version="6.0.0" />
         <PackageReference Include="System.Security.Permissions" Version="6.0.0" />
         <PackageReference Include="System.Security.Principal.Windows" Version="5.0.0" />
@@ -36,6 +38,18 @@
             <PrivateAssets>all</PrivateAssets>
         </ProjectReference>
         <ProjectReference Include="..\IKVM.Runtime.JNI\IKVM.Runtime.JNI.csproj">
+            <ReferenceOutputAssembly>True</ReferenceOutputAssembly>
+            <PrivateAssets>all</PrivateAssets>
+        </ProjectReference>
+        <ProjectReference Include="..\ikvm\ikvm.csproj">
+            <ReferenceOutputAssembly>True</ReferenceOutputAssembly>
+            <PrivateAssets>all</PrivateAssets>
+        </ProjectReference>
+        <ProjectReference Include="..\ikvmc\ikvmc.csproj">
+            <ReferenceOutputAssembly>True</ReferenceOutputAssembly>
+            <PrivateAssets>all</PrivateAssets>
+        </ProjectReference>
+        <ProjectReference Include="..\ikvmstub\ikvmstub.csproj">
             <ReferenceOutputAssembly>True</ReferenceOutputAssembly>
             <PrivateAssets>all</PrivateAssets>
         </ProjectReference>

@@ -35,6 +35,7 @@ using IKVM.Attributes;
 using IKVM.Reflection;
 using Type = IKVM.Reflection.Type;
 #else
+using IKVM.Runtime.Vfs;
 using System.Reflection;
 #endif
 
@@ -813,7 +814,7 @@ namespace IKVM.Internal
 #if FIRST_PASS
 			return null;
 #else
-            return new java.io.File(VirtualFileSystem.GetAssemblyResourcesPath(asm) + name).toURI().toURL();
+            return new java.io.File(VfsTable.GetAssemblyResourcesPath(asm) + name).toURI().toURL();
 #endif
         }
 
@@ -894,7 +895,7 @@ namespace IKVM.Internal
                 if (tw != null && tw.GetClassLoader() == this && !tw.IsArray && !tw.IsDynamic)
                 {
 #if !FIRST_PASS
-                    yield return new java.io.File(VirtualFileSystem.GetAssemblyClassesPath(assemblyLoader.Assembly) + unmangledName).toURI().toURL();
+                    yield return new java.io.File(VfsTable.GetAssemblyClassesPath(assemblyLoader.Assembly) + unmangledName).toURI().toURL();
 #endif
                 }
             }

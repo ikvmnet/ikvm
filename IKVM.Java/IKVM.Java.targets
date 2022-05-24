@@ -6,8 +6,6 @@
         <RefStubsOutputPath>$(IntermediateOutputPath)refstubs\</RefStubsOutputPath>
         <JavaClassOutputPath>$(IntermediateOutputPath)classes\</JavaClassOutputPath>
         <RmiStubsOutputPath>$(IntermediateOutputPath)rmistubs\</RmiStubsOutputPath>
-        <ResourcesZipTempPath>$(IntermediateOutputPath)resources_zip\</ResourcesZipTempPath>
-        <ResourcesZipPath>$(IntermediateOutputPath)resources.zip</ResourcesZipPath>
 
         <JavaAssemblyName>java.dll</JavaAssemblyName>
         <JavaDebugSymbolsName>java.pdb</JavaDebugSymbolsName>
@@ -22,7 +20,6 @@
         <UpToDateCheckInput Include="@(JavaResourceTemplate)" />
         <UpToDateCheckInput Include="@(OpenJdkSource)" />
         <UpToDateCheckInput Include="@(OpenJdkResource)" />
-        <UpToDateCheckInput Include="@(ResourcesZipItem)" />
         <UpToDateCheckInput Include="@(IkvmMapFile)" />
     </ItemGroup>
 
@@ -129,48 +126,43 @@
         </Task>
     </UsingTask>
 
-    <Target Name="BuildResourcesZipCore" Inputs="@(ResourcesZipItem)" Outputs="$(ResourcesZipPath)">
-        <RemoveDir Directories="$(ResourcesZipTempPath)" />
-        <MakeDir Directories="$(ResourcesZipTempPath)" />
-        <Copy SourceFiles="@(ResourcesZipItem)" DestinationFolder="$(ResourcesZipTempPath)\%(RecursiveDir)" />
-        <ZipDirectory SourceDirectory="$(ResourcesZipTempPath)" DestinationFile="$(ResourcesZipPath)" Overwrite="true" />
-        <RemoveDir Directories="$(ResourcesZipTempPath)" />
-        <ItemGroup>
-            <FileWrites Include="$(ResourcesZipPath)" />
-        </ItemGroup>
-    </Target>
-
-    <Target Name="BuildResourcesZipResource" DependsOnTargets="BuildResourcesZipCore">
-        <ItemGroup>
-            <EmbeddedResource Include="$(ResourcesZipPath)">
-                <LogicalName>resources.zip</LogicalName>
-            </EmbeddedResource>
-        </ItemGroup>
-    </Target>
-
-    <Target Name="BuildResourcesZip" DependsOnTargets="$(BuildResourcesZipDependsOn)">
-
-    </Target>
-
     <PropertyGroup>
-        <BuildResourcesZipDependsOn>
-            $(BuildResourcesZipDependsOn);
-            BuildResourcesZipCore;
-            BuildResourcesZipResource;
-        </BuildResourcesZipDependsOn>
+        <JavaAssemblyInfoFile>$(IntermediateOutputPath)$(MSBuildThisFile).AssemblyInfo.java</JavaAssemblyInfoFile>
     </PropertyGroup>
 
-    <Target Name="CleanResourcesZip">
-        <RemoveDir Directories="$(ResourcesZipTempPath)" />
-        <Delete Files="$(ResourcesZipPath)" />
-    </Target>
+    <Target Name="GenerateJavaAssemblyInfo" DependsOnTargets="GetAssemblyAttributes;CreateGeneratedAssemblyInfoInputsCacheFile" Inputs="$(GeneratedAssemblyInfoInputsCacheFile)" Outputs="$(JavaAssemblyInfoFile)">
+        <ItemGroup>
+            <Compile Remove="$(JavaAssemblyInfoFile)" />
+        </ItemGroup>
+        <ItemGroup>
+            <_AssemblyAttribute Include="@(AssemblyAttribute)" Condition=" '%(Identity)' == 'System.Runtime.CompilerServices.InternalsVisibleTo' " />
+            
+            <!-- InternalsVisibleTo needs to be renamed with Attribute suffix -->
+            <AssemblyAttribute Remove="System.Runtime.CompilerServices.InternalsVisibleTo" />
+            <AssemblyAttribute Include="@(_AssemblyAttribute->'System.Runtime.CompilerServices.InternalsVisibleToAttribute')" Condition=" '%(Identity)' == 'System.Runtime.CompilerServices.InternalsVisibleTo' " />
+        
+            <!-- #55 not emitted by stub generator -->
+            <AssemblyAttribute Remove="System.Reflection.AssemblyMetadataAttribute" />
 
-    <PropertyGroup>
-        <CleanDependsOn>
-            $(CleanDependsOn);
-            CleanResourcesZip;
-        </CleanDependsOn>
-    </PropertyGroup>
+            <!-- Required by Roslyn -->
+            <AssemblyAttribute Include="System.Runtime.CompilerServices.ExtensionAttribute" />
+        </ItemGroup>
+        <ItemGroup>
+            <_JavaAssemblyInfoLine Include="@cli.System.Runtime.Versioning.TargetFrameworkAttribute.Annotation(&quot;$(TargetFrameworkIdentifier),Version=$(TargetFrameworkVersion)&quot;)" />
+            <_JavaAssemblyInfoLine Include="@(AssemblyAttribute->'@cli.%(Identity).Annotation')" Condition=" '%(AssemblyAttribute._Parameter1)' == '' And '%(AssemblyAttribute._Parameter2)' == '' And '%(AssemblyAttribute._Parameter3)' == '' " />
+            <_JavaAssemblyInfoLine Include="@(AssemblyAttribute->'@cli.%(Identity).Annotation(&quot;%(_Parameter1)&quot;)')" Condition=" '%(AssemblyAttribute._Parameter1)' != '' And '%(AssemblyAttribute._Parameter2)' == '' And '%(AssemblyAttribute._Parameter3)' == '' " />
+            <_JavaAssemblyInfoLine Include="@(AssemblyAttribute->'@cli.%(Identity).Annotation(&quot;%(_Parameter1)&quot;, &quot;%(_Parameter2)&quot;)')" Condition=" '%(AssemblyAttribute._Parameter1)' != '' And '%(AssemblyAttribute._Parameter2)' != '' And '%(AssemblyAttribute._Parameter3)' == '' " />
+            <_JavaAssemblyInfoLine Include="@(AssemblyAttribute->'@cli.%(Identity).Annotation(&quot;%(_Parameter1)&quot;, &quot;%(_Parameter2)&quot;, &quot;%(_Parameter3)&quot;)')" Condition=" '%(AssemblyAttribute._Parameter1)' != '' And '%(AssemblyAttribute._Parameter2)' != '' And '%(AssemblyAttribute._Parameter3)' != '' " />
+            <_JavaAssemblyInfoLine Include="interface CompilerAssemblyInfo {}" />
+        </ItemGroup>
+        <WriteLinesToFile File="$(JavaAssemblyInfoFile)" Lines="@(_JavaAssemblyInfoLine)" Overwrite="true" WriteOnlyWhenDifferent="true" />
+        <ItemGroup>
+            <JavaSource Include="$(JavaAssemblyInfoFile)" PackagePath="CompilerAssemblyInfo" AssemblyAttributes="true" />
+        </ItemGroup>
+        <ItemGroup>
+            <FileWrites Include="$(JavaAssemblyInfoFile)" />
+        </ItemGroup>
+    </Target>
 
     <Target Name="GetIkvmStubExe" DependsOnTargets="ResolveProjectReferences">
         <MSBuild Projects="@(_MSBuildProjectReferenceExistent)" Targets="Build" BuildInParallel="$(BuildInParallel)" Properties="%(_MSBuildProjectReferenceExistent.SetConfiguration);%(_MSBuildProjectReferenceExistent.SetPlatform);%(_MSBuildProjectReferenceExistent.SetTargetFramework)" RemoveProperties="%(_MSBuildProjectReferenceExistent.GlobalPropertiesToRemove)$(_GlobalPropertiesToRemoveFromProjectReferences)" Condition=" '%(_MSBuildProjectReferenceExistent.IsIkvmStub)' == 'true' ">
@@ -187,7 +179,7 @@
             <_RefStubAssemblyNames>@(RefStubAssembly->';%(Identity);')</_RefStubAssemblyNames>
         </PropertyGroup>
         <ItemGroup>
-            <RefStub Include="@(ReferencePathWithRefAssemblies->'$(RefStubsOutputPath)%(Filename).jar')" Condition="$(_RefStubAssemblyNames.Contains(';%(Filename);'))">
+            <RefStub Include="@(ReferencePathWithRefAssemblies->Distinct()->'$(RefStubsOutputPath)%(Filename).jar')" Condition="$(_RefStubAssemblyNames.Contains(';%(Filename);'))">
                 <AssemblyFile>%(Identity)</AssemblyFile>
             </RefStub>
         </ItemGroup>
@@ -243,11 +235,11 @@
         <_BuildRefStubsCoreStampFile>$(IntermediateOutputPath)$(MSBuildThisFile).BuildRefStubsCore.stamp</_BuildRefStubsCoreStampFile>
     </PropertyGroup>
 
-    <Target Name="BuildRefStubsState" DependsOnTargets="GetIkvmStubExe;ResolveRefStubs" Inputs="@(JavaClasspathItem);@(JavaSourceItems)" Outputs="$(_BuildRefStubsStateStampFile)">
+    <Target Name="BuildRefStubsState" DependsOnTargets="GetIkvmStubExe;ResolveRefStubs" Inputs="$(IkvmStub);@(JavaClasspathItem);@(JavaSourceItems);@(ReferencePathWithRefAssemblies);@(RefStub->'%(AssemblyFile)')" Outputs="$(_BuildRefStubsStateStampFile)">
         <ItemGroup>
             <_BuildRefStubsInputs Include="$(IkvmStub)" />
             <_BuildRefStubsInputs Include="@(ReferencePathWithRefAssemblies->Distinct())" />
-            <_BuildRefStubsInputs Include="@(RefStub->'%(AssemblyFile)')" />
+            <_BuildRefStubsInputs Include="@(RefStub->Distinct()->'%(AssemblyFile)')" />
         </ItemGroup>
         <SortItems Source="@(_BuildRefStubsInputs)">
             <Output TaskParameter="Output" ItemName="_BuildRefStubsInputsSorted" />
@@ -256,7 +248,7 @@
             <Output TaskParameter="Items" ItemName="_BuildRefStubsInputsWithHash" />
         </GetFileHash>
         <ItemGroup>
-            <_BuildRefStubsInputsStateLine Include="@(_BuildRefStubsInputsWithHash->'%(FileHash) %(Identity)')" />
+            <_BuildRefStubsInputsStateLine Include="@(_BuildRefStubsInputsWithHash->Distinct()->'%(FileHash) %(Identity)')" />
         </ItemGroup>
         <WriteLinesToFile File="$(_BuildRefStubsStateFile)" Lines="@(_BuildRefStubsInputsStateLine)" Overwrite="true" WriteOnlyWhenDifferent="true" />
 
@@ -309,6 +301,8 @@
         <BuildRefStubsDependsOn>
             $(BuildRefStubsDependsOn);
             GetIkvmStubExe;
+            ResolveReferences;
+            FindReferenceAssembliesForReferences;
             ResolveRefStubs;
             BuildRefStubsState;
             BuildRefStubsCore;
@@ -389,6 +383,7 @@
     <PropertyGroup>
         <ResolveJavaSourceItemsDependsOn>
             $(ResolveJavaSourceItemsDependsOn);
+            GenerateJavaAssemblyInfo;
             ResolveTransformJavaSourceTemplates;
             ResolveTransformTemplateVariables;
             TransformJavaSourceTemplates;
@@ -705,14 +700,17 @@
 
     <PropertyGroup>
         <_BuildJavaAssemblyCoreStampFile>$(IntermediateOutputPath)$(MSBuildThisFile).BuildJavaAssemblyCore.stamp</_BuildJavaAssemblyCoreStampFile>
-        <_BuildJavaAssemblyCoreTempPath>$(IntermediateOutputPath)java</_BuildJavaAssemblyCoreTempPath>
+        <_BuildJavaAssemblyCoreTempPath>$(IntermediateOutputPath)java\</_BuildJavaAssemblyCoreTempPath>
         <_BuildJavaAssemblyCoreExcludeFilePath>$(IntermediateOutputPath)$(MSBuildThisFile).BuildJavaAssembly.exclude.txt</_BuildJavaAssemblyCoreExcludeFilePath>
         <_BuildJavaAssemblyCoreIkvmcArgsFilePath>$(IntermediateOutputPath)$(MSBuildThisFile).BuildJavaAssembly.ikvmc.args.txt</_BuildJavaAssemblyCoreIkvmcArgsFilePath>
     </PropertyGroup>
 
-    <Target Name="BuildJavaAssemblyCore" DependsOnTargets="BuildJavaAssemblyState;GetIkvmcExe;GetIkvmRuntimeDll;ResolveJavaClassItems;ResolveJavaResourceItems;BuildRmiStubs" Inputs="$(_BuildJavaAssemblyStateFile)" Outputs="$(JavaAssemblyPath);$(JavaDebugSymbolsPath);$(_BuildJavaAssemblyCoreStampFile)">
+    <Target Name="BuildJavaAssemblyCore" DependsOnTargets="BuildJavaAssemblyState;GetIkvmcExe;GetIkvmRuntimeDll;GenerateJavaAssemblyInfo;ResolveJavaClassItems;ResolveJavaResourceItems;BuildRmiStubs" Inputs="$(_BuildJavaAssemblyStateFile)" Outputs="$(JavaAssemblyPath);$(JavaDebugSymbolsPath);$(_BuildJavaAssemblyCoreStampFile)">
         <WriteLinesToFile File="$(_BuildJavaAssemblyCoreExcludeFilePath)" Lines="@(OpenJdkExcludeRegex)" Overwrite="true" />
 
+        <ItemGroup>
+        </ItemGroup>
+        
         <ItemGroup>
             <_IkvmcArgs Include="-debug" Condition=" '$(DebugSymbols)' == 'true' " />
             <_IkvmcArgs Include="-assembly:$(AssemblyName)" />
@@ -731,8 +729,13 @@
             <_IkvmcArgs Include="-w4" />
             <_IkvmcArgs Include="-noparameterreflection" />
             <_IkvmcArgs Include="-exclude:$([System.IO.Path]::GetFullPath('$(_BuildJavaAssemblyCoreExcludeFilePath)'))" />
+            <_IkvmcAssemblyAttributeItem Include="@(JavaSourceItems)" ClassPath="$([System.String]::new('%(JavaSourceItems.PackagePath)').Replace('/', '\'))" Condition=" '%(JavaSourceItems.PackagePath)' != '' And '%(JavaSourceItems.AssemblyAttributes)' == 'true' " />
+            <_IkvmcAssemblyAttributePath Include="@(_IkvmcAssemblyAttributeItem->'$(JavaClassOutputPath)%(ClassPath).class')" />
+            <_IkvmcArgs Include="@(_IkvmcAssemblyAttributePath->'-assemblyattributes:%(FullPath)')" />
             <_IkvmcArgs Include="@(ReferencePathWithRefAssemblies->Distinct()->'-reference:%(FullPath)')" />
-            <_IkvmcArgs Include="@(JavaResourceItems->Distinct()->'-resource:%(ResourcePath)=%(FullPath)')" />
+            <_IkvmcResourceItem Include="@(JavaResourceItems)" ResourcePath="$([System.String]::new('%(JavaResourceItems.ResourcePath)').Replace('\', '/'))" Condition=" '%(Identity)' != '' " />
+            <_IkvmcResourcePath Include="@(_IkvmcResourceItem)" />
+            <_IkvmcArgs Include="@(_IkvmcResourcePath->'-resource:%(ResourcePath)=%(FullPath)')" />
             <_IkvmcArgs Include="@(JavaClassItems->Distinct()->'%(FullPath)')" />
         </ItemGroup>
         <WriteLinesToFile File="$(_BuildJavaAssemblyCoreIkvmcArgsFilePath)" Lines="@(_IkvmcArgs)" Overwrite="true" />
@@ -795,7 +798,6 @@
     <PropertyGroup>
         <BuildDependsOn>
             BuildJavaAssembly;
-            BuildResourcesZip;
             $(BuildDependsOn);
         </BuildDependsOn>
     </PropertyGroup>
@@ -832,8 +834,13 @@
         <Delete Files="$(_MergeJavaAssemblyCoreForceBuildFile)" ContinueOnError="True" />
 
         <!-- repack assemblies -->
+        <!-- for now lets just replace them, nothing to merge -->
+        <Copy SourceFiles="$(JavaAssemblyPath)" DestinationFiles="$(_MergeJavaAssemblyCorePath)$(TargetName)$(TargetExt)" OverwriteReadOnlyFiles="true" />
+        <Copy SourceFiles="$(JavaDebugSymbolsPath)" DestinationFiles="$(_MergeJavaAssemblyCorePath)$(TargetName).pdb" OverwriteReadOnlyFiles="true" />
+        <!--
         <ILRepack DebugInfo="true" AllowDuplicateResources="false" CopyAttributes="true" AllowMultiple="true" XmlDocumentation="true" InputAssemblies="$(_MergeJavaAssemblyCoreTempPath)$(TargetName)$(TargetExt);$(JavaAssemblyPath)" TargetKind="SameAsPrimaryAssembly" LibraryPath="@(_ILRepackFilteredLibraryPaths)" OutputFile="$(_MergeJavaAssemblyCorePath)$(TargetName)$(TargetExt)" KeyFile="$(AssemblyOriginatorKeyFile)" Verbose="true" Condition=" '$(SignAssembly)' == 'true' " />
         <ILRepack DebugInfo="true" AllowDuplicateResources="false" CopyAttributes="true" AllowMultiple="true" XmlDocumentation="true" InputAssemblies="$(_MergeJavaAssemblyCoreTempPath)$(TargetName)$(TargetExt);$(JavaAssemblyPath)" TargetKind="SameAsPrimaryAssembly" LibraryPath="@(_ILRepackFilteredLibraryPaths)" OutputFile="$(_MergeJavaAssemblyCorePath)$(TargetName)$(TargetExt)" Verbose="true" Condition=" '$(SignAssembly)' != 'true' " />
+        -->
         <RemoveDir Directories="$(_MergeJavaAssemblyCoreTempPath)" />
 
         <!-- replace original intermediate assembly -->

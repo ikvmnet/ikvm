@@ -32,6 +32,7 @@ using System.Text;
 using System.Threading;
 
 using IKVM.Internal;
+using IKVM.Runtime.Vfs;
 
 static class Java_java_lang_Class
 {
@@ -761,10 +762,11 @@ static class Java_java_lang_ClassLoader
 
 static class Java_java_lang_ClassLoader_00024NativeLibrary
 {
+
 	public static void load(object thisNativeLibrary, string name, bool isBuiltin)
 	{
 #if !FIRST_PASS
-		if (VirtualFileSystem.IsVirtualFS(name))
+		if (VfsTable.Default.IsPath(name))
 		{
 			// we fake success for native libraries loaded from VFS
 			((java.lang.ClassLoader.NativeLibrary)thisNativeLibrary).loaded = true;
@@ -886,7 +888,7 @@ static class Java_java_lang_Package
 		if (systemPackages == null)
 		{
 			Dictionary<string, string> dict = new Dictionary<string, string>();
-			string path = VirtualFileSystem.GetAssemblyResourcesPath(JVM.CoreAssembly) + "resources.jar";
+			string path = VfsTable.GetAssemblyResourcesPath(JVM.CoreAssembly) + "resources.jar";
 			foreach (KeyValuePair<string, string[]> pkgs in ClassLoaderWrapper.GetBootstrapClassLoader().GetPackageInfo())
 			{
 				foreach (string pkg in pkgs.Value)
@@ -1317,17 +1319,21 @@ static class Java_java_lang_Thread
 
 static class Java_java_lang_ProcessImpl
 {
+
+	/// <summary>
+	/// Maps the given path to a path capable of being executed.
+	/// </summary>
+	/// <param name="path"></param>
+	/// <returns></returns>
 	public static string mapVfsExecutable(string path)
 	{
-		string unquoted = path;
-		if (unquoted.Length > 2 && unquoted[0] == '"' && unquoted[unquoted.Length - 1] == '"')
-		{
-			unquoted = unquoted.Substring(1, unquoted.Length - 2);
-		}
-		if (VirtualFileSystem.IsVirtualFS(unquoted))
-		{
-			return VirtualFileSystem.MapExecutable(unquoted);
-		}
+		// remove any unneccessary quotes
+		path = path.Trim('"');
+
+		// check the VFS: it might overload the path with an executable link
+		if (VfsTable.Default.GetPath(path) is VfsExecutable executable)
+			return executable.GetLink();
+
 		return path;
 	}
 

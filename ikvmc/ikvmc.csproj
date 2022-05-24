@@ -30,19 +30,21 @@
     </ItemGroup>
 
     <ItemGroup>
-        <ExcludeFromCompile Include="..\IKVM.Runtime\AssemblyInfo.cs" />
+        <ExcludeFromCompile Include="..\IKVM.Runtime\bin\**\*.cs" />
+        <ExcludeFromCompile Include="..\IKVM.Runtime\obj\**\*.cs" />
+        <ExcludeFromCompile Include="..\IKVM.Runtime\openjdk\**\*.cs" />
+        <ExcludeFromCompile Include="..\IKVM.Runtime\stubgen\**\*.cs" />
+        <ExcludeFromCompile Include="..\IKVM.Runtime\Vfs\**\*.cs" />
         <ExcludeFromCompile Include="..\IKVM.Runtime\Assertions.cs" />
         <ExcludeFromCompile Include="..\IKVM.Runtime\ByteCodeHelper.cs" />
         <ExcludeFromCompile Include="..\IKVM.Runtime\common.cs" />
-        <ExcludeFromCompile Include="..\IKVM.Runtime\Dummy.OpenJDK.Core.cs" />
         <ExcludeFromCompile Include="..\IKVM.Runtime\DynamicMethodUtils.cs" />
         <ExcludeFromCompile Include="..\IKVM.Runtime\ExceptionHelper.cs" />
         <ExcludeFromCompile Include="..\IKVM.Runtime\PassiveWeakDictionary.cs" />
-        <ExcludeFromCompile Include="..\IKVM.Runtime\vfs.cs" />
     </ItemGroup>
 
     <ItemGroup>
-        <Compile Include="..\IKVM.Runtime\*.cs" LinkBase="runtime" Exclude="@(ExcludeFromCompile)" />
+        <Compile Include="..\IKVM.Runtime\**\*.cs" LinkBase="runtime" Exclude="@(ExcludeFromCompile)" />
     </ItemGroup>
 
 </Project>

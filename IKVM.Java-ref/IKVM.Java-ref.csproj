@@ -4,7 +4,6 @@
         <PackageId>IKVM.Java-ref</PackageId>
         <TargetFrameworks>net461;netcoreapp3.1</TargetFrameworks>
         <AssemblyName>IKVM.Java</AssemblyName>
-        <LangVersion>7.0</LangVersion>
         <NoWarn>$(NoWarn);169;649</NoWarn>
     </PropertyGroup>
 

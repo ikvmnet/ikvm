@@ -32,6 +32,7 @@ using IKVM.Runtime;
 using IKVM.Internal;
 using AssemblyClassLoader_ = IKVM.Internal.AssemblyClassLoader;
 using jlClass = java.lang.Class;
+using IKVM.Runtime.Vfs;
 #if !FIRST_PASS
 using NegativeArraySizeException = java.lang.NegativeArraySizeException;
 using IllegalArgumentException = java.lang.IllegalArgumentException;
@@ -110,16 +111,18 @@ namespace IKVM.NativeCode.gnu.java.net.protocol.ikvmres
 
 namespace IKVM.NativeCode.java.lang
 {
+
 	static class VMSystemProperties
 	{
+
 		public static string getVirtualFileSystemRoot()
 		{
-			return VirtualFileSystem.RootPath;
+			return VfsTable.HomePath;
 		}
 
 		public static string getBootClassPath()
 		{
-			return VirtualFileSystem.GetAssemblyClassesPath(JVM.CoreAssembly);
+			return VfsTable.GetAssemblyClassesPath(JVM.CoreAssembly);
 		}
 
 		public static string getStdoutEncoding()
@@ -369,7 +372,7 @@ namespace IKVM.NativeCode.ikvm.runtime
 				global::java.util.jar.Attributes attr = null;
 				if (packages.Key != null)
 				{
-					global::java.util.jar.JarFile jarFile = new global::java.util.jar.JarFile(VirtualFileSystem.GetAssemblyResourcesPath(wrapper.MainAssembly) + packages.Key);
+					global::java.util.jar.JarFile jarFile = new global::java.util.jar.JarFile(VfsTable.GetAssemblyResourcesPath(wrapper.MainAssembly) + packages.Key);
 					manifest = jarFile.getManifest();
 				}
 				if (manifest != null)

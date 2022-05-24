@@ -101,3 +101,5 @@ jobs:
       with:
         name: pkg
         path: build/pkg
+    - name: Run Tests
+      uses: microsoft-approved-actions/vstest@master
