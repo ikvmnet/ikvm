@@ -20,7 +20,18 @@ jobs:
     - name: Extract OpenJDK 7
       run: tar xzvf openjdk-7u75-b13-linux-x64-18_dec_2014.tar.gz
       working-directory: openjdk8/build
+    - name: Cache OpenJDK 8 Build Results
+      uses: actions/cache@v3
+      with:
+        path: openjdk8/build/linux-x86_64-normal-server-release
+        key: openjdk8-build-linux-x86_64-normal-server-release--${{ runner.os }}--${{ hashFiles('openjdk8/**', '!openjdk8/build') }}
+    - name: Check file existence
+      id: openjdk8-build-stamp
+      uses: andstor/file-existence-action@v1
+      with:
+        files: openjdk8/build/linux-x86_64-normal-server-release/stamp
     - name: Build OpenJDK 8
+      if: steps.openjdk8-build-stamp.outputs.files_exists != 'true'
       uses: docker://debian/eol:lenny
       with:
         args: >
@@ -46,7 +57,8 @@ jobs:
               libfontconfig1-dev &&
             cd openjdk8 &&
             JAVA_HOME=build/java-se-7u75-ri bash ./configure &&
-            make DISABLE_HOTSPOT_OS_VERSION_CHECK=ok images"
+            make DISABLE_HOTSPOT_OS_VERSION_CHECK=ok images" &&
+            touch build/linux-x86_64-normal-server-release/stamp
     - name: Package OpenJDK 8
       run: |
         zip -r openjdk8-build-linux-x86_64-normal-server-release.zip \

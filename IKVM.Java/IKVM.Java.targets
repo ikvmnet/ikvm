@@ -748,7 +748,8 @@
 
         <!-- Move temporary files in place of permanent files. -->
         <Delete Files="$(JavaAssemblyPath);$(JavaDebugSymbolsPath)" />
-        <Move SourceFiles="$(_BuildJavaAssemblyCoreTempPath)$(JavaAssemblyName);$(_BuildJavaAssemblyCoreTempPath)$(JavaDebugSymbolsName)" DestinationFiles="$(JavaAssemblyPath);$(JavaDebugSymbolsPath)" OverwriteReadOnlyFiles="true" />
+        <Move SourceFiles="$(_BuildJavaAssemblyCoreTempPath)$(JavaAssemblyName)" DestinationFiles="$(JavaAssemblyPath)" OverwriteReadOnlyFiles="true" />
+        <Move SourceFiles="$(_BuildJavaAssemblyCoreTempPath)$(JavaDebugSymbolsName)" DestinationFiles="$(JavaDebugSymbolsPath)" OverwriteReadOnlyFiles="true" Condition="Exists('$(_BuildJavaAssemblyCoreTempPath)$(JavaDebugSymbolsName)')" />
         <RemoveDir Directories="$(_BuildJavaAssemblyCoreTempPath)" />
 
         <Touch Files="$(_BuildJavaAssemblyCoreStampFile)" AlwaysCreate="true" ForceTouch="true" />
