@@ -93,9 +93,9 @@ jobs:
     - name: NuGet Restore
       run: dotnet restore IKVM.sln
     - name: Build IKVM
-      run: msbuild /m:1 IKVM.sln
+      run: msbuild /m:1 /p:Configuration=Release /p:Platform=AnyCPU IKVM.sln
     - name: Build IKVM Artifacts
-      run: msbuild /m:1 IKVM.artifacts.msbuildproj
+      run: msbuild /m:1 /p:Configuration=Release /p:Platform=AnyCPU IKVM.artifacts.msbuildproj
     - name: Upload IKVM Packages
       uses: actions/upload-artifact@v3
       with:
