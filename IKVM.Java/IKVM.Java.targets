@@ -507,7 +507,7 @@
 
     <Target Name="BuildJavaClassesCore" DependsOnTargets="GetJavacExe;BuildJavaClassesState;ResolveJavaSourceItems;ResolveJavaClasspath" Inputs="$(_BuildJavaClassesStateFile)" Outputs="$(_BuildJavaClassesCoreStampFile)">
         <ItemGroup>
-            <_JavacArgs Include="-g" />
+            <_JavacArgs Include="-g" Condition=" '$(DebugSymbols)' == 'true' Or '$(DebugType)' != 'none' "/>
             <_JavacArgs Include="-nowarn" />
             <_JavacArgs Include="-implicit:none" />
             <_JavacArgs Include="-parameters" />
@@ -686,6 +686,7 @@
         <ItemGroup>
             <_BuildJavaAssemblyInputsStateLine Include="@(OpenJdkExcludeRegex)" />
             <_BuildJavaAssemblyInputsStateLine Include="$(DebugSymbols)" />
+            <_BuildJavaAssemblyInputsStateLine Include="$(DebugType)" />
             <_BuildJavaAssemblyInputsStateLine Include="$(AssemblyName)" />
             <_BuildJavaAssemblyInputsStateLine Include="@(_BuildJavaAssemblyInputsWithHash->'%(FileHash) %(Identity)')" />
         </ItemGroup>
@@ -712,7 +713,7 @@
         </ItemGroup>
         
         <ItemGroup>
-            <_IkvmcArgs Include="-debug" Condition=" '$(DebugSymbols)' == 'true' " />
+            <_IkvmcArgs Include="-debug" Condition=" '$(DebugSymbols)' == 'true' Or '$(DebugType)' != 'none' " />
             <_IkvmcArgs Include="-assembly:$(AssemblyName)" />
             <_IkvmcArgs Include="-version:$(AssemblyVersion)" />
             <_IkvmcArgs Include="-runtime:$(IkvmRuntimeDll)" />
