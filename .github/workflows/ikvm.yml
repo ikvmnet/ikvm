@@ -84,7 +84,12 @@ jobs:
     - name: Checkout Source
       uses: actions/checkout@v3
       with:
+        fetch-depth: 0
         submodules: recursive
+    - name: Determine Version
+      uses: gittools/actions/gitversion/execute@v0.9.7
+      with:
+        useConfigFile: true
     - name: Setup .NET 3.1
       uses: actions/setup-dotnet@v2
       with:
@@ -112,14 +117,31 @@ jobs:
     - name: NuGet Restore
       run: dotnet restore IKVM.sln
     - name: Build IKVM Artifacts
-      run: msbuild /m:1 /p:Configuration=Release /p:Platform="Any CPU" IKVM.artifacts.msbuildproj
+      run: |
+        msbuild /m:1 `
+        /p:Configuration="Release" `
+        /p:Platform="Any CPU" `
+        /p:Version=${env:GITVERSION_FULLSEMVER} `
+        /p:AssemblyVersion=${env:GITVERSION} `
+        /p:AssemblyInformationalVersion=${env:GITVERSION_INFORMATIONALVERSION} `
+        /p:FileVersion=${env:GITVERSION_ASSEMBLYSEMVER} `
+        IKVM.artifacts.msbuildproj
     - name: Upload IKVM Packages
       uses: actions/upload-artifact@v3
       with:
         name: pkg
         path: build/pkg
     - name: Build IKVM Solution
-      run: msbuild /m:1 /p:Configuration=Release /p:Platform="Any CPU" IKVM.sln
+      run: |
+        msbuild /m:1 `
+        /p:Configuration="Release" `
+        /p:Platform="Any CPU" `
+        /p:Version=${env:GITVERSION_FULLSEMVER} `
+        /p:AssemblyVersion=${env:GITVERSION} `
+        /p:AssemblyInformationalVersion=${env:GITVERSION_INFORMATIONALVERSION} `
+        /p:FileVersion=${env:GITVERSION_ASSEMBLYSEMVER} `
+        IKVM.sln
+IKVM.sln
     - name: Run IKVM Tests
       uses: microsoft/vstest-action@v0.1.0
       with:
