@@ -814,15 +814,14 @@
 
         <!-- remove the intermediate assembly, it's absense will cause CoreCompile to run again if we fail -->
         <Delete Files="$(IntermediateOutputPath)$(TargetName)$(TargetExt)" />
-        <Delete Files="$(IntermediateOutputPath)$(TargetName).pdb" />
+        <Delete Files="$(IntermediateOutputPath)$(TargetName).pdb" Condition="Exists('$(IntermediateOutputPath)$(TargetName).pdb')" />
 
         <!-- At this point original intermediate outputs are moved, so CoreCompile will always run if build fails after this point. -->
         <Delete Files="$(_MergeJavaAssemblyCoreForceBuildFile)" ContinueOnError="True" />
 
-        <!-- repack assemblies -->
-        <!-- for now lets just replace them, nothing to merge -->
+        <!-- replace original assemblies -->
         <Copy SourceFiles="$(JavaAssemblyPath)" DestinationFiles="$(IntermediateOutputPath)$(TargetName)$(TargetExt)" OverwriteReadOnlyFiles="true" />
-        <Copy SourceFiles="$(JavaDebugSymbolsPath)" DestinationFiles="$(IntermediateOutputPath)$(TargetName).pdb" OverwriteReadOnlyFiles="true" />
+        <Copy SourceFiles="$(JavaDebugSymbolsPath)" DestinationFiles="$(IntermediateOutputPath)$(TargetName).pdb" OverwriteReadOnlyFiles="true" Condition="Exists('$(JavaDebugSymbolsPath)')" />
     </Target>
 
     <PropertyGroup>
