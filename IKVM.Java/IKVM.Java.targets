@@ -7,8 +7,8 @@
         <JavaClassOutputPath>$(IntermediateOutputPath)classes\</JavaClassOutputPath>
         <RmiStubsOutputPath>$(IntermediateOutputPath)rmistubs\</RmiStubsOutputPath>
 
-        <JavaAssemblyName>java.dll</JavaAssemblyName>
-        <JavaDebugSymbolsName>java.pdb</JavaDebugSymbolsName>
+        <JavaAssemblyName>$(AssemblyName).java.dll</JavaAssemblyName>
+        <JavaDebugSymbolsName>$(AssemblyName).java.pdb</JavaDebugSymbolsName>
         <JavaAssemblyPath>$(IntermediateOutputPath)$(JavaAssemblyName)</JavaAssemblyPath>
         <JavaDebugSymbolsPath>$(IntermediateOutputPath)$(JavaDebugSymbolsName)</JavaDebugSymbolsPath>
     </PropertyGroup>
@@ -802,12 +802,8 @@
         </BuildDependsOn>
     </PropertyGroup>
 
-    <UsingTask AssemblyFile="$(ILRepackToolsPath)\ILRepack.Lib.MSBuild.dll" TaskName="ILRepack" Condition=" Exists('$(ILRepackToolsPath)\ILRepack.Lib.MSBuild.dll') " />
-
     <PropertyGroup>
         <_MergeJavaAssemblyCoreForceBuildFile>$(IntermediateOutputPath)$(MSBuildThisFile).MergeJavaAssemblyCore.force</_MergeJavaAssemblyCoreForceBuildFile>
-        <_MergeJavaAssemblyCorePath>$(IntermediateOutputPath)merge\</_MergeJavaAssemblyCorePath>
-        <_MergeJavaAssemblyCoreTempPath>$(_MergeJavaAssemblyCorePath)tmp\</_MergeJavaAssemblyCoreTempPath>
     </PropertyGroup>
 
     <Target Name="MergeJavaAssemblyCore" DependsOnTargets="BuildJavaAssembly" Condition="'$(_MergeJavaAssemblyTimestampBeforeCompile)' != '$(_MergeJavaAssemblyTimestampAfterCompile)' Or Exists('$(_MergeJavaAssemblyCoreForceBuildFile)')">
@@ -816,37 +812,17 @@
              That in turn results in timestamps being equal, this target not running and untransformed assemblies being copied to the output. -->
         <Touch Files="$(_MergeJavaAssemblyCoreForceBuildFile)" AlwaysCreate="true" ContinueOnError="true" />
 
-        <!-- ILRepack requires that reference paths be directories. Find the directory of each reference item. -->
-        <ItemGroup>
-            <_ILRepackReferences Include="@(ReferencePathWithRefAssemblies)" />
-            <_ILRepackReferencePath Include="$([System.String]::new('%(_ILRepackReferences.RelativeDir)').TrimEnd('\'))" />
-        </ItemGroup>
-        <RemoveDuplicates Inputs="@(_ILRepackReferencePath)">
-            <Output TaskParameter="Filtered" ItemName="_ILRepackFilteredLibraryPaths" />
-        </RemoveDuplicates>
-
-        <!-- move the intermediate assembly to a temporary path, it's absense will cause CoreCompile to run again if we fail -->
-        <MakeDir Directories="$(_MergeJavaAssemblyCoreTempPath)" />
-        <Move SourceFiles="$(IntermediateOutputPath)$(TargetName)$(TargetExt)" DestinationFiles="$(_MergeJavaAssemblyCoreTempPath)$(TargetName)$(TargetExt)" OverwriteReadOnlyFiles="true" />
-        <Move SourceFiles="$(IntermediateOutputPath)$(TargetName).pdb" DestinationFiles="$(_MergeJavaAssemblyCoreTempPath)$(TargetName).pdb" OverwriteReadOnlyFiles="true" />
+        <!-- remove the intermediate assembly, it's absense will cause CoreCompile to run again if we fail -->
+        <Delete Files="$(IntermediateOutputPath)$(TargetName)$(TargetExt)" />
+        <Delete Files="$(IntermediateOutputPath)$(TargetName).pdb" />
 
         <!-- At this point original intermediate outputs are moved, so CoreCompile will always run if build fails after this point. -->
         <Delete Files="$(_MergeJavaAssemblyCoreForceBuildFile)" ContinueOnError="True" />
 
         <!-- repack assemblies -->
         <!-- for now lets just replace them, nothing to merge -->
-        <Copy SourceFiles="$(JavaAssemblyPath)" DestinationFiles="$(_MergeJavaAssemblyCorePath)$(TargetName)$(TargetExt)" OverwriteReadOnlyFiles="true" />
-        <Copy SourceFiles="$(JavaDebugSymbolsPath)" DestinationFiles="$(_MergeJavaAssemblyCorePath)$(TargetName).pdb" OverwriteReadOnlyFiles="true" />
-        <!--
-        <ILRepack DebugInfo="true" AllowDuplicateResources="false" CopyAttributes="true" AllowMultiple="true" XmlDocumentation="true" InputAssemblies="$(_MergeJavaAssemblyCoreTempPath)$(TargetName)$(TargetExt);$(JavaAssemblyPath)" TargetKind="SameAsPrimaryAssembly" LibraryPath="@(_ILRepackFilteredLibraryPaths)" OutputFile="$(_MergeJavaAssemblyCorePath)$(TargetName)$(TargetExt)" KeyFile="$(AssemblyOriginatorKeyFile)" Verbose="true" Condition=" '$(SignAssembly)' == 'true' " />
-        <ILRepack DebugInfo="true" AllowDuplicateResources="false" CopyAttributes="true" AllowMultiple="true" XmlDocumentation="true" InputAssemblies="$(_MergeJavaAssemblyCoreTempPath)$(TargetName)$(TargetExt);$(JavaAssemblyPath)" TargetKind="SameAsPrimaryAssembly" LibraryPath="@(_ILRepackFilteredLibraryPaths)" OutputFile="$(_MergeJavaAssemblyCorePath)$(TargetName)$(TargetExt)" Verbose="true" Condition=" '$(SignAssembly)' != 'true' " />
-        -->
-        <RemoveDir Directories="$(_MergeJavaAssemblyCoreTempPath)" />
-
-        <!-- replace original intermediate assembly -->
-        <Move SourceFiles="$(_MergeJavaAssemblyCorePath)$(TargetName)$(TargetExt)" DestinationFiles="$(IntermediateOutputPath)$(TargetName)$(TargetExt)" OverwriteReadOnlyFiles="true" />
-        <Move SourceFiles="$(_MergeJavaAssemblyCorePath)$(TargetName).pdb" DestinationFiles="$(IntermediateOutputPath)$(TargetName).pdb" OverwriteReadOnlyFiles="true" />
-        <RemoveDir Directories="$(_MergeJavaAssemblyCorePath)" />
+        <Copy SourceFiles="$(JavaAssemblyPath)" DestinationFiles="$(IntermediateOutputPath)$(TargetName)$(TargetExt)" OverwriteReadOnlyFiles="true" />
+        <Copy SourceFiles="$(JavaDebugSymbolsPath)" DestinationFiles="$(IntermediateOutputPath)$(TargetName).pdb" OverwriteReadOnlyFiles="true" />
     </Target>
 
     <PropertyGroup>
