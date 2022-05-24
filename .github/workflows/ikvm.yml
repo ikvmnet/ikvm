@@ -125,10 +125,10 @@ jobs:
         msbuild /m:1 `
           /p:Configuration="Release" `
           /p:Platform="Any CPU" `
-          /p:Version=${env:GITVERSION_FULLSEMVER} `
-          /p:AssemblyVersion=${env:GITVERSION} `
-          /p:AssemblyInformationalVersion=${env:GITVERSION_INFORMATIONALVERSION} `
-          /p:FileVersion=${env:GITVERSION_ASSEMBLYSEMVER} `
+          /p:Version=${env:GitVersion_FullSemVer} `
+          /p:AssemblyVersion=${env:GitVersion_AssemblySemFileVer} `
+          /p:AssemblyInformationalVersion=${env:GitVersion_InformationalVersion} `
+          /p:FileVersion=${env:GitVersion_AssemblySemFileVer} `
           IKVM.artifacts.msbuildproj
     - name: Upload IKVM Packages
       uses: actions/upload-artifact@v3
@@ -140,10 +140,10 @@ jobs:
         msbuild /m:1 `
           /p:Configuration="Release" `
           /p:Platform="Any CPU" `
-          /p:Version=${env:GITVERSION_FULLSEMVER} `
-          /p:AssemblyVersion=${env:GITVERSION} `
-          /p:AssemblyInformationalVersion=${env:GITVERSION_INFORMATIONALVERSION} `
-          /p:FileVersion=${env:GITVERSION_ASSEMBLYSEMVER} `
+          /p:Version=${env:GitVersion_FullSemVer} `
+          /p:AssemblyVersion=${env:GitVersion_AssemblySemFileVer} `
+          /p:AssemblyInformationalVersion=${env:GitVersion_InformationalVersion} `
+          /p:FileVersion=${env:GitVersion_AssemblySemFileVer} `
           IKVM.sln
     - name: Run IKVM Tests
       uses: microsoft/vstest-action@v0.1.0
