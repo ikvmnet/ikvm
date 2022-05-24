@@ -147,7 +147,7 @@ jobs:
           /p:FileVersion=${env:GitVersion_AssemblySemFileVer} `
           /p:PackageVersion=${env:GitVersion_NuGetVersionV2} `
           IKVM.sln
-    - name: Run IKVM Tests (.NET Framework)
+    - name: Run IKVM Tests (Framework 4.5)
       uses: microsoft/vstest-action@v0.1.0
       with:
         testAssembly: |
@@ -156,7 +156,7 @@ jobs:
         searchFolder: ./
         runInParallel: true
         otherConsoleOptions: /Framework:Framework45
-    - name: Run IKVM Tests (.NET Core)
+    - name: Run IKVM Tests (Core 3.1)
       uses: microsoft/vstest-action@v0.1.0
       with:
         testAssembly: |
@@ -164,4 +164,4 @@ jobs:
           !**\obj\**
         searchFolder: ./
         runInParallel: true
-        otherConsoleOptions: /Framework:.NETCoreApp,Version=1.1
+        otherConsoleOptions: /Framework:.NETCoreApp,Version=v3.1
