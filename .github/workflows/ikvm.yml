@@ -151,7 +151,7 @@ jobs:
       uses: microsoft/vstest-action@v0.1.0
       with:
         testAssembly: |
-          **\*.Tests.dll
+          **\net461\*.Tests.dll
           !**\obj\**
         searchFolder: ./
         runInParallel: true
@@ -161,7 +161,7 @@ jobs:
       uses: microsoft/vstest-action@v0.1.0
       with:
         testAssembly: |
-          **\*.Tests.dll
+          **\netcoreapp3.1\*.Tests.dll
           !**\obj\**
         searchFolder: ./
         runInParallel: true
