@@ -156,6 +156,7 @@ jobs:
         searchFolder: ./
         runInParallel: true
         otherConsoleOptions: /Framework:Framework45
+        resultLogsArtifactName: vs-test-result-logs-net461
     - name: Run IKVM Tests (Core 3.1)
       uses: microsoft/vstest-action@v0.1.0
       with:
@@ -165,6 +166,7 @@ jobs:
         searchFolder: ./
         runInParallel: true
         otherConsoleOptions: /Framework:.NETCoreApp,Version=v3.1
+        resultLogsArtifactName: vs-test-result-logs-netcoreapp3.1
     - name: Publish NuGet Packages To GitHub
       run: |
         dotnet nuget add source --username USERNAME --password ${{ secrets.GITHUB_TOKEN }} --store-password-in-clear-text --name github "https://nuget.pkg.github.com/${env:GITHUB_REPOSITORY_OWNER}/index.json"
