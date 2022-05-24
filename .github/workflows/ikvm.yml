@@ -19,7 +19,7 @@ jobs:
       uses: actions/cache@v3
       with:
         path: openjdk8/build/linux-x86_64-normal-server-release
-        key: openjdk8-build-linux-x86_64-normal-server-release--${{ runner.os }}--${{ hashFiles('openjdk8/**', '!openjdk8/build') }}-3
+        key: openjdk8-build-linux-x86_64-normal-server-release--${{ runner.os }}--${{ hashFiles('openjdk8/**', '!openjdk8/build') }}-4
     - name: Check OpenJDK 8 Build Stamp
       id: openjdk8-build-stamp
       uses: andstor/file-existence-action@v1
@@ -58,8 +58,8 @@ jobs:
               libfontconfig1-dev &&
             cd openjdk8 &&
             JAVA_HOME=build/java-se-7u75-ri bash ./configure &&
-            make DISABLE_HOTSPOT_OS_VERSION_CHECK=ok images" &&
-            touch build/linux-x86_64-normal-server-release/stamp
+            make DISABLE_HOTSPOT_OS_VERSION_CHECK=ok images &&
+            touch build/linux-x86_64-normal-server-release/stamp"
     - name: Package OpenJDK 8
       run: |
         zip -r openjdk8-build-linux-x86_64-normal-server-release.zip \
@@ -105,8 +105,6 @@ jobs:
       working-directory: openjdk8/build
     - name: NuGet Restore
       run: dotnet restore IKVM.sln
-    - name: Build IKVM
-      run: msbuild /m:1 /p:Configuration=Release /p:Platform="Any CPU" IKVM.sln
     - name: Build IKVM Artifacts
       run: msbuild /m:1 /p:Configuration=Release /p:Platform="Any CPU" IKVM.artifacts.msbuildproj
     - name: Upload IKVM Packages
@@ -114,5 +112,7 @@ jobs:
       with:
         name: pkg
         path: build/pkg
-    - name: Run Tests
+    - name: Build IKVM Solution
+      run: msbuild /m:1 /p:Configuration=Release /p:Platform="Any CPU" IKVM.sln
+    - name: Run IKVM Tests
       uses: microsoft/vstest-action@v0.1.0
