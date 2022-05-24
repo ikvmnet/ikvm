@@ -2,9 +2,12 @@
 using System.Collections.Generic;
 using System.Linq;
 using System.Reflection;
+
+#if NETCOREAPP3_1_OR_GREATER
 using System.Runtime.Loader;
 
 using Microsoft.Extensions.DependencyModel;
+#endif
 
 namespace IKVM.Runtime.Vfs
 {
