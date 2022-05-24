@@ -117,5 +117,9 @@ jobs:
     - name: Run IKVM Tests
       uses: microsoft/vstest-action@v0.1.0
       with:
+        testAssembly: |
+          **\*.Tests.dll
+          !**\obj\**
         searchFolder: ./
         runInParallel: true
+        codeCoverageEnabled: true
