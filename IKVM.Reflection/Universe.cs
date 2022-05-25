@@ -187,7 +187,11 @@ namespace IKVM.Reflection
 #endif
 
         internal static readonly bool MonoRuntime = System.Type.GetType("Mono.Runtime") != null;
-        internal static readonly bool CoreRuntime = Environment.Version.Major >= 5 || RuntimeInformation.FrameworkDescription.StartsWith(".NET Core", StringComparison.OrdinalIgnoreCase);
+#if NET461
+        internal static readonly bool CoreRuntime = false;
+#else
+        internal static readonly bool CoreRuntime = true;
+#endif
         private readonly Dictionary<Type, Type> canonicalizedTypes = new Dictionary<Type, Type>();
         private readonly List<AssemblyReader> assemblies = new List<AssemblyReader>();
         private readonly List<AssemblyBuilder> dynamicAssemblies = new List<AssemblyBuilder>();

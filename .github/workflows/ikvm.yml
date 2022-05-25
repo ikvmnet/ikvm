@@ -130,6 +130,8 @@ jobs:
           /p:AssemblyInformationalVersion=${env:GitVersion_InformationalVersion} `
           /p:FileVersion=${env:GitVersion_AssemblySemFileVer} `
           /p:PackageVersion=${env:GitVersion_NuGetVersionV2} `
+          /p:RepositoryUrl="${env:GITHUB_SERVER_URL}${env:GITHUB_REPOSITORY}" `
+          /p:PackageProjectUrl="${env:GITHUB_SERVER_URL}${env:GITHUB_REPOSITORY}" `
           IKVM.artifacts.msbuildproj
     - name: Upload IKVM Packages
       uses: actions/upload-artifact@v3
@@ -146,6 +148,8 @@ jobs:
           /p:AssemblyInformationalVersion=${env:GitVersion_InformationalVersion} `
           /p:FileVersion=${env:GitVersion_AssemblySemFileVer} `
           /p:PackageVersion=${env:GitVersion_NuGetVersionV2} `
+          /p:RepositoryUrl="${env:GITHUB_SERVER_URL}${env:GITHUB_REPOSITORY}" `
+          /p:PackageProjectUrl="${env:GITHUB_SERVER_URL}${env:GITHUB_REPOSITORY}" `
           IKVM.sln
     - name: Run IKVM Tests (Framework 4.5)
       uses: microsoft/vstest-action@v0.1.0
