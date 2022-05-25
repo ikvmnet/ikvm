@@ -2,9 +2,14 @@ name: IKVM
 
 on:
   push:
-    branches: [ openjdk_msbuild ]
+    branches:
+      main
+      master
+      develop
   pull_request:
-    branches: [ openjdk_msbuild ]
+      main
+      master
+      develop
 
 jobs:
   build-openjdk8:
