@@ -180,7 +180,7 @@ jobs:
         otherConsoleOptions: /Framework:.NETCoreApp,Version=v3.1
         resultLogsArtifactName: vs-test-result-logs-netcoreapp3.1
     - name: Push NuGet (GitHub)
-      if: github.ref == 'master' || github.ref == 'main || github.ref == 'develop'
+      if: github.ref == 'master' || github.ref == 'main' || github.ref == 'develop'
       run: dotnet nuget push build\pkg\*.nupkg -k $env:GITHUB_TOKEN -s $env:GITHUB_REPOS --skip-duplicate --no-symbols
       env:
         GITHUB_REPOS: https://nuget.pkg.github.com/${{ github.repository_owner }}/index.json
