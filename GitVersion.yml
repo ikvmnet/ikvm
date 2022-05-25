@@ -4,3 +4,5 @@ assembly-file-versioning-scheme: MajorMinorPatchTag
 branches:
   main:
     increment: Patch
+  develop:
+    increment: Patch
