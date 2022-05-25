@@ -1,3 +1,4 @@
 mode: Mainline
+increment: Patch
 assembly-versioning-scheme: MajorMinor
 assembly-file-versioning-scheme: MajorMinorPatchTag
