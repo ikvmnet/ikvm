@@ -40,6 +40,10 @@
     </ItemGroup>
 
     <ItemGroup>
+        <Reference Remove="@(Reference)" />
+    </ItemGroup>
+
+    <ItemGroup>
         <None Include="..\LICENSE" Pack="true" PackagePath="." />
     </ItemGroup>
 
