@@ -111,7 +111,7 @@ jobs:
     - name: Add msbuild to PATH
       uses: microsoft/setup-msbuild@v1.1
     - name: Download OpenJDK 8 Build
-      uses: actions/download-artifact@v2
+      uses: actions/download-artifact@v3
       with:
         name: openjdk8-build-linux-x86_64-normal-server-release
         path: openjdk8/build
