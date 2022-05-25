@@ -6,10 +6,6 @@ on:
     - main
     - master
     - develop
-  pull_request:
-    - main
-    - master
-    - develop
 
 jobs:
   build-openjdk8:
