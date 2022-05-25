@@ -9,6 +9,7 @@ branches:
     is-mainline: true
     increment: Patch
   develop:
+    mode: ContinuousDelivery
     increment: None
     tag: develop
     source-branches: [ 'main' ]
