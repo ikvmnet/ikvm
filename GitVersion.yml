@@ -9,4 +9,5 @@ branches:
   main:
     increment: Patch
   develop:
-    increment: Patch
+    increment: None
+    tag: develop
