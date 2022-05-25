@@ -1,5 +1,4 @@
 mode: Mainline
-increment: Patch
 assembly-versioning-scheme: MajorMinor
 assembly-file-versioning-scheme: MajorMinorPatchTag
 major-version-bump-message: '\+semver:\s?(major)'
@@ -7,7 +6,9 @@ minor-version-bump-message: '\+semver:\s?(breaking|minor)'
 patch-version-bump-message: '\+semver:\s?(fix|bug-?(fix)?|patch|increment(al)?|enhancements?)'
 branches:
   main:
+    is-mainline: true
     increment: Patch
   develop:
     increment: None
     tag: develop
+    source-branches: [ 'main' ]
