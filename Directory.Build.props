@@ -46,6 +46,7 @@
     <ItemGroup Condition=" '$(TargetFramework)' == 'net461' ">
         <Reference Include="System.Configuration" />
         <Reference Include="System.IO.Compression" />
+        <Reference Include="System.Security" />
     </ItemGroup>
 
     <ItemGroup Condition=" '$(TargetFramework)' == 'netcoreapp3.1' ">
