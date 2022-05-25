@@ -3,13 +3,13 @@ name: IKVM
 on:
   push:
     branches:
-      main
-      master
-      develop
+    - main
+    - master
+    - develop
   pull_request:
-      main
-      master
-      develop
+    - main
+    - master
+    - develop
 
 jobs:
   build-openjdk8:
