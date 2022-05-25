@@ -157,7 +157,7 @@ jobs:
         testAssembly: |
           **\net461\*.Tests.dll
           !**\obj\**
-        searchFolder: .
+        searchFolder: .\
         runInParallel: true
         otherConsoleOptions: /Framework:Framework45
         resultLogsArtifactName: vs-test-result-logs-net461
@@ -167,7 +167,7 @@ jobs:
         testAssembly: |
           **\netcoreapp3.1\*.Tests.dll
           !**\obj\**
-        searchFolder: .
+        searchFolder: .\
         runInParallel: true
         otherConsoleOptions: /Framework:.NETCoreApp,Version=v3.1
         resultLogsArtifactName: vs-test-result-logs-netcoreapp3.1
