@@ -179,6 +179,14 @@ jobs:
         runInParallel: true
         otherConsoleOptions: /Framework:.NETCoreApp,Version=v3.1
         resultLogsArtifactName: vs-test-result-logs-netcoreapp3.1
+    - name: Create Release
+      if: github.ref == 'refs/heads/master' || github.ref == 'refs/heads/main'
+      uses: ncipollo/release-action@v1.10.0
+      with:
+        artifacts: build\pkg\*.nupkg,build\pkg\*.snupkg
+        draft: true
+        generateReleaseNotes: true
+        token: ${{ secrets.GITHUB_TOKEN }}
     - name: Push NuGet (GitHub)
       if: github.ref == 'refs/heads/master' || github.ref == 'refs/heads/main' || github.ref == 'refs/heads/develop'
       run: dotnet nuget push build\pkg\*.nupkg --source $env:GITHUB_REPOS --api-key $env:GITHUB_TOKEN --skip-duplicate --no-symbols
@@ -191,14 +199,6 @@ jobs:
       env:
         AZUREDEVOPS_REPOS: https://pkgs.dev.azure.com/ikvm-revived/ikvm/_packaging/ikvm-ci/nuget/v3/index.json
         AZUREDEVOPS_TOKEN: ${{ secrets.AZUREDEVOPS_TOKEN }}
-    - name: Create Release
-      if: github.ref == 'refs/heads/master' || github.ref == 'refs/heads/main'
-      uses: ncipollo/release-action@v1.10.0
-      with:
-        artifacts: build\pkg\*.nupkg,build\pkg\*.snupkg
-        draft: true
-        generateReleaseNotes: true
-        token: ${{ secrets.GITHUB_TOKEN }}
     - name: Push NuGet
       if: github.ref == 'refs/heads/master' || github.ref == 'refs/heads/main'
       run: dotnet nuget push build\pkg\*.nupkg --source $env:NUGET_REPOS --api-key $env:NUGET_TOKEN --skip-duplicate --no-symbols
