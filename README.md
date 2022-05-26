@@ -4,9 +4,11 @@
 
 Project should open within Visual Studio. Project can also be built with MSBuild on a Windows host. Project cannot currently be built on a Linux host, nor with an exclusively .NET Core version of MSBuild.
 
-The OpenJDK JDK8u source hierarchy and build results for Linux/x64 for is required. These build artifacts cannot be built on Windows, or modern Linux hosts. Instead, they must be built on a host with GCC 4.3 available. Debian Lenny is known to work acceptably. The CI/CD GitHub action can serve as a demonstration of this. Alternatively, the GitHub action's generated artifact can simply be extract into the appropriate spot in openjdk/build.
+The OpenJDK JDK8u source hierarchy and build results for Linux/x64 is required. These build artifacts cannot be built on Windows, or modern Linux hosts. Instead, they must be built on a host with GCC 4.3 available. Debian Lenny is known to work acceptably. The CI/CD GitHub action can serve as a demonstration of this. 
 
-Both of these issues are known and considered unacceptable.
+The GitHub action's generated artifact can simply be extract into the appropriate spot in `openjdk8/build` to avoid building it yourself. Navigate to the GitHub Actions, find the latest successfuly build for the branch you're concerned with, and download the `openjdk8-build-linux-x86_64-normal-server-release` artifact. Extract this zip file into `openjdk8/build`.
+
+Both of these issues are known and considered unacceptable. They are "on the list."
 
 ## Project
 
