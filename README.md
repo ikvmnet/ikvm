@@ -8,7 +8,7 @@ The OpenJDK JDK8u source hierarchy and build results for Linux/x64 is required. 
 
 The GitHub action's generated artifact can simply be extract into the appropriate spot in `openjdk8/build` to avoid building it yourself. Navigate to the GitHub Actions, find the latest successfuly build for the branch you're concerned with, and download the `openjdk8-build-linux-x86_64-normal-server-release` artifact. Extract this zip file into `openjdk8/build`.
 
-Both of these issues are known and considered unacceptable. They are "on the list."
+IKVM includes a native library named 'ikvm-native' which must be built for the JNI functionality to work. The solution includes .vcxprojs that build both the win-x86, win-x64, linux-x86 and linux-x64 versions of these libraries. However, the linux-* version require WSL to be abled on your development machine.
 
 ## Project
 
