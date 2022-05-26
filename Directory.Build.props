@@ -2,7 +2,7 @@
     <PropertyGroup>
         <LangVersion Condition=" '$(LangVersion)' == '' ">9.0</LangVersion>
         <NoWarn>$(NoWarn);1591;1573;CS8002</NoWarn>
-        <GenerateDocumentation>true</GenerateDocumentation>
+        <GenerateDocumentationFile>true</GenerateDocumentationFile>
     </PropertyGroup>
 
     <ItemGroup>
