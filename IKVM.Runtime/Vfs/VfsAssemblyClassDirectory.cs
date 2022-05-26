@@ -130,9 +130,6 @@ namespace IKVM.Runtime.Vfs
         /// <exception cref="NotImplementedException"></exception>
         VfsEntry GetPackageEntry(string packageName)
         {
-#if FIRST_PASS
-            throw new PlatformNotSupportedException();
-#else
             var acl = AssemblyClassLoader.FromAssembly(assembly);
             if (acl == null)
                 throw new InvalidOperationException("Could not locate assembly loader.");
@@ -142,10 +139,14 @@ namespace IKVM.Runtime.Vfs
             {
                 var name = acl.GetTypeNameAndType(type, out var isJavaType);
 
+#if FIRST_PASS
+                throw new PlatformNotSupportedException();
+#else
                 // annotation custom attributes are pseudo proxies and are not loadable by name (and should not exist in the file systems,
                 // because proxies are, ostensibly, created on the fly)
                 if (isJavaType && type.BaseType == typeof(global::ikvm.@internal.AnnotationAttributeBase) && name.Contains(".$Proxy"))
                     continue;
+#endif
 
                 // if the type is within the requested package, the package exists
                 var next = package + "." + packageName;
@@ -154,7 +155,6 @@ namespace IKVM.Runtime.Vfs
             }
 
             return null;
-#endif
         }
 
         /// <summary>
@@ -164,9 +164,6 @@ namespace IKVM.Runtime.Vfs
         /// <exception cref="InvalidOperationException"></exception>
         public override string[] List()
         {
-#if FIRST_PASS
-            throw new PlatformNotSupportedException();
-#else
             var lst = new HashSet<string>();
 
             var acl = AssemblyClassLoader.FromAssembly(assembly);
@@ -178,10 +175,14 @@ namespace IKVM.Runtime.Vfs
             {
                 var name = acl.GetTypeNameAndType(type, out var isJavaType);
 
+#if FIRST_PASS
+                throw new PlatformNotSupportedException();
+#else
                 // annotation custom attributes are pseudo proxies and are not loadable by name (and should not exist in the file systems,
                 // because proxies are, ostensibly, created on the fly)
                 if (isJavaType && type.BaseType == typeof(global::ikvm.@internal.AnnotationAttributeBase) && name.Contains(".$Proxy"))
                     continue;
+#endif
 
                 // if the type is within the requested package, the package exists
                 var next = package + ".";
@@ -190,7 +191,6 @@ namespace IKVM.Runtime.Vfs
             }
 
             return lst.ToArray();
-#endif
         }
 
     }
