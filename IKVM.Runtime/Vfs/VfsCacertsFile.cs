@@ -32,7 +32,7 @@ namespace IKVM.Runtime.Vfs
     /// <summary>
     /// Represents a fake cacerts file.
     /// </summary>
-    sealed class VfsCacertsEntry : VfsFile
+    sealed class VfsCacertsFile : VfsFile
     {
 
         readonly Lazy<byte[]> buff;
@@ -41,8 +41,7 @@ namespace IKVM.Runtime.Vfs
         /// Initializes a new instance.
         /// </summary>
         /// <param name="context"></param>
-        /// <param name="type"></param>
-        internal VfsCacertsEntry(VfsContext context) :
+        internal VfsCacertsFile(VfsContext context) :
             base(context)
         {
             this.buff = new Lazy<byte[]>(GenerateCacertsFile, true);

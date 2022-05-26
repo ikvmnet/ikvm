@@ -108,7 +108,7 @@ namespace IKVM.Runtime.Vfs
 
             // generate security directory
             var security = (VfsEntryDirectory)lib.GetOrCreateDirectory("security");
-            security.AddEntry("cacerts", new VfsCacertsEntry(context));
+            security.AddEntry("cacerts", new VfsCacertsFile(context));
             security.AddEntry("local_policy.jar", security.GetEntry("US_export_policy.jar")); // link policies
 
             return home;
@@ -148,8 +148,8 @@ namespace IKVM.Runtime.Vfs
         /// <summary>
         /// Adds a zip entry to the given directory.
         /// </summary>
-        /// <param name="zip"></param>
         /// <param name="directory"></param>
+        /// <param name="fileName"></param>
         /// <param name="entry"></param>
         static void AddEntryAtPath(VfsEntryDirectory directory, string fileName, VfsZipEntry entry)
         {

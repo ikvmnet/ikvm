@@ -73,7 +73,7 @@ namespace IKVM.Runtime.Vfs
         /// <summary>
         /// Gets the entry for he given path.
         /// </summary>
-        /// <param name="v"></param>
+        /// <param name="path"></param>
         /// <returns></returns>
         /// <exception cref="NotImplementedException"></exception>
         public VfsEntry GetPath(string path)
