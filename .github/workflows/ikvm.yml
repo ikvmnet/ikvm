@@ -131,6 +131,7 @@ jobs:
     - name: Build IKVM Artifacts
       run: |
         msbuild /m:1 `
+          /p:ContinuousIntegrationBuild=true `
           /p:Configuration="Release" `
           /p:Platform="Any CPU" `
           /p:Version=${env:GitVersion_FullSemVer} `
@@ -149,6 +150,7 @@ jobs:
     - name: Build IKVM Solution
       run: |
         msbuild /m:1 `
+          /p:ContinuousIntegrationBuild=true `
           /p:Configuration="Release" `
           /p:Platform="Any CPU" `
           /p:Version=${env:GitVersion_FullSemVer} `
