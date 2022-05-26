@@ -6,6 +6,7 @@
         <IncludeBuildOutput>false</IncludeBuildOutput>
         <TargetsForTfmSpecificContentInPackage>$(TargetsForTfmSpecificContentInPackage);CopyProjectReferencesToPackage</TargetsForTfmSpecificContentInPackage>
         <PackageLicenseFile>LICENSE</PackageLicenseFile>
+        <Description>Java SE 8 Virtual Machine for .NET</Description>
     </PropertyGroup>
 
     <ItemGroup>

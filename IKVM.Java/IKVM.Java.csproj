@@ -5,8 +5,8 @@
         <PackageId>IKVM.Java</PackageId>
         <TargetFrameworks>net461;netcoreapp3.1</TargetFrameworks>
         <AssemblyName>IKVM.Java</AssemblyName>
-        <AssemblyTitle>IKVM.NET OpenJDK Platform</AssemblyTitle>
-        <Description>JVM for .NET</Description>
+        <AssemblyTitle>IKVM.NET Java Standard Edition 8 Platform</AssemblyTitle>
+        <Description>IKVM.NET Java Standard Edition 8 Platform</Description>
     </PropertyGroup>
 
     <ItemGroup>
