@@ -161,26 +161,13 @@ jobs:
           /p:RepositoryUrl="${env:GITHUB_SERVER_URL}/${env:GITHUB_REPOSITORY}.git" `
           /p:PackageProjectUrl="${env:GITHUB_SERVER_URL}/${env:GITHUB_REPOSITORY}" `
           IKVM.sln
-    - name: Run IKVM Tests (Framework 4.5)
-      uses: microsoft/vstest-action@v0.1.0
+    - name: Run Tests
+      run: gci **\bin\**\*.Tests.dll -Recurse | group { $_.Directory.BaseName } | %{ dotnet test $_.Group --blame --blame-crash --blame-hang -v 3 }
+    - name: Upload Test Results
+      uses: actions/upload-artifact@v3
       with:
-        testAssembly: |
-          **\net461\*.Tests.dll
-          !**\obj\**
-        searchFolder: .\
-        runInParallel: true
-        otherConsoleOptions: /Framework:Framework45
-        resultLogsArtifactName: vs-test-result-logs-net461
-    - name: Run IKVM Tests (Core 3.1)
-      uses: microsoft/vstest-action@v0.1.0
-      with:
-        testAssembly: |
-          **\netcoreapp3.1\*.Tests.dll
-          !**\obj\**
-        searchFolder: .\
-        runInParallel: true
-        otherConsoleOptions: /Framework:.NETCoreApp,Version=v3.1
-        resultLogsArtifactName: vs-test-result-logs-netcoreapp3.1
+        name: TestResults
+        path: TestResults
     - name: Create Release
       if: github.ref == 'refs/heads/master' || github.ref == 'refs/heads/main'
       uses: ncipollo/release-action@v1.10.0
