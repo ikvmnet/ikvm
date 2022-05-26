@@ -195,10 +195,12 @@ jobs:
         GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
     - name: Push NuGet (Azure DevOps)
       if: github.ref == 'refs/heads/master' || github.ref == 'refs/heads/main' || github.ref == 'refs/heads/develop'
-      run: dotnet nuget push build\pkg\*.nupkg --source $env:AZUREDEVOPS_REPOS --api-key $env:AZUREDEVOPS_TOKEN --skip-duplicate --no-symbols
+      run: |
+        dotnet nuget add source azuredevops $env:AZUREDEVOPS_REPOS --name az --username AZ --password $env:AZUREDEVOPS_TOKEN --store-password-in-clear-text
+        dotnet nuget push build\pkg\*.nupkg --source az --api-key az --skip-duplicate --no-symbols
       env:
         AZUREDEVOPS_REPOS: https://pkgs.dev.azure.com/ikvm-revived/ikvm/_packaging/ikvm-ci/nuget/v3/index.json
-        AZUREDEVOPS_TOKEN: ${{ secrets.AZUREDEVOPS_TOKEN }}
+        AZUREDEVOPS_TOKEN: ${{ secrets.AZUREDEVOPS_PAT }}
     - name: Push NuGet
       if: github.ref == 'refs/heads/master' || github.ref == 'refs/heads/main'
       run: dotnet nuget push build\pkg\*.nupkg --source $env:NUGET_REPOS --api-key $env:NUGET_TOKEN --skip-duplicate --no-symbols
