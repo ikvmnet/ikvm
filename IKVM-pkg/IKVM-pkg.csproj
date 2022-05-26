@@ -3,10 +3,11 @@
     <PropertyGroup>
         <PackageId>IKVM</PackageId>
         <TargetFrameworks>net461;netcoreapp3.1</TargetFrameworks>
-        <IncludeBuildOutput>false</IncludeBuildOutput>
+        <IncludeBuildOutput>true</IncludeBuildOutput>
         <TargetsForTfmSpecificContentInPackage>$(TargetsForTfmSpecificContentInPackage);CopyProjectReferencesToPackage</TargetsForTfmSpecificContentInPackage>
         <PackageLicenseFile>LICENSE</PackageLicenseFile>
         <Description>Java SE 8 Virtual Machine for .NET</Description>
+        <GenerateDocumentationFile>false</GenerateDocumentationFile>
     </PropertyGroup>
 
     <ItemGroup>
@@ -41,12 +42,72 @@
     </ItemGroup>
 
     <ItemGroup>
+        <LibProjectReference Include="ikvm-native-win-x64">
+            <ProjectFile>..\ikvm-native\ikvm-native-win-x64.vcxproj</ProjectFile>
+            <Platform>x64</Platform>
+            <Configuration>$(Configuration)</Configuration>
+            <OutputDir>runtimes\win-x64\native</OutputDir>
+        </LibProjectReference>
+        <LibProjectReference Include="ikvm-native-win-x86">
+            <ProjectFile>..\ikvm-native\ikvm-native-win-x86.vcxproj</ProjectFile>
+            <Platform>Win32</Platform>
+            <Configuration>$(Configuration)</Configuration>
+            <OutputDir>runtimes\win-x86\native</OutputDir>
+        </LibProjectReference>
+        <LibProjectReference Include="ikvm-native-linux-x64">
+            <ProjectFile>..\ikvm-native\ikvm-native-linux.vcxproj</ProjectFile>
+            <Platform>x64</Platform>
+            <Configuration>$(Configuration)</Configuration>
+            <OutputDir>runtimes\linux-x64\native</OutputDir>
+        </LibProjectReference>
+        <LibProjectReference Include="ikvm-native-linux-x86">
+            <ProjectFile>..\ikvm-native\ikvm-native-linux.vcxproj</ProjectFile>
+            <Platform>x86</Platform>
+            <Configuration>$(Configuration)</Configuration>
+            <OutputDir>runtimes\linux-x86\native</OutputDir>
+        </LibProjectReference>
+    </ItemGroup>
+
+    <ItemGroup>
         <Reference Remove="@(Reference)" />
+    </ItemGroup>
+
+    <ItemGroup>
+        <None Include="build\**\*.targets" Pack="true" PackagePath="build\%(RecursiveDir)%(Filename)%(Extension)" />
     </ItemGroup>
 
     <ItemGroup>
         <None Include="..\LICENSE" Pack="true" PackagePath="." />
     </ItemGroup>
+
+    <Target Name="GetLibProjectReferences">
+        <MSBuild Projects="@(LibProjectReference->'%(ProjectFile)')" Targets="GetTargetPath" Properties="Platform=%(LibProjectReference.Platform);Configuration=%(LibProjectReference.Configuration)">
+            <Output TaskParameter="TargetOutputs" ItemName="_LibProjectReferenceWithOutputPath" />
+        </MSBuild>
+        <ItemGroup>
+            <LibProjectReferenceWithOutputPath Include="@(_LibProjectReferenceWithOutputPath)">
+                <OutputPath>%(Identity)</OutputPath>
+            </LibProjectReferenceWithOutputPath>
+        </ItemGroup>
+    </Target>
+
+    <Target Name="GetItemsForLibProjectReferences" BeforeTargets="Build;AssignTargetPaths" DependsOnTargets="GetLibProjectReferences" Condition="'$(DesignTimeBuild)' != 'true'">
+        <ItemGroup>
+            <None Include="@(LibProjectReferenceWithOutputPath->'%(OutputPath)')">
+                <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+                <Link>%(LibProjectReferenceWithOutputPath.OutputDir)\%(LibProjectReferenceWithOutputPath.Filename)%(LibProjectReferenceWithOutputPath.Extension)</Link>
+                <Pack>true</Pack>
+                <PackagePath>%(LibProjectReferenceWithOutputPath.OutputDir)</PackagePath>
+                <PackageCopyToOutput>true</PackageCopyToOutput>
+            </None>
+        </ItemGroup>
+    </Target>
+
+    <Target Name="BuildLibProjectReferences" BeforeTargets="Compile" DependsOnTargets="GetLibProjectReferences" Condition="'$(DesignTimeBuild)' != 'true'">
+        <MSBuild Projects="%(LibProjectReferenceWithOutputPath.ProjectFile)" Targets="Build" Properties="Platform=%(LibProjectReferenceWithOutputPath.Platform);Configuration=%(LibProjectReferenceWithOutputPath.Configuration)">
+            <Output TaskParameter="TargetOutputs" ItemName="LibProjectReferencesCompileOutput" />
+        </MSBuild>
+    </Target>
 
     <Target Name="CopyProjectReferencesToPackage" DependsOnTargets="ResolveReferences">
         <ItemGroup>
