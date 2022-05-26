@@ -186,10 +186,16 @@ jobs:
         GITHUB_REPOS: https://nuget.pkg.github.com/${{ github.repository_owner }}/index.json
         GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
     - name: Create Release
-      if: github.ref_type == 'tag'
+      if: github.ref == 'refs/heads/master' || github.ref == 'refs/heads/main'
       uses: ncipollo/release-action@v1.10.0
       with:
         artifacts: build\pkg\*.nupkg,build\pkg\*.snupkg
         draft: true
         generateReleaseNotes: true
         token: ${{ secrets.GITHUB_TOKEN }}
+    - name: Push NuGet
+      if: github.ref == 'refs/heads/master' || github.ref == 'refs/heads/main'
+      run: dotnet nuget push build\pkg\*.nupkg --source $env:NUGET_REPOS --api-key $env:NUGET_TOKEN --skip-duplicate --no-symbols
+      env:
+        NUGET_REPOS: https://api.nuget.org/v3/index.json
+        NUGET_TOKEN: ${{ secrets.NUGET_TOKEN }}
