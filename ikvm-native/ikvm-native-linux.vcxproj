@@ -60,22 +60,26 @@
     <OutDir>$(ProjectDir)bin\$(Configuration)\linux-x64\</OutDir>
     <IntDir>$(ProjectDir)obj\$(Configuration)\linux-x64\</IntDir>
     <IncludePath>/usr/include;/usr/local/include</IncludePath>
+    <LocalRemoteCopySources>true</LocalRemoteCopySources>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x86'">
     <TargetName>libikvm-native</TargetName>
     <OutDir>$(ProjectDir)bin\$(Configuration)\linux-x86\</OutDir>
     <IntDir>$(ProjectDir)obj\$(Configuration)\linux-x86\</IntDir>
     <IncludePath>/usr/include;/usr/local/include</IncludePath>
+    <LocalRemoteCopySources>true</LocalRemoteCopySources>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'">
     <TargetName>libikvm-native</TargetName>
     <OutDir>$(ProjectDir)bin\$(Configuration)\linux-x64\</OutDir>
     <IntDir>$(ProjectDir)obj\$(Configuration)\linux-x64\</IntDir>
+    <LocalRemoteCopySources>true</LocalRemoteCopySources>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|x86'">
     <TargetName>libikvm-native</TargetName>
     <OutDir>$(ProjectDir)bin\$(Configuration)\linux-x86\</OutDir>
     <IntDir>$(ProjectDir)obj\$(Configuration)\linux-x86\</IntDir>
+    <LocalRemoteCopySources>true</LocalRemoteCopySources>
   </PropertyGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">
     <ClCompile />
