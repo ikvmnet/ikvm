@@ -185,6 +185,12 @@ jobs:
       env:
         GITHUB_REPOS: https://nuget.pkg.github.com/${{ github.repository_owner }}/index.json
         GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+    - name: Push NuGet (Azure DevOps)
+      if: github.ref == 'refs/heads/master' || github.ref == 'refs/heads/main' || github.ref == 'refs/heads/develop'
+      run: dotnet nuget push build\pkg\*.nupkg --source $env:AZUREDEVOPS_REPOS --api-key $env:AZUREDEVOPS_TOKEN --skip-duplicate --no-symbols
+      env:
+        AZUREDEVOPS_REPOS: https://pkgs.dev.azure.com/ikvm-revived/ikvm/_packaging/ikvm-ci/nuget/v3/index.json
+        AZUREDEVOPS_TOKEN: ${{ secrets.AZUREDEVOPS_TOKEN }}
     - name: Create Release
       if: github.ref == 'refs/heads/master' || github.ref == 'refs/heads/main'
       uses: ncipollo/release-action@v1.10.0
