@@ -44,9 +44,9 @@
   </ImportGroup>
   <PropertyGroup Label="UserMacros" />
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">
-    <OutDir>bin\$(Configuration)\win-x64\</OutDir>
+    <OutDir>$(ProjectDir)bin\$(Configuration)\win-x64\</OutDir>
     <TargetName>ikvm-native</TargetName>
-    <IntDir>obj\$(Configuration)\win-x64\</IntDir>
+    <IntDir>$(ProjectDir)obj\$(Configuration)\win-x64\</IntDir>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'">
     <OutDir>bin\$(Configuration)\win-x64\</OutDir>
@@ -58,7 +58,6 @@
       <WarningLevel>Level3</WarningLevel>
       <SDLCheck>true</SDLCheck>
       <PreprocessorDefinitions>_DEBUG;_CONSOLE;%(PreprocessorDefinitions);_WIN64</PreprocessorDefinitions>
-      <ConformanceMode>true</ConformanceMode>
       <LanguageStandard_C>stdc11</LanguageStandard_C>
     </ClCompile>
     <Link>
