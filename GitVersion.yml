@@ -6,10 +6,10 @@ minor-version-bump-message: '\+semver:\s?(breaking|minor)'
 patch-version-bump-message: '\+semver:\s?(fix|bug-?(fix)?|patch|increment(al)?|enhancements?)'
 branches:
   main:
-    is-mainline: true
+    is-mainline: false
     increment: Patch
   develop:
-    mode: ContinuousDelivery
-    increment: None
+    is-mainline: true
+    increment: Inherit
     tag: develop
     source-branches: [ 'main' ]
