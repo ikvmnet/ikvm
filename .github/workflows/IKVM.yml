@@ -110,6 +110,8 @@ jobs:
       uses: actions/setup-dotnet@v2
       with:
         dotnet-version: 6.0.x
+    - name: Setup WSL
+      uses: Vampire/setup-wsl@v1.2.0
     - name: Cache NuGet
       uses: actions/cache@v3
       with:
