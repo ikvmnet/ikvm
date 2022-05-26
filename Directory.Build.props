@@ -5,11 +5,17 @@
         <GenerateDocumentation>true</GenerateDocumentation>
     </PropertyGroup>
 
+    <ItemGroup>
+        <Authors Include="Jeroen Frijters" />
+        <Authors Include="Windward Studios" />
+        <Authors Include="Jerome Haltom" />
+    </ItemGroup>
+
     <PropertyGroup Label="Copyright Info">
         <ProductName>IKVM</ProductName>
-        <Authors>Jeroen Frijters,Windward Studios,Jerome Haltom</Authors>
+        <Authors>@(Authors, ',')</Authors>
         <CurrentYear Condition=" '$(CurrentYear)' == '' ">$([System.DateTime]::UtcNow.Year.ToString())</CurrentYear>
-        <Copyright>Copyright © $(CurrentYear) $(Authors)</Copyright>
+        <Copyright>Copyright © $(CurrentYear) @(Authors, ', ')</Copyright>
     </PropertyGroup>
 
     <PropertyGroup Label="Version Info">
