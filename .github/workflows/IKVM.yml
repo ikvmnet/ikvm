@@ -115,6 +115,7 @@ jobs:
       with:
         additional-packages:
           clang
+          gcc
     - name: Cache NuGet
       uses: actions/cache@v3
       with:
