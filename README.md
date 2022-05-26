@@ -32,3 +32,11 @@ Both of these issues are known and considered unacceptable.
   "Reference" version of the IKVM.Java project. Due to the circular dependency between IKVM.Java and IKVM.Runtime, IKVM.Runtime must build against a partial copy of IKVM.Java.
 + IKVM-pkg
   To untangle the ProjectReferences between the circular dependencies, this project generates the NuGet package output, including all of it's required dependencies, and the full version of the underlying IKVM assemblies.
+
+## Versioning
+
+IKVM uses the Semantic Versioning specification, with a unique twist. Since the project tracks compatibility with the Java SE specification, the major version is always the version of the JDK we claim to support. Otherwise major/breaking IKVM releases are denoted by an increment of the minor version. Other releases are denoted by an increment of the patch version.
+
+Semantic Versioning is accomplished automatically by GitVersion in Mainline mode. The `main` branch functions as the release branch. Every commit to main results in an increment of the patch version and a release. The `develop` branch represents a prerelease staging area. Builds within the `develop` branch inherit the NEXT version number of the `main` branch, with a prerelease tag followed by the number of commit separating develop from the last release.
+
+Increases in the major and minor version are accomplished manually by introducing a commit with a message containing a line such as `+semver: major` or `+semver: minor`. The process of creating a new major or minor release is simply to bump the version with the introduction of a commit message. The GitHub Actions should automatically generate the git tag and GitHub release, and publish the proper NuGet packages to the proper places.
