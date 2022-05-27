@@ -82,24 +82,24 @@
     <LocalRemoteCopySources>true</LocalRemoteCopySources>
   </PropertyGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">
-    <ClCompile />
     <Link>
       <LibraryDependencies>dl</LibraryDependencies>
     </Link>
   </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x86'">
-    <ClCompile />
     <Link>
       <LibraryDependencies>dl</LibraryDependencies>
     </Link>
   </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'">
-    <ClCompile />
+    <Link>
+      <LibraryDependencies>dl</LibraryDependencies>
+    </Link>
   </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Release|x86'">
-    <ClCompile>
-      <AdditionalIncludeDirectories>%(ClCompile.AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
-    </ClCompile>
+    <Link>
+      <LibraryDependencies>dl</LibraryDependencies>
+    </Link>
   </ItemDefinitionGroup>
   <ItemGroup>
     <ClCompile Include="jni.c" />
