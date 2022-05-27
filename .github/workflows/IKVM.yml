@@ -261,10 +261,11 @@ jobs:
     - name: Create Release
       uses: ncipollo/release-action@v1.10.0
       with:
-        tag: ${env:GitVersion_Semver}
+        tag: ${{ steps.GitVersion.outputs.semVer }}
         artifacts: build\nuget\*.nupkg,build\nuget\*.snupkg,build\tools\*.zip
         draft: true
         generateReleaseNotes: true
+        prerelease: ${{ github.event.head_commit.message == '+prerelease' && github.ref == 'refs/heads/develop' }}
         token: ${{ secrets.GITHUB_TOKEN }}
     - name: Push NuGet (GitHub)
       shell: pwsh
