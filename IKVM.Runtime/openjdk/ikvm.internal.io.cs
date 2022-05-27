@@ -9,7 +9,7 @@ static class Java_ikvm_internal_io_FileStreamExtensions
 #if NET461
         return new FileStream(path, mode, rights, share, bufferSize, options);
 #else
-        return FileSystemAclExtensions.Create(new FileInfo(path), mode, rights, share, bufferSize, options, null);
+        return FileSystemAclExtensions.Create(new FileInfo(path), mode, rights, share, bufferSize, options, new FileSecurity());
 #endif
     }
 
