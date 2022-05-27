@@ -235,11 +235,14 @@ jobs:
       with:
         name: tools
         path: build
+    - name: Compress Tools
+      shell: pwsh
+      run: cd build; gi tools/*/* | group { $_.Parent.Name } | %{ $tfm = $_.Name; $_.Group | %{ $rid=$_.Name; Push-Location "tools/$tfm/$rid"; zip -r "../../tools-$tfm-$rid.zip" .; Pop-Location  } }
     - name: Create Release
       if: github.ref == 'refs/heads/master' || github.ref == 'refs/heads/main'
       uses: ncipollo/release-action@v1.10.0
       with:
-        artifacts: build\nuget\*.nupkg,build\nuget\*.snupkg
+        artifacts: build\nuget\*.nupkg,build\nuget\*.snupkg,build\tools\*.zip
         draft: true
         generateReleaseNotes: true
         token: ${{ secrets.GITHUB_TOKEN }}
