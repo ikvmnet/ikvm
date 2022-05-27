@@ -114,7 +114,6 @@ jobs:
       uses: Vampire/setup-wsl@v1.2.0
       with:
         additional-packages:
-          clang
           gcc
           g++
     - name: Cache NuGet
@@ -256,8 +255,6 @@ jobs:
     - name: Compress Tools
       shell: pwsh
       run: cd build && gi tools/*/* | group { $_.Parent.Name } | %{ $tfm = $_.Name; $_.Group | %{ $rid=$_.Name; Push-Location "tools/$tfm/$rid"; zip -r "../../ikvm-${env:GitVersion_SemVer}-tools-$tfm-$rid.zip" .; Pop-Location  } }
-      env:
-        GitVersion_SemVer: ${{ steps.GitVersion.outputs.semVer }}
     - name: Create Release
       if: github.ref == 'refs/heads/master' || github.ref == 'refs/heads/main' || github.event.head_commit.message == '+prerelease'
       uses: ncipollo/release-action@v1.10.0
