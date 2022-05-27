@@ -203,7 +203,7 @@ jobs:
         name: TestResults-linux
         path: TestResults
   release:
-    name: Test IKVM (Windows)
+    name: Release
     needs:
     - test-ikvm-windows
     - test-ikvm-linux
