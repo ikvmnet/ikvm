@@ -229,7 +229,7 @@ jobs:
       uses: actions/download-artifact@v3
       with:
         name: nuget
-        path: build
+        path: build/nuget
     - name: Download Tools
       uses: actions/download-artifact@v3
       with:
