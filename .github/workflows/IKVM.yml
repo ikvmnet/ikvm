@@ -256,12 +256,14 @@ jobs:
         token: ${{ secrets.GITHUB_TOKEN }}
     - name: Push NuGet (GitHub)
       if: github.ref == 'refs/heads/master' || github.ref == 'refs/heads/main' || github.ref == 'refs/heads/develop'
+      shell: pwsh
       run: dotnet nuget push build\nuget\*.nupkg --source $env:GITHUB_REPOS --api-key $env:GITHUB_TOKEN --skip-duplicate --no-symbols
       env:
         GITHUB_REPOS: https://nuget.pkg.github.com/${{ github.repository_owner }}/index.json
         GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
     - name: Push NuGet (Azure DevOps)
       if: github.ref == 'refs/heads/master' || github.ref == 'refs/heads/main' || github.ref == 'refs/heads/develop'
+      shell: pwsh
       run: |
         dotnet nuget add source $env:AZUREDEVOPS_REPOS --name az --username az --password $env:AZUREDEVOPS_TOKEN --store-password-in-clear-text
         dotnet nuget push build\nuget\*.nupkg --source az --api-key az --skip-duplicate --no-symbols
@@ -270,6 +272,7 @@ jobs:
         AZUREDEVOPS_TOKEN: ${{ secrets.AZUREDEVOPS_PAT }}
     - name: Push NuGet
       if: github.ref == 'refs/heads/master' || github.ref == 'refs/heads/main'
+      shell: pwsh
       run: dotnet nuget push build\nuget\*.nupkg --source $env:NUGET_REPOS --api-key $env:NUGET_TOKEN --skip-duplicate --no-symbols
       env:
         NUGET_REPOS: https://api.nuget.org/v3/index.json
