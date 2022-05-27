@@ -182,7 +182,7 @@ jobs:
       uses: actions/download-artifact@v3
       with:
         name: tests
-        path: build
+        path: build/tests
     - name: Run Tests
       shell: pwsh
       run: gci build\tests\**\*.Tests.dll -Recurse | group { $_.Directory.BaseName } | %{ dotnet test $_.Group --blame --blame-crash --blame-hang -v 3 --results-directory .\TestResults }
@@ -209,7 +209,7 @@ jobs:
       uses: actions/download-artifact@v3
       with:
         name: tests
-        path: build
+        path: build/tests
     - name: Run Tests
       shell: pwsh
       run: gci build\tests\**\*.Tests.dll -Recurse | group { $_.Directory.BaseName } | %{ dotnet test $_.Group --blame --blame-crash --blame-hang -v 3 --results-directory .\TestResults }
