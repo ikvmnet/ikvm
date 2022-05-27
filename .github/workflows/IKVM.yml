@@ -83,10 +83,10 @@ jobs:
       with:
         name: openjdk8-build-linux-x86_64-normal-server-release
         path: openjdk8/build/openjdk8-build-linux-x86_64-normal-server-release.zip
-  build-ikvm-windows:
+  build-ikvm:
     name: Build IKVM (Windows)
     needs:
-      build-openjdk8
+    - build-openjdk8
     runs-on: windows-latest
     steps:
     - name: Checkout Source
@@ -159,27 +159,66 @@ jobs:
       with:
         name: tools
         path: build/tools
-    - name: Build Solution
-      run: |
-        msbuild /m:1 `
-          /p:ContinuousIntegrationBuild=true `
-          /p:Configuration="Release" `
-          /p:Platform="Any CPU" `
-          /p:Version=${env:GitVersion_FullSemVer} `
-          /p:AssemblyVersion=${env:GitVersion_AssemblyFileVer} `
-          /p:AssemblyInformationalVersion=${env:GitVersion_InformationalVersion} `
-          /p:FileVersion=${env:GitVersion_AssemblySemFileVer} `
-          /p:PackageVersion=${env:GitVersion_NuGetVersionV2} `
-          /p:RepositoryUrl="${env:GITHUB_SERVER_URL}/${env:GITHUB_REPOSITORY}.git" `
-          /p:PackageProjectUrl="${env:GITHUB_SERVER_URL}/${env:GITHUB_REPOSITORY}" `
-          IKVM.sln
+    - name: Upload Tests
+      uses: actions/upload-artifact@v3
+      with:
+        name: tests
+        path: build/tests
+  test-ikvm-windows:
+    name: Test IKVM (Windows)
+    needs:
+    - build-ikvm
+    runs-on: windows-latest
+    steps:
+    - name: Download IKVM Tests
+      uses: actions/download-artifact@v3
+      with:
+        name: tests
+        path: build
     - name: Run Tests
-      run: gci **\bin\**\*.Tests.dll -Recurse | group { $_.Directory.BaseName } | %{ dotnet test $_.Group --blame --blame-crash --blame-hang -v 3 -r TestResults }
+      shell: pwsh
+      run: gci build\tests\**\*.Tests.dll -Recurse | group { $_.Directory.BaseName } | %{ dotnet test $_.Group --blame --blame-crash --blame-hang -v 3 -r TestResults }
     - name: Upload Test Results
       uses: actions/upload-artifact@v3
       with:
-        name: TestResults
+        name: TestResults-windows
         path: TestResults
+  test-ikvm-linux:
+    name: Test IKVM (Linux)
+    needs:
+    - build-ikvm
+    runs-on: ubuntu-latest
+    steps:
+    - name: Download IKVM Tests
+      uses: actions/download-artifact@v3
+      with:
+        name: tests
+        path: build
+    - name: Run Tests
+      shell: pwsh
+      run: gci build\tests\**\*.Tests.dll -Recurse | group { $_.Directory.BaseName } | %{ dotnet test $_.Group --blame --blame-crash --blame-hang -v 3 -r TestResults }
+    - name: Upload Test Results
+      uses: actions/upload-artifact@v3
+      with:
+        name: TestResults-linux
+        path: TestResults
+  release:
+    name: Test IKVM (Windows)
+    needs:
+    - test-ikvm-windows
+    - test-ikvm-linux
+    runs-on: ubuntu-latest
+    steps:
+    - name: Download NuGet Packages
+      uses: actions/download-artifact@v3
+      with:
+        name: nuget
+        path: build
+    - name: Download Tools
+      uses: actions/download-artifact@v3
+      with:
+        name: tools
+        path: build
     - name: Create Release
       if: github.ref == 'refs/heads/master' || github.ref == 'refs/heads/main'
       uses: ncipollo/release-action@v1.10.0
