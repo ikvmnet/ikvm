@@ -27,18 +27,6 @@
             <ReferenceOutputAssembly>True</ReferenceOutputAssembly>
             <PrivateAssets>all</PrivateAssets>
         </ProjectReference>
-        <ProjectReference Include="..\ikvm\ikvm.csproj">
-            <ReferenceOutputAssembly>True</ReferenceOutputAssembly>
-            <PrivateAssets>all</PrivateAssets>
-        </ProjectReference>
-        <ProjectReference Include="..\ikvmc\ikvmc.csproj">
-            <ReferenceOutputAssembly>True</ReferenceOutputAssembly>
-            <PrivateAssets>all</PrivateAssets>
-        </ProjectReference>
-        <ProjectReference Include="..\ikvmstub\ikvmstub.csproj">
-            <ReferenceOutputAssembly>True</ReferenceOutputAssembly>
-            <PrivateAssets>all</PrivateAssets>
-        </ProjectReference>
     </ItemGroup>
 
     <ItemGroup>
