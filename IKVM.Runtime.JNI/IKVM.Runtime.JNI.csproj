@@ -34,12 +34,6 @@
             <Configuration>$(Configuration)</Configuration>
             <OutputDir>runtimes\linux-x64\native</OutputDir>
         </LibProjectReference>
-        <LibProjectReference Include="ikvm-native-linux-x86">
-            <ProjectFile>..\ikvm-native\ikvm-native-linux.vcxproj</ProjectFile>
-            <Platform>x86</Platform>
-            <Configuration>$(Configuration)</Configuration>
-            <OutputDir>runtimes\linux-x86\native</OutputDir>
-        </LibProjectReference>
     </ItemGroup>
 
     <ItemGroup>

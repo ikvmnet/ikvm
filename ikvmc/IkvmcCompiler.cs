@@ -280,21 +280,11 @@ namespace ikvmc
 
         static string GetVersionAndCopyrightInfo()
         {
-            System.Reflection.Assembly asm = typeof(IkvmcCompiler).Assembly;
-            object[] desc = asm.GetCustomAttributes(typeof(System.Reflection.AssemblyTitleAttribute), false);
-            if (desc.Length == 1)
-            {
-                object[] copyright = asm.GetCustomAttributes(typeof(System.Reflection.AssemblyCopyrightAttribute), false);
-                if (copyright.Length == 1)
-                {
-                    return string.Format("{0} version {1}{2}{3}{2}http://www.ikvm.net/",
-                        ((System.Reflection.AssemblyTitleAttribute)desc[0]).Title,
-                        asm.GetName().Version,
-                        Environment.NewLine,
-                        ((System.Reflection.AssemblyCopyrightAttribute)copyright[0]).Copyright);
-                }
-            }
-            return "";
+            var asm = typeof(IkvmcCompiler).Assembly;
+            var desc = System.Reflection.CustomAttributeExtensions.GetCustomAttribute<System.Reflection.AssemblyTitleAttribute>(asm);
+            var copy = System.Reflection.CustomAttributeExtensions.GetCustomAttribute<System.Reflection.AssemblyCopyrightAttribute>(asm);
+            var info = System.Reflection.CustomAttributeExtensions.GetCustomAttribute<System.Reflection.AssemblyInformationalVersionAttribute>(asm);
+            return $"{desc.Title} ({info.InformationalVersion}){Environment.NewLine}{copy.Copyright}{Environment.NewLine}http://www.ikvm.org/";
         }
 
         private static void PrintHeader()
@@ -1065,7 +1055,7 @@ namespace ikvmc
 
         static void ResolveReferences(List<CompilerOptions> targets)
         {
-            Dictionary<string, Assembly> cache = new Dictionary<string, Assembly>();
+            Dictionary<string, IKVM.Reflection.Assembly> cache = new Dictionary<string, IKVM.Reflection.Assembly>();
             foreach (CompilerOptions target in targets)
             {
                 if (target.unresolvedReferences != null)
