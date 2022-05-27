@@ -177,7 +177,7 @@ jobs:
         path: build
     - name: Run Tests
       shell: pwsh
-      run: gci build\tests\**\*.Tests.dll -Recurse | group { $_.Directory.BaseName } | %{ dotnet test $_.Group --blame --blame-crash --blame-hang -v 3 -r TestResults }
+      run: gci build\tests\**\*.Tests.dll -Recurse | group { $_.Directory.BaseName } | %{ dotnet test $_.Group --blame --blame-crash --blame-hang -v 3 --results-directory .\TestResults }
     - name: Upload Test Results
       uses: actions/upload-artifact@v3
       with:
@@ -196,7 +196,7 @@ jobs:
         path: build
     - name: Run Tests
       shell: pwsh
-      run: gci build\tests\**\*.Tests.dll -Recurse | group { $_.Directory.BaseName } | %{ dotnet test $_.Group --blame --blame-crash --blame-hang -v 3 -r TestResults }
+      run: gci build\tests\**\*.Tests.dll -Recurse | group { $_.Directory.BaseName } | %{ dotnet test $_.Group --blame --blame-crash --blame-hang -v 3 --results-directory .\TestResults }
     - name: Upload Test Results
       uses: actions/upload-artifact@v3
       with:
