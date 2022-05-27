@@ -228,11 +228,21 @@ jobs:
         path: TestResults
   release:
     name: Release
+    if: github.ref == 'refs/heads/master' || github.ref == 'refs/heads/main' || ( github.event.head_commit.message == '+prerelease' && github.ref == 'refs/heads/develop' )
     needs:
     - test-ikvm-windows
     - test-ikvm-linux
     runs-on: ubuntu-latest
     steps:
+    - name: Install GitVersion
+      uses: gittools/actions/gitversion/setup@v0.9.13
+      with:
+        versionSpec: 5.x
+    - name: Execute GitVersion
+      id: GitVersion
+      uses: gittools/actions/gitversion/execute@v0.9.13
+      with:
+        useConfigFile: true
     - name: Download NuGet Packages
       uses: actions/download-artifact@v3
       with:
@@ -245,24 +255,24 @@ jobs:
         path: build/tools
     - name: Compress Tools
       shell: pwsh
-      run: cd build && gi tools/*/* | group { $_.Parent.Name } | %{ $tfm = $_.Name; $_.Group | %{ $rid=$_.Name; Push-Location "tools/$tfm/$rid"; zip -r "../../tools-$tfm-$rid.zip" .; Pop-Location  } }
+      run: cd build && gi tools/*/* | group { $_.Parent.Name } | %{ $tfm = $_.Name; $_.Group | %{ $rid=$_.Name; Push-Location "tools/$tfm/$rid"; zip -r "../../ikvm-${env:GitVersion_SemVer}-tools-$tfm-$rid.zip" .; Pop-Location  } }
+      env:
+        GitVersion_SemVer: ${{ steps.GitVersion.outputs.semVer }}
     - name: Create Release
-      if: github.ref == 'refs/heads/master' || github.ref == 'refs/heads/main'
       uses: ncipollo/release-action@v1.10.0
       with:
+        tag: ${env:GitVersion_Semver}
         artifacts: build\nuget\*.nupkg,build\nuget\*.snupkg,build\tools\*.zip
         draft: true
         generateReleaseNotes: true
         token: ${{ secrets.GITHUB_TOKEN }}
     - name: Push NuGet (GitHub)
-      if: github.ref == 'refs/heads/master' || github.ref == 'refs/heads/main' || github.ref == 'refs/heads/develop'
       shell: pwsh
       run: dotnet nuget push build\nuget\*.nupkg --source $env:GITHUB_REPOS --api-key $env:GITHUB_TOKEN --skip-duplicate --no-symbols
       env:
         GITHUB_REPOS: https://nuget.pkg.github.com/${{ github.repository_owner }}/index.json
         GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
     - name: Push NuGet (Azure DevOps)
-      if: github.ref == 'refs/heads/master' || github.ref == 'refs/heads/main' || github.ref == 'refs/heads/develop'
       shell: pwsh
       run: |
         dotnet nuget add source $env:AZUREDEVOPS_REPOS --name az --username az --password $env:AZUREDEVOPS_TOKEN --store-password-in-clear-text
@@ -271,7 +281,6 @@ jobs:
         AZUREDEVOPS_REPOS: https://pkgs.dev.azure.com/ikvm-revived/ikvm/_packaging/ikvm-ci/nuget/v3/index.json
         AZUREDEVOPS_TOKEN: ${{ secrets.AZUREDEVOPS_PAT }}
     - name: Push NuGet
-      if: github.ref == 'refs/heads/master' || github.ref == 'refs/heads/main'
       shell: pwsh
       run: dotnet nuget push build\nuget\*.nupkg --source $env:NUGET_REPOS --api-key $env:NUGET_TOKEN --skip-duplicate --no-symbols
       env:
