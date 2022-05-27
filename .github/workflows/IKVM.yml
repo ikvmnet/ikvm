@@ -234,10 +234,10 @@ jobs:
       uses: actions/download-artifact@v3
       with:
         name: tools
-        path: build
+        path: build/tools
     - name: Compress Tools
       shell: pwsh
-      run: cd build; gi tools/*/* | group { $_.Parent.Name } | %{ $tfm = $_.Name; $_.Group | %{ $rid=$_.Name; Push-Location "tools/$tfm/$rid"; zip -r "../../tools-$tfm-$rid.zip" .; Pop-Location  } }
+      run: cd build && gi tools/*/* | group { $_.Parent.Name } | %{ $tfm = $_.Name; $_.Group | %{ $rid=$_.Name; Push-Location "tools/$tfm/$rid"; zip -r "../../tools-$tfm-$rid.zip" .; Pop-Location  } }
     - name: Create Release
       if: github.ref == 'refs/heads/master' || github.ref == 'refs/heads/main'
       uses: ncipollo/release-action@v1.10.0
