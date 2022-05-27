@@ -228,7 +228,7 @@ jobs:
         path: TestResults
   release:
     name: Release
-    if: github.ref == 'refs/heads/master' || github.ref == 'refs/heads/main' || ( github.event.head_commit.message == '+prerelease' && github.ref == 'refs/heads/develop' )
+    if: github.ref == 'refs/heads/master' || github.ref == 'refs/heads/main' || github.ref == 'refs/heads/develop'
     needs:
     - test-ikvm-windows
     - test-ikvm-linux
@@ -259,13 +259,14 @@ jobs:
       env:
         GitVersion_SemVer: ${{ steps.GitVersion.outputs.semVer }}
     - name: Create Release
+      if: github.ref == 'refs/heads/master' || github.ref == 'refs/heads/main' || github.event.head_commit.message == '+prerelease'
       uses: ncipollo/release-action@v1.10.0
       with:
         tag: ${{ steps.GitVersion.outputs.semVer }}
         artifacts: build\nuget\*.nupkg,build\nuget\*.snupkg,build\tools\*.zip
         draft: true
         generateReleaseNotes: true
-        prerelease: ${{ github.event.head_commit.message == '+prerelease' && github.ref == 'refs/heads/develop' }}
+        prerelease: ${{ github.ref == 'refs/heads/develop' }}
         token: ${{ secrets.GITHUB_TOKEN }}
     - name: Push NuGet (GitHub)
       shell: pwsh
@@ -282,6 +283,7 @@ jobs:
         AZUREDEVOPS_REPOS: https://pkgs.dev.azure.com/ikvm-revived/ikvm/_packaging/ikvm-ci/nuget/v3/index.json
         AZUREDEVOPS_TOKEN: ${{ secrets.AZUREDEVOPS_PAT }}
     - name: Push NuGet
+      if: github.ref == 'refs/heads/master' || github.ref == 'refs/heads/main' || github.event.head_commit.message == '+prerelease'
       shell: pwsh
       run: dotnet nuget push build\nuget\*.nupkg --source $env:NUGET_REPOS --api-key $env:NUGET_TOKEN --skip-duplicate --no-symbols
       env:
