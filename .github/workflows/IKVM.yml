@@ -135,7 +135,7 @@ jobs:
       working-directory: openjdk8/build
     - name: NuGet Restore
       run: dotnet restore IKVM.sln
-    - name: Build IKVM Artifacts
+    - name: Build Artifacts
       run: |
         msbuild /m:1 `
           /p:ContinuousIntegrationBuild=true `
@@ -149,12 +149,17 @@ jobs:
           /p:RepositoryUrl="${env:GITHUB_SERVER_URL}/${env:GITHUB_REPOSITORY}.git" `
           /p:PackageProjectUrl="${env:GITHUB_SERVER_URL}/${env:GITHUB_REPOSITORY}" `
           IKVM.artifacts.msbuildproj
-    - name: Upload IKVM Packages
+    - name: Upload NuGet Packages
       uses: actions/upload-artifact@v3
       with:
-        name: pkg
-        path: build/pkg
-    - name: Build IKVM Solution
+        name: nuget
+        path: build/nuget
+    - name: Upload Tools
+      uses: actions/upload-artifact@v3
+      with:
+        name: tools
+        path: build/tools
+    - name: Build Solution
       run: |
         msbuild /m:1 `
           /p:ContinuousIntegrationBuild=true `
