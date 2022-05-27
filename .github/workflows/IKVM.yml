@@ -170,6 +170,14 @@ jobs:
     - build-ikvm
     runs-on: windows-latest
     steps:
+    - name: Setup .NET 3.1
+      uses: actions/setup-dotnet@v2
+      with:
+        dotnet-version: 3.1.x
+    - name: Setup .NET 6.0
+      uses: actions/setup-dotnet@v2
+      with:
+        dotnet-version: 6.0.x
     - name: Download IKVM Tests
       uses: actions/download-artifact@v3
       with:
@@ -189,6 +197,14 @@ jobs:
     - build-ikvm
     runs-on: ubuntu-latest
     steps:
+    - name: Setup .NET 3.1
+      uses: actions/setup-dotnet@v2
+      with:
+        dotnet-version: 3.1.x
+    - name: Setup .NET 6.0
+      uses: actions/setup-dotnet@v2
+      with:
+        dotnet-version: 6.0.x
     - name: Download IKVM Tests
       uses: actions/download-artifact@v3
       with:
