@@ -22,6 +22,7 @@
   
 */
 using System;
+using System.Collections.Concurrent;
 using System.Reflection;
 using System.Text;
 
@@ -35,6 +36,8 @@ namespace IKVM.Runtime.Vfs
     /// </summary>
     sealed class VfsAssemblyDirectory : VfsDirectory
     {
+
+        readonly ConcurrentDictionary<Assembly, VfsDirectory> directories = new ConcurrentDictionary<Assembly, VfsDirectory>();
 
         /// <summary>
         /// Initializes a new instance.
@@ -184,7 +187,7 @@ namespace IKVM.Runtime.Vfs
                 foreach (var assemblyName in Context.GetAssemblyNames())
                     if (Context.GetAssembly(assemblyName) is Assembly assembly)
                         if (assembly.ManifestModule.ModuleVersionId == guid && !ReflectUtil.IsDynamicAssembly(assembly))
-                            return CreateAssemblyDirectory(assembly);
+                            return directories.GetOrAdd(assembly, CreateAssemblyDirectory);
 
                 return null;
             }
@@ -196,7 +199,7 @@ namespace IKVM.Runtime.Vfs
                 {
                     var assembly = SafeGetAssembly(assemblyName);
                     if (assembly != null && !ReflectUtil.IsDynamicAssembly(assembly) && name == GetName(assembly.GetName()))
-                        return CreateAssemblyDirectory(assembly);
+                        return directories.GetOrAdd(assembly, CreateAssemblyDirectory);
                 }
 
                 return null;

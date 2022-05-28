@@ -610,13 +610,13 @@ namespace ikvmc
                     }
                     else if (s.StartsWith("-resource:"))
                     {
-                        string[] spec = s.Substring(10).Split('=');
+                        var spec = s.Substring(10).Split('=');
                         if (spec.Length != 2)
-                        {
                             throw new FatalCompilerErrorException(Message.InvalidOptionSyntax, s);
-                        }
-                        FileInfo fileInfo = GetFileInfo(spec[1]);
-                        options.GetResourcesJar().Add(spec[0].TrimStart('/'), ReadAllBytes(fileInfo), fileInfo);
+
+                        var fileInfo = GetFileInfo(spec[1]);
+                        var fileName = spec[0].TrimStart('/').TrimEnd('/');
+                        options.GetResourcesJar().Add(fileName, ReadAllBytes(fileInfo), fileInfo);
                     }
                     else if (s.StartsWith("-externalresource:"))
                     {
@@ -1329,6 +1329,7 @@ namespace ikvmc
                     // include as resource
                     // extract the resource name by chopping off the base directory
                     string name = file.Substring(baseDir.FullName.Length);
+                    Console.WriteLine("ADDING ZIP HERE");
                     name = name.TrimStart(Path.DirectorySeparatorChar).Replace('\\', '/');
                     options.GetResourcesJar().Add(name, ReadAllBytes(fileInfo), fileInfo);
                 }

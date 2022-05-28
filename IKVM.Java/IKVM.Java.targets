@@ -762,6 +762,9 @@
             <FileWrites Include="$(_BuildJavaAssemblyCoreTempPath)$(JavaAssemblyName);$(_BuildJavaAssemblyCoreTempPath)$(JavaDebugSymbolsName)" />
             <FileWrites Include="$(JavaAssemblyPath);$(JavaDebugSymbolsPath)" />
         </ItemGroup>
+
+        <!-- Forces the merge to run again. This is sort of a hack. -->
+        <Touch Files="$(_MergeJavaAssemblyCoreForceBuildFile)" AlwaysCreate="true" ContinueOnError="true" />
     </Target>
 
     <PropertyGroup>
@@ -808,9 +811,9 @@
     <PropertyGroup>
         <_MergeJavaAssemblyCoreForceBuildFile>$(IntermediateOutputPath)$(MSBuildThisFile).MergeJavaAssemblyCore.force</_MergeJavaAssemblyCoreForceBuildFile>
     </PropertyGroup>
-
+    
     <Target Name="MergeJavaAssemblyCore" DependsOnTargets="BuildJavaAssembly" Condition="'$(_MergeJavaAssemblyTimestampBeforeCompile)' != '$(_MergeJavaAssemblyTimestampAfterCompile)' Or Exists('$(_MergeJavaAssemblyCoreForceBuildFile)')">
-        <!-- Create a file which will force the next build to run this target if the previous build failed. 
+        <!-- Create a file which will force the next build to run this target if the previous build failed.
              Failure between this point and the point where intermediate outputs are moved will make CoreCompile not run again (up-to-date outputs).
              That in turn results in timestamps being equal, this target not running and untransformed assemblies being copied to the output. -->
         <Touch Files="$(_MergeJavaAssemblyCoreForceBuildFile)" AlwaysCreate="true" ContinueOnError="true" />

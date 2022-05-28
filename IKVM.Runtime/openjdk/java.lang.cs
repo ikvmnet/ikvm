@@ -36,10 +36,10 @@ using IKVM.Runtime.Vfs;
 
 static class Java_java_lang_Class
 {
-	public static java.lang.Class forName0(string name, bool initialize, java.lang.ClassLoader loader, java.lang.Class caller)
-	{
+    public static java.lang.Class forName0(string name, bool initialize, java.lang.ClassLoader loader, java.lang.Class caller)
+    {
 #if FIRST_PASS
-		return null;
+        return null;
 #else
 		//Console.WriteLine("forName: " + name + ", loader = " + loader);
 		TypeWrapper tw = null;
@@ -101,12 +101,12 @@ static class Java_java_lang_Class
 		}
 		return tw.ClassObject;
 #endif
-	}
+    }
 
-	public static byte[] getRawTypeAnnotations(java.lang.Class thisClass)
-	{
-		return TypeWrapper.FromClass(thisClass).GetRawTypeAnnotations();
-	}
+    public static byte[] getRawTypeAnnotations(java.lang.Class thisClass)
+    {
+        return TypeWrapper.FromClass(thisClass).GetRawTypeAnnotations();
+    }
 
 #if !FIRST_PASS
 	private sealed class ConstantPoolImpl : sun.reflect.ConstantPool
@@ -146,118 +146,118 @@ static class Java_java_lang_Class
 #endif
 
     public static object getConstantPool(java.lang.Class thisClass)
-	{
+    {
 #if FIRST_PASS
-		return null;
+        return null;
 #else
 		return new ConstantPoolImpl(TypeWrapper.FromClass(thisClass).GetConstantPool());
 #endif
-	}
+    }
 
-	public static bool isInstance(java.lang.Class thisClass, object obj)
-	{
-		return TypeWrapper.FromClass(thisClass).IsInstance(obj);
-	}
+    public static bool isInstance(java.lang.Class thisClass, object obj)
+    {
+        return TypeWrapper.FromClass(thisClass).IsInstance(obj);
+    }
 
-	public static bool isAssignableFrom(java.lang.Class thisClass, java.lang.Class otherClass)
-	{
+    public static bool isAssignableFrom(java.lang.Class thisClass, java.lang.Class otherClass)
+    {
 #if !FIRST_PASS
 		if (otherClass == null)
 		{
 			throw new java.lang.NullPointerException();
 		}
 #endif
-		return TypeWrapper.FromClass(otherClass).IsAssignableTo(TypeWrapper.FromClass(thisClass));
-	}
+        return TypeWrapper.FromClass(otherClass).IsAssignableTo(TypeWrapper.FromClass(thisClass));
+    }
 
-	public static bool isInterface(java.lang.Class thisClass)
-	{
-		return TypeWrapper.FromClass(thisClass).IsInterface;
-	}
+    public static bool isInterface(java.lang.Class thisClass)
+    {
+        return TypeWrapper.FromClass(thisClass).IsInterface;
+    }
 
-	public static bool isArray(java.lang.Class thisClass)
-	{
-		return TypeWrapper.FromClass(thisClass).IsArray;
-	}
+    public static bool isArray(java.lang.Class thisClass)
+    {
+        return TypeWrapper.FromClass(thisClass).IsArray;
+    }
 
-	public static bool isPrimitive(java.lang.Class thisClass)
-	{
-		return TypeWrapper.FromClass(thisClass).IsPrimitive;
-	}
+    public static bool isPrimitive(java.lang.Class thisClass)
+    {
+        return TypeWrapper.FromClass(thisClass).IsPrimitive;
+    }
 
-	public static string getName0(java.lang.Class thisClass)
-	{
-		TypeWrapper tw = TypeWrapper.FromClass(thisClass);
-		if (tw.IsPrimitive)
-		{
-			if (tw == PrimitiveTypeWrapper.BYTE)
-			{
-				return "byte";
-			}
-			else if (tw == PrimitiveTypeWrapper.CHAR)
-			{
-				return "char";
-			}
-			else if (tw == PrimitiveTypeWrapper.DOUBLE)
-			{
-				return "double";
-			}
-			else if (tw == PrimitiveTypeWrapper.FLOAT)
-			{
-				return "float";
-			}
-			else if (tw == PrimitiveTypeWrapper.INT)
-			{
-				return "int";
-			}
-			else if (tw == PrimitiveTypeWrapper.LONG)
-			{
-				return "long";
-			}
-			else if (tw == PrimitiveTypeWrapper.SHORT)
-			{
-				return "short";
-			}
-			else if (tw == PrimitiveTypeWrapper.BOOLEAN)
-			{
-				return "boolean";
-			}
-			else if (tw == PrimitiveTypeWrapper.VOID)
-			{
-				return "void";
-			}
-		}
-		if (tw.IsUnsafeAnonymous)
-		{
+    public static string getName0(java.lang.Class thisClass)
+    {
+        TypeWrapper tw = TypeWrapper.FromClass(thisClass);
+        if (tw.IsPrimitive)
+        {
+            if (tw == PrimitiveTypeWrapper.BYTE)
+            {
+                return "byte";
+            }
+            else if (tw == PrimitiveTypeWrapper.CHAR)
+            {
+                return "char";
+            }
+            else if (tw == PrimitiveTypeWrapper.DOUBLE)
+            {
+                return "double";
+            }
+            else if (tw == PrimitiveTypeWrapper.FLOAT)
+            {
+                return "float";
+            }
+            else if (tw == PrimitiveTypeWrapper.INT)
+            {
+                return "int";
+            }
+            else if (tw == PrimitiveTypeWrapper.LONG)
+            {
+                return "long";
+            }
+            else if (tw == PrimitiveTypeWrapper.SHORT)
+            {
+                return "short";
+            }
+            else if (tw == PrimitiveTypeWrapper.BOOLEAN)
+            {
+                return "boolean";
+            }
+            else if (tw == PrimitiveTypeWrapper.VOID)
+            {
+                return "void";
+            }
+        }
+        if (tw.IsUnsafeAnonymous)
+        {
 #if !FIRST_PASS
 			// for OpenJDK compatibility and debugging convenience we modify the class name to
 			// include the identity hashcode of the class object
 			return tw.Name + "/" + java.lang.System.identityHashCode(thisClass);
 #endif
-		}
-		return tw.Name;
-	}
+        }
+        return tw.Name;
+    }
 
-	public static string getSigName(java.lang.Class thisClass)
-	{
-		return TypeWrapper.FromClass(thisClass).SigName;
-	}
+    public static string getSigName(java.lang.Class thisClass)
+    {
+        return TypeWrapper.FromClass(thisClass).SigName;
+    }
 
-	public static java.lang.ClassLoader getClassLoader0(java.lang.Class thisClass)
-	{
-		return TypeWrapper.FromClass(thisClass).GetClassLoader().GetJavaClassLoader();
-	}
+    public static java.lang.ClassLoader getClassLoader0(java.lang.Class thisClass)
+    {
+        return TypeWrapper.FromClass(thisClass).GetClassLoader().GetJavaClassLoader();
+    }
 
-	public static java.lang.Class getSuperclass(java.lang.Class thisClass)
-	{
-		TypeWrapper super = TypeWrapper.FromClass(thisClass).BaseTypeWrapper;
-		return super != null ? super.ClassObject : null;
-	}
+    public static java.lang.Class getSuperclass(java.lang.Class thisClass)
+    {
+        TypeWrapper super = TypeWrapper.FromClass(thisClass).BaseTypeWrapper;
+        return super != null ? super.ClassObject : null;
+    }
 
-	public static java.lang.Class[] getInterfaces0(java.lang.Class thisClass)
-	{
+    public static java.lang.Class[] getInterfaces0(java.lang.Class thisClass)
+    {
 #if FIRST_PASS
-		return null;
+        return null;
 #else
 		TypeWrapper[] ifaces = TypeWrapper.FromClass(thisClass).Interfaces;
 		java.lang.Class[] interfaces = new java.lang.Class[ifaces.Length];
@@ -267,94 +267,94 @@ static class Java_java_lang_Class
 		}
 		return interfaces;
 #endif
-	}
+    }
 
-	public static java.lang.Class getComponentType(java.lang.Class thisClass)
-	{
-		TypeWrapper tw = TypeWrapper.FromClass(thisClass);
-		return tw.IsArray ? tw.ElementTypeWrapper.ClassObject : null;
-	}
+    public static java.lang.Class getComponentType(java.lang.Class thisClass)
+    {
+        TypeWrapper tw = TypeWrapper.FromClass(thisClass);
+        return tw.IsArray ? tw.ElementTypeWrapper.ClassObject : null;
+    }
 
-	public static int getModifiers(java.lang.Class thisClass)
-	{
-		// the 0x7FFF mask comes from JVM_ACC_WRITTEN_FLAGS in hotspot\src\share\vm\utilities\accessFlags.hpp
-		// masking out ACC_SUPER comes from instanceKlass::compute_modifier_flags() in hotspot\src\share\vm\oops\instanceKlass.cpp
-		const int mask = 0x7FFF & (int)~IKVM.Attributes.Modifiers.Super;
-		return (int)TypeWrapper.FromClass(thisClass).ReflectiveModifiers & mask;
-	}
+    public static int getModifiers(java.lang.Class thisClass)
+    {
+        // the 0x7FFF mask comes from JVM_ACC_WRITTEN_FLAGS in hotspot\src\share\vm\utilities\accessFlags.hpp
+        // masking out ACC_SUPER comes from instanceKlass::compute_modifier_flags() in hotspot\src\share\vm\oops\instanceKlass.cpp
+        const int mask = 0x7FFF & (int)~IKVM.Attributes.Modifiers.Super;
+        return (int)TypeWrapper.FromClass(thisClass).ReflectiveModifiers & mask;
+    }
 
-	public static object[] getSigners(java.lang.Class thisClass)
-	{
+    public static object[] getSigners(java.lang.Class thisClass)
+    {
 #if FIRST_PASS
-		return null;
+        return null;
 #else
 		return thisClass.signers;
 #endif
-	}
+    }
 
-	public static void setSigners(java.lang.Class thisClass, object[] signers)
-	{
+    public static void setSigners(java.lang.Class thisClass, object[] signers)
+    {
 #if !FIRST_PASS
 		thisClass.signers = signers;
 #endif
-	}
+    }
 
-	public static object[] getEnclosingMethod0(java.lang.Class thisClass)
-	{
-		try
-		{
-			TypeWrapper tw = TypeWrapper.FromClass(thisClass);
-			tw.Finish();
-			string[] enc = tw.GetEnclosingMethod();
-			if (enc == null)
-			{
-				return null;
-			}
-			return new object[] { tw.GetClassLoader().LoadClassByDottedName(enc[0]).ClassObject, enc[1], enc[2] == null ? null : enc[2].Replace('.', '/') };
-		}
-		catch (RetargetableJavaException x)
-		{
-			throw x.ToJava();
-		}
-	}
+    public static object[] getEnclosingMethod0(java.lang.Class thisClass)
+    {
+        try
+        {
+            TypeWrapper tw = TypeWrapper.FromClass(thisClass);
+            tw.Finish();
+            string[] enc = tw.GetEnclosingMethod();
+            if (enc == null)
+            {
+                return null;
+            }
+            return new object[] { tw.GetClassLoader().LoadClassByDottedName(enc[0]).ClassObject, enc[1], enc[2] == null ? null : enc[2].Replace('.', '/') };
+        }
+        catch (RetargetableJavaException x)
+        {
+            throw x.ToJava();
+        }
+    }
 
-	public static java.lang.Class getDeclaringClass0(java.lang.Class thisClass)
-	{
-		try
-		{
-			TypeWrapper wrapper = TypeWrapper.FromClass(thisClass);
-			wrapper.Finish();
-			TypeWrapper decl = wrapper.DeclaringTypeWrapper;
-			if (decl == null)
-			{
-				return null;
-			}
-			decl = decl.EnsureLoadable(wrapper.GetClassLoader());
-			if (!decl.IsAccessibleFrom(wrapper))
-			{
-				throw new IllegalAccessError(string.Format("tried to access class {0} from class {1}", decl.Name, wrapper.Name));
-			}
-			decl.Finish();
-			TypeWrapper[] declInner = decl.InnerClasses;
-			for (int i = 0; i < declInner.Length; i++)
-			{
-				if (declInner[i].Name == wrapper.Name && declInner[i].EnsureLoadable(decl.GetClassLoader()) == wrapper)
-				{
-					return decl.ClassObject;
-				}
-			}
-			throw new IncompatibleClassChangeError(string.Format("{0} and {1} disagree on InnerClasses attribute", decl.Name, wrapper.Name));
-		}
-		catch (RetargetableJavaException x)
-		{
-			throw x.ToJava();
-		}
-	}
+    public static java.lang.Class getDeclaringClass0(java.lang.Class thisClass)
+    {
+        try
+        {
+            TypeWrapper wrapper = TypeWrapper.FromClass(thisClass);
+            wrapper.Finish();
+            TypeWrapper decl = wrapper.DeclaringTypeWrapper;
+            if (decl == null)
+            {
+                return null;
+            }
+            decl = decl.EnsureLoadable(wrapper.GetClassLoader());
+            if (!decl.IsAccessibleFrom(wrapper))
+            {
+                throw new IllegalAccessError(string.Format("tried to access class {0} from class {1}", decl.Name, wrapper.Name));
+            }
+            decl.Finish();
+            TypeWrapper[] declInner = decl.InnerClasses;
+            for (int i = 0; i < declInner.Length; i++)
+            {
+                if (declInner[i].Name == wrapper.Name && declInner[i].EnsureLoadable(decl.GetClassLoader()) == wrapper)
+                {
+                    return decl.ClassObject;
+                }
+            }
+            throw new IncompatibleClassChangeError(string.Format("{0} and {1} disagree on InnerClasses attribute", decl.Name, wrapper.Name));
+        }
+        catch (RetargetableJavaException x)
+        {
+            throw x.ToJava();
+        }
+    }
 
-	public static java.security.ProtectionDomain getProtectionDomain0(java.lang.Class thisClass)
-	{
+    public static java.security.ProtectionDomain getProtectionDomain0(java.lang.Class thisClass)
+    {
 #if FIRST_PASS
-		return null;
+        return null;
 #else
 		TypeWrapper wrapper = TypeWrapper.FromClass(thisClass);
 		if (wrapper.IsArray)
@@ -380,48 +380,48 @@ static class Java_java_lang_Class
 		}
 		return pd;
 #endif
-	}
+    }
 
-	public static java.lang.Class getPrimitiveClass(string name)
-	{
-		// note that this method isn't used anymore (because it is an intrinsic (during core class library compilation))
-		// it still remains for compat because it might be invoked through reflection by evil code
-		switch (name)
-		{
-			case "byte":
-				return PrimitiveTypeWrapper.BYTE.ClassObject;
-			case "char":
-				return PrimitiveTypeWrapper.CHAR.ClassObject;
-			case "double":
-				return PrimitiveTypeWrapper.DOUBLE.ClassObject;
-			case "float":
-				return PrimitiveTypeWrapper.FLOAT.ClassObject;
-			case "int":
-				return PrimitiveTypeWrapper.INT.ClassObject;
-			case "long":
-				return PrimitiveTypeWrapper.LONG.ClassObject;
-			case "short":
-				return PrimitiveTypeWrapper.SHORT.ClassObject;
-			case "boolean":
-				return PrimitiveTypeWrapper.BOOLEAN.ClassObject;
-			case "void":
-				return PrimitiveTypeWrapper.VOID.ClassObject;
-			default:
-				throw new ArgumentException(name);
-		}
-	}
+    public static java.lang.Class getPrimitiveClass(string name)
+    {
+        // note that this method isn't used anymore (because it is an intrinsic (during core class library compilation))
+        // it still remains for compat because it might be invoked through reflection by evil code
+        switch (name)
+        {
+            case "byte":
+                return PrimitiveTypeWrapper.BYTE.ClassObject;
+            case "char":
+                return PrimitiveTypeWrapper.CHAR.ClassObject;
+            case "double":
+                return PrimitiveTypeWrapper.DOUBLE.ClassObject;
+            case "float":
+                return PrimitiveTypeWrapper.FLOAT.ClassObject;
+            case "int":
+                return PrimitiveTypeWrapper.INT.ClassObject;
+            case "long":
+                return PrimitiveTypeWrapper.LONG.ClassObject;
+            case "short":
+                return PrimitiveTypeWrapper.SHORT.ClassObject;
+            case "boolean":
+                return PrimitiveTypeWrapper.BOOLEAN.ClassObject;
+            case "void":
+                return PrimitiveTypeWrapper.VOID.ClassObject;
+            default:
+                throw new ArgumentException(name);
+        }
+    }
 
-	public static string getGenericSignature0(java.lang.Class thisClass)
-	{
-		TypeWrapper tw = TypeWrapper.FromClass(thisClass);
-		tw.Finish();
-		return tw.GetGenericSignature();
-	}
+    public static string getGenericSignature0(java.lang.Class thisClass)
+    {
+        TypeWrapper tw = TypeWrapper.FromClass(thisClass);
+        tw.Finish();
+        return tw.GetGenericSignature();
+    }
 
-	internal static object AnnotationsToMap(ClassLoaderWrapper loader, object[] objAnn)
-	{
+    internal static object AnnotationsToMap(ClassLoaderWrapper loader, object[] objAnn)
+    {
 #if FIRST_PASS
-		return null;
+        return null;
 #else
 		java.util.LinkedHashMap map = new java.util.LinkedHashMap();
 		if (objAnn != null)
@@ -445,7 +445,7 @@ static class Java_java_lang_Class
 		}
 		return map;
 #endif
-	}
+    }
 
 #if !FIRST_PASS
 	internal static java.lang.annotation.Annotation FreezeOrWrapAttribute(java.lang.annotation.Annotation ann)
@@ -465,10 +465,10 @@ static class Java_java_lang_Class
 	}
 #endif
 
-	public static object getDeclaredAnnotationsImpl(java.lang.Class thisClass)
-	{
+    public static object getDeclaredAnnotationsImpl(java.lang.Class thisClass)
+    {
 #if FIRST_PASS
-		return null;
+        return null;
 #else
 		TypeWrapper wrapper = TypeWrapper.FromClass(thisClass);
 		try
@@ -481,12 +481,12 @@ static class Java_java_lang_Class
 		}
 		return AnnotationsToMap(wrapper.GetClassLoader(), wrapper.GetDeclaredAnnotations());
 #endif
-	}
+    }
 
-	public static object getDeclaredFields0(java.lang.Class thisClass, bool publicOnly)
-	{
+    public static object getDeclaredFields0(java.lang.Class thisClass, bool publicOnly)
+    {
 #if FIRST_PASS
-		return null;
+        return null;
 #else
 		Profiler.Enter("Class.getDeclaredFields0");
 		try
@@ -522,12 +522,12 @@ static class Java_java_lang_Class
 			Profiler.Leave("Class.getDeclaredFields0");
 		}
 #endif
-	}
+    }
 
-	public static object getDeclaredMethods0(java.lang.Class thisClass, bool publicOnly)
-	{
+    public static object getDeclaredMethods0(java.lang.Class thisClass, bool publicOnly)
+    {
 #if FIRST_PASS
-		return null;
+        return null;
 #else
 		Profiler.Enter("Class.getDeclaredMethods0");
 		try
@@ -569,12 +569,12 @@ static class Java_java_lang_Class
 			Profiler.Leave("Class.getDeclaredMethods0");
 		}
 #endif
-	}
+    }
 
-	public static object getDeclaredConstructors0(java.lang.Class thisClass, bool publicOnly)
-	{
+    public static object getDeclaredConstructors0(java.lang.Class thisClass, bool publicOnly)
+    {
 #if FIRST_PASS
-		return null;
+        return null;
 #else
 		Profiler.Enter("Class.getDeclaredConstructors0");
 		try
@@ -615,12 +615,12 @@ static class Java_java_lang_Class
 			Profiler.Leave("Class.getDeclaredConstructors0");
 		}
 #endif
-	}
+    }
 
-	public static java.lang.Class[] getDeclaredClasses0(java.lang.Class thisClass)
-	{
+    public static java.lang.Class[] getDeclaredClasses0(java.lang.Class thisClass)
+    {
 #if FIRST_PASS
-		return null;
+        return null;
 #else
 		try
 		{
@@ -646,89 +646,89 @@ static class Java_java_lang_Class
 			throw x.ToJava();
 		}
 #endif
-	}
+    }
 
-	public static bool desiredAssertionStatus0(java.lang.Class clazz)
-	{
-		return IKVM.Runtime.Assertions.IsEnabled(TypeWrapper.FromClass(clazz));
-	}
+    public static bool desiredAssertionStatus0(java.lang.Class clazz)
+    {
+        return IKVM.Runtime.Assertions.IsEnabled(TypeWrapper.FromClass(clazz));
+    }
 }
 
 static class Java_java_lang_ClassLoader
 {
-	public static java.net.URL getBootstrapResource(string name)
-	{
-		foreach (java.net.URL url in ClassLoaderWrapper.GetBootstrapClassLoader().GetResources(name))
-		{
-			return url;
-		}
-		return null;
-	}
+    public static java.net.URL getBootstrapResource(string name)
+    {
+        foreach (java.net.URL url in ClassLoaderWrapper.GetBootstrapClassLoader().GetResources(name))
+        {
+            return url;
+        }
+        return null;
+    }
 
-	public static java.util.Enumeration getBootstrapResources(string name)
-	{
+    public static java.util.Enumeration getBootstrapResources(string name)
+    {
 #if FIRST_PASS
-		return null;
+        return null;
 #else
 		return new ikvm.runtime.EnumerationWrapper(ClassLoaderWrapper.GetBootstrapClassLoader().GetResources(name));
 #endif
-	}
+    }
 
-	public static java.lang.Class defineClass0(java.lang.ClassLoader thisClassLoader, string name, byte[] b, int off, int len, java.security.ProtectionDomain pd)
-	{
-		return defineClass1(thisClassLoader, name, b, off, len, pd, null);
-	}
+    public static java.lang.Class defineClass0(java.lang.ClassLoader thisClassLoader, string name, byte[] b, int off, int len, java.security.ProtectionDomain pd)
+    {
+        return defineClass1(thisClassLoader, name, b, off, len, pd, null);
+    }
 
-	public static java.lang.Class defineClass1(java.lang.ClassLoader thisClassLoader, string name, byte[] b, int off, int len, java.security.ProtectionDomain pd, string source)
-	{
-		// it appears the source argument is only used for trace messages in HotSpot. We'll just ignore it for now.
-		Profiler.Enter("ClassLoader.defineClass");
-		try
-		{
-			try
-			{
-				ClassLoaderWrapper classLoaderWrapper = ClassLoaderWrapper.GetClassLoaderWrapper(thisClassLoader);
-				ClassFile classFile = new ClassFile(b, off, len, name, classLoaderWrapper.ClassFileParseOptions, null);
-				if (name != null && classFile.Name != name)
-				{
+    public static java.lang.Class defineClass1(java.lang.ClassLoader thisClassLoader, string name, byte[] b, int off, int len, java.security.ProtectionDomain pd, string source)
+    {
+        // it appears the source argument is only used for trace messages in HotSpot. We'll just ignore it for now.
+        Profiler.Enter("ClassLoader.defineClass");
+        try
+        {
+            try
+            {
+                ClassLoaderWrapper classLoaderWrapper = ClassLoaderWrapper.GetClassLoaderWrapper(thisClassLoader);
+                ClassFile classFile = new ClassFile(b, off, len, name, classLoaderWrapper.ClassFileParseOptions, null);
+                if (name != null && classFile.Name != name)
+                {
 #if !FIRST_PASS
 					throw new java.lang.NoClassDefFoundError(name + " (wrong name: " + classFile.Name + ")");
 #endif
-				}
-				TypeWrapper type = classLoaderWrapper.DefineClass(classFile, pd);
-				return type.ClassObject;
-			}
-			catch (RetargetableJavaException x)
-			{
-				throw x.ToJava();
-			}
-		}
-		finally
-		{
-			Profiler.Leave("ClassLoader.defineClass");
-		}
-	}
+                }
+                TypeWrapper type = classLoaderWrapper.DefineClass(classFile, pd);
+                return type.ClassObject;
+            }
+            catch (RetargetableJavaException x)
+            {
+                throw x.ToJava();
+            }
+        }
+        finally
+        {
+            Profiler.Leave("ClassLoader.defineClass");
+        }
+    }
 
-	public static java.lang.Class defineClass2(java.lang.ClassLoader thisClassLoader, string name, java.nio.ByteBuffer bb, int off, int len, java.security.ProtectionDomain pd, string source)
-	{
+    public static java.lang.Class defineClass2(java.lang.ClassLoader thisClassLoader, string name, java.nio.ByteBuffer bb, int off, int len, java.security.ProtectionDomain pd, string source)
+    {
 #if FIRST_PASS
-		return null;
+        return null;
 #else
 		byte[] buf = new byte[bb.remaining()];
 		bb.get(buf);
 		return defineClass1(thisClassLoader, name, buf, 0, buf.Length, pd, source);
 #endif
-	}
+    }
 
-	public static void resolveClass0(java.lang.ClassLoader thisClassLoader, java.lang.Class clazz)
-	{
-		// no-op
-	}
+    public static void resolveClass0(java.lang.ClassLoader thisClassLoader, java.lang.Class clazz)
+    {
+        // no-op
+    }
 
-	public static java.lang.Class findBootstrapClass(java.lang.ClassLoader thisClassLoader, string name)
-	{
+    public static java.lang.Class findBootstrapClass(java.lang.ClassLoader thisClassLoader, string name)
+    {
 #if FIRST_PASS
-		return null;
+        return null;
 #else
 		TypeWrapper tw;
 		try
@@ -741,30 +741,30 @@ static class Java_java_lang_ClassLoader
 		}
 		return tw != null ? tw.ClassObject : null;
 #endif
-	}
+    }
 
-	public static java.lang.Class findLoadedClass0(java.lang.ClassLoader thisClassLoader, string name)
-	{
-		if (name == null)
-		{
-			return null;
-		}
-		ClassLoaderWrapper loader = ClassLoaderWrapper.GetClassLoaderWrapper(thisClassLoader);
-		TypeWrapper tw = loader.FindLoadedClass(name);
-		return tw != null ? tw.ClassObject : null;
-	}
+    public static java.lang.Class findLoadedClass0(java.lang.ClassLoader thisClassLoader, string name)
+    {
+        if (name == null)
+        {
+            return null;
+        }
+        ClassLoaderWrapper loader = ClassLoaderWrapper.GetClassLoaderWrapper(thisClassLoader);
+        TypeWrapper tw = loader.FindLoadedClass(name);
+        return tw != null ? tw.ClassObject : null;
+    }
 
-	public static object retrieveDirectives()
-	{
-		return IKVM.Runtime.Assertions.RetrieveDirectives();
-	}
+    public static object retrieveDirectives()
+    {
+        return IKVM.Runtime.Assertions.RetrieveDirectives();
+    }
 }
 
 static class Java_java_lang_ClassLoader_00024NativeLibrary
 {
 
-	public static void load(object thisNativeLibrary, string name, bool isBuiltin)
-	{
+    public static void load(object thisNativeLibrary, string name, bool isBuiltin)
+    {
 #if !FIRST_PASS
 		if (VfsTable.Default.IsPath(name))
 		{
@@ -776,7 +776,7 @@ static class Java_java_lang_ClassLoader_00024NativeLibrary
 			doLoad(thisNativeLibrary, name);
 		}
 #endif
-	}
+    }
 
 #if !FIRST_PASS
 	// we don't want to inline this method, because that would needlessly cause IKVM.Runtime.JNI.dll to be loaded when loading a fake native library from VFS
@@ -790,15 +790,15 @@ static class Java_java_lang_ClassLoader_00024NativeLibrary
 	}
 #endif
 
-	public static long find(object thisNativeLibrary, string name)
-	{
-		// TODO
-		throw new NotImplementedException();
-	}
+    public static long find(object thisNativeLibrary, string name)
+    {
+        // TODO
+        throw new NotImplementedException();
+    }
 
-	[SecuritySafeCritical]
-	public static void unload(object thisNativeLibrary, string name, bool isBuiltin)
-	{
+    [SecuritySafeCritical]
+    public static void unload(object thisNativeLibrary, string name, bool isBuiltin)
+    {
 #if !FIRST_PASS
 		java.lang.ClassLoader.NativeLibrary lib = (java.lang.ClassLoader.NativeLibrary)thisNativeLibrary;
 		long handle = Interlocked.Exchange(ref lib.handle, 0);
@@ -807,188 +807,186 @@ static class Java_java_lang_ClassLoader_00024NativeLibrary
 			IKVM.Runtime.JniHelper.UnloadLibrary(handle, TypeWrapper.FromClass(java.lang.ClassLoader.NativeLibrary.getFromClass()).GetClassLoader());
 		}
 #endif
-	}
+    }
 
-	public static string findBuiltinLib(string name)
-	{
-		return null;
-	}
+    public static string findBuiltinLib(string name)
+    {
+        return null;
+    }
 }
 
 static class Java_java_lang_Compiler
 {
-	public static void initialize()
-	{
-	}
+    public static void initialize()
+    {
+    }
 
-	public static void registerNatives()
-	{
-	}
+    public static void registerNatives()
+    {
+    }
 
-	public static bool compileClass(object clazz)
-	{
-		return false;
-	}
+    public static bool compileClass(object clazz)
+    {
+        return false;
+    }
 
-	public static bool compileClasses(string str)
-	{
-		return false;
-	}
+    public static bool compileClasses(string str)
+    {
+        return false;
+    }
 
-	public static object command(object any)
-	{
-		return null;
-	}
+    public static object command(object any)
+    {
+        return null;
+    }
 
-	public static void enable()
-	{
-	}
+    public static void enable()
+    {
+    }
 
-	public static void disable()
-	{
-	}
+    public static void disable()
+    {
+    }
 }
 
 static class Java_java_lang_Double
 {
-	public static long doubleToRawLongBits(double value)
-	{
-		IKVM.Runtime.DoubleConverter converter = new IKVM.Runtime.DoubleConverter();
-		return IKVM.Runtime.DoubleConverter.ToLong(value, ref converter);
-	}
+    public static long doubleToRawLongBits(double value)
+    {
+        IKVM.Runtime.DoubleConverter converter = new IKVM.Runtime.DoubleConverter();
+        return IKVM.Runtime.DoubleConverter.ToLong(value, ref converter);
+    }
 
-	public static double longBitsToDouble(long bits)
-	{
-		IKVM.Runtime.DoubleConverter converter = new IKVM.Runtime.DoubleConverter();
-		return IKVM.Runtime.DoubleConverter.ToDouble(bits, ref converter);
-	}
+    public static double longBitsToDouble(long bits)
+    {
+        IKVM.Runtime.DoubleConverter converter = new IKVM.Runtime.DoubleConverter();
+        return IKVM.Runtime.DoubleConverter.ToDouble(bits, ref converter);
+    }
 }
 
 static class Java_java_lang_Float
 {
-	public static int floatToRawIntBits(float value)
-	{
-		IKVM.Runtime.FloatConverter converter = new IKVM.Runtime.FloatConverter();
-		return IKVM.Runtime.FloatConverter.ToInt(value, ref converter);
-	}
+    public static int floatToRawIntBits(float value)
+    {
+        IKVM.Runtime.FloatConverter converter = new IKVM.Runtime.FloatConverter();
+        return IKVM.Runtime.FloatConverter.ToInt(value, ref converter);
+    }
 
-	public static float intBitsToFloat(int bits)
-	{
-		IKVM.Runtime.FloatConverter converter = new IKVM.Runtime.FloatConverter();
-		return IKVM.Runtime.FloatConverter.ToFloat(bits, ref converter);
-	}
+    public static float intBitsToFloat(int bits)
+    {
+        IKVM.Runtime.FloatConverter converter = new IKVM.Runtime.FloatConverter();
+        return IKVM.Runtime.FloatConverter.ToFloat(bits, ref converter);
+    }
 }
 
 static class Java_java_lang_Package
 {
-	private static Dictionary<string, string> systemPackages;
 
-	private static void LazyInitSystemPackages()
-	{
-		if (systemPackages == null)
-		{
-			Dictionary<string, string> dict = new Dictionary<string, string>();
-			string path = VfsTable.GetAssemblyResourcesPath(JVM.CoreAssembly) + "resources.jar";
-			foreach (KeyValuePair<string, string[]> pkgs in ClassLoaderWrapper.GetBootstrapClassLoader().GetPackageInfo())
-			{
-				foreach (string pkg in pkgs.Value)
-				{
-					dict[pkg.Replace('.', '/') + "/"] = path;
-				}
-			}
-			Interlocked.CompareExchange(ref systemPackages, dict, null);
-		}
-	}
+    static Dictionary<string, string> systemPackages;
 
-	public static string getSystemPackage0(string name)
-	{
-		LazyInitSystemPackages();
-		string path;
-		systemPackages.TryGetValue(name, out path);
-		return path;
-	}
+    static void LazyInitSystemPackages()
+    {
+        if (systemPackages == null)
+        {
+            var dict = new Dictionary<string, string>();
+            var path = Path.Combine(VfsTable.GetAssemblyResourcesPath(JVM.CoreAssembly), "resources.jar");
+            foreach (var pkgs in ClassLoaderWrapper.GetBootstrapClassLoader().GetPackageInfo())
+                foreach (var pkg in pkgs.Value)
+                    dict[pkg.Replace('.', '/') + "/"] = path;
 
-	public static string[] getSystemPackages0()
-	{
-		LazyInitSystemPackages();
-		string[] pkgs = new string[systemPackages.Count];
-		systemPackages.Keys.CopyTo(pkgs, 0);
-		return pkgs;
-	}
+            Interlocked.CompareExchange(ref systemPackages, dict, null);
+        }
+    }
+
+    public static string getSystemPackage0(string name)
+    {
+        LazyInitSystemPackages();
+        string path;
+        systemPackages.TryGetValue(name, out path);
+        return path;
+    }
+
+    public static string[] getSystemPackages0()
+    {
+        LazyInitSystemPackages();
+        string[] pkgs = new string[systemPackages.Count];
+        systemPackages.Keys.CopyTo(pkgs, 0);
+        return pkgs;
+    }
 }
 
 static class Java_java_lang_ProcessEnvironment
 {
-	public static string environmentBlock()
-	{
-		StringBuilder sb = new StringBuilder();
-		foreach (System.Collections.DictionaryEntry de in Environment.GetEnvironmentVariables())
-		{
-			sb.Append(de.Key).Append('=').Append(de.Value).Append('\u0000');
-		}
-		if (sb.Length == 0)
-		{
-			sb.Append('\u0000');
-		}
-		sb.Append('\u0000');
-		return sb.ToString();
-	}
+    public static string environmentBlock()
+    {
+        StringBuilder sb = new StringBuilder();
+        foreach (System.Collections.DictionaryEntry de in Environment.GetEnvironmentVariables())
+        {
+            sb.Append(de.Key).Append('=').Append(de.Value).Append('\u0000');
+        }
+        if (sb.Length == 0)
+        {
+            sb.Append('\u0000');
+        }
+        sb.Append('\u0000');
+        return sb.ToString();
+    }
 }
 
 static class Java_java_lang_Runtime
 {
-	public static int availableProcessors(object thisRuntime)
-	{
-		return Environment.ProcessorCount;
-	}
+    public static int availableProcessors(object thisRuntime)
+    {
+        return Environment.ProcessorCount;
+    }
 
-	public static long freeMemory(object thisRuntime)
-	{
-		// TODO figure out if there is anything meaningful we can return here
-		return 10 * 1024 * 1024;
-	}
+    public static long freeMemory(object thisRuntime)
+    {
+        // TODO figure out if there is anything meaningful we can return here
+        return 10 * 1024 * 1024;
+    }
 
-	public static long totalMemory(object thisRuntime)
-	{
-		// NOTE this really is a bogus number, but we have to return something
-		return GC.GetTotalMemory(false) + freeMemory(thisRuntime);
-	}
+    public static long totalMemory(object thisRuntime)
+    {
+        // NOTE this really is a bogus number, but we have to return something
+        return GC.GetTotalMemory(false) + freeMemory(thisRuntime);
+    }
 
-	public static long maxMemory(object thisRuntime)
-	{
-		// spec says: If there is no inherent limit then the value Long.MAX_VALUE will be returned.
-		return Int64.MaxValue;
-	}
+    public static long maxMemory(object thisRuntime)
+    {
+        // spec says: If there is no inherent limit then the value Long.MAX_VALUE will be returned.
+        return Int64.MaxValue;
+    }
 
-	public static void gc(object thisRuntime)
-	{
-		GC.Collect();
-	}
+    public static void gc(object thisRuntime)
+    {
+        GC.Collect();
+    }
 
-	public static void traceInstructions(object thisRuntime, bool on)
-	{
-	}
+    public static void traceInstructions(object thisRuntime, bool on)
+    {
+    }
 
-	public static void traceMethodCalls(object thisRuntime, bool on)
-	{
-	}
+    public static void traceMethodCalls(object thisRuntime, bool on)
+    {
+    }
 
-	public static void runFinalization0()
-	{
-		GC.WaitForPendingFinalizers();
-	}
+    public static void runFinalization0()
+    {
+        GC.WaitForPendingFinalizers();
+    }
 }
 
 static class Java_java_lang_SecurityManager
 {
-	// this field is set by code in the JNI assembly itself,
-	// to prevent having to load the JNI assembly when it isn't used.
-	internal static volatile Assembly jniAssembly;
+    // this field is set by code in the JNI assembly itself,
+    // to prevent having to load the JNI assembly when it isn't used.
+    internal static volatile Assembly jniAssembly;
 
-	public static java.lang.Class[] getClassContext(object thisSecurityManager)
-	{
+    public static java.lang.Class[] getClassContext(object thisSecurityManager)
+    {
 #if FIRST_PASS
-		return null;
+        return null;
 #else
 		List<java.lang.Class> stack = new List<java.lang.Class>();
 		StackTrace trace = new StackTrace();
@@ -1009,213 +1007,213 @@ static class Java_java_lang_SecurityManager
 		}
 		return stack.ToArray();
 #endif
-	}
+    }
 
-	public static object currentClassLoader0(object thisSecurityManager)
-	{
-		java.lang.Class currentClass = currentLoadedClass0(thisSecurityManager);
-		if (currentClass != null)
-		{
-			return TypeWrapper.FromClass(currentClass).GetClassLoader().GetJavaClassLoader();
-		}
-		return null;
-	}
+    public static object currentClassLoader0(object thisSecurityManager)
+    {
+        java.lang.Class currentClass = currentLoadedClass0(thisSecurityManager);
+        if (currentClass != null)
+        {
+            return TypeWrapper.FromClass(currentClass).GetClassLoader().GetJavaClassLoader();
+        }
+        return null;
+    }
 
-	public static int classDepth(object thisSecurityManager, string name)
-	{
-		throw new NotImplementedException();
-	}
+    public static int classDepth(object thisSecurityManager, string name)
+    {
+        throw new NotImplementedException();
+    }
 
-	public static int classLoaderDepth0(object thisSecurityManager)
-	{
-		throw new NotImplementedException();
-	}
+    public static int classLoaderDepth0(object thisSecurityManager)
+    {
+        throw new NotImplementedException();
+    }
 
-	public static java.lang.Class currentLoadedClass0(object thisSecurityManager)
-	{
-		throw new NotImplementedException();
-	}
+    public static java.lang.Class currentLoadedClass0(object thisSecurityManager)
+    {
+        throw new NotImplementedException();
+    }
 }
 
 static class Java_java_lang_StrictMath
 {
-	public static double sin(double d)
-	{
+    public static double sin(double d)
+    {
 #if FIRST_PASS
-		return 0;
+        return 0;
 #else
 		return ikvm.@internal.JMath.sin(d);
 #endif
-	}
+    }
 
-	public static double cos(double d)
-	{
+    public static double cos(double d)
+    {
 #if FIRST_PASS
-		return 0;
+        return 0;
 #else
 		return ikvm.@internal.JMath.cos(d);
 #endif
-	}
+    }
 
-	public static double tan(double d)
-	{
-		return fdlibm.tan(d);
-	}
+    public static double tan(double d)
+    {
+        return fdlibm.tan(d);
+    }
 
-	public static double asin(double d)
-	{
+    public static double asin(double d)
+    {
 #if FIRST_PASS
-		return 0;
+        return 0;
 #else
 		return ikvm.@internal.JMath.asin(d);
 #endif
-	}
+    }
 
-	public static double acos(double d)
-	{
+    public static double acos(double d)
+    {
 #if FIRST_PASS
-		return 0;
+        return 0;
 #else
 		return ikvm.@internal.JMath.acos(d);
 #endif
-	}
+    }
 
-	public static double atan(double d)
-	{
+    public static double atan(double d)
+    {
 #if FIRST_PASS
-		return 0;
+        return 0;
 #else
 		return ikvm.@internal.JMath.atan(d);
 #endif
-	}
+    }
 
-	public static double exp(double d)
-	{
+    public static double exp(double d)
+    {
 #if FIRST_PASS
-		return 0;
+        return 0;
 #else
 		return ikvm.@internal.JMath.exp(d);
 #endif
-	}
+    }
 
-	public static double log(double d)
-	{
-		// FPU behavior is correct
-		return Math.Log(d);
-	}
+    public static double log(double d)
+    {
+        // FPU behavior is correct
+        return Math.Log(d);
+    }
 
-	public static double log10(double d)
-	{
-		// FPU behavior is correct
-		return Math.Log10(d);
-	}
+    public static double log10(double d)
+    {
+        // FPU behavior is correct
+        return Math.Log10(d);
+    }
 
-	public static double sqrt(double d)
-	{
-		// FPU behavior is correct
-		return Math.Sqrt(d);
-	}
+    public static double sqrt(double d)
+    {
+        // FPU behavior is correct
+        return Math.Sqrt(d);
+    }
 
-	public static double cbrt(double d)
-	{
-		return fdlibm.cbrt(d);
-	}
+    public static double cbrt(double d)
+    {
+        return fdlibm.cbrt(d);
+    }
 
-	public static double IEEEremainder(double f1, double f2)
-	{
+    public static double IEEEremainder(double f1, double f2)
+    {
 #if FIRST_PASS
-		return 0;
+        return 0;
 #else
 		return ikvm.@internal.JMath.IEEEremainder(f1, f2);
 #endif
-	}
+    }
 
-	public static double atan2(double y, double x)
-	{
+    public static double atan2(double y, double x)
+    {
 #if FIRST_PASS
-		return 0;
+        return 0;
 #else
 		return ikvm.@internal.JMath.atan2(y, x);
 #endif
-	}
+    }
 
-	public static double pow(double x, double y)
-	{
-		return fdlibm.__ieee754_pow(x, y);
-	}
+    public static double pow(double x, double y)
+    {
+        return fdlibm.__ieee754_pow(x, y);
+    }
 
-	public static double sinh(double d)
-	{
-		return Math.Sinh(d);
-	}
+    public static double sinh(double d)
+    {
+        return Math.Sinh(d);
+    }
 
-	public static double cosh(double d)
-	{
-		return Math.Cosh(d);
-	}
+    public static double cosh(double d)
+    {
+        return Math.Cosh(d);
+    }
 
-	public static double tanh(double d)
-	{
-		return Math.Tanh(d);
-	}
+    public static double tanh(double d)
+    {
+        return Math.Tanh(d);
+    }
 
-	public static double hypot(double a, double b)
-	{
-		return fdlibm.__ieee754_hypot(a, b);
-	}
+    public static double hypot(double a, double b)
+    {
+        return fdlibm.__ieee754_hypot(a, b);
+    }
 
-	public static double expm1(double d)
-	{
-		return fdlibm.expm1(d);
-	}
+    public static double expm1(double d)
+    {
+        return fdlibm.expm1(d);
+    }
 
-	public static double log1p(double d)
-	{
-		return fdlibm.log1p(d);
-	}
+    public static double log1p(double d)
+    {
+        return fdlibm.log1p(d);
+    }
 }
 
 static class Java_java_lang_System
 {
-	public static void registerNatives()
-	{
-	}
+    public static void registerNatives()
+    {
+    }
 
-	public static void setIn0(object @in)
-	{
+    public static void setIn0(object @in)
+    {
 #if !FIRST_PASS
 		java.lang.StdIO.@in = (java.io.InputStream)@in;
 #endif
-	}
+    }
 
-	public static void setOut0(object @out)
-	{
+    public static void setOut0(object @out)
+    {
 #if !FIRST_PASS
 		java.lang.StdIO.@out = (java.io.PrintStream)@out;
 #endif
-	}
+    }
 
-	public static void setErr0(object err)
-	{
+    public static void setErr0(object err)
+    {
 #if !FIRST_PASS
 		java.lang.StdIO.err = (java.io.PrintStream)err;
 #endif
-	}
+    }
 
-	public static object initProperties(object props)
-	{
+    public static object initProperties(object props)
+    {
 #if FIRST_PASS
-		return null;
+        return null;
 #else
 		java.lang.VMSystemProperties.initProperties((java.util.Properties)props);
 		return props;
 #endif
-	}
+    }
 
-	public static string mapLibraryName(string libname)
-	{
+    public static string mapLibraryName(string libname)
+    {
 #if FIRST_PASS
-		return null;
+        return null;
 #else
 		if (libname == null)
 		{
@@ -1234,17 +1232,17 @@ static class Java_java_lang_System
 			return "lib" + libname + ".so";
 		}
 #endif
-	}
+    }
 
-	public static void arraycopy(object src, int srcPos, object dest, int destPos, int length)
-	{
-		IKVM.Runtime.ByteCodeHelper.arraycopy(src, srcPos, dest, destPos, length);
-	}
+    public static void arraycopy(object src, int srcPos, object dest, int destPos, int length)
+    {
+        IKVM.Runtime.ByteCodeHelper.arraycopy(src, srcPos, dest, destPos, length);
+    }
 }
 
 static class Java_java_lang_Thread
 {
-	private static readonly object mainThreadGroup;
+    private static readonly object mainThreadGroup;
 
 #if !FIRST_PASS
 	static Java_java_lang_Thread()
@@ -1253,14 +1251,14 @@ static class Java_java_lang_Thread
 	}
 #endif
 
-	public static object getMainThreadGroup()
-	{
-		return mainThreadGroup;
-	}
+    public static object getMainThreadGroup()
+    {
+        return mainThreadGroup;
+    }
 
-	// this is called from JniInterface.cs
-	internal static void WaitUntilLastJniThread()
-	{
+    // this is called from JniInterface.cs
+    internal static void WaitUntilLastJniThread()
+    {
 #if !FIRST_PASS
 		int count = java.lang.Thread.currentThread().isDaemon() ? 0 : 1;
 		while (Interlocked.CompareExchange(ref java.lang.Thread.nonDaemonCount[0], 0, 0) > count)
@@ -1268,11 +1266,11 @@ static class Java_java_lang_Thread
 			Thread.Sleep(1);
 		}
 #endif
-	}
+    }
 
-	// this is called from JniInterface.cs
-	internal static void AttachThreadFromJni(object threadGroup)
-	{
+    // this is called from JniInterface.cs
+    internal static void AttachThreadFromJni(object threadGroup)
+    {
 #if !FIRST_PASS
 		if (threadGroup == null)
 		{
@@ -1283,23 +1281,23 @@ static class Java_java_lang_Thread
 			new java.lang.Thread((java.lang.ThreadGroup)threadGroup);
 		}
 #endif
-	}
+    }
 
-	public static java.lang.StackTraceElement[] getStackTrace(StackTrace stack)
-	{
+    public static java.lang.StackTraceElement[] getStackTrace(StackTrace stack)
+    {
 #if FIRST_PASS
-		return null;
+        return null;
 #else
 		List<java.lang.StackTraceElement> stackTrace = new List<java.lang.StackTraceElement>();
 		ExceptionHelper.ExceptionInfoHelper.Append(stackTrace, stack, 0, true);
 		return stackTrace.ToArray();
 #endif
-	}
+    }
 
-	public static object getThreads()
-	{
+    public static object getThreads()
+    {
 #if FIRST_PASS
-		return null;
+        return null;
 #else
 		return java.security.AccessController.doPrivileged(ikvm.runtime.Delegates.toPrivilegedAction(delegate
 		{
@@ -1314,143 +1312,143 @@ static class Java_java_lang_Thread
 			}
 		}));
 #endif
-	}
+    }
 }
 
 static class Java_java_lang_ProcessImpl
 {
 
-	/// <summary>
-	/// Maps the given path to a path capable of being executed.
-	/// </summary>
-	/// <param name="path"></param>
-	/// <returns></returns>
-	public static string mapVfsExecutable(string path)
-	{
-		// remove any unneccessary quotes
-		path = path.Trim('"');
+    /// <summary>
+    /// Maps the given path to a path capable of being executed.
+    /// </summary>
+    /// <param name="path"></param>
+    /// <returns></returns>
+    public static string mapVfsExecutable(string path)
+    {
+        // remove any unneccessary quotes
+        path = path.Trim('"');
 
-		// check the VFS: it might overload the path with an executable link
-		if (VfsTable.Default.GetPath(path) is VfsExecutable executable)
-			return executable.GetLink();
+        // check the VFS: it might overload the path with an executable link
+        if (VfsTable.Default.GetPath(path) is VfsExecutable executable)
+            return executable.GetLink();
 
-		return path;
-	}
+        return path;
+    }
 
-	public static int parseCommandString(string cmdstr)
-	{
-		int pos = cmdstr.IndexOf(' ');
-		if (pos == -1)
-		{
-			return cmdstr.Length;
-		}
-		if (cmdstr[0] == '"')
-		{
-			int close = cmdstr.IndexOf('"', 1);
-			return close == -1 ? cmdstr.Length : close + 1;
-		}
-		if (Environment.OSVersion.Platform != PlatformID.Win32NT)
-		{
-			return pos;
-		}
-		IList<string> path = null;
-		for (; ; )
-		{
-			string str = cmdstr.Substring(0, pos);
-			if (IsPathRooted(str))
-			{
-				if (Exists(str))
-				{
-					return pos;
-				}
-			}
-			else
-			{
-				if (path == null)
-				{
-					path = GetSearchPath();
-				}
-				foreach (string p in path)
-				{
-					if (Exists(Path.Combine(p, str)))
-					{
-						return pos;
-					}
-				}
-			}
-			if (pos == cmdstr.Length)
-			{
-				return cmdstr.IndexOf(' ');
-			}
-			pos = cmdstr.IndexOf(' ', pos + 1);
-			if (pos == -1)
-			{
-				pos = cmdstr.Length;
-			}
-		}
-	}
+    public static int parseCommandString(string cmdstr)
+    {
+        int pos = cmdstr.IndexOf(' ');
+        if (pos == -1)
+        {
+            return cmdstr.Length;
+        }
+        if (cmdstr[0] == '"')
+        {
+            int close = cmdstr.IndexOf('"', 1);
+            return close == -1 ? cmdstr.Length : close + 1;
+        }
+        if (Environment.OSVersion.Platform != PlatformID.Win32NT)
+        {
+            return pos;
+        }
+        IList<string> path = null;
+        for (; ; )
+        {
+            string str = cmdstr.Substring(0, pos);
+            if (IsPathRooted(str))
+            {
+                if (Exists(str))
+                {
+                    return pos;
+                }
+            }
+            else
+            {
+                if (path == null)
+                {
+                    path = GetSearchPath();
+                }
+                foreach (string p in path)
+                {
+                    if (Exists(Path.Combine(p, str)))
+                    {
+                        return pos;
+                    }
+                }
+            }
+            if (pos == cmdstr.Length)
+            {
+                return cmdstr.IndexOf(' ');
+            }
+            pos = cmdstr.IndexOf(' ', pos + 1);
+            if (pos == -1)
+            {
+                pos = cmdstr.Length;
+            }
+        }
+    }
 
-	private static List<string> GetSearchPath()
-	{
-		List<string> list = new List<string>();
-		list.Add(Path.GetDirectoryName(Process.GetCurrentProcess().MainModule.FileName));
-		list.Add(Environment.CurrentDirectory);
-		list.Add(Environment.SystemDirectory);
-		string windir = Path.GetDirectoryName(Environment.SystemDirectory);
-		list.Add(Path.Combine(windir, "System"));
-		list.Add(windir);
-		string path = Environment.GetEnvironmentVariable("PATH");
-		if (path != null)
-		{
-			foreach (string p in path.Split(Path.PathSeparator))
-			{
-				list.Add(p);
-			}
-		}
-		return list;
-	}
+    private static List<string> GetSearchPath()
+    {
+        List<string> list = new List<string>();
+        list.Add(Path.GetDirectoryName(Process.GetCurrentProcess().MainModule.FileName));
+        list.Add(Environment.CurrentDirectory);
+        list.Add(Environment.SystemDirectory);
+        string windir = Path.GetDirectoryName(Environment.SystemDirectory);
+        list.Add(Path.Combine(windir, "System"));
+        list.Add(windir);
+        string path = Environment.GetEnvironmentVariable("PATH");
+        if (path != null)
+        {
+            foreach (string p in path.Split(Path.PathSeparator))
+            {
+                list.Add(p);
+            }
+        }
+        return list;
+    }
 
-	private static bool IsPathRooted(string path)
-	{
-		try
-		{
-			return Path.IsPathRooted(path);
-		}
-		catch (ArgumentException)
-		{
-			return false;
-		}
-	}
+    private static bool IsPathRooted(string path)
+    {
+        try
+        {
+            return Path.IsPathRooted(path);
+        }
+        catch (ArgumentException)
+        {
+            return false;
+        }
+    }
 
-	private static bool Exists(string file)
-	{
-		try
-		{
-			if (File.Exists(file))
-			{
-				return true;
-			}
-			else if (Directory.Exists(file))
-			{
-				return false;
-			}
-			else if (file.IndexOf('.') == -1 && File.Exists(file + ".exe"))
-			{
-				return true;
-			}
-			else if (mapVfsExecutable(file) != file)
-			{
-				return true;
-			}
-			else
-			{
-				return false;
-			}
-		}
-		catch
-		{
-			return false;
-		}
-	}
+    private static bool Exists(string file)
+    {
+        try
+        {
+            if (File.Exists(file))
+            {
+                return true;
+            }
+            else if (Directory.Exists(file))
+            {
+                return false;
+            }
+            else if (file.IndexOf('.') == -1 && File.Exists(file + ".exe"))
+            {
+                return true;
+            }
+            else if (mapVfsExecutable(file) != file)
+            {
+                return true;
+            }
+            else
+            {
+                return false;
+            }
+        }
+        catch
+        {
+            return false;
+        }
+    }
 
 }

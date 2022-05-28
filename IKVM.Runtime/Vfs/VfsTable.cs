@@ -6,6 +6,7 @@ using System.Linq;
 using System.Reflection;
 
 using IKVM.Internal;
+using IKVM.Runtime.Extensions;
 
 namespace IKVM.Runtime.Vfs
 {
@@ -36,7 +37,7 @@ namespace IKVM.Runtime.Vfs
             if (assembly is null)
                 throw new ArgumentNullException(nameof(assembly));
 
-            return Path.Combine(HomePath, "assembly", VfsAssemblyDirectory.GetName(assembly.GetName()), "classes");
+            return PathExtensions.EnsureEndingDirectorySeparator(Path.Combine(HomePath, "assembly", VfsAssemblyDirectory.GetName(assembly.GetName()), "classes"));
         }
 
         /// <summary>
@@ -49,7 +50,7 @@ namespace IKVM.Runtime.Vfs
             if (assembly is null)
                 throw new ArgumentNullException(nameof(assembly));
 
-            return Path.Combine(HomePath, "assembly", VfsAssemblyDirectory.GetName(assembly.GetName()), "resources");
+            return PathExtensions.EnsureEndingDirectorySeparator(Path.Combine(HomePath, "assembly", VfsAssemblyDirectory.GetName(assembly.GetName()), "resources"));
         }
 
         /// <summary>
@@ -81,6 +82,9 @@ namespace IKVM.Runtime.Vfs
             var home = new VfsEntryDirectory(context);
             ExtractZipArchive(home, new ZipArchive(typeof(VfsTable).Assembly.GetManifestResourceStream("vfs.zip"), ZipArchiveMode.Read));
 
+            // dynamically generated directory full of assembly names
+            home.AddEntry("assembly", new VfsAssemblyDirectory(context));
+
             // generate lib directory
             var lib = (VfsEntryDirectory)home.GetOrCreateDirectory("lib");
 
@@ -96,9 +100,6 @@ namespace IKVM.Runtime.Vfs
             AddDummyLibrary(bin, "splashscreen");
             AddDummyLibrary(bin, "osx");
             AddDummyLibrary(bin, "management");
-
-            // dynamically generated directory full of assembly names
-            bin.AddEntry("assembly", new VfsAssemblyDirectory(context));
 
             // fake java executables
             bin.AddEntry("java", new VfsJavaExe(context));
@@ -259,13 +260,15 @@ namespace IKVM.Runtime.Vfs
         {
             // VFS is currently completely read-only
             if (mode != FileMode.Open || access != FileAccess.Read)
-                throw new IOException("VFS is read-only.");
+                throw new UnauthorizedAccessException("Virtual file system is read-only.");
 
             // search for the entry in the file system and open it
-            if (GetPath(path) is VfsFile entry)
-                return entry.Open(mode, access);
-
-            throw new FileNotFoundException("File not found.", path);
+            return GetPath(path) switch
+            {
+                VfsFile file => file.Open(mode, access),
+                VfsDirectory => throw new UnauthorizedAccessException($"Access to '{path}' was denied."),
+                _ => throw new FileNotFoundException("File not found.", path)
+            };
         }
 
         /// <summary>

@@ -21,8 +21,10 @@
     </ItemGroup>
 
     <ItemGroup>
-        <Compile Include="..\IKVM.Runtime\stubgen\ClassFileWriter.cs" LinkBase="runtime" />
+        <Compile Include="..\IKVM.Runtime\Extensions\**\*.cs" LinkBase="runtime" />
+        <Compile Include="..\IKVM.Runtime\Syntax\**\*.cs" LinkBase="runtime" />
         <Compile Include="..\ikvmc\IKVM\Internal\AssemblyResolver.cs" LinkBase="ikvmc" />
+        <Compile Include="..\IKVM.Runtime\InternalException.cs" LinkBase="runtime" />
         <Compile Include="..\IKVM.Runtime\AssemblyClassLoader.cs" LinkBase="runtime" />
         <Compile Include="..\IKVM.Runtime\attributes.cs" LinkBase="runtime" />
         <Compile Include="..\IKVM.Runtime\ClassLoaderWrapper.cs" LinkBase="runtime" />
@@ -36,6 +38,7 @@
         <Compile Include="..\IKVM.Runtime\Types.cs" LinkBase="runtime" />
         <Compile Include="..\IKVM.Runtime\TypeWrapper.cs" LinkBase="runtime" />
         <Compile Include="..\IKVM.Runtime\vm.cs" LinkBase="runtime" />
+        <Compile Include="..\IKVM.Runtime\stubgen\ClassFileWriter.cs" LinkBase="runtime" />
         <Compile Include="..\IKVM.Runtime\stubgen\SerialVersionUID.cs" LinkBase="runtime" />
         <Compile Include="..\IKVM.Runtime\stubgen\StubGenerator.cs" LinkBase="runtime" />
     </ItemGroup>

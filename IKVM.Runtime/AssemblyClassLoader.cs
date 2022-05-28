@@ -30,6 +30,7 @@ using System.Threading;
 using FormatterServices = System.Runtime.Serialization.FormatterServices;
 
 using IKVM.Attributes;
+using IKVM.Runtime.Syntax;
 
 #if STATIC_COMPILER || STUB_GENERATOR
 using IKVM.Reflection;
@@ -298,34 +299,45 @@ namespace IKVM.Internal
                 return null;
             }
 
-            internal string GetTypeNameAndType(Type type, out bool isJavaType)
+            /// <summary>
+            /// Gets the Java type name for the specified type.
+            /// </summary>
+            /// <param name="type"></param>
+            /// <param name="isJavaType"></param>
+            /// <returns></returns>
+            internal JavaTypeName? GetTypeNameAndType(Type type, out bool isJavaType)
             {
-                Module mod = type.Module;
+                // find the module index of the type's module
+                var module = type.Module;
                 int moduleIndex = -1;
                 for (int i = 0; i < modules.Length; i++)
                 {
-                    if (modules[i] == mod)
+                    if (modules[i] == module)
                     {
                         moduleIndex = i;
                         break;
                     }
                 }
+
+                // if the type is associated with a Java module, the type is a Java type
                 if (isJavaModule[moduleIndex])
                 {
                     isJavaType = true;
+
+                    // types which should be hidden from Java should not have Java names
                     if (AttributeHelper.IsHideFromJava(type))
-                    {
                         return null;
-                    }
+
                     return CompiledTypeWrapper.GetName(type);
                 }
                 else
                 {
                     isJavaType = false;
-                    if (!DotNetTypeWrapper.IsAllowedOutside(type))
-                    {
+
+                    // type is a .NET type, but not allowed visibilty to Java
+                    if (DotNetTypeWrapper.IsAllowedOutside(type) == false)
                         return null;
-                    }
+
                     return DotNetTypeWrapper.GetName(type);
                 }
             }
@@ -572,7 +584,7 @@ namespace IKVM.Internal
             return null;
         }
 
-        internal string GetTypeNameAndType(Type type, out bool isJavaType)
+        internal JavaTypeName? GetTypeNameAndType(Type type, out bool isJavaType)
         {
             return GetLoader(type.Assembly).GetTypeNameAndType(type, out isJavaType);
         }
@@ -812,7 +824,7 @@ namespace IKVM.Internal
         private static java.net.URL MakeResourceURL(Assembly asm, string name)
         {
 #if FIRST_PASS
-			return null;
+            return null;
 #else
             return new java.io.File(VfsTable.GetAssemblyResourcesPath(asm) + name).toURI().toURL();
 #endif

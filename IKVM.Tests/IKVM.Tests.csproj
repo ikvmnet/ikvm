@@ -5,11 +5,13 @@
     </PropertyGroup>
 
     <ItemGroup>
-      <None Remove="Runtime\Vfs\VfsTestResource.txt" />
+        <None Remove="JNI\JniTests.java" />
+        <None Remove="Runtime\Vfs\VfsTestResource.txt" />
     </ItemGroup>
 
     <ItemGroup>
-      <EmbeddedResource Include="Runtime\Vfs\VfsTestResource.txt" />
+        <EmbeddedResource Include="JNI\JniTests.java" />
+        <EmbeddedResource Include="Runtime\Vfs\VfsTestResource.txt" />
     </ItemGroup>
 
     <ItemGroup>
@@ -25,6 +27,27 @@
         <ProjectReference Include="..\IKVM.Reflection\IKVM.Reflection.csproj" />
         <ProjectReference Include="..\IKVM.Runtime.JNI\IKVM.Runtime.JNI.csproj" />
         <ProjectReference Include="..\IKVM.Runtime\IKVM.Runtime.csproj" />
+    </ItemGroup>
+
+    <ItemGroup>
+        <LibProjectReference Include="ikvm-tests-native-win-x64">
+            <ProjectFile>..\ikvm-tests-native\ikvm-tests-native-win.vcxproj</ProjectFile>
+            <Platform>x64</Platform>
+            <Configuration>$(Configuration)</Configuration>
+            <OutputDir>runtimes\win-x64\native</OutputDir>
+        </LibProjectReference>
+        <LibProjectReference Include="ikvm-tests-native-win-x86">
+            <ProjectFile>..\ikvm-tests-native\ikvm-tests-native-win.vcxproj</ProjectFile>
+            <Platform>Win32</Platform>
+            <Configuration>$(Configuration)</Configuration>
+            <OutputDir>runtimes\win-x86\native</OutputDir>
+        </LibProjectReference>
+        <LibProjectReference Include="ikvm-tests-native-linux-x64">
+            <ProjectFile>..\ikvm-tests-native\ikvm-tests-native-linux.vcxproj</ProjectFile>
+            <Platform>x64</Platform>
+            <Configuration>$(Configuration)</Configuration>
+            <OutputDir>runtimes\linux-x64\native</OutputDir>
+        </LibProjectReference>
     </ItemGroup>
 
 </Project>

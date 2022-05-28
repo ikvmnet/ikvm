@@ -738,42 +738,43 @@ namespace IKVM.Internal
             Tracer.Info(Tracer.Compiler, "CompilerClassLoader adding resources...");
 
             // BUG we need to call GetTypeWrapperFactory() to make sure that the assemblyBuilder is created (when building an empty target)
-            ModuleBuilder moduleBuilder = this.GetTypeWrapperFactory().ModuleBuilder;
+            var moduleBuilder = GetTypeWrapperFactory().ModuleBuilder;
 
             for (int i = 0; i < options.jars.Count; i++)
             {
-                bool hasEntries = false;
-                MemoryStream mem = new MemoryStream();
+                var hasEntries = false;
+                var mem = new MemoryStream();
                 using (ZipOutputStream zip = new ZipOutputStream(mem))
                 {
                     if (!string.IsNullOrEmpty(options.jars[i].Comment))
-                    {
                         zip.SetComment(options.jars[i].Comment);
-                    }
+
                     zip.SetLevel(9);
-                    List<string> stubs = new List<string>();
+
+                    var stubs = new List<string>();
                     foreach (Jar.Item item in options.jars[i])
                     {
                         if (item.IsStub)
                         {
                             // we don't want stub class pseudo resources for classes loaded from the file system
                             if (i != options.classesJar)
-                            {
                                 stubs.Add(item.Name);
-                            }
+
                             continue;
                         }
-                        ZipEntry zipEntry = item.ZipEntry;
+                        var zipEntry = item.ZipEntry;
                         if (options.compressedResources || zipEntry.CompressionMethod != CompressionMethod.Stored)
-                        {
                             zipEntry.CompressionMethod = CompressionMethod.Deflated;
-                        }
+
+                        Console.WriteLine("isdirectory2 {0}", zipEntry.IsDirectory);
                         zip.PutNextEntry(zipEntry);
+                        Console.WriteLine("isdirectory3 {0}", zipEntry.IsDirectory);
                         byte[] data = item.GetData();
                         zip.Write(data, 0, data.Length);
                         zip.CloseEntry();
                         hasEntries = true;
                     }
+
                     if (stubs.Count != 0)
                     {
                         // generate the --ikvm-classes-- file in the jar
@@ -3357,7 +3358,7 @@ namespace IKVM.Internal
         internal void Add(string name, byte[] data, FileInfo fileInfo)
         {
             ZipEntry zipEntry = new ZipEntry(name);
-            zipEntry.DateTime = fileInfo.LastWriteTimeUtc;
+            zipEntry.DateTime = new DateTime(1980, 01, 01, 0, 00, 0, DateTimeKind.Utc);
             zipEntry.CompressionMethod = CompressionMethod.Stored;
             Items.Add(new JarItem(zipEntry, data, fileInfo));
         }
@@ -3406,14 +3407,12 @@ namespace IKVM.Internal
             {
                 get
                 {
-                    ZipEntry org = Jar.Items[Index].zipEntry;
-                    ZipEntry zipEntry = new ZipEntry(org.Name);
+                    var org = Jar.Items[Index].zipEntry;
+                    var zipEntry = new ZipEntry(org.Name);
                     zipEntry.Comment = org.Comment;
                     zipEntry.CompressionMethod = org.CompressionMethod;
-                    zipEntry.DosTime = org.DosTime;
-                    zipEntry.ExternalFileAttributes = org.ExternalFileAttributes;
-                    zipEntry.ExtraData = org.ExtraData;
-                    zipEntry.Flags = org.Flags;
+                    zipEntry.DateTime = org.DateTime;
+                    Console.WriteLine("isDirectory: {0}", zipEntry.IsDirectory);
                     return zipEntry;
                 }
             }
@@ -3602,6 +3601,7 @@ namespace IKVM.Internal
                 resourcesJar = jars.Count;
                 CreateJar("resources.jar", null);
             }
+
             return jars[resourcesJar];
         }
 
