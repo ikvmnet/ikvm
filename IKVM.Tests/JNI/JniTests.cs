@@ -28,19 +28,19 @@ namespace IKVM.Tests.JNI
 
         }
 
-        [TestMethod]
-        public void Can_get_javac_instance()
-        {
-            var s = new StreamReader(typeof(JniTests).Assembly.GetManifestResourceStream("IKVM.Tests.JNI.JniTests.java")).ReadToEnd();
-            var f = global::java.util.Arrays.asList(new JavaSourceFromString("ikvm.tests.JNI.JniTests", s));
-            var c = global::javax.tools.ToolProvider.getSystemJavaCompiler();
-            var m = c.getStandardFileManager(null, null, null);
-            m.setLocation(global::javax.tools.StandardLocation.CLASS_OUTPUT, global::java.util.Arrays.asList(new global::java.io.File(@"C:\foo")));
-            var w = new global::java.io.StringWriter();
-            var t = c.getTask(w, m, null, null, null, f).call().booleanValue();
-            if (t == false)
-                throw new Exception(w.toString());
-        }
+        //[TestMethod]
+        //public void Can_get_javac_instance()
+        //{
+        //    var s = new StreamReader(typeof(JniTests).Assembly.GetManifestResourceStream("IKVM.Tests.JNI.JniTests.java")).ReadToEnd();
+        //    var f = global::java.util.Arrays.asList(new JavaSourceFromString("ikvm.tests.JNI.JniTests", s));
+        //    var c = global::javax.tools.ToolProvider.getSystemJavaCompiler();
+        //    var m = c.getStandardFileManager(null, null, null);
+        //    m.setLocation(global::javax.tools.StandardLocation.CLASS_OUTPUT, global::java.util.Arrays.asList(new global::java.io.File(@"C:\foo")));
+        //    var w = new global::java.io.StringWriter();
+        //    var t = c.getTask(w, m, null, null, null, f).call().booleanValue();
+        //    if (t == false)
+        //        throw new Exception(w.toString());
+        //}
 
     }
 
