@@ -806,8 +806,11 @@
     </PropertyGroup>
 
     <Target Name="MoveJavaAssemblyCore" DependsOnTargets="BuildJavaAssembly">
+        <!-- remove the intermediate assembly, it's absense will cause CoreCompile to run again if we fail -->
         <Delete Files="$(IntermediateOutputPath)$(TargetName)$(TargetExt)" />
         <Delete Files="$(IntermediateOutputPath)$(TargetName).pdb" Condition="Exists('$(IntermediateOutputPath)$(TargetName).pdb')" />
+        
+        <!-- replace original assemblies -->
         <Copy SourceFiles="$(JavaAssemblyPath)" DestinationFiles="$(IntermediateOutputPath)$(TargetName)$(TargetExt)" OverwriteReadOnlyFiles="true" UseHardlinksIfPossible="true" />
         <Copy SourceFiles="$(JavaDebugSymbolsPath)" DestinationFiles="$(IntermediateOutputPath)$(TargetName).pdb" OverwriteReadOnlyFiles="true" UseHardlinksIfPossible="true" Condition="Exists('$(JavaDebugSymbolsPath)')" />
     </Target>
