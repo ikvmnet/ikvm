@@ -805,32 +805,58 @@
         </BuildDependsOn>
     </PropertyGroup>
 
-    <Target Name="MoveJavaAssemblyCore" DependsOnTargets="BuildJavaAssembly">
+    <PropertyGroup>
+        <_MergeJavaAssemblyCoreForceBuildFile>$(IntermediateOutputPath)$(MSBuildThisFile).MergeJavaAssemblyCore.force</_MergeJavaAssemblyCoreForceBuildFile>
+    </PropertyGroup>
+
+    <Target Name="MergeJavaAssemblyCore" DependsOnTargets="BuildJavaAssembly" Condition="'$(_MergeJavaAssemblyTimestampBeforeCompile)' != '$(_MergeJavaAssemblyTimestampAfterCompile)' Or Exists('$(_MergeJavaAssemblyCoreForceBuildFile)')">
+        <!-- Create a file which will force the next build to run this target if the previous build failed. 
+             Failure between this point and the point where intermediate outputs are moved will make CoreCompile not run again (up-to-date outputs).
+             That in turn results in timestamps being equal, this target not running and untransformed assemblies being copied to the output. -->
+        <Touch Files="$(_MergeJavaAssemblyCoreForceBuildFile)" AlwaysCreate="true" ContinueOnError="true" />
+
         <!-- remove the intermediate assembly, it's absense will cause CoreCompile to run again if we fail -->
         <Delete Files="$(IntermediateOutputPath)$(TargetName)$(TargetExt)" />
         <Delete Files="$(IntermediateOutputPath)$(TargetName).pdb" Condition="Exists('$(IntermediateOutputPath)$(TargetName).pdb')" />
-        
+
+        <!-- At this point original intermediate outputs are moved, so CoreCompile will always run if build fails after this point. -->
+        <Delete Files="$(_MergeJavaAssemblyCoreForceBuildFile)" ContinueOnError="True" />
+
         <!-- replace original assemblies -->
-        <Copy SourceFiles="$(JavaAssemblyPath)" DestinationFiles="$(IntermediateOutputPath)$(TargetName)$(TargetExt)" OverwriteReadOnlyFiles="true" UseHardlinksIfPossible="true" />
-        <Copy SourceFiles="$(JavaDebugSymbolsPath)" DestinationFiles="$(IntermediateOutputPath)$(TargetName).pdb" OverwriteReadOnlyFiles="true" UseHardlinksIfPossible="true" Condition="Exists('$(JavaDebugSymbolsPath)')" />
+        <Copy SourceFiles="$(JavaAssemblyPath)" DestinationFiles="$(IntermediateOutputPath)$(TargetName)$(TargetExt)" OverwriteReadOnlyFiles="true" />
+        <Copy SourceFiles="$(JavaDebugSymbolsPath)" DestinationFiles="$(IntermediateOutputPath)$(TargetName).pdb" OverwriteReadOnlyFiles="true" Condition="Exists('$(JavaDebugSymbolsPath)')" />
     </Target>
 
     <PropertyGroup>
-        <MoveJavaAssemblyDependsOn>
-            $(MoveJavaAssemblyDependsOn);
+        <MergeJavaAssemblyDependsOn>
+            $(MergeJavaAssemblyDependsOn);
             BuildJavaAssembly;
-            MoveJavaAssemblyCore;
-        </MoveJavaAssemblyDependsOn>
+            MergeJavaAssemblyCore;
+        </MergeJavaAssemblyDependsOn>
     </PropertyGroup>
 
-    <Target Name="MoveJavaAssembly" DependsOnTargets="$(MoveJavaAssemblyDependsOn)">
+    <Target Name="MergeJavaAssembly" DependsOnTargets="$(MergeJavaAssemblyDependsOn)">
 
+    </Target>
+
+    <Target Name="MergeJavaAssemblyTimestampBeforeCompile">
+        <PropertyGroup>
+            <_MergeJavaAssemblyTimestampBeforeCompile>%(IntermediateAssembly.ModifiedTime)</_MergeJavaAssemblyTimestampBeforeCompile>
+        </PropertyGroup>
+    </Target>
+
+    <Target Name="MergeJavaAssemblyTimestampAfterCompile">
+        <PropertyGroup>
+            <_MergeJavaAssemblyTimestampAfterCompile>%(IntermediateAssembly.ModifiedTime)</_MergeJavaAssemblyTimestampAfterCompile>
+        </PropertyGroup>
     </Target>
 
     <PropertyGroup>
         <CompileDependsOn>
+            MergeJavaAssemblyTimestampBeforeCompile;
             $(CompileDependsOn);
-            MoveJavaAssembly;
+            MergeJavaAssemblyTimestampAfterCompile;
+            MergeJavaAssembly;
         </CompileDependsOn>
     </PropertyGroup>
 
