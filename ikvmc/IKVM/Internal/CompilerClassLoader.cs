@@ -3412,7 +3412,6 @@ namespace IKVM.Internal
                     zipEntry.Comment = org.Comment;
                     zipEntry.CompressionMethod = org.CompressionMethod;
                     zipEntry.DateTime = org.DateTime;
-                    Console.WriteLine("isDirectory: {0}", zipEntry.IsDirectory);
                     return zipEntry;
                 }
             }
