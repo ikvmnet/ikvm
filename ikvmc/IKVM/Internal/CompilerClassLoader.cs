@@ -766,9 +766,7 @@ namespace IKVM.Internal
                         if (options.compressedResources || zipEntry.CompressionMethod != CompressionMethod.Stored)
                             zipEntry.CompressionMethod = CompressionMethod.Deflated;
 
-                        Console.WriteLine("isdirectory2 {0}", zipEntry.IsDirectory);
                         zip.PutNextEntry(zipEntry);
-                        Console.WriteLine("isdirectory3 {0}", zipEntry.IsDirectory);
                         byte[] data = item.GetData();
                         zip.Write(data, 0, data.Length);
                         zip.CloseEntry();
