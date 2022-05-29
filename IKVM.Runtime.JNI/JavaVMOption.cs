@@ -22,14 +22,17 @@
   
 */
 using System.Runtime.InteropServices;
-// Java type JNI aliases
 
-namespace IKVM.Runtime.JNI
+namespace IKVM.Runtime
 {
+
     [StructLayout(LayoutKind.Sequential)]
     unsafe struct JavaVMOption
     {
+
         internal byte* optionString;
         internal void* extraInfo;
+
     }
+
 }

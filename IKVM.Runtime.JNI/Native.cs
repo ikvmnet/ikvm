@@ -1,192 +1,145 @@
-﻿using System;
-using System.Collections.Generic;
-using System.IO;
-using System.Reflection;
+﻿/*
+  Copyright (C) 2002-2014 Jeroen Frijters
+
+  This software is provided 'as-is', without any express or implied
+  warranty.  In no event will the authors be held liable for any damages
+  arising from the use of this software.
+
+  Permission is granted to anyone to use this software for any purpose,
+  including commercial applications, and to alter it and redistribute it
+  freely, subject to the following restrictions:
+
+  1. The origin of this software must not be misrepresented; you must not
+     claim that you wrote the original software. If you use this software
+     in a product, an acknowledgment in the product documentation would be
+     appreciated but is not required.
+  2. Altered source versions must be plainly marked as such, and must not be
+     misrepresented as being the original software.
+  3. This notice may not be removed or altered from any source distribution.
+
+  Jeroen Frijters
+  jeroen@frijters.net
+  
+*/
+using System;
 using System.Runtime.InteropServices;
 
-namespace IKVM.Runtime.JNI
+namespace IKVM.Runtime
 {
 
     /// <summary>
-    /// Provides access to the native companion methods.
+    /// Provides methods to load a library.
     /// </summary>
-    static unsafe class Native
+    static class NativeLoader
     {
 
-        public const string LIB_NAME = "ikvm-native";
-
         /// <summary>
-        /// Native Win32 LoadLibrary method.
+        /// Invokes the Windows LoadLibrary function.
         /// </summary>
-        /// <param name="dllToLoad"></param>
+        /// <param name="path"></param>
         /// <returns></returns>
-        [DllImport("kernel32.dll", SetLastError = true)]
-        public static extern IntPtr LoadLibrary(string dllToLoad);
+        [DllImport("kernel32.dll", EntryPoint = "LoadLibrary", SetLastError = true)]
+        static extern IntPtr LoadLibrary(string path);
 
         /// <summary>
-        /// Native POSIX library loader method.
+        /// Invokes the Windows FreeLibrary function.
+        /// </summary>
+        /// <param name="handle"></param>
+        /// <returns></returns>
+        [DllImport("kernel32.dll", EntryPoint = "FreeLibrary", SetLastError = true)]
+        static extern IntPtr FreeLibrary(IntPtr handle);
+
+        /// <summary>
+        /// Invokes the Windows GetProcAddress function.
+        /// </summary>
+        /// <param name="handle"></param>
+        /// <param name="name"></param>
+        /// <returns></returns>
+        [DllImport("kernel32.dll", EntryPoint = "GetProcAddress", SetLastError = true)]
+        static extern IntPtr GetProcAddress(IntPtr handle, string name);
+
+        /// <summary>
+        /// Invokes the Windows GetProcAddress function, handling 32-bit mangled names.
+        /// </summary>
+        /// <param name="handle"></param>
+        /// <param name="name"></param>
+        /// <param name="argc"></param>
+        /// <returns></returns>
+        static IntPtr GetProcAddress32(IntPtr handle, string name, int argc)
+        {
+            var h = GetProcAddress(handle, name + "@" + argc);
+            if (h == IntPtr.Zero)
+                h = GetProcAddress(handle, name);
+
+            return h;
+        }
+
+        /// <summary>
+        /// Invokes the POSIX dlopen function.
         /// </summary>
         /// <param name="path"></param>
         /// <param name="flag"></param>
         /// <returns></returns>
-        [DllImport("dl")]
+        [DllImport("dl", EntryPoint = "dlopen")]
         static extern IntPtr dlopen(string path, int flag);
 
         /// <summary>
-        /// Initializes the static instance.
+        /// Invokes the POSIX dlclose function.
         /// </summary>
-        static Native()
-        {
-#if NET461
-            LegacyImportDll();
-#else
-            NativeLibrary.SetDllImportResolver(typeof(Native).Assembly, DllImportResolver);
-#endif
-        }
-
-#if NET461
-
-        /// <summary>
-        /// Preloads the native DLL for down-level platforms.
-        /// </summary>
-        static void LegacyImportDll()
-        {
-            // attempt to load with default loader
-            var h = LoadLibrary(LIB_NAME);
-            if (h != IntPtr.Zero)
-                return;
-
-            // scan known paths
-            foreach (var path in GetLibraryPaths(LIB_NAME))
-            {
-                h = LoadLibrary(path);
-                if (h != IntPtr.Zero)
-                    return;
-            }
-    }
-
-#endif
-
-#if NETCOREAPP3_1
-
-        /// <summary>
-        /// Attempts to resolve the specified assembly when running on .NET Core 3.1 and above.
-        /// </summary>
-        /// <param name="libraryName"></param>
-        /// <param name="assembly"></param>
-        /// <param name="searchPath"></param>
+        /// <param name="handle"></param>
         /// <returns></returns>
-        static IntPtr DllImportResolver(string libraryName, Assembly assembly, DllImportSearchPath? searchPath)
-        {
-            if (libraryName == LIB_NAME)
-            {
-                // attempt to load with default loader
-                if (NativeLibrary.TryLoad(libraryName, out var h) && h != IntPtr.Zero)
-                    return h;
-
-                // scan known paths
-                foreach (var path in GetLibraryPaths(libraryName))
-                    if (NativeLibrary.TryLoad(path, out h) && h != IntPtr.Zero)
-                        return h;
-            }
-
-            return IntPtr.Zero;
-        }
-
-#endif
+        [DllImport("dl", EntryPoint = "dlclose")]
+        static extern IntPtr dlclose(IntPtr handle);
 
         /// <summary>
-        /// Gets the RID architecture.
+        /// Invokes the POSIX dlsym function.
         /// </summary>
+        /// <param name="handle"></param>
         /// <returns></returns>
-        static string GetRuntimeIdentifierArch()
-        {
-            switch (Marshal.SizeOf<IntPtr>())
-            {
-                case 4:
-                    return "x86";
-                case 8:
-                    return "x64";
-                default:
-                    break;
-            }
-
-            throw new NotSupportedException();
-        }
+        [DllImport("dl", EntryPoint = "dlsym")]
+        static extern IntPtr dlsym(IntPtr handle, string name);
 
         /// <summary>
-        /// Gets the runtime identifiers of the current platform.
+        /// Loads the given library in a platform dependent manner.
         /// </summary>
+        /// <param name="path"></param>
         /// <returns></returns>
-        static IEnumerable<string> GetRuntimeIdentifiers()
+        /// <exception cref="PlatformNotSupportedException"></exception>
+        public static IntPtr Load(string path) => Environment.OSVersion.Platform switch
         {
-            var arch = GetRuntimeIdentifierArch();
-
-#if NET461
-            yield return $"win-{arch}";
-#else
-            if (RuntimeInformation.IsOSPlatform(OSPlatform.Windows))
-                yield return $"win-{arch}";
-
-            if (RuntimeInformation.IsOSPlatform(OSPlatform.Linux))
-                yield return $"linux-{arch}";
-#endif
-        }
+            PlatformID.Win32NT => LoadLibrary(path),
+            PlatformID.Unix => dlopen(path, 0),
+            _ => throw new PlatformNotSupportedException()
+        };
 
         /// <summary>
-        /// Gets the appropriate 
+        /// Loads the given library in a platform dependent manner.
         /// </summary>
+        /// <param name="handle"></param>
+        /// <returns></returns>
+        /// <exception cref="PlatformNotSupportedException"></exception>
+        public static IntPtr Free(IntPtr handle) => Environment.OSVersion.Platform switch
+        {
+            PlatformID.Win32NT => FreeLibrary(handle),
+            PlatformID.Unix => dlclose(handle),
+            _ => throw new PlatformNotSupportedException()
+        };
+
+        /// <summary>
+        /// Gets a function pointer to the given named function.
+        /// </summary>
+        /// <param name="handle"></param>
         /// <param name="name"></param>
+        /// <param name="argc"></param>
         /// <returns></returns>
-        static string GetLibraryFileName(string name)
+        /// <exception cref="PlatformNotSupportedException"></exception>
+        public static IntPtr GetFunction(IntPtr handle, string name, int argc) => Environment.OSVersion.Platform switch
         {
-#if NET461
-            return $"{name}.dll";
-#else
-            if (RuntimeInformation.IsOSPlatform(OSPlatform.Windows))
-                return $"{name}.dll";
-
-            if (RuntimeInformation.IsOSPlatform(OSPlatform.Linux))
-                return $"lib{name}.so";
-#endif
-
-            throw new NotSupportedException();
-        }
-
-        /// <summary>
-        /// Gets some library paths to check.
-        /// </summary>
-        /// <returns></returns>
-        static IEnumerable<string> GetLibraryPaths(string name)
-        {
-            var self = Directory.GetParent(typeof(Native).Assembly.Location)?.FullName;
-            if (self == null)
-                yield break;
-
-            var file = GetLibraryFileName(name);
-
-            // search in runtime specific directories
-            foreach (var rid in GetRuntimeIdentifiers())
-                yield return Path.Combine(self, "runtimes", rid, "native", file);
-        }
-
-        [DllImport(LIB_NAME, EntryPoint = "ikvm_LoadLibrary", SetLastError = true)]
-        public static extern IntPtr ikvm_LoadLibrary(string filename);
-
-        [DllImport(LIB_NAME, EntryPoint = "ikvm_FreeLibrary")]
-        public static extern void ikvm_FreeLibrary(IntPtr handle);
-
-        [DllImport(LIB_NAME, EntryPoint = "ikvm_GetProcAddress")]
-        public static extern IntPtr ikvm_GetProcAddress(IntPtr handle, string name, int argc);
-
-        [DllImport(LIB_NAME, EntryPoint = "ikvm_CallOnLoad")]
-        public static extern int ikvm_CallOnLoad(IntPtr method, void* jvm, void* reserved);
-
-        [DllImport(LIB_NAME, EntryPoint = "ikvm_GetJNIEnvVTable")]
-        public static extern void** ikvm_GetJNIEnvVTable();
-
-        [DllImport(LIB_NAME, EntryPoint = "ikvm_MarshalDelegate")]
-        public static extern void* ikvm_MarshalDelegate(Delegate d);
+            PlatformID.Win32NT when IntPtr.Size == 8 => GetProcAddress(handle, name),
+            PlatformID.Win32NT when IntPtr.Size == 4 => GetProcAddress32(handle, name, argc),
+            PlatformID.Unix => dlsym(handle, name),
+            _ => throw new PlatformNotSupportedException()
+        };
 
     }
 

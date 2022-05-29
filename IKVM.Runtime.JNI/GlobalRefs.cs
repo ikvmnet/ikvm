@@ -23,7 +23,7 @@
 */
 using System.Runtime.InteropServices;
 
-namespace IKVM.Runtime.JNI
+namespace IKVM.Runtime
 {
 
     static class GlobalRefs

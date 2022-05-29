@@ -22,7 +22,7 @@
     <ClInclude Include="..\ikvm-native\jni.h" />
   </ItemGroup>
   <ItemGroup>
-    <ClCompile Include="test.c" />
+    <ClCompile Include="JniTests.c" />
   </ItemGroup>
   <PropertyGroup Label="Globals">
     <ProjectGuid>{E566FE94-C551-43A7-843C-5E8199CA7373}</ProjectGuid>

@@ -27,98 +27,15 @@ using System.Text;
 
 using IKVM.Internal;
 
-namespace IKVM.Runtime.JNI
+namespace IKVM.Runtime
 {
 
-    public unsafe sealed class JNI
+    public sealed unsafe class JNI
     {
-
-        internal static volatile bool jvmCreated;
-        internal static volatile bool jvmDestroyed;
-        internal const string METHOD_PTR_FIELD_PREFIX = "__<jniptr>";
-
-        internal static bool IsSupportedJniVersion(jint version)
-        {
-            return version == JNIEnv.JNI_VERSION_1_1
-                || version == JNIEnv.JNI_VERSION_1_2
-                || version == JNIEnv.JNI_VERSION_1_4
-                || version == JNIEnv.JNI_VERSION_1_6
-                || version == JNIEnv.JNI_VERSION_1_8
-                ;
-        }
-
-        public static int CreateJavaVM(void* ppvm, void* ppenv, void* args)
-        {
-            JavaVMInitArgs* pInitArgs = (JavaVMInitArgs*)args;
-            // we don't support the JDK 1.1 JavaVMInitArgs
-            if (!IsSupportedJniVersion(pInitArgs->version) || pInitArgs->version == JNIEnv.JNI_VERSION_1_1)
-            {
-                return JNIEnv.JNI_EVERSION;
-            }
-            if (jvmCreated)
-            {
-                return JNIEnv.JNI_ERR;
-            }
-            System.Collections.Hashtable props = new System.Collections.Hashtable();
-            for (int i = 0; i < pInitArgs->nOptions; i++)
-            {
-                string option = JNIEnv.StringFromOEM(pInitArgs->options[i].optionString);
-                if (option.StartsWith("-D"))
-                {
-                    int idx = option.IndexOf('=', 2);
-                    props[option.Substring(2, idx - 2)] = option.Substring(idx + 1);
-                }
-                else if (option.StartsWith("-verbose"))
-                {
-                    // ignore
-                }
-                else if (option == "vfprintf" || option == "exit" || option == "abort")
-                {
-                    // not supported
-                }
-                else if (pInitArgs->ignoreUnrecognized == JNIEnv.JNI_FALSE)
-                {
-                    return JNIEnv.JNI_ERR;
-                }
-            }
-
-            ikvm.runtime.Startup.setProperties(props);
-
-            // initialize the class library
-            java.lang.Thread.currentThread();
-
-            *((void**)ppvm) = JavaVM.pJavaVM;
-            return JavaVM.AttachCurrentThread(JavaVM.pJavaVM, (void**)ppenv, null);
-        }
-
-        public static int GetDefaultJavaVMInitArgs(void* vm_args)
-        {
-            // This is only used for JDK 1.1 JavaVMInitArgs, and we don't support those.
-            return JNIEnv.JNI_ERR;
-        }
-
-        public static int GetCreatedJavaVMs(void* ppvmBuf, int bufLen, int* nVMs)
-        {
-            if (jvmCreated)
-            {
-                if (bufLen >= 1)
-                {
-                    *((void**)ppvmBuf) = JavaVM.pJavaVM;
-                }
-                if (nVMs != null)
-                {
-                    *nVMs = 1;
-                }
-            }
-            else if (nVMs != null)
-            {
-                *nVMs = 0;
-            }
-            return JNIEnv.JNI_OK;
-        }
 
         public struct Frame
         {
+
             private JNIEnv.ManagedJNIEnv env;
             private JNIEnv.ManagedJNIEnv.FrameState prevFrameState;
 
@@ -204,13 +121,13 @@ namespace IKVM.Runtime.JNI
                 {
                     foreach (IntPtr p in loader.GetNativeLibraries())
                     {
-                        IntPtr pfunc = Native.ikvm_GetProcAddress(p, shortMethodName, sp + 2 * IntPtr.Size);
+                        IntPtr pfunc = NativeLoader.GetFunction(p, shortMethodName, sp + 2 * IntPtr.Size);
                         if (pfunc != IntPtr.Zero)
                         {
                             Tracer.Info(Tracer.Jni, "Native method {0}.{1}{2} found in library 0x{3:X} (short)", clazz, name, sig, p.ToInt64());
                             return pfunc;
                         }
-                        pfunc = Native.ikvm_GetProcAddress(p, longMethodName, sp + 2 * IntPtr.Size);
+                        pfunc = NativeLoader.GetFunction(p, longMethodName, sp + 2 * IntPtr.Size);
                         if (pfunc != IntPtr.Zero)
                         {
                             Tracer.Info(Tracer.Jni, "Native method {0}.{1}{2} found in library 0x{3:X} (long)", clazz, name, sig, p.ToInt64());
@@ -266,6 +183,91 @@ namespace IKVM.Runtime.JNI
             {
                 return JNIEnv.UnwrapRef(env, p);
             }
+
+        }
+
+        internal static volatile bool jvmCreated;
+        internal static volatile bool jvmDestroyed;
+        internal const string METHOD_PTR_FIELD_PREFIX = "__<jniptr>";
+
+        internal static bool IsSupportedJniVersion(jint version)
+        {
+            return version == JNIEnv.JNI_VERSION_1_1
+                || version == JNIEnv.JNI_VERSION_1_2
+                || version == JNIEnv.JNI_VERSION_1_4
+                || version == JNIEnv.JNI_VERSION_1_6
+                || version == JNIEnv.JNI_VERSION_1_8
+                ;
+        }
+
+        public static int CreateJavaVM(void* ppvm, void* ppenv, void* args)
+        {
+            JavaVMInitArgs* pInitArgs = (JavaVMInitArgs*)args;
+            // we don't support the JDK 1.1 JavaVMInitArgs
+            if (!IsSupportedJniVersion(pInitArgs->version) || pInitArgs->version == JNIEnv.JNI_VERSION_1_1)
+            {
+                return JNIEnv.JNI_EVERSION;
+            }
+            if (jvmCreated)
+            {
+                return JNIEnv.JNI_ERR;
+            }
+            System.Collections.Hashtable props = new System.Collections.Hashtable();
+            for (int i = 0; i < pInitArgs->nOptions; i++)
+            {
+                string option = JNIEnv.StringFromOEM(pInitArgs->options[i].optionString);
+                if (option.StartsWith("-D"))
+                {
+                    int idx = option.IndexOf('=', 2);
+                    props[option.Substring(2, idx - 2)] = option.Substring(idx + 1);
+                }
+                else if (option.StartsWith("-verbose"))
+                {
+                    // ignore
+                }
+                else if (option == "vfprintf" || option == "exit" || option == "abort")
+                {
+                    // not supported
+                }
+                else if (pInitArgs->ignoreUnrecognized == JNIEnv.JNI_FALSE)
+                {
+                    return JNIEnv.JNI_ERR;
+                }
+            }
+
+            ikvm.runtime.Startup.setProperties(props);
+
+            // initialize the class library
+            java.lang.Thread.currentThread();
+
+            *((void**)ppvm) = JavaVM.pJavaVM;
+            return JavaVM.AttachCurrentThread(JavaVM.pJavaVM, (void**)ppenv, null);
+        }
+
+        public static int GetDefaultJavaVMInitArgs(void* vm_args)
+        {
+            // This is only used for JDK 1.1 JavaVMInitArgs, and we don't support those.
+            return JNIEnv.JNI_ERR;
+        }
+
+        public static int GetCreatedJavaVMs(void* ppvmBuf, int bufLen, int* nVMs)
+        {
+            if (jvmCreated)
+            {
+                if (bufLen >= 1)
+                {
+                    *((void**)ppvmBuf) = JavaVM.pJavaVM;
+                }
+                if (nVMs != null)
+                {
+                    *nVMs = 1;
+                }
+            }
+            else if (nVMs != null)
+            {
+                *nVMs = 0;
+            }
+            return JNIEnv.JNI_OK;
         }
     }
 }

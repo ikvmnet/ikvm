@@ -25,7 +25,7 @@ using System;
 using System.Runtime.InteropServices;
 // Java type JNI aliases
 
-namespace IKVM.Runtime.JNI
+namespace IKVM.Runtime
 {
     static class JniMem
     {
@@ -38,5 +38,7 @@ namespace IKVM.Runtime.JNI
         {
             Marshal.FreeHGlobal(p);
         }
+
     }
+
 }

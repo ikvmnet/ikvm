@@ -14,7 +14,7 @@
     </ClInclude>
   </ItemGroup>
   <ItemGroup>
-    <ClCompile Include="test.c">
+    <ClCompile Include="JniTests.c">
       <Filter>Source Files</Filter>
     </ClCompile>
   </ItemGroup>

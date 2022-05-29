@@ -1,46 +1,33 @@
 ﻿using System;
 using System.IO;
 
+using FluentAssertions;
+
 using Microsoft.VisualStudio.TestTools.UnitTesting;
 
 namespace IKVM.Tests.JNI
 {
 
     [TestClass]
-    public class JniTests
+    public partial class JniTests
     {
 
-        class JavaSourceFromString : global::javax.tools.SimpleJavaFileObject
+        [TestMethod]
+        public void Can_invoke_native_method()
         {
+            var s = new StreamReader(typeof(JniTests).Assembly.GetManifestResourceStream("IKVM.Tests.JNI.JniTests.java")).ReadToEnd();
+            s = s.Replace("@@IKVM_TESTS_NATIVE@@", Native.GetLibraryPath().Replace(@"\", @"\\"));
+            var f = new InMemoryCodeUnit("ikvm.tests.jni.JniTests", s);
+            var c = new InMemoryCompiler(new[] { f });
+            c.Compile();
+            var z = c.getCompiledClass("ikvm.tests.jni.JniTests");
+            if (z == null)
+                throw new Exception();
 
-            readonly string code;
-
-            public JavaSourceFromString(string name, string code) :
-                base(global::java.net.URI.create("string:///" + name.Replace(".", "/") + global::javax.tools.JavaFileObject.Kind.SOURCE.extension), global::javax.tools.JavaFileObject.Kind.SOURCE)
-            {
-                this.code = code;
-            }
-
-            public override global::java.lang.CharSequence getCharContent(bool ignoreEncodingErrors)
-            {
-                return code;
-            }
-
+            var m = z.getDeclaredMethod("echo", typeof(string));
+            var r = (string)m.invoke(null, "TEST");
+            r.Should().Be("TEST");
         }
-
-        //[TestMethod]
-        //public void Can_get_javac_instance()
-        //{
-        //    var s = new StreamReader(typeof(JniTests).Assembly.GetManifestResourceStream("IKVM.Tests.JNI.JniTests.java")).ReadToEnd();
-        //    var f = global::java.util.Arrays.asList(new JavaSourceFromString("ikvm.tests.JNI.JniTests", s));
-        //    var c = global::javax.tools.ToolProvider.getSystemJavaCompiler();
-        //    var m = c.getStandardFileManager(null, null, null);
-        //    m.setLocation(global::javax.tools.StandardLocation.CLASS_OUTPUT, global::java.util.Arrays.asList(new global::java.io.File(@"C:\foo")));
-        //    var w = new global::java.io.StringWriter();
-        //    var t = c.getTask(w, m, null, null, null, f).call().booleanValue();
-        //    if (t == false)
-        //        throw new Exception(w.toString());
-        //}
 
     }
 

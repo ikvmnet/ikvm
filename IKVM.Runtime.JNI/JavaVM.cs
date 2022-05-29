@@ -24,7 +24,7 @@
 using System;
 using System.Runtime.InteropServices;
 
-namespace IKVM.Runtime.JNI
+namespace IKVM.Runtime
 {
 
     [StructLayout(LayoutKind.Sequential)]
@@ -57,7 +57,7 @@ namespace IKVM.Runtime.JNI
             pJavaVM->vtable = &pJavaVM->firstVtableEntry;
             for (int i = 0; i < vtableDelegates.Length; i++)
             {
-                pJavaVM->vtable[i] = Native.ikvm_MarshalDelegate(vtableDelegates[i]);
+                pJavaVM->vtable[i] = NativeLibrary.ikvm_MarshalDelegate(vtableDelegates[i]);
             }
         }
 
@@ -154,5 +154,7 @@ namespace IKVM.Runtime.JNI
         {
             return AttachCurrentThreadImpl(pJVM, penv, (JavaVMAttachArgs*)args, true);
         }
+
     }
+
 }

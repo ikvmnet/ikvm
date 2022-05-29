@@ -23,14 +23,18 @@
 */
 using System.Runtime.InteropServices;
 
-namespace IKVM.Runtime.JNI
+namespace IKVM.Runtime
 {
+
     [StructLayout(LayoutKind.Sequential)]
     unsafe struct JavaVMInitArgs
     {
+
         internal jint version;
         internal jint nOptions;
         internal JavaVMOption* options;
         internal jboolean ignoreUnrecognized;
+
     }
+
 }

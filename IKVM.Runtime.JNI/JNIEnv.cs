@@ -30,7 +30,7 @@ using System.Text;
 
 using IKVM.Internal;
 
-namespace IKVM.Runtime.JNI
+namespace IKVM.Runtime
 {
 
     [StructLayout(LayoutKind.Sequential)]

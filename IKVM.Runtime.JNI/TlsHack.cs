@@ -23,7 +23,7 @@
 */
 using System;
 
-namespace IKVM.Runtime.JNI
+namespace IKVM.Runtime
 {
 
     static class TlsHack

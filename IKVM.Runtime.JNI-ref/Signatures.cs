@@ -76,7 +76,7 @@ namespace IKVM.Runtime
 
 	}
 
-	internal sealed class JniHelper
+	sealed class JniHelper
 	{
 
 		internal static readonly object JniLock;
