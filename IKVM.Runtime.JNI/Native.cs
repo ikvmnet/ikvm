@@ -160,9 +160,6 @@ namespace IKVM.Runtime
         [DllImport(LIB_NAME, EntryPoint = "ikvm_GetJNIEnvVTable")]
         public static extern void** ikvm_GetJNIEnvVTable();
 
-        [DllImport(LIB_NAME, EntryPoint = "ikvm_MarshalDelegate")]
-        public static extern void* ikvm_MarshalDelegate(Delegate d);
-
     }
 
 }

@@ -57,7 +57,7 @@ namespace IKVM.Runtime
             pJavaVM->vtable = &pJavaVM->firstVtableEntry;
             for (int i = 0; i < vtableDelegates.Length; i++)
             {
-                pJavaVM->vtable[i] = Native.ikvm_MarshalDelegate(vtableDelegates[i]);
+                pJavaVM->vtable[i] = (void*)Marshal.GetFunctionPointerForDelegate(vtableDelegates[i]);
             }
         }
 

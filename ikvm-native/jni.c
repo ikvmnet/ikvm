@@ -490,8 +490,3 @@ JNIEXPORT void** JNICALL ikvm_GetJNIEnvVTable()
 {
 	return JNIEnv_vtable;
 }
-
-JNIEXPORT void* JNICALL ikvm_MarshalDelegate(void* p)
-{
-	return p;
-}

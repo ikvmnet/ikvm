@@ -22,6 +22,7 @@
   
 */
 using System;
+using System.Runtime.InteropServices;
 
 namespace IKVM.Runtime
 {
@@ -122,8 +123,7 @@ namespace IKVM.Runtime
             {
                 if (vtableDelegates[i] != null)
                 {
-                    // TODO on Whidbey we can use Marshal.GetFunctionPointerForDelegate
-                    p[i] = Native.ikvm_MarshalDelegate(vtableDelegates[i]);
+                    p[i] = (void*)Marshal.GetFunctionPointerForDelegate(vtableDelegates[i]);
                 }
                 else
                 {
