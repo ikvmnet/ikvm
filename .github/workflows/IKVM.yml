@@ -258,7 +258,7 @@ jobs:
         path: build/tools
     - name: Compress Tools
       shell: pwsh
-      run: cd build && gi tools/*/* | group { $_.Parent.Name } | %{ $tfm = $_.Name; $_.Group | %{ $rid=$_.Name; Push-Location "tools/$tfm/$rid"; zip -r "../../ikvm-${env:GitVersion_SemVer}-tools-$tfm-$rid.zip" .; Pop-Location  } }
+      run: cd build && gi tools/*/* | group { $_.Parent.Name } | %{ $tfm = $_.Name; $_.Group | %{ $rid=$_.Name; Push-Location "tools/$tfm/$rid"; zip -r "../../IKVM-${env:GitVersion_SemVer}-tools-$tfm-$rid.zip" .; Pop-Location  } }
     - name: Create Release
       if: github.ref == 'refs/heads/master' || github.ref == 'refs/heads/main' || github.event.head_commit.message == '+prerelease'
       uses: ncipollo/release-action@v1.10.0
