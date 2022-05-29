@@ -1,4 +1,19 @@
-# IKVM
+# IKVM - Java Virtual Machine for .NET
+
+[![Nuget](https://img.shields.io/nuget/dt/IKVM)](https://www.nuget.org/packages/IKVM)
+[![GitHub](https://img.shields.io/github/license/ikvm-revived/ikvm)](https://github.com/ikvm-revived/ikvm/blob/master/LICENSE.md)
+
+IKVM includes a Java Virtual Machine implemented in C#. It provides tools to easily convert Java source code or compiled `.jar` files into .NET assemblies. Conversely, it can also be used to compile .NET assemblies in Java.
+
+## Documentation
+
+See the [tutorial](https://sourceforge.net/p/ikvm/wiki/Tutorial/) to get started or [IKVM.NET In Details](https://www.c-sharpcorner.com/UploadFile/abhijmk/ikvm-net-in-details/) for a more in-depth look.
+
+## Support
+
+- .NET Framework 4.6.1 and higher
+- .NET Core 3.1 and higher
+- .NET 5 and higher
 
 ## Build
 
