@@ -289,7 +289,7 @@ public static class NetExp
             object[] copyright = asm.GetCustomAttributes(typeof(System.Reflection.AssemblyCopyrightAttribute), false);
             if (copyright.Length == 1)
             {
-                return string.Format("{0} version {1}{2}{3}{2}http://www.ikvm.net/",
+                return string.Format("{0} version {1}{2}{3}", // TODO: Add domain once we get one {2}http://www.ikvm.net/
                     ((System.Reflection.AssemblyTitleAttribute)desc[0]).Title,
                     asm.GetName().Version,
                     Environment.NewLine,
