@@ -5,7 +5,8 @@
         <TargetFrameworks>net461;netcoreapp3.1</TargetFrameworks>
         <IncludeBuildOutput>true</IncludeBuildOutput>
         <TargetsForTfmSpecificContentInPackage>$(TargetsForTfmSpecificContentInPackage);CopyProjectReferencesToPackage</TargetsForTfmSpecificContentInPackage>
-        <PackageLicenseFile>LICENSE</PackageLicenseFile>
+        <PackageLicenseFile>LICENSE.md</PackageLicenseFile>
+        <PackageReadmeFile>README.md</PackageReadmeFile>
         <Description>Java SE 8 Virtual Machine for .NET</Description>
         <GenerateDocumentationFile>false</GenerateDocumentationFile>
     </PropertyGroup>
@@ -59,7 +60,8 @@
     </ItemGroup>
 
     <ItemGroup>
-        <None Include="..\LICENSE" Pack="true" PackagePath="." />
+        <None Include="..\LICENSE.md" Pack="true" PackagePath="." />
+        <None Include="..\README.md" Pack="true" PackagePath="." />
     </ItemGroup>
 
     <Target Name="CopyProjectReferencesToPackage" DependsOnTargets="ResolveReferences">

@@ -117,8 +117,8 @@ final class VMSystemProperties
     {
         p.setProperty("java.version", "1.8.0");
         p.setProperty("java.vendor", "Jeroen Frijters");
-        p.setProperty("java.vendor.url", "http://ikvm.net/");
-        p.setProperty("java.vendor.url.bug", "http://www.ikvm.net/bugs");
+        p.setProperty("java.vendor.url", "https://github.com/ikvm-revived/ikvm");
+        p.setProperty("java.vendor.url.bug", "https://github.com/ikvm-revived/ikvm/issues");
         p.setProperty("java.vm.specification.version", "1.8");
         p.setProperty("java.vm.specification.vendor", "Oracle Corporation");
         p.setProperty("java.vm.specification.name", "Java Virtual Machine Specification");

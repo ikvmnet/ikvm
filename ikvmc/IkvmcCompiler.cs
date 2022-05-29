@@ -284,7 +284,7 @@ namespace ikvmc
             var desc = System.Reflection.CustomAttributeExtensions.GetCustomAttribute<System.Reflection.AssemblyTitleAttribute>(asm);
             var copy = System.Reflection.CustomAttributeExtensions.GetCustomAttribute<System.Reflection.AssemblyCopyrightAttribute>(asm);
             var info = System.Reflection.CustomAttributeExtensions.GetCustomAttribute<System.Reflection.AssemblyInformationalVersionAttribute>(asm);
-            return $"{desc.Title} ({info.InformationalVersion}){Environment.NewLine}{copy.Copyright}{Environment.NewLine}http://www.ikvm.org/";
+            return $"{desc.Title} ({info.InformationalVersion}){Environment.NewLine}{copy.Copyright}"; // TODO: Add domain once we get one {Environment.NewLine}http://www.ikvm.org/
         }
 
         private static void PrintHeader()

@@ -164,7 +164,7 @@ public final class Startup
             Object[] copyright = asm.GetCustomAttributes(Util.getInstanceTypeFromClass(AssemblyCopyrightAttribute.class), false);
             if(copyright.length == 1)
             {
-                return cli.System.String.Format("{0} version {1}{2}{3}{2}http://www.ikvm.net/",
+                return cli.System.String.Format("{0} version {1}{2}{3}", // TODO: Add domain once we get one {2}http://www.ikvm.net/
                     ((AssemblyTitleAttribute)desc[0]).get_Title(),
                     asm.GetName().get_Version(),
                     Environment.get_NewLine(),
