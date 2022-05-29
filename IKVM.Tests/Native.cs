@@ -30,20 +30,12 @@ namespace IKVM.Tests
         /// Gets the RID architecture.
         /// </summary>
         /// <returns></returns>
-        static string GetRuntimeIdentifierArch()
+        static string GetRuntimeIdentifierArch() => IntPtr.Size switch
         {
-            switch (Marshal.SizeOf<IntPtr>())
-            {
-                case 4:
-                    return "x86";
-                case 8:
-                    return "x64";
-                default:
-                    break;
-            }
-
-            throw new NotSupportedException();
-        }
+            4 => "x86",
+            8 => "x64",
+            _ => throw new NotSupportedException(),
+        };
 
         /// <summary>
         /// Gets the runtime identifiers of the current platform.

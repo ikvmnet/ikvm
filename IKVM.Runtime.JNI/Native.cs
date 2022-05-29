@@ -63,11 +63,15 @@ namespace IKVM.Runtime
         /// </summary>
         /// <param name="handle"></param>
         /// <param name="name"></param>
-        /// <param name="argc"></param>
+        /// <param name="argl"></param>
         /// <returns></returns>
-        static IntPtr GetProcAddress32(IntPtr handle, string name, int argc)
+        static IntPtr GetProcAddress32(IntPtr handle, string name, int argl)
         {
-            var h = GetProcAddress(handle, name + "@" + argc);
+            // long paths not supported on Win32
+            if (name.Length > 512 - 11)
+                return IntPtr.Zero;
+
+            var h = GetProcAddress(handle, "_" + name + "@" + argl);
             if (h == IntPtr.Zero)
                 h = GetProcAddress(handle, name);
 
