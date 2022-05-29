@@ -10,9 +10,7 @@ public class JniTests
 
 	public static String echo(String value)
 	{
-		System.out.println("enter echo");
 		String ret = echoImpl(value);
-		System.out.println("leave echo");
 		return ret;
 	}
 

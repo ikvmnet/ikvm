@@ -7,7 +7,7 @@ namespace IKVM.Tests
 {
 
     /// <summary>
-    /// Provides access to the native companion methods.
+    /// Assists in discovering the native test library.
     /// </summary>
     static unsafe class Native
     {

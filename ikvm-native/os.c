@@ -22,15 +22,10 @@
 
 */
 #ifdef _WIN32
-
-#include <windows.h>
-#include "jni.h"
-
 #else
 
 #include <sys/types.h>
 #include <sys/mman.h>
-#include <dlfcn.h>
 #include "jni.h"
 
 JNIEXPORT void* JNICALL ikvm_mmap(int fd, jboolean writeable, jboolean copy_on_write, jlong position, jint size)

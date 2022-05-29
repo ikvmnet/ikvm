@@ -116,14 +116,14 @@ namespace IKVM.Runtime
         {
             JNI.jvmCreated = true;
             // JNIEnv
-            void** pmcpp = NativeLibrary.ikvm_GetJNIEnvVTable();
+            void** pmcpp = Native.ikvm_GetJNIEnvVTable();
             void** p = (void**)JniMem.Alloc(IntPtr.Size * vtableDelegates.Length);
             for (int i = 0; i < vtableDelegates.Length; i++)
             {
                 if (vtableDelegates[i] != null)
                 {
                     // TODO on Whidbey we can use Marshal.GetFunctionPointerForDelegate
-                    p[i] = NativeLibrary.ikvm_MarshalDelegate(vtableDelegates[i]);
+                    p[i] = Native.ikvm_MarshalDelegate(vtableDelegates[i]);
                 }
                 else
                 {

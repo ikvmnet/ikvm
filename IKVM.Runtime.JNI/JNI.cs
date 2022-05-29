@@ -121,13 +121,13 @@ namespace IKVM.Runtime
                 {
                     foreach (var p in loader.GetNativeLibraries())
                     {
-                        var pfunc = NativeLoader.GetFunction(p, shortMethodName, sp + 2 * IntPtr.Size);
+                        var pfunc = JniNativeLibrary.GetExport(p, shortMethodName, sp + 2 * IntPtr.Size);
                         if (pfunc != IntPtr.Zero)
                         {
                             Tracer.Info(Tracer.Jni, "Native method {0}.{1}{2} found in library 0x{3:X} (short)", clazz, name, sig, p.ToInt64());
                             return pfunc;
                         }
-                        pfunc = NativeLoader.GetFunction(p, longMethodName, sp + 2 * IntPtr.Size);
+                        pfunc = JniNativeLibrary.GetExport(p, longMethodName, sp + 2 * IntPtr.Size);
                         if (pfunc != IntPtr.Zero)
                         {
                             Tracer.Info(Tracer.Jni, "Native method {0}.{1}{2} found in library 0x{3:X} (long)", clazz, name, sig, p.ToInt64());

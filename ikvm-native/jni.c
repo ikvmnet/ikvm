@@ -495,10 +495,3 @@ JNIEXPORT void* JNICALL ikvm_MarshalDelegate(void* p)
 {
 	return p;
 }
-
-typedef jint (JNICALL *PJNI_ONLOAD)(JavaVM* vm, void* reserved);
-
-JNIEXPORT jint JNICALL ikvm_CallOnLoad(PJNI_ONLOAD method, JavaVM* vm, void* reserved)
-{
-	return method(vm, reserved);
-}

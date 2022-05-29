@@ -54,63 +54,85 @@ namespace IKVM.Runtime
 
             lock (JniLock)
             {
-                var p = NativeLoader.Load(filename);
-                if (p == IntPtr.Zero)
-                {
-                    Tracer.Info(Tracer.Jni, "Failed to load library: path = '{0}', error = {1}, message = {2}", filename, Marshal.GetLastWin32Error(), new System.ComponentModel.Win32Exception().Message);
-                    return 0;
-                }
+                var p = IntPtr.Zero;
+
                 try
                 {
-                    foreach (IntPtr tmp in loader.GetNativeLibraries())
+                    // attempt to load the native library
+                    p = JniNativeLibrary.Load(filename);
+                    if (p == IntPtr.Zero)
+                    {
+                        Tracer.Info(Tracer.Jni, "Failed to load library: path = '{0}', message = {2}", filename, "NULL handle returned.");
+                        return 0;
+                    }
+
+                    // find whether the native library was already loaded
+                    foreach (var tmp in loader.GetNativeLibraries())
                     {
                         if (tmp == p)
                         {
-                            // the library was already loaded by the current class loader,
-                            // no need to do anything
-                            NativeLoader.Free(p);
-                            Tracer.Warning(Tracer.Jni, "Library was already loaded: {0}", filename);
+                            JniNativeLibrary.Free(p);
+                            Tracer.Warning(Tracer.Jni, "Library was already loaded, returning same reference.", filename);
                             return p.ToInt64();
                         }
                     }
+
+                    // library was loaded by another classloader, that's a link error
                     if (nativeLibraries.Contains(p))
                     {
-                        string msg = string.Format("Native library {0} already loaded in another classloader", filename);
+                        var msg = $"Native library '{filename}' already loaded in another classloader.";
                         Tracer.Error(Tracer.Jni, "UnsatisfiedLinkError: {0}", msg);
                         throw new java.lang.UnsatisfiedLinkError(msg);
                     }
+
                     Tracer.Info(Tracer.Jni, "Library loaded: {0}, handle = 0x{1:X}", filename, p.ToInt64());
-                    IntPtr onload = NativeLoader.GetFunction(p, "JNI_OnLoad", IntPtr.Size * 2);
-                    if (onload != IntPtr.Zero)
+
+                    try
                     {
-                        Tracer.Info(Tracer.Jni, "Calling JNI_OnLoad on: {0}", filename);
-                        JNI.Frame f = new JNI.Frame();
-                        int version;
-                        ClassLoaderWrapper prevLoader = f.Enter(loader);
-                        try
+                        var onload = JniNativeLibrary.GetExport(p, "JNI_OnLoad", IntPtr.Size * 2);
+                        if (onload != IntPtr.Zero)
                         {
-                            // TODO on Whidbey we should be able to use Marshal.GetDelegateForFunctionPointer to call OnLoad
-                            version = NativeLibrary.ikvm_CallOnLoad(onload, JavaVM.pJavaVM, null);
-                            Tracer.Info(Tracer.Jni, "JNI_OnLoad returned: 0x{0:X8}", version);
-                        }
-                        finally
-                        {
-                            f.Leave(prevLoader);
-                        }
-                        if (!JNI.IsSupportedJniVersion(version))
-                        {
-                            string msg = string.Format("Unsupported JNI version 0x{0:X} required by {1}", version, filename);
-                            Tracer.Error(Tracer.Jni, "UnsatisfiedLinkError: {0}", msg);
-                            throw new java.lang.UnsatisfiedLinkError(msg);
+                            Tracer.Info(Tracer.Jni, "Calling JNI_OnLoad on: {0}", filename);
+                            var f = new JNI.Frame();
+                            int v;
+                            var w = f.Enter(loader);
+                            try
+                            {
+                                v = Marshal.GetDelegateForFunctionPointer<Func<IntPtr, IntPtr, int>>(onload)((IntPtr)JavaVM.pJavaVM, IntPtr.Zero);
+                                Tracer.Info(Tracer.Jni, "JNI_OnLoad returned: 0x{0:X8}", v);
+                            }
+                            finally
+                            {
+                                f.Leave(w);
+                            }
+
+                            if (JNI.IsSupportedJniVersion(v) == false)
+                            {
+                                var msg = $"Unsupported JNI version 0x{v:X} required by {filename}";
+                                Tracer.Error(Tracer.Jni, "UnsatisfiedLinkError: {0}", msg);
+                                throw new java.lang.UnsatisfiedLinkError(msg);
+                            }
                         }
                     }
+                    catch (EntryPointNotFoundException)
+                    {
+                        // JNI_OnLoad entry point doesn't exist and isn't required
+                    }
+
+                    // record addition of native library
                     nativeLibraries.Add(p);
                     loader.RegisterNativeLibrary(p);
                     return p.ToInt64();
                 }
-                catch
+                catch (DllNotFoundException e)
                 {
-                    NativeLoader.Free(p);
+                    Tracer.Info(Tracer.Jni, "Failed to load library: path = '{0}', error = {1}, message = {2}", filename, "DllNotFoundException", e.Message);
+                    return 0;
+                }
+                catch (Exception e)
+                {
+                    Tracer.Info(Tracer.Jni, "Failed to load library: path = '{0}', error = {1}, message = {2}", filename, "Exception", e.Message);
+                    JniNativeLibrary.Free(p);
                     throw;
                 }
             }
@@ -118,29 +140,40 @@ namespace IKVM.Runtime
 
         private unsafe static void UnloadLibrary(long handle, ClassLoaderWrapper loader)
         {
+            var p = (IntPtr)handle;
+
             lock (JniLock)
             {
                 Tracer.Info(Tracer.Jni, "Unloading library: handle = 0x{0:X}, class loader = {1}", handle, loader);
-                IntPtr p = (IntPtr)handle;
-                IntPtr onunload = NativeLoader.GetFunction(p, "JNI_OnUnload", IntPtr.Size * 2);
-                if (onunload != IntPtr.Zero)
+
+                try
                 {
-                    Tracer.Info(Tracer.Jni, "Calling JNI_OnUnload on: handle = 0x{0:X}", handle);
-                    JNI.Frame f = new JNI.Frame();
-                    ClassLoaderWrapper prevLoader = f.Enter(loader);
-                    try
+                    var onunload = JniNativeLibrary.GetExport(p, "JNI_OnUnload", IntPtr.Size * 2);
+                    if (onunload != IntPtr.Zero)
                     {
-                        // TODO on Whidbey we should be able to use Marshal.GetDelegateForFunctionPointer to call OnLoad
-                        NativeLibrary.ikvm_CallOnLoad(onunload, JavaVM.pJavaVM, null);
-                    }
-                    finally
-                    {
-                        f.Leave(prevLoader);
+                        Tracer.Info(Tracer.Jni, "Calling JNI_OnUnload on: handle = 0x{0:X}", handle);
+
+                        var f = new JNI.Frame();
+                        var w = f.Enter(loader);
+                        try
+                        {
+                            Marshal.GetDelegateForFunctionPointer<Func<IntPtr, IntPtr, int>>(onunload)((IntPtr)JavaVM.pJavaVM, IntPtr.Zero);
+                        }
+                        finally
+                        {
+                            f.Leave(w);
+                        }
                     }
                 }
+                catch (EntryPointNotFoundException)
+                {
+                    // JNI_OnUnload entry point doesn't exist and isn't required
+                }
+
+                // remove record of native library
                 nativeLibraries.Remove(p);
                 loader.UnregisterNativeLibrary(p);
-                NativeLoader.Free((IntPtr)handle);
+                JniNativeLibrary.Free((IntPtr)handle);
             }
         }
 
