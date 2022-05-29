@@ -6,6 +6,7 @@
         <IncludeBuildOutput>true</IncludeBuildOutput>
         <TargetsForTfmSpecificContentInPackage>$(TargetsForTfmSpecificContentInPackage);CopyProjectReferencesToPackage</TargetsForTfmSpecificContentInPackage>
         <PackageLicenseFile>LICENSE.md</PackageLicenseFile>
+        <PackageReadmeFile>README.md</PackageReadmeFile>
         <Description>Java SE 8 Virtual Machine for .NET</Description>
         <GenerateDocumentationFile>false</GenerateDocumentationFile>
     </PropertyGroup>
@@ -60,6 +61,7 @@
 
     <ItemGroup>
         <None Include="..\LICENSE.md" Pack="true" PackagePath="." />
+        <None Include="..\README.md" Pack="true" PackagePath="." />
     </ItemGroup>
 
     <Target Name="CopyProjectReferencesToPackage" DependsOnTargets="ResolveReferences">
