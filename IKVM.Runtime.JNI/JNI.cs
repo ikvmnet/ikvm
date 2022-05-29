@@ -113,15 +113,15 @@ namespace IKVM.Runtime
                 string mangledClass = JniMangle(clazz);
                 string mangledName = JniMangle(name);
                 string mangledSig = JniMangle(sig.Substring(1, sig.IndexOf(')') - 1));
-                string shortMethodName = String.Format("Java_{0}_{1}", mangledClass, mangledName);
-                string longMethodName = String.Format("Java_{0}_{1}__{2}", mangledClass, mangledName, mangledSig);
-                Tracer.Info(Tracer.Jni, "Linking native method: {0}.{1}{2}, class loader = {3}, short = {4}, long = {5}, args = {6}",
-                    clazz, name, sig, loader, shortMethodName, longMethodName, sp + 2 * IntPtr.Size);
+                string shortMethodName = $"Java_{mangledClass}_{mangledName}";
+                string longMethodName = $"Java_{mangledClass}_{mangledName}__{mangledSig}";
+                Tracer.Info(Tracer.Jni, "Linking native method: {0}.{1}{2}, class loader = {3}, short = {4}, long = {5}, args = {6}", clazz, name, sig, loader, shortMethodName, longMethodName, sp + 2 * IntPtr.Size);
+
                 lock (JniHelper.JniLock)
                 {
-                    foreach (IntPtr p in loader.GetNativeLibraries())
+                    foreach (var p in loader.GetNativeLibraries())
                     {
-                        IntPtr pfunc = NativeLoader.GetFunction(p, shortMethodName, sp + 2 * IntPtr.Size);
+                        var pfunc = NativeLoader.GetFunction(p, shortMethodName, sp + 2 * IntPtr.Size);
                         if (pfunc != IntPtr.Zero)
                         {
                             Tracer.Info(Tracer.Jni, "Native method {0}.{1}{2} found in library 0x{3:X} (short)", clazz, name, sig, p.ToInt64());
@@ -135,41 +135,43 @@ namespace IKVM.Runtime
                         }
                     }
                 }
-                string msg = string.Format("{0}.{1}{2}", clazz, name, sig);
+
+                var msg = $"{clazz}.{name}{sig}";
                 Tracer.Error(Tracer.Jni, "UnsatisfiedLinkError: {0}", msg);
                 throw new java.lang.UnsatisfiedLinkError(msg);
             }
 
             private static string JniMangle(string name)
             {
-                StringBuilder sb = new StringBuilder();
-                foreach (char c in name)
+                var sb = new StringBuilder();
+
+                foreach (var c in name)
                 {
-                    if (c == '/')
+                    switch (c)
                     {
-                        sb.Append('_');
-                    }
-                    else if (c == '_')
-                    {
-                        sb.Append("_1");
-                    }
-                    else if (c == ';')
-                    {
-                        sb.Append("_2");
-                    }
-                    else if (c == '[')
-                    {
-                        sb.Append("_3");
-                    }
-                    else if ((c >= '0' && c <= '9') || (c >= 'a' && c <= 'z') || (c >= 'A' && c <= 'Z'))
-                    {
-                        sb.Append(c);
-                    }
-                    else
-                    {
-                        sb.Append(String.Format("_0{0:x4}", (int)c));
+                        case '/':
+                            sb.Append('_');
+                            break;
+                        case '_':
+                            sb.Append("_1");
+                            break;
+                        case ';':
+                            sb.Append("_2");
+                            break;
+                        case '[':
+                            sb.Append("_3");
+                            break;
+                        case >= '0' and <= '9':
+                        case >= 'a' and <= 'z':
+                        case >= 'A' and <= 'Z':
+                            sb.Append(c);
+                            break;
+                        default:
+                            sb.Append($"_0{(int)c:x4}");
+                            break;
                     }
                 }
+
                 return sb.ToString();
             }
 

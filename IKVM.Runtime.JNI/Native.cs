@@ -134,13 +134,13 @@ namespace IKVM.Runtime
         /// </summary>
         /// <param name="handle"></param>
         /// <param name="name"></param>
-        /// <param name="argc"></param>
+        /// <param name="argl"></param>
         /// <returns></returns>
         /// <exception cref="PlatformNotSupportedException"></exception>
-        public static IntPtr GetFunction(IntPtr handle, string name, int argc) => Environment.OSVersion.Platform switch
+        public static IntPtr GetFunction(IntPtr handle, string name, int argl) => Environment.OSVersion.Platform switch
         {
             PlatformID.Win32NT when IntPtr.Size == 8 => GetProcAddress(handle, name),
-            PlatformID.Win32NT when IntPtr.Size == 4 => GetProcAddress32(handle, name, argc),
+            PlatformID.Win32NT when IntPtr.Size == 4 => GetProcAddress32(handle, name, argl),
             PlatformID.Unix => dlsym(handle, name),
             _ => throw new PlatformNotSupportedException()
         };
