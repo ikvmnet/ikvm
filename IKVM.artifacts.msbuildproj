@@ -14,11 +14,7 @@
 		</TargetsForPublish>
         <TargetsForPublish Include="$(SolutionFile)">
             <Targets>ikvm:Publish;ikvmc:Publish;ikvmstub:Publish</Targets>
-            <Properties>TargetFramework=net461;RuntimeIdentifier=win7-x64;PublishDir=$([System.IO.Path]::Combine('$(ArtifactStagingDirectory)', 'tools\net461\win7-x64'))</Properties>
-        </TargetsForPublish>
-        <TargetsForPublish Include="$(SolutionFile)">
-            <Targets>ikvm:Publish;ikvmc:Publish;ikvmstub:Publish</Targets>
-            <Properties>TargetFramework=net461;RuntimeIdentifier=win7-x86;PublishDir=$([System.IO.Path]::Combine('$(ArtifactStagingDirectory)', 'tools\net461\win7-x86'))</Properties>
+            <Properties>TargetFramework=net461;PublishDir=$([System.IO.Path]::Combine('$(ArtifactStagingDirectory)', 'tools\net461\any'))</Properties>
         </TargetsForPublish>
         <TargetsForPublish Include="$(SolutionFile)">
             <Targets>ikvm:Publish;ikvmc:Publish;ikvmstub:Publish</Targets>
