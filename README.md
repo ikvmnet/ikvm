@@ -3,7 +3,7 @@
 [![Nuget](https://img.shields.io/nuget/dt/IKVM)](https://www.nuget.org/packages/IKVM)
 [![GitHub](https://img.shields.io/github/license/ikvm-revived/ikvm)](https://github.com/ikvm-revived/ikvm/blob/master/LICENSE.md)
 
-IKVM.NET is an implementation of Java for Mono and the Microsoft .NET Framework.
+IKVM.NET is an implementation of Java for the Microsoft .NET Framework and .NET Core.
 
 IKVM.NET includes the following components:
 
