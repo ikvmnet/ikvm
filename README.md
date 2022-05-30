@@ -3,7 +3,15 @@
 [![Nuget](https://img.shields.io/nuget/dt/IKVM)](https://www.nuget.org/packages/IKVM)
 [![GitHub](https://img.shields.io/github/license/ikvm-revived/ikvm)](https://github.com/ikvm-revived/ikvm/blob/master/LICENSE.md)
 
-IKVM includes a Java Virtual Machine implemented in C#. It provides tools to easily convert Java source code or compiled `.jar` files into .NET assemblies.
+IKVM.NET is an implementation of Java for the Microsoft .NET Framework and .NET Core.
+
+IKVM.NET includes the following components:
+
+* A Java virtual machine (JVM) implemented in .NET
+* A .NET implementation of the Java class libraries
+* A tool that translates Java bytecode (JAR files) to .NET IL (DLLs or EXE files).
+* Tools that enable Java and .NET interoperability
+* With IKVM.NET you can run compiled Java code (bytecode) directly on Microsoft .NET Framework or .NET Core. The bytecode is converted on the fly to CIL and executed.
 
 ## Documentation
 
