@@ -81,6 +81,17 @@ jobs:
       with:
         name: openjdk8-build-linux-x86_64-normal-server-release
         path: openjdk8/build/openjdk8-build-linux-x86_64-normal-server-release.zip
+    - name: Build Java Regression Test Harness
+      run: bash ./build.sh --jdk ../../openjdk8/build/openjdk8-build-linux-x86_64-normal-server-release/images/j2sdk-image
+      working-directory: jtreg/make
+    - name: Package Java Regression Test Harness
+      run: zip -r jtreg-build.zip build
+      working-directory: jtreg
+    - name: Upload Java Regression Test Harness 
+      uses: actions/upload-artifact@v3
+      with:
+        name: jtreg-build
+        path: jtreg/jtreg-build.zip
   build-ikvm:
     name: Build IKVM (Windows)
     needs:
