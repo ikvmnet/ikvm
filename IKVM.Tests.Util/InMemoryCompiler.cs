@@ -1,13 +1,17 @@
 ﻿using System;
 using System.Collections.Concurrent;
+using System.IO;
 
-namespace IKVM.Tests.JNI
+namespace IKVM.Tests.Util
 {
+
     /// <summary>
     /// Provides methods to compile a set of sources into a Java classes.
     /// </summary>
-    class InMemoryCompiler
+    public class InMemoryCompiler
     {
+
+        readonly ConcurrentDictionary<string, global::java.io.ByteArrayOutputStream> classes = new();
 
         /// <summary>
         /// Captures the output files from the compilation process.
@@ -15,7 +19,7 @@ namespace IKVM.Tests.JNI
         class InMemoryForwardingJavaFileManager : global::javax.tools.ForwardingJavaFileManager
         {
 
-            readonly ConcurrentDictionary<string, global::java.io.ByteArrayOutputStream> classes = new();
+            readonly ConcurrentDictionary<string, global::java.io.ByteArrayOutputStream> classes;
 
             /// <summary>
             /// Class loader which reads from the output class files.
@@ -87,10 +91,11 @@ namespace IKVM.Tests.JNI
             /// Initializes a new instance.
             /// </summary>
             /// <param name="manager"></param>
-            public InMemoryForwardingJavaFileManager(global::javax.tools.JavaFileManager manager) :
+            /// <param name="classes"></param>
+            public InMemoryForwardingJavaFileManager(global::javax.tools.JavaFileManager manager, ConcurrentDictionary<string, global::java.io.ByteArrayOutputStream> classes) :
                 base(manager)
             {
-
+                this.classes = classes ?? throw new ArgumentNullException(nameof(classes));
             }
 
             /// <summary>
@@ -163,7 +168,7 @@ namespace IKVM.Tests.JNI
             this.compiler = global::javax.tools.ToolProvider.getSystemJavaCompiler() ?? throw new Exception();
 
             this.units = source ?? throw new ArgumentNullException(nameof(source));
-            this.files = new InMemoryForwardingJavaFileManager(compiler.getStandardFileManager(null, null, null));
+            this.files = new InMemoryForwardingJavaFileManager(compiler.getStandardFileManager(null, null, null), classes);
         }
 
         /// <summary>
@@ -201,9 +206,59 @@ namespace IKVM.Tests.JNI
             var cld = files.getClassLoader(null);
             var cls = cld.loadClass(className);
             if (cls == null)
-                throw new ClassNotFoundException("Class returned by ClassLoader was null!");
+                throw new global::java.lang.ClassNotFoundException("Class returned by ClassLoader was null!");
 
             return cls;
+        }
+
+        /// <summary>
+        /// Writes the compiled classes to a JAR.
+        /// </summary>
+        /// <param name="path"></param>
+        public void WriteJar(string path)
+        {
+            using var jar = File.OpenWrite(path);
+            WriteJar(jar);
+        }
+
+        /// <summary>
+        /// Writes the compiled classes to a JAR on the given stream.
+        /// </summary>
+        /// <param name="stream"></param>
+        public void WriteJar(Stream stream)
+        {
+            // write to temporary stream
+            var buf = new global::java.io.ByteArrayOutputStream();
+            WriteJar(buf);
+            stream.Write(buf.toByteArray(), 0, buf.size());
+        }
+
+        /// <summary>
+        /// Writes the compiled classes to a JAR on the given stream.
+        /// </summary>
+        /// <param name="stream"></param>
+        public void WriteJar(global::java.io.OutputStream stream)
+        {
+            var man = new global::java.util.jar.Manifest();
+            man.getMainAttributes().put(global::java.util.jar.Attributes.Name.MANIFEST_VERSION, "1.0");
+            var jar = new global::java.util.jar.JarOutputStream(stream, man);
+            WriteJar(jar);
+            jar.close();
+        }
+
+        /// <summary>
+        /// Writes the compiled classes to a JAR.
+        /// </summary>
+        /// <param name="jar"></param>
+        public void WriteJar(global::java.util.jar.JarOutputStream jar)
+        {
+            foreach (var i in classes)
+            {
+                var e = new global::java.util.jar.JarEntry(i.Key.Replace(".", "/") + ".class");
+                jar.putNextEntry(e);
+                i.Value.writeTo(jar);
+                jar.closeEntry();
+            }
         }
 
     }

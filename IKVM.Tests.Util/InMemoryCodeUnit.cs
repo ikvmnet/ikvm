@@ -1,11 +1,12 @@
 ﻿using System;
 
-namespace IKVM.Tests.JNI
+namespace IKVM.Tests.Util
 {
+
     /// <summary>
     /// Represents a unit of code to compile.
     /// </summary>
-    class InMemoryCodeUnit
+    public class InMemoryCodeUnit
     {
 
         /// <summary>

@@ -49,6 +49,7 @@ public static class NetExp
 
     public static int Main(string[] args)
     {
+
         IKVM.Internal.Tracer.EnableTraceConsoleListener();
         IKVM.Internal.Tracer.EnableTraceForDebug();
         string assemblyNameOrPath = null;
@@ -56,7 +57,6 @@ public static class NetExp
         bool autoLoadSharedClassLoaderAssemblies = false;
         List<string> references = new List<string>();
         List<string> libpaths = new List<string>();
-        bool nostdlib = false;
         bool bootstrap = false;
         string outputFile = null;
         bool forwarders = false;
@@ -86,10 +86,6 @@ public static class NetExp
                 else if (s.StartsWith("-r:") || s.StartsWith("-reference:"))
                 {
                     references.Add(s.Substring(s.IndexOf(':') + 1));
-                }
-                else if (s == "-nostdlib")
-                {
-                    nostdlib = true;
                 }
                 else if (s.StartsWith("-lib:"))
                 {
@@ -139,7 +135,6 @@ public static class NetExp
             Console.Error.WriteLine("    -japi                      Generate jar suitable for comparison with japitools");
             Console.Error.WriteLine("    -skiperror                 Continue when errors are encountered");
             Console.Error.WriteLine("    -shared                    Process all assemblies in shared group");
-            Console.Error.WriteLine("    -nostdlib                  Do not reference standard libraries");
             Console.Error.WriteLine("    -lib:<dir>                 Additional directories to search for references");
             Console.Error.WriteLine("    -namespace:<ns>            Only include types from specified namespace");
             Console.Error.WriteLine("    -forwarders                Export forwarded types too");
@@ -147,20 +142,16 @@ public static class NetExp
             return 1;
         }
 
-        if (File.Exists(assemblyNameOrPath) && nostdlib)
-        {
-            // Add the target assembly to the references list, to allow it to be considered as "mscorlib".
-            // This allows "ikvmstub -nostdlib \...\mscorlib.dll" to work.
+        if (File.Exists(assemblyNameOrPath))
             references.Add(assemblyNameOrPath);
-        }
 
         StaticCompiler.Resolver.Warning += new AssemblyResolver.WarningEvent(Resolver_Warning);
-        StaticCompiler.Resolver.Init(StaticCompiler.Universe, nostdlib, references, libpaths);
+        StaticCompiler.Resolver.Init(StaticCompiler.Universe, references, libpaths);
         Dictionary<string, Assembly> cache = new Dictionary<string, Assembly>();
         foreach (string reference in references)
         {
-            Assembly[] dummy = null;
-            if (!StaticCompiler.Resolver.ResolveReference(cache, ref dummy, reference))
+            var dummy = new List<Assembly>();
+            if (!StaticCompiler.Resolver.ResolveReference(cache, dummy, reference))
             {
                 Console.Error.WriteLine("Error: reference not found {0}", reference);
                 return 1;
@@ -199,8 +190,8 @@ public static class NetExp
             else
             {
                 StaticCompiler.LoadFile(typeof(NetExp).Assembly.Location);
-                StaticCompiler.runtimeAssembly = StaticCompiler.LoadFile(Path.GetFullPath(Path.Combine(typeof(NetExp).Assembly.Location, "../IKVM.Runtime.dll")));
-                JVM.CoreAssembly = StaticCompiler.LoadFile(Path.GetFullPath(Path.Combine(typeof(NetExp).Assembly.Location, "../IKVM.Java.dll")));
+                StaticCompiler.runtimeAssembly = StaticCompiler.LoadFile(Path.GetFullPath(Path.Combine(typeof(NetExp).Assembly.Location, "..", "IKVM.Runtime.dll")));
+                JVM.CoreAssembly = StaticCompiler.LoadFile(Path.GetFullPath(Path.Combine(typeof(NetExp).Assembly.Location, "..", "IKVM.Java.dll")));
             }
             if (AttributeHelper.IsJavaModule(assembly.ManifestModule))
             {

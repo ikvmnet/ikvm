@@ -3,6 +3,8 @@ using System.IO;
 
 using FluentAssertions;
 
+using IKVM.Tests.Util;
+
 using Microsoft.VisualStudio.TestTools.UnitTesting;
 
 namespace IKVM.Tests.JNI

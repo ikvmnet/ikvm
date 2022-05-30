@@ -39,20 +39,21 @@
             <SetTargetFramework>%(SetTargetFramework)</SetTargetFramework>
             <PublishTargetPath>%(TargetPath)</PublishTargetPath>
             <PublishProperties>%(Properties)</PublishProperties>
+            <Targets></Targets>
         </ProjectReference>
     </ItemGroup>
 
     <Target Name="GetPublishProjectReferences" DependsOnTargets="ResolveProjectReferences">
         <ItemGroup>
-            <PublishProjectReference Include="@(ProjectReferenceWithConfiguration)" Condition="'%(ProjectReferenceWithConfiguration.PublishTargetPath)' != ''">
+            <_PublishProjectReference Include="@(ProjectReferenceWithConfiguration)" Condition="'%(ProjectReferenceWithConfiguration.PublishTargetPath)' != ''">
                 <ProjectName>$([System.IO.Path]::GetFileNameWithoutExtension('%(Identity)'))</ProjectName>
                 <PublishTargetPath>$([MSBuild]::EnsureTrailingSlash(%(ProjectReferenceWithConfiguration.PublishTargetPath)))</PublishTargetPath>
-            </PublishProjectReference>
+            </_PublishProjectReference>
         </ItemGroup>
     </Target>
 
-    <Target Name="GetPublishProjectReferenceOutputItems" DependsOnTargets="GetPublishProjectReferences" Inputs="@(PublishProjectReference)" Outputs="%(PublishProjectReference.Identity)\dummy">
-        <MSBuild Projects="@(PublishProjectReference)" Targets="Publish;PublishItemsOutputGroup" BuildInParallel="$(BuildInParallel)" Properties="%(PublishProjectReference.SetConfiguration);%(PublishProjectReference.SetPlatform);%(PublishProjectReference.SetTargetFramework);%(PublishProjectReference.PublishProperties)" RemoveProperties="%(PublishProjectReference.GlobalPropertiesToRemove);%(PublishProjectReference.PublishPropertiesToRemove);" RebaseOutputs="true">
+    <Target Name="GetPublishProjectReferenceOutputItems" DependsOnTargets="GetPublishProjectReferences" Inputs="@(_PublishProjectReference)" Outputs="%(PublishProjectReference.Identity)\dummy">
+        <MSBuild Projects="@(_PublishProjectReference)" Targets="Publish;PublishItemsOutputGroup" BuildInParallel="$(BuildInParallel)" Properties="%(_PublishProjectReference.SetConfiguration);%(_PublishProjectReference.SetPlatform);%(_PublishProjectReference.SetTargetFramework);%(_PublishProjectReference.PublishProperties)" RemoveProperties="%(_PublishProjectReference.GlobalPropertiesToRemove);%(_PublishProjectReference.PublishPropertiesToRemove);" RebaseOutputs="true">
             <Output TaskParameter="TargetOutputs" ItemName="_PublishProjectReferenceOutputItems" />
         </MSBuild>
     </Target>

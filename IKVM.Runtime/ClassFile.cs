@@ -445,7 +445,7 @@ namespace IKVM.Internal
 										GetConstantPoolClass(class_index),
 										null,
 										null
-																   };
+									};
 								}
 								else
 								{
@@ -767,16 +767,16 @@ namespace IKVM.Internal
 							ushort type_name_index = rdr.ReadUInt16();
 							ushort const_name_index = rdr.ReadUInt16();
 							return new object[] {
-											AnnotationDefaultAttribute.TAG_ENUM,
-											classFile.GetConstantPoolUtf8String(utf8_cp, type_name_index),
-											classFile.GetConstantPoolUtf8String(utf8_cp, const_name_index)
-										};
+								AnnotationDefaultAttribute.TAG_ENUM,
+								classFile.GetConstantPoolUtf8String(utf8_cp, type_name_index),
+								classFile.GetConstantPoolUtf8String(utf8_cp, const_name_index)
+							};
 						}
 					case (byte)'c':
 						return new object[] {
-											AnnotationDefaultAttribute.TAG_CLASS,
-											classFile.GetConstantPoolUtf8String(utf8_cp, rdr.ReadUInt16())
-										};
+								AnnotationDefaultAttribute.TAG_CLASS,
+								classFile.GetConstantPoolUtf8String(utf8_cp, rdr.ReadUInt16())
+							};
 					case (byte)'@':
 						return ReadAnnotation(rdr, classFile, utf8_cp);
 					case (byte)'[':
@@ -1241,15 +1241,12 @@ namespace IKVM.Internal
 #endif
 		}
 
-		internal object[] Annotations
-		{
-			get
-			{
-				return annotations;
-			}
-		}
+		/// <summary>
+		/// Gets the annotations set on the class.
+		/// </summary>
+        internal object[] Annotations => annotations;
 
-		internal string GenericSignature
+        internal string GenericSignature
 		{
 			get
 			{

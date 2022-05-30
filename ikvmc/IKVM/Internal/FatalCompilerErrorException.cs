@@ -23,141 +23,101 @@
 */
 using System;
 
-using IKVM.Internal;
-
-sealed class FatalCompilerErrorException : Exception
+namespace IKVM.Internal
 {
-    internal FatalCompilerErrorException(Message id, params object[] args)
-        : base(string.Format("fatal error IKVMC{0}: {1}", (int)id, args.Length == 0 ? GetMessage(id) : string.Format(GetMessage(id), args)))
+
+    /// <summary>
+    /// Describes a fatal compiler error.
+    /// </summary>
+    sealed class FatalCompilerErrorException : Exception
     {
+
+        /// <summary>
+        /// Initializes a new instance.
+        /// </summary>
+        /// <param name="id"></param>
+        /// <param name="args"></param>
+        internal FatalCompilerErrorException(Message id, params object[] args) :
+            base($"fatal error IKVMC{(int)id}: {(args.Length == 0 ? GetMessage(id) : string.Format(GetMessage(id), args))}")
+        {
+
+        }
+
+        /// <summary>
+        /// Initializes a new instance.
+        /// </summary>
+        /// <param name="id"></param>
+        /// <param name="innerException"></param>
+        /// <param name="args"></param>
+        internal FatalCompilerErrorException(Message id, Exception innerException, params object[] args) :
+            base($"fatal error IKVMC{(int)id}: {(args.Length == 0 ? GetMessage(id) : string.Format(GetMessage(id), args))}", innerException)
+        {
+
+        }
+
+        static string GetMessage(Message id) => id switch
+        {
+            IKVM.Internal.Message.ResponseFileDepthExceeded => "Response file nesting depth exceeded",
+            IKVM.Internal.Message.ErrorReadingFile => "Unable to read file: {0}\n\t({1})",
+            IKVM.Internal.Message.NoTargetsFound => "No targets found",
+            IKVM.Internal.Message.FileFormatLimitationExceeded => "File format limitation exceeded: {0}",
+            IKVM.Internal.Message.CannotSpecifyBothKeyFileAndContainer => "You cannot specify both a key file and container",
+            IKVM.Internal.Message.DelaySignRequiresKey => "You cannot delay sign without a key file or container",
+            IKVM.Internal.Message.InvalidStrongNameKeyPair => "Invalid key {0} specified.\n\t(\"{1}\")",
+            IKVM.Internal.Message.ReferenceNotFound => "Reference not found: {0}",
+            IKVM.Internal.Message.OptionsMustPreceedChildLevels => "You can only specify options before any child levels",
+            IKVM.Internal.Message.UnrecognizedTargetType => "Invalid value '{0}' for -target option",
+            IKVM.Internal.Message.UnrecognizedPlatform => "Invalid value '{0}' for -platform option",
+            IKVM.Internal.Message.UnrecognizedApartment => "Invalid value '{0}' for -apartment option",
+            IKVM.Internal.Message.MissingFileSpecification => "Missing file specification for '{0}' option",
+            IKVM.Internal.Message.PathTooLong => "Path too long: {0}",
+            IKVM.Internal.Message.PathNotFound => "Path not found: {0}",
+            IKVM.Internal.Message.InvalidPath => "Invalid path: {0}",
+            IKVM.Internal.Message.InvalidOptionSyntax => "Invalid option: {0}",
+            IKVM.Internal.Message.ExternalResourceNotFound => "External resource file does not exist: {0}",
+            IKVM.Internal.Message.ExternalResourceNameInvalid => "External resource file may not include path specification: {0}",
+            IKVM.Internal.Message.InvalidVersionFormat => "Invalid version specified: {0}",
+            IKVM.Internal.Message.InvalidFileAlignment => "Invalid value '{0}' for -filealign option",
+            IKVM.Internal.Message.ErrorWritingFile => "Unable to write file: {0}\n\t({1})",
+            IKVM.Internal.Message.UnrecognizedOption => "Unrecognized option: {0}",
+            IKVM.Internal.Message.NoOutputFileSpecified => "No output file specified",
+            IKVM.Internal.Message.SharedClassLoaderCannotBeUsedOnModuleTarget => "Incompatible options: -target:module and -sharedclassloader cannot be combined",
+            IKVM.Internal.Message.RuntimeNotFound => "Unable to load runtime assembly",
+            IKVM.Internal.Message.MainClassRequiresExe => "Main class cannot be specified for library or module",
+            IKVM.Internal.Message.ExeRequiresMainClass => "No main method found",
+            IKVM.Internal.Message.PropertiesRequireExe => "Properties cannot be specified for library or module",
+            IKVM.Internal.Message.ModuleCannotHaveClassLoader => "Cannot specify assembly class loader for modules",
+            IKVM.Internal.Message.ErrorParsingMapFile => "Unable to parse remap file: {0}\n\t({1})",
+            IKVM.Internal.Message.BootstrapClassesMissing => "Bootstrap classes missing and core assembly not found",
+            IKVM.Internal.Message.StrongNameRequiresStrongNamedRefs => "All referenced assemblies must be strong named, to be able to sign the output assembly",
+            IKVM.Internal.Message.MainClassNotFound => "Main class not found",
+            IKVM.Internal.Message.MainMethodNotFound => "Main method not found",
+            IKVM.Internal.Message.UnsupportedMainMethod => "Redirected main method not supported",
+            IKVM.Internal.Message.ExternalMainNotAccessible => "External main method must be public and in a public class",
+            IKVM.Internal.Message.ClassLoaderNotFound => "Custom assembly class loader class not found",
+            IKVM.Internal.Message.ClassLoaderNotAccessible => "Custom assembly class loader class is not accessible",
+            IKVM.Internal.Message.ClassLoaderIsAbstract => "Custom assembly class loader class is abstract",
+            IKVM.Internal.Message.ClassLoaderNotClassLoader => "Custom assembly class loader class does not extend java.lang.ClassLoader",
+            IKVM.Internal.Message.ClassLoaderConstructorMissing => "Custom assembly class loader constructor is missing",
+            IKVM.Internal.Message.MapFileTypeNotFound => "Type '{0}' referenced in remap file was not found",
+            IKVM.Internal.Message.MapFileClassNotFound => "Class '{0}' referenced in remap file was not found",
+            IKVM.Internal.Message.MaximumErrorCountReached => "Maximum error count reached",
+            IKVM.Internal.Message.LinkageError => "Link error: {0}",
+            IKVM.Internal.Message.RuntimeMismatch => "Referenced assembly {0} was compiled with an incompatible IKVM.Runtime version\n" + "\tCurrent runtime: {1}\n" + "\tReferenced assembly runtime: {2}",
+            IKVM.Internal.Message.CoreClassesMissing => "Failed to find core classes in core library",
+            IKVM.Internal.Message.CriticalClassNotFound => "Unable to load critical class '{0}'",
+            IKVM.Internal.Message.AssemblyContainsDuplicateClassNames => "Type '{0}' and '{1}' both map to the same name '{2}'\n" + "\t({3})",
+            IKVM.Internal.Message.CallerIDRequiresHasCallerIDAnnotation => "CallerID.getCallerID() requires a HasCallerID annotation",
+            IKVM.Internal.Message.UnableToResolveInterface => "Unable to resolve interface '{0}' on type '{1}'",
+            IKVM.Internal.Message.MissingBaseType => "The base class or interface '{0}' in assembly '{1}' referenced by type '{2}' in '{3}' could not be resolved",
+            IKVM.Internal.Message.MissingBaseTypeReference => "The type '{0}' is defined in an assembly that is not referenced. You must add a reference to assembly '{1}'",
+            IKVM.Internal.Message.FileNotFound => "File not found: {0}",
+            IKVM.Internal.Message.RuntimeMethodMissing => "Runtime method '{0}' not found",
+            IKVM.Internal.Message.MapFileFieldNotFound => "Field '{0}' referenced in remap file was not found in class '{1}'",
+            IKVM.Internal.Message.GhostInterfaceMethodMissing => "Remapped class '{0}' does not implement ghost interface method\n" + "\t({1}.{2}{3})",
+            _ => "Missing Error Message. Please file a bug.",
+        };
+
     }
 
-    private static string GetMessage(Message id)
-    {
-        switch (id)
-        {
-            case IKVM.Internal.Message.ResponseFileDepthExceeded:
-                return "Response file nesting depth exceeded";
-            case IKVM.Internal.Message.ErrorReadingFile:
-                return "Unable to read file: {0}\n\t({1})";
-            case IKVM.Internal.Message.NoTargetsFound:
-                return "No targets found";
-            case IKVM.Internal.Message.FileFormatLimitationExceeded:
-                return "File format limitation exceeded: {0}";
-            case IKVM.Internal.Message.CannotSpecifyBothKeyFileAndContainer:
-                return "You cannot specify both a key file and container";
-            case IKVM.Internal.Message.DelaySignRequiresKey:
-                return "You cannot delay sign without a key file or container";
-            case IKVM.Internal.Message.InvalidStrongNameKeyPair:
-                return "Invalid key {0} specified.\n\t(\"{1}\")";
-            case IKVM.Internal.Message.ReferenceNotFound:
-                return "Reference not found: {0}";
-            case IKVM.Internal.Message.OptionsMustPreceedChildLevels:
-                return "You can only specify options before any child levels";
-            case IKVM.Internal.Message.UnrecognizedTargetType:
-                return "Invalid value '{0}' for -target option";
-            case IKVM.Internal.Message.UnrecognizedPlatform:
-                return "Invalid value '{0}' for -platform option";
-            case IKVM.Internal.Message.UnrecognizedApartment:
-                return "Invalid value '{0}' for -apartment option";
-            case IKVM.Internal.Message.MissingFileSpecification:
-                return "Missing file specification for '{0}' option";
-            case IKVM.Internal.Message.PathTooLong:
-                return "Path too long: {0}";
-            case IKVM.Internal.Message.PathNotFound:
-                return "Path not found: {0}";
-            case IKVM.Internal.Message.InvalidPath:
-                return "Invalid path: {0}";
-            case IKVM.Internal.Message.InvalidOptionSyntax:
-                return "Invalid option: {0}";
-            case IKVM.Internal.Message.ExternalResourceNotFound:
-                return "External resource file does not exist: {0}";
-            case IKVM.Internal.Message.ExternalResourceNameInvalid:
-                return "External resource file may not include path specification: {0}";
-            case IKVM.Internal.Message.InvalidVersionFormat:
-                return "Invalid version specified: {0}";
-            case IKVM.Internal.Message.InvalidFileAlignment:
-                return "Invalid value '{0}' for -filealign option";
-            case IKVM.Internal.Message.ErrorWritingFile:
-                return "Unable to write file: {0}\n\t({1})";
-            case IKVM.Internal.Message.UnrecognizedOption:
-                return "Unrecognized option: {0}";
-            case IKVM.Internal.Message.NoOutputFileSpecified:
-                return "No output file specified";
-            case IKVM.Internal.Message.SharedClassLoaderCannotBeUsedOnModuleTarget:
-                return "Incompatible options: -target:module and -sharedclassloader cannot be combined";
-            case IKVM.Internal.Message.RuntimeNotFound:
-                return "Unable to load runtime assembly";
-            case IKVM.Internal.Message.MainClassRequiresExe:
-                return "Main class cannot be specified for library or module";
-            case IKVM.Internal.Message.ExeRequiresMainClass:
-                return "No main method found";
-            case IKVM.Internal.Message.PropertiesRequireExe:
-                return "Properties cannot be specified for library or module";
-            case IKVM.Internal.Message.ModuleCannotHaveClassLoader:
-                return "Cannot specify assembly class loader for modules";
-            case IKVM.Internal.Message.ErrorParsingMapFile:
-                return "Unable to parse remap file: {0}\n\t({1})";
-            case IKVM.Internal.Message.BootstrapClassesMissing:
-                return "Bootstrap classes missing and core assembly not found";
-            case IKVM.Internal.Message.StrongNameRequiresStrongNamedRefs:
-                return "All referenced assemblies must be strong named, to be able to sign the output assembly";
-            case IKVM.Internal.Message.MainClassNotFound:
-                return "Main class not found";
-            case IKVM.Internal.Message.MainMethodNotFound:
-                return "Main method not found";
-            case IKVM.Internal.Message.UnsupportedMainMethod:
-                return "Redirected main method not supported";
-            case IKVM.Internal.Message.ExternalMainNotAccessible:
-                return "External main method must be public and in a public class";
-            case IKVM.Internal.Message.ClassLoaderNotFound:
-                return "Custom assembly class loader class not found";
-            case IKVM.Internal.Message.ClassLoaderNotAccessible:
-                return "Custom assembly class loader class is not accessible";
-            case IKVM.Internal.Message.ClassLoaderIsAbstract:
-                return "Custom assembly class loader class is abstract";
-            case IKVM.Internal.Message.ClassLoaderNotClassLoader:
-                return "Custom assembly class loader class does not extend java.lang.ClassLoader";
-            case IKVM.Internal.Message.ClassLoaderConstructorMissing:
-                return "Custom assembly class loader constructor is missing";
-            case IKVM.Internal.Message.MapFileTypeNotFound:
-                return "Type '{0}' referenced in remap file was not found";
-            case IKVM.Internal.Message.MapFileClassNotFound:
-                return "Class '{0}' referenced in remap file was not found";
-            case IKVM.Internal.Message.MaximumErrorCountReached:
-                return "Maximum error count reached";
-            case IKVM.Internal.Message.LinkageError:
-                return "Link error: {0}";
-            case IKVM.Internal.Message.RuntimeMismatch:
-                return "Referenced assembly {0} was compiled with an incompatible IKVM.Runtime version\n" +
-                    "\tCurrent runtime: {1}\n" +
-                    "\tReferenced assembly runtime: {2}";
-            case IKVM.Internal.Message.CoreClassesMissing:
-                return "Failed to find core classes in core library";
-            case IKVM.Internal.Message.CriticalClassNotFound:
-                return "Unable to load critical class '{0}'";
-            case IKVM.Internal.Message.AssemblyContainsDuplicateClassNames:
-                return "Type '{0}' and '{1}' both map to the same name '{2}'\n" +
-                    "\t({3})";
-            case IKVM.Internal.Message.CallerIDRequiresHasCallerIDAnnotation:
-                return "CallerID.getCallerID() requires a HasCallerID annotation";
-            case IKVM.Internal.Message.UnableToResolveInterface:
-                return "Unable to resolve interface '{0}' on type '{1}'";
-            case IKVM.Internal.Message.MissingBaseType:
-                return "The base class or interface '{0}' in assembly '{1}' referenced by type '{2}' in '{3}' could not be resolved";
-            case IKVM.Internal.Message.MissingBaseTypeReference:
-                return "The type '{0}' is defined in an assembly that is not referenced. You must add a reference to assembly '{1}'";
-            case IKVM.Internal.Message.FileNotFound:
-                return "File not found: {0}";
-            case IKVM.Internal.Message.RuntimeMethodMissing:
-                return "Runtime method '{0}' not found";
-            case IKVM.Internal.Message.MapFileFieldNotFound:
-                return "Field '{0}' referenced in remap file was not found in class '{1}'";
-            case IKVM.Internal.Message.GhostInterfaceMethodMissing:
-                return "Remapped class '{0}' does not implement ghost interface method\n" +
-                    "\t({1}.{2}{3})";
-            default:
-                return "Missing Error Message. Please file a bug.";
-        }
-    }
 }

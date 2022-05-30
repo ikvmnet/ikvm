@@ -68,7 +68,7 @@ namespace IKVM.Internal.MapXml
             if (Class.IndexOf(',') >= 0)
             {
 #if NETCOREAPP
-				Class = Class.Replace("mscorlib", Universe.CoreLibName);
+				Class = Class.Replace("mscorlib", Universe.StdLibName);
 #endif
                 Type type = StaticCompiler.Universe.GetType(Class, true);
                 MethodInfo mi = type.GetMethod(Name, redirParamTypes);

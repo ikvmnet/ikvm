@@ -149,13 +149,13 @@ namespace IKVM.Reflection
     public sealed class Universe : IDisposable
     {
 
-#if NETCOREAPP3_1
+#if NETCOREAPP3_1_OR_GREATER
 
-        public static readonly string CoreLibName = "netstandard";
+        public static readonly string StdLibName = "netstandard";
 
 #elif NETFRAMEWORK || MONO
 
-		public static readonly string CoreLibName = "mscorlib";
+		public static readonly string StdLibName = "mscorlib";
 
 #endif
 
@@ -259,7 +259,7 @@ namespace IKVM.Reflection
 
         internal Assembly Mscorlib
         {
-            get { return Load(CoreLibName); }
+            get { return Load(StdLibName); }
         }
 
         private Type ImportMscorlibType(string ns, string name)
@@ -540,7 +540,7 @@ namespace IKVM.Reflection
 
         internal bool HasMscorlib
         {
-            get { return GetLoadedAssembly(CoreLibName) != null; }
+            get { return GetLoadedAssembly(StdLibName) != null; }
         }
 
         public event ResolveEventHandler AssemblyResolve
@@ -755,101 +755,41 @@ namespace IKVM.Reflection
             return null;
         }
 
-        public Assembly Load(string refname)
+        public Assembly Load(string refName)
         {
-            return Load(refname, null, true);
+            return Load(refName, null, true);
         }
 
-        internal Assembly Load(string refname, Module requestingModule, bool throwOnError)
+        internal Assembly Load(string refName, Module requestingModule, bool throwOnError)
         {
-            Assembly asm = GetLoadedAssembly(refname);
-            if (asm != null)
+            // if the assembly is already loaded, just return that
+            var assembly = GetLoadedAssembly(refName);
+            if (assembly != null)
+                return assembly;
+
+            // dispatch a resolve event to the resolvers
+            var arg = new ResolveEventArgs(refName, requestingModule?.Assembly);
+            assembly = resolvers.Select(i => i(this, arg)).FirstOrDefault(i => i != null);
+
+            // still not found, maybe it's a dynamic assembly?
+            if (assembly == null)
+                assembly = GetDynamicAssembly(refName);
+
+            // we did find the assembly
+            if (assembly != null)
             {
-                return asm;
+                // associate the assembly with our set by name
+                var defName = assembly.FullName;
+                if (refName != defName)
+                    assembliesByName.Add(refName, assembly);
+
+                return assembly;
             }
-            if (resolvers.Count == 0)
-            {
-                asm = DefaultResolver(refname, throwOnError);
-            }
-            else
-            {
-                ResolveEventArgs args = new ResolveEventArgs(refname, requestingModule == null ? null : requestingModule.Assembly);
-                foreach (ResolveEventHandler evt in resolvers)
-                {
-                    asm = evt(this, args);
-                    if (asm != null)
-                    {
-                        break;
-                    }
-                }
-                if (asm == null)
-                {
-                    asm = GetDynamicAssembly(refname);
-                }
-            }
-            if (asm != null)
-            {
-                string defname = asm.FullName;
-                if (refname != defname)
-                {
-                    assembliesByName.Add(refname, asm);
-                }
-                return asm;
-            }
+
             if (throwOnError)
-            {
-                throw new FileNotFoundException(refname);
-            }
-            return null;
-        }
-
-        Assembly DefaultResolver(string refname, bool throwOnError)
-        {
-            var asm = GetDynamicAssembly(refname);
-            if (asm != null)
-                return asm;
-
-#if NETCOREAPP3_1_OR_GREATER
-            var filepath = DependencyContext.Default.CompileLibraries.Where(i => i.Name == GetSimpleAssemblyName(refname)).Select(i => i.Path).FirstOrDefault();
-            if (File.Exists(filepath))
-                using (var module = OpenRawModule(filepath))
-                    if (module.IsManifestModule && CompareAssemblyIdentity(refname, false, module.GetAssemblyName().FullName, false, out AssemblyComparisonResult result))
-                        return LoadAssembly(module);
+                throw new FileNotFoundException(refName);
 
             return null;
-#else
-			string fileName;
-			if (throwOnError)
-			{
-				try
-				{
-					fileName = System.Reflection.Assembly.ReflectionOnlyLoad(refname).Location;
-				}
-				catch (System.BadImageFormatException x)
-				{
-					throw new BadImageFormatException(x.Message, x);
-				}
-			}
-			else
-			{
-				try
-				{
-					fileName = System.Reflection.Assembly.ReflectionOnlyLoad(refname).Location;
-				}
-				catch (System.BadImageFormatException x)
-				{
-					throw new BadImageFormatException(x.Message, x);
-				}
-				catch (FileNotFoundException)
-				{
-					// we intentionally only swallow the FileNotFoundException, if the file exists but isn't a valid assembly,
-					// we should throw an exception
-					return null;
-				}
-			}
-
-			return LoadFile(fileName);
-#endif
         }
 
         public Type GetType(string assemblyQualifiedTypeName)

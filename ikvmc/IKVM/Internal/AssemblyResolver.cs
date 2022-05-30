@@ -29,11 +29,12 @@ using IKVM.Reflection;
 
 namespace IKVM.Internal
 {
+
     sealed class AssemblyResolver
     {
-        private readonly List<string> libpath = new List<string>();
-        private Universe universe;
-        private Version mscorlibVersion;
+
+        readonly List<string> libpath = new List<string>();
+        Universe universe;
 
         internal enum WarningId
         {
@@ -47,207 +48,202 @@ namespace IKVM.Internal
         internal delegate void WarningEvent(WarningId warning, string message, string[] parameters);
         internal event WarningEvent Warning;
 
-        private void EmitWarning(WarningId warning, string message, params string[] parameters)
+        /// <summary>
+        /// Emits a warning event.
+        /// </summary>
+        /// <param name="warning"></param>
+        /// <param name="message"></param>
+        /// <param name="parameters"></param>
+        void EmitWarning(WarningId warning, string message, params string[] parameters)
         {
             if (Warning != null)
-            {
                 Warning(warning, message, parameters);
-            }
             else
-            {
                 Console.Error.WriteLine("Warning: " + message, parameters);
-            }
         }
 
-        internal void Init(Universe universe, bool nostdlib, IList<string> references, IList<string> userLibPaths)
+        internal void Init(Universe universe, IList<string> references, IList<string> userLibPaths)
         {
             this.universe = universe;
 
-            // like the C# compiler, the references are loaded from:
-            // current directory, CLR directory, -lib: option, %LIB% environment
-            // (note that, unlike the C# compiler, we don't add the CLR directory if -nostdlib has been specified)
+            // search in the local directory first
             libpath.Add(Environment.CurrentDirectory);
 
-            if (!nostdlib)
-                libpath.Add(System.Runtime.InteropServices.RuntimeEnvironment.GetRuntimeDirectory());
-
+            // then search in directories specified by the user
             foreach (string str in userLibPaths)
                 AddLibraryPaths(str, true);
 
+            // then search in the LIB environment variable
             AddLibraryPaths(Environment.GetEnvironmentVariable("LIB") ?? "", false);
 
-            if (nostdlib)
-            {
-                mscorlibVersion = LoadMscorlib(references).GetName().Version;
-            }
-            else
-            {
-                mscorlibVersion = universe.Load(Universe.CoreLibName).GetName().Version;
-            }
-
 #if STATIC_COMPILER
-			universe.AssemblyResolve += AssemblyResolve;
+            universe.AssemblyResolve += AssemblyResolve;
 #else
             universe.AssemblyResolve += LegacyAssemblyResolve;
 #endif
         }
 
+        /// <summary>
+        /// Attempts to load the assembly from the specified path.
+        /// </summary>
+        /// <param name="path"></param>
+        /// <returns></returns>
         internal Assembly LoadFile(string path)
         {
-            string ex = null;
+            string msg = null;
             try
             {
-                using (RawModule module = universe.OpenRawModule(path))
-                {
-                    if (mscorlibVersion != null)
-                    {
-                        // to avoid problems (i.e. weird exceptions), we don't allow assemblies to load that reference a newer version of mscorlib
-                        foreach (AssemblyName asmref in module.GetReferencedAssemblies())
-                        {
-                            if (asmref.Name == Universe.CoreLibName && asmref.Version > mscorlibVersion)
-                            {
-                                Console.Error.WriteLine("Error: unable to load assembly '{0}' as it depends on a higher version of mscorlib than the one currently loaded", path);
-                                Environment.Exit(1);
-                            }
-                        }
-                    }
-                    Assembly asm = universe.LoadAssembly(module);
-                    if (asm.Location != module.Location && CanonicalizePath(asm.Location) != CanonicalizePath(module.Location))
-                    {
-                        EmitWarning(WarningId.LocationIgnored, "assembly \"{0}\" is ignored as previously loaded assembly \"{1}\" has the same identity \"{2}\"", path, asm.Location, asm.FullName);
-                    }
-                    return asm;
-                }
+                using var module = universe.OpenRawModule(path);
+                var assembly = universe.LoadAssembly(module);
+                if (assembly.Location != module.Location && CanonicalizePath(assembly.Location) != CanonicalizePath(module.Location))
+                    EmitWarning(WarningId.LocationIgnored, "assembly \"{0}\" is ignored as previously loaded assembly \"{1}\" has the same identity \"{2}\"", path, assembly.Location, assembly.FullName);
+
+                return assembly;
             }
             catch (IOException x)
             {
-                ex = x.Message;
+                msg = x.Message;
             }
             catch (UnauthorizedAccessException x)
             {
-                ex = x.Message;
+                msg = x.Message;
             }
             catch (IKVM.Reflection.BadImageFormatException x)
             {
-                ex = x.Message;
+                msg = x.Message;
             }
-            Console.Error.WriteLine("Error: unable to load assembly '{0}'" + Environment.NewLine + "    ({1})", path, ex);
+
+            Console.Error.WriteLine("Error: unable to load assembly '{0}'" + Environment.NewLine + "    ({1})", path, msg);
             Environment.Exit(1);
             return null;
         }
 
-        private static string CanonicalizePath(string path)
+        /// <summary>
+        /// Returns the canonical path for the given path.
+        /// </summary>
+        /// <param name="path"></param>
+        /// <returns></returns>
+        static string CanonicalizePath(string path)
         {
+            if (string.IsNullOrWhiteSpace(path))
+                throw new ArgumentException($"'{nameof(path)}' cannot be null or whitespace.", nameof(path));
+
             try
             {
-                System.IO.FileInfo fi = new System.IO.FileInfo(path);
+                var fi = new FileInfo(Path.GetFullPath(path));
                 if (fi.DirectoryName == null)
-                {
                     return path.Length > 1 && path[1] == ':' ? path.ToUpper() : path;
-                }
-                string dir = CanonicalizePath(fi.DirectoryName);
-                string name = fi.Name;
+
+                var dir = CanonicalizePath(fi.DirectoryName);
+                var name = fi.Name;
                 try
                 {
-                    string[] arr = System.IO.Directory.GetFileSystemEntries(dir, name);
+                    var arr = Directory.GetFileSystemEntries(dir, name);
                     if (arr.Length == 1)
-                    {
                         name = arr[0];
-                    }
                 }
-                catch (System.UnauthorizedAccessException)
+                catch (UnauthorizedAccessException)
                 {
+
                 }
-                catch (System.IO.IOException)
+                catch (IOException)
                 {
+
                 }
-                return System.IO.Path.Combine(dir, name);
-            }
-            catch (System.UnauthorizedAccessException)
-            {
-            }
-            catch (System.IO.IOException)
-            {
-            }
-            catch (System.Security.SecurityException)
-            {
-            }
-            catch (System.NotSupportedException)
-            {
-            }
-            return path;
-        }
 
-        internal Assembly LoadWithPartialName(string name)
-        {
-            foreach (string path in FindAssemblyPath(name + ".dll"))
-            {
-                return LoadFile(path);
+                return Path.Combine(dir, name);
             }
-            return null;
-        }
+            catch (UnauthorizedAccessException)
+            {
 
-        internal bool ResolveReference(Dictionary<string, Assembly> cache, ref Assembly[] references, string reference)
-        {
-            string[] files = new string[0];
-            try
-            {
-                string path = Path.GetDirectoryName(reference);
-                files = Directory.GetFiles(path == "" ? "." : path, Path.GetFileName(reference));
-            }
-            catch (ArgumentException)
-            {
             }
             catch (IOException)
             {
+
             }
-            if (files.Length == 0)
+            catch (System.Security.SecurityException)
             {
-                Assembly asm = null;
-                cache.TryGetValue(reference, out asm);
-                if (asm == null)
+
+            }
+            catch (NotSupportedException)
+            {
+
+            }
+
+            return path;
+        }
+
+        /// <summary>
+        /// Attempts to load an assembly with a partial name.
+        /// </summary>
+        /// <param name="name"></param>
+        /// <returns></returns>
+        internal Assembly LoadWithPartialName(string name)
+        {
+            if (string.IsNullOrWhiteSpace(name))
+                throw new ArgumentException($"'{nameof(name)}' cannot be null or whitespace.", nameof(name));
+
+            foreach (var path in FindAssemblyPath(name + ".dll"))
+                return LoadFile(path);
+
+            return null;
+        }
+        /// <summary>
+        /// Attempts to resolve the given reference, appending the discovered assembly to the references list.
+        /// </summary>
+        /// <param name="cache"></param>
+        /// <param name="references"></param>
+        /// <param name="reference"></param>
+        /// <returns></returns>
+        internal bool ResolveReference(Dictionary<string, Assembly> cache, List<Assembly> references, string reference)
+        {
+            if (cache is null)
+                throw new ArgumentNullException(nameof(cache));
+            if (references is null)
+                throw new ArgumentNullException(nameof(references));
+            if (string.IsNullOrEmpty(reference))
+                throw new ArgumentException($"'{nameof(reference)}' cannot be null or empty.", nameof(reference));
+
+            var files = new List<string>(0);
+
+            // attempt to find the reference in the current directory if it exists
+            var fullPath = Path.GetFullPath(reference);
+            if (File.Exists(fullPath))
+                files.Add(fullPath);
+
+            // we haven't yet found the reference
+            if (files.Count == 0)
+            {
+                if (cache.TryGetValue(reference, out Assembly assembly) == false)
                 {
                     foreach (string found in FindAssemblyPath(reference))
                     {
-                        asm = LoadFile(found);
-                        cache.Add(reference, asm);
+                        assembly = LoadFile(found);
+                        cache.Add(reference, assembly);
                         break;
                     }
                 }
-                if (asm == null)
-                {
+
+                if (assembly == null)
                     return false;
-                }
-                ArrayAppend(ref references, asm);
+
+                references.Add(assembly);
             }
             else
             {
-                foreach (string file in files)
+                foreach (var file in files)
                 {
-                    Assembly asm;
-                    if (!cache.TryGetValue(file, out asm))
-                    {
-                        asm = LoadFile(file);
-                    }
-                    ArrayAppend(ref references, asm);
+                    if (cache.TryGetValue(file, out Assembly assembly) == false)
+                        assembly = LoadFile(file);
+
+                    references.Add(assembly);
                 }
             }
+
             return true;
         }
 
-        private static void ArrayAppend<T>(ref T[] array, T element)
-        {
-            if (array == null)
-            {
-                array = new T[] { element };
-            }
-            else
-            {
-                array = ArrayUtil.Concat(array, element);
-            }
-        }
-
-        private Assembly AssemblyResolve(object sender, IKVM.Reflection.ResolveEventArgs args)
+        Assembly AssemblyResolve(object sender, IKVM.Reflection.ResolveEventArgs args)
         {
             AssemblyName name = new AssemblyName(args.Name);
             AssemblyName previousMatch = null;
@@ -343,11 +339,11 @@ namespace IKVM.Internal
 #if STUB_GENERATOR
                 return universe.CreateMissingAssembly(name.FullName);
 #else
-				Console.Error.WriteLine("Error: unable to find assembly '{0}'", name.FullName);
-				if (requestingAssembly != null)
-				{
-					Console.Error.WriteLine("    (a dependency of '{0}')", requestingAssembly.FullName);
-				}
+                Console.Error.WriteLine("Error: unable to find assembly '{0}'", name.FullName);
+                if (requestingAssembly != null)
+                {
+                    Console.Error.WriteLine("    (a dependency of '{0}')", requestingAssembly.FullName);
+                }
 #endif
             }
             Environment.Exit(1);
@@ -397,7 +393,7 @@ namespace IKVM.Internal
             }
         }
 
-        private void AddLibraryPaths(string str, bool option)
+        void AddLibraryPaths(string str, bool option)
         {
             foreach (string dir in str.Split(Path.PathSeparator))
             {
@@ -419,7 +415,7 @@ namespace IKVM.Internal
             }
         }
 
-        private Assembly LoadMscorlib(IList<string> references)
+        private Assembly LoadStdLib(IList<string> references)
         {
             if (references != null)
             {
@@ -427,7 +423,7 @@ namespace IKVM.Internal
                 {
                     try
                     {
-                        if (AssemblyName.GetAssemblyName(r).Name == Universe.CoreLibName)
+                        if (AssemblyName.GetAssemblyName(r).Name == Universe.StdLibName)
                         {
                             return LoadFile(r);
                         }
@@ -437,7 +433,7 @@ namespace IKVM.Internal
                     }
                 }
             }
-            foreach (string mscorlib in FindAssemblyPath(Universe.CoreLibName + ".dll"))
+            foreach (string mscorlib in FindAssemblyPath(Universe.StdLibName + ".dll"))
             {
                 return LoadFile(mscorlib);
             }
@@ -446,25 +442,23 @@ namespace IKVM.Internal
             return null;
         }
 
-        private IEnumerable<string> FindAssemblyPath(string file)
+        IEnumerable<string> FindAssemblyPath(string file)
         {
             if (Path.IsPathRooted(file))
             {
                 if (File.Exists(file))
-                {
                     yield return file;
-                }
             }
             else
             {
-                foreach (string dir in libpath)
+                foreach (var dir in libpath)
                 {
-                    string path = Path.Combine(dir, file);
+                    // if the assembly file is found in the lib path, yield it up
+                    var path = Path.Combine(dir, file);
                     if (File.Exists(path))
-                    {
                         yield return path;
-                    }
-                    // for legacy compat, we try again after appending .dll
+
+                    // it's possible the reference did not specify a dll name
                     path = Path.Combine(dir, file + ".dll");
                     if (File.Exists(path))
                     {
@@ -474,5 +468,7 @@ namespace IKVM.Internal
                 }
             }
         }
+
     }
+
 }

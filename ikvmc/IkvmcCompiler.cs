@@ -33,8 +33,6 @@ using IKVM.Internal;
 using IKVM.Reflection;
 using IKVM.Reflection.Emit;
 
-using Type = IKVM.Reflection.Type;
-
 namespace ikvmc
 {
 
@@ -46,7 +44,6 @@ namespace ikvmc
         private string defaultAssemblyName;
         private static bool time;
         private static string runtimeAssembly;
-        private static bool nostdlib;
         private static bool nonDeterministicOutput;
         private static readonly List<string> libpaths = new List<string>();
         internal static readonly AssemblyResolver resolver = new AssemblyResolver();
@@ -80,6 +77,7 @@ namespace ikvmc
                 }
                 catch (Exception x)
                 {
+                    Console.WriteLine(x.StackTrace);
                     throw new FatalCompilerErrorException(Message.ErrorReadingFile, s.Substring(1), x.Message);
                 }
             }
@@ -174,7 +172,7 @@ namespace ikvmc
             comp.ParseCommandLine(argList.GetEnumerator(), targets, toplevel);
             StaticCompiler.Init(nonDeterministicOutput);
             resolver.Warning += loader_Warning;
-            resolver.Init(StaticCompiler.Universe, nostdlib, toplevel.unresolvedReferences, libpaths);
+            resolver.Init(StaticCompiler.Universe, toplevel.unresolvedReferences, libpaths);
             ResolveReferences(targets);
             ResolveStrongNameKeys(targets);
             if (targets.Count == 0)
@@ -274,6 +272,7 @@ namespace ikvmc
             }
             catch (Exception x)
             {
+                Console.WriteLine(x.StackTrace);
                 throw new FatalCompilerErrorException(Message.ErrorReadingFile, path.ToString(), x.Message);
             }
         }
@@ -379,7 +378,6 @@ namespace ikvmc
             Console.Error.WriteLine("-baseaddress:<address>         Base address for the library to be built");
             Console.Error.WriteLine("-filealign:<n>                 Specify the alignment used for output file");
             Console.Error.WriteLine("-nopeercrossreference          Do not automatically cross reference all peers");
-            Console.Error.WriteLine("-nostdlib                      Do not reference standard libraries");
             Console.Error.WriteLine("-lib:<dir>                     Additional directories to search for references");
             Console.Error.WriteLine("-highentropyva                 Enable high entropy ASLR");
             Console.Error.WriteLine("-static                        Disable dynamic binding");
@@ -551,12 +549,11 @@ namespace ikvmc
                     }
                     else if (s.StartsWith("-reference:") || s.StartsWith("-r:"))
                     {
-                        string r = s.Substring(s.IndexOf(':') + 1);
+                        var r = s.Substring(s.IndexOf(':') + 1);
                         if (r == "")
-                        {
                             throw new FatalCompilerErrorException(Message.MissingFileSpecification, s);
-                        }
-                        ArrayAppend(ref options.unresolvedReferences, r);
+
+                        options.unresolvedReferences.Add(r);
                     }
                     else if (s.StartsWith("-recurse:"))
                     {
@@ -712,12 +709,12 @@ namespace ikvmc
                     else if (s.StartsWith("-privatepackage:"))
                     {
                         string prefix = s.Substring(16);
-                        ArrayAppend(ref options.privatePackages, prefix);
+                        options.privatePackages.Add(prefix);
                     }
                     else if (s.StartsWith("-publicpackage:"))
                     {
                         string prefix = s.Substring(15);
-                        ArrayAppend(ref options.publicPackages, prefix);
+                        options.publicPackages.Add(prefix);
                     }
                     else if (s.StartsWith("-nowarn:"))
                     {
@@ -800,11 +797,6 @@ namespace ikvmc
                     {
                         options.crossReferenceAllPeers = false;
                     }
-                    else if (s == "-nostdlib")
-                    {
-                        // this is a global option
-                        nostdlib = true;
-                    }
                     else if (s.StartsWith("-lib:"))
                     {
                         // this is a global option
@@ -858,7 +850,7 @@ namespace ikvmc
                     }
                     else if (s.StartsWith("-assemblyattributes:", StringComparison.Ordinal))
                     {
-                        ProcessAttributeAnnotationsClass(ref options.assemblyAttributeAnnotations, s.Substring(20));
+                        ProcessAttributeAnnotationsClass(options.assemblyAttributeAnnotations, s.Substring(20));
                     }
                     else if (s == "-w4") // undocumented option to always warn if a class isn't found
                     {
@@ -1055,8 +1047,8 @@ namespace ikvmc
 
         static void ResolveReferences(List<CompilerOptions> targets)
         {
-            Dictionary<string, IKVM.Reflection.Assembly> cache = new Dictionary<string, IKVM.Reflection.Assembly>();
-            foreach (CompilerOptions target in targets)
+            var cache = new Dictionary<string, IKVM.Reflection.Assembly>();
+            foreach (var target in targets)
             {
                 if (target.unresolvedReferences != null)
                 {
@@ -1066,15 +1058,15 @@ namespace ikvmc
                         {
                             if (peer.assembly.Equals(reference, StringComparison.OrdinalIgnoreCase))
                             {
-                                ArrayAppend(ref target.peerReferences, peer.assembly);
+                                target.peerReferences.Add(peer.assembly);
                                 goto next_reference;
                             }
                         }
-                        if (!resolver.ResolveReference(cache, ref target.references, reference))
-                        {
+
+                        if (!resolver.ResolveReference(cache, target.references, reference))
                             throw new FatalCompilerErrorException(Message.ReferenceNotFound, reference);
-                        }
-                    next_reference:;
+
+                        next_reference:;
                     }
                 }
             }
@@ -1085,62 +1077,23 @@ namespace ikvmc
                 {
                     foreach (Assembly asm in target.references)
                     {
-                        Type forwarder = asm.GetType("__<MainAssembly>");
+                        var forwarder = asm.GetType("__<MainAssembly>");
                         if (forwarder != null && forwarder.Assembly != asm)
-                        {
                             StaticCompiler.IssueMessage(Message.NonPrimaryAssemblyReference, asm.Location, forwarder.Assembly.GetName().Name);
-                        }
                     }
                 }
             }
 
             // add legacy references (from stub files)
             foreach (CompilerOptions target in targets)
-            {
                 foreach (string assemblyName in target.legacyStubReferences.Keys)
-                {
-                    ArrayAppend(ref target.references, resolver.LegacyLoad(new AssemblyName(assemblyName), null));
-                }
-            }
+                    target.references.Add(resolver.LegacyLoad(new AssemblyName(assemblyName), null));
 
             // now pre-load the secondary assemblies of any shared class loader groups
             foreach (CompilerOptions target in targets)
-            {
                 if (target.references != null)
-                {
                     foreach (Assembly asm in target.references)
-                    {
                         AssemblyClassLoader.PreloadExportedAssemblies(asm);
-                    }
-                }
-            }
-        }
-
-        private static void ArrayAppend<T>(ref T[] array, T element)
-        {
-            if (array == null)
-            {
-                array = new T[] { element };
-            }
-            else
-            {
-                array = ArrayUtil.Concat(array, element);
-            }
-        }
-
-        private static void ArrayAppend<T>(ref T[] array, T[] append)
-        {
-            if (array == null)
-            {
-                array = append;
-            }
-            else if (append != null)
-            {
-                T[] tmp = new T[array.Length + append.Length];
-                Array.Copy(array, tmp, array.Length);
-                Array.Copy(append, 0, tmp, array.Length, append.Length);
-                array = tmp;
-            }
         }
 
         private static byte[] ReadFromZip(ZipFile zf, ZipEntry ze)
@@ -1283,6 +1236,7 @@ namespace ikvmc
             }
             catch (ICSharpCode.SharpZipLib.SharpZipBaseException x)
             {
+                Console.WriteLine(x.StackTrace);
                 throw new FatalCompilerErrorException(Message.ErrorReadingFile, file, x.Message);
             }
         }
@@ -1399,20 +1353,22 @@ namespace ikvmc
             }
             catch (Exception x)
             {
+                Console.WriteLine(x.StackTrace);
                 throw new FatalCompilerErrorException(Message.ErrorReadingFile, filename, x.Message);
             }
         }
 
-        private static void ProcessAttributeAnnotationsClass(ref object[] annotations, string filename)
+        static void ProcessAttributeAnnotationsClass(List<object> annotations, string filename)
         {
             try
             {
-                byte[] buf = File.ReadAllBytes(filename);
-                ClassFile cf = new ClassFile(buf, 0, buf.Length, null, ClassFileParseOptions.None, null);
-                ArrayAppend(ref annotations, cf.Annotations);
+                var buf = File.ReadAllBytes(filename);
+                var cf = new ClassFile(buf, 0, buf.Length, null, ClassFileParseOptions.None, null);
+                annotations.AddRange(cf.Annotations);
             }
             catch (Exception x)
             {
+                Console.WriteLine(x.StackTrace);
                 throw new FatalCompilerErrorException(Message.ErrorReadingFile, filename, x.Message);
             }
         }

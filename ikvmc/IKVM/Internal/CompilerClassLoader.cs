@@ -26,6 +26,7 @@ using System;
 using System.Collections.Generic;
 using System.Diagnostics;
 using System.IO;
+using System.Linq;
 using System.Security;
 using System.Security.Permissions;
 using System.Text;
@@ -38,6 +39,7 @@ using ICSharpCode.SharpZipLib.Zip;
 using IKVM.Attributes;
 using IKVM.Reflection;
 using IKVM.Reflection.Emit;
+using IKVM.Runtime;
 
 using ikvmc;
 
@@ -2559,11 +2561,11 @@ namespace IKVM.Internal
                 if (runtimeAssembly == null)
                 {
                     // we assume that the runtime is in the same directory as the compiler
-                    runtimeAssembly = Path.Combine(typeof(CompilerClassLoader).Assembly.Location, ".." + Path.DirectorySeparatorChar + "IKVM.Runtime.dll");
+                    runtimeAssembly = Path.GetFullPath(Path.Combine(typeof(CompilerClassLoader).Assembly.Location, "..", "IKVM.Runtime.dll"));
                 }
 
                 StaticCompiler.runtimeAssembly = StaticCompiler.LoadFile(runtimeAssembly);
-                StaticCompiler.runtimeJniAssembly = StaticCompiler.LoadFile(Path.Combine(StaticCompiler.runtimeAssembly.Location, ".." + Path.DirectorySeparatorChar + "IKVM.Runtime.JNI.dll"));
+                StaticCompiler.runtimeJniAssembly = StaticCompiler.LoadFile(Path.GetFullPath(Path.Combine(StaticCompiler.runtimeAssembly.Location, "..", "IKVM.Runtime.JNI.dll")));
             }
             catch (FileNotFoundException)
             {
@@ -2586,27 +2588,20 @@ namespace IKVM.Internal
                     return rc;
                 }
                 compilers.Add(compiler);
+
                 if (options.sharedclassloader != null)
-                {
                     options.sharedclassloader.Add(compiler);
-                }
             }
+
             foreach (CompilerClassLoader compiler1 in compilers)
-            {
                 foreach (CompilerClassLoader compiler2 in compilers)
-                {
-                    if (compiler1 != compiler2
-                        && (compiler1.options.crossReferenceAllPeers || (compiler1.options.peerReferences != null && Array.IndexOf(compiler1.options.peerReferences, compiler2.options.assembly) != -1)))
-                    {
+                    if (compiler1 != compiler2 && (compiler1.options.crossReferenceAllPeers || (compiler1.options.peerReferences.IndexOf(compiler2.options.assembly) != -1)))
                         compiler1.AddReference(compiler2);
-                    }
-                }
-            }
+
             foreach (CompilerClassLoader compiler in compilers)
-            {
                 compiler.CompilePass0();
-            }
-            Dictionary<CompilerClassLoader, Type> mainAssemblyTypes = new Dictionary<CompilerClassLoader, Type>();
+
+            var mainAssemblyTypes = new Dictionary<CompilerClassLoader, Type>();
             foreach (CompilerClassLoader compiler in compilers)
             {
                 if (compiler.options.sharedclassloader != null)
@@ -2665,10 +2660,11 @@ namespace IKVM.Internal
         private static int CreateCompiler(CompilerOptions options, ref CompilerClassLoader loader, ref bool compilingCoreAssembly)
         {
             Tracer.Info(Tracer.Compiler, "JVM.Compile path: {0}, assembly: {1}", options.path, options.assembly);
-            AssemblyName runtimeAssemblyName = StaticCompiler.runtimeAssembly.GetName();
-            bool allReferencesAreStrongNamed = IsSigned(StaticCompiler.runtimeAssembly);
-            List<Assembly> references = new List<Assembly>();
-            foreach (Assembly reference in options.references ?? new Assembly[0])
+
+            var runtimeAssemblyName = StaticCompiler.runtimeAssembly.GetName();
+            var allReferencesAreStrongNamed = IsSigned(StaticCompiler.runtimeAssembly);
+            var references = new List<Assembly>();
+            foreach (var reference in options.references ?? Enumerable.Empty<Assembly>())
             {
                 references.Add(reference);
                 allReferencesAreStrongNamed &= IsSigned(reference);
@@ -2704,17 +2700,14 @@ namespace IKVM.Internal
             foreach (Jar jar in options.jars)
             {
                 if (options.IsResourcesJar(jar))
-                {
                     continue;
-                }
+
                 foreach (Jar.Item item in jar)
                 {
                     string name = item.Name;
-                    if (name.EndsWith(".class", StringComparison.Ordinal)
-                        && name.Length > 6
-                        && name.IndexOf('.') == name.Length - 6)
+                    if (name.EndsWith(".class", StringComparison.Ordinal) && name.Length > 6 && name.IndexOf('.') == name.Length - 6)
                     {
-                        string className = name.Substring(0, name.Length - 6).Replace('/', '.');
+                        var className = name.Substring(0, name.Length - 6).Replace('/', '.');
                         if (h.ContainsKey(className))
                         {
                             StaticCompiler.IssueMessage(Message.DuplicateClassName, className);
@@ -2735,31 +2728,6 @@ namespace IKVM.Internal
                         h.Add(className, item);
                         classNames.Add(className);
                     }
-                }
-            }
-
-            if (options.assemblyAttributeAnnotations == null)
-            {
-                // look for "assembly" type that acts as a placeholder for assembly attributes
-                Jar.Item assemblyType;
-                if (h.TryGetValue("assembly", out assemblyType))
-                {
-                    try
-                    {
-                        byte[] buf = assemblyType.GetData();
-                        ClassFile f = new ClassFile(buf, 0, buf.Length, null, ClassFileParseOptions.None, null);
-                        // NOTE the "assembly" type in the unnamed package is a magic type
-                        // that acts as the placeholder for assembly attributes
-                        if (f.Name == "assembly" && f.Annotations != null)
-                        {
-                            options.assemblyAttributeAnnotations = f.Annotations;
-                            // HACK remove "assembly" type that exists only as a placeholder for assembly attributes
-                            h.Remove(f.Name);
-                            assemblyType.Remove();
-                            StaticCompiler.IssueMessage(Message.LegacyAssemblyAttributesFound);
-                        }
-                    }
-                    catch (ClassFormatError) { }
                 }
             }
 
@@ -2785,7 +2753,10 @@ namespace IKVM.Internal
                             }
                         }
                     }
-                    catch (ClassFormatError) { }
+                    catch (ClassFormatError)
+                    {
+
+                    }
                 }
             break_outer:;
             }
@@ -2868,8 +2839,10 @@ namespace IKVM.Internal
                 }
                 catch (Exception x)
                 {
+                    Console.WriteLine(x.StackTrace);
                     throw new FatalCompilerErrorException(Message.ErrorReadingFile, options.remapfile, x.Message);
                 }
+
                 try
                 {
                     XmlTextReader rdr = new XmlTextReader(fs);
@@ -2904,16 +2877,17 @@ namespace IKVM.Internal
             // try to find the core assembly by looking at the assemblies that the runtime references
             if (JVM.CoreAssembly == null && !compilingCoreAssembly)
             {
-                foreach (AssemblyName name in StaticCompiler.runtimeAssembly.GetReferencedAssemblies())
+                foreach (var name in StaticCompiler.runtimeAssembly.GetReferencedAssemblies())
                 {
                     Assembly asm = null;
 
                     try
                     {
-                        asm = LoadReferencedAssembly(StaticCompiler.runtimeAssembly.Location + "/../" + name.Name + ".dll");
+                        asm = LoadReferencedAssembly(Path.Combine(StaticCompiler.runtimeAssembly.Location, "..", name.Name + ".dll"));
                     }
                     catch (FileNotFoundException)
                     {
+
                     }
 
                     if (asm != null && IsCoreAssembly(asm))
@@ -3095,29 +3069,27 @@ namespace IKVM.Internal
             }
             Tracer.Info(Tracer.Compiler, "Compiling class files (2)");
             WriteResources();
+
             if (options.externalResources != null)
-            {
-                foreach (KeyValuePair<string, string> kv in options.externalResources)
-                {
-                    assemblyBuilder.AddResourceFile(JVM.MangleResourceName(kv.Key), kv.Value);
-                }
-            }
+                foreach (var kvp in options.externalResources)
+                    assemblyBuilder.AddResourceFile(JVM.MangleResourceName(kvp.Key), kvp.Value);
+
             if (options.fileversion != null)
             {
-                CustomAttributeBuilder filever = new CustomAttributeBuilder(JVM.Import(typeof(System.Reflection.AssemblyFileVersionAttribute)).GetConstructor(new Type[] { Types.String }), new object[] { options.fileversion });
+                var filever = new CustomAttributeBuilder(JVM.Import(typeof(System.Reflection.AssemblyFileVersionAttribute)).GetConstructor(new Type[] { Types.String }), new object[] { options.fileversion });
                 assemblyBuilder.SetCustomAttribute(filever);
             }
+
             if (options.assemblyAttributeAnnotations != null)
             {
                 foreach (object[] def in options.assemblyAttributeAnnotations)
                 {
-                    Annotation annotation = Annotation.LoadAssemblyCustomAttribute(this, def);
+                    var annotation = Annotation.LoadAssemblyCustomAttribute(this, def);
                     if (annotation != null)
-                    {
                         annotation.Apply(this, assemblyBuilder, def);
-                    }
                 }
             }
+
             if (options.classLoader != null)
             {
                 TypeWrapper wrapper = null;
@@ -3488,10 +3460,10 @@ namespace IKVM.Internal
         internal ApartmentState apartment;
         internal PEFileKinds target;
         internal bool guessFileKind;
-        internal string[] unresolvedReferences; // only used during command line parsing
+        internal List<string> unresolvedReferences = new List<string>(); // only used during command line parsing
         internal Dictionary<string, string> legacyStubReferences = new Dictionary<string, string>();    // only used during command line parsing
-        internal Assembly[] references;
-        internal string[] peerReferences;
+        internal List<Assembly> references = new List<Assembly>();
+        internal List<string> peerReferences = new List<string>();
         internal bool crossReferenceAllPeers = true;
         internal string[] classesToExclude;     // only used during command line parsing
         internal FileInfo remapfile;
@@ -3499,8 +3471,8 @@ namespace IKVM.Internal
         internal bool noglobbing;
         internal CodeGenOptions codegenoptions;
         internal bool compressedResources;
-        internal string[] privatePackages;
-        internal string[] publicPackages;
+        internal List<string> privatePackages = new List<string>();
+        internal List<string> publicPackages = new List<string>();
         internal string sourcepath;
         internal Dictionary<string, string> externalResources;
         internal string classLoader;
@@ -3515,7 +3487,7 @@ namespace IKVM.Internal
         internal bool warnaserror; // treat all warnings as errors
         internal FileInfo writeSuppressWarningsFile;
         internal List<string> proxies = new List<string>();
-        internal object[] assemblyAttributeAnnotations;
+        internal List<object> assemblyAttributeAnnotations = new List<object>();
         internal bool warningLevelHigh;
         internal bool noParameterReflection;
 

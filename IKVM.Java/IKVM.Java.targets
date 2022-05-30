@@ -279,8 +279,8 @@
         </PropertyGroup>
 
         <MakeDir Directories="$(RefStubsOutputPath);$(RefStubsOutputPath)tmp" />
-        <Message Text="$(_IkvmToolExecPrefix)$(IkvmStub) -bootstrap &quot;%(_RefStubWorkItem.AssemblyFile)&quot; $(_RefStubArgs) -nostdlib -out:&quot;%(TmpFile)&quot;" />
-        <Exec Command="$(_IkvmToolExecPrefix)$(IkvmStub) -bootstrap &quot;%(_RefStubWorkItem.AssemblyFile)&quot; $(_RefStubArgs) -nostdlib -out:&quot;%(TmpFile)&quot;" />
+        <Message Text="$(_IkvmToolExecPrefix)$(IkvmStub) -bootstrap &quot;%(_RefStubWorkItem.AssemblyFile)&quot; $(_RefStubArgs) -out:&quot;%(TmpFile)&quot;" />
+        <Exec Command="$(_IkvmToolExecPrefix)$(IkvmStub) -bootstrap &quot;%(_RefStubWorkItem.AssemblyFile)&quot; $(_RefStubArgs) -out:&quot;%(TmpFile)&quot;" />
 
         <CalculateMD5ForRefStubs Source="@(_RefStubWorkItem)">
             <Output TaskParameter="Output" ItemName="_RefStubWorkItemWithHash" />
@@ -725,7 +725,6 @@
             <_IkvmcArgs Include="-strictfinalfieldsemantics" />
             <_IkvmcArgs Include="-removeassertions" />
             <_IkvmcArgs Include="-target:library" />
-            <_IkvmcArgs Include="-nostdlib" />
             <_IkvmcArgs Include="-sharedclassloader" />
             <_IkvmcArgs Include="-nowarn:110" />
             <_IkvmcArgs Include="-w4" />

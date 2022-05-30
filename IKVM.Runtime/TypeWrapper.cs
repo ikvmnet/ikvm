@@ -1627,10 +1627,16 @@ namespace IKVM.Internal
 
     abstract class Annotation
     {
+
 #if STATIC_COMPILER
+
         internal static Annotation LoadAssemblyCustomAttribute(ClassLoaderWrapper loader, object[] def)
         {
-            Debug.Assert(def[0].Equals(AnnotationDefaultAttribute.TAG_ANNOTATION));
+            if (def.Length == 0)
+                throw new ArgumentException("LoadAssemblyCustomAttribute did not receive any definitions.");
+            if (object.Equals(def[0], AnnotationDefaultAttribute.TAG_ANNOTATION) == false)
+                throw new InternalException("LoadAssemblyCustomAttribute did not receive AnnotationDefaultAttribute.TAG_ANNOTATION.");
+
             string annotationClass = (string)def[1];
             if (ClassFile.IsValidFieldSig(annotationClass))
             {
@@ -1640,10 +1646,12 @@ namespace IKVM.Internal
                 }
                 catch (RetargetableJavaException)
                 {
+
                 }
             }
             return null;
         }
+
 #endif
 
 #if !STUB_GENERATOR

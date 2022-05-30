@@ -98,7 +98,7 @@ namespace IKVM.Reflection
                 throw new ArgumentException();
             }
 
-            if (name2.Name != null && name2.Name.Equals(Universe.CoreLibName, StringComparison.OrdinalIgnoreCase))
+            if (name2.Name != null && name2.Name.Equals(Universe.StdLibName, StringComparison.OrdinalIgnoreCase))
             {
                 if (name1.Name != null && name1.Name.Equals(name2.Name, StringComparison.OrdinalIgnoreCase))
                 {
