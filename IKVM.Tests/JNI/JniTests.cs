@@ -20,7 +20,7 @@ namespace IKVM.Tests.JNI
             var f = new InMemoryCodeUnit("ikvm.tests.jni.JniTests", s);
             var c = new InMemoryCompiler(new[] { f });
             c.Compile();
-            var z = c.getCompiledClass("ikvm.tests.jni.JniTests");
+            var z = c.GetClass("ikvm.tests.jni.JniTests");
             if (z == null)
                 throw new Exception();
 

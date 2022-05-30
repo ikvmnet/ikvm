@@ -196,7 +196,7 @@ namespace IKVM.Tests.JNI
         /// <param name="className"></param>
         /// <returns></returns>
         /// <exception cref="ClassNotFoundException"></exception>
-        public global::java.lang.Class getCompiledClass(string className)
+        public global::java.lang.Class GetClass(string className)
         {
             var cld = files.getClassLoader(null);
             var cls = cld.loadClass(className);
