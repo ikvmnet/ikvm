@@ -22,6 +22,7 @@ namespace ikvmc.Tests
         /// </summary>
         /// <param name="target"></param>
         /// <param name="useNetCore"></param>
+        /// <param name="exitCode"></param>
         /// <param name="arguments"></param>
         /// <returns></returns>
         async Task<string> ExecuteIkvmc(string target, bool useNetCore, int exitCode, params string[] arguments)
@@ -32,7 +33,7 @@ namespace ikvmc.Tests
             cmd = cmd.WithStandardOutputPipe(PipeTarget.ToStringBuilder(txt));
             cmd = cmd.WithStandardErrorPipe(PipeTarget.ToStringBuilder(txt));
             var tsk = await cmd.ExecuteAsync();
-            tsk.ExitCode.Should().Be(0);
+            tsk.ExitCode.Should().Be(exitCode);
             var str = txt.ToString();
             return str;
         }
