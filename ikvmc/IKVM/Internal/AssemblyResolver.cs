@@ -69,18 +69,10 @@ namespace IKVM.Internal
             libpath.Add(Environment.CurrentDirectory);
 
             if (!nostdlib)
-            {
-//#if NETCOREAPP3_1
-//				libpath.Add(Universe.ReferenceAssembliesDirectory);
-//#else
                 libpath.Add(System.Runtime.InteropServices.RuntimeEnvironment.GetRuntimeDirectory());
-//#endif
-            }
 
             foreach (string str in userLibPaths)
-            {
                 AddLibraryPaths(str, true);
-            }
 
             AddLibraryPaths(Environment.GetEnvironmentVariable("LIB") ?? "", false);
 

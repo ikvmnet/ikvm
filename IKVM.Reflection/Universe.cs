@@ -24,12 +24,16 @@
 using System;
 using System.Collections.Generic;
 using System.IO;
-using System.Runtime.InteropServices;
+using System.Linq;
 using System.Security;
 using System.Text;
 
 using IKVM.Reflection.Emit;
 using IKVM.Reflection.Reader;
+
+#if NETCOREAPP3_1_OR_GREATER
+using Microsoft.Extensions.DependencyModel;
+#endif
 
 namespace IKVM.Reflection
 {
@@ -148,37 +152,6 @@ namespace IKVM.Reflection
 #if NETCOREAPP3_1
 
         public static readonly string CoreLibName = "netstandard";
-
-        public static string ReferenceAssembliesDirectory
-        {
-            get
-            {
-                return BuildRefDirFrom(System.Runtime.InteropServices.RuntimeEnvironment.GetRuntimeDirectory());
-            }
-        }
-
-        private static string BuildRefDirFrom(string runtimeDir)
-        {
-            // transform a thing like
-            // C:\Program Files\dotnet\shared\Microsoft.NETCore.App\3.1.7
-            // to
-            // C:\Program Files\dotnet\packs\Microsoft.NETCore.App.Ref\3.1.0\ref\netcoreapp3.1
-
-            var parts = runtimeDir.Split(Path.DirectorySeparatorChar);
-            var n = string.IsNullOrEmpty(parts[parts.Length - 1]) ? parts.Length - 2 : parts.Length - 1;
-            var versionDir = parts[n--];
-            var frameworkDir = parts[n--];
-            var newParts = new string[n + 5];
-            Array.Copy(parts, newParts, n);
-            var suffixParts = new string[] { "packs", frameworkDir + ".Ref", "3.1.0", "ref", "netcoreapp3.1" };
-            Array.Copy(suffixParts, 0, newParts, n, suffixParts.Length);
-            var dir = Path.Combine(newParts);
-            if (!Directory.Exists(dir))
-            {
-                throw new FileNotFoundException("Reference assemblies directory: " + dir);
-            }
-            return dir;
-        }
 
 #elif NETFRAMEWORK || MONO
 
@@ -830,27 +803,19 @@ namespace IKVM.Reflection
             return null;
         }
 
-        private Assembly DefaultResolver(string refname, bool throwOnError)
+        Assembly DefaultResolver(string refname, bool throwOnError)
         {
-            Assembly asm = GetDynamicAssembly(refname);
+            var asm = GetDynamicAssembly(refname);
             if (asm != null)
-            {
                 return asm;
-            }
 
-#if NETCOREAPP3_1
-            string filepath = Path.Combine(ReferenceAssembliesDirectory, GetSimpleAssemblyName(refname) + ".dll");
+#if NETCOREAPP3_1_OR_GREATER
+            var filepath = DependencyContext.Default.CompileLibraries.Where(i => i.Name == GetSimpleAssemblyName(refname)).Select(i => i.Path).FirstOrDefault();
             if (File.Exists(filepath))
-            {
-                using (RawModule module = OpenRawModule(filepath))
-                {
-                    AssemblyComparisonResult result;
-                    if (module.IsManifestModule && CompareAssemblyIdentity(refname, false, module.GetAssemblyName().FullName, false, out result))
-                    {
+                using (var module = OpenRawModule(filepath))
+                    if (module.IsManifestModule && CompareAssemblyIdentity(refname, false, module.GetAssemblyName().FullName, false, out AssemblyComparisonResult result))
                         return LoadAssembly(module);
-                    }
-                }
-            }
+
             return null;
 #else
 			string fileName;
@@ -882,6 +847,7 @@ namespace IKVM.Reflection
 					return null;
 				}
 			}
+
 			return LoadFile(fileName);
 #endif
         }
