@@ -1,7 +1,10 @@
 ﻿using System.Collections.Generic;
-using System.Diagnostics;
 using System.IO;
 using System.Runtime.InteropServices;
+using System.Text;
+using System.Threading.Tasks;
+
+using CliWrap;
 
 using FluentAssertions;
 
@@ -15,18 +18,37 @@ namespace ikvmc.Tests
     {
 
         /// <summary>
+        /// Executes the IKVMC command line.
+        /// </summary>
+        /// <param name="target"></param>
+        /// <param name="useNetCore"></param>
+        /// <param name="arguments"></param>
+        /// <returns></returns>
+        async Task<string> ExecuteIkvmc(string target, bool useNetCore, int exitCode, params string[] arguments)
+        {
+            var dir = Path.Combine(Path.GetDirectoryName(typeof(ExeTests).Assembly.Location), $"ikvmc-{target}");
+            var cmd = useNetCore ? Cli.Wrap("dotnet").WithArguments(o => o.Add("exec").Add(Path.Combine(dir, "ikvmc.dll"))) : Cli.Wrap(Path.Combine(dir, "ikvmc.exe"));
+            var txt = new StringBuilder();
+            cmd = cmd.WithStandardOutputPipe(PipeTarget.ToStringBuilder(txt));
+            cmd = cmd.WithStandardErrorPipe(PipeTarget.ToStringBuilder(txt));
+            var tsk = await cmd.ExecuteAsync();
+            tsk.ExitCode.Should().Be(0);
+            var str = txt.ToString();
+            return str;
+        }
+
+        /// <summary>
         /// Can confirm we can simply execute the ikvmc executable and not have an error code.
         /// </summary>
         /// <param name="target"></param>
+        /// <param name="useNetCore"></param>
         [DataTestMethod]
         [DynamicData(nameof(GetVersionsToTest), DynamicDataSourceType.Method)]
-        public void Should_execute(string target, bool useDotNet)
+        public async Task Should_display_options_and_exit_successfully_with_no_arguments(string target, bool useNetCore)
         {
-            var dir = Path.Combine(Path.GetDirectoryName(typeof(ExeTests).Assembly.Location), $"ikvmc-{target}");
-            var exe = useDotNet ? $"dotnet exec ${Path.Combine(dir, "ikvmc.dll")}" : Path.Combine(dir, "ikvmc.exe");
-            var pid = Process.Start(exe);
-            pid.WaitForExit();
-            pid.ExitCode.Should().Be(0);
+            var str = await ExecuteIkvmc(target, useNetCore, 0);
+            str.Should().StartWith("IKVM.NET");
+            str.Should().Contain("Compiler Options:");
         }
 
         /// <summary>
