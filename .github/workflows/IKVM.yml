@@ -25,7 +25,7 @@ jobs:
       uses: actions/cache@v3
       with:
         path: openjdk8/build/linux-x86_64-normal-server-release
-        key: openjdk8-build-linux-x86_64-normal-server-release--${{ runner.os }}--${{ hashFiles('openjdk8/**', '!openjdk8/build') }}-6
+        key: openjdk8-build-linux-x86_64-normal-server-release--${{ runner.os }}--${{ hashFiles('openjdk8/**', '!openjdk8/build') }}-7
     - name: Check OpenJDK 8 Build Stamp
       id: openjdk8-build-stamp
       uses: andstor/file-existence-action@v1
@@ -65,9 +65,11 @@ jobs:
             cd openjdk8 &&
             JAVA_HOME=build/java-se-7u75-ri bash ./configure &&
             make DISABLE_HOTSPOT_OS_VERSION_CHECK=ok images &&
-            chown -R `id -u`:`id -g` build/linux-x86_64-normal-server-release &&
-            chmod -R +rwx build/linux-x86_64-normal-server-release/images/j2sdk-image/bin &&
             touch build/linux-x86_64-normal-server-release/stamp"
+    - name: Update OpenJDK 8 Attributes
+      run: |
+        chown -R `id -u`:`id -g` build/linux-x86_64-normal-server-release && \
+        chmod -R +rwx build/linux-x86_64-normal-server-release/images/j2sdk-image/bin
     - name: Package OpenJDK 8
       run: |
         zip -r openjdk8-build-linux-x86_64-normal-server-release.zip \
