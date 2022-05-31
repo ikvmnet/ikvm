@@ -39,10 +39,12 @@ namespace IKVM.Internal
 
     static class Intrinsics
     {
+
         internal static bool IsIntrinsic(MethodWrapper methodWrapper)
         {
             return false;
         }
+
     }
 
     static class StaticCompiler
@@ -111,12 +113,12 @@ namespace IKVM.Internal
         internal BootstrapBootstrapClassLoader()
             : base(CodeGenOptions.None, null)
         {
-            TypeWrapper javaLangObject = new StubTypeWrapper(Modifiers.Public, "java.lang.Object", null, true);
+            var javaLangObject = new StubTypeWrapper(Modifiers.Public, "java.lang.Object", null, true);
             SetRemappedType(JVM.Import(typeof(object)), javaLangObject);
             SetRemappedType(JVM.Import(typeof(string)), new StubTypeWrapper(Modifiers.Public | Modifiers.Final, "java.lang.String", javaLangObject, true));
             SetRemappedType(JVM.Import(typeof(Exception)), new StubTypeWrapper(Modifiers.Public, "java.lang.Throwable", javaLangObject, true));
             SetRemappedType(JVM.Import(typeof(IComparable)), new StubTypeWrapper(Modifiers.Public | Modifiers.Abstract | Modifiers.Interface, "java.lang.Comparable", null, true));
-            TypeWrapper tw = new StubTypeWrapper(Modifiers.Public | Modifiers.Abstract | Modifiers.Interface, "java.lang.AutoCloseable", null, true);
+            var tw = new StubTypeWrapper(Modifiers.Public | Modifiers.Abstract | Modifiers.Interface, "java.lang.AutoCloseable", null, true);
             tw.SetMethods(new MethodWrapper[] { new SimpleCallMethodWrapper(tw, "close", "()V", JVM.Import(typeof(IDisposable)).GetMethod("Dispose"), PrimitiveTypeWrapper.VOID, TypeWrapper.EmptyArray, Modifiers.Public | Modifiers.Abstract, MemberFlags.None, SimpleOpCode.Callvirt, SimpleOpCode.Callvirt) });
             SetRemappedType(JVM.Import(typeof(IDisposable)), tw);
 
@@ -404,23 +406,13 @@ namespace ikvmstub
             }
         }
 
-        private static string GetVersionAndCopyrightInfo()
+        static string GetVersionAndCopyrightInfo()
         {
-            System.Reflection.Assembly asm = System.Reflection.Assembly.GetEntryAssembly();
-            object[] desc = asm.GetCustomAttributes(typeof(System.Reflection.AssemblyTitleAttribute), false);
-            if (desc.Length == 1)
-            {
-                object[] copyright = asm.GetCustomAttributes(typeof(System.Reflection.AssemblyCopyrightAttribute), false);
-                if (copyright.Length == 1)
-                {
-                    return string.Format("{0} version {1}{2}{3}", // TODO: Add domain once we get one {2}http://www.ikvm.net/
-                        ((System.Reflection.AssemblyTitleAttribute)desc[0]).Title,
-                        asm.GetName().Version,
-                        Environment.NewLine,
-                        ((System.Reflection.AssemblyCopyrightAttribute)copyright[0]).Copyright);
-                }
-            }
-            return "";
+            var asm = typeof(Program).Assembly;
+            var desc = System.Reflection.CustomAttributeExtensions.GetCustomAttribute<System.Reflection.AssemblyTitleAttribute>(asm);
+            var copy = System.Reflection.CustomAttributeExtensions.GetCustomAttribute<System.Reflection.AssemblyCopyrightAttribute>(asm);
+            var info = System.Reflection.CustomAttributeExtensions.GetCustomAttribute<System.Reflection.AssemblyInformationalVersionAttribute>(asm);
+            return $"{desc.Title} ({info.InformationalVersion}){Environment.NewLine}{copy.Copyright}"; // TODO: Add domain once we get one {Environment.NewLine}http://www.ikvm.org/
         }
 
         private static void LoadSharedClassLoaderAssemblies(Assembly assembly, List<Assembly> assemblies)
