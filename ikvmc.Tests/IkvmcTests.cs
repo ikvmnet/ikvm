@@ -1,10 +1,11 @@
 ﻿using System;
-using System.Linq;
 using System.IO;
+using System.Linq;
 
 using FluentAssertions;
 
 using IKVM.Tests.Util;
+
 using Microsoft.VisualStudio.TestTools.UnitTesting;
 
 #if NETCOREAPP3_1_OR_GREATER

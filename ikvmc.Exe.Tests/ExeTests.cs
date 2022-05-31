@@ -13,6 +13,12 @@ using IKVM.Tests.Util;
 
 using Microsoft.VisualStudio.TestTools.UnitTesting;
 
+using System.Linq;
+
+#if NETCOREAPP3_1_OR_GREATER
+using Microsoft.Extensions.DependencyModel;
+#endif
+
 namespace ikvmc.Exe.Tests
 {
 
@@ -99,8 +105,14 @@ namespace ikvmc.Exe.Tests
             var j = Path.Combine(Path.GetTempPath(), Guid.NewGuid().ToString("n") + ".jar");
             c.WriteJar(j);
 
+#if NET461
+            var a = new[] { $"-lib:{System.Runtime.InteropServices.RuntimeEnvironment.GetRuntimeDirectory()}" };
+#else
+            var a = DependencyContext.Default.CompileLibraries.SelectMany(i => i.ResolveReferencePaths()).Select(i => $"-r:{i}");
+#endif
+
             var asm = Path.ChangeExtension(j, ".dll");
-            var rsl = await ExecuteIkvmc(target, useNetCore, "-assembly:ikvmc.Tests.Java", $"-out:{asm}", j);
+            var rsl = await ExecuteIkvmc(target, useNetCore, a.Concat(new[] { "-assembly:ikvmc.Tests.Java", $"-out:{asm}", j }).ToArray());
             rsl.ExitCode.Should().Be(0);
             rsl.StandardOutput.Should().StartWith("IKVM.NET");
             File.Exists(asm).Should().BeTrue();
