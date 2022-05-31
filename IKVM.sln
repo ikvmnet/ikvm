@@ -57,11 +57,13 @@ Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "ikvm-tests-native-linux", "
 EndProject
 Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "ikvm-tests-native", "ikvm-tests-native", "{B6083619-C4E8-4D8E-95BD-217E3663134C}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "IKVM.Tests.Util", "IKVM.Tests.Util\IKVM.Tests.Util.csproj", "{066E1713-6D64-4B40-BE1B-7C33C7ADD877}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "IKVM.Tests.Util", "IKVM.Tests.Util\IKVM.Tests.Util.csproj", "{066E1713-6D64-4B40-BE1B-7C33C7ADD877}"
 EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "ikvmc.Exe.Tests", "ikvmc.Exe.Tests\ikvmc.Exe.Tests.csproj", "{6B006D99-1082-44ED-8CF9-B1F1E619A6F8}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "ikvmc.Tests", "ikvmc.Tests\ikvmc.Tests.csproj", "{A1982DB0-3626-4B8B-8CCA-8AF692252701}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "ikvmc.Tests", "ikvmc.Tests\ikvmc.Tests.csproj", "{A1982DB0-3626-4B8B-8CCA-8AF692252701}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "ikvmstub.Tests", "ikvmstub.Tests\ikvmstub.Tests.csproj", "{B41CDA62-0147-4D57-9D7C-919E041B7478}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
@@ -149,6 +151,10 @@ Global
 		{A1982DB0-3626-4B8B-8CCA-8AF692252701}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{A1982DB0-3626-4B8B-8CCA-8AF692252701}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{A1982DB0-3626-4B8B-8CCA-8AF692252701}.Release|Any CPU.Build.0 = Release|Any CPU
+		{B41CDA62-0147-4D57-9D7C-919E041B7478}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{B41CDA62-0147-4D57-9D7C-919E041B7478}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{B41CDA62-0147-4D57-9D7C-919E041B7478}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{B41CDA62-0147-4D57-9D7C-919E041B7478}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE

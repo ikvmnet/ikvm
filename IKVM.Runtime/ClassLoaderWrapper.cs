@@ -1109,12 +1109,12 @@ namespace IKVM.Internal
             }
 
 #if STUB_GENERATOR
-			if(type.__IsMissing || type.__ContainsMissingType)
-			{
-				wrapper = new UnloadableTypeWrapper("Missing/" + type.Assembly.FullName);
-				globalTypeToTypeWrapper.Add(type, wrapper);
-				return wrapper;
-			}
+            if (type.__IsMissing || type.__ContainsMissingType)
+            {
+                wrapper = new UnloadableTypeWrapper("Missing/" + type.Assembly.FullName);
+                globalTypeToTypeWrapper.Add(type, wrapper);
+                return wrapper;
+            }
 #endif
             string remapped;
             if (remappedTypes.TryGetValue(type, out remapped))
