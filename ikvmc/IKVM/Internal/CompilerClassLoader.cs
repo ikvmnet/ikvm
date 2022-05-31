@@ -3634,7 +3634,7 @@ namespace IKVM.Internal
         DllExportRequiresSupportedPlatform = 130,
         DuplicateAssemblyReference = 132,
         UnableToResolveType = 133,
-        StubsAreDeprecated = 134,
+        StubsAreInvalid = 134,
         WrongClassName = 135,
         ReflectionCallerClassRequiresCallerID = 136,
         LegacyAssemblyAttributesFound = 137,
@@ -3996,8 +3996,8 @@ namespace IKVM.Internal
                 case Message.UnableToResolveType:
                     msg = "Reference in \"{0}\" to type \"{1}\" claims it is defined in \"{2}\", but it could not be found";
                     break;
-                case Message.StubsAreDeprecated:
-                    msg = "Compiling stubs is deprecated. Please add a reference to assembly \"{0}\" instead.";
+                case Message.StubsAreInvalid:
+                    msg = "Compiling stubs is not supported. Please add a reference to assembly \"{0}\" instead.";
                     break;
                 case Message.WrongClassName:
                     msg = "Unable to compile \"{0}\" (wrong name: \"{1}\")";

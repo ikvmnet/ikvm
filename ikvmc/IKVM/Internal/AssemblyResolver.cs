@@ -76,11 +76,8 @@ namespace IKVM.Internal
             // then search in the LIB environment variable
             AddLibraryPaths(Environment.GetEnvironmentVariable("LIB") ?? "", false);
 
-#if STATIC_COMPILER
+            // attach to the universe to handle resolution
             universe.AssemblyResolve += AssemblyResolve;
-#else
-            universe.AssemblyResolve += LegacyAssemblyResolve;
-#endif
         }
 
         /// <summary>
@@ -188,6 +185,7 @@ namespace IKVM.Internal
 
             return null;
         }
+
         /// <summary>
         /// Attempts to resolve the given reference, appending the discovered assembly to the references list.
         /// </summary>
@@ -243,20 +241,32 @@ namespace IKVM.Internal
             return true;
         }
 
+        /// <summary>
+        /// Attempts to resolve a required assembly.
+        /// </summary>
+        /// <param name="sender"></param>
+        /// <param name="args"></param>
+        /// <returns></returns>
         Assembly AssemblyResolve(object sender, IKVM.Reflection.ResolveEventArgs args)
         {
-            AssemblyName name = new AssemblyName(args.Name);
+            var name = new AssemblyName(args.Name);
             AssemblyName previousMatch = null;
             int previousMatchLevel = 0;
-            foreach (Assembly asm in universe.GetAssemblies())
-            {
+
+            // first attempt to match the requested assembly against one that is already laoe
+            foreach (var asm in universe.GetAssemblies())
                 if (Match(asm.GetName(), name, ref previousMatch, ref previousMatchLevel))
-                {
                     return asm;
-                }
-            }
+
+            // attempt to locate teh assembly in the search path
+            foreach (var file in FindAssemblyPath(name.Name + ".dll"))
+                if (Match(AssemblyName.GetAssemblyName(file), name, ref previousMatch, ref previousMatchLevel))
+                    return LoadFile(file);
+
+            // we did not find an exact match, but we did find one that was close
             if (previousMatch != null)
             {
+                // match level was okay to proceed
                 if (previousMatchLevel == 2)
                 {
 #if NETFRAMEWORK
@@ -264,93 +274,31 @@ namespace IKVM.Internal
 #endif
                     return universe.Load(previousMatch.FullName);
                 }
-                else if (args.RequestingAssembly != null)
+
+                if (args.RequestingAssembly != null)
                 {
+                    // we found an assembly match, but it was of a lower version than that which was requested
                     Console.Error.WriteLine("Error: Assembly '{0}' uses '{1}' which has a higher version than referenced assembly '{2}'", args.RequestingAssembly.FullName, name.FullName, previousMatch.FullName);
                     Environment.Exit(1);
                     return null;
                 }
                 else
                 {
+                    // an assembly was found at a lower version, but wasn't specifically requested by a dependent
                     Console.Error.WriteLine("Error: Assembly '{0}' was requested which is a higher version than referenced assembly '{1}'", name.FullName, previousMatch.FullName);
                     Environment.Exit(1);
                     return null;
                 }
             }
-            else if (args.RequestingAssembly != null)
-            {
+
+            // generate a missing assembly reference, only if we had a requester
+            if (args.RequestingAssembly != null)
                 return universe.CreateMissingAssembly(args.Name);
-            }
-            else
-            {
-                return null;
-            }
-        }
 
-        private Assembly LegacyAssemblyResolve(object sender, IKVM.Reflection.ResolveEventArgs args)
-        {
-            return LegacyLoad(new AssemblyName(args.Name), args.RequestingAssembly);
-        }
-
-        internal Assembly LegacyLoad(AssemblyName name, Assembly requestingAssembly)
-        {
-            AssemblyName previousMatch = null;
-            int previousMatchLevel = 0;
-            foreach (Assembly asm in universe.GetAssemblies())
-            {
-                if (Match(asm.GetName(), name, ref previousMatch, ref previousMatchLevel))
-                {
-                    return asm;
-                }
-            }
-            foreach (string file in FindAssemblyPath(name.Name + ".dll"))
-            {
-                if (Match(AssemblyName.GetAssemblyName(file), name, ref previousMatch, ref previousMatchLevel))
-                {
-                    return LoadFile(file);
-                }
-            }
-            if (requestingAssembly != null)
-            {
-                string path = Path.Combine(Path.GetDirectoryName(requestingAssembly.Location), name.Name + ".dll");
-                if (File.Exists(path) && Match(AssemblyName.GetAssemblyName(path), name, ref previousMatch, ref previousMatchLevel))
-                {
-                    return LoadFile(path);
-                }
-            }
-            if (previousMatch != null)
-            {
-                if (previousMatchLevel == 2)
-                {
-                    EmitWarning(WarningId.HigherVersion, "assuming assembly reference \"{0}\" matches \"{1}\", you may need to supply runtime policy", previousMatch.FullName, name.FullName);
-                    return LoadFile(new Uri(previousMatch.CodeBase).LocalPath);
-                }
-                else if (requestingAssembly != null)
-                {
-                    Console.Error.WriteLine("Error: Assembly '{0}' uses '{1}' which has a higher version than referenced assembly '{2}'", requestingAssembly.FullName, name.FullName, previousMatch.FullName);
-                }
-                else
-                {
-                    Console.Error.WriteLine("Error: Assembly '{0}' was requested which is a higher version than referenced assembly '{1}'", name.FullName, previousMatch.FullName);
-                }
-            }
-            else
-            {
-#if STUB_GENERATOR
-                return universe.CreateMissingAssembly(name.FullName);
-#else
-                Console.Error.WriteLine("Error: unable to find assembly '{0}'", name.FullName);
-                if (requestingAssembly != null)
-                {
-                    Console.Error.WriteLine("    (a dependency of '{0}')", requestingAssembly.FullName);
-                }
-#endif
-            }
-            Environment.Exit(1);
             return null;
         }
 
-        private bool Match(AssemblyName assemblyDef, AssemblyName assemblyRef, ref AssemblyName bestMatch, ref int bestMatchLevel)
+        bool Match(AssemblyName assemblyDef, AssemblyName assemblyRef, ref AssemblyName bestMatch, ref int bestMatchLevel)
         {
             // Match levels:
             //   0 = no match
@@ -413,33 +361,6 @@ namespace IKVM.Internal
                     }
                 }
             }
-        }
-
-        private Assembly LoadStdLib(IList<string> references)
-        {
-            if (references != null)
-            {
-                foreach (string r in references)
-                {
-                    try
-                    {
-                        if (AssemblyName.GetAssemblyName(r).Name == Universe.StdLibName)
-                        {
-                            return LoadFile(r);
-                        }
-                    }
-                    catch
-                    {
-                    }
-                }
-            }
-            foreach (string mscorlib in FindAssemblyPath(Universe.StdLibName + ".dll"))
-            {
-                return LoadFile(mscorlib);
-            }
-            Console.Error.WriteLine("Error: unable to find mscorlib.dll");
-            Environment.Exit(1);
-            return null;
         }
 
         IEnumerable<string> FindAssemblyPath(string file)

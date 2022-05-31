@@ -1075,7 +1075,7 @@ namespace ikvmc
             {
                 if (target.references != null)
                 {
-                    foreach (Assembly asm in target.references)
+                    foreach (var asm in target.references)
                     {
                         var forwarder = asm.GetType("__<MainAssembly>");
                         if (forwarder != null && forwarder.Assembly != asm)
@@ -1083,11 +1083,6 @@ namespace ikvmc
                     }
                 }
             }
-
-            // add legacy references (from stub files)
-            foreach (CompilerOptions target in targets)
-                foreach (string assemblyName in target.legacyStubReferences.Keys)
-                    target.references.Add(resolver.LegacyLoad(new AssemblyName(assemblyName), null));
 
             // now pre-load the secondary assemblies of any shared class loader groups
             foreach (CompilerOptions target in targets)
@@ -1108,7 +1103,13 @@ namespace ikvmc
             return buf;
         }
 
-        private static bool EmitStubWarning(CompilerOptions options, byte[] buf)
+        /// <summary>
+        /// Emits a warning if the the class file is a stub.
+        /// </summary>
+        /// <param name="options"></param>
+        /// <param name="buf"></param>
+        /// <returns></returns>
+        static bool EmitStubWarning(CompilerOptions options, byte[] buf)
         {
             ClassFile cf;
             try
@@ -1119,56 +1120,62 @@ namespace ikvmc
             {
                 return false;
             }
+
             if (cf.IKVMAssemblyAttribute == null)
-            {
                 return false;
-            }
+
             if (cf.IKVMAssemblyAttribute.StartsWith("[["))
             {
-                Regex r = new Regex(@"\[([^\[\]]+)\]");
-                MatchCollection mc = r.Matches(cf.IKVMAssemblyAttribute);
+                var r = new Regex(@"\[([^\[\]]+)\]");
+                var mc = r.Matches(cf.IKVMAssemblyAttribute);
                 foreach (Match m in mc)
                 {
                     options.legacyStubReferences[m.Groups[1].Value] = null;
-                    StaticCompiler.IssueMessage(options, Message.StubsAreDeprecated, m.Groups[1].Value);
+                    StaticCompiler.IssueMessage(options, Message.StubsAreInvalid, m.Groups[1].Value);
                 }
             }
             else
             {
                 options.legacyStubReferences[cf.IKVMAssemblyAttribute] = null;
-                StaticCompiler.IssueMessage(options, Message.StubsAreDeprecated, cf.IKVMAssemblyAttribute);
+                StaticCompiler.IssueMessage(options, Message.StubsAreInvalid, cf.IKVMAssemblyAttribute);
             }
+
             return true;
         }
 
-        private static bool IsExcludedOrStubLegacy(CompilerOptions options, ZipEntry ze, byte[] data)
+        /// <summary>
+        /// Returns <c>true</c> if the class file is excluded from compilation, or a stub file.
+        /// </summary>
+        /// <param name="options"></param>
+        /// <param name="ze"></param>
+        /// <param name="data"></param>
+        /// <returns></returns>
+        static bool IsExcludedOrStub(CompilerOptions options, ZipEntry ze, byte[] data)
         {
             if (ze.Name.EndsWith(".class", StringComparison.OrdinalIgnoreCase))
             {
                 try
                 {
-                    bool stub;
-                    string name = ClassFile.GetClassName(data, 0, data.Length, out stub);
+                    var name = ClassFile.GetClassName(data, 0, data.Length, out bool stub);
                     if (options.IsExcludedClass(name) || (stub && EmitStubWarning(options, data)))
-                    {
-                        // we use stubs to add references, but otherwise ignore them
                         return true;
-                    }
                 }
                 catch (ClassFormatError)
                 {
+
                 }
             }
+
             return false;
         }
 
-        private void ProcessManifest(CompilerOptions options, ZipFile zf, ZipEntry ze)
+        void ProcessManifest(CompilerOptions options, ZipFile zf, ZipEntry ze)
         {
             if (manifestMainClass == null)
             {
                 // read main class from manifest
                 // TODO find out if we can use other information from manifest
-                StreamReader rdr = new StreamReader(zf.GetInputStream(ze));
+                var rdr = new StreamReader(zf.GetInputStream(ze));
                 string line;
                 while ((line = rdr.ReadLine()) != null)
                 {
@@ -1188,7 +1195,7 @@ namespace ikvmc
             }
         }
 
-        private bool ProcessZipFile(CompilerOptions options, string file, Predicate<ZipEntry> filter)
+        bool ProcessZipFile(CompilerOptions options, string file, Predicate<ZipEntry> filter)
         {
             try
             {
@@ -1207,7 +1214,7 @@ namespace ikvmc
                         {
                             found = true;
                             byte[] data = ReadFromZip(zf, ze);
-                            if (IsExcludedOrStubLegacy(options, ze, data))
+                            if (IsExcludedOrStub(options, ze, data))
                             {
                                 continue;
                             }

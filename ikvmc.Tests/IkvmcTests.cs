@@ -1,6 +1,7 @@
 ﻿using System;
 using System.IO;
 using System.Linq;
+using System.Runtime.InteropServices;
 
 using FluentAssertions;
 
@@ -30,7 +31,7 @@ namespace ikvmc.Tests
             c.WriteJar(j);
 
 #if NET461
-            var a = new[] { $"-lib:{System.Runtime.InteropServices.RuntimeEnvironment.GetRuntimeDirectory()}" };
+            var a = new[] { $"-lib:{RuntimeEnvironment.GetRuntimeDirectory()}" };
 #else
             var a = DependencyContext.Default.CompileLibraries.SelectMany(i => i.ResolveReferencePaths()).Select(i => $"-r:{i}");
 #endif
