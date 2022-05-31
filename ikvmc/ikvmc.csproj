@@ -9,7 +9,6 @@
         <Description>JVM for .NET</Description>
         <DefineConstants>$(DefineConstants);STATIC_COMPILER;EMITTERS</DefineConstants>
         <AutoGenerateBindingRedirects>true</AutoGenerateBindingRedirects>
-        <PreserveCompilationContext>true</PreserveCompilationContext>
     </PropertyGroup>
 
     <ItemGroup>

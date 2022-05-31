@@ -276,138 +276,136 @@ namespace IKVM.Internal
         {
             RemapperTypeWrapper rtw;
             if (remapped.TryGetValue(name, out rtw))
-            {
                 return rtw;
-            }
-            else
+
+            if (classes.TryGetValue(name, out Jar.Item itemRef))
             {
-                Jar.Item itemRef;
-                if (classes.TryGetValue(name, out itemRef))
+                classes.Remove(name);
+                ClassFile f;
+                try
                 {
-                    classes.Remove(name);
-                    ClassFile f;
-                    try
+                    var buf = itemRef.GetData();
+                    f = new ClassFile(buf, 0, buf.Length, name, ClassFileParseOptions, null);
+                }
+                catch (ClassFormatError x)
+                {
+                    StaticCompiler.SuppressWarning(options, Message.ClassNotFound, name);
+                    StaticCompiler.IssueMessage(options, Message.ClassFormatError, name, x.Message);
+                    return null;
+                }
+
+                if (f.Name != name)
+                {
+                    StaticCompiler.SuppressWarning(options, Message.ClassNotFound, name);
+                    StaticCompiler.IssueMessage(options, Message.WrongClassName, name, f.Name);
+                    return null;
+                }
+
+                if (f.IsPublic && options.privatePackages.Count > 0)
+                {
+                    foreach (string p in options.privatePackages)
                     {
-                        byte[] buf = itemRef.GetData();
-                        f = new ClassFile(buf, 0, buf.Length, name, ClassFileParseOptions, null);
-                    }
-                    catch (ClassFormatError x)
-                    {
-                        StaticCompiler.SuppressWarning(options, Message.ClassNotFound, name);
-                        StaticCompiler.IssueMessage(options, Message.ClassFormatError, name, x.Message);
-                        return null;
-                    }
-                    if (f.Name != name)
-                    {
-                        StaticCompiler.SuppressWarning(options, Message.ClassNotFound, name);
-                        StaticCompiler.IssueMessage(options, Message.WrongClassName, name, f.Name);
-                        return null;
-                    }
-                    if (f.IsPublic && options.privatePackages != null)
-                    {
-                        foreach (string p in options.privatePackages)
-                        {
-                            if (f.Name.StartsWith(p))
-                            {
-                                f.SetInternal();
-                                break;
-                            }
-                        }
-                    }
-                    if (f.IsPublic && options.publicPackages != null)
-                    {
-                        bool found = false;
-                        foreach (string package in options.publicPackages)
-                        {
-                            if (f.Name.StartsWith(package))
-                            {
-                                found = true;
-                                break;
-                            }
-                        }
-                        if (!found)
+                        if (f.Name.StartsWith(p))
                         {
                             f.SetInternal();
+                            break;
                         }
                     }
-                    if (f.SourceFileAttribute != null)
+                }
+
+                if (f.IsPublic && options.publicPackages.Count > 0)
+                {
+                    bool found = false;
+                    foreach (string package in options.publicPackages)
                     {
-                        FileInfo path = itemRef.Path;
-                        if (path != null)
+                        if (f.Name.StartsWith(package))
                         {
-                            string sourceFile = Path.GetFullPath(Path.Combine(path.DirectoryName, f.SourceFileAttribute));
-                            if (File.Exists(sourceFile))
-                            {
-                                f.SourcePath = sourceFile;
-                            }
-                        }
-                        if (f.SourcePath == null)
-                        {
-                            if (options.sourcepath != null)
-                            {
-                                string package = f.Name;
-                                int index = package.LastIndexOf('.');
-                                package = index == -1 ? "" : package.Substring(0, index).Replace('.', '/');
-                                f.SourcePath = Path.GetFullPath(Path.Combine(options.sourcepath + "/" + package, f.SourceFileAttribute));
-                            }
-                            else
-                            {
-                                f.SourcePath = f.SourceFileAttribute;
-                            }
+                            found = true;
+                            break;
                         }
                     }
-                    try
+                    if (!found)
                     {
-                        TypeWrapper tw = DefineClass(f, null);
-                        // we successfully created the type, so we don't need to include the class as a resource
-                        if (options.nojarstubs)
+                        f.SetInternal();
+                    }
+                }
+
+                if (f.SourceFileAttribute != null)
+                {
+                    var path = itemRef.Path;
+                    if (path != null)
+                    {
+                        var sourceFile = Path.GetFullPath(Path.Combine(path.DirectoryName, f.SourceFileAttribute));
+                        if (File.Exists(sourceFile))
+                            f.SourcePath = sourceFile;
+                    }
+
+                    if (f.SourcePath == null)
+                    {
+                        if (options.sourcepath != null)
                         {
-                            itemRef.Remove();
+                            var package = f.Name;
+                            var index = package.LastIndexOf('.');
+                            package = index == -1 ? "" : package.Substring(0, index).Replace('.', Path.DirectorySeparatorChar);
+                            f.SourcePath = Path.GetFullPath(Path.Combine(options.sourcepath, package, f.SourceFileAttribute));
                         }
                         else
                         {
-                            itemRef.MarkAsStub();
+                            f.SourcePath = f.SourceFileAttribute;
                         }
-                        int pos = f.Name.LastIndexOf('.');
-                        if (pos != -1)
-                        {
-                            string manifestJar = options.IsClassesJar(itemRef.Jar) ? null : itemRef.Jar.Name;
-                            packages.DefinePackage(f.Name.Substring(0, pos), manifestJar);
-                        }
-                        return tw;
                     }
-                    catch (ClassFormatError x)
-                    {
-                        StaticCompiler.IssueMessage(options, Message.ClassFormatError, name, x.Message);
-                    }
-                    catch (IllegalAccessError x)
-                    {
-                        StaticCompiler.IssueMessage(options, Message.IllegalAccessError, name, x.Message);
-                    }
-                    catch (VerifyError x)
-                    {
-                        StaticCompiler.IssueMessage(options, Message.VerificationError, name, x.Message);
-                    }
-                    catch (NoClassDefFoundError x)
-                    {
-                        if ((options.codegenoptions & CodeGenOptions.DisableDynamicBinding) != 0)
-                        {
-                            StaticCompiler.IssueMessage(options, Message.NoClassDefFoundError, name, x.Message);
-                        }
-                        StaticCompiler.IssueMessage(options, Message.ClassNotFound, x.Message);
-                    }
-                    catch (RetargetableJavaException x)
-                    {
-                        StaticCompiler.IssueMessage(options, Message.GenericUnableToCompileError, name, x.GetType().Name, x.Message);
-                    }
-                    StaticCompiler.SuppressWarning(options, Message.ClassNotFound, name);
-                    return null;
                 }
-                else
+
+                try
                 {
-                    return null;
+                    var tw = DefineClass(f, null);
+                    // we successfully created the type, so we don't need to include the class as a resource
+                    if (options.nojarstubs)
+                    {
+                        itemRef.Remove();
+                    }
+                    else
+                    {
+                        itemRef.MarkAsStub();
+                    }
+
+                    int pos = f.Name.LastIndexOf('.');
+                    if (pos != -1)
+                    {
+                        string manifestJar = options.IsClassesJar(itemRef.Jar) ? null : itemRef.Jar.Name;
+                        packages.DefinePackage(f.Name.Substring(0, pos), manifestJar);
+                    }
+
+                    return tw;
                 }
+                catch (ClassFormatError x)
+                {
+                    StaticCompiler.IssueMessage(options, Message.ClassFormatError, name, x.Message);
+                }
+                catch (IllegalAccessError x)
+                {
+                    StaticCompiler.IssueMessage(options, Message.IllegalAccessError, name, x.Message);
+                }
+                catch (VerifyError x)
+                {
+                    StaticCompiler.IssueMessage(options, Message.VerificationError, name, x.Message);
+                }
+                catch (NoClassDefFoundError x)
+                {
+                    if ((options.codegenoptions & CodeGenOptions.DisableDynamicBinding) != 0)
+                        StaticCompiler.IssueMessage(options, Message.NoClassDefFoundError, name, x.Message);
+                    StaticCompiler.IssueMessage(options, Message.ClassNotFound, x.Message);
+                }
+                catch (RetargetableJavaException x)
+                {
+                    StaticCompiler.IssueMessage(options, Message.GenericUnableToCompileError, name, x.GetType().Name, x.Message);
+                }
+
+                StaticCompiler.SuppressWarning(options, Message.ClassNotFound, name);
+                return null;
             }
+
+            return null;
         }
 
         // HACK when we're compiling multiple targets with -sharedclassloader, each target will have its own CompilerClassLoader,

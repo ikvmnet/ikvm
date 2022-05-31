@@ -1,11 +1,15 @@
 ﻿using System;
+using System.Linq;
 using System.IO;
 
 using FluentAssertions;
 
 using IKVM.Tests.Util;
-
 using Microsoft.VisualStudio.TestTools.UnitTesting;
+
+#if NETCOREAPP3_1_OR_GREATER
+using Microsoft.Extensions.DependencyModel;
+#endif
 
 namespace ikvmc.Tests
 {
@@ -24,11 +28,18 @@ namespace ikvmc.Tests
             var j = Path.Combine(Path.GetTempPath(), Guid.NewGuid().ToString("n") + ".jar");
             c.WriteJar(j);
 
+#if NET461
+            var a = new[] { $"-lib:{System.Runtime.InteropServices.RuntimeEnvironment.GetRuntimeDirectory()}" };
+#else
+            var a = DependencyContext.Default.CompileLibraries.SelectMany(i => i.ResolveReferencePaths()).Select(i => $"-r:{i}");
+#endif
+
             var asm = Path.ChangeExtension(j, ".dll");
-            var ret = ikvmc.IkvmcCompiler.Main(new[] { "-assembly:ikvmc.Tests.Java", $"-out:{asm}", j });
+            var ret = ikvmc.IkvmcCompiler.Main(a.Concat(new[] { "-assembly:ikvmc.Tests.Java", $"-out:{asm}", j }).ToArray());
             ret.Should().Be(0);
             File.Exists(asm).Should().BeTrue();
         }
 
     }
+
 }
