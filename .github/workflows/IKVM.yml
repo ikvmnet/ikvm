@@ -68,8 +68,9 @@ jobs:
             touch build/linux-x86_64-normal-server-release/stamp"
     - name: Update OpenJDK 8 Attributes
       run: |
-        chown -R `id -u`:`id -g` build/linux-x86_64-normal-server-release && \
-        chmod -R +rwx build/linux-x86_64-normal-server-release/images/j2sdk-image/bin
+        chown -R `id -u`:`id -g` linux-x86_64-normal-server-release && \
+        chmod -R +rwx linux-x86_64-normal-server-release/images/j2sdk-image/bin
+      working-directory: openjdk8/build
     - name: Package OpenJDK 8
       run: |
         zip -r openjdk8-build-linux-x86_64-normal-server-release.zip \
