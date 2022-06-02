@@ -23,7 +23,7 @@
 */
 using System;
 
-using IKVM.Runtime.Internal.Java.Lang;
+using IKVM.Runtime.Util.Java.Lang;
 
 static class Java_java_lang_StrictMath
 {

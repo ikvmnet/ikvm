@@ -29,7 +29,7 @@ using FileDescriptor = java.io.FileDescriptor;
 static class Java_sun_nio_ch_WindowsAsynchronousServerSocketChannelImpl
 {
 #if !FIRST_PASS
-	sealed class Accept : IKVM.Runtime.Internal.Sun.Nio.Ch.OperationBase<System.Net.Sockets.Socket>
+	sealed class Accept : IKVM.Runtime.Util.Sun.Nio.Ch.OperationBase<System.Net.Sockets.Socket>
 	{
 		protected override IAsyncResult Begin(System.Net.Sockets.Socket listenSocket, System.Net.Sockets.Socket acceptSocket, AsyncCallback callback, object state)
 		{

@@ -32,7 +32,7 @@ using InetAddress = java.net.InetAddress;
 static class Java_sun_nio_ch_WindowsAsynchronousSocketChannelImpl
 {
 #if !FIRST_PASS
-	sealed class Connect : IKVM.Runtime.Internal.Sun.Nio.Ch.OperationBase<System.Net.IPEndPoint>
+	sealed class Connect : IKVM.Runtime.Util.Sun.Nio.Ch.OperationBase<System.Net.IPEndPoint>
 	{
 		protected override IAsyncResult Begin(System.Net.Sockets.Socket socket, System.Net.IPEndPoint remoteEP, AsyncCallback callback, object state)
 		{
@@ -56,7 +56,7 @@ static class Java_sun_nio_ch_WindowsAsynchronousSocketChannelImpl
 		return list;
 	}
 
-	sealed class Receive : IKVM.Runtime.Internal.Sun.Nio.Ch.OperationBase<ByteBuffer[]>
+	sealed class Receive : IKVM.Runtime.Util.Sun.Nio.Ch.OperationBase<ByteBuffer[]>
 	{
 		protected override IAsyncResult Begin(System.Net.Sockets.Socket socket, ByteBuffer[] bufs, AsyncCallback callback, object state)
 		{
@@ -69,7 +69,7 @@ static class Java_sun_nio_ch_WindowsAsynchronousSocketChannelImpl
 		}
 	}
 
-	sealed class Send : IKVM.Runtime.Internal.Sun.Nio.Ch.OperationBase<ByteBuffer[]>
+	sealed class Send : IKVM.Runtime.Util.Sun.Nio.Ch.OperationBase<ByteBuffer[]>
 	{
 		protected override IAsyncResult Begin(System.Net.Sockets.Socket socket, ByteBuffer[] bufs, AsyncCallback callback, object state)
 		{

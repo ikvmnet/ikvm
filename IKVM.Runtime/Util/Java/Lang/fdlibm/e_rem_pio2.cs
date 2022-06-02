@@ -29,7 +29,7 @@
  * use __kernel_rem_pio2()
  */
 
-namespace IKVM.Runtime.Internal.Java.Lang
+namespace IKVM.Runtime.Util.Java.Lang
 {
     static partial class fdlibm
     {

@@ -25,7 +25,7 @@
 using System;
 
 #if !FIRST_PASS
-namespace IKVM.Runtime.Internal.Sun.Nio.Ch
+namespace IKVM.Runtime.Util.Sun.Nio.Ch
 {
     using System.Net.Sockets;
 

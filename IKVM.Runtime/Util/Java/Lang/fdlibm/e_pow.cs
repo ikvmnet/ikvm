@@ -70,7 +70,7 @@
 using unsigned = System.UInt32;
 #pragma warning disable 168
 
-namespace IKVM.Runtime.Internal.Java.Lang
+namespace IKVM.Runtime.Util.Java.Lang
 {
     static partial class fdlibm
     {

@@ -88,7 +88,7 @@
  *       See HP-15C Advanced Functions Handbook, p.193.
  */
 
-namespace IKVM.Runtime.Internal.Java.Lang
+namespace IKVM.Runtime.Util.Java.Lang
 {
     static partial class fdlibm
     {

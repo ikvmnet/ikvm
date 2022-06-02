@@ -57,7 +57,7 @@
  *                     = 1 - 2*(tan(y) - (tan(y)^2)/(1+tan(y)))
  */
 
-namespace IKVM.Runtime.Internal.Java.Lang
+namespace IKVM.Runtime.Util.Java.Lang
 {
     static partial class fdlibm
     {

@@ -46,7 +46,7 @@ using VerifyType = global::sun.invoke.util.VerifyType;
 using Wrapper = global::sun.invoke.util.Wrapper;
 #endif
 
-namespace IKVM.Runtime.Internal.Java.Lang.Invoke
+namespace IKVM.Runtime.Util.Java.Lang.Invoke
 {
 
     sealed class NativeInvokerBytecodeGenerator

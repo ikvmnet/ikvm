@@ -55,7 +55,7 @@
  *      than 1 ulps (units in the last place)
  */
 
-namespace IKVM.Runtime.Internal.Java.Lang
+namespace IKVM.Runtime.Util.Java.Lang
 {
     static partial class fdlibm
     {

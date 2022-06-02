@@ -27,7 +27,7 @@ using System;
 using FileDescriptor = java.io.FileDescriptor;
 using InetAddress = java.net.InetAddress;
 
-namespace IKVM.Runtime.Internal.Sun.Nio.Ch
+namespace IKVM.Runtime.Util.Sun.Nio.Ch
 {
     static class Net
     {

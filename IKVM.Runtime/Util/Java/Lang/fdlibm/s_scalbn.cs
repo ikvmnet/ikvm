@@ -30,7 +30,7 @@
  * exponentiation or a multiplication.
  */
 
-namespace IKVM.Runtime.Internal.Java.Lang
+namespace IKVM.Runtime.Util.Java.Lang
 {
     static partial class fdlibm
     {

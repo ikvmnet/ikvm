@@ -28,7 +28,7 @@ using System.Collections.Generic;
 using ByteBuffer = java.nio.ByteBuffer;
 using FileDescriptor = java.io.FileDescriptor;
 
-namespace IKVM.Runtime.Internal.Sun.Nio.Ch
+namespace IKVM.Runtime.Util.Sun.Nio.Ch
 {
     static class SocketDispatcher
 	{

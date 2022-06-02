@@ -26,7 +26,7 @@ using System;
 
 using FileDescriptor = java.io.FileDescriptor;
 
-namespace IKVM.Runtime.Internal.Sun.Nio.Ch
+namespace IKVM.Runtime.Util.Sun.Nio.Ch
 {
 
     static class SocketChannelImpl
