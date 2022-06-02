@@ -1222,9 +1222,9 @@ namespace IKVM.Runtime
             return FindFieldID(pEnv, clazz, name, sig, false);
         }
 
-        private static sun.reflect.FieldAccessor GetFieldAccessor(jfieldID cookie)
+        private static global::sun.reflect.FieldAccessor GetFieldAccessor(jfieldID cookie)
         {
-            return (sun.reflect.FieldAccessor)FieldWrapper.FromCookie(cookie).GetFieldAccessorJNI();
+            return (global::sun.reflect.FieldAccessor)FieldWrapper.FromCookie(cookie).GetFieldAccessorJNI();
         }
 
         internal static jobject GetObjectField(JNIEnv* pEnv, jobject obj, jfieldID fieldID)

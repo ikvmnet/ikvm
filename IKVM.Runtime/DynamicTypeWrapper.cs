@@ -4388,11 +4388,14 @@ namespace IKVM.Internal
                                 Type nativeCodeType = null;
 #if STATIC_COMPILER
 								nativeCodeType = StaticCompiler.GetType(wrapper.GetClassLoader(), "IKVM.NativeCode." + classFile.Name.Replace('$', '+'));
+
+                                // simple JNI mapping
 								if (nativeCodeType == null)
-								{
-									// simple JNI like class name mangling
 									nativeCodeType = StaticCompiler.GetType(wrapper.GetClassLoader(), "Java_" + classFile.Name.Replace('.', '_').Replace("$", "_00024"));
-								}
+
+                                // nested class JNI mapping (new)
+								if (nativeCodeType == null)
+									nativeCodeType = StaticCompiler.GetType(wrapper.GetClassLoader(), "IKVM.Runtime.JniExport." + classFile.Name.Replace("$", "+"));
 #endif
                                 MethodInfo nativeMethod = null;
                                 TypeWrapper[] args = methods[i].GetParameters();

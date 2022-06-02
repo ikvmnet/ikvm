@@ -24,7 +24,7 @@
 using System;
 using System.Collections.Generic;
 using System.IO;
-using System.Text;
+
 using IKVM.Attributes;
 using IKVM.Internal;
 #if STUB_GENERATOR
@@ -33,7 +33,7 @@ using Type = IKVM.Reflection.Type;
 
 namespace IKVM.StubGen
 {
-	static class SerialVersionUID
+    static class SerialVersionUID
 	{
 		private readonly static System.Security.Cryptography.SHA1Managed sha1 = new System.Security.Cryptography.SHA1Managed();
 

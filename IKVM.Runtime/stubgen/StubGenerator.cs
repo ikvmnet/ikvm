@@ -29,13 +29,14 @@ using IKVM.Reflection;
 using Type = IKVM.Reflection.Type;
 #else
 using System.Reflection;
+
 #endif
 using IKVM.Attributes;
 using IKVM.Internal;
 
 namespace IKVM.StubGen
 {
-	static class StubGenerator
+    static class StubGenerator
 	{
 		internal static void WriteClass(Stream stream, TypeWrapper tw, bool includeNonPublicInterfaces, bool includeNonPublicMembers, bool includeSerialVersionUID, bool includeParameterNames)
 		{

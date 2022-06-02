@@ -1841,7 +1841,7 @@
             <method name="isTypeVisible" sig="(Ljava.lang.Class;Ljava.lang.Class;)Z">
                 <replace-method-call class="java.lang.Class" name="getClassLoader" sig="()Ljava.lang.ClassLoader;">
                     <code>
-                        <call type="Java_sun_invoke_util_VerifyAccess" name="Class_getClassLoader" sig="(Ljava.lang.Class;)Ljava.lang.ClassLoader;" />
+                        <call type="IKVM.Runtime.JniExport.sun.invoke.util.VerifyAccess" name="Class_getClassLoader" sig="(Ljava.lang.Class;)Ljava.lang.ClassLoader;" />
                     </code>
                 </replace-method-call>
             </method>
@@ -2856,7 +2856,7 @@
                 </attribute>
                 <body>
                     <ldarg_0 />
-                    <call type="Java_sun_reflect_Reflection" name="getCallerClass" sig="(I)Ljava.lang.Class;" />
+                    <call type="IKVM.Runtime.JniExport.sun.reflect.Reflection" name="getCallerClass" sig="(I)Ljava.lang.Class;" />
                     <stloc name="class" class="java.lang.Class" />
                     <!-- "leave" is to thwart tail-call optimization -->
                     <leave name="x" />
@@ -2885,7 +2885,7 @@
             <method name="compileToBytecode" sig="()Ljava.lang.invoke.MemberName;">
                 <replace-method-call class="java.lang.invoke.InvokerBytecodeGenerator" name="generateCustomizedCode" sig="(Ljava.lang.invoke.LambdaForm;Ljava.lang.invoke.MethodType;)Ljava.lang.invoke.MemberName;">
                     <code>
-                        <call type="NativeInvokerBytecodeGenerator" name="generateCustomizedCode" sig="(Ljava.lang.invoke.LambdaForm;Ljava.lang.invoke.MethodType;)Ljava.lang.invoke.MemberName;" />
+                        <call type="IKVM.Runtime.Internal.Java.Lang.Invoke.NativeInvokerBytecodeGenerator" name="generateCustomizedCode" sig="(Ljava.lang.invoke.LambdaForm;Ljava.lang.invoke.MethodType;)Ljava.lang.invoke.MemberName;" />
                     </code>
                 </replace-method-call>
             </method>
@@ -2923,7 +2923,7 @@
                 <replace-method-call class="java.lang.invoke.MethodHandleNatives" name="init" sig="(Ljava.lang.invoke.MemberName;Ljava.lang.Object;)V">
                     <code>
                         <ldarg_2 />
-                        <call type="Java_java_lang_invoke_MethodHandleNatives" name="init" sig="(Ljava.lang.invoke.MemberName;Ljava.lang.Object;Z)V" />
+                        <call type="IKVM.Runtime.JniExport.java.lang.invoke.MethodHandleNatives" name="init" sig="(Ljava.lang.invoke.MemberName;Ljava.lang.Object;Z)V" />
                     </code>
                 </replace-method-call>
             </constructor>
@@ -3023,14 +3023,14 @@
             <method name="castReference" sig="(Ljava.lang.Class;Ljava.lang.Object;)Ljava.lang.Object;">
                 <replace-method-call class="java.lang.Class" name="isInstance" sig="(Ljava.lang.Object;)Z">
                     <code>
-                        <call type="Java_java_lang_invoke_MethodHandleNatives" name="Class_isInstance" sig="(Ljava.lang.Class;Ljava.lang.Object;)Z" />
+                        <call type="IKVM.Runtime.JniExport.java.lang.invoke.MethodHandleNatives" name="Class_isInstance" sig="(Ljava.lang.Class;Ljava.lang.Object;)Z" />
                     </code>
                 </replace-method-call>
             </method>
             <method name="makePairwiseConvert" sig="(Ljava.lang.invoke.MethodHandle;Ljava.lang.invoke.MethodType;ZZ)Ljava.lang.invoke.MethodHandle;">
                 <replace-method-call class="java.lang.invoke.MethodHandleImpl" name="makePairwiseConvertByEditor" sig="(Ljava.lang.invoke.MethodHandle;Ljava.lang.invoke.MethodType;ZZ)Ljava.lang.invoke.MethodHandle;">
                     <code>
-                        <call type="Java_java_lang_invoke_MethodHandleImpl" name="makePairwiseConvert" sig="(Ljava.lang.invoke.MethodHandle;Ljava.lang.invoke.MethodType;ZZ)Ljava.lang.invoke.MethodHandle;" />
+                        <call type="IKVM.Runtime.JniExport.java.lang.invoke.MethodHandleImpl" name="makePairwiseConvert" sig="(Ljava.lang.invoke.MethodHandle;Ljava.lang.invoke.MethodType;ZZ)Ljava.lang.invoke.MethodHandle;" />
                     </code>
                 </replace-method-call>
             </method>
@@ -3050,7 +3050,7 @@
             <method name="makeAllocator" sig="(Ljava.lang.invoke.MemberName;)Ljava.lang.invoke.DirectMethodHandle;">
                 <prologue>
                     <ldarg_0 />
-                    <call type="Java_java_lang_invoke_DirectMethodHandle" name="makeStringAllocator" sig="(Ljava.lang.invoke.MemberName;)Ljava.lang.invoke.DirectMethodHandle;" />
+                    <call type="IKVM.Runtime.JniExport.java.lang.invoke.DirectMethodHandle" name="makeStringAllocator" sig="(Ljava.lang.invoke.MemberName;)Ljava.lang.invoke.DirectMethodHandle;" />
                     <dup />
                     <brfalse name="continue" />
                     <ret />

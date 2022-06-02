@@ -4500,7 +4500,7 @@ namespace IKVM.Internal
             }
             return false;
 #else
-			return mb.IsDefined(typeof(sun.reflect.CallerSensitiveAttribute), false);
+			return mb.IsDefined(typeof(global::sun.reflect.CallerSensitiveAttribute), false);
 #endif
         }
 
