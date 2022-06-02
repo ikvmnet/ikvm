@@ -10,7 +10,7 @@ namespace IKVM.Tests.java.nio.channels
     {
 
         [TestMethod]
-        public void Can_open_filechannel_write()
+        public void Can_open_filechannel_with_write_and_truncate()
         {
             var f = new global::java.io.File(Path.Combine(Path.GetTempPath(), Path.GetRandomFileName()));
             f.createNewFile();
