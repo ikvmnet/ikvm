@@ -37,19 +37,19 @@
             <Properties>$(ToolProperties);TargetFramework=netcoreapp3.1;RuntimeIdentifier=linux-x64;PublishDir=$([System.IO.Path]::Combine('$(ArtifactStagingDirectory)', 'tools\netcoreapp3.1\linux-x64'))</Properties>
         </TargetsForPublish>
         <TargetsForPublish Include="$(SolutionFile)">
-            <Targets>IKVM_Tests:Publish;ikvmc.Tests:Publish;ikvmstub.Tests:Publish</Targets>
+            <Targets>IKVM_Tests:Publish;ikvmc_Tests:Publish;ikvmstub_Tests:Publish</Targets>
             <Properties>TargetFramework=net461;PublishDir=$([System.IO.Path]::Combine('$(ArtifactStagingDirectory)', 'tests\net461'))</Properties>
         </TargetsForPublish>
         <TargetsForPublish Include="$(SolutionFile)">
-            <Targets>IKVM_Tests:Publish;ikvmc.Tests:Publish;ikvmc.Exe.Tests:Publish;ikvmstub.Tests:Publish</Targets>
+            <Targets>IKVM_Tests:Publish;ikvmc_Tests:Publish;ikvmc_Exe_Tests:Publish;ikvmstub_Tests:Publish</Targets>
             <Properties>TargetFramework=netcoreapp3.1;PublishDir=$([System.IO.Path]::Combine('$(ArtifactStagingDirectory)', 'tests\netcoreapp3.1'))</Properties>
         </TargetsForPublish>
         <TargetsForPublish Include="$(SolutionFile)">
-            <Targets>IKVM_Tests:Publish;ikvmc.Tests:Publish;ikvmstub.Tests:Publish</Targets>
+            <Targets>IKVM_Tests:Publish;ikvmc_Tests:Publish;ikvmstub_Tests:Publish</Targets>
             <Properties>TargetFramework=net5.0;PublishDir=$([System.IO.Path]::Combine('$(ArtifactStagingDirectory)', 'tests\net5.0'))</Properties>
         </TargetsForPublish>
         <TargetsForPublish Include="$(SolutionFile)">
-            <Targets>IKVM_Tests:Publish;ikvmc.Tests:Publish;ikvmstub.Tests:Publish</Targets>
+            <Targets>IKVM_Tests:Publish;ikvmc_Tests:Publish;ikvmstub_Tests:Publish</Targets>
             <Properties>TargetFramework=net6.0;PublishDir=$([System.IO.Path]::Combine('$(ArtifactStagingDirectory)', 'tests\net6.0'))</Properties>
         </TargetsForPublish>
     </ItemGroup>

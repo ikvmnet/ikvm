@@ -85,8 +85,8 @@ namespace ikvmc.Exe.Tests
         {
             var rsl = await ExecuteIkvmc(target, useNetCore);
             rsl.ExitCode.Should().Be(0);
-            rsl.StandardOutput.Should().StartWith("IKVM.NET");
-            rsl.StandardOutput.Should().Contain("Compiler Options:");
+            rsl.StandardError.Should().StartWith("IKVM.NET");
+            rsl.StandardError.Should().Contain("Compiler Options:");
         }
 
         /// <summary>
@@ -114,7 +114,7 @@ namespace ikvmc.Exe.Tests
             var asm = Path.ChangeExtension(j, ".dll");
             var rsl = await ExecuteIkvmc(target, useNetCore, a.Concat(new[] { "-assembly:ikvmc.Tests.Java", $"-out:{asm}", j }).ToArray());
             rsl.ExitCode.Should().Be(0);
-            rsl.StandardOutput.Should().StartWith("IKVM.NET");
+            rsl.StandardError.Should().StartWith("IKVM.NET");
             File.Exists(asm).Should().BeTrue();
         }
 
