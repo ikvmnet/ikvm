@@ -7276,7 +7276,7 @@ namespace IKVM.Internal
 					return ikvm.@internal.CallerID.create(null, null);
 #endif
                 }
-                if (Java_sun_reflect_Reflection.IsHideFromStackWalk(method))
+                if (IKVM.Runtime.JniExport.sun.reflect.Reflection.IsHideFromStackWalk(method))
                 {
                     continue;
                 }

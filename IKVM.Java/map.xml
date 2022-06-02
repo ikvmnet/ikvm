@@ -2885,7 +2885,7 @@
             <method name="compileToBytecode" sig="()Ljava.lang.invoke.MemberName;">
                 <replace-method-call class="java.lang.invoke.InvokerBytecodeGenerator" name="generateCustomizedCode" sig="(Ljava.lang.invoke.LambdaForm;Ljava.lang.invoke.MethodType;)Ljava.lang.invoke.MemberName;">
                     <code>
-                        <call type="IKVM.Runtime.Internal.Java.Lang.Invoke.NativeInvokerBytecodeGenerator" name="generateCustomizedCode" sig="(Ljava.lang.invoke.LambdaForm;Ljava.lang.invoke.MethodType;)Ljava.lang.invoke.MemberName;" />
+                        <call type="IKVM.Runtime.Util.Java.Lang.Invoke.NativeInvokerBytecodeGenerator" name="generateCustomizedCode" sig="(Ljava.lang.invoke.LambdaForm;Ljava.lang.invoke.MethodType;)Ljava.lang.invoke.MemberName;" />
                     </code>
                 </replace-method-call>
             </method>

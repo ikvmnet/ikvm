@@ -23,22 +23,30 @@
 */
 using IKVM.Internal;
 
-static class Java_java_lang_invoke_DirectMethodHandle
+namespace IKVM.Runtime.JniExport.java.lang.invoke
 {
-	// this is called from DirectMethodHandle.makeAllocator() via a map.xml prologue patch
-	public static java.lang.invoke.DirectMethodHandle makeStringAllocator(java.lang.invoke.MemberName member)
+
+    static class DirectMethodHandle
 	{
+
+		// this is called from DirectMethodHandle.makeAllocator() via a map.xml prologue patch
+		public static global::java.lang.invoke.DirectMethodHandle makeStringAllocator(global::java.lang.invoke.MemberName member)
+		{
 #if FIRST_PASS
 		return null;
 #else
-		// we cannot construct strings via the standard two-pass approach (allocateObject followed by constructor invocation),
-		// so we special case string construction here (to call our static factory method instead)
-		if (member.getDeclaringClass() == CoreClasses.java.lang.String.Wrapper.ClassObject)
-		{
-			java.lang.invoke.MethodType mt = member.getMethodType().changeReturnType(CoreClasses.java.lang.String.Wrapper.ClassObject);
-			return new java.lang.invoke.DirectMethodHandle(mt, java.lang.invoke.DirectMethodHandle._preparedLambdaForm(mt, java.lang.invoke.MethodTypeForm.LF_INVSTATIC), member, null);
-		}
-		return null;
+			// we cannot construct strings via the standard two-pass approach (allocateObject followed by constructor invocation),
+			// so we special case string construction here (to call our static factory method instead)
+			if (member.getDeclaringClass() == CoreClasses.java.lang.String.Wrapper.ClassObject)
+			{
+				global::java.lang.invoke.MethodType mt = member.getMethodType().changeReturnType(CoreClasses.java.lang.String.Wrapper.ClassObject);
+				return new global::java.lang.invoke.DirectMethodHandle(mt, global::java.lang.invoke.DirectMethodHandle._preparedLambdaForm(mt, global::java.lang.invoke.MethodTypeForm.LF_INVSTATIC), member, null);
+			}
+
+			return null;
 #endif
+		}
+
 	}
+
 }

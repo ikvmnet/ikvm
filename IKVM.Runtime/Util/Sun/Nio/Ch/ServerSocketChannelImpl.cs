@@ -22,7 +22,7 @@
   
 */
 
-using FileDescriptor = java.io.FileDescriptor;
+using FileDescriptor = global::java.io.FileDescriptor;
 
 namespace IKVM.Runtime.Util.Sun.Nio.Ch
 {

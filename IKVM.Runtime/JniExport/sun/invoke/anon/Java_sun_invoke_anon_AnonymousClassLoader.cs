@@ -30,4 +30,5 @@ static class Java_sun_invoke_anon_AnonymousClassLoader
     {
         throw new NotImplementedException();
     }
+
 }

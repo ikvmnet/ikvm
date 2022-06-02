@@ -334,7 +334,7 @@ namespace IKVM.Runtime.Util.Java.Lang.Invoke
         /**
          * Generate customized bytecode for a given LambdaForm.
          */
-        public static java.lang.invoke.MemberName generateCustomizedCode(java.lang.invoke.LambdaForm form, java.lang.invoke.MethodType invokerType)
+        public static global::java.lang.invoke.MemberName generateCustomizedCode(java.lang.invoke.LambdaForm form, java.lang.invoke.MethodType invokerType)
         {
             try
             {

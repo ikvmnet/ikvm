@@ -22,9 +22,16 @@
   
 */
 using System;
+
 using IKVM.Internal;
+
 #if STATIC_COMPILER
+using IKVM.Reflection;
+using IKVM.Reflection.Emit;
 using Type = IKVM.Reflection.Type;
+#else
+using System.Reflection;
+using System.Reflection.Emit;
 #endif
 
 static partial class MethodHandleUtil
@@ -206,4 +213,5 @@ static partial class MethodHandleUtil
 		}
 		return count;
 	}
+
 }

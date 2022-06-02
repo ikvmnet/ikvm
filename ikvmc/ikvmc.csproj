@@ -25,7 +25,7 @@
     <ItemGroup>
         <ExcludeFromCompile Include="..\IKVM.Runtime\bin\**\*.cs" />
         <ExcludeFromCompile Include="..\IKVM.Runtime\obj\**\*.cs" />
-        <ExcludeFromCompile Include="..\IKVM.Runtime\Internal\**\*.cs" />
+        <ExcludeFromCompile Include="..\IKVM.Runtime\Util\**\*.cs" />
         <ExcludeFromCompile Include="..\IKVM.Runtime\JniExport\**\*.cs" />
         <ExcludeFromCompile Include="..\IKVM.Runtime\stubgen\**\*.cs" />
         <ExcludeFromCompile Include="..\IKVM.Runtime\Vfs\**\*.cs" />
