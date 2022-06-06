@@ -7,18 +7,24 @@
         <SolutionFile>$([System.IO.Path]::Combine('$(MSBuildThisFileDirectory)', 'IKVM.sln'))</SolutionFile>
     </PropertyGroup>
 
+    <PropertyGroup>
+        <PackProperties></PackProperties>
+        <ToolProperties></ToolProperties>
+        <TestProperties></TestProperties>
+    </PropertyGroup>
+
     <ItemGroup>
         <TargetsForPublish Include="$(SolutionFile)">
             <Targets>IKVM-pkg:Publish</Targets>
-            <Properties>TargetFramework=net461;PublishDir=$([System.IO.Path]::Combine('$(ArtifactStagingDirectory)', 'bin\net461'))</Properties>
+            <Properties>$(PackProperties);TargetFramework=net461;PublishDir=$([System.IO.Path]::Combine('$(ArtifactStagingDirectory)', 'bin\net461'))</Properties>
         </TargetsForPublish>
         <TargetsForPublish Include="$(SolutionFile)">
             <Targets>IKVM-pkg:Publish</Targets>
-            <Properties>TargetFramework=netcoreapp3.1;PublishDir=$([System.IO.Path]::Combine('$(ArtifactStagingDirectory)', 'bin\netcoreapp3.1'))</Properties>
+            <Properties>$(PackProperties);TargetFramework=netcoreapp3.1;PublishDir=$([System.IO.Path]::Combine('$(ArtifactStagingDirectory)', 'bin\netcoreapp3.1'))</Properties>
         </TargetsForPublish>
         <TargetsForPublish Include="$(SolutionFile)">
             <Targets>IKVM-pkg:Pack</Targets>
-            <Properties>PackageOutputPath=$([System.IO.Path]::Combine('$(ArtifactStagingDirectory)', 'nuget'))</Properties>
+            <Properties>$(PackProperties);PackageOutputPath=$([System.IO.Path]::Combine('$(ArtifactStagingDirectory)', 'nuget'))</Properties>
         </TargetsForPublish>
         <TargetsForPublish Include="$(SolutionFile)">
             <Targets>ikvm:Publish;ikvmc:Publish;ikvmstub:Publish</Targets>
@@ -38,19 +44,19 @@
         </TargetsForPublish>
         <TargetsForPublish Include="$(SolutionFile)">
             <Targets>IKVM_Tests:Publish</Targets>
-            <Properties>TargetFramework=net461;PublishDir=$([System.IO.Path]::Combine('$(ArtifactStagingDirectory)', 'tests\net461'))</Properties>
+            <Properties>$(TestProperties);TargetFramework=net461;PublishDir=$([System.IO.Path]::Combine('$(ArtifactStagingDirectory)', 'tests\net461'))</Properties>
         </TargetsForPublish>
         <TargetsForPublish Include="$(SolutionFile)">
             <Targets>IKVM_Tests:Publish</Targets>
-            <Properties>TargetFramework=netcoreapp3.1;PublishDir=$([System.IO.Path]::Combine('$(ArtifactStagingDirectory)', 'tests\netcoreapp3.1'))</Properties>
+            <Properties>$(TestProperties);TargetFramework=netcoreapp3.1;PublishDir=$([System.IO.Path]::Combine('$(ArtifactStagingDirectory)', 'tests\netcoreapp3.1'))</Properties>
         </TargetsForPublish>
         <TargetsForPublish Include="$(SolutionFile)">
             <Targets>IKVM_Tests:Publish</Targets>
-            <Properties>TargetFramework=net5.0;PublishDir=$([System.IO.Path]::Combine('$(ArtifactStagingDirectory)', 'tests\net5.0'))</Properties>
+            <Properties>$(TestProperties);TargetFramework=net5.0;PublishDir=$([System.IO.Path]::Combine('$(ArtifactStagingDirectory)', 'tests\net5.0'))</Properties>
         </TargetsForPublish>
         <TargetsForPublish Include="$(SolutionFile)">
             <Targets>IKVM_Tests:Publish</Targets>
-            <Properties>TargetFramework=net6.0;PublishDir=$([System.IO.Path]::Combine('$(ArtifactStagingDirectory)', 'tests\net6.0'))</Properties>
+            <Properties>$(TestProperties);TargetFramework=net6.0;PublishDir=$([System.IO.Path]::Combine('$(ArtifactStagingDirectory)', 'tests\net6.0'))</Properties>
         </TargetsForPublish>
     </ItemGroup>
 
