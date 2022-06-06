@@ -63,6 +63,7 @@ namespace IKVM.Runtime.Vfs
             using var s = entry.Open();
             var m = new MemoryStream((int)entry.Length);
             s.CopyTo(m);
+            m.Position = 0;
             return m;
         }
 

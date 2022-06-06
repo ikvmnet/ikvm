@@ -16040,13 +16040,8 @@
         <VfsItem Include="$(OpenJdkDir)\build\linux-x86_64-normal-server-release\jdk\lib\cmm\**\*" VfsPath="lib\cmm\%(RecursiveDir)%(Filename)%(Extension)" />
         <VfsItem Include="$(OpenJdkDir)\build\linux-x86_64-normal-server-release\jdk\lib\images\**\*" VfsPath="lib\images\%(RecursiveDir)%(Filename)%(Extension)" />
         <VfsItem Include="$(OpenJdkDir)\build\linux-x86_64-normal-server-release\jdk\lib\management\**\*" VfsPath="lib\management\%(RecursiveDir)%(Filename)%(Extension)" />
-        <VfsItem Include="$(OpenJdkDir)\build\linux-x86_64-normal-server-release\jdk\lib\security\java.policy" VfsPath="lib\security\java.policy" />
-        <VfsItem Include="$(OpenJdkDir)\build\linux-x86_64-normal-server-release\jdk\lib\security\java.security" VfsPath="lib\security\java.security" />
-        <VfsItem Include="$(OpenJdkDir)\build\linux-x86_64-normal-server-release\jdk\lib\security\*.jar" VfsPath="lib\security\%(Filename)%(Extension)" />
+        <VfsItem Include="$(OpenJdkDir)\build\linux-x86_64-normal-server-release\jdk\lib\security\**\*" VfsPath="lib\security\%(Filename)%(Extension)" />
         <VfsItem Include="$(OpenJdkDir)\jdk\src\windows\lib\**\*" VfsPath="lib\%(RecursiveDir)%(Filename)%(Extension)" />
-    </ItemGroup>
-
-    <ItemGroup>
     </ItemGroup>
 
 </Project>
