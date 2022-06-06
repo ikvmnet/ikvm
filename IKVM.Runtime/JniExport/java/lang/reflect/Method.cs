@@ -1,6 +1,5 @@
-﻿/*
-  Copyright (C) 2007-2015 Jeroen Frijters
-  Copyright (C) 2009 Volker Berlin (i-net software)
+/*
+  Copyright (C) 2007-2013 Jeroen Frijters
 
   This software is provided 'as-is', without any express or implied
   warranty.  In no event will the authors be held liable for any damages
@@ -24,14 +23,18 @@
 */
 using IKVM.Internal;
 
-static class Java_java_lang_ref_Reference
+namespace IKVM.Runtime.JniExport.java.lang.reflect
 {
-    public static bool noclassgc()
-    {
-#if CLASSGC
-        return !JVM.classUnloading;
-#else
-        return true;
-#endif
-    }
+
+	static class Method
+	{
+
+		public static object getDefaultValue(global::java.lang.reflect.Method thisMethod)
+		{
+			MethodWrapper mw = MethodWrapper.FromExecutable(thisMethod);
+			return mw.DeclaringType.GetAnnotationDefault(mw);
+		}
+
+	}
+
 }
