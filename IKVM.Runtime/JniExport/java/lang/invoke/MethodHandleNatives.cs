@@ -26,10 +26,6 @@ using System.Reflection;
 
 using IKVM.Internal;
 
-using JlClass = java.lang.Class;
-using JlInvoke = java.lang.invoke;
-using JlReflect = java.lang.reflect;
-
 namespace IKVM.Runtime.JniExport.java.lang.invoke
 {
 
@@ -37,7 +33,7 @@ namespace IKVM.Runtime.JniExport.java.lang.invoke
     {
 
         // called from map.xml as a replacement for Class.isInstance() in JlInvoke.MethodHandleImpl.castReference()
-        public static bool Class_isInstance(JlClass clazz, object obj)
+        public static bool Class_isInstance(global::java.lang.Class clazz, object obj)
         {
             TypeWrapper tw = TypeWrapper.FromClass(clazz);
             // handle the type system hole that is caused by arrays being both derived from cli.System.Array and directly from java.lang.Object
@@ -53,23 +49,23 @@ namespace IKVM.Runtime.JniExport.java.lang.invoke
         public static void init(global::java.lang.invoke.MemberName self, object refObj, bool wantSpecial)
         {
 #if !FIRST_PASS
-            JlReflect.Method method;
-            JlReflect.Constructor constructor;
-            JlReflect.Field field;
-            if ((method = refObj as JlReflect.Method) != null)
+            global::java.lang.reflect.Method method;
+            global::java.lang.reflect.Constructor constructor;
+            global::java.lang.reflect.Field field;
+            if ((method = refObj as global::java.lang.reflect.Method) != null)
             {
                 InitMethodImpl(self, MethodWrapper.FromExecutable(method), wantSpecial);
             }
-            else if ((constructor = refObj as JlReflect.Constructor) != null)
+            else if ((constructor = refObj as global::java.lang.reflect.Constructor) != null)
             {
                 InitMethodImpl(self, MethodWrapper.FromExecutable(constructor), wantSpecial);
             }
-            else if ((field = refObj as JlReflect.Field) != null)
+            else if ((field = refObj as global::java.lang.reflect.Field) != null)
             {
                 FieldWrapper fw = FieldWrapper.FromField(field);
                 self._clazz(fw.DeclaringType.ClassObject);
-                int flags = (int)fw.Modifiers | java.lang.invoke.MethodHandleNatives.Constants.MN_IS_FIELD;
-                flags |= (fw.IsStatic ? java.lang.invoke.MethodHandleNatives.Constants.REF_getStatic : java.lang.invoke.MethodHandleNatives.Constants.REF_getField) << java.lang.invoke.MethodHandleNatives.Constants.MN_REFERENCE_KIND_SHIFT;
+                int flags = (int)fw.Modifiers | global::java.lang.invoke.MethodHandleNatives.Constants.MN_IS_FIELD;
+                flags |= (fw.IsStatic ? global::java.lang.invoke.MethodHandleNatives.Constants.REF_getStatic : global::java.lang.invoke.MethodHandleNatives.Constants.REF_getField) << global::java.lang.invoke.MethodHandleNatives.Constants.MN_REFERENCE_KIND_SHIFT;
                 self._flags(flags);
             }
             else
@@ -83,7 +79,7 @@ namespace IKVM.Runtime.JniExport.java.lang.invoke
         {
 #if !FIRST_PASS
             int flags = (int)mw.Modifiers;
-            flags |= mw.IsConstructor ? java.lang.invoke.MethodHandleNatives.Constants.MN_IS_CONSTRUCTOR : global::java.lang.invoke.MethodHandleNatives.Constants.MN_IS_METHOD;
+            flags |= mw.IsConstructor ? global::java.lang.invoke.MethodHandleNatives.Constants.MN_IS_CONSTRUCTOR : global::java.lang.invoke.MethodHandleNatives.Constants.MN_IS_METHOD;
             if (mw.IsStatic)
             {
                 flags |= global::java.lang.invoke.MethodHandleNatives.Constants.REF_invokeStatic << global::java.lang.invoke.MethodHandleNatives.Constants.MN_REFERENCE_KIND_SHIFT;
@@ -110,7 +106,7 @@ namespace IKVM.Runtime.JniExport.java.lang.invoke
             }
             if (mw.IsConstructor && mw.DeclaringType == CoreClasses.java.lang.String.Wrapper)
             {
-                JlClass[] parameters1 = new JlClass[mw.GetParameters().Length];
+                global::java.lang.Class[] parameters1 = new global::java.lang.Class[mw.GetParameters().Length];
                 for (int i = 0; i < mw.GetParameters().Length; i++)
                 {
                     parameters1[i] = mw.GetParameters()[i].ClassObject;
@@ -125,7 +121,7 @@ namespace IKVM.Runtime.JniExport.java.lang.invoke
             self._flags(flags);
             self._clazz(mw.DeclaringType.ClassObject);
             int firstParam = mw.IsStatic ? 0 : 1;
-            JlClass[] parameters = new JlClass[mw.GetParameters().Length + firstParam];
+            global::java.lang.Class[] parameters = new global::java.lang.Class[mw.GetParameters().Length + firstParam];
             for (int i = 0; i < mw.GetParameters().Length; i++)
             {
                 parameters[i + firstParam] = mw.GetParameters()[i].ClassObject;
@@ -150,7 +146,7 @@ namespace IKVM.Runtime.JniExport.java.lang.invoke
             throw new NotImplementedException();
         }
 
-        public static global::java.lang.invoke.MemberName resolve(global::java.lang.invoke.MemberName self, JlClass caller)
+        public static global::java.lang.invoke.MemberName resolve(global::java.lang.invoke.MemberName self, global::java.lang.Class caller)
         {
 #if !FIRST_PASS
             switch (self.getReferenceKind())
@@ -166,7 +162,7 @@ namespace IKVM.Runtime.JniExport.java.lang.invoke
                             case "linkToInterface":
                                 // this delegate is never used normally, only by the PrivateInvokeTest white-box JSR-292 tests
                                 self.vmtarget = MethodHandleUtil.DynamicMethodBuilder.CreateMethodHandleLinkTo(self);
-                                self._flags(self._flags() | JlReflect.Modifier.STATIC | JlReflect.Modifier.NATIVE | java.lang.invoke.MethodHandleNatives.Constants.MN_IS_METHOD);
+                                self._flags(self._flags() | global::java.lang.reflect.Modifier.STATIC | global::java.lang.reflect.Modifier.NATIVE | global::java.lang.invoke.MethodHandleNatives.Constants.MN_IS_METHOD);
                                 return self;
                         }
                     }
@@ -181,7 +177,7 @@ namespace IKVM.Runtime.JniExport.java.lang.invoke
                             case "invokeExact":
                             case "invokeBasic":
                                 self.vmtarget = MethodHandleUtil.DynamicMethodBuilder.CreateMethodHandleInvoke(self);
-                                self._flags(self._flags() | JlReflect.Modifier.NATIVE | JlReflect.Modifier.FINAL | java.lang.invoke.MethodHandleNatives.Constants.MN_IS_METHOD);
+                                self._flags(self._flags() | global::java.lang.reflect.Modifier.NATIVE | global::java.lang.reflect.Modifier.FINAL | global::java.lang.invoke.MethodHandleNatives.Constants.MN_IS_METHOD);
                                 return self;
                         }
                     }
@@ -206,7 +202,7 @@ namespace IKVM.Runtime.JniExport.java.lang.invoke
         }
 
 #if !FIRST_PASS
-        private static void ResolveMethod(global::java.lang.invoke.MemberName self, JlClass caller)
+        private static void ResolveMethod(global::java.lang.invoke.MemberName self, global::java.lang.Class caller)
         {
             bool invokeSpecial = self.getReferenceKind() == global::java.lang.invoke.MethodHandleNatives.Constants.REF_invokeSpecial;
             bool newInvokeSpecial = self.getReferenceKind() == global::java.lang.invoke.MethodHandleNatives.Constants.REF_newInvokeSpecial;
@@ -263,7 +259,7 @@ namespace IKVM.Runtime.JniExport.java.lang.invoke
                 self.vmtarget = CreateMemberNameDelegate(mw, caller, self.hasReceiverTypeDispatch(), methodType);
             }
             SetModifiers(self, mw);
-            self._flags(self._flags() | (mw.IsConstructor ? global::java.lang.invoke.MethodHandleNatives.Constants.MN_IS_CONSTRUCTOR : java.lang.invoke.MethodHandleNatives.Constants.MN_IS_METHOD));
+            self._flags(self._flags() | (mw.IsConstructor ? global::java.lang.invoke.MethodHandleNatives.Constants.MN_IS_CONSTRUCTOR : global::java.lang.invoke.MethodHandleNatives.Constants.MN_IS_METHOD));
             if (self.getReferenceKind() == global::java.lang.invoke.MethodHandleNatives.Constants.REF_invokeVirtual && (mw.IsPrivate || mw.IsFinal || mw.IsConstructor))
             {
                 int flags = self._flags();
@@ -334,7 +330,7 @@ namespace IKVM.Runtime.JniExport.java.lang.invoke
 #endif
 
         // TODO consider caching this delegate in MethodWrapper
-        private static Delegate CreateMemberNameDelegate(MethodWrapper mw, JlClass caller, bool doDispatch, global::java.lang.invoke.MethodType type)
+        private static Delegate CreateMemberNameDelegate(MethodWrapper mw, global::java.lang.Class caller, bool doDispatch, global::java.lang.invoke.MethodType type)
         {
 #if FIRST_PASS
 		return null;
@@ -383,7 +379,7 @@ namespace IKVM.Runtime.JniExport.java.lang.invoke
 #endif
         }
 
-        public static int getMembers(JlClass defc, string matchName, string matchSig, int matchFlags, JlClass caller, int skip, global::java.lang.invoke.MemberName[] results)
+        public static int getMembers(global::java.lang.Class defc, string matchName, string matchSig, int matchFlags, global::java.lang.Class caller, int skip, global::java.lang.invoke.MemberName[] results)
         {
 #if FIRST_PASS
 		return 0;
@@ -397,7 +393,7 @@ namespace IKVM.Runtime.JniExport.java.lang.invoke
             {
                 if (!methods[i].IsConstructor && !methods[i].IsClassInitializer)
                 {
-                    results[i - skip] = new global::java.lang.invoke.MemberName((JlReflect.Method)methods[i].ToMethodOrConstructor(true), false);
+                    results[i - skip] = new global::java.lang.invoke.MemberName((global::java.lang.reflect.Method)methods[i].ToMethodOrConstructor(true), false);
                 }
             }
             return methods.Length - skip;
@@ -409,7 +405,7 @@ namespace IKVM.Runtime.JniExport.java.lang.invoke
 #if FIRST_PASS
 		return 0;
 #else
-            JlReflect.Field field = (JlReflect.Field)TypeWrapper.FromClass(self.getDeclaringClass())
+            global::java.lang.reflect.Field field = (global::java.lang.reflect.Field)TypeWrapper.FromClass(self.getDeclaringClass())
                 .GetFieldWrapper(self.getName(), self.getSignature().Replace('/', '.')).ToField(false);
             return global::sun.misc.Unsafe.allocateUnsafeFieldId(field);
 #endif
@@ -426,7 +422,7 @@ namespace IKVM.Runtime.JniExport.java.lang.invoke
         }
 
 #if !FIRST_PASS
-        internal static void InitializeCallSite(JlInvoke.CallSite site)
+        internal static void InitializeCallSite(global::java.lang.invoke.CallSite site)
         {
             Type type = typeof(IKVM.Runtime.IndyCallSite<>).MakeGenericType(MethodHandleUtil.GetDelegateTypeForInvokeExact(site.type()));
             IKVM.Runtime.IIndyCallSite ics = (IKVM.Runtime.IIndyCallSite)Activator.CreateInstance(type, true);
@@ -434,7 +430,7 @@ namespace IKVM.Runtime.JniExport.java.lang.invoke
         }
 #endif
 
-        public static void setCallSiteTargetNormal(JlInvoke.CallSite site, global::java.lang.invoke.MethodHandle target)
+        public static void setCallSiteTargetNormal(global::java.lang.invoke.CallSite site, global::java.lang.invoke.MethodHandle target)
         {
 #if !FIRST_PASS
             if (site.ics == null)
@@ -449,19 +445,20 @@ namespace IKVM.Runtime.JniExport.java.lang.invoke
 #endif
         }
 
-        public static void setCallSiteTargetVolatile(JlInvoke.CallSite site, global::java.lang.invoke.MethodHandle target)
+        public static void setCallSiteTargetVolatile(global::java.lang.invoke.CallSite site, global::java.lang.invoke.MethodHandle target)
         {
             setCallSiteTargetNormal(site, target);
         }
 
         public static void registerNatives()
         {
+
         }
 
         public static object getMemberVMInfo(global::java.lang.invoke.MemberName self)
         {
 #if FIRST_PASS
-		return null;
+		    return null;
 #else
             if (self.isField())
             {

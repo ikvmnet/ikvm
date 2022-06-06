@@ -21,6 +21,7 @@
   jeroen@frijters.net
   
 */
+
 using System;
 using System.Collections.Generic;
 using System.Diagnostics;
@@ -30,27 +31,28 @@ using IKVM.Internal;
 
 static class Java_java_lang_SecurityManager
 {
+
     // this field is set by code in the JNI assembly itself,
     // to prevent having to load the JNI assembly when it isn't used.
     internal static volatile Assembly jniAssembly;
 
-    public static java.lang.Class[] getClassContext(object thisSecurityManager)
+    public static global::java.lang.Class[] getClassContext(object thisSecurityManager)
     {
 #if FIRST_PASS
         return null;
 #else
-		List<java.lang.Class> stack = new List<java.lang.Class>();
+		List<global::java.lang.Class> stack = new List<global::java.lang.Class>();
 		StackTrace trace = new StackTrace();
 		for (int i = 0; i < trace.FrameCount; i++)
 		{
 			StackFrame frame = trace.GetFrame(i);
 			MethodBase method = frame.GetMethod();
-			if (Java_sun_reflect_Reflection.IsHideFromStackWalk(method))
+			if (IKVM.Runtime.JniExport.sun.reflect.Reflection.IsHideFromStackWalk(method))
 			{
 				continue;
 			}
 			Type type = method.DeclaringType;
-			if (type == typeof(java.lang.SecurityManager))
+			if (type == typeof(global::java.lang.SecurityManager))
 			{
 				continue;
 			}
@@ -62,7 +64,7 @@ static class Java_java_lang_SecurityManager
 
     public static object currentClassLoader0(object thisSecurityManager)
     {
-        java.lang.Class currentClass = currentLoadedClass0(thisSecurityManager);
+        global::java.lang.Class currentClass = currentLoadedClass0(thisSecurityManager);
         if (currentClass != null)
         {
             return TypeWrapper.FromClass(currentClass).GetClassLoader().GetJavaClassLoader();
@@ -80,8 +82,9 @@ static class Java_java_lang_SecurityManager
         throw new NotImplementedException();
     }
 
-    public static java.lang.Class currentLoadedClass0(object thisSecurityManager)
+    public static global::java.lang.Class currentLoadedClass0(object thisSecurityManager)
     {
         throw new NotImplementedException();
     }
+
 }

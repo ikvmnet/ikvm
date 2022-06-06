@@ -135,7 +135,7 @@ namespace IKVM.Runtime.JniExport.sun.reflect
 #else
             if (realFramesToSkip <= 0)
             {
-                return global::ikvm.@internal.ClassLiteral<sun.reflect.Reflection>.Value;
+                return global::ikvm.@internal.ClassLiteral<global::sun.reflect.Reflection>.Value;
             }
             for (int i = 2; ;)
             {
