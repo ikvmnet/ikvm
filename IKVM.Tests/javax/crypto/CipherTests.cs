@@ -1,4 +1,5 @@
-﻿
+﻿using FluentAssertions;
+
 using Microsoft.VisualStudio.TestTools.UnitTesting;
 
 namespace IKVM.Tests.javax.crypto
