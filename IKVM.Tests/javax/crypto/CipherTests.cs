@@ -11,7 +11,8 @@ namespace IKVM.Tests.javax.crypto
         [TestMethod]
         public void Can_get_standard_ciphers()
         {
-            global::javax.crypto.Cipher.getInstance("RSA/ECB/PKCS1Padding");
+            global::javax.crypto.Cipher.getInstance("RSA/ECB/PKCS1Padding").Should().NotBeNull();
+            global::javax.crypto.Cipher.getInstance("AES/ECB/PKCS5Padding").Should().NotBeNull();
         }
 
     }

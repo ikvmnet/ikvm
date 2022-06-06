@@ -7,6 +7,10 @@
         <SolutionFile>$([System.IO.Path]::Combine('$(MSBuildThisFileDirectory)', 'IKVM.sln'))</SolutionFile>
     </PropertyGroup>
 
+    <PropertyGroup>
+        <ToolProperties>SelfContained=true</ToolProperties>
+    </PropertyGroup>
+
     <ItemGroup>
         <TargetsForPublish Include="$(SolutionFile)">
             <Targets>IKVM-pkg:Publish</Targets>
