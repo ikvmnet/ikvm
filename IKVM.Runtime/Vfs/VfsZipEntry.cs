@@ -57,7 +57,15 @@ namespace IKVM.Runtime.Vfs
         /// Opens the entry for reading.
         /// </summary>
         /// <returns></returns>
-        protected override Stream OpenRead() => entry.Open();
+        protected override Stream OpenRead()
+        {
+            // copy the contents to a memory stream to allow seeking and length
+            using var s = entry.Open();
+            var m = new MemoryStream((int)entry.Length);
+            s.CopyTo(m);
+            m.Position = 0;
+            return m;
+        }
 
     }
 
