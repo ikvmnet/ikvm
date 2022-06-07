@@ -145,7 +145,7 @@ namespace IKVM.Reflection
     public sealed class Universe : IDisposable
     {
 
-#if NETCOREAPP3_1
+#if NETCOREAPP3_1_OR_GREATER
 
         public static readonly string CoreLibName = "netstandard";
 
@@ -838,7 +838,7 @@ namespace IKVM.Reflection
                 return asm;
             }
 
-#if NETCOREAPP3_1
+#if NETCOREAPP3_1_OR_GREATER
             string filepath = Path.Combine(ReferenceAssembliesDirectory, GetSimpleAssemblyName(refname) + ".dll");
             if (File.Exists(filepath))
             {

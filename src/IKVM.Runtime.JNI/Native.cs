@@ -62,7 +62,7 @@ namespace IKVM.Runtime
 
 #endif
 
-#if NETCOREAPP3_1
+#if NETCOREAPP3_1_OR_GREATER
 
         /// <summary>
         /// Attempts to resolve the specified assembly when running on .NET Core 3.1 and above.
