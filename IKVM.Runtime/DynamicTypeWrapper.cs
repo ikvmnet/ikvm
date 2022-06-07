@@ -4388,11 +4388,10 @@ namespace IKVM.Internal
                                 Type nativeCodeType = null;
 #if STATIC_COMPILER
 								nativeCodeType = StaticCompiler.GetType(wrapper.GetClassLoader(), "IKVM.NativeCode." + classFile.Name.Replace('$', '+'));
+
+                                // nested class JNI mapping (new)
 								if (nativeCodeType == null)
-								{
-									// simple JNI like class name mangling
-									nativeCodeType = StaticCompiler.GetType(wrapper.GetClassLoader(), "Java_" + classFile.Name.Replace('.', '_').Replace("$", "_00024"));
-								}
+									nativeCodeType = StaticCompiler.GetType(wrapper.GetClassLoader(), "IKVM.Java.Externs." + classFile.Name.Replace("$", "+"));
 #endif
                                 MethodInfo nativeMethod = null;
                                 TypeWrapper[] args = methods[i].GetParameters();
@@ -7273,7 +7272,7 @@ namespace IKVM.Internal
 					return ikvm.@internal.CallerID.create(null, null);
 #endif
                 }
-                if (Java_sun_reflect_Reflection.IsHideFromStackWalk(method))
+                if (IKVM.Java.Externs.sun.reflect.Reflection.IsHideFromStackWalk(method))
                 {
                     continue;
                 }

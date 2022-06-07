@@ -23,12 +23,13 @@
 */
 using System;
 using System.Collections.Generic;
-using System.Reflection;
 using System.Diagnostics;
+using System.Reflection;
 using System.Runtime.Serialization;
 using System.Security;
+
 using IKVM.Attributes;
-using IKVM.Internal;
+
 using IDictionary = System.Collections.IDictionary;
 using Interlocked = System.Threading.Interlocked;
 using MethodBase = System.Reflection.MethodBase;
@@ -36,13 +37,14 @@ using ObjectInputStream = java.io.ObjectInputStream;
 using ObjectOutputStream = java.io.ObjectOutputStream;
 using ObjectStreamField = java.io.ObjectStreamField;
 using StackTraceElement = java.lang.StackTraceElement;
+
 #if !FIRST_PASS
 using Throwable = java.lang.Throwable;
 #endif
 
 namespace IKVM.Internal
 {
-	static class ExceptionHelper
+    static class ExceptionHelper
 	{
 		private static readonly Dictionary<string, string> failedTypes = new Dictionary<string, string>();
 		private static readonly Key EXCEPTION_DATA_KEY = new Key();
@@ -318,7 +320,7 @@ namespace IKVM.Internal
 #if FIRST_PASS
 			return false;
 #else
-			return (Java_sun_reflect_Reflection.GetHideFromJavaFlags(mb) & HideFromJavaFlags.StackTrace) != 0
+			return (IKVM.Java.Externs.sun.reflect.Reflection.GetHideFromJavaFlags(mb) & HideFromJavaFlags.StackTrace) != 0
 				|| (mb.DeclaringType == typeof(ikvm.runtime.Util) && mb.Name == "mapException");
 #endif
 		}

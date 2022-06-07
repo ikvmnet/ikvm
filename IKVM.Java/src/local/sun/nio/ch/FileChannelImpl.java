@@ -1122,8 +1122,8 @@ public class FileChannelImpl
     @DllImportAttribute.Annotation("kernel32")
     private static native int UnmapViewOfFile(IntPtr lpBaseAddress);
 
-    @DllImportAttribute.Annotation("ikvm-native")
-    private static native int ikvm_munmap(IntPtr address, int size);
+    @DllImportAttribute.Annotation(value="libc", EntryPoint="munmap")
+    private static native int munmap(IntPtr address, int size);
 
     @DllImportAttribute.Annotation("ikvm-native")
     private static native IntPtr ikvm_mmap(SafeFileHandle handle, byte writeable, byte copy_on_write, long position, int size);
@@ -1135,7 +1135,7 @@ public class FileChannelImpl
         if (win32)
             UnmapViewOfFile(IntPtr.op_Explicit(address));
         else
-            ikvm_munmap(IntPtr.op_Explicit(address), (int)length);
+            munmap(IntPtr.op_Explicit(address), (int)length);
         cli.System.GC.RemoveMemoryPressure(length);
         return 0;
     }

@@ -1585,7 +1585,7 @@ namespace IKVM.Internal
 #else
 			if (jniAccessor == null)
 			{
-				Interlocked.CompareExchange(ref jniAccessor, Java_sun_reflect_ReflectionFactory.NewFieldAccessorJNI(this), null);
+				Interlocked.CompareExchange(ref jniAccessor, IKVM.Java.Externs.sun.reflect.ReflectionFactory.NewFieldAccessorJNI(this), null);
 			}
 			return jniAccessor;
 #endif

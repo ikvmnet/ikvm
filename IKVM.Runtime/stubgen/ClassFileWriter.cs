@@ -22,13 +22,14 @@
   
 */
 using System;
-using System.IO;
 using System.Collections.Generic;
+using System.IO;
+
 using IKVM.Attributes;
 
 namespace IKVM.StubGen
 {
-	sealed class BigEndianStream
+    sealed class BigEndianStream
 	{
 		private Stream stream;
 

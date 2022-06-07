@@ -33,14 +33,4 @@ JNIEXPORT void* JNICALL ikvm_mmap(int fd, jboolean writeable, jboolean copy_on_w
 	return mmap(0, size, writeable ? PROT_WRITE | PROT_READ : PROT_READ, copy_on_write ? MAP_PRIVATE : MAP_SHARED, fd, position);
 }
 
-JNIEXPORT int JNICALL ikvm_munmap(void* address, jint size)
-{
-	return munmap(address, size);
-}
-
-JNIEXPORT int JNICALL ikvm_msync(void* address, jint size)
-{
-	return msync(address, size, MS_SYNC);
-}
-
 #endif
