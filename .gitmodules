@@ -1,8 +1,7 @@
-[submodule "openjdk8"]
-	path = openjdk8
-	url = https://github.com/openjdk/jdk8u.git
-	ignore = dirty
 [submodule "jtreg"]
 	path = jtreg
 	url = https://github.com/openjdk/jtreg.git
 	ignore = dirty
+[submodule "openjdk"]
+	path = openjdk
+	url = https://github.com/openjdk/jdk8u.git
