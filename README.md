@@ -30,7 +30,7 @@ Project should open within Visual Studio. Project can also be built with MSBuild
 
 The OpenJDK JDK8u source hierarchy and build results for Linux/x64 is required. These build artifacts cannot be built on Windows, or modern Linux hosts. Instead, they must be built on a host with GCC 4.3 available. Debian Lenny is known to work acceptably. The CI/CD GitHub action can serve as a demonstration of this. 
 
-The GitHub action's generated artifact can simply be extract into the appropriate spot in `openjdk8/build` to avoid building it yourself. Navigate to the GitHub Actions, find the latest successfuly build for the branch you're concerned with, and download the `openjdk8-build-linux-x86_64-normal-server-release` artifact. Extract this zip file into `openjdk8/build`.
+The GitHub action's generated artifact can simply be extract into the appropriate spot in `openjdk/build` to avoid building it yourself. Navigate to the GitHub Actions, find the latest successfuly build for the branch you're concerned with, and download the `openjdk-build-linux-x86_64-normal-server-release` artifact. Extract this zip file into `openjdk/build`.
 
 IKVM includes a native library named 'ikvm-native' which must be built for the JNI functionality to work. The solution includes `.vcxproj` files that build both the win-x86, win-x64, linux-x86 and linux-x64 versions of these libraries. However, the linux-* version require WSL to be enabled on your development machine. Within this WSL distribution ensure you have installed the GCC toolset. For Debian based distributions, this should be as simple as typing `apt-get install g++`.
 

@@ -13,32 +13,32 @@ on:
     - develop
 
 jobs:
-  build-openjdk8:
-    name: Build OpenJDK 8
+  build-openjdk:
+    name: Build OpenJDK
     runs-on: ubuntu-18.04
     steps:
     - name: Checkout Source
       uses: actions/checkout@v1
       with:
         submodules: recursive
-    - name: Cache OpenJDK 8 Build
+    - name: Cache OpenJDK Build
       uses: actions/cache@v3
       with:
-        path: openjdk8/build/linux-x86_64-normal-server-release
-        key: openjdk8-build-linux-x86_64-normal-server-release--${{ runner.os }}--${{ hashFiles('openjdk8/**', '!openjdk8/build') }}-7
-    - name: Check OpenJDK 8 Build Stamp
-      id: openjdk8-build-stamp
+        path: openjdk/build/linux-x86_64-normal-server-release
+        key: openjdk-build-linux-x86_64-normal-server-release--${{ runner.os }}--${{ hashFiles('openjdk/**', '!openjdk/build') }}-7
+    - name: Check OpenJDK Build Stamp
+      id: openjdk-build-stamp
       uses: andstor/file-existence-action@v1
       with:
-        files: openjdk8/build/linux-x86_64-normal-server-release/stamp
+        files: openjdk/build/linux-x86_64-normal-server-release/stamp
     - name: Fetch OpenJDK 7
-      if: steps.openjdk8-build-stamp.outputs.files_exists != 'true'
+      if: steps.openjdk-build-stamp.outputs.files_exists != 'true'
       run: |
-        mkdir -p openjdk8/build && 
-        curl -o openjdk8/build/openjdk-7u75-b13-linux-x64-18_dec_2014.tar.gz "https://download.java.net/openjdk/jdk7u75/ri/openjdk-7u75-b13-linux-x64-18_dec_2014.tar.gz" &&
-        tar xzvf openjdk8/build/openjdk-7u75-b13-linux-x64-18_dec_2014.tar.gz -C openjdk8/build
-    - name: Build OpenJDK 8
-      if: steps.openjdk8-build-stamp.outputs.files_exists != 'true'
+        mkdir -p openjdk/build && 
+        curl -o openjdk/build/openjdk-7u75-b13-linux-x64-18_dec_2014.tar.gz "https://download.java.net/openjdk/jdk7u75/ri/openjdk-7u75-b13-linux-x64-18_dec_2014.tar.gz" &&
+        tar xzvf openjdk/build/openjdk-7u75-b13-linux-x64-18_dec_2014.tar.gz -C openjdk/build
+    - name: Build OpenJDK
+      if: steps.openjdk-build-stamp.outputs.files_exists != 'true'
       uses: docker://debian/eol:lenny
       with:
         args: >
@@ -62,35 +62,35 @@ jobs:
               libasound2-dev \
               libfreetype6-dev \
               libfontconfig1-dev &&
-            cd openjdk8 &&
+            cd openjdk &&
             JAVA_HOME=build/java-se-7u75-ri bash ./configure &&
             make DISABLE_HOTSPOT_OS_VERSION_CHECK=ok images &&
             touch build/linux-x86_64-normal-server-release/stamp"
-    - name: Update OpenJDK 8 Attributes
+    - name: Update OpenJDK Attributes
       run: |
         sudo chown -R `id -u`:`id -g` linux-x86_64-normal-server-release && \
         sudo chmod -R +rwx linux-x86_64-normal-server-release/images/j2sdk-image/bin
-      working-directory: openjdk8/build
-    - name: Package OpenJDK 8
+      working-directory: openjdk/build
+    - name: Package OpenJDK
       run: |
-        zip -r openjdk8-build-linux-x86_64-normal-server-release.zip \
+        zip -r openjdk-build-linux-x86_64-normal-server-release.zip \
           linux-x86_64-normal-server-release/langtools/gensrc \
           linux-x86_64-normal-server-release/corba/gensrc \
           linux-x86_64-normal-server-release/jdk/gensrc \
           linux-x86_64-normal-server-release/jdk/impsrc \
           linux-x86_64-normal-server-release/jdk/lib \
           linux-x86_64-normal-server-release/jdk/classes
-      working-directory: openjdk8/build
-    - name: Upload OpenJDK 8
+      working-directory: openjdk/build
+    - name: Upload OpenJDK
       uses: actions/upload-artifact@v3
       with:
-        name: openjdk8-build-linux-x86_64-normal-server-release
-        path: openjdk8/build/openjdk8-build-linux-x86_64-normal-server-release.zip
+        name: openjdk-build-linux-x86_64-normal-server-release
+        path: openjdk/build/openjdk-build-linux-x86_64-normal-server-release.zip
     - name: Cache OpenJDK Test Harness
       uses: actions/cache@v3
       with:
         path: jtreg/build
-        key: jtreg-build--${{ runner.os }}--${{ hashFiles('jtreg/**', 'openjdk8/build/linux-x86_64-normal-server-release/images/j2sdk-image', '!jtreg/build') }}-5
+        key: jtreg-build--${{ runner.os }}--${{ hashFiles('jtreg/**', 'openjdk/build/linux-x86_64-normal-server-release/images/j2sdk-image', '!jtreg/build') }}-5
     - name: Check OpenJDK 8 Build Stamp
       id: jtreg-build-stamp
       uses: andstor/file-existence-action@v1
@@ -98,7 +98,7 @@ jobs:
         files: jtreg/build/stamp
     - name: Build OpenJDK Test Harness
       if: steps.jtreg-build-stamp.outputs.files_exists != 'true'
-      run: bash ./build.sh --jdk `realpath ../../openjdk8/build/linux-x86_64-normal-server-release/images/j2sdk-image`
+      run: bash ./build.sh --jdk `realpath ../../openjdk/build/linux-x86_64-normal-server-release/images/j2sdk-image`
       working-directory: jtreg/make
     - name: Package OpenJDK Test Harness
       run: zip -r jtreg-build.zip build
@@ -111,7 +111,7 @@ jobs:
   build-ikvm:
     name: Build IKVM (Windows)
     needs:
-    - build-openjdk8
+    - build-openjdk
     runs-on: windows-latest
     steps:
     - name: Checkout Source
@@ -152,11 +152,11 @@ jobs:
     - name: Download OpenJDK 8 Build
       uses: actions/download-artifact@v3
       with:
-        name: openjdk8-build-linux-x86_64-normal-server-release
-        path: openjdk8/build
+        name: openjdk-build-linux-x86_64-normal-server-release
+        path: openjdk/build
     - name: Restore OpenJDK 8 Build
-      run: unzip -o openjdk8-build-linux-x86_64-normal-server-release.zip
-      working-directory: openjdk8/build
+      run: unzip -o openjdk-build-linux-x86_64-normal-server-release.zip
+      working-directory: openjdk/build
     - name: NuGet Restore
       run: dotnet restore IKVM.sln
     - name: Build Artifacts

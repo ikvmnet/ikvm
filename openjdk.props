@@ -1,6 +1,6 @@
 ﻿<Project>
     <PropertyGroup>
-        <OpenJdkDir>$(MSBuildThisFileDirectory)openjdk8</OpenJdkDir>
+        <OpenJdkDir>$(MSBuildThisFileDirectory)openjdk</OpenJdkDir>
         <OpenJdkImplementationVersion>1.8.0</OpenJdkImplementationVersion>
         <OpenJdkSpecificationVersion>1.8</OpenJdkSpecificationVersion>
         <OpenJdkFullVersion>1.8.0_45-b14</OpenJdkFullVersion>
