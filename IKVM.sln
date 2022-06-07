@@ -31,8 +31,8 @@ Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Solution Items", "Solution 
 		IKVM.artifacts.msbuildproj = IKVM.artifacts.msbuildproj
 		.github\workflows\IKVM.yml = .github\workflows\IKVM.yml
 		LICENSE.md = LICENSE.md
-		README.md = README.md
 		openjdk.props = openjdk.props
+		README.md = README.md
 	EndProjectSection
 EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "IKVM.Java-ref", "src\IKVM.Java-ref\IKVM.Java-ref.csproj", "{43BA164D-41F3-4563-BDB0-EEF56CE49309}"
@@ -45,7 +45,7 @@ Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "IKVM.Tool", "src\IKVM.Tool\
 EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "IKVM-pkg", "src\IKVM-pkg\IKVM-pkg.csproj", "{A333BFF7-1690-486C-BD54-C99A33CE73C6}"
 EndProject
-Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "ikvm-native", "src\ikvm-native", "{0606E530-F834-44A3-9B4E-37852A06D11B}"
+Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "ikvm-native", "ikvm-native", "{0606E530-F834-44A3-9B4E-37852A06D11B}"
 EndProject
 Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "ikvm-native-win", "src\ikvm-native\ikvm-native-win.vcxproj", "{D8B580D1-D12B-39CD-A42B-BAEE36602AA1}"
 EndProject
@@ -56,6 +56,10 @@ EndProject
 Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "ikvm-tests-native-linux", "src\ikvm-tests-native\ikvm-tests-native-linux.vcxproj", "{E566FE94-C551-43A7-843C-5E8199CA7373}"
 EndProject
 Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "ikvm-tests-native", "ikvm-tests-native", "{B6083619-C4E8-4D8E-95BD-217E3663134C}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "ikvmc.Tests", "src\ikvmc.Tests\ikvmc.Tests.csproj", "{CF80B061-AF1B-4C15-A725-10C0A5D267CC}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "IKVM.Tests.Util", "src\IKVM.Tests.Util\IKVM.Tests.Util.csproj", "{E2C71F2E-2940-4990-A618-E7E47C00D6A6}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
@@ -271,6 +275,30 @@ Global
 		{E566FE94-C551-43A7-843C-5E8199CA7373}.Release|x64.Build.0 = Release|x64
 		{E566FE94-C551-43A7-843C-5E8199CA7373}.Release|x86.ActiveCfg = Release|x86
 		{E566FE94-C551-43A7-843C-5E8199CA7373}.Release|x86.Build.0 = Release|x86
+		{CF80B061-AF1B-4C15-A725-10C0A5D267CC}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{CF80B061-AF1B-4C15-A725-10C0A5D267CC}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{CF80B061-AF1B-4C15-A725-10C0A5D267CC}.Debug|x64.ActiveCfg = Debug|Any CPU
+		{CF80B061-AF1B-4C15-A725-10C0A5D267CC}.Debug|x64.Build.0 = Debug|Any CPU
+		{CF80B061-AF1B-4C15-A725-10C0A5D267CC}.Debug|x86.ActiveCfg = Debug|Any CPU
+		{CF80B061-AF1B-4C15-A725-10C0A5D267CC}.Debug|x86.Build.0 = Debug|Any CPU
+		{CF80B061-AF1B-4C15-A725-10C0A5D267CC}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{CF80B061-AF1B-4C15-A725-10C0A5D267CC}.Release|Any CPU.Build.0 = Release|Any CPU
+		{CF80B061-AF1B-4C15-A725-10C0A5D267CC}.Release|x64.ActiveCfg = Release|Any CPU
+		{CF80B061-AF1B-4C15-A725-10C0A5D267CC}.Release|x64.Build.0 = Release|Any CPU
+		{CF80B061-AF1B-4C15-A725-10C0A5D267CC}.Release|x86.ActiveCfg = Release|Any CPU
+		{CF80B061-AF1B-4C15-A725-10C0A5D267CC}.Release|x86.Build.0 = Release|Any CPU
+		{E2C71F2E-2940-4990-A618-E7E47C00D6A6}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{E2C71F2E-2940-4990-A618-E7E47C00D6A6}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{E2C71F2E-2940-4990-A618-E7E47C00D6A6}.Debug|x64.ActiveCfg = Debug|Any CPU
+		{E2C71F2E-2940-4990-A618-E7E47C00D6A6}.Debug|x64.Build.0 = Debug|Any CPU
+		{E2C71F2E-2940-4990-A618-E7E47C00D6A6}.Debug|x86.ActiveCfg = Debug|Any CPU
+		{E2C71F2E-2940-4990-A618-E7E47C00D6A6}.Debug|x86.Build.0 = Debug|Any CPU
+		{E2C71F2E-2940-4990-A618-E7E47C00D6A6}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{E2C71F2E-2940-4990-A618-E7E47C00D6A6}.Release|Any CPU.Build.0 = Release|Any CPU
+		{E2C71F2E-2940-4990-A618-E7E47C00D6A6}.Release|x64.ActiveCfg = Release|Any CPU
+		{E2C71F2E-2940-4990-A618-E7E47C00D6A6}.Release|x64.Build.0 = Release|Any CPU
+		{E2C71F2E-2940-4990-A618-E7E47C00D6A6}.Release|x86.ActiveCfg = Release|Any CPU
+		{E2C71F2E-2940-4990-A618-E7E47C00D6A6}.Release|x86.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
