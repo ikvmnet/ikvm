@@ -1,6 +1,6 @@
 ﻿<Project>
     <Import Project="Sdk.props" Sdk="Microsoft.NET.Sdk" />
-    <Import Project="..\openjdk8.props" />
+    <Import Project="..\..\openjdk.props" />
 
     <PropertyGroup>
         <TargetFrameworks>net461;netcoreapp3.1</TargetFrameworks>
