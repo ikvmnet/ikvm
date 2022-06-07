@@ -21,17 +21,25 @@
   jeroen@frijters.net
   
 */
-static class Java_java_lang_Double
+
+namespace IKVM.Runtime.JniExport.java.lang
 {
-    public static long doubleToRawLongBits(double value)
+
+    static class Double
     {
-        IKVM.Runtime.DoubleConverter converter = new IKVM.Runtime.DoubleConverter();
-        return IKVM.Runtime.DoubleConverter.ToLong(value, ref converter);
+
+        public static long doubleToRawLongBits(double value)
+        {
+            IKVM.Runtime.DoubleConverter converter = new IKVM.Runtime.DoubleConverter();
+            return IKVM.Runtime.DoubleConverter.ToLong(value, ref converter);
+        }
+
+        public static double longBitsToDouble(long bits)
+        {
+            IKVM.Runtime.DoubleConverter converter = new IKVM.Runtime.DoubleConverter();
+            return IKVM.Runtime.DoubleConverter.ToDouble(bits, ref converter);
+        }
+
     }
 
-    public static double longBitsToDouble(long bits)
-    {
-        IKVM.Runtime.DoubleConverter converter = new IKVM.Runtime.DoubleConverter();
-        return IKVM.Runtime.DoubleConverter.ToDouble(bits, ref converter);
-    }
 }

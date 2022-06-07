@@ -426,7 +426,7 @@ namespace IKVM.Runtime.JniExport.java.lang.invoke
         {
             Type type = typeof(IKVM.Runtime.IndyCallSite<>).MakeGenericType(MethodHandleUtil.GetDelegateTypeForInvokeExact(site.type()));
             IKVM.Runtime.IIndyCallSite ics = (IKVM.Runtime.IIndyCallSite)Activator.CreateInstance(type, true);
-            System.Threading.Interlocked.CompareExchange(ref site.ics, ics, null);
+            global::System.Threading.Interlocked.CompareExchange(ref site.ics, ics, null);
         }
 #endif
 

@@ -129,13 +129,13 @@ namespace IKVM.Runtime.JniExport.java.lang.reflect
             return null;
         }
 #else
-        private static System.Array CheckArray(object arrayObj)
+        private static global::System.Array CheckArray(object arrayObj)
         {
             if (arrayObj == null)
             {
                 throw new global::java.lang.NullPointerException();
             }
-            System.Array arr = arrayObj as System.Array;
+            global::System.Array arr = arrayObj as global::System.Array;
             if (arr != null)
             {
                 return arr;
@@ -150,7 +150,7 @@ namespace IKVM.Runtime.JniExport.java.lang.reflect
 
         public static object get(object arrayObj, int index)
         {
-            System.Array arr = CheckArray(arrayObj);
+            global::System.Array arr = CheckArray(arrayObj);
             if (index < 0 || index >= arr.Length)
             {
                 throw new global::java.lang.ArrayIndexOutOfBoundsException();
@@ -605,7 +605,7 @@ namespace IKVM.Runtime.JniExport.java.lang.reflect
             {
                 TypeWrapper wrapper = TypeWrapper.FromClass(componentType);
                 wrapper.Finish();
-                object obj = System.Array.CreateInstance(wrapper.TypeAsArrayType, length);
+                object obj = global::System.Array.CreateInstance(wrapper.TypeAsArrayType, length);
                 if (wrapper.IsGhost || wrapper.IsGhostArray)
                 {
                     IKVM.Runtime.GhostTag.SetTag(obj, wrapper.MakeArrayType(1));

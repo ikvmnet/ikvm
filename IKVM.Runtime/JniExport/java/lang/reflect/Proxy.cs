@@ -33,7 +33,7 @@ namespace IKVM.Runtime.JniExport.java.lang.reflect
 
 		public static object defineClass0(global::java.lang.ClassLoader classLoader, string name, byte[] b, int off, int len)
 		{
-			return Java_java_lang_ClassLoader.defineClass1(classLoader, name, b, off, len, null, null);
+			return IKVM.Runtime.JniExport.java.lang.ClassLoader.defineClass1(classLoader, name, b, off, len, null, null);
 		}
 
 		public static global::java.lang.Class getPrecompiledProxy(global::java.lang.ClassLoader classLoader, string proxyName, global::java.lang.Class[] interfaces)

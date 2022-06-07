@@ -24,20 +24,27 @@
 using System;
 using System.Text;
 
-static class Java_java_lang_ProcessEnvironment
+namespace IKVM.Runtime.JniExport.java.lang
 {
-    public static string environmentBlock()
+
+    static class ProcessEnvironment
     {
-        StringBuilder sb = new StringBuilder();
-        foreach (System.Collections.DictionaryEntry de in Environment.GetEnvironmentVariables())
+
+        public static string environmentBlock()
         {
-            sb.Append(de.Key).Append('=').Append(de.Value).Append('\u0000');
-        }
-        if (sb.Length == 0)
-        {
+            StringBuilder sb = new StringBuilder();
+            foreach (global::System.Collections.DictionaryEntry de in Environment.GetEnvironmentVariables())
+            {
+                sb.Append(de.Key).Append('=').Append(de.Value).Append('\u0000');
+            }
+            if (sb.Length == 0)
+            {
+                sb.Append('\u0000');
+            }
             sb.Append('\u0000');
+            return sb.ToString();
         }
-        sb.Append('\u0000');
-        return sb.ToString();
+
     }
+
 }

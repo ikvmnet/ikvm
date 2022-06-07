@@ -74,7 +74,7 @@ static class Java_java_security_AccessController
             {
                 is_privileged = true;
                 global::java.lang.Class caller = callerID.getCallerClass();
-                protection_domain = caller == null ? null : Java_java_lang_Class.getProtectionDomain0(caller);
+                protection_domain = caller == null ? null : IKVM.Runtime.JniExport.java.lang.Class.getProtectionDomain0(caller);
             }
             else if (IKVM.Runtime.JniExport.sun.reflect.Reflection.IsHideFromStackWalk(method))
             {
@@ -111,7 +111,7 @@ static class Java_java_security_AccessController
         if (type == null
             || type.Assembly == typeof(object).Assembly
             || type.Assembly == typeof(Java_java_security_AccessController).Assembly
-            || type.Assembly == Java_java_lang_SecurityManager.jniAssembly
+            || type.Assembly == IKVM.Runtime.JniExport.java.lang.SecurityManager.jniAssembly
             || type.Assembly == typeof(global::java.lang.Thread).Assembly)
         {
             return null;
@@ -119,7 +119,7 @@ static class Java_java_security_AccessController
         TypeWrapper tw = ClassLoaderWrapper.GetWrapperFromType(type);
         if (tw != null)
         {
-            return Java_java_lang_Class.getProtectionDomain0(tw.ClassObject);
+            return IKVM.Runtime.JniExport.java.lang.Class.getProtectionDomain0(tw.ClassObject);
         }
         return null;
     }

@@ -110,7 +110,7 @@ namespace IKVM.Runtime.JniExport.sun.reflect
             return type == null
                 || type.Assembly == typeof(object).Assembly
                 || type.Assembly == typeof(Reflection).Assembly
-                || type.Assembly == Java_java_lang_SecurityManager.jniAssembly
+                || type.Assembly == IKVM.Runtime.JniExport.java.lang.SecurityManager.jniAssembly
                 || type == typeof(global::java.lang.reflect.Method)
                 || type == typeof(global::java.lang.reflect.Constructor)
                 || (GetHideFromJavaFlags(mb) & HideFromJavaFlags.StackWalk) != 0

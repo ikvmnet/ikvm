@@ -54,10 +54,10 @@ namespace IKVM.Runtime.Util.Java.Lang.Invoke
 
 #if FIRST_PASS
 
-    public static MemberName generateCustomizedCode(LambdaForm form, MethodType invokerType)
-    {
-        return null;
-    }
+        public static MemberName generateCustomizedCode(LambdaForm form, MethodType invokerType)
+        {
+            return null;
+        }
 
 #else
 
@@ -84,13 +84,16 @@ namespace IKVM.Runtime.Util.Java.Lang.Invoke
 
         private sealed class BailoutException : Exception
         {
+
             internal BailoutException(Bailout reason, object data)
                 : base("BAILOUT " + reason + ": " + data)
             {
+
             }
+
         }
 
-        private NativeInvokerBytecodeGenerator(LambdaForm lambdaForm, global::java.lang.invoke.MethodType invokerType)
+        private NativeInvokerBytecodeGenerator(java.lang.invoke.LambdaForm lambdaForm, global::java.lang.invoke.MethodType invokerType)
         {
             if (invokerType != invokerType.basicType())
             {

@@ -21,17 +21,25 @@
   jeroen@frijters.net
   
 */
-static class Java_java_lang_Float
+
+namespace IKVM.Runtime.JniExport.java.lang
 {
-    public static int floatToRawIntBits(float value)
+
+    static class Float
     {
-        IKVM.Runtime.FloatConverter converter = new IKVM.Runtime.FloatConverter();
-        return IKVM.Runtime.FloatConverter.ToInt(value, ref converter);
+
+        public static int floatToRawIntBits(float value)
+        {
+            IKVM.Runtime.FloatConverter converter = new IKVM.Runtime.FloatConverter();
+            return IKVM.Runtime.FloatConverter.ToInt(value, ref converter);
+        }
+
+        public static float intBitsToFloat(int bits)
+        {
+            IKVM.Runtime.FloatConverter converter = new IKVM.Runtime.FloatConverter();
+            return IKVM.Runtime.FloatConverter.ToFloat(bits, ref converter);
+        }
+
     }
 
-    public static float intBitsToFloat(int bits)
-    {
-        IKVM.Runtime.FloatConverter converter = new IKVM.Runtime.FloatConverter();
-        return IKVM.Runtime.FloatConverter.ToFloat(bits, ref converter);
-    }
 }

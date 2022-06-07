@@ -177,7 +177,7 @@ static class Java_sun_misc_Unsafe
 
 	public static java.lang.Class defineClass(object thisUnsafe, string name, byte[] buf, int offset, int length, java.lang.ClassLoader cl, java.security.ProtectionDomain pd)
 	{
-		return Java_java_lang_ClassLoader.defineClass1(cl, name.Replace('/', '.'), buf, offset, length, pd, null);
+		return IKVM.Runtime.JniExport.java.lang.ClassLoader.defineClass1(cl, name.Replace('/', '.'), buf, offset, length, pd, null);
 	}
 
 	public static java.lang.Class defineClass(object thisUnsafe, string name, byte[] buf, int offset, int length, ikvm.@internal.CallerID callerID)

@@ -21,36 +21,44 @@
   jeroen@frijters.net
   
 */
-static class Java_java_lang_Compiler
+
+namespace IKVM.Runtime.JniExport.java.lang
 {
-    public static void initialize()
+
+    static class Compiler
     {
+
+        public static void initialize()
+        {
+        }
+
+        public static void registerNatives()
+        {
+        }
+
+        public static bool compileClass(object clazz)
+        {
+            return false;
+        }
+
+        public static bool compileClasses(string str)
+        {
+            return false;
+        }
+
+        public static object command(object any)
+        {
+            return null;
+        }
+
+        public static void enable()
+        {
+        }
+
+        public static void disable()
+        {
+        }
+
     }
 
-    public static void registerNatives()
-    {
-    }
-
-    public static bool compileClass(object clazz)
-    {
-        return false;
-    }
-
-    public static bool compileClasses(string str)
-    {
-        return false;
-    }
-
-    public static object command(object any)
-    {
-        return null;
-    }
-
-    public static void enable()
-    {
-    }
-
-    public static void disable()
-    {
-    }
 }

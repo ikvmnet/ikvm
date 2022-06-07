@@ -32,7 +32,7 @@ namespace IKVM.Runtime.JniExport.java.lang.reflect
 		public static object getDeclaredAnnotationsImpl(global::java.lang.reflect.Field thisField)
 		{
 			FieldWrapper fw = FieldWrapper.FromField(thisField);
-			return Java_java_lang_Class.AnnotationsToMap(fw.DeclaringType.GetClassLoader(), fw.DeclaringType.GetFieldAnnotations(fw));
+			return IKVM.Runtime.JniExport.java.lang.Class.AnnotationsToMap(fw.DeclaringType.GetClassLoader(), fw.DeclaringType.GetFieldAnnotations(fw));
 		}
 
 		public static byte[] getTypeAnnotationBytes0(global::java.lang.reflect.Field thisField)
