@@ -111,7 +111,7 @@ namespace IKVM.Runtime.JniExport.java.net
 					}
 					else
 					{
-						throw net_util_md.NET_ThrowCurrent("socket write error");
+						throw global::java.net.net_util_md.NET_ThrowCurrent("socket write error");
 					}
 				}
 				len -= chunkLen;

@@ -1122,7 +1122,7 @@ public class FileChannelImpl
     @DllImportAttribute.Annotation("kernel32")
     private static native int UnmapViewOfFile(IntPtr lpBaseAddress);
 
-    @DllImportAttribute.Annotation("libc", EntryPoint = "munmap")
+    @DllImportAttribute.Annotation(value="libc", EntryPoint="munmap")
     private static native int munmap(IntPtr address, int size);
 
     @DllImportAttribute.Annotation("ikvm-native")

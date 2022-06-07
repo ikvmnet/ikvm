@@ -25,29 +25,37 @@
 using System;
 using System.Collections.Generic;
 
-static class Java_java_util_jar_JarFile
+namespace IKVM.Runtime.JniExport.java.security
 {
-    public static string[] getMetaInfEntryNames(object thisJarFile)
+
+    static class JarFile
     {
-#if FIRST_PASS
-        return null;
-#else
-        java.util.zip.ZipFile zf = (java.util.zip.ZipFile)thisJarFile;
-        java.util.Enumeration entries = zf.entries();
-        List<string> list = null;
-        while (entries.hasMoreElements())
+
+        public static string[] getMetaInfEntryNames(object thisJarFile)
         {
-            java.util.zip.ZipEntry entry = (java.util.zip.ZipEntry)entries.nextElement();
-            if (entry.getName().StartsWith("META-INF/", StringComparison.OrdinalIgnoreCase))
+#if FIRST_PASS
+            return null;
+#else
+            global::java.util.zip.ZipFile zf = (global::java.util.zip.ZipFile)thisJarFile;
+            global::java.util.Enumeration entries = zf.entries();
+            List<string> list = null;
+            while (entries.hasMoreElements())
             {
-                if (list == null)
+                global::java.util.zip.ZipEntry entry = (global::java.util.zip.ZipEntry)entries.nextElement();
+                if (entry.getName().StartsWith("META-INF/", StringComparison.OrdinalIgnoreCase))
                 {
-                    list = new List<string>();
+                    if (list == null)
+                    {
+                        list = new List<string>();
+                    }
+                    list.Add(entry.getName());
                 }
-                list.Add(entry.getName());
             }
-        }
-        return list == null ? null : list.ToArray();
+
+            return list == null ? null : list.ToArray();
 #endif
+        }
+
     }
+
 }
