@@ -1,5 +1,5 @@
 ﻿/*
-  Copyright (C) 2007-2015 Jeroen Frijters
+  Copyright (C) 2007-2013 Jeroen Frijters
   Copyright (C) 2009 Volker Berlin (i-net software)
 
   This software is provided 'as-is', without any express or implied
@@ -22,11 +22,30 @@
   jeroen@frijters.net
   
 */
-static class Java_java_util_logging_FileHandler
+
+namespace IKVM.Runtime.JniExport.java.util.prefs
 {
-    public static bool isSetUID()
-    {
-        // TODO
-        return false;
-    }
+
+	static class FileSystemPreferences
+	{
+		public static int chmod(string filename, int permission)
+		{
+			// TODO
+			return 0;
+		}
+
+		public static int[] lockFile0(string filename, int permission, bool shared)
+		{
+			// TODO
+			return new int[] { 1, 0 };
+		}
+
+		public static int unlockFile0(int fd)
+		{
+			// TODO
+			return 0;
+		}
+
+	}
+
 }

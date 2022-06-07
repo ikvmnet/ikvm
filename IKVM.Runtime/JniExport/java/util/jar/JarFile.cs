@@ -25,7 +25,7 @@
 using System;
 using System.Collections.Generic;
 
-namespace IKVM.Runtime.JniExport.java.security
+namespace IKVM.Runtime.JniExport.java.util.jar
 {
 
     static class JarFile
