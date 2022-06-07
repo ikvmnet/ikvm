@@ -21,9 +21,18 @@
   jeroen@frijters.net
   
 */
-static class Java_java_net_Inet4Address
+
+namespace IKVM.Runtime.JniExport.java.net
 {
-	public static void init()
-	{
-	}
+
+    static class DatagramPacket
+    {
+
+        public static void init()
+        {
+
+        }
+
+    }
+
 }

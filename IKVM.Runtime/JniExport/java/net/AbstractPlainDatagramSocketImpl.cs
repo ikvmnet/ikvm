@@ -24,27 +24,43 @@
 using System;
 using System.Net.Sockets;
 
-static class Java_java_net_InetAddressImplFactory
+namespace IKVM.Runtime.JniExport.java.net
 {
-	private static readonly bool ipv6supported = Init();
 
-	private static bool Init()
-	{
-		string env = IKVM.Internal.JVM.SafeGetEnvironmentVariable("IKVM_IPV6");
-		int val;
-		if (env != null && Int32.TryParse(env, out val))
-		{
-			return (val & 1) != 0;
-		}
-		// On Linux we can't bind both an IPv4 and IPv6 to the same port, so we have to disable IPv6 until we have a dual-stack implementation.
-		// Mono on Windows doesn't appear to support IPv6 either (Mono on Linux does).
-		return Type.GetType("Mono.Runtime") == null
-			&& Environment.OSVersion.Platform == PlatformID.Win32NT
-			&& Socket.OSSupportsIPv6;
-	}
+    static class AbstractPlainDatagramSocketImpl
+    {
 
-	public static bool isIPv6Supported()
-	{
-		return ipv6supported;
-	}
+        public static void init()
+        {
+
+        }
+
+        public static int dataAvailable(object _this)
+        {
+#if FIRST_PASS
+			return 0;
+#else
+            try
+            {
+                global::java.net.AbstractPlainDatagramSocketImpl obj = (global::java.net.AbstractPlainDatagramSocketImpl)_this;
+                if (obj.fd != null)
+                {
+                    return obj.fd.getSocket().Available;
+                }
+            }
+            catch (ObjectDisposedException)
+            {
+
+            }
+            catch (SocketException)
+            {
+
+            }
+
+            throw new global::java.net.SocketException("Socket closed");
+#endif
+        }
+
+    }
+
 }

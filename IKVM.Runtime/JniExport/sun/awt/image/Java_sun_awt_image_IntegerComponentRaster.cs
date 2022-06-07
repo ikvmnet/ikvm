@@ -22,9 +22,13 @@
   jeroen@frijters.net
   
 */
+
 static class Java_sun_awt_image_IntegerComponentRaster
 {
+
     public static void initIDs()
     {
+
     }
+
 }

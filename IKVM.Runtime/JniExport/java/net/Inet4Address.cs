@@ -21,9 +21,18 @@
   jeroen@frijters.net
   
 */
-static class Java_java_net_Inet6Address
+
+namespace IKVM.Runtime.JniExport.java.net
 {
-	public static void init()
-	{
-	}
+
+    static class Inet4Address
+    {
+
+        public static void init()
+        {
+
+        }
+
+    }
+
 }

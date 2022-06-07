@@ -21,9 +21,35 @@
   jeroen@frijters.net
   
 */
-static class Java_java_net_DatagramPacket
+using System.Net;
+
+namespace IKVM.Runtime.JniExport.java.net
 {
-	public static void init()
-	{
-	}
+
+    static class InetAddress
+    {
+
+        public static void init()
+        {
+
+        }
+
+#if !FIRST_PASS
+
+        internal static global::java.net.InetAddress ConvertIPAddress(IPAddress address, string hostname)
+        {
+            if (address.IsIPv6LinkLocal || address.IsIPv6SiteLocal)
+            {
+                return global::java.net.Inet6Address.getByAddress(hostname, address.GetAddressBytes(), (int)address.ScopeId);
+            }
+            else
+            {
+                return global::java.net.InetAddress.getByAddress(hostname, address.GetAddressBytes());
+            }
+        }
+
+#endif
+
+    }
+
 }
