@@ -29,4 +29,55 @@
         </MSBuild>
     </Target>
 
+    <ItemGroup>
+        <ProjectReference Include="@(PublishProjectReference)">
+            <Private>false</Private>
+            <IncludeAssets>none</IncludeAssets>
+            <ExcludeAssets>all</ExcludeAssets>
+            <ReferenceOutputAssembly>false</ReferenceOutputAssembly>
+            <CopyLocalSatelliteAssemblies>false</CopyLocalSatelliteAssemblies>
+            <SetTargetFramework>%(SetTargetFramework)</SetTargetFramework>
+            <PublishTargetPath>%(TargetPath)</PublishTargetPath>
+            <PublishProperties>%(Properties)</PublishProperties>
+            <Targets></Targets>
+        </ProjectReference>
+    </ItemGroup>
+
+    <Target Name="GetPublishProjectReferences" DependsOnTargets="ResolveProjectReferences">
+        <ItemGroup>
+            <_PublishProjectReference Include="@(ProjectReferenceWithConfiguration)" Condition="'%(ProjectReferenceWithConfiguration.PublishTargetPath)' != ''">
+                <ProjectName>$([System.IO.Path]::GetFileNameWithoutExtension('%(Identity)'))</ProjectName>
+                <PublishTargetPath>$([MSBuild]::EnsureTrailingSlash(%(ProjectReferenceWithConfiguration.PublishTargetPath)))</PublishTargetPath>
+            </_PublishProjectReference>
+        </ItemGroup>
+    </Target>
+
+    <Target Name="GetPublishProjectReferenceOutputItems" DependsOnTargets="GetPublishProjectReferences" Inputs="@(_PublishProjectReference)" Outputs="%(PublishProjectReference.Identity)\dummy">
+        <MSBuild Projects="@(_PublishProjectReference)" Targets="Publish;PublishItemsOutputGroup" BuildInParallel="$(BuildInParallel)" Properties="%(_PublishProjectReference.SetConfiguration);%(_PublishProjectReference.SetPlatform);%(_PublishProjectReference.SetTargetFramework);%(_PublishProjectReference.PublishProperties)" RemoveProperties="%(_PublishProjectReference.GlobalPropertiesToRemove);%(_PublishProjectReference.PublishPropertiesToRemove);" RebaseOutputs="true">
+            <Output TaskParameter="TargetOutputs" ItemName="_PublishProjectReferenceOutputItems" />
+        </MSBuild>
+    </Target>
+
+    <Target Name="_GetPublishProjectReferenceCopyToOutputDirectoryItems" DependsOnTargets="GetPublishProjectReferenceOutputItems">
+        <ItemGroup>
+            <ContentWithTargetPath Include="@(_PublishProjectReferenceOutputItems)" Condition=" '%(_PublishProjectReferenceOutputItems.TargetPath)' != '' ">
+                <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+                <TargetPath>%(_PublishProjectReferenceOutputItems.PublishTargetPath)\%(_PublishProjectReferenceOutputItems.TargetPath)</TargetPath>
+            </ContentWithTargetPath>
+        </ItemGroup>
+    </Target>
+
+    <PropertyGroup>
+        <GetPublishProjectReferenceCopyToOutputDirectoryItemsDependsOn>
+            $(GetPublishProjectReferenceCopyToOutputDirectoryItemsDependsOn);
+            GetPublishProjectReferences;
+            GetPublishProjectReferenceOutputItems;
+            _GetPublishProjectReferenceCopyToOutputDirectoryItems;
+        </GetPublishProjectReferenceCopyToOutputDirectoryItemsDependsOn>
+    </PropertyGroup>
+
+    <Target Name="GetPublishProjectReferenceCopyToOutputDirectoryItems" DependsOnTargets="$(GetPublishProjectReferenceCopyToOutputDirectoryItemsDependsOn)" BeforeTargets="GetCopyToOutputDirectoryItems">
+
+    </Target>
+
 </Project>
