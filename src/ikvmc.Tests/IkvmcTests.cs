@@ -20,27 +20,27 @@ namespace ikvmc.Tests
     public class IkvmcTests
     {
 
-        [TestMethod]
-        public void Should_convert_simple_jar()
-        {
-            var s = new StreamReader(typeof(IkvmcTests).Assembly.GetManifestResourceStream("ikvmc.Tests.IkvmcTests.java")).ReadToEnd();
-            var f = new InMemoryCodeUnit("ikvmc.tests.IkvmcTests", s);
-            var c = new InMemoryCompiler(new[] { f });
-            c.Compile();
-            var j = Path.Combine(Path.GetTempPath(), Guid.NewGuid().ToString("n") + ".jar");
-            c.WriteJar(j);
+//        [TestMethod]
+//        public void Should_convert_simple_jar()
+//        {
+//            var s = new StreamReader(typeof(IkvmcTests).Assembly.GetManifestResourceStream("ikvmc.Tests.IkvmcTests.java")).ReadToEnd();
+//            var f = new InMemoryCodeUnit("ikvmc.tests.IkvmcTests", s);
+//            var c = new InMemoryCompiler(new[] { f });
+//            c.Compile();
+//            var j = Path.Combine(Path.GetTempPath(), Guid.NewGuid().ToString("n") + ".jar");
+//            c.WriteJar(j);
 
-#if NET461
-            var a = new[] { $"-lib:{RuntimeEnvironment.GetRuntimeDirectory()}" };
-#else
-            var a = DependencyContext.Default.CompileLibraries.SelectMany(i => i.ResolveReferencePaths()).Select(i => $"-r:{i}");
-#endif
+//#if NET461
+//            var a = new[] { $"-lib:{RuntimeEnvironment.GetRuntimeDirectory()}" };
+//#else
+//            var a = DependencyContext.Default.CompileLibraries.SelectMany(i => i.ResolveReferencePaths()).Select(i => $"-r:{i}");
+//#endif
 
-            var asm = Path.ChangeExtension(j, ".dll");
-            var ret = ikvmc.IkvmcCompiler.Main(a.Concat(new[] { "-assembly:ikvmc.Tests.Java", $"-out:{asm}", j }).ToArray());
-            ret.Should().Be(0);
-            File.Exists(asm).Should().BeTrue();
-        }
+//            var asm = Path.ChangeExtension(j, ".dll");
+//            var ret = ikvmc.IkvmcCompiler.Main(a.Concat(new[] { "-assembly:ikvmc.Tests.Java", $"-out:{asm}", j }).ToArray());
+//            ret.Should().Be(0);
+//            File.Exists(asm).Should().BeTrue();
+//        }
 
     }
 

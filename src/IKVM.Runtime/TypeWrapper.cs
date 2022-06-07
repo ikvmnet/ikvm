@@ -23,14 +23,6 @@
 */
 using System;
 using System.Collections.Generic;
-#if STATIC_COMPILER || STUB_GENERATOR
-using IKVM.Reflection;
-using IKVM.Reflection.Emit;
-using Type = IKVM.Reflection.Type;
-#else
-using System.Reflection;
-using System.Reflection.Emit;
-#endif
 using System.Diagnostics;
 using System.Security;
 using System.Security.Permissions;
@@ -39,16 +31,28 @@ using IKVM.Attributes;
 using IKVM.Runtime;
 using IKVM.Runtime.Syntax;
 
+#if STATIC_COMPILER || STUB_GENERATOR
+using IKVM.Reflection;
+using IKVM.Reflection.Emit;
+
+using Type = IKVM.Reflection.Type;
+#else
+using System.Reflection;
+using System.Reflection.Emit;
+#endif
+
 namespace IKVM.Internal
 {
 
     static class StringConstants
     {
+
         internal static readonly string CLINIT = string.Intern("<clinit>");
         internal static readonly string INIT = string.Intern("<init>");
         internal static readonly string SIG_VOID = string.Intern("()V");
         internal static readonly string FINALIZE = string.Intern("finalize");
         internal static readonly string CLONE = string.Intern("clone");
+
     }
 
     struct ExModifiers
@@ -1627,10 +1631,16 @@ namespace IKVM.Internal
 
     abstract class Annotation
     {
+
 #if STATIC_COMPILER
+
         internal static Annotation LoadAssemblyCustomAttribute(ClassLoaderWrapper loader, object[] def)
         {
-            Debug.Assert(def[0].Equals(AnnotationDefaultAttribute.TAG_ANNOTATION));
+            if (def.Length == 0)
+                throw new ArgumentException("LoadAssemblyCustomAttribute did not receive any definitions.");
+            if (object.Equals(def[0], AnnotationDefaultAttribute.TAG_ANNOTATION) == false)
+                throw new InternalException("LoadAssemblyCustomAttribute did not receive AnnotationDefaultAttribute.TAG_ANNOTATION.");
+
             string annotationClass = (string)def[1];
             if (ClassFile.IsValidFieldSig(annotationClass))
             {
@@ -1640,10 +1650,12 @@ namespace IKVM.Internal
                 }
                 catch (RetargetableJavaException)
                 {
+
                 }
             }
             return null;
         }
+
 #endif
 
 #if !STUB_GENERATOR
@@ -2006,8 +2018,9 @@ namespace IKVM.Internal
         internal TypeWrapper(TypeFlags flags, Modifiers modifiers, string name)
         {
             Profiler.Count("TypeWrapper");
-            // class name should be dotted or null for primitives
-            Debug.Assert(name == null || name.IndexOf('/') < 0, name);
+
+            if (name != null && name.IndexOf('/') > -1)
+                throw new InternalException("Class name should be dotted, or null for primitives.");
 
             this.flags = flags;
             this.modifiers = modifiers;
