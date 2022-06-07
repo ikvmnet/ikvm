@@ -29,7 +29,7 @@ namespace ikvmstub.Tests
 #endif
 
             var jar = Path.Combine(Path.GetTempPath(), Path.GetFileName(Path.ChangeExtension(j, ".jar")));
-            var ret = NetExp.Main(a.Concat(new[] { "-bootstrap", $"-r:{Path.Combine(Path.GetDirectoryName(typeof(IkvmstubTests).Assembly.Location), "IKVM.Runtime.dll")}", $"-out:{jar}", j }).ToArray());
+            var ret = Program.Main(a.Concat(new[] { "-bootstrap", $"-r:{Path.Combine(Path.GetDirectoryName(typeof(IkvmstubTests).Assembly.Location), "IKVM.Runtime.dll")}", $"-out:{jar}", j }).ToArray());
             ret.Should().Be(0);
             File.Exists(jar).Should().BeTrue();
         }
