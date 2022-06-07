@@ -1,5 +1,6 @@
 ﻿/*
-  Copyright (C) 2007-2014 Jeroen Frijters
+  Copyright (C) 2007-2015 Jeroen Frijters
+  Copyright (C) 2009 Volker Berlin (i-net software)
 
   This software is provided 'as-is', without any express or implied
   warranty.  In no event will the authors be held liable for any damages
@@ -21,20 +22,31 @@
   jeroen@frijters.net
   
 */
-namespace IKVM.Internal
+using System.Security.Cryptography;
+
+namespace IKVM.Runtime.JniExport.sun.security.provider
 {
 
-#if !FIRST_PASS
+    static class NativeSeedGenerator
+    {
 
-    public interface IReflectionException
-	{
-
-        global::java.lang.IllegalArgumentException GetIllegalArgumentException(object obj);
-
-        global::java.lang.IllegalArgumentException SetIllegalArgumentException(object obj);
-
-	}
-
+        public static bool nativeGenerateSeed(byte[] result)
+        {
+            try
+            {
+                RNGCryptoServiceProvider csp = new RNGCryptoServiceProvider();
+                csp.GetBytes(result);
+#if NET_4_0
+			csp.Dispose();
 #endif
+                return true;
+            }
+            catch (CryptographicException)
+            {
+                return false;
+            }
+        }
+
+    }
 
 }

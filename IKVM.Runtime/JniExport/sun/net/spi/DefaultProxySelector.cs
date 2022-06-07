@@ -1,5 +1,6 @@
 ﻿/*
-  Copyright (C) 2007-2014 Jeroen Frijters
+  Copyright (C) 2007-2015 Jeroen Frijters
+  Copyright (C) 2009 Volker Berlin (i-net software)
 
   This software is provided 'as-is', without any express or implied
   warranty.  In no event will the authors be held liable for any damages
@@ -21,20 +22,24 @@
   jeroen@frijters.net
   
 */
-namespace IKVM.Internal
+
+namespace IKVM.Runtime.JniExport.sun.net.spi
 {
 
-#if !FIRST_PASS
+    static class DefaultProxySelector
+    {
 
-    public interface IReflectionException
-	{
+        public static bool init()
+        {
+            return true;
+        }
 
-        global::java.lang.IllegalArgumentException GetIllegalArgumentException(object obj);
+        public static object getSystemProxy(object thisDefaultProxySelector, string protocol, string host)
+        {
+            // TODO on Whidbey we might be able to use System.Net.Configuration.DefaultProxySection.Proxy
+            return null;
+        }
 
-        global::java.lang.IllegalArgumentException SetIllegalArgumentException(object obj);
-
-	}
-
-#endif
+    }
 
 }

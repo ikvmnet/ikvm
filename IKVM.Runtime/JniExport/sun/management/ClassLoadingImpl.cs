@@ -1,5 +1,5 @@
 ﻿/*
-  Copyright (C) 2007-2014 Jeroen Frijters
+  Copyright (C) 2011-2014 Jeroen Frijters
 
   This software is provided 'as-is', without any express or implied
   warranty.  In no event will the authors be held liable for any damages
@@ -21,20 +21,18 @@
   jeroen@frijters.net
   
 */
-namespace IKVM.Internal
+
+namespace IKVM.Runtime.JniExport.sun.management
 {
 
-#if !FIRST_PASS
+    static class ClassLoadingImpl
+    {
 
-    public interface IReflectionException
-	{
+        public static void setVerboseClass(bool value)
+        {
 
-        global::java.lang.IllegalArgumentException GetIllegalArgumentException(object obj);
+        }
 
-        global::java.lang.IllegalArgumentException SetIllegalArgumentException(object obj);
-
-	}
-
-#endif
+    }
 
 }

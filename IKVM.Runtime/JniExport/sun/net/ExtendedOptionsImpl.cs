@@ -1,5 +1,6 @@
-﻿/*
-  Copyright (C) 2007-2014 Jeroen Frijters
+/*
+  Copyright (C) 2007-2015 Jeroen Frijters
+  Copyright (C) 2009 Volker Berlin (i-net software)
 
   This software is provided 'as-is', without any express or implied
   warranty.  In no event will the authors be held liable for any damages
@@ -21,20 +22,38 @@
   jeroen@frijters.net
   
 */
-namespace IKVM.Internal
+
+namespace IKVM.Runtime.JniExport.sun.net.spi
 {
 
+    static class ExtendedOptionsImpl
+    {
+
+        public static void init()
+        {
+
+        }
+
+        public static void setFlowOption(global::java.io.FileDescriptor fd, object f)
+        {
 #if !FIRST_PASS
-
-    public interface IReflectionException
-	{
-
-        global::java.lang.IllegalArgumentException GetIllegalArgumentException(object obj);
-
-        global::java.lang.IllegalArgumentException SetIllegalArgumentException(object obj);
-
-	}
-
+            throw new global::java.lang.UnsupportedOperationException();
 #endif
+        }
+
+        public static void getFlowOption(global::java.io.FileDescriptor fd, object f)
+        {
+#if !FIRST_PASS
+            throw new global::java.lang.UnsupportedOperationException();
+#endif
+        }
+
+        public static bool flowSupported()
+        {
+            // We don't support this. Solaris only functionality.
+            return false;
+        }
+
+    }
 
 }

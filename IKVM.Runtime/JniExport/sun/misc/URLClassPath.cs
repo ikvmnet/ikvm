@@ -1,5 +1,6 @@
 ﻿/*
-  Copyright (C) 2007-2014 Jeroen Frijters
+  Copyright (C) 2007-2015 Jeroen Frijters
+  Copyright (C) 2009 Volker Berlin (i-net software)
 
   This software is provided 'as-is', without any express or implied
   warranty.  In no event will the authors be held liable for any damages
@@ -21,20 +22,28 @@
   jeroen@frijters.net
   
 */
-namespace IKVM.Internal
+
+namespace IKVM.Runtime.JniExport.sun.misc
 {
 
-#if !FIRST_PASS
-
-    public interface IReflectionException
+    static class URLClassPath
 	{
 
-        global::java.lang.IllegalArgumentException GetIllegalArgumentException(object obj);
+		public static global::java.net.URL[] getLookupCacheURLs(global::java.lang.ClassLoader loader)
+		{
+			return null;
+		}
 
-        global::java.lang.IllegalArgumentException SetIllegalArgumentException(object obj);
+		public static int[] getLookupCacheForClassLoader(global::java.lang.ClassLoader loader, string name)
+		{
+			return null;
+		}
+
+		public static bool knownToNotExist0(global::java.lang.ClassLoader loader, string className)
+		{
+			return false;
+		}
 
 	}
-
-#endif
 
 }

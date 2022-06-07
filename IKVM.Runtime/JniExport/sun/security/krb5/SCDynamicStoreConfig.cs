@@ -1,5 +1,6 @@
-﻿/*
-  Copyright (C) 2007-2014 Jeroen Frijters
+/*
+  Copyright (C) 2007-2011 Jeroen Frijters
+  Copyright (C) 2011 Trevor Bell (Siemens Energy, Inc.)
 
   This software is provided 'as-is', without any express or implied
   warranty.  In no event will the authors be held liable for any damages
@@ -21,20 +22,23 @@
   jeroen@frijters.net
   
 */
-namespace IKVM.Internal
+
+namespace IKVM.Runtime.JniExport.sun.security.krb5
 {
 
-#if !FIRST_PASS
-
-    public interface IReflectionException
+	static class SCDynamicStoreConfig
 	{
 
-        global::java.lang.IllegalArgumentException GetIllegalArgumentException(object obj);
+		public static void installNotificationCallback()
+		{
 
-        global::java.lang.IllegalArgumentException SetIllegalArgumentException(object obj);
+		}
+
+		public static object getKerberosConfig()
+		{
+			return null;
+		}
 
 	}
-
-#endif
 
 }

@@ -1,5 +1,6 @@
-﻿/*
-  Copyright (C) 2007-2014 Jeroen Frijters
+/*
+  Copyright (C) 2007-2015 Jeroen Frijters
+  Copyright (C) 2009 Volker Berlin (i-net software)
 
   This software is provided 'as-is', without any express or implied
   warranty.  In no event will the authors be held liable for any damages
@@ -21,20 +22,23 @@
   jeroen@frijters.net
   
 */
-namespace IKVM.Internal
+
+namespace IKVM.Runtime.JniExport.sun.misc
 {
 
-#if !FIRST_PASS
-
-    public interface IReflectionException
+	static class VMSupport
 	{
 
-        global::java.lang.IllegalArgumentException GetIllegalArgumentException(object obj);
+		public static object initAgentProperties(object props)
+		{
+			return props;
+		}
 
-        global::java.lang.IllegalArgumentException SetIllegalArgumentException(object obj);
+		public static string getVMTemporaryDirectory()
+		{
+			return System.IO.Path.GetTempPath();
+		}
 
 	}
-
-#endif
 
 }

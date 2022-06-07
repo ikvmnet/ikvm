@@ -1,5 +1,6 @@
 ﻿/*
-  Copyright (C) 2007-2014 Jeroen Frijters
+  Copyright (C) 2007-2015 Jeroen Frijters
+  Copyright (C) 2009 Volker Berlin (i-net software)
 
   This software is provided 'as-is', without any express or implied
   warranty.  In no event will the authors be held liable for any damages
@@ -21,20 +22,25 @@
   jeroen@frijters.net
   
 */
-namespace IKVM.Internal
+using System.Reflection;
+
+using IKVM.Internal;
+
+namespace IKVM.Runtime.JniExport.sun.misc
 {
 
-#if !FIRST_PASS
-
-    public interface IReflectionException
+	static class MiscHelper
 	{
 
-        global::java.lang.IllegalArgumentException GetIllegalArgumentException(object obj);
-
-        global::java.lang.IllegalArgumentException SetIllegalArgumentException(object obj);
+		public static object getAssemblyClassLoader(Assembly asm, object extcl)
+		{
+			if (extcl == null || asm.IsDefined(typeof(IKVM.Attributes.CustomAssemblyClassLoaderAttribute), false))
+			{
+				return AssemblyClassLoader.FromAssembly(asm).GetJavaClassLoader();
+			}
+			return null;
+		}
 
 	}
-
-#endif
 
 }

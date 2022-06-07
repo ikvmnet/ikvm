@@ -1,5 +1,5 @@
 ﻿/*
-  Copyright (C) 2007-2014 Jeroen Frijters
+  Copyright (C) 2011-2014 Jeroen Frijters
 
   This software is provided 'as-is', without any express or implied
   warranty.  In no event will the authors be held liable for any damages
@@ -21,20 +21,46 @@
   jeroen@frijters.net
   
 */
-namespace IKVM.Internal
+
+namespace IKVM.Runtime.JniExport.sun.management
 {
 
-#if !FIRST_PASS
+    static class MemoryImpl
+    {
 
-    public interface IReflectionException
-	{
-
-        global::java.lang.IllegalArgumentException GetIllegalArgumentException(object obj);
-
-        global::java.lang.IllegalArgumentException SetIllegalArgumentException(object obj);
-
-	}
-
+        public static object getMemoryPools0()
+        {
+#if FIRST_PASS
+		    return null;
+#else
+            return new global::java.lang.management.MemoryPoolMXBean[0];
 #endif
+        }
+
+        public static object getMemoryManagers0()
+        {
+#if FIRST_PASS
+		    return null;
+#else
+            return new global::java.lang.management.MemoryManagerMXBean[0];
+#endif
+        }
+
+        public static object getMemoryUsage0(object impl, bool heap)
+        {
+#if FIRST_PASS
+		    return null;
+#else
+            long mem = System.GC.GetTotalMemory(false);
+            return new global::java.lang.management.MemoryUsage(-1, mem, mem, -1);
+#endif
+        }
+
+        public static void setVerboseGC(object impl, bool value)
+        {
+
+        }
+
+    }
 
 }

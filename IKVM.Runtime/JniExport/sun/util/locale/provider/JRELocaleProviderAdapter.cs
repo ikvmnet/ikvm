@@ -1,5 +1,5 @@
-﻿/*
-  Copyright (C) 2007-2014 Jeroen Frijters
+/*
+  Copyright (C) 2014 Jeroen Frijters
 
   This software is provided 'as-is', without any express or implied
   warranty.  In no event will the authors be held liable for any damages
@@ -21,20 +21,14 @@
   jeroen@frijters.net
   
 */
-namespace IKVM.Internal
+
+static class JRELocaleProviderAdapter
 {
 
-#if !FIRST_PASS
-
-    public interface IReflectionException
+	// the Java implementation is redirected via map.xml
+	internal static bool isNonENLangSupported()
 	{
-
-        global::java.lang.IllegalArgumentException GetIllegalArgumentException(object obj);
-
-        global::java.lang.IllegalArgumentException SetIllegalArgumentException(object obj);
-
+		return IKVM.Internal.ClassLoaderWrapper.GetBootstrapClassLoader().LoadClassByDottedNameFast("sun.text.resources.nl.FormatData_nl") != null;
 	}
-
-#endif
 
 }

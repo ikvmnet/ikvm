@@ -113,7 +113,7 @@ namespace IKVM.Runtime.JniExport.java.security
         {
             if (type == null
                 || type.Assembly == typeof(object).Assembly
-                || type.Assembly == typeof(Java_java_security_AccessController).Assembly
+                || type.Assembly == typeof(AccessController).Assembly
                 || type.Assembly == IKVM.Runtime.JniExport.java.lang.SecurityManager.jniAssembly
                 || type.Assembly == typeof(global::java.lang.Thread).Assembly)
             {

@@ -52,7 +52,7 @@ namespace IKVM.Runtime.JniExport.java.util.zip
             /// </summary>
             /// <param name="zipFile"></param>
             /// <param name="entry"></param>
-            public ZipEntryStream(java.util.zip.ZipFile zipFile, java.util.zip.ZipEntry entry)
+            public ZipEntryStream(global::java.util.zip.ZipFile zipFile, global::java.util.zip.ZipEntry entry)
             {
                 this.zipFile = zipFile;
                 this.entry = entry;

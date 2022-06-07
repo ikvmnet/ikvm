@@ -1,5 +1,5 @@
 ﻿/*
-  Copyright (C) 2007-2014 Jeroen Frijters
+  Copyright (C) 2011-2014 Jeroen Frijters
 
   This software is provided 'as-is', without any express or implied
   warranty.  In no event will the authors be held liable for any damages
@@ -21,20 +21,29 @@
   jeroen@frijters.net
   
 */
-namespace IKVM.Internal
+using System;
+
+namespace IKVM.Runtime.JniExport.sun.management
 {
 
-#if !FIRST_PASS
+    static class GcInfoBuilder
+    {
 
-    public interface IReflectionException
-	{
+        public static int getNumGcExtAttributes(object _this, object gc)
+        {
+            throw new NotSupportedException();
+        }
 
-        global::java.lang.IllegalArgumentException GetIllegalArgumentException(object obj);
+        public static void fillGcAttributeInfo(object _this, object gc, int numAttributes, string[] attributeNames, char[] types, string[] descriptions)
+        {
+            throw new NotSupportedException();
+        }
 
-        global::java.lang.IllegalArgumentException SetIllegalArgumentException(object obj);
+        public static object getLastGcInfo0(object _this, object gc, int numExtAtts, object[] extAttValues, char[] extAttTypes, object[] before, object[] after)
+        {
+            throw new NotSupportedException();
+        }
 
-	}
-
-#endif
+    }
 
 }

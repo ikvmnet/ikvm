@@ -1,5 +1,6 @@
 ﻿/*
-  Copyright (C) 2007-2014 Jeroen Frijters
+  Copyright (C) 2007-2015 Jeroen Frijters
+  Copyright (C) 2009 Volker Berlin (i-net software)
 
   This software is provided 'as-is', without any express or implied
   warranty.  In no event will the authors be held liable for any damages
@@ -21,20 +22,24 @@
   jeroen@frijters.net
   
 */
-namespace IKVM.Internal
+using System;
+
+namespace IKVM.Runtime.JniExport.sun.awt
 {
 
-#if !FIRST_PASS
+    static class DefaultMouseInfoPeer
+    {
 
-    public interface IReflectionException
-	{
+        public static int fillPointWithCoords(object _this, object point)
+        {
+            throw new NotImplementedException();
+        }
 
-        global::java.lang.IllegalArgumentException GetIllegalArgumentException(object obj);
+        public static bool isWindowUnderMouse(object _this, object w)
+        {
+            throw new NotImplementedException();
+        }
 
-        global::java.lang.IllegalArgumentException SetIllegalArgumentException(object obj);
-
-	}
-
-#endif
+    }
 
 }

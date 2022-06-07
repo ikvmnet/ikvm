@@ -1,5 +1,6 @@
 ﻿/*
-  Copyright (C) 2007-2014 Jeroen Frijters
+  Copyright (C) 2007-2015 Jeroen Frijters
+  Copyright (C) 2009 Volker Berlin (i-net software)
 
   This software is provided 'as-is', without any express or implied
   warranty.  In no event will the authors be held liable for any damages
@@ -21,20 +22,34 @@
   jeroen@frijters.net
   
 */
-namespace IKVM.Internal
+using System;
+
+namespace IKVM.Runtime.JniExport.sun.misc
 {
 
-#if !FIRST_PASS
-
-    public interface IReflectionException
+	static class Version
 	{
 
-        global::java.lang.IllegalArgumentException GetIllegalArgumentException(object obj);
+		public static string getJvmSpecialVersion()
+		{
+			throw new NotImplementedException();
+		}
 
-        global::java.lang.IllegalArgumentException SetIllegalArgumentException(object obj);
+		public static string getJdkSpecialVersion()
+		{
+			throw new NotImplementedException();
+		}
+
+		public static bool getJvmVersionInfo()
+		{
+			throw new NotImplementedException();
+		}
+
+		public static void getJdkVersionInfo()
+		{
+			throw new NotImplementedException();
+		}
 
 	}
-
-#endif
 
 }
