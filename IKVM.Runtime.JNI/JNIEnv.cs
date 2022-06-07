@@ -63,7 +63,7 @@ namespace IKVM.Runtime
         static JNIEnv()
         {
             // we set the field here so that IKVM.Runtime.dll doesn't have to load us if we're not otherwise needed
-            Java_java_lang_SecurityManager.jniAssembly = typeof(JNIEnv).Assembly;
+            IKVM.Java.Externs.java.lang.SecurityManager.jniAssembly = typeof(JNIEnv).Assembly;
         }
 
         internal ManagedJNIEnv GetManagedJNIEnv()
@@ -442,7 +442,7 @@ namespace IKVM.Runtime
                 // TODO what should the protection domain be?
                 // NOTE I'm assuming name is platform encoded (as opposed to UTF-8), but the Sun JVM only seems to work for ASCII.
                 global::java.lang.ClassLoader classLoader = (global::java.lang.ClassLoader)pEnv->UnwrapRef(loader);
-                return pEnv->MakeLocalRef(Java_java_lang_ClassLoader.defineClass0(classLoader, name != null ? StringFromOEM(name) : null, buf, 0, buf.Length, null));
+                return pEnv->MakeLocalRef(IKVM.Java.Externs.java.lang.ClassLoader.defineClass0(classLoader, name != null ? StringFromOEM(name) : null, buf, 0, buf.Length, null));
             }
             catch (Exception x)
             {

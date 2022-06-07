@@ -46,6 +46,10 @@
             <OutputDir>runtimes\linux-x64\native</OutputDir>
         </LibProjectReference>
     </ItemGroup>
+
+    <ItemGroup>
+      <Folder Include="JniExport\" />
+    </ItemGroup>
     
     <Import Project="Sdk.targets" Sdk="Microsoft.NET.Sdk" />
 

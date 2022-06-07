@@ -29,7 +29,7 @@ using System.Threading;
 
 using IKVM.Attributes;
 using IKVM.Internal;
-using IKVM.Runtime.JniExport.java.lang.invoke;
+using IKVM.Java.Externs.java.lang.invoke;
 
 namespace IKVM.Runtime
 {

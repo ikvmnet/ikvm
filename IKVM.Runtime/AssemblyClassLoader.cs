@@ -791,7 +791,7 @@ namespace IKVM.Internal
                 {
                     return tw;
                 }
-                return TypeWrapper.FromClass(IKVM.Runtime.JniExport.java.lang.ClassLoader.defineClass1(loader, name, buf, 0, buf.Length, GetProtectionDomain(), null));
+                return TypeWrapper.FromClass(IKVM.Java.Externs.java.lang.ClassLoader.defineClass1(loader, name, buf, 0, buf.Length, GetProtectionDomain(), null));
             }
         }
 #endif

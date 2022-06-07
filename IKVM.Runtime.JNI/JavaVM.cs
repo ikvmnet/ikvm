@@ -68,7 +68,7 @@ namespace IKVM.Runtime
                 return JNIEnv.JNI_ERR;
             }
             JNI.jvmDestroyed = true;
-            Java_java_lang_Thread.WaitUntilLastJniThread();
+            IKVM.Java.Externs.java.lang.Thread.WaitUntilLastJniThread();
             return JNIEnv.JNI_OK;
         }
 
@@ -113,7 +113,7 @@ namespace IKVM.Runtime
                 object threadGroup = GlobalRefs.Unwrap(pAttachArgs->group.ToInt32());
                 if (threadGroup != null)
                 {
-                    Java_java_lang_Thread.AttachThreadFromJni(threadGroup);
+                    IKVM.Java.Externs.java.lang.Thread.AttachThreadFromJni(threadGroup);
                 }
             }
             *penv = JNIEnv.CreateJNIEnv();
@@ -129,7 +129,7 @@ namespace IKVM.Runtime
             }
             // TODO if we set Thread.IsBackground to false when we attached, now might be a good time to set it back to true.
             JNIEnv.FreeJNIEnv();
-            IKVM.Runtime.JniExport.ikvm.runtime.Startup.jniDetach();
+            IKVM.Java.Externs.ikvm.runtime.Startup.jniDetach();
             return JNIEnv.JNI_OK;
         }
 

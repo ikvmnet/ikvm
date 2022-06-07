@@ -278,7 +278,7 @@ namespace IKVM.Internal
 			{
 				return false;
 			}
-			if (type.Assembly == IKVM.Runtime.JniExport.java.lang.SecurityManager.jniAssembly)
+			if (type.Assembly == IKVM.Java.Externs.java.lang.SecurityManager.jniAssembly)
 			{
 				return false;
 			}
