@@ -249,7 +249,7 @@ jobs:
         path: build/tests
     - name: Run Tests
       shell: pwsh
-      run: gi ./build/tests/**/*.Tests.dll | group { $_.Directory.BaseName } | %{ dotnet test $_.Group --blame -v 3 --results-directory ./TestResults --logger "trx;LogFileName=$($_.Name).trx" }
+      run: gi ./build/tests/**/*.Tests.dll | group { $_.Directory.BaseName } | ?{ $_.Name -ne 'net461' } | %{ dotnet test $_.Group --blame -v 3 --results-directory ./TestResults --logger "trx;LogFileName=$($_.Name).trx" }
     - name: Upload Test Results
       uses: actions/upload-artifact@v3
       with:

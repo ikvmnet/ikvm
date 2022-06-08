@@ -22,13 +22,13 @@
   
 */
 using System;
-using System.IO;
 using System.Collections.Generic;
+
 using IKVM.Attributes;
 
 namespace IKVM.Internal
 {
-	enum HardError : short
+    enum HardError : short
 	{
 		NoClassDefFoundError,
 		IllegalAccessError,
