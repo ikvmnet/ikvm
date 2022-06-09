@@ -1,8 +1,24 @@
-﻿<Project TreatAsLocalProperty="TaskFolder;TaskAssembly">
+﻿<Project TreatAsLocalProperty="TaskFolder;TaskAssembly;ToolFramework;ToolFolder;ToolPath">
     <PropertyGroup>
         <TaskFolder Condition=" '$(MSBuildRuntimeType)' == 'Core' ">netcoreapp3.1</TaskFolder>
         <TaskFolder Condition=" '$(MSBuildRuntimeType)' != 'Core' ">net461</TaskFolder>
         <TaskAssembly>$(MSBuildThisFileDirectory)..\..\tasks\$(TaskFolder)\IKVM.Sdk.dll</TaskAssembly>
+        <ToolFramework Condition="IsTargetFrameworkCompatible('$(TargetFramework)', 'net461')">net461</ToolFramework>
+        <ToolFramework Condition="IsTargetFrameworkCompatible('$(TargetFramework)', 'netcoreapp3.1')">netcoreapp3.1</ToolFramework>
+        <ToolFolder>$(ToolFramework)</ToolFolder>
+        <ToolPath>$(MSBuildThisFileDirectory)..\..\tools\$(ToolFolder)\</ToolPath>
+    </PropertyGroup>
+
+    <PropertyGroup Condition=" '$(ToolFramework)' == 'net461' ">
+        <IkvmToolExec>$(ToolPath)ikvm.exe</IkvmToolExec>
+        <IkvmcToolExec>$(ToolPath)ikvmc.exe</IkvmcToolExec>
+        <IkvmstubToolExec>$(ToolPath)ikvmstub.exe</IkvmstubToolExec>
+    </PropertyGroup>
+
+    <PropertyGroup Condition=" '$(ToolFramework)' == 'netcoreapp3.1' ">
+        <IkvmToolExec>dotnet exec $(ToolPath)ikvm.dll</IkvmToolExec>
+        <IkvmcToolExec>dotnet exec $(ToolPath)ikvmc.dll</IkvmcToolExec>
+        <IkvmstubToolExec>dotnet exec $(ToolPath)ikvmstub.dll</IkvmstubToolExec>
     </PropertyGroup>
 
     <UsingTask TaskName="IKVM.Sdk.Tasks.IkvmCompilerTask" AssemblyFile="$(TaskAssembly)" />

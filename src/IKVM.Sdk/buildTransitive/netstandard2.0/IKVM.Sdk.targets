@@ -1,7 +1,9 @@
-﻿<Project TreatAsLocalProperty="TaskFolder;TaskAssembly">
+﻿<Project>
 
     <Target Name="BuildIkvmSampleTarget" AfterTargets="Build">
-        <Message Text="SDK post-build event ran" Importance="high" />
+        <Message Text="IkvmToolExec: $(IkvmToolExec)" Importance="high" />
+        <Message Text="IkvmcToolExec: $(IkvmcToolExec)" Importance="high" />
+        <Message Text="IkvmstubToolExec: $(IkvmstubToolExec)" Importance="high" />
     </Target>
     
 </Project>
