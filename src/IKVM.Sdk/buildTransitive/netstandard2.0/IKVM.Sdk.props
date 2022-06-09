@@ -1,0 +1,9 @@
+﻿<Project TreatAsLocalProperty="TaskFolder;TaskAssembly">
+    <PropertyGroup>
+        <TaskFolder Condition=" '$(MSBuildRuntimeType)' == 'Core' ">netcoreapp3.1</TaskFolder>
+        <TaskFolder Condition=" '$(MSBuildRuntimeType)' != 'Core' ">net461</TaskFolder>
+        <TaskAssembly>$(MSBuildThisFileDirectory)..\..\tasks\$(TaskFolder)\IKVM.Sdk.dll</TaskAssembly>
+    </PropertyGroup>
+
+    <UsingTask TaskName="IKVM.Sdk.Tasks.IkvmCompilerTask" AssemblyFile="$(TaskAssembly)" />
+</Project>

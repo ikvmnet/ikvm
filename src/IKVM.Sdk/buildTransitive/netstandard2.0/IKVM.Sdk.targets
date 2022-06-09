@@ -1,0 +1,7 @@
+﻿<Project TreatAsLocalProperty="TaskFolder;TaskAssembly">
+
+    <Target Name="BuildIkvmSampleTarget" AfterTargets="Build">
+        <Message Text="SDK post-build event ran" Importance="high" />
+    </Target>
+    
+</Project>

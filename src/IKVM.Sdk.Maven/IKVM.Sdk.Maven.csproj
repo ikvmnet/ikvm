@@ -7,8 +7,8 @@
     </PropertyGroup>
 
     <ItemGroup>
-        <Content Include="build\**\*" PackagePath="build\%(RecursiveDir)%(Filename)%(Extension)" />
-        <Content Include="buildMultiTargeting\**\*" PackagePath="buildMultiTargeting\%(RecursiveDir)%(Filename)%(Extension)" />
+        <Content Include="lib\**\*" PackagePath="lib\%(RecursiveDir)%(Filename)%(Extension)" />
+        <Content Include="buildTransitive\**\*" PackagePath="buildTransitive\%(RecursiveDir)%(Filename)%(Extension)" />
     </ItemGroup>
 
     <ItemGroup>

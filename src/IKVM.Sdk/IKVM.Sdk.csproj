@@ -7,8 +7,8 @@
     </PropertyGroup>
 
     <ItemGroup>
-        <Content Include="build\**\*" PackagePath="build\%(RecursiveDir)%(Filename)%(Extension)" />
-        <Content Include="buildMultiTargeting\**\*" PackagePath="buildMultiTargeting\%(RecursiveDir)%(Filename)%(Extension)" />
+        <Content Include="lib\**\*" PackagePath="lib\%(RecursiveDir)%(Filename)%(Extension)" />
+        <Content Include="buildTransitive\**\*" PackagePath="buildTransitive\%(RecursiveDir)%(Filename)%(Extension)" />
     </ItemGroup>
 
     <ItemGroup>
@@ -22,31 +22,42 @@
     </ItemGroup>
 
     <ItemGroup>
-        <ProjectReference Include="..\IKVM-pkg\IKVM-pkg.csproj" />
+        <ProjectReference Include="..\IKVM-pkg\IKVM-pkg.csproj">
+            <IncludeAssets>none</IncludeAssets>
+        </ProjectReference>
     </ItemGroup>
 
     <ItemGroup>
-        <ProjectReference Include="..\IKVM.Java\IKVM.Java.csproj">
-            <PrivateAssets>all</PrivateAssets>
-        </ProjectReference>
-        <ProjectReference Include="..\IKVM.Reflection\IKVM.Reflection.csproj">
-            <PrivateAssets>all</PrivateAssets>
-        </ProjectReference>
-        <ProjectReference Include="..\IKVM.Runtime\IKVM.Runtime.csproj">
-            <PrivateAssets>all</PrivateAssets>
-        </ProjectReference>
-        <ProjectReference Include="..\IKVM.Runtime.JNI\IKVM.Runtime.JNI.csproj">
-            <PrivateAssets>all</PrivateAssets>
-        </ProjectReference>
-        <ProjectReference Include="..\ikvm\ikvm.csproj">
-            <PrivateAssets>all</PrivateAssets>
-        </ProjectReference>
-        <ProjectReference Include="..\ikvmc\ikvmc.csproj">
-            <PrivateAssets>all</PrivateAssets>
-        </ProjectReference>
-        <ProjectReference Include="..\ikvmstub\ikvmstub.csproj">
-            <PrivateAssets>all</PrivateAssets>
-        </ProjectReference>
+        <PublishProjectReference Include="..\ikvm\ikvm.csproj" Condition=" '$(TargetFramework)' == '' ">
+            <SetTargetFramework>TargetFramework=net461</SetTargetFramework>
+            <PublishPackagePath>tools\net461</PublishPackagePath>
+            <PublishProperties>SelfContained=false</PublishProperties>
+        </PublishProjectReference>
+        <PublishProjectReference Include="..\ikvmc\ikvmc.csproj" Condition=" '$(TargetFramework)' == '' ">
+            <SetTargetFramework>TargetFramework=net461</SetTargetFramework>
+            <PublishPackagePath>tools\net461</PublishPackagePath>
+            <PublishProperties>SelfContained=false</PublishProperties>
+        </PublishProjectReference>
+        <PublishProjectReference Include="..\ikvmstub\ikvmstub.csproj" Condition=" '$(TargetFramework)' == '' ">
+            <SetTargetFramework>TargetFramework=net461</SetTargetFramework>
+            <PublishPackagePath>tools\net461</PublishPackagePath>
+            <PublishProperties>SelfContained=false</PublishProperties>
+        </PublishProjectReference>
+        <PublishProjectReference Include="..\ikvm\ikvm.csproj" Condition=" '$(TargetFramework)' == '' ">
+            <SetTargetFramework>TargetFramework=netcoreapp3.1</SetTargetFramework>
+            <PublishPackagePath>tools\netcoreapp3.1</PublishPackagePath>
+            <PublishProperties>SelfContained=false</PublishProperties>
+        </PublishProjectReference>
+        <PublishProjectReference Include="..\ikvmc\ikvmc.csproj" Condition=" '$(TargetFramework)' == '' ">
+            <SetTargetFramework>TargetFramework=netcoreapp3.1</SetTargetFramework>
+            <PublishPackagePath>tools\netcoreapp3.1</PublishPackagePath>
+            <PublishProperties>SelfContained=false</PublishProperties>
+        </PublishProjectReference>
+        <PublishProjectReference Include="..\ikvmstub\ikvmstub.csproj" Condition=" '$(TargetFramework)' == '' ">
+            <SetTargetFramework>TargetFramework=netcoreapp3.1</SetTargetFramework>
+            <PublishPackagePath>tools\netcoreapp3.1</PublishPackagePath>
+            <PublishProperties>SelfContained=false</PublishProperties>
+        </PublishProjectReference>
     </ItemGroup>
 
     <Target DependsOnTargets="ResolveReferences" Name="CopyProjectReferencesToPackage">
