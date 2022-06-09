@@ -22,29 +22,8 @@
     </ItemGroup>
 
     <ItemGroup>
-        <ProjectReference Include="..\IKVM-pkg\IKVM-pkg.csproj">
-            <IncludeAssets>none</IncludeAssets>
-        </ProjectReference>
-        <ProjectReference Include="..\IKVM.Java\IKVM.Java.csproj">
-            <PrivateAssets>all</PrivateAssets>
-        </ProjectReference>
-        <ProjectReference Include="..\IKVM.Reflection\IKVM.Reflection.csproj">
-            <PrivateAssets>all</PrivateAssets>
-        </ProjectReference>
-        <ProjectReference Include="..\IKVM.Runtime\IKVM.Runtime.csproj">
-            <PrivateAssets>all</PrivateAssets>
-        </ProjectReference>
-        <ProjectReference Include="..\IKVM.Runtime.JNI\IKVM.Runtime.JNI.csproj">
-            <PrivateAssets>all</PrivateAssets>
-        </ProjectReference>
-        <ProjectReference Include="..\ikvm\ikvm.csproj">
-            <PrivateAssets>all</PrivateAssets>
-        </ProjectReference>
-        <ProjectReference Include="..\ikvmc\ikvmc.csproj">
-            <PrivateAssets>all</PrivateAssets>
-        </ProjectReference>
-        <ProjectReference Include="..\ikvmstub\ikvmstub.csproj">
-            <PrivateAssets>all</PrivateAssets>
+        <ProjectReference Include="..\IKVM.Sdk\IKVM.Sdk.csproj">
+            <IncludeAssets>all</IncludeAssets>
         </ProjectReference>
     </ItemGroup>
 
