@@ -1,0 +1,9 @@
+﻿<Project Sdk="Microsoft.NET.Sdk">
+    <PropertyGroup>
+        <TargetFrameworks>net472;netcoreapp3.1;net5.0;net6.0</TargetFrameworks>
+    </PropertyGroup>
+
+    <ItemGroup>
+        <PackageReference Include="IKVM.Sdk" Version="8.0.0-dev" />
+    </ItemGroup>
+</Project>

@@ -1,9 +1,71 @@
 ﻿<Project>
 
-    <Target Name="BuildIkvmSampleTarget" AfterTargets="Build">
-        <Message Text="IkvmToolExec: $(IkvmToolExec)" Importance="high" />
-        <Message Text="IkvmcToolExec: $(IkvmcToolExec)" Importance="high" />
-        <Message Text="IkvmstubToolExec: $(IkvmstubToolExec)" Importance="high" />
+    <!-- Transforms the JavaReference item group into JavaReferenceItem items. -->
+    <Target Name="GetJavaReferenceItemsFromJavaReference">
+        <ItemGroup>
+            <JavaReferenceItems Include="@(JavaReference)">
+                <AssemblyStagePath>$(JavaAssemblyStageDir)%(AssemblyName).dll</AssemblyStagePath>
+                <AssemblyCachePath>$(JavaAssemblyCacheDir)%(AssemblyName).dll</AssemblyCachePath>
+            </JavaReferenceItems>
+        </ItemGroup>
     </Target>
-    
+
+    <PropertyGroup>
+        <GetJavaReferenceItemsDependsOn>
+            $(GetJavaReferenceItemsDependsOn);
+            GetJavaReferenceItemsFromJavaReference;
+        </GetJavaReferenceItemsDependsOn>
+    </PropertyGroup>
+
+    <!-- Assembles the set of JavaReferenceItems from various sources. -->
+    <Target Name="GetJavaReferenceItems" DependsOnTargets="$(GetJavaReferenceItemsDependsOn)" Returns="@(JavaReferenceItems)">
+        
+    </Target>
+
+    <!-- Builds the JavaReferenceItems into their output items within the cache. -->
+    <Target Name="_BuildJavaReferenceAssemblies" DependsOnTargets="GetJavaReferenceItems" Inputs="@(JavaReferenceItems)" Outputs="%(JavaReferenceItems.AssemblyCachePath)" Condition=" '%(JavaReferenceItems.JavaReferenceItems)' != '' ">
+        <ItemGroup>
+            <_IkvmcArgs Include="-debug" Condition=" '$(DebugSymbols)' == 'true' Or '$(DebugType)' != 'none' " />
+            <_IkvmcArgs Include="-assembly:%(AssemblyName)" />
+            <_IkvmcArgs Include="-version:%(AssemblyVersion)" />
+            <_IkvmcArgs Include="-runtime:$(IkvmRuntimeDll)" />
+            <_IkvmcArgs Include="-compressresources" />
+            <_IkvmcArgs Include="-opt:fields" />
+            <_IkvmcArgs Include="-strictfinalfieldsemantics" />
+            <_IkvmcArgs Include="-removeassertions" />
+            <_IkvmcArgs Include="-target:library" />
+            <_IkvmcArgs Include="-nostdlib" />
+            <_IkvmcArgs Include="-sharedclassloader" />
+            <_IkvmcArgs Include="-nowarn:110" />
+            <_IkvmcArgs Include="-w4" />
+            <_IkvmcArgs Include="-noparameterreflection" />
+            <_IkvmcArgs Include="@(ReferencePathWithRefAssemblies->Distinct()->'-reference:%(FullPath)')" />
+            <_IkvmcArgs Include="%(Identity->'%(FullPath)')" />
+        </ItemGroup>
+        <MakeDir Directories="$([System.IO.Path]::GetDirectoryName('$(AssemblyStagePath)')" />
+        <WriteLinesToFile File="$(AssemblyStagePath).cmd" Lines="@(_IkvmcArgs)" Overwrite="true" />
+        <Exec Command="$(IkvmcToolExec) -out:%(AssemblyStagePath) @$(AssemblyStagePath).cmd" />
+
+        <MakeDir Directories="$([System.IO.Path]::GetDirectoryName('$(AssemblyCachePath)')" />
+        <Copy SourceFiles="%(AssemblyStagePath)" DestinationFiles="%(AssemblyCachePath)" OverwriteReadOnlyFiles="true" />
+    </Target>
+
+    <PropertyGroup>
+        <BuildJavaAssemblyReferencesDependsOn>
+            $(BuildJavaAssemblyReferencesDependsOn);
+            GetJavaReferenceItems;
+            _BuildJavaReferenceAssemblies;
+        </BuildJavaAssemblyReferencesDependsOn>
+    </PropertyGroup>
+
+    <Target Name="BuildJavaAssemblyReferences" DependsOnTargets="$(BuildJavaAssemblyReferencesDependsOn)">
+
+    </Target>
+
+    <Target Name="ResolveJavaAssemblyReferences" DependsOnTargets="BuildJavaAssemblyReferences" BeforeTargets="ResolveAssemblyReferences">
+        <ItemGroup>
+            <Reference Include="@(JavaReferenceItem->'%(AssemblyCachePath)')" />
+        </ItemGroup>
+    </Target>
+
 </Project>

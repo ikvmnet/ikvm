@@ -114,4 +114,8 @@
         
     </Target>
 
+    <Target Name="GetPackageOutputPath" DependsOnTargets="_GetAbsoluteOutputPathsForPack" Returns="$(PackageOutputAbsolutePath)">
+        
+    </Target>
+
 </Project>

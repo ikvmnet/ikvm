@@ -3,10 +3,11 @@
         <TaskFolder Condition=" '$(MSBuildRuntimeType)' == 'Core' ">netcoreapp3.1</TaskFolder>
         <TaskFolder Condition=" '$(MSBuildRuntimeType)' != 'Core' ">net461</TaskFolder>
         <TaskAssembly>$(MSBuildThisFileDirectory)..\..\tasks\$(TaskFolder)\IKVM.Sdk.dll</TaskAssembly>
-        <ToolFramework Condition="IsTargetFrameworkCompatible('$(TargetFramework)', 'net461')">net461</ToolFramework>
-        <ToolFramework Condition="IsTargetFrameworkCompatible('$(TargetFramework)', 'netcoreapp3.1')">netcoreapp3.1</ToolFramework>
+        <ToolFramework Condition="$([MSBuild]::IsTargetFrameworkCompatible('$(TargetFramework)', 'net461'))">net461</ToolFramework>
+        <ToolFramework Condition="$([MSBuild]::IsTargetFrameworkCompatible('$(TargetFramework)', 'netcoreapp3.1'))">netcoreapp3.1</ToolFramework>
         <ToolFolder>$(ToolFramework)</ToolFolder>
         <ToolPath>$(MSBuildThisFileDirectory)..\..\tools\$(ToolFolder)\</ToolPath>
+        <IkvmRuntimeDll>$(ToolPath)IKVM.Runtime.dll</IkvmRuntimeDll>
     </PropertyGroup>
 
     <PropertyGroup Condition=" '$(ToolFramework)' == 'net461' ">
@@ -22,4 +23,16 @@
     </PropertyGroup>
 
     <UsingTask TaskName="IKVM.Sdk.Tasks.IkvmCompilerTask" AssemblyFile="$(TaskAssembly)" />
+
+    <PropertyGroup>
+        <JavaAssemblyStageDir>$(IntermediateOutputPath)ikvm-stage</JavaAssemblyStageDir>
+        <JavaAssemblyCacheDir>$(IntermediateOutputPath)ikvm-cache</JavaAssemblyCacheDir>
+    </PropertyGroup>
+
+    <ItemDefinitionGroup>
+        <JavaReference>
+            <AssemblyName></AssemblyName>
+            <AssemblyVersion></AssemblyVersion>
+        </JavaReference>
+    </ItemDefinitionGroup>
 </Project>

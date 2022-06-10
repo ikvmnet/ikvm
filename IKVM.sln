@@ -63,9 +63,11 @@ Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "IKVM.Tests.Util", "src\IKVM
 EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "ikvmstub.Tests", "src\ikvmstub.Tests\ikvmstub.Tests.csproj", "{EB7B5899-14D0-4B5A-980A-4AC06DF5975F}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "IKVM.Sdk", "src\IKVM.Sdk\IKVM.Sdk.csproj", "{037DB17C-0AF9-40F7-AC2E-9A7D816847D1}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "IKVM.Sdk", "src\IKVM.Sdk\IKVM.Sdk.csproj", "{037DB17C-0AF9-40F7-AC2E-9A7D816847D1}"
 EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "IKVM.Sdk.Maven", "src\IKVM.Sdk.Maven\IKVM.Sdk.Maven.csproj", "{E352BF1F-C061-48A1-AAFC-36170C45D3B7}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "IKVM.Sdk.Tests", "src\IKVM.Sdk.Tests\IKVM.Sdk.Tests.csproj", "{46E173A7-3D20-4FCF-B32A-71EA7C571D82}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
@@ -341,6 +343,18 @@ Global
 		{E352BF1F-C061-48A1-AAFC-36170C45D3B7}.Release|x64.Build.0 = Release|Any CPU
 		{E352BF1F-C061-48A1-AAFC-36170C45D3B7}.Release|x86.ActiveCfg = Release|Any CPU
 		{E352BF1F-C061-48A1-AAFC-36170C45D3B7}.Release|x86.Build.0 = Release|Any CPU
+		{46E173A7-3D20-4FCF-B32A-71EA7C571D82}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{46E173A7-3D20-4FCF-B32A-71EA7C571D82}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{46E173A7-3D20-4FCF-B32A-71EA7C571D82}.Debug|x64.ActiveCfg = Debug|Any CPU
+		{46E173A7-3D20-4FCF-B32A-71EA7C571D82}.Debug|x64.Build.0 = Debug|Any CPU
+		{46E173A7-3D20-4FCF-B32A-71EA7C571D82}.Debug|x86.ActiveCfg = Debug|Any CPU
+		{46E173A7-3D20-4FCF-B32A-71EA7C571D82}.Debug|x86.Build.0 = Debug|Any CPU
+		{46E173A7-3D20-4FCF-B32A-71EA7C571D82}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{46E173A7-3D20-4FCF-B32A-71EA7C571D82}.Release|Any CPU.Build.0 = Release|Any CPU
+		{46E173A7-3D20-4FCF-B32A-71EA7C571D82}.Release|x64.ActiveCfg = Release|Any CPU
+		{46E173A7-3D20-4FCF-B32A-71EA7C571D82}.Release|x64.Build.0 = Release|Any CPU
+		{46E173A7-3D20-4FCF-B32A-71EA7C571D82}.Release|x86.ActiveCfg = Release|Any CPU
+		{46E173A7-3D20-4FCF-B32A-71EA7C571D82}.Release|x86.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
