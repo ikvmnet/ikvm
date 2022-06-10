@@ -1,6 +1,6 @@
 ﻿<Project Sdk="Microsoft.NET.Sdk">
     <PropertyGroup>
-        <TargetFrameworks>net472;netcoreapp3.1;net5.0;net6.0</TargetFrameworks>
+        <TargetFrameworks>net472;netcoreapp3.1</TargetFrameworks>
     </PropertyGroup>
 
     <ItemGroup>
@@ -13,9 +13,9 @@
     </ItemGroup>
 
     <ItemGroup>
-        <JavaReference Include="C:\Program Files\Java\jre1.8.0_301\lib\ext\zipfs.jar">
-            <AssemblyName>zipfs</AssemblyName>
-            <AssemblyVersion>1.0.0.0</AssemblyVersion>
+        <JavaReference Include="helloworld-2.0.jar">
+            <AssemblyName>helloworld-2.0</AssemblyName>
+            <AssemblyVersion>2.0.0.0</AssemblyVersion>
         </JavaReference>
     </ItemGroup>
 </Project>

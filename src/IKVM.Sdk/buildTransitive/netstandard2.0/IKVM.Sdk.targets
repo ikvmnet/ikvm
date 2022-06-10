@@ -2,7 +2,7 @@
 
     <PropertyGroup>
         <JavaAssemblyStageDir Condition=" '$(JavaAssemblyStageDir)' == '' ">$(IntermediateOutputPath)ikvm-stage\</JavaAssemblyStageDir>
-        <JavaAssemblyCacheDir Condition=" '$(JavaAssemblyCacheDir)' == '' ">$(IntermediateOutputPath)ikvm-cache\</JavaAssemblyCacheDir>
+        <JavaAssemblyCacheDir Condition=" '$(JavaAssemblyCacheDir)' == '' ">$(IkvmHomeDir)cache\1\</JavaAssemblyCacheDir>
     </PropertyGroup>
 
     <!-- Transforms the JavaReference item group into JavaReferenceItem items. -->
@@ -49,7 +49,7 @@
             <_IkvmcArgs Include="-w4" />
             <_IkvmcArgs Include="-noparameterreflection" />
             <_IkvmcArgs Include="-nostdlib" />
-            <_IkvmcArgs Include="@(_IkvmcLibs->'-reference:%(FullPath)')" />
+            <_IkvmcArgs Include="@(_IkvmcLibs->'-reference:%(Identity)')" />
             <_IkvmcArgs Include="%(JavaReferenceItems.FullPath)" />
         </ItemGroup>
         <MakeDir Directories="$([System.IO.Path]::GetDirectoryName('%(JavaReferenceItems.AssemblyStagePath)'))" />

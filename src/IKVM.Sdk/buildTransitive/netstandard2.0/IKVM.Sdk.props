@@ -8,6 +8,8 @@
         <ToolFolder>$(ToolFramework)</ToolFolder>
         <ToolPath>$(MSBuildThisFileDirectory)..\..\tools\$(ToolFolder)\</ToolPath>
         <IkvmRuntimeDll>$(ToolPath)IKVM.Runtime.dll</IkvmRuntimeDll>
+        <IkvmUserDir>$([MSBuild]::EnsureTrailingSlash('$([System.Environment]::GetFolderPath(SpecialFolder.UserProfile))'))</IkvmUserDir>
+        <IkvmHomeDir>$(IkvmUserDir).ikvm\</IkvmHomeDir>
     </PropertyGroup>
 
     <PropertyGroup Condition=" '$(ToolFramework)' == 'net461' ">
