@@ -32,6 +32,27 @@
 
     <Import Project="Sdk.targets" Sdk="Microsoft.NET.Sdk" />
 
+    <!-- Generate a file the Tests can use to retrieve various MSBuild properties. -->
+    <Target Name="GeneratePropertiesFile">
+        <ItemGroup>
+            <ProjectProperties Include="PackageVersion=$(PackageVersion)" />
+        </ItemGroup>
+        <WriteLinesToFile File="$(IntermediateOutputPath)$(ProjectName).properties" Lines="@(ProjectProperties)" Overwrite="true" />
+        <ItemGroup>
+            <ContentWithTargetPath Include="$(IntermediateOutputPath)$(ProjectName).properties">
+                <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+                <TargetPath>$(ProjectName).properties</TargetPath>
+            </ContentWithTargetPath>
+        </ItemGroup>
+    </Target>
+
+    <PropertyGroup>
+        <GetCopyToOutputDirectoryItemsDependsOn>
+            GeneratePropertiesFile;
+            $(GetCopyToOutputDirectoryItemsDependsOn);
+        </GetCopyToOutputDirectoryItemsDependsOn>
+    </PropertyGroup>
+
     <Target Name="AssignPackageProjectConfiguration" Condition=" '@(PackageProjectReference)' != '' " Inputs="@(PackageProjectReference)" Outputs="dummy">
         <PropertyGroup>
             <OnlyReferenceAndBuildProjectsEnabledInSolutionConfiguration Condition="'$(OnlyReferenceAndBuildProjectsEnabledInSolutionConfiguration)' == ''">true</OnlyReferenceAndBuildProjectsEnabledInSolutionConfiguration>
@@ -59,7 +80,7 @@
     </Target>
 
     <Target Name="GetProjectReferencePackageOutputPath" DependsOnTargets="AssignPackageProjectConfiguration" Inputs="@(_PackageProjectReferenceWithConfiguration)" Outputs="dummy">
-        <MSBuild Projects="@(_PackageProjectReferenceWithConfiguration)" Targets="Pack;GetPackageOutputPath" BuildInParallel="$(BuildInParallel)" Properties="%(_PackageProjectReferenceWithConfiguration.SetConfiguration);%(_PackageProjectReferenceWithConfiguration.SetPlatform)" RemoveProperties="%(_PackageProjectReferenceWithConfiguration.GlobalPropertiesToRemove);TargetFramework" Condition=" '%(_PackageProjectReferenceWithConfiguration.Identity)' != '' ">
+        <MSBuild Projects="@(_PackageProjectReferenceWithConfiguration)" Targets="_CleanPackageFiles;Pack;GetPackageOutputPath" BuildInParallel="$(BuildInParallel)" Properties="%(_PackageProjectReferenceWithConfiguration.SetConfiguration);%(_PackageProjectReferenceWithConfiguration.SetPlatform)" RemoveProperties="%(_PackageProjectReferenceWithConfiguration.GlobalPropertiesToRemove);TargetFramework" Condition=" '%(_PackageProjectReferenceWithConfiguration.Identity)' != '' ">
             <Output TaskParameter="TargetOutputs" ItemName="_ResolvedPackageOutputPath" />
         </MSBuild>
         <ItemGroup>

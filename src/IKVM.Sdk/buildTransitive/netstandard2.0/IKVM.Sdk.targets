@@ -1,5 +1,10 @@
 ﻿<Project>
 
+    <PropertyGroup>
+        <JavaAssemblyStageDir Condition=" '$(JavaAssemblyStageDir)' == '' ">$(IntermediateOutputPath)ikvm-stage\</JavaAssemblyStageDir>
+        <JavaAssemblyCacheDir Condition=" '$(JavaAssemblyCacheDir)' == '' ">$(IntermediateOutputPath)ikvm-cache\</JavaAssemblyCacheDir>
+    </PropertyGroup>
+
     <!-- Transforms the JavaReference item group into JavaReferenceItem items. -->
     <Target Name="GetJavaReferenceItemsFromJavaReference">
         <ItemGroup>
@@ -21,50 +26,56 @@
     <Target Name="GetJavaReferenceItems" DependsOnTargets="$(GetJavaReferenceItemsDependsOn)" Returns="@(JavaReferenceItems)">
         
     </Target>
-
+    
     <!-- Builds the JavaReferenceItems into their output items within the cache. -->
-    <Target Name="_BuildJavaReferenceAssemblies" DependsOnTargets="GetJavaReferenceItems" Inputs="@(JavaReferenceItems)" Outputs="%(JavaReferenceItems.AssemblyCachePath)" Condition=" '%(JavaReferenceItems.JavaReferenceItems)' != '' ">
+    <Target Name="_BuildJavaReferenceAssemblies" DependsOnTargets="GetJavaReferenceItems;GetReferenceAssemblyPaths;ResolvePackageAssets" Inputs="@(JavaReferenceItems)" Outputs="%(AssemblyCachePath)">
+        <ItemGroup>
+            <!-- there is likely a more appropriate place to obtain the references for the framework -->
+            <_IkvmcLibs Include="@(Reference)" />
+        </ItemGroup>
+        <Message Text="_IkvmcLibs: @(_IkvmcLibs)" />
         <ItemGroup>
             <_IkvmcArgs Include="-debug" Condition=" '$(DebugSymbols)' == 'true' Or '$(DebugType)' != 'none' " />
-            <_IkvmcArgs Include="-assembly:%(AssemblyName)" />
-            <_IkvmcArgs Include="-version:%(AssemblyVersion)" />
+            <_IkvmcArgs Include="-assembly:%(JavaReferenceItems.AssemblyName)" />
+            <_IkvmcArgs Include="-version:%(JavaReferenceItems.AssemblyVersion)" />
             <_IkvmcArgs Include="-runtime:$(IkvmRuntimeDll)" />
             <_IkvmcArgs Include="-compressresources" />
             <_IkvmcArgs Include="-opt:fields" />
             <_IkvmcArgs Include="-strictfinalfieldsemantics" />
             <_IkvmcArgs Include="-removeassertions" />
             <_IkvmcArgs Include="-target:library" />
-            <_IkvmcArgs Include="-nostdlib" />
             <_IkvmcArgs Include="-sharedclassloader" />
             <_IkvmcArgs Include="-nowarn:110" />
             <_IkvmcArgs Include="-w4" />
             <_IkvmcArgs Include="-noparameterreflection" />
-            <_IkvmcArgs Include="@(ReferencePathWithRefAssemblies->Distinct()->'-reference:%(FullPath)')" />
-            <_IkvmcArgs Include="%(Identity->'%(FullPath)')" />
+            <_IkvmcArgs Include="-nostdlib" />
+            <_IkvmcArgs Include="@(_IkvmcLibs->'-reference:%(FullPath)')" />
+            <_IkvmcArgs Include="%(JavaReferenceItems.FullPath)" />
         </ItemGroup>
-        <MakeDir Directories="$([System.IO.Path]::GetDirectoryName('$(AssemblyStagePath)')" />
-        <WriteLinesToFile File="$(AssemblyStagePath).cmd" Lines="@(_IkvmcArgs)" Overwrite="true" />
-        <Exec Command="$(IkvmcToolExec) -out:%(AssemblyStagePath) @$(AssemblyStagePath).cmd" />
+        <MakeDir Directories="$([System.IO.Path]::GetDirectoryName('%(JavaReferenceItems.AssemblyStagePath)'))" />
+        <WriteLinesToFile File="%(JavaReferenceItems.AssemblyStagePath).cmd" Lines="@(_IkvmcArgs)" Overwrite="true" />
+        <Exec Command="$(IkvmcToolExec) -out:%(JavaReferenceItems.AssemblyStagePath) @%(JavaReferenceItems.AssemblyStagePath).cmd" />
 
-        <MakeDir Directories="$([System.IO.Path]::GetDirectoryName('$(AssemblyCachePath)')" />
-        <Copy SourceFiles="%(AssemblyStagePath)" DestinationFiles="%(AssemblyCachePath)" OverwriteReadOnlyFiles="true" />
+        <MakeDir Directories="$([System.IO.Path]::GetDirectoryName('%(JavaReferenceItems.AssemblyCachePath)'))" />
+        <Copy SourceFiles="%(JavaReferenceItems.AssemblyStagePath)" DestinationFiles="%(JavaReferenceItems.AssemblyCachePath)" OverwriteReadOnlyFiles="true" />
     </Target>
 
     <PropertyGroup>
-        <BuildJavaAssemblyReferencesDependsOn>
-            $(BuildJavaAssemblyReferencesDependsOn);
+        <BuildJavaReferenceAssembliesDependsOn>
+            $(BuildJavaReferenceAssembliesDependsOn);
             GetJavaReferenceItems;
+            GetReferenceAssemblyPaths;
             _BuildJavaReferenceAssemblies;
-        </BuildJavaAssemblyReferencesDependsOn>
+        </BuildJavaReferenceAssembliesDependsOn>
     </PropertyGroup>
 
-    <Target Name="BuildJavaAssemblyReferences" DependsOnTargets="$(BuildJavaAssemblyReferencesDependsOn)">
+    <Target Name="BuildJavaReferenceAssemblies" DependsOnTargets="$(BuildJavaReferenceAssembliesDependsOn)">
 
     </Target>
 
-    <Target Name="ResolveJavaAssemblyReferences" DependsOnTargets="BuildJavaAssemblyReferences" BeforeTargets="ResolveAssemblyReferences">
+    <Target Name="ResolveJavaReferenceAssemblies" DependsOnTargets="BuildJavaReferenceAssemblies" BeforeTargets="ResolveAssemblyReferences">
         <ItemGroup>
-            <Reference Include="@(JavaReferenceItem->'%(AssemblyCachePath)')" />
+            <ReferencePath Include="@(JavaReferenceItem->'%(AssemblyCachePath)')" />
         </ItemGroup>
     </Target>
 

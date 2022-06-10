@@ -24,11 +24,6 @@
 
     <UsingTask TaskName="IKVM.Sdk.Tasks.IkvmCompilerTask" AssemblyFile="$(TaskAssembly)" />
 
-    <PropertyGroup>
-        <JavaAssemblyStageDir>$(IntermediateOutputPath)ikvm-stage</JavaAssemblyStageDir>
-        <JavaAssemblyCacheDir>$(IntermediateOutputPath)ikvm-cache</JavaAssemblyCacheDir>
-    </PropertyGroup>
-
     <ItemDefinitionGroup>
         <JavaReference>
             <AssemblyName></AssemblyName>

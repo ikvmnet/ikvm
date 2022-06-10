@@ -1,5 +1,6 @@
 ﻿using System;
 using System.IO;
+using System.Linq;
 
 using Buildalyzer;
 
@@ -46,6 +47,8 @@ namespace IKVM.Sdk.Tests
         [TestMethod]
         public void Can_build_test_project()
         {
+            var properties = File.ReadAllLines("IKVM.Sdk.Tests.properties").Select(i => i.Split('=', 2)).ToDictionary(i => i[0], i => i[1]);
+
             var nugetPackageRoot = Path.Combine(Path.GetTempPath(), "IKVM.Sdk.Tests", "nuget", "packages");
             if (Directory.Exists(nugetPackageRoot))
                 Directory.Delete(nugetPackageRoot, true);
@@ -55,6 +58,7 @@ namespace IKVM.Sdk.Tests
             var analyzer = manager.GetProject(Path.Combine(@"Project", "Project.csproj"));
             analyzer.SetGlobalProperty("RestoreAdditionalProjectSources", Path.GetFullPath(@"nuget"));
             analyzer.SetGlobalProperty("RestorePackagesPath", nugetPackageRoot + Path.DirectorySeparatorChar);
+            analyzer.SetGlobalProperty("PackageVersion", properties["PackageVersion"]);
             analyzer.AddBuildLogger(new TargetLogger(TestContext));
             var results = analyzer.Build();
             results.OverallSuccess.Should().Be(true);
