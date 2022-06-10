@@ -51,6 +51,9 @@ namespace ikvmstub
 
         public static int Main(string[] args)
         {
+#if NETCOREAPP3_1_OR_GREATER
+            System.Text.Encoding.RegisterProvider(System.Text.CodePagesEncodingProvider.Instance);
+#endif
             IKVM.Internal.Tracer.EnableTraceConsoleListener();
             IKVM.Internal.Tracer.EnableTraceForDebug();
             string assemblyNameOrPath = null;

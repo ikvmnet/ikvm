@@ -94,6 +94,9 @@ public static class Starter
 	[IKVM.Attributes.HideFromJava]
 	static int Main(string[] args)
 	{
+#if NETCOREAPP3_1_OR_GREATER
+		System.Text.Encoding.RegisterProvider(System.Text.CodePagesEncodingProvider.Instance);
+#endif
 		Tracer.EnableTraceConsoleListener();
 		Tracer.EnableTraceForDebug();
 		System.Collections.Hashtable props = new System.Collections.Hashtable();

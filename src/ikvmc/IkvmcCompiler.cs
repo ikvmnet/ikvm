@@ -101,6 +101,9 @@ namespace ikvmc
 
         public static int Main(string[] args)
         {
+#if NETCOREAPP3_1_OR_GREATER
+            System.Text.Encoding.RegisterProvider(System.Text.CodePagesEncodingProvider.Instance);
+#endif
             DateTime start = DateTime.Now;
             System.Threading.Thread.CurrentThread.Name = "compiler";
             Tracer.EnableTraceConsoleListener();
