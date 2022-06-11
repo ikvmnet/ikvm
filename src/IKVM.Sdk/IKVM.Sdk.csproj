@@ -22,9 +22,7 @@
     </ItemGroup>
 
     <ItemGroup>
-        <ProjectReference Include="..\IKVM-pkg\IKVM-pkg.csproj">
-            <IncludeAssets>none</IncludeAssets>
-        </ProjectReference>
+        <ProjectReference Include="..\IKVM-pkg\IKVM-pkg.csproj" />
     </ItemGroup>
 
     <ItemGroup>

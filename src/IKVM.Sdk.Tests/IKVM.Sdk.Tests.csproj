@@ -20,14 +20,14 @@
     </ItemGroup>
 
     <ItemGroup>
+        <PackageProjectReference Include="..\IKVM-pkg\IKVM-pkg.csproj" />
         <PackageProjectReference Include="..\IKVM.Sdk\IKVM.Sdk.csproj" />
         <PackageProjectReference Include="..\IKVM.Sdk.Maven\IKVM.Sdk.Maven.csproj" />
     </ItemGroup>
 
     <ItemGroup>
-        <None Include="Project\**\*">
-            <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
-        </None>
+        <Compile Remove="Project\**\*" />
+        <None Include="Project\**\*" CopyToOutputDirectory="PreserveNewest" />
     </ItemGroup>
 
     <Import Project="Sdk.targets" Sdk="Microsoft.NET.Sdk" />
@@ -61,21 +61,9 @@
             <AddSyntheticProjectReferencesForSolutionDependencies Condition="'$(AddSyntheticProjectReferencesForSolutionDependencies)' == '' and '$(TargetFrameworkIdentifier)' == 'Silverlight'">false</AddSyntheticProjectReferencesForSolutionDependencies>
             <AddSyntheticProjectReferencesForSolutionDependencies Condition="'$(AddSyntheticProjectReferencesForSolutionDependencies)' == '' and '$(BuildingInsideVisualStudio)' != 'true'">true</AddSyntheticProjectReferencesForSolutionDependencies>
         </PropertyGroup>
-        <AssignProjectConfiguration
-            ProjectReferences="@(PackageProjectReference)"
-            CurrentProject="$(MSBuildProjectFullPath)"
-            CurrentProjectConfiguration="$(Configuration)"
-            CurrentProjectPlatform="$(Platform)"
-            DefaultToVcxPlatformMapping="$(DefaultToVcxPlatformMapping)"
-            VcxToDefaultPlatformMapping="$(VcxToDefaultPlatformMapping)"
-            OutputType="$(OutputType)"
-            ResolveConfigurationPlatformUsingMappings="false"
-            SolutionConfigurationContents="$(CurrentSolutionConfigurationContents)"
-            AddSyntheticProjectReferencesForSolutionDependencies="$(AddSyntheticProjectReferencesForSolutionDependencies)"
-            OnlyReferenceAndBuildProjectsEnabledInSolutionConfiguration = "$(OnlyReferenceAndBuildProjectsEnabledInSolutionConfiguration)"
-            ShouldUnsetParentConfigurationAndPlatform = "$(ShouldUnsetParentConfigurationAndPlatform)" >
-            <Output TaskParameter="AssignedProjects" ItemName="_PackageProjectReferenceWithConfiguration"/>
-            <Output TaskParameter="UnassignedProjects" ItemName="_PackageProjectReferenceWithConfiguration"/>
+        <AssignProjectConfiguration ProjectReferences="@(PackageProjectReference)" CurrentProject="$(MSBuildProjectFullPath)" CurrentProjectConfiguration="$(Configuration)" CurrentProjectPlatform="$(Platform)" DefaultToVcxPlatformMapping="$(DefaultToVcxPlatformMapping)" VcxToDefaultPlatformMapping="$(VcxToDefaultPlatformMapping)" OutputType="$(OutputType)" ResolveConfigurationPlatformUsingMappings="false" SolutionConfigurationContents="$(CurrentSolutionConfigurationContents)" AddSyntheticProjectReferencesForSolutionDependencies="$(AddSyntheticProjectReferencesForSolutionDependencies)" OnlyReferenceAndBuildProjectsEnabledInSolutionConfiguration="$(OnlyReferenceAndBuildProjectsEnabledInSolutionConfiguration)" ShouldUnsetParentConfigurationAndPlatform="$(ShouldUnsetParentConfigurationAndPlatform)">
+            <Output TaskParameter="AssignedProjects" ItemName="_PackageProjectReferenceWithConfiguration" />
+            <Output TaskParameter="UnassignedProjects" ItemName="_PackageProjectReferenceWithConfiguration" />
         </AssignProjectConfiguration>
     </Target>
 

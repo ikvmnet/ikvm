@@ -3,6 +3,7 @@ using System.IO;
 using System.Linq;
 
 using Buildalyzer;
+using Buildalyzer.Environment;
 
 using FluentAssertions;
 
@@ -60,8 +61,13 @@ namespace IKVM.Sdk.Tests
             analyzer.SetGlobalProperty("RestorePackagesPath", nugetPackageRoot + Path.DirectorySeparatorChar);
             analyzer.SetGlobalProperty("PackageVersion", properties["PackageVersion"]);
             analyzer.AddBuildLogger(new TargetLogger(TestContext));
-            var results = analyzer.Build();
+            var options = new EnvironmentOptions();
+            options.DesignTime = false;
+            var results = analyzer.Build(options);
             results.OverallSuccess.Should().Be(true);
+
+            foreach (var r in results.Results)
+                Console.WriteLine(r);
         }
 
     }

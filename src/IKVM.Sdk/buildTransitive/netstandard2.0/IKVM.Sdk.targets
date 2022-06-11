@@ -24,14 +24,14 @@
 
     <!-- Assembles the set of JavaReferenceItems from various sources. -->
     <Target Name="GetJavaReferenceItems" DependsOnTargets="$(GetJavaReferenceItemsDependsOn)" Returns="@(JavaReferenceItems)">
-        
+
     </Target>
-    
+
     <!-- Builds the JavaReferenceItems into their output items within the cache. -->
     <Target Name="_BuildJavaReferenceAssemblies" DependsOnTargets="GetJavaReferenceItems;GetReferenceAssemblyPaths;ResolvePackageAssets" Inputs="@(JavaReferenceItems)" Outputs="%(AssemblyCachePath)">
         <ItemGroup>
             <!-- there is likely a more appropriate place to obtain the references for the framework -->
-            <_IkvmcLibs Include="@(Reference)" />
+            <_IkvmcLibs Include="@(Reference);@(JavaAssemblyReference)" />
         </ItemGroup>
         <Message Text="_IkvmcLibs: @(_IkvmcLibs)" />
         <ItemGroup>
@@ -58,6 +58,12 @@
 
         <MakeDir Directories="$([System.IO.Path]::GetDirectoryName('%(JavaReferenceItems.AssemblyCachePath)'))" />
         <Copy SourceFiles="%(JavaReferenceItems.AssemblyStagePath)" DestinationFiles="%(JavaReferenceItems.AssemblyCachePath)" OverwriteReadOnlyFiles="true" />
+
+        <ItemGroup>
+            <JavaAssemblyReference Include="%(JavaReferenceItems.AssemblyCachePath)" Condition=" '%(JavaReferenceItems.AssemblyCachePath)' != '' ">
+                <HintPath>%(JavaReferenceItems.AssemblyCachePath)</HintPath>
+            </JavaAssemblyReference>
+        </ItemGroup>
     </Target>
 
     <PropertyGroup>
@@ -75,7 +81,9 @@
 
     <Target Name="ResolveJavaReferenceAssemblies" DependsOnTargets="BuildJavaReferenceAssemblies" BeforeTargets="ResolveAssemblyReferences">
         <ItemGroup>
-            <ReferencePath Include="@(JavaReferenceItem->'%(AssemblyCachePath)')" />
+            <Reference Include="@(JavaAssemblyReference)">
+                <HintPath>%(JavaAssemblyReference.HintPath)</HintPath>
+            </Reference>
         </ItemGroup>
     </Target>
 

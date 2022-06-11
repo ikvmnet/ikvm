@@ -1,12 +1,15 @@
-﻿<Project Sdk="Microsoft.NET.Sdk">
+﻿<Project>
     <PropertyGroup>
+        <ImportDirectoryBuildProps>false</ImportDirectoryBuildProps>
+        <ImportDirectoryBuildTargets>false</ImportDirectoryBuildTargets>
+    </PropertyGroup>
+    
+    <Import Project="Sdk.props" Sdk="Microsoft.NET.Sdk" />
+    
+    <PropertyGroup>
+        <OutputType>Exe</OutputType>
         <TargetFrameworks>net472;netcoreapp3.1</TargetFrameworks>
     </PropertyGroup>
-
-    <ItemGroup>
-        <Reference Remove="@(Reference)" />
-        <PackageReference Remove="@(PackageReference)" />
-    </ItemGroup>
 
     <ItemGroup>
         <PackageReference Include="IKVM.Sdk" Version="$(PackageVersion)" />
@@ -18,4 +21,6 @@
             <AssemblyVersion>2.0.0.0</AssemblyVersion>
         </JavaReference>
     </ItemGroup>
+
+    <Import Project="Sdk.targets" Sdk="Microsoft.NET.Sdk" />
 </Project>
