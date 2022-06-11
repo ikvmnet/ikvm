@@ -334,7 +334,7 @@ namespace IKVM.Sdk.Tasks
                 cli = cli.WithValidation(CommandResultValidation.None);
 
                 // send output to MSBuild
-                cli = cli.WithStandardErrorPipe(PipeTarget.ToDelegate(i => Log.LogError(i)));
+                cli = cli.WithStandardErrorPipe(PipeTarget.ToDelegate(i => Log.LogMessage(i)));
                 cli = cli.WithStandardOutputPipe(PipeTarget.ToDelegate(i => Log.LogMessage(i)));
 
                 // combine manual cancellation with timeout

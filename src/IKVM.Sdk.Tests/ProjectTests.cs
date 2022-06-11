@@ -63,6 +63,7 @@ namespace IKVM.Sdk.Tests
             analyzer.AddBuildLogger(new TargetLogger(TestContext));
             var options = new EnvironmentOptions();
             options.DesignTime = false;
+            options.TargetsToBuild.Clear();
             options.TargetsToBuild.Add("Clean");
             options.TargetsToBuild.Add("Build");
             var results = analyzer.Build(options);
