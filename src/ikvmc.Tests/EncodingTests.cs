@@ -1,14 +1,19 @@
 ﻿using Microsoft.VisualStudio.TestTools.UnitTesting;
 using System;
-using System.Collections.Generic;
-using System.Linq;
 using System.Text;
-using System.Threading.Tasks;
 
 namespace ikvmc.Tests
 {
+    [TestClass]
     public class EncodingTests
     {
+        [ClassInitialize]
+        public static void ClassInitialize(TestContext context)
+        {
+            // Load our encoding providers
+            IkvmcCompiler.Main(new string[] { "-help" });
+        }
+
         [TestMethod]
         public void Should_load_encoding_Windows1252()
         {

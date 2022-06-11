@@ -2,7 +2,7 @@
 using System;
 using System.Text;
 
-namespace ikvmstub.Tests
+namespace ikvm.console.Tests
 {
     [TestClass]
     public class EncodingTests
@@ -11,7 +11,7 @@ namespace ikvmstub.Tests
         public static void ClassInitialize(TestContext context)
         {
             // Load our encoding providers
-            Program.Main(new string[] { "-help" });
+            Starter.Main(new string[] { "-help" });
         }
 
         [TestMethod]

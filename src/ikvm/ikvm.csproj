@@ -11,6 +11,10 @@
     </PropertyGroup>
 
     <ItemGroup>
+        <InternalsVisibleTo Include="ikvm.console.Tests" />
+    </ItemGroup>
+
+    <ItemGroup>
         <ProjectReference Include="..\IKVM.Java\IKVM.Java.csproj">
             <PrivateAssets>All</PrivateAssets>
         </ProjectReference>

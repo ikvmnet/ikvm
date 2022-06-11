@@ -92,7 +92,7 @@ public static class Starter
 
 	[STAThread]	// NOTE this is here because otherwise SWT's RegisterDragDrop (a COM thing) doesn't work
 	[IKVM.Attributes.HideFromJava]
-	static int Main(string[] args)
+	internal static int Main(string[] args)
 	{
 #if NETCOREAPP3_1_OR_GREATER
 		System.Text.Encoding.RegisterProvider(System.Text.CodePagesEncodingProvider.Instance);
