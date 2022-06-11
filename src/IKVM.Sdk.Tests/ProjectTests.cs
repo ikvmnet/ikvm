@@ -15,7 +15,7 @@ namespace IKVM.Sdk.Tests
 {
 
     [TestClass]
-    public class BuildTests
+    public class ProjectTests
     {
 
         /// <summary>
@@ -56,13 +56,15 @@ namespace IKVM.Sdk.Tests
             Directory.CreateDirectory(nugetPackageRoot);
 
             var manager = new AnalyzerManager();
-            var analyzer = manager.GetProject(Path.Combine(@"Project", "Project.csproj"));
+            var analyzer = manager.GetProject(Path.Combine(@"Project", "Exe", "ProjectExe.csproj"));
             analyzer.SetGlobalProperty("RestoreAdditionalProjectSources", Path.GetFullPath(@"nuget"));
             analyzer.SetGlobalProperty("RestorePackagesPath", nugetPackageRoot + Path.DirectorySeparatorChar);
             analyzer.SetGlobalProperty("PackageVersion", properties["PackageVersion"]);
             analyzer.AddBuildLogger(new TargetLogger(TestContext));
             var options = new EnvironmentOptions();
             options.DesignTime = false;
+            options.TargetsToBuild.Add("Clean");
+            options.TargetsToBuild.Add("Build");
             var results = analyzer.Build(options);
             results.OverallSuccess.Should().Be(true);
 

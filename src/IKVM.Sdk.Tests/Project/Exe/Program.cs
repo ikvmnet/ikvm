@@ -2,7 +2,9 @@
 using System.Collections.Generic;
 using System.Text;
 
-namespace IKVM.Sdk.Tests.Project
+using IKVM.Sdk.Tests.Project.Lib;
+
+namespace IKVM.Sdk.Tests.Project.Exe
 {
 
     public static class Program
@@ -10,7 +12,7 @@ namespace IKVM.Sdk.Tests.Project
 
         public static void Main(string[] args)
         {
-            Console.WriteLine(new sample.HelloworldImpl().sayHello("Bob"));
+            Console.WriteLine(Helloworld.SayHello(args[0]));
         }
 
     }

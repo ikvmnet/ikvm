@@ -28,34 +28,31 @@
     </Target>
 
     <!-- Builds the JavaReferenceItems into their output items within the cache. -->
-    <Target Name="_BuildJavaReferenceAssemblies" DependsOnTargets="GetJavaReferenceItems;GetReferenceAssemblyPaths;ResolvePackageAssets" Inputs="@(JavaReferenceItems)" Outputs="%(AssemblyCachePath)">
+    <Target Name="_BuildJavaReferenceAssemblies" DependsOnTargets="GetJavaReferenceItems;GetReferenceAssemblyPaths;ResolvePackageAssets" Inputs="@(JavaReferenceItems)" Outputs="dummy">
         <ItemGroup>
-            <!-- there is likely a more appropriate place to obtain the references for the framework -->
-            <_IkvmcLibs Include="@(Reference);@(JavaAssemblyReference)" />
+            <_IkvmcReferences Remove="@(_IkvmcReferences)" />
+            <_IkvmcReferences Include="@(Reference);@(JavaAssemblyReference)" />
         </ItemGroup>
-        <Message Text="_IkvmcLibs: @(_IkvmcLibs)" />
-        <ItemGroup>
-            <_IkvmcArgs Include="-debug" Condition=" '$(DebugSymbols)' == 'true' Or '$(DebugType)' != 'none' " />
-            <_IkvmcArgs Include="-assembly:%(JavaReferenceItems.AssemblyName)" />
-            <_IkvmcArgs Include="-version:%(JavaReferenceItems.AssemblyVersion)" />
-            <_IkvmcArgs Include="-runtime:$(IkvmRuntimeDll)" />
-            <_IkvmcArgs Include="-compressresources" />
-            <_IkvmcArgs Include="-opt:fields" />
-            <_IkvmcArgs Include="-strictfinalfieldsemantics" />
-            <_IkvmcArgs Include="-removeassertions" />
-            <_IkvmcArgs Include="-target:library" />
-            <_IkvmcArgs Include="-sharedclassloader" />
-            <_IkvmcArgs Include="-nowarn:110" />
-            <_IkvmcArgs Include="-w4" />
-            <_IkvmcArgs Include="-noparameterreflection" />
-            <_IkvmcArgs Include="-nostdlib" />
-            <_IkvmcArgs Include="@(_IkvmcLibs->'-reference:%(Identity)')" />
-            <_IkvmcArgs Include="%(JavaReferenceItems.FullPath)" />
-        </ItemGroup>
+        <PropertyGroup>
+            <_IkvmcNoStdLib Condition=" '$(IkvmToolFramework)' == 'netcoreapp3.1' ">true</_IkvmcNoStdLib>
+        </PropertyGroup>
+        
         <MakeDir Directories="$([System.IO.Path]::GetDirectoryName('%(JavaReferenceItems.AssemblyStagePath)'))" />
-        <WriteLinesToFile File="%(JavaReferenceItems.AssemblyStagePath).cmd" Lines="@(_IkvmcArgs)" Overwrite="true" />
-        <Exec Command="$(IkvmcToolExec) -out:%(JavaReferenceItems.AssemblyStagePath) @%(JavaReferenceItems.AssemblyStagePath).cmd" />
-
+        <IkvmCompiler
+            ResponseFile="C:\Users\jhaltom\ikvmc.$(TargetFramework).txt"
+            ToolPath="$(IkvmcTool)"
+            UseDotNetExec="$(IkvmUseDotNetExec)"
+            Output="%(JavaReferenceItems.AssemblyStagePath)"
+            Debug="%(JavaReferenceItems.Debug)"
+            Assembly="%(JavaReferenceItems.AssemblyName)"
+            Version="%(JavaReferenceItems.AssemblyVersion)"
+            Runtime="$(IkvmRuntimeDll)"
+            CompressResources="true"
+            Target="library"
+            NoStdLib="$(_IkvmcNoStdLib)"
+            References="@(_IkvmcReferences)"
+            Input="%(JavaReferenceItems.FullPath)" />
+        
         <MakeDir Directories="$([System.IO.Path]::GetDirectoryName('%(JavaReferenceItems.AssemblyCachePath)'))" />
         <Copy SourceFiles="%(JavaReferenceItems.AssemblyStagePath)" DestinationFiles="%(JavaReferenceItems.AssemblyCachePath)" OverwriteReadOnlyFiles="true" />
 
