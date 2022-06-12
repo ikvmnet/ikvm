@@ -50,7 +50,7 @@ namespace IKVM.Sdk.Tests
         {
             var properties = File.ReadAllLines("IKVM.Sdk.Tests.properties").Select(i => i.Split('=', 2)).ToDictionary(i => i[0], i => i[1]);
 
-            var nugetPackageRoot = Path.Combine(Path.GetTempPath(), "IKVM.Sdk.Tests", "nuget", "packages");
+            var nugetPackageRoot = Path.Combine(Environment.CurrentDirectory, "nuget-packages");
             if (Directory.Exists(nugetPackageRoot))
                 Directory.Delete(nugetPackageRoot, true);
             Directory.CreateDirectory(nugetPackageRoot);

@@ -1,14 +1,13 @@
 ﻿<Project TreatAsLocalProperty="TaskFolder;TaskAssembly">
     <PropertyGroup>
-        <TaskFolder Condition=" '$(MSBuildRuntimeType)' == 'Core' ">netcoreapp3.1</TaskFolder>
-        <TaskFolder Condition=" '$(MSBuildRuntimeType)' != 'Core' ">net461</TaskFolder>
-        <TaskAssembly>$(MSBuildThisFileDirectory)..\..\tasks\$(TaskFolder)\IKVM.Sdk.dll</TaskAssembly>
+        <TaskFolder Condition=" '$(MSBuildRuntimeType)' == 'Core' ">net6.0</TaskFolder>
+        <TaskFolder Condition=" '$(MSBuildRuntimeType)' != 'Core' ">net472</TaskFolder>
+        <TaskAssembly>$(MSBuildThisFileDirectory)..\..\tasks\$(TaskFolder)\IKVM.Sdk.Tasks.dll</TaskAssembly>
         <IkvmToolFramework Condition="$([MSBuild]::IsTargetFrameworkCompatible('$(TargetFramework)', 'netstandard1.0'))">netcoreapp3.1</IkvmToolFramework>
         <IkvmToolFramework Condition="$([MSBuild]::IsTargetFrameworkCompatible('$(TargetFramework)', 'net461'))">net461</IkvmToolFramework>
         <IkvmToolFramework Condition="$([MSBuild]::IsTargetFrameworkCompatible('$(TargetFramework)', 'netcoreapp3.1'))">netcoreapp3.1</IkvmToolFramework>
         <IkvmToolFolder>$(IkvmToolFramework)</IkvmToolFolder>
         <IkvmToolPath>$([System.IO.Path]::GetFullPath('$(MSBuildThisFileDirectory)..\..\tools\$(IkvmToolFolder)\'))</IkvmToolPath>
-        <IkvmRuntimeDll>$([System.IO.Path]::GetFullPath('$(IkvmToolPath)IKVM.Runtime.dll'))</IkvmRuntimeDll>
         <IkvmUserDir>$([MSBuild]::EnsureTrailingSlash('$([System.Environment]::GetFolderPath(SpecialFolder.UserProfile))'))</IkvmUserDir>
         <IkvmHomeDir>$(IkvmUserDir).ikvm\</IkvmHomeDir>
         <IkvmUseDotNetExec>false</IkvmUseDotNetExec>

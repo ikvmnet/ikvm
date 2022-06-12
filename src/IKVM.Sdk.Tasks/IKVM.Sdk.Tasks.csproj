@@ -1,0 +1,26 @@
+﻿<Project Sdk="Microsoft.NET.Sdk">
+
+    <PropertyGroup>
+        <TargetFrameworks>net472;net6.0</TargetFrameworks>
+    </PropertyGroup>
+
+    <ItemGroup>
+        <InternalsVisibleTo Include="IKVM.Sdk.Tests" />
+    </ItemGroup>
+
+    <ItemGroup>
+        <Reference Remove="@(Reference)" />
+        <PackageReference Remove="@(PackageReference)" />
+    </ItemGroup>
+
+    <ItemGroup>
+        <PackageReference Include="CliWrap" Version="3.4.4" />
+        <PackageReference Include="Microsoft.Build" Version="17.2.0" />
+        <PackageReference Include="Microsoft.Build.Utilities.Core" Version="17.2.0" />
+    </ItemGroup>
+
+    <ItemGroup>
+        <ProjectReference Include="..\IKVM.Util\IKVM.Util.csproj" />
+    </ItemGroup>
+
+</Project>

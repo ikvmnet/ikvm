@@ -30,13 +30,19 @@ namespace IKVM.Sdk.Tasks
         /// Other references that will be used to generate the assemblies.
         /// </summary>
         [Required]
-        public ITaskItem[] References { get; set; }
+        public string RuntimeAssembly { get; set; }
+
+        /// <summary>
+        /// IKVM tool framework.
+        /// </summary>
+        [Required]
+        public string ToolFramework { get; set; }
 
         /// <summary>
         /// Other references that will be used to generate the assemblies.
         /// </summary>
         [Required]
-        public string RuntimeAssembly { get; set; }
+        public ITaskItem[] References { get; set; }
 
         /// <summary>
         /// Executes the task.
@@ -46,6 +52,8 @@ namespace IKVM.Sdk.Tasks
         {
             if (string.IsNullOrWhiteSpace(RuntimeAssembly))
                 throw new IkvmTaskException("RuntimeAssembly is required.");
+            if (string.IsNullOrWhiteSpace(ToolFramework))
+                throw new IkvmTaskException("ToolFramework is required.");
             if (File.Exists(RuntimeAssembly) == false)
                 throw new FileNotFoundException($"Could not find RuntimeAssembly at '{RuntimeAssembly}'.");
 
@@ -69,8 +77,6 @@ namespace IKVM.Sdk.Tasks
             if (item.GetMetadata(IkvmJavaReferenceItemMetadata.IkvmIdentity) is string id && string.IsNullOrWhiteSpace(id) == false)
                 return id;
 
-            if (item.GetMetadata(IkvmJavaReferenceItemMetadata.ToolFramework) is not string toolFramework)
-                throw new IkvmTaskException($"Item '{item.ItemSpec}' missing ToolFramework value.");
             if (item.GetMetadata(IkvmJavaReferenceItemMetadata.AssemblyName) is not string assemblyName)
                 throw new IkvmTaskException($"Item '{item.ItemSpec}' missing AssemblyName value.");
             if (item.GetMetadata(IkvmJavaReferenceItemMetadata.AssemblyVersion) is not string assemblyVersion)
@@ -79,7 +85,7 @@ namespace IKVM.Sdk.Tasks
                 throw new IkvmTaskException($"Item '{item.ItemSpec}' missing Debug metadata.");
 
             var manifest = new StringWriter();
-            manifest.WriteLine("ToolFramework={0}", toolFramework);
+            manifest.WriteLine("ToolFramework={0}", ToolFramework);
             manifest.WriteLine("AssemblyName={0}", assemblyName);
             manifest.WriteLine("AssemblyVersion={0}", assemblyVersion);
             manifest.WriteLine("Debug={0}", debug);
