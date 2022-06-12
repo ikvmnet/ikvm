@@ -4,7 +4,7 @@
         <TargetFrameworks>net472;netcoreapp3.1</TargetFrameworks>
         <BuildOutputTargetFolder>tasks</BuildOutputTargetFolder>
         <TargetsForTfmSpecificBuildOutput>$(TargetsForTfmSpecificBuildOutput);CopyProjectReferencesToPackage;CopyPackageReferencesToPackage</TargetsForTfmSpecificBuildOutput>
-        <NoWarn>NU5100</NoWarn>
+        <NoWarn>NU5100;NU5128</NoWarn>
     </PropertyGroup>
 
     <ItemGroup>
