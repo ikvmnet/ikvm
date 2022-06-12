@@ -19,6 +19,12 @@
             <AssemblyName>helloworld-2.0</AssemblyName>
             <AssemblyVersion>2.0.0.0</AssemblyVersion>
         </JavaReference>
+        <JavaReference Include="helloworld-2.1.jar">
+            <AssemblyName>helloworld-2.1</AssemblyName>
+            <AssemblyVersion>2.1.0.0</AssemblyVersion>
+            <References>helloworld-2.0.jar</References>
+            <Aliases>helloworld21</Aliases>
+        </JavaReference>
     </ItemGroup>
 
     <Import Project="Sdk.targets" Sdk="Microsoft.NET.Sdk" />

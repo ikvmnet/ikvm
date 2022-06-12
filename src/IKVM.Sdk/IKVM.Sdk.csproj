@@ -1,11 +1,14 @@
 ﻿<Project Sdk="Microsoft.NET.Sdk">
 
     <PropertyGroup>
-        <TargetFrameworks>net461;netcoreapp3.1</TargetFrameworks>
+        <TargetFrameworks>net472;netcoreapp3.1</TargetFrameworks>
         <BuildOutputTargetFolder>tasks</BuildOutputTargetFolder>
         <TargetsForTfmSpecificBuildOutput>$(TargetsForTfmSpecificBuildOutput);CopyProjectReferencesToPackage;CopyPackageReferencesToPackage</TargetsForTfmSpecificBuildOutput>
-        <UserSecretsId>0dba4e07-6efd-4503-9a31-f051741a48ba</UserSecretsId>
     </PropertyGroup>
+
+    <ItemGroup>
+        <InternalsVisibleTo Include="IKVM.Sdk.Tests" />
+    </ItemGroup>
 
     <ItemGroup>
         <Content Include="lib\**\*" PackagePath="lib\%(RecursiveDir)%(Filename)%(Extension)" />
@@ -19,6 +22,7 @@
 
     <ItemGroup>
         <PackageReference Include="CliWrap" Version="3.4.4" PrivateAssets="all" />
+        <PackageReference Include="Microsoft.Build" Version="16.9.0" PrivateAssets="all" />
         <PackageReference Include="Microsoft.Build.Framework" Version="17.2.0" PrivateAssets="all" />
         <PackageReference Include="Microsoft.Build.Tasks.Core" Version="16.9.0" PrivateAssets="all" />
         <PackageReference Include="Microsoft.Build.Utilities.Core" Version="17.2.0" PrivateAssets="all" />
@@ -66,32 +70,6 @@
             <BuildOutputInPackage Include="@(ReferenceCopyLocalPaths-&gt;WithMetadataValue('ReferenceSourceTarget', 'ProjectReference'))" />
         </ItemGroup>
     </Target>
-    
-    <UsingTask TaskName="GetMetadataTask" TaskFactory="RoslynCodeTaskFactory" AssemblyFile="$(MSBuildToolsPath)\Microsoft.Build.Tasks.Core.dll">
-        <ParameterGroup>
-            <Items ParameterType="Microsoft.Build.Framework.ITaskItem[]" Required="true" />
-            <MetadataString Output="true" />
-        </ParameterGroup>
-        <Task>
-            <Using Namespace="System" />
-            <Code Type="Fragment" Language="cs">
-                <![CDATA[
-                var command = new StringBuilder();
-                
-                foreach (var item in Items)
-                {
-                    command.AppendFormat("ItemName={0}\r\n", item);
-                    foreach (string parameter in item.MetadataNames)
-                        command.AppendFormat("  {0}={1}\r\n", parameter, item.GetMetadata(parameter));
-                        
-                    command.AppendFormat("\r\n");
-                }
-                
-                MetadataString = command.ToString();
-      ]]>
-            </Code>
-        </Task>
-    </UsingTask>
 
     <Target DependsOnTargets="ResolveReferences;ResolvePackageAssets" Name="CopyPackageReferencesToPackage">
         <PropertyGroup>
@@ -100,7 +78,6 @@
         <ItemGroup>
             <BuildOutputInPackage Include="@(RuntimeCopyLocalItems)" Condition="$(CopyLocalPackageReferences.Contains(';%(RuntimeCopyLocalItems.NuGetPackageId);'))" />
         </ItemGroup>
-        <Message Text="BuildOutputInPackage: @(BuildOutputInPackage)" />
     </Target>
 
 </Project>

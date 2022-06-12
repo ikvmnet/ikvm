@@ -30,6 +30,11 @@
         <None Include="Project\**\*" CopyToOutputDirectory="PreserveNewest" />
     </ItemGroup>
 
+    <ItemGroup>
+      <ProjectReference Include="..\IKVM.Sdk.Maven\IKVM.Sdk.Maven.csproj" />
+      <ProjectReference Include="..\IKVM.Sdk\IKVM.Sdk.csproj" />
+    </ItemGroup>
+
     <Import Project="Sdk.targets" Sdk="Microsoft.NET.Sdk" />
 
     <!-- Generate a file the Tests can use to retrieve various MSBuild properties. -->

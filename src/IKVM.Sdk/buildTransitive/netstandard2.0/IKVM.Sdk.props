@@ -27,11 +27,17 @@
     </PropertyGroup>
 
     <UsingTask TaskName="IkvmCompiler" AssemblyFile="$(TaskAssembly)" />
+    <UsingTask TaskName="IkvmCalculateMD5" AssemblyFile="$(TaskAssembly)" />
+    <UsingTask TaskName="IkvmAssignJavaReferenceItemMetadata" AssemblyFile="$(TaskAssembly)" />
+    <UsingTask TaskName="IkvmAssignJavaReferenceItemIdentity" AssemblyFile="$(TaskAssembly)" />
 
     <ItemDefinitionGroup>
         <JavaReference>
             <AssemblyName></AssemblyName>
             <AssemblyVersion></AssemblyVersion>
+            <Compile></Compile>
+            <Aliases></Aliases>
+            <References></References>
         </JavaReference>
     </ItemDefinitionGroup>
 </Project>
