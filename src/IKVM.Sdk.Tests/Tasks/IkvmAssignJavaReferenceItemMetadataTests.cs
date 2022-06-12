@@ -16,10 +16,10 @@ namespace IKVM.Sdk.Tests.Tasks
         public void Should_normalize_jar_itemspec()
         {
             var t = new IkvmAssignJavaReferenceItemMetadata();
-            var i1 = new TaskItem(@".\Project\Lib\helloworld-2.0.jar");
+            var i1 = new TaskItem(@".\Project\Lib\helloworld-2.0-1\.\helloworld-2.0.jar");
             t.Items = new[] { i1 };
             t.Execute().Should().BeTrue();
-            i1.ItemSpec.Should().Be(@"Project\Lib\helloworld-2.0.jar");
+            i1.ItemSpec.Should().Be(@"Project\Lib\helloworld-2.0-1\helloworld-2.0.jar");
         }
 
         [TestMethod]
@@ -46,11 +46,11 @@ namespace IKVM.Sdk.Tests.Tasks
         public void Should_add_jar_identity_to_compile()
         {
             var t = new IkvmAssignJavaReferenceItemMetadata();
-            var i1 = new TaskItem(@".\Project\Lib\helloworld-2.0.jar");
+            var i1 = new TaskItem(@".\Project\Lib\helloworld-2.0-1\helloworld-2.0.jar");
             t.Items = new[] { i1 };
             t.Execute().Should().BeTrue();
             var c = i1.GetMetadata(IkvmJavaReferenceItemMetadata.Compile);
-            c.Split(IkvmJavaReferenceItemMetadata.PropertySeperatorChar).Should().Contain(@"Project\Lib\helloworld-2.0.jar");
+            c.Split(IkvmJavaReferenceItemMetadata.PropertySeperatorChar).Should().Contain(@"Project\Lib\helloworld-2.0-1\helloworld-2.0.jar");
         }
 
         [TestMethod]
@@ -68,20 +68,20 @@ namespace IKVM.Sdk.Tests.Tasks
         public void Should_resolve_reference()
         {
             var t = new IkvmAssignJavaReferenceItemMetadata();
-            var i1 = new TaskItem(@".\Project\Lib\helloworld-2.0.jar");
-            var i2 = new TaskItem(@".\Project\Lib\helloworld-2.1.jar");
-            i2.SetMetadata(IkvmJavaReferenceItemMetadata.References, @".\Project\Lib\helloworld-2.0.jar");
+            var i1 = new TaskItem(@".\Project\Lib\helloworld-2.0-1\helloworld-2.0.jar");
+            var i2 = new TaskItem(@".\Project\Lib\helloworld-2.0-2\helloworld-2.0.jar");
+            i2.SetMetadata(IkvmJavaReferenceItemMetadata.References, @".\Project\Lib\helloworld-2.0-1\helloworld-2.0.jar");
             t.Items = new[] { i1, i2 };
             t.Execute().Should().BeTrue();
             var c = i2.GetMetadata(IkvmJavaReferenceItemMetadata.References);
-            c.Split(IkvmJavaReferenceItemMetadata.PropertySeperatorChar).Should().Contain(@"Project\Lib\helloworld-2.0.jar");
+            c.Split(IkvmJavaReferenceItemMetadata.PropertySeperatorChar).Should().Contain(@"Project\Lib\helloworld-2.0-1\helloworld-2.0.jar");
         }
 
         [TestMethod]
         public void Should_get_default_assembly_name_from_jar()
         {
             var t = new IkvmAssignJavaReferenceItemMetadata();
-            var i1 = new TaskItem(@".\Project\Lib\helloworld-2.0.jar");
+            var i1 = new TaskItem(@".\Project\Lib\helloworld-2.0-1\helloworld-2.0.jar");
             t.Items = new[] { i1 };
             t.Execute().Should().BeTrue();
             var c = i1.GetMetadata(IkvmJavaReferenceItemMetadata.AssemblyName);

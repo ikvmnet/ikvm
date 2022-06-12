@@ -47,6 +47,16 @@ namespace IKVM.Util.Jar
         }
 
         /// <summary>
+        /// Initializes a new instance.
+        /// </summary>
+        /// <param name="value"></param>
+        public Manifest(string value) :
+            this(new StringReader(value))
+        {
+
+        }
+
+        /// <summary>
         /// Reads a section of the manifest data in from the reader.
         /// </summary>
         /// <param name="reader"></param>

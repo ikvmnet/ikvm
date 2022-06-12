@@ -1,4 +1,4 @@
-﻿extern alias helloworld21;
+﻿extern alias helloworld2;
 
 using System;
 using System.Collections.Generic;
@@ -15,9 +15,9 @@ namespace IKVM.Sdk.Tests.Project.Lib
             return new sample.HelloworldImpl().sayHello(value);
         }
 
-        public static string SayHello21(string value)
+        public static string SayHello2(string value)
         {
-            return new helloworld21::sample.HelloworldImpl().sayHello(value);
+            return new helloworld2::sample.HelloworldImpl().sayHello(value);
         }
 
     }

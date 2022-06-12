@@ -29,6 +29,7 @@
         <ProjectReference Include="..\IKVM.Runtime.JNI\IKVM.Runtime.JNI.csproj" />
         <ProjectReference Include="..\IKVM.Runtime\IKVM.Runtime.csproj" />
         <ProjectReference Include="..\IKVM.Tests.Util\IKVM.Tests.Util.csproj" />
+        <ProjectReference Include="..\IKVM.Util\IKVM.Util.csproj" />
     </ItemGroup>
 
     <ItemGroup>
@@ -53,7 +54,9 @@
     </ItemGroup>
 
     <ItemGroup>
-      <Folder Include="Util\" />
+        <None Include="..\..\ext\helloworld-2.0.jar" Link="Util\Jar\helloworld-2.0.jar">
+            <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+        </None>
     </ItemGroup>
 
 </Project>

@@ -31,9 +31,18 @@
     </ItemGroup>
 
     <ItemGroup>
-      <ProjectReference Include="..\IKVM.Runtime\IKVM.Runtime.csproj" />
-      <ProjectReference Include="..\IKVM.Sdk.Maven\IKVM.Sdk.Maven.csproj" />
-      <ProjectReference Include="..\IKVM.Sdk\IKVM.Sdk.csproj" />
+        <None Include="..\..\ext\helloworld-2.0.jar" Link="Project\Lib\helloworld-2.0-1\helloworld-2.0.jar">
+            <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+        </None>
+        <None Include="..\..\ext\helloworld-2.0.jar" Link="Project\Lib\helloworld-2.0-2\helloworld-2.0.jar">
+            <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+        </None>
+    </ItemGroup>
+
+    <ItemGroup>
+        <ProjectReference Include="..\IKVM.Runtime\IKVM.Runtime.csproj" />
+        <ProjectReference Include="..\IKVM.Sdk.Maven\IKVM.Sdk.Maven.csproj" />
+        <ProjectReference Include="..\IKVM.Sdk\IKVM.Sdk.csproj" />
     </ItemGroup>
 
     <Import Project="Sdk.targets" Sdk="Microsoft.NET.Sdk" />
