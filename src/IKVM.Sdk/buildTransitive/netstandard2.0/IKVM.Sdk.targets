@@ -1,42 +1,16 @@
 ﻿<Project>
 
-    <UsingTask TaskName="GetMetadataTask" TaskFactory="RoslynCodeTaskFactory" AssemblyFile="$(MSBuildToolsPath)\Microsoft.Build.Tasks.Core.dll">
-        <ParameterGroup>
-            <Items ParameterType="Microsoft.Build.Framework.ITaskItem[]" Required="true" />
-            <MetadataString Output="true" />
-        </ParameterGroup>
-        <Task>
-            <Using Namespace="System" />
-            <Code Type="Fragment" Language="cs">
-                <![CDATA[
-                var command = new StringBuilder();
-                
-                foreach (var item in Items)
-                {
-                    command.AppendFormat("ItemName={0}\r\n", item);
-                    foreach (string parameter in item.MetadataNames)
-                        command.AppendFormat("  {0}={1}\r\n", parameter, item.GetMetadata(parameter));
-                        
-                    command.AppendFormat("\r\n");
-                }
-                
-                MetadataString = command.ToString();
-      ]]>
-            </Code>
-        </Task>
-    </UsingTask>
-
     <PropertyGroup>
         <JavaAssemblyStageDir Condition=" '$(JavaAssemblyStageDir)' == '' ">$(IntermediateOutputPath)ikvm-stage\</JavaAssemblyStageDir>
         <JavaAssemblyCacheDir Condition=" '$(JavaAssemblyCacheDir)' == '' ">$(IkvmHomeDir)cache\1\</JavaAssemblyCacheDir>
     </PropertyGroup>
 
-    <!-- Gathers those references which are either related to the Framework itself, of IKVM. -->
-    <Target Name="GetJavaFrameworkReferences">
+    <!-- Gathers those references which are either related to the Framework itself, or IKVM. -->
+    <Target Name="GetJavaFrameworkReferences" DependsOnTargets="GetReferenceAssemblyPaths;ResolvePackageAssets">
         <ItemGroup>
-            <JavaFrameworkReference Include="@(Reference)" Condition=" '$(NuGetIsFrameworkReference)' == 'true' " />
-            <JavaFrameworkReference Include="@(Reference)" Condition=" '$(FrameworkReferenceName)' != '' " />
-            <JavaFrameworkReference Include="@(Reference)" Condition=" '$(NuGetPackageId)' == 'IKVM' " />
+            <JavaFrameworkReference Include="@(Reference)" Condition=" '%(Reference.NuGetIsFrameworkReference)' == 'true' Or '%(Reference.FrameworkReferenceName)' != '' " />
+            <JavaFrameworkReference Include="@(Reference)" Condition=" '%(Reference.NuGetPackageId)' == 'IKVM' " />
+            <IkvmRuntimeAssembly Include="@(Reference)" Condition=" '%(Reference.NuGetPackageId)' == 'IKVM' And '%(Filename)%(Extension)' == 'IKVM.Runtime.dll' " />
         </ItemGroup>
     </Target>
 
@@ -44,7 +18,7 @@
     <Target Name="GetJavaReferenceItemsFromJavaReferences" DependsOnTargets="GetJavaFrameworkReferences">
         <ItemGroup>
             <_JavaReferenceItem Include="@(JavaReference)">
-
+                <ToolFramework>$(IkvmToolFramework)</ToolFramework>
             </_JavaReferenceItem>
         </ItemGroup>
 
@@ -53,8 +27,9 @@
             <Output TaskParameter="Items" ItemName="_JavaReferenceItemWithMetadata" />
         </IkvmAssignJavaReferenceItemMetadata>
 
+        <Message Text="IkvmRuntimeDll: $(IkvmRuntimeDll)" />
         <!-- Probes for default metadata from the reference item. -->
-        <IkvmAssignJavaReferenceItemIdentity Items="@(_JavaReferenceItemWithMetadata)" References="@(JavaFrameworkReference)">
+        <IkvmAssignJavaReferenceItemIdentity Items="@(_JavaReferenceItemWithMetadata)" References="@(JavaFrameworkReference)" RuntimeAssembly="@(IkvmRuntimeAssembly)">
             <Output TaskParameter="Items" ItemName="_JavaReferenceItemWithIdentity" />
         </IkvmAssignJavaReferenceItemIdentity>
 
@@ -65,11 +40,6 @@
                 <AssemblyStagePath>$(JavaAssemblyStageDir)%(IkvmIdentity)\%(AssemblyName).dll</AssemblyStagePath>
             </JavaReferenceItem>
         </ItemGroup>
-
-        <GetMetadataTask Items="@(JavaReferenceItem)">
-            <Output TaskParameter="MetadataString" PropertyName="MetadataString" />
-        </GetMetadataTask>
-        <Message Text="MetadataString: $(MetadataString)" />
     </Target>
 
     <PropertyGroup>
@@ -92,18 +62,18 @@
         </ItemGroup>
         <PropertyGroup>
             <_IkvmcNoStdLib Condition=" '$(IkvmToolFramework)' == 'netcoreapp3.1' ">true</_IkvmcNoStdLib>
-            <_IkvmcStagePath>$(JavaAssemblyStageDir)</_IkvmcStagePath>
         </PropertyGroup>
 
         <MakeDir Directories="$([System.IO.Path]::GetDirectoryName('%(JavaReferenceItem.AssemblyStagePath)'))" />
         <IkvmCompiler
             ToolPath="$(IkvmcTool)"
             UseDotNetExec="$(IkvmUseDotNetExec)"
+            ResponseFile="%(JavaReferenceItem.AssemblyStagePath).rsp"
             Output="%(JavaReferenceItem.AssemblyStagePath)"
             Debug="%(JavaReferenceItem.Debug)"
             Assembly="%(JavaReferenceItem.AssemblyName)"
             Version="%(JavaReferenceItem.AssemblyVersion)"
-            Runtime="$(IkvmRuntimeDll)"
+            Runtime="@(IkvmRuntimeAssembly)"
             CompressResources="true"
             Target="library"
             NoStdLib="$(_IkvmcNoStdLib)"
@@ -126,6 +96,7 @@
             $(BuildJavaReferenceAssembliesDependsOn);
             GetReferenceAssemblyPaths;
             GetJavaReferenceItems;
+            GetJavaFrameworkReferences;
             _BuildJavaReferenceAssemblies;
         </BuildJavaReferenceAssembliesDependsOn>
     </PropertyGroup>

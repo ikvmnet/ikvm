@@ -30,6 +30,7 @@
 
     <ItemGroup>
         <ProjectReference Include="..\IKVM-pkg\IKVM-pkg.csproj" />
+        <ProjectReference Include="..\IKVM.Util\IKVM.Util.csproj" PrivateAssets="all" />
     </ItemGroup>
 
     <ItemGroup>

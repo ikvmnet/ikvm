@@ -13,6 +13,7 @@ namespace IKVM.Sdk.Tests.Project.Exe
         public static void Main(string[] args)
         {
             Console.WriteLine(Helloworld.SayHello(args[0]));
+            Console.WriteLine(Helloworld.SayHello21(args[0]));
         }
 
     }
