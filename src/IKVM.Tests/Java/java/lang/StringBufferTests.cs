@@ -2,7 +2,7 @@
 
 using FluentAssertions;
 
-namespace IKVM.Tests.java.lang
+namespace IKVM.Tests.Java.java.lang
 {
 
     [TestClass]

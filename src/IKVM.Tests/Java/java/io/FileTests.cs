@@ -6,7 +6,7 @@ using IKVM.Runtime.Vfs;
 
 using Microsoft.VisualStudio.TestTools.UnitTesting;
 
-namespace IKVM.Tests.java.lang
+namespace IKVM.Tests.Java.java.lang
 {
 
     [TestClass]

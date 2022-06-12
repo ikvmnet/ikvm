@@ -2,7 +2,7 @@
 
 using Microsoft.VisualStudio.TestTools.UnitTesting;
 
-namespace IKVM.Tests.java.security
+namespace IKVM.Tests.Java.java.security
 {
 
     [TestClass]

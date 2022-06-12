@@ -7,7 +7,7 @@ using Microsoft.VisualStudio.TestTools.UnitTesting;
 using java.nio;
 using java.nio.charset;
 
-namespace IKVM.Tests.java.nio.charset
+namespace IKVM.Tests.Java.java.nio.charset
 {
 
     [TestClass]

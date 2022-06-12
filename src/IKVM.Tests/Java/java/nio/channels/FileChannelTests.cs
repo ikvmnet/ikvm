@@ -2,7 +2,7 @@
 
 using Microsoft.VisualStudio.TestTools.UnitTesting;
 
-namespace IKVM.Tests.java.nio.channels
+namespace IKVM.Tests.Java.java.nio.channels
 {
 
     [TestClass]

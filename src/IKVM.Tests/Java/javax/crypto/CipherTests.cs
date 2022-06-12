@@ -2,7 +2,7 @@
 
 using Microsoft.VisualStudio.TestTools.UnitTesting;
 
-namespace IKVM.Tests.javax.crypto
+namespace IKVM.Tests.Java.javax.crypto
 {
 
     [TestClass]
