@@ -20,7 +20,7 @@ namespace IKVM.Sdk.Tests.Tasks
             var i1 = new TaskItem(@".\Project\Lib\helloworld-2.0.jar");
             t.Items = new[] { i1 };
             t.Execute().Should().BeTrue();
-            i1.GetMetadata(IkvmJavaReferenceItemMetadata.IkvmIdentity).Should().Be(@"3f822ae99d091766885973d0dc2072d4");
+            i1.GetMetadata(IkvmJavaReferenceItemMetadata.IkvmIdentity).Should().Be(@"3736b42933bd384f048812670eac32c3");
         }
 
     }
