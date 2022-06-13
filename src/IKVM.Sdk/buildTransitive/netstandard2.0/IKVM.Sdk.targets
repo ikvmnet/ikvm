@@ -1,24 +1,54 @@
 ﻿<Project>
 
+    <UsingTask TaskName="GetMetadataTask" TaskFactory="RoslynCodeTaskFactory" AssemblyFile="$(MSBuildToolsPath)\Microsoft.Build.Tasks.Core.dll">
+        <ParameterGroup>
+            <Items ParameterType="Microsoft.Build.Framework.ITaskItem[]" Required="true" />
+            <MetadataString Output="true" />
+        </ParameterGroup>
+        <Task>
+            <Using Namespace="System" />
+            <Code Type="Fragment" Language="cs">
+                <![CDATA[
+                var command = new StringBuilder();
+                
+                foreach (var item in Items)
+                {
+                    command.AppendFormat("ItemName={0}\r\n", item);
+                    foreach (string parameter in item.MetadataNames)
+                        command.AppendFormat("  {0}={1}\r\n", parameter, item.GetMetadata(parameter));
+                        
+                    command.AppendFormat("\r\n");
+                }
+                
+                MetadataString = command.ToString();
+      ]]>
+            </Code>
+        </Task>
+    </UsingTask>
+
     <PropertyGroup>
         <IkvmStageDir Condition=" '$(IkvmStageDir)' == '' ">$(IntermediateOutputPath)ikvm-stage\</IkvmStageDir>
         <IkvmCacheDir Condition=" '$(IkvmCacheDir)' == '' ">$(IkvmHomeDir)cache\1\</IkvmCacheDir>
     </PropertyGroup>
 
     <!-- Gathers those references which are either related to the Framework itself, or IKVM. -->
-    <Target Name="GetJavaFrameworkReferences" DependsOnTargets="GetReferenceAssemblyPaths;ResolvePackageAssets">
+    <Target Name="GetJavaFrameworkReferences" DependsOnTargets="ResolveAssemblyReferences">
         <ItemGroup>
-            <JavaFrameworkReference Include="@(Reference)" Condition=" '%(Reference.NuGetIsFrameworkReference)' == 'true' Or '%(Reference.FrameworkReferenceName)' != '' " />
-            <JavaFrameworkReference Include="@(Reference)" Condition=" '%(Reference.NuGetPackageId)' == 'IKVM' " />
-            <IkvmRuntimeAssembly Include="@(Reference)" Condition=" '%(Reference.NuGetPackageId)' == 'IKVM' And '%(Filename)%(Extension)' == 'IKVM.Runtime.dll' " />
+            <JavaFrameworkReference Include="@(ReferencePath)" Condition=" '%(ReferencePath.FrameworkReferenceName)' != '' Or '$(FrameworkFile)' == 'true' " />
+            <IkvmRuntimeAssembly Include="@(ReferencePath)" Condition=" '%(ReferencePath.NuGetPackageId)' == 'IKVM' And '%(Filename)%(Extension)' == 'IKVM.Runtime.dll' " />
         </ItemGroup>
+        <Message Text="JavaFrameworkReference: @(JavaFrameworkReference)"/>
+        <GetMetadataTask Items="@(JavaFrameworkReference)">
+            <Output TaskParameter="MetadataString" PropertyName="MetadataString" />
+        </GetMetadataTask>
+        <Message Text="MetadataString: $(MetadataString)"/>
     </Target>
 
     <!-- Transforms the JavaReference item group into JavaReferenceItem items. -->
     <Target Name="GetJavaReferenceItemsFromJavaReferences" DependsOnTargets="GetJavaFrameworkReferences">
         <ItemGroup>
             <_JavaReferenceItem Include="@(JavaReference)">
-                
+
             </_JavaReferenceItem>
         </ItemGroup>
 
@@ -27,31 +57,80 @@
             <Output TaskParameter="Items" ItemName="_JavaReferenceItemWithMetadata" />
         </IkvmAssignJavaReferenceItemMetadata>
 
-        <!-- Probes for default metadata from the reference item. -->
-        <IkvmAssignJavaReferenceItemIdentity Items="@(_JavaReferenceItemWithMetadata)" ToolFramework="$(IkvmToolFramework)" RuntimeAssembly="@(IkvmRuntimeAssembly)" References="@(JavaFrameworkReference)" >
+        <!-- Configures the identity value to uniquely identify a reference. -->
+        <IkvmAssignJavaReferenceItemIdentity Items="@(_JavaReferenceItemWithMetadata)" ToolVersion="$(IkvmSdkVersion)" ToolFramework="$(IkvmToolFramework)" RuntimeAssembly="@(IkvmRuntimeAssembly)" References="@(JavaFrameworkReference)" >
             <Output TaskParameter="Items" ItemName="_JavaReferenceItemWithIdentity" />
         </IkvmAssignJavaReferenceItemIdentity>
 
-        <!-- Sorts the JavaReferenceItems based on their references to each other. -->
-        <IkvmSortJavaReferenceItem Items="@(_JavaReferenceItemWithIdentity)" >
-            <Output TaskParameter="Items" ItemName="_JavaReferenceItemInOrder" />
-        </IkvmSortJavaReferenceItem>
-
-        <!-- Cache path is determined based on the identity. -->
+        <!-- Assign newly discovered items. -->
         <ItemGroup>
-            <JavaReferenceItem Include="@(_JavaReferenceItemInOrder)">
+            <JavaReferenceItem Include="@(_JavaReferenceItemWithIdentity)" />
+        </ItemGroup>
+    </Target>
+
+    <!-- Duplicate set for reference lookup in batched target. -->
+    <Target Name="GetJavaReferenceItemsForLookup">
+        <ItemGroup>
+            <_JavaReferenceItemForLookup Include="@(JavaReferenceItem)" />
+        </ItemGroup>
+    </Target>
+
+    <!-- Applies the ResolvedReferences metadata to each item. -->
+    <Target Name="GetJavaReferenceItemsResolvedReferencesForItem" DependsOnTargets="GetJavaReferenceItemsForLookup" Outputs="%(JavaReferenceItem.Identity).batch">
+        <PropertyGroup>
+            <_References>;%(JavaReferenceItem.References);</_References>
+        </PropertyGroup>
+        <ItemGroup>
+            <_ResolvedReferences Include="@(_JavaReferenceItemForLookup->'%(CachePath)')" Condition="$(_References.Contains(';%(Identity);'))" />
+        </ItemGroup>
+        <ItemGroup>
+            <_JavaReferenceItemForItem Include="@(JavaReferenceItem)">
+                <ResolvedReferences>@(_ResolvedReferences, ';')</ResolvedReferences>
+            </_JavaReferenceItemForItem>
+        </ItemGroup>
+    </Target>
+
+    <!-- Applies the ResolvedReferences metadata to each item. -->
+    <Target Name="GetJavaReferenceItemsResolvedReferences" DependsOnTargets="GetJavaReferenceItemsResolvedReferencesForItem">
+        <ItemGroup>
+            <JavaReferenceItem Remove="@(JavaReferenceItem)"/>
+            <JavaReferenceItem Include="@(_JavaReferenceItemForItem)" />
+        </ItemGroup>
+    </Target>
+
+    <!-- Applies the Stage and Cache paths to the items.-->
+    <Target Name="GetJavaReferenceItemsWithPaths" DependsOnTargets="GetJavaReferenceItemsResolvedReferences">
+        <ItemGroup>
+            <_JavaReferenceItemWithPaths Include="@(JavaReferenceItem)">
                 <StagePath>$(IkvmStageDir)%(IkvmIdentity)\%(AssemblyName).dll</StagePath>
                 <CachePath>$(IkvmCacheDir)%(IkvmIdentity)\%(AssemblyName).dll</CachePath>
-            </JavaReferenceItem>
+            </_JavaReferenceItemWithPaths>
+            <JavaReferenceItem Remove="@(JavaReferenceItem)"/>
+            <JavaReferenceItem Include="@(_JavaReferenceItemWithPaths)" />
         </ItemGroup>
-    
-</Target>
+    </Target>
+
+    <!-- Sorts the JavaReferenceItem set. -->
+    <Target Name="GetJavaReferenceItemsSorted" DependsOnTargets="GetJavaReferenceItemsWithPaths">
+        <IkvmSortJavaReferenceItem Items="@(JavaReferenceItem)" >
+            <Output TaskParameter="Items" ItemName="_JavaReferenceItemSorted" />
+        </IkvmSortJavaReferenceItem>
+        <ItemGroup>
+            <JavaReferenceItem Remove="@(JavaReferenceItem)" />
+            <JavaReferenceItem Include="@(_JavaReferenceItemSorted)" />
+        </ItemGroup>
+    </Target>
 
     <PropertyGroup>
         <GetJavaReferenceItemsDependsOn>
             $(GetJavaReferenceItemsDependsOn);
             GetJavaFrameworkReferences;
             GetJavaReferenceItemsFromJavaReferences;
+            GetJavaReferenceItemsForLookup;
+            GetJavaReferenceItemsResolvedReferencesForItem;
+            GetJavaReferenceItemsResolvedReferences;
+            GetJavaReferenceItemsWithPaths;
+            GetJavaReferenceItemsSorted;
         </GetJavaReferenceItemsDependsOn>
     </PropertyGroup>
 
@@ -61,14 +140,7 @@
     </Target>
 
     <!-- Builds the JavaReferenceItems into their output items within the cache. -->
-    <Target Name="_BuildJavaReferenceAssemblies" DependsOnTargets="GetJavaReferenceItems;GetReferenceAssemblyPaths;ResolvePackageAssets" Inputs="@(JavaReferenceItem)" Outputs="%(JavaReferenceItem.CachePath)">
-        <ItemGroup>
-            <_IkvmcReferences Include="@(JavaFrameworkReference)" />
-        </ItemGroup>
-        <PropertyGroup>
-            <_IkvmcNoStdLib Condition=" '$(IkvmToolFramework)' == 'netcoreapp3.1' ">true</_IkvmcNoStdLib>
-        </PropertyGroup>
-
+    <Target Name="_BuildJavaReferenceAssemblies" DependsOnTargets="GetJavaReferenceItems" Inputs="@(JavaReferenceItem)" Outputs="%(JavaReferenceItem.CachePath)">
         <MakeDir Directories="$([System.IO.Path]::GetDirectoryName('%(JavaReferenceItem.StagePath)'))" />
         <IkvmCompiler
             ToolPath="$(IkvmcTool)"
@@ -81,19 +153,12 @@
             Runtime="@(IkvmRuntimeAssembly)"
             CompressResources="true"
             Target="library"
-            NoStdLib="$(_IkvmcNoStdLib)"
-            References="@(_IkvmcReferences)"
+            NoStdLib="$(IkvmcToolNoStdLib)"
+            References="@(JavaFrameworkReference);%(JavaReferenceItem.ResolvedReferences)"
             Input="%(JavaReferenceItem.FullPath)" />
 
         <MakeDir Directories="$([System.IO.Path]::GetDirectoryName('%(JavaReferenceItem.CachePath)'))" />
         <Copy SourceFiles="%(JavaReferenceItem.StagePath)" DestinationFiles="%(JavaReferenceItem.CachePath)" OverwriteReadOnlyFiles="true" />
-
-        <ItemGroup>
-            <JavaAssemblyReference Include="%(JavaReferenceItem.Identity)" Condition=" '%(JavaReferenceItem.CachePath)' != '' ">
-                <HintPath>%(JavaReferenceItem.CachePath)</HintPath>
-                <Aliases>%(JavaReferenceItem.Aliases)</Aliases>
-            </JavaAssemblyReference>
-        </ItemGroup>
     </Target>
 
     <PropertyGroup>
@@ -110,10 +175,41 @@
 
     </Target>
 
-    <Target Name="ResolveJavaReferenceAssemblies" DependsOnTargets="BuildJavaReferenceAssemblies" BeforeTargets="ResolveAssemblyReferences">
+    <!-- Ensure the JavaReference assemblies are built before compile. -->
+    <PropertyGroup>
+        <CompileDependsOn>
+            BuildJavaReferenceAssemblies;
+            $(CompileDependsOn);
+        </CompileDependsOn>
+    </PropertyGroup>
+
+    <!-- Adds the expected JavaReferences to the Reference set. -->
+    <Target Name="_ResolveJavaReferences" DependsOnTargets="GetJavaReferenceItems">
         <ItemGroup>
-            <Reference Include="@(JavaAssemblyReference)" />
+            <ReferencePath Include="@(JavaReferenceItem->'%(CachePath)')">
+                <ReferenceSourceTarget>ResolveJavaRefrences</ReferenceSourceTarget>
+                <Aliases>%(JavaReferenceItem.Aliases)</Aliases>
+            </ReferencePath>
         </ItemGroup>
     </Target>
+
+    <PropertyGroup>
+        <ResolveJavaReferencesDependsOn>
+            $(ResolveJavaReferenceAssembliesDependsOn);
+            GetJavaReferenceItems;
+            _ResolveJavaReferences;
+        </ResolveJavaReferencesDependsOn>
+    </PropertyGroup>
+
+    <Target Name="ResolveJavaReferences" DependsOnTargets="$(ResolveJavaReferencesDependsOn)">
+
+    </Target>
+
+    <PropertyGroup>
+        <ResolveReferencesDependsOn>
+            $(ResolveReferencesDependsOn);
+            ResolveJavaReferences;
+        </ResolveReferencesDependsOn>
+    </PropertyGroup>
 
 </Project>

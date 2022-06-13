@@ -1,4 +1,5 @@
-﻿<Project Sdk="Microsoft.NET.Sdk">
+﻿<Project>
+    <Import Project="Sdk.props" Sdk="Microsoft.NET.Sdk" />
 
     <PropertyGroup>
         <TargetFrameworks>net461;netcoreapp3.1</TargetFrameworks>
@@ -13,6 +14,11 @@
     <ItemGroup>
         <Content Include="lib\**\*" PackagePath="lib\%(RecursiveDir)%(Filename)%(Extension)" />
         <Content Include="buildTransitive\**\*" PackagePath="buildTransitive\%(RecursiveDir)%(Filename)%(Extension)" />
+    </ItemGroup>
+
+    <ItemGroup>
+        <None Include="..\..\LICENSE.md" Pack="true" PackagePath="." />
+        <None Include="..\..\README.md" Pack="true" PackagePath="." />
     </ItemGroup>
 
     <ItemGroup>
@@ -66,5 +72,14 @@
             <PublishProperties>SelfContained=false</PublishProperties>
         </PublishProjectReference>
     </ItemGroup>
+    
+    <Import Project="Sdk.targets" Sdk="Microsoft.NET.Sdk" />
+
+    <Target Name="MakeIkvmSdkVersionFile" Outputs="$(IntermediateOutputPath)VERSION" BeforeTargets="_GetPackageFiles">
+        <WriteLinesToFile File="$(IntermediateOutputPath)VERSION" Lines="$(Version)" Overwrite="true" WriteOnlyWhenDifferent="true" />
+        <ItemGroup>
+            <_PackageFiles Include="$(IntermediateOutputPath)VERSION" PackagePath="." />
+        </ItemGroup>
+    </Target>
 
 </Project>
