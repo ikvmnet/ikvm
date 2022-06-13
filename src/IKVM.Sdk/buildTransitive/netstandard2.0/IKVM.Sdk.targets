@@ -1,31 +1,5 @@
 ﻿<Project>
 
-    <UsingTask TaskName="GetMetadataTask" TaskFactory="RoslynCodeTaskFactory" AssemblyFile="$(MSBuildToolsPath)\Microsoft.Build.Tasks.Core.dll">
-        <ParameterGroup>
-            <Items ParameterType="Microsoft.Build.Framework.ITaskItem[]" Required="true" />
-            <MetadataString Output="true" />
-        </ParameterGroup>
-        <Task>
-            <Using Namespace="System" />
-            <Code Type="Fragment" Language="cs">
-                <![CDATA[
-                var command = new StringBuilder();
-                
-                foreach (var item in Items)
-                {
-                    command.AppendFormat("ItemName={0}\r\n", item);
-                    foreach (string parameter in item.MetadataNames)
-                        command.AppendFormat("  {0}={1}\r\n", parameter, item.GetMetadata(parameter));
-                        
-                    command.AppendFormat("\r\n");
-                }
-                
-                MetadataString = command.ToString();
-      ]]>
-            </Code>
-        </Task>
-    </UsingTask>
-
     <PropertyGroup>
         <IkvmStageDir Condition=" '$(IkvmStageDir)' == '' ">$(IntermediateOutputPath)ikvm-stage\</IkvmStageDir>
         <IkvmCacheDir Condition=" '$(IkvmCacheDir)' == '' ">$(IkvmHomeDir)cache\1\</IkvmCacheDir>
@@ -37,11 +11,6 @@
             <JavaFrameworkReference Include="@(ReferencePath)" Condition=" '%(ReferencePath.FrameworkReferenceName)' != '' Or '$(FrameworkFile)' == 'true' " />
             <IkvmRuntimeAssembly Include="@(ReferencePath)" Condition=" '%(ReferencePath.NuGetPackageId)' == 'IKVM' And '%(Filename)%(Extension)' == 'IKVM.Runtime.dll' " />
         </ItemGroup>
-        <Message Text="JavaFrameworkReference: @(JavaFrameworkReference)"/>
-        <GetMetadataTask Items="@(JavaFrameworkReference)">
-            <Output TaskParameter="MetadataString" PropertyName="MetadataString" />
-        </GetMetadataTask>
-        <Message Text="MetadataString: $(MetadataString)"/>
     </Target>
 
     <!-- Transforms the JavaReference item group into JavaReferenceItem items. -->
