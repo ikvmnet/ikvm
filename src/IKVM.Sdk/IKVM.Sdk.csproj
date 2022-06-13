@@ -5,6 +5,7 @@
         <TargetFrameworks>net461;netcoreapp3.1</TargetFrameworks>
         <NoWarn>$(NoWarn);NU5100;NU5128</NoWarn>
         <IncludeBuildOutput>false</IncludeBuildOutput>
+        <Description>Java SE 8 Virtual Machine for .NET (SDK)</Description>
     </PropertyGroup>
 
     <ItemGroup>
@@ -18,7 +19,6 @@
 
     <ItemGroup>
         <None Include="..\..\LICENSE.md" Pack="true" PackagePath="." />
-        <None Include="..\..\README.md" Pack="true" PackagePath="." />
     </ItemGroup>
 
     <ItemGroup>
