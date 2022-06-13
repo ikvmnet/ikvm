@@ -32,14 +32,20 @@
             <Output TaskParameter="Items" ItemName="_JavaReferenceItemWithIdentity" />
         </IkvmAssignJavaReferenceItemIdentity>
 
+        <!-- Sorts the JavaReferenceItems based on their references to each other. -->
+        <IkvmSortJavaReferenceItem Items="@(_JavaReferenceItemWithIdentity)" >
+            <Output TaskParameter="Items" ItemName="_JavaReferenceItemInOrder" />
+        </IkvmSortJavaReferenceItem>
+
         <!-- Cache path is determined based on the identity. -->
         <ItemGroup>
-            <JavaReferenceItem Include="@(_JavaReferenceItemWithIdentity)">
+            <JavaReferenceItem Include="@(_JavaReferenceItemInOrder)">
                 <StagePath>$(IkvmStageDir)%(IkvmIdentity)\%(AssemblyName).dll</StagePath>
                 <CachePath>$(IkvmCacheDir)%(IkvmIdentity)\%(AssemblyName).dll</CachePath>
             </JavaReferenceItem>
         </ItemGroup>
-    </Target>
+    
+</Target>
 
     <PropertyGroup>
         <GetJavaReferenceItemsDependsOn>

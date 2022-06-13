@@ -30,6 +30,7 @@
     <UsingTask TaskName="IkvmCalculateMD5" AssemblyFile="$(TaskAssembly)" />
     <UsingTask TaskName="IkvmAssignJavaReferenceItemMetadata" AssemblyFile="$(TaskAssembly)" />
     <UsingTask TaskName="IkvmAssignJavaReferenceItemIdentity" AssemblyFile="$(TaskAssembly)" />
+    <UsingTask TaskName="IkvmSortJavaReferenceItem" AssemblyFile="$(TaskAssembly)" />
 
     <ItemDefinitionGroup>
         <JavaReference>

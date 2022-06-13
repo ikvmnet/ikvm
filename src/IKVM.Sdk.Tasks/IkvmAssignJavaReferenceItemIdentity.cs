@@ -33,6 +33,12 @@ namespace IKVM.Sdk.Tasks
         public string RuntimeAssembly { get; set; }
 
         /// <summary>
+        /// IKVM tool version.
+        /// </summary>
+        [Required]
+        public string ToolVersion { get; set; }
+
+        /// <summary>
         /// IKVM tool framework.
         /// </summary>
         [Required]
@@ -54,11 +60,20 @@ namespace IKVM.Sdk.Tasks
                 throw new IkvmTaskException("RuntimeAssembly is required.");
             if (string.IsNullOrWhiteSpace(ToolFramework))
                 throw new IkvmTaskException("ToolFramework is required.");
+            if (string.IsNullOrWhiteSpace(ToolVersion))
+                throw new IkvmTaskException("ToolVersion is required.");
             if (File.Exists(RuntimeAssembly) == false)
                 throw new FileNotFoundException($"Could not find RuntimeAssembly at '{RuntimeAssembly}'.");
 
-            foreach (var item in Items)
-                GetHashForItem(item);
+            var items = IkvmJavaReferenceItemUtil.Import(Items);
+
+            // calculate the identity for each item
+            foreach (var item in items)
+                item.IkvmIdentity = CalculateIkvmIdentity(item);
+
+            // save each back to the original task item
+            foreach (var item in items)
+                item.Save();
 
             return true;
         }
@@ -68,34 +83,33 @@ namespace IKVM.Sdk.Tasks
         /// </summary>
         /// <param name="item"></param>
         /// <returns></returns>
-        string GetHashForItem(ITaskItem item)
+        string CalculateIkvmIdentity(JavaReferenceItem item)
         {
             if (item is null)
                 throw new ArgumentNullException(nameof(item));
 
             // identity is already computed
-            if (item.GetMetadata(IkvmJavaReferenceItemMetadata.IkvmIdentity) is string id && string.IsNullOrWhiteSpace(id) == false)
+            if (item.IkvmIdentity is string id && string.IsNullOrWhiteSpace(id) == false)
                 return id;
 
-            if (item.GetMetadata(IkvmJavaReferenceItemMetadata.AssemblyName) is not string assemblyName)
+            if (string.IsNullOrWhiteSpace(item.AssemblyName))
                 throw new IkvmTaskException($"Item '{item.ItemSpec}' missing AssemblyName value.");
-            if (item.GetMetadata(IkvmJavaReferenceItemMetadata.AssemblyVersion) is not string assemblyVersion)
+            if (string.IsNullOrWhiteSpace(item.AssemblyVersion))
                 throw new IkvmTaskException($"Item '{item.ItemSpec}' missing AssemblyVersion value.");
-            if (item.GetMetadata(IkvmJavaReferenceItemMetadata.Debug) is not string debug)
-                throw new IkvmTaskException($"Item '{item.ItemSpec}' missing Debug metadata.");
 
             var manifest = new StringWriter();
+            manifest.WriteLine("ToolVersion={0}", ToolVersion);
             manifest.WriteLine("ToolFramework={0}", ToolFramework);
-            manifest.WriteLine("AssemblyName={0}", assemblyName);
-            manifest.WriteLine("AssemblyVersion={0}", assemblyVersion);
-            manifest.WriteLine("Debug={0}", debug);
+            manifest.WriteLine("AssemblyName={0}", item.AssemblyName);
+            manifest.WriteLine("AssemblyVersion={0}", item.AssemblyVersion);
+            manifest.WriteLine("Debug={0}", item.Debug ? "true" : "false");
             manifest.WriteLine("Runtime={0}", GetHashForFile(RuntimeAssembly));
 
             // each Compile item should be a jar or class file
             var compiles = new List<string>(16);
-            foreach (var compile in item.GetMetadata(IkvmJavaReferenceItemMetadata.Compile).Split(IkvmJavaReferenceItemMetadata.PropertySeperatorCharArray, StringSplitOptions.RemoveEmptyEntries))
-                if (compile.EndsWith(".jar") || compile.EndsWith(".class"))
-                    compiles.Add(GetCompileLine(item, compile));
+            foreach (var path in item.Compile)
+                if (path.EndsWith(".jar") || path.EndsWith(".class"))
+                    compiles.Add(GetCompileLine(item, path));
 
             // sort and write the compile lines
             foreach (var c in compiles.OrderBy(i => i))
@@ -108,17 +122,15 @@ namespace IKVM.Sdk.Tasks
                     references.Add(GetReferenceLine(item, reference));
 
             // gather reference lines from metadata
-            foreach (var reference in item.GetMetadata(IkvmJavaReferenceItemMetadata.References).Split(IkvmJavaReferenceItemMetadata.PropertySeperatorCharArray, StringSplitOptions.RemoveEmptyEntries))
-                if (string.IsNullOrWhiteSpace(reference) == false)
-                    references.Add(GetReferenceLine(item, reference));
+            foreach (var reference in item.References)
+                references.Add(GetReferenceLine(item, reference));
 
             // sort and write the reference lines
             foreach (var r in references.OrderBy(i => i))
                 manifest.WriteLine(r);
 
             // hash the resulting manifest and set the identity
-            item.SetMetadata(IkvmJavaReferenceItemMetadata.IkvmIdentity, id = GetHashForString(manifest.ToString()));
-            return id;
+            return GetHashForString(manifest.ToString());
         }
 
         /// <summary>
@@ -166,7 +178,7 @@ namespace IKVM.Sdk.Tasks
         /// <param name="item"></param>
         /// <param name="path"></param>
         /// <exception cref="FileNotFoundException"></exception>
-        string GetCompileLine(ITaskItem item, string path)
+        string GetCompileLine(JavaReferenceItem item, string path)
         {
             if (string.IsNullOrWhiteSpace(path))
                 throw new ArgumentException($"'{nameof(path)}' cannot be null or whitespace.", nameof(path));
@@ -181,7 +193,7 @@ namespace IKVM.Sdk.Tasks
         /// </summary>
         /// <param name="item"></param>
         /// <param name="reference"></param>
-        string GetReferenceLine(ITaskItem item, ITaskItem reference)
+        string GetReferenceLine(JavaReferenceItem item, ITaskItem reference)
         {
             if (item is null)
                 throw new ArgumentNullException(nameof(item));
@@ -204,18 +216,14 @@ namespace IKVM.Sdk.Tasks
         /// </summary>
         /// <param name="item"></param>
         /// <param name="reference"></param>
-        string GetReferenceLine(ITaskItem item, string reference)
+        string GetReferenceLine(JavaReferenceItem item, JavaReferenceItem reference)
         {
             if (item is null)
                 throw new ArgumentNullException(nameof(item));
-            if (string.IsNullOrWhiteSpace(reference))
-                throw new ArgumentException($"'{nameof(reference)}' cannot be null or whitespace.", nameof(reference));
+            if (reference is null)
+                throw new ArgumentNullException(nameof(reference));
 
-            var resolved = Items.FirstOrDefault(i => i.ItemSpec == reference);
-            if (resolved == null)
-                throw new IkvmTaskException($"Could not resolve reference '{reference}' on '{item.ItemSpec}'.");
-
-            return $"Reference={GetHashForItem(resolved)}";
+            return $"Reference={CalculateIkvmIdentity(reference)}";
         }
 
     }
