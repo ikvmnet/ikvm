@@ -21,7 +21,7 @@
 
     <PropertyGroup Label="Version Info">
         <DefaultMajorVersion>8</DefaultMajorVersion>
-        <Version Condition=" '$(Version)' == '' ">$(DefaultMajorVersion).0.0</Version>
+        <Version Condition=" '$(Version)' == '' ">$(DefaultMajorVersion).0.0-dev</Version>
         <AssemblyVersion Condition=" '$(AssemblyVersion)' == '' ">$(DefaultMajorVersion).0.0.0</AssemblyVersion>
         <FileVersion Condition=" '$(FileVersion)' == '' ">$(DefaultMajorVersion).0.0.0</FileVersion>
         <InformationalVersion Condition=" '$(InformationalVersion)' == '' ">$(DefaultMajorVersion).0.0.0</InformationalVersion>
@@ -31,7 +31,7 @@
         <RepositoryUrl Condition=" '$(RepositoryUrl)' == '' ">https://github.com/ikvm-revived/ikvm.git</RepositoryUrl>
         <RepositoryType Condition=" '$(RepositoryType)' == '' ">git</RepositoryType>
         <PackageProjectUrl  Condition=" '$(PackageProjectUrl)' == '' ">https://github.com/ikvm-revived/ikvm</PackageProjectUrl>
-        <PackageVersion Condition=" '$(PackageVersion)' == '' ">8.0.0-dev</PackageVersion>
+        <PackageVersion Condition=" '$(PackageVersion)' == '' ">$(Version)</PackageVersion>
         <SymbolPackageFormat>snupkg</SymbolPackageFormat>
     </PropertyGroup>
 

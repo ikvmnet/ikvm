@@ -28,42 +28,42 @@
         <PublishProjectReference Include="..\IKVM.Sdk.Tasks\IKVM.Sdk.Tasks.csproj" Condition=" '$(TargetFramework)' == '' ">
             <SetTargetFramework>TargetFramework=net472</SetTargetFramework>
             <PublishPackagePath>tasks\net472</PublishPackagePath>
-            <PublishProperties>SelfContained=false;GenerateDocumentationFile=false</PublishProperties>
+            <PublishProperties>SelfContained=false</PublishProperties>
         </PublishProjectReference>
         <PublishProjectReference Include="..\IKVM.Sdk.Tasks\IKVM.Sdk.Tasks.csproj" Condition=" '$(TargetFramework)' == '' ">
             <SetTargetFramework>TargetFramework=net6.0</SetTargetFramework>
             <PublishPackagePath>tasks\net6.0</PublishPackagePath>
-            <PublishProperties>SelfContained=false;GenerateDocumentationFile=false</PublishProperties>
+            <PublishProperties>SelfContained=false</PublishProperties>
         </PublishProjectReference>
         <PublishProjectReference Include="..\ikvm\ikvm.csproj" Condition=" '$(TargetFramework)' == '' ">
             <SetTargetFramework>TargetFramework=net461</SetTargetFramework>
             <PublishPackagePath>tools\net461</PublishPackagePath>
-            <PublishProperties>SelfContained=false;GenerateDocumentationFile=false</PublishProperties>
+            <PublishProperties>SelfContained=false</PublishProperties>
         </PublishProjectReference>
         <PublishProjectReference Include="..\ikvmc\ikvmc.csproj" Condition=" '$(TargetFramework)' == '' ">
             <SetTargetFramework>TargetFramework=net461</SetTargetFramework>
             <PublishPackagePath>tools\net461</PublishPackagePath>
-            <PublishProperties>SelfContained=false;GenerateDocumentationFile=false</PublishProperties>
+            <PublishProperties>SelfContained=false</PublishProperties>
         </PublishProjectReference>
         <PublishProjectReference Include="..\ikvmstub\ikvmstub.csproj" Condition=" '$(TargetFramework)' == '' ">
             <SetTargetFramework>TargetFramework=net461</SetTargetFramework>
             <PublishPackagePath>tools\net461</PublishPackagePath>
-            <PublishProperties>SelfContained=false;GenerateDocumentationFile=false</PublishProperties>
+            <PublishProperties>SelfContained=false</PublishProperties>
         </PublishProjectReference>
         <PublishProjectReference Include="..\ikvm\ikvm.csproj" Condition=" '$(TargetFramework)' == '' ">
             <SetTargetFramework>TargetFramework=netcoreapp3.1</SetTargetFramework>
             <PublishPackagePath>tools\netcoreapp3.1</PublishPackagePath>
-            <PublishProperties>SelfContained=false;GenerateDocumentationFile=false</PublishProperties>
+            <PublishProperties>SelfContained=false</PublishProperties>
         </PublishProjectReference>
         <PublishProjectReference Include="..\ikvmc\ikvmc.csproj" Condition=" '$(TargetFramework)' == '' ">
             <SetTargetFramework>TargetFramework=netcoreapp3.1</SetTargetFramework>
             <PublishPackagePath>tools\netcoreapp3.1</PublishPackagePath>
-            <PublishProperties>SelfContained=false;GenerateDocumentationFile=false</PublishProperties>
+            <PublishProperties>SelfContained=false</PublishProperties>
         </PublishProjectReference>
         <PublishProjectReference Include="..\ikvmstub\ikvmstub.csproj" Condition=" '$(TargetFramework)' == '' ">
             <SetTargetFramework>TargetFramework=netcoreapp3.1</SetTargetFramework>
             <PublishPackagePath>tools\netcoreapp3.1</PublishPackagePath>
-            <PublishProperties>SelfContained=false;GenerateDocumentationFile=false</PublishProperties>
+            <PublishProperties>SelfContained=false</PublishProperties>
         </PublishProjectReference>
     </ItemGroup>
 
