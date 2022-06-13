@@ -1,7 +1,7 @@
 # IKVM - Java Virtual Machine for .NET (SDK)
 
 > **Warning**
-> IKVM fails to properly build assemblies under a TFM > `netcoreapp3.1`. Until this is resolved, you can use `netcoreapp3.1` to access the Java assembly in a library that you access from other TFMs.
+> IKVM fails to properly build assemblies under a TFM > `netcoreapp3.1`. Until this is resolved, you can use `netcoreapp3.1` to access the Java assembly in a library that you reference from other projects.
 
 
 
