@@ -1,5 +1,10 @@
 # IKVM - Java Virtual Machine for .NET (SDK)
 
+> **Warning**
+> IKVM fails to properly build assemblies under a TFM > `netcoreapp3.1`. Until this is resolved, you can use `netcoreapp3.1` to access the Java assembly in a library that you access from other TFMs.
+
+
+
 This project contains the build infrastructure required for referencing Java libraries from .NET projects.
 
 Install the `IKVM.Sdk` package in a project that wants to reference Java libraries. Use the `JavaReference` `ItemGroup`
