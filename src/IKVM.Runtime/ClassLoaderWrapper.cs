@@ -22,6 +22,12 @@
   
 */
 using System;
+
+using System.Collections.Generic;
+using System.Diagnostics;
+using System.Threading;
+using System.Runtime.CompilerServices;
+
 #if STATIC_COMPILER || STUB_GENERATOR
 using IKVM.Reflection;
 using IKVM.Reflection.Emit;
@@ -30,59 +36,18 @@ using ProtectionDomain = System.Object;
 #else
 using System.Reflection;
 using System.Reflection.Emit;
+
 using ProtectionDomain = java.security.ProtectionDomain;
 #endif
-using System.IO;
-using System.Collections.Generic;
-using System.Diagnostics;
-using System.Threading;
-using System.Runtime.CompilerServices;
+
 using IKVM.Attributes;
 
 namespace IKVM.Internal
 {
-    [Flags]
-    enum CodeGenOptions
-    {
-        None = 0,
-        Debug = 1,
-        NoStackTraceInfo = 2,
-        StrictFinalFieldSemantics = 4,
-        NoJNI = 8,
-        RemoveAsserts = 16,
-        NoAutomagicSerialization = 32,
-        DisableDynamicBinding = 64,
-        NoRefEmitHelpers = 128,
-        RemoveUnusedFields = 256,
-    }
 
-    [Flags]
-    enum LoadMode
-    {
-        // These are the modes that should be used
-        Find = ReturnNull,
-        LoadOrNull = Load | ReturnNull,
-        LoadOrThrow = Load | ThrowClassNotFound,
-        Link = Load | ReturnUnloadable | SuppressExceptions,
-
-        // call into Java class loader
-        Load = 0x0001,
-
-        // return value
-        DontReturnUnloadable = 0x0002,  // This is used with a bitwise OR to disable returning unloadable
-        ReturnUnloadable = 0x0004,
-        ReturnNull = 0x0004 | DontReturnUnloadable,
-        ThrowClassNotFound = 0x0008 | DontReturnUnloadable,
-        MaskReturn = ReturnUnloadable | ReturnNull | ThrowClassNotFound,
-
-        // exceptions (not ClassNotFoundException)
-        SuppressExceptions = 0x0010,
-
-        // warnings
-        WarnClassNotFound = 0x0020,
-    }
 
 #if !STUB_GENERATOR
+
     abstract class TypeWrapperFactory
     {
         internal abstract ModuleBuilder ModuleBuilder { get; }

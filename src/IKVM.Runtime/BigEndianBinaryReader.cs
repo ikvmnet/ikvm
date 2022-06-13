@@ -22,7 +22,6 @@
   
 */
 using System;
-using System.IO;
 
 sealed class BigEndianBinaryReader
 {

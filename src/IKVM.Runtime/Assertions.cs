@@ -23,12 +23,15 @@
 */
 using System;
 using System.Globalization;
+
 using IKVM.Internal;
 
 namespace IKVM.Runtime
 {
-	public static class Assertions
+
+    public static class Assertions
 	{
+
 		private static bool sysAsserts;
 		private static bool userAsserts;
 		private static OptionNode classes;
@@ -173,5 +176,7 @@ namespace IKVM.Runtime
 			return asd;
 #endif
 		}
+
 	}
+
 }

@@ -21,7 +21,6 @@
   jeroen@frijters.net
   
 */
-//#define LABELCHECK
 #define CHECK_INVARIANTS
 using System;
 using System.Collections.Generic;
@@ -39,68 +38,10 @@ using System.Diagnostics;
 
 namespace IKVM.Internal
 {
-	sealed class CodeEmitterLabel
+
+    sealed class CodeEmitter
 	{
-		internal readonly Label Label;
-		internal int Temp;
 
-		internal CodeEmitterLabel(Label label)
-		{
-			this.Label = label;
-		}
-	}
-
-	sealed class CodeEmitterLocal
-	{
-		private Type type;
-		private string name;
-		private LocalBuilder local;
-
-		internal CodeEmitterLocal(Type type)
-		{
-			this.type = type;
-		}
-
-		internal Type LocalType
-		{
-			get { return type; }
-		}
-
-		internal void SetLocalSymInfo(string name)
-		{
-			this.name = name;
-		}
-
-		internal int __LocalIndex
-		{
-			get { return local == null ? 0xFFFF : local.LocalIndex; }
-		}
-
-		internal void Emit(ILGenerator ilgen, OpCode opcode)
-		{
-			if (local == null)
-			{
-				// it's a temporary local that is only allocated on-demand
-				local = ilgen.DeclareLocal(type);
-			}
-			ilgen.Emit(opcode, local);
-		}
-
-		internal void Declare(ILGenerator ilgen)
-		{
-			local = ilgen.DeclareLocal(type);
-			if (name != null)
-			{
-#if NETFRAMEWORK
-				// SetLocalSymInfo does not exist in .net core
-				local.SetLocalSymInfo(name);
-#endif
-			}
-		}
-	}
-
-	sealed class CodeEmitter
-	{
 		private static readonly MethodInfo objectToString = Types.Object.GetMethod("ToString", BindingFlags.Public | BindingFlags.Instance, null, Type.EmptyTypes, null);
 		private static readonly MethodInfo verboseCastFailure = JVM.SafeGetEnvironmentVariable("IKVM_VERBOSE_CAST") == null ? null : ByteCodeHelperMethods.VerboseCastFailure;
 		private static readonly MethodInfo monitorEnter = JVM.Import(typeof(System.Threading.Monitor)).GetMethod("Enter", BindingFlags.Public | BindingFlags.Static, null, new Type[] { Types.Object }, null);
@@ -2972,4 +2913,5 @@ namespace IKVM.Internal
 			EmitPseudoOpCode(CodeType.MonitorExit, null);
 		}
 	}
+
 }
