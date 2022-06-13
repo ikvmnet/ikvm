@@ -28,34 +28,10 @@ using IKVM.Attributes;
 
 namespace IKVM.Internal
 {
-    enum HardError : short
-	{
-		NoClassDefFoundError,
-		IllegalAccessError,
-		InstantiationError,
-		IncompatibleClassChangeError,
-		NoSuchFieldError,
-		AbstractMethodError,
-		NoSuchMethodError,
-		LinkageError,
-		// "exceptions" that are wrapped in an IncompatibleClassChangeError
-		IllegalAccessException,
-		// if an error is added here, it must also be added to MethodAnalyzer.SetHardError()
-	}
 
-	[Flags]
-	enum ClassFileParseOptions
+    sealed class ClassFile
 	{
-		None = 0,
-		LocalVariableTable = 1,
-		LineNumberTable = 2,
-		RelaxedClassNameValidation = 4,
-		TrustedAnnotations = 8,
-		RemoveAssertions = 16,
-	}
 
-	sealed class ClassFile
-	{
 		private ConstantPoolItem[] constantpool;
 		// Modifiers is a ushort, so the next four fields combine into two 32 bit slots
 		private Modifiers access_flags;
@@ -4002,4 +3978,5 @@ namespace IKVM.Internal
 			return false;
 		}
 	}
+
 }
