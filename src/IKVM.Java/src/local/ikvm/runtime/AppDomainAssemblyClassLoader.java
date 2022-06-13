@@ -32,23 +32,26 @@ import java.util.Vector;
 
 public final class AppDomainAssemblyClassLoader extends ClassLoader
 {
+
     public AppDomainAssemblyClassLoader(Assembly assembly)
     {
-	super(new AssemblyClassLoader(assembly));
+        super(new AssemblyClassLoader(assembly));
     }
 
     protected Class findClass(String name) throws ClassNotFoundException
     {
-	Assembly[] assemblies = AppDomain.get_CurrentDomain().GetAssemblies();
-	for (int i = 0; i < assemblies.length; i++)
-	{
-	    Class c = loadClassFromAssembly(assemblies[i], name);
-	    if (c != null)
-	    {
-		return c;
-	    }
-	}
-	throw new ClassNotFoundException(name);
+        Assembly[] assemblies = AppDomain.get_CurrentDomain().GetAssemblies();
+
+        for (int i = 0; i < assemblies.length; i++)
+        {
+            Class c = loadClassFromAssembly(assemblies[i], name);
+            if (c != null)
+            {
+                return c;
+            }
+        }
+
+        throw new ClassNotFoundException(name);
     }
 
     private static native Class loadClassFromAssembly(Assembly asm, String className);
@@ -58,14 +61,15 @@ public final class AppDomainAssemblyClassLoader extends ClassLoader
     // we override getResources() instead of findResources() to be able to filter duplicates
     public Enumeration<URL> getResources(String name) throws IOException
     {
-	Vector<URL> v = new Vector<URL>();
-	for (Enumeration<URL> e = super.getResources(name); e.hasMoreElements(); )
-	{
-	    v.add(e.nextElement());
-	}
-	getResources(v, name);
-	return v.elements();
+        Vector<URL> v = new Vector<URL>();
+        for (Enumeration<URL> e = super.getResources(name); e.hasMoreElements(); )
+        {
+            v.add(e.nextElement());
+        }
+        getResources(v, name);
+        return v.elements();
     }
-    
+
     private static native void getResources(Vector<URL> v, String name);
+
 }
