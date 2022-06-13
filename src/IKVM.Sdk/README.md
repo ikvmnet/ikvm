@@ -29,11 +29,15 @@ are supported to reference multiple JAR or .class files.
 + `References`: Optional semi-colon separated list of other `JavaReference` identity values to specify as a reference
 to the current one. For instance, if `foo.jar` depends on `bar.jar`, include both as `JavaReference` items, but specify
 the identity of `bar.jar` on the `References` metadata of `foo.jar`.
++ `Debug`: Optional boolean indicating whether to generate debug symbols (non-portable). By default this is determined
+based on the overall setting of the project.
 + All other metadata supported on the `Reference` MSBuild item group definition.
 
 `JavaReference` is not transitive. Including it in one project, and adding a dependency to that project from a second
 project, will not result in the same reference being available on the second project. Instead, add the reference to
 each project.
+
+For each project to resolve to the same resulting assembly, ensure their settings are identical.
 
 
 ```
