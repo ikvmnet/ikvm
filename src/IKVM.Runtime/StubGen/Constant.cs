@@ -1,5 +1,5 @@
 ﻿/*
-  Copyright (C) 2002-2015 Jeroen Frijters
+  Copyright (C) 2002-2013 Jeroen Frijters
 
   This software is provided 'as-is', without any express or implied
   warranty.  In no event will the authors be held liable for any damages
@@ -22,20 +22,20 @@
   
 */
 
-namespace IKVM.Internal
+namespace IKVM.StubGen
 {
-    enum HardError : short
+    enum Constant
 	{
-		NoClassDefFoundError,
-		IllegalAccessError,
-		InstantiationError,
-		IncompatibleClassChangeError,
-		NoSuchFieldError,
-		AbstractMethodError,
-		NoSuchMethodError,
-		LinkageError,
-		// "exceptions" that are wrapped in an IncompatibleClassChangeError
-		IllegalAccessException,
-		// if an error is added here, it must also be added to MethodAnalyzer.SetHardError()
+		Utf8 = 1,
+		Integer = 3,
+		Float = 4,
+		Long = 5,
+		Double = 6,
+		Class = 7,
+		String = 8,
+		Fieldref = 9,
+		Methodref = 10,
+		InterfaceMethodref = 11,
+		NameAndType = 12
 	}
 }

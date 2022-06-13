@@ -28,6 +28,8 @@ using System.Diagnostics;
 using System.Threading;
 using System.Runtime.CompilerServices;
 
+using IKVM.Attributes;
+
 #if STATIC_COMPILER || STUB_GENERATOR
 using IKVM.Reflection;
 using IKVM.Reflection.Emit;
@@ -40,11 +42,8 @@ using System.Reflection.Emit;
 using ProtectionDomain = java.security.ProtectionDomain;
 #endif
 
-using IKVM.Attributes;
-
 namespace IKVM.Internal
 {
-
 
 #if !STUB_GENERATOR
 
@@ -65,6 +64,7 @@ namespace IKVM.Internal
 
     class ClassLoaderWrapper
     {
+
         private static readonly object wrapperLock = new object();
         private static readonly Dictionary<Type, TypeWrapper> globalTypeToTypeWrapper = new Dictionary<Type, TypeWrapper>();
 #if STATIC_COMPILER || STUB_GENERATOR
@@ -1616,4 +1616,5 @@ namespace IKVM.Internal
         }
 #endif
     }
+
 }

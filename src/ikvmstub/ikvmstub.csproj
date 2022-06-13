@@ -21,12 +21,11 @@
     </ItemGroup>
 
     <ItemGroup>
-        <Compile Include="..\IKVM.Runtime\Extensions\**\*.cs" LinkBase="runtime" />
-        <Compile Include="..\IKVM.Runtime\Syntax\**\*.cs" LinkBase="runtime" />
-        <Compile Include="..\ikvmc\IKVM\Internal\AssemblyResolver.cs" LinkBase="ikvmc" />
+        <Compile Include="..\IKVM.Runtime\Extensions\**\*.cs" LinkBase="runtime\Extensions" />
+        <Compile Include="..\IKVM.Runtime\Syntax\**\*.cs" LinkBase="runtime\Syntax" />
         <Compile Include="..\IKVM.Runtime\InternalException.cs" LinkBase="runtime" />
         <Compile Include="..\IKVM.Runtime\AssemblyClassLoader.cs" LinkBase="runtime" />
-        <Compile Include="..\IKVM.Runtime\Attributes\**\*.cs" LinkBase="runtime" />
+        <Compile Include="..\IKVM.Runtime\Attributes\**\*.cs" LinkBase="runtime\Attributes" />
         <Compile Include="..\IKVM.Runtime\ClassLoaderWrapper.cs" LinkBase="runtime" />
         <Compile Include="..\IKVM.Runtime\CoreClasses.cs" LinkBase="runtime" />
         <Compile Include="..\IKVM.Runtime\DotNetTypeWrapper.cs" LinkBase="runtime" />
@@ -38,11 +37,13 @@
         <Compile Include="..\IKVM.Runtime\Types.cs" LinkBase="runtime" />
         <Compile Include="..\IKVM.Runtime\TypeWrapper.cs" LinkBase="runtime" />
         <Compile Include="..\IKVM.Runtime\vm.cs" LinkBase="runtime" />
-        <Compile Include="..\IKVM.Runtime\stubgen\ClassFileWriter.cs" LinkBase="runtime" />
-        <Compile Include="..\IKVM.Runtime\stubgen\SerialVersionUID.cs" LinkBase="runtime" />
-        <Compile Include="..\IKVM.Runtime\stubgen\StubGenerator.cs" LinkBase="runtime" />
+        <Compile Include="..\IKVM.Runtime\StubGen\**\*.cs" LinkBase="runtime\SubGen" />
         <Compile Include="..\IKVM.Runtime\LoadMode.cs" LinkBase="runtime" />
         <Compile Include="..\IKVM.Runtime\CodeGenOptions.cs" LinkBase="runtime" />
+    </ItemGroup>
+
+    <ItemGroup>
+        <Compile Include="..\ikvmc\IKVM\Internal\AssemblyResolver.cs" LinkBase="ikvmc\Internal" />
     </ItemGroup>
 
 </Project>

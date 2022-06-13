@@ -22,16 +22,18 @@
   
 */
 using System;
-using System.IO;
 using System.Collections.Generic;
 using System.Diagnostics;
+
+using IKVM.Internal;
+
 #if STATIC_COMPILER
 using IKVM.Reflection.Emit;
 using Type = IKVM.Reflection.Type;
 #else
 using System.Reflection.Emit;
 #endif
-using IKVM.Internal;
+
 using InstructionFlags = IKVM.Internal.ClassFile.Method.InstructionFlags;
 using ExceptionTableEntry = IKVM.Internal.ClassFile.Method.ExceptionTableEntry;
 
