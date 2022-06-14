@@ -28,6 +28,7 @@ using System.Security;
 using System.Security.Permissions;
 
 using IKVM.Attributes;
+using IKVM.Runtime;
 
 #if STATIC_COMPILER || STUB_GENERATOR
 using IKVM.Reflection;

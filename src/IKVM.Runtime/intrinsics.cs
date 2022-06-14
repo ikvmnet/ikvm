@@ -35,6 +35,7 @@ using System.Reflection.Emit;
 using System.Diagnostics;
 using Instruction = IKVM.Internal.ClassFile.Method.Instruction;
 using InstructionFlags = IKVM.Internal.ClassFile.Method.InstructionFlags;
+using IKVM.Runtime;
 
 namespace IKVM.Internal
 {

@@ -70,11 +70,11 @@ namespace IKVM.Internal
 
             if (!nostdlib)
             {
-//#if NETCOREAPP3_1
-//				libpath.Add(Universe.ReferenceAssembliesDirectory);
-//#else
+                //#if NETCOREAPP3_1
+                //				libpath.Add(Universe.ReferenceAssembliesDirectory);
+                //#else
                 libpath.Add(System.Runtime.InteropServices.RuntimeEnvironment.GetRuntimeDirectory());
-//#endif
+                //#endif
             }
 
             foreach (string str in userLibPaths)
@@ -442,6 +442,7 @@ namespace IKVM.Internal
                     }
                     catch
                     {
+
                     }
                 }
             }
@@ -449,7 +450,8 @@ namespace IKVM.Internal
             {
                 return LoadFile(mscorlib);
             }
-            Console.Error.WriteLine("Error: unable to find mscorlib.dll");
+
+            Console.Error.WriteLine($"Error: unable to find '{Universe.CoreLibName}.dll'.");
             Environment.Exit(1);
             return null;
         }

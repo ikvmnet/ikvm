@@ -23,12 +23,15 @@
 */
 using System;
 using System.Collections.Generic;
+
 #if STATIC_COMPILER
 using IKVM.Reflection;
 using IKVM.Reflection.Emit;
+
 using Type = IKVM.Reflection.Type;
 using DynamicOrAotTypeWrapper = IKVM.Internal.AotTypeWrapper;
 using ProtectionDomain = System.Object;
+
 #else
 using System.Reflection;
 using System.Reflection.Emit;
@@ -43,10 +46,12 @@ using IKVM.Attributes;
 
 using System.Linq;
 
+using IKVM.Runtime;
+
 namespace IKVM.Internal
 {
 #if STATIC_COMPILER
-	abstract class DynamicTypeWrapper : TypeWrapper
+    abstract class DynamicTypeWrapper : TypeWrapper
 #else
 #pragma warning disable 628 // don't complain about protected members in sealed type
     sealed class DynamicTypeWrapper : TypeWrapper
