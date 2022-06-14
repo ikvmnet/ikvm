@@ -3,28 +3,8 @@
     <PropertyGroup>
         <IkvmSdkDir>$(MSBuildThisFileDirectory)..\..\</IkvmSdkDir>
         <IkvmSdkVersion>$([System.IO.File]::ReadAllText('$(IkvmSdkDir)VERSION'))</IkvmSdkVersion>
-        <IkvmToolFramework Condition="$([MSBuild]::IsTargetFrameworkCompatible('$(TargetFramework)', 'netstandard1.0'))">netcoreapp3.1</IkvmToolFramework>
-        <IkvmToolFramework Condition="$([MSBuild]::IsTargetFrameworkCompatible('$(TargetFramework)', 'net461'))">net461</IkvmToolFramework>
-        <IkvmToolFramework Condition="$([MSBuild]::IsTargetFrameworkCompatible('$(TargetFramework)', 'netcoreapp3.1'))">netcoreapp3.1</IkvmToolFramework>
-        <IkvmToolFolder>$(IkvmToolFramework)</IkvmToolFolder>
-        <IkvmToolPath>$([System.IO.Path]::GetFullPath('$(IkvmSdkDir)tools\$(IkvmToolFolder)\'))</IkvmToolPath>
         <IkvmUserDir>$([MSBuild]::EnsureTrailingSlash('$([System.Environment]::GetFolderPath(SpecialFolder.UserProfile))'))</IkvmUserDir>
         <IkvmHomeDir>$(IkvmUserDir).ikvm\</IkvmHomeDir>
-        <IkvmUseDotNetExec>false</IkvmUseDotNetExec>
-        <IkvmUseDotNetExec Condition=" '$(IkvmToolFramework)' == 'netcoreapp3.1' ">true</IkvmUseDotNetExec>
-    </PropertyGroup>
-
-    <PropertyGroup Condition=" '$(IkvmToolFramework)' == 'net461' ">
-        <IkvmTool>$(IkvmToolPath)ikvm.exe</IkvmTool>
-        <IkvmcTool>$(IkvmToolPath)ikvmc.exe</IkvmcTool>
-        <IkvmstubTool>$(IkvmToolPath)ikvmstub.exe</IkvmstubTool>
-    </PropertyGroup>
-
-    <PropertyGroup Condition=" '$(IkvmToolFramework)' == 'netcoreapp3.1' ">
-        <IkvmTool>$(IkvmToolPath)ikvm.dll</IkvmTool>
-        <IkvmcTool>$(IkvmToolPath)ikvmc.dll</IkvmcTool>
-        <IkvmcToolNoStdLib>true</IkvmcToolNoStdLib>
-        <IkvmstubTool>$(IkvmToolPath)ikvmstub.dll</IkvmstubTool>
     </PropertyGroup>
 
     <PropertyGroup>
@@ -45,6 +25,7 @@
             <AssemblyVersion></AssemblyVersion>
             <Compile></Compile>
             <Sources></Sources>
+            <Debug></Debug>
             <Aliases></Aliases>
             <References></References>
         </JavaReference>
