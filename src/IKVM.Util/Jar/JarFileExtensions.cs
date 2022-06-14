@@ -1,4 +1,8 @@
-﻿namespace IKVM.Util.Jar
+﻿using System;
+
+using static IKVM.Util.Jar.JarFileUtil;
+
+namespace IKVM.Util.Jar
 {
 
     /// <summary>
@@ -12,9 +16,12 @@
         /// </summary>
         /// <param name="jar"></param>
         /// <returns></returns>
-        public static string GetModuleName(this JarFile jar)
+        public static ModuleInfo GetModuleInfo(this JarFile jar)
         {
-            return jar.Manifest is Manifest m ? GetModuleNameFromManifest(m) : null;
+            if (jar is null)
+                throw new ArgumentNullException(nameof(jar));
+
+            return jar.Manifest is Manifest m ? GetModuleInfoFromManifest(m) : null;
         }
 
         /// <summary>
@@ -22,9 +29,12 @@
         /// </summary>
         /// <param name="manifest"></param>
         /// <returns></returns>
-        static string GetModuleNameFromManifest(Manifest manifest)
+        static ModuleInfo GetModuleInfoFromManifest(Manifest manifest)
         {
-            return manifest.MainAttributes.TryGetValue("Automatic-Module-Name", out var name) ? name : null;
+            if (manifest is null)
+                throw new ArgumentNullException(nameof(manifest));
+
+            return new ModuleInfo(manifest.MainAttributes.TryGetValue("Automatic-Module-Name", out var name) ? name : null, null);
         }
 
     }

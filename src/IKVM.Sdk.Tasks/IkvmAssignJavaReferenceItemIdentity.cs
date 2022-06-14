@@ -5,6 +5,8 @@ using System.Linq;
 using System.Security.Cryptography;
 using System.Text;
 
+using IKVM.Sdk.Tasks.Resources;
+
 using Microsoft.Build.Framework;
 using Microsoft.Build.Utilities;
 
@@ -56,26 +58,34 @@ namespace IKVM.Sdk.Tasks
         /// <returns></returns>
         public override bool Execute()
         {
-            if (string.IsNullOrWhiteSpace(RuntimeAssembly))
-                throw new IkvmTaskException("RuntimeAssembly is required.");
-            if (string.IsNullOrWhiteSpace(ToolFramework))
-                throw new IkvmTaskException("ToolFramework is required.");
-            if (string.IsNullOrWhiteSpace(ToolVersion))
-                throw new IkvmTaskException("ToolVersion is required.");
-            if (File.Exists(RuntimeAssembly) == false)
-                throw new FileNotFoundException($"Could not find RuntimeAssembly at '{RuntimeAssembly}'.");
+            try
+            {
+                if (string.IsNullOrWhiteSpace(RuntimeAssembly))
+                    throw new IkvmTaskException("RuntimeAssembly is required.");
+                if (string.IsNullOrWhiteSpace(ToolFramework))
+                    throw new IkvmTaskException("ToolFramework is required.");
+                if (string.IsNullOrWhiteSpace(ToolVersion))
+                    throw new IkvmTaskException("ToolVersion is required.");
+                if (File.Exists(RuntimeAssembly) == false)
+                    throw new FileNotFoundException($"Could not find RuntimeAssembly at '{RuntimeAssembly}'.");
 
-            var items = IkvmJavaReferenceItemUtil.Import(Items);
+                var items = IkvmJavaReferenceItemUtil.Import(Items);
 
-            // calculate the identity for each item
-            foreach (var item in items)
-                item.IkvmIdentity = CalculateIkvmIdentity(item);
+                // calculate the identity for each item
+                foreach (var item in items)
+                    item.IkvmIdentity = CalculateIkvmIdentity(item);
 
-            // save each back to the original task item
-            foreach (var item in items)
-                item.Save();
+                // save each back to the original task item
+                foreach (var item in items)
+                    item.Save();
 
-            return true;
+                return true;
+            }
+            catch (IkvmTaskMessageException e)
+            {
+                Log.LogErrorWithCodeFromResources(e.MessageResourceName, e.MessageArgs);
+                return false;
+            }
         }
 
         /// <summary>
@@ -93,9 +103,9 @@ namespace IKVM.Sdk.Tasks
                 return id;
 
             if (string.IsNullOrWhiteSpace(item.AssemblyName))
-                throw new IkvmTaskException($"Item '{item.ItemSpec}' missing AssemblyName value.");
+                throw new IkvmTaskMessageException(SR.Error_JavaReferenceInvalidAssemblyName, item, item.AssemblyName);
             if (string.IsNullOrWhiteSpace(item.AssemblyVersion))
-                throw new IkvmTaskException($"Item '{item.ItemSpec}' missing AssemblyVersion value.");
+                throw new IkvmTaskMessageException(SR.Error_JavaReferenceInvalidAssemblyVersion, item, item.AssemblyVersion);
 
             var manifest = new StringWriter();
             manifest.WriteLine("ToolVersion={0}", ToolVersion);

@@ -12,36 +12,167 @@ namespace IKVM.Sdk.Tests.Tasks
     public class IkvmAssignJavaReferenceItemIdentityTests
     {
 
+        readonly static string HELLOWORLD_JAR = @".\Project\Lib\helloworld-2.0-1\helloworld-2.0.jar";
+
+        /// <summary>
+        /// Builds a basic task item.
+        /// </summary>
+        /// <param name="itemSpec"></param>
+        /// <param name="assemblyName"></param>
+        /// <param name="assemblyVersion"></param>
+        /// <returns></returns>
+        TaskItem BuildItem(string itemSpec, string assemblyName, string assemblyVersion)
+        {
+            var item = new TaskItem(itemSpec);
+            item.SetMetadata(IkvmJavaReferenceItemMetadata.AssemblyName, assemblyName);
+            item.SetMetadata(IkvmJavaReferenceItemMetadata.AssemblyVersion, assemblyVersion);
+            item.SetMetadata(IkvmJavaReferenceItemMetadata.Compile, itemSpec);
+            return item;
+        }
+
+        /// <summary>
+        /// Builds a new task instance with various information.
+        /// </summary>
+        /// <param name="toolFramework"></param>
+        /// <returns></returns>
+        IkvmAssignJavaReferenceItemIdentity BuildTask(string toolFramework, string toolVersion)
+        {
+            var t = new IkvmAssignJavaReferenceItemIdentity();
+            t.ToolVersion = toolVersion;
+            t.ToolFramework = toolFramework;
+            t.RuntimeAssembly = typeof(IKVM.Runtime.InternalException).Assembly.Location;
+            t.References = new[] { new TaskItem(typeof(object).Assembly.Location) };
+            return t;
+        }
+
         [TestMethod]
         public void Should_assign_identity_to_jar_for_netcoreapp3_1()
         {
-            var t = new IkvmAssignJavaReferenceItemIdentity();
-            t.ToolVersion = "0.0.0.0";
-            t.ToolFramework = "netcoreapp3.1";
-            t.RuntimeAssembly = typeof(IKVM.Runtime.InternalException).Assembly.Location;
-            var i1 = new TaskItem(@".\Project\Lib\helloworld-2.0-1\helloworld-2.0.jar");
-            i1.SetMetadata(IkvmJavaReferenceItemMetadata.AssemblyName, "helloworld");
-            i1.SetMetadata(IkvmJavaReferenceItemMetadata.AssemblyVersion, "0.0.0.0");
-            i1.SetMetadata(IkvmJavaReferenceItemMetadata.Compile, @".\Project\Lib\helloworld-2.0-1\helloworld-2.0.jar");
+            var t = BuildTask("netcoreapp3.1", "0.0.0");
+            var i1 = BuildItem(HELLOWORLD_JAR, "helloworld", "0.0.0.0");
             t.Items = new[] { i1 };
             t.Execute().Should().BeTrue();
-            i1.GetMetadata(IkvmJavaReferenceItemMetadata.IkvmIdentity).Should().Be(@"8328e23109508e20ded72593ce94a0e3");
+            i1.GetMetadata(IkvmJavaReferenceItemMetadata.IkvmIdentity).Should().NotBeUpperCased();
+            i1.GetMetadata(IkvmJavaReferenceItemMetadata.IkvmIdentity).Should().HaveLength(32);
         }
 
         [TestMethod]
         public void Should_assign_identity_to_jar_for_net461()
         {
-            var t = new IkvmAssignJavaReferenceItemIdentity();
-            t.ToolVersion = "0.0.0.0";
-            t.ToolFramework = "net461";
-            t.RuntimeAssembly = typeof(IKVM.Runtime.InternalException).Assembly.Location;
-            var i1 = new TaskItem(@".\Project\Lib\helloworld-2.0-1\helloworld-2.0.jar");
-            i1.SetMetadata(IkvmJavaReferenceItemMetadata.AssemblyName, "helloworld");
-            i1.SetMetadata(IkvmJavaReferenceItemMetadata.AssemblyVersion, "0.0.0.0");
-            i1.SetMetadata(IkvmJavaReferenceItemMetadata.Compile, @".\Project\Lib\helloworld-2.0-1\helloworld-2.0.jar");
+            var t = BuildTask("net461", "0.0.0");
+            var i1 = BuildItem(HELLOWORLD_JAR, "helloworld", "0.0.0.0");
             t.Items = new[] { i1 };
             t.Execute().Should().BeTrue();
-            i1.GetMetadata(IkvmJavaReferenceItemMetadata.IkvmIdentity).Should().Be(@"dcd3bbb855492ae08c67c4e3c9254992");
+            i1.GetMetadata(IkvmJavaReferenceItemMetadata.IkvmIdentity).Should().NotBeUpperCased();
+            i1.GetMetadata(IkvmJavaReferenceItemMetadata.IkvmIdentity).Should().HaveLength(32);
+        }
+
+        [TestMethod]
+        public void Should_assign_consistent_identity_to_jar_for_netcoreapp3_1()
+        {
+            var t1 = BuildTask("netcoreapp3.1", "0.0.0");
+            var i1 = BuildItem(HELLOWORLD_JAR, "helloworld", "0.0.0.0");
+            t1.Items = new[] { i1 };
+            t1.Execute().Should().BeTrue();
+
+            var t2 = BuildTask("netcoreapp3.1", "0.0.0");
+            var i2 = BuildItem(HELLOWORLD_JAR, "helloworld", "0.0.0.0");
+            t2.Items = new[] { i2 };
+            t2.Execute().Should().BeTrue();
+
+            var identity1 = i1.GetMetadata(IkvmJavaReferenceItemMetadata.IkvmIdentity);
+            var identity2 = i2.GetMetadata(IkvmJavaReferenceItemMetadata.IkvmIdentity);
+            identity1.Should().Be(identity2);
+        }
+
+        [TestMethod]
+        public void Should_assign_consistent_identity_to_jar_for_net461()
+        {
+            var t1 = BuildTask("net461", "0.0.0");
+            var i1 = BuildItem(HELLOWORLD_JAR, "helloworld", "0.0.0.0");
+            t1.Items = new[] { i1 };
+            t1.Execute().Should().BeTrue();
+
+            var t2 = BuildTask("net461", "0.0.0");
+            var i2 = BuildItem(HELLOWORLD_JAR, "helloworld", "0.0.0.0");
+            t2.Items = new[] { i2 };
+            t2.Execute().Should().BeTrue();
+
+            var identity1 = i1.GetMetadata(IkvmJavaReferenceItemMetadata.IkvmIdentity);
+            var identity2 = i2.GetMetadata(IkvmJavaReferenceItemMetadata.IkvmIdentity);
+            identity1.Should().Be(identity2);
+        }
+
+        [TestMethod]
+        public void Should_vary_by_tool_framework()
+        {
+            var t1 = BuildTask("netcoreapp3.1", "0.0.0");
+            var i1 = BuildItem(HELLOWORLD_JAR, "helloworld", "0.0.0.0");
+            t1.Items = new[] { i1 };
+            t1.Execute().Should().BeTrue();
+
+            var t2 = BuildTask("net461", "0.0.0");
+            var i2 = BuildItem(HELLOWORLD_JAR, "helloworld", "0.0.0.0");
+            t2.Items = new[] { i2 };
+            t2.Execute().Should().BeTrue();
+
+            var identity1 = i1.GetMetadata(IkvmJavaReferenceItemMetadata.IkvmIdentity);
+            var identity2 = i2.GetMetadata(IkvmJavaReferenceItemMetadata.IkvmIdentity);
+            identity1.Should().NotBe(identity2);
+        }
+
+        [TestMethod]
+        public void Should_vary_by_tool_version()
+        {
+            var t1 = BuildTask("netcoreapp3.1", "0.0.0");
+            var i1 = BuildItem(HELLOWORLD_JAR, "helloworld", "0.0.0.0");
+            t1.Items = new[] { i1 };
+            t1.Execute().Should().BeTrue();
+
+            var t2 = BuildTask("netcoreapp3.1", "0.0.1");
+            var i2 = BuildItem(HELLOWORLD_JAR, "helloworld", "0.0.0.0");
+            t2.Items = new[] { i2 };
+            t2.Execute().Should().BeTrue();
+
+            var identity1 = i1.GetMetadata(IkvmJavaReferenceItemMetadata.IkvmIdentity);
+            var identity2 = i2.GetMetadata(IkvmJavaReferenceItemMetadata.IkvmIdentity);
+            identity1.Should().NotBe(identity2);
+        }
+
+        [TestMethod]
+        public void Should_vary_by_assembly_name()
+        {
+            var t1 = BuildTask("netcoreapp3.1", "0.0.0");
+            var i1 = BuildItem(HELLOWORLD_JAR, "helloworld1", "0.0.0.0");
+            t1.Items = new[] { i1 };
+            t1.Execute().Should().BeTrue();
+
+            var t2 = BuildTask("netcoreapp3.1", "0.0.0");
+            var i2 = BuildItem(HELLOWORLD_JAR, "helloworld2", "0.0.0.0");
+            t2.Items = new[] { i2 };
+            t2.Execute().Should().BeTrue();
+
+            var identity1 = i1.GetMetadata(IkvmJavaReferenceItemMetadata.IkvmIdentity);
+            var identity2 = i2.GetMetadata(IkvmJavaReferenceItemMetadata.IkvmIdentity);
+            identity1.Should().NotBe(identity2);
+        }
+
+        [TestMethod]
+        public void Should_vary_by_assembly_version()
+        {
+            var t1 = BuildTask("netcoreapp3.1", "0.0.0");
+            var i1 = BuildItem(HELLOWORLD_JAR, "helloworld", "0.0.0.0");
+            t1.Items = new[] { i1 };
+            t1.Execute().Should().BeTrue();
+
+            var t2 = BuildTask("netcoreapp3.1", "0.0.1");
+            var i2 = BuildItem(HELLOWORLD_JAR, "helloworld", "0.0.0.0");
+            t2.Items = new[] { i2 };
+            t2.Execute().Should().BeTrue();
+
+            var identity1 = i1.GetMetadata(IkvmJavaReferenceItemMetadata.IkvmIdentity);
+            var identity2 = i2.GetMetadata(IkvmJavaReferenceItemMetadata.IkvmIdentity);
+            identity1.Should().NotBe(identity2);
         }
 
     }

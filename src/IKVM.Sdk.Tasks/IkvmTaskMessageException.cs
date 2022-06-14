@@ -1,0 +1,55 @@
+﻿using System;
+
+using IKVM.Sdk.Tasks.Resources;
+
+namespace IKVM.Sdk.Tasks
+{
+
+    /// <summary>
+    /// IKVM task exception with error message.
+    /// </summary>
+    class IkvmTaskMessageException : IkvmTaskException
+    {
+
+        readonly string messageResourceName;
+        readonly object[] messageArgs;
+
+        /// <summary>
+        /// Initializes a new instance.
+        /// </summary>
+        /// <param name="messageResourceName"></param>
+        /// <param name="messageArgs"></param>
+        /// <exception cref="ArgumentNullException"></exception>
+        public IkvmTaskMessageException(string messageResourceName, params object[] messageArgs) :
+            base(string.Format(SR.ResourceManager.GetString(messageResourceName), messageArgs))
+        {
+            this.messageResourceName = messageResourceName ?? throw new ArgumentNullException(nameof(messageResourceName));
+            this.messageArgs = messageArgs ?? throw new ArgumentNullException(nameof(messageArgs));
+        }
+
+        /// <summary>
+        /// Initializes a new instance.
+        /// </summary>
+        /// <param name="messageResourceName"></param>
+        /// <param name="messageArgs"></param>
+        /// <exception cref="ArgumentNullException"></exception>
+        public IkvmTaskMessageException(Exception innerException, string messageResourceName, params object[] messageArgs) :
+            base(string.Format(SR.ResourceManager.GetString(messageResourceName), messageArgs), innerException)
+        {
+            this.messageResourceName = messageResourceName ?? throw new ArgumentNullException(nameof(messageResourceName));
+            this.messageArgs = messageArgs ?? throw new ArgumentNullException(nameof(messageArgs));
+        }
+
+        /// <summary>
+        /// Gets the resource name of the message.
+        /// </summary>
+        public string MessageResourceName => messageResourceName;
+
+        /// <summary>
+        /// Gets the arguments of the message.
+        /// </summary>
+        public object[] MessageArgs => messageArgs;
+
+    }
+
+}

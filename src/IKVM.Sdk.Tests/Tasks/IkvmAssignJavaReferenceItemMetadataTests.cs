@@ -88,6 +88,17 @@ namespace IKVM.Sdk.Tests.Tasks
             c.Should().Be("helloworld");
         }
 
+        [TestMethod]
+        public void Should_get_default_assembly_version_from_jar()
+        {
+            var t = new IkvmAssignJavaReferenceItemMetadata();
+            var i1 = new TaskItem(@".\Project\Lib\helloworld-2.0-1\helloworld-2.0.jar");
+            t.Items = new[] { i1 };
+            t.Execute().Should().BeTrue();
+            var c = i1.GetMetadata(IkvmJavaReferenceItemMetadata.AssemblyVersion);
+            c.Should().Be("2.0");
+        }
+
     }
 
 }

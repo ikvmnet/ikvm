@@ -12,6 +12,43 @@ namespace IKVM.Util.Jar
     {
 
         /// <summary>
+        /// Describes a module.
+        /// </summary>
+        public class ModuleInfo
+        {
+
+            /// <summary>
+            /// Initializes a new instance.
+            /// </summary>
+            public ModuleInfo()
+            {
+
+            }
+
+            /// <summary>
+            /// Initializes a new instance.
+            /// </summary>
+            /// <param name="name"></param>
+            /// <param name="version"></param>
+            public ModuleInfo(string name, string version)
+            {
+                Name = name;
+                Version = version;
+            }
+
+            /// <summary>
+            /// Name of the module.
+            /// </summary>
+            public string Name { get; set; }
+
+            /// <summary>
+            /// Version of the module.
+            /// </summary>
+            public string Version { get; set; }
+
+        }
+
+        /// <summary>
         /// Attempts to get the module name from the given classpath entry.
         /// </summary>
         /// <param name="path"></param>
@@ -19,7 +56,7 @@ namespace IKVM.Util.Jar
         /// <exception cref="ArgumentNullException"></exception>
         /// <exception cref="ArgumentException"></exception>
         /// <exception cref="FileNotFoundException"></exception>
-        public static string GetModuleName(string path)
+        public static ModuleInfo GetModuleInfo(string path)
         {
             if (path is null)
                 throw new ArgumentNullException(nameof(path));
@@ -29,7 +66,19 @@ namespace IKVM.Util.Jar
                 throw new FileNotFoundException("Cannot find JAR file.", path);
 
             using var jar = new JarFile(path);
-            return jar.GetModuleName() ?? GetModuleNameFromFileName(path);
+            var info = jar.GetModuleInfo();
+
+            // we didn't get any info from the file itself, fallback to using the name of the file
+            if (info.Name is null || info.Version is null)
+            {
+                var fromFileName = GetModuleNameAndVersionFromFileName(path);
+                if (info.Name is null && fromFileName.Name is not null)
+                    info.Name = fromFileName.Name;
+                if (info.Version is null && fromFileName.Version is not null)
+                    info.Version = fromFileName.Version;
+            }
+
+            return info;
         }
 
         /// <summary>
@@ -37,9 +86,9 @@ namespace IKVM.Util.Jar
         /// </summary>
         /// <param name="name"></param>
         /// <returns></returns>
-        static string GetModuleNameFromFileName(string name)
+        static ModuleInfo GetModuleNameAndVersionFromFileName(string name)
         {
-            var vstr = (string)null;
+            var info = new ModuleInfo();
 
             // The ".jar" suffix is removed.
             name = Path.GetFileNameWithoutExtension(name);
@@ -49,7 +98,7 @@ namespace IKVM.Util.Jar
             // If the name matches the regular expression "-(\\d+(\\.|$))" then the module name will be derived from the subsequence preceding the hyphen of the first occurrence.
             if (Regex.Match(name, @"-(\d+(\.|$))") is Match m)
             {
-                vstr = TryParseVersion(span.Slice(m.Index));
+                info.Version = TryParseVersion(span.Slice(m.Index + 1));
                 span = span.Slice(0, m.Index);
             }
 
@@ -64,9 +113,9 @@ namespace IKVM.Util.Jar
                 name = name.Remove(i, 1);
 
             // and all leading and trailing dots are removed.
-            name = name.Trim('.');
+            info.Name = name.Trim('.');
 
-            return name;
+            return info;
         }
 
         /// <summary>
@@ -76,7 +125,7 @@ namespace IKVM.Util.Jar
         /// <returns></returns>
         static string TryParseVersion(ReadOnlySpan<char> span)
         {
-            return null;
+            return span.ToString();
         }
 
     }

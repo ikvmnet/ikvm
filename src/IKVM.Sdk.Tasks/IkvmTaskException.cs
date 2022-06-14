@@ -1,36 +1,34 @@
 ﻿using System;
-using System.Runtime.Serialization;
 
 namespace IKVM.Sdk.Tasks
 {
-    [Serializable]
-    internal class IkvmTaskException : Exception
+
+    /// <summary>
+    /// Generic IKVM task exception.
+    /// </summary>
+    class IkvmTaskException : Exception
     {
-        private string v;
-        private string reference;
-        private string itemSpec;
 
-        public IkvmTaskException()
-        {
-        }
-
+        /// <summary>
+        /// Initializes a new instance.
+        /// </summary>
+        /// <param name="message"></param>
         public IkvmTaskException(string message) : base(message)
         {
+
         }
 
-        public IkvmTaskException(string message, Exception innerException) : base(message, innerException)
+        /// <summary>
+        /// Initializes a new instance.
+        /// </summary>
+        /// <param name="message"></param>
+        /// <param name="innerException"></param>
+        public IkvmTaskException(string message, Exception innerException) :
+            base(message, innerException)
         {
+
         }
 
-        public IkvmTaskException(string v, string reference, string itemSpec)
-        {
-            this.v = v;
-            this.reference = reference;
-            this.itemSpec = itemSpec;
-        }
-
-        protected IkvmTaskException(SerializationInfo info, StreamingContext context) : base(info, context)
-        {
-        }
     }
+
 }

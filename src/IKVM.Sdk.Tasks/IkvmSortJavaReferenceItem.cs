@@ -53,7 +53,7 @@ namespace IKVM.Sdk.Tasks
             if (l.Count == items.Count)
                 return l.ToArray();
 
-            throw new InvalidOperationException("Cycle detected.");
+            throw new IkvmTaskMessageException("Error.JavaReferenceCircularReference", l[0]);
         }
 
         /// <summary>
