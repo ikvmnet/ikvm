@@ -2,9 +2,12 @@
     <Import Project="Sdk.props" Sdk="Microsoft.NET.Sdk" />
 
     <PropertyGroup>
+        <PackageId>IKVM.Sdk</PackageId>
         <TargetFrameworks>net461;netcoreapp3.1</TargetFrameworks>
         <NoWarn>$(NoWarn);NU5100;NU5128</NoWarn>
         <IncludeBuildOutput>false</IncludeBuildOutput>
+        <PackageLicenseFile>LICENSE.md</PackageLicenseFile>
+        <PackageReadmeFile>README.md</PackageReadmeFile>
         <Description>Java SE 8 Virtual Machine for .NET (SDK)</Description>
     </PropertyGroup>
 
