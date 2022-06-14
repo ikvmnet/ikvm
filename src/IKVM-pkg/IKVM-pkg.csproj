@@ -52,10 +52,6 @@
     </ItemGroup>
 
     <ItemGroup>
-        <Reference Remove="@(Reference)" />
-    </ItemGroup>
-
-    <ItemGroup>
         <None Include="build\**\*.targets" Pack="true" PackagePath="build\%(RecursiveDir)%(Filename)%(Extension)" />
     </ItemGroup>
 

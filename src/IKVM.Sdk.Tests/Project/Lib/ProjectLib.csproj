@@ -1,0 +1,30 @@
+﻿<Project>
+    <PropertyGroup>
+        <ImportDirectoryBuildProps>false</ImportDirectoryBuildProps>
+        <ImportDirectoryBuildTargets>false</ImportDirectoryBuildTargets>
+    </PropertyGroup>
+    
+    <Import Project="Sdk.props" Sdk="Microsoft.NET.Sdk" />
+    
+    <PropertyGroup>
+        <TargetFrameworks>net461;net472;net48;netcoreapp3.1</TargetFrameworks>
+    </PropertyGroup>
+
+    <ItemGroup>
+        <PackageReference Include="IKVM.Sdk" Version="$(PackageVersion)" />
+    </ItemGroup>
+
+    <ItemGroup>
+        <JavaReference Include="helloworld-2.0-1\helloworld-2.0.jar">
+            <AssemblyVersion>2.0.0.0</AssemblyVersion>
+        </JavaReference>
+        <JavaReference Include="helloworld-2.0-2\helloworld-2.0.jar">
+            <AssemblyName>helloworld-2</AssemblyName>
+            <AssemblyVersion>2.0.0.0</AssemblyVersion>
+            <References>helloworld-2.0-1\helloworld-2.0.jar</References>
+            <Aliases>helloworld2</Aliases>
+        </JavaReference>
+    </ItemGroup>
+
+    <Import Project="Sdk.targets" Sdk="Microsoft.NET.Sdk" />
+</Project>

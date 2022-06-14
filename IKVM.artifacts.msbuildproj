@@ -27,6 +27,10 @@
             <Properties>$(PackProperties);PackageOutputPath=$(ArtifactStagingDirectory)\nuget</Properties>
         </TargetsForPublish>
         <TargetsForPublish Include="$(SolutionFile)">
+            <Targets>IKVM_Sdk:Pack</Targets>
+            <Properties>$(PackProperties);PackageOutputPath=$(ArtifactStagingDirectory)\nuget</Properties>
+        </TargetsForPublish>
+        <TargetsForPublish Include="$(SolutionFile)">
             <Targets>ikvm:Publish;ikvmc:Publish;ikvmstub:Publish</Targets>
             <Properties>$(ToolProperties);TargetFramework=net461;PublishDir=$(ArtifactStagingDirectory)\tools\net461\any</Properties>
         </TargetsForPublish>
@@ -55,7 +59,7 @@
             <Properties>$(TestProperties);TargetFramework=net5.0;PublishDir=$(ArtifactStagingDirectory)\tests\net5.0</Properties>
         </TargetsForPublish>
         <TargetsForPublish Include="$(SolutionFile)">
-            <Targets>IKVM_Tests:Publish;ikvmc_Tests:Publish;ikvmstub_Tests:Publish</Targets>
+            <Targets>IKVM_Tests:Publish;ikvmc_Tests:Publish;ikvmstub_Tests:Publish;IKVM_Sdk_Tests:Publish</Targets>
             <Properties>$(TestProperties);TargetFramework=net6.0;PublishDir=$(ArtifactStagingDirectory)\tests\net6.0</Properties>
         </TargetsForPublish>
     </ItemGroup>

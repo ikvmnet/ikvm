@@ -28,6 +28,7 @@ using System.Collections.Generic;
 using IKVM.Attributes;
 using IKVM.Reflection;
 using IKVM.Reflection.Emit;
+using IKVM.Runtime;
 
 using Type = IKVM.Reflection.Type;
 

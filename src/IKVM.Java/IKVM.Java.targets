@@ -100,32 +100,6 @@
         </Task>
     </UsingTask>
 
-    <UsingTask TaskName="GetMetadataTask" TaskFactory="RoslynCodeTaskFactory" AssemblyFile="$(MSBuildToolsPath)\Microsoft.Build.Tasks.Core.dll">
-        <ParameterGroup>
-            <Items ParameterType="Microsoft.Build.Framework.ITaskItem[]" Required="true" />
-            <MetadataString Output="true" />
-        </ParameterGroup>
-        <Task>
-            <Using Namespace="System" />
-            <Code Type="Fragment" Language="cs">
-                <![CDATA[
-                var command = new StringBuilder();
-                
-                foreach (var item in Items)
-                {
-                    command.AppendFormat("ItemName={0}\r\n", item);
-                    foreach (string parameter in item.MetadataNames)
-                        command.AppendFormat("  {0}={1}\r\n", parameter, item.GetMetadata(parameter));
-                        
-                    command.AppendFormat("\r\n");
-                }
-                
-                MetadataString = command.ToString();
-      ]]>
-            </Code>
-        </Task>
-    </UsingTask>
-
     <PropertyGroup>
         <JavaAssemblyInfoFile>$(IntermediateOutputPath)$(MSBuildThisFile).AssemblyInfo.java</JavaAssemblyInfoFile>
     </PropertyGroup>
@@ -137,11 +111,11 @@
         </ItemGroup>
         <ItemGroup>
             <_JavaAssemblyAttribute Include="@(JavaAssemblyAttribute)" Condition=" '%(Identity)' == 'System.Runtime.CompilerServices.InternalsVisibleTo' " />
-            
+
             <!-- InternalsVisibleTo needs to be renamed with Attribute suffix -->
             <JavaAssemblyAttribute Remove="System.Runtime.CompilerServices.InternalsVisibleTo" />
             <JavaAssemblyAttribute Include="@(_JavaAssemblyAttribute->'System.Runtime.CompilerServices.InternalsVisibleToAttribute')" Condition=" '%(Identity)' == 'System.Runtime.CompilerServices.InternalsVisibleTo' " />
-        
+
             <!-- #55 not emitted by stub generator -->
             <JavaAssemblyAttribute Remove="System.Reflection.AssemblyMetadataAttribute" />
 
@@ -712,7 +686,7 @@
 
         <ItemGroup>
         </ItemGroup>
-        
+
         <ItemGroup>
             <_IkvmcArgs Include="-debug" Condition=" '$(DebugSymbols)' == 'true' Or '$(DebugType)' != 'none' " />
             <_IkvmcArgs Include="-assembly:$(AssemblyName)" />
@@ -811,7 +785,7 @@
     <PropertyGroup>
         <_MergeJavaAssemblyCoreForceBuildFile>$(IntermediateOutputPath)$(MSBuildThisFile).MergeJavaAssemblyCore.force</_MergeJavaAssemblyCoreForceBuildFile>
     </PropertyGroup>
-    
+
     <Target Name="MergeJavaAssemblyCore" DependsOnTargets="BuildJavaAssembly" Condition="'$(_MergeJavaAssemblyTimestampBeforeCompile)' != '$(_MergeJavaAssemblyTimestampAfterCompile)' Or Exists('$(_MergeJavaAssemblyCoreForceBuildFile)')">
         <!-- Create a file which will force the next build to run this target if the previous build failed.
              Failure between this point and the point where intermediate outputs are moved will make CoreCompile not run again (up-to-date outputs).
