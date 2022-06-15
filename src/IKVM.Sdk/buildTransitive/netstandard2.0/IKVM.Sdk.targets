@@ -142,7 +142,7 @@
     </Target>
 
     <!-- Builds the JavaReferenceItems into their output items within the cache. -->
-    <Target Name="_BuildJavaReferenceAssemblies" DependsOnTargets="GetJavaReferenceItems" Inputs="@(JavaReferenceItem)" Outputs="%(JavaReferenceItem.CachePath)">
+    <Target Name="_BuildJavaReferenceAssemblies" DependsOnTargets="GetJavaReferenceItems" Inputs="@(JavaReferenceItem->'%(Compile)')" Outputs="%(JavaReferenceItem.CachePath)">
         <MakeDir Directories="$([System.IO.Path]::GetDirectoryName('%(JavaReferenceItem.StagePath)'))" />
         <IkvmCompiler
             ToolPath="$(IkvmcTool)"
