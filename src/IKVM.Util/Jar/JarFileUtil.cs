@@ -66,9 +66,7 @@ namespace IKVM.Util.Jar
                 throw new FileNotFoundException("Cannot find JAR file.", path);
 
             using var jar = new JarFile(path);
-            var info = jar.GetModuleInfo();
-
-            // we didn't get any info from the file itself, fallback to using the name of the file
+            var info = jar.GetModuleInfo() ?? new ModuleInfo();
             if (info.Name is null || info.Version is null)
             {
                 var fromFileName = GetModuleNameAndVersionFromFileName(path);
