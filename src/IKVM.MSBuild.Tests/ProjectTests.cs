@@ -48,7 +48,7 @@ namespace IKVM.MSBuild.Tests
         [TestMethod]
         public void Can_build_test_project()
         {
-            var properties = File.ReadAllLines("IKVM.Sdk.Tests.properties").Select(i => i.Split('=', 2)).ToDictionary(i => i[0], i => i[1]);
+            var properties = File.ReadAllLines("IKVM.MSBuild.Tests.properties").Select(i => i.Split('=', 2)).ToDictionary(i => i[0], i => i[1]);
 
             var nugetPackageRoot = Path.Combine(Environment.CurrentDirectory, "nuget-packages");
             if (Directory.Exists(nugetPackageRoot))

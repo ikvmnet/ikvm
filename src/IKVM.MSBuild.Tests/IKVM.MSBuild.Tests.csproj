@@ -22,13 +22,11 @@
 
     <ItemGroup>
         <ProjectReference Include="..\IKVM.Runtime\IKVM.Runtime.csproj" />
-        <ProjectReference Include="..\IKVM.Sdk\IKVM.Sdk.csproj" />
+        <ProjectReference Include="..\IKVM.MSBuild.Tasks\IKVM.MSBuild.Tasks.csproj" />
     </ItemGroup>
 
     <ItemGroup>
         <PackageProjectReference Include="..\IKVM-pkg\IKVM-pkg.csproj" />
-        <PackageProjectReference Include="..\IKVM.Sdk\IKVM.Sdk.csproj" />
-        <PackageProjectReference Include="..\IKVM.Sdk.Maven\IKVM.Sdk.Maven.csproj" />
     </ItemGroup>
 
     <ItemGroup>

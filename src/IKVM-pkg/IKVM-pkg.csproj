@@ -52,7 +52,51 @@
     </ItemGroup>
 
     <ItemGroup>
-        <None Include="build\**\*.targets" Pack="true" PackagePath="build\%(RecursiveDir)%(Filename)%(Extension)" />
+        <PublishProjectReference Include="..\IKVM.MSBuild.Tasks\IKVM.MSBuild.Tasks.csproj" Condition=" '$(TargetFramework)' == '' ">
+            <SetTargetFramework>TargetFramework=net472</SetTargetFramework>
+            <PublishPackagePath>tasks\net472</PublishPackagePath>
+            <PublishProperties>SelfContained=false</PublishProperties>
+        </PublishProjectReference>
+        <PublishProjectReference Include="..\IKVM.MSBuild.Tasks\IKVM.MSBuild.Tasks.csproj" Condition=" '$(TargetFramework)' == '' ">
+            <SetTargetFramework>TargetFramework=net6.0</SetTargetFramework>
+            <PublishPackagePath>tasks\net6.0</PublishPackagePath>
+            <PublishProperties>SelfContained=false</PublishProperties>
+        </PublishProjectReference>
+        <PublishProjectReference Include="..\ikvm\ikvm.csproj" Condition=" '$(TargetFramework)' == '' ">
+            <SetTargetFramework>TargetFramework=net461</SetTargetFramework>
+            <PublishPackagePath>tools\net461</PublishPackagePath>
+            <PublishProperties>SelfContained=false</PublishProperties>
+        </PublishProjectReference>
+        <PublishProjectReference Include="..\ikvmc\ikvmc.csproj" Condition=" '$(TargetFramework)' == '' ">
+            <SetTargetFramework>TargetFramework=net461</SetTargetFramework>
+            <PublishPackagePath>tools\net461</PublishPackagePath>
+            <PublishProperties>SelfContained=false</PublishProperties>
+        </PublishProjectReference>
+        <PublishProjectReference Include="..\ikvmstub\ikvmstub.csproj" Condition=" '$(TargetFramework)' == '' ">
+            <SetTargetFramework>TargetFramework=net461</SetTargetFramework>
+            <PublishPackagePath>tools\net461</PublishPackagePath>
+            <PublishProperties>SelfContained=false</PublishProperties>
+        </PublishProjectReference>
+        <PublishProjectReference Include="..\ikvm\ikvm.csproj" Condition=" '$(TargetFramework)' == '' ">
+            <SetTargetFramework>TargetFramework=netcoreapp3.1</SetTargetFramework>
+            <PublishPackagePath>tools\netcoreapp3.1</PublishPackagePath>
+            <PublishProperties>SelfContained=false</PublishProperties>
+        </PublishProjectReference>
+        <PublishProjectReference Include="..\ikvmc\ikvmc.csproj" Condition=" '$(TargetFramework)' == '' ">
+            <SetTargetFramework>TargetFramework=netcoreapp3.1</SetTargetFramework>
+            <PublishPackagePath>tools\netcoreapp3.1</PublishPackagePath>
+            <PublishProperties>SelfContained=false</PublishProperties>
+        </PublishProjectReference>
+        <PublishProjectReference Include="..\ikvmstub\ikvmstub.csproj" Condition=" '$(TargetFramework)' == '' ">
+            <SetTargetFramework>TargetFramework=netcoreapp3.1</SetTargetFramework>
+            <PublishPackagePath>tools\netcoreapp3.1</PublishPackagePath>
+            <PublishProperties>SelfContained=false</PublishProperties>
+        </PublishProjectReference>
+    </ItemGroup>
+
+    <ItemGroup>
+        <None Include="build\**\*" Pack="true" PackagePath="build\%(RecursiveDir)%(Filename)%(Extension)" />
+        <None Include="buildTransitive\**\*" Pack="true" PackagePath="buildTransitive\%(RecursiveDir)%(Filename)%(Extension)" />
     </ItemGroup>
 
     <ItemGroup>
@@ -63,6 +107,13 @@
     <Target Name="CopyProjectReferencesToPackage" DependsOnTargets="ResolveReferences">
         <ItemGroup>
             <TfmSpecificPackageFile Include="@(ReferenceCopyLocalPaths-&gt;WithMetadataValue('ReferenceSourceTarget', 'ProjectReference')-&gt;WithMetadataValue('PrivateAssets', 'all'))" PackagePath="lib\$(TargetFramework)" />
+        </ItemGroup>
+    </Target>
+
+    <Target Name="MakeIkvmVersionFile" Outputs="$(IntermediateOutputPath)VERSION" BeforeTargets="_GetPackageFiles">
+        <WriteLinesToFile File="$(IntermediateOutputPath)VERSION" Lines="$(Version)" Overwrite="true" WriteOnlyWhenDifferent="true" />
+        <ItemGroup>
+            <_PackageFiles Include="$(IntermediateOutputPath)VERSION" PackagePath="." />
         </ItemGroup>
     </Target>
 

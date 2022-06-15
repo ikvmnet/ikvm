@@ -17,7 +17,6 @@
 
     <ItemGroup>
         <Content Include="lib\**\*" PackagePath="lib\%(RecursiveDir)%(Filename)%(Extension)" />
-        <Content Include="buildTransitive\**\*" PackagePath="buildTransitive\%(RecursiveDir)%(Filename)%(Extension)" />
     </ItemGroup>
 
     <ItemGroup>
