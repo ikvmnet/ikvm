@@ -23,7 +23,6 @@ See the [tutorial](https://sourceforge.net/p/ikvm/wiki/Tutorial/) to get started
 - .NET Core 3.1 and higher
 - .NET 5 and higher
 - Java SE 8
-# IKVM - Java Virtual Machine for .NET (SDK)
 
 ## IkvmReference
 
