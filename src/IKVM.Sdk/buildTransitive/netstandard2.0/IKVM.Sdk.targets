@@ -201,7 +201,7 @@
 
     <PropertyGroup>
         <ResolveJavaReferencesDependsOn>
-            $(ResolveJavaReferenceAssembliesDependsOn);
+            $(ResolveJavaReferencesDependsOn);
             GetJavaReferenceItems;
             _ResolveJavaReferences;
         </ResolveJavaReferencesDependsOn>

@@ -58,27 +58,27 @@ namespace IKVM.Sdk.Tasks
 
             if (string.IsNullOrWhiteSpace(item.AssemblyName))
             {
-                Log.LogErrorWithCodeFromResources("Error.JavaReferenceInvalidAssemblyName", item, item.AssemblyName);
+                Log.LogErrorWithCodeFromResources("Error.JavaReferenceInvalidAssemblyName", item.ItemSpec, item.AssemblyName);
                 valid = false;
             }
 
             if (string.IsNullOrWhiteSpace(item.AssemblyVersion))
             {
-                Log.LogErrorWithCodeFromResources("Error.JavaReferenceInvalidAssemblyVersion", item, item.AssemblyVersion);
+                Log.LogErrorWithCodeFromResources("Error.JavaReferenceInvalidAssemblyVersion", item.ItemSpec, item.AssemblyVersion);
                 valid = false;
             }
             else
             {
                 if (Version.TryParse(item.AssemblyVersion, out _) == false)
                 {
-                    Log.LogErrorWithCodeFromResources("Error.JavaReferenceInvalidAssemblyVersion", item, item.AssemblyVersion);
+                    Log.LogErrorWithCodeFromResources("Error.JavaReferenceInvalidAssemblyVersion", item.ItemSpec, item.AssemblyVersion);
                     valid = false;
                 }
             }
 
             if (item.Compile.Count == 0)
             {
-                Log.LogErrorWithCodeFromResources("Error.JavaReferenceRequiresCompile", item);
+                Log.LogErrorWithCodeFromResources("Error.JavaReferenceRequiresCompile", item.ItemSpec);
                 valid = false;
             }
             else
@@ -87,13 +87,13 @@ namespace IKVM.Sdk.Tasks
                 {
                     if (Path.GetExtension(compile) is not ".jar" and not ".class")
                     {
-                        Log.LogErrorWithCodeFromResources("Error.JavaReferenceInvalidCompile", item, compile);
+                        Log.LogErrorWithCodeFromResources("Error.JavaReferenceInvalidCompile", item.ItemSpec, compile);
                         valid = false;
                     }
 
                     if (File.Exists(compile) == false)
                     {
-                        Log.LogErrorWithCodeFromResources("Error.JavaReferenceMissingCompile", item, compile);
+                        Log.LogErrorWithCodeFromResources("Error.JavaReferenceMissingCompile", item.ItemSpec, compile);
                         valid = false;
                     }
                 }
@@ -103,12 +103,12 @@ namespace IKVM.Sdk.Tasks
             {
                 if (Path.GetExtension(source) is not ".java")
                 {
-                    Log.LogErrorWithCodeFromResources("Error.JavaReferenceInvalidSources", item, source);
+                    Log.LogErrorWithCodeFromResources("Error.JavaReferenceInvalidSources", item.ItemSpec, source);
                     valid = false;
                 }
                 else if (File.Exists(source) == false)
                 {
-                    Log.LogErrorWithCodeFromResources("Error.JavaReferenceMissingSources", item, source);
+                    Log.LogErrorWithCodeFromResources("Error.JavaReferenceMissingSources", item.ItemSpec, source);
                     valid = false;
                 }
             }
@@ -123,7 +123,7 @@ namespace IKVM.Sdk.Tasks
             }
             catch (Exception)
             {
-                Log.LogErrorWithCodeFromResources("Error.JavaReferenceInvalidAssemblyInfo", item, item.AssemblyName, item.AssemblyVersion);
+                Log.LogErrorWithCodeFromResources("Error.JavaReferenceInvalidAssemblyInfo", item.ItemSpec, item.AssemblyName, item.AssemblyVersion);
                 valid = false;
             }
 

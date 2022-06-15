@@ -84,7 +84,7 @@ namespace IKVM.Sdk.Tasks
                 if (TryResolveReference(map, itemSpec, out var resolved))
                     l.Add(resolved);
                 else
-                    throw new IkvmTaskMessageException("Error.JavaReferenceInvalidReference", item, itemSpec);
+                    throw new IkvmTaskMessageException("Error.JavaReferenceInvalidReference", item.ItemSpec, itemSpec);
 
             return l;
         }
