@@ -128,16 +128,21 @@ namespace IKVM.Sdk.Tasks
         /// <param name="path"></param>
         void AssignMetadataFromCompile(JavaReferenceItem item, string path)
         {
-            var info = TryGetAssemblyNameFromPath(path);
+            if (string.IsNullOrWhiteSpace(item.AssemblyName) || string.IsNullOrWhiteSpace(item.AssemblyVersion))
+            {
+                var info = TryGetAssemblyNameFromPath(path);
+                if (info != null)
+                {
+                    // attempt to derive a default assembly name from the compile item
+                    if (string.IsNullOrWhiteSpace(item.AssemblyName))
+                        item.AssemblyName = info.Name;
 
-            // attempt to derive a default assembly name from the compile item
-            if (info != null && string.IsNullOrWhiteSpace(item.AssemblyName))
-                item.AssemblyName = info.Name;
-
-            // attempt to derive a default assembly version from the compile item
-            if (info != null && string.IsNullOrWhiteSpace(item.AssemblyVersion))
-                if (Version.TryParse(info.Version, out var v))
-                    item.AssemblyVersion = v.ToString();
+                    // attempt to derive a default assembly version from the compile item
+                    if (string.IsNullOrWhiteSpace(item.AssemblyVersion))
+                        if (Version.TryParse(info.Version, out var v))
+                            item.AssemblyVersion = v.ToString();
+                }
+            }
         }
 
         /// <summary>
