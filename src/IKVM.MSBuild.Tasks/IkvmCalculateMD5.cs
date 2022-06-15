@@ -5,7 +5,7 @@ using System.Text;
 using Microsoft.Build.Framework;
 using Microsoft.Build.Utilities;
 
-namespace IKVM.Sdk.Tasks
+namespace IKVM.MSBuild.Tasks
 {
 
     /// <summary>

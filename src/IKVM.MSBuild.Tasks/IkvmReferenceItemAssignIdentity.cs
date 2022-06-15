@@ -5,24 +5,24 @@ using System.Linq;
 using System.Security.Cryptography;
 using System.Text;
 
-using IKVM.Sdk.Tasks.Resources;
+using IKVM.MSBuild.Tasks.Resources;
 
 using Microsoft.Build.Framework;
 using Microsoft.Build.Utilities;
 
-namespace IKVM.Sdk.Tasks
+namespace IKVM.MSBuild.Tasks
 {
 
     /// <summary>
-    /// For each of the JavaReferenceItem items passed in, resolves the various dependencies and calculates the hash.
+    /// For each of the <see cref="IkvmReferenceItem"/> items passed in, resolves the various dependencies and calculates the hash.
     /// </summary>
-    public class IkvmAssignJavaReferenceItemIdentity : Task
+    public class IkvmReferenceItemAssignIdentity : Task
     {
 
         readonly static MD5 md5 = MD5.Create();
 
         /// <summary>
-        /// JavaReferenceItem items without assigned hashes.
+        /// <see cref="IkvmReferenceItem"/> items without assigned hashes.
         /// </summary>
         [Required]
         [Output]
@@ -69,7 +69,7 @@ namespace IKVM.Sdk.Tasks
                 if (File.Exists(RuntimeAssembly) == false)
                     throw new FileNotFoundException($"Could not find RuntimeAssembly at '{RuntimeAssembly}'.");
 
-                var items = IkvmJavaReferenceItemUtil.Import(Items);
+                var items = IkvmReferenceItemUtil.Import(Items);
 
                 // calculate the identity for each item
                 foreach (var item in items)
@@ -93,7 +93,7 @@ namespace IKVM.Sdk.Tasks
         /// </summary>
         /// <param name="item"></param>
         /// <returns></returns>
-        string CalculateIkvmIdentity(JavaReferenceItem item)
+        string CalculateIkvmIdentity(IkvmReferenceItem item)
         {
             if (item is null)
                 throw new ArgumentNullException(nameof(item));
@@ -103,9 +103,9 @@ namespace IKVM.Sdk.Tasks
                 return id;
 
             if (string.IsNullOrWhiteSpace(item.AssemblyName))
-                throw new IkvmTaskMessageException(SR.Error_JavaReferenceInvalidAssemblyName, item, item.AssemblyName);
+                throw new IkvmTaskMessageException(SR.Error_IkvmInvalidAssemblyName, item, item.AssemblyName);
             if (string.IsNullOrWhiteSpace(item.AssemblyVersion))
-                throw new IkvmTaskMessageException(SR.Error_JavaReferenceInvalidAssemblyVersion, item, item.AssemblyVersion);
+                throw new IkvmTaskMessageException(SR.Error_IkvmInvalidAssemblyVersion, item, item.AssemblyVersion);
 
             var manifest = new StringWriter();
             manifest.WriteLine("ToolVersion={0}", ToolVersion);
@@ -188,7 +188,7 @@ namespace IKVM.Sdk.Tasks
         /// <param name="item"></param>
         /// <param name="path"></param>
         /// <exception cref="FileNotFoundException"></exception>
-        string GetCompileLine(JavaReferenceItem item, string path)
+        string GetCompileLine(IkvmReferenceItem item, string path)
         {
             if (string.IsNullOrWhiteSpace(path))
                 throw new ArgumentException($"'{nameof(path)}' cannot be null or whitespace.", nameof(path));
@@ -203,7 +203,7 @@ namespace IKVM.Sdk.Tasks
         /// </summary>
         /// <param name="item"></param>
         /// <param name="reference"></param>
-        string GetReferenceLine(JavaReferenceItem item, ITaskItem reference)
+        string GetReferenceLine(IkvmReferenceItem item, ITaskItem reference)
         {
             if (item is null)
                 throw new ArgumentNullException(nameof(item));
@@ -226,7 +226,7 @@ namespace IKVM.Sdk.Tasks
         /// </summary>
         /// <param name="item"></param>
         /// <param name="reference"></param>
-        string GetReferenceLine(JavaReferenceItem item, JavaReferenceItem reference)
+        string GetReferenceLine(IkvmReferenceItem item, IkvmReferenceItem reference)
         {
             if (item is null)
                 throw new ArgumentNullException(nameof(item));

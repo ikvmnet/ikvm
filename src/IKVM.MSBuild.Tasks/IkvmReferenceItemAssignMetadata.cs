@@ -8,17 +8,17 @@ using Microsoft.Build.Framework;
 using Microsoft.Build.Globbing;
 using Microsoft.Build.Utilities;
 
-namespace IKVM.Sdk.Tasks
+namespace IKVM.MSBuild.Tasks
 {
 
     /// <summary>
-    /// For each JavaReferenceItem passed in, assigns default metadata if required.
+    /// For each <see cref="IkvmReferenceItem"/> passed in, assigns default metadata if required.
     /// </summary>
-    public class IkvmAssignJavaReferenceItemMetadata : Task
+    public class IkvmReferenceItemAssignMetadata : Task
     {
 
         /// <summary>
-        /// JavaReferenceItem items to assign metadata to.
+        /// <see cref="IkvmReferenceItem"/> items to assign metadata to.
         /// </summary>
         [Required]
         [Output]
@@ -30,7 +30,7 @@ namespace IKVM.Sdk.Tasks
         /// <returns></returns>
         public override bool Execute()
         {
-            var items = IkvmJavaReferenceItemUtil.Import(Items);
+            var items = IkvmReferenceItemUtil.Import(Items);
 
             // assign other metadata
             foreach (var item in items)
@@ -47,7 +47,7 @@ namespace IKVM.Sdk.Tasks
         /// Assigns the metadata to the item.
         /// </summary>
         /// <param name="item"></param>
-        void AssignMetadata(JavaReferenceItem item)
+        void AssignMetadata(IkvmReferenceItem item)
         {
             // if it's a jar or a directory, add the itemspec to Compile
             if (item.ItemSpec.EndsWith(".jar", StringComparison.OrdinalIgnoreCase) && File.Exists(item.ItemSpec) || Directory.Exists(item.ItemSpec))
@@ -63,7 +63,7 @@ namespace IKVM.Sdk.Tasks
         /// Expands each entry in the Compile metadata.
         /// </summary>
         /// <param name="item"></param>
-        void ExpandCompile(JavaReferenceItem item)
+        void ExpandCompile(IkvmReferenceItem item)
         {
             var l = new List<string>();
             foreach (var c in item.Compile)
@@ -76,7 +76,7 @@ namespace IKVM.Sdk.Tasks
         /// Expands each entry in the Sources metadata.
         /// </summary>
         /// <param name="item"></param>
-        void ExpandSources(JavaReferenceItem item)
+        void ExpandSources(IkvmReferenceItem item)
         {
             var l = new List<string>();
             foreach (var c in item.Sources)
@@ -115,7 +115,7 @@ namespace IKVM.Sdk.Tasks
         /// Assigns the metadata to the item derived from the Compile items.
         /// </summary>
         /// <param name="item"></param>
-        void AssignMetadataFromCompile(JavaReferenceItem item)
+        void AssignMetadataFromCompile(IkvmReferenceItem item)
         {
             foreach (var path in item.Compile)
                 AssignMetadataFromCompile(item, path);
@@ -126,7 +126,7 @@ namespace IKVM.Sdk.Tasks
         /// </summary>
         /// <param name="item"></param>
         /// <param name="path"></param>
-        void AssignMetadataFromCompile(JavaReferenceItem item, string path)
+        void AssignMetadataFromCompile(IkvmReferenceItem item, string path)
         {
             if (string.IsNullOrWhiteSpace(item.AssemblyName) || string.IsNullOrWhiteSpace(item.AssemblyVersion))
             {

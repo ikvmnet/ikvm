@@ -2,7 +2,7 @@
 
 using FluentAssertions;
 
-using IKVM.Sdk.Tasks;
+using IKVM.MSBuild.Tasks;
 
 using Microsoft.Build.Framework;
 using Microsoft.Build.Utilities;
@@ -10,11 +10,11 @@ using Microsoft.VisualStudio.TestTools.UnitTesting;
 
 using Moq;
 
-namespace IKVM.Sdk.Tests.Tasks
+namespace IKVM.MSBuild.Tests.Tasks
 {
 
     [TestClass]
-    public class IkvmValidateJavaReferenceItemTests
+    public class IkvmReferenceItemValidateTests
     {
 
         [TestMethod]
@@ -24,11 +24,11 @@ namespace IKVM.Sdk.Tests.Tasks
             var errors = new List<BuildErrorEventArgs>();
             engine.Setup(x => x.LogErrorEvent(It.IsAny<BuildErrorEventArgs>())).Callback((BuildErrorEventArgs e) => errors.Add(e));
 
-            var t = new IkvmValidateJavaReferenceItem();
+            var t = new IkvmReferenceItemValidate();
             t.BuildEngine = engine.Object;
             var i1 = new TaskItem(@".\Project\Lib\helloworld-2.0-1\.\helloworld-2.0.jar");
-            i1.SetMetadata(IkvmJavaReferenceItemMetadata.AssemblyVersion, "2.0");
-            i1.SetMetadata(IkvmJavaReferenceItemMetadata.Compile, @".\Project\Lib\helloworld-2.0-1\.\helloworld-2.0.jar");
+            i1.SetMetadata(IkvmReferenceItemMetadata.AssemblyVersion, "2.0");
+            i1.SetMetadata(IkvmReferenceItemMetadata.Compile, @".\Project\Lib\helloworld-2.0-1\.\helloworld-2.0.jar");
             t.Items = new[] { i1 };
             t.Execute().Should().BeFalse();
             errors.Should().Contain(x => x.Code == "IKVMSDK0002");
@@ -41,11 +41,11 @@ namespace IKVM.Sdk.Tests.Tasks
             var errors = new List<BuildErrorEventArgs>();
             engine.Setup(x => x.LogErrorEvent(It.IsAny<BuildErrorEventArgs>())).Callback((BuildErrorEventArgs e) => errors.Add(e));
 
-            var t = new IkvmValidateJavaReferenceItem();
+            var t = new IkvmReferenceItemValidate();
             t.BuildEngine = engine.Object;
             var i1 = new TaskItem(@".\Project\Lib\helloworld-2.0-1\.\helloworld-2.0.jar");
-            i1.SetMetadata(IkvmJavaReferenceItemMetadata.AssemblyName, "helloworld");
-            i1.SetMetadata(IkvmJavaReferenceItemMetadata.Compile, @".\Project\Lib\helloworld-2.0-1\.\helloworld-2.0.jar");
+            i1.SetMetadata(IkvmReferenceItemMetadata.AssemblyName, "helloworld");
+            i1.SetMetadata(IkvmReferenceItemMetadata.Compile, @".\Project\Lib\helloworld-2.0-1\.\helloworld-2.0.jar");
             t.Items = new[] { i1 };
             t.Execute().Should().BeFalse();
             errors.Should().Contain(x => x.Code == "IKVMSDK0003");
@@ -58,12 +58,12 @@ namespace IKVM.Sdk.Tests.Tasks
             var errors = new List<BuildErrorEventArgs>();
             engine.Setup(x => x.LogErrorEvent(It.IsAny<BuildErrorEventArgs>())).Callback((BuildErrorEventArgs e) => errors.Add(e));
 
-            var t = new IkvmValidateJavaReferenceItem();
+            var t = new IkvmReferenceItemValidate();
             t.BuildEngine = engine.Object;
             var i1 = new TaskItem(@".\Project\Lib\helloworld-2.0-1\.\helloworld-2.0.jar");
-            i1.SetMetadata(IkvmJavaReferenceItemMetadata.AssemblyName, "helloworld");
-            i1.SetMetadata(IkvmJavaReferenceItemMetadata.AssemblyVersion, "invalid");
-            i1.SetMetadata(IkvmJavaReferenceItemMetadata.Compile, @".\Project\Lib\helloworld-2.0-1\.\helloworld-2.0.jar");
+            i1.SetMetadata(IkvmReferenceItemMetadata.AssemblyName, "helloworld");
+            i1.SetMetadata(IkvmReferenceItemMetadata.AssemblyVersion, "invalid");
+            i1.SetMetadata(IkvmReferenceItemMetadata.Compile, @".\Project\Lib\helloworld-2.0-1\.\helloworld-2.0.jar");
             t.Items = new[] { i1 };
             t.Execute().Should().BeFalse();
             errors.Should().Contain(x => x.Code == "IKVMSDK0003");
@@ -76,7 +76,7 @@ namespace IKVM.Sdk.Tests.Tasks
             var errors = new List<BuildErrorEventArgs>();
             engine.Setup(x => x.LogErrorEvent(It.IsAny<BuildErrorEventArgs>())).Callback((BuildErrorEventArgs e) => errors.Add(e));
 
-            var t = new IkvmValidateJavaReferenceItem();
+            var t = new IkvmReferenceItemValidate();
             t.BuildEngine = engine.Object;
             var i1 = new TaskItem(@"missing");
             t.Items = new[] { i1 };
@@ -93,13 +93,13 @@ namespace IKVM.Sdk.Tests.Tasks
             var errors = new List<BuildErrorEventArgs>();
             engine.Setup(x => x.LogErrorEvent(It.IsAny<BuildErrorEventArgs>())).Callback((BuildErrorEventArgs e) => errors.Add(e));
 
-            var t = new IkvmValidateJavaReferenceItem();
+            var t = new IkvmReferenceItemValidate();
             t.BuildEngine = engine.Object;
             var i1 = new TaskItem(@".\Project\Lib\helloworld-2.0-1\.\helloworld-2.0.jar");
-            i1.SetMetadata(IkvmJavaReferenceItemMetadata.AssemblyName, "helloworld");
-            i1.SetMetadata(IkvmJavaReferenceItemMetadata.AssemblyVersion, "2.0");
-            i1.SetMetadata(IkvmJavaReferenceItemMetadata.Compile, @".\Project\Lib\helloworld-2.0-1\.\helloworld-2.0.jar");
-            i1.SetMetadata(IkvmJavaReferenceItemMetadata.Sources, "invalid");
+            i1.SetMetadata(IkvmReferenceItemMetadata.AssemblyName, "helloworld");
+            i1.SetMetadata(IkvmReferenceItemMetadata.AssemblyVersion, "2.0");
+            i1.SetMetadata(IkvmReferenceItemMetadata.Compile, @".\Project\Lib\helloworld-2.0-1\.\helloworld-2.0.jar");
+            i1.SetMetadata(IkvmReferenceItemMetadata.Sources, "invalid");
             t.Items = new[] { i1 };
             t.Execute().Should().BeFalse();
             errors.Should().Contain(x => x.Code == "IKVMSDK0007");
@@ -112,13 +112,13 @@ namespace IKVM.Sdk.Tests.Tasks
             var errors = new List<BuildErrorEventArgs>();
             engine.Setup(x => x.LogErrorEvent(It.IsAny<BuildErrorEventArgs>())).Callback((BuildErrorEventArgs e) => errors.Add(e));
 
-            var t = new IkvmValidateJavaReferenceItem();
+            var t = new IkvmReferenceItemValidate();
             t.BuildEngine = engine.Object;
             var i1 = new TaskItem(@".\Project\Lib\helloworld-2.0-1\.\helloworld-2.0.jar");
-            i1.SetMetadata(IkvmJavaReferenceItemMetadata.AssemblyName, "helloworld");
-            i1.SetMetadata(IkvmJavaReferenceItemMetadata.AssemblyVersion, "2.0");
-            i1.SetMetadata(IkvmJavaReferenceItemMetadata.Compile, @".\Project\Lib\helloworld-2.0-1\.\helloworld-2.0.jar");
-            i1.SetMetadata(IkvmJavaReferenceItemMetadata.Sources, "missing.java");
+            i1.SetMetadata(IkvmReferenceItemMetadata.AssemblyName, "helloworld");
+            i1.SetMetadata(IkvmReferenceItemMetadata.AssemblyVersion, "2.0");
+            i1.SetMetadata(IkvmReferenceItemMetadata.Compile, @".\Project\Lib\helloworld-2.0-1\.\helloworld-2.0.jar");
+            i1.SetMetadata(IkvmReferenceItemMetadata.Sources, "missing.java");
             t.Items = new[] { i1 };
             t.Execute().Should().BeFalse();
             errors.Should().Contain(x => x.Code == "IKVMSDK0009");

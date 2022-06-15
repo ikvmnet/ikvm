@@ -1,25 +1,24 @@
-﻿using System;
-using System.Collections.Generic;
+﻿using System.Collections.Generic;
 using System.Linq;
 
 using Microsoft.Build.Framework;
 using Microsoft.Build.Utilities;
 
-namespace IKVM.Sdk.Tasks
+namespace IKVM.MSBuild.Tasks
 {
 
     /// <summary>
-    /// Sorts the input JavaReferenceItem specifications based on their dependencies.
+    /// Sorts the input <see cref="IkvmReferenceItem"/> specifications based on their dependencies.
     /// </summary>
-    public class IkvmSortJavaReferenceItem : Task
+    public class IkvmReferenceItemSort : Task
     {
 
         /// <summary>
-        /// Topologically sorts the JavaReferenceItem set.
+        /// Topologically sorts the <see cref="IkvmReferenceItem"/> set.
         /// </summary>
         /// <param name="items"></param>
         /// <returns></returns>
-        static IList<JavaReferenceItem> Sort(IList<JavaReferenceItem> items)
+        static IList<IkvmReferenceItem> Sort(IList<IkvmReferenceItem> items)
         {
             // construct a map of nodes to their indegrees
             var m = items.ToDictionary(i => i, i => 0);
@@ -28,10 +27,10 @@ namespace IKVM.Sdk.Tasks
                     m[reference]++;
 
             // track nodes with no incoming edges
-            var t = new Queue<JavaReferenceItem>(items.Where(i => m[i] == 0));
+            var t = new Queue<IkvmReferenceItem>(items.Where(i => m[i] == 0));
 
             // initially no nodes in our ordering
-            var l = new List<JavaReferenceItem>();
+            var l = new List<IkvmReferenceItem>();
 
             // as long as there are nodes with no incoming edges
             while (t.Count > 0)
@@ -53,11 +52,11 @@ namespace IKVM.Sdk.Tasks
             if (l.Count == items.Count)
                 return l.ToArray();
 
-            throw new IkvmTaskMessageException("Error.JavaReferenceCircularReference", l[0]);
+            throw new IkvmTaskMessageException("Error.IkvmCircularReference", l[0]);
         }
 
         /// <summary>
-        /// JavaReferenceItem items without assigned hashes.
+        /// <see cref="IkvmReferenceItem"/> items without assigned hashes.
         /// </summary>
         [Required]
         [Output]
@@ -69,7 +68,7 @@ namespace IKVM.Sdk.Tasks
         /// <returns></returns>
         public override bool Execute()
         {
-            Items = Sort(IkvmJavaReferenceItemUtil.Import(Items)).Select(i => i.Item).ToArray();
+            Items = Sort(IkvmReferenceItemUtil.Import(Items)).Select(i => i.Item).ToArray();
             return true;
         }
 

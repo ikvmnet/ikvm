@@ -1,6 +1,6 @@
 ﻿using System;
 
-namespace IKVM.Sdk.Tasks
+namespace IKVM.MSBuild.Tasks
 {
 
     /// <summary>

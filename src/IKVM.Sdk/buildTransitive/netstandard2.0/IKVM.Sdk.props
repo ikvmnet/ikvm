@@ -1,25 +1,25 @@
 ﻿<Project TreatAsLocalProperty="TaskFolder;TaskAssembly">
     
     <PropertyGroup>
-        <IkvmSdkDir>$(MSBuildThisFileDirectory)..\..\</IkvmSdkDir>
-        <IkvmSdkVersion>$([System.IO.File]::ReadAllText('$(IkvmSdkDir)VERSION'))</IkvmSdkVersion>
+        <IkvmDir>$(MSBuildThisFileDirectory)..\..\</IkvmDir>
+        <IkvmVersion>$([System.IO.File]::ReadAllText('$(IkvmDir)VERSION'))</IkvmVersion>
     </PropertyGroup>
 
     <PropertyGroup>
-        <IkvmSdkTaskFolder Condition=" '$(MSBuildRuntimeType)' == 'Core' ">net6.0</IkvmSdkTaskFolder>
-        <IkvmSdkTaskFolder Condition=" '$(MSBuildRuntimeType)' != 'Core' ">net472</IkvmSdkTaskFolder>
-        <IkvmSdkTaskAssembly>$(IkvmSdkDir)tasks\$(IkvmSdkTaskFolder)\IKVM.Sdk.Tasks.dll</IkvmSdkTaskAssembly>
+        <IkvmTaskFolder Condition=" '$(MSBuildRuntimeType)' == 'Core' ">net6.0</IkvmTaskFolder>
+        <IkvmTaskFolder Condition=" '$(MSBuildRuntimeType)' != 'Core' ">net472</IkvmTaskFolder>
+        <IkvmTaskAssembly>$(IkvmDir)tasks\$(IkvmTaskFolder)\IKVM.Sdk.Tasks.dll</IkvmTaskAssembly>
     </PropertyGroup>
 
-    <UsingTask TaskName="IkvmCompiler" AssemblyFile="$(IkvmSdkTaskAssembly)" />
-    <UsingTask TaskName="IkvmCalculateMD5" AssemblyFile="$(IkvmSdkTaskAssembly)" />
-    <UsingTask TaskName="IkvmAssignJavaReferenceItemMetadata" AssemblyFile="$(IkvmSdkTaskAssembly)" />
-    <UsingTask TaskName="IkvmAssignJavaReferenceItemIdentity" AssemblyFile="$(IkvmSdkTaskAssembly)" />
-    <UsingTask TaskName="IkvmSortJavaReferenceItem" AssemblyFile="$(IkvmSdkTaskAssembly)" />
-    <UsingTask TaskName="IkvmValidateJavaReferenceItem" AssemblyFile="$(IkvmSdkTaskAssembly)" />
+    <UsingTask TaskName="IkvmCompiler" AssemblyFile="$(IkvmTaskAssembly)" />
+    <UsingTask TaskName="IkvmCalculateMD5" AssemblyFile="$(IkvmTaskAssembly)" />
+    <UsingTask TaskName="IkvmReferenceItemAssignMetadata" AssemblyFile="$(IkvmTaskAssembly)" />
+    <UsingTask TaskName="IkvmReferenceItemAssignIdentity" AssemblyFile="$(IkvmTaskAssembly)" />
+    <UsingTask TaskName="IkvmReferenceItemSort" AssemblyFile="$(IkvmTaskAssembly)" />
+    <UsingTask TaskName="IkvmReferenceItemValidate" AssemblyFile="$(IkvmTaskAssembly)" />
 
     <ItemDefinitionGroup>
-        <JavaReference>
+        <IkvmReference>
             <AssemblyName></AssemblyName>
             <AssemblyVersion></AssemblyVersion>
             <Compile></Compile>
@@ -27,7 +27,7 @@
             <Debug></Debug>
             <Aliases></Aliases>
             <References></References>
-        </JavaReference>
+        </IkvmReference>
     </ItemDefinitionGroup>
 
 </Project>

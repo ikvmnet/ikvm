@@ -11,7 +11,7 @@ using Microsoft.Build.Framework;
 using Microsoft.Build.Utilities;
 using Microsoft.VisualStudio.TestTools.UnitTesting;
 
-namespace IKVM.Sdk.Tests
+namespace IKVM.MSBuild.Tests
 {
 
     [TestClass]

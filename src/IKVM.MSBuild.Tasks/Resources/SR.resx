@@ -117,34 +117,34 @@
   <resheader name="writer">
     <value>System.Resources.ResXResourceWriter, System.Windows.Forms, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value>
   </resheader>
-  <data name="Error.JavaReferenceCircularReference" xml:space="preserve">
-    <value>IKVMSDK0001: The JavaReference {0} contains a circular reference.</value>
+  <data name="Error.IkvmCircularReference" xml:space="preserve">
+    <value>IKVMSDK0001: The IkvmReference {0} contains a circular reference.</value>
   </data>
-  <data name="Error.JavaReferenceInvalidAssemblyInfo" xml:space="preserve">
-    <value>IKVMSDK0004: The JavaReference {0} has invalid AssemblyName '{1}' or AssemblyVersion '{2}'.</value>
+  <data name="Error.IkvmInvalidAssemblyInfo" xml:space="preserve">
+    <value>IKVMSDK0004: The IkvmReference {0} has invalid AssemblyName '{1}' or AssemblyVersion '{2}'.</value>
   </data>
-  <data name="Error.JavaReferenceInvalidAssemblyName" xml:space="preserve">
-    <value>IKVMSDK0002: The JavaReference {0} has invalid AssemblyName '{1}'.</value>
+  <data name="Error.IkvmInvalidAssemblyName" xml:space="preserve">
+    <value>IKVMSDK0002: The IkvmReference {0} has invalid AssemblyName '{1}'.</value>
   </data>
-  <data name="Error.JavaReferenceInvalidAssemblyVersion" xml:space="preserve">
-    <value>IKVMSDK0003: The JavaReference {0} has invalid AssemblyVersion '{1}'.</value>
+  <data name="Error.IkvmInvalidAssemblyVersion" xml:space="preserve">
+    <value>IKVMSDK0003: The IkvmReference {0} has invalid AssemblyVersion '{1}'.</value>
   </data>
-  <data name="Error.JavaReferenceInvalidCompile" xml:space="preserve">
-    <value>IKVMSDK0005: The JavaReference {0} has an invalid Compile item '{1}'. Can only include jar or class files.</value>
+  <data name="Error.IkvmInvalidCompile" xml:space="preserve">
+    <value>IKVMSDK0005: The IkvmReference {0} has an invalid Compile item '{1}'. Can only include jar or class files.</value>
   </data>
-  <data name="Error.JavaReferenceInvalidReference" xml:space="preserve">
-    <value>IKVMSDK0006: The JavaReference {0} contains an invalid Reference '{1}'.</value>
+  <data name="Error.IkvmInvalidReference" xml:space="preserve">
+    <value>IKVMSDK0006: The IkvmReference {0} contains an invalid Reference '{1}'.</value>
   </data>
-  <data name="Error.JavaReferenceInvalidSources" xml:space="preserve">
-    <value>IKVMSDK0007: The JavaReference {0} has an invalid Sources item '{1}'. Can only include .java files.</value>
+  <data name="Error.IkvmInvalidSources" xml:space="preserve">
+    <value>IKVMSDK0007: The IkvmReference {0} has an invalid Sources item '{1}'. Can only include .java files.</value>
   </data>
-  <data name="Error.JavaReferenceMissingCompile" xml:space="preserve">
-    <value>IKVMSDK0008: The JavaReference {0} is missing the Compile item '{1}'.</value>
+  <data name="Error.IkvmMissingCompile" xml:space="preserve">
+    <value>IKVMSDK0008: The IkvmReference {0} is missing the Compile item '{1}'.</value>
   </data>
-  <data name="Error.JavaReferenceMissingSources" xml:space="preserve">
-    <value>IKVMSDK0009: The JavaReference {0} is missing the Source item '{1}'.</value>
+  <data name="Error.IkvmMissingSources" xml:space="preserve">
+    <value>IKVMSDK0009: The IkvmReference {0} is missing the Source item '{1}'.</value>
   </data>
-  <data name="Error.JavaReferenceRequiresCompile" xml:space="preserve">
-    <value>IKVMSDK0010: The JavaReference {0} requires at least one Compile item.</value>
+  <data name="Error.IkvmRequiresCompile" xml:space="preserve">
+    <value>IKVMSDK0010: The IkvmReference {0} requires at least one Compile item.</value>
   </data>
 </root>

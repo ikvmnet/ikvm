@@ -4,13 +4,13 @@ using System.Linq;
 
 using Microsoft.Build.Framework;
 
-namespace IKVM.Sdk.Tasks
+namespace IKVM.MSBuild.Tasks
 {
 
     /// <summary>
-    /// Models the required data of a JavaReferenceItem
+    /// Models the required data of a <see cref="IkvmReferenceItem"/>.
     /// </summary>
-    class JavaReferenceItem
+    class IkvmReferenceItem
     {
 
         /// <summary>
@@ -18,7 +18,7 @@ namespace IKVM.Sdk.Tasks
         /// </summary>
         /// <param name="item"></param>
         /// <exception cref="System.ArgumentNullException"></exception>
-        public JavaReferenceItem(ITaskItem item)
+        public IkvmReferenceItem(ITaskItem item)
         {
             Item = item ?? throw new ArgumentNullException(nameof(item));
         }
@@ -61,7 +61,7 @@ namespace IKVM.Sdk.Tasks
         /// <summary>
         /// References required to compile.
         /// </summary>
-        public List<JavaReferenceItem> References { get; set; }
+        public List<IkvmReferenceItem> References { get; set; }
 
         /// <summary>
         /// Unique IKVM identity of the reference.
@@ -74,13 +74,13 @@ namespace IKVM.Sdk.Tasks
         public void Save()
         {
             Item.ItemSpec = ItemSpec;
-            Item.SetMetadata(IkvmJavaReferenceItemMetadata.AssemblyName, AssemblyName);
-            Item.SetMetadata(IkvmJavaReferenceItemMetadata.AssemblyVersion, AssemblyVersion);
-            Item.SetMetadata(IkvmJavaReferenceItemMetadata.Debug, Debug ? "true" : "false");
-            Item.SetMetadata(IkvmJavaReferenceItemMetadata.Compile, string.Join(IkvmJavaReferenceItemMetadata.PropertySeperatorString, Compile));
-            Item.SetMetadata(IkvmJavaReferenceItemMetadata.Sources, string.Join(IkvmJavaReferenceItemMetadata.PropertySeperatorString, Sources));
-            Item.SetMetadata(IkvmJavaReferenceItemMetadata.References, string.Join(IkvmJavaReferenceItemMetadata.PropertySeperatorString, References.Select(i => i.ItemSpec)));
-            Item.SetMetadata(IkvmJavaReferenceItemMetadata.IkvmIdentity, IkvmIdentity);
+            Item.SetMetadata(IkvmReferenceItemMetadata.AssemblyName, AssemblyName);
+            Item.SetMetadata(IkvmReferenceItemMetadata.AssemblyVersion, AssemblyVersion);
+            Item.SetMetadata(IkvmReferenceItemMetadata.Debug, Debug ? "true" : "false");
+            Item.SetMetadata(IkvmReferenceItemMetadata.Compile, string.Join(IkvmReferenceItemMetadata.PropertySeperatorString, Compile));
+            Item.SetMetadata(IkvmReferenceItemMetadata.Sources, string.Join(IkvmReferenceItemMetadata.PropertySeperatorString, Sources));
+            Item.SetMetadata(IkvmReferenceItemMetadata.References, string.Join(IkvmReferenceItemMetadata.PropertySeperatorString, References.Select(i => i.ItemSpec)));
+            Item.SetMetadata(IkvmReferenceItemMetadata.IkvmIdentity, IkvmIdentity);
         }
 
     }

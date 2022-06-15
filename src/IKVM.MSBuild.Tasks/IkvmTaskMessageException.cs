@@ -1,8 +1,8 @@
 ﻿using System;
 
-using IKVM.Sdk.Tasks.Resources;
+using IKVM.MSBuild.Tasks.Resources;
 
-namespace IKVM.Sdk.Tasks
+namespace IKVM.MSBuild.Tasks
 {
 
     /// <summary>

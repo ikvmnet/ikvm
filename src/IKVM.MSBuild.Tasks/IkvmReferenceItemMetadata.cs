@@ -1,7 +1,7 @@
-﻿namespace IKVM.Sdk.Tasks
+﻿namespace IKVM.MSBuild.Tasks
 {
 
-    public static class IkvmJavaReferenceItemMetadata
+    public static class IkvmReferenceItemMetadata
     {
 
         public const char PropertySeperatorChar = ';';

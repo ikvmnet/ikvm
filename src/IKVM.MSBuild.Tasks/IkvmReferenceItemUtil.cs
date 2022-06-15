@@ -5,17 +5,17 @@ using System.Linq;
 
 using Microsoft.Build.Framework;
 
-namespace IKVM.Sdk.Tasks
+namespace IKVM.MSBuild.Tasks
 {
 
     /// <summary>
-    /// Provides common utility methods for working with <see cref="JavaReferenceItem"/> sets.
+    /// Provides common utility methods for working with <see cref="IkvmReferenceItem"/> sets.
     /// </summary>
-    static class IkvmJavaReferenceItemUtil
+    static class IkvmReferenceItemUtil
     {
 
         /// <summary>
-        /// Returns a normalized version of a <see cref="JavaReferenceItem"/> itemspec.
+        /// Returns a normalized version of a <see cref="IkvmReferenceItem"/> itemspec.
         /// </summary>
         /// <param name="itemSpec"></param>
         /// <returns></returns>
@@ -33,30 +33,30 @@ namespace IKVM.Sdk.Tasks
         }
 
         /// <summary>
-        /// Attempts to import a set of <see cref="JavaReferenceItem"/> instances from the given <see cref="ITaskItem"/> instances.
+        /// Attempts to import a set of <see cref="IkvmReferenceItem"/> instances from the given <see cref="ITaskItem"/> instances.
         /// </summary>
         /// <param name="items"></param>
         /// <returns></returns>
-        public static JavaReferenceItem[] Import(IEnumerable<ITaskItem> items)
+        public static IkvmReferenceItem[] Import(IEnumerable<ITaskItem> items)
         {
             if (items is null)
                 throw new ArgumentNullException(nameof(items));
 
             // normalize itemspecs into a dictionary
-            var map = new Dictionary<string, JavaReferenceItem>();
+            var map = new Dictionary<string, IkvmReferenceItem>();
             foreach (var item in items)
-                map[NormalizeItemSpec(item.ItemSpec)] = new JavaReferenceItem(item);
+                map[NormalizeItemSpec(item.ItemSpec)] = new IkvmReferenceItem(item);
 
             // populate the properties of each item
             foreach (var item in map.Values)
             {
                 item.ItemSpec = NormalizeItemSpec(item.Item.ItemSpec);
-                item.AssemblyName = item.Item.GetMetadata(IkvmJavaReferenceItemMetadata.AssemblyName);
-                item.AssemblyVersion = item.Item.GetMetadata(IkvmJavaReferenceItemMetadata.AssemblyVersion);
-                item.Debug = bool.TryParse(item.Item.GetMetadata(IkvmJavaReferenceItemMetadata.Debug), out var b) && b;
-                item.Compile = item.Item.GetMetadata(IkvmJavaReferenceItemMetadata.Compile)?.Split(IkvmJavaReferenceItemMetadata.PropertySeperatorCharArray, StringSplitOptions.RemoveEmptyEntries).ToList();
-                item.Sources = item.Item.GetMetadata(IkvmJavaReferenceItemMetadata.Sources)?.Split(IkvmJavaReferenceItemMetadata.PropertySeperatorCharArray, StringSplitOptions.RemoveEmptyEntries).ToList();
-                item.References = ResolveReferences(map, item, item.Item.GetMetadata(IkvmJavaReferenceItemMetadata.References)).ToList();
+                item.AssemblyName = item.Item.GetMetadata(IkvmReferenceItemMetadata.AssemblyName);
+                item.AssemblyVersion = item.Item.GetMetadata(IkvmReferenceItemMetadata.AssemblyVersion);
+                item.Debug = bool.TryParse(item.Item.GetMetadata(IkvmReferenceItemMetadata.Debug), out var b) && b;
+                item.Compile = item.Item.GetMetadata(IkvmReferenceItemMetadata.Compile)?.Split(IkvmReferenceItemMetadata.PropertySeperatorCharArray, StringSplitOptions.RemoveEmptyEntries).ToList();
+                item.Sources = item.Item.GetMetadata(IkvmReferenceItemMetadata.Sources)?.Split(IkvmReferenceItemMetadata.PropertySeperatorCharArray, StringSplitOptions.RemoveEmptyEntries).ToList();
+                item.References = ResolveReferences(map, item, item.Item.GetMetadata(IkvmReferenceItemMetadata.References)).ToList();
             }
 
             // return the resulting imported references
@@ -72,30 +72,30 @@ namespace IKVM.Sdk.Tasks
         /// <param name="references"></param>
         /// <returns></returns>
         /// <exception cref="IkvmTaskException"></exception>
-        static List<JavaReferenceItem> ResolveReferences(Dictionary<string, JavaReferenceItem> map, JavaReferenceItem item, string references)
+        static List<IkvmReferenceItem> ResolveReferences(Dictionary<string, IkvmReferenceItem> map, IkvmReferenceItem item, string references)
         {
             if (map is null)
                 throw new ArgumentNullException(nameof(map));
             if (item is null)
                 throw new ArgumentNullException(nameof(item));
 
-            var l = new List<JavaReferenceItem>();
-            foreach (var itemSpec in references.Split(IkvmJavaReferenceItemMetadata.PropertySeperatorCharArray, StringSplitOptions.RemoveEmptyEntries))
+            var l = new List<IkvmReferenceItem>();
+            foreach (var itemSpec in references.Split(IkvmReferenceItemMetadata.PropertySeperatorCharArray, StringSplitOptions.RemoveEmptyEntries))
                 if (TryResolveReference(map, itemSpec, out var resolved))
                     l.Add(resolved);
                 else
-                    throw new IkvmTaskMessageException("Error.JavaReferenceInvalidReference", item.ItemSpec, itemSpec);
+                    throw new IkvmTaskMessageException("Error.IkvmInvalidReference", item.ItemSpec, itemSpec);
 
             return l;
         }
 
         /// <summary>
-        /// Attempts to resolve the given <see cref="JavaReferenceItem"/> itemspec against the set of  <see cref="JavaReferenceItem"/> instances
+        /// Attempts to resolve the given <see cref="IkvmReferenceItem"/> itemspec against the set of  <see cref="IkvmReferenceItem"/> instances
         /// </summary>
         /// <param name="itemSpec"></param>
         /// <param name="resolved"></param>
         /// <returns></returns>
-        static bool TryResolveReference(Dictionary<string, JavaReferenceItem> map, string itemSpec, out JavaReferenceItem resolved)
+        static bool TryResolveReference(Dictionary<string, IkvmReferenceItem> map, string itemSpec, out IkvmReferenceItem resolved)
         {
             if (map is null)
                 throw new ArgumentNullException(nameof(map));

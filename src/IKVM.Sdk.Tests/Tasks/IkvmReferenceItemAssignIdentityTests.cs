@@ -1,15 +1,15 @@
 ﻿using FluentAssertions;
 
-using IKVM.Sdk.Tasks;
+using IKVM.MSBuild.Tasks;
 
 using Microsoft.Build.Utilities;
 using Microsoft.VisualStudio.TestTools.UnitTesting;
 
-namespace IKVM.Sdk.Tests.Tasks
+namespace IKVM.MSBuild.Tests.Tasks
 {
 
     [TestClass]
-    public class IkvmAssignJavaReferenceItemIdentityTests
+    public class IkvmReferenceItemAssignIdentityTests
     {
 
         readonly static string HELLOWORLD_JAR = @".\Project\Lib\helloworld-2.0-1\helloworld-2.0.jar";
@@ -24,9 +24,9 @@ namespace IKVM.Sdk.Tests.Tasks
         TaskItem BuildItem(string itemSpec, string assemblyName, string assemblyVersion)
         {
             var item = new TaskItem(itemSpec);
-            item.SetMetadata(IkvmJavaReferenceItemMetadata.AssemblyName, assemblyName);
-            item.SetMetadata(IkvmJavaReferenceItemMetadata.AssemblyVersion, assemblyVersion);
-            item.SetMetadata(IkvmJavaReferenceItemMetadata.Compile, itemSpec);
+            item.SetMetadata(IkvmReferenceItemMetadata.AssemblyName, assemblyName);
+            item.SetMetadata(IkvmReferenceItemMetadata.AssemblyVersion, assemblyVersion);
+            item.SetMetadata(IkvmReferenceItemMetadata.Compile, itemSpec);
             return item;
         }
 
@@ -35,9 +35,9 @@ namespace IKVM.Sdk.Tests.Tasks
         /// </summary>
         /// <param name="toolFramework"></param>
         /// <returns></returns>
-        IkvmAssignJavaReferenceItemIdentity BuildTask(string toolFramework, string toolVersion)
+        IkvmReferenceItemAssignIdentity BuildTask(string toolFramework, string toolVersion)
         {
-            var t = new IkvmAssignJavaReferenceItemIdentity();
+            var t = new IkvmReferenceItemAssignIdentity();
             t.ToolVersion = toolVersion;
             t.ToolFramework = toolFramework;
             t.RuntimeAssembly = typeof(IKVM.Runtime.InternalException).Assembly.Location;
@@ -52,8 +52,8 @@ namespace IKVM.Sdk.Tests.Tasks
             var i1 = BuildItem(HELLOWORLD_JAR, "helloworld", "0.0.0.0");
             t.Items = new[] { i1 };
             t.Execute().Should().BeTrue();
-            i1.GetMetadata(IkvmJavaReferenceItemMetadata.IkvmIdentity).Should().NotBeUpperCased();
-            i1.GetMetadata(IkvmJavaReferenceItemMetadata.IkvmIdentity).Should().HaveLength(32);
+            i1.GetMetadata(IkvmReferenceItemMetadata.IkvmIdentity).Should().NotBeUpperCased();
+            i1.GetMetadata(IkvmReferenceItemMetadata.IkvmIdentity).Should().HaveLength(32);
         }
 
         [TestMethod]
@@ -63,8 +63,8 @@ namespace IKVM.Sdk.Tests.Tasks
             var i1 = BuildItem(HELLOWORLD_JAR, "helloworld", "0.0.0.0");
             t.Items = new[] { i1 };
             t.Execute().Should().BeTrue();
-            i1.GetMetadata(IkvmJavaReferenceItemMetadata.IkvmIdentity).Should().NotBeUpperCased();
-            i1.GetMetadata(IkvmJavaReferenceItemMetadata.IkvmIdentity).Should().HaveLength(32);
+            i1.GetMetadata(IkvmReferenceItemMetadata.IkvmIdentity).Should().NotBeUpperCased();
+            i1.GetMetadata(IkvmReferenceItemMetadata.IkvmIdentity).Should().HaveLength(32);
         }
 
         [TestMethod]
@@ -80,8 +80,8 @@ namespace IKVM.Sdk.Tests.Tasks
             t2.Items = new[] { i2 };
             t2.Execute().Should().BeTrue();
 
-            var identity1 = i1.GetMetadata(IkvmJavaReferenceItemMetadata.IkvmIdentity);
-            var identity2 = i2.GetMetadata(IkvmJavaReferenceItemMetadata.IkvmIdentity);
+            var identity1 = i1.GetMetadata(IkvmReferenceItemMetadata.IkvmIdentity);
+            var identity2 = i2.GetMetadata(IkvmReferenceItemMetadata.IkvmIdentity);
             identity1.Should().Be(identity2);
         }
 
@@ -98,8 +98,8 @@ namespace IKVM.Sdk.Tests.Tasks
             t2.Items = new[] { i2 };
             t2.Execute().Should().BeTrue();
 
-            var identity1 = i1.GetMetadata(IkvmJavaReferenceItemMetadata.IkvmIdentity);
-            var identity2 = i2.GetMetadata(IkvmJavaReferenceItemMetadata.IkvmIdentity);
+            var identity1 = i1.GetMetadata(IkvmReferenceItemMetadata.IkvmIdentity);
+            var identity2 = i2.GetMetadata(IkvmReferenceItemMetadata.IkvmIdentity);
             identity1.Should().Be(identity2);
         }
 
@@ -116,8 +116,8 @@ namespace IKVM.Sdk.Tests.Tasks
             t2.Items = new[] { i2 };
             t2.Execute().Should().BeTrue();
 
-            var identity1 = i1.GetMetadata(IkvmJavaReferenceItemMetadata.IkvmIdentity);
-            var identity2 = i2.GetMetadata(IkvmJavaReferenceItemMetadata.IkvmIdentity);
+            var identity1 = i1.GetMetadata(IkvmReferenceItemMetadata.IkvmIdentity);
+            var identity2 = i2.GetMetadata(IkvmReferenceItemMetadata.IkvmIdentity);
             identity1.Should().NotBe(identity2);
         }
 
@@ -134,8 +134,8 @@ namespace IKVM.Sdk.Tests.Tasks
             t2.Items = new[] { i2 };
             t2.Execute().Should().BeTrue();
 
-            var identity1 = i1.GetMetadata(IkvmJavaReferenceItemMetadata.IkvmIdentity);
-            var identity2 = i2.GetMetadata(IkvmJavaReferenceItemMetadata.IkvmIdentity);
+            var identity1 = i1.GetMetadata(IkvmReferenceItemMetadata.IkvmIdentity);
+            var identity2 = i2.GetMetadata(IkvmReferenceItemMetadata.IkvmIdentity);
             identity1.Should().NotBe(identity2);
         }
 
@@ -152,8 +152,8 @@ namespace IKVM.Sdk.Tests.Tasks
             t2.Items = new[] { i2 };
             t2.Execute().Should().BeTrue();
 
-            var identity1 = i1.GetMetadata(IkvmJavaReferenceItemMetadata.IkvmIdentity);
-            var identity2 = i2.GetMetadata(IkvmJavaReferenceItemMetadata.IkvmIdentity);
+            var identity1 = i1.GetMetadata(IkvmReferenceItemMetadata.IkvmIdentity);
+            var identity2 = i2.GetMetadata(IkvmReferenceItemMetadata.IkvmIdentity);
             identity1.Should().NotBe(identity2);
         }
 
@@ -170,8 +170,8 @@ namespace IKVM.Sdk.Tests.Tasks
             t2.Items = new[] { i2 };
             t2.Execute().Should().BeTrue();
 
-            var identity1 = i1.GetMetadata(IkvmJavaReferenceItemMetadata.IkvmIdentity);
-            var identity2 = i2.GetMetadata(IkvmJavaReferenceItemMetadata.IkvmIdentity);
+            var identity1 = i1.GetMetadata(IkvmReferenceItemMetadata.IkvmIdentity);
+            var identity2 = i2.GetMetadata(IkvmReferenceItemMetadata.IkvmIdentity);
             identity1.Should().NotBe(identity2);
         }
 

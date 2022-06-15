@@ -8,7 +8,7 @@
 // </auto-generated>
 //------------------------------------------------------------------------------
 
-namespace IKVM.Sdk.Tasks.Resources {
+namespace IKVM.MSBuild.Tasks.Resources {
     using System;
     
     
@@ -39,7 +39,7 @@ namespace IKVM.Sdk.Tasks.Resources {
         internal static global::System.Resources.ResourceManager ResourceManager {
             get {
                 if (object.ReferenceEquals(resourceMan, null)) {
-                    global::System.Resources.ResourceManager temp = new global::System.Resources.ResourceManager("IKVM.Sdk.Tasks.Resources.SR", typeof(SR).Assembly);
+                    global::System.Resources.ResourceManager temp = new global::System.Resources.ResourceManager("IKVM.MSBuild.Tasks.Resources.SR", typeof(SR).Assembly);
                     resourceMan = temp;
                 }
                 return resourceMan;
@@ -61,92 +61,92 @@ namespace IKVM.Sdk.Tasks.Resources {
         }
         
         /// <summary>
-        ///   Looks up a localized string similar to IKVMSDK0001: The JavaReference {0} contains a circular reference..
+        ///   Looks up a localized string similar to IKVMSDK0001: The IkvmReference {0} contains a circular reference..
         /// </summary>
-        internal static string Error_JavaReferenceCircularReference {
+        internal static string Error_IkvmCircularReference {
             get {
-                return ResourceManager.GetString("Error.JavaReferenceCircularReference", resourceCulture);
+                return ResourceManager.GetString("Error.IkvmCircularReference", resourceCulture);
             }
         }
         
         /// <summary>
-        ///   Looks up a localized string similar to IKVMSDK0004: The JavaReference {0} has invalid AssemblyName &apos;{1}&apos; or AssemblyVersion &apos;{2}&apos;..
+        ///   Looks up a localized string similar to IKVMSDK0004: The IkvmReference {0} has invalid AssemblyName &apos;{1}&apos; or AssemblyVersion &apos;{2}&apos;..
         /// </summary>
-        internal static string Error_JavaReferenceInvalidAssemblyInfo {
+        internal static string Error_IkvmInvalidAssemblyInfo {
             get {
-                return ResourceManager.GetString("Error.JavaReferenceInvalidAssemblyInfo", resourceCulture);
+                return ResourceManager.GetString("Error.IkvmInvalidAssemblyInfo", resourceCulture);
             }
         }
         
         /// <summary>
-        ///   Looks up a localized string similar to IKVMSDK0002: The JavaReference {0} has invalid AssemblyName &apos;{1}&apos;..
+        ///   Looks up a localized string similar to IKVMSDK0002: The IkvmReference {0} has invalid AssemblyName &apos;{1}&apos;..
         /// </summary>
-        internal static string Error_JavaReferenceInvalidAssemblyName {
+        internal static string Error_IkvmInvalidAssemblyName {
             get {
-                return ResourceManager.GetString("Error.JavaReferenceInvalidAssemblyName", resourceCulture);
+                return ResourceManager.GetString("Error.IkvmInvalidAssemblyName", resourceCulture);
             }
         }
         
         /// <summary>
-        ///   Looks up a localized string similar to IKVMSDK0003: The JavaReference {0} has invalid AssemblyVersion &apos;{1}&apos;..
+        ///   Looks up a localized string similar to IKVMSDK0003: The IkvmReference {0} has invalid AssemblyVersion &apos;{1}&apos;..
         /// </summary>
-        internal static string Error_JavaReferenceInvalidAssemblyVersion {
+        internal static string Error_IkvmInvalidAssemblyVersion {
             get {
-                return ResourceManager.GetString("Error.JavaReferenceInvalidAssemblyVersion", resourceCulture);
+                return ResourceManager.GetString("Error.IkvmInvalidAssemblyVersion", resourceCulture);
             }
         }
         
         /// <summary>
-        ///   Looks up a localized string similar to IKVMSDK0005: The JavaReference {0} has an invalid Compile item &apos;{1}&apos;. Can only include jar or class files..
+        ///   Looks up a localized string similar to IKVMSDK0005: The IkvmReference {0} has an invalid Compile item &apos;{1}&apos;. Can only include jar or class files..
         /// </summary>
-        internal static string Error_JavaReferenceInvalidCompile {
+        internal static string Error_IkvmInvalidCompile {
             get {
-                return ResourceManager.GetString("Error.JavaReferenceInvalidCompile", resourceCulture);
+                return ResourceManager.GetString("Error.IkvmInvalidCompile", resourceCulture);
             }
         }
         
         /// <summary>
-        ///   Looks up a localized string similar to IKVMSDK0006: The JavaReference {0} contains an invalid Reference &apos;{1}&apos;..
+        ///   Looks up a localized string similar to IKVMSDK0006: The IkvmReference {0} contains an invalid Reference &apos;{1}&apos;..
         /// </summary>
-        internal static string Error_JavaReferenceInvalidReference {
+        internal static string Error_IkvmInvalidReference {
             get {
-                return ResourceManager.GetString("Error.JavaReferenceInvalidReference", resourceCulture);
+                return ResourceManager.GetString("Error.IkvmInvalidReference", resourceCulture);
             }
         }
         
         /// <summary>
-        ///   Looks up a localized string similar to IKVMSDK0007: The JavaReference {0} has an invalid Sources item &apos;{1}&apos;. Can only include .java files..
+        ///   Looks up a localized string similar to IKVMSDK0007: The IkvmReference {0} has an invalid Sources item &apos;{1}&apos;. Can only include .java files..
         /// </summary>
-        internal static string Error_JavaReferenceInvalidSources {
+        internal static string Error_IkvmInvalidSources {
             get {
-                return ResourceManager.GetString("Error.JavaReferenceInvalidSources", resourceCulture);
+                return ResourceManager.GetString("Error.IkvmInvalidSources", resourceCulture);
             }
         }
         
         /// <summary>
-        ///   Looks up a localized string similar to IKVMSDK0008: The JavaReference {0} is missing the Compile item &apos;{1}&apos;..
+        ///   Looks up a localized string similar to IKVMSDK0008: The IkvmReference {0} is missing the Compile item &apos;{1}&apos;..
         /// </summary>
-        internal static string Error_JavaReferenceMissingCompile {
+        internal static string Error_IkvmMissingCompile {
             get {
-                return ResourceManager.GetString("Error.JavaReferenceMissingCompile", resourceCulture);
+                return ResourceManager.GetString("Error.IkvmMissingCompile", resourceCulture);
             }
         }
         
         /// <summary>
-        ///   Looks up a localized string similar to IKVMSDK0009: The JavaReference {0} is missing the Source item &apos;{1}&apos;..
+        ///   Looks up a localized string similar to IKVMSDK0009: The IkvmReference {0} is missing the Source item &apos;{1}&apos;..
         /// </summary>
-        internal static string Error_JavaReferenceMissingSources {
+        internal static string Error_IkvmMissingSources {
             get {
-                return ResourceManager.GetString("Error.JavaReferenceMissingSources", resourceCulture);
+                return ResourceManager.GetString("Error.IkvmMissingSources", resourceCulture);
             }
         }
         
         /// <summary>
-        ///   Looks up a localized string similar to IKVMSDK0010: The JavaReference {0} requires at least one Compile item..
+        ///   Looks up a localized string similar to IKVMSDK0010: The IkvmReference {0} requires at least one Compile item..
         /// </summary>
-        internal static string Error_JavaReferenceRequiresCompile {
+        internal static string Error_IkvmRequiresCompile {
             get {
-                return ResourceManager.GetString("Error.JavaReferenceRequiresCompile", resourceCulture);
+                return ResourceManager.GetString("Error.IkvmRequiresCompile", resourceCulture);
             }
         }
     }

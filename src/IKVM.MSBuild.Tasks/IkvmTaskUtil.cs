@@ -1,8 +1,9 @@
 ﻿using System;
 using System.IO;
 
-namespace IKVM.Sdk.Tasks
+namespace IKVM.MSBuild.Tasks
 {
+
     static class IkvmTaskUtil
     {
 
