@@ -3,8 +3,6 @@
     <PropertyGroup>
         <IkvmSdkDir>$(MSBuildThisFileDirectory)..\..\</IkvmSdkDir>
         <IkvmSdkVersion>$([System.IO.File]::ReadAllText('$(IkvmSdkDir)VERSION'))</IkvmSdkVersion>
-        <IkvmUserDir>$([MSBuild]::EnsureTrailingSlash('$([System.Environment]::GetFolderPath(SpecialFolder.UserProfile))'))</IkvmUserDir>
-        <IkvmHomeDir>$(IkvmUserDir).ikvm\</IkvmHomeDir>
     </PropertyGroup>
 
     <PropertyGroup>

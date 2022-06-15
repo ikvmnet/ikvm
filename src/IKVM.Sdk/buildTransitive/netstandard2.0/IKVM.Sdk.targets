@@ -24,8 +24,8 @@
     </PropertyGroup>
 
     <PropertyGroup Condition=" '$(TargetFramework)' != '' ">
-        <IkvmStageDir Condition=" '$(IkvmStageDir)' == '' ">$(IntermediateOutputPath)ikvm-stage\</IkvmStageDir>
-        <IkvmCacheDir Condition=" '$(IkvmCacheDir)' == '' ">$(IkvmHomeDir)cache\1\</IkvmCacheDir>
+        <IkvmStageDir Condition=" '$(IkvmStageDir)' == '' ">$(IntermediateOutputPath)ikvm\</IkvmStageDir>
+        <IkvmCacheDir Condition=" '$(IkvmCacheDir)' == '' ">$([System.IO.Path]::GetTempPath())\ikvm\cache\1\</IkvmCacheDir>
     </PropertyGroup>
 
     <!-- Gathers those references which are either related to the Framework itself, or IKVM. -->
