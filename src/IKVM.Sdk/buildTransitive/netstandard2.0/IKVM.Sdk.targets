@@ -46,7 +46,7 @@
     </Target>
 
     <!-- Populates the JavaReferenceItem set with required metadata. -->
-    <Target Name="GetJavaReferenceItemsMetadata" DependsOnTargets="GetJavaFrameworkReferences">
+    <Target Name="GetJavaReferenceItemsMetadata" DependsOnTargets="GetJavaFrameworkReferences" Condition=" '@(JavaReferenceItem)' != '' ">
         <!-- Probes for default metadata from the reference item. -->
         <IkvmAssignJavaReferenceItemMetadata Items="@(JavaReferenceItem)">
             <Output TaskParameter="Items" ItemName="_JavaReferenceItemWithMetadata" />
@@ -142,7 +142,9 @@
     </Target>
 
     <!-- Builds the JavaReferenceItems into their output items within the cache. -->
-    <Target Name="_BuildJavaReferenceAssemblies" DependsOnTargets="GetJavaReferenceItems" Inputs="@(JavaReferenceItem->'%(Compile)')" Outputs="%(JavaReferenceItem.CachePath)">
+    <Target Name="_BuildJavaReferenceAssemblies" DependsOnTargets="GetJavaReferenceItems" Inputs="@(JavaReferenceItem->'%(Compile)')" Outputs="%(JavaReferenceItem.CachePath)" >
+        <Error Text="Compiling Java References with IKVM is not yet supported for '$(TargetFramework)' projects." Condition=" '$(IkvmToolFramework)' == 'netcoreapp3.1' And '$(TargetFramework)' != 'netcoreapp3.1' " />
+            
         <MakeDir Directories="$([System.IO.Path]::GetDirectoryName('%(JavaReferenceItem.StagePath)'))" />
         <IkvmCompiler
             ToolPath="$(IkvmcTool)"
