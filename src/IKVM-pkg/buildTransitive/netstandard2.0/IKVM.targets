@@ -67,7 +67,6 @@
             <IkvmReferenceItem Remove="@(IkvmReferenceItem)"/>
             <IkvmReferenceItem Include="@(_IkvmReferenceItemWithIdentity)" />
         </ItemGroup>
-
     </Target>
 
     <!-- Duplicate set for reference lookup in batched target. -->
