@@ -58,8 +58,8 @@
             <PublishProperties>SelfContained=false</PublishProperties>
         </PublishProjectReference>
         <PublishProjectReference Include="..\IKVM.MSBuild.Tasks\IKVM.MSBuild.Tasks.csproj" Condition=" '$(TargetFramework)' == '' ">
-            <SetTargetFramework>TargetFramework=net6.0</SetTargetFramework>
-            <PublishPackagePath>tasks\net6.0</PublishPackagePath>
+            <SetTargetFramework>TargetFramework=netcoreapp3.1</SetTargetFramework>
+            <PublishPackagePath>tasks\netcoreapp3.1</PublishPackagePath>
             <PublishProperties>SelfContained=false</PublishProperties>
         </PublishProjectReference>
         <PublishProjectReference Include="..\ikvm\ikvm.csproj" Condition=" '$(TargetFramework)' == '' ">
