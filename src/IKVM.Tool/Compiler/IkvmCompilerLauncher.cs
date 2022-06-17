@@ -37,6 +37,16 @@ namespace IKVM.Tool.Compiler
         }
 
         /// <summary>
+        /// Initializes a new instance.
+        /// </summary>
+        /// <param name="listener"></param>
+        public IkvmCompilerLauncher(IIkvmToolDiagnosticEventListener listener) :
+            this(Path.Combine(Path.GetDirectoryName(typeof(IkvmCompilerLauncher).Assembly.Location), "ikvm-tools"), listener)
+        {
+
+        }
+
+        /// <summary>
         /// Logs an event if a listener is provided.
         /// </summary>
         /// <param name="level"></param>
@@ -49,13 +59,87 @@ namespace IKVM.Tool.Compiler
         }
 
         /// <summary>
-        /// Initializes a new instance.
+        /// Gets the path to the tool directory for the given environment.
         /// </summary>
-        /// <param name="listener"></param>
-        public IkvmCompilerLauncher(IIkvmToolDiagnosticEventListener listener) :
-            this(Path.Combine(Path.GetDirectoryName(typeof(IkvmCompilerLauncher).Assembly.Location), "ikvm-tools"), listener)
+        /// <param name="framework"></param>
+        /// <returns></returns>
+        /// <exception cref="ArgumentNullException"></exception>
+        /// <exception cref="NotImplementedException"></exception>
+        public string GetToolDir(IkvmCompilerTargetFramework framework, OSPlatform platform, Architecture architecture)
         {
+            // determine the TFM of the tool to be executed
+            var tfm = framework switch
+            {
+                IkvmCompilerTargetFramework.NetFramework => "net461",
+                IkvmCompilerTargetFramework.NetCore => "netcoreapp3.1",
+                _ => throw new NotImplementedException(),
+            };
 
+            // determine the RID of the tool to be executed
+            var rid = RuntimeInformation.ProcessArchitecture switch
+            {
+                Architecture.X86 => framework switch
+                {
+                    IkvmCompilerTargetFramework.NetFramework => "any",
+                    IkvmCompilerTargetFramework.NetCore when platform == OSPlatform.Windows => "win7-x86",
+                    IkvmCompilerTargetFramework.NetCore when platform == OSPlatform.Linux => "linux-x86",
+                    _ => throw new NotImplementedException(),
+                },
+                Architecture.X64 => framework switch
+                {
+                    IkvmCompilerTargetFramework.NetFramework => "any",
+                    IkvmCompilerTargetFramework.NetCore when platform == OSPlatform.Windows => "win7-x64",
+                    IkvmCompilerTargetFramework.NetCore when platform == OSPlatform.Linux => "linux-x64",
+                    _ => throw new NotImplementedException(),
+                },
+                _ => throw new NotImplementedException(),
+            };
+
+            // we use a different path and args set based on which version we're running
+            return Path.Combine(toolPath, tfm, rid);
+        }
+
+        /// <summary>
+        /// Gets the path to executable for the given environment.
+        /// </summary>
+        /// <param name="framework"></param>
+        /// <returns></returns>
+        /// <exception cref="ArgumentNullException"></exception>
+        /// <exception cref="NotImplementedException"></exception>
+        public string GetToolExe(IkvmCompilerTargetFramework framework, OSPlatform platform, Architecture architecture)
+        {
+            return Path.Combine(GetToolDir(framework, platform, architecture), platform == OSPlatform.Windows ? "ikvmc.exe" : "ikvmc");
+        }
+
+        /// <summary>
+        /// Gets the path to the reference assemblies for the given environment.
+        /// </summary>
+        /// <param name="framework"></param>
+        /// <returns></returns>
+        /// <exception cref="ArgumentNullException"></exception>
+        /// <exception cref="NotImplementedException"></exception>
+        public string GetReferenceAssemblyPath(IkvmCompilerTargetFramework framework, OSPlatform platform, Architecture architecture)
+        {
+            return Path.Combine(GetToolDir(framework, platform, architecture), "refs");
+        }
+
+        /// <summary>
+        /// Gets the current OS platform.
+        /// </summary>
+        /// <returns></returns>
+        /// <exception cref="PlatformNotSupportedException"></exception>
+        OSPlatform GetOSPlatform()
+        {
+            if (RuntimeInformation.IsOSPlatform(OSPlatform.Windows))
+                return OSPlatform.Windows;
+
+            if (RuntimeInformation.IsOSPlatform(OSPlatform.Linux))
+                return OSPlatform.Linux;
+
+            if (RuntimeInformation.IsOSPlatform(OSPlatform.OSX))
+                return OSPlatform.OSX;
+
+            throw new PlatformNotSupportedException();
         }
 
         /// <summary>
@@ -245,39 +329,8 @@ namespace IKVM.Tool.Compiler
                 response = options.ResponseFile ?? Path.GetTempFileName();
                 File.WriteAllText(response, w.ToString());
 
-                // determine the TFM of the tool to be executed
-                var tfm = options.TargetFramework switch
-                {
-                    IkvmCompilerTargetFramework.NetFramework => "net461",
-                    IkvmCompilerTargetFramework.NetCore => "netcoreapp3.1",
-                    _ => throw new NotImplementedException(),
-                };
-
-                // determine the RID of the tool to be executed
-                var rid = RuntimeInformation.ProcessArchitecture switch
-                {
-                    Architecture.X86 => options.TargetFramework switch
-                    {
-                        IkvmCompilerTargetFramework.NetFramework => "any",
-                        IkvmCompilerTargetFramework.NetCore when RuntimeInformation.IsOSPlatform(OSPlatform.Windows) => "win7-x86",
-                        IkvmCompilerTargetFramework.NetCore when RuntimeInformation.IsOSPlatform(OSPlatform.Linux) => "linux-x86",
-                        _ => throw new NotImplementedException(),
-                    },
-                    Architecture.X64 => options.TargetFramework switch
-                    {
-                        IkvmCompilerTargetFramework.NetFramework => "any",
-                        IkvmCompilerTargetFramework.NetCore when RuntimeInformation.IsOSPlatform(OSPlatform.Windows) => "win7-x64",
-                        IkvmCompilerTargetFramework.NetCore when RuntimeInformation.IsOSPlatform(OSPlatform.Linux) => "linux-x64",
-                        _ => throw new NotImplementedException(),
-                    },
-                    _ => throw new NotImplementedException(),
-                };
-
-                // determine the name of the EXE to execute
-                var exe = RuntimeInformation.IsOSPlatform(OSPlatform.Windows) ? "ikvmc.exe" : "ikvmc";
-
                 // we use a different path and args set based on which version we're running
-                var cli = Cli.Wrap(Path.Combine(toolPath, tfm, rid, exe));
+                var cli = Cli.Wrap(GetToolExe(options.TargetFramework, GetOSPlatform(), RuntimeInformation.OSArchitecture));
                 var args = new List<string>();
 
                 // execute the contents of the response file
