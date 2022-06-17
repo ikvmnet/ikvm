@@ -1,4 +1,4 @@
-﻿namespace IKVM.Tool
+﻿namespace IKVM.Tool.Exe
 {
 
     public static class Program

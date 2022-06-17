@@ -26,10 +26,12 @@ using System.Collections.Generic;
 
 namespace IKVM.Reflection
 {
+
     public delegate Module ModuleResolveEventHandler(object sender, ResolveEventArgs e);
 
     public abstract class Assembly : ICustomAttributeProvider
     {
+
         internal readonly Universe universe;
         protected string fullName;  // AssemblyBuilder needs access to this field to clear it when the name changes
         protected List<ModuleResolveEventHandler> resolvers;

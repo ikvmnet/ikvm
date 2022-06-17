@@ -22,11 +22,16 @@ namespace IKVM.MSBuild.Tasks
         readonly static MD5 md5 = MD5.Create();
 
         /// <summary>
-        /// <see cref="IkvmReferenceItem"/> items without assigned hashes.
+        /// IKVM tool version.
         /// </summary>
         [Required]
-        [Output]
-        public ITaskItem[] Items { get; set; }
+        public string ToolVersion { get; set; }
+
+        /// <summary>
+        /// IKVM target framework.
+        /// </summary>
+        [Required]
+        public string TargetFramework { get; set; }
 
         /// <summary>
         /// Other references that will be used to generate the assemblies.
@@ -35,16 +40,11 @@ namespace IKVM.MSBuild.Tasks
         public string RuntimeAssembly { get; set; }
 
         /// <summary>
-        /// IKVM tool version.
+        /// <see cref="IkvmReferenceItem"/> items without assigned hashes.
         /// </summary>
         [Required]
-        public string ToolVersion { get; set; }
-
-        /// <summary>
-        /// IKVM tool framework.
-        /// </summary>
-        [Required]
-        public string ToolFramework { get; set; }
+        [Output]
+        public ITaskItem[] Items { get; set; }
 
         /// <summary>
         /// Other references that will be used to generate the assemblies.
@@ -62,7 +62,7 @@ namespace IKVM.MSBuild.Tasks
             {
                 if (string.IsNullOrWhiteSpace(RuntimeAssembly))
                     throw new IkvmTaskException("RuntimeAssembly is required.");
-                if (string.IsNullOrWhiteSpace(ToolFramework))
+                if (string.IsNullOrWhiteSpace(TargetFramework))
                     throw new IkvmTaskException("ToolFramework is required.");
                 if (string.IsNullOrWhiteSpace(ToolVersion))
                     throw new IkvmTaskException("ToolVersion is required.");
@@ -109,11 +109,11 @@ namespace IKVM.MSBuild.Tasks
 
             var manifest = new StringWriter();
             manifest.WriteLine("ToolVersion={0}", ToolVersion);
-            manifest.WriteLine("ToolFramework={0}", ToolFramework);
+            manifest.WriteLine("TargetFramework={0}", TargetFramework);
+            manifest.WriteLine("RuntimeAssembly={0}", GetHashForFile(RuntimeAssembly));
             manifest.WriteLine("AssemblyName={0}", item.AssemblyName);
             manifest.WriteLine("AssemblyVersion={0}", item.AssemblyVersion);
             manifest.WriteLine("Debug={0}", item.Debug ? "true" : "false");
-            manifest.WriteLine("Runtime={0}", GetHashForFile(RuntimeAssembly));
 
             // each Compile item should be a jar or class file
             var compiles = new List<string>(16);

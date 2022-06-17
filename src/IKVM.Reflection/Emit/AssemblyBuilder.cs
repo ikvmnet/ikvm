@@ -32,8 +32,10 @@ using IKVM.Reflection.Writer;
 
 namespace IKVM.Reflection.Emit
 {
+
     public sealed class AssemblyBuilder : Assembly
 	{
+
 		private readonly string name;
 		private ushort majorVersion;
 		private ushort minorVersion;

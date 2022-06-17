@@ -54,7 +54,7 @@
     </ItemGroup>
 
     <ItemGroup>
-        <None Include="..\..\ext\helloworld-2.0.jar" Link="Util\Jar\helloworld-2.0.jar">
+        <None Include="..\..\ext\helloworld-2.0.jar" Link="helloworld-2.0.jar">
             <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
         </None>
     </ItemGroup>

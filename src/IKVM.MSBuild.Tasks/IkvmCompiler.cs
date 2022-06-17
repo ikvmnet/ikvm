@@ -1,9 +1,9 @@
 ﻿using System;
-using System.Collections.Generic;
 using System.IO;
+using System.Linq;
 using System.Threading;
 
-using CliWrap;
+using IKVM.Tool.Compiler;
 
 using Microsoft.Build.Framework;
 using Microsoft.Build.Utilities;
@@ -18,16 +18,16 @@ namespace IKVM.MSBuild.Tasks
     {
 
         /// <summary>
-        /// Path to the IKVMC executable file.
+        /// Root of the tools director.
         /// </summary>
         [Required]
-        public string ToolPath { get; set; }
+        public string ToolsPath { get; set; }
 
         /// <summary>
-        /// Whether we should execute IKVMC using 'dotnet exec'.
+        /// Whether we are generating a NetFramework or NetCore assembly.
         /// </summary>
         [Required]
-        public bool UseDotNetExec { get; set; }
+        public string TargetFramework { get; set; } = "NetCore";
 
         /// <summary>
         /// Number of milliseconds to wait for the command to execute.
@@ -39,9 +39,15 @@ namespace IKVM.MSBuild.Tasks
         /// </summary>
         public string ResponseFile { get; set; }
 
+        /// <summary>
+        /// Input items to be compiled.
+        /// </summary>
         [Required]
         public ITaskItem[] Input { get; set; }
 
+        /// <summary>
+        /// Path of the output assembly.
+        /// </summary>
         [Required]
         public string Output { get; set; }
 
@@ -139,235 +145,138 @@ namespace IKVM.MSBuild.Tasks
 
         public int? WarningLevel { get; set; }
 
-        public string NoParameterReflection { get; set; }
+        public bool NoParameterReflection { get; set; }
 
+        /// <summary>
+        /// Executes the task.
+        /// </summary>
+        /// <returns></returns>
+        /// <exception cref="NullReferenceException"></exception>
         public override bool Execute()
         {
-            using var w = new StringWriter();
+            var options = new IkvmCompilerOptions();
 
-            if (Output is not null)
-                w.WriteLine($"-out:{Output}");
+            options.TargetFramework = TargetFramework switch
+            {
+                "NetCore" => IkvmCompilerTargetFramework.NetCore,
+                "NetFramework" => IkvmCompilerTargetFramework.NetFramework,
+                _ => throw new IkvmTaskException("Invalid TargetFramework."),
+            };
 
-            if (Assembly is not null)
-                w.WriteLine($"-assembly:{Assembly}");
-
-            if (Version is not null)
-                w.WriteLine($"-version:{Version}");
-
-            if (Target is not null)
-                w.WriteLine($"-target:{Target}");
-
-            if (Platform is not null)
-                w.WriteLine($"-platform:{Platform}");
-
-            if (KeyFile is not null)
-                w.WriteLine($"-keyfile:{KeyFile}");
-
-            if (Key is not null)
-                w.WriteLine($"-key:{Key}");
-
-            if (DelaySign)
-                w.WriteLine("-delay");
+            options.Output = Output;
+            options.Assembly = Assembly;
+            options.Version = Version;
+            options.Target = Target;
+            options.Platform = Platform;
+            options.KeyFile = KeyFile;
+            options.Key = Key;
+            options.DelaySign = DelaySign;
 
             if (References is not null)
                 foreach (var reference in References)
-                    w.WriteLine($"-reference:{reference.ItemSpec}");
+                    options.References.Add(reference.ItemSpec);
 
             if (Recurse is not null)
                 foreach (var recurse in Recurse)
-                    w.WriteLine($"-recurse:{recurse.ItemSpec}");
+                    options.Recurse.Add(recurse.ItemSpec);
 
-            if (Exclude is not null)
-                w.WriteLine($"-exclude:{Exclude}");
-
-            if (FileVersion is not null)
-                w.WriteLine($"-fileversion:{FileVersion}");
-
-            if (Win32Icon is not null)
-                w.WriteLine($"-win32icon:{Win32Icon}");
-
-            if (Win32Manifest is not null)
-                w.WriteLine($"-win32manifest:{Win32Manifest}");
+            options.Exclude = Exclude;
+            options.FileVersion = FileVersion;
+            options.Win32Icon = Win32Icon;
+            options.Win32Manifest = Win32Manifest;
 
             if (Resources is not null)
                 foreach (var resource in Resources)
-                    w.WriteLine($"-resource:{resource.GetMetadata("ResourcePath")}={resource.ItemSpec}");
+                    options.Resources.Add(new IkvmCompilerResourceItem(resource.ItemSpec, resource.GetMetadata("ResourcePath")));
 
             if (ExternalResources is not null)
                 foreach (var resource in ExternalResources)
-                    w.WriteLine($"-externalresource:{resource.GetMetadata("ResourcePath")}={resource.ItemSpec}");
+                    options.ExternalResources.Add(new IkvmCompilerExternalResourceItem(resource.ItemSpec, resource.GetMetadata("ResourcePath")));
 
-            if (CompressResources)
-                w.WriteLine("-compressresources");
-
-            if (Debug)
-                w.WriteLine("-debug");
-
-            if (NoAutoSerialization)
-                w.WriteLine("-noautoserialization");
-
-            if (NoGlobbing)
-                w.WriteLine("-noglobbing");
-
-            if (NoJNI)
-                w.WriteLine("-nojni");
-
-            if (OptFields)
-                w.WriteLine("-opt:fields");
-
-            if (RemoveAssertions)
-                w.WriteLine("-removeassertions");
-
-            if (StrictFinalFieldSemantics)
-                w.WriteLine("-strictfinalfieldsemantics");
+            options.CompressResources = CompressResources;
+            options.Debug = Debug;
+            options.NoAutoSerialization = NoAutoSerialization;
+            options.NoGlobbing = NoGlobbing;
+            options.NoJNI = NoJNI;
+            options.OptFields = OptFields;
+            options.RemoveAssertions = RemoveAssertions;
+            options.StrictFinalFieldSemantics = StrictFinalFieldSemantics;
 
             if (NoWarn is not null)
                 foreach (var i in NoWarn.Split(';'))
-                    w.WriteLine($"-nowarn:{i}");
+                    options.NoWarn.Add(i);
 
-            if (WarnAsError)
-                w.WriteLine("-warnaserror");
+            options.WarnAsError = WarnAsError;
 
             if (WarnAsErrorWarnings is not null)
                 foreach (var i in WarnAsErrorWarnings.Split(';'))
-                    w.WriteLine($"-warnaserror:{i}");
+                    options.WarnAsErrorWarnings.Add(i);
 
-            if (WriteSuppressWarningsFile is not null)
-                w.WriteLine($"-writesupresswarningsfile:{WriteSuppressWarningsFile}");
-
-            if (Main is not null)
-                w.WriteLine($"-main:{Main}");
-
-            if (SrcPath is not null)
-                w.WriteLine($"-srcpath:{SrcPath}");
-
-            if (Apartment is not null)
-                w.WriteLine($"-apartment:{Apartment}");
+            options.WriteSuppressWarningsFile = WriteSuppressWarningsFile;
+            options.Main = Main;
+            options.SrcPath = SrcPath;
+            options.Apartment = Apartment;
 
             if (SetProperties is not null)
-                foreach (var p in SetProperties.Split(new[] { ';' }, 2))
+                foreach (var p in SetProperties.Split(new[] { ';' }, 2).Select(i => i.Split('=')))
                     if (p.Length == 2)
-                        w.WriteLine($"-D{p[0]}={p[1]}");
+                        options.SetProperties[p[0]] = p[1];
 
-            if (NoStackTraceInfo)
-                w.WriteLine("-nostacktraceinfo");
+            options.NoStackTraceInfo = NoStackTraceInfo;
 
             if (XTrace is not null)
                 foreach (var i in XTrace.Split(';'))
-                    w.WriteLine($"-Xtrace:{i}");
+                    options.XTrace.Add(i);
 
             if (XMethodTrace is not null)
                 foreach (var i in XMethodTrace.Split(';'))
-                    w.WriteLine($"-Xmethodtrace:{i}");
+                    options.XMethodTrace.Add(i);
 
             if (PrivatePackages is not null)
                 foreach (var i in PrivatePackages.Split(';'))
-                    w.WriteLine($"-privatepackage:{i}");
+                    options.PrivatePackages.Add(i);
 
-            if (ClassLoader is not null)
-                w.WriteLine($"-classloader:{ClassLoader}");
-
-            if (SharedClassLoader)
-                w.WriteLine("-sharedclassloader");
-
-            if (BaseAddress is not null)
-                w.WriteLine($"-baseaddress:{BaseAddress}");
-
-            if (FileAlign is not null)
-                w.WriteLine($"-filealign:{FileAlign}");
-
-            if (NoPeerCrossReference)
-                w.WriteLine("-nopeercrossreference");
-
-            if (NoStdLib)
-                w.WriteLine("-nostdlib");
+            options.ClassLoader = ClassLoader;
+            options.SharedClassLoader = SharedClassLoader;
+            options.BaseAddress = BaseAddress;
+            options.FileAlign = FileAlign;
+            options.NoPeerCrossReference = NoPeerCrossReference;
+            options.NoStdLib = NoStdLib;
 
             if (Lib is not null)
                 foreach (var i in Lib)
-                    w.WriteLine($"-lib:{i.ItemSpec}");
+                    options.Lib.Add(i.ItemSpec);
 
-            if (HighEntropyVA)
-                w.WriteLine("-highentropyva");
-
-            if (Static)
-                w.WriteLine("-static");
+            options.HighEntropyVA = HighEntropyVA;
+            options.Static = Static;
 
             if (AssemblyAttributes is not null)
-                foreach (var i in Lib)
-                    w.WriteLine($"-assemblyattributes:{i.ItemSpec}");
+                foreach (var i in AssemblyAttributes)
+                    options.AssemblyAttributes.Add(i.ItemSpec);
 
-            if (Runtime is not null)
-                w.WriteLine($"-runtime:{Runtime}");
-
-            if (WarningLevel is not null)
-                w.WriteLine($"-w{WarningLevel}");
-
-            if (NoParameterReflection is not null)
-                w.WriteLine($"-noparameterreflection");
+            options.Runtime = Runtime;
+            options.WarningLevel = WarningLevel;
+            options.NoParameterReflection = NoParameterReflection;
 
             if (Input != null)
                 foreach (var i in Input)
-                    w.WriteLine(i.ItemSpec);
+                    options.Input.Add(i.ItemSpec);
 
-            // path to the temporary response file
-            var response = (string)null;
-            var cts = new CancellationTokenSource();
+            // check that the tools exist
+            if (ToolsPath == null || Directory.Exists(ToolsPath) == false)
+                throw new IkvmTaskException("Missing tools path.");
 
-            try
-            {
-                // create response file
-                response = ResponseFile ?? Path.GetTempFileName();
-                File.WriteAllText(response, w.ToString());
+            // kick off the launcher with the configured options
+            var launcher = new IkvmCompilerLauncher(ToolsPath, new IkvmToolTaskDiagnosticWriter(Log));
+            var run = System.Threading.Tasks.Task.Run(() => launcher.ExecuteAsync(options, CancellationToken.None));
 
-                // we use a different path and args set based on which version we're running
-                var cli = UseDotNetExec ? Cli.Wrap("dotnet") : Cli.Wrap(ToolPath);
-                var args = new List<string>();
-                if (UseDotNetExec)
-                {
-                    args.Add("exec");
-                    args.Add(ToolPath);
-                }
+            // yield and wait for the task to complete
+            BuildEngine3.Yield();
+            var rsl = run.GetAwaiter().GetResult();
+            BuildEngine3.Reacquire();
 
-                // execute the contents of the response file
-                args.Add($"@{response}");
-                cli = cli.WithArguments(args);
-                cli = cli.WithValidation(CommandResultValidation.None);
-
-                // send output to MSBuild
-                cli = cli.WithStandardErrorPipe(PipeTarget.ToDelegate(i => Log.LogMessage(i)));
-                cli = cli.WithStandardOutputPipe(PipeTarget.ToDelegate(i => Log.LogMessage(i)));
-
-                // combine manual cancellation with timeout
-                var ctk = cts.Token;
-                if (Timeout != System.Threading.Timeout.Infinite)
-                    ctk = CancellationTokenSource.CreateLinkedTokenSource(ctk, new CancellationTokenSource(Timeout).Token).Token;
-
-                // execute command
-                Log.LogCommandLine(cli.ToString());
-                var run = cli.ExecuteAsync(ctk);
-
-                // yield and wait for the task to complete
-                BuildEngine3.Yield();
-                var rsl = run.GetAwaiter().GetResult();
-                BuildEngine3.Reacquire();
-
-                // collect final results
-                if (rsl == null)
-                    throw new NullReferenceException();
-
-                // check that we exited successfully
-                return rsl.ExitCode == 0;
-            }
-            finally
-            {
-                // cancel the execution if it is still running
-                if (cts != null)
-                    cts.Cancel();
-
-                // clean up response file
-                if (ResponseFile == null && response != null && File.Exists(response))
-                    File.Delete(response);
-            }
+            // check that we exited successfully
+            return rsl == 0;
         }
 
     }

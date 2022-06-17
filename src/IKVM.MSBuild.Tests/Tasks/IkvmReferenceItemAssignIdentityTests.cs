@@ -39,7 +39,7 @@ namespace IKVM.MSBuild.Tests.Tasks
         {
             var t = new IkvmReferenceItemAssignIdentity();
             t.ToolVersion = toolVersion;
-            t.ToolFramework = toolFramework;
+            t.TargetFramework = toolFramework;
             t.RuntimeAssembly = typeof(IKVM.Runtime.InternalException).Assembly.Location;
             t.References = new[] { new TaskItem(typeof(object).Assembly.Location) };
             return t;

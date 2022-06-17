@@ -14,7 +14,7 @@ namespace IKVM.Tests.Util.Jar
         [TestMethod]
         public void Can_read_manifest_version()
         {
-            var z = new JarFile(@"Util/Jar/helloworld-2.0.jar");
+            var z = new JarFile(@"helloworld-2.0.jar");
             z.Manifest.MainAttributes.Should().Contain("Manifest-Version", "1.0");
         }
 

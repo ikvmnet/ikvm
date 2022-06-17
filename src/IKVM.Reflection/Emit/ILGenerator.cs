@@ -103,6 +103,7 @@ namespace IKVM.Reflection.Emit
 
 	public sealed class ILGenerator
 	{
+
 		private readonly ModuleBuilder moduleBuilder;
 		private readonly ByteBuffer code;
 		private readonly SignatureHelper locals;

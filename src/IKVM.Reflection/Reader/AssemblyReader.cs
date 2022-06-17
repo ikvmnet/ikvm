@@ -29,8 +29,10 @@ using IKVM.Reflection.Metadata;
 
 namespace IKVM.Reflection.Reader
 {
+
 	sealed class AssemblyReader : Assembly
 	{
+
 		private const int ContainsNoMetaData = 0x0001;
 		private readonly string location;
 		private readonly ModuleReader manifestModule;

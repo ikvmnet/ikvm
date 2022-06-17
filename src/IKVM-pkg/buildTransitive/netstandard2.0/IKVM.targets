@@ -1,26 +1,10 @@
 ﻿<Project>
 
     <PropertyGroup Condition=" '$(TargetFramework)' != '' ">
-        <IkvmToolFramework Condition="$([MSBuild]::IsTargetFrameworkCompatible('$(TargetFramework)', 'netstandard1.0'))">netcoreapp3.1</IkvmToolFramework>
-        <IkvmToolFramework Condition="$([MSBuild]::IsTargetFrameworkCompatible('$(TargetFramework)', 'net461'))">net461</IkvmToolFramework>
-        <IkvmToolFramework Condition="$([MSBuild]::IsTargetFrameworkCompatible('$(TargetFramework)', 'netcoreapp3.1'))">netcoreapp3.1</IkvmToolFramework>
-        <IkvmToolFolder>$(IkvmToolFramework)</IkvmToolFolder>
-        <IkvmToolPath>$([System.IO.Path]::GetFullPath('$(IkvmDir)tools\$(IkvmToolFolder)\'))</IkvmToolPath>
-        <IkvmUseDotNetExec>false</IkvmUseDotNetExec>
-        <IkvmUseDotNetExec Condition=" '$(IkvmToolFramework)' == 'netcoreapp3.1' ">true</IkvmUseDotNetExec>
-    </PropertyGroup>
-
-    <PropertyGroup Condition=" '$(IkvmToolFramework)' == 'net461' ">
-        <IkvmTool>$(IkvmToolPath)ikvm.exe</IkvmTool>
-        <IkvmcTool>$(IkvmToolPath)ikvmc.exe</IkvmcTool>
-        <IkvmstubTool>$(IkvmToolPath)ikvmstub.exe</IkvmstubTool>
-    </PropertyGroup>
-
-    <PropertyGroup Condition=" '$(IkvmToolFramework)' == 'netcoreapp3.1' ">
-        <IkvmTool>$(IkvmToolPath)ikvm.dll</IkvmTool>
-        <IkvmcTool>$(IkvmToolPath)ikvmc.dll</IkvmcTool>
-        <IkvmcToolNoStdLib>true</IkvmcToolNoStdLib>
-        <IkvmstubTool>$(IkvmToolPath)ikvmstub.dll</IkvmstubTool>
+        <IkvmTargetFramework Condition="$([MSBuild]::IsTargetFrameworkCompatible('$(TargetFramework)', 'netstandard1.0'))">NetCore</IkvmTargetFramework>
+        <IkvmTargetFramework Condition="$([MSBuild]::IsTargetFrameworkCompatible('$(TargetFramework)', 'net461'))">NetFramework</IkvmTargetFramework>
+        <IkvmTargetFramework Condition="$([MSBuild]::IsTargetFrameworkCompatible('$(TargetFramework)', 'netcoreapp3.1'))">NetCore</IkvmTargetFramework>
+        <IkvmToolsPath>$([System.IO.Path]::GetFullPath('$(IkvmDir)tools\'))</IkvmToolsPath>
     </PropertyGroup>
 
     <PropertyGroup Condition=" '$(TargetFramework)' != '' ">
@@ -58,7 +42,7 @@
         </IkvmReferenceItemValidate>
 
         <!-- Configures the identity value to uniquely identify a reference. -->
-        <IkvmReferenceItemAssignIdentity Items="@(_IkvmReferenceItemWithMetadata)" ToolVersion="$(IkvmVersion)" ToolFramework="$(IkvmToolFramework)" RuntimeAssembly="@(IkvmRuntimeAssembly)" References="@(IkvmFrameworkReference)" >
+        <IkvmReferenceItemAssignIdentity ToolVersion="$(IkvmVersion)" TargetFramework="$(IkvmTargetFramework)" RuntimeAssembly="@(IkvmRuntimeAssembly)" Items="@(_IkvmReferenceItemWithMetadata)" References="@(IkvmFrameworkReference)" >
             <Output TaskParameter="Items" ItemName="_IkvmReferenceItemWithIdentity" />
         </IkvmReferenceItemAssignIdentity>
 
@@ -168,8 +152,8 @@
 
         <!-- Compile the reference item. -->
         <IkvmCompiler
-            ToolPath="$(IkvmcTool)"
-            UseDotNetExec="$(IkvmUseDotNetExec)"
+            ToolsPath="$(IkvmToolsPath)"
+            TargetFramework="$(IkvmTargetFramework)"
             ResponseFile="%(IkvmReferenceItem.StagePath).rsp"
             Output="%(IkvmReferenceItem.StagePath)"
             Assembly="%(IkvmReferenceItem.AssemblyName)"

@@ -17,7 +17,7 @@ namespace IKVM.MSBuild.Tasks
         /// Initializes a new instance.
         /// </summary>
         /// <param name="item"></param>
-        /// <exception cref="System.ArgumentNullException"></exception>
+        /// <exception cref="ArgumentNullException"></exception>
         public IkvmReferenceItem(ITaskItem item)
         {
             Item = item ?? throw new ArgumentNullException(nameof(item));

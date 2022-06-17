@@ -62,6 +62,9 @@
             <PublishPackagePath>tasks\netcoreapp3.1</PublishPackagePath>
             <PublishProperties>SelfContained=false</PublishProperties>
         </PublishProjectReference>
+    </ItemGroup>
+    
+    <ItemGroup>
         <PublishProjectReference Include="..\ikvm\ikvm.csproj" Condition=" '$(TargetFramework)' == '' ">
             <SetTargetFramework>TargetFramework=net461</SetTargetFramework>
             <PublishPackagePath>tools\net461</PublishPackagePath>

@@ -26,7 +26,7 @@ using System.Reflection;
 using System.Reflection.Emit;
 using System.Security;
 using System.Security.Permissions;
-using System.Threading;
+
 using IKVM.Internal;
 
 static class DynamicMethodUtils

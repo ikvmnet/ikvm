@@ -28,6 +28,7 @@ namespace IKVM.Reflection.Emit
 {
 	public struct ExceptionHandler : IEquatable<ExceptionHandler>
 	{
+
 		private readonly int tryOffset;
 		private readonly int tryLength;
 		private readonly int filterOffset;

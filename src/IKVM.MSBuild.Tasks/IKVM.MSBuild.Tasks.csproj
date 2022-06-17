@@ -19,6 +19,7 @@
     </ItemGroup>
 
     <ItemGroup>
+        <ProjectReference Include="..\IKVM.Tool\IKVM.Tool.csproj" AdditionalProperties="IncludeTools=false" />
         <ProjectReference Include="..\IKVM.Util\IKVM.Util.csproj" />
     </ItemGroup>
 

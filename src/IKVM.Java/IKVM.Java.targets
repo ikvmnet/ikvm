@@ -685,9 +685,6 @@
         <WriteLinesToFile File="$(_BuildJavaAssemblyCoreExcludeFilePath)" Lines="@(OpenJdkExcludeRegex)" Overwrite="true" />
 
         <ItemGroup>
-        </ItemGroup>
-
-        <ItemGroup>
             <_IkvmcArgs Include="-debug" Condition=" '$(DebugSymbols)' == 'true' Or '$(DebugType)' != 'none' " />
             <_IkvmcArgs Include="-assembly:$(AssemblyName)" />
             <_IkvmcArgs Include="-version:$(AssemblyVersion)" />
