@@ -42,30 +42,30 @@ namespace IKVM.Tests.Tool.Compiler
             exitCode.Should().Be(0);
         }
 
-        //[TestMethod]
-        //public async Task Can_compile_netcore_jar()
-        //{
-        //    var p = Path.Combine(Path.GetTempPath(), Guid.NewGuid().ToString(), "helloworld-2.0.dll");
-        //    Directory.CreateDirectory(Path.GetDirectoryName(p));
+        [TestMethod]
+        public async Task Can_compile_netcore_jar()
+        {
+            var p = Path.Combine(Path.GetTempPath(), Guid.NewGuid().ToString(), "helloworld-2.0.dll");
+            Directory.CreateDirectory(Path.GetDirectoryName(p));
 
-        //    var e = new List<IkvmToolDiagnosticEvent>();
-        //    var l = new IkvmCompilerLauncher(new IkvmToolDelegateDiagnosticListener(evt => { e.Add(evt); TestContext.WriteLine(evt.Message, evt.MessageArgs); }));
-        //    var o = new IkvmCompilerOptions()
-        //    {
-        //        TargetFramework = IkvmCompilerTargetFramework.NetCore,
-        //        ResponseFile = "ikvmc.rsp",
-        //        Input = { "helloworld-2.0.jar" },
-        //        Assembly = "helloworld-2.0",
-        //        Version = "1.0.0.0",
-        //        NoStdLib = true,
-        //        Lib = { Path.Combine(Path.GetDirectoryName(typeof(IkvmCompilerLauncherTests).Assembly.Location), "refs") },
-        //        //Runtime = typeof(IKVM.Runtime.Compiler).Assembly.Location,
-        //        Output = p,
-        //    };
+            var e = new List<IkvmToolDiagnosticEvent>();
+            var l = new IkvmCompilerLauncher(new IkvmToolDelegateDiagnosticListener(evt => { e.Add(evt); TestContext.WriteLine(evt.Message, evt.MessageArgs); }));
+            var o = new IkvmCompilerOptions()
+            {
+                TargetFramework = IkvmCompilerTargetFramework.NetCore,
+                ResponseFile = "ikvmc.rsp",
+                Input = { "helloworld-2.0.jar" },
+                Assembly = "helloworld-2.0",
+                Version = "1.0.0.0",
+                NoStdLib = true,
+                Lib = { @"C:\dev\ikvm\src\IKVM.Tests\bin\Debug\netcoreapp3.1\ikvm-tools\netcoreapp3.1\win7-x64\refs" },
+                //Runtime = typeof(IKVM.Runtime.Compiler).Assembly.Location,
+                Output = p,
+            };
 
-        //    var exitCode = await l.ExecuteAsync(o);
-        //    exitCode.Should().Be(0);
-        //}
+            var exitCode = await l.ExecuteAsync(o);
+            exitCode.Should().Be(0);
+        }
 
     }
 
