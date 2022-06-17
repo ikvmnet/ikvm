@@ -62,6 +62,8 @@ namespace IKVM.Tool.Compiler
         /// Gets the path to the tool directory for the given environment.
         /// </summary>
         /// <param name="framework"></param>
+        /// <param name="platform"></param>
+        /// <param name="architecture"></param>
         /// <returns></returns>
         /// <exception cref="ArgumentNullException"></exception>
         /// <exception cref="NotImplementedException"></exception>
@@ -76,7 +78,7 @@ namespace IKVM.Tool.Compiler
             };
 
             // determine the RID of the tool to be executed
-            var rid = RuntimeInformation.ProcessArchitecture switch
+            var rid = architecture switch
             {
                 Architecture.X86 => framework switch
                 {
@@ -103,6 +105,8 @@ namespace IKVM.Tool.Compiler
         /// Gets the path to executable for the given environment.
         /// </summary>
         /// <param name="framework"></param>
+        /// <param name="platform"></param>
+        /// <param name="architecture"></param>
         /// <returns></returns>
         /// <exception cref="ArgumentNullException"></exception>
         /// <exception cref="NotImplementedException"></exception>
@@ -112,15 +116,41 @@ namespace IKVM.Tool.Compiler
         }
 
         /// <summary>
+        /// Gets the path to executable for the given environment.
+        /// </summary>
+        /// <param name="framework"></param>
+        /// <returns></returns>
+        /// <exception cref="ArgumentNullException"></exception>
+        /// <exception cref="NotImplementedException"></exception>
+        public string GetToolExe(IkvmCompilerTargetFramework framework)
+        {
+            return GetToolExe(framework, GetOSPlatform(), RuntimeInformation.OSArchitecture);
+        }
+
+        /// <summary>
         /// Gets the path to the reference assemblies for the given environment.
         /// </summary>
         /// <param name="framework"></param>
+        /// <param name="platform"></param>
+        /// <param name="architecture"></param>
         /// <returns></returns>
         /// <exception cref="ArgumentNullException"></exception>
         /// <exception cref="NotImplementedException"></exception>
         public string GetReferenceAssemblyPath(IkvmCompilerTargetFramework framework, OSPlatform platform, Architecture architecture)
         {
             return Path.Combine(GetToolDir(framework, platform, architecture), "refs");
+        }
+
+        /// <summary>
+        /// Gets the path to the reference assemblies for the given environment.
+        /// </summary>
+        /// <param name="framework"></param>
+        /// <returns></returns>
+        /// <exception cref="ArgumentNullException"></exception>
+        /// <exception cref="NotImplementedException"></exception>
+        public string GetReferenceAssemblyPath(IkvmCompilerTargetFramework framework)
+        {
+            return GetReferenceAssemblyPath(framework, GetOSPlatform(), RuntimeInformation.OSArchitecture);
         }
 
         /// <summary>
