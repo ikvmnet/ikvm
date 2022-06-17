@@ -318,7 +318,7 @@ namespace IKVM.Reflection.Emit
 			private void GetTypeName(StringBuilder sb, Type type, bool isTypeParam)
 			{
 				bool v1 = !assembly.ManifestModule.__IsMissing && assembly.ManifestModule.MDStreamVersion < 0x20000;
-				bool includeAssemblyName = type.Assembly != assembly && (!v1 || type.Assembly != type.Module.universe.Mscorlib);
+				bool includeAssemblyName = type.Assembly != assembly && (!v1 || type.Assembly != type.Module.universe.CoreLib);
 				if (isTypeParam && includeAssemblyName)
 				{
 					sb.Append('[');

@@ -33,7 +33,7 @@ namespace IKVM.Internal
     {
         private readonly List<string> libpath = new List<string>();
         private Universe universe;
-        private Version mscorlibVersion;
+        private Version coreLibVersion;
 
         internal enum WarningId
         {
@@ -86,11 +86,11 @@ namespace IKVM.Internal
 
             if (nostdlib)
             {
-                mscorlibVersion = LoadMscorlib(references).GetName().Version;
+                coreLibVersion = LoadCoreLib(references).GetName().Version;
             }
             else
             {
-                mscorlibVersion = universe.Load(Universe.CoreLibName).GetName().Version;
+                coreLibVersion = universe.Load(Universe.CoreLibName).GetName().Version;
             }
 
 #if STATIC_COMPILER
@@ -107,12 +107,12 @@ namespace IKVM.Internal
             {
                 using (RawModule module = universe.OpenRawModule(path))
                 {
-                    if (mscorlibVersion != null)
+                    if (coreLibVersion != null)
                     {
                         // to avoid problems (i.e. weird exceptions), we don't allow assemblies to load that reference a newer version of mscorlib
                         foreach (AssemblyName asmref in module.GetReferencedAssemblies())
                         {
-                            if (asmref.Name == Universe.CoreLibName && asmref.Version > mscorlibVersion)
+                            if (asmref.Name == Universe.CoreLibName && asmref.Version > coreLibVersion)
                             {
                                 Console.Error.WriteLine("Error: unable to load assembly '{0}' as it depends on a higher version of mscorlib than the one currently loaded", path);
                                 Environment.Exit(1);
@@ -189,9 +189,8 @@ namespace IKVM.Internal
         internal Assembly LoadWithPartialName(string name)
         {
             foreach (string path in FindAssemblyPath(name + ".dll"))
-            {
                 return LoadFile(path);
-            }
+
             return null;
         }
 
@@ -255,18 +254,16 @@ namespace IKVM.Internal
             }
         }
 
-        private Assembly AssemblyResolve(object sender, IKVM.Reflection.ResolveEventArgs args)
+        Assembly AssemblyResolve(object sender, IKVM.Reflection.ResolveEventArgs args)
         {
             AssemblyName name = new AssemblyName(args.Name);
             AssemblyName previousMatch = null;
             int previousMatchLevel = 0;
-            foreach (Assembly asm in universe.GetAssemblies())
-            {
+
+            foreach (var asm in universe.GetAssemblies())
                 if (Match(asm.GetName(), name, ref previousMatch, ref previousMatchLevel))
-                {
                     return asm;
-                }
-            }
+
             if (previousMatch != null)
             {
                 if (previousMatchLevel == 2)
@@ -427,7 +424,7 @@ namespace IKVM.Internal
             }
         }
 
-        private Assembly LoadMscorlib(IList<string> references)
+        Assembly LoadCoreLib(IList<string> references)
         {
             if (references != null)
             {
@@ -446,17 +443,16 @@ namespace IKVM.Internal
                     }
                 }
             }
-            foreach (string mscorlib in FindAssemblyPath(Universe.CoreLibName + ".dll"))
-            {
-                return LoadFile(mscorlib);
-            }
+
+            foreach (string coreLib in FindAssemblyPath(Universe.CoreLibName + ".dll"))
+                return LoadFile(coreLib);
 
             Console.Error.WriteLine($"Error: unable to find '{Universe.CoreLibName}.dll'.");
             Environment.Exit(1);
             return null;
         }
 
-        private IEnumerable<string> FindAssemblyPath(string file)
+        IEnumerable<string> FindAssemblyPath(string file)
         {
             if (Path.IsPathRooted(file))
             {
@@ -484,5 +480,7 @@ namespace IKVM.Internal
                 }
             }
         }
+
     }
+
 }

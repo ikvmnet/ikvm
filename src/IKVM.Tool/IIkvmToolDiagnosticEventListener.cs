@@ -6,7 +6,7 @@ namespace IKVM.Tool
     /// <summary>
     /// Handles diagnostic events from a tool.
     /// </summary>
-    public interface IToolDiagnosticEventListener
+    public interface IIkvmToolDiagnosticEventListener
     {
 
         /// <summary>
@@ -14,7 +14,7 @@ namespace IKVM.Tool
         /// </summary>
         /// <param name="event"></param>
         /// <returns></returns>
-        Task ReceiveAsync(ToolDiagnosticEvent @event);
+        Task ReceiveAsync(IkvmToolDiagnosticEvent @event);
 
     }
 

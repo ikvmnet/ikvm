@@ -3744,6 +3744,7 @@ namespace IKVM.Internal
 
     sealed class PrimitiveTypeWrapper : TypeWrapper
     {
+
         internal static readonly PrimitiveTypeWrapper BYTE = new PrimitiveTypeWrapper(Types.Byte, "B");
         internal static readonly PrimitiveTypeWrapper CHAR = new PrimitiveTypeWrapper(Types.Char, "C");
         internal static readonly PrimitiveTypeWrapper DOUBLE = new PrimitiveTypeWrapper(Types.Double, "D");

@@ -1,10 +1,14 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Diagnostics;
 using System.IO;
+using System.Runtime.InteropServices;
 using System.Threading;
 using System.Threading.Tasks;
 
 using CliWrap;
+
+using IKVM.Tool.Internal;
 
 namespace IKVM.Tool.Compiler
 {
@@ -16,14 +20,14 @@ namespace IKVM.Tool.Compiler
     {
 
         readonly string toolPath;
-        readonly IToolDiagnosticEventListener listener;
+        readonly IIkvmToolDiagnosticEventListener listener;
 
         /// <summary>
         /// Initializes a new instance.
         /// </summary>
         /// <param name="toolPath"></param>
         /// <param name="listener"></param>
-        public IkvmCompilerLauncher(string toolPath, IToolDiagnosticEventListener listener)
+        public IkvmCompilerLauncher(string toolPath, IIkvmToolDiagnosticEventListener listener)
         {
             this.toolPath = toolPath ?? throw new ArgumentNullException(nameof(toolPath));
             this.listener = listener;
@@ -39,16 +43,16 @@ namespace IKVM.Tool.Compiler
         /// <param name="message"></param>
         /// <param name="args"></param>
         /// <returns></returns>
-        Task LogEvent(ToolDiagnosticEventLevel level, string message, params object[] args)
+        Task LogEvent(IkvmToolDiagnosticEventLevel level, string message, params object[] args)
         {
-            return listener?.ReceiveAsync(new ToolDiagnosticEvent(level, message, args));
+            return listener?.ReceiveAsync(new IkvmToolDiagnosticEvent(level, message, args));
         }
 
         /// <summary>
         /// Initializes a new instance.
         /// </summary>
         /// <param name="listener"></param>
-        public IkvmCompilerLauncher(IToolDiagnosticEventListener listener) :
+        public IkvmCompilerLauncher(IIkvmToolDiagnosticEventListener listener) :
             this(Path.Combine(Path.GetDirectoryName(typeof(IkvmCompilerLauncher).Assembly.Location), "ikvm-tools"), listener)
         {
 
@@ -241,14 +245,40 @@ namespace IKVM.Tool.Compiler
                 response = options.ResponseFile ?? Path.GetTempFileName();
                 File.WriteAllText(response, w.ToString());
 
-                // we use a different path and args set based on which version we're running
-                var cli = options.TargetFramework == IkvmCompilerTargetFramework.NetCore ? Cli.Wrap("dotnet") : Cli.Wrap(Path.Combine(toolPath, "net461", "ikvmc.exe"));
-                var args = new List<string>();
-                if (options.TargetFramework == IkvmCompilerTargetFramework.NetCore)
+                // determine the TFM of the tool to be executed
+                var tfm = options.TargetFramework switch
                 {
-                    args.Add("exec");
-                    args.Add(Path.Combine(toolPath, "netcoreapp3.1", "ikvmc.dll"));
-                }
+                    IkvmCompilerTargetFramework.NetFramework => "net461",
+                    IkvmCompilerTargetFramework.NetCore => "netcoreapp3.1",
+                    _ => throw new NotImplementedException(),
+                };
+
+                // determine the RID of the tool to be executed
+                var rid = RuntimeInformation.ProcessArchitecture switch
+                {
+                    Architecture.X86 => options.TargetFramework switch
+                    {
+                        IkvmCompilerTargetFramework.NetFramework => "any",
+                        IkvmCompilerTargetFramework.NetCore when RuntimeInformation.IsOSPlatform(OSPlatform.Windows) => "win7-x86",
+                        IkvmCompilerTargetFramework.NetCore when RuntimeInformation.IsOSPlatform(OSPlatform.Linux) => "linux-x86",
+                        _ => throw new NotImplementedException(),
+                    },
+                    Architecture.X64 => options.TargetFramework switch
+                    {
+                        IkvmCompilerTargetFramework.NetFramework => "any",
+                        IkvmCompilerTargetFramework.NetCore when RuntimeInformation.IsOSPlatform(OSPlatform.Windows) => "win7-x64",
+                        IkvmCompilerTargetFramework.NetCore when RuntimeInformation.IsOSPlatform(OSPlatform.Linux) => "linux-x64",
+                        _ => throw new NotImplementedException(),
+                    },
+                    _ => throw new NotImplementedException(),
+                };
+
+                // determine the name of the EXE to execute
+                var exe = RuntimeInformation.IsOSPlatform(OSPlatform.Windows) ? "ikvmc.exe" : "ikvmc";
+
+                // we use a different path and args set based on which version we're running
+                var cli = Cli.Wrap(Path.Combine(toolPath, tfm, rid, exe));
+                var args = new List<string>();
 
                 // execute the contents of the response file
                 args.Add($"@{response}");
@@ -256,8 +286,8 @@ namespace IKVM.Tool.Compiler
                 cli = cli.WithValidation(CommandResultValidation.None);
 
                 // send output to MSBuild
-                cli = cli.WithStandardErrorPipe(PipeTarget.ToDelegate(i => LogEvent(ToolDiagnosticEventLevel.Error, i)));
-                cli = cli.WithStandardOutputPipe(PipeTarget.ToDelegate(i => LogEvent(ToolDiagnosticEventLevel.Debug, i)));
+                cli = cli.WithStandardErrorPipe(PipeTarget.ToDelegate(i => LogEvent(IkvmToolDiagnosticEventLevel.Error, i)));
+                cli = cli.WithStandardOutputPipe(PipeTarget.ToDelegate(i => LogEvent(IkvmToolDiagnosticEventLevel.Debug, i)));
 
                 // combine manual cancellation with timeout
                 var ctk = cts.Token;
@@ -265,12 +295,17 @@ namespace IKVM.Tool.Compiler
                     ctk = CancellationTokenSource.CreateLinkedTokenSource(ctk, new CancellationTokenSource(options.Timeout).Token).Token;
 
                 // execute command
-                var rsl = await cli.ExecuteAsync(ctk);
-                if (rsl == null)
-                    throw new NullReferenceException();
+                var pid = cli.ExecuteAsync(ctk);
+
+                // windows provides special support for killing subprocesses on termination of parent
+                if (RuntimeInformation.IsOSPlatform(OSPlatform.Windows))
+                    WindowsChildProcessTracker.AddProcess(Process.GetProcessById(pid.ProcessId));
+
+                // wait for the execution to finish
+                var ret = await pid;
 
                 // check that we exited successfully
-                return rsl.ExitCode;
+                return ret.ExitCode;
             }
             finally
             {
@@ -280,7 +315,16 @@ namespace IKVM.Tool.Compiler
 
                 // clean up response file
                 if (options.ResponseFile == null && response != null && File.Exists(response))
-                    File.Delete(response);
+                {
+                    try
+                    {
+                        File.Delete(response);
+                    }
+                    catch (IOException)
+                    {
+                        // did our best
+                    }
+                }
             }
         }
 

@@ -51,7 +51,7 @@
         </LibProjectReference>
     </ItemGroup>
 
-    <ItemGroup>
+    <ItemGroup Condition=" '$(TargetFramework)' == '' ">
         <PublishProjectReference Include="..\IKVM.MSBuild.Tasks\IKVM.MSBuild.Tasks.csproj" Condition=" '$(TargetFramework)' == '' ">
             <SetTargetFramework>TargetFramework=net472</SetTargetFramework>
             <PublishPackagePath>tasks\net472</PublishPackagePath>
@@ -63,37 +63,70 @@
             <PublishProperties>SelfContained=false</PublishProperties>
         </PublishProjectReference>
     </ItemGroup>
-    
-    <ItemGroup>
+
+    <ItemGroup Condition=" '$(TargetFramework)' == '' ">
         <PublishProjectReference Include="..\ikvm\ikvm.csproj" Condition=" '$(TargetFramework)' == '' ">
             <SetTargetFramework>TargetFramework=net461</SetTargetFramework>
-            <PublishPackagePath>tools\net461</PublishPackagePath>
+            <PublishPackagePath>tools\net461\any</PublishPackagePath>
             <PublishProperties>SelfContained=false</PublishProperties>
         </PublishProjectReference>
         <PublishProjectReference Include="..\ikvmc\ikvmc.csproj" Condition=" '$(TargetFramework)' == '' ">
             <SetTargetFramework>TargetFramework=net461</SetTargetFramework>
-            <PublishPackagePath>tools\net461</PublishPackagePath>
+            <PublishPackagePath>tools\net461\any</PublishPackagePath>
             <PublishProperties>SelfContained=false</PublishProperties>
         </PublishProjectReference>
         <PublishProjectReference Include="..\ikvmstub\ikvmstub.csproj" Condition=" '$(TargetFramework)' == '' ">
             <SetTargetFramework>TargetFramework=net461</SetTargetFramework>
-            <PublishPackagePath>tools\net461</PublishPackagePath>
+            <PublishPackagePath>tools\net461\any</PublishPackagePath>
             <PublishProperties>SelfContained=false</PublishProperties>
         </PublishProjectReference>
+
         <PublishProjectReference Include="..\ikvm\ikvm.csproj" Condition=" '$(TargetFramework)' == '' ">
             <SetTargetFramework>TargetFramework=netcoreapp3.1</SetTargetFramework>
-            <PublishPackagePath>tools\netcoreapp3.1</PublishPackagePath>
-            <PublishProperties>SelfContained=false</PublishProperties>
+            <PublishPackagePath>tools\netcoreapp3.1\win7-x86</PublishPackagePath>
+            <PublishProperties>SelfContained=false;RuntimeIdentifier=win7-x86</PublishProperties>
         </PublishProjectReference>
         <PublishProjectReference Include="..\ikvmc\ikvmc.csproj" Condition=" '$(TargetFramework)' == '' ">
             <SetTargetFramework>TargetFramework=netcoreapp3.1</SetTargetFramework>
-            <PublishPackagePath>tools\netcoreapp3.1</PublishPackagePath>
-            <PublishProperties>SelfContained=false</PublishProperties>
+            <PublishPackagePath>tools\netcoreapp3.1\win7-x86</PublishPackagePath>
+            <PublishProperties>SelfContained=false;RuntimeIdentifier=win7-x86</PublishProperties>
         </PublishProjectReference>
         <PublishProjectReference Include="..\ikvmstub\ikvmstub.csproj" Condition=" '$(TargetFramework)' == '' ">
             <SetTargetFramework>TargetFramework=netcoreapp3.1</SetTargetFramework>
-            <PublishPackagePath>tools\netcoreapp3.1</PublishPackagePath>
-            <PublishProperties>SelfContained=false</PublishProperties>
+            <PublishPackagePath>tools\netcoreapp3.1\win7-x86</PublishPackagePath>
+            <PublishProperties>SelfContained=false;RuntimeIdentifier=win7-x86</PublishProperties>
+        </PublishProjectReference>
+
+        <PublishProjectReference Include="..\ikvm\ikvm.csproj" Condition=" '$(TargetFramework)' == '' ">
+            <SetTargetFramework>TargetFramework=netcoreapp3.1</SetTargetFramework>
+            <PublishPackagePath>tools\netcoreapp3.1\win7-x64</PublishPackagePath>
+            <PublishProperties>SelfContained=false;RuntimeIdentifier=win7-x64</PublishProperties>
+        </PublishProjectReference>
+        <PublishProjectReference Include="..\ikvmc\ikvmc.csproj" Condition=" '$(TargetFramework)' == '' ">
+            <SetTargetFramework>TargetFramework=netcoreapp3.1</SetTargetFramework>
+            <PublishPackagePath>tools\netcoreapp3.1\win7-x64</PublishPackagePath>
+            <PublishProperties>SelfContained=false;RuntimeIdentifier=win7-x64</PublishProperties>
+        </PublishProjectReference>
+        <PublishProjectReference Include="..\ikvmstub\ikvmstub.csproj" Condition=" '$(TargetFramework)' == '' ">
+            <SetTargetFramework>TargetFramework=netcoreapp3.1</SetTargetFramework>
+            <PublishPackagePath>tools\netcoreapp3.1\win7-x64</PublishPackagePath>
+            <PublishProperties>SelfContained=false;RuntimeIdentifier=win7-x64</PublishProperties>
+        </PublishProjectReference>
+
+        <PublishProjectReference Include="..\ikvm\ikvm.csproj" Condition=" '$(TargetFramework)' == '' ">
+            <SetTargetFramework>TargetFramework=netcoreapp3.1</SetTargetFramework>
+            <PublishPackagePath>tools\netcoreapp3.1\linux-x64</PublishPackagePath>
+            <PublishProperties>SelfContained=false;RuntimeIdentifier=linux-x64</PublishProperties>
+        </PublishProjectReference>
+        <PublishProjectReference Include="..\ikvmc\ikvmc.csproj" Condition=" '$(TargetFramework)' == '' ">
+            <SetTargetFramework>TargetFramework=netcoreapp3.1</SetTargetFramework>
+            <PublishPackagePath>tools\netcoreapp3.1\linux-x64</PublishPackagePath>
+            <PublishProperties>SelfContained=false;RuntimeIdentifier=linux-x64</PublishProperties>
+        </PublishProjectReference>
+        <PublishProjectReference Include="..\ikvmstub\ikvmstub.csproj" Condition=" '$(TargetFramework)' == '' ">
+            <SetTargetFramework>TargetFramework=netcoreapp3.1</SetTargetFramework>
+            <PublishPackagePath>tools\netcoreapp3.1\linux-x64</PublishPackagePath>
+            <PublishProperties>SelfContained=false;RuntimeIdentifier=linux-x64</PublishProperties>
         </PublishProjectReference>
     </ItemGroup>
 

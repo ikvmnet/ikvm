@@ -159,7 +159,7 @@ namespace IKVM.Reflection
 			}
 			else
 			{
-				Assembly mscorlib = module.universe.Mscorlib;
+				Assembly mscorlib = module.universe.CoreLib;
 				imageRuntimeVersion = mscorlib.__IsMissing ? "v4.0.30319" : mscorlib.ImageRuntimeVersion;
 			}
 
@@ -454,7 +454,7 @@ namespace IKVM.Reflection
 
 		private Version GetMscorlibVersion()
 		{
-			Assembly mscorlib = module.universe.Mscorlib;
+			Assembly mscorlib = module.universe.CoreLib;
 			return mscorlib.__IsMissing ? new Version(4, 0, 0, 0) : mscorlib.GetName().Version;
 		}
 

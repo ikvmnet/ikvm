@@ -6,7 +6,7 @@ namespace IKVM.Tool
     /// <summary>
     /// Describes an event emitted from a tool.
     /// </summary>
-    public class ToolDiagnosticEvent
+    public class IkvmToolDiagnosticEvent
     {
 
         /// <summary>
@@ -15,7 +15,7 @@ namespace IKVM.Tool
         /// <param name="level"></param>
         /// <param name="message"></param>
         /// <param name="messageArgs"></param>
-        public ToolDiagnosticEvent(ToolDiagnosticEventLevel level, string message, params object[] messageArgs)
+        public IkvmToolDiagnosticEvent(IkvmToolDiagnosticEventLevel level, string message, params object[] messageArgs)
         {
             Level = level;
             Message = message ?? throw new ArgumentNullException(nameof(message));
@@ -25,7 +25,7 @@ namespace IKVM.Tool
         /// <summary>
         /// Gets the level of the event.
         /// </summary>
-        public ToolDiagnosticEventLevel Level { get;  }
+        public IkvmToolDiagnosticEventLevel Level { get;  }
 
         /// <summary>
         /// Message format string.

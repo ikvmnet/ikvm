@@ -116,9 +116,9 @@ namespace IKVM.Reflection.Emit
 			{
 				this.customAttributes.AddRange(customAttributes);
 			}
-			if (universe.HasMscorlib && !universe.Mscorlib.__IsMissing && universe.Mscorlib.ImageRuntimeVersion != null)
+			if (universe.HasCoreLib && !universe.CoreLib.__IsMissing && universe.CoreLib.ImageRuntimeVersion != null)
 			{
-				this.imageRuntimeVersion = universe.Mscorlib.ImageRuntimeVersion;
+				this.imageRuntimeVersion = universe.CoreLib.ImageRuntimeVersion;
 			}
 			else
 			{

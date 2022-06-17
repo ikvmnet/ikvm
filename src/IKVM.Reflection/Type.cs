@@ -2206,10 +2206,10 @@ namespace IKVM.Reflection
 
 		private bool ResolvePotentialEnumOrValueType()
 		{
-			if (this.Assembly == this.Universe.Mscorlib
+			if (this.Assembly == this.Universe.CoreLib
 				|| this.Assembly.GetName().Name.Equals("mscorlib", StringComparison.OrdinalIgnoreCase)
 				// check if mscorlib forwards the type (.NETCore profile reference mscorlib forwards System.Enum and System.ValueType to System.Runtime.dll)
-				|| this.Universe.Mscorlib.FindType(TypeName) == this)
+				|| this.Universe.CoreLib.FindType(TypeName) == this)
 			{
 				typeFlags = (typeFlags & ~TypeFlags.PotentialEnumOrValueType) | TypeFlags.EnumOrValueType;
 				return true;

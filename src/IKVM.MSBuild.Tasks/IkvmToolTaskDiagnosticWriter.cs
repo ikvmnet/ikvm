@@ -10,7 +10,7 @@ namespace IKVM.MSBuild.Tasks
     /// <summary>
     /// Logs diagnostic events to MSBuild.
     /// </summary>
-    class IkvmToolTaskDiagnosticWriter : IToolDiagnosticEventListener
+    class IkvmToolTaskDiagnosticWriter : IIkvmToolDiagnosticEventListener
     {
 
         readonly Microsoft.Build.Utilities.TaskLoggingHelper log;
@@ -30,20 +30,20 @@ namespace IKVM.MSBuild.Tasks
         /// </summary>
         /// <param name="event"></param>
         /// <returns></returns>
-        public Task ReceiveAsync(ToolDiagnosticEvent @event)
+        public Task ReceiveAsync(IkvmToolDiagnosticEvent @event)
         {
             switch (@event.Level)
             {
-                case ToolDiagnosticEventLevel.Debug:
+                case IkvmToolDiagnosticEventLevel.Debug:
                     log.LogMessage(Microsoft.Build.Framework.MessageImportance.Low, @event.Message, @event.MessageArgs);
                     break;
-                case ToolDiagnosticEventLevel.Information:
+                case IkvmToolDiagnosticEventLevel.Information:
                     log.LogMessage(Microsoft.Build.Framework.MessageImportance.Normal, @event.Message, @event.MessageArgs);
                     break;
-                case ToolDiagnosticEventLevel.Warning:
+                case IkvmToolDiagnosticEventLevel.Warning:
                     log.LogWarning(@event.Message, @event.MessageArgs);
                     break;
-                case ToolDiagnosticEventLevel.Error:
+                case IkvmToolDiagnosticEventLevel.Error:
                     log.LogError(@event.Message, @event.MessageArgs);
                     break;
             }

@@ -499,15 +499,15 @@ namespace IKVM.Reflection
 			{
 				if (resolve)
 				{
-					type = universe.Mscorlib.ResolveType(context, name);
+					type = universe.CoreLib.ResolveType(context, name);
 				}
 				else if (ignoreCase)
 				{
-					type = universe.Mscorlib.FindTypeIgnoreCase(name.ToLowerInvariant());
+					type = universe.CoreLib.FindTypeIgnoreCase(name.ToLowerInvariant());
 				}
 				else
 				{
-					type = universe.Mscorlib.FindType(name);
+					type = universe.CoreLib.FindType(name);
 				}
 			}
 			else
@@ -521,22 +521,22 @@ namespace IKVM.Reflection
 				{
 					type = context.FindType(name);
 				}
-				if (type == null && context != universe.Mscorlib.ManifestModule)
+				if (type == null && context != universe.CoreLib.ManifestModule)
 				{
 					if (ignoreCase)
 					{
-						type = universe.Mscorlib.FindTypeIgnoreCase(name);
+						type = universe.CoreLib.FindTypeIgnoreCase(name);
 					}
 					else
 					{
-						type = universe.Mscorlib.FindType(name);
+						type = universe.CoreLib.FindType(name);
 					}
 				}
 				if (type == null && resolve)
 				{
-					if (universe.Mscorlib.__IsMissing && !context.__IsMissing)
+					if (universe.CoreLib.__IsMissing && !context.__IsMissing)
 					{
-						type = universe.Mscorlib.ResolveType(context, name);
+						type = universe.CoreLib.ResolveType(context, name);
 					}
 					else
 					{

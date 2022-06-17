@@ -494,10 +494,12 @@ namespace IKVM.Internal
             return type;
 #endif
         }
+
     }
 
     static class Experimental
     {
         internal static readonly bool JDK_9 = JVM.SafeGetEnvironmentVariable("IKVM_EXPERIMENTAL_JDK_9") != null;
     }
+
 }

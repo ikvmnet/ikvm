@@ -1603,7 +1603,7 @@ namespace IKVM.Reflection.Emit
 			IList<CustomAttributeData> attributes = asm.GetCustomAttributesData(null);
 			if (attributes.Count > 0)
 			{
-				int mscorlib = ImportAssemblyRef(universe.Mscorlib);
+				int mscorlib = ImportAssemblyRef(universe.CoreLib);
 				int[] placeholderTokens = new int[4];
 				string[] placeholderTypeNames = new string[] { "AssemblyAttributesGoHere", "AssemblyAttributesGoHereM", "AssemblyAttributesGoHereS", "AssemblyAttributesGoHereSM" };
 				foreach (CustomAttributeData cad in attributes)
