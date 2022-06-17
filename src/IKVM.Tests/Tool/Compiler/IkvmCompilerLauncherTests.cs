@@ -34,9 +34,12 @@ namespace IKVM.Tests.Tool.Compiler
                 Input = { "helloworld-2.0.jar" },
                 Assembly = "helloworld-2.0",
                 Version = "1.0.0.0",
-                //Runtime = typeof(IKVM.Runtime.Compiler).Assembly.Location,
+                NoStdLib = true,
                 Output = p,
             };
+
+            foreach (var f in Directory.GetFiles(@"C:\dev\ikvm\src\IKVM.Tests\bin\Debug\net461\ikvm-tools\netcoreapp3.1\win7-x64\refs"))
+                o.References.Add(f);
 
             var exitCode = await l.ExecuteAsync(o);
             exitCode.Should().Be(0);
@@ -58,10 +61,11 @@ namespace IKVM.Tests.Tool.Compiler
                 Assembly = "helloworld-2.0",
                 Version = "1.0.0.0",
                 NoStdLib = true,
-                Lib = { @"C:\dev\ikvm\src\IKVM.Tests\bin\Debug\netcoreapp3.1\ikvm-tools\netcoreapp3.1\win7-x64\refs" },
-                //Runtime = typeof(IKVM.Runtime.Compiler).Assembly.Location,
                 Output = p,
             };
+
+            foreach (var f in Directory.GetFiles(@"C:\dev\ikvm\src\IKVM.Tests\bin\Debug\net461\ikvm-tools\netcoreapp3.1\win7-x64\refs"))
+                o.References.Add(f);
 
             var exitCode = await l.ExecuteAsync(o);
             exitCode.Should().Be(0);
