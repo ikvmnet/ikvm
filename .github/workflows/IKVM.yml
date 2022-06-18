@@ -91,7 +91,7 @@ jobs:
       with:
         path: jtreg/build
         key: jtreg-build--${{ runner.os }}--${{ hashFiles('jtreg/**', 'openjdk/build/linux-x86_64-normal-server-release/images/j2sdk-image', '!jtreg/build') }}-5
-    - name: Check OpenJDK 8 Build Stamp
+    - name: Check OpenJDK Test Harness Build Stamp
       id: jtreg-build-stamp
       uses: andstor/file-existence-action@v1
       with:
