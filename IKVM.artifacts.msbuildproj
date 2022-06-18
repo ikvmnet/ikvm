@@ -16,7 +16,6 @@
     <ItemGroup>
         <TargetsForPublish Include="$(SolutionFile)">
             <Targets>ikvm:Build;ikvmc:Build;ikvmstub:Build</Targets>
-            <Properties>$(ToolProperties)</Properties>
         </TargetsForPublish>
         <TargetsForPublish Include="$(SolutionFile)">
             <Targets>IKVM-pkg:Build</Targets>
