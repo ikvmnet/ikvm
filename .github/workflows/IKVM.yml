@@ -164,7 +164,9 @@ jobs:
         msbuild /m:1 `
           /p:BuildInParallel=false `
           /p:CreateHardLinksForCopyFilesToOutputDirectoryIfPossible=true `
+          /p:CreateHardLinksForCopyAdditionalFilesIfPossible=true `
           /p:CreateHardLinksForCopyLocalIfPossible=true `
+          /p:CreateHardLinksForPublishFilesIfPossible=true `
           /p:ContinuousIntegrationBuild=true `
           /p:Configuration="Release" `
           /p:Platform="Any CPU" `
