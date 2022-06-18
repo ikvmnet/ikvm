@@ -49,8 +49,8 @@ namespace IKVM.Java.Externs.java.io
             else if (mode == FileMode.Append)
             {
 #if NETFRAMEWORK
-            // this is the way to get atomic append behavior for all writes
-            return new FileStream(name, mode, FileSystemRights.AppendData, FileShare.ReadWrite, 1, FileOptions.None);
+                // this is the way to get atomic append behavior for all writes
+                return new FileStream(name, mode, FileSystemRights.AppendData, FileShare.ReadWrite, 1, FileOptions.None);
 #else
                 // the above constructor does not exist in .net core
                 // since the buffer size is 1 byte, it's always atomic

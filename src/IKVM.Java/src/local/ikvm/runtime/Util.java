@@ -29,8 +29,10 @@ import sun.misc.Unsafe;
 
 public final class Util
 {
+
     private Util()
     {
+
     }
 
     public static native Class getClassFromObject(Object o);

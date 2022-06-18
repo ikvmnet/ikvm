@@ -490,6 +490,7 @@ namespace IKVM.NativeCode.ikvm.runtime
 
     static class Util
     {
+
         public static jlClass getClassFromObject(object o)
         {
             return GetTypeWrapperFromObject(o).ClassObject;
