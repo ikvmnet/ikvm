@@ -3,11 +3,11 @@
         <ImportDirectoryBuildProps>false</ImportDirectoryBuildProps>
         <ImportDirectoryBuildTargets>false</ImportDirectoryBuildTargets>
     </PropertyGroup>
-    
+
     <Import Project="Sdk.props" Sdk="Microsoft.NET.Sdk" />
-    
+
     <PropertyGroup>
-        <TargetFrameworks>net461;net472;net48;netcoreapp3.1</TargetFrameworks>
+        <TargetFrameworks>net461;net472;net48;netcoreapp3.1;net5.0;net6.0</TargetFrameworks>
     </PropertyGroup>
 
     <ItemGroup>
@@ -16,7 +16,7 @@
 
     <ItemGroup>
         <IkvmReference Include="helloworld-2.0-1\helloworld-2.0.jar">
-            
+
         </IkvmReference>
         <IkvmReference Include="helloworld-2.0-2\helloworld-2.0.jar">
             <AssemblyName>helloworld-2</AssemblyName>

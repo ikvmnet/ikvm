@@ -47,6 +47,16 @@ namespace IKVM.Tool.Compiler
         }
 
         /// <summary>
+        /// Initializes a new instance.
+        /// </summary>
+        /// <param name="toolPath"></param>
+        public IkvmCompilerLauncher(string toolPath) :
+            this(toolPath, new IkvmToolDelegateDiagnosticListener(evt => Task.CompletedTask))
+        {
+
+        }
+
+        /// <summary>
         /// Logs an event if a listener is provided.
         /// </summary>
         /// <param name="level"></param>
@@ -136,7 +146,7 @@ namespace IKVM.Tool.Compiler
         /// <returns></returns>
         /// <exception cref="ArgumentNullException"></exception>
         /// <exception cref="NotImplementedException"></exception>
-        public string GetReferenceAssemblyPath(IkvmCompilerTargetFramework framework, OSPlatform platform, Architecture architecture)
+        public string GetReferenceAssemblyDirectory(IkvmCompilerTargetFramework framework, OSPlatform platform, Architecture architecture)
         {
             return Path.Combine(GetToolDir(framework, platform, architecture), "refs");
         }
@@ -148,9 +158,57 @@ namespace IKVM.Tool.Compiler
         /// <returns></returns>
         /// <exception cref="ArgumentNullException"></exception>
         /// <exception cref="NotImplementedException"></exception>
-        public string GetReferenceAssemblyPath(IkvmCompilerTargetFramework framework)
+        public string GetReferenceAssemblyDirectory(IkvmCompilerTargetFramework framework)
         {
-            return GetReferenceAssemblyPath(framework, GetOSPlatform(), RuntimeInformation.OSArchitecture);
+            return GetReferenceAssemblyDirectory(framework, GetOSPlatform(), RuntimeInformation.OSArchitecture);
+        }
+
+        /// <summary>
+        /// Gets the path to the runtime assembly for the given environment.
+        /// </summary>
+        /// <param name="framework"></param>
+        /// <param name="platform"></param>
+        /// <param name="architecture"></param>
+        /// <returns></returns>
+        /// <exception cref="ArgumentNullException"></exception>
+        /// <exception cref="NotImplementedException"></exception>
+        public string GetRuntimeAssemblyFile(IkvmCompilerTargetFramework framework, OSPlatform platform, Architecture architecture)
+        {
+            return Path.Combine(GetToolDir(framework, platform, architecture), "IKVM.Runtime.dll");
+        }
+
+        /// <summary>
+        /// Gets the path to the runtime assembly for the given environment.
+        /// </summary>
+        /// <param name="framework"></param>
+        /// <returns></returns>
+        public string GetRuntimeAssemblyFile(IkvmCompilerTargetFramework framework)
+        {
+            return GetRuntimeAssemblyFile(framework, GetOSPlatform(), RuntimeInformation.OSArchitecture);
+        }
+
+        /// <summary>
+        /// Gets the path to the Java base assembly for the given environment.
+        /// </summary>
+        /// <param name="framework"></param>
+        /// <param name="platform"></param>
+        /// <param name="architecture"></param>
+        /// <returns></returns>
+        /// <exception cref="ArgumentNullException"></exception>
+        /// <exception cref="NotImplementedException"></exception>
+        public string GetJavaBaseAssemblyFile(IkvmCompilerTargetFramework framework, OSPlatform platform, Architecture architecture)
+        {
+            return Path.Combine(GetToolDir(framework, platform, architecture), "IKVM.Java.dll");
+        }
+
+        /// <summary>
+        /// Gets the path to the Java base assembly for the given environment.
+        /// </summary>
+        /// <param name="framework"></param>
+        /// <returns></returns>
+        public string GetJavaBaseAssemblyFile(IkvmCompilerTargetFramework framework)
+        {
+            return GetJavaBaseAssemblyFile(framework, GetOSPlatform(), RuntimeInformation.OSArchitecture);
         }
 
         /// <summary>

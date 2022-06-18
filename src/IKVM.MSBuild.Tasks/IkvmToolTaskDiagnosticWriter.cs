@@ -44,7 +44,7 @@ namespace IKVM.MSBuild.Tasks
                     log.LogWarning(@event.Message, @event.MessageArgs);
                     break;
                 case IkvmToolDiagnosticEventLevel.Error:
-                    log.LogError(@event.Message, @event.MessageArgs);
+                    log.LogWarning(@event.Message, @event.MessageArgs);
                     break;
             }
 

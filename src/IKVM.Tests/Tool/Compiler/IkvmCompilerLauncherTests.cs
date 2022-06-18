@@ -38,7 +38,7 @@ namespace IKVM.Tests.Tool.Compiler
                 Output = p,
             };
 
-            foreach (var f in Directory.GetFiles(l.GetReferenceAssemblyPath(o.TargetFramework)))
+            foreach (var f in Directory.GetFiles(l.GetReferenceAssemblyDirectory(o.TargetFramework)))
                 o.References.Add(f);
 
             var exitCode = await l.ExecuteAsync(o);
@@ -64,7 +64,7 @@ namespace IKVM.Tests.Tool.Compiler
                 Output = p,
             };
 
-            foreach (var f in Directory.GetFiles(l.GetReferenceAssemblyPath(o.TargetFramework)))
+            foreach (var f in Directory.GetFiles(l.GetReferenceAssemblyDirectory(o.TargetFramework)))
                 o.References.Add(f);
 
             var exitCode = await l.ExecuteAsync(o);

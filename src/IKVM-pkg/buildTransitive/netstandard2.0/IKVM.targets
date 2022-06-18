@@ -14,9 +14,13 @@
 
     <!-- Gathers those references which are either related to the Framework itself, or IKVM. -->
     <Target Name="GetIkvmFrameworkReferences" DependsOnTargets="ResolveAssemblyReferences">
+        <IkvmCompilerMergeReferenceAssemblies ToolsPath="$(IkvmToolsPath)" TargetFramework="$(IkvmTargetFramework)" Items="@(IkvmFrameworkReference)" >
+            <Output TaskParameter="Items" ItemName="IkvmFrameworkReference" />
+        </IkvmCompilerMergeReferenceAssemblies>
+
+        <!-- Locate runtime assembly in the output. -->
         <ItemGroup>
-            <IkvmFrameworkReference Include="@(ReferencePath)" Condition=" '%(ReferencePath.FrameworkReferenceName)' != '' Or '$(FrameworkFile)' == 'true' " />
-            <IkvmRuntimeAssembly Include="@(ReferencePath)" Condition=" '%(ReferencePath.NuGetPackageId)' == 'IKVM' And '%(Filename)%(Extension)' == 'IKVM.Runtime.dll' " />
+            <IkvmRuntimeAssembly Include="@(IkvmFrameworkReference)" Condition=" '%(Filename)%(Extension)' == 'IKVM.Runtime.dll' " />
         </ItemGroup>
     </Target>
 

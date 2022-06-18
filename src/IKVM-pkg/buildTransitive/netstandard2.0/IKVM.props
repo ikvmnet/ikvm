@@ -11,6 +11,7 @@
         <IkvmTaskAssembly>$(IkvmDir)tasks\$(IkvmTaskFolder)\IKVM.MSBuild.Tasks.dll</IkvmTaskAssembly>
     </PropertyGroup>
 
+    <UsingTask TaskName="IkvmCompilerMergeReferenceAssemblies" AssemblyFile="$(IkvmTaskAssembly)" />
     <UsingTask TaskName="IkvmCompiler" AssemblyFile="$(IkvmTaskAssembly)" />
     <UsingTask TaskName="IkvmCalculateMD5" AssemblyFile="$(IkvmTaskAssembly)" />
     <UsingTask TaskName="IkvmReferenceItemAssignMetadata" AssemblyFile="$(IkvmTaskAssembly)" />
