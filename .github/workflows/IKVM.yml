@@ -162,6 +162,7 @@ jobs:
     - name: Build Artifacts
       run: |
         msbuild /m:1 `
+          /p:BuildInParallel=false `
           /p:ContinuousIntegrationBuild=true `
           /p:Configuration="Release" `
           /p:Platform="Any CPU" `

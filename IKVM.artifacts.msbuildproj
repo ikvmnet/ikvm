@@ -63,11 +63,11 @@
     <Target Name="Publish">
         <ItemGroup>
             <_TargetsForPublish Include="@(TargetsForPublish)">
-                <Properties>%(Properties);BuildInParallel=false</Properties>
+                <Properties>%(Properties)</Properties>
             </_TargetsForPublish>
         </ItemGroup>
 
-        <MSBuild BuildInParallel="false" ContinueOnError="false" Projects="@(_TargetsForPublish)" Targets="%(_TargetsForPublish.Targets)" />
+        <MSBuild BuildInParallel="$(BuildInParallel)" ContinueOnError="false" Projects="@(_TargetsForPublish)" Targets="%(_TargetsForPublish.Targets)" />
     </Target>
 
 </Project>
