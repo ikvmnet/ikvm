@@ -69,7 +69,7 @@
     <Target Name="Publish">
         <ItemGroup>
             <_TargetsForPublish Include="@(TargetsForPublish)">
-                <Properties>%(Properties)</Properties>
+                <Properties>%(TargetsForPublish.Properties)</Properties>
             </_TargetsForPublish>
         </ItemGroup>
 
