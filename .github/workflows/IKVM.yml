@@ -86,7 +86,7 @@ jobs:
       with:
         name: openjdk-build-linux-x86_64-normal-server-release
         path: openjdk/build/openjdk-build-linux-x86_64-normal-server-release.zip
-    - name: Cache OpenJDK Test Harness
+    - name: Cache OpenJDK Test Harness Build
       uses: actions/cache@v3
       with:
         path: jtreg/build
