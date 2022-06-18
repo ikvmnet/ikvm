@@ -76,7 +76,7 @@
             </_TargetsForPublish>
         </ItemGroup>
 
-        <MSBuild BuildInParallel="$(BuildInParallel)" ContinueOnError="false" Projects="@(_TargetsForPublish)" Targets="%(_TargetsForPublish.Targets)" />
+        <MSBuild BuildInParallel="$(BuildInParallel)" ContinueOnError="false" Projects="@(_TargetsForPublish)" Targets="%(_TargetsForPublish.Targets)" RunEachTargetSeparately="" />
     </Target>
 
 </Project>
