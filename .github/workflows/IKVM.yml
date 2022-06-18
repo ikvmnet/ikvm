@@ -136,7 +136,7 @@ jobs:
       with:
         dotnet-version: 6.0.x
     - name: Setup WSL
-      uses: Vampire/setup-wsl@v1.2.0
+      uses: Vampire/setup-wsl@v1
       with:
         additional-packages:
           gcc
