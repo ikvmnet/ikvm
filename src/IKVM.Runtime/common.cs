@@ -346,57 +346,87 @@ namespace IKVM.NativeCode.ikvm.runtime
             return null;
         }
 
-        private static string GetAttributeValue(global::java.util.jar.Attributes.Name name, global::java.util.jar.Attributes first, global::java.util.jar.Attributes second)
+        /// <summary>
+        /// Returns the first non-null value for the attribute in either the first attribute set or the second.
+        /// </summary>
+        /// <param name="name"></param>
+        /// <param name="first"></param>
+        /// <param name="second"></param>
+        /// <returns></returns>
+        static string GetAttributeValue(global::java.util.jar.Attributes.Name name, global::java.util.jar.Attributes first, global::java.util.jar.Attributes second)
         {
-            string result = null;
-            if (first != null)
-            {
-                result = first.getValue(name);
-            }
-            if (second != null && result == null)
-            {
-                result = second.getValue(name);
-            }
-            return result;
+            return first?.getValue(name) ?? second?.getValue(name);
         }
+
 #endif
 
+#if !FIRST_PASS
+
+        /// <summary>
+        /// Gets the JAR manifest for the given assembly and resource name.
+        /// </summary>
+        /// <param name="assembly"></param>
+        /// <param name="resourceName"></param>
+        /// <returns></returns>
+        /// <exception cref="ArgumentNullException"></exception>
+        /// <exception cref="ArgumentException"></exception>
+        static global::java.util.jar.Manifest GetManifestForAssemblyJar(Assembly assembly, string resourceName)
+        {
+            if (assembly is null)
+                throw new ArgumentNullException(nameof(assembly));
+            if (string.IsNullOrEmpty(resourceName))
+                throw new ArgumentException($"'{nameof(resourceName)}' cannot be null or empty.", nameof(resourceName));
+
+            using var resStream = assembly.GetManifestResourceStream(resourceName);
+            if (resStream == null)
+                throw new InternalException($"Could not find assembly resource {resourceName}.");
+
+            using var wrpStream = new global::ikvm.io.InputStreamWrapper(resStream);
+            using var jarStream = new global::java.util.jar.JarInputStream(wrpStream);
+            var manifest = jarStream.getManifest();
+
+            return manifest;
+        }
+
+#endif
+
+        /// <summary>
+        /// Defines all of the packages in the class loader that are not currently defined, using the assembly as a source.
+        /// </summary>
+        /// <param name="_this"></param>
         public static void lazyDefinePackages(global::java.lang.ClassLoader _this)
         {
 #if !FIRST_PASS
-            AssemblyClassLoader_ wrapper = (AssemblyClassLoader_)ClassLoaderWrapper.GetClassLoaderWrapper(_this);
-            global::java.net.URL sealBase = GetCodeBase(wrapper.MainAssembly);
-            foreach (KeyValuePair<string, string[]> packages in wrapper.GetPackageInfo())
+            var wrapper = (AssemblyClassLoader_)ClassLoaderWrapper.GetClassLoaderWrapper(_this);
+            var sealBase = GetCodeBase(wrapper.MainAssembly);
+
+            foreach (var packages in wrapper.GetPackageInfo())
             {
-                global::java.util.jar.Manifest manifest = null;
-                global::java.util.jar.Attributes attr = null;
-                if (packages.Key != null)
+                // if the package exists in a JAR within the main assembly, load its manifest
+                var manifest = packages.Key != null ? GetManifestForAssemblyJar(wrapper.MainAssembly, packages.Key) : null;
+
+                // if we loaded a manifest, get the main attributes
+                var mainAttributes = manifest?.getMainAttributes();
+
+                // for each package, check if defined, else define
+                foreach (var name in packages.Value)
                 {
-                    global::java.util.jar.JarFile jarFile = new global::java.util.jar.JarFile(VfsTable.GetAssemblyResourcesPath(wrapper.MainAssembly) + packages.Key);
-                    manifest = jarFile.getManifest();
-                }
-                if (manifest != null)
-                {
-                    attr = manifest.getMainAttributes();
-                }
-                foreach (string name in packages.Value)
-                {
-                    if (_this.getPackage(name) == null)
-                    {
-                        global::java.util.jar.Attributes entryAttr = null;
-                        if (manifest != null)
-                        {
-                            entryAttr = manifest.getAttributes(name.Replace('.', '/') + '/');
-                        }
-                        _this.definePackage(name,
-                            GetAttributeValue(global::java.util.jar.Attributes.Name.SPECIFICATION_TITLE, entryAttr, attr),
-                            GetAttributeValue(global::java.util.jar.Attributes.Name.SPECIFICATION_VERSION, entryAttr, attr),
-                            GetAttributeValue(global::java.util.jar.Attributes.Name.SPECIFICATION_VENDOR, entryAttr, attr),
-                            GetAttributeValue(global::java.util.jar.Attributes.Name.IMPLEMENTATION_TITLE, entryAttr, attr),
-                            GetAttributeValue(global::java.util.jar.Attributes.Name.IMPLEMENTATION_VERSION, entryAttr, attr),
-                            GetAttributeValue(global::java.util.jar.Attributes.Name.IMPLEMENTATION_VENDOR, entryAttr, attr),
-                            "true".Equals(GetAttributeValue(global::java.util.jar.Attributes.Name.SEALED, entryAttr, attr), StringComparison.OrdinalIgnoreCase) ? sealBase : null);
-                    }
+                    if (_this.getPackage(name) != null)
+                        continue;
+
+                    // manifest might contain an overriding entry for this specific package
+                    var packageAttributes = manifest?.getAttributes(name.Replace('.', '/') + '/');
+
+                    // define package with package information from package attributes or main attributes
+                    _this.definePackage(
+                        name,
+                        GetAttributeValue(global::java.util.jar.Attributes.Name.SPECIFICATION_TITLE, packageAttributes, mainAttributes),
+                        GetAttributeValue(global::java.util.jar.Attributes.Name.SPECIFICATION_VERSION, packageAttributes, mainAttributes),
+                        GetAttributeValue(global::java.util.jar.Attributes.Name.SPECIFICATION_VENDOR, packageAttributes, mainAttributes),
+                        GetAttributeValue(global::java.util.jar.Attributes.Name.IMPLEMENTATION_TITLE, packageAttributes, mainAttributes),
+                        GetAttributeValue(global::java.util.jar.Attributes.Name.IMPLEMENTATION_VERSION, packageAttributes, mainAttributes),
+                        GetAttributeValue(global::java.util.jar.Attributes.Name.IMPLEMENTATION_VENDOR, packageAttributes, mainAttributes),
+                        string.Equals(GetAttributeValue(global::java.util.jar.Attributes.Name.SEALED, packageAttributes, mainAttributes), "true", StringComparison.OrdinalIgnoreCase) ? sealBase : null);
                 }
             }
 #endif
