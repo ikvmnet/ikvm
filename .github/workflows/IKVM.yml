@@ -163,6 +163,7 @@ jobs:
       run: |
         msbuild /m:1 `
           /p:BuildInParallel=false `
+          /p:CreateHardLinksForCopyFilesToOutputDirectoryIfPossible=true `
           /p:ContinuousIntegrationBuild=true `
           /p:Configuration="Release" `
           /p:Platform="Any CPU" `
