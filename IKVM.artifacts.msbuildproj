@@ -15,6 +15,10 @@
 
     <ItemGroup>
         <TargetsForPublish Include="$(SolutionFile)">
+            <Targets>ikvm:Build;ikvmc:Build;ikvmstub:Build</Targets>
+            <Properties>$(ToolProperties)</Properties>
+        </TargetsForPublish>
+        <TargetsForPublish Include="$(SolutionFile)">
             <Targets>IKVM-pkg:Build</Targets>
         </TargetsForPublish>
         <TargetsForPublish Include="$(SolutionFile)">
@@ -28,10 +32,6 @@
         <TargetsForPublish Include="$(SolutionFile)">
             <Targets>IKVM-pkg:Pack</Targets>
             <Properties>$(PackProperties);PackageOutputPath=$(ArtifactStagingDirectory)\nuget</Properties>
-        </TargetsForPublish>
-        <TargetsForPublish Include="$(SolutionFile)">
-            <Targets>ikvm:Build;ikvmc:Build;ikvmstub:Build</Targets>
-            <Properties>$(ToolProperties)</Properties>
         </TargetsForPublish>
         <TargetsForPublish Include="$(SolutionFile)">
             <Targets>ikvm:Publish;ikvmc:Publish;ikvmstub:Publish</Targets>
