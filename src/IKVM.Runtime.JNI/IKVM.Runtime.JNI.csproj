@@ -5,7 +5,6 @@
         <AssemblyName>IKVM.Runtime.JNI</AssemblyName>
         <AssemblyTitle>IKVM.NET Runtime JNI Layer</AssemblyTitle>
         <Description>JVM for .NET</Description>
-        <NoWarn>$(NoWarn);169;649</NoWarn>
         <AllowUnsafeBlocks>true</AllowUnsafeBlocks>
         <LangVersion>10.0</LangVersion>
     </PropertyGroup>

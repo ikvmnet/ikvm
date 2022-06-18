@@ -8,7 +8,6 @@
         <AssemblyTitle>IKVM.NET Runtime</AssemblyTitle>
         <Description>JVM for .NET</Description>
         <DefineConstants>$(DefineConstants);EMITTERS</DefineConstants>
-        <NoWarn>$(NoWarn);169;649</NoWarn>
     </PropertyGroup>
 
     <ItemGroup>

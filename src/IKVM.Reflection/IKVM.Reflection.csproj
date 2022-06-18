@@ -5,7 +5,6 @@
         <AssemblyTitle>IKVM.NET Reflection Library</AssemblyTitle>
         <Description>Alternative implementation of System.Reflection[.Emit]</Description>
         <DefineConstants>$(DefineConstants);EMITTERS</DefineConstants>
-        <NoWarn>$(NoWarn);169;649</NoWarn>
     </PropertyGroup>
 
     <ItemGroup>
