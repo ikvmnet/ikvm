@@ -67,6 +67,10 @@
             <Targets>IKVM_Tests:Publish;ikvmc_Tests:Publish;ikvmstub_Tests:Publish;IKVM_MSBuild_Tests:Publish</Targets>
             <Properties>$(TestProperties);TargetFramework=net6.0;PublishDir=$(ArtifactStagingDirectory)\tests\net6.0</Properties>
         </TargetsForPublish>
+        <TargetsForPublish Include="$(SolutionFile)">
+            <Targets>IKVM_MSBuild_Tests:Publish</Targets>
+            <Properties>$(TestProperties);TargetFramework=net6.0;PublishDir=$(ArtifactStagingDirectory)\tests\net6.0</Properties>
+        </TargetsForPublish>
     </ItemGroup>
 
     <Target Name="Publish">
