@@ -15,6 +15,9 @@
 
     <ItemGroup>
         <TargetsForPublish Include="$(SolutionFile)">
+            <Targets>IKVM-pkg:Build</Targets>
+        </TargetsForPublish>
+        <TargetsForPublish Include="$(SolutionFile)">
             <Targets>IKVM-pkg:Publish</Targets>
             <Properties>$(PackProperties);TargetFramework=net461;PublishDir=$(ArtifactStagingDirectory)\bin\net461</Properties>
         </TargetsForPublish>

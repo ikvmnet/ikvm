@@ -65,38 +65,4 @@
             $(GetCopyToOutputDirectoryItemsDependsOn);
         </GetCopyToOutputDirectoryItemsDependsOn>
     </PropertyGroup>
-
-    <Target Name="AssignPackageProjectConfiguration" Condition=" '@(PackageProjectReference)' != '' " Inputs="@(PackageProjectReference)" Outputs="dummy">
-        <PropertyGroup>
-            <OnlyReferenceAndBuildProjectsEnabledInSolutionConfiguration Condition="'$(OnlyReferenceAndBuildProjectsEnabledInSolutionConfiguration)' == ''">true</OnlyReferenceAndBuildProjectsEnabledInSolutionConfiguration>
-            <ShouldUnsetParentConfigurationAndPlatform Condition="'$(ShouldUnsetParentConfigurationAndPlatform)' == '' and ('$(BuildingInsideVisualStudio)' == 'true' or '$(BuildingSolutionFile)' == 'true')">true</ShouldUnsetParentConfigurationAndPlatform>
-            <ShouldUnsetParentConfigurationAndPlatform Condition="'$(ShouldUnsetParentConfigurationAndPlatform)' == ''">false</ShouldUnsetParentConfigurationAndPlatform>
-            <AddSyntheticProjectReferencesForSolutionDependencies Condition="'$(AddSyntheticProjectReferencesForSolutionDependencies)' == '' and '$(TargetFrameworkIdentifier)' == 'Silverlight'">false</AddSyntheticProjectReferencesForSolutionDependencies>
-            <AddSyntheticProjectReferencesForSolutionDependencies Condition="'$(AddSyntheticProjectReferencesForSolutionDependencies)' == '' and '$(BuildingInsideVisualStudio)' != 'true'">true</AddSyntheticProjectReferencesForSolutionDependencies>
-        </PropertyGroup>
-        <AssignProjectConfiguration ProjectReferences="@(PackageProjectReference)" CurrentProject="$(MSBuildProjectFullPath)" CurrentProjectConfiguration="$(Configuration)" CurrentProjectPlatform="$(Platform)" DefaultToVcxPlatformMapping="$(DefaultToVcxPlatformMapping)" VcxToDefaultPlatformMapping="$(VcxToDefaultPlatformMapping)" OutputType="$(OutputType)" ResolveConfigurationPlatformUsingMappings="false" SolutionConfigurationContents="$(CurrentSolutionConfigurationContents)" AddSyntheticProjectReferencesForSolutionDependencies="$(AddSyntheticProjectReferencesForSolutionDependencies)" OnlyReferenceAndBuildProjectsEnabledInSolutionConfiguration="$(OnlyReferenceAndBuildProjectsEnabledInSolutionConfiguration)" ShouldUnsetParentConfigurationAndPlatform="$(ShouldUnsetParentConfigurationAndPlatform)">
-            <Output TaskParameter="AssignedProjects" ItemName="_PackageProjectReferenceWithConfiguration" />
-            <Output TaskParameter="UnassignedProjects" ItemName="_PackageProjectReferenceWithConfiguration" />
-        </AssignProjectConfiguration>
-    </Target>
-
-    <Target Name="GetProjectReferencePackageOutputPath" DependsOnTargets="AssignPackageProjectConfiguration" Inputs="@(_PackageProjectReferenceWithConfiguration)" Outputs="dummy">
-        <MSBuild Projects="@(_PackageProjectReferenceWithConfiguration)" Targets="_CleanPackageFiles;Pack;GetPackageOutputPath" BuildInParallel="$(BuildInParallel)" Properties="%(_PackageProjectReferenceWithConfiguration.SetConfiguration);%(_PackageProjectReferenceWithConfiguration.SetPlatform)" RemoveProperties="%(_PackageProjectReferenceWithConfiguration.GlobalPropertiesToRemove);TargetFramework" Condition=" '%(_PackageProjectReferenceWithConfiguration.Identity)' != '' ">
-            <Output TaskParameter="TargetOutputs" ItemName="_ResolvedPackageOutputPath" />
-        </MSBuild>
-        <ItemGroup>
-            <_ResolvePackageProjectReferenceOutputItems Include="%(_ResolvedPackageOutputPath.Identity)\**\*.nupkg" Condition=" '%(_ResolvedPackageOutputPath.Identity)' != '' " />
-            <ContentWithTargetPath Include="@(_ResolvePackageProjectReferenceOutputItems)">
-                <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
-                <TargetPath>nuget\%(Filename)%(Extension)</TargetPath>
-            </ContentWithTargetPath>
-        </ItemGroup>
-    </Target>
-
-    <PropertyGroup>
-        <GetCopyToOutputDirectoryItemsDependsOn>
-            GetProjectReferencePackageOutputPath;
-            $(GetCopyToOutputDirectoryItemsDependsOn);
-        </GetCopyToOutputDirectoryItemsDependsOn>
-    </PropertyGroup>
 </Project>
