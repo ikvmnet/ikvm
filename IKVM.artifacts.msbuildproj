@@ -30,6 +30,10 @@
             <Properties>$(PackProperties);PackageOutputPath=$(ArtifactStagingDirectory)\nuget</Properties>
         </TargetsForPublish>
         <TargetsForPublish Include="$(SolutionFile)">
+            <Targets>ikvm:Build;ikvmc:Build;ikvmstub:Build</Targets>
+            <Properties>$(ToolProperties)</Properties>
+        </TargetsForPublish>
+        <TargetsForPublish Include="$(SolutionFile)">
             <Targets>ikvm:Publish;ikvmc:Publish;ikvmstub:Publish</Targets>
             <Properties>$(ToolProperties);TargetFramework=net461;PublishDir=$(ArtifactStagingDirectory)\tools\net461\any</Properties>
         </TargetsForPublish>
