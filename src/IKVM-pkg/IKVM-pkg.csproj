@@ -4,11 +4,19 @@
         <PackageId>IKVM</PackageId>
         <TargetFrameworks>net461;netcoreapp3.1</TargetFrameworks>
         <IncludeBuildOutput>true</IncludeBuildOutput>
-        <TargetsForTfmSpecificContentInPackage>$(TargetsForTfmSpecificContentInPackage);CopyProjectReferencesToPackage</TargetsForTfmSpecificContentInPackage>
+        <TargetsForTfmSpecificContentInPackage>$(TargetsForTfmSpecificContentInPackage);ProjectReferencesToPackage</TargetsForTfmSpecificContentInPackage>
+        <TargetsForTfmSpecificDebugSymbolsInPackage>$(TargetsForTfmSpecificContentInPackage);ProjectReferencesToDebugSymbolsPackage</TargetsForTfmSpecificDebugSymbolsInPackage>
         <PackageLicenseFile>LICENSE.md</PackageLicenseFile>
         <PackageReadmeFile>README.md</PackageReadmeFile>
         <Description>Java SE 8 Virtual Machine for .NET</Description>
         <GenerateDocumentationFile>false</GenerateDocumentationFile>
+    </PropertyGroup>
+
+    <PropertyGroup>
+        <PublishRepositoryUrl>true</PublishRepositoryUrl>
+        <EmbedUntrackedSources>true</EmbedUntrackedSources>
+        <IncludeSymbols>true</IncludeSymbols>
+        <SymbolPackageFormat>snupkg</SymbolPackageFormat>
     </PropertyGroup>
 
     <ItemGroup>
@@ -22,7 +30,7 @@
     </ItemGroup>
 
     <ItemGroup>
-        <PackageReference Include="Microsoft.SourceLink.GitHub" Version="1.1.1" PrivateAssets="all"/>
+        <PackageReference Include="Microsoft.SourceLink.GitHub" Version="1.1.1" PrivateAssets="all" />
         <PackageReference Include="SharpZipLib" Version="1.3.3" />
         <PackageReference Include="System.Memory" Version="4.5.5" />
     </ItemGroup>
@@ -143,9 +151,27 @@
         </PublishProjectReference>
     </ItemGroup>
 
-    <Target Name="CopyProjectReferencesToPackage" DependsOnTargets="ResolveReferences">
+    <Target Name="ProjectReferencesToPackage" DependsOnTargets="ResolveReferences">
         <ItemGroup>
-            <TfmSpecificPackageFile Include="@(ReferenceCopyLocalPaths-&gt;WithMetadataValue('ReferenceSourceTarget', 'ProjectReference')-&gt;WithMetadataValue('PrivateAssets', 'all'))" PackagePath="lib\$(TargetFramework)" />
+            <AllowedOutputExtensionsInPackageBuildOutputFolderSplit Include="$(AllowedOutputExtensionsInPackageBuildOutputFolder.Split(';'))" />
+        </ItemGroup>
+        <PropertyGroup>
+            <AllowedOutputExtensionsInPackageBuildOutputFolderSplit>;@(AllowedOutputExtensionsInPackageBuildOutputFolderSplit, ';');</AllowedOutputExtensionsInPackageBuildOutputFolderSplit>
+        </PropertyGroup>
+        <ItemGroup>
+            <TfmSpecificPackageFile Include="@(ReferenceCopyLocalPaths-&gt;WithMetadataValue('ReferenceSourceTarget', 'ProjectReference')-&gt;WithMetadataValue('PrivateAssets', 'all'))" PackagePath="lib\$(TargetFramework)" Condition="$(AllowedOutputExtensionsInPackageBuildOutputFolderSplit.Contains(';%(ReferenceCopyLocalPaths.Extension);'))" />
+        </ItemGroup>
+    </Target>
+
+    <Target Name="ProjectReferencesToDebugSymbolsPackage" DependsOnTargets="ResolveReferences">
+        <ItemGroup>
+            <AllowedOutputExtensionsInSymbolsPackageBuildOutputFolderSplit Include="$(AllowedOutputExtensionsInSymbolsPackageBuildOutputFolder.Split(';'))" />
+        </ItemGroup>
+        <PropertyGroup>
+            <AllowedOutputExtensionsInSymbolsPackageBuildOutputFolderSplit>;@(AllowedOutputExtensionsInSymbolsPackageBuildOutputFolderSplit, ';');</AllowedOutputExtensionsInSymbolsPackageBuildOutputFolderSplit>
+        </PropertyGroup>
+        <ItemGroup>
+            <DebugSymbolsProjectOutputGroupOutput Include="@(ReferenceCopyLocalPaths-&gt;WithMetadataValue('ReferenceSourceTarget', 'ProjectReference')-&gt;WithMetadataValue('PrivateAssets', 'all'))" PackagePath="lib\$(TargetFramework)" Condition="$(AllowedOutputExtensionsInSymbolsPackageBuildOutputFolderSplit.Contains(';%(ReferenceCopyLocalPaths.Extension);'))" />
         </ItemGroup>
     </Target>
 
@@ -154,6 +180,7 @@
         <ItemGroup>
             <_PackageFiles Include="$(IntermediateOutputPath)VERSION" PackagePath="." />
         </ItemGroup>
+        <Message Text="AllowedOutputExtensionsInPackageBuildOutputFolder : $(AllowedOutputExtensionsInPackageBuildOutputFolder)" />
     </Target>
 
 </Project>
