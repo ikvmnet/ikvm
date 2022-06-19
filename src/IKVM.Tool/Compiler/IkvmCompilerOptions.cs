@@ -49,7 +49,10 @@ namespace IKVM.Tool.Compiler
         /// </summary>
         public IkvmCompilerTarget? Target { get; set; }
 
-        public string Platform { get; set; }
+        /// <summary>
+        /// Platform to build.
+        /// </summary>
+        public IkvmCompilerPlatform? Platform { get; set; }
 
         public string KeyFile { get; set; }
 

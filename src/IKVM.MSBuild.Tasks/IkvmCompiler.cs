@@ -178,7 +178,17 @@ namespace IKVM.MSBuild.Tasks
                 _ => throw new NotImplementedException(),
             };
 
-            options.Platform = Platform;
+            options.Platform = Platform?.ToLowerInvariant() switch
+            {
+                null => null,
+                "anycpu" => IkvmCompilerPlatform.AnyCPU,
+                "anycpu32bitpreferred" => IkvmCompilerPlatform.AnyCPU32BitPreferred,
+                "x86" => IkvmCompilerPlatform.X86,
+                "x64" => IkvmCompilerPlatform.X64,
+                "arm" => IkvmCompilerPlatform.ARM,
+                _ => throw new NotImplementedException(),
+            };
+
             options.KeyFile = KeyFile;
             options.Key = Key;
             options.DelaySign = DelaySign;
