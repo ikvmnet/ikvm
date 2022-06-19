@@ -417,8 +417,22 @@ namespace IKVM.Tool.Compiler
                 response = options.ResponseFile ?? Path.GetTempFileName();
                 File.WriteAllText(response, w.ToString());
 
+                // locate EXE file
+                var exe = GetToolExe(options.TargetFramework);
+                if (File.Exists(exe) == false)
+                    throw new FileNotFoundException($"Could not locate tool at {exe}.");
+
+                // if we're running on Linux, we might need to set the execute bit on the file,
+                // since the NuGet package is built on Windows
+                if (RuntimeInformation.IsOSPlatform(OSPlatform.Linux))
+                {
+                    var psx = Mono.Unix.UnixFileSystemInfo.GetFileSystemEntry(exe);
+                    if (psx.FileAccessPermissions.HasFlag(Mono.Unix.FileAccessPermissions.UserExecute) == false)
+                        psx.FileAccessPermissions |= Mono.Unix.FileAccessPermissions.UserExecute;
+                }
+
                 // we use a different path and args set based on which version we're running
-                var cli = Cli.Wrap(GetToolExe(options.TargetFramework, GetOSPlatform(), RuntimeInformation.OSArchitecture));
+                var cli = Cli.Wrap(exe);
                 var args = new List<string>();
 
                 // execute the contents of the response file

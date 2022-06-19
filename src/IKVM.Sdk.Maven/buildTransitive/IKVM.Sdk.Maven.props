@@ -1,9 +1,0 @@
-﻿<Project TreatAsLocalProperty="TaskFolder;TaskAssembly">
-    <PropertyGroup>
-        <TaskFolder Condition=" '$(MSBuildRuntimeType)' == 'Core' ">netcoreapp3.1</TaskFolder>
-        <TaskFolder Condition=" '$(MSBuildRuntimeType)' != 'Core' ">net461</TaskFolder>
-        <TaskAssembly>$(MSBuildThisFileDirectory)..\..\tasks\$(TaskFolder)\IKVM.Sdk.Maven.dll</TaskAssembly>
-    </PropertyGroup>
-
-    <UsingTask TaskName="IKVM.Sdk.Maven.Tasks.IkvmMavenTask" AssemblyFile="$(TaskAssembly)" />
-</Project>

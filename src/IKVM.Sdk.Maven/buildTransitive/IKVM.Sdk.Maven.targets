@@ -1,7 +1,0 @@
-﻿<Project TreatAsLocalProperty="TaskFolder;TaskAssembly">
-
-    <Target Name="BuildIkvmMavenSampleTarget" AfterTargets="Build">
-        <Message Text="SDK Maven post-build event ran" Importance="high" />
-    </Target>
-    
-</Project>

@@ -99,7 +99,7 @@
 
     <Target Name="GetPublishProjectReferenceCopyToOutputDirectoryItems" DependsOnTargets="GetPublishProjectReferenceItems">
         <ItemGroup>
-            <ContentWithTargetPath Include="@(_PublishProjectReferenceItems)" Condition=" '%(_PublishProjectReferenceItems.PublishTargetPath)' != '' ">
+            <ContentWithTargetPath Include="@(_PublishProjectReferenceItems->'%(Identity)')" Condition=" '%(_PublishProjectReferenceItems.PublishTargetPath)' != '' ">
                 <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
                 <TargetPath>%(_PublishProjectReferenceItems.PublishTargetPath)%(_PublishProjectReferenceItems.TargetPath)</TargetPath>
                 <Pack Condition=" '%(_PublishProjectReferenceItems.PublishPackagePath)' != '' ">true</Pack>
@@ -118,10 +118,21 @@
         </GetCopyToOutputDirectoryItemsDependsOn>
     </PropertyGroup>
 
-    <Target Name="GetPublishProjectReferencePackageItems" DependsOnTargets="GetPublishProjectReferenceItems">
+    <Target Name="GetPublishProjectReferencePackageItems" DependsOnTargets="GetPublishProjectReferenceItems" Condition=" '@(_PublishProjectReferenceItems)' != '' ">
         <ItemGroup>
-            <_PackageFiles Include="@(_PublishProjectReferenceItems->Distinct())" Condition=" '%(_PublishProjectReferenceItems.PublishPackagePath)' != '' ">
+            <_PackageFiles Include="@(_PublishProjectReferenceItems->Distinct()->'%(Identity)')" Condition=" '%(_PublishProjectReferenceItems.PublishPackagePath)' != '' And '$([System.IO.Path]::GetExtension(%(_PublishProjectReferenceItems.Identity)))' != '' ">
                 <PackagePath>%(_PublishProjectReferenceItems.PublishPackagePath)%(_PublishProjectReferenceItems.TargetPath)</PackagePath>
+            </_PackageFiles>
+            <_PackageFilesToStage Include="@(_PublishProjectReferenceItems->Distinct()->'%(Identity)')" Condition=" '%(_PublishProjectReferenceItems.PublishPackagePath)' != '' And '$([System.IO.Path]::GetExtension(%(_PublishProjectReferenceItems.Identity)))' == '' ">
+                <PackagePath>%(_PublishProjectReferenceItems.PublishPackagePath)%(_PublishProjectReferenceItems.TargetPath)</PackagePath>
+                <TemporaryPath>$([System.IO.Path]::GetFullPath('$(IntermediateOutputPath)publish-pkg\%(_PublishProjectReferenceItems.PublishPackagePath)%(_PublishProjectReferenceItems.TargetPath)'))</TemporaryPath>
+            </_PackageFilesToStage>
+        </ItemGroup>
+        <Copy SourceFiles="@(_PackageFilesToStage)" DestinationFiles="@(_PackageFilesToStage->'%(TemporaryPath)')" OverwriteReadOnlyFiles="true" SkipUnchangedFiles="true" />
+        <Message Text="_PackageFilesToStage: @(_PackageFilesToStage->'%(TemporaryPath)')" />
+        <ItemGroup>
+            <_PackageFiles Include="@(_PackageFilesToStage->'%(TemporaryPath)')">
+                <PackagePath>$([System.IO.Path]::GetDirectoryName('%(_PackageFilesToStage.PackagePath)'))</PackagePath>
             </_PackageFiles>
         </ItemGroup>
     </Target>
@@ -137,11 +148,11 @@
     </PropertyGroup>
 
     <Target Name="GetPublishProjectReferencePackageItemsBeforeGetPackageFiles" DependsOnTargets="$(GetPublishProjectReferenceItemsBeforePackageFilesDependsOn)" BeforeTargets="_GetPackageFiles">
-        
+
     </Target>
 
     <Target Name="GetPackageOutputPath" DependsOnTargets="_GetAbsoluteOutputPathsForPack" Returns="$(PackageOutputAbsolutePath)">
-        
+
     </Target>
 
 
