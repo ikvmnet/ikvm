@@ -22,6 +22,7 @@
     </ItemGroup>
 
     <ItemGroup>
+        <PackageReference Include="Microsoft.SourceLink.GitHub" Version="1.1.1" PrivateAssets="all"/>
         <PackageReference Include="SharpZipLib" Version="1.3.3" />
         <PackageReference Include="System.Memory" Version="4.5.5" />
     </ItemGroup>
@@ -76,12 +77,6 @@
             <Configuration>$(Configuration)</Configuration>
             <OutputDir>runtimes\win-x64\native</OutputDir>
         </LibProjectReference>
-        <LibProjectReference Include="ikvm-native-win-x86">
-            <ProjectFile>..\ikvm-native\ikvm-native-win.vcxproj</ProjectFile>
-            <Platform>Win32</Platform>
-            <Configuration>$(Configuration)</Configuration>
-            <OutputDir>runtimes\win-x86\native</OutputDir>
-        </LibProjectReference>
         <LibProjectReference Include="ikvm-native-linux-x64">
             <ProjectFile>..\ikvm-native\ikvm-native-linux.vcxproj</ProjectFile>
             <Platform>x64</Platform>
@@ -113,22 +108,6 @@
         <PublishProjectReference Include="..\ikvmstub\ikvmstub.csproj" Condition=" '$(TargetFramework)' == '' ">
             <SetTargetFramework>TargetFramework=net461</SetTargetFramework>
             <PublishPackagePath>tools\net461\any</PublishPackagePath>
-        </PublishProjectReference>
-
-        <PublishProjectReference Include="..\ikvm\ikvm.csproj" Condition=" '$(TargetFramework)' == '' ">
-            <SetTargetFramework>TargetFramework=netcoreapp3.1</SetTargetFramework>
-            <PublishPackagePath>tools\netcoreapp3.1\win7-x86</PublishPackagePath>
-            <PublishProperties>RuntimeIdentifier=win7-x86</PublishProperties>
-        </PublishProjectReference>
-        <PublishProjectReference Include="..\ikvmc\ikvmc.csproj" Condition=" '$(TargetFramework)' == '' ">
-            <SetTargetFramework>TargetFramework=netcoreapp3.1</SetTargetFramework>
-            <PublishPackagePath>tools\netcoreapp3.1\win7-x86</PublishPackagePath>
-            <PublishProperties>RuntimeIdentifier=win7-x86</PublishProperties>
-        </PublishProjectReference>
-        <PublishProjectReference Include="..\ikvmstub\ikvmstub.csproj" Condition=" '$(TargetFramework)' == '' ">
-            <SetTargetFramework>TargetFramework=netcoreapp3.1</SetTargetFramework>
-            <PublishPackagePath>tools\netcoreapp3.1\win7-x86</PublishPackagePath>
-            <PublishProperties>RuntimeIdentifier=win7-x86</PublishProperties>
         </PublishProjectReference>
 
         <PublishProjectReference Include="..\ikvm\ikvm.csproj" Condition=" '$(TargetFramework)' == '' ">

@@ -47,12 +47,6 @@
             <Configuration>$(Configuration)</Configuration>
             <OutputDir>runtimes\win-x64\native</OutputDir>
         </LibProjectReference>
-        <LibProjectReference Include="ikvm-tests-native-win-x86">
-            <ProjectFile>..\ikvm-tests-native\ikvm-tests-native-win.vcxproj</ProjectFile>
-            <Platform>Win32</Platform>
-            <Configuration>$(Configuration)</Configuration>
-            <OutputDir>runtimes\win-x86\native</OutputDir>
-        </LibProjectReference>
         <LibProjectReference Include="ikvm-tests-native-linux-x64">
             <ProjectFile>..\ikvm-tests-native\ikvm-tests-native-linux.vcxproj</ProjectFile>
             <Platform>x64</Platform>
@@ -90,22 +84,6 @@
             <SetTargetFramework>TargetFramework=netcoreapp3.1</SetTargetFramework>
             <PublishTargetPath>ikvm-tools\netcoreapp3.1\win7-x64</PublishTargetPath>
             <PublishProperties>RuntimeIdentifier=win7-x64</PublishProperties>
-        </PublishProjectReference>
-
-        <PublishProjectReference Include="..\ikvm\ikvm.csproj">
-            <SetTargetFramework>TargetFramework=netcoreapp3.1</SetTargetFramework>
-            <PublishTargetPath>ikvm-tools\netcoreapp3.1\win7-x86</PublishTargetPath>
-            <PublishProperties>RuntimeIdentifier=win7-x86</PublishProperties>
-        </PublishProjectReference>
-        <PublishProjectReference Include="..\ikvmc\ikvmc.csproj">
-            <SetTargetFramework>TargetFramework=netcoreapp3.1</SetTargetFramework>
-            <PublishTargetPath>ikvm-tools\netcoreapp3.1\win7-x86</PublishTargetPath>
-            <PublishProperties>RuntimeIdentifier=win7-x86</PublishProperties>
-        </PublishProjectReference>
-        <PublishProjectReference Include="..\ikvmstub\ikvmstub.csproj">
-            <SetTargetFramework>TargetFramework=netcoreapp3.1</SetTargetFramework>
-            <PublishTargetPath>ikvm-tools\netcoreapp3.1\win7-x86</PublishTargetPath>
-            <PublishProperties>RuntimeIdentifier=win7-x86</PublishProperties>
         </PublishProjectReference>
 
         <PublishProjectReference Include="..\ikvm\ikvm.csproj">

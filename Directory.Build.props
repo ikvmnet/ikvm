@@ -32,7 +32,6 @@
         <RepositoryType Condition=" '$(RepositoryType)' == '' ">git</RepositoryType>
         <PackageProjectUrl  Condition=" '$(PackageProjectUrl)' == '' ">https://github.com/ikvm-revived/ikvm</PackageProjectUrl>
         <PackageVersion Condition=" '$(PackageVersion)' == '' ">$(Version)</PackageVersion>
-        <SymbolPackageFormat>snupkg</SymbolPackageFormat>
     </PropertyGroup>
 
     <PropertyGroup Label="Assembly Signing">
@@ -42,8 +41,9 @@
     </PropertyGroup>
 
     <PropertyGroup Label="Debug Info">
-        <IncludeSymbols>true</IncludeSymbols>
-        <EmbedAllSources>true</EmbedAllSources>
+        <PublishRepositoryUrl>true</PublishRepositoryUrl>
+        <EmbedUntrackedSources>true</EmbedUntrackedSources>
+        <SymbolPackageFormat>snupkg</SymbolPackageFormat>
     </PropertyGroup>
 
 </Project>
