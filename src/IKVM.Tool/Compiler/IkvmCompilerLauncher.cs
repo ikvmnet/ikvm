@@ -254,7 +254,23 @@ namespace IKVM.Tool.Compiler
                 w.WriteLine($"-version:{options.Version}");
 
             if (options.Target is not null)
-                w.WriteLine($"-target:{options.Target}");
+            {
+                switch (options.Target)
+                {
+                    case IkvmCompilerTarget.Library:
+                        w.WriteLine($"-target:library");
+                        break;
+                    case IkvmCompilerTarget.Exe:
+                        w.WriteLine($"-target:exe");
+                        break;
+                    case IkvmCompilerTarget.WinExe:
+                        w.WriteLine($"-target:winexe");
+                        break;
+                    case IkvmCompilerTarget.Module:
+                        w.WriteLine($"-target:module");
+                        break;
+                }
+            }
 
             if (options.Platform is not null)
                 w.WriteLine($"-platform:{options.Platform}");
@@ -422,13 +438,24 @@ namespace IKVM.Tool.Compiler
                 if (File.Exists(exe) == false)
                     throw new FileNotFoundException($"Could not locate tool at {exe}.");
 
+                // check for supported platform
+                if (RuntimeInformation.IsOSPlatform(OSPlatform.Windows) == false && options.TargetFramework == IkvmCompilerTargetFramework.NetFramework)
+                    throw new IkvmToolException("IKVM generation for .NET Framework assemblies is not supported on Linux operating system.");
+
                 // if we're running on Linux, we might need to set the execute bit on the file,
                 // since the NuGet package is built on Windows
                 if (RuntimeInformation.IsOSPlatform(OSPlatform.Linux))
                 {
-                    var psx = Mono.Unix.UnixFileSystemInfo.GetFileSystemEntry(exe);
-                    if (psx.FileAccessPermissions.HasFlag(Mono.Unix.FileAccessPermissions.UserExecute) == false)
-                        psx.FileAccessPermissions |= Mono.Unix.FileAccessPermissions.UserExecute;
+                    try
+                    {
+                        var psx = Mono.Unix.UnixFileSystemInfo.GetFileSystemEntry(exe);
+                        if (psx.FileAccessPermissions.HasFlag(Mono.Unix.FileAccessPermissions.UserExecute) == false)
+                            psx.FileAccessPermissions |= Mono.Unix.FileAccessPermissions.UserExecute;
+                    }
+                    catch (Exception e)
+                    {
+                        throw new IkvmToolException($"Could not set user executable bit on '{exe}'.", e);
+                    }
                 }
 
                 // we use a different path and args set based on which version we're running

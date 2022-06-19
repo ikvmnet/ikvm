@@ -55,7 +55,7 @@
         </MSBuild>
     </Target>
 
-    <Target Name="AssignPublishProjectConfiguration" Condition=" '@(PublishProjectReference)' != '' " Inputs="@(PublishProjectReference)" Outputs="dummy">
+    <Target Name="AssignPublishProjectConfiguration" Inputs="@(PublishProjectReference)" Outputs="dummy" Condition=" '@(PublishProjectReference)' != '' ">
         <PropertyGroup>
             <OnlyReferenceAndBuildProjectsEnabledInSolutionConfiguration Condition="'$(OnlyReferenceAndBuildProjectsEnabledInSolutionConfiguration)' == ''">true</OnlyReferenceAndBuildProjectsEnabledInSolutionConfiguration>
             <ShouldUnsetParentConfigurationAndPlatform Condition="'$(ShouldUnsetParentConfigurationAndPlatform)' == '' and ('$(BuildingInsideVisualStudio)' == 'true' or '$(BuildingSolutionFile)' == 'true')">true</ShouldUnsetParentConfigurationAndPlatform>
@@ -129,7 +129,6 @@
             </_PackageFilesToStage>
         </ItemGroup>
         <Copy SourceFiles="@(_PackageFilesToStage)" DestinationFiles="@(_PackageFilesToStage->'%(TemporaryPath)')" OverwriteReadOnlyFiles="true" SkipUnchangedFiles="true" />
-        <Message Text="_PackageFilesToStage: @(_PackageFilesToStage->'%(TemporaryPath)')" />
         <ItemGroup>
             <_PackageFiles Include="@(_PackageFilesToStage->'%(TemporaryPath)')">
                 <PackagePath>$([System.IO.Path]::GetDirectoryName('%(_PackageFilesToStage.PackagePath)'))</PackagePath>

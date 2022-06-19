@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.IO;
+using System.Runtime.InteropServices;
 using System.Threading.Tasks;
 
 using FluentAssertions;
@@ -22,6 +23,10 @@ namespace IKVM.Tests.Tool.Compiler
         [TestMethod]
         public async Task Can_compile_netframework_jar()
         {
+            // Framework building not supported on ~Windows
+            if (RuntimeInformation.IsOSPlatform(OSPlatform.Windows) == false)
+                return;
+
             var p = Path.Combine(Path.GetTempPath(), Guid.NewGuid().ToString(), "helloworld-2.0.dll");
             Directory.CreateDirectory(Path.GetDirectoryName(p));
 
@@ -30,7 +35,7 @@ namespace IKVM.Tests.Tool.Compiler
             var o = new IkvmCompilerOptions()
             {
                 TargetFramework = IkvmCompilerTargetFramework.NetFramework,
-                ResponseFile = "ikvmc.rsp",
+                ResponseFile = "helloworld_netframework_ikvmc.rsp",
                 Input = { "helloworld-2.0.jar" },
                 Assembly = "helloworld-2.0",
                 Version = "1.0.0.0",
@@ -56,7 +61,7 @@ namespace IKVM.Tests.Tool.Compiler
             var o = new IkvmCompilerOptions()
             {
                 TargetFramework = IkvmCompilerTargetFramework.NetCore,
-                ResponseFile = "ikvmc.rsp",
+                ResponseFile = "helloworld_netcore_ikvmc.rsp",
                 Input = { "helloworld-2.0.jar" },
                 Assembly = "helloworld-2.0",
                 Version = "1.0.0.0",

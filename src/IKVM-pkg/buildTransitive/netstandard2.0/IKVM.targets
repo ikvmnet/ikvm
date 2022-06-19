@@ -163,10 +163,10 @@
             Assembly="%(IkvmReferenceItem.AssemblyName)"
             Version="%(IkvmReferenceItem.AssemblyVersion)"
             Runtime="@(IkvmRuntimeAssembly)"
+            Target="library"
             Debug="%(IkvmReferenceItem.Debug)"
             CompressResources="true"
-            Target="library"
-            NoStdLib="$(IkvmcToolNoStdLib)"
+            NoStdLib="true"
             References="@(IkvmFrameworkReference);%(IkvmReferenceItem.ResolvedReferences)"
             Input="%(IkvmReferenceItem.Compile)"
             Condition=" '%(IkvmReferenceItem.Compile)' != '' "/>

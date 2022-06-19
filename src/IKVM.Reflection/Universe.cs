@@ -149,36 +149,6 @@ namespace IKVM.Reflection
 
         public static readonly string CoreLibName = "netstandard";
 
-        public static string ReferenceAssembliesDirectory
-        {
-            get
-            {
-                return BuildRefDirFrom(System.Runtime.InteropServices.RuntimeEnvironment.GetRuntimeDirectory());
-            }
-        }
-
-        private static string BuildRefDirFrom(string runtimeDir)
-        {
-            // transform a thing like
-            // C:\Program Files\dotnet\shared\Microsoft.NETCore.App\3.1.7
-            // to
-            // C:\Program Files\dotnet\packs\Microsoft.NETCore.App.Ref\3.1.0\ref\netcoreapp3.1
-
-            var parts = runtimeDir.Split(Path.DirectorySeparatorChar);
-            var n = string.IsNullOrEmpty(parts[parts.Length - 1]) ? parts.Length - 2 : parts.Length - 1;
-            var versionDir = parts[n--];
-            var frameworkDir = parts[n--];
-            var newParts = new string[n + 5];
-            Array.Copy(parts, newParts, n);
-            var suffixParts = new string[] { "packs", frameworkDir + ".Ref", "3.1.0", "ref", "netcoreapp3.1" };
-            Array.Copy(suffixParts, 0, newParts, n, suffixParts.Length);
-            var dir = Path.Combine(newParts);
-            if (!Directory.Exists(dir))
-            {
-                throw new FileNotFoundException("Reference assemblies directory: " + dir);
-            }
-            return dir;
-        }
 
 #elif NETFRAMEWORK || MONO
 
@@ -748,17 +718,14 @@ namespace IKVM.Reflection
             return name;
         }
 
-        private Assembly GetLoadedAssembly(string refname)
+        Assembly GetLoadedAssembly(string refname)
         {
-            Assembly asm;
-            if (!assembliesByName.TryGetValue(refname, out asm) && (options & UniverseOptions.DisableDefaultAssembliesLookup) == 0)
+            if (!assembliesByName.TryGetValue(refname, out var asm) && (options & UniverseOptions.DisableDefaultAssembliesLookup) == 0)
             {
-                string simpleName = GetSimpleAssemblyName(refname);
+                var simpleName = GetSimpleAssemblyName(refname);
                 for (int i = 0; i < assemblies.Count; i++)
                 {
-                    AssemblyComparisonResult result;
-                    if (simpleName.Equals(assemblies[i].Name, StringComparison.OrdinalIgnoreCase)
-                        && CompareAssemblyIdentity(refname, false, assemblies[i].FullName, false, out result))
+                    if (simpleName.Equals(assemblies[i].Name, StringComparison.OrdinalIgnoreCase) && CompareAssemblyIdentity(refname, false, assemblies[i].FullName, false, out var result))
                     {
                         asm = assemblies[i];
                         assembliesByName.Add(refname, asm);
@@ -766,21 +733,17 @@ namespace IKVM.Reflection
                     }
                 }
             }
+
             return asm;
         }
 
-        private Assembly GetDynamicAssembly(string refname)
+        Assembly GetDynamicAssembly(string refname)
         {
-            string simpleName = GetSimpleAssemblyName(refname);
-            foreach (AssemblyBuilder asm in dynamicAssemblies)
-            {
-                AssemblyComparisonResult result;
-                if (simpleName.Equals(asm.Name, StringComparison.OrdinalIgnoreCase)
-                    && CompareAssemblyIdentity(refname, false, asm.FullName, false, out result))
-                {
+            var simpleName = GetSimpleAssemblyName(refname);
+            foreach (var asm in dynamicAssemblies)
+                if (simpleName.Equals(asm.Name, StringComparison.OrdinalIgnoreCase) && CompareAssemblyIdentity(refname, false, asm.FullName, false, out var result))
                     return asm;
-                }
-            }
+
             return null;
         }
 
@@ -791,44 +754,40 @@ namespace IKVM.Reflection
 
         internal Assembly Load(string refname, Module requestingModule, bool throwOnError)
         {
-            Assembly asm = GetLoadedAssembly(refname);
+            var asm = GetLoadedAssembly(refname);
             if (asm != null)
-            {
                 return asm;
-            }
+
             if (resolvers.Count == 0)
             {
                 asm = DefaultResolver(refname, throwOnError);
             }
             else
             {
-                ResolveEventArgs args = new ResolveEventArgs(refname, requestingModule == null ? null : requestingModule.Assembly);
-                foreach (ResolveEventHandler evt in resolvers)
+                var args = new ResolveEventArgs(refname, requestingModule == null ? null : requestingModule.Assembly);
+                foreach (var evt in resolvers)
                 {
                     asm = evt(this, args);
                     if (asm != null)
-                    {
                         break;
-                    }
                 }
+
                 if (asm == null)
-                {
                     asm = GetDynamicAssembly(refname);
-                }
             }
+
             if (asm != null)
             {
-                string defname = asm.FullName;
+                var defname = asm.FullName;
                 if (refname != defname)
-                {
                     assembliesByName.Add(refname, asm);
-                }
+
                 return asm;
             }
+
             if (throwOnError)
-            {
                 throw new FileNotFoundException(refname);
-            }
+
             return null;
         }
 
@@ -836,25 +795,10 @@ namespace IKVM.Reflection
         {
             Assembly asm = GetDynamicAssembly(refname);
             if (asm != null)
-            {
                 return asm;
-            }
 
-#if NETCOREAPP3_1_OR_GREATER
-            string filepath = Path.Combine(ReferenceAssembliesDirectory, GetSimpleAssemblyName(refname) + ".dll");
-            if (File.Exists(filepath))
-            {
-                using (RawModule module = OpenRawModule(filepath))
-                {
-                    AssemblyComparisonResult result;
-                    if (module.IsManifestModule && CompareAssemblyIdentity(refname, false, module.GetAssemblyName().FullName, false, out result))
-                    {
-                        return LoadAssembly(module);
-                    }
-                }
-            }
-            return null;
-#else
+#if NETFRAMEWORK
+
 			string fileName;
 			if (throwOnError)
 			{
@@ -884,7 +828,10 @@ namespace IKVM.Reflection
 					return null;
 				}
 			}
+
 			return LoadFile(fileName);
+#else
+            return null;
 #endif
         }
 

@@ -155,6 +155,7 @@ namespace IKVM.MSBuild.Tasks
         public override bool Execute()
         {
             var options = new IkvmCompilerOptions();
+            options.ResponseFile = ResponseFile;
 
             options.TargetFramework = TargetFramework switch
             {
@@ -166,7 +167,17 @@ namespace IKVM.MSBuild.Tasks
             options.Output = Output;
             options.Assembly = Assembly;
             options.Version = Version;
-            options.Target = Target;
+
+            options.Target = Target?.ToLowerInvariant() switch
+            {
+                null => null,
+                "library" => IkvmCompilerTarget.Library,
+                "exe" => IkvmCompilerTarget.Exe,
+                "winexe" => IkvmCompilerTarget.WinExe,
+                "module" => IkvmCompilerTarget.Module,
+                _ => throw new NotImplementedException(),
+            };
+
             options.Platform = Platform;
             options.KeyFile = KeyFile;
             options.Key = Key;

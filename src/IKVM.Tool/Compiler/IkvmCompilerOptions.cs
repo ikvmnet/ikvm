@@ -44,7 +44,10 @@ namespace IKVM.Tool.Compiler
         /// </summary>
         public string Version { get; set; }
 
-        public string Target { get; set; }
+        /// <summary>
+        /// Target to build.
+        /// </summary>
+        public IkvmCompilerTarget? Target { get; set; }
 
         public string Platform { get; set; }
 
