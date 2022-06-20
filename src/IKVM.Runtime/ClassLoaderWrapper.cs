@@ -1363,9 +1363,8 @@ namespace IKVM.Internal
                 finally
                 {
                     if (nativeLibraries == null)
-                    {
                         nativeLibraries = new List<IntPtr>();
-                    }
+
                     nativeLibraries.Add(p);
                 }
             }
@@ -1391,9 +1390,8 @@ namespace IKVM.Internal
             lock (this)
             {
                 if (nativeLibraries == null)
-                {
                     return new IntPtr[0];
-                }
+
                 return nativeLibraries.ToArray();
             }
         }
