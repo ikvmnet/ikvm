@@ -35,6 +35,7 @@ namespace IKVM.Tests.Tool.Compiler
             var o = new IkvmCompilerOptions()
             {
                 TargetFramework = IkvmCompilerTargetFramework.NetFramework,
+                Runtime = Path.Combine("lib", "net461", "IKVM.Runtime.dll"),
                 ResponseFile = "helloworld_netframework_ikvmc.rsp",
                 Input = { "helloworld-2.0.jar" },
                 Assembly = "helloworld-2.0",
@@ -43,6 +44,7 @@ namespace IKVM.Tests.Tool.Compiler
                 Output = p,
             };
 
+            o.References.Add(Path.Combine("lib", "net461", "IKVM.Java.dll"));
             foreach (var f in Directory.GetFiles(l.GetReferenceAssemblyDirectory(o.TargetFramework)))
                 o.References.Add(f);
 
@@ -61,6 +63,7 @@ namespace IKVM.Tests.Tool.Compiler
             var o = new IkvmCompilerOptions()
             {
                 TargetFramework = IkvmCompilerTargetFramework.NetCore,
+                Runtime = Path.Combine("lib", "netcoreapp3.1", "IKVM.Runtime.dll"),
                 ResponseFile = "helloworld_netcore_ikvmc.rsp",
                 Input = { "helloworld-2.0.jar" },
                 Assembly = "helloworld-2.0",
@@ -69,6 +72,7 @@ namespace IKVM.Tests.Tool.Compiler
                 Output = p,
             };
 
+            o.References.Add(Path.Combine("lib", "netcoreapp3.1", "IKVM.Java.dll"));
             foreach (var f in Directory.GetFiles(l.GetReferenceAssemblyDirectory(o.TargetFramework)))
                 o.References.Add(f);
 

@@ -25,8 +25,10 @@ namespace IKVM.Tests.Java.ikvm.runtime
         {
 #if NETCOREAPP3_1_OR_GREATER
             var tfm = IkvmCompilerTargetFramework.NetCore;
+            var dir = "netcoreapp3.1";
 #else
             var tfm = IkvmCompilerTargetFramework.NetFramework;
+            var dir = "net461";
 #endif
 
             var p = Path.Combine(Path.GetTempPath(), Guid.NewGuid().ToString(), "helloworld-2.0.dll");
@@ -37,6 +39,7 @@ namespace IKVM.Tests.Java.ikvm.runtime
             var o = new IkvmCompilerOptions()
             {
                 TargetFramework = tfm,
+                Runtime = Path.Combine("lib", dir, "IKVM.Runtime.dll"),
                 ResponseFile = "ikvmc.rsp",
                 Input = { "helloworld-2.0.jar" },
                 Assembly = "helloworld-2.0",
@@ -45,6 +48,7 @@ namespace IKVM.Tests.Java.ikvm.runtime
                 Output = p,
             };
 
+            o.References.Add(Path.Combine("lib", dir, "IKVM.Java.dll"));
             foreach (var f in Directory.GetFiles(l.GetReferenceAssemblyDirectory(o.TargetFramework)))
                 o.References.Add(f);
 

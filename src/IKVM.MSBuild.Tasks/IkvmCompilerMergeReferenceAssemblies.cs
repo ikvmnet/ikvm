@@ -83,10 +83,6 @@ namespace IKVM.MSBuild.Tasks
             // gets the reference assemblies
             foreach (var path in Directory.GetFiles(l.GetReferenceAssemblyDirectory(f), "*.dll"))
                 yield return path;
-
-            // adds the IKVM.Runtime assembly to the end
-            yield return l.GetRuntimeAssemblyFile(f);
-            yield return l.GetJavaBaseAssemblyFile(f);
         }
 
         /// <summary>

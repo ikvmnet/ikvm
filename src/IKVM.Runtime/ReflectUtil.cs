@@ -22,6 +22,7 @@
   
 */
 using System;
+
 #if STATIC_COMPILER || STUB_GENERATOR
 using IKVM.Reflection;
 using IKVM.Reflection.Emit;
@@ -33,12 +34,9 @@ using System.Reflection.Emit;
 
 namespace IKVM.Internal
 {
+
     static class ReflectUtil
     {
-#if !NET_4_0 && !STATIC_COMPILER && !STUB_GENERATOR
-        private static readonly bool clr_v4 = Environment.Version.Major >= 4;
-        private static Predicate<Assembly> get_IsDynamic;
-#endif
 
         internal static bool IsSameAssembly(Type type1, Type type2)
         {
@@ -59,65 +57,43 @@ namespace IKVM.Internal
         {
 #if STATIC_COMPILER || STUB_GENERATOR
 			return false;
-#elif NET_4_0
-			return asm.IsDynamic;
 #else
-            if (clr_v4)
-            {
-                // on .NET 4.0 dynamic assemblies have a non-AssemblyBuilder derived peer, so we have to call IsDynamic
-                if (get_IsDynamic == null)
-                {
-                    get_IsDynamic = (Predicate<Assembly>)Delegate.CreateDelegate(typeof(Predicate<Assembly>), typeof(Assembly).GetMethod("get_IsDynamic"));
-                }
-                return get_IsDynamic(asm);
-            }
-            return asm is AssemblyBuilder;
+            return asm.IsDynamic;
 #endif
         }
 
         internal static bool IsReflectionOnly(Type type)
         {
             while (type.HasElementType)
-            {
                 type = type.GetElementType();
-            }
-            Assembly asm = type.Assembly;
+
+            var asm = type.Assembly;
             if (asm != null && asm.ReflectionOnly)
-            {
                 return true;
-            }
+
             if (!type.IsGenericType || type.IsGenericTypeDefinition)
-            {
                 return false;
-            }
+
             // we have a generic type instantiation, it might have ReflectionOnly type arguments
             foreach (Type arg in type.GetGenericArguments())
-            {
                 if (IsReflectionOnly(arg))
-                {
                     return true;
-                }
-            }
+
             return false;
         }
 
         internal static bool ContainsTypeBuilder(Type type)
         {
             while (type.HasElementType)
-            {
                 type = type.GetElementType();
-            }
+
             if (!type.IsGenericType || type.IsGenericTypeDefinition)
-            {
                 return type is TypeBuilder;
-            }
+
             foreach (Type arg in type.GetGenericArguments())
-            {
                 if (ContainsTypeBuilder(arg))
-                {
                     return true;
-                }
-            }
+
             return type.GetGenericTypeDefinition() is TypeBuilder;
         }
 
@@ -169,25 +145,20 @@ namespace IKVM.Internal
 
         internal static bool MatchNameAndPublicKeyToken(AssemblyName name1, AssemblyName name2)
         {
-            return name1.Name.Equals(name2.Name, StringComparison.OrdinalIgnoreCase)
-                && CompareKeys(name1.GetPublicKeyToken(), name2.GetPublicKeyToken());
+            return name1.Name.Equals(name2.Name, StringComparison.OrdinalIgnoreCase) && CompareKeys(name1.GetPublicKeyToken(), name2.GetPublicKeyToken());
         }
 
-        private static bool CompareKeys(byte[] b1, byte[] b2)
+        static bool CompareKeys(byte[] b1, byte[] b2)
         {
             int len1 = b1 == null ? 0 : b1.Length;
             int len2 = b2 == null ? 0 : b2.Length;
             if (len1 != len2)
-            {
                 return false;
-            }
+
             for (int i = 0; i < len1; i++)
-            {
                 if (b1[i] != b2[i])
-                {
                     return false;
-                }
-            }
+
             return true;
         }
 
@@ -244,6 +215,7 @@ namespace IKVM.Internal
         }
 
 #if STATIC_COMPILER
+
 		internal static Type GetMissingType(Type type)
 		{
 			while (type.HasElementType)
@@ -274,6 +246,9 @@ namespace IKVM.Internal
 				return type;
 			}
 		}
+
 #endif
+
     }
+
 }

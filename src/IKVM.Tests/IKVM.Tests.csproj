@@ -47,12 +47,37 @@
             <Configuration>$(Configuration)</Configuration>
             <OutputDir>runtimes\win-x64\native</OutputDir>
         </LibProjectReference>
+        <LibProjectReference Include="ikvm-tests-native-win-x86">
+            <ProjectFile>..\ikvm-tests-native\ikvm-tests-native-win.vcxproj</ProjectFile>
+            <Platform>Win32</Platform>
+            <Configuration>$(Configuration)</Configuration>
+            <OutputDir>runtimes\win-x86\native</OutputDir>
+        </LibProjectReference>
         <LibProjectReference Include="ikvm-tests-native-linux-x64">
             <ProjectFile>..\ikvm-tests-native\ikvm-tests-native-linux.vcxproj</ProjectFile>
             <Platform>x64</Platform>
             <Configuration>$(Configuration)</Configuration>
             <OutputDir>runtimes\linux-x64\native</OutputDir>
         </LibProjectReference>
+    </ItemGroup>
+
+    <ItemGroup>
+        <IncludeProjectReference Include="..\IKVM.Runtime\IKVM.Runtime.csproj">
+            <SetTargetFramework>TargetFramework=net461</SetTargetFramework>
+            <IncludeTargetPath>lib\net461\</IncludeTargetPath>
+        </IncludeProjectReference>
+        <IncludeProjectReference Include="..\IKVM.Runtime\IKVM.Runtime.csproj">
+            <SetTargetFramework>TargetFramework=netcoreapp3.1</SetTargetFramework>
+            <IncludeTargetPath>lib\netcoreapp3.1\</IncludeTargetPath>
+        </IncludeProjectReference>
+        <IncludeProjectReference Include="..\IKVM.Java\IKVM.Java.csproj">
+            <SetTargetFramework>TargetFramework=net461</SetTargetFramework>
+            <IncludeTargetPath>lib\net461\</IncludeTargetPath>
+        </IncludeProjectReference>
+        <IncludeProjectReference Include="..\IKVM.Java\IKVM.Java.csproj">
+            <SetTargetFramework>TargetFramework=netcoreapp3.1</SetTargetFramework>
+            <IncludeTargetPath>lib\netcoreapp3.1\</IncludeTargetPath>
+        </IncludeProjectReference>
     </ItemGroup>
 
     <ItemGroup>

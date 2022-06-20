@@ -26,17 +26,34 @@ using System.Reflection;
 using System.Reflection.Emit;
 using System.Security;
 using System.Security.Permissions;
+using System.Threading;
 
 using IKVM.Internal;
 
 static class DynamicMethodUtils
 {
 
+#if NETFRAMEWORK
+
+    private static Module dynamicModule;
+
+#endif
+
     [SecuritySafeCritical]
     internal static DynamicMethod Create(string name, Type owner, bool nonPublic, Type returnType, Type[] paramTypes)
     {
         try
         {
+#if NETFRAMEWORK
+			if (dynamicModule == null)
+			{
+				// we have to create a module that is security critical to hold the dynamic method, if we want to be able to emit unverifiable code
+				AssemblyBuilder ab = AppDomain.CurrentDomain.DefineDynamicAssembly(new AssemblyName("<DynamicMethodHolder>"), AssemblyBuilderAccess.RunAndCollect);
+				Interlocked.CompareExchange(ref dynamicModule, ab.DefineDynamicModule("<DynamicMethodHolder>"), null);
+			}
+
+			return new DynamicMethod(name, MethodAttributes.Public | MethodAttributes.Static, CallingConventions.Standard, returnType, paramTypes, dynamicModule, true);
+#else
             if (!ReflectUtil.CanOwnDynamicMethod(owner))
             {
                 // interfaces and arrays aren't allowed as owners of dynamic methods
@@ -46,6 +63,7 @@ static class DynamicMethodUtils
             {
                 return new DynamicMethod(name, returnType, paramTypes, owner);
             }
+#endif
         }
         catch (SecurityException)
         {
@@ -61,7 +79,7 @@ static class DynamicMethodUtils
         }
     }
 
-    private static bool RestrictedMemberAccess
+    static bool RestrictedMemberAccess
     {
         get
         {
@@ -75,5 +93,7 @@ static class DynamicMethodUtils
                 return false;
             }
         }
+
     }
+
 }
