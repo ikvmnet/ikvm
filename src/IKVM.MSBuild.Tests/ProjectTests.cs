@@ -92,6 +92,7 @@ namespace IKVM.MSBuild.Tests
                     options.GlobalProperties.Add("TargetFramework", tfm);
                     options.GlobalProperties.Add("RuntimeIdentifier", rid);
                     options.TargetsToBuild.Clear();
+                    options.TargetsToBuild.Add("Clean");
                     options.TargetsToBuild.Add("Build");
                     options.TargetsToBuild.Add("Publish");
                     var results = analyzer.Build(options);

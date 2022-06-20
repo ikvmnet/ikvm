@@ -41,7 +41,7 @@ namespace IKVM.Tool.Compiler
         /// </summary>
         /// <param name="listener"></param>
         public IkvmCompilerLauncher(IIkvmToolDiagnosticEventListener listener) :
-            this(Path.Combine(Path.GetDirectoryName(typeof(IkvmCompilerLauncher).Assembly.Location), "ikvm-tools"), listener)
+            this(Path.Combine(Path.GetDirectoryName(typeof(IkvmCompilerLauncher).Assembly.Location), "ikvmc"), listener)
         {
 
         }

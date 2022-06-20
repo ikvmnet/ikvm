@@ -69,7 +69,7 @@ Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "IKVM.MSBuild.Tasks", "src\I
 EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "IKVM.MSBuild.Tests", "src\IKVM.MSBuild.Tests\IKVM.MSBuild.Tests.csproj", "{9AD9F640-FDA2-49E5-9B0F-9BD66BA26F11}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "IKVM.Tool.Exe", "src\IKVM.Tool.Exe\IKVM.Tool.Exe.csproj", "{BE69E1D2-1443-44FA-81D3-F6A452222998}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "IKVM.Tool.Exe", "src\IKVM.Tool.Exe\IKVM.Tool.Exe.csproj", "{BE69E1D2-1443-44FA-81D3-F6A452222998}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution

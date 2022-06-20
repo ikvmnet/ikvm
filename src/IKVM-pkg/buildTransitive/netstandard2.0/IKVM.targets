@@ -4,23 +4,24 @@
         <IkvmTargetFramework Condition="$([MSBuild]::IsTargetFrameworkCompatible('$(TargetFramework)', 'netstandard1.0'))">NetCore</IkvmTargetFramework>
         <IkvmTargetFramework Condition="$([MSBuild]::IsTargetFrameworkCompatible('$(TargetFramework)', 'net461'))">NetFramework</IkvmTargetFramework>
         <IkvmTargetFramework Condition="$([MSBuild]::IsTargetFrameworkCompatible('$(TargetFramework)', 'netcoreapp3.1'))">NetCore</IkvmTargetFramework>
-        <IkvmToolsPath>$([System.IO.Path]::GetFullPath('$(IkvmDir)tools\'))</IkvmToolsPath>
+        <IkvmToolsPath>$([System.IO.Path]::GetFullPath('$(IkvmDir)bin\'))</IkvmToolsPath>
     </PropertyGroup>
 
     <PropertyGroup Condition=" '$(TargetFramework)' != '' ">
-        <IkvmStageDir Condition=" '$(IkvmStageDir)' == '' ">$(IntermediateOutputPath)ikvm\</IkvmStageDir>
+        <IkvmStageDir Condition=" '$(IkvmStageDir)' == '' ">$(IntermediateOutputPath)ikvm\stage\1\</IkvmStageDir>
         <IkvmCacheDir Condition=" '$(IkvmCacheDir)' == '' ">$([System.IO.Path]::GetTempPath())ikvm\cache\1\</IkvmCacheDir>
     </PropertyGroup>
 
     <!-- Gathers those references which are either related to the Framework itself, or IKVM. -->
     <Target Name="GetIkvmFrameworkReferences" DependsOnTargets="ResolveAssemblyReferences">
-        <IkvmCompilerMergeReferenceAssemblies ToolsPath="$(IkvmToolsPath)" TargetFramework="$(IkvmTargetFramework)" Items="@(IkvmFrameworkReference)" >
+        <IkvmCompilerMergeReferenceAssemblies ToolsPath="$(IkvmToolsPath)ikvmc" TargetFramework="$(IkvmTargetFramework)" Items="@(IkvmFrameworkReference)" >
             <Output TaskParameter="Items" ItemName="IkvmFrameworkReference" />
         </IkvmCompilerMergeReferenceAssemblies>
 
         <!-- Locate runtime assembly in the output. -->
         <ItemGroup>
-            <IkvmRuntimeAssembly Include="@(IkvmFrameworkReference)" Condition=" '%(Filename)%(Extension)' == 'IKVM.Runtime.dll' " />
+            <IkvmFrameworkReference Include="@(ReferencePath)" Condition=" '%(Filename)%(Extension)' == 'IKVM.Java.dll' " />
+            <IkvmRuntimeAssembly Include="@(ReferencePath)" Condition=" '%(Filename)%(Extension)' == 'IKVM.Runtime.dll' " />
         </ItemGroup>
     </Target>
 
@@ -156,7 +157,7 @@
 
         <!-- Compile the reference item. -->
         <IkvmCompiler
-            ToolsPath="$(IkvmToolsPath)"
+            ToolsPath="$(IkvmToolsPath)ikvmc"
             TargetFramework="$(IkvmTargetFramework)"
             ResponseFile="%(IkvmReferenceItem.StagePath).rsp"
             Output="%(IkvmReferenceItem.StagePath)"
