@@ -97,12 +97,10 @@
         <PublishProjectReference Include="..\IKVM.MSBuild.Tasks\IKVM.MSBuild.Tasks.csproj" Condition=" '$(TargetFramework)' == '' ">
             <SetTargetFramework>TargetFramework=net472</SetTargetFramework>
             <PublishPackagePath>tasks\net472</PublishPackagePath>
-            <PublishProperties>DebugSymbols=false;DebugType=none</PublishProperties>
         </PublishProjectReference>
         <PublishProjectReference Include="..\IKVM.MSBuild.Tasks\IKVM.MSBuild.Tasks.csproj" Condition=" '$(TargetFramework)' == '' ">
             <SetTargetFramework>TargetFramework=netcoreapp3.1</SetTargetFramework>
             <PublishPackagePath>tasks\netcoreapp3.1</PublishPackagePath>
-            <PublishProperties>DebugSymbols=false;DebugType=none</PublishProperties>
         </PublishProjectReference>
     </ItemGroup>
 
