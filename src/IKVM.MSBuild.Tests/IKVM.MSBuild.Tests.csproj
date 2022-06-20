@@ -33,8 +33,8 @@
         <ProjectReference Include="..\IKVM.Runtime\IKVM.Runtime.csproj" />
         <ProjectReference Include="..\IKVM.MSBuild.Tasks\IKVM.MSBuild.Tasks.csproj" />
     </ItemGroup>
-    
-    <ItemGroup>
+
+    <ItemGroup Condition=" '$(TargetFramework)' != '' ">
         <IncludeProjectReference Include="..\IKVM.Runtime\IKVM.Runtime.csproj">
             <SetTargetFramework>TargetFramework=net461</SetTargetFramework>
             <IncludeTargetPath>lib\net461\</IncludeTargetPath>
@@ -53,11 +53,11 @@
         </IncludeProjectReference>
     </ItemGroup>
 
-    <ItemGroup>
+    <ItemGroup Condition=" '$(TargetFramework)' != '' ">
         <PackageProjectReference Include="..\IKVM-pkg\IKVM-pkg.csproj" />
     </ItemGroup>
 
-    <ItemGroup>
+    <ItemGroup Condition=" '$(TargetFramework)' != '' ">
         <PublishProjectReference Include="..\ikvm\ikvm.csproj">
             <SetTargetFramework>TargetFramework=net461</SetTargetFramework>
             <PublishTargetPath>ikvm\net461\any</PublishTargetPath>

@@ -40,7 +40,7 @@
         <ProjectReference Include="..\IKVM.Util\IKVM.Util.csproj" />
     </ItemGroup>
 
-    <ItemGroup>
+    <ItemGroup Condition=" '$(TargetFramework)' != '' ">
         <LibProjectReference Include="ikvm-tests-native-win-x64">
             <ProjectFile>..\ikvm-tests-native\ikvm-tests-native-win.vcxproj</ProjectFile>
             <Platform>x64</Platform>
@@ -61,7 +61,7 @@
         </LibProjectReference>
     </ItemGroup>
 
-    <ItemGroup>
+    <ItemGroup Condition=" '$(TargetFramework)' != '' ">
         <LibProjectReference Include="ikvm-native-win-x64">
             <ProjectFile>..\ikvm-native\ikvm-native-win.vcxproj</ProjectFile>
             <Platform>x64</Platform>
@@ -82,7 +82,7 @@
         </LibProjectReference>
     </ItemGroup>
 
-    <ItemGroup>
+    <ItemGroup Condition=" '$(TargetFramework)' != '' ">
         <IncludeProjectReference Include="..\IKVM.Runtime\IKVM.Runtime.csproj">
             <SetTargetFramework>TargetFramework=net461</SetTargetFramework>
             <IncludeTargetPath>lib\net461\</IncludeTargetPath>
@@ -101,7 +101,7 @@
         </IncludeProjectReference>
     </ItemGroup>
 
-    <ItemGroup>
+    <ItemGroup Condition=" '$(TargetFramework)' != '' ">
 
         <PublishProjectReference Include="..\ikvm\ikvm.csproj">
             <SetTargetFramework>TargetFramework=net461</SetTargetFramework>
