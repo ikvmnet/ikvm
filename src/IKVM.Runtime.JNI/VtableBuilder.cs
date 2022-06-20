@@ -27,6 +27,9 @@ using System.Runtime.InteropServices;
 namespace IKVM.Runtime
 {
 
+	/// <summary>
+	/// Populates the JNIEnv table of methods with implementations that call back into managed code.
+	/// </summary>
     unsafe class VtableBuilder
     {
 
@@ -113,23 +116,22 @@ namespace IKVM.Runtime
 
         internal static void* vtable;
 
+		/// <summary>
+		/// Initializes the static instance.
+		/// </summary>
         static VtableBuilder()
         {
             JNI.jvmCreated = true;
-            // JNIEnv
+
+			// native library provides an initial template with functions for variadic implementations
             void** pmcpp = Native.ikvm_GetJNIEnvVTable();
             void** p = (void**)JniMem.Alloc(IntPtr.Size * vtableDelegates.Length);
             for (int i = 0; i < vtableDelegates.Length; i++)
-            {
                 if (vtableDelegates[i] != null)
-                {
                     p[i] = (void*)Marshal.GetFunctionPointerForDelegate(vtableDelegates[i]);
-                }
                 else
-                {
                     p[i] = pmcpp[i];
-                }
-            }
+
             vtable = p;
         }
 
@@ -437,5 +439,7 @@ namespace IKVM.Runtime
 
 			new pf_int_IntPtr(JNIEnv.GetObjectRefType) // virtual jobjectRefType GetObjectRefType(jobject obj);
 		};
+
     }
+
 }

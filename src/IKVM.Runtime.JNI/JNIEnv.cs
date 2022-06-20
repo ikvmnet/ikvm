@@ -54,12 +54,16 @@ namespace IKVM.Runtime
         internal const int JNIWeakGlobalRefType = 3;
         internal const sbyte JNI_TRUE = 1;
         internal const sbyte JNI_FALSE = 0;
-        private void* vtable;
-        private GCHandle managedJNIEnv;
-        private GCHandle* pinHandles;
-        private int pinHandleMaxCount;
-        private int pinHandleInUseCount;
 
+        void* vtable;
+        GCHandle managedJNIEnv;
+        GCHandle* pinHandles;
+        int pinHandleMaxCount;
+        int pinHandleInUseCount;
+
+        /// <summary>
+        /// Initializes the static instance.
+        /// </summary>
         static JNIEnv()
         {
             // we set the field here so that IKVM.Runtime.dll doesn't have to load us if we're not otherwise needed
@@ -76,19 +80,24 @@ namespace IKVM.Runtime
             // NOTE the initial bucket size must be a power of two < LOCAL_REF_MAX_BUCKET_SIZE,
             // because each time we grow it, we double the size and it must eventually reach
             // exactly LOCAL_REF_MAX_BUCKET_SIZE
-            private const int LOCAL_REF_INITIAL_BUCKET_SIZE = 32;
-            private const int LOCAL_REF_SHIFT = 10;
-            private const int LOCAL_REF_MAX_BUCKET_SIZE = (1 << LOCAL_REF_SHIFT);
-            private const int LOCAL_REF_MASK = (LOCAL_REF_MAX_BUCKET_SIZE - 1);
+            const int LOCAL_REF_INITIAL_BUCKET_SIZE = 32;
+            const int LOCAL_REF_SHIFT = 10;
+            const int LOCAL_REF_MAX_BUCKET_SIZE = (1 << LOCAL_REF_SHIFT);
+            const int LOCAL_REF_MASK = (LOCAL_REF_MAX_BUCKET_SIZE - 1);
+
             internal readonly JNIEnv* pJNIEnv;
             internal ClassLoaderWrapper classLoader;
             internal ikvm.@internal.CallerID callerID;
-            private object[][] localRefs;
-            private int localRefSlot;
-            private int localRefIndex;
-            private object[] active;
+
+            object[][] localRefs;
+            int localRefSlot;
+            int localRefIndex;
+            object[] active;
             internal Exception pendingException;
 
+            /// <summary>
+            /// Initializes a new instance.
+            /// </summary>
             internal ManagedJNIEnv()
             {
                 pJNIEnv = (JNIEnv*)JniMem.Alloc(sizeof(JNIEnv));
@@ -111,22 +120,20 @@ namespace IKVM.Runtime
                 if (!Environment.HasShutdownStarted)
                 {
                     if (pJNIEnv->managedJNIEnv.IsAllocated)
-                    {
                         pJNIEnv->managedJNIEnv.Free();
-                    }
+
                     for (int i = 0; i < pJNIEnv->pinHandleMaxCount; i++)
-                    {
                         if (pJNIEnv->pinHandles[i].IsAllocated)
-                        {
                             pJNIEnv->pinHandles[i].Free();
-                        }
-                    }
+
                     JniMem.Free((IntPtr)(void*)pJNIEnv);
                 }
+
             }
 
             internal struct FrameState
             {
+
                 internal readonly ikvm.@internal.CallerID callerID;
                 internal readonly int localRefSlot;
                 internal readonly int localRefIndex;
@@ -137,6 +144,7 @@ namespace IKVM.Runtime
                     this.localRefSlot = localRefSlot;
                     this.localRefIndex = localRefIndex;
                 }
+
             }
 
             internal FrameState Enter(ikvm.@internal.CallerID newCallerID)
@@ -166,6 +174,7 @@ namespace IKVM.Runtime
                 {
                     active[i] = null;
                 }
+
                 while (--localRefSlot != prev.localRefSlot)
                 {
                     if (localRefs[localRefSlot] != null)
@@ -470,17 +479,20 @@ namespace IKVM.Runtime
             try
             {
                 string name = StringFromOEM(pszName);
+
                 // don't allow dotted names!
                 if (name.IndexOf('.') >= 0)
                 {
                     SetPendingException(pEnv, new java.lang.NoClassDefFoundError(name));
                     return IntPtr.Zero;
                 }
+
                 // spec doesn't say it, but Sun allows signature format class names (but not for primitives)
                 if (name.StartsWith("L") && name.EndsWith(";"))
                 {
                     name = name.Substring(1, name.Length - 2);
                 }
+
                 TypeWrapper wrapper = FindNativeMethodClassLoader(pEnv).LoadClassByDottedNameFast(name.Replace('/', '.'));
                 if (wrapper == null)
                 {
