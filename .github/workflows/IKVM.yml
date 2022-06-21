@@ -241,7 +241,7 @@ jobs:
         path: build
     - name: Restore Tests
       run: unzip -o tests.zip
-    - name: Run Tests
+    - name: Execute Tests
       shell: pwsh
       run: gi .\build\tests\**\*.Tests.dll | group { $_.Directory.BaseName } | %{ dotnet test $_.Group --blame -v 3 --results-directory .\TestResults --logger "trx;LogFileName=$($_.Name).trx" }
     - name: Upload Test Results
@@ -274,7 +274,7 @@ jobs:
         path: build
     - name: Restore Tests
       run: unzip -o tests.zip
-    - name: Run Tests
+    - name: Execute Tests
       shell: pwsh
       run: gi ./build/tests/**/*.Tests.dll | group { $_.Directory.BaseName } | ?{ $_.Name -ne 'net461' } | %{ dotnet test $_.Group --blame -v 3 --results-directory ./TestResults --logger "trx;LogFileName=$($_.Name).trx" }
     - name: Upload Test Results
