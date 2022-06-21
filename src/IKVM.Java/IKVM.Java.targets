@@ -797,8 +797,8 @@
         <Delete Files="$(_MergeJavaAssemblyCoreForceBuildFile)" ContinueOnError="True" />
 
         <!-- replace original assemblies -->
-        <Copy SourceFiles="$(JavaAssemblyPath)" DestinationFiles="$(IntermediateOutputPath)$(TargetName)$(TargetExt)" OverwriteReadOnlyFiles="true" UseHardlinksIfPossible="$(CreateHardLinksForCopyFilesToOutputDirectoryIfPossible)" />
-        <Copy SourceFiles="$(JavaDebugSymbolsPath)" DestinationFiles="$(IntermediateOutputPath)$(TargetName).pdb" OverwriteReadOnlyFiles="true"  UseHardlinksIfPossible="$(CreateHardLinksForCopyFilesToOutputDirectoryIfPossible)" Condition="Exists('$(JavaDebugSymbolsPath)')" />
+        <Copy SourceFiles="$(JavaAssemblyPath)" DestinationFiles="$(IntermediateOutputPath)$(TargetName)$(TargetExt)" OverwriteReadOnlyFiles="true" />
+        <Copy SourceFiles="$(JavaDebugSymbolsPath)" DestinationFiles="$(IntermediateOutputPath)$(TargetName).pdb" OverwriteReadOnlyFiles="true" Condition="Exists('$(JavaDebugSymbolsPath)')" />
     </Target>
 
     <PropertyGroup>
