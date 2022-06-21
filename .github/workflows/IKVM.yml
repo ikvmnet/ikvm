@@ -186,21 +186,30 @@ jobs:
       with:
         name: nuget
         path: build/nuget
+    - name: Package Binaries
+      run: zip -r bin.zip bin
+      working-directory: build
     - name: Upload Binaries
       uses: actions/upload-artifact@v3
       with:
         name: bin
-        path: build/bin
+        path: build/bin.zip
+    - name: Package Tools
+      run: zip -r tools.zip tools
+      working-directory: build
     - name: Upload Tools
       uses: actions/upload-artifact@v3
       with:
         name: tools
-        path: build/tools
+        path: build/tools.zip
+    - name: Package Tests
+      run: zip -r tests.zip tests
+      working-directory: build
     - name: Upload Tests
       uses: actions/upload-artifact@v3
       with:
         name: tests
-        path: build/tests
+        path: build/tests.zip
   test-ikvm-windows:
     name: Test IKVM (Windows)
     needs:
@@ -219,11 +228,13 @@ jobs:
       uses: actions/setup-dotnet@v2
       with:
         dotnet-version: 6.0.x
-    - name: Download IKVM Tests
+    - name: Download Tests
       uses: actions/download-artifact@v3
       with:
         name: tests
-        path: build/tests
+        path: build
+    - name: Restore Tests
+      run: unzip -o tests.zip
     - name: Run Tests
       shell: pwsh
       run: gi .\build\tests\**\*.Tests.dll | group { $_.Directory.BaseName } | %{ dotnet test $_.Group --blame -v 3 --results-directory .\TestResults --logger "trx;LogFileName=$($_.Name).trx" }
@@ -250,11 +261,13 @@ jobs:
       uses: actions/setup-dotnet@v2
       with:
         dotnet-version: 6.0.x
-    - name: Download IKVM Tests
+    - name: Download Tests
       uses: actions/download-artifact@v3
       with:
         name: tests
-        path: build/tests
+        path: build
+    - name: Restore Tests
+      run: unzip -o tests.zip
     - name: Run Tests
       shell: pwsh
       run: gi ./build/tests/**/*.Tests.dll | group { $_.Directory.BaseName } | ?{ $_.Name -ne 'net461' } | %{ dotnet test $_.Group --blame -v 3 --results-directory ./TestResults --logger "trx;LogFileName=$($_.Name).trx" }
@@ -293,7 +306,9 @@ jobs:
       uses: actions/download-artifact@v3
       with:
         name: bin
-        path: build/bin
+        path: build
+    - name: Restore Binaries
+      run: unzip -o bin.zip
     - name: Compress Binaries
       shell: pwsh
       run: cd build && gi bin/* | %{ $tfm = $_.Name; Push-Location "bin/$tfm"; zip -r "../IKVM-${env:GitVersion_SemVer}-bin-$tfm.zip" .; Pop-Location }
@@ -301,7 +316,9 @@ jobs:
       uses: actions/download-artifact@v3
       with:
         name: tools
-        path: build/tools
+        path: build
+    - name: Restore Tools
+      run: unzip -o tools.zip
     - name: Compress Tools
       shell: pwsh
       run: cd build && gi tools/*/* | group { $_.Parent.Name } | %{ $tfm = $_.Name; $_.Group | %{ $rid=$_.Name; Push-Location "tools/$tfm/$rid"; zip -r "../../IKVM-${env:GitVersion_SemVer}-tools-$tfm-$rid.zip" .; Pop-Location  } }
