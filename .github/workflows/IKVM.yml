@@ -142,7 +142,7 @@ jobs:
           gcc
           g++
     - name: Setup NuGet
-      run: Write-Host "::set-env NUGET_PACKAGES=${{ runner.temp }}\.nuget\packages"
+      run: ac $env:GITHUB_ENV "`nNUGET_PACKAGES=${{ runner.temp }}\.nuget\packages"
     - name: Cache NuGet
       uses: actions/cache@v3
       with:
