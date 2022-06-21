@@ -240,7 +240,7 @@ jobs:
         name: tests
         path: build
     - name: Restore Tests
-      run: 7z e tests.7z
+      run: 7z x tests.7z
       working-directory: build
     - name: Execute Tests
       shell: pwsh
@@ -274,7 +274,7 @@ jobs:
         name: tests
         path: build
     - name: Restore Tests
-      run: 7z e tests.7z
+      run: 7z x tests.7z
       working-directory: build
     - name: Execute Tests
       shell: pwsh
@@ -316,7 +316,7 @@ jobs:
         name: bin
         path: build
     - name: Restore Binaries
-      run: 7z e bin.7z
+      run: 7z x bin.7z
       working-directory: build
     - name: Compress Binaries
       shell: pwsh
@@ -327,7 +327,7 @@ jobs:
         name: tools
         path: build
     - name: Restore Tools
-      run: 7z e tools.7z
+      run: 7z x tools.7z
       working-directory: build
     - name: Compress Tools
       shell: pwsh
