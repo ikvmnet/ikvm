@@ -113,8 +113,6 @@ jobs:
     needs:
     - build-openjdk
     runs-on: windows-latest
-    env:
-      NUGET_PACKAGES: ${{ RUNNER_TEMP }}\.nuget\packages
     steps:
     - name: Checkout Source
       uses: actions/checkout@v3
@@ -143,6 +141,8 @@ jobs:
         additional-packages:
           gcc
           g++
+    - name: Setup NuGet
+      run: echo "NUGET_PACKAGES=$(echo $RUNNER_TEMP\.nuget\packages)" >> $GITHUB_ENV
     - name: Cache NuGet
       uses: actions/cache@v3
       with:
