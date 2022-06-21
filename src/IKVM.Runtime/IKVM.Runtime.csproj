@@ -79,7 +79,7 @@
     <Target Name="_BuildVfsZip" BeforeTargets="Compile" Inputs="@(VfsItem)" Outputs="$(VfsZipPath)">
         <Delete Files="$(VfsZipTempPath)\**\*" />
         <MakeDir Directories="$(VfsZipTempPath)" />
-        <Copy SourceFiles="@(VfsItem)" DestinationFiles="@(VfsItem->'$(VfsZipTempPath)\%(VfsPath)')" />
+        <Copy SourceFiles="@(VfsItem)" DestinationFiles="@(VfsItem->'$(VfsZipTempPath)\%(VfsPath)')" UseHardlinksIfPossible="$(CreateHardLinksForCopyFilesToOutputDirectoryIfPossible)" />
         <Delete Files="$(VfsZipPath)" />
         <ZipDirectory SourceDirectory="$(VfsZipTempPath)" DestinationFile="$(VfsZipPath)" />
         <ItemGroup>
