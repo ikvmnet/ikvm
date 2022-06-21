@@ -503,7 +503,7 @@
         <Delete Files="$(JavaClassOutputPath)**\*" />
         <MakeDir Directories="$(JavaClassOutputPath)" />
         <Message Text="Beginning compilation of Java classes for OpenJDK..." Importance="high" />
-        <Message Text="$(Javac) $(JavacArgs) @(_JavacArgs, ' ')" />
+        <Message Text="$(Javac) $(JavacArgs) @(_JavacArgs, ' ')" Importance="low" />
         <Exec Command="$(Javac) $(JavacArgs) @$(_BuildJavaClassesCoreJavacArgFile)" />
         <Message Text="Finished compilation of Java classes for OpenJDK." Importance="high" />
 
