@@ -487,7 +487,7 @@
             <_JavacArgs Include="-implicit:none" />
             <_JavacArgs Include="-parameters" />
             <_JavacArgs Include="-cp" />
-            <_JavacArgs Include="dummy" />
+            <_JavacArgs Include="null" />
             <_JavacArgs Include="-bootclasspath" />
             <_JavacArgs Include="@(JavaClasspath, '$([System.IO.Path]::PathSeparator)')" />
             <_JavacArgs Include="-source" />
@@ -797,8 +797,8 @@
         <Delete Files="$(_MergeJavaAssemblyCoreForceBuildFile)" ContinueOnError="True" />
 
         <!-- replace original assemblies -->
-        <Copy SourceFiles="$(JavaAssemblyPath)" DestinationFiles="$(IntermediateOutputPath)$(TargetName)$(TargetExt)" OverwriteReadOnlyFiles="true" />
-        <Copy SourceFiles="$(JavaDebugSymbolsPath)" DestinationFiles="$(IntermediateOutputPath)$(TargetName).pdb" OverwriteReadOnlyFiles="true" Condition="Exists('$(JavaDebugSymbolsPath)')" />
+        <Copy SourceFiles="$(JavaAssemblyPath)" DestinationFiles="$(IntermediateOutputPath)$(TargetName)$(TargetExt)" OverwriteReadOnlyFiles="true" UseHardlinksIfPossible="$(CreateHardLinksForCopyFilesToOutputDirectoryIfPossible)" />
+        <Copy SourceFiles="$(JavaDebugSymbolsPath)" DestinationFiles="$(IntermediateOutputPath)$(TargetName).pdb" OverwriteReadOnlyFiles="true"  UseHardlinksIfPossible="$(CreateHardLinksForCopyFilesToOutputDirectoryIfPossible)" Condition="Exists('$(JavaDebugSymbolsPath)')" />
     </Target>
 
     <PropertyGroup>

@@ -142,11 +142,11 @@ jobs:
           gcc
           g++
     - name: Setup NuGet
-      run: ac $env:GITHUB_ENV "`nNUGET_PACKAGES=${{ runner.temp }}\.nuget\packages"
+      run: ac $env:GITHUB_ENV "`nNUGET_PACKAGES=${{ runner.temp }}\nuget\packages"
     - name: Cache NuGet
       uses: actions/cache@v3
       with:
-        path: ${{ runner.temp }}\.nuget\packages
+        path: ${{ runner.temp }}\nuget\packages
         key: ${{ runner.os }}-nuget-${{ hashFiles('**\*.csproj', '**\*.msbuildproj') }}
         restore-keys: ${{ runner.os }}-nuget-
     - name: Add msbuild to PATH
@@ -165,8 +165,9 @@ jobs:
       run: |
         msbuild /m:1 `
           /p:BuildInParallel=false `
-          /p:CreateHardLinksForCopyFilesToOutputDirectoryIfPossible=true `
+          /p:CreateHardLinksForAdditionalFilesIfPossible=true `
           /p:CreateHardLinksForCopyAdditionalFilesIfPossible=true `
+          /p:CreateHardLinksForCopyFilesToOutputDirectoryIfPossible=true `
           /p:CreateHardLinksForCopyLocalIfPossible=true `
           /p:CreateHardLinksForPublishFilesIfPossible=true `
           /p:ContinuousIntegrationBuild=true `
