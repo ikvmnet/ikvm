@@ -193,7 +193,7 @@ jobs:
         name: nuget
         path: build/nuget
     - name: Package Binaries
-      run: zip -r bin.zip bin
+      run: 7z a bin.zip bin
       working-directory: build
     - name: Upload Binaries
       uses: actions/upload-artifact@v3
@@ -201,7 +201,7 @@ jobs:
         name: bin
         path: build/bin.zip
     - name: Package Tools
-      run: zip -r tools.zip tools
+      run: 7z a tools.zip tools
       working-directory: build
     - name: Upload Tools
       uses: actions/upload-artifact@v3
@@ -209,7 +209,7 @@ jobs:
         name: tools
         path: build/tools.zip
     - name: Package Tests
-      run: zip -r tests.zip tests
+      run: 7z a tests.zip tests
       working-directory: build
     - name: Upload Tests
       uses: actions/upload-artifact@v3
