@@ -127,10 +127,16 @@ jobs:
       uses: gittools/actions/gitversion/execute@v0.9.13
       with:
         useConfigFile: true
+    - name: Setup .NET
+      run: ac $env:GITHUB_ENV "`nDOTNET_INSTALL_DIR=${{ runner.temp }}\dotnet"
     - name: Setup .NET 3.1
       uses: actions/setup-dotnet@v2
       with:
         dotnet-version: 3.1.x
+    - name: Setup .NET 5.0
+      uses: actions/setup-dotnet@v2
+      with:
+        dotnet-version: 5.0.x
     - name: Setup .NET 6.0
       uses: actions/setup-dotnet@v2
       with:
