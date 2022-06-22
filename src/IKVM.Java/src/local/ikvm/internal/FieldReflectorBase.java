@@ -27,9 +27,9 @@ import java.io.ObjectStreamField;
 
 public abstract class FieldReflectorBase
 {
-  public abstract ObjectStreamField[] getFields();
-  public abstract void getPrimFieldValues(Object obj, byte[] buf);
-  public abstract void setPrimFieldValues(Object obj, byte[] buf);
-  public abstract void getObjFieldValues(Object obj, Object[] vals);
-  public abstract void setObjFieldValues(Object obj, Object[] vals);
+    public abstract ObjectStreamField[] getFields();
+    public abstract void getPrimFieldValues(Object obj, byte[] buf);
+    public abstract void setPrimFieldValues(Object obj, byte[] buf);
+    public abstract void getObjFieldValues(Object obj, Object[] vals);
+    public abstract void setObjFieldValues(Object obj, Object[] vals);
 }

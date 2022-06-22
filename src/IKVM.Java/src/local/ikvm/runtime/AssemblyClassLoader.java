@@ -21,7 +21,7 @@
   jeroen@frijters.net
   
 */
-// HACK because of historical reasons this class' source lives in ikvm/internal instead of ikvm/runtime
+
 package ikvm.runtime;
 
 import cli.System.Reflection.Assembly;
@@ -37,6 +37,7 @@ import java.util.jar.Manifest;
 
 public final class AssemblyClassLoader extends ClassLoader
 {
+
     private boolean packagesDefined;
 
     // This constructor is used to manually construct an AssemblyClassLoader that is used
@@ -114,44 +115,6 @@ public final class AssemblyClassLoader extends ClassLoader
 
     // return the ClassLoader for the assembly. Note that this doesn't have to be an AssemblyClassLoader.
     public static native ClassLoader getAssemblyClassLoader(Assembly asm);
+
 }
 
-final class GenericClassLoader extends ClassLoader
-{
-    // this constructor avoids the security check in ClassLoader by passing in null as the security manager
-    // to the IKVM specific constructor in ClassLoader
-    GenericClassLoader()
-    {
-        super(null, null);
-    }
-
-    @Override
-    public native String toString();
-
-    @Override
-    public URL getResource(String name)
-    {
-        Enumeration<URL> e = getResources(name);
-        return e.hasMoreElements()
-            ? e.nextElement()
-            : null;
-    }
-
-    @Override
-    public native Enumeration<URL> getResources(String name);
-
-    @Override
-    protected native URL findResource(String name);
-
-    @Override
-    protected Enumeration<URL> findResources(String name)
-    {
-        Vector<URL> v = new Vector<URL>();
-        URL url = findResource(name);
-        if (url != null)
-        {
-            v.add(url);
-        }
-        return v.elements();
-    }
-}

@@ -18,10 +18,16 @@ namespace IKVM.Tests.Java.ikvm.runtime
     public class AssemblyClassLoaderTests
     {
 
+        Assembly helloworldDll;
+
         public TestContext TestContext { get; set; }
 
-        [TestMethod]
-        public async Task Can_get_package()
+        /// <summary>
+        /// Initializes the test DLL.
+        /// </summary>
+        /// <returns></returns>
+        [TestInitialize]
+        public async Task Setup()
         {
 #if NETCOREAPP3_1_OR_GREATER
             var tfm = IkvmCompilerTargetFramework.NetCore;
@@ -40,7 +46,7 @@ namespace IKVM.Tests.Java.ikvm.runtime
             {
                 TargetFramework = tfm,
                 Runtime = Path.Combine("lib", dir, "IKVM.Runtime.dll"),
-                ResponseFile = "ikvmc.rsp",
+                ResponseFile = "Can_get_package_ikvmc.rsp",
                 Input = { "helloworld-2.0.jar" },
                 Assembly = "helloworld-2.0",
                 Version = "1.0.0.0",
@@ -55,9 +61,24 @@ namespace IKVM.Tests.Java.ikvm.runtime
             var exitCode = await l.ExecuteAsync(o);
             exitCode.Should().Be(0);
 
-            var asm = Assembly.LoadFile(p);
-            var t = asm.GetType("sample.HelloworldImpl");
+            helloworldDll = Assembly.LoadFrom(p);
+            var z = AppDomain.CurrentDomain.GetAssemblies();
+        }
+
+        [TestMethod]
+        public async Task Can_get_package()
+        {
+            var t = helloworldDll.GetType("sample.HelloworldImpl");
             var k = ((global::java.lang.Class)t).getPackage();
+            k.Should().NotBeNull();
+        }
+
+        [TestMethod]
+        public async Task Can_get_resource()
+        {
+            var t = helloworldDll.GetType("sample.HelloworldImpl");
+            var k = ((global::java.lang.Class)t).getClassLoader().getResource("helloworld.composite");
+            k.Should().NotBeNull();
         }
 
     }

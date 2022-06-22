@@ -30,6 +30,7 @@ import java.util.NoSuchElementException;
 
 public final class EnumerationWrapper<T> implements Enumeration<T>
 {
+
     private final IEnumerator enumerator;
     private boolean next;
 
@@ -52,4 +53,5 @@ public final class EnumerationWrapper<T> implements Enumeration<T>
         next = enumerator.MoveNext();
         return (T)value;
     }
+
 }

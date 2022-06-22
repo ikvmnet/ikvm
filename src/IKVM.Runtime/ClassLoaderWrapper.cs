@@ -49,17 +49,28 @@ namespace IKVM.Internal
 
     abstract class TypeWrapperFactory
     {
+
         internal abstract ModuleBuilder ModuleBuilder { get; }
+
         internal abstract TypeWrapper DefineClassImpl(Dictionary<string, TypeWrapper> types, TypeWrapper host, ClassFile f, ClassLoaderWrapper classLoader, ProtectionDomain protectionDomain);
+
         internal abstract bool ReserveName(string name);
+
         internal abstract string AllocMangledName(DynamicTypeWrapper tw);
+
         internal abstract Type DefineUnloadable(string name);
+
         internal abstract Type DefineDelegate(int parameterCount, bool returnVoid);
+
         internal abstract bool HasInternalAccess { get; }
+
 #if CLASSGC
+
 		internal abstract void AddInternalsVisibleTo(Assembly friend);
+
 #endif
     }
+
 #endif // !STUB_GENERATOR
 
     class ClassLoaderWrapper
@@ -1283,11 +1294,11 @@ namespace IKVM.Internal
         internal static ClassLoaderWrapper GetAssemblyClassLoaderByName(string name)
         {
             if (name.StartsWith("[["))
-            {
                 return GetGenericClassLoaderByName(name);
-            }
+
             return AssemblyClassLoader.FromAssembly(Assembly.Load(name));
         }
+
 #endif
 
         internal static int GetGenericClassLoaderId(ClassLoaderWrapper wrapper)

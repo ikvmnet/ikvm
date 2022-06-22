@@ -36,12 +36,15 @@ namespace IKVM.Java.Externs.java.lang
 
         static Dictionary<string, string> systemPackages;
 
+        /// <summary>
+        /// Initializes the system packages.
+        /// </summary>
         static void LazyInitSystemPackages()
         {
             if (systemPackages == null)
             {
                 var dict = new Dictionary<string, string>();
-                var path = Path.Combine(VfsTable.GetAssemblyResourcesPath(JVM.CoreAssembly), "resources.jar");
+                var path = Path.Combine(VfsTable.Default.GetAssemblyResourcesPath(JVM.CoreAssembly), "resources.jar");
                 foreach (var pkgs in ClassLoaderWrapper.GetBootstrapClassLoader().GetPackageInfo())
                     foreach (var pkg in pkgs.Value)
                         dict[pkg.Replace('.', '/') + "/"] = path;
@@ -53,15 +56,14 @@ namespace IKVM.Java.Externs.java.lang
         public static string getSystemPackage0(string name)
         {
             LazyInitSystemPackages();
-            string path;
-            systemPackages.TryGetValue(name, out path);
+            systemPackages.TryGetValue(name, out string path);
             return path;
         }
 
         public static string[] getSystemPackages0()
         {
             LazyInitSystemPackages();
-            string[] pkgs = new string[systemPackages.Count];
+            var pkgs = new string[systemPackages.Count];
             systemPackages.Keys.CopyTo(pkgs, 0);
             return pkgs;
         }

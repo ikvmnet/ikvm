@@ -25,6 +25,7 @@ package ikvm.lang;
 
 public class CIL
 {
+
     public static native byte unbox_byte(Object o);
     public static native boolean unbox_boolean(Object o);
     public static native short unbox_short(Object o);
@@ -52,4 +53,5 @@ public class CIL
     public static native short unbox_ushort(cli.System.UInt16 v);
     public static native int unbox_uint(cli.System.UInt32 v);
     public static native long unbox_ulong(cli.System.UInt64 v);
+
 }

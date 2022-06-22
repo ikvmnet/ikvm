@@ -30,11 +30,18 @@ namespace IKVM.Runtime.Vfs
         /// <exception cref="NotImplementedException"></exception>
         public override Assembly GetAssembly(AssemblyName name)
         {
+            try
+            {
 #if NET461
-            return AppDomain.CurrentDomain.Load(name);
+                return Assembly.Load(name);
 #else
-            return GetAssembly(DependencyContext.Default, AssemblyLoadContext.Default,name);
+                return GetAssembly(DependencyContext.Default, AssemblyLoadContext.Default, name);
 #endif
+            }
+            catch
+            {
+                return null;
+            }
         }
 
         /// <summary>
@@ -66,6 +73,7 @@ namespace IKVM.Runtime.Vfs
             // concatinate the assemblies loaded in the runtime to those available to the runtime
             return assemblyLoadContext.Assemblies
                 .Select(i => i.GetName())
+                .Concat(AppDomain.CurrentDomain.GetAssemblies().Select(i => i.GetName()))
                 .Concat(dependencyContext.RuntimeLibraries.SelectMany(i => i.GetDefaultAssemblyNames(dependencyContext)))
                 .Distinct();
         }

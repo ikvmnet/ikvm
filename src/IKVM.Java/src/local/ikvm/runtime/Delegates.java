@@ -30,6 +30,7 @@ import java.security.PrivilegedAction;
 
 public final class Delegates
 {
+
     private Delegates() { }
     
     public static Runnable toRunnable(RunnableDelegate delegate)
@@ -88,4 +89,5 @@ public final class Delegates
             return Invoke(proxy, method, args);
         }
     }
+
 }

@@ -33,74 +33,80 @@ import sun.net.www.ParseUtil;
 
 public final class ClassPathAssemblyClassLoader extends URLClassLoader
 {
+
     public ClassPathAssemblyClassLoader(Assembly assembly)
     {
-	super(buildURLs(), new AssemblyClassLoader(assembly));
+		super(buildURLs(), new AssemblyClassLoader(assembly));
     }
 
     private static URL[] buildURLs()
     {
-	// we can assume we're already runnning in a privileged context
-	// (otherwise you wouldn't be able to construct a ClassLoader anyway)
-	String classpath = System.getProperty("java.class.path", "");
-	if (classpath.length() == 0)
-	{
-	    classpath = System.getenv("CLASSPATH");
-	    if (classpath == null || classpath.length() == 0)
-	    {
-		classpath = ".";
-	    }
-	}
-	// Copyright note: this code is identical to the code in GNU Classpath's ClassLoader,
-	// but I wrote that code so I co-own the copyright and can dual license it to use
-	// here under the zlib license.
-	StringTokenizer tok = new StringTokenizer(classpath, File.pathSeparator, true);
-	ArrayList list = new ArrayList();
-	while (tok.hasMoreTokens())
-	{
-	    String s = tok.nextToken();
-	    if (s.equals(File.pathSeparator))
-	    {
-		addFileURL(list, ".");
-	    }
-	    else
-	    {
-		addFileURL(list, s);
-		if (tok.hasMoreTokens())
+		// we can assume we're already runnning in a privileged context
+		// (otherwise you wouldn't be able to construct a ClassLoader anyway)
+		String classpath = System.getProperty("java.class.path", "");
+		if (classpath.length() == 0)
 		{
-		    // Skip the separator.
-		    tok.nextToken();
-		    // If the classpath ended with a separator,
-		    // append the current directory.
-		    if (!tok.hasMoreTokens())
-		    {
-			addFileURL(list, ".");
-		    }
+			classpath = System.getenv("CLASSPATH");
+			if (classpath == null || classpath.length() == 0)
+			{
+				classpath = ".";
+			}
 		}
-	    }
-	}
-	URL[] urls = new URL[list.size()];
-	list.toArray(urls);
-	return urls;
+
+		// Copyright note: this code is identical to the code in GNU Classpath's ClassLoader,
+		// but I wrote that code so I co-own the copyright and can dual license it to use
+		// here under the zlib license.
+		StringTokenizer tok = new StringTokenizer(classpath, File.pathSeparator, true);
+		ArrayList list = new ArrayList();
+		while (tok.hasMoreTokens())
+		{
+			String s = tok.nextToken();
+			if (s.equals(File.pathSeparator))
+			{
+				addFileURL(list, ".");
+			}
+			else
+			{
+				addFileURL(list, s);
+				if (tok.hasMoreTokens())
+				{
+					// Skip the separator.
+					tok.nextToken();
+
+					// If the classpath ended with a separator,
+					// append the current directory.
+					if (!tok.hasMoreTokens())
+					{
+						addFileURL(list, ".");
+					}
+				}
+			}
+		}
+		URL[] urls = new URL[list.size()];
+		list.toArray(urls);
+		return urls;
     }
 
     private static void addFileURL(ArrayList list, String pathname)
     {
-	try
-	{
-	    File file = new File(pathname);
-	    try
-	    {
-		file = file.getCanonicalFile();
-	    }
-	    catch (java.io.IOException _)
-	    {
-	    }
-	    list.add(ParseUtil.fileToEncodedURL(file));
-	}
-	catch (java.net.MalformedURLException x)
-	{
-	    throw new InternalError();
-	}
+		try
+		{
+			File file = new File(pathname);
+			try
+			{
+				file = file.getCanonicalFile();
+			}
+			catch (java.io.IOException _)
+			{
+				
+			}
+
+			list.add(ParseUtil.fileToEncodedURL(file));
+		}
+		catch (java.net.MalformedURLException x)
+		{
+			throw new InternalError();
+		}
     }
+
 }

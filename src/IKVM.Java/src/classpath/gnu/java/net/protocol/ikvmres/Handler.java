@@ -30,24 +30,26 @@ import java.io.*;
 
 class IkvmresURLConnection extends URLConnection
 {
+
     private InputStream inputStream;
 
     IkvmresURLConnection(URL url)
     {
-	super(url);
-	doOutput = false;
+        super(url);
+        doOutput = false;
     }
 
     public void connect() throws IOException
     {
-	if(!connected)
-	{
-	    String assembly = url.getHost();
-	    String resource = url.getFile();
-	    if(assembly == null || resource == null || !resource.startsWith("/"))
-	    {
-		throw new MalformedURLException(url.toString());
-	    }
+        if(!connected)
+        {
+            String assembly = url.getHost();
+            String resource = url.getFile();
+            if(assembly == null || resource == null || !resource.startsWith("/"))
+            {
+                throw new MalformedURLException(url.toString());
+            }
+
             try
             {
                 inputStream = Handler.readResourceFromAssembly(assembly, url.getPort(), resource);
@@ -70,31 +72,33 @@ class IkvmresURLConnection extends URLConnection
 
     public InputStream getInputStream() throws IOException
     {
-	if(!connected)
-	{
-	    connect();
-	}
-	return inputStream;
+        if(!connected)
+        {
+            connect();
+        }
+        return inputStream;
     }
 
     public OutputStream getOutputStream() throws IOException
     {
-	throw new IOException("resource URLs are read only");
+        throw new IOException("resource URLs are read only");
     }
 
     public long getLastModified()
     {
-	return -1;
+        return -1;
     }
 
     public int getContentLength()
     {
-	return -1;
+        return -1;
     }
+
 }
 
 public class Handler extends URLStreamHandler
 {
+
     private static final String RFC2396_DIGIT = "0123456789";
     private static final String RFC2396_LOWALPHA = "abcdefghijklmnopqrstuvwxyz";
     private static final String RFC2396_UPALPHA = "ABCDEFGHIJKLMNOPQRSTUVWXYZ";
@@ -113,7 +117,7 @@ public class Handler extends URLStreamHandler
                cli.System.Security.SecurityException,
                IOException
     {
-        if(assembly.equals("gen") && port != -1 && resource.endsWith(".class") && resource.indexOf('.') == resource.length() - 6)
+        if (assembly.equals("gen") && port != -1 && resource.endsWith(".class") && resource.indexOf('.') == resource.length() - 6)
         {
             ClassLoader loader = GetGenericClassLoaderById(port);
             try
@@ -166,8 +170,7 @@ public class Handler extends URLStreamHandler
     private static native byte[] GenerateStub(Class c);
     private static native cli.System.IO.Stream ReadResourceFromAssemblyImpl(Assembly asm, String resource);
     private static native Class LoadClassFromAssembly(Assembly asm, String className);
-    private static native Assembly LoadAssembly(String name)
-        throws cli.System.IO.FileNotFoundException, cli.System.BadImageFormatException, cli.System.Security.SecurityException;
+    private static native Assembly LoadAssembly(String name) throws cli.System.IO.FileNotFoundException, cli.System.BadImageFormatException, cli.System.Security.SecurityException;
     private static native ClassLoader GetGenericClassLoaderById(int id);
 
     protected URLConnection openConnection(URL url) throws IOException
@@ -185,49 +188,50 @@ public class Handler extends URLStreamHandler
 	        if(url_string.startsWith("//"))
 	        {
 	            int slash = url_string.indexOf('/', 2);
-	            if(slash == -1)
+	            if  (slash == -1)
 	            {
-		        throw new RuntimeException("ikvmres: URLs must contain path");
+                    throw new RuntimeException("ikvmres: URLs must contain path");
 	            }
 	            String assembly = unquote(url_string.substring(2, slash));
 	            String file = unquote(url_string.substring(slash));
 	            setURL(url, "ikvmres", assembly, -1, file, null);
-                }
-                else if(url_string.startsWith("/"))
+            }
+            else if (url_string.startsWith("/"))
+            {
+                setURL(url, "ikvmres", url.getHost(), -1, url_string, null);
+            }
+            else
+            {
+                String[] baseparts = ((cli.System.String)(Object)url.getFile()).Split(new char[] { '/' });
+                String[] relparts = ((cli.System.String)(Object)url_string).Split(new char[] { '/' });
+                String[] target = new String[baseparts.length + relparts.length - 1];
+                for(int i = 1; i < baseparts.length; i++)
                 {
-                    setURL(url, "ikvmres", url.getHost(), -1, url_string, null);
+                    target[i - 1] = baseparts[i];
                 }
-                else
+                int p = baseparts.length - 2;
+                for(int i = 0; i < relparts.length; i++)
                 {
-                    String[] baseparts = ((cli.System.String)(Object)url.getFile()).Split(new char[] { '/' });
-                    String[] relparts = ((cli.System.String)(Object)url_string).Split(new char[] { '/' });
-                    String[] target = new String[baseparts.length + relparts.length - 1];
-                    for(int i = 1; i < baseparts.length; i++)
+                    if(relparts[i].equals("."))
                     {
-                        target[i - 1] = baseparts[i];
+                        
                     }
-                    int p = baseparts.length - 2;
-                    for(int i = 0; i < relparts.length; i++)
+                    else if (relparts[i].equals(".."))
                     {
-                        if(relparts[i].equals("."))
-                        {
-                        }
-                        else if(relparts[i].equals(".."))
-                        {
-                            p = Math.max(0, p - 1);
-                        }
-                        else
-                        {
-                            target[p++] = relparts[i];
-                        }
+                        p = Math.max(0, p - 1);
                     }
-                    StringBuffer file = new StringBuffer();
-                    for(int i = 0; i < p; i++)
+                    else
                     {
-                        file.append('/').append(target[i]);
+                        target[p++] = relparts[i];
                     }
-                    setURL(url, "ikvmres", url.getHost(), -1, file.toString(), null);
                 }
+                StringBuffer file = new StringBuffer();
+                for (int i = 0; i < p; i++)
+                {
+                    file.append('/').append(target[i]);
+                }
+                setURL(url, "ikvmres", url.getHost(), -1, file.toString(), null);
+            }
 	    }
 	    catch(URISyntaxException x)
 	    {

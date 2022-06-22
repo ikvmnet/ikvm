@@ -122,7 +122,7 @@ namespace IKVM.NativeCode.java.lang
 
         public static string getBootClassPath()
         {
-            return VfsTable.GetAssemblyClassesPath(JVM.CoreAssembly);
+            return VfsTable.Default.GetAssemblyClassesPath(JVM.CoreAssembly);
         }
 
         public static string getStdoutEncoding()
@@ -291,11 +291,9 @@ namespace IKVM.NativeCode.ikvm.runtime
         public static global::java.net.URL getResource(global::java.lang.ClassLoader _this, string name)
         {
 #if !FIRST_PASS
-            AssemblyClassLoader_ wrapper = (AssemblyClassLoader_)ClassLoaderWrapper.GetClassLoaderWrapper(_this);
+            var wrapper = (AssemblyClassLoader_)ClassLoaderWrapper.GetClassLoaderWrapper(_this);
             foreach (global::java.net.URL url in wrapper.GetResources(name))
-            {
                 return url;
-            }
 #endif
             return null;
         }

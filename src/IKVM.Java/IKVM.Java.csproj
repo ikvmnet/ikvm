@@ -16,6 +16,10 @@
     </ItemGroup>
     
     <Import Project=".\IKVM.Java.props" />
+    
+    <ItemGroup>
+      <JavaSource Remove="src\local\ikvm\runtime\GenericClassLoader.java" />
+    </ItemGroup>
 
     <ItemGroup>
         <PackageReference Include="SharpZipLib" Version="1.3.3" />

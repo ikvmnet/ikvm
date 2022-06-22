@@ -23,10 +23,9 @@
 */
 using System;
 using System.Collections.Concurrent;
+using System.Linq;
 using System.Reflection;
 using System.Text;
-
-using IKVM.Internal;
 
 namespace IKVM.Runtime.Vfs
 {
@@ -50,47 +49,11 @@ namespace IKVM.Runtime.Vfs
         }
 
         /// <summary>
-        /// Gets the dirctory name of the given assembly.
-        /// </summary>
-        /// <param name="name"></param>
-        /// <returns></returns>
-        public static string GetName(AssemblyName name)
-        {
-            var sb = new StringBuilder();
-
-            var simpleName = name.Name;
-            for (var i = 0; i < simpleName.Length; i++)
-            {
-                if (simpleName[i] == '_')
-                {
-                    sb.Append("_!");
-                }
-                else
-                {
-                    sb.Append(simpleName[i]);
-                }
-            }
-
-            var publicKeyToken = name.GetPublicKeyToken();
-            if (publicKeyToken != null && publicKeyToken.Length != 0)
-            {
-                sb.Append("__").Append(name.Version).Append("__");
-                for (int i = 0; i < publicKeyToken.Length; i++)
-                    sb.AppendFormat("{0:x2}", publicKeyToken[i]);
-            }
-
-            if (name.CultureInfo != null && !string.IsNullOrEmpty(name.CultureInfo.Name))
-                sb.Append("__").Append(name.CultureInfo.Name);
-
-            return sb.ToString();
-        }
-
-        /// <summary>
         /// Attempt to parse a directory name into the associated assembly name.
         /// </summary>
         /// <param name="directoryName"></param>
         /// <returns></returns>
-        AssemblyName ParseName(string directoryName)
+        AssemblyName ParseDirectoryName(string directoryName)
         {
             try
             {
@@ -158,23 +121,6 @@ namespace IKVM.Runtime.Vfs
         }
 
         /// <summary>
-        /// Attempts to get an assembly with the given name.
-        /// </summary>
-        /// <param name="name"></param>
-        /// <returns></returns>
-        Assembly SafeGetAssembly(AssemblyName name)
-        {
-            try
-            {
-                return Context.GetAssembly(name);
-            }
-            catch
-            {
-                return null;
-            }
-        }
-
-        /// <summary>
         /// Gets the directory for the given name.
         /// </summary>
         /// <param name="name"></param>
@@ -184,9 +130,10 @@ namespace IKVM.Runtime.Vfs
             // search for a directory by MVID
             if (Guid.TryParse(name, out var guid))
             {
+                var l = Context.GetAssemblyNames().ToList();
                 foreach (var assemblyName in Context.GetAssemblyNames())
                     if (Context.GetAssembly(assemblyName) is Assembly assembly)
-                        if (assembly.ManifestModule.ModuleVersionId == guid && !ReflectUtil.IsDynamicAssembly(assembly))
+                        if (assembly.ManifestModule.ModuleVersionId == guid && assembly.IsDynamic == false)
                             return directories.GetOrAdd(assembly, CreateAssemblyDirectory);
 
                 return null;
@@ -194,11 +141,11 @@ namespace IKVM.Runtime.Vfs
             else
             {
                 // search for a directory for the given full name
-                var assemblyName = ParseName(name);
+                var assemblyName = ParseDirectoryName(name);
                 if (assemblyName != null)
                 {
-                    var assembly = SafeGetAssembly(assemblyName);
-                    if (assembly != null && !ReflectUtil.IsDynamicAssembly(assembly) && name == GetName(assembly.GetName()))
+                    var assembly = Context.GetAssembly(assemblyName);
+                    if (assembly != null && assembly.IsDynamic == false && name == VfsTable.Default.GetAssemblyDirectoryName(assembly))
                         return directories.GetOrAdd(assembly, CreateAssemblyDirectory);
                 }
 

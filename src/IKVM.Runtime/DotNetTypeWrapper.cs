@@ -1632,17 +1632,15 @@ namespace IKVM.Internal
 		{
 			TypeWrapper tw;
 			lock (types)
-			{
 				types.TryGetValue(type, out tw);
-			}
+
 			if (tw == null)
 			{
 				tw = AssemblyClassLoader.FromAssembly(type.Assembly).GetWrapperFromAssemblyType(type);
 				lock (types)
-				{
 					types[type] = tw;
-				}
 			}
+
 			return tw;
 		}
 

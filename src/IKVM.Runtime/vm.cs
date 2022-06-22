@@ -83,9 +83,12 @@ namespace IKVM.Internal
 
 namespace IKVM.Internal
 {
+
     static class JVM
     {
+
         internal const string JarClassList = "--ikvm-classes--/";
+
 #if STATIC_COMPILER
 		internal const bool FinishingForDebugSave = false;
 		internal const bool IsSaveDebugImage = false;
@@ -98,6 +101,7 @@ namespace IKVM.Internal
 #endif
 #endif // STATIC_COMPILER
         private static Assembly coreAssembly;
+
 #if !STUB_GENERATOR
         internal static bool relaxedVerification = true;
         internal static bool AllowNonVirtualCalls;
@@ -196,6 +200,7 @@ namespace IKVM.Internal
                     {
                         state = debug.Equals("True", StringComparison.OrdinalIgnoreCase) ? 1 : 2;
                     }
+
                     // make sure we only set the value once, because it isn't allowed to changed as that could cause
                     // the compiler to try emitting symbols into a ModuleBuilder that doesn't accept them (and would
                     // throw an InvalidOperationException)
@@ -261,6 +266,7 @@ namespace IKVM.Internal
         }
 
 #if !STATIC_COMPILER
+
         internal static void CriticalFailure(string message, Exception x)
         {
             try

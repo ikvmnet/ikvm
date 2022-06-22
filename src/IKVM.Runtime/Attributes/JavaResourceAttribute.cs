@@ -29,6 +29,7 @@ using Type = IKVM.Reflection.Type;
 
 namespace IKVM.Attributes
 {
+
     [AttributeUsage(AttributeTargets.Assembly, AllowMultiple = true)]
 	public sealed class JavaResourceAttribute : Attribute
 	{

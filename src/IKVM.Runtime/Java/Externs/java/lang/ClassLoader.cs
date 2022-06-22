@@ -32,9 +32,8 @@ namespace IKVM.Java.Externs.java.lang
         public static global::java.net.URL getBootstrapResource(string name)
         {
             foreach (global::java.net.URL url in ClassLoaderWrapper.GetBootstrapClassLoader().GetResources(name))
-            {
                 return url;
-            }
+
             return null;
         }
 

@@ -54,112 +54,112 @@ public abstract class AnnotationAttributeBase
 
     protected final Object getValue(String name)
     {
-	freeze();
+        freeze();
         return values.get(name);
     }
 
     protected final byte getByteValue(String name)
     {
-	freeze();
+        freeze();
         return ((Byte)values.get(name)).byteValue();
     }
 
     protected final boolean getBooleanValue(String name)
     {
-	freeze();
+        freeze();
         return ((Boolean)values.get(name)).booleanValue();
     }
 
     protected final short getShortValue(String name)
     {
-	freeze();
+        freeze();
         return ((Short)values.get(name)).shortValue();
     }
 
     protected final char getCharValue(String name)
     {
-	freeze();
+        freeze();
         return ((Character)values.get(name)).charValue();
     }
 
     protected final int getIntValue(String name)
     {
-	freeze();
+        freeze();
         return ((Integer)values.get(name)).intValue();
     }
 
     protected final float getFloatValue(String name)
     {
-	freeze();
+        freeze();
         return ((Float)values.get(name)).floatValue();
     }
 
     protected final long getLongValue(String name)
     {
-	freeze();
+        freeze();
         return ((Long)values.get(name)).longValue();
     }
 
     protected final double getDoubleValue(String name)
     {
-	freeze();
+        freeze();
         return ((Double)values.get(name)).doubleValue();
     }
 
     protected final synchronized void setValue(String name, Object value)
     {
-        if(frozen || definition != null)
+        if (frozen || definition != null)
         {
             throw new IllegalStateException("Annotation properties have already been defined");
         }
         try
         {
             Class type = annotationType.getMethod(name).getReturnType();
-            if(type.isEnum())
+            if (type.isEnum())
             {
                 value = Enum.valueOf(type, value.toString());
             }
-            else if(type == Class.class)
+            else if (type == Class.class)
             {
                 value = ikvm.runtime.Util.getFriendlyClassFromType((cli.System.Type)value);
             }
-            else if(type == boolean.class)
+            else if (type == boolean.class)
             {
                 value = ikvm.lang.CIL.unbox_boolean(value);
             }
-            else if(type == byte.class)
+            else if (type == byte.class)
             {
                 value = ikvm.lang.CIL.unbox_byte(value);
             }
-            else if(type == short.class)
+            else if (type == short.class)
             {
                 value = ikvm.lang.CIL.unbox_short(value);
             }
-            else if(type == char.class)
+            else if (type == char.class)
             {
                 value = ikvm.lang.CIL.unbox_char(value);
             }
-            else if(type == int.class)
+            else if (type == int.class)
             {
                 value = ikvm.lang.CIL.unbox_int(value);
             }
-            else if(type == long.class)
+            else if (type == long.class)
             {
                 value = ikvm.lang.CIL.unbox_long(value);
             }
-            else if(type == float.class)
+            else if (type == float.class)
             {
                 value = ikvm.lang.CIL.unbox_float(value);
             }
-            else if(type == double.class)
+            else if (type == double.class)
             {
                 value = ikvm.lang.CIL.unbox_double(value);
             }
-            else if(type == String.class)
+            else if (type == String.class)
             {
                 // no conversion needed
             }
-            else if(type.isArray())
+            else if (type.isArray())
             {
                 type = type.getComponentType();
                 if(type.isEnum())

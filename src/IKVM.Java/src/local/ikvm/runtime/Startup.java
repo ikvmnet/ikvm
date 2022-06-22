@@ -49,6 +49,7 @@ public final class Startup
 
     private Startup()
     {
+        
     }
 
     private static String[] glob(String arg)
@@ -184,4 +185,5 @@ public final class Startup
     }
 
     public static native void addBootClassPathAssembly(Assembly assembly);
+
 }

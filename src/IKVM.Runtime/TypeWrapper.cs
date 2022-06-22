@@ -1958,6 +1958,7 @@ namespace IKVM.Internal
     [Flags]
     enum TypeFlags : ushort
     {
+
         None = 0,
         HasIncompleteInterfaceImplementation = 1,
         InternalAccess = 2,
@@ -1967,10 +1968,12 @@ namespace IKVM.Internal
         HasUnsupportedAbstractMethods = 32,
         Anonymous = 64,
         Linked = 128,
+
     }
 
     static class NamePrefix
     {
+
         internal const string Type2AccessStubBackingField = "__<>";
         internal const string AccessStub = "<accessstub>";
         internal const string NonVirtual = "<nonvirtual>";
@@ -1978,10 +1981,12 @@ namespace IKVM.Internal
         internal const string Incomplete = "<incomplete>";
         internal const string DefaultMethod = "<default>";
         internal const string PrivateInterfaceInstanceMethod = "<piim>";
+
     }
 
     static class NestedTypeName
     {
+
         internal const string CallerID = "__<CallerID>";
         internal const string InterfaceHelperMethods = "__<>IHM";
         internal const string PrivateInterfaceMethods = "__<>PIM";
@@ -1998,12 +2003,14 @@ namespace IKVM.Internal
         internal const string MethodHandleConstant = "__<>MHC";
         internal const string MethodTypeConstant = "__<>MTC";
         internal const string IntrinsifiedAnonymousClass = "__<>Anon";
+
     }
 
     internal abstract class TypeWrapper
     {
+
         private static readonly object flagsLock = new object();
-        private readonly string name;       // java name (e.g. java.lang.Object)
+        private readonly string name; // java name (e.g. java.lang.Object)
         private readonly Modifiers modifiers;
         private TypeFlags flags;
         private MethodWrapper[] methods;
@@ -2015,6 +2022,13 @@ namespace IKVM.Internal
         internal const Modifiers UnloadableModifiersHack = Modifiers.Final | Modifiers.Interface | Modifiers.Private;
         internal const Modifiers VerifierTypeModifiersHack = Modifiers.Final | Modifiers.Interface;
 
+        /// <summary>
+        /// Initializes a new instance.
+        /// </summary>
+        /// <param name="flags"></param>
+        /// <param name="modifiers"></param>
+        /// <param name="name"></param>
+        /// <exception cref="InternalException"></exception>
         internal TypeWrapper(TypeFlags flags, Modifiers modifiers, string name)
         {
             Profiler.Count("TypeWrapper");
@@ -2028,6 +2042,7 @@ namespace IKVM.Internal
         }
 
 #if EMITTERS
+
         internal void EmitClassLiteral(CodeEmitter ilgen)
         {
             Debug.Assert(!this.IsPrimitive);
@@ -2069,11 +2084,10 @@ namespace IKVM.Internal
             TypeWrapper tw = this;
             if (tw.IsGhostArray)
             {
-                int rank = tw.ArrayRank;
+                var rank = tw.ArrayRank;
                 while (tw.IsArray)
-                {
                     tw = tw.ElementTypeWrapper;
-                }
+
                 return ArrayTypeWrapper.MakeArrayType(tw.TypeAsTBD, rank);
             }
             else
@@ -2101,6 +2115,7 @@ namespace IKVM.Internal
         }
 
 #if !STATIC_COMPILER && !STUB_GENERATOR
+
         internal void SetClassObject(java.lang.Class classObject)
         {
             this.classObject = classObject;
@@ -2112,57 +2127,57 @@ namespace IKVM.Internal
             {
                 Debug.Assert(!IsUnloadable && !IsVerifierType);
                 if (classObject == null)
-                {
                     LazyInitClass();
-                }
+
                 return classObject;
             }
         }
 
 #if !FIRST_PASS
-		private java.lang.Class GetPrimitiveClass()
-		{
-			if (this == PrimitiveTypeWrapper.BYTE)
-			{
-				return java.lang.Byte.TYPE;
-			}
-			else if (this == PrimitiveTypeWrapper.CHAR)
-			{
-				return java.lang.Character.TYPE;
-			}
-			else if (this == PrimitiveTypeWrapper.DOUBLE)
-			{
-				return java.lang.Double.TYPE;
-			}
-			else if (this == PrimitiveTypeWrapper.FLOAT)
-			{
-				return java.lang.Float.TYPE;
-			}
-			else if (this == PrimitiveTypeWrapper.INT)
-			{
-				return java.lang.Integer.TYPE;
-			}
-			else if (this == PrimitiveTypeWrapper.LONG)
-			{
-				return java.lang.Long.TYPE;
-			}
-			else if (this == PrimitiveTypeWrapper.SHORT)
-			{
-				return java.lang.Short.TYPE;
-			}
-			else if (this == PrimitiveTypeWrapper.BOOLEAN)
-			{
-				return java.lang.Boolean.TYPE;
-			}
-			else if (this == PrimitiveTypeWrapper.VOID)
-			{
-				return java.lang.Void.TYPE;
-			}
-			else
-			{
-				throw new InvalidOperationException();
-			}
-		}
+
+        private java.lang.Class GetPrimitiveClass()
+        {
+            if (this == PrimitiveTypeWrapper.BYTE)
+            {
+                return java.lang.Byte.TYPE;
+            }
+            else if (this == PrimitiveTypeWrapper.CHAR)
+            {
+                return java.lang.Character.TYPE;
+            }
+            else if (this == PrimitiveTypeWrapper.DOUBLE)
+            {
+                return java.lang.Double.TYPE;
+            }
+            else if (this == PrimitiveTypeWrapper.FLOAT)
+            {
+                return java.lang.Float.TYPE;
+            }
+            else if (this == PrimitiveTypeWrapper.INT)
+            {
+                return java.lang.Integer.TYPE;
+            }
+            else if (this == PrimitiveTypeWrapper.LONG)
+            {
+                return java.lang.Long.TYPE;
+            }
+            else if (this == PrimitiveTypeWrapper.SHORT)
+            {
+                return java.lang.Short.TYPE;
+            }
+            else if (this == PrimitiveTypeWrapper.BOOLEAN)
+            {
+                return java.lang.Boolean.TYPE;
+            }
+            else if (this == PrimitiveTypeWrapper.VOID)
+            {
+                return java.lang.Void.TYPE;
+            }
+            else
+            {
+                throw new InvalidOperationException();
+            }
+        }
 #endif
 
         private void LazyInitClass()
@@ -2174,38 +2189,38 @@ namespace IKVM.Internal
                     // DynamicTypeWrapper should haved already had SetClassObject explicitly
                     Debug.Assert(!IsDynamic);
 #if !FIRST_PASS
-					java.lang.Class clazz;
-					// note that this has to be the same check as in EmitClassLiteral
-					if (!this.IsFastClassLiteralSafe)
-					{
-						if (this.IsPrimitive)
-						{
-							clazz = GetPrimitiveClass();
-						}
-						else
-						{
-							clazz = new java.lang.Class(null);
-						}
-					}
-					else
-					{
-						Type type = GetClassLiteralType();
-						if (IsForbiddenTypeParameterType(type))
-						{
-							clazz = new java.lang.Class(type);
-						}
-						else
-						{
-							clazz = (java.lang.Class)typeof(ikvm.@internal.ClassLiteral<>).MakeGenericType(type).GetField("Value").GetValue(null);
-						}
-					}
+                    java.lang.Class clazz;
+                    // note that this has to be the same check as in EmitClassLiteral
+                    if (!this.IsFastClassLiteralSafe)
+                    {
+                        if (this.IsPrimitive)
+                        {
+                            clazz = GetPrimitiveClass();
+                        }
+                        else
+                        {
+                            clazz = new java.lang.Class(null);
+                        }
+                    }
+                    else
+                    {
+                        Type type = GetClassLiteralType();
+                        if (IsForbiddenTypeParameterType(type))
+                        {
+                            clazz = new java.lang.Class(type);
+                        }
+                        else
+                        {
+                            clazz = (java.lang.Class)typeof(ikvm.@internal.ClassLiteral<>).MakeGenericType(type).GetField("Value").GetValue(null);
+                        }
+                    }
 #if __MonoCS__
 					SetTypeWrapperHack(clazz, this);
 #else
-					clazz.typeWrapper = this;
+                    clazz.typeWrapper = this;
 #endif
-					// MONOBUG Interlocked.Exchange is broken on Mono, so we use CompareExchange
-					System.Threading.Interlocked.CompareExchange(ref classObject, clazz, null);
+                    // MONOBUG Interlocked.Exchange is broken on Mono, so we use CompareExchange
+                    System.Threading.Interlocked.CompareExchange(ref classObject, clazz, null);
 #endif
                 }
             }
@@ -2222,23 +2237,24 @@ namespace IKVM.Internal
 #endif
 
 #if !FIRST_PASS
-		private static void ResolvePrimitiveTypeWrapperClasses()
-		{
-			// note that we're evaluating all ClassObject properties for the side effect
-			// (to initialize and associate the ClassObject with the TypeWrapper)
-			if (PrimitiveTypeWrapper.BYTE.ClassObject == null
-				|| PrimitiveTypeWrapper.CHAR.ClassObject == null
-				|| PrimitiveTypeWrapper.DOUBLE.ClassObject == null
-				|| PrimitiveTypeWrapper.FLOAT.ClassObject == null
-				|| PrimitiveTypeWrapper.INT.ClassObject == null
-				|| PrimitiveTypeWrapper.LONG.ClassObject == null
-				|| PrimitiveTypeWrapper.SHORT.ClassObject == null
-				|| PrimitiveTypeWrapper.BOOLEAN.ClassObject == null
-				|| PrimitiveTypeWrapper.VOID.ClassObject == null)
-			{
-				throw new InvalidOperationException();
-			}
-		}
+
+        private static void ResolvePrimitiveTypeWrapperClasses()
+        {
+            // note that we're evaluating all ClassObject properties for the side effect
+            // (to initialize and associate the ClassObject with the TypeWrapper)
+            if (PrimitiveTypeWrapper.BYTE.ClassObject == null
+                || PrimitiveTypeWrapper.CHAR.ClassObject == null
+                || PrimitiveTypeWrapper.DOUBLE.ClassObject == null
+                || PrimitiveTypeWrapper.FLOAT.ClassObject == null
+                || PrimitiveTypeWrapper.INT.ClassObject == null
+                || PrimitiveTypeWrapper.LONG.ClassObject == null
+                || PrimitiveTypeWrapper.SHORT.ClassObject == null
+                || PrimitiveTypeWrapper.BOOLEAN.ClassObject == null
+                || PrimitiveTypeWrapper.VOID.ClassObject == null)
+            {
+                throw new InvalidOperationException();
+            }
+        }
 #endif
 
         internal static TypeWrapper FromClass(java.lang.Class clazz)
@@ -2246,33 +2262,33 @@ namespace IKVM.Internal
 #if FIRST_PASS
             return null;
 #else
-			// MONOBUG redundant cast to workaround mcs bug
-			TypeWrapper tw = (TypeWrapper)(object)clazz.typeWrapper;
-			if(tw == null)
-			{
-				Type type = clazz.type;
-				if (type == null)
-				{
-					ResolvePrimitiveTypeWrapperClasses();
-					return FromClass(clazz);
-				}
-				if (type == typeof(void) || type.IsPrimitive || ClassLoaderWrapper.IsRemappedType(type))
-				{
-					tw = DotNetTypeWrapper.GetWrapperFromDotNetType(type);
-				}
-				else
-				{
-					tw = ClassLoaderWrapper.GetWrapperFromType(type);
-				}
+            // MONOBUG redundant cast to workaround mcs bug
+            var tw = (TypeWrapper)(object)clazz.typeWrapper;
+            if (tw == null)
+            {
+                var type = clazz.type;
+                if (type == null)
+                {
+                    ResolvePrimitiveTypeWrapperClasses();
+                    return FromClass(clazz);
+                }
+
+                if (type == typeof(void) || type.IsPrimitive || ClassLoaderWrapper.IsRemappedType(type))
+                    tw = DotNetTypeWrapper.GetWrapperFromDotNetType(type);
+                else
+                    tw = ClassLoaderWrapper.GetWrapperFromType(type);
+
 #if __MonoCS__
 				SetTypeWrapperHack(clazz, tw);
 #else
-				clazz.typeWrapper = tw;
+                clazz.typeWrapper = tw;
 #endif
-			}
-			return tw;
+            }
+
+            return tw;
 #endif
         }
+
 #endif // !STATIC_COMPILER && !STUB_GENERATOR
 
         public override string ToString()
@@ -2315,14 +2331,11 @@ namespace IKVM.Internal
         {
             get
             {
-                foreach (TypeWrapper iface in this.Interfaces)
-                {
+                foreach (var iface in this.Interfaces)
                     if (iface.HasUnsupportedAbstractMethods)
-                    {
                         return true;
-                    }
-                }
-                TypeWrapper baseWrapper = this.BaseTypeWrapper;
+
+                var baseWrapper = this.BaseTypeWrapper;
                 return (flags & TypeFlags.HasUnsupportedAbstractMethods) != 0 || (baseWrapper != null && baseWrapper.HasUnsupportedAbstractMethods);
             }
         }
@@ -3605,23 +3618,25 @@ namespace IKVM.Internal
 
     sealed class UnloadableTypeWrapper : TypeWrapper
     {
+
         internal const string ContainerTypeName = "__<Unloadable>";
-        private readonly Type missingType;
-        private Type customModifier;
+        readonly Type missingType;
+        Type customModifier;
 
         internal UnloadableTypeWrapper(string name)
             : base(TypeFlags.None, TypeWrapper.UnloadableModifiersHack, name)
         {
+
         }
 
-        internal UnloadableTypeWrapper(Type missingType)
-            : this(missingType.FullName)    // TODO demangle and re-mangle appropriately
+        internal UnloadableTypeWrapper(Type missingType) :
+            this(missingType.FullName) // TODO demangle and re-mangle appropriately
         {
             this.missingType = missingType;
         }
 
-        internal UnloadableTypeWrapper(string name, Type customModifier)
-            : this(name)
+        internal UnloadableTypeWrapper(string name, Type customModifier) :
+            this(name)
         {
             this.customModifier = customModifier;
         }
@@ -3638,11 +3653,10 @@ namespace IKVM.Internal
 
         internal override TypeWrapper EnsureLoadable(ClassLoaderWrapper loader)
         {
-            TypeWrapper tw = loader.LoadClassByDottedNameFast(this.Name);
+            var tw = loader.LoadClassByDottedNameFast(this.Name);
             if (tw == null)
-            {
                 throw new NoClassDefFoundError(this.Name);
-            }
+
             return tw;
         }
 
@@ -3650,11 +3664,10 @@ namespace IKVM.Internal
         {
             get
             {
-                string name = Name;
+                var name = Name;
                 if (name.StartsWith("["))
-                {
                     return name;
-                }
+
                 return "L" + name + ";";
             }
         }
@@ -3683,6 +3696,7 @@ namespace IKVM.Internal
                     return TypeWrapper.EmptyArray;
                 }
 #endif
+
                 throw new InvalidOperationException("get_Interfaces called on UnloadableTypeWrapper: " + Name);
             }
         }
@@ -3724,6 +3738,7 @@ namespace IKVM.Internal
         }
 
 #if EMITTERS
+
         internal Type GetCustomModifier(TypeWrapperFactory context)
         {
             // we don't need to lock, because we're only supposed to be called while holding the finish lock
@@ -3739,7 +3754,9 @@ namespace IKVM.Internal
         {
             throw new InvalidOperationException("EmitInstanceOf called on UnloadableTypeWrapper: " + Name);
         }
+
 #endif // EMITTERS
+
     }
 
     sealed class PrimitiveTypeWrapper : TypeWrapper
@@ -3755,9 +3772,14 @@ namespace IKVM.Internal
         internal static readonly PrimitiveTypeWrapper BOOLEAN = new PrimitiveTypeWrapper(Types.Boolean, "Z");
         internal static readonly PrimitiveTypeWrapper VOID = new PrimitiveTypeWrapper(Types.Void, "V");
 
-        private readonly Type type;
-        private readonly string sigName;
+        readonly Type type;
+        readonly string sigName;
 
+        /// <summary>
+        /// Initializes a new instance.
+        /// </summary>
+        /// <param name="type"></param>
+        /// <param name="sigName"></param>
         private PrimitiveTypeWrapper(Type type, string sigName)
             : base(TypeFlags.None, Modifiers.Public | Modifiers.Abstract | Modifiers.Final, null)
         {
@@ -4012,15 +4034,15 @@ namespace IKVM.Internal
             }
 
 #if !STATIC_COMPILER && !STUB_GENERATOR && !FIRST_PASS
-			internal override object GhostWrap(object obj)
-			{
-				return type.GetMethod("Cast").Invoke(null, new object[] { obj });
-			}
+            internal override object GhostWrap(object obj)
+            {
+                return type.GetMethod("Cast").Invoke(null, new object[] { obj });
+            }
 
-			internal override object GhostUnwrap(object obj)
-			{
-				return type.GetMethod("ToObject").Invoke(obj, new object[0]);
-			}
+            internal override object GhostUnwrap(object obj)
+            {
+                return type.GetMethod("ToObject").Invoke(obj, new object[0]);
+            }
 #endif
         }
 
@@ -4514,7 +4536,7 @@ namespace IKVM.Internal
             }
             return false;
 #else
-			return mb.IsDefined(typeof(global::sun.reflect.CallerSensitiveAttribute), false);
+            return mb.IsDefined(typeof(global::sun.reflect.CallerSensitiveAttribute), false);
 #endif
         }
 
@@ -4983,39 +5005,39 @@ namespace IKVM.Internal
 #endif // EMITTERS
 
 #if !STATIC_COMPILER && !FIRST_PASS && !STUB_GENERATOR
-			[HideFromJava]
-			internal override object Invoke(object obj, object[] args)
-			{
-				MethodBase mb = mbHelper != null ? mbHelper : GetMethod();
-				if (mb.IsStatic && !IsStatic)
-				{
-					args = ArrayUtil.Concat(obj, args);
-					obj = null;
-				}
-				return InvokeAndUnwrapException(mb, obj, args);
-			}
+            [HideFromJava]
+            internal override object Invoke(object obj, object[] args)
+            {
+                MethodBase mb = mbHelper != null ? mbHelper : GetMethod();
+                if (mb.IsStatic && !IsStatic)
+                {
+                    args = ArrayUtil.Concat(obj, args);
+                    obj = null;
+                }
+                return InvokeAndUnwrapException(mb, obj, args);
+            }
 
-			[HideFromJava]
-			internal override object CreateInstance(object[] args)
-			{
-				MethodBase mb = mbHelper != null ? mbHelper : GetMethod();
-				if (mb.IsStatic)
-				{
-					return InvokeAndUnwrapException(mb, null, args);
-				}
-				return base.CreateInstance(args);
-			}
+            [HideFromJava]
+            internal override object CreateInstance(object[] args)
+            {
+                MethodBase mb = mbHelper != null ? mbHelper : GetMethod();
+                if (mb.IsStatic)
+                {
+                    return InvokeAndUnwrapException(mb, null, args);
+                }
+                return base.CreateInstance(args);
+            }
 
-			[HideFromJava]
-			internal override object InvokeNonvirtualRemapped(object obj, object[] args)
-			{
-				MethodInfo mi = mbNonvirtualHelper;
-				if (mi == null)
-				{
-					mi = mbHelper;
-				}
-				return mi.Invoke(null, ArrayUtil.Concat(obj, args));
-			}
+            [HideFromJava]
+            internal override object InvokeNonvirtualRemapped(object obj, object[] args)
+            {
+                MethodInfo mi = mbNonvirtualHelper;
+                if (mi == null)
+                {
+                    mi = mbHelper;
+                }
+                return mi.Invoke(null, ArrayUtil.Concat(obj, args));
+            }
 #endif // !STATIC_COMPILER && !FIRST_PASS && !STUB_GENERATOR
 
 #if EMITTERS
