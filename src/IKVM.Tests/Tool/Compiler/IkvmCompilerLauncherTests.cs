@@ -45,6 +45,8 @@ namespace IKVM.Tests.Tool.Compiler
             };
 
             o.References.Add(Path.Combine("lib", "net461", "IKVM.Java.dll"));
+            o.References.Add(Path.Combine("lib", "net461", "IKVM.Runtime.dll"));
+            o.References.Add(Path.Combine("lib", "net461", "IKVM.Runtime.JNI.dll"));
             foreach (var f in Directory.GetFiles(l.GetReferenceAssemblyDirectory(o.TargetFramework)))
                 o.References.Add(f);
 
@@ -73,6 +75,8 @@ namespace IKVM.Tests.Tool.Compiler
             };
 
             o.References.Add(Path.Combine("lib", "netcoreapp3.1", "IKVM.Java.dll"));
+            o.References.Add(Path.Combine("lib", "netcoreapp3.1", "IKVM.Runtime.dll"));
+            o.References.Add(Path.Combine("lib", "netcoreapp3.1", "IKVM.Runtime.JNI.dll"));
             foreach (var f in Directory.GetFiles(l.GetReferenceAssemblyDirectory(o.TargetFramework)))
                 o.References.Add(f);
 

@@ -69,7 +69,7 @@ namespace IKVM.MSBuild.Tests
             var manager = new AnalyzerManager();
             var analyzer = manager.GetProject(Path.Combine(@"Project", "Exe", "ProjectExe.csproj"));
             analyzer.SetGlobalProperty("PackageVersion", properties["PackageVersion"]);
-            analyzer.SetGlobalProperty("RestoreSources", string.Join(";", "https://api.nuget.org/v3/index.json", Path.GetFullPath(@"nuget")));
+            analyzer.SetGlobalProperty("RestoreSources", string.Join("%3B", "https://api.nuget.org/v3/index.json", Path.GetFullPath(@"nuget")));
             analyzer.SetGlobalProperty("RestorePackagesPath", nugetPackageRoot + Path.DirectorySeparatorChar);
 
             // allow NuGet to locate packages in existing global packages folder if set
@@ -100,7 +100,6 @@ namespace IKVM.MSBuild.Tests
                     options.GlobalProperties.Add("TargetFramework", tfm);
                     options.GlobalProperties.Add("RuntimeIdentifier", rid);
                     options.TargetsToBuild.Clear();
-                    options.TargetsToBuild.Add("Clean");
                     options.TargetsToBuild.Add("Build");
                     options.TargetsToBuild.Add("Publish");
                     var results = analyzer.Build(options);

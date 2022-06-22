@@ -826,7 +826,8 @@ namespace IKVM.Internal
         }
 
 #if !STATIC_COMPILER && !STUB_GENERATOR
-        private static java.net.URL MakeResourceURL(Assembly asm, string name)
+
+        static java.net.URL MakeResourceURL(Assembly asm, string name)
         {
 #if FIRST_PASS
             return null;

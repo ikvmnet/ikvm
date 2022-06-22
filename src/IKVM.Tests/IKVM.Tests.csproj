@@ -87,13 +87,21 @@
             <SetTargetFramework>TargetFramework=net461</SetTargetFramework>
             <IncludeTargetPath>lib\net461\</IncludeTargetPath>
         </IncludeProjectReference>
-        <IncludeProjectReference Include="..\IKVM.Runtime\IKVM.Runtime.csproj">
-            <SetTargetFramework>TargetFramework=netcoreapp3.1</SetTargetFramework>
-            <IncludeTargetPath>lib\netcoreapp3.1\</IncludeTargetPath>
+        <IncludeProjectReference Include="..\IKVM.Runtime.JNI\IKVM.Runtime.JNI.csproj">
+            <SetTargetFramework>TargetFramework=net461</SetTargetFramework>
+            <IncludeTargetPath>lib\net461\</IncludeTargetPath>
         </IncludeProjectReference>
         <IncludeProjectReference Include="..\IKVM.Java\IKVM.Java.csproj">
             <SetTargetFramework>TargetFramework=net461</SetTargetFramework>
             <IncludeTargetPath>lib\net461\</IncludeTargetPath>
+        </IncludeProjectReference>
+        <IncludeProjectReference Include="..\IKVM.Runtime\IKVM.Runtime.csproj">
+            <SetTargetFramework>TargetFramework=netcoreapp3.1</SetTargetFramework>
+            <IncludeTargetPath>lib\netcoreapp3.1\</IncludeTargetPath>
+        </IncludeProjectReference>
+        <IncludeProjectReference Include="..\IKVM.Runtime.JNI\IKVM.Runtime.JNI.csproj">
+            <SetTargetFramework>TargetFramework=netcoreapp3.1</SetTargetFramework>
+            <IncludeTargetPath>lib\netcoreapp3.1\</IncludeTargetPath>
         </IncludeProjectReference>
         <IncludeProjectReference Include="..\IKVM.Java\IKVM.Java.csproj">
             <SetTargetFramework>TargetFramework=netcoreapp3.1</SetTargetFramework>

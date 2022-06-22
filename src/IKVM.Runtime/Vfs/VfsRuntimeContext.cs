@@ -32,7 +32,13 @@ namespace IKVM.Runtime.Vfs
         {
             try
             {
-#if NET461
+#if NETFRAMEWORK
+                // try to find an assembly that matches
+                foreach (var assembly in AppDomain.CurrentDomain.GetAssemblies())
+                    if (IsMatch(assembly.GetName(), name))
+                        return assembly;
+
+                // try to load it
                 return Assembly.Load(name);
 #else
                 return GetAssembly(DependencyContext.Default, AssemblyLoadContext.Default, name);
@@ -45,12 +51,39 @@ namespace IKVM.Runtime.Vfs
         }
 
         /// <summary>
+        /// Returns <c>true</c> if the given assembly name reference the definition.
+        /// </summary>
+        /// <param name="reference"></param>
+        /// <param name="definition"></param>
+        /// <returns></returns>
+        bool IsMatch(AssemblyName reference, AssemblyName definition)
+        {
+            // match full name
+            if (definition.Name != null && string.Equals(definition.Name, reference.Name, StringComparison.OrdinalIgnoreCase) == false)
+                return false;
+
+            // match version
+            if (definition.Version != null && definition.Version != reference.Version)
+                return false;
+
+            // match culture
+            if (definition.CultureName != null && string.Equals(definition.CultureName, reference.CultureName, StringComparison.OrdinalIgnoreCase) == false)
+                return false;
+
+            // match public key
+            if (definition.GetPublicKeyToken() != null && definition.GetPublicKeyToken().AsSpan().SequenceEqual(reference.GetPublicKeyToken()) == false)
+                return false;
+
+            return true;
+        }
+
+        /// <summary>
         /// Gets the assembly names known to the runtime.
         /// </summary>
         /// <returns></returns>
         public override IEnumerable<AssemblyName> GetAssemblyNames()
         {
-#if NET461
+#if NETFRAMEWORK
             return AppDomain.CurrentDomain.GetAssemblies().Select(i => i.GetName()).Distinct();
 #else
             return GetAssemblyNames(DependencyContext.Default, AssemblyLoadContext.Default);

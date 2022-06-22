@@ -55,6 +55,8 @@ namespace IKVM.Tests.Java.ikvm.runtime
             };
 
             o.References.Add(Path.Combine("lib", dir, "IKVM.Java.dll"));
+            o.References.Add(Path.Combine("lib", dir, "IKVM.Runtime.dll"));
+            o.References.Add(Path.Combine("lib", dir, "IKVM.Runtime.JNI.dll"));
             foreach (var f in Directory.GetFiles(l.GetReferenceAssemblyDirectory(o.TargetFramework)))
                 o.References.Add(f);
 
@@ -62,7 +64,6 @@ namespace IKVM.Tests.Java.ikvm.runtime
             exitCode.Should().Be(0);
 
             helloworldDll = Assembly.LoadFrom(p);
-            var z = AppDomain.CurrentDomain.GetAssemblies();
         }
 
         [TestMethod]
