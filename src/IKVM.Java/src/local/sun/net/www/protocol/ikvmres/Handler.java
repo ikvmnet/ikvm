@@ -26,4 +26,5 @@ package sun.net.www.protocol.ikvmres;
 
 public class Handler extends gnu.java.net.protocol.ikvmres.Handler
 {
+
 }

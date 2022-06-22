@@ -1581,28 +1581,21 @@ namespace IKVM.Internal
 #if FIRST_PASS
 			return null;
 #else
-            java.util.Vector v = new java.util.Vector();
-            foreach (java.net.URL url in GetBootstrapClassLoader().GetResources(name))
-            {
+            var v = new java.util.Vector();
+            foreach (var url in GetBootstrapClassLoader().GetResources(name))
                 v.add(url);
-            }
+
             if (name.EndsWith(".class", StringComparison.Ordinal) && name.IndexOf('.') == name.Length - 6)
             {
-                TypeWrapper tw = FindLoadedClass(name.Substring(0, name.Length - 6).Replace('/', '.'));
+                var tw = FindLoadedClass(name.Substring(0, name.Length - 6).Replace('/', '.'));
                 if (tw != null && !tw.IsArray && !tw.IsDynamic)
                 {
-                    ClassLoaderWrapper loader = tw.GetClassLoader();
+                    var loader = tw.GetClassLoader();
                     if (loader is GenericClassLoaderWrapper)
-                    {
                         v.add(new java.net.URL("ikvmres", "gen", ClassLoaderWrapper.GetGenericClassLoaderId(loader), "/" + name));
-                    }
                     else if (loader is AssemblyClassLoader)
-                    {
                         foreach (java.net.URL url in ((AssemblyClassLoader)loader).FindResources(name))
-                        {
                             v.add(url);
-                        }
-                    }
                 }
             }
             return v.elements();
@@ -1614,11 +1607,9 @@ namespace IKVM.Internal
 #if !FIRST_PASS
             if (name.EndsWith(".class", StringComparison.Ordinal) && name.IndexOf('.') == name.Length - 6)
             {
-                TypeWrapper tw = FindLoadedClass(name.Substring(0, name.Length - 6).Replace('/', '.'));
+                var tw = FindLoadedClass(name.Substring(0, name.Length - 6).Replace('/', '.'));
                 if (tw != null && tw.GetClassLoader() == this && !tw.IsArray && !tw.IsDynamic)
-                {
                     return new java.net.URL("ikvmres", "gen", ClassLoaderWrapper.GetGenericClassLoaderId(this), "/" + name);
-                }
             }
 #endif
             return null;
