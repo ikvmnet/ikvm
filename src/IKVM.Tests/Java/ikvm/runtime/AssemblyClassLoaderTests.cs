@@ -38,7 +38,7 @@ namespace IKVM.Tests.Java.ikvm.runtime
 #endif
 
             var n = Guid.NewGuid().ToString("n");
-            var p = Path.Combine(Path.GetTempPath(), n, $"{n}.dll");
+            var p = Path.Combine(Path.GetTempPath(), n, $"helloworld_{n}.dll");
             Directory.CreateDirectory(Path.GetDirectoryName(p));
 
             var e = new List<IkvmToolDiagnosticEvent>();
@@ -49,7 +49,7 @@ namespace IKVM.Tests.Java.ikvm.runtime
                 Runtime = Path.Combine("lib", dir, "IKVM.Runtime.dll"),
                 ResponseFile = $"{n}_ikvmc.rsp",
                 Input = { "helloworld-2.0.jar" },
-                Assembly = n,
+                Assembly = $"helloworld_{n}",
                 Version = "1.0.0.0",
                 NoStdLib = true,
                 Output = p,

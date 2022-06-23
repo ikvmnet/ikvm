@@ -388,6 +388,7 @@ namespace IKVM.Internal
 #if !STATIC_COMPILER && !STUB_GENERATOR && !FIRST_PASS
             internal java.util.Enumeration FindResources(string name)
             {
+                var an = assembly.FullName;
                 if (urlClassPath == null)
                 {
                     if (jarList == null)
