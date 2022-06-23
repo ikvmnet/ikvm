@@ -466,4 +466,5 @@ final class VMSystemProperties
     private static native String getStdoutEncoding();
     private static native String getStderrEncoding();
     private static native FileVersionInfo getKernel32FileVersionInfo();
+
 }

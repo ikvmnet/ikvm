@@ -3151,7 +3151,7 @@ namespace IKVM.Internal
             if (obj != null)
             {
                 TypeWrapper thisWrapper = this;
-                TypeWrapper objWrapper = IKVM.NativeCode.ikvm.runtime.Util.GetTypeWrapperFromObject(obj);
+                TypeWrapper objWrapper = IKVM.Java.Externs.ikvm.runtime.Util.GetTypeWrapperFromObject(obj);
                 return objWrapper.IsAssignableTo(thisWrapper);
             }
             return false;

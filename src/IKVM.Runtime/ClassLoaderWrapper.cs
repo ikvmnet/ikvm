@@ -30,6 +30,10 @@ using System.Runtime.CompilerServices;
 
 using IKVM.Attributes;
 
+#if NETCOREAPP
+using System.Runtime.Loader;
+#endif
+
 #if STATIC_COMPILER || STUB_GENERATOR
 using IKVM.Reflection;
 using IKVM.Reflection.Emit;
@@ -1031,16 +1035,12 @@ namespace IKVM.Internal
 #endif
                 if (wrapper == null)
                 {
-                    CodeGenOptions opt = CodeGenOptions.None;
+                    var opt = CodeGenOptions.None;
                     if (JVM.EmitSymbols)
-                    {
                         opt |= CodeGenOptions.Debug;
-                    }
-#if NET_4_0
+#if NETFRAMEWORK
 					if (!AppDomain.CurrentDomain.IsFullyTrusted)
-					{
 						opt |= CodeGenOptions.NoAutomagicSerialization;
-					}
 #endif
                     wrapper = new ClassLoaderWrapper(opt, javaClassLoader);
                     SetWrapperForClassLoader(javaClassLoader, wrapper);
@@ -1296,12 +1296,16 @@ namespace IKVM.Internal
             if (name.StartsWith("[["))
                 return GetGenericClassLoaderByName(name);
 
+#if NETFRAMEWORK
             return AssemblyClassLoader.FromAssembly(Assembly.Load(name));
+#else
+            return AssemblyClassLoader.FromAssembly(AssemblyLoadContext.GetLoadContext(typeof(ClassLoaderWrapper).Assembly).LoadFromAssemblyName(new AssemblyName(name)));
+#endif
         }
 
 #endif
 
-        internal static int GetGenericClassLoaderId(ClassLoaderWrapper wrapper)
+            internal static int GetGenericClassLoaderId(ClassLoaderWrapper wrapper)
         {
             lock (wrapperLock)
             {

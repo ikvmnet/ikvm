@@ -1,6 +1,5 @@
 ﻿/*
-  Copyright (C) 2007-2015 Jeroen Frijters
-  Copyright (C) 2009 Volker Berlin (i-net software)
+  Copyright (C) 2002-2015 Jeroen Frijters
 
   This software is provided 'as-is', without any express or implied
   warranty.  In no event will the authors be held liable for any damages
@@ -22,27 +21,37 @@
   jeroen@frijters.net
   
 */
-using System.Reflection;
+using IKVM.Attributes;
 
-using IKVM.Internal;
-
-namespace IKVM.Java.Externs.ikvm.runtime
+namespace IKVM.Java.Externs.ikvm.@internal
 {
 
-    static class Startup
+    static class AnnotationAttributeBase
     {
-        // this method is called from ikvm.runtime.Startup.exitMainThread() and from JNI's DetachCurrentThread
-        public static void jniDetach()
+
+        public static object[] unescapeInvalidSurrogates(object[] def)
         {
-#if !FIRST_PASS
-            global::java.lang.Thread.currentThread().die();
+            return (object[])AnnotationDefaultAttribute.Unescape(def);
+        }
+
+        public static object newAnnotationInvocationHandler(global::java.lang.Class type, object memberValues)
+        {
+#if FIRST_PASS
+            return null;
+#else
+            return new global::sun.reflect.annotation.AnnotationInvocationHandler(type, (global::java.util.Map)memberValues);
 #endif
         }
 
-        public static void addBootClassPathAssembly(Assembly asm)
+        public static object newAnnotationTypeMismatchExceptionProxy(string msg)
         {
-            ClassLoaderWrapper.GetBootstrapClassLoader().AddDelegate(IKVM.Internal.AssemblyClassLoader.FromAssembly(asm));
+#if FIRST_PASS
+            return null;
+#else
+            return new global::sun.reflect.annotation.AnnotationTypeMismatchExceptionProxy(msg);
+#endif
         }
+
     }
 
 }

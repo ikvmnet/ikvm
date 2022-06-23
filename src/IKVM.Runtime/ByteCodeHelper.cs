@@ -272,7 +272,7 @@ namespace IKVM.Runtime
             Profiler.Count("DynamicCast");
             if (!DynamicInstanceOf(obj, clazz))
             {
-                throw new global::java.lang.ClassCastException(NativeCode.ikvm.runtime.Util.GetTypeWrapperFromObject(obj).Name + " cannot be cast to " + clazz.getName());
+                throw new global::java.lang.ClassCastException(IKVM.Java.Externs.ikvm.runtime.Util.GetTypeWrapperFromObject(obj).Name + " cannot be cast to " + clazz.getName());
             }
             return obj;
 #endif
@@ -565,7 +565,7 @@ namespace IKVM.Runtime
         [DebuggerStepThroughAttribute]
         public static object GetClassFromTypeHandle(RuntimeTypeHandle typeHandle)
         {
-            return NativeCode.ikvm.runtime.Util.getClassFromTypeHandle(typeHandle);
+            return IKVM.Java.Externs.ikvm.runtime.Util.getClassFromTypeHandle(typeHandle);
         }
 
         [DebuggerStepThroughAttribute]

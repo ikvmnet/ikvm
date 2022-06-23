@@ -130,7 +130,6 @@ namespace IKVM.Runtime.Vfs
             // search for a directory by MVID
             if (Guid.TryParse(name, out var guid))
             {
-                var l = Context.GetAssemblyNames().ToList();
                 foreach (var assemblyName in Context.GetAssemblyNames())
                     if (Context.GetAssembly(assemblyName) is Assembly assembly)
                         if (assembly.ManifestModule.ModuleVersionId == guid && assembly.IsDynamic == false)

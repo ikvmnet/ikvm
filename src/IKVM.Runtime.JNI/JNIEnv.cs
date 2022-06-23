@@ -881,14 +881,14 @@ namespace IKVM.Runtime
 
         internal static jclass GetObjectClass(JNIEnv* pEnv, jobject obj)
         {
-            return pEnv->MakeLocalRef(IKVM.NativeCode.ikvm.runtime.Util.getClassFromObject(pEnv->UnwrapRef(obj)));
+            return pEnv->MakeLocalRef(IKVM.Java.Externs.ikvm.runtime.Util.getClassFromObject(pEnv->UnwrapRef(obj)));
         }
 
         internal static jboolean IsInstanceOf(JNIEnv* pEnv, jobject obj, jclass clazz)
         {
             // NOTE if clazz is an interface, this is still the right thing to do
             // (i.e. if the object implements the interface, we return true)
-            java.lang.Class objClass = IKVM.NativeCode.ikvm.runtime.Util.getClassFromObject(pEnv->UnwrapRef(obj));
+            java.lang.Class objClass = IKVM.Java.Externs.ikvm.runtime.Util.getClassFromObject(pEnv->UnwrapRef(obj));
             TypeWrapper w1 = TypeWrapper.FromClass((java.lang.Class)pEnv->UnwrapRef(clazz));
             TypeWrapper w2 = TypeWrapper.FromClass(objClass);
             return w2.IsAssignableTo(w1) ? JNI_TRUE : JNI_FALSE;

@@ -1,6 +1,5 @@
 ﻿/*
-  Copyright (C) 2007-2015 Jeroen Frijters
-  Copyright (C) 2009 Volker Berlin (i-net software)
+  Copyright (C) 2002-2015 Jeroen Frijters
 
   This software is provided 'as-is', without any express or implied
   warranty.  In no event will the authors be held liable for any damages
@@ -22,26 +21,27 @@
   jeroen@frijters.net
   
 */
-using System.Reflection;
-
 using IKVM.Internal;
 
 namespace IKVM.Java.Externs.ikvm.runtime
 {
 
-    static class Startup
+    static class GenericClassLoader
     {
-        // this method is called from ikvm.runtime.Startup.exitMainThread() and from JNI's DetachCurrentThread
-        public static void jniDetach()
+
+        public static string toString(global::java.lang.ClassLoader _this)
         {
-#if !FIRST_PASS
-            global::java.lang.Thread.currentThread().die();
-#endif
+            return ((GenericClassLoaderWrapper)ClassLoaderWrapper.GetClassLoaderWrapper(_this)).GetName();
         }
 
-        public static void addBootClassPathAssembly(Assembly asm)
+        public static global::java.util.Enumeration getResources(global::java.lang.ClassLoader _this, string name)
         {
-            ClassLoaderWrapper.GetBootstrapClassLoader().AddDelegate(IKVM.Internal.AssemblyClassLoader.FromAssembly(asm));
+            return ((GenericClassLoaderWrapper)ClassLoaderWrapper.GetClassLoaderWrapper(_this)).GetResources(name);
+        }
+
+        public static global::java.net.URL findResource(global::java.lang.ClassLoader _this, string name)
+        {
+            return ((GenericClassLoaderWrapper)ClassLoaderWrapper.GetClassLoaderWrapper(_this)).FindResource(name);
         }
     }
 

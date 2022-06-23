@@ -1,6 +1,5 @@
 ﻿/*
-  Copyright (C) 2007-2015 Jeroen Frijters
-  Copyright (C) 2009 Volker Berlin (i-net software)
+  Copyright (C) 2002-2015 Jeroen Frijters
 
   This software is provided 'as-is', without any express or implied
   warranty.  In no event will the authors be held liable for any damages
@@ -26,23 +25,27 @@ using System.Reflection;
 
 using IKVM.Internal;
 
-namespace IKVM.Java.Externs.ikvm.runtime
+namespace IKVM.Java.Externs.ikvm.@internal
 {
 
-    static class Startup
+    static class CallerID
     {
-        // this method is called from ikvm.runtime.Startup.exitMainThread() and from JNI's DetachCurrentThread
-        public static void jniDetach()
+
+        public static global::java.lang.Class GetClass(object obj)
         {
-#if !FIRST_PASS
-            global::java.lang.Thread.currentThread().die();
-#endif
+            return ClassLoaderWrapper.GetWrapperFromType(obj.GetType().DeclaringType).ClassObject;
         }
 
-        public static void addBootClassPathAssembly(Assembly asm)
+        public static global::java.lang.ClassLoader GetClassLoader(object obj)
         {
-            ClassLoaderWrapper.GetBootstrapClassLoader().AddDelegate(IKVM.Internal.AssemblyClassLoader.FromAssembly(asm));
+            return ClassLoaderWrapper.GetWrapperFromType(obj.GetType().DeclaringType).GetClassLoader().GetJavaClassLoader();
         }
+
+        public static global::java.lang.ClassLoader GetAssemblyClassLoader(Assembly asm)
+        {
+            return AssemblyClassLoader.FromAssembly(asm).GetJavaClassLoader();
+        }
+
     }
 
 }

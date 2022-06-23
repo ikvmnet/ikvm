@@ -54,7 +54,7 @@ namespace IKVM.Internal
         private static int dumpCounter;
 #endif // !STATIC_COMPILER
 #if STATIC_COMPILER || CLASSGC
-		private readonly Dictionary<string, TypeWrapper> dynamicTypes = new Dictionary<string, TypeWrapper>();
+        private readonly Dictionary<string, TypeWrapper> dynamicTypes = new Dictionary<string, TypeWrapper>();
 #else
         private static readonly Dictionary<string, TypeWrapper> dynamicTypes = new Dictionary<string, TypeWrapper>();
 #endif
@@ -71,7 +71,7 @@ namespace IKVM.Internal
         private static DynamicClassLoader instance = new DynamicClassLoader(CreateModuleBuilder(), false);
 #endif
 #if CLASSGC
-		private List<string> friends = new List<string>();
+        private List<string> friends = new List<string>();
 #endif
 
         [System.Security.SecuritySafeCritical]
@@ -109,38 +109,38 @@ namespace IKVM.Internal
 #endif
 
 #if STATIC_COMPILER || CLASSGC
-			// Ref.Emit doesn't like the "<Module>" name for types
-			// (since it already defines a pseudo-type named <Module> for global methods and fields)
-			dynamicTypes.Add("<Module>", null);
+            // Ref.Emit doesn't like the "<Module>" name for types
+            // (since it already defines a pseudo-type named <Module> for global methods and fields)
+            dynamicTypes.Add("<Module>", null);
 #endif
         }
 
 #if CLASSGC
-		internal override void AddInternalsVisibleTo(Assembly friend)
-		{
-			string name = friend.GetName().Name;
-			lock (friends)
-			{
-				if (!friends.Contains(name))
-				{
-					friends.Add(name);
-					AttributeHelper.SetInternalsVisibleToAttribute((AssemblyBuilder)moduleBuilder.Assembly, name);
-				}
-			}
-		}
+        internal override void AddInternalsVisibleTo(Assembly friend)
+        {
+            string name = friend.GetName().Name;
+            lock (friends)
+            {
+                if (!friends.Contains(name))
+                {
+                    friends.Add(name);
+                    AttributeHelper.SetInternalsVisibleToAttribute((AssemblyBuilder)moduleBuilder.Assembly, name);
+                }
+            }
+        }
 #endif // CLASSGC
 
 #if !STATIC_COMPILER
         private static Assembly OnTypeResolve(object sender, ResolveEventArgs args)
         {
 #if CLASSGC
-			ClassLoaderWrapper loader = ClassLoaderWrapper.GetClassLoaderForDynamicJavaAssembly(args.RequestingAssembly);
-			if (loader == null)
-			{
-				return null;
-			}
-			DynamicClassLoader instance = (DynamicClassLoader)loader.GetTypeWrapperFactory();
-			return Resolve(instance.dynamicTypes, args.Name);
+            ClassLoaderWrapper loader = ClassLoaderWrapper.GetClassLoaderForDynamicJavaAssembly(args.RequestingAssembly);
+            if (loader == null)
+            {
+                return null;
+            }
+            DynamicClassLoader instance = (DynamicClassLoader)loader.GetTypeWrapperFactory();
+            return Resolve(instance.dynamicTypes, args.Name);
 #else
             return Resolve(dynamicTypes, args.Name);
 #endif
@@ -235,7 +235,7 @@ namespace IKVM.Internal
 			types[f.Name] = type;
 			return type;
 #elif FIRST_PASS
-			return null;
+            return null;
 #else
             // this step can throw a retargettable exception, if the class is incorrect
             DynamicTypeWrapper type = new DynamicTypeWrapper(host, f, classLoader, protectionDomain);
@@ -484,7 +484,7 @@ namespace IKVM.Internal
                 }
             }
 #if CLASSGC
-			DynamicClassLoader instance = new DynamicClassLoader(CreateModuleBuilder(), false);
+            DynamicClassLoader instance = new DynamicClassLoader(CreateModuleBuilder(), false);
 #endif
             return instance;
 #endif
@@ -578,23 +578,25 @@ namespace IKVM.Internal
 #endif
             }
 #if CLASSGC
-			else if(JVM.classUnloading
-				// DefineDynamicAssembly(..., RunAndCollect, ...) does a demand for PermissionSet(Unrestricted), so we want to avoid that in partial trust scenarios
-				&& AppDomain.CurrentDomain.IsFullyTrusted)
-			{
-				access = AssemblyBuilderAccess.RunAndCollect;
-			}
+            else if (JVM.classUnloading
+                // DefineDynamicAssembly(..., RunAndCollect, ...) does a demand for PermissionSet(Unrestricted), so we want to avoid that in partial trust scenarios
+                && AppDomain.CurrentDomain.IsFullyTrusted)
+            {
+                access = AssemblyBuilderAccess.RunAndCollect;
+            }
 #endif
             else
             {
                 access = AssemblyBuilderAccess.Run;
             }
+
 #if NETFRAMEWORK
+
             if (!AppDomain.CurrentDomain.IsFullyTrusted)
-            {
                 attribs.Add(new CustomAttributeBuilder(typeof(System.Security.SecurityTransparentAttribute).GetConstructor(Type.EmptyTypes), new object[0]));
-            }
+
 #endif
+
             AssemblyBuilder assemblyBuilder = DefineDynamicAssembly(name, access, attribs);
             AttributeHelper.SetRuntimeCompatibilityAttribute(assemblyBuilder);
             bool debug = JVM.EmitSymbols;

@@ -386,24 +386,24 @@ namespace IKVM.Internal
             }
 
 #if !STATIC_COMPILER && !STUB_GENERATOR && !FIRST_PASS
+
             internal java.util.Enumeration FindResources(string name)
             {
-                var an = assembly.FullName;
                 if (urlClassPath == null)
                 {
                     if (jarList == null)
-                    {
                         return gnu.java.util.EmptyEnumeration.getInstance();
-                    }
-                    List<java.net.URL> urls = new List<java.net.URL>();
-                    foreach (string jar in jarList)
-                    {
+
+                    var urls = new List<java.net.URL>();
+                    foreach (var jar in jarList)
                         urls.Add(MakeResourceURL(assembly, jar));
-                    }
+
                     Interlocked.CompareExchange(ref urlClassPath, new sun.misc.URLClassPath(urls.ToArray()), null);
                 }
+
                 return urlClassPath.findResources(name, true);
             }
+
 #endif
         }
 
