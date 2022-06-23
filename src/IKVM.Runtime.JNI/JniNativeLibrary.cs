@@ -33,7 +33,7 @@ namespace IKVM.Runtime
     static class JniNativeLibrary
     {
 
-#if NET461
+#if NETFRAMEWORK
 
         /// <summary>
         /// Invokes the Windows LoadLibrary function.
@@ -69,11 +69,7 @@ namespace IKVM.Runtime
         /// <returns></returns>
         static IntPtr GetProcAddress32(IntPtr handle, string name, int argl)
         {
-            // long paths not supported on Win32
-            if (name.Length > 512 - 11)
-                return IntPtr.Zero;
-
-            var h = GetProcAddress(handle, "_" + name + "@" + argl);
+            var h = GetWin32ExportName(name, argl) is string n ? GetProcAddress(handle, n) : IntPtr.Zero;
             if (h == IntPtr.Zero)
                 h = GetProcAddress(handle, name);
 
@@ -83,6 +79,18 @@ namespace IKVM.Runtime
 #endif
 
         /// <summary>
+        /// Invokes the Windows GetProcAddress function, handling 32-bit mangled names.
+        /// </summary>
+        /// <param name="name"></param>
+        /// <param name="argl"></param>
+        /// <returns></returns>
+        static string GetWin32ExportName(string name, int argl)
+        {
+            // long paths not supported on Win32
+            return name.Length <= 512 - 11 ? "_" + name + "@" + argl : null;
+        }
+
+        /// <summary>
         /// Loads the given library in a platform dependent manner.
         /// </summary>
         /// <param name="path"></param>
@@ -90,10 +98,10 @@ namespace IKVM.Runtime
         /// <exception cref="PlatformNotSupportedException"></exception>
         public static IntPtr Load(string path)
         {
-#if NET461
+#if NETFRAMEWORK
             return LoadLibrary(path);
 #else
-            return System.Runtime.InteropServices.NativeLibrary.Load(path);
+            return NativeLibrary.Load(path);
 #endif
         }
 
@@ -105,10 +113,10 @@ namespace IKVM.Runtime
         /// <exception cref="PlatformNotSupportedException"></exception>
         public static void Free(IntPtr handle)
         {
-#if NET461
+#if NETFRAMEWORK
             FreeLibrary(handle);
 #else
-            System.Runtime.InteropServices.NativeLibrary.Free(handle);
+            NativeLibrary.Free(handle);
 #endif
         }
 
@@ -122,12 +130,26 @@ namespace IKVM.Runtime
         /// <exception cref="PlatformNotSupportedException"></exception>
         public static IntPtr GetExport(IntPtr handle, string name, int argl)
         {
-#if NET461
-            return IntPtr.Size == 4 ? GetProcAddress32(handle, name, argl) : GetProcAddress(handle, name);
+            try
+            {
+                var h = IntPtr.Zero;
+
+#if NETFRAMEWORK
+                h = IntPtr.Size == 4 ? GetProcAddress32(handle, name, argl) : GetProcAddress(handle, name);
 #else
-            return System.Runtime.InteropServices.NativeLibrary.GetExport(handle, name);
+                if (RuntimeInformation.IsOSPlatform(OSPlatform.Windows))
+                    h = IntPtr.Size == 4 && GetWin32ExportName(name, argl) is string n ? NativeLibrary.GetExport(handle, n) : IntPtr.Zero;
+
+                if (h == IntPtr.Zero)
+                    h = NativeLibrary.GetExport(handle, name);
 #endif
 
+                return h;
+            }
+            catch (EntryPointNotFoundException)
+            {
+                return IntPtr.Zero;
+            }
         }
 
     }
