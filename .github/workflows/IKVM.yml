@@ -209,13 +209,13 @@ jobs:
         name: tools
         path: build/tools.7z
     - name: Package Tests
-      run: 7z a tests.7z tests
+      run: tar czvf tests.tar.gz tests
       working-directory: build
     - name: Upload Tests
       uses: actions/upload-artifact@v3
       with:
         name: tests
-        path: build/tests.7z
+        path: build/tests.tar.gz
   test-ikvm-windows:
     name: Test IKVM (Windows)
     needs:
@@ -240,7 +240,7 @@ jobs:
         name: tests
         path: build
     - name: Restore Tests
-      run: 7z x tests.7z
+      run: tar czvf tests.tar.gz
       working-directory: build
     - name: Execute Tests
       shell: pwsh
@@ -274,7 +274,7 @@ jobs:
         name: tests
         path: build
     - name: Restore Tests
-      run: 7z x tests.7z
+      run: tar czvf tests.tar.gz
       working-directory: build
     - name: Execute Tests
       shell: pwsh
