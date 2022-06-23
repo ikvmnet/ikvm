@@ -37,7 +37,8 @@ namespace IKVM.Tests.Java.ikvm.runtime
             var dir = "net461";
 #endif
 
-            var p = Path.Combine(Path.GetTempPath(), Guid.NewGuid().ToString(), "helloworld-2.0.dll");
+            var n = Guid.NewGuid().ToString("n");
+            var p = Path.Combine(Path.GetTempPath(), n, $"{n}.dll");
             Directory.CreateDirectory(Path.GetDirectoryName(p));
 
             var e = new List<IkvmToolDiagnosticEvent>();
@@ -46,9 +47,9 @@ namespace IKVM.Tests.Java.ikvm.runtime
             {
                 TargetFramework = tfm,
                 Runtime = Path.Combine("lib", dir, "IKVM.Runtime.dll"),
-                ResponseFile = "Can_get_package_ikvmc.rsp",
+                ResponseFile = $"{n}_ikvmc.rsp",
                 Input = { "helloworld-2.0.jar" },
-                Assembly = "helloworld-2.0",
+                Assembly = n,
                 Version = "1.0.0.0",
                 NoStdLib = true,
                 Output = p,

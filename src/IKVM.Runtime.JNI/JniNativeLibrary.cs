@@ -101,7 +101,7 @@ namespace IKVM.Runtime
 #if NETFRAMEWORK
             return LoadLibrary(path);
 #else
-            return NativeLibrary.Load(path);
+            return NativeLibrary.TryLoad(path, out var h) ? h : IntPtr.Zero;
 #endif
         }
 
@@ -138,10 +138,11 @@ namespace IKVM.Runtime
                 h = IntPtr.Size == 4 ? GetProcAddress32(handle, name, argl) : GetProcAddress(handle, name);
 #else
                 if (RuntimeInformation.IsOSPlatform(OSPlatform.Windows))
-                    h = IntPtr.Size == 4 && GetWin32ExportName(name, argl) is string n ? NativeLibrary.GetExport(handle, n) : IntPtr.Zero;
+                    if (IntPtr.Size == 4 && GetWin32ExportName(name, argl) is string n)
+                        NativeLibrary.TryGetExport(handle, n, out h);
 
                 if (h == IntPtr.Zero)
-                    h = NativeLibrary.GetExport(handle, name);
+                    NativeLibrary.TryGetExport(handle, name, out h);
 #endif
 
                 return h;
