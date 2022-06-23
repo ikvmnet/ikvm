@@ -779,32 +779,9 @@
         </BuildDependsOn>
     </PropertyGroup>
 
-    <Target Name="CopyJavaAssemblyCore" DependsOnTargets="BuildJavaAssembly">
+    <Target Name="CoreCompile" DependsOnTargets="BuildJavaAssembly">
         <Copy SourceFiles="$(JavaAssemblyPath)" DestinationFiles="$(IntermediateOutputPath)$(TargetName)$(TargetExt)" OverwriteReadOnlyFiles="true" />
         <Copy SourceFiles="$(JavaDebugSymbolsPath)" DestinationFiles="$(IntermediateOutputPath)$(TargetName).pdb" OverwriteReadOnlyFiles="true" Condition="Exists('$(JavaDebugSymbolsPath)')" />
-    </Target>
-
-    <PropertyGroup>
-        <CopyJavaAssemblyDependsOn>
-            $(CopyJavaAssemblyDependsOn);
-            BuildJavaAssembly;
-            CopyJavaAssemblyCore;
-        </CopyJavaAssemblyDependsOn>
-    </PropertyGroup>
-
-    <Target Name="CopyJavaAssembly" DependsOnTargets="$(CopyJavaAssemblyDependsOn)">
-
-    </Target>
-
-    <PropertyGroup>
-        <CompileDependsOn>
-            $(CompileDependsOn);
-            CopyJavaAssembly;
-        </CompileDependsOn>
-    </PropertyGroup>
-
-    <Target Name="CoreCompile">
-        <!-- no-op -->
     </Target>
 
 </Project>
