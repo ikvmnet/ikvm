@@ -240,7 +240,7 @@ jobs:
         name: tests
         path: build
     - name: Restore Tests
-      run: tar czvf tests.tar.gz
+      run: tar xzvf tests.tar.gz
       working-directory: build
     - name: Execute Tests
       shell: pwsh
@@ -274,7 +274,7 @@ jobs:
         name: tests
         path: build
     - name: Restore Tests
-      run: tar czvf tests.tar.gz
+      run: tar xzvf tests.tar.gz
       working-directory: build
     - name: Execute Tests
       shell: pwsh
