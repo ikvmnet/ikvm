@@ -1,7 +1,7 @@
 # IKVM - Java Virtual Machine for .NET
 
 [![Nuget](https://img.shields.io/nuget/dt/IKVM)](https://www.nuget.org/packages/IKVM)
-[![GitHub](https://img.shields.io/github/license/ikvm-revived/ikvm)](https://github.com/ikvm-revived/ikvm/blob/master/LICENSE.md)
+[![GitHub](https://img.shields.io/github/license/ikvm-revived/ikvm)](https://github.com/ikvm-revived/ikvm/blob/develop/LICENSE.md)
 
 IKVM.NET is an implementation of Java for the Microsoft .NET Framework and .NET Core.
 
