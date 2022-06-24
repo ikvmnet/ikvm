@@ -71,17 +71,17 @@ namespace IKVM.MSBuild.Tasks
         /// <summary>
         /// Set of sources to compile.
         /// </summary>
-        public List<string> Compile { get; set; }
+        public List<string> Compile { get; set; } = new List<string>();
 
         /// <summary>
         /// Set of Java sources which can be used to generate documentation.
         /// </summary>
-        public List<string> Sources { get; set; }
+        public List<string> Sources { get; set; } = new List<string>();
 
         /// <summary>
         /// References required to compile.
         /// </summary>
-        public List<IkvmReferenceItem> References { get; set; }
+        public List<IkvmReferenceItem> References { get; set; } = new List<IkvmReferenceItem>();
 
         /// <summary>
         /// Unique IKVM identity of the reference.

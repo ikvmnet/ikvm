@@ -59,9 +59,33 @@
         </ItemGroup>
     </Target>
 
-    <!-- Duplicate set for reference lookup in batched target. -->
-    <Target Name="GetIkvmReferenceItemsForLookup" DependsOnTargets="GetIkvmReferenceItemsMetadata" Condition=" '@(IkvmReferenceItem)' != '' ">
+    <!-- Applies the Stage and Cache paths to the items.-->
+    <Target Name="GetIkvmReferenceItemsPaths" DependsOnTargets="GetIkvmReferenceItemsMetadata" Condition=" '@(IkvmReferenceItem)' != '' ">
         <ItemGroup>
+            <_IkvmReferenceItemWithPaths Include="@(IkvmReferenceItem)">
+                <StagePath>$(IkvmStageDir)%(IkvmIdentity)\%(AssemblyName).dll</StagePath>
+                <CachePath>$(IkvmCacheDir)%(IkvmIdentity)\%(AssemblyName).dll</CachePath>
+            </_IkvmReferenceItemWithPaths>
+            <IkvmReferenceItem Remove="@(IkvmReferenceItem)"/>
+            <IkvmReferenceItem Include="@(_IkvmReferenceItemWithPaths)" />
+        </ItemGroup>
+    </Target>
+
+    <!-- Sorts the IkvmReferenceItem set. -->
+    <Target Name="GetIkvmReferenceItemsSorted" DependsOnTargets="GetIkvmReferenceItemsPaths" Condition=" '@(IkvmReferenceItem)' != '' ">
+        <IkvmReferenceItemSort Items="@(IkvmReferenceItem)" >
+            <Output TaskParameter="Items" ItemName="_IkvmReferenceItemSorted" />
+        </IkvmReferenceItemSort>
+        <ItemGroup>
+            <IkvmReferenceItem Remove="@(IkvmReferenceItem)" />
+            <IkvmReferenceItem Include="@(_IkvmReferenceItemSorted)" />
+        </ItemGroup>
+    </Target>
+
+    <!-- Duplicate set for reference lookup in batched target. -->
+    <Target Name="GetIkvmReferenceItemsForLookup" DependsOnTargets="GetIkvmReferenceItemsSorted" Condition=" '@(IkvmReferenceItem)' != '' ">
+        <ItemGroup>
+            <_IkvmReferenceItemForItem Remove="@(_IkvmReferenceItemForItem)" />
             <_IkvmReferenceItemForLookup Include="@(IkvmReferenceItem)" />
         </ItemGroup>
     </Target>
@@ -89,40 +113,17 @@
         </ItemGroup>
     </Target>
 
-    <!-- Applies the Stage and Cache paths to the items.-->
-    <Target Name="GetIkvmReferenceItemsPaths" DependsOnTargets="GetIkvmReferenceItemsResolvedReferences" Condition=" '@(IkvmReferenceItem)' != '' ">
-        <ItemGroup>
-            <_IkvmReferenceItemWithPaths Include="@(IkvmReferenceItem)">
-                <StagePath>$(IkvmStageDir)%(IkvmIdentity)\%(AssemblyName).dll</StagePath>
-                <CachePath>$(IkvmCacheDir)%(IkvmIdentity)\%(AssemblyName).dll</CachePath>
-            </_IkvmReferenceItemWithPaths>
-            <IkvmReferenceItem Remove="@(IkvmReferenceItem)"/>
-            <IkvmReferenceItem Include="@(_IkvmReferenceItemWithPaths)" />
-        </ItemGroup>
-    </Target>
-
-    <!-- Sorts the IkvmReferenceItem set. -->
-    <Target Name="GetIkvmReferenceItemsSorted" DependsOnTargets="GetIkvmReferenceItemsPaths" Condition=" '@(IkvmReferenceItem)' != '' ">
-        <IkvmReferenceItemSort Items="@(IkvmReferenceItem)" >
-            <Output TaskParameter="Items" ItemName="_IkvmReferenceItemSorted" />
-        </IkvmReferenceItemSort>
-        <ItemGroup>
-            <IkvmReferenceItem Remove="@(IkvmReferenceItem)" />
-            <IkvmReferenceItem Include="@(_IkvmReferenceItemSorted)" />
-        </ItemGroup>
-    </Target>
-
     <PropertyGroup>
         <GetIkvmReferenceItemsDependsOn>
             $(GetIkvmReferenceItemsDependsOn);
             GetIkvmCompileReferences;
             GetIkvmReferenceItemsFromIkvmReferences;
             GetIkvmReferenceItemsMetadata;
+            GetIkvmReferenceItemsPaths;
+            GetIkvmReferenceItemsSorted;
             GetIkvmReferenceItemsForLookup;
             GetIkvmReferenceItemsResolvedReferencesForItem;
             GetIkvmReferenceItemsResolvedReferences;
-            GetIkvmReferenceItemsPaths;
-            GetIkvmReferenceItemsSorted;
         </GetIkvmReferenceItemsDependsOn>
     </PropertyGroup>
 
@@ -134,6 +135,7 @@
     <!-- Expands the IkvmReferenceItem set by the Compile metadata for inputs and outputs of the build target. -->
     <Target Name="_GetIkvmReferenceItemsCompileToCachePath" DependsOnTargets="GetIkvmReferenceItems" Condition=" '@(IkvmReferenceItem)' != '' ">
         <ItemGroup>
+            <_IkvmReferenceItemCompileToCachePath Remove="@(_IkvmReferenceItemCompileToCachePath)" />
             <_IkvmReferenceItemCompileToCachePath Include="@(IkvmReferenceItem->'%(Compile)')" Condition=" '%(IkvmReferenceItem.Compile)' != '' ">
                 <CachePath>%(IkvmReferenceItem.CachePath)</CachePath>
             </_IkvmReferenceItemCompileToCachePath>
