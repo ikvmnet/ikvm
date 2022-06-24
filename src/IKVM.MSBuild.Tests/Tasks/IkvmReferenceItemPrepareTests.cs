@@ -367,17 +367,25 @@ namespace IKVM.MSBuild.Tests.Tasks
         {
             var t = BuildTestTask("netcoreapp3.1", "0.0.0");
 
-            var i1 = new TaskItem(HELLOWORLD1_JAR);
-            i1.SetMetadata(IkvmReferenceItemMetadata.AssemblyName, "helloworld");
+            var i1 = new TaskItem("helloworld1");
+            i1.SetMetadata(IkvmReferenceItemMetadata.Compile, HELLOWORLD1_JAR);
+            i1.SetMetadata(IkvmReferenceItemMetadata.AssemblyName, "helloworld1");
             i1.SetMetadata(IkvmReferenceItemMetadata.AssemblyVersion, "0.0.0.0");
-            var i2 = new TaskItem(HELLOWORLD2_JAR);
-            i2.SetMetadata(IkvmReferenceItemMetadata.AssemblyName, "helloworld");
+            var i2 = new TaskItem("helloworld2");
+            i2.SetMetadata(IkvmReferenceItemMetadata.Compile, HELLOWORLD1_JAR);
+            i2.SetMetadata(IkvmReferenceItemMetadata.AssemblyName, "helloworld2");
             i2.SetMetadata(IkvmReferenceItemMetadata.AssemblyVersion, "0.0.0.0");
-            i2.SetMetadata(IkvmReferenceItemMetadata.References, HELLOWORLD1_JAR);
-            t.Items = new[] { i1, i2 };
+            i2.SetMetadata(IkvmReferenceItemMetadata.References, "helloworld1");
+            var i3 = new TaskItem("helloworld3");
+            i3.SetMetadata(IkvmReferenceItemMetadata.Compile, HELLOWORLD1_JAR);
+            i3.SetMetadata(IkvmReferenceItemMetadata.AssemblyName, "helloworld3");
+            i3.SetMetadata(IkvmReferenceItemMetadata.AssemblyVersion, "0.0.0.0");
+            i3.SetMetadata(IkvmReferenceItemMetadata.References, "helloworld2");
+            t.Items = new[] { i2, i3, i1 };
             t.Execute().Should().BeTrue();
-            t.Items[0].Should().Be(i2);
-            t.Items[1].Should().Be(i1);
+            t.Items[0].Should().Be(i1);
+            t.Items[1].Should().Be(i2);
+            t.Items[2].Should().Be(i3);
         }
 
     }

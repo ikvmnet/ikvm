@@ -1,7 +1,7 @@
 ﻿namespace IKVM.MSBuild.Tasks
 {
 
-    public static class IkvmReferenceItemMetadata
+    static class IkvmReferenceItemMetadata
     {
 
         public const char PropertySeperatorChar = ';';
@@ -19,9 +19,11 @@
         public static readonly string Sources = "Sources";
         public static readonly string References = "References";
         public static readonly string IkvmIdentity = "IkvmIdentity";
-        public static readonly string ResolvedReferences = "ResolvedReferences";
         public static readonly string CachePath = "CachePath";
         public static readonly string StagePath = "StagePath";
+        public static readonly string ResolvedReferences = "ResolvedReferences";
+        public static readonly string Private = "Private";
+        public static readonly string ReferenceOutputAssembly = "ReferenceOutputAssembly";
 
     }
 

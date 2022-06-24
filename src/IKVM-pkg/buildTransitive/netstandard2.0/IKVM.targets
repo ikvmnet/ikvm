@@ -140,11 +140,11 @@
     <!-- Adds the expected IkvmReferences to the Reference set. -->
     <Target Name="_ResolveIkvmReferences" DependsOnTargets="GetIkvmReferenceItems">
         <ItemGroup>
-            <ReferencePath Include="@(IkvmReferenceItem->'%(CachePath)')">
+            <ReferencePath Include="@(IkvmReferenceItem->WithMetadataValue('ReferenceOutputAssembly', 'true')->'%(CachePath)')">
                 <ReferenceSourceTarget>ResolveIkvmReferences</ReferenceSourceTarget>
                 <Aliases>%(IkvmReferenceItem.Aliases)</Aliases>
             </ReferencePath>
-            <ReferenceCopyLocalPaths Include="@(IkvmReferenceItem->'%(CachePath)')">
+            <ReferenceCopyLocalPaths Include="@(IkvmReferenceItem->WithMetadataValue('Private', 'true')->'%(CachePath)')">
                 <ReferenceSourceTarget>ResolveIkvmReferences</ReferenceSourceTarget>
                 <Aliases>%(IkvmReferenceItem.Aliases)</Aliases>
             </ReferenceCopyLocalPaths>

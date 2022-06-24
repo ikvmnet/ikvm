@@ -29,6 +29,8 @@
             <Debug></Debug>
             <Aliases></Aliases>
             <References></References>
+            <Private>true</Private>
+            <ReferenceOutputAssembly>true</ReferenceOutputAssembly>
         </IkvmReference>
     </ItemDefinitionGroup>
 

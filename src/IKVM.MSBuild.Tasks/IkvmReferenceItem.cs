@@ -109,6 +109,16 @@ namespace IKVM.MSBuild.Tasks
         public List<string> ResolvedReferences { get; set; }
 
         /// <summary>
+        /// Whether the itme will be copied along with the build output.
+        /// </summary>
+        public bool Private { get; set; } = true;
+
+        /// <summary>
+        /// Whether a reference should be added to this item.
+        /// </summary>
+        public bool ReferenceOutputAssembly { get; set; } = true;
+
+        /// <summary>
         /// Writes the metadata to the item.
         /// </summary>
         public void Save()
@@ -129,6 +139,8 @@ namespace IKVM.MSBuild.Tasks
             Item.SetMetadata(IkvmReferenceItemMetadata.CachePath, CachePath);
             Item.SetMetadata(IkvmReferenceItemMetadata.StagePath, StagePath);
             Item.SetMetadata(IkvmReferenceItemMetadata.ResolvedReferences, string.Join(IkvmReferenceItemMetadata.PropertySeperatorString, References.Select(i => i.CachePath)));
+            Item.SetMetadata(IkvmReferenceItemMetadata.Private, Private ? "true" : "false");
+            Item.SetMetadata(IkvmReferenceItemMetadata.ReferenceOutputAssembly, ReferenceOutputAssembly ? "true" : "false");
         }
 
     }

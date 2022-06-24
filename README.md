@@ -26,9 +26,6 @@ See the [tutorial](https://sourceforge.net/p/ikvm/wiki/Tutorial/) to get started
 
 ## IkvmReference
 
-> **Warning**
-> IkvmReference fails to properly build assemblies under a TFM > `netcoreapp3.1`. Until this is resolved, you can use `netcoreapp3.1` to access the Java assembly in a library that you reference from other projects.
-
 IKVM includes build-time support for translating Java libraries to .NET assemblies. Install the `IKVM` package in a project that wants to reference Java libraries. Use the `IkvmReference` `ItemGroup` to indicate which Java libraries your project required.
 
 Example:
@@ -47,6 +44,10 @@ an otherwise unimportant name.
 specification. To override this, do so here.
 + `AssemblyVersion`: By default the `AssemblyVersion` is generated using the rules defined by the `Automatic-Module-Name`
 specification. To override this, do so here.
++ `DisableAutoAssemblyName`: If `true` disables detection of `AssemblyName`.
++ `DisableAutoAssemblyVersion`: If `true` disables detection of `AssemblyVersion`.
++ `FallbackAssemblyName`: If `AssemblyName` is not provided or cannot be calculated, use this value.
++ `FallbackAssemblyVersion`: If `AssemblyVersion` is not provided or cannot be calculated, use this value.
 + `Compile`: Optional semi-colon separated list of Java class path items to compile into the assembly. By default this
 value is the `Identity` of the item, if the identity of the item is an existing JAR file or directory (not yet supported). MSBuild globs
 are supported to reference multiple JAR or .class files.
