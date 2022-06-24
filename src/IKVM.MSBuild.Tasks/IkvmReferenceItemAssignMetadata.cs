@@ -163,15 +163,9 @@ namespace IKVM.MSBuild.Tasks
         /// <returns></returns>
         Version ToAssemblyVersion(ModuleVersion version)
         {
+            // only include major and minor by default
             var major = GetAssemblyVersionComponent(version, 0);
             var minor = GetAssemblyVersionComponent(version, 1);
-            var build = GetAssemblyVersionComponent(version, 2);
-            var patch = GetAssemblyVersionComponent(version, 3);
-
-            if (patch is not null && build is not null && minor is not null && major is not null)
-                return new Version(major ?? 0, minor ?? 0, build ?? 0, patch ?? 0);
-            if (build is not null && minor is not null && major is not null)
-                return new Version(major ?? 0, minor ?? 0, build ?? 0);
             if (minor is not null && major is not null)
                 return new Version(major ?? 0, minor ?? 0);
 
