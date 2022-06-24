@@ -2,6 +2,8 @@
 using System.IO;
 using System.Text.RegularExpressions;
 
+using IKVM.Util.Modules;
+
 namespace IKVM.Util.Jar
 {
 
@@ -30,7 +32,7 @@ namespace IKVM.Util.Jar
             /// </summary>
             /// <param name="name"></param>
             /// <param name="version"></param>
-            public ModuleInfo(string name, string version)
+            public ModuleInfo(string name, ModuleVersion version)
             {
                 Name = name;
                 Version = version;
@@ -44,7 +46,7 @@ namespace IKVM.Util.Jar
             /// <summary>
             /// Version of the module.
             /// </summary>
-            public string Version { get; set; }
+            public ModuleVersion Version { get; set; }
 
         }
 
@@ -121,9 +123,9 @@ namespace IKVM.Util.Jar
         /// </summary>
         /// <param name="span"></param>
         /// <returns></returns>
-        static string TryParseVersion(ReadOnlySpan<char> span)
+        static ModuleVersion TryParseVersion(ReadOnlySpan<char> span)
         {
-            return span.ToString();
+            return ModuleVersion.TryParse(span, out var v) ? v : null;
         }
 
     }

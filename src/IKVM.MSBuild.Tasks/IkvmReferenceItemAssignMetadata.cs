@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.IO;
 
 using IKVM.Util.Jar;
+using IKVM.Util.Modules;
 
 using Microsoft.Build.Framework;
 using Microsoft.Build.Globbing;
@@ -57,6 +58,14 @@ namespace IKVM.MSBuild.Tasks
             ExpandCompile(item);
             ExpandSources(item);
             AssignMetadataFromCompile(item);
+
+            // default to fallback value
+            if (string.IsNullOrWhiteSpace(item.AssemblyName))
+                item.AssemblyName = item.FallbackAssemblyName;
+
+            // default to fallback value
+            if (string.IsNullOrWhiteSpace(item.AssemblyVersion))
+                item.AssemblyVersion = item.FallbackAssemblyVersion;
         }
 
         /// <summary>
@@ -128,21 +137,56 @@ namespace IKVM.MSBuild.Tasks
         /// <param name="path"></param>
         void AssignMetadataFromCompile(IkvmReferenceItem item, string path)
         {
-            if (string.IsNullOrWhiteSpace(item.AssemblyName) || string.IsNullOrWhiteSpace(item.AssemblyVersion))
+            if (item.DisableAutoAssemblyName == false || item.DisableAutoAssemblyVersion == false)
             {
-                var info = TryGetAssemblyNameFromPath(path);
-                if (info != null)
+                if (string.IsNullOrWhiteSpace(item.AssemblyName) || string.IsNullOrWhiteSpace(item.AssemblyVersion))
                 {
-                    // attempt to derive a default assembly name from the compile item
-                    if (string.IsNullOrWhiteSpace(item.AssemblyName))
-                        item.AssemblyName = info.Name;
+                    var info = TryGetAssemblyNameFromPath(path);
+                    if (info != null)
+                    {
+                        // attempt to derive a default assembly name from the compile item
+                        if (string.IsNullOrWhiteSpace(item.AssemblyName) && item.DisableAutoAssemblyName == false)
+                            item.AssemblyName = info.Name;
 
-                    // attempt to derive a default assembly version from the compile item
-                    if (string.IsNullOrWhiteSpace(item.AssemblyVersion))
-                        if (Version.TryParse(info.Version, out var v))
-                            item.AssemblyVersion = v.ToString();
+                        // attempt to derive a default assembly version from the compile item
+                        if (string.IsNullOrWhiteSpace(item.AssemblyVersion) && item.DisableAutoAssemblyVersion == false)
+                            item.AssemblyVersion = info.Version != null ? ToAssemblyVersion(info.Version)?.ToString() : null;
+                    }
                 }
             }
+        }
+
+        /// <summary>
+        /// Converts a <see cref="ModuleVersion"/> to an assembly version.
+        /// </summary>
+        /// <param name="version"></param>
+        /// <returns></returns>
+        Version ToAssemblyVersion(ModuleVersion version)
+        {
+            var major = GetAssemblyVersionComponent(version, 0);
+            var minor = GetAssemblyVersionComponent(version, 1);
+            var build = GetAssemblyVersionComponent(version, 2);
+            var patch = GetAssemblyVersionComponent(version, 3);
+
+            if (patch is not null && build is not null && minor is not null && major is not null)
+                return new Version(major ?? 0, minor ?? 0, build ?? 0, patch ?? 0);
+            if (build is not null && minor is not null && major is not null)
+                return new Version(major ?? 0, minor ?? 0, build ?? 0);
+            if (minor is not null && major is not null)
+                return new Version(major ?? 0, minor ?? 0);
+
+            return null;
+        }
+
+        /// <summary>
+        /// Gets the assembly version compatible component at the given index.
+        /// </summary>
+        /// <param name="version"></param>
+        /// <param name="index"></param>
+        /// <returns></returns>
+        int? GetAssemblyVersionComponent(ModuleVersion version, int index)
+        {
+            return version.Number.Count > index && version.Number[index] is int i ? i : null;
         }
 
         /// <summary>

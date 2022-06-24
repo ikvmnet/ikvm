@@ -1460,8 +1460,7 @@ public abstract class ClassLoader {
                 Throwable oops = null;
                 scl = l.getClassLoader();
                 try {
-                    scl = AccessController.doPrivileged(
-                        new SystemClassLoaderAction(scl));
+                    scl = AccessController.doPrivileged(new SystemClassLoaderAction(scl));
                 } catch (PrivilegedActionException pae) {
                     oops = pae.getCause();
                     if (oops instanceof InvocationTargetException) {

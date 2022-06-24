@@ -44,6 +44,26 @@ namespace IKVM.MSBuild.Tasks
         public string AssemblyVersion { get; set; }
 
         /// <summary>
+        /// Disable automatic detection of the assembly name.
+        /// </summary>
+        public bool DisableAutoAssemblyName { get; set; } = false;
+
+        /// <summary>
+        /// Disable automatic detection of the assembly version.
+        /// </summary>
+        public bool DisableAutoAssemblyVersion { get; set; } = false;
+
+        /// <summary>
+        /// Assembly name to use if no other assembly name is available.
+        /// </summary>
+        public string FallbackAssemblyName { get; set; }
+
+        /// <summary>
+        /// Assembly version to use if no other assembly version is available.
+        /// </summary>
+        public string FallbackAssemblyVersion { get; set; }
+
+        /// <summary>
         /// Compile in debug mode.
         /// </summary>
         public bool Debug { get; set; }
@@ -76,6 +96,10 @@ namespace IKVM.MSBuild.Tasks
             Item.ItemSpec = ItemSpec;
             Item.SetMetadata(IkvmReferenceItemMetadata.AssemblyName, AssemblyName);
             Item.SetMetadata(IkvmReferenceItemMetadata.AssemblyVersion, AssemblyVersion);
+            Item.SetMetadata(IkvmReferenceItemMetadata.DisableAutoAssemblyName, DisableAutoAssemblyName ? "true" : "false");
+            Item.SetMetadata(IkvmReferenceItemMetadata.DisableAutoAssemblyVersion, DisableAutoAssemblyVersion ? "true" : "false");
+            Item.SetMetadata(IkvmReferenceItemMetadata.FallbackAssemblyName, FallbackAssemblyName);
+            Item.SetMetadata(IkvmReferenceItemMetadata.FallbackAssemblyVersion, FallbackAssemblyVersion);
             Item.SetMetadata(IkvmReferenceItemMetadata.Debug, Debug ? "true" : "false");
             Item.SetMetadata(IkvmReferenceItemMetadata.Compile, string.Join(IkvmReferenceItemMetadata.PropertySeperatorString, Compile));
             Item.SetMetadata(IkvmReferenceItemMetadata.Sources, string.Join(IkvmReferenceItemMetadata.PropertySeperatorString, Sources));

@@ -53,6 +53,10 @@ namespace IKVM.MSBuild.Tasks
                 item.ItemSpec = NormalizeItemSpec(item.Item.ItemSpec);
                 item.AssemblyName = item.Item.GetMetadata(IkvmReferenceItemMetadata.AssemblyName);
                 item.AssemblyVersion = item.Item.GetMetadata(IkvmReferenceItemMetadata.AssemblyVersion);
+                item.DisableAutoAssemblyName = string.Equals(item.Item.GetMetadata(IkvmReferenceItemMetadata.DisableAutoAssemblyName), "true", StringComparison.OrdinalIgnoreCase);
+                item.DisableAutoAssemblyVersion = string.Equals(item.Item.GetMetadata(IkvmReferenceItemMetadata.DisableAutoAssemblyVersion), "true", StringComparison.OrdinalIgnoreCase);
+                item.FallbackAssemblyName = item.Item.GetMetadata(IkvmReferenceItemMetadata.FallbackAssemblyName);
+                item.FallbackAssemblyVersion = item.Item.GetMetadata(IkvmReferenceItemMetadata.FallbackAssemblyVersion);
                 item.Debug = bool.TryParse(item.Item.GetMetadata(IkvmReferenceItemMetadata.Debug), out var b) && b;
                 item.Compile = item.Item.GetMetadata(IkvmReferenceItemMetadata.Compile)?.Split(IkvmReferenceItemMetadata.PropertySeperatorCharArray, StringSplitOptions.RemoveEmptyEntries).ToList();
                 item.Sources = item.Item.GetMetadata(IkvmReferenceItemMetadata.Sources)?.Split(IkvmReferenceItemMetadata.PropertySeperatorCharArray, StringSplitOptions.RemoveEmptyEntries).ToList();
