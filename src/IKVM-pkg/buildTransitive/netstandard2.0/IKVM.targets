@@ -37,79 +37,16 @@
 
     <!-- Populates the IkvmReferenceItem set with required metadata. -->
     <Target Name="GetIkvmReferenceItemsMetadata" DependsOnTargets="GetIkvmReferenceItemsFromIkvmReferences;GetIkvmCompileReferences" Condition=" '@(IkvmReferenceItem)' != '' ">
-        <!-- Probes for default metadata from the reference item. -->
-        <IkvmReferenceItemAssignMetadata Items="@(IkvmReferenceItem)">
+
+        <!-- Populates metadata, validates, resolves references, and emits in build order. -->
+        <IkvmReferenceItemPrepare Items="@(IkvmReferenceItem)" ToolVersion="$(IkvmVersion)" TargetFramework="$(IkvmTargetFramework)" RuntimeAssembly="@(IkvmRuntimeAssembly)" References="@(IkvmFrameworkReference);@(IkvmBaseReference);@(IkvmRuntimeAssembly);@(IkvmRuntimeJNIAssembly)" StageDir="$(IkvmStageDir)" CacheDir="$(IkvmCacheDir)">
             <Output TaskParameter="Items" ItemName="_IkvmReferenceItemWithMetadata" />
-        </IkvmReferenceItemAssignMetadata>
-
-        <!-- Validates the metadata before continuing. -->
-        <IkvmReferenceItemValidate Items="@(_IkvmReferenceItemWithMetadata)" >
-
-        </IkvmReferenceItemValidate>
-
-        <!-- Configures the identity value to uniquely identify a reference. -->
-        <IkvmReferenceItemAssignIdentity ToolVersion="$(IkvmVersion)" TargetFramework="$(IkvmTargetFramework)" RuntimeAssembly="@(IkvmRuntimeAssembly)" Items="@(_IkvmReferenceItemWithMetadata)" References="@(IkvmFrameworkReference);@(IkvmBaseReference);@(IkvmRuntimeAssembly);@(IkvmRuntimeJNIAssembly)" >
-            <Output TaskParameter="Items" ItemName="_IkvmReferenceItemWithIdentity" />
-        </IkvmReferenceItemAssignIdentity>
+        </IkvmReferenceItemPrepare>
 
         <!-- Assign newly discovered items. -->
         <ItemGroup>
             <IkvmReferenceItem Remove="@(IkvmReferenceItem)"/>
-            <IkvmReferenceItem Include="@(_IkvmReferenceItemWithIdentity)" />
-        </ItemGroup>
-    </Target>
-
-    <!-- Applies the Stage and Cache paths to the items.-->
-    <Target Name="GetIkvmReferenceItemsPaths" DependsOnTargets="GetIkvmReferenceItemsMetadata" Condition=" '@(IkvmReferenceItem)' != '' ">
-        <ItemGroup>
-            <_IkvmReferenceItemWithPaths Include="@(IkvmReferenceItem)">
-                <StagePath>$(IkvmStageDir)%(IkvmIdentity)\%(AssemblyName).dll</StagePath>
-                <CachePath>$(IkvmCacheDir)%(IkvmIdentity)\%(AssemblyName).dll</CachePath>
-            </_IkvmReferenceItemWithPaths>
-            <IkvmReferenceItem Remove="@(IkvmReferenceItem)"/>
-            <IkvmReferenceItem Include="@(_IkvmReferenceItemWithPaths)" />
-        </ItemGroup>
-    </Target>
-
-    <!-- Sorts the IkvmReferenceItem set. -->
-    <Target Name="GetIkvmReferenceItemsSorted" DependsOnTargets="GetIkvmReferenceItemsPaths" Condition=" '@(IkvmReferenceItem)' != '' ">
-        <IkvmReferenceItemSort Items="@(IkvmReferenceItem)" >
-            <Output TaskParameter="Items" ItemName="_IkvmReferenceItemSorted" />
-        </IkvmReferenceItemSort>
-        <ItemGroup>
-            <IkvmReferenceItem Remove="@(IkvmReferenceItem)" />
-            <IkvmReferenceItem Include="@(_IkvmReferenceItemSorted)" />
-        </ItemGroup>
-    </Target>
-
-    <!-- Duplicate set for reference lookup in batched target. -->
-    <Target Name="GetIkvmReferenceItemsForLookup" DependsOnTargets="GetIkvmReferenceItemsSorted" Condition=" '@(IkvmReferenceItem)' != '' ">
-        <ItemGroup>
-            <_IkvmReferenceItemForItem Remove="@(_IkvmReferenceItemForItem)" />
-            <_IkvmReferenceItemForLookup Include="@(IkvmReferenceItem)" />
-        </ItemGroup>
-    </Target>
-
-    <!-- Applies the ResolvedReferences metadata to each item. -->
-    <Target Name="GetIkvmReferenceItemsResolvedReferencesForItem" DependsOnTargets="GetIkvmReferenceItemsForLookup" Outputs="%(IkvmReferenceItem.Identity).batch">
-        <PropertyGroup>
-            <_References>;%(IkvmReferenceItem.References);</_References>
-        </PropertyGroup>
-        <ItemGroup>
-            <_ResolvedReferences Include="@(_IkvmReferenceItemForLookup->'%(CachePath)')" Condition="$(_References.Contains(';%(Identity);'))" />
-        </ItemGroup>
-        <ItemGroup>
-            <_IkvmReferenceItemForItem Include="@(IkvmReferenceItem)">
-                <ResolvedReferences>@(_ResolvedReferences, ';')</ResolvedReferences>
-            </_IkvmReferenceItemForItem>
-        </ItemGroup>
-    </Target>
-
-    <!-- Applies the ResolvedReferences metadata to each item. -->
-    <Target Name="GetIkvmReferenceItemsResolvedReferences" DependsOnTargets="GetIkvmReferenceItemsResolvedReferencesForItem" Condition=" '@(IkvmReferenceItem)' != '' ">
-        <ItemGroup>
-            <IkvmReferenceItem Remove="@(IkvmReferenceItem)"/>
-            <IkvmReferenceItem Include="@(_IkvmReferenceItemForItem)" />
+            <IkvmReferenceItem Include="@(_IkvmReferenceItemWithMetadata)" />
         </ItemGroup>
     </Target>
 
@@ -119,17 +56,12 @@
             GetIkvmCompileReferences;
             GetIkvmReferenceItemsFromIkvmReferences;
             GetIkvmReferenceItemsMetadata;
-            GetIkvmReferenceItemsPaths;
-            GetIkvmReferenceItemsSorted;
-            GetIkvmReferenceItemsForLookup;
-            GetIkvmReferenceItemsResolvedReferencesForItem;
-            GetIkvmReferenceItemsResolvedReferences;
         </GetIkvmReferenceItemsDependsOn>
     </PropertyGroup>
 
     <!-- Assembles the set of IkvmReferenceItems from various sources. -->
     <Target Name="GetIkvmReferenceItems" DependsOnTargets="$(GetIkvmReferenceItemsDependsOn)" Returns="@(IkvmReferenceItem)">
-
+        
     </Target>
 
     <!-- Expands the IkvmReferenceItem set by the Compile metadata for inputs and outputs of the build target. -->

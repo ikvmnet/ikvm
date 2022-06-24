@@ -2975,7 +2975,7 @@ namespace IKVM.Internal
             }
         }
 
-        private void CompilePass1()
+        void CompilePass1()
         {
             Tracer.Info(Tracer.Compiler, "Compiling class files (1)");
             if (CheckCompilingCoreAssembly())
@@ -2987,29 +2987,26 @@ namespace IKVM.Internal
             // that represent the not-really existing types (i.e. the Java enums that represent .NET enums,
             // the Method interface for delegates and the Annotation annotation for custom attributes)
             if (map != null && CheckCompilingCoreAssembly())
-            {
                 FakeTypes.Create(GetTypeWrapperFactory().ModuleBuilder, this);
-            }
 
             allwrappers = new List<TypeWrapper>();
-            foreach (string s in classesToCompile)
+            foreach (var s in classesToCompile)
             {
-                TypeWrapper wrapper = LoadClassByDottedNameFast(s);
+                var wrapper = LoadClassByDottedNameFast(s);
                 if (wrapper != null)
                 {
-                    ClassLoaderWrapper loader = wrapper.GetClassLoader();
+                    var loader = wrapper.GetClassLoader();
                     if (loader != this)
                     {
                         if (loader is AssemblyClassLoader)
-                        {
                             StaticCompiler.IssueMessage(options, Message.SkippingReferencedClass, s, ((AssemblyClassLoader)loader).GetAssembly(wrapper).FullName);
-                        }
+
                         continue;
                     }
+
                     if (options.sharedclassloader != null && options.sharedclassloader[0] != this)
-                    {
                         options.sharedclassloader[0].dynamicallyImportedTypes.Add(wrapper);
-                    }
+
                     allwrappers.Add(wrapper);
                 }
             }

@@ -57,10 +57,12 @@ namespace IKVM.MSBuild.Tasks
                 item.DisableAutoAssemblyVersion = string.Equals(item.Item.GetMetadata(IkvmReferenceItemMetadata.DisableAutoAssemblyVersion), "true", StringComparison.OrdinalIgnoreCase);
                 item.FallbackAssemblyName = item.Item.GetMetadata(IkvmReferenceItemMetadata.FallbackAssemblyName);
                 item.FallbackAssemblyVersion = item.Item.GetMetadata(IkvmReferenceItemMetadata.FallbackAssemblyVersion);
+                item.Aliases = item.Item.GetMetadata(IkvmReferenceItemMetadata.Aliases);
                 item.Debug = bool.TryParse(item.Item.GetMetadata(IkvmReferenceItemMetadata.Debug), out var b) && b;
                 item.Compile = item.Item.GetMetadata(IkvmReferenceItemMetadata.Compile)?.Split(IkvmReferenceItemMetadata.PropertySeperatorCharArray, StringSplitOptions.RemoveEmptyEntries).ToList();
                 item.Sources = item.Item.GetMetadata(IkvmReferenceItemMetadata.Sources)?.Split(IkvmReferenceItemMetadata.PropertySeperatorCharArray, StringSplitOptions.RemoveEmptyEntries).ToList();
                 item.References = ResolveReferences(map, item, item.Item.GetMetadata(IkvmReferenceItemMetadata.References)).ToList();
+                item.Save();
             }
 
             // return the resulting imported references

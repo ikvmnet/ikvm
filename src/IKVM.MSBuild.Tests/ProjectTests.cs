@@ -56,6 +56,11 @@ namespace IKVM.MSBuild.Tests
                 Directory.Delete(nugetPackageRoot, true);
             Directory.CreateDirectory(nugetPackageRoot);
 
+            var ikvmCachePath = Path.Combine(Path.GetTempPath(), "IKVM.MSBuild.Tests", "ikvm", "cache");
+            if (Directory.Exists(ikvmCachePath))
+                Directory.Delete(ikvmCachePath, true);
+            Directory.CreateDirectory(ikvmCachePath);
+
             // only select supported tfms
             var tfms = new[] { "netcoreapp3.1", "net5.0", "net6.0" };
             if (RuntimeInformation.IsOSPlatform(OSPlatform.Windows))
@@ -68,6 +73,7 @@ namespace IKVM.MSBuild.Tests
 
             var manager = new AnalyzerManager();
             var analyzer = manager.GetProject(Path.Combine(@"Project", "Exe", "ProjectExe.csproj"));
+            analyzer.SetGlobalProperty("IkvmCacheDir", ikvmCachePath + Path.DirectorySeparatorChar);
             analyzer.SetGlobalProperty("PackageVersion", properties["PackageVersion"]);
             analyzer.SetGlobalProperty("RestoreSources", string.Join("%3B", "https://api.nuget.org/v3/index.json", Path.GetFullPath(@"nuget")));
             analyzer.SetGlobalProperty("RestorePackagesPath", nugetPackageRoot + Path.DirectorySeparatorChar);

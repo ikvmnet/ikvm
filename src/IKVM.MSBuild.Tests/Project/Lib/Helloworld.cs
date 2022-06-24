@@ -15,11 +15,6 @@ namespace IKVM.Sdk.Tests.Project.Lib
             return new sample.HelloworldImpl().sayHello(value);
         }
 
-        public static string SayHello2(string value)
-        {
-            return new helloworld2::sample.HelloworldImpl().sayHello(value);
-        }
-
     }
 
 }
