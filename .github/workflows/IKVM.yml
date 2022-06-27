@@ -338,7 +338,6 @@ jobs:
       with:
         tag: ${{ steps.GitVersion.outputs.semVer }}
         artifacts: build/bin/*.zip,build/nuget/*.nupkg,build/nuget/*.snupkg,build/tools/*.zip
-        draft: true
         generateReleaseNotes: true
         prerelease: ${{ github.ref == 'refs/heads/develop' }}
         token: ${{ secrets.GITHUB_TOKEN }}
