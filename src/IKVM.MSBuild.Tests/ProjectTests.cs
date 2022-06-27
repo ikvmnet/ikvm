@@ -92,6 +92,7 @@ namespace IKVM.MSBuild.Tests
                 options.DesignTime = false;
                 options.TargetsToBuild.Clear();
                 options.TargetsToBuild.Add("Restore");
+                options.TargetsToBuild.Add("Build");
                 var results = analyzer.Build(options);
                 results.OverallSuccess.Should().Be(true);
             }
@@ -100,13 +101,14 @@ namespace IKVM.MSBuild.Tests
             {
                 foreach (var rid in rids)
                 {
+                    TestContext.WriteLine("Publishing with TargetFramework {0} and RuntimeIdentifier {1}.", tfm, rid);
+
                     var options = new EnvironmentOptions();
                     options.DesignTime = false;
                     options.Restore = false;
                     options.GlobalProperties.Add("TargetFramework", tfm);
                     options.GlobalProperties.Add("RuntimeIdentifier", rid);
                     options.TargetsToBuild.Clear();
-                    options.TargetsToBuild.Add("Build");
                     options.TargetsToBuild.Add("Publish");
                     var results = analyzer.Build(options);
                     results.OverallSuccess.Should().Be(true);
