@@ -3,23 +3,21 @@ using System.IO;
 
 using FluentAssertions;
 
-using IKVM.MSBuild.Tasks;
-
 using Microsoft.Build.Framework;
 using Microsoft.Build.Utilities;
 using Microsoft.VisualStudio.TestTools.UnitTesting;
 
 using Moq;
 
-namespace IKVM.MSBuild.Tests.Tasks
+namespace IKVM.MSBuild.Tasks.Tests
 {
 
     [TestClass]
     public class IkvmReferenceItemPrepareTests
     {
 
-        readonly static string HELLOWORLD1_JAR = @".\Project\Lib\helloworld-2.0-1\helloworld-2.0.jar";
-        readonly static string HELLOWORLD2_JAR = @".\Project\Lib\helloworld-2.0-2\helloworld-2.0.jar";
+        readonly static string HELLOWORLD1_JAR = @".\ext\helloworld-2.0-1\helloworld-2.0.jar";
+        readonly static string HELLOWORLD2_JAR = @".\ext\helloworld-2.0-2\helloworld-2.0.jar";
 
         /// <summary>
         /// Builds a new task instance with various information.
@@ -41,17 +39,17 @@ namespace IKVM.MSBuild.Tests.Tasks
         [TestMethod]
         public void Should_normalize_jar_itemspec()
         {
-            var i1 = new TaskItem(@".\Project\Lib\helloworld-2.0-1\.\helloworld-2.0.jar");
+            var i1 = new TaskItem(@".\ext\helloworld-2.0-1\.\helloworld-2.0.jar");
             IkvmReferenceItemPrepare.AssignMetadata(IkvmReferenceItemUtil.Import(new[] { i1 }));
-            i1.ItemSpec.Should().Be(@"Project\Lib\helloworld-2.0-1\helloworld-2.0.jar");
+            i1.ItemSpec.Should().Be(@"ext\helloworld-2.0-1\helloworld-2.0.jar");
         }
 
         [TestMethod]
         public void Should_normalize_dir_itemspec()
         {
-            var i1 = new TaskItem(@".\Project");
+            var i1 = new TaskItem(@".\ext");
             IkvmReferenceItemPrepare.AssignMetadata(IkvmReferenceItemUtil.Import(new[] { i1 }));
-            i1.ItemSpec.Should().Be(@"Project\");
+            i1.ItemSpec.Should().Be(@"ext\");
         }
 
         [TestMethod]
@@ -65,30 +63,30 @@ namespace IKVM.MSBuild.Tests.Tasks
         [TestMethod]
         public void Should_add_jar_identity_to_compile()
         {
-            var i1 = new TaskItem(@".\Project\Lib\helloworld-2.0-1\helloworld-2.0.jar");
+            var i1 = new TaskItem(@".\ext\helloworld-2.0-1\helloworld-2.0.jar");
             IkvmReferenceItemPrepare.AssignMetadata(IkvmReferenceItemUtil.Import(new[] { i1 }));
             var c = i1.GetMetadata(IkvmReferenceItemMetadata.Compile);
-            c.Split(IkvmReferenceItemMetadata.PropertySeperatorChar).Should().Contain(@"Project\Lib\helloworld-2.0-1\helloworld-2.0.jar");
+            c.Split(IkvmReferenceItemMetadata.PropertySeperatorChar).Should().Contain(@"ext\helloworld-2.0-1\helloworld-2.0.jar");
         }
 
         [TestMethod]
         public void Should_not_add_dir_identity_to_compile()
         {
-            var i1 = new TaskItem(@".\Project");
+            var i1 = new TaskItem(@".\ext");
             IkvmReferenceItemPrepare.AssignMetadata(IkvmReferenceItemUtil.Import(new[] { i1 }));
             var c = i1.GetMetadata(IkvmReferenceItemMetadata.Compile);
-            c.Split(IkvmReferenceItemMetadata.PropertySeperatorChar).Should().NotContain(@"Project\");
+            c.Split(IkvmReferenceItemMetadata.PropertySeperatorChar).Should().NotContain(@"ext\");
         }
 
         [TestMethod]
         public void Should_resolve_reference()
         {
-            var i1 = new TaskItem(@".\Project\Lib\helloworld-2.0-1\helloworld-2.0.jar");
-            var i2 = new TaskItem(@".\Project\Lib\helloworld-2.0-2\helloworld-2.0.jar");
-            i2.SetMetadata(IkvmReferenceItemMetadata.References, @".\Project\Lib\helloworld-2.0-1\helloworld-2.0.jar");
+            var i1 = new TaskItem(@".\ext\helloworld-2.0-1\helloworld-2.0.jar");
+            var i2 = new TaskItem(@".\ext\helloworld-2.0-2\helloworld-2.0.jar");
+            i2.SetMetadata(IkvmReferenceItemMetadata.References, @".\ext\helloworld-2.0-1\helloworld-2.0.jar");
             IkvmReferenceItemPrepare.AssignMetadata(IkvmReferenceItemUtil.Import(new[] { i1, i2 }));
             var c = i2.GetMetadata(IkvmReferenceItemMetadata.References);
-            c.Split(IkvmReferenceItemMetadata.PropertySeperatorChar).Should().Contain(@"Project\Lib\helloworld-2.0-1\helloworld-2.0.jar");
+            c.Split(IkvmReferenceItemMetadata.PropertySeperatorChar).Should().Contain(@"ext\helloworld-2.0-1\helloworld-2.0.jar");
         }
 
         [TestMethod]
@@ -118,9 +116,9 @@ namespace IKVM.MSBuild.Tests.Tasks
 
             var t = new IkvmReferenceItemPrepare();
             t.BuildEngine = engine.Object;
-            var i1 = new TaskItem(@".\Project\Lib\helloworld-2.0-1\.\helloworld-2.0.jar");
+            var i1 = new TaskItem(@".\ext\helloworld-2.0-1\.\helloworld-2.0.jar");
             i1.SetMetadata(IkvmReferenceItemMetadata.AssemblyVersion, "2.0");
-            i1.SetMetadata(IkvmReferenceItemMetadata.Compile, @".\Project\Lib\helloworld-2.0-1\.\helloworld-2.0.jar");
+            i1.SetMetadata(IkvmReferenceItemMetadata.Compile, @".\ext\helloworld-2.0-1\.\helloworld-2.0.jar");
             t.Items = new[] { i1 };
             t.Validate(IkvmReferenceItemUtil.Import(t.Items)).Should().BeFalse();
             errors.Should().Contain(x => x.Code == "IKVMSDK0002");
@@ -135,9 +133,9 @@ namespace IKVM.MSBuild.Tests.Tasks
 
             var t = new IkvmReferenceItemPrepare();
             t.BuildEngine = engine.Object;
-            var i1 = new TaskItem(@".\Project\Lib\helloworld-2.0-1\.\helloworld-2.0.jar");
+            var i1 = new TaskItem(@".\ext\helloworld-2.0-1\.\helloworld-2.0.jar");
             i1.SetMetadata(IkvmReferenceItemMetadata.AssemblyName, "helloworld");
-            i1.SetMetadata(IkvmReferenceItemMetadata.Compile, @".\Project\Lib\helloworld-2.0-1\.\helloworld-2.0.jar");
+            i1.SetMetadata(IkvmReferenceItemMetadata.Compile, @".\ext\helloworld-2.0-1\.\helloworld-2.0.jar");
             t.Items = new[] { i1 };
             t.Validate(IkvmReferenceItemUtil.Import(t.Items)).Should().BeFalse();
             errors.Should().Contain(x => x.Code == "IKVMSDK0003");
@@ -152,10 +150,10 @@ namespace IKVM.MSBuild.Tests.Tasks
 
             var t = new IkvmReferenceItemPrepare();
             t.BuildEngine = engine.Object;
-            var i1 = new TaskItem(@".\Project\Lib\helloworld-2.0-1\.\helloworld-2.0.jar");
+            var i1 = new TaskItem(@".\ext\helloworld-2.0-1\.\helloworld-2.0.jar");
             i1.SetMetadata(IkvmReferenceItemMetadata.AssemblyName, "helloworld");
             i1.SetMetadata(IkvmReferenceItemMetadata.AssemblyVersion, "invalid");
-            i1.SetMetadata(IkvmReferenceItemMetadata.Compile, @".\Project\Lib\helloworld-2.0-1\.\helloworld-2.0.jar");
+            i1.SetMetadata(IkvmReferenceItemMetadata.Compile, @".\ext\helloworld-2.0-1\.\helloworld-2.0.jar");
             t.Items = new[] { i1 };
             t.Validate(IkvmReferenceItemUtil.Import(t.Items)).Should().BeFalse();
             errors.Should().Contain(x => x.Code == "IKVMSDK0003");
@@ -187,10 +185,10 @@ namespace IKVM.MSBuild.Tests.Tasks
 
             var t = new IkvmReferenceItemPrepare();
             t.BuildEngine = engine.Object;
-            var i1 = new TaskItem(@".\Project\Lib\helloworld-2.0-1\.\helloworld-2.0.jar");
+            var i1 = new TaskItem(@".\ext\helloworld-2.0-1\.\helloworld-2.0.jar");
             i1.SetMetadata(IkvmReferenceItemMetadata.AssemblyName, "helloworld");
             i1.SetMetadata(IkvmReferenceItemMetadata.AssemblyVersion, "2.0");
-            i1.SetMetadata(IkvmReferenceItemMetadata.Compile, @".\Project\Lib\helloworld-2.0-1\.\helloworld-2.0.jar");
+            i1.SetMetadata(IkvmReferenceItemMetadata.Compile, @".\ext\helloworld-2.0-1\.\helloworld-2.0.jar");
             i1.SetMetadata(IkvmReferenceItemMetadata.Sources, "invalid");
             t.Items = new[] { i1 };
             t.Validate(IkvmReferenceItemUtil.Import(t.Items)).Should().BeFalse();
@@ -206,10 +204,10 @@ namespace IKVM.MSBuild.Tests.Tasks
 
             var t = new IkvmReferenceItemPrepare();
             t.BuildEngine = engine.Object;
-            var i1 = new TaskItem(@".\Project\Lib\helloworld-2.0-1\.\helloworld-2.0.jar");
+            var i1 = new TaskItem(@".\ext\helloworld-2.0-1\.\helloworld-2.0.jar");
             i1.SetMetadata(IkvmReferenceItemMetadata.AssemblyName, "helloworld");
             i1.SetMetadata(IkvmReferenceItemMetadata.AssemblyVersion, "2.0");
-            i1.SetMetadata(IkvmReferenceItemMetadata.Compile, @".\Project\Lib\helloworld-2.0-1\.\helloworld-2.0.jar");
+            i1.SetMetadata(IkvmReferenceItemMetadata.Compile, @".\ext\helloworld-2.0-1\.\helloworld-2.0.jar");
             i1.SetMetadata(IkvmReferenceItemMetadata.Sources, "missing.java");
             t.Items = new[] { i1 };
             t.Validate(IkvmReferenceItemUtil.Import(t.Items)).Should().BeFalse();
