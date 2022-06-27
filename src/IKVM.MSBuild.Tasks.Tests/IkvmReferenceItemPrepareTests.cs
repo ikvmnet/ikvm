@@ -104,7 +104,7 @@ namespace IKVM.MSBuild.Tasks.Tests
             var i1 = new TaskItem(HELLOWORLD1_JAR);
             IkvmReferenceItemPrepare.AssignMetadata(IkvmReferenceItemUtil.Import(new[] { i1 }));
             var c = i1.GetMetadata(IkvmReferenceItemMetadata.AssemblyVersion);
-            c.Should().Be("2.0");
+            c.Should().Be("2.0.0.0");
         }
 
         [TestMethod]
