@@ -281,7 +281,7 @@ namespace IKVM.MSBuild.Tasks
             var major = GetAssemblyVersionComponent(version, 0);
             var minor = GetAssemblyVersionComponent(version, 1);
             if (minor is not null && major is not null)
-                return new Version(major ?? 0, minor ?? 0);
+                return new Version(major ?? 0, minor ?? 0, 0, 0);
 
             return null;
         }

@@ -13,17 +13,21 @@
     </PropertyGroup>
 
     <!-- Gathers those references which are either related to the Framework itself, or IKVM. -->
-    <Target Name="GetIkvmCompileReferences" DependsOnTargets="ResolveAssemblyReferences">
-        <IkvmCompilerMergeReferenceAssemblies ToolsPath="$(IkvmToolsPath)ikvmc" TargetFramework="$(IkvmTargetFramework)" Items="@(IkvmFrameworkReference)" >
-            <Output TaskParameter="Items" ItemName="IkvmFrameworkReference" />
-        </IkvmCompilerMergeReferenceAssemblies>
+    <Target Name="GetIkvmCompileReferences" DependsOnTargets="ResolveProjectReferences">
+        <IkvmGetReferenceAssemblies ToolsPath="$(IkvmToolsPath)ikvmc" TargetFramework="$(IkvmTargetFramework)">
+            <Output TaskParameter="ResolvedFrameworkReferences" ItemName="IkvmFrameworkReference" />
+        </IkvmGetReferenceAssemblies>
 
-        <!-- Locate runtime assembly in the output. -->
+        <!-- Locate runtime assemblies. -->
         <ItemGroup>
-            <IkvmBaseReference Include="@(ReferencePath)" Condition=" '%(Filename)%(Extension)' == 'IKVM.Java.dll' " />
-            <IkvmRuntimeAssembly Include="@(ReferencePath)" Condition=" '%(Filename)%(Extension)' == 'IKVM.Runtime.dll' " />
-            <IkvmRuntimeJNIAssembly Include="@(ReferencePath)" Condition=" '%(Filename)%(Extension)' == 'IKVM.Runtime.JNI.dll' " />
+            <IkvmBaseReference Include="@(Reference)" Condition=" '%(Filename)%(Extension)' == 'IKVM.Java.dll' " />
+            <IkvmRuntimeAssembly Include="@(Reference)" Condition=" '%(Filename)%(Extension)' == 'IKVM.Runtime.dll' " />
+            <IkvmRuntimeJNIAssembly Include="@(Reference)" Condition=" '%(Filename)%(Extension)' == 'IKVM.Runtime.JNI.dll' " />
         </ItemGroup>
+
+        <Error Text="Could not locate IKVM.Java.dll." Condition=" '@(IkvmBaseReference)' == '' " />
+        <Error Text="Could not locate IKVM.Runtime.dll." Condition=" '@(IkvmRuntimeAssembly)' == '' " />
+        <Error Text="Could not locate IKVM.Runtime.JNI.dll." Condition=" '@(IkvmRuntimeJNIAssembly)' == '' " />
     </Target>
 
     <!-- Transforms the IkvmReference item group into IkvmReferenceItem items. -->
@@ -116,7 +120,6 @@
     <PropertyGroup>
         <CompileIkvmReferencesDependsOn>
             $(CompileIkvmReferenceAssemblies);
-            GetReferenceAssemblyPaths;
             GetIkvmReferenceItems;
             GetIkvmCompileReferences;
             _GetIkvmReferenceItemsCompileToCachePath;
@@ -139,20 +142,20 @@
     <!-- Adds the expected IkvmReferences to the Reference set. -->
     <Target Name="_ResolveIkvmReferences" DependsOnTargets="GetIkvmReferenceItems">
         <ItemGroup>
-            <ReferencePath Include="@(IkvmReferenceItem->WithMetadataValue('ReferenceOutputAssembly', 'true')->'%(CachePath)')">
+            <Reference Include="@(IkvmReferenceItem->'%(AssemblyName), Version=%(AssemblyVersion)')">
                 <ReferenceSourceTarget>ResolveIkvmReferences</ReferenceSourceTarget>
+                <HintPath>%(IkvmReferenceItem.CachePath)</HintPath>
                 <Aliases>%(IkvmReferenceItem.Aliases)</Aliases>
-            </ReferencePath>
-            <ReferenceCopyLocalPaths Include="@(IkvmReferenceItem->WithMetadataValue('Private', 'true')->'%(CachePath)')">
-                <ReferenceSourceTarget>ResolveIkvmReferences</ReferenceSourceTarget>
-                <Aliases>%(IkvmReferenceItem.Aliases)</Aliases>
-            </ReferenceCopyLocalPaths>
+                <Private>%(IkvmReferenceItem.Private)</Private>
+                <ReferenceOutputAssembly>%(IkvmReferenceItem.ReferenceOutputAssembly)</ReferenceOutputAssembly>
+            </Reference>
         </ItemGroup>
     </Target>
 
     <PropertyGroup>
         <ResolveIkvmReferencesDependsOn>
             $(ResolveIkvmReferencesDependsOn);
+            CompileIkvmReferences;
             GetIkvmReferenceItems;
             _ResolveIkvmReferences;
         </ResolveIkvmReferencesDependsOn>
@@ -163,10 +166,10 @@
     </Target>
 
     <PropertyGroup Condition=" '$(TargetFramework)' != '' ">
-        <ResolveReferencesDependsOn>
-            $(ResolveReferencesDependsOn);
+        <ResolveAssemblyReferencesDependsOn>
             ResolveIkvmReferences;
-        </ResolveReferencesDependsOn>
+            $(ResolveAssemblyReferencesDependsOn);
+        </ResolveAssemblyReferencesDependsOn>
     </PropertyGroup>
 
 </Project>

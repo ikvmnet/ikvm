@@ -22,7 +22,6 @@
         <IkvmReference Include="helloworld-2.0-2\helloworld-2.0.jar">
             <AssemblyName>helloworld-2</AssemblyName>
             <AssemblyVersion>2.1.0.0</AssemblyVersion>
-            <References>helloworld-2.0-1\helloworld-2.0.jar</References>
             <Aliases>helloworld2</Aliases>
         </IkvmReference>
     </ItemGroup>

@@ -11,10 +11,10 @@
         <IkvmTaskAssembly>$(IkvmDir)tasks\$(IkvmTaskFolder)\IKVM.MSBuild.Tasks.dll</IkvmTaskAssembly>
     </PropertyGroup>
 
-    <UsingTask TaskName="IkvmCompilerMergeReferenceAssemblies" AssemblyFile="$(IkvmTaskAssembly)" />
-    <UsingTask TaskName="IkvmCompiler" AssemblyFile="$(IkvmTaskAssembly)" />
-    <UsingTask TaskName="IkvmCalculateMD5" AssemblyFile="$(IkvmTaskAssembly)" />
-    <UsingTask TaskName="IkvmReferenceItemPrepare" AssemblyFile="$(IkvmTaskAssembly)" />
+    <UsingTask TaskName="IkvmGetReferenceAssemblies" AssemblyFile="$(IkvmTaskAssembly)" Condition="Exists('$(IkvmTaskAssembly)')" />
+    <UsingTask TaskName="IkvmCompiler" AssemblyFile="$(IkvmTaskAssembly)" Condition="Exists('$(IkvmTaskAssembly)')" />
+    <UsingTask TaskName="IkvmCalculateMD5" AssemblyFile="$(IkvmTaskAssembly)" Condition="Exists('$(IkvmTaskAssembly)')" />
+    <UsingTask TaskName="IkvmReferenceItemPrepare" AssemblyFile="$(IkvmTaskAssembly)" Condition="Exists('$(IkvmTaskAssembly)')" />
 
     <ItemDefinitionGroup>
         <IkvmReference>
@@ -26,9 +26,9 @@
             <FallbackAssemblyVersion></FallbackAssemblyVersion>
             <Compile></Compile>
             <Sources></Sources>
+            <References></References>
             <Debug></Debug>
             <Aliases></Aliases>
-            <References></References>
             <Private>true</Private>
             <ReferenceOutputAssembly>true</ReferenceOutputAssembly>
         </IkvmReference>
