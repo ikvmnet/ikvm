@@ -16,40 +16,6 @@
     </PropertyGroup>
 
     <ItemGroup>
-        <TargetsForPublish Include="src\ikvm-native\ikvm-native-win.vcxproj">
-            <Targets>Build</Targets>
-            <Properties>Configuration=$(Configuration);Platform=x64</Properties>
-        </TargetsForPublish>
-        <TargetsForPublish Include="src\ikvm-native\ikvm-native-win.vcxproj">
-            <Targets>Build</Targets>
-            <Properties>Configuration=$(Configuration);Platform=Win32</Properties>
-        </TargetsForPublish>
-        <TargetsForPublish Include="src\ikvm-native\ikvm-native-linux.vcxproj">
-            <Targets>Build</Targets>
-            <Properties>Configuration=$(Configuration);Platform=x64</Properties>
-        </TargetsForPublish>
-        <TargetsForPublish Include="src\ikvm-native\ikvm-native-linux.vcxproj">
-            <Targets>Build</Targets>
-            <Properties>Configuration=$(Configuration);Platform=x86</Properties>
-        </TargetsForPublish>
-
-        <TargetsForPublish Include="src\ikvm-tests-native\ikvm-tests-native-win.vcxproj">
-            <Targets>Build</Targets>
-            <Properties>Configuration=$(Configuration);Platform=x64</Properties>
-        </TargetsForPublish>
-        <TargetsForPublish Include="src\ikvm-tests-native\ikvm-tests-native-win.vcxproj">
-            <Targets>Build</Targets>
-            <Properties>Configuration=$(Configuration);Platform=Win32</Properties>
-        </TargetsForPublish>
-        <TargetsForPublish Include="src\ikvm-tests-native\ikvm-tests-native-linux.vcxproj">
-            <Targets>Build</Targets>
-            <Properties>Configuration=$(Configuration);Platform=x64</Properties>
-        </TargetsForPublish>
-        <TargetsForPublish Include="src\ikvm-tests-native\ikvm-tests-native-linux.vcxproj">
-            <Targets>Build</Targets>
-            <Properties>Configuration=$(Configuration);Platform=x86</Properties>
-        </TargetsForPublish>
-
         <TargetsForPublish Include="$(SolutionFile)">
             <Targets>IKVM_Java;IKVM_Runtime</Targets>
         </TargetsForPublish>
@@ -171,7 +137,7 @@
             </_TargetsForPublish>
         </ItemGroup>
 
-        <MSBuild BuildInParallel="$(BuildInParallel)" ContinueOnError="false" Projects="@(_TargetsForPublish)" Targets="%(_TargetsForPublish.Targets)" RunEachTargetSeparately="" />
+        <MSBuild BuildInParallel="$(BuildInParallel)" ContinueOnError="false" Projects="@(_TargetsForPublish)" Targets="%(_TargetsForPublish.Targets)" />
     </Target>
 
 </Project>
