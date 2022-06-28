@@ -193,21 +193,21 @@ jobs:
         name: nuget
         path: build/nuget
     - name: Package Binaries
-      run: 7z a bin.7z bin
+      run: tar czvf bin.tar.gz tools
       working-directory: build
     - name: Upload Binaries
       uses: actions/upload-artifact@v3
       with:
         name: bin
-        path: build/bin.7z
+        path: build/bin.tar.gz
     - name: Package Tools
-      run: 7z a tools.7z tools
+      run: tar czvf tools.tar.gz tools
       working-directory: build
     - name: Upload Tools
       uses: actions/upload-artifact@v3
       with:
         name: tools
-        path: build/tools.7z
+        path: build/tools.tar.gz
     - name: Package Tests
       run: tar czvf tests.tar.gz tests
       working-directory: build
@@ -316,7 +316,7 @@ jobs:
         name: bin
         path: build
     - name: Restore Binaries
-      run: 7z x bin.7z
+      run: tar xzvf bin.tar.gz
       working-directory: build
     - name: Compress Binaries
       shell: pwsh
@@ -327,7 +327,7 @@ jobs:
         name: tools
         path: build
     - name: Restore Tools
-      run: 7z x tools.7z
+      run: tar xzvf tools.tar.gz
       working-directory: build
     - name: Compress Tools
       shell: pwsh
