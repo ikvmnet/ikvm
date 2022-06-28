@@ -31,6 +31,7 @@ using System.Security.Cryptography;
 #if STATIC_COMPILER
 using IKVM.Reflection;
 using IKVM.Reflection.Emit;
+
 using Type = IKVM.Reflection.Type;
 using ProtectionDomain = System.Object;
 #else
