@@ -5,6 +5,8 @@
         <ArtifactStagingDirectory Condition="'$(ArtifactStagingDirectory)' == ''">$([System.IO.Path]::Combine('$(MSBuildThisFileDirectory)', 'build'))</ArtifactStagingDirectory>
         <ArtifactStagingDirectory>$([System.IO.Path]::GetFullPath('$(ArtifactStagingDirectory)'))</ArtifactStagingDirectory>
         <SolutionFile>$([System.IO.Path]::Combine('$(MSBuildThisFileDirectory)', 'IKVM.sln'))</SolutionFile>
+        <Configuration Condition=" '$(Configuration)' == '' ">Release</Configuration>
+        <Platform Condition=" '$(Platform)' == '' ">Any CPU</Platform>
     </PropertyGroup>
 
     <PropertyGroup>
@@ -14,6 +16,23 @@
     </PropertyGroup>
 
     <ItemGroup>
+        <TargetsForPublish Include="src\ikvm-native\ikvm-native-win.vcxproj">
+            <Targets>Build</Targets>
+            <Properties>Configuration=$(Configuration);Platform=x64</Properties>
+        </TargetsForPublish>
+        <TargetsForPublish Include="src\ikvm-native\ikvm-native-win.vcxproj">
+            <Targets>Build</Targets>
+            <Properties>Configuration=$(Configuration);Platform=Win32</Properties>
+        </TargetsForPublish>
+        <TargetsForPublish Include="src\ikvm-native\ikvm-native-linux.vcxproj">
+            <Targets>Build</Targets>
+            <Properties>Configuration=$(Configuration);Platform=x64</Properties>
+        </TargetsForPublish>
+        <TargetsForPublish Include="src\ikvm-native\ikvm-native-linux.vcxproj">
+            <Targets>Build</Targets>
+            <Properties>Configuration=$(Configuration);Platform=x86</Properties>
+        </TargetsForPublish>
+
         <TargetsForPublish Include="$(SolutionFile)">
             <Targets>IKVM_Java;IKVM_Runtime</Targets>
         </TargetsForPublish>
@@ -35,7 +54,7 @@
             <Targets>IKVM-pkg:Pack</Targets>
             <Properties>$(PackProperties);PackageOutputPath=$(ArtifactStagingDirectory)\nuget</Properties>
         </TargetsForPublish>
-        
+
         <TargetsForPublish Include="$(SolutionFile)">
             <Targets>ikvm:Publish;ikvmc:Publish;ikvmstub:Publish</Targets>
             <Properties>$(ToolProperties);TargetFramework=net461;PublishDir=$(ArtifactStagingDirectory)\tools\net461\any</Properties>
