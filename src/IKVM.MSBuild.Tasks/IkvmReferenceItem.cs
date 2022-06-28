@@ -44,6 +44,11 @@ namespace IKVM.MSBuild.Tasks
         public string AssemblyVersion { get; set; }
 
         /// <summary>
+        /// Assembly file version. If not specified, defaults to the assembly version.
+        /// </summary>
+        public string AssemblyFileVersion { get; set; }
+
+        /// <summary>
         /// Disable automatic detection of the assembly name.
         /// </summary>
         public bool DisableAutoAssemblyName { get; set; } = false;
@@ -126,6 +131,7 @@ namespace IKVM.MSBuild.Tasks
             Item.ItemSpec = ItemSpec;
             Item.SetMetadata(IkvmReferenceItemMetadata.AssemblyName, AssemblyName);
             Item.SetMetadata(IkvmReferenceItemMetadata.AssemblyVersion, AssemblyVersion);
+            Item.SetMetadata(IkvmReferenceItemMetadata.AssemblyFileVersion, AssemblyFileVersion);
             Item.SetMetadata(IkvmReferenceItemMetadata.DisableAutoAssemblyName, DisableAutoAssemblyName ? "true" : "false");
             Item.SetMetadata(IkvmReferenceItemMetadata.DisableAutoAssemblyVersion, DisableAutoAssemblyVersion ? "true" : "false");
             Item.SetMetadata(IkvmReferenceItemMetadata.FallbackAssemblyName, FallbackAssemblyName);

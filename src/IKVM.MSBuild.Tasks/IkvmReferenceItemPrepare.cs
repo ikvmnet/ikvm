@@ -178,6 +178,10 @@ namespace IKVM.MSBuild.Tasks
             if (string.IsNullOrWhiteSpace(item.AssemblyVersion))
                 item.AssemblyVersion = item.FallbackAssemblyVersion;
 
+            // default to fallback value
+            if (string.IsNullOrWhiteSpace(item.AssemblyFileVersion))
+                item.AssemblyFileVersion = item.AssemblyVersion;
+
             // save changes to item
             item.Save();
         }
@@ -335,6 +339,7 @@ namespace IKVM.MSBuild.Tasks
             manifest.WriteLine("RuntimeAssembly={0}", GetHashForFile(RuntimeAssembly));
             manifest.WriteLine("AssemblyName={0}", item.AssemblyName);
             manifest.WriteLine("AssemblyVersion={0}", item.AssemblyVersion);
+            manifest.WriteLine("AssemblyFileVersion={0}", item.AssemblyFileVersion);
             manifest.WriteLine("Debug={0}", item.Debug ? "true" : "false");
 
             // each Compile item should be a jar or class file
@@ -482,13 +487,13 @@ namespace IKVM.MSBuild.Tasks
 
             if (string.IsNullOrWhiteSpace(item.AssemblyName))
             {
-                Log.LogErrorWithCodeFromResources("Error.IkvmInvalidAssemblyName", item.ItemSpec, item.AssemblyName);
+                Log.LogErrorWithCodeFromResources("Error.IkvmMissingAssemblyName", item.ItemSpec);
                 valid = false;
             }
 
             if (string.IsNullOrWhiteSpace(item.AssemblyVersion))
             {
-                Log.LogErrorWithCodeFromResources("Error.IkvmInvalidAssemblyVersion", item.ItemSpec, item.AssemblyVersion);
+                Log.LogErrorWithCodeFromResources("Error.IkvmMissingAssemblyVersion", item.ItemSpec);
                 valid = false;
             }
             else
@@ -496,6 +501,20 @@ namespace IKVM.MSBuild.Tasks
                 if (Version.TryParse(item.AssemblyVersion, out _) == false)
                 {
                     Log.LogErrorWithCodeFromResources("Error.IkvmInvalidAssemblyVersion", item.ItemSpec, item.AssemblyVersion);
+                    valid = false;
+                }
+            }
+
+            if (string.IsNullOrWhiteSpace(item.AssemblyFileVersion))
+            {
+                Log.LogErrorWithCodeFromResources("Error.IkvmMissingAssemblyFileVersion", item.ItemSpec);
+                valid = false;
+            }
+            else
+            {
+                if (Version.TryParse(item.AssemblyFileVersion, out _) == false)
+                {
+                    Log.LogErrorWithCodeFromResources("Error.IkvmInvalidAssemblyFileVersion", item.ItemSpec, item.AssemblyFileVersion);
                     valid = false;
                 }
             }

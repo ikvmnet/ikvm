@@ -124,6 +124,33 @@ namespace IKVM.MSBuild.Tasks.Resources {
         }
         
         /// <summary>
+        ///   Looks up a localized string similar to IKVMSDK0013: The IkvmReference {0} is missing AssemblyFileVersion..
+        /// </summary>
+        internal static string Error_IkvmMissingAssemblyFileVersion {
+            get {
+                return ResourceManager.GetString("Error.IkvmMissingAssemblyFileVersion", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to IKVMSDK0011: The IkvmReference {0} is missing AssemblyName..
+        /// </summary>
+        internal static string Error_IkvmMissingAssemblyName {
+            get {
+                return ResourceManager.GetString("Error.IkvmMissingAssemblyName", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to IKVMSDK0012: The IkvmReference {0} is missing AssemblyVersion..
+        /// </summary>
+        internal static string Error_IkvmMissingAssemblyVersion {
+            get {
+                return ResourceManager.GetString("Error.IkvmMissingAssemblyVersion", resourceCulture);
+            }
+        }
+        
+        /// <summary>
         ///   Looks up a localized string similar to IKVMSDK0008: The IkvmReference {0} is missing the Compile item &apos;{1}&apos;..
         /// </summary>
         internal static string Error_IkvmMissingCompile {

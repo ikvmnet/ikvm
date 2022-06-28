@@ -9,6 +9,7 @@
         public static readonly char[] PropertySeperatorCharArray = new[] { PropertySeperatorChar };
         public static readonly string AssemblyName = "AssemblyName";
         public static readonly string AssemblyVersion = "AssemblyVersion";
+        public static readonly string AssemblyFileVersion = "AssemblyFileVersion";
         public static readonly string DisableAutoAssemblyName = "DisableAutoAssemblyName";
         public static readonly string DisableAutoAssemblyVersion = "DisableAutoAssemblyVersion";
         public static readonly string FallbackAssemblyName = "FallbackAssemblyName";

@@ -102,7 +102,7 @@
             Output="%(_IkvmReferenceItemToCompile.StagePath)"
             Assembly="%(_IkvmReferenceItemToCompile.AssemblyName)"
             Version="%(_IkvmReferenceItemToCompile.AssemblyVersion)"
-            FileVersion="%(_IkvmReferenceItemToCompile.AssemblyVersion)"
+            FileVersion="%(_IkvmReferenceItemToCompile.AssemblyFileVersion)"
             Runtime="@(IkvmRuntimeAssembly)"
             Target="library"
             Debug="%(_IkvmReferenceItemToCompile.Debug)"
