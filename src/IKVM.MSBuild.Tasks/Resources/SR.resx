@@ -120,6 +120,9 @@
   <data name="Error.IkvmCircularReference" xml:space="preserve">
     <value>IKVMSDK0001: The IkvmReference {0} contains a circular reference.</value>
   </data>
+  <data name="Error.IkvmDelaySignRequiresKey" xml:space="preserve">
+    <value>IKVMSDK0012: The IkvmReference {0} has been configured to delay sign the assembly but is missing a key file.</value>
+  </data>
   <data name="Error.IkvmInvalidAssemblyInfo" xml:space="preserve">
     <value>IKVMSDK0004: The IkvmReference {0} has invalid AssemblyName '{1}' or AssemblyVersion '{2}'.</value>
   </data>
@@ -132,6 +135,9 @@
   <data name="Error.IkvmInvalidCompile" xml:space="preserve">
     <value>IKVMSDK0005: The IkvmReference {0} has an invalid Compile item '{1}'. Can only include jar or class files.</value>
   </data>
+  <data name="Error.IkvmInvalidKeyFile" xml:space="preserve">
+    <value>IKVMSDK0012: The IkvmReference {0} has a invalid key file '{1}'.</value>
+  </data>
   <data name="Error.IkvmInvalidReference" xml:space="preserve">
     <value>IKVMSDK0006: The IkvmReference {0} contains an invalid Reference '{1}'.</value>
   </data>
@@ -140,6 +146,9 @@
   </data>
   <data name="Error.IkvmMissingCompile" xml:space="preserve">
     <value>IKVMSDK0008: The IkvmReference {0} is missing the Compile item '{1}'.</value>
+  </data>
+  <data name="Error.IkvmMissingKeyFile" xml:space="preserve">
+    <value>IKVMSDK0011: The IkvmReference {0} has specified key file '{1}', but the key file could not be found.</value>
   </data>
   <data name="Error.IkvmMissingSources" xml:space="preserve">
     <value>IKVMSDK0009: The IkvmReference {0} is missing the Source item '{1}'.</value>
