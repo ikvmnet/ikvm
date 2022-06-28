@@ -131,52 +131,46 @@ namespace IKVM.Internal
 
         internal ModuleBuilder CreateModuleBuilder()
         {
-            AssemblyName name = new AssemblyName();
+            var name = new AssemblyName();
             name.Name = assemblyName;
             if (options.keyPair != null)
-            {
                 name.KeyPair = options.keyPair;
-            }
             else if (options.publicKey != null)
-            {
                 name.SetPublicKey(options.publicKey);
-            }
+
             name.Version = options.version;
-            assemblyBuilder =
-                StaticCompiler.Universe
-                    .DefineDynamicAssembly(name, AssemblyBuilderAccess.ReflectionOnly, assemblyDir);
-            ModuleBuilder moduleBuilder;
-            moduleBuilder = assemblyBuilder.DefineDynamicModule(assemblyName, assemblyFile, this.EmitDebugInfo);
-            if (this.EmitStackTraceInfo)
-            {
+
+            // define a dynamic assembly and module
+            assemblyBuilder = StaticCompiler.Universe.DefineDynamicAssembly(name, AssemblyBuilderAccess.ReflectionOnly, assemblyDir);
+            var moduleBuilder = assemblyBuilder.DefineDynamicModule(assemblyName, assemblyFile, this.EmitDebugInfo);
+
+            // if configured to emit stack trace info set source file
+            if (EmitStackTraceInfo)
                 AttributeHelper.SetSourceFile(moduleBuilder, null);
-            }
-            if (this.EmitDebugInfo || this.EmitStackTraceInfo)
+
+            // if configured to emit debug info or stack trace info, add debug DebuggableAttribute
+            if (EmitDebugInfo || EmitStackTraceInfo)
             {
-                CustomAttributeBuilder debugAttr = new CustomAttributeBuilder(JVM.Import(typeof(DebuggableAttribute)).GetConstructor(new Type[] { Types.Boolean, Types.Boolean }), new object[] { true, this.EmitDebugInfo });
+                var debugAttr = new CustomAttributeBuilder(JVM.Import(typeof(DebuggableAttribute)).GetConstructor(new[] { Types.Boolean, Types.Boolean }), new object[] { true, EmitDebugInfo });
                 assemblyBuilder.SetCustomAttribute(debugAttr);
             }
+
             AttributeHelper.SetRuntimeCompatibilityAttribute(assemblyBuilder);
+
             if (options.baseAddress != 0)
-            {
                 moduleBuilder.__ImageBase = options.baseAddress;
-            }
             if (options.fileAlignment != 0)
-            {
                 moduleBuilder.__FileAlignment = options.fileAlignment;
-            }
             if (options.highentropyva)
-            {
                 moduleBuilder.__DllCharacteristics |= DllCharacteristics.HighEntropyVA;
-            }
+
             // allow the runtime to "inject" dynamic classes into the assembly
-            string mainAssemblyName = options.sharedclassloader != null && options.sharedclassloader[0] != this
+            var mainAssemblyName = options.sharedclassloader != null && options.sharedclassloader[0] != this
                 ? options.sharedclassloader[0].assemblyName
                 : assemblyName;
             if (!DisableDynamicBinding)
-            {
                 AttributeHelper.SetInternalsVisibleToAttribute(assemblyBuilder, mainAssemblyName + DynamicClassLoader.DynamicAssemblySuffixAndPublicKey);
-            }
+
             return moduleBuilder;
         }
 
