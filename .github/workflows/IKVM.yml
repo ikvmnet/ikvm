@@ -193,7 +193,7 @@ jobs:
         name: nuget
         path: build/nuget
     - name: Package Binaries
-      run: tar czvf bin.tar.gz tools
+      run: tar czvf bin.tar.gz bin
       working-directory: build
     - name: Upload Binaries
       uses: actions/upload-artifact@v3
