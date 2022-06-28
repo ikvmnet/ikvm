@@ -33,6 +33,23 @@
             <Properties>Configuration=$(Configuration);Platform=x86</Properties>
         </TargetsForPublish>
 
+        <TargetsForPublish Include="src\ikvm-tests-native\ikvm-tests-native-win.vcxproj">
+            <Targets>Build</Targets>
+            <Properties>Configuration=$(Configuration);Platform=x64</Properties>
+        </TargetsForPublish>
+        <TargetsForPublish Include="src\ikvm-tests-native\ikvm-tests-native-win.vcxproj">
+            <Targets>Build</Targets>
+            <Properties>Configuration=$(Configuration);Platform=Win32</Properties>
+        </TargetsForPublish>
+        <TargetsForPublish Include="src\ikvm-tests-native\ikvm-tests-native-linux.vcxproj">
+            <Targets>Build</Targets>
+            <Properties>Configuration=$(Configuration);Platform=x64</Properties>
+        </TargetsForPublish>
+        <TargetsForPublish Include="src\ikvm-tests-native\ikvm-tests-native-linux.vcxproj">
+            <Targets>Build</Targets>
+            <Properties>Configuration=$(Configuration);Platform=x86</Properties>
+        </TargetsForPublish>
+
         <TargetsForPublish Include="$(SolutionFile)">
             <Targets>IKVM_Java;IKVM_Runtime</Targets>
         </TargetsForPublish>
