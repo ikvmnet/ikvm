@@ -49,7 +49,7 @@ namespace IKVM.MSBuild.Tasks.Tests
         {
             var i1 = new TaskItem(@".\ext");
             IkvmReferenceItemPrepare.AssignMetadata(IkvmReferenceItemUtil.Import(new[] { i1 }));
-            i1.ItemSpec.Should().Be(@"ext\");
+            i1.ItemSpec.Should().Be(@"ext" + Path.DirectorySeparatorChar);
         }
 
         [TestMethod]
