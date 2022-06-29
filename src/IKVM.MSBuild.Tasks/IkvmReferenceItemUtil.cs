@@ -59,6 +59,8 @@ namespace IKVM.MSBuild.Tasks
                 item.FallbackAssemblyVersion = item.Item.GetMetadata(IkvmReferenceItemMetadata.FallbackAssemblyVersion);
                 item.Aliases = item.Item.GetMetadata(IkvmReferenceItemMetadata.Aliases);
                 item.Debug = string.Equals(item.Item.GetMetadata(IkvmReferenceItemMetadata.Debug), "true", StringComparison.OrdinalIgnoreCase);
+                item.KeyFile = item.Item.GetMetadata(IkvmReferenceItemMetadata.KeyFile);
+                item.DelaySign = string.Equals(item.Item.GetMetadata(IkvmReferenceItemMetadata.DelaySign), "true", StringComparison.OrdinalIgnoreCase);
                 item.Compile = item.Item.GetMetadata(IkvmReferenceItemMetadata.Compile)?.Split(IkvmReferenceItemMetadata.PropertySeperatorCharArray, StringSplitOptions.RemoveEmptyEntries).ToList();
                 item.Sources = item.Item.GetMetadata(IkvmReferenceItemMetadata.Sources)?.Split(IkvmReferenceItemMetadata.PropertySeperatorCharArray, StringSplitOptions.RemoveEmptyEntries).ToList();
                 item.References = ResolveReferences(map, item, item.Item.GetMetadata(IkvmReferenceItemMetadata.References)).ToList();

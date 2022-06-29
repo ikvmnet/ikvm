@@ -106,6 +106,8 @@
             Runtime="@(IkvmRuntimeAssembly)"
             Target="library"
             Debug="%(_IkvmReferenceItemToCompile.Debug)"
+            KeyFile="%(_IkvmReferenceItemToCompile.KeyFile)"
+            DelaySign="%(_IkvmReferenceItemToCompile.DelaySign)"
             CompressResources="true"
             NoStdLib="true"
             References="@(IkvmFrameworkReference);@(IkvmBaseAssembly);@(IkvmRuntimeAssembly);@(IkvmRuntimeJNIAssembly);%(_IkvmReferenceItemToCompile.ResolvedReferences)"

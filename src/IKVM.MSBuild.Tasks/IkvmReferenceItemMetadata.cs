@@ -21,6 +21,8 @@
         public static readonly string StagePath = "StagePath";
         public static readonly string ResolvedReferences = "ResolvedReferences";
         public static readonly string Debug = "Debug";
+        public static readonly string KeyFile = "KeyFile";
+        public static readonly string DelaySign = "DelaySign";
         public static readonly string Aliases = "Aliases";
         public static readonly string Private = "Private";
         public static readonly string ReferenceOutputAssembly = "ReferenceOutputAssembly";
