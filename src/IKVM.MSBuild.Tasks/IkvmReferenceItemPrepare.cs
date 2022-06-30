@@ -598,7 +598,7 @@ namespace IKVM.MSBuild.Tasks
         {
             foreach (var item in items)
             {
-                item.ResolvedReferences = item.References.Select(i => i.CachePath).ToList();
+                item.ResolvedReferences = item.References.Distinct().Select(i => i.CachePath).ToList();
                 item.Save();
             }
         }
