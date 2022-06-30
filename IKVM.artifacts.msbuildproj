@@ -39,16 +39,42 @@
         </TargetsForPublish>
 
         <TargetsForPublish Include="$(SolutionFile)">
-            <Targets>ikvm:Publish;ikvmc:Publish;ikvmstub:Publish</Targets>
-            <Properties>$(ToolProperties);TargetFramework=net461;PublishDir=$(ArtifactStagingDirectory)\tools\net461\any</Properties>
+            <Targets>ikvm:Publish</Targets>
+            <Properties>$(ToolProperties);TargetFramework=net461;PublishDir=$(ArtifactStagingDirectory)\tools\ikvm\net461\any</Properties>
         </TargetsForPublish>
         <TargetsForPublish Include="$(SolutionFile)">
-            <Targets>ikvm:Publish;ikvmc:Publish;ikvmstub:Publish</Targets>
-            <Properties>$(ToolProperties);TargetFramework=netcoreapp3.1;RuntimeIdentifier=win7-x64;PublishDir=$(ArtifactStagingDirectory)\tools\netcoreapp3.1\win7-x64</Properties>
+            <Targets>ikvm:Publish</Targets>
+            <Properties>$(ToolProperties);TargetFramework=netcoreapp3.1;RuntimeIdentifier=win7-x64;PublishDir=$(ArtifactStagingDirectory)\tools\ikvm\netcoreapp3.1\win7-x64</Properties>
         </TargetsForPublish>
         <TargetsForPublish Include="$(SolutionFile)">
-            <Targets>ikvm:Publish;ikvmc:Publish;ikvmstub:Publish</Targets>
-            <Properties>$(ToolProperties);TargetFramework=netcoreapp3.1;RuntimeIdentifier=linux-x64;PublishDir=$(ArtifactStagingDirectory)\tools\netcoreapp3.1\linux-x64</Properties>
+            <Targets>ikvm:Publish</Targets>
+            <Properties>$(ToolProperties);TargetFramework=netcoreapp3.1;RuntimeIdentifier=linux-x64;PublishDir=$(ArtifactStagingDirectory)\tools\ikvm\netcoreapp3.1\linux-x64</Properties>
+        </TargetsForPublish>
+
+        <TargetsForPublish Include="$(SolutionFile)">
+            <Targets>ikvmc:Publish</Targets>
+            <Properties>$(ToolProperties);TargetFramework=net461;PublishDir=$(ArtifactStagingDirectory)\tools\ikvmc\net461\any</Properties>
+        </TargetsForPublish>
+        <TargetsForPublish Include="$(SolutionFile)">
+            <Targets>ikvmc:Publish</Targets>
+            <Properties>$(ToolProperties);TargetFramework=netcoreapp3.1;RuntimeIdentifier=win7-x64;PublishDir=$(ArtifactStagingDirectory)\tools\ikvmc\netcoreapp3.1\win7-x64</Properties>
+        </TargetsForPublish>
+        <TargetsForPublish Include="$(SolutionFile)">
+            <Targets>ikvmc:Publish</Targets>
+            <Properties>$(ToolProperties);TargetFramework=netcoreapp3.1;RuntimeIdentifier=linux-x64;PublishDir=$(ArtifactStagingDirectory)\tools\ikvmc\netcoreapp3.1\linux-x64</Properties>
+        </TargetsForPublish>
+
+        <TargetsForPublish Include="$(SolutionFile)">
+            <Targets>ikvmstub:Publish</Targets>
+            <Properties>$(ToolProperties);TargetFramework=net461;PublishDir=$(ArtifactStagingDirectory)\tools\ikvmstub\net461\any</Properties>
+        </TargetsForPublish>
+        <TargetsForPublish Include="$(SolutionFile)">
+            <Targets>ikvmstub:Publish</Targets>
+            <Properties>$(ToolProperties);TargetFramework=netcoreapp3.1;RuntimeIdentifier=win7-x64;PublishDir=$(ArtifactStagingDirectory)\tools\ikvmstub\netcoreapp3.1\win7-x64</Properties>
+        </TargetsForPublish>
+        <TargetsForPublish Include="$(SolutionFile)">
+            <Targets>ikvmstub:Publish</Targets>
+            <Properties>$(ToolProperties);TargetFramework=netcoreapp3.1;RuntimeIdentifier=linux-x64;PublishDir=$(ArtifactStagingDirectory)\tools\ikvmstub\netcoreapp3.1\linux-x64</Properties>
         </TargetsForPublish>
 
         <TargetsForPublish Include="$(SolutionFile)">
