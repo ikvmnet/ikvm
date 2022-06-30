@@ -360,7 +360,7 @@ namespace IKVM.MSBuild.Tasks
                 references.Add(GetReferenceLine(item, reference));
 
             // sort and write the reference lines
-            foreach (var r in references)
+            foreach (var r in references.Distinct())
                 manifest.WriteLine(r);
 
             // hash the resulting manifest and set the identity

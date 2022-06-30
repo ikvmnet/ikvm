@@ -195,7 +195,8 @@ namespace IKVM.MSBuild.Tasks
 
             if (References is not null)
                 foreach (var reference in References)
-                    options.References.Add(reference.ItemSpec);
+                    if (options.References.Contains(reference.ItemSpec) == false)
+                        options.References.Add(reference.ItemSpec);
 
             if (Recurse is not null)
                 foreach (var recurse in Recurse)
