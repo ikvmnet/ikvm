@@ -336,6 +336,8 @@ namespace IKVM.MSBuild.Tasks
             manifest.WriteLine("AssemblyName={0}", item.AssemblyName);
             manifest.WriteLine("AssemblyVersion={0}", item.AssemblyVersion);
             manifest.WriteLine("Debug={0}", item.Debug ? "true" : "false");
+            manifest.WriteLine("KeyFile={0}", string.IsNullOrWhiteSpace(item.KeyFile) == false ? GetHashForFile(item.KeyFile) : "");
+            manifest.WriteLine("DelaySign={0}", item.DelaySign ? "true" : "false");
 
             // each Compile item should be a jar or class file
             var compiles = new List<string>(16);
@@ -548,6 +550,18 @@ namespace IKVM.MSBuild.Tasks
             catch (Exception)
             {
                 Log.LogErrorWithCodeFromResources("Error.IkvmInvalidAssemblyInfo", item.ItemSpec, item.AssemblyName, item.AssemblyVersion);
+                valid = false;
+            }
+
+            if (string.IsNullOrWhiteSpace(item.KeyFile) == false && File.Exists(item.KeyFile) == false)
+            {
+                Log.LogErrorWithCodeFromResources("Error.IkvmMissingKeyFile", item.ItemSpec, item.KeyFile);
+                valid = false;
+            }
+
+            if (item.DelaySign && string.IsNullOrWhiteSpace(item.KeyFile))
+            {
+                Log.LogErrorWithCodeFromResources("Error.IkvmDelaySignRequiresKey", item.ItemSpec);
                 valid = false;
             }
 
