@@ -64,26 +64,6 @@ namespace IKVM.MSBuild.Tasks
         public string FallbackAssemblyVersion { get; set; }
 
         /// <summary>
-        /// Aliases to make the assembly available under.
-        /// </summary>
-        public string Aliases { get; set; }
-
-        /// <summary>
-        /// Compile in debug mode.
-        /// </summary>
-        public bool Debug { get; set; }
-
-        /// <summary>
-        /// Path to the file to sign the assembly.
-        /// </summary>
-        public string KeyFile { get; set; }
-
-        /// <summary>
-        /// Whether to delay sign the produced assembly.
-        /// </summary>
-        public bool DelaySign { get; set; }
-
-        /// <summary>
         /// Set of sources to compile.
         /// </summary>
         public List<string> Compile { get; set; } = new List<string>();
@@ -114,6 +94,26 @@ namespace IKVM.MSBuild.Tasks
         public string StagePath { get; set; }
 
         /// <summary>
+        /// Aliases to make the assembly available under.
+        /// </summary>
+        public string Aliases { get; set; }
+
+        /// <summary>
+        /// Compile in debug mode.
+        /// </summary>
+        public bool Debug { get; set; }
+
+        /// <summary>
+        /// Path to the file to sign the assembly.
+        /// </summary>
+        public string KeyFile { get; set; }
+
+        /// <summary>
+        /// Whether to delay sign the produced assembly.
+        /// </summary>
+        public bool DelaySign { get; set; }
+
+        /// <summary>
         /// Whether the itme will be copied along with the build output.
         /// </summary>
         public bool Private { get; set; } = true;
@@ -140,16 +140,16 @@ namespace IKVM.MSBuild.Tasks
             Item.SetMetadata(IkvmReferenceItemMetadata.DisableAutoAssemblyVersion, DisableAutoAssemblyVersion ? "true" : "false");
             Item.SetMetadata(IkvmReferenceItemMetadata.FallbackAssemblyName, FallbackAssemblyName);
             Item.SetMetadata(IkvmReferenceItemMetadata.FallbackAssemblyVersion, FallbackAssemblyVersion);
-            Item.SetMetadata(IkvmReferenceItemMetadata.Aliases, Aliases);
-            Item.SetMetadata(IkvmReferenceItemMetadata.Debug, Debug ? "true" : "false");
-            Item.SetMetadata(IkvmReferenceItemMetadata.KeyFile, KeyFile);
-            Item.SetMetadata(IkvmReferenceItemMetadata.DelaySign, DelaySign ? "true" : "false");
             Item.SetMetadata(IkvmReferenceItemMetadata.Compile, string.Join(IkvmReferenceItemMetadata.PropertySeperatorString, Compile));
             Item.SetMetadata(IkvmReferenceItemMetadata.Sources, string.Join(IkvmReferenceItemMetadata.PropertySeperatorString, Sources));
             Item.SetMetadata(IkvmReferenceItemMetadata.References, string.Join(IkvmReferenceItemMetadata.PropertySeperatorString, References.Select(i => i.ItemSpec)));
             Item.SetMetadata(IkvmReferenceItemMetadata.IkvmIdentity, IkvmIdentity);
             Item.SetMetadata(IkvmReferenceItemMetadata.CachePath, CachePath);
             Item.SetMetadata(IkvmReferenceItemMetadata.StagePath, StagePath);
+            Item.SetMetadata(IkvmReferenceItemMetadata.Aliases, Aliases);
+            Item.SetMetadata(IkvmReferenceItemMetadata.Debug, Debug ? "true" : "false");
+            Item.SetMetadata(IkvmReferenceItemMetadata.KeyFile, KeyFile);
+            Item.SetMetadata(IkvmReferenceItemMetadata.DelaySign, DelaySign ? "true" : "false");
             Item.SetMetadata(IkvmReferenceItemMetadata.Private, Private ? "true" : "false");
             Item.SetMetadata(IkvmReferenceItemMetadata.ReferenceOutputAssembly, ReferenceOutputAssembly ? "true" : "false");
             Item.SetMetadata(IkvmReferenceItemMetadata.ResolvedReferences, string.Join(IkvmReferenceItemMetadata.PropertySeperatorString, ResolvedReferences));
