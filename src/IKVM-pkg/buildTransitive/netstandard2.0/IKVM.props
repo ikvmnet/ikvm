@@ -3,6 +3,7 @@
     <PropertyGroup>
         <IkvmDir>$(MSBuildThisFileDirectory)..\..\</IkvmDir>
         <IkvmVersion>$([System.IO.File]::ReadAllText('$(IkvmDir)VERSION'))</IkvmVersion>
+        <IkvmKeyFile>$(IkvmDir)ikvm.snk</IkvmKeyFile>
     </PropertyGroup>
 
     <PropertyGroup>

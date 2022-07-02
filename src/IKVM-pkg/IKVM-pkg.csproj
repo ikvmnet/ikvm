@@ -27,7 +27,7 @@
     <ItemGroup>
         <None Include="..\..\LICENSE.md" Pack="true" PackagePath="." />
         <None Include="..\..\README.md" Pack="true" PackagePath="." />
-        <None Include="..\..\IKVM.snk" Pack="true" PackagePath="." />
+        <None Include="..\..\ikvm.snk" Pack="true" PackagePath="." />
     </ItemGroup>
 
     <ItemGroup>
