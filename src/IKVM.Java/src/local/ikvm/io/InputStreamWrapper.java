@@ -42,11 +42,11 @@ public final class InputStreamWrapper extends java.io.InputStream
             if (false) throw new cli.System.IO.IOException();
             if (false) throw new cli.System.ObjectDisposedException(null);
             int i = stream.ReadByte();
-	    if (i == -1)
-	    {
-		atEOF = true;
-	    }
-	    return i;
+	        if (i == -1)
+	        {
+		        atEOF = true;
+	        }
+	        return i;
         }
         catch (cli.System.IO.IOException x)
         {
@@ -85,13 +85,13 @@ public final class InputStreamWrapper extends java.io.InputStream
         {
             if (false) throw new cli.System.IO.IOException();
             if (false) throw new cli.System.ObjectDisposedException(null);
-	    int count = stream.Read(b, off, len);
-	    if (count == 0)
-	    {
-		atEOF = true;
-		return -1;
-	    }
-	    return count;
+	        int count = stream.Read(b, off, len);
+	        if (count == 0)
+            {
+                atEOF = true;
+                return -1;
+            }
+            return count;
         }
         catch (cli.System.IO.IOException x)
         {
@@ -236,4 +236,5 @@ public final class InputStreamWrapper extends java.io.InputStream
     {
         return stream.get_CanSeek();
     }
+
 }

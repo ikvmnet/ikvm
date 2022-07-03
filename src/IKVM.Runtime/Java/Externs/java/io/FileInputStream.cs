@@ -83,7 +83,9 @@ namespace IKVM.Java.Externs.java.io
 
         public static void initIDs()
         {
+
         }
+
     }
 
 }
