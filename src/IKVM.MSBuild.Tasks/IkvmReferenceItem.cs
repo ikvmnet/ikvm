@@ -79,6 +79,11 @@ namespace IKVM.MSBuild.Tasks
         public List<IkvmReferenceItem> References { get; set; } = new List<IkvmReferenceItem>();
 
         /// <summary>
+        /// Name of the classloader to use.
+        /// </summary>
+        public string ClassLoader { get; set; }
+
+        /// <summary>
         /// Unique IKVM identity of the reference.
         /// </summary>
         public string IkvmIdentity { get; set; }
@@ -143,6 +148,7 @@ namespace IKVM.MSBuild.Tasks
             Item.SetMetadata(IkvmReferenceItemMetadata.Compile, string.Join(IkvmReferenceItemMetadata.PropertySeperatorString, Compile));
             Item.SetMetadata(IkvmReferenceItemMetadata.Sources, string.Join(IkvmReferenceItemMetadata.PropertySeperatorString, Sources));
             Item.SetMetadata(IkvmReferenceItemMetadata.References, string.Join(IkvmReferenceItemMetadata.PropertySeperatorString, References.Select(i => i.ItemSpec)));
+            Item.SetMetadata(IkvmReferenceItemMetadata.ClassLoader, ClassLoader);
             Item.SetMetadata(IkvmReferenceItemMetadata.IkvmIdentity, IkvmIdentity);
             Item.SetMetadata(IkvmReferenceItemMetadata.CachePath, CachePath);
             Item.SetMetadata(IkvmReferenceItemMetadata.StagePath, StagePath);

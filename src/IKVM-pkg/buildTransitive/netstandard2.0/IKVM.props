@@ -28,6 +28,7 @@
             <Compile></Compile>
             <Sources></Sources>
             <References></References>
+            <ClassLoader></ClassLoader>
             <Debug></Debug>
             <KeyFile></KeyFile>
             <DelaySign></DelaySign>

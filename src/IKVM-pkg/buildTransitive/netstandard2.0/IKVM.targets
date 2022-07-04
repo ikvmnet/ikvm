@@ -111,6 +111,7 @@
             KeyFile="%(_IkvmReferenceItemToCompile.KeyFile)"
             DelaySign="%(_IkvmReferenceItemToCompile.DelaySign)"
             CompressResources="true"
+            ClassLoader="%(_IkvmReferenceItemToCompile.ClassLoader)"
             NoStdLib="true"
             References="@(IkvmFrameworkReference);@(IkvmBaseAssembly);@(IkvmRuntimeAssembly);@(IkvmRuntimeJNIAssembly);@(_IkvmReferenceItemResolvedReference->Distinct())"
             Input="%(_IkvmReferenceItemToCompile.Compile)"
