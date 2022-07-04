@@ -16,6 +16,7 @@
         public static readonly string Compile = "Compile";
         public static readonly string Sources = "Sources";
         public static readonly string References = "References";
+        public static readonly string ClassLoader = "ClassLoader";
         public static readonly string IkvmIdentity = "IkvmIdentity";
         public static readonly string CachePath = "CachePath";
         public static readonly string StagePath = "StagePath";
