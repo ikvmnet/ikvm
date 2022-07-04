@@ -178,9 +178,9 @@ namespace IKVM.MSBuild.Tasks
             if (string.IsNullOrWhiteSpace(item.AssemblyVersion))
                 item.AssemblyVersion = item.FallbackAssemblyVersion;
 
-            // default to fallback value
+            // default to assembly version
             if (string.IsNullOrWhiteSpace(item.AssemblyFileVersion))
-                item.AssemblyFileVersion = item.AssemblyFileVersion;
+                item.AssemblyFileVersion = item.AssemblyVersion;
 
             // save changes to item
             item.Save();
