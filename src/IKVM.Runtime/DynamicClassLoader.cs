@@ -31,6 +31,7 @@ using System.Security.Cryptography;
 #if STATIC_COMPILER
 using IKVM.Reflection;
 using IKVM.Reflection.Emit;
+
 using Type = IKVM.Reflection.Type;
 using ProtectionDomain = System.Object;
 #else
@@ -43,37 +44,52 @@ using ProtectionDomain = java.security.ProtectionDomain;
 namespace IKVM.Internal
 {
 
+    /// <summary>
+    /// Provides access to dynamically emitted Java types.
+    /// </summary>
     sealed class DynamicClassLoader : TypeWrapperFactory
     {
 
-        // this PublicKey must be the same as the byte array in ForgedKeyPair
+#if NETFRAMEWORK
         internal const string DynamicAssemblySuffixAndPublicKey = "-ikvm-runtime-injected, PublicKey=00240000048000009400000006020000002400005253413100040000010001009D674F3D63B8D7A4C428BD7388341B025C71AA61C6224CD53A12C21330A3159D300051FE2EED154FE30D70673A079E4529D0FD78113DCA771DA8B0C1EF2F77B73651D55645B0A4294F0AF9BF7078432E13D0F46F951D712C2FCF02EB15552C0FE7817FC0AED58E0984F86661BF64D882F29B619899DD264041E7D4992548EB9E";
-#if !STATIC_COMPILER
-        private static AssemblyBuilder jniProxyAssemblyBuilder;
-        private static List<DynamicClassLoader> saveClassLoaders;
-        private static int dumpCounter;
-#endif // !STATIC_COMPILER
-#if STATIC_COMPILER || CLASSGC
-        private readonly Dictionary<string, TypeWrapper> dynamicTypes = new Dictionary<string, TypeWrapper>();
 #else
-        private static readonly Dictionary<string, TypeWrapper> dynamicTypes = new Dictionary<string, TypeWrapper>();
-#endif
-        private readonly ModuleBuilder moduleBuilder;
-        private readonly bool hasInternalAccess;
-#if STATIC_COMPILER
-		private TypeBuilder proxiesContainer;
-		private List<TypeBuilder> proxies;
-#endif // STATIC_COMPILER
-        private Dictionary<string, TypeBuilder> unloadables;
-        private TypeBuilder unloadableContainer;
-        private Type[] delegates;
-#if !STATIC_COMPILER && !CLASSGC
-        private static DynamicClassLoader instance = new DynamicClassLoader(CreateModuleBuilder(), false);
-#endif
-#if CLASSGC
-        private List<string> friends = new List<string>();
+        internal const string DynamicAssemblySuffixAndPublicKey = "-ikvm-runtime-injected";
 #endif
 
+#if !STATIC_COMPILER
+        static AssemblyBuilder jniProxyAssemblyBuilder;
+        static List<DynamicClassLoader> saveClassLoaders;
+        static int dumpCounter;
+#endif
+
+#if STATIC_COMPILER || CLASSGC
+        readonly Dictionary<string, TypeWrapper> dynamicTypes = new Dictionary<string, TypeWrapper>();
+#else
+        static readonly Dictionary<string, TypeWrapper> dynamicTypes = new Dictionary<string, TypeWrapper>();
+#endif
+        readonly ModuleBuilder moduleBuilder;
+        readonly bool hasInternalAccess;
+
+#if STATIC_COMPILER
+        TypeBuilder proxiesContainer;
+        List<TypeBuilder> proxies;
+#endif
+
+        Dictionary<string, TypeBuilder> unloadables;
+        TypeBuilder unloadableContainer;
+        Type[] delegates;
+
+#if !STATIC_COMPILER && !CLASSGC
+        static DynamicClassLoader instance = new DynamicClassLoader(CreateModuleBuilder(), false);
+#endif
+
+#if CLASSGC
+        List<string> friends = new List<string>();
+#endif
+
+        /// <summary>
+        /// Initializes the static instance.
+        /// </summary>
         [System.Security.SecuritySafeCritical]
         static DynamicClassLoader()
         {
@@ -89,6 +105,11 @@ namespace IKVM.Internal
 #endif // !STATIC_COMPILER
         }
 
+        /// <summary>
+        /// Initializes a new instance.
+        /// </summary>
+        /// <param name="moduleBuilder"></param>
+        /// <param name="hasInternalAccess"></param>
         internal DynamicClassLoader(ModuleBuilder moduleBuilder, bool hasInternalAccess)
         {
             this.moduleBuilder = moduleBuilder;
@@ -128,35 +149,32 @@ namespace IKVM.Internal
                 }
             }
         }
-#endif // CLASSGC
+#endif
 
 #if !STATIC_COMPILER
-        private static Assembly OnTypeResolve(object sender, ResolveEventArgs args)
+        static Assembly OnTypeResolve(object sender, ResolveEventArgs args)
         {
 #if CLASSGC
-            ClassLoaderWrapper loader = ClassLoaderWrapper.GetClassLoaderForDynamicJavaAssembly(args.RequestingAssembly);
+            var loader = ClassLoaderWrapper.GetClassLoaderForDynamicJavaAssembly(args.RequestingAssembly);
             if (loader == null)
-            {
                 return null;
-            }
-            DynamicClassLoader instance = (DynamicClassLoader)loader.GetTypeWrapperFactory();
+
+            var instance = (DynamicClassLoader)loader.GetTypeWrapperFactory();
             return Resolve(instance.dynamicTypes, args.Name);
 #else
             return Resolve(dynamicTypes, args.Name);
 #endif
         }
 
-        private static Assembly Resolve(Dictionary<string, TypeWrapper> dict, string name)
+        static Assembly Resolve(Dictionary<string, TypeWrapper> dict, string name)
         {
             TypeWrapper type;
             lock (dict)
-            {
                 dict.TryGetValue(name, out type);
-            }
+
             if (type == null)
-            {
                 return null;
-            }
+
             try
             {
                 type.Finish();
@@ -173,7 +191,7 @@ namespace IKVM.Internal
             // have been used already, we cannot remove the keys.
             return type.TypeAsTBD.Assembly;
         }
-#endif // !STATIC_COMPILER
+#endif
 
         internal override bool ReserveName(string name)
         {
@@ -212,7 +230,7 @@ namespace IKVM.Internal
             if (dict.ContainsKey(mangledTypeName) || mangledTypeName.EndsWith("."))
             {
 #if STATIC_COMPILER
-				Tracer.Warning(Tracer.Compiler, "Class name clash: {0}", mangledTypeName);
+                Tracer.Warning(Tracer.Compiler, "Class name clash: {0}", mangledTypeName);
 #endif
                 // Java class names cannot contain slashes (since they are converted into periods),
                 // so we take advantage of that fact to create a unique name.
@@ -230,10 +248,10 @@ namespace IKVM.Internal
         internal sealed override TypeWrapper DefineClassImpl(Dictionary<string, TypeWrapper> types, TypeWrapper host, ClassFile f, ClassLoaderWrapper classLoader, ProtectionDomain protectionDomain)
         {
 #if STATIC_COMPILER
-			AotTypeWrapper type = new AotTypeWrapper(f, (CompilerClassLoader)classLoader);
-			type.CreateStep1();
-			types[f.Name] = type;
-			return type;
+            AotTypeWrapper type = new AotTypeWrapper(f, (CompilerClassLoader)classLoader);
+            type.CreateStep1();
+            types[f.Name] = type;
+            return type;
 #elif FIRST_PASS
             return null;
 #else
@@ -288,19 +306,19 @@ namespace IKVM.Internal
 #endif
 
 #if STATIC_COMPILER
-		internal TypeBuilder DefineProxy(string name, TypeAttributes typeAttributes, Type parent, Type[] interfaces)
-		{
-			if (proxiesContainer == null)
-			{
-				proxiesContainer = moduleBuilder.DefineType(TypeNameUtil.ProxiesContainer, TypeAttributes.Public | TypeAttributes.Class | TypeAttributes.Sealed | TypeAttributes.Abstract);
-				AttributeHelper.HideFromJava(proxiesContainer);
-				AttributeHelper.SetEditorBrowsableNever(proxiesContainer);
-				proxies = new List<TypeBuilder>();
-			}
-			TypeBuilder tb = proxiesContainer.DefineNestedType(name, typeAttributes, parent, interfaces);
-			proxies.Add(tb);
-			return tb;
-		}
+        internal TypeBuilder DefineProxy(string name, TypeAttributes typeAttributes, Type parent, Type[] interfaces)
+        {
+            if (proxiesContainer == null)
+            {
+                proxiesContainer = moduleBuilder.DefineType(TypeNameUtil.ProxiesContainer, TypeAttributes.Public | TypeAttributes.Class | TypeAttributes.Sealed | TypeAttributes.Abstract);
+                AttributeHelper.HideFromJava(proxiesContainer);
+                AttributeHelper.SetEditorBrowsableNever(proxiesContainer);
+                proxies = new List<TypeBuilder>();
+            }
+            TypeBuilder tb = proxiesContainer.DefineNestedType(name, typeAttributes, parent, interfaces);
+            proxies.Add(tb);
+            return tb;
+        }
 #endif
 
         internal override Type DefineUnloadable(string name)
@@ -401,14 +419,14 @@ namespace IKVM.Internal
                 }
             }
 #if STATIC_COMPILER
-			if(proxiesContainer != null)
-			{
-				proxiesContainer.CreateType();
-				foreach(TypeBuilder tb in proxies)
-				{
-					tb.CreateType();
-				}
-			}
+            if (proxiesContainer != null)
+            {
+                proxiesContainer.CreateType();
+                foreach (TypeBuilder tb in proxies)
+                {
+                    tb.CreateType();
+                }
+            }
 #endif // STATIC_COMPILER
         }
 
@@ -449,8 +467,8 @@ namespace IKVM.Internal
             jniProxyAssemblyBuilder = DefineDynamicAssembly(name, AssemblyBuilderAccess.RunAndSave, null);
             return jniProxyAssemblyBuilder.DefineDynamicModule("jniproxy.dll", "jniproxy.dll");
 #else
-			jniProxyAssemblyBuilder = DefineDynamicAssembly(name, AssemblyBuilderAccess.Run, null);
-			return jniProxyAssemblyBuilder.DefineDynamicModule("jniproxy.dll");
+            jniProxyAssemblyBuilder = DefineDynamicAssembly(name, AssemblyBuilderAccess.Run, null);
+            return jniProxyAssemblyBuilder.DefineDynamicModule("jniproxy.dll");
 #endif
         }
 #endif
@@ -467,30 +485,36 @@ namespace IKVM.Internal
         internal static DynamicClassLoader Get(ClassLoaderWrapper loader)
         {
 #if STATIC_COMPILER
-			return new DynamicClassLoader(((CompilerClassLoader)loader).CreateModuleBuilder(), false);
+            return new DynamicClassLoader(((CompilerClassLoader)loader).CreateModuleBuilder(), false);
 #else
-            AssemblyClassLoader acl = loader as AssemblyClassLoader;
-            if (acl != null && ForgedKeyPair.Instance != null)
+            var acl = loader as AssemblyClassLoader;
+            if (acl != null)
             {
-                string name = acl.MainAssembly.GetName().Name + DynamicAssemblySuffixAndPublicKey;
-                foreach (InternalsVisibleToAttribute attr in acl.MainAssembly.GetCustomAttributes(typeof(InternalsVisibleToAttribute), false))
+                var name = acl.MainAssembly.GetName().Name + DynamicAssemblySuffixAndPublicKey;
+                foreach (var attr in acl.MainAssembly.GetCustomAttributes<InternalsVisibleToAttribute>())
                 {
                     if (attr.AssemblyName == name)
                     {
-                        AssemblyName n = new AssemblyName(name);
+                        var n = new AssemblyName(name);
+#if NETFRAMEWORK
                         n.KeyPair = ForgedKeyPair.Instance;
+#endif
                         return new DynamicClassLoader(CreateModuleBuilder(n), true);
                     }
                 }
             }
 #if CLASSGC
-            DynamicClassLoader instance = new DynamicClassLoader(CreateModuleBuilder(), false);
+            var instance = new DynamicClassLoader(CreateModuleBuilder(), false);
 #endif
+
             return instance;
 #endif
         }
 
 #if !STATIC_COMPILER
+
+#if NETFRAMEWORK
+
         sealed class ForgedKeyPair : StrongNameKeyPair
         {
             internal static readonly StrongNameKeyPair Instance;
@@ -549,6 +573,8 @@ namespace IKVM.Internal
             }
         }
 
+#endif
+
         private static ModuleBuilder CreateModuleBuilder()
         {
             AssemblyName name = new AssemblyName();
@@ -574,7 +600,7 @@ namespace IKVM.Internal
 #if NETFRAMEWORK
                 access = AssemblyBuilderAccess.RunAndSave;
 #else
-				access = AssemblyBuilderAccess.Run;
+                access = AssemblyBuilderAccess.Run;
 #endif
             }
 #if CLASSGC
@@ -605,7 +631,7 @@ namespace IKVM.Internal
 #if NETFRAMEWORK
             ModuleBuilder moduleBuilder = JVM.IsSaveDebugImage ? assemblyBuilder.DefineDynamicModule(name.Name, name.Name + ".dll", debug) : assemblyBuilder.DefineDynamicModule(name.Name, debug);
 #else
-			ModuleBuilder moduleBuilder = assemblyBuilder.DefineDynamicModule(name.Name);
+            ModuleBuilder moduleBuilder = assemblyBuilder.DefineDynamicModule(name.Name);
 #endif
             moduleBuilder.SetCustomAttribute(new CustomAttributeBuilder(typeof(IKVM.Attributes.JavaModuleAttribute).GetConstructor(Type.EmptyTypes), new object[0]));
             return moduleBuilder;
@@ -616,7 +642,7 @@ namespace IKVM.Internal
 #if NETFRAMEWORK
             return AppDomain.CurrentDomain.DefineDynamicAssembly(name, access, null, true, assemblyAttributes);
 #else
-			return AssemblyBuilder.DefineDynamicAssembly(name, access, assemblyAttributes);
+            return AssemblyBuilder.DefineDynamicAssembly(name, access, assemblyAttributes);
 #endif
         }
 #endif // !STATIC_COMPILER

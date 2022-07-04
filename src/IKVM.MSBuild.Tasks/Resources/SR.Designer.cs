@@ -70,6 +70,15 @@ namespace IKVM.MSBuild.Tasks.Resources {
         }
         
         /// <summary>
+        ///   Looks up a localized string similar to IKVMSDK0012: The IkvmReference {0} has been configured to delay sign the assembly but is missing a key file..
+        /// </summary>
+        internal static string Error_IkvmDelaySignRequiresKey {
+            get {
+                return ResourceManager.GetString("Error.IkvmDelaySignRequiresKey", resourceCulture);
+            }
+        }
+        
+        /// <summary>
         ///   Looks up a localized string similar to IKVMSDK0004: The IkvmReference {0} has invalid AssemblyName &apos;{1}&apos; or AssemblyVersion &apos;{2}&apos;..
         /// </summary>
         internal static string Error_IkvmInvalidAssemblyInfo {
@@ -102,6 +111,15 @@ namespace IKVM.MSBuild.Tasks.Resources {
         internal static string Error_IkvmInvalidCompile {
             get {
                 return ResourceManager.GetString("Error.IkvmInvalidCompile", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to IKVMSDK0012: The IkvmReference {0} has a invalid key file &apos;{1}&apos;..
+        /// </summary>
+        internal static string Error_IkvmInvalidKeyFile {
+            get {
+                return ResourceManager.GetString("Error.IkvmInvalidKeyFile", resourceCulture);
             }
         }
         
@@ -156,6 +174,15 @@ namespace IKVM.MSBuild.Tasks.Resources {
         internal static string Error_IkvmMissingCompile {
             get {
                 return ResourceManager.GetString("Error.IkvmMissingCompile", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to IKVMSDK0011: The IkvmReference {0} has specified key file &apos;{1}&apos;, but the key file could not be found..
+        /// </summary>
+        internal static string Error_IkvmMissingKeyFile {
+            get {
+                return ResourceManager.GetString("Error.IkvmMissingKeyFile", resourceCulture);
             }
         }
         

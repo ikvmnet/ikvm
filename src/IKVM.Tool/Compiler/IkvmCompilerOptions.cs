@@ -54,30 +54,60 @@ namespace IKVM.Tool.Compiler
         /// </summary>
         public IkvmCompilerPlatform? Platform { get; set; }
 
+        /// <summary>
+        /// Path to the key to use for strong name signing.
+        /// </summary>
         public string KeyFile { get; set; }
 
+        /// <summary>
+        /// Identity of the key to use for signing.
+        /// </summary>
         public string Key { get; set; }
 
+        /// <summary>
+        /// Whether the assembly should be delay signed.
+        /// </summary>
         public bool DelaySign { get; set; }
 
+        /// <summary>
+        /// Set of paths to assemblies to add as references.
+        /// </summary>
         public IList<string> References { get; } = new List<string>();
 
         public IList<string> Recurse { get;  } = new List<string>();
 
         public string Exclude { get; set; }
 
+        /// <summary>
+        /// File version to configure on the assembly.
+        /// </summary>
         public string FileVersion { get; set; }
 
+        /// <summary>
+        /// Win32 icon to configure on the assembly.
+        /// </summary>
         public string Win32Icon { get; set; }
 
+        /// <summary>
+        /// Win32 manifest to embed within the assembly.
+        /// </summary>
         public string Win32Manifest { get; set; }
 
+        /// <summary>
+        /// Set of resources to embed within the assembly.
+        /// </summary>
         public List<IkvmCompilerResourceItem> Resources { get; } = new List<IkvmCompilerResourceItem>();
 
         public List<IkvmCompilerExternalResourceItem> ExternalResources { get; } = new List<IkvmCompilerExternalResourceItem>();
 
+        /// <summary>
+        /// Whether resources should be compressed.
+        /// </summary>
         public bool CompressResources { get; set; }
 
+        /// <summary>
+        /// Whether debug symbols should be produced along with the assembly.
+        /// </summary>
         public bool Debug { get; set; }
 
         public bool NoAutoSerialization { get; set; }

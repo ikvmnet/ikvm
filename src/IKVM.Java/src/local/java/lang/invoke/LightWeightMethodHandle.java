@@ -28,20 +28,22 @@ package java.lang.invoke;
  */
 final class LightWeightMethodHandle extends MethodHandle
 {
-  LightWeightMethodHandle(MethodType type, LambdaForm form)
-  {
-    super(type, form);
-  }
 
-  @Override
-  BoundMethodHandle rebind()
-  {
-    return BoundMethodHandle.makeReinvoker(this);
-  }
+    LightWeightMethodHandle(MethodType type, LambdaForm form)
+    {
+        super(type, form);
+    }
 
-  @Override
-  MethodHandle copyWith(MethodType type, LambdaForm form)
-  {
-    return new LightWeightMethodHandle(type, form);
-  }
+    @Override
+    BoundMethodHandle rebind()
+    {
+        return BoundMethodHandle.makeReinvoker(this);
+    }
+
+    @Override
+    MethodHandle copyWith(MethodType type, LambdaForm form)
+    {
+        return new LightWeightMethodHandle(type, form);
+    }
+
 }

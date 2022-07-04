@@ -88,6 +88,8 @@
         <ItemGroup>
             <_IkvmReferenceItemToCompile Remove="@(_IkvmReferenceItemToCompile)" />
             <_IkvmReferenceItemToCompile Include="@(IkvmReferenceItem)" Condition=" '%(IkvmReferenceItem.CachePath)' == '$(_IkvmReferenceItemToCompileCachePath)' " />
+            <_IkvmReferenceItemResolvedReference Remove="@(_IkvmReferenceItemResolvedReference)" />
+            <_IkvmReferenceItemResolvedReference Include="%(_IkvmReferenceItemToCompile.ResolvedReferences)" />
         </ItemGroup>
 
         <!-- Output to stage path then copy to cache path to be atomic. -->
@@ -106,15 +108,22 @@
             Runtime="@(IkvmRuntimeAssembly)"
             Target="library"
             Debug="%(_IkvmReferenceItemToCompile.Debug)"
+            KeyFile="%(_IkvmReferenceItemToCompile.KeyFile)"
+            DelaySign="%(_IkvmReferenceItemToCompile.DelaySign)"
             CompressResources="true"
             NoStdLib="true"
-            References="@(IkvmFrameworkReference);@(IkvmBaseAssembly);@(IkvmRuntimeAssembly);@(IkvmRuntimeJNIAssembly);%(_IkvmReferenceItemToCompile.ResolvedReferences)"
+            References="@(IkvmFrameworkReference);@(IkvmBaseAssembly);@(IkvmRuntimeAssembly);@(IkvmRuntimeJNIAssembly);@(_IkvmReferenceItemResolvedReference->Distinct())"
             Input="%(_IkvmReferenceItemToCompile.Compile)"
             Condition=" '%(_IkvmReferenceItemToCompile.Compile)' != '' "/>
         <Copy
             SourceFiles="%(_IkvmReferenceItemToCompile.StagePath)"
             DestinationFiles="%(_IkvmReferenceItemToCompile.CachePath)"
             OverwriteReadOnlyFiles="true" />
+
+        <ItemGroup>
+            <FileWrites Include="%(_IkvmReferenceItemToCompile.StagePath)" />
+            <FileWrites Include="%(_IkvmReferenceItemToCompile.StagePath).rsp" />
+        </ItemGroup>
     </Target>
 
     <PropertyGroup>

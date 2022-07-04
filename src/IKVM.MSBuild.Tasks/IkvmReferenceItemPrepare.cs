@@ -341,6 +341,8 @@ namespace IKVM.MSBuild.Tasks
             manifest.WriteLine("AssemblyVersion={0}", item.AssemblyVersion);
             manifest.WriteLine("AssemblyFileVersion={0}", item.AssemblyFileVersion);
             manifest.WriteLine("Debug={0}", item.Debug ? "true" : "false");
+            manifest.WriteLine("KeyFile={0}", string.IsNullOrWhiteSpace(item.KeyFile) == false ? GetHashForFile(item.KeyFile) : "");
+            manifest.WriteLine("DelaySign={0}", item.DelaySign ? "true" : "false");
 
             // each Compile item should be a jar or class file
             var compiles = new List<string>(16);
@@ -363,7 +365,7 @@ namespace IKVM.MSBuild.Tasks
                 references.Add(GetReferenceLine(item, reference));
 
             // sort and write the reference lines
-            foreach (var r in references.OrderBy(i => i))
+            foreach (var r in references.Distinct())
                 manifest.WriteLine(r);
 
             // hash the resulting manifest and set the identity
@@ -570,6 +572,18 @@ namespace IKVM.MSBuild.Tasks
                 valid = false;
             }
 
+            if (string.IsNullOrWhiteSpace(item.KeyFile) == false && File.Exists(item.KeyFile) == false)
+            {
+                Log.LogErrorWithCodeFromResources("Error.IkvmMissingKeyFile", item.ItemSpec, item.KeyFile);
+                valid = false;
+            }
+
+            if (item.DelaySign && string.IsNullOrWhiteSpace(item.KeyFile))
+            {
+                Log.LogErrorWithCodeFromResources("Error.IkvmDelaySignRequiresKey", item.ItemSpec);
+                valid = false;
+            }
+
             return valid;
         }
 
@@ -603,7 +617,7 @@ namespace IKVM.MSBuild.Tasks
         {
             foreach (var item in items)
             {
-                item.ResolvedReferences = item.References.Select(i => i.CachePath).ToList();
+                item.ResolvedReferences = item.References.Distinct().Select(i => i.CachePath).ToList();
                 item.Save();
             }
         }
