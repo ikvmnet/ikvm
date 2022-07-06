@@ -121,7 +121,7 @@ namespace IKVM.MSBuild.Tasks.Tests
             i1.SetMetadata(IkvmReferenceItemMetadata.Compile, Path.Combine(".", "ext", "helloworld-2.0-1", ".", "helloworld-2.0.jar"));
             t.Items = new[] { i1 };
             t.Validate(IkvmReferenceItemUtil.Import(t.Items)).Should().BeFalse();
-            errors.Should().Contain(x => x.Code == "IKVMSDK0002");
+            errors.Should().Contain(x => x.Code == "IKVMSDK0011");
         }
 
         [TestMethod]
@@ -138,7 +138,24 @@ namespace IKVM.MSBuild.Tasks.Tests
             i1.SetMetadata(IkvmReferenceItemMetadata.Compile, Path.Combine(".", "ext", "helloworld-2.0-1", ".", "helloworld-2.0.jar"));
             t.Items = new[] { i1 };
             t.Validate(IkvmReferenceItemUtil.Import(t.Items)).Should().BeFalse();
-            errors.Should().Contain(x => x.Code == "IKVMSDK0003");
+            errors.Should().Contain(x => x.Code == "IKVMSDK0012");
+        }
+
+        [TestMethod]
+        public void Should_fail_when_missing_file_version()
+        {
+            var engine = new Mock<IBuildEngine>();
+            var errors = new List<BuildErrorEventArgs>();
+            engine.Setup(x => x.LogErrorEvent(It.IsAny<BuildErrorEventArgs>())).Callback((BuildErrorEventArgs e) => errors.Add(e));
+
+            var t = new IkvmReferenceItemPrepare();
+            t.BuildEngine = engine.Object;
+            var i1 = new TaskItem(Path.Combine(".", "ext", "helloworld-2.0-1", ".", "helloworld-2.0.jar"));
+            i1.SetMetadata(IkvmReferenceItemMetadata.AssemblyName, "helloworld");
+            i1.SetMetadata(IkvmReferenceItemMetadata.Compile, Path.Combine(".", "ext", "helloworld-2.0-1", ".", "helloworld-2.0.jar"));
+            t.Items = new[] { i1 };
+            t.Validate(IkvmReferenceItemUtil.Import(t.Items)).Should().BeFalse();
+            errors.Should().Contain(x => x.Code == "IKVMSDK0013");
         }
 
         [TestMethod]
@@ -171,8 +188,9 @@ namespace IKVM.MSBuild.Tasks.Tests
             var i1 = new TaskItem(@"missing");
             t.Items = new[] { i1 };
             t.Validate(IkvmReferenceItemUtil.Import(t.Items)).Should().BeFalse();
-            errors.Should().Contain(x => x.Code == "IKVMSDK0002");
-            errors.Should().Contain(x => x.Code == "IKVMSDK0003");
+            errors.Should().Contain(x => x.Code == "IKVMSDK0011");
+            errors.Should().Contain(x => x.Code == "IKVMSDK0012");
+            errors.Should().Contain(x => x.Code == "IKVMSDK0013");
             errors.Should().Contain(x => x.Code == "IKVMSDK0010");
         }
 

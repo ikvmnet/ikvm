@@ -144,6 +144,15 @@
   <data name="Error.IkvmInvalidSources" xml:space="preserve">
     <value>IKVMSDK0007: The IkvmReference {0} has an invalid Sources item '{1}'. Can only include .java files.</value>
   </data>
+  <data name="Error.IkvmMissingAssemblyFileVersion" xml:space="preserve">
+    <value>IKVMSDK0013: The IkvmReference {0} is missing AssemblyFileVersion.</value>
+  </data>
+  <data name="Error.IkvmMissingAssemblyName" xml:space="preserve">
+    <value>IKVMSDK0011: The IkvmReference {0} is missing AssemblyName.</value>
+  </data>
+  <data name="Error.IkvmMissingAssemblyVersion" xml:space="preserve">
+    <value>IKVMSDK0012: The IkvmReference {0} is missing AssemblyVersion.</value>
+  </data>
   <data name="Error.IkvmMissingCompile" xml:space="preserve">
     <value>IKVMSDK0008: The IkvmReference {0} is missing the Compile item '{1}'.</value>
   </data>
