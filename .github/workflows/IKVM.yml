@@ -180,7 +180,7 @@ jobs:
           /p:Configuration="Release" `
           /p:Platform="Any CPU" `
           /p:Version=${env:GitVersion_FullSemVer} `
-          /p:AssemblyVersion=${env:GitVersion_AssemblyFileVer} `
+          /p:AssemblyVersion=${env:GitVersion_AssemblySemVer} `
           /p:InformationalVersion=${env:GitVersion_InformationalVersion} `
           /p:FileVersion=${env:GitVersion_AssemblySemFileVer} `
           /p:PackageVersion=${env:GitVersion_NuGetVersionV2} `
