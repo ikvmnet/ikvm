@@ -1,6 +1,7 @@
 ﻿using System;
 using System.IO;
 using System.Linq;
+using System.Runtime.InteropServices;
 using System.Threading;
 
 using IKVM.Tool.Compiler;
@@ -16,6 +17,20 @@ namespace IKVM.MSBuild.Tasks
     /// </summary>
     public class IkvmCompiler : Task
     {
+
+#if NETCOREAPP
+
+        /// <summary>
+        /// Initializes the static instance.
+        /// </summary>
+        static IkvmCompiler()
+        {
+            // preload Mono.Unix native library, MSBuild isn't capable of following dependency context
+            if (RuntimeInformation.IsOSPlatform(OSPlatform.Linux) && Environment.Is64BitProcess)
+                NativeLibrary.Load(Path.Combine(Path.GetDirectoryName(typeof(IkvmCompiler).Assembly.Location), "runtimes", "linux-x64", "native", "libMono.Unix.so"));
+        }
+
+#endif
 
         /// <summary>
         /// Root of the tools director.
