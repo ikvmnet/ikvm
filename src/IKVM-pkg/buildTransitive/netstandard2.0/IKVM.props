@@ -21,6 +21,7 @@
         <IkvmReference>
             <AssemblyName></AssemblyName>
             <AssemblyVersion></AssemblyVersion>
+            <AssemblyFileVersion></AssemblyFileVersion>
             <DisableAutoAssemblyName></DisableAutoAssemblyName>
             <DisableAutoAssemblyVersion></DisableAutoAssemblyVersion>
             <FallbackAssemblyName></FallbackAssemblyName>
