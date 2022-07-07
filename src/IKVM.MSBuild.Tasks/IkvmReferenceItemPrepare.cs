@@ -547,7 +547,7 @@ namespace IKVM.MSBuild.Tasks
 
             foreach (var source in item.Sources)
             {
-                if (Path.GetExtension(source) is not ".java")
+                if (Path.GetExtension(source) is not ".java" && Path.GetExtension(source) is not ".jar")
                 {
                     Log.LogErrorWithCodeFromResources("Error.IkvmInvalidSources", item.ItemSpec, source);
                     valid = false;
