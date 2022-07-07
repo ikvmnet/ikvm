@@ -335,6 +335,7 @@ namespace IKVM.MSBuild.Tasks
             manifest.WriteLine("RuntimeAssembly={0}", GetHashForFile(RuntimeAssembly));
             manifest.WriteLine("AssemblyName={0}", item.AssemblyName);
             manifest.WriteLine("AssemblyVersion={0}", item.AssemblyVersion);
+            manifest.WriteLine("ClassLoader={0}", item.ClassLoader);
             manifest.WriteLine("Debug={0}", item.Debug ? "true" : "false");
             manifest.WriteLine("KeyFile={0}", string.IsNullOrWhiteSpace(item.KeyFile) == false ? GetHashForFile(item.KeyFile) : "");
             manifest.WriteLine("DelaySign={0}", item.DelaySign ? "true" : "false");

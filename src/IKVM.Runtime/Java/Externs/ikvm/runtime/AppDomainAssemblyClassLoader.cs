@@ -25,61 +25,84 @@ using System;
 using System.Collections.Generic;
 using System.Reflection;
 
-using IKVM.Internal;
-
 namespace IKVM.Java.Externs.ikvm.runtime
 {
+
     static class AppDomainAssemblyClassLoader
     {
-        public static object loadClassFromAssembly(Assembly asm, string className)
+
+        /// <summary>
+        /// Attempts to load the given class from the specified <see cref="Assembly"/>.
+        /// </summary>
+        /// <param name="assembly"></param>
+        /// <param name="className"></param>
+        /// <returns></returns>
+        static object LoadClassFromAssembly(Assembly assembly, string className)
         {
-            if (ReflectUtil.IsDynamicAssembly(asm))
-            {
-                return null;
-            }
-            TypeWrapper tw = Internal.AssemblyClassLoader.FromAssembly(asm).DoLoad(className);
-            return tw != null ? tw.ClassObject : null;
+            return assembly.IsDynamic == false ? (Internal.AssemblyClassLoader.FromAssembly(assembly).DoLoad(className)?.ClassObject) : null;
         }
 
-        private static IEnumerable<global::java.net.URL> FindResources(string name)
+        /// <summary>
+        /// Finds the class with the given name within the AppDomain.
+        /// </summary>
+        /// <param name="name"></param>
+        /// <returns></returns>
+        /// <exception cref="ClassNotFoundException"></exception>
+        public static global::java.lang.Class findClass(object thisObj, string name)
         {
-            List<Internal.AssemblyClassLoader> done = new List<Internal.AssemblyClassLoader>();
-            foreach (Assembly asm in AppDomain.CurrentDomain.GetAssemblies())
+            foreach (var assembly in AppDomain.CurrentDomain.GetAssemblies())
+                if (LoadClassFromAssembly(assembly, name) is global::java.lang.Class c)
+                    return c;
+
+            throw new ClassNotFoundException(name);
+        }
+
+        /// <summary>
+        /// Attempts to locate a resource in the loaded assemblies.
+        /// </summary>
+        /// <param name="name"></param>
+        /// <returns></returns>
+        static IEnumerable<global::java.net.URL> FindResources(string name)
+        {
+            var done = new HashSet<Internal.AssemblyClassLoader>();
+
+            foreach (var asm in AppDomain.CurrentDomain.GetAssemblies())
             {
-                if (!ReflectUtil.IsDynamicAssembly(asm))
-                {
-                    Internal.AssemblyClassLoader acl = Internal.AssemblyClassLoader.FromAssembly(asm);
-                    if (!done.Contains(acl))
-                    {
-                        done.Add(acl);
-                        foreach (global::java.net.URL url in acl.FindResources(name))
-                        {
-                            yield return url;
-                        }
-                    }
-                }
+                if (asm.IsDynamic)
+                    continue;
+
+                var acl = Internal.AssemblyClassLoader.FromAssembly(asm);
+                if (done.Add(acl))
+                    foreach (var url in acl.FindResources(name))
+                        yield return url;
             }
         }
 
+        /// <summary>
+        /// Finds the first matching resource.
+        /// </summary>
+        /// <param name="thisObj"></param>
+        /// <param name="name"></param>
+        /// <returns></returns>
         public static global::java.net.URL findResource(object thisObj, string name)
         {
             foreach (global::java.net.URL url in FindResources(name))
-            {
                 return url;
-            }
+
             return null;
         }
 
+        /// <summary>
+        /// Finds the resource(s) with the given name and adds them to the vector.
+        /// </summary>
+        /// <param name="v"></param>
+        /// <param name="name"></param>
         public static void getResources(global::java.util.Vector v, string name)
         {
 #if !FIRST_PASS
-            foreach (global::java.net.URL url in FindResources(name))
-            {
+            foreach (var url in FindResources(name))
                 if (url != null && !v.contains(url))
-                {
                     v.add(url);
-                }
-            }
 #endif
         }
 

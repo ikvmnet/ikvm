@@ -38,23 +38,7 @@ public final class AppDomainAssemblyClassLoader extends ClassLoader
         super(new AssemblyClassLoader(assembly));
     }
 
-    protected Class findClass(String name) throws ClassNotFoundException
-    {
-        Assembly[] assemblies = AppDomain.get_CurrentDomain().GetAssemblies();
-
-        for (int i = 0; i < assemblies.length; i++)
-        {
-            Class c = loadClassFromAssembly(assemblies[i], name);
-            if (c != null)
-            {
-                return c;
-            }
-        }
-
-        throw new ClassNotFoundException(name);
-    }
-
-    private static native Class loadClassFromAssembly(Assembly asm, String className);
+    protected native Class findClass(String name) throws ClassNotFoundException;
 
     protected native URL findResource(String name);
 
