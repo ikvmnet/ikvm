@@ -21,6 +21,7 @@
   jeroen@frijters.net
   
  */
+
 package sun.jdbc.odbc;
 
 import java.sql.*;
@@ -30,7 +31,7 @@ import java.util.logging.Logger;
 /**
  * This JDBC Driver is a wrapper to the ODBC.NET Data Provider
  */
-public class JdbcOdbcDriver implements Driver{
+public class JdbcOdbcDriver implements Driver {
 
     private static final String URL_PREFIX = "jdbc:odbc:";
 
