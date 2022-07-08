@@ -22,212 +22,353 @@
   
 */
 using System;
-using System.Reflection;
-using IKVM.Internal;
 
+/// <summary>
+/// .NET exception that corresponds to a Java exception.
+/// </summary>
 abstract class RetargetableJavaException : ApplicationException
 {
-	internal RetargetableJavaException(string msg) : base(msg)
-	{
-	}
 
-	internal RetargetableJavaException(string msg, Exception x) : base(msg, x)
-	{
-	}
+    /// <summary>
+    /// Initializes a new instance.
+    /// </summary>
+    /// <param name="msg"></param>
+    internal RetargetableJavaException(string msg) :
+        base(msg)
+    {
 
-	internal static string Format(string s, object[] args)
-	{
-		if (args == null || args.Length == 0)
-		{
-			return s;
-		}
-		return String.Format(s, args);
-	}
+    }
+
+    /// <summary>
+    /// Initializes a new instance.
+    /// </summary>
+    /// <param name="message"></param>
+    /// <param name="innerException"></param>
+    internal RetargetableJavaException(string message, Exception innerException) :
+        base(message, innerException)
+    {
+
+    }
+
+    internal static string Format(string s, object[] args)
+    {
+        return args == null || args.Length == 0 ? s : string.Format(s, args);
+    }
 
 #if !STATIC_COMPILER && !FIRST_PASS && !STUB_GENERATOR
-	internal abstract Exception ToJava();
+
+    internal abstract Exception ToJava();
+
 #elif FIRST_PASS
+
 	internal virtual Exception ToJava()
 	{
 		return null;
 	}
+
 #endif
+
 }
 
-// NOTE this is not a Java exception, but instead it wraps a Java exception that
-// was thrown by a class loader. It is used so ClassFile.LoadClassHelper() can catch
-// Java exceptions and turn them into UnloadableTypeWrappers without inadvertantly
-// hiding exceptions caused by coding errors in the IKVM code.
+/// <summary>
+/// This is not a Java exception, but instead it wraps a Java exception that
+/// was thrown by a class loader. It is used so ClassFile.LoadClassHelper() can catch
+/// Java exceptions and turn them into UnloadableTypeWrappers without inadvertantly
+/// hiding exceptions caused by coding errors in the IKVM code.
+/// </summary>
 sealed class ClassLoadingException : RetargetableJavaException
 {
-	internal ClassLoadingException(Exception x, string className)
-		: base(className, x)
-	{
-	}
+
+    /// <summary>
+    /// Initializes a new instance.
+    /// </summary>
+    /// <param name="innerException"></param>
+    /// <param name="className"></param>
+    internal ClassLoadingException(Exception innerException, string className) :
+        base(className, innerException)
+    {
+
+    }
 
 #if !STATIC_COMPILER && !FIRST_PASS && !STUB_GENERATOR
-	internal override Exception ToJava()
-	{
-		if (!(InnerException is java.lang.Error) && !(InnerException is java.lang.RuntimeException))
-		{
-			return new java.lang.NoClassDefFoundError(Message.Replace('.', '/')).initCause(InnerException);
-		}
-		return InnerException;
-	}
+
+    internal override Exception ToJava()
+    {
+        if (!(InnerException is java.lang.Error) && !(InnerException is java.lang.RuntimeException))
+            return new java.lang.NoClassDefFoundError(Message.Replace('.', '/')).initCause(InnerException);
+
+        return InnerException;
+    }
+
 #endif
+
 }
 
 class LinkageError : RetargetableJavaException
 {
-	internal LinkageError(string msg) : base(msg)
-	{
-	}
 
-	internal LinkageError(string msg, Exception x) : base(msg, x)
-	{
-	}
+    /// <summary>
+    /// Initializes a new instance.
+    /// </summary>
+    /// <param name="message"></param>
+    internal LinkageError(string message) : base(message)
+    {
+
+    }
+
+    /// <summary>
+    /// Initializes a new instance.
+    /// </summary>
+    /// <param name="message"></param>
+    /// <param name="innerException"></param>
+    internal LinkageError(string message, Exception innerException) :
+        base(message, innerException)
+    {
+
+    }
 
 #if !STATIC_COMPILER && !FIRST_PASS && !STUB_GENERATOR
-	internal override Exception ToJava()
-	{
-		return new java.lang.LinkageError(Message);
-	}
+
+    internal override Exception ToJava()
+    {
+        return new java.lang.LinkageError(Message);
+    }
+
 #endif
+
 }
 
 sealed class VerifyError : LinkageError
 {
-	internal VerifyError() : base("")
-	{
-	}
 
-	internal VerifyError(string msg) : base(msg)
-	{
-	}
+    /// <summary>
+    /// Initializes a new instance.
+    /// </summary>
+    internal VerifyError() :
+        base("")
+    {
 
-	internal VerifyError(string msg, Exception x) : base(msg, x)
-	{
-	}
+    }
+
+    /// <summary>
+    /// Initializes a new instance.
+    /// </summary>
+    /// <param name="message"></param>
+    internal VerifyError(string message) :
+        base(message)
+    {
+
+    }
+
+    /// <summary>
+    /// Initializes a new instance.
+    /// </summary>
+    /// <param name="message"></param>
+    /// <param name="innerException"></param>
+    internal VerifyError(string message, Exception innerException) : base(message, innerException)
+    {
+
+    }
 
 #if !STATIC_COMPILER && !FIRST_PASS && !STUB_GENERATOR
-	internal override Exception ToJava()
-	{
-		return new java.lang.VerifyError(Message);
-	}
+
+    internal override Exception ToJava()
+    {
+        return new java.lang.VerifyError(Message);
+    }
+
 #endif
+
 }
 
 sealed class ClassNotFoundException : RetargetableJavaException
 {
-	internal ClassNotFoundException(string name) : base(name)
-	{
-	}
+
+    /// <summary>
+    /// Initializes a new instance.
+    /// </summary>
+    /// <param name="message"></param>
+    internal ClassNotFoundException(string message) :
+        base(message)
+    {
+
+    }
 
 #if !STATIC_COMPILER && !FIRST_PASS && !STUB_GENERATOR
-	internal override Exception ToJava()
-	{
-		return new java.lang.NoClassDefFoundError(Message);
-	}
+
+    internal override Exception ToJava()
+    {
+        return new java.lang.NoClassDefFoundError(Message);
+    }
+
 #endif
+
 }
 
 sealed class ClassCircularityError : LinkageError
 {
-	internal ClassCircularityError(string msg) : base(msg)
-	{
-	}
+
+    /// <summary>
+    /// Initializes a new instance.
+    /// </summary>
+    /// <param name="message"></param>
+    internal ClassCircularityError(string message) :
+        base(message)
+    {
+
+    }
 
 #if !STATIC_COMPILER && !FIRST_PASS && !STUB_GENERATOR
-	internal override Exception ToJava()
-	{
-		return new java.lang.ClassCircularityError(Message);
-	}
+
+    internal override Exception ToJava()
+    {
+        return new java.lang.ClassCircularityError(Message);
+    }
+
 #endif
+
 }
 
 sealed class NoClassDefFoundError : LinkageError
 {
-	internal NoClassDefFoundError(string msg) : base(msg)
-	{
-	}
+
+    /// <summary>
+    /// Initializes a new instance.
+    /// </summary>
+    /// <param name="message"></param>
+    internal NoClassDefFoundError(string message) :
+        base(message)
+    {
+
+    }
 
 #if !STATIC_COMPILER && !FIRST_PASS && !STUB_GENERATOR
-	internal override Exception ToJava()
-	{
-		return new java.lang.NoClassDefFoundError(Message);
-	}
+
+    internal override Exception ToJava()
+    {
+        return new java.lang.NoClassDefFoundError(Message);
+    }
+
 #endif
+
 }
 
 class IncompatibleClassChangeError : LinkageError
 {
-	internal IncompatibleClassChangeError(string msg) : base(msg)
-	{
-	}
+
+    /// <summary>
+    /// Initializes a new instance.
+    /// </summary>
+    /// <param name="message"></param>
+    internal IncompatibleClassChangeError(string message) :
+        base(message)
+    {
+
+    }
 
 #if !STATIC_COMPILER && !FIRST_PASS && !STUB_GENERATOR
-	internal override Exception ToJava()
-	{
-		return new java.lang.IncompatibleClassChangeError(Message);
-	}
+
+    internal override Exception ToJava()
+    {
+        return new java.lang.IncompatibleClassChangeError(Message);
+    }
+
 #endif
+
 }
 
 sealed class IllegalAccessError : IncompatibleClassChangeError
 {
-	internal IllegalAccessError(string msg) : base(msg)
-	{
-	}
+
+    /// <summary>
+    /// Initializes a new instance.
+    /// </summary>
+    /// <param name="message"></param>
+    internal IllegalAccessError(string message) :
+        base(message)
+    {
+
+    }
 
 #if !STATIC_COMPILER && !FIRST_PASS && !STUB_GENERATOR
-	internal override Exception ToJava()
-	{
-		return new java.lang.IllegalAccessError(Message);
-	}
+    internal override Exception ToJava()
+    {
+        return new java.lang.IllegalAccessError(Message);
+    }
+
 #endif
+
 }
 
 class ClassFormatError : LinkageError
 {
-	internal ClassFormatError(string msg, params object[] p)
-		: base(Format(msg, p))
-	{
-	}
+
+    /// <summary>
+    /// Initializes a new instance.
+    /// </summary>
+    /// <param name="message"></param>
+    /// <param name="args"></param>
+    internal ClassFormatError(string message, params object[] args) :
+        base(Format(message, args))
+    {
+
+    }
 
 #if !STATIC_COMPILER && !FIRST_PASS && !STUB_GENERATOR
-	internal override Exception ToJava()
-	{
-		return new java.lang.ClassFormatError(Message);
-	}
+
+    internal override Exception ToJava()
+    {
+        return new java.lang.ClassFormatError(Message);
+    }
+
 #endif
+
 }
 
 sealed class UnsupportedClassVersionError : ClassFormatError
 {
-	internal UnsupportedClassVersionError(string msg)
-		: base(msg)
-	{
-	}
+
+    /// <summary>
+    /// Initializes a new instance.
+    /// </summary>
+    /// <param name="message"></param>
+    internal UnsupportedClassVersionError(string message) :
+        base(message)
+    {
+
+    }
 
 #if !STATIC_COMPILER && !FIRST_PASS && !STUB_GENERATOR
-	internal override Exception ToJava()
-	{
-		return new java.lang.UnsupportedClassVersionError(Message);
-	}
+
+    internal override Exception ToJava()
+    {
+        return new java.lang.UnsupportedClassVersionError(Message);
+    }
+
 #endif
+
 }
 
 sealed class JavaSecurityException : RetargetableJavaException
 {
-	internal JavaSecurityException(string msg)
-		: base(msg)
-	{
-	}
+
+    /// <summary>
+    /// Initializes a new instance.
+    /// </summary>
+    /// <param name="msg"></param>
+    internal JavaSecurityException(string msg) :
+        base(msg)
+    {
+
+    }
 
 #if !STATIC_COMPILER && !FIRST_PASS && !STUB_GENERATOR
-	internal override Exception ToJava()
-	{
-		return new java.lang.SecurityException(Message);
-	}
+
+    internal override Exception ToJava()
+    {
+        return new java.lang.SecurityException(Message);
+    }
+
 #endif
+
 }
