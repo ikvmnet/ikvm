@@ -21,14 +21,12 @@
   jeroen@frijters.net
   
 */
-using System;
 
+using System;
 using System.Collections.Generic;
 using System.Diagnostics;
 using System.Threading;
 using System.Runtime.CompilerServices;
-
-using IKVM.Attributes;
 
 #if NETCOREAPP
 using System.Runtime.Loader;
@@ -48,34 +46,6 @@ using ProtectionDomain = java.security.ProtectionDomain;
 
 namespace IKVM.Internal
 {
-
-#if !STUB_GENERATOR
-
-    abstract class TypeWrapperFactory
-    {
-
-        internal abstract ModuleBuilder ModuleBuilder { get; }
-
-        internal abstract TypeWrapper DefineClassImpl(Dictionary<string, TypeWrapper> types, TypeWrapper host, ClassFile f, ClassLoaderWrapper classLoader, ProtectionDomain protectionDomain);
-
-        internal abstract bool ReserveName(string name);
-
-        internal abstract string AllocMangledName(DynamicTypeWrapper tw);
-
-        internal abstract Type DefineUnloadable(string name);
-
-        internal abstract Type DefineDelegate(int parameterCount, bool returnVoid);
-
-        internal abstract bool HasInternalAccess { get; }
-
-#if CLASSGC
-
-        internal abstract void AddInternalsVisibleTo(Assembly friend);
-
-#endif
-    }
-
-#endif
 
     class ClassLoaderWrapper
     {
@@ -1001,32 +971,27 @@ namespace IKVM.Internal
             lock (wrapperLock)
             {
                 if (bootstrapClassLoader == null)
-                {
                     bootstrapClassLoader = new BootstrapClassLoader();
-                }
+
                 return bootstrapClassLoader;
             }
         }
 
 #if !STATIC_COMPILER && !STUB_GENERATOR
+
         internal static ClassLoaderWrapper GetClassLoaderWrapper(java.lang.ClassLoader javaClassLoader)
         {
             if (javaClassLoader == null)
-            {
                 return GetBootstrapClassLoader();
-            }
+
             lock (wrapperLock)
             {
 #if FIRST_PASS
                 ClassLoaderWrapper wrapper = null;
 #else
-                ClassLoaderWrapper wrapper =
-#if __MonoCS__
-					// MONOBUG the redundant cast to ClassLoaderWrapper is to workaround an mcs bug
-					(ClassLoaderWrapper)(object)
+                ClassLoaderWrapper wrapper = javaClassLoader.wrapper;
 #endif
-                    javaClassLoader.wrapper;
-#endif
+
                 if (wrapper == null)
                 {
                     var opt = CodeGenOptions.None;

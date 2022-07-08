@@ -66,6 +66,7 @@
         <Compile Include="..\IKVM.Runtime\tracer.cs" LinkBase="runtime" />
         <Compile Include="..\IKVM.Runtime\Types.cs" LinkBase="runtime" />
         <Compile Include="..\IKVM.Runtime\TypeWrapper.cs" LinkBase="runtime" />
+        <Compile Include="..\IKVM.Runtime\TypeWrapperFactory.cs" LinkBase="runtime" />
         <Compile Include="..\IKVM.Runtime\vm.cs" LinkBase="runtime" />
         <Compile Include="..\IKVM.Runtime\StubGen\**\*.cs" LinkBase="runtime\SubGen" />
         <Compile Include="..\IKVM.Runtime\LoadMode.cs" LinkBase="runtime" />
