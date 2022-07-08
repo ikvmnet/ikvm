@@ -24,9 +24,6 @@
 
 package ikvm.runtime;
 
-import cli.System.Reflection.Assembly;
-import gnu.java.util.EmptyEnumeration;
-import ikvm.lang.Internal;
 import java.io.IOException;
 import java.net.MalformedURLException;
 import java.net.URL;
@@ -34,6 +31,12 @@ import java.util.Enumeration;
 import java.util.Vector;
 import java.util.jar.Attributes;
 import java.util.jar.Manifest;
+
+import gnu.java.util.EmptyEnumeration;
+
+import ikvm.lang.Internal;
+
+import cli.System.Reflection.Assembly;
 
 public final class AssemblyClassLoader extends ClassLoader
 {

@@ -3834,12 +3834,14 @@ namespace IKVM.Internal
 
     class CompiledTypeWrapper : TypeWrapper
     {
-        private readonly Type type;
-        private TypeWrapper baseTypeWrapper = VerifierTypeWrapper.Null;
-        private volatile TypeWrapper[] interfaces;
-        private MethodInfo clinitMethod;
-        private volatile bool clinitMethodSet;
-        private Modifiers reflectiveModifiers;
+
+        readonly Type type;
+
+        TypeWrapper baseTypeWrapper = VerifierTypeWrapper.Null;
+        volatile TypeWrapper[] interfaces;
+        MethodInfo clinitMethod;
+        volatile bool clinitMethodSet;
+        Modifiers reflectiveModifiers;
 
         internal static CompiledTypeWrapper newInstance(string name, Type type)
         {

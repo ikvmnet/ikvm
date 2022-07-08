@@ -29,22 +29,30 @@ using Type = IKVM.Reflection.Type;
 
 namespace IKVM.Attributes
 {
+
+    /// <summary>
+    /// Marks an assembly such that it's types are considered to be loaded by the specified class loader type.
+    /// </summary>
     [AttributeUsage(AttributeTargets.Assembly)]
 	public sealed class CustomAssemblyClassLoaderAttribute : Attribute
 	{
-		private Type type;
 
+		readonly Type type;
+
+        /// <summary>
+        /// Initializes a new instance.
+        /// </summary>
+        /// <param name="type"></param>
 		public CustomAssemblyClassLoaderAttribute(Type type)
 		{
-			this.type = type;
+			this.type = type ?? throw new ArgumentNullException(nameof(type));
 		}
 
-		public Type Type
-		{
-			get
-			{
-				return type;
-			}
-		}
-	}
+        /// <summary>
+        /// Gets the type of the class loader.
+        /// </summary>
+        public Type Type => type;
+
+    }
+
 }
