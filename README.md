@@ -5,12 +5,12 @@
 
 ## What is IKVM?
 
-IKVM is an implementation of Java for the Microsoft .NET Framework and .NET Core. It can be used to quickly and easily:
+IKVM is an implementation of Java for the Microsoft .NET platform. It can be used to quickly and easily:
 
-- Execute compiled Java code (bytecode) directly in .NET
-- Consume a Java library or executable within a .NET project
+- Execute compiled Java code (bytecode) on .NET Framework or .NET Core
+- Convert bytecode to a .NET assembly to directly access its API in a .NET project
 
-These tasks can be done **without porting the source code** to .NET.
+These tasks can be done **without porting source code** to .NET.
 
 ### IKVM Components
 
@@ -22,13 +22,14 @@ These tasks can be done **without porting the source code** to .NET.
 ### Run Java Applications with .NET
 
 1. **Statically:** By compiling a Java application into a .NET assembly using `<MavenReference>`, `<IkvmReference>` or `ikvmc`.
-   - Libary assemblies can be referenced by any .NET application with a compatible target framework.
-   - Executable assemblies can be launched by wrapping in a .NET executable that calls the `main()` method of the Java application.
+   - Libary assemblies can be referenced by any .NET application with a compatible target framework and platform.
+   - Executable assemblies can be launched by wrapping in a .NET executable that calls the `main()` method of the Java application or by specifying the class to locatet the `main()` method in during compilation.
 2. **Dynamically:** By running a Java application using the `ikvm.exe` tool, which can be used as a direct replacement for `java.exe`. The Java bytecode is converted on-the-fly to CIL and executed.
 
 ## What IKVM is Not
 
 - A converter utility to transform Java source code to C# source code
+- A decompiler utitity to transform compiled Java bytecode to C# source code
 - A tool that runs .NET code in Java - all IKVM conversions are Java > .NET
 
 ## Support
@@ -85,7 +86,7 @@ The following values can be used as either an attribute or a nested element of `
 
 | Attribute or Element  | Description  |
 |---|---|
-| `Include` | The identity of the `IkvmReference` item. The value can be one of: <ul><li>path to a JAR file</li><li>path to a directory</li><li>an otherwise unimportant name</li></ul> |
+| `Include` (attribute only) | The identity of the `IkvmReference` item. The value can be one of: <ul><li>path to a JAR file</li><li>path to a directory</li><li>an otherwise unimportant name</li></ul> |
 | `AssemblyName` | By default the `AssemblyName` is generated using the rules defined by the [`Automatic-Module-Name` specification](#automatic-module-name-specification). To override this, do so here. The value should not include a file extension, `.dll` will be appended automatically. |
 | `AssemblyVersion` | By default the `AssemblyVersion` is generated using the rules defined by the [`Automatic-Module-Name` specification](#automatic-module-name-specification). To override this, do so here. |
 | `AssemblyFileVersion` | By default the `AssemblyFileVersion` is generated using the rules defined by the [`Automatic-Module-Name` specification](#automatic-module-name-specification) or, if overridden, the same value as `AssemblyVersion`. To override this, do so here. |
