@@ -22,23 +22,19 @@
   
 */
 
-using System;
 using System.IO;
 using System.Runtime.CompilerServices;
+using System.Runtime.InteropServices;
 using System.Security;
 using System.Security.AccessControl;
 
 using IKVM.Runtime.Vfs;
-
-using Microsoft.Win32.SafeHandles;
 
 namespace IKVM.Java.Externs.java.io
 {
 
     static class FileDescriptor
     {
-
-        private static Converter<int, int> fsync;
 
         public static Stream open(string name, FileMode mode, FileAccess access)
         {
@@ -67,46 +63,33 @@ namespace IKVM.Java.Externs.java.io
         [SecuritySafeCritical]
         public static bool flushPosix(FileStream fs)
         {
-            if (fsync == null)
-            {
-                ResolveFSync();
-            }
-            bool success = false;
-            SafeFileHandle handle = fs.SafeFileHandle;
+            // this whole method is a bit wonky, shouldn't exist, flush should be handled in .NET
+            // and not have separate POSIX and Win32 calls
+
+            var success = false;
+            var handle = fs.SafeFileHandle;
             RuntimeHelpers.PrepareConstrainedRegions();
+
             try
             {
                 handle.DangerousAddRef(ref success);
-                return fsync(handle.DangerousGetHandle().ToInt32()) == 0;
+#if NETCOREAPP
+                if (RuntimeInformation.IsOSPlatform(OSPlatform.Linux))
+                    return Mono.Unix.Native.Syscall.fsync(handle.DangerousGetHandle().ToInt32()) == 0;
+                else
+                    // TODO OS X
+                    return true;
+#else
+                return true;
+#endif
             }
             finally
             {
                 if (success)
-                {
                     handle.DangerousRelease();
-                }
             }
         }
 
-        [SecurityCritical]
-        private static void ResolveFSync()
-        {
-            // we don't want a build time dependency on this Mono assembly, so we use reflection
-            Type type = Type.GetType("Mono.Unix.Native.Syscall, Mono.Posix, Version=2.0.0.0, Culture=neutral, PublicKeyToken=0738eb9f132ed756");
-            if (type != null)
-            {
-                fsync = (Converter<int, int>)Delegate.CreateDelegate(typeof(Converter<int, int>), type, "fsync", false, false);
-            }
-            if (fsync == null)
-            {
-                fsync = DummyFSync;
-            }
-        }
-
-        private static int DummyFSync(int fd)
-        {
-            return 0;
-        }
     }
 
 }

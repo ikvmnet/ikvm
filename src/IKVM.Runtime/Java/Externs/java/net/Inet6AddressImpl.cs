@@ -25,17 +25,18 @@ using System;
 using System.Net;
 using System.Net.Sockets;
 
+using IKVM.Runtime.Util.Java.Net;
+
 namespace IKVM.Java.Externs.java.net
 {
 
     static class Inet6AddressImpl
     {
 
-        public static string getLocalHostName(object thisInet6AddressImpl)
+        public static string getLocalHostName(object self)
         {
-
 #if FIRST_PASS
-		return null;
+            throw new NotSupportedException();
 #else
             try
             {
@@ -48,43 +49,36 @@ namespace IKVM.Java.Externs.java.net
 #endif
         }
 
-        public static object lookupAllHostAddr(object thisInet6AddressImpl, string hostname)
+        public static object lookupAllHostAddr(object self, string hostname)
         {
 #if FIRST_PASS
-		return null;
+            throw new NotSupportedException();
 #else
             try
             {
-                IPAddress[] addr = Dns.GetHostAddresses(hostname);
-                global::java.net.InetAddress[] addresses = new global::java.net.InetAddress[addr.Length];
+                var addr = Dns.GetHostAddresses(hostname);
+                var addresses = new global::java.net.InetAddress[addr.Length];
                 int pos = 0;
                 for (int i = 0; i < addr.Length; i++)
-                {
                     if (addr[i].AddressFamily == AddressFamily.InterNetworkV6 == global::java.net.InetAddress.preferIPv6Address)
-                    {
-                        addresses[pos++] = InetAddress.ConvertIPAddress(addr[i], hostname);
-                    }
-                }
+                        addresses[pos++] = addr[i].ToInetAddress(hostname);
+
                 for (int i = 0; i < addr.Length; i++)
-                {
                     if (addr[i].AddressFamily == AddressFamily.InterNetworkV6 != global::java.net.InetAddress.preferIPv6Address)
-                    {
-                        addresses[pos++] = InetAddress.ConvertIPAddress(addr[i], hostname);
-                    }
-                }
+                        addresses[pos++] = addr[i].ToInetAddress(hostname);
+
                 if (addresses.Length == 0)
-                {
                     throw new global::java.net.UnknownHostException(hostname);
-                }
+
                 return addresses;
             }
-            catch (ArgumentException x)
+            catch (ArgumentException e)
             {
-                throw new global::java.net.UnknownHostException(x.Message);
+                throw new global::java.net.UnknownHostException(e.Message);
             }
-            catch (SocketException x)
+            catch (SocketException e)
             {
-                throw new global::java.net.UnknownHostException(x.Message);
+                throw new global::java.net.UnknownHostException(e.Message);
             }
 #endif
         }
@@ -92,7 +86,7 @@ namespace IKVM.Java.Externs.java.net
         public static string getHostByAddr(object thisInet6AddressImpl, byte[] addr)
         {
 #if FIRST_PASS
-		return null;
+            throw new NotSupportedException();
 #else
             try
             {
@@ -109,44 +103,33 @@ namespace IKVM.Java.Externs.java.net
 #endif
         }
 
-        public static bool isReachable0(object thisInet6AddressImpl, byte[] addr, int scope, int timeout, byte[] inf, int ttl, int if_scope)
+        public static bool isReachable0(object self, byte[] addr, int scope, int timeout, byte[] inf, int ttl, int if_scope)
         {
             if (addr.Length == 4)
-            {
                 return Inet4AddressImpl.isReachable0(null, addr, timeout, inf, ttl);
-            }
-            // like the JDK, we don't use Ping, but we try a TCP connection to the echo port
-            // (.NET 2.0 has a System.Net.NetworkInformation.Ping class, but that doesn't provide the option of binding to a specific interface)
+
             try
             {
-                using (Socket sock = new Socket(AddressFamily.InterNetworkV6, SocketType.Stream, ProtocolType.Tcp))
+                using var socket = new Socket(AddressFamily.InterNetworkV6, SocketType.Stream, ProtocolType.Tcp);
+                if (inf != null)
+                    socket.Bind(new IPEndPoint(new IPAddress(inf, (uint)if_scope), 0));
+
+                if (ttl > 0)
+                    socket.Ttl = (short)ttl;
+
+                var ep = new IPEndPoint(new IPAddress(addr, (uint)scope), 7);
+                var res = socket.BeginConnect(ep, null, null);
+                if (res.AsyncWaitHandle.WaitOne(timeout, false))
                 {
-                    if (inf != null)
+                    try
                     {
-                        sock.Bind(new IPEndPoint(new IPAddress(inf, (uint)if_scope), 0));
+                        socket.EndConnect(res);
+                        return true;
                     }
-                    if (ttl > 0)
+                    catch (SocketException x)
                     {
-                        sock.SetSocketOption(SocketOptionLevel.IPv6, SocketOptionName.HopLimit, ttl);
-                    }
-                    IPEndPoint ep = new IPEndPoint(new IPAddress(addr, (uint)scope), 7);
-                    IAsyncResult res = sock.BeginConnect(ep, null, null);
-                    if (res.AsyncWaitHandle.WaitOne(timeout, false))
-                    {
-                        try
-                        {
-                            sock.EndConnect(res);
+                        if (x.SocketErrorCode == SocketError.ConnectionRefused)
                             return true;
-                        }
-                        catch (SocketException x)
-                        {
-                            const int WSAECONNREFUSED = 10061;
-                            if (x.ErrorCode == WSAECONNREFUSED)
-                            {
-                                // we got back an explicit "connection refused", that means the host was reachable.
-                                return true;
-                            }
-                        }
                     }
                 }
             }

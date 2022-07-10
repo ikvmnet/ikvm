@@ -68,7 +68,7 @@ namespace IKVM.Tests.Java.ikvm.runtime
         }
 
         [TestMethod]
-        public async Task Can_get_package()
+        public void Can_get_package()
         {
             var t = helloworldDll.GetType("sample.HelloworldImpl");
             var k = ((global::java.lang.Class)t).getPackage();
@@ -76,7 +76,7 @@ namespace IKVM.Tests.Java.ikvm.runtime
         }
 
         [TestMethod]
-        public async Task Can_get_resource()
+        public void Can_get_resource()
         {
             var t = helloworldDll.GetType("sample.HelloworldImpl");
             var k = ((global::java.lang.Class)t).getResource("/helloworld.composite");

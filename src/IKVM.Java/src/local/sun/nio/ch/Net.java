@@ -602,15 +602,36 @@ public class Net {
 
     static native int getInterface6(FileDescriptor fd) throws IOException;
 
+    private static native void initIDs();
+
     /**
      * Event masks for the various poll system calls.
      * They will be set platform dependant in the static initializer below.
      */
-    public static final short POLLIN       = 0x0001;
-    public static final short POLLCONN     = 0x0002;
-    public static final short POLLOUT      = 0x0004;
-    public static final short POLLERR      = 0x0008;
-    public static final short POLLHUP      = 0x0010;
-    public static final short POLLNVAL     = 0x0020;
-    public static final short POLLREMOVE   = 0x0800;
+    public static final short POLLIN;
+    public static final short POLLOUT;
+    public static final short POLLERR;
+    public static final short POLLHUP;
+    public static final short POLLNVAL;
+    public static final short POLLCONN;
+
+    static native short pollinValue();
+    static native short polloutValue();
+    static native short pollerrValue();
+    static native short pollhupValue();
+    static native short pollnvalValue();
+    static native short pollconnValue();
+
+    static {
+        IOUtil.load();
+        initIDs();
+
+        POLLIN     = pollinValue();
+        POLLOUT    = polloutValue();
+        POLLERR    = pollerrValue();
+        POLLHUP    = pollhupValue();
+        POLLNVAL   = pollnvalValue();
+        POLLCONN   = pollconnValue();
+    }
+
 }

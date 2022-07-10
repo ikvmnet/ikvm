@@ -37,111 +37,112 @@ namespace IKVM.Java.Externs.sun.nio.ch
 
         public static void disconnect0(global::java.io.FileDescriptor fd, bool isIPv6)
         {
-#if !FIRST_PASS
-			try
-			{
-				fd.getSocket().Connect(new System.Net.IPEndPoint(System.Net.IPAddress.Any, 0));
-				IKVM.Runtime.Util.Sun.Nio.Ch.Net.setConnectionReset(fd.getSocket(), false);
-			}
-			catch (System.Net.Sockets.SocketException x)
-			{
-				throw global::java.net.SocketUtil.convertSocketExceptionToIOException(x);
-			}
-			catch (ObjectDisposedException)
-			{
-				throw new global::java.net.SocketException("Socket is closed");
-			}
+#if FIRST_PASS
+            throw new NotSupportedException();
+#else
+            try
+            {
+                fd.getSocket().Connect(new System.Net.IPEndPoint(System.Net.IPAddress.Any, 0));
+                Runtime.Java.Externs.sun.nio.ch.Net.setConnectionReset(fd.getSocket(), false);
+            }
+            catch (System.Net.Sockets.SocketException e)
+            {
+                throw global::java.net.SocketUtil.convertSocketExceptionToIOException(e);
+            }
+            catch (ObjectDisposedException)
+            {
+                throw new global::java.net.SocketException("Socket is closed.");
+            }
 #endif
         }
 
-        public static int receive0(object obj, global::java.io.FileDescriptor fd, byte[] buf, int pos, int len, bool connected)
+        public static int receive0(object self, global::java.io.FileDescriptor fd, byte[] buf, int pos, int len, bool connected)
         {
 #if FIRST_PASS
-            return 0;
+            throw new NotSupportedException();
 #else
-			global::sun.nio.ch.DatagramChannelImpl impl = (global::sun.nio.ch.DatagramChannelImpl)obj;
-			global::java.net.SocketAddress remoteAddress = impl.remoteAddress();
-			System.Net.EndPoint remoteEP;
-			if (fd.getSocket().AddressFamily == System.Net.Sockets.AddressFamily.InterNetworkV6)
-			{
-				remoteEP = new System.Net.IPEndPoint(System.Net.IPAddress.IPv6Any, 0);
-			}
-			else
-			{
-				remoteEP = new System.Net.IPEndPoint(0, 0);
-			}
-			global::java.net.InetSocketAddress addr;
-			int length;
-			do
-			{
-				for (; ; )
-				{
-					try
-					{
-						length = fd.getSocket().ReceiveFrom(buf, pos, len, System.Net.Sockets.SocketFlags.None, ref remoteEP);
-						break;
-					}
-					catch (System.Net.Sockets.SocketException x)
-					{
-						if (x.ErrorCode == global::java.net.SocketUtil.WSAECONNRESET)
-						{
-							// A previous send failed (i.e. the remote host responded with a ICMP that the port is closed) and
-							// the winsock stack helpfully lets us know this, but we only care about this when we're connected,
-							// otherwise we'll simply retry the receive (note that we use SIO_UDP_CONNRESET to prevent these
-							// WSAECONNRESET exceptions, but when switching from connected to disconnected, some can slip through).
-							if (connected)
-							{
-								throw new global::java.net.PortUnreachableException();
-							}
-							continue;
-						}
-						if (x.ErrorCode == global::java.net.SocketUtil.WSAEMSGSIZE)
-						{
-							// The buffer size was too small for the packet, ReceiveFrom receives the part of the packet
-							// that fits in the buffer and then throws an exception, so we have to ignore the exception in this case.
-							length = len;
-							break;
-						}
-						if (x.ErrorCode == global::java.net.SocketUtil.WSAEWOULDBLOCK)
-						{
-							return global::sun.nio.ch.IOStatus.UNAVAILABLE;
-						}
-						throw global::java.net.SocketUtil.convertSocketExceptionToIOException(x);
-					}
-					catch (ObjectDisposedException)
-					{
-						throw new global::java.net.SocketException("Socket is closed");
-					}
-				}
-				System.Net.IPEndPoint ep = (System.Net.IPEndPoint)remoteEP;
-				addr = new global::java.net.InetSocketAddress(global::java.net.SocketUtil.getInetAddressFromIPEndPoint(ep), ep.Port);
-			} while (remoteAddress != null && !addr.equals(remoteAddress));
-			impl.sender = addr;
-			return length;
+            var impl = (global::sun.nio.ch.DatagramChannelImpl)self;
+            var remoteAddress = impl.remoteAddress();
+            System.Net.EndPoint remoteEP;
+            if (fd.getSocket().AddressFamily == System.Net.Sockets.AddressFamily.InterNetworkV6)
+                remoteEP = new System.Net.IPEndPoint(System.Net.IPAddress.IPv6Any, 0);
+            else
+                remoteEP = new System.Net.IPEndPoint(0, 0);
+
+            global::java.net.InetSocketAddress addr;
+            int length;
+            do
+            {
+                for (; ; )
+                {
+                    try
+                    {
+                        length = fd.getSocket().ReceiveFrom(buf, pos, len, System.Net.Sockets.SocketFlags.None, ref remoteEP);
+                        break;
+                    }
+                    catch (System.Net.Sockets.SocketException e) when (e.SocketErrorCode == System.Net.Sockets.SocketError.ConnectionReset)
+                    {
+                        // A previous send failed (i.e. the remote host responded with a ICMP that the port is closed) and
+                        // the winsock stack helpfully lets us know this, but we only care about this when we're connected,
+                        // otherwise we'll simply retry the receive (note that we use SIO_UDP_CONNRESET to prevent these
+                        // WSAECONNRESET exceptions, but when switching from connected to disconnected, some can slip through).
+                        if (connected)
+                            throw new global::java.net.PortUnreachableException();
+
+                        continue;
+                    }
+                    catch (System.Net.Sockets.SocketException e) when (e.SocketErrorCode == System.Net.Sockets.SocketError.MessageSize)
+                    {
+                        // The buffer size was too small for the packet, ReceiveFrom receives the part of the packet
+                        // that fits in the buffer and then throws an exception, so we have to ignore the exception in this case.
+                        length = len;
+                        break;
+                    }
+                    catch (System.Net.Sockets.SocketException e) when (e.SocketErrorCode == System.Net.Sockets.SocketError.WouldBlock)
+                    {
+                        return global::sun.nio.ch.IOStatus.UNAVAILABLE;
+                    }
+                    catch (System.Net.Sockets.SocketException e)
+                    {
+                        throw global::java.net.SocketUtil.convertSocketExceptionToIOException(e);
+                    }
+                    catch (ObjectDisposedException)
+                    {
+                        throw new global::java.net.SocketException("Socket is closed");
+                    }
+                }
+
+                var ep = (System.Net.IPEndPoint)remoteEP;
+                addr = new global::java.net.InetSocketAddress(global::java.net.SocketUtil.getInetAddressFromIPEndPoint(ep), ep.Port);
+            }
+            while (remoteAddress != null && !addr.equals(remoteAddress));
+
+            impl.sender = addr;
+            return length;
 #endif
         }
 
         public static int send0(object obj, bool preferIPv6, global::java.io.FileDescriptor fd, byte[] buf, int pos, int len, global::java.net.InetAddress addr, int port)
         {
 #if FIRST_PASS
-            return 0;
+            throw new NotSupportedException();
 #else
-			try
-			{
-				return fd.getSocket().SendTo(buf, pos, len, System.Net.Sockets.SocketFlags.None, new System.Net.IPEndPoint(global::java.net.SocketUtil.getAddressFromInetAddress(addr, preferIPv6), port));
-			}
-			catch (System.Net.Sockets.SocketException x)
-			{
-				if (x.ErrorCode == global::java.net.SocketUtil.WSAEWOULDBLOCK)
-				{
-					return global::sun.nio.ch.IOStatus.UNAVAILABLE;
-				}
-				throw global::java.net.SocketUtil.convertSocketExceptionToIOException(x);
-			}
-			catch (ObjectDisposedException)
-			{
-				throw new global::java.net.SocketException("Socket is closed");
-			}
+            try
+            {
+                return fd.getSocket().SendTo(buf, pos, len, System.Net.Sockets.SocketFlags.None, new System.Net.IPEndPoint(global::java.net.SocketUtil.getAddressFromInetAddress(addr, preferIPv6), port));
+            }
+            catch (System.Net.Sockets.SocketException e) when (e.SocketErrorCode == System.Net.Sockets.SocketError.WouldBlock)
+            {
+                return global::sun.nio.ch.IOStatus.UNAVAILABLE;
+            }
+            catch (System.Net.Sockets.SocketException e)
+            {
+                throw global::java.net.SocketUtil.convertSocketExceptionToIOException(e);
+            }
+            catch (ObjectDisposedException)
+            {
+                throw new global::java.net.SocketException("Socket is closed");
+            }
 #endif
         }
 
