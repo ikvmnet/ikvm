@@ -23,7 +23,7 @@ These tasks can be done **without porting source code** to .NET.
 
 1. **Statically:** By compiling a Java application into a .NET assembly using `<MavenReference>`, `<IkvmReference>` or `ikvmc`.
    - Libary assemblies can be referenced by any .NET application with a compatible target framework and platform.
-   - Executable assemblies can be launched by wrapping in a .NET executable that calls the `main()` method of the Java application or by specifying the class to locatet the `main()` method in during compilation.
+   - Executable assemblies can be launched by wrapping in a .NET executable that calls the `main()` method of the Java application or by specifying the class to locate the `main()` method in during compilation.
 2. **Dynamically:** By running a Java application using the `ikvm.exe` tool, which can be used as a direct replacement for `java.exe`. The Java bytecode is converted on-the-fly to CIL and executed.
 
 ## What IKVM is Not
