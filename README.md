@@ -22,9 +22,9 @@ These tasks can be done **without porting source code** to .NET.
 ### Run Java Applications with .NET
 
 1. **Statically:** By compiling a Java application into a .NET assembly using `<MavenReference>`, `<IkvmReference>` or `ikvmc`.
-   - Libary assemblies can be referenced by any .NET application with a compatible target framework and platform.
-   - Executable assemblies can be launched by wrapping in a .NET executable that calls the `main()` method of the Java application or by specifying the class to locate the `main()` method in during compilation.
-2. **Dynamically:** By running a Java application using the `ikvm.exe` tool, which can be used as a direct replacement for `java.exe`. The Java bytecode is converted on-the-fly to CIL and executed.
+   - Libary assemblies can be referenced by any .NET application with a compatible target framework and platform. Types can be referenced by using the Java package name like a .NET namespace.
+   - Executable assemblies can be launched by specifying the class to locate the `main()` method in during compilation.
+2. **Dynamically:** By running a Java application using the `ikvm` tool, which can be used as a direct replacement for `java.exe`. The Java bytecode is converted on-the-fly to CIL and executed.
 
 ## What IKVM is Not
 
@@ -42,6 +42,24 @@ These tasks can be done **without porting source code** to .NET.
 ## Documentation
 
 See the [tutorial](https://sourceforge.net/p/ikvm/wiki/Tutorial/) to get started or [IKVM.NET In Details](https://www.c-sharpcorner.com/UploadFile/abhijmk/ikvm-net-in-details/) for a more in-depth look.
+
+## Installation
+
+### NuGet
+
+```console
+PM> Install-Package IKVM
+```
+
+Or, to use `<MavenReference>`:
+
+```console
+PM> Install-Package IKVM.Maven.Sdk
+```
+
+### Tools
+
+The build tools are a available for download on the [releases](https://github.com/ikvm-revived/ikvm/releases) page.
 
 ## IkvmReference
 
