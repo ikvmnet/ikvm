@@ -3,19 +3,33 @@
 [![Nuget](https://img.shields.io/nuget/dt/IKVM)](https://www.nuget.org/packages/IKVM)
 [![GitHub](https://img.shields.io/github/license/ikvm-revived/ikvm)](https://github.com/ikvm-revived/ikvm/blob/develop/LICENSE.md)
 
-IKVM.NET is an implementation of Java for the Microsoft .NET Framework and .NET Core.
+## What is IKVM?
 
-IKVM.NET includes the following components:
+IKVM is an implementation of Java for the Microsoft .NET Framework and .NET Core. It can be used to quickly and easily:
+
+- Execute compiled Java code (bytecode) directly in .NET
+- Consume a Java library or executable within a .NET project
+
+These tasks can be done **without porting the source code** to .NET.
+
+### IKVM Components
 
 * A Java virtual machine (JVM) implemented in .NET
 * A .NET implementation of the Java class libraries
-* A tool that translates Java bytecode (JAR files) to .NET IL (DLLs or EXE files).
+* A tool that translates Java bytecode (JAR files) to .NET IL (DLL or EXE files).
 * Tools that enable Java and .NET interoperability
-* With IKVM.NET you can run compiled Java code (bytecode) directly on Microsoft .NET Framework or .NET Core. The bytecode is converted on the fly to CIL and executed.
 
-## Documentation
+### Run Java Applications with .NET
 
-See the [tutorial](https://sourceforge.net/p/ikvm/wiki/Tutorial/) to get started or [IKVM.NET In Details](https://www.c-sharpcorner.com/UploadFile/abhijmk/ikvm-net-in-details/) for a more in-depth look.
+1. **Statically:** By compiling a Java application into a .NET assembly using `<MavenReference>`, `<IkvmReference>` or `ikvmc`.
+   - Libary assemblies can be referenced by any .NET application with a compatible target framework.
+   - Executable assemblies can be launched by wrapping in a .NET executable that calls the `main()` method of the Java application.
+2. **Dynamically:** By running a Java application using the `ikvm.exe` tool, which can be used as a direct replacement for `java.exe`. The Java bytecode is converted on-the-fly to CIL and executed.
+
+## What IKVM is Not
+
+- A converter utility to transform Java source code to C# source code
+- A tool that runs .NET code in Java - all IKVM conversions are Java > .NET
 
 ## Support
 
@@ -24,40 +38,70 @@ See the [tutorial](https://sourceforge.net/p/ikvm/wiki/Tutorial/) to get started
 - .NET 5 and higher
 - Java SE 8
 
+## Documentation
+
+See the [tutorial](https://sourceforge.net/p/ikvm/wiki/Tutorial/) to get started or [IKVM.NET In Details](https://www.c-sharpcorner.com/UploadFile/abhijmk/ikvm-net-in-details/) for a more in-depth look.
+
 ## IkvmReference
 
-IKVM includes build-time support for translating Java libraries to .NET assemblies. Install the `IKVM` package in a project that wants to reference Java libraries. Use the `IkvmReference` `ItemGroup` to indicate which Java libraries your project required.
+IKVM includes build-time support for translating Java libraries to .NET assemblies. Install the `IKVM` package in a project that requires references to Java libraries. Use `<IkvmReference>` within an `<ItemGroup>` to indicate which Java libraries your project requires.
 
-Example:
+### Example
 
-```
-    <ItemGroup>
-        <IkvmReference Include="..\..\ext\helloworld-2.0.jar" />
-    </ItemGroup>
+```xml
+<ItemGroup>
+  <IkvmReference Include="..\..\ext\helloworld-2.0.jar" />
+</ItemGroup>
 ```
 
 The output assembly will be generated as part of your project's build process. Additional metadata can be added to `IkvmReference` to customize the generated assembly.
 
-+ `Identity`: The identity of the `IkvmReference` item can be either a) path to a JAR file b) path to a directory or c)
-an otherwise unimportant name.
-+ `AssemblyName`: By default the `AssemblyName` is generated using the rules defined by the `Automatic-Module-Name`
-specification. To override this, do so here.
-+ `AssemblyVersion`: By default the `AssemblyVersion` is generated using the rules defined by the `Automatic-Module-Name`
-specification. To override this, do so here.
-+ `DisableAutoAssemblyName`: If `true` disables detection of `AssemblyName`.
-+ `DisableAutoAssemblyVersion`: If `true` disables detection of `AssemblyVersion`.
-+ `FallbackAssemblyName`: If `AssemblyName` is not provided or cannot be calculated, use this value.
-+ `FallbackAssemblyVersion`: If `AssemblyVersion` is not provided or cannot be calculated, use this value.
-+ `Compile`: Optional semi-colon separated list of Java class path items to compile into the assembly. By default this
-value is the `Identity` of the item, if the identity of the item is an existing JAR file or directory (not yet supported). MSBuild globs
-are supported to reference multiple JAR or .class files.
-+ `Sources`: Optional semi-colon separated list of Java source files to use during documentation generation. (not yet supported)
-+ `References`: Optional semi-colon separated list of other `IkvmReference` identity values to specify as a reference
-to the current one. For instance, if `foo.jar` depends on `bar.jar`, include both as `IkvmReference` items, but specify
-the identity of `bar.jar` on the `References` metadata of `foo.jar`.
-+ `Debug`: Optional boolean indicating whether to generate debug symbols (non-portable). By default this is determined
-based on the overall setting of the project.
-+ All other metadata supported on the `Reference` MSBuild item group definition.
+### Syntax
+
+```xml
+<ItemGroup>
+  <IkvmReference Include="..\..\ext\helloworld-2.0.jar"
+                 AssemblyName="MyAssembly"
+                 AssemblyVersion="3.2.1.0"
+                 FileVersion="3.0.0.0"
+                 DisableAutoAssemblyName="true"
+                 DisableAutoAssemblyVersion="true"
+                 FallbackAssemblyName="MyAssemblyFallback"
+                 FallbackAssemblyVersion="3.1.0.0"
+                 KeyFile="MyKey.snk"
+                 DelaySign="true"
+                 Compile="SomeInternalDependency.jar;SomeOtherInternalDependency.jar"
+                 Sources="MyClass.java;YourClass.java"
+                 References="SomeExternalDependency.jar;SomeOtherExternalDependency.jar"
+                 Aliases="MyAssemblyAlias;helloworld2_0"
+                 Debug="true" />
+</ItemGroup>
+```
+
+
+### Attributes and Elements
+
+The following values can be used as either an attribute or a nested element of `<IkvmReference>`.
+
+| Attribute or Element  | Description  |
+|---|---|
+| `Include` | The identity of the `IkvmReference` item. The value can be one of: <ul><li>path to a JAR file</li><li>path to a directory</li><li>an otherwise unimportant name</li></ul> |
+| `AssemblyName` | By default the `AssemblyName` is generated using the rules defined by the [`Automatic-Module-Name` specification](#automatic-module-name-specification). To override this, do so here. The value should not include a file extension, `.dll` will be appended automatically. |
+| `AssemblyVersion` | By default the `AssemblyVersion` is generated using the rules defined by the [`Automatic-Module-Name` specification](#automatic-module-name-specification). To override this, do so here. |
+| `AssemblyFileVersion` | By default the `AssemblyFileVersion` is generated using the rules defined by the [`Automatic-Module-Name` specification](#automatic-module-name-specification) or, if overridden, the same value as `AssemblyVersion`. To override this, do so here. |
+| `DisableAutoAssemblyName` | If `true` disables detection of `AssemblyName`. |
+| `DisableAutoAssemblyVersion` | If `true` disables detection of `AssemblyVersion`. |
+| `FallbackAssemblyName` | If `AssemblyName` is not provided or cannot be calculated, use this value. |
+| `FallbackAssemblyVersion` | If `AssemblyVersion` is not provided or cannot be calculated, use this value. |
+| `KeyFile` | Specifies the filename containing the cryptographic key. When this option is used, the compiler inserts the public key from the specified file into the assembly manifest and then signs the final assembly with the private key. |
+| `DelaySign` | This option causes the compiler to reserve space in the output file so that a digital signature can be added later. Use `DelaySign` if you only want to place the public key in the assembly. The `DelaySign` option has no effect unless used with `KeyFile`. |
+| `Compile` | A semi-colon separated list of Java class path items to compile into the assembly. By default this value is the `Identity` of the item, if the identity of the item is an existing JAR file or directory (not yet supported). MSBuild globs are supported to reference multiple JAR or .class files. |
+| `Sources` | A semi-colon separated list of Java source files to use during documentation generation. (not yet supported) |
+| `References` | Optional semi-colon separated list of other `IkvmReference` identity values to specify as a reference to the current one. For example, if `foo.jar` depends on `bar.jar`, include both as `IkvmReference` items, but specify the identity of `bar.jar` on the `References` metadata of `foo.jar`. |
+| `Debug` | Optional boolean indicating whether to generate debug symbols. By default this is determined based on the `<DebugType>` and `<DebugSymbols>`  properties of the project. Only full debug symbols are currently supported. |
+| `Aliases` | A semi-colon separated list of aliases that can be used to reference the assembly in `References`. |
+| All other metadata supported on the [`Reference`](https://docs.microsoft.com/en-us/visualstudio/msbuild/common-msbuild-project-items#reference) MSBuild item group definition. | |
+
 
 `IkvmReference` is not transitive. Including it in one project and adding a dependency to that project from a second
 project will not result in the same reference being available on the second project. Instead add the reference to
@@ -66,18 +110,22 @@ each project.
 For each project to resolve to the same resulting assembly ensure their settings are identical.
 
 
+```xml
+<ItemGroup>
+  <IkvmReference Include="helloworld.jar">
+    <AssemblyVersion>1.0.0.0</AssemblyVersion>
+  </IkvmReference>
+  <IkvmReference Include="helloworld-2.jar">
+    <AssemblyName>helloworld-2</AssemblyName>
+    <AssemblyVersion>2.0.0.0</AssemblyVersion>
+    <References>helloworld.jar</References>
+    <Aliases>helloworld2</Aliases>
+  </IkvmReference>
+</ItemGroup>
 ```
-    <ItemGroup>
-        <IkvmReference Include="helloworld.jar">
-            <AssemblyVersion>1.0.0.0</AssemblyVersion>
-        </IkvmReference>
-        <IkvmReference Include="helloworld-2.jar">
-            <AssemblyName>helloworld-2</AssemblyName>
-            <AssemblyVersion>2.0.0.0</AssemblyVersion>
-            <References>helloworld.jar</References>
-            <Aliases>helloworld2</Aliases>
-        </IkvmReference>
-    </ItemGroup>
 
-```
+### `Automatic-Module-Name` Specification
 
+The `Automatic-Module-Name` is an attribute of the JAR manifest, which can be found in the `META-INF/MANIFEST.MF` file inside the JAR. See the [Java SE 9 JAR documentation](https://docs.oracle.com/javase/9/docs/specs/jar/jar.html#main_attributesmain-attributes) for more information.
+
+> A JAR file is simply a `.zip` file with another extension, so it can be extracted using any zip file library or utility.
