@@ -14,11 +14,11 @@ Name of an assembly. May be a fully-qualified path.
 
 ## Options
 
-| Source  | Description  |
+| <span>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;</span>Source<span>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;</span>  | <span>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;</span>Description<span>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;</span>  |
 |---|---|
 | No `<assemblyNameOrPath>` provided | Displays command syntax and options for the tool. |
 | `-out:<outputfile>` | Specifies the name of the `outputfile`. |
-| `-r:\|-reference:<filespec>` | Reference an assembly. |
+| `-r:\|-reference:<filespec>` | Reference a class library DLL (.NET assembly). This option may be specified more than once to reference multiple DLLs. |
 | `-japi` | Generate `.jar` suitable for comparison with japitools. |
 | `-skiperror` | Continue when errors are encountered. |
 | `-shared` |  Process all assemblies in shared group. |
@@ -27,6 +27,9 @@ Name of an assembly. May be a fully-qualified path.
 | `-namespace:<namespace>` | Only include types from specified `namespace`. This option may be specified more than once. |
 | `-forwarders` |  Export forwarded types too. |
 | `-parameters` |  Emit Java 8 classes with parameter names. |
+| `-bootstrap` | Undocumented. |
+| `-serialver` | Deprecated. Use `-japi` instead. |
+
 
 
 ## Notes
