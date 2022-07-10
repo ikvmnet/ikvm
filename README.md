@@ -23,7 +23,7 @@ These tasks can be done **without porting source code** to .NET.
 
 1. **Statically:** By compiling a Java application into a .NET assembly using `<MavenReference>`, `<IkvmReference>` or `ikvmc`.
    - Libary assemblies can be referenced by any .NET application with a compatible target framework and platform. Types can be referenced by using the Java package name like a .NET namespace.
-   - Executable assemblies can be launched by specifying the class to locate the `main()` method in during compilation.
+   - Executable assemblies can be launched by specifying the class containing the `main()` method to execute at runtime when building using `ikvmc`.
 2. **Dynamically:** By running a Java application using the `ikvm` tool, which can be used as a direct replacement for `java.exe`. The Java bytecode is converted on-the-fly to CIL and executed.
 
 ## What IKVM is Not
@@ -51,7 +51,7 @@ See the [tutorial](https://sourceforge.net/p/ikvm/wiki/Tutorial/) to get started
 PM> Install-Package IKVM
 ```
 
-Or, to use `<MavenReference>`:
+Or, to use `MavenReference`:
 
 ```console
 PM> Install-Package IKVM.Maven.Sdk
@@ -59,23 +59,31 @@ PM> Install-Package IKVM.Maven.Sdk
 
 ### Tools
 
-The build tools are a available for download on the [releases](https://github.com/ikvm-revived/ikvm/releases) page.
+The tools are a available for download on the [Releases](https://github.com/ikvm-revived/ikvm/releases) page.
 
-## IkvmReference
+## Usage
 
-IKVM includes build-time support for translating Java libraries to .NET assemblies. Install the `IKVM` package in a project that requires references to Java libraries. Use `<IkvmReference>` within an `<ItemGroup>` to indicate which Java libraries your project requires.
+IKVM supports integration with .NET SDK projects as well as low level tools for running compiled Java code directly or for advanced build scenarios. The 2 main entry points for integration with the .NET SDK are `IkvmReference` and `MavenReference`. .NET SDK projects can be built on the command line directly or using an IDE that supports them, such as recent versions [Visual Studio](https://visualstudio.microsoft.com/downloads/) or [JetBrains Rider](https://www.jetbrains.com/rider/).
 
-### Example
+### IkvmReference
+
+IKVM includes build-time support for translating Java libraries to .NET assemblies. Install the `IKVM` package in a project that requires references to Java libraries. Use `IkvmReference` within an `ItemGroup` to indicate which Java libraries your project requires.
+
+#### Example
 
 ```xml
+<ItemGroup>
+  <PackageReference Include="IKVM" Version="8.2.0" />
+</ItemGroup>
+
 <ItemGroup>
   <IkvmReference Include="..\..\ext\helloworld-2.0.jar" />
 </ItemGroup>
 ```
 
-The output assembly will be generated as part of your project's build process. Additional metadata can be added to `IkvmReference` to customize the generated assembly.
+The output assembly will be generated as part of your project's build process and a reference will automatically be added to your project so you can call APIs of the compiled `.jar` assembly. Additional metadata can be added to `IkvmReference` to customize the assembly that is generated.
 
-### Syntax
+#### Syntax
 
 ```xml
 <ItemGroup>
@@ -98,7 +106,7 @@ The output assembly will be generated as part of your project's build process. A
 ```
 
 
-### Attributes and Elements
+#### Attributes and Elements
 
 The following values can be used as either an attribute or a nested element of `<IkvmReference>`.
 
@@ -123,7 +131,7 @@ The following values can be used as either an attribute or a nested element of `
 
 
 `IkvmReference` is not transitive. Including it in one project and adding a dependency to that project from a second
-project will not result in the same reference being available on the second project. Instead add the reference to
+project will not result in the same reference being available on the second project. Instead, add the reference to
 each project.
 
 For each project to resolve to the same resulting assembly ensure their settings are identical.
@@ -143,8 +151,12 @@ For each project to resolve to the same resulting assembly ensure their settings
 </ItemGroup>
 ```
 
-### `Automatic-Module-Name` Specification
+#### `Automatic-Module-Name` Specification
 
 The `Automatic-Module-Name` is an attribute of the JAR manifest, which can be found in the `META-INF/MANIFEST.MF` file inside the JAR. See the [Java SE 9 JAR documentation](https://docs.oracle.com/javase/9/docs/specs/jar/jar.html#main_attributesmain-attributes) for more information.
 
 > A JAR file is simply a `.zip` file with another extension, so it can be extracted using any zip file library or utility.
+
+### MavenReference
+
+See the [ikvm-maven Readme](https://github.com/ikvm-revived/ikvm-maven#readme) for usage instructions.
