@@ -1,15 +1,15 @@
 ﻿using System.Net.Sockets;
 
-namespace IKVM.Runtime.Util.Java.Net
+namespace IKVM.Java.Externs.java.net
 {
-
-#if !FIRST_PASS
 
     /// <summary>
     /// Provides a map of Java socket information to .NET socket information.
     /// </summary>
     static class SocketOptionMap
     {
+
+#if !FIRST_PASS
 
         /// <summary>
         /// Describes a mapping between a <see cref="global::java.net.SocketOptions"/> and it's associated .NET information.
@@ -105,8 +105,8 @@ namespace IKVM.Runtime.Util.Java.Net
             return false;
         }
 
-    }
-
 #endif
+
+    }
 
 }

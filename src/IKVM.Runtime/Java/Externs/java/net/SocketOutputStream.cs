@@ -32,6 +32,24 @@ namespace IKVM.Java.Externs.java.net
     static class SocketOutputStream
     {
 
+        /// <summary>
+        /// Implements the native method for 'init'.
+        /// </summary>
+        public static void init()
+        {
+
+        }
+
+        /// <summary>
+        /// Implements the native method for 'socketWrite0'.
+        /// </summary>
+        /// <param name="self"></param>
+        /// <param name="fd"></param>
+        /// <param name="data"></param>
+        /// <param name="off"></param>
+        /// <param name="len"></param>
+        /// <exception cref="global::java.net.SocketException"></exception>
+        /// <exception cref="global::java.lang.NullPointerException"></exception>
         public static void socketWrite0(object self, global::java.io.FileDescriptor fd, byte[] data, int off, int len)
         {
 #if FIRST_PASS
@@ -60,11 +78,6 @@ namespace IKVM.Java.Externs.java.net
                 throw new global::java.net.SocketException("Socket is closed.");
             }
 #endif
-        }
-
-        public static void init()
-        {
-
         }
 
     }

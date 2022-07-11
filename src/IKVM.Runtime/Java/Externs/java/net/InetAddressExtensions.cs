@@ -1,6 +1,6 @@
 ﻿using System.Net;
 
-namespace IKVM.Runtime.Util.Java.Net
+namespace IKVM.Runtime.Java.Externs.java.net
 {
 
     /// <summary>
@@ -28,7 +28,7 @@ namespace IKVM.Runtime.Util.Java.Net
         /// <returns></returns>
         public static global::java.net.InetAddress ToInetAddress(this IPAddress address)
         {
-            return address != null ? ToInetAddress(address, address.ToString()) : null;
+            return address != null ? address.ToInetAddress(address.ToString()) : null;
         }
 
         /// <summary>
@@ -54,7 +54,7 @@ namespace IKVM.Runtime.Util.Java.Net
         /// <returns></returns>
         public static global::java.net.InetAddress ToInetAddress(this IPEndPoint self)
         {
-            return self != null ? ToInetAddress(self.Address) : null;
+            return self != null ? self.Address.ToInetAddress() : null;
         }
 
 #endif

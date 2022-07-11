@@ -5,7 +5,9 @@ using System.Net;
 using System.Net.Sockets;
 using System.Reflection;
 
-using IKVM.Runtime.Util.Java.Net;
+using IKVM.Runtime.Java.Externs.java.net;
+
+using static IKVM.Java.Externs.java.net.SocketImplUtil;
 
 namespace IKVM.Java.Externs.java.net
 {
@@ -47,7 +49,8 @@ namespace IKVM.Java.Externs.java.net
             SafeInvoke<global::java.net.PlainDatagramSocketImpl>(this_, impl =>
             {
                 var socket = new Socket(SocketType.Dgram, ProtocolType.Udp);
-                socket.SetSocketOption(SocketOptionLevel.IPv6, SocketOptionName.IPv6Only, false);
+                if (Socket.OSSupportsIPv6)
+                    socket.SetSocketOption(SocketOptionLevel.IPv6, SocketOptionName.IPv6Only, false);
                 impl.fd.setSocket(socket);
             });
 #endif
@@ -232,9 +235,21 @@ namespace IKVM.Java.Externs.java.net
                         throw new global::java.lang.NullPointerException(nameof(packet));
 
                     // peek at data
-                    socket.ReceiveTimeout = impl.timeout;
+                    int n;
                     EndPoint remoteEndpoint = null;
-                    var n = socket.ReceiveFrom(packet.getData(), packet.getOffset(), packet.getLength(), SocketFlags.Peek, ref remoteEndpoint);
+                    if (impl.timeout <= 0)
+                    {
+                        n = socket.ReceiveFrom(packet.getData(), packet.getOffset(), packet.getLength(), SocketFlags.Peek, ref remoteEndpoint);
+                    }
+                    else
+                    {
+                        // use asynchronous completion to simulate a blocking timeout
+                        var result = socket.BeginReceiveFrom(packet.getData(), packet.getOffset(), packet.getLength(), SocketFlags.Peek, ref remoteEndpoint, null, null);
+                        if (result.AsyncWaitHandle.WaitOne(impl.timeout, true) == false)
+                            throw new global::java.net.SocketTimeoutException("Peek data timed out.");
+
+                        n = socket.EndReceiveFrom(result, ref remoteEndpoint);
+                    }
 
                     // check that we received an IP endpoint
                     var ipRemoteEndpoint = remoteEndpoint as IPEndPoint;
@@ -646,11 +661,17 @@ namespace IKVM.Java.Externs.java.net
                     // multicast options may receive InetAddress or NetworkInterface
                     if (opt == global::java.net.SocketOptions.IP_MULTICAST_IF ||
                         opt == global::java.net.SocketOptions.IP_MULTICAST_IF2)
+                    {
                         SetMulticastInterface(socket, opt, val);
+                        return;
+                    }
 
                     // implementation changes based on IP/IPv6
                     if (opt == global::java.net.SocketOptions.IP_MULTICAST_LOOP)
+                    {
                         SetMulticastLoopbackMode(socket, opt, val);
+                        return;
+                    }
 
                     if (SocketOptionMap.TryGetDotNetSocketOption(opt, out var options) == false)
                         throw new global::java.net.SocketException("Invalid option.");
@@ -757,66 +778,6 @@ namespace IKVM.Java.Externs.java.net
         }
 
         /// <summary>
-        /// Invokes the given delegate mapping exception to their appropriate Java type.
-        /// </summary>
-        /// <typeparam name="TArg1"></typeparam>
-        /// <param name="arg1"></param>
-        /// <param name="action"></param>
-        static void SafeInvoke<TArg1>(object arg1, Action<TArg1> action)
-        {
-            SafeInvoke(() => action((TArg1)arg1));
-        }
-
-        /// <summary>
-        /// Invokes the given delegate mapping exception to their appropriate Java type.
-        /// </summary>
-        /// <typeparam name="TArg1"></typeparam>
-        /// <typeparam name="TArg2"></typeparam>
-        /// <param name="arg1"></param>
-        /// <param name="arg2"></param>
-        /// <param name="action"></param>
-        static void SafeInvoke<TArg1, TArg2>(object arg1, object arg2, Action<TArg1, TArg2> action)
-        {
-            SafeInvoke(() => action((TArg1)arg1, (TArg2)arg2));
-        }
-
-        /// <summary>
-        /// Invokes the given delegate mapping exception to their appropriate Java type.
-        /// </summary>
-        /// <typeparam name="TArg1"></typeparam>
-        /// <typeparam name="TArg2"></typeparam>
-        /// <typeparam name="TArg3"></typeparam>
-        /// <param name="arg1"></param>
-        /// <param name="arg2"></param>
-        /// <param name="arg3"></param>
-        /// <param name="action"></param>
-        static void SafeInvoke<TArg1, TArg2, TArg3>(object arg1, object arg2, object arg3, Action<TArg1, TArg2, TArg3> action)
-        {
-            SafeInvoke(() => action((TArg1)arg1, (TArg2)arg2, (TArg3)arg3));
-        }
-
-        /// <summary>
-        /// Invokes the given action, catching and mapping any resulting .NET exceptions.
-        /// </summary>
-        /// <param name="action"></param>
-        /// <exception cref="global::java.net.SocketException"></exception>
-        static void SafeInvoke(Action action)
-        {
-            try
-            {
-                action();
-            }
-            catch (SocketException e)
-            {
-                throw e.ToIOException();
-            }
-            catch (ObjectDisposedException)
-            {
-                throw new global::java.net.SocketException("Socket closed.");
-            }
-        }
-
-        /// <summary>
         /// Invokes the given function with the current socket, catching and mapping any resulting .NET exceptions.
         /// </summary>
         /// <typeparam name="TResult"></typeparam>
@@ -832,72 +793,6 @@ namespace IKVM.Java.Externs.java.net
                 throw new global::java.net.SocketException("Socket closed.");
 
             return func(socket);
-        }
-
-        /// <summary>
-        /// Invokes the given delegate mapping exception to their appropriate Java type.
-        /// </summary>
-        /// <typeparam name="TArg1"></typeparam>
-        /// <typeparam name="TResult"></typeparam>
-        /// <param name="arg1"></param>
-        /// <param name="action"></param>
-        /// <returns></returns>
-        static TResult SafeInvoke<TArg1, TResult>(object arg1, Func<TArg1, TResult> action)
-        {
-            return SafeInvokeFunc(() => action((TArg1)arg1));
-        }
-
-        /// <summary>
-        /// Invokes the given delegate mapping exception to their appropriate Java type.
-        /// </summary>
-        /// <typeparam name="TArg1"></typeparam>
-        /// <typeparam name="TArg2"></typeparam>
-        /// <typeparam name="TResult"></typeparam>
-        /// <param name="arg1"></param>
-        /// <param name="arg2"></param>
-        /// <param name="action"></param>
-        /// <returns></returns>
-        static TResult SafeInvoke<TArg1, TArg2, TResult>(object arg1, object arg2, Func<TArg1, TArg2, TResult> action)
-        {
-            return SafeInvokeFunc(() => action((TArg1)arg1, (TArg2)arg2));
-        }
-
-        /// <summary>
-        /// Invokes the given delegate mapping exception to their appropriate Java type.
-        /// </summary>
-        /// <typeparam name="TArg1"></typeparam>
-        /// <typeparam name="TArg2"></typeparam>
-        /// <typeparam name="TArg3"></typeparam>
-        /// <typeparam name="TResult"></typeparam>
-        /// <param name="arg1"></param>
-        /// <param name="arg2"></param>
-        /// <param name="arg3"></param>
-        /// <param name="action"></param>
-        /// <returns></returns>
-        static TResult SafeInvoke<TArg1, TArg2, TArg3, TResult>(object arg1, object arg2, object arg3, Func<TArg1, TArg2, TArg3, TResult> action)
-        {
-            return SafeInvokeFunc(() => action((TArg1)arg1, (TArg2)arg2, (TArg3)arg3));
-        }
-
-        /// <summary>
-        /// Invokes the given action, catching and mapping any resulting .NET exceptions.
-        /// </summary>
-        /// <param name="func"></param>
-        /// <exception cref="global::java.net.SocketException"></exception>
-        static TResult SafeInvokeFunc<TResult>(Func<TResult> func)
-        {
-            try
-            {
-                return func();
-            }
-            catch (SocketException e)
-            {
-                throw e.ToIOException();
-            }
-            catch (ObjectDisposedException)
-            {
-                throw new global::java.net.SocketException("Socket closed.");
-            }
         }
 
 #endif

@@ -27,6 +27,9 @@ using System.Net.Sockets;
 namespace IKVM.Java.Externs.java.net
 {
 
+    /// <summary>
+    /// Implements the external methods for <see cref="global::java.net.AbstractPlainDatagramSocketImpl"/>.
+    /// </summary>
     static class AbstractPlainDatagramSocketImpl
     {
 

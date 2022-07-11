@@ -24,8 +24,9 @@
 
 using System;
 using System.Collections.Generic;
+using System.Net.Sockets;
 
-using IKVM.Runtime.Util.Java.Net;
+using IKVM.Java.Externs.java.net;
 
 namespace IKVM.Runtime.Java.externs.sun.nio.ch
 {
@@ -39,10 +40,10 @@ namespace IKVM.Runtime.Java.externs.sun.nio.ch
             throw new NotSupportedException();
 #else
             global::java.nio.ByteBuffer[] altBufs = null;
-            List<ArraySegment<byte>> list = new List<ArraySegment<byte>>(length);
+            var list = new List<ArraySegment<byte>>(length);
             for (int i = 0; i < length; i++)
             {
-                global::java.nio.ByteBuffer bb = bufs[i + offset];
+                var bb = bufs[i + offset];
                 if (!bb.hasArray())
                 {
                     if (altBufs == null)
@@ -58,9 +59,9 @@ namespace IKVM.Runtime.Java.externs.sun.nio.ch
             {
                 count = fd.getSocket().Receive(list);
             }
-            catch (System.Net.Sockets.SocketException x)
+            catch (SocketException x)
             {
-                if (x.SocketErrorCode == System.Net.Sockets.SocketError.WouldBlock)
+                if (x.SocketErrorCode == SocketError.WouldBlock)
                 {
                     count = 0;
                 }
@@ -101,17 +102,17 @@ namespace IKVM.Runtime.Java.externs.sun.nio.ch
 			return 0;
 #else
             global::java.nio.ByteBuffer[] altBufs = null;
-            List<ArraySegment<byte>> list = new List<ArraySegment<byte>>(length);
+            var list = new List<ArraySegment<byte>>(length);
             for (int i = 0; i < length; i++)
             {
-                global::java.nio.ByteBuffer bb = bufs[i + offset];
+                var bb = bufs[i + offset];
                 if (!bb.hasArray())
                 {
                     if (altBufs == null)
                     {
                         altBufs = new global::java.nio.ByteBuffer[bufs.Length];
                     }
-                    global::java.nio.ByteBuffer abb = global::java.nio.ByteBuffer.allocate(bb.remaining());
+                    var abb = global::java.nio.ByteBuffer.allocate(bb.remaining());
                     int pos = bb.position();
                     abb.put(bb);
                     bb.position(pos);
@@ -125,9 +126,9 @@ namespace IKVM.Runtime.Java.externs.sun.nio.ch
             {
                 count = fd.getSocket().Send(list);
             }
-            catch (System.Net.Sockets.SocketException e)
+            catch (SocketException e)
             {
-                if (e.SocketErrorCode == System.Net.Sockets.SocketError.WouldBlock)
+                if (e.SocketErrorCode == SocketError.WouldBlock)
                     count = 0;
                 else
                     throw e.ToIOException();
@@ -139,11 +140,12 @@ namespace IKVM.Runtime.Java.externs.sun.nio.ch
             int total = count;
             for (int i = 0; total > 0 && i < length; i++)
             {
-                global::java.nio.ByteBuffer bb = bufs[i + offset];
+                var bb = bufs[i + offset];
                 int consumed = Math.Min(total, bb.remaining());
                 bb.position(bb.position() + consumed);
                 total -= consumed;
             }
+
             return count;
 #endif
         }

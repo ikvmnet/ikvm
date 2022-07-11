@@ -1,16 +1,16 @@
 ﻿using System;
 using System.Net.Sockets;
 
-namespace IKVM.Runtime.Util.Java.Net
+namespace IKVM.Java.Externs.java.net
 {
-
-#if !FIRST_PASS
 
     /// <summary>
     /// Extensions for working with Sockets.
     /// </summary>
     static class SocketExceptionExtensions
     {
+
+#if !FIRST_PASS
 
         /// <summary>
         /// Converts the given <see cref="SocketException"/> to a <see cref="global::java.io.IOException"/>.
@@ -45,8 +45,8 @@ namespace IKVM.Runtime.Util.Java.Net
             }
         }
 
-    }
-
 #endif
+
+    }
 
 }

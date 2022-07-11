@@ -25,7 +25,7 @@ using System;
 using System.Net;
 using System.Net.Sockets;
 
-using IKVM.Runtime.Util.Java.Net;
+using IKVM.Runtime.Java.Externs.java.net;
 
 namespace IKVM.Java.Externs.java.net
 {
@@ -42,9 +42,9 @@ namespace IKVM.Java.Externs.java.net
             {
                 return Dns.GetHostName();
             }
-            catch (SocketException x)
+            catch (SocketException e)
             {
-                throw new global::java.net.UnknownHostException(x.Message);
+                throw new global::java.net.UnknownHostException(e.Message);
             }
 #endif
         }
