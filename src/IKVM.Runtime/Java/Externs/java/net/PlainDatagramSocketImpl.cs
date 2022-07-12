@@ -106,6 +106,14 @@ namespace IKVM.Java.Externs.java.net
                         throw new global::java.lang.NullPointerException(nameof(localAddress));
 
                     socket.Bind(new IPEndPoint(localAddress.ToIPAddress(), localPort));
+
+                    // check that we bound to an IP endpoint
+                    var localEndpoint = socket.LocalEndPoint;
+                    if (localEndpoint is not IPEndPoint ipLocalEndpoint)
+                        throw new global::java.net.SocketException("Unexpected resulting endpoint type.");
+
+                    // set localport
+                    impl.localPort = ipLocalEndpoint.Port;
                 });
             });
 #endif

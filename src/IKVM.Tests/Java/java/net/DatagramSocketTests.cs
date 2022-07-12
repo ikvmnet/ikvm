@@ -18,19 +18,40 @@ namespace IKVM.Tests.Java.java.net
         [TestMethod]
         public void Can_listen_on_any()
         {
-            using var s = new global::java.net.DatagramSocket();
+            using var s = new global::java.net.DatagramSocket(0);
+            s.isClosed().Should().BeFalse();
+            s.isBound().Should().BeTrue();
+            s.isConnected().Should().BeFalse();
+            var a = s.getLocalAddress();
+            a.Should().NotBeNull();
+            var p = s.getLocalPort();
+            p.Should().BeGreaterThan(0);
         }
 
         [TestMethod]
         public void Can_listen_on_specific()
         {
             using var s = new global::java.net.DatagramSocket(42343);
+            s.isClosed().Should().BeFalse();
+            s.isBound().Should().BeTrue();
+            s.isConnected().Should().BeFalse();
+            var a = s.getLocalAddress();
+            a.Should().NotBeNull();
+            var p = s.getLocalPort();
+            p.Should().Be(42343);
         }
 
         [TestMethod]
         public void Can_listen_on_wildcard()
         {
             using var s = new global::java.net.DatagramSocket(40104, global::java.net.InetAddress.getByName("0.0.0.0"));
+            s.isClosed().Should().BeFalse();
+            s.isBound().Should().BeTrue();
+            s.isConnected().Should().BeFalse();
+            var a = s.getLocalAddress();
+            a.Should().NotBeNull();
+            var p = s.getLocalPort();
+            p.Should().Be(40104);
         }
 
         [TestMethod]
