@@ -61,15 +61,31 @@ namespace IKVM.MSBuild.Tests
                 Directory.Delete(ikvmCachePath, true);
             Directory.CreateDirectory(ikvmCachePath);
 
-            // only select supported tfms
-            var tfms = new[] { "netcoreapp3.1", "net5.0", "net6.0" };
-            if (RuntimeInformation.IsOSPlatform(OSPlatform.Windows))
-                tfms = new[] { "net461", "net472", "net48", "netcoreapp3.1", "net5.0", "net6.0" };
+            var targets = new[]
+            {
+                ("net461",          "win7-x64"),
+                ("net472",          "win7-x64"),
+                ("net48",           "win7-x64"),
+                ("netcoreapp3.1",   "win7-x64"),
+                ("net5.0",          "win7-x64"),
+                ("net6.0",          "win7-x64"),
+                ("netcoreapp3.1",   "linux-x64"),
+                ("net5.0",          "linux-x64"),
+                ("net6.0",          "linux-x64"),
+            };
 
-            // only select supported rids
-            var rids = new[] { "win7-x64", "linux-x64" };
             if (RuntimeInformation.IsOSPlatform(OSPlatform.Linux))
-                rids = new[] { "linux-x64" };
+            {
+                targets = new[]
+                {
+                    ("netcoreapp3.1",   "win7-x64"),
+                    ("net5.0",          "win7-x64"),
+                    ("net6.0",          "win7-x64"),
+                    ("netcoreapp3.1",   "linux-x64"),
+                    ("net5.0",          "linux-x64"),
+                    ("net6.0",          "linux-x64"),
+                };
+            }
 
             var manager = new AnalyzerManager();
             var analyzer = manager.GetProject(Path.Combine(@"Project", "Exe", "ProjectExe.csproj"));
@@ -93,27 +109,24 @@ namespace IKVM.MSBuild.Tests
                 options.TargetsToBuild.Clear();
                 options.TargetsToBuild.Add("Restore");
                 options.TargetsToBuild.Add("Clean");
-                options.TargetsToBuild.Add("Build");
                 var results = analyzer.Build(options);
                 results.OverallSuccess.Should().Be(true);
             }
 
-            foreach (var tfm in tfms)
+            foreach (var (tfm, rid) in targets)
             {
-                foreach (var rid in rids)
-                {
-                    TestContext.WriteLine("Publishing with TargetFramework {0} and RuntimeIdentifier {1}.", tfm, rid);
+                TestContext.WriteLine("Publishing with TargetFramework {0} and RuntimeIdentifier {1}.", tfm, rid);
 
-                    var options = new EnvironmentOptions();
-                    options.DesignTime = false;
-                    options.Restore = false;
-                    options.GlobalProperties.Add("TargetFramework", tfm);
-                    options.GlobalProperties.Add("RuntimeIdentifier", rid);
-                    options.TargetsToBuild.Clear();
-                    options.TargetsToBuild.Add("Publish");
-                    var results = analyzer.Build(options);
-                    results.OverallSuccess.Should().Be(true);
-                }
+                var options = new EnvironmentOptions();
+                options.DesignTime = false;
+                options.Restore = false;
+                options.GlobalProperties.Add("TargetFramework", tfm);
+                options.GlobalProperties.Add("RuntimeIdentifier", rid);
+                options.TargetsToBuild.Clear();
+                options.TargetsToBuild.Add("Build");
+                options.TargetsToBuild.Add("Publish");
+                var results = analyzer.Build(options);
+                results.OverallSuccess.Should().Be(true);
             }
         }
 
