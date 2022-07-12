@@ -1,4 +1,5 @@
-﻿using System.Collections.Generic;
+﻿using System;
+using System.Collections.Generic;
 using System.Text;
 using System.Threading;
 using System.Threading.Tasks;
@@ -33,13 +34,25 @@ namespace IKVM.Tests.Java.java.net
         }
 
         [TestMethod]
+        [ExpectedException(typeof(global::java.net.SocketTimeoutException))]
+        public void Should_throw_on_receive_timeout()
+        {
+            var localhost = global::java.net.InetAddress.getLocalHost();
+            using var s = new global::java.net.DatagramSocket(41021, localhost);
+            s.setSoTimeout(200);
+            var b = new byte[1024];
+            var packet = new global::java.net.DatagramPacket(b, b.Length);
+            s.receive(packet);
+        }
+
+        [TestMethod]
         public async Task Can_send_and_receive()
         {
             var localhost = global::java.net.InetAddress.getLocalHost();
             var received = new List<string>();
 
             // simple loop that listens and waits
-            var serverCts = new CancellationTokenSource();
+            var serverCts = new CancellationTokenSource(TimeSpan.FromSeconds(30));
             var server = Task.Run(() =>
             {
                 using var s = new global::java.net.DatagramSocket(41041, localhost);
@@ -65,19 +78,25 @@ namespace IKVM.Tests.Java.java.net
             {
                 var buffer = Encoding.UTF8.GetBytes(text);
                 var packet = new global::java.net.DatagramPacket(buffer, buffer.Length, localhost, 41041);
-                var client = new global::java.net.DatagramSocket();
+                using var client = new global::java.net.DatagramSocket();
                 client.send(packet);
             }
 
             // wait for the server to have a chance to receive, then cancel and wait
-            Send("HELLO");
+            Send("MESSAGEA");
+            await Task.Delay(1000);
+            Send("MESSAGEB");
+            await Task.Delay(1000);
+            Send("MESSAGEC");
             await Task.Delay(1000);
             serverCts.Cancel();
             await server;
 
             // check that we received the text
-            received.Should().HaveCount(1);
-            received[0].Should().Be("HELLO");
+            received.Should().HaveCount(3);
+            received[0].Should().Be("MESSAGEA");
+            received[1].Should().Be("MESSAGEB");
+            received[2].Should().Be("MESSAGEC");
         }
 
     }

@@ -22,9 +22,12 @@ namespace IKVM.Java.Externs.java.net
 
         static readonly byte[] PeekBuffer = new byte[1];
         static readonly MethodInfo InetAddressHolderMethod = typeof(global::java.net.InetAddress).GetMethod("holder", BindingFlags.NonPublic | BindingFlags.Instance);
-        static readonly FieldInfo InetAddressHolderAddressField = typeof(global::java.net.InetAddress).GetNestedType("InetAddressHolder").GetField("address");
+        static readonly FieldInfo InetAddressHolderAddressField = typeof(global::java.net.InetAddress).GetNestedType("InetAddressHolder", BindingFlags.NonPublic).GetField("address", BindingFlags.NonPublic);
         static readonly MethodInfo Inet6AddressHolderMethod = typeof(global::java.net.Inet6Address).GetMethod("holder6", BindingFlags.NonPublic | BindingFlags.Instance);
-        static readonly MethodInfo Inet6AddressHolderSetIpAddressMethod = typeof(global::java.net.Inet6Address).GetNestedType("Inet6AddressHolder").GetMethod("setAddr");
+        static readonly MethodInfo Inet6AddressHolderSetIpAddressMethod = typeof(global::java.net.Inet6Address).GetNestedType("Inet6AddressHolder", BindingFlags.NonPublic).GetMethod("setAddr", BindingFlags.NonPublic);
+        static readonly FieldInfo NetworkInterfaceIndexField = typeof(global::java.net.NetworkInterface).GetField("index", BindingFlags.NonPublic | BindingFlags.Instance);
+        static readonly FieldInfo NetworkInterfaceAddrsField = typeof(global::java.net.NetworkInterface).GetField("addrs", BindingFlags.NonPublic | BindingFlags.Instance);
+        static readonly FieldInfo NetworkInterfaceNameField = typeof(global::java.net.NetworkInterface).GetField("name", BindingFlags.NonPublic | BindingFlags.Instance);
 
 #endif
 
@@ -69,9 +72,14 @@ namespace IKVM.Java.Externs.java.net
 #else
             SafeInvoke<global::java.net.PlainDatagramSocketImpl>(this_, (impl) =>
             {
+                var socket = (Socket)impl.fd?.getSocket();
+                if (socket == null)
+                    return;
+
                 InvokeWithSocket(impl, socket =>
                 {
                     socket.Close();
+                    impl.fd.setSocket(null);
                 });
             });
 #endif
@@ -122,7 +130,12 @@ namespace IKVM.Java.Externs.java.net
                     if (packet == null)
                         throw new global::java.lang.NullPointerException(nameof(packet));
 
-                    socket.SendTo(packet.getData(), packet.getOffset(), packet.getLength(), SocketFlags.None, new IPEndPoint(packet.getAddress().ToIPAddress(), packet.getPort()));
+                    socket.SendTimeout = impl.timeout;
+                    var result = socket.BeginSendTo(packet.getData(), packet.getOffset(), packet.getLength(), SocketFlags.None, new IPEndPoint(packet.getAddress().ToIPAddress(), packet.getPort()), null, null);
+                    if (impl.timeout > 0 && result.AsyncWaitHandle.WaitOne(impl.timeout, true) == false)
+                        throw new global::java.net.SocketTimeoutException("Send timed out.");
+
+                    var n = socket.EndSendTo(result);
                 });
             });
 #endif
@@ -148,16 +161,20 @@ namespace IKVM.Java.Externs.java.net
                     if (address == null)
                         throw new global::java.lang.NullPointerException(nameof(address));
 
-                    // peek a single byte into same buffer, result is useless
-                    EndPoint endpoint = null;
-                    socket.ReceiveFrom(PeekBuffer, 0, 1, SocketFlags.Peek, ref endpoint);
+                    // use asynchronous completion to allow cancelation through Close()
+                    var remoteEndpoint = (EndPoint)new IPEndPoint(IPAddress.Any, 0);
+                    socket.ReceiveTimeout = impl.timeout;
+                    var result = socket.BeginReceiveFrom(PeekBuffer, 0, 1, SocketFlags.Peek, ref remoteEndpoint, null, null);
+                    if (impl.timeout > 0 && result.AsyncWaitHandle.WaitOne(impl.timeout, true) == false)
+                        throw new global::java.net.SocketTimeoutException("Peek data timed out.");
+
+                    var n = socket.EndReceiveFrom(result, ref remoteEndpoint);
 
                     // check that we received an IP endpoint
-                    var ipEndpoint = endpoint as IPEndPoint;
-                    if (ipEndpoint == null)
-                        throw new global::java.net.SocketException("Unexpected endpoint type.");
+                    if (remoteEndpoint is not IPEndPoint ipRemoteEndpoint)
+                        throw new global::java.net.SocketException("Unexpected resulting endpoint type.");
 
-                    if (ipEndpoint.AddressFamily == AddressFamily.InterNetworkV6)
+                    if (ipRemoteEndpoint.AddressFamily == AddressFamily.InterNetworkV6)
                     {
                         if (address is global::java.net.Inet6Address)
                         {
@@ -167,10 +184,10 @@ namespace IKVM.Java.Externs.java.net
                                 throw new global::java.net.SocketException("Could not get Inet6Address holder.");
 
                             // set the address directly onto the holder
-                            var bytes = ipEndpoint.Address.GetAddressBytes();
+                            var bytes = ipRemoteEndpoint.Address.GetAddressBytes();
                             Inet6AddressHolderSetIpAddressMethod.Invoke(holder, new[] { bytes });
                         }
-                        else if (ipEndpoint.Address.IsIPv4MappedToIPv6)
+                        else if (ipRemoteEndpoint.Address.IsIPv4MappedToIPv6)
                         {
                             // InetAddress stores its data on a nested 'holder' instance
                             var holder = InetAddressHolderMethod.Invoke(address, Array.Empty<object>());
@@ -178,11 +195,11 @@ namespace IKVM.Java.Externs.java.net
                                 throw new global::java.net.SocketException("Could not get InetAddress holder.");
 
                             // set the address directly onto the holder
-                            var bytes = BinaryPrimitives.ReadInt32BigEndian(ipEndpoint.Address.MapToIPv4().GetAddressBytes());
+                            var bytes = BinaryPrimitives.ReadInt32BigEndian(ipRemoteEndpoint.Address.MapToIPv4().GetAddressBytes());
                             InetAddressHolderAddressField.SetValue(holder, bytes);
                         }
                     }
-                    else if (ipEndpoint.AddressFamily == AddressFamily.InterNetwork)
+                    else if (ipRemoteEndpoint.AddressFamily == AddressFamily.InterNetwork)
                     {
                         if (address is global::java.net.Inet6Address)
                         {
@@ -192,7 +209,7 @@ namespace IKVM.Java.Externs.java.net
                                 throw new global::java.net.SocketException("Could not get Inet6Address holder.");
 
                             // set the address directly onto the holder
-                            var bytes = ipEndpoint.Address.MapToIPv6().GetAddressBytes();
+                            var bytes = ipRemoteEndpoint.Address.MapToIPv6().GetAddressBytes();
                             Inet6AddressHolderSetIpAddressMethod.Invoke(holder, new[] { bytes });
                         }
                         else
@@ -203,12 +220,12 @@ namespace IKVM.Java.Externs.java.net
                                 throw new global::java.net.SocketException("Could not get InetAddress holder.");
 
                             // set the address directly onto the holder
-                            var bytes = BinaryPrimitives.ReadInt32BigEndian(ipEndpoint.Address.GetAddressBytes());
+                            var bytes = BinaryPrimitives.ReadInt32BigEndian(ipRemoteEndpoint.Address.GetAddressBytes());
                             InetAddressHolderAddressField.SetValue(holder, bytes);
                         }
                     }
 
-                    return ipEndpoint.Port;
+                    return ipRemoteEndpoint.Port;
                 });
             });
 #endif
@@ -234,27 +251,18 @@ namespace IKVM.Java.Externs.java.net
                     if (packet == null)
                         throw new global::java.lang.NullPointerException(nameof(packet));
 
-                    // peek at data
-                    int n;
-                    EndPoint remoteEndpoint = null;
-                    if (impl.timeout <= 0)
-                    {
-                        n = socket.ReceiveFrom(packet.getData(), packet.getOffset(), packet.getLength(), SocketFlags.Peek, ref remoteEndpoint);
-                    }
-                    else
-                    {
-                        // use asynchronous completion to simulate a blocking timeout
-                        var result = socket.BeginReceiveFrom(packet.getData(), packet.getOffset(), packet.getLength(), SocketFlags.Peek, ref remoteEndpoint, null, null);
-                        if (result.AsyncWaitHandle.WaitOne(impl.timeout, true) == false)
-                            throw new global::java.net.SocketTimeoutException("Peek data timed out.");
+                    // use asynchronous completion to allow cancelation through Close()
+                    var remoteEndpoint = (EndPoint)new IPEndPoint(IPAddress.Any, 0);
+                    socket.ReceiveTimeout = impl.timeout;
+                    var result = socket.BeginReceiveFrom(packet.getData(), packet.getOffset(), packet.getLength(), SocketFlags.Peek, ref remoteEndpoint, null, null);
+                    if (impl.timeout > 0 && result.AsyncWaitHandle.WaitOne(impl.timeout, true) == false)
+                        throw new global::java.net.SocketTimeoutException("Peek data timed out.");
 
-                        n = socket.EndReceiveFrom(result, ref remoteEndpoint);
-                    }
+                    var n = socket.EndReceiveFrom(result, ref remoteEndpoint);
 
                     // check that we received an IP endpoint
-                    var ipRemoteEndpoint = remoteEndpoint as IPEndPoint;
-                    if (ipRemoteEndpoint == null)
-                        throw new global::java.net.SocketException("Unexpected endpoint type.");
+                    if (remoteEndpoint is not IPEndPoint ipRemoteEndpoint)
+                        throw new global::java.net.SocketException("Unexpected resulting endpoint type.");
 
                     var remoteAddress = ipRemoteEndpoint.ToInetAddress();
                     var packetAddress = packet.getAddress();
@@ -288,10 +296,14 @@ namespace IKVM.Java.Externs.java.net
                     if (packet == null)
                         throw new global::java.lang.NullPointerException(nameof(packet));
 
-                    // peek at data
+                    // use asynchronous completion to allow cancelation through Close()
+                    var remoteEndpoint = (EndPoint)new IPEndPoint(IPAddress.Any, 0);
                     socket.ReceiveTimeout = impl.timeout;
-                    EndPoint remoteEndpoint = new IPEndPoint(IPAddress.Any, 0);
-                    var n = socket.ReceiveFrom(packet.getData(), packet.getOffset(), packet.getLength(), SocketFlags.None, ref remoteEndpoint);
+                    var result = socket.BeginReceiveFrom(packet.getData(), packet.getOffset(), packet.getLength(), SocketFlags.None, ref remoteEndpoint, null, null);
+                    if (impl.timeout > 0 && result.AsyncWaitHandle.WaitOne(impl.timeout, true) == false)
+                        throw new global::java.net.SocketTimeoutException("Receive timed out.");
+
+                    var n = socket.EndReceiveFrom(result, ref remoteEndpoint);
 
                     // check that we received an IP endpoint
                     if (remoteEndpoint is not IPEndPoint ipRemoteEndpoint)
@@ -518,9 +530,9 @@ namespace IKVM.Java.Externs.java.net
 
             // return a new anonymous network interface with index -1 and empty address array
             var anon = new global::java.net.NetworkInterface();
-            typeof(global::java.net.NetworkInterface).GetField("index").SetValue(anon, -1);
-            typeof(global::java.net.NetworkInterface).GetField("addrs").SetValue(anon, new global::java.net.InetAddress[0]);
-            typeof(global::java.net.NetworkInterface).GetField("name").SetValue(anon, "");
+            NetworkInterfaceIndexField.SetValue(anon, -1);
+            NetworkInterfaceAddrsField.SetValue(anon, new global::java.net.InetAddress[0]);
+            NetworkInterfaceNameField.SetValue(anon, "");
             return anon;
         }
 
