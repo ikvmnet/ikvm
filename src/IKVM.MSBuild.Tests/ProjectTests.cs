@@ -93,7 +93,6 @@ namespace IKVM.MSBuild.Tests
                 options.TargetsToBuild.Clear();
                 options.TargetsToBuild.Add("Restore");
                 options.TargetsToBuild.Add("Clean");
-                options.TargetsToBuild.Add("Build");
                 var results = analyzer.Build(options);
                 results.OverallSuccess.Should().Be(true);
             }
