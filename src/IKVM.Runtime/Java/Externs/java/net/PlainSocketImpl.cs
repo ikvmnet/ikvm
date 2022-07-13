@@ -42,7 +42,7 @@ namespace IKVM.Java.Externs.java.net
 #if FIRST_PASS
             throw new NotSupportedException();
 #else
-            SafeInvoke<global::java.net.PlainSocketImpl>(this_, impl =>
+            SocketInvokeFunc<global::java.net.PlainSocketImpl>(this_, impl =>
             {
                 var socket = new Socket(stream ? SocketType.Stream : SocketType.Dgram, ProtocolType.Unspecified);
 
@@ -138,7 +138,7 @@ namespace IKVM.Java.Externs.java.net
 #if FIRST_PASS
             throw new NotSupportedException();
 #else
-            SafeInvoke<global::java.net.PlainSocketImpl>(this_, impl =>
+            SocketInvokeFunc<global::java.net.PlainSocketImpl>(this_, impl =>
             {
                 InvokeWithSocket(impl, socket =>
                 {
@@ -221,7 +221,7 @@ namespace IKVM.Java.Externs.java.net
 #if FIRST_PASS
             throw new NotSupportedException();
 #else
-            SafeInvoke<global::java.net.PlainSocketImpl>(this_, impl =>
+            SocketInvokeFunc<global::java.net.PlainSocketImpl>(this_, impl =>
             {
                 InvokeWithSocket(impl, socket =>
                 {
@@ -244,7 +244,7 @@ namespace IKVM.Java.Externs.java.net
 #if FIRST_PASS
             throw new NotSupportedException();
 #else
-            SafeInvoke<global::java.net.PlainSocketImpl>(this_, impl =>
+            SocketInvokeFunc<global::java.net.PlainSocketImpl>(this_, impl =>
             {
                 InvokeWithSocket(impl, socket =>
                 {
@@ -277,7 +277,7 @@ namespace IKVM.Java.Externs.java.net
                         return;
                     }
 
-                    if (SocketOptionMap.TryGetDotNetSocketOption(cmd, out var options) == false)
+                    if (SocketOptionUtil.TryGetDotNetSocketOption(cmd, out var options) == false)
                         throw new global::java.net.SocketException("Invalid option.");
 
                     socket.SetSocketOption(options.Level, options.Name, value switch
@@ -321,7 +321,7 @@ namespace IKVM.Java.Externs.java.net
                     if (opt == global::java.net.SocketOptions.SO_LINGER)
                         return socket.LingerState.Enabled ? socket.LingerState.LingerTime : -1;
 
-                    if (SocketOptionMap.TryGetDotNetSocketOption(opt, out var options) == false)
+                    if (SocketOptionUtil.TryGetDotNetSocketOption(opt, out var options) == false)
                         throw new global::java.net.SocketException("Invalid option.");
 
                     return socket.GetSocketOption(options.Level, options.Name) switch
@@ -343,7 +343,7 @@ namespace IKVM.Java.Externs.java.net
 #if FIRST_PASS
             throw new NotSupportedException();
 #else
-            SafeInvoke<global::java.net.PlainSocketImpl>(this_, impl =>
+            SocketInvokeFunc<global::java.net.PlainSocketImpl>(this_, impl =>
             {
                 InvokeWithSocket(impl, socket =>
                 {

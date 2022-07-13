@@ -6,7 +6,7 @@ namespace IKVM.Java.Externs.java.net
     /// <summary>
     /// Provides a map of Java socket information to .NET socket information.
     /// </summary>
-    static class SocketOptionMap
+    static class SocketOptionUtil
     {
 
 #if !FIRST_PASS
@@ -80,28 +80,6 @@ namespace IKVM.Java.Externs.java.net
             }
 
             options = default;
-            return false;
-        }
-
-        /// <summary>
-        /// Gets the socket option map item from the given option.
-        /// </summary>
-        /// <param name="level"></param>
-        /// <param name="name"></param>
-        /// <param name="option"></param>
-        /// <returns></returns>
-        public static bool TryGetJavaSocketOptions(SocketOptionLevel level, SocketOptionName name, out int option)
-        {
-            foreach (var o in map)
-            {
-                if (o.Level == level && o.Name == name)
-                {
-                    option = o.Option;
-                    return true;
-                }
-            }
-
-            option = default;
             return false;
         }
 

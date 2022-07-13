@@ -71,10 +71,6 @@
         </LibProjectReference>
     </ItemGroup>
 
-    <ItemGroup>
-      <Folder Include="Util\Java\Net\" />
-    </ItemGroup>
-
     <Import Project="Sdk.targets" Sdk="Microsoft.NET.Sdk" />
 
     <PropertyGroup>

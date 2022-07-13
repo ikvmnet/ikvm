@@ -58,7 +58,7 @@
     </ItemGroup>
 
     <ItemGroup>
-        <Compile Include="..\IKVM.Runtime\**\*.cs" LinkBase="runtime" Exclude="@(ExcludeFromCompile)" />
+        <Compile Include="..\IKVM.Runtime\**\*.cs" LinkBase="" Exclude="@(ExcludeFromCompile)" />
     </ItemGroup>
 
 </Project>
