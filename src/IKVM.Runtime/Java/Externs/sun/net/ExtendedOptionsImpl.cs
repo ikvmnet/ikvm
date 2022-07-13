@@ -1,4 +1,6 @@
-﻿namespace IKVM.Runtime.Java.Externs.sun.net
+﻿using System;
+
+namespace IKVM.Runtime.Java.Externs.sun.net
 {
 
     static class ExtendedOptionsImpl
@@ -16,12 +18,20 @@
 
         public static void getFlowOption(object this_, object f_)
         {
+#if FIRST_PASS
+            throw new NotSupportedException();
+#else
             throw new global::java.lang.UnsupportedOperationException();
+#endif
         }
 
         public static void setFlowOption(object this_, object f_)
         {
+#if FIRST_PASS
+            throw new NotSupportedException();
+#else
             throw new global::java.lang.UnsupportedOperationException();
+#endif
         }
 
     }
