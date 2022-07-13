@@ -257,7 +257,7 @@ namespace IKVM.Java.Externs.java.net
         /// <summary>
         /// Implements the native method for 'socketSetOption0'.
         /// </summary>
-        public static void socketSetOption0(object this_, int cmd, bool on, object value)
+        public static void socketSetOption(object this_, int cmd, bool on, object value)
         {
 #if FIRST_PASS
             throw new NotSupportedException();
