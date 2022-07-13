@@ -49,7 +49,7 @@ namespace IKVM.Java.Externs.java.net
 #if FIRST_PASS
             throw new NotSupportedException();
 #else
-            SocketInvokeFunc<global::java.net.PlainDatagramSocketImpl>(this_, impl =>
+            InvokeAction<global::java.net.PlainDatagramSocketImpl>(this_, impl =>
             {
                 var socket = new Socket(SocketType.Dgram, ProtocolType.Udp);
                 if (Socket.OSSupportsIPv6)
@@ -70,7 +70,7 @@ namespace IKVM.Java.Externs.java.net
 #if FIRST_PASS
             throw new NotSupportedException();
 #else
-            SocketInvokeFunc<global::java.net.PlainDatagramSocketImpl>(this_, (impl) =>
+            InvokeAction<global::java.net.PlainDatagramSocketImpl>(this_, (impl) =>
             {
                 var socket = (Socket)impl.fd?.getSocket();
                 if (socket == null)
@@ -98,7 +98,7 @@ namespace IKVM.Java.Externs.java.net
 #if FIRST_PASS
             throw new NotSupportedException();
 #else
-            SafeInvoke<global::java.net.PlainDatagramSocketImpl, global::java.net.InetAddress>(this_, localAddress_, (impl, localAddress) =>
+            InvokeAction<global::java.net.PlainDatagramSocketImpl, global::java.net.InetAddress>(this_, localAddress_, (impl, localAddress) =>
             {
                 InvokeWithSocket(impl, socket =>
                 {
@@ -131,7 +131,7 @@ namespace IKVM.Java.Externs.java.net
 #if FIRST_PASS
             throw new NotSupportedException();
 #else
-            SafeInvoke<global::java.net.PlainDatagramSocketImpl, global::java.net.DatagramPacket>(this_, packet_, (impl, packet) =>
+            InvokeAction<global::java.net.PlainDatagramSocketImpl, global::java.net.DatagramPacket>(this_, packet_, (impl, packet) =>
             {
                 InvokeWithSocket(impl, socket =>
                 {
@@ -162,7 +162,7 @@ namespace IKVM.Java.Externs.java.net
 #if FIRST_PASS
             throw new NotSupportedException();
 #else
-            return SafeInvoke<global::java.net.PlainDatagramSocketImpl, global::java.net.InetAddress, int>(this_, address_, (impl, address) =>
+            return InvokeFunc<global::java.net.PlainDatagramSocketImpl, global::java.net.InetAddress, int>(this_, address_, (impl, address) =>
             {
                 return InvokeWithSocket(impl, socket =>
                 {
@@ -252,7 +252,7 @@ namespace IKVM.Java.Externs.java.net
 #if FIRST_PASS
             throw new NotSupportedException();
 #else
-            return SafeInvoke<global::java.net.PlainDatagramSocketImpl, global::java.net.DatagramPacket, int>(this_, packet_, (impl, packet) =>
+            return InvokeFunc<global::java.net.PlainDatagramSocketImpl, global::java.net.DatagramPacket, int>(this_, packet_, (impl, packet) =>
             {
                 return InvokeWithSocket(impl, socket =>
                 {
@@ -297,7 +297,7 @@ namespace IKVM.Java.Externs.java.net
 #if FIRST_PASS
             throw new NotSupportedException();
 #else
-            SafeInvoke<global::java.net.PlainDatagramSocketImpl, global::java.net.DatagramPacket>(this_, packet_, (impl, packet) =>
+            InvokeAction<global::java.net.PlainDatagramSocketImpl, global::java.net.DatagramPacket>(this_, packet_, (impl, packet) =>
             {
                 InvokeWithSocket(impl, socket =>
                 {
@@ -341,7 +341,7 @@ namespace IKVM.Java.Externs.java.net
 #if FIRST_PASS
             throw new NotSupportedException();
 #else
-            SocketInvokeFunc<global::java.net.PlainDatagramSocketImpl>(this_, (impl) =>
+            InvokeAction<global::java.net.PlainDatagramSocketImpl>(this_, (impl) =>
             {
                 InvokeWithSocket(impl, socket =>
                 {
@@ -363,7 +363,7 @@ namespace IKVM.Java.Externs.java.net
 #if FIRST_PASS
             throw new NotSupportedException();
 #else
-            return SafeInvoke<global::java.net.PlainDatagramSocketImpl, int>(this_, (impl) =>
+            return InvokeFunc<global::java.net.PlainDatagramSocketImpl, int>(this_, (impl) =>
             {
                 return InvokeWithSocket(impl, socket =>
                 {
@@ -458,7 +458,7 @@ namespace IKVM.Java.Externs.java.net
 #if FIRST_PASS
             throw new NotSupportedException();
 #else
-            SocketInvokeFunc<global::java.net.PlainDatagramSocketImpl, global::java.net.InetAddress, global::java.net.NetworkInterface>(this_, inetaddr_, netIf_, (impl, inetaddr, netIf) =>
+            InvokeAction<global::java.net.PlainDatagramSocketImpl, global::java.net.InetAddress, global::java.net.NetworkInterface>(this_, inetaddr_, netIf_, (impl, inetaddr, netIf) =>
             {
                 InvokeWithSocket(impl, socket =>
                 {
@@ -481,7 +481,7 @@ namespace IKVM.Java.Externs.java.net
 #if FIRST_PASS
             throw new NotSupportedException();
 #else
-            SocketInvokeFunc<global::java.net.PlainDatagramSocketImpl, global::java.net.InetAddress, global::java.net.NetworkInterface>(this_, inetaddr_, netIf_, (impl, inetaddr, netIf) =>
+            InvokeAction<global::java.net.PlainDatagramSocketImpl, global::java.net.InetAddress, global::java.net.NetworkInterface>(this_, inetaddr_, netIf_, (impl, inetaddr, netIf) =>
             {
                 InvokeWithSocket(impl, socket =>
                 {
@@ -559,7 +559,7 @@ namespace IKVM.Java.Externs.java.net
 #if FIRST_PASS
             throw new NotSupportedException();
 #else
-            return SafeInvoke<global::java.net.PlainDatagramSocketImpl, object>(this_, impl =>
+            return InvokeFunc<global::java.net.PlainDatagramSocketImpl, object>(this_, impl =>
             {
                 return InvokeWithSocket<object>(impl, socket =>
                 {
@@ -671,7 +671,7 @@ namespace IKVM.Java.Externs.java.net
 #if FIRST_PASS
             throw new NotSupportedException();
 #else
-            SafeInvoke<global::java.net.PlainDatagramSocketImpl>(this_, impl =>
+            InvokeAction<global::java.net.PlainDatagramSocketImpl>(this_, impl =>
             {
                 InvokeWithSocket(impl, socket =>
                 {
@@ -720,7 +720,7 @@ namespace IKVM.Java.Externs.java.net
 #if FIRST_PASS
             throw new NotSupportedException();
 #else
-            SafeInvoke<global::java.net.PlainDatagramSocketImpl, global::java.net.InetAddress>(this_, address_, (impl, address) =>
+            InvokeAction<global::java.net.PlainDatagramSocketImpl, global::java.net.InetAddress>(this_, address_, (impl, address) =>
             {
                 InvokeWithSocket(impl, socket =>
                 {
@@ -745,7 +745,7 @@ namespace IKVM.Java.Externs.java.net
 #if FIRST_PASS
             throw new NotSupportedException();
 #else
-            SocketInvokeFunc<global::java.net.PlainDatagramSocketImpl>(this_, impl =>
+            InvokeAction<global::java.net.PlainDatagramSocketImpl>(this_, impl =>
             {
                 InvokeWithSocket(impl, socket =>
                 {
@@ -767,7 +767,7 @@ namespace IKVM.Java.Externs.java.net
 #if FIRST_PASS
             throw new NotSupportedException();
 #else
-            return SafeInvoke<global::java.net.PlainDatagramSocketImpl, int>(this_, impl =>
+            return InvokeFunc<global::java.net.PlainDatagramSocketImpl, int>(this_, impl =>
             {
                 return InvokeWithSocket(impl, socket =>
                 {

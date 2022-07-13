@@ -42,7 +42,7 @@ namespace IKVM.Java.Externs.java.net
 #if FIRST_PASS
             throw new NotSupportedException();
 #else
-            SocketInvokeFunc<global::java.net.PlainSocketImpl>(this_, impl =>
+            InvokeAction<global::java.net.PlainSocketImpl>(this_, impl =>
             {
                 var socket = new Socket(stream ? SocketType.Stream : SocketType.Dgram, ProtocolType.Unspecified);
 
@@ -67,9 +67,9 @@ namespace IKVM.Java.Externs.java.net
 #if FIRST_PASS
             throw new NotSupportedException();
 #else
-            SafeInvoke<global::java.net.PlainSocketImpl, global::java.net.InetAddress>(this_, address_, (impl, address) =>
+            InvokeAction<global::java.net.PlainSocketImpl, global::java.net.InetAddress>(this_, address_, (impl, address) =>
             {
-                InvokeWithSocket(impl, socket =>
+                InvokeActionWithSocket(impl, socket =>
                 {
                     var localPort = (int)PlainSocketImplLocalPortField.GetValue(impl);
 
@@ -115,9 +115,9 @@ namespace IKVM.Java.Externs.java.net
 #if FIRST_PASS
             throw new NotSupportedException();
 #else
-            SafeInvoke<global::java.net.PlainSocketImpl, global::java.net.InetAddress>(this_, address_, (impl, address) =>
+            InvokeAction<global::java.net.PlainSocketImpl, global::java.net.InetAddress>(this_, address_, (impl, address) =>
             {
-                InvokeWithSocket(impl, socket =>
+                InvokeActionWithSocket(impl, socket =>
                 {
                     socket.Bind(new IPEndPoint(address.ToIPAddress(), port));
 
@@ -138,9 +138,9 @@ namespace IKVM.Java.Externs.java.net
 #if FIRST_PASS
             throw new NotSupportedException();
 #else
-            SocketInvokeFunc<global::java.net.PlainSocketImpl>(this_, impl =>
+            InvokeAction<global::java.net.PlainSocketImpl>(this_, impl =>
             {
-                InvokeWithSocket(impl, socket =>
+                InvokeActionWithSocket(impl, socket =>
                 {
                     socket.Listen(count);
                 });
@@ -156,9 +156,9 @@ namespace IKVM.Java.Externs.java.net
 #if FIRST_PASS
             throw new NotSupportedException();
 #else
-            SafeInvoke<global::java.net.PlainSocketImpl, global::java.net.AbstractPlainSocketImpl>(this_, s_, (impl, s) =>
+            InvokeAction<global::java.net.PlainSocketImpl, global::java.net.AbstractPlainSocketImpl>(this_, s_, (impl, s) =>
             {
-                InvokeWithSocket(impl, socket =>
+                InvokeActionWithSocket(impl, socket =>
                 {
                     Socket newSocket;
 
@@ -203,9 +203,9 @@ namespace IKVM.Java.Externs.java.net
 #if FIRST_PASS
             throw new NotSupportedException();
 #else
-            return SafeInvoke<global::java.net.PlainSocketImpl, int>(this_, impl =>
+            return InvokeFunc<global::java.net.PlainSocketImpl, int>(this_, impl =>
             {
-                return InvokeWithSocket(impl, socket =>
+                return InvokeFuncWithSocket(impl, socket =>
                 {
                     return socket.Available;
                 });
@@ -221,9 +221,9 @@ namespace IKVM.Java.Externs.java.net
 #if FIRST_PASS
             throw new NotSupportedException();
 #else
-            SocketInvokeFunc<global::java.net.PlainSocketImpl>(this_, impl =>
+            InvokeAction<global::java.net.PlainSocketImpl>(this_, impl =>
             {
-                InvokeWithSocket(impl, socket =>
+                InvokeActionWithSocket(impl, socket =>
                 {
                     // intended to "pre-close" the file descriptor, not useful on .NET
                     if (useDeferredClose)
@@ -244,9 +244,9 @@ namespace IKVM.Java.Externs.java.net
 #if FIRST_PASS
             throw new NotSupportedException();
 #else
-            SocketInvokeFunc<global::java.net.PlainSocketImpl>(this_, impl =>
+            InvokeAction<global::java.net.PlainSocketImpl>(this_, impl =>
             {
-                InvokeWithSocket(impl, socket =>
+                InvokeActionWithSocket(impl, socket =>
                 {
                     socket.Shutdown((SocketShutdown)howto);
                 });
@@ -262,9 +262,9 @@ namespace IKVM.Java.Externs.java.net
 #if FIRST_PASS
             throw new NotSupportedException();
 #else
-            SafeInvoke<global::java.net.PlainSocketImpl>(this_, impl =>
+            InvokeAction<global::java.net.PlainSocketImpl>(this_, impl =>
             {
-                InvokeWithSocket(impl, socket =>
+                InvokeActionWithSocket(impl, socket =>
                 {
                     if (value == null)
                         throw new global::java.lang.NullPointerException(nameof(value));
@@ -299,22 +299,15 @@ namespace IKVM.Java.Externs.java.net
 #if FIRST_PASS
             throw new NotSupportedException();
 #else
-            return SafeInvoke<global::java.net.PlainSocketImpl, global::java.net.InetAddressContainer, int>(this_, iaContainerObj_, (impl, iaContainerObj) =>
+            return InvokeFunc<global::java.net.PlainSocketImpl, global::java.net.InetAddressContainer, int>(this_, iaContainerObj_, (impl, iaContainerObj) =>
             {
-                return InvokeWithSocket(impl, socket =>
+                return InvokeFuncWithSocket<int>(impl, socket =>
                 {
                     // .NET provides property
                     if (opt == global::java.net.SocketOptions.SO_BINDADDR)
                     {
                         iaContainerObj.addr = ((IPEndPoint)socket.LocalEndPoint).ToInetAddress();
                         return 0;
-
-                        //var field = iaContainerObj.GetType().GetField("addr", BindingFlags.NonPublic | BindingFlags.Instance);
-                        //if (field == null)
-                        //    throw new global::java.net.SocketException("Could not find 'addr' field on container.");
-
-                        //field.SetValue(iaContainerObj, ((IPEndPoint)socket.LocalEndPoint).ToInetAddress());
-                        //return 0;
                     }
 
                     // .NET provides property
@@ -343,9 +336,9 @@ namespace IKVM.Java.Externs.java.net
 #if FIRST_PASS
             throw new NotSupportedException();
 #else
-            SocketInvokeFunc<global::java.net.PlainSocketImpl>(this_, impl =>
+            InvokeAction<global::java.net.PlainSocketImpl>(this_, impl =>
             {
-                InvokeWithSocket(impl, socket =>
+                InvokeActionWithSocket(impl, socket =>
                 {
                     throw new NotImplementedException();
                 });
@@ -364,7 +357,7 @@ namespace IKVM.Java.Externs.java.net
         /// <returns></returns>
         /// <exception cref="global::java.lang.NullPointerException"></exception>
         /// <exception cref="global::java.net.SocketException"></exception>
-        static void InvokeWithSocket(global::java.net.PlainSocketImpl impl, Action<Socket> action)
+        static void InvokeActionWithSocket(global::java.net.PlainSocketImpl impl, Action<Socket> action)
         {
             var socket = (Socket)impl.fd?.getSocket();
             if (socket == null)
@@ -382,7 +375,7 @@ namespace IKVM.Java.Externs.java.net
         /// <returns></returns>
         /// <exception cref="global::java.lang.NullPointerException"></exception>
         /// <exception cref="global::java.net.SocketException"></exception>
-        static TResult InvokeWithSocket<TResult>(global::java.net.PlainSocketImpl impl, Func<Socket, TResult> func)
+        static TResult InvokeFuncWithSocket<TResult>(global::java.net.PlainSocketImpl impl, Func<Socket, TResult> func)
         {
             var socket = (Socket)impl.fd?.getSocket();
             if (socket == null)

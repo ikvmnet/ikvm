@@ -18,9 +18,9 @@ namespace IKVM.Java.Externs.java.net
         /// <typeparam name="TArg1"></typeparam>
         /// <param name="arg1"></param>
         /// <param name="action"></param>
-        public static void SocketInvokeFunc<TArg1>(object arg1, Action<TArg1> action)
+        public static void InvokeAction<TArg1>(object arg1, Action<TArg1> action)
         {
-            SocketInvokeFunc(() => action((TArg1)arg1));
+            InvokeAction(() => action((TArg1)arg1));
         }
 
         /// <summary>
@@ -31,9 +31,9 @@ namespace IKVM.Java.Externs.java.net
         /// <param name="arg1"></param>
         /// <param name="arg2"></param>
         /// <param name="action"></param>
-        public static void SocketInvokeFunc<TArg1, TArg2>(object arg1, object arg2, Action<TArg1, TArg2> action)
+        public static void InvokeAction<TArg1, TArg2>(object arg1, object arg2, Action<TArg1, TArg2> action)
         {
-            SocketInvokeFunc(() => action((TArg1)arg1, (TArg2)arg2));
+            InvokeAction(() => action((TArg1)arg1, (TArg2)arg2));
         }
 
         /// <summary>
@@ -46,9 +46,9 @@ namespace IKVM.Java.Externs.java.net
         /// <param name="arg2"></param>
         /// <param name="arg3"></param>
         /// <param name="action"></param>
-        public static void SocketInvokeFunc<TArg1, TArg2, TArg3>(object arg1, object arg2, object arg3, Action<TArg1, TArg2, TArg3> action)
+        public static void InvokeAction<TArg1, TArg2, TArg3>(object arg1, object arg2, object arg3, Action<TArg1, TArg2, TArg3> action)
         {
-            SocketInvokeFunc(() => action((TArg1)arg1, (TArg2)arg2, (TArg3)arg3));
+            InvokeAction(() => action((TArg1)arg1, (TArg2)arg2, (TArg3)arg3));
         }
 
         /// <summary>
@@ -56,7 +56,7 @@ namespace IKVM.Java.Externs.java.net
         /// </summary>
         /// <param name="action"></param>
         /// <exception cref="global::java.net.SocketException"></exception>
-        public static void SocketInvokeFunc(Action action)
+        public static void InvokeAction(Action action)
         {
             try
             {
@@ -80,9 +80,9 @@ namespace IKVM.Java.Externs.java.net
         /// <param name="arg1"></param>
         /// <param name="action"></param>
         /// <returns></returns>
-        public static TResult SafeInvoke<TArg1, TResult>(object arg1, Func<TArg1, TResult> action)
+        public static TResult InvokeFunc<TArg1, TResult>(object arg1, Func<TArg1, TResult> action)
         {
-            return SocketInvokeFunc(() => action((TArg1)arg1));
+            return InvokeFunc(() => action((TArg1)arg1));
         }
 
         /// <summary>
@@ -95,9 +95,9 @@ namespace IKVM.Java.Externs.java.net
         /// <param name="arg2"></param>
         /// <param name="action"></param>
         /// <returns></returns>
-        public static TResult SafeInvoke<TArg1, TArg2, TResult>(object arg1, object arg2, Func<TArg1, TArg2, TResult> action)
+        public static TResult InvokeFunc<TArg1, TArg2, TResult>(object arg1, object arg2, Func<TArg1, TArg2, TResult> action)
         {
-            return SocketInvokeFunc(() => action((TArg1)arg1, (TArg2)arg2));
+            return InvokeFunc(() => action((TArg1)arg1, (TArg2)arg2));
         }
 
         /// <summary>
@@ -112,9 +112,9 @@ namespace IKVM.Java.Externs.java.net
         /// <param name="arg3"></param>
         /// <param name="action"></param>
         /// <returns></returns>
-        public static TResult SafeInvoke<TArg1, TArg2, TArg3, TResult>(object arg1, object arg2, object arg3, Func<TArg1, TArg2, TArg3, TResult> action)
+        public static TResult InvokeFunc<TArg1, TArg2, TArg3, TResult>(object arg1, object arg2, object arg3, Func<TArg1, TArg2, TArg3, TResult> action)
         {
-            return SocketInvokeFunc(() => action((TArg1)arg1, (TArg2)arg2, (TArg3)arg3));
+            return InvokeFunc(() => action((TArg1)arg1, (TArg2)arg2, (TArg3)arg3));
         }
 
         /// <summary>
@@ -122,7 +122,7 @@ namespace IKVM.Java.Externs.java.net
         /// </summary>
         /// <param name="func"></param>
         /// <exception cref="global::java.net.SocketException"></exception>
-        public static TResult SocketInvokeFunc<TResult>(Func<TResult> func)
+        public static TResult InvokeFunc<TResult>(Func<TResult> func)
         {
             try
             {
