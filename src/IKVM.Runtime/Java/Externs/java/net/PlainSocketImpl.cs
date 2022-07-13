@@ -20,7 +20,6 @@ namespace IKVM.Java.Externs.java.net
 
         static readonly byte[] PeekBuffer = new byte[1];
         static readonly FieldInfo PlainSocketImplLocalPortField = typeof(global::java.net.PlainSocketImpl).GetField("localport", BindingFlags.NonPublic | BindingFlags.Instance);
-        static readonly FieldInfo PlainSocketImplTimeoutField = typeof(global::java.net.PlainSocketImpl).GetField("timeout", BindingFlags.NonPublic | BindingFlags.Instance);
         static readonly FieldInfo AbstractPlainSocketImplTrafficClassField = typeof(global::java.net.AbstractPlainSocketImpl).GetField("trafficClass", BindingFlags.NonPublic | BindingFlags.Instance);
         static readonly FieldInfo PlainSocketImplServerSocketField = typeof(global::java.net.PlainSocketImpl).GetField("serverSocket", BindingFlags.NonPublic | BindingFlags.Instance);
 
@@ -71,8 +70,6 @@ namespace IKVM.Java.Externs.java.net
             {
                 InvokeActionWithSocket(impl, socket =>
                 {
-                    var localPort = (int)PlainSocketImplLocalPortField.GetValue(impl);
-
                     if (Socket.OSSupportsIPv6)
                     {
                         var trafficClass = (int)AbstractPlainSocketImplTrafficClassField.GetValue(impl);
@@ -80,26 +77,19 @@ namespace IKVM.Java.Externs.java.net
                             socket.SetSocketOption(SocketOptionLevel.IP, SocketOptionName.TypeOfService, trafficClass);
                     }
 
-                    if (timeout <= 0)
+                    var result = socket.BeginConnect(address.ToIPAddress(), port, null, null);
+                    if (timeout > 0 && result.AsyncWaitHandle.WaitOne(timeout, true) == false)
                     {
-                        socket.Connect(address.ToIPAddress(), port);
+                        socket.Close();
+                        throw new global::java.net.SocketTimeoutException("Connect timed out.");
                     }
-                    else
-                    {
-                        // use asynchronous completion to simulate a blocking timeout
-                        var result = socket.BeginConnect(address.ToIPAddress(), port, null, null);
-                        if (result.AsyncWaitHandle.WaitOne(timeout, true) == false)
-                        {
-                            socket.Close();
-                            throw new global::java.net.SocketTimeoutException("Connection timed out.");
-                        }
 
-                        socket.EndConnect(result);
-                    }
+                    socket.EndConnect(result);
 
                     impl.setAddress(address);
                     impl.setPort(port);
 
+                    var localPort = (int)PlainSocketImplLocalPortField.GetValue(impl);
                     if (localPort == 0)
                         impl.setLocalPort(((IPEndPoint)socket.LocalEndPoint).Port);
                 });
@@ -120,11 +110,7 @@ namespace IKVM.Java.Externs.java.net
                 InvokeActionWithSocket(impl, socket =>
                 {
                     socket.Bind(new IPEndPoint(address.ToIPAddress(), port));
-
-                    if (port == 0)
-                        impl.setLocalPort(((IPEndPoint)socket.LocalEndPoint).Port);
-                    else
-                        impl.setLocalPort(port);
+                    impl.setLocalPort(port == 0 ? ((IPEndPoint)socket.LocalEndPoint).Port : port);
                 });
             });
 #endif
@@ -160,36 +146,37 @@ namespace IKVM.Java.Externs.java.net
             {
                 InvokeActionWithSocket(impl, socket =>
                 {
-                    Socket newSocket;
+                    var prevTimeout = socket.ReceiveTimeout;
 
-                    var timeout = (int)PlainSocketImplTimeoutField.GetValue(impl);
-                    if (timeout <= 0)
+                    try
                     {
-                        newSocket = socket.Accept();
-                    }
-                    else
-                    {
-                        // use asynchronous completion to simulate a blocking timeout
+                        socket.ReceiveTimeout = impl.timeout;
+
+                        // wait for connection attempt
                         var result = socket.BeginAccept(null, null);
-                        if (result.AsyncWaitHandle.WaitOne(timeout, true) == false)
+                        if (impl.timeout > 0 && result.AsyncWaitHandle.WaitOne(impl.timeout, true) == false)
                             throw new global::java.net.SocketTimeoutException("Accept timed out.");
 
-                        newSocket = socket.EndAccept(result);
+                        // process results
+                        var newSocket = socket.EndAccept(result);
+                        if (newSocket == null)
+                            throw new global::java.net.SocketException("Invalid socket.");
+
+                        // associate new FileDescriptor with socket
+                        var newfd = new global::java.io.FileDescriptor();
+                        newfd.setSocket(newSocket);
+
+                        // populate newly accepted socket
+                        var remoteIpEndPoint = (IPEndPoint)newSocket.RemoteEndPoint;
+                        s.setFileDescriptor(newfd);
+                        s.setAddress(remoteIpEndPoint.ToInetAddress());
+                        s.setPort(remoteIpEndPoint.Port);
+                        s.setLocalPort(impl.port);
                     }
-
-                    if (newSocket == null)
-                        throw new global::java.net.SocketException("Invalid socket.");
-
-                    // associate new FileDescriptor with socket
-                    var newfd = new global::java.io.FileDescriptor();
-                    newfd.setSocket(newSocket);
-
-                    // populate newly accepted socket
-                    var remoteIpEndPoint = (IPEndPoint)newSocket.RemoteEndPoint;
-                    s.setFileDescriptor(newfd);
-                    s.setAddress(remoteIpEndPoint.ToInetAddress());
-                    s.setPort(remoteIpEndPoint.Port);
-                    s.setLocalPort(impl.port);
+                    finally
+                    {
+                        socket.ReceiveTimeout = prevTimeout;
+                    }
                 });
             });
 #endif
@@ -277,6 +264,13 @@ namespace IKVM.Java.Externs.java.net
                         return;
                     }
 
+                    // .NET provides a property
+                    if (cmd == global::java.net.SocketOptions.TCP_NODELAY)
+                    {
+                        socket.NoDelay = on;
+                        return;
+                    }
+
                     if (SocketOptionUtil.TryGetDotNetSocketOption(cmd, out var options) == false)
                         throw new global::java.net.SocketException("Invalid option.");
 
@@ -340,7 +334,23 @@ namespace IKVM.Java.Externs.java.net
             {
                 InvokeActionWithSocket(impl, socket =>
                 {
-                    throw new NotImplementedException();
+                    var prevTimeout = socket.SendTimeout;
+
+                    try
+                    {
+                        socket.SendTimeout = impl.timeout;
+
+                        var buffer = new byte[] { (byte)data };
+                        var result = socket.BeginSend(buffer, 0, 1, SocketFlags.OutOfBand, null, null);
+                        if (impl.timeout > 0 && result.AsyncWaitHandle.WaitOne(impl.timeout, true) == false)
+                            throw new global::java.net.SocketTimeoutException("Send timed out.");
+
+                        socket.EndSend(result);
+                    }
+                    finally
+                    {
+                        socket.SendTimeout = prevTimeout;
+                    }
                 });
             });
 #endif

@@ -36,7 +36,7 @@ namespace IKVM.Java.Externs.java.net
             }
             catch (SocketException e)
             {
-                throw global::java.net.SocketUtil.convertSocketExceptionToIOException(e);
+                throw e.ToIOException();
             }
             finally
             {
