@@ -7,11 +7,13 @@
     </PropertyGroup>
 
     <ItemGroup>
+        <None Remove="Java\java\lang\ClassTests.java" />
         <None Remove="JNI\JniTests.java" />
         <None Remove="Runtime\Vfs\VfsTestResource.txt" />
     </ItemGroup>
 
     <ItemGroup>
+        <EmbeddedResource Include="Java\java\lang\ClassTests.java" />
         <EmbeddedResource Include="JNI\JniTests.java" />
         <EmbeddedResource Include="Runtime\Vfs\VfsTestResource.txt" />
     </ItemGroup>
