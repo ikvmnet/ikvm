@@ -1465,12 +1465,7 @@ namespace IKVM.Internal
 #if STATIC_COMPILER
 						StaticCompiler.LinkageError("Method \"{2}.{3}{4}\" has a return type \"{0}\" and tries to override method \"{5}.{3}{4}\" that has a return type \"{1}\"", mw.ReturnType, baseMethod.ReturnType, mw.DeclaringType.Name, mw.Name, mw.Signature, baseMethod.DeclaringType.Name);
 #else
-                        // when we're finishing types to save a debug image (in dynamic mode) we don't care about loader constraints anymore
-                        // (and we can't throw a LinkageError, because that would prevent the debug image from being saved)
-                        if (!JVM.FinishingForDebugSave)
-                        {
-                            throw new LinkageError("Loader constraints violated");
-                        }
+                        throw new LinkageError("Loader constraints violated");
 #endif
                     }
                 }
@@ -1493,12 +1488,7 @@ namespace IKVM.Internal
 #if STATIC_COMPILER
 							StaticCompiler.LinkageError("Method \"{2}.{3}{4}\" has an argument type \"{0}\" and tries to override method \"{5}.{3}{4}\" that has an argument type \"{1}\"", here[i], there[i], mw.DeclaringType.Name, mw.Name, mw.Signature, baseMethod.DeclaringType.Name);
 #else
-                            // when we're finishing types to save a debug image (in dynamic mode) we don't care about loader constraints anymore
-                            // (and we can't throw a LinkageError, because that would prevent the debug image from being saved)
-                            if (!JVM.FinishingForDebugSave)
-                            {
-                                throw new LinkageError("Loader constraints violated");
-                            }
+                            throw new LinkageError("Loader constraints violated");
 #endif
                         }
                     }
@@ -4516,16 +4506,7 @@ namespace IKVM.Internal
 #endif
                                     else
                                     {
-                                        if (JVM.IsSaveDebugImage)
-                                        {
-#if !STATIC_COMPILER
-                                            JniProxyBuilder.Generate(this, ilGenerator, wrapper, methods[i], typeBuilder, classFile, m, args);
-#endif // !STATIC_COMPILER
-                                        }
-                                        else
-                                        {
-                                            JniBuilder.Generate(this, ilGenerator, wrapper, methods[i], typeBuilder, classFile, m, args, false);
-                                        }
+                                        JniBuilder.Generate(this, ilGenerator, wrapper, methods[i], typeBuilder, classFile, m, args, false);
                                     }
                                 }
                                 ilGenerator.DoEmit();
@@ -5724,6 +5705,7 @@ namespace IKVM.Internal
 #if !STATIC_COMPILER
             internal static class JniProxyBuilder
             {
+
                 private readonly static ModuleBuilder mod;
                 private static int count;
 
@@ -6923,7 +6905,7 @@ namespace IKVM.Internal
             if (mbld != null)
             {
 #if NETFRAMEWORK
-				return mbld.GetToken().Token;
+                return mbld.GetToken().Token;
 #else
                 BindingFlags flags = BindingFlags.DeclaredOnly;
                 flags |= mbld.IsPublic ? BindingFlags.Public : BindingFlags.NonPublic;

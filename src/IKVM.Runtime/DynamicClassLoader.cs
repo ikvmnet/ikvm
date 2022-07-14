@@ -58,8 +58,6 @@ namespace IKVM.Internal
 
 #if !STATIC_COMPILER
         static AssemblyBuilder jniProxyAssemblyBuilder;
-        static List<DynamicClassLoader> saveClassLoaders;
-        static int dumpCounter;
 #endif
 
 #if STATIC_COMPILER || CLASSGC
@@ -114,20 +112,6 @@ namespace IKVM.Internal
         {
             this.moduleBuilder = moduleBuilder;
             this.hasInternalAccess = hasInternalAccess;
-
-#if !STATIC_COMPILER
-            if (JVM.IsSaveDebugImage)
-            {
-                if (saveClassLoaders == null)
-                {
-                    System.Threading.Interlocked.CompareExchange(ref saveClassLoaders, new List<DynamicClassLoader>(), null);
-                }
-                lock (saveClassLoaders)
-                {
-                    saveClassLoaders.Add(this);
-                }
-            }
-#endif
 
 #if STATIC_COMPILER || CLASSGC
             // Ref.Emit doesn't like the "<Module>" name for types
@@ -431,55 +415,18 @@ namespace IKVM.Internal
         }
 
 #if !STATIC_COMPILER
-        internal static void SaveDebugImages()
-        {
-            Console.Error.WriteLine("Saving dynamic assemblies...");
-            JVM.FinishingForDebugSave = true;
-            if (saveClassLoaders != null)
-            {
-                foreach (DynamicClassLoader instance in saveClassLoaders)
-                {
-                    instance.FinishAll();
-                    AssemblyBuilder ab = (AssemblyBuilder)instance.ModuleBuilder.Assembly;
-                    SaveDebugAssembly(ab);
-                }
-            }
-            if (jniProxyAssemblyBuilder != null)
-            {
-                SaveDebugAssembly(jniProxyAssemblyBuilder);
-            }
-            Console.Error.WriteLine("Saving done.");
-        }
-
-        private static void SaveDebugAssembly(AssemblyBuilder ab)
-        {
-            Console.Error.WriteLine("Saving '{0}'", ab.GetName().Name + ".dll");
-#if NETFRAMEWORK
-            ab.Save(ab.GetName().Name + ".dll");
-#endif
-        }
 
         internal static ModuleBuilder CreateJniProxyModuleBuilder()
         {
             AssemblyName name = new AssemblyName();
             name.Name = "jniproxy";
-#if NETFRAMEWORK
-            jniProxyAssemblyBuilder = DefineDynamicAssembly(name, AssemblyBuilderAccess.RunAndSave, null);
-            return jniProxyAssemblyBuilder.DefineDynamicModule("jniproxy.dll", "jniproxy.dll");
-#else
             jniProxyAssemblyBuilder = DefineDynamicAssembly(name, AssemblyBuilderAccess.Run, null);
             return jniProxyAssemblyBuilder.DefineDynamicModule("jniproxy.dll");
-#endif
         }
+
 #endif
 
-        internal sealed override ModuleBuilder ModuleBuilder
-        {
-            get
-            {
-                return moduleBuilder;
-            }
-        }
+        internal sealed override ModuleBuilder ModuleBuilder => moduleBuilder;
 
         [System.Security.SecuritySafeCritical]
         internal static DynamicClassLoader Get(ClassLoaderWrapper loader)
@@ -517,6 +464,7 @@ namespace IKVM.Internal
 
         sealed class ForgedKeyPair : StrongNameKeyPair
         {
+
             internal static readonly StrongNameKeyPair Instance;
 
             static ForgedKeyPair()
@@ -544,26 +492,19 @@ namespace IKVM.Internal
                 }
                 catch
                 {
+
                 }
             }
 
             private ForgedKeyPair(byte[] publicKey)
                 : base(ToInfo(publicKey), new StreamingContext())
             {
+
             }
 
             private static SerializationInfo ToInfo(byte[] publicKey)
             {
                 byte[] privateKey = publicKey;
-                if (JVM.IsSaveDebugImage)
-                {
-                    CspParameters cspParams = new CspParameters();
-                    cspParams.KeyContainerName = null;
-                    cspParams.Flags = CspProviderFlags.UseArchivableKey;
-                    cspParams.KeyNumber = 2;
-                    RSACryptoServiceProvider rsa = new RSACryptoServiceProvider(1024, cspParams);
-                    privateKey = rsa.ExportCspBlob(true);
-                }
                 SerializationInfo info = new SerializationInfo(typeof(StrongNameKeyPair), new FormatterConverter());
                 info.AddValue("_keyPairExported", true);
                 info.AddValue("_keyPairArray", privateKey);
@@ -578,14 +519,7 @@ namespace IKVM.Internal
         private static ModuleBuilder CreateModuleBuilder()
         {
             AssemblyName name = new AssemblyName();
-            if (JVM.IsSaveDebugImage)
-            {
-                name.Name = "ikvmdump-" + System.Threading.Interlocked.Increment(ref dumpCounter);
-            }
-            else
-            {
-                name.Name = "ikvm_dynamic_assembly__" + (uint)Environment.TickCount;
-            }
+            name.Name = "ikvm_dynamic_assembly__" + (uint)Environment.TickCount;
             return CreateModuleBuilder(name);
         }
 
@@ -594,33 +528,16 @@ namespace IKVM.Internal
             DateTime now = DateTime.Now;
             name.Version = new Version(now.Year, (now.Month * 100) + now.Day, (now.Hour * 100) + now.Minute, (now.Second * 1000) + now.Millisecond);
             List<CustomAttributeBuilder> attribs = new List<CustomAttributeBuilder>();
-            AssemblyBuilderAccess access;
-            if (JVM.IsSaveDebugImage)
-            {
-#if NETFRAMEWORK
-                access = AssemblyBuilderAccess.RunAndSave;
-#else
-                access = AssemblyBuilderAccess.Run;
-#endif
-            }
+            AssemblyBuilderAccess access = AssemblyBuilderAccess.Run;
+
 #if CLASSGC
-            else if (JVM.classUnloading
-                // DefineDynamicAssembly(..., RunAndCollect, ...) does a demand for PermissionSet(Unrestricted), so we want to avoid that in partial trust scenarios
-                && AppDomain.CurrentDomain.IsFullyTrusted)
-            {
+            if (JVM.classUnloading && AppDomain.CurrentDomain.IsFullyTrusted)
                 access = AssemblyBuilderAccess.RunAndCollect;
-            }
 #endif
-            else
-            {
-                access = AssemblyBuilderAccess.Run;
-            }
 
 #if NETFRAMEWORK
-
             if (!AppDomain.CurrentDomain.IsFullyTrusted)
                 attribs.Add(new CustomAttributeBuilder(typeof(System.Security.SecurityTransparentAttribute).GetConstructor(Type.EmptyTypes), new object[0]));
-
 #endif
 
             AssemblyBuilder assemblyBuilder = DefineDynamicAssembly(name, access, attribs);
@@ -629,7 +546,7 @@ namespace IKVM.Internal
             CustomAttributeBuilder debugAttr = new CustomAttributeBuilder(typeof(DebuggableAttribute).GetConstructor(new Type[] { typeof(bool), typeof(bool) }), new object[] { true, debug });
             assemblyBuilder.SetCustomAttribute(debugAttr);
 #if NETFRAMEWORK
-            ModuleBuilder moduleBuilder = JVM.IsSaveDebugImage ? assemblyBuilder.DefineDynamicModule(name.Name, name.Name + ".dll", debug) : assemblyBuilder.DefineDynamicModule(name.Name, debug);
+            ModuleBuilder moduleBuilder = assemblyBuilder.DefineDynamicModule(name.Name, debug);
 #else
             ModuleBuilder moduleBuilder = assemblyBuilder.DefineDynamicModule(name.Name);
 #endif
@@ -645,6 +562,9 @@ namespace IKVM.Internal
             return AssemblyBuilder.DefineDynamicAssembly(name, access, assemblyAttributes);
 #endif
         }
-#endif // !STATIC_COMPILER
+
+#endif
+
     }
+
 }

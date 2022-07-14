@@ -42,16 +42,6 @@ namespace IKVM.Internal
     public static class Starter
     {
 
-        public static void PrepareForSaveDebugImage()
-        {
-            JVM.IsSaveDebugImage = true;
-        }
-
-        public static void SaveDebugImage()
-        {
-            DynamicClassLoader.SaveDebugImages();
-        }
-
         public static bool ClassUnloading
         {
 #if CLASSGC
@@ -91,11 +81,9 @@ namespace IKVM.Internal
 
 #if STATIC_COMPILER
 		internal const bool FinishingForDebugSave = false;
-		internal const bool IsSaveDebugImage = false;
 #elif !STUB_GENERATOR
         private static bool finishingForDebugSave;
         private static int emitSymbols;
-        internal static bool IsSaveDebugImage;
 #if CLASSGC
 		internal static bool classUnloading = true;
 #endif
@@ -109,14 +97,12 @@ namespace IKVM.Internal
 #endif
 
 #if !STATIC_COMPILER && !STUB_GENERATOR && !FIRST_PASS
+
         static JVM()
         {
-            if (SafeGetEnvironmentVariable("IKVM_SAVE_DYNAMIC_ASSEMBLIES") != null)
-            {
-                IsSaveDebugImage = true;
-                java.lang.Runtime.getRuntime().addShutdownHook(new java.lang.Thread(ikvm.runtime.Delegates.toRunnable(DynamicClassLoader.SaveDebugImages)));
-            }
+
         }
+
 #endif
 
         internal static Version SafeGetAssemblyVersion(System.Reflection.Assembly asm)
@@ -172,17 +158,6 @@ namespace IKVM.Internal
         }
 
 #if !STATIC_COMPILER && !STUB_GENERATOR
-        internal static bool FinishingForDebugSave
-        {
-            get
-            {
-                return finishingForDebugSave;
-            }
-            set
-            {
-                finishingForDebugSave = value;
-            }
-        }
 
         internal static bool EmitSymbols
         {
