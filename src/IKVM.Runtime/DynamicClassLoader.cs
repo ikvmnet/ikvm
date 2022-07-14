@@ -58,8 +58,6 @@ namespace IKVM.Internal
 
 #if !STATIC_COMPILER
         static AssemblyBuilder jniProxyAssemblyBuilder;
-        static List<DynamicClassLoader> saveClassLoaders;
-        static int dumpCounter;
 #endif
 
 #if STATIC_COMPILER || CLASSGC
@@ -422,23 +420,13 @@ namespace IKVM.Internal
         {
             AssemblyName name = new AssemblyName();
             name.Name = "jniproxy";
-#if NETFRAMEWORK
-            jniProxyAssemblyBuilder = DefineDynamicAssembly(name, AssemblyBuilderAccess.RunAndSave, null);
-            return jniProxyAssemblyBuilder.DefineDynamicModule("jniproxy.dll", "jniproxy.dll");
-#else
             jniProxyAssemblyBuilder = DefineDynamicAssembly(name, AssemblyBuilderAccess.Run, null);
             return jniProxyAssemblyBuilder.DefineDynamicModule("jniproxy.dll");
-#endif
         }
+
 #endif
 
-        internal sealed override ModuleBuilder ModuleBuilder
-        {
-            get
-            {
-                return moduleBuilder;
-            }
-        }
+        internal sealed override ModuleBuilder ModuleBuilder => moduleBuilder;
 
         [System.Security.SecuritySafeCritical]
         internal static DynamicClassLoader Get(ClassLoaderWrapper loader)
@@ -476,6 +464,7 @@ namespace IKVM.Internal
 
         sealed class ForgedKeyPair : StrongNameKeyPair
         {
+
             internal static readonly StrongNameKeyPair Instance;
 
             static ForgedKeyPair()
@@ -503,6 +492,7 @@ namespace IKVM.Internal
                 }
                 catch
                 {
+
                 }
             }
 
@@ -529,14 +519,7 @@ namespace IKVM.Internal
         private static ModuleBuilder CreateModuleBuilder()
         {
             AssemblyName name = new AssemblyName();
-            if (JVM.IsSaveDebugImage)
-            {
-                name.Name = "ikvmdump-" + System.Threading.Interlocked.Increment(ref dumpCounter);
-            }
-            else
-            {
-                name.Name = "ikvm_dynamic_assembly__" + (uint)Environment.TickCount;
-            }
+            name.Name = "ikvm_dynamic_assembly__" + (uint)Environment.TickCount;
             return CreateModuleBuilder(name);
         }
 
@@ -553,10 +536,8 @@ namespace IKVM.Internal
 #endif
 
 #if NETFRAMEWORK
-
             if (!AppDomain.CurrentDomain.IsFullyTrusted)
                 attribs.Add(new CustomAttributeBuilder(typeof(System.Security.SecurityTransparentAttribute).GetConstructor(Type.EmptyTypes), new object[0]));
-
 #endif
 
             AssemblyBuilder assemblyBuilder = DefineDynamicAssembly(name, access, attribs);
