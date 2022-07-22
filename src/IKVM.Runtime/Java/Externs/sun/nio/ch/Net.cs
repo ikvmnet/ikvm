@@ -27,15 +27,17 @@ using System;
 using FileDescriptor = java.io.FileDescriptor;
 using InetAddress = java.net.InetAddress;
 
-namespace IKVM.Runtime.Util.Sun.Nio.Ch
+namespace IKVM.Java.Externs.sun.nio.ch
 {
+
     static class Net
     {
+
         public static bool isIPv6Available0()
         {
-            string env = IKVM.Internal.JVM.SafeGetEnvironmentVariable("IKVM_IPV6");
+            string env = Internal.JVM.SafeGetEnvironmentVariable("IKVM_IPV6");
             int val;
-            if (env != null && Int32.TryParse(env, out val))
+            if (env != null && int.TryParse(env, out val))
             {
                 return (val & 2) != 0;
             }
@@ -99,7 +101,7 @@ namespace IKVM.Runtime.Util.Sun.Nio.Ch
             {
                 throw global::java.net.SocketUtil.convertSocketExceptionToIOException(x);
             }
-            catch (System.ObjectDisposedException)
+            catch (ObjectDisposedException)
             {
                 throw new global::java.net.SocketException("Socket is closed");
             }
@@ -120,7 +122,7 @@ namespace IKVM.Runtime.Util.Sun.Nio.Ch
             {
                 throw global::java.net.SocketUtil.convertSocketExceptionToIOException(x);
             }
-            catch (System.ObjectDisposedException)
+            catch (ObjectDisposedException)
             {
                 throw new global::java.net.SocketException("Socket is closed");
             }
@@ -141,7 +143,7 @@ namespace IKVM.Runtime.Util.Sun.Nio.Ch
             {
                 throw global::java.net.SocketUtil.convertSocketExceptionToIOException(x);
             }
-            catch (System.ObjectDisposedException)
+            catch (ObjectDisposedException)
             {
                 throw new global::java.net.SocketException("Socket is closed");
             }
@@ -162,7 +164,7 @@ namespace IKVM.Runtime.Util.Sun.Nio.Ch
             {
                 throw global::java.net.SocketUtil.convertSocketExceptionToIOException(x);
             }
-            catch (System.ObjectDisposedException)
+            catch (ObjectDisposedException)
             {
                 throw new global::java.net.SocketException("Socket is closed");
             }
@@ -203,7 +205,7 @@ namespace IKVM.Runtime.Util.Sun.Nio.Ch
                 }
                 throw global::java.net.SocketUtil.convertSocketExceptionToIOException(x);
             }
-            catch (System.ObjectDisposedException)
+            catch (ObjectDisposedException)
             {
                 throw new global::java.net.SocketException("Socket is closed");
             }
@@ -226,7 +228,7 @@ namespace IKVM.Runtime.Util.Sun.Nio.Ch
                 if (sol == System.Net.Sockets.SocketOptionLevel.IP
                     && son == System.Net.Sockets.SocketOptionName.TypeOfService)
                 {
-                    arg &= (IPTOS_TOS_MASK | IPTOS_PREC_MASK);
+                    arg &= IPTOS_TOS_MASK | IPTOS_PREC_MASK;
                 }
             }
             try
@@ -252,7 +254,7 @@ namespace IKVM.Runtime.Util.Sun.Nio.Ch
                 }
                 throw global::java.net.SocketUtil.convertSocketExceptionToIOException(x);
             }
-            catch (System.ObjectDisposedException)
+            catch (ObjectDisposedException)
             {
                 throw new global::java.net.SocketException("Socket is closed");
             }
@@ -297,7 +299,7 @@ namespace IKVM.Runtime.Util.Sun.Nio.Ch
             {
                 throw global::java.net.SocketUtil.convertSocketExceptionToIOException(x);
             }
-            catch (System.ObjectDisposedException)
+            catch (ObjectDisposedException)
             {
                 throw new global::java.net.SocketException("Socket is closed");
             }
@@ -325,7 +327,7 @@ namespace IKVM.Runtime.Util.Sun.Nio.Ch
             {
                 throw global::java.net.SocketUtil.convertSocketExceptionToIOException(x);
             }
-            catch (System.ObjectDisposedException)
+            catch (ObjectDisposedException)
             {
                 throw new global::java.net.SocketException("Socket is closed");
             }
@@ -375,7 +377,7 @@ namespace IKVM.Runtime.Util.Sun.Nio.Ch
             {
                 throw global::java.net.SocketUtil.convertSocketExceptionToIOException(x);
             }
-            catch (System.ObjectDisposedException)
+            catch (ObjectDisposedException)
             {
                 throw new global::java.net.SocketException("Socket is closed");
             }
@@ -406,7 +408,7 @@ namespace IKVM.Runtime.Util.Sun.Nio.Ch
             {
                 throw global::java.net.SocketUtil.convertSocketExceptionToIOException(x);
             }
-            catch (System.ObjectDisposedException)
+            catch (ObjectDisposedException)
             {
                 throw new global::java.net.SocketException("Socket is closed");
             }
@@ -424,7 +426,7 @@ namespace IKVM.Runtime.Util.Sun.Nio.Ch
             {
                 throw global::java.net.SocketUtil.convertSocketExceptionToIOException(x);
             }
-            catch (System.ObjectDisposedException)
+            catch (ObjectDisposedException)
             {
                 throw new global::java.net.SocketException("Socket is closed");
             }
@@ -444,7 +446,7 @@ namespace IKVM.Runtime.Util.Sun.Nio.Ch
             {
                 throw global::java.net.SocketUtil.convertSocketExceptionToIOException(x);
             }
-            catch (System.ObjectDisposedException)
+            catch (ObjectDisposedException)
             {
                 throw new global::java.net.SocketException("Socket is closed");
             }
@@ -462,7 +464,7 @@ namespace IKVM.Runtime.Util.Sun.Nio.Ch
             {
                 throw global::java.net.SocketUtil.convertSocketExceptionToIOException(x);
             }
-            catch (System.ObjectDisposedException)
+            catch (ObjectDisposedException)
             {
                 throw new global::java.net.SocketException("Socket is closed");
             }
@@ -482,7 +484,7 @@ namespace IKVM.Runtime.Util.Sun.Nio.Ch
             {
                 throw global::java.net.SocketUtil.convertSocketExceptionToIOException(x);
             }
-            catch (System.ObjectDisposedException)
+            catch (ObjectDisposedException)
             {
                 throw new global::java.net.SocketException("Socket is closed");
             }
@@ -542,7 +544,7 @@ namespace IKVM.Runtime.Util.Sun.Nio.Ch
             {
                 throw global::java.net.SocketUtil.convertSocketExceptionToIOException(x);
             }
-            catch (System.ObjectDisposedException)
+            catch (ObjectDisposedException)
             {
                 throw new global::java.net.SocketException("Socket is closed");
             }
@@ -560,7 +562,7 @@ namespace IKVM.Runtime.Util.Sun.Nio.Ch
             {
                 throw global::java.net.SocketUtil.convertSocketExceptionToIOException(x);
             }
-            catch (System.ObjectDisposedException)
+            catch (ObjectDisposedException)
             {
                 throw new global::java.net.SocketException("Socket is closed");
             }
@@ -607,7 +609,7 @@ namespace IKVM.Runtime.Util.Sun.Nio.Ch
             {
                 throw new global::java.net.ConnectException(x.Message);
             }
-            catch (System.ObjectDisposedException)
+            catch (ObjectDisposedException)
             {
                 throw new global::java.net.SocketException("Socket is closed");
             }
@@ -632,7 +634,7 @@ namespace IKVM.Runtime.Util.Sun.Nio.Ch
                 default:
                     throw new NotSupportedException();
             }
-            int microSeconds = timeout >= Int32.MaxValue / 1000 ? Int32.MaxValue : (int)(timeout * 1000);
+            int microSeconds = timeout >= int.MaxValue / 1000 ? int.MaxValue : (int)(timeout * 1000);
             try
             {
                 if (fd.getSocket().Poll(microSeconds, selectMode))
@@ -644,7 +646,7 @@ namespace IKVM.Runtime.Util.Sun.Nio.Ch
             {
                 throw new global::java.net.SocketException(x.Message);
             }
-            catch (System.ObjectDisposedException)
+            catch (ObjectDisposedException)
             {
                 throw new global::java.net.SocketException("Socket is closed");
             }
