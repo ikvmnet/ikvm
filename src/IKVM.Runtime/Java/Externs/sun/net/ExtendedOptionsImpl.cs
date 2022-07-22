@@ -23,7 +23,7 @@
   
 */
 
-namespace IKVM.Java.Externs.sun.net.spi
+namespace IKVM.Java.Externs.sun.net
 {
 
     static class ExtendedOptionsImpl
