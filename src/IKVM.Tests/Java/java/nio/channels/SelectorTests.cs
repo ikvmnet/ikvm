@@ -1,4 +1,5 @@
-﻿using System.Collections.Generic;
+﻿using System;
+using System.Collections.Generic;
 using System.Text;
 using System.Threading;
 using System.Threading.Tasks;
@@ -34,6 +35,7 @@ namespace IKVM.Tests.Java.java.nio.channels
                 server.bind(serverAddr);
                 server.configureBlocking(false);
                 var ops = server.validOps();
+                cancellationTokenSource.Token.Register(() => server.close());
 
                 var selector = Selector.open();
                 var server1Key = server.register(selector, ops, null);
@@ -45,24 +47,33 @@ namespace IKVM.Tests.Java.java.nio.channels
                     var iter = keys.iterator();
                     while (iter.hasNext())
                     {
-                        var key = (SelectionKey)iter.next();
-
-                        if (key.isAcceptable())
+                        try
                         {
-                            var client = server.accept();
-                            client.configureBlocking(false);
-                            client.register(selector, SelectionKey.OP_READ);
+                            var key = (SelectionKey)iter.next();
+
+                            if (key.isAcceptable())
+                            {
+                                var client = server.accept();
+                                client.configureBlocking(false);
+                                client.register(selector, SelectionKey.OP_READ);
+                            }
+                            else if (key.isReadable())
+                            {
+                                var client = (SocketChannel)key.channel();
+                                var buffer = ByteBuffer.allocate(256);
+                                client.read(buffer);
+                                var data = (byte[])buffer.array();
+                                var term = Array.FindIndex(data, i => i == 0x00);
+                                var result = Encoding.UTF8.GetString(data, 0, term);
+                                messages.Add(result);
+
+                                if (result == "BYE")
+                                    client.close();
+                            }
                         }
-                        else if (key.isReadable())
+                        catch (Exception e)
                         {
-                            var client = (SocketChannel)key.channel();
-                            var buffer = ByteBuffer.allocate(256);
-                            client.read(buffer);
-                            var result = Encoding.UTF8.GetString(buffer.array()).Trim();
-                            messages.Add(result);
 
-                            if (result == "BYE")
-                                client.close();
                         }
                     }
 
@@ -82,8 +93,10 @@ namespace IKVM.Tests.Java.java.nio.channels
 
                 foreach (var i in new[] { "MESSAGEA", "MESSAGEB", "MESSAGEC", "BYE" })
                 {
-                    var message = Encoding.UTF8.GetBytes(i);
-                    var buffer = ByteBuffer.wrap(message);
+                    var data = new byte[Encoding.UTF8.GetByteCount(i) + 1];
+                    Encoding.UTF8.GetBytes(i).CopyTo(data, 0);
+                    data[data.Length - 1] = 0x00;
+                    var buffer = ByteBuffer.wrap(data);
                     sock.write(buffer);
                     buffer.clear();
                     Thread.Sleep(500);
