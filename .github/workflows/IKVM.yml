@@ -144,8 +144,6 @@ jobs:
     - name: Setup WSL
       uses: Vampire/setup-wsl@v1
       with:
-        distribution: Ubuntu-22.04
-        set-as-default: 'true'
         additional-packages:
           gcc
           g++
