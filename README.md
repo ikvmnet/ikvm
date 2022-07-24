@@ -154,7 +154,7 @@ Multiple `IkvmReference` entries can be configured to include each other as refe
 
 #### `Automatic-Module-Name` Specification
 
-The `Automatic-Module-Name` is either a specified attribute of the JAR manifest, which can be found in the `META-INF/MANIFEST.MF` file inside the JAR, or agenerated value based on the name of the JAR file. See the [Java SE 9 JAR documentation](https://docs.oracle.com/javase/9/docs/api/java/lang/module/ModuleFinder.html#automatic-modules) for more information.
+The `Automatic-Module-Name` is either a specified attribute of the JAR manifest, which can be found in the `META-INF/MANIFEST.MF` file inside the JAR, or a generated value based on the name of the JAR file. See the [documentation](https://docs.oracle.com/javase/9/docs/api/java/lang/module/ModuleFinder.html#automatic-modules) for more information.
 
 ### MavenReference
 
