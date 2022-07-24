@@ -37,14 +37,6 @@ namespace IKVM.Java.Externs.sun.nio.ch
         public static bool isIPv6Available0()
         {
             return Socket.OSSupportsIPv6;
-            }
-            // we only support IPv6 on Vista and up (because there is no TwoStacks nio implementation)
-            // (non-Windows OSses are currently not supported)
-            // Mono on Windows doesn't appear to support IPv6 either (Mono on Linux does).
-            return Type.GetType("Mono.Runtime") == null
-                && System.Net.Sockets.Socket.OSSupportsIPv6
-                && Environment.OSVersion.Platform == PlatformID.Win32NT
-                && Environment.OSVersion.Version.Major >= 6;
         }
 
         public static int isExclusiveBindAvailable()
@@ -679,7 +671,7 @@ namespace IKVM.Java.Externs.sun.nio.ch
         public static int poll(global::java.io.FileDescriptor fd, int events, long timeout)
         {
 #if FIRST_PASS
-			throw new NotSupportedException();
+            throw new NotSupportedException();
 #else
             var socket = (Socket)fd.getSocket();
             if (socket == null)

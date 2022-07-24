@@ -99,7 +99,7 @@ namespace IKVM.Java.Externs.sun.nio.ch
         public static long write(object nd, global::java.io.FileDescriptor fd, global::java.nio.ByteBuffer[] bufs, int offset, int length)
         {
 #if FIRST_PASS
-			return 0;
+            throw new NotSupportedException();
 #else
             global::java.nio.ByteBuffer[] altBufs = null;
             var list = new List<ArraySegment<byte>>(length);
@@ -127,14 +127,13 @@ namespace IKVM.Java.Externs.sun.nio.ch
                 count = fd.getSocket().Send(list);
             }
             catch (SocketException e)
-                {
+            {
                 if (e.SocketErrorCode == SocketError.WouldBlock)
                     count = 0;
-                }
                 else
                     throw e.ToIOException();
             }
-            catch (ObjectDisposedException)
+            catch (ObjectDisposedException e)
             {
                 throw new global::java.net.SocketException("Socket is closed");
             }
