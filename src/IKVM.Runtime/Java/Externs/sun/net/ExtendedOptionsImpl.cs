@@ -1,6 +1,6 @@
 ﻿using System;
 
-namespace IKVM.Runtime.Java.Externs.sun.net
+namespace IKVM.Java.Externs.sun.net
 {
 
     static class ExtendedOptionsImpl

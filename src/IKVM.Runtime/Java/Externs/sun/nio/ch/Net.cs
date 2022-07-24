@@ -28,7 +28,7 @@ using System.Runtime.InteropServices;
 
 using IKVM.Java.Externs.java.io;
 
-namespace IKVM.Runtime.Java.Externs.sun.nio.ch
+namespace IKVM.Java.Externs.sun.nio.ch
 {
 
     static class Net
@@ -37,6 +37,14 @@ namespace IKVM.Runtime.Java.Externs.sun.nio.ch
         public static bool isIPv6Available0()
         {
             return Socket.OSSupportsIPv6;
+            }
+            // we only support IPv6 on Vista and up (because there is no TwoStacks nio implementation)
+            // (non-Windows OSses are currently not supported)
+            // Mono on Windows doesn't appear to support IPv6 either (Mono on Linux does).
+            return Type.GetType("Mono.Runtime") == null
+                && System.Net.Sockets.Socket.OSSupportsIPv6
+                && Environment.OSVersion.Platform == PlatformID.Win32NT
+                && Environment.OSVersion.Version.Major >= 6;
         }
 
         public static int isExclusiveBindAvailable()
@@ -201,14 +209,22 @@ namespace IKVM.Runtime.Java.Externs.sun.nio.ch
             {
                 object obj = socket.GetSocketOption(sol, son);
                 return obj is LingerOption linger ? linger.Enabled ? linger.LingerTime : -1 : (int)obj;
-            }
+                }
             catch (SocketException e) when (mayNeedConversion && e.SocketErrorCode == SocketError.ProtocolOption && sol == SocketOptionLevel.IP && son == SocketOptionName.TypeOfService)
             {
-                return 0;
-            }
+                if (mayNeedConversion)
+                {
+                    if (x.ErrorCode == global::java.net.SocketUtil.WSAENOPROTOOPT
+                        && sol == System.Net.Sockets.SocketOptionLevel.IP
+                        && son == System.Net.Sockets.SocketOptionName.TypeOfService)
+                    {
+                        return 0;
+                    }
             catch (SocketException e)
             {
                 throw global::java.net.SocketUtil.convertSocketExceptionToIOException(e);
+                }
+                throw global::java.net.SocketUtil.convertSocketExceptionToIOException(x);
             }
             catch (ObjectDisposedException)
             {
@@ -238,7 +254,7 @@ namespace IKVM.Runtime.Java.Externs.sun.nio.ch
                 const int IPTOS_PREC_MASK = 0xe0;
                 if (sol == SocketOptionLevel.IP && son == SocketOptionName.TypeOfService)
                     arg &= IPTOS_TOS_MASK | IPTOS_PREC_MASK;
-            }
+                }
 
             try
             {
@@ -252,7 +268,7 @@ namespace IKVM.Runtime.Java.Externs.sun.nio.ch
                         return;
                     if (x.SocketErrorCode == SocketError.InvalidArgument && sol == SocketOptionLevel.IP && son == SocketOptionName.TypeOfService)
                         return;
-                }
+                    }
 
                 throw global::java.net.SocketUtil.convertSocketExceptionToIOException(x);
             }
@@ -545,6 +561,7 @@ namespace IKVM.Runtime.Java.Externs.sun.nio.ch
                     socket.SetSocketOption(SocketOptionLevel.IPv6, SocketOptionName.IPv6Only, 0);
 
                 if (!stream)
+                {
                     setConnectionReset(socket, false);
 
                 var fd = new global::java.io.FileDescriptor();
@@ -681,7 +698,7 @@ namespace IKVM.Runtime.Java.Externs.sun.nio.ch
             {
                 if (socket.Poll(microSeconds, selectMode))
                     return events;
-            }
+                }
             catch (SocketException e)
             {
                 throw new global::java.net.SocketException(e.Message);

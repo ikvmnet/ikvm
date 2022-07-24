@@ -4,6 +4,8 @@ using FluentAssertions;
 
 using Microsoft.VisualStudio.TestTools.UnitTesting;
 
+using Newtonsoft.Json.Linq;
+
 namespace IKVM.Tests.Java.java.net
 {
 
@@ -14,11 +16,12 @@ namespace IKVM.Tests.Java.java.net
         [TestMethod]
         public void Can_fetch_http_url()
         {
-            var stm = new global::java.net.URL("http://ptsv2.com/t/utqb9-1657681652/post").openStream();
-            var buf = new byte[1024];
-            var bytesRead = stm.read(buf, 0, 1024);
+            var stm = new global::java.net.URL("https://httpbin.org/anything?text=ECHO").openStream();
+            var buf = new byte[8192];
+            var bytesRead = stm.read(buf, 0, 8192);
             var str = Encoding.UTF8.GetString(buf, 0, bytesRead);
-            str.Should().Be("Thank you for this dump. I hope you have a lovely day!");
+            var json = JObject.Parse(str);
+            json["args"]["text"].Value<string>().Should().Be("ECHO");
         }
 
     }

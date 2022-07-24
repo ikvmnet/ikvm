@@ -28,7 +28,7 @@ using System.Net.Sockets;
 
 using IKVM.Java.Externs.java.net;
 
-namespace IKVM.Runtime.Java.externs.sun.nio.ch
+namespace IKVM.Java.Externs.sun.nio.ch
 {
 
     static class SocketDispatcher
@@ -127,9 +127,10 @@ namespace IKVM.Runtime.Java.externs.sun.nio.ch
                 count = fd.getSocket().Send(list);
             }
             catch (SocketException e)
-            {
+                {
                 if (e.SocketErrorCode == SocketError.WouldBlock)
                     count = 0;
+                }
                 else
                     throw e.ToIOException();
             }

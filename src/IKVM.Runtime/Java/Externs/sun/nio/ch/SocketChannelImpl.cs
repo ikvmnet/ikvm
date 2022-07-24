@@ -26,7 +26,7 @@ using System;
 
 using FileDescriptor = java.io.FileDescriptor;
 
-namespace IKVM.Runtime.Java.Externs.sun.nio.ch
+namespace IKVM.Java.Externs.sun.nio.ch
 {
 
     static class SocketChannelImpl
@@ -84,6 +84,7 @@ namespace IKVM.Runtime.Java.Externs.sun.nio.ch
             }
 #endif
         }
+
     }
 
 }
