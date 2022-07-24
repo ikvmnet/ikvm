@@ -156,8 +156,6 @@ Multiple `IkvmReference` entries can be configured to include each other as refe
 
 The `Automatic-Module-Name` is an attribute of the JAR manifest, which can be found in the `META-INF/MANIFEST.MF` file inside the JAR. See the [Java SE 9 JAR documentation](https://docs.oracle.com/javase/9/docs/specs/jar/jar.html#main_attributesmain-attributes) for more information.
 
-> A JAR file is simply a `.zip` file with another extension, so it can be extracted using any zip file library or utility.
-
 ### MavenReference
 
 See the [ikvm-maven Readme](https://github.com/ikvm-revived/ikvm-maven#readme) for usage instructions.
