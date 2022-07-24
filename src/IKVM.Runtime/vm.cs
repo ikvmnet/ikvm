@@ -29,6 +29,7 @@ using System.Security;
 
 #if STATIC_COMPILER || STUB_GENERATOR
 using IKVM.Reflection;
+
 using Type = IKVM.Reflection.Type;
 #else
 using System.Reflection;
@@ -79,15 +80,12 @@ namespace IKVM.Internal
 
         internal const string JarClassList = "--ikvm-classes--/";
 
-#if STATIC_COMPILER
-		internal const bool FinishingForDebugSave = false;
-#elif !STUB_GENERATOR
-        private static bool finishingForDebugSave;
+#if !STUB_GENERATOR
         private static int emitSymbols;
 #if CLASSGC
 		internal static bool classUnloading = true;
 #endif
-#endif // STATIC_COMPILER
+#endif
         private static Assembly coreAssembly;
 
 #if !STUB_GENERATOR
