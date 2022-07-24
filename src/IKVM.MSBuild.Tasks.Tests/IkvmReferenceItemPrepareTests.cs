@@ -17,7 +17,6 @@ namespace IKVM.MSBuild.Tasks.Tests
     {
 
         readonly static string HELLOWORLD1_JAR = @".\ext\helloworld-2.0-1\helloworld-2.0.jar";
-        readonly static string HELLOWORLD2_JAR = @".\ext\helloworld-2.0-2\helloworld-2.0.jar";
 
         /// <summary>
         /// Builds a new task instance with various information.
