@@ -26,7 +26,7 @@ using System;
 using System.Net.Sockets;
 using System.Runtime.InteropServices;
 
-using IKVM.Java.Externs.java.io;
+using IKVM.Java.Externs.java.net;
 
 namespace IKVM.Java.Externs.sun.nio.ch
 {
@@ -73,7 +73,7 @@ namespace IKVM.Java.Externs.sun.nio.ch
             }
             catch (SocketException e)
             {
-                throw global::java.net.SocketUtil.convertSocketExceptionToIOException(e);
+                throw e.ToIOException();
             }
             catch (ObjectDisposedException)
             {
@@ -93,12 +93,11 @@ namespace IKVM.Java.Externs.sun.nio.ch
 
             try
             {
-                var ep = (System.Net.IPEndPoint)socket.LocalEndPoint;
-                return ep.Port;
+                return ((System.Net.IPEndPoint)socket.LocalEndPoint).Port;
             }
             catch (SocketException e)
             {
-                throw global::java.net.SocketUtil.convertSocketExceptionToIOException(e);
+                throw e.ToIOException();
             }
             catch (ObjectDisposedException)
             {
@@ -118,12 +117,11 @@ namespace IKVM.Java.Externs.sun.nio.ch
 
             try
             {
-                var ep = (System.Net.IPEndPoint)socket.LocalEndPoint;
-                return global::java.net.SocketUtil.getInetAddressFromIPEndPoint(ep);
+                return global::java.net.SocketUtil.getInetAddressFromIPEndPoint((System.Net.IPEndPoint)socket.LocalEndPoint);
             }
             catch (SocketException e)
             {
-                throw global::java.net.SocketUtil.convertSocketExceptionToIOException(e);
+                throw e.ToIOException();
             }
             catch (ObjectDisposedException)
             {
@@ -143,12 +141,11 @@ namespace IKVM.Java.Externs.sun.nio.ch
 
             try
             {
-                var ep = (System.Net.IPEndPoint)socket.RemoteEndPoint;
-                return ep.Port;
+                return ((System.Net.IPEndPoint)socket.RemoteEndPoint).Port;
             }
             catch (SocketException e)
             {
-                throw global::java.net.SocketUtil.convertSocketExceptionToIOException(e);
+                throw e.ToIOException();
             }
             catch (ObjectDisposedException)
             {
@@ -168,12 +165,11 @@ namespace IKVM.Java.Externs.sun.nio.ch
 
             try
             {
-                var ep = (System.Net.IPEndPoint)socket.RemoteEndPoint;
-                return global::java.net.SocketUtil.getInetAddressFromIPEndPoint(ep);
+                return global::java.net.SocketUtil.getInetAddressFromIPEndPoint((System.Net.IPEndPoint)socket.RemoteEndPoint);
             }
             catch (SocketException e)
             {
-                throw global::java.net.SocketUtil.convertSocketExceptionToIOException(e);
+                throw e.ToIOException();
             }
             catch (ObjectDisposedException)
             {
@@ -201,22 +197,14 @@ namespace IKVM.Java.Externs.sun.nio.ch
             {
                 object obj = socket.GetSocketOption(sol, son);
                 return obj is LingerOption linger ? linger.Enabled ? linger.LingerTime : -1 : (int)obj;
-                }
+            }
             catch (SocketException e) when (mayNeedConversion && e.SocketErrorCode == SocketError.ProtocolOption && sol == SocketOptionLevel.IP && son == SocketOptionName.TypeOfService)
             {
-                if (mayNeedConversion)
-                {
-                    if (x.ErrorCode == global::java.net.SocketUtil.WSAENOPROTOOPT
-                        && sol == System.Net.Sockets.SocketOptionLevel.IP
-                        && son == System.Net.Sockets.SocketOptionName.TypeOfService)
-                    {
-                        return 0;
-                    }
+                return 0;
+            }
             catch (SocketException e)
             {
-                throw global::java.net.SocketUtil.convertSocketExceptionToIOException(e);
-                }
-                throw global::java.net.SocketUtil.convertSocketExceptionToIOException(x);
+                throw e.ToIOException();
             }
             catch (ObjectDisposedException)
             {
@@ -246,23 +234,23 @@ namespace IKVM.Java.Externs.sun.nio.ch
                 const int IPTOS_PREC_MASK = 0xe0;
                 if (sol == SocketOptionLevel.IP && son == SocketOptionName.TypeOfService)
                     arg &= IPTOS_TOS_MASK | IPTOS_PREC_MASK;
-                }
+            }
 
             try
             {
                 socket.SetSocketOption(sol, son, arg);
             }
-            catch (SocketException x)
+            catch (SocketException e) when (mayNeedConversion && e.SocketErrorCode == SocketError.ProtocolOption && sol == SocketOptionLevel.IP && (son == SocketOptionName.TypeOfService || son == SocketOptionName.MulticastLoopback))
             {
-                if (mayNeedConversion)
-                {
-                    if (x.SocketErrorCode == SocketError.ProtocolOption && sol == SocketOptionLevel.IP && (son == SocketOptionName.TypeOfService || son == SocketOptionName.MulticastLoopback))
-                        return;
-                    if (x.SocketErrorCode == SocketError.InvalidArgument && sol == SocketOptionLevel.IP && son == SocketOptionName.TypeOfService)
-                        return;
-                    }
-
-                throw global::java.net.SocketUtil.convertSocketExceptionToIOException(x);
+                return;
+            }
+            catch (SocketException e) when (mayNeedConversion && e.SocketErrorCode == SocketError.InvalidArgument && sol == SocketOptionLevel.IP && son == SocketOptionName.TypeOfService)
+            {
+                return;
+            }
+            catch (SocketException e)
+            {
+                throw e.ToIOException();
             }
             catch (ObjectDisposedException)
             {
@@ -308,7 +296,7 @@ namespace IKVM.Java.Externs.sun.nio.ch
             }
             catch (SocketException e)
             {
-                throw global::java.net.SocketUtil.convertSocketExceptionToIOException(e);
+                throw e.ToIOException();
             }
             catch (ObjectDisposedException)
             {
@@ -336,9 +324,9 @@ namespace IKVM.Java.Externs.sun.nio.ch
                 socket.SetSocketOption(SocketOptionLevel.IP, block ? SocketOptionName.BlockSource : SocketOptionName.UnblockSource, optionValue);
                 return 0;
             }
-            catch (SocketException x)
+            catch (SocketException e)
             {
-                throw global::java.net.SocketUtil.convertSocketExceptionToIOException(x);
+                throw e.ToIOException();
             }
             catch (ObjectDisposedException)
             {
@@ -396,7 +384,7 @@ namespace IKVM.Java.Externs.sun.nio.ch
             }
             catch (SocketException e)
             {
-                throw global::java.net.SocketUtil.convertSocketExceptionToIOException(e);
+                throw e.ToIOException();
             }
             catch (ObjectDisposedException)
             {
@@ -432,7 +420,7 @@ namespace IKVM.Java.Externs.sun.nio.ch
             }
             catch (SocketException e)
             {
-                throw global::java.net.SocketUtil.convertSocketExceptionToIOException(e);
+                throw e.ToIOException();
             }
             catch (ObjectDisposedException)
             {
@@ -456,7 +444,7 @@ namespace IKVM.Java.Externs.sun.nio.ch
             }
             catch (SocketException e)
             {
-                throw global::java.net.SocketUtil.convertSocketExceptionToIOException(e);
+                throw e.ToIOException();
             }
             catch (ObjectDisposedException)
             {
@@ -480,7 +468,7 @@ namespace IKVM.Java.Externs.sun.nio.ch
             }
             catch (SocketException e)
             {
-                throw global::java.net.SocketUtil.convertSocketExceptionToIOException(e);
+                throw e.ToIOException();
             }
             catch (ObjectDisposedException)
             {
@@ -528,11 +516,11 @@ namespace IKVM.Java.Externs.sun.nio.ch
             }
             catch (SocketException e)
             {
-                throw global::java.net.SocketUtil.convertSocketExceptionToIOException(e);
+                throw e.ToIOException();
             }
             catch (ObjectDisposedException)
             {
-                throw new global::java.net.SocketException("Socket is closed");
+                throw new global::java.net.SocketException("Socket is closed.");
             }
 #endif
         }
@@ -553,7 +541,6 @@ namespace IKVM.Java.Externs.sun.nio.ch
                     socket.SetSocketOption(SocketOptionLevel.IPv6, SocketOptionName.IPv6Only, 0);
 
                 if (!stream)
-                {
                     setConnectionReset(socket, false);
 
                 var fd = new global::java.io.FileDescriptor();
@@ -562,7 +549,7 @@ namespace IKVM.Java.Externs.sun.nio.ch
             }
             catch (SocketException e)
             {
-                throw global::java.net.SocketUtil.convertSocketExceptionToIOException(e);
+                throw e.ToIOException();
             }
 #endif
         }
@@ -585,7 +572,7 @@ namespace IKVM.Java.Externs.sun.nio.ch
             }
             catch (SocketException e)
             {
-                throw global::java.net.SocketUtil.convertSocketExceptionToIOException(e);
+                throw e.ToIOException();
             }
             catch (ObjectDisposedException)
             {
@@ -609,7 +596,7 @@ namespace IKVM.Java.Externs.sun.nio.ch
             }
             catch (SocketException e)
             {
-                throw global::java.net.SocketUtil.convertSocketExceptionToIOException(e);
+                throw e.ToIOException();
             }
             catch (ObjectDisposedException)
             {
@@ -690,7 +677,7 @@ namespace IKVM.Java.Externs.sun.nio.ch
             {
                 if (socket.Poll(microSeconds, selectMode))
                     return events;
-                }
+            }
             catch (SocketException e)
             {
                 throw new global::java.net.SocketException(e.Message);
