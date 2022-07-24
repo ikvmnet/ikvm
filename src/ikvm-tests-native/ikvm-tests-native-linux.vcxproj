@@ -66,7 +66,7 @@
     <IntDir>$(ProjectDir)obj\$(Configuration)\linux-x64\</IntDir>
     <LocalRemoteCopySources>true</LocalRemoteCopySources>
     <IncludePath>..\ikvm-native</IncludePath>
-    <WSLPath>ubuntu</WSLPath>
+    <WSLPath>Ubuntu-22.04</WSLPath>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x86'">
     <TargetName>libikvm-tests-native</TargetName>
@@ -74,7 +74,7 @@
     <IntDir>$(ProjectDir)obj\$(Configuration)\linux-x86\</IntDir>
     <LocalRemoteCopySources>true</LocalRemoteCopySources>
     <IncludePath>..\ikvm-native</IncludePath>
-    <WSLPath>ubuntu</WSLPath>
+    <WSLPath>Ubuntu-22.04</WSLPath>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'">
     <TargetName>libikvm-tests-native</TargetName>
@@ -82,7 +82,7 @@
     <IntDir>$(ProjectDir)obj\$(Configuration)\linux-x64\</IntDir>
     <LocalRemoteCopySources>true</LocalRemoteCopySources>
     <IncludePath>..\ikvm-native</IncludePath>
-    <WSLPath>ubuntu</WSLPath>
+    <WSLPath>Ubuntu-22.04</WSLPath>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|x86'">
     <TargetName>libikvm-tests-native</TargetName>
@@ -90,7 +90,7 @@
     <IntDir>$(ProjectDir)obj\$(Configuration)\linux-x86\</IntDir>
     <LocalRemoteCopySources>true</LocalRemoteCopySources>
     <IncludePath>..\ikvm-native</IncludePath>
-    <WSLPath>ubuntu</WSLPath>
+    <WSLPath>Ubuntu-22.04</WSLPath>
   </PropertyGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">
     <Link>
