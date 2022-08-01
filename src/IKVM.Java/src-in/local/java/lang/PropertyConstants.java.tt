@@ -1,3 +1,7 @@
+<#@ template language="c#" hostspecific="true" #>
+<#@ parameter type="System.String" name="Version" #>
+<#@ parameter type="System.String" name="OpenJdkVersion" #>
+
 /*
   Copyright (C) 2007, 2009 Jeroen Frijters
 
@@ -27,7 +31,7 @@ interface PropertyConstants
 {
     String awt_toolkit = "ikvm.awt.NetToolkit, @AWTASSEMBLY@";
     String java_awt_graphicsenv = "ikvm.awt.NetGraphicsEnvironment, @AWTASSEMBLY@";
-    String java_vm_version = "@@Version@@";
-    String java_runtime_version = "@Version@@";
-    String openjdk_version = "@@OpenJdkVersion@@";
+    String java_vm_version = "<#= Version #>";
+    String java_runtime_version = "<#= Version #>";
+    String openjdk_version = "<#= OpenJdkVersion #>";
 }

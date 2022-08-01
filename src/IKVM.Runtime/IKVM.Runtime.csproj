@@ -46,7 +46,7 @@
     </ItemGroup>
 
     <ItemGroup>
-        <ProjectReference Include="..\IKVM.Java\IKVM.Java.csproj">
+        <ProjectReference Include="..\IKVM.Java\IKVM.Java.msbuildproj">
             <PrivateAssets>All</PrivateAssets>
         </ProjectReference>
         <ProjectReference Include="..\IKVM.Runtime.JNI-ref\IKVM.Runtime.JNI-ref.csproj">
@@ -67,6 +67,22 @@
             <Configuration>$(Configuration)</Configuration>
             <OutputDir>runtimes\linux-x64\native</OutputDir>
         </LibProjectReference>
+    </ItemGroup>
+
+    <ItemGroup>
+      <None Update="TextTemplate1.tt">
+        <Generator>TextTemplatingFileGenerator</Generator>
+        <LastGenOutput>TextTemplate1.java</LastGenOutput>
+      </None>
+      <None Update="TextTemplate1.java">
+        <DesignTime>True</DesignTime>
+        <AutoGen>True</AutoGen>
+        <DependentUpon>TextTemplate1.tt</DependentUpon>
+      </None>
+    </ItemGroup>
+
+    <ItemGroup>
+      <Service Include="{508349b6-6b84-4df5-91f0-309beebad82d}" />
     </ItemGroup>
     
     <Import Project="Sdk.targets" Sdk="Microsoft.NET.Sdk" />

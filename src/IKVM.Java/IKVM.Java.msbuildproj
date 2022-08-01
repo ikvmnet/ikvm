@@ -1,0 +1,279 @@
+﻿<Project>
+    <Import Project="$(MSBuildThisFileDirectory)..\..\sdk\Sdk\Sdk.props" />
+    <Import Project="$(MSBuildThisFileDirectory)..\..\openjdk.props" />
+
+    <PropertyGroup>
+        <PackageId>IKVM.Java</PackageId>
+        <TargetFrameworks>net461;netcoreapp3.1</TargetFrameworks>
+        <AssemblyName>IKVM.Java</AssemblyName>
+        <AssemblyTitle>IKVM.NET Java Standard Edition 8 Platform</AssemblyTitle>
+        <Description>IKVM.NET Java Standard Edition 8 Platform</Description>
+        <TransformOnBuild>true</TransformOnBuild>
+        <Bootstrap>true</Bootstrap>
+    </PropertyGroup>
+
+    <ItemGroup>
+        <InternalsVisibleTo Include="IKVM.Runtime" />
+        <InternalsVisibleTo Include="IKVM.Runtime.JNI" />
+        <InternalsVisibleTo Include="IKVM.AWT.WinForms" />
+    </ItemGroup>
+
+    <ItemGroup>
+        <PackageReference Include="SharpZipLib" Version="1.3.3" />
+        <PackageReference Include="System.Memory" Version="4.5.5" />
+    </ItemGroup>
+
+    <ItemGroup Condition=" '$(TargetFramework)' == 'net461' ">
+        <Reference Include="System.Configuration" />
+        <Reference Include="System.IO.Compression" />
+        <Reference Include="System.Security" />
+    </ItemGroup>
+
+    <ItemGroup Condition=" '$(TargetFramework)' == 'netcoreapp3.1' ">
+        <PackageReference Include="Microsoft.Extensions.DependencyModel" Version="6.0.0" />
+        <PackageReference Include="Microsoft.Win32.Registry" Version="5.0.0" />
+        <PackageReference Include="System.Configuration.ConfigurationManager" Version="6.0.0" />
+        <PackageReference Include="System.Drawing.Common" Version="6.0.0" />
+        <PackageReference Include="System.Data.Odbc" Version="6.0.0" />
+        <PackageReference Include="System.IO.Compression" Version="4.3.0" />
+        <PackageReference Include="System.IO.FileSystem.AccessControl" Version="5.0.0" />
+        <PackageReference Include="System.Runtime" Version="4.3.1" />
+        <PackageReference Include="System.Runtime.InteropServices" Version="4.3.0" />
+        <PackageReference Include="System.Runtime.Loader" Version="4.3.0" />
+        <PackageReference Include="System.Security.Cryptography.Pkcs" Version="6.0.1" />
+        <PackageReference Include="System.Security.AccessControl" Version="6.0.0" />
+        <PackageReference Include="System.Security.Permissions" Version="6.0.0" />
+        <PackageReference Include="System.Security.Principal.Windows" Version="5.0.0" />
+        <PackageReference Include="System.Threading.AccessControl" Version="6.0.0" />
+    </ItemGroup>
+
+    <Choose>
+        <!-- This is a major limitation which prevents building on Linux.
+             The version of the tool that is executed should be that of the current MSBuild platform, not that being targeted.
+             However, at present Frameworks builds of IKVM cannot generate Core version assemblies. -->
+        <When Condition=" '$(IkvmTargetFramework)' == 'NetCore' ">
+            <PropertyGroup>
+                <_IkvmToolTargetFramework>netcoreapp3.1</_IkvmToolTargetFramework>
+                <_IkvmToolExecPrefix>dotnet exec </_IkvmToolExecPrefix>
+            </PropertyGroup>
+        </When>
+        <When Condition=" '$(IkvmTargetFramework)' == 'NetFramework' ">
+            <PropertyGroup>
+                <_IkvmToolTargetFramework>net461</_IkvmToolTargetFramework>
+                <_IkvmToolExecPrefix></_IkvmToolExecPrefix>
+            </PropertyGroup>
+        </When>
+    </Choose>
+
+    <ItemGroup>
+        <ProjectReference Include="..\IKVM.Runtime-ref\IKVM.Runtime-ref.csproj">
+            <PrivateAssets>All</PrivateAssets>
+            <Private>False</Private>
+            <IsIkvmRuntimeDll>true</IsIkvmRuntimeDll>
+        </ProjectReference>
+        <ProjectReference Include="..\ikvmc\ikvmc.csproj">
+            <PrivateAssets>All</PrivateAssets>
+            <ReferenceOutputAssembly>false</ReferenceOutputAssembly>
+            <Private>False</Private>
+            <IsIkvmCompiler>true</IsIkvmCompiler>
+            <SetTargetFramework>TargetFramework=$(_IkvmToolTargetFramework)</SetTargetFramework>
+        </ProjectReference>
+        <ProjectReference Include="..\ikvmstub\ikvmstub.csproj">
+            <PrivateAssets>All</PrivateAssets>
+            <ReferenceOutputAssembly>false</ReferenceOutputAssembly>
+            <Private>False</Private>
+            <IsIkvmStub>true</IsIkvmStub>
+            <SetTargetFramework>TargetFramework=$(_IkvmToolTargetFramework)</SetTargetFramework>
+        </ProjectReference>
+    </ItemGroup>
+
+    <ItemGroup>
+        <T4ParameterValues Include="OpenJdkImplementationVersion">
+            <Value>$(OpenJdkImplementationVersion)</Value>
+            <Visible>False</Visible>
+        </T4ParameterValues>
+        <T4ParameterValues Include="OpenJdkSpecificationVersion">
+            <Value>$(OpenJdkSpecificationVersion)</Value>
+            <Visible>False</Visible>
+        </T4ParameterValues>
+        <T4ParameterValues Include="OpenJdkFullVersion">
+            <Value>$(OpenJdkFullVersion)</Value>
+            <Visible>False</Visible>
+        </T4ParameterValues>
+        <T4ParameterValues Include="OpenJdkVersion">
+            <Value>$(OpenJdkVersion)</Value>
+            <Visible>False</Visible>
+        </T4ParameterValues>
+        <T4ParameterValues Include="Version">
+            <Value>$(Version)</Value>
+            <Visible>False</Visible>
+        </T4ParameterValues>
+        <T4ParameterValues Include="FileVersion">
+            <Value>$(FileVersion)</Value>
+            <Visible>False</Visible>
+        </T4ParameterValues>
+    </ItemGroup>
+
+    <ItemGroup>
+        <Compile Include="@(OpenJdkSource)" LinkBase="openjdk" />
+        <Resource Include="@(OpenJdkResource)" LinkBase="openjdk" />
+        <Resource Include="res\**\*" ResourcePath="%(RecursiveDir)%(Filename)%(Extension)" />
+        <ExcludeRegex Include="@(OpenJdkExcludeRegex)" />
+    </ItemGroup>
+
+    <Target Name="CreateTemplatePaths">
+        <MakeDir Directories="$(IntermediateOutputPath)src\local\java\lang" />
+        <MakeDir Directories="$(IntermediateOutputPath)res\META-INF" />
+        <MakeDir Directories="$(IntermediateOutputPath)res\nashorn" />
+    </Target>
+
+    <PropertyGroup>
+        <BeforeTransform>CreateTemplatePaths</BeforeTransform>
+    </PropertyGroup>
+
+    <ItemGroup>
+        <None Include="src-in\local\java\lang\PropertyConstants.java.tt">
+            <Generator>TextTemplatingFileGenerator</Generator>
+            <OutputFilePath>$([System.IO.Path]::GetFullPath('$(IntermediateOutputPath)src\local\java\lang'))</OutputFilePath>
+            <OutputFileName>PropertyConstants.java</OutputFileName>
+        </None>
+        <Compile Include="$(IntermediateOutputPath)src\local\java\lang\PropertyConstants.java">
+            <AutoGen>True</AutoGen>
+        </Compile>
+    </ItemGroup>
+
+    <ItemGroup>
+        <None Include="res-in\META-INF\MANIFEST.MF.tt">
+            <Generator>TextTemplatingFileGenerator</Generator>
+            <OutputFilePath>$([System.IO.Path]::GetFullPath('$(IntermediateOutputPath)res\META-INF'))</OutputFilePath>
+            <OutputFileName>MANIFEST.MF</OutputFileName>
+        </None>
+        <Resource Include="$(IntermediateOutputPath)res\META-INF\MANIFEST.MF">
+            <AutoGen>True</AutoGen>
+            <ResourcePath>META-INF\MANIFEST.MF</ResourcePath>
+        </Resource>
+    </ItemGroup>
+
+    <ItemGroup>
+        <None Include="res-in\nashorn\version.properties.tt">
+            <Generator>TextTemplatingFileGenerator</Generator>
+            <OutputFilePath>$([System.IO.Path]::GetFullPath('$(IntermediateOutputPath)res\nashorn'))</OutputFilePath>
+            <OutputFileName>version.properties</OutputFileName>
+        </None>
+        <Resource Include="$(IntermediateOutputPath)res\nashorn\version.properties">
+            <AutoGen>True</AutoGen>
+            <ResourcePath>nashorn/version.properties</ResourcePath>
+        </Resource>
+    </ItemGroup>
+
+    <ItemGroup>
+        <MapFile Include="map.xml" />
+    </ItemGroup>
+
+    <Import Project="$(MSBuildExtensionsPath)\Microsoft\VisualStudio\v$(VisualStudioVersion)\TextTemplating\Microsoft.TextTemplating.targets" />
+    <Import Project="$(MSBuildThisFileDirectory)..\..\sdk\Sdk\Sdk.targets" />
+
+    <Target Name="GetIkvmStub" DependsOnTargets="ResolveProjectReferences">
+        <MSBuild Projects="@(_MSBuildProjectReferenceExistent)" Targets="Build" BuildInParallel="$(BuildInParallel)" Properties="%(_MSBuildProjectReferenceExistent.SetConfiguration);%(_MSBuildProjectReferenceExistent.SetPlatform);%(_MSBuildProjectReferenceExistent.SetTargetFramework)" RemoveProperties="%(_MSBuildProjectReferenceExistent.GlobalPropertiesToRemove)$(_GlobalPropertiesToRemoveFromProjectReferences)" Condition=" '%(_MSBuildProjectReferenceExistent.IsIkvmStub)' == 'true' ">
+            <Output TaskParameter="TargetOutputs" ItemName="_IkvmStubPath" />
+        </MSBuild>
+        <PropertyGroup>
+            <IkvmStubPath>@(_IkvmStubPath)</IkvmStubPath>
+            <IkvmStubExec>$(_IkvmToolExecPrefix)$(IkvmStubPath)</IkvmStubExec>
+        </PropertyGroup>
+        <Message Text="Using ikvmstub executable at '$(IkvmStubPath)'." />
+    </Target>
+
+    <Target Name="GetIkvmCompiler" DependsOnTargets="ResolveProjectReferences">
+        <MSBuild Projects="@(_MSBuildProjectReferenceExistent)" Targets="Build" BuildInParallel="$(BuildInParallel)" Properties="%(_MSBuildProjectReferenceExistent.SetConfiguration);%(_MSBuildProjectReferenceExistent.SetPlatform);%(_MSBuildProjectReferenceExistent.SetTargetFramework)" RemoveProperties="%(_MSBuildProjectReferenceExistent.GlobalPropertiesToRemove)$(_GlobalPropertiesToRemoveFromProjectReferences)" Condition=" '%(_MSBuildProjectReferenceExistent.IsIkvmCompiler)' == 'true' ">
+            <Output TaskParameter="TargetOutputs" ItemName="_IkvmCompilerPath" />
+        </MSBuild>
+        <PropertyGroup>
+            <IkvmCompilerPath>@(_IkvmCompilerPath)</IkvmCompilerPath>
+            <IkvmCompilerExec>$(_IkvmToolExecPrefix)$(IkvmCompilerPath)</IkvmCompilerExec>
+        </PropertyGroup>
+        <Message Text="Using ikvmc executable at '$(IkvmCompilerPath)'." Importance="high" />
+    </Target>
+
+    <Target Name="GetIkvmRuntime" DependsOnTargets="ResolveProjectReferences">
+        <MSBuild Projects="@(_MSBuildProjectReferenceExistent)" Targets="Build" BuildInParallel="$(BuildInParallel)" Properties="%(_MSBuildProjectReferenceExistent.SetConfiguration);%(_MSBuildProjectReferenceExistent.SetPlatform);%(_MSBuildProjectReferenceExistent.SetTargetFramework)" RemoveProperties="%(_MSBuildProjectReferenceExistent.GlobalPropertiesToRemove)$(_GlobalPropertiesToRemoveFromProjectReferences)" Condition=" '%(_MSBuildProjectReferenceExistent.IsIkvmRuntimeDll)' == 'true' ">
+            <Output TaskParameter="TargetOutputs" ItemName="_IkvmRuntimePath" />
+        </MSBuild>
+        <PropertyGroup>
+            <IkvmRuntimePath>@(_IkvmRuntimePath)</IkvmRuntimePath>
+        </PropertyGroup>
+        <Message Text="Using IKVM.Runtime at '$(IkvmRuntimePath)'." Importance="high" />
+    </Target>
+
+    <Target Name="ResolveRmiStubInputItems" DependsOnTargets="CompileJava">
+        <ItemGroup>
+            <RmiStubInputItem Include="@(Classpath)" />
+            <RmiStubInputItem Include="$(ClassOutputPath)**\*.class" />
+        </ItemGroup>
+    </Target>
+
+    <Target Name="GetRmicExe">
+        <PropertyGroup>
+            <Rmic>rmic</Rmic>
+        </PropertyGroup>
+    </Target>
+
+    <PropertyGroup>
+        <RmiStubsOutputPath>$(IntermediateOutputPath)rmistubs\</RmiStubsOutputPath>
+    </PropertyGroup>
+
+    <Target Name="_BuildRmiStubs" DependsOnTargets="GetRmicExe;ResolveRmiStubInputItems" Inputs="@(RmiStubInputItem)" Outputs="$(_BuildRmiStubsCoreStampFile)">
+        <ItemGroup>
+            <_RmicClasspath Include="@(Classpath);$(ClassOutputPath)" />
+            <_RmicArgs Include="-J-client" />
+            <_RmicArgs Include="-J-Xms128m" />
+            <_RmicArgs Include="-nowarn" />
+            <_RmicArgs Include="-bootclasspath" />
+            <_RmicArgs Include="@(_RmicClasspath, '$([System.IO.Path]::PathSeparator)')" />
+            <_RmicArgs Include="-d" />
+            <_RmicArgs Include="$(RmiStubsOutputPath)" />
+        </ItemGroup>
+        <PropertyGroup>
+            <_RmicArgs>@(_RmicArgs, ' ')</_RmicArgs>
+        </PropertyGroup>
+        <Delete Files="$(RmiStubsOutputPath)**\*" />
+        <MakeDir Directories="$(RmiStubsOutputPath)" />
+        <Exec Command="$(Rmic) $(_RmicArgs) %(OpenJdkRmiStub.Flags) %(OpenJdkRmiStub.Identity)" />
+        <Touch Files="$(_BuildRmiStubsCoreStampFile)" AlwaysCreate="true" ForceTouch="true" />
+    </Target>
+
+    <PropertyGroup>
+        <BuildRmiStubsDependsOn>
+            $(BuildRmiStubsDependsOn)
+            CompileJava;
+            ResolveRmiStubInputItems;
+            _BuildRmiStubs;
+        </BuildRmiStubsDependsOn>
+    </PropertyGroup>
+
+    <Target Name="BuildRmiStubs" DependsOnTargets="$(BuildRmiStubsDependsOn)">
+        <ItemGroup>
+            <Class Include="$(RmiStubsOutputPath)**\*.class" />
+        </ItemGroup>
+    </Target>
+
+    <Target Name="CleanRmiStubs">
+        <Delete Files="$(_BuildRmiStubsCoreStampFile)" />
+        <RemoveDir Directories="$(RmiStubsOutputPath)" />
+    </Target>
+
+    <PropertyGroup>
+        <CleanDependsOn>
+            $(CleanDependsOn);
+            CleanRmiStubs;
+        </CleanDependsOn>
+    </PropertyGroup>
+
+    <PropertyGroup>
+        <CoreCompileDependsOn>
+            BuildRmiStubs;
+            $(CoreCompileDependsOn);
+        </CoreCompileDependsOn>
+    </PropertyGroup>
+
+</Project>

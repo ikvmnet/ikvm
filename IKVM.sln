@@ -5,8 +5,6 @@ VisualStudioVersion = 17.2.32505.173
 MinimumVisualStudioVersion = 10.0.40219.1
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "IKVM.Runtime", "src\IKVM.Runtime\IKVM.Runtime.csproj", "{1DAD30CB-7FF9-47AC-92B2-0F46003EB6A4}"
 EndProject
-Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "IKVM.Java", "src\IKVM.Java\IKVM.Java.csproj", "{FAC669CD-03A2-4120-8B06-68D34E047C1C}"
-EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "IKVM.Runtime-ref", "src\IKVM.Runtime-ref\IKVM.Runtime-ref.csproj", "{197EF0EC-63E2-4644-AF25-054B931DDB55}"
 EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "IKVM.Runtime.JNI", "src\IKVM.Runtime.JNI\IKVM.Runtime.JNI.csproj", "{E4E508BF-7ADF-413F-83E2-908A3C9F7F8D}"
@@ -71,7 +69,31 @@ Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "IKVM.MSBuild.Tests", "src\I
 EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "IKVM.Tool.Exe", "src\IKVM.Tool.Exe\IKVM.Tool.Exe.csproj", "{BE69E1D2-1443-44FA-81D3-F6A452222998}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "IKVM.MSBuild.Tasks.Tests", "src\IKVM.MSBuild.Tasks.Tests\IKVM.MSBuild.Tasks.Tests.csproj", "{E7C0E8FA-F34C-48C6-AD55-FD9798F5BC71}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "IKVM.MSBuild.Tasks.Tests", "src\IKVM.MSBuild.Tasks.Tests\IKVM.MSBuild.Tasks.Tests.csproj", "{E7C0E8FA-F34C-48C6-AD55-FD9798F5BC71}"
+EndProject
+Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "sdk", "sdk", "{44F5637B-7270-4D2A-A38D-E54F512883E5}"
+EndProject
+Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "targets", "targets", "{76A71303-EEAF-4CFF-9254-B673B61DBAB9}"
+	ProjectSection(SolutionItems) = preProject
+		sdk\targets\IKVM.Java.Core.targets = sdk\targets\IKVM.Java.Core.targets
+		sdk\targets\IKVM.Java.CrossTargeting.targets = sdk\targets\IKVM.Java.CrossTargeting.targets
+		sdk\targets\IKVM.Java.CurrentVersion.targets = sdk\targets\IKVM.Java.CurrentVersion.targets
+		sdk\targets\IKVM.Java.DesignTime.targets = sdk\targets\IKVM.Java.DesignTime.targets
+		sdk\targets\IKVM.Java.props = sdk\targets\IKVM.Java.props
+		sdk\targets\IKVM.Java.targets = sdk\targets\IKVM.Java.targets
+		sdk\targets\IKVM.NET.Sdk.Java.props = sdk\targets\IKVM.NET.Sdk.Java.props
+		sdk\targets\IKVM.NET.Sdk.Java.targets = sdk\targets\IKVM.NET.Sdk.Java.targets
+		sdk\targets\IKVM.NET.Sdk.props = sdk\targets\IKVM.NET.Sdk.props
+		sdk\targets\IKVM.NET.Sdk.targets = sdk\targets\IKVM.NET.Sdk.targets
+	EndProjectSection
+EndProject
+Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Sdk", "Sdk", "{C3DBFA04-BC4C-4437-ACD0-0ACB9612D7FF}"
+	ProjectSection(SolutionItems) = preProject
+		sdk\Sdk\Sdk.props = sdk\Sdk\Sdk.props
+		sdk\Sdk\Sdk.targets = sdk\Sdk\Sdk.targets
+	EndProjectSection
+EndProject
+Project("{13B669BE-BB05-4DDF-9536-439F39A36129}") = "IKVM.Java", "src\IKVM.Java\IKVM.Java.msbuildproj", "{ABD81C7E-F986-4018-986E-ACAF82C64D3A}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
@@ -95,18 +117,6 @@ Global
 		{1DAD30CB-7FF9-47AC-92B2-0F46003EB6A4}.Release|x64.Build.0 = Release|Any CPU
 		{1DAD30CB-7FF9-47AC-92B2-0F46003EB6A4}.Release|x86.ActiveCfg = Release|Any CPU
 		{1DAD30CB-7FF9-47AC-92B2-0F46003EB6A4}.Release|x86.Build.0 = Release|Any CPU
-		{FAC669CD-03A2-4120-8B06-68D34E047C1C}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
-		{FAC669CD-03A2-4120-8B06-68D34E047C1C}.Debug|Any CPU.Build.0 = Debug|Any CPU
-		{FAC669CD-03A2-4120-8B06-68D34E047C1C}.Debug|x64.ActiveCfg = Debug|Any CPU
-		{FAC669CD-03A2-4120-8B06-68D34E047C1C}.Debug|x64.Build.0 = Debug|Any CPU
-		{FAC669CD-03A2-4120-8B06-68D34E047C1C}.Debug|x86.ActiveCfg = Debug|Any CPU
-		{FAC669CD-03A2-4120-8B06-68D34E047C1C}.Debug|x86.Build.0 = Debug|Any CPU
-		{FAC669CD-03A2-4120-8B06-68D34E047C1C}.Release|Any CPU.ActiveCfg = Release|Any CPU
-		{FAC669CD-03A2-4120-8B06-68D34E047C1C}.Release|Any CPU.Build.0 = Release|Any CPU
-		{FAC669CD-03A2-4120-8B06-68D34E047C1C}.Release|x64.ActiveCfg = Release|Any CPU
-		{FAC669CD-03A2-4120-8B06-68D34E047C1C}.Release|x64.Build.0 = Release|Any CPU
-		{FAC669CD-03A2-4120-8B06-68D34E047C1C}.Release|x86.ActiveCfg = Release|Any CPU
-		{FAC669CD-03A2-4120-8B06-68D34E047C1C}.Release|x86.Build.0 = Release|Any CPU
 		{197EF0EC-63E2-4644-AF25-054B931DDB55}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
 		{197EF0EC-63E2-4644-AF25-054B931DDB55}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{197EF0EC-63E2-4644-AF25-054B931DDB55}.Debug|x64.ActiveCfg = Debug|Any CPU
@@ -383,6 +393,18 @@ Global
 		{E7C0E8FA-F34C-48C6-AD55-FD9798F5BC71}.Release|x64.Build.0 = Release|Any CPU
 		{E7C0E8FA-F34C-48C6-AD55-FD9798F5BC71}.Release|x86.ActiveCfg = Release|Any CPU
 		{E7C0E8FA-F34C-48C6-AD55-FD9798F5BC71}.Release|x86.Build.0 = Release|Any CPU
+		{ABD81C7E-F986-4018-986E-ACAF82C64D3A}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{ABD81C7E-F986-4018-986E-ACAF82C64D3A}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{ABD81C7E-F986-4018-986E-ACAF82C64D3A}.Debug|x64.ActiveCfg = Debug|Any CPU
+		{ABD81C7E-F986-4018-986E-ACAF82C64D3A}.Debug|x64.Build.0 = Debug|Any CPU
+		{ABD81C7E-F986-4018-986E-ACAF82C64D3A}.Debug|x86.ActiveCfg = Debug|Any CPU
+		{ABD81C7E-F986-4018-986E-ACAF82C64D3A}.Debug|x86.Build.0 = Debug|Any CPU
+		{ABD81C7E-F986-4018-986E-ACAF82C64D3A}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{ABD81C7E-F986-4018-986E-ACAF82C64D3A}.Release|Any CPU.Build.0 = Release|Any CPU
+		{ABD81C7E-F986-4018-986E-ACAF82C64D3A}.Release|x64.ActiveCfg = Release|Any CPU
+		{ABD81C7E-F986-4018-986E-ACAF82C64D3A}.Release|x64.Build.0 = Release|Any CPU
+		{ABD81C7E-F986-4018-986E-ACAF82C64D3A}.Release|x86.ActiveCfg = Release|Any CPU
+		{ABD81C7E-F986-4018-986E-ACAF82C64D3A}.Release|x86.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
@@ -392,6 +414,8 @@ Global
 		{F2A81A31-C65F-4B4E-A6FE-B14E71515EA3} = {0606E530-F834-44A3-9B4E-37852A06D11B}
 		{A275C11D-F06E-475F-AEBA-7F7A1EF8D140} = {B6083619-C4E8-4D8E-95BD-217E3663134C}
 		{E566FE94-C551-43A7-843C-5E8199CA7373} = {B6083619-C4E8-4D8E-95BD-217E3663134C}
+		{76A71303-EEAF-4CFF-9254-B673B61DBAB9} = {44F5637B-7270-4D2A-A38D-E54F512883E5}
+		{C3DBFA04-BC4C-4437-ACD0-0ACB9612D7FF} = {44F5637B-7270-4D2A-A38D-E54F512883E5}
 	EndGlobalSection
 	GlobalSection(ExtensibilityGlobals) = postSolution
 		SolutionGuid = {A03ACB78-6C3F-4E09-BAF1-16E41D5A3945}

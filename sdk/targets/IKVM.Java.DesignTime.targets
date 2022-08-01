@@ -1,0 +1,43 @@
+<Project xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+    <PropertyGroup>
+        <MSBuildAllProjects>$(MSBuildAllProjects);$(MsBuildThisFileFullPath)</MSBuildAllProjects>
+    </PropertyGroup>
+
+    <PropertyGroup>
+        <ManagedDesignTimeTargetsPath Condition=" '$(ManagedDesignTimeTargetsPath)' == '' ">$(MSBuildExtensionsPath)\Microsoft\VisualStudio\Managed\Microsoft.Managed.DesignTime.targets</ManagedDesignTimeTargetsPath>
+    </PropertyGroup>
+    <Import Project="$(ManagedDesignTimeTargetsPath)" Condition=" '$(ManagedDesignTimeTargetsPath)' != '' And Exists('$(ManagedDesignTimeTargetsPath)') " />
+
+    <PropertyGroup>
+        <AppDesignerFolder Condition=" '$(AppDesignerFolder)' == '' ">Properties</AppDesignerFolder>
+        <AppDesignerFolderContentsVisibleOnlyInShowAllFiles Condition=" '$(AppDesignerFolderContentsVisibleOnlyInShowAllFiles)' == '' ">false</AppDesignerFolderContentsVisibleOnlyInShowAllFiles>
+        <LanguageServiceName Condition=" '$(LanguageServiceName)' == '' "></LanguageServiceName>
+        <LanguageServiceId Condition=" '$(LanguageServiceId)'=='' "></LanguageServiceId>
+        <TemplateLanguage Condition=" '$(TemplateLanguage)' == '' ">Java</TemplateLanguage>
+        <AddItemTemplatesGuid Condition=" '$(AddItemTemplatesGuid)' == '' ">{5EAED7BA-8010-454A-8797-307F9DD1962F}</AddItemTemplatesGuid>
+        <CmdUIContextGuid Condition=" '$(CmdUIContextGuid)' == '' ">{5EAED7BA-8010-454A-8797-307F9DD1962F}</CmdUIContextGuid>
+        <GeneratorsTypeGuid Condition=" '$(GeneratorsTypeGuid)' == '' ">{5EAED7BA-8010-454A-8797-307F9DD1962F}</GeneratorsTypeGuid>
+        <DesignerFunctionVisibility Condition=" '$(DesignerFunctionVisibility)' == '' ">Private</DesignerFunctionVisibility>
+        <DesignerVariableNaming Condition=" '$(DesignerVariableNaming)' == '' ">Camel</DesignerVariableNaming>
+        <DesignerHiddenCodeGeneration Condition=" '$(DesignerHiddenCodeGeneration)' == '' ">Declarations</DesignerHiddenCodeGeneration>
+        <DefineJavaItemSchemas>false</DefineJavaItemSchemas>
+    </PropertyGroup>
+
+    <ItemGroup>
+        <ProjectCapability Include="Java;Managed;ClassDesigner;SharedProjectReferences;ProjectPropertiesEditor;" />
+    </ItemGroup>
+
+    <ItemGroup Condition=" '$(DefineCommonManagedItemSchemas)' == 'true' ">
+        <PropertyPageSchema Include="$(ManagedXamlNeutralResourcesDirectory)EditorConfigFiles.xaml">
+            <Context>File</Context>
+        </PropertyPageSchema>
+        <PropertyPageSchema Include="$(ManagedXamlResourcesDirectory)EditorConfigFiles.BrowseObject.xaml">
+            <Context>BrowseObject</Context>
+        </PropertyPageSchema>
+    </ItemGroup>
+
+    <Target Name="CompileDesignTime" DependsOnTargets="_CheckCompileDesignTimePrerequisite" Condition="'$(IsCrossTargetingBuild)' != 'true'">
+        <Message Text="CompileDesignTime" />
+    </Target>
+
+</Project>

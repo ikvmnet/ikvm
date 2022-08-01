@@ -1,0 +1,21 @@
+<Project DefaultTargets="Build" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+    <PropertyGroup>
+        <MSBuildAllProjects>$(MSBuildAllProjects);$(MsBuildThisFileFullPath)</MSBuildAllProjects>
+    </PropertyGroup>
+    
+    <Import Sdk="Microsoft.NET.Sdk" Project="Sdk.targets" />
+    
+    <PropertyGroup Condition=" '$(DisableImplicitConfigurationDefines)' != 'true' ">
+        <ImplicitConfigurationDefine>$(Configuration.ToUpperInvariant())</ImplicitConfigurationDefine>
+        <ImplicitConfigurationDefine>$(ImplicitConfigurationDefine.Replace('-', '_'))</ImplicitConfigurationDefine>
+        <ImplicitConfigurationDefine>$(ImplicitConfigurationDefine.Replace('.', '_'))</ImplicitConfigurationDefine>
+        <ImplicitConfigurationDefine>$(ImplicitConfigurationDefine.Replace(' ', '_'))</ImplicitConfigurationDefine>
+        <DefineConstants>$(DefineConstants);$(ImplicitConfigurationDefine)</DefineConstants>
+    </PropertyGroup>
+    
+    <PropertyGroup>
+        <DefineConstants>$(DefineConstants);$(VersionlessImplicitFrameworkDefine);$(ImplicitFrameworkDefine);$(BackwardsCompatFrameworkDefine)</DefineConstants>
+    </PropertyGroup>
+
+    <Import Project="$(MSBuildThisFileDirectory)IKVM.NET.Sdk.Java.targets" />
+</Project>

@@ -17,6 +17,19 @@ namespace ikvmstub.Tests
     public class IkvmstubTests
     {
 
+        [TestMethod]
+        public void Foo()
+        {
+            ikvmstub.Program.Main(new[] 
+            {
+                "-bootstrap",
+                "-nostdlib",
+                @"-r:C:\Program Files (x86)\Reference Assemblies\Microsoft\Framework\.NETFramework\v4.6.1\mscorlib.dll",
+                @"C:\Program Files (x86)\Reference Assemblies\Microsoft\Framework\.NETFramework\v4.6.1\System.ServiceModel.dll",
+                "-out:nowhere.jar"
+            });
+        }
+
 //        [TestMethod]
 //        public void Can_stub_system_runtime()
 //        {
