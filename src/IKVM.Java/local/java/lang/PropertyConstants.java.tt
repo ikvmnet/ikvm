@@ -1,4 +1,4 @@
-<#@ template language="c#" hostspecific="true" #>
+<#@ template language="C#" hostspecific="true" #>
 <#@ parameter type="System.String" name="Version" #>
 <#@ parameter type="System.String" name="OpenJdkVersion" #>
 

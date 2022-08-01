@@ -117,51 +117,41 @@
     <ItemGroup>
         <Compile Include="@(OpenJdkSource)" LinkBase="openjdk" />
         <Resource Include="@(OpenJdkResource)" LinkBase="openjdk" />
-        <Resource Include="res\**\*" ResourcePath="%(RecursiveDir)%(Filename)%(Extension)" />
+        <Resource Include="local\**\*" Exclude="local\**\*.java" ResourcePath="%(RecursiveDir)%(Filename)%(Extension)" />
         <ExcludeRegex Include="@(OpenJdkExcludeRegex)" />
     </ItemGroup>
 
-    <Target Name="CreateTemplatePaths">
-        <MakeDir Directories="$(IntermediateOutputPath)src\local\java\lang" />
-        <MakeDir Directories="$(IntermediateOutputPath)res\META-INF" />
-        <MakeDir Directories="$(IntermediateOutputPath)res\nashorn" />
-    </Target>
-
-    <PropertyGroup>
-        <BeforeTransform>CreateTemplatePaths</BeforeTransform>
-    </PropertyGroup>
-
     <ItemGroup>
-        <None Include="src-in\local\java\lang\PropertyConstants.java.tt">
+        <None Include="local\java\lang\PropertyConstants.java.tt">
             <Generator>TextTemplatingFileGenerator</Generator>
-            <OutputFilePath>$([System.IO.Path]::GetFullPath('$(IntermediateOutputPath)src\local\java\lang'))</OutputFilePath>
             <OutputFileName>PropertyConstants.java</OutputFileName>
         </None>
-        <Compile Include="$(IntermediateOutputPath)src\local\java\lang\PropertyConstants.java">
+        <Compile Update="local\java\lang\PropertyConstants.java">
             <AutoGen>True</AutoGen>
+            <DependentUpon>PropertyConstants.java.tt</DependentUpon>
         </Compile>
     </ItemGroup>
 
     <ItemGroup>
-        <None Include="res-in\META-INF\MANIFEST.MF.tt">
+        <None Include="local\META-INF\MANIFEST.MF.tt">
             <Generator>TextTemplatingFileGenerator</Generator>
-            <OutputFilePath>$([System.IO.Path]::GetFullPath('$(IntermediateOutputPath)res\META-INF'))</OutputFilePath>
             <OutputFileName>MANIFEST.MF</OutputFileName>
         </None>
-        <Resource Include="$(IntermediateOutputPath)res\META-INF\MANIFEST.MF">
+        <Resource Update="local\META-INF\MANIFEST.MF">
             <AutoGen>True</AutoGen>
+            <DependentUpon>MANIFEST.MF.tt</DependentUpon>
             <ResourcePath>META-INF\MANIFEST.MF</ResourcePath>
         </Resource>
     </ItemGroup>
 
     <ItemGroup>
-        <None Include="res-in\nashorn\version.properties.tt">
+        <None Include="local\nashorn\version.properties.tt">
             <Generator>TextTemplatingFileGenerator</Generator>
-            <OutputFilePath>$([System.IO.Path]::GetFullPath('$(IntermediateOutputPath)res\nashorn'))</OutputFilePath>
             <OutputFileName>version.properties</OutputFileName>
         </None>
-        <Resource Include="$(IntermediateOutputPath)res\nashorn\version.properties">
+        <Resource Update="local\nashorn\version.properties">
             <AutoGen>True</AutoGen>
+            <DependentUpon>version.properties.tt</DependentUpon>
             <ResourcePath>nashorn/version.properties</ResourcePath>
         </Resource>
     </ItemGroup>
