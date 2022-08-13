@@ -80,9 +80,9 @@ namespace IKVM.Tests.Java.java.nio.channels
                         {
 
                         }
-                    }
 
-                    iter.remove();
+                        iter.remove();
+                    }
                 }
 
                 server.close();
@@ -110,7 +110,7 @@ namespace IKVM.Tests.Java.java.nio.channels
                 sock.close();
             });
 
-            await Task.Delay(3000);
+            await Task.Delay(5000);
             cancellationTokenSource.Cancel();
 
             await clientTask;
