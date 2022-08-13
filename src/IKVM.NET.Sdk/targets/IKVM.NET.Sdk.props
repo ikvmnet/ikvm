@@ -1,13 +1,16 @@
 <Project xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
     <PropertyGroup>
         <MSBuildAllProjects>$(MSBuildAllProjects);$(MSBuildThisFileFullPath)</MSBuildAllProjects>
-        <UsingIkvmSdk>true</UsingIkvmSdk>
+        <UsingIkvmNetSdk>true</UsingIkvmNetSdk>
+        <IkvmNetSdkDir>$(MSBuildThisFileDirectory)..\</IkvmNetSdkDir>
+        <IkvmNetSdkVersion>$([System.IO.File]::ReadAllText('$(IkvmNetSdkDir)VERSION'))</IkvmNetSdkVersion>
     </PropertyGroup>
 
     <Import Project="$(CustomBeforeIkvmNetSdkProps)" Condition=" '$(CustomBeforeIkvmNetSdkProps)' != '' And Exists('$(CustomBeforeIkvmNetSdkProps)') " />
 
     <PropertyGroup>
-        <DefaultProjectTypeGuid Condition=" '$(DefaultProjectTypeGuid)' == '' ">{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}</DefaultProjectTypeGuid>
+        <DefaultProjectTypeGuid Condition=" '$(DefaultProjectTypeGuid)' == '' ">{9A19103F-16F7-4668-BE54-9A1E7A4F7556}</DefaultProjectTypeGuid>
+        <EnableDefaultItems>true</EnableDefaultItems>
         <EnableDefaultEmbeddedResourceItems>false</EnableDefaultEmbeddedResourceItems>
         <DisableFastUpToDateCheck Condition=" '$(DisableFastUpToDateCheck)' == '' ">true</DisableFastUpToDateCheck>
         <GenerateMSBuildEditorConfigFile Condition=" '$(GenerateMSBuildEditorConfigFile)' == ''" >false</GenerateMSBuildEditorConfigFile>

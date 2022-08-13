@@ -3,12 +3,12 @@
     <Import Project="$(MSBuildThisFileDirectory)..\..\openjdk.props" />
 
     <PropertyGroup>
-        <PackageId>IKVM.Java</PackageId> 
+        <PackageId>IKVM.Java</PackageId>
         <TargetFrameworks>net461;netcoreapp3.1</TargetFrameworks>
         <AssemblyName>IKVM.Java</AssemblyName>
         <AssemblyTitle>IKVM.NET Java Standard Edition 8 Platform</AssemblyTitle>
         <Description>IKVM.NET Java Standard Edition 8 Platform</Description>
-        <TransformOnBuild>true</TransformOnBuild> 
+        <TransformOnBuild>true</TransformOnBuild>
         <Bootstrap>true</Bootstrap>
     </PropertyGroup>
 
@@ -51,13 +51,13 @@
         <!-- This is a major limitation which prevents building on Linux.
              The version of the tool that is executed should be that of the current MSBuild platform, not that being targeted.
              However, at present Frameworks builds of IKVM cannot generate Core version assemblies. -->
-        <When Condition=" '$(IkvmTargetFramework)' == 'NetCore' ">
+        <When Condition=" '$(TargetFramework)' == 'netcoreapp3.1' ">
             <PropertyGroup>
                 <_IkvmToolTargetFramework>netcoreapp3.1</_IkvmToolTargetFramework>
                 <_IkvmToolExecPrefix>dotnet exec </_IkvmToolExecPrefix>
             </PropertyGroup>
         </When>
-        <When Condition=" '$(IkvmTargetFramework)' == 'NetFramework' ">
+        <When Condition=" '$(TargetFramework)' == 'net461' ">
             <PropertyGroup>
                 <_IkvmToolTargetFramework>net461</_IkvmToolTargetFramework>
                 <_IkvmToolExecPrefix></_IkvmToolExecPrefix>
@@ -71,14 +71,14 @@
             <Private>False</Private>
             <IsIkvmRuntimeDll>true</IsIkvmRuntimeDll>
         </ProjectReference>
-        <ProjectReference Include="..\ikvmc\ikvmc.csproj" Condition=" '$(IkvmTargetFramework)' != '' ">
+        <ProjectReference Include="..\ikvmc\ikvmc.csproj" Condition=" '$(_IkvmToolTargetFramework)' != '' ">
             <PrivateAssets>All</PrivateAssets>
             <ReferenceOutputAssembly>false</ReferenceOutputAssembly>
             <Private>False</Private>
             <IsIkvmCompiler>true</IsIkvmCompiler>
             <SetTargetFramework>TargetFramework=$(_IkvmToolTargetFramework)</SetTargetFramework>
         </ProjectReference>
-        <ProjectReference Include="..\ikvmstub\ikvmstub.csproj" Condition=" '$(IkvmTargetFramework)' != '' ">
+        <ProjectReference Include="..\ikvmstub\ikvmstub.csproj" Condition=" '$(_IkvmToolTargetFramework)' != '' ">
             <PrivateAssets>All</PrivateAssets>
             <ReferenceOutputAssembly>false</ReferenceOutputAssembly>
             <Private>False</Private>
@@ -115,9 +115,12 @@
     </ItemGroup>
 
     <ItemGroup>
+        <JavaResource Include="local\**\*" Exclude="local\**\*.java" ResourcePath="%(RecursiveDir)%(Filename)%(Extension)" />
+    </ItemGroup>
+    
+    <ItemGroup>
         <Compile Include="@(OpenJdkSource)" LinkBase="openjdk" />
-        <Resource Include="@(OpenJdkResource)" LinkBase="openjdk" />
-        <Resource Include="local\**\*" Exclude="local\**\*.java" ResourcePath="%(RecursiveDir)%(Filename)%(Extension)" />
+        <JavaResource Include="@(OpenJdkResource)" LinkBase="openjdk" />
         <ExcludeRegex Include="@(OpenJdkExcludeRegex)" />
     </ItemGroup>
 
@@ -137,11 +140,11 @@
             <Generator>TextTemplatingFileGenerator</Generator>
             <OutputFileName>MANIFEST.MF</OutputFileName>
         </None>
-        <Resource Update="local\META-INF\MANIFEST.MF">
+        <JavaResource Update="local\META-INF\MANIFEST.MF">
             <AutoGen>True</AutoGen>
             <DependentUpon>MANIFEST.MF.tt</DependentUpon>
             <ResourcePath>META-INF\MANIFEST.MF</ResourcePath>
-        </Resource>
+        </JavaResource>
     </ItemGroup>
 
     <ItemGroup>
@@ -149,19 +152,19 @@
             <Generator>TextTemplatingFileGenerator</Generator>
             <OutputFileName>version.properties</OutputFileName>
         </None>
-        <Resource Update="local\nashorn\version.properties">
+        <JavaResource Update="local\nashorn\version.properties">
             <AutoGen>True</AutoGen>
             <DependentUpon>version.properties.tt</DependentUpon>
             <ResourcePath>nashorn/version.properties</ResourcePath>
-        </Resource>
+        </JavaResource>
     </ItemGroup>
 
     <ItemGroup>
         <MapFile Include="map.xml" />
     </ItemGroup>
 
-    <Import Project="$(MSBuildExtensionsPath)\Microsoft\VisualStudio\v$(VisualStudioVersion)\TextTemplating\Microsoft.TextTemplating.targets" Condition="Exists('$(MSBuildExtensionsPath)\Microsoft\VisualStudio\v$(VisualStudioVersion)\TextTemplating\Microsoft.TextTemplating.targets')" />
     <Import Project="$(MSBuildThisFileDirectory)..\IKVM.NET.Sdk\Sdk\Sdk.targets" />
+    <Import Project="$(MSBuildExtensionsPath)\Microsoft\VisualStudio\v$(VisualStudioVersion)\TextTemplating\Microsoft.TextTemplating.targets" Condition="Exists('$(MSBuildExtensionsPath)\Microsoft\VisualStudio\v$(VisualStudioVersion)\TextTemplating\Microsoft.TextTemplating.targets')" />
 
     <Target Name="GetIkvmStub" DependsOnTargets="ResolveProjectReferences">
         <MSBuild Projects="@(_MSBuildProjectReferenceExistent)" Targets="Build" BuildInParallel="$(BuildInParallel)" Properties="%(_MSBuildProjectReferenceExistent.SetConfiguration);%(_MSBuildProjectReferenceExistent.SetPlatform);%(_MSBuildProjectReferenceExistent.SetTargetFramework)" RemoveProperties="%(_MSBuildProjectReferenceExistent.GlobalPropertiesToRemove)$(_GlobalPropertiesToRemoveFromProjectReferences)" Condition=" '%(_MSBuildProjectReferenceExistent.IsIkvmStub)' == 'true' ">

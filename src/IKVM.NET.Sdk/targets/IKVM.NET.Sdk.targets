@@ -3,6 +3,10 @@
         <MSBuildAllProjects>$(MSBuildAllProjects);$(MSBuildThisFileFullPath)</MSBuildAllProjects>
     </PropertyGroup>
 
+    <ItemGroup>
+        <PackageReference Include="IKVM" Version="$(IkvmNetSdkVersion)" Condition=" '$(Bootstrap)' != 'true' " />
+    </ItemGroup>
+
     <PropertyGroup Condition=" '$(TargetFramework)' != '' ">
         <IkvmTargetFramework Condition="$([MSBuild]::IsTargetFrameworkCompatible('$(TargetFramework)', 'netstandard1.0'))">NetCore</IkvmTargetFramework>
         <IkvmTargetFramework Condition="$([MSBuild]::IsTargetFrameworkCompatible('$(TargetFramework)', 'net461'))">NetFramework</IkvmTargetFramework>

@@ -168,7 +168,7 @@
         <_IkvmCompilerResponseFile>$(IntermediateOutputPath)$(MSBuildProjectName).ikvmc.rsp</_IkvmCompilerResponseFile>
     </PropertyGroup>
 
-    <Target Name="_CoreCompile" DependsOnTargets="GetIkvmRuntime;GetIkvmCompiler;CompileJava" Inputs="$(IkvmRuntimeDll);$(KeyOriginatorFile);@(MapFile);@(ReferencePathWithRefAssemblies);@(Class);@(Resource);$(_CompileJavaStampFile)" Outputs="@(IntermediateAssembly);@(_DebugSymbolsIntermediatePath)">
+    <Target Name="_CoreCompile" DependsOnTargets="GetIkvmRuntime;GetIkvmCompiler;CompileJava" Inputs="$(IkvmRuntimeDll);$(KeyOriginatorFile);@(MapFile);@(ReferencePathWithRefAssemblies);@(Class);@(JavaResource);$(_CompileJavaStampFile)" Outputs="@(IntermediateAssembly);@(_DebugSymbolsIntermediatePath)">
         <Error Text="IKVM.Runtime.dll could not be located at '$(IkvmRuntimePath)'" Condition="!Exists('$(IkvmRuntimePath)')" />
         <Error Text="ikvmc could not be located at '$(IkvmCompilerPath)'" Condition="!Exists('$(IkvmCompilerPath)')" />
 
@@ -177,6 +177,7 @@
         <ItemGroup>
             <_ClassToCompile Include="@(Class)" />
             <_AssemblyAttributesClass Include="@(_ClassToCompile)" Condition=" '%(Filename)%(Extension)' == '__AssemblyAttributes.class' " />
+            <_AssemblyAttributesClass Include="@(_ClassToCompile)" Condition=" '%(Filename)%(Extension)' == '__AssemblyInfo.class' " />
             <_ClassToCompile Remove="@(_AssemblyAttributesClass)" />
         </ItemGroup>
 
@@ -200,7 +201,7 @@
             <_IkvmCompilerArgs Include="@(_AssemblyAttributesClass->'-assemblyattributes:%(FullPath)')" />
             <_IkvmCompilerReferencePath Include="@(ReferencePathWithRefAssemblies)" />
             <_IkvmCompilerArgs Include="@(_IkvmCompilerReferencePath->'-reference:%(FullPath)')" />
-            <_IkvmCompilerResourceItem Include="@(Resource)" ResourcePath="$([System.String]::new('%(Resource.ResourcePath)').Replace('\', '/'))" Condition=" '%(Identity)' != '' " />
+            <_IkvmCompilerResourceItem Include="@(JavaResource)" ResourcePath="$([System.String]::new('%(JavaResource.ResourcePath)').Replace('\', '/'))" Condition=" '%(Identity)' != '' " />
             <_IkvmCompilerArgs Include="@(_IkvmCompilerResourceItem->'-resource:%(ResourcePath)=%(FullPath)')" />
             <_IkvmCompilerArgs Include="-out:$(_AssemblyTempPath)$(TargetName)$(TargetExt)" />
             <_IkvmCompilerArgs Include="@(_ClassToCompile->'%(FullPath)')" />

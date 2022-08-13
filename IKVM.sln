@@ -71,33 +71,9 @@ Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "IKVM.Tool.Exe", "src\IKVM.T
 EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "IKVM.MSBuild.Tasks.Tests", "src\IKVM.MSBuild.Tasks.Tests\IKVM.MSBuild.Tasks.Tests.csproj", "{E7C0E8FA-F34C-48C6-AD55-FD9798F5BC71}"
 EndProject
-Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "sdk", "sdk", "{44F5637B-7270-4D2A-A38D-E54F512883E5}"
-EndProject
-Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "targets", "targets", "{76A71303-EEAF-4CFF-9254-B673B61DBAB9}"
-	ProjectSection(SolutionItems) = preProject
-		sdk\targets\IKVM.Java.Core.targets = sdk\targets\IKVM.Java.Core.targets
-		sdk\targets\IKVM.Java.CrossTargeting.targets = sdk\targets\IKVM.Java.CrossTargeting.targets
-		sdk\targets\IKVM.Java.CurrentVersion.targets = sdk\targets\IKVM.Java.CurrentVersion.targets
-		sdk\targets\IKVM.Java.DesignTime.targets = sdk\targets\IKVM.Java.DesignTime.targets
-		sdk\targets\IKVM.Java.props = sdk\targets\IKVM.Java.props
-		sdk\targets\IKVM.Java.targets = sdk\targets\IKVM.Java.targets
-		sdk\targets\IKVM.NET.Sdk.Java.props = sdk\targets\IKVM.NET.Sdk.Java.props
-		sdk\targets\IKVM.NET.Sdk.Java.targets = sdk\targets\IKVM.NET.Sdk.Java.targets
-		sdk\targets\IKVM.NET.Sdk.props = sdk\targets\IKVM.NET.Sdk.props
-		sdk\targets\IKVM.NET.Sdk.targets = sdk\targets\IKVM.NET.Sdk.targets
-	EndProjectSection
-EndProject
-Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Sdk", "Sdk", "{C3DBFA04-BC4C-4437-ACD0-0ACB9612D7FF}"
-	ProjectSection(SolutionItems) = preProject
-		sdk\Sdk\Sdk.props = sdk\Sdk\Sdk.props
-		sdk\Sdk\Sdk.targets = sdk\Sdk\Sdk.targets
-	EndProjectSection
-EndProject
-Project("{13B669BE-BB05-4DDF-9536-439F39A36129}") = "IKVM.Java", "src\IKVM.Java\IKVM.Java.csproj", "{ABD81C7E-F986-4018-986E-ACAF82C64D3A}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "IKVM.Java", "src\IKVM.Java\IKVM.Java.msbuildproj", "{ABD81C7E-F986-4018-986E-ACAF82C64D3A}"
 EndProject
 Project("{13B669BE-BB05-4DDF-9536-439F39A36129}") = "IKVM.NET.Sdk", "src\IKVM.NET.Sdk\IKVM.NET.Sdk.msbuildproj", "{704BD7C7-7746-4D72-A86E-ECFE7BBD80CC}"
-EndProject
-Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "TestSdkProj", "src\TestSdkProj\TestSdkProj.csproj", "{DD814AB9-39FE-48D9-97E6-B1DA054B8C52}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
@@ -209,10 +185,6 @@ Global
 		{704BD7C7-7746-4D72-A86E-ECFE7BBD80CC}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{704BD7C7-7746-4D72-A86E-ECFE7BBD80CC}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{704BD7C7-7746-4D72-A86E-ECFE7BBD80CC}.Release|Any CPU.Build.0 = Release|Any CPU
-		{DD814AB9-39FE-48D9-97E6-B1DA054B8C52}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
-		{DD814AB9-39FE-48D9-97E6-B1DA054B8C52}.Debug|Any CPU.Build.0 = Debug|Any CPU
-		{DD814AB9-39FE-48D9-97E6-B1DA054B8C52}.Release|Any CPU.ActiveCfg = Release|Any CPU
-		{DD814AB9-39FE-48D9-97E6-B1DA054B8C52}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
@@ -222,8 +194,6 @@ Global
 		{F2A81A31-C65F-4B4E-A6FE-B14E71515EA3} = {0606E530-F834-44A3-9B4E-37852A06D11B}
 		{A275C11D-F06E-475F-AEBA-7F7A1EF8D140} = {B6083619-C4E8-4D8E-95BD-217E3663134C}
 		{E566FE94-C551-43A7-843C-5E8199CA7373} = {B6083619-C4E8-4D8E-95BD-217E3663134C}
-		{76A71303-EEAF-4CFF-9254-B673B61DBAB9} = {44F5637B-7270-4D2A-A38D-E54F512883E5}
-		{C3DBFA04-BC4C-4437-ACD0-0ACB9612D7FF} = {44F5637B-7270-4D2A-A38D-E54F512883E5}
 	EndGlobalSection
 	GlobalSection(ExtensibilityGlobals) = postSolution
 		SolutionGuid = {A03ACB78-6C3F-4E09-BAF1-16E41D5A3945}

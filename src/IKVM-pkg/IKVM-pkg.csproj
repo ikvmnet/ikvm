@@ -1,4 +1,4 @@
-﻿<Project Sdk="Microsoft.Build.NoTargets/3.5.0">
+﻿<Project Sdk="Microsoft.Build.NoTargets/3.5.6">
 
     <PropertyGroup>
         <PackageId>IKVM</PackageId>
@@ -61,7 +61,7 @@
     </ItemGroup>
 
     <ItemGroup>
-        <ProjectReference Include="..\IKVM.Java\IKVM.Java.csproj">
+        <ProjectReference Include="..\IKVM.Java\IKVM.Java.msbuildproj">
             <ReferenceOutputAssembly>True</ReferenceOutputAssembly>
             <PrivateAssets>all</PrivateAssets>
         </ProjectReference>

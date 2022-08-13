@@ -1,21 +1,33 @@
-<Project Sdk="Microsoft.Build.NoTargets/3.5.6">
-  <PropertyGroup>
-    <TargetFramework>netstandard2.0</TargetFramework>
-  </PropertyGroup>
-  <ItemGroup>
-    <None Include="Sdk\**\*" />
-  </ItemGroup>
-  <ItemGroup>
-    <None Include="targets\IKVM.Java.Core.targets" />
-    <None Include="targets\IKVM.Java.CrossTargeting.targets" />
-    <None Include="targets\IKVM.Java.CurrentVersion.targets" />
-    <None Include="targets\IKVM.Java.DesignTime.targets" />
-    <None Include="targets\IKVM.Java.props" />
-    <None Include="targets\IKVM.Java.targets" />
-    <None Include="targets\IKVM.NET.Sdk.Java.props" />
-    <None Include="targets\IKVM.NET.Sdk.Java.targets" />
-    <None Include="targets\IKVM.NET.Sdk.props" />
-    <None Include="targets\IKVM.NET.Sdk.targets" />
-    <None Include="targets\Java.ProjectItemsSchema.xaml" />
-  </ItemGroup>
+﻿<Project Sdk="Microsoft.Build.NoTargets/3.5.6">
+    <PropertyGroup>
+        <TargetFramework>netstandard2.0</TargetFramework>
+        <PackageLicenseFile>LICENSE.md</PackageLicenseFile>
+        <PackageReadmeFile>README.md</PackageReadmeFile>
+        <Description>Java SE 8 Virtual Machine for .NET (Java Language SDK)</Description>
+        <GenerateDocumentationFile>false</GenerateDocumentationFile>
+        <IncludeBuildOutput>false</IncludeBuildOutput>
+    </PropertyGroup>
+
+    <PropertyGroup>
+        <PublishRepositoryUrl>true</PublishRepositoryUrl>
+        <EmbedUntrackedSources>true</EmbedUntrackedSources>
+        <IncludeSymbols>true</IncludeSymbols>
+        <SymbolPackageFormat>snupkg</SymbolPackageFormat>
+    </PropertyGroup>
+    
+    <ItemGroup>
+        <None Include="Sdk\**\*" Pack="true" PackagePath="Sdk\%(RecursiveDir)%(Filename)%(Extension)" />
+        <None Include="targets\**\*" Pack="true" PackagePath="targets\%(RecursiveDir)%(Filename)%(Extension)" />
+        <None Include="..\..\LICENSE.md" Pack="true" PackagePath="." />
+        <None Include="..\..\README.md" Pack="true" PackagePath="." />
+    </ItemGroup>
+
+    <Target Name="MakeIkvmVersionFile" Outputs="$(IntermediateOutputPath)VERSION" BeforeTargets="_GetPackageFiles">
+        <WriteLinesToFile File="$(IntermediateOutputPath)VERSION" Lines="$(Version)" Overwrite="true" WriteOnlyWhenDifferent="true" />
+        <ItemGroup>
+            <_PackageFiles Include="$(IntermediateOutputPath)VERSION" PackagePath="." />
+        </ItemGroup>
+        <Message Text="AllowedOutputExtensionsInPackageBuildOutputFolder : $(AllowedOutputExtensionsInPackageBuildOutputFolder)" />
+    </Target>
+
 </Project>

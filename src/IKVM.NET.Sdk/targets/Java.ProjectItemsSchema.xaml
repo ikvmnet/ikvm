@@ -2,11 +2,19 @@
 
     <ContentType
         Name="JavaSourceFile"
-        DisplayName="Java file"
+        DisplayName="Java source file"
         ItemType="Compile">
     </ContentType>
 
-    <ItemType Name="Compile" UpToDateCheckInput="true" DisplayName="Compile"/>
+    <ContentType
+        Name="JavaClassFile"
+        DisplayName="Java class file"
+        ItemType="Class">
+    </ContentType>
+
+    <ItemType Name="Compile" UpToDateCheckInput="true" DisplayName="Compile" />
+    <ItemType Name="Class" UpToDateCheckInput="true" DisplayName="Class" />
 
     <FileExtension Name=".java" ContentType="JavaSourceFile"/>
+    <FileExtension Name=".class" ContentType="JavaClassFile"/>
 </ProjectSchemaDefinitions>
