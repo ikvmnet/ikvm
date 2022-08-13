@@ -1,0 +1,21 @@
+<Project Sdk="Microsoft.Build.NoTargets/3.5.6">
+  <PropertyGroup>
+    <TargetFramework>netstandard2.0</TargetFramework>
+  </PropertyGroup>
+  <ItemGroup>
+    <None Include="Sdk\**\*" />
+  </ItemGroup>
+  <ItemGroup>
+    <None Include="targets\IKVM.Java.Core.targets" />
+    <None Include="targets\IKVM.Java.CrossTargeting.targets" />
+    <None Include="targets\IKVM.Java.CurrentVersion.targets" />
+    <None Include="targets\IKVM.Java.DesignTime.targets" />
+    <None Include="targets\IKVM.Java.props" />
+    <None Include="targets\IKVM.Java.targets" />
+    <None Include="targets\IKVM.NET.Sdk.Java.props" />
+    <None Include="targets\IKVM.NET.Sdk.Java.targets" />
+    <None Include="targets\IKVM.NET.Sdk.props" />
+    <None Include="targets\IKVM.NET.Sdk.targets" />
+    <None Include="targets\Java.ProjectItemsSchema.xaml" />
+  </ItemGroup>
+</Project>

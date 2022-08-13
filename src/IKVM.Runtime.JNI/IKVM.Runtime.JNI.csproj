@@ -62,7 +62,7 @@
         <ProjectReference Include="..\IKVM.Runtime-ref\IKVM.Runtime-ref.csproj">
             <PrivateAssets>All</PrivateAssets>
         </ProjectReference>
-        <ProjectReference Include="..\IKVM.Java\IKVM.Java.msbuildproj">
+        <ProjectReference Include="..\IKVM.Java\IKVM.Java.csproj">
             <PrivateAssets>All</PrivateAssets>
         </ProjectReference>
     </ItemGroup>

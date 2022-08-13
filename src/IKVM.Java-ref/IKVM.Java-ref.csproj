@@ -2,8 +2,8 @@
 
     <PropertyGroup>
         <PackageId>IKVM.Java-ref</PackageId>
-        <TargetFrameworks>net461;netcoreapp3.1</TargetFrameworks>
-        <AssemblyName>IKVM.Java</AssemblyName>
+        <TargetFrameworks>net461;netcoreapp3.1 </TargetFrameworks>
+        <AssemblyName>IKVM.Java</AssemblyName> 
     </PropertyGroup>
 
     <ItemGroup>

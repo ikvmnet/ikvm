@@ -1,20 +1,28 @@
 <Project xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
     <PropertyGroup>
         <MSBuildAllProjects>$(MSBuildAllProjects);$(MsBuildThisFileFullPath)</MSBuildAllProjects>
-        <UsingIkvmSdk>true</UsingIkvmSdk>
         <UsingMicrosoftNETSdk>true</UsingMicrosoftNETSdk>
+        <UsingIkvmSdk>true</UsingIkvmSdk>
+        <UsingNETSdkDefaults>true</UsingNETSdkDefaults>
     </PropertyGroup>
-    
+
     <Import Project="$(CustomBeforeIkvmNetSdkProps)" Condition=" '$(CustomBeforeIkvmNetSdkProps)' != '' And Exists('$(CustomBeforeIkvmNetSdkProps)') " />
-    
+
     <PropertyGroup>
         <EnableDefaultEmbeddedResourceItems>false</EnableDefaultEmbeddedResourceItems>
         <GenerateMSBuildEditorConfigFile Condition=" '$(GenerateMSBuildEditorConfigFile)' == ''" >false</GenerateMSBuildEditorConfigFile>
         <DisableFastUpToDateCheck Condition=" '$(DisableFastUpToDateCheck)' == '' ">true</DisableFastUpToDateCheck>
     </PropertyGroup>
-    
+
+     <!--Language specific functionality.--> 
     <Import Project="$(MSBuildThisFileDirectory)IKVM.NET.Sdk.Java.props" />
     <Import Project="$(LanguageProps)" Condition="Exists('$(LanguageProps)')" />
-    <Import Sdk="Microsoft.NET.Sdk" Project="Sdk.props" />
+
+     <!--Blank targets to be overridden later.--> 
+    <Target Name="CreateManifestResourceNames" />
+    <Target Name="CompileDesignTime" />
+
+    <Import Sdk="Microsoft.NET.Sdk" Project="Sdk.props" Condition=" '$(MicrosoftCommonPropsHasBeenImported)' != 'true' " />
+
     <Import Project="$(CustomAfterIkvmNetSdkProps)" Condition=" '$(CustomAfterIkvmNetSdkProps)' != '' And Exists('$(CustomAfterIkvmNetSdkProps)') " />
 </Project>
