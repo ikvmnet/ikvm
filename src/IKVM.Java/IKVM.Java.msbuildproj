@@ -132,7 +132,7 @@
             <Generator>TextTemplatingFileGenerator</Generator>
             <OutputFileName>PropertyConstants.java</OutputFileName>
         </None>
-        <Compile Update="local\java\lang\PropertyConstants.java">
+        <Compile Include="local\java\lang\PropertyConstants.java">
             <AutoGen>True</AutoGen>
             <DependentUpon>PropertyConstants.java.tt</DependentUpon>
         </Compile>
@@ -143,7 +143,7 @@
             <Generator>TextTemplatingFileGenerator</Generator>
             <OutputFileName>MANIFEST.MF</OutputFileName>
         </None>
-        <JavaResource Update="local\META-INF\MANIFEST.MF">
+        <JavaResource Include="local\META-INF\MANIFEST.MF">
             <AutoGen>True</AutoGen>
             <DependentUpon>MANIFEST.MF.tt</DependentUpon>
             <ResourcePath>META-INF\MANIFEST.MF</ResourcePath>
@@ -155,7 +155,7 @@
             <Generator>TextTemplatingFileGenerator</Generator>
             <OutputFileName>version.properties</OutputFileName>
         </None>
-        <JavaResource Update="local\nashorn\version.properties">
+        <JavaResource Include="local\nashorn\version.properties">
             <AutoGen>True</AutoGen>
             <DependentUpon>version.properties.tt</DependentUpon>
             <ResourcePath>nashorn/version.properties</ResourcePath>
