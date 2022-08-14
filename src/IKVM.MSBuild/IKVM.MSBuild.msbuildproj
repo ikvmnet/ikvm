@@ -69,12 +69,6 @@
         </PublishProjectReference>
     </ItemGroup>
 
-    <ItemGroup>
-      <None Update="build\netstandard2.0\IKVM.MSBuild.props">
-        <PackagePath>build\%(RecursiveDir)%(Filename)%(Extension)</PackagePath>
-      </None>
-    </ItemGroup>
-
     <Target Name="MakeGeneratedPropsFile" Outputs="$(IntermediateOutputPath)generated.props" BeforeTargets="_GetPackageFiles">
         <ItemGroup>
             <_GeneratedPropsFileLine Include="&lt;Project&gt;&lt;PropertyGroup&gt;&lt;IkvmVersion&gt;$(Version)&lt;/IkvmVersion&gt;&lt;/PropertyGroup&gt;&lt;/Project&gt;" />
