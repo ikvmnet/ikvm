@@ -37,6 +37,14 @@
             <Targets>IKVM-pkg:Pack</Targets>
             <Properties>$(PackProperties);PackageOutputPath=$(ArtifactStagingDirectory)\nuget</Properties>
         </TargetsForPublish>
+        <TargetsForPublish Include="$(SolutionFile)">
+            <Targets>IKVM_MSBuild:Pack</Targets>
+            <Properties>$(PackProperties);PackageOutputPath=$(ArtifactStagingDirectory)\nuget</Properties>
+        </TargetsForPublish>
+        <TargetsForPublish Include="$(SolutionFile)">
+            <Targets>IKVM_NET_Sdk:Pack</Targets>
+            <Properties>$(PackProperties);PackageOutputPath=$(ArtifactStagingDirectory)\nuget</Properties>
+        </TargetsForPublish>
 
         <TargetsForPublish Include="$(SolutionFile)">
             <Targets>ikvm:Publish</Targets>

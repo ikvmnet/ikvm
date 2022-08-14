@@ -3,13 +3,11 @@
     <PropertyGroup>
         <PackageId>IKVM</PackageId>
         <TargetFrameworks>net461;netcoreapp3.1</TargetFrameworks>
-        <IncludeBuildOutput>true</IncludeBuildOutput>
         <TargetsForTfmSpecificContentInPackage>$(TargetsForTfmSpecificContentInPackage);ProjectReferencesToPackage</TargetsForTfmSpecificContentInPackage>
         <TargetsForTfmSpecificDebugSymbolsInPackage>$(TargetsForTfmSpecificContentInPackage);ProjectReferencesToDebugSymbolsPackage</TargetsForTfmSpecificDebugSymbolsInPackage>
         <PackageLicenseFile>LICENSE.md</PackageLicenseFile>
         <PackageReadmeFile>README.md</PackageReadmeFile>
         <Description>Java SE 8 Virtual Machine for .NET</Description>
-        <GenerateDocumentationFile>false</GenerateDocumentationFile>
     </PropertyGroup>
 
     <PropertyGroup>
@@ -62,20 +60,23 @@
 
     <ItemGroup>
         <ProjectReference Include="..\IKVM.Java\IKVM.Java.msbuildproj">
-            <ReferenceOutputAssembly>True</ReferenceOutputAssembly>
+            <ReferenceOutputAssembly>true</ReferenceOutputAssembly>
             <PrivateAssets>all</PrivateAssets>
         </ProjectReference>
         <ProjectReference Include="..\IKVM.Reflection\IKVM.Reflection.csproj">
-            <ReferenceOutputAssembly>True</ReferenceOutputAssembly>
+            <ReferenceOutputAssembly>true</ReferenceOutputAssembly>
             <PrivateAssets>all</PrivateAssets>
         </ProjectReference>
         <ProjectReference Include="..\IKVM.Runtime\IKVM.Runtime.csproj">
-            <ReferenceOutputAssembly>True</ReferenceOutputAssembly>
+            <ReferenceOutputAssembly>true</ReferenceOutputAssembly>
             <PrivateAssets>all</PrivateAssets>
         </ProjectReference>
         <ProjectReference Include="..\IKVM.Runtime.JNI\IKVM.Runtime.JNI.csproj">
-            <ReferenceOutputAssembly>True</ReferenceOutputAssembly>
+            <ReferenceOutputAssembly>true</ReferenceOutputAssembly>
             <PrivateAssets>all</PrivateAssets>
+        </ProjectReference>
+        <ProjectReference Include="..\IKVM.MSBuild\IKVM.MSBuild.msbuildproj">
+            <ReferenceOutputAssembly>true</ReferenceOutputAssembly>
         </ProjectReference>
     </ItemGroup>
 
