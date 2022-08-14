@@ -1,0 +1,18 @@
+<Project xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+    <PropertyGroup>
+        <MSBuildAllProjects>$(MSBuildAllProjects);$(MSBuildThisFileFullPath)</MSBuildAllProjects>
+    </PropertyGroup>
+
+    <PropertyGroup>
+        <IkvmMSBuildTaskFolder Condition=" '$(MSBuildRuntimeType)' == 'Core' ">netcoreapp3.1</IkvmMSBuildTaskFolder>
+        <IkvmMSBuildTaskFolder Condition=" '$(MSBuildRuntimeType)' != 'Core' ">net472</IkvmMSBuildTaskFolder>
+        <IkvmMSBuildTaskAssembly>$(MSBuildThisFileDirectory)..\..\tasks\$(IkvmNetSdkTaskFolder)\IKVM.MSBuild.Tasks.dll</IkvmMSBuildTaskAssembly>
+    </PropertyGroup>
+
+    <UsingTask TaskName="IkvmGetReferenceAssemblies" AssemblyFile="$(IkvmMSBuildTaskAssembly)" Condition="Exists('$(IkvmMSBuildTaskAssembly)')" />
+    <UsingTask TaskName="IkvmCompiler" AssemblyFile="$(IkvmMSBuildTaskAssembly)" Condition="Exists('$(IkvmMSBuildTaskAssembly)')" />
+    <UsingTask TaskName="IkvmImporter" AssemblyFile="$(IkvmMSBuildTaskAssembly)" Condition="Exists('$(IkvmMSBuildTaskAssembly)')" />
+    <UsingTask TaskName="IkvmCalculateMD5" AssemblyFile="$(IkvmMSBuildTaskAssembly)" Condition="Exists('$(IkvmMSBuildTaskAssembly)')" />
+    <UsingTask TaskName="IkvmReferenceItemPrepare" AssemblyFile="$(IkvmMSBuildTaskAssembly)" Condition="Exists('$(IkvmMSBuildTaskAssembly)')" />
+
+</Project>
