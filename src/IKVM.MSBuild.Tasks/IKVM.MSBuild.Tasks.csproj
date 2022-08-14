@@ -16,7 +16,7 @@
 
     <ItemGroup>
         <ProjectReference Include="..\IKVM.Java\IKVM.Java.msbuildproj" />
-        <ProjectReference Include="..\IKVM.Tool\IKVM.Tool.csproj" AdditionalProperties="IncludeTools=false" />
+        <ProjectReference Include="..\IKVM.Tool\IKVM.Tool.csproj" />
         <ProjectReference Include="..\IKVM.Util\IKVM.Util.csproj" />
     </ItemGroup>
 

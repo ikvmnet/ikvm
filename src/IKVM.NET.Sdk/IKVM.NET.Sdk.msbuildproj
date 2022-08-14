@@ -1,4 +1,5 @@
 ﻿<Project Sdk="Microsoft.Build.NoTargets/3.5.6">
+
     <PropertyGroup>
         <TargetFramework>netstandard2.0</TargetFramework>
         <PackageLicenseFile>LICENSE.md</PackageLicenseFile>
@@ -10,9 +11,6 @@
 
     <PropertyGroup>
         <PublishRepositoryUrl>true</PublishRepositoryUrl>
-        <EmbedUntrackedSources>true</EmbedUntrackedSources>
-        <IncludeSymbols>true</IncludeSymbols>
-        <SymbolPackageFormat>snupkg</SymbolPackageFormat>
     </PropertyGroup>
     
     <ItemGroup>
@@ -22,12 +20,14 @@
         <None Include="..\..\README.md" Pack="true" PackagePath="." />
     </ItemGroup>
 
-    <Target Name="MakeIkvmVersionFile" Outputs="$(IntermediateOutputPath)VERSION" BeforeTargets="_GetPackageFiles">
-        <WriteLinesToFile File="$(IntermediateOutputPath)VERSION" Lines="$(Version)" Overwrite="true" WriteOnlyWhenDifferent="true" />
+    <Target Name="MakeGeneratedPropsFile" Outputs="$(IntermediateOutputPath)generated.props" BeforeTargets="_GetPackageFiles">
         <ItemGroup>
-            <_PackageFiles Include="$(IntermediateOutputPath)VERSION" PackagePath="." />
+            <_GeneratedPropsFileLine Include="&lt;Project&gt;&lt;PropertyGroup&gt;&lt;IkvmVersion&gt;$(Version)&lt;/IkvmVersion&gt;&lt;/PropertyGroup&gt;&lt;/Project&gt;" />
         </ItemGroup>
-        <Message Text="AllowedOutputExtensionsInPackageBuildOutputFolder : $(AllowedOutputExtensionsInPackageBuildOutputFolder)" />
+        <WriteLinesToFile File="$(IntermediateOutputPath)generated.props" Lines="@(_GeneratedPropsFileLine)" Overwrite="true" WriteOnlyWhenDifferent="true" />
+        <ItemGroup>
+            <_PackageFiles Include="$(IntermediateOutputPath)generated.props" PackagePath="targets\generated.props" />
+        </ItemGroup>
     </Target>
-
+    
 </Project>

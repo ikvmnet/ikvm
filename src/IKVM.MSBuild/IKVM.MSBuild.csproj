@@ -1,0 +1,82 @@
+﻿<Project Sdk="Microsoft.Build.NoTargets/3.5.6">
+
+    <PropertyGroup>
+        <TargetFramework>netstandard2.0</TargetFramework>
+        <PackageLicenseFile>LICENSE.md</PackageLicenseFile>
+        <PackageReadmeFile>README.md</PackageReadmeFile>
+        <Description>Java SE 8 Virtual Machine for .NET (MSBuild Common Items)</Description>
+        <GenerateDocumentationFile>false</GenerateDocumentationFile>
+        <IncludeBuildOutput>false</IncludeBuildOutput>
+    </PropertyGroup>
+
+    <PropertyGroup>
+        <PublishRepositoryUrl>true</PublishRepositoryUrl>
+    </PropertyGroup>
+
+    <ItemGroup>
+        <None Include="build\**\*" Pack="true" PackagePath="build\%(RecursiveDir)%(Filename)%(Extension)" />
+    </ItemGroup>
+
+    <ItemGroup>
+        <None Include="..\..\LICENSE.md" Pack="true" PackagePath="." />
+        <None Include="..\..\README.md" Pack="true" PackagePath="." />
+    </ItemGroup>
+
+    <ItemGroup>
+        <PublishProjectReference Include="..\IKVM.MSBuild.Tasks\IKVM.MSBuild.Tasks.csproj">
+            <SetTargetFramework>TargetFramework=net472</SetTargetFramework>
+            <PublishPackagePath>tasks\net472</PublishPackagePath>
+        </PublishProjectReference>
+        <PublishProjectReference Include="..\IKVM.MSBuild.Tasks\IKVM.MSBuild.Tasks.csproj">
+            <SetTargetFramework>TargetFramework=netcoreapp3.1</SetTargetFramework>
+            <PublishPackagePath>tasks\netcoreapp3.1</PublishPackagePath>
+        </PublishProjectReference>
+    </ItemGroup>
+
+    <ItemGroup>
+        <PublishProjectReference Include="..\ikvmc\ikvmc.csproj">
+            <SetTargetFramework>TargetFramework=net461</SetTargetFramework>
+            <PublishPackagePath>bin\ikvmc\net461\any</PublishPackagePath>
+            <PublishProperties></PublishProperties>
+        </PublishProjectReference>
+        <PublishProjectReference Include="..\ikvmc\ikvmc.csproj">
+            <SetTargetFramework>TargetFramework=netcoreapp3.1</SetTargetFramework>
+            <PublishPackagePath>bin\ikvmc\netcoreapp3.1\win7-x64</PublishPackagePath>
+            <PublishProperties>RuntimeIdentifier=win7-x64</PublishProperties>
+        </PublishProjectReference>
+        <PublishProjectReference Include="..\ikvmc\ikvmc.csproj">
+            <SetTargetFramework>TargetFramework=netcoreapp3.1</SetTargetFramework>
+            <PublishPackagePath>bin\ikvmc\netcoreapp3.1\linux-x64\</PublishPackagePath>
+            <PublishProperties>RuntimeIdentifier=linux-x64</PublishProperties>
+        </PublishProjectReference>
+    </ItemGroup>
+
+    <ItemGroup>
+        <PublishProjectReference Include="..\ikvmstub\ikvmstub.csproj">
+            <SetTargetFramework>TargetFramework=net461</SetTargetFramework>
+            <PublishPackagePath>bin\ikvmstub\net461\any</PublishPackagePath>
+            <PublishProperties></PublishProperties>
+        </PublishProjectReference>
+        <PublishProjectReference Include="..\ikvmstub\ikvmstub.csproj">
+            <SetTargetFramework>TargetFramework=netcoreapp3.1</SetTargetFramework>
+            <PublishPackagePath>bin\ikvmstub\netcoreapp3.1\win7-x64</PublishPackagePath>
+            <PublishProperties>RuntimeIdentifier=win7-x64</PublishProperties>
+        </PublishProjectReference>
+        <PublishProjectReference Include="..\ikvmstub\ikvmstub.csproj">
+            <SetTargetFramework>TargetFramework=netcoreapp3.1</SetTargetFramework>
+            <PublishPackagePath>bin\ikvmstub\netcoreapp3.1\linux-x64\</PublishPackagePath>
+            <PublishProperties>RuntimeIdentifier=linux-x64</PublishProperties>
+        </PublishProjectReference>
+    </ItemGroup>
+
+    <Target Name="MakeGeneratedPropsFile" Outputs="$(IntermediateOutputPath)generated.props" BeforeTargets="_GetPackageFiles">
+        <ItemGroup>
+            <_GeneratedPropsFileLine Include="&lt;Project&gt;&lt;PropertyGroup&gt;&lt;IkvmVersion&gt;$(Version)&lt;/IkvmVersion&gt;&lt;/PropertyGroup&gt;&lt;/Project&gt;" />
+        </ItemGroup>
+        <WriteLinesToFile File="$(IntermediateOutputPath)generated.props" Lines="@(_GeneratedPropsFileLine)" Overwrite="true" WriteOnlyWhenDifferent="true" />
+        <ItemGroup>
+            <_PackageFiles Include="$(IntermediateOutputPath)generated.props" PackagePath="targets\generated.props" />
+        </ItemGroup>
+    </Target>
+
+</Project>

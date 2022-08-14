@@ -75,6 +75,8 @@ Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "IKVM.Java", "src\IKVM.Java\
 EndProject
 Project("{13B669BE-BB05-4DDF-9536-439F39A36129}") = "IKVM.NET.Sdk", "src\IKVM.NET.Sdk\IKVM.NET.Sdk.msbuildproj", "{704BD7C7-7746-4D72-A86E-ECFE7BBD80CC}"
 EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "IKVM.MSBuild", "src\IKVM.MSBuild\IKVM.MSBuild.csproj", "{7EDDDBF8-125C-4721-97B7-CD8C72D2FE55}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -185,6 +187,10 @@ Global
 		{704BD7C7-7746-4D72-A86E-ECFE7BBD80CC}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{704BD7C7-7746-4D72-A86E-ECFE7BBD80CC}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{704BD7C7-7746-4D72-A86E-ECFE7BBD80CC}.Release|Any CPU.Build.0 = Release|Any CPU
+		{7EDDDBF8-125C-4721-97B7-CD8C72D2FE55}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{7EDDDBF8-125C-4721-97B7-CD8C72D2FE55}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{7EDDDBF8-125C-4721-97B7-CD8C72D2FE55}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{7EDDDBF8-125C-4721-97B7-CD8C72D2FE55}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE

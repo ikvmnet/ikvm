@@ -1,0 +1,29 @@
+<Project xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+    <PropertyGroup>
+        <MSBuildAllProjects>$(MSBuildAllProjects);$(MSBuildThisFileFullPath)</MSBuildAllProjects>
+    </PropertyGroup>
+
+    <PropertyGroup>
+        <IkvmNetSdkTaskFolder Condition=" '$(MSBuildRuntimeType)' == 'Core' ">netcoreapp3.1</IkvmNetSdkTaskFolder>
+        <IkvmNetSdkTaskFolder Condition=" '$(MSBuildRuntimeType)' != 'Core' ">net472</IkvmNetSdkTaskFolder>
+        <IkvmNetSdkTaskAssembly>$(IkvmDir)tasks\$(IkvmTaskFolder)\IKVM.MSBuild.Tasks.dll</IkvmNetSdkTaskAssembly>
+    </PropertyGroup>
+
+    <UsingTask TaskName="IkvmGetReferenceAssemblies" AssemblyFile="$(IkvmTaskAssembly)" Condition="Exists('$(IkvmTaskAssembly)')" />
+    <UsingTask TaskName="IkvmCompiler" AssemblyFile="$(IkvmTaskAssembly)" Condition="Exists('$(IkvmTaskAssembly)')" />
+    <UsingTask TaskName="IkvmCalculateMD5" AssemblyFile="$(IkvmTaskAssembly)" Condition="Exists('$(IkvmTaskAssembly)')" />
+    <UsingTask TaskName="IkvmReferenceItemPrepare" AssemblyFile="$(IkvmTaskAssembly)" Condition="Exists('$(IkvmTaskAssembly)')" />
+
+    <Target Name="_BuildReferenceStubs" DependsOnTargets="ResolveIkvmStub;ResolveReferenceStubs" Inputs="%(ReferenceStub.AssemblyFile)" Outputs="%(ReferenceStub.Identity)">
+        <Error Text="_BuildReferenceStubs not implemented." />
+    </Target>
+
+    <Target Name="_CompileJava" DependsOnTargets="ResolveJavaCompiler;BuildReferenceStubs" Inputs="@(Compile);@(Classpath)" Outputs="$(_CompileJavaStampFile)">
+        <Error Text="_CompileJava not implemented." />
+    </Target>
+
+    <Target Name="_CoreCompile" DependsOnTargets="ResolveIkvmAssemblies;ResolveIkvmCompiler;CompileJava" Inputs="$(IkvmRuntimeAssembly);$(KeyOriginatorFile);@(MapFile);@(ReferencePathWithRefAssemblies);@(Class);@(JavaResource);$(_CompileJavaStampFile)" Outputs="@(IntermediateAssembly);@(_DebugSymbolsIntermediatePath)">
+        <Error Text="_CoreCompile not implemented." />
+    </Target>
+
+</Project>

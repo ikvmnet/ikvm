@@ -4,7 +4,8 @@
     </PropertyGroup>
 
     <ItemGroup>
-        <PackageReference Include="IKVM" Version="$(IkvmNetSdkVersion)" Condition=" '$(Bootstrap)' != 'true' " />
+        <PackageReference Include="IKVM" Version="$(IkvmVersion)" Condition=" '$(DisableImplicitIkvmPackageReference)' != 'true' " />
+        <PackageReference Include="IKVM.MSBuild" Version="$(IkvmVersion)" Condition=" '$(DisableImplicitIkvmMSBuildPackageReference)' != 'true' " />
     </ItemGroup>
 
     <PropertyGroup Condition=" '$(TargetFramework)' != '' ">
