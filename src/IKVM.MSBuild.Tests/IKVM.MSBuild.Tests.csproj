@@ -30,7 +30,7 @@
     </ItemGroup>
     
     <ItemGroup Condition=" '$(TargetFramework)' != '' ">
-        <PackageProjectReference Include="..\IKVM-pkg\IKVM-pkg.msbuildproj" />
+        <PackageProjectReference Include="..\IKVM-pkg\IKVM-pkg.csproj" />
         <PackageProjectReference Include="..\IKVM.MSBuild\IKVM.MSBuild.msbuildproj" />
     </ItemGroup>
 

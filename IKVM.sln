@@ -75,7 +75,7 @@ Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "IKVM.NET.Sdk", "src\IKVM.NE
 EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "IKVM.MSBuild", "src\IKVM.MSBuild\IKVM.MSBuild.msbuildproj", "{AE5BFBC6-7DD4-4ACA-BEA7-86F842F38B64}"
 EndProject
-Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "IKVM-pkg", "src\IKVM-pkg\IKVM-pkg.msbuildproj", "{95F23908-2D65-40C7-9EF1-B5C8543503AA}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "IKVM-pkg", "src\IKVM-pkg\IKVM-pkg.csproj", "{95F23908-2D65-40C7-9EF1-B5C8543503AA}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
