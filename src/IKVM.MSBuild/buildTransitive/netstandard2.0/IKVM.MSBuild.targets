@@ -7,6 +7,7 @@
         <IkvmMSBuildTaskFolder Condition=" '$(MSBuildRuntimeType)' == 'Core' ">netcoreapp3.1</IkvmMSBuildTaskFolder>
         <IkvmMSBuildTaskFolder Condition=" '$(MSBuildRuntimeType)' != 'Core' ">net472</IkvmMSBuildTaskFolder>
         <IkvmMSBuildTaskAssembly>$(MSBuildThisFileDirectory)..\..\tasks\$(IkvmMSBuildTaskFolder)\IKVM.MSBuild.Tasks.dll</IkvmMSBuildTaskAssembly>
+        <IkvmToolsPath>$(MSBuildThisFileDirectory)..\..\bin\</IkvmToolsPath>
     </PropertyGroup>
 
     <UsingTask TaskName="IkvmGetReferenceAssemblies" AssemblyFile="$(IkvmMSBuildTaskAssembly)" Condition="Exists('$(IkvmMSBuildTaskAssembly)')" />
@@ -14,5 +15,11 @@
     <UsingTask TaskName="IkvmImporter" AssemblyFile="$(IkvmMSBuildTaskAssembly)" Condition="Exists('$(IkvmMSBuildTaskAssembly)')" />
     <UsingTask TaskName="IkvmCalculateMD5" AssemblyFile="$(IkvmMSBuildTaskAssembly)" Condition="Exists('$(IkvmMSBuildTaskAssembly)')" />
     <UsingTask TaskName="IkvmReferenceItemPrepare" AssemblyFile="$(IkvmMSBuildTaskAssembly)" Condition="Exists('$(IkvmMSBuildTaskAssembly)')" />
+
+    <PropertyGroup Condition=" '$(TargetFramework)' != '' ">
+        <IkvmTargetFramework Condition="$([MSBuild]::IsTargetFrameworkCompatible('$(TargetFramework)', 'netstandard1.0'))">NetCore</IkvmTargetFramework>
+        <IkvmTargetFramework Condition="$([MSBuild]::IsTargetFrameworkCompatible('$(TargetFramework)', 'net461'))">NetFramework</IkvmTargetFramework>
+        <IkvmTargetFramework Condition="$([MSBuild]::IsTargetFrameworkCompatible('$(TargetFramework)', 'netcoreapp3.1'))">NetCore</IkvmTargetFramework>
+    </PropertyGroup>
 
 </Project>

@@ -44,7 +44,7 @@
     <Target Name="GetIkvmReferenceItemsMetadata" DependsOnTargets="GetIkvmReferenceItemsFromIkvmReferences;ResolveIkvmAssemblies" Condition=" '@(IkvmReferenceItem)' != '' ">
 
         <!-- Populates metadata, validates, resolves references, and emits in build order. -->
-        <IkvmReferenceItemPrepare Items="@(IkvmReferenceItem)" ToolVersion="$(IkvmVersion)" TargetFramework="$(IkvmTargetFramework)" RuntimeAssembly="@(IkvmRuntimeAssembly)" References="@(IkvmFrameworkReference);$(IkvmBaseAssembly);$(IkvmRuntimeAssembly);$(IkvmRuntimeJNIAssembly)" StageDir="$(IkvmStageDir)" CacheDir="$(IkvmCacheDir)">
+        <IkvmReferenceItemPrepare Items="@(IkvmReferenceItem)" ToolVersion="$(IkvmVersion)" TargetFramework="$(IkvmTargetFramework)" RuntimeAssembly="$(IkvmRuntimeAssembly)" References="@(IkvmFrameworkReference);$(IkvmBaseAssembly);$(IkvmRuntimeAssembly);$(IkvmRuntimeJNIAssembly)" StageDir="$(IkvmStageDir)" CacheDir="$(IkvmCacheDir)">
             <Output TaskParameter="Items" ItemName="_IkvmReferenceItemWithMetadata" />
         </IkvmReferenceItemPrepare>
 
@@ -106,7 +106,7 @@
             Assembly="%(_IkvmReferenceItemToCompile.AssemblyName)"
             Version="%(_IkvmReferenceItemToCompile.AssemblyVersion)"
             FileVersion="%(_IkvmReferenceItemToCompile.AssemblyFileVersion)"
-            Runtime="@(IkvmRuntimeAssembly)"
+            Runtime="$(IkvmRuntimeAssembly)"
             Target="library"
             Debug="%(_IkvmReferenceItemToCompile.Debug)"
             KeyFile="%(_IkvmReferenceItemToCompile.KeyFile)"

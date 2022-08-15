@@ -7,12 +7,6 @@
         <PackageReference Include="IKVM" Version="$(IkvmVersion)" Condition=" '$(DisableImplicitIkvmPackageReference)' != 'true' " />
         <PackageReference Include="IKVM.MSBuild" Version="$(IkvmVersion)" Condition=" '$(DisableImplicitIkvmMSBuildPackageReference)' != 'true' " />
     </ItemGroup>
-
-    <PropertyGroup Condition=" '$(TargetFramework)' != '' ">
-        <IkvmTargetFramework Condition="$([MSBuild]::IsTargetFrameworkCompatible('$(TargetFramework)', 'netstandard1.0'))">NetCore</IkvmTargetFramework>
-        <IkvmTargetFramework Condition="$([MSBuild]::IsTargetFrameworkCompatible('$(TargetFramework)', 'net461'))">NetFramework</IkvmTargetFramework>
-        <IkvmTargetFramework Condition="$([MSBuild]::IsTargetFrameworkCompatible('$(TargetFramework)', 'netcoreapp3.1'))">NetCore</IkvmTargetFramework>
-    </PropertyGroup>
     
     <Import Sdk="Microsoft.NET.Sdk" Project="Sdk.targets" />
     
