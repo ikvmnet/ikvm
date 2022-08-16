@@ -1,4 +1,6 @@
-﻿namespace IKVM.Tool.Compiler
+﻿using System;
+
+namespace IKVM.Tool.Compiler
 {
 
     /// <summary>
@@ -12,13 +14,13 @@
         /// </summary>
         /// <param name="filePath"></param>
         /// <param name="resourcePath"></param>
-        /// <exception cref="System.ArgumentException"></exception>
+        /// <exception cref="ArgumentException"></exception>
         public IkvmCompilerExternalResourceItem(string filePath, string resourcePath)
         {
             if (string.IsNullOrEmpty(filePath))
-                throw new System.ArgumentException($"'{nameof(filePath)}' cannot be null or empty.", nameof(filePath));
+                throw new ArgumentException($"'{nameof(filePath)}' cannot be null or empty.", nameof(filePath));
             if (string.IsNullOrEmpty(resourcePath))
-                throw new System.ArgumentException($"'{nameof(resourcePath)}' cannot be null or empty.", nameof(resourcePath));
+                throw new ArgumentException($"'{nameof(resourcePath)}' cannot be null or empty.", nameof(resourcePath));
 
             FilePath = filePath;
             ResourcePath = resourcePath;

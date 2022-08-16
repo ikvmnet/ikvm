@@ -54,7 +54,7 @@
         <_CompileJavaResponseFile>$(IntermediateOutputPath)$(MSBuildProjectName).javac.rsp</_CompileJavaResponseFile>
     </PropertyGroup>
 
-    <Target Name="_CompileJava" DependsOnTargets="GetJavaCompilerPath;BuildReferenceStubs" Inputs="@(Compile);@(Classpath)" Outputs="$(_CompileJavaStampFile)">
+    <Target Name="_CompileJava" DependsOnTargets="BuildReferenceStubs" Inputs="@(Compile);@(Classpath)" Outputs="$(_CompileJavaStampFile)">
         <Error Text="_CompileJava not implemented." />
     </Target>
 

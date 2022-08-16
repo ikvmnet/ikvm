@@ -1,10 +1,10 @@
-﻿namespace IKVM.Tool.Compiler
+﻿namespace IKVM.Tool
 {
 
     /// <summary>
     /// Available tool frameworks.
     /// </summary>
-    public enum IkvmCompilerTargetFramework
+    public enum IkvmToolFramework
     {
 
         /// <summary>

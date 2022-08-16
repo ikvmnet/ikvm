@@ -1,18 +1,18 @@
 ﻿using System.Collections.Generic;
 
-namespace IKVM.Tool.Importer
+namespace IKVM.Tool.Exporter
 {
 
     /// <summary>
     /// Options available to the IKVM importer tool.
     /// </summary>
-    public class IkvmImporterOptions
+    public class IkvmExporterOptions
     {
 
         /// <summary>
         /// Version of the tool to use.
         /// </summary>
-        public IkvmImporterTargetFramework TargetFramework { get; set; } = IkvmImporterTargetFramework.NetCore;
+        public IkvmToolFramework ToolFramework { get; set; } = IkvmToolFramework.NetCore;
 
         /// <summary>
         /// Number of milliseconds to wait for the command to execute.
@@ -73,6 +73,11 @@ namespace IKVM.Tool.Importer
         /// Generate jar suitable for comparison with japitools.
         /// </summary>
         public bool JApi { get; set; }
+
+        /// <summary>
+        /// Run in bootstrap mode.
+        /// </summary>
+        public bool Bootstrap { get; set; }
 
     }
 

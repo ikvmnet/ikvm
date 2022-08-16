@@ -11,15 +11,15 @@
     </PropertyGroup>
 
     <UsingTask TaskName="IkvmGetReferenceAssemblies" AssemblyFile="$(IkvmMSBuildTaskAssembly)" Condition="Exists('$(IkvmMSBuildTaskAssembly)')" />
-    <UsingTask TaskName="IkvmCompiler" AssemblyFile="$(IkvmMSBuildTaskAssembly)" Condition="Exists('$(IkvmMSBuildTaskAssembly)')" />
-    <UsingTask TaskName="IkvmImporter" AssemblyFile="$(IkvmMSBuildTaskAssembly)" Condition="Exists('$(IkvmMSBuildTaskAssembly)')" />
-    <UsingTask TaskName="IkvmCalculateMD5" AssemblyFile="$(IkvmMSBuildTaskAssembly)" Condition="Exists('$(IkvmMSBuildTaskAssembly)')" />
     <UsingTask TaskName="IkvmReferenceItemPrepare" AssemblyFile="$(IkvmMSBuildTaskAssembly)" Condition="Exists('$(IkvmMSBuildTaskAssembly)')" />
+    <UsingTask TaskName="IkvmCompiler" AssemblyFile="$(IkvmMSBuildTaskAssembly)" Condition="Exists('$(IkvmMSBuildTaskAssembly)')" />
+    <UsingTask TaskName="IkvmExporter" AssemblyFile="$(IkvmMSBuildTaskAssembly)" Condition="Exists('$(IkvmMSBuildTaskAssembly)')" />
+    <UsingTask TaskName="IkvmJavaCompiler" AssemblyFile="$(IkvmMSBuildTaskAssembly)" Condition="Exists('$(IkvmMSBuildTaskAssembly)')" />
 
     <PropertyGroup Condition=" '$(TargetFramework)' != '' ">
-        <IkvmTargetFramework Condition="$([MSBuild]::IsTargetFrameworkCompatible('$(TargetFramework)', 'netstandard1.0'))">NetCore</IkvmTargetFramework>
-        <IkvmTargetFramework Condition="$([MSBuild]::IsTargetFrameworkCompatible('$(TargetFramework)', 'net461'))">NetFramework</IkvmTargetFramework>
-        <IkvmTargetFramework Condition="$([MSBuild]::IsTargetFrameworkCompatible('$(TargetFramework)', 'netcoreapp3.1'))">NetCore</IkvmTargetFramework>
+        <IkvmToolFramework Condition="$([MSBuild]::IsTargetFrameworkCompatible('$(TargetFramework)', 'netstandard1.0'))">NetCore</IkvmToolFramework>
+        <IkvmToolFramework Condition="$([MSBuild]::IsTargetFrameworkCompatible('$(TargetFramework)', 'net461'))">NetFramework</IkvmToolFramework>
+        <IkvmToolFramework Condition="$([MSBuild]::IsTargetFrameworkCompatible('$(TargetFramework)', 'netcoreapp3.1'))">NetCore</IkvmToolFramework>
     </PropertyGroup>
 
 </Project>

@@ -20,6 +20,8 @@ namespace IKVM.Tests.Tool.Compiler
 
         public TestContext TestContext { get; set; }
 
+#if NETFRAMEWORK
+
         [TestMethod]
         public async Task Can_compile_netframework_jar()
         {
@@ -34,7 +36,7 @@ namespace IKVM.Tests.Tool.Compiler
             var l = new IkvmCompilerLauncher(new IkvmToolDelegateDiagnosticListener(evt => { e.Add(evt); TestContext.WriteLine(evt.Message, evt.MessageArgs); }));
             var o = new IkvmCompilerOptions()
             {
-                TargetFramework = IkvmCompilerTargetFramework.NetFramework,
+                ToolFramework = IkvmToolFramework.NetFramework,
                 Runtime = Path.Combine("lib", "net461", "IKVM.Runtime.dll"),
                 ResponseFile = "helloworld_netframework_ikvmc.rsp",
                 Input = { "helloworld-2.0.jar" },
@@ -47,12 +49,16 @@ namespace IKVM.Tests.Tool.Compiler
             o.References.Add(Path.Combine("lib", "net461", "IKVM.Java.dll"));
             o.References.Add(Path.Combine("lib", "net461", "IKVM.Runtime.dll"));
             o.References.Add(Path.Combine("lib", "net461", "IKVM.Runtime.JNI.dll"));
-            foreach (var f in Directory.GetFiles(l.GetReferenceAssemblyDirectory(o.TargetFramework)))
+            foreach (var f in Directory.GetFiles(l.GetReferenceAssemblyDirectory(o.ToolFramework)))
                 o.References.Add(f);
 
             var exitCode = await l.ExecuteAsync(o);
             exitCode.Should().Be(0);
         }
+
+#endif
+
+#if NETCOREAPP
 
         [TestMethod]
         public async Task Can_compile_netcore_jar()
@@ -64,7 +70,7 @@ namespace IKVM.Tests.Tool.Compiler
             var l = new IkvmCompilerLauncher(new IkvmToolDelegateDiagnosticListener(evt => { e.Add(evt); TestContext.WriteLine(evt.Message, evt.MessageArgs); }));
             var o = new IkvmCompilerOptions()
             {
-                TargetFramework = IkvmCompilerTargetFramework.NetCore,
+                ToolFramework = IkvmToolFramework.NetCore,
                 Runtime = Path.Combine("lib", "netcoreapp3.1", "IKVM.Runtime.dll"),
                 ResponseFile = "helloworld_netcore_ikvmc.rsp",
                 Input = { "helloworld-2.0.jar" },
@@ -77,12 +83,14 @@ namespace IKVM.Tests.Tool.Compiler
             o.References.Add(Path.Combine("lib", "netcoreapp3.1", "IKVM.Java.dll"));
             o.References.Add(Path.Combine("lib", "netcoreapp3.1", "IKVM.Runtime.dll"));
             o.References.Add(Path.Combine("lib", "netcoreapp3.1", "IKVM.Runtime.JNI.dll"));
-            foreach (var f in Directory.GetFiles(l.GetReferenceAssemblyDirectory(o.TargetFramework)))
+            foreach (var f in Directory.GetFiles(l.GetReferenceAssemblyDirectory(o.ToolFramework)))
                 o.References.Add(f);
 
             var exitCode = await l.ExecuteAsync(o);
             exitCode.Should().Be(0);
         }
+
+#endif
 
     }
 

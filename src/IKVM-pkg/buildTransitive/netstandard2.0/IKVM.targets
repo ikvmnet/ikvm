@@ -10,7 +10,7 @@
 
     <!-- Gathers those references which are either related to the Framework itself, or IKVM. -->
     <Target Name="ResolveIkvmAssemblies" DependsOnTargets="ResolveProjectReferences">
-        <IkvmGetReferenceAssemblies ToolsPath="$(IkvmToolsPath)ikvmc" TargetFramework="$(IkvmTargetFramework)">
+        <IkvmGetReferenceAssemblies ToolPath="$(IkvmToolsPath)ikvmc" ToolFramework="$(IkvmToolFramework)">
             <Output TaskParameter="ResolvedFrameworkReferences" ItemName="IkvmFrameworkReference" />
         </IkvmGetReferenceAssemblies>
 
@@ -44,7 +44,7 @@
     <Target Name="GetIkvmReferenceItemsMetadata" DependsOnTargets="GetIkvmReferenceItemsFromIkvmReferences;ResolveIkvmAssemblies" Condition=" '@(IkvmReferenceItem)' != '' ">
 
         <!-- Populates metadata, validates, resolves references, and emits in build order. -->
-        <IkvmReferenceItemPrepare Items="@(IkvmReferenceItem)" ToolVersion="$(IkvmVersion)" TargetFramework="$(IkvmTargetFramework)" RuntimeAssembly="$(IkvmRuntimeAssembly)" References="@(IkvmFrameworkReference);$(IkvmBaseAssembly);$(IkvmRuntimeAssembly);$(IkvmRuntimeJNIAssembly)" StageDir="$(IkvmStageDir)" CacheDir="$(IkvmCacheDir)">
+        <IkvmReferenceItemPrepare Items="@(IkvmReferenceItem)" ToolVersion="$(IkvmVersion)" ToolFramework="$(IkvmToolFramework)" RuntimeAssembly="$(IkvmRuntimeAssembly)" References="@(IkvmFrameworkReference);$(IkvmBaseAssembly);$(IkvmRuntimeAssembly);$(IkvmRuntimeJNIAssembly)" StageDir="$(IkvmStageDir)" CacheDir="$(IkvmCacheDir)">
             <Output TaskParameter="Items" ItemName="_IkvmReferenceItemWithMetadata" />
         </IkvmReferenceItemPrepare>
 
@@ -99,8 +99,8 @@
 
         <!-- Compile the reference item. -->
         <IkvmCompiler
-            ToolsPath="$(IkvmToolsPath)ikvmc"
-            TargetFramework="$(IkvmTargetFramework)"
+            ToolPath="$(IkvmToolsPath)ikvmc"
+            ToolFramework="$(IkvmToolFramework)"
             ResponseFile="%(_IkvmReferenceItemToCompile.StagePath).rsp"
             Output="%(_IkvmReferenceItemToCompile.StagePath)"
             Assembly="%(_IkvmReferenceItemToCompile.AssemblyName)"
