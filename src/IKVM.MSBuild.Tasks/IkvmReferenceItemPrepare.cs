@@ -182,8 +182,56 @@ namespace IKVM.MSBuild.Tasks
             if (string.IsNullOrWhiteSpace(item.AssemblyFileVersion))
                 item.AssemblyFileVersion = item.AssemblyVersion;
 
+            // clean up values
+            item.AssemblyVersion = NormalizeAssemblyVersion(item.AssemblyVersion);
+            item.AssemblyFileVersion = NormalizeAssemblyFileVersion(item.AssemblyFileVersion);
+
             // save changes to item
             item.Save();
+        }
+
+        /// <summary>
+        /// Normalizes an assembly version.
+        /// </summary>
+        /// <param name="version"></param>
+        /// <returns></returns>
+        static string NormalizeAssemblyVersion(string version)
+        {
+            if (string.IsNullOrWhiteSpace(version))
+                return null;
+
+            if (Version.TryParse(version, out var v))
+            {
+                var major = v.Major;
+                var minor = v.Minor;
+                var build = v.Build;
+                var patch = v.Revision;
+                return new Version(major, minor, build > -1 ? build : 0, patch > -1 ? patch : 0).ToString();
+            }
+
+            return null;
+        }
+
+        /// <summary>
+        /// Normalizes an assembly version.
+        /// </summary>
+        /// <param name="version"></param>
+        /// <returns></returns>
+        static string NormalizeAssemblyFileVersion(string version)
+        {
+            if (string.IsNullOrWhiteSpace(version))
+                return null;
+
+            if (Version.TryParse(version, out var v))
+            {
+                var major = v.Major;
+                var minor = v.Minor;
+                var build = v.Build;
+                var patch = v.Revision;
+                return new Version(major, minor, build >= 0 ? build : 0, patch >= 0 ? patch : 0).ToString();
+            }
+
+            return null;
         }
 
         /// <summary>
