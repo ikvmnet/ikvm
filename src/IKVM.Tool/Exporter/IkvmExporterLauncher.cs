@@ -243,6 +243,7 @@ namespace IKVM.Tool.Exporter
                 var cli = Cli.Wrap(exe).WithWorkingDirectory(Environment.CurrentDirectory);
                 cli = cli.WithArguments(args);
                 cli = cli.WithValidation(CommandResultValidation.None);
+                await LogEvent(IkvmToolDiagnosticEventLevel.Debug, "Executing {0} {1}", cli.TargetFilePath, cli.Arguments);
 
                 // send output to MSBuild
                 cli = cli.WithStandardErrorPipe(PipeTarget.ToDelegate(i => LogEvent(IkvmToolDiagnosticEventLevel.Error, i)));

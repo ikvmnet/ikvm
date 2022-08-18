@@ -6,6 +6,8 @@ using FluentAssertions;
 
 using Microsoft.VisualStudio.TestTools.UnitTesting;
 
+using sun.tools.jar.resources;
+
 #if NETCOREAPP3_1_OR_GREATER
 using Microsoft.Extensions.DependencyModel;
 #endif
@@ -16,6 +18,26 @@ namespace ikvmstub.Tests
     [TestClass]
     public class IkvmstubTests
     {
+
+        [TestMethod]
+        public void Foo()
+        {
+            var ret = Program.Main(new[]
+            {
+                @"-out:ICSharpCode.SharpZipLib.jar",
+                @"-reference:C:\Users\jhaltom\AppData\Local\Temp\IKVM.NET.Sdk.Tests\nuget\packages\ikvm\8.0.0-dev\lib\netcoreapp3.1\IKVM.Java.dll",
+                @"-reference:C:\Users\jhaltom\AppData\Local\Temp\IKVM.NET.Sdk.Tests\nuget\packages\ikvm\8.0.0-dev\lib\netcoreapp3.1\IKVM.Reflection.dll",
+                @"-reference:C:\Users\jhaltom\AppData\Local\Temp\IKVM.NET.Sdk.Tests\nuget\packages\ikvm\8.0.0-dev\lib\netcoreapp3.1\IKVM.Runtime.dll",
+                @"-reference:C:\Users\jhaltom\AppData\Local\Temp\IKVM.NET.Sdk.Tests\nuget\packages\ikvm\8.0.0-dev\lib\netcoreapp3.1\IKVM.Runtime.JNI.dll",
+                @"-reference:C:\Program Files\dotnet\packs\Microsoft.NETCore.App.Ref\5.0.0\ref\net5.0\mscorlib.dll",
+                @"-reference:C:\Program Files\dotnet\packs\Microsoft.NETCore.App.Ref\5.0.0\ref\net5.0\netstandard.dll",
+                @"-reference:C:\Program Files\dotnet\packs\Microsoft.NETCore.App.Ref\5.0.0\ref\net5.0\System.Core.dll",
+                @"-reference:C:\Program Files\dotnet\packs\Microsoft.NETCore.App.Ref\5.0.0\ref\net5.0\System.dll",
+                @"-reference:C:\Program Files\dotnet\packs\Microsoft.NETCore.App.Ref\5.0.0\ref\net5.0\System.Runtime.dll",
+                @"-nostdlib",
+                @"C:\Users\jhaltom\.nuget\packages\sharpziplib\1.3.3\lib\netstandard2.1\ICSharpCode.SharpZipLib.dll"
+            });
+        }
 
         [TestMethod]
         public void Can_stub_system_runtime()

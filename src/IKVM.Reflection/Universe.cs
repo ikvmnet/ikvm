@@ -147,7 +147,7 @@ namespace IKVM.Reflection
 
 #if NETCOREAPP3_1_OR_GREATER
 
-        public static readonly string CoreLibName = "netstandard";
+        public static readonly string CoreLibName = "System.Runtime";
 
 
 #elif NETFRAMEWORK || MONO

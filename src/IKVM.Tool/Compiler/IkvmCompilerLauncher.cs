@@ -421,6 +421,7 @@ namespace IKVM.Tool.Compiler
                 args.Add($"@{response}");
                 cli = cli.WithArguments(args);
                 cli = cli.WithValidation(CommandResultValidation.None);
+                await LogEvent(IkvmToolDiagnosticEventLevel.Debug, "Executing {0} {1}", cli.TargetFilePath, cli.Arguments);
 
                 // send output to MSBuild
                 cli = cli.WithStandardErrorPipe(PipeTarget.ToDelegate(i => LogEvent(IkvmToolDiagnosticEventLevel.Error, i)));
