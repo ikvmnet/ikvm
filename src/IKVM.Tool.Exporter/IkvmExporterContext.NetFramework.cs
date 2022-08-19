@@ -39,8 +39,8 @@ namespace IKVM.Tool.Exporter
 
         }
 
-        readonly AppDomain appDomain;
-        readonly IkvmExporterDispatcher dispatcher;
+        AppDomain appDomain;
+        IkvmExporterDispatcher dispatcher;
 
         /// <summary>
         /// Initializes a new instance.
@@ -52,7 +52,11 @@ namespace IKVM.Tool.Exporter
             appDomain = AppDomain.CreateDomain(
                 "IkvmExporter",
                 AppDomain.CurrentDomain.Evidence,
-                new AppDomainSetup() { ApplicationBase = AppDomain.CurrentDomain.SetupInformation.ApplicationBase });
+                new AppDomainSetup()
+                {
+                    ApplicationBase = AppDomain.CurrentDomain.SetupInformation.ApplicationBase,
+                    ConfigurationFile = AppDomain.CurrentDomain.SetupInformation.ConfigurationFile,
+                });
 
             dispatcher = (IkvmExporterDispatcher)appDomain.CreateInstanceAndUnwrap(
                 typeof(IkvmExporterDispatcher).Assembly.GetName().FullName,
@@ -73,7 +77,7 @@ namespace IKVM.Tool.Exporter
         /// <exception cref="NotImplementedException"></exception>
         public partial Task<int> ExecuteAsync(CancellationToken cancellationToken)
         {
-            return Task.FromResult(dispatcher.Execute());
+            return Task.Run(dispatcher.Execute);
         }
 
         /// <summary>
@@ -81,7 +85,16 @@ namespace IKVM.Tool.Exporter
         /// </summary>
         public void Dispose()
         {
-            AppDomain.Unload(appDomain);
+            try
+            {
+                dispatcher = null;
+                AppDomain.Unload(appDomain);
+            }
+            finally
+            {
+                appDomain = null;
+            }
+
             GC.SuppressFinalize(this);
         }
 
