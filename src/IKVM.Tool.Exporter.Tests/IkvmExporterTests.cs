@@ -5,6 +5,9 @@ using System.Runtime.InteropServices;
 using FluentAssertions;
 
 using Microsoft.VisualStudio.TestTools.UnitTesting;
+using System.Threading.Tasks;
+using System.Collections.Generic;
+using System.Threading;
 
 #if NETCOREAPP3_1_OR_GREATER
 using Microsoft.Extensions.DependencyModel;
@@ -18,20 +21,31 @@ namespace IKVM.Tool.Exporter.Tests.Tests
     {
 
         [TestMethod]
-        public void Can_stub_system_runtime()
+        public async Task Can_stub_corelib()
         {
+            var options = new IkvmExporterOptions()
+            {
+                NoStdLib = true,
+                References =
+                {
+                    Path.Combine(Path.GetDirectoryName(typeof(IkvmExporterTests).Assembly.Location), "IKVM.Runtime.dll"),
+                    Path.Combine(Path.GetDirectoryName(typeof(IkvmExporterTests).Assembly.Location), "IKVM.Java.dll"),
+                }
+            };
+
 #if NET461
-            var a = new[] { $"-lib:{RuntimeEnvironment.GetRuntimeDirectory()}" };
-            var j = Path.Combine(RuntimeEnvironment.GetRuntimeDirectory(), "mscorlib.dll");
+            options.Libraries.Add(RuntimeEnvironment.GetRuntimeDirectory());
+            options.Assembly = Path.Combine(RuntimeEnvironment.GetRuntimeDirectory(), "mscorlib.dll");
+            options.Output = Path.Combine(Path.GetTempPath(), Path.GetFileName(Path.ChangeExtension(options.Assembly, ".jar")));
 #else
-            var a = DependencyContext.Default.CompileLibraries.SelectMany(i => i.ResolveReferencePaths()).Select(i => $"-r:{i}");
-            var j = DependencyContext.Default.CompileLibraries.Where(i => i.Name == "netstandard").SelectMany(i => i.ResolveReferencePaths()).FirstOrDefault();
+            options.References.AddRange(DependencyContext.Default.CompileLibraries.SelectMany(i => i.ResolveReferencePaths()));
+            options.Assembly = DependencyContext.Default.CompileLibraries.Where(i => i.Name == "netstandard").SelectMany(i => i.ResolveReferencePaths()).FirstOrDefault();
+            options.Output = Path.Combine(Path.GetTempPath(), Path.GetFileName(Path.ChangeExtension(options.Assembly, ".jar")));
 #endif
 
-            var jar = Path.Combine(Path.GetTempPath(), Path.GetFileName(Path.ChangeExtension(j, ".jar")));
-            var ret = IkvmExporterTool.Main(a.Concat(new[] { "-bootstrap", $"-r:{Path.Combine(Path.GetDirectoryName(typeof(IkvmExporterTests).Assembly.Location), "IKVM.Runtime.dll")}", $"-out:{jar}", j }).ToArray());
+            var ret = await new IkvmExporter(options).ExecuteAsync(CancellationToken.None);
             ret.Should().Be(0);
-            File.Exists(jar).Should().BeTrue();
+            File.Exists(options.Output).Should().BeTrue();
         }
 
     }

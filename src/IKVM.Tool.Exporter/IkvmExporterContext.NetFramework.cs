@@ -11,33 +11,9 @@ namespace IKVM.Tool.Exporter
     {
 
         /// <summary>
-        /// Reference to a remote CancellationToken.
-        /// </summary>
-        class CancellationTokenRef : MarshalByRefObject
-        {
-
-            readonly CancellationToken cancellationToken;
-
-            /// <summary>
-            /// Initializes a new instance.
-            /// </summary>
-            /// <param name="cancellationToken"></param>
-            public CancellationTokenRef(CancellationToken cancellationToken)
-            {
-                this.cancellationToken = cancellationToken;
-            }
-
-            public void Register(Action action)
-            {
-                cancellationToken.Register(action);
-            }
-
-        }
-
-        /// <summary>
         /// Encapsulates a <see cref="IkvmExporterInternal"/> in a remote <see cref="AppDomain"/>.
         /// </summary>
-        class IkvmExporterRef : MarshalByRefObject
+        class IkvmExporterDispatcher : MarshalByRefObject
         {
 
             readonly IkvmExporterOptions options;
@@ -47,45 +23,24 @@ namespace IKVM.Tool.Exporter
             /// </summary>
             /// <param name="options"></param>
             /// <exception cref="ArgumentNullException"></exception>
-            public IkvmExporterRef(IkvmExporterOptions options)
+            public IkvmExporterDispatcher(IkvmExporterOptions options)
             {
                 this.options = options ?? throw new ArgumentNullException(nameof(options));
             }
 
-
             /// <summary>
-            /// Executes the exporter with the given options.
+            /// Executes the exporter.
             /// </summary>
-            /// <param name="cancellationTokenRef"></param>
-            /// <returns></returns>
-            public void BeginExecute(Action<int> onComplete, Action<Exception> onException, CancellationTokenRef cancellationTokenRef)
-            {
-                Task.Run(() => Execute(onComplete, onException, cancellationTokenRef));
-            }
-
-            /// <summary>
-            /// Executes the export, signaling completion.
-            /// </summary>
-            /// <param name="onComplete"></param>
-            /// <param name="onException"></param>
-            /// <param name="cancellationTokenRef"></param>
             /// <exception cref="NotImplementedException"></exception>
-            void Execute(Action<int> onComplete, Action<Exception> onException, CancellationTokenRef cancellationTokenRef)
+            public int Execute()
             {
-                try
-                {
-                    onComplete(IkvmExporterInternal.Execute(options));
-                }
-                catch (Exception e)
-                {
-                    onException(e);
-                }
+                return IkvmExporterInternal.Execute(options);
             }
 
         }
 
         readonly AppDomain appDomain;
-        readonly IkvmExporterRef exporter;
+        readonly IkvmExporterDispatcher dispatcher;
 
         /// <summary>
         /// Initializes a new instance.
@@ -94,9 +49,20 @@ namespace IKVM.Tool.Exporter
         /// <exception cref="ArgumentNullException"></exception>
         public IkvmExporterContext(IkvmExporterOptions options)
         {
-            appDomain = AppDomain.CreateDomain("IkvmExporter");
-            exporter = (IkvmExporterRef)appDomain.CreateInstanceAndUnwrap(
-                typeof(IkvmExporterRef).Assembly.GetName().Name, typeof(IkvmExporterRef).Name, false, System.Reflection.BindingFlags.DeclaredOnly, null, new[] { options }, null, null);
+            appDomain = AppDomain.CreateDomain(
+                "IkvmExporter",
+                AppDomain.CurrentDomain.Evidence,
+                new AppDomainSetup() { ApplicationBase = AppDomain.CurrentDomain.SetupInformation.ApplicationBase });
+
+            dispatcher = (IkvmExporterDispatcher)appDomain.CreateInstanceAndUnwrap(
+                typeof(IkvmExporterDispatcher).Assembly.GetName().FullName,
+                typeof(IkvmExporterDispatcher).FullName,
+                false,
+                System.Reflection.BindingFlags.Default,
+                null,
+                new[] { options },
+                null,
+                null);
         }
 
         /// <summary>
@@ -107,9 +73,7 @@ namespace IKVM.Tool.Exporter
         /// <exception cref="NotImplementedException"></exception>
         public partial Task<int> ExecuteAsync(CancellationToken cancellationToken)
         {
-            var tcs = new TaskCompletionSource<int>();
-            exporter.BeginExecute(result => tcs.SetResult(result), e => tcs.SetException(e), new CancellationTokenRef(cancellationToken));
-            return tcs.Task;
+            return Task.FromResult(dispatcher.Execute());
         }
 
         /// <summary>

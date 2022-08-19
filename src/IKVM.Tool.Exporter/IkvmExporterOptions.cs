@@ -19,12 +19,12 @@ namespace IKVM.Tool.Exporter
         /// <summary>
         /// Assembly references.
         /// </summary>
-        public List<string> References { get; set; }
+        public List<string> References { get; set; } = new List<string>();
 
         /// <summary>
         /// Path to directories to search for assembly references.
         /// </summary>
-        public List<string> Libraries { get; set; }
+        public List<string> Libraries { get; set; } = new List<string>();
 
         public bool JApi { get; set; }
 
@@ -32,7 +32,7 @@ namespace IKVM.Tool.Exporter
 
         public bool NoStdLib { get; set; }
 
-        public List<string> Namespaces { get; set; }
+        public List<string> Namespaces { get; set; } = new List<string>(); 
 
         public bool Forwarders { get; set; }
 

@@ -1,9 +1,16 @@
 ﻿#if NETCOREAPP
 
 using System;
+using System.IO;
+using System.Reflection;
 using System.Runtime.Loader;
+using System.Runtime.Serialization.Formatters.Binary;
 using System.Threading;
 using System.Threading.Tasks;
+
+using Microsoft.Extensions.DependencyModel.Resolution;
+
+using Newtonsoft.Json;
 
 namespace IKVM.Tool.Exporter
 {
@@ -24,19 +31,49 @@ namespace IKVM.Tool.Exporter
             /// </summary>
             /// <param name="options"></param>
             /// <exception cref="ArgumentNullException"></exception>
-            public IkvmExporterDispatcher(IkvmExporterOptions options)
+            public IkvmExporterDispatcher(string options)
             {
-                this.options = options ?? throw new ArgumentNullException(nameof(options));
+                if (options is null)
+                    throw new ArgumentNullException(nameof(options));
+
+                this.options = JsonConvert.DeserializeObject<IkvmExporterOptions>(options);
             }
 
-            public Task<int> ExecuteAsync(CancellationToken cancellationToken)
+            /// <summary>
+            /// Executes the exporter.
+            /// </summary>
+            /// <returns></returns>
+            public int Execute()
             {
-                return Task.FromResult(IkvmExporterInternal.Execute(options));
+                return IkvmExporterInternal.Execute(options);
             }
 
         }
 
-        readonly IkvmExporterDispatcher dispatcher;
+        class IsolatedAssemblyLoadContext : AssemblyLoadContext
+        {
+
+            readonly AssemblyDependencyResolver resolver;
+
+            /// <summary>
+            /// Initializes a new instance.
+            /// </summary>
+            /// <param name="name"></param>
+            /// <param name="isCollectible"></param>
+            public IsolatedAssemblyLoadContext(string name, bool isCollectible = false) :
+                base(name, isCollectible)
+            {
+                resolver = new AssemblyDependencyResolver(Assembly.GetEntryAssembly().Location);
+            }
+
+            protected override Assembly Load(AssemblyName assemblyName)
+            {
+                return resolver.ResolveAssemblyToPath(assemblyName) is string p ? base.LoadFromAssemblyPath(p) : base.Load(assemblyName);
+            }
+
+        }
+
+        readonly object dispatcher;
 
         /// <summary>
         /// Initializes a new instance.
@@ -46,10 +83,10 @@ namespace IKVM.Tool.Exporter
         public IkvmExporterContext(IkvmExporterOptions options)
         {
             // load the exporter in a nested assembly context
-            dispatcher = (IkvmExporterDispatcher)Activator.CreateInstance(new AssemblyLoadContext("IkvmExporter", true)
-                    .LoadFromAssemblyName(typeof(IkvmExporterDispatcher).Assembly.GetName())
-                    .GetType(typeof(IkvmExporterDispatcher).Name),
-                options);
+            var ctx = new IsolatedAssemblyLoadContext("IkvmExporter", true);
+            var asm = ctx.LoadFromAssemblyName(typeof(IkvmExporterDispatcher).Assembly.GetName());
+            var typ = asm.GetType(typeof(IkvmExporterDispatcher).FullName);
+            dispatcher = Activator.CreateInstance(typ, new[] { JsonConvert.SerializeObject(options) });
         }
 
         /// <summary>
@@ -60,7 +97,7 @@ namespace IKVM.Tool.Exporter
         /// <exception cref="NotImplementedException"></exception>
         public partial Task<int> ExecuteAsync(CancellationToken cancellationToken)
         {
-            return dispatcher.ExecuteAsync(cancellationToken);
+            return Task.FromResult((int)dispatcher.GetType().GetMethod(nameof(IkvmExporterDispatcher.Execute), BindingFlags.Public | BindingFlags.Instance).Invoke(dispatcher, Array.Empty<object>()));
         }
 
         /// <summary>
