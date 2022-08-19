@@ -28,6 +28,7 @@ using Type = IKVM.Reflection.Type;
 
 static class StaticCompiler
 {
+
     internal static readonly Universe Universe = new Universe(UniverseOptions.EnableFunctionPointers);
     internal static readonly AssemblyResolver Resolver = new AssemblyResolver();
     internal static Assembly runtimeAssembly;

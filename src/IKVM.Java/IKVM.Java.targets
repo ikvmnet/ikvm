@@ -249,7 +249,7 @@
         </ItemGroup>
 
         <PropertyGroup>
-            <_RefStubArgs>@(ReferencePathWithRefAssemblies->Distinct()->'-r:"%(Identity)"', ' ')</_RefStubArgs>
+            <_RefStubArgs>@(ReferencePathWithRefAssemblies->Distinct()->'-reference:"%(Identity)"', ' ')</_RefStubArgs>
         </PropertyGroup>
 
         <MakeDir Directories="$(RefStubsOutputPath);$(RefStubsOutputPath)tmp" />
