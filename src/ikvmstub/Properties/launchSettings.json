@@ -1,0 +1,8 @@
+{
+  "profiles": {
+    "ikvmstub": {
+      "commandName": "Project",
+      "commandLineArgs": "ICSharpCode.SharpZipLib.dll -out foo.jar -r:..\\..\\..\\..\\IKVM.Runtime\\bin\\Debug\\net461\\IKVM.Runtime.dll -nostdlib -reference:c:\\windows\\Microsoft.NET\\Framework64\\v4.0.30319\\mscorlib.dll -reference ..\\..\\..\\..\\IKVM.Java\\bin\\Debug\\net461\\IKVM.Java.dll"
+    }
+  }
+}
