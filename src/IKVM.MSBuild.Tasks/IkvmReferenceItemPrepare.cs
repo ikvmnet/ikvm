@@ -383,7 +383,7 @@ namespace IKVM.MSBuild.Tasks
 
             var manifest = new StringWriter();
             manifest.WriteLine("ToolVersion={0}", ToolVersion);
-            manifest.WriteLine("TargetFramework={0}", ToolFramework);
+            manifest.WriteLine("ToolFramework={0}", ToolFramework);
             manifest.WriteLine("RuntimeAssembly={0}", GetHashForFile(RuntimeAssembly));
             manifest.WriteLine("AssemblyName={0}", item.AssemblyName);
             manifest.WriteLine("AssemblyVersion={0}", item.AssemblyVersion);

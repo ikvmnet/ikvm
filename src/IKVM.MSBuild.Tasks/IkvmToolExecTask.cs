@@ -55,7 +55,7 @@ namespace IKVM.MSBuild.Tasks
         /// <exception cref="NullReferenceException"></exception>
         public override bool Execute()
         {
-            var targetFramework = ToolFramework switch
+            var toolFramework = ToolFramework switch
             {
                 "NetCore" => IkvmToolFramework.NetCore,
                 "NetFramework" => IkvmToolFramework.NetFramework,
@@ -67,7 +67,7 @@ namespace IKVM.MSBuild.Tasks
                 throw new IkvmTaskException("Missing tools path.");
 
             // kick off the launcher with the configured options
-            var run = System.Threading.Tasks.Task.Run(() => ExecuteAsync(targetFramework, new IkvmToolTaskDiagnosticWriter(Log), CancellationToken.None));
+            var run = System.Threading.Tasks.Task.Run(() => ExecuteAsync(toolFramework, new IkvmToolTaskDiagnosticWriter(Log), CancellationToken.None));
 
             // yield and wait for the task to complete
             BuildEngine3.Yield();
