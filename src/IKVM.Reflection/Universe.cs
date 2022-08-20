@@ -24,7 +24,6 @@
 using System;
 using System.Collections.Generic;
 using System.IO;
-using System.Runtime.InteropServices;
 using System.Security;
 using System.Text;
 
@@ -147,7 +146,7 @@ namespace IKVM.Reflection
 
 #if NETCOREAPP3_1_OR_GREATER
 
-        public static readonly string CoreLibName = "System.Runtime";
+        public static readonly string CoreLibName = "netstandard";
 
 
 #elif NETFRAMEWORK || MONO
