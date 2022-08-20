@@ -1,27 +1,4 @@
-/*
-  Copyright (C) 2002-2013 Jeroen Frijters
-
-  This software is provided 'as-is', without any express or implied
-  warranty.  In no event will the authors be held liable for any damages
-  arising from the use of this software.
-
-  Permission is granted to anyone to use this software for any purpose,
-  including commercial applications, and to alter it and redistribute it
-  freely, subject to the following restrictions:
-
-  1. The origin of this software must not be misrepresented; you must not
-     claim that you wrote the original software. If you use this software
-     in a product, an acknowledgment in the product documentation would be
-     appreciated but is not required.
-  2. Altered source versions must be plainly marked as such, and must not be
-     misrepresented as being the original software.
-  3. This notice may not be removed or altered from any source distribution.
-
-  Jeroen Frijters
-  jeroen@frijters.net
-  
-*/
-using System;
+﻿using System;
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
@@ -33,26 +10,35 @@ using IKVM.Reflection;
 
 using Type = IKVM.Reflection.Type;
 
-namespace ikvmstub
+namespace IKVM.Tool.Exporter
 {
 
-    public static class Program
+    /// <summary>
+    /// Internal implementation of the IkvmExporter.
+    /// </summary>
+    static class IkvmExporterInternal
     {
-        private static int zipCount;
-        private static ZipOutputStream zipFile;
-        private static Dictionary<string, string> done = new Dictionary<string, string>();
-        private static Dictionary<string, TypeWrapper> todo = new Dictionary<string, TypeWrapper>();
-        private static FileInfo file;
-        private static bool includeSerialVersionUID;
-        private static bool includeNonPublicInterfaces;
-        private static bool includeNonPublicMembers;
-        private static bool includeParameterNames;
-        private static List<string> namespaces = new List<string>();
 
-        public static int Main(string[] args)
+        static int zipCount;
+        static ZipOutputStream zipFile;
+        static Dictionary<string, string> done = new Dictionary<string, string>();
+        static Dictionary<string, TypeWrapper> todo = new Dictionary<string, TypeWrapper>();
+        static FileInfo file;
+        static bool includeSerialVersionUID;
+        static bool includeNonPublicInterfaces;
+        static bool includeNonPublicMembers;
+        static bool includeParameterNames;
+        static List<string> namespaces = new List<string>();
+
+        /// <summary>
+        /// Executes the exporter.
+        /// </summary>
+        /// <param name="options"></param>
+        public static int Execute(IkvmExporterOptions options)
         {
             IKVM.Internal.Tracer.EnableTraceConsoleListener();
             IKVM.Internal.Tracer.EnableTraceForDebug();
+
             string assemblyNameOrPath = null;
             bool continueOnError = false;
             bool autoLoadSharedClassLoaderAssemblies = false;
@@ -62,92 +48,34 @@ namespace ikvmstub
             bool bootstrap = false;
             string outputFile = null;
             bool forwarders = false;
-            foreach (string s in args)
+
+            if (options.JApi)
             {
-                if (s.StartsWith("-") || assemblyNameOrPath != null)
-                {
-                    if (s == "-serialver")
-                    {
-                        Console.Error.WriteLine("The -serialver option is deprecated and will be removed in the future. Use -japi instead.");
-                        includeSerialVersionUID = true;
-                    }
-                    else if (s == "-japi")
-                    {
-                        includeSerialVersionUID = true;
-                        includeNonPublicInterfaces = true;
-                        includeNonPublicMembers = true;
-                    }
-                    else if (s == "-skiperror")
-                    {
-                        continueOnError = true;
-                    }
-                    else if (s == "-shared")
-                    {
-                        autoLoadSharedClassLoaderAssemblies = true;
-                    }
-                    else if (s.StartsWith("-r:") || s.StartsWith("-reference:"))
-                    {
-                        references.Add(s.Substring(s.IndexOf(':') + 1));
-                    }
-                    else if (s == "-nostdlib")
-                    {
-                        nostdlib = true;
-                    }
-                    else if (s.StartsWith("-lib:"))
-                    {
-                        libpaths.Add(s.Substring(5));
-                    }
-                    else if (s == "-bootstrap")
-                    {
-                        bootstrap = true;
-                    }
-                    else if (s.StartsWith("-out:"))
-                    {
-                        outputFile = s.Substring(5);
-                    }
-                    else if (s.StartsWith("-namespace:"))
-                    {
-                        namespaces.Add(s.Substring(11) + ".");
-                    }
-                    else if (s == "-forwarders")
-                    {
-                        forwarders = true;
-                    }
-                    else if (s == "-parameters")
-                    {
-                        includeParameterNames = true;
-                    }
-                    else
-                    {
-                        // unrecognized option, or multiple assemblies, print usage message and exit
-                        assemblyNameOrPath = null;
-                        break;
-                    }
-                }
-                else
-                {
-                    assemblyNameOrPath = s;
-                }
+                includeSerialVersionUID = true;
+                includeNonPublicInterfaces = true;
+                includeNonPublicMembers = true;
             }
-            if (assemblyNameOrPath == null)
-            {
-                Console.Error.WriteLine(GetVersionAndCopyrightInfo());
-                Console.Error.WriteLine();
-                Console.Error.WriteLine("usage: ikvmstub [-options] <assemblyNameOrPath>");
-                Console.Error.WriteLine();
-                Console.Error.WriteLine("options:");
-                Console.Error.WriteLine("    -out:<outputfile>          Specify the output filename");
-                Console.Error.WriteLine("    -reference:<filespec>      Reference an assembly (short form -r:<filespec>)");
-                Console.Error.WriteLine("    -japi                      Generate jar suitable for comparison with japitools");
-                Console.Error.WriteLine("    -skiperror                 Continue when errors are encountered");
-                Console.Error.WriteLine("    -shared                    Process all assemblies in shared group");
-                Console.Error.WriteLine("    -nostdlib                  Do not reference standard libraries");
-                Console.Error.WriteLine("    -lib:<dir>                 Additional directories to search for references");
-                Console.Error.WriteLine("    -namespace:<ns>            Only include types from specified namespace");
-                Console.Error.WriteLine("    -forwarders                Export forwarded types too");
-                Console.Error.WriteLine("    -parameters                Emit Java 8 classes with parameter names");
-                return 1;
-            }
+
+            autoLoadSharedClassLoaderAssemblies = options.Shared;
+            continueOnError = options.SkipError;
+            nostdlib = options.NoStdLib;
+            bootstrap = options.Boostrap;
+            outputFile = options.Output;
+            forwarders = options.Forwarders;
+            includeParameterNames = options.Parameters;
+            assemblyNameOrPath = options.Assembly;
+
+            if (options.References != null)
+                foreach (var reference in options.References)
+                    references.Add(reference);
+
+            if (options.Libraries != null)
+                foreach (var library in options.Libraries)
+                    libpaths.Add(library);
+
+            if (options.Namespaces != null)
+                foreach (var ns in options.Namespaces)
+                    namespaces.Add(ns);
 
             if (File.Exists(assemblyNameOrPath) && nostdlib)
             {
@@ -197,12 +125,12 @@ namespace ikvmstub
             {
                 if (bootstrap)
                 {
-                    StaticCompiler.runtimeAssembly = StaticCompiler.LoadFile(typeof(Program).Assembly.Location);
+                    StaticCompiler.runtimeAssembly = StaticCompiler.LoadFile(typeof(IkvmExporterTool).Assembly.Location);
                     ClassLoaderWrapper.SetBootstrapClassLoader(new BootstrapBootstrapClassLoader());
                 }
                 else
                 {
-                    StaticCompiler.LoadFile(typeof(Program).Assembly.Location);
+                    StaticCompiler.LoadFile(typeof(IkvmExporterInternal).Assembly.Location);
 
                     var runtimeAssemblyPath = references.FirstOrDefault(i => Path.GetFileNameWithoutExtension(i) == "IKVM.Runtime");
                     if (runtimeAssemblyPath != null)
@@ -298,7 +226,7 @@ namespace ikvmstub
 
         static string GetVersionAndCopyrightInfo()
         {
-            var asm = typeof(Program).Assembly;
+            var asm = typeof(IkvmExporterTool).Assembly;
             var desc = System.Reflection.CustomAttributeExtensions.GetCustomAttribute<System.Reflection.AssemblyTitleAttribute>(asm);
             var copy = System.Reflection.CustomAttributeExtensions.GetCustomAttribute<System.Reflection.AssemblyCopyrightAttribute>(asm);
             var info = System.Reflection.CustomAttributeExtensions.GetCustomAttribute<System.Reflection.AssemblyInformationalVersionAttribute>(asm);
@@ -507,6 +435,7 @@ namespace ikvmstub
                 }
             }
         }
+
     }
 
 }

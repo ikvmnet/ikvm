@@ -17,6 +17,9 @@
         <ProjectReference Include="..\IKVM.Runtime\IKVM.Runtime.csproj" />
         <ProjectReference Include="..\IKVM.Java\IKVM.Java.msbuildproj" />
         <ProjectReference Include="..\ikvmstub\ikvmstub.csproj" />
+        <ProjectReference Include="..\IKVM.Java\IKVM.Java.csproj" />
+        <ProjectReference Include="..\IKVM.Runtime\IKVM.Runtime.csproj" />
+        <ProjectReference Include="..\IKVM.Tool.Exporter\IKVM.Tool.Exporter.csproj" />
     </ItemGroup>
 
 </Project>
