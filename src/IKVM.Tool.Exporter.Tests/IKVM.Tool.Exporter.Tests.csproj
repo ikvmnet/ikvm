@@ -1,7 +1,7 @@
-<Project Sdk="Microsoft.NET.Sdk">
+﻿<Project Sdk="Microsoft.NET.Sdk">
 
     <PropertyGroup>
-        <TargetFrameworks>net461;netcoreapp3.1;net5.0;net6.0</TargetFrameworks>
+        <TargetFrameworks>net461;netcoreapp3.1</TargetFrameworks>
         <PreserveCompilationContext>true</PreserveCompilationContext>
     </PropertyGroup>
 
@@ -17,7 +17,6 @@
         <ProjectReference Include="..\IKVM.Runtime\IKVM.Runtime.csproj" />
         <ProjectReference Include="..\IKVM.Java\IKVM.Java.msbuildproj" />
         <ProjectReference Include="..\IKVM.Tool.Exporter\IKVM.Tool.Exporter.csproj" />
-        <ProjectReference Include="..\ikvmstub\ikvmstub.csproj" />
     </ItemGroup>
 
 </Project>
