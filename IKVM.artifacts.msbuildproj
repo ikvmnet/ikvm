@@ -37,6 +37,14 @@
             <Targets>IKVM-pkg:Pack</Targets>
             <Properties>$(PackProperties);PackageOutputPath=$(ArtifactStagingDirectory)\nuget</Properties>
         </TargetsForPublish>
+        <TargetsForPublish Include="$(SolutionFile)">
+            <Targets>IKVM_MSBuild:Pack</Targets>
+            <Properties>$(PackProperties);PackageOutputPath=$(ArtifactStagingDirectory)\nuget</Properties>
+        </TargetsForPublish>
+        <!--<TargetsForPublish Include="$(SolutionFile)">
+            <Targets>IKVM_NET_Sdk:Pack</Targets>
+            <Properties>$(PackProperties);PackageOutputPath=$(ArtifactStagingDirectory)\nuget</Properties>
+        </TargetsForPublish>-->
 
         <TargetsForPublish Include="$(SolutionFile)">
             <Targets>ikvm:Publish</Targets>
@@ -86,8 +94,8 @@
             <Properties>$(TestProperties);TargetFramework=net461;PublishDir=$(ArtifactStagingDirectory)\tests\ikvmc.Tests\net461</Properties>
         </TargetsForPublish>
         <TargetsForPublish Include="$(SolutionFile)">
-            <Targets>ikvmstub_Tests:Publish</Targets>
-            <Properties>$(TestProperties);TargetFramework=net461;PublishDir=$(ArtifactStagingDirectory)\tests\ikvmstub.Tests\net461</Properties>
+            <Targets>IKVM_Tool_Exporter_Tests:Publish</Targets>
+            <Properties>$(TestProperties);TargetFramework=net461;PublishDir=$(ArtifactStagingDirectory)\tests\IKVM.Tool.Exporter.Tests\net461</Properties>
         </TargetsForPublish>
 
         <TargetsForPublish Include="$(SolutionFile)">
@@ -109,8 +117,8 @@
             <Properties>$(TestProperties);TargetFramework=netcoreapp3.1;PublishDir=$(ArtifactStagingDirectory)\tests\ikvmc.Tests\netcoreapp3.1</Properties>
         </TargetsForPublish>
         <TargetsForPublish Include="$(SolutionFile)">
-            <Targets>ikvmstub_Tests:Publish</Targets>
-            <Properties>$(TestProperties);TargetFramework=netcoreapp3.1;PublishDir=$(ArtifactStagingDirectory)\tests\ikvmstub.Tests\netcoreapp3.1</Properties>
+            <Targets>IKVM_Tool_Exporter_Tests:Publish</Targets>
+            <Properties>$(TestProperties);TargetFramework=netcoreapp3.1;PublishDir=$(ArtifactStagingDirectory)\tests\IKVM.Tool.Exporter.Tests\netcoreapp3.1</Properties>
         </TargetsForPublish>
         <TargetsForPublish Include="$(SolutionFile)">
             <Targets>IKVM_MSBuild_Tasks_Tests:Publish</Targets>
@@ -126,10 +134,6 @@
             <Properties>$(TestProperties);TargetFramework=net5.0;PublishDir=$(ArtifactStagingDirectory)\tests\ikvmc.Tests\net5.0</Properties>
         </TargetsForPublish>
         <TargetsForPublish Include="$(SolutionFile)">
-            <Targets>ikvmstub_Tests:Publish</Targets>
-            <Properties>$(TestProperties);TargetFramework=net5.0;PublishDir=$(ArtifactStagingDirectory)\tests\ikvmstub.Tests\net5.0</Properties>
-        </TargetsForPublish>
-        <TargetsForPublish Include="$(SolutionFile)">
             <Targets>IKVM_MSBuild_Tasks_Tests:Publish</Targets>
             <Properties>$(TestProperties);TargetFramework=net5.0;PublishDir=$(ArtifactStagingDirectory)\tests\IKVM.MSBuild.Tasks.Tests\net5.0</Properties>
         </TargetsForPublish>
@@ -141,10 +145,6 @@
         <TargetsForPublish Include="$(SolutionFile)">
             <Targets>ikvmc_Tests:Publish</Targets>
             <Properties>$(TestProperties);TargetFramework=net6.0;PublishDir=$(ArtifactStagingDirectory)\tests\ikvmc.Tests\net6.0</Properties>
-        </TargetsForPublish>
-        <TargetsForPublish Include="$(SolutionFile)">
-            <Targets>ikvmstub_Tests:Publish</Targets>
-            <Properties>$(TestProperties);TargetFramework=net6.0;PublishDir=$(ArtifactStagingDirectory)\tests\ikvmstub.Tests\net6.0</Properties>
         </TargetsForPublish>
         <TargetsForPublish Include="$(SolutionFile)">
             <Targets>IKVM_MSBuild_Tasks_Tests:Publish</Targets>

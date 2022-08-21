@@ -2033,9 +2033,6 @@ namespace IKVM.Internal
         {
             Profiler.Count("TypeWrapper");
 
-            if (name != null && name.IndexOf('/') > -1)
-                throw new InternalException("Class name should be dotted, or null for primitives.");
-
             this.flags = flags;
             this.modifiers = modifiers;
             this.name = name == null ? null : String.Intern(name);

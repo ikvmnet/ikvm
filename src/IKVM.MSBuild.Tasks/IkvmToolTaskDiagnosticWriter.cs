@@ -3,14 +3,13 @@ using System.Threading.Tasks;
 
 using IKVM.Tool;
 
-
 namespace IKVM.MSBuild.Tasks
 {
 
     /// <summary>
     /// Logs diagnostic events to MSBuild.
     /// </summary>
-    class IkvmToolTaskDiagnosticWriter : IIkvmToolDiagnosticEventListener
+    public class IkvmToolTaskDiagnosticWriter : IIkvmToolDiagnosticEventListener
     {
 
         readonly Microsoft.Build.Utilities.TaskLoggingHelper log;

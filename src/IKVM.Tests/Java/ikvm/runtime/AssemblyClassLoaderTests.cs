@@ -30,10 +30,10 @@ namespace IKVM.Tests.Java.ikvm.runtime
         public async Task Setup()
         {
 #if NETCOREAPP3_1_OR_GREATER
-            var tfm = IkvmCompilerTargetFramework.NetCore;
+            var tfm = IkvmToolFramework.NetCore;
             var dir = "netcoreapp3.1";
 #else
-            var tfm = IkvmCompilerTargetFramework.NetFramework;
+            var tfm = IkvmToolFramework.NetFramework;
             var dir = "net461";
 #endif
 
@@ -45,7 +45,7 @@ namespace IKVM.Tests.Java.ikvm.runtime
             var l = new IkvmCompilerLauncher(new IkvmToolDelegateDiagnosticListener(evt => { e.Add(evt); TestContext.WriteLine(evt.Message, evt.MessageArgs); }));
             var o = new IkvmCompilerOptions()
             {
-                TargetFramework = tfm,
+                ToolFramework = tfm,
                 Runtime = Path.Combine("lib", dir, "IKVM.Runtime.dll"),
                 ResponseFile = $"{n}_ikvmc.rsp",
                 Input = { "helloworld-2.0.jar" },
@@ -58,7 +58,7 @@ namespace IKVM.Tests.Java.ikvm.runtime
             o.References.Add(Path.Combine("lib", dir, "IKVM.Java.dll"));
             o.References.Add(Path.Combine("lib", dir, "IKVM.Runtime.dll"));
             o.References.Add(Path.Combine("lib", dir, "IKVM.Runtime.JNI.dll"));
-            foreach (var f in Directory.GetFiles(l.GetReferenceAssemblyDirectory(o.TargetFramework)))
+            foreach (var f in Directory.GetFiles(l.GetReferenceAssemblyDirectory(o.ToolFramework)))
                 o.References.Add(f);
 
             var exitCode = await l.ExecuteAsync(o);

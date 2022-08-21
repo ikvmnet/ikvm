@@ -1,0 +1,41 @@
+<Project xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+    <PropertyGroup>
+        <MSBuildAllProjects>$(MSBuildAllProjects);$(MSBuildThisFileFullPath)</MSBuildAllProjects>
+        <UsingIkvmNetSdk>true</UsingIkvmNetSdk>
+    </PropertyGroup>
+
+    <Import Project="$(MSBuildThisFileDirectory)generated.props" Condition="Exists('$(MSBuildThisFileDirectory)generated.props')" />
+
+    <Import Project="$(CustomBeforeIkvmNetSdkProps)" Condition=" '$(CustomBeforeIkvmNetSdkProps)' != '' And Exists('$(CustomBeforeIkvmNetSdkProps)') " />
+
+    <PropertyGroup>
+        <DefaultProjectTypeGuid Condition=" '$(DefaultProjectTypeGuid)' == '' ">{9A19103F-16F7-4668-BE54-9A1E7A4F7556}</DefaultProjectTypeGuid>
+        <EnableDefaultItems>true</EnableDefaultItems>
+        <EnableDefaultEmbeddedResourceItems>false</EnableDefaultEmbeddedResourceItems>
+        <DisableFastUpToDateCheck Condition=" '$(DisableFastUpToDateCheck)' == '' ">true</DisableFastUpToDateCheck>
+        <GenerateMSBuildEditorConfigFile Condition=" '$(GenerateMSBuildEditorConfigFile)' == ''" >false</GenerateMSBuildEditorConfigFile>
+        <WarningLevel Condition=" '$(WarningLevel)' == '' ">4</WarningLevel>
+        <DefineConstants Condition=" '$(DefineConstants)' != '' ">$(DefineConstants);</DefineConstants>
+        <ProduceReferenceAssembly>false</ProduceReferenceAssembly>
+    </PropertyGroup>
+
+    <PropertyGroup>
+        <Bootstrap Condition=" '$(Bootstrap)' == '' ">false</Bootstrap>
+        <NoCompilerStandardLib Condition=" '$(NoCompilerStandardLib)' == '' ">true</NoCompilerStandardLib>
+        <CompressResources Condition=" '$(CompressResources)' == '' ">true</CompressResources>
+        <StrictFinalFieldSemantics Condition=" '$(StrictFinalFieldSemantics)' == '' ">true</StrictFinalFieldSemantics>
+        <RemoveAssertions Condition=" '$(RemoveAssertions)' == '' ">true</RemoveAssertions>
+        <NoParameterReflection Condition=" '$(NoParameterReflection)' == '' ">true</NoParameterReflection>
+    </PropertyGroup>
+
+    <!-- generated version information -->
+    <Import Project="$(MSBuildThisFileDirectory)generated\ImplicitIkvmPackageReferenceVersion.props" Condition="Exists('$(MSBuildThisFileDirectory)generated\ImplicitIkvmPackageReferenceVersion.props')" />
+
+    <!-- language specific functionality -->
+    <Import Project="$(MSBuildThisFileDirectory)IKVM.NET.Sdk.Java.props" />
+    <Import Project="$(LanguageProps)" Condition="Exists('$(LanguageProps)')" />
+
+    <Import Sdk="Microsoft.NET.Sdk" Project="Sdk.props" Condition=" '$(MicrosoftCommonPropsHasBeenImported)' != 'true' " />
+
+    <Import Project="$(CustomAfterIkvmNetSdkProps)" Condition=" '$(CustomAfterIkvmNetSdkProps)' != '' And Exists('$(CustomAfterIkvmNetSdkProps)') " />
+</Project>

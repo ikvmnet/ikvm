@@ -1,0 +1,115 @@
+<Project xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+    <PropertyGroup>
+        <MSBuildAllProjects>$(MSBuildAllProjects);$(MSBuildThisFileFullPath)</MSBuildAllProjects>
+    </PropertyGroup>
+
+    <Target Name="_BuildReferenceStubs" DependsOnTargets="ResolveReferenceStubs" Inputs="%(ReferenceStub.AssemblyFile)" Outputs="%(ReferenceStub.Identity)">
+        <ItemGroup>
+            <_ReferenceStubReference Remove="@(_ReferenceStubReference)" />
+            <_ReferenceStubReference Include="@(ReferencePathWithRefAssemblies)"  Condition=" '%(Filename)' != '%(ReferenceStub.Filename)' "/>
+        </ItemGroup>
+
+        <MakeDir Directories="$(ReferenceStubOutputPath);$(ReferenceStubOutputPath)tmp" />
+        <IkvmExporter
+            ToolPath="$(IkvmToolsPath)ikvmstub"
+            ToolFramework="$(IkvmToolFramework)"
+            Input="%(ReferenceStub.AssemblyFile)"
+            Bootstrap="$(Bootstrap)"
+            NoStdLib="$(NoCompilerStandardLib)"
+            References="@(_ReferenceStubReference)"
+            Output="$(ReferenceStubOutputPath)tmp\%(ReferenceStub.Filename)%(ReferenceStub.Extension)" />
+        <Move SourceFiles="$(ReferenceStubOutputPath)tmp\%(ReferenceStub.Filename)%(ReferenceStub.Extension)" DestinationFiles="%(ReferenceStub.Identity)" />
+        <Delete Files="$(ReferenceStubOutputPath)tmp\%(ReferenceStub.Filename)%(ReferenceStub.Extension)" />
+
+        <ItemGroup>
+            <FileWrites Include="$(ReferenceStubOutputPath)tmp\%(ReferenceStub.Filename)%(ReferenceStub.Extension)" />
+        </ItemGroup>
+    </Target>
+
+    <Target Name="_CompileJava" DependsOnTargets="BuildReferenceStubs" Inputs="@(Compile);@(Classpath)" Outputs="$(_CompileJavaStampFile)">
+        <PropertyGroup>
+            <_JavaCompilerDebug Condition=" '$(DebugSymbols)' == 'true' Or '$(DebugType)' != 'none' ">all</_JavaCompilerDebug>
+        </PropertyGroup>
+
+        <Message Text="Classpath: @(Classpath)" />
+        
+        <RemoveDir Directories="$(ClassOutputPath)" />
+        <MakeDir Directories="$(ClassOutputPath)" />
+        <IkvmJavaCompiler
+            Classpath="@(Classpath)"
+            Sources="@(Compile)"
+            Debug="$(_JavaCompilerDebug)"
+            NoWarn="true"
+            Source="$(LangVersion)"
+            Target="$(JavaVersion)"
+            Destination="$([System.IO.Path]::GetFullPath('$(ClassOutputPath)'))" />
+
+        <Touch Files="$(_CompileJavaStampFile)" AlwaysCreate="true" ForceTouch="true" />
+    </Target>
+
+    <Target Name="_CoreCompile" DependsOnTargets="CompileJava" Inputs="$(IkvmRuntimeAssembly);$(KeyOriginatorFile);@(MapFile);@(ReferencePathWithRefAssemblies);@(Class);@(JavaResource);$(_CompileJavaStampFile)" Outputs="@(IntermediateAssembly);@(_DebugSymbolsIntermediatePath)">
+        <Error Text="IKVM.Runtime.dll could not be located at '$(IkvmRuntimeAssembly)'" Condition="!Exists('$(IkvmRuntimeAssembly)')" />
+
+        <WriteLinesToFile File="$(_ExcludeFilePath)" Lines="@(ExcludeRegex)" Overwrite="true" Condition=" '@(ExcludeRegex)' != '' " />
+
+        <ItemGroup>
+            <_ClassToCompile Include="@(Class)" />
+            <_AssemblyAttributesClass Include="@(_ClassToCompile)" Condition=" '%(Filename)%(Extension)' == '__AssemblyAttributes.class' " />
+            <_AssemblyAttributesClass Include="@(_ClassToCompile)" Condition=" '%(Filename)%(Extension)' == '__AssemblyInfo.class' " />
+            <_ClassToCompile Remove="@(_AssemblyAttributesClass)" />
+        </ItemGroup>
+
+        <PropertyGroup>
+            <_IkvmCompilerDebug Condition=" '$(DebugType)' != 'none' ">true</_IkvmCompilerDebug>
+            <_IkvmCompilerExclude Condition="Exists('$(_ExcludeFilePath)')">$(_ExcludeFilePath)</_IkvmCompilerExclude>
+        </PropertyGroup>
+        <ItemGroup>
+            <_IkvmCompilerResource Include="@(JavaResource)" ResourcePath="$([System.String]::new('%(JavaResource.ResourcePath)').Replace('\', '/'))" Condition=" '%(Identity)' != '' " />
+        </ItemGroup>
+
+        <!-- Build Java assembly into temporary directory. -->
+        <RemoveDir Directories="$(_AssemblyTempPath)" />
+        <MakeDir Directories="$(_AssemblyTempPath)" />
+
+        <!-- Compile the reference item. -->
+        <IkvmCompiler
+            ToolPath="$(IkvmToolsPath)ikvmc"
+            ToolFramework="$(IkvmToolFramework)"
+            ResponseFile="$(_IkvmCompilerResponseFile)"
+            Output="$(_AssemblyTempPath)$(TargetName)$(TargetExt)"
+            Assembly="$(AssemblyName)"
+            AssemblyAttributes="@(_AssemblyAttributesClass)"
+            Exclude="$(_IkvmCompilerExclude)"
+            Version="$(AssemblyVersion)"
+            FileVersion="$(FileVersion)"
+            Runtime="$(IkvmRuntimeAssembly)"
+            Target="$(OutputType.ToLowerInvariant())"
+            Debug="$(_IkvmCompilerDebug)"
+            KeyFile="$(KeyOriginatorFile)"
+            CompressResources="$(CompressResources)"
+            ClassLoader="$(ClassLoader)"
+            SharedClassLoader="$(SharedClassLoader)"
+            NoStdLib="$(NoCompilerStandardLib)"
+            NoParameterReflection="$(NoParameterReflection)"
+            WarningLevel="$(WarningLevel)"
+            References="@(ReferencePathWithRefAssemblies)"
+            StrictFinalFieldSemantics="$(StrictFinalFieldSemantics)"
+            OptFields="true"
+            RemoveAssertions="$(RemoveAssertions)"
+            Resources="@(_IkvmCompilerResource)"
+            Remap="@(MapFile)"
+            Input="@(_ClassToCompile)" />
+
+        <!-- Move temporary files in place of permanent files. -->
+        <Move SourceFiles="$(_AssemblyTempPath)$(TargetName)$(TargetExt)" DestinationFiles="@(IntermediateAssembly)" OverwriteReadOnlyFiles="true" />
+        <Move SourceFiles="$(_AssemblyTempPath)$(TargetName).pdb" DestinationFiles="@(_DebugSymbolsIntermediatePath)" OverwriteReadOnlyFiles="true" Condition="Exists('$(_AssemblyTempPath)$(TargetName).pdb')" />
+
+        <ItemGroup>
+            <FileWrites Include="$(_ExcludeFilePath)" />
+            <FileWrites Include="$(_IkvmCompilerResponseFile)" />
+            <FileWrites Include="$(_AssemblyTempPath)$(TargetName)$(TargetExt)" />
+            <FileWrites Include="$(_AssemblyTempPath)$(TargetName).pdb" />
+        </ItemGroup>
+    </Target>
+
+</Project>

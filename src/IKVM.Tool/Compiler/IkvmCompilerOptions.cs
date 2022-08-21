@@ -12,7 +12,7 @@ namespace IKVM.Tool.Compiler
         /// <summary>
         /// Version of the tool to use.
         /// </summary>
-        public IkvmCompilerTargetFramework TargetFramework { get; set; } = IkvmCompilerTargetFramework.NetCore;
+        public IkvmToolFramework ToolFramework { get; set; } = IkvmToolFramework.NetCore;
 
         /// <summary>
         /// Number of milliseconds to wait for the command to execute.
@@ -171,6 +171,8 @@ namespace IKVM.Tool.Compiler
         public int? WarningLevel { get; set; }
 
         public bool NoParameterReflection { get; set; }
+
+        public string Remap { get; set; }
 
     }
 

@@ -1,0 +1,126 @@
+<Project xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+    <PropertyGroup>
+        <MSBuildAllProjects>$(MSBuildAllProjects);$(MSBuildThisFileFullPath)</MSBuildAllProjects>
+    </PropertyGroup>
+
+    <PropertyGroup>
+        <UseIkvmTasks Condition=" '$(UseIkvmTasks)' == '' ">true</UseIkvmTasks>
+        <ReferenceStubOutputPath>$(IntermediateOutputPath)refstubs\</ReferenceStubOutputPath>
+        <ClassOutputPath>$(IntermediateOutputPath)classes\</ClassOutputPath>
+    </PropertyGroup>
+
+    <Target Name="ResolveReferenceStubs" DependsOnTargets="ResolveReferences;FindReferenceAssembliesForReferences">
+        <ItemGroup>
+            <ReferenceStub Include="@(ReferencePath->'$(ReferenceStubOutputPath)%(Filename).jar')" Condition="'%(Filename)' != 'System.Runtime.Serialization'">
+                <AssemblyFile>%(Identity)</AssemblyFile>
+            </ReferenceStub>
+        </ItemGroup>
+    </Target>
+
+    <Target Name="_BuildReferenceStubs" DependsOnTargets="ResolveReferenceStubs" Inputs="%(ReferenceStub.AssemblyFile)" Outputs="%(ReferenceStub.Identity)">
+        <Error Text="_BuildReferenceStubs not implemented." />
+    </Target>
+
+    <PropertyGroup>
+        <BuildReferenceStubsDependsOn>
+            $(BuildReferenceStubsDependsOn);
+            ResolveReferences;
+            FindReferenceAssembliesForReferences;
+            ResolveReferenceStubs;
+            _BuildReferenceStubs;
+        </BuildReferenceStubsDependsOn>
+    </PropertyGroup>
+
+    <Target Name="BuildReferenceStubs" DependsOnTargets="$(BuildReferenceStubsDependsOn)">
+        <ItemGroup>
+            <Classpath Include="@(ReferenceStub)" />
+        </ItemGroup>
+    </Target>
+
+    <Target Name="CleanReferenceStubs">
+        <Delete Files="@(ReferenceStub)" />
+        <RemoveDir Directories="$(ReferenceStubOutputPath);$(ReferenceStubOutputPath)tmp" />
+    </Target>
+
+    <PropertyGroup>
+        <CleanDependsOn>
+            $(CleanDependsOn);
+            CleanReferenceStubs;
+        </CleanDependsOn>
+    </PropertyGroup>
+
+    <PropertyGroup>
+        <_CompileJavaStampFile>$(IntermediateOutputPath)$(MSBuildProjectName).javac.stamp</_CompileJavaStampFile>
+        <_CompileJavaResponseFile>$(IntermediateOutputPath)$(MSBuildProjectName).javac.rsp</_CompileJavaResponseFile>
+    </PropertyGroup>
+
+    <Target Name="_CompileJava" DependsOnTargets="BuildReferenceStubs" Inputs="@(Compile);@(Classpath)" Outputs="$(_CompileJavaStampFile)">
+        <Error Text="_CompileJava not implemented." />
+    </Target>
+
+    <PropertyGroup>
+        <CompileJavaDependsOn>
+            $(CompileJavaDependsOn)
+            BuildReferenceStubs;
+            _CompileJava;
+        </CompileJavaDependsOn>
+    </PropertyGroup>
+
+    <Target Name="CompileJava" DependsOnTargets="$(CompileJavaDependsOn)">
+        <Message Text="ClassOutputPath: $(ClassOutputPath)" />
+        <ItemGroup>
+            <Class Include="$(ClassOutputPath)**\*.class" />
+        </ItemGroup>
+    </Target>
+
+    <Target Name="CleanCompileJava">
+        <Delete Files="$(_CompileJavaCoreStampFile)" />
+        <Delete Files="$(_CompileJavaCoreJavacArgFile)" />
+        <RemoveDir Directories="$(ClassOutputPath)" />
+    </Target>
+
+    <PropertyGroup>
+        <CleanDependsOn>
+            $(CleanDependsOn);
+            CleanCompileJava;
+        </CleanDependsOn>
+    </PropertyGroup>
+
+    <PropertyGroup>
+        <_AssemblyTempPath>$(IntermediateOutputPath)java\</_AssemblyTempPath>
+        <_ExcludeFilePath>$(IntermediateOutputPath)$(MSBuildProjectName).exclude</_ExcludeFilePath>
+        <_IkvmCompilerResponseFile>$(IntermediateOutputPath)$(MSBuildProjectName).ikvmc.rsp</_IkvmCompilerResponseFile>
+    </PropertyGroup>
+
+    <Target Name="_CoreCompile" DependsOnTargets="CompileJava" Inputs="$(IkvmRuntimeAssembly);$(KeyOriginatorFile);@(MapFile);@(ReferencePathWithRefAssemblies);@(Class);@(JavaResource);$(_CompileJavaStampFile)" Outputs="@(IntermediateAssembly);@(_DebugSymbolsIntermediatePath)">
+        <Error Text="_CoreCompile not implemented." />
+    </Target>
+
+    <PropertyGroup>
+        <CoreCompileDependsOn>
+            $(CoreCompileDependsOn);
+            CompileJava;
+            _CoreCompile;
+        </CoreCompileDependsOn>
+    </PropertyGroup>
+
+    <Target Name="CoreCompile" DependsOnTargets="$(CoreCompileDependsOn)">
+        <CallTarget Targets="$(TargetsTriggeredByCompilation)" Condition="'$(TargetsTriggeredByCompilation)' != ''" />
+    </Target>
+
+    <Target Name="CleanCoreCompile">
+        <Delete Files="$(_ExcludeFilePath)" />
+        <Delete Files="$(_IkvmCompilerResponseFile)" />
+        <RemoveDir Directories="$(_AssemblyTempPath)" />
+    </Target>
+
+    <PropertyGroup>
+        <CleanDependsOn>
+            $(CleanDependsOn);
+            CleanCoreCompile;
+        </CleanDependsOn>
+    </PropertyGroup>
+
+    <Import Project="IKVM.Java.Core.Tasks.targets" Condition=" '$(UseIkvmTasks)' == 'true' "/>
+
+</Project>

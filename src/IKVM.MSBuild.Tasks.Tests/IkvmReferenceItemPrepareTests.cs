@@ -27,7 +27,7 @@ namespace IKVM.MSBuild.Tasks.Tests
         {
             var t = new IkvmReferenceItemPrepare();
             t.ToolVersion = toolVersion;
-            t.TargetFramework = toolFramework;
+            t.ToolFramework = toolFramework;
             t.RuntimeAssembly = typeof(IKVM.Runtime.InternalException).Assembly.Location;
             t.References = new[] { new TaskItem(typeof(object).Assembly.Location) };
             t.CacheDir = Path.Combine(Path.GetTempPath(), "ikvm", "cache", "1");
