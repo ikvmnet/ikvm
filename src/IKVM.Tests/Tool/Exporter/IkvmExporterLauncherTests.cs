@@ -75,7 +75,6 @@ namespace IKVM.Tests.Tool.Exporter
             };
 
             o.References.Add(Assembly.Load("netstandard").Location);
-            o.References.Add(Assembly.Load("System.Private.CoreLib").Location);
             o.References.Add(Assembly.Load("System.Runtime").Location);
             o.References.Add(Assembly.Load("IKVM.Runtime").Location);
             o.References.Add(Assembly.Load("IKVM.Java").Location);

@@ -5,13 +5,13 @@
 
     <PropertyGroup>
         <UseIkvmTasks Condition=" '$(UseIkvmTasks)' == '' ">true</UseIkvmTasks>
-        <ReferenceStubOutputPath>$(IntermediateOutputPath)refexp\</ReferenceStubOutputPath>
+        <ReferenceExportOutputPath>$(IntermediateOutputPath)refexp\</ReferenceExportOutputPath>
         <ClassOutputPath>$(IntermediateOutputPath)classes\</ClassOutputPath>
     </PropertyGroup>
 
     <Target Name="ResolveReferenceExports" DependsOnTargets="ResolveReferences;FindReferenceAssembliesForReferences">
         <ItemGroup>
-            <ReferenceExport Include="@(ReferencePath->'$(ReferenceStubOutputPath)%(Filename).jar')" Condition="'%(Filename)' != 'System.Runtime.Serialization'">
+            <ReferenceExport Include="@(ReferencePath->'$(ReferenceExportOutputPath)%(Filename).jar')" Condition="'%(Filename)' != 'System.Runtime.Serialization'">
                 <AssemblyFile>%(Identity)</AssemblyFile>
             </ReferenceExport>
         </ItemGroup>
@@ -22,30 +22,30 @@
     </Target>
 
     <PropertyGroup>
-        <BuildReferenceStubsDependsOn>
-            $(BuildReferenceStubsDependsOn);
+        <BuildReferenceExportsDependsOn>
+            $(BuildReferenceExportsDependsOn);
             ResolveReferences;
             FindReferenceAssembliesForReferences;
             ResolveReferenceExports;
             _BuildReferenceExports;
-        </BuildReferenceStubsDependsOn>
+        </BuildReferenceExportsDependsOn>
     </PropertyGroup>
 
-    <Target Name="BuildReferenceStubs" DependsOnTargets="$(BuildReferenceStubsDependsOn)">
+    <Target Name="BuildReferenceExports" DependsOnTargets="$(BuildReferenceExportsDependsOn)">
         <ItemGroup>
             <Classpath Include="@(ReferenceExport)" />
         </ItemGroup>
     </Target>
 
-    <Target Name="CleanReferenceStubs">
+    <Target Name="CleanReferenceExports">
         <Delete Files="@(ReferenceExport)" />
-        <RemoveDir Directories="$(ReferenceStubOutputPath);$(ReferenceStubOutputPath)tmp" />
+        <RemoveDir Directories="$(ReferenceExportOutputPath);$(ReferenceExportOutputPath)tmp" />
     </Target>
 
     <PropertyGroup>
         <CleanDependsOn>
             $(CleanDependsOn);
-            CleanReferenceStubs;
+            CleanReferenceExports;
         </CleanDependsOn>
     </PropertyGroup>
 
@@ -54,14 +54,14 @@
         <_CompileJavaResponseFile>$(IntermediateOutputPath)$(MSBuildProjectName).javac.rsp</_CompileJavaResponseFile>
     </PropertyGroup>
 
-    <Target Name="_CompileJava" DependsOnTargets="BuildReferenceStubs" Inputs="@(Compile);@(Classpath)" Outputs="$(_CompileJavaStampFile)">
+    <Target Name="_CompileJava" DependsOnTargets="BuildReferenceExports" Inputs="@(Compile);@(Classpath)" Outputs="$(_CompileJavaStampFile)">
         <Error Text="_CompileJava not implemented." />
     </Target>
 
     <PropertyGroup>
         <CompileJavaDependsOn>
             $(CompileJavaDependsOn)
-            BuildReferenceStubs;
+            BuildReferenceExports;
             _CompileJava;
         </CompileJavaDependsOn>
     </PropertyGroup>

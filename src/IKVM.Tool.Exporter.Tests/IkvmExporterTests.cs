@@ -39,7 +39,7 @@ namespace IKVM.Tool.Exporter.Tests
             options.Output = Path.Combine(Path.GetTempPath(), Path.GetFileName(Path.ChangeExtension(options.Assembly, ".jar")));
 #else
             options.References.AddRange(DependencyContext.Default.CompileLibraries.SelectMany(i => i.ResolveReferencePaths()));
-            options.Assembly = DependencyContext.Default.CompileLibraries.Where(i => i.Name == "netstandard").SelectMany(i => i.ResolveReferencePaths()).FirstOrDefault();
+            options.Assembly = typeof(object).Assembly.Location;
             options.Output = Path.Combine(Path.GetTempPath(), Path.GetFileName(Path.ChangeExtension(options.Assembly, ".jar")));
 #endif
 

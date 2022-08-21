@@ -9,7 +9,7 @@
             <_ReferenceStubReference Include="@(ReferencePathWithRefAssemblies)"  Condition=" '%(Filename)' != '%(ReferenceExport.Filename)' "/>
         </ItemGroup>
 
-        <MakeDir Directories="$(ReferenceStubOutputPath);$(ReferenceStubOutputPath)tmp" />
+        <MakeDir Directories="$(ReferenceExportOutputPath);$(ReferenceExportOutputPath)tmp" />
         <IkvmExporter
             ToolPath="$(IkvmToolsPath)ikvmstub"
             ToolFramework="$(IkvmToolFramework)"
@@ -17,16 +17,16 @@
             Bootstrap="$(Bootstrap)"
             NoStdLib="$(NoCompilerStandardLib)"
             References="@(_ReferenceStubReference)"
-            Output="$(ReferenceStubOutputPath)tmp\%(ReferenceExport.Filename)%(ReferenceExport.Extension)" />
-        <Move SourceFiles="$(ReferenceStubOutputPath)tmp\%(ReferenceExport.Filename)%(ReferenceExport.Extension)" DestinationFiles="%(ReferenceExport.Identity)" />
-        <Delete Files="$(ReferenceStubOutputPath)tmp\%(ReferenceExport.Filename)%(ReferenceExport.Extension)" />
+            Output="$(ReferenceExportOutputPath)tmp\%(ReferenceExport.Filename)%(ReferenceExport.Extension)" />
+        <Move SourceFiles="$(ReferenceExportOutputPath)tmp\%(ReferenceExport.Filename)%(ReferenceExport.Extension)" DestinationFiles="%(ReferenceExport.Identity)" />
+        <Delete Files="$(ReferenceExportOutputPath)tmp\%(ReferenceExport.Filename)%(ReferenceExport.Extension)" />
 
         <ItemGroup>
-            <FileWrites Include="$(ReferenceStubOutputPath)tmp\%(ReferenceExport.Filename)%(ReferenceExport.Extension)" />
+            <FileWrites Include="$(ReferenceExportOutputPath)tmp\%(ReferenceExport.Filename)%(ReferenceExport.Extension)" />
         </ItemGroup>
     </Target>
 
-    <Target Name="_CompileJava" DependsOnTargets="BuildReferenceStubs" Inputs="@(Compile);@(Classpath)" Outputs="$(_CompileJavaStampFile)">
+    <Target Name="_CompileJava" DependsOnTargets="BuildReferenceExports" Inputs="@(Compile);@(Classpath)" Outputs="$(_CompileJavaStampFile)">
         <PropertyGroup>
             <_JavaCompilerDebug Condition=" '$(DebugSymbols)' == 'true' Or '$(DebugType)' != 'none' ">all</_JavaCompilerDebug>
         </PropertyGroup>
