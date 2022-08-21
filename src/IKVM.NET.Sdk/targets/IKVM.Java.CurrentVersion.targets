@@ -33,8 +33,7 @@
     <Target
         Name="CreateManifestResourceNames"
         Condition="'@(EmbeddedResource)' != ''"
-        DependsOnTargets="$(CreateManifestResourceNamesDependsOn)"
-        >
+        DependsOnTargets="$(CreateManifestResourceNamesDependsOn)">
         <ItemGroup>
             <_Temporary Remove="@(_Temporary)" />
         </ItemGroup>

@@ -1,0 +1,41 @@
+<Project xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+    <PropertyGroup>
+        <MSBuildAllProjects>$(MSBuildAllProjects);$(MSBuildThisFileFullPath)</MSBuildAllProjects>
+    </PropertyGroup>
+
+    <!-- Resolve IkvmCompiler from project marked with IsIkvmCompiler. -->
+    <Target Name="ResolveIkvmCompiler" DependsOnTargets="ResolveProjectReferences">
+        <MSBuild Projects="@(_MSBuildProjectReferenceExistent)" Targets="Build" BuildInParallel="$(BuildInParallel)" Properties="%(_MSBuildProjectReferenceExistent.SetConfiguration);%(_MSBuildProjectReferenceExistent.SetPlatform);%(_MSBuildProjectReferenceExistent.SetTargetFramework)" RemoveProperties="%(_MSBuildProjectReferenceExistent.GlobalPropertiesToRemove)$(_GlobalPropertiesToRemoveFromProjectReferences)" Condition=" '%(_MSBuildProjectReferenceExistent.IsIkvmCompiler)' == 'true' ">
+            <Output TaskParameter="TargetOutputs" ItemName="_IkvmCompilerPath" />
+        </MSBuild>
+        <PropertyGroup>
+            <IkvmCompilerPath>@(_IkvmCompilerPath)</IkvmCompilerPath>
+            <IkvmCompilerExec>$(_IkvmToolExecPrefix)$(IkvmCompilerPath)</IkvmCompilerExec>
+        </PropertyGroup>
+        <Message Text="Using ikvmc executable at '$(IkvmCompilerPath)'." Importance="high" />
+    </Target>
+
+    <!-- Resolve IkvmExporter from project marked with IsIkvmCompiler. -->
+    <Target Name="ResolveIkvmExporter" DependsOnTargets="ResolveProjectReferences">
+        <MSBuild Projects="@(_MSBuildProjectReferenceExistent)" Targets="Build" BuildInParallel="$(BuildInParallel)" Properties="%(_MSBuildProjectReferenceExistent.SetConfiguration);%(_MSBuildProjectReferenceExistent.SetPlatform);%(_MSBuildProjectReferenceExistent.SetTargetFramework)" RemoveProperties="%(_MSBuildProjectReferenceExistent.GlobalPropertiesToRemove)$(_GlobalPropertiesToRemoveFromProjectReferences)" Condition=" '%(_MSBuildProjectReferenceExistent.IsIkvmExporter)' == 'true' ">
+            <Output TaskParameter="TargetOutputs" ItemName="_IkvmExporterPath" />
+        </MSBuild>
+        <PropertyGroup>
+            <IkvmExporterPath>@(_IkvmExporterPath)</IkvmExporterPath>
+            <IkvmExporterExec>$(_IkvmToolExecPrefix)$(IkvmExporterPath)</IkvmExporterExec>
+        </PropertyGroup>
+        <Message Text="Using ikvmstub executable at '$(IkvmExporterPath)'." Importance="high" />
+    </Target>
+
+    <!-- Resolve IKVM.Runtime from project marked with IsIkvmRuntimeAssembly. -->
+    <Target Name="ResolveIkvmRuntimeAssembly" DependsOnTargets="ResolveProjectReferences">
+        <MSBuild Projects="@(_MSBuildProjectReferenceExistent)" Targets="Build" BuildInParallel="$(BuildInParallel)" Properties="%(_MSBuildProjectReferenceExistent.SetConfiguration);%(_MSBuildProjectReferenceExistent.SetPlatform);%(_MSBuildProjectReferenceExistent.SetTargetFramework)" RemoveProperties="%(_MSBuildProjectReferenceExistent.GlobalPropertiesToRemove)$(_GlobalPropertiesToRemoveFromProjectReferences)" Condition=" '%(_MSBuildProjectReferenceExistent.IsIkvmRuntimeAssembly)' == 'true' ">
+            <Output TaskParameter="TargetOutputs" ItemName="_IkvmRuntimeAssembly" />
+        </MSBuild>
+        <PropertyGroup>
+            <IkvmRuntimeAssembly>@(_IkvmRuntimeAssembly)</IkvmRuntimeAssembly>
+        </PropertyGroup>
+        <Message Text="Using IKVM.Runtime at '$(IkvmRuntimeAssembly)'." Importance="high" />
+    </Target>
+
+</Project>

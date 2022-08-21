@@ -19,6 +19,16 @@
         <None Include="..\..\LICENSE.md" Pack="true" PackagePath="." />
         <None Include="..\..\README.md" Pack="true" PackagePath="." />
     </ItemGroup>
+    
+    <ItemGroup>
+      <None Update="targets\IKVM.Java.Core.ProjectReferences.targets">
+        <PackagePath>targets\%(RecursiveDir)%(Filename)%(Extension)</PackagePath>
+      </None>
+      <None Update="targets\IKVM.Java.Core.Commands.targets">
+        <PackagePath>targets\%(RecursiveDir)%(Filename)%(Extension)</PackagePath>
+        <Pack>true</Pack>
+      </None>
+    </ItemGroup>
 
     <Target Name="MakeGeneratedPropsFile" Outputs="$(IntermediateOutputPath)generated.props" BeforeTargets="_GetPackageFiles">
         <ItemGroup>

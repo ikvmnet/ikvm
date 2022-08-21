@@ -5,20 +5,20 @@
 
     <PropertyGroup>
         <UseIkvmTasks Condition=" '$(UseIkvmTasks)' == '' ">true</UseIkvmTasks>
-        <ReferenceStubOutputPath>$(IntermediateOutputPath)refstubs\</ReferenceStubOutputPath>
+        <ReferenceStubOutputPath>$(IntermediateOutputPath)refexp\</ReferenceStubOutputPath>
         <ClassOutputPath>$(IntermediateOutputPath)classes\</ClassOutputPath>
     </PropertyGroup>
 
-    <Target Name="ResolveReferenceStubs" DependsOnTargets="ResolveReferences;FindReferenceAssembliesForReferences">
+    <Target Name="ResolveReferenceExports" DependsOnTargets="ResolveReferences;FindReferenceAssembliesForReferences">
         <ItemGroup>
-            <ReferenceStub Include="@(ReferencePath->'$(ReferenceStubOutputPath)%(Filename).jar')" Condition="'%(Filename)' != 'System.Runtime.Serialization'">
+            <ReferenceExport Include="@(ReferencePath->'$(ReferenceStubOutputPath)%(Filename).jar')" Condition="'%(Filename)' != 'System.Runtime.Serialization'">
                 <AssemblyFile>%(Identity)</AssemblyFile>
-            </ReferenceStub>
+            </ReferenceExport>
         </ItemGroup>
     </Target>
 
-    <Target Name="_BuildReferenceStubs" DependsOnTargets="ResolveReferenceStubs" Inputs="%(ReferenceStub.AssemblyFile)" Outputs="%(ReferenceStub.Identity)">
-        <Error Text="_BuildReferenceStubs not implemented." />
+    <Target Name="_BuildReferenceExports" DependsOnTargets="ResolveReferenceExports" Inputs="%(ReferenceExport.AssemblyFile)" Outputs="%(ReferenceExport.Identity)">
+        <Error Text="_BuildReferenceExports not implemented." />
     </Target>
 
     <PropertyGroup>
@@ -26,19 +26,19 @@
             $(BuildReferenceStubsDependsOn);
             ResolveReferences;
             FindReferenceAssembliesForReferences;
-            ResolveReferenceStubs;
-            _BuildReferenceStubs;
+            ResolveReferenceExports;
+            _BuildReferenceExports;
         </BuildReferenceStubsDependsOn>
     </PropertyGroup>
 
     <Target Name="BuildReferenceStubs" DependsOnTargets="$(BuildReferenceStubsDependsOn)">
         <ItemGroup>
-            <Classpath Include="@(ReferenceStub)" />
+            <Classpath Include="@(ReferenceExport)" />
         </ItemGroup>
     </Target>
 
     <Target Name="CleanReferenceStubs">
-        <Delete Files="@(ReferenceStub)" />
+        <Delete Files="@(ReferenceExport)" />
         <RemoveDir Directories="$(ReferenceStubOutputPath);$(ReferenceStubOutputPath)tmp" />
     </Target>
 
@@ -122,5 +122,6 @@
     </PropertyGroup>
 
     <Import Project="IKVM.Java.Core.Tasks.targets" Condition=" '$(UseIkvmTasks)' == 'true' "/>
+    <Import Project="IKVM.Java.Core.Commands.targets" Condition=" '$(UseIkvmTasks)' != 'true' "/>
 
 </Project>

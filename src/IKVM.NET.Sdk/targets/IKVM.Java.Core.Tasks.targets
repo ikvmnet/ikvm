@@ -3,26 +3,26 @@
         <MSBuildAllProjects>$(MSBuildAllProjects);$(MSBuildThisFileFullPath)</MSBuildAllProjects>
     </PropertyGroup>
 
-    <Target Name="_BuildReferenceStubs" DependsOnTargets="ResolveReferenceStubs" Inputs="%(ReferenceStub.AssemblyFile)" Outputs="%(ReferenceStub.Identity)">
+    <Target Name="_BuildReferenceExports" DependsOnTargets="ResolveReferenceExports" Inputs="%(ReferenceExport.AssemblyFile)" Outputs="%(ReferenceExport.Identity)">
         <ItemGroup>
             <_ReferenceStubReference Remove="@(_ReferenceStubReference)" />
-            <_ReferenceStubReference Include="@(ReferencePathWithRefAssemblies)"  Condition=" '%(Filename)' != '%(ReferenceStub.Filename)' "/>
+            <_ReferenceStubReference Include="@(ReferencePathWithRefAssemblies)"  Condition=" '%(Filename)' != '%(ReferenceExport.Filename)' "/>
         </ItemGroup>
 
         <MakeDir Directories="$(ReferenceStubOutputPath);$(ReferenceStubOutputPath)tmp" />
         <IkvmExporter
             ToolPath="$(IkvmToolsPath)ikvmstub"
             ToolFramework="$(IkvmToolFramework)"
-            Input="%(ReferenceStub.AssemblyFile)"
+            Input="%(ReferenceExport.AssemblyFile)"
             Bootstrap="$(Bootstrap)"
             NoStdLib="$(NoCompilerStandardLib)"
             References="@(_ReferenceStubReference)"
-            Output="$(ReferenceStubOutputPath)tmp\%(ReferenceStub.Filename)%(ReferenceStub.Extension)" />
-        <Move SourceFiles="$(ReferenceStubOutputPath)tmp\%(ReferenceStub.Filename)%(ReferenceStub.Extension)" DestinationFiles="%(ReferenceStub.Identity)" />
-        <Delete Files="$(ReferenceStubOutputPath)tmp\%(ReferenceStub.Filename)%(ReferenceStub.Extension)" />
+            Output="$(ReferenceStubOutputPath)tmp\%(ReferenceExport.Filename)%(ReferenceExport.Extension)" />
+        <Move SourceFiles="$(ReferenceStubOutputPath)tmp\%(ReferenceExport.Filename)%(ReferenceExport.Extension)" DestinationFiles="%(ReferenceExport.Identity)" />
+        <Delete Files="$(ReferenceStubOutputPath)tmp\%(ReferenceExport.Filename)%(ReferenceExport.Extension)" />
 
         <ItemGroup>
-            <FileWrites Include="$(ReferenceStubOutputPath)tmp\%(ReferenceStub.Filename)%(ReferenceStub.Extension)" />
+            <FileWrites Include="$(ReferenceStubOutputPath)tmp\%(ReferenceExport.Filename)%(ReferenceExport.Extension)" />
         </ItemGroup>
     </Target>
 
