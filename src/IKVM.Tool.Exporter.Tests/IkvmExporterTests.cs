@@ -35,7 +35,7 @@ namespace IKVM.Tool.Exporter.Tests
 
 #if NET461
             options.Libraries.Add(RuntimeEnvironment.GetRuntimeDirectory());
-            options.Assembly = Path.Combine(RuntimeEnvironment.GetRuntimeDirectory(), "mscorlib.dll");
+            options.Assembly = typeof(object).Assembly.Location;
             options.Output = Path.Combine(Path.GetTempPath(), Path.GetFileName(Path.ChangeExtension(options.Assembly, ".jar")));
 #else
             options.References.AddRange(DependencyContext.Default.CompileLibraries.SelectMany(i => i.ResolveReferencePaths()));
