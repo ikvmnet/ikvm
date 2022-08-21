@@ -13,7 +13,7 @@ using System.Threading;
 using Microsoft.Extensions.DependencyModel;
 #endif
 
-namespace IKVM.Tool.Exporter.Tests.Tests
+namespace IKVM.Tool.Exporter.Tests
 {
 
     [TestClass]

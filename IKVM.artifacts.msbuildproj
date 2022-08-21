@@ -134,10 +134,6 @@
             <Properties>$(TestProperties);TargetFramework=net5.0;PublishDir=$(ArtifactStagingDirectory)\tests\ikvmc.Tests\net5.0</Properties>
         </TargetsForPublish>
         <TargetsForPublish Include="$(SolutionFile)">
-            <Targets>IKVM_Tool_Exporter_Tests:Publish</Targets>
-            <Properties>$(TestProperties);TargetFramework=net5.0;PublishDir=$(ArtifactStagingDirectory)\tests\IKVM.Tool.Exporter.Tests\net5.0</Properties>
-        </TargetsForPublish>
-        <TargetsForPublish Include="$(SolutionFile)">
             <Targets>IKVM_MSBuild_Tasks_Tests:Publish</Targets>
             <Properties>$(TestProperties);TargetFramework=net5.0;PublishDir=$(ArtifactStagingDirectory)\tests\IKVM.MSBuild.Tasks.Tests\net5.0</Properties>
         </TargetsForPublish>
@@ -149,10 +145,6 @@
         <TargetsForPublish Include="$(SolutionFile)">
             <Targets>ikvmc_Tests:Publish</Targets>
             <Properties>$(TestProperties);TargetFramework=net6.0;PublishDir=$(ArtifactStagingDirectory)\tests\ikvmc.Tests\net6.0</Properties>
-        </TargetsForPublish>
-        <TargetsForPublish Include="$(SolutionFile)">
-            <Targets>IKVM_Tool_Exporter_Tests:Publish</Targets>
-            <Properties>$(TestProperties);TargetFramework=net6.0;PublishDir=$(ArtifactStagingDirectory)\tests\IKVM.Tool.Exporter.Tests\net6.0</Properties>
         </TargetsForPublish>
         <TargetsForPublish Include="$(SolutionFile)">
             <Targets>IKVM_MSBuild_Tasks_Tests:Publish</Targets>
