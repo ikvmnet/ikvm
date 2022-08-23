@@ -4,6 +4,8 @@
     </PropertyGroup>
 
     <Target Name="_BuildReferenceExports" DependsOnTargets="ResolveReferenceExports" Inputs="%(ReferenceExport.AssemblyFile)" Outputs="%(ReferenceExport.Identity)">
+        <Error Text="IKVM.NET.Sdk cannot currently build assemblies targeting '$(TargetFramework)'. Either target 'net461' or 'netcoreapp3.1'." Condition=" '$(TargetFramework)' != 'net461' And '$(TargetFramework)' != 'netcoreapp3.1' " />
+               
         <ItemGroup>
             <_ReferenceStubReference Remove="@(_ReferenceStubReference)" />
             <_ReferenceStubReference Include="@(ReferencePathWithRefAssemblies)"  Condition=" '%(Filename)' != '%(ReferenceExport.Filename)' "/>
@@ -48,6 +50,8 @@
     </Target>
 
     <Target Name="_CoreCompile" DependsOnTargets="CompileJava" Inputs="$(IkvmRuntimeAssembly);$(KeyOriginatorFile);@(MapFile);@(ReferencePathWithRefAssemblies);@(Class);@(JavaResource);$(_CompileJavaStampFile)" Outputs="@(IntermediateAssembly);@(_DebugSymbolsIntermediatePath)">
+        <Error Text="IKVM.NET.Sdk cannot currently build assemblies targeting '$(TargetFramework)'. Either target 'net461' or 'netcoreapp3.1'." Condition=" '$(TargetFramework)' != 'net461' And '$(TargetFramework)' != 'netcoreapp3.1' " />
+        
         <Error Text="IKVM.Runtime.dll could not be located at '$(IkvmRuntimeAssembly)'" Condition="!Exists('$(IkvmRuntimeAssembly)')" />
 
         <WriteLinesToFile File="$(_ExcludeFilePath)" Lines="@(ExcludeRegex)" Overwrite="true" Condition=" '@(ExcludeRegex)' != '' " />
