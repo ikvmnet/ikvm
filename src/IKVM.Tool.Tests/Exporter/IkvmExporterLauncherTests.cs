@@ -51,6 +51,10 @@ namespace IKVM.Tool.Tests.Exporter
         [TestMethod]
         public Task Can_export_netframework_dll()
         {
+            // Framework not supported on ~Windows
+            if (RuntimeInformation.IsOSPlatform(OSPlatform.Windows) == false)
+                return Task.CompletedTask;
+
             return Can_export_dll(IkvmToolFramework.NetFramework, "net461");
         }
 
