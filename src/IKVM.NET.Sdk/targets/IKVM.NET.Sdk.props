@@ -28,9 +28,6 @@
         <NoParameterReflection Condition=" '$(NoParameterReflection)' == '' ">true</NoParameterReflection>
     </PropertyGroup>
 
-    <!-- generated version information -->
-    <Import Project="$(MSBuildThisFileDirectory)generated\ImplicitIkvmPackageReferenceVersion.props" Condition="Exists('$(MSBuildThisFileDirectory)generated\ImplicitIkvmPackageReferenceVersion.props')" />
-
     <!-- language specific functionality -->
     <Import Project="$(MSBuildThisFileDirectory)IKVM.NET.Sdk.Java.props" />
     <Import Project="$(LanguageProps)" Condition="Exists('$(LanguageProps)')" />
