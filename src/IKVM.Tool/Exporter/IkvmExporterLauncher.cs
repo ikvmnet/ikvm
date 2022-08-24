@@ -114,7 +114,7 @@ namespace IKVM.Tool.Exporter
                 // locate EXE file
                 var exe = GetToolExe(options.ToolFramework);
                 if (File.Exists(exe) == false)
-                    throw new FileNotFoundException($"Could not locate tool at {exe}.");
+                    throw new FileNotFoundException($"Could not locate tool at '{exe}'.");
 
                 // check for supported platform
                 if (RuntimeInformation.IsOSPlatform(OSPlatform.Windows) == false && options.ToolFramework == IkvmToolFramework.NetFramework)

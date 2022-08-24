@@ -21,7 +21,7 @@ namespace IKVM.Tool.Tests.Exporter
 
         public TestContext TestContext { get; set; }
 
-        public async Task Can_export_dll(IkvmToolFramework toolFramework, string tfm)
+        async Task Can_export_dll(IkvmToolFramework toolFramework, string tfm)
         {
             var libs = Path.Combine(TESTBASE, "lib", tfm);
 
@@ -33,7 +33,7 @@ namespace IKVM.Tool.Tests.Exporter
             var l = new IkvmExporterLauncher(new IkvmToolDelegateDiagnosticListener(evt => { e.Add(evt); TestContext.WriteLine(evt.Message, evt.MessageArgs); }));
             var o = new IkvmExporterOptions()
             {
-                ToolFramework = IkvmToolFramework.NetFramework,
+                ToolFramework = toolFramework,
                 NoStdLib = true,
                 Input = a,
                 Output = p,
