@@ -67,7 +67,6 @@
     </PropertyGroup>
 
     <Target Name="CompileJava" DependsOnTargets="$(CompileJavaDependsOn)">
-        <Message Text="ClassOutputPath: $(ClassOutputPath)" />
         <ItemGroup>
             <Class Include="$(ClassOutputPath)**\*.class" />
         </ItemGroup>

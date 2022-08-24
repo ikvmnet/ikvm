@@ -33,8 +33,6 @@
             <_JavaCompilerDebug Condition=" '$(DebugSymbols)' == 'true' Or '$(DebugType)' != 'none' ">all</_JavaCompilerDebug>
         </PropertyGroup>
 
-        <Message Text="Classpath: @(Classpath)" />
-        
         <RemoveDir Directories="$(ClassOutputPath)" />
         <MakeDir Directories="$(ClassOutputPath)" />
         <IkvmJavaCompiler
