@@ -2,7 +2,6 @@
 
     <PropertyGroup>
         <TargetFrameworks>net461;netcoreapp3.1</TargetFrameworks>
-        <RuntimeIdentifiers>win7-x64;linux-x64</RuntimeIdentifiers>
         <AssemblyTitle>IKVM.NET Assembly Exporter</AssemblyTitle>
         <Description>IKVM.NET Assembly Exporter</Description>
         <DefineConstants>$(DefineConstants);STUB_GENERATOR</DefineConstants>
@@ -40,9 +39,7 @@
     </ItemGroup>
 
     <ItemGroup>
-        <ProjectReference Include="..\IKVM.Reflection\IKVM.Reflection.csproj">
-            <PrivateAssets>All</PrivateAssets>
-        </ProjectReference>
+        <ProjectReference Include="..\IKVM.Reflection\IKVM.Reflection.csproj" />
     </ItemGroup>
 
     <ItemGroup>

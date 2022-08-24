@@ -1,0 +1,127 @@
+<Project xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+    <PropertyGroup>
+        <MSBuildAllProjects>$(MSBuildAllProjects);$(MSBuildThisFileFullPath)</MSBuildAllProjects>
+    </PropertyGroup>
+
+    <PropertyGroup>
+        <UseIkvmTasks Condition=" '$(UseIkvmTasks)' == '' ">true</UseIkvmTasks>
+        <ReferenceExportOutputPath>$(IntermediateOutputPath)refexp\</ReferenceExportOutputPath>
+        <ClassOutputPath>$(IntermediateOutputPath)classes\</ClassOutputPath>
+    </PropertyGroup>
+
+    <Target Name="ResolveReferenceExports" DependsOnTargets="ResolveReferences;FindReferenceAssembliesForReferences">
+        <ItemGroup>
+            <ReferenceExport Include="@(ReferencePath->'$(ReferenceExportOutputPath)%(Filename).jar')" Condition="'%(Filename)' != 'System.Runtime.Serialization'">
+                <AssemblyFile>%(Identity)</AssemblyFile>
+            </ReferenceExport>
+        </ItemGroup>
+    </Target>
+
+    <Target Name="_BuildReferenceExports" DependsOnTargets="ResolveReferenceExports" Inputs="%(ReferenceExport.AssemblyFile)" Outputs="%(ReferenceExport.Identity)">
+        <Error Text="_BuildReferenceExports not implemented." />
+    </Target>
+
+    <PropertyGroup>
+        <BuildReferenceExportsDependsOn>
+            $(BuildReferenceExportsDependsOn);
+            ResolveReferences;
+            FindReferenceAssembliesForReferences;
+            ResolveReferenceExports;
+            _BuildReferenceExports;
+        </BuildReferenceExportsDependsOn>
+    </PropertyGroup>
+
+    <Target Name="BuildReferenceExports" DependsOnTargets="$(BuildReferenceExportsDependsOn)">
+        <ItemGroup>
+            <Classpath Include="@(ReferenceExport)" />
+        </ItemGroup>
+    </Target>
+
+    <Target Name="CleanReferenceExports">
+        <Delete Files="@(ReferenceExport)" />
+        <RemoveDir Directories="$(ReferenceExportOutputPath);$(ReferenceExportOutputPath)tmp" />
+    </Target>
+
+    <PropertyGroup>
+        <CleanDependsOn>
+            $(CleanDependsOn);
+            CleanReferenceExports;
+        </CleanDependsOn>
+    </PropertyGroup>
+
+    <PropertyGroup>
+        <_CompileJavaStampFile>$(IntermediateOutputPath)$(MSBuildProjectName).javac.stamp</_CompileJavaStampFile>
+        <_CompileJavaResponseFile>$(IntermediateOutputPath)$(MSBuildProjectName).javac.rsp</_CompileJavaResponseFile>
+    </PropertyGroup>
+
+    <Target Name="_CompileJava" DependsOnTargets="BuildReferenceExports" Inputs="@(Compile);@(Classpath)" Outputs="$(_CompileJavaStampFile)">
+        <Error Text="_CompileJava not implemented." />
+    </Target>
+
+    <PropertyGroup>
+        <CompileJavaDependsOn>
+            $(CompileJavaDependsOn)
+            BuildReferenceExports;
+            _CompileJava;
+        </CompileJavaDependsOn>
+    </PropertyGroup>
+
+    <Target Name="CompileJava" DependsOnTargets="$(CompileJavaDependsOn)">
+        <Message Text="ClassOutputPath: $(ClassOutputPath)" />
+        <ItemGroup>
+            <Class Include="$(ClassOutputPath)**\*.class" />
+        </ItemGroup>
+    </Target>
+
+    <Target Name="CleanCompileJava">
+        <Delete Files="$(_CompileJavaCoreStampFile)" />
+        <Delete Files="$(_CompileJavaCoreJavacArgFile)" />
+        <RemoveDir Directories="$(ClassOutputPath)" />
+    </Target>
+
+    <PropertyGroup>
+        <CleanDependsOn>
+            $(CleanDependsOn);
+            CleanCompileJava;
+        </CleanDependsOn>
+    </PropertyGroup>
+
+    <PropertyGroup>
+        <_AssemblyTempPath>$(IntermediateOutputPath)java\</_AssemblyTempPath>
+        <_ExcludeFilePath>$(IntermediateOutputPath)$(MSBuildProjectName).exclude</_ExcludeFilePath>
+        <_IkvmCompilerResponseFile>$(IntermediateOutputPath)$(MSBuildProjectName).ikvmc.rsp</_IkvmCompilerResponseFile>
+    </PropertyGroup>
+
+    <Target Name="_CoreCompile" DependsOnTargets="CompileJava" Inputs="$(IkvmRuntimeAssembly);$(KeyOriginatorFile);@(MapFile);@(ReferencePathWithRefAssemblies);@(Class);@(JavaResource);$(_CompileJavaStampFile)" Outputs="@(IntermediateAssembly);@(_DebugSymbolsIntermediatePath)">
+        <Error Text="_CoreCompile not implemented." />
+    </Target>
+
+    <PropertyGroup>
+        <CoreCompileDependsOn>
+            $(CoreCompileDependsOn);
+            CompileJava;
+            _CoreCompile;
+        </CoreCompileDependsOn>
+    </PropertyGroup>
+
+    <Target Name="CoreCompile" DependsOnTargets="$(CoreCompileDependsOn)">
+        <CallTarget Targets="$(TargetsTriggeredByCompilation)" Condition="'$(TargetsTriggeredByCompilation)' != ''" />
+    </Target>
+
+    <Target Name="CleanCoreCompile">
+        <Delete Files="$(_ExcludeFilePath)" />
+        <Delete Files="$(_IkvmCompilerResponseFile)" />
+        <RemoveDir Directories="$(_AssemblyTempPath)" />
+    </Target>
+
+    <PropertyGroup>
+        <CleanDependsOn>
+            $(CleanDependsOn);
+            CleanCoreCompile;
+        </CleanDependsOn>
+    </PropertyGroup>
+
+    <Import Project="IKVM.Java.Core.Tasks.targets" Condition=" '$(UseIkvmTasks)' == 'true' "/>
+    <Import Project="IKVM.Java.Core.Commands.targets" Condition=" '$(UseIkvmTasks)' != 'true' "/>
+
+</Project>

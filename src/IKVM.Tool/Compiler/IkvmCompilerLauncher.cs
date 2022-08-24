@@ -16,24 +16,20 @@ namespace IKVM.Tool.Compiler
     /// <summary>
     /// Provides methods to launch the IKVM compiler.
     /// </summary>
-    public class IkvmCompilerLauncher
+    public class IkvmCompilerLauncher : IkvmToolLauncher
     {
 
-        readonly string toolPath;
-        readonly IIkvmToolDiagnosticEventListener listener;
+        static readonly string TOOLNAME = "ikvmc";
 
         /// <summary>
         /// Initializes a new instance.
         /// </summary>
         /// <param name="toolPath"></param>
         /// <param name="listener"></param>
-        public IkvmCompilerLauncher(string toolPath, IIkvmToolDiagnosticEventListener listener)
+        public IkvmCompilerLauncher(string toolPath, IIkvmToolDiagnosticEventListener listener) :
+            base(TOOLNAME, toolPath, listener)
         {
-            this.toolPath = toolPath ?? throw new ArgumentNullException(nameof(toolPath));
-            this.listener = listener;
 
-            if (Directory.Exists(toolPath) == false)
-                throw new DirectoryNotFoundException($"Could not locate tool path {toolPath}.");
         }
 
         /// <summary>
@@ -41,7 +37,7 @@ namespace IKVM.Tool.Compiler
         /// </summary>
         /// <param name="listener"></param>
         public IkvmCompilerLauncher(IIkvmToolDiagnosticEventListener listener) :
-            this(Path.Combine(Path.GetDirectoryName(typeof(IkvmCompilerLauncher).Assembly.Location), "ikvmc"), listener)
+            this(Path.Combine(Path.GetDirectoryName(typeof(IkvmCompilerLauncher).Assembly.Location), TOOLNAME), listener)
         {
 
         }
@@ -54,132 +50,6 @@ namespace IKVM.Tool.Compiler
             this(toolPath, new IkvmToolDelegateDiagnosticListener(evt => Task.CompletedTask))
         {
 
-        }
-
-        /// <summary>
-        /// Logs an event if a listener is provided.
-        /// </summary>
-        /// <param name="level"></param>
-        /// <param name="message"></param>
-        /// <param name="args"></param>
-        /// <returns></returns>
-        Task LogEvent(IkvmToolDiagnosticEventLevel level, string message, params object[] args)
-        {
-            return listener?.ReceiveAsync(new IkvmToolDiagnosticEvent(level, message, args));
-        }
-
-        /// <summary>
-        /// Gets the path to the tool directory for the given environment.
-        /// </summary>
-        /// <param name="framework"></param>
-        /// <param name="platform"></param>
-        /// <param name="architecture"></param>
-        /// <returns></returns>
-        /// <exception cref="ArgumentNullException"></exception>
-        /// <exception cref="NotImplementedException"></exception>
-        public string GetToolDir(IkvmCompilerTargetFramework framework, OSPlatform platform, Architecture architecture)
-        {
-            // determine the TFM of the tool to be executed
-            var tfm = framework switch
-            {
-                IkvmCompilerTargetFramework.NetFramework => "net461",
-                IkvmCompilerTargetFramework.NetCore => "netcoreapp3.1",
-                _ => throw new NotImplementedException(),
-            };
-
-            // determine the RID of the tool to be executed
-            var rid = architecture switch
-            {
-                Architecture.X86 => framework switch
-                {
-                    IkvmCompilerTargetFramework.NetFramework => "any",
-                    IkvmCompilerTargetFramework.NetCore when platform == OSPlatform.Windows => "win7-x86",
-                    IkvmCompilerTargetFramework.NetCore when platform == OSPlatform.Linux => "linux-x86",
-                    _ => throw new NotImplementedException(),
-                },
-                Architecture.X64 => framework switch
-                {
-                    IkvmCompilerTargetFramework.NetFramework => "any",
-                    IkvmCompilerTargetFramework.NetCore when platform == OSPlatform.Windows => "win7-x64",
-                    IkvmCompilerTargetFramework.NetCore when platform == OSPlatform.Linux => "linux-x64",
-                    _ => throw new NotImplementedException(),
-                },
-                _ => throw new NotImplementedException(),
-            };
-
-            // we use a different path and args set based on which version we're running
-            return Path.Combine(toolPath, tfm, rid);
-        }
-
-        /// <summary>
-        /// Gets the path to executable for the given environment.
-        /// </summary>
-        /// <param name="framework"></param>
-        /// <param name="platform"></param>
-        /// <param name="architecture"></param>
-        /// <returns></returns>
-        /// <exception cref="ArgumentNullException"></exception>
-        /// <exception cref="NotImplementedException"></exception>
-        public string GetToolExe(IkvmCompilerTargetFramework framework, OSPlatform platform, Architecture architecture)
-        {
-            return Path.Combine(GetToolDir(framework, platform, architecture), platform == OSPlatform.Windows ? "ikvmc.exe" : "ikvmc");
-        }
-
-        /// <summary>
-        /// Gets the path to executable for the given environment.
-        /// </summary>
-        /// <param name="framework"></param>
-        /// <returns></returns>
-        /// <exception cref="ArgumentNullException"></exception>
-        /// <exception cref="NotImplementedException"></exception>
-        public string GetToolExe(IkvmCompilerTargetFramework framework)
-        {
-            return GetToolExe(framework, GetOSPlatform(), RuntimeInformation.OSArchitecture);
-        }
-
-        /// <summary>
-        /// Gets the path to the reference assemblies for the given environment.
-        /// </summary>
-        /// <param name="framework"></param>
-        /// <param name="platform"></param>
-        /// <param name="architecture"></param>
-        /// <returns></returns>
-        /// <exception cref="ArgumentNullException"></exception>
-        /// <exception cref="NotImplementedException"></exception>
-        public string GetReferenceAssemblyDirectory(IkvmCompilerTargetFramework framework, OSPlatform platform, Architecture architecture)
-        {
-            return Path.Combine(GetToolDir(framework, platform, architecture), "refs");
-        }
-
-        /// <summary>
-        /// Gets the path to the reference assemblies for the given environment.
-        /// </summary>
-        /// <param name="framework"></param>
-        /// <returns></returns>
-        /// <exception cref="ArgumentNullException"></exception>
-        /// <exception cref="NotImplementedException"></exception>
-        public string GetReferenceAssemblyDirectory(IkvmCompilerTargetFramework framework)
-        {
-            return GetReferenceAssemblyDirectory(framework, GetOSPlatform(), RuntimeInformation.OSArchitecture);
-        }
-
-        /// <summary>
-        /// Gets the current OS platform.
-        /// </summary>
-        /// <returns></returns>
-        /// <exception cref="PlatformNotSupportedException"></exception>
-        OSPlatform GetOSPlatform()
-        {
-            if (RuntimeInformation.IsOSPlatform(OSPlatform.Windows))
-                return OSPlatform.Windows;
-
-            if (RuntimeInformation.IsOSPlatform(OSPlatform.Linux))
-                return OSPlatform.Linux;
-
-            if (RuntimeInformation.IsOSPlatform(OSPlatform.OSX))
-                return OSPlatform.OSX;
-
-            throw new PlatformNotSupportedException();
         }
 
         /// <summary>
@@ -371,6 +241,9 @@ namespace IKVM.Tool.Compiler
             if (options.NoParameterReflection)
                 w.WriteLine($"-noparameterreflection");
 
+            if (options.Remap is not null)
+                w.WriteLine($"-remap:{options.Remap}");
+
             if (options.Input != null)
                 foreach (var i in options.Input)
                     w.WriteLine(i);
@@ -386,12 +259,12 @@ namespace IKVM.Tool.Compiler
                 File.WriteAllText(response, w.ToString());
 
                 // locate EXE file
-                var exe = GetToolExe(options.TargetFramework);
+                var exe = GetToolExe(options.ToolFramework);
                 if (File.Exists(exe) == false)
-                    throw new FileNotFoundException($"Could not locate tool at {exe}.");
+                    throw new FileNotFoundException($"Could not locate tool at '{exe}'.");
 
                 // check for supported platform
-                if (RuntimeInformation.IsOSPlatform(OSPlatform.Windows) == false && options.TargetFramework == IkvmCompilerTargetFramework.NetFramework)
+                if (RuntimeInformation.IsOSPlatform(OSPlatform.Windows) == false && options.ToolFramework == IkvmToolFramework.NetFramework)
                     throw new IkvmToolException("IKVM generation for .NET Framework assemblies is not supported on Linux operating system.");
 
                 // if we're running on Linux, we might need to set the execute bit on the file,
@@ -418,6 +291,7 @@ namespace IKVM.Tool.Compiler
                 args.Add($"@{response}");
                 cli = cli.WithArguments(args);
                 cli = cli.WithValidation(CommandResultValidation.None);
+                await LogEvent(IkvmToolDiagnosticEventLevel.Debug, "Executing {0} {1}", cli.TargetFilePath, cli.Arguments);
 
                 // send output to MSBuild
                 cli = cli.WithStandardErrorPipe(PipeTarget.ToDelegate(i => LogEvent(IkvmToolDiagnosticEventLevel.Error, i)));

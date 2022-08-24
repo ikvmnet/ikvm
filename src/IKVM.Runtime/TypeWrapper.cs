@@ -2032,6 +2032,7 @@ namespace IKVM.Internal
         internal TypeWrapper(TypeFlags flags, Modifiers modifiers, string name)
         {
             Profiler.Count("TypeWrapper");
+
             this.flags = flags;
             this.modifiers = modifiers;
             this.name = name == null ? null : String.Intern(name);

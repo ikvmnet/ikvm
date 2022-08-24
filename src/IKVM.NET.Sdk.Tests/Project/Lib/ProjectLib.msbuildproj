@@ -1,0 +1,11 @@
+﻿<Project Sdk="IKVM.NET.Sdk/8.0.0-dev">
+    <PropertyGroup>
+        <ImportDirectoryBuildProps>false</ImportDirectoryBuildProps>
+        <ImportDirectoryBuildTargets>false</ImportDirectoryBuildTargets>
+    </PropertyGroup>
+
+    <PropertyGroup>
+        <TargetFrameworks>net461;netcoreapp3.1</TargetFrameworks>
+    </PropertyGroup>
+    
+</Project>

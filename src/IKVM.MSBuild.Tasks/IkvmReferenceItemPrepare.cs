@@ -95,7 +95,7 @@ namespace IKVM.MSBuild.Tasks
         /// IKVM target framework.
         /// </summary>
         [Required]
-        public string TargetFramework { get; set; }
+        public string ToolFramework { get; set; }
 
         /// <summary>
         /// Other references that will be used to generate the assemblies.
@@ -383,7 +383,7 @@ namespace IKVM.MSBuild.Tasks
 
             var manifest = new StringWriter();
             manifest.WriteLine("ToolVersion={0}", ToolVersion);
-            manifest.WriteLine("TargetFramework={0}", TargetFramework);
+            manifest.WriteLine("ToolFramework={0}", ToolFramework);
             manifest.WriteLine("RuntimeAssembly={0}", GetHashForFile(RuntimeAssembly));
             manifest.WriteLine("AssemblyName={0}", item.AssemblyName);
             manifest.WriteLine("AssemblyVersion={0}", item.AssemblyVersion);

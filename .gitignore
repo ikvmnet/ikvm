@@ -242,4 +242,4 @@ ModelManifest.xml
 .fake/
 
 # Ignore build output
-build/
+/build/

@@ -86,8 +86,9 @@ namespace IKVM.Tool.Exporter
 
             StaticCompiler.Resolver.Warning += new AssemblyResolver.WarningEvent(Resolver_Warning);
             StaticCompiler.Resolver.Init(StaticCompiler.Universe, nostdlib, references, libpaths);
-            Dictionary<string, Assembly> cache = new Dictionary<string, Assembly>();
-            foreach (string reference in references)
+
+            var cache = new Dictionary<string, Assembly>();
+            foreach (var reference in references)
             {
                 Assembly[] dummy = null;
                 if (!StaticCompiler.Resolver.ResolveReference(cache, ref dummy, reference))
@@ -96,12 +97,13 @@ namespace IKVM.Tool.Exporter
                     return 1;
                 }
             }
+
             Assembly assembly = null;
             try
             {
                 file = new FileInfo(assemblyNameOrPath);
             }
-            catch (System.Exception x)
+            catch (Exception x)
             {
                 Console.Error.WriteLine("Error: unable to load \"{0}\"\n  {1}", assemblyNameOrPath, x.Message);
                 return 1;
@@ -150,14 +152,13 @@ namespace IKVM.Tool.Exporter
                         return 1;
                     }
                 }
+
                 if (AttributeHelper.IsJavaModule(assembly.ManifestModule))
-                {
                     Console.Error.WriteLine("Warning: Running ikvmstub on ikvmc compiled assemblies is not supported.");
-                }
+
                 if (outputFile == null)
-                {
                     outputFile = assembly.GetName().Name + ".jar";
-                }
+
                 try
                 {
                     using (zipFile = new ZipOutputStream(new FileStream(outputFile, FileMode.Create)))
@@ -196,9 +197,7 @@ namespace IKVM.Tool.Exporter
                             Console.Error.WriteLine(x);
 
                             if (!continueOnError)
-                            {
                                 Console.Error.WriteLine("Warning: Assembly reflection encountered an error. Resultant JAR may be incomplete.");
-                            }
 
                             rc = 1;
                         }
@@ -208,15 +207,12 @@ namespace IKVM.Tool.Exporter
                 {
                     rc = 1;
                     if (zipCount == 0)
-                    {
                         Console.Error.WriteLine("Error: Assembly contains no public IKVM.NET compatible types");
-                    }
                     else
-                    {
                         Console.Error.WriteLine("Error: {0}", x.Message);
-                    }
                 }
             }
+
             return rc;
         }
 

@@ -1,0 +1,27 @@
+<Project xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+    <PropertyGroup>
+        <MSBuildAllProjects>$(MSBuildAllProjects);$(MSBuildThisFileFullPath)</MSBuildAllProjects>
+    </PropertyGroup>
+
+    <PropertyGroup>
+        <IsCrossTargetingBuild Condition=" '$(TargetFrameworks)' != '' And '$(TargetFramework)' == '' ">true</IsCrossTargetingBuild>
+    </PropertyGroup>
+
+    <Choose>
+        <When Condition=" '$(IsCrossTargetingBuild)' == 'true' ">
+            <PropertyGroup>
+                <JavaTargetsPath>$(MSBuildThisFileDirectory)IKVM.Java.CrossTargeting.targets</JavaTargetsPath>
+            </PropertyGroup>
+        </When>
+        <Otherwise>
+            <PropertyGroup>
+                <JavaTargetsPath>$(MSBuildThisFileDirectory)IKVM.Java.CurrentVersion.targets</JavaTargetsPath>
+            </PropertyGroup>
+        </Otherwise>
+    </Choose>
+
+    <Import Project="$(MSBuildToolsPath)\Microsoft.Managed.Before.targets" />
+    <Import Project="$(JavaTargetsPath)" />
+    <Import Project="$(MSBuildToolsPath)\Microsoft.Managed.After.targets" />
+
+</Project>

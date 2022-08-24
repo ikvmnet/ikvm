@@ -43,4 +43,11 @@
             <PublishProperties>RuntimeIdentifier=linux-x64</PublishProperties>
         </PublishProjectReference>
     </ItemGroup>
+
+    <ItemGroup>
+        <None Update="IkvmJavaCompilerTests.java">
+            <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+        </None>
+    </ItemGroup>
+
 </Project>

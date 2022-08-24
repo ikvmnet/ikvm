@@ -1,0 +1,11 @@
+<#@ template language="c#" hostspecific="true" #>
+<#@ parameter type="System.String" name="OpenJdkImplementationVersion" #>
+<#@ parameter type="System.String" name="OpenJdkSpecificationVersion" #>
+Manifest-Version: 1.0
+Implementation-Vendor: Oracle Corporation & others
+Implementation-Title: IKVM.NET OpenJDK
+Implementation-Version: <#= OpenJdkImplementationVersion #>
+Specification-Vendor: Oracle Corporation
+Specification-Title: Java Platform API Specification
+Specification-Version: <#= OpenJdkSpecificationVersion #>
+

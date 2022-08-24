@@ -7,7 +7,7 @@
 
     <ItemGroup>
         <Compile Remove="Project\**\*" />
-        <None Include="Project\**\*" CopyToOutputDirectory="PreserveNewest" />
+        <None Include="Project\**\*" CopyToOutputDirectory="Always" />
     </ItemGroup>
 
     <ItemGroup>
@@ -28,84 +28,10 @@
         <PackageReference Include="MSTest.TestAdapter" Version="2.2.10" />
         <PackageReference Include="MSTest.TestFramework" Version="2.2.10" />
     </ItemGroup>
-
-    <ItemGroup>
-        <ProjectReference Include="..\IKVM.Runtime\IKVM.Runtime.csproj" />
-        <ProjectReference Include="..\IKVM.MSBuild.Tasks\IKVM.MSBuild.Tasks.csproj" />
-    </ItemGroup>
-
-    <ItemGroup Condition=" '$(TargetFramework)' != '' ">
-        <IncludeProjectReference Include="..\IKVM.Runtime\IKVM.Runtime.csproj">
-            <SetTargetFramework>TargetFramework=net461</SetTargetFramework>
-            <IncludeTargetPath>lib\net461\</IncludeTargetPath>
-        </IncludeProjectReference>
-        <IncludeProjectReference Include="..\IKVM.Runtime\IKVM.Runtime.csproj">
-            <SetTargetFramework>TargetFramework=netcoreapp3.1</SetTargetFramework>
-            <IncludeTargetPath>lib\netcoreapp3.1\</IncludeTargetPath>
-        </IncludeProjectReference>
-        <IncludeProjectReference Include="..\IKVM.Java\IKVM.Java.csproj">
-            <SetTargetFramework>TargetFramework=net461</SetTargetFramework>
-            <IncludeTargetPath>lib\net461\</IncludeTargetPath>
-        </IncludeProjectReference>
-        <IncludeProjectReference Include="..\IKVM.Java\IKVM.Java.csproj">
-            <SetTargetFramework>TargetFramework=netcoreapp3.1</SetTargetFramework>
-            <IncludeTargetPath>lib\netcoreapp3.1\</IncludeTargetPath>
-        </IncludeProjectReference>
-    </ItemGroup>
-
+    
     <ItemGroup Condition=" '$(TargetFramework)' != '' ">
         <PackageProjectReference Include="..\IKVM-pkg\IKVM-pkg.csproj" />
-    </ItemGroup>
-
-    <ItemGroup Condition=" '$(TargetFramework)' != '' ">
-        <PublishProjectReference Include="..\ikvm\ikvm.csproj">
-            <SetTargetFramework>TargetFramework=net461</SetTargetFramework>
-            <PublishTargetPath>ikvm\net461\any</PublishTargetPath>
-            <PublishProperties></PublishProperties>
-        </PublishProjectReference>
-        <PublishProjectReference Include="..\ikvmc\ikvmc.csproj">
-            <SetTargetFramework>TargetFramework=net461</SetTargetFramework>
-            <PublishTargetPath>ikvmc\net461\any</PublishTargetPath>
-            <PublishProperties></PublishProperties>
-        </PublishProjectReference>
-        <PublishProjectReference Include="..\ikvmstub\ikvmstub.csproj">
-            <SetTargetFramework>TargetFramework=net461</SetTargetFramework>
-            <PublishTargetPath>ikvmstub\net461\any</PublishTargetPath>
-            <PublishProperties></PublishProperties>
-        </PublishProjectReference>
-
-        <PublishProjectReference Include="..\ikvm\ikvm.csproj">
-            <SetTargetFramework>TargetFramework=netcoreapp3.1</SetTargetFramework>
-            <PublishTargetPath>ikvm\netcoreapp3.1\win7-x64</PublishTargetPath>
-            <PublishProperties>RuntimeIdentifier=win7-x64</PublishProperties>
-        </PublishProjectReference>
-        <PublishProjectReference Include="..\ikvmc\ikvmc.csproj">
-            <SetTargetFramework>TargetFramework=netcoreapp3.1</SetTargetFramework>
-            <PublishTargetPath>ikvmc\netcoreapp3.1\win7-x64</PublishTargetPath>
-            <PublishProperties>RuntimeIdentifier=win7-x64</PublishProperties>
-        </PublishProjectReference>
-        <PublishProjectReference Include="..\ikvmstub\ikvmstub.csproj">
-            <SetTargetFramework>TargetFramework=netcoreapp3.1</SetTargetFramework>
-            <PublishTargetPath>ikvmstub\netcoreapp3.1\win7-x64</PublishTargetPath>
-            <PublishProperties>RuntimeIdentifier=win7-x64</PublishProperties>
-        </PublishProjectReference>
-
-        <PublishProjectReference Include="..\ikvm\ikvm.csproj">
-            <SetTargetFramework>TargetFramework=netcoreapp3.1</SetTargetFramework>
-            <PublishTargetPath>ikvm\netcoreapp3.1\linux-x64</PublishTargetPath>
-            <PublishProperties>RuntimeIdentifier=linux-x64</PublishProperties>
-        </PublishProjectReference>
-        <PublishProjectReference Include="..\ikvmc\ikvmc.csproj">
-            <SetTargetFramework>TargetFramework=netcoreapp3.1</SetTargetFramework>
-            <PublishTargetPath>ikvmc\netcoreapp3.1\linux-x64</PublishTargetPath>
-            <PublishProperties>RuntimeIdentifier=linux-x64</PublishProperties>
-        </PublishProjectReference>
-        <PublishProjectReference Include="..\ikvmstub\ikvmstub.csproj">
-            <SetTargetFramework>TargetFramework=netcoreapp3.1</SetTargetFramework>
-            <PublishTargetPath>ikvmstub\netcoreapp3.1\linux-x64</PublishTargetPath>
-            <PublishProperties>RuntimeIdentifier=linux-x64</PublishProperties>
-        </PublishProjectReference>
-
+        <PackageProjectReference Include="..\IKVM.MSBuild\IKVM.MSBuild.msbuildproj" />
     </ItemGroup>
 
     <Import Project="Sdk.targets" Sdk="Microsoft.NET.Sdk" />
