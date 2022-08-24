@@ -13,7 +13,7 @@
 
         <MakeDir Directories="$(ReferenceExportOutputPath);$(ReferenceExportOutputPath)tmp" />
         <IkvmExporter
-            ToolPath="$(IkvmToolsPath)ikvmstub"
+            ToolPath="$(IKvmExporterToolPath)"
             ToolFramework="$(IkvmToolFramework)"
             Input="%(ReferenceExport.AssemblyFile)"
             Bootstrap="$(Bootstrap)"
@@ -75,7 +75,7 @@
 
         <!-- Compile the reference item. -->
         <IkvmCompiler
-            ToolPath="$(IkvmToolsPath)ikvmc"
+            ToolPath="$(IKvmCompilerToolPath)"
             ToolFramework="$(IkvmToolFramework)"
             ResponseFile="$(_IkvmCompilerResponseFile)"
             Output="$(_AssemblyTempPath)$(TargetName)$(TargetExt)"
