@@ -191,7 +191,7 @@ jobs:
       uses: actions/upload-artifact@v3
       with:
         name: nuget
-        path: build/nuget
+        path: build/nuget/*.nupkg
     - name: Package Binaries
       run: tar czvf bin.tar.gz bin
       working-directory: build
