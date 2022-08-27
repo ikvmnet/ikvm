@@ -122,7 +122,7 @@ jobs:
         path: osxcross/target
         key: osxcross-target--${{ runner.os }}--${{ hashFiles('osxcross/**', '!osxcross/target') }}-1
     - name: Check OS X Cross Build Stamp
-      id: osxcross-build-stamp
+      id: osxcross-target-stamp
       uses: andstor/file-existence-action@v1
       with:
         files: osxcross/target/stamp
