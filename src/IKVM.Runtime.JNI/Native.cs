@@ -15,7 +15,7 @@ namespace IKVM.Runtime
 
         public const string LIB_NAME = "ikvm-native";
 
-#if NET461
+#if NETFRAMEWORK
 
         /// <summary>
         /// Native Win32 LoadLibrary method.
@@ -32,14 +32,14 @@ namespace IKVM.Runtime
         /// </summary>
         static Native()
         {
-#if NET461
+#if NETFRAMEWORK
             LegacyImportDll();
 #else
             NativeLibrary.SetDllImportResolver(typeof(Native).Assembly, DllImportResolver);
 #endif
         }
 
-#if NET461
+#if NETFRAMEWORK
 
         /// <summary>
         /// Preloads the native DLL for down-level platforms.
@@ -58,11 +58,11 @@ namespace IKVM.Runtime
                 if (h != IntPtr.Zero)
                     return;
             }
-    }
+        }
 
 #endif
 
-#if NETCOREAPP3_1_OR_GREATER
+#if NETCOREAPP
 
         /// <summary>
         /// Attempts to resolve the specified assembly when running on .NET Core 3.1 and above.
@@ -91,32 +91,42 @@ namespace IKVM.Runtime
 #endif
 
         /// <summary>
-        /// Gets the RID architecture.
-        /// </summary>
-        /// <returns></returns>
-        static string GetRuntimeIdentifierArch() => IntPtr.Size switch
-        {
-            4 => "x86",
-            8 => "x64",
-            _ => throw new NotSupportedException(),
-        };
-
-        /// <summary>
         /// Gets the runtime identifiers of the current platform.
         /// </summary>
         /// <returns></returns>
         static IEnumerable<string> GetRuntimeIdentifiers()
         {
-            var arch = GetRuntimeIdentifierArch();
-
-#if NET461
-            yield return $"win-{arch}";
+#if NETFRAMEWORK
+            if (IntPtr.Size == 4)
+                yield return $"win-x86";
+            else if (IntPtr.Size == 8)
+                yield return $"win-x64";
 #else
             if (RuntimeInformation.IsOSPlatform(OSPlatform.Windows))
-                yield return $"win-{arch}";
-
-            if (RuntimeInformation.IsOSPlatform(OSPlatform.Linux))
-                yield return $"linux-{arch}";
+            {
+                if (RuntimeInformation.ProcessArchitecture == Architecture.X86)
+                    yield return $"win-x86";
+                else if (RuntimeInformation.ProcessArchitecture == Architecture.X64)
+                    yield return $"win-x64";
+                else if (RuntimeInformation.ProcessArchitecture == Architecture.Arm64)
+                    yield return $"win-arm64";
+            }
+            else if (RuntimeInformation.IsOSPlatform(OSPlatform.Linux))
+            {
+                if (RuntimeInformation.ProcessArchitecture == Architecture.X86)
+                    yield return $"linux-x86";
+                else if (RuntimeInformation.ProcessArchitecture == Architecture.X64)
+                    yield return $"linux-x64";
+                else if (RuntimeInformation.ProcessArchitecture == Architecture.Arm64)
+                    yield return $"linux-arm64";
+            }
+            else if (RuntimeInformation.IsOSPlatform(OSPlatform.OSX))
+            {
+                if (RuntimeInformation.ProcessArchitecture == Architecture.X64)
+                    yield return $"osx-11.0-x64";
+                else if (RuntimeInformation.ProcessArchitecture == Architecture.Arm64)
+                    yield return $"osx-11.0-arm64";
+            }
 #endif
         }
 
@@ -127,14 +137,15 @@ namespace IKVM.Runtime
         /// <returns></returns>
         static string GetLibraryFileName(string name)
         {
-#if NET461
+#if NETFRAMEWORK
             return $"{name}.dll";
 #else
             if (RuntimeInformation.IsOSPlatform(OSPlatform.Windows))
                 return $"{name}.dll";
-
-            if (RuntimeInformation.IsOSPlatform(OSPlatform.Linux))
+            else if (RuntimeInformation.IsOSPlatform(OSPlatform.Linux))
                 return $"lib{name}.so";
+            else if (RuntimeInformation.IsOSPlatform(OSPlatform.OSX))
+                return $"lib{name}.dynlib";
 #endif
 
             throw new NotSupportedException();

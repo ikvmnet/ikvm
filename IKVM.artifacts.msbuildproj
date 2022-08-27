@@ -58,6 +58,14 @@
             <Targets>ikvm:Publish</Targets>
             <Properties>$(ToolProperties);TargetFramework=netcoreapp3.1;RuntimeIdentifier=linux-x64;PublishDir=$(ArtifactStagingDirectory)\tools\ikvm\netcoreapp3.1\linux-x64</Properties>
         </TargetsForPublish>
+        <TargetsForPublish Include="$(SolutionFile)">
+            <Targets>ikvm:Publish</Targets>
+            <Properties>$(ToolProperties);TargetFramework=netcoreapp3.1;RuntimeIdentifier=osx-11.0-x64;PublishDir=$(ArtifactStagingDirectory)\tools\ikvm\netcoreapp3.1\osx-11.0-x64</Properties>
+        </TargetsForPublish>
+        <TargetsForPublish Include="$(SolutionFile)">
+            <Targets>ikvm:Publish</Targets>
+            <Properties>$(ToolProperties);TargetFramework=netcoreapp3.1;RuntimeIdentifier=osx-11.0-arm64;PublishDir=$(ArtifactStagingDirectory)\tools\ikvm\netcoreapp3.1\osx-11.0-arm64</Properties>
+        </TargetsForPublish>
 
         <TargetsForPublish Include="$(SolutionFile)">
             <Targets>ikvmc:Publish</Targets>
@@ -71,6 +79,14 @@
             <Targets>ikvmc:Publish</Targets>
             <Properties>$(ToolProperties);TargetFramework=netcoreapp3.1;RuntimeIdentifier=linux-x64;PublishDir=$(ArtifactStagingDirectory)\tools\ikvmc\netcoreapp3.1\linux-x64</Properties>
         </TargetsForPublish>
+        <TargetsForPublish Include="$(SolutionFile)">
+            <Targets>ikvmc:Publish</Targets>
+            <Properties>$(ToolProperties);TargetFramework=netcoreapp3.1;RuntimeIdentifier=osx-11.0-x64;PublishDir=$(ArtifactStagingDirectory)\tools\ikvmc\netcoreapp3.1\osx-11.0-x64</Properties>
+        </TargetsForPublish>
+        <TargetsForPublish Include="$(SolutionFile)">
+            <Targets>ikvmc:Publish</Targets>
+            <Properties>$(ToolProperties);TargetFramework=netcoreapp3.1;RuntimeIdentifier=osx-11.0-arm64;PublishDir=$(ArtifactStagingDirectory)\tools\ikvmc\netcoreapp3.1\osx-11.0-arm64</Properties>
+        </TargetsForPublish>
 
         <TargetsForPublish Include="$(SolutionFile)">
             <Targets>ikvmstub:Publish</Targets>
@@ -83,6 +99,14 @@
         <TargetsForPublish Include="$(SolutionFile)">
             <Targets>ikvmstub:Publish</Targets>
             <Properties>$(ToolProperties);TargetFramework=netcoreapp3.1;RuntimeIdentifier=linux-x64;PublishDir=$(ArtifactStagingDirectory)\tools\ikvmstub\netcoreapp3.1\linux-x64</Properties>
+        </TargetsForPublish>
+        <TargetsForPublish Include="$(SolutionFile)">
+            <Targets>ikvmstub:Publish</Targets>
+            <Properties>$(ToolProperties);TargetFramework=netcoreapp3.1;RuntimeIdentifier=osx-11.0-x64;PublishDir=$(ArtifactStagingDirectory)\tools\ikvmstub\netcoreapp3.1\osx-11.0-x64</Properties>
+        </TargetsForPublish>
+        <TargetsForPublish Include="$(SolutionFile)">
+            <Targets>ikvmstub:Publish</Targets>
+            <Properties>$(ToolProperties);TargetFramework=netcoreapp3.1;RuntimeIdentifier=osx-11.0-arm64;PublishDir=$(ArtifactStagingDirectory)\tools\ikvmstub\netcoreapp3.1\osx-11.0-arm64</Properties>
         </TargetsForPublish>
 
         <TargetsForPublish Include="$(SolutionFile)">

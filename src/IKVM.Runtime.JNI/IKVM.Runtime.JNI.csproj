@@ -56,6 +56,18 @@
             <Configuration>$(Configuration)</Configuration>
             <OutputDir>runtimes\linux-x64\native</OutputDir>
         </LibProjectReference>
+        <LibProjectReference Include="ikvm-native-osx-11.0-x64">
+            <ProjectFile>..\ikvm-native\ikvm-native-osx-x64.vcxproj</ProjectFile>
+            <Platform>x64</Platform>
+            <Configuration>$(Configuration)</Configuration>
+            <OutputDir>runtimes\osx-11.0-x64\native</OutputDir>
+        </LibProjectReference>
+        <LibProjectReference Include="ikvm-native-osx-11.0-arm64">
+            <ProjectFile>..\ikvm-native\ikvm-native-osx-arm64.vcxproj</ProjectFile>
+            <Platform>x64</Platform>
+            <Configuration>$(Configuration)</Configuration>
+            <OutputDir>runtimes\osx-11.0-arm64\native</OutputDir>
+        </LibProjectReference>
     </ItemGroup>
 
     <ItemGroup>
