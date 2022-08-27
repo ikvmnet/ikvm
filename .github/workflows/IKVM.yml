@@ -108,10 +108,40 @@ jobs:
       with:
         name: jtreg-build
         path: jtreg/jtreg-build.zip
+  build-osxcross:
+    name: Build OSX Cross
+    runs-on: ubuntu-18.04
+    steps:
+    - name: Checkout Source
+      uses: actions/checkout@v1
+      with:
+        submodules: recursive
+    - name: Cache OSX Cross Build
+      uses: actions/cache@v3
+      with:
+        path: osxcross/target
+        key: osxcross-target--${{ runner.os }}--${{ hashFiles('osxcross/**', '!osxcross/target') }}-7
+    - name: Check OSX Cross Build Stamp
+      id: osxcross-build-stamp
+      uses: andstor/file-existence-action@v1
+      with:
+        files: osxcross/target/stamp
+    - name: Build OSX Cross
+      if: steps.osxcross-target-stamp.outputs.files_exists != 'true'
+      run: ./osxcross.build.sh
+    - name: Package OSX Cross
+      run: zip -r osxcross-target.zip target
+      working-directory: osxcross
+    - name: Upload OSX Cross
+      uses: actions/upload-artifact@v3
+      with:
+        name: osxcross-target
+        path: osxcross/osxcross-target.zip
   build-ikvm:
     name: Build IKVM (Windows)
     needs:
     - build-openjdk
+    - build-osxcross
     runs-on: windows-latest
     steps:
     - name: Checkout Source
@@ -165,6 +195,14 @@ jobs:
     - name: Restore OpenJDK 8 Build
       run: unzip -o openjdk-build-linux-x86_64-normal-server-release.zip
       working-directory: openjdk/build
+    - name: Download OSX Cross Build
+      uses: actions/download-artifact@v3
+      with:
+        name: osxcross-target
+        path: osxcross
+    - name: Restore OSX Cross Build
+      run: unzip -o osxcross-target.zip
+      working-directory: osxcross
     - name: NuGet Restore
       run: dotnet restore IKVM.sln
     - name: Build Artifacts

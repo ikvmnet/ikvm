@@ -6,3 +6,7 @@
 	path = jtreg
 	url = https://github.com/openjdk/jtreg.git
 	ignore = dirty
+[submodule "osxcross"]
+	path = osxcross
+	url = https://github.com/tpoechtrager/osxcross.git
+	ignore = dirty
