@@ -3,36 +3,36 @@
         <MSBuildAllProjects>$(MSBuildAllProjects);$(MSBuildThisFileFullPath)</MSBuildAllProjects>
     </PropertyGroup>
 
-    <Target Name="_BuildReferenceStubs" DependsOnTargets="ResolveReferenceStubs" Inputs="%(ReferenceStub.AssemblyFile)" Outputs="%(ReferenceStub.Identity)">
+    <Target Name="_BuildReferenceExports" DependsOnTargets="ResolveReferenceExports" Inputs="%(ReferenceExport.AssemblyFile)" Outputs="%(ReferenceExport.Identity)">
+        <Error Text="IKVM.NET.Sdk cannot currently build assemblies targeting '$(TargetFramework)'. Either target 'net461' or 'netcoreapp3.1'." Condition=" '$(TargetFramework)' != 'net461' And '$(TargetFramework)' != 'netcoreapp3.1' " />
+               
         <ItemGroup>
             <_ReferenceStubReference Remove="@(_ReferenceStubReference)" />
-            <_ReferenceStubReference Include="@(ReferencePathWithRefAssemblies)"  Condition=" '%(Filename)' != '%(ReferenceStub.Filename)' "/>
+            <_ReferenceStubReference Include="@(ReferencePathWithRefAssemblies)"  Condition=" '%(Filename)' != '%(ReferenceExport.Filename)' "/>
         </ItemGroup>
 
-        <MakeDir Directories="$(ReferenceStubOutputPath);$(ReferenceStubOutputPath)tmp" />
+        <MakeDir Directories="$(ReferenceExportOutputPath);$(ReferenceExportOutputPath)tmp" />
         <IkvmExporter
-            ToolPath="$(IkvmToolsPath)ikvmstub"
+            ToolPath="$(IKvmExporterToolPath)"
             ToolFramework="$(IkvmToolFramework)"
-            Input="%(ReferenceStub.AssemblyFile)"
+            Input="%(ReferenceExport.AssemblyFile)"
             Bootstrap="$(Bootstrap)"
             NoStdLib="$(NoCompilerStandardLib)"
             References="@(_ReferenceStubReference)"
-            Output="$(ReferenceStubOutputPath)tmp\%(ReferenceStub.Filename)%(ReferenceStub.Extension)" />
-        <Move SourceFiles="$(ReferenceStubOutputPath)tmp\%(ReferenceStub.Filename)%(ReferenceStub.Extension)" DestinationFiles="%(ReferenceStub.Identity)" />
-        <Delete Files="$(ReferenceStubOutputPath)tmp\%(ReferenceStub.Filename)%(ReferenceStub.Extension)" />
+            Output="$(ReferenceExportOutputPath)tmp\%(ReferenceExport.Filename)%(ReferenceExport.Extension)" />
+        <Move SourceFiles="$(ReferenceExportOutputPath)tmp\%(ReferenceExport.Filename)%(ReferenceExport.Extension)" DestinationFiles="%(ReferenceExport.Identity)" />
+        <Delete Files="$(ReferenceExportOutputPath)tmp\%(ReferenceExport.Filename)%(ReferenceExport.Extension)" />
 
         <ItemGroup>
-            <FileWrites Include="$(ReferenceStubOutputPath)tmp\%(ReferenceStub.Filename)%(ReferenceStub.Extension)" />
+            <FileWrites Include="$(ReferenceExportOutputPath)tmp\%(ReferenceExport.Filename)%(ReferenceExport.Extension)" />
         </ItemGroup>
     </Target>
 
-    <Target Name="_CompileJava" DependsOnTargets="BuildReferenceStubs" Inputs="@(Compile);@(Classpath)" Outputs="$(_CompileJavaStampFile)">
+    <Target Name="_CompileJava" DependsOnTargets="BuildReferenceExports" Inputs="@(Compile);@(Classpath)" Outputs="$(_CompileJavaStampFile)">
         <PropertyGroup>
             <_JavaCompilerDebug Condition=" '$(DebugSymbols)' == 'true' Or '$(DebugType)' != 'none' ">all</_JavaCompilerDebug>
         </PropertyGroup>
 
-        <Message Text="Classpath: @(Classpath)" />
-        
         <RemoveDir Directories="$(ClassOutputPath)" />
         <MakeDir Directories="$(ClassOutputPath)" />
         <IkvmJavaCompiler
@@ -48,6 +48,8 @@
     </Target>
 
     <Target Name="_CoreCompile" DependsOnTargets="CompileJava" Inputs="$(IkvmRuntimeAssembly);$(KeyOriginatorFile);@(MapFile);@(ReferencePathWithRefAssemblies);@(Class);@(JavaResource);$(_CompileJavaStampFile)" Outputs="@(IntermediateAssembly);@(_DebugSymbolsIntermediatePath)">
+        <Error Text="IKVM.NET.Sdk cannot currently build assemblies targeting '$(TargetFramework)'. Either target 'net461' or 'netcoreapp3.1'." Condition=" '$(TargetFramework)' != 'net461' And '$(TargetFramework)' != 'netcoreapp3.1' " />
+        
         <Error Text="IKVM.Runtime.dll could not be located at '$(IkvmRuntimeAssembly)'" Condition="!Exists('$(IkvmRuntimeAssembly)')" />
 
         <WriteLinesToFile File="$(_ExcludeFilePath)" Lines="@(ExcludeRegex)" Overwrite="true" Condition=" '@(ExcludeRegex)' != '' " />
@@ -73,7 +75,7 @@
 
         <!-- Compile the reference item. -->
         <IkvmCompiler
-            ToolPath="$(IkvmToolsPath)ikvmc"
+            ToolPath="$(IKvmCompilerToolPath)"
             ToolFramework="$(IkvmToolFramework)"
             ResponseFile="$(_IkvmCompilerResponseFile)"
             Output="$(_AssemblyTempPath)$(TargetName)$(TargetExt)"

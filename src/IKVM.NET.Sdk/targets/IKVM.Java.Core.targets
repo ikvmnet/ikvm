@@ -5,47 +5,47 @@
 
     <PropertyGroup>
         <UseIkvmTasks Condition=" '$(UseIkvmTasks)' == '' ">true</UseIkvmTasks>
-        <ReferenceStubOutputPath>$(IntermediateOutputPath)refstubs\</ReferenceStubOutputPath>
+        <ReferenceExportOutputPath>$(IntermediateOutputPath)refexp\</ReferenceExportOutputPath>
         <ClassOutputPath>$(IntermediateOutputPath)classes\</ClassOutputPath>
     </PropertyGroup>
 
-    <Target Name="ResolveReferenceStubs" DependsOnTargets="ResolveReferences;FindReferenceAssembliesForReferences">
+    <Target Name="ResolveReferenceExports" DependsOnTargets="ResolveReferences;FindReferenceAssembliesForReferences">
         <ItemGroup>
-            <ReferenceStub Include="@(ReferencePath->'$(ReferenceStubOutputPath)%(Filename).jar')" Condition="'%(Filename)' != 'System.Runtime.Serialization'">
+            <ReferenceExport Include="@(ReferencePath->'$(ReferenceExportOutputPath)%(Filename).jar')" Condition="'%(Filename)' != 'System.Runtime.Serialization'">
                 <AssemblyFile>%(Identity)</AssemblyFile>
-            </ReferenceStub>
+            </ReferenceExport>
         </ItemGroup>
     </Target>
 
-    <Target Name="_BuildReferenceStubs" DependsOnTargets="ResolveReferenceStubs" Inputs="%(ReferenceStub.AssemblyFile)" Outputs="%(ReferenceStub.Identity)">
-        <Error Text="_BuildReferenceStubs not implemented." />
+    <Target Name="_BuildReferenceExports" DependsOnTargets="ResolveReferenceExports" Inputs="%(ReferenceExport.AssemblyFile)" Outputs="%(ReferenceExport.Identity)">
+        <Error Text="_BuildReferenceExports not implemented." />
     </Target>
 
     <PropertyGroup>
-        <BuildReferenceStubsDependsOn>
-            $(BuildReferenceStubsDependsOn);
+        <BuildReferenceExportsDependsOn>
+            $(BuildReferenceExportsDependsOn);
             ResolveReferences;
             FindReferenceAssembliesForReferences;
-            ResolveReferenceStubs;
-            _BuildReferenceStubs;
-        </BuildReferenceStubsDependsOn>
+            ResolveReferenceExports;
+            _BuildReferenceExports;
+        </BuildReferenceExportsDependsOn>
     </PropertyGroup>
 
-    <Target Name="BuildReferenceStubs" DependsOnTargets="$(BuildReferenceStubsDependsOn)">
+    <Target Name="BuildReferenceExports" DependsOnTargets="$(BuildReferenceExportsDependsOn)">
         <ItemGroup>
-            <Classpath Include="@(ReferenceStub)" />
+            <Classpath Include="@(ReferenceExport)" />
         </ItemGroup>
     </Target>
 
-    <Target Name="CleanReferenceStubs">
-        <Delete Files="@(ReferenceStub)" />
-        <RemoveDir Directories="$(ReferenceStubOutputPath);$(ReferenceStubOutputPath)tmp" />
+    <Target Name="CleanReferenceExports">
+        <Delete Files="@(ReferenceExport)" />
+        <RemoveDir Directories="$(ReferenceExportOutputPath);$(ReferenceExportOutputPath)tmp" />
     </Target>
 
     <PropertyGroup>
         <CleanDependsOn>
             $(CleanDependsOn);
-            CleanReferenceStubs;
+            CleanReferenceExports;
         </CleanDependsOn>
     </PropertyGroup>
 
@@ -54,20 +54,19 @@
         <_CompileJavaResponseFile>$(IntermediateOutputPath)$(MSBuildProjectName).javac.rsp</_CompileJavaResponseFile>
     </PropertyGroup>
 
-    <Target Name="_CompileJava" DependsOnTargets="BuildReferenceStubs" Inputs="@(Compile);@(Classpath)" Outputs="$(_CompileJavaStampFile)">
+    <Target Name="_CompileJava" DependsOnTargets="BuildReferenceExports" Inputs="@(Compile);@(Classpath)" Outputs="$(_CompileJavaStampFile)">
         <Error Text="_CompileJava not implemented." />
     </Target>
 
     <PropertyGroup>
         <CompileJavaDependsOn>
             $(CompileJavaDependsOn)
-            BuildReferenceStubs;
+            BuildReferenceExports;
             _CompileJava;
         </CompileJavaDependsOn>
     </PropertyGroup>
 
     <Target Name="CompileJava" DependsOnTargets="$(CompileJavaDependsOn)">
-        <Message Text="ClassOutputPath: $(ClassOutputPath)" />
         <ItemGroup>
             <Class Include="$(ClassOutputPath)**\*.class" />
         </ItemGroup>
@@ -122,5 +121,6 @@
     </PropertyGroup>
 
     <Import Project="IKVM.Java.Core.Tasks.targets" Condition=" '$(UseIkvmTasks)' == 'true' "/>
+    <Import Project="IKVM.Java.Core.Commands.targets" Condition=" '$(UseIkvmTasks)' != 'true' "/>
 
 </Project>

@@ -7,7 +7,7 @@
 
     <ItemGroup>
         <Compile Remove="Project\**\*" />
-        <None Include="Project\**\*" CopyToOutputDirectory="PreserveNewest" />
+        <None Include="Project\**\*" CopyToOutputDirectory="Always" />
     </ItemGroup>
 
     <ItemGroup>

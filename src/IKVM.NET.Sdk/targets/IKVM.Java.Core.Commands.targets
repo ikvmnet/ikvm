@@ -1,0 +1,171 @@
+<Project xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+    <PropertyGroup>
+        <MSBuildAllProjects>$(MSBuildAllProjects);$(MSBuildThisFileFullPath)</MSBuildAllProjects>
+    </PropertyGroup>
+
+    <Choose>
+        <When Condition=" '$(TargetFramework)' == 'netcoreapp3.1' ">
+            <PropertyGroup>
+                <_IkvmTargetFramework>netcoreapp3.1</_IkvmTargetFramework>
+                <_IkvmToolExecPrefix>dotnet exec </_IkvmToolExecPrefix>
+            </PropertyGroup>
+        </When>
+        <When Condition=" '$(TargetFramework)' == 'net461' ">
+            <PropertyGroup>
+                <_IkvmTargetFramework>net461</_IkvmTargetFramework>
+                <_IkvmToolExecPrefix></_IkvmToolExecPrefix>
+            </PropertyGroup>
+        </When>
+    </Choose>
+    
+    <Target Name="ResolveIkvmCompiler">
+        <PropertyGroup>
+            <IkvmCompilerPath>ikvmc</IkvmCompilerPath>
+            <IkvmCompilerExec>$(_IkvmToolExecPrefix)$(IkvmCompilerPath)</IkvmCompilerExec>
+        </PropertyGroup>
+        <Error Text="Could not find ikvmc executable." Condition=" '$(IkvmCompilerPath)' == '' " />
+        <Message Text="Using ikvmc executable at '$(IkvmCompilerPath)'." Importance="high" />
+    </Target>
+
+    <Target Name="ResolveIkvmExporter">
+        <PropertyGroup>
+            <IkvmExporterPath>ikvmstub</IkvmExporterPath>
+            <IkvmExporterExec>$(_IkvmToolExecPrefix)$(IkvmExporterPath)</IkvmExporterExec>
+        </PropertyGroup>
+        <Error Text="Could not find ikvmstub executable." Condition=" '$(IkvmExporterPath)' == '' " />
+        <Message Text="Using ikvmstub executable at '$(IkvmExporterPath)'." Importance="high" />
+    </Target>
+
+    <Target Name="ResolveIkvmRuntimeAssembly" DependsOnTargets="ResolveAssemblyReferences">
+        <ItemGroup>
+            <IkvmRuntimeAssembly Include="@(Reference)" Condition=" '%(Filename)%(Extension)' == 'IKVM.Runtime.dll " />
+        </ItemGroup>
+        <PropertyGroup>
+            <IkvmRuntimeAssembly>@(IkvmRuntimeAssembly)</IkvmRuntimeAssembly>
+        </PropertyGroup>
+        <Error Text="Could not find IKVM.Runtime assembly." Condition=" '$(IkvmRuntimeAssembly)' == '' " />
+        <Message Text="Using IKVM.Runtime at '$(IkvmRuntimeAssembly)'." Importance="high" />
+    </Target>
+
+    <!-- Override IKVM.NET.Sdk: directly invoke executable  -->
+    <Target Name="_BuildReferenceExports" DependsOnTargets="ResolveIkvmExporter;ResolveReferenceExports" Inputs="%(ReferenceExport.AssemblyFile)" Outputs="%(ReferenceExport.Identity)">
+        <Error Text="ikvmstub could not be located at '$(IkvmExporterPath)'" Condition="!Exists('$(IkvmExporterPath)')" />
+
+        <ItemGroup>
+            <_IkvmStubArgs Include="-bootstrap" Condition=" '$(Bootstrap)' == 'true' " />
+            <_IkvmStubArgs Include="@(ReferencePathWithRefAssemblies->'-r:&quot;%(FullPath)&quot;')"  Condition=" '%(Filename)' != '%(ReferenceExport.Filename)' "/>
+            <_IkvmStubArgs Include="-nostdlib" Condition=" '$(NoCompilerStandardLib)' == 'true' " />
+            <_IkvmStubArgs Include="-out:&quot;$(ReferenceExportOutputPath)tmp\%(ReferenceExport.Filename)%(ReferenceExport.Extension)&quot;" />
+            <_IkvmStubArgs Include="&quot;%(ReferenceExport.AssemblyFile)&quot;" />
+        </ItemGroup>
+
+        <MakeDir Directories="$(ReferenceExportOutputPath);$(ReferenceExportOutputPath)tmp" />
+        <Message Text="$(IkvmExporterExec) @(_IkvmStubArgs, ' ')" Importance="low" />
+        <Exec Command="$(IkvmExporterExec) @(_IkvmStubArgs, ' ')" />
+        <Move SourceFiles="$(ReferenceExportOutputPath)tmp\%(ReferenceExport.Filename)%(ReferenceExport.Extension)" DestinationFiles="%(ReferenceExport.Identity)" />
+        <Delete Files="$(ReferenceExportOutputPath)tmp\%(ReferenceExport.Filename)%(ReferenceExport.Extension)" />
+
+        <ItemGroup>
+            <FileWrites Include="$(ReferenceExportOutputPath)tmp\%(ReferenceExport.Filename)%(ReferenceExport.Extension)" />
+        </ItemGroup>
+    </Target>
+
+    <Target Name="ResolveJavaCompiler">
+        <PropertyGroup>
+            <JavaCompilerPath Condition=" '$(JavaCompilerPath)' == '' ">javac</JavaCompilerPath>
+            <JavaCompilerArgs Condition=" '$(JavaCompilerArgs)' == '' ">-J-Xmx1536M</JavaCompilerArgs>
+            <JavaCompilerExec Condition=" '$(JavaCompilerExec)' == '' ">$(JavaCompilerPath) $(JavaCompilerArgs)</JavaCompilerExec>
+        </PropertyGroup>
+    </Target>
+
+    <Target Name="_CompileJava" DependsOnTargets="ResolveJavaCompiler;BuildReferenceExports" Inputs="@(Compile);@(Classpath)" Outputs="$(_CompileJavaStampFile)">
+        <ItemGroup>
+            <_JavaCompilerArgs Include="-g" Condition=" '$(DebugSymbols)' == 'true' Or '$(DebugType)' != 'none' " />
+            <_JavaCompilerArgs Include="-nowarn" />
+            <_JavaCompilerArgs Include="-implicit:none" />
+            <_JavaCompilerArgs Include="-parameters" />
+            <_JavaCompilerArgs Include="-cp" />
+            <_JavaCompilerArgs Include="null" />
+            <_JavaCompilerArgs Include="-bootclasspath" Condition=" '@(Classpath)' != '' "/>
+            <_JavaCompilerArgs Include="@(Classpath, '$([System.IO.Path]::PathSeparator)')" Condition=" '@(Classpath)' != '' " />
+            <_JavaCompilerArgs Include="-source" />
+            <_JavaCompilerArgs Include="$(LangVersion)" />
+            <_JavaCompilerArgs Include="-target" />
+            <_JavaCompilerArgs Include="$(JavaVersion)" />
+            <_JavaCompilerArgs Include="-d" />
+            <_JavaCompilerArgs Include="$([System.IO.Path]::GetFullPath('$(ClassOutputPath)'))" />
+            <_JavaCompilerArgs Include="@(Compile->'%(FullPath)')" />
+        </ItemGroup>
+        <WriteLinesToFile File="$(_CompileJavaResponseFile)" Lines="@(_JavaCompilerArgs)" Overwrite="true" />
+
+        <RemoveDir Directories="$(ClassOutputPath)" />
+        <MakeDir Directories="$(ClassOutputPath)" />
+        <Message Text="$(JavaCompilerExec) @(_JavaCompilerArgs, ' ')" Importance="low" />
+        <Exec Command="$(JavaCompilerExec) @$(_CompileJavaResponseFile)" />
+
+        <Touch Files="$(_CompileJavaStampFile)" AlwaysCreate="true" ForceTouch="true" />
+        <ItemGroup>
+            <FileWrites Include="$(_CompileJavaResponseFile)" />
+        </ItemGroup>
+    </Target>
+
+    <Target Name="_CoreCompile" DependsOnTargets="ResolveIkvmCompiler;ResolveIkvmRuntimeAssembly;CompileJava" Inputs="$(IkvmRuntimeDll);$(KeyOriginatorFile);@(MapFile);@(ReferencePathWithRefAssemblies);@(Class);@(JavaResource);$(_CompileJavaStampFile)" Outputs="@(IntermediateAssembly);@(_DebugSymbolsIntermediatePath)">
+        <Error Text="IKVM.Runtime.dll could not be located at '$(IkvmRuntimeAssembly)'" Condition="!Exists('$(IkvmRuntimeAssembly)')" />
+        <Error Text="ikvmc could not be located at '$(IkvmCompilerPath)'" Condition="!Exists('$(IkvmCompilerPath)')" />
+
+        <WriteLinesToFile File="$(_ExcludeFilePath)" Lines="@(ExcludeRegex)" Overwrite="true" Condition=" '@(ExcludeRegex)' != '' " />
+
+        <ItemGroup>
+            <_ClassToCompile Include="@(Class)" />
+            <_AssemblyAttributesClass Include="@(_ClassToCompile)" Condition=" '%(Filename)%(Extension)' == '__AssemblyAttributes.class' " />
+            <_AssemblyAttributesClass Include="@(_ClassToCompile)" Condition=" '%(Filename)%(Extension)' == '__AssemblyInfo.class' " />
+            <_ClassToCompile Remove="@(_AssemblyAttributesClass)" />
+        </ItemGroup>
+
+        <ItemGroup>
+            <_IkvmCompilerArgs Include="-debug" Condition=" '$(DebugType)' != 'none' " />
+            <_IkvmCompilerArgs Include="-assembly:$(AssemblyName)" />
+            <_IkvmCompilerArgs Include="-version:$(AssemblyVersion)" />
+            <_IkvmCompilerArgs Include="-runtime:$(IkvmRuntimeAssembly)" />
+            <_IkvmCompilerArgs Include="-keyfile:$(KeyOriginatorFile)" Condition=" '$(KeyOriginatorFile)' != '' " />
+            <_IkvmCompilerArgs Include="@(MapFile->'-remap:%(FullPath)')" Condition=" '@(MapFile)' != '' " />
+            <_IkvmCompilerArgs Include="-compressresources" Condition=" '$(CompressResources)' == 'true' " />
+            <_IkvmCompilerArgs Include="-opt:fields" />
+            <_IkvmCompilerArgs Include="-strictfinalfieldsemantics" Condition=" '$(StrictFinalFieldSemantics)' == 'true' " />
+            <_IkvmCompilerArgs Include="-removeassertions" Condition=" '$(RemoveAssertions)' == 'true' " />
+            <_IkvmCompilerArgs Include="-target:$(OutputType.ToLowerInvariant())" />
+            <_IkvmCompilerArgs Include="-nostdlib" Condition=" '$(NoCompilerStandardLib)' == 'true' " />
+            <_IkvmCompilerArgs Include="-sharedclassloader" Condition=" '$(SharedClassLoader)' == 'true' " />
+            <_IkvmCompilerArgs Include="-w$(WarningLevel)" />
+            <_IkvmCompilerArgs Include="-noparameterreflection" Condition=" '$(NoParameterReflection)' == 'true' " />
+            <_IkvmCompilerArgs Include="-exclude:$([System.IO.Path]::GetFullPath('$(_ExcludeFilePath)'))" Condition="Exists('$(_ExcludeFilePath)')" />
+            <_IkvmCompilerArgs Include="@(_AssemblyAttributesClass->'-assemblyattributes:%(FullPath)')" />
+            <_IkvmCompilerReferencePath Include="@(ReferencePathWithRefAssemblies)" />
+            <_IkvmCompilerArgs Include="@(_IkvmCompilerReferencePath->'-reference:%(FullPath)')" />
+            <_IkvmCompilerResourceItem Include="@(JavaResource)" ResourcePath="$([System.String]::new('%(JavaResource.ResourcePath)').Replace('\', '/'))" Condition=" '%(Identity)' != '' " />
+            <_IkvmCompilerArgs Include="@(_IkvmCompilerResourceItem->'-resource:%(ResourcePath)=%(FullPath)')" />
+            <_IkvmCompilerArgs Include="-out:$(_AssemblyTempPath)$(TargetName)$(TargetExt)" />
+            <_IkvmCompilerArgs Include="@(_ClassToCompile->'%(FullPath)')" />
+        </ItemGroup>
+        <WriteLinesToFile File="$(_IkvmCompilerResponseFile)" Lines="@(_IkvmCompilerArgs)" Overwrite="true" />
+
+        <!-- Build Java assembly into temporary directory. -->
+        <RemoveDir Directories="$(_AssemblyTempPath)" />
+        <MakeDir Directories="$(_AssemblyTempPath)" />
+        <Exec Command="$(IkvmCompilerExec) @$(_IkvmCompilerResponseFile)" />
+
+        <!-- Move temporary files in place of permanent files. -->
+        <Move SourceFiles="$(_AssemblyTempPath)$(TargetName)$(TargetExt)" DestinationFiles="@(IntermediateAssembly)" OverwriteReadOnlyFiles="true" />
+        <Move SourceFiles="$(_AssemblyTempPath)$(TargetName).pdb" DestinationFiles="@(_DebugSymbolsIntermediatePath)" OverwriteReadOnlyFiles="true" Condition="Exists('$(_AssemblyTempPath)$(TargetName).pdb')" />
+
+        <ItemGroup>
+            <FileWrites Include="$(_ExcludeFilePath)" />
+            <FileWrites Include="$(_IkvmCompilerResponseFile)" />
+            <FileWrites Include="$(_AssemblyTempPath)$(TargetName)$(TargetExt)" />
+            <FileWrites Include="$(_AssemblyTempPath)$(TargetName).pdb" />
+        </ItemGroup>
+    </Target>
+    
+    <Import Project="IKVM.Java.Core.ProjectReferences.targets" Condition=" '$(UseIkvmProjectReferences)' == 'true' "/>
+
+</Project>

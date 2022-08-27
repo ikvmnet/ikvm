@@ -113,8 +113,9 @@ namespace IKVM.MSBuild.Tasks
             }
 
             // apply classpath
-            if (Classpath.Length > 0)
-                fileManager.setLocation(StandardLocation.CLASS_PATH, Arrays.asList(Classpath.Select(i => new File(System.IO.Path.GetFullPath(i.ItemSpec))).ToArray()));
+            if (Classpath != null)
+                if (Classpath.Length > 0)
+                    fileManager.setLocation(StandardLocation.CLASS_PATH, Arrays.asList(Classpath.Select(i => new File(System.IO.Path.GetFullPath(i.ItemSpec))).ToArray()));
 
             // yield and wait for the task to complete
             BuildEngine3.Yield();

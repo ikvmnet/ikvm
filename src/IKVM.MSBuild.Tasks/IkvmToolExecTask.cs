@@ -64,7 +64,7 @@ namespace IKVM.MSBuild.Tasks
 
             // check that the tools exist
             if (ToolPath == null || Directory.Exists(ToolPath) == false)
-                throw new IkvmTaskException("Missing tools path.");
+                throw new IkvmTaskException($"Missing tool path: '{ToolPath}'.");
 
             // kick off the launcher with the configured options
             var run = System.Threading.Tasks.Task.Run(() => ExecuteAsync(toolFramework, new IkvmToolTaskDiagnosticWriter(Log), CancellationToken.None));

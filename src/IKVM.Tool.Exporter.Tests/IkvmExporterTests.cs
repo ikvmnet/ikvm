@@ -21,7 +21,7 @@ namespace IKVM.Tool.Exporter.Tests
     {
 
         [TestMethod]
-        public async Task Can_stub_corelib()
+        public async Task Can_stub_library()
         {
             var options = new IkvmExporterOptions()
             {
@@ -35,11 +35,11 @@ namespace IKVM.Tool.Exporter.Tests
 
 #if NET461
             options.Libraries.Add(RuntimeEnvironment.GetRuntimeDirectory());
-            options.Assembly = Path.Combine(RuntimeEnvironment.GetRuntimeDirectory(), "mscorlib.dll");
+            options.Assembly = typeof(System.Linq.Enumerable).Assembly.Location;
             options.Output = Path.Combine(Path.GetTempPath(), Path.GetFileName(Path.ChangeExtension(options.Assembly, ".jar")));
 #else
             options.References.AddRange(DependencyContext.Default.CompileLibraries.SelectMany(i => i.ResolveReferencePaths()));
-            options.Assembly = DependencyContext.Default.CompileLibraries.Where(i => i.Name == "netstandard").SelectMany(i => i.ResolveReferencePaths()).FirstOrDefault();
+            options.Assembly = typeof(System.Linq.Enumerable).Assembly.Location;
             options.Output = Path.Combine(Path.GetTempPath(), Path.GetFileName(Path.ChangeExtension(options.Assembly, ".jar")));
 #endif
 

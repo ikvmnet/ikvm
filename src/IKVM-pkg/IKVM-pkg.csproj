@@ -4,7 +4,7 @@
         <PackageId>IKVM</PackageId>
         <TargetFrameworks>net461;netcoreapp3.1</TargetFrameworks>
         <TargetsForTfmSpecificContentInPackage>$(TargetsForTfmSpecificContentInPackage);ProjectReferencesToPackage</TargetsForTfmSpecificContentInPackage>
-        <TargetsForTfmSpecificDebugSymbolsInPackage>$(TargetsForTfmSpecificContentInPackage);ProjectReferencesToDebugSymbolsPackage</TargetsForTfmSpecificDebugSymbolsInPackage>
+        <TargetsForTfmSpecificDebugSymbolsInPackage>$(TargetsForTfmSpecificDebugSymbolsInPackage);ProjectReferencesToDebugSymbolsPackage</TargetsForTfmSpecificDebugSymbolsInPackage>
         <PackageLicenseFile>LICENSE.md</PackageLicenseFile>
         <PackageReadmeFile>README.md</PackageReadmeFile>
         <Description>Java SE 8 Virtual Machine for .NET</Description>
@@ -127,7 +127,7 @@
 
     <Target Name="MakeGeneratedPropsFile" Outputs="$(IntermediateOutputPath)generated.props" BeforeTargets="_GetPackageFiles">
         <ItemGroup>
-            <_GeneratedPropsFileLine Include="&lt;Project&gt;&lt;PropertyGroup&gt;&lt;IkvmVersion&gt;$(Version)&lt;/IkvmVersion&gt;&lt;/PropertyGroup&gt;&lt;/Project&gt;" />
+            <_GeneratedPropsFileLine Include="&lt;Project&gt;&lt;PropertyGroup&gt;&lt;IkvmVersion&gt;$(PackageVersion)&lt;/IkvmVersion&gt;&lt;/PropertyGroup&gt;&lt;/Project&gt;" />
         </ItemGroup>
         <WriteLinesToFile File="$(IntermediateOutputPath)generated.props" Lines="@(_GeneratedPropsFileLine)" Overwrite="true" WriteOnlyWhenDifferent="true" />
         <ItemGroup>

@@ -8,26 +8,37 @@
         <IkvmCacheDir Condition=" '$(IkvmCacheDir)' == '' ">$([System.IO.Path]::GetTempPath())ikvm\cache\1\</IkvmCacheDir>
     </PropertyGroup>
 
+    <!-- Locates the IKVM.Runtime assembly from among the current references of the project. -->
+    <Target Name="ResolveIkvmRuntimeAssembly" DependsOnTargets="ResolveProjectReferences">
+        <ItemGroup>
+            <_IkvmRuntimeAssembly Include="@(Reference)" Condition=" '%(Filename)%(Extension)' == 'IKVM.Runtime.dll' " />
+        </ItemGroup>
+        <PropertyGroup>
+            <IkvmRuntimeAssembly>@(_IkvmRuntimeAssembly)</IkvmRuntimeAssembly>
+        </PropertyGroup>
+
+        <Error Text="Could not locate IKVM.Runtime.dll." Condition=" '$(IkvmRuntimeAssembly)' == '' " />
+    </Target>
+
     <!-- Gathers those references which are either related to the Framework itself, or IKVM. -->
-    <Target Name="ResolveIkvmAssemblies" DependsOnTargets="ResolveProjectReferences">
+    <Target Name="ResolveIkvmReferenceAssemblies" DependsOnTargets="ResolveProjectReferences;ResolveIkvmRuntimeAssembly">
+        <!-- Consult tool to get the reference assemblies for the tool framework. -->
+        <!-- This is a bug. Tools should be able to use assemblies of project, not its own. -->
         <IkvmGetReferenceAssemblies ToolPath="$(IkvmToolsPath)ikvmc" ToolFramework="$(IkvmToolFramework)">
             <Output TaskParameter="ResolvedFrameworkReferences" ItemName="IkvmFrameworkReference" />
         </IkvmGetReferenceAssemblies>
 
-        <!-- Locate runtime assemblies. -->
+        <!-- Find local references for IKVM assemblies. -->
         <ItemGroup>
             <_IkvmBaseAssembly Include="@(Reference)" Condition=" '%(Filename)%(Extension)' == 'IKVM.Java.dll' " />
-            <_IkvmRuntimeAssembly Include="@(Reference)" Condition=" '%(Filename)%(Extension)' == 'IKVM.Runtime.dll' " />
             <_IkvmRuntimeJNIAssembly Include="@(Reference)" Condition=" '%(Filename)%(Extension)' == 'IKVM.Runtime.JNI.dll' " />
         </ItemGroup>
         <PropertyGroup>
             <IkvmBaseAssembly>@(_IkvmBaseAssembly)</IkvmBaseAssembly>
-            <IkvmRuntimeAssembly>@(_IkvmRuntimeAssembly)</IkvmRuntimeAssembly>
             <IkvmRuntimeJNIAssembly>@(_IkvmRuntimeJNIAssembly)</IkvmRuntimeJNIAssembly>
         </PropertyGroup>
 
         <Error Text="Could not locate IKVM.Java.dll." Condition=" '$(IkvmBaseAssembly)' == '' " />
-        <Error Text="Could not locate IKVM.Runtime.dll." Condition=" '$(IkvmRuntimeAssembly)' == '' " />
         <Error Text="Could not locate IKVM.Runtime.JNI.dll." Condition=" '$(IkvmRuntimeJNIAssembly)' == '' " />
     </Target>
 
@@ -41,7 +52,7 @@
     </Target>
 
     <!-- Populates the IkvmReferenceItem set with required metadata. -->
-    <Target Name="GetIkvmReferenceItemsMetadata" DependsOnTargets="GetIkvmReferenceItemsFromIkvmReferences;ResolveIkvmAssemblies" Condition=" '@(IkvmReferenceItem)' != '' ">
+    <Target Name="GetIkvmReferenceItemsMetadata" DependsOnTargets="GetIkvmReferenceItemsFromIkvmReferences;ResolveIkvmRuntimeAssembly;ResolveIkvmReferenceAssemblies" Condition=" '@(IkvmReferenceItem)' != '' ">
 
         <!-- Populates metadata, validates, resolves references, and emits in build order. -->
         <IkvmReferenceItemPrepare Items="@(IkvmReferenceItem)" ToolVersion="$(IkvmVersion)" ToolFramework="$(IkvmToolFramework)" RuntimeAssembly="$(IkvmRuntimeAssembly)" References="@(IkvmFrameworkReference);$(IkvmBaseAssembly);$(IkvmRuntimeAssembly);$(IkvmRuntimeJNIAssembly)" StageDir="$(IkvmStageDir)" CacheDir="$(IkvmCacheDir)">
@@ -58,7 +69,7 @@
     <PropertyGroup>
         <GetIkvmReferenceItemsDependsOn>
             $(GetIkvmReferenceItemsDependsOn);
-            ResolveIkvmAssemblies;
+            ResolveIkvmReferenceAssemblies;
             GetIkvmReferenceItemsFromIkvmReferences;
             GetIkvmReferenceItemsMetadata;
         </GetIkvmReferenceItemsDependsOn>
@@ -80,7 +91,7 @@
     </Target>
 
     <!-- Builds the IkvmReferenceItem set into their output items within the cache. -->
-    <Target Name="_CompileIkvmReferences" DependsOnTargets="ResolveIkvmAssemblies;_GetIkvmReferenceItemsCompileToCachePath" Inputs="@(_IkvmReferenceItemCompileToCachePath)" Outputs="%(_IkvmReferenceItemCompileToCachePath.CachePath)" Condition=" '@(_IkvmReferenceItemCompileToCachePath.CachePath)' != '' ">
+    <Target Name="_CompileIkvmReferences" DependsOnTargets="ResolveIkvmRuntimeAssembly;ResolveIkvmReferenceAssemblies;_GetIkvmReferenceItemsCompileToCachePath" Inputs="@(_IkvmReferenceItemCompileToCachePath)" Outputs="%(_IkvmReferenceItemCompileToCachePath.CachePath)" Condition=" '@(_IkvmReferenceItemCompileToCachePath.CachePath)' != '' ">
 
         <!-- Take IkvmReferenceItem for the current batch on CachePath. -->
         <PropertyGroup>
@@ -99,7 +110,7 @@
 
         <!-- Compile the reference item. -->
         <IkvmCompiler
-            ToolPath="$(IkvmToolsPath)ikvmc"
+            ToolPath="$(IKvmCompilerToolPath)"
             ToolFramework="$(IkvmToolFramework)"
             ResponseFile="%(_IkvmReferenceItemToCompile.StagePath).rsp"
             Output="%(_IkvmReferenceItemToCompile.StagePath)"
@@ -132,7 +143,7 @@
         <CompileIkvmReferencesDependsOn>
             $(CompileIkvmReferenceAssemblies);
             GetIkvmReferenceItems;
-            ResolveIkvmAssemblies;
+            ResolveIkvmReferenceAssemblies;
             _GetIkvmReferenceItemsCompileToCachePath;
             _CompileIkvmReferences;
         </CompileIkvmReferencesDependsOn>

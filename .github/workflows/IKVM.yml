@@ -191,7 +191,7 @@ jobs:
       uses: actions/upload-artifact@v3
       with:
         name: nuget
-        path: build/nuget
+        path: build/nuget/*.nupkg
     - name: Package Binaries
       run: tar czvf bin.tar.gz bin
       working-directory: build
@@ -337,7 +337,7 @@ jobs:
       uses: ncipollo/release-action@v1.10.0
       with:
         tag: ${{ steps.GitVersion.outputs.semVer }}
-        artifacts: build/bin/*.zip,build/nuget/*.nupkg,build/nuget/*.snupkg,build/tools/*.zip
+        artifacts: build/bin/*.zip,build/nuget/*.nupkg,build/tools/*.zip
         generateReleaseNotes: true
         prerelease: ${{ github.ref == 'refs/heads/develop' }}
         token: ${{ secrets.GITHUB_TOKEN }}
