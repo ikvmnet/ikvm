@@ -1,90 +1,103 @@
 ﻿<Project DefaultTargets="Build" ToolsVersion="15.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
-    <ItemGroup Label="ProjectConfigurations">
-        <ProjectConfiguration Include="Debug|x64">
-            <Configuration>Debug</Configuration>
-            <Platform>x64</Platform>
-        </ProjectConfiguration>
-        <ProjectConfiguration Include="Release|x64">
-            <Configuration>Release</Configuration>
-            <Platform>x64</Platform>
-        </ProjectConfiguration>
-    </ItemGroup>
-    <PropertyGroup Label="Globals">
-        <ProjectGuid>{01E7A7F2-49EF-455B-AF8B-D219D1CC2B32}</ProjectGuid>
-        <Keyword>Linux</Keyword>
-        <RootNamespace>libikvm-native</RootNamespace>
-        <MinimumVisualStudioVersion>15.0</MinimumVisualStudioVersion>
-        <ApplicationType>Linux</ApplicationType>
-        <ApplicationTypeRevision>1.0</ApplicationTypeRevision>
-        <TargetLinuxPlatform>Generic</TargetLinuxPlatform>
-        <LinuxProjectType>{D51BCBC9-82E9-4017-911E-C93873C4EA2B}</LinuxProjectType>
-        <ProjectName>ikvm-native-osx-arm64</ProjectName>
-    </PropertyGroup>
-    <Import Project="$(VCTargetsPath)\Microsoft.Cpp.Default.props" />
-    <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'" Label="Configuration">
-        <UseDebugLibraries>true</UseDebugLibraries>
-        <PlatformToolset>WSL_Clang_1_0</PlatformToolset>
-        <ConfigurationType>DynamicLibrary</ConfigurationType>
-    </PropertyGroup>
-    <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'" Label="Configuration">
-        <UseDebugLibraries>false</UseDebugLibraries>
-        <PlatformToolset>WSL_Clang_1_0</PlatformToolset>
-        <ConfigurationType>DynamicLibrary</ConfigurationType>
-    </PropertyGroup>
-    <Import Project="$(VCTargetsPath)\Microsoft.Cpp.props" />
-    <ImportGroup Label="ExtensionSettings" />
-    <ImportGroup Label="Shared" />
-    <ImportGroup Label="PropertySheets" />
-    <PropertyGroup Label="UserMacros" />
-    <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">
-        <TargetName>libikvm-native</TargetName>
-        <OutDir>$(ProjectDir)bin\$(Configuration)\osx-11.0-arm64\</OutDir>
-        <IntDir>$(ProjectDir)obj\$(Configuration)\osx-11.0-arm64\</IntDir>
-        <LocalRemoteCopySources>true</LocalRemoteCopySources>
-        <WSLPath>default</WSLPath>
-        <TargetExt>.dynlib</TargetExt>
-        <RemoteCCompileToolExe>$(ProjectDir)../osxcross/target/bin/arm64e-apple-darwin21.4-clang++</RemoteCCompileToolExe>
-        <RemoteCppCompileToolExe>$(ProjectDir)../osxcross/target/bin/arm64e-apple-darwin21.4-clang++</RemoteCppCompileToolExe>
-        <RemoteLdToolExe>$(ProjectDir)../osxcross/target/bin/arm64e-apple-darwin21.4-clang++</RemoteLdToolExe>
-    </PropertyGroup>
-    <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'">
-        <TargetName>libikvm-native</TargetName>
-        <OutDir>$(ProjectDir)bin\$(Configuration)\osx-11.0-arm64\</OutDir>
-        <IntDir>$(ProjectDir)obj\$(Configuration)\osx-11.0-arm64\</IntDir>
-        <LocalRemoteCopySources>true</LocalRemoteCopySources>
-        <WSLPath>default</WSLPath>
-        <TargetExt>.dynlib</TargetExt>
-        <RemoteCCompileToolExe>$(ProjectDir)../osxcross/target/bin/arm64e-apple-darwin21.4-clang++</RemoteCCompileToolExe>
-        <RemoteCppCompileToolExe>$(ProjectDir)../osxcross/target/bin/arm64e-apple-darwin21.4-clang++</RemoteCppCompileToolExe>
-        <RemoteLdToolExe>$(ProjectDir)../osxcross/target/bin/arm64e-apple-darwin21.4-clang++</RemoteLdToolExe>
-    </PropertyGroup>
-    <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">
-        <Link>
-            <LibraryDependencies>dl</LibraryDependencies>
-            <AdditionalOptions>--ld-path=$(ProjectDir)../osxcross/target/bin/arm64e-apple-darwin21.4-ld</AdditionalOptions>
-            <UnresolvedSymbolReferences>false</UnresolvedSymbolReferences>
-            <FunctionBinding>false</FunctionBinding>
-            <NoExecStackRequired>false</NoExecStackRequired>
-            <Relocation></Relocation>
-        </Link>
-    </ItemDefinitionGroup>
-    <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'">
-        <Link>
-            <LibraryDependencies>dl</LibraryDependencies>
-            <AdditionalOptions>--ld-path=$(ProjectDir)../osxcross/target/bin/arm64e-apple-darwin21.4-ld</AdditionalOptions>
-            <UnresolvedSymbolReferences>false</UnresolvedSymbolReferences>
-            <FunctionBinding>false</FunctionBinding>
-            <NoExecStackRequired>false</NoExecStackRequired>
-            <Relocation></Relocation>
-        </Link>
-    </ItemDefinitionGroup>
-    <ItemGroup>
-        <ClCompile Include="jni.c" />
-        <ClCompile Include="os.c" />
-    </ItemGroup>
-    <ItemGroup>
-        <ClInclude Include="jni.h" />
-    </ItemGroup>
-    <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
-    <ImportGroup Label="ExtensionTargets" />
+  <ItemGroup Label="ProjectConfigurations">
+    <ProjectConfiguration Include="Debug|x64">
+      <Configuration>Debug</Configuration>
+      <Platform>x64</Platform>
+    </ProjectConfiguration>
+    <ProjectConfiguration Include="Release|x64">
+      <Configuration>Release</Configuration>
+      <Platform>x64</Platform>
+    </ProjectConfiguration>
+  </ItemGroup>
+  <PropertyGroup Label="Globals">
+    <ProjectGuid>{01E7A7F2-49EF-455B-AF8B-D219D1CC2B32}</ProjectGuid>
+    <Keyword>Linux</Keyword>
+    <RootNamespace>libikvm-native</RootNamespace>
+    <MinimumVisualStudioVersion>15.0</MinimumVisualStudioVersion>
+    <ApplicationType>Linux</ApplicationType>
+    <ApplicationTypeRevision>1.0</ApplicationTypeRevision>
+    <TargetLinuxPlatform>Generic</TargetLinuxPlatform>
+    <LinuxProjectType>{D51BCBC9-82E9-4017-911E-C93873C4EA2B}</LinuxProjectType>
+    <ProjectName>ikvm-native-osx-arm64</ProjectName>
+  </PropertyGroup>
+  <Import Project="$(VCTargetsPath)\Microsoft.Cpp.Default.props" />
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'" Label="Configuration">
+    <UseDebugLibraries>true</UseDebugLibraries>
+    <PlatformToolset>WSL_Clang_1_0</PlatformToolset>
+    <ConfigurationType>DynamicLibrary</ConfigurationType>
+  </PropertyGroup>
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'" Label="Configuration">
+    <UseDebugLibraries>false</UseDebugLibraries>
+    <PlatformToolset>WSL_Clang_1_0</PlatformToolset>
+    <ConfigurationType>DynamicLibrary</ConfigurationType>
+  </PropertyGroup>
+  <Import Project="$(VCTargetsPath)\Microsoft.Cpp.props" />
+  <ImportGroup Label="ExtensionSettings" />
+  <ImportGroup Label="Shared" />
+  <ImportGroup Label="PropertySheets" />
+  <PropertyGroup Label="UserMacros" />
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">
+    <TargetName>libikvm-native</TargetName>
+    <OutDir>$(ProjectDir)bin\$(Configuration)\osx-11.0-arm64\</OutDir>
+    <IntDir>$(ProjectDir)obj\$(Configuration)\osx-11.0-arm64\</IntDir>
+    <LocalRemoteCopySources>true</LocalRemoteCopySources>
+    <WSLPath>default</WSLPath>
+    <TargetExt>.dynlib</TargetExt>
+    <RemoteCCompileToolExe>oa64-clang++</RemoteCCompileToolExe>
+    <RemoteCppCompileToolExe>oa64-clang++</RemoteCppCompileToolExe>
+    <RemoteLdToolExe>oa64-clang++</RemoteLdToolExe>
+  </PropertyGroup>
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'">
+    <TargetName>libikvm-native</TargetName>
+    <OutDir>$(ProjectDir)bin\$(Configuration)\osx-11.0-arm64\</OutDir>
+    <IntDir>$(ProjectDir)obj\$(Configuration)\osx-11.0-arm64\</IntDir>
+    <LocalRemoteCopySources>true</LocalRemoteCopySources>
+    <WSLPath>default</WSLPath>
+    <TargetExt>.dynlib</TargetExt>
+    <RemoteCCompileToolExe>oa64-clang++</RemoteCCompileToolExe>
+    <RemoteCppCompileToolExe>oa64-clang++</RemoteCppCompileToolExe>
+    <RemoteLdToolExe>oa64-clang++</RemoteLdToolExe>
+  </PropertyGroup>
+  <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">
+    <Link>
+      <LibraryDependencies>dl</LibraryDependencies>
+      <AdditionalOptions>--ld-path=oa64-clang++</AdditionalOptions>
+      <UnresolvedSymbolReferences>false</UnresolvedSymbolReferences>
+      <FunctionBinding>false</FunctionBinding>
+      <NoExecStackRequired>false</NoExecStackRequired>
+      <Relocation></Relocation>
+    </Link>
+    <RemotePreBuildEvent>
+      <Command>export PATH=$PATH:`wslpath -a '$(ProjectDir)..\osxcross\target\bin'`; echo $PATH</Command>
+    </RemotePreBuildEvent>
+    <RemotePreLinkEvent>
+      <Command>export PATH=$PATH:`wslpath -a '$(ProjectDir)..\osxcross\target\bin'`; echo $PATH</Command>
+    </RemotePreLinkEvent>
+  </ItemDefinitionGroup>
+  <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'">
+    <Link>
+      <LibraryDependencies>dl</LibraryDependencies>
+      <AdditionalOptions>--ld-path=arm64-apple-darwin21.4-ld</AdditionalOptions>
+      <UnresolvedSymbolReferences>false</UnresolvedSymbolReferences>
+      <FunctionBinding>false</FunctionBinding>
+      <NoExecStackRequired>false</NoExecStackRequired>
+      <Relocation>
+      </Relocation>
+    </Link>
+    <RemotePreBuildEvent>
+      <Command>export PATH=$PATH:`wslpath -a '$(ProjectDir)..\osxcross\target\bin'`; echo $PATH</Command>
+    </RemotePreBuildEvent>
+    <RemotePreLinkEvent>
+      <Command>export PATH=$PATH:`wslpath -a '$(ProjectDir)..\osxcross\target\bin'`; echo $PATH</Command>
+    </RemotePreLinkEvent>
+  </ItemDefinitionGroup>
+  <ItemGroup>
+    <ClCompile Include="jni.c" />
+    <ClCompile Include="os.c" />
+  </ItemGroup>
+  <ItemGroup>
+    <ClInclude Include="jni.h" />
+  </ItemGroup>
+  <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
+  <ImportGroup Label="ExtensionTargets" />
 </Project>
