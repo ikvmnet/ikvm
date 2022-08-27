@@ -128,7 +128,7 @@ jobs:
         files: osxcross/target/stamp
     - name: Build OS X Cross
       if: steps.osxcross-target-stamp.outputs.files_exists != 'true'
-      run: ./osxcross.build.sh
+      run: ./osxcross.build.sh && touch osxcross/target/stamp
     - name: Package OS X Cross
       run: zip -r osxcross-target.zip target
       working-directory: osxcross
