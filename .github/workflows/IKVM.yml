@@ -120,7 +120,7 @@ jobs:
       uses: actions/cache@v3
       with:
         path: osxcross/target
-        key: osxcross-target--${{ runner.os }}--${{ hashFiles('osxcross/**', '!osxcross/target') }}-7
+        key: osxcross-target--${{ runner.os }}--${{ hashFiles('osxcross/**', '!osxcross/target') }}-1
     - name: Check OSX Cross Build Stamp
       id: osxcross-build-stamp
       uses: andstor/file-existence-action@v1
