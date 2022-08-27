@@ -43,9 +43,9 @@
         <LocalRemoteCopySources>true</LocalRemoteCopySources>
         <WSLPath>default</WSLPath>
         <TargetExt>.dynlib</TargetExt>
-        <RemoteCCompileToolExe>~/osxcross/target/bin/arm64e-apple-darwin21.4-clang++</RemoteCCompileToolExe>
-        <RemoteCppCompileToolExe>~/osxcross/target/bin/arm64e-apple-darwin21.4-clang++</RemoteCppCompileToolExe>
-        <RemoteLdToolExe>~/osxcross/target/bin/arm64e-apple-darwin21.4-clang++</RemoteLdToolExe>
+        <RemoteCCompileToolExe>$(ProjectDir)../osxcross/target/bin/arm64e-apple-darwin21.4-clang++</RemoteCCompileToolExe>
+        <RemoteCppCompileToolExe>$(ProjectDir)../osxcross/target/bin/arm64e-apple-darwin21.4-clang++</RemoteCppCompileToolExe>
+        <RemoteLdToolExe>$(ProjectDir)../osxcross/target/bin/arm64e-apple-darwin21.4-clang++</RemoteLdToolExe>
     </PropertyGroup>
     <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'">
         <TargetName>libikvm-native</TargetName>
@@ -54,14 +54,14 @@
         <LocalRemoteCopySources>true</LocalRemoteCopySources>
         <WSLPath>default</WSLPath>
         <TargetExt>.dynlib</TargetExt>
-        <RemoteCCompileToolExe>~/osxcross/target/bin/arm64e-apple-darwin21.4-clang++</RemoteCCompileToolExe>
-        <RemoteCppCompileToolExe>~/osxcross/target/bin/arm64e-apple-darwin21.4-clang++</RemoteCppCompileToolExe>
-        <RemoteLdToolExe>~/osxcross/target/bin/arm64e-apple-darwin21.4-clang++</RemoteLdToolExe>
+        <RemoteCCompileToolExe>$(ProjectDir)../osxcross/target/bin/arm64e-apple-darwin21.4-clang++</RemoteCCompileToolExe>
+        <RemoteCppCompileToolExe>$(ProjectDir)../osxcross/target/bin/arm64e-apple-darwin21.4-clang++</RemoteCppCompileToolExe>
+        <RemoteLdToolExe>$(ProjectDir)../osxcross/target/bin/arm64e-apple-darwin21.4-clang++</RemoteLdToolExe>
     </PropertyGroup>
     <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">
         <Link>
             <LibraryDependencies>dl</LibraryDependencies>
-            <AdditionalOptions>--ld-path=/home/jhaltom/osxcross/target/bin/arm64e-apple-darwin21.4-ld</AdditionalOptions>
+            <AdditionalOptions>--ld-path=$(ProjectDir)../osxcross/target/bin/arm64e-apple-darwin21.4-ld</AdditionalOptions>
             <UnresolvedSymbolReferences>false</UnresolvedSymbolReferences>
             <FunctionBinding>false</FunctionBinding>
             <NoExecStackRequired>false</NoExecStackRequired>
@@ -71,7 +71,7 @@
     <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'">
         <Link>
             <LibraryDependencies>dl</LibraryDependencies>
-            <AdditionalOptions>--ld-path=/home/jhaltom/osxcross/target/bin/arm64e-apple-darwin21.4-ld</AdditionalOptions>
+            <AdditionalOptions>--ld-path=$(ProjectDir)../osxcross/target/bin/arm64e-apple-darwin21.4-ld</AdditionalOptions>
             <UnresolvedSymbolReferences>false</UnresolvedSymbolReferences>
             <FunctionBinding>false</FunctionBinding>
             <NoExecStackRequired>false</NoExecStackRequired>
