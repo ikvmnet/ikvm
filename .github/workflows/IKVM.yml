@@ -180,6 +180,13 @@ jobs:
         additional-packages:
           gcc
           g++
+          zlib1g-dev
+          libmpc-dev
+          libmpfr-dev
+          libgmp-dev
+          clang
+          llvm
+          llvm-dev
     - name: Setup NuGet
       run: ac $env:GITHUB_ENV "`nNUGET_PACKAGES=${{ runner.temp }}\nuget\packages"
     - name: Cache NuGet
