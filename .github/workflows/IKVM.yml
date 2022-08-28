@@ -128,7 +128,7 @@ jobs:
         files: osxcross/target/stamp
     - name: Install Packages
       if: steps.jtreg-build-stamp.outputs.files_exists != 'true'
-      run: sudo apt-get install -y gcc g++ zlib1g-dev libmpc-dev libmpfr-dev libgmp-dev clang llvm-13 llvm-13-dev
+      run: sudo apt-get install -y gcc g++ zlib1g-dev libmpc-dev libmpfr-dev libgmp-dev clang llvm llvm-dev
     - name: Build OS X Cross
       if: steps.osxcross-target-stamp.outputs.files_exists != 'true'
       run: ./osxcross.build.sh && touch osxcross/target/stamp
