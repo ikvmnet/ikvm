@@ -25,7 +25,7 @@
             <PackagePath>targets\%(RecursiveDir)%(Filename)%(Extension)</PackagePath>
             <Pack>true</Pack>
         </None>
-        <None Update="targets\IKVM.Java.Core.Commands.targets">
+        <None Update="targets\IKVM.Java.Core.NoTasks.targets">
             <PackagePath>targets\%(RecursiveDir)%(Filename)%(Extension)</PackagePath>
             <Pack>true</Pack>
         </None>

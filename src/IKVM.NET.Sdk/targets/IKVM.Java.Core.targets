@@ -9,14 +9,25 @@
         <ClassOutputPath>$(IntermediateOutputPath)classes\</ClassOutputPath>
     </PropertyGroup>
 
+    <!-- References may be derived from various sources: ProjectReference or IkvmReference. In each case, compilation of the Java
+         code requires the original Java class or JAR files as input. These are attached as metadata to each possible reference.
+    -->
+    <Target Name="GetReferenceClasspath" DependsOnTargets="ResolveReferences;FindReferenceAssembliesForReferences">
+        <ItemGroup>
+            <Classpath Include="@(ReferencePath->'%(JavaClasspath)')" Condition=" '%(ReferencePath.JavaClasspath)' != '' " />
+        </ItemGroup>
+    </Target>
+
+    <!-- Compiles the set of exports to be made, along with their original assembly file path. -->
     <Target Name="ResolveReferenceExports" DependsOnTargets="ResolveReferences;FindReferenceAssembliesForReferences">
         <ItemGroup>
-            <ReferenceExport Include="@(ReferencePath->'$(ReferenceExportOutputPath)%(Filename).jar')" Condition="'%(Filename)' != 'System.Runtime.Serialization'">
+            <ReferenceExport Include="@(ReferencePath->'$(ReferenceExportOutputPath)%(Filename).jar')" Condition=" '%(ReferencePath.JavaClasspath)' == '' And '%(Filename)' != 'System.Runtime.Serialization' ">
                 <AssemblyFile>%(Identity)</AssemblyFile>
             </ReferenceExport>
         </ItemGroup>
     </Target>
 
+    <!-- Abstract target to conduct actual assembly exports. Overridden either by Command or Task implementation. -->
     <Target Name="_BuildReferenceExports" DependsOnTargets="ResolveReferenceExports" Inputs="%(ReferenceExport.AssemblyFile)" Outputs="%(ReferenceExport.Identity)">
         <Error Text="_BuildReferenceExports not implemented." />
     </Target>
@@ -54,6 +65,7 @@
         <_CompileJavaResponseFile>$(IntermediateOutputPath)$(MSBuildProjectName).javac.rsp</_CompileJavaResponseFile>
     </PropertyGroup>
 
+    <!-- Abstract target to conduct actual Java compilation. Overridden either by Command or Task implementation. -->
     <Target Name="_CompileJava" DependsOnTargets="BuildReferenceExports" Inputs="@(Compile);@(Classpath)" Outputs="$(_CompileJavaStampFile)">
         <Error Text="_CompileJava not implemented." />
     </Target>
@@ -61,6 +73,7 @@
     <PropertyGroup>
         <CompileJavaDependsOn>
             $(CompileJavaDependsOn)
+            GetReferenceClasspath;
             BuildReferenceExports;
             _CompileJava;
         </CompileJavaDependsOn>
@@ -91,6 +104,7 @@
         <_IkvmCompilerResponseFile>$(IntermediateOutputPath)$(MSBuildProjectName).ikvmc.rsp</_IkvmCompilerResponseFile>
     </PropertyGroup>
 
+    <!-- Abstract target to conduct compilation. Overridden either by Command or Task implementation. -->
     <Target Name="_CoreCompile" DependsOnTargets="CompileJava" Inputs="$(IkvmRuntimeAssembly);$(KeyOriginatorFile);@(MapFile);@(ReferencePathWithRefAssemblies);@(Class);@(JavaResource);$(_CompileJavaStampFile)" Outputs="@(IntermediateAssembly);@(_DebugSymbolsIntermediatePath)">
         <Error Text="_CoreCompile not implemented." />
     </Target>
@@ -120,7 +134,8 @@
         </CleanDependsOn>
     </PropertyGroup>
 
+    <!-- Include Task or Command implementation of targets. -->
     <Import Project="IKVM.Java.Core.Tasks.targets" Condition=" '$(UseIkvmTasks)' == 'true' "/>
-    <Import Project="IKVM.Java.Core.Commands.targets" Condition=" '$(UseIkvmTasks)' != 'true' "/>
+    <Import Project="IKVM.Java.Core.NoTasks.targets" Condition=" '$(UseIkvmTasks)' != 'true' "/>
 
 </Project>

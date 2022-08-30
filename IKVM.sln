@@ -88,7 +88,10 @@ EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "IKVM.JavaTest.TestAdapter", "src\IKVM.JavaTest.TestAdapter\IKVM.JavaTest.TestAdapter.csproj", "{734A378C-DBAB-40D6-847B-D034CBD2D485}"
 EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "IKVM.JavaTest.TestAdapter.Tests", "src\IKVM.JavaTest.TestAdapter.Tests\IKVM.JavaTest.TestAdapter.Tests.csproj", "{69820773-513E-4F22-8846-3AD0079631D5}"
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "IKVM.Tool.Tests", "src\IKVM.Tool.Tests\IKVM.Tool.Tests.csproj", "{E4E6EAB9-2C68-49AC-A212-D464F1BB483B}"
+EndProject
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "IKVM.Tool.Tests", "src\IKVM.Tool.Tests\IKVM.Tool.Tests.csproj", "{E4E6EAB9-2C68-49AC-A212-D464F1BB483B}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "javac", "src\javac\javac.csproj", "{78BE5834-EC02-48C5-A83A-2693D777375A}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
@@ -232,6 +235,10 @@ Global
 		{E4E6EAB9-2C68-49AC-A212-D464F1BB483B}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{E4E6EAB9-2C68-49AC-A212-D464F1BB483B}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{E4E6EAB9-2C68-49AC-A212-D464F1BB483B}.Release|Any CPU.Build.0 = Release|Any CPU
+		{78BE5834-EC02-48C5-A83A-2693D777375A}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{78BE5834-EC02-48C5-A83A-2693D777375A}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{78BE5834-EC02-48C5-A83A-2693D777375A}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{78BE5834-EC02-48C5-A83A-2693D777375A}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE

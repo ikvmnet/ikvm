@@ -1,32 +1,6 @@
 <Project>
 
-    <UsingTask TaskName="GetMetadataTask" TaskFactory="RoslynCodeTaskFactory" AssemblyFile="$(MSBuildToolsPath)\Microsoft.Build.Tasks.Core.dll">
-        <ParameterGroup>
-            <Items ParameterType="Microsoft.Build.Framework.ITaskItem[]" Required="true" />
-            <MetadataString Output="true" />
-        </ParameterGroup>
-        <Task>
-            <Using Namespace="System" />
-            <Code Type="Fragment" Language="cs">
-                <![CDATA[
-                var command = new StringBuilder();
-                
-                foreach (var item in Items)
-                {
-                    command.AppendFormat("ItemName={0}\r\n", item);
-                    foreach (string parameter in item.MetadataNames)
-                        command.AppendFormat("  {0}={1}\r\n", parameter, item.GetMetadata(parameter));
-                        
-                    command.AppendFormat("\r\n");
-                }
-                
-                MetadataString = command.ToString();
-      ]]>
-            </Code>
-        </Task>
-    </UsingTask>
-
-    <Target Name="GetLibProjectReferences">
+    <Target Name="GetLibProjectReferences" Condition=" '@(LibProjectReference)' != '' ">
         <MSBuild Projects="@(LibProjectReference->'%(ProjectFile)')" Targets="GetTargetPath" BuildInParallel="$(BuildInParallel)" Properties="Platform=%(LibProjectReference.Platform);Configuration=%(LibProjectReference.Configuration)">
             <Output TaskParameter="TargetOutputs" ItemName="_LibProjectReferenceWithOutputPath" />
         </MSBuild>
@@ -55,7 +29,7 @@
         </MSBuild>
     </Target>
 
-    <Target Name="AssignPublishProjectConfiguration" Inputs="@(PublishProjectReference)" Outputs="dummy" Condition=" '@(PublishProjectReference)' != '' ">
+    <Target Name="AssignPublishProjectConfiguration" Condition=" '@(PublishProjectReference)' != '' ">
         <PropertyGroup>
             <OnlyReferenceAndBuildProjectsEnabledInSolutionConfiguration Condition="'$(OnlyReferenceAndBuildProjectsEnabledInSolutionConfiguration)' == ''">true</OnlyReferenceAndBuildProjectsEnabledInSolutionConfiguration>
             <ShouldUnsetParentConfigurationAndPlatform Condition="'$(ShouldUnsetParentConfigurationAndPlatform)' == '' and ('$(BuildingInsideVisualStudio)' == 'true' or '$(BuildingSolutionFile)' == 'true')">true</ShouldUnsetParentConfigurationAndPlatform>
@@ -79,7 +53,7 @@
         </AssignProjectConfiguration>
     </Target>
 
-    <Target Name="GetPublishProjectReferences" DependsOnTargets="AssignPublishProjectConfiguration" Inputs="@(_PublishProjectReferenceWithConfiguration)" Outputs="dummy">
+    <Target Name="GetPublishProjectReferences" DependsOnTargets="AssignPublishProjectConfiguration" Condition=" '@(_PublishProjectReferenceWithConfiguration)' != '' ">
         <ItemGroup>
             <_PublishProjectReference Include="@(_PublishProjectReferenceWithConfiguration)">
                 <ProjectName>$([System.IO.Path]::GetFileNameWithoutExtension('%(Identity)'))</ProjectName>
@@ -89,7 +63,7 @@
         </ItemGroup>
     </Target>
 
-    <Target Name="GetPublishProjectReferenceItems" DependsOnTargets="GetPublishProjectReferences" Inputs="@(_PublishProjectReference)" Outputs="dummy">
+    <Target Name="GetPublishProjectReferenceItems" DependsOnTargets="GetPublishProjectReferences" Condition=" '@(_PublishProjectReference)' != '' ">
         <MSBuild Projects="@(_PublishProjectReference)" Targets="Publish;PublishItemsOutputGroup" BuildInParallel="$(BuildInParallel)" Properties="%(_PublishProjectReference.SetConfiguration);%(_PublishProjectReference.SetPlatform);%(_PublishProjectReference.SetTargetFramework);%(_PublishProjectReference.PublishProperties)" RemoveProperties="%(_PublishProjectReference.GlobalPropertiesToRemove);%(_PublishProjectReference.PublishPropertiesToRemove);PublishDir;PublishUrl;Location" RebaseOutputs="true">
             <Output TaskParameter="TargetOutputs" ItemName="_PublishProjectReferenceItems" />
         </MSBuild>
@@ -148,7 +122,7 @@
 
     </Target>
 
-    <Target Name="AssignIncludeProjectConfiguration" Inputs="@(IncludeProjectReference)" Outputs="dummy" Condition=" '@(IncludeProjectReference)' != '' ">
+    <Target Name="AssignIncludeProjectConfiguration" Condition=" '@(IncludeProjectReference)' != '' ">
         <PropertyGroup>
             <OnlyReferenceAndBuildProjectsEnabledInSolutionConfiguration Condition="'$(OnlyReferenceAndBuildProjectsEnabledInSolutionConfiguration)' == ''">true</OnlyReferenceAndBuildProjectsEnabledInSolutionConfiguration>
             <ShouldUnsetParentConfigurationAndPlatform Condition="'$(ShouldUnsetParentConfigurationAndPlatform)' == '' and ('$(BuildingInsideVisualStudio)' == 'true' or '$(BuildingSolutionFile)' == 'true')">true</ShouldUnsetParentConfigurationAndPlatform>
@@ -172,7 +146,7 @@
         </AssignProjectConfiguration>
     </Target>
 
-    <Target Name="GetIncludeProjectReferences" DependsOnTargets="AssignIncludeProjectConfiguration" Inputs="@(_IncludeProjectReferenceWithConfiguration)" Outputs="dummy">
+    <Target Name="GetIncludeProjectReferences" DependsOnTargets="AssignIncludeProjectConfiguration" Condition=" '@(_IncludeProjectReferenceWithConfiguration)' != '' ">
         <ItemGroup>
             <_IncludeProjectReference Include="@(_IncludeProjectReferenceWithConfiguration)">
                 <ProjectName>$([System.IO.Path]::GetFileNameWithoutExtension('%(Identity)'))</ProjectName>
@@ -182,14 +156,13 @@
         </ItemGroup>
     </Target>
 
-    <Target Name="GetIncludeProjectReferenceItems" DependsOnTargets="GetIncludeProjectReferences" Inputs="@(_IncludeProjectReference)" Outputs="dummy">
+    <Target Name="GetIncludeProjectReferenceItems" DependsOnTargets="GetIncludeProjectReferences" Condition=" '@(_IncludeProjectReference)' != '' ">
         <MSBuild Projects="@(_IncludeProjectReference)" Targets="Build;BuiltProjectOutputGroup" BuildInParallel="$(BuildInParallel)" Properties="%(_IncludeProjectReference.SetConfiguration);%(_IncludeProjectReference.SetPlatform);%(_IncludeProjectReference.SetTargetFramework);%(_IncludeProjectReference.IncludeProperties)" RemoveProperties="%(_IncludeProjectReference.GlobalPropertiesToRemove);%(_IncludeProjectReference.IncludePropertiesToRemove);" RebaseOutputs="true">
             <Output TaskParameter="TargetOutputs" ItemName="_IncludeProjectReferenceItems" />
         </MSBuild>
     </Target>
 
     <Target Name="GetIncludeProjectReferenceCopyToOutputDirectoryItems" DependsOnTargets="GetIncludeProjectReferenceItems">
-        <Message Text="_IncludeProjectReferenceItems: @(_IncludeProjectReferenceItems->'%(TargetPath)')" />
         <ItemGroup>
             <ContentWithTargetPath Include="@(_IncludeProjectReferenceItems)" Condition=" '%(_IncludeProjectReferenceItems.IncludeTargetPath)' != '' And '%(_IncludeProjectReferenceItems.TargetPath)' != '' ">
                 <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
@@ -247,7 +220,7 @@
     </Target>
 
 
-    <Target Name="AssignPackageProjectConfiguration" Condition=" '@(PackageProjectReference)' != '' " Inputs="@(PackageProjectReference)" Outputs="dummy">
+    <Target Name="AssignPackageProjectConfiguration" Condition=" '@(PackageProjectReference)' != '' " >
         <PropertyGroup>
             <OnlyReferenceAndBuildProjectsEnabledInSolutionConfiguration Condition="'$(OnlyReferenceAndBuildProjectsEnabledInSolutionConfiguration)' == ''">true</OnlyReferenceAndBuildProjectsEnabledInSolutionConfiguration>
             <ShouldUnsetParentConfigurationAndPlatform Condition="'$(ShouldUnsetParentConfigurationAndPlatform)' == '' and ('$(BuildingInsideVisualStudio)' == 'true' or '$(BuildingSolutionFile)' == 'true')">true</ShouldUnsetParentConfigurationAndPlatform>
@@ -259,7 +232,7 @@
         </AssignProjectConfiguration>
     </Target>
 
-    <Target Name="GetProjectReferencePackageOutputPath" DependsOnTargets="AssignPackageProjectConfiguration" Inputs="@(_PackageProjectReferenceWithConfiguration)" Outputs="dummy">
+    <Target Name="GetProjectReferencePackageOutputPath" DependsOnTargets="AssignPackageProjectConfiguration" Condition=" '@(_PackageProjectReferenceWithConfiguration)' != '' " >
         <MSBuild Projects="@(_PackageProjectReferenceWithConfiguration)" Targets="_CleanPackageFiles;Pack;GetPackageOutputPath" BuildInParallel="$(BuildInParallel)" Properties="%(_PackageProjectReferenceWithConfiguration.SetConfiguration);%(_PackageProjectReferenceWithConfiguration.SetPlatform)" RemoveProperties="%(_PackageProjectReferenceWithConfiguration.GlobalPropertiesToRemove);TargetFramework" Condition=" '%(_PackageProjectReferenceWithConfiguration.Identity)' != '' ">
             <Output TaskParameter="TargetOutputs" ItemName="_ResolvedPackageOutputPath" />
         </MSBuild>

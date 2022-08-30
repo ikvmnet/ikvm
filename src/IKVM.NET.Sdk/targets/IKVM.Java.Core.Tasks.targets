@@ -3,12 +3,16 @@
         <MSBuildAllProjects>$(MSBuildAllProjects);$(MSBuildThisFileFullPath)</MSBuildAllProjects>
     </PropertyGroup>
 
+    <!--
+    This file contains targets which invoke the jobs in 'Task' mode. The tasks provided by MSBuild are used.
+    -->
+
     <Target Name="_BuildReferenceExports" DependsOnTargets="ResolveReferenceExports" Inputs="%(ReferenceExport.AssemblyFile)" Outputs="%(ReferenceExport.Identity)">
         <Error Text="IKVM.NET.Sdk cannot currently build assemblies targeting '$(TargetFramework)'. Either target 'net461' or 'netcoreapp3.1'." Condition=" '$(TargetFramework)' != 'net461' And '$(TargetFramework)' != 'netcoreapp3.1' " />
                
         <ItemGroup>
-            <_ReferenceStubReference Remove="@(_ReferenceStubReference)" />
-            <_ReferenceStubReference Include="@(ReferencePathWithRefAssemblies)"  Condition=" '%(Filename)' != '%(ReferenceExport.Filename)' "/>
+            <_ReferenceExportReference Remove="@(_ReferenceExportReference)" />
+            <_ReferenceExportReference Include="@(ReferencePathWithRefAssemblies)" Condition=" '%(Filename)' != '%(ReferenceExport.Filename)' "/>
         </ItemGroup>
 
         <MakeDir Directories="$(ReferenceExportOutputPath);$(ReferenceExportOutputPath)tmp" />
@@ -18,7 +22,7 @@
             Input="%(ReferenceExport.AssemblyFile)"
             Bootstrap="$(Bootstrap)"
             NoStdLib="$(NoCompilerStandardLib)"
-            References="@(_ReferenceStubReference)"
+            References="@(_ReferenceExportReference)"
             Output="$(ReferenceExportOutputPath)tmp\%(ReferenceExport.Filename)%(ReferenceExport.Extension)" />
         <Move SourceFiles="$(ReferenceExportOutputPath)tmp\%(ReferenceExport.Filename)%(ReferenceExport.Extension)" DestinationFiles="%(ReferenceExport.Identity)" />
         <Delete Files="$(ReferenceExportOutputPath)tmp\%(ReferenceExport.Filename)%(ReferenceExport.Extension)" />
