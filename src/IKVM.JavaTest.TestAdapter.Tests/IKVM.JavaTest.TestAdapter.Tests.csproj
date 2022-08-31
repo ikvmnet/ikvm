@@ -14,10 +14,6 @@
     </ItemGroup>
 
     <ItemGroup>
-        <ProjectReference Include="..\IKVM.JavaTest.TestAdapter\IKVM.JavaTest.TestAdapter.csproj" />
-    </ItemGroup>
-
-    <ItemGroup>
         <None Update="root\**\*">
             <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
         </None>
