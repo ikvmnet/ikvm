@@ -1,0 +1,8 @@
+{
+  "profiles": {
+    "IKVM.JavaTest.AgentServer": {
+      "commandName": "Project",
+      "commandLineArgs": "-logfile out.txt"
+    }
+  }
+}

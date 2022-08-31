@@ -81,9 +81,17 @@ Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "IKVM.Tool.Exporter", "src\I
 EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "IKVM.Tool.Exporter.Tests", "src\IKVM.Tool.Exporter.Tests\IKVM.Tool.Exporter.Tests.csproj", "{EFF93C65-3F45-48B6-9178-1E68ADD41974}"
 EndProject
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "IKVM.JavaTest", "src\IKVM.JavaTest\IKVM.JavaTest.msbuildproj", "{64313869-0118-47C2-9C98-D5F5147816B7}"
+EndProject
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "IKVM.JavaTest.AgentServer", "src\IKVM.JavaTest.AgentServer\IKVM.JavaTest.AgentServer.csproj", "{F3F6574B-480E-497E-8FA0-A25E167154AF}"
+EndProject
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "IKVM.JavaTest.TestAdapter", "src\IKVM.JavaTest.TestAdapter\IKVM.JavaTest.TestAdapter.csproj", "{734A378C-DBAB-40D6-847B-D034CBD2D485}"
+EndProject
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "IKVM.JavaTest.TestAdapter.Tests", "src\IKVM.JavaTest.TestAdapter.Tests\IKVM.JavaTest.TestAdapter.Tests.csproj", "{69820773-513E-4F22-8846-3AD0079631D5}"
+EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "IKVM.Tool.Tests", "src\IKVM.Tool.Tests\IKVM.Tool.Tests.csproj", "{E4E6EAB9-2C68-49AC-A212-D464F1BB483B}"
 EndProject
-Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "javac", "src\javac\javac.csproj", "{78BE5834-EC02-48C5-A83A-2693D777375A}"
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "javac", "src\javac\javac.csproj", "{78BE5834-EC02-48C5-A83A-2693D777375A}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
@@ -207,6 +215,22 @@ Global
 		{EFF93C65-3F45-48B6-9178-1E68ADD41974}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{EFF93C65-3F45-48B6-9178-1E68ADD41974}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{EFF93C65-3F45-48B6-9178-1E68ADD41974}.Release|Any CPU.Build.0 = Release|Any CPU
+		{64313869-0118-47C2-9C98-D5F5147816B7}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{64313869-0118-47C2-9C98-D5F5147816B7}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{64313869-0118-47C2-9C98-D5F5147816B7}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{64313869-0118-47C2-9C98-D5F5147816B7}.Release|Any CPU.Build.0 = Release|Any CPU
+		{F3F6574B-480E-497E-8FA0-A25E167154AF}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{F3F6574B-480E-497E-8FA0-A25E167154AF}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{F3F6574B-480E-497E-8FA0-A25E167154AF}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{F3F6574B-480E-497E-8FA0-A25E167154AF}.Release|Any CPU.Build.0 = Release|Any CPU
+		{734A378C-DBAB-40D6-847B-D034CBD2D485}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{734A378C-DBAB-40D6-847B-D034CBD2D485}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{734A378C-DBAB-40D6-847B-D034CBD2D485}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{734A378C-DBAB-40D6-847B-D034CBD2D485}.Release|Any CPU.Build.0 = Release|Any CPU
+		{69820773-513E-4F22-8846-3AD0079631D5}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{69820773-513E-4F22-8846-3AD0079631D5}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{69820773-513E-4F22-8846-3AD0079631D5}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{69820773-513E-4F22-8846-3AD0079631D5}.Release|Any CPU.Build.0 = Release|Any CPU
 		{E4E6EAB9-2C68-49AC-A212-D464F1BB483B}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
 		{E4E6EAB9-2C68-49AC-A212-D464F1BB483B}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{E4E6EAB9-2C68-49AC-A212-D464F1BB483B}.Release|Any CPU.ActiveCfg = Release|Any CPU
