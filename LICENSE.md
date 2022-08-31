@@ -1,4 +1,4 @@
-IKVM
+LICENSE
 ==========================
 
 Copyright (C) 2002-2022 Jeroen Frijters, Windward Studios, Jerome Haltom,
