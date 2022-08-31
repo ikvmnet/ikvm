@@ -15,24 +15,6 @@
         <IkvmKeyFile>$(AssemblyOriginatorKeyFile)</IkvmKeyFile>
     </PropertyGroup>
 
-    <Choose>
-        <!-- This is a major limitation which prevents building on Linux.
-             The version of the tool that is executed should be that of the current MSBuild platform, not that being targeted.
-             However, at present Frameworks builds of IKVM cannot generate Core version assemblies. -->
-        <When Condition=" '$(TargetFramework)' == 'netcoreapp3.1' ">
-            <PropertyGroup>
-                <_IkvmTargetFramework>netcoreapp3.1</_IkvmTargetFramework>
-                <_IkvmToolExecPrefix>dotnet exec </_IkvmToolExecPrefix>
-            </PropertyGroup>
-        </When>
-        <When Condition=" '$(TargetFramework)' == 'net461' ">
-            <PropertyGroup>
-                <_IkvmTargetFramework>net461</_IkvmTargetFramework>
-                <_IkvmToolExecPrefix></_IkvmToolExecPrefix>
-            </PropertyGroup>
-        </When>
-    </Choose>
-
     <ItemGroup>
         <ProjectReference Include="..\IKVM.Java\IKVM.Java.msbuildproj">
             <IsIkvmBaseAssembly>true</IsIkvmBaseAssembly>
@@ -43,26 +25,23 @@
         <ProjectReference Include="..\IKVM.Runtime.JNI\IKVM.Runtime.JNI.csproj">
             <IsIkvmRuntimeJNIAssembly>true</IsIkvmRuntimeJNIAssembly>
         </ProjectReference>
-        <ProjectReference Include="..\javac\javac.csproj" Condition=" '$(_IkvmTargetFramework)' != '' ">
+        <ProjectReference Include="..\javac\javac.csproj">
             <PrivateAssets>All</PrivateAssets>
             <ReferenceOutputAssembly>false</ReferenceOutputAssembly>
             <Private>False</Private>
             <IsJavaCompiler>true</IsJavaCompiler>
-            <SetTargetFramework>TargetFramework=$(_IkvmTargetFramework)</SetTargetFramework>
         </ProjectReference>
-        <ProjectReference Include="..\ikvmc\ikvmc.csproj" Condition=" '$(_IkvmTargetFramework)' != '' ">
+        <ProjectReference Include="..\ikvmc\ikvmc.csproj">
             <PrivateAssets>All</PrivateAssets>
             <ReferenceOutputAssembly>false</ReferenceOutputAssembly>
             <Private>False</Private>
             <IsIkvmCompiler>true</IsIkvmCompiler>
-            <SetTargetFramework>TargetFramework=$(_IkvmTargetFramework)</SetTargetFramework>
         </ProjectReference>
-        <ProjectReference Include="..\ikvmstub\ikvmstub.csproj" Condition=" '$(_IkvmTargetFramework)' != '' ">
+        <ProjectReference Include="..\ikvmstub\ikvmstub.csproj">
             <PrivateAssets>All</PrivateAssets>
             <ReferenceOutputAssembly>false</ReferenceOutputAssembly>
             <Private>False</Private>
             <IsIkvmExporter>true</IsIkvmExporter>
-            <SetTargetFramework>TargetFramework=$(_IkvmTargetFramework)</SetTargetFramework>
         </ProjectReference>
     </ItemGroup>
 

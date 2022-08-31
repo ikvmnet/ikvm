@@ -142,7 +142,5 @@
             <FileWrites Include="$(_AssemblyTempPath)$(TargetName).pdb" />
         </ItemGroup>
     </Target>
-    
-    <Import Project="IKVM.Java.Core.ProjectReferences.targets" Condition=" '$(UseIkvmProjectReferences)' == 'true' "/>
 
 </Project>
