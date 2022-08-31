@@ -59,7 +59,7 @@
             <_IkvmCompilerArgs Include="-removeassertions" Condition=" '$(RemoveAssertions)' == 'true' " />
             <_IkvmCompilerArgs Include="-target:library" />
             <_IkvmCompilerArgs Include="-nostdlib" />
-            <_IkvmCompilerArgs Include="-classloader:%(_IkvmReferenceItemToCompile.ClassLoader)" />
+            <_IkvmCompilerArgs Include="-classloader:%(_IkvmReferenceItemToCompile.ClassLoader)" Condition=" '%(_IkvmReferenceItemToCompile.ClassLoader)' != '' " />
             <_IkvmCompilerReferencePath Remove="@(_IkvmCompilerReferencePath)" />
             <_IkvmCompilerReferencePath Include="@(IkvmFrameworkReference);$(IkvmBaseAssembly);$(IkvmRuntimeAssembly);$(IkvmRuntimeJNIAssembly);@(_IkvmReferenceItemResolvedReference->Distinct())" />
             <_IkvmCompilerArgs Include="@(_IkvmCompilerReferencePath->'-reference:%(FullPath)')" />

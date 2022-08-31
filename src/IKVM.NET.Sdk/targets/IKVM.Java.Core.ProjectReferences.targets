@@ -2,7 +2,7 @@
     <PropertyGroup>
         <MSBuildAllProjects>$(MSBuildAllProjects);$(MSBuildThisFileFullPath)</MSBuildAllProjects>
     </PropertyGroup>
-    
+
     <!--
     This file contains targets which are used to derive various dependent items from existing ProjectReferences.
     It is used by setting UseIkvmProjectReferences to 'true', as done by projects that are building within the
@@ -18,14 +18,12 @@
 
     <!-- Resolve JavaCompiler from project marked with IsJavaCompiler. -->
     <Target Name="ResolveJavaCompiler" DependsOnTargets="$(ResolveJavaCompilerDependsOn)">
-        <MSBuild Projects="@(_MSBuildProjectReferenceExistent)" Targets="Build" BuildInParallel="$(BuildInParallel)" Properties="%(_MSBuildProjectReferenceExistent.SetConfiguration);%(_MSBuildProjectReferenceExistent.SetPlatform);%(_MSBuildProjectReferenceExistent.SetTargetFramework)" RemoveProperties="%(_MSBuildProjectReferenceExistent.GlobalPropertiesToRemove)$(_GlobalPropertiesToRemoveFromProjectReferences)" Condition=" '%(_MSBuildProjectReferenceExistent.IsJavaCompiler)' == 'true' ">
-            <Output TaskParameter="TargetOutputs" ItemName="_JavaCompilerPath" />
-        </MSBuild>
+        <MSBuild Projects="@(_MSBuildProjectReferenceExistent)" Targets="Publish" BuildInParallel="$(BuildInParallel)" Properties="%(_MSBuildProjectReferenceExistent.SetConfiguration);%(_MSBuildProjectReferenceExistent.SetPlatform);%(_MSBuildProjectReferenceExistent.SetTargetFramework);PublishDir=$([System.IO.Path]::GetFullPath('$(IntermediateOutputPath)javac'))" RemoveProperties="%(_MSBuildProjectReferenceExistent.GlobalPropertiesToRemove)$(_GlobalPropertiesToRemoveFromProjectReferences);PublishUrl;Location" Condition=" '%(_MSBuildProjectReferenceExistent.IsJavaCompiler)' == 'true' " />
         <PropertyGroup>
-            <JavaCompilerPath Condition=" '$(JavaCompilerPath)' == '' ">@(_JavaCompilerPath)</JavaCompilerPath>
-            <JavaCompilerExec Condition=" '$(JavaCompilerExec)' == '' ">$(_IkvmToolExecPrefix)$(JavaCompilerPath)</JavaCompilerExec>
+            <JavaCompilerPath Condition=" '$(JavaCompilerPath)' == '' And Exists('$(IntermediateOutputPath)javac\javac.exe') ">$(IntermediateOutputPath)javac\javac.exe</JavaCompilerPath>
+            <JavaCompilerExec Condition=" '$(JavaCompilerExec)' == '' ">$(JavaCompilerPath)</JavaCompilerExec>
         </PropertyGroup>
-        <Message Text="Resolved javac executable from project at '$(JavaCompilerPath)'." Importance="high" Condition=" '$(_JavaCompilerPath)' != '' " />
+        <Message Text="Resolved javac executable from project at '$(JavaCompilerPath)'." Importance="high" Condition=" '@(_JavaCompilerPath)' != '' " />
     </Target>
 
     <PropertyGroup>
@@ -37,14 +35,12 @@
 
     <!-- Resolve IkvmCompiler from project marked with IsIkvmCompiler. -->
     <Target Name="ResolveIkvmCompiler" DependsOnTargets="$(ResolveIkvmCompilerDependsOn)">
-        <MSBuild Projects="@(_MSBuildProjectReferenceExistent)" Targets="Build" BuildInParallel="$(BuildInParallel)" Properties="%(_MSBuildProjectReferenceExistent.SetConfiguration);%(_MSBuildProjectReferenceExistent.SetPlatform);%(_MSBuildProjectReferenceExistent.SetTargetFramework)" RemoveProperties="%(_MSBuildProjectReferenceExistent.GlobalPropertiesToRemove)$(_GlobalPropertiesToRemoveFromProjectReferences)" Condition=" '%(_MSBuildProjectReferenceExistent.IsIkvmCompiler)' == 'true' ">
-            <Output TaskParameter="TargetOutputs" ItemName="_IkvmCompilerPath" />
-        </MSBuild>
+        <MSBuild Projects="@(_MSBuildProjectReferenceExistent)" Targets="Publish" BuildInParallel="$(BuildInParallel)" Properties="%(_MSBuildProjectReferenceExistent.SetConfiguration);%(_MSBuildProjectReferenceExistent.SetPlatform);%(_MSBuildProjectReferenceExistent.SetTargetFramework);PublishDir=$([System.IO.Path]::GetFullPath('$(IntermediateOutputPath)ikvmc'))" RemoveProperties="%(_MSBuildProjectReferenceExistent.GlobalPropertiesToRemove)$(_GlobalPropertiesToRemoveFromProjectReferences);PublishUrl;Location" Condition=" '%(_MSBuildProjectReferenceExistent.IsIkvmCompiler)' == 'true' " />
         <PropertyGroup>
-            <IkvmCompilerPath Condition=" '$(IkvmCompilerPath)' == '' ">@(_IkvmCompilerPath)</IkvmCompilerPath>
-            <IkvmCompilerExec Condition=" '$(IkvmCompilerExec)' == '' ">$(_IkvmToolExecPrefix)$(IkvmCompilerPath)</IkvmCompilerExec>
+            <IkvmCompilerPath Condition=" '$(IkvmCompilerPath)' == '' And Exists('$(IntermediateOutputPath)ikvmc\ikvmc.exe') ">$(IntermediateOutputPath)ikvmc\ikvmc.exe</IkvmCompilerPath>
+            <IkvmCompilerExec Condition=" '$(IkvmCompilerExec)' == '' ">$(IkvmCompilerPath)</IkvmCompilerExec>
         </PropertyGroup>
-        <Message Text="Using ikvmc executable from project at '$(IkvmCompilerPath)'." Importance="high" Condition=" '$(_IkvmCompilerPath)' != '' " />
+        <Message Text="Using ikvmc executable from project at '$(IkvmCompilerPath)'." Importance="high" Condition=" '$(IkvmCompilerPath)' != '' " />
     </Target>
 
     <PropertyGroup>
@@ -54,16 +50,14 @@
         </ResolveIkvmExporterDependsOn>
     </PropertyGroup>
 
-    <!-- Resolve IkvmExporter from project marked with IsIkvmCompiler. -->
+    <!-- Resolve IkvmExporter from project marked with IsIkvmExporter. -->
     <Target Name="ResolveIkvmExporter" DependsOnTargets="$(ResolveIkvmExporterDependsOn)">
-        <MSBuild Projects="@(_MSBuildProjectReferenceExistent)" Targets="Build" BuildInParallel="$(BuildInParallel)" Properties="%(_MSBuildProjectReferenceExistent.SetConfiguration);%(_MSBuildProjectReferenceExistent.SetPlatform);%(_MSBuildProjectReferenceExistent.SetTargetFramework)" RemoveProperties="%(_MSBuildProjectReferenceExistent.GlobalPropertiesToRemove)$(_GlobalPropertiesToRemoveFromProjectReferences)" Condition=" '%(_MSBuildProjectReferenceExistent.IsIkvmExporter)' == 'true' ">
-            <Output TaskParameter="TargetOutputs" ItemName="_IkvmExporterPath" />
-        </MSBuild>
+        <MSBuild Projects="@(_MSBuildProjectReferenceExistent)" Targets="Publish" BuildInParallel="$(BuildInParallel)" Properties="%(_MSBuildProjectReferenceExistent.SetConfiguration);%(_MSBuildProjectReferenceExistent.SetPlatform);%(_MSBuildProjectReferenceExistent.SetTargetFramework);PublishDir=$([System.IO.Path]::GetFullPath('$(IntermediateOutputPath)ikvmstub'))" RemoveProperties="%(_MSBuildProjectReferenceExistent.GlobalPropertiesToRemove)$(_GlobalPropertiesToRemoveFromProjectReferences);PublishUrl;Location" Condition=" '%(_MSBuildProjectReferenceExistent.IsIkvmExporter)' == 'true' " />
         <PropertyGroup>
-            <IkvmExporterPath Condition=" '$(IkvmExporterPath)' == '' ">@(_IkvmExporterPath)</IkvmExporterPath>
-            <IkvmExporterExec Condition=" '$(IkvmExporterExec)' == '' ">$(_IkvmToolExecPrefix)$(IkvmExporterPath)</IkvmExporterExec>
+            <IkvmExporterPath Condition=" '$(IkvmExporterPath)' == '' And Exists('$(IntermediateOutputPath)ikvmstub\ikvmstub.exe')">$(IntermediateOutputPath)ikvmstub\ikvmstub.exe</IkvmExporterPath>
+            <IkvmExporterExec Condition=" '$(IkvmExporterExec)' == '' ">$(IkvmExporterPath)</IkvmExporterExec>
         </PropertyGroup>
-        <Message Text="Using ikvmstub executable from project at '$(IkvmExporterPath)'." Importance="high" Condition=" '$(_IkvmExporterPath)' != '' " />
+        <Message Text="Using ikvmstub executable from project at '$(IkvmExporterPath)'." Importance="high" Condition=" '$(IkvmExporterPath)' != '' " />
     </Target>
 
     <PropertyGroup>
@@ -122,16 +116,15 @@
 
     <PropertyGroup>
         <ResolveIkvmReferenceAssembliesDependsOn>
-            ResolveProjectReferences;
+            $(ResolveIkvmReferenceAssembliesDependsOn);
             ResolveIkvmCompiler;
-            ResolveIkvmRuntimeAssembly;
         </ResolveIkvmReferenceAssembliesDependsOn>
     </PropertyGroup>
 
     <!-- Gathers those references which are either related to the Framework itself, or IKVM. -->
     <Target Name="ResolveIkvmReferenceAssemblies" DependsOnTargets="$(ResolveIkvmReferenceAssembliesDependsOn)">
         <ItemGroup>
-            
+            <IkvmFrameworkReference Include="$(IntermediateOutputPath)ikvmc\refs\*.dll" />
         </ItemGroup>
     </Target>
 
