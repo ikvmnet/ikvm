@@ -1,8 +1,8 @@
 IMPORTANT NOTICE
 ==========================
 
-  Copyright (C) 1998-2022 Free Software Foundation, Inc.
-  Copyright (C) 1996-2022 Oracle and/or its affiliates
+  Copyright (C) 1998-2022 Free Software Foundation, Inc.\
+  Copyright (C) 1996-2022 Oracle and/or its affiliates\
   Copyright (C) 2002-2022 Jeroen Frijters, Windward Studios, Jerome Haltom,
   Shad Storhaug, and contributors.
 
