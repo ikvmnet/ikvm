@@ -1,4 +1,48 @@
-GNU General Public License
+IKVM
+==========================
+
+Copyright (C) 2002-2022 Jeroen Frijters, Windward Studios, Jerome Haltom,
+  Shad Storhaug, and contributors.
+
+  This software is provided 'as-is', without any express or implied
+  warranty.  In no event will the authors be held liable for any damages
+  arising from the use of this software.
+
+  Permission is granted to anyone to use this software for any purpose,
+  including commercial applications, and to alter it and redistribute it
+  freely, subject to the following restrictions:
+
+  1. The origin of this software must not be misrepresented; you must not
+     claim that you wrote the original software. If you use this software
+     in a product, an acknowledgment in the product documentation would be
+     appreciated but is not required.
+  2. Altered source versions must be plainly marked as such, and must not be
+     misrepresented as being the original software.
+  3. This notice may not be removed or altered from any source distribution.
+
+IMPORTANT NOTICE
+==========================
+
+  Copyright (C) 1998-2022 Free Software Foundation, Inc.
+  Copyright (C) 1996-2022 Oracle and/or its affiliates
+  Copyright (C) 2002-2022 Jeroen Frijters, Windward Studios, Jerome Haltom,
+  Shad Storhaug, and contributors.
+
+  Some files in this distribution are part of GNU Classpath or OpenJDK and
+  are licensed under the GNU General Public License (GPL) version 2
+  with "Classpath" exception. This applies in particular to:
+    - IKVM.Java.dll
+    - some of the *.java files (see each file header for license)
+
+  See http://www.gnu.org/software/classpath/ for information on the
+  GNU Classpath license and "Classpath" exception.
+  
+  See below for a full copy of the GPL license and the Sun version of the
+  "Classpath" exception.
+  
+-----------------------------------------------------------------------------
+  
+  GNU General Public License
 ==========================
 
 _Version 2, June 1991_  
@@ -300,45 +344,3 @@ exception as provided by Oracle in the LICENSE file that accompanied this code."
     the library, but you are not obligated to do so.  If you do not wish to do
     so, delete this exception statement from your version.
 
------------------------------------------------------------------------------
-
-IMPORTANT NOTICE
-==========================
-
-  Copyright (C) 1998-2022 Free Software Foundation, Inc.
-  Copyright (C) 1996-2022 Oracle and/or its affiliates
-  Copyright (C) 2002-2022 Jeroen Frijters, Windward Studios, Jerome Haltom,
-  Shad Storhaug, and contributors.
-
-  Some files in this distribution are part of GNU Classpath or OpenJDK and
-  are licensed under the GNU General Public License (GPL) version 2
-  with "Classpath" exception. This applies in particular to:
-    - IKVM.Java.dll
-    - some of the *.java files (see each file header for license)
-
-  See http://www.gnu.org/software/classpath/ for information on the
-  GNU Classpath license and "Classpath" exception.
-  
-  See below for a full copy of the GPL license and the Sun version of the
-  "Classpath" exception.
-
------------------------------------------------------------------------------
-
-  Copyright (C) 2002-2022 Jeroen Frijters, Windward Studios, Jerome Haltom,
-  Shad Storhaug, and contributors.
-
-  This software is provided 'as-is', without any express or implied
-  warranty.  In no event will the authors be held liable for any damages
-  arising from the use of this software.
-
-  Permission is granted to anyone to use this software for any purpose,
-  including commercial applications, and to alter it and redistribute it
-  freely, subject to the following restrictions:
-
-  1. The origin of this software must not be misrepresented; you must not
-     claim that you wrote the original software. If you use this software
-     in a product, an acknowledgment in the product documentation would be
-     appreciated but is not required.
-  2. Altered source versions must be plainly marked as such, and must not be
-     misrepresented as being the original software.
-  3. This notice may not be removed or altered from any source distribution.
