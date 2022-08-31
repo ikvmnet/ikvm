@@ -6,4 +6,8 @@
         <RuntimeIdentifiers>win7-x64;linux-x64</RuntimeIdentifiers>
     </PropertyGroup>
 
+    <ItemGroup>
+        <ProjectReference Include="..\IKVM.JavaTest\IKVM.JavaTest.msbuildproj" />
+    </ItemGroup>
+
 </Project>

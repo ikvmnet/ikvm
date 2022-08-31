@@ -13,6 +13,10 @@
         <PackageReference Include="Microsoft.TestPlatform.ObjectModel" Version="17.2.0" />
     </ItemGroup>
 
+    <ItemGroup>
+        <ProjectReference Include="..\IKVM.JavaTest\IKVM.JavaTest.msbuildproj" />
+    </ItemGroup>
+
     <ItemGroup Condition=" '$(TargetFramework)' == 'net461' ">
         <PublishProjectReference Include="..\IKVM.JavaTest.AgentServer\IKVM.JavaTest.AgentServer.csproj">
             <SetTargetFramework>TargetFramework=net461</SetTargetFramework>
