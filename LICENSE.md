@@ -1,25 +1,3 @@
-LICENSE
-==========================
-
-Copyright (C) 2002-2022 Jeroen Frijters, Windward Studios, Jerome Haltom,
-  Shad Storhaug, and contributors.
-
-  This software is provided 'as-is', without any express or implied
-  warranty.  In no event will the authors be held liable for any damages
-  arising from the use of this software.
-
-  Permission is granted to anyone to use this software for any purpose,
-  including commercial applications, and to alter it and redistribute it
-  freely, subject to the following restrictions:
-
-  1. The origin of this software must not be misrepresented; you must not
-     claim that you wrote the original software. If you use this software
-     in a product, an acknowledgment in the product documentation would be
-     appreciated but is not required.
-  2. Altered source versions must be plainly marked as such, and must not be
-     misrepresented as being the original software.
-  3. This notice may not be removed or altered from any source distribution.
-
 IMPORTANT NOTICE
 ==========================
 
@@ -40,9 +18,29 @@ IMPORTANT NOTICE
   See below for a full copy of the GPL license and the Sun version of the
   "Classpath" exception.
   
------------------------------------------------------------------------------
+IKVM
+==========================
+
+Copyright (C) 2002-2022 Jeroen Frijters, Windward Studios, Jerome Haltom,
+  Shad Storhaug, and contributors.
+
+  This software is provided 'as-is', without any express or implied
+  warranty.  In no event will the authors be held liable for any damages
+  arising from the use of this software.
+
+  Permission is granted to anyone to use this software for any purpose,
+  including commercial applications, and to alter it and redistribute it
+  freely, subject to the following restrictions:
+
+  1. The origin of this software must not be misrepresented; you must not
+     claim that you wrote the original software. If you use this software
+     in a product, an acknowledgment in the product documentation would be
+     appreciated but is not required.
+  2. Altered source versions must be plainly marked as such, and must not be
+     misrepresented as being the original software.
+  3. This notice may not be removed or altered from any source distribution.
   
-  GNU General Public License
+GNU General Public License
 ==========================
 
 _Version 2, June 1991_  
@@ -318,10 +316,8 @@ YOU OR THIRD PARTIES OR A FAILURE OF THE PROGRAM TO OPERATE WITH ANY OTHER
 PROGRAMS), EVEN IF SUCH HOLDER OR OTHER PARTY HAS BEEN ADVISED OF THE
 POSSIBILITY OF SUCH DAMAGES.
 
------------------------------------------------------------------------------
 
 "CLASSPATH" EXCEPTION TO THE GPL
-==========================
 
 Certain source files distributed by Oracle America and/or its affiliates are
 subject to the following clarification and special exception to the GPL, but
