@@ -8,8 +8,8 @@
         <IkvmMSBuildTaskFolder Condition=" '$(MSBuildRuntimeType)' != 'Core' ">net472</IkvmMSBuildTaskFolder>
         <IkvmMSBuildTaskAssembly>$(MSBuildThisFileDirectory)..\..\tasks\$(IkvmMSBuildTaskFolder)\IKVM.MSBuild.Tasks.dll</IkvmMSBuildTaskAssembly>
         <IkvmToolsPath>$(MSBuildThisFileDirectory)..\..\bin\</IkvmToolsPath>
-        <IKvmCompilerToolPath>$(IkvmToolsPath)ikvmc</IKvmCompilerToolPath>
-        <IKvmExporterToolPath>$(IkvmToolsPath)ikvmstub</IKvmExporterToolPath>
+        <IkvmCompilerToolPath>$(IkvmToolsPath)ikvmc</IkvmCompilerToolPath>
+        <IkvmExporterToolPath>$(IkvmToolsPath)ikvmstub</IkvmExporterToolPath>
     </PropertyGroup>
 
     <UsingTask TaskName="IkvmGetReferenceAssemblies" AssemblyFile="$(IkvmMSBuildTaskAssembly)" Condition="Exists('$(IkvmMSBuildTaskAssembly)')" />

@@ -6,7 +6,7 @@
     <Import Project="$(MSBuildThisFileDirectory)..\..\targets\generated.props" Condition="Exists('$(MSBuildThisFileDirectory)..\..\targets\generated.props')" />
     
     <PropertyGroup>
-        <IkvmKeyFile>$(MSBuildThisFileDirectory)..\..\ikvm.snk</IkvmKeyFile>
+        <IkvmKeyFile Condition=" '$(IkvmKeyFile)' == '' And Exists('$(MSBuildThisFileDirectory)..\..\ikvm.snk') ">$(MSBuildThisFileDirectory)..\..\ikvm.snk</IkvmKeyFile>
     </PropertyGroup>
 
     <ItemDefinitionGroup>
@@ -23,7 +23,7 @@
             <References></References>
             <ClassLoader></ClassLoader>
             <Debug></Debug>
-            <KeyFile></KeyFile>
+            <KeyFile>$(IkvmKeyFile)</KeyFile>
             <DelaySign></DelaySign>
             <Aliases></Aliases>
             <Private>true</Private>

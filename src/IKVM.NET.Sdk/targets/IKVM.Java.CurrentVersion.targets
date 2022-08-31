@@ -99,12 +99,21 @@ interface __AssemblyAttributes {}
         </PropertyGroup>
     </Target>
 
+    <!-- Includes the original compilation outputs along with the target path. Allows consumers of the project to directly access the compiled results. -->
+    <Target Name="_UpdateTargetPathWithTargetPlatformMonikerWithJavaMetadata" AfterTargets="GetTargetPathWithTargetPlatformMoniker" BeforeTargets="GetTargetPath" DependsOnTargets="CompileJava">
+        <ItemGroup>
+            <TargetPathWithTargetPlatformMoniker Update="@(TargetPathWithTargetPlatformMoniker)">
+                <JavaClasspath>$([System.IO.Path]::GetFullPath('$(ClassOutputPath)'))</JavaClasspath>
+            </TargetPathWithTargetPlatformMoniker>
+        </ItemGroup>
+    </Target>
+
     <PropertyGroup>
         <Utf8Output Condition=" '$(Utf8Output)' == '' ">true</Utf8Output>
         <NoCompilerStandardLib Condition=" '$(NoCompilerStandardLib)' == '' ">true</NoCompilerStandardLib>
         <PreferredUILang Condition="'$(BuildingInsideVisualStudio)' == 'true' and '$(PreferredUILang)' == ''">$([System.Globalization.CultureInfo]::CurrentUICulture.Name)</PreferredUILang>
     </PropertyGroup>
-    
+
     <ItemGroup Condition=" '$(NoCompilerStandardLib)' == 'true' and '$(NoStdLib)' != 'true' ">
         <_ExplicitReference Include="$(FrameworkPathOverride)\mscorlib.dll" />
     </ItemGroup>

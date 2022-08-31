@@ -1,16 +1,13 @@
-﻿<Project Sdk="Microsoft.NET.Sdk">
+<Project Sdk="Microsoft.NET.Sdk">
 
     <PropertyGroup>
-        <PackageId>IKVM.Runtime-ref</PackageId>
+        <PackageId>javac</PackageId>
         <TargetFrameworks>net461;netcoreapp3.1</TargetFrameworks>
-        <AssemblyName>IKVM.Runtime</AssemblyName>
-        <DefineConstants>$(DefineConstants);EMITTERS;CLASSGC;FIRST_PASS</DefineConstants>
+        <RuntimeIdentifiers>win7-x64;linux-x64</RuntimeIdentifiers>
+        <OutputType>Exe</OutputType>
+        <AssemblyTitle>IKVM.NET Java Compiler</AssemblyTitle>
+        <AutoGenerateBindingRedirects>true</AutoGenerateBindingRedirects>
     </PropertyGroup>
-
-    <ItemGroup>
-        <InternalsVisibleTo Include="IKVM.Runtime.JNI" />
-        <InternalsVisibleTo Include="IKVM.Java" />
-    </ItemGroup>
 
     <ItemGroup>
         <PackageReference Include="SharpZipLib" Version="1.3.3" />
@@ -42,18 +39,16 @@
     </ItemGroup>
 
     <ItemGroup>
-        <ProjectReference Include="..\IKVM.Java-ref\IKVM.Java-ref.csproj">
+        <ProjectReference Include="..\IKVM.Java\IKVM.Java.msbuildproj">
             <PrivateAssets>All</PrivateAssets>
         </ProjectReference>
-        <ProjectReference Include="..\IKVM.Runtime.JNI-ref\IKVM.Runtime.JNI-ref.csproj">
+        <ProjectReference Include="..\IKVM.Runtime.JNI\IKVM.Runtime.JNI.csproj">
             <PrivateAssets>All</PrivateAssets>
         </ProjectReference>
-    </ItemGroup>
-
-    <ItemGroup>
-        <ExcludeFromCompile Include="..\IKVM.Runtime\bin\**\*.cs" />
-        <ExcludeFromCompile Include="..\IKVM.Runtime\obj\**\*.cs" />
-        <Compile Include="..\IKVM.Runtime\**\*.cs" LinkBase="" Exclude="@(ExcludeFromCompile)" />
+        <ProjectReference Include="..\IKVM.Runtime\IKVM.Runtime.csproj">
+            <PrivateAssets>All</PrivateAssets>
+        </ProjectReference>
     </ItemGroup>
 
 </Project>
+
