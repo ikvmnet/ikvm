@@ -4,8 +4,7 @@
     </PropertyGroup>
 
     <!--
-    This file contains targets which may already be provided by the IKVM.NET.Sdk package. This file should only be
-    imported if the SDK is not loaded.
+    This file contains targets which resolve various items from PackageReference.
     -->
 
     <PropertyGroup>
@@ -64,7 +63,7 @@
 
     <PropertyGroup>
         <ResolveIkvmReferenceAssembliesDependsOn>
-            ResolvePackageReferences;
+            $(ResolveIkvmReferenceAssembliesDependsOn);
             ResolveIkvmRuntimeAssembly;
         </ResolveIkvmReferenceAssembliesDependsOn>
     </PropertyGroup>

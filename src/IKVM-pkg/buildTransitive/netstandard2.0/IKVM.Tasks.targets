@@ -42,7 +42,7 @@
 
         <!-- Compile the reference item to the stage path. -->
         <IkvmCompiler
-            ToolPath="$(IKvmCompilerToolPath)"
+            ToolPath="$(IkvmCompilerToolPath)"
             ToolFramework="$(IkvmToolFramework)"
             ResponseFile="%(_IkvmReferenceItemToCompile.StagePath).rsp"
             Output="%(_IkvmReferenceItemToCompile.StagePath)"

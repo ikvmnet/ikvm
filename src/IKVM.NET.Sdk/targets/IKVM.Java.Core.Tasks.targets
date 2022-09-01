@@ -33,6 +33,8 @@
     </Target>
 
     <Target Name="_CompileJava" DependsOnTargets="BuildReferenceExports" Inputs="@(Compile);@(Classpath)" Outputs="$(_CompileJavaStampFile)">
+        <Delete Files="$(_CompileJavaStampFile)" />
+        
         <PropertyGroup>
             <_JavaCompilerDebug Condition=" '$(DebugSymbols)' == 'true' Or '$(DebugType)' != 'none' ">all</_JavaCompilerDebug>
         </PropertyGroup>
@@ -78,7 +80,7 @@
 
         <!-- Compile the reference item. -->
         <IkvmCompiler
-            ToolPath="$(IKvmCompilerToolPath)"
+            ToolPath="$(IkvmCompilerToolPath)"
             ToolFramework="$(IkvmToolFramework)"
             ResponseFile="$(_IkvmCompilerResponseFile)"
             Output="$(_AssemblyTempPath)$(TargetName)$(TargetExt)"

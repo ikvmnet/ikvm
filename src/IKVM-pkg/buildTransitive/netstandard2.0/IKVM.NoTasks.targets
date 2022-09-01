@@ -8,7 +8,7 @@
     -->
 
     <!-- Populates the IkvmReferenceItem set with required metadata. -->
-    <Target Name="_UpdateIkvmReferenceItemsMetadata" DependsOnTargets="GetIkvmReferenceItemsFromIkvmReferences;ResolveIkvmRuntimeAssembly;ResolveIkvmRuntimeJNIAssembly;ResolveIkvmBaseAssembly;ResolveIkvmReferenceAssemblies" Condition=" '@(IkvmReferenceItem)' != '' ">
+    <Target Name="_UpdateIkvmReferenceItemsMetadata" DependsOnTargets="GetIkvmReferenceItemsFromIkvmReferences;ResolveIkvmRuntimeAssembly;ResolveIkvmRuntimeJNIAssembly;ResolveIkvmBaseAssembly;ResolveIkvmFrameworkReferences" Condition=" '@(IkvmReferenceItem)' != '' ">
         <GetFileHash Files="@(IkvmReferenceItem)" MetadataName="IkvmIdentity">
             <Output TaskParameter="Items" ItemName="_IkvmReferenceItemWithIdentity" />
         </GetFileHash>
@@ -25,11 +25,10 @@
                 <CachePath>$(IntermediateOutputPath)ikvm\cache\%(IkvmIdentity)\%(Filename).dll</CachePath>
             </IkvmReferenceItem>
         </ItemGroup>
-        <Message Text="IkvmReferenceItem: @(IkvmReferenceItem->'%(CachePath)')" />
     </Target>
 
     <!-- Builds the IkvmReferenceItem set into their output items within the cache. -->
-    <Target Name="_CompileIkvmReferences" DependsOnTargets="ResolveIkvmCompiler;ResolveIkvmRuntimeAssembly;ResolveIkvmRuntimeJNIAssembly;ResolveIkvmBaseAssembly;ResolveIkvmReferenceAssemblies;_GetIkvmReferenceItemsCompileToCachePath" Inputs="@(_IkvmReferenceItemCompileToCachePath)" Outputs="%(_IkvmReferenceItemCompileToCachePath.CachePath)" Condition=" '@(_IkvmReferenceItemCompileToCachePath.CachePath)' != '' ">
+    <Target Name="_CompileIkvmReferences" DependsOnTargets="ResolveIkvmCompiler;ResolveIkvmRuntimeAssembly;ResolveIkvmRuntimeJNIAssembly;ResolveIkvmBaseAssembly;ResolveIkvmFrameworkReferences;_GetIkvmReferenceItemsCompileToCachePath" Inputs="@(_IkvmReferenceItemCompileToCachePath)" Outputs="%(_IkvmReferenceItemCompileToCachePath.CachePath)" Condition=" '@(_IkvmReferenceItemCompileToCachePath.CachePath)' != '' ">
         <!-- Take IkvmReferenceItem for the current batch on CachePath. -->
         <PropertyGroup>
             <_IkvmReferenceItemToCompileCachePath>%(_IkvmReferenceItemCompileToCachePath.CachePath)</_IkvmReferenceItemToCompileCachePath>

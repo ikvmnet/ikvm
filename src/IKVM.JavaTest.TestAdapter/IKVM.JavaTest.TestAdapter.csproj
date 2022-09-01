@@ -1,13 +1,10 @@
 ﻿<Project>
     <Import Sdk="Microsoft.NET.Sdk" Project="Sdk.props"/>
     <Import Project="$(MSBuildThisFileDirectory)..\IKVM-pkg\buildTransitive\netstandard2.0\IKVM.props" />
+    <Import Project="$(MSBuildThisFileDirectory)..\IKVM.MSBuild\buildTransitive\netstandard2.0\IKVM.MSBuild.props" />
 
     <PropertyGroup>
         <TargetFrameworks>net461;netcoreapp3.1</TargetFrameworks>
-        <UseIkvmTasks>false</UseIkvmTasks>
-        <UseIkvmProjectReferences>true</UseIkvmProjectReferences>
-        <DisableImplicitIkvmPackageReference>true</DisableImplicitIkvmPackageReference>
-        <DisableImplicitIkvmMSBuildPackageReference>true</DisableImplicitIkvmMSBuildPackageReference>
     </PropertyGroup>
 
     <ItemGroup>
@@ -80,4 +77,5 @@
 
     <Import Sdk="Microsoft.NET.Sdk" Project="Sdk.targets"/>
     <Import Project="$(MSBuildThisFileDirectory)..\IKVM-pkg\buildTransitive\netstandard2.0\IKVM.targets" />
+    <Import Project="$(MSBuildThisFileDirectory)..\IKVM.MSBuild\buildTransitive\netstandard2.0\IKVM.MSBuild.targets" />
 </Project>

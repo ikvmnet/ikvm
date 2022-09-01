@@ -1,18 +1,11 @@
 ﻿<Project>
     <Import Project="$(MSBuildThisFileDirectory)..\IKVM.NET.Sdk\Sdk\Sdk.props" />
     <Import Project="$(MSBuildThisFileDirectory)..\IKVM-pkg\buildTransitive\netstandard2.0\IKVM.props" />
+    <Import Project="$(MSBuildThisFileDirectory)..\IKVM.MSBuild\buildTransitive\netstandard2.0\IKVM.MSBuild.props" />
 
     <PropertyGroup>
         <PackageId>IKVM.JavaTest</PackageId>
         <TargetFrameworks>net461;netcoreapp3.1</TargetFrameworks>
-        <AssemblyName>IKVM.JavaTest</AssemblyName>
-        <AssemblyTitle>IKVM.NET Java Standard Edition 8 Platform</AssemblyTitle>
-        <Description>IKVM.NET Java Standard Edition 8 Platform</Description>
-        <UseIkvmTasks>false</UseIkvmTasks>
-        <UseIkvmProjectReferences>true</UseIkvmProjectReferences>
-        <DisableImplicitIkvmPackageReference>true</DisableImplicitIkvmPackageReference>
-        <DisableImplicitIkvmMSBuildPackageReference>true</DisableImplicitIkvmMSBuildPackageReference>
-        <IkvmKeyFile>$(AssemblyOriginatorKeyFile)</IkvmKeyFile>
     </PropertyGroup>
 
     <ItemGroup>
@@ -55,4 +48,5 @@
 
     <Import Project="$(MSBuildThisFileDirectory)..\IKVM.NET.Sdk\Sdk\Sdk.targets" />
     <Import Project="$(MSBuildThisFileDirectory)..\IKVM-pkg\buildTransitive\netstandard2.0\IKVM.targets" />
+    <Import Project="$(MSBuildThisFileDirectory)..\IKVM.MSBuild\buildTransitive\netstandard2.0\IKVM.MSBuild.targets" />
 </Project>

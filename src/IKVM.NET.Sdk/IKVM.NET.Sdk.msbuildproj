@@ -4,7 +4,7 @@
         <TargetFramework>netstandard2.0</TargetFramework>
         <PackageLicenseFile>LICENSE.md</PackageLicenseFile>
         <PackageReadmeFile>README.md</PackageReadmeFile>
-        <Description>Java SE 8 Virtual Machine for .NET (Java Language SDK)</Description>
+        <Description>IKVM Managed SDK</Description>
         <GenerateDocumentationFile>false</GenerateDocumentationFile>
         <IncludeBuildOutput>false</IncludeBuildOutput>
     </PropertyGroup>
@@ -21,10 +21,6 @@
     </ItemGroup>
 
     <ItemGroup>
-        <None Update="targets\IKVM.Java.Core.ProjectReferences.targets">
-            <PackagePath>targets\%(RecursiveDir)%(Filename)%(Extension)</PackagePath>
-            <Pack>true</Pack>
-        </None>
         <None Update="targets\IKVM.Java.Core.NoTasks.targets">
             <PackagePath>targets\%(RecursiveDir)%(Filename)%(Extension)</PackagePath>
             <Pack>true</Pack>

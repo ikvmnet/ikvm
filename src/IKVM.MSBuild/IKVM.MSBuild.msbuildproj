@@ -5,7 +5,7 @@
         <TargetFrameworks>net461;netcoreapp3.1</TargetFrameworks>
         <PackageLicenseFile>LICENSE.md</PackageLicenseFile>
         <PackageReadmeFile>README.md</PackageReadmeFile>
-        <Description>Java SE 8 Virtual Machine for .NET (MSBuild Targets)</Description>
+        <Description>IKVM MSBuild Tools and Targets</Description>
     </PropertyGroup>
 
     <PropertyGroup>
@@ -67,6 +67,19 @@
             <PublishPackagePath>bin\ikvmstub\netcoreapp3.1\linux-x64\</PublishPackagePath>
             <PublishProperties>RuntimeIdentifier=linux-x64</PublishProperties>
         </PublishProjectReference>
+    </ItemGroup>
+
+    <ItemGroup>
+      <None Update="buildTransitive\netstandard2.0\IKVM.MSBuild.NoTasks.targets">
+        <PackagePath>buildTransitive\%(RecursiveDir)%(Filename)%(Extension)</PackagePath>
+      </None>
+      <None Update="buildTransitive\netstandard2.0\IKVM.MSBuild.Tasks.targets">
+        <PackagePath>buildTransitive\%(RecursiveDir)%(Filename)%(Extension)</PackagePath>
+      </None>
+      <None Update="buildTransitive\netstandard2.0\IKVM.MSBuild.ProjectReferences.targets">
+        <PackagePath>targets\%(RecursiveDir)%(Filename)%(Extension)</PackagePath>
+        <Pack>true</Pack>
+      </None>
     </ItemGroup>
 
     <Target Name="MakeGeneratedPropsFile" Outputs="$(IntermediateOutputPath)generated.props" BeforeTargets="_GetPackageFiles">

@@ -19,14 +19,14 @@
     </Target>
 
     <!-- Populates the IkvmReferenceItem set with required metadata. -->
-    <Target Name="_UpdateIkvmReferenceItemsMetadata" DependsOnTargets="GetIkvmReferenceItemsFromIkvmReferences;ResolveIkvmRuntimeAssembly;ResolveIkvmRuntimeJNIAssembly;ResolveIkvmBaseAssembly;ResolveIkvmReferenceAssemblies" Condition=" '@(IkvmReferenceItem)' != '' ">
+    <Target Name="_UpdateIkvmReferenceItemsMetadata" DependsOnTargets="GetIkvmReferenceItemsFromIkvmReferences;ResolveIkvmRuntimeAssembly;ResolveIkvmRuntimeJNIAssembly;ResolveIkvmBaseAssembly;ResolveIkvmFrameworkReferences" Condition=" '@(IkvmReferenceItem)' != '' ">
         <Error Text="_UpdateIkvmReferenceItemsMetadata has no implementation." />
     </Target>
 
     <PropertyGroup>
         <GetIkvmReferenceItemsDependsOn>
             $(GetIkvmReferenceItemsDependsOn);
-            ResolveIkvmReferenceAssemblies;
+            ResolveIkvmFrameworkReferences;
             GetIkvmReferenceItemsFromIkvmReferences;
             _UpdateIkvmReferenceItemsMetadata;
         </GetIkvmReferenceItemsDependsOn>
@@ -56,7 +56,7 @@
         <CompileIkvmReferencesDependsOn>
             $(CompileIkvmReferenceAssemblies);
             GetIkvmReferenceItems;
-            ResolveIkvmReferenceAssemblies;
+            ResolveIkvmFrameworkReferences;
             _GetIkvmReferenceItemsCompileToCachePath;
             _CompileIkvmReferences;
         </CompileIkvmReferencesDependsOn>
@@ -107,9 +107,6 @@
             $(ResolveAssemblyReferencesDependsOn);
         </ResolveAssemblyReferencesDependsOn>
     </PropertyGroup>
-
-    <!-- Targets which are optionally provided by the SDK. -->
-    <Import Project="IKVM.NoSdk.targets" Condition=" '$(UsingIkvmNetSdk)' != 'true' " />
 
     <!-- Include Task or NoTask implementation of targets. -->
     <Import Project="IKVM.Tasks.targets" Condition=" '$(UseIkvmTasks)' == 'true' "/>
