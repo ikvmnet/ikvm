@@ -39,4 +39,13 @@
         <SignAssembly Condition=" '$(AssemblyOriginatorKeyFile)' != '' ">true</SignAssembly>
     </PropertyGroup>
 
+    <PropertyGroup Label="IKVM SDK">
+        <UseIkvmTasks>false</UseIkvmTasks>
+        <UseIkvmProjectReferences>true</UseIkvmProjectReferences>
+        <DisableImplicitIkvmPackageReference>true</DisableImplicitIkvmPackageReference>
+        <DisableImplicitIkvmMSBuildPackageReference>true</DisableImplicitIkvmMSBuildPackageReference>
+        <IkvmCacheDir>$(MSBuildThisFileDirectory).ikvm\cache\1</IkvmCacheDir>
+        <IkvmKeyFile>$(AssemblyOriginatorKeyFile)</IkvmKeyFile>
+    </PropertyGroup>
+
 </Project>

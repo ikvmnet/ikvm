@@ -4,9 +4,7 @@
     </PropertyGroup>
 
     <!--
-    This file contains targets which are used to derive various dependent items from existing ProjectReferences.
-    It is used by setting UseIkvmProjectReferences to 'true', as done by projects that are building within the
-    IKVM tree itself and should derive paths from other projects instead of packages.
+    This file contains targets which resolve various items by ProjectReference.
     -->
 
     <PropertyGroup>
@@ -20,11 +18,18 @@
     <Target Name="ResolveJavaCompiler" DependsOnTargets="$(ResolveJavaCompilerDependsOn)">
         <MSBuild Projects="@(_MSBuildProjectReferenceExistent)" Targets="Publish" BuildInParallel="$(BuildInParallel)" Properties="%(_MSBuildProjectReferenceExistent.SetConfiguration);%(_MSBuildProjectReferenceExistent.SetPlatform);%(_MSBuildProjectReferenceExistent.SetTargetFramework);PublishDir=$([System.IO.Path]::GetFullPath('$(IntermediateOutputPath)javac'))" RemoveProperties="%(_MSBuildProjectReferenceExistent.GlobalPropertiesToRemove)$(_GlobalPropertiesToRemoveFromProjectReferences);PublishUrl;Location" Condition=" '%(_MSBuildProjectReferenceExistent.IsJavaCompiler)' == 'true' " />
         <PropertyGroup>
-            <JavaCompilerPath Condition=" '$(JavaCompilerPath)' == '' And Exists('$(IntermediateOutputPath)javac\javac.exe') ">$(IntermediateOutputPath)javac\javac.exe</JavaCompilerPath>
+            <JavaCompilerPath Condition=" '$(JavaCompilerPath)' == '' And Exists('$(IntermediateOutputPath)java\javac.exe') ">$(IntermediateOutputPath)java\javac.exe</JavaCompilerPath>
             <JavaCompilerExec Condition=" '$(JavaCompilerExec)' == '' ">$(JavaCompilerPath)</JavaCompilerExec>
         </PropertyGroup>
         <Message Text="Resolved javac executable from project at '$(JavaCompilerPath)'." Importance="high" Condition=" '@(_JavaCompilerPath)' != '' " />
     </Target>
+
+    <PropertyGroup>
+        <ResolveIkvmCompilerDependsOn>
+            $(ResolveIkvmCompilerDependsOn);
+            ResolveProjectReferences;
+        </ResolveIkvmCompilerDependsOn>
+    </PropertyGroup>
 
     <PropertyGroup>
         <ResolveIkvmCompilerDependsOn>
@@ -115,14 +120,14 @@
     </Target>
 
     <PropertyGroup>
-        <ResolveIkvmReferenceAssembliesDependsOn>
-            $(ResolveIkvmReferenceAssembliesDependsOn);
+        <ResolveIkvmFrameworkReferencesDependsOn>
+            $(ResolveIkvmFrameworkReferencesDependsOn);
             ResolveIkvmCompiler;
-        </ResolveIkvmReferenceAssembliesDependsOn>
+        </ResolveIkvmFrameworkReferencesDependsOn>
     </PropertyGroup>
 
     <!-- Gathers those references which are either related to the Framework itself, or IKVM. -->
-    <Target Name="ResolveIkvmReferenceAssemblies" DependsOnTargets="$(ResolveIkvmReferenceAssembliesDependsOn)">
+    <Target Name="ResolveIkvmFrameworkReferences" DependsOnTargets="$(ResolveIkvmFrameworkReferencesDependsOn)">
         <ItemGroup>
             <IkvmFrameworkReference Include="$(IntermediateOutputPath)ikvmc\refs\*.dll" />
         </ItemGroup>
