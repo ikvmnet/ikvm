@@ -4,7 +4,7 @@
     </PropertyGroup>
 
     <!--
-    This file contains targets which invoke the jobs in 'NoTask' mode. The tasks provided by MSBuild are not used.
+    This file contains targets which invoke the jobs in 'NoTask' mode.
     -->
 
     <!-- Override IKVM.NET.Sdk: directly invoke executable  -->
@@ -32,21 +32,12 @@
         </ItemGroup>
     </Target>
 
-    <!-- Runs after ResolveJavaCompiler, defaulting to the javac available on the path. -->
-    <Target Name="ResolveJavaCompilerFromJavaHome" AfterTargets="ResolveJavaCompiler" Condition=" '$(JAVA_HOME)' != '' And '$(JavaCompilerPath)' == '' ">
-        <PropertyGroup>
-            <JavaCompilerPath Condition=" '$([MSBuild]::IsOSUnixLike())' == 'true' And Exists('$(JAVA_HOME)\bin\javac') ">$(JAVA_HOME)\bin\javac</JavaCompilerPath>
-            <JavaCompilerPath Condition=" '$([MSBuild]::IsOSUnixLike())' != 'true' And Exists('$(JAVA_HOME)\bin\javac.exe') ">$(JAVA_HOME)\bin\javac.exe</JavaCompilerPath>
-            <JavaCompilerArgs>-J-Xmx1536M</JavaCompilerArgs>
-            <JavaCompilerExec Condition=" '$(JavaCompilerPath)' != '' ">&quot;$(JavaCompilerPath)&quot; $(JavaCompilerArgs)</JavaCompilerExec>
-        </PropertyGroup>
-        <Message Text="Using javac executable found in JAVA_HOME at '$(JavaCompilerPath)'." Importance="high" Condition=" '$(JavaCompilerPath)' != '' " />
-    </Target>
-
     <Target Name="_CompileJava" DependsOnTargets="ResolveJavaCompiler;BuildReferenceExports" Inputs="@(Compile);@(Classpath)" Outputs="$(_CompileJavaStampFile)">
+        <Delete Files="$(_CompileJavaStampFile)" />
+
         <Error Text="javac could not be located." Condition=" '$(JavaCompilerPath)' == '' " />
         <Error Text="javac could not be located at '$(JavaCompilerPath)'." Condition="!Exists('$(JavaCompilerPath)')" />
-        
+
         <ItemGroup>
             <_JavaCompilerArgs Remove="@(_JavaCompilerArgs)" />
             <_JavaCompilerArgs Include="-g" Condition=" '$(DebugSymbols)' == 'true' Or '$(DebugType)' != 'none' " />
@@ -142,7 +133,5 @@
             <FileWrites Include="$(_AssemblyTempPath)$(TargetName).pdb" />
         </ItemGroup>
     </Target>
-    
-    <Import Project="IKVM.Java.Core.ProjectReferences.targets" Condition=" '$(UseIkvmProjectReferences)' == 'true' "/>
 
 </Project>

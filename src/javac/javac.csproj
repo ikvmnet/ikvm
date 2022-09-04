@@ -1,11 +1,9 @@
 <Project Sdk="Microsoft.NET.Sdk">
 
     <PropertyGroup>
-        <PackageId>javac</PackageId>
+        <OutputType>Exe</OutputType>
         <TargetFrameworks>net461;netcoreapp3.1</TargetFrameworks>
         <RuntimeIdentifiers>win7-x64;linux-x64</RuntimeIdentifiers>
-        <OutputType>Exe</OutputType>
-        <AssemblyTitle>IKVM.NET Java Compiler</AssemblyTitle>
         <AutoGenerateBindingRedirects>true</AutoGenerateBindingRedirects>
     </PropertyGroup>
 

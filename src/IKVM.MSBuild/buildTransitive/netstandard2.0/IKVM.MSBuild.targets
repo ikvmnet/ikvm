@@ -4,24 +4,26 @@
     </PropertyGroup>
 
     <PropertyGroup>
-        <IkvmMSBuildTaskFolder Condition=" '$(MSBuildRuntimeType)' == 'Core' ">netcoreapp3.1</IkvmMSBuildTaskFolder>
-        <IkvmMSBuildTaskFolder Condition=" '$(MSBuildRuntimeType)' != 'Core' ">net472</IkvmMSBuildTaskFolder>
-        <IkvmMSBuildTaskAssembly>$(MSBuildThisFileDirectory)..\..\tasks\$(IkvmMSBuildTaskFolder)\IKVM.MSBuild.Tasks.dll</IkvmMSBuildTaskAssembly>
-        <IkvmToolsPath>$(MSBuildThisFileDirectory)..\..\bin\</IkvmToolsPath>
-        <IkvmCompilerToolPath>$(IkvmToolsPath)ikvmc</IkvmCompilerToolPath>
-        <IkvmExporterToolPath>$(IkvmToolsPath)ikvmstub</IkvmExporterToolPath>
+        <UseIkvmTasks Condition=" '$(UseIkvmTasks)' == '' ">true</UseIkvmTasks>
     </PropertyGroup>
-
-    <UsingTask TaskName="IkvmGetReferenceAssemblies" AssemblyFile="$(IkvmMSBuildTaskAssembly)" Condition="Exists('$(IkvmMSBuildTaskAssembly)')" />
-    <UsingTask TaskName="IkvmReferenceItemPrepare" AssemblyFile="$(IkvmMSBuildTaskAssembly)" Condition="Exists('$(IkvmMSBuildTaskAssembly)')" />
-    <UsingTask TaskName="IkvmCompiler" AssemblyFile="$(IkvmMSBuildTaskAssembly)" Condition="Exists('$(IkvmMSBuildTaskAssembly)')" />
-    <UsingTask TaskName="IkvmExporter" AssemblyFile="$(IkvmMSBuildTaskAssembly)" Condition="Exists('$(IkvmMSBuildTaskAssembly)')" />
-    <UsingTask TaskName="IkvmJavaCompiler" AssemblyFile="$(IkvmMSBuildTaskAssembly)" Condition="Exists('$(IkvmMSBuildTaskAssembly)')" />
 
     <PropertyGroup Condition=" '$(TargetFramework)' != '' ">
         <IkvmToolFramework Condition="$([MSBuild]::IsTargetFrameworkCompatible('$(TargetFramework)', 'netstandard1.0'))">NetCore</IkvmToolFramework>
         <IkvmToolFramework Condition="$([MSBuild]::IsTargetFrameworkCompatible('$(TargetFramework)', 'net461'))">NetFramework</IkvmToolFramework>
         <IkvmToolFramework Condition="$([MSBuild]::IsTargetFrameworkCompatible('$(TargetFramework)', 'netcoreapp3.1'))">NetCore</IkvmToolFramework>
     </PropertyGroup>
+
+    <!--
+    Optionally disable registration of tasks.
+    -->
+    <Import Project="IKVM.MSBuild.Tasks.targets" Condition=" '$(UseIkvmTasks)' == 'true' "/>
+    <Import Project="IKVM.MSBuild.NoTasks.targets" Condition=" '$(UseIkvmTasks)' != 'true' "/>
+
+    <!--
+    PackageReference mode looks for IKVM tools and assemblies from the included IKVM and IKVM.MSBuild packages.
+    ProjectReference mode looks for IKVM tools and assemblies from marked ProjectReferences. Used for internal builds.
+    -->
+    <Import Project="IKVM.MSBuild.PackageReferences.targets" Condition=" '$(UseIkvmProjectReferences)' != 'true' "/>
+    <Import Project="IKVM.MSBuild.ProjectReferences.targets" Condition=" '$(UseIkvmProjectReferences)' == 'true' "/>
 
 </Project>
