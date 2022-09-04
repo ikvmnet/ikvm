@@ -21,8 +21,8 @@
                 <AssemblyName>%(Filename)</AssemblyName>
                 <AssemblyVersion>1.0.0.0</AssemblyVersion>
                 <AssemblyFileVersion>1.0.0.0</AssemblyFileVersion>
-                <StagePath>$(IntermediateOutputPath)ikvm\stage\%(IkvmIdentity)\%(Filename).dll</StagePath>
-                <CachePath>$(IntermediateOutputPath)ikvm\cache\%(IkvmIdentity)\%(Filename).dll</CachePath>
+                <StagePath>$(IkvmStageDir)%(IkvmIdentity)\%(Filename).dll</StagePath>
+                <CachePath>$(IkvmCacheDir)%(IkvmIdentity)\%(Filename).dll</CachePath>
             </IkvmReferenceItem>
         </ItemGroup>
     </Target>

@@ -18,8 +18,7 @@
     <Target Name="ResolveJavaCompiler" DependsOnTargets="$(ResolveJavaCompilerDependsOn)">
         <MSBuild Projects="@(_MSBuildProjectReferenceExistent)" Targets="Publish" BuildInParallel="$(BuildInParallel)" Properties="%(_MSBuildProjectReferenceExistent.SetConfiguration);%(_MSBuildProjectReferenceExistent.SetPlatform);%(_MSBuildProjectReferenceExistent.SetTargetFramework);PublishDir=$([System.IO.Path]::GetFullPath('$(IntermediateOutputPath)javac'))" RemoveProperties="%(_MSBuildProjectReferenceExistent.GlobalPropertiesToRemove)$(_GlobalPropertiesToRemoveFromProjectReferences);PublishUrl;Location" Condition=" '%(_MSBuildProjectReferenceExistent.IsJavaCompiler)' == 'true' " />
         <PropertyGroup>
-            <JavaCompilerToolPath Condition=" '$(JavaCompilerToolPath)' == '' And Exists('$(IntermediateOutputPath)javac') ">$(IntermediateOutputPath)javac\</JavaCompilerToolPath>
-            <JavaCompilerPath Condition=" '$(JavaCompilerPath)' == '' And Exists('$(JavaCompilerToolPath)javac.exe') ">$(JavaCompilerToolPath)javac.exe</JavaCompilerPath>
+            <JavaCompilerPath Condition=" '$(JavaCompilerPath)' == '' And Exists('$(IntermediateOutputPath)java\javac.exe') ">$(IntermediateOutputPath)java\javac.exe</JavaCompilerPath>
             <JavaCompilerExec Condition=" '$(JavaCompilerExec)' == '' ">$(JavaCompilerPath)</JavaCompilerExec>
         </PropertyGroup>
         <Message Text="Resolved javac executable from project at '$(JavaCompilerPath)'." Importance="high" Condition=" '@(_JavaCompilerPath)' != '' " />
@@ -43,8 +42,7 @@
     <Target Name="ResolveIkvmCompiler" DependsOnTargets="$(ResolveIkvmCompilerDependsOn)">
         <MSBuild Projects="@(_MSBuildProjectReferenceExistent)" Targets="Publish" BuildInParallel="$(BuildInParallel)" Properties="%(_MSBuildProjectReferenceExistent.SetConfiguration);%(_MSBuildProjectReferenceExistent.SetPlatform);%(_MSBuildProjectReferenceExistent.SetTargetFramework);PublishDir=$([System.IO.Path]::GetFullPath('$(IntermediateOutputPath)ikvmc'))" RemoveProperties="%(_MSBuildProjectReferenceExistent.GlobalPropertiesToRemove)$(_GlobalPropertiesToRemoveFromProjectReferences);PublishUrl;Location" Condition=" '%(_MSBuildProjectReferenceExistent.IsIkvmCompiler)' == 'true' " />
         <PropertyGroup>
-            <IkvmCompilerToolPath Condition=" '$(IkvmCompilerToolPath)' == '' And Exists('$(IntermediateOutputPath)ikvmc') ">$(IntermediateOutputPath)ikvmc\</IkvmCompilerToolPath>
-            <IkvmCompilerPath Condition=" '$(IkvmCompilerPath)' == '' And Exists('$(IkvmCompilerToolPath)ikvmc.exe') ">$(IkvmCompilerToolPath)ikvmc.exe</IkvmCompilerPath>
+            <IkvmCompilerPath Condition=" '$(IkvmCompilerPath)' == '' And Exists('$(IntermediateOutputPath)ikvmc\ikvmc.exe') ">$(IntermediateOutputPath)ikvmc\ikvmc.exe</IkvmCompilerPath>
             <IkvmCompilerExec Condition=" '$(IkvmCompilerExec)' == '' ">$(IkvmCompilerPath)</IkvmCompilerExec>
         </PropertyGroup>
         <Message Text="Using ikvmc executable from project at '$(IkvmCompilerPath)'." Importance="high" Condition=" '$(IkvmCompilerPath)' != '' " />
@@ -61,8 +59,7 @@
     <Target Name="ResolveIkvmExporter" DependsOnTargets="$(ResolveIkvmExporterDependsOn)">
         <MSBuild Projects="@(_MSBuildProjectReferenceExistent)" Targets="Publish" BuildInParallel="$(BuildInParallel)" Properties="%(_MSBuildProjectReferenceExistent.SetConfiguration);%(_MSBuildProjectReferenceExistent.SetPlatform);%(_MSBuildProjectReferenceExistent.SetTargetFramework);PublishDir=$([System.IO.Path]::GetFullPath('$(IntermediateOutputPath)ikvmstub'))" RemoveProperties="%(_MSBuildProjectReferenceExistent.GlobalPropertiesToRemove)$(_GlobalPropertiesToRemoveFromProjectReferences);PublishUrl;Location" Condition=" '%(_MSBuildProjectReferenceExistent.IsIkvmExporter)' == 'true' " />
         <PropertyGroup>
-            <IkvmExporterToolPath Condition=" '$(IkvmExporterToolPath)' == '' And Exists('$(IntermediateOutputPath)ikvmstub') ">$(IntermediateOutputPath)ikvmstub\</IkvmExporterToolPath>
-            <IkvmExporterPath Condition=" '$(IkvmExporterPath)' == '' And Exists('$(IkvmExporterToolPath)ikvmstub.exe')">$(IkvmExporterToolPath)ikvmstub.exe</IkvmExporterPath>
+            <IkvmExporterPath Condition=" '$(IkvmExporterPath)' == '' And Exists('$(IntermediateOutputPath)ikvmstub\ikvmstub.exe')">$(IntermediateOutputPath)ikvmstub\ikvmstub.exe</IkvmExporterPath>
             <IkvmExporterExec Condition=" '$(IkvmExporterExec)' == '' ">$(IkvmExporterPath)</IkvmExporterExec>
         </PropertyGroup>
         <Message Text="Using ikvmstub executable from project at '$(IkvmExporterPath)'." Importance="high" Condition=" '$(IkvmExporterPath)' != '' " />

@@ -243,3 +243,4 @@ ModelManifest.xml
 
 # Ignore build output
 /build/
+/.ikvm/

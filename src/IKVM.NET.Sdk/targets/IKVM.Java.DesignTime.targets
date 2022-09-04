@@ -26,7 +26,7 @@
         </PropertyPageSchema>
     </ItemGroup>
 
-    <Target Name="CompileDesignTime" DependsOnTargets="_CheckCompileDesignTimePrerequisite">
+    <Target Name="CompileDesignTime" DependsOnTargets="_CheckCompileDesignTimePrerequisite;Compile">
         <Message Text="CompileDesignTime" />
     </Target>
 
