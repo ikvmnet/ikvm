@@ -58,7 +58,7 @@ PM> Install-Package IKVM.Maven.Sdk
 
 ### Tools
 
-The tools are a available for download on the [Releases](https://github.com/ikvm-revived/ikvm/releases) page.
+The tools are available for download on the [Releases](https://github.com/ikvm-revived/ikvm/releases) page.
 
 ## Usage
 

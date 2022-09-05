@@ -60,7 +60,7 @@
             References="$(IkvmRuntimeAssembly);$(IkvmRuntimeJNIAssembly);$(IkvmBaseAssembly);@(IkvmFrameworkReference);@(_IkvmReferenceItemResolvedReference->Distinct())"
             Input="%(_IkvmReferenceItemToCompile.Compile)"
             Condition=" '%(_IkvmReferenceItemToCompile.Compile)' != '' "/>
-        
+
         <!-- Copy the compiled assembly to its cache path. -->
         <Copy
             SourceFiles="%(_IkvmReferenceItemToCompile.StagePath)"

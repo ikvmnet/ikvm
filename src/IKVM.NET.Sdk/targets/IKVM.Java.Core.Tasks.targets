@@ -9,7 +9,7 @@
 
     <Target Name="_BuildReferenceExports" DependsOnTargets="ResolveReferenceExports" Inputs="%(ReferenceExport.AssemblyFile)" Outputs="%(ReferenceExport.Identity)">
         <Error Text="IKVM.NET.Sdk cannot currently build assemblies targeting '$(TargetFramework)'. Either target 'net461' or 'netcoreapp3.1'." Condition=" '$(TargetFramework)' != 'net461' And '$(TargetFramework)' != 'netcoreapp3.1' " />
-               
+
         <ItemGroup>
             <_ReferenceExportReference Remove="@(_ReferenceExportReference)" />
             <_ReferenceExportReference Include="@(ReferencePathWithRefAssemblies)" Condition=" '%(Filename)' != '%(ReferenceExport.Filename)' "/>
@@ -34,7 +34,7 @@
 
     <Target Name="_CompileJava" DependsOnTargets="BuildReferenceExports" Inputs="@(Compile);@(Classpath)" Outputs="$(_CompileJavaStampFile)">
         <Delete Files="$(_CompileJavaStampFile)" />
-        
+
         <PropertyGroup>
             <_JavaCompilerDebug Condition=" '$(DebugSymbols)' == 'true' Or '$(DebugType)' != 'none' ">all</_JavaCompilerDebug>
         </PropertyGroup>

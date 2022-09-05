@@ -34,10 +34,10 @@
 
     <Target Name="_CompileJava" DependsOnTargets="ResolveJavaCompiler;BuildReferenceExports" Inputs="@(Compile);@(Classpath)" Outputs="$(_CompileJavaStampFile)">
         <Delete Files="$(_CompileJavaStampFile)" />
-        
+
         <Error Text="javac could not be located." Condition=" '$(JavaCompilerPath)' == '' " />
         <Error Text="javac could not be located at '$(JavaCompilerPath)'." Condition="!Exists('$(JavaCompilerPath)')" />
-        
+
         <ItemGroup>
             <_JavaCompilerArgs Remove="@(_JavaCompilerArgs)" />
             <_JavaCompilerArgs Include="-g" Condition=" '$(DebugSymbols)' == 'true' Or '$(DebugType)' != 'none' " />

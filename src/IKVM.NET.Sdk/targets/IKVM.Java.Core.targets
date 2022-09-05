@@ -136,5 +136,5 @@
     <!-- Include Task or Command implementation of targets. -->
     <Import Project="IKVM.Java.Core.Tasks.targets" Condition=" '$(UseIkvmTasks)' == 'true' "/>
     <Import Project="IKVM.Java.Core.NoTasks.targets" Condition=" '$(UseIkvmTasks)' != 'true' "/>
-    
+
 </Project>

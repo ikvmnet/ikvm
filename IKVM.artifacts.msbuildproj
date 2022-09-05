@@ -114,7 +114,7 @@
             <Targets>IKVM_Tests:Publish</Targets>
             <Properties>$(TestProperties);TargetFramework=net6.0;PublishDir=$(ArtifactStagingDirectory)\tests\IKVM.Tests\net6.0</Properties>
         </TargetsForPublish>
-        
+
         <TargetsForPublish Include="$(SolutionFile)">
             <Targets>ikvmc_Tests:Publish</Targets>
             <Properties>$(TestProperties);TargetFramework=net461;PublishDir=$(ArtifactStagingDirectory)\tests\ikvmc.Tests\net461</Properties>
@@ -131,7 +131,7 @@
             <Targets>ikvmc_Tests:Publish</Targets>
             <Properties>$(TestProperties);TargetFramework=net6.0;PublishDir=$(ArtifactStagingDirectory)\tests\ikvmc.Tests\net6.0</Properties>
         </TargetsForPublish>
-        
+
         <TargetsForPublish Include="$(SolutionFile)">
             <Targets>IKVM_Tool_Tests:Publish</Targets>
             <Properties>$(TestProperties);TargetFramework=net461;PublishDir=$(ArtifactStagingDirectory)\tests\IKVM.Tool.Tests\net461</Properties>
@@ -148,7 +148,7 @@
             <Targets>IKVM_Tool_Tests:Publish</Targets>
             <Properties>$(TestProperties);TargetFramework=net6.0;PublishDir=$(ArtifactStagingDirectory)\tests\IKVM.Tool.Tests\net6.0</Properties>
         </TargetsForPublish>
-        
+
         <TargetsForPublish Include="$(SolutionFile)">
             <Targets>IKVM_Tool_Exporter_Tests:Publish</Targets>
             <Properties>$(TestProperties);TargetFramework=net461;PublishDir=$(ArtifactStagingDirectory)\tests\IKVM.Tool.Exporter.Tests\net461</Properties>
@@ -178,7 +178,7 @@
             <Targets>IKVM_MSBuild_Tasks_Tests:Publish</Targets>
             <Properties>$(TestProperties);TargetFramework=net6.0;PublishDir=$(ArtifactStagingDirectory)\tests\IKVM.MSBuild.Tasks.Tests\net6.0</Properties>
         </TargetsForPublish>
-        
+
         <TargetsForPublish Include="$(SolutionFile)">
             <Targets>IKVM_MSBuild_Tests:Publish</Targets>
             <Properties>$(TestProperties);TargetFramework=net6.0;PublishDir=$(ArtifactStagingDirectory)\tests\IKVM.MSBuild.Tests\net6.0</Properties>

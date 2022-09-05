@@ -4,7 +4,7 @@
     </PropertyGroup>
 
     <Import Project="$(MSBuildThisFileDirectory)..\..\targets\generated.props" Condition="Exists('$(MSBuildThisFileDirectory)..\..\targets\generated.props')" />
-    
+
     <PropertyGroup>
         <IkvmKeyFile Condition=" '$(IkvmKeyFile)' == '' And Exists('$(MSBuildThisFileDirectory)..\..\ikvm.snk') ">$(MSBuildThisFileDirectory)..\..\ikvm.snk</IkvmKeyFile>
     </PropertyGroup>

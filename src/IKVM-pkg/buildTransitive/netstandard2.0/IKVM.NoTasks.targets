@@ -66,7 +66,7 @@
             <_IkvmCompilerArgs Include="%(_IkvmReferenceItemToCompile.Compile)" />
         </ItemGroup>
         <WriteLinesToFile File="%(_IkvmReferenceItemToCompile.StagePath).rsp" Lines="@(_IkvmCompilerArgs)" Overwrite="true" />
-        
+
         <Delete Files="%(_IkvmReferenceItemToCompile.StagePath)" Condition="Exists('%(_IkvmReferenceItemToCompile.StagePath)')" />
         <Exec Command="$(IkvmCompilerExec) @%(_IkvmReferenceItemToCompile.StagePath).rsp" />
         <Copy SourceFiles="%(_IkvmReferenceItemToCompile.StagePath)" DestinationFiles="%(_IkvmReferenceItemToCompile.CachePath)" OverwriteReadOnlyFiles="true" />

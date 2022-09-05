@@ -13,5 +13,5 @@
         </PropertyGroup>
         <Message Text="Using javac executable found in JAVA_HOME at '$(JavaCompilerPath)'." Importance="high" Condition=" '$(JavaCompilerPath)' != '' " />
     </Target>
-    
+
 </Project>
