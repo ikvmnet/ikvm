@@ -41,7 +41,7 @@ namespace IKVM.Java.Externs.com.sun.media.sound
         public static object getProviders(object providerClass)
         {
 #if FIRST_PASS
-        return null;
+            return null;
 #else
             return new global::java.util.ArrayList();
 #endif

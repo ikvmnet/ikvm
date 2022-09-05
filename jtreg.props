@@ -1,0 +1,20 @@
+﻿<Project>
+    <PropertyGroup>
+        <JTRegDir>$(MSBuildThisFileDirectory)jtreg</JTRegDir>
+    </PropertyGroup>
+
+    <ItemDefinitionGroup>
+        <JTRegSource>
+            <SourcePath>%(Identity)</SourcePath>
+        </JTRegSource>
+    </ItemDefinitionGroup>
+
+    <ItemGroup>
+        <JTRegSource Include="$(JTRegDir)\src\share\classes\**\*.java" />
+    </ItemGroup>
+
+    <ItemGroup>
+        <JTRegJar Include="$(JTRegDir)\build\deps\**\*.jar" />
+    </ItemGroup>
+
+</Project>

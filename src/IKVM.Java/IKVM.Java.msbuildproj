@@ -25,6 +25,7 @@
         <Reference Include="System.Configuration" />
         <Reference Include="System.IO.Compression" />
         <Reference Include="System.Security" />
+        <PackageReference Include="System.Runtime.InteropServices.RuntimeInformation" Version="4.3.0" />
     </ItemGroup>
 
     <ItemGroup Condition=" '$(TargetFramework)' == 'netcoreapp3.1' ">
@@ -97,7 +98,8 @@
     </ItemGroup>
 
     <ItemGroup>
-        <Compile Include="@(OpenJdkSource)" LinkBase="openjdk" />
+        <None Include="@(OpenJdkSource)" LinkBase="openjdk" />
+        <Compile Include="@(OpenJdkSource)" />
         <JavaResource Include="@(OpenJdkResource)" LinkBase="openjdk" />
         <ExcludeRegex Include="@(OpenJdkExcludeRegex)" />
     </ItemGroup>

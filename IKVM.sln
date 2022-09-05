@@ -28,6 +28,7 @@ Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Solution Items", "Solution 
 		global.json = global.json
 		IKVM.artifacts.msbuildproj = IKVM.artifacts.msbuildproj
 		.github\workflows\IKVM.yml = .github\workflows\IKVM.yml
+		jtreg.props = jtreg.props
 		LICENSE.md = LICENSE.md
 		openjdk.props = openjdk.props
 		README.md = README.md
@@ -91,7 +92,7 @@ Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "IKVM.JavaTest.TestAdapter.T
 EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "IKVM.Tool.Tests", "src\IKVM.Tool.Tests\IKVM.Tool.Tests.csproj", "{E4E6EAB9-2C68-49AC-A212-D464F1BB483B}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "javac", "src\javac\javac.csproj", "{78BE5834-EC02-48C5-A83A-2693D777375A}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "javac", "src\javac\javac.csproj", "{78BE5834-EC02-48C5-A83A-2693D777375A}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
