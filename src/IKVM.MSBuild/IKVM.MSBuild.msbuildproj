@@ -69,31 +69,6 @@
         </PublishProjectReference>
     </ItemGroup>
 
-    <ItemGroup>
-        <None Update="buildTransitive\netstandard2.0\IKVM.MSBuild.Tasks.targets">
-          <PackagePath>buildTransitive\%(RecursiveDir)%(Filename)%(Extension)</PackagePath>
-        </None>
-        <None Update="buildTransitive\netstandard2.0\IKVM.MSBuild.ProjectReferences.targets">
-          <PackagePath>buildTransitive\%(RecursiveDir)%(Filename)%(Extension)</PackagePath>
-        </None>
-        <None Update="buildTransitive\netstandard2.0\IKVM.MSBuild.PackageReferences.targets">
-          <PackagePath>buildTransitive\%(RecursiveDir)%(Filename)%(Extension)</PackagePath>
-        </None>
-        <None Update="buildTransitive\netstandard2.0\IKVM.MSBuild.NoTasks.targets">
-          <PackagePath>buildTransitive\%(RecursiveDir)%(Filename)%(Extension)</PackagePath>
-        </None>
-        <None Update="buildTransitive\netstandard2.0\IKVM.MSBuild.NoTasks.targets">
-            <PackagePath>buildTransitive\%(RecursiveDir)%(Filename)%(Extension)</PackagePath>
-        </None>
-        <None Update="buildTransitive\netstandard2.0\IKVM.MSBuild.Tasks.targets">
-            <PackagePath>buildTransitive\%(RecursiveDir)%(Filename)%(Extension)</PackagePath>
-        </None>
-        <None Update="buildTransitive\netstandard2.0\IKVM.MSBuild.ProjectReferences.targets">
-            <PackagePath>targets\%(RecursiveDir)%(Filename)%(Extension)</PackagePath>
-            <Pack>true</Pack>
-        </None>
-    </ItemGroup>
-
     <Target Name="MakeGeneratedPropsFile" Outputs="$(IntermediateOutputPath)generated.props" BeforeTargets="_GetPackageFiles">
         <ItemGroup>
             <_GeneratedPropsFileLine Include="&lt;Project&gt;&lt;PropertyGroup&gt;&lt;IkvmVersion&gt;$(PackageVersion)&lt;/IkvmVersion&gt;&lt;/PropertyGroup&gt;&lt;/Project&gt;" />
