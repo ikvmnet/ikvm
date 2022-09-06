@@ -1,5 +1,11 @@
 <Project>
 
+    <ItemDefinitionGroup>
+        <ResolvedFileToPublish>
+            <CopyToPublishDirectory>PreserveNewest</CopyToPublishDirectory>
+        </ResolvedFileToPublish>
+    </ItemDefinitionGroup>
+
     <Target Name="GetLibProjectReferences" Condition=" '@(LibProjectReference)' != '' ">
         <MSBuild Projects="@(LibProjectReference->'%(ProjectFile)')" Targets="GetTargetPath" BuildInParallel="$(BuildInParallel)" Properties="Platform=%(LibProjectReference.Platform);Configuration=%(LibProjectReference.Configuration)">
             <Output TaskParameter="TargetOutputs" ItemName="_LibProjectReferenceWithOutputPath" />

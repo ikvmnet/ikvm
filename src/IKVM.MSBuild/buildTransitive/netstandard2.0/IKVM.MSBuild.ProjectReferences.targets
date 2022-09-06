@@ -18,7 +18,7 @@
     <Target Name="ResolveJavaCompiler" DependsOnTargets="$(ResolveJavaCompilerDependsOn)">
         <MSBuild Projects="@(_MSBuildProjectReferenceExistent)" Targets="Publish" BuildInParallel="$(BuildInParallel)" Properties="%(_MSBuildProjectReferenceExistent.SetConfiguration);%(_MSBuildProjectReferenceExistent.SetPlatform);%(_MSBuildProjectReferenceExistent.SetTargetFramework);PublishDir=$([System.IO.Path]::GetFullPath('$(IntermediateOutputPath)javac'))" RemoveProperties="%(_MSBuildProjectReferenceExistent.GlobalPropertiesToRemove)$(_GlobalPropertiesToRemoveFromProjectReferences);PublishUrl;Location" Condition=" '%(_MSBuildProjectReferenceExistent.IsJavaCompiler)' == 'true' " />
         <PropertyGroup>
-            <JavaCompilerPath Condition=" '$(JavaCompilerPath)' == '' And Exists('$(IntermediateOutputPath)java\javac.exe') ">$(IntermediateOutputPath)java\javac.exe</JavaCompilerPath>
+            <JavaCompilerPath Condition=" '$(JavaCompilerPath)' == '' And Exists('$(IntermediateOutputPath)javac\javac.exe') ">$(IntermediateOutputPath)javac\javac.exe</JavaCompilerPath>
             <JavaCompilerExec Condition=" '$(JavaCompilerExec)' == '' ">$(JavaCompilerPath)</JavaCompilerExec>
         </PropertyGroup>
         <Message Text="Resolved javac executable from project at '$(JavaCompilerPath)'." Importance="high" Condition=" '@(_JavaCompilerPath)' != '' " />

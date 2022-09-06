@@ -11,7 +11,7 @@
     <!-- References may be derived from various sources: ProjectReference or IkvmReference. In each case, compilation of the Java
          code requires the original Java class or JAR files as input. These are attached as metadata to each possible reference.
     -->
-    <Target Name="GetReferenceClasspath" DependsOnTargets="ResolveReferences;FindReferenceAssembliesForReferences">
+    <Target Name="GetReferenceClasspath" DependsOnTargets="ResolveReferences;FindReferenceAssembliesForReferences" AfterTargets="BuildReferenceExports">
         <ItemGroup>
             <Classpath Include="@(ReferencePath->'%(JavaClasspath)')" Condition=" '%(ReferencePath.JavaClasspath)' != '' " />
         </ItemGroup>
