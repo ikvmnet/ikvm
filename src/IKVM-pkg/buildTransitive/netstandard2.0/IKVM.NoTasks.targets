@@ -7,16 +7,45 @@
     This file contains targets which invoke the jobs in 'NoTask' mode. The tasks provided by MSBuild are not used.
     -->
 
-    <!-- Populates the IkvmReferenceItem set with required metadata. -->
-    <Target Name="_UpdateIkvmReferenceItemsMetadata" DependsOnTargets="GetIkvmReferenceItemsFromIkvmReferences;ResolveIkvmRuntimeAssembly;ResolveIkvmRuntimeJNIAssembly;ResolveIkvmBaseAssembly;ResolveIkvmFrameworkReferences" Condition=" '@(IkvmReferenceItem)' != '' ">
-        <GetFileHash Files="@(IkvmReferenceItem)" MetadataName="IkvmIdentity">
-            <Output TaskParameter="Items" ItemName="_IkvmReferenceItemWithIdentity" />
+    <!-- Populates the IkvmReferenceItem set with file hashes, required to identify unique stage directory. -->
+    <Target Name="_UpdateIkvmReferenceItemsFileHash" DependsOnTargets="GetIkvmReferenceItemsFromIkvmReferences" Condition=" '@(IkvmReferenceItem)' != '' ">
+        <GetFileHash Files="@(IkvmReferenceItem)" MetadataName="FileHash">
+            <Output TaskParameter="Items" ItemName="_IkvmReferenceItemWithFileHash" />
         </GetFileHash>
+    </Target>
+    
+    <!-- Writes some identifying information to a manifest file for each item, this allows us to hash a file to collect the final identity.  -->
+    <Target Name="_OutputIkvmReferenceItemsManifest" DependsOnTargets="_UpdateIkvmReferenceItemsFileHash" Inputs="@(_IkvmReferenceItemWithFileHash)" Outputs="$(IkvmStageDir)manifests\%(_IkvmReferenceItemWithFileHash.FileHash).manifest" Condition=" '@(_IkvmReferenceItemWithFileHash)' != '' ">
+        <ItemGroup>
+            <_IkvmReferenceManifestLine Remove="@(_IkvmReferenceManifestLine)" />
+            <_IkvmReferenceManifestLine Include="TargetFramework=$(TargetFramework)" />
+            <_IkvmReferenceManifestLine Include="FileHash=%(_IkvmReferenceItemWithFileHash.FileHash)" />
+        </ItemGroup>
+        <WriteLinesToFile Lines="@(_IkvmReferenceManifestLine)" File="$(IkvmStageDir)manifests\%(_IkvmReferenceItemWithFileHash.FileHash).manifest" Overwrite="true" WriteOnlyWhenDifferent="true" />
+    </Target>
 
-        <!-- Partial implementation: assume JAR files, take file name as assembly name. Good enough for bootstrapping. -->
+    <!-- Hashes the manifests for the identity and rebuilds the IkvmReferenceItem set with the path metadata. -->
+    <Target Name="_UpdateIkvmReferenceItemsMetadataFromManifest" DependsOnTargets="_OutputIkvmReferenceItemsManifest">
+        <ItemGroup>
+            <_IkvmReferenceManifest Include="@(_IkvmReferenceItemWithFileHash->'$(IkvmStageDir)manifests\%(FileHash).manifest')">
+                <OriginalIdentity>%(Identity)</OriginalIdentity>
+            </_IkvmReferenceManifest>
+        </ItemGroup>
+        <GetFileHash Files="@(_IkvmReferenceManifest)" MetadataName="IkvmIdentity">
+            <Output TaskParameter="Items" ItemName="_IkvmReferenceManifestWithIdentity" />
+        </GetFileHash>
         <ItemGroup>
             <IkvmReferenceItem Remove="@(IkvmReferenceItem)" />
-            <IkvmReferenceItem Include="@(_IkvmReferenceItemWithIdentity)">
+            <IkvmReferenceItem Include="@(_IkvmReferenceManifestWithIdentity->'%(OriginalIdentity)')">
+                <IkvmIdentity>%(IkvmIdentity)</IkvmIdentity>
+            </IkvmReferenceItem>
+        </ItemGroup>
+    </Target>
+
+    <!-- Updates any missing metadata on the items. -->
+    <Target Name="_UpdateIkvmReferenceItemsMissingMetadata" DependsOnTargets="_UpdateIkvmReferenceItemsMetadataFromManifest" Condition=" '@(IkvmReferenceItem)' != '' ">
+        <ItemGroup>
+            <IkvmReferenceItem Update="@(IkvmReferenceItem)">
                 <Compile>%(FullPath)</Compile>
                 <AssemblyName>%(Filename)</AssemblyName>
                 <AssemblyVersion>1.0.0.0</AssemblyVersion>
@@ -25,6 +54,21 @@
                 <CachePath>$(IkvmCacheDir)%(IkvmIdentity)\%(Filename).dll</CachePath>
             </IkvmReferenceItem>
         </ItemGroup>
+    </Target>
+
+    <PropertyGroup>
+        <_UpdateIkvmReferenceItemsMetadataDependsOn>
+            $(_UpdateIkvmReferenceItemsMetadataDependsOn);
+            _UpdateIkvmReferenceItemsFileHash;
+            _OutputIkvmReferenceItemsManifest;
+            _UpdateIkvmReferenceItemsMetadataFromManifest;
+            _UpdateIkvmReferenceItemsMissingMetadata;
+        </_UpdateIkvmReferenceItemsMetadataDependsOn>
+    </PropertyGroup>
+
+    <!-- Hashes the manifests for the identity and rebuilds the IkvmReferenceItem set with the path metadata. -->
+    <Target Name="_UpdateIkvmReferenceItemsMetadata" DependsOnTargets="$(_UpdateIkvmReferenceItemsMetadataDependsOn)" Condition=" '@(IkvmReferenceItem)' != '' ">
+        
     </Target>
 
     <!-- Builds the IkvmReferenceItem set into their output items within the cache. -->
