@@ -17,6 +17,7 @@
         <Reference Include="System.Configuration" />
         <Reference Include="System.IO.Compression" />
         <Reference Include="System.Security" />
+        <PackageReference Include="System.Runtime.InteropServices.RuntimeInformation" Version="4.3.0" />
     </ItemGroup>
 
     <ItemGroup Condition=" '$(TargetFramework)' == 'netcoreapp3.1' ">
@@ -45,6 +46,9 @@
             <PrivateAssets>All</PrivateAssets>
         </ProjectReference>
         <ProjectReference Include="..\IKVM.Runtime\IKVM.Runtime.csproj">
+            <PrivateAssets>All</PrivateAssets>
+        </ProjectReference>
+        <ProjectReference Include="..\java\java.csproj">
             <PrivateAssets>All</PrivateAssets>
         </ProjectReference>
     </ItemGroup>

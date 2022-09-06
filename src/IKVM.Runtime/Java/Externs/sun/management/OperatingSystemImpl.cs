@@ -89,15 +89,15 @@ namespace IKVM.Java.Externs.sun.management
 
         [DllImport("psapi", SetLastError = true)]
         [return: MarshalAs(UnmanagedType.Bool)]
-        static extern bool GetProcessMemoryInfo(IntPtr hProcess, out PROCESS_MEMORY_COUNTERS counters, uint size);
+        static extern bool GetProcessMemoryInfo(IntPtr Process, out PROCESS_MEMORY_COUNTERS ppsmemCounters, uint cb);
+
+        [DllImport("kernel32", SetLastError = true)]
+        [return: MarshalAs(UnmanagedType.Bool)]
+        static extern bool GlobalMemoryStatusEx(ref MEMORYSTATUSEX lpBuffer);
 
         [DllImport("psapi", SetLastError = true)]
         [return: MarshalAs(UnmanagedType.Bool)]
-        static extern bool GlobalMemoryStatusEx(out MEMORYSTATUSEX lpBuffer);
-
-        [DllImport("psapi", SetLastError = true)]
-        [return: MarshalAs(UnmanagedType.Bool)]
-        static extern bool GetPerformanceInfo([Out] out PERFORMANCE_INFORMATION pi, uint size);
+        static extern bool GetPerformanceInfo(ref PERFORMANCE_INFORMATION pPerformanceInformation, uint size);
 
         /// <summary>
         /// Initializes the static information.
@@ -109,8 +109,6 @@ namespace IKVM.Java.Externs.sun.management
                 platform = OSPlatform.Windows;
             else if (RuntimeInformation.IsOSPlatform(OSPlatform.Linux))
                 platform = OSPlatform.Linux;
-            else if (RuntimeInformation.IsOSPlatform(OSPlatform.FreeBSD))
-                platform = OSPlatform.FreeBSD;
             else if (RuntimeInformation.IsOSPlatform(OSPlatform.OSX))
                 platform = OSPlatform.OSX;
         }
@@ -127,7 +125,7 @@ namespace IKVM.Java.Externs.sun.management
                 var r = -1L;
                 var p = new MEMORYSTATUSEX();
                 p.dwLength = (uint)Marshal.SizeOf(p);
-                if (GlobalMemoryStatusEx(out p))
+                if (GlobalMemoryStatusEx(ref p))
                     r = (long)p.ullTotalPageFile;
 
                 return r;
@@ -145,7 +143,7 @@ namespace IKVM.Java.Externs.sun.management
                 var r = -1L;
                 var p = new MEMORYSTATUSEX();
                 p.dwLength = (uint)Marshal.SizeOf(p);
-                if (GlobalMemoryStatusEx(out p))
+                if (GlobalMemoryStatusEx(ref p))
                     r = (long)p.ullAvailPageFile;
 
                 return r;
@@ -162,7 +160,7 @@ namespace IKVM.Java.Externs.sun.management
             {
                 var m = -1L;
                 var p = new PERFORMANCE_INFORMATION();
-                if (GetPerformanceInfo(out p, (uint)Marshal.SizeOf(p)))
+                if (GetPerformanceInfo(ref p, (uint)Marshal.SizeOf(p)))
                     m = (long)(ulong)p.PhysicalAvailable;
 
                 return m;
@@ -179,7 +177,7 @@ namespace IKVM.Java.Externs.sun.management
             {
                 var m = -1L;
                 var p = new PERFORMANCE_INFORMATION();
-                if (GetPerformanceInfo(out p, (uint)Marshal.SizeOf(p)))
+                if (GetPerformanceInfo(ref p, (uint)Marshal.SizeOf(p)))
                     m = (long)(ulong)p.PhysicalTotal;
 
                 return m;

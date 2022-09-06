@@ -94,6 +94,10 @@ Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "IKVM.Tool.Tests", "src\IKVM
 EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "javac", "src\javac\javac.csproj", "{78BE5834-EC02-48C5-A83A-2693D777375A}"
 EndProject
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "java", "src\java\java.csproj", "{4F7D51D0-F52D-46EF-94DF-C4081587FBB4}"
+EndProject
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "IKVM.Tool.Launcher", "src\IKVM.Tool.Launcher\IKVM.Tool.Launcher.csproj", "{0F7C5706-9A2E-44B6-800C-32A453018FE1}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -240,6 +244,14 @@ Global
 		{78BE5834-EC02-48C5-A83A-2693D777375A}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{78BE5834-EC02-48C5-A83A-2693D777375A}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{78BE5834-EC02-48C5-A83A-2693D777375A}.Release|Any CPU.Build.0 = Release|Any CPU
+		{4F7D51D0-F52D-46EF-94DF-C4081587FBB4}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{4F7D51D0-F52D-46EF-94DF-C4081587FBB4}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{4F7D51D0-F52D-46EF-94DF-C4081587FBB4}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{4F7D51D0-F52D-46EF-94DF-C4081587FBB4}.Release|Any CPU.Build.0 = Release|Any CPU
+		{0F7C5706-9A2E-44B6-800C-32A453018FE1}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{0F7C5706-9A2E-44B6-800C-32A453018FE1}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{0F7C5706-9A2E-44B6-800C-32A453018FE1}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{0F7C5706-9A2E-44B6-800C-32A453018FE1}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE

@@ -233,6 +233,10 @@ namespace IKVM.JavaTest
             rp.setMatchLists(new global::java.io.File[0]);
             rp.setEnvVars(new global::java.util.HashMap());
 
+            var jdk = Path.Combine(Path.GetDirectoryName(typeof(JTRegTestAdapter).Assembly.Location), "jdk");
+            rp.setTestJDK(JDK.of(jdk));
+            rp.setCompileJDK(JDK.of(jdk));
+
             rp.setTests(testManager.getTests(testSuite));
 
             return rp;

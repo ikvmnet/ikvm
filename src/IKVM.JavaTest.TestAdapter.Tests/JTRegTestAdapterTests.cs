@@ -1,5 +1,7 @@
 ﻿using System.Collections.Generic;
 
+using FluentAssertions;
+
 using Microsoft.VisualStudio.TestPlatform.ObjectModel;
 using Microsoft.VisualStudio.TestPlatform.ObjectModel.Adapter;
 using Microsoft.VisualStudio.TestPlatform.ObjectModel.Logging;
@@ -28,6 +30,7 @@ namespace IKVM.JavaTest.TestAdapter.Tests
 
             var adp = new JTRegTestAdapter();
             adp.DiscoverTests(typeof(JTRegTestAdapterTests).Assembly.Location, discoveryContext.Object, messageLogger.Object, testCaseDiscoverySink.Object);
+            testCases.Should().HaveCountGreaterThanOrEqualTo(1);
         }
 
         [TestMethod]
