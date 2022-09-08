@@ -9,8 +9,8 @@
 
     <!-- Override IKVM.NET.Sdk: directly invoke executable  -->
     <Target Name="_BuildReferenceExports" DependsOnTargets="ResolveIkvmExporter;ResolveReferenceExports" Inputs="%(ReferenceExport.AssemblyFile)" Outputs="%(ReferenceExport.Identity)">
-        <Error Text="ikvmstub could not be located." Condition=" '$(IkvmExporterPath)' == '' " />
-        <Error Text="ikvmstub could not be located at '$(IkvmExporterPath)'" Condition="!Exists('$(IkvmExporterPath)')" />
+        <Error Text="Could not locate ikvmstub executable." Condition=" '$(IkvmExporterPath)' == '' " />
+        <Error Text="ikvmstub executable could not be located at '$(IkvmExporterPath)'" Condition="!Exists('$(IkvmExporterPath)')" />
 
         <ItemGroup>
             <_IkvmExporterArgs Remove="@(_IkvmExporterArgs)" />
@@ -33,9 +33,7 @@
     </Target>
 
     <Target Name="_CompileJava" DependsOnTargets="ResolveJavaCompiler;BuildReferenceExports" Inputs="@(Compile);@(Classpath)" Outputs="$(_CompileJavaStampFile)">
-        <Delete Files="$(_CompileJavaStampFile)" />
-
-        <Error Text="javac could not be located." Condition=" '$(JavaCompilerPath)' == '' " />
+        <Error Text="Could not locate javac executable." Condition=" '$(JavaCompilerPath)' == '' " />
         <Error Text="javac could not be located at '$(JavaCompilerPath)'." Condition="!Exists('$(JavaCompilerPath)')" />
 
         <ItemGroup>
@@ -60,10 +58,21 @@
         </ItemGroup>
         <WriteLinesToFile File="$(_CompileJavaResponseFile)" Lines="@(_JavaCompilerArgs)" Overwrite="true" />
 
-        <RemoveDir Directories="$(ClassOutputPath)" Condition="Exists('$(ClassOutputPath)')" />
+        <!-- Store initial time. Files that remain older than this will be removed. -->
+        <PropertyGroup>
+            <_CompileJavaStartTime>$([System.DateTime]::Now.Ticks)</_CompileJavaStartTime>
+        </PropertyGroup>
+
         <MakeDir Directories="$(ClassOutputPath)" />
         <Message Text="$(JavaCompilerExec) @$(_CompileJavaResponseFile)" />
         <Exec Command="$(JavaCompilerExec) @$(_CompileJavaResponseFile)" />
+
+        <!-- Remove files that were not modified by this compilation. -->
+        <ItemGroup>
+            <_CompileJavaClassFiles Include="$(ClassOutputPath)**\*.class" />
+            <_CompileJavaStaleFiles Include="@(_CompileJavaClassFiles)" Condition="$([System.DateTime]::Parse('%(ModifiedTime)').Ticks) &lt; $(_CompileJavaStartTime) " />
+        </ItemGroup>
+        <Delete Files="@(_CompileJavaStaleFiles)" />
 
         <Touch Files="$(_CompileJavaStampFile)" AlwaysCreate="true" ForceTouch="true" />
         <ItemGroup>
@@ -72,9 +81,9 @@
     </Target>
 
     <Target Name="_CoreCompile" DependsOnTargets="ResolveIkvmCompiler;ResolveIkvmRuntimeAssembly;CompileJava" Inputs="$(IkvmRuntimeAssembly);$(KeyOriginatorFile);@(MapFile);@(ReferencePathWithRefAssemblies);@(Class);@(JavaResource);$(_CompileJavaStampFile)" Outputs="@(IntermediateAssembly);@(_DebugSymbolsIntermediatePath)">
-        <Error Text="IKVM.Runtime.dll could not be located." Condition=" '$(IkvmRuntimeAssembly)' == '' " />
+        <Error Text="Could not locate IKVM.Runtime assembly." Condition=" '$(IkvmRuntimeAssembly)' == '' " />
         <Error Text="IKVM.Runtime.dll could not be located at '$(IkvmRuntimeAssembly)'." Condition="!Exists('$(IkvmRuntimeAssembly)')" />
-        <Error Text="ikvmc could not be located." Condition=" '$(IkvmCompilerPath)' == '' " />
+        <Error Text="Could not locate ikvmc executable." Condition=" '$(IkvmCompilerPath)' == '' " />
         <Error Text="ikvmc could not be located at '$(IkvmCompilerPath)'." Condition="!Exists('$(IkvmCompilerPath)')" />
 
         <WriteLinesToFile File="$(_ExcludeFilePath)" Lines="@(ExcludeRegex)" Overwrite="true" Condition=" '@(ExcludeRegex)' != '' " />

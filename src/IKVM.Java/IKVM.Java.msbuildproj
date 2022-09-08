@@ -52,6 +52,11 @@
             <Private>False</Private>
             <IsIkvmRuntimeAssembly>true</IsIkvmRuntimeAssembly>
         </ProjectReference>
+        <ProjectReference Include="..\IKVM.Runtime.JNI-ref\IKVM.Runtime.JNI-ref.csproj">
+            <PrivateAssets>All</PrivateAssets>
+            <Private>False</Private>
+            <IsIkvmRuntimeJNIAssembly>true</IsIkvmRuntimeJNIAssembly>
+        </ProjectReference>
         <ProjectReference Include="..\ikvmc\ikvmc.csproj">
             <PrivateAssets>All</PrivateAssets>
             <ReferenceOutputAssembly>false</ReferenceOutputAssembly>
@@ -98,7 +103,13 @@
     </ItemGroup>
 
     <ItemGroup>
-        <None Include="@(OpenJdkSource)" LinkBase="openjdk" />
+        <None Include="classpath\**\*" />
+        <None Include="icedtea_jce\**\*" />
+        <None Include="icedtea_rt\**\*" />
+        <None Include="local\**\*" />
+        <None Include="@(OpenJdkSource)">
+            <LinkBase>openjdk\$([MSBuild]::MakeRelative('$(OpenJdkDir)', '%(RootDir)%(Directory)'))</LinkBase>
+        </None>
         <Compile Include="@(OpenJdkSource)" />
         <JavaResource Include="@(OpenJdkResource)" LinkBase="openjdk" />
         <ExcludeRegex Include="@(OpenJdkExcludeRegex)" />
@@ -149,6 +160,17 @@
     <Import Project="$(MSBuildThisFileDirectory)..\IKVM.NET.Sdk\Sdk\Sdk.targets" />
     <Import Project="$(MSBuildThisFileDirectory)..\IKVM.MSBuild\buildTransitive\netstandard2.0\IKVM.MSBuild.targets" />
     <Import Project="$(MSBuildExtensionsPath)\Microsoft\VisualStudio\v$(VisualStudioVersion)\TextTemplating\Microsoft.TextTemplating.targets" Condition="Exists('$(MSBuildExtensionsPath)\Microsoft\VisualStudio\v$(VisualStudioVersion)\TextTemplating\Microsoft.TextTemplating.targets')" />
+
+    <!-- IKVM.Java uses the javac executable from JAVA_HOME: bootstrap -->
+    <Target Name="ResolveJavaCompiler" Condition=" '$(JAVA_HOME)' != '' And '$(JavaCompilerPath)' == '' ">
+        <PropertyGroup>
+            <JavaCompilerPath Condition=" '$([MSBuild]::IsOSUnixLike())' == 'true' And Exists('$(JAVA_HOME)\bin\javac') ">$(JAVA_HOME)\bin\javac</JavaCompilerPath>
+            <JavaCompilerPath Condition=" '$([MSBuild]::IsOSUnixLike())' != 'true' And Exists('$(JAVA_HOME)\bin\javac.exe') ">$(JAVA_HOME)\bin\javac.exe</JavaCompilerPath>
+            <JavaCompilerArgs>-J-Xmx1536M</JavaCompilerArgs>
+            <JavaCompilerExec Condition=" '$(JavaCompilerPath)' != '' ">&quot;$(JavaCompilerPath)&quot; $(JavaCompilerArgs)</JavaCompilerExec>
+        </PropertyGroup>
+        <Message Text="Using javac executable found in JAVA_HOME at '$(JavaCompilerPath)'." Importance="high" Condition=" '$(JavaCompilerPath)' != '' " />
+    </Target>
 
     <Target Name="ResolveRmiStubInputItems" DependsOnTargets="CompileJava">
         <ItemGroup>

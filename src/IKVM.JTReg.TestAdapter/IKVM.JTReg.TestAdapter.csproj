@@ -1,5 +1,5 @@
 ﻿<Project>
-    <Import Sdk="Microsoft.NET.Sdk" Project="Sdk.props"/>
+    <Import Sdk="Microsoft.NET.Sdk" Project="Sdk.props" />
     <Import Project="$(MSBuildThisFileDirectory)..\IKVM-pkg\buildTransitive\netstandard2.0\IKVM.props" />
     <Import Project="$(MSBuildThisFileDirectory)..\IKVM.MSBuild\buildTransitive\netstandard2.0\IKVM.MSBuild.props" />
     <Import Project="$(MSBuildThisFileDirectory)..\..\jtreg.props" />
@@ -9,7 +9,16 @@
     </PropertyGroup>
 
     <ItemGroup>
-        <InternalsVisibleTo Include="IKVM.JavaTest.TestAdapter.Tests" />
+        <InternalsVisibleTo Include="IKVM.JTReg.TestAdapter.Tests" />
+    </ItemGroup>
+
+    <ItemGroup>
+        <PackageReference Include="Microsoft.TestPlatform.AdapterUtilities" Version="17.3.1" />
+        <PackageReference Include="Microsoft.TestPlatform.ObjectModel" Version="17.3.1" />
+    </ItemGroup>
+
+    <ItemGroup>
+        <ProjectReference Include="..\IKVM.JTReg\IKVM.JTReg.msbuildproj" />
     </ItemGroup>
 
     <ItemGroup>
@@ -42,36 +51,6 @@
         </ProjectReference>
     </ItemGroup>
 
-    <ItemGroup>
-        <PackageReference Include="Microsoft.TestPlatform.AdapterUtilities" Version="17.2.0" />
-        <PackageReference Include="Microsoft.TestPlatform.ObjectModel" Version="17.2.0" />
-    </ItemGroup>
-
-    <ItemGroup>
-        <ProjectReference Include="..\IKVM.JavaTest\IKVM.JavaTest.msbuildproj" />
-    </ItemGroup>
-
-    <ItemGroup Condition=" '$(TargetFramework)' == 'net461' ">
-        <PublishProjectReference Include="..\IKVM.JavaTest.AgentServer\IKVM.JavaTest.AgentServer.csproj">
-            <SetTargetFramework>TargetFramework=net461</SetTargetFramework>
-            <PublishTargetPath>agent-server\win7-x64</PublishTargetPath>
-            <PublishProperties>RuntimeIdentifier=win7-x64</PublishProperties>
-        </PublishProjectReference>
-    </ItemGroup>
-
-    <ItemGroup Condition=" '$(TargetFramework)' == 'netcoreapp3.1' ">
-        <PublishProjectReference Include="..\IKVM.JavaTest.AgentServer\IKVM.JavaTest.AgentServer.csproj">
-            <SetTargetFramework>TargetFramework=netcoreapp3.1</SetTargetFramework>
-            <PublishTargetPath>agent-server\win7-x64</PublishTargetPath>
-            <PublishProperties>RuntimeIdentifier=win7-x64</PublishProperties>
-        </PublishProjectReference>
-        <PublishProjectReference Include="..\IKVM.JavaTest.AgentServer\IKVM.JavaTest.AgentServer.csproj">
-            <SetTargetFramework>TargetFramework=netcoreapp3.1</SetTargetFramework>
-            <PublishTargetPath>agent-server\linux-x64</PublishTargetPath>
-            <PublishProperties>RuntimeIdentifier=linux-x64</PublishProperties>
-        </PublishProjectReference>
-    </ItemGroup>
-
     <ItemGroup Condition=" '$(TargetFramework)' == 'net461' ">
         <PublishProjectReference Include="..\java\java.csproj">
             <SetTargetFramework>TargetFramework=net461</SetTargetFramework>
@@ -99,10 +78,17 @@
     </ItemGroup>
 
     <ItemGroup>
-        <IkvmReference Include="@(JTRegJar)" />
+        <IkvmReference Include="ikvm-javatest">
+            <Compile>@(JTRegJar)</Compile>
+            <AssemblyName>ikvm-javatest</AssemblyName>
+            <AssemblyVersion>$(AssemblyVersion)</AssemblyVersion>
+            <AssemblyFileVersion>$(FileVersion)</AssemblyFileVersion>
+            <ClassLoader>ikvm.runtime.AppDomainAssemblyClassLoader</ClassLoader>
+            <Private>True</Private>
+        </IkvmReference>
     </ItemGroup>
 
-    <Import Sdk="Microsoft.NET.Sdk" Project="Sdk.targets"/>
+    <Import Sdk="Microsoft.NET.Sdk" Project="Sdk.targets" />
     <Import Project="$(MSBuildThisFileDirectory)..\IKVM-pkg\buildTransitive\netstandard2.0\IKVM.targets" />
     <Import Project="$(MSBuildThisFileDirectory)..\IKVM.MSBuild\buildTransitive\netstandard2.0\IKVM.MSBuild.targets" />
 </Project>

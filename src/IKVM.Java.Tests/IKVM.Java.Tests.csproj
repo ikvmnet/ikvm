@@ -5,14 +5,21 @@
     <Import Project="$(MSBuildThisFileDirectory)..\..\jtreg.props" />
 
     <PropertyGroup>
-        <OutputType>Exe</OutputType>
         <TargetFrameworks>net461;netcoreapp3.1</TargetFrameworks>
-        <RuntimeIdentifiers>win7-x64;linux-x64</RuntimeIdentifiers>
-        <ValidateExecutableReferencesMatchSelfContained>false</ValidateExecutableReferencesMatchSelfContained>
     </PropertyGroup>
 
     <ItemGroup>
-        <ProjectReference Include="..\IKVM.JavaTest\IKVM.JavaTest.msbuildproj" />
+        <PackageReference Include="FluentAssertions" Version="6.7.0" />
+        <PackageReference Include="Microsoft.CodeCoverage" Version="17.2.0" />
+        <PackageReference Include="Microsoft.NET.Test.Sdk" Version="17.2.0" />
+        <PackageReference Include="MSTest.TestAdapter" Version="2.2.10" />
+        <PackageReference Include="MSTest.TestFramework" Version="2.2.10" />
+        <PackageReference Include="Moq" Version="4.18.1" />
+    </ItemGroup>
+
+    <ItemGroup>
+        <ProjectReference Include="..\IKVM.JTReg\IKVM.JTReg.msbuildproj" />
+        <ProjectReference Include="..\IKVM.JTReg.TestAdapter\IKVM.JTReg.TestAdapter.csproj" />
     </ItemGroup>
 
     <ItemGroup>
@@ -46,7 +53,26 @@
     </ItemGroup>
 
     <ItemGroup>
-        <IkvmReference Include="@(JTRegJar)" />
+        <None Include="$(JTRegDir)\jdk\test\**\*" LinkBase="jdk">
+            <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+        </None>
+        <None Include="$(JTRegDir)\jdk\langtools\**\*" LinkBase="langtools">
+            <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+        </None>
+        <None Include="$(JTRegDir)\nashorn\test\**\*" LinkBase="nashorn">
+            <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+        </None>
+    </ItemGroup>
+
+    <ItemGroup>
+        <IkvmReference Include="ikvm-javatest">
+            <Compile>@(JTRegJar)</Compile>
+            <AssemblyName>ikvm-javatest</AssemblyName>
+            <AssemblyVersion>$(AssemblyVersion)</AssemblyVersion>
+            <AssemblyFileVersion>$(FileVersion)</AssemblyFileVersion>
+            <ClassLoader>ikvm.runtime.AppDomainAssemblyClassLoader</ClassLoader>
+            <Private>True</Private>
+        </IkvmReference>
     </ItemGroup>
 
     <Import Sdk="Microsoft.NET.Sdk" Project="Sdk.targets"/>

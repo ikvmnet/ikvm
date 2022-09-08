@@ -8,7 +8,7 @@
     -->
 
     <!-- Populates the IkvmReferenceItem set with required metadata. -->
-    <Target Name="_UpdateIkvmReferenceItemsMetadata" DependsOnTargets="GetIkvmReferenceItemsFromIkvmReferences;ResolveIkvmRuntimeAssembly;ResolveIkvmRuntimeJNIAssembly;ResolveIkvmBaseAssembly;ResolveIkvmReferenceAssemblies" Condition=" '@(IkvmReferenceItem)' != '' ">
+    <Target Name="_UpdateIkvmReferenceItemsMetadata" DependsOnTargets="GetIkvmReferenceItemsFromIkvmReferences;ResolveIkvmRuntimeAssembly;ResolveIkvmRuntimeJNIAssembly;ResolveIkvmBaseAssembly;ResolveIkvmFrameworkReferences" Condition=" '@(IkvmReferenceItem)' != '' ">
 
         <!-- Populates metadata, validates, resolves references, and emits in build order. -->
         <IkvmReferenceItemPrepare Items="@(IkvmReferenceItem)" ToolVersion="$(IkvmVersion)" ToolFramework="$(IkvmToolFramework)" RuntimeAssembly="$(IkvmRuntimeAssembly)" References="$(IkvmBaseAssembly);$(IkvmRuntimeAssembly);$(IkvmRuntimeJNIAssembly);@(IkvmFrameworkReference)" StageDir="$(IkvmStageDir)" CacheDir="$(IkvmCacheDir)">

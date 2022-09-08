@@ -7,72 +7,45 @@
     This file contains targets which invoke the jobs in 'NoTask' mode. The tasks provided by MSBuild are not used.
     -->
 
-    <!-- Populates the IkvmReferenceItem set with file hashes, required to identify unique stage directory. -->
-    <Target Name="_UpdateIkvmReferenceItemsFileHash" DependsOnTargets="GetIkvmReferenceItemsFromIkvmReferences" Condition=" '@(IkvmReferenceItem)' != '' ">
-        <GetFileHash Files="@(IkvmReferenceItem)" MetadataName="FileHash">
-            <Output TaskParameter="Items" ItemName="_IkvmReferenceItemWithFileHash" />
-        </GetFileHash>
-    </Target>
-    
-    <!-- Writes some identifying information to a manifest file for each item, this allows us to hash a file to collect the final identity.  -->
-    <Target Name="_OutputIkvmReferenceItemsManifest" DependsOnTargets="_UpdateIkvmReferenceItemsFileHash" Inputs="@(_IkvmReferenceItemWithFileHash)" Outputs="$(IkvmStageDir)manifests\%(_IkvmReferenceItemWithFileHash.FileHash).manifest" Condition=" '@(_IkvmReferenceItemWithFileHash)' != '' ">
-        <ItemGroup>
-            <_IkvmReferenceManifestLine Remove="@(_IkvmReferenceManifestLine)" />
-            <_IkvmReferenceManifestLine Include="TargetFramework=$(TargetFramework)" />
-            <_IkvmReferenceManifestLine Include="FileHash=%(_IkvmReferenceItemWithFileHash.FileHash)" />
-        </ItemGroup>
-        <WriteLinesToFile Lines="@(_IkvmReferenceManifestLine)" File="$(IkvmStageDir)manifests\%(_IkvmReferenceItemWithFileHash.FileHash).manifest" Overwrite="true" WriteOnlyWhenDifferent="true" />
-    </Target>
+    <UsingTask TaskName="IkvmReferenceItemPrepare" TaskFactory="RoslynCodeTaskFactory" AssemblyFile="$(MSBuildToolsPath)\Microsoft.Build.Tasks.Core.dll">
+        <ParameterGroup />
+        <Task>
+            <Code Type="Class" Source="$(MSBuildThisFileDirectory)inline\IkvmReferenceItemPrepare.cs" Language="cs" />
+        </Task>
+    </UsingTask>
 
-    <!-- Hashes the manifests for the identity and rebuilds the IkvmReferenceItem set with the path metadata. -->
-    <Target Name="_UpdateIkvmReferenceItemsMetadataFromManifest" DependsOnTargets="_OutputIkvmReferenceItemsManifest">
-        <ItemGroup>
-            <_IkvmReferenceManifest Include="@(_IkvmReferenceItemWithFileHash->'$(IkvmStageDir)manifests\%(FileHash).manifest')">
-                <OriginalIdentity>%(Identity)</OriginalIdentity>
-            </_IkvmReferenceManifest>
-        </ItemGroup>
-        <GetFileHash Files="@(_IkvmReferenceManifest)" MetadataName="IkvmIdentity">
-            <Output TaskParameter="Items" ItemName="_IkvmReferenceManifestWithIdentity" />
-        </GetFileHash>
-        <ItemGroup>
-            <IkvmReferenceItem Remove="@(IkvmReferenceItem)" />
-            <IkvmReferenceItem Include="@(_IkvmReferenceManifestWithIdentity->'%(OriginalIdentity)')">
-                <IkvmIdentity>%(IkvmIdentity)</IkvmIdentity>
-            </IkvmReferenceItem>
-        </ItemGroup>
-    </Target>
+    <!-- Populates the IkvmReferenceItem set with required metadata. -->
+    <Target Name="_UpdateIkvmReferenceItemsMetadata" DependsOnTargets="GetIkvmReferenceItemsFromIkvmReferences;ResolveIkvmRuntimeAssembly;ResolveIkvmRuntimeJNIAssembly;ResolveIkvmBaseAssembly;ResolveIkvmFrameworkReferences" Condition=" '@(IkvmReferenceItem)' != '' ">
+        <Error Text="Could not locate IKVM.Runtime assembly." Condition=" '$(IkvmRuntimeAssembly)' == '' " />
+        <Error Text="IKVM.Runtime.dll could not be located at '$(IkvmRuntimeAssembly)'." Condition="!Exists('$(IkvmRuntimeAssembly)')" />
+        <Error Text="Could not locate IKVM.Runtime.JNI assembly." Condition=" '$(IkvmRuntimeJNIAssembly)' == '' " />
+        <Error Text="IKVM.Runtime.JNI.dll could not be located at '$(IkvmRuntimeJNIAssembly)'." Condition="!Exists('$(IkvmRuntimeJNIAssembly)')" />
+        <Error Text="Could not locate IKVM.Java assembly." Condition=" '$(IkvmBaseAssembly)' == '' " />
+        <Error Text="IKVM.Java.dll could not be located at '$(IkvmBaseAssembly)'." Condition="!Exists('$(IkvmBaseAssembly)')" />
 
-    <!-- Updates any missing metadata on the items. -->
-    <Target Name="_UpdateIkvmReferenceItemsMissingMetadata" DependsOnTargets="_UpdateIkvmReferenceItemsMetadataFromManifest" Condition=" '@(IkvmReferenceItem)' != '' ">
+        <!-- Populates metadata, validates, resolves references, and emits in build order. -->
+        <IkvmReferenceItemPrepare Items="@(IkvmReferenceItem)" ToolVersion="$(AssemblyVersion)" ToolFramework="$(IkvmToolFramework)" RuntimeAssembly="$(IkvmRuntimeAssembly)" References="$(IkvmBaseAssembly);$(IkvmRuntimeAssembly);$(IkvmRuntimeJNIAssembly);@(IkvmFrameworkReference)" StageDir="$(IkvmStageDir)" CacheDir="$(IkvmCacheDir)">
+            <Output TaskParameter="Items" ItemName="_IkvmReferenceItemWithMetadata" />
+        </IkvmReferenceItemPrepare>
+
+        <!-- Assign newly discovered items. -->
         <ItemGroup>
-            <IkvmReferenceItem Update="@(IkvmReferenceItem)">
-                <Compile>%(FullPath)</Compile>
-                <AssemblyName>%(Filename)</AssemblyName>
-                <AssemblyVersion>1.0.0.0</AssemblyVersion>
-                <AssemblyFileVersion>1.0.0.0</AssemblyFileVersion>
-                <StagePath>$(IkvmStageDir)%(IkvmIdentity)\%(Filename).dll</StagePath>
-                <CachePath>$(IkvmCacheDir)%(IkvmIdentity)\%(Filename).dll</CachePath>
-            </IkvmReferenceItem>
+            <IkvmReferenceItem Remove="@(IkvmReferenceItem)"/>
+            <IkvmReferenceItem Include="@(_IkvmReferenceItemWithMetadata)" />
         </ItemGroup>
-    </Target>
-
-    <PropertyGroup>
-        <_UpdateIkvmReferenceItemsMetadataDependsOn>
-            $(_UpdateIkvmReferenceItemsMetadataDependsOn);
-            _UpdateIkvmReferenceItemsFileHash;
-            _OutputIkvmReferenceItemsManifest;
-            _UpdateIkvmReferenceItemsMetadataFromManifest;
-            _UpdateIkvmReferenceItemsMissingMetadata;
-        </_UpdateIkvmReferenceItemsMetadataDependsOn>
-    </PropertyGroup>
-
-    <!-- Hashes the manifests for the identity and rebuilds the IkvmReferenceItem set with the path metadata. -->
-    <Target Name="_UpdateIkvmReferenceItemsMetadata" DependsOnTargets="$(_UpdateIkvmReferenceItemsMetadataDependsOn)" Condition=" '@(IkvmReferenceItem)' != '' ">
-        
     </Target>
 
     <!-- Builds the IkvmReferenceItem set into their output items within the cache. -->
     <Target Name="_CompileIkvmReferences" DependsOnTargets="ResolveIkvmCompiler;ResolveIkvmRuntimeAssembly;ResolveIkvmRuntimeJNIAssembly;ResolveIkvmBaseAssembly;ResolveIkvmFrameworkReferences;_GetIkvmReferenceItemsCompileToCachePath" Inputs="$(IkvmCompilerPath);@(IkvmFrameworkReference);$(IkvmBaseAssembly);$(IkvmRuntimeAssembly);$(IkvmRuntimeJNIAssembly);@(_IkvmReferenceItemCompileToCachePath)" Outputs="%(_IkvmReferenceItemCompileToCachePath.CachePath)" Condition=" '@(_IkvmReferenceItemCompileToCachePath.CachePath)' != '' ">
+        <Error Text="Could not locate IKVM.Runtime assembly." Condition=" '$(IkvmRuntimeAssembly)' == '' " />
+        <Error Text="IKVM.Runtime.dll could not be located at '$(IkvmRuntimeAssembly)'." Condition="!Exists('$(IkvmRuntimeAssembly)')" />
+        <Error Text="Could not locate IKVM.Runtime.JNI assembly." Condition=" '$(IkvmRuntimeJNIAssembly)' == '' " />
+        <Error Text="IKVM.Runtime.JNI.dll could not be located at '$(IkvmRuntimeJNIAssembly)'." Condition="!Exists('$(IkvmRuntimeJNIAssembly)')" />
+        <Error Text="Could not locate IKVM.Java assembly." Condition=" '$(IkvmBaseAssembly)' == '' " />
+        <Error Text="IKVM.Java.dll could not be located at '$(IkvmBaseAssembly)'." Condition="!Exists('$(IkvmBaseAssembly)')" />
+        <Error Text="Could not locate ikvmc executable." Condition=" '$(IkvmCompilerPath)' == '' " />
+        <Error Text="ikvmc could not be located at '$(IkvmCompilerPath)'." Condition="!Exists('$(IkvmCompilerPath)')" />
+
         <!-- Take IkvmReferenceItem for the current batch on CachePath. -->
         <PropertyGroup>
             <_IkvmReferenceItemToCompileCachePath>%(_IkvmReferenceItemCompileToCachePath.CachePath)</_IkvmReferenceItemToCompileCachePath>

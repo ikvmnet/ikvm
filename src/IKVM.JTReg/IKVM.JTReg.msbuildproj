@@ -6,6 +6,7 @@
 
     <PropertyGroup>
         <TargetFrameworks>net461;netcoreapp3.1</TargetFrameworks>
+        <NoWarn>IKVMC0100</NoWarn>
     </PropertyGroup>
 
     <ItemGroup>
@@ -39,11 +40,18 @@
     </ItemGroup>
 
     <ItemGroup>
-        <IkvmReference Include="@(JTRegJar)" />
+        <IkvmReference Include="ikvm-javatest">
+            <Compile>@(JTRegJar)</Compile>
+            <AssemblyName>ikvm-javatest</AssemblyName>
+            <AssemblyVersion>$(AssemblyVersion)</AssemblyVersion>
+            <AssemblyFileVersion>$(FileVersion)</AssemblyFileVersion>
+            <ClassLoader>ikvm.runtime.AppDomainAssemblyClassLoader</ClassLoader>
+            <Private>True</Private>
+        </IkvmReference>
     </ItemGroup>
 
     <ItemGroup>
-        <None Include="@(JTRegSource)" LinkBase="jtreg" />
+        <None Include="@(JTRegSource)" LinkBase="" />
         <Compile Include="@(JTRegSource)" />
     </ItemGroup>
 

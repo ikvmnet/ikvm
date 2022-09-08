@@ -205,7 +205,7 @@ namespace IKVM.JavaTest
             if (testSuite is null)
                 throw new ArgumentNullException(nameof(testSuite));
 
-            var rp = new RegressionParameters("regtest", testSuite, new DelegateConsumer<string>(s => Console.WriteLine(s)));
+            var rp = new RegressionParameters("regtest", testSuite);
 
             // configure work directory
             var wd = testManager.getWorkDirectory(testSuite);
