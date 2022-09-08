@@ -8,7 +8,7 @@
     -->
 
     <!-- Override IKVM.NET.Sdk: invoke exporter through task  -->
-    <Target Name="_BuildReferenceExports" DependsOnTargets="ResolveReferenceExports" Inputs="%(ReferenceExport.AssemblyFile)" Outputs="%(ReferenceExport.Identity)">
+    <Target Name="_ExportReferences" DependsOnTargets="ResolveReferenceExports" Inputs="%(ReferenceExport.AssemblyFile)" Outputs="%(ReferenceExport.Identity)">
         <Error Text="IKVM.NET.Sdk cannot currently build assemblies targeting '$(TargetFramework)'. Either target 'net461' or 'netcoreapp3.1'." Condition=" '$(TargetFramework)' != 'net461' And '$(TargetFramework)' != 'netcoreapp3.1' " />
 
         <ItemGroup>
@@ -33,11 +33,17 @@
         </ItemGroup>
     </Target>
 
-    <Target Name="_CompileJava" DependsOnTargets="BuildReferenceExports" Inputs="@(Compile);@(Classpath)" Outputs="$(_CompileJavaStampFile)">
+    <!-- Override IKVM.NET.Sdk: invoke compiler through task  -->
+    <Target Name="_CompileJava" DependsOnTargets="ExportReferences;_ResolveClasspathFiles" Inputs="@(Compile);@(ClasspathFiles);" Outputs="$(_CompileJavaStampFile)">
         <Delete Files="$(_CompileJavaStampFile)" />
 
         <PropertyGroup>
             <_JavaCompilerDebug Condition=" '$(DebugSymbols)' == 'true' Or '$(DebugType)' != 'none' ">all</_JavaCompilerDebug>
+        </PropertyGroup>
+
+        <!-- Store initial time. Files that remain older than this will be removed. -->
+        <PropertyGroup>
+            <_CompileJavaStartTime>$([System.DateTime]::Now.Ticks)</_CompileJavaStartTime>
         </PropertyGroup>
 
         <RemoveDir Directories="$(ClassOutputPath)" />
@@ -49,11 +55,19 @@
             NoWarn="true"
             Source="$(LangVersion)"
             Target="$(JavaVersion)"
-            Destination="$([System.IO.Path]::GetFullPath('$(ClassOutputPath)'))" />
+            Destination="$([System.IO.Path]::GetFullPath('$(ClassOutputPath)'))" />>
+
+        <!-- Remove files that were not modified by this compilation. -->
+        <ItemGroup>
+            <_CompileJavaClassFiles Include="$(ClassOutputPath)**\*.class" />
+            <_CompileJavaStaleFiles Include="@(_CompileJavaClassFiles)" Condition="$([System.DateTime]::Parse('%(ModifiedTime)').Ticks) &lt; $(_CompileJavaStartTime) " />
+        </ItemGroup>
+        <Delete Files="@(_CompileJavaStaleFiles)" />
 
         <Touch Files="$(_CompileJavaStampFile)" AlwaysCreate="true" ForceTouch="true" />
     </Target>
 
+    <!-- Override IKVM.NET.Sdk: invoke compiler through task  -->
     <Target Name="_CoreCompile" DependsOnTargets="ResolveIkvmCompiler;ResolveIkvmRuntimeAssembly;CompileJava" Inputs="$(IkvmRuntimeAssembly);$(KeyOriginatorFile);@(MapFile);@(ReferencePathWithRefAssemblies);@(Class);@(JavaResource);$(_CompileJavaStampFile)" Outputs="@(IntermediateAssembly);@(_DebugSymbolsIntermediatePath)">
         <Error Text="IKVM.NET.Sdk cannot currently build assemblies targeting '$(TargetFramework)'. Either target 'net461' or 'netcoreapp3.1'." Condition=" '$(TargetFramework)' != 'net461' And '$(TargetFramework)' != 'netcoreapp3.1' " />
         <Error Text="Could not locate IKVM.Runtime assembly." Condition=" '$(IkvmRuntimeAssembly)' == '' " />
@@ -67,7 +81,7 @@
             <_AssemblyAttributesClass Include="@(_ClassToCompile)" Condition=" '%(Filename)%(Extension)' == '__AssemblyInfo.class' " />
             <_ClassToCompile Remove="@(_AssemblyAttributesClass)" />
         </ItemGroup>
-
+        
         <PropertyGroup>
             <_IkvmCompilerDebug Condition=" '$(DebugType)' != 'none' ">true</_IkvmCompilerDebug>
             <_IkvmCompilerExclude Condition="Exists('$(_ExcludeFilePath)')">$(_ExcludeFilePath)</_IkvmCompilerExclude>
@@ -115,7 +129,6 @@
 
         <ItemGroup>
             <FileWrites Include="$(_ExcludeFilePath)" />
-            <FileWrites Include="$(_IkvmCompilerResponseFile)" />
             <FileWrites Include="$(_AssemblyTempPath)$(TargetName)$(TargetExt)" />
             <FileWrites Include="$(_AssemblyTempPath)$(TargetName).pdb" />
         </ItemGroup>

@@ -37,18 +37,8 @@
 
     </Target>
 
-    <!-- Expands the IkvmReferenceItem set by the Compile metadata for inputs and outputs of the build target. -->
-    <Target Name="_GetIkvmReferenceItemsCompileToCachePath" DependsOnTargets="GetIkvmReferenceItems" Condition=" '@(IkvmReferenceItem)' != '' ">
-        <ItemGroup>
-            <_IkvmReferenceItemCompileToCachePath Remove="@(_IkvmReferenceItemCompileToCachePath)" />
-            <_IkvmReferenceItemCompileToCachePath Include="@(IkvmReferenceItem->'%(Compile)')" Condition=" '%(IkvmReferenceItem.Compile)' != '' ">
-                <CachePath>%(IkvmReferenceItem.CachePath)</CachePath>
-            </_IkvmReferenceItemCompileToCachePath>
-        </ItemGroup>
-    </Target>
-
     <!-- Builds the IkvmReferenceItem set into their output items within the cache. -->
-    <Target Name="_CompileIkvmReferences" DependsOnTargets="ResolveIkvmRuntimeAssembly;ResolveIkvmRuntimeJNIAssembly;ResolveIkvmBaseAssembly;ResolveIkvmReferenceAssemblies;_GetIkvmReferenceItemsCompileToCachePath" Inputs="@(_IkvmReferenceItemCompileToCachePath)" Outputs="%(_IkvmReferenceItemCompileToCachePath.CachePath)" Condition=" '@(_IkvmReferenceItemCompileToCachePath.CachePath)' != '' ">
+    <Target Name="_CompileIkvmReferences" DependsOnTargets="ResolveIkvmRuntimeAssembly;ResolveIkvmRuntimeJNIAssembly;ResolveIkvmBaseAssembly;ResolveIkvmReferenceAssemblies" Inputs="%(IkvmReferenceItem.Compile)" Outputs="%(IkvmReferenceItem.CachePath)">
         <Error Text="_CompileIkvmReferences has no implementation." />
     </Target>
 
@@ -57,7 +47,6 @@
             $(CompileIkvmReferenceAssemblies);
             GetIkvmReferenceItems;
             ResolveIkvmFrameworkReferences;
-            _GetIkvmReferenceItemsCompileToCachePath;
             _CompileIkvmReferences;
         </CompileIkvmReferencesDependsOn>
     </PropertyGroup>

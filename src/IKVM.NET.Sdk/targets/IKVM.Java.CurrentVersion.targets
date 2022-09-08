@@ -77,6 +77,8 @@
         <CoreCompileDependsOn>$(CoreCompileDependsOn);_ComputeNonExistentFileProperty</CoreCompileDependsOn>
     </PropertyGroup>
 
+    <Import Project="$(MSBuildToolsPath)\Microsoft.Common.targets" />
+
     <PropertyGroup>
         <JavaCoreTargetsPath Condition=" '$(JavaCoreTargetsPath)' == '' ">$(MSBuildThisFileDirectory)IKVM.Java.Core.targets</JavaCoreTargetsPath>
     </PropertyGroup>
@@ -86,8 +88,6 @@
         <JavaDesignTimeTargetsPath Condition=" '$(JavaDesignTimeTargetsPath)' == '' ">$(MSBuildThisFileDirectory)IKVM.Java.DesignTime.targets</JavaDesignTimeTargetsPath>
     </PropertyGroup>
     <Import Project="$(JavaDesignTimeTargetsPath)"  />
-
-    <Import Project="$(MSBuildToolsPath)\Microsoft.Common.targets" />
 
     <Target Name="_SetTargetFrameworkMonikerAttribute" BeforeTargets="GenerateTargetFrameworkMonikerAttribute">
         <PropertyGroup>

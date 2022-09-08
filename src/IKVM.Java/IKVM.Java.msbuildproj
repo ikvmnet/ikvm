@@ -230,10 +230,10 @@
     </Target>
 
     <PropertyGroup>
-        <CleanDependsOn>
-            $(CleanDependsOn);
+        <CoreCleanDependsOn>
+            $(CoreCleanDependsOn);
             CleanRmiStubs;
-        </CleanDependsOn>
+        </CoreCleanDependsOn>
     </PropertyGroup>
 
     <PropertyGroup>
