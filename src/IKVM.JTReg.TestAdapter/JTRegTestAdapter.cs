@@ -35,9 +35,9 @@ namespace IKVM.JavaTest
         /// </summary>
         internal static void Initialize()
         {
-            var cld = ((global::java.lang.Class)typeof(Harness)).getClassLoader();
+            var cld = ((java.lang.Class)typeof(Harness)).getClassLoader();
             var cls = cld.getResource("com/sun/javatest/Harness.class").getFile();
-            var dir = new global::java.io.File(cls).getParentFile().getParentFile().getParentFile().getParentFile();
+            var dir = new java.io.File(cls).getParentFile().getParentFile().getParentFile().getParentFile();
             if (Harness.getClassDir() == null)
                 Harness.setClassDir(dir);
         }
@@ -65,12 +65,18 @@ namespace IKVM.JavaTest
         internal void DiscoverTests(string source, IDiscoveryContext discoveryContext, IMessageLogger logger, ITestCaseDiscoverySink discoverySink)
         {
             // discover all root test directories
-            var testDirs = new global::java.util.ArrayList();
+            var testDirs = new java.util.ArrayList();
             foreach (var rootDir in Directory.GetFiles(Path.GetDirectoryName(source), "TEST.ROOT", SearchOption.AllDirectories))
-                testDirs.add(new global::java.io.File(Path.GetDirectoryName(rootDir)));
+                testDirs.add(new java.io.File(Path.GetDirectoryName(rootDir)));
+
+            // temporary path for discovery
+            var runDir = Path.Combine(Path.GetTempPath(), Guid.NewGuid().ToString("n"));
+            Directory.CreateDirectory(runDir);
+            using var output = new java.io.PrintWriter(Path.Combine(runDir, "jtreg.out"));
+            using var errors = new StreamWriter(File.OpenWrite(Path.Combine(runDir, "jtreg.log")));
 
             // initialize the test manager with the discovered roots
-            var testManager = CreateTestManager(null);
+            var testManager = CreateTestManager(runDir, output, errors);
             testManager.addTestFiles(testDirs, false);
 
             // for each suite, get the results and transform a test case
@@ -135,16 +141,21 @@ namespace IKVM.JavaTest
         internal void RunTests(string source, IRunContext runContext, IFrameworkHandle frameworkHandle, IEnumerable<TestCase> tests)
         {
             // either add all tests, or tests specified
-            var testFiles = new global::java.util.ArrayList();
+            var testFiles = new java.util.ArrayList();
             if (tests == null)
                 foreach (var rootDir in Directory.GetFiles(Path.GetDirectoryName(source), "TEST.ROOT", SearchOption.AllDirectories))
-                    testFiles.add(new global::java.io.File(Path.GetDirectoryName(rootDir)));
+                    testFiles.add(new java.io.File(Path.GetDirectoryName(rootDir)));
             else
                 foreach (var testFile in tests.Select(i => i.CodeFilePath))
-                    testFiles.add(new global::java.io.File(testFile));
+                    testFiles.add(new java.io.File(testFile));
+
+            // temporary path for discovery
+            var runDir = Path.Combine(runContext.TestRunDirectory, "jtreg");
+            using var output = new java.io.PrintWriter(Path.Combine(runDir, "jtreg.out"));
+            using var errors = new StreamWriter(File.OpenWrite(Path.Combine(runDir, "jtreg.log")));
 
             // initialize the test manager with the discovered roots
-            var testManager = CreateTestManager(Path.Combine(runContext.TestRunDirectory, "jtreg"));
+            var testManager = CreateTestManager(Path.Combine(runContext.TestRunDirectory, "jtreg"), output, errors);
             testManager.addTestFiles(testFiles, false);
 
             var testStats = new TestStats();
@@ -173,22 +184,11 @@ namespace IKVM.JavaTest
         /// </summary>
         /// <param name="runDir"></param>
         /// <returns></returns>
-        TestManager CreateTestManager(string runDir)
+        TestManager CreateTestManager(string runDir, java.io.PrintWriter output, TextWriter errors)
         {
-
-            // default to temp output
-            runDir ??= Path.Combine(runDir ?? Path.GetTempPath(), "jtreg");
-            if (Directory.Exists(runDir))
-                Directory.Delete(runDir, true);
-            if (Directory.Exists(runDir) == false)
-                Directory.CreateDirectory(runDir);
-
-            // initialize new test manager
-            using var pw = new global::java.io.PrintWriter(Path.Combine(runDir, "jtreg.out"));
-            using var fw = new StreamWriter(File.OpenWrite(Path.Combine(runDir, "jtreg.log")));
-            var tm = new TestManager(pw, new global::java.io.File(Environment.CurrentDirectory), new DelegateErrorHandler(s => fw.WriteLine(s)));
-            tm.setReportDirectory(new global::java.io.File(Path.Combine(runDir, "report")));
-            tm.setWorkDirectory(new global::java.io.File(Path.Combine(runDir, "work")));
+            var tm = new TestManager(output, new java.io.File(Environment.CurrentDirectory), new DelegateErrorHandler(s => errors.WriteLine(s)));
+            tm.setReportDirectory(new java.io.File(Path.Combine(runDir, "report")));
+            tm.setWorkDirectory(new java.io.File(Path.Combine(runDir, "work")));
             return tm;
         }
 
@@ -229,9 +229,9 @@ namespace IKVM.JavaTest
             rp.setConcurrency(Environment.ProcessorCount);
             rp.setTimeLimit(15000);
             rp.setRetainArgs(global::java.util.Collections.singletonList("all"));
-            rp.setExcludeLists(new global::java.io.File[0]);
-            rp.setMatchLists(new global::java.io.File[0]);
-            rp.setEnvVars(new global::java.util.HashMap());
+            rp.setExcludeLists(new java.io.File[0]);
+            rp.setMatchLists(new java.io.File[0]);
+            rp.setEnvVars(new java.util.HashMap());
 
             var jdk = Path.Combine(Path.GetDirectoryName(typeof(JTRegTestAdapter).Assembly.Location), "jdk");
             rp.setTestJDK(JDK.of(jdk));
@@ -248,7 +248,7 @@ namespace IKVM.JavaTest
         /// <param name="parameters"></param>
         /// <returns></returns>
         /// <exception cref="ArgumentNullException"></exception>
-        global::java.util.Iterator GetResultsIter(InterviewParameters parameters)
+        java.util.Iterator GetResultsIter(InterviewParameters parameters)
         {
             if (parameters is null)
                 throw new ArgumentNullException(nameof(parameters));

@@ -6,6 +6,13 @@
         </ResolvedFileToPublish>
     </ItemDefinitionGroup>
 
+    <!-- Publish target that returns publish directory. -->
+    <Target Name="IkvmPublish" DependsOnTargets="Publish" Returns="$(PublishDirFullPath)">
+        <PropertyGroup>
+            <PublishDirFullPath>$([System.IO.Path]::GetFullPath('$(PublishDir)'))</PublishDirFullPath>
+        </PropertyGroup>
+    </Target>
+
     <Target Name="GetLibProjectReferences" Condition=" '@(LibProjectReference)' != '' ">
         <MSBuild Projects="@(LibProjectReference->'%(ProjectFile)')" Targets="GetTargetPath" BuildInParallel="$(BuildInParallel)" Properties="Platform=%(LibProjectReference.Platform);Configuration=%(LibProjectReference.Configuration)">
             <Output TaskParameter="TargetOutputs" ItemName="_LibProjectReferenceWithOutputPath" />

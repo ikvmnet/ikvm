@@ -43,12 +43,8 @@
     </ItemGroup>
 
     <ItemGroup>
-        <ProjectReference Include="..\IKVM.Java-ref\IKVM.Java-ref.csproj">
-            <PrivateAssets>All</PrivateAssets>
-        </ProjectReference>
-        <ProjectReference Include="..\IKVM.Runtime.JNI-ref\IKVM.Runtime.JNI-ref.csproj">
-            <PrivateAssets>All</PrivateAssets>
-        </ProjectReference>
+        <ProjectReference Include="..\IKVM.Runtime.JNI-ref\IKVM.Runtime.JNI-ref.csproj" Private="False" PrivateAssets="All" />
+        <ProjectReference Include="..\IKVM.Java-ref\IKVM.Java-ref.csproj" Private="False" PrivateAssets="All" />
     </ItemGroup>
 
     <ItemGroup>

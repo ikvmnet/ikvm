@@ -100,6 +100,8 @@ Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "IKVM.JTReg.AgentServer", "s
 EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "IKVM.JTReg.TestAdapter.Tests", "src\IKVM.JTReg.TestAdapter.Tests\IKVM.JTReg.TestAdapter.Tests.csproj", "{7D2B4609-6AD6-4F6C-ACDB-F5278A1FCA89}"
 EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "IKVM.JTReg.TestAdapter.Console", "src\IKVM.JTReg.TestAdapter.Console\IKVM.JTReg.TestAdapter.Console.csproj", "{BBE54FEC-49B3-4E8A-B9D1-B4B96D58117A}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -258,6 +260,10 @@ Global
 		{7D2B4609-6AD6-4F6C-ACDB-F5278A1FCA89}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{7D2B4609-6AD6-4F6C-ACDB-F5278A1FCA89}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{7D2B4609-6AD6-4F6C-ACDB-F5278A1FCA89}.Release|Any CPU.Build.0 = Release|Any CPU
+		{BBE54FEC-49B3-4E8A-B9D1-B4B96D58117A}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{BBE54FEC-49B3-4E8A-B9D1-B4B96D58117A}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{BBE54FEC-49B3-4E8A-B9D1-B4B96D58117A}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{BBE54FEC-49B3-4E8A-B9D1-B4B96D58117A}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE

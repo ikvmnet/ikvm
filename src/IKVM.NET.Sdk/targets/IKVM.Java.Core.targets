@@ -13,14 +13,14 @@
     -->
     <Target Name="GetReferenceClasspath" DependsOnTargets="ResolveReferences;FindReferenceAssembliesForReferences" AfterTargets="ExportReferences">
         <ItemGroup>
-            <Classpath Include="%(ReferencePath.JavaClasspath)" Condition=" '%(ReferencePath.JavaClasspath)' != '' " />
+            <Classpath Include="%(ReferencePath.JavaClasspath)" Condition=" '%(ReferencePath.HideFromJava)' != 'true' And '%(ReferencePath.JavaClasspath)' != '' " />
         </ItemGroup>
     </Target>
 
     <!-- Compiles the set of exports to be made, along with their original assembly file path. -->
     <Target Name="ResolveReferenceExports" DependsOnTargets="ResolveReferences;FindReferenceAssembliesForReferences">
         <ItemGroup>
-            <ReferenceExport Include="@(ReferencePath->'$(ReferenceExportOutputPath)%(Filename).jar')" Condition=" '%(ReferencePath.JavaClasspath)' == '' And '%(Filename)' != 'System.Runtime.Serialization' ">
+            <ReferenceExport Include="@(ReferencePath->'$(ReferenceExportOutputPath)%(Filename).jar')" Condition=" '%(ReferencePath.HideFromJava)' != 'true' And '%(ReferencePath.JavaClasspath)' == '' And '%(Filename)' != 'System.Runtime.Serialization' ">
                 <AssemblyFile>%(Identity)</AssemblyFile>
             </ReferenceExport>
         </ItemGroup>

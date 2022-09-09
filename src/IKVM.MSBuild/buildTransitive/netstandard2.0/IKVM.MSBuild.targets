@@ -13,6 +13,63 @@
         <IkvmToolFramework Condition="$([MSBuild]::IsTargetFrameworkCompatible('$(TargetFramework)', 'netcoreapp3.1'))">NetCore</IkvmToolFramework>
     </PropertyGroup>
 
+    <PropertyGroup>
+        <ResolveIkvmRuntimeAssemblyDependsOn>
+            $(ResolveIkvmRuntimeAssemblyDependsOn);
+            ResolvePackageDependenciesForBuild;
+            ResolveProjectReferences;
+        </ResolveIkvmRuntimeAssemblyDependsOn>
+    </PropertyGroup>
+
+    <!-- Locates the IKVM.Runtime assembly from among the current references of the project. -->
+    <Target Name="ResolveIkvmRuntimeAssembly" DependsOnTargets="$(ResolveIkvmRuntimeAssemblyDependsOn)">
+        <ItemGroup>
+            <_IkvmRuntimeAssembly Include="@(Reference);@(_ResolvedProjectReferencePaths)" Condition=" '%(Filename)%(Extension)' == 'IKVM.Runtime.dll' " />
+        </ItemGroup>
+        <PropertyGroup>
+            <IkvmRuntimeAssembly>@(_IkvmRuntimeAssembly)</IkvmRuntimeAssembly>
+        </PropertyGroup>
+        <Error Text="Could not locate IKVM.Runtime.dll." Condition=" '$(IkvmRuntimeAssembly)' == '' " />
+    </Target>
+
+    <PropertyGroup>
+        <ResolveIkvmRuntimeJNIAssemblyDependsOn>
+            $(ResolveIkvmRuntimeJNIAssemblyDependsOn);
+            ResolvePackageDependenciesForBuild;
+            ResolveProjectReferences;
+        </ResolveIkvmRuntimeJNIAssemblyDependsOn>
+    </PropertyGroup>
+
+    <!-- Locates the IKVM.Runtime.JNI assembly from among the current references of the project. -->
+    <Target Name="ResolveIkvmRuntimeJNIAssembly" DependsOnTargets="$(ResolveIkvmRuntimeJNIAssemblyDependsOn)">
+        <ItemGroup>
+            <_IkvmRuntimeJNIAssembly Include="@(Reference);@(_ResolvedProjectReferencePaths)" Condition=" '%(Filename)%(Extension)' == 'IKVM.Runtime.JNI.dll' " />
+        </ItemGroup>
+        <PropertyGroup>
+            <IkvmRuntimeJNIAssembly>@(_IkvmRuntimeJNIAssembly)</IkvmRuntimeJNIAssembly>
+        </PropertyGroup>
+        <Error Text="Could not locate IKVM.Runtime.JNI.dll." Condition=" '$(IkvmRuntimeJNIAssembly)' == '' " />
+    </Target>
+
+    <PropertyGroup>
+        <ResolveIkvmBaseAssemblyDependsOn>
+            $(ResolveIkvmBaseAssemblyDependsOn);
+            ResolvePackageDependenciesForBuild;
+            ResolveProjectReferences;
+        </ResolveIkvmBaseAssemblyDependsOn>
+    </PropertyGroup>
+
+    <!-- Locates the IKVM.Java assembly from among the current references of the project. -->
+    <Target Name="ResolveIkvmBaseAssembly" DependsOnTargets="$(ResolveIkvmBaseAssemblyDependsOn)">
+        <ItemGroup>
+            <_IkvmBaseAssembly Include="@(Reference);@(_ResolvedProjectReferencePaths)" Condition=" '%(Filename)%(Extension)' == 'IKVM.Java.dll' " />
+        </ItemGroup>
+        <PropertyGroup>
+            <IkvmBaseAssembly>@(_IkvmBaseAssembly)</IkvmBaseAssembly>
+        </PropertyGroup>
+        <Error Text="Could not locate IKVM.Java.dll." Condition=" '$(IkvmBaseAssembly)' == '' " />
+    </Target>
+
     <!--
     Optionally disable registration of tasks.
     -->
@@ -23,7 +80,6 @@
     PackageReference mode looks for IKVM tools and assemblies from the included IKVM and IKVM.MSBuild packages.
     ProjectReference mode looks for IKVM tools and assemblies from marked ProjectReferences. Used for internal builds.
     -->
-    <Import Project="IKVM.MSBuild.PackageReferences.targets" Condition=" '$(UseIkvmProjectReferences)' != 'true' "/>
-    <Import Project="IKVM.MSBuild.ProjectReferences.targets" Condition=" '$(UseIkvmProjectReferences)' == 'true' "/>
+    <Import Project="IKVM.MSBuild.IkvmToolReference.targets" Condition=" '$(UseIkvmToolReferences)' == 'true' "/>
 
 </Project>

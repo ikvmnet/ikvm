@@ -18,37 +18,10 @@
     </ItemGroup>
 
     <ItemGroup>
+        <ProjectReference Include="..\IKVM.Runtime\IKVM.Runtime.csproj" />
+        <ProjectReference Include="..\IKVM.Runtime.JNI\IKVM.Runtime.JNI.csproj" />
+        <ProjectReference Include="..\IKVM.Java\IKVM.Java.msbuildproj" />
         <ProjectReference Include="..\IKVM.JTReg.TestAdapter\IKVM.JTReg.TestAdapter.csproj" />
-    </ItemGroup>
-
-    <ItemGroup>
-        <ProjectReference Include="..\IKVM.Java\IKVM.Java.msbuildproj">
-            <IsIkvmBaseAssembly>true</IsIkvmBaseAssembly>
-        </ProjectReference>
-        <ProjectReference Include="..\IKVM.Runtime\IKVM.Runtime.csproj">
-            <IsIkvmRuntimeAssembly>true</IsIkvmRuntimeAssembly>
-        </ProjectReference>
-        <ProjectReference Include="..\IKVM.Runtime.JNI\IKVM.Runtime.JNI.csproj">
-            <IsIkvmRuntimeJNIAssembly>true</IsIkvmRuntimeJNIAssembly>
-        </ProjectReference>
-        <ProjectReference Include="..\javac\javac.csproj">
-            <PrivateAssets>All</PrivateAssets>
-            <ReferenceOutputAssembly>false</ReferenceOutputAssembly>
-            <Private>False</Private>
-            <IsJavaCompiler>true</IsJavaCompiler>
-        </ProjectReference>
-        <ProjectReference Include="..\ikvmc\ikvmc.csproj">
-            <PrivateAssets>All</PrivateAssets>
-            <ReferenceOutputAssembly>false</ReferenceOutputAssembly>
-            <Private>False</Private>
-            <IsIkvmCompiler>true</IsIkvmCompiler>
-        </ProjectReference>
-        <ProjectReference Include="..\ikvmstub\ikvmstub.csproj">
-            <PrivateAssets>All</PrivateAssets>
-            <ReferenceOutputAssembly>false</ReferenceOutputAssembly>
-            <Private>False</Private>
-            <IsIkvmExporter>true</IsIkvmExporter>
-        </ProjectReference>
     </ItemGroup>
 
     <ItemGroup>
@@ -58,12 +31,11 @@
             <AssemblyVersion>$(AssemblyVersion)</AssemblyVersion>
             <AssemblyFileVersion>%(FileVersion)</AssemblyFileVersion>
             <ClassLoader>ikvm.runtime.AppDomainAssemblyClassLoader</ClassLoader>
-            <Private>True</Private>
         </IkvmReference>
     </ItemGroup>
 
     <ItemGroup>
-        <None Update="root\**\*">
+        <None Include="root\**">
             <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
         </None>
     </ItemGroup>

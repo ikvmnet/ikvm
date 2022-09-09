@@ -235,6 +235,9 @@ namespace IKVM.Tool.Compiler
             if (options.Runtime is not null)
                 w.WriteLine($"-runtime:{options.Runtime}");
 
+            if (options.JNI is not null)
+                w.WriteLine($"-jni:{options.JNI}");
+
             if (options.WarningLevel is not null)
                 w.WriteLine($"-w{options.WarningLevel}");
 

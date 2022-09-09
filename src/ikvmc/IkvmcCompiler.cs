@@ -46,6 +46,7 @@ namespace ikvmc
         private string defaultAssemblyName;
         private static bool time;
         private static string runtimeAssembly;
+        private static string runtimeJniAssembly;
         private static bool nostdlib;
         private static bool nonDeterministicOutput;
         private static readonly List<string> libpaths = new List<string>();
@@ -177,6 +178,7 @@ namespace ikvmc
             resolver.Init(StaticCompiler.Universe, nostdlib, toplevel.unresolvedReferences, libpaths);
             ResolveReferences(targets);
             ResolveStrongNameKeys(targets);
+
             if (targets.Count == 0)
             {
                 throw new FatalCompilerErrorException(Message.NoTargetsFound);
@@ -185,9 +187,10 @@ namespace ikvmc
             {
                 return 1;
             }
+
             try
             {
-                return CompilerClassLoader.Compile(runtimeAssembly, targets);
+                return CompilerClassLoader.Compile(runtimeAssembly, runtimeJniAssembly, targets);
             }
             catch (FileFormatLimitationExceededException x)
             {
@@ -753,6 +756,11 @@ namespace ikvmc
                     {
                         // NOTE this is an undocumented option
                         runtimeAssembly = s.Substring(9);
+                    }
+                    else if (s.StartsWith("-jni:"))
+                    {
+                        // NOTE this is an undocumented option
+                        runtimeJniAssembly = s.Substring(5);
                     }
                     else if (s == "-time")
                     {

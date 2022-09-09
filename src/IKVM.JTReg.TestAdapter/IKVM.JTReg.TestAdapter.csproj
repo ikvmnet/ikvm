@@ -18,37 +18,10 @@
     </ItemGroup>
 
     <ItemGroup>
+        <ProjectReference Include="..\IKVM.Runtime\IKVM.Runtime.csproj" />
+        <ProjectReference Include="..\IKVM.Runtime.JNI\IKVM.Runtime.JNI.csproj" />
+        <ProjectReference Include="..\IKVM.Java\IKVM.Java.msbuildproj" />
         <ProjectReference Include="..\IKVM.JTReg\IKVM.JTReg.msbuildproj" />
-    </ItemGroup>
-
-    <ItemGroup>
-        <ProjectReference Include="..\IKVM.Java\IKVM.Java.msbuildproj">
-            <IsIkvmBaseAssembly>true</IsIkvmBaseAssembly>
-        </ProjectReference>
-        <ProjectReference Include="..\IKVM.Runtime\IKVM.Runtime.csproj">
-            <IsIkvmRuntimeAssembly>true</IsIkvmRuntimeAssembly>
-        </ProjectReference>
-        <ProjectReference Include="..\IKVM.Runtime.JNI\IKVM.Runtime.JNI.csproj">
-            <IsIkvmRuntimeJNIAssembly>true</IsIkvmRuntimeJNIAssembly>
-        </ProjectReference>
-        <ProjectReference Include="..\javac\javac.csproj">
-            <PrivateAssets>All</PrivateAssets>
-            <ReferenceOutputAssembly>false</ReferenceOutputAssembly>
-            <Private>False</Private>
-            <IsJavaCompiler>true</IsJavaCompiler>
-        </ProjectReference>
-        <ProjectReference Include="..\ikvmc\ikvmc.csproj">
-            <PrivateAssets>All</PrivateAssets>
-            <ReferenceOutputAssembly>false</ReferenceOutputAssembly>
-            <Private>False</Private>
-            <IsIkvmCompiler>true</IsIkvmCompiler>
-        </ProjectReference>
-        <ProjectReference Include="..\ikvmstub\ikvmstub.csproj">
-            <PrivateAssets>All</PrivateAssets>
-            <ReferenceOutputAssembly>false</ReferenceOutputAssembly>
-            <Private>False</Private>
-            <IsIkvmExporter>true</IsIkvmExporter>
-        </ProjectReference>
     </ItemGroup>
 
     <ItemGroup Condition=" '$(TargetFramework)' == 'net461' ">
@@ -57,7 +30,7 @@
             <PublishTargetPath>jdk\bin</PublishTargetPath>
             <PublishProperties></PublishProperties>
         </PublishProjectReference>
-        <PublishProjectReference Include="..\java\java.csproj">
+        <PublishProjectReference Include="..\javac\javac.csproj">
             <SetTargetFramework>TargetFramework=net461</SetTargetFramework>
             <PublishTargetPath>jdk\bin</PublishTargetPath>
             <PublishProperties></PublishProperties>
@@ -84,7 +57,6 @@
             <AssemblyVersion>$(AssemblyVersion)</AssemblyVersion>
             <AssemblyFileVersion>$(FileVersion)</AssemblyFileVersion>
             <ClassLoader>ikvm.runtime.AppDomainAssemblyClassLoader</ClassLoader>
-            <Private>True</Private>
         </IkvmReference>
     </ItemGroup>
 

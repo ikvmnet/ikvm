@@ -12,7 +12,7 @@
         <DefaultProjectTypeGuid Condition=" '$(DefaultProjectTypeGuid)' == '' ">{9A19103F-16F7-4668-BE54-9A1E7A4F7556}</DefaultProjectTypeGuid>
         <EnableDefaultItems>true</EnableDefaultItems>
         <EnableDefaultEmbeddedResourceItems>false</EnableDefaultEmbeddedResourceItems>
-        <DisableFastUpToDateCheck Condition=" '$(DisableFastUpToDateCheck)' == '' ">true</DisableFastUpToDateCheck>
+        <!--<DisableFastUpToDateCheck Condition=" '$(DisableFastUpToDateCheck)' == '' ">true</DisableFastUpToDateCheck>-->
         <GenerateMSBuildEditorConfigFile Condition=" '$(GenerateMSBuildEditorConfigFile)' == ''" >false</GenerateMSBuildEditorConfigFile>
         <WarningLevel Condition=" '$(WarningLevel)' == '' ">4</WarningLevel>
         <DefineConstants Condition=" '$(DefineConstants)' != '' ">$(DefineConstants);</DefineConstants>

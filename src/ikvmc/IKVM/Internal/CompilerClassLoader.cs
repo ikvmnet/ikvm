@@ -2547,28 +2547,27 @@ namespace IKVM.Internal
             return false;
         }
 
-        internal static int Compile(string runtimeAssembly, List<CompilerOptions> optionsList)
+        internal static int Compile(string runtimeAssembly, string runtimeJniAssembly, List<CompilerOptions> optionsList)
         {
             try
             {
-                if (runtimeAssembly == null)
-                {
-                    // we assume that the runtime is in the same directory as the compiler
-                    runtimeAssembly = Path.Combine(typeof(CompilerClassLoader).Assembly.Location, ".." + Path.DirectorySeparatorChar + "IKVM.Runtime.dll");
-                }
-
-                StaticCompiler.runtimeAssembly = StaticCompiler.LoadFile(runtimeAssembly);
-                StaticCompiler.runtimeJniAssembly = StaticCompiler.LoadFile(Path.Combine(StaticCompiler.runtimeAssembly.Location, ".." + Path.DirectorySeparatorChar + "IKVM.Runtime.JNI.dll"));
+                StaticCompiler.runtimeAssembly = StaticCompiler.LoadFile(runtimeAssembly ?? Path.Combine(Path.GetDirectoryName(typeof(CompilerClassLoader).Assembly.Location), "IKVM.Runtime.dll"));
+                StaticCompiler.runtimeJniAssembly = StaticCompiler.LoadFile(runtimeJniAssembly ?? Path.Combine(Path.GetDirectoryName(runtimeAssembly), "IKVM.Runtime.JNI.dll"));
             }
             catch (FileNotFoundException)
             {
+                // runtime assembly is required
                 if (StaticCompiler.runtimeAssembly == null)
-                {
                     throw new FatalCompilerErrorException(Message.RuntimeNotFound);
-                }
 
-                StaticCompiler.IssueMessage(Message.NoJniRuntime);
+                // JNI will issue warning
+                if (StaticCompiler.runtimeJniAssembly == null)
+                    StaticCompiler.IssueMessage(Message.NoJniRuntime);
+
+                // some unknown error
+                throw new FatalCompilerErrorException(Message.FileNotFound);
             }
+
             Tracer.Info(Tracer.Compiler, "Loaded runtime assembly: {0}", StaticCompiler.runtimeAssembly.FullName);
             bool compilingCoreAssembly = false;
             List<CompilerClassLoader> compilers = new List<CompilerClassLoader>();
