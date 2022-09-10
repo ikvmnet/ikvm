@@ -27,12 +27,12 @@
     <ItemGroup Condition=" '$(TargetFramework)' == 'net461' ">
         <PublishProjectReference Include="..\java\java.csproj">
             <SetTargetFramework>TargetFramework=net461</SetTargetFramework>
-            <PublishTargetPath>jdk\bin</PublishTargetPath>
+            <PublishTargetPath>ikvm\bin</PublishTargetPath>
             <PublishProperties></PublishProperties>
         </PublishProjectReference>
         <PublishProjectReference Include="..\javac\javac.csproj">
             <SetTargetFramework>TargetFramework=net461</SetTargetFramework>
-            <PublishTargetPath>jdk\bin</PublishTargetPath>
+            <PublishTargetPath>ikvm\bin</PublishTargetPath>
             <PublishProperties></PublishProperties>
         </PublishProjectReference>
     </ItemGroup>
@@ -40,12 +40,12 @@
     <ItemGroup Condition=" '$(TargetFramework)' == 'netcoreapp3.1' ">
         <PublishProjectReference Include="..\java\java.csproj">
             <SetTargetFramework>TargetFramework=netcoreapp3.1</SetTargetFramework>
-            <PublishTargetPath>jdk\bin</PublishTargetPath>
+            <PublishTargetPath>ikvm\bin</PublishTargetPath>
             <PublishProperties></PublishProperties>
         </PublishProjectReference>
         <PublishProjectReference Include="..\javac\javac.csproj">
             <SetTargetFramework>TargetFramework=netcoreapp3.1</SetTargetFramework>
-            <PublishTargetPath>jdk\bin</PublishTargetPath>
+            <PublishTargetPath>ikvm\bin</PublishTargetPath>
             <PublishProperties></PublishProperties>
         </PublishProjectReference>
     </ItemGroup>

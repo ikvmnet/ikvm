@@ -33,7 +33,7 @@ namespace IKVM.JavaTest
         /// <summary>
         /// Initializes the static instance.
         /// </summary>
-        internal static void Initialize()
+        static void Initialize()
         {
             var cld = ((java.lang.Class)typeof(Harness)).getClassLoader();
             var cls = cld.getResource("com/sun/javatest/Harness.class").getFile();
@@ -176,7 +176,7 @@ namespace IKVM.JavaTest
 
         public void Cancel()
         {
-            throw new NotImplementedException();
+
         }
 
         /// <summary>
@@ -233,7 +233,7 @@ namespace IKVM.JavaTest
             rp.setMatchLists(new java.io.File[0]);
             rp.setEnvVars(new java.util.HashMap());
 
-            var jdk = Path.Combine(Path.GetDirectoryName(typeof(JTRegTestAdapter).Assembly.Location), "jdk");
+            var jdk = Path.Combine(Path.GetDirectoryName(typeof(JTRegTestAdapter).Assembly.Location), "ikvm");
             rp.setTestJDK(JDK.of(jdk));
             rp.setCompileJDK(JDK.of(jdk));
 

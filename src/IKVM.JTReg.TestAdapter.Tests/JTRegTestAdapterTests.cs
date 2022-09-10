@@ -44,7 +44,6 @@ namespace IKVM.JavaTest.TestAdapter.Tests
             var sources = new[] { typeof(JTRegTestAdapterTests).Assembly.Location };
 
             // execute tests
-            JTRegTestAdapter.Initialize();
             var adp = new JTRegTestAdapter();
             adp.RunTests(sources, runContext.Object, frameworkHandle.Object);
         }
