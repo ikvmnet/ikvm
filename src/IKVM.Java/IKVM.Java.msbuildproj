@@ -145,8 +145,8 @@
     <!-- IKVM.Java uses the javac executable from JAVA_HOME: bootstrap -->
     <Target Name="ResolveJavaCompiler" Condition=" '$(JAVA_HOME)' != '' And '$(JavaCompilerPath)' == '' ">
         <PropertyGroup>
-            <JavaCompilerPath Condition=" '$([MSBuild]::IsOSUnixLike())' == 'true' And Exists('$(JAVA_HOME)\bin\javac') ">$(JAVA_HOME)\bin\javac</JavaCompilerPath>
-            <JavaCompilerPath Condition=" '$([MSBuild]::IsOSUnixLike())' != 'true' And Exists('$(JAVA_HOME)\bin\javac.exe') ">$(JAVA_HOME)\bin\javac.exe</JavaCompilerPath>
+            <JavaCompilerPath Condition=" '$([MSBuild]::IsOSUnixLike())' == 'true' And Exists('$(JAVA_HOME)\bin\javac') ">$([System.IO.Path]::GetFullPath('$(JAVA_HOME)\bin\javac'))</JavaCompilerPath>
+            <JavaCompilerPath Condition=" '$([MSBuild]::IsOSUnixLike())' != 'true' And Exists('$(JAVA_HOME)\bin\javac.exe') ">$([System.IO.Path]::GetFullPath('$(JAVA_HOME)\bin\javac.exe'))</JavaCompilerPath>
             <JavaCompilerArgs>-J-Xmx1536M</JavaCompilerArgs>
             <JavaCompilerExec Condition=" '$(JavaCompilerPath)' != '' ">"$(JavaCompilerPath)" $(JavaCompilerArgs)</JavaCompilerExec>
         </PropertyGroup>

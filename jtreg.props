@@ -1,6 +1,6 @@
 ﻿<Project>
     <PropertyGroup>
-        <JTRegDir>$(MSBuildThisFileDirectory)jtreg</JTRegDir>
+        <JTRegDir>$(MSBuildThisFileDirectory)jtreg\</JTRegDir>
     </PropertyGroup>
 
     <ItemDefinitionGroup>
@@ -10,12 +10,12 @@
     </ItemDefinitionGroup>
 
     <ItemGroup>
-        <JTRegSource Include="$(JTRegDir)\src\share\classes\**\*.java" />
+        <JTRegSource Include="$(JTRegDir)src\share\classes\**\*.java" />
     </ItemGroup>
 
     <ItemGroup>
-        <JTRegJar Include="$(JTRegDir)\build\images\jtreg\lib\*.jar" Exclude="$(JTRegDir)\build\images\jtreg\lib\jtreg.jar" />
-        <JTRegJar Include="$(JTRegDir)\build\ant\apache-ant-1.9.4\lib\*.jar" />
+        <JTRegJar Include="$(JTRegDir)build\images\jtreg\lib\*.jar" Exclude="$(JTRegDir)build\images\jtreg\lib\jtreg.jar" />
+        <JTRegJar Include="$(JTRegDir)build\ant\apache-ant-1.9.4\lib\*.jar" />
     </ItemGroup>
 
 </Project>

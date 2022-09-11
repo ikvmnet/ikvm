@@ -10,6 +10,11 @@
     </PropertyGroup>
 
     <ItemGroup>
+      <Compile Remove="BuildAction.java" />
+      <Compile Remove="CompileAction.java" />
+    </ItemGroup>
+
+    <ItemGroup>
         <ProjectReference Include="..\IKVM.Runtime\IKVM.Runtime.csproj" />
         <ProjectReference Include="..\IKVM.Runtime.JNI\IKVM.Runtime.JNI.csproj" />
         <ProjectReference Include="..\IKVM.Java\IKVM.Java.msbuildproj" />
@@ -26,8 +31,13 @@
     </ItemGroup>
 
     <ItemGroup>
+        <Exclude Include="$(JTRegDir)src\share\classes\com\sun\javatest\regtest\exec\BuildAction.java" />
+        <Exclude Include="$(JTRegDir)src\share\classes\com\sun\javatest\regtest\exec\CompileAction.java" />
         <None Include="@(JTRegSource)" LinkBase="" />
+        <None Remove="@(Exclude)" />
+        <None Include="**\*.java" Exclude="bin\**\*;obj\**\*" />
         <Compile Include="@(JTRegSource)" />
+        <Compile Remove="@(Exclude)" />
     </ItemGroup>
 
     <Import Project="$(MSBuildThisFileDirectory)..\IKVM.NET.Sdk\Sdk\Sdk.targets" />

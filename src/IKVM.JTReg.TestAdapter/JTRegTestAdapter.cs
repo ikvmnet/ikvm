@@ -3,17 +3,19 @@ using System.Collections;
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
+using System.Threading;
 
 using com.sun.javatest;
 using com.sun.javatest.regtest.config;
-using System.Threading;
 using com.sun.javatest.regtest.report;
+
+using IKVM.JTReg.TestAdapter;
+
+using java.util;
 
 using Microsoft.VisualStudio.TestPlatform.ObjectModel;
 using Microsoft.VisualStudio.TestPlatform.ObjectModel.Adapter;
 using Microsoft.VisualStudio.TestPlatform.ObjectModel.Logging;
-using com.sun.javadoc;
-using IKVM.JTReg.TestAdapter;
 
 namespace IKVM.JavaTest
 {
@@ -98,9 +100,8 @@ namespace IKVM.JavaTest
             {
                 logger.SendMessage(TestMessageLevel.Informational, $"Discovered jtreg test suite: {testSuite.getName()}");
 
-                for (var iter = GetResultsIter(CreateParameters(testManager, testSuite)); iter.hasNext();)
+                foreach (var testResult in GetResults(CreateParameters(testManager, testSuite)))
                 {
-                    var testResult = (com.sun.javatest.TestResult)iter.next();
                     var description = testResult.getDescription();
                     var name = GetFullyQualifiedName(testResult);
 
@@ -204,10 +205,10 @@ namespace IKVM.JavaTest
 
         internal TestStats RunTestSuite(TestManager testManager, RegressionTestSuite testSuite, CancellationToken cancellationToken)
         {
-            return RunHarness(CreateParameters(testManager, testSuite), cancellationToken);
+            return RunTestSuite(CreateParameters(testManager, testSuite), cancellationToken);
         }
 
-        internal TestStats RunHarness(IkvmRegressionParameters parameters, CancellationToken cancellationToken)
+        internal TestStats RunTestSuite(IkvmRegressionParameters parameters, CancellationToken cancellationToken)
         {
             cancellationToken.ThrowIfCancellationRequested();
 
@@ -245,9 +246,9 @@ namespace IKVM.JavaTest
         /// </summary>
         /// <param name="runDir"></param>
         /// <returns></returns>
-        TestManager CreateTestManager(string runDir, java.io.PrintWriter output, TextWriter errors)
+        IkvmTestManager CreateTestManager(string runDir, java.io.PrintWriter output, TextWriter errors)
         {
-            var tm = new TestManager(output, new java.io.File(Environment.CurrentDirectory), new DelegateErrorHandler(s => errors.WriteLine(s)));
+            var tm = new IkvmTestManager(output, new java.io.File(Environment.CurrentDirectory), new DelegateErrorHandler(s => errors.WriteLine(s)));
             tm.setReportDirectory(new java.io.File(Path.Combine(runDir, "report")));
             tm.setWorkDirectory(new java.io.File(Path.Combine(runDir, "work")));
             return tm;
@@ -285,6 +286,9 @@ namespace IKVM.JavaTest
             if (rp.isValid() == false)
                 throw new Exception();
 
+            rp.setCompileJDK(new IkvmJDK(new java.io.File(Path.Combine(Path.GetDirectoryName(typeof(JTRegTestAdapter).Assembly.Location)), "ikvm")));
+            rp.setTestJDK(rp.getCompileJDK());
+            rp.setExecMode(ExecMode.OTHERVM);
             rp.setFile(wd.getFile("config.jti"));
             rp.setPriorStatusValues(null);
             rp.setConcurrency(Environment.ProcessorCount);
@@ -304,7 +308,7 @@ namespace IKVM.JavaTest
         /// <param name="parameters"></param>
         /// <returns></returns>
         /// <exception cref="ArgumentNullException"></exception>
-        java.util.Iterator GetResultsIter(InterviewParameters parameters)
+        IReadOnlyList<com.sun.javatest.TestResult> GetResults(InterviewParameters parameters)
         {
             if (parameters is null)
                 throw new ArgumentNullException(nameof(parameters));
@@ -316,11 +320,11 @@ namespace IKVM.JavaTest
             // find tests
             var tests = parameters.getTests();
             if (tests == null)
-                return trt.getIterator();
+                return trt.getIterator().RemainingToList<com.sun.javatest.TestResult>();
             else if (tests.Length == 0)
-                return global::java.util.Collections.emptySet().iterator();
+                return Array.Empty<com.sun.javatest.TestResult>();
             else
-                return trt.getIterator(tests);
+                return trt.getIterator(tests).RemainingToList<com.sun.javatest.TestResult>();
         }
 
         /// <summary>

@@ -2,6 +2,7 @@
 
 using com.sun.javatest;
 using com.sun.javatest.regtest.config;
+using com.sun.javatest.util;
 
 using java.io;
 
@@ -40,6 +41,18 @@ namespace IKVM.JTReg.TestAdapter
             base(testSuiteRoot, errHandler)
         {
 
+        }
+
+        public override Script createScript(TestDescription td, string[] exclTestCases, TestEnvironment scriptEnv, WorkDirectory workDir, BackupPolicy backupPolicy)
+        {
+            var s = new IkvmRegressionScript();
+            s.initTestDescription(td);
+            s.initExcludedTestCases(exclTestCases);
+            s.initTestEnvironment(scriptEnv);
+            s.initWorkDir(workDir);
+            s.initBackupPolicy(backupPolicy);
+            s.initClassLoader(getClassLoader());
+            return s;
         }
 
     }
