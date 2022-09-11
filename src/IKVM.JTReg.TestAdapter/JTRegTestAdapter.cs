@@ -6,11 +6,14 @@ using System.Linq;
 
 using com.sun.javatest;
 using com.sun.javatest.regtest.config;
+using System.Threading;
 using com.sun.javatest.regtest.report;
 
 using Microsoft.VisualStudio.TestPlatform.ObjectModel;
 using Microsoft.VisualStudio.TestPlatform.ObjectModel.Adapter;
 using Microsoft.VisualStudio.TestPlatform.ObjectModel.Logging;
+using com.sun.javadoc;
+using IKVM.JTReg.TestAdapter;
 
 namespace IKVM.JavaTest
 {
@@ -42,6 +45,9 @@ namespace IKVM.JavaTest
                 Harness.setClassDir(dir);
         }
 
+        readonly Guid id = Guid.NewGuid();
+        CancellationTokenSource cts;
+
         /// <summary>
         /// Discovers the available OpenJDK tests.
         /// </summary>
@@ -64,13 +70,19 @@ namespace IKVM.JavaTest
         /// <param name="discoverySink"></param>
         internal void DiscoverTests(string source, IDiscoveryContext discoveryContext, IMessageLogger logger, ITestCaseDiscoverySink discoverySink)
         {
+            logger.SendMessage(TestMessageLevel.Informational, $"Scanning jtreg test directories for '{source}'.");
+
             // discover all root test directories
             var testDirs = new java.util.ArrayList();
             foreach (var rootDir in Directory.GetFiles(Path.GetDirectoryName(source), "TEST.ROOT", SearchOption.AllDirectories))
+            {
+                logger.SendMessage(TestMessageLevel.Informational, $"Found jtreg test directory: {rootDir}");
                 testDirs.add(new java.io.File(Path.GetDirectoryName(rootDir)));
+            }
 
             // temporary path for discovery
-            var runDir = Path.Combine(Path.GetTempPath(), Guid.NewGuid().ToString("n"));
+            var runDir = Path.Combine("jtreg-", Path.GetTempPath(), id.ToString("n"));
+            logger.SendMessage(TestMessageLevel.Informational, $"Using jtreg run directory: {runDir}");
             Directory.CreateDirectory(runDir);
             using var output = new java.io.PrintWriter(Path.Combine(runDir, "jtreg.out"));
             using var errors = new StreamWriter(File.OpenWrite(Path.Combine(runDir, "jtreg.log")));
@@ -79,20 +91,28 @@ namespace IKVM.JavaTest
             var testManager = CreateTestManager(runDir, output, errors);
             testManager.addTestFiles(testDirs, false);
 
+            int testCount = 0;
+
             // for each suite, get the results and transform a test case
-            foreach (RegressionTestSuite testSuite in (IEnumerable)testManager.getTestSuites())
+            foreach (IkvmRegressionTestSuite testSuite in (IEnumerable)testManager.getTestSuites())
             {
+                logger.SendMessage(TestMessageLevel.Informational, $"Discovered jtreg test suite: {testSuite.getName()}");
+
                 for (var iter = GetResultsIter(CreateParameters(testManager, testSuite)); iter.hasNext();)
                 {
                     var testResult = (com.sun.javatest.TestResult)iter.next();
                     var description = testResult.getDescription();
                     var name = GetFullyQualifiedName(testResult);
 
+                    testCount++;
+                    logger.SendMessage(TestMessageLevel.Informational, $"Discovered jtreg test: {name}");
                     var testCase = new TestCase(name, new Uri("executor://JTRegAdapter/v1"), source);
                     testCase.CodeFilePath = description.getFile()?.toString();
                     discoverySink.SendTestCase(testCase);
                 }
             }
+
+            logger.SendMessage(TestMessageLevel.Informational, $"Discovered {testCount} jtreg tests for '{source}'.");
         }
 
         /// <summary>
@@ -115,6 +135,7 @@ namespace IKVM.JavaTest
         public void RunTests(IEnumerable<string> sources, IRunContext runContext, IFrameworkHandle frameworkHandle)
         {
             RunTests(sources, runContext, frameworkHandle, null);
+
         }
 
         /// <summary>
@@ -124,11 +145,25 @@ namespace IKVM.JavaTest
         /// <param name="runContext"></param>
         /// <param name="frameworkHandle"></param>
         /// <param name="tests"></param>
+        /// <param name="cancellationToken"></param>
         /// <exception cref="NotImplementedException"></exception>
         internal void RunTests(IEnumerable<string> sources, IRunContext runContext, IFrameworkHandle frameworkHandle, IEnumerable<TestCase> tests)
         {
-            foreach (var source in sources)
-                RunTests(source, runContext, frameworkHandle, tests?.Where(i => i.Source == source));
+            try
+            {
+                cts = new CancellationTokenSource();
+
+                foreach (var source in sources)
+                    RunTestForSource(source, runContext, frameworkHandle, tests?.Where(i => i.Source == source), cts.Token);
+            }
+            catch (OperationCanceledException)
+            {
+                // ignore
+            }
+            finally
+            {
+                cts = null;
+            }
         }
 
         /// <summary>
@@ -138,8 +173,10 @@ namespace IKVM.JavaTest
         /// <param name="runContext"></param>
         /// <param name="frameworkHandle"></param>
         /// <param name="tests"></param>
-        internal void RunTests(string source, IRunContext runContext, IFrameworkHandle frameworkHandle, IEnumerable<TestCase> tests)
+        internal void RunTestForSource(string source, IRunContext runContext, IFrameworkHandle frameworkHandle, IEnumerable<TestCase> tests, CancellationToken cancellationToken)
         {
+            cancellationToken.ThrowIfCancellationRequested();
+
             // either add all tests, or tests specified
             var testFiles = new java.util.ArrayList();
             if (tests == null)
@@ -151,6 +188,8 @@ namespace IKVM.JavaTest
 
             // temporary path for discovery
             var runDir = Path.Combine(runContext.TestRunDirectory, "jtreg");
+            Directory.Delete(runDir, true);
+            Directory.CreateDirectory(runDir);
             using var output = new java.io.PrintWriter(Path.Combine(runDir, "jtreg.out"));
             using var errors = new StreamWriter(File.OpenWrite(Path.Combine(runDir, "jtreg.log")));
 
@@ -160,23 +199,45 @@ namespace IKVM.JavaTest
 
             var testStats = new TestStats();
             foreach (RegressionTestSuite testSuite in (IEnumerable)testManager.getTestSuites())
-                testStats.addAll(BatchHarness(CreateParameters(testManager, testSuite)));
+                testStats.addAll(RunTestSuite(testManager, testSuite, cancellationToken));
         }
 
-        internal TestStats BatchHarness(RegressionParameters parameters)
+        internal TestStats RunTestSuite(TestManager testManager, RegressionTestSuite testSuite, CancellationToken cancellationToken)
         {
+            return RunHarness(CreateParameters(testManager, testSuite), cancellationToken);
+        }
+
+        internal TestStats RunHarness(IkvmRegressionParameters parameters, CancellationToken cancellationToken)
+        {
+            cancellationToken.ThrowIfCancellationRequested();
+
             var stats = new TestStats();
             var h = new Harness();
             stats.register(h);
 
             var tests = parameters.getTests();
-            var ok = (tests != null && tests.Length == 0) || h.batch(parameters);
+            if (tests != null && tests.Length > 0)
+            {
+                try
+                {
+                    var ok = h.batch(parameters);
+                    //h.start(parameters);
+                    //cancellationToken.Register(() => h.stop());
+                    //h.waitUntilDone();
+                }
+                catch (java.lang.InterruptedException)
+                {
+                    // ignore
+                }
+            }
+
             return stats;
         }
 
         public void Cancel()
         {
-
+            cts?.Cancel();
+            cts = null;
         }
 
         /// <summary>
@@ -198,14 +259,14 @@ namespace IKVM.JavaTest
         /// <param name="testManager"></param>
         /// <param name="testSuite"></param>
         /// <returns></returns>
-        RegressionParameters CreateParameters(TestManager testManager, RegressionTestSuite testSuite)
+        IkvmRegressionParameters CreateParameters(TestManager testManager, RegressionTestSuite testSuite)
         {
             if (testManager is null)
                 throw new ArgumentNullException(nameof(testManager));
             if (testSuite is null)
                 throw new ArgumentNullException(nameof(testSuite));
 
-            var rp = new RegressionParameters("regtest", testSuite);
+            var rp = new IkvmRegressionParameters("regtest", testSuite);
 
             // configure work directory
             var wd = testManager.getWorkDirectory(testSuite);
@@ -232,11 +293,6 @@ namespace IKVM.JavaTest
             rp.setExcludeLists(new java.io.File[0]);
             rp.setMatchLists(new java.io.File[0]);
             rp.setEnvVars(new java.util.HashMap());
-
-            var jdk = Path.Combine(Path.GetDirectoryName(typeof(JTRegTestAdapter).Assembly.Location), "ikvm");
-            rp.setTestJDK(JDK.of(jdk));
-            rp.setCompileJDK(JDK.of(jdk));
-
             rp.setTests(testManager.getTests(testSuite));
 
             return rp;

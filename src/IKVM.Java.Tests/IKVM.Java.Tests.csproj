@@ -3,6 +3,7 @@
     <Import Project="$(MSBuildThisFileDirectory)..\IKVM-pkg\buildTransitive\netstandard2.0\IKVM.props" />
     <Import Project="$(MSBuildThisFileDirectory)..\IKVM.MSBuild\buildTransitive\netstandard2.0\IKVM.MSBuild.props" />
     <Import Project="$(MSBuildThisFileDirectory)..\..\jtreg.props" />
+    <Import Project="$(MSBuildThisFileDirectory)..\..\openjdk.props" />
 
     <PropertyGroup>
         <TargetFrameworks>net461;netcoreapp3.1</TargetFrameworks>
@@ -26,13 +27,13 @@
     </ItemGroup>
 
     <ItemGroup>
-        <None Include="$(JTRegDir)\jdk\test\**\*" LinkBase="jdk">
+        <None Include="$(OpenJdkDir)\jdk\test\**\*" LinkBase="jdk">
             <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
         </None>
-        <None Include="$(JTRegDir)\jdk\langtools\**\*" LinkBase="langtools">
+        <None Include="$(OpenJdkDir)\langtools\test\**\*" LinkBase="langtools">
             <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
         </None>
-        <None Include="$(JTRegDir)\nashorn\test\**\*" LinkBase="nashorn">
+        <None Include="$(OpenJdkDir)\nashorn\test\**\*" LinkBase="nashorn">
             <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
         </None>
     </ItemGroup>

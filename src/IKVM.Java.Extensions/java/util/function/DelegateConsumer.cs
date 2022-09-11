@@ -1,31 +1,31 @@
 ﻿using System;
 
-namespace IKVM.JavaTest
+namespace java.util.function
 {
 
 
     /// <summary>
-    /// Implementation of <see cref="global::java.util.function.Consumer"/> that sends output to a delegate.
+    /// Implementation of <see cref="Consumer"/> that sends output to a delegate.
     /// </summary>
     /// <typeparam name="T"></typeparam>
-    class DelegateConsumer<T> : global::java.util.function.Consumer
+    class DelegateConsumer<T> : Consumer
     {
 
         /// <summary>
         /// Joins two consumers into one.
         /// </summary>
-        sealed class JoinConsumer : global::java.util.function.Consumer
+        sealed class JoinConsumer : Consumer
         {
 
-            readonly global::java.util.function.Consumer arg1;
-            readonly global::java.util.function.Consumer arg2;
+            readonly Consumer arg1;
+            readonly Consumer arg2;
 
             /// <summary>
             /// Initializes a new instance.
             /// </summary>
             /// <param name="arg1"></param>
             /// <param name="arg2"></param>
-            internal JoinConsumer(global::java.util.function.Consumer arg1, global::java.util.function.Consumer arg2)
+            internal JoinConsumer(Consumer arg1, Consumer arg2)
             {
                 this.arg1 = arg1 ?? throw new ArgumentNullException(nameof(arg1));
                 this.arg2 = arg2 ?? throw new ArgumentNullException(nameof(arg2));
@@ -37,7 +37,7 @@ namespace IKVM.JavaTest
                 arg2.accept(obj0);
             }
 
-            public global::java.util.function.Consumer andThen(global::java.util.function.Consumer other)
+            public Consumer andThen(Consumer other)
             {
                 return new JoinConsumer(this, other);
             }
@@ -61,7 +61,7 @@ namespace IKVM.JavaTest
             action((T)t);
         }
 
-        public global::java.util.function.Consumer andThen(global::java.util.function.Consumer other)
+        public Consumer andThen(Consumer other)
         {
             return new JoinConsumer(this, other);
         }
