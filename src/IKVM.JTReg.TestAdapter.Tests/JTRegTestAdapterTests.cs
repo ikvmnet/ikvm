@@ -4,6 +4,7 @@ using FluentAssertions;
 
 using Microsoft.VisualStudio.TestPlatform.ObjectModel;
 using Microsoft.VisualStudio.TestPlatform.ObjectModel.Adapter;
+using Microsoft.VisualStudio.TestPlatform.ObjectModel.Client;
 using Microsoft.VisualStudio.TestPlatform.ObjectModel.Logging;
 using Microsoft.VisualStudio.TestTools.UnitTesting;
 
@@ -24,7 +25,6 @@ namespace IKVM.JavaTest.TestAdapter.Tests
             var discoveryContext = new Mock<IDiscoveryContext>();
             var messageLogger = new Mock<IMessageLogger>();
             var testCaseDiscoverySink = new Mock<ITestCaseDiscoverySink>();
-
             var testCases = new List<TestCase>();
             testCaseDiscoverySink.Setup(x => x.SendTestCase(It.IsAny<TestCase>())).Callback((TestCase x) => testCases.Add(x));
 
@@ -38,7 +38,6 @@ namespace IKVM.JavaTest.TestAdapter.Tests
         {
             var runContext = new Mock<IRunContext>();
             runContext.Setup(x => x.TestRunDirectory).Returns(TestContext.TestRunDirectory);
-
             var frameworkHandle = new Mock<IFrameworkHandle2>();
 
             var sources = new[] { typeof(JTRegTestAdapterTests).Assembly.Location };

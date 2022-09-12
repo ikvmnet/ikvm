@@ -35,21 +35,23 @@ final class VMSystemProperties
     public static final String SPEC_VERSION = "1.8";
     public static final String SPEC_VENDOR = "Oracle Corporation";
 
+    public static final cli.System.Collections.IDictionary importProperties = new cli.System.Collections.Hashtable();
+
     private static String getLibraryPath()
     {
         String libraryPath;
-        if(ikvm.internal.Util.WINDOWS)
+        if (ikvm.internal.Util.WINDOWS)
         {
-	    // see /hotspot/src/os/windows/vm/os_windows.cpp for the comment that describes how we build the path
-	    String windir = SafeGetEnvironmentVariable("SystemRoot");
-	    if(windir != null)
-	    {
-		libraryPath = cli.System.IO.Path.PathSeparator + windir + "\\Sun\\Java\\bin";
-	    }
-	    else
-	    {
-	        libraryPath = null;
-	    }
+	        // see /hotspot/src/os/windows/vm/os_windows.cpp for the comment that describes how we build the path
+	        String windir = SafeGetEnvironmentVariable("SystemRoot");
+	        if(windir != null)
+	        {
+		        libraryPath = cli.System.IO.Path.PathSeparator + windir + "\\Sun\\Java\\bin";
+	        }
+	        else
+	        {
+	            libraryPath = null;
+	        }
             try
             {
                 if(false) throw new cli.System.Security.SecurityException();
@@ -97,8 +99,8 @@ final class VMSystemProperties
             // If the CLR was started by a native app (e.g. via COM interop) there is no entry assembly
             if (entryAsm != null)
             {
-		// the application (or launcher) directory is prepended to the library path
-		// (similar to how the JDK prepends its directory to the path)
+                // the application (or launcher) directory is prepended to the library path
+                // (similar to how the JDK prepends its directory to the path)
                 libraryPath = new cli.System.IO.FileInfo(entryAsm.get_Location()).get_DirectoryName() + cli.System.IO.Path.PathSeparator + libraryPath;
             }
         }
@@ -135,7 +137,7 @@ final class VMSystemProperties
         p.setProperty("java.library.path", getLibraryPath());
         try
         {
-            if(false) throw new cli.System.Security.SecurityException();
+            if (false) throw new cli.System.Security.SecurityException();
             p.setProperty("java.io.tmpdir", cli.System.IO.Path.GetTempPath());
         }
         catch(cli.System.Security.SecurityException _)
@@ -337,15 +339,15 @@ final class VMSystemProperties
         p.setProperty("java.endorsed.dirs", vfsroot + "lib" + cli.System.IO.Path.DirectorySeparatorChar + "endorsed");
         p.setProperty("sun.boot.library.path", vfsroot + "bin");
         p.setProperty("sun.boot.class.path", getBootClassPath());
-	initCommonProperties(p);
-	setupI18N(p);
-	p.setProperty("sun.cpu.endian", cli.System.BitConverter.IsLittleEndian ? "little" : "big");
-	p.setProperty("file.encoding.pkg", "sun.io");
-	p.setProperty("user.timezone", "");
-	p.setProperty("sun.os.patch.level", cli.System.Environment.get_OSVersion().get_ServicePack());
-	p.setProperty("java.vm.info", "compiled mode");
-	p.setProperty("sun.nio.MaxDirectMemorySize", "-1");
-	p.setProperty("java.awt.graphicsenv", PropertyConstants.java_awt_graphicsenv);
+        initCommonProperties(p);
+        setupI18N(p);
+        p.setProperty("sun.cpu.endian", cli.System.BitConverter.IsLittleEndian ? "little" : "big");
+        p.setProperty("file.encoding.pkg", "sun.io");
+        p.setProperty("user.timezone", "");
+        p.setProperty("sun.os.patch.level", cli.System.Environment.get_OSVersion().get_ServicePack());
+        p.setProperty("java.vm.info", "compiled mode");
+        p.setProperty("sun.nio.MaxDirectMemorySize", "-1");
+        p.setProperty("java.awt.graphicsenv", PropertyConstants.java_awt_graphicsenv);
         p.setProperty("java.awt.printerjob", "sun.awt.windows.WPrinterJob");
 
         String stdoutEncoding = getStdoutEncoding();
@@ -369,18 +371,18 @@ final class VMSystemProperties
         }
 
         
-	// TODO
-	// sun.cpu.isalist:=pentium_pro+mmx pentium_pro pentium+mmx pentium i486 i386 i86
-	// sun.desktop:=windows
-	// sun.io.unicode.encoding:=UnicodeLittle
-	// sun.management.compiler:=HotSpot Client Compiler
+        // TODO
+        // sun.cpu.isalist:=pentium_pro+mmx pentium_pro pentium+mmx pentium i486 i386 i86
+        // sun.desktop:=windows
+        // sun.io.unicode.encoding:=UnicodeLittle
+        // sun.management.compiler:=HotSpot Client Compiler
         try
         {
             // read properties from app.config
-            if(false) throw new cli.System.Configuration.ConfigurationException();
+            if (false) throw new cli.System.Configuration.ConfigurationException();
             cli.System.Collections.Specialized.NameValueCollection appSettings = cli.System.Configuration.ConfigurationSettings.get_AppSettings();
             cli.System.Collections.IEnumerator keys = appSettings.GetEnumerator();
-            while(keys.MoveNext())
+            while (keys.MoveNext())
             {
                 String key = (String)keys.get_Current();
                 if(key.startsWith("ikvm:"))
@@ -389,15 +391,15 @@ final class VMSystemProperties
                 }
             }
         }
-        catch(cli.System.Configuration.ConfigurationException _)
+        catch (cli.System.Configuration.ConfigurationException _)
         {
             // app.config is invalid, ignore
         }
+
         // set the properties that were specified with ikvm.runtime.Startup.setProperties()
-        cli.System.Collections.IDictionary props = ikvm.runtime.Startup.props;
-        if(props != null)
+        if (importProperties != null)
         {
-            cli.System.Collections.IDictionaryEnumerator entries = props.GetEnumerator();
+            cli.System.Collections.IDictionaryEnumerator entries = importProperties.GetEnumerator();
             while(entries.MoveNext())
             {
                 p.setProperty((String)entries.get_Key(), (String)entries.get_Value());

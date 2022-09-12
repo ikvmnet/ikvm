@@ -237,7 +237,7 @@ namespace IKVM.Runtime
                 }
             }
 
-            ikvm.runtime.Startup.setProperties(props);
+            IKVM.Runtime.Launcher.SetProperties(props);
 
             // initialize the class library
             java.lang.Thread.currentThread();

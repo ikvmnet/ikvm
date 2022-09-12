@@ -1,12 +1,16 @@
-﻿namespace jar
+﻿using IKVM.Runtime;
+
+using java.lang;
+
+namespace jar
 {
 
     public static class Program
     {
 
-        public static void Main(string[] args)
+        public static int Main(string[] args)
         {
-            sun.tools.jar.Main.main(args);
+            return Launcher.Execute(args, ((Class)typeof(sun.tools.jar.Main)).getName());
         }
 
     }

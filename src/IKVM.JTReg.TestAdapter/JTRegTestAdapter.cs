@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Collections;
 using System.Collections.Generic;
+using System.Diagnostics;
 using System.IO;
 using System.Linq;
 using System.Threading;
@@ -24,7 +25,7 @@ namespace IKVM.JavaTest
     [FileExtension(".exe")]
     [DefaultExecutorUri("executor://JTRegAdapter/v1")]
     [ExtensionUri("executor://JTRegAdapter/v1")]
-    public class JTRegTestAdapter : ITestDiscoverer, ITestExecutor
+    public class JTRegTestAdapter : ITestDiscoverer, ITestExecutor2
     {
 
         /// <summary>
@@ -32,14 +33,8 @@ namespace IKVM.JavaTest
         /// </summary>
         static JTRegTestAdapter()
         {
-            Initialize();
-        }
-
-        /// <summary>
-        /// Initializes the static instance.
-        /// </summary>
-        static void Initialize()
-        {
+            // need to do some static configuration on the harness
+            // preload class to ensure class loader is happy
             var cld = ((java.lang.Class)typeof(Harness)).getClassLoader();
             var cls = cld.getResource("com/sun/javatest/Harness.class").getFile();
             var dir = new java.io.File(cls).getParentFile().getParentFile().getParentFile().getParentFile();
@@ -84,36 +79,61 @@ namespace IKVM.JavaTest
 
             // temporary path for discovery
             var runDir = Path.Combine("jtreg-", Path.GetTempPath(), id.ToString("n"));
-            logger.SendMessage(TestMessageLevel.Informational, $"Using jtreg run directory: {runDir}");
-            Directory.CreateDirectory(runDir);
-            using var output = new java.io.PrintWriter(Path.Combine(runDir, "jtreg.out"));
-            using var errors = new StreamWriter(File.OpenWrite(Path.Combine(runDir, "jtreg.log")));
 
-            // initialize the test manager with the discovered roots
-            var testManager = CreateTestManager(runDir, output, errors);
-            testManager.addTestFiles(testDirs, false);
-
-            int testCount = 0;
-
-            // for each suite, get the results and transform a test case
-            foreach (IkvmRegressionTestSuite testSuite in (IEnumerable)testManager.getTestSuites())
+            try
             {
-                logger.SendMessage(TestMessageLevel.Informational, $"Discovered jtreg test suite: {testSuite.getName()}");
+                // attempt to create a temporary directory as scratch space for this test
+                logger.SendMessage(TestMessageLevel.Informational, $"Using jtreg run directory: {runDir}");
+                Directory.CreateDirectory(runDir);
 
-                foreach (var testResult in GetResults(CreateParameters(testManager, testSuite)))
+                using var output = new java.io.PrintWriter(Path.Combine(runDir, "jtreg.out"));
+                using var errors = new StreamWriter(File.OpenWrite(Path.Combine(runDir, "jtreg.log")));
+
+                // initialize the test manager with the discovered roots
+                var testManager = CreateTestManager(runDir, output, errors);
+                testManager.addTestFiles(testDirs, false);
+
+                // track metrics related to tests
+                int testCount = 0;
+                var testWatch = new Stopwatch();
+                testWatch.Start();
+
+                // for each suite, get the results and transform a test case
+                foreach (IkvmRegressionTestSuite testSuite in (IEnumerable)testManager.getTestSuites())
                 {
-                    var description = testResult.getDescription();
-                    var name = GetFullyQualifiedName(testResult);
+                    logger.SendMessage(TestMessageLevel.Informational, $"Discovered jtreg test suite: {testSuite.getName()}");
 
-                    testCount++;
-                    logger.SendMessage(TestMessageLevel.Informational, $"Discovered jtreg test: {name}");
-                    var testCase = new TestCase(name, new Uri("executor://JTRegAdapter/v1"), source);
-                    testCase.CodeFilePath = description.getFile()?.toString();
-                    discoverySink.SendTestCase(testCase);
+                    foreach (var testResult in GetResults(CreateParameters(testManager, testSuite)))
+                    {
+                        var id = testResult.getDescription().getId();
+                        var description = testResult.getDescription();
+                        var name = GetFullyQualifiedName(testResult);
+
+                        testCount++;
+                        logger.SendMessage(TestMessageLevel.Informational, $"Discovered jtreg test: {name}");
+                        var testCase = new TestCase(name, new Uri("executor://JTRegAdapter/v1"), source);
+                        testCase.CodeFilePath = description.getFile()?.toString();
+                        discoverySink.SendTestCase(testCase);
+                    }
                 }
-            }
 
-            logger.SendMessage(TestMessageLevel.Informational, $"Discovered {testCount} jtreg tests for '{source}'.");
+                testWatch.Stop();
+                logger.SendMessage(TestMessageLevel.Informational, $"Discovered {testCount} jtreg tests for '{source}' in {testWatch.Elapsed.TotalSeconds} seconds.");
+            }
+            finally
+            {
+                if (Directory.Exists(runDir))
+                {
+                    try
+                    {
+                        Directory.Delete(runDir, true);
+                    }
+                    catch (Exception)
+                    {
+                        // ignore
+                    }
+                }    
+            }
         }
 
         /// <summary>
@@ -198,41 +218,113 @@ namespace IKVM.JavaTest
             var testManager = CreateTestManager(Path.Combine(runContext.TestRunDirectory, "jtreg"), output, errors);
             testManager.addTestFiles(testFiles, false);
 
-            var testStats = new TestStats();
+            // invoke each test suite
             foreach (RegressionTestSuite testSuite in (IEnumerable)testManager.getTestSuites())
-                testStats.addAll(RunTestSuite(testManager, testSuite, cancellationToken));
+                RunTests(runContext, frameworkHandle, tests, CreateParameters(testManager, testSuite), cancellationToken);
         }
 
-        internal TestStats RunTestSuite(TestManager testManager, RegressionTestSuite testSuite, CancellationToken cancellationToken)
-        {
-            return RunTestSuite(CreateParameters(testManager, testSuite), cancellationToken);
-        }
-
-        internal TestStats RunTestSuite(IkvmRegressionParameters parameters, CancellationToken cancellationToken)
+        /// <summary>
+        /// Executes the tests for the given parameters.
+        /// </summary>
+        /// <param name="runContext"></param>
+        /// <param name="frameworkHandle"></param>
+        /// <param name="tests"></param>
+        /// <param name="parameters"></param>
+        /// <param name="cancellationToken"></param>
+        internal void RunTests(IRunContext runContext, IFrameworkHandle frameworkHandle, IEnumerable<TestCase> tests, IkvmRegressionParameters parameters, CancellationToken cancellationToken)
         {
             cancellationToken.ThrowIfCancellationRequested();
 
-            var stats = new TestStats();
-            var h = new Harness();
-            stats.register(h);
-
-            var tests = parameters.getTests();
-            if (tests != null && tests.Length > 0)
+            // only continue if there are in fact tests in the suite to execute
+            if (parameters.getTests() is string[] t && t.Length > 0)
             {
                 try
                 {
-                    var ok = h.batch(parameters);
-                    //h.start(parameters);
-                    //cancellationToken.Register(() => h.stop());
-                    //h.waitUntilDone();
+                    // observe harness for test results
+                    var o = new TestObserver(runContext, frameworkHandle, tests);
+                    var h = new Harness();
+                    h.addObserver(o);
+
+                    // begin harness execution asynchronously, thus allowing potential cancellation
+                    h.start(parameters);
+                    cancellationToken.Register(() => h.stop());
+
+                    // wait until canceled or finished and cleanup
+                    h.waitUntilDone();
+                    h.stop();
+                    h.removeObserver(o);
                 }
                 catch (java.lang.InterruptedException)
                 {
                     // ignore
                 }
+                catch (Exception e)
+                {
+                    frameworkHandle.SendMessage(TestMessageLevel.Error, e.ToString());
+                }
+            }
+        }
+
+        /// <summary>
+        /// Traps events from the harness and emits them to the test framework.
+        /// </summary>
+        class TestObserver : Harness.Observer
+        {
+
+            readonly IRunContext runContext;
+            readonly IFrameworkHandle frameworkHandle;
+            readonly IEnumerable<TestCase> tests;
+
+            /// <summary>
+            /// Initializes a new instance.
+            /// </summary>
+            /// <param name="runContext"></param>
+            /// <param name="frameworkHandle"></param>
+            /// <param name="tests"></param>
+            /// <exception cref="ArgumentNullException"></exception>
+            public TestObserver(IRunContext runContext, IFrameworkHandle frameworkHandle, IEnumerable<TestCase> tests)
+            {
+                this.runContext = runContext ?? throw new ArgumentNullException(nameof(runContext));
+                this.frameworkHandle = frameworkHandle ?? throw new ArgumentNullException(nameof(frameworkHandle));
+                this.tests = tests ?? throw new ArgumentNullException(nameof(tests));
             }
 
-            return stats;
+            public void startingTestRun(Parameters p)
+            {
+                frameworkHandle.SendMessage(TestMessageLevel.Informational, $"JTReg Harness: starting test run.");
+            }
+
+            public void startingTest(com.sun.javatest.TestResult tr)
+            {
+                frameworkHandle.SendMessage(TestMessageLevel.Informational, $"JTReg Harness: starting test '{tr.getTestName()}'.");
+
+            }
+
+            public void error(string str)
+            {
+                frameworkHandle.SendMessage(TestMessageLevel.Error, $"JTReg Harness: ERROR: '{str}'.");
+            }
+
+            public void stoppingTestRun()
+            {
+                frameworkHandle.SendMessage(TestMessageLevel.Informational, $"JTReg Harness: stopping test run.");
+            }
+
+            public void finishedTest(com.sun.javatest.TestResult tr)
+            {
+                frameworkHandle.SendMessage(TestMessageLevel.Informational, $"JTReg Harness: finished test '{tr.getTestName()}'.");
+            }
+
+            public void finishedTesting()
+            {
+                frameworkHandle.SendMessage(TestMessageLevel.Informational, $"JTReg Harness: finished testing.");
+            }
+
+            public void finishedTestRun(bool b)
+            {
+                frameworkHandle.SendMessage(TestMessageLevel.Informational, $"JTReg Harness: finished test run with overall result '{b}'.");
+            }
+
         }
 
         public void Cancel()
@@ -350,6 +442,16 @@ namespace IKVM.JavaTest
             name = string.Join(".", spl);
 
             return name;
+        }
+
+        public bool ShouldAttachToTestHost(IEnumerable<string> sources, IRunContext runContext)
+        {
+            return true;
+        }
+
+        public bool ShouldAttachToTestHost(IEnumerable<TestCase> tests, IRunContext runContext)
+        {
+            return true;
         }
 
     }

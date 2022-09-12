@@ -1,12 +1,16 @@
-﻿namespace jarsigner
+﻿using IKVM.Runtime;
+
+using java.lang;
+
+namespace jarsigner
 {
 
     public static class Program
     {
 
-        public static void Main(string[] args)
+        public static int Main(string[] args)
         {
-            sun.security.tools.jarsigner.Main.main(args);
+            return Launcher.Execute(args, ((Class)typeof(sun.security.tools.jarsigner.Main)).getName());
         }
 
     }
