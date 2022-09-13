@@ -35,8 +35,6 @@ final class VMSystemProperties
     public static final String SPEC_VERSION = "1.8";
     public static final String SPEC_VENDOR = "Oracle Corporation";
 
-    public static final cli.System.Collections.IDictionary importProperties = new cli.System.Collections.Hashtable();
-
     private static String getLibraryPath()
     {
         String libraryPath;
@@ -397,6 +395,7 @@ final class VMSystemProperties
         }
 
         // set the properties that were specified with ikvm.runtime.Startup.setProperties()
+        cli.System.Collections.IDictionary importProperties = get_ImportProperties();
         if (importProperties != null)
         {
             cli.System.Collections.IDictionaryEnumerator entries = importProperties.GetEnumerator();
@@ -468,5 +467,6 @@ final class VMSystemProperties
     private static native String getStdoutEncoding();
     private static native String getStderrEncoding();
     private static native FileVersionInfo getKernel32FileVersionInfo();
+    private static native cli.System.Collections.IDictionary get_ImportProperties();
 
 }

@@ -12,6 +12,7 @@ using com.sun.javatest.regtest.report;
 
 using IKVM.JTReg.TestAdapter;
 
+using java.text;
 using java.util;
 
 using Microsoft.VisualStudio.TestPlatform.ObjectModel;
@@ -112,6 +113,7 @@ namespace IKVM.JavaTest
                         testCount++;
                         logger.SendMessage(TestMessageLevel.Informational, $"Discovered jtreg test: {name}");
                         var testCase = new TestCase(name, new Uri("executor://JTRegAdapter/v1"), source);
+                        testCase.DisplayName = description.getName();
                         testCase.CodeFilePath = description.getFile()?.toString();
                         discoverySink.SendTestCase(testCase);
                     }
@@ -132,7 +134,7 @@ namespace IKVM.JavaTest
                     {
                         // ignore
                     }
-                }    
+                }
             }
         }
 
@@ -296,8 +298,13 @@ namespace IKVM.JavaTest
 
             public void startingTest(com.sun.javatest.TestResult tr)
             {
-                frameworkHandle.SendMessage(TestMessageLevel.Informational, $"JTReg Harness: starting test '{tr.getTestName()}'.");
+                var name = GetFullyQualifiedName(tr);
+                var test = tests.FirstOrDefault(i => i.FullyQualifiedName == name);
+                if (test == null)
+                    return;
 
+                frameworkHandle.SendMessage(TestMessageLevel.Informational, $"JTReg Harness: starting test '{name}'.");
+                frameworkHandle.RecordStart(test);
             }
 
             public void error(string str)
@@ -312,7 +319,13 @@ namespace IKVM.JavaTest
 
             public void finishedTest(com.sun.javatest.TestResult tr)
             {
+                var name = GetFullyQualifiedName(tr);
+                var test = tests.FirstOrDefault(i => i.FullyQualifiedName == name);
+                if (test == null)
+                    return;
+
                 frameworkHandle.SendMessage(TestMessageLevel.Informational, $"JTReg Harness: finished test '{tr.getTestName()}'.");
+                frameworkHandle.RecordResult(ToTestResult(test, tr));
             }
 
             public void finishedTesting()
@@ -323,6 +336,89 @@ namespace IKVM.JavaTest
             public void finishedTestRun(bool b)
             {
                 frameworkHandle.SendMessage(TestMessageLevel.Informational, $"JTReg Harness: finished test run with overall result '{b}'.");
+            }
+
+            /// <summary>
+            /// Maps a <see cref="com.sun.javatest.TestResult"/> to a <see cref="Microsoft.VisualStudio.TestPlatform.ObjectModel.TestResult"/>.
+            /// </summary>
+            /// <param name="test"></param>
+            /// <param name="tr"></param>
+            /// <returns></returns>
+            Microsoft.VisualStudio.TestPlatform.ObjectModel.TestResult ToTestResult(TestCase test, com.sun.javatest.TestResult tr)
+            {
+                var testResult = new Microsoft.VisualStudio.TestPlatform.ObjectModel.TestResult(test)
+                {
+                    DisplayName = test.DisplayName,
+                    ComputerName = tr.getProperty("hostname"),
+                    Duration = ParseElapsed(tr.getProperty("elapsed")),
+                    StartTime = ParseLogDate(tr.getProperty("start")),
+                    EndTime = ParseLogDate(tr.getProperty("end")),
+                    Outcome = ToTestOutcome(tr.getStatus()),
+                    ErrorMessage = tr.getProperty("execStatus"),
+                };
+
+                for (int i = 0; i < tr.getSectionCount(); i++)
+                {
+                    var s = tr.getSection(i);
+                    foreach (var j in s.getOutputNames())
+                    {
+                        var o = s.getOutput(j);
+                        var m = new TestResultMessage($"{s.getTitle()} - {j}", o);
+                        testResult.Messages.Add(m);
+                    }
+                }
+
+                return testResult;
+            }
+
+            static readonly SimpleDateFormat logFormat = new SimpleDateFormat("EEE MMM dd HH:mm:ss z yyyy", Locale.US);
+
+            /// <summary>
+            /// Parses the common date time format used by jtreg.
+            /// </summary>
+            /// <param name="v"></param>
+            /// <returns></returns>
+            DateTimeOffset ParseLogDate(string v)
+            {
+                try
+                {
+                    if (v != null)
+                    {
+                        var p = logFormat.parse(v);
+                        var d = DateTimeOffset.FromUnixTimeMilliseconds(p.getTime()).ToOffset(new TimeSpan(0, -p.getTimezoneOffset(), 0));
+                        return d;
+                    }
+                }
+                catch (java.text.ParseException)
+                {
+                    // ignore
+                }
+
+                return DateTimeOffset.MinValue;
+            }
+
+            TimeSpan ParseElapsed(string v)
+            {
+                return int.TryParse(v.Split(' ')[0], out var s) ? TimeSpan.FromMilliseconds(s) : TimeSpan.MinValue;
+            }
+
+            /// <summary>
+            /// Maps a <see cref="Status"/> to a <see cref="TestOutcome"/>.
+            /// </summary>
+            /// <param name="status"></param>
+            /// <returns></returns>
+            TestOutcome ToTestOutcome(Status status)
+            {
+                if (status.isPassed())
+                    return TestOutcome.Passed;
+                else if (status.isFailed())
+                    return TestOutcome.Failed;
+                else if (status.isError())
+                    return TestOutcome.Failed;
+                else if (status.isNotRun())
+                    return TestOutcome.Skipped;
+                else
+                    return TestOutcome.None;
             }
 
         }
@@ -425,7 +521,7 @@ namespace IKVM.JavaTest
         /// <param name="testResult"></param>
         /// <returns></returns>
         /// <exception cref="ArgumentNullException"></exception>
-        string GetFullyQualifiedName(com.sun.javatest.TestResult testResult)
+        static string GetFullyQualifiedName(com.sun.javatest.TestResult testResult)
         {
             if (testResult is null)
                 throw new ArgumentNullException(nameof(testResult));

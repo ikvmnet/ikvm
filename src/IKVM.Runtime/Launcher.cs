@@ -90,9 +90,7 @@ namespace IKVM.Runtime
             if (properties is null)
                 throw new ArgumentNullException(nameof(properties));
 
-            java.lang.VMSystemProperties.importProperties.Clear();
-            foreach (DictionaryEntry kvp in properties)
-                java.lang.VMSystemProperties.importProperties.Add(kvp.Key, kvp.Value);
+            IKVM.Java.Externs.java.lang.VMSystemProperties.ImportProperties = properties;
 #endif
         }
 
@@ -207,8 +205,8 @@ namespace IKVM.Runtime
         /// <param name="rarg"></param>
         internal static void SplitArguments(IEnumerable<string> args, out IEnumerable<string> jvmArgs, out IEnumerable<string> appArgs, string rarg = "-J")
         {
-            jvmArgs = args.Where(i => rarg == "" || i.StartsWith(rarg)).Where(i => rarg != null).Select(i => i.Substring(rarg.Length));
-            appArgs = args.Where(i => rarg != null && rarg != "" && i.StartsWith(rarg) == false);
+            jvmArgs = args.Where(i => rarg != null).Where(i => i.StartsWith(rarg)).Select(i => i.Substring(rarg.Length));
+            appArgs = args.Where(i => rarg == null || i.StartsWith(rarg) == false);
         }
 
         /// <summary>
@@ -224,6 +222,17 @@ namespace IKVM.Runtime
         {
             SplitArguments(args, out var jvmArgs, out var appArgs, rarg);
             return Execute(jvmArgs, appArgs, main, jar);
+        }
+
+        /// <summary>
+        /// Checks whether the given argument value equals the specified string.
+        /// </summary>
+        /// <param name="a"></param>
+        /// <param name="b"></param>
+        /// <returns></returns>
+        static bool ArgEquals(ReadOnlySpan<char> a, string b)
+        {
+            return a.Equals(b.AsSpan(), StringComparison.Ordinal);
         }
 
         /// <summary>
@@ -264,7 +273,7 @@ namespace IKVM.Runtime
                         continue;
                     }
 
-                    if (arg == "-ea".AsSpan() || arg == "-enableassertions".AsSpan())
+                    if (ArgEquals(arg, "-ea") || ArgEquals(arg, "-enableassertions"))
                     {
                         Assertions.EnableAssertions();
                         continue;
@@ -276,7 +285,7 @@ namespace IKVM.Runtime
                             Assertions.EnableAssertions(arg.Slice(v).ToString());
                     }
 
-                    if (arg == "-da".AsSpan() || arg == "-disableassertions".AsSpan())
+                    if (ArgEquals(arg, "-da") || ArgEquals(arg, "-disableassertions"))
                     {
                         Assertions.DisableAssertions();
                         continue;
@@ -288,19 +297,19 @@ namespace IKVM.Runtime
                             Assertions.DisableAssertions(arg.Slice(v).ToString());
                     }
 
-                    if (arg == "-esa".AsSpan() || arg == "-enablesystemassertions".AsSpan())
+                    if (ArgEquals(arg, "-esa") || ArgEquals(arg, " - enablesystemassertions"))
                     {
                         Assertions.EnableSystemAssertions();
                         continue;
                     }
 
-                    if (arg == "-dsa".AsSpan() || arg == "-disablesystemassertions".AsSpan())
+                    if (ArgEquals(arg, "-dsa") || ArgEquals(arg, "-disablesystemassertions"))
                     {
                         Assertions.DisableSystemAssertions();
                         continue;
                     }
 
-                    if (arg == "-cp".AsSpan() || arg == "-classpath".AsSpan())
+                    if (ArgEquals(arg, "-cp") || ArgEquals(arg, "-classpath"))
                     {
                         if (jvmArg.MoveNext() == false)
                         {
@@ -313,49 +322,49 @@ namespace IKVM.Runtime
                         continue;
                     }
 
-                    if (arg == "-version".AsSpan())
+                    if (ArgEquals(arg, "-version"))
                     {
                         PrintVersion();
                         return 0;
                     }
 
-                    if (arg == "-showversion".AsSpan())
+                    if (ArgEquals(arg, "-showversion"))
                     {
                         showversion = true;
                         continue;
                     }
 
-                    if (arg == "-jar".AsSpan())
+                    if (ArgEquals(arg, "-jar"))
                     {
                         jar = true;
                         continue;
                     }
 
-                    if (arg == "-?".AsSpan() || arg == "-help".AsSpan())
+                    if (ArgEquals(arg, "-?") || ArgEquals(arg, "-help"))
                     {
                         PrintHelp();
                         return 1;
                     }
 
-                    if (arg == "-X".AsSpan())
+                    if (ArgEquals(arg, "-X"))
                     {
                         PrintXHelp();
                         return 1;
                     }
 
-                    if (arg == "-Xtime".AsSpan())
+                    if (ArgEquals(arg, "-Xtime"))
                     {
                         Console.Error.WriteLine("Unrecognized option: {0}", arg.ToString());
                         return 1;
                     }
 
-                    if (arg == "-Xbreak".AsSpan())
+                    if (ArgEquals(arg, "-Xbreak"))
                     {
                         Debugger.Break();
                         continue;
                     }
 
-                    if (arg == "-Xnoclassgc".AsSpan())
+                    if (ArgEquals(arg, "-Xnoclassgc"))
                     {
 #if CLASSGC
                         JVM.classUnloading = false;
@@ -363,7 +372,7 @@ namespace IKVM.Runtime
                         continue;
                     }
 
-                    if (arg == "-Xverify".AsSpan())
+                    if (ArgEquals(arg, "-Xverify"))
                     {
                         JVM.relaxedVerification = false;
                         continue;
@@ -393,7 +402,7 @@ namespace IKVM.Runtime
                         continue;
                     }
 
-                    if (arg == "-XX:+AllowNonVirtualCalls".AsSpan())
+                    if (ArgEquals(arg, "-XX:+AllowNonVirtualCalls"))
                     {
                         JVM.AllowNonVirtualCalls = true;
                         continue;
@@ -404,16 +413,16 @@ namespace IKVM.Runtime
                         arg.StartsWith("-Xmn".AsSpan()) ||
                         arg.StartsWith("-Xss".AsSpan()) ||
                         arg.StartsWith("-XX:".AsSpan()) ||
-                        arg == "-Xmixed".AsSpan() ||
-                        arg == "-Xint".AsSpan() ||
-                        arg == "-Xincgc".AsSpan() ||
-                        arg == "-Xbatch".AsSpan() ||
-                        arg == "-Xfuture".AsSpan() ||
-                        arg == "-Xrs".AsSpan() ||
-                        arg == "-Xcheck:jni".AsSpan() ||
-                        arg == "-Xshare:off".AsSpan() ||
-                        arg == "-Xshare:auto".AsSpan() ||
-                        arg == "-Xshare:on".AsSpan())
+                        ArgEquals(arg, "-Xmixed") ||
+                        ArgEquals(arg, "-Xint") ||
+                        ArgEquals(arg, "-Xincgc") ||
+                        ArgEquals(arg, "-Xbatch") ||
+                        ArgEquals(arg, "-Xfuture") ||
+                        ArgEquals(arg, "-Xrs") ||
+                        ArgEquals(arg, "-Xcheck:jni") ||
+                        ArgEquals(arg, "-Xshare:off") ||
+                        ArgEquals(arg, "-Xshare:auto") ||
+                        ArgEquals(arg, "-Xshare:on"))
                     {
                         Console.Error.WriteLine("Ignoring unrecognized option: {0}", arg.ToString());
                         continue;
