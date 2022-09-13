@@ -1,4 +1,8 @@
-﻿using com.sun.javatest;
+﻿using System;
+using System.Collections;
+
+using com.sun.javatest;
+using com.sun.javatest.logging;
 using com.sun.javatest.regtest;
 using com.sun.javatest.regtest.config;
 using com.sun.javatest.util;
@@ -13,8 +17,7 @@ namespace IKVM.JTReg.TestAdapter
     /// <summary>
     /// Specialized version of <see cref="TestManager"/> for IKVM.
     /// </summary>
-    /// <typeparam name="TTestSuite"></typeparam>
-    class IkvmTestManager : TestManager
+    class IkvmTestManager : TestManager, IDisposable
     {
 
         static readonly I18NResourceBundle i18n = I18NResourceBundle.getBundleForClass(typeof(TestManager));
@@ -31,6 +34,12 @@ namespace IKVM.JTReg.TestAdapter
 
         }
 
+        /// <summary>
+        /// Gets the set of the available test suites.
+        /// </summary>
+        /// <returns></returns>
+        /// <exception cref="AssertionError"></exception>
+        /// <exception cref="Main.Fault"></exception>
         public override Set getTestSuites()
         {
             var set = new LinkedHashSet();
@@ -41,7 +50,7 @@ namespace IKVM.JTReg.TestAdapter
                 {
                     try
                     {
-                        e.testSuite = IkvmRegressionTestSuite.Open(e.rootDir, errHandler);
+                        e.testSuite = new IkvmRegressionTestSuite(e.rootDir, errHandler);
                         if (!e.testSuite.getRootDir().equals(e.rootDir))
                         {
                             java.lang.System.err.println("e.testSuite.getRootDir(): " + e.testSuite.getRootDir());
@@ -60,6 +69,47 @@ namespace IKVM.JTReg.TestAdapter
             }
 
             return set;
+        }
+
+        /// <summary>
+        /// Attempts to close the given test manager.
+        /// </summary>
+        public void Dispose()
+        {
+            try
+            {
+                foreach (IkvmRegressionTestSuite testSuite in (IEnumerable)getTestSuites())
+                {
+                    try
+                    {
+                        // log file is left open
+                        var log = testSuite.getLog(getWorkDirectory(testSuite), I18NResourceBundle.getBundleForClass(typeof(TestResultCache)).getString("core.log.name"));
+                        if (log != null && log.getHandlers() != null)
+                            foreach (var handler in log.getHandlers())
+                                if (handler is WorkDirLogHandler h)
+                                    h.close();
+                    }
+                    catch (System.Exception)
+                    {
+                        // ignore
+                    }
+
+                    try
+                    {
+                        // test result cache is left open
+                        var trt = getWorkDirectory(testSuite).getTestResultTable();
+                        trt.dispose();
+                    }
+                    catch (System.Exception)
+                    {
+                        // ignore
+                    }
+                }
+            }
+            catch (System.Exception)
+            {
+                // ignore
+            }
         }
 
     }

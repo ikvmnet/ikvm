@@ -1,28 +1,33 @@
-﻿using com.sun.javatest;
+﻿using System.Diagnostics;
+using System.Reflection;
+
 using com.sun.javatest.regtest.exec;
 
 namespace IKVM.JTReg.TestAdapter
 {
 
+    /// <summary>
+    /// <see cref="RegressionScript"/> implementation for IKVM.
+    /// </summary>
     class IkvmRegressionScript : RegressionScript
     {
 
         /// <summary>
-        /// Initializes a new instance.
+        /// Invoked when a process is executed.
         /// </summary>
-        public IkvmRegressionScript()
-        {
+        public System.Action<Process> ProcessEventHandler { get; set; }
 
-        }
-
-        public override void run()
+        /// <summary>
+        /// Invoked when a process is executed.
+        /// </summary>
+        /// <param name="process"></param>
+        override protected void onProcessStart(java.lang.Process process)
         {
-            base.run();
-        }
-
-        public override Status run(string[] argv, TestDescription td, TestEnvironment env)
-        {
-            return base.run(argv, td, env);
+            var t = typeof(java.lang.Process).Assembly.GetType("java.lang.ProcessImpl");
+            var f = t.GetField("handle", BindingFlags.NonPublic | BindingFlags.Instance);
+            var p = (Process)f.GetValue(process);
+            if (p.HasExited == false)
+                ProcessEventHandler?.Invoke(p);
         }
 
     }

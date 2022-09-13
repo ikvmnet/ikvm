@@ -1,4 +1,5 @@
-﻿using System.Collections.Generic;
+﻿using System;
+using System.Diagnostics;
 
 using com.sun.javatest;
 using com.sun.javatest.regtest.config;
@@ -9,28 +10,11 @@ using java.io;
 namespace IKVM.JTReg.TestAdapter
 {
 
+    /// <summary>
+    /// <see cref="RegressionTestSuite"/> implementation for IKVM.
+    /// </summary>
     class IkvmRegressionTestSuite : RegressionTestSuite
     {
-
-        static Dictionary<File, System.WeakReference<IkvmRegressionTestSuite>> cache = new Dictionary<File, System.WeakReference<IkvmRegressionTestSuite>>();
-
-        /// <summary>
-        /// Gets the <see cref="IkvmRegressionTestSuite"/> for the given root path.
-        /// </summary>
-        /// <param name="testSuiteRoot"></param>
-        /// <param name="errHandler"></param>
-        /// <returns></returns>
-        public static RegressionTestSuite Open(File testSuiteRoot, TestFinder.ErrorHandler errHandler)
-        {
-            var @ref = cache.TryGetValue(testSuiteRoot, out var __) ? __ : null;
-            if (@ref == null || @ref.TryGetTarget(out var ts) == false)
-            {
-                ts = new IkvmRegressionTestSuite(testSuiteRoot, errHandler);
-                cache.Add(testSuiteRoot, new System.WeakReference<IkvmRegressionTestSuite>(ts));
-            }
-
-            return ts;
-        }
 
         /// <summary>
         /// Initializes a new instance.
@@ -43,6 +27,20 @@ namespace IKVM.JTReg.TestAdapter
 
         }
 
+        /// <summary>
+        /// Invoked when a process is executed.
+        /// </summary>
+        public Action<Process> ProcessEventHandler { get; set; }
+
+        /// <summary>
+        /// Creates a new script instance.
+        /// </summary>
+        /// <param name="td"></param>
+        /// <param name="exclTestCases"></param>
+        /// <param name="scriptEnv"></param>
+        /// <param name="workDir"></param>
+        /// <param name="backupPolicy"></param>
+        /// <returns></returns>
         public override Script createScript(TestDescription td, string[] exclTestCases, TestEnvironment scriptEnv, WorkDirectory workDir, BackupPolicy backupPolicy)
         {
             var s = new IkvmRegressionScript();
@@ -52,6 +50,7 @@ namespace IKVM.JTReg.TestAdapter
             s.initWorkDir(workDir);
             s.initBackupPolicy(backupPolicy);
             s.initClassLoader(getClassLoader());
+            s.ProcessEventHandler = ProcessEventHandler;
             return s;
         }
 

@@ -619,7 +619,8 @@ public class CompileAction extends Action {
             .setEnvironment(env)
             .setStreams(stdOut, stdErr)
             .setTimeout(timeout, TimeUnit.SECONDS)
-            .setTimeoutHandler(timeoutHandler);
+            .setTimeoutHandler(timeoutHandler)
+            .setCallback(p -> script.onProcessStart(p));
 
         status = normalize(cmd.exec());
 
