@@ -4,6 +4,7 @@ using System.Security.Claims;
 
 using com.sun.org.glassfish.gmbal;
 
+using java.nio.file;
 using java.text;
 using java.util;
 
@@ -32,7 +33,7 @@ namespace IKVM.JTReg.TestAdapter
             if (testResult is null)
                 throw new ArgumentNullException(nameof(testResult));
 
-            var name = TestResultMethods.GetFullyQualifiedName(testSuite, testResult);
+            var name = TestResultMethods.GetFullyQualifiedName(source, testSuite, testResult);
             var description = testResult.getDescription();
 
             var testCase = new TestCase(name, new Uri("executor://IkvmJTRegTestAdapter/v1"), source);
@@ -95,29 +96,32 @@ namespace IKVM.JTReg.TestAdapter
         /// <summary>
         /// Gets the fully qualified name for the given test.
         /// </summary>
+        /// <param name="source"></param>
         /// <param name="testSuite"></param>
         /// <param name="testResult"></param>
         /// <returns></returns>
         /// <exception cref="ArgumentNullException"></exception>
-        public static string GetFullyQualifiedName(dynamic testSuite, dynamic testResult)
+        public static string GetFullyQualifiedName(string source, dynamic testSuite, dynamic testResult)
         {
+            if (source is null)
+                throw new ArgumentNullException(nameof(source));
             if (testSuite is null)
                 throw new ArgumentNullException(nameof(testSuite));
             if (testResult is null)
                 throw new ArgumentNullException(nameof(testResult));
 
-            // get and format test name
-            var name = testResult.getTestName();
-            if (name.EndsWith(".java"))
-                name = name.Substring(0, name.Length - 5);
-            name = name.Replace("/", ".");
+            // root path
+            var rootPath = ((java.io.File)testSuite.getRootDir()).toPath();
+            var rootName = new java.io.File(source).getParentFile().toPath().relativize(rootPath).toString().Replace('.', '_');
 
-            // repeat last segment, since we need ns.class.method
-            var spl = new List<string>(name.Split('.'));
-            spl.Add(spl[spl.Count - 1]);
-            name = string.Join(".", spl);
+            // test path
+            var testPath = ((java.io.File)testResult.getDescription().getDir()).toPath();
+            var pathName = rootPath.relativize(testPath).toString().Replace('.', '_');
 
-            return name;
+            // test name
+            var testName = testResult.getDescription().getName().Replace('.', '_');
+
+            return $"{rootName}.{pathName}.{testName}";
         }
 
         static readonly SimpleDateFormat logFormat = new SimpleDateFormat("EEE MMM dd HH:mm:ss z yyyy", Locale.US);

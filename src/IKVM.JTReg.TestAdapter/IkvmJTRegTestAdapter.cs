@@ -461,7 +461,7 @@ namespace IKVM.JTReg.TestAdapter
             rp.setExcludeLists(excludeFileList.ToArray());
             rp.setMatchLists(new java.io.File[0]);
             rp.setPriorStatusValues(null);
-            rp.setUseWindowsSubsystemForLinux(false);
+            rp.setUseWindowsSubsystemForLinux(true);
             rp.initExprContext();
 
             if (rp.isValid() == false)
