@@ -15,7 +15,6 @@
         <ProjectReference Include="..\IKVM.Runtime\IKVM.Runtime.csproj" />
         <ProjectReference Include="..\IKVM.Runtime.JNI\IKVM.Runtime.JNI.csproj" />
         <ProjectReference Include="..\IKVM.Java\IKVM.Java.msbuildproj" />
-        <ProjectReference Include="..\IKVM.JTReg\IKVM.JTReg.msbuildproj" />
     </ItemGroup>
 
     <ItemGroup>

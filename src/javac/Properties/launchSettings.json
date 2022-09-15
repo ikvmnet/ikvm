@@ -2,7 +2,7 @@
   "profiles": {
     "javac": {
       "commandName": "Project",
-      "commandLineArgs": "-J-jar asd"
+      "commandLineArgs": "-J-Dtest.src='C:\\dev\\ikvm\\src\\IKVM.JTReg.TestAdapter.Tests\\bin\\Debug\\net461\\root\\ns' -J-Dtest.src.path='C:\\dev\\ikvm\\src\\IKVM.JTReg.TestAdapter.Tests\\bin\\Debug\\net461\\root\\ns' -J-Dtest.classes='C:\\dev\\ikvm\\TestResults\\ikvm-jtreg-f6b88eb18ce857c03e134dd0aeae4c39\\JTwork\\classes\\0\\ns' -J-Dtest.class.path='C:\\dev\\ikvm\\TestResults\\ikvm-jtreg-f6b88eb18ce857c03e134dd0aeae4c39\\JTwork\\classes\\0\\ns' -J-Dtest.vm.opts= -J-Dtest.tool.vm.opts= -J-Dtest.compiler.opts= -J-Dtest.java.opts= -J-Dtest.jdk='C:\\dev\\ikvm\\src\\IKVM.JTReg.TestAdapter.Tests\\bin\\Debug\\net461\\ikvm' -J-Dcompile.jdk='C:\\dev\\ikvm\\src\\IKVM.JTReg.TestAdapter.Tests\\bin\\Debug\\net461\\ikvm' -J-Dtest.timeout.factor=1.0 -J-Dtest.root='C:\\dev\\ikvm\\src\\IKVM.JTReg.TestAdapter.Tests\\bin\\Debug\\net461\\root' -d 'C:\\dev\\ikvm\\TestResults\\ikvm-jtreg-f6b88eb18ce857c03e134dd0aeae4c39\\JTwork\\classes\\0\\ns' -sourcepath 'C:\\dev\\ikvm\\src\\IKVM.JTReg.TestAdapter.Tests\\bin\\Debug\\net461\\root\\ns' -classpath 'C:\\dev\\ikvm\\src\\IKVM.JTReg.TestAdapter.Tests\\bin\\Debug\\net461\\root\\ns;C:\\dev\\ikvm\\TestResults\\ikvm-jtreg-f6b88eb18ce857c03e134dd0aeae4c39\\JTwork\\classes\\0\\ns' 'C:\\dev\\ikvm\\src\\IKVM.JTReg.TestAdapter.Tests\\bin\\Debug\\net461\\root\\ns\\FailTest.java'"
     }
   }
 }

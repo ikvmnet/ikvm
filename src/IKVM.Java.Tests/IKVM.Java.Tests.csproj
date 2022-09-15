@@ -1,5 +1,5 @@
 ﻿<Project>
-    <Import Sdk="Microsoft.NET.Sdk" Project="Sdk.props"/>
+    <Import Sdk="Microsoft.NET.Sdk" Project="Sdk.props" />
     <Import Project="$(MSBuildThisFileDirectory)..\IKVM-pkg\buildTransitive\netstandard2.0\IKVM.props" />
     <Import Project="$(MSBuildThisFileDirectory)..\IKVM.MSBuild\buildTransitive\netstandard2.0\IKVM.MSBuild.props" />
     <Import Project="$(MSBuildThisFileDirectory)..\..\jtreg.props" />
@@ -22,7 +22,6 @@
         <ProjectReference Include="..\IKVM.Runtime\IKVM.Runtime.csproj" />
         <ProjectReference Include="..\IKVM.Runtime.JNI\IKVM.Runtime.JNI.csproj" />
         <ProjectReference Include="..\IKVM.Java\IKVM.Java.msbuildproj" />
-        <ProjectReference Include="..\IKVM.JTReg\IKVM.JTReg.msbuildproj" />
         <ProjectReference Include="..\IKVM.JTReg.TestAdapter\IKVM.JTReg.TestAdapter.csproj" />
     </ItemGroup>
 
@@ -38,17 +37,7 @@
         </None>
     </ItemGroup>
 
-    <ItemGroup>
-        <IkvmReference Include="ikvm-javatest">
-            <Compile>@(JTRegJar)</Compile>
-            <AssemblyName>ikvm-javatest</AssemblyName>
-            <AssemblyVersion>$(AssemblyVersion)</AssemblyVersion>
-            <AssemblyFileVersion>$(FileVersion)</AssemblyFileVersion>
-            <ClassLoader>ikvm.runtime.AppDomainAssemblyClassLoader</ClassLoader>
-        </IkvmReference>
-    </ItemGroup>
-
-    <Import Sdk="Microsoft.NET.Sdk" Project="Sdk.targets"/>
+    <Import Sdk="Microsoft.NET.Sdk" Project="Sdk.targets" />
     <Import Project="$(MSBuildThisFileDirectory)..\IKVM-pkg\buildTransitive\netstandard2.0\IKVM.targets" />
     <Import Project="$(MSBuildThisFileDirectory)..\IKVM.MSBuild\buildTransitive\netstandard2.0\IKVM.MSBuild.targets" />
 </Project>

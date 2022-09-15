@@ -13,6 +13,7 @@
     </ItemGroup>
 
     <ItemGroup>
+        <PackageReference Include="Castle.Core" Version="5.0.0" />
         <PackageReference Include="Microsoft.TestPlatform.AdapterUtilities" Version="16.11.0" />
         <PackageReference Include="Microsoft.TestPlatform.ObjectModel" Version="16.11.0" />
     </ItemGroup>
@@ -22,7 +23,6 @@
         <ProjectReference Include="..\IKVM.Runtime.JNI\IKVM.Runtime.JNI.csproj" />
         <ProjectReference Include="..\IKVM.Java\IKVM.Java.msbuildproj" />
         <ProjectReference Include="..\IKVM.Java.Extensions\IKVM.Java.Extensions.csproj" />
-        <ProjectReference Include="..\IKVM.JTReg\IKVM.JTReg.msbuildproj" />
     </ItemGroup>
 
     <ItemGroup Condition=" '$(TargetFramework)' == 'net461' ">
@@ -52,17 +52,9 @@
     </ItemGroup>
 
     <ItemGroup>
-        <IkvmReference Include="ikvm-javatest">
-            <Compile>@(JTRegJar)</Compile>
-            <AssemblyName>ikvm-javatest</AssemblyName>
-            <AssemblyVersion>$(AssemblyVersion)</AssemblyVersion>
-            <AssemblyFileVersion>$(FileVersion)</AssemblyFileVersion>
-            <ClassLoader>ikvm.runtime.AppDomainAssemblyClassLoader</ClassLoader>
-        </IkvmReference>
-    </ItemGroup>
-
-    <ItemGroup>
-      <Reference Include="Microsoft.Build.Framework" />
+        <Content Include="@(JTRegJar)" LinkBase="lib">
+            <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+        </Content>
     </ItemGroup>
 
     <Import Sdk="Microsoft.NET.Sdk" Project="Sdk.targets" />

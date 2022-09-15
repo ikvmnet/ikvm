@@ -25,16 +25,6 @@
     </ItemGroup>
 
     <ItemGroup>
-        <IkvmReference Include="ikvm-javatest">
-            <Compile>@(JTRegJar)</Compile>
-            <AssemblyName>ikvm-javatest</AssemblyName>
-            <AssemblyVersion>$(AssemblyVersion)</AssemblyVersion>
-            <AssemblyFileVersion>%(FileVersion)</AssemblyFileVersion>
-            <ClassLoader>ikvm.runtime.AppDomainAssemblyClassLoader</ClassLoader>
-        </IkvmReference>
-    </ItemGroup>
-
-    <ItemGroup>
         <None Include="root\**">
             <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
         </None>

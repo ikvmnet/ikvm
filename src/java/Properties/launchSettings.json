@@ -1,0 +1,8 @@
+{
+  "profiles": {
+    "java": {
+      "commandName": "Project",
+      "commandLineArgs": "Main"
+    }
+  }
+}

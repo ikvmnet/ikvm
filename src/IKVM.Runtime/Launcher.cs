@@ -254,6 +254,7 @@ namespace IKVM.Runtime
             var setAppArgs = false;
 
             // classpath from environment by default
+            properties["java.class.path"] = ".";
             if (Environment.GetEnvironmentVariable("CLASSPATH") is string cp && !string.IsNullOrEmpty(cp))
                 properties["java.class.path"] = cp;
 
@@ -261,15 +262,16 @@ namespace IKVM.Runtime
             for (var jvmArg = jvmArgs.GetEnumerator(); jvmArg.MoveNext();)
             {
                 var arg = jvmArg.Current.AsSpan();
-                if (arg.StartsWith("-".AsSpan()))
+                if (hasMainArg == false && arg.StartsWith("-".AsSpan()))
                 {
                     // define system property
                     if (arg.StartsWith("-D".AsSpan()))
                     {
-                        var sep = arg.IndexOf('=');
-                        var key = sep > -1 ? arg.Slice(0, sep) : "".AsSpan();
-                        var val = sep > -1 ? arg.Slice(sep) : "".AsSpan();
-                        properties.Add(key.ToString(), val.ToString());
+                        var def = arg.Slice(2);
+                        var sep = def.IndexOf('=');
+                        var key = sep > -1 ? def.Slice(0, sep) : def;
+                        var val = sep > -1 ? def.Slice(sep + 1) : "".AsSpan();
+                        properties[key.ToString()] = val.ToString();
                         continue;
                     }
 
@@ -318,7 +320,7 @@ namespace IKVM.Runtime
                             return 1;
                         }
 
-                        properties.Add("java.class.path", jvmArg.Current);
+                        properties["java.class.path"] = jvmArg.Current;
                         continue;
                     }
 
@@ -435,7 +437,7 @@ namespace IKVM.Runtime
                 {
                     hasMainArg = true;
                     main = arg.ToString();
-                    break;
+                    continue;
                 }
                 else
                 {
@@ -448,6 +450,7 @@ namespace IKVM.Runtime
 
                     // append new application argument
                     appArgList.Add(arg.ToString());
+                    continue;
                 }
             }
 

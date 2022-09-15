@@ -8,44 +8,48 @@ using System.Security.Cryptography;
 using System.Text;
 using System.Threading;
 
-using com.sun.javatest;
-using com.sun.javatest.logging;
-using com.sun.javatest.regtest.config;
-using com.sun.javatest.util;
-
-using IKVM.JTReg.TestAdapter;
-
-using java.text;
-using java.util;
-
 using Microsoft.VisualStudio.TestPlatform.ObjectModel;
 using Microsoft.VisualStudio.TestPlatform.ObjectModel.Adapter;
 using Microsoft.VisualStudio.TestPlatform.ObjectModel.Logging;
 
-namespace IKVM.JavaTest
+using sun.misc;
+
+using static com.sun.tools.javac.util.Name;
+
+namespace IKVM.JTReg.TestAdapter
 {
 
     [FileExtension(".dll")]
     [FileExtension(".exe")]
-    [DefaultExecutorUri("executor://JTRegIkvmAdapter/v1")]
-    [ExtensionUri("executor://JTRegIkvmAdapter/v1")]
-    public class IkvmTestAdapter : ITestDiscoverer, ITestExecutor2
+    [DefaultExecutorUri("executor://IkvmJTRegTestAdapter/v1")]
+    [ExtensionUri("executor://IkvmJTRegTestAdapter/v1")]
+    public class IkvmJTRegTestAdapter : ITestDiscoverer, ITestExecutor2
     {
 
-        static readonly MD5 md5 = MD5.Create();
+        internal static readonly java.net.URLClassLoader ClassLoader = new java.net.URLClassLoader(Directory.GetFiles(Path.Combine(Path.GetDirectoryName(typeof(IkvmJTRegTestAdapter).Assembly.Location), "lib"), "*.jar").Select(i => new java.io.File(i).toURI().toURL()).ToArray());
+        internal static readonly MD5 MD5 = MD5.Create();
+
+        static readonly string[] DEFAULT_UNIX_ENV_VARS = {
+            "PATH",
+            "DISPLAY", "GNOME_DESKTOP_SESSION_ID", "HOME", "LANG",
+            "LC_ALL", "LC_CTYPE", "LPDEST", "PRINTER", "TZ", "XMODIFIERS"
+        };
+
+        static readonly string[] DEFAULT_WINDOWS_ENV_VARS = {
+            "PATH",
+            "SystemDrive", "SystemRoot", "windir", "TMP", "TEMP", "TZ"
+        };
 
         /// <summary>
         /// Initializes the static instance.
         /// </summary>
-        static IkvmTestAdapter()
+        static IkvmJTRegTestAdapter()
         {
             // need to do some static configuration on the harness
-            // preload class to ensure class loader is happy
-            var cld = ((java.lang.Class)typeof(Harness)).getClassLoader();
-            var cls = cld.getResource("com/sun/javatest/Harness.class").getFile();
-            var dir = new java.io.File(cls).getParentFile().getParentFile().getParentFile().getParentFile();
-            if (Harness.getClassDir() == null)
-                Harness.setClassDir(dir);
+            var jarnessClazz = java.lang.Class.forName("com.sun.javatest.Harness", true, ClassLoader);
+            var productClazz = java.lang.Class.forName("com.sun.javatest.ProductInfo", true, ClassLoader);
+            if (jarnessClazz.getMethod("getClassDir").invoke(null) == null)
+                jarnessClazz.getMethod("setClassDir", typeof(java.io.File)).invoke(null, productClazz.getMethod("getJavaTestClassDir").invoke(null));
         }
 
         /// <summary>
@@ -55,7 +59,7 @@ namespace IKVM.JavaTest
         /// <returns></returns>
         static string GetSourceHash(string source)
         {
-            var b = md5.ComputeHash(Encoding.UTF8.GetBytes(source));
+            var b = MD5.ComputeHash(Encoding.UTF8.GetBytes(source));
             var s = new StringBuilder();
             for (int i = 0; i < b.Length; i++)
                 s.Append(b[i].ToString("x2"));
@@ -80,12 +84,12 @@ namespace IKVM.JavaTest
             }
             catch (Exception e)
             {
-                logger.SendMessage(TestMessageLevel.Error, $"An exception occurred discovering tests.\n\n{e.Message}\n{e.StackTrace}");
+                logger.SendMessage(TestMessageLevel.Error, "JTReg: " + $"An exception occurred discovering tests.\n\n{e.Message}\n{e.StackTrace}");
             }
         }
 
         /// <summary>
-        /// Discovers the available OpenJDK tests.
+        /// Discovers the available tests.
         /// </summary>
         /// <param name="source"></param>
         /// <param name="discoveryContext"></param>
@@ -119,7 +123,7 @@ namespace IKVM.JavaTest
                     using var errors = new StreamWriter(File.OpenWrite(Path.Combine(runDir, "jtreg.log")));
 
                     // initialize the test manager with the discovered roots
-                    using var testManager = CreateTestManager(runDir, output, errors);
+                    var testManager = CreateTestManager(runDir, output, errors);
                     testManager.addTestFiles(testDirs, false);
 
                     // track metrics related to tests
@@ -128,20 +132,15 @@ namespace IKVM.JavaTest
                     testWatch.Start();
 
                     // for each suite, get the results and transform a test case
-                    foreach (IkvmRegressionTestSuite testSuite in (IEnumerable)testManager.getTestSuites())
+                    foreach (dynamic testSuite in (IEnumerable)testManager.getTestSuites())
                     {
                         logger.SendMessage(TestMessageLevel.Informational, "JTReg: " + $"Discovered test suite: {testSuite.getName()}");
 
                         foreach (var testResult in GetResults(CreateParameters(testManager, testSuite)))
                         {
-                            var description = testResult.getDescription();
-                            var name = GetFullyQualifiedName(testResult);
-
                             testCount++;
-                            logger.SendMessage(TestMessageLevel.Informational, "JTReg: " + $"Discovered test: {name}");
-                            var testCase = new TestCase(name, new Uri("executor://JTRegIkvmAdapter/v1"), source);
-                            testCase.DisplayName = description.getName();
-                            testCase.CodeFilePath = description.getFile()?.toString();
+                            var testCase = (TestCase)TestResultMethods.ToTestCase(source, testResult);
+                            logger.SendMessage(TestMessageLevel.Informational, "JTReg: " + $"Discovered test: {testCase.FullyQualifiedName}");
                             discoverySink.SendTestCase(testCase);
                         }
                     }
@@ -151,17 +150,17 @@ namespace IKVM.JavaTest
                 }
                 finally
                 {
-                    if (Directory.Exists(runDir))
-                    {
-                        try
-                        {
-                            Directory.Delete(runDir, true);
-                        }
-                        catch (Exception e)
-                        {
-                            logger.SendMessage(TestMessageLevel.Error, "JTReg: " + $"An exception occurred clearing run directory '{runDir}'.\n\n{e.Message}\n{e.StackTrace}");
-                        }
-                    }
+                    //if (Directory.Exists(runDir))
+                    //{
+                    //    try
+                    //    {
+                    //        Directory.Delete(runDir, true);
+                    //    }
+                    //    catch (Exception e)
+                    //    {
+                    //        logger.SendMessage(TestMessageLevel.Error, "JTReg: " + $"An exception occurred clearing run directory '{runDir}'.\n\n{e.Message}\n{e.StackTrace}");
+                    //    }
+                    //}
                 }
             }
             catch (Exception e)
@@ -190,7 +189,6 @@ namespace IKVM.JavaTest
         public void RunTests(IEnumerable<string> sources, IRunContext runContext, IFrameworkHandle frameworkHandle)
         {
             RunTests(sources, runContext, frameworkHandle, null);
-
         }
 
         /// <summary>
@@ -200,7 +198,6 @@ namespace IKVM.JavaTest
         /// <param name="runContext"></param>
         /// <param name="frameworkHandle"></param>
         /// <param name="tests"></param>
-        /// <param name="cancellationToken"></param>
         /// <exception cref="NotImplementedException"></exception>
         internal void RunTests(IEnumerable<string> sources, IRunContext runContext, IFrameworkHandle frameworkHandle, IEnumerable<TestCase> tests)
         {
@@ -232,6 +229,7 @@ namespace IKVM.JavaTest
         /// <param name="runContext"></param>
         /// <param name="frameworkHandle"></param>
         /// <param name="tests"></param>
+        /// <param name="cancellationToken"></param>
         internal void RunTestForSource(string source, IRunContext runContext, IFrameworkHandle frameworkHandle, IEnumerable<TestCase> tests, CancellationToken cancellationToken)
         {
             try
@@ -241,8 +239,14 @@ namespace IKVM.JavaTest
                 // either add all tests, or tests specified
                 var testFiles = new java.util.ArrayList();
                 if (tests == null)
-                    foreach (var rootDir in Directory.GetFiles(Path.GetDirectoryName(source), "TEST.ROOT", SearchOption.AllDirectories))
-                        testFiles.add(new java.io.File(Path.GetDirectoryName(rootDir)));
+                {
+                    tests = Array.Empty<TestCase>();
+                    foreach (var rootFile in Directory.GetFiles(Path.GetDirectoryName(source), "TEST.ROOT", SearchOption.AllDirectories))
+                    {
+                        frameworkHandle.SendMessage(TestMessageLevel.Informational, "JTReg: " + $"Found test root file: {rootFile}");
+                        testFiles.add(new java.io.File(Path.GetDirectoryName(rootFile)));
+                    }
+                }
                 else
                     foreach (var testFile in tests.Select(i => i.CodeFilePath))
                         testFiles.add(new java.io.File(testFile));
@@ -257,12 +261,15 @@ namespace IKVM.JavaTest
                 using var errors = new StreamWriter(File.OpenWrite(Path.Combine(runDir, "jtreg.log")));
 
                 // initialize the test manager with the discovered roots
-                using var testManager = CreateTestManager(runDir, output, errors);
+                var testManager = CreateTestManager(runDir, output, errors);
                 testManager.addTestFiles(testFiles, false);
 
                 // invoke each test suite
-                foreach (RegressionTestSuite testSuite in (IEnumerable)testManager.getTestSuites())
-                    RunTests(runContext, frameworkHandle, tests, CreateParameters(testManager, testSuite), cancellationToken);
+                foreach (dynamic testSuite in (IEnumerable)testManager.getTestSuites())
+                {
+                    frameworkHandle.SendMessage(TestMessageLevel.Informational, "JTReg: " + $"Running test suite: {testSuite.getName()}");
+                    RunTests(source, runContext, frameworkHandle, tests, CreateParameters(testManager, testSuite), cancellationToken);
+                }
             }
             catch (Exception e)
             {
@@ -273,31 +280,30 @@ namespace IKVM.JavaTest
         /// <summary>
         /// Executes the tests for the given parameters.
         /// </summary>
+        /// <param name="source"></param>
         /// <param name="runContext"></param>
         /// <param name="frameworkHandle"></param>
         /// <param name="tests"></param>
         /// <param name="parameters"></param>
         /// <param name="cancellationToken"></param>
-        internal void RunTests(IRunContext runContext, IFrameworkHandle frameworkHandle, IEnumerable<TestCase> tests, IkvmRegressionParameters parameters, CancellationToken cancellationToken)
+        internal void RunTests(string source, IRunContext runContext, IFrameworkHandle frameworkHandle, IEnumerable<TestCase> tests, dynamic parameters, CancellationToken cancellationToken)
         {
             cancellationToken.ThrowIfCancellationRequested();
 
             // only continue if there are in fact tests in the suite to execute
-            if (parameters.getTests() is string[] t && t.Length > 0)
+            var testResults = ((IEnumerable<object>)GetResults(parameters)).ToList<dynamic>();
+            if (testResults != null && testResults.Count > 0)
             {
-                parameters.reset();
-
                 try
                 {
                     // observe harness for test results
-                    var o = new TestObserver(runContext, frameworkHandle, tests);
-                    var h = new Harness();
+                    var h = (dynamic)java.lang.Class.forName("com.sun.javatest.Harness", true, ClassLoader).newInstance();
+                    var o = HarnessObserverInterceptor.Create(new HarnessObserverImplementation(source, runContext, frameworkHandle, tests));
                     h.addObserver(o);
 
                     // begin harness execution asynchronously, thus allowing potential cancellation
                     h.start(parameters);
                     cancellationToken.Register(() => h.stop());
-
                     // wait until canceled or finished and cleanup
                     h.waitUntilDone();
                     h.stop();
@@ -314,162 +320,6 @@ namespace IKVM.JavaTest
             }
         }
 
-        /// <summary>
-        /// Traps events from the harness and emits them to the test framework.
-        /// </summary>
-        class TestObserver : Harness.Observer
-        {
-
-            readonly IRunContext runContext;
-            readonly IFrameworkHandle frameworkHandle;
-            readonly IEnumerable<TestCase> tests;
-
-            /// <summary>
-            /// Initializes a new instance.
-            /// </summary>
-            /// <param name="runContext"></param>
-            /// <param name="frameworkHandle"></param>
-            /// <param name="tests"></param>
-            /// <exception cref="ArgumentNullException"></exception>
-            public TestObserver(IRunContext runContext, IFrameworkHandle frameworkHandle, IEnumerable<TestCase> tests)
-            {
-                this.runContext = runContext ?? throw new ArgumentNullException(nameof(runContext));
-                this.frameworkHandle = frameworkHandle ?? throw new ArgumentNullException(nameof(frameworkHandle));
-                this.tests = tests ?? throw new ArgumentNullException(nameof(tests));
-            }
-
-            public void startingTestRun(Parameters p)
-            {
-                frameworkHandle.SendMessage(TestMessageLevel.Informational, $"JTReg: starting test run");
-            }
-
-            public void startingTest(com.sun.javatest.TestResult tr)
-            {
-                var name = GetFullyQualifiedName(tr);
-                var test = tests.FirstOrDefault(i => i.FullyQualifiedName == name);
-                if (test == null)
-                    return;
-
-                frameworkHandle.SendMessage(TestMessageLevel.Informational, $"JTReg: starting test '{name}'");
-                frameworkHandle.RecordStart(test);
-            }
-
-            public void error(string str)
-            {
-                frameworkHandle.SendMessage(TestMessageLevel.Error, $"JTReg: error: '{str}'");
-            }
-
-            public void stoppingTestRun()
-            {
-                frameworkHandle.SendMessage(TestMessageLevel.Informational, $"JTReg: stopping test run");
-            }
-
-            public void finishedTest(com.sun.javatest.TestResult tr)
-            {
-                var name = GetFullyQualifiedName(tr);
-                var test = tests.FirstOrDefault(i => i.FullyQualifiedName == name);
-                if (test == null)
-                    return;
-
-                frameworkHandle.SendMessage(TestMessageLevel.Informational, $"JTReg: finished test '{tr.getTestName()}': {tr.getStatus()}");
-                frameworkHandle.RecordResult(ToTestResult(test, tr));
-            }
-
-            public void finishedTesting()
-            {
-                frameworkHandle.SendMessage(TestMessageLevel.Informational, $"JTReg: finished testing");
-            }
-
-            public void finishedTestRun(bool b)
-            {
-                frameworkHandle.SendMessage(TestMessageLevel.Informational, $"JTReg: finished test run with overall result '{b}'");
-            }
-
-            /// <summary>
-            /// Maps a <see cref="com.sun.javatest.TestResult"/> to a <see cref="Microsoft.VisualStudio.TestPlatform.ObjectModel.TestResult"/>.
-            /// </summary>
-            /// <param name="test"></param>
-            /// <param name="tr"></param>
-            /// <returns></returns>
-            Microsoft.VisualStudio.TestPlatform.ObjectModel.TestResult ToTestResult(TestCase test, com.sun.javatest.TestResult tr)
-            {
-                var testResult = new Microsoft.VisualStudio.TestPlatform.ObjectModel.TestResult(test)
-                {
-                    DisplayName = test.DisplayName,
-                    ComputerName = tr.getProperty("hostname"),
-                    Duration = ParseElapsed(tr.getProperty("elapsed")),
-                    StartTime = ParseLogDate(tr.getProperty("start")),
-                    EndTime = ParseLogDate(tr.getProperty("end")),
-                    Outcome = ToTestOutcome(tr.getStatus()),
-                    ErrorMessage = tr.getProperty("execStatus"),
-                };
-
-                for (int i = 0; i < tr.getSectionCount(); i++)
-                {
-                    var s = tr.getSection(i);
-                    foreach (var j in s.getOutputNames())
-                    {
-                        var o = s.getOutput(j);
-                        var m = new TestResultMessage($"{s.getTitle()} - {j}", o);
-                        testResult.Messages.Add(m);
-                    }
-                }
-
-                return testResult;
-            }
-
-            static readonly SimpleDateFormat logFormat = new SimpleDateFormat("EEE MMM dd HH:mm:ss z yyyy", Locale.US);
-
-            /// <summary>
-            /// Parses the common date time format used by jtreg.
-            /// </summary>
-            /// <param name="v"></param>
-            /// <returns></returns>
-            DateTimeOffset ParseLogDate(string v)
-            {
-                try
-                {
-                    if (v != null)
-                    {
-                        var p = logFormat.parse(v);
-                        var d = DateTimeOffset.FromUnixTimeMilliseconds(p.getTime()).ToOffset(new TimeSpan(0, -p.getTimezoneOffset(), 0));
-                        return d;
-                    }
-                }
-                catch (java.text.ParseException)
-                {
-                    // ignore
-                }
-
-                return DateTimeOffset.MinValue;
-            }
-
-            TimeSpan ParseElapsed(string v)
-            {
-                return int.TryParse(v.Split(' ')[0], out var s) ? TimeSpan.FromMilliseconds(s) : TimeSpan.MinValue;
-            }
-
-            /// <summary>
-            /// Maps a <see cref="Status"/> to a <see cref="TestOutcome"/>.
-            /// </summary>
-            /// <param name="status"></param>
-            /// <returns></returns>
-            TestOutcome ToTestOutcome(Status status)
-            {
-                if (status.isPassed())
-                    return TestOutcome.Passed;
-                else if (status.isFailed())
-                    return TestOutcome.Failed;
-                else if (status.isError())
-                    return TestOutcome.Failed;
-                else if (status.isNotRun())
-                    return TestOutcome.Skipped;
-                else
-                    return TestOutcome.None;
-            }
-
-        }
-
         public void Cancel()
         {
             cts?.Cancel();
@@ -481,17 +331,20 @@ namespace IKVM.JavaTest
         /// </summary>
         /// <param name="runDir"></param>
         /// <returns></returns>
-        IkvmTestManager CreateTestManager(string runDir, java.io.PrintWriter output, System.IO.TextWriter errors)
+        dynamic CreateTestManager(string runDir, java.io.PrintWriter output, TextWriter errors)
         {
-            var tm = new IkvmTestManager(output, new java.io.File(Environment.CurrentDirectory), new DelegateErrorHandler(s => errors.WriteLine(s)));
+            var tmclazz = java.lang.Class.forName("com.sun.javatest.regtest.config.TestManager", true, ClassLoader);
+            var ehclazz = java.lang.Class.forName("com.sun.javatest.TestFinder$ErrorHandler", true, ClassLoader);
+            var eh = ErrorHandlerInterceptor.Create(new ErrorHandlerImplementation(errors));
+            var tm = tmclazz.getConstructor(typeof(java.io.PrintWriter), typeof(java.io.File), ehclazz).newInstance(output, new java.io.File(Environment.CurrentDirectory), eh);
 
-            var rd = Path.Combine(runDir, "report");
-            Directory.CreateDirectory(rd);
-            tm.setReportDirectory(new java.io.File(rd));
-
-            var wd = Path.Combine(runDir, "work");
+            var wd = Path.Combine(runDir, "JTwork");
             Directory.CreateDirectory(wd);
             tm.setWorkDirectory(new java.io.File(wd));
+
+            var rd = Path.Combine(runDir, "JTreport");
+            Directory.CreateDirectory(rd);
+            tm.setReportDirectory(new java.io.File(rd));
 
             return tm;
         }
@@ -502,14 +355,17 @@ namespace IKVM.JavaTest
         /// <param name="testManager"></param>
         /// <param name="testSuite"></param>
         /// <returns></returns>
-        IkvmRegressionParameters CreateParameters(TestManager testManager, RegressionTestSuite testSuite)
+        dynamic CreateParameters(dynamic testManager, dynamic testSuite)
         {
             if (testManager is null)
                 throw new ArgumentNullException(nameof(testManager));
             if (testSuite is null)
                 throw new ArgumentNullException(nameof(testSuite));
 
-            var rp = new IkvmRegressionParameters("regtest", testSuite);
+            // invoke new RegressionParameters(string, RegressionTestSuite)
+            var rpclazz = java.lang.Class.forName("com.sun.javatest.regtest.config.RegressionParameters", true, ClassLoader);
+            var tsclazz = java.lang.Class.forName("com.sun.javatest.regtest.config.RegressionTestSuite", true, ClassLoader);
+            var rp = rpclazz.getConstructor(typeof(string), tsclazz).newInstance("regtest", testSuite);
 
             // configure work directory
             var wd = testManager.getWorkDirectory(testSuite);
@@ -518,19 +374,28 @@ namespace IKVM.JavaTest
             var rd = testManager.getReportDirectory(testSuite);
             rp.setReportDir(rd);
 
-            rp.setCompileJDK(new IkvmJDK(new java.io.File(Path.Combine(Path.GetDirectoryName(typeof(IkvmTestAdapter).Assembly.Location)), "ikvm")));
-            rp.setTestJDK(rp.getCompileJDK());
-            rp.setExecMode(ExecMode.OTHERVM);
-            rp.setFile(wd.getFile("config.jti"));
-            rp.setPriorStatusValues(null);
+            // invoke JDK.of(File)
+            var jdkclazz = java.lang.Class.forName("com.sun.javatest.regtest.config.JDK", true, ClassLoader);
+            var jdkofmethod = jdkclazz.getMethod("of", typeof(java.io.File));
+            var jdk = (dynamic)jdkofmethod.invoke(null, new java.io.File(Path.Combine(Path.GetDirectoryName(typeof(IkvmJTRegTestAdapter).Assembly.Location)), "ikvm"));
+            var execmodeclazz = java.lang.Class.forName("com.sun.javatest.regtest.config.ExecMode", true, ClassLoader);
+
+            rp.setTests((java.util.Set)testManager.getTests(testSuite));
+            rp.setExecMode(testSuite.getDefaultExecMode() ?? java.lang.Enum.valueOf(execmodeclazz, "OTHERVM"));
+            rp.setCheck(false);
+            rp.setCompileJDK(jdk);
+            rp.setTestCompilerOptions(java.util.Collections.singletonList("-verbose"));
+            rp.setTestJDK(jdk);
+            rp.setFile((java.io.File)wd.getFile("config.jti"));
+            rp.setEnvVars(GetEnvVars());
             rp.setConcurrency(Environment.ProcessorCount);
             rp.setTimeLimit(15000);
             rp.setRetainArgs(java.util.Collections.singletonList("all"));
             rp.setExcludeLists(new java.io.File[0]);
             rp.setMatchLists(new java.io.File[0]);
-            rp.setEnvVars(new java.util.HashMap());
-            rp.setTests(testManager.getTests(testSuite));
-            rp.getExecMode
+            rp.setPriorStatusValues(null);
+            rp.setUseWindowsSubsystemForLinux(false);
+            rp.initExprContext();
 
             if (rp.isValid() == false)
                 throw new Exception();
@@ -539,15 +404,42 @@ namespace IKVM.JavaTest
         }
 
         /// <summary>
+        /// Gets the set of environment variables to include with the tests by default.
+        /// </summary>
+        /// <returns></returns>
+        java.util.Map GetEnvVars()
+        {
+            var envVars = new java.util.TreeMap();
+
+            // import existing variables based on the current OS
+            var os = (dynamic)java.lang.Class.forName("com.sun.javatest.regtest.config.OS", true, ClassLoader).getMethod("current").invoke(null);
+            foreach (var var in ((string)os.family) == "windows" ? DEFAULT_WINDOWS_ENV_VARS : DEFAULT_UNIX_ENV_VARS)
+                if (Environment.GetEnvironmentVariable(var) is string val)
+                    envVars.put(var, val);
+
+            // import any variables prefixed with JTREG, as done by the existing tool
+            foreach (DictionaryEntry entry in Environment.GetEnvironmentVariables())
+                if (((string)entry.Key).StartsWith("JTREG_"))
+                    envVars.put((string)entry.Key, (string)entry.Value);
+
+            return envVars;
+        }
+
+        /// <summary>
         /// Gets the results of an interview.
         /// </summary>
         /// <param name="parameters"></param>
         /// <returns></returns>
         /// <exception cref="ArgumentNullException"></exception>
-        IReadOnlyList<com.sun.javatest.TestResult> GetResults(InterviewParameters parameters)
+        IEnumerable<dynamic> GetResults(dynamic parameters)
         {
             if (parameters is null)
                 throw new ArgumentNullException(nameof(parameters));
+
+            // resolve RemainingToList generic method
+            var trclazz = java.lang.Class.forName("com.sun.javatest.TestResult", true, ClassLoader);
+            var trtype = ikvm.runtime.Util.getInstanceTypeFromClass(trclazz);
+            var rtltrmethod = typeof(java.util.IteratorExtensions).GetMethod(nameof(java.util.IteratorExtensions.RemainingToList)).MakeGenericMethod(trtype);
 
             // wait until result is initialized
             var trt = parameters.getWorkDirectory().getTestResultTable();
@@ -556,36 +448,11 @@ namespace IKVM.JavaTest
             // find tests
             var tests = parameters.getTests();
             if (tests == null)
-                return trt.getIterator().RemainingToList<com.sun.javatest.TestResult>();
+                return (IEnumerable<dynamic>)rtltrmethod.Invoke(null, new[] { (java.util.Iterator)trt.getIterator() });
             else if (tests.Length == 0)
-                return Array.Empty<com.sun.javatest.TestResult>();
+                return (IEnumerable<dynamic>)Array.CreateInstance(ikvm.runtime.Util.getInstanceTypeFromClass(trclazz), 0);
             else
-                return trt.getIterator(tests).RemainingToList<com.sun.javatest.TestResult>();
-        }
-
-        /// <summary>
-        /// Gets the fully qualified name for the given test.
-        /// </summary>
-        /// <param name="testResult"></param>
-        /// <returns></returns>
-        /// <exception cref="ArgumentNullException"></exception>
-        static string GetFullyQualifiedName(com.sun.javatest.TestResult testResult)
-        {
-            if (testResult is null)
-                throw new ArgumentNullException(nameof(testResult));
-
-            // get and format test name
-            var name = testResult.getTestName();
-            if (name.EndsWith(".java"))
-                name = name.Substring(0, name.Length - 5);
-            name = name.Replace("/", ".");
-
-            // repeat last segment, since we need ns.class.method
-            var spl = new List<string>(name.Split('.'));
-            spl.Add(spl[spl.Count - 1]);
-            name = string.Join(".", spl);
-
-            return name;
+                return (IEnumerable<dynamic>)rtltrmethod.Invoke(null, new[] { (java.util.Iterator)trt.getIterator() });
         }
 
         public bool ShouldAttachToTestHost(IEnumerable<string> sources, IRunContext runContext)
