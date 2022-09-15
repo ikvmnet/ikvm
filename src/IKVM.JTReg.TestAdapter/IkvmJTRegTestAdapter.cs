@@ -4,6 +4,7 @@ using System.Collections.Generic;
 using System.Diagnostics;
 using System.IO;
 using System.Linq;
+using System.Runtime.InteropServices;
 using System.Security.Cryptography;
 using System.Text;
 using System.Threading;
@@ -34,7 +35,22 @@ namespace IKVM.JTReg.TestAdapter
         const string ENV_PREFIX = "JTREG_";
 
         static readonly MD5 MD5 = MD5.Create();
-        static readonly string IKVM_JDK_DIR = Path.Combine(Path.GetDirectoryName(typeof(IkvmJTRegTestAdapter).Assembly.Location), "ikvm");
+        static readonly string IKVM_JDK_DIR = GetIkvmJdkDir();
+
+        /// <summary>
+        /// Returns the appropriate IKVM JDK directory based on the platform.
+        /// </summary>
+        /// <returns></returns>
+        /// <exception cref="PlatformNotSupportedException"></exception>
+        static string GetIkvmJdkDir()
+        {
+            if (RuntimeInformation.IsOSPlatform(OSPlatform.Windows))
+                return Path.Combine(Path.GetDirectoryName(typeof(IkvmJTRegTestAdapter).Assembly.Location), "ikvm", "win7-x64");
+            if (RuntimeInformation.IsOSPlatform(OSPlatform.Linux))
+                return Path.Combine(Path.GetDirectoryName(typeof(IkvmJTRegTestAdapter).Assembly.Location), "ikvm", "linux-x64");
+
+            throw new PlatformNotSupportedException("No IKVM JDK installation for platform.");
+        }
 
         static readonly string[] DEFAULT_WINDOWS_ENV_VARS = { "PATH", "SystemDrive", "SystemRoot", "windir", "TMP", "TEMP", "TZ" };
         static readonly string[] DEFAULT_UNIX_ENV_VARS = { "PATH", "DISPLAY", "GNOME_DESKTOP_SESSION_ID", "HOME", "LANG", "LC_ALL", "LC_CTYPE", "LPDEST", "PRINTER", "TZ", "XMODIFIERS" };

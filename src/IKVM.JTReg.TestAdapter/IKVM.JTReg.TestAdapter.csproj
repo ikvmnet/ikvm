@@ -28,30 +28,36 @@
     <ItemGroup Condition=" '$(TargetFramework)' == 'net461' ">
         <PublishProjectReference Include="..\java\java.csproj">
             <SetTargetFramework>TargetFramework=net461</SetTargetFramework>
-            <Properties>RuntimeIdentifier=win7-x64</Properties>
-            <PublishTargetPath>ikvm\bin</PublishTargetPath>
-            <PublishProperties></PublishProperties>
+            <PublishProperties>RuntimeIdentifier=win7-x64</PublishProperties>
+            <PublishTargetPath>ikvm\win7-x64\bin</PublishTargetPath>
         </PublishProjectReference>
         <PublishProjectReference Include="..\javac\javac.csproj">
             <SetTargetFramework>TargetFramework=net461</SetTargetFramework>
-            <Properties>RuntimeIdentifier=win7-x64</Properties>
-            <PublishTargetPath>ikvm\bin</PublishTargetPath>
-            <PublishProperties></PublishProperties>
+            <PublishProperties>RuntimeIdentifier=win7-x64</PublishProperties>
+            <PublishTargetPath>ikvm\win7-x64\bin</PublishTargetPath>
         </PublishProjectReference>
     </ItemGroup>
 
     <ItemGroup Condition=" '$(TargetFramework)' == 'netcoreapp3.1' ">
         <PublishProjectReference Include="..\java\java.csproj">
             <SetTargetFramework>TargetFramework=netcoreapp3.1</SetTargetFramework>
-            <Properties>RuntimeIdentifier=win7-x64</Properties>
-            <PublishTargetPath>ikvm\bin</PublishTargetPath>
-            <PublishProperties></PublishProperties>
+            <PublishProperties>RuntimeIdentifier=win7-x64</PublishProperties>
+            <PublishTargetPath>ikvm\win7-x64\bin</PublishTargetPath>
         </PublishProjectReference>
         <PublishProjectReference Include="..\javac\javac.csproj">
             <SetTargetFramework>TargetFramework=netcoreapp3.1</SetTargetFramework>
-            <Properties>RuntimeIdentifier=win7-x64</Properties>
-            <PublishTargetPath>ikvm\bin</PublishTargetPath>
-            <PublishProperties></PublishProperties>
+            <PublishProperties>RuntimeIdentifier=win7-x64</PublishProperties>
+            <PublishTargetPath>ikvm\win7-x64\bin</PublishTargetPath>
+        </PublishProjectReference>
+        <PublishProjectReference Include="..\java\java.csproj">
+            <SetTargetFramework>TargetFramework=netcoreapp3.1</SetTargetFramework>
+            <PublishProperties>RuntimeIdentifier=linux-x64</PublishProperties>
+            <PublishTargetPath>ikvm\linux-x64\bin</PublishTargetPath>
+        </PublishProjectReference>
+        <PublishProjectReference Include="..\javac\javac.csproj">
+            <SetTargetFramework>TargetFramework=netcoreapp3.1</SetTargetFramework>
+            <PublishProperties>RuntimeIdentifier=linux-x64</PublishProperties>
+            <PublishTargetPath>ikvm\linux-x64\bin</PublishTargetPath>
         </PublishProjectReference>
     </ItemGroup>
 
