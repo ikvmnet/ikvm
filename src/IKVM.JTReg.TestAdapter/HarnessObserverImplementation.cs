@@ -16,6 +16,7 @@ namespace IKVM.JTReg.TestAdapter
     {
 
         readonly string source;
+        readonly dynamic testSuite;
         readonly IRunContext runContext;
         readonly IFrameworkHandle frameworkHandle;
         readonly IEnumerable<TestCase> tests;
@@ -24,13 +25,15 @@ namespace IKVM.JTReg.TestAdapter
         /// Initializes a new instance.
         /// </summary>
         /// <param name="source"></param>
+        /// <param name="testSuite"></param>
         /// <param name="runContext"></param>
         /// <param name="frameworkHandle"></param>
         /// <param name="tests"></param>
         /// <exception cref="ArgumentNullException"></exception>
-        public HarnessObserverImplementation(string source, IRunContext runContext, IFrameworkHandle frameworkHandle, IEnumerable<TestCase> tests)
+        public HarnessObserverImplementation(string source, dynamic testSuite, IRunContext runContext, IFrameworkHandle frameworkHandle, IEnumerable<TestCase> tests)
         {
             this.source = source ?? throw new ArgumentNullException(nameof(source));
+            this.testSuite = testSuite ?? throw new ArgumentNullException(nameof(testSuite));
             this.runContext = runContext ?? throw new ArgumentNullException(nameof(runContext));
             this.frameworkHandle = frameworkHandle ?? throw new ArgumentNullException(nameof(frameworkHandle));
             this.tests = tests ?? throw new ArgumentNullException(nameof(tests));
@@ -43,8 +46,8 @@ namespace IKVM.JTReg.TestAdapter
 
         public void startingTest(dynamic self, dynamic testResult)
         {
-            var name = (string)TestResultMethods.GetFullyQualifiedName(testResult);
-            var test = tests.FirstOrDefault(i => i.FullyQualifiedName == name) ?? (TestCase)TestResultMethods.ToTestCase(source, testResult);
+            var name = (string)TestResultMethods.GetFullyQualifiedName(testSuite, testResult);
+            var test = tests.FirstOrDefault(i => i.FullyQualifiedName == name) ?? (TestCase)TestResultMethods.ToTestCase(source, testSuite, testResult);
 
             frameworkHandle.SendMessage(TestMessageLevel.Informational, $"JTReg: starting test '{test.FullyQualifiedName}'");
             frameworkHandle.RecordStart(test);
@@ -62,8 +65,8 @@ namespace IKVM.JTReg.TestAdapter
 
         public void finishedTest(dynamic self, dynamic testResult)
         {
-            var name = (string)TestResultMethods.GetFullyQualifiedName(testResult);
-            var test = tests.FirstOrDefault(i => i.Source == source && i.FullyQualifiedName == name)?? (TestCase)TestResultMethods.ToTestCase(source, testResult);
+            var name = (string)TestResultMethods.GetFullyQualifiedName(testSuite, testResult);
+            var test = tests.FirstOrDefault(i => i.Source == source && i.FullyQualifiedName == name) ?? (TestCase)TestResultMethods.ToTestCase(source, testSuite, testResult);
             var rslt = (TestResult)TestResultMethods.ToTestResult(source, testResult, test);
 
             frameworkHandle.SendMessage(TestMessageLevel.Informational, $"JTReg: finished test '{test.FullyQualifiedName}'. [{rslt.Outcome}]");
@@ -78,7 +81,7 @@ namespace IKVM.JTReg.TestAdapter
 
         public void finishedTestRun(dynamic self, bool success)
         {
-            frameworkHandle.SendMessage(success ? TestMessageLevel.Informational: TestMessageLevel.Error, $"JTReg: finished test run with overall result '{success}'");
+            frameworkHandle.SendMessage(success ? TestMessageLevel.Informational : TestMessageLevel.Error, $"JTReg: finished test run with overall result '{success}'");
         }
 
     }

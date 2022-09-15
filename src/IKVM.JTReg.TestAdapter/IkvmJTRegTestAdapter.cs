@@ -12,10 +12,6 @@ using Microsoft.VisualStudio.TestPlatform.ObjectModel;
 using Microsoft.VisualStudio.TestPlatform.ObjectModel.Adapter;
 using Microsoft.VisualStudio.TestPlatform.ObjectModel.Logging;
 
-using sun.misc;
-
-using static com.sun.tools.javac.util.Name;
-
 namespace IKVM.JTReg.TestAdapter
 {
 
@@ -26,19 +22,22 @@ namespace IKVM.JTReg.TestAdapter
     public class IkvmJTRegTestAdapter : ITestDiscoverer, ITestExecutor2
     {
 
-        internal static readonly java.net.URLClassLoader ClassLoader = new java.net.URLClassLoader(Directory.GetFiles(Path.Combine(Path.GetDirectoryName(typeof(IkvmJTRegTestAdapter).Assembly.Location), "lib"), "*.jar").Select(i => new java.io.File(i).toURI().toURL()).ToArray());
-        internal static readonly MD5 MD5 = MD5.Create();
+        const string BASEDIR_PREFIX = "ikvm-jtreg-";
+        const string TEST_ROOT_FILE_NAME = "TEST.ROOT";
+        const string TEST_PROBLEM_LIST_FILE_NAME = "ProblemList.txt";
+        const string TEST_EXCLUDE_LIST_FILE_NAME = "ExcludeList.txt";
+        const string DEFAULT_OUT_FILE_NAME = "jtreg.out";
+        const string DEFAULT_LOG_FILE_NAME = "jtreg.log";
+        const string DEFAULT_WORK_DIR_NAME = "JTwork";
+        const string DEFAULT_REPORT_DIR_NAME = "JTreport";
+        const string DEFAULT_PARAM_TAG = "regtest";
+        const string ENV_PREFIX = "JTREG_";
 
-        static readonly string[] DEFAULT_UNIX_ENV_VARS = {
-            "PATH",
-            "DISPLAY", "GNOME_DESKTOP_SESSION_ID", "HOME", "LANG",
-            "LC_ALL", "LC_CTYPE", "LPDEST", "PRINTER", "TZ", "XMODIFIERS"
-        };
+        static readonly MD5 MD5 = MD5.Create();
+        static readonly string IKVM_JDK_DIR = Path.Combine(Path.GetDirectoryName(typeof(IkvmJTRegTestAdapter).Assembly.Location), "ikvm");
 
-        static readonly string[] DEFAULT_WINDOWS_ENV_VARS = {
-            "PATH",
-            "SystemDrive", "SystemRoot", "windir", "TMP", "TEMP", "TZ"
-        };
+        static readonly string[] DEFAULT_WINDOWS_ENV_VARS = { "PATH", "SystemDrive", "SystemRoot", "windir", "TMP", "TEMP", "TZ" };
+        static readonly string[] DEFAULT_UNIX_ENV_VARS = { "PATH", "DISPLAY", "GNOME_DESKTOP_SESSION_ID", "HOME", "LANG", "LC_ALL", "LC_CTYPE", "LPDEST", "PRINTER", "TZ", "XMODIFIERS" };
 
         /// <summary>
         /// Initializes the static instance.
@@ -46,10 +45,8 @@ namespace IKVM.JTReg.TestAdapter
         static IkvmJTRegTestAdapter()
         {
             // need to do some static configuration on the harness
-            var jarnessClazz = java.lang.Class.forName("com.sun.javatest.Harness", true, ClassLoader);
-            var productClazz = java.lang.Class.forName("com.sun.javatest.ProductInfo", true, ClassLoader);
-            if (jarnessClazz.getMethod("getClassDir").invoke(null) == null)
-                jarnessClazz.getMethod("setClassDir", typeof(java.io.File)).invoke(null, productClazz.getMethod("getJavaTestClassDir").invoke(null));
+            if (JTRegTypes.Harness.GetClassDirMethod.invoke(null) == null)
+                JTRegTypes.Harness.SetClassDirMethod.invoke(null, JTRegTypes.ProductInfo.GetJavaTestClassDirMethod.invoke(null));
         }
 
         /// <summary>
@@ -77,6 +74,15 @@ namespace IKVM.JTReg.TestAdapter
         /// <param name="discoverySink"></param>
         public void DiscoverTests(IEnumerable<string> sources, IDiscoveryContext discoveryContext, IMessageLogger logger, ITestCaseDiscoverySink discoverySink)
         {
+            if (sources is null)
+                throw new ArgumentNullException(nameof(sources));
+            if (discoveryContext is null)
+                throw new ArgumentNullException(nameof(discoveryContext));
+            if (logger is null)
+                throw new ArgumentNullException(nameof(logger));
+            if (discoverySink is null)
+                throw new ArgumentNullException(nameof(discoverySink));
+
             try
             {
                 foreach (var source in sources)
@@ -97,13 +103,22 @@ namespace IKVM.JTReg.TestAdapter
         /// <param name="discoverySink"></param>
         internal void DiscoverTests(string source, IDiscoveryContext discoveryContext, IMessageLogger logger, ITestCaseDiscoverySink discoverySink)
         {
+            if (string.IsNullOrEmpty(source))
+                throw new ArgumentException($"'{nameof(source)}' cannot be null or empty.", nameof(source));
+            if (discoveryContext is null)
+                throw new ArgumentNullException(nameof(discoveryContext));
+            if (logger is null)
+                throw new ArgumentNullException(nameof(logger));
+            if (discoverySink is null)
+                throw new ArgumentNullException(nameof(discoverySink));
+
             try
             {
                 logger.SendMessage(TestMessageLevel.Informational, "JTReg: " + $"Scanning for test roots for '{source}'.");
 
                 // discover all root test directories
                 var testDirs = new java.util.ArrayList();
-                foreach (var rootFile in Directory.GetFiles(Path.GetDirectoryName(source), "TEST.ROOT", SearchOption.AllDirectories))
+                foreach (var rootFile in Directory.GetFiles(Path.GetDirectoryName(source), TEST_ROOT_FILE_NAME, SearchOption.AllDirectories))
                 {
                     logger.SendMessage(TestMessageLevel.Informational, "JTReg: " + $"Found test root file: {rootFile}");
                     testDirs.add(new java.io.File(Path.GetDirectoryName(rootFile)));
@@ -111,62 +126,55 @@ namespace IKVM.JTReg.TestAdapter
 
                 // output path for jtreg state
                 var id = GetSourceHash(source);
-                var runDir = Path.Combine(Path.GetTempPath(), "ikvm-jtreg-" + id);
+                var baseDir = Path.Combine(Path.GetTempPath(), BASEDIR_PREFIX + id);
 
-                try
+                // attempt to create a temporary directory as scratch space for this test
+                logger.SendMessage(TestMessageLevel.Informational, "JTReg: " + $"Using run directory: {baseDir}");
+                Directory.CreateDirectory(baseDir);
+
+                using var output = new java.io.PrintWriter(Path.Combine(baseDir, DEFAULT_OUT_FILE_NAME));
+                using var errors = new StreamWriter(File.OpenWrite(Path.Combine(baseDir, DEFAULT_LOG_FILE_NAME)));
+
+                // initialize the test manager with the discovered roots
+                var testManager = CreateTestManager(baseDir, output, errors);
+                testManager.addTestFiles(testDirs, false);
+
+                // track metrics related to tests
+                int testCount = 0;
+                var testWatch = new Stopwatch();
+                testWatch.Start();
+
+                // for each suite, get the results and transform a test case
+                foreach (dynamic testSuite in (IEnumerable)testManager.getTestSuites())
                 {
-                    // attempt to create a temporary directory as scratch space for this test
-                    logger.SendMessage(TestMessageLevel.Informational, "JTReg: " + $"Using run directory: {runDir}");
-                    Directory.CreateDirectory(runDir);
+                    logger.SendMessage(TestMessageLevel.Informational, "JTReg: " + $"Discovered test suite: {testSuite.getName()}");
 
-                    using var output = new java.io.PrintWriter(Path.Combine(runDir, "jtreg.out"));
-                    using var errors = new StreamWriter(File.OpenWrite(Path.Combine(runDir, "jtreg.log")));
-
-                    // initialize the test manager with the discovered roots
-                    var testManager = CreateTestManager(runDir, output, errors);
-                    testManager.addTestFiles(testDirs, false);
-
-                    // track metrics related to tests
-                    int testCount = 0;
-                    var testWatch = new Stopwatch();
-                    testWatch.Start();
-
-                    // for each suite, get the results and transform a test case
-                    foreach (dynamic testSuite in (IEnumerable)testManager.getTestSuites())
+                    foreach (var testResult in GetResults(CreateParameters(testManager, testSuite)))
                     {
-                        logger.SendMessage(TestMessageLevel.Informational, "JTReg: " + $"Discovered test suite: {testSuite.getName()}");
-
-                        foreach (var testResult in GetResults(CreateParameters(testManager, testSuite)))
-                        {
-                            testCount++;
-                            var testCase = (TestCase)TestResultMethods.ToTestCase(source, testResult);
-                            logger.SendMessage(TestMessageLevel.Informational, "JTReg: " + $"Discovered test: {testCase.FullyQualifiedName}");
-                            discoverySink.SendTestCase(testCase);
-                        }
+                        testCount++;
+                        var testCase = (TestCase)TestResultMethods.ToTestCase(source, testSuite, testResult);
+                        logger.SendMessage(TestMessageLevel.Informational, "JTReg: " + $"Discovered test: {testCase.FullyQualifiedName}");
+                        discoverySink.SendTestCase(testCase);
                     }
+                }
 
-                    testWatch.Stop();
-                    logger.SendMessage(TestMessageLevel.Informational, "JTReg: " + $"Discovered {testCount} tests for '{source}' in {testWatch.Elapsed.TotalSeconds} seconds.");
-                }
-                finally
-                {
-                    //if (Directory.Exists(runDir))
-                    //{
-                    //    try
-                    //    {
-                    //        Directory.Delete(runDir, true);
-                    //    }
-                    //    catch (Exception e)
-                    //    {
-                    //        logger.SendMessage(TestMessageLevel.Error, "JTReg: " + $"An exception occurred clearing run directory '{runDir}'.\n\n{e.Message}\n{e.StackTrace}");
-                    //    }
-                    //}
-                }
+                testWatch.Stop();
+                logger.SendMessage(TestMessageLevel.Informational, "JTReg: " + $"Discovered {testCount} tests for '{source}' in {testWatch.Elapsed.TotalSeconds} seconds.");
             }
             catch (Exception e)
             {
                 logger.SendMessage(TestMessageLevel.Error, "JTReg: " + $"An exception occurred discovering tests for '{source}'.\n\n{e.Message}\n{e.StackTrace}");
             }
+        }
+
+        public bool ShouldAttachToTestHost(IEnumerable<string> sources, IRunContext runContext)
+        {
+            return true;
+        }
+
+        public bool ShouldAttachToTestHost(IEnumerable<TestCase> tests, IRunContext runContext)
+        {
+            return true;
         }
 
         /// <summary>
@@ -177,6 +185,13 @@ namespace IKVM.JTReg.TestAdapter
         /// <param name="frameworkHandle"></param>
         public void RunTests(IEnumerable<TestCase> tests, IRunContext runContext, IFrameworkHandle frameworkHandle)
         {
+            if (tests is null)
+                throw new ArgumentNullException(nameof(tests));
+            if (runContext is null)
+                throw new ArgumentNullException(nameof(runContext));
+            if (frameworkHandle is null)
+                throw new ArgumentNullException(nameof(frameworkHandle));
+
             RunTests(tests.Select(i => i.Source).Distinct(), runContext, frameworkHandle, tests);
         }
 
@@ -188,6 +203,13 @@ namespace IKVM.JTReg.TestAdapter
         /// <param name="frameworkHandle"></param>
         public void RunTests(IEnumerable<string> sources, IRunContext runContext, IFrameworkHandle frameworkHandle)
         {
+            if (sources is null)
+                throw new ArgumentNullException(nameof(sources));
+            if (runContext is null)
+                throw new ArgumentNullException(nameof(runContext));
+            if (frameworkHandle is null)
+                throw new ArgumentNullException(nameof(frameworkHandle));
+
             RunTests(sources, runContext, frameworkHandle, null);
         }
 
@@ -199,7 +221,7 @@ namespace IKVM.JTReg.TestAdapter
         /// <param name="frameworkHandle"></param>
         /// <param name="tests"></param>
         /// <exception cref="NotImplementedException"></exception>
-        internal void RunTests(IEnumerable<string> sources, IRunContext runContext, IFrameworkHandle frameworkHandle, IEnumerable<TestCase> tests)
+        internal void RunTests(IEnumerable<string> sources, IRunContext runContext, IFrameworkHandle frameworkHandle, IEnumerable<TestCase> tests = null)
         {
             try
             {
@@ -232,6 +254,13 @@ namespace IKVM.JTReg.TestAdapter
         /// <param name="cancellationToken"></param>
         internal void RunTestForSource(string source, IRunContext runContext, IFrameworkHandle frameworkHandle, IEnumerable<TestCase> tests, CancellationToken cancellationToken)
         {
+            if (string.IsNullOrEmpty(source))
+                throw new ArgumentException($"'{nameof(source)}' cannot be null or empty.", nameof(source));
+            if (runContext is null)
+                throw new ArgumentNullException(nameof(runContext));
+            if (frameworkHandle is null)
+                throw new ArgumentNullException(nameof(frameworkHandle));
+
             try
             {
                 cancellationToken.ThrowIfCancellationRequested();
@@ -241,7 +270,7 @@ namespace IKVM.JTReg.TestAdapter
                 if (tests == null)
                 {
                     tests = Array.Empty<TestCase>();
-                    foreach (var rootFile in Directory.GetFiles(Path.GetDirectoryName(source), "TEST.ROOT", SearchOption.AllDirectories))
+                    foreach (var rootFile in Directory.GetFiles(Path.GetDirectoryName(source), TEST_ROOT_FILE_NAME, SearchOption.AllDirectories))
                     {
                         frameworkHandle.SendMessage(TestMessageLevel.Informational, "JTReg: " + $"Found test root file: {rootFile}");
                         testFiles.add(new java.io.File(Path.GetDirectoryName(rootFile)));
@@ -253,22 +282,22 @@ namespace IKVM.JTReg.TestAdapter
 
                 // output path for jtreg state
                 var id = GetSourceHash(source);
-                var runDir = Path.Combine(runContext.TestRunDirectory, "ikvm-jtreg-" + id);
-                Directory.CreateDirectory(runDir);
+                var baseDir = Path.Combine(runContext.TestRunDirectory, BASEDIR_PREFIX + id);
+                Directory.CreateDirectory(baseDir);
 
                 // setup output logs to rundir
-                using var output = new java.io.PrintWriter(Path.Combine(runDir, "jtreg.out"));
-                using var errors = new StreamWriter(File.OpenWrite(Path.Combine(runDir, "jtreg.log")));
+                using var output = new java.io.PrintWriter(Path.Combine(baseDir, DEFAULT_OUT_FILE_NAME));
+                using var errors = new StreamWriter(File.OpenWrite(Path.Combine(baseDir, DEFAULT_LOG_FILE_NAME)));
 
                 // initialize the test manager with the discovered roots
-                var testManager = CreateTestManager(runDir, output, errors);
+                var testManager = CreateTestManager(baseDir, output, errors);
                 testManager.addTestFiles(testFiles, false);
 
                 // invoke each test suite
                 foreach (dynamic testSuite in (IEnumerable)testManager.getTestSuites())
                 {
                     frameworkHandle.SendMessage(TestMessageLevel.Informational, "JTReg: " + $"Running test suite: {testSuite.getName()}");
-                    RunTests(source, runContext, frameworkHandle, tests, CreateParameters(testManager, testSuite), cancellationToken);
+                    RunTests(source, testSuite, runContext, frameworkHandle, tests, CreateParameters(testManager, testSuite), cancellationToken);
                 }
             }
             catch (Exception e)
@@ -286,8 +315,21 @@ namespace IKVM.JTReg.TestAdapter
         /// <param name="tests"></param>
         /// <param name="parameters"></param>
         /// <param name="cancellationToken"></param>
-        internal void RunTests(string source, IRunContext runContext, IFrameworkHandle frameworkHandle, IEnumerable<TestCase> tests, dynamic parameters, CancellationToken cancellationToken)
+        internal void RunTests(string source, dynamic testSuite, IRunContext runContext, IFrameworkHandle frameworkHandle, IEnumerable<TestCase> tests, dynamic parameters, CancellationToken cancellationToken)
         {
+            if (string.IsNullOrEmpty(source))
+                throw new ArgumentException($"'{nameof(source)}' cannot be null or empty.", nameof(source));
+            if (testSuite is null)
+                throw new ArgumentNullException(nameof(testSuite));
+            if (runContext is null)
+                throw new ArgumentNullException(nameof(runContext));
+            if (frameworkHandle is null)
+                throw new ArgumentNullException(nameof(frameworkHandle));
+            if (tests is null)
+                throw new ArgumentNullException(nameof(tests));
+            if (parameters is null)
+                throw new ArgumentNullException(nameof(parameters));
+
             cancellationToken.ThrowIfCancellationRequested();
 
             // only continue if there are in fact tests in the suite to execute
@@ -297,17 +339,18 @@ namespace IKVM.JTReg.TestAdapter
                 try
                 {
                     // observe harness for test results
-                    var h = (dynamic)java.lang.Class.forName("com.sun.javatest.Harness", true, ClassLoader).newInstance();
-                    var o = HarnessObserverInterceptor.Create(new HarnessObserverImplementation(source, runContext, frameworkHandle, tests));
-                    h.addObserver(o);
+                    var harness = JTRegTypes.Harness.New();
+                    var observer = HarnessObserverInterceptor.Create(new HarnessObserverImplementation(source, testSuite, runContext, frameworkHandle, tests));
+                    harness.addObserver(observer);
 
                     // begin harness execution asynchronously, thus allowing potential cancellation
-                    h.start(parameters);
-                    cancellationToken.Register(() => h.stop());
+                    harness.start(parameters);
+                    cancellationToken.Register(() => harness.stop());
+
                     // wait until canceled or finished and cleanup
-                    h.waitUntilDone();
-                    h.stop();
-                    h.removeObserver(o);
+                    harness.waitUntilDone();
+                    harness.stop();
+                    harness.removeObserver(observer);
                 }
                 catch (java.lang.InterruptedException)
                 {
@@ -320,6 +363,9 @@ namespace IKVM.JTReg.TestAdapter
             }
         }
 
+        /// <summary>
+        /// Initiates a cancellation of the test discovery or execution.
+        /// </summary>
         public void Cancel()
         {
             cts?.Cancel();
@@ -327,26 +373,33 @@ namespace IKVM.JTReg.TestAdapter
         }
 
         /// <summary>
-        /// Creates a new <see cref="TestManager"/>.
+        /// Creates a new TestManager.
         /// </summary>
         /// <param name="runDir"></param>
+        /// <param name="output"></param>
+        /// <param name="errors"></param>
         /// <returns></returns>
         dynamic CreateTestManager(string runDir, java.io.PrintWriter output, TextWriter errors)
         {
-            var tmclazz = java.lang.Class.forName("com.sun.javatest.regtest.config.TestManager", true, ClassLoader);
-            var ehclazz = java.lang.Class.forName("com.sun.javatest.TestFinder$ErrorHandler", true, ClassLoader);
-            var eh = ErrorHandlerInterceptor.Create(new ErrorHandlerImplementation(errors));
-            var tm = tmclazz.getConstructor(typeof(java.io.PrintWriter), typeof(java.io.File), ehclazz).newInstance(output, new java.io.File(Environment.CurrentDirectory), eh);
+            if (string.IsNullOrEmpty(runDir))
+                throw new ArgumentException($"'{nameof(runDir)}' cannot be null or empty.", nameof(runDir));
+            if (output is null)
+                throw new ArgumentNullException(nameof(output));
+            if (errors is null)
+                throw new ArgumentNullException(nameof(errors));
 
-            var wd = Path.Combine(runDir, "JTwork");
-            Directory.CreateDirectory(wd);
-            tm.setWorkDirectory(new java.io.File(wd));
+            var errorHandler = ErrorHandlerInterceptor.Create(new ErrorHandlerImplementation(errors));
+            var testManager = JTRegTypes.TestManager.New(output, new java.io.File(Environment.CurrentDirectory), errorHandler);
 
-            var rd = Path.Combine(runDir, "JTreport");
-            Directory.CreateDirectory(rd);
-            tm.setReportDirectory(new java.io.File(rd));
+            var workDirectory = Path.Combine(runDir, DEFAULT_WORK_DIR_NAME);
+            Directory.CreateDirectory(workDirectory);
+            testManager.setWorkDirectory(new java.io.File(workDirectory));
 
-            return tm;
+            var reportDirectory = Path.Combine(runDir, DEFAULT_REPORT_DIR_NAME);
+            Directory.CreateDirectory(reportDirectory);
+            testManager.setReportDirectory(new java.io.File(reportDirectory));
+
+            return testManager;
         }
 
         /// <summary>
@@ -363,9 +416,7 @@ namespace IKVM.JTReg.TestAdapter
                 throw new ArgumentNullException(nameof(testSuite));
 
             // invoke new RegressionParameters(string, RegressionTestSuite)
-            var rpclazz = java.lang.Class.forName("com.sun.javatest.regtest.config.RegressionParameters", true, ClassLoader);
-            var tsclazz = java.lang.Class.forName("com.sun.javatest.regtest.config.RegressionTestSuite", true, ClassLoader);
-            var rp = rpclazz.getConstructor(typeof(string), tsclazz).newInstance("regtest", testSuite);
+            var rp = JTRegTypes.RegressionParameters.New(DEFAULT_PARAM_TAG, testSuite);
 
             // configure work directory
             var wd = testManager.getWorkDirectory(testSuite);
@@ -374,24 +425,24 @@ namespace IKVM.JTReg.TestAdapter
             var rd = testManager.getReportDirectory(testSuite);
             rp.setReportDir(rd);
 
-            // invoke JDK.of(File)
-            var jdkclazz = java.lang.Class.forName("com.sun.javatest.regtest.config.JDK", true, ClassLoader);
-            var jdkofmethod = jdkclazz.getMethod("of", typeof(java.io.File));
-            var jdk = (dynamic)jdkofmethod.invoke(null, new java.io.File(Path.Combine(Path.GetDirectoryName(typeof(IkvmJTRegTestAdapter).Assembly.Location)), "ikvm"));
-            var execmodeclazz = java.lang.Class.forName("com.sun.javatest.regtest.config.ExecMode", true, ClassLoader);
+            // if a ProblemList.txt or ExcludeList.txt file exists in the root, add them as exclude files
+            var excludeFileList = new List<java.io.File>();
+            foreach (var n in new[] { TEST_PROBLEM_LIST_FILE_NAME, TEST_EXCLUDE_LIST_FILE_NAME })
+                if (Path.Combine(((java.io.File)testSuite.getRootDir()).toString(), n) is string f && File.Exists(f))
+                    excludeFileList.Add(new java.io.File(f));
 
             rp.setTests((java.util.Set)testManager.getTests(testSuite));
-            rp.setExecMode(testSuite.getDefaultExecMode() ?? java.lang.Enum.valueOf(execmodeclazz, "OTHERVM"));
+            rp.setExecMode(testSuite.getDefaultExecMode() ?? JTRegTypes.ExecMode.OTHERVM);
             rp.setCheck(false);
-            rp.setCompileJDK(jdk);
+            rp.setCompileJDK(JTRegTypes.JDK.Of(new java.io.File(IKVM_JDK_DIR)));
+            rp.setTestJDK(rp.getCompileJDK());
             rp.setTestCompilerOptions(java.util.Collections.singletonList("-verbose"));
-            rp.setTestJDK(jdk);
             rp.setFile((java.io.File)wd.getFile("config.jti"));
             rp.setEnvVars(GetEnvVars());
             rp.setConcurrency(Environment.ProcessorCount);
             rp.setTimeLimit(15000);
             rp.setRetainArgs(java.util.Collections.singletonList("all"));
-            rp.setExcludeLists(new java.io.File[0]);
+            rp.setExcludeLists(excludeFileList.ToArray());
             rp.setMatchLists(new java.io.File[0]);
             rp.setPriorStatusValues(null);
             rp.setUseWindowsSubsystemForLinux(false);
@@ -412,14 +463,13 @@ namespace IKVM.JTReg.TestAdapter
             var envVars = new java.util.TreeMap();
 
             // import existing variables based on the current OS
-            var os = (dynamic)java.lang.Class.forName("com.sun.javatest.regtest.config.OS", true, ClassLoader).getMethod("current").invoke(null);
-            foreach (var var in ((string)os.family) == "windows" ? DEFAULT_WINDOWS_ENV_VARS : DEFAULT_UNIX_ENV_VARS)
+            foreach (var var in ((string)JTRegTypes.OS.Current().family) == "windows" ? DEFAULT_WINDOWS_ENV_VARS : DEFAULT_UNIX_ENV_VARS)
                 if (Environment.GetEnvironmentVariable(var) is string val)
                     envVars.put(var, val);
 
             // import any variables prefixed with JTREG, as done by the existing tool
             foreach (DictionaryEntry entry in Environment.GetEnvironmentVariables())
-                if (((string)entry.Key).StartsWith("JTREG_"))
+                if (((string)entry.Key).StartsWith(ENV_PREFIX))
                     envVars.put((string)entry.Key, (string)entry.Value);
 
             return envVars;
@@ -437,8 +487,7 @@ namespace IKVM.JTReg.TestAdapter
                 throw new ArgumentNullException(nameof(parameters));
 
             // resolve RemainingToList generic method
-            var trclazz = java.lang.Class.forName("com.sun.javatest.TestResult", true, ClassLoader);
-            var trtype = ikvm.runtime.Util.getInstanceTypeFromClass(trclazz);
+            var trtype = ikvm.runtime.Util.getInstanceTypeFromClass(JTRegTypes.TestResult.Class);
             var rtltrmethod = typeof(java.util.IteratorExtensions).GetMethod(nameof(java.util.IteratorExtensions.RemainingToList)).MakeGenericMethod(trtype);
 
             // wait until result is initialized
@@ -450,19 +499,9 @@ namespace IKVM.JTReg.TestAdapter
             if (tests == null)
                 return (IEnumerable<dynamic>)rtltrmethod.Invoke(null, new[] { (java.util.Iterator)trt.getIterator() });
             else if (tests.Length == 0)
-                return (IEnumerable<dynamic>)Array.CreateInstance(ikvm.runtime.Util.getInstanceTypeFromClass(trclazz), 0);
+                return (IEnumerable<dynamic>)Array.CreateInstance(ikvm.runtime.Util.getInstanceTypeFromClass(JTRegTypes.TestResult.Class), 0);
             else
                 return (IEnumerable<dynamic>)rtltrmethod.Invoke(null, new[] { (java.util.Iterator)trt.getIterator() });
-        }
-
-        public bool ShouldAttachToTestHost(IEnumerable<string> sources, IRunContext runContext)
-        {
-            return true;
-        }
-
-        public bool ShouldAttachToTestHost(IEnumerable<TestCase> tests, IRunContext runContext)
-        {
-            return true;
         }
 
     }

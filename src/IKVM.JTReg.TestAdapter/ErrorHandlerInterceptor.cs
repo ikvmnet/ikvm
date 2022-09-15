@@ -16,7 +16,6 @@ namespace IKVM.JTReg.TestAdapter
     {
 
         static readonly ProxyGenerator DefaultProxyGenerator = new ProxyGenerator();
-        static readonly Type RealType = ikvm.runtime.Util.getInstanceTypeFromClass(java.lang.Class.forName("com.sun.javatest.TestFinder$ErrorHandler", true, IkvmJTRegTestAdapter.ClassLoader));
 
         /// <summary>
         /// Creates a new implementation of 'com.sun.javatest.TestFinder$ErrorHandler'.
@@ -27,7 +26,7 @@ namespace IKVM.JTReg.TestAdapter
             if (implementation is null)
                 throw new ArgumentNullException(nameof(implementation));
 
-            return DefaultProxyGenerator.CreateInterfaceProxyWithoutTarget(RealType, new ErrorHandlerInterceptor(implementation));
+            return DefaultProxyGenerator.CreateInterfaceProxyWithoutTarget(JTRegTypes.TestFinder.ErrorHandler.Type, new ErrorHandlerInterceptor(implementation));
         }
 
         readonly ErrorHandlerImplementation implementation;

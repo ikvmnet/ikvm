@@ -22,16 +22,17 @@ namespace IKVM.JTReg.TestAdapter
         /// Creates a new <see cref="TestCase"/> from the given test result.
         /// </summary>
         /// <param name="source"></param>
+        /// <param name="testSuite"></param>
         /// <param name="testResult"></param>
         /// <returns></returns>
-        public static TestCase ToTestCase(string source, dynamic testResult)
+        public static TestCase ToTestCase(string source, dynamic testSuite, dynamic testResult)
         {
             if (source is null)
                 throw new ArgumentNullException(nameof(source));
             if (testResult is null)
                 throw new ArgumentNullException(nameof(testResult));
 
-            var name = TestResultMethods.GetFullyQualifiedName(testResult);
+            var name = TestResultMethods.GetFullyQualifiedName(testSuite, testResult);
             var description = testResult.getDescription();
 
             var testCase = new TestCase(name, new Uri("executor://IkvmJTRegTestAdapter/v1"), source);
@@ -94,11 +95,14 @@ namespace IKVM.JTReg.TestAdapter
         /// <summary>
         /// Gets the fully qualified name for the given test.
         /// </summary>
+        /// <param name="testSuite"></param>
         /// <param name="testResult"></param>
         /// <returns></returns>
         /// <exception cref="ArgumentNullException"></exception>
-        public static string GetFullyQualifiedName(dynamic testResult)
+        public static string GetFullyQualifiedName(dynamic testSuite, dynamic testResult)
         {
+            if (testSuite is null)
+                throw new ArgumentNullException(nameof(testSuite));
             if (testResult is null)
                 throw new ArgumentNullException(nameof(testResult));
 

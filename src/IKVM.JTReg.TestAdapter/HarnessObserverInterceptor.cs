@@ -12,7 +12,6 @@ namespace IKVM.JTReg.TestAdapter
     {
 
         static readonly ProxyGenerator DefaultProxyGenerator = new ProxyGenerator();
-        static readonly Type RealType = ikvm.runtime.Util.getInstanceTypeFromClass(java.lang.Class.forName("com.sun.javatest.Harness$Observer", true, IkvmJTRegTestAdapter.ClassLoader));
 
         /// <summary>
         /// Creates a new implementation of 'com.sun.javatest.Harness$Observer'.
@@ -23,7 +22,7 @@ namespace IKVM.JTReg.TestAdapter
             if (implementation is null)
                 throw new ArgumentNullException(nameof(implementation));
 
-            return DefaultProxyGenerator.CreateInterfaceProxyWithoutTarget(RealType, new HarnessObserverInterceptor(implementation));
+            return DefaultProxyGenerator.CreateInterfaceProxyWithoutTarget(JTRegTypes.Harness.Observer.Type, new HarnessObserverInterceptor(implementation));
         }
 
         readonly HarnessObserverImplementation implementation;
