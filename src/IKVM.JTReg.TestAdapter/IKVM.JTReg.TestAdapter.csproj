@@ -14,8 +14,8 @@
 
     <ItemGroup>
         <PackageReference Include="Castle.Core" Version="5.0.0" />
-        <PackageReference Include="Microsoft.TestPlatform.AdapterUtilities" Version="16.11.0" />
-        <PackageReference Include="Microsoft.TestPlatform.ObjectModel" Version="16.11.0" />
+        <PackageReference Include="Microsoft.TestPlatform.AdapterUtilities" Version="16.11.0" PrivateAssets="All" />
+        <PackageReference Include="Microsoft.TestPlatform.ObjectModel" Version="16.11.0" PrivateAssets="All" />
     </ItemGroup>
 
     <ItemGroup>
