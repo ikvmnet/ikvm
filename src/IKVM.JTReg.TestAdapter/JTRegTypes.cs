@@ -1,4 +1,5 @@
-﻿using System.IO;
+﻿using System.Configuration;
+using System.IO;
 using System.Linq;
 
 using java.lang;
@@ -15,6 +16,17 @@ namespace IKVM.JTReg.TestAdapter
 
         static readonly string[] libs = Directory.GetFiles(Path.Combine(Path.GetDirectoryName(typeof(IkvmJTRegTestAdapter).Assembly.Location), "jtreg", "lib"), "*.jar");
         public static readonly URLClassLoader ClassLoader = new URLClassLoader(libs.Select(i => new java.io.File(i).toURI().toURL()).ToArray());
+
+        public static class SearchPath
+        {
+
+            public static readonly Class Class = Class.forName("com.sun.javatest.regtest.agent.SearchPath", true, ClassLoader);
+            public static readonly Type Type = ikvm.runtime.Util.getInstanceTypeFromClass(Class);
+            public static readonly Constructor Constructor1 = Class.getConstructor(new Class[] { (Class)typeof(string[]) });
+
+            public static dynamic New(params string[] paths) => Constructor1.newInstance(new[] { paths });
+
+        }
 
         public static class Harness
         {
@@ -110,6 +122,16 @@ namespace IKVM.JTReg.TestAdapter
             public static readonly Type Type = ikvm.runtime.Util.getInstanceTypeFromClass(Class);
             public static readonly dynamic OTHERVM = java.lang.Enum.valueOf(Class, "OTHERVM");
             public static readonly dynamic AGENTVM = java.lang.Enum.valueOf(Class, "AGENTVM");
+
+        }
+
+        public static class IgnoreKind
+        {
+
+            public static readonly Class Class = Class.forName("com.sun.javatest.regtest.config.IgnoreKind", true, ClassLoader);
+            public static readonly Type Type = ikvm.runtime.Util.getInstanceTypeFromClass(Class);
+            public static readonly dynamic RUN = java.lang.Enum.valueOf(Class, "RUN");
+            public static readonly dynamic QUIET = java.lang.Enum.valueOf(Class, "QUIET");
 
         }
 

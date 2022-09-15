@@ -462,9 +462,9 @@ namespace IKVM.JTReg.TestAdapter
             rp.setRetainArgs(java.util.Collections.singletonList("all"));
             rp.setExcludeLists(excludeFileList.ToArray());
             rp.setMatchLists(new java.io.File[0]);
+            rp.setIgnoreKind(JTRegTypes.IgnoreKind.QUIET);
             rp.setPriorStatusValues(null);
             rp.setUseWindowsSubsystemForLinux(true);
-            rp.initExprContext();
 
             // configure keywords to filter based on
             string keywordsExpr = null;
@@ -473,6 +473,20 @@ namespace IKVM.JTReg.TestAdapter
             if (string.IsNullOrWhiteSpace(keywordsExpr) == false)
                 rp.setKeywordsExpr(keywordsExpr);
 
+            // locate and configure TestNG
+            var testNGPath = Path.Combine(Path.GetDirectoryName(typeof(IkvmJTRegTestAdapter).Assembly.Location), "jtreg", "lib", "testng.jar");
+            rp.setTestNGPath(JTRegTypes.SearchPath.New(testNGPath));
+
+            // locate and configure JUnit
+            var junitPath = Path.Combine(Path.GetDirectoryName(typeof(IkvmJTRegTestAdapter).Assembly.Location), "jtreg", "lib", "junit.jar");
+            rp.setJUnitPath(JTRegTypes.SearchPath.New(junitPath));
+
+            // locate and configure JUnit
+            var asmtoolsPath = Path.Combine(Path.GetDirectoryName(typeof(IkvmJTRegTestAdapter).Assembly.Location), "jtreg", "lib", "asmtools.jar");
+            rp.setAsmToolsPath(JTRegTypes.SearchPath.New(asmtoolsPath));
+
+            // final initialization
+            rp.initExprContext();
             if (rp.isValid() == false)
                 throw new Exception();
 
