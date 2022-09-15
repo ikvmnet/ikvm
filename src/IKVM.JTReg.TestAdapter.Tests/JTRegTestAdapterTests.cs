@@ -30,7 +30,7 @@ namespace IKVM.JTReg.TestAdapter.Tests
 
             var adp = new IkvmJTRegTestAdapter();
             adp.DiscoverTests(typeof(JTRegTestAdapterTests).Assembly.Location, discoveryContext.Object, messageLogger.Object, testCaseDiscoverySink.Object);
-            testCases.Should().HaveCountGreaterThanOrEqualTo(2);
+            testCases.Should().HaveCountGreaterThanOrEqualTo(1);
         }
 
         [TestMethod]
@@ -47,7 +47,7 @@ namespace IKVM.JTReg.TestAdapter.Tests
             // execute tests
             var adp = new IkvmJTRegTestAdapter();
             adp.RunTests(sources, runContext.Object, frameworkHandle.Object);
-            testResults.Should().HaveCountGreaterThanOrEqualTo(2);
+            testResults.Should().HaveCountGreaterThanOrEqualTo(1);
         }
 
     }

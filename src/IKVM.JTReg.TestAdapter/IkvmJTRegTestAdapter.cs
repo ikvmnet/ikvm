@@ -152,7 +152,7 @@ namespace IKVM.JTReg.TestAdapter
                 using var errors = new StreamWriter(File.OpenWrite(Path.Combine(baseDir, DEFAULT_LOG_FILE_NAME)));
 
                 // initialize the test manager with the discovered roots
-                var testManager = CreateTestManager(baseDir, output, errors);
+                var testManager = CreateTestManager(logger, baseDir, output, errors);
                 testManager.addTestFiles(testDirs, false);
 
                 // track metrics related to tests
@@ -306,7 +306,7 @@ namespace IKVM.JTReg.TestAdapter
                 using var errors = new StreamWriter(File.OpenWrite(Path.Combine(baseDir, DEFAULT_LOG_FILE_NAME)));
 
                 // initialize the test manager with the discovered roots
-                var testManager = CreateTestManager(baseDir, output, errors);
+                var testManager = CreateTestManager(frameworkHandle, baseDir, output, errors);
                 testManager.addTestFiles(testFiles, false);
 
                 // invoke each test suite
@@ -391,14 +391,15 @@ namespace IKVM.JTReg.TestAdapter
         /// <summary>
         /// Creates a new TestManager.
         /// </summary>
-        /// <param name="runDir"></param>
+        /// <param name="logger"></param>
+        /// <param name="baseDir"></param>
         /// <param name="output"></param>
         /// <param name="errors"></param>
         /// <returns></returns>
-        dynamic CreateTestManager(string runDir, java.io.PrintWriter output, TextWriter errors)
+        dynamic CreateTestManager(IMessageLogger logger, string baseDir, java.io.PrintWriter output, TextWriter errors)
         {
-            if (string.IsNullOrEmpty(runDir))
-                throw new ArgumentException($"'{nameof(runDir)}' cannot be null or empty.", nameof(runDir));
+            if (string.IsNullOrEmpty(baseDir))
+                throw new ArgumentException($"'{nameof(baseDir)}' cannot be null or empty.", nameof(baseDir));
             if (output is null)
                 throw new ArgumentNullException(nameof(output));
             if (errors is null)
@@ -407,14 +408,15 @@ namespace IKVM.JTReg.TestAdapter
             var errorHandler = ErrorHandlerInterceptor.Create(new ErrorHandlerImplementation(errors));
             var testManager = JTRegTypes.TestManager.New(output, new java.io.File(Environment.CurrentDirectory), errorHandler);
 
-            var workDirectory = Path.Combine(runDir, DEFAULT_WORK_DIR_NAME);
+            var workDirectory = Path.Combine(baseDir, DEFAULT_WORK_DIR_NAME);
+            logger.SendMessage(TestMessageLevel.Informational, "JTReg: " + $"Using work directory: '{workDirectory}'.");
             Directory.CreateDirectory(workDirectory);
             testManager.setWorkDirectory(new java.io.File(workDirectory));
 
-            var reportDirectory = Path.Combine(runDir, DEFAULT_REPORT_DIR_NAME);
+            var reportDirectory = Path.Combine(baseDir, DEFAULT_REPORT_DIR_NAME);
+            logger.SendMessage(TestMessageLevel.Informational, "JTReg: " + $"Using report directory: '{reportDirectory}'.");
             Directory.CreateDirectory(reportDirectory);
             testManager.setReportDirectory(new java.io.File(reportDirectory));
-
             return testManager;
         }
 
@@ -445,7 +447,7 @@ namespace IKVM.JTReg.TestAdapter
             var excludeFileList = new List<java.io.File>();
             foreach (var n in new[] { TEST_PROBLEM_LIST_FILE_NAME, TEST_EXCLUDE_LIST_FILE_NAME })
                 if (Path.Combine(((java.io.File)testSuite.getRootDir()).toString(), n) is string f && File.Exists(f))
-                    excludeFileList.Add(new java.io.File(f));
+                    excludeFileList.Add(new java.io.File(new java.io.File(f).getAbsoluteFile().toURI().normalize()));
 
             rp.setTests((java.util.Set)testManager.getTests(testSuite));
             rp.setExecMode(testSuite.getDefaultExecMode() ?? JTRegTypes.ExecMode.OTHERVM);
@@ -463,6 +465,13 @@ namespace IKVM.JTReg.TestAdapter
             rp.setPriorStatusValues(null);
             rp.setUseWindowsSubsystemForLinux(true);
             rp.initExprContext();
+
+            // configure keywords to filter based on
+            string keywordsExpr = null;
+            keywordsExpr = combineKeywords(keywordsExpr, "!ignore");
+            keywordsExpr = combineKeywords(keywordsExpr, "!manual");
+            if (string.IsNullOrWhiteSpace(keywordsExpr) == false)
+                rp.setKeywordsExpr(keywordsExpr);
 
             if (rp.isValid() == false)
                 throw new Exception();
@@ -518,6 +527,17 @@ namespace IKVM.JTReg.TestAdapter
                 return (IEnumerable<dynamic>)Array.CreateInstance(ikvm.runtime.Util.getInstanceTypeFromClass(JTRegTypes.TestResult.Class), 0);
             else
                 return (IEnumerable<dynamic>)rtltrmethod.Invoke(null, new[] { (java.util.Iterator)trt.getIterator() });
+        }
+
+        /// <summary>
+        /// Combines the two keywords.
+        /// </summary>
+        /// <param name="kw1"></param>
+        /// <param name="kw2"></param>
+        /// <returns></returns>
+        string combineKeywords(string kw1, string kw2)
+        {
+            return kw1 == null ? kw2 : kw1 + " & " + kw2;
         }
 
     }

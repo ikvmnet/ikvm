@@ -33,4 +33,16 @@
         </None>
     </ItemGroup>
 
+    <ItemGroup>
+        <None Update="jdk\ExcludeList.txt">
+            <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+        </None>
+        <None Update="langtools\ExcludeList.txt">
+            <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+        </None>
+        <None Update="nashorn\ExcludeList.txt">
+            <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+        </None>
+    </ItemGroup>
+
 </Project>

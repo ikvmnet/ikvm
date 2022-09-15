@@ -112,14 +112,14 @@ namespace IKVM.JTReg.TestAdapter
 
             // root path
             var rootPath = ((java.io.File)testSuite.getRootDir()).toPath();
-            var rootName = new java.io.File(source).getParentFile().toPath().relativize(rootPath).toString().Replace('.', '_');
+            var rootName = new java.io.File(source).getParentFile().toPath().relativize(rootPath).toString().Replace('.', '_').Replace('\\', '/');
 
             // test path
             var testPath = ((java.io.File)testResult.getDescription().getDir()).toPath();
-            var pathName = rootPath.relativize(testPath).toString().Replace('.', '_');
+            var pathName = rootPath.relativize(testPath).toString().Replace('.', '_').Replace('\\', '/');
 
             // test name
-            var testName = testResult.getDescription().getName().Replace('.', '_');
+            var testName = testResult.getDescription().getName().Replace('.', '_').Replace('\\', '/');
 
             return $"{rootName}.{pathName}.{testName}";
         }
