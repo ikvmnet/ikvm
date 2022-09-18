@@ -8,13 +8,19 @@
     -->
 
     <Target Name="_AssignIkvmToolReferenceConfiguration" Condition=" '@(IkvmToolReference)' != '' ">
+        <ItemGroup>
+            <_IkvmToolReferenceToConfigure Include="@(IkvmToolReference)">
+                <TargetFramework>SetTargetFramework=$(IkvmToolFramework)</TargetFramework>
+                <Properties>RuntimeIdentifier=$(IkvmToolRuntime)</Properties>
+            </_IkvmToolReferenceToConfigure>
+        </ItemGroup>
         <PropertyGroup>
             <OnlyReferenceAndBuildProjectsEnabledInSolutionConfiguration Condition="'$(OnlyReferenceAndBuildProjectsEnabledInSolutionConfiguration)' == ''">true</OnlyReferenceAndBuildProjectsEnabledInSolutionConfiguration>
             <ShouldUnsetParentConfigurationAndPlatform Condition="'$(ShouldUnsetParentConfigurationAndPlatform)' == '' and ('$(BuildingInsideVisualStudio)' == 'true' or '$(BuildingSolutionFile)' == 'true')">true</ShouldUnsetParentConfigurationAndPlatform>
             <ShouldUnsetParentConfigurationAndPlatform Condition="'$(ShouldUnsetParentConfigurationAndPlatform)' == ''">false</ShouldUnsetParentConfigurationAndPlatform>
         </PropertyGroup>
         <AssignProjectConfiguration
-            ProjectReferences="@(IkvmToolReference)"
+            ProjectReferences="@(_IkvmToolReferenceToConfigure)"
             CurrentProject="$(MSBuildProjectFullPath)"
             CurrentProjectConfiguration="$(Configuration)"
             CurrentProjectPlatform="$(Platform)"
@@ -24,8 +30,8 @@
             ResolveConfigurationPlatformUsingMappings="false"
             SolutionConfigurationContents="$(CurrentSolutionConfigurationContents)"
             AddSyntheticProjectReferencesForSolutionDependencies="false"
-            OnlyReferenceAndBuildProjectsEnabledInSolutionConfiguration = "$(OnlyReferenceAndBuildProjectsEnabledInSolutionConfiguration)"
-            ShouldUnsetParentConfigurationAndPlatform = "$(ShouldUnsetParentConfigurationAndPlatform)" >
+            OnlyReferenceAndBuildProjectsEnabledInSolutionConfiguration="$(OnlyReferenceAndBuildProjectsEnabledInSolutionConfiguration)"
+            ShouldUnsetParentConfigurationAndPlatform="$(ShouldUnsetParentConfigurationAndPlatform)">
             <Output TaskParameter="AssignedProjects" ItemName="_IkvmToolReferenceWithConfiguration"/>
             <Output TaskParameter="UnassignedProjects" ItemName="_IkvmToolReferenceWithConfiguration"/>
         </AssignProjectConfiguration>

@@ -31,7 +31,7 @@
             <PublishProperties>RuntimeIdentifier=win7-x64</PublishProperties>
             <PublishTargetPath>ikvm\win7-x64\bin</PublishTargetPath>
         </PublishProjectReference>
-        <PublishProjectReference Include="..\javac\javac.csproj">
+        <PublishProjectReference Include="..\javac\javac.msbuildproj">
             <SetTargetFramework>TargetFramework=net461</SetTargetFramework>
             <PublishProperties>RuntimeIdentifier=win7-x64</PublishProperties>
             <PublishTargetPath>ikvm\win7-x64\bin</PublishTargetPath>
@@ -44,7 +44,7 @@
             <PublishProperties>RuntimeIdentifier=win7-x64</PublishProperties>
             <PublishTargetPath>ikvm\win7-x64\bin</PublishTargetPath>
         </PublishProjectReference>
-        <PublishProjectReference Include="..\javac\javac.csproj">
+        <PublishProjectReference Include="..\javac\javac.msbuildproj">
             <SetTargetFramework>TargetFramework=netcoreapp3.1</SetTargetFramework>
             <PublishProperties>RuntimeIdentifier=win7-x64</PublishProperties>
             <PublishTargetPath>ikvm\win7-x64\bin</PublishTargetPath>
@@ -54,7 +54,7 @@
             <PublishProperties>RuntimeIdentifier=linux-x64</PublishProperties>
             <PublishTargetPath>ikvm\linux-x64\bin</PublishTargetPath>
         </PublishProjectReference>
-        <PublishProjectReference Include="..\javac\javac.csproj">
+        <PublishProjectReference Include="..\javac\javac.msbuildproj">
             <SetTargetFramework>TargetFramework=netcoreapp3.1</SetTargetFramework>
             <PublishProperties>RuntimeIdentifier=linux-x64</PublishProperties>
             <PublishTargetPath>ikvm\linux-x64\bin</PublishTargetPath>
