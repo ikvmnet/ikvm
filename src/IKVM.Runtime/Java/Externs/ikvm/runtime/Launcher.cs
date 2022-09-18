@@ -26,14 +26,12 @@ namespace IKVM.Java.Externs.ikvm.runtime
 #if FIRST_PASS
             throw new NotImplementedException();
 #else
-            if (main is null)
-                throw new ArgumentNullException(nameof(main));
             if (args is null)
                 throw new ArgumentNullException(nameof(args));
 
             // statically compiled entry points need to be explicitly added to the classpath
             // this is sort of a hack and should be removed with a better class loader hierarchy
-            if (main.Assembly.IsDynamic == false)
+            if (main != null && main.Assembly.IsDynamic == false)
                 ClassLoaderWrapper.GetBootstrapClassLoader().AddDelegate(IKVM.Internal.AssemblyClassLoader.FromAssembly(main.Assembly));
 
             // copy properties to a CLR type
@@ -42,7 +40,7 @@ namespace IKVM.Java.Externs.ikvm.runtime
                 foreach (global::java.util.Map.Entry entry in (IEnumerable)properties.entrySet())
                     p.Add((string)entry.getKey(), (string)entry.getValue());
 
-            return IKVM.Runtime.Launcher.Run(((global::java.lang.Class)main).getName(), false, args, jvmArgPrefix, p);
+            return IKVM.Runtime.Launcher.Run(main != null ? ((global::java.lang.Class)main).getName() : null, false, args, jvmArgPrefix, p);
 #endif
         }
 

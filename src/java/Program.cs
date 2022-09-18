@@ -9,7 +9,7 @@ namespace java
 
         public static int Main(string[] args)
         {
-            return Launcher.run(null, args, "-J", new Properties());
+            return Launcher.run(null, args, "", new Properties());
         }
 
     }
