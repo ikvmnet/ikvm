@@ -16,4 +16,11 @@
     <UsingTask TaskName="IkvmCompiler" AssemblyFile="$(IkvmMSBuildTaskAssembly)" Condition="Exists('$(IkvmMSBuildTaskAssembly)')" />
     <UsingTask TaskName="IkvmExporter" AssemblyFile="$(IkvmMSBuildTaskAssembly)" Condition="Exists('$(IkvmMSBuildTaskAssembly)')" />
     <UsingTask TaskName="IkvmJavaCompiler" AssemblyFile="$(IkvmMSBuildTaskAssembly)" Condition="Exists('$(IkvmMSBuildTaskAssembly)')" />
+
+    <!-- Gathers those references which are either related to the Framework itself, or IKVM. -->
+    <Target Name="ResolveIkvmFrameworkReferences" DependsOnTargets="$(ResolveIkvmFrameworkReferencesDependsOn)">
+        <IkvmGetReferenceAssemblies ToolPath="$(IkvmCompilerToolPath)" ToolFramework="$(IkvmToolFramework)">
+            <Output TaskParameter="ResolvedFrameworkReferences" ItemName="IkvmFrameworkReference" />
+        </IkvmGetReferenceAssemblies>
+    </Target>
 </Project>

@@ -110,6 +110,7 @@
             Runtime="$(IkvmRuntimeAssembly)"
             JNI="$(IkvmRuntimeJNIAssembly)"
             Target="$(OutputType.ToLowerInvariant())"
+            Main="$(StartupObject)"
             Debug="$(_IkvmCompilerDebug)"
             KeyFile="$(KeyOriginatorFile)"
             CompressResources="$(CompressResources)"

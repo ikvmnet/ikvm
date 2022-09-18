@@ -1,9 +1,9 @@
-package IKVM.NET.Sdk.Tests.Project.Exe;
+package ikvm.net.sdk.tests.project.exe;
 
 import java.lang.*;
-import IKVM.NET.Sdk.Tests.Project.Lib.Helloworld;
+import ikvm.net.sdk.tests.project.lib.Helloworld;
 
-public final class Program
+public final class Main
 {
 
     public static void main(String[] args)

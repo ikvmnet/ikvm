@@ -490,15 +490,13 @@ namespace IKVM.Internal
                 mainMethodProxy.SetCustomAttribute(new CustomAttributeBuilder(apartmentAttributeType.GetConstructor(Type.EmptyTypes), new object[0]));
 
             var ilgen = CodeEmitter.Create(mainMethodProxy);
-            var classType = LoadClassByDottedName("java.lang.Class").TypeAsTBD;
             var propertiesType = LoadClassByDottedName("java.util.Properties").TypeAsTBD;
             var launcherType = LoadClassByDottedName("ikvm.runtime.Launcher").TypeAsTBD;
-            var launchMethod = launcherType.GetMethod("run", new Type[] { classType, Types.String.MakeArrayType(), Types.String, propertiesType });
+            var launchMethod = launcherType.GetMethod("run", new Type[] { Types.Type, Types.String.MakeArrayType(), Types.String, propertiesType });
 
             // first argument to Launch (Class)
             ilgen.Emit(OpCodes.Ldtoken, type.TypeAsTBD);
             ilgen.Emit(OpCodes.Call, Types.Type.GetMethod("GetTypeFromHandle"));
-            ilgen.Emit(OpCodes.Call, classType.GetMethod("op_Implicit", new[] { Types.Type }));
 
             // second argument: args
             ilgen.Emit(OpCodes.Ldarg_0);

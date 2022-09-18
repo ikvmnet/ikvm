@@ -1,4 +1,5 @@
-﻿using IKVM.Runtime;
+﻿using java.util;
+using ikvm.runtime;
 
 namespace java
 {
@@ -8,7 +9,7 @@ namespace java
 
         public static int Main(string[] args)
         {
-            return Launcher.Launch(null, false, args);
+            return Launcher.run(null, args, "-J", new Properties());
         }
 
     }

@@ -84,7 +84,7 @@ Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "IKVM.Tool.Exporter.Tests", 
 EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "IKVM.Tool.Tests", "src\IKVM.Tool.Tests\IKVM.Tool.Tests.csproj", "{E4E6EAB9-2C68-49AC-A212-D464F1BB483B}"
 EndProject
-Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "javac", "src\javac\javac.csproj", "{78BE5834-EC02-48C5-A83A-2693D777375A}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "javac", "src\javac\javac.msbuildproj", "{78BE5834-EC02-48C5-A83A-2693D777375A}"
 EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "java", "src\java\java.csproj", "{4F7D51D0-F52D-46EF-94DF-C4081587FBB4}"
 EndProject
@@ -96,27 +96,27 @@ Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "IKVM.JTReg.TestAdapter.Test
 EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "IKVM.Java.Extensions", "src\IKVM.Java.Extensions\IKVM.Java.Extensions.csproj", "{6ABB187B-EBF6-4726-965B-2D19F3846099}"
 EndProject
-Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "rmic", "src\rmic\rmic.csproj", "{1685EDBF-1A43-46C1-BC3B-378C909CA3DF}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "rmic", "src\rmic\rmic.msbuildproj", "{1685EDBF-1A43-46C1-BC3B-378C909CA3DF}"
 EndProject
-Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "jar", "src\jar\jar.csproj", "{B240F8BA-6C35-4C19-9035-2821CC6BFEA8}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "jar", "src\jar\jar.msbuildproj", "{B240F8BA-6C35-4C19-9035-2821CC6BFEA8}"
 EndProject
-Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "jarsigner", "src\jarsigner\jarsigner.csproj", "{C6C34134-D80C-43CC-A477-32B4172374D2}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "jarsigner", "src\jarsigner\jarsigner.msbuildproj", "{C6C34134-D80C-43CC-A477-32B4172374D2}"
 EndProject
-Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "javadoc", "src\javadoc\javadoc.csproj", "{4371190E-AD8B-4625-A520-B745B05DE005}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "javadoc", "src\javadoc\javadoc.msbuildproj", "{4371190E-AD8B-4625-A520-B745B05DE005}"
 EndProject
-Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "keytool", "src\keytool\keytool.csproj", "{7C7BCE2E-88CE-4EA8-863E-37F6B8A824C4}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "keytool", "src\keytool\keytool.msbuildproj", "{7C7BCE2E-88CE-4EA8-863E-37F6B8A824C4}"
 EndProject
-Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "policytool", "src\policytool\policytool.csproj", "{B2EF307F-90AA-4CFE-B7F3-FF741545E35B}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "policytool", "src\policytool\policytool.msbuildproj", "{B2EF307F-90AA-4CFE-B7F3-FF741545E35B}"
 EndProject
-Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "javah", "src\javah\javah.csproj", "{2B536749-A2CD-4873-803A-5553D25E88EC}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "javah", "src\javah\javah.msbuildproj", "{2B536749-A2CD-4873-803A-5553D25E88EC}"
 EndProject
-Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "javap", "src\javap\javap.csproj", "{03F00630-3625-440D-BE43-51751FCE7806}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "javap", "src\javap\javap.msbuildproj", "{03F00630-3625-440D-BE43-51751FCE7806}"
 EndProject
-Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "jdeps", "src\jdeps\jdeps.csproj", "{FB1F02F2-3A18-49CC-A288-EC0834D90EED}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "jdeps", "src\jdeps\jdeps.msbuildproj", "{FB1F02F2-3A18-49CC-A288-EC0834D90EED}"
 EndProject
-Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "wsgen", "src\wsgen\wsgen.csproj", "{ECF6B110-DF3B-4D29-91C8-45AD4C7D4B17}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "wsgen", "src\wsgen\wsgen.msbuildproj", "{ECF6B110-DF3B-4D29-91C8-45AD4C7D4B17}"
 EndProject
-Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "wsimport", "src\wsimport\wsimport.csproj", "{004561E2-DED0-464D-A7B9-85D98281FED4}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "wsimport", "src\wsimport\wsimport.msbuildproj", "{004561E2-DED0-464D-A7B9-85D98281FED4}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution

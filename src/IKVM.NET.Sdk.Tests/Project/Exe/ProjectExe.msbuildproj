@@ -9,6 +9,7 @@
         <OutputType>Exe</OutputType>
         <TargetFrameworks>net461;netcoreapp3.1</TargetFrameworks>
         <RuntimeIdentifiers>win7-x64;linux-x64</RuntimeIdentifiers>
+        <StartupObject>ikvm.net.sdk.tests.project.exe.Main</StartupObject>
     </PropertyGroup>
 
     <ItemGroup>
