@@ -73,7 +73,7 @@
             <Using Namespace="System"/>
             <Using Namespace="System.IO"/>
             <Code Type="Fragment" Language="cs">
-<![CDATA[
+                <![CDATA[
             var files = new List<ITaskItem>();
             foreach (var item in Items)
                 if (File.Exists(item.ItemSpec))
@@ -149,7 +149,7 @@
     </PropertyGroup>
 
     <Target Name="CoreCompile" DependsOnTargets="$(CoreCompileDependsOn)">
-        <CallTarget Targets="$(TargetsTriggeredByCompilation)" Condition="'$(TargetsTriggeredByCompilation)' != ''" />
+        <CallTarget Targets="$(TargetsTriggeredByCompilation)" Condition=" '$(TargetsTriggeredByCompilation)' != '' " />
     </Target>
 
     <Target Name="CleanCoreCompile">

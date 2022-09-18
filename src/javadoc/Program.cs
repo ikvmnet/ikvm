@@ -1,7 +1,5 @@
 ﻿using IKVM.Runtime;
 
-using java.lang;
-
 namespace javadoc
 {
 
@@ -10,7 +8,7 @@ namespace javadoc
 
         public static int Main(string[] args)
         {
-            return Launcher.Execute(args, ((Class)typeof(com.sun.tools.javadoc.Main)).getName());
+            return Launcher.Launch(typeof(com.sun.tools.javadoc.Main), args);
         }
 
     }

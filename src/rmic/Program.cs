@@ -1,8 +1,4 @@
-﻿using IKVM.Runtime;
-
-using java.lang;
-
-namespace rmic
+﻿namespace rmic
 {
 
     public static class Program
@@ -10,7 +6,7 @@ namespace rmic
 
         public static int Main(string[] args)
         {
-            return Launcher.Execute(args, ((Class)typeof(sun.rmi.rmic.Main)).getName());
+            return ikvm.runtime.Launcher.run(typeof(sun.rmi.rmic.Main), args, "-J", null);
         }
 
     }

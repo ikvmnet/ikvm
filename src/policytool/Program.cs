@@ -1,7 +1,5 @@
 ﻿using IKVM.Runtime;
 
-using java.lang;
-
 namespace policytool
 {
 
@@ -10,7 +8,7 @@ namespace policytool
 
         public static int Main(string[] args)
         {
-            return Launcher.Execute(args, ((Class)typeof(sun.security.tools.policytool.PolicyTool)).getName());
+            return Launcher.Launch(typeof(sun.security.tools.policytool.PolicyTool), args);
         }
 
     }

@@ -1,7 +1,5 @@
 ﻿using IKVM.Runtime;
 
-using java.lang;
-
 namespace jdeps
 {
 
@@ -10,7 +8,7 @@ namespace jdeps
 
         public static int Main(string[] args)
         {
-            return Launcher.Execute(args, ((Class)typeof(com.sun.tools.jdeps.Main)).getName());
+            return Launcher.Launch(typeof(com.sun.tools.jdeps.Main), args);
         }
 
     }

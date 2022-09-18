@@ -7,6 +7,8 @@
         <IkvmMSBuildTaskFolder Condition=" '$(MSBuildRuntimeType)' == 'Core' ">netcoreapp3.1</IkvmMSBuildTaskFolder>
         <IkvmMSBuildTaskFolder Condition=" '$(MSBuildRuntimeType)' != 'Core' ">net472</IkvmMSBuildTaskFolder>
         <IkvmMSBuildTaskAssembly>$(MSBuildThisFileDirectory)..\..\tasks\$(IkvmMSBuildTaskFolder)\IKVM.MSBuild.Tasks.dll</IkvmMSBuildTaskAssembly>
+        <IkvmCompilerToolPath>$(MSBuildThisFileDirectory)..\..\bin\ikvmc</IkvmCompilerToolPath>
+        <IkvmExporterToolPath>$(MSBuildThisFileDirectory)..\..\bin\ikvmstub</IkvmExporterToolPath>
     </PropertyGroup>
 
     <UsingTask TaskName="IkvmGetReferenceAssemblies" AssemblyFile="$(IkvmMSBuildTaskAssembly)" Condition="Exists('$(IkvmMSBuildTaskAssembly)')" />

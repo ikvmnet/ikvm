@@ -1,7 +1,5 @@
 ﻿using IKVM.Runtime;
 
-using java.lang;
-
 namespace javah
 {
 
@@ -10,7 +8,7 @@ namespace javah
 
         public static int Main(string[] args)
         {
-            return Launcher.Execute(args, ((Class)typeof(com.sun.tools.javah.Main)).getName());
+            return Launcher.Launch(typeof(com.sun.tools.javah.Main), args);
         }
 
     }

@@ -34,7 +34,7 @@
     </Target>
 
     <!-- Override IKVM.NET.Sdk: invoke compiler through task  -->
-    <Target Name="_CompileJava" DependsOnTargets="ExportReferences;_ResolveClasspathFiles" Inputs="@(Compile);@(ClasspathFiles);" Outputs="$(_CompileJavaStampFile)">
+    <Target Name="_CompileJava" DependsOnTargets="ExportReferences;_ResolveClasspathFiles" Inputs="@(Compile);@(ClasspathFiles)" Outputs="$(_CompileJavaStampFile)">
         <Delete Files="$(_CompileJavaStampFile)" />
 
         <PropertyGroup>
@@ -49,18 +49,19 @@
         <RemoveDir Directories="$(ClassOutputPath)" />
         <MakeDir Directories="$(ClassOutputPath)" />
         <IkvmJavaCompiler
-            Classpath="@(Classpath)"
-            Sources="@(Compile)"
             Debug="$(_JavaCompilerDebug)"
             NoWarn="true"
+            Classpath="@(Classpath)"
             Source="$(LangVersion)"
             Target="$(JavaVersion)"
-            Destination="$([System.IO.Path]::GetFullPath('$(ClassOutputPath)'))" />>
+            Destination="$([System.IO.Path]::GetFullPath('$(ClassOutputPath)'))"
+            Verbose="true"
+            Sources="@(Compile)" />
 
         <!-- Remove files that were not modified by this compilation. -->
         <ItemGroup>
             <_CompileJavaClassFiles Include="$(ClassOutputPath)**\*.class" />
-            <_CompileJavaStaleFiles Include="@(_CompileJavaClassFiles)" Condition="$([System.DateTime]::Parse('%(ModifiedTime)').Ticks) &lt; $(_CompileJavaStartTime) " />
+            <_CompileJavaStaleFiles Include="@(_CompileJavaClassFiles)" Condition="$([System.DateTime]::Parse('%(ModifiedTime)').Ticks) &lt; $(_CompileJavaStartTime)" />
         </ItemGroup>
         <Delete Files="@(_CompileJavaStaleFiles)" />
 
@@ -68,7 +69,7 @@
     </Target>
 
     <!-- Override IKVM.NET.Sdk: invoke compiler through task  -->
-    <Target Name="_CoreCompile" DependsOnTargets="ResolveIkvmCompiler;ResolveIkvmRuntimeAssembly;ResolveIkvmRuntimeJNIAssembly;CompileJava" Inputs="$(IkvmRuntimeAssembly);$(IkvmRuntimeJNIAssembly);$(KeyOriginatorFile);@(MapFile);@(ReferencePathWithRefAssemblies);@(Class);@(JavaResource);$(_CompileJavaStampFile)" Outputs="@(IntermediateAssembly);@(_DebugSymbolsIntermediatePath)">
+    <Target Name="_CoreCompile" DependsOnTargets="ResolveIkvmRuntimeAssembly;ResolveIkvmRuntimeJNIAssembly;CompileJava" Inputs="$(IkvmRuntimeAssembly);$(IkvmRuntimeJNIAssembly);$(KeyOriginatorFile);@(MapFile);@(ReferencePathWithRefAssemblies);@(Class);@(JavaResource);$(_CompileJavaStampFile)" Outputs="@(IntermediateAssembly);@(_DebugSymbolsIntermediatePath)">
         <Error Text="IKVM.NET.Sdk cannot currently build assemblies targeting '$(TargetFramework)'. Either target 'net461' or 'netcoreapp3.1'." Condition=" '$(TargetFramework)' != 'net461' And '$(TargetFramework)' != 'netcoreapp3.1' " />
         <Error Text="Could not locate IKVM.Runtime assembly." Condition=" '$(IkvmRuntimeAssembly)' == '' " />
         <Error Text="IKVM.Runtime.dll could not be located at '$(IkvmRuntimeAssembly)'." Condition="!Exists('$(IkvmRuntimeAssembly)')" />
@@ -81,7 +82,7 @@
             <_AssemblyAttributesClass Include="@(_ClassToCompile)" Condition=" '%(Filename)%(Extension)' == '__AssemblyInfo.class' " />
             <_ClassToCompile Remove="@(_AssemblyAttributesClass)" />
         </ItemGroup>
-        
+
         <PropertyGroup>
             <_IkvmCompilerDebug Condition=" '$(DebugType)' != 'none' ">true</_IkvmCompilerDebug>
             <_IkvmCompilerExclude Condition="Exists('$(_ExcludeFilePath)')">$(_ExcludeFilePath)</_IkvmCompilerExclude>

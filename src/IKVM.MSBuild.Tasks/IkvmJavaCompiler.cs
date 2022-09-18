@@ -41,6 +41,8 @@ namespace IKVM.MSBuild.Tasks
 
         public bool NoWarn { get; set; }
 
+        public bool Verbose { get; set; }
+
         public string Source { get; set; }
 
         public string Target { get; set; }
@@ -88,6 +90,14 @@ namespace IKVM.MSBuild.Tasks
                     options.add("-nowarn");
                 else
                     Log.LogWarning("Unsupported option '-nowarn'. Ignoring.");
+            }
+
+            if (Verbose)
+            {
+                if (compiler.isSupportedOption("-verbose") >= 0)
+                    options.add("-verbose");
+                else
+                    Log.LogWarning("Unsupported option '-verbose'. Ignoring.");
             }
 
             if (Source != null)

@@ -1,7 +1,5 @@
 ﻿using IKVM.Runtime;
 
-using java.lang;
-
 namespace wsgen
 {
 
@@ -10,7 +8,7 @@ namespace wsgen
 
         public static int Main(string[] args)
         {
-            return Launcher.Execute(args, ((Class)typeof(com.sun.tools.@internal.ws.WsGen)).getName());
+            return Launcher.Launch(typeof(com.sun.tools.@internal.ws.WsGen), args);
         }
 
     }

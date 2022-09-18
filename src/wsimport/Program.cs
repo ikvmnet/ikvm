@@ -1,7 +1,5 @@
 ﻿using IKVM.Runtime;
 
-using java.lang;
-
 namespace wsimport
 {
 
@@ -10,7 +8,7 @@ namespace wsimport
 
         public static int Main(string[] args)
         {
-            return Launcher.Execute(args, ((Class)typeof(com.sun.tools.@internal.ws.WsImport)).getName());
+            return Launcher.Launch(typeof(com.sun.tools.@internal.ws.WsImport), args);
         }
 
     }

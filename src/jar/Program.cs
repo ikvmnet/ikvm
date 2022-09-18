@@ -1,8 +1,4 @@
-﻿using IKVM.Runtime;
-
-using java.lang;
-
-namespace jar
+﻿namespace jar
 {
 
     public static class Program
@@ -10,7 +6,7 @@ namespace jar
 
         public static int Main(string[] args)
         {
-            return Launcher.Execute(args, ((Class)typeof(sun.tools.jar.Main)).getName());
+            return ikvm.runtime.Launcher.run(typeof(sun.tools.jar.Main), args, "-J", null);
         }
 
     }

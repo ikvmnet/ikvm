@@ -1,7 +1,5 @@
 ﻿using IKVM.Runtime;
 
-using java.lang;
-
 namespace keytool
 {
 
@@ -10,7 +8,7 @@ namespace keytool
 
         public static int Main(string[] args)
         {
-            return Launcher.Execute(args, ((Class)typeof(sun.security.tools.keytool.Main)).getName());
+            return Launcher.Launch(typeof(sun.security.tools.keytool.Main), args);
         }
 
     }

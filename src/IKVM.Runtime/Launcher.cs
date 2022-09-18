@@ -14,10 +14,12 @@ namespace IKVM.Runtime
 
     /// <summary>
     /// Utility for launching a Java class from a main entry point. Parses JVM command line options, then passes the
-    /// remainder through to the underlying main method.
+    /// remainder through to the underlying Java main method.
     /// </summary>
-    public static class Launcher
+    static class Launcher
     {
+
+        const string DEFAULT_RUNTIME_ARG_PREFIX = "-J";
 
         /// <summary>
         /// Returns an enumeration with the given argument prepended.
@@ -35,47 +37,49 @@ namespace IKVM.Runtime
         /// <summary>
         /// Applies a glob to the given argument value, potentially returning multiple expanded arguments.
         /// </summary>
-        /// <param name="arg"></param>
+        /// <param name="path"></param>
         /// <returns></returns>
-        static IEnumerable<string> Glob(string arg)
+        static string[] Glob(string path)
         {
-            var dir = Path.GetDirectoryName(arg);
-            if (dir == "")
-                dir = null;
-
-            var exp = false;
-            foreach (var fsi in new DirectoryInfo(dir ?? Environment.CurrentDirectory).GetFileSystemInfos(Path.GetFileName(arg)))
+            try
             {
-                exp = true;
-                yield return dir != null ? Path.Combine(dir, fsi.Name) : fsi.Name;
-            }
+                var dir = Path.GetDirectoryName(path);
+                if (dir == "")
+                    dir = null;
 
-            if (exp == false)
-                yield return arg;
-        }
-
-        static string[] Glob(string[] args, int skip)
-        {
-            if (Environment.OSVersion.Platform == PlatformID.Win32NT)
-            {
-                var vmargs = new string[args.Length - skip];
-                Array.Copy(args, skip, vmargs, 0, args.Length - skip);
-                return vmargs;
-            }
-            else
-            {
                 var list = new List<string>();
-                for (var i = skip; i < args.Length; i++)
-                {
-                    var arg = args[i];
-                    if (arg.IndexOf('*') != -1 || arg.IndexOf('?') != -1)
-                        list.AddRange(Glob(arg));
-                    else
-                        list.Add(arg);
-                }
+                foreach (var fsi in new DirectoryInfo(dir ?? Environment.CurrentDirectory).GetFileSystemInfos(Path.GetFileName(path)))
+                    list.Add(dir != null ? Path.Combine(dir, fsi.Name) : fsi.Name);
+
+                if (list.Count == 0)
+                    return new string[] { path };
 
                 return list.ToArray();
             }
+            catch
+            {
+                return new string[] { path };
+            }
+        }
+
+        /// <summary>
+        /// Applies a glob to the given arguments.
+        /// </summary>
+        /// <param name="paths"></param>
+        /// <returns></returns>
+        static string[] Glob(string[] paths)
+        {
+            var list = new List<string>();
+            for (var i = 0; i < paths.Length; i++)
+            {
+                var path = paths[i];
+                if (path.IndexOf('*') != -1 || path.IndexOf('?') != -1)
+                    list.AddRange(Glob(path));
+                else
+                    list.Add(path);
+            }
+
+            return list.ToArray();
         }
 
         /// <summary>
@@ -196,35 +200,6 @@ namespace IKVM.Runtime
         }
 
         /// <summary>
-        /// Splits the given set of input arguments into two output sets, the first being those args which are passed
-        /// to the JVM, while the second is those args which are passed to the application.
-        /// </summary>
-        /// <param name="args"></param>
-        /// <param name="jvmArgs"></param>
-        /// <param name="appArgs"></param>
-        /// <param name="rarg"></param>
-        internal static void SplitArguments(IEnumerable<string> args, out IEnumerable<string> jvmArgs, out IEnumerable<string> appArgs, string rarg = "-J")
-        {
-            jvmArgs = args.Where(i => rarg != null).Where(i => i.StartsWith(rarg)).Select(i => i.Substring(rarg.Length));
-            appArgs = args.Where(i => rarg == null || i.StartsWith(rarg) == false);
-        }
-
-        /// <summary>
-        /// Accepts the given command line arguments, default main value and argument information, and executes
-        /// the application.
-        /// </summary>
-        /// <param name="args"></param>
-        /// <param name="main"></param>
-        /// <param name="jar"></param>
-        /// <param name="rarg"></param>
-        /// <returns></returns>
-        public static int Execute(IEnumerable<string> args, string main = null, bool jar = false, string rarg = "-J")
-        {
-            SplitArguments(args, out var jvmArgs, out var appArgs, rarg);
-            return Execute(jvmArgs, appArgs, main, jar);
-        }
-
-        /// <summary>
         /// Checks whether the given argument value equals the specified string.
         /// </summary>
         /// <param name="a"></param>
@@ -236,27 +211,33 @@ namespace IKVM.Runtime
         }
 
         /// <summary>
-        /// Executes the main class, given the input JVM args and input app arguments. The JVM arguments can potentially override the main and jar settings.
+        /// Launches a Java application.
         /// </summary>
-        /// <param name="jvmArgs"></param>
-        /// <param name="appArgs"></param>
         /// <param name="main"></param>
         /// <param name="jar"></param>
-        internal static int Execute(IEnumerable<string> jvmArgs, IEnumerable<string> appArgs, string main = null, bool jar = false)
+        /// <param name="args"></param>
+        /// <param name="rarg"></param>
+        /// <param name="properties"></param>
+        /// <returns></returns>
+        public static int Run(string main, bool jar, string[] args, string rarg, IDictionary<string, string> properties)
         {
+            if (args is null)
+                throw new ArgumentNullException(nameof(args));
+
 #if FIRST_PASS || STATIC_COMPILER
             throw new NotImplementedException();
 #else
-            var properties = new Hashtable();
+            var initialize = properties != null ? new Dictionary<string, string>(properties) : new Dictionary<string, string>();
             var showversion = false;
             var hasMainArg = false;
-            var appArgList = new List<string>(appArgs);
-            var setAppArgs = false;
+            var jvmArgs = args.Where(i => rarg != null).Where(i => i.StartsWith(rarg)).Select(i => i.Substring(rarg.Length)).ToList();
+            var appArgs = args.Where(i => rarg == null || i.StartsWith(rarg) == false).ToList();
+            var appArgsReset = false;
 
             // classpath from environment by default
-            properties["java.class.path"] = ".";
+            initialize["java.class.path"] = ".";
             if (Environment.GetEnvironmentVariable("CLASSPATH") is string cp && !string.IsNullOrEmpty(cp))
-                properties["java.class.path"] = cp;
+                initialize["java.class.path"] = string.Join(Path.PathSeparator.ToString(), Glob(cp.Split(Path.PathSeparator)));
 
             // process through each incoming argument
             for (var jvmArg = jvmArgs.GetEnumerator(); jvmArg.MoveNext();)
@@ -271,7 +252,7 @@ namespace IKVM.Runtime
                         var sep = def.IndexOf('=');
                         var key = sep > -1 ? def.Slice(0, sep) : def;
                         var val = sep > -1 ? def.Slice(sep + 1) : "".AsSpan();
-                        properties[key.ToString()] = val.ToString();
+                        initialize[key.ToString()] = val.ToString();
                         continue;
                     }
 
@@ -299,7 +280,7 @@ namespace IKVM.Runtime
                             Assertions.DisableAssertions(arg.Slice(v).ToString());
                     }
 
-                    if (ArgEquals(arg, "-esa") || ArgEquals(arg, " - enablesystemassertions"))
+                    if (ArgEquals(arg, "-esa") || ArgEquals(arg, "-enablesystemassertions"))
                     {
                         Assertions.EnableSystemAssertions();
                         continue;
@@ -320,7 +301,7 @@ namespace IKVM.Runtime
                             return 1;
                         }
 
-                        properties["java.class.path"] = jvmArg.Current;
+                        initialize["java.class.path"] = string.Join(Path.PathSeparator.ToString(), Glob(jvmArg.Current.Split(Path.PathSeparator)));
                         continue;
                     }
 
@@ -442,14 +423,14 @@ namespace IKVM.Runtime
                 else
                 {
                     // indicate we're resetting the application arguments
-                    if (setAppArgs == false)
+                    if (appArgsReset == false)
                     {
-                        setAppArgs = true;
-                        appArgList.Clear();
+                        appArgsReset = true;
+                        appArgs.Clear();
                     }
 
                     // append new application argument
-                    appArgList.Add(arg.ToString());
+                    appArgs.Add(arg.ToString());
                     continue;
                 }
             }
@@ -458,14 +439,14 @@ namespace IKVM.Runtime
             {
                 // if a jar file is specified, we're going to set the classpath to the jar itself
                 if (jar)
-                    properties["java.class.path"] = main;
+                    initialize["java.class.path"] = main;
 
                 // like the JDK we don't quote the args (even if they contain spaces)
-                properties["sun.java.command"] = string.Join(" ", Prepend(appArgList, main));
-                properties["sun.java.launcher"] = "SUN_STANDARD";
+                initialize["sun.java.command"] = string.Join(" ", Prepend(appArgs, main));
+                initialize["sun.java.launcher"] = "SUN_STANDARD";
 
                 // apply the loaded VM properties
-                SetProperties(properties);
+                SetProperties(initialize);
                 EnterMainThread();
 
                 // we were instructed to show the version
@@ -481,7 +462,7 @@ namespace IKVM.Runtime
 
                 // process the main argument, returning the true value, and resetting the command property to match
                 var clazz = sun.launcher.LauncherHelper.checkAndLoadMain(true, jar ? 2 : 1, main);
-                java.lang.System.setProperty("sun.java.command", (string)properties["sun.java.command"]);
+                java.lang.System.setProperty("sun.java.command", initialize["sun.java.command"]);
 
                 // find the main method and ensure it is accessible
                 var method = clazz.getMethod("main", typeof(string[]));
@@ -490,7 +471,7 @@ namespace IKVM.Runtime
                 try
                 {
                     // invoke main method, which is responsible for exit
-                    method.invoke(null, new object[] { appArgList.ToArray() });
+                    method.invoke(null, new object[] { appArgs.ToArray() });
                     return 0;
                 }
                 catch (java.lang.reflect.InvocationTargetException e)

@@ -8,7 +8,7 @@ namespace java
 
         public static int Main(string[] args)
         {
-            return Launcher.Execute(args, null, false, "");
+            return Launcher.Launch(null, false, args);
         }
 
     }

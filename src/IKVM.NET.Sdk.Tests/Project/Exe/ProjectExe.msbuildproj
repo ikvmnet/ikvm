@@ -1,8 +1,9 @@
-﻿<Project Sdk="IKVM.NET.Sdk/8.0.0-dev">
+﻿<Project>
     <PropertyGroup>
         <ImportDirectoryBuildProps>false</ImportDirectoryBuildProps>
         <ImportDirectoryBuildTargets>false</ImportDirectoryBuildTargets>
     </PropertyGroup>
+    <Import Sdk="IKVM.NET.Sdk" Version="8.0.0-dev" Project="Sdk.props" />
 
     <PropertyGroup>
         <OutputType>Exe</OutputType>
@@ -13,5 +14,6 @@
     <ItemGroup>
         <ProjectReference Include="..\Lib\ProjectLib.msbuildproj" />
     </ItemGroup>
-    
+
+    <Import Sdk="IKVM.NET.Sdk" Version="8.0.0-dev" Project="Sdk.targets" />
 </Project>
