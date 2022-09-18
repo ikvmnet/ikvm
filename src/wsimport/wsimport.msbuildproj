@@ -1,4 +1,4 @@
-<Project>
+﻿<Project>
     <Import Project="$(MSBuildThisFileDirectory)..\IKVM.NET.Sdk\Sdk\Sdk.props" />
     <Import Project="$(MSBuildThisFileDirectory)..\IKVM-pkg\buildTransitive\netstandard2.0\IKVM.props" />
     <Import Project="$(MSBuildThisFileDirectory)..\IKVM.MSBuild\buildTransitive\netstandard2.0\IKVM.MSBuild.props" />
@@ -9,6 +9,7 @@
         <RuntimeIdentifiers>win7-x64;linux-x64</RuntimeIdentifiers>
         <AutoGenerateBindingRedirects>true</AutoGenerateBindingRedirects>
         <StartupObject>com.sun.tools.internal.ws.WsImport</StartupObject>
+        <RootNamespace>ikvm.tools.wsimport</RootNamespace>
     </PropertyGroup>
 
     <ItemGroup>

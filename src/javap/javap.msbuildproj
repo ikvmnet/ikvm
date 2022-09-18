@@ -9,6 +9,7 @@
         <RuntimeIdentifiers>win7-x64;linux-x64</RuntimeIdentifiers>
         <AutoGenerateBindingRedirects>true</AutoGenerateBindingRedirects>
         <StartupObject>com.sun.tools.javap.Main</StartupObject>
+        <RootNamespace>ikvm.tools.javap</RootNamespace>
     </PropertyGroup>
 
     <ItemGroup>

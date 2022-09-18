@@ -1,16 +1,14 @@
 ﻿using java.util;
 using ikvm.runtime;
 
-namespace java
+namespace ikvm.tools.java
 {
 
     public static class Program
     {
 
-        public static int Main(string[] args)
-        {
-            return Launcher.run(null, args, "", new Properties());
-        }
+        public static int Main(string[] args) => Launcher.run(null, args, "", new Properties());
 
     }
+
 }
