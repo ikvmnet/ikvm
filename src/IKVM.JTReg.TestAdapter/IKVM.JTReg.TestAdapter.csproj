@@ -1,0 +1,73 @@
+﻿<Project>
+    <Import Sdk="Microsoft.NET.Sdk" Project="Sdk.props" />
+    <Import Project="$(MSBuildThisFileDirectory)..\IKVM-pkg\buildTransitive\netstandard2.0\IKVM.props" />
+    <Import Project="$(MSBuildThisFileDirectory)..\IKVM.MSBuild\buildTransitive\netstandard2.0\IKVM.MSBuild.props" />
+    <Import Project="$(MSBuildThisFileDirectory)..\..\jtreg.props" />
+
+    <PropertyGroup>
+        <TargetFrameworks>net461;netcoreapp3.1</TargetFrameworks>
+    </PropertyGroup>
+
+    <ItemGroup>
+        <InternalsVisibleTo Include="IKVM.JTReg.TestAdapter.Tests" />
+    </ItemGroup>
+
+    <ItemGroup>
+        <PackageReference Include="Castle.Core" Version="5.0.0" />
+        <PackageReference Include="Microsoft.TestPlatform.AdapterUtilities" Version="16.11.0" PrivateAssets="All" />
+        <PackageReference Include="Microsoft.TestPlatform.ObjectModel" Version="16.11.0" PrivateAssets="All" />
+    </ItemGroup>
+
+    <ItemGroup>
+        <ProjectReference Include="..\IKVM.Runtime\IKVM.Runtime.csproj" />
+        <ProjectReference Include="..\IKVM.Runtime.JNI\IKVM.Runtime.JNI.csproj" />
+        <ProjectReference Include="..\IKVM.Java\IKVM.Java.msbuildproj" />
+        <ProjectReference Include="..\IKVM.Java.Extensions\IKVM.Java.Extensions.csproj" />
+    </ItemGroup>
+
+    <ItemGroup Condition=" '$(TargetFramework)' == 'net461' ">
+        <PublishProjectReference Include="..\java\java.csproj">
+            <SetTargetFramework>TargetFramework=net461</SetTargetFramework>
+            <PublishProperties>RuntimeIdentifier=win7-x64</PublishProperties>
+            <PublishTargetPath>ikvm\win7-x64\bin</PublishTargetPath>
+        </PublishProjectReference>
+        <PublishProjectReference Include="..\javac\javac.msbuildproj">
+            <SetTargetFramework>TargetFramework=net461</SetTargetFramework>
+            <PublishProperties>RuntimeIdentifier=win7-x64</PublishProperties>
+            <PublishTargetPath>ikvm\win7-x64\bin</PublishTargetPath>
+        </PublishProjectReference>
+    </ItemGroup>
+
+    <ItemGroup Condition=" '$(TargetFramework)' == 'netcoreapp3.1' ">
+        <PublishProjectReference Include="..\java\java.csproj">
+            <SetTargetFramework>TargetFramework=netcoreapp3.1</SetTargetFramework>
+            <PublishProperties>RuntimeIdentifier=win7-x64</PublishProperties>
+            <PublishTargetPath>ikvm\win7-x64\bin</PublishTargetPath>
+        </PublishProjectReference>
+        <PublishProjectReference Include="..\javac\javac.msbuildproj">
+            <SetTargetFramework>TargetFramework=netcoreapp3.1</SetTargetFramework>
+            <PublishProperties>RuntimeIdentifier=win7-x64</PublishProperties>
+            <PublishTargetPath>ikvm\win7-x64\bin</PublishTargetPath>
+        </PublishProjectReference>
+        <PublishProjectReference Include="..\java\java.csproj">
+            <SetTargetFramework>TargetFramework=netcoreapp3.1</SetTargetFramework>
+            <PublishProperties>RuntimeIdentifier=linux-x64</PublishProperties>
+            <PublishTargetPath>ikvm\linux-x64\bin</PublishTargetPath>
+        </PublishProjectReference>
+        <PublishProjectReference Include="..\javac\javac.msbuildproj">
+            <SetTargetFramework>TargetFramework=netcoreapp3.1</SetTargetFramework>
+            <PublishProperties>RuntimeIdentifier=linux-x64</PublishProperties>
+            <PublishTargetPath>ikvm\linux-x64\bin</PublishTargetPath>
+        </PublishProjectReference>
+    </ItemGroup>
+
+    <ItemGroup>
+        <Content Include="@(JTRegJar)" LinkBase="jtreg\lib">
+            <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+        </Content>
+    </ItemGroup>
+
+    <Import Sdk="Microsoft.NET.Sdk" Project="Sdk.targets" />
+    <Import Project="$(MSBuildThisFileDirectory)..\IKVM-pkg\buildTransitive\netstandard2.0\IKVM.targets" />
+    <Import Project="$(MSBuildThisFileDirectory)..\IKVM.MSBuild\buildTransitive\netstandard2.0\IKVM.MSBuild.targets" />
+</Project>
