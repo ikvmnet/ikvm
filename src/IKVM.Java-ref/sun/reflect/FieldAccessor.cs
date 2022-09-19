@@ -22,9 +22,12 @@
   
 */
 
-
-
 namespace sun.reflect
 {
-    public interface FieldAccessor { }
+
+    public interface FieldAccessor
+    {
+
+    }
+
 }
