@@ -86,6 +86,19 @@
         </TargetsForPublish>
 
         <TargetsForPublish Include="$(SolutionFile)">
+            <Targets>jar:Publish;jarsigner:Publish;java:Publish;javac:Publish;javadoc:Publish;javah:Publish;javap:Publish;jdeps:Publish;keytool:Publish;policytool:Publish;rmic:Publish;wsgen:Publish;wsimport:Publish</Targets>
+            <Properties>$(ToolProperties);TargetFramework=net461;PublishDir=$(ArtifactStagingDirectory)\jdk\net461\any\bin</Properties>
+        </TargetsForPublish>
+        <TargetsForPublish Include="$(SolutionFile)">
+            <Targets>jar:Publish;jarsigner:Publish;java:Publish;javac:Publish;javadoc:Publish;javah:Publish;javap:Publish;jdeps:Publish;keytool:Publish;policytool:Publish;rmic:Publish;wsgen:Publish;wsimport:Publish</Targets>
+            <Properties>$(ToolProperties);TargetFramework=netcoreapp3.1;RuntimeIdentifier=win7-x64;PublishDir=$(ArtifactStagingDirectory)\jdk\netcoreapp3.1\win7-x64\bin</Properties>
+        </TargetsForPublish>
+        <TargetsForPublish Include="$(SolutionFile)">
+            <Targets>jar:Publish;jarsigner:Publish;java:Publish;javac:Publish;javadoc:Publish;javah:Publish;javap:Publish;jdeps:Publish;keytool:Publish;policytool:Publish;rmic:Publish;wsgen:Publish;wsimport:Publish</Targets>
+            <Properties>$(ToolProperties);TargetFramework=netcoreapp3.1;RuntimeIdentifier=linux-x64;PublishDir=$(ArtifactStagingDirectory)\jdk\netcoreapp3.1\linux-x64\bin</Properties>
+        </TargetsForPublish>
+
+        <TargetsForPublish Include="$(SolutionFile)">
             <Targets>IKVM_Tests:Publish</Targets>
             <Properties>$(TestProperties);TargetFramework=netcoreapp3.1;PublishDir=$(ArtifactStagingDirectory)\tests\IKVM.Tests\netcoreapp3.1</Properties>
         </TargetsForPublish>
@@ -169,6 +182,23 @@
         <TargetsForPublish Include="$(SolutionFile)">
             <Targets>IKVM_MSBuild_Tests:Publish</Targets>
             <Properties>$(TestProperties);TargetFramework=net6.0;PublishDir=$(ArtifactStagingDirectory)\tests\IKVM.MSBuild.Tests\net6.0</Properties>
+        </TargetsForPublish>
+
+        <TargetsForPublish Include="$(SolutionFile)">
+            <Targets>IKVM_Java_Tests:Publish</Targets>
+            <Properties>$(TestProperties);TargetFramework=net461;PublishDir=$(ArtifactStagingDirectory)\tests\IKVM.Java.Tests\net461</Properties>
+        </TargetsForPublish>
+        <TargetsForPublish Include="$(SolutionFile)">
+            <Targets>IKVM_Java_Tests:Publish</Targets>
+            <Properties>$(TestProperties);TargetFramework=netcoreapp3.1;PublishDir=$(ArtifactStagingDirectory)\tests\IKVM.Java.Tests\netcoreapp3.1</Properties>
+        </TargetsForPublish>
+        <TargetsForPublish Include="$(SolutionFile)">
+            <Targets>IKVM_Java_Tests:Publish</Targets>
+            <Properties>$(TestProperties);TargetFramework=net5.0;PublishDir=$(ArtifactStagingDirectory)\tests\IKVM.Java.Tests\net5.0</Properties>
+        </TargetsForPublish>
+        <TargetsForPublish Include="$(SolutionFile)">
+            <Targets>IKVM_Java_Tests:Publish</Targets>
+            <Properties>$(TestProperties);TargetFramework=net6.0;PublishDir=$(ArtifactStagingDirectory)\tests\IKVM.Java.Tests\net6.0</Properties>
         </TargetsForPublish>
 
     </ItemGroup>
