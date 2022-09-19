@@ -1,5 +1,18 @@
 <Project>
 
+    <ItemDefinitionGroup>
+        <ResolvedFileToPublish>
+            <CopyToPublishDirectory>PreserveNewest</CopyToPublishDirectory>
+        </ResolvedFileToPublish>
+    </ItemDefinitionGroup>
+
+    <!-- Publish target that returns publish directory. -->
+    <Target Name="IkvmPublish" DependsOnTargets="Publish" Returns="$(PublishDirFullPath)">
+        <PropertyGroup>
+            <PublishDirFullPath>$([System.IO.Path]::GetFullPath('$(PublishDir)'))</PublishDirFullPath>
+        </PropertyGroup>
+    </Target>
+
     <Target Name="GetLibProjectReferences" Condition=" '@(LibProjectReference)' != '' ">
         <MSBuild Projects="@(LibProjectReference->'%(ProjectFile)')" Targets="GetTargetPath" BuildInParallel="$(BuildInParallel)" Properties="Platform=%(LibProjectReference.Platform);Configuration=%(LibProjectReference.Configuration)">
             <Output TaskParameter="TargetOutputs" ItemName="_LibProjectReferenceWithOutputPath" />
@@ -11,7 +24,7 @@
         </ItemGroup>
     </Target>
 
-    <Target Name="GetItemsForLibProjectReferences" BeforeTargets="Build;AssignTargetPaths" DependsOnTargets="GetLibProjectReferences" Condition="'$(DesignTimeBuild)' != 'true'">
+    <Target Name="GetItemsForLibProjectReferences" BeforeTargets="Build;AssignTargetPaths" DependsOnTargets="GetLibProjectReferences" Condition=" '$(DesignTimeBuild)' != 'true' And '@(LibProjectReference)' != '' ">
         <ItemGroup>
             <None Include="@(LibProjectReferenceWithOutputPath->'%(OutputPath)')">
                 <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
@@ -23,7 +36,7 @@
         </ItemGroup>
     </Target>
 
-    <Target Name="BuildLibProjectReferences" BeforeTargets="Compile" DependsOnTargets="GetLibProjectReferences" Condition=" '$(DesignTimeBuild)' != 'true' ">
+    <Target Name="BuildLibProjectReferences" BeforeTargets="Compile" DependsOnTargets="GetLibProjectReferences" Condition=" '$(DesignTimeBuild)' != 'true' And '@(LibProjectReference)' != '' ">
         <MSBuild Projects="%(LibProjectReferenceWithOutputPath.ProjectFile)" Targets="Build" BuildInParallel="$(BuildInParallel)" Properties="Platform=%(LibProjectReferenceWithOutputPath.Platform);Configuration=%(LibProjectReferenceWithOutputPath.Configuration)">
             <Output TaskParameter="TargetOutputs" ItemName="LibProjectReferencesCompileOutput" />
         </MSBuild>
@@ -219,7 +232,6 @@
 
     </Target>
 
-
     <Target Name="AssignPackageProjectConfiguration" Condition=" '$(DesignTimeBuild)' != 'true' And '@(PackageProjectReference)' != '' " >
         <PropertyGroup>
             <OnlyReferenceAndBuildProjectsEnabledInSolutionConfiguration Condition="'$(OnlyReferenceAndBuildProjectsEnabledInSolutionConfiguration)' == ''">true</OnlyReferenceAndBuildProjectsEnabledInSolutionConfiguration>
@@ -232,7 +244,7 @@
         </AssignProjectConfiguration>
     </Target>
 
-    <Target Name="GetProjectReferencePackageOutputPath" DependsOnTargets="AssignPackageProjectConfiguration" Condition=" '$(DesignTimeBuild)' != 'true' And '@(_PackageProjectReferenceWithConfiguration)' != '' " >
+    <Target Name="GetPackageProjectReferenceCopyToOutputDirectoryItems" DependsOnTargets="AssignPackageProjectConfiguration" Condition=" '$(DesignTimeBuild)' != 'true' And '@(_PackageProjectReferenceWithConfiguration)' != '' " >
         <MSBuild Projects="@(_PackageProjectReferenceWithConfiguration)" Targets="_CleanPackageFiles;Pack;GetPackageOutputPath" BuildInParallel="$(BuildInParallel)" Properties="%(_PackageProjectReferenceWithConfiguration.SetConfiguration);%(_PackageProjectReferenceWithConfiguration.SetPlatform)" RemoveProperties="%(_PackageProjectReferenceWithConfiguration.GlobalPropertiesToRemove);TargetFramework" Condition=" '%(_PackageProjectReferenceWithConfiguration.Identity)' != '' ">
             <Output TaskParameter="TargetOutputs" ItemName="_ResolvedPackageOutputPath" />
         </MSBuild>
@@ -247,7 +259,8 @@
 
     <PropertyGroup>
         <GetCopyToOutputDirectoryItemsDependsOn>
-            GetProjectReferencePackageOutputPath;
+            AssignPackageProjectConfiguration;
+            GetPackageProjectReferenceCopyToOutputDirectoryItems;
             $(GetCopyToOutputDirectoryItemsDependsOn);
         </GetCopyToOutputDirectoryItemsDependsOn>
     </PropertyGroup>

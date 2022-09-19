@@ -40,12 +40,19 @@
     </PropertyGroup>
 
     <PropertyGroup Label="IKVM SDK">
+        <IkvmCacheDir>$(MSBuildThisFileDirectory).ikvm\cache\1\</IkvmCacheDir>
+        <IkvmKeyFile>$(AssemblyOriginatorKeyFile)</IkvmKeyFile>
+        <IkvmVersion>$(PackageVersion)</IkvmVersion>
         <UseIkvmTasks>false</UseIkvmTasks>
-        <UseIkvmProjectReferences>true</UseIkvmProjectReferences>
+        <UseIkvmToolReferences>true</UseIkvmToolReferences>
         <DisableImplicitIkvmPackageReference>true</DisableImplicitIkvmPackageReference>
         <DisableImplicitIkvmMSBuildPackageReference>true</DisableImplicitIkvmMSBuildPackageReference>
-        <IkvmCacheDir>$(MSBuildThisFileDirectory).ikvm\cache\1</IkvmCacheDir>
-        <IkvmKeyFile>$(AssemblyOriginatorKeyFile)</IkvmKeyFile>
     </PropertyGroup>
+
+    <ItemGroup>
+        <IkvmToolReference Include="$(MSBuildThisFileDirectory)src\javac\javac.msbuildproj" IsJavaCompiler="true" />
+        <IkvmToolReference Include="$(MSBuildThisFileDirectory)src\ikvmc\ikvmc.csproj" IsIkvmCompiler="true" />
+        <IkvmToolReference Include="$(MSBuildThisFileDirectory)src\ikvmstub\ikvmstub.csproj" IsIkvmExporter="true" />
+    </ItemGroup>
 
 </Project>

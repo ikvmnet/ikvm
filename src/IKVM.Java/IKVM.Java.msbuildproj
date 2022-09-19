@@ -15,7 +15,7 @@
         <InternalsVisibleTo Include="IKVM.Runtime.JNI" />
         <InternalsVisibleTo Include="IKVM.AWT.WinForms" />
     </ItemGroup>
-
+    
     <ItemGroup>
         <PackageReference Include="SharpZipLib" Version="1.3.3" />
         <PackageReference Include="System.Memory" Version="4.5.5" />
@@ -25,6 +25,7 @@
         <Reference Include="System.Configuration" />
         <Reference Include="System.IO.Compression" />
         <Reference Include="System.Security" />
+        <PackageReference Include="System.Runtime.InteropServices.RuntimeInformation" Version="4.3.0" />
     </ItemGroup>
 
     <ItemGroup Condition=" '$(TargetFramework)' == 'netcoreapp3.1' ">
@@ -46,23 +47,9 @@
     </ItemGroup>
 
     <ItemGroup>
-        <ProjectReference Include="..\IKVM.Runtime-ref\IKVM.Runtime-ref.csproj">
-            <PrivateAssets>All</PrivateAssets>
-            <Private>False</Private>
-            <IsIkvmRuntimeAssembly>true</IsIkvmRuntimeAssembly>
-        </ProjectReference>
-        <ProjectReference Include="..\ikvmc\ikvmc.csproj">
-            <PrivateAssets>All</PrivateAssets>
-            <ReferenceOutputAssembly>false</ReferenceOutputAssembly>
-            <Private>False</Private>
-            <IsIkvmCompiler>true</IsIkvmCompiler>
-        </ProjectReference>
-        <ProjectReference Include="..\ikvmstub\ikvmstub.csproj">
-            <PrivateAssets>All</PrivateAssets>
-            <ReferenceOutputAssembly>false</ReferenceOutputAssembly>
-            <Private>False</Private>
-            <IsIkvmExporter>true</IsIkvmExporter>
-        </ProjectReference>
+        <ProjectReference Include="..\IKVM.Runtime-ref\IKVM.Runtime-ref.csproj" Private="False" PrivateAssets="All" />
+        <ProjectReference Include="..\IKVM.Runtime.JNI-ref\IKVM.Runtime.JNI-ref.csproj" Private="False" PrivateAssets="All" HideFromJava="true" />
+        <ProjectReference Include="..\IKVM.Java-ref\IKVM.Java-ref.csproj" Private="False" PrivateAssets="All" HideFromJava="true" />
     </ItemGroup>
 
     <ItemGroup>
@@ -97,7 +84,14 @@
     </ItemGroup>
 
     <ItemGroup>
-        <Compile Include="@(OpenJdkSource)" LinkBase="openjdk" />
+        <None Include="classpath\**\*" />
+        <None Include="icedtea_jce\**\*" />
+        <None Include="icedtea_rt\**\*" />
+        <None Include="local\**\*" />
+        <None Include="@(OpenJdkSource)">
+            <LinkBase>openjdk\$([MSBuild]::MakeRelative('$(OpenJdkDir)', '%(RootDir)%(Directory)'))</LinkBase>
+        </None>
+        <Compile Include="@(OpenJdkSource)" />
         <JavaResource Include="@(OpenJdkResource)" LinkBase="openjdk" />
         <ExcludeRegex Include="@(OpenJdkExcludeRegex)" />
     </ItemGroup>
@@ -147,6 +141,17 @@
     <Import Project="$(MSBuildThisFileDirectory)..\IKVM.NET.Sdk\Sdk\Sdk.targets" />
     <Import Project="$(MSBuildThisFileDirectory)..\IKVM.MSBuild\buildTransitive\netstandard2.0\IKVM.MSBuild.targets" />
     <Import Project="$(MSBuildExtensionsPath)\Microsoft\VisualStudio\v$(VisualStudioVersion)\TextTemplating\Microsoft.TextTemplating.targets" Condition="Exists('$(MSBuildExtensionsPath)\Microsoft\VisualStudio\v$(VisualStudioVersion)\TextTemplating\Microsoft.TextTemplating.targets')" />
+
+    <!-- IKVM.Java uses the javac executable from JAVA_HOME: bootstrap -->
+    <Target Name="ResolveJavaCompiler" Condition=" '$(JAVA_HOME)' != '' And '$(JavaCompilerPath)' == '' ">
+        <PropertyGroup>
+            <JavaCompilerPath Condition=" '$([MSBuild]::IsOSUnixLike())' == 'true' And Exists('$(JAVA_HOME)\bin\javac') ">$([System.IO.Path]::GetFullPath('$(JAVA_HOME)\bin\javac'))</JavaCompilerPath>
+            <JavaCompilerPath Condition=" '$([MSBuild]::IsOSUnixLike())' != 'true' And Exists('$(JAVA_HOME)\bin\javac.exe') ">$([System.IO.Path]::GetFullPath('$(JAVA_HOME)\bin\javac.exe'))</JavaCompilerPath>
+            <JavaCompilerArgs>-J-Xmx1536M</JavaCompilerArgs>
+            <JavaCompilerExec Condition=" '$(JavaCompilerPath)' != '' ">"$(JavaCompilerPath)" $(JavaCompilerArgs)</JavaCompilerExec>
+        </PropertyGroup>
+        <Message Text="Using javac executable found in JAVA_HOME at '$(JavaCompilerPath)'." Importance="high" Condition=" '$(JavaCompilerPath)' != '' " />
+    </Target>
 
     <Target Name="ResolveRmiStubInputItems" DependsOnTargets="CompileJava">
         <ItemGroup>
@@ -206,10 +211,10 @@
     </Target>
 
     <PropertyGroup>
-        <CleanDependsOn>
-            $(CleanDependsOn);
+        <CoreCleanDependsOn>
+            $(CoreCleanDependsOn);
             CleanRmiStubs;
-        </CleanDependsOn>
+        </CoreCleanDependsOn>
     </PropertyGroup>
 
     <PropertyGroup>

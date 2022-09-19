@@ -22,6 +22,7 @@
   
 */
 using System;
+using System.Reflection.Emit;
 
 using IKVM.Attributes;
 using IKVM.Internal;
@@ -102,24 +103,20 @@ namespace IKVM.Java.Externs.ikvm.runtime
                 type = type.GetElementType();
                 rank++;
             }
-            if (type.DeclaringType != null
-                && AttributeHelper.IsGhostInterface(type.DeclaringType))
-            {
+
+            if (type.DeclaringType != null && AttributeHelper.IsGhostInterface(type.DeclaringType))
                 type = type.DeclaringType;
-            }
+
             if (!IsVisibleAsClass(type))
-            {
                 return null;
-            }
-            TypeWrapper wrapper = ClassLoaderWrapper.GetWrapperFromType(type);
+
+            var wrapper = ClassLoaderWrapper.GetWrapperFromType(type);
             if (wrapper == null)
-            {
                 return null;
-            }
+
             if (rank > 0)
-            {
                 wrapper = wrapper.MakeArrayType(rank);
-            }
+
             return wrapper.ClassObject;
         }
 
@@ -145,13 +142,34 @@ namespace IKVM.Java.Externs.ikvm.runtime
             return true;
         }
 
-        public static Type getInstanceTypeFromClass(global::java.lang.Class clazz)
+        /// <summary>
+        /// Gets the underlying CLR <see cref="Type"/> instance.
+        /// </summary>
+        /// <param name="classObject"></param>
+        /// <returns></returns>
+        public static Type getInstanceTypeFromClass(global::java.lang.Class classObject)
         {
-            TypeWrapper wrapper = TypeWrapper.FromClass(clazz);
+            var wrapper = TypeWrapper.FromClass(classObject);
+            if (wrapper.IsRemapped && wrapper.IsFinal)
+                return wrapper.TypeAsTBD;
+
+            return wrapper.TypeAsBaseType;
+        }
+
+        /// <summary>
+        /// Gets the underlying CLR <see cref="Type"/> instance resovled fully at runtime.
+        /// </summary>
+        /// <param name="classObject"></param>
+        /// <returns></returns>
+        public static Type getRuntimeTypeFromClass(global::java.lang.Class classObject)
+        {
+            var wrapper = TypeWrapper.FromClass(classObject);
             if (wrapper.IsRemapped && wrapper.IsFinal)
             {
+                wrapper.Finish();
                 return wrapper.TypeAsTBD;
             }
+
             return wrapper.TypeAsBaseType;
         }
 

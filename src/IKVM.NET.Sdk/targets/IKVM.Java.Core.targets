@@ -11,37 +11,37 @@
     <!-- References may be derived from various sources: ProjectReference or IkvmReference. In each case, compilation of the Java
          code requires the original Java class or JAR files as input. These are attached as metadata to each possible reference.
     -->
-    <Target Name="GetReferenceClasspath" DependsOnTargets="ResolveReferences;FindReferenceAssembliesForReferences">
+    <Target Name="GetReferenceClasspath" DependsOnTargets="ResolveReferences;FindReferenceAssembliesForReferences" AfterTargets="ExportReferences">
         <ItemGroup>
-            <Classpath Include="@(ReferencePath->'%(JavaClasspath)')" Condition=" '%(ReferencePath.JavaClasspath)' != '' " />
+            <Classpath Include="%(ReferencePath.JavaClasspath)" Condition=" '%(ReferencePath.HideFromJava)' != 'true' And '%(ReferencePath.JavaClasspath)' != '' And '%(Filename)' != 'IKVM.Java' " />
         </ItemGroup>
     </Target>
 
     <!-- Compiles the set of exports to be made, along with their original assembly file path. -->
     <Target Name="ResolveReferenceExports" DependsOnTargets="ResolveReferences;FindReferenceAssembliesForReferences">
         <ItemGroup>
-            <ReferenceExport Include="@(ReferencePath->'$(ReferenceExportOutputPath)%(Filename).jar')" Condition=" '%(ReferencePath.JavaClasspath)' == '' And '%(Filename)' != 'System.Runtime.Serialization' ">
+            <ReferenceExport Include="@(ReferencePath->'$(ReferenceExportOutputPath)%(Filename).jar')" Condition=" '%(ReferencePath.HideFromJava)' != 'true' And '%(ReferencePath.JavaClasspath)' == '' And '%(Filename)' != 'IKVM.Java' And '%(Filename)' != 'System.Runtime.Serialization' ">
                 <AssemblyFile>%(Identity)</AssemblyFile>
             </ReferenceExport>
         </ItemGroup>
     </Target>
 
     <!-- Abstract target to conduct actual assembly exports. Overridden either by Command or Task implementation. -->
-    <Target Name="_BuildReferenceExports" DependsOnTargets="ResolveReferenceExports" Inputs="%(ReferenceExport.AssemblyFile)" Outputs="%(ReferenceExport.Identity)">
-        <Error Text="_BuildReferenceExports not implemented." />
+    <Target Name="_ExportReferences" DependsOnTargets="ResolveReferenceExports" Inputs="%(ReferenceExport.AssemblyFile)" Outputs="%(ReferenceExport.Identity)">
+        <Error Text="_ExportReferences not implemented." />
     </Target>
 
     <PropertyGroup>
-        <BuildReferenceExportsDependsOn>
-            $(BuildReferenceExportsDependsOn);
+        <ExportReferencesDependsOn>
+            $(ExportReferencesDependsOn);
             ResolveReferences;
             FindReferenceAssembliesForReferences;
             ResolveReferenceExports;
-            _BuildReferenceExports;
-        </BuildReferenceExportsDependsOn>
+            _ExportReferences;
+        </ExportReferencesDependsOn>
     </PropertyGroup>
 
-    <Target Name="BuildReferenceExports" DependsOnTargets="$(BuildReferenceExportsDependsOn)">
+    <Target Name="ExportReferences" DependsOnTargets="$(ExportReferencesDependsOn)">
         <ItemGroup>
             <Classpath Include="@(ReferenceExport)" />
         </ItemGroup>
@@ -53,10 +53,10 @@
     </Target>
 
     <PropertyGroup>
-        <CleanDependsOn>
-            $(CleanDependsOn);
+        <CoreCleanDependsOn>
+            $(CoreCleanDependsOn);
             CleanReferenceExports;
-        </CleanDependsOn>
+        </CoreCleanDependsOn>
     </PropertyGroup>
 
     <PropertyGroup>
@@ -64,8 +64,39 @@
         <_CompileJavaResponseFile>$(IntermediateOutputPath)$(MSBuildProjectName).javac.rsp</_CompileJavaResponseFile>
     </PropertyGroup>
 
+    <UsingTask TaskName="ClasspathToClasspathFiles" TaskFactory="RoslynCodeTaskFactory" AssemblyFile="$(MSBuildToolsPath)\Microsoft.Build.Tasks.Core.dll">
+        <ParameterGroup>
+            <Items ParameterType="Microsoft.Build.Framework.ITaskItem[]" Required="true" />
+            <Files ParameterType="Microsoft.Build.Framework.ITaskItem[]" Output="true" />
+        </ParameterGroup>
+        <Task>
+            <Using Namespace="System"/>
+            <Using Namespace="System.IO"/>
+            <Code Type="Fragment" Language="cs">
+                <![CDATA[
+var files = new List<ITaskItem>();
+foreach (var item in Items)
+    if (File.Exists(item.ItemSpec))
+        files.Add(item);
+    else if (Directory.Exists(item.ItemSpec))
+        foreach (var file in Directory.GetFiles(item.ItemSpec, "*", SearchOption.AllDirectories))
+            files.Add(new TaskItem(file));
+
+Files = files.ToArray();
+]]>
+            </Code>
+        </Task>
+    </UsingTask>
+
+    <!-- Classpath can contain both files and directories. We transform it to files so Inputs can recognize it. -->
+    <Target Name="_ResolveClasspathFiles" DependsOnTargets="GetReferenceClasspath;ExportReferences">
+        <ClasspathToClasspathFiles Items="@(Classpath)">
+            <Output TaskParameter="Files" ItemName="ClasspathFiles" />
+        </ClasspathToClasspathFiles>
+    </Target>
+
     <!-- Abstract target to conduct actual Java compilation. Overridden either by Command or Task implementation. -->
-    <Target Name="_CompileJava" DependsOnTargets="BuildReferenceExports" Inputs="@(Compile);@(Classpath)" Outputs="$(_CompileJavaStampFile)">
+    <Target Name="_CompileJava" DependsOnTargets="ExportReferences;_ResolveClasspathFiles" Inputs="@(Compile);@(ClasspathFiles)" Outputs="$(_CompileJavaStampFile)">
         <Error Text="_CompileJava not implemented." />
     </Target>
 
@@ -73,7 +104,8 @@
         <CompileJavaDependsOn>
             $(CompileJavaDependsOn)
             GetReferenceClasspath;
-            BuildReferenceExports;
+            ExportReferences;
+            _ResolveClasspathFiles;
             _CompileJava;
         </CompileJavaDependsOn>
     </PropertyGroup>
@@ -91,10 +123,10 @@
     </Target>
 
     <PropertyGroup>
-        <CleanDependsOn>
-            $(CleanDependsOn);
+        <CoreCleanDependsOn>
+            $(CoreCleanDependsOn);
             CleanCompileJava;
-        </CleanDependsOn>
+        </CoreCleanDependsOn>
     </PropertyGroup>
 
     <PropertyGroup>
@@ -117,7 +149,7 @@
     </PropertyGroup>
 
     <Target Name="CoreCompile" DependsOnTargets="$(CoreCompileDependsOn)">
-        <CallTarget Targets="$(TargetsTriggeredByCompilation)" Condition="'$(TargetsTriggeredByCompilation)' != ''" />
+        <CallTarget Targets="$(TargetsTriggeredByCompilation)" Condition=" '$(TargetsTriggeredByCompilation)' != '' " />
     </Target>
 
     <Target Name="CleanCoreCompile">
@@ -127,10 +159,10 @@
     </Target>
 
     <PropertyGroup>
-        <CleanDependsOn>
-            $(CleanDependsOn);
+        <CoreCleanDependsOn>
+            $(CoreCleanDependsOn);
             CleanCoreCompile;
-        </CleanDependsOn>
+        </CoreCleanDependsOn>
     </PropertyGroup>
 
     <!-- Include Task or Command implementation of targets. -->

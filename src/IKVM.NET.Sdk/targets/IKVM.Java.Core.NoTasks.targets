@@ -8,9 +8,9 @@
     -->
 
     <!-- Override IKVM.NET.Sdk: directly invoke executable  -->
-    <Target Name="_BuildReferenceExports" DependsOnTargets="ResolveIkvmExporter;ResolveReferenceExports" Inputs="%(ReferenceExport.AssemblyFile)" Outputs="%(ReferenceExport.Identity)">
-        <Error Text="ikvmstub could not be located." Condition=" '$(IkvmExporterPath)' == '' " />
-        <Error Text="ikvmstub could not be located at '$(IkvmExporterPath)'" Condition="!Exists('$(IkvmExporterPath)')" />
+    <Target Name="_ExportReferences" DependsOnTargets="ResolveIkvmExporter;ResolveReferenceExports" Inputs="%(ReferenceExport.AssemblyFile)" Outputs="%(ReferenceExport.Identity)">
+        <Error Text="Could not locate ikvmstub executable." Condition=" '$(IkvmExporterPath)' == '' " />
+        <Error Text="ikvmstub executable could not be located at '$(IkvmExporterPath)'" Condition="!Exists('$(IkvmExporterPath)')" />
 
         <ItemGroup>
             <_IkvmExporterArgs Remove="@(_IkvmExporterArgs)" />
@@ -32,10 +32,9 @@
         </ItemGroup>
     </Target>
 
-    <Target Name="_CompileJava" DependsOnTargets="ResolveJavaCompiler;BuildReferenceExports" Inputs="@(Compile);@(Classpath)" Outputs="$(_CompileJavaStampFile)">
-        <Delete Files="$(_CompileJavaStampFile)" />
-
-        <Error Text="javac could not be located." Condition=" '$(JavaCompilerPath)' == '' " />
+    <!-- Override IKVM.NET.Sdk: directly invoke javac executable  -->
+    <Target Name="_CompileJava" DependsOnTargets="ResolveJavaCompiler;ExportReferences;_ResolveClasspathFiles" Inputs="@(Compile);@(ClasspathFiles)" Outputs="$(_CompileJavaStampFile)">
+        <Error Text="Could not locate javac executable." Condition=" '$(JavaCompilerPath)' == '' " />
         <Error Text="javac could not be located at '$(JavaCompilerPath)'." Condition="!Exists('$(JavaCompilerPath)')" />
 
         <ItemGroup>
@@ -55,15 +54,26 @@
             <_JavaCompilerArgs Include="$(JavaVersion)" />
             <_JavaCompilerArgs Include="-d" />
             <_JavaCompilerArgs Include="$([System.IO.Path]::GetFullPath('$(ClassOutputPath)'))" />
-            <_JavaCompilerArgs Include="-verbose" />
+            <!--<_JavaCompilerArgs Include="-verbose" />-->
             <_JavaCompilerArgs Include="@(Compile->'%(FullPath)')" />
         </ItemGroup>
         <WriteLinesToFile File="$(_CompileJavaResponseFile)" Lines="@(_JavaCompilerArgs)" Overwrite="true" />
 
-        <RemoveDir Directories="$(ClassOutputPath)" Condition="Exists('$(ClassOutputPath)')" />
+        <!-- Store initial time. Files that remain older than this will be removed. -->
+        <PropertyGroup>
+            <_CompileJavaStartTime>$([System.DateTime]::Now.Ticks)</_CompileJavaStartTime>
+        </PropertyGroup>
+
         <MakeDir Directories="$(ClassOutputPath)" />
         <Message Text="$(JavaCompilerExec) @$(_CompileJavaResponseFile)" />
         <Exec Command="$(JavaCompilerExec) @$(_CompileJavaResponseFile)" />
+
+        <!-- Remove files that were not modified by this compilation. -->
+        <ItemGroup>
+            <_CompileJavaClassFiles Include="$(ClassOutputPath)**\*.class" />
+            <_CompileJavaStaleFiles Include="@(_CompileJavaClassFiles)" Condition="$([System.DateTime]::Parse('%(ModifiedTime)').Ticks) &lt; $(_CompileJavaStartTime) " />
+        </ItemGroup>
+        <Delete Files="@(_CompileJavaStaleFiles)" />
 
         <Touch Files="$(_CompileJavaStampFile)" AlwaysCreate="true" ForceTouch="true" />
         <ItemGroup>
@@ -71,10 +81,10 @@
         </ItemGroup>
     </Target>
 
-    <Target Name="_CoreCompile" DependsOnTargets="ResolveIkvmCompiler;ResolveIkvmRuntimeAssembly;CompileJava" Inputs="$(IkvmRuntimeAssembly);$(KeyOriginatorFile);@(MapFile);@(ReferencePathWithRefAssemblies);@(Class);@(JavaResource);$(_CompileJavaStampFile)" Outputs="@(IntermediateAssembly);@(_DebugSymbolsIntermediatePath)">
-        <Error Text="IKVM.Runtime.dll could not be located." Condition=" '$(IkvmRuntimeAssembly)' == '' " />
+    <Target Name="_CoreCompile" DependsOnTargets="ResolveIkvmCompiler;ResolveIkvmRuntimeAssembly;ResolveIkvmRuntimeJNIAssembly;CompileJava" Inputs="$(IkvmRuntimeAssembly);$(IkvmRuntimeJNIAssembly);$(KeyOriginatorFile);@(MapFile);@(ReferencePathWithRefAssemblies);@(Class);@(JavaResource);$(_CompileJavaStampFile)" Outputs="@(IntermediateAssembly);@(_DebugSymbolsIntermediatePath)">
+        <Error Text="Could not locate IKVM.Runtime assembly." Condition=" '$(IkvmRuntimeAssembly)' == '' " />
         <Error Text="IKVM.Runtime.dll could not be located at '$(IkvmRuntimeAssembly)'." Condition="!Exists('$(IkvmRuntimeAssembly)')" />
-        <Error Text="ikvmc could not be located." Condition=" '$(IkvmCompilerPath)' == '' " />
+        <Error Text="Could not locate ikvmc executable." Condition=" '$(IkvmCompilerPath)' == '' " />
         <Error Text="ikvmc could not be located at '$(IkvmCompilerPath)'." Condition="!Exists('$(IkvmCompilerPath)')" />
 
         <WriteLinesToFile File="$(_ExcludeFilePath)" Lines="@(ExcludeRegex)" Overwrite="true" Condition=" '@(ExcludeRegex)' != '' " />
@@ -92,6 +102,7 @@
             <_IkvmCompilerArgs Include="-assembly:$(AssemblyName)" />
             <_IkvmCompilerArgs Include="-version:$(AssemblyVersion)" />
             <_IkvmCompilerArgs Include="-runtime:$(IkvmRuntimeAssembly)" />
+            <_IkvmCompilerArgs Include="-jni:$(IkvmRuntimeJNIAssembly)" Condition=" '$(IkvmRuntimeJNIAssembly)' != '' " />
             <_IkvmCompilerArgs Include="-keyfile:$(KeyOriginatorFile)" Condition=" '$(KeyOriginatorFile)' != '' " />
             <_IkvmCompilerArgs Include="@(MapFile->'-remap:%(FullPath)')" Condition=" '@(MapFile)' != '' " />
             <_IkvmCompilerArgs Include="-compressresources" Condition=" '$(CompressResources)' == 'true' " />
@@ -99,6 +110,7 @@
             <_IkvmCompilerArgs Include="-strictfinalfieldsemantics" Condition=" '$(StrictFinalFieldSemantics)' == 'true' " />
             <_IkvmCompilerArgs Include="-removeassertions" Condition=" '$(RemoveAssertions)' == 'true' " />
             <_IkvmCompilerArgs Include="-target:$(OutputType.ToLowerInvariant())" />
+            <_IkvmCompilerArgs Include="-main:$(StartupObject)" Condition=" '$(StartupObject)' != '' " />
             <_IkvmCompilerArgs Include="-nostdlib" Condition=" '$(NoCompilerStandardLib)' == 'true' " />
             <_IkvmCompilerArgs Include="-sharedclassloader" Condition=" '$(SharedClassLoader)' == 'true' " />
             <_IkvmCompilerArgs Include="-w$(WarningLevel)" />
@@ -106,7 +118,7 @@
             <_IkvmCompilerArgs Include="-exclude:$([System.IO.Path]::GetFullPath('$(_ExcludeFilePath)'))" Condition="Exists('$(_ExcludeFilePath)')" />
             <_IkvmCompilerArgs Include="@(_AssemblyAttributesClass->'-assemblyattributes:%(FullPath)')" />
             <_IkvmCompilerReferencePath Remove="@(_IkvmCompilerReferencePath)" />
-            <_IkvmCompilerReferencePath Include="@(ReferencePathWithRefAssemblies)" />
+            <_IkvmCompilerReferencePath Include="@(ReferencePathWithRefAssemblies)" Condition=" '%(ReferencePathWithRefAssemblies.HideFromJava)' != 'true' " />
             <_IkvmCompilerArgs Include="@(_IkvmCompilerReferencePath->'-reference:%(FullPath)')" />
             <_IkvmCompilerResourceItem Remove="@(_IkvmCompilerResourceItem)" />
             <_IkvmCompilerResourceItem Include="@(JavaResource)" ResourcePath="$([System.String]::new('%(JavaResource.ResourcePath)').Replace('\', '/'))" Condition=" '%(Identity)' != '' " />

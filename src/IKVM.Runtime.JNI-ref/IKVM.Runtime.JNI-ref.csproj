@@ -13,9 +13,7 @@
     </ItemGroup>
 
     <ItemGroup>
-        <ProjectReference Include="..\IKVM.Java-ref\IKVM.Java-ref.csproj">
-            <PrivateAssets>All</PrivateAssets>
-        </ProjectReference>
+        <ProjectReference Include="..\IKVM.Java-ref\IKVM.Java-ref.csproj"  Private="False" PrivateAssets="All" />
     </ItemGroup>
 
 </Project>

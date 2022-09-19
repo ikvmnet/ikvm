@@ -126,6 +126,8 @@ namespace IKVM.MSBuild.Tasks
 
         public string Runtime { get; set; }
 
+        public string JNI { get; set; }
+
         public string WarningLevel { get; set; }
 
         public bool NoParameterReflection { get; set; }
@@ -250,6 +252,7 @@ namespace IKVM.MSBuild.Tasks
                     options.AssemblyAttributes.Add(i.ItemSpec);
 
             options.Runtime = Runtime;
+            options.JNI = JNI;
 
             if (options.WarningLevel is not null)
                 options.WarningLevel = int.Parse(WarningLevel);
