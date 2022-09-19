@@ -22,6 +22,7 @@
   
 */
 using System;
+using System.Collections;
 using System.Diagnostics;
 using System.Text;
 
@@ -205,23 +206,21 @@ namespace IKVM.Runtime
         public static int CreateJavaVM(void* ppvm, void* ppenv, void* args)
         {
             JavaVMInitArgs* pInitArgs = (JavaVMInitArgs*)args;
+
             // we don't support the JDK 1.1 JavaVMInitArgs
             if (!IsSupportedJniVersion(pInitArgs->version) || pInitArgs->version == JNIEnv.JNI_VERSION_1_1)
-            {
                 return JNIEnv.JNI_EVERSION;
-            }
             if (jvmCreated)
-            {
                 return JNIEnv.JNI_ERR;
-            }
-            System.Collections.Hashtable props = new System.Collections.Hashtable();
+
+            var properties = new Hashtable();
             for (int i = 0; i < pInitArgs->nOptions; i++)
             {
-                string option = JNIEnv.StringFromOEM(pInitArgs->options[i].optionString);
+                var option = JNIEnv.StringFromOEM(pInitArgs->options[i].optionString);
                 if (option.StartsWith("-D"))
                 {
-                    int idx = option.IndexOf('=', 2);
-                    props[option.Substring(2, idx - 2)] = option.Substring(idx + 1);
+                    var idx = option.IndexOf('=', 2);
+                    properties[option.Substring(2, idx - 2)] = option.Substring(idx + 1);
                 }
                 else if (option.StartsWith("-verbose"))
                 {
@@ -237,12 +236,13 @@ namespace IKVM.Runtime
                 }
             }
 
-            ikvm.runtime.Startup.setProperties(props);
+            // set properties to be imported
+            IKVM.Java.Externs.java.lang.VMSystemProperties.ImportProperties = properties;
 
             // initialize the class library
             java.lang.Thread.currentThread();
 
-            *((void**)ppvm) = JavaVM.pJavaVM;
+            *(void**)ppvm = JavaVM.pJavaVM;
             return JavaVM.AttachCurrentThread(JavaVM.pJavaVM, (void**)ppenv, null);
         }
 
@@ -271,5 +271,7 @@ namespace IKVM.Runtime
             }
             return JNIEnv.JNI_OK;
         }
+
     }
+
 }

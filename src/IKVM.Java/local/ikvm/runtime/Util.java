@@ -46,6 +46,8 @@ public final class Util
 
     public static native Type getInstanceTypeFromClass(Class classObject);
 
+    public static native Type getRuntimeTypeFromClass(Class classObject);
+
     public static native Throwable mapException(Throwable x);
     
     public static native Throwable unmapException(Throwable x);

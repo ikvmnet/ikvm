@@ -54,7 +54,7 @@
             <_JavaCompilerArgs Include="$(JavaVersion)" />
             <_JavaCompilerArgs Include="-d" />
             <_JavaCompilerArgs Include="$([System.IO.Path]::GetFullPath('$(ClassOutputPath)'))" />
-            <_JavaCompilerArgs Include="-verbose" />
+            <!--<_JavaCompilerArgs Include="-verbose" />-->
             <_JavaCompilerArgs Include="@(Compile->'%(FullPath)')" />
         </ItemGroup>
         <WriteLinesToFile File="$(_CompileJavaResponseFile)" Lines="@(_JavaCompilerArgs)" Overwrite="true" />
@@ -110,6 +110,7 @@
             <_IkvmCompilerArgs Include="-strictfinalfieldsemantics" Condition=" '$(StrictFinalFieldSemantics)' == 'true' " />
             <_IkvmCompilerArgs Include="-removeassertions" Condition=" '$(RemoveAssertions)' == 'true' " />
             <_IkvmCompilerArgs Include="-target:$(OutputType.ToLowerInvariant())" />
+            <_IkvmCompilerArgs Include="-main:$(StartupObject)" Condition=" '$(StartupObject)' != '' " />
             <_IkvmCompilerArgs Include="-nostdlib" Condition=" '$(NoCompilerStandardLib)' == 'true' " />
             <_IkvmCompilerArgs Include="-sharedclassloader" Condition=" '$(SharedClassLoader)' == 'true' " />
             <_IkvmCompilerArgs Include="-w$(WarningLevel)" />

@@ -20,13 +20,6 @@
         <None Include="README.md" Pack="true" PackagePath="." />
     </ItemGroup>
 
-    <ItemGroup>
-        <None Update="targets\IKVM.Java.Core.NoTasks.targets">
-            <PackagePath>targets\%(RecursiveDir)%(Filename)%(Extension)</PackagePath>
-            <Pack>true</Pack>
-        </None>
-    </ItemGroup>
-
     <Target Name="MakeGeneratedPropsFile" Outputs="$(IntermediateOutputPath)generated.props" BeforeTargets="_GetPackageFiles">
         <ItemGroup>
             <_GeneratedPropsFileLine Include="&lt;Project&gt;&lt;PropertyGroup&gt;&lt;IkvmVersion&gt;$(PackageVersion)&lt;/IkvmVersion&gt;&lt;/PropertyGroup&gt;&lt;/Project&gt;" />

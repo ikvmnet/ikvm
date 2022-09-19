@@ -14,7 +14,7 @@
     </ItemGroup>
 
     <ItemGroup>
-        <JTRegJar Include="$(JTRegDir)build\images\jtreg\lib\*.jar" Exclude="$(JTRegDir)build\images\jtreg\lib\jtreg.jar" />
+        <JTRegJar Include="$(JTRegDir)build\images\jtreg\lib\*.jar" />
         <JTRegJar Include="$(JTRegDir)build\ant\apache-ant-1.9.4\lib\*.jar" />
     </ItemGroup>
 

@@ -127,13 +127,6 @@
         </ResolveIkvmFrameworkReferencesDependsOn>
     </PropertyGroup>
 
-    <!-- Gathers those references which are either related to the Framework itself, or IKVM. -->
-    <Target Name="ResolveIkvmFrameworkReferences" DependsOnTargets="$(ResolveIkvmFrameworkReferencesDependsOn)">
-        <IkvmGetReferenceAssemblies ToolPath="$(IkvmCompilerToolPath)" ToolFramework="$(IkvmToolFramework)">
-            <Output TaskParameter="ResolvedFrameworkReferences" ItemName="IkvmFrameworkReference" />
-        </IkvmGetReferenceAssemblies>
-    </Target>
-
     <!-- Include Task or NoTask implementation of targets. -->
     <Import Project="IKVM.Tasks.targets" Condition=" '$(UseIkvmTasks)' == 'true' "/>
     <Import Project="IKVM.NoTasks.targets" Condition=" '$(UseIkvmTasks)' != 'true' "/>

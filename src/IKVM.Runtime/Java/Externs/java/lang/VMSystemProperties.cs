@@ -22,6 +22,7 @@
   
 */
 using System;
+using System.Collections;
 using System.Diagnostics;
 using System.Reflection;
 using System.Runtime.InteropServices;
@@ -34,6 +35,11 @@ namespace IKVM.Java.Externs.java.lang
 
     static class VMSystemProperties
     {
+
+        /// <summary>
+        /// Set of properties to initially import upon startup.
+        /// </summary>
+        public static IDictionary ImportProperties { get; set; }
 
         public static string getVirtualFileSystemRoot()
         {
@@ -71,30 +77,27 @@ namespace IKVM.Java.Externs.java.lang
             return null;
         }
 
-        private static bool IsWindowsConsole(bool stdout)
+        static bool IsWindowsConsole(bool stdout)
         {
             if (Environment.OSVersion.Platform != PlatformID.Win32NT)
-            {
                 return false;
-            }
+
             // these properties are available starting with .NET 4.5
-            PropertyInfo pi = typeof(Console).GetProperty(stdout ? "IsOutputRedirected" : "IsErrorRedirected");
+            var pi = typeof(Console).GetProperty(stdout ? "IsOutputRedirected" : "IsErrorRedirected");
             if (pi != null)
-            {
                 return !(bool)pi.GetValue(null, null);
-            }
+
             const int STD_OUTPUT_HANDLE = -11;
             const int STD_ERROR_HANDLE = -12;
-            IntPtr handle = GetStdHandle(stdout ? STD_OUTPUT_HANDLE : STD_ERROR_HANDLE);
+            var handle = GetStdHandle(stdout ? STD_OUTPUT_HANDLE : STD_ERROR_HANDLE);
             if (handle == IntPtr.Zero)
-            {
                 return false;
-            }
+
             const int FILE_TYPE_CHAR = 2;
             return GetFileType(handle) == FILE_TYPE_CHAR;
         }
 
-        private static string GetConsoleEncoding()
+        static string GetConsoleEncoding()
         {
             int codepage = Console.InputEncoding.CodePage;
             return codepage >= 847 && codepage <= 950
@@ -103,10 +106,11 @@ namespace IKVM.Java.Externs.java.lang
         }
 
         [DllImport("kernel32")]
-        private static extern int GetFileType(IntPtr hFile);
+        static extern int GetFileType(IntPtr hFile);
 
         [DllImport("kernel32")]
-        private static extern IntPtr GetStdHandle(int nStdHandle);
+        static extern IntPtr GetStdHandle(int nStdHandle);
+
     }
 
 }
