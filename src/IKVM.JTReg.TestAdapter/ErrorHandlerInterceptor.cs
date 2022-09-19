@@ -4,8 +4,6 @@ using System.Reflection.Emit;
 
 using Castle.DynamicProxy;
 
-using com.sun.xml.@internal.ws.message;
-
 namespace IKVM.JTReg.TestAdapter
 {
 
