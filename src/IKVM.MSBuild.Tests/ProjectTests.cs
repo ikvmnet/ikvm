@@ -101,8 +101,8 @@ namespace IKVM.MSBuild.Tests
             else
                 analyzer.SetGlobalProperty("RestoreAdditionalProjectFallbackFolders", Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.UserProfile), ".nuget", "packages"));
 
-            analyzer.AddBuildLogger(new TargetLogger(TestContext));
-
+            analyzer.AddBuildLogger(new TargetLogger(TestContext) { Verbosity = LoggerVerbosity.Detailed });
+            
             {
                 var options = new EnvironmentOptions();
                 options.DesignTime = false;

@@ -7,6 +7,7 @@
 
     <PropertyGroup>
         <TargetFrameworks>net461;netcoreapp3.1</TargetFrameworks>
+        <RootNamespace>project.lib</RootNamespace>
     </PropertyGroup>
 
     <Import Sdk="IKVM.NET.Sdk" Version="8.0.0-dev" Project="Sdk.targets" />
