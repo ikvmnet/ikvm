@@ -1,7 +1,7 @@
 <Project>
     
     <PropertyGroup>
-        <GlobalPropertiesToRemove>PublishDir;PackageOutputPath</GlobalPropertiesToRemove>
+        <GlobalPropertiesToRemove>$(GlobalPropertiesToRemove);PublishDir;PackageOutputPath</GlobalPropertiesToRemove>
     </PropertyGroup>
 
     <ItemDefinitionGroup>
