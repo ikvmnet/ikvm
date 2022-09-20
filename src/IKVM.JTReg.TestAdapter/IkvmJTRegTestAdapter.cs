@@ -298,7 +298,7 @@ namespace IKVM.JTReg.TestAdapter
 
                 // output path for jtreg state
                 var id = GetSourceHash(source);
-                var baseDir = Path.Combine(runContext.TestRunDirectory, BASEDIR_PREFIX + id);
+                var baseDir = Path.Combine(Path.GetTempPath(), BASEDIR_PREFIX + id);
                 Directory.CreateDirectory(baseDir);
 
                 // setup output logs to rundir
@@ -454,7 +454,7 @@ namespace IKVM.JTReg.TestAdapter
             rp.setCheck(false);
             rp.setCompileJDK(JTRegTypes.JDK.Of(new java.io.File(IKVM_JDK_DIR)));
             rp.setTestJDK(rp.getCompileJDK());
-            rp.setTestCompilerOptions(java.util.Collections.singletonList("-verbose"));
+            rp.setTestCompilerOptions(java.util.Collections.emptyList());
             rp.setFile((java.io.File)wd.getFile("config.jti"));
             rp.setEnvVars(GetEnvVars());
             rp.setConcurrency(Environment.ProcessorCount);
