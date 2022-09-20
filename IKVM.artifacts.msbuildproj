@@ -17,15 +17,6 @@
 
     <ItemGroup>
         <TargetsForPublish Include="$(SolutionFile)">
-            <Targets>IKVM_Java;IKVM_Runtime</Targets>
-        </TargetsForPublish>
-        <TargetsForPublish Include="$(SolutionFile)">
-            <Targets>ikvm;ikvmc;ikvmstub</Targets>
-        </TargetsForPublish>
-        <TargetsForPublish Include="$(SolutionFile)">
-            <Targets>IKVM-pkg</Targets>
-        </TargetsForPublish>
-        <TargetsForPublish Include="$(SolutionFile)">
             <Targets>IKVM-pkg:Publish</Targets>
             <Properties>$(PackProperties);TargetFramework=net461;PublishDir=$(ArtifactStagingDirectory)\bin\net461</Properties>
         </TargetsForPublish>
