@@ -26,7 +26,14 @@
         </PropertyGroup>
     </Target>
 
-    <!-- LibProjectReferences are references to vcxproj that that have their target outputs collected and included into the content directory. This allows multi-platform targeting. -->
+    <!--
+    
+    LibProjectReferences
+    
+    These refrences specify .vcxproj projects that should be built, with their output combined into the consuming project.
+    
+    -->
+    
     <Target Name="GetLibProjectReferences" Condition=" '@(LibProjectReference)' != '' ">
         <ItemGroup>
             <LibProjectReference Update="@(LibProjectReference)">
