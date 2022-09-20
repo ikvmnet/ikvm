@@ -170,7 +170,7 @@ jobs:
       run: dotnet restore IKVM.sln
     - name: Build Artifacts
       run: |
-        msbuild /m:1 `
+        msbuild /m `
           /p:Configuration="Release" `
           /p:Platform="Any CPU" `
           /p:Version=${env:GitVersion_FullSemVer} `
