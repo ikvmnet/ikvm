@@ -168,7 +168,7 @@ jobs:
       run: dotnet restore IKVM.sln
     - name: Build Artifacts
       run: |
-        msbuild /m `
+        msbuild /m:1 `
           /p:Configuration="Release" `
           /p:Platform="Any CPU" `
           /p:Version=${env:GitVersion_FullSemVer} `
@@ -178,7 +178,7 @@ jobs:
           /p:PackageVersion=${env:GitVersion_NuGetVersionV2} `
           /p:RepositoryUrl="${env:GITHUB_SERVER_URL}/${env:GITHUB_REPOSITORY}.git" `
           /p:PackageProjectUrl="${env:GITHUB_SERVER_URL}/${env:GITHUB_REPOSITORY}" `
-          /p:BuildInParallel=false `
+          /p:BuildInParallel=true `
           /p:CreateHardLinksForAdditionalFilesIfPossible=true `
           /p:CreateHardLinksForCopyAdditionalFilesIfPossible=true `
           /p:CreateHardLinksForCopyFilesToOutputDirectoryIfPossible=true `
