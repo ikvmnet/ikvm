@@ -1,10 +1,23 @@
 <Project>
+    
+    <PropertyGroup>
+        <GlobalPropertiesToRemove>PublishDir;PackageOutputPath</GlobalPropertiesToRemove>
+    </PropertyGroup>
 
     <ItemDefinitionGroup>
         <ResolvedFileToPublish>
             <CopyToPublishDirectory>PreserveNewest</CopyToPublishDirectory>
         </ResolvedFileToPublish>
     </ItemDefinitionGroup>
+
+    <!-- Attempt to remove the PublishDir from the evaluation graph to prevent multiple evaluation. -->
+    <Target Name="AddPublishDirToGlobalPropertiesToRemove" BeforeTargets="AssignProjectConfiguration">
+        <ItemGroup>
+            <ProjectReference Update="@(ProjectReference)">
+                <GlobalPropertiesToRemove>%(ProjectReference.GlobalPropertiesToRemove);$(GlobalPropertiesToRemove)</GlobalPropertiesToRemove>
+            </ProjectReference>
+        </ItemGroup>
+    </Target>
 
     <!-- Publish target that returns publish directory. -->
     <Target Name="IkvmPublish" DependsOnTargets="Publish" Returns="$(PublishDirFullPath)">
@@ -13,8 +26,14 @@
         </PropertyGroup>
     </Target>
 
+    <!-- LibProjectReferences are references to vcxproj that that have their target outputs collected and included into the content directory. This allows multi-platform targeting. -->
     <Target Name="GetLibProjectReferences" Condition=" '@(LibProjectReference)' != '' ">
-        <MSBuild Projects="@(LibProjectReference->'%(ProjectFile)')" Targets="GetTargetPath" BuildInParallel="$(BuildInParallel)" Properties="Platform=%(LibProjectReference.Platform);Configuration=%(LibProjectReference.Configuration)">
+        <ItemGroup>
+            <LibProjectReference Update="@(LibProjectReference)">
+                <GlobalPropertiesToRemove>%(LibProjectReference.GlobalPropertiesToRemove);$(GlobalPropertiesToRemove)</GlobalPropertiesToRemove>
+            </LibProjectReference>
+        </ItemGroup>
+        <MSBuild Projects="@(LibProjectReference->'%(ProjectFile)')" Targets="GetTargetPath" BuildInParallel="$(BuildInParallel)" Properties="Platform=%(LibProjectReference.Platform);Configuration=%(LibProjectReference.Configuration)" RemoveProperties="%(LibProjectReference.GlobalPropertiesToRemove)">
             <Output TaskParameter="TargetOutputs" ItemName="_LibProjectReferenceWithOutputPath" />
         </MSBuild>
         <ItemGroup>
@@ -37,30 +56,31 @@
     </Target>
 
     <Target Name="BuildLibProjectReferences" BeforeTargets="Compile" DependsOnTargets="GetLibProjectReferences" Condition=" '$(DesignTimeBuild)' != 'true' And '@(LibProjectReference)' != '' ">
-        <MSBuild Projects="%(LibProjectReferenceWithOutputPath.ProjectFile)" Targets="Build" BuildInParallel="$(BuildInParallel)" Properties="Platform=%(LibProjectReferenceWithOutputPath.Platform);Configuration=%(LibProjectReferenceWithOutputPath.Configuration)">
+        <MSBuild Projects="%(LibProjectReferenceWithOutputPath.ProjectFile)" Targets="Build" BuildInParallel="$(BuildInParallel)" Properties="Platform=%(LibProjectReferenceWithOutputPath.Platform);Configuration=%(LibProjectReferenceWithOutputPath.Configuration)" RemoveProperties="%(LibProjectReferenceWithOutputPath.GlobalPropertiesToRemove)">
             <Output TaskParameter="TargetOutputs" ItemName="LibProjectReferencesCompileOutput" />
         </MSBuild>
     </Target>
 
+    <!-- 
+    
+        PublishProjectReference
+        
+        These references have their Publish target invoked, with the output being consumed by the containing project.
+        
+    -->
+    
     <Target Name="AssignPublishProjectConfiguration" Condition=" '$(DesignTimeBuild)' != 'true' And '@(PublishProjectReference)' != '' ">
+        <ItemGroup>
+            <PublishProjectReference Update="@(PublishProjectReference)">
+                <GlobalPropertiesToRemove>%(PublishProjectReference.GlobalPropertiesToRemove);$(GlobalPropertiesToRemove)</GlobalPropertiesToRemove>
+            </PublishProjectReference>
+        </ItemGroup>
         <PropertyGroup>
             <OnlyReferenceAndBuildProjectsEnabledInSolutionConfiguration Condition="'$(OnlyReferenceAndBuildProjectsEnabledInSolutionConfiguration)' == ''">true</OnlyReferenceAndBuildProjectsEnabledInSolutionConfiguration>
             <ShouldUnsetParentConfigurationAndPlatform Condition="'$(ShouldUnsetParentConfigurationAndPlatform)' == '' and ('$(BuildingInsideVisualStudio)' == 'true' or '$(BuildingSolutionFile)' == 'true')">true</ShouldUnsetParentConfigurationAndPlatform>
             <ShouldUnsetParentConfigurationAndPlatform Condition="'$(ShouldUnsetParentConfigurationAndPlatform)' == ''">false</ShouldUnsetParentConfigurationAndPlatform>
         </PropertyGroup>
-        <AssignProjectConfiguration
-            ProjectReferences="@(PublishProjectReference)"
-            CurrentProject="$(MSBuildProjectFullPath)"
-            CurrentProjectConfiguration="$(Configuration)"
-            CurrentProjectPlatform="$(Platform)"
-            DefaultToVcxPlatformMapping="$(DefaultToVcxPlatformMapping)"
-            VcxToDefaultPlatformMapping="$(VcxToDefaultPlatformMapping)"
-            OutputType="$(OutputType)"
-            ResolveConfigurationPlatformUsingMappings="false"
-            SolutionConfigurationContents="$(CurrentSolutionConfigurationContents)"
-            AddSyntheticProjectReferencesForSolutionDependencies="false"
-            OnlyReferenceAndBuildProjectsEnabledInSolutionConfiguration = "$(OnlyReferenceAndBuildProjectsEnabledInSolutionConfiguration)"
-            ShouldUnsetParentConfigurationAndPlatform = "$(ShouldUnsetParentConfigurationAndPlatform)" >
+        <AssignProjectConfiguration ProjectReferences="@(PublishProjectReference)" CurrentProject="$(MSBuildProjectFullPath)" CurrentProjectConfiguration="$(Configuration)" CurrentProjectPlatform="$(Platform)" DefaultToVcxPlatformMapping="$(DefaultToVcxPlatformMapping)" VcxToDefaultPlatformMapping="$(VcxToDefaultPlatformMapping)" OutputType="$(OutputType)" ResolveConfigurationPlatformUsingMappings="false" SolutionConfigurationContents="$(CurrentSolutionConfigurationContents)" AddSyntheticProjectReferencesForSolutionDependencies="false" OnlyReferenceAndBuildProjectsEnabledInSolutionConfiguration="$(OnlyReferenceAndBuildProjectsEnabledInSolutionConfiguration)" ShouldUnsetParentConfigurationAndPlatform="$(ShouldUnsetParentConfigurationAndPlatform)">
             <Output TaskParameter="AssignedProjects" ItemName="_PublishProjectReferenceWithConfiguration"/>
             <Output TaskParameter="UnassignedProjects" ItemName="_PublishProjectReferenceWithConfiguration"/>
         </AssignProjectConfiguration>
@@ -77,12 +97,12 @@
     </Target>
 
     <Target Name="GetPublishProjectReferenceItems" DependsOnTargets="GetPublishProjectReferences" Condition=" '$(DesignTimeBuild)' != 'true' And '@(_PublishProjectReference)' != '' ">
-        <MSBuild Projects="@(_PublishProjectReference)" Targets="Publish;PublishItemsOutputGroup" BuildInParallel="$(BuildInParallel)" Properties="%(_PublishProjectReference.SetConfiguration);%(_PublishProjectReference.SetPlatform);%(_PublishProjectReference.SetTargetFramework);%(_PublishProjectReference.PublishProperties)" RemoveProperties="%(_PublishProjectReference.GlobalPropertiesToRemove);%(_PublishProjectReference.PublishPropertiesToRemove);PublishDir;PublishUrl;Location" RebaseOutputs="true">
+        <MSBuild Projects="@(_PublishProjectReference)" Targets="Publish;PublishItemsOutputGroup" BuildInParallel="$(BuildInParallel)" Properties="%(_PublishProjectReference.SetConfiguration);%(_PublishProjectReference.SetPlatform);%(_PublishProjectReference.SetTargetFramework);%(_PublishProjectReference.PublishProperties)" RemoveProperties="%(_PublishProjectReference.GlobalPropertiesToRemove);%(_PublishProjectReference.PublishPropertiesToRemove)" RebaseOutputs="true">
             <Output TaskParameter="TargetOutputs" ItemName="_PublishProjectReferenceItems" />
         </MSBuild>
     </Target>
 
-    <Target Name="GetPublishProjectReferenceCopyToOutputDirectoryItems" DependsOnTargets="GetPublishProjectReferenceItems" Condition=" '$(DesignTimeBuild)' != 'true' ">
+    <Target Name="GetPublishProjectReferenceCopyToOutputDirectoryItems" DependsOnTargets="GetPublishProjectReferenceItems" Condition=" '$(DesignTimeBuild)' != 'true' and '@(_PublishProjectReferenceItems)' != '' ">
         <ItemGroup>
             <ContentWithTargetPath Include="@(_PublishProjectReferenceItems->'%(Identity)')" Condition=" '%(_PublishProjectReferenceItems.PublishTargetPath)' != '' ">
                 <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
@@ -134,26 +154,27 @@
     <Target Name="GetPublishProjectReferencePackageItemsBeforeGetPackageFiles" DependsOnTargets="$(GetPublishProjectReferenceItemsBeforePackageFilesDependsOn)" BeforeTargets="_GetPackageFiles" Condition=" '$(DesignTimeBuild)' != 'true' ">
 
     </Target>
+    
+    <!--
+    
+        IncludeProjectReference
+        
+        These references have their build output included into the content output of the consuming project.
+        
+    -->
 
     <Target Name="AssignIncludeProjectConfiguration" Condition=" '$(DesignTimeBuild)' != 'true' And '@(IncludeProjectReference)' != '' ">
+        <ItemGroup>
+            <IncludeProjectReference Update="@(IncludeProjectReference)">
+                <GlobalPropertiesToRemove>%(IncludeProjectReference.GlobalPropertiesToRemove);$(GlobalPropertiesToRemove)</GlobalPropertiesToRemove>
+            </IncludeProjectReference>
+        </ItemGroup>
         <PropertyGroup>
             <OnlyReferenceAndBuildProjectsEnabledInSolutionConfiguration Condition="'$(OnlyReferenceAndBuildProjectsEnabledInSolutionConfiguration)' == ''">true</OnlyReferenceAndBuildProjectsEnabledInSolutionConfiguration>
             <ShouldUnsetParentConfigurationAndPlatform Condition="'$(ShouldUnsetParentConfigurationAndPlatform)' == '' and ('$(BuildingInsideVisualStudio)' == 'true' or '$(BuildingSolutionFile)' == 'true')">true</ShouldUnsetParentConfigurationAndPlatform>
             <ShouldUnsetParentConfigurationAndPlatform Condition="'$(ShouldUnsetParentConfigurationAndPlatform)' == ''">false</ShouldUnsetParentConfigurationAndPlatform>
         </PropertyGroup>
-        <AssignProjectConfiguration
-            ProjectReferences="@(IncludeProjectReference)"
-            CurrentProject="$(MSBuildProjectFullPath)"
-            CurrentProjectConfiguration="$(Configuration)"
-            CurrentProjectPlatform="$(Platform)"
-            DefaultToVcxPlatformMapping="$(DefaultToVcxPlatformMapping)"
-            VcxToDefaultPlatformMapping="$(VcxToDefaultPlatformMapping)"
-            OutputType="$(OutputType)"
-            ResolveConfigurationPlatformUsingMappings="false"
-            SolutionConfigurationContents="$(CurrentSolutionConfigurationContents)"
-            AddSyntheticProjectReferencesForSolutionDependencies="false"
-            OnlyReferenceAndBuildProjectsEnabledInSolutionConfiguration = "$(OnlyReferenceAndBuildProjectsEnabledInSolutionConfiguration)"
-            ShouldUnsetParentConfigurationAndPlatform = "$(ShouldUnsetParentConfigurationAndPlatform)" >
+        <AssignProjectConfiguration ProjectReferences="@(IncludeProjectReference)" CurrentProject="$(MSBuildProjectFullPath)" CurrentProjectConfiguration="$(Configuration)" CurrentProjectPlatform="$(Platform)" DefaultToVcxPlatformMapping="$(DefaultToVcxPlatformMapping)" VcxToDefaultPlatformMapping="$(VcxToDefaultPlatformMapping)" OutputType="$(OutputType)" ResolveConfigurationPlatformUsingMappings="false" SolutionConfigurationContents="$(CurrentSolutionConfigurationContents)" AddSyntheticProjectReferencesForSolutionDependencies="false" OnlyReferenceAndBuildProjectsEnabledInSolutionConfiguration="$(OnlyReferenceAndBuildProjectsEnabledInSolutionConfiguration)" ShouldUnsetParentConfigurationAndPlatform="$(ShouldUnsetParentConfigurationAndPlatform)">
             <Output TaskParameter="AssignedProjects" ItemName="_IncludeProjectReferenceWithConfiguration"/>
             <Output TaskParameter="UnassignedProjects" ItemName="_IncludeProjectReferenceWithConfiguration"/>
         </AssignProjectConfiguration>
@@ -228,11 +249,24 @@
 
     </Target>
 
+    <!--
+    
+        PackageProjectReference
+        
+        These references have ther produced NuGet file (Pack target) copied into the consuming project as a content file.
+        
+    -->
+    
     <Target Name="GetPackageOutputPath" DependsOnTargets="_GetAbsoluteOutputPathsForPack" Returns="$(PackageOutputAbsolutePath)">
 
     </Target>
 
     <Target Name="AssignPackageProjectConfiguration" Condition=" '$(DesignTimeBuild)' != 'true' And '@(PackageProjectReference)' != '' " >
+        <ItemGroup>
+            <PackageProjectReference Update="@(PackageProjectReference)">
+                <GlobalPropertiesToRemove>%(PackageProjectReference.GlobalPropertiesToRemove);$(GlobalPropertiesToRemove)</GlobalPropertiesToRemove>
+            </PackageProjectReference>
+        </ItemGroup>
         <PropertyGroup>
             <OnlyReferenceAndBuildProjectsEnabledInSolutionConfiguration Condition="'$(OnlyReferenceAndBuildProjectsEnabledInSolutionConfiguration)' == ''">true</OnlyReferenceAndBuildProjectsEnabledInSolutionConfiguration>
             <ShouldUnsetParentConfigurationAndPlatform Condition="'$(ShouldUnsetParentConfigurationAndPlatform)' == '' and ('$(BuildingInsideVisualStudio)' == 'true' or '$(BuildingSolutionFile)' == 'true')">true</ShouldUnsetParentConfigurationAndPlatform>
