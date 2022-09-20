@@ -4,7 +4,6 @@
     </PropertyGroup>
 
     <PropertyGroup Condition=" '$(TargetFramework)' != '' ">
-        <UseIkvmTasks Condition=" '$(UseIkvmTasks)' == '' ">true</UseIkvmTasks>
         <IkvmStageDir Condition=" '$(IkvmStageDir)' == '' ">$(IntermediateOutputPath)ikvm\stage\1\</IkvmStageDir>
         <IkvmCacheDir Condition=" '$(IkvmCacheDir)' == '' ">$([System.IO.Path]::GetTempPath())ikvm\cache\1\</IkvmCacheDir>
     </PropertyGroup>
@@ -128,6 +127,6 @@
     </PropertyGroup>
 
     <!-- Include Task or NoTask implementation of targets. -->
-    <Import Project="IKVM.Tasks.targets" Condition=" '$(UseIkvmTasks)' == 'true' "/>
-    <Import Project="IKVM.NoTasks.targets" Condition=" '$(UseIkvmTasks)' != 'true' "/>
+    <Import Project="IKVM.Tasks.targets" Condition=" '$(UseIkvmTasks)' != 'false' "/>
+    <Import Project="IKVM.NoTasks.targets" Condition=" '$(UseIkvmTasks)' == 'false' "/>
 </Project>
