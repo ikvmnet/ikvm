@@ -218,14 +218,6 @@ jobs:
   test-ikvm:
     strategy:
       matrix:
-        os:
-        - windows
-        - ubuntu
-        tfm:
-        - net461
-        - netcoreapp3.1
-        - net5.0
-        - net6.0
         suite:
         - IKVM.Java.Tests
         - IKVM.MSBuild.Tasks.Tests
@@ -234,6 +226,14 @@ jobs:
         - IKVM.Tool.Exporter.Tests
         - IKVM.Tool.Tests
         - ikvmc.Tests
+        tfm:
+        - net461
+        - netcoreapp3.1
+        - net5.0
+        - net6.0
+        os:
+        - windows
+        - ubuntu
     name: Test IKVM (${{ matrix.suite }}:${{ matrix.os }}:${{ matrix.tfm }})
     needs:
     - build-ikvm
