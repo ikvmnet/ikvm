@@ -215,11 +215,18 @@ jobs:
       with:
         name: tests
         path: build/tests.tar.gz
-  test-ikvm-windows:
-    name: Test IKVM (Windows)
-    needs:
-    - build-ikvm
-    runs-on: windows-latest
+  test-ikvm:
+    strategy:
+      matrix:
+        os:
+        - windows-latest
+        - ubuntu-latest
+        tfm:
+        - net461
+        - netcoreapp3.1
+        - net5.0
+        - net6.0
+    name: Test IKVM (${{ matrix.os }}:${{ matrix.tfm }})
     steps:
     - name: Setup .NET 3.1
       uses: actions/setup-dotnet@v2
@@ -243,46 +250,12 @@ jobs:
       working-directory: build
     - name: Execute Tests
       shell: pwsh
-      run: gci .\build\tests\ -Recurse -Filter '*.Tests.dll' | group { $_.Directory.BaseName } | %{ dotnet test $_.Group --blame -v 3 --results-directory .\TestResults --logger "trx;LogFileName=$($_.Name).trx" }
+      run: $tfm="${{ matrix.tfm }}"; gci .\build\tests\*\$tfm -Recurse -Filter '*.Tests.dll' | group { $_.Directory.Parent.Name } | %{ dotnet test $_.Group --blame -v 3 --results-directory ".\TestResults-$tfm\$tst" }
     - name: Upload Test Results
       uses: actions/upload-artifact@v3
       with:
-        name: TestResults-windows
-        path: TestResults
-  test-ikvm-linux:
-    name: Test IKVM (Linux)
-    needs:
-    - build-ikvm
-    runs-on: ubuntu-latest
-    steps:
-    - name: Setup .NET 3.1
-      uses: actions/setup-dotnet@v2
-      with:
-        dotnet-version: 3.1.x
-    - name: Setup .NET 5.0
-      uses: actions/setup-dotnet@v2
-      with:
-        dotnet-version: 5.0.x
-    - name: Setup .NET 6.0
-      uses: actions/setup-dotnet@v2
-      with:
-        dotnet-version: 6.0.x
-    - name: Download Tests
-      uses: actions/download-artifact@v3
-      with:
-        name: tests
-        path: build
-    - name: Restore Tests
-      run: tar xzvf tests.tar.gz
-      working-directory: build
-    - name: Execute Tests
-      shell: pwsh
-      run: gci ./build/tests/ -Recurse -Filter '*.Tests.dll' | group { $_.Directory.BaseName } | ?{ $_.Name -notin @('net461', 'net472', 'net48') } | %{ dotnet test $_.Group --blame -v 3 --results-directory ./TestResults --logger "trx;LogFileName=$($_.Name).trx" }
-    - name: Upload Test Results
-      uses: actions/upload-artifact@v3
-      with:
-        name: TestResults-linux
-        path: TestResults
+        name: TestResults-${{ matrix.os }}:${{ matrix.tfm }}
+        path: TestResults-${{ matrix.tfm }}
   release:
     name: Release
     if: github.ref == 'refs/heads/master' || github.ref == 'refs/heads/main' || github.ref == 'refs/heads/develop'
