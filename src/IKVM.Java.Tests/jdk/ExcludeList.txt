@@ -954,8 +954,8 @@ com/sun/java/swing/plaf/windows/WindowsRadioButtonUI/7089914/bug7089914.java    
 
 # Other
 com/oracle/net/sanity.sh                                                                                                generic-all
-com/sun/corba/5036554/TestCorbaBug.java                                                                                 generic-all
-com/sun/corba/cachedSocket/7056731.java                                                                                 generic-all
+com/sun/corba/5036554/TestCorbaBug.sh                                                                                   generic-all
+com/sun/corba/cachedSocket/7056731.sh                                                                                   generic-all
 com/sun/crypto/provider/Cipher/RSA/TestOAEPPadding.java                                                                 generic-all
 com/sun/crypto/provider/Cipher/RSA/TestOAEPParameterSpec.java                                                           generic-all
 com/sun/crypto/provider/Cipher/RSA/TestOAEPWithParams.java                                                              generic-all
