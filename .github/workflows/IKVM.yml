@@ -227,6 +227,8 @@ jobs:
         - net5.0
         - net6.0
     name: Test IKVM (${{ matrix.os }}:${{ matrix.tfm }})
+    needs:
+    - build-ikvm
     runs-on: ${{ matrix.os }}
     steps:
     - name: Setup .NET 3.1
