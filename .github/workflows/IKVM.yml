@@ -228,13 +228,15 @@ jobs:
         - ikvmc.Tests
         tfm:
         - net461
+        - net472
+        - net48
         - netcoreapp3.1
         - net5.0
         - net6.0
         os:
         - windows
         - ubuntu
-    name: Test IKVM (${{ matrix.suite }}:${{ matrix.os }}:${{ matrix.tfm }})
+    name: Test IKVM (${{ matrix.suite }}:${{ matrix.tfm }}:${{ matrix.os }})
     needs:
     - build-ikvm
     runs-on: ${{ matrix.os }}-latest
