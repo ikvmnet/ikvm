@@ -1,1 +1,13 @@
-src/jdk/nashorn/internal/runtime/ContextTest                                                                            generic-all
+src/jdk/nashorn/api/javaaccess/BooleanAccessTest.java                                                                   generic-all
+src/jdk/nashorn/api/javaaccess/MethodAccessTest.java                                                                    generic-all
+src/jdk/nashorn/api/javaaccess/NumberAccessTest.java                                                                    generic-all
+src/jdk/nashorn/api/javaaccess/NumberBoxingTest.java                                                                    generic-all
+src/jdk/nashorn/api/javaaccess/ObjectAccessTest.java                                                                    generic-all
+src/jdk/nashorn/api/javaaccess/StringAccessTest.java                                                                    generic-all
+src/jdk/nashorn/api/scripting/MultipleEngineTest.java                                                                   generic-all
+src/jdk/nashorn/api/scripting/ScriptEngineTest.java                                                                     generic-all
+src/jdk/nashorn/internal/runtime/CodeStoreAndPathTest.java                                                              generic-all
+src/jdk/nashorn/internal/runtime/ContextTest.java                                                                       generic-all
+src/jdk/nashorn/internal/runtime/ExceptionsNotSerializable.java                                                         generic-all
+src/jdk/nashorn/internal/runtime/LexicalBindingTest.java                                                                generic-all
+src/jdk/nashorn/internal/runtime/NoPersistenceCachingTest.java                                                          generic-all

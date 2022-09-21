@@ -371,33 +371,33 @@ namespace IKVM.JTReg.TestAdapter
             cancellationToken.ThrowIfCancellationRequested();
 
             // only continue if there are in fact tests in the suite to execute
-            var testResults = ((IEnumerable<object>)GetResults(parameters)).ToList<dynamic>();
-            if (testResults != null && testResults.Count > 0)
+            var firstTestResult = ((IEnumerable<object>)GetResults(parameters)).FirstOrDefault();
+            if (firstTestResult is null)
+                return;
+
+            try
             {
-                try
-                {
-                    // observe harness for test results
-                    var harness = JTRegTypes.Harness.New();
-                    var observer = HarnessObserverInterceptor.Create(new HarnessObserverImplementation(source, testSuite, runContext, frameworkHandle, tests));
-                    harness.addObserver(observer);
+                // observe harness for test results
+                var harness = JTRegTypes.Harness.New();
+                var observer = HarnessObserverInterceptor.Create(new HarnessObserverImplementation(source, testSuite, runContext, frameworkHandle, tests));
+                harness.addObserver(observer);
 
-                    // begin harness execution asynchronously, thus allowing potential cancellation
-                    harness.start(parameters);
-                    cancellationToken.Register(() => harness.stop());
+                // begin harness execution asynchronously, thus allowing potential cancellation
+                harness.start(parameters);
+                cancellationToken.Register(() => harness.stop());
 
-                    // wait until canceled or finished and cleanup
-                    harness.waitUntilDone();
-                    harness.stop();
-                    harness.removeObserver(observer);
-                }
-                catch (java.lang.InterruptedException)
-                {
-                    // ignore
-                }
-                catch (Exception e)
-                {
-                    frameworkHandle.SendMessage(TestMessageLevel.Error, "JTReg: " + e.ToString());
-                }
+                // wait until canceled or finished and cleanup
+                harness.waitUntilDone();
+                harness.stop();
+                harness.removeObserver(observer);
+            }
+            catch (java.lang.InterruptedException)
+            {
+                // ignore
+            }
+            catch (Exception e)
+            {
+                frameworkHandle.SendMessage(TestMessageLevel.Error, "JTReg: " + e.ToString());
             }
         }
 

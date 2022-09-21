@@ -1,9 +1,4 @@
 # unknown errors (FIXME)
-tools/javac/file/zip/T6865530.java                                                                                      generic-all
-tools/javac/api/ToolProvider/HelloWorldTest.java                                                                        generic-all
-tools/javac/api/ToolProvider/ToolProviderTest1.java                                                                     generic-all
-tools/javac/api/ToolProvider/ToolProviderTest2.java                                                                     generic-all
-tools/javac/6627362/T6627362.java                                                                                       generic-all
 com/sun/javadoc/testGeneratedBy/TestGeneratedBy.java                                                                    generic-all
 lib/combo/tools/javac/combo/Diagnostics.java                                                                            generic-all
 lib/combo/tools/javac/combo/JavacTemplateTestBase.java                                                                  generic-all
@@ -95,6 +90,7 @@ tools/javac/6457284/T6457284.java                                               
 tools/javac/6508981/TestInferBinaryName.java                                                                            generic-all
 tools/javac/6567415/T6567415.java                                                                                       generic-all
 tools/javac/6589361/T6589361.java                                                                                       generic-all
+tools/javac/6627362/T6627362.java                                                                                       generic-all
 tools/javac/6863465/TestCircularClassfile.java                                                                          generic-all
 tools/javac/6889255/T6889255.java                                                                                       generic-all
 tools/javac/6902720/Test.java                                                                                           generic-all
@@ -282,6 +278,9 @@ tools/javac/api/TestResolveError.java                                           
 tools/javac/api/TestResolveIdent.java                                                                                   generic-all
 tools/javac/api/TestTreePath.java                                                                                       generic-all
 tools/javac/api/TestTrees.java                                                                                          generic-all
+tools/javac/api/ToolProvider/HelloWorldTest.java                                                                        generic-all
+tools/javac/api/ToolProvider/ToolProviderTest1.java                                                                     generic-all
+tools/javac/api/ToolProvider/ToolProviderTest2.java                                                                     generic-all
 tools/javac/api/guide/Test.java                                                                                         generic-all
 tools/javac/api/taskListeners/EventsBalancedTest.java                                                                   generic-all
 tools/javac/api/taskListeners/TestSimpleAddRemove.java                                                                  generic-all
@@ -344,6 +343,7 @@ tools/javac/fatalErrors/NoJavaLangTest.java                                     
 tools/javac/file/T7018098.java                                                                                          generic-all
 tools/javac/file/T7068437.java                                                                                          generic-all
 tools/javac/file/T7068451.java                                                                                          generic-all
+tools/javac/file/zip/T6865530.java                                                                                      generic-all
 tools/javac/flow/LVTHarness.java                                                                                        generic-all
 tools/javac/flow/T8042741/LambdaArgumentsTest.java                                                                      generic-all
 tools/javac/flow/T8042741/PositionTest.java                                                                             generic-all
