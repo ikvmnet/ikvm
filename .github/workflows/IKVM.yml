@@ -261,8 +261,7 @@ jobs:
     name: Release
     if: github.ref == 'refs/heads/master' || github.ref == 'refs/heads/main' || github.ref == 'refs/heads/develop'
     needs:
-    - test-ikvm-windows
-    - test-ikvm-linux
+    - test-ikvm
     runs-on: ubuntu-latest
     steps:
     - name: Checkout Source
