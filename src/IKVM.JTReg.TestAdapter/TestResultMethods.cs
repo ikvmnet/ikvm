@@ -41,6 +41,7 @@ namespace IKVM.JTReg.TestAdapter
             testCase.SetPropertyValue(IkvmJTRegTestProperties.TestPathNameProperty, GetTestPathName(source, testSuite, testResult));
             testCase.SetPropertyValue(IkvmJTRegTestProperties.TestIdProperty, GetTestId(source, testSuite, testResult));
             testCase.SetPropertyValue(IkvmJTRegTestProperties.TestTitleProperty, GetTestTitle(source, testSuite, testResult));
+            testCase.SetPropertyValue(IkvmJTRegTestProperties.TestAuthorProperty, GetTestAuthor(source, testSuite, testResult));
             testCase.SetPropertyValue(IkvmJTRegTestProperties.TestCategoryProperty, GetTestKeywords(source, testSuite, testResult));
             return testCase;
         }
@@ -134,12 +135,7 @@ namespace IKVM.JTReg.TestAdapter
             if (testResult is null)
                 throw new ArgumentNullException(nameof(testResult));
 
-            // get test file name relative to test suite dir
-            var rootPath = ((java.io.File)testSuite.getRootDir()).toPath();
-            var testFile = ((java.io.File)testResult.getDescription().getFile()).toPath();
-            var testName = rootPath.relativize(testFile).toString().Replace('\\', '/');
-
-            return testName;
+            return (string)testResult.getDescription().getRootRelativePath();
         }
 
         /// <summary>
@@ -197,6 +193,25 @@ namespace IKVM.JTReg.TestAdapter
                 throw new ArgumentNullException(nameof(testResult));
 
             return (string)testResult.getDescription().getTitle();
+        }
+
+        /// <summary>
+        /// Gets the author of the given test.
+        /// </summary>
+        /// <param name="source"></param>
+        /// <param name="testSuite"></param>
+        /// <param name="testResult"></param>
+        /// <returns></returns>
+        public static string GetTestAuthor(string source, dynamic testSuite, dynamic testResult)
+        {
+            if (source is null)
+                throw new ArgumentNullException(nameof(source));
+            if (testSuite is null)
+                throw new ArgumentNullException(nameof(testSuite));
+            if (testResult is null)
+                throw new ArgumentNullException(nameof(testResult));
+
+            return (string)testResult.getDescription().getParameter("author");
         }
 
         /// <summary>

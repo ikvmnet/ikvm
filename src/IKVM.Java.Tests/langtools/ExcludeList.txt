@@ -1,4 +1,10 @@
 # unknown errors (FIXME)
+tools/javac/file/zip/T6865530.java                                                                                      generic-all
+tools/javac/api/ToolProvider/HelloWorldTest.java                                                                        generic-all
+tools/javac/api/ToolProvider/ToolProviderTest1.java                                                                     generic-all
+tools/javac/api/ToolProvider/ToolProviderTest2.java                                                                     generic-all
+tools/javac/6627362/T6627362.java                                                                                       generic-all
+com/sun/javadoc/testGeneratedBy/TestGeneratedBy.java                                                                    generic-all
 lib/combo/tools/javac/combo/Diagnostics.java                                                                            generic-all
 lib/combo/tools/javac/combo/JavacTemplateTestBase.java                                                                  generic-all
 lib/combo/tools/javac/combo/Template.java                                                                               generic-all
