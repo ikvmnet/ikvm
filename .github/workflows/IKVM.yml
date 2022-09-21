@@ -226,7 +226,15 @@ jobs:
         - netcoreapp3.1
         - net5.0
         - net6.0
-    name: Test IKVM (${{ matrix.os }}:${{ matrix.tfm }})
+        suite:
+        - IKVM.Java.Tests
+        - IKVM.MSBuild.Tasks.Tests
+        - IKVM.MSBuild.Tests
+        - IKVM.Tests
+        - IKVM.Tool.Exporter.Tests
+        - IKVM.Tool.Tests
+        - ikvmc.Tests
+    name: Test IKVM (${{ matrix.suite }}:${{ matrix.os }}:${{ matrix.tfm }})
     needs:
     - build-ikvm
     runs-on: ${{ matrix.os }}-latest
@@ -253,13 +261,13 @@ jobs:
       working-directory: build
     - name: Execute Tests
       shell: pwsh
-      run: $tfm="${{ matrix.tfm }}"; gci .\build\tests\*\$tfm -Recurse -Filter '*.Tests.dll' | group { $_.Directory.Parent.Name } | %{ $tst=$_.Group.Directory.Parent.Name; dotnet test $_.Group --blame -v 3 --results-directory ".\TestResults--$tfm\$tst" }
+      run: $suite=${{ matrix.suite }}; $tfm="${{ matrix.tfm }}"; gci .\build\tests\$suite\$tfm -Recurse -Filter '*.Tests.dll' | group { $_.Directory.Parent.Name } | %{ dotnet test $_.Group --blame -v 3 --results-directory ".\TestResults--$suite--$tfm--$os" }
     - name: Upload Test Results
       if: ${{ always() }}
       uses: actions/upload-artifact@v3
       with:
-        name: TestResults--${{ matrix.os }}--${{ matrix.tfm }}
-        path: TestResults--${{ matrix.tfm }}
+        name: TestResults--${{ matrix.suite }}--${{ matrix.tfm }}--${{ matrix.os }}
+        path: TestResults--${{ matrix.suite }}--${{ matrix.tfm }}--${{ matrix.os }}
   release:
     name: Release
     if: github.ref == 'refs/heads/master' || github.ref == 'refs/heads/main' || github.ref == 'refs/heads/develop'
