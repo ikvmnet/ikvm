@@ -219,9 +219,9 @@ jobs:
     strategy:
       matrix:
         suite:
-        - IKVM.Java.Tests?FullyQualifiedName~langtools.
-        - IKVM.Java.Tests?FullyQualifiedName~jdk.
-        - IKVM.Java.Tests?FullyQualifiedName~nashorn.
+        - IKVM.Java.Tests?TestSuiteName=langtools
+        - IKVM.Java.Tests?TestSuiteName=jdk
+        - IKVM.Java.Tests?TestSuiteName=nashorn
         - IKVM.MSBuild.Tasks.Tests
         - IKVM.MSBuild.Tests
         - IKVM.Tests
