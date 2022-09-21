@@ -227,6 +227,7 @@ jobs:
         - net5.0
         - net6.0
     name: Test IKVM (${{ matrix.os }}:${{ matrix.tfm }})
+    runs-on: ${{ matrix.os }}
     steps:
     - name: Setup .NET 3.1
       uses: actions/setup-dotnet@v2
@@ -250,12 +251,12 @@ jobs:
       working-directory: build
     - name: Execute Tests
       shell: pwsh
-      run: $tfm="${{ matrix.tfm }}"; gci .\build\tests\*\$tfm -Recurse -Filter '*.Tests.dll' | group { $_.Directory.Parent.Name } | %{ dotnet test $_.Group --blame -v 3 --results-directory ".\TestResults-$tfm\$tst" }
+      run: $tfm="${{ matrix.tfm }}"; gci .\build\tests\*\$tfm -Recurse -Filter '*.Tests.dll' | group { $_.Directory.Parent.Name } | %{ dotnet test $_.Group --blame -v 3 --results-directory ".\TestResults--$tfm\$tst" }
     - name: Upload Test Results
       uses: actions/upload-artifact@v3
       with:
-        name: TestResults-${{ matrix.os }}:${{ matrix.tfm }}
-        path: TestResults-${{ matrix.tfm }}
+        name: TestResults--${{ matrix.os }}--${{ matrix.tfm }}
+        path: TestResults--${{ matrix.tfm }}
   release:
     name: Release
     if: github.ref == 'refs/heads/master' || github.ref == 'refs/heads/main' || github.ref == 'refs/heads/develop'
