@@ -27,6 +27,7 @@ namespace IKVM.JTReg.TestAdapter
         const string TEST_ROOT_FILE_NAME = "TEST.ROOT";
         const string TEST_PROBLEM_LIST_FILE_NAME = "ProblemList.txt";
         const string TEST_EXCLUDE_LIST_FILE_NAME = "ExcludeList.txt";
+        const string TEST_INCLUDE_LIST_FILE_NAME = "IncludeList.txt";
         const string DEFAULT_OUT_FILE_NAME = "jtreg.out";
         const string DEFAULT_LOG_FILE_NAME = "jtreg.log";
         const string DEFAULT_WORK_DIR_NAME = "JTwork";
@@ -79,7 +80,17 @@ namespace IKVM.JTReg.TestAdapter
             return s.ToString();
         }
 
+        readonly Dictionary<string, TestProperty> properties = new Dictionary<string, TestProperty>(StringComparer.OrdinalIgnoreCase);
         CancellationTokenSource cts;
+
+        /// <summary>
+        /// Initializes a new instance.
+        /// </summary>
+        public IkvmJTRegTestAdapter()
+        {
+            properties.Add(IkvmJTRegTestProperties.TestSuiteRootProperty.Label, IkvmJTRegTestProperties.TestSuiteRootProperty);
+            properties.Add(IkvmJTRegTestProperties.TestSuiteNameProperty.Label, IkvmJTRegTestProperties.TestSuiteNameProperty);
+        }
 
         /// <summary>
         /// Discovers the available OpenJDK tests.
@@ -165,7 +176,7 @@ namespace IKVM.JTReg.TestAdapter
                 {
                     logger.SendMessage(TestMessageLevel.Informational, "JTReg: " + $"Discovered test suite: {testSuite.getName()}");
 
-                    foreach (var testResult in GetResults(CreateParameters(testManager, testSuite)))
+                    foreach (var testResult in GetResults(CreateParameters(source, baseDir, testManager, testSuite, null)))
                     {
                         testCount++;
                         var testCase = (TestCase)TestResultMethods.ToTestCase(source, testSuite, testResult);
@@ -281,20 +292,13 @@ namespace IKVM.JTReg.TestAdapter
             {
                 cancellationToken.ThrowIfCancellationRequested();
 
-                // either add all tests, or tests specified
-                var testFiles = new java.util.ArrayList();
-                if (tests == null)
+                // discover all root test directories
+                var testDirs = new java.util.ArrayList();
+                foreach (var rootFile in Directory.GetFiles(Path.GetDirectoryName(source), TEST_ROOT_FILE_NAME, SearchOption.AllDirectories))
                 {
-                    tests = Array.Empty<TestCase>();
-                    foreach (var rootFile in Directory.GetFiles(Path.GetDirectoryName(source), TEST_ROOT_FILE_NAME, SearchOption.AllDirectories))
-                    {
-                        frameworkHandle.SendMessage(TestMessageLevel.Informational, "JTReg: " + $"Found test root file: {rootFile}");
-                        testFiles.add(new java.io.File(Path.GetDirectoryName(rootFile)));
-                    }
+                    frameworkHandle.SendMessage(TestMessageLevel.Informational, "JTReg: " + $"Found test root file: {rootFile}");
+                    testDirs.add(new java.io.File(Path.GetDirectoryName(rootFile)));
                 }
-                else
-                    foreach (var testFile in tests.Select(i => i.CodeFilePath))
-                        testFiles.add(new java.io.File(testFile));
 
                 // output path for jtreg state
                 var id = GetSourceHash(source);
@@ -307,13 +311,31 @@ namespace IKVM.JTReg.TestAdapter
 
                 // initialize the test manager with the discovered roots
                 var testManager = CreateTestManager(frameworkHandle, baseDir, output, errors);
-                testManager.addTestFiles(testFiles, false);
+                testManager.addTestFiles(testDirs, false);
+
+                // we will need a full list of tests to apply any filters to
+                if (tests == null)
+                {
+                    var l = new List<TestCase>();
+
+                    // discover the full set of tests
+                    foreach (dynamic testSuite in (IEnumerable)testManager.getTestSuites())
+                        foreach (var testResult in GetResults(CreateParameters(source, baseDir, testManager, testSuite, null)))
+                            l.Add(TestResultMethods.ToTestCase(source, testSuite, testResult));
+
+                    tests = l;
+                }
+
+                // filter the tests
+                var filter = runContext.GetTestCaseFilter(properties.Keys, s => properties.TryGetValue(s, out var v) ? v : null);
+                if (filter != null)
+                    tests = tests.Where(i => filter.MatchTestCase(i, s => properties.TryGetValue(s, out var v) ? i.GetPropertyValue(v) : null));
 
                 // invoke each test suite
                 foreach (dynamic testSuite in (IEnumerable)testManager.getTestSuites())
                 {
                     frameworkHandle.SendMessage(TestMessageLevel.Informational, "JTReg: " + $"Running test suite: {testSuite.getName()}");
-                    RunTests(source, testSuite, runContext, frameworkHandle, tests, CreateParameters(testManager, testSuite), cancellationToken);
+                    RunTests(source, testSuite, runContext, frameworkHandle, tests, CreateParameters(source, baseDir, testManager, testSuite, tests), cancellationToken);
                 }
             }
             catch (Exception e)
@@ -423,11 +445,18 @@ namespace IKVM.JTReg.TestAdapter
         /// <summary>
         /// Creates the parameters for a given suite.
         /// </summary>
+        /// <param name="source"></param>
+        /// <param name="baseDir"></param>
         /// <param name="testManager"></param>
         /// <param name="testSuite"></param>
+        /// <param name="tests"></param>
         /// <returns></returns>
-        dynamic CreateParameters(dynamic testManager, dynamic testSuite)
+        dynamic CreateParameters(string source, string baseDir, dynamic testManager, dynamic testSuite, IEnumerable<TestCase> tests)
         {
+            if (source is null)
+                throw new ArgumentNullException(nameof(source));
+            if (baseDir is null)
+                throw new ArgumentNullException(nameof(baseDir));
             if (testManager is null)
                 throw new ArgumentNullException(nameof(testManager));
             if (testSuite is null)
@@ -449,6 +478,28 @@ namespace IKVM.JTReg.TestAdapter
                 if (Path.Combine(((java.io.File)testSuite.getRootDir()).toString(), n) is string f && File.Exists(f))
                     excludeFileList.Add(new java.io.File(new java.io.File(f).getAbsoluteFile().toURI().normalize()));
 
+            // if a IncludeList.txt file exists in the root, add it as include files
+            var includeFileList = new List<java.io.File>();
+            foreach (var n in new[] { TEST_INCLUDE_LIST_FILE_NAME })
+                if (Path.Combine(((java.io.File)testSuite.getRootDir()).toString(), n) is string f && File.Exists(f))
+                    includeFileList.Add(new java.io.File(new java.io.File(f).getAbsoluteFile().toURI().normalize()));
+
+            // passed in an explicit set of tests, add to an include file
+            if (tests != null)
+            {
+                // name of the current suite
+                var testSuiteName = TestResultMethods.GetTestSuiteName(source, testSuite);
+
+                // fill in include list containing tests located within the suite
+                var tf = Path.Combine(baseDir, testSuiteName + "-IncludeList.txt");
+                using (var ts = File.CreateText(tf))
+                    foreach (var test in tests)
+                        if (string.Equals(test.GetPropertyValue(IkvmJTRegTestProperties.TestSuiteNameProperty), testSuiteName))
+                            ts.WriteLine(test.GetPropertyValue(IkvmJTRegTestProperties.TestPathNameProperty) + " generic-all");
+
+                includeFileList.Add(new java.io.File(new java.io.File(tf).getAbsoluteFile().toURI().normalize()));
+            }
+
             rp.setTests((java.util.Set)testManager.getTests(testSuite));
             rp.setExecMode(testSuite.getDefaultExecMode() ?? JTRegTypes.ExecMode.OTHERVM);
             rp.setCheck(false);
@@ -461,7 +512,7 @@ namespace IKVM.JTReg.TestAdapter
             rp.setTimeLimit(15000);
             rp.setRetainArgs(java.util.Collections.singletonList("all"));
             rp.setExcludeLists(excludeFileList.ToArray());
-            rp.setMatchLists(new java.io.File[0]);
+            rp.setMatchLists(includeFileList.ToArray());
             rp.setIgnoreKind(JTRegTypes.IgnoreKind.QUIET);
             rp.setPriorStatusValues(null);
             rp.setUseWindowsSubsystemForLinux(true);

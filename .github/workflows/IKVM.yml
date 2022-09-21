@@ -219,7 +219,9 @@ jobs:
     strategy:
       matrix:
         suite:
-        - IKVM.Java.Tests
+        - IKVM.Java.Tests?FullyQualifiedName~langtools.
+        - IKVM.Java.Tests?FullyQualifiedName~jdk.
+        - IKVM.Java.Tests?FullyQualifiedName~nashorn.
         - IKVM.MSBuild.Tasks.Tests
         - IKVM.MSBuild.Tests
         - IKVM.Tests
@@ -263,7 +265,28 @@ jobs:
       working-directory: build
     - name: Execute Tests
       shell: pwsh
-      run: $suite="${{ matrix.suite }}"; $tfm="${{ matrix.tfm }}"; $os="${{ matrix.os }}"; gci .\build\tests\$suite\$tfm -Recurse -Filter '*.Tests.dll' | group { $_.Directory.Parent.Name } | %{ dotnet test $_.Group --blame -v 3 --results-directory ".\TestResults--$suite--$tfm--$os" }
+      run: |
+        # assign powershell variables
+        $suite = "${{ matrix.suite }}"
+        $tfm   = "${{ matrix.tfm }}"
+        $os    = "${{ matrix.os }}"
+
+        # suite name can contain filter expression after ?
+        $split = $suite.IndexOf("?")
+        if ($split -gt -1) {
+            $query=$suite.Substring($split+1);
+            $suite=$suite.Substring(0, $split);
+        }
+
+        # scan for test assemblies
+        $tests = $(gci .\build\tests\$suite\$tfm -Recurse -Filter '*.Tests.dll')
+
+        # if a query was specified, add to test command
+        if ($query -ne "") {
+            dotnet test $tests --blame -v 3 --results-directory ".\TestResults--$suite--$tfm--$os" --filter "$query"
+        } else {
+            dotnet test $tests --blame -v 3 --results-directory ".\TestResults--$suite--$tfm--$os"
+        }
     - name: Upload Test Results
       if: ${{ always() }}
       uses: actions/upload-artifact@v3

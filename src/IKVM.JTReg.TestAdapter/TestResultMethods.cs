@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Linq;
 using System.Security.Claims;
 
 using com.sun.org.glassfish.gmbal;
@@ -33,11 +34,14 @@ namespace IKVM.JTReg.TestAdapter
             if (testResult is null)
                 throw new ArgumentNullException(nameof(testResult));
 
-            var name = TestResultMethods.GetFullyQualifiedName(source, testSuite, testResult);
-            var description = testResult.getDescription();
-
-            var testCase = new TestCase(name, new Uri("executor://IkvmJTRegTestAdapter/v1"), source);
-            testCase.CodeFilePath = ((java.io.File)description.getFile())?.toString();
+            var testCase = new TestCase(TestResultMethods.GetFullyQualifiedTestName(source, testSuite, testResult), new Uri("executor://IkvmJTRegTestAdapter/v1"), source);
+            testCase.CodeFilePath = ((java.io.File)testResult.getDescription().getFile())?.toPath().toAbsolutePath().toString();
+            testCase.SetPropertyValue(IkvmJTRegTestProperties.TestSuiteRootProperty, ((java.io.File)testSuite.getRootDir()).toPath().toAbsolutePath().toString());
+            testCase.SetPropertyValue(IkvmJTRegTestProperties.TestSuiteNameProperty, GetTestSuiteName(source, testSuite));
+            testCase.SetPropertyValue(IkvmJTRegTestProperties.TestPathNameProperty, GetTestPathName(source, testSuite, testResult));
+            testCase.SetPropertyValue(IkvmJTRegTestProperties.TestIdProperty, GetTestId(source, testSuite, testResult));
+            testCase.SetPropertyValue(IkvmJTRegTestProperties.TestTitleProperty, GetTestTitle(source, testSuite, testResult));
+            testCase.SetPropertyValue(IkvmJTRegTestProperties.TestCategoryProperty, GetTestKeywords(source, testSuite, testResult));
             return testCase;
         }
 
@@ -59,7 +63,7 @@ namespace IKVM.JTReg.TestAdapter
 
             var r = new TestResult(testCase)
             {
-                DisplayName = TestResultMethods.GetDisplayName(testResult),
+                DisplayName = TestResultMethods.GetTestDisplayName(testResult),
                 ComputerName = testResult.getProperty("hostname"),
                 Duration = ParseElapsed(testResult.getProperty("elapsed")),
                 StartTime = ParseLogDate(testResult.getProperty("start")),
@@ -87,10 +91,131 @@ namespace IKVM.JTReg.TestAdapter
         /// </summary>
         /// <param name="testResult"></param>
         /// <returns></returns>
-        public static string GetDisplayName(dynamic testResult)
+        public static string GetTestDisplayName(dynamic testResult)
         {
             var description = testResult.getDescription();
             return (string)description.getName();
+        }
+
+        /// <summary>
+        /// Gets the local name of the test suite.
+        /// </summary>
+        /// <param name="source"></param>
+        /// <param name="testSuite"></param>
+        /// <returns></returns>
+        /// <exception cref="ArgumentNullException"></exception>
+        public static string GetTestSuiteName(string source, dynamic testSuite)
+        {
+            if (source is null)
+                throw new ArgumentNullException(nameof(source));
+            if (testSuite is null)
+                throw new ArgumentNullException(nameof(testSuite));
+
+            // root path
+            var rootPath = ((java.io.File)testSuite.getRootDir()).toPath();
+            var rootName = new java.io.File(source).getParentFile().toPath().relativize(rootPath).toString().Replace('.', '_').Replace('\\', '/');
+
+            return rootName;
+        }
+
+        /// <summary>
+        /// Gets the path name of the given test.
+        /// </summary>
+        /// <param name="source"></param>
+        /// <param name="testSuite"></param>
+        /// <param name="testResult"></param>
+        /// <returns></returns>
+        public static string GetTestPathName(string source, dynamic testSuite, dynamic testResult)
+        {
+            if (source is null)
+                throw new ArgumentNullException(nameof(source));
+            if (testSuite is null)
+                throw new ArgumentNullException(nameof(testSuite));
+            if (testResult is null)
+                throw new ArgumentNullException(nameof(testResult));
+
+            // get test file name relative to test suite dir
+            var rootPath = ((java.io.File)testSuite.getRootDir()).toPath();
+            var testFile = ((java.io.File)testResult.getDescription().getFile()).toPath();
+            var testName = rootPath.relativize(testFile).toString().Replace('\\', '/');
+
+            return testName;
+        }
+
+        /// <summary>
+        /// Gets the id of the given test.
+        /// </summary>
+        /// <param name="source"></param>
+        /// <param name="testSuite"></param>
+        /// <param name="testResult"></param>
+        /// <returns></returns>
+        public static string GetTestId(string source, dynamic testSuite, dynamic testResult)
+        {
+            if (source is null)
+                throw new ArgumentNullException(nameof(source));
+            if (testSuite is null)
+                throw new ArgumentNullException(nameof(testSuite));
+            if (testResult is null)
+                throw new ArgumentNullException(nameof(testResult));
+
+            return testResult.getDescription().getId();
+        }
+
+        /// <summary>
+        /// Gets the name of the given test.
+        /// </summary>
+        /// <param name="source"></param>
+        /// <param name="testSuite"></param>
+        /// <param name="testResult"></param>
+        /// <returns></returns>
+        public static string GetTestName(string source, dynamic testSuite, dynamic testResult)
+        {
+            if (source is null)
+                throw new ArgumentNullException(nameof(source));
+            if (testSuite is null)
+                throw new ArgumentNullException(nameof(testSuite));
+            if (testResult is null)
+                throw new ArgumentNullException(nameof(testResult));
+
+            return testResult.getDescription().getName();
+        }
+
+        /// <summary>
+        /// Gets the title of the given test.
+        /// </summary>
+        /// <param name="source"></param>
+        /// <param name="testSuite"></param>
+        /// <param name="testResult"></param>
+        /// <returns></returns>
+        public static string GetTestTitle(string source, dynamic testSuite, dynamic testResult)
+        {
+            if (source is null)
+                throw new ArgumentNullException(nameof(source));
+            if (testSuite is null)
+                throw new ArgumentNullException(nameof(testSuite));
+            if (testResult is null)
+                throw new ArgumentNullException(nameof(testResult));
+
+            return (string)testResult.getDescription().getTitle();
+        }
+
+        /// <summary>
+        /// Gets the title of the given test.
+        /// </summary>
+        /// <param name="source"></param>
+        /// <param name="testSuite"></param>
+        /// <param name="testResult"></param>
+        /// <returns></returns>
+        public static string[] GetTestKeywords(string source, dynamic testSuite, dynamic testResult)
+        {
+            if (source is null)
+                throw new ArgumentNullException(nameof(source));
+            if (testSuite is null)
+                throw new ArgumentNullException(nameof(testSuite));
+            if (testResult is null)
+                throw new ArgumentNullException(nameof(testResult));
+
+            return ((Set)testResult.getDescription().getKeywordTable()).AsSet<string>().ToArray();
         }
 
         /// <summary>
@@ -101,7 +226,7 @@ namespace IKVM.JTReg.TestAdapter
         /// <param name="testResult"></param>
         /// <returns></returns>
         /// <exception cref="ArgumentNullException"></exception>
-        public static string GetFullyQualifiedName(string source, dynamic testSuite, dynamic testResult)
+        public static string GetFullyQualifiedTestName(string source, dynamic testSuite, dynamic testResult)
         {
             if (source is null)
                 throw new ArgumentNullException(nameof(source));
@@ -110,18 +235,14 @@ namespace IKVM.JTReg.TestAdapter
             if (testResult is null)
                 throw new ArgumentNullException(nameof(testResult));
 
-            // root path
             var rootPath = ((java.io.File)testSuite.getRootDir()).toPath();
-            var rootName = new java.io.File(source).getParentFile().toPath().relativize(rootPath).toString().Replace('.', '_').Replace('\\', '/');
-
-            // test path
             var testPath = ((java.io.File)testResult.getDescription().getDir()).toPath();
             var pathName = rootPath.relativize(testPath).toString().Replace('.', '_').Replace('\\', '/');
 
             // test name
             var testName = testResult.getDescription().getName().Replace('.', '_').Replace('\\', '/');
 
-            return $"{rootName}.{pathName}.{testName}";
+            return $"{GetTestSuiteName(source, testSuite)}.{pathName}.{testName}";
         }
 
         static readonly SimpleDateFormat logFormat = new SimpleDateFormat("EEE MMM dd HH:mm:ss z yyyy", Locale.US);

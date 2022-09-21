@@ -10,11 +10,12 @@
 
     <ItemGroup>
         <PackageReference Include="FluentAssertions" Version="6.7.0" />
-        <PackageReference Include="Microsoft.CodeCoverage" Version="17.2.0" />
-        <PackageReference Include="Microsoft.NET.Test.Sdk" Version="17.2.0" />
+        <PackageReference Include="Microsoft.NET.Test.Sdk" Version="16.10.0" />
         <PackageReference Include="MSTest.TestAdapter" Version="2.2.10" />
         <PackageReference Include="MSTest.TestFramework" Version="2.2.10" />
         <PackageReference Include="Moq" Version="4.18.1" />
+        <PackageReference Include="Microsoft.TestPlatform.ObjectModel" Version="16.10.0" PrivateAssets="All" />
+        <PackageReference Include="Microsoft.TestPlatform.AdapterUtilities" Version="16.10.0" PrivateAssets="All" />
     </ItemGroup>
 
     <ItemGroup>
