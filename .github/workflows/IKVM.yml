@@ -221,26 +221,27 @@ jobs:
         run:
         - IKVM.Java.Tests?Partition=0
         - IKVM.Java.Tests?Partition=1
-        - IKVM.Java.Tests?TestSuiteName=jdk&Partition=2
-        - IKVM.Java.Tests?TestSuiteName=jdk&Partition=3
-        - IKVM.Java.Tests?TestSuiteName=jdk&Partition=4
-        - IKVM.Java.Tests?TestSuiteName=jdk&Partition=5
-        - IKVM.Java.Tests?TestSuiteName=jdk&Partition=6
-        - IKVM.Java.Tests?TestSuiteName=jdk&Partition=7
-        - IKVM.Java.Tests?TestSuiteName=jdk&Partition=8
-        - IKVM.Java.Tests?TestSuiteName=jdk&Partition=9
-        - IKVM.Java.Tests?TestSuiteName=jdk&Partition=10
-        - IKVM.Java.Tests?TestSuiteName=jdk&Partition=11
-        - IKVM.Java.Tests?TestSuiteName=jdk&Partition=12
-        - IKVM.Java.Tests?TestSuiteName=jdk&Partition=13
-        - IKVM.Java.Tests?TestSuiteName=jdk&Partition=14
-        - IKVM.Java.Tests?TestSuiteName=jdk&Partition=15
-        - IKVM.MSBuild.Tasks.Tests
-        - IKVM.MSBuild.Tests
+        - IKVM.Java.Tests?Partition=2
+        - IKVM.Java.Tests?Partition=3
+        - IKVM.Java.Tests?Partition=4
+        - IKVM.Java.Tests?Partition=5
+        - IKVM.Java.Tests?Partition=6
+        - IKVM.Java.Tests?Partition=7
+        - IKVM.Java.Tests?Partition=8
+        - IKVM.Java.Tests?Partition=9
+        - IKVM.Java.Tests?Partition=10
+        - IKVM.Java.Tests?Partition=11
+        - IKVM.Java.Tests?Partition=12
+        - IKVM.Java.Tests?Partition=13
+        - IKVM.Java.Tests?Partition=14
+        - IKVM.Java.Tests?Partition=15
         - IKVM.Tests
         - IKVM.Tool.Exporter.Tests
         - IKVM.Tool.Tests
         - ikvmc.Tests
+        - IKVM.MSBuild.Tasks.Tests
+        - IKVM.MSBuild.Tests
+        - IKVM.NET.Sdk.Tests
         tfm:
         - net461
         - net48
