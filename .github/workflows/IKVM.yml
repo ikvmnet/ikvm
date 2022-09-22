@@ -281,8 +281,8 @@ jobs:
         # suite name can contain filter expression after ?
         $split = $run.IndexOf("?")
         if ($split -gt -1) {
-            $query=$suite.Substring($split+1);
-            $suite=$suite.Substring(0, $split);
+            $query = $run.Substring($split+1);
+            $suite = $run.Substring(0, $split);
         }
 
         # scan for test assemblies
