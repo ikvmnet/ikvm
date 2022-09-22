@@ -215,9 +215,8 @@ namespace IKVM.MSBuild.Tasks
             options.Apartment = Apartment;
 
             if (SetProperties is not null)
-                foreach (var p in SetProperties.Split(new[] { ';' }, 2).Select(i => i.Split('=')))
-                    if (p.Length == 2)
-                        options.SetProperties[p[0]] = p[1];
+                foreach (var p in SetProperties.Split(new[] { ';' }).Select(i => i.Split(new[] { '=' }, 2)))
+                    options.SetProperties[p[0]] = p.Length == 2 ? p[1] : "";
 
             options.NoStackTraceInfo = NoStackTraceInfo;
 
