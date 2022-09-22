@@ -1961,7 +1961,7 @@ javax/management/remote/mandatory/util/MapNullValuesTest.java                   
 javax/management/remote/mandatory/version/ImplVersionTest.java                                                          generic-all
 javax/print/CheckDupFlavor.java                                                                                         generic-all
 javax/print/LookupServices.java                                                                                         generic-all
-javax/print/PrintSE/PrintSE.java                                                                                        generic-all
+javax/print/PrintSE/PrintSE.sh                                                                                          generic-all
 javax/print/PrintServiceLookup/GetPrintServices.java                                                                    generic-all
 javax/print/TestRaceCond.java                                                                                           generic-all
 javax/print/TextFlavorTest.java                                                                                         generic-all
@@ -1974,9 +1974,9 @@ javax/print/attribute/PSCopiesFlavorTest.java                                   
 javax/print/attribute/SidesPageRangesTest.java                                                                          generic-all
 javax/print/attribute/SupportedPrintableAreas.java                                                                      generic-all
 javax/print/attribute/autosense/PrintAutoSenseData.java                                                                 generic-all
-javax/rmi/ssl/SSLSocketParametersTest.java                                                                              generic-all
-javax/script/ProviderTest.java                                                                                          generic-all
-javax/security/auth/Subject/doAs/Test.java                                                                              generic-all
+javax/rmi/ssl/SSLSocketParametersTest.sh                                                                                generic-all
+javax/script/ProviderTest.sh                                                                                            generic-all
+javax/security/auth/Subject/doAs/Test.sh                                                                                generic-all
 javax/security/auth/login/Configuration/ConfigFileWithBlank.java                                                        generic-all
 javax/security/auth/login/Configuration/GetInstance.java                                                                generic-all
 javax/security/auth/login/Configuration/GetInstanceSecurity.java                                                        generic-all
