@@ -16009,10 +16009,9 @@
         <VfsItem Include="$(OpenJdkDir)\build\linux-x86_64-normal-server-release\jdk\lib\tzdb.dat" VfsPath="lib\tzdb.dat" />
         <VfsItem Include="$(OpenJdkDir)\build\linux-x86_64-normal-server-release\jdk\lib\currency.data" VfsPath="lib\currency.data" />
         <VfsItem Include="$(OpenJdkDir)\build\linux-x86_64-normal-server-release\jdk\lib\cmm\**\*" VfsPath="lib\cmm\%(RecursiveDir)%(Filename)%(Extension)" />
-        <VfsItem Include="$(OpenJdkDir)\build\linux-x86_64-normal-server-release\jdk\lib\images\**\*" VfsPath="lib\images\%(RecursiveDir)%(Filename)%(Extension)" />
         <VfsItem Include="$(OpenJdkDir)\build\linux-x86_64-normal-server-release\jdk\lib\management\**\*" VfsPath="lib\management\%(RecursiveDir)%(Filename)%(Extension)" />
         <VfsItem Include="$(OpenJdkDir)\build\linux-x86_64-normal-server-release\jdk\lib\security\**\*" VfsPath="lib\security\%(Filename)%(Extension)" />
-        <VfsItem Include="$(OpenJdkDir)\jdk\src\windows\lib\**\*" VfsPath="lib\%(RecursiveDir)%(Filename)%(Extension)" />
+        <VfsItem Include="$(OpenJdkDir)\jdk\src\windows\lib\*" VfsPath="lib\%(Filename)%(Extension)" />
     </ItemGroup>
 
 </Project>

@@ -79,6 +79,9 @@
         <ProjectReference Include="..\IKVM.MSBuild\IKVM.MSBuild.msbuildproj">
             <ReferenceOutputAssembly>true</ReferenceOutputAssembly>
         </ProjectReference>
+        <ProjectReference Include="..\IKVM.Image.JRE\IKVM.Image.JRE.msbuildproj">
+            <ReferenceOutputAssembly>true</ReferenceOutputAssembly>
+        </ProjectReference>
     </ItemGroup>
 
     <ItemGroup>

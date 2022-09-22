@@ -143,7 +143,7 @@
         <Copy SourceFiles="@(_PackageFilesToStage)" DestinationFiles="@(_PackageFilesToStage->'%(TemporaryPath)')" OverwriteReadOnlyFiles="true" SkipUnchangedFiles="true" />
         <ItemGroup>
             <_PackageFiles Include="@(_PackageFilesToStage->'%(TemporaryPath)')">
-                <PackagePath>$([System.IO.Path]::GetDirectoryName('%(_PackageFilesToStage.PackagePath)'))</PackagePath>
+                <PackagePath Condition=" '%(_PackageFilesToStage.PackagePath)' != '' ">$([System.IO.Path]::GetDirectoryName('%(_PackageFilesToStage.PackagePath)'))</PackagePath>
             </_PackageFiles>
         </ItemGroup>
     </Target>

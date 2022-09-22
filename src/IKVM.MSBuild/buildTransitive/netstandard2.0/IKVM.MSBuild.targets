@@ -3,10 +3,6 @@
         <MSBuildAllProjects>$(MSBuildAllProjects);$(MSBuildThisFileFullPath)</MSBuildAllProjects>
     </PropertyGroup>
 
-    <PropertyGroup>
-        <UseIkvmTasks Condition=" '$(UseIkvmTasks)' == '' ">true</UseIkvmTasks>
-    </PropertyGroup>
-
     <PropertyGroup Condition=" '$(TargetFramework)' != '' ">
         <IkvmToolFramework Condition="$([MSBuild]::IsTargetFrameworkCompatible('$(TargetFramework)', 'netstandard1.0'))">NetCore</IkvmToolFramework>
         <IkvmToolFramework Condition="$([MSBuild]::IsTargetFrameworkCompatible('$(TargetFramework)', 'net461'))">NetFramework</IkvmToolFramework>
@@ -75,8 +71,8 @@
     <!--
     Optionally disable registration of tasks.
     -->
-    <Import Project="IKVM.MSBuild.Tasks.targets" Condition=" '$(UseIkvmTasks)' == 'true' "/>
-    <Import Project="IKVM.MSBuild.NoTasks.targets" Condition=" '$(UseIkvmTasks)' != 'true' "/>
+    <Import Project="IKVM.MSBuild.Tasks.targets" Condition=" '$(UseIkvmTasks)' != 'false' "/>
+    <Import Project="IKVM.MSBuild.NoTasks.targets" Condition=" '$(UseIkvmTasks)' == 'false' "/>
 
     <!--
     PackageReference mode looks for IKVM tools and assemblies from the included IKVM and IKVM.MSBuild packages.

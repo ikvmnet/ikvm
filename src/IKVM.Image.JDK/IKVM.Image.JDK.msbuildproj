@@ -1,0 +1,61 @@
+﻿<Project Sdk="Microsoft.Build.NoTargets/3.5.6">
+
+    <PropertyGroup>
+        <TargetFrameworks>net461;netcoreapp3.1</TargetFrameworks>
+        <PackageLicenseFile>LICENSE.md</PackageLicenseFile>
+        <PackageReadmeFile>README.md</PackageReadmeFile>
+        <Description>IKVM JDK Runtime Image</Description>
+    </PropertyGroup>
+
+    <PropertyGroup>
+        <PublishRepositoryUrl>true</PublishRepositoryUrl>
+        <EmbedUntrackedSources>true</EmbedUntrackedSources>
+    </PropertyGroup>
+
+    <ItemGroup>
+        <None Include="..\..\LICENSE.md" Pack="true" PackagePath="." />
+        <None Include="README.md" Pack="true" PackagePath="." />
+    </ItemGroup>
+
+    <ItemGroup>
+        <None Include="build\**\*" Pack="true" PackagePath="build\%(RecursiveDir)%(Filename)%(Extension)" />
+        <None Include="lib\**\*" Pack="true" PackagePath="lib\%(RecursiveDir)%(Filename)%(Extension)" />
+    </ItemGroup>
+
+    <ItemGroup>
+        <Tools Include="..\jar\jar.msbuildproj" />
+        <Tools Include="..\jarsigner\jarsigner.msbuildproj" />
+        <Tools Include="..\javac\javac.msbuildproj" />
+        <Tools Include="..\javadoc\javadoc.msbuildproj" />
+        <Tools Include="..\javah\javah.msbuildproj" />
+        <Tools Include="..\javap\javap.msbuildproj" />
+        <Tools Include="..\jdeps\jdeps.msbuildproj" />
+        <Tools Include="..\keytool\keytool.msbuildproj" />
+        <Tools Include="..\policytool\policytool.msbuildproj" />
+        <Tools Include="..\rmic\rmic.msbuildproj" />
+        <Tools Include="..\wsgen\wsgen.msbuildproj" />
+        <Tools Include="..\wsimport\wsimport.msbuildproj" />
+    </ItemGroup>
+
+    <ItemGroup Condition=" '$(TargetFramework)' == '' ">
+        <PublishProjectReference Include="@(Tools)">
+            <SetTargetFramework>TargetFramework=net461</SetTargetFramework>
+            <PublishProperties>RuntimeIdentifier=win7-x64</PublishProperties>
+            <PublishPackagePath>runtimes\win7-x64\contentFiles\net461\ikvm\bin</PublishPackagePath>
+        </PublishProjectReference>
+        <PublishProjectReference Include="@(Tools)">
+            <SetTargetFramework>TargetFramework=netcoreapp3.1</SetTargetFramework>
+            <PublishProperties>RuntimeIdentifier=win7-x64</PublishProperties>
+            <PublishPackagePath>runtimes\win7-x64\contentFiles\netcoreapp3.1\ikvm\bin</PublishPackagePath>
+        </PublishProjectReference>
+    </ItemGroup>
+
+    <ItemGroup Condition=" '$(TargetFramework)' == '' ">
+        <PublishProjectReference Include="@(Tools)">
+            <SetTargetFramework>TargetFramework=netcoreapp3.1</SetTargetFramework>
+            <PublishProperties>RuntimeIdentifier=linux-x64</PublishProperties>
+            <PublishPackagePath>runtimes\linux-x64\contentFiles\netcoreapp3.1\ikvm\bin</PublishPackagePath>
+        </PublishProjectReference>
+    </ItemGroup>
+
+</Project>
