@@ -312,7 +312,7 @@ jobs:
       shell: pwsh
       run: |
         # assign powershell variables
-        $run = "${{ matrix.tun }}"
+        $run = "${{ matrix.run }}"
         $tfm = "${{ matrix.tfm }}"
         $sys = "${{ matrix.sys }}"
 
