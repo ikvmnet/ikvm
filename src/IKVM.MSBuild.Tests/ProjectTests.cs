@@ -64,13 +64,10 @@ namespace IKVM.MSBuild.Tests
             var targets = new[]
             {
                 ("net461",          "win7-x64"),
-                ("net472",          "win7-x64"),
                 ("net48",           "win7-x64"),
                 ("netcoreapp3.1",   "win7-x64"),
-                ("net5.0",          "win7-x64"),
                 ("net6.0",          "win7-x64"),
                 ("netcoreapp3.1",   "linux-x64"),
-                ("net5.0",          "linux-x64"),
                 ("net6.0",          "linux-x64"),
             };
 
@@ -79,10 +76,8 @@ namespace IKVM.MSBuild.Tests
                 targets = new[]
                 {
                     ("netcoreapp3.1",   "win7-x64"),
-                    ("net5.0",          "win7-x64"),
                     ("net6.0",          "win7-x64"),
                     ("netcoreapp3.1",   "linux-x64"),
-                    ("net5.0",          "linux-x64"),
                     ("net6.0",          "linux-x64"),
                 };
             }
