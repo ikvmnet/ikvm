@@ -29,7 +29,7 @@ namespace IKVM.JTReg.TestAdapter.Tests
             testCaseDiscoverySink.Setup(x => x.SendTestCase(It.IsAny<TestCase>())).Callback((TestCase x) => testCases.Add(x));
 
             var adp = new IkvmJTRegTestAdapter();
-            adp.DiscoverTests(typeof(JTRegTestAdapterTests).Assembly.Location, discoveryContext.Object, messageLogger.Object, testCaseDiscoverySink.Object, 16);
+            adp.DiscoverTests(typeof(JTRegTestAdapterTests).Assembly.Location, discoveryContext.Object, messageLogger.Object, testCaseDiscoverySink.Object);
             testCases.Should().HaveCountGreaterThanOrEqualTo(1);
         }
 
