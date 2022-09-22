@@ -304,7 +304,7 @@ namespace IKVM.JTReg.TestAdapter
 
         static TimeSpan ParseElapsed(string v)
         {
-            return v != null && int.TryParse(v.Split(' ')[0], out var s) ? TimeSpan.FromMilliseconds(s) : TimeSpan.MinValue;
+            return v != null && int.TryParse(v.Split(' ')[0], out var s) ? TimeSpan.FromMilliseconds(s) : TimeSpan.Zero;
         }
 
         /// <summary>
