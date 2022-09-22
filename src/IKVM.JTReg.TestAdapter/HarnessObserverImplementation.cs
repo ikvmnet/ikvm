@@ -46,8 +46,8 @@ namespace IKVM.JTReg.TestAdapter
 
         public void startingTest(dynamic self, dynamic testResult)
         {
-            var name = (string)TestResultMethods.GetFullyQualifiedTestName(source, testSuite, testResult);
-            var test = tests.FirstOrDefault(i => i.FullyQualifiedName == name) ?? (TestCase)TestResultMethods.ToTestCase(source, testSuite, testResult);
+            var name = (string)DynamicObjectMethods.GetFullyQualifiedTestName(source, testSuite, testResult);
+            var test = tests.FirstOrDefault(i => i.FullyQualifiedName == name);
 
             frameworkHandle.SendMessage(TestMessageLevel.Informational, $"JTReg: starting test '{test.FullyQualifiedName}'");
             frameworkHandle.RecordStart(test);
@@ -65,9 +65,9 @@ namespace IKVM.JTReg.TestAdapter
 
         public void finishedTest(dynamic self, dynamic testResult)
         {
-            var name = (string)TestResultMethods.GetFullyQualifiedTestName(source, testSuite, testResult);
-            var test = tests.FirstOrDefault(i => i.Source == source && i.FullyQualifiedName == name) ?? (TestCase)TestResultMethods.ToTestCase(source, testSuite, testResult);
-            var rslt = (TestResult)TestResultMethods.ToTestResult(source, testResult, test);
+            var name = (string)DynamicObjectMethods.GetFullyQualifiedTestName(source, testSuite, testResult);
+            var test = tests.FirstOrDefault(i => i.Source == source && i.FullyQualifiedName == name);
+            var rslt = (TestResult)DynamicObjectMethods.ToTestResult(source, testResult, test);
 
             frameworkHandle.SendMessage(TestMessageLevel.Informational, $"JTReg: finished test '{test.FullyQualifiedName}'. [{rslt.Outcome}]");
             frameworkHandle.RecordEnd(test, rslt.Outcome);

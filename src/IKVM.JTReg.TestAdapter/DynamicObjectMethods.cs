@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Collections;
 using System.Collections.Generic;
 using System.Linq;
 using System.Security.Claims;
@@ -17,8 +18,24 @@ namespace IKVM.JTReg.TestAdapter
     /// <summary>
     /// Provides various information for working against 'com.sun.javatest.TestResult' instances.
     /// </summary>
-    static class TestResultMethods
+    static class DynamicObjectMethods
     {
+
+        /// <summary>
+        /// Gets the test suites within the given test manager, properly sorted.
+        /// </summary>
+        /// <param name="source"></param>
+        /// <param name="testManager"></param>
+        /// <returns></returns>
+        public static IEnumerable<dynamic> GetTestSuites(string source, dynamic testManager)
+        {
+            if (source is null)
+                throw new ArgumentNullException(nameof(source));
+            if (testManager is null)
+                throw new ArgumentNullException(nameof(testManager));
+
+            return ((IEnumerable)testManager.getTestSuites()).Cast<object>().OrderBy(i => GetTestSuiteName(source, i)).Cast<dynamic>();
+        }
 
         /// <summary>
         /// Creates a new <see cref="TestCase"/> from the given test result.
@@ -27,14 +44,16 @@ namespace IKVM.JTReg.TestAdapter
         /// <param name="testSuite"></param>
         /// <param name="testResult"></param>
         /// <returns></returns>
-        public static TestCase ToTestCase(string source, dynamic testSuite, dynamic testResult)
+        public static TestCase ToTestCase(string source, dynamic testSuite, dynamic testResult, int partition)
         {
             if (source is null)
                 throw new ArgumentNullException(nameof(source));
+            if (testSuite is null)
+                throw new ArgumentNullException(nameof(testSuite));
             if (testResult is null)
                 throw new ArgumentNullException(nameof(testResult));
 
-            var testCase = new TestCase(TestResultMethods.GetFullyQualifiedTestName(source, testSuite, testResult), new Uri("executor://IkvmJTRegTestAdapter/v1"), source);
+            var testCase = new TestCase(DynamicObjectMethods.GetFullyQualifiedTestName(source, testSuite, testResult), new Uri("executor://IkvmJTRegTestAdapter/v1"), source);
             testCase.CodeFilePath = ((java.io.File)testResult.getDescription().getFile())?.toPath().toAbsolutePath().toString();
             testCase.SetPropertyValue(IkvmJTRegTestProperties.TestSuiteRootProperty, ((java.io.File)testSuite.getRootDir()).toPath().toAbsolutePath().toString());
             testCase.SetPropertyValue(IkvmJTRegTestProperties.TestSuiteNameProperty, GetTestSuiteName(source, testSuite));
@@ -43,6 +62,7 @@ namespace IKVM.JTReg.TestAdapter
             testCase.SetPropertyValue(IkvmJTRegTestProperties.TestTitleProperty, GetTestTitle(source, testSuite, testResult));
             testCase.SetPropertyValue(IkvmJTRegTestProperties.TestAuthorProperty, GetTestAuthor(source, testSuite, testResult));
             testCase.SetPropertyValue(IkvmJTRegTestProperties.TestCategoryProperty, GetTestKeywords(source, testSuite, testResult));
+            testCase.Traits.Add("Partition", partition.ToString());
             return testCase;
         }
 
@@ -64,7 +84,7 @@ namespace IKVM.JTReg.TestAdapter
 
             var r = new TestResult(testCase)
             {
-                DisplayName = TestResultMethods.GetTestDisplayName(testResult),
+                DisplayName = DynamicObjectMethods.GetTestDisplayName(testResult),
                 ComputerName = testResult.getProperty("hostname"),
                 Duration = ParseElapsed(testResult.getProperty("elapsed")),
                 StartTime = ParseLogDate(testResult.getProperty("start")),

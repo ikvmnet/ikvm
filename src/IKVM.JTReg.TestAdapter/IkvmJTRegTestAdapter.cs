@@ -23,6 +23,8 @@ namespace IKVM.JTReg.TestAdapter
     public class IkvmJTRegTestAdapter : ITestDiscoverer, ITestExecutor2
     {
 
+        const int PARTITION_COUNT = 16;
+
         const string BASEDIR_PREFIX = "ikvm-jtreg-";
         const string TEST_ROOT_FILE_NAME = "TEST.ROOT";
         const string TEST_PROBLEM_LIST_FILE_NAME = "ProblemList.txt";
@@ -172,14 +174,13 @@ namespace IKVM.JTReg.TestAdapter
                 testWatch.Start();
 
                 // for each suite, get the results and transform a test case
-                foreach (dynamic testSuite in (IEnumerable)testManager.getTestSuites())
+                foreach (dynamic testSuite in DynamicObjectMethods.GetTestSuites(source, testManager))
                 {
                     logger.SendMessage(TestMessageLevel.Informational, "JTReg: " + $"Discovered test suite: {testSuite.getName()}");
 
-                    foreach (var testResult in GetResults(CreateParameters(source, baseDir, testManager, testSuite, null)))
+                    foreach (var testResult in GetTestResults(source, testSuite, CreateParameters(source, baseDir, testManager, testSuite, null)))
                     {
-                        testCount++;
-                        var testCase = (TestCase)TestResultMethods.ToTestCase(source, testSuite, testResult);
+                        var testCase = (TestCase)DynamicObjectMethods.ToTestCase(source, testSuite, testResult, testCount++ % PARTITION_COUNT);
                         logger.SendMessage(TestMessageLevel.Informational, "JTReg: " + $"Discovered test: {testCase.FullyQualifiedName}");
                         discoverySink.SendTestCase(testCase);
                     }
@@ -316,12 +317,14 @@ namespace IKVM.JTReg.TestAdapter
                 // we will need a full list of tests to apply any filters to
                 if (tests == null)
                 {
+                    var testCount = 0;
+
                     var l = new List<TestCase>();
 
                     // discover the full set of tests
-                    foreach (dynamic testSuite in (IEnumerable)testManager.getTestSuites())
-                        foreach (var testResult in GetResults(CreateParameters(source, baseDir, testManager, testSuite, null)))
-                            l.Add(TestResultMethods.ToTestCase(source, testSuite, testResult));
+                    foreach (dynamic testSuite in DynamicObjectMethods.GetTestSuites(source, testManager))
+                        foreach (var testResult in GetTestResults(source, testSuite, CreateParameters(source, baseDir, testManager, testSuite, null)))
+                            l.Add(DynamicObjectMethods.ToTestCase(source, testSuite, testResult, testCount++ % PARTITION_COUNT));
 
                     tests = l;
                 }
@@ -371,7 +374,7 @@ namespace IKVM.JTReg.TestAdapter
             cancellationToken.ThrowIfCancellationRequested();
 
             // only continue if there are in fact tests in the suite to execute
-            var firstTestResult = ((IEnumerable<object>)GetResults(parameters)).FirstOrDefault();
+            var firstTestResult = GetTestResults(source, testSuite, parameters).FirstOrDefault();
             if (firstTestResult is null)
                 return;
 
@@ -488,7 +491,7 @@ namespace IKVM.JTReg.TestAdapter
             if (tests != null)
             {
                 // name of the current suite
-                var testSuiteName = TestResultMethods.GetTestSuiteName(source, testSuite);
+                var testSuiteName = DynamicObjectMethods.GetTestSuiteName(source, testSuite);
 
                 // fill in include list containing tests located within the suite
                 var tf = Path.Combine(baseDir, testSuiteName + "-IncludeList.txt");
@@ -571,8 +574,12 @@ namespace IKVM.JTReg.TestAdapter
         /// <param name="parameters"></param>
         /// <returns></returns>
         /// <exception cref="ArgumentNullException"></exception>
-        IEnumerable<dynamic> GetResults(dynamic parameters)
+        IEnumerable<dynamic> GetTestResults(string source, dynamic testSuite, dynamic parameters)
         {
+            if (source is null)
+                throw new ArgumentNullException(nameof(source));
+            if (testSuite is null)
+                throw new ArgumentNullException(nameof(testSuite));
             if (parameters is null)
                 throw new ArgumentNullException(nameof(parameters));
 
@@ -587,11 +594,11 @@ namespace IKVM.JTReg.TestAdapter
             // find tests
             var tests = parameters.getTests();
             if (tests == null)
-                return (IEnumerable<dynamic>)rtltrmethod.Invoke(null, new[] { (java.util.Iterator)trt.getIterator() });
+                return ((IEnumerable<dynamic>)rtltrmethod.Invoke(null, new[] { (java.util.Iterator)trt.getIterator() })).OrderBy(i => DynamicObjectMethods.GetTestPathName(source, testSuite, i));
             else if (tests.Length == 0)
                 return (IEnumerable<dynamic>)Array.CreateInstance(ikvm.runtime.Util.getInstanceTypeFromClass(JTRegTypes.TestResult.Class), 0);
             else
-                return (IEnumerable<dynamic>)rtltrmethod.Invoke(null, new[] { (java.util.Iterator)trt.getIterator() });
+                return ((IEnumerable<dynamic>)rtltrmethod.Invoke(null, new[] { (java.util.Iterator)trt.getIterator() })).OrderBy(i => DynamicObjectMethods.GetTestPathName(source, testSuite, i));
         }
 
         /// <summary>
