@@ -218,7 +218,7 @@ jobs:
   test-ikvm:
     strategy:
       matrix:
-        suite:
+        run:
         - IKVM.Java.Tests?TestSuiteName=langtools&Partition=0
         - IKVM.Java.Tests?TestSuiteName=jdk&Partition=0
         - IKVM.Java.Tests?TestSuiteName=nashorn&Partition=0
@@ -280,13 +280,13 @@ jobs:
         - netcoreapp3.1
         - net5.0
         - net6.0
-        os:
+        sys:
         - windows
         - ubuntu
-    name: Test IKVM (${{ matrix.suite }}:${{ matrix.tfm }}:${{ matrix.os }})
+    name: Test IKVM (${{ matrix.run }}:${{ matrix.tfm }}:${{ matrix.sys }}
     needs:
     - build-ikvm
-    runs-on: ${{ matrix.os }}-latest
+    runs-on: ${{ matrix.sys }}-latest
     steps:
     - name: Setup .NET 3.1
       uses: actions/setup-dotnet@v2
@@ -312,12 +312,12 @@ jobs:
       shell: pwsh
       run: |
         # assign powershell variables
-        $suite = "${{ matrix.suite }}"
-        $tfm   = "${{ matrix.tfm }}"
-        $os    = "${{ matrix.os }}"
+        $run = "${{ matrix.tun }}"
+        $tfm = "${{ matrix.tfm }}"
+        $sys = "${{ matrix.sys }}"
 
         # suite name can contain filter expression after ?
-        $split = $suite.IndexOf("?")
+        $split = $run.IndexOf("?")
         if ($split -gt -1) {
             $query=$suite.Substring($split+1);
             $suite=$suite.Substring(0, $split);
@@ -328,16 +328,16 @@ jobs:
 
         # if a query was specified, add to test command
         if ($query -ne "") {
-            dotnet test $tests --blame -v 3 --results-directory ".\TestResults--$suite--$tfm--$os" --filter "$query"
+            dotnet test $tests --blame -v 3 --results-directory ".\TestResults--$suite--$tfm--$sys" --filter "$query"
         } else {
-            dotnet test $tests --blame -v 3 --results-directory ".\TestResults--$suite--$tfm--$os"
+            dotnet test $tests --blame -v 3 --results-directory ".\TestResults--$suite--$tfm--$sys"
         }
     - name: Upload Test Results
       if: ${{ always() }}
       uses: actions/upload-artifact@v3
       with:
-        name: TestResults--${{ matrix.suite }}--${{ matrix.tfm }}--${{ matrix.os }}
-        path: TestResults--${{ matrix.suite }}--${{ matrix.tfm }}--${{ matrix.os }}
+        name: TestResults--${{ matrix.run }}--${{ matrix.tfm }}--${{ matrix.sys }}
+        path: TestResults--${{ matrix.run }}--${{ matrix.tfm }}--${{ matrix.sys }}
   release:
     name: Release
     if: github.ref == 'refs/heads/master' || github.ref == 'refs/heads/main' || github.ref == 'refs/heads/develop'
