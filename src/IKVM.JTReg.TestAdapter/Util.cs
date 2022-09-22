@@ -2,11 +2,7 @@
 using System.Collections;
 using System.Collections.Generic;
 using System.Linq;
-using System.Security.Claims;
 
-using com.sun.org.glassfish.gmbal;
-
-using java.nio.file;
 using java.text;
 using java.util;
 
@@ -18,7 +14,7 @@ namespace IKVM.JTReg.TestAdapter
     /// <summary>
     /// Provides various information for working against 'com.sun.javatest.TestResult' instances.
     /// </summary>
-    static class DynamicObjectMethods
+    static class Util
     {
 
         /// <summary>
@@ -53,7 +49,7 @@ namespace IKVM.JTReg.TestAdapter
             if (testResult is null)
                 throw new ArgumentNullException(nameof(testResult));
 
-            var testCase = new TestCase(DynamicObjectMethods.GetFullyQualifiedTestName(source, testSuite, testResult), new Uri("executor://IkvmJTRegTestAdapter/v1"), source);
+            var testCase = new TestCase(Util.GetFullyQualifiedTestName(source, testSuite, testResult), new Uri("executor://IkvmJTRegTestAdapter/v1"), source);
             testCase.CodeFilePath = ((java.io.File)testResult.getDescription().getFile())?.toPath().toAbsolutePath().toString();
             testCase.SetPropertyValue(IkvmJTRegTestProperties.TestSuiteRootProperty, ((java.io.File)testSuite.getRootDir()).toPath().toAbsolutePath().toString());
             testCase.SetPropertyValue(IkvmJTRegTestProperties.TestSuiteNameProperty, GetTestSuiteName(source, testSuite));
@@ -84,7 +80,7 @@ namespace IKVM.JTReg.TestAdapter
 
             var r = new TestResult(testCase)
             {
-                DisplayName = DynamicObjectMethods.GetTestDisplayName(testResult),
+                DisplayName = Util.GetTestDisplayName(testResult),
                 ComputerName = testResult.getProperty("hostname"),
                 Duration = ParseElapsed(testResult.getProperty("elapsed")),
                 StartTime = ParseLogDate(testResult.getProperty("start")),

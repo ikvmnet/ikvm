@@ -174,13 +174,13 @@ namespace IKVM.JTReg.TestAdapter
                 testWatch.Start();
 
                 // for each suite, get the results and transform a test case
-                foreach (dynamic testSuite in DynamicObjectMethods.GetTestSuites(source, testManager))
+                foreach (dynamic testSuite in Util.GetTestSuites(source, testManager))
                 {
                     logger.SendMessage(TestMessageLevel.Informational, "JTReg: " + $"Discovered test suite: {testSuite.getName()}");
 
                     foreach (var testResult in GetTestResults(source, testSuite, CreateParameters(source, baseDir, testManager, testSuite, null)))
                     {
-                        var testCase = (TestCase)DynamicObjectMethods.ToTestCase(source, testSuite, testResult, testCount++ % PARTITION_COUNT);
+                        var testCase = (TestCase)Util.ToTestCase(source, testSuite, testResult, testCount++ % PARTITION_COUNT);
                         logger.SendMessage(TestMessageLevel.Informational, "JTReg: " + $"Discovered test: {testCase.FullyQualifiedName}");
                         discoverySink.SendTestCase(testCase);
                     }
@@ -322,9 +322,9 @@ namespace IKVM.JTReg.TestAdapter
                     var l = new List<TestCase>();
 
                     // discover the full set of tests
-                    foreach (dynamic testSuite in DynamicObjectMethods.GetTestSuites(source, testManager))
+                    foreach (dynamic testSuite in Util.GetTestSuites(source, testManager))
                         foreach (var testResult in GetTestResults(source, testSuite, CreateParameters(source, baseDir, testManager, testSuite, null)))
-                            l.Add(DynamicObjectMethods.ToTestCase(source, testSuite, testResult, testCount++ % PARTITION_COUNT));
+                            l.Add(Util.ToTestCase(source, testSuite, testResult, testCount++ % PARTITION_COUNT));
 
                     tests = l;
                 }
@@ -374,7 +374,7 @@ namespace IKVM.JTReg.TestAdapter
             cancellationToken.ThrowIfCancellationRequested();
 
             // only continue if there are in fact tests in the suite to execute
-            var firstTestResult = GetTestResults(source, testSuite, parameters).FirstOrDefault();
+            var firstTestResult = ((IEnumerable<object>)GetTestResults(source, testSuite, parameters)).FirstOrDefault();
             if (firstTestResult is null)
                 return;
 
@@ -491,7 +491,7 @@ namespace IKVM.JTReg.TestAdapter
             if (tests != null)
             {
                 // name of the current suite
-                var testSuiteName = DynamicObjectMethods.GetTestSuiteName(source, testSuite);
+                var testSuiteName = Util.GetTestSuiteName(source, testSuite);
 
                 // fill in include list containing tests located within the suite
                 var tf = Path.Combine(baseDir, testSuiteName + "-IncludeList.txt");
@@ -594,11 +594,11 @@ namespace IKVM.JTReg.TestAdapter
             // find tests
             var tests = parameters.getTests();
             if (tests == null)
-                return ((IEnumerable<dynamic>)rtltrmethod.Invoke(null, new[] { (java.util.Iterator)trt.getIterator() })).OrderBy(i => DynamicObjectMethods.GetTestPathName(source, testSuite, i));
+                return ((IEnumerable<dynamic>)rtltrmethod.Invoke(null, new[] { (java.util.Iterator)trt.getIterator() })).OrderBy(i => Util.GetTestPathName(source, testSuite, i));
             else if (tests.Length == 0)
                 return (IEnumerable<dynamic>)Array.CreateInstance(ikvm.runtime.Util.getInstanceTypeFromClass(JTRegTypes.TestResult.Class), 0);
             else
-                return ((IEnumerable<dynamic>)rtltrmethod.Invoke(null, new[] { (java.util.Iterator)trt.getIterator() })).OrderBy(i => DynamicObjectMethods.GetTestPathName(source, testSuite, i));
+                return ((IEnumerable<dynamic>)rtltrmethod.Invoke(null, new[] { (java.util.Iterator)trt.getIterator() })).OrderBy(i => Util.GetTestPathName(source, testSuite, i));
         }
 
         /// <summary>
