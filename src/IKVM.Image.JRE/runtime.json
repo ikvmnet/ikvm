@@ -1,0 +1,16 @@
+{
+    "runtimes": {
+        "win7-x64": {
+            "#import": [],
+            "IKVM.Image.JRE": {
+                "IKVM.Image.JRE.runtime.win7-x64": "[8.0.0, )"
+            }
+        },
+        "linux-x64": {
+            "#import": [],
+            "IKVM.Image.JRE": {
+                "IKVM.Image.JRE.runtime.linux-x64": "[8.0.0, )"
+            }
+        }
+    }
+}

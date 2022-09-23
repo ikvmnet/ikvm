@@ -36,36 +36,36 @@
     <ItemGroup Condition=" '$(TargetFramework)' == '' ">
         <PublishProjectReference Include="..\ikvmc\ikvmc.csproj">
             <SetTargetFramework>TargetFramework=net461</SetTargetFramework>
-            <PublishPackagePath>bin\ikvmc\net461\any</PublishPackagePath>
             <PublishProperties></PublishProperties>
+            <PublishPackagePath>bin\ikvmc\net461\any</PublishPackagePath>
         </PublishProjectReference>
         <PublishProjectReference Include="..\ikvmc\ikvmc.csproj">
             <SetTargetFramework>TargetFramework=netcoreapp3.1</SetTargetFramework>
-            <PublishPackagePath>bin\ikvmc\netcoreapp3.1\win7-x64</PublishPackagePath>
             <PublishProperties>RuntimeIdentifier=win7-x64</PublishProperties>
+            <PublishPackagePath>bin\ikvmc\netcoreapp3.1\win7-x64</PublishPackagePath>
         </PublishProjectReference>
         <PublishProjectReference Include="..\ikvmc\ikvmc.csproj">
             <SetTargetFramework>TargetFramework=netcoreapp3.1</SetTargetFramework>
-            <PublishPackagePath>bin\ikvmc\netcoreapp3.1\linux-x64\</PublishPackagePath>
             <PublishProperties>RuntimeIdentifier=linux-x64</PublishProperties>
+            <PublishPackagePath>bin\ikvmc\netcoreapp3.1\linux-x64\</PublishPackagePath>
         </PublishProjectReference>
     </ItemGroup>
 
     <ItemGroup Condition=" '$(TargetFramework)' == '' ">
         <PublishProjectReference Include="..\ikvmstub\ikvmstub.csproj">
             <SetTargetFramework>TargetFramework=net461</SetTargetFramework>
-            <PublishPackagePath>bin\ikvmstub\net461\any</PublishPackagePath>
             <PublishProperties></PublishProperties>
+            <ProjectPackagePath>bin\ikvmstub\net461\any</ProjectPackagePath>
         </PublishProjectReference>
         <PublishProjectReference Include="..\ikvmstub\ikvmstub.csproj">
             <SetTargetFramework>TargetFramework=netcoreapp3.1</SetTargetFramework>
-            <PublishPackagePath>bin\ikvmstub\netcoreapp3.1\win7-x64</PublishPackagePath>
             <PublishProperties>RuntimeIdentifier=win7-x64</PublishProperties>
+            <ProjectPackagePath>bin\ikvmstub\netcoreapp3.1\win7-x64</ProjectPackagePath>
         </PublishProjectReference>
         <PublishProjectReference Include="..\ikvmstub\ikvmstub.csproj">
             <SetTargetFramework>TargetFramework=netcoreapp3.1</SetTargetFramework>
-            <PublishPackagePath>bin\ikvmstub\netcoreapp3.1\linux-x64\</PublishPackagePath>
             <PublishProperties>RuntimeIdentifier=linux-x64</PublishProperties>
+            <ProjectPackagePath>bin\ikvmstub\netcoreapp3.1\linux-x64\</ProjectPackagePath>
         </PublishProjectReference>
     </ItemGroup>
 

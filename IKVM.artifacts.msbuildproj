@@ -33,11 +33,11 @@
             <Properties>$(PackProperties);PackageOutputPath=$(ArtifactStagingDirectory)\nuget</Properties>
         </TargetsForPublish>
         <TargetsForPublish Include="$(SolutionFile)">
-            <Targets>IKVM_Image_JRE:Pack</Targets>
+            <Targets>IKVM_Image_JRE:Pack;IKVM_Image_JRE_runtime_win7-x64:Pack;IKVM_Image_JRE_runtime_linux-x64:Pack</Targets>
             <Properties>$(PackProperties);PackageOutputPath=$(ArtifactStagingDirectory)\nuget</Properties>
         </TargetsForPublish>
         <TargetsForPublish Include="$(SolutionFile)">
-            <Targets>IKVM_Image_JDK:Pack</Targets>
+            <Targets>IKVM_Image_JDK:Pack;IKVM_Image_JDK_runtime_win7-x64:PackIKVM_Image_JDK_runtime_linux-x64:Pack;</Targets>
             <Properties>$(PackProperties);PackageOutputPath=$(ArtifactStagingDirectory)\nuget</Properties>
         </TargetsForPublish>
 
