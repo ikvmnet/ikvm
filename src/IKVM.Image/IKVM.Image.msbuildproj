@@ -20,11 +20,7 @@
 
     <ItemGroup>
         <None Include="@(VfsItem)" Pack="true" PackagePath="contentFiles\any\any\ikvm\win7-x64\$([System.IO.Path]::GetDirectoryName('%(VfsPath)'))" Link="ikvm\win7-x64\%(VfsPath)" />
-        <None Include="ikvm\ikvm.properties" Pack="true" PackagePath="contentFiles\any\any\ikvm\win7-x64" />
-        <None Include="ikvm\bin\ikvm.properties" Pack="true" PackagePath="contentFiles\any\any\ikvm\win7-x64\bin" />
         <None Include="@(VfsItem)" Pack="true" PackagePath="contentFiles\any\any\ikvm\linux-x64\$([System.IO.Path]::GetDirectoryName('%(VfsPath)'))" Link="ikvm\linux-x64\%(VfsPath)" />
-        <None Include="ikvm\ikvm.properties" Pack="true" PackagePath="contentFiles\any\any\ikvm\linux-x64" />
-        <None Include="ikvm\bin\ikvm.properties" Pack="true" PackagePath="contentFiles\any\any\ikvm\linux-x64\bin" />
     </ItemGroup>
 
 </Project>

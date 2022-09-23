@@ -1,9 +1,9 @@
 ﻿<Project Sdk="Microsoft.Build.NoTargets/3.5.6">
     <PropertyGroup>
-        <TargetFramework>netstandard2.0</TargetFramework>
+        <TargetFrameworks>netstandard2.0</TargetFrameworks>
         <PackageLicenseFile>LICENSE.md</PackageLicenseFile>
         <PackageReadmeFile>README.md</PackageReadmeFile>
-        <Description>IKVM Runtime Image (JRE)</Description>
+        <Description>IKVM JRE Runtime Image</Description>
     </PropertyGroup>
 
     <PropertyGroup>
@@ -14,11 +14,25 @@
     <ItemGroup>
         <None Include="..\..\LICENSE.md" Pack="true" PackagePath="." />
         <None Include="README.md" Pack="true" PackagePath="." />
-        <None Include="runtime.json" Pack="true" PackagePath="." />
     </ItemGroup>
 
     <ItemGroup>
-      <ProjectReference Include="..\IKVM.Image\IKVM.Image.msbuildproj" />
+        <RuntimePackage Include="win7-x64" />
+        <RuntimePackage Include="linux-x64" />
     </ItemGroup>
+
+    <Target Name="MakeRuntimeJson" Outputs="$(IntermediateOutputPath)runtime.json" BeforeTargets="_GetPackageFiles">
+        <ItemGroup>
+            <_RuntimeJsonLine Include="{" />
+            <_RuntimeJsonLine Include="  &quot;runtimes&quot;: {" />
+            <_RuntimeJsonLine Include="@(RuntimePackage->'&quot;%(Identity)&quot;: { &quot;#import&quot;: [], &quot;IKVM.Image.JRE&quot;: { &quot;IKVM.Image.JRE.runtime.%(Identity)&quot;: &quot;$(PackageVersion)&quot; } }')" />
+            <_RuntimeJsonLine Include="  }" />
+            <_RuntimeJsonLine Include="}" />
+        </ItemGroup>
+        <WriteLinesToFile File="$(IntermediateOutputPath)runtime.json" Lines="@(_RuntimeJsonLine)" Overwrite="true" WriteOnlyWhenDifferent="true" />
+        <ItemGroup>
+            <_PackageFiles Include="$(IntermediateOutputPath)runtime.json" PackagePath="runtime.json" />
+        </ItemGroup>
+    </Target>
 
 </Project>

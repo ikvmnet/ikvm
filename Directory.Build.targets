@@ -97,33 +97,32 @@
         </ItemGroup>
     </Target>
 
-    <Target Name="GetPublishProjectReferenceItems" DependsOnTargets="GetPublishProjectReferences" Inputs="@(_PublishProjectReference)" Outputs="null" Condition=" '$(DesignTimeBuild)' != 'true' And '@(_PublishProjectReference)' != '' ">
-        <MSBuild Projects="@(_PublishProjectReference)" Targets="PublishAndGetPublishDir" BuildInParallel="$(BuildInParallel)" Properties="%(_PublishProjectReference.SetConfiguration);%(_PublishProjectReference.SetPlatform);%(_PublishProjectReference.SetTargetFramework);%(_PublishProjectReference.PublishProperties)" RemoveProperties="%(_PublishProjectReference.GlobalPropertiesToRemove);%(_PublishProjectReference.PublishPropertiesToRemove)" RebaseOutputs="true">
-            <Output TaskParameter="TargetOutputs" PropertyName="_PublishProjectReferencePublishDirs" />
+    <Target Name="GetPublishProjectReferenceItems" DependsOnTargets="GetPublishProjectReferences" Inputs="@(_PublishProjectReference)" Outputs="%(_PublishProjectReference.Identity)\null" Condition=" '$(DesignTimeBuild)' != 'true' And '@(_PublishProjectReference)' != '' ">
+        <MSBuild Projects="%(_PublishProjectReference.Identity)" Targets="PublishAndGetPublishDir" BuildInParallel="$(BuildInParallel)" Properties="%(_PublishProjectReference.SetConfiguration);%(_PublishProjectReference.SetPlatform);%(_PublishProjectReference.SetTargetFramework);%(_PublishProjectReference.SetRuntimeIdentifier)" RemoveProperties="%(_PublishProjectReference.GlobalPropertiesToRemove);%(_PublishProjectReference.PublishPropertiesToRemove)" RebaseOutputs="true">
+            <Output TaskParameter="TargetOutputs" PropertyName="_PublishProjectReferencePublishDir" />
         </MSBuild>
-        <Message Text="ProjectTargetPath: %(_PublishProjectReference.ProjectTargetPath)" />
+        <PropertyGroup>
+            <_ProjectName>%(_PublishProjectReference.ProjectName)</_ProjectName>
+            <_ProjectTargetPath>%(_PublishProjectReference.ProjectTargetPath)</_ProjectTargetPath>
+            <_ProjectPackagePath>%(_PublishProjectReference.ProjectPackagePath)</_ProjectPackagePath>
+        </PropertyGroup>
         <ItemGroup>
-            <_PublishProjectReferenceItems Include="$(_PublishProjectReferencePublishDirs)\**\*">
-                <ProjectName>%(_PublishProjectReference.ProjectName)')</ProjectName>
-                <ProjectTargetPath>%(_PublishProjectReference.ProjectTargetPath)</ProjectTargetPath>
-                <ProjectPackagePath>%(_PublishProjectReference.ProjectPackagePath)</ProjectPackagePath>
+            <_PublishProjectReferenceItemsInput Include="$(_PublishProjectReferencePublishDir)\**\*" />
+            <_PublishProjectReferenceItems Include="@(_PublishProjectReferenceItemsInput)">
+                <ProjectName>$(_ProjectName)</ProjectName>
+                <ProjectTargetPath>$(_ProjectTargetPath)</ProjectTargetPath>
+                <ProjectPackagePath>$(_ProjectPackagePath)</ProjectPackagePath>
                 <TargetPath>%(RecursiveDir)%(Filename)%(Extension)</TargetPath>
             </_PublishProjectReferenceItems>
         </ItemGroup>
-        <Message Text="_PublishProjectReferenceItems: @(_PublishProjectReferenceItems)" />
     </Target>
 
     <Target Name="GetPublishProjectReferenceCopyToOutputDirectoryItems" BeforeTargets="Build;AssignTargetPaths" DependsOnTargets="GetPublishProjectReferenceItems" Condition=" '$(DesignTimeBuild)' != 'true' and '@(_PublishProjectReferenceItems)' != '' ">
         <ItemGroup>
-            <None Include="@(_PublishProjectReferenceItems)" Condition=" '%(_PublishProjectReferenceItems.ProjectTargetPath)' != '' ">
-                <TargetPath></TargetPath>
+            <ContentWithTargetPath Include="@(_PublishProjectReferenceItems)" Condition=" '%(_PublishProjectReferenceItems.ProjectTargetPath)' != '' ">
                 <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
-                <Link>%(_PublishProjectReferenceItems.ProjectTargetPath)\%(_PublishProjectReferenceItems.TargetPath)</Link>
-                <Pack>true</Pack>
-                <PackagePath>%(_PublishProjectReferenceItems.ProjectTargetPath)\%(_PublishProjectReferenceItems.TargetPath)</PackagePath>
-                <PackagePath Condition=" '%(_PublishProjectReferenceItems.ProjectPackagePath)' != '' ">%(_PublishProjectReferenceItems.ProjectPackagePath)\%(_PublishProjectReferenceItems.TargetPath)</PackagePath>
-                <PackageCopyToOutput>true</PackageCopyToOutput>
-            </None>
+                <TargetPath>%(_PublishProjectReferenceItems.ProjectTargetPath)\%(_PublishProjectReferenceItems.TargetPath)</TargetPath>
+            </ContentWithTargetPath>
         </ItemGroup>
     </Target>
 
@@ -136,6 +135,20 @@
             $(GetCopyToOutputDirectoryItemsDependsOn);
         </GetCopyToOutputDirectoryItemsDependsOn>
     </PropertyGroup>
+
+    <PropertyGroup>
+        <TargetsForTfmSpecificContentInPackage>$(TargetsForTfmSpecificContentInPackage);GetPublishProjectReferenceTfmSpecificContent</TargetsForTfmSpecificContentInPackage>
+    </PropertyGroup>
+
+    <Target Name="GetPublishProjectReferenceTfmSpecificContent" DependsOnTargets="GetPublishProjectReferenceItems" Condition=" '$(DesignTimeBuild)' != 'true' and '@(_PublishProjectReferenceItems)' != '' ">
+        <ItemGroup>
+            <TfmSpecificPackageFile Include="@(_PublishProjectReferenceItems)" Condition=" '%(_PublishProjectReferenceItems.ProjectTargetPath)' != '' ">
+                <PackagePath>$([System.IO.Path]::GetDirectoryName('contentFiles\any\$(TargetFramework)\%(_PublishProjectReferenceItems.ProjectTargetPath)%(_PublishProjectReferenceItems.TargetPath)'))</PackagePath>
+                <PackagePath Condition=" '%(_PublishProjectReferenceItems.ProjectPackagePath)' != '' ">$([System.IO.Path]::GetDirectoryName('contentFiles\any\$(TargetFramework)\%(_PublishProjectReferenceItems.ProjectPackagePath)%(_PublishProjectReferenceItems.TargetPath)'))</PackagePath>
+                <PackageCopyToOutput>true</PackageCopyToOutput>
+            </TfmSpecificPackageFile>
+        </ItemGroup>
+    </Target>
 
     <Target Name="GetPublishProjectReferencePackageItems" DependsOnTargets="GetPublishProjectReferenceItems" Condition=" '$(DesignTimeBuild)' != 'true' And '@(_PublishProjectReferenceItems)' != '' ">
         <ItemGroup>
