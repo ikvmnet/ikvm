@@ -31,6 +31,9 @@
     
     <ItemGroup Condition=" '$(TargetFramework)' != '' ">
         <PackageProjectReference Include="..\IKVM-pkg\IKVM-pkg.csproj" />
+        <PackageProjectReference Include="..\IKVM.Image\IKVM.Image.msbuildproj" />
+        <PackageProjectReference Include="..\IKVM.Image.JRE\IKVM.Image.JRE.msbuildproj" />
+        <PackageProjectReference Include="..\IKVM.Image.JDK\IKVM.Image.JDK.msbuildproj" />
         <PackageProjectReference Include="..\IKVM.MSBuild\IKVM.MSBuild.msbuildproj" />
     </ItemGroup>
 

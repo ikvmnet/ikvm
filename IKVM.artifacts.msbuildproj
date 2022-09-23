@@ -17,23 +17,19 @@
 
     <ItemGroup>
         <TargetsForPublish Include="$(SolutionFile)">
-            <Targets>IKVM-pkg:Publish</Targets>
-            <Properties>$(PackProperties);TargetFramework=net461;PublishDir=$(ArtifactStagingDirectory)\bin\net461</Properties>
+            <Targets>IKVM_MSBuild:Pack</Targets>
+            <Properties>$(PackProperties);PackageOutputPath=$(ArtifactStagingDirectory)\nuget</Properties>
         </TargetsForPublish>
         <TargetsForPublish Include="$(SolutionFile)">
-            <Targets>IKVM-pkg:Publish</Targets>
-            <Properties>$(PackProperties);TargetFramework=netcoreapp3.1;PublishDir=$(ArtifactStagingDirectory)\bin\netcoreapp3.1</Properties>
+            <Targets>IKVM_NET_Sdk:Pack</Targets>
+            <Properties>$(PackProperties);PackageOutputPath=$(ArtifactStagingDirectory)\nuget</Properties>
         </TargetsForPublish>
         <TargetsForPublish Include="$(SolutionFile)">
             <Targets>IKVM-pkg:Pack</Targets>
             <Properties>$(PackProperties);PackageOutputPath=$(ArtifactStagingDirectory)\nuget</Properties>
         </TargetsForPublish>
         <TargetsForPublish Include="$(SolutionFile)">
-            <Targets>IKVM_MSBuild:Pack</Targets>
-            <Properties>$(PackProperties);PackageOutputPath=$(ArtifactStagingDirectory)\nuget</Properties>
-        </TargetsForPublish>
-        <TargetsForPublish Include="$(SolutionFile)">
-            <Targets>IKVM_NET_Sdk:Pack</Targets>
+            <Targets>IKVM_Image:Pack</Targets>
             <Properties>$(PackProperties);PackageOutputPath=$(ArtifactStagingDirectory)\nuget</Properties>
         </TargetsForPublish>
         <TargetsForPublish Include="$(SolutionFile)">
@@ -43,6 +39,15 @@
         <TargetsForPublish Include="$(SolutionFile)">
             <Targets>IKVM_Image_JDK:Pack</Targets>
             <Properties>$(PackProperties);PackageOutputPath=$(ArtifactStagingDirectory)\nuget</Properties>
+        </TargetsForPublish>
+
+        <TargetsForPublish Include="$(SolutionFile)">
+            <Targets>IKVM-pkg:Publish</Targets>
+            <Properties>$(PackProperties);TargetFramework=net461;PublishDir=$(ArtifactStagingDirectory)\bin\net461</Properties>
+        </TargetsForPublish>
+        <TargetsForPublish Include="$(SolutionFile)">
+            <Targets>IKVM-pkg:Publish</Targets>
+            <Properties>$(PackProperties);TargetFramework=netcoreapp3.1;PublishDir=$(ArtifactStagingDirectory)\bin\netcoreapp3.1</Properties>
         </TargetsForPublish>
 
         <TargetsForPublish Include="$(SolutionFile)">

@@ -1,3 +1,3 @@
-﻿# IKVM.Image.JRE - IKVM Java Runtime Environment Image
+﻿# IKVM.Image.JRE
 
-Includes a standard JRE layout within your .NET IKVM project.
+Includes the requirements of a Java JRE Runtime Image, including the Java executable and standard tools.

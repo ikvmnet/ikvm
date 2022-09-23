@@ -1,11 +1,9 @@
 ﻿<Project Sdk="Microsoft.Build.NoTargets/3.5.6">
-    <Import Project="..\..\openjdk.props" />
-
     <PropertyGroup>
         <TargetFrameworks>net461;netcoreapp3.1</TargetFrameworks>
         <PackageLicenseFile>LICENSE.md</PackageLicenseFile>
         <PackageReadmeFile>README.md</PackageReadmeFile>
-        <Description>IKVM JRE Runtime Image</Description>
+        <Description>IKVM Runtime Image (JRE)</Description>
     </PropertyGroup>
 
     <PropertyGroup>
@@ -19,11 +17,11 @@
     </ItemGroup>
 
     <ItemGroup>
-        <None Include="build\**\*" Pack="true" PackagePath="build\%(RecursiveDir)%(Filename)%(Extension)" />
         <None Include="lib\**\*" Pack="true" PackagePath="lib\%(RecursiveDir)%(Filename)%(Extension)" />
-        <None Include="@(VfsItem)" Pack="true" PackagePath="contentFiles\ikvm\$([System.IO.Path]::GetDirectoryName('%(VfsPath)'))" Link="ikvm\%(VfsPath)" />
-        <None Include="ikvm.properties" Pack="true" PackagePath="contentFiles" />
-        <None Include="ikvm\bin\ikvm.properties" Pack="true" PackagePath="contentFiles\ikvm\bin" />
+    </ItemGroup>
+
+    <ItemGroup>
+      <ProjectReference Include="..\IKVM.Image\IKVM.Image.msbuildproj" />
     </ItemGroup>
 
     <ItemGroup>
@@ -34,12 +32,16 @@
         <PublishProjectReference Include="@(Tools)">
             <SetTargetFramework>TargetFramework=net461</SetTargetFramework>
             <PublishProperties>RuntimeIdentifier=win7-x64</PublishProperties>
-            <PublishPackagePath>runtimes\win7-x64\contentFiles\net461\ikvm\bin</PublishPackagePath>
+            <PublishPackagePath>runtimes\win7-x64\contentFiles\any\net461\ikvm\bin</PublishPackagePath>
+            <PackageCopyToOutput>true</PackageCopyToOutput>
+            <CopyToOuputDirectory>PreserveNewest</CopyToOuputDirectory>
         </PublishProjectReference>
         <PublishProjectReference Include="@(Tools)">
             <SetTargetFramework>TargetFramework=netcoreapp3.1</SetTargetFramework>
             <PublishProperties>RuntimeIdentifier=win7-x64</PublishProperties>
-            <PublishPackagePath>runtimes\win7-x64\contentFiles\netcoreapp3.1\ikvm\bin</PublishPackagePath>
+            <PublishPackagePath>runtimes\win7-x64\contentFiles\any\netcoreapp3.1\ikvm\bin</PublishPackagePath>
+            <PackageCopyToOutput>true</PackageCopyToOutput>
+            <CopyToOuputDirectory>PreserveNewest</CopyToOuputDirectory>
         </PublishProjectReference>
     </ItemGroup>
 
@@ -47,7 +49,9 @@
         <PublishProjectReference Include="@(Tools)">
             <SetTargetFramework>TargetFramework=netcoreapp3.1</SetTargetFramework>
             <PublishProperties>RuntimeIdentifier=linux-x64</PublishProperties>
-            <PublishPackagePath>runtimes\linux-x64\contentFiles\netcoreapp3.1\ikvm\bin</PublishPackagePath>
+            <PublishPackagePath>runtimes\linux-x64\contentFiles\any\netcoreapp3.1\ikvm\bin</PublishPackagePath>
+            <PackageCopyToOutput>true</PackageCopyToOutput>
+            <CopyToOuputDirectory>PreserveNewest</CopyToOuputDirectory>
         </PublishProjectReference>
     </ItemGroup>
 

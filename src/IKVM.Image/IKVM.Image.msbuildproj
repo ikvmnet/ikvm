@@ -1,0 +1,28 @@
+﻿<Project Sdk="Microsoft.Build.NoTargets/3.5.6">
+    <Import Project="..\..\openjdk.props" />
+
+    <PropertyGroup>
+        <TargetFrameworks>net461;netcoreapp3.1</TargetFrameworks>
+        <PackageLicenseFile>LICENSE.md</PackageLicenseFile>
+        <PackageReadmeFile>README.md</PackageReadmeFile>
+        <Description>IKVM Runtime Image</Description>
+    </PropertyGroup>
+
+    <PropertyGroup>
+        <PublishRepositoryUrl>true</PublishRepositoryUrl>
+        <EmbedUntrackedSources>true</EmbedUntrackedSources>
+    </PropertyGroup>
+
+    <ItemGroup>
+        <None Include="..\..\LICENSE.md" Pack="true" PackagePath="." />
+        <None Include="README.md" Pack="true" PackagePath="." />
+    </ItemGroup>
+
+    <ItemGroup>
+        <None Include="lib\**\*" Pack="true" PackagePath="lib\%(RecursiveDir)%(Filename)%(Extension)" />
+        <None Include="@(VfsItem)" Pack="true" PackagePath="contentFiles\any\any\ikvm\$([System.IO.Path]::GetDirectoryName('%(VfsPath)'))" Link="ikvm\%(VfsPath)" PackageCopyToOutput="true" CopyToOuputDirectory="PreserveNewest" />
+        <None Include="ikvm.properties" Pack="true" PackagePath="contentFiles\any\any" PackageCopyToOutput="true" CopyToOuputDirectory="PreserveNewest" />
+        <None Include="ikvm\bin\ikvm.properties" Pack="true" PackagePath="contentFiles\any\any\ikvm\bin" PackageCopyToOutput="true" CopyToOuputDirectory="PreserveNewest" />
+    </ItemGroup>
+
+</Project>

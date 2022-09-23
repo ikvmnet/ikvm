@@ -41,12 +41,12 @@
         <PublishProjectReference Include="@(Tools)">
             <SetTargetFramework>TargetFramework=net461</SetTargetFramework>
             <PublishProperties>RuntimeIdentifier=win7-x64</PublishProperties>
-            <PublishPackagePath>runtimes\win7-x64\contentFiles\net461\ikvm\bin</PublishPackagePath>
+            <PublishPackagePath>runtimes\win7-x64\contentFiles\any\net461\ikvm\bin</PublishPackagePath>
         </PublishProjectReference>
         <PublishProjectReference Include="@(Tools)">
             <SetTargetFramework>TargetFramework=netcoreapp3.1</SetTargetFramework>
             <PublishProperties>RuntimeIdentifier=win7-x64</PublishProperties>
-            <PublishPackagePath>runtimes\win7-x64\contentFiles\netcoreapp3.1\ikvm\bin</PublishPackagePath>
+            <PublishPackagePath>runtimes\win7-x64\contentFiles\any\netcoreapp3.1\ikvm\bin</PublishPackagePath>
         </PublishProjectReference>
     </ItemGroup>
 
@@ -54,7 +54,7 @@
         <PublishProjectReference Include="@(Tools)">
             <SetTargetFramework>TargetFramework=netcoreapp3.1</SetTargetFramework>
             <PublishProperties>RuntimeIdentifier=linux-x64</PublishProperties>
-            <PublishPackagePath>runtimes\linux-x64\contentFiles\netcoreapp3.1\ikvm\bin</PublishPackagePath>
+            <PublishPackagePath>runtimes\linux-x64\contentFiles\any\netcoreapp3.1\ikvm\bin</PublishPackagePath>
         </PublishProjectReference>
     </ItemGroup>
 
