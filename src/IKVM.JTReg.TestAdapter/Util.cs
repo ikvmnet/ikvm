@@ -49,7 +49,7 @@ namespace IKVM.JTReg.TestAdapter
             if (testResult is null)
                 throw new ArgumentNullException(nameof(testResult));
 
-            var testCase = new TestCase(Util.GetFullyQualifiedTestName(source, testSuite, testResult), new Uri("executor://IkvmJTRegTestAdapter/v1"), source);
+            var testCase = new TestCase(Util.GetFullyQualifiedTestName(source, testSuite, testResult), new Uri("executor://ikvmjtregtestadapter/v1"), source);
             testCase.CodeFilePath = ((java.io.File)testResult.getDescription().getFile())?.toPath().toAbsolutePath().toString();
             testCase.SetPropertyValue(IkvmJTRegTestProperties.TestSuiteRootProperty, ((java.io.File)testSuite.getRootDir()).toPath().toAbsolutePath().toString());
             testCase.SetPropertyValue(IkvmJTRegTestProperties.TestSuiteNameProperty, GetTestSuiteName(source, testSuite));
@@ -58,6 +58,7 @@ namespace IKVM.JTReg.TestAdapter
             testCase.SetPropertyValue(IkvmJTRegTestProperties.TestTitleProperty, GetTestTitle(source, testSuite, testResult));
             testCase.SetPropertyValue(IkvmJTRegTestProperties.TestAuthorProperty, GetTestAuthor(source, testSuite, testResult));
             testCase.SetPropertyValue(IkvmJTRegTestProperties.TestCategoryProperty, GetTestKeywords(source, testSuite, testResult));
+            testCase.SetPropertyValue(IkvmJTRegTestProperties.TestPartitionProperty, partition);
             testCase.Traits.Add("Partition", partition.ToString());
             return testCase;
         }

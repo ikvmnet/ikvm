@@ -6,16 +6,16 @@
 
     <PropertyGroup>
         <TargetFrameworks>net461;netcoreapp3.1</TargetFrameworks>
+        <UserSecretsId>845b3270-236d-4ac6-8c28-e132ab499ed6</UserSecretsId>
     </PropertyGroup>
 
     <ItemGroup>
         <PackageReference Include="FluentAssertions" Version="6.7.0" />
-        <PackageReference Include="Microsoft.NET.Test.Sdk" Version="16.10.0" />
+        <PackageReference Include="Microsoft.NET.Test.Sdk" Version="17.3.1" />
         <PackageReference Include="MSTest.TestAdapter" Version="2.2.10" />
         <PackageReference Include="MSTest.TestFramework" Version="2.2.10" />
         <PackageReference Include="Moq" Version="4.18.1" />
-        <PackageReference Include="Microsoft.TestPlatform.ObjectModel" Version="16.10.0" PrivateAssets="All" />
-        <PackageReference Include="Microsoft.TestPlatform.AdapterUtilities" Version="16.10.0" PrivateAssets="All" />
+        <PackageReference Include="Microsoft.TestPlatform.ObjectModel" Version="17.3.1" />
     </ItemGroup>
 
     <ItemGroup>

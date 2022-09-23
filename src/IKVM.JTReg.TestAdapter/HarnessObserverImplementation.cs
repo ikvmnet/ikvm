@@ -47,7 +47,7 @@ namespace IKVM.JTReg.TestAdapter
         public void startingTest(dynamic self, dynamic testResult)
         {
             var name = (string)Util.GetFullyQualifiedTestName(source, testSuite, testResult);
-            var test = tests.FirstOrDefault(i => i.FullyQualifiedName == name);
+            var test = tests.FirstOrDefault(i => i.Source == source && i.FullyQualifiedName == name);
 
             frameworkHandle.SendMessage(TestMessageLevel.Informational, $"JTReg: starting test '{test.FullyQualifiedName}'");
             frameworkHandle.RecordStart(test);

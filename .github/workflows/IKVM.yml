@@ -219,22 +219,22 @@ jobs:
     strategy:
       matrix:
         run:
-        - IKVM.Java.Tests?Partition=0
-        - IKVM.Java.Tests?Partition=1
-        - IKVM.Java.Tests?Partition=2
-        - IKVM.Java.Tests?Partition=3
-        - IKVM.Java.Tests?Partition=4
-        - IKVM.Java.Tests?Partition=5
-        - IKVM.Java.Tests?Partition=6
-        - IKVM.Java.Tests?Partition=7
-        - IKVM.Java.Tests?Partition=8
-        - IKVM.Java.Tests?Partition=9
-        - IKVM.Java.Tests?Partition=10
-        - IKVM.Java.Tests?Partition=11
-        - IKVM.Java.Tests?Partition=12
-        - IKVM.Java.Tests?Partition=13
-        - IKVM.Java.Tests?Partition=14
-        - IKVM.Java.Tests?Partition=15
+        - IKVM.Java.Tests?TestPartition=0
+        - IKVM.Java.Tests?TestPartition=1
+        - IKVM.Java.Tests?TestPartition=2
+        - IKVM.Java.Tests?TestPartition=3
+        - IKVM.Java.Tests?TestPartition=4
+        - IKVM.Java.Tests?TestPartition=5
+        - IKVM.Java.Tests?TestPartition=6
+        - IKVM.Java.Tests?TestPartition=7
+        - IKVM.Java.Tests?TestPartition=8
+        - IKVM.Java.Tests?TestPartition=9
+        - IKVM.Java.Tests?TestPartition=10
+        - IKVM.Java.Tests?TestPartition=11
+        - IKVM.Java.Tests?TestPartition=12
+        - IKVM.Java.Tests?TestPartition=13
+        - IKVM.Java.Tests?TestPartition=14
+        - IKVM.Java.Tests?TestPartition=15
         - IKVM.Tests
         - IKVM.Tool.Exporter.Tests
         - IKVM.Tool.Tests
@@ -291,9 +291,9 @@ jobs:
 
         # if a query was specified, add to test command
         if ($query -ne "") {
-            dotnet test $tests --blame -v 3 --results-directory ".\TestResults--$suite--$tfm--$sys" --filter "$query"
+            dotnet test -f $tfm --blame -v 2 --results-directory ".\TestResults--$suite--$tfm--$sys" --filter "$query" $tests
         } else {
-            dotnet test $tests --blame -v 3 --results-directory ".\TestResults--$suite--$tfm--$sys"
+            dotnet test -f $tfm --blame -v 2 --results-directory ".\TestResults--$suite--$tfm--$sys" $tests
         }
     - name: Upload Test Results
       if: ${{ always() }}
