@@ -10,6 +10,26 @@
         </ResolvedFileToPublish>
     </ItemDefinitionGroup>
 
+    <UsingTask TaskName="ReplaceFileText" TaskFactory="CodeTaskFactory" AssemblyFile="$(MSBuildToolsPath)\Microsoft.Build.Tasks.v4.0.dll">
+        <ParameterGroup>
+            <InputFilename ParameterType="System.String" Required="true" />
+            <OutputFilename ParameterType="System.String" Required="true" />
+            <MatchExpression ParameterType="System.String" Required="true" />
+            <ReplacementText ParameterType="System.String" Required="true" />
+        </ParameterGroup>
+        <Task>
+            <Reference Include="System.Core" />
+            <Using Namespace="System" />
+            <Using Namespace="System.IO" />
+            <Using Namespace="System.Text.RegularExpressions" />
+            <Code Type="Fragment" Language="cs">
+                <![CDATA[
+                File.WriteAllText(OutputFilename,Regex.Replace(File.ReadAllText(InputFilename), MatchExpression, ReplacementText));
+                ]]>
+            </Code>
+        </Task>
+    </UsingTask>
+
     <!-- Attempt to remove the PublishDir from the evaluation graph to prevent multiple evaluation. -->
     <Target Name="AddPublishDirToGlobalPropertiesToRemove" BeforeTargets="AssignProjectConfiguration">
         <ItemGroup>

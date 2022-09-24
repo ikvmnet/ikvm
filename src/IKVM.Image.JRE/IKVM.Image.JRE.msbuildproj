@@ -22,14 +22,7 @@
     </ItemGroup>
 
     <Target Name="MakeRuntimeJson" Outputs="$(IntermediateOutputPath)runtime.json" BeforeTargets="_GetPackageFiles">
-        <ItemGroup>
-            <_RuntimeJsonLine Include="{" />
-            <_RuntimeJsonLine Include="  &quot;runtimes&quot;: {" />
-            <_RuntimeJsonLine Include="@(RuntimePackage->'&quot;%(Identity)&quot;: { &quot;#import&quot;: [], &quot;IKVM.Image.JRE&quot;: { &quot;IKVM.Image.JRE.runtime.%(Identity)&quot;: &quot;$(PackageVersion)&quot; } }')" />
-            <_RuntimeJsonLine Include="  }" />
-            <_RuntimeJsonLine Include="}" />
-        </ItemGroup>
-        <WriteLinesToFile File="$(IntermediateOutputPath)runtime.json" Lines="@(_RuntimeJsonLine)" Overwrite="true" WriteOnlyWhenDifferent="true" />
+        <ReplaceFileText InputFilename="runtime.json" OutputFilename="$(IntermediateOutputPath)runtime.json" MatchExpression="\#VERSION\#" ReplacementText="$(PackageVersion)" />
         <ItemGroup>
             <_PackageFiles Include="$(IntermediateOutputPath)runtime.json" PackagePath="runtime.json" />
         </ItemGroup>

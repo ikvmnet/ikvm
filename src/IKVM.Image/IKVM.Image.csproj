@@ -2,7 +2,7 @@
     <Import Project="..\..\openjdk.props" />
 
     <PropertyGroup>
-        <TargetFrameworks>netstandard2.0</TargetFrameworks>
+        <TargetFrameworks>net461;netcoreapp3.1</TargetFrameworks>
         <PackageLicenseFile>LICENSE.md</PackageLicenseFile>
         <PackageReadmeFile>README.md</PackageReadmeFile>
         <Description>IKVM Runtime Image</Description>
@@ -19,8 +19,8 @@
     </ItemGroup>
 
     <ItemGroup>
-        <None Include="@(VfsItem)" Pack="true" PackagePath="contentFiles\any\any\ikvm\win7-x64\$([System.IO.Path]::GetDirectoryName('%(VfsPath)'))" Link="ikvm\win7-x64\%(VfsPath)" />
-        <None Include="@(VfsItem)" Pack="true" PackagePath="contentFiles\any\any\ikvm\linux-x64\$([System.IO.Path]::GetDirectoryName('%(VfsPath)'))" Link="ikvm\linux-x64\%(VfsPath)" />
+        <Content Include="@(VfsItem)" Pack="true" BuildAction="None" PackageCopyToOutput="true" PackagePath="$([System.IO.Path]::GetDirectoryName('contentFiles\any\any\ikvm\win7-x64\%(VfsPath)'))"  />
+        <Content Include="@(VfsItem)" Pack="true" BuildAction="None" PackageCopyToOutput="true" PackagePath="$([System.IO.Path]::GetDirectoryName('contentFiles\any\any\ikvm\linux-x64\%(VfsPath)'))"  />
     </ItemGroup>
 
 </Project>
