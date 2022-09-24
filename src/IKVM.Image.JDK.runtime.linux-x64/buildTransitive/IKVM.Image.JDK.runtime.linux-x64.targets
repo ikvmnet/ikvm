@@ -3,8 +3,8 @@
         <MSBuildAllProjects>$(MSBuildAllProjects);$(MSBuildThisFileFullPath)</MSBuildAllProjects>
     </PropertyGroup>
 
-    <ItemGroup Condition=" '$(UsingIkvmImageJre)' == 'true' And '$(RuntimeIdentifier)' == 'linux-x64' And '$(IkvmImageTargetFramework)' == 'netcoreapp3.1' ">
-        <ContentWithTargetPath Include="$(MSBuildThisFileDirectory)..\bin\netcoreapp3.1\**\*">
+    <ItemGroup Condition=" '$(UsingIkvmImageJre)' == 'true' And '$(IkvmRuntimeIdentifier)' == 'linux-x64' And '$(IkvmImageTargetFramework)' == 'netcoreapp3.1' ">
+        <ContentWithTargetPath Include="$(MSBuildThisFileDirectory)..\content\netcoreapp3.1\**\*">
             <TargetPath>%(RecursiveDir)%(FileName)%(Extension)</TargetPath>
             <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
         </ContentWithTargetPath>

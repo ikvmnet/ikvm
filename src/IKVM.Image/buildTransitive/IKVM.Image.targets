@@ -15,9 +15,14 @@
             </PropertyGroup>
         </When>
     </Choose>
+
+    <PropertyGroup Condition=" '$(IkvmRuntimeIdentifier)' == '' ">
+        <IkvmRuntimeIdentifier>$(RuntimeIdentifier)</IkvmRuntimeIdentifier>
+        <IkvmRuntimeIdentifier Condition=" '$(RuntimeIdentifier)' == '' And $([MSBuild]::IsTargetFrameworkCompatible('$(TargetFramework)', 'net461')) ">win7-x64</IkvmRuntimeIdentifier>
+    </PropertyGroup>
     
     <ItemGroup>
-        <ContentWithTargetPath Include="$(MSBuildThisFileDirectory)..\bin\any\**\*">
+        <ContentWithTargetPath Include="$(MSBuildThisFileDirectory)..\content\any\**\*">
             <TargetPath>%(RecursiveDir)%(FileName)%(Extension)</TargetPath>
             <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
         </ContentWithTargetPath>

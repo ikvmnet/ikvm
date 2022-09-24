@@ -37,12 +37,12 @@
         <PublishProjectReference Include="@(Tools)">
             <SetTargetFramework>TargetFramework=net461</SetTargetFramework>
             <SetRuntimeIdentifier>RuntimeIdentifier=win7-x64</SetRuntimeIdentifier>
-            <ProjectPackagePath>bin\net461\ikvm\bin</ProjectPackagePath>
+            <ProjectPackagePath>content\net461\ikvm\bin</ProjectPackagePath>
         </PublishProjectReference>
         <PublishProjectReference Include="@(Tools)">
             <SetTargetFramework>TargetFramework=netcoreapp3.1</SetTargetFramework>
             <SetRuntimeIdentifier>RuntimeIdentifier=win7-x64</SetRuntimeIdentifier>
-            <ProjectPackagePath>bin\netcoreapp3.1\ikvm\bin</ProjectPackagePath>
+            <ProjectPackagePath>content\netcoreapp3.1\ikvm\bin</ProjectPackagePath>
         </PublishProjectReference>
     </ItemGroup>
 

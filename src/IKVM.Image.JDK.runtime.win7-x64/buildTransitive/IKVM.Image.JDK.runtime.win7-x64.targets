@@ -3,15 +3,15 @@
         <MSBuildAllProjects>$(MSBuildAllProjects);$(MSBuildThisFileFullPath)</MSBuildAllProjects>
     </PropertyGroup>
 
-    <ItemGroup Condition=" '$(UsingIkvmImageJdk)' == 'true' And '$(RuntimeIdentifier)' == 'win7-x64' And '$(IkvmImageTargetFramework)' == 'net461' ">
-        <ContentWithTargetPath Include="$(MSBuildThisFileDirectory)..\bin\net461\**\*">
+    <ItemGroup Condition=" '$(UsingIkvmImageJdk)' == 'true' And '$(IkvmRuntimeIdentifier)' == 'win7-x64' And '$(IkvmImageTargetFramework)' == 'net461' ">
+        <ContentWithTargetPath Include="$(MSBuildThisFileDirectory)..\content\net461\**\*">
             <TargetPath>%(RecursiveDir)%(FileName)%(Extension)</TargetPath>
             <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
         </ContentWithTargetPath>
     </ItemGroup>
 
-    <ItemGroup Condition=" '$(UsingIkvmImageJdk)' == 'true' And '$(RuntimeIdentifier)' == 'win7-x64' And '$(IkvmImageTargetFramework)' == 'netcoreapp3.1' ">
-        <ContentWithTargetPath Include="$(MSBuildThisFileDirectory)..\bin\netcoreapp3.1\**\*">
+    <ItemGroup Condition=" '$(UsingIkvmImageJdk)' == 'true' And '$(IkvmRuntimeIdentifier)' == 'win7-x64' And '$(IkvmImageTargetFramework)' == 'netcoreapp3.1' ">
+        <ContentWithTargetPath Include="$(MSBuildThisFileDirectory)..\content\netcoreapp3.1\**\*">
             <TargetPath>%(RecursiveDir)%(FileName)%(Extension)</TargetPath>
             <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
         </ContentWithTargetPath>
