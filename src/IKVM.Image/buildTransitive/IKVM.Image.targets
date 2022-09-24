@@ -18,7 +18,7 @@
 
     <PropertyGroup Condition=" '$(IkvmRuntimeIdentifier)' == '' ">
         <IkvmRuntimeIdentifier>$(RuntimeIdentifier)</IkvmRuntimeIdentifier>
-        <IkvmRuntimeIdentifier Condition=" '$(RuntimeIdentifier)' == '' And $([MSBuild]::IsTargetFrameworkCompatible('$(TargetFramework)', 'net461')) ">win7-x64</IkvmRuntimeIdentifier>
+        <IkvmRuntimeIdentifier Condition=" '$(IkvmRuntimeIdentifier)' == '' And $([MSBuild]::IsTargetFrameworkCompatible('$(TargetFramework)', 'net461')) ">win7-x64</IkvmRuntimeIdentifier>
     </PropertyGroup>
     
     <ItemGroup>
