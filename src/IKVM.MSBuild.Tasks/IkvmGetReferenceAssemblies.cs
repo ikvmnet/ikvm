@@ -3,8 +3,8 @@ using System.Collections.Generic;
 using System.IO;
 using System.Linq;
 
-using IKVM.Tools;
-using IKVM.Tools.Compiler;
+using IKVM.Tools.Runner;
+using IKVM.Tools.Runner.Compiler;
 
 using Microsoft.Build.Framework;
 using Microsoft.Build.Utilities;

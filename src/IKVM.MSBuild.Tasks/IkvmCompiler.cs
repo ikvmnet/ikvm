@@ -3,8 +3,8 @@ using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
 
-using IKVM.Tools;
-using IKVM.Tools.Compiler;
+using IKVM.Tools.Runner;
+using IKVM.Tools.Runner.Compiler;
 
 using Microsoft.Build.Framework;
 

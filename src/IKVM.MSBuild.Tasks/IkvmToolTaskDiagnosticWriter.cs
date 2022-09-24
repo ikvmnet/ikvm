@@ -1,7 +1,7 @@
 ﻿using System;
 using System.Threading.Tasks;
 
-using IKVM.Tools;
+using IKVM.Tools.Runner;
 
 namespace IKVM.MSBuild.Tasks
 {

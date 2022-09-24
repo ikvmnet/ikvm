@@ -1,8 +1,8 @@
 ﻿using System.Threading;
 using System.Threading.Tasks;
 
-using IKVM.Tools;
-using IKVM.Tools.Exporter;
+using IKVM.Tools.Runner;
+using IKVM.Tools.Runner.Exporter;
 
 using Microsoft.Build.Framework;
 
