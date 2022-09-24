@@ -3,7 +3,7 @@ using System.IO;
 using System.Runtime.InteropServices;
 using System.Threading;
 
-using IKVM.Tool;
+using IKVM.Tools;
 
 using Microsoft.Build.Framework;
 using Microsoft.Build.Utilities;

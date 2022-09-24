@@ -9,7 +9,7 @@
     </PropertyGroup>
 
     <ItemGroup>
-        <ProjectReference Include="..\IKVM.Tool.Exporter\IKVM.Tool.Exporter.csproj" />
+        <ProjectReference Include="..\IKVM.Tools.Exporter\IKVM.Tools.Exporter.csproj" />
     </ItemGroup>
 
 </Project>
