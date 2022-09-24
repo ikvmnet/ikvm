@@ -16,11 +16,10 @@
     <ItemGroup>
         <None Include="..\..\LICENSE.md" Pack="true" PackagePath="." />
         <None Include="README.md" Pack="true" PackagePath="." />
-    </ItemGroup>
-
-    <ItemGroup>
-        <Content Include="@(VfsItem)" Pack="true" BuildAction="None" PackageCopyToOutput="true" PackagePath="$([System.IO.Path]::GetDirectoryName('contentFiles\any\any\ikvm\win7-x64\%(VfsPath)'))"  />
-        <Content Include="@(VfsItem)" Pack="true" BuildAction="None" PackageCopyToOutput="true" PackagePath="$([System.IO.Path]::GetDirectoryName('contentFiles\any\any\ikvm\linux-x64\%(VfsPath)'))"  />
+        <None Include="buildTransitive\**\*" Pack="true" PackagePath="buildTransitive\%(RecursiveDir)%(Filename)%(Extension)" />
+        <None Include="lib\**\*" Pack="true" PackagePath="lib\%(RecursiveDir)%(Filename)%(Extension)" />
+        <None Include="pkg\bin\**\*" Pack="true" PackagePath="bin\%(RecursiveDir)%(Filename)%(Extension)" />
+        <None Include="@(VfsItem)" Link="pkg\bin\any\ikvm\%(VfsPath)" Pack="true" PackagePath="$([System.IO.Path]::GetDirectoryName('bin\any\ikvm\%(VfsPath)'))" />
     </ItemGroup>
 
 </Project>

@@ -3,7 +3,7 @@
         <TargetFrameworks>net461;netcoreapp3.1</TargetFrameworks>
         <PackageLicenseFile>LICENSE.md</PackageLicenseFile>
         <PackageReadmeFile>README.md</PackageReadmeFile>
-        <Description>IKVM Runtime Image (JRE)</Description>
+        <Description>IKVM JRE Runtime Image</Description>
     </PropertyGroup>
 
     <PropertyGroup>
@@ -14,17 +14,24 @@
     <ItemGroup>
         <None Include="..\..\LICENSE.md" Pack="true" PackagePath="." />
         <None Include="README.md" Pack="true" PackagePath="." />
+        <None Include="buildTransitive\**\*" Pack="true" PackagePath="buildTransitive\%(RecursiveDir)%(Filename)%(Extension)" />
+        <None Include="lib\**\*" Pack="true" PackagePath="lib\%(RecursiveDir)%(Filename)%(Extension)" />
     </ItemGroup>
 
     <ItemGroup>
         <Tools Include="..\java\java.csproj" />
     </ItemGroup>
 
-    <ItemGroup Condition=" '$(TargetFramework)' != '' ">
+    <ItemGroup Condition=" '$(TargetFramework)' == '' ">
         <PublishProjectReference Include="@(Tools)">
-            <SetTargetFramework>TargetFramework=$(TargetFramework)</SetTargetFramework>
+            <SetTargetFramework>TargetFramework=net461</SetTargetFramework>
             <SetRuntimeIdentifier>RuntimeIdentifier=win7-x64</SetRuntimeIdentifier>
-            <ProjectTargetPath>ikvm\win7-x64\bin</ProjectTargetPath>
+            <ProjectPackagePath>bin\net461\ikvm\bin</ProjectPackagePath>
+        </PublishProjectReference>
+        <PublishProjectReference Include="@(Tools)">
+            <SetTargetFramework>TargetFramework=netcoreapp3.1</SetTargetFramework>
+            <SetRuntimeIdentifier>RuntimeIdentifier=win7-x64</SetRuntimeIdentifier>
+            <ProjectPackagePath>bin\netcoreapp3.1\ikvm\bin</ProjectPackagePath>
         </PublishProjectReference>
     </ItemGroup>
 
