@@ -6,19 +6,18 @@ using System.Threading.Tasks;
 
 using FluentAssertions;
 
-using IKVM.Tools.Compiler;
-using IKVM.Tools.Tests.Exporter;
+using IKVM.Tools.Runner.Compiler;
 
 using Microsoft.VisualStudio.TestTools.UnitTesting;
 
-namespace IKVM.Tools.Test.Compiler
+namespace IKVM.Tools.Runner.Test.Compiler
 {
 
     [TestClass]
     public class IkvmCompilerLauncherTests
     {
 
-        static readonly string TESTBASE = Path.GetDirectoryName(typeof(IkvmExporterLauncherTests).Assembly.Location);
+        static readonly string TESTBASE = Path.GetDirectoryName(typeof(IkvmCompilerLauncherTests).Assembly.Location);
 
         public TestContext TestContext { get; set; }
 

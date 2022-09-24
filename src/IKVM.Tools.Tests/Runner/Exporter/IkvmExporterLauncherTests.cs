@@ -6,11 +6,12 @@ using System.Threading.Tasks;
 
 using FluentAssertions;
 
-using IKVM.Tools.Exporter;
+using IKVM.Tools.Runner;
+using IKVM.Tools.Runner.Exporter;
 
 using Microsoft.VisualStudio.TestTools.UnitTesting;
 
-namespace IKVM.Tools.Tests.Exporter
+namespace IKVM.Tools.Tests.Runner.Exporter
 {
 
     [TestClass]
