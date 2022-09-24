@@ -18,8 +18,14 @@
         <None Include="README.md" Pack="true" PackagePath="." />
         <None Include="buildTransitive\**\*" Pack="true" PackagePath="buildTransitive\%(RecursiveDir)%(Filename)%(Extension)" />
         <None Include="lib\**\*" Pack="true" PackagePath="lib\%(RecursiveDir)%(Filename)%(Extension)" />
-        <None Include="content\**\*" Pack="true" PackagePath="content\%(RecursiveDir)%(Filename)%(Extension)" />
-        <None Include="@(VfsItem)" Link="content\any\ikvm\%(VfsPath)" Pack="true" PackagePath="$([System.IO.Path]::GetDirectoryName('content\any\ikvm\%(VfsPath)'))" />
+        <None Include="content\any\**\*" Pack="true" PackagePath="content\any\%(RecursiveDir)%(Filename)%(Extension)">
+            <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+            <TargetPath>%(RecursiveDir)%(Filename)%(Extension)</TargetPath>
+        </None>
+        <None Include="@(VfsItem)" Link="content\any\ikvm\%(VfsPath)" Pack="true" PackagePath="$([System.IO.Path]::GetDirectoryName('content\any\ikvm\%(VfsPath)'))">
+            <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+            <TargetPath>ikvm\%(VfsPath)</TargetPath>
+        </None>
     </ItemGroup>
 
 </Project>

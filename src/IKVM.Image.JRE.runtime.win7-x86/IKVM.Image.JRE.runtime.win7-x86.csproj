@@ -12,25 +12,27 @@
     </PropertyGroup>
 
     <ItemGroup>
-        <ProjectReference Include="..\IKVM.Image\IKVM.Image.csproj">
-            <ReferenceOutputAssembly>true</ReferenceOutputAssembly>
-        </ProjectReference>
-        <ProjectReference Include="..\IKVM.Image.JRE.runtime.win7-x64\IKVM.Image.JRE.runtime.win7-x64.csproj">
-            <ReferenceOutputAssembly>true</ReferenceOutputAssembly>
-        </ProjectReference>
-        <ProjectReference Include="..\IKVM.Image.JRE.runtime.win7-x86\IKVM.Image.JRE.runtime.win7-x86.csproj">
-            <ReferenceOutputAssembly>true</ReferenceOutputAssembly>
-        </ProjectReference>
-        <ProjectReference Include="..\IKVM.Image.JRE.runtime.linux-x64\IKVM.Image.JRE.runtime.linux-x64.csproj">
-            <ReferenceOutputAssembly>true</ReferenceOutputAssembly>
-        </ProjectReference>
-    </ItemGroup>
-
-    <ItemGroup>
         <None Include="..\..\LICENSE.md" Pack="true" PackagePath="." />
         <None Include="README.md" Pack="true" PackagePath="." />
         <None Include="buildTransitive\**\*" Pack="true" PackagePath="buildTransitive\%(RecursiveDir)%(Filename)%(Extension)" />
         <None Include="lib\**\*" Pack="true" PackagePath="lib\%(RecursiveDir)%(Filename)%(Extension)" />
+    </ItemGroup>
+
+    <ItemGroup>
+        <Tools Include="..\java\java.csproj" />
+    </ItemGroup>
+
+    <ItemGroup Condition=" '$(TargetFramework)' == '' ">
+        <PublishProjectReference Include="@(Tools)">
+            <SetTargetFramework>TargetFramework=net461</SetTargetFramework>
+            <SetRuntimeIdentifier>RuntimeIdentifier=win7-x86</SetRuntimeIdentifier>
+            <ProjectPackagePath>content\net461\ikvm\bin</ProjectPackagePath>
+        </PublishProjectReference>
+        <PublishProjectReference Include="@(Tools)">
+            <SetTargetFramework>TargetFramework=netcoreapp3.1</SetTargetFramework>
+            <SetRuntimeIdentifier>RuntimeIdentifier=win7-x86</SetRuntimeIdentifier>
+            <ProjectPackagePath>content\netcoreapp3.1\ikvm\bin</ProjectPackagePath>
+        </PublishProjectReference>
     </ItemGroup>
 
 </Project>

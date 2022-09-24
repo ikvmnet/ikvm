@@ -1,0 +1,20 @@
+<Project xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+    <PropertyGroup>
+        <MSBuildAllProjects>$(MSBuildAllProjects);$(MSBuildThisFileFullPath)</MSBuildAllProjects>
+    </PropertyGroup>
+
+    <ItemGroup Condition=" '$(UsingIkvmImageJdk)' == 'true' And '$(IkvmRuntimeIdentifier)' == 'win7-x86' And '$(IkvmImageTargetFramework)' == 'net461' ">
+        <ContentWithTargetPath Include="$(MSBuildThisFileDirectory)..\content\net461\**\*">
+            <TargetPath>%(RecursiveDir)%(FileName)%(Extension)</TargetPath>
+            <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+        </ContentWithTargetPath>
+    </ItemGroup>
+
+    <ItemGroup Condition=" '$(UsingIkvmImageJdk)' == 'true' And '$(IkvmRuntimeIdentifier)' == 'win7-x86' And '$(IkvmImageTargetFramework)' == 'netcoreapp3.1' ">
+        <ContentWithTargetPath Include="$(MSBuildThisFileDirectory)..\content\netcoreapp3.1\**\*">
+            <TargetPath>%(RecursiveDir)%(FileName)%(Extension)</TargetPath>
+            <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+        </ContentWithTargetPath>
+    </ItemGroup>
+    
+</Project>
