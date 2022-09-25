@@ -24,7 +24,12 @@
 package java.lang;
 
 import java.util.Properties;
+import java.io.File;
+import java.io.FileReader;
+import java.nio.file.Path;
+import java.nio.file.Paths;
 import cli.System.Diagnostics.FileVersionInfo;
+
 import static ikvm.internal.Util.SafeGetEnvironmentVariable;
 
 final class VMSystemProperties
@@ -42,7 +47,7 @@ final class VMSystemProperties
         {
 	        // see /hotspot/src/os/windows/vm/os_windows.cpp for the comment that describes how we build the path
 	        String windir = SafeGetEnvironmentVariable("SystemRoot");
-	        if(windir != null)
+	        if (windir != null)
 	        {
 		        libraryPath = cli.System.IO.Path.PathSeparator + windir + "\\Sun\\Java\\bin";
 	        }
@@ -52,7 +57,7 @@ final class VMSystemProperties
 	        }
             try
             {
-                if(false) throw new cli.System.Security.SecurityException();
+                if (false) throw new cli.System.Security.SecurityException();
                 if (libraryPath == null)
                 {
                     libraryPath = cli.System.Environment.get_SystemDirectory();
@@ -62,33 +67,33 @@ final class VMSystemProperties
                     libraryPath += cli.System.IO.Path.PathSeparator + cli.System.Environment.get_SystemDirectory();
                 }
             }
-            catch(cli.System.Security.SecurityException _)
+            catch (cli.System.Security.SecurityException _)
             {
             }
-            if(windir != null)
+            if (windir != null)
             {
-		libraryPath += cli.System.IO.Path.PathSeparator + windir;
+                libraryPath += cli.System.IO.Path.PathSeparator + windir;
             }
             String path = SafeGetEnvironmentVariable("PATH");
-            if(path != null)
+            if (path != null)
             {
                 libraryPath += cli.System.IO.Path.PathSeparator + path;
             }
         }
-        else if(ikvm.internal.Util.MACOSX)
+        else if (ikvm.internal.Util.MACOSX)
         {
             libraryPath = ".";
         }
         else /* assume Linux, since that's the only other platform we support */
         {
-	    // on Linux we have some hardcoded paths (from /hotspot/src/os/linux/vm/os_linux.cpp)
-	    // and we can only guess the cpu arch based on bitness (that means only x86 and x64)
-	    String cpu_arch = cli.System.IntPtr.get_Size() == 4 ? "i386" : "amd64";
-	    libraryPath = "/usr/java/packages/lib/" + cpu_arch + ":/lib:/usr/lib";
+            // on Linux we have some hardcoded paths (from /hotspot/src/os/linux/vm/os_linux.cpp)
+            // and we can only guess the cpu arch based on bitness (that means only x86 and x64)
+            String cpu_arch = cli.System.IntPtr.get_Size() == 4 ? "i386" : "amd64";
+            libraryPath = "/usr/java/packages/lib/" + cpu_arch + ":/lib:/usr/lib";
             String ld_library_path = SafeGetEnvironmentVariable("LD_LIBRARY_PATH");
             if(ld_library_path != null)
             {
-		libraryPath = ld_library_path + ":" + libraryPath;
+                libraryPath = ld_library_path + ":" + libraryPath;
             }
         }
         try
@@ -106,7 +111,7 @@ final class VMSystemProperties
         {
             // ignore
         }
-        if(ikvm.internal.Util.WINDOWS)
+        if (ikvm.internal.Util.WINDOWS)
         {
             libraryPath += cli.System.IO.Path.PathSeparator + ".";
         }
@@ -138,7 +143,7 @@ final class VMSystemProperties
             if (false) throw new cli.System.Security.SecurityException();
             p.setProperty("java.io.tmpdir", cli.System.IO.Path.GetTempPath());
         }
-        catch(cli.System.Security.SecurityException _)
+        catch( cli.System.Security.SecurityException _)
         {
             // TODO should we set another value?
             p.setProperty("java.io.tmpdir", ".");
@@ -286,7 +291,7 @@ final class VMSystemProperties
         p.setProperty("line.separator", cli.System.Environment.get_NewLine());
         try
         {
-            if(false) throw new cli.System.Security.SecurityException();
+            if (false) throw new cli.System.Security.SecurityException();
             p.setProperty("user.name", cli.System.Environment.get_UserName());
         }
         catch(cli.System.Security.SecurityException _)
@@ -318,7 +323,7 @@ final class VMSystemProperties
         p.setProperty("user.home", home);
         try
         {
-            if(false) throw new cli.System.Security.SecurityException();
+            if (false) throw new cli.System.Security.SecurityException();
             p.setProperty("user.dir", cli.System.Environment.get_CurrentDirectory());
         }
         catch(cli.System.Security.SecurityException _)
@@ -330,12 +335,64 @@ final class VMSystemProperties
 
     public static void initProperties(Properties p)
     {
+        // basic runtime properties
         p.setProperty("openjdk.version", PropertyConstants.openjdk_version);
-        String vfsroot = getVirtualFileSystemRoot();
-        p.setProperty("java.home", vfsroot.substring(0, vfsroot.length() - 1));
-        // the %home%\lib\endorsed directory does not exist, but neither does it on JDK 1.7
-        p.setProperty("java.endorsed.dirs", vfsroot + "lib" + cli.System.IO.Path.DirectorySeparatorChar + "endorsed");
-        p.setProperty("sun.boot.library.path", vfsroot + "bin");
+
+        // search for ikvm.properties file initially, and load values
+        cli.System.Reflection.Assembly entryAssembly = cli.System.Reflection.Assembly.GetEntryAssembly();
+        if (entryAssembly != null)
+        {
+            try
+            {
+                Path entryAssemblyPath = Paths.get(entryAssembly.get_Location());
+                if (entryAssemblyPath.toFile().isFile())
+                {
+                    Path ikvmPropertiesPath = entryAssemblyPath.getParent().resolve("ikvm.properties");
+                    if (ikvmPropertiesPath.toFile().isFile())
+                    {
+                        try (FileReader ikvmPropertiesReader = new FileReader(ikvmPropertiesPath.toFile()))
+                        {
+                            p.load(ikvmPropertiesReader);
+                        }
+                    }
+                }
+            }
+            catch (Exception _)
+            {
+
+            }
+        }
+
+        // ikvm.home property, if present, defines the path of java.home
+        String ikvmHome = p.getProperty("ikvm.home");
+        if (ikvmHome != null)
+        {
+            try
+            {
+                Path ikvmHomeRoot = Paths.get(entryAssembly.get_Location()).getParent();
+                if (ikvmHomeRoot.toFile().isDirectory())
+                {
+                    Path ikvmHomePath = ikvmHomeRoot.resolve(ikvmHome);
+                    if (ikvmHomePath.toFile().isDirectory())
+                    {
+                        p.setProperty("java.home", ikvmHomePath.toRealPath().toString());
+                    }
+                }
+            }
+            catch (Exception _)
+            {
+
+            }
+        }
+
+        String javaHome = p.getProperty("java.home");
+        if (javaHome != null)
+        {
+            Path javaHomePath = Paths.get(javaHome);
+            p.setProperty("java.endorsed.dirs", javaHomePath.resolve("lib").resolve("endorsed").toString());
+            p.setProperty("sun.boot.library.path", javaHomePath.resolve("bin").toString());
+        }
+
         p.setProperty("sun.boot.class.path", getBootClassPath());
         initCommonProperties(p);
         setupI18N(p);
@@ -353,13 +410,14 @@ final class VMSystemProperties
         {
             p.setProperty("sun.stdout.encoding", stdoutEncoding);
         }
+
         String stderrEncoding = getStderrEncoding();
-        if(stderrEncoding != null)
+        if (stderrEncoding != null)
         {
             p.setProperty("sun.stderr.encoding", stderrEncoding);
         }
 
-        if(ikvm.internal.Util.MACOSX)
+        if (ikvm.internal.Util.MACOSX)
         {
             p.setProperty("sun.jnu.encoding", "UTF-8");
         }
@@ -367,7 +425,6 @@ final class VMSystemProperties
         {
             p.setProperty("sun.jnu.encoding", cli.System.Text.Encoding.get_Default().get_WebName());
         }
-
         
         // TODO
         // sun.cpu.isalist:=pentium_pro+mmx pentium_pro pentium+mmx pentium i486 i386 i86
@@ -383,7 +440,7 @@ final class VMSystemProperties
             while (keys.MoveNext())
             {
                 String key = (String)keys.get_Current();
-                if(key.startsWith("ikvm:"))
+                if (key.startsWith("ikvm:"))
                 {
                     p.setProperty(key.substring(5), appSettings.get_Item(key));
                 }
@@ -394,7 +451,7 @@ final class VMSystemProperties
             // app.config is invalid, ignore
         }
 
-        // set the properties that were specified with ikvm.runtime.Startup.setProperties()
+        // set the properties that were specified with IKVM.Runtime.Launcher.SetProperties()
         cli.System.Collections.IDictionary importProperties = get_ImportProperties();
         if (importProperties != null)
         {
