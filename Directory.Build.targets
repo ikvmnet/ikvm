@@ -1,7 +1,7 @@
 <Project>
 
     <PropertyGroup>
-        <GlobalPropertiesToRemove>$(GlobalPropertiesToRemove);PublishDir;PackageOutputPath</GlobalPropertiesToRemove>
+        <GlobalPropertiesToRemove>GlobalPropertiesToRemove;$(GlobalPropertiesToRemove);PublishDir;PackageOutputPath</GlobalPropertiesToRemove>
     </PropertyGroup>
 
     <ItemDefinitionGroup>
@@ -10,7 +10,25 @@
         </ResolvedFileToPublish>
     </ItemDefinitionGroup>
 
-    <UsingTask TaskName="ReplaceFileText" TaskFactory="CodeTaskFactory" AssemblyFile="$(MSBuildToolsPath)\Microsoft.Build.Tasks.v4.0.dll">
+    <!-- Adds an index value to each item. Can be used to ensure at least one unique metadata value is available on each item. -->
+    <UsingTask TaskName="AddIndexMetadata" TaskFactory="RoslynCodeTaskFactory" AssemblyFile="$(MSBuildToolsPath)\Microsoft.Build.Tasks.Core.dll">
+        <ParameterGroup>
+            <Items ParameterType="Microsoft.Build.Framework.ITaskItem[]" Required="true" Output="true" />
+            <MetadataName ParameterType="System.String" Required="true" />
+        </ParameterGroup>
+        <Task>
+            <Using Namespace="System" />
+            <Code Type="Fragment" Language="cs">
+                <![CDATA[
+                var i = 0;
+                foreach (var item in Items)
+                    item.SetMetadata(MetadataName, (i++).ToString());
+                ]]>
+            </Code>
+        </Task>
+    </UsingTask>
+
+    <UsingTask TaskName="ReplaceFileText" TaskFactory="RoslynCodeTaskFactory" AssemblyFile="$(MSBuildToolsPath)\Microsoft.Build.Tasks.Core.dll">
         <ParameterGroup>
             <InputFilename ParameterType="System.String" Required="true" />
             <OutputFilename ParameterType="System.String" Required="true" />
@@ -31,7 +49,7 @@
     </UsingTask>
 
     <!-- Attempt to remove the PublishDir from the evaluation graph to prevent multiple evaluation. -->
-    <Target Name="AddPublishDirToGlobalPropertiesToRemove" BeforeTargets="AssignProjectConfiguration">
+    <Target Name="AddGlobalPropertiesToRemoveFromProperty" BeforeTargets="AssignProjectConfiguration">
         <ItemGroup>
             <ProjectReference Update="@(ProjectReference)">
                 <GlobalPropertiesToRemove>%(ProjectReference.GlobalPropertiesToRemove);$(GlobalPropertiesToRemove)</GlobalPropertiesToRemove>
@@ -115,10 +133,13 @@
                 <ProjectPackagePath Condition=" '%(_PublishProjectReferenceWithConfiguration.ProjectPackagePath)' != '' ">$([MSBuild]::EnsureTrailingSlash('%(_PublishProjectReferenceWithConfiguration.ProjectPackagePath)'))</ProjectPackagePath>
             </_PublishProjectReference>
         </ItemGroup>
+        <AddIndexMetadata Items="@(_PublishProjectReference)" MetadataName="_Index">
+            <Output TaskParameter="Items" ItemName="_PublishProjectReference" />
+        </AddIndexMetadata>
     </Target>
 
-    <Target Name="GetPublishProjectReferenceItems" DependsOnTargets="GetPublishProjectReferences" Inputs="@(_PublishProjectReference)" Outputs="%(_PublishProjectReference.Identity)\null" Condition=" '$(DesignTimeBuild)' != 'true' And '@(_PublishProjectReference)' != '' ">
-        <MSBuild Projects="%(_PublishProjectReference.Identity)" Targets="PublishAndGetPublishDir" BuildInParallel="$(BuildInParallel)" Properties="%(_PublishProjectReference.SetConfiguration);%(_PublishProjectReference.SetPlatform);%(_PublishProjectReference.SetTargetFramework);%(_PublishProjectReference.SetRuntimeIdentifier)" RemoveProperties="%(_PublishProjectReference.GlobalPropertiesToRemove);%(_PublishProjectReference.PublishPropertiesToRemove)" RebaseOutputs="true">
+    <Target Name="GetPublishProjectReferenceItems" DependsOnTargets="GetPublishProjectReferences" Inputs="@(_PublishProjectReference)" Outputs="%(_PublishProjectReference.Identity)\%(_PublishProjectReference._Index)\null" Condition=" '$(DesignTimeBuild)' != 'true' And '@(_PublishProjectReference)' != '' ">
+        <MSBuild Projects="%(_PublishProjectReference.Identity)" Targets="PublishAndGetPublishDir" BuildInParallel="$(BuildInParallel)" Properties="%(_PublishProjectReference.SetConfiguration);%(_PublishProjectReference.SetPlatform);%(_PublishProjectReference.SetTargetFramework);%(_PublishProjectReference.SetRuntimeIdentifier);ProjectName=;ProjectTargetPath=;ProjectPackagePath=" RemoveProperties="%(_PublishProjectReference.GlobalPropertiesToRemove);%(_PublishProjectReference.PublishPropertiesToRemove)" RebaseOutputs="true">
             <Output TaskParameter="TargetOutputs" PropertyName="_PublishProjectReferencePublishDir" />
         </MSBuild>
         <PropertyGroup>

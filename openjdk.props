@@ -16040,6 +16040,8 @@
         <VfsItem Include="$(OpenJdkDir)\build\linux-x86_64-normal-server-release\jdk\lib\cmm\**\*" VfsPath="lib\cmm\%(RecursiveDir)%(Filename)%(Extension)" />
         <VfsItem Include="$(OpenJdkDir)\build\linux-x86_64-normal-server-release\jdk\lib\management\**\*" VfsPath="lib\management\%(RecursiveDir)%(Filename)%(Extension)" />
         <VfsItem Include="$(OpenJdkDir)\build\linux-x86_64-normal-server-release\jdk\lib\security\**\*" VfsPath="lib\security\%(Filename)%(Extension)" />
+        <VfsItem Remove="$(OpenJdkDir)\build\linux-x86_64-normal-server-release\jdk\lib\content-types.properties" />
+        <VfsItem Remove="$(OpenJdkDir)\build\linux-x86_64-normal-server-release\jdk\lib\flavormap.properties" />
         <VfsItem Include="$(OpenJdkDir)\jdk\src\windows\lib\*" VfsPath="lib\%(Filename)%(Extension)" />
     </ItemGroup>
 
