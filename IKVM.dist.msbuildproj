@@ -51,11 +51,11 @@
 
         <TargetsForPublish Include="$(SolutionFile)">
             <Targets>ikvmstub:Publish</Targets>
-            <Properties>TargetFramework=net461;RuntimeIdentifier=win7-x64;PublishDir=$(DistDir)\tools\ikvmstub\net461\x86</Properties>
+            <Properties>TargetFramework=net461;RuntimeIdentifier=win7-x64;PublishDir=$(DistDir)\tools\ikvmstub\net461\win7-x86</Properties>
         </TargetsForPublish>
         <TargetsForPublish Include="$(SolutionFile)">
             <Targets>ikvmstub:Publish</Targets>
-            <Properties>TargetFramework=net461;RuntimeIdentifier=win7-x86;PublishDir=$(DistDir)\tools\ikvmstub\net461\x86</Properties>
+            <Properties>TargetFramework=net461;RuntimeIdentifier=win7-x86;PublishDir=$(DistDir)\tools\ikvmstub\net461\win7-x86</Properties>
         </TargetsForPublish>
         <TargetsForPublish Include="$(SolutionFile)">
             <Targets>ikvmstub:Publish</Targets>
