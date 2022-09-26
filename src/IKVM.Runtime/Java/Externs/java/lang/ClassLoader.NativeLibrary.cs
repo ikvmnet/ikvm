@@ -39,6 +39,12 @@ namespace IKVM.Java.Externs.java.lang
         internal static class NativeLibrary
         {
 
+            /// <summary>
+            /// Implements the backing for the native 'load' method.
+            /// </summary>
+            /// <param name="self"></param>
+            /// <param name="name"></param>
+            /// <param name="isBuiltin"></param>
             public static void load(object self, string name, bool isBuiltin)
             {
 #if FIRST_PASS
@@ -69,11 +75,24 @@ namespace IKVM.Java.Externs.java.lang
 #endif
             }
 
+            /// <summary>
+            /// Implements the backing for the native 'find' method.
+            /// </summary>
+            /// <param name="self"></param>
+            /// <param name="name"></param>
+            /// <returns></returns>
+            /// <exception cref="NotImplementedException"></exception>
             public static long find(object self, string name)
             {
                 throw new NotImplementedException();
             }
 
+            /// <summary>
+            /// Implements the backing for the native 'unload' method.
+            /// </summary>
+            /// <param name="thisNativeLibrary"></param>
+            /// <param name="name"></param>
+            /// <param name="isBuiltin"></param>
             [SecuritySafeCritical]
             public static void unload(object thisNativeLibrary, string name, bool isBuiltin)
             {
@@ -95,18 +114,44 @@ namespace IKVM.Java.Externs.java.lang
             /// </summary>
             /// <param name="name"></param>
             /// <returns></returns>
-            public static string findBuiltinLib(string name) => GetUnmappedLibraryName(name) switch
+            public static string findBuiltinLib(string name)
             {
-                "net" => "net",
-                _ => null
-            };
+                var l = GetUnmappedLibraryName(name);
+                return IsBuiltinLib(l) ? l : null;
+            }
+
+            /// <summary>
+            /// Returns <c>true</c> if the given short library name is a builtin library.
+            /// </summary>
+            /// <param name="name"></param>
+            /// <returns></returns>
+            static bool IsBuiltinLib(string name)
+            {
+                switch (name)
+                {
+                    case "net":
+                    case "unpack":
+                    case "jaas_nt":
+                    case "awt":
+                    case "splashscreen":
+                    case "jit":
+                    case "sunec":
+                    case "w2k_lsa_auth":
+                    case "osxkrb5":
+                    case "osx":
+                    case "management":
+                        return true;
+                    default:
+                        return false;
+                }
+            }
 
             /// <summary>
             /// Takes a mapped library name and returns the unmapped verison.
             /// </summary>
             /// <param name="name"></param>
             /// <returns></returns>
-            static object GetUnmappedLibraryName(string name)
+            static string GetUnmappedLibraryName(string name)
             {
                 if (name == null)
                     return null;

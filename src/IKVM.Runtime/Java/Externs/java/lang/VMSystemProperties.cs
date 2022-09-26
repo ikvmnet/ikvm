@@ -36,6 +36,11 @@ namespace IKVM.Java.Externs.java.lang
     {
 
         /// <summary>
+        /// Set of properties to initially import upon startup.
+        /// </summary>
+        public static IDictionary ImportProperties { get; set; }
+
+        /// <summary>
         /// Gets the <see cref="Assembly"/> of the runtime.
         /// </summary>
         /// <returns></returns>
@@ -45,9 +50,13 @@ namespace IKVM.Java.Externs.java.lang
         }
 
         /// <summary>
-        /// Set of properties to initially import upon startup.
+        /// Gets the path to the root of the VFS.
         /// </summary>
-        public static IDictionary ImportProperties { get; set; }
+        /// <returns></returns>
+        public static string getVirtualFileSystemRoot()
+        {
+            return VfsTable.RootPath;
+        }
 
         public static string getBootClassPath()
         {

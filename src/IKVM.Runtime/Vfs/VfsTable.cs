@@ -55,6 +55,7 @@ namespace IKVM.Runtime.Vfs
 
             var home = new VfsEntryDirectory(context);
             home.AddEntry("assembly", new VfsAssemblyDirectory(context));
+            home.AddEntry("cacerts", new VfsCacertsFile(context));
             return home;
         }
 

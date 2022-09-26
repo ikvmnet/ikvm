@@ -162,6 +162,10 @@ final class VMSystemProperties
             p.setProperty("sun.jnu.encoding", cli.System.Text.Encoding.get_Default().get_WebName());
         }
         
+        // serve cacerts out of the VFS by default
+        String vfsroot = getVirtualFileSystemRoot();
+        p.setProperty("javax.net.ssl.trustStore", cli.System.IO.Path.Combine(vfsroot, "cacerts"));
+        
         // TODO
         // sun.cpu.isalist:=pentium_pro+mmx pentium_pro pentium+mmx pentium i486 i386 i86
         // sun.desktop:=windows
@@ -434,12 +438,13 @@ final class VMSystemProperties
         p.setProperty("user.variant", variant);
         p.setProperty("user.script", script);
     }
-
+    
+    private static native cli.System.Collections.IDictionary get_ImportProperties();
+    private static native cli.System.Reflection.Assembly getRuntimeAssembly();
+    private static native String getVirtualFileSystemRoot();
     private static native String getBootClassPath();
     private static native String getStdoutEncoding();
     private static native String getStderrEncoding();
     private static native FileVersionInfo getKernel32FileVersionInfo();
-    private static native cli.System.Reflection.Assembly getRuntimeAssembly();
-    private static native cli.System.Collections.IDictionary get_ImportProperties();
 
 }
