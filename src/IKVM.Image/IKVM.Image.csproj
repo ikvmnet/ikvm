@@ -22,9 +22,9 @@
             <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
             <TargetPath>%(RecursiveDir)%(Filename)%(Extension)</TargetPath>
         </None>
-        <None Include="@(VfsItem)" Link="content\any\ikvm\%(VfsPath)" Pack="true" PackagePath="$([System.IO.Path]::GetDirectoryName('content\any\ikvm\%(VfsPath)'))">
+        <None Include="@(OpenJdkImageContent)" Link="content\any\ikvm\%(ImagePath)" Pack="true" PackagePath="$([System.IO.Path]::GetDirectoryName('content\any\ikvm\%(ImagePath)'))">
             <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
-            <TargetPath>ikvm\%(VfsPath)</TargetPath>
+            <TargetPath>ikvm\%(ImagePath)</TargetPath>
         </None>
     </ItemGroup>
 

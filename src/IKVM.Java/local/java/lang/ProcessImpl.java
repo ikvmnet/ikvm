@@ -443,8 +443,6 @@ final class ProcessImpl extends Process {
             return null; }});
     }
 
-    private static native String mapVfsExecutable(String path);
-
     public OutputStream getOutputStream() {
         return stdin_stream;
     }
@@ -579,7 +577,7 @@ final class ProcessImpl extends Process {
         }
 
         String fileName = cmdstr.substring(0, programEnd);
-        ProcessStartInfo si = new ProcessStartInfo(mapVfsExecutable(fileName), cmdstr.substring(argumentsStart));
+        ProcessStartInfo si = new ProcessStartInfo(fileName, cmdstr.substring(argumentsStart));
         si.set_UseShellExecute(false);
         si.set_RedirectStandardError(true);
         si.set_RedirectStandardOutput(true);

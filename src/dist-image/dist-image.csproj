@@ -50,11 +50,11 @@
                 <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
                 <TargetPath>$(_TargetFramework)\$(_RuntimeIdentifier)\%(RecursiveDir)%(Filename)%(Extension)</TargetPath>
             </ContentWithTargetPath>
-            <ContentVfsItem Include="@(VfsItem)">
+            <OpenJdkContentItem Include="@(OpenJdkImageContent)">
                 <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
-                <TargetPath>$(_TargetFramework)\$(_RuntimeIdentifier)\%(VfsPath)</TargetPath>
-            </ContentVfsItem>
-            <ContentWithTargetPath Include="@(ContentVfsItem)" />
+                <TargetPath>$(_TargetFramework)\$(_RuntimeIdentifier)\%(ImagePath)</TargetPath>
+            </OpenJdkContentItem>
+            <ContentWithTargetPath Include="@(OpenJdkContentItem)" />
         </ItemGroup>
         <ItemGroup>
             <PublishProjectReference Include="@(BinProject)">
