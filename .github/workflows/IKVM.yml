@@ -207,6 +207,14 @@ jobs:
       with:
         name: tools
         path: dist/tools.tar.gz
+    - name: Package Image
+      run: tar czvf image.tar.gz image
+      working-directory: dist
+    - name: Upload Image
+      uses: actions/upload-artifact@v3
+      with:
+        name: image
+        path: dist/image.tar.gz
     - name: Package Tests
       run: tar czvf tests.tar.gz tests
       working-directory: dist
@@ -331,6 +339,17 @@ jobs:
     - name: Compress Tools
       shell: pwsh
       run: cd dist && gi tools/*/* | group { $_.Parent.Name } | %{ $tfm = $_.Name; $_.Group | %{ $rid=$_.Name; Push-Location "tools/$tfm/$rid"; zip -r "../../IKVM-${env:GitVersion_SemVer}-tools-$tfm-$rid.zip" .; Pop-Location  } }
+    - name: Download Image
+      uses: actions/download-artifact@v3
+      with:
+        name: image
+        path: dist
+    - name: Restore Image
+      run: tar xzvf image.tar.gz
+      working-directory: dist
+    - name: Compress Image
+      shell: pwsh
+      run: cd dist && gi image/*/* | %{ $tfm = $_.Parent.Name; $rid = $_.Name; Push-Location "image/$tfm/$rid"; zip -r "../IKVM-${env:GitVersion_SemVer}-image-$tfm-$rid.zip" .; Pop-Location }
     - name: Create Release
       if: github.ref == 'refs/heads/master' || github.ref == 'refs/heads/main' || github.event.head_commit.message == '+prerelease'
       uses: ncipollo/release-action@v1.10.0
