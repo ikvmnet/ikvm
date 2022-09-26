@@ -14,30 +14,9 @@
             <Targets>dist-image:Publish</Targets>
             <Properties>PublishDir=$(DistDir)\image</Properties>
         </TargetsForPublish>
-
         <TargetsForPublish Include="$(SolutionFile)">
-            <Targets>IKVM_MSBuild:Pack</Targets>
-            <Properties>PackageOutputPath=$(DistDir)\nuget</Properties>
-        </TargetsForPublish>
-        <TargetsForPublish Include="$(SolutionFile)">
-            <Targets>IKVM_NET_Sdk:Pack</Targets>
-            <Properties>PackageOutputPath=$(DistDir)\nuget</Properties>
-        </TargetsForPublish>
-        <TargetsForPublish Include="$(SolutionFile)">
-            <Targets>IKVM-pkg:Pack</Targets>
-            <Properties>PackageOutputPath=$(DistDir)\nuget</Properties>
-        </TargetsForPublish>
-        <TargetsForPublish Include="$(SolutionFile)">
-            <Targets>IKVM_Image:Pack</Targets>
-            <Properties>PackageOutputPath=$(DistDir)\nuget</Properties>
-        </TargetsForPublish>
-        <TargetsForPublish Include="$(SolutionFile)">
-            <Targets>IKVM_Image_JRE:Pack;IKVM_Image_JRE_runtime_win7-x64:Pack;IKVM_Image_JRE_runtime_win7-x86:Pack;IKVM_Image_JRE_runtime_linux-x64:Pack</Targets>
-            <Properties>PackageOutputPath=$(DistDir)\nuget</Properties>
-        </TargetsForPublish>
-        <TargetsForPublish Include="$(SolutionFile)">
-            <Targets>IKVM_Image_JDK:Pack;IKVM_Image_JDK_runtime_win7-x64:Pack;IKVM_Image_JDK_runtime_win7-x86:Pack;IKVM_Image_JDK_runtime_linux-x64:Pack</Targets>
-            <Properties>PackageOutputPath=$(DistDir)\nuget</Properties>
+            <Targets>dist-nuget:Publish</Targets>
+            <Properties>PublishDir=$(DistDir)\nuget</Properties>
         </TargetsForPublish>
 
         <TargetsForPublish Include="$(SolutionFile)">

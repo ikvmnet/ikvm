@@ -4,7 +4,7 @@
         <PackageLicenseFile>LICENSE.md</PackageLicenseFile>
         <PackageReadmeFile>README.md</PackageReadmeFile>
         <Description>IKVM JRE Runtime Image</Description>
-        <NoWarn>NU5118</NoWarn>
+        <NoWarn>NU5118;NU5100</NoWarn>
     </PropertyGroup>
 
     <PropertyGroup>
@@ -19,12 +19,8 @@
         <None Include="lib\**\*" Pack="true" PackagePath="lib\%(RecursiveDir)%(Filename)%(Extension)" />
     </ItemGroup>
 
-    <ItemGroup>
-        <Tools Include="..\java\java.csproj" />
-    </ItemGroup>
-
     <ItemGroup Condition=" '$(TargetFramework)' == '' ">
-        <PublishProjectReference Include="@(Tools)">
+        <PublishProjectReference Include="..\IKVM.Image.JRE-bin\IKVM.Image.JRE-bin.csproj">
             <SetTargetFramework>TargetFramework=netcoreapp3.1</SetTargetFramework>
             <SetRuntimeIdentifier>RuntimeIdentifier=linux-x64</SetRuntimeIdentifier>
             <ProjectPackagePath>content\netcoreapp3.1\ikvm\bin</ProjectPackagePath>
