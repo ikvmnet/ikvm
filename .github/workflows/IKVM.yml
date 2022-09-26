@@ -185,7 +185,7 @@ jobs:
           /p:CreateHardLinksForCopyLocalIfPossible=true `
           /p:CreateHardLinksForPublishFilesIfPossible=true `
           /p:ContinuousIntegrationBuild=true `
-          IKVM.artifacts.msbuildproj
+          IKVM.dist.msbuildproj
     - name: Upload NuGet Packages
       uses: actions/upload-artifact@v3
       with:
