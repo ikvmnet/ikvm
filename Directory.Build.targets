@@ -335,7 +335,7 @@
     </Target>
 
     <Target Name="GetPackageProjectReferenceItems" DependsOnTargets="GetPackageProjectReferences" Inputs="@(_PackageProjectReference)" Outputs="%(_PackageProjectReference.Identity)\%(_PackageProjectReference._Index)\null" Condition=" '$(DesignTimeBuild)' != 'true' And '@(_PackageProjectReference)' != '' ">
-        <MSBuild Projects="%(_PackageProjectReference.Identity)" Targets="_CleanPackageFiles;Pack;GetPackageOutputPath" BuildInParallel="$(BuildInParallel)" Properties="%(_PackageProjectReference.SetConfiguration);%(_PackageProjectReference.SetPlatform);%(_PackageProjectReference.SetTargetFramework);%(_PackageProjectReference.SetRuntimeIdentifier);ProjectName=;ProjectTargetPath=;ProjectPackagePath=" RemoveProperties="$(GlobalPropertiesToRemove);%(_PackageProjectReference.GlobalPropertiesToRemove)" RebaseOutputs="true">
+        <MSBuild Projects="%(_PackageProjectReference.Identity)" Targets="_CleanPackageFiles;Pack;GetPackageOutputPath" BuildInParallel="$(BuildInParallel)" Properties="%(_PackageProjectReference.SetConfiguration);ProjectName=;ProjectTargetPath=;ProjectPackagePath=" RemoveProperties="$(GlobalPropertiesToRemove);%(_PackageProjectReference.GlobalPropertiesToRemove)" RebaseOutputs="true">
             <Output TaskParameter="TargetOutputs" ItemName="_ResolvedPackageOutputPath" />
         </MSBuild>
         <PropertyGroup>
