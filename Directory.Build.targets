@@ -71,7 +71,7 @@
                 <GlobalPropertiesToRemove>%(LibProjectReference.GlobalPropertiesToRemove);$(GlobalPropertiesToRemove)</GlobalPropertiesToRemove>
             </LibProjectReference>
         </ItemGroup>
-        <MSBuild Projects="@(LibProjectReference->'%(ProjectFile)')" Targets="GetTargetPath" BuildInParallel="$(BuildInParallel)" Properties="Platform=%(LibProjectReference.Platform);Configuration=%(LibProjectReference.Configuration)" RemoveProperties="%(LibProjectReference.GlobalPropertiesToRemove)">
+        <MSBuild Projects="@(LibProjectReference->'%(ProjectFile)')" Targets="GetTargetPath" BuildInParallel="$(BuildInParallel)" Properties="Platform=%(LibProjectReference.Platform);Configuration=%(LibProjectReference.Configuration)" RemoveProperties="$(GlobalPropertiesToRemove);%(LibProjectReference.GlobalPropertiesToRemove)">
             <Output TaskParameter="TargetOutputs" ItemName="_LibProjectReferenceWithOutputPath" />
         </MSBuild>
         <ItemGroup>
@@ -95,7 +95,7 @@
     </Target>
 
     <Target Name="BuildLibProjectReferences" BeforeTargets="Compile" DependsOnTargets="GetLibProjectReferences" Condition=" '$(DesignTimeBuild)' != 'true' And '@(LibProjectReference)' != '' ">
-        <MSBuild Projects="%(LibProjectReferenceWithOutputPath.ProjectFile)" Targets="Build" BuildInParallel="$(BuildInParallel)" Properties="Platform=%(LibProjectReferenceWithOutputPath.Platform);Configuration=%(LibProjectReferenceWithOutputPath.Configuration)" RemoveProperties="%(LibProjectReferenceWithOutputPath.GlobalPropertiesToRemove)">
+        <MSBuild Projects="%(LibProjectReferenceWithOutputPath.ProjectFile)" Targets="Build" BuildInParallel="$(BuildInParallel)" Properties="Platform=%(LibProjectReferenceWithOutputPath.Platform);Configuration=%(LibProjectReferenceWithOutputPath.Configuration)" RemoveProperties="$(GlobalPropertiesToRemove);%(LibProjectReferenceWithOutputPath.GlobalPropertiesToRemove)">
             <Output TaskParameter="TargetOutputs" ItemName="LibProjectReferencesCompileOutput" />
         </MSBuild>
     </Target>
@@ -139,7 +139,7 @@
     </Target>
 
     <Target Name="GetPublishProjectReferenceItems" DependsOnTargets="GetPublishProjectReferences" Inputs="@(_PublishProjectReference)" Outputs="%(_PublishProjectReference.Identity)\%(_PublishProjectReference._Index)\null" Condition=" '$(DesignTimeBuild)' != 'true' And '@(_PublishProjectReference)' != '' ">
-        <MSBuild Projects="%(_PublishProjectReference.Identity)" Targets="PublishAndGetPublishDir" BuildInParallel="$(BuildInParallel)" Properties="%(_PublishProjectReference.SetConfiguration);%(_PublishProjectReference.SetPlatform);%(_PublishProjectReference.SetTargetFramework);%(_PublishProjectReference.SetRuntimeIdentifier);ProjectName=;ProjectTargetPath=;ProjectPackagePath=" RemoveProperties="%(_PublishProjectReference.GlobalPropertiesToRemove);%(_PublishProjectReference.PublishPropertiesToRemove)" RebaseOutputs="true">
+        <MSBuild Projects="%(_PublishProjectReference.Identity)" Targets="PublishAndGetPublishDir" BuildInParallel="$(BuildInParallel)" Properties="%(_PublishProjectReference.SetConfiguration);%(_PublishProjectReference.SetPlatform);%(_PublishProjectReference.SetTargetFramework);%(_PublishProjectReference.SetRuntimeIdentifier);ProjectName=;ProjectTargetPath=;ProjectPackagePath=" RemoveProperties="$(GlobalPropertiesToRemove);%(_PublishProjectReference.GlobalPropertiesToRemove)" RebaseOutputs="true">
             <Output TaskParameter="TargetOutputs" PropertyName="_PublishProjectReferencePublishDir" />
         </MSBuild>
         <PropertyGroup>
@@ -259,7 +259,7 @@
     </Target>
 
     <Target Name="GetIncludeProjectReferenceItems" DependsOnTargets="GetIncludeProjectReferences" Condition=" '$(DesignTimeBuild)' != 'true' And '@(_IncludeProjectReference)' != '' ">
-        <MSBuild Projects="@(_IncludeProjectReference)" Targets="Build;BuiltProjectOutputGroup" BuildInParallel="$(BuildInParallel)" Properties="%(_IncludeProjectReference.SetConfiguration);%(_IncludeProjectReference.SetPlatform);%(_IncludeProjectReference.SetTargetFramework);%(_IncludeProjectReference.IncludeProperties)" RemoveProperties="%(_IncludeProjectReference.GlobalPropertiesToRemove);%(_IncludeProjectReference.IncludePropertiesToRemove);" RebaseOutputs="true">
+        <MSBuild Projects="@(_IncludeProjectReference)" Targets="Build;BuiltProjectOutputGroup" BuildInParallel="$(BuildInParallel)" Properties="%(_IncludeProjectReference.SetConfiguration);%(_IncludeProjectReference.SetPlatform);%(_IncludeProjectReference.SetTargetFramework);%(_IncludeProjectReference.IncludeProperties)" RemoveProperties="$(GlobalPropertiesToRemove);%(_IncludeProjectReference.GlobalPropertiesToRemove)" RebaseOutputs="true">
             <Output TaskParameter="TargetOutputs" ItemName="_IncludeProjectReferenceItems" />
         </MSBuild>
     </Target>
@@ -347,7 +347,7 @@
     </Target>
 
     <Target Name="GetPackageProjectReferenceCopyToOutputDirectoryItems" DependsOnTargets="AssignPackageProjectConfiguration" Condition=" '$(DesignTimeBuild)' != 'true' And '@(_PackageProjectReferenceWithConfiguration)' != '' " >
-        <MSBuild Projects="@(_PackageProjectReferenceWithConfiguration)" Targets="_CleanPackageFiles;Pack;GetPackageOutputPath" BuildInParallel="$(BuildInParallel)" Properties="%(_PackageProjectReferenceWithConfiguration.SetConfiguration);%(_PackageProjectReferenceWithConfiguration.SetPlatform)" RemoveProperties="%(_PackageProjectReferenceWithConfiguration.GlobalPropertiesToRemove);TargetFramework" Condition=" '%(_PackageProjectReferenceWithConfiguration.Identity)' != '' ">
+        <MSBuild Projects="@(_PackageProjectReferenceWithConfiguration)" Targets="_CleanPackageFiles;Pack;GetPackageOutputPath" BuildInParallel="$(BuildInParallel)" Properties="%(_PackageProjectReferenceWithConfiguration.SetConfiguration);%(_PackageProjectReferenceWithConfiguration.SetPlatform)" RemoveProperties="$(GlobalPropertiesToRemove);%(_PackageProjectReferenceWithConfiguration.GlobalPropertiesToRemove);TargetFramework" Condition=" '%(_PackageProjectReferenceWithConfiguration.Identity)' != '' ">
             <Output TaskParameter="TargetOutputs" ItemName="_ResolvedPackageOutputPath" />
         </MSBuild>
         <ItemGroup>

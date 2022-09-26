@@ -15,16 +15,39 @@
     </PropertyGroup>
 
     <ItemGroup>
-        <None Include="..\..\LICENSE.md" Pack="true" PackagePath="." />
-        <None Include="README.md" Pack="true" PackagePath="." />
-        <None Include="buildTransitive\**\*" Pack="true" PackagePath="buildTransitive\%(RecursiveDir)%(Filename)%(Extension)" />
-        <None Include="content\any\**\*" Pack="true" PackagePath="content\any\%(RecursiveDir)%(Filename)%(Extension)">
+        <None Include="buildTransitive\**\*">
+            <Pack>true</Pack>
+            <PackagePath>buildTransitive\%(RecursiveDir)%(Filename)%(Extension)</PackagePath>
+        </None>
+        <None Include="README.md;..\..\LICENSE.md">
+            <Pack>true</Pack>
+            <PackagePath>.</PackagePath>
+        </None>
+        
+        <!-- files directly part of this project -->
+        <None Include="content\any\**\*">
             <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
             <TargetPath>%(RecursiveDir)%(Filename)%(Extension)</TargetPath>
+            <Pack>true</Pack>
+            <PackagePath>content\any\%(RecursiveDir)%(Filename)%(Extension)</PackagePath>
         </None>
-        <None Include="@(OpenJdkImageContent)" Link="content\any\ikvm\%(ImagePath)" Pack="true" PackagePath="$([System.IO.Path]::GetDirectoryName('content\any\ikvm\%(ImagePath)'))">
+        
+        <!-- solution level files -->
+        <None Include="..\..\README.md;..\..\LICENSE.md;..\..\THIRD_PARTY_README;..\..\TRADEMARK">
+            <Link>content\any\ikvm\%(RecursiveDir)%(Filename)%(Extension)</Link>
+            <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+            <TargetPath>ikvm\%(RecursiveDir)%(Filename)%(Extension)</TargetPath>
+            <Pack>true</Pack>
+            <PackagePath>content\any\ikvm</PackagePath>
+        </None>
+        
+        <!-- openjdk contents -->
+        <None Include="@(OpenJdkImageContent)" Link="">
+            <Link>content\any\ikvm\%(ImagePath)</Link>
             <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
             <TargetPath>ikvm\%(ImagePath)</TargetPath>
+            <Pack>true</Pack>
+            <PackagePath>$([System.IO.Path]::GetDirectoryName('content\any\ikvm\%(ImagePath)'))</PackagePath>
         </None>
     </ItemGroup>
 

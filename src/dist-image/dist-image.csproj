@@ -31,32 +31,39 @@
         <BinProject Include="..\wsimport\wsimport.msbuildproj" />
     </ItemGroup>
 
+    <!-- Runs once per TFM/RID combination to generate individual output. -->
     <Target Name="GetCopyToOutputDirectoryItemsByImageTarget" BeforeTargets="BeforeBuild" Inputs="@(ImageTarget)" Outputs="%(Identity)\null">
+        
+        <!-- batch values to properties -->
         <PropertyGroup>
             <_TargetFramework>%(ImageTarget.TargetFramework)</_TargetFramework>
             <_RuntimeIdentifier>%(ImageTarget.RuntimeIdentifier)</_RuntimeIdentifier>
         </PropertyGroup>
+        
+        <!-- output for the TFM/RID -->
         <ItemGroup>
-            <ContentWithTargetPath Include="..\..\LICENSE.md">
-                <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
-                <TargetPath>$(_TargetFramework)\$(_RuntimeIdentifier)\LICENSE.md</TargetPath>
-            </ContentWithTargetPath>
-            <ContentWithTargetPath Include="..\IKVM.Image\README.md">
-                <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
-                <TargetPath>$(_TargetFramework)\$(_RuntimeIdentifier)\README.md</TargetPath>
-            </ContentWithTargetPath>
-            <_ContentWithTargetPathContent Include="content\**\*" />
-            <ContentWithTargetPath Include="@(_ContentWithTargetPathContent)">
+
+            <!-- files directly part of this project -->
+            <_ContentFromProject Include="content\**\*" />
+            <ContentWithTargetPath Include="@(_ContentFromProject)">
                 <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
                 <TargetPath>$(_TargetFramework)\$(_RuntimeIdentifier)\%(RecursiveDir)%(Filename)%(Extension)</TargetPath>
             </ContentWithTargetPath>
-            <OpenJdkContentItem Include="@(OpenJdkImageContent)">
+
+            <!-- solution level files -->
+            <_ContentFromSolution Include="..\..\README.md;..\..\LICENSE.md;..\..\THIRD_PARTY_README;..\..\TRADEMARK" />
+            <ContentWithTargetPath Include="@(_ContentFromSolution)">
                 <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
-                <TargetPath>$(_TargetFramework)\$(_RuntimeIdentifier)\%(ImagePath)</TargetPath>
-            </OpenJdkContentItem>
-            <ContentWithTargetPath Include="@(OpenJdkContentItem)" />
-        </ItemGroup>
-        <ItemGroup>
+                <TargetPath>$(_TargetFramework)\$(_RuntimeIdentifier)\%(RecursiveDir)%(Filename)%(Extension)</TargetPath>
+            </ContentWithTargetPath>
+
+            <!-- openjdk contents -->
+            <ContentWithTargetPath Include="@(OpenJdkImageContent)">
+                <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+                <TargetPath>$(_TargetFramework)\$(_RuntimeIdentifier)\%(OpenJdkImageContent.ImagePath)</TargetPath>
+            </ContentWithTargetPath>
+
+            <!-- output of binary projects -->
             <PublishProjectReference Include="@(BinProject)">
                 <SetTargetFramework>TargetFramework=$(_TargetFramework)</SetTargetFramework>
                 <SetRuntimeIdentifier>RuntimeIdentifier=$(_RuntimeIdentifier)</SetRuntimeIdentifier>
