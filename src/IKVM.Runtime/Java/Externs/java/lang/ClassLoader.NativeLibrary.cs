@@ -22,12 +22,13 @@
   
 */
 using System;
+using System.IO;
 using System.Runtime.CompilerServices;
+using System.Runtime.InteropServices;
 using System.Security;
 using System.Threading;
 
 using IKVM.Internal;
-using IKVM.Runtime.Vfs;
 
 namespace IKVM.Java.Externs.java.lang
 {
@@ -38,55 +39,89 @@ namespace IKVM.Java.Externs.java.lang
         internal static class NativeLibrary
         {
 
-            public static void load(object thisNativeLibrary, string name, bool isBuiltin)
+            public static void load(object self, string name, bool isBuiltin)
             {
-#if !FIRST_PASS
-                if (VfsTable.Default.IsPath(name))
-                {
-                    // we fake success for native libraries loaded from VFS
-                    ((global::java.lang.ClassLoader.NativeLibrary)thisNativeLibrary).loaded = true;
-                }
-                else
-                {
-                    doLoad(thisNativeLibrary, name);
-                }
+#if FIRST_PASS
+                throw new NotImplementedException();
+#else
+                LoadImpl(self, name, isBuiltin);
 #endif
             }
 
-#if !FIRST_PASS
-            // we don't want to inline this method, because that would needlessly cause IKVM.Runtime.JNI.dll to be loaded when loading a fake native library from VFS
+            /// <summary>
+            /// </summary>
+            /// <remarks>
+            /// Method avoids inlining to ensure IKVM.Runtime.JNI does not get loaded.
+            /// </remarks>
+            /// <param name="self"></param>
+            /// <param name="name"></param>
+            /// <param name="isBuiltin"></param>
             [MethodImpl(MethodImplOptions.NoInlining)]
             [SecuritySafeCritical]
-            private static void doLoad(object thisNativeLibrary, string name)
+            static void LoadImpl(object self, string name, bool isBuiltin)
             {
-                global::java.lang.ClassLoader.NativeLibrary lib = (global::java.lang.ClassLoader.NativeLibrary)thisNativeLibrary;
-                lib.handle = IKVM.Runtime.JniHelper.LoadLibrary(name, TypeWrapper.FromClass(global::java.lang.ClassLoader.NativeLibrary.getFromClass()).GetClassLoader());
+#if FIRST_PASS
+                throw new NotImplementedException();
+#else
+                var lib = (global::java.lang.ClassLoader.NativeLibrary)self;
+                lib.handle = isBuiltin ? 0 : IKVM.Runtime.JniHelper.LoadLibrary(name, TypeWrapper.FromClass(global::java.lang.ClassLoader.NativeLibrary.getFromClass()).GetClassLoader());
                 lib.loaded = true;
-            }
 #endif
+            }
 
-            public static long find(object thisNativeLibrary, string name)
+            public static long find(object self, string name)
             {
-                // TODO
                 throw new NotImplementedException();
             }
 
             [SecuritySafeCritical]
             public static void unload(object thisNativeLibrary, string name, bool isBuiltin)
             {
-#if !FIRST_PASS
-                global::java.lang.ClassLoader.NativeLibrary lib = (global::java.lang.ClassLoader.NativeLibrary)thisNativeLibrary;
-                long handle = Interlocked.Exchange(ref lib.handle, 0);
-                if (handle != 0)
+#if FIRST_PASS
+                throw new NotImplementedException();
+#else
+                if (isBuiltin == false)
                 {
-                    IKVM.Runtime.JniHelper.UnloadLibrary(handle, TypeWrapper.FromClass(global::java.lang.ClassLoader.NativeLibrary.getFromClass()).GetClassLoader());
+                    var lib = (global::java.lang.ClassLoader.NativeLibrary)thisNativeLibrary;
+                    var handle = Interlocked.Exchange(ref lib.handle, 0);
+                    if (handle != 0)
+                        IKVM.Runtime.JniHelper.UnloadLibrary(handle, TypeWrapper.FromClass(global::java.lang.ClassLoader.NativeLibrary.getFromClass()).GetClassLoader());
                 }
 #endif
             }
 
-            public static string findBuiltinLib(string name)
+            /// <summary>
+            /// Finds the builtin native library, or returns <c>null</c> if the given name isn't built in.
+            /// </summary>
+            /// <param name="name"></param>
+            /// <returns></returns>
+            public static string findBuiltinLib(string name) => GetUnmappedLibraryName(name) switch
             {
-                return null;
+                "net" => "net",
+                _ => null
+            };
+
+            /// <summary>
+            /// Takes a mapped library name and returns the unmapped verison.
+            /// </summary>
+            /// <param name="name"></param>
+            /// <returns></returns>
+            static object GetUnmappedLibraryName(string name)
+            {
+                if (name == null)
+                    return null;
+
+                if (RuntimeInformation.IsOSPlatform(OSPlatform.Windows))
+                {
+                    return Path.GetFileNameWithoutExtension(name);
+                }
+                else
+                {
+                    if (name.StartsWith("lib"))
+                        return Path.GetFileNameWithoutExtension(name).Substring(3);
+                    else
+                        return Path.GetFileNameWithoutExtension(name);
+                }
             }
 
         }

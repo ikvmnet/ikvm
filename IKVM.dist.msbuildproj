@@ -1,8 +1,7 @@
 <Project DefaultTargets="Publish">
     <PropertyGroup>
-        <ArtifactStagingDirectory Condition="'$(ArtifactStagingDirectory)' == ''">$(BUILDDIR)</ArtifactStagingDirectory>
-        <ArtifactStagingDirectory Condition="'$(ArtifactStagingDirectory)' == ''">$(BUILD_ARTIFACTSTAGINGDIRECTORY)</ArtifactStagingDirectory>
-        <ArtifactStagingDirectory Condition="'$(ArtifactStagingDirectory)' == ''">$([System.IO.Path]::Combine('$(MSBuildThisFileDirectory)', 'build'))</ArtifactStagingDirectory>
+        <ArtifactStagingDirectory Condition="'$(ArtifactStagingDirectory)' == ''">$(DISTDIR)</ArtifactStagingDirectory>
+        <ArtifactStagingDirectory Condition="'$(ArtifactStagingDirectory)' == ''">$([System.IO.Path]::Combine('$(MSBuildThisFileDirectory)', 'dist'))</ArtifactStagingDirectory>
         <ArtifactStagingDirectory>$([System.IO.Path]::GetFullPath('$(ArtifactStagingDirectory)'))</ArtifactStagingDirectory>
         <SolutionFile>$([System.IO.Path]::Combine('$(MSBuildThisFileDirectory)', 'IKVM.sln'))</SolutionFile>
         <Configuration Condition=" '$(Configuration)' == '' ">Release</Configuration>

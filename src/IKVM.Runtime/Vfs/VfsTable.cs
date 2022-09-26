@@ -21,7 +21,7 @@ namespace IKVM.Runtime.Vfs
         /// <summary>
         /// Gets the default mount path of the global file system.
         /// </summary>
-        public readonly static string HomePath = JVM.IsUnix ? "/mnt/.ikvm/" : @"\\.ikvm\";
+        public readonly static string RootPath = JVM.IsUnix ? "/mnt/.ikvm/" : @"\\.ikvm\";
 
         /// <summary>
         /// Gets the default mount table.
@@ -38,7 +38,7 @@ namespace IKVM.Runtime.Vfs
                 throw new ArgumentNullException(nameof(context));
 
             var table = new VfsTable(context);
-            table.AddMount(HomePath, BuildIkvmHomeRoot(context));
+            table.AddMount(RootPath, BuildIkvmHomeRoot(context));
             return table;
         }
 
