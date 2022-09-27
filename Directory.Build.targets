@@ -325,8 +325,8 @@
         <ItemGroup>
             <__PackageProjectReference Include="@(_PackageProjectReferenceWithConfiguration)">
                 <ProjectName>$([System.IO.Path]::GetFileNameWithoutExtension('%(Identity)'))</ProjectName>
-                <PackageTargetPath Condition=" '%(_PackageProjectReferenceWithConfiguration.PackageTargetPath)' != '' ">$([MSBuild]::EnsureTrailingSlash('%(_PackageProjectReferenceWithConfiguration.PackageTargetPath)'))</PackageTargetPath>
-                <PackagePackagePath Condition=" '%(_PackageProjectReferenceWithConfiguration.PackagePackagePath)' != '' ">$([MSBuild]::EnsureTrailingSlash('%(_PackageProjectReferenceWithConfiguration.PackagePackagePath)'))</PackagePackagePath>
+                <PackageTargetPath Condition=" '%(_PackageProjectReferenceWithConfiguration.PackageTargetPath)' != '' ">$([MSBuild]::NormalizePath('%(_PackageProjectReferenceWithConfiguration.PackageTargetPath)'))</PackageTargetPath>
+                <PackagePackagePath Condition=" '%(_PackageProjectReferenceWithConfiguration.PackagePackagePath)' != '' ">$([MSBuild]::NormalizeDirectory('%(_PackageProjectReferenceWithConfiguration.PackagePackagePath)'))</PackagePackagePath>
             </__PackageProjectReference>
         </ItemGroup>
         <AddIndexMetadata Items="@(__PackageProjectReference)" MetadataName="_Index">
