@@ -15,8 +15,6 @@
         <BinProject Include="..\javah\javah.msbuildproj" />
         <BinProject Include="..\javap\javap.msbuildproj" />
         <BinProject Include="..\jdeps\jdeps.msbuildproj" />
-        <BinProject Include="..\keytool\keytool.msbuildproj" />
-        <BinProject Include="..\policytool\policytool.msbuildproj" />
         <BinProject Include="..\rmic\rmic.msbuildproj" />
         <BinProject Include="..\wsgen\wsgen.msbuildproj" />
         <BinProject Include="..\wsimport\wsimport.msbuildproj" />

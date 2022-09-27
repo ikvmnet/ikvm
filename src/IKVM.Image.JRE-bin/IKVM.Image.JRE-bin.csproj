@@ -9,6 +9,8 @@
 
     <ItemGroup>
         <BinProject Include="..\java\java.csproj" />
+        <BinProject Include="..\keytool\keytool.msbuildproj" />
+        <BinProject Include="..\policytool\policytool.msbuildproj" />
     </ItemGroup>
 
     <ItemGroup>

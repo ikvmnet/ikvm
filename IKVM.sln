@@ -131,9 +131,11 @@ Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "dist-image", "src\dist-imag
 EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "IKVM.Image.JDK-bin", "src\IKVM.Image.JDK-bin\IKVM.Image.JDK-bin.csproj", "{CCE3DE31-5DE7-4157-90D1-BAFA08C181EC}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "IKVM.Image.JRE-bin", "src\IKVM.Image.JRE-bin\IKVM.Image.JRE-bin.csproj", "{162A1F6D-7752-4686-A6C2-923633F4E4C0}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "IKVM.Image.JRE-bin", "src\IKVM.Image.JRE-bin\IKVM.Image.JRE-bin.csproj", "{162A1F6D-7752-4686-A6C2-923633F4E4C0}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "dist-nuget", "src\dist-nuget\dist-nuget.csproj", "{22835332-F418-4086-9FB1-0DE3397A2D15}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "dist-nuget", "src\dist-nuget\dist-nuget.csproj", "{22835332-F418-4086-9FB1-0DE3397A2D15}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "javac-ref", "src\javac-ref\javac-ref.msbuildproj", "{5DC963FD-6742-47BB-BC96-365B82F73C88}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
@@ -825,6 +827,18 @@ Global
 		{22835332-F418-4086-9FB1-0DE3397A2D15}.Release|x64.Build.0 = Release|Any CPU
 		{22835332-F418-4086-9FB1-0DE3397A2D15}.Release|x86.ActiveCfg = Release|Any CPU
 		{22835332-F418-4086-9FB1-0DE3397A2D15}.Release|x86.Build.0 = Release|Any CPU
+		{5DC963FD-6742-47BB-BC96-365B82F73C88}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{5DC963FD-6742-47BB-BC96-365B82F73C88}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{5DC963FD-6742-47BB-BC96-365B82F73C88}.Debug|x64.ActiveCfg = Debug|Any CPU
+		{5DC963FD-6742-47BB-BC96-365B82F73C88}.Debug|x64.Build.0 = Debug|Any CPU
+		{5DC963FD-6742-47BB-BC96-365B82F73C88}.Debug|x86.ActiveCfg = Debug|Any CPU
+		{5DC963FD-6742-47BB-BC96-365B82F73C88}.Debug|x86.Build.0 = Debug|Any CPU
+		{5DC963FD-6742-47BB-BC96-365B82F73C88}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{5DC963FD-6742-47BB-BC96-365B82F73C88}.Release|Any CPU.Build.0 = Release|Any CPU
+		{5DC963FD-6742-47BB-BC96-365B82F73C88}.Release|x64.ActiveCfg = Release|Any CPU
+		{5DC963FD-6742-47BB-BC96-365B82F73C88}.Release|x64.Build.0 = Release|Any CPU
+		{5DC963FD-6742-47BB-BC96-365B82F73C88}.Release|x86.ActiveCfg = Release|Any CPU
+		{5DC963FD-6742-47BB-BC96-365B82F73C88}.Release|x86.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
