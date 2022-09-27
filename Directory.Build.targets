@@ -64,40 +64,112 @@
         </PropertyGroup>
     </Target>
 
-    <!-- LibProjectReferences are references to vcxproj that that have their target outputs collected and included into the content directory. This allows multi-platform targeting. -->
-    <Target Name="GetLibProjectReferences" Condition=" '@(LibProjectReference)' != '' ">
+
+    <!-- 
+    
+        LibProjectReference
+        
+        These references point to native vcxprojs and have their produced libraries added to the project output.
+        
+    -->
+
+    <Target Name="AssignLibProjectConfiguration" Condition=" '$(DesignTimeBuild)' != 'true' And '@(LibProjectReference)' != '' ">
+        <PropertyGroup>
+            <OnlyReferenceAndBuildProjectsEnabledInSolutionConfiguration Condition="'$(OnlyReferenceAndBuildProjectsEnabledInSolutionConfiguration)' == ''">true</OnlyReferenceAndBuildProjectsEnabledInSolutionConfiguration>
+            <ShouldUnsetParentConfigurationAndPlatform Condition="'$(ShouldUnsetParentConfigurationAndPlatform)' == '' and ('$(BuildingInsideVisualStudio)' == 'true' or '$(BuildingSolutionFile)' == 'true')">true</ShouldUnsetParentConfigurationAndPlatform>
+            <ShouldUnsetParentConfigurationAndPlatform Condition="'$(ShouldUnsetParentConfigurationAndPlatform)' == ''">false</ShouldUnsetParentConfigurationAndPlatform>
+        </PropertyGroup>
+        <AssignProjectConfiguration ProjectReferences="@(LibProjectReference)" CurrentProject="$(MSBuildProjectFullPath)" CurrentProjectConfiguration="$(Configuration)" CurrentProjectPlatform="$(Platform)" DefaultToVcxPlatformMapping="$(DefaultToVcxPlatformMapping)" VcxToDefaultPlatformMapping="$(VcxToDefaultPlatformMapping)" OutputType="$(OutputType)" ResolveConfigurationPlatformUsingMappings="false" SolutionConfigurationContents="$(CurrentSolutionConfigurationContents)" AddSyntheticProjectReferencesForSolutionDependencies="false" OnlyReferenceAndBuildProjectsEnabledInSolutionConfiguration="$(OnlyReferenceAndBuildProjectsEnabledInSolutionConfiguration)" ShouldUnsetParentConfigurationAndPlatform="$(ShouldUnsetParentConfigurationAndPlatform)">
+            <Output TaskParameter="AssignedProjects" ItemName="_LibProjectReferenceWithConfiguration"/>
+            <Output TaskParameter="UnassignedProjects" ItemName="_LibProjectReferenceWithConfiguration"/>
+        </AssignProjectConfiguration>
+    </Target>
+
+    <Target Name="GetLibProjectReferences" DependsOnTargets="AssignLibProjectConfiguration" Condition=" '@(_LibProjectReferenceWithConfiguration)' != '' ">
         <ItemGroup>
-            <LibProjectReference Update="@(LibProjectReference)">
-                <GlobalPropertiesToRemove>%(LibProjectReference.GlobalPropertiesToRemove);$(GlobalPropertiesToRemove)</GlobalPropertiesToRemove>
-            </LibProjectReference>
+            <__LibProjectReference Include="@(_LibProjectReferenceWithConfiguration)">
+                <ProjectName>$([System.IO.Path]::GetFileNameWithoutExtension('%(Identity)'))</ProjectName>
+                <LibTargetPath Condition=" '%(_LibProjectReferenceWithConfiguration.LibTargetPath)' != '' ">$([MSBuild]::EnsureTrailingSlash('%(_LibProjectReferenceWithConfiguration.LibTargetPath)'))</LibTargetPath>
+                <LibPackagePath Condition=" '%(_LibProjectReferenceWithConfiguration.LibPackagePath)' != '' ">$([MSBuild]::EnsureTrailingSlash('%(_LibProjectReferenceWithConfiguration.LibPackagePath)'))</LibPackagePath>
+            </__LibProjectReference>
         </ItemGroup>
-        <MSBuild Projects="@(LibProjectReference->'%(ProjectFile)')" Targets="GetTargetPath" BuildInParallel="$(BuildInParallel)" Properties="Platform=%(LibProjectReference.Platform);Configuration=%(LibProjectReference.Configuration)" RemoveProperties="$(GlobalPropertiesToRemove);%(LibProjectReference.GlobalPropertiesToRemove)">
-            <Output TaskParameter="TargetOutputs" ItemName="_LibProjectReferenceWithOutputPath" />
+        <AddIndexMetadata Items="@(__LibProjectReference)" MetadataName="_Index">
+            <Output TaskParameter="Items" ItemName="_LibProjectReference" />
+        </AddIndexMetadata>
+    </Target>
+
+    <Target Name="GetLibProjectReferenceItems" DependsOnTargets="GetLibProjectReferences" Inputs="@(_LibProjectReference)" Outputs="%(_LibProjectReference.Identity)\%(_LibProjectReference._Index)\null" Condition=" '$(DesignTimeBuild)' != 'true' And '@(_LibProjectReference)' != '' ">
+        <MSBuild Projects="%(_LibProjectReference.Identity)" Targets="Build;GetTargetPath" BuildInParallel="$(BuildInParallel)" Properties="%(_LibProjectReference.SetConfiguration);%(_LibProjectReference.SetPlatform);ProjectName=;LibTargetPath=;LibPackagePath=" RemoveProperties="$(GlobalPropertiesToRemove);%(_LibProjectReference.GlobalPropertiesToRemove);ProjectName;LibTargetPath;LibPackagePath" RebaseOutputs="true">
+            <Output TaskParameter="TargetOutputs" ItemName="_LibProjectReferenceTargetOutput" />
         </MSBuild>
+        <PropertyGroup>
+            <_ProjectName>%(_LibProjectReference.ProjectName)</_ProjectName>
+            <_LibTargetPath>%(_LibProjectReference.LibTargetPath)</_LibTargetPath>
+            <_LibPackagePath>%(_LibProjectReference.LibPackagePath)</_LibPackagePath>
+        </PropertyGroup>
         <ItemGroup>
-            <LibProjectReferenceWithOutputPath Include="@(_LibProjectReferenceWithOutputPath)">
-                <OutputPath>%(Identity)</OutputPath>
-            </LibProjectReferenceWithOutputPath>
+            <_LibProjectReferenceItems Include="@(_LibProjectReferenceTargetOutput)">
+                <ProjectName>$(_ProjectName)</ProjectName>
+                <LibTargetPath>$(_LibTargetPath)</LibTargetPath>
+                <LibPackagePath>$(_LibPackagePath)</LibPackagePath>
+                <TargetPath>%(RecursiveDir)%(Filename)%(Extension)</TargetPath>
+            </_LibProjectReferenceItems>
         </ItemGroup>
     </Target>
 
-    <Target Name="GetItemsForLibProjectReferences" BeforeTargets="Build;AssignTargetPaths" DependsOnTargets="GetLibProjectReferences" Condition=" '$(DesignTimeBuild)' != 'true' And '@(LibProjectReference)' != '' ">
+    <Target Name="GetLibProjectReferenceCopyToOutputDirectoryItems" BeforeTargets="Build;AssignTargetPaths" DependsOnTargets="GetLibProjectReferenceItems" Condition=" '$(DesignTimeBuild)' != 'true' and '@(_LibProjectReferenceItems)' != '' ">
         <ItemGroup>
-            <None Include="@(LibProjectReferenceWithOutputPath->'%(OutputPath)')">
-                <TargetPath></TargetPath>
+            <ContentWithTargetPath Include="@(_LibProjectReferenceItems)" Condition=" '%(_LibProjectReferenceItems.LibTargetPath)' != '' ">
                 <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
-                <Link>$([MSBuild]::NormalizePath('%(LibProjectReferenceWithOutputPath.OutputDir)\%(LibProjectReferenceWithOutputPath.Filename)%(LibProjectReferenceWithOutputPath.Extension)'))</Link>
-                <Pack>true</Pack>
-                <PackagePath>$([MSBuild]::NormalizeDirectory('%(LibProjectReferenceWithOutputPath.OutputDir)'))</PackagePath>
-                <PackageCopyToOutput>true</PackageCopyToOutput>
-            </None>
+                <TargetPath>$([System.IO.Path]::GetRelativePath('.', '%(_LibProjectReferenceItems.ProjectTargetPath)%(_LibProjectReferenceItems.TargetPath)'))</TargetPath>
+            </ContentWithTargetPath>
         </ItemGroup>
     </Target>
 
-    <Target Name="BuildLibProjectReferences" BeforeTargets="Compile" DependsOnTargets="GetLibProjectReferences" Condition=" '$(DesignTimeBuild)' != 'true' And '@(LibProjectReference)' != '' ">
-        <MSBuild Projects="%(LibProjectReferenceWithOutputPath.ProjectFile)" Targets="Build" BuildInParallel="$(BuildInParallel)" Properties="Platform=%(LibProjectReferenceWithOutputPath.Platform);Configuration=%(LibProjectReferenceWithOutputPath.Configuration)" RemoveProperties="$(GlobalPropertiesToRemove);%(LibProjectReferenceWithOutputPath.GlobalPropertiesToRemove)">
-            <Output TaskParameter="TargetOutputs" ItemName="LibProjectReferencesCompileOutput" />
-        </MSBuild>
+    <PropertyGroup>
+        <GetCopyToOutputDirectoryItemsDependsOn>
+            AssignLibProjectConfiguration;
+            GetLibProjectReferences;
+            GetLibProjectReferenceItems;
+            GetLibProjectReferenceCopyToOutputDirectoryItems;
+            $(GetCopyToOutputDirectoryItemsDependsOn);
+        </GetCopyToOutputDirectoryItemsDependsOn>
+    </PropertyGroup>
+
+    <PropertyGroup>
+        <TargetsForTfmSpecificContentInPackage>$(TargetsForTfmSpecificContentInPackage);GetLibProjectReferenceTfmSpecificContent</TargetsForTfmSpecificContentInPackage>
+    </PropertyGroup>
+
+    <Target Name="GetLibProjectReferenceTfmSpecificContent" DependsOnTargets="GetLibProjectReferenceItems" Condition=" '$(DesignTimeBuild)' != 'true' and '@(_LibProjectReferenceItems)' != '' ">
+        <ItemGroup>
+            <TfmSpecificPackageFile Include="@(_LibProjectReferenceItems)" Condition=" '%(_LibProjectReferenceItems.LibTargetPath)' != '' ">
+                <PackagePath>$([System.IO.Path]::GetDirectoryName('contentFiles\any\$(TargetFramework)\%(_LibProjectReferenceItems.LibTargetPath)%(_LibProjectReferenceItems.TargetPath)'))</PackagePath>
+                <PackagePath Condition=" '%(_LibProjectReferenceItems.LibPackagePath)' != '' ">$([System.IO.Path]::GetDirectoryName('contentFiles\any\$(TargetFramework)\%(_LibProjectReferenceItems.LibPackagePath)%(_LibProjectReferenceItems.TargetPath)'))</PackagePath>
+                <PackageCopyToOutput>true</PackageCopyToOutput>
+            </TfmSpecificPackageFile>
+        </ItemGroup>
+    </Target>
+
+    <Target Name="GetLibProjectReferencePackageItems" DependsOnTargets="GetLibProjectReferenceItems" Condition=" '$(DesignTimeBuild)' != 'true' And '@(_LibProjectReferenceItems)' != '' ">
+        <ItemGroup>
+            <_PackageFiles Include="@(_LibProjectReferenceItems)" Condition=" '%(_LibProjectReferenceItems.LibPackagePath)' != '' ">
+                <PackagePath>$([System.IO.Path]::GetDirectoryName('%(_LibProjectReferenceItems.LibPackagePath)%(_LibProjectReferenceItems.TargetPath)'))</PackagePath>
+            </_PackageFiles>
+        </ItemGroup>
+    </Target>
+
+    <PropertyGroup>
+        <GetLibProjectReferenceItemsBeforePackageFilesDependsOn>
+            AssignLibProjectConfiguration;
+            GetLibProjectReferences;
+            GetLibProjectReferenceItems;
+            GetLibProjectReferencePackageItems;
+            $(GetLibProjectReferenceItemsBeforePackageFilesDependsOn);
+        </GetLibProjectReferenceItemsBeforePackageFilesDependsOn>
+    </PropertyGroup>
+
+    <Target Name="GetLibProjectReferencePackageItemsBeforeGetPackageFiles" DependsOnTargets="$(GetLibProjectReferenceItemsBeforePackageFilesDependsOn)" BeforeTargets="_GetPackageFiles" Condition=" '$(DesignTimeBuild)' != 'true' ">
+
     </Target>
 
     <!-- 
@@ -124,8 +196,8 @@
         <ItemGroup>
             <__PublishProjectReference Include="@(_PublishProjectReferenceWithConfiguration)">
                 <ProjectName>$([System.IO.Path]::GetFileNameWithoutExtension('%(Identity)'))</ProjectName>
-                <ProjectTargetPath Condition=" '%(_PublishProjectReferenceWithConfiguration.ProjectTargetPath)' != '' ">$([MSBuild]::NormalizePath('%(_PublishProjectReferenceWithConfiguration.ProjectTargetPath)'))</ProjectTargetPath>
-                <ProjectPackagePath Condition=" '%(_PublishProjectReferenceWithConfiguration.ProjectPackagePath)' != '' ">$([MSBuild]::NormalizeDirectory('%(_PublishProjectReferenceWithConfiguration.ProjectPackagePath)'))</ProjectPackagePath>
+                <ProjectTargetPath Condition=" '%(_PublishProjectReferenceWithConfiguration.ProjectTargetPath)' != '' ">$([MSBuild]::EnsureTrailingSlash('%(_PublishProjectReferenceWithConfiguration.ProjectTargetPath)'))</ProjectTargetPath>
+                <ProjectPackagePath Condition=" '%(_PublishProjectReferenceWithConfiguration.ProjectPackagePath)' != '' ">$([MSBuild]::EnsureTrailingSlash('%(_PublishProjectReferenceWithConfiguration.ProjectPackagePath)'))</ProjectPackagePath>
             </__PublishProjectReference>
         </ItemGroup>
         <AddIndexMetadata Items="@(__PublishProjectReference)" MetadataName="_Index">
@@ -157,7 +229,7 @@
         <ItemGroup>
             <ContentWithTargetPath Include="@(_PublishProjectReferenceItems)" Condition=" '%(_PublishProjectReferenceItems.ProjectTargetPath)' != '' ">
                 <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
-                <TargetPath>%(_PublishProjectReferenceItems.ProjectTargetPath)%(_PublishProjectReferenceItems.TargetPath)</TargetPath>
+                <TargetPath>$([System.IO.Path]::GetRelativePath('.', '%(_PublishProjectReferenceItems.ProjectTargetPath)%(_PublishProjectReferenceItems.TargetPath)'))</TargetPath>
             </ContentWithTargetPath>
         </ItemGroup>
     </Target>
@@ -188,8 +260,8 @@
 
     <Target Name="GetPublishProjectReferencePackageItems" DependsOnTargets="GetPublishProjectReferenceItems" Condition=" '$(DesignTimeBuild)' != 'true' And '@(_PublishProjectReferenceItems)' != '' ">
         <ItemGroup>
-            <_PackageFiles Include="@(_PublishProjectReferenceItems->Distinct()->'%(Identity)')" Condition=" '%(_PublishProjectReferenceItems.ProjectPackagePath)' != '' And '$([System.IO.Path]::GetExtension(%(_PublishProjectReferenceItems.Identity)))' != '' ">
-                <PackagePath>%(_PublishProjectReferenceItems.ProjectPackagePath)%(_PublishProjectReferenceItems.TargetPath)</PackagePath>
+            <_PackageFiles Include="@(_PublishProjectReferenceItems)" Condition=" '%(_PublishProjectReferenceItems.ProjectPackagePath)' != '' ">
+                <PackagePath>$([System.IO.Path]::GetDirectoryName('%(_PublishProjectReferenceItems.ProjectPackagePath)%(_PublishProjectReferenceItems.TargetPath)'))</PackagePath>
             </_PackageFiles>
         </ItemGroup>
     </Target>
@@ -230,27 +302,41 @@
 
     <Target Name="GetIncludeProjectReferences" DependsOnTargets="AssignIncludeProjectConfiguration" Condition=" '$(DesignTimeBuild)' != 'true' And '@(_IncludeProjectReferenceWithConfiguration)' != '' ">
         <ItemGroup>
-            <_IncludeProjectReference Include="@(_IncludeProjectReferenceWithConfiguration)">
+            <__IncludeProjectReference Include="@(_IncludeProjectReferenceWithConfiguration)">
                 <ProjectName>$([System.IO.Path]::GetFileNameWithoutExtension('%(Identity)'))</ProjectName>
-                <IncludeTargetPath Condition=" '%(_IncludeProjectReferenceWithConfiguration.IncludeTargetPath)' != '' ">$([MSBuild]::NormalizePath('%(_IncludeProjectReferenceWithConfiguration.IncludeTargetPath)'))</IncludeTargetPath>
-                <IncludePackagePath Condition=" '%(_IncludeProjectReferenceWithConfiguration.IncludePackagePath)' != '' ">$([MSBuild]::NormalizeDirectory('%(_IncludeProjectReferenceWithConfiguration.IncludePackagePath)'))</IncludePackagePath>
-            </_IncludeProjectReference>
+                <IncludeTargetPath Condition=" '%(_IncludeProjectReferenceWithConfiguration.IncludeTargetPath)' != '' ">$([MSBuild]::EnsureTrailingSlash('%(_IncludeProjectReferenceWithConfiguration.IncludeTargetPath)'))</IncludeTargetPath>
+                <IncludePackagePath Condition=" '%(_IncludeProjectReferenceWithConfiguration.IncludePackagePath)' != '' ">$([MSBuild]::EnsureTrailingSlash('%(_IncludeProjectReferenceWithConfiguration.IncludePackagePath)'))</IncludePackagePath>
+            </__IncludeProjectReference>
         </ItemGroup>
+        <AddIndexMetadata Items="@(__IncludeProjectReference)" MetadataName="_Index">
+            <Output TaskParameter="Items" ItemName="_IncludeProjectReference" />
+        </AddIndexMetadata>
     </Target>
 
     <Target Name="GetIncludeProjectReferenceItems" DependsOnTargets="GetIncludeProjectReferences" Condition=" '$(DesignTimeBuild)' != 'true' And '@(_IncludeProjectReference)' != '' ">
-        <MSBuild Projects="@(_IncludeProjectReference)" Targets="Build;BuiltProjectOutputGroup" BuildInParallel="$(BuildInParallel)" Properties="%(_IncludeProjectReference.SetConfiguration);%(_IncludeProjectReference.SetPlatform);%(_IncludeProjectReference.SetTargetFramework);%(_IncludeProjectReference.IncludeProperties)" RemoveProperties="$(GlobalPropertiesToRemove);%(_IncludeProjectReference.GlobalPropertiesToRemove)" RebaseOutputs="true">
-            <Output TaskParameter="TargetOutputs" ItemName="_IncludeProjectReferenceItems" />
+        <MSBuild Projects="%(_IncludeProjectReference.Identity)" Targets="Build;BuiltProjectOutputGroup" BuildInParallel="$(BuildInParallel)" Properties="%(_PackageProjectReference.SetConfiguration);ProjectName=;IncludeTargetPath=;IncludePackagePath=" RemoveProperties="$(GlobalPropertiesToRemove);%(_IncludeProjectReference.GlobalPropertiesToRemove);TargetFramework;RuntimeIdentifier;ProjectName;IncludeTargetPath;IncludePublishPath" RebaseOutputs="true">
+            <Output TaskParameter="TargetOutputs" ItemName="_IncludeProjectReferenceItemsInput" />
         </MSBuild>
+        <PropertyGroup>
+            <_ProjectName>%(_IncludeProjectReference.ProjectName)</_ProjectName>
+            <_IncludeTargetPath>%(_IncludeProjectReference.IncludeTargetPath)</_IncludeTargetPath>
+            <_IncludePackagePath>%(_IncludeProjectReference.IncludePackagePath)</_IncludePackagePath>
+        </PropertyGroup>
+        <ItemGroup>
+            <_IncludeProjectReferenceItems Include="@(_PackageProjectReferenceItemsInput)">
+                <ProjectName>$(_ProjectName)</ProjectName>
+                <IncludeTargetPath>$(_IncludeTargetPath)</IncludeTargetPath>
+                <IncludePackagePath>$(_IncludePackagePath)</IncludePackagePath>
+                <TargetPath>%(RecursiveDir)%(Filename)%(Extension)</TargetPath>
+            </_IncludeProjectReferenceItems>
+        </ItemGroup>
     </Target>
 
     <Target Name="GetIncludeProjectReferenceCopyToOutputDirectoryItems" DependsOnTargets="GetIncludeProjectReferenceItems" Condition=" '$(DesignTimeBuild)' != 'true' ">
         <ItemGroup>
             <ContentWithTargetPath Include="@(_IncludeProjectReferenceItems)" Condition=" '%(_IncludeProjectReferenceItems.IncludeTargetPath)' != '' And '%(_IncludeProjectReferenceItems.TargetPath)' != '' ">
                 <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
-                <TargetPath>%(_IncludeProjectReferenceItems.IncludeTargetPath)%(_IncludeProjectReferenceItems.TargetPath)</TargetPath>
-                <Pack Condition=" '%(_IncludeProjectReferenceItems.IncludePackagePath)' != '' ">true</Pack>
-                <PackagePath Condition=" '%(_IncludeProjectReferenceItems.IncludePackagePath)' != '' ">%(_IncludeProjectReferenceItems.IncludePackagePath)%(_IncludeProjectReferenceItems.TargetPath)</PackagePath>
+                <TargetPath>$([System.IO.Path]::GetRelativePath('.', '%(_IncludeProjectReferenceItems.IncludeTargetPath)%(_IncludeProjectReferenceItems.TargetPath)'))</TargetPath>
             </ContentWithTargetPath>
         </ItemGroup>
     </Target>
@@ -265,20 +351,24 @@
         </GetCopyToOutputDirectoryItemsDependsOn>
     </PropertyGroup>
 
+    <PropertyGroup>
+        <TargetsForTfmSpecificContentInPackage>$(TargetsForTfmSpecificContentInPackage);GetIncludeProjectReferenceTfmSpecificContent</TargetsForTfmSpecificContentInPackage>
+    </PropertyGroup>
+
+    <Target Name="GetIncludeProjectReferenceTfmSpecificContent" DependsOnTargets="GetIncludeProjectReferenceItems" Condition=" '$(DesignTimeBuild)' != 'true' and '@(_IncludeProjectReferenceItems)' != '' ">
+        <ItemGroup>
+            <TfmSpecificPackageFile Include="@(_IncludeProjectReferenceItems)" Condition=" '%(_IncludeProjectReferenceItems.IncludeTargetPath)' != '' ">
+                <PackagePath>$([System.IO.Path]::GetDirectoryName('contentFiles\any\$(TargetFramework)\%(_IncludeProjectReferenceItems.IncludeTargetPath)%(_IncludeProjectReferenceItems.TargetPath)'))</PackagePath>
+                <PackagePath Condition=" '%(_IncludeProjectReferenceItems.IncludePackagePath)' != '' ">$([System.IO.Path]::GetDirectoryName('contentFiles\any\$(TargetFramework)\%(_IncludeProjectReferenceItems.IncludePackagePath)%(_IncludeProjectReferenceItems.TargetPath)'))</PackagePath>
+                <PackageCopyToOutput>true</PackageCopyToOutput>
+            </TfmSpecificPackageFile>
+        </ItemGroup>
+    </Target>
+
     <Target Name="GetIncludeProjectReferencePackageItems" DependsOnTargets="GetIncludeProjectReferenceItems" Condition=" '$(DesignTimeBuild)' != 'true' And '@(_IncludeProjectReferenceItems)' != '' ">
         <ItemGroup>
-            <_IncludePackageFiles Include="@(_IncludeProjectReferenceItems->Distinct()->'%(Identity)')" Condition=" '%(_IncludeProjectReferenceItems.IncludePackagePath)' != '' And '$([System.IO.Path]::GetExtension(%(_IncludeProjectReferenceItems.Identity)))' != '' ">
-                <PackagePath>%(_IncludeProjectReferenceItems.IncludePackagePath)%(_IncludeProjectReferenceItems.TargetPath)</PackagePath>
-            </_IncludePackageFiles>
-            <_IncludePackageFilesToStage Include="@(_IncludeProjectReferenceItems->Distinct()->'%(Identity)')" Condition=" '%(_IncludeProjectReferenceItems.IncludePackagePath)' != '' And '$([System.IO.Path]::GetExtension(%(_IncludeProjectReferenceItems.Identity)))' == '' ">
-                <PackagePath>%(_IncludeProjectReferenceItems.IncludePackagePath)%(_IncludeProjectReferenceItems.TargetPath)</PackagePath>
-                <TemporaryPath>$([System.IO.Path]::GetFullPath('$(IntermediateOutputPath)include-pkg\%(_IncludeProjectReferenceItems.IncludePackagePath)%(_IncludeProjectReferenceItems.TargetPath)'))</TemporaryPath>
-            </_IncludePackageFilesToStage>
-        </ItemGroup>
-        <Copy SourceFiles="@(_IncludePackageFilesToStage)" DestinationFiles="@(_PackageFilesToStage->'%(TemporaryPath)')" OverwriteReadOnlyFiles="true" SkipUnchangedFiles="true" />
-        <ItemGroup>
-            <_PackageFiles Include="@(_IncludePackageFilesToStage->'%(TemporaryPath)')">
-                <PackagePath>$([System.IO.Path]::GetDirectoryName('%(_PackageFilesToStage.PackagePath)'))</PackagePath>
+            <_PackageFiles Include="@(_IncludeProjectReferenceItems)" Condition=" '%(_IncludeProjectReferenceItems.IncludePackagePath)' != '' ">
+                <PackagePath>$([System.IO.Path]::GetDirectoryName('%(_IncludeProjectReferenceItems.IncludePackagePath)%(_IncludeProjectReferenceItems.TargetPath)'))</PackagePath>
             </_PackageFiles>
         </ItemGroup>
     </Target>
@@ -301,7 +391,7 @@
     
         PackageProjectReference
         
-        These references have ther produced NuGet file (Pack target) copied into the consuming project as a content file.
+        These references have their produced NuGet file (Pack target) copied into the consuming project as a content file.
         
     -->
 
@@ -325,8 +415,8 @@
         <ItemGroup>
             <__PackageProjectReference Include="@(_PackageProjectReferenceWithConfiguration)">
                 <ProjectName>$([System.IO.Path]::GetFileNameWithoutExtension('%(Identity)'))</ProjectName>
-                <PackageTargetPath Condition=" '%(_PackageProjectReferenceWithConfiguration.PackageTargetPath)' != '' ">$([MSBuild]::NormalizePath('%(_PackageProjectReferenceWithConfiguration.PackageTargetPath)'))</PackageTargetPath>
-                <PackagePackagePath Condition=" '%(_PackageProjectReferenceWithConfiguration.PackagePackagePath)' != '' ">$([MSBuild]::NormalizeDirectory('%(_PackageProjectReferenceWithConfiguration.PackagePackagePath)'))</PackagePackagePath>
+                <PackageTargetPath Condition=" '%(_PackageProjectReferenceWithConfiguration.PackageTargetPath)' != '' ">$([MSBuild]::EnsureTrailingSlash('%(_PackageProjectReferenceWithConfiguration.PackageTargetPath)'))</PackageTargetPath>
+                <PackagePackagePath Condition=" '%(_PackageProjectReferenceWithConfiguration.PackagePackagePath)' != '' ">$([MSBuild]::EnsureTrailingSlash('%(_PackageProjectReferenceWithConfiguration.PackagePackagePath)'))</PackagePackagePath>
             </__PackageProjectReference>
         </ItemGroup>
         <AddIndexMetadata Items="@(__PackageProjectReference)" MetadataName="_Index">
@@ -358,7 +448,7 @@
         <ItemGroup>
             <ContentWithTargetPath Include="@(_PackageProjectReferenceItems)" Condition=" '%(_PackageProjectReferenceItems.PackageTargetPath)' != '' ">
                 <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
-                <TargetPath>%(_PackageProjectReferenceItems.PackageTargetPath)%(_PackageProjectReferenceItems.TargetPath)</TargetPath>
+                <TargetPath>$([System.IO.Path]::GetRelativePath('.', '%(_PackageProjectReferenceItems.PackageTargetPath)%(_PackageProjectReferenceItems.TargetPath)'))</TargetPath>
             </ContentWithTargetPath>
         </ItemGroup>
     </Target>
@@ -389,8 +479,8 @@
 
     <Target Name="GetPackageProjectReferencePackageItems" DependsOnTargets="GetPackageProjectReferenceItems" Condition=" '$(DesignTimeBuild)' != 'true' And '@(_PackageProjectReferenceItems)' != '' ">
         <ItemGroup>
-            <_PackageFiles Include="@(_PackageProjectReferenceItems->Distinct()->'%(Identity)')" Condition=" '%(_PackageProjectReferenceItems.PackagePackagePath)' != '' And '$([System.IO.Path]::GetExtension(%(_PackageProjectReferenceItems.Identity)))' != '' ">
-                <PackagePath>%(_PackageProjectReferenceItems.PackagePackagePath)%(_PackageProjectReferenceItems.TargetPath)</PackagePath>
+            <_PackageFiles Include="@(_PackageProjectReferenceItems)" Condition=" '%(_PackageProjectReferenceItems.PackagePackagePath)' != '' ">
+                <PackagePath>$([System.IO.Path]::GetDirectoryName('%(_PackageProjectReferenceItems.PackagePackagePath)%(_PackageProjectReferenceItems.TargetPath)'))</PackagePath>
             </_PackageFiles>
         </ItemGroup>
     </Target>

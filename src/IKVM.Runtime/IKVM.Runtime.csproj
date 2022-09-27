@@ -49,17 +49,17 @@
     </ItemGroup>
 
     <ItemGroup>
-        <LibProjectReference Include="ikvm-native-win-x64">
-            <ProjectFile>..\ikvm-native\ikvm-native-win.vcxproj</ProjectFile>
-            <Platform>x64</Platform>
-            <Configuration>$(Configuration)</Configuration>
-            <OutputDir>runtimes\win-x64\native</OutputDir>
+        <LibProjectReference Include="..\ikvm-native\ikvm-native-win.vcxproj">
+            <SetPlatform>Platform=x64</SetPlatform>
+            <LibTargetPath>runtimes\win-x64\native</LibTargetPath>
         </LibProjectReference>
-        <LibProjectReference Include="ikvm-native-linux-x64">
-            <ProjectFile>..\ikvm-native\ikvm-native-linux.vcxproj</ProjectFile>
-            <Platform>x64</Platform>
-            <Configuration>$(Configuration)</Configuration>
-            <OutputDir>runtimes\linux-x64\native</OutputDir>
+        <LibProjectReference Include="..\ikvm-native\ikvm-native-win.vcxproj">
+            <SetPlatform>Platform=Win32</SetPlatform>
+            <LibTargetPath>runtimes\win-x86\native</LibTargetPath>
+        </LibProjectReference>
+        <LibProjectReference Include="..\ikvm-native\ikvm-native-linux.vcxproj">
+            <SetPlatform>Platform=x64</SetPlatform>
+            <LibTargetPath>runtimes\linux-x64\native</LibTargetPath>
         </LibProjectReference>
     </ItemGroup>
     
