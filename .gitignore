@@ -244,3 +244,4 @@ ModelManifest.xml
 # Ignore build output
 /dist/
 /.ikvm/
+/msbuild.binlog
