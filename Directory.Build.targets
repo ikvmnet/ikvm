@@ -121,7 +121,7 @@
         <ItemGroup>
             <ContentWithTargetPath Include="@(_LibProjectReferenceItems)" Condition=" '%(_LibProjectReferenceItems.LibTargetPath)' != '' ">
                 <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
-                <TargetPath>$([System.IO.Path]::GetRelativePath('.', '%(_LibProjectReferenceItems.ProjectTargetPath)%(_LibProjectReferenceItems.TargetPath)'))</TargetPath>
+                <TargetPath>$([MSBuild]::MakeRelative('.', '%(_LibProjectReferenceItems.ProjectTargetPath)%(_LibProjectReferenceItems.TargetPath)'))</TargetPath>
             </ContentWithTargetPath>
         </ItemGroup>
     </Target>
@@ -229,7 +229,7 @@
         <ItemGroup>
             <ContentWithTargetPath Include="@(_PublishProjectReferenceItems)" Condition=" '%(_PublishProjectReferenceItems.ProjectTargetPath)' != '' ">
                 <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
-                <TargetPath>$([System.IO.Path]::GetRelativePath('.', '%(_PublishProjectReferenceItems.ProjectTargetPath)%(_PublishProjectReferenceItems.TargetPath)'))</TargetPath>
+                <TargetPath>$([MSBuild]::MakeRelative('.', '%(_PublishProjectReferenceItems.ProjectTargetPath)%(_PublishProjectReferenceItems.TargetPath)'))</TargetPath>
             </ContentWithTargetPath>
         </ItemGroup>
     </Target>
@@ -336,7 +336,7 @@
         <ItemGroup>
             <ContentWithTargetPath Include="@(_IncludeProjectReferenceItems)" Condition=" '%(_IncludeProjectReferenceItems.IncludeTargetPath)' != '' And '%(_IncludeProjectReferenceItems.TargetPath)' != '' ">
                 <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
-                <TargetPath>$([System.IO.Path]::GetRelativePath('.', '%(_IncludeProjectReferenceItems.IncludeTargetPath)%(_IncludeProjectReferenceItems.TargetPath)'))</TargetPath>
+                <TargetPath>$([MSBuild]::MakeRelative('.', '%(_IncludeProjectReferenceItems.IncludeTargetPath)%(_IncludeProjectReferenceItems.TargetPath)'))</TargetPath>
             </ContentWithTargetPath>
         </ItemGroup>
     </Target>
@@ -448,7 +448,7 @@
         <ItemGroup>
             <ContentWithTargetPath Include="@(_PackageProjectReferenceItems)" Condition=" '%(_PackageProjectReferenceItems.PackageTargetPath)' != '' ">
                 <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
-                <TargetPath>$([System.IO.Path]::GetRelativePath('.', '%(_PackageProjectReferenceItems.PackageTargetPath)%(_PackageProjectReferenceItems.TargetPath)'))</TargetPath>
+                <TargetPath>$([MSBuild]::MakeRelative('.', '%(_PackageProjectReferenceItems.PackageTargetPath)%(_PackageProjectReferenceItems.TargetPath)'))</TargetPath>
             </ContentWithTargetPath>
         </ItemGroup>
     </Target>
