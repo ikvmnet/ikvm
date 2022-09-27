@@ -86,9 +86,9 @@
             <None Include="@(LibProjectReferenceWithOutputPath->'%(OutputPath)')">
                 <TargetPath></TargetPath>
                 <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
-                <Link>%(LibProjectReferenceWithOutputPath.OutputDir)\%(LibProjectReferenceWithOutputPath.Filename)%(LibProjectReferenceWithOutputPath.Extension)</Link>
+                <Link>$([MSBuild]::NormalizePath('%(LibProjectReferenceWithOutputPath.OutputDir)\%(LibProjectReferenceWithOutputPath.Filename)%(LibProjectReferenceWithOutputPath.Extension)'))</Link>
                 <Pack>true</Pack>
-                <PackagePath>%(LibProjectReferenceWithOutputPath.OutputDir)</PackagePath>
+                <PackagePath>$([MSBuild]::NormalizeDirectory('%(LibProjectReferenceWithOutputPath.OutputDir)'))</PackagePath>
                 <PackageCopyToOutput>true</PackageCopyToOutput>
             </None>
         </ItemGroup>
@@ -124,8 +124,8 @@
         <ItemGroup>
             <__PublishProjectReference Include="@(_PublishProjectReferenceWithConfiguration)">
                 <ProjectName>$([System.IO.Path]::GetFileNameWithoutExtension('%(Identity)'))</ProjectName>
-                <ProjectTargetPath Condition=" '%(_PublishProjectReferenceWithConfiguration.ProjectTargetPath)' != '' ">$([MSBuild]::EnsureTrailingSlash('%(_PublishProjectReferenceWithConfiguration.ProjectTargetPath)'))</ProjectTargetPath>
-                <ProjectPackagePath Condition=" '%(_PublishProjectReferenceWithConfiguration.ProjectPackagePath)' != '' ">$([MSBuild]::EnsureTrailingSlash('%(_PublishProjectReferenceWithConfiguration.ProjectPackagePath)'))</ProjectPackagePath>
+                <ProjectTargetPath Condition=" '%(_PublishProjectReferenceWithConfiguration.ProjectTargetPath)' != '' ">$([MSBuild]::NormalizePath('%(_PublishProjectReferenceWithConfiguration.ProjectTargetPath)'))</ProjectTargetPath>
+                <ProjectPackagePath Condition=" '%(_PublishProjectReferenceWithConfiguration.ProjectPackagePath)' != '' ">$([MSBuild]::NormalizeDirectory('%(_PublishProjectReferenceWithConfiguration.ProjectPackagePath)'))</ProjectPackagePath>
             </__PublishProjectReference>
         </ItemGroup>
         <AddIndexMetadata Items="@(__PublishProjectReference)" MetadataName="_Index">
@@ -232,8 +232,8 @@
         <ItemGroup>
             <_IncludeProjectReference Include="@(_IncludeProjectReferenceWithConfiguration)">
                 <ProjectName>$([System.IO.Path]::GetFileNameWithoutExtension('%(Identity)'))</ProjectName>
-                <IncludeTargetPath Condition=" '%(_IncludeProjectReferenceWithConfiguration.IncludeTargetPath)' != '' ">$([MSBuild]::EnsureTrailingSlash('%(_IncludeProjectReferenceWithConfiguration.IncludeTargetPath)'))</IncludeTargetPath>
-                <IncludePackagePath Condition=" '%(_IncludeProjectReferenceWithConfiguration.IncludePackagePath)' != '' ">$([MSBuild]::EnsureTrailingSlash('%(_IncludeProjectReferenceWithConfiguration.IncludePackagePath)'))</IncludePackagePath>
+                <IncludeTargetPath Condition=" '%(_IncludeProjectReferenceWithConfiguration.IncludeTargetPath)' != '' ">$([MSBuild]::NormalizePath('%(_IncludeProjectReferenceWithConfiguration.IncludeTargetPath)'))</IncludeTargetPath>
+                <IncludePackagePath Condition=" '%(_IncludeProjectReferenceWithConfiguration.IncludePackagePath)' != '' ">$([MSBuild]::NormalizeDirectory('%(_IncludeProjectReferenceWithConfiguration.IncludePackagePath)'))</IncludePackagePath>
             </_IncludeProjectReference>
         </ItemGroup>
     </Target>
