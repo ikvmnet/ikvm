@@ -147,8 +147,8 @@
     <Target Name="GetLibProjectReferenceTfmSpecificContent" DependsOnTargets="GetLibProjectReferenceItems" Condition=" '$(DesignTimeBuild)' != 'true' and '@(_LibProjectReferenceItems)' != '' ">
         <ItemGroup>
             <TfmSpecificPackageFile Include="@(_LibProjectReferenceItems)" Condition=" '%(_LibProjectReferenceItems.LibTargetPath)' != '' ">
-                <PackagePath>$([System.IO.Path]::GetDirectoryName('contentFiles\any\$(TargetFramework)\%(_LibProjectReferenceItems.LibTargetPath)%(_LibProjectReferenceItems.TargetPath)'))</PackagePath>
-                <PackagePath Condition=" '%(_LibProjectReferenceItems.LibPackagePath)' != '' ">$([System.IO.Path]::GetDirectoryName('contentFiles\any\$(TargetFramework)\%(_LibProjectReferenceItems.LibPackagePath)%(_LibProjectReferenceItems.TargetPath)'))</PackagePath>
+                <PackagePath>contentFiles\any\$(TargetFramework)\%(_LibProjectReferenceItems.LibTargetPath)</PackagePath>
+                <PackagePath Condition=" '%(_LibProjectReferenceItems.LibPackagePath)' != '' ">contentFiles\any\$(TargetFramework)\%(_LibProjectReferenceItems.LibPackagePath)</PackagePath>
                 <PackageCopyToOutput>true</PackageCopyToOutput>
             </TfmSpecificPackageFile>
         </ItemGroup>
@@ -157,7 +157,7 @@
     <Target Name="GetLibProjectReferencePackageItems" DependsOnTargets="GetLibProjectReferenceItems" Condition=" '$(DesignTimeBuild)' != 'true' And '@(_LibProjectReferenceItems)' != '' ">
         <ItemGroup>
             <_PackageFiles Include="@(_LibProjectReferenceItems)" Condition=" '%(_LibProjectReferenceItems.LibPackagePath)' != '' ">
-                <PackagePath>$([System.IO.Path]::GetDirectoryName('%(_LibProjectReferenceItems.LibPackagePath)%(_LibProjectReferenceItems.TargetPath)'))</PackagePath>
+                <PackagePath>%(_LibProjectReferenceItems.LibPackagePath)</PackagePath>
             </_PackageFiles>
         </ItemGroup>
     </Target>
@@ -258,8 +258,8 @@
     <Target Name="GetPublishProjectReferenceTfmSpecificContent" DependsOnTargets="GetPublishProjectReferenceItems" Condition=" '$(DesignTimeBuild)' != 'true' and '@(_PublishProjectReferenceItems)' != '' ">
         <ItemGroup>
             <TfmSpecificPackageFile Include="@(_PublishProjectReferenceItems)" Condition=" '%(_PublishProjectReferenceItems.ProjectTargetPath)' != '' ">
-                <PackagePath>$([System.IO.Path]::GetDirectoryName('contentFiles\any\$(TargetFramework)\%(_PublishProjectReferenceItems.ProjectTargetPath)%(_PublishProjectReferenceItems.TargetPath)'))</PackagePath>
-                <PackagePath Condition=" '%(_PublishProjectReferenceItems.ProjectPackagePath)' != '' ">$([System.IO.Path]::GetDirectoryName('contentFiles\any\$(TargetFramework)\%(_PublishProjectReferenceItems.ProjectPackagePath)%(_PublishProjectReferenceItems.TargetPath)'))</PackagePath>
+                <PackagePath>contentFiles\any\$(TargetFramework)\%(_PublishProjectReferenceItems.ProjectTargetPath)</PackagePath>
+                <PackagePath Condition=" '%(_PublishProjectReferenceItems.ProjectPackagePath)' != '' ">contentFiles\any\$(TargetFramework)\%(_PublishProjectReferenceItems.ProjectPackagePath)</PackagePath>
                 <PackageCopyToOutput>true</PackageCopyToOutput>
             </TfmSpecificPackageFile>
         </ItemGroup>
@@ -268,7 +268,7 @@
     <Target Name="GetPublishProjectReferencePackageItems" DependsOnTargets="GetPublishProjectReferenceItems" Condition=" '$(DesignTimeBuild)' != 'true' And '@(_PublishProjectReferenceItems)' != '' ">
         <ItemGroup>
             <_PackageFiles Include="@(_PublishProjectReferenceItems)" Condition=" '%(_PublishProjectReferenceItems.ProjectPackagePath)' != '' ">
-                <PackagePath>$([System.IO.Path]::GetDirectoryName('%(_PublishProjectReferenceItems.ProjectPackagePath)%(_PublishProjectReferenceItems.TargetPath)'))</PackagePath>
+                <PackagePath>%(_PublishProjectReferenceItems.ProjectPackagePath)</PackagePath>
             </_PackageFiles>
         </ItemGroup>
     </Target>
@@ -369,8 +369,8 @@
     <Target Name="GetIncludeProjectReferenceTfmSpecificContent" DependsOnTargets="GetIncludeProjectReferenceItems" Condition=" '$(DesignTimeBuild)' != 'true' and '@(_IncludeProjectReferenceItems)' != '' ">
         <ItemGroup>
             <TfmSpecificPackageFile Include="@(_IncludeProjectReferenceItems)" Condition=" '%(_IncludeProjectReferenceItems.IncludeTargetPath)' != '' ">
-                <PackagePath>$([System.IO.Path]::GetDirectoryName('contentFiles\any\$(TargetFramework)\%(_IncludeProjectReferenceItems.IncludeTargetPath)%(_IncludeProjectReferenceItems.TargetPath)'))</PackagePath>
-                <PackagePath Condition=" '%(_IncludeProjectReferenceItems.IncludePackagePath)' != '' ">$([System.IO.Path]::GetDirectoryName('contentFiles\any\$(TargetFramework)\%(_IncludeProjectReferenceItems.IncludePackagePath)%(_IncludeProjectReferenceItems.TargetPath)'))</PackagePath>
+                <PackagePath>contentFiles\any\$(TargetFramework)\%(_IncludeProjectReferenceItems.IncludeTargetPath)</PackagePath>
+                <PackagePath Condition=" '%(_IncludeProjectReferenceItems.IncludePackagePath)' != '' ">contentFiles\any\$(TargetFramework)\%(_IncludeProjectReferenceItems.IncludePackagePath)</PackagePath>
                 <PackageCopyToOutput>true</PackageCopyToOutput>
             </TfmSpecificPackageFile>
         </ItemGroup>
@@ -379,7 +379,7 @@
     <Target Name="GetIncludeProjectReferencePackageItems" DependsOnTargets="GetIncludeProjectReferenceItems" Condition=" '$(DesignTimeBuild)' != 'true' And '@(_IncludeProjectReferenceItems)' != '' ">
         <ItemGroup>
             <_PackageFiles Include="@(_IncludeProjectReferenceItems)" Condition=" '%(_IncludeProjectReferenceItems.IncludePackagePath)' != '' ">
-                <PackagePath>$([System.IO.Path]::GetDirectoryName('%(_IncludeProjectReferenceItems.IncludePackagePath)%(_IncludeProjectReferenceItems.TargetPath)'))</PackagePath>
+                <PackagePath>%(_IncludeProjectReferenceItems.IncludePackagePath)</PackagePath>
             </_PackageFiles>
         </ItemGroup>
     </Target>
@@ -439,6 +439,7 @@
         <ItemGroup>
             <_PackageProjectReferencesToTarget Include="@(_PackageProjectReference)" RemoveMetadata="ProjectName;PackageTargetPath;PackagePackagePath" />
         </ItemGroup>
+        <MSBuild Projects="@(_PackageProjectReferencesToTarget)" Targets="Build" BuildInParallel="$(BuildInParallel)" Properties="%(_PackageProjectReferencesToTarget.SetConfiguration);%(_PackageProjectReferencesToTarget.SetPlatform)" RemoveProperties="$(_GlobalPropertiesToRemoveFromProjectReferences);%(_PackageProjectReferencesToTarget.GlobalPropertiesToRemove);TargetFramework;RuntimeIdentifier" RebaseOutputs="true" />
         <MSBuild Projects="@(_PackageProjectReferencesToTarget)" Targets="_CleanPackageFiles;Pack;GetPackageOutputPath" BuildInParallel="$(BuildInParallel)" Properties="%(_PackageProjectReferencesToTarget.SetConfiguration);%(_PackageProjectReferencesToTarget.SetPlatform)" RemoveProperties="$(_GlobalPropertiesToRemoveFromProjectReferences);%(_PackageProjectReferencesToTarget.GlobalPropertiesToRemove);TargetFramework;RuntimeIdentifier" RebaseOutputs="true">
             <Output TaskParameter="TargetOutputs" ItemName="_ResolvedPackageOutputPath" />
         </MSBuild>
@@ -484,8 +485,8 @@
     <Target Name="GetPackageProjectReferenceTfmSpecificContent" DependsOnTargets="GetPackageProjectReferenceItems" Condition=" '$(DesignTimeBuild)' != 'true' and '@(_PackageProjectReferenceItems)' != '' ">
         <ItemGroup>
             <TfmSpecificPackageFile Include="@(_PackageProjectReferenceItems)" Condition=" '%(_PackageProjectReferenceItems.PackageTargetPath)' != '' ">
-                <PackagePath>$([System.IO.Path]::GetDirectoryName('contentFiles\any\$(TargetFramework)\%(_PackageProjectReferenceItems.PackageTargetPath)%(_PackageProjectReferenceItems.TargetPath)'))</PackagePath>
-                <PackagePath Condition=" '%(_PackageProjectReferenceItems.PackagePackagePath)' != '' ">$([System.IO.Path]::GetDirectoryName('contentFiles\any\$(TargetFramework)\%(_PackageProjectReferenceItems.PackagePackagePath)%(_PackageProjectReferenceItems.TargetPath)'))</PackagePath>
+                <PackagePath>contentFiles\any\$(TargetFramework)\%(_PackageProjectReferenceItems.PackageTargetPath)</PackagePath>
+                <PackagePath Condition=" '%(_PackageProjectReferenceItems.PackagePackagePath)' != '' ">contentFiles\any\$(TargetFramework)\%(_PackageProjectReferenceItems.PackagePackagePath)</PackagePath>
                 <PackageCopyToOutput>true</PackageCopyToOutput>
             </TfmSpecificPackageFile>
         </ItemGroup>
@@ -494,7 +495,7 @@
     <Target Name="GetPackageProjectReferencePackageItems" DependsOnTargets="GetPackageProjectReferenceItems" Condition=" '$(DesignTimeBuild)' != 'true' And '@(_PackageProjectReferenceItems)' != '' ">
         <ItemGroup>
             <_PackageFiles Include="@(_PackageProjectReferenceItems)" Condition=" '%(_PackageProjectReferenceItems.PackagePackagePath)' != '' ">
-                <PackagePath>$([System.IO.Path]::GetDirectoryName('%(_PackageProjectReferenceItems.PackagePackagePath)%(_PackageProjectReferenceItems.TargetPath)'))</PackagePath>
+                <PackagePath>%(_PackageProjectReferenceItems.PackagePackagePath)</PackagePath>
             </_PackageFiles>
         </ItemGroup>
     </Target>

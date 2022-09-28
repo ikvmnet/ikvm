@@ -65,14 +65,14 @@ namespace IKVM.Tools.Runner
             {
                 Architecture.X86 => framework switch
                 {
-                    IkvmToolFramework.NetFramework => "any",
+                    IkvmToolFramework.NetFramework => "win7-x86",
                     IkvmToolFramework.NetCore when platform == OSPlatform.Windows => "win7-x86",
                     IkvmToolFramework.NetCore when platform == OSPlatform.Linux => "linux-x86",
                     _ => throw new NotImplementedException(),
                 },
                 Architecture.X64 => framework switch
                 {
-                    IkvmToolFramework.NetFramework => "any",
+                    IkvmToolFramework.NetFramework => "win7-x64",
                     IkvmToolFramework.NetCore when platform == OSPlatform.Windows => "win7-x64",
                     IkvmToolFramework.NetCore when platform == OSPlatform.Linux => "linux-x64",
                     _ => throw new NotImplementedException(),
