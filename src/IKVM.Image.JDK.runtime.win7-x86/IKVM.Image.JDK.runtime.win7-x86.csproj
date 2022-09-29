@@ -23,12 +23,12 @@
         <PublishProjectReference Include="..\IKVM.Image.JDK-bin\IKVM.Image.JDK-bin.csproj">
             <SetTargetFramework>TargetFramework=net461</SetTargetFramework>
             <SetRuntimeIdentifier>RuntimeIdentifier=win7-x86</SetRuntimeIdentifier>
-            <ProjectPackagePath>content\net461\ikvm\bin</ProjectPackagePath>
+            <ProjectPackagePath>ikvm\net461\win7-x86\bin</ProjectPackagePath>
         </PublishProjectReference>
         <PublishProjectReference Include="..\IKVM.Image.JDK-bin\IKVM.Image.JDK-bin.csproj">
             <SetTargetFramework>TargetFramework=netcoreapp3.1</SetTargetFramework>
             <SetRuntimeIdentifier>RuntimeIdentifier=win7-x86</SetRuntimeIdentifier>
-            <ProjectPackagePath>content\netcoreapp3.1\ikvm\bin</ProjectPackagePath>
+            <ProjectPackagePath>ikvm\netcoreapp3.1\win7-x86\bin</ProjectPackagePath>
         </PublishProjectReference>
     </ItemGroup>
 

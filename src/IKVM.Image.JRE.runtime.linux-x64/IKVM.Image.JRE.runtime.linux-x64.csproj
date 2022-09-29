@@ -23,7 +23,7 @@
         <PublishProjectReference Include="..\IKVM.Image.JRE-bin\IKVM.Image.JRE-bin.csproj">
             <SetTargetFramework>TargetFramework=netcoreapp3.1</SetTargetFramework>
             <SetRuntimeIdentifier>RuntimeIdentifier=linux-x64</SetRuntimeIdentifier>
-            <ProjectPackagePath>content\netcoreapp3.1\ikvm\bin</ProjectPackagePath>
+            <ProjectPackagePath>ikvm\netcoreapp3.1\linux-x64\bin</ProjectPackagePath>
         </PublishProjectReference>
     </ItemGroup>
 

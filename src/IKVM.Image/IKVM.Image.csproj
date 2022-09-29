@@ -25,29 +25,29 @@
         </None>
         
         <!-- files directly part of this project -->
-        <None Include="content\any\**\*">
+        <None Include="ikvm\**\*">
             <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
             <TargetPath>%(RecursiveDir)%(Filename)%(Extension)</TargetPath>
             <Pack>true</Pack>
-            <PackagePath>content\any\%(RecursiveDir)%(Filename)%(Extension)</PackagePath>
+            <PackagePath>ikvm\%(RecursiveDir)%(Filename)%(Extension)</PackagePath>
         </None>
         
         <!-- solution level files -->
         <None Include="..\..\README.md;..\..\LICENSE.md;..\..\THIRD_PARTY_README;..\..\TRADEMARK">
-            <Link>content\any\ikvm\%(RecursiveDir)%(Filename)%(Extension)</Link>
+            <Link>ikvm\any\any\%(RecursiveDir)%(Filename)%(Extension)</Link>
             <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
             <TargetPath>ikvm\%(RecursiveDir)%(Filename)%(Extension)</TargetPath>
             <Pack>true</Pack>
-            <PackagePath>content\any\ikvm</PackagePath>
+            <PackagePath>ikvm\any\any\</PackagePath>
         </None>
         
         <!-- openjdk contents -->
         <None Include="@(OpenJdkImageContent)" Link="">
-            <Link>content\any\ikvm\%(ImagePath)</Link>
+            <Link>ikvm\any\any\%(ImagePath)</Link>
             <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
             <TargetPath>ikvm\%(ImagePath)</TargetPath>
             <Pack>true</Pack>
-            <PackagePath>$([System.IO.Path]::GetDirectoryName('content\any\ikvm\%(ImagePath)'))</PackagePath>
+            <PackagePath>$([System.IO.Path]::GetDirectoryName('ikvm\any\any\%(ImagePath)'))</PackagePath>
         </None>
     </ItemGroup>
 

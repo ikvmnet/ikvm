@@ -1,0 +1,19 @@
+<Project xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+    <PropertyGroup>
+        <MSBuildAllProjects>$(MSBuildAllProjects);$(MSBuildThisFileFullPath)</MSBuildAllProjects>
+    </PropertyGroup>
+
+    <ItemGroup>
+        <IkvmImageItem Include="$(MSBuildThisFileDirectory)..\ikvm\net461\win7-x86\**\*">
+            <TargetFramework>net461</TargetFramework>
+            <RuntimeIdentifier>win7-x86</RuntimeIdentifier>
+            <TargetPath>%(RecursiveDir)%(FileName)%(Extension)</TargetPath>
+        </IkvmImageItem>
+        <IkvmImageItem Include="$(MSBuildThisFileDirectory)..\ikvm\netcoreapp3.1\win7-x86\**\*">
+            <TargetFramework>netcoreapp3.1</TargetFramework>
+            <RuntimeIdentifier>win7-x86</RuntimeIdentifier>
+            <TargetPath>%(RecursiveDir)%(FileName)%(Extension)</TargetPath>
+        </IkvmImageItem>
+    </ItemGroup>
+
+</Project>

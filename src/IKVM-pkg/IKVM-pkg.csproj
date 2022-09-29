@@ -84,18 +84,18 @@
         </ProjectReference>
     </ItemGroup>
 
-    <ItemGroup>
+    <ItemGroup Condition=" '$(TargetFramework)' == '' ">
         <LibProjectReference Include="..\ikvm-native\ikvm-native-win.vcxproj">
             <SetPlatform>Platform=x64</SetPlatform>
-            <LibTargetPath>runtimes\win7-x64\native</LibTargetPath>
+            <LibPackagePath>runtimes\win7-x64\native</LibPackagePath>
         </LibProjectReference>
         <LibProjectReference Include="..\ikvm-native\ikvm-native-win.vcxproj">
             <SetPlatform>Platform=Win32</SetPlatform>
-            <LibTargetPath>runtimes\win7-x86\native</LibTargetPath>
+            <LibPackagePath>runtimes\win7-x86\native</LibPackagePath>
         </LibProjectReference>
         <LibProjectReference Include="..\ikvm-native\ikvm-native-linux.vcxproj">
             <SetPlatform>Platform=x64</SetPlatform>
-            <LibTargetPath>runtimes\linux-x64\native</LibTargetPath>
+            <LibPackagePath>runtimes\linux-x64\native</LibPackagePath>
         </LibProjectReference>
     </ItemGroup>
 
