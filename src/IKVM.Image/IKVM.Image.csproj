@@ -28,8 +28,7 @@
         <None Include="ikvm.properties">
             <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
             <Pack>true</Pack>
-            <BuildAction>None</BuildAction>
-            <PackageCopyToOutput>true</PackageCopyToOutput>
+            <PackagePath>content</PackagePath>
         </None>
 
         <!-- files directly part of this project -->

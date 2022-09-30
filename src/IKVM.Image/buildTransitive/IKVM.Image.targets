@@ -143,10 +143,22 @@
         </_IkvmImageItemDistinct>
     </Target>
 
+    <Target Name="GetDefaultIkvmPropertiesFile" BeforeTargets="AssignLinkMetadata;AssignTargetPaths">
+        <ItemGroup>
+            <None Include="$(MSBuildThisFileDirectory)..\content\ikvm.properties">
+                <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+                <TargetPath>ikvm.properties</TargetPath>
+                <Private>true</Private>
+                <Link>ikvm.properties</Link>
+            </None>
+        </ItemGroup>
+    </Target>
+
     <PropertyGroup>
         <AssignTargetPathsDependsOn>
             GetIkvmImageItemsForRuntimeIdentifier;
             GetIkvmImageItems;
+            GetDefaultIkvmPropertiesFile;
             $(AssignTargetPathsDependsOn);
         </AssignTargetPathsDependsOn>
     </PropertyGroup>
