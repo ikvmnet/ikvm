@@ -22,42 +22,9 @@
         <ProjectReference Include="..\IKVM.Runtime.JNI\IKVM.Runtime.JNI.csproj" />
         <ProjectReference Include="..\IKVM.Java\IKVM.Java.msbuildproj" />
         <ProjectReference Include="..\IKVM.Java.Extensions\IKVM.Java.Extensions.csproj" />
-    </ItemGroup>
-
-    <ItemGroup Condition=" '$(TargetFramework)' == 'net461' ">
-        <PublishProjectReference Include="..\java\java.csproj">
-            <SetTargetFramework>TargetFramework=net461</SetTargetFramework>
-            <PublishProperties>RuntimeIdentifier=win7-x64</PublishProperties>
-            <PublishTargetPath>ikvm\win7-x64\bin</PublishTargetPath>
-        </PublishProjectReference>
-        <PublishProjectReference Include="..\javac\javac.msbuildproj">
-            <SetTargetFramework>TargetFramework=net461</SetTargetFramework>
-            <PublishProperties>RuntimeIdentifier=win7-x64</PublishProperties>
-            <PublishTargetPath>ikvm\win7-x64\bin</PublishTargetPath>
-        </PublishProjectReference>
-    </ItemGroup>
-
-    <ItemGroup Condition=" '$(TargetFramework)' == 'netcoreapp3.1' ">
-        <PublishProjectReference Include="..\java\java.csproj">
-            <SetTargetFramework>TargetFramework=netcoreapp3.1</SetTargetFramework>
-            <PublishProperties>RuntimeIdentifier=win7-x64</PublishProperties>
-            <PublishTargetPath>ikvm\win7-x64\bin</PublishTargetPath>
-        </PublishProjectReference>
-        <PublishProjectReference Include="..\javac\javac.msbuildproj">
-            <SetTargetFramework>TargetFramework=netcoreapp3.1</SetTargetFramework>
-            <PublishProperties>RuntimeIdentifier=win7-x64</PublishProperties>
-            <PublishTargetPath>ikvm\win7-x64\bin</PublishTargetPath>
-        </PublishProjectReference>
-        <PublishProjectReference Include="..\java\java.csproj">
-            <SetTargetFramework>TargetFramework=netcoreapp3.1</SetTargetFramework>
-            <PublishProperties>RuntimeIdentifier=linux-x64</PublishProperties>
-            <PublishTargetPath>ikvm\linux-x64\bin</PublishTargetPath>
-        </PublishProjectReference>
-        <PublishProjectReference Include="..\javac\javac.msbuildproj">
-            <SetTargetFramework>TargetFramework=netcoreapp3.1</SetTargetFramework>
-            <PublishProperties>RuntimeIdentifier=linux-x64</PublishProperties>
-            <PublishTargetPath>ikvm\linux-x64\bin</PublishTargetPath>
-        </PublishProjectReference>
+        <ProjectReference Include="..\IKVM.Image\IKVM.Image.csproj" />
+        <ProjectReference Include="..\IKVM.Image.JRE\IKVM.Image.JRE.csproj" />
+        <ProjectReference Include="..\IKVM.Image.JDK\IKVM.Image.JDK.csproj" />
     </ItemGroup>
 
     <ItemGroup>
