@@ -120,14 +120,38 @@ final class VMSystemProperties
 
         }
 
-        // default value for ikvm.home
+        // lookup existing ikvm.home property
         String ikvmHome = p.getProperty("ikvm.home");
+
+        // calculate ikvm.home from ikvm.home.root
+        if (ikvmHome == null) {
+            String ikvmHomeRoot = p.getProperty("ikvm.home.root");
+            if (ikvmHomeRoot != null) {
+                String ikvmHomeRootPath = cli.System.IO.Path.Combine(runtimePath, ikvmHomeRoot);
+                if (cli.System.IO.Directory.Exists(ikvmHomeRootPath)) {
+                    String ikvmHomeArch = getIkvmHomeArch();
+                    if (ikvmHomeArch != null) {
+                        String ikvmHomePath = cli.System.IO.Path.Combine(ikvmHomeRootPath, ikvmHomeArch);
+                        if (cli.System.IO.Directory.Exists(ikvmHomePath)) {
+                            ikvmHome = cli.System.IO.Path.Combine(ikvmHomeRoot, ikvmHomeArch);
+                        }
+                    }
+                }
+            }
+        }
+
+        // default value for ikvm.home
         if (ikvmHome == null) {
             ikvmHome = "ikvm";
         }
         
         try {
-            ikvmHome = cli.System.IO.Path.GetFullPath(cli.System.IO.Path.Combine(runtimePath, ikvmHome));
+            // ensure ikvm.home is absolute
+            if (cli.System.IO.Path.IsPathRooted(ikvmHome) == false) {
+                ikvmHome = cli.System.IO.Path.GetFullPath(cli.System.IO.Path.Combine(runtimePath, ikvmHome));
+            }
+
+            // adjust ikvm.home and java.home to match
             p.setProperty("ikvm.home", ikvmHome);
             p.setProperty("java.home", ikvmHome);
         } catch (Exception _) {
@@ -441,6 +465,7 @@ final class VMSystemProperties
     
     private static native cli.System.Collections.IDictionary get_ImportProperties();
     private static native cli.System.Reflection.Assembly getRuntimeAssembly();
+    private static native String getIkvmHomeArch();
     private static native String getVirtualFileSystemRoot();
     private static native String getBootClassPath();
     private static native String getStdoutEncoding();

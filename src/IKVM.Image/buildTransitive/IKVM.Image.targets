@@ -44,7 +44,7 @@
         <IkvmImageRuntimeIdentifier Include="linux-x64" />
     </ItemGroup>
 
-    <Target Name="GetIkvmImageCopyToOutputDirectoryItemsForRuntimeIdentifier" Outputs="%(IkvmImageRuntimeIdentifier.Identity)">
+    <Target Name="GetIkvmImageItemsForRuntimeIdentifier" Outputs="%(IkvmImageRuntimeIdentifier.Identity)">
         <PropertyGroup>
             <_IkvmImageRuntimeIdentifier>%(IkvmImageRuntimeIdentifier.Identity)</_IkvmImageRuntimeIdentifier>
         </PropertyGroup>
@@ -62,26 +62,30 @@
         </ItemGroup>
     </Target>
 
-    <Target Name="GetIkvmImageCopyToOutputDirectoryItems" DependsOnTargets="GetIkvmImageCopyToOutputDirectoryItemsForRuntimeIdentifier">
+    <Target Name="GetIkvmImageItems" DependsOnTargets="GetIkvmImageItemsForRuntimeIdentifier" BeforeTargets="AssignLinkMetadata;AssignTargetPaths">
         <_IkvmImageItemDistinct Items="@(_IkvmImageContentWithTargetPath)">
             <Output TaskParameter="Items" ItemName="__IkvmImageContentWithTargetPath" />
         </_IkvmImageItemDistinct>
         
         <ItemGroup>
-            <ContentWithTargetPath Include="@(__IkvmImageContentWithTargetPath)" RemoveMetadata="RuntimeIdentifier;TargetFramework">
+            <None Include="@(__IkvmImageContentWithTargetPath)" RemoveMetadata="RuntimeIdentifier;TargetFramework">
+                <NuGetItemType>None</NuGetItemType>
                 <Pack>false</Pack>
-                <Private>false</Private>
                 <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
-            </ContentWithTargetPath>
+                <TargetPath>%(__IkvmImageContentWithTargetPath.TargetPath)</TargetPath>
+                <DestinationSubDirectory>$([System.IO.Path]::GetDirectoryName('%(__IkvmImageContentWithTargetPath.TargetPath)'))</DestinationSubDirectory>
+                <Private>true</Private>
+                <Link>%(__IkvmImageContentWithTargetPath.TargetPath)</Link>
+            </None>
         </ItemGroup>
     </Target>
 
     <PropertyGroup>
-        <GetCopyToOutputDirectoryItemsDependsOn>
-            GetIkvmImageCopyToOutputDirectoryItemsForRuntimeIdentifier;
-            GetIkvmImageCopyToOutputDirectoryItems;
-            $(GetCopyToOutputDirectoryItemsDependsOn);
-        </GetCopyToOutputDirectoryItemsDependsOn>
+        <AssignTargetPathsDependsOn>
+            GetIkvmImageItemsForRuntimeIdentifier;
+            GetIkvmImageItems;
+            $(AssignTargetPathsDependsOn);
+        </AssignTargetPathsDependsOn>
     </PropertyGroup>
 
 </Project>
