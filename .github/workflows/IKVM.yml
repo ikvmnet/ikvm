@@ -185,31 +185,39 @@ jobs:
           /p:CreateHardLinksForCopyLocalIfPossible=true `
           /p:CreateHardLinksForPublishFilesIfPossible=true `
           /p:ContinuousIntegrationBuild=true `
-          IKVM.artifacts.msbuildproj
+          IKVM.dist.msbuildproj
     - name: Upload NuGet Packages
       uses: actions/upload-artifact@v3
       with:
         name: nuget
-        path: build/nuget/*.nupkg
+        path: dist/nuget/*.nupkg
     - name: Package Binaries
       run: tar czvf bin.tar.gz bin
-      working-directory: build
+      working-directory: dist
     - name: Upload Binaries
       uses: actions/upload-artifact@v3
       with:
         name: bin
-        path: build/bin.tar.gz
+        path: dist/bin.tar.gz
     - name: Package Tools
       run: tar czvf tools.tar.gz tools
-      working-directory: build
+      working-directory: dist
     - name: Upload Tools
       uses: actions/upload-artifact@v3
       with:
         name: tools
-        path: build/tools.tar.gz
+        path: dist/tools.tar.gz
+    - name: Package Image
+      run: tar czvf image.tar.gz image
+      working-directory: dist
+    - name: Upload Image
+      uses: actions/upload-artifact@v3
+      with:
+        name: image
+        path: dist/image.tar.gz
     - name: Package Tests
       run: tar czvf tests.tar.gz tests
-      working-directory: build
+      working-directory: dist
     - name: Upload Tests
       uses: actions/upload-artifact@v3
       with:
@@ -267,10 +275,10 @@ jobs:
       uses: actions/download-artifact@v3
       with:
         name: tests
-        path: build
+        path: dist
     - name: Restore Tests
       run: tar xzvf tests.tar.gz
-      working-directory: build
+      working-directory: dist
     - name: Execute Tests
       shell: pwsh
       run: |
@@ -325,41 +333,52 @@ jobs:
       uses: actions/download-artifact@v3
       with:
         name: nuget
-        path: build/nuget
+        path: dist/nuget
     - name: Download Binaries
       uses: actions/download-artifact@v3
       with:
         name: bin
-        path: build
+        path: dist
     - name: Restore Binaries
       run: tar xzvf bin.tar.gz
-      working-directory: build
+      working-directory: dist
     - name: Compress Binaries
       shell: pwsh
-      run: cd build && gi bin/* | %{ $tfm = $_.Name; Push-Location "bin/$tfm"; zip -r "../IKVM-${env:GitVersion_SemVer}-bin-$tfm.zip" .; Pop-Location }
+      run: cd dist && gi bin/* | %{ $tfm = $_.Name; Push-Location "bin/$tfm"; zip -r "../IKVM-${env:GitVersion_SemVer}-bin-$tfm.zip" .; Pop-Location }
     - name: Download Tools
       uses: actions/download-artifact@v3
       with:
         name: tools
-        path: build
+        path: dist
     - name: Restore Tools
       run: tar xzvf tools.tar.gz
-      working-directory: build
+      working-directory: dist
     - name: Compress Tools
       shell: pwsh
-      run: cd build && gi tools/*/* | group { $_.Parent.Name } | %{ $tfm = $_.Name; $_.Group | %{ $rid=$_.Name; Push-Location "tools/$tfm/$rid"; zip -r "../../IKVM-${env:GitVersion_SemVer}-tools-$tfm-$rid.zip" .; Pop-Location  } }
+      run: cd dist && gi tools/*/* | group { $_.Parent.Name } | %{ $tfm = $_.Name; $_.Group | %{ $rid=$_.Name; Push-Location "tools/$tfm/$rid"; zip -r "../../IKVM-${env:GitVersion_SemVer}-tools-$tfm-$rid.zip" .; Pop-Location  } }
+    - name: Download Image
+      uses: actions/download-artifact@v3
+      with:
+        name: image
+        path: dist
+    - name: Restore Image
+      run: tar xzvf image.tar.gz
+      working-directory: dist
+    - name: Compress Image
+      shell: pwsh
+      run: cd dist && gi image/*/* | %{ $tfm = $_.Parent.Name; $rid = $_.Name; Push-Location "image/$tfm/$rid"; zip -r "../IKVM-${env:GitVersion_SemVer}-image-$tfm-$rid.zip" .; Pop-Location }
     - name: Create Release
       if: github.ref == 'refs/heads/master' || github.ref == 'refs/heads/main' || github.event.head_commit.message == '+prerelease'
       uses: ncipollo/release-action@v1.10.0
       with:
         tag: ${{ steps.GitVersion.outputs.semVer }}
-        artifacts: build/bin/*.zip,build/nuget/*.nupkg,build/tools/*.zip
+        artifacts: dist/bin/*.zip,dist/nuget/*.nupkg,dist/tools/*.zip
         generateReleaseNotes: true
         prerelease: ${{ github.ref == 'refs/heads/develop' }}
         token: ${{ secrets.GITHUB_TOKEN }}
     - name: Push NuGet (GitHub)
       shell: pwsh
-      run: dotnet nuget push build/nuget/*.nupkg --source $env:GITHUB_REPOS --api-key $env:GITHUB_TOKEN --skip-duplicate --no-symbols
+      run: dotnet nuget push dist/nuget/*.nupkg --source $env:GITHUB_REPOS --api-key $env:GITHUB_TOKEN --skip-duplicate --no-symbols
       env:
         GITHUB_REPOS: https://nuget.pkg.github.com/${{ github.repository_owner }}/index.json
         GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
@@ -367,14 +386,14 @@ jobs:
       shell: pwsh
       run: |
         dotnet nuget add source $env:AZUREDEVOPS_REPOS --name az --username az --password $env:AZUREDEVOPS_TOKEN --store-password-in-clear-text
-        dotnet nuget push build/nuget/*.nupkg --source az --api-key az --skip-duplicate --no-symbols
+        dotnet nuget push dist/nuget/*.nupkg --source az --api-key az --skip-duplicate --no-symbols
       env:
         AZUREDEVOPS_REPOS: https://pkgs.dev.azure.com/ikvm-revived/ikvm/_packaging/ikvm-ci/nuget/v3/index.json
         AZUREDEVOPS_TOKEN: ${{ secrets.AZUREDEVOPS_PAT }}
     - name: Push NuGet
       if: github.ref == 'refs/heads/master' || github.ref == 'refs/heads/main' || github.event.head_commit.message == '+prerelease'
       shell: pwsh
-      run: dotnet nuget push build/nuget/*.nupkg --source $env:NUGET_REPOS --api-key $env:NUGET_TOKEN --skip-duplicate
+      run: dotnet nuget push dist/nuget/*.nupkg --source $env:NUGET_REPOS --api-key $env:NUGET_TOKEN --skip-duplicate
       env:
         NUGET_REPOS: https://api.nuget.org/v3/index.json
         NUGET_TOKEN: ${{ secrets.NUGET_TOKEN }}

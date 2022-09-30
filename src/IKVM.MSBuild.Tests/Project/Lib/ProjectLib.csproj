@@ -9,10 +9,13 @@
     <PropertyGroup>
         <TargetFrameworks>net461;net48;netcoreapp3.1;net6.0</TargetFrameworks>
         <RuntimeIdentifiers>win7-x64;linux-x64</RuntimeIdentifiers>
+        <TargetFrameworks>net461;net472;net48;netcoreapp3.1;net5.0;net6.0</TargetFrameworks>
     </PropertyGroup>
 
     <ItemGroup>
         <PackageReference Include="IKVM" Version="$(PackageVersion)" />
+        <PackageReference Include="IKVM.Image.JRE" Version="$(PackageVersion)" />
+        <PackageReference Include="IKVM.Image.JDK" Version="$(PackageVersion)" />
     </ItemGroup>
 
     <ItemGroup>

@@ -101,6 +101,7 @@ namespace IKVM.MSBuild.Tests
             {
                 var options = new EnvironmentOptions();
                 options.DesignTime = false;
+                options.Arguments.Add("-bl");
                 options.TargetsToBuild.Clear();
                 options.TargetsToBuild.Add("Restore");
                 options.TargetsToBuild.Add("Clean");
@@ -114,6 +115,7 @@ namespace IKVM.MSBuild.Tests
 
                 var options = new EnvironmentOptions();
                 options.DesignTime = false;
+                options.Arguments.Add("-bl");
                 options.Restore = false;
                 options.GlobalProperties.Add("TargetFramework", tfm);
                 options.GlobalProperties.Add("RuntimeIdentifier", rid);

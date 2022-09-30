@@ -110,10 +110,10 @@ namespace IKVM.Runtime
             var arch = GetRuntimeIdentifierArch();
 
 #if NET461
-            yield return $"win-{arch}";
+            yield return $"win7-{arch}";
 #else
             if (RuntimeInformation.IsOSPlatform(OSPlatform.Windows))
-                yield return $"win-{arch}";
+                yield return $"win7-{arch}";
 
             if (RuntimeInformation.IsOSPlatform(OSPlatform.Linux))
                 yield return $"linux-{arch}";

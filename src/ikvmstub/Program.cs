@@ -1,6 +1,6 @@
 ﻿using System.Threading.Tasks;
 
-using IKVM.Tool.Exporter;
+using IKVM.Tools.Exporter;
 
 namespace ikvmstub
 {

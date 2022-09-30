@@ -1,10 +1,13 @@
 ﻿<Project>
     <PropertyGroup>
         <OpenJdkDir>$(MSBuildThisFileDirectory)openjdk</OpenJdkDir>
-        <OpenJdkImplementationVersion>1.8.0</OpenJdkImplementationVersion>
-        <OpenJdkSpecificationVersion>1.8</OpenJdkSpecificationVersion>
-        <OpenJdkFullVersion>1.8.0_45-b14</OpenJdkFullVersion>
         <OpenJdkVersion>OpenJDK 8u45 b14</OpenJdkVersion>
+        <OpenJdkFullVersion>1.8.0_45-b14</OpenJdkFullVersion>
+        <OpenJdkVendor>Oracle</OpenJdkVendor>
+        <OpenJdkImplementationVersion>1.8.0</OpenJdkImplementationVersion>
+        <OpenJdkImplementationVendor>Oracle Corporation</OpenJdkImplementationVendor>
+        <OpenJdkSpecificationVersion>1.8</OpenJdkSpecificationVersion>
+        <OpenJdkSpecificationVendor>Oracle Corporation</OpenJdkSpecificationVendor>
     </PropertyGroup>
 
     <ItemDefinitionGroup>
@@ -16005,13 +16008,18 @@
     </ItemGroup>
 
     <ItemGroup>
-        <VfsItem Include="$(OpenJdkDir)\build\linux-x86_64-normal-server-release\jdk\lib\*.properties" VfsPath="lib\%(Filename)%(Extension)" />
-        <VfsItem Include="$(OpenJdkDir)\build\linux-x86_64-normal-server-release\jdk\lib\tzdb.dat" VfsPath="lib\tzdb.dat" />
-        <VfsItem Include="$(OpenJdkDir)\build\linux-x86_64-normal-server-release\jdk\lib\currency.data" VfsPath="lib\currency.data" />
-        <VfsItem Include="$(OpenJdkDir)\build\linux-x86_64-normal-server-release\jdk\lib\cmm\**\*" VfsPath="lib\cmm\%(RecursiveDir)%(Filename)%(Extension)" />
-        <VfsItem Include="$(OpenJdkDir)\build\linux-x86_64-normal-server-release\jdk\lib\management\**\*" VfsPath="lib\management\%(RecursiveDir)%(Filename)%(Extension)" />
-        <VfsItem Include="$(OpenJdkDir)\build\linux-x86_64-normal-server-release\jdk\lib\security\**\*" VfsPath="lib\security\%(Filename)%(Extension)" />
-        <VfsItem Include="$(OpenJdkDir)\jdk\src\windows\lib\*" VfsPath="lib\%(Filename)%(Extension)" />
+        <OpenJdkImageContent Include="$(OpenJdkDir)\build\linux-x86_64-normal-server-release\jdk\lib\*.properties" ImagePath="lib\%(Filename)%(Extension)" />
+        <OpenJdkImageContent Remove="$(OpenJdkDir)\build\linux-x86_64-normal-server-release\jdk\lib\content-types.properties" />
+        <OpenJdkImageContent Remove="$(OpenJdkDir)\build\linux-x86_64-normal-server-release\jdk\lib\flavormap.properties" />
+        <OpenJdkImageContent Include="$(OpenJdkDir)\build\linux-x86_64-normal-server-release\jdk\lib\tzdb.dat" ImagePath="lib\tzdb.dat" />
+        <OpenJdkImageContent Include="$(OpenJdkDir)\build\linux-x86_64-normal-server-release\jdk\lib\currency.data" ImagePath="lib\currency.data" />
+        <OpenJdkImageContent Include="$(OpenJdkDir)\build\linux-x86_64-normal-server-release\jdk\lib\cmm\**\*" ImagePath="lib\cmm\%(RecursiveDir)%(Filename)%(Extension)" />
+        <OpenJdkImageContent Include="$(OpenJdkDir)\build\linux-x86_64-normal-server-release\jdk\lib\management\**\*" ImagePath="lib\management\%(RecursiveDir)%(Filename)%(Extension)" />
+        <OpenJdkImageContent Include="$(OpenJdkDir)\build\linux-x86_64-normal-server-release\jdk\lib\security\**\*" ImagePath="lib\security\%(Filename)%(Extension)" />
+        <OpenJdkImageContent Remove="$(OpenJdkDir)\build\linux-x86_64-normal-server-release\jdk\lib\security\cacerts" />
+        <OpenJdkImageContent Remove="$(OpenJdkDir)\build\linux-x86_64-normal-server-release\jdk\lib\security\local_policy.jar" />
+        <OpenJdkImageContent Include="$(OpenJdkDir)\build\linux-x86_64-normal-server-release\jdk\lib\security\US_export_policy.jar" ImagePath="lib\security\local_policy.jar" />
+        <OpenJdkImageContent Include="$(OpenJdkDir)\jdk\src\windows\lib\*" ImagePath="lib\%(Filename)%(Extension)" />
     </ItemGroup>
 
 </Project>
