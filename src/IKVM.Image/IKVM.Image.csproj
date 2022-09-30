@@ -30,12 +30,14 @@
         <None Include="..\..\README.md;..\..\LICENSE.md;..\..\THIRD_PARTY_README;..\..\TRADEMARK">
             <Pack>true</Pack>
             <PackagePath>ikvm\any\any\</PackagePath>
+            <Visible>false</Visible>
         </None>
 
         <!-- default IKVM properties -->
         <None Include="ikvm.properties">
             <Pack>true</Pack>
             <PackagePath>content\%(RecursiveDir)%(Filename)%(Extension)</PackagePath>
+            <Visible>false</Visible>
         </None>
 
         <!-- files directly part of this project -->
@@ -45,9 +47,10 @@
         </None>
 
         <!-- openjdk contents -->
-        <None Include="@(OpenJdkImageContent)" Link="">
+        <None Include="@(OpenJdkImageContent)">
             <Pack>true</Pack>
             <PackagePath>$([System.IO.Path]::GetDirectoryName('ikvm\any\any\%(ImagePath)'))</PackagePath>
+            <Link>ikvm\any\any\%(ImagePath)</Link>
         </None>
     </ItemGroup>
 
@@ -67,7 +70,7 @@
         </IkvmImageItem>
         
         <!-- files directly part of this project -->
-        <IkvmImageItem Include="$(MSBuildThisFileDirectory)ikvm\any\any\**\*">
+        <IkvmImageItem Include="ikvm\any\any\**\*">
             <TargetFramework>any</TargetFramework>
             <RuntimeIdentifier>any</RuntimeIdentifier>
             <TargetPath>%(RecursiveDir)%(FileName)%(Extension)</TargetPath>
