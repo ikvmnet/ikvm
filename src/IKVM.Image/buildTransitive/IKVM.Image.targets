@@ -16,6 +16,32 @@
         </When>
     </Choose>
 
+    <Choose>
+        <When Condition="$(RuntimeIdentifier.StartsWith('win'))">
+            <Choose>
+                <When Condition="$(RuntimeIdentifier.EndsWith('-x64'))">
+                    <PropertyGroup>
+                        <_IkvmImageRuntimeIdentifier>win7-x64</_IkvmImageRuntimeIdentifier>
+                    </PropertyGroup>
+                </When>
+                <When Condition="$(RuntimeIdentifier.EndsWith('-x86'))">
+                    <PropertyGroup>
+                        <_IkvmImageRuntimeIdentifier>win7-x86</_IkvmImageRuntimeIdentifier>
+                    </PropertyGroup>
+                </When>
+            </Choose>
+        </When>
+        <When Condition="$(RuntimeIdentifier.StartsWith('linux'))">
+            <Choose>
+                <When Condition="$(RuntimeIdentifier.EndsWith('-x64'))">
+                    <PropertyGroup>
+                        <_IkvmImageRuntimeIdentifier>linux-x64</_IkvmImageRuntimeIdentifier>
+                    </PropertyGroup>
+                </When>
+            </Choose>
+        </When>
+    </Choose>
+
     <!-- Adds an index value to each item. Can be used to ensure at least one unique metadata value is available on each item. -->
     <UsingTask TaskName="_IkvmImageItemDistinct" TaskFactory="RoslynCodeTaskFactory" AssemblyFile="$(MSBuildToolsPath)\Microsoft.Build.Tasks.Core.dll">
         <ParameterGroup>
@@ -37,27 +63,30 @@
             </Code>
         </Task>
     </UsingTask>
-    
+
     <ItemGroup>
-        <IkvmImageRuntimeIdentifier Include="win7-x64" />
-        <IkvmImageRuntimeIdentifier Include="win7-x86" />
-        <IkvmImageRuntimeIdentifier Include="linux-x64" />
+        <IkvmImageRuntimeIdentifiers Include="win7-x64" />
+        <IkvmImageRuntimeIdentifiers Include="win7-x86" />
+        <IkvmImageRuntimeIdentifiers Include="linux-x64" />
     </ItemGroup>
 
-    <Target Name="GetIkvmImageItemsForRuntimeIdentifier" Outputs="%(IkvmImageRuntimeIdentifier.Identity)">
+    <Target Name="GetIkvmImageItemsForRuntimeIdentifier" Outputs="%(IkvmImageRuntimeIdentifiers.Identity)">
         <PropertyGroup>
-            <_IkvmImageRuntimeIdentifier>%(IkvmImageRuntimeIdentifier.Identity)</_IkvmImageRuntimeIdentifier>
+            <_IkvmImageRuntimeIdentifiers>%(IkvmImageRuntimeIdentifiers.Identity)</_IkvmImageRuntimeIdentifiers>
         </PropertyGroup>
-        
+
         <ItemGroup>
             <_IkvmImageContentWithTargetPath Include="@(IkvmImageItem)" Condition=" '%(IkvmImageItem.TargetFramework)' == 'any' And '%(IkvmImageItem.RuntimeIdentifier)' == 'any' ">
-                <TargetPath>ikvm\$(_IkvmImageRuntimeIdentifier)\%(IkvmImageItem.TargetPath)</TargetPath>
+                <TargetFramework>$(_IkvmImageTargetFramework)</TargetFramework>
+                <RuntimeIdentifier>$(_IkvmImageRuntimeIdentifiers)</RuntimeIdentifier>
             </_IkvmImageContentWithTargetPath>
             <_IkvmImageContentWithTargetPath Include="@(IkvmImageItem)" Condition=" '%(IkvmImageItem.TargetFramework)' == '$(_IkvmImageTargetFramework)' And '%(IkvmImageItem.RuntimeIdentifier)' == 'any' ">
-                <TargetPath>ikvm\$(_IkvmImageRuntimeIdentifier)\%(IkvmImageItem.TargetPath)</TargetPath>
+                <TargetFramework>$(_IkvmImageTargetFramework)</TargetFramework>
+                <RuntimeIdentifier>$(_IkvmImageRuntimeIdentifiers)</RuntimeIdentifier>
             </_IkvmImageContentWithTargetPath>
-            <_IkvmImageContentWithTargetPath Include="@(IkvmImageItem)" Condition=" '%(IkvmImageItem.TargetFramework)' == '$(_IkvmImageTargetFramework)' And '%(IkvmImageItem.RuntimeIdentifier)' == '$(_IkvmImageRuntimeIdentifier)' ">
-                <TargetPath>ikvm\$(_IkvmImageRuntimeIdentifier)\%(IkvmImageItem.TargetPath)</TargetPath>
+            <_IkvmImageContentWithTargetPath Include="@(IkvmImageItem)" Condition=" '%(IkvmImageItem.TargetFramework)' == '$(_IkvmImageTargetFramework)' And '%(IkvmImageItem.RuntimeIdentifier)' == '$(_IkvmImageRuntimeIdentifiers)' ">
+                <TargetFramework>$(_IkvmImageTargetFramework)</TargetFramework>
+                <RuntimeIdentifier>$(_IkvmImageRuntimeIdentifiers)</RuntimeIdentifier>
             </_IkvmImageContentWithTargetPath>
         </ItemGroup>
     </Target>
@@ -66,16 +95,17 @@
         <_IkvmImageItemDistinct Items="@(_IkvmImageContentWithTargetPath)">
             <Output TaskParameter="Items" ItemName="__IkvmImageContentWithTargetPath" />
         </_IkvmImageItemDistinct>
-        
+
         <ItemGroup>
             <None Include="@(__IkvmImageContentWithTargetPath)" RemoveMetadata="RuntimeIdentifier;TargetFramework">
-                <NuGetItemType>None</NuGetItemType>
                 <Pack>false</Pack>
                 <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
-                <TargetPath>%(__IkvmImageContentWithTargetPath.TargetPath)</TargetPath>
-                <DestinationSubDirectory>$([System.IO.Path]::GetDirectoryName('%(__IkvmImageContentWithTargetPath.TargetPath)'))</DestinationSubDirectory>
+                <CopyToPublishDirectory>Never</CopyToPublishDirectory>
+                <CopyToPublishDirectory Condition=" '$(_IkvmImageRuntimeIdentifier)' == '%(__IkvmImageContentWithTargetPath.RuntimeIdentifier)' ">PreserveNewest</CopyToPublishDirectory>
+                <TargetPath>ikvm\%(__IkvmImageContentWithTargetPath.RuntimeIdentifier)\%(__IkvmImageContentWithTargetPath.TargetPath)</TargetPath>
+                <DestinationSubDirectory>$([System.IO.Path]::GetDirectoryName('ikvm\%(__IkvmImageContentWithTargetPath.RuntimeIdentifier)\%(__IkvmImageContentWithTargetPath.TargetPath)'))</DestinationSubDirectory>
                 <Private>true</Private>
-                <Link>%(__IkvmImageContentWithTargetPath.TargetPath)</Link>
+                <Link>ikvm\%(__IkvmImageContentWithTargetPath.RuntimeIdentifier)\%(__IkvmImageContentWithTargetPath.TargetPath)</Link>
             </None>
         </ItemGroup>
     </Target>
