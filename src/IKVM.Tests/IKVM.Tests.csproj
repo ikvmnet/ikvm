@@ -105,11 +105,13 @@
 
         <PublishProjectReference Include="..\ikvmc\ikvmc.csproj">
             <SetTargetFramework>TargetFramework=net461</SetTargetFramework>
-            <ProjectTargetPath>ikvmc\net461\any</ProjectTargetPath>
+            <SetRuntimeIdentifier>RuntimeIdentifier=win7-x64</SetRuntimeIdentifier>
+            <ProjectTargetPath>ikvmc\net461\win7-x64</ProjectTargetPath>
         </PublishProjectReference>
         <PublishProjectReference Include="..\ikvmstub\ikvmstub.csproj">
             <SetTargetFramework>TargetFramework=net461</SetTargetFramework>
-            <ProjectTargetPath>ikvmstub\net461\any</ProjectTargetPath>
+            <SetRuntimeIdentifier>RuntimeIdentifier=win7-x64</SetRuntimeIdentifier>
+            <ProjectTargetPath>ikvmstub\net461\win7-x64</ProjectTargetPath>
         </PublishProjectReference>
 
         <PublishProjectReference Include="..\ikvmc\ikvmc.csproj">
