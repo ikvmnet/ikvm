@@ -39,6 +39,8 @@
         <ProjectReference Include="..\IKVM.Runtime.JNI\IKVM.Runtime.JNI.csproj" />
         <ProjectReference Include="..\IKVM.Java\IKVM.Java.msbuildproj" />
         <ProjectReference Include="..\IKVM.Image\IKVM.Image.csproj" />
+        <ProjectReference Include="..\IKVM.Image.JRE\IKVM.Image.JRE.csproj" />
+        <ProjectReference Include="..\IKVM.Image.JDK\IKVM.Image.JDK.csproj" />
         <ProjectReference Include="..\IKVM.Tests.Util\IKVM.Tests.Util.csproj" />
         <ProjectReference Include="..\IKVM.Tools.Runner\IKVM.Tools.Runner.csproj" />
         <ProjectReference Include="..\IKVM.Util\IKVM.Util.csproj" />

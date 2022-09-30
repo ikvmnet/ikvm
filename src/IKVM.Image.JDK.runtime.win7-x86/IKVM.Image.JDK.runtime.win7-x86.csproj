@@ -32,4 +32,12 @@
         </PublishProjectReference>
     </ItemGroup>
 
+    <ItemGroup Condition=" '$(TargetFramework)' != '' ">
+        <PublishProjectReference Include="..\IKVM.Image.JDK-bin\IKVM.Image.JDK-bin.csproj">
+            <SetTargetFramework>TargetFramework=$(TargetFramework)</SetTargetFramework>
+            <SetRuntimeIdentifier>RuntimeIdentifier=win7-x86</SetRuntimeIdentifier>
+            <ProjectTargetPath>ikvm\win7-x86\bin</ProjectTargetPath>
+        </PublishProjectReference>
+    </ItemGroup>
+
 </Project>

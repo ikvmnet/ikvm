@@ -27,4 +27,12 @@
         </PublishProjectReference>
     </ItemGroup>
 
+    <ItemGroup Condition=" '$(TargetFramework)' != '' ">
+        <PublishProjectReference Include="..\IKVM.Image.JDK-bin\IKVM.Image.JDK-bin.csproj">
+            <SetTargetFramework>TargetFramework=$(TargetFramework)</SetTargetFramework>
+            <SetRuntimeIdentifier>RuntimeIdentifier=linux-x64</SetRuntimeIdentifier>
+            <ProjectTargetPath>ikvm\linux-x64\bin</ProjectTargetPath>
+        </PublishProjectReference>
+    </ItemGroup>
+
 </Project>
