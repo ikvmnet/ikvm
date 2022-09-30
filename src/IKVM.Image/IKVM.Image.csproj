@@ -24,6 +24,12 @@
             <PackagePath>.</PackagePath>
         </None>
         
+        <!-- default IKVM properties -->
+        <None Remove="ikvm.properties" />
+        <Content Include="ikvm.properties">
+          <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+        </Content>
+        
         <!-- files directly part of this project -->
         <None Include="ikvm\**\*">
             <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>

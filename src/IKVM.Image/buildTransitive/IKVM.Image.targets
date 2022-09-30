@@ -42,28 +42,6 @@
         </When>
     </Choose>
 
-    <!-- Adds an index value to each item. Can be used to ensure at least one unique metadata value is available on each item. -->
-    <UsingTask TaskName="_IkvmImageItemDistinct" TaskFactory="RoslynCodeTaskFactory" AssemblyFile="$(MSBuildToolsPath)\Microsoft.Build.Tasks.Core.dll">
-        <ParameterGroup>
-            <Items ParameterType="Microsoft.Build.Framework.ITaskItem[]" Required="true" Output="true" />
-        </ParameterGroup>
-        <Task>
-            <Using Namespace="System" />
-            <Using Namespace="System.Collections.Generic" />
-            <Code Type="Fragment" Language="cs">
-                <![CDATA[
-                var hs = new HashSet<string>();
-                var ls = new List<ITaskItem>();
-                foreach (var item in Items)
-                    if (hs.Add(item.GetMetadata("TargetPath")))
-                        ls.Add(item);
-                        
-                Items = ls.ToArray();
-                ]]>
-            </Code>
-        </Task>
-    </UsingTask>
-
     <ItemGroup>
         <IkvmImageRuntimeIdentifiers Include="win7-x64" />
         <IkvmImageRuntimeIdentifiers Include="win7-x86" />
@@ -92,10 +70,6 @@
     </Target>
 
     <Target Name="GetIkvmImageItems" DependsOnTargets="GetIkvmImageItemsForRuntimeIdentifier" BeforeTargets="AssignLinkMetadata;AssignTargetPaths">
-        <_IkvmImageItemDistinct Items="@(_IkvmImageContentWithTargetPath)">
-            <Output TaskParameter="Items" ItemName="__IkvmImageContentWithTargetPath" />
-        </_IkvmImageItemDistinct>
-
         <ItemGroup>
             <None Include="@(__IkvmImageContentWithTargetPath)" RemoveMetadata="RuntimeIdentifier;TargetFramework">
                 <Pack>false</Pack>
