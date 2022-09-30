@@ -55,7 +55,6 @@
             Source="$(LangVersion)"
             Target="$(JavaVersion)"
             Destination="$([System.IO.Path]::GetFullPath('$(ClassOutputPath)'))"
-            SetProperties="$(SystemProperties)"
             Verbose="true"
             Sources="@(Compile)" />
 
