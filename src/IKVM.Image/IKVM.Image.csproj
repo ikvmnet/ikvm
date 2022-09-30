@@ -23,13 +23,15 @@
             <Pack>true</Pack>
             <PackagePath>.</PackagePath>
         </None>
-        
+
         <!-- default IKVM properties -->
-        <None Remove="ikvm.properties" />
-        <Content Include="ikvm.properties">
-          <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
-        </Content>
-        
+        <None Include="ikvm.properties">
+            <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+            <Pack>true</Pack>
+            <BuildAction>None</BuildAction>
+            <PackageCopyToOutput>true</PackageCopyToOutput>
+        </None>
+
         <!-- files directly part of this project -->
         <None Include="ikvm\**\*">
             <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
@@ -37,7 +39,7 @@
             <Pack>true</Pack>
             <PackagePath>ikvm\%(RecursiveDir)%(Filename)%(Extension)</PackagePath>
         </None>
-        
+
         <!-- solution level files -->
         <None Include="..\..\README.md;..\..\LICENSE.md;..\..\THIRD_PARTY_README;..\..\TRADEMARK">
             <Link>ikvm\any\any\%(RecursiveDir)%(Filename)%(Extension)</Link>
@@ -46,7 +48,7 @@
             <Pack>true</Pack>
             <PackagePath>ikvm\any\any\</PackagePath>
         </None>
-        
+
         <!-- openjdk contents -->
         <None Include="@(OpenJdkImageContent)" Link="">
             <Link>ikvm\any\any\%(ImagePath)</Link>
