@@ -30,11 +30,17 @@
     </ItemGroup>
     
     <ItemGroup Condition=" '$(TargetFramework)' != '' ">
-        <PackageProjectReference Include="..\IKVM-pkg\IKVM-pkg.csproj" />
-        <PackageProjectReference Include="..\IKVM.Image\IKVM.Image.csproj" />
-        <PackageProjectReference Include="..\IKVM.Image.JRE\IKVM.Image.JRE.csproj" />
-        <PackageProjectReference Include="..\IKVM.Image.JDK\IKVM.Image.JDK.csproj" />
-        <PackageProjectReference Include="..\IKVM.MSBuild\IKVM.MSBuild.msbuildproj" />
+        <PackageProjectReference Include="..\IKVM.MSBuild\IKVM.MSBuild.msbuildproj" PackageTargetPath="nuget" />
+        <PackageProjectReference Include="..\IKVM-pkg\IKVM-pkg.csproj" PackageTargetPath="nuget" />
+        <PackageProjectReference Include="..\IKVM.Image\IKVM.Image.csproj" PackageTargetPath="nuget" />
+        <PackageProjectReference Include="..\IKVM.Image.JRE\IKVM.Image.JRE.csproj" PackageTargetPath="nuget" />
+        <PackageProjectReference Include="..\IKVM.Image.JRE.runtime.win7-x64\IKVM.Image.JRE.runtime.win7-x64.csproj" PackageTargetPath="nuget" />
+        <PackageProjectReference Include="..\IKVM.Image.JRE.runtime.win7-x86\IKVM.Image.JRE.runtime.win7-x86.csproj" PackageTargetPath="nuget" />
+        <PackageProjectReference Include="..\IKVM.Image.JRE.runtime.linux-x64\IKVM.Image.JRE.runtime.linux-x64.csproj" PackageTargetPath="nuget" />
+        <PackageProjectReference Include="..\IKVM.Image.JDK\IKVM.Image.JDK.csproj" PackageTargetPath="nuget" />
+        <PackageProjectReference Include="..\IKVM.Image.JDK.runtime.win7-x64\IKVM.Image.JDK.runtime.win7-x64.csproj" PackageTargetPath="nuget" />
+        <PackageProjectReference Include="..\IKVM.Image.JDK.runtime.win7-x86\IKVM.Image.JDK.runtime.win7-x86.csproj" PackageTargetPath="nuget" />
+        <PackageProjectReference Include="..\IKVM.Image.JDK.runtime.linux-x64\IKVM.Image.JDK.runtime.linux-x64.csproj" PackageTargetPath="nuget" />
     </ItemGroup>
 
     <Import Project="Sdk.targets" Sdk="Microsoft.NET.Sdk" />

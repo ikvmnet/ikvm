@@ -22,6 +22,8 @@
   
 */
 
+using System;
+
 namespace IKVM.Java.Externs.java.lang
 {
 
@@ -67,7 +69,7 @@ namespace IKVM.Java.Externs.java.lang
         public static string mapLibraryName(string libname)
         {
 #if FIRST_PASS
-            return null;
+            throw new NotImplementedException();
 #else
             if (libname == null)
             {

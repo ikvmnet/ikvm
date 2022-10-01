@@ -53,20 +53,8 @@
     </ItemGroup>
 
     <ItemGroup>
-        <T4ParameterValues Include="OpenJdkImplementationVersion">
-            <Value>$(OpenJdkImplementationVersion)</Value>
-            <Visible>False</Visible>
-        </T4ParameterValues>
-        <T4ParameterValues Include="OpenJdkSpecificationVersion">
-            <Value>$(OpenJdkSpecificationVersion)</Value>
-            <Visible>False</Visible>
-        </T4ParameterValues>
-        <T4ParameterValues Include="OpenJdkFullVersion">
-            <Value>$(OpenJdkFullVersion)</Value>
-            <Visible>False</Visible>
-        </T4ParameterValues>
-        <T4ParameterValues Include="OpenJdkVersion">
-            <Value>$(OpenJdkVersion)</Value>
+        <T4ParameterValues Include="Name">
+            <Value>$(ProductName)</Value>
             <Visible>False</Visible>
         </T4ParameterValues>
         <T4ParameterValues Include="Version">
@@ -75,6 +63,42 @@
         </T4ParameterValues>
         <T4ParameterValues Include="FileVersion">
             <Value>$(FileVersion)</Value>
+            <Visible>False</Visible>
+        </T4ParameterValues>
+        <T4ParameterValues Include="VendorUrl">
+            <Value>$(PackageProjectUrl)</Value>
+            <Visible>False</Visible>
+        </T4ParameterValues>
+        <T4ParameterValues Include="VendorUrlBug">
+            <Value>$(PackageProjectUrl)/issues/</Value>
+            <Visible>False</Visible>
+        </T4ParameterValues>
+        <T4ParameterValues Include="OpenJdkVersion">
+            <Value>$(OpenJdkVersion)</Value>
+            <Visible>False</Visible>
+        </T4ParameterValues>
+        <T4ParameterValues Include="OpenJdkFullVersion">
+            <Value>$(OpenJdkFullVersion)</Value>
+            <Visible>False</Visible>
+        </T4ParameterValues>
+        <T4ParameterValues Include="OpenJdkVendor">
+            <Value>$(OpenJdkVendor)</Value>
+            <Visible>False</Visible>
+        </T4ParameterValues>
+        <T4ParameterValues Include="OpenJdkImplementationVendor">
+            <Value>$(OpenJdkImplementationVendor)</Value>
+            <Visible>False</Visible>
+        </T4ParameterValues>
+        <T4ParameterValues Include="OpenJdkImplementationVersion">
+            <Value>$(OpenJdkImplementationVersion)</Value>
+            <Visible>False</Visible>
+        </T4ParameterValues>
+        <T4ParameterValues Include="OpenJdkSpecificationVersion">
+            <Value>$(OpenJdkSpecificationVersion)</Value>
+            <Visible>False</Visible>
+        </T4ParameterValues>
+        <T4ParameterValues Include="OpenJdkSpecificationVendor">
+            <Value>$(OpenJdkSpecificationVendor)</Value>
             <Visible>False</Visible>
         </T4ParameterValues>
     </ItemGroup>

@@ -23,6 +23,7 @@
 */
 using System;
 using System.Collections;
+using System.Collections.Generic;
 using System.Diagnostics;
 using System.Reflection;
 using System.Runtime.InteropServices;
@@ -41,9 +42,52 @@ namespace IKVM.Java.Externs.java.lang
         /// </summary>
         public static IDictionary ImportProperties { get; set; }
 
+        /// <summary>
+        /// Gets the <see cref="Assembly"/> of the runtime.
+        /// </summary>
+        /// <returns></returns>
+        public static Assembly getRuntimeAssembly()
+        {
+            return typeof(VMSystemProperties).Assembly;
+        }
+
+        /// <summary>
+        /// Gets the RID architecture.
+        /// </summary>
+        /// <returns></returns>
+        static string GetRuntimeIdentifierArch() => IntPtr.Size switch
+        {
+            4 => "x86",
+            8 => "x64",
+            _ => throw new NotSupportedException(),
+        };
+
+        /// <summary>
+        /// Returns the architecture name of the ikvm.home directory to use for this run.
+        /// </summary>
+        /// <returns></returns>
+        public static string getIkvmHomeArch()
+        {
+#if NETFRAMEWORK
+            return $"win7-{GetRuntimeIdentifierArch()}";
+#else
+            if (RuntimeInformation.IsOSPlatform(OSPlatform.Windows))
+                return $"win7-{GetRuntimeIdentifierArch()}";
+
+            if (RuntimeInformation.IsOSPlatform(OSPlatform.Linux))
+                return $"linux-{GetRuntimeIdentifierArch()}";
+#endif
+
+            return null;
+        }
+
+        /// <summary>
+        /// Gets the path to the root of the VFS.
+        /// </summary>
+        /// <returns></returns>
         public static string getVirtualFileSystemRoot()
         {
-            return VfsTable.HomePath;
+            return VfsTable.RootPath;
         }
 
         public static string getBootClassPath()
@@ -81,35 +125,16 @@ namespace IKVM.Java.Externs.java.lang
         {
             if (Environment.OSVersion.Platform != PlatformID.Win32NT)
                 return false;
-
-            // these properties are available starting with .NET 4.5
-            var pi = typeof(Console).GetProperty(stdout ? "IsOutputRedirected" : "IsErrorRedirected");
-            if (pi != null)
-                return !(bool)pi.GetValue(null, null);
-
-            const int STD_OUTPUT_HANDLE = -11;
-            const int STD_ERROR_HANDLE = -12;
-            var handle = GetStdHandle(stdout ? STD_OUTPUT_HANDLE : STD_ERROR_HANDLE);
-            if (handle == IntPtr.Zero)
-                return false;
-
-            const int FILE_TYPE_CHAR = 2;
-            return GetFileType(handle) == FILE_TYPE_CHAR;
+            else
+                return stdout ? !Console.IsOutputRedirected : !Console.IsErrorRedirected;
         }
 
         static string GetConsoleEncoding()
         {
-            int codepage = Console.InputEncoding.CodePage;
-            return codepage >= 847 && codepage <= 950
-                ? "ms" + codepage
-                : "cp" + codepage;
+            var codepage = Console.InputEncoding.CodePage;
+            return codepage is >= 847 and <= 950 ? $"ms{codepage}" : $"cp{codepage}";
         }
 
-        [DllImport("kernel32")]
-        static extern int GetFileType(IntPtr hFile);
-
-        [DllImport("kernel32")]
-        static extern IntPtr GetStdHandle(int nStdHandle);
 
     }
 

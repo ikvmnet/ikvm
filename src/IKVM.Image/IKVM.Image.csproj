@@ -1,4 +1,5 @@
-﻿<Project Sdk="Microsoft.Build.NoTargets/3.5.6">
+﻿<Project >
+    <Import Sdk="Microsoft.Build.NoTargets" Version="3.5.6" Project="Sdk.props" />
     <Import Project="..\..\openjdk.props" />
 
     <PropertyGroup>
@@ -6,6 +7,7 @@
         <PackageLicenseFile>LICENSE.md</PackageLicenseFile>
         <PackageReadmeFile>README.md</PackageReadmeFile>
         <Description>IKVM Runtime Image</Description>
+        <NoWarn>NU5118</NoWarn>
     </PropertyGroup>
 
     <PropertyGroup>
@@ -13,19 +15,76 @@
         <EmbedUntrackedSources>true</EmbedUntrackedSources>
     </PropertyGroup>
 
+    <!-- items to package -->
     <ItemGroup>
-        <None Include="..\..\LICENSE.md" Pack="true" PackagePath="." />
-        <None Include="README.md" Pack="true" PackagePath="." />
-        <None Include="buildTransitive\**\*" Pack="true" PackagePath="buildTransitive\%(RecursiveDir)%(Filename)%(Extension)" />
-        <None Include="lib\**\*" Pack="true" PackagePath="lib\%(RecursiveDir)%(Filename)%(Extension)" />
-        <None Include="content\any\**\*" Pack="true" PackagePath="content\any\%(RecursiveDir)%(Filename)%(Extension)">
-            <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
-            <TargetPath>%(RecursiveDir)%(Filename)%(Extension)</TargetPath>
+        <None Include="buildTransitive\**\*">
+            <Pack>true</Pack>
+            <PackagePath>buildTransitive\%(RecursiveDir)%(Filename)%(Extension)</PackagePath>
         </None>
-        <None Include="@(VfsItem)" Link="content\any\ikvm\%(VfsPath)" Pack="true" PackagePath="$([System.IO.Path]::GetDirectoryName('content\any\ikvm\%(VfsPath)'))">
-            <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
-            <TargetPath>ikvm\%(VfsPath)</TargetPath>
+        <None Include="README.md;..\..\LICENSE.md">
+            <Pack>true</Pack>
+            <PackagePath>.</PackagePath>
+        </None>
+
+        <!-- solution level files -->
+        <None Include="..\..\README.md;..\..\LICENSE.md;..\..\THIRD_PARTY_README;..\..\TRADEMARK">
+            <Pack>true</Pack>
+            <PackagePath>ikvm\any\any\</PackagePath>
+            <Visible>false</Visible>
+        </None>
+
+        <!-- default IKVM properties -->
+        <None Include="ikvm.properties">
+            <Pack>true</Pack>
+            <PackagePath>content\%(RecursiveDir)%(Filename)%(Extension)</PackagePath>
+            <Visible>false</Visible>
+        </None>
+
+        <!-- files directly part of this project -->
+        <None Include="ikvm\**\*">
+            <Pack>true</Pack>
+            <PackagePath>ikvm\%(RecursiveDir)%(Filename)%(Extension)</PackagePath>
+        </None>
+
+        <!-- openjdk contents -->
+        <None Include="@(OpenJdkImageContent)">
+            <Pack>true</Pack>
+            <PackagePath>$([System.IO.Path]::GetDirectoryName('ikvm\any\any\%(ImagePath)'))</PackagePath>
+            <Link>ikvm\any\any\%(ImagePath)</Link>
         </None>
     </ItemGroup>
 
+    <!-- items to output -->
+    <ItemGroup>
+
+        <!-- default IKVM properties -->
+        <None Include="ikvm.properties">
+            <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+        </None>
+        
+        <!-- solution level files -->
+        <IkvmImageItem Include="..\..\README.md;..\..\LICENSE.md;..\..\THIRD_PARTY_README;..\..\TRADEMARK">
+            <TargetFramework>any</TargetFramework>
+            <RuntimeIdentifier>any</RuntimeIdentifier>
+            <TargetPath>%(Filename)%(Extension)</TargetPath>
+        </IkvmImageItem>
+        
+        <!-- files directly part of this project -->
+        <IkvmImageItem Include="ikvm\any\any\**\*">
+            <TargetFramework>any</TargetFramework>
+            <RuntimeIdentifier>any</RuntimeIdentifier>
+            <TargetPath>%(RecursiveDir)%(FileName)%(Extension)</TargetPath>
+        </IkvmImageItem>
+        
+        <!-- openjdk contents -->
+        <IkvmImageItem Include="@(OpenJdkImageContent)" Link="">
+            <TargetFramework>any</TargetFramework>
+            <RuntimeIdentifier>any</RuntimeIdentifier>
+            <TargetPath>%(ImagePath)</TargetPath>
+        </IkvmImageItem>
+    
+    </ItemGroup>
+
+    <Import Sdk="Microsoft.Build.NoTargets" Version="3.5.6" Project="Sdk.targets" />
+    <Import Project="buildTransitive\IKVM.Image.targets" />
 </Project>

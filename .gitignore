@@ -242,5 +242,6 @@ ModelManifest.xml
 .fake/
 
 # Ignore build output
-/build/
+/dist/
 /.ikvm/
+/msbuild.binlog
