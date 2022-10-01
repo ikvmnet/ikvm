@@ -97,10 +97,6 @@
         </TargetsForPublish>
         <TargetsForPublish Include="$(SolutionFile)">
             <Targets>ikvmc_Tests:Publish</Targets>
-            <Properties>TargetFramework=net5.0;PublishDir=$(DistDir)\tests\ikvmc.Tests\net5.0</Properties>
-        </TargetsForPublish>
-        <TargetsForPublish Include="$(SolutionFile)">
-            <Targets>ikvmc_Tests:Publish</Targets>
             <Properties>TargetFramework=net6.0;PublishDir=$(DistDir)\tests\ikvmc.Tests\net6.0</Properties>
         </TargetsForPublish>
 
