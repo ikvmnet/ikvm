@@ -343,7 +343,7 @@ jobs:
       working-directory: dist
     - name: Compress Tools
       shell: pwsh
-      run: cd dist && gi tools/*/* | group { $_.Parent.Name } | %{ $tfm = $_.Name; $_.Group | %{ $rid=$_.Name; Push-Location "tools/$tfm/$rid"; zip -r "../../IKVM-${env:GitVersion_SemVer}-tools-$tfm-$rid.zip" .; Pop-Location  } }
+      run: cd dist && gi tools/*/* | %{ $tfm = $_.Parent.Name; $rid = $_.Name; Push-Location "tools/$tfm/$rid"; zip -r "../IKVM-${env:GitVersion_SemVer}-tools-$tfm-$rid.zip" .; Pop-Location }
     - name: Download Image
       uses: actions/download-artifact@v3
       with:
