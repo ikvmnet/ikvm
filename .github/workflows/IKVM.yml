@@ -343,7 +343,7 @@ jobs:
       working-directory: dist
     - name: Compress Tools
       shell: pwsh
-      run: cd dist && gi tools/*/* | %{ $tfm = $_.Parent.Name; $rid = $_.Name; Push-Location "tools/$tfm/$rid"; zip -r "../IKVM-${env:GitVersion_SemVer}-tools-$tfm-$rid.zip" .; Pop-Location }
+      run: cd dist && gi tools/*/* | %{ $tfm = $_.Parent.Name; $rid = $_.Name; Push-Location "tools/$tfm/$rid"; zip -r "../../IKVM-${env:GitVersion_SemVer}-tools-$tfm-$rid.zip" .; Pop-Location }
     - name: Download Image
       uses: actions/download-artifact@v3
       with:
@@ -354,7 +354,7 @@ jobs:
       working-directory: dist
     - name: Compress Image
       shell: pwsh
-      run: cd dist && gi image/*/* | %{ $tfm = $_.Parent.Name; $rid = $_.Name; Push-Location "image/$tfm/$rid"; zip -r "../IKVM-${env:GitVersion_SemVer}-image-$tfm-$rid.zip" .; Pop-Location }
+      run: cd dist && gi image/*/* | %{ $tfm = $_.Parent.Name; $rid = $_.Name; Push-Location "image/$tfm/$rid"; zip -r "../../IKVM-${env:GitVersion_SemVer}-image-$tfm-$rid.zip" .; Pop-Location }
     - name: Create Release
       if: github.ref == 'refs/heads/master' || github.ref == 'refs/heads/main' || github.event.head_commit.message == '+prerelease'
       uses: ncipollo/release-action@v1.10.0
