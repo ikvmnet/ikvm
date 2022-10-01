@@ -34,22 +34,6 @@ namespace IKVM.JTReg.TestAdapter
         protected const string ENV_PREFIX = "JTREG_";
 
         protected static readonly MD5 MD5 = MD5.Create();
-        protected static readonly string IKVM_JDK_DIR = GetIkvmJdkDir();
-
-        /// <summary>
-        /// Returns the appropriate IKVM JDK directory based on the platform.
-        /// </summary>
-        /// <returns></returns>
-        /// <exception cref="PlatformNotSupportedException"></exception>
-        protected static string GetIkvmJdkDir()
-        {
-            if (RuntimeInformation.IsOSPlatform(OSPlatform.Windows))
-                return Path.Combine(Path.GetDirectoryName(typeof(IkvmJTRegTestAdapter).Assembly.Location), "ikvm", "win7-x64");
-            if (RuntimeInformation.IsOSPlatform(OSPlatform.Linux))
-                return Path.Combine(Path.GetDirectoryName(typeof(IkvmJTRegTestAdapter).Assembly.Location), "ikvm", "linux-x64");
-
-            throw new PlatformNotSupportedException("No IKVM JDK installation for platform.");
-        }
 
         protected static readonly string[] DEFAULT_WINDOWS_ENV_VARS = { "PATH", "SystemDrive", "SystemRoot", "windir", "TMP", "TEMP", "TZ" };
         protected static readonly string[] DEFAULT_UNIX_ENV_VARS = { "PATH", "DISPLAY", "GNOME_DESKTOP_SESSION_ID", "HOME", "LANG", "LC_ALL", "LC_CTYPE", "LPDEST", "PRINTER", "TZ", "XMODIFIERS" };
@@ -189,7 +173,7 @@ namespace IKVM.JTReg.TestAdapter
             rp.setTests((java.util.Set)testManager.getTests(testSuite));
             rp.setExecMode(testSuite.getDefaultExecMode() ?? JTRegTypes.ExecMode.OTHERVM);
             rp.setCheck(false);
-            rp.setCompileJDK(JTRegTypes.JDK.Of(new java.io.File(IKVM_JDK_DIR)));
+            rp.setCompileJDK(JTRegTypes.JDK.Of(new java.io.File(java.lang.System.getProperty("java.home"))));
             rp.setTestJDK(rp.getCompileJDK());
             rp.setTestCompilerOptions(java.util.Collections.emptyList());
             rp.setFile((java.io.File)wd.getFile("config.jti"));
