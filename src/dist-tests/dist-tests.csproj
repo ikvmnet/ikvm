@@ -6,34 +6,42 @@
     </PropertyGroup>
 
     <ItemGroup>
-        <ImageTarget Include="net48|win7-x64" TargetFramework="net48" RuntimeIdentifier="win7-x64" />
-        <ImageTarget Include="net48|win7-x86" TargetFramework="net48" RuntimeIdentifier="win7-x86" />
-        <ImageTarget Include="netcoreapp3.1|win7-x64" TargetFramework="netcoreapp3.1" RuntimeIdentifier="win7-x64" />
-        <ImageTarget Include="netcoreapp3.1|win7-x86" TargetFramework="netcoreapp3.1" RuntimeIdentifier="win7-x86" />
-        <ImageTarget Include="netcoreapp3.1|linux-x64" TargetFramework="netcoreapp3.1" RuntimeIdentifier="linux-x64" />
-        <ImageTarget Include="net5.0|win7-x64" TargetFramework="net5.0" RuntimeIdentifier="win7-x64" />
-        <ImageTarget Include="net5.0|win7-x86" TargetFramework="net5.0" RuntimeIdentifier="win7-x86" />
-        <ImageTarget Include="net5.0|linux-x64" TargetFramework="net5.0" RuntimeIdentifier="linux-x64" />
-        <ImageTarget Include="net6.0|win7-x64" TargetFramework="net6.0" RuntimeIdentifier="win7-x64" />
-        <ImageTarget Include="net6.0|win7-x86" TargetFramework="net6.0" RuntimeIdentifier="win7-x86" />
-        <ImageTarget Include="net6.0|linux-x64" TargetFramework="net6.0" RuntimeIdentifier="linux-x64" />
+        <TestTarget Include="IKVM.Tests|net461" ProjectName="IKVM.Tests" TargetFramework="net461" />
+        <TestTarget Include="IKVM.Tests|net48" ProjectName="IKVM.Tests" TargetFramework="net48" />
+        <TestTarget Include="IKVM.Tests|netcoreapp3.1" ProjectName="IKVM.Tests" TargetFramework="netcoreapp3.1" />
+        <TestTarget Include="IKVM.Tests|net6.0" ProjectName="IKVM.Tests" TargetFramework="net6.0" />
+        <TestTarget Include="ikvmc.Tests|net461" ProjectName="ikvmc.Tests" TargetFramework="net461" />
+        <TestTarget Include="ikvmc.Tests|netcoreapp3.1" ProjectName="ikvmc.Tests" TargetFramework="netcoreapp3.1" />
+        <TestTarget Include="IKVM.Tools.Tests|net461" ProjectName="IKVM.Tools.Tests" TargetFramework="net461" />
+        <TestTarget Include="IKVM.Tools.Tests|net48" ProjectName="IKVM.Tools.Tests" TargetFramework="net48" />
+        <TestTarget Include="IKVM.Tools.Tests|netcoreapp3.1" ProjectName="IKVM.Tools.Tests" TargetFramework="netcoreapp3.1" />
+        <TestTarget Include="IKVM.Tools.Tests|net6.0" ProjectName="IKVM.Tools.Tests" TargetFramework="net6.0" />
+        <TestTarget Include="IKVM.Tools.Exporter.Tests|net461" ProjectName="IKVM.Tools.Exporter.Tests" TargetFramework="net461" />
+        <TestTarget Include="IKVM.Tools.Exporter.Tests|netcoreapp3.1" ProjectName="IKVM.Tools.Exporter.Tests" TargetFramework="netcoreapp3.1" />
+        <TestTarget Include="IKVM.MSBuild.Tasks.Tests|net472" ProjectName="IKVM.MSBuild.Tasks.Tests" TargetFramework="net472" />
+        <TestTarget Include="IKVM.MSBuild.Tasks.Tests|net48" ProjectName="IKVM.MSBuild.Tasks.Tests" TargetFramework="net48" />
+        <TestTarget Include="IKVM.MSBuild.Tasks.Tests|netcoreapp3.1" ProjectName="IKVM.MSBuild.Tasks.Tests" TargetFramework="netcoreapp3.1" />
+        <TestTarget Include="IKVM.MSBuild.Tasks.Tests|net6.0" ProjectName="IKVM.MSBuild.Tasks.Tests" TargetFramework="net6.0" />
+        <TestTarget Include="IKVM.MSBuild.Tests|net6.0" ProjectName="IKVM.MSBuild.Tests" TargetFramework="net6.0" />
+        <TestTarget Include="IKVM.NET.Sdk.Tests|net6.0" ProjectName="IKVM.NET.Sdk.Tests" TargetFramework="net6.0" />
     </ItemGroup>
 
     <!-- Runs once per TFM/RID combination to generate individual output. -->
-    <Target Name="GetCopyToOutputDirectoryItemsByImageTarget" BeforeTargets="BeforeBuild" Inputs="@(ImageTarget)" Outputs="%(Identity)\null">
+    <Target Name="GetCopyToOutputDirectoryItemsByTestTarget" BeforeTargets="BeforeBuild" Inputs="@(TestTarget)" Outputs="%(Identity)\null">
 
         <!-- batch values to properties -->
         <PropertyGroup>
-            <_TargetFramework>%(ImageTarget.TargetFramework)</_TargetFramework>
-            <_RuntimeIdentifier>%(ImageTarget.RuntimeIdentifier)</_RuntimeIdentifier>
+            <_ProjectName>%(TestTarget.ProjectName)</_ProjectName>
+            <_ProjectFile>%(TestTarget.ProjectFile)</_ProjectFile>
+            <_ProjectFile Condition=" '$(_ProjectFile)' == '' ">..\$(_ProjectName)\$(_ProjectName).csproj</_ProjectFile>
+            <_TargetFramework>%(TestTarget.TargetFramework)</_TargetFramework>
         </PropertyGroup>
 
         <!-- output for the TFM/RID -->
         <ItemGroup>
-            <PublishProjectReference Include="..\IKVM.Tests\IKVM.Tests.csproj">
+            <PublishProjectReference Include="$(_ProjectFile)">
                 <SetTargetFramework>TargetFramework=$(_TargetFramework)</SetTargetFramework>
-                <SetRuntimeIdentifier>RuntimeIdentifier=$(_RuntimeIdentifier)</SetRuntimeIdentifier>
-                <ProjectTargetPath>IKVM.Tests\$(_TargetFramework)\$(_RuntimeIdentifier)</ProjectTargetPath>
+                <ProjectTargetPath>$(_ProjectName)\$(_TargetFramework)</ProjectTargetPath>
             </PublishProjectReference>
         </ItemGroup>
     </Target>

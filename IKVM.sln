@@ -139,6 +139,8 @@ Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "javac-ref", "src\javac-ref\
 EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "dist-tools", "src\dist-tools\dist-tools.csproj", "{BEB24DF0-A5AA-4FF4-BEBE-82600BA01E15}"
 EndProject
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "dist-tests", "src\dist-tests\dist-tests.csproj", "{7B499B90-6AE8-48E8-976A-2B84945E26ED}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -853,6 +855,18 @@ Global
 		{BEB24DF0-A5AA-4FF4-BEBE-82600BA01E15}.Release|x64.Build.0 = Release|Any CPU
 		{BEB24DF0-A5AA-4FF4-BEBE-82600BA01E15}.Release|x86.ActiveCfg = Release|Any CPU
 		{BEB24DF0-A5AA-4FF4-BEBE-82600BA01E15}.Release|x86.Build.0 = Release|Any CPU
+		{7B499B90-6AE8-48E8-976A-2B84945E26ED}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{7B499B90-6AE8-48E8-976A-2B84945E26ED}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{7B499B90-6AE8-48E8-976A-2B84945E26ED}.Debug|x64.ActiveCfg = Debug|Any CPU
+		{7B499B90-6AE8-48E8-976A-2B84945E26ED}.Debug|x64.Build.0 = Debug|Any CPU
+		{7B499B90-6AE8-48E8-976A-2B84945E26ED}.Debug|x86.ActiveCfg = Debug|Any CPU
+		{7B499B90-6AE8-48E8-976A-2B84945E26ED}.Debug|x86.Build.0 = Debug|Any CPU
+		{7B499B90-6AE8-48E8-976A-2B84945E26ED}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{7B499B90-6AE8-48E8-976A-2B84945E26ED}.Release|Any CPU.Build.0 = Release|Any CPU
+		{7B499B90-6AE8-48E8-976A-2B84945E26ED}.Release|x64.ActiveCfg = Release|Any CPU
+		{7B499B90-6AE8-48E8-976A-2B84945E26ED}.Release|x64.Build.0 = Release|Any CPU
+		{7B499B90-6AE8-48E8-976A-2B84945E26ED}.Release|x86.ActiveCfg = Release|Any CPU
+		{7B499B90-6AE8-48E8-976A-2B84945E26ED}.Release|x86.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
