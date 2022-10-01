@@ -249,14 +249,15 @@ jobs:
         - IKVM.Java.Tests?TestPartition=14
         - IKVM.Java.Tests?TestPartition=15
         - IKVM.Tests
-        - IKVM.Tool.Exporter.Tests
-        - IKVM.Tool.Tests
         - ikvmc.Tests
+        - IKVM.Tools.Exporter.Tests
+        - IKVM.Tools.Tests
         - IKVM.MSBuild.Tasks.Tests
         - IKVM.MSBuild.Tests
         - IKVM.NET.Sdk.Tests
         tfm:
         - net461
+        - net472
         - net48
         - netcoreapp3.1
         - net6.0
