@@ -227,7 +227,7 @@ jobs:
       uses: actions/upload-artifact@v3
       with:
         name: tests
-        path: build/tests.tar.gz
+        path: dist/tests.tar.gz
   test-ikvm:
     strategy:
       matrix:
@@ -248,6 +248,13 @@ jobs:
         sys:
         - windows
         - ubuntu
+        exclude:
+        - sys: ubuntu
+          tfm: net461
+        - sys: ubuntu
+          tfm: net472
+        - sys: ubuntu
+          tfm: net48
     name: Test IKVM (${{ matrix.run }}:${{ matrix.tfm }}:${{ matrix.sys }}
     needs:
     - build-ikvm
