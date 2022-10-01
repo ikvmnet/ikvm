@@ -331,7 +331,7 @@ jobs:
 
         # if a query was specified, add to test command
         if ($tests) {
-            if ($query -ne "") {
+            if ($query -ne "" -and $query -ne $null) {
                 dotnet test -f $tfm --blame -v 2 --results-directory ".\TestResults--$($run.Replace('?', '_'))--$tfm--$sys" --filter "$query" $tests
             } else {
                 dotnet test -f $tfm --blame -v 2 --results-directory ".\TestResults--$($run.Replace('?', '_'))--$tfm--$sys" $tests
