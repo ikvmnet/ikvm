@@ -271,6 +271,12 @@ jobs:
           tfm: net472
         - sys: ubuntu
           tfm: net48
+        - run: IKVM.MSBuild.Tasks.Tests
+          sys: ubuntu
+        - run: IKVM.MSBuild.Tests
+          sys: ubuntu
+        - run: IKVM.NET.Sdk.Tests
+          sys: ubuntu
     name: Test IKVM (${{ matrix.run }}:${{ matrix.tfm }}:${{ matrix.sys }}
     needs:
     - build-ikvm
