@@ -9,7 +9,7 @@ using IKVM.Tests.Util;
 
 using Microsoft.VisualStudio.TestTools.UnitTesting;
 
-#if NETCOREAPP3_1_OR_GREATER
+#if NETCOREAPP
 using Microsoft.Extensions.DependencyModel;
 #endif
 
