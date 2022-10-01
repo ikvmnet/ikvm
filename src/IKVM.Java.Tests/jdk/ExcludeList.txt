@@ -26,7 +26,7 @@ com/sun/jdi/ArrayRangeTest.sh                                                   
 com/sun/jdi/BacktraceFieldTest.java                                                                                     generic-all
 com/sun/jdi/BadHandshakeTest.java                                                                                       generic-all
 com/sun/jdi/BreakpointTest.java                                                                                         generic-all
-com/sun/jdi/BreakpointWithFullGC.java                                                                                   generic-all
+com/sun/jdi/BreakpointWithFullGC.sh                                                                                     generic-all
 com/sun/jdi/CatchAllTest.sh                                                                                             generic-all
 com/sun/jdi/CatchCaughtTest.sh                                                                                          generic-all
 com/sun/jdi/ClassLoaderClassesTest.java                                                                                 generic-all
@@ -95,7 +95,7 @@ com/sun/jdi/NativeInstanceFilter.java                                           
 com/sun/jdi/NewInstanceTest.java                                                                                        generic-all
 com/sun/jdi/NoLaunchOptionTest.java                                                                                     generic-all
 com/sun/jdi/NoLocInfoTest.java                                                                                          generic-all
-com/sun/jdi/NotAField.java                                                                                              generic-all
+com/sun/jdi/NotAField.sh                                                                                                generic-all
 com/sun/jdi/NullThreadGroupNameTest.java                                                                                generic-all
 com/sun/jdi/OnThrowTest.java                                                                                            generic-all
 com/sun/jdi/OptionTest.java                                                                                             generic-all
