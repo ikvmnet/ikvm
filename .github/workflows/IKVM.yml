@@ -204,6 +204,10 @@ jobs:
       with:
         name: bin
         path: dist/bin.tar.gz
+    - name: Delete Binaries
+      shell: pwsh
+      run: ri bin.tar.gz
+      working-directory: dist
     - name: Package Tools
       run: tar czvf tools.tar.gz tools
       working-directory: dist
@@ -212,6 +216,10 @@ jobs:
       with:
         name: tools
         path: dist/tools.tar.gz
+    - name: Delete Tools
+      shell: pwsh
+      run: ri tools.tar.gz
+      working-directory: dist
     - name: Package Image
       run: tar czvf image.tar.gz image
       working-directory: dist
@@ -220,6 +228,10 @@ jobs:
       with:
         name: image
         path: dist/image.tar.gz
+    - name: Delete Image
+      shell: pwsh
+      run: ri image.tar.gz
+      working-directory: dist
     - name: Package Tests
       run: tar czvf tests.tar.gz tests
       working-directory: dist
@@ -228,6 +240,10 @@ jobs:
       with:
         name: tests
         path: dist/tests.tar.gz
+    - name: Delete Tests
+      shell: pwsh
+      run: ri tests.tar.gz
+      working-directory: dist
   test-ikvm:
     strategy:
       matrix:
