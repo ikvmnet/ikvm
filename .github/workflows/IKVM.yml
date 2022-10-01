@@ -306,9 +306,9 @@ jobs:
 
         # if a query was specified, add to test command
         if ($query -ne "") {
-            dotnet test -f $tfm --blame -v 2 --results-directory ".\TestResults--$suite--$tfm--$sys" --filter "$query" $tests
+            dotnet test -f $tfm --blame -v 2 --results-directory ".\TestResults--$run--$tfm--$sys" --filter "$query" $tests
         } else {
-            dotnet test -f $tfm --blame -v 2 --results-directory ".\TestResults--$suite--$tfm--$sys" $tests
+            dotnet test -f $tfm --blame -v 2 --results-directory ".\TestResults--$run--$tfm--$sys" $tests
         }
     - name: Upload Test Results
       if: ${{ always() }}
