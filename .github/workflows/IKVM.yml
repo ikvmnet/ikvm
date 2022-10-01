@@ -232,6 +232,14 @@ jobs:
     strategy:
       matrix:
         run:
+        - IKVM.Tests
+        - ikvmc.Tests
+        - IKVM.Tools.Exporter.Tests
+        - IKVM.Tools.Tests
+        - IKVM.MSBuild.Tasks.Tests
+        - IKVM.MSBuild.Tests
+        - IKVM.NET.Sdk.Tests
+        - IKVM.JTReg.TestAdapter.Tests
         - IKVM.Java.Tests?TestPartition=0
         - IKVM.Java.Tests?TestPartition=1
         - IKVM.Java.Tests?TestPartition=2
@@ -248,13 +256,6 @@ jobs:
         - IKVM.Java.Tests?TestPartition=13
         - IKVM.Java.Tests?TestPartition=14
         - IKVM.Java.Tests?TestPartition=15
-        - IKVM.Tests
-        - ikvmc.Tests
-        - IKVM.Tools.Exporter.Tests
-        - IKVM.Tools.Tests
-        - IKVM.MSBuild.Tasks.Tests
-        - IKVM.MSBuild.Tests
-        - IKVM.NET.Sdk.Tests
         tfm:
         - net461
         - net472
