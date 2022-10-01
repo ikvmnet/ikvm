@@ -227,21 +227,36 @@ jobs:
       uses: actions/upload-artifact@v3
       with:
         name: tests
-        path: dist/tests.tar.gz
-  test-ikvm-windows:
-    name: Test IKVM (Windows)
+        path: build/tests.tar.gz
+  test-ikvm:
+    strategy:
+      matrix:
+        run:
+        - IKVM.Tests
+        - ikvmc.Tests
+        - IKVM.Tools.Exporter.Tests
+        - IKVM.Tools.Tests
+        - IKVM.MSBuild.Tasks.Tests
+        - IKVM.MSBuild.Tests
+        - IKVM.NET.Sdk.Tests
+        tfm:
+        - net461
+        - net472
+        - net48
+        - netcoreapp3.1
+        - net6.0
+        sys:
+        - windows
+        - ubuntu
+    name: Test IKVM (${{ matrix.run }}:${{ matrix.tfm }}:${{ matrix.sys }}
     needs:
     - build-ikvm
-    runs-on: windows-latest
+    runs-on: ${{ matrix.sys }}-latest
     steps:
     - name: Setup .NET 3.1
       uses: actions/setup-dotnet@v2
       with:
         dotnet-version: 3.1.x
-    - name: Setup .NET 5.0
-      uses: actions/setup-dotnet@v2
-      with:
-        dotnet-version: 5.0.x
     - name: Setup .NET 6.0
       uses: actions/setup-dotnet@v2
       with:
@@ -256,52 +271,41 @@ jobs:
       working-directory: dist
     - name: Execute Tests
       shell: pwsh
-      run: gci .\dist\tests\ -Recurse -Filter '*.Tests.dll' | group { $_.Directory.BaseName } | %{ dotnet test $_.Group --blame -v 3 --results-directory .\TestResults --logger "trx;LogFileName=$($_.Name).trx" }
+      run: |
+        # assign powershell variables
+        $run = "${{ matrix.run }}"
+        $tfm = "${{ matrix.tfm }}"
+        $sys = "${{ matrix.sys }}"
+
+        # suite name can contain filter expression after ?
+        $split = $run.IndexOf("?")
+        if ($split -gt -1) {
+            $query = $run.Substring($split + 1);
+            $suite = $run.Substring(0, $split);
+        }
+
+        # scan for test assemblies
+        $tests = $(gci .\dist\tests\$suite\$tfm -Recurse -Filter '*.Tests.dll')
+
+        # if a query was specified, add to test command
+        if ($tests) {
+            if ($query -ne "") {
+                dotnet test -f $tfm --blame -v 2 --results-directory ".\TestResults--$($run.Replace('?', '_'))--$tfm--$sys" --filter "$query" $tests
+            } else {
+                dotnet test -f $tfm --blame -v 2 --results-directory ".\TestResults--$($run.Replace('?', '_'))--$tfm--$sys" $tests
+            }
+        }
     - name: Upload Test Results
+      if: ${{ always() }}
       uses: actions/upload-artifact@v3
       with:
-        name: TestResults-windows
-        path: TestResults
-  test-ikvm-linux:
-    name: Test IKVM (Linux)
-    needs:
-    - build-ikvm
-    runs-on: ubuntu-latest
-    steps:
-    - name: Setup .NET 3.1
-      uses: actions/setup-dotnet@v2
-      with:
-        dotnet-version: 3.1.x
-    - name: Setup .NET 5.0
-      uses: actions/setup-dotnet@v2
-      with:
-        dotnet-version: 5.0.x
-    - name: Setup .NET 6.0
-      uses: actions/setup-dotnet@v2
-      with:
-        dotnet-version: 6.0.x
-    - name: Download Tests
-      uses: actions/download-artifact@v3
-      with:
-        name: tests
-        path: dist
-    - name: Restore Tests
-      run: tar xzvf tests.tar.gz
-      working-directory: dist
-    - name: Execute Tests
-      shell: pwsh
-      run: gci ./dist/tests/ -Recurse -Filter '*.Tests.dll' | group { $_.Directory.BaseName } | ?{ $_.Name -notin @('net461', 'net472', 'net48') } | %{ dotnet test $_.Group --blame -v 3 --results-directory ./TestResults --logger "trx;LogFileName=$($_.Name).trx" }
-    - name: Upload Test Results
-      uses: actions/upload-artifact@v3
-      with:
-        name: TestResults-linux
-        path: TestResults
+        name: TestResults--${{ matrix.run }}--${{ matrix.tfm }}--${{ matrix.sys }}
+        path: TestResults--*
   release:
     name: Release
     if: github.ref == 'refs/heads/master' || github.ref == 'refs/heads/main' || github.ref == 'refs/heads/develop'
     needs:
-    - test-ikvm-windows
-    - test-ikvm-linux
+    - test-ikvm
     runs-on: ubuntu-latest
     steps:
     - name: Checkout Source
@@ -360,7 +364,7 @@ jobs:
       uses: ncipollo/release-action@v1.10.0
       with:
         tag: ${{ steps.GitVersion.outputs.semVer }}
-        artifacts: dist/bin/*.zip,dist/nuget/*.nupkg,dist/tools/*.zip
+        artifacts: dist/nuget/*.nupkg,dist/bin/*.zip,dist/tools/*.zip,dist/image/*.zip
         generateReleaseNotes: true
         prerelease: ${{ github.ref == 'refs/heads/develop' }}
         token: ${{ secrets.GITHUB_TOKEN }}
