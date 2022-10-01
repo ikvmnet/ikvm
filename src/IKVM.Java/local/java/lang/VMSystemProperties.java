@@ -24,11 +24,11 @@
 package java.lang;
 
 import java.lang.PropertyConstants;
-import java.io.File;
-import java.io.FileReader;
-import java.nio.file.Path;
-import java.nio.file.Paths;
+import java.io.StringReader;
 import java.util.Properties;
+
+import ikvm.io.InputStreamWrapper;
+
 import cli.System.Diagnostics.FileVersionInfo;
 
 import static ikvm.internal.Util.SafeGetEnvironmentVariable;
@@ -76,7 +76,8 @@ final class VMSystemProperties
             }
         } else if (ikvm.internal.Util.MACOSX) {
             libraryPath = ".";
-        } else /* assume Linux, since that's the only other platform we support */ {
+        } else {
+            // assume Linux, since that's the only other platform we support
             // on Linux we have some hardcoded paths (from /hotspot/src/os/linux/vm/os_linux.cpp)
             // and we can only guess the cpu arch based on bitness (that means only x86 and x64)
             String cpu_arch = cli.System.IntPtr.get_Size() == 4 ? "i386" : "amd64";
@@ -112,7 +113,7 @@ final class VMSystemProperties
         try {
             String ikvmPropertiesPath = cli.System.IO.Path.Combine(runtimePath, "ikvm.properties");
             if (cli.System.IO.File.Exists(ikvmPropertiesPath)) {
-                try (FileReader ikvmPropertiesReader = new FileReader(ikvmPropertiesPath)) {
+                try (StringReader ikvmPropertiesReader = new StringReader(cli.System.IO.File.ReadAllText(ikvmPropertiesPath))) {
                     p.load(ikvmPropertiesReader);
                 }
             }
