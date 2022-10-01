@@ -8,27 +8,30 @@
     -->
 
     <!-- Override IKVM.NET.Sdk: directly invoke executable  -->
-    <Target Name="_ExportReferences" DependsOnTargets="ResolveIkvmExporter;ResolveReferenceExports" Inputs="%(ReferenceExport.AssemblyFile)" Outputs="%(ReferenceExport.Identity)">
+    <Target Name="_ExportReferences" DependsOnTargets="ResolveIkvmExporter;ResolveReferenceExports" Inputs="@(ReferenceExport)" Outputs="%(ReferenceExport.CachePath)">
         <Error Text="Could not locate ikvmstub executable." Condition=" '$(IkvmExporterPath)' == '' " />
         <Error Text="ikvmstub executable could not be located at '$(IkvmExporterPath)'" Condition="!Exists('$(IkvmExporterPath)')" />
+
+        <!-- Output to stage path then copy to cache path to be atomic. -->
+        <MakeDir Directories="$([System.IO.Path]::GetDirectoryName('%(ReferenceExport.StagePath)'))" />
+        <MakeDir Directories="$([System.IO.Path]::GetDirectoryName('%(ReferenceExport.CachePath)'))" />
 
         <ItemGroup>
             <_IkvmExporterArgs Remove="@(_IkvmExporterArgs)" />
             <_IkvmExporterArgs Include="-bootstrap" Condition=" '$(Bootstrap)' == 'true' " />
             <_IkvmExporterArgs Include="@(ReferencePathWithRefAssemblies->'-r:&quot;%(FullPath)&quot;')"  Condition=" '%(Filename)' != '%(ReferenceExport.Filename)' "/>
             <_IkvmExporterArgs Include="-nostdlib" Condition=" '$(NoCompilerStandardLib)' == 'true' " />
-            <_IkvmExporterArgs Include="-out:&quot;$(ReferenceExportOutputPath)tmp\%(ReferenceExport.Filename)%(ReferenceExport.Extension)&quot;" />
-            <_IkvmExporterArgs Include="&quot;%(ReferenceExport.AssemblyFile)&quot;" />
+            <_IkvmExporterArgs Include="-out:&quot;%(ReferenceExport.StagePath)&quot;" />
+            <_IkvmExporterArgs Include="&quot;%(ReferenceExport.Identity)&quot;" />
         </ItemGroup>
 
-        <MakeDir Directories="$(ReferenceExportOutputPath);$(ReferenceExportOutputPath)tmp" />
+        <Delete Files="%(ReferenceExport.StagePath)" Condition="Exists('%(ReferenceExport.StagePath)')" />
         <Message Text="$(IkvmExporterExec) @(_IkvmExporterArgs, ' ')" Importance="low" />
         <Exec Command="$(IkvmExporterExec) @(_IkvmExporterArgs, ' ')" />
-        <Move SourceFiles="$(ReferenceExportOutputPath)tmp\%(ReferenceExport.Filename)%(ReferenceExport.Extension)" DestinationFiles="%(ReferenceExport.Identity)" />
-        <Delete Files="$(ReferenceExportOutputPath)tmp\%(ReferenceExport.Filename)%(ReferenceExport.Extension)" />
+        <Copy SourceFiles="%(ReferenceExport.StagePath)" DestinationFiles="%(ReferenceExport.CachePath)" OverwriteReadOnlyFiles="true" />
 
         <ItemGroup>
-            <FileWrites Include="$(ReferenceExportOutputPath)tmp\%(ReferenceExport.Filename)%(ReferenceExport.Extension)" />
+            <FileWrites Include="%(ReferenceExport.StagePath)" />
         </ItemGroup>
     </Target>
 

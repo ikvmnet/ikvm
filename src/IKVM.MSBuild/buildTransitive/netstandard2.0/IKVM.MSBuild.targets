@@ -11,6 +11,14 @@
         <IkvmToolRuntime Condition="$([MSBuild]::IsOSPlatform('Linux'))">linux-x64</IkvmToolRuntime>
     </PropertyGroup>
 
+    <!-- Set up default cache information. -->
+    <PropertyGroup Condition=" '$(TargetFramework)' != '' ">
+        <IkvmStageDir Condition=" '$(IkvmStageDir)' == '' ">$(IntermediateOutputPath)ikvm\stage\1\</IkvmStageDir>
+        <IkvmCacheDir Condition=" '$(IkvmCacheDir)' == '' ">$([System.IO.Path]::GetTempPath())ikvm\cache\1\</IkvmCacheDir>
+        <IkvmExportStageDir Condition=" '$(IkvmExportStageDir)' == '' ">$(IntermediateOutputPath)ikvm\expstage\1\</IkvmExportStageDir>
+        <IkvmExportCacheDir Condition=" '$(IkvmExportCacheDir)' == '' ">$([System.IO.Path]::GetTempPath())ikvm\expcache\1\</IkvmExportCacheDir>
+    </PropertyGroup>
+
     <PropertyGroup>
         <ResolveIkvmRuntimeAssemblyDependsOn>
             $(ResolveIkvmRuntimeAssemblyDependsOn);

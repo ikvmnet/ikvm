@@ -3,11 +3,6 @@
         <MSBuildAllProjects>$(MSBuildAllProjects);$(MSBuildThisFileFullPath)</MSBuildAllProjects>
     </PropertyGroup>
 
-    <PropertyGroup Condition=" '$(TargetFramework)' != '' ">
-        <IkvmStageDir Condition=" '$(IkvmStageDir)' == '' ">$(IntermediateOutputPath)ikvm\stage\1\</IkvmStageDir>
-        <IkvmCacheDir Condition=" '$(IkvmCacheDir)' == '' ">$([System.IO.Path]::GetTempPath())ikvm\cache\1\</IkvmCacheDir>
-    </PropertyGroup>
-
     <!-- Transforms the IkvmReference item group into IkvmReferenceItem items. -->
     <Target Name="GetIkvmReferenceItemsFromIkvmReferences">
         <ItemGroup>

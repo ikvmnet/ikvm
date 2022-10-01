@@ -59,7 +59,10 @@ namespace IKVM.MSBuild.Tests
             var ikvmCachePath = Path.Combine(Path.GetTempPath(), "IKVM.MSBuild.Tests", "ikvm", "cache");
             if (Directory.Exists(ikvmCachePath))
                 Directory.Delete(ikvmCachePath, true);
-            Directory.CreateDirectory(ikvmCachePath);
+
+            var ikvmExportCachePath = Path.Combine(Path.GetTempPath(), "IKVM.MSBuild.Tests", "ikvm", "expcache");
+            if (Directory.Exists(ikvmExportCachePath))
+                Directory.Delete(ikvmExportCachePath, true);
 
             var targets = new[]
             {
@@ -90,6 +93,7 @@ namespace IKVM.MSBuild.Tests
             var manager = new AnalyzerManager();
             var analyzer = manager.GetProject(Path.Combine(@"Project", "Exe", "ProjectExe.csproj"));
             analyzer.SetGlobalProperty("IkvmCacheDir", ikvmCachePath + Path.DirectorySeparatorChar);
+            analyzer.SetGlobalProperty("IkvmExportCacheDir", ikvmCachePath + Path.DirectorySeparatorChar);
             analyzer.SetGlobalProperty("PackageVersion", properties["PackageVersion"]);
             analyzer.SetGlobalProperty("RestoreSources", string.Join("%3B", "https://api.nuget.org/v3/index.json", Path.GetFullPath(@"nuget")));
             analyzer.SetGlobalProperty("RestorePackagesPath", nugetPackageRoot + Path.DirectorySeparatorChar);
