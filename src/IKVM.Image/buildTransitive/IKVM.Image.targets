@@ -131,7 +131,7 @@
                 <Pack>false</Pack>
                 <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
                 <CopyToPublishDirectory>Never</CopyToPublishDirectory>
-                <CopyToPublishDirectory Condition=" '$(_IkvmImageRuntimeIdentifier)' == '%(_IkvmImageItem.RuntimeIdentifier)' ">PreserveNewest</CopyToPublishDirectory>
+                <CopyToPublishDirectory Condition=" '$(_IkvmImageRuntimeIdentifier)' == '' Or '$(_IkvmImageRuntimeIdentifier)' == '%(_IkvmImageItem.RuntimeIdentifier)' ">PreserveNewest</CopyToPublishDirectory>
                 <TargetPath>ikvm\%(_IkvmImageItem.RuntimeIdentifier)\%(_IkvmImageItem.TargetPath)</TargetPath>
                 <DestinationSubDirectory>$([System.IO.Path]::GetDirectoryName('ikvm\%(_IkvmImageItem.RuntimeIdentifier)\%(_IkvmImageItem.TargetPath)'))</DestinationSubDirectory>
                 <Private>true</Private>
