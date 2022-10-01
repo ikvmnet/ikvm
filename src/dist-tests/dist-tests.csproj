@@ -24,6 +24,12 @@
         <TestTarget Include="IKVM.MSBuild.Tasks.Tests|net6.0" ProjectName="IKVM.MSBuild.Tasks.Tests" TargetFramework="net6.0" />
         <TestTarget Include="IKVM.MSBuild.Tests|net6.0" ProjectName="IKVM.MSBuild.Tests" TargetFramework="net6.0" />
         <TestTarget Include="IKVM.NET.Sdk.Tests|net6.0" ProjectName="IKVM.NET.Sdk.Tests" TargetFramework="net6.0" />
+        <TestTarget Include="IKVM.JTReg.TestAdapter.Tests|net461" ProjectName="IKVM.JTReg.TestAdapter.Tests" TargetFramework="net461" />
+        <TestTarget Include="IKVM.JTReg.TestAdapter.Tests|netcoreapp3.1" ProjectName="IKVM.JTReg.TestAdapter.Tests" TargetFramework="netcoreapp3.1" />
+        <TestTarget Include="IKVM.Java.Tests|net461" ProjectName="IKVM.Java.Tests" TargetFramework="net461" />
+        <TestTarget Include="IKVM.Java.Tests|net48" ProjectName="IKVM.Java.Tests" TargetFramework="net48" />
+        <TestTarget Include="IKVM.Java.Tests|netcoreapp3.1" ProjectName="IKVM.Java.Tests" TargetFramework="netcoreapp3.1" />
+        <TestTarget Include="IKVM.Java.Tests|net6.0" ProjectName="IKVM.Java.Tests" TargetFramework="net6.0" />
     </ItemGroup>
 
     <!-- Runs once per TFM/RID combination to generate individual output. -->
