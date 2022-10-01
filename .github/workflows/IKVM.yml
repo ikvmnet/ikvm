@@ -295,12 +295,12 @@ jobs:
         # suite name can contain filter expression after ?
         $split = $run.IndexOf("?")
         if ($split -gt -1) {
-            $query = $run.Substring($split+1);
+            $query = $run.Substring($split + 1);
             $suite = $run.Substring(0, $split);
         }
 
         # scan for test assemblies
-        $tests = $(gci .\build\tests\$suite\$tfm -Recurse -Filter '*.Tests.dll')
+        $tests = $(gci .\dist\tests\$suite\$tfm -Recurse -Filter '*.Tests.dll')
 
         # if a query was specified, add to test command
         if ($query -ne "") {
