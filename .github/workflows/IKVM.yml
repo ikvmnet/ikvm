@@ -168,7 +168,7 @@ jobs:
       run: dotnet restore IKVM.sln
     - name: Build Artifacts
       run: |
-        msbuild /m:1 `
+        msbuild /m:1 /bl `
           /p:Configuration="Release" `
           /p:Platform="Any CPU" `
           /p:Version=${env:GitVersion_FullSemVer} `
@@ -186,6 +186,11 @@ jobs:
           /p:CreateHardLinksForPublishFilesIfPossible=true `
           /p:ContinuousIntegrationBuild=true `
           IKVM.dist.msbuildproj
+    - name: Upload MSBuild Log
+      uses: actions/upload-artifact@v3
+      with:
+        name: msbuild.binlog
+        path: msbuild.binlog
     - name: Upload NuGet Packages
       uses: actions/upload-artifact@v3
       with:

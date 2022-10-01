@@ -8,7 +8,7 @@
     -->
 
     <!-- Override IKVM.NET.Sdk: invoke exporter through task  -->
-    <Target Name="_ExportReferences" DependsOnTargets="ResolveReferenceExports" Inputs="%(ReferenceExport.AssemblyFile)" Outputs="%(ReferenceExport.Identity)">
+    <Target Name="_ExportReferences" DependsOnTargets="ResolveReferenceExports" Inputs="@(ReferenceExport)" Outputs="%(ReferenceExport.CachePath)">
         <Error Text="IKVM.NET.Sdk cannot currently build assemblies targeting '$(TargetFramework)'. Either target 'net461' or 'netcoreapp3.1'." Condition=" '$(TargetFramework)' != 'net461' And '$(TargetFramework)' != 'netcoreapp3.1' " />
 
         <ItemGroup>
@@ -16,20 +16,16 @@
             <_ReferenceExportReference Include="@(ReferencePathWithRefAssemblies)" Condition=" '%(Filename)' != '%(ReferenceExport.Filename)' "/>
         </ItemGroup>
 
-        <MakeDir Directories="$(ReferenceExportOutputPath);$(ReferenceExportOutputPath)tmp" />
-        <IkvmExporter
-            ToolPath="$(IkvmExporterToolPath)"
-            ToolFramework="$(IkvmToolFramework)"
-            Input="%(ReferenceExport.AssemblyFile)"
-            Bootstrap="$(Bootstrap)"
-            NoStdLib="$(NoCompilerStandardLib)"
-            References="@(_ReferenceExportReference)"
-            Output="$(ReferenceExportOutputPath)tmp\%(ReferenceExport.Filename)%(ReferenceExport.Extension)" />
-        <Move SourceFiles="$(ReferenceExportOutputPath)tmp\%(ReferenceExport.Filename)%(ReferenceExport.Extension)" DestinationFiles="%(ReferenceExport.Identity)" />
-        <Delete Files="$(ReferenceExportOutputPath)tmp\%(ReferenceExport.Filename)%(ReferenceExport.Extension)" />
+        <!-- Output to stage path then copy to cache path to be atomic. -->
+        <MakeDir Directories="$([System.IO.Path]::GetDirectoryName('%(ReferenceExport.StagePath)'))" />
+        <MakeDir Directories="$([System.IO.Path]::GetDirectoryName('%(ReferenceExport.CachePath)'))" />
+
+        <Delete Files="%(ReferenceExport.StagePath)" Condition="Exists('%(ReferenceExport.StagePath)')" />
+        <IkvmExporter ToolPath="$(IkvmExporterToolPath)" ToolFramework="$(IkvmToolFramework)" Input="%(ReferenceExport.Identity)" Bootstrap="$(Bootstrap)" NoStdLib="$(NoCompilerStandardLib)" References="@(_ReferenceExportReference)" Output="%(ReferenceExport.StagePath)" />
+        <Copy SourceFiles="%(ReferenceExport.StagePath)" DestinationFiles="%(ReferenceExport.CachePath)" OverwriteReadOnlyFiles="true" />
 
         <ItemGroup>
-            <FileWrites Include="$(ReferenceExportOutputPath)tmp\%(ReferenceExport.Filename)%(ReferenceExport.Extension)" />
+            <FileWrites Include="%(ReferenceExport.StagePath)" />
         </ItemGroup>
     </Target>
 

@@ -8,7 +8,6 @@
     </PropertyGroup>
 
     <PropertyGroup>
-        <ReferenceExportOutputPath>$(IntermediateOutputPath)refexp\</ReferenceExportOutputPath>
         <ClassOutputPath>$(IntermediateOutputPath)classes\</ClassOutputPath>
     </PropertyGroup>
 
@@ -21,17 +20,31 @@
         </ItemGroup>
     </Target>
 
+    <!-- Assigns additional metadata to the reference export. -->
+    <UsingTask TaskName="IkvmReferenceExportPrepare" TaskFactory="RoslynCodeTaskFactory" AssemblyFile="$(MSBuildToolsPath)\Microsoft.Build.Tasks.Core.dll">
+        <Task>
+            <Code Type="Class" Source="$(MSBuildThisFileDirectory)inline\IkvmReferenceExportPrepare.cs" Language="cs" />
+        </Task>
+    </UsingTask>
+
     <!-- Compiles the set of exports to be made, along with their original assembly file path. -->
-    <Target Name="ResolveReferenceExports" DependsOnTargets="ResolveReferences;FindReferenceAssembliesForReferences">
+    <Target Name="ResolveReferenceExports" DependsOnTargets="ResolveReferences;FindReferenceAssembliesForReferences;ResolveIkvmRuntimeAssembly">
         <ItemGroup>
-            <ReferenceExport Include="@(ReferencePath->'$(ReferenceExportOutputPath)%(Filename).jar')" Condition=" '%(ReferencePath.HideFromJava)' != 'true' And '%(ReferencePath.JavaClasspath)' == '' And '%(Filename)' != 'IKVM.Java' And '%(Filename)' != 'System.Runtime.Serialization' ">
-                <AssemblyFile>%(Identity)</AssemblyFile>
+            <_ReferenceExport Include="@(ReferencePath)" Condition=" '%(ReferencePath.HideFromJava)' != 'true' And '%(ReferencePath.JavaClasspath)' == '' And '%(Filename)' != 'IKVM.Java' And '%(Filename)' != 'System.Runtime.Serialization' " />
+        </ItemGroup>
+        <IkvmReferenceExportPrepare Items="@(_ReferenceExport)" ToolVersion="$(IkvmVersion)" ToolFramework="$(IkvmToolFramework)" References="@(ReferencePathWithRefAssemblies)" Bootstrap="$(Bootstrap)" NoStdLib="$(NoCompilerStandardLib)">
+            <Output TaskParameter="Items" ItemName="ReferenceExport" />
+        </IkvmReferenceExportPrepare>
+        <ItemGroup>
+            <ReferenceExport Update="@(ReferenceExport)">
+                <StagePath>$(IkvmExportStageDir)%(IkvmIdentity)\%(Filename).jar</StagePath>
+                <CachePath>$(IkvmExportCacheDir)%(IkvmIdentity)\%(Filename).jar</CachePath>
             </ReferenceExport>
         </ItemGroup>
     </Target>
 
     <!-- Abstract target to conduct actual assembly exports. Overridden either by Command or Task implementation. -->
-    <Target Name="_ExportReferences" DependsOnTargets="ResolveReferenceExports" Inputs="%(ReferenceExport.AssemblyFile)" Outputs="%(ReferenceExport.Identity)">
+    <Target Name="_ExportReferences" DependsOnTargets="ResolveReferenceExports" Inputs="@(ReferenceExport)" Outputs="%(ReferenceExport.CachePath)">
         <Error Text="_ExportReferences not implemented." />
     </Target>
 
@@ -47,13 +60,12 @@
 
     <Target Name="ExportReferences" DependsOnTargets="$(ExportReferencesDependsOn)">
         <ItemGroup>
-            <Classpath Include="@(ReferenceExport)" />
+            <Classpath Include="@(ReferenceExport->'%(CachePath)')" />
         </ItemGroup>
     </Target>
 
     <Target Name="CleanReferenceExports">
-        <Delete Files="@(ReferenceExport)" />
-        <RemoveDir Directories="$(ReferenceExportOutputPath);$(ReferenceExportOutputPath)tmp" />
+        <Delete Files="@(ReferenceExport->'%(StagePath)')" />
     </Target>
 
     <PropertyGroup>
