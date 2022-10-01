@@ -168,7 +168,7 @@ jobs:
       run: dotnet restore IKVM.sln
     - name: Build Artifacts
       run: |
-        msbuild /m:1 /bl `
+        msbuild /m /bl `
           /p:Configuration="Release" `
           /p:Platform="Any CPU" `
           /p:Version=${env:GitVersion_FullSemVer} `
@@ -204,6 +204,10 @@ jobs:
       with:
         name: bin
         path: dist/bin.tar.gz
+    - name: Delete Binaries
+      shell: pwsh
+      run: ri bin.tar.gz
+      working-directory: dist
     - name: Package Tools
       run: tar czvf tools.tar.gz tools
       working-directory: dist
@@ -212,6 +216,10 @@ jobs:
       with:
         name: tools
         path: dist/tools.tar.gz
+    - name: Delete Tools
+      shell: pwsh
+      run: ri tools.tar.gz
+      working-directory: dist
     - name: Package Image
       run: tar czvf image.tar.gz image
       working-directory: dist
@@ -220,6 +228,10 @@ jobs:
       with:
         name: image
         path: dist/image.tar.gz
+    - name: Delete Image
+      shell: pwsh
+      run: ri image.tar.gz
+      working-directory: dist
     - name: Package Tests
       run: tar czvf tests.tar.gz tests
       working-directory: dist
@@ -227,7 +239,11 @@ jobs:
       uses: actions/upload-artifact@v3
       with:
         name: tests
-        path: build/tests.tar.gz
+        path: dist/tests.tar.gz
+    - name: Delete Tests
+      shell: pwsh
+      run: ri tests.tar.gz
+      working-directory: dist
   test-ikvm:
     strategy:
       matrix:
@@ -265,6 +281,13 @@ jobs:
         sys:
         - windows
         - ubuntu
+        exclude:
+        - sys: ubuntu
+          tfm: net461
+        - sys: ubuntu
+          tfm: net472
+        - sys: ubuntu
+          tfm: net48
     name: Test IKVM (${{ matrix.run }}:${{ matrix.tfm }}:${{ matrix.sys }}
     needs:
     - build-ikvm
@@ -297,18 +320,22 @@ jobs:
         # suite name can contain filter expression after ?
         $split = $run.IndexOf("?")
         if ($split -gt -1) {
-            $query = $run.Substring($split + 1);
-            $suite = $run.Substring(0, $split);
+            $suite = $run.Substring(0, $split)
+            $query = $run.Substring($split + 1)
+        } else {
+            $suite = $run
         }
 
         # scan for test assemblies
         $tests = $(gci .\dist\tests\$suite\$tfm -Recurse -Filter '*.Tests.dll')
 
         # if a query was specified, add to test command
-        if ($query -ne "") {
-            dotnet test -f $tfm --blame -v 2 --results-directory ".\TestResults--$($run.Replace('?', '_'))--$tfm--$sys" --filter "$query" $tests
-        } else {
-            dotnet test -f $tfm --blame -v 2 --results-directory ".\TestResults--$($run.Replace('?', '_'))--$tfm--$sys" $tests
+        if ($tests) {
+            if ($query -ne "") {
+                dotnet test -f $tfm --blame -v 2 --results-directory ".\TestResults--$($run.Replace('?', '_'))--$tfm--$sys" --filter "$query" $tests
+            } else {
+                dotnet test -f $tfm --blame -v 2 --results-directory ".\TestResults--$($run.Replace('?', '_'))--$tfm--$sys" $tests
+            }
         }
     - name: Upload Test Results
       if: ${{ always() }}

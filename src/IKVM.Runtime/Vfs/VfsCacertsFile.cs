@@ -24,6 +24,7 @@
 using System;
 using System.Collections.Generic;
 using System.IO;
+using System.Security.Cryptography;
 using System.Security.Cryptography.X509Certificates;
 
 namespace IKVM.Runtime.Vfs
@@ -64,22 +65,29 @@ namespace IKVM.Runtime.Vfs
             // import both local machine and current user certificates
             foreach (var storeLocation in new[] { StoreLocation.LocalMachine, StoreLocation.CurrentUser })
             {
-                using var store = new X509Store(StoreName.Root, storeLocation);
-                store.Open(OpenFlags.ReadOnly | OpenFlags.OpenExistingOnly);
-
-                foreach (X509Certificate2 cert in store.Certificates)
+                try
                 {
-                    // only interested in trust information
-                    if (cert.HasPrivateKey)
-                        continue;
+                    using var store = new X509Store(StoreName.Root, storeLocation);
+                    store.Open(OpenFlags.ReadOnly | OpenFlags.OpenExistingOnly);
 
-                    // the alias must be unique, otherwise we overwrite the previous certificate with that alias
-                    var alias = cert.Subject;
-                    var index = 0;
-                    while (aliases.Add(alias) == false)
-                        alias = cert.Subject + " #" + (++index);
+                    foreach (X509Certificate2 cert in store.Certificates)
+                    {
+                        // only interested in trust information
+                        if (cert.HasPrivateKey)
+                            continue;
 
-                    jstore.setCertificateEntry(alias, cf.generateCertificate(new java.io.ByteArrayInputStream(cert.RawData)));
+                        // the alias must be unique, otherwise we overwrite the previous certificate with that alias
+                        var alias = cert.Subject;
+                        var index = 0;
+                        while (aliases.Add(alias) == false)
+                            alias = cert.Subject + " #" + (++index);
+
+                        jstore.setCertificateEntry(alias, cf.generateCertificate(new java.io.ByteArrayInputStream(cert.RawData)));
+                    }
+                }
+                catch (CryptographicException)
+                {
+                    // ignore
                 }
             }
 
