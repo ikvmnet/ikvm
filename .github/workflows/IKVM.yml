@@ -315,7 +315,7 @@ jobs:
       uses: actions/upload-artifact@v3
       with:
         name: TestResults--${{ matrix.run }}--${{ matrix.tfm }}--${{ matrix.sys }}
-        path: TestResults--${{ matrix.run }}--${{ matrix.tfm }}--${{ matrix.sys }}
+        path: TestResults--*
   release:
     name: Release
     if: github.ref == 'refs/heads/master' || github.ref == 'refs/heads/main' || github.ref == 'refs/heads/develop'
