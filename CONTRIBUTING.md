@@ -14,14 +14,12 @@ IKVM includes a native library named 'ikvm-native' which must be built for the J
 
 + IKVM.sln
   Main solution file for the project.
-+ IKVM.artifacts.msbuildproj
++ IKVM.dist.msbuildproj
   MSBuild project file that builds the output artifacts, including the NuGet packages.
 + IKVM.Runtime
   The main executable core of IKVM. Provides services used by IKVM.Java.
 + IKVM.Java
   The OpenJDK distribution included with IKVM. This project is heavily customized to compile the OpenJDK Java source files and produce a .NET assembly from them.
-+ ikvm
-  `java` compatibility executable. Launches a JVM. Can be used to execute Java applications with entry points.
 + ikvmc
   `ikvmc` executable. Transforms Java class files or JAR files into .NET libraries or executables.
 + ikvmstub
@@ -32,8 +30,14 @@ IKVM includes a native library named 'ikvm-native' which must be built for the J
   "Reference" version of the IKVM.Runtime project. Due to a circular dependency between IKVM.Java and IKVM.Runtime, IKVM.Java must build against a partial copy of IKVM.Runtime.
 + IKVM.Java-ref
   "Reference" version of the IKVM.Java project. Due to the circular dependency between IKVM.Java and IKVM.Runtime, IKVM.Runtime must build against a partial copy of IKVM.Java.
-+ IKVM-pkg
++ IKVM
   To untangle the ProjectReferences between the circular dependencies, this project generates the NuGet package output, including all of it's required dependencies, and the full version of the underlying IKVM assemblies.
++ IKVM.MSBuild
+  Contains tasks and targets used by both the IKVM package and the IKVM.NET.Sdk package.
++ IKVM.MSBuild.Tasks
+  Source code for the task contained within IKVM.MSBuild.
++ IKVM.NET.Sdk
+  MSBuild SDK package which provides support for building managed code form Java sources.
 
 ## Versioning
 
