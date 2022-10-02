@@ -10094,7 +10094,7 @@
         <OpenJdkSource Include="$(OpenJdkDir)\jdk\src\share\classes\java\math\package-info.java" />
         <OpenJdkSource Include="$(OpenJdkDir)\jdk\src\share\classes\java\math\RoundingMode.java" />
         <OpenJdkSource Include="$(OpenJdkDir)\jdk\src\share\classes\java\math\SignedMutableBigInteger.java" />
-        <OpenJdkSource Include="$(OpenJdkDir)\jdk\src\share\classes\java\net\*.java" />
+        <OpenJdkSource Include="$(OpenJdkDir)\jdk\src\share\classes\java\net\**\*.java" />
         <OpenJdkSource Include="$(OpenJdkDir)\jdk\src\share\classes\java\nio\Buffer.java" />
         <OpenJdkSource Include="$(OpenJdkDir)\jdk\src\share\classes\java\nio\ByteOrder.java" />
         <OpenJdkSource Include="$(OpenJdkDir)\jdk\src\share\classes\java\nio\channels\AsynchronousByteChannel.java" />
@@ -12595,7 +12595,7 @@
         <OpenJdkSource Include="$(OpenJdkDir)\jdk\src\share\classes\jdk\internal\util\xml\SAXParser.java" />
         <OpenJdkSource Include="$(OpenJdkDir)\jdk\src\share\classes\jdk\internal\util\xml\XMLStreamException.java" />
         <OpenJdkSource Include="$(OpenJdkDir)\jdk\src\share\classes\jdk\internal\util\xml\XMLStreamWriter.java" />
-        <OpenJdkSource Include="$(OpenJdkDir)\jdk\src\share\classes\jdk\net\*.java" />
+        <OpenJdkSource Include="$(OpenJdkDir)\jdk\src\share\classes\jdk\net\**\*.java" />
         <OpenJdkSource Include="$(OpenJdkDir)\jdk\src\share\classes\org\ietf\jgss\ChannelBinding.java" />
         <OpenJdkSource Include="$(OpenJdkDir)\jdk\src\share\classes\org\ietf\jgss\GSSContext.java" />
         <OpenJdkSource Include="$(OpenJdkDir)\jdk\src\share\classes\org\ietf\jgss\GSSCredential.java" />
@@ -14613,7 +14613,7 @@
         <OpenJdkSource Include="$(OpenJdkDir)\jdk\src\windows\classes\java\io\WinNTFileSystem.java" />
         <OpenJdkSource Include="$(OpenJdkDir)\jdk\src\windows\classes\java\lang\ProcessEnvironment.java" />
         <OpenJdkSource Include="$(OpenJdkDir)\jdk\src\windows\classes\java\lang\Terminator.java" />
-        <OpenJdkSource Include="$(OpenJdkDir)\jdk\src\solaris\classes\java\net\*.java" />
+        <OpenJdkSource Include="$(OpenJdkDir)\jdk\src\solaris\classes\java\net\**\*.java" />
         <OpenJdkSource Include="$(OpenJdkDir)\jdk\src\windows\classes\java\util\prefs\WindowsPreferences.java" />
         <OpenJdkSource Include="$(OpenJdkDir)\jdk\src\windows\classes\java\util\prefs\WindowsPreferencesFactory.java" />
         <OpenJdkSource Include="$(OpenJdkDir)\jdk\src\windows\classes\sun\awt\Win32ColorModel24.java" />
