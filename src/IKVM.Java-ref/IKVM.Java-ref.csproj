@@ -6,10 +6,4 @@
         <AssemblyName>IKVM.Java</AssemblyName>
     </PropertyGroup>
 
-    <ItemGroup>
-        <PackageReference Include="SharpZipLib" Version="1.3.3" />
-        <PackageReference Include="System.Memory" Version="4.5.5" />
-        <PackageReference Include="System.ValueTuple" Version="4.5.0" />
-    </ItemGroup>
-
 </Project>
