@@ -14,7 +14,7 @@ namespace IKVM.JTReg.TestAdapter
     static class JTRegTypes
     {
 
-        static readonly string[] libs = Directory.GetFiles(Path.Combine(Path.GetDirectoryName(typeof(IkvmJTRegTestAdapter).Assembly.Location), "jtreg", "lib"), "*.jar");
+        static readonly string[] libs = Directory.GetFiles(Path.Combine(Path.GetDirectoryName(typeof(IkvmJTRegTestAdapter).Assembly.Location), "jtreg"), "*.jar");
         public static readonly URLClassLoader ClassLoader = new URLClassLoader(libs.Select(i => new java.io.File(i).toURI().toURL()).ToArray());
 
         public static class SearchPath
