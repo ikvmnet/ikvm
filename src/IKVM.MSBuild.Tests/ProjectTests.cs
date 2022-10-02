@@ -2,6 +2,7 @@ using System;
 using System.IO;
 using System.Linq;
 using System.Runtime.InteropServices;
+using System.Xml.Linq;
 
 using Buildalyzer;
 using Buildalyzer.Environment;
@@ -90,12 +91,25 @@ namespace IKVM.MSBuild.Tests
                 };
             }
 
+            // write out nuget.config with package sources
+            // can't use property for sdk resolver
+            new XDocument(
+                new XElement("configuration",
+                    new XElement("config",
+                        new XElement("add",
+                            new XAttribute("key", "globalPackagesFolder"),
+                            new XAttribute("value", nugetPackageRoot))),
+                    new XElement("packageSources",
+                        new XElement("add",
+                            new XAttribute("key", "dev"),
+                            new XAttribute("value", Path.Combine(Path.GetDirectoryName(typeof(ProjectTests).Assembly.Location), @"nuget"))))))
+                .Save(Path.Combine(@"Project", "nuget.config"));
+
             var manager = new AnalyzerManager();
             var analyzer = manager.GetProject(Path.Combine(@"Project", "Exe", "ProjectExe.csproj"));
             analyzer.SetGlobalProperty("IkvmCacheDir", ikvmCachePath + Path.DirectorySeparatorChar);
             analyzer.SetGlobalProperty("IkvmExportCacheDir", ikvmCachePath + Path.DirectorySeparatorChar);
             analyzer.SetGlobalProperty("PackageVersion", properties["PackageVersion"]);
-            analyzer.SetGlobalProperty("RestoreSources", string.Join("%3B", "https://api.nuget.org/v3/index.json", Path.GetFullPath(@"nuget")));
             analyzer.SetGlobalProperty("RestorePackagesPath", nugetPackageRoot + Path.DirectorySeparatorChar);
 
             // allow NuGet to locate packages in existing global packages folder if set
