@@ -12,7 +12,7 @@
         <PackageProjectReference Include="..\IKVM.NET.Sdk\IKVM.NET.Sdk.msbuildproj">
             <PackageTargetPath>.</PackageTargetPath>
         </PackageProjectReference>
-        <PackageProjectReference Include="..\IKVM-pkg\IKVM-pkg.csproj">
+        <PackageProjectReference Include="..\IKVM\IKVM.csproj">
             <PackageTargetPath>.</PackageTargetPath>
         </PackageProjectReference>
         <PackageProjectReference Include="..\IKVM.Image\IKVM.Image.csproj">
