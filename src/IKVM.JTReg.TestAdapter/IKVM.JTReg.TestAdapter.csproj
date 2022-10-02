@@ -1,6 +1,6 @@
 ﻿<Project>
     <Import Sdk="Microsoft.NET.Sdk" Project="Sdk.props" />
-    <Import Project="$(MSBuildThisFileDirectory)..\IKVM-pkg\buildTransitive\netstandard2.0\IKVM.props" />
+    <Import Project="$(MSBuildThisFileDirectory)..\IKVM\buildTransitive\netstandard2.0\IKVM.props" />
     <Import Project="$(MSBuildThisFileDirectory)..\IKVM.MSBuild\buildTransitive\netstandard2.0\IKVM.MSBuild.props" />
     <Import Project="$(MSBuildThisFileDirectory)..\..\jtreg.props" />
 
@@ -36,6 +36,6 @@
     </ItemGroup>
 
     <Import Sdk="Microsoft.NET.Sdk" Project="Sdk.targets" />
-    <Import Project="$(MSBuildThisFileDirectory)..\IKVM-pkg\buildTransitive\netstandard2.0\IKVM.targets" />
+    <Import Project="$(MSBuildThisFileDirectory)..\IKVM\buildTransitive\netstandard2.0\IKVM.targets" />
     <Import Project="$(MSBuildThisFileDirectory)..\IKVM.MSBuild\buildTransitive\netstandard2.0\IKVM.MSBuild.targets" />
 </Project>
