@@ -187,6 +187,7 @@ jobs:
           /p:ContinuousIntegrationBuild=true `
           IKVM.dist.msbuildproj
     - name: Upload MSBuild Log
+      if: ${{ always() }}
       uses: actions/upload-artifact@v3
       with:
         name: msbuild.binlog
