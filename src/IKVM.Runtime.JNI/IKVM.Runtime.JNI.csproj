@@ -2,9 +2,6 @@
 
     <PropertyGroup>
         <TargetFrameworks>net461;netcoreapp3.1</TargetFrameworks>
-        <AssemblyName>IKVM.Runtime.JNI</AssemblyName>
-        <AssemblyTitle>IKVM.NET Runtime JNI Layer</AssemblyTitle>
-        <Description>JVM for .NET</Description>
         <AllowUnsafeBlocks>true</AllowUnsafeBlocks>
         <LangVersion>10.0</LangVersion>
     </PropertyGroup>
@@ -44,27 +41,23 @@
     </ItemGroup>
 
     <ItemGroup>
-        <LibProjectReference Include="ikvm-native-win-x64">
-            <ProjectFile>..\ikvm-native\ikvm-native-win.vcxproj</ProjectFile>
-            <Platform>x64</Platform>
-            <Configuration>$(Configuration)</Configuration>
-            <OutputDir>runtimes\win-x64\native</OutputDir>
-        </LibProjectReference>
-        <LibProjectReference Include="ikvm-native-linux-x64">
-            <ProjectFile>..\ikvm-native\ikvm-native-linux.vcxproj</ProjectFile>
-            <Platform>x64</Platform>
-            <Configuration>$(Configuration)</Configuration>
-            <OutputDir>runtimes\linux-x64\native</OutputDir>
-        </LibProjectReference>
+        <ProjectReference Include="..\IKVM.Runtime-ref\IKVM.Runtime-ref.csproj" Private="False" PrivateAssets="All" />
+        <ProjectReference Include="..\IKVM.Java\IKVM.Java.msbuildproj" />
     </ItemGroup>
 
     <ItemGroup>
-        <ProjectReference Include="..\IKVM.Runtime-ref\IKVM.Runtime-ref.csproj">
-            <PrivateAssets>All</PrivateAssets>
-        </ProjectReference>
-        <ProjectReference Include="..\IKVM.Java\IKVM.Java.csproj">
-            <PrivateAssets>All</PrivateAssets>
-        </ProjectReference>
+        <LibProjectReference Include="..\ikvm-native\ikvm-native-win.vcxproj">
+            <SetPlatform>Platform=x64</SetPlatform>
+            <LibTargetPath>runtimes\win7-x64\native</LibTargetPath>
+        </LibProjectReference>
+        <LibProjectReference Include="..\ikvm-native\ikvm-native-win.vcxproj">
+            <SetPlatform>Platform=Win32</SetPlatform>
+            <LibTargetPath>runtimes\win7-x86\native</LibTargetPath>
+        </LibProjectReference>
+        <LibProjectReference Include="..\ikvm-native\ikvm-native-linux.vcxproj">
+            <SetPlatform>Platform=x64</SetPlatform>
+            <LibTargetPath>runtimes\linux-x64\native</LibTargetPath>
+        </LibProjectReference>
     </ItemGroup>
 
 </Project>

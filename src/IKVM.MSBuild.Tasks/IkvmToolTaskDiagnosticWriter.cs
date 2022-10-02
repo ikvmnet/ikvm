@@ -1,8 +1,7 @@
 ﻿using System;
 using System.Threading.Tasks;
 
-using IKVM.Tool;
-
+using IKVM.Tools.Runner;
 
 namespace IKVM.MSBuild.Tasks
 {
@@ -10,7 +9,7 @@ namespace IKVM.MSBuild.Tasks
     /// <summary>
     /// Logs diagnostic events to MSBuild.
     /// </summary>
-    class IkvmToolTaskDiagnosticWriter : IIkvmToolDiagnosticEventListener
+    public class IkvmToolTaskDiagnosticWriter : IIkvmToolDiagnosticEventListener
     {
 
         readonly Microsoft.Build.Utilities.TaskLoggingHelper log;

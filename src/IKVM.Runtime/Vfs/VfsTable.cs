@@ -21,7 +21,7 @@ namespace IKVM.Runtime.Vfs
         /// <summary>
         /// Gets the default mount path of the global file system.
         /// </summary>
-        public readonly static string HomePath = JVM.IsUnix ? "/.virtual-ikvm-home/" : @"C:\.virtual-ikvm-home\";
+        public readonly static string RootPath = JVM.IsUnix ? "/mnt/.ikvm/" : @"\\.ikvm\";
 
         /// <summary>
         /// Gets the default mount table.
@@ -38,7 +38,7 @@ namespace IKVM.Runtime.Vfs
                 throw new ArgumentNullException(nameof(context));
 
             var table = new VfsTable(context);
-            table.AddMount(HomePath, BuildIkvmHomeRoot(context));
+            table.AddMount(RootPath, BuildIkvmHomeRoot(context));
             return table;
         }
 
@@ -53,105 +53,10 @@ namespace IKVM.Runtime.Vfs
             if (context is null)
                 throw new ArgumentNullException(nameof(context));
 
-            // start with a new root directory, with the 'vfs.zip' file expanded within it
             var home = new VfsEntryDirectory(context);
-            ExtractZipArchive(home, new ZipArchive(typeof(VfsTable).Assembly.GetManifestResourceStream("vfs.zip"), ZipArchiveMode.Read));
-
-            // dynamically generated directory full of assembly names
             home.AddEntry("assembly", new VfsAssemblyDirectory(context));
-
-            // generate lib directory
-            var lib = (VfsEntryDirectory)home.GetOrCreateDirectory("lib");
-
-            // generate bin directory
-            var bin = (VfsEntryDirectory)home.GetOrCreateDirectory("bin");
-            AddDummyLibrary(bin, "zip");
-            AddDummyLibrary(bin, "awt");
-            AddDummyLibrary(bin, "rmi");
-            AddDummyLibrary(bin, "w2k_lsa_auth");
-            AddDummyLibrary(bin, "jaas_nt");
-            AddDummyLibrary(bin, "jaas_unix");
-            AddDummyLibrary(bin, "net");
-            AddDummyLibrary(bin, "splashscreen");
-            AddDummyLibrary(bin, "osx");
-            AddDummyLibrary(bin, "management");
-
-            // fake java executables
-            bin.AddEntry("java", new VfsJavaExe(context));
-            bin.AddEntry("javaw", new VfsJavaExe(context));
-            bin.AddEntry("java.exe", new VfsJavaExe(context));
-            bin.AddEntry("javaw.exe", new VfsJavaExe(context));
-
-            // generate security directory
-            var security = (VfsEntryDirectory)lib.GetOrCreateDirectory("security");
-            security.AddEntry("cacerts", new VfsCacertsFile(context));
-            security.AddEntry("local_policy.jar", security.GetEntry("US_export_policy.jar")); // link policies
-
+            home.AddEntry("cacerts", new VfsCacertsFile(context));
             return home;
-        }
-
-        /// <summary>
-        /// Adds a dummy library to the given directory.
-        /// </summary>
-        /// <param name="directory"></param>
-        /// <param name="name"></param>
-        static void AddDummyLibrary(VfsEntryDirectory directory, string name)
-        {
-            if (directory is null)
-                throw new ArgumentNullException(nameof(directory));
-
-#if FIRST_PASS
-            throw new PlatformNotSupportedException();
-#else
-            directory.AddEntry(java.lang.System.mapLibraryName(name), new VfsEmptyFile(directory.Context));
-#endif
-        }
-
-        /// <summary>
-        /// Expands a zip archive into the directory.
-        /// </summary>
-        /// <param name="directory"></param>
-        /// <param name="archive"></param>
-        static void ExtractZipArchive(VfsEntryDirectory directory, ZipArchive archive)
-        {
-            if (directory is null)
-                throw new ArgumentNullException(nameof(directory));
-
-            foreach (var entry in archive.Entries)
-                AddEntryAtPath(directory, entry.FullName.Replace('/', Path.DirectorySeparatorChar), new VfsZipEntry(directory.Context, entry));
-        }
-
-        /// <summary>
-        /// Adds a zip entry to the given directory.
-        /// </summary>
-        /// <param name="directory"></param>
-        /// <param name="fileName"></param>
-        /// <param name="entry"></param>
-        static void AddEntryAtPath(VfsEntryDirectory directory, string fileName, VfsZipEntry entry)
-        {
-            if (directory is null)
-                throw new ArgumentNullException(nameof(directory));
-
-            var filePath = fileName.Split(Path.DirectorySeparatorChar);
-            var position = (VfsDirectory)directory;
-            for (var i = 0; i < filePath.Length - 1; i++)
-            {
-                var existing = position.GetEntry(filePath[i]);
-                if (existing == null)
-                {
-                    if (position is VfsEntryDirectory parent)
-                        existing = parent.GetOrCreateDirectory(filePath[i]);
-                    else
-                        throw new InvalidOperationException("Cannot add a directory to a parent that is not an entry directory.");
-                }
-
-                position = (VfsDirectory)existing;
-            }
-
-            if (position is VfsEntryDirectory target)
-                target.AddEntry(filePath[filePath.Length - 1], entry);
-            else
-                throw new InvalidOperationException("Cannot add a file to a parent that is not an entry directory.");
         }
 
         readonly VfsContext context;

@@ -1,7 +1,8 @@
 # IKVM - Java Virtual Machine for .NET
 
 [![Nuget](https://img.shields.io/nuget/dt/IKVM)](https://www.nuget.org/packages/IKVM)
-[![GitHub](https://img.shields.io/github/license/ikvm-revived/ikvm)](https://github.com/ikvm-revived/ikvm/blob/develop/LICENSE.md)
+[![Discord](https://img.shields.io/badge/Chat-on%20Discord-brightgreen)](https://discord.gg/MpzNd5Tk8P)
+
 
 ## What is IKVM?
 
@@ -59,7 +60,7 @@ PM> Install-Package IKVM.Maven.Sdk
 
 ### Tools
 
-The tools are a available for download on the [Releases](https://github.com/ikvm-revived/ikvm/releases) page.
+The tools are available for download on the [Releases](https://github.com/ikvm-revived/ikvm/releases) page.
 
 ## Usage
 
@@ -87,21 +88,22 @@ The output assembly will be generated as part of your project's build process an
 
 ```xml
 <ItemGroup>
-  <IkvmReference Include="..\..\ext\helloworld-2.0.jar"
-                 AssemblyName="MyAssembly"
-                 AssemblyVersion="3.2.1.0"
-                 FileVersion="3.0.0.0"
-                 DisableAutoAssemblyName="true"
-                 DisableAutoAssemblyVersion="true"
-                 FallbackAssemblyName="MyAssemblyFallback"
-                 FallbackAssemblyVersion="3.1.0.0"
-                 KeyFile="MyKey.snk"
-                 DelaySign="true"
-                 Compile="SomeInternalDependency.jar;SomeOtherInternalDependency.jar"
-                 Sources="MyClass.java;YourClass.java"
-                 References="SomeExternalDependency.jar;SomeOtherExternalDependency.jar"
-                 Aliases="MyAssemblyAlias;helloworld2_0"
-                 Debug="true" />
+   <IkvmReference Include="..\..\ext\helloworld-2.0.jar">
+      <AssemblyName>MyAssembly</AssemblyName>
+      <AssemblyVersion>3.2.1.0</AssemblyVersion>
+      <AssemblyFileVersion>3.0.0.0</AssemblyFileVersion>
+      <DisableAutoAssemblyName>true</DisableAutoAssemblyName>
+      <DisableAutoAssemblyVersion>true</DisableAutoAssemblyVersion>
+      <FallbackAssemblyName>MyAssemblyFallback</FallbackAssemblyName>
+      <FallbackAssemblyVersion>3.1.0.0</FallbackAssemblyVersion>
+      <KeyFile>MyKey.snk</KeyFile>
+      <DelaySign>true</DelaySign>
+      <Compile>SomeInternalDependency.jar;SomeOtherInternalDependency.jar</Compile>
+      <Sources>MyClass.java;YourClass.java</Sources>
+      <References>SomeExternalDependency.jar;SomeOtherExternalDependency.jar</References>
+      <Aliases>MyAssemblyAlias;helloworld2_0</Aliases>
+      <Debug>true</Debug>
+   </IkvmReference>
 </ItemGroup>
 ```
 
@@ -136,26 +138,25 @@ each project.
 
 For each project to resolve to the same resulting assembly ensure their settings are identical.
 
+Multiple `IkvmReference` entries can be configured to include each other as references.
 
 ```xml
 <ItemGroup>
-  <IkvmReference Include="helloworld.jar">
-    <AssemblyVersion>1.0.0.0</AssemblyVersion>
-  </IkvmReference>
-  <IkvmReference Include="helloworld-2.jar">
-    <AssemblyName>helloworld-2</AssemblyName>
-    <AssemblyVersion>2.0.0.0</AssemblyVersion>
-    <References>helloworld.jar</References>
-    <Aliases>helloworld2</Aliases>
-  </IkvmReference>
+   <IkvmReference Include="helloworld.jar">
+      <AssemblyVersion>1.0.0.0</AssemblyVersion>
+   </IkvmReference>
+   <IkvmReference Include="helloworld-2.jar">
+      <AssemblyName>helloworld-2</AssemblyName>
+      <AssemblyVersion>2.0.0.0</AssemblyVersion>
+      <References>helloworld.jar</References>
+      <Aliases>helloworld2</Aliases>
+   </IkvmReference>
 </ItemGroup>
 ```
 
 #### `Automatic-Module-Name` Specification
 
-The `Automatic-Module-Name` is an attribute of the JAR manifest, which can be found in the `META-INF/MANIFEST.MF` file inside the JAR. See the [Java SE 9 JAR documentation](https://docs.oracle.com/javase/9/docs/specs/jar/jar.html#main_attributesmain-attributes) for more information.
-
-> A JAR file is simply a `.zip` file with another extension, so it can be extracted using any zip file library or utility.
+The `Automatic-Module-Name` is either a specified attribute of the JAR manifest, which can be found in the `META-INF/MANIFEST.MF` file inside the JAR, or a generated value based on the name of the JAR file. See the [documentation](https://docs.oracle.com/javase/9/docs/api/java/lang/module/ModuleFinder.html#automatic-modules) for more information.
 
 ### MavenReference
 

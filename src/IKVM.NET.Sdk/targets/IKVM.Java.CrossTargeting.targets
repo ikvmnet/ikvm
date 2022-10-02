@@ -1,0 +1,12 @@
+<Project xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+    <PropertyGroup>
+        <MSBuildAllProjects>$(MSBuildAllProjects);$(MSBuildThisFileFullPath)</MSBuildAllProjects>
+    </PropertyGroup>
+
+    <PropertyGroup>
+        <JavaDesignTimeTargetsPath Condition=" '$(JavaDesignTimeTargetsPath)' == '' ">$(MSBuildThisFileDirectory)IKVM.Java.DesignTime.targets</JavaDesignTimeTargetsPath>
+    </PropertyGroup>
+    <Import Project="$(JavaDesignTimeTargetsPath)" />
+
+    <Import Project="$(MSBuildToolsPath)\Microsoft.Common.CrossTargeting.targets" />
+</Project>

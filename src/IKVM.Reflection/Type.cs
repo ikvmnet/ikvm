@@ -22,9 +22,10 @@
   
 */
 using System;
+using System.Collections.Generic;
 using System.Runtime.InteropServices;
 using System.Text;
-using System.Collections.Generic;
+
 using IKVM.Reflection.Emit;
 
 namespace IKVM.Reflection
@@ -3150,92 +3151,6 @@ namespace IKVM.Reflection
 		internal override bool IsBaked
 		{
 			get { return type.IsBaked; }
-		}
-	}
-
-	sealed class FunctionPointerType : TypeInfo
-	{
-		private readonly Universe universe;
-		private readonly __StandAloneMethodSig sig;
-
-		internal static Type Make(Universe universe, __StandAloneMethodSig sig)
-		{
-			return universe.CanonicalizeType(new FunctionPointerType(universe, sig));
-		}
-
-		private FunctionPointerType(Universe universe, __StandAloneMethodSig sig)
-			: base(Signature.ELEMENT_TYPE_FNPTR)
-		{
-			this.universe = universe;
-			this.sig = sig;
-		}
-
-		public override bool Equals(object obj)
-		{
-			FunctionPointerType other = obj as FunctionPointerType;
-			return other != null
-				&& other.universe == universe
-				&& other.sig.Equals(sig);
-		}
-
-		public override int GetHashCode()
-		{
-			return sig.GetHashCode();
-		}
-
-		public override __StandAloneMethodSig __MethodSignature
-		{
-			get { return sig; }
-		}
-
-		public override Type BaseType
-		{
-			get { return null; }
-		}
-
-		public override TypeAttributes Attributes
-		{
-			get { return 0; }
-		}
-
-		public override string Name
-		{
-			get { throw new InvalidOperationException(); }
-		}
-
-		public override string FullName
-		{
-			get { throw new InvalidOperationException(); }
-		}
-
-		public override Module Module
-		{
-			get { throw new InvalidOperationException(); }
-		}
-
-		internal override Universe Universe
-		{
-			get { return universe; }
-		}
-
-		public override string ToString()
-		{
-			return "<FunctionPtr>";
-		}
-
-		protected override bool ContainsMissingTypeImpl
-		{
-			get { return sig.ContainsMissingType; }
-		}
-
-		internal override bool IsBaked
-		{
-			get { return true; }
-		}
-
-		protected override bool IsValueTypeImpl
-		{
-			get { return false; }
 		}
 	}
 

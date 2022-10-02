@@ -1,0 +1,55 @@
+﻿<Project>
+    <Import Project="$(MSBuildThisFileDirectory)..\IKVM.NET.Sdk\Sdk\Sdk.props" />
+    <Import Project="$(MSBuildThisFileDirectory)..\IKVM\buildTransitive\netstandard2.0\IKVM.props" />
+    <Import Project="$(MSBuildThisFileDirectory)..\IKVM.MSBuild\buildTransitive\netstandard2.0\IKVM.MSBuild.props" />
+
+    <PropertyGroup>
+        <OutputType>Exe</OutputType>
+        <TargetFrameworks>net461;netcoreapp3.1</TargetFrameworks>
+        <RuntimeIdentifiers>win7-x64;win7-x86;linux-x64</RuntimeIdentifiers>
+        <AutoGenerateBindingRedirects>true</AutoGenerateBindingRedirects>
+        <StartupObject>com.sun.tools.javac.Main</StartupObject>
+        <RootNamespace>ikvm.tools.javac</RootNamespace>
+    </PropertyGroup>
+
+    <ItemGroup>
+        <PackageReference Include="SharpZipLib" Version="1.3.3" />
+        <PackageReference Include="System.Memory" Version="4.5.5" />
+    </ItemGroup>
+
+    <ItemGroup Condition="$([MSBuild]::IsTargetFrameworkCompatible('$(TargetFramework)', 'net461'))">
+        <Reference Include="System.Configuration" />
+        <Reference Include="System.IO.Compression" />
+        <Reference Include="System.Security" />
+        <PackageReference Include="System.Runtime.InteropServices.RuntimeInformation" Version="4.3.0" />
+    </ItemGroup>
+
+    <ItemGroup Condition="$([MSBuild]::IsTargetFrameworkCompatible('$(TargetFramework)', 'netcoreapp3.1'))">
+        <PackageReference Include="Microsoft.Extensions.DependencyModel" Version="6.0.0" />
+        <PackageReference Include="Microsoft.Win32.Registry" Version="5.0.0" />
+        <PackageReference Include="System.Configuration.ConfigurationManager" Version="6.0.0" />
+        <PackageReference Include="System.Drawing.Common" Version="6.0.0" />
+        <PackageReference Include="System.Data.Odbc" Version="6.0.0" />
+        <PackageReference Include="System.IO.Compression" Version="4.3.0" />
+        <PackageReference Include="System.IO.FileSystem.AccessControl" Version="5.0.0" />
+        <PackageReference Include="System.Runtime" Version="4.3.1" />
+        <PackageReference Include="System.Runtime.InteropServices" Version="4.3.0" />
+        <PackageReference Include="System.Runtime.Loader" Version="4.3.0" />
+        <PackageReference Include="System.Security.Cryptography.Pkcs" Version="6.0.1" />
+        <PackageReference Include="System.Security.AccessControl" Version="6.0.0" />
+        <PackageReference Include="System.Security.Permissions" Version="6.0.0" />
+        <PackageReference Include="System.Security.Principal.Windows" Version="5.0.0" />
+        <PackageReference Include="System.Threading.AccessControl" Version="6.0.0" />
+    </ItemGroup>
+
+    <ItemGroup>
+        <ProjectReference Include="..\IKVM.Java\IKVM.Java.msbuildproj" />
+        <ProjectReference Include="..\IKVM.Runtime\IKVM.Runtime.csproj" />
+        <ProjectReference Include="..\IKVM.Runtime.JNI\IKVM.Runtime.JNI.csproj" />
+    </ItemGroup>
+
+    <Import Project="$(MSBuildThisFileDirectory)..\IKVM.NET.Sdk\Sdk\Sdk.targets" />
+    <Import Project="$(MSBuildThisFileDirectory)..\IKVM\buildTransitive\netstandard2.0\IKVM.targets" />
+    <Import Project="$(MSBuildThisFileDirectory)..\IKVM.MSBuild\buildTransitive\netstandard2.0\IKVM.MSBuild.targets" />
+</Project>
+

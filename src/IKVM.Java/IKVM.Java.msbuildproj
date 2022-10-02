@@ -1,0 +1,251 @@
+﻿<Project>
+    <Import Project="$(MSBuildThisFileDirectory)..\IKVM.NET.Sdk\Sdk\Sdk.props" />
+    <Import Project="$(MSBuildThisFileDirectory)..\IKVM.MSBuild\buildTransitive\netstandard2.0\IKVM.MSBuild.props" />
+    <Import Project="$(MSBuildThisFileDirectory)..\..\openjdk.props" />
+
+    <PropertyGroup>
+        <PackageId>IKVM.Java</PackageId>
+        <TargetFrameworks>net461;netcoreapp3.1</TargetFrameworks>
+        <TransformOnBuild>true</TransformOnBuild>
+        <Bootstrap>true</Bootstrap>
+    </PropertyGroup>
+
+    <ItemGroup>
+        <InternalsVisibleTo Include="IKVM.Runtime" />
+        <InternalsVisibleTo Include="IKVM.Runtime.JNI" />
+        <InternalsVisibleTo Include="IKVM.AWT.WinForms" />
+    </ItemGroup>
+    
+    <ItemGroup>
+        <PackageReference Include="SharpZipLib" Version="1.3.3" />
+        <PackageReference Include="System.Memory" Version="4.5.5" />
+    </ItemGroup>
+
+    <ItemGroup Condition=" '$(TargetFramework)' == 'net461' ">
+        <Reference Include="System.Configuration" />
+        <Reference Include="System.IO.Compression" />
+        <Reference Include="System.Security" />
+        <PackageReference Include="System.Runtime.InteropServices.RuntimeInformation" Version="4.3.0" />
+    </ItemGroup>
+
+    <ItemGroup Condition=" '$(TargetFramework)' == 'netcoreapp3.1' ">
+        <PackageReference Include="Microsoft.Extensions.DependencyModel" Version="6.0.0" />
+        <PackageReference Include="Microsoft.Win32.Registry" Version="5.0.0" />
+        <PackageReference Include="System.Configuration.ConfigurationManager" Version="6.0.0" />
+        <PackageReference Include="System.Drawing.Common" Version="6.0.0" />
+        <PackageReference Include="System.Data.Odbc" Version="6.0.0" />
+        <PackageReference Include="System.IO.Compression" Version="4.3.0" />
+        <PackageReference Include="System.IO.FileSystem.AccessControl" Version="5.0.0" />
+        <PackageReference Include="System.Runtime" Version="4.3.1" />
+        <PackageReference Include="System.Runtime.InteropServices" Version="4.3.0" />
+        <PackageReference Include="System.Runtime.Loader" Version="4.3.0" />
+        <PackageReference Include="System.Security.Cryptography.Pkcs" Version="6.0.1" />
+        <PackageReference Include="System.Security.AccessControl" Version="6.0.0" />
+        <PackageReference Include="System.Security.Permissions" Version="6.0.0" />
+        <PackageReference Include="System.Security.Principal.Windows" Version="5.0.0" />
+        <PackageReference Include="System.Threading.AccessControl" Version="6.0.0" />
+    </ItemGroup>
+
+    <ItemGroup>
+        <ProjectReference Include="..\IKVM.Runtime-ref\IKVM.Runtime-ref.csproj" Private="False" PrivateAssets="All" />
+        <ProjectReference Include="..\IKVM.Runtime.JNI-ref\IKVM.Runtime.JNI-ref.csproj" Private="False" PrivateAssets="All" HideFromJava="true" />
+        <ProjectReference Include="..\IKVM.Java-ref\IKVM.Java-ref.csproj" Private="False" PrivateAssets="All" HideFromJava="true" />
+    </ItemGroup>
+
+    <ItemGroup>
+        <T4ParameterValues Include="Name">
+            <Value>$(ProductName)</Value>
+            <Visible>False</Visible>
+        </T4ParameterValues>
+        <T4ParameterValues Include="Version">
+            <Value>$(Version)</Value>
+            <Visible>False</Visible>
+        </T4ParameterValues>
+        <T4ParameterValues Include="FileVersion">
+            <Value>$(FileVersion)</Value>
+            <Visible>False</Visible>
+        </T4ParameterValues>
+        <T4ParameterValues Include="VendorUrl">
+            <Value>$(PackageProjectUrl)</Value>
+            <Visible>False</Visible>
+        </T4ParameterValues>
+        <T4ParameterValues Include="VendorUrlBug">
+            <Value>$(PackageProjectUrl)/issues/</Value>
+            <Visible>False</Visible>
+        </T4ParameterValues>
+        <T4ParameterValues Include="OpenJdkVersion">
+            <Value>$(OpenJdkVersion)</Value>
+            <Visible>False</Visible>
+        </T4ParameterValues>
+        <T4ParameterValues Include="OpenJdkFullVersion">
+            <Value>$(OpenJdkFullVersion)</Value>
+            <Visible>False</Visible>
+        </T4ParameterValues>
+        <T4ParameterValues Include="OpenJdkVendor">
+            <Value>$(OpenJdkVendor)</Value>
+            <Visible>False</Visible>
+        </T4ParameterValues>
+        <T4ParameterValues Include="OpenJdkImplementationVendor">
+            <Value>$(OpenJdkImplementationVendor)</Value>
+            <Visible>False</Visible>
+        </T4ParameterValues>
+        <T4ParameterValues Include="OpenJdkImplementationVersion">
+            <Value>$(OpenJdkImplementationVersion)</Value>
+            <Visible>False</Visible>
+        </T4ParameterValues>
+        <T4ParameterValues Include="OpenJdkSpecificationVersion">
+            <Value>$(OpenJdkSpecificationVersion)</Value>
+            <Visible>False</Visible>
+        </T4ParameterValues>
+        <T4ParameterValues Include="OpenJdkSpecificationVendor">
+            <Value>$(OpenJdkSpecificationVendor)</Value>
+            <Visible>False</Visible>
+        </T4ParameterValues>
+    </ItemGroup>
+
+    <ItemGroup>
+        <JavaResource Include="local\**\*" Exclude="local\**\*.java;**\*.tt" ResourcePath="%(RecursiveDir)%(Filename)%(Extension)" />
+    </ItemGroup>
+
+    <ItemGroup>
+        <None Include="classpath\**\*" />
+        <None Include="icedtea_jce\**\*" />
+        <None Include="icedtea_rt\**\*" />
+        <None Include="local\**\*" />
+        <None Include="@(OpenJdkSource)">
+            <LinkBase>openjdk\$([MSBuild]::MakeRelative('$(OpenJdkDir)', '%(RootDir)%(Directory)'))</LinkBase>
+        </None>
+        <Compile Include="@(OpenJdkSource)" />
+        <JavaResource Include="@(OpenJdkResource)" LinkBase="openjdk" />
+        <ExcludeRegex Include="@(OpenJdkExcludeRegex)" />
+    </ItemGroup>
+
+    <ItemGroup>
+        <None Include="local\java\lang\PropertyConstants.java.tt">
+            <Generator>TextTemplatingFileGenerator</Generator>
+            <OutputFileName>PropertyConstants.java</OutputFileName>
+        </None>
+        <Compile Remove="local\java\lang\PropertyConstants.java" />
+        <Compile Include="local\java\lang\PropertyConstants.java">
+            <AutoGen>True</AutoGen>
+            <DependentUpon>PropertyConstants.java.tt</DependentUpon>
+        </Compile>
+    </ItemGroup>
+
+    <ItemGroup>
+        <None Include="local\META-INF\MANIFEST.MF.tt">
+            <Generator>TextTemplatingFileGenerator</Generator>
+            <OutputFileName>MANIFEST.MF</OutputFileName>
+        </None>
+        <JavaResource Remove="local\META-INF\MANIFEST.MF" />
+        <JavaResource Include="local\META-INF\MANIFEST.MF">
+            <AutoGen>True</AutoGen>
+            <DependentUpon>MANIFEST.MF.tt</DependentUpon>
+            <ResourcePath>META-INF\MANIFEST.MF</ResourcePath>
+        </JavaResource>
+    </ItemGroup>
+
+    <ItemGroup>
+        <None Include="local\nashorn\version.properties.tt">
+            <Generator>TextTemplatingFileGenerator</Generator>
+            <OutputFileName>version.properties</OutputFileName>
+        </None>
+        <JavaResource Remove="local\nashorn\version.properties" />
+        <JavaResource Include="local\nashorn\version.properties">
+            <AutoGen>True</AutoGen>
+            <DependentUpon>version.properties.tt</DependentUpon>
+            <ResourcePath>nashorn/version.properties</ResourcePath>
+        </JavaResource>
+    </ItemGroup>
+
+    <ItemGroup>
+        <MapFile Include="map.xml" />
+    </ItemGroup>
+
+    <Import Project="$(MSBuildThisFileDirectory)..\IKVM.NET.Sdk\Sdk\Sdk.targets" />
+    <Import Project="$(MSBuildThisFileDirectory)..\IKVM.MSBuild\buildTransitive\netstandard2.0\IKVM.MSBuild.targets" />
+    <Import Project="$(MSBuildExtensionsPath)\Microsoft\VisualStudio\v$(VisualStudioVersion)\TextTemplating\Microsoft.TextTemplating.targets" Condition="Exists('$(MSBuildExtensionsPath)\Microsoft\VisualStudio\v$(VisualStudioVersion)\TextTemplating\Microsoft.TextTemplating.targets')" />
+
+    <!-- IKVM.Java uses the javac executable from JAVA_HOME: bootstrap -->
+    <Target Name="ResolveJavaCompiler" Condition=" '$(JAVA_HOME)' != '' And '$(JavaCompilerPath)' == '' ">
+        <PropertyGroup>
+            <JavaCompilerPath Condition=" '$([MSBuild]::IsOSUnixLike())' == 'true' And Exists('$(JAVA_HOME)\bin\javac') ">$([System.IO.Path]::GetFullPath('$(JAVA_HOME)\bin\javac'))</JavaCompilerPath>
+            <JavaCompilerPath Condition=" '$([MSBuild]::IsOSUnixLike())' != 'true' And Exists('$(JAVA_HOME)\bin\javac.exe') ">$([System.IO.Path]::GetFullPath('$(JAVA_HOME)\bin\javac.exe'))</JavaCompilerPath>
+            <JavaCompilerArgs>-J-Xmx1536M</JavaCompilerArgs>
+            <JavaCompilerExec Condition=" '$(JavaCompilerPath)' != '' ">"$(JavaCompilerPath)" $(JavaCompilerArgs)</JavaCompilerExec>
+        </PropertyGroup>
+        <Message Text="Using javac executable found in JAVA_HOME at '$(JavaCompilerPath)'." Importance="high" Condition=" '$(JavaCompilerPath)' != '' " />
+    </Target>
+
+    <Target Name="ResolveRmiStubInputItems" DependsOnTargets="CompileJava">
+        <ItemGroup>
+            <RmiStubInputItem Include="@(Classpath)" />
+            <RmiStubInputItem Include="$(ClassOutputPath)**\*.class" />
+        </ItemGroup>
+    </Target>
+
+    <Target Name="GetRmicExe">
+        <PropertyGroup>
+            <Rmic>rmic</Rmic>
+        </PropertyGroup>
+    </Target>
+
+    <PropertyGroup>
+        <RmiStubsOutputPath>$(IntermediateOutputPath)rmistubs\</RmiStubsOutputPath>
+    </PropertyGroup>
+
+    <Target Name="_BuildRmiStubs" DependsOnTargets="GetRmicExe;ResolveRmiStubInputItems" Inputs="@(RmiStubInputItem)" Outputs="$(_BuildRmiStubsCoreStampFile)">
+        <ItemGroup>
+            <_RmicClasspath Include="@(Classpath);$(ClassOutputPath)" />
+            <_RmicArgs Include="-J-client" />
+            <_RmicArgs Include="-J-Xms128m" />
+            <_RmicArgs Include="-nowarn" />
+            <_RmicArgs Include="-bootclasspath" />
+            <_RmicArgs Include="@(_RmicClasspath, '$([System.IO.Path]::PathSeparator)')" />
+            <_RmicArgs Include="-d" />
+            <_RmicArgs Include="$(RmiStubsOutputPath)" />
+        </ItemGroup>
+        <PropertyGroup>
+            <_RmicArgs>@(_RmicArgs, ' ')</_RmicArgs>
+        </PropertyGroup>
+        <Delete Files="$(RmiStubsOutputPath)**\*" />
+        <MakeDir Directories="$(RmiStubsOutputPath)" />
+        <Exec Command="$(Rmic) $(_RmicArgs) %(OpenJdkRmiStub.Flags) %(OpenJdkRmiStub.Identity)" />
+        <Touch Files="$(_BuildRmiStubsCoreStampFile)" AlwaysCreate="true" ForceTouch="true" />
+    </Target>
+
+    <PropertyGroup>
+        <BuildRmiStubsDependsOn>
+            $(BuildRmiStubsDependsOn)
+            CompileJava;
+            ResolveRmiStubInputItems;
+            _BuildRmiStubs;
+        </BuildRmiStubsDependsOn>
+    </PropertyGroup>
+
+    <Target Name="BuildRmiStubs" DependsOnTargets="$(BuildRmiStubsDependsOn)">
+        <ItemGroup>
+            <Class Include="$(RmiStubsOutputPath)**\*.class" />
+        </ItemGroup>
+    </Target>
+
+    <Target Name="CleanRmiStubs">
+        <Delete Files="$(_BuildRmiStubsCoreStampFile)" />
+        <RemoveDir Directories="$(RmiStubsOutputPath)" />
+    </Target>
+
+    <PropertyGroup>
+        <CoreCleanDependsOn>
+            $(CoreCleanDependsOn);
+            CleanRmiStubs;
+        </CoreCleanDependsOn>
+    </PropertyGroup>
+
+    <PropertyGroup>
+        <CoreCompileDependsOn>
+            BuildRmiStubs;
+            $(CoreCompileDependsOn);
+        </CoreCompileDependsOn>
+    </PropertyGroup>
+
+</Project>

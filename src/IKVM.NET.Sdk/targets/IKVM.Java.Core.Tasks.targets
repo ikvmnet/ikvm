@@ -1,0 +1,137 @@
+<Project xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+    <PropertyGroup>
+        <MSBuildAllProjects>$(MSBuildAllProjects);$(MSBuildThisFileFullPath)</MSBuildAllProjects>
+    </PropertyGroup>
+
+    <!--
+    This file contains targets which invoke the jobs in 'Task' mode. The tasks provided by MSBuild are used.
+    -->
+
+    <!-- Override IKVM.NET.Sdk: invoke exporter through task  -->
+    <Target Name="_ExportReferences" DependsOnTargets="ResolveReferenceExports" Inputs="@(ReferenceExport)" Outputs="%(ReferenceExport.CachePath)">
+        <Error Text="IKVM.NET.Sdk cannot currently build assemblies targeting '$(TargetFramework)'. Either target 'net461' or 'netcoreapp3.1'." Condition=" '$(TargetFramework)' != 'net461' And '$(TargetFramework)' != 'netcoreapp3.1' " />
+
+        <ItemGroup>
+            <_ReferenceExportReference Remove="@(_ReferenceExportReference)" />
+            <_ReferenceExportReference Include="@(ReferencePathWithRefAssemblies)" Condition=" '%(Filename)' != '%(ReferenceExport.Filename)' "/>
+        </ItemGroup>
+
+        <!-- Output to stage path then copy to cache path to be atomic. -->
+        <MakeDir Directories="$([System.IO.Path]::GetDirectoryName('%(ReferenceExport.StagePath)'))" />
+        <MakeDir Directories="$([System.IO.Path]::GetDirectoryName('%(ReferenceExport.CachePath)'))" />
+
+        <Delete Files="%(ReferenceExport.StagePath)" Condition="Exists('%(ReferenceExport.StagePath)')" />
+        <IkvmExporter ToolPath="$(IkvmExporterToolPath)" ToolFramework="$(IkvmToolFramework)" Input="%(ReferenceExport.Identity)" Bootstrap="$(Bootstrap)" NoStdLib="$(NoCompilerStandardLib)" References="@(_ReferenceExportReference)" Output="%(ReferenceExport.StagePath)" />
+        <Copy SourceFiles="%(ReferenceExport.StagePath)" DestinationFiles="%(ReferenceExport.CachePath)" OverwriteReadOnlyFiles="true" />
+
+        <ItemGroup>
+            <FileWrites Include="%(ReferenceExport.StagePath)" />
+        </ItemGroup>
+    </Target>
+
+    <!-- Override IKVM.NET.Sdk: invoke compiler through task  -->
+    <Target Name="_CompileJava" DependsOnTargets="ExportReferences;_ResolveClasspathFiles" Inputs="@(Compile);@(ClasspathFiles)" Outputs="$(_CompileJavaStampFile)">
+        <Delete Files="$(_CompileJavaStampFile)" />
+
+        <PropertyGroup>
+            <_JavaCompilerDebug Condition=" '$(DebugSymbols)' == 'true' Or '$(DebugType)' != 'none' ">all</_JavaCompilerDebug>
+        </PropertyGroup>
+
+        <!-- Store initial time. Files that remain older than this will be removed. -->
+        <PropertyGroup>
+            <_CompileJavaStartTime>$([System.DateTime]::Now.Ticks)</_CompileJavaStartTime>
+        </PropertyGroup>
+
+        <RemoveDir Directories="$(ClassOutputPath)" />
+        <MakeDir Directories="$(ClassOutputPath)" />
+        <IkvmJavaCompiler
+            Debug="$(_JavaCompilerDebug)"
+            NoWarn="true"
+            Classpath="@(Classpath)"
+            Source="$(LangVersion)"
+            Target="$(JavaVersion)"
+            Destination="$([System.IO.Path]::GetFullPath('$(ClassOutputPath)'))"
+            Verbose="true"
+            Sources="@(Compile)" />
+
+        <!-- Remove files that were not modified by this compilation. -->
+        <ItemGroup>
+            <_CompileJavaClassFiles Include="$(ClassOutputPath)**\*.class" />
+            <_CompileJavaStaleFiles Include="@(_CompileJavaClassFiles)" Condition="$([System.DateTime]::Parse('%(ModifiedTime)').Ticks) &lt; $(_CompileJavaStartTime)" />
+        </ItemGroup>
+        <Delete Files="@(_CompileJavaStaleFiles)" />
+
+        <Touch Files="$(_CompileJavaStampFile)" AlwaysCreate="true" ForceTouch="true" />
+    </Target>
+
+    <!-- Override IKVM.NET.Sdk: invoke compiler through task  -->
+    <Target Name="_CoreCompile" DependsOnTargets="ResolveIkvmRuntimeAssembly;ResolveIkvmRuntimeJNIAssembly;CompileJava" Inputs="$(IkvmRuntimeAssembly);$(IkvmRuntimeJNIAssembly);$(KeyOriginatorFile);@(MapFile);@(ReferencePathWithRefAssemblies);@(Class);@(JavaResource);$(_CompileJavaStampFile)" Outputs="@(IntermediateAssembly);@(_DebugSymbolsIntermediatePath)">
+        <Error Text="IKVM.NET.Sdk cannot currently build assemblies targeting '$(TargetFramework)'. Either target 'net461' or 'netcoreapp3.1'." Condition=" '$(TargetFramework)' != 'net461' And '$(TargetFramework)' != 'netcoreapp3.1' " />
+        <Error Text="Could not locate IKVM.Runtime assembly." Condition=" '$(IkvmRuntimeAssembly)' == '' " />
+        <Error Text="IKVM.Runtime.dll could not be located at '$(IkvmRuntimeAssembly)'." Condition="!Exists('$(IkvmRuntimeAssembly)')" />
+
+        <WriteLinesToFile File="$(_ExcludeFilePath)" Lines="@(ExcludeRegex)" Overwrite="true" Condition=" '@(ExcludeRegex)' != '' " />
+
+        <ItemGroup>
+            <_ClassToCompile Include="@(Class)" />
+            <_AssemblyAttributesClass Include="@(_ClassToCompile)" Condition=" '%(Filename)%(Extension)' == '__AssemblyAttributes.class' " />
+            <_AssemblyAttributesClass Include="@(_ClassToCompile)" Condition=" '%(Filename)%(Extension)' == '__AssemblyInfo.class' " />
+            <_ClassToCompile Remove="@(_AssemblyAttributesClass)" />
+        </ItemGroup>
+
+        <PropertyGroup>
+            <_IkvmCompilerDebug Condition=" '$(DebugType)' != 'none' ">true</_IkvmCompilerDebug>
+            <_IkvmCompilerExclude Condition="Exists('$(_ExcludeFilePath)')">$(_ExcludeFilePath)</_IkvmCompilerExclude>
+        </PropertyGroup>
+        <ItemGroup>
+            <_IkvmCompilerReferencePath Include="@(ReferencePathWithRefAssemblies)" Condition=" '%(ReferencePathWithRefAssemblies.HideFromJava)' != 'true' " />
+            <_IkvmCompilerResource Include="@(JavaResource)" ResourcePath="$([System.String]::new('%(JavaResource.ResourcePath)').Replace('\', '/'))" Condition=" '%(Identity)' != '' " />
+        </ItemGroup>
+
+        <!-- Build Java assembly into temporary directory. -->
+        <RemoveDir Directories="$(_AssemblyTempPath)" />
+        <MakeDir Directories="$(_AssemblyTempPath)" />
+
+        <!-- Compile the reference item. -->
+        <IkvmCompiler
+            ToolPath="$(IkvmCompilerToolPath)"
+            ToolFramework="$(IkvmToolFramework)"
+            ResponseFile="$(_IkvmCompilerResponseFile)"
+            Output="$(_AssemblyTempPath)$(TargetName)$(TargetExt)"
+            Assembly="$(AssemblyName)"
+            AssemblyAttributes="@(_AssemblyAttributesClass)"
+            Exclude="$(_IkvmCompilerExclude)"
+            Version="$(AssemblyVersion)"
+            FileVersion="$(FileVersion)"
+            Runtime="$(IkvmRuntimeAssembly)"
+            JNI="$(IkvmRuntimeJNIAssembly)"
+            Target="$(OutputType.ToLowerInvariant())"
+            Main="$(StartupObject)"
+            Debug="$(_IkvmCompilerDebug)"
+            KeyFile="$(KeyOriginatorFile)"
+            CompressResources="$(CompressResources)"
+            ClassLoader="$(ClassLoader)"
+            SharedClassLoader="$(SharedClassLoader)"
+            NoStdLib="$(NoCompilerStandardLib)"
+            NoParameterReflection="$(NoParameterReflection)"
+            WarningLevel="$(WarningLevel)"
+            References="@(_IkvmCompilerReferencePath)"
+            StrictFinalFieldSemantics="$(StrictFinalFieldSemantics)"
+            OptFields="true"
+            RemoveAssertions="$(RemoveAssertions)"
+            Resources="@(_IkvmCompilerResource)"
+            Remap="@(MapFile)"
+            Input="@(_ClassToCompile)" />
+
+        <!-- Move temporary files in place of permanent files. -->
+        <Move SourceFiles="$(_AssemblyTempPath)$(TargetName)$(TargetExt)" DestinationFiles="@(IntermediateAssembly)" OverwriteReadOnlyFiles="true" />
+        <Move SourceFiles="$(_AssemblyTempPath)$(TargetName).pdb" DestinationFiles="@(_DebugSymbolsIntermediatePath)" OverwriteReadOnlyFiles="true" Condition="Exists('$(_AssemblyTempPath)$(TargetName).pdb')" />
+
+        <ItemGroup>
+            <FileWrites Include="$(_ExcludeFilePath)" />
+            <FileWrites Include="$(_AssemblyTempPath)$(TargetName)$(TargetExt)" />
+            <FileWrites Include="$(_AssemblyTempPath)$(TargetName).pdb" />
+        </ItemGroup>
+    </Target>
+
+</Project>

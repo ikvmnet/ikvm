@@ -21,11 +21,14 @@
   jeroen@frijters.net
   
 */
+
 using System;
 using System.IO;
-using System.Text;
+using System.Linq;
 using System.Runtime.InteropServices;
 using System.Security;
+using System.Text;
+
 using IKVM.Runtime.Vfs;
 
 namespace IKVM.Java.Externs.java.io
@@ -56,23 +59,37 @@ namespace IKVM.Java.Externs.java.io
             return "\\";
         }
 
+        /// <summary>
+        /// Attempts to canonicalize the given path.
+        /// </summary>
+        /// <param name="path"></param>
+        /// <returns></returns>
         static string CanonicalizePath(string path)
         {
             try
             {
-                var fi = new FileInfo(path);
-                if (fi.DirectoryName == null)
-                    return path.Length > 1 && path[1] == ':' ? $"{char.ToUpper(path[0])}:{Path.DirectorySeparatorChar}" : path;
+                // begin by processing parent element
+                var parent = Path.GetDirectoryName(path);
 
-                var dir = CanonicalizePath(fi.DirectoryName);
-                var name = fi.Name;
+                // root paths with drive letter should have driver letter upper cased
+                if (parent == null)
+                    return path.Length > 1 && path[1] == ':' ? $"{char.ToUpper(path[0])}:{Path.DirectorySeparatorChar}" : path;
+                else
+                    parent = CanonicalizePath(parent);
+
+                // trailing slash would result in a last path element of empty string
+                var name = Path.GetFileName(path);
+                if (name == "")
+                    return parent;
+
                 try
                 {
                     if (VfsTable.Default.IsPath(path) == false)
                     {
-                        var arr = Directory.GetFileSystemEntries(dir, name);
-                        if (arr.Length == 1)
-                            name = arr[0];
+                        // consult the file system for an actual node with the appropriate name
+                        var all = Directory.EnumerateFileSystemEntries(parent, name);
+                        if (all.FirstOrDefault() is string one)
+                            name = Path.GetFileName(one);
                     }
                 }
                 catch (UnauthorizedAccessException)
@@ -84,7 +101,7 @@ namespace IKVM.Java.Externs.java.io
 
                 }
 
-                return Path.Combine(dir, name);
+                return Path.Combine(parent, name);
             }
             catch (UnauthorizedAccessException)
             {
@@ -109,7 +126,7 @@ namespace IKVM.Java.Externs.java.io
         public static string canonicalize0(object _this, string path)
         {
 #if FIRST_PASS
-        return null;
+            return null;
 #else
             try
             {
@@ -122,9 +139,8 @@ namespace IKVM.Java.Externs.java.io
                 // If we don't do this, "c:\j\." would be canonicalized to "C:\"
                 int colon = path.IndexOf(':', 2);
                 if (colon != -1)
-                {
                     return CanonicalizePath(path.Substring(0, colon) + Path.DirectorySeparatorChar) + path.Substring(colon);
-                }
+
                 return CanonicalizePath(path + Path.DirectorySeparatorChar);
             }
             catch (ArgumentException x)
@@ -142,7 +158,7 @@ namespace IKVM.Java.Externs.java.io
         private static string GetPathFromFile(global::java.io.File file)
         {
 #if FIRST_PASS
-        return null;
+            return null;
 #else
             return file.getPath();
 #endif

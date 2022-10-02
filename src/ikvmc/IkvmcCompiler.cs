@@ -46,6 +46,7 @@ namespace ikvmc
         private string defaultAssemblyName;
         private static bool time;
         private static string runtimeAssembly;
+        private static string runtimeJniAssembly;
         private static bool nostdlib;
         private static bool nonDeterministicOutput;
         private static readonly List<string> libpaths = new List<string>();
@@ -177,6 +178,7 @@ namespace ikvmc
             resolver.Init(StaticCompiler.Universe, nostdlib, toplevel.unresolvedReferences, libpaths);
             ResolveReferences(targets);
             ResolveStrongNameKeys(targets);
+
             if (targets.Count == 0)
             {
                 throw new FatalCompilerErrorException(Message.NoTargetsFound);
@@ -185,9 +187,10 @@ namespace ikvmc
             {
                 return 1;
             }
+
             try
             {
-                return CompilerClassLoader.Compile(runtimeAssembly, targets);
+                return CompilerClassLoader.Compile(runtimeAssembly, runtimeJniAssembly, targets);
             }
             catch (FileFormatLimitationExceededException x)
             {
@@ -311,6 +314,8 @@ namespace ikvmc
             Console.Error.WriteLine("-platform:<string>             Limit which platforms this code can run on:");
             Console.Error.WriteLine("                               x86, x64, arm, anycpu32bitpreferred, or");
             Console.Error.WriteLine("                               anycpu. The default is anycpu.");
+            Console.Error.WriteLine("-runtime:<filespec>            Use the specified IKVM runtime assembly.");
+            Console.Error.WriteLine("-jni:<filespec>                Use the specified IKVM JNI assembly.");
             Console.Error.WriteLine("-keyfile:<keyfilename>         Use keyfile to sign the assembly");
             Console.Error.WriteLine("-key:<keycontainer>            Use keycontainer to sign the assembly");
             Console.Error.WriteLine("-delaysign                     Delay-sign the assembly");
@@ -753,6 +758,11 @@ namespace ikvmc
                     {
                         // NOTE this is an undocumented option
                         runtimeAssembly = s.Substring(9);
+                    }
+                    else if (s.StartsWith("-jni:"))
+                    {
+                        // NOTE this is an undocumented option
+                        runtimeJniAssembly = s.Substring(5);
                     }
                     else if (s == "-time")
                     {

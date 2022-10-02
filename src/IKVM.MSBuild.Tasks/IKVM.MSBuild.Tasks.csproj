@@ -15,9 +15,11 @@
     </ItemGroup>
 
     <ItemGroup>
-        <ProjectReference Include="..\IKVM.Java\IKVM.Java.csproj" />
-        <ProjectReference Include="..\IKVM.Tool\IKVM.Tool.csproj" AdditionalProperties="IncludeTools=false" />
+        <ProjectReference Include="..\IKVM.Runtime\IKVM.Runtime.csproj" />
+        <ProjectReference Include="..\IKVM.Java\IKVM.Java.msbuildproj" />
+        <ProjectReference Include="..\IKVM.Java.Extensions\IKVM.Java.Extensions.csproj" />
         <ProjectReference Include="..\IKVM.Util\IKVM.Util.csproj" />
+        <ProjectReference Include="..\IKVM.Tools.Runner\IKVM.Tools.Runner.csproj" />
     </ItemGroup>
 
     <ItemGroup>

@@ -25,37 +25,12 @@ using System;
 using System.Collections.Generic;
 using System.Diagnostics;
 using System.IO;
-using System.Reflection;
-using System.Runtime.CompilerServices;
-using System.Security;
-using System.Text;
-using System.Threading;
-
-using IKVM.Internal;
-using IKVM.Runtime.Vfs;
 
 namespace IKVM.Java.Externs.java.lang
 {
 
     static class ProcessImpl
     {
-
-        /// <summary>
-        /// Maps the given path to a path capable of being executed.
-        /// </summary>
-        /// <param name="path"></param>
-        /// <returns></returns>
-        public static string mapVfsExecutable(string path)
-        {
-            // remove any unneccessary quotes
-            path = path.Trim('"');
-
-            // check the VFS: it might overload the path with an executable link
-            if (VfsTable.Default.GetPath(path) is VfsExecutable executable)
-                return executable.GetLink();
-
-            return path;
-        }
 
         public static int parseCommandString(string cmdstr)
         {
@@ -155,10 +130,6 @@ namespace IKVM.Java.Externs.java.lang
                     return false;
                 }
                 else if (file.IndexOf('.') == -1 && File.Exists(file + ".exe"))
-                {
-                    return true;
-                }
-                else if (mapVfsExecutable(file) != file)
                 {
                     return true;
                 }
