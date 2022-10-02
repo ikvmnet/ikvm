@@ -29,9 +29,10 @@
     </ItemGroup>
 
     <ItemGroup>
-        <Content Include="@(JTRegJar)" LinkBase="jtreg\lib">
+        <ContentWithTargetPath Include="@(JTRegJar)">
             <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
-        </Content>
+            <TargetPath>jtreg\lib\%(Filename)%(Extension)</TargetPath>
+        </ContentWithTargetPath>
     </ItemGroup>
 
     <Import Sdk="Microsoft.NET.Sdk" Project="Sdk.targets" />
