@@ -3,12 +3,12 @@
         <ImportDirectoryBuildProps>false</ImportDirectoryBuildProps>
         <ImportDirectoryBuildTargets>false</ImportDirectoryBuildTargets>
     </PropertyGroup>
-    <Import Sdk="IKVM.NET.Sdk" Version="8.0.0-dev" Project="Sdk.props" />
+    <Import Sdk="IKVM.NET.Sdk" Version="$(PackageVersion)" Project="Sdk.props" />
 
     <PropertyGroup>
         <TargetFrameworks>net461;netcoreapp3.1</TargetFrameworks>
         <RootNamespace>project.lib</RootNamespace>
     </PropertyGroup>
 
-    <Import Sdk="IKVM.NET.Sdk" Version="8.0.0-dev" Project="Sdk.targets" />
+    <Import Sdk="IKVM.NET.Sdk" Version="$(PackageVersion)" Project="Sdk.targets" />
 </Project>
