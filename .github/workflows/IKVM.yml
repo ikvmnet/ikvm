@@ -337,6 +337,10 @@ jobs:
     - name: Restore Tests
       run: tar xzvf tests.tar.gz
       working-directory: dist
+    - name: Delete Tests
+      shell: pwsh
+      run: ri tests.tar.gz
+      working-directory: dist
     - name: Execute Tests
       shell: pwsh
       run: |
