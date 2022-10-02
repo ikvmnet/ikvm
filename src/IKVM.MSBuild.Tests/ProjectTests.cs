@@ -120,11 +120,11 @@ namespace IKVM.MSBuild.Tests
                 analyzer.SetGlobalProperty("RestoreAdditionalProjectFallbackFolders", Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.UserProfile), ".nuget", "packages"));
 
             analyzer.AddBuildLogger(new TargetLogger(TestContext) { Verbosity = LoggerVerbosity.Detailed });
+            analyzer.AddBinaryLogger(Path.Combine(TestContext.ResultsDirectory, "msbuild.binlog"));
 
             {
                 var options = new EnvironmentOptions();
                 options.DesignTime = false;
-                options.Arguments.Add("-bl");
                 options.TargetsToBuild.Clear();
                 options.TargetsToBuild.Add("Restore");
                 options.TargetsToBuild.Add("Clean");
