@@ -117,7 +117,11 @@ namespace IKVM.MSBuild.Tests
             if (Environment.GetEnvironmentVariable("NUGET_PACKAGES") is string nugetPackagesDir && Directory.Exists(nugetPackagesDir))
                 analyzer.SetGlobalProperty("RestoreAdditionalProjectFallbackFolders", nugetPackagesDir);
             else
-                analyzer.SetGlobalProperty("RestoreAdditionalProjectFallbackFolders", Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.UserProfile), ".nuget", "packages"));
+            {
+                var d = Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.UserProfile), ".nuget", "packages");
+                Directory.CreateDirectory(d);
+                analyzer.SetGlobalProperty("RestoreAdditionalProjectFallbackFolders", d);
+            }
 
             analyzer.AddBuildLogger(new TargetLogger(TestContext) { Verbosity = LoggerVerbosity.Detailed });
             analyzer.AddBinaryLogger(Path.Combine(TestContext.ResultsDirectory, "msbuild.binlog"));
