@@ -278,6 +278,40 @@ jobs:
           sys: ubuntu
         - run: IKVM.NET.Sdk.Tests
           sys: ubuntu
+        - run: IKVM.Tests
+          tfm: net472
+        - run: IKVM.Tools.Exporter.Tests
+          tfm: net472
+        - run: IKVM.Tools.Exporter.Tests
+          tfm: net48
+        - run: IKVM.Tools.Exporter.Tests
+          tfm: net6.0
+        - run: IKVM.Tools.Tests
+          tfm: net472
+        - run: ikvmc.Tests
+          tfm: net472
+        - run: ikvmc.Tests
+          tfm: net48
+        - run: ikvmc.Tests
+          tfm: net6.0
+        - run: IKVM.MSBuild.Tests
+          tfm: net461
+        - run: IKVM.MSBuild.Tests
+          tfm: net472
+        - run: IKVM.MSBuild.Tests
+          tfm: net48
+        - run: IKVM.MSBuild.Tests
+          tfm: netcoreapp3.1
+        - run: IKVM.NET.Sdk.Tests
+          sys: ubuntu
+        - run: IKVM.NET.Sdk.Tests
+          tfm: net461
+        - run: IKVM.NET.Sdk.Tests
+          tfm: net472
+        - run: IKVM.NET.Sdk.Tests
+          tfm: net48
+        - run: IKVM.NET.Sdk.Tests
+          tfm: netcoreapp3.1
     name: Test IKVM (${{ matrix.run }}:${{ matrix.tfm }}:${{ matrix.sys }}
     needs:
     - build-ikvm
@@ -302,6 +336,10 @@ jobs:
         path: dist
     - name: Restore Tests
       run: tar xzvf tests.tar.gz
+      working-directory: dist
+    - name: Delete Tests
+      shell: pwsh
+      run: ri tests.tar.gz
       working-directory: dist
     - name: Execute Tests
       shell: pwsh
