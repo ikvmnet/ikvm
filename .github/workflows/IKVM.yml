@@ -326,16 +326,16 @@ jobs:
         # if a query was specified, add to test command
         if ($tests) {
             if ($query -ne "" -and $query -ne $null) {
-                dotnet test -f $tfm --blame -v 2 --results-directory "TestResults" --filter "$query" $tests
+                dotnet test -f $tfm --blame -v 2 --results-directory "TestResults" --logger:trx --filter "$query" $tests
             } else {
-                dotnet test -f $tfm --blame -v 2 --results-directory "TestResults" $tests
+                dotnet test -f $tfm --blame -v 2 --results-directory "TestResults" --logger:trx $tests
             }
         }
     - name: Upload Test Results
       if: ${{ always() }}
       uses: actions/upload-artifact@v3
       with:
-        name: TestResults-${{ matrix.run }}-${{ matrix.tfm }}-${{ matrix.sys }}
+        name: TestResults--${{ matrix.run }}--${{ matrix.tfm }}--${{ matrix.sys }}
         path: TestResults
   release:
     name: Release
