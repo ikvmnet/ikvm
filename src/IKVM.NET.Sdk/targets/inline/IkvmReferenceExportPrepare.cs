@@ -9,7 +9,7 @@ using System.Text;
 using Microsoft.Build.Framework;
 using Microsoft.Build.Utilities;
 
-namespace IKVM.MSBuild.Tasks
+namespace IKVM.NET.Sdk.Tasks
 {
 
     public class IkvmReferenceExportPrepare : Task
