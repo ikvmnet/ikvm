@@ -195,15 +195,15 @@ namespace IKVM.JTReg.TestAdapter
                 rp.setKeywordsExpr(keywordsExpr);
 
             // locate and configure TestNG
-            var testNGPath = Path.Combine(Path.GetDirectoryName(typeof(IkvmJTRegTestAdapter).Assembly.Location), "jtreg", "lib", "testng.jar");
+            var testNGPath = Path.Combine(Path.GetDirectoryName(typeof(IkvmJTRegTestAdapter).Assembly.Location), "jtreg", "testng.jar");
             rp.setTestNGPath(JTRegTypes.SearchPath.New(testNGPath));
 
             // locate and configure JUnit
-            var junitPath = Path.Combine(Path.GetDirectoryName(typeof(IkvmJTRegTestAdapter).Assembly.Location), "jtreg", "lib", "junit.jar");
+            var junitPath = Path.Combine(Path.GetDirectoryName(typeof(IkvmJTRegTestAdapter).Assembly.Location), "jtreg", "junit.jar");
             rp.setJUnitPath(JTRegTypes.SearchPath.New(junitPath));
 
             // locate and configure JUnit
-            var asmtoolsPath = Path.Combine(Path.GetDirectoryName(typeof(IkvmJTRegTestAdapter).Assembly.Location), "jtreg", "lib", "asmtools.jar");
+            var asmtoolsPath = Path.Combine(Path.GetDirectoryName(typeof(IkvmJTRegTestAdapter).Assembly.Location), "jtreg", "asmtools.jar");
             rp.setAsmToolsPath(JTRegTypes.SearchPath.New(asmtoolsPath));
 
             // final initialization

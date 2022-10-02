@@ -31,7 +31,7 @@
     <ItemGroup>
         <ContentWithTargetPath Include="@(JTRegJar)">
             <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
-            <TargetPath>jtreg\lib\%(Filename)%(Extension)</TargetPath>
+            <TargetPath>jtreg\%(Filename)%(Extension)</TargetPath>
         </ContentWithTargetPath>
     </ItemGroup>
 
