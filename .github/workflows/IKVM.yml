@@ -249,6 +249,9 @@ jobs:
       shell: pwsh
       run: ri tests.tar.gz
       working-directory: dist
+    - name: Delete Files
+      shell: pwsh
+      run: ri dist -Recurse -Force
   test-ikvm:
     strategy:
       matrix:
