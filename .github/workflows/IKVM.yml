@@ -250,6 +250,8 @@ jobs:
       matrix:
         run:
         - IKVM.Tests
+        - IKVM.Tests.JRE
+        - IKVM.Tests.JDK
         - ikvmc.Tests
         - IKVM.Tools.Exporter.Tests
         - IKVM.Tools.Tests
@@ -279,6 +281,10 @@ jobs:
         - run: IKVM.NET.Sdk.Tests
           sys: ubuntu
         - run: IKVM.Tests
+          tfm: net472
+        - run: IKVM.Tests.JRE
+          tfm: net472
+        - run: IKVM.Tests.JDK
           tfm: net472
         - run: IKVM.Tools.Exporter.Tests
           tfm: net472
