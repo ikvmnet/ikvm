@@ -9,7 +9,10 @@
     </PropertyGroup>
 
     <ItemGroup>
-
+        <TargetsForPublish Include="$(SolutionFile)">
+            <Targets>dist-bin:Publish</Targets>
+            <Properties>PublishDir=$(DistDir)\bin</Properties>
+        </TargetsForPublish>
         <TargetsForPublish Include="$(SolutionFile)">
             <Targets>dist-tools:Publish</Targets>
             <Properties>PublishDir=$(DistDir)\tools</Properties>
@@ -26,16 +29,6 @@
             <Targets>dist-tests:Publish</Targets>
             <Properties>PublishDir=$(DistDir)\tests</Properties>
         </TargetsForPublish>
-
-        <TargetsForPublish Include="$(SolutionFile)">
-            <Targets>IKVM:Publish</Targets>
-            <Properties>TargetFramework=net461;PublishDir=$(DistDir)\bin\net461</Properties>
-        </TargetsForPublish>
-        <TargetsForPublish Include="$(SolutionFile)">
-            <Targets>IKVM:Publish</Targets>
-            <Properties>TargetFramework=netcoreapp3.1;PublishDir=$(DistDir)\bin\netcoreapp3.1</Properties>
-        </TargetsForPublish>
-
     </ItemGroup>
 
     <Target Name="Publish">
