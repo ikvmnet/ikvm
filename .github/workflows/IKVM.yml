@@ -331,7 +331,7 @@ jobs:
         dotnet-version: 6.0.x
     - name: Move Temporary Directory
       shell: pwsh
-      run: ac $env:GITHUB_ENV "`nTMP=${{ runner.temp }}`nTMP=${{ runner.temp }}"
+      run: Add-Content $env:GITHUB_ENV "`nTMP=${{ runner.temp }}`nTMP=${{ runner.temp }}"
     - name: Download Tests
       uses: actions/download-artifact@v3
       with:
