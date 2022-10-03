@@ -71,10 +71,8 @@ namespace IKVM.MSBuild.Tests
                 ("net472",          "win7-x64"),
                 ("net48",           "win7-x64"),
                 ("netcoreapp3.1",   "win7-x64"),
-                ("net5.0",          "win7-x64"),
                 ("net6.0",          "win7-x64"),
                 ("netcoreapp3.1",   "linux-x64"),
-                ("net5.0",          "linux-x64"),
                 ("net6.0",          "linux-x64"),
             };
 
@@ -83,10 +81,8 @@ namespace IKVM.MSBuild.Tests
                 targets = new[]
                 {
                     ("netcoreapp3.1",   "win7-x64"),
-                    ("net5.0",          "win7-x64"),
                     ("net6.0",          "win7-x64"),
                     ("netcoreapp3.1",   "linux-x64"),
-                    ("net5.0",          "linux-x64"),
                     ("net6.0",          "linux-x64"),
                 };
             }
@@ -111,6 +107,11 @@ namespace IKVM.MSBuild.Tests
             analyzer.SetGlobalProperty("IkvmExportCacheDir", ikvmCachePath + Path.DirectorySeparatorChar);
             analyzer.SetGlobalProperty("PackageVersion", properties["PackageVersion"]);
             analyzer.SetGlobalProperty("RestorePackagesPath", nugetPackageRoot + Path.DirectorySeparatorChar);
+            analyzer.SetGlobalProperty("CreateHardLinksForAdditionalFilesIfPossible", "true");
+            analyzer.SetGlobalProperty("CreateHardLinksForCopyAdditionalFilesIfPossible", "true");
+            analyzer.SetGlobalProperty("CreateHardLinksForCopyFilesToOutputDirectoryIfPossible", "true");
+            analyzer.SetGlobalProperty("CreateHardLinksForCopyLocalIfPossible", "true");
+            analyzer.SetGlobalProperty("CreateHardLinksForPublishFilesIfPossible", "true");
 
             // allow NuGet to locate packages in existing global packages folder if set
             // else fallback to standard location

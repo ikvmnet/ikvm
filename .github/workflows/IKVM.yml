@@ -132,10 +132,6 @@ jobs:
       uses: actions/setup-dotnet@v2
       with:
         dotnet-version: 3.1.x
-    - name: Setup .NET 5.0
-      uses: actions/setup-dotnet@v2
-      with:
-        dotnet-version: 5.0.x
     - name: Setup .NET 6.0
       uses: actions/setup-dotnet@v2
       with:
@@ -146,8 +142,12 @@ jobs:
         additional-packages:
           gcc
           g++
-    - name: Setup NuGet
-      run: ac $env:GITHUB_ENV "`nNUGET_PACKAGES=${{ runner.temp }}\nuget\packages"
+    - name: Move Temporary Directory
+      shell: pwsh
+      run: Add-Content $env:GITHUB_ENV "`nTMP=${{ runner.temp }}`nTMP=${{ runner.temp }}"
+    - name: Move NuGet Directory
+      shell: pwsh
+      run: Add-Content $env:GITHUB_ENV "`nNUGET_PACKAGES=${{ runner.temp }}\nuget\packages"
     - name: Cache NuGet
       uses: actions/cache@v3
       with:
@@ -321,14 +321,13 @@ jobs:
       uses: actions/setup-dotnet@v2
       with:
         dotnet-version: 3.1.x
-    - name: Setup .NET 5.0
-      uses: actions/setup-dotnet@v2
-      with:
-        dotnet-version: 5.0.x
     - name: Setup .NET 6.0
       uses: actions/setup-dotnet@v2
       with:
         dotnet-version: 6.0.x
+    - name: Move Temporary Directory
+      shell: pwsh
+      run: Add-Content $env:GITHUB_ENV "`nTMP=${{ runner.temp }}`nTMP=${{ runner.temp }}"
     - name: Download Tests
       uses: actions/download-artifact@v3
       with:
