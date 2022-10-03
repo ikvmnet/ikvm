@@ -317,11 +317,6 @@ jobs:
     - build-ikvm
     runs-on: ${{ matrix.sys }}-latest
     steps:
-    - name: Set TEMP
-      shell: pwsh
-      run: |
-        echo "TEMP=${{ env.RUNNER_TEMP }}" | Out-File -FilePath $env:GITHUB_ENV -Encoding UTF8 -Append
-        echo "TMP=${{ env.RUNNER_TEMP }}"  | Out-File -FilePath $env:GITHUB_ENV -Encoding UTF8 -Append
     - name: Setup .NET 3.1
       uses: actions/setup-dotnet@v2
       with:
@@ -334,6 +329,11 @@ jobs:
       uses: actions/setup-dotnet@v2
       with:
         dotnet-version: 6.0.x
+    - name: Set TEMP
+      shell: pwsh
+      run: |
+        echo "TEMP=${{ env.RUNNER_TEMP }}" | Out-File -FilePath $env:GITHUB_ENV -Encoding UTF8 -Append
+        echo "TMP=${{ env.RUNNER_TEMP }}"  | Out-File -FilePath $env:GITHUB_ENV -Encoding UTF8 -Append
     - name: Download Tests
       uses: actions/download-artifact@v3
       with:
