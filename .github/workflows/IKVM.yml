@@ -397,7 +397,7 @@ jobs:
             }
         }
     - name: Upload Test Results
-      if: ${{ always() && env.RET.startsWith('TestResults--') }}
+      if: ${{ always() && startsWith(env.RET, 'TestResults--') }}
       uses: actions/upload-artifact@v3
       with:
         name: ${{ env.RET }}
