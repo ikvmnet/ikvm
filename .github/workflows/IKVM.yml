@@ -389,10 +389,10 @@ jobs:
         # if a query was specified, add to test command
         if ($tests) {
             if ($qry -ne "" -and $query -ne $null) {
-                Write-Host "::set-env name=RET::TestResults--$tst--$tfm--$sys"
+                Write-Host "::set-env name=RET::TestResults--$tst-$qry--$tfm--$sys"
                 dotnet test -f $tfm --blame -v 2 --results-directory "TestResults" --logger:"console;verbosity=detailed" --logger:trx --collect "Code Coverage" --filter "$qry" $tests
             } else {
-                Write-Host "::set-env name=RET::TestResults--$tst-$qry--$tfm--$sys"
+                Write-Host "::set-env name=RET::TestResults--$tst--$tfm--$sys"
                 dotnet test -f $tfm --blame -v 2 --results-directory "TestResults" --logger:"console;verbosity=detailed" --logger:trx --collect "Code Coverage" $tests
             }
         }
