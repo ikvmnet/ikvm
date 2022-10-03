@@ -1,21 +1,16 @@
 package ikvm.runtime;
 
-import java.util.Properties;
-
-import cli.System.Type;
-
-public final class Launcher
+public final class Startup
 {
 
-    private Launcher()
+    private Startup()
     {
         
     }
 
     /**
-     * Launches the given .NET type as a Java application class. This method should be invoked before any other JVM work is
-     * conducted, ideally by generated executables.
+     * Ensures the given assembly is added to the boot class path of the running JVM instance.
      */
-    public static native int run(Type main, String[] args, String jvmArgPrefix, Properties properties);
+    public static native void addBootClassPathAssembly(cli.System.Reflection.Assembly assembly);
 
 }
