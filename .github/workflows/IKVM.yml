@@ -149,8 +149,9 @@ jobs:
     - name: Move Temporary Directory
       shell: pwsh
       run: Add-Content $env:GITHUB_ENV "`nTMP=${{ runner.temp }}`nTMP=${{ runner.temp }}"
-    - name: Setup NuGet
-      run: ac $env:GITHUB_ENV "`nNUGET_PACKAGES=${{ runner.temp }}\nuget\packages"
+    - name: Move NuGet Directory
+      shell: pwsh
+      run: Add-Content $env:GITHUB_ENV "`nNUGET_PACKAGES=${{ runner.temp }}\nuget\packages"
     - name: Cache NuGet
       uses: actions/cache@v3
       with:
