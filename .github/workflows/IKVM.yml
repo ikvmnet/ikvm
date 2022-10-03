@@ -245,6 +245,16 @@ jobs:
       shell: pwsh
       run: ri tests.tar.gz
       working-directory: dist
+    - name: Delete Files
+      shell: pwsh
+      run: ri dist -Recurse -Force
+    - name: Clean Solution
+      run: |
+        msbuild /m `
+          /p:Configuration="Release" `
+          /p:Platform="Any CPU" `
+          /t:Clean `
+          IKVM.sln
   test-ikvm:
     strategy:
       matrix:
@@ -258,6 +268,23 @@ jobs:
         - IKVM.MSBuild.Tasks.Tests
         - IKVM.MSBuild.Tests
         - IKVM.NET.Sdk.Tests
+        - IKVM.JTReg.TestAdapter.Tests
+        - IKVM.Java.Tests?TestPartition=0
+        - IKVM.Java.Tests?TestPartition=1
+        - IKVM.Java.Tests?TestPartition=2
+        - IKVM.Java.Tests?TestPartition=3
+        - IKVM.Java.Tests?TestPartition=4
+        - IKVM.Java.Tests?TestPartition=5
+        - IKVM.Java.Tests?TestPartition=6
+        - IKVM.Java.Tests?TestPartition=7
+        - IKVM.Java.Tests?TestPartition=8
+        - IKVM.Java.Tests?TestPartition=9
+        - IKVM.Java.Tests?TestPartition=10
+        - IKVM.Java.Tests?TestPartition=11
+        - IKVM.Java.Tests?TestPartition=12
+        - IKVM.Java.Tests?TestPartition=13
+        - IKVM.Java.Tests?TestPartition=14
+        - IKVM.Java.Tests?TestPartition=15
         tfm:
         - net461
         - net472
@@ -278,8 +305,24 @@ jobs:
           sys: ubuntu
         - run: IKVM.MSBuild.Tests
           sys: ubuntu
+        - run: IKVM.MSBuild.Tests
+          tfm: net461
+        - run: IKVM.MSBuild.Tests
+          tfm: net472
+        - run: IKVM.MSBuild.Tests
+          tfm: net48
+        - run: IKVM.MSBuild.Tests
+          tfm: netcoreapp3.1
         - run: IKVM.NET.Sdk.Tests
           sys: ubuntu
+        - run: IKVM.NET.Sdk.Tests
+          tfm: net461
+        - run: IKVM.NET.Sdk.Tests
+          tfm: net472
+        - run: IKVM.NET.Sdk.Tests
+          tfm: net48
+        - run: IKVM.NET.Sdk.Tests
+          tfm: netcoreapp3.1
         - run: IKVM.Tests
           tfm: net472
         - run: IKVM.Tests.JRE
@@ -300,24 +343,6 @@ jobs:
           tfm: net48
         - run: ikvmc.Tests
           tfm: net6.0
-        - run: IKVM.MSBuild.Tests
-          tfm: net461
-        - run: IKVM.MSBuild.Tests
-          tfm: net472
-        - run: IKVM.MSBuild.Tests
-          tfm: net48
-        - run: IKVM.MSBuild.Tests
-          tfm: netcoreapp3.1
-        - run: IKVM.NET.Sdk.Tests
-          sys: ubuntu
-        - run: IKVM.NET.Sdk.Tests
-          tfm: net461
-        - run: IKVM.NET.Sdk.Tests
-          tfm: net472
-        - run: IKVM.NET.Sdk.Tests
-          tfm: net48
-        - run: IKVM.NET.Sdk.Tests
-          tfm: netcoreapp3.1
     name: Test IKVM (${{ matrix.run }}:${{ matrix.tfm }}:${{ matrix.sys }}
     needs:
     - build-ikvm
@@ -357,28 +382,30 @@ jobs:
         # suite name can contain filter expression after ?
         $split = $run.IndexOf("?")
         if ($split -gt -1) {
-            $suite = $run.Substring(0, $split)
-            $query = $run.Substring($split + 1)
+            $tst = $run.Substring(0, $split)
+            $qry = $run.Substring($split + 1)
         } else {
-            $suite = $run
+            $tst = $run
         }
 
         # scan for test assemblies
-        $tests = $(gci .\dist\tests\$suite\$tfm -Recurse -Filter '*.Tests.dll')
+        $tests = $(gci .\dist\tests\$tst\$tfm -Recurse -Filter '*.Tests.dll')
 
         # if a query was specified, add to test command
         if ($tests) {
-            if ($query -ne "" -and $query -ne $null) {
-                dotnet test -f $tfm --blame -v 2 --results-directory "TestResults" --logger:"console;verbosity=detailed" --logger:trx --collect "Code Coverage" --filter "$query" $tests
+            if ($qry -ne "" -and $qry -ne $null) {
+                Write-Host "::set-env name=RET::TestResults--$tst-$qry--$tfm--$sys"
+                dotnet test -f $tfm --blame -v 2 --results-directory "TestResults" --logger:"console;verbosity=detailed" --logger:trx --collect "Code Coverage" --filter "$qry" $tests
             } else {
+                Write-Host "::set-env name=RET::TestResults--$tst--$tfm--$sys"
                 dotnet test -f $tfm --blame -v 2 --results-directory "TestResults" --logger:"console;verbosity=detailed" --logger:trx --collect "Code Coverage" $tests
             }
         }
     - name: Upload Test Results
-      if: ${{ always() }}
+      if: ${{ always() && startsWith(env.RET, 'TestResults--') }}
       uses: actions/upload-artifact@v3
       with:
-        name: TestResults--${{ matrix.run }}--${{ matrix.tfm }}--${{ matrix.sys }}
+        name: ${{ env.RET }}
         path: TestResults
   release:
     name: Release
