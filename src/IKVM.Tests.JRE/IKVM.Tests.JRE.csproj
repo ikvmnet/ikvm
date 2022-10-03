@@ -1,4 +1,4 @@
-﻿<Project Sdk="Microsoft.NET.Sdk">
+<Project Sdk="Microsoft.NET.Sdk">
 
     <PropertyGroup>
         <TargetFrameworks>net461;net48;netcoreapp3.1;net6.0</TargetFrameworks>
@@ -6,24 +6,6 @@
         <PreserveCompilationContext>true</PreserveCompilationContext>
         <ErrorOnDuplicatePublishOutputFiles>false</ErrorOnDuplicatePublishOutputFiles>
     </PropertyGroup>
-
-    <ItemGroup>
-        <None Remove="Java\java\lang\ClassTests.java" />
-        <None Remove="JNI\JniTests.java" />
-        <None Remove="Runtime\Vfs\VfsTestResource.txt" />
-    </ItemGroup>
-
-    <ItemGroup>
-        <EmbeddedResource Include="Java\java\lang\ClassTests.java" />
-        <EmbeddedResource Include="JNI\JniTests.java" />
-        <EmbeddedResource Include="Runtime\Vfs\VfsTestResource.txt" />
-    </ItemGroup>
-
-    <ItemGroup>
-        <None Include="..\..\ext\helloworld-2.0.jar" Link="helloworld-2.0.jar">
-            <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
-        </None>
-    </ItemGroup>
 
     <ItemGroup>
         <PackageReference Include="FluentAssertions" Version="6.7.0" />
@@ -40,6 +22,7 @@
         <ProjectReference Include="..\IKVM.Runtime.JNI\IKVM.Runtime.JNI.csproj" />
         <ProjectReference Include="..\IKVM.Java\IKVM.Java.msbuildproj" />
         <ProjectReference Include="..\IKVM.Image\IKVM.Image.csproj" />
+        <ProjectReference Include="..\IKVM.Image.JRE\IKVM.Image.JRE.csproj" />
         <ProjectReference Include="..\IKVM.Tests.Util\IKVM.Tests.Util.csproj" />
         <ProjectReference Include="..\IKVM.Tools.Runner\IKVM.Tools.Runner.csproj" />
         <ProjectReference Include="..\IKVM.Util\IKVM.Util.csproj" />

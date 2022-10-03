@@ -132,10 +132,6 @@ jobs:
       uses: actions/setup-dotnet@v2
       with:
         dotnet-version: 3.1.x
-    - name: Setup .NET 5.0
-      uses: actions/setup-dotnet@v2
-      with:
-        dotnet-version: 5.0.x
     - name: Setup .NET 6.0
       uses: actions/setup-dotnet@v2
       with:
@@ -264,6 +260,8 @@ jobs:
       matrix:
         run:
         - IKVM.Tests
+        - IKVM.Tests.JRE
+        - IKVM.Tests.JDK
         - ikvmc.Tests
         - IKVM.Tools.Exporter.Tests
         - IKVM.Tools.Tests
@@ -327,6 +325,10 @@ jobs:
           tfm: netcoreapp3.1
         - run: IKVM.Tests
           tfm: net472
+        - run: IKVM.Tests.JRE
+          tfm: net472
+        - run: IKVM.Tests.JDK
+          tfm: net472
         - run: IKVM.Tools.Exporter.Tests
           tfm: net472
         - run: IKVM.Tools.Exporter.Tests
@@ -350,10 +352,6 @@ jobs:
       uses: actions/setup-dotnet@v2
       with:
         dotnet-version: 3.1.x
-    - name: Setup .NET 5.0
-      uses: actions/setup-dotnet@v2
-      with:
-        dotnet-version: 5.0.x
     - name: Setup .NET 6.0
       uses: actions/setup-dotnet@v2
       with:
