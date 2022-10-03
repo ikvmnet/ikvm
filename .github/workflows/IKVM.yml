@@ -252,6 +252,13 @@ jobs:
     - name: Delete Files
       shell: pwsh
       run: ri dist -Recurse -Force
+    - name: Clean Solution
+      run: |
+        msbuild /m `
+          /p:Configuration="Release" `
+          /p:Platform="Any CPU" `
+          /t:Clean `
+          IKVM.sln
   test-ikvm:
     strategy:
       matrix:
