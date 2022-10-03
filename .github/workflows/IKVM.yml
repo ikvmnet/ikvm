@@ -367,28 +367,30 @@ jobs:
         # suite name can contain filter expression after ?
         $split = $run.IndexOf("?")
         if ($split -gt -1) {
-            $suite = $run.Substring(0, $split)
-            $query = $run.Substring($split + 1)
+            $tst = $run.Substring(0, $split)
+            $qry = $run.Substring($split + 1)
         } else {
-            $suite = $run
+            $tst = $run
         }
 
         # scan for test assemblies
-        $tests = $(gci .\dist\tests\$suite\$tfm -Recurse -Filter '*.Tests.dll')
+        $tests = $(gci .\dist\tests\$tst\$tfm -Recurse -Filter '*.Tests.dll')
 
         # if a query was specified, add to test command
         if ($tests) {
-            if ($query -ne "" -and $query -ne $null) {
-                dotnet test -f $tfm --blame -v 2 --results-directory "TestResults" --logger:"console;verbosity=detailed" --logger:trx --collect "Code Coverage" --filter "$query" $tests
+            if ($qry -ne "" -and $query -ne $null) {
+                Write-Host "::set-env name=RET::TestResults--$tst--$tfm--$sys"
+                dotnet test -f $tfm --blame -v 2 --results-directory "TestResults" --logger:"console;verbosity=detailed" --logger:trx --collect "Code Coverage" --filter "$qry" $tests
             } else {
+                Write-Host "::set-env name=RET::TestResults--$tst-$qry--$tfm--$sys"
                 dotnet test -f $tfm --blame -v 2 --results-directory "TestResults" --logger:"console;verbosity=detailed" --logger:trx --collect "Code Coverage" $tests
             }
         }
     - name: Upload Test Results
-      if: ${{ always() }}
+      if: ${{ always() && env.RET.startsWith('TestResults--') }}
       uses: actions/upload-artifact@v3
       with:
-        name: TestResults--${{ matrix.run }}--${{ matrix.tfm }}--${{ matrix.sys }}
+        name: ${{ env.RET }}
         path: TestResults
   release:
     name: Release
