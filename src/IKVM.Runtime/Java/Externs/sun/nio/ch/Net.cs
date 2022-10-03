@@ -34,6 +34,11 @@ namespace IKVM.Java.Externs.sun.nio.ch
     static class Net
     {
 
+        public static  void initIDs()
+        {
+
+        }
+
         public static bool isIPv6Available0()
         {
             return Socket.OSSupportsIPv6;
@@ -61,7 +66,7 @@ namespace IKVM.Java.Externs.sun.nio.ch
         public static void shutdown(global::java.io.FileDescriptor fd, int how)
         {
 #if FIRST_PASS
-            throw new NotSupportedException();
+            throw new NotImplementedException();
 #else
             var socket = (Socket)fd.getSocket();
             if (socket == null)
@@ -85,7 +90,7 @@ namespace IKVM.Java.Externs.sun.nio.ch
         public static int localPort(global::java.io.FileDescriptor fd)
         {
 #if FIRST_PASS
-            throw new NotSupportedException();
+            throw new NotImplementedException();
 #else
             var socket = (Socket)fd.getSocket();
             if (socket == null)
@@ -109,7 +114,7 @@ namespace IKVM.Java.Externs.sun.nio.ch
         public static global::java.net.InetAddress localInetAddress(global::java.io.FileDescriptor fd)
         {
 #if FIRST_PASS
-            throw new NotSupportedException();
+            throw new NotImplementedException();
 #else
             var socket = (Socket)fd.getSocket();
             if (socket == null)
@@ -133,7 +138,7 @@ namespace IKVM.Java.Externs.sun.nio.ch
         public static int remotePort(global::java.io.FileDescriptor fd)
         {
 #if FIRST_PASS
-            throw new NotSupportedException();
+            throw new NotImplementedException();
 #else
             var socket = (Socket)fd.getSocket();
             if (socket == null)
@@ -157,7 +162,7 @@ namespace IKVM.Java.Externs.sun.nio.ch
         public static global::java.net.InetAddress remoteInetAddress(global::java.io.FileDescriptor fd)
         {
 #if FIRST_PASS
-            throw new NotSupportedException();
+            throw new NotImplementedException();
 #else
             var socket = (Socket)fd.getSocket();
             if (socket == null)
@@ -181,7 +186,7 @@ namespace IKVM.Java.Externs.sun.nio.ch
         public static int getIntOption0(global::java.io.FileDescriptor fd, bool mayNeedConversion, int level, int opt)
         {
 #if FIRST_PASS
-            throw new NotSupportedException();
+            throw new NotImplementedException();
 #else
             var socket = (Socket)fd.getSocket();
             if (socket == null)
@@ -216,7 +221,7 @@ namespace IKVM.Java.Externs.sun.nio.ch
         public static void setIntOption0(global::java.io.FileDescriptor fd, bool mayNeedConversion, int level, int opt, int arg, bool isIPv6)
         {
 #if FIRST_PASS
-            throw new NotSupportedException();
+            throw new NotImplementedException();
 #else
             var socket = (Socket)fd.getSocket();
             if (socket == null)
@@ -270,7 +275,7 @@ namespace IKVM.Java.Externs.sun.nio.ch
         public static int joinOrDrop4(bool join, global::java.io.FileDescriptor fd, int group, int interf, int source)
         {
 #if FIRST_PASS
-            throw new NotSupportedException();
+            throw new NotImplementedException();
 #else
             var socket = (Socket)fd.getSocket();
             if (socket == null)
@@ -308,7 +313,7 @@ namespace IKVM.Java.Externs.sun.nio.ch
         public static int blockOrUnblock4(bool block, global::java.io.FileDescriptor fd, int group, int interf, int source)
         {
 #if FIRST_PASS
-            throw new NotSupportedException();
+            throw new NotImplementedException();
 #else
             var socket = (Socket)fd.getSocket();
             if (socket == null)
@@ -353,7 +358,7 @@ namespace IKVM.Java.Externs.sun.nio.ch
         public static int joinOrDrop6(bool join, global::java.io.FileDescriptor fd, byte[] group, int index, byte[] source)
         {
 #if FIRST_PASS
-            throw new NotSupportedException();
+            throw new NotImplementedException();
 #else
             var socket = (Socket)fd.getSocket();
             if (socket == null)
@@ -396,7 +401,7 @@ namespace IKVM.Java.Externs.sun.nio.ch
         public static int blockOrUnblock6(bool block, global::java.io.FileDescriptor fd, byte[] group, int index, byte[] source)
         {
 #if FIRST_PASS
-            throw new NotSupportedException();
+            throw new NotImplementedException();
 #else
             var socket = (Socket)fd.getSocket();
             if (socket == null)
@@ -432,7 +437,7 @@ namespace IKVM.Java.Externs.sun.nio.ch
         public static void setInterface4(global::java.io.FileDescriptor fd, int interf)
         {
 #if FIRST_PASS
-            throw new NotSupportedException();
+            throw new NotImplementedException();
 #else
             var socket = (Socket)fd.getSocket();
             if (socket == null)
@@ -456,7 +461,7 @@ namespace IKVM.Java.Externs.sun.nio.ch
         public static int getInterface4(global::java.io.FileDescriptor fd)
         {
 #if FIRST_PASS
-            throw new NotSupportedException();
+            throw new NotImplementedException();
 #else
             var socket = (Socket)fd.getSocket();
             if (socket == null)
@@ -480,7 +485,7 @@ namespace IKVM.Java.Externs.sun.nio.ch
         public static void setInterface6(global::java.io.FileDescriptor fd, int index)
         {
 #if FIRST_PASS
-            throw new NotSupportedException();
+            throw new NotImplementedException();
 #else
             var socket = (Socket)fd.getSocket();
             if (socket == null)
@@ -504,7 +509,7 @@ namespace IKVM.Java.Externs.sun.nio.ch
         public static int getInterface6(global::java.io.FileDescriptor fd)
         {
 #if FIRST_PASS
-            throw new NotSupportedException();
+            throw new NotImplementedException();
 #else
             var socket = (Socket)fd.getSocket();
             if (socket == null)
@@ -528,7 +533,7 @@ namespace IKVM.Java.Externs.sun.nio.ch
         public static global::java.io.FileDescriptor socket0(bool preferIPv6, bool stream, bool reuse)
         {
 #if FIRST_PASS
-            throw new NotSupportedException();
+            throw new NotImplementedException();
 #else
             try
             {
@@ -557,7 +562,7 @@ namespace IKVM.Java.Externs.sun.nio.ch
         public static void bind0(global::java.io.FileDescriptor fd, bool preferIPv6, bool useExclBind, global::java.net.InetAddress addr, int port)
         {
 #if FIRST_PASS
-            throw new NotSupportedException();
+            throw new NotImplementedException();
 #else
             var socket = (Socket)fd.getSocket();
             if (socket == null)
@@ -584,7 +589,7 @@ namespace IKVM.Java.Externs.sun.nio.ch
         public static void listen(global::java.io.FileDescriptor fd, int backlog)
         {
 #if FIRST_PASS
-            throw new NotSupportedException();
+            throw new NotImplementedException();
 #else
             var socket = (Socket)fd.getSocket();
             if (socket == null)
@@ -620,7 +625,7 @@ namespace IKVM.Java.Externs.sun.nio.ch
         public static int connect0(bool preferIPv6, global::java.io.FileDescriptor fd, global::java.net.InetAddress remote, int remotePort)
         {
 #if FIRST_PASS
-            throw new NotSupportedException();
+            throw new NotImplementedException();
 #else
             var socket = (Socket)fd.getSocket();
             if (socket == null)
@@ -658,7 +663,7 @@ namespace IKVM.Java.Externs.sun.nio.ch
         public static int poll(global::java.io.FileDescriptor fd, int events, long timeout)
         {
 #if FIRST_PASS
-            throw new NotSupportedException();
+            throw new NotImplementedException();
 #else
             var socket = (Socket)fd.getSocket();
             if (socket == null)
