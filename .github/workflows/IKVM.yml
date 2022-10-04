@@ -402,10 +402,10 @@ jobs:
         # if a query was specified, add to test command
         if ($tests) {
             if ($qry -ne "" -and $qry -ne $null) {
-                Write-Host "::set-env name=RET::TestResults--$tst-$qry--$tfm--$sys"
+                Add-Content $env:GITHUB_ENV "`nRET=TestResults--$tst-$qry--$tfm--$sys"
                 dotnet test -f $tfm --blame -v 2 --results-directory "TestResults" --logger:"console;verbosity=detailed" --logger:trx --collect "Code Coverage" --filter "$qry" $tests
             } else {
-                Write-Host "::set-env name=RET::TestResults--$tst--$tfm--$sys"
+                Add-Content $env:GITHUB_ENV "`nRET=TestResults--$tst--$tfm--$sys"
                 dotnet test -f $tfm --blame -v 2 --results-directory "TestResults" --logger:"console;verbosity=detailed" --logger:trx --collect "Code Coverage" $tests
             }
         }
