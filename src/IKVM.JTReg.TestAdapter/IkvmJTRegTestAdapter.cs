@@ -43,6 +43,14 @@ namespace IKVM.JTReg.TestAdapter
         /// </summary>
         static IkvmJTRegTestAdapter()
         {
+            Init();
+        }
+
+        /// <summary>
+        /// Initializes various static information.
+        /// </summary>
+        static void Init()
+        {
             // executable permissions may not have made it onto the JRE binaries so attempt to set them
             if (RuntimeInformation.IsOSPlatform(OSPlatform.Linux))
             {
@@ -158,6 +166,8 @@ namespace IKVM.JTReg.TestAdapter
                 throw new ArgumentNullException(nameof(testManager));
             if (testSuite is null)
                 throw new ArgumentNullException(nameof(testSuite));
+
+            Init();
 
             // invoke new RegressionParameters(string, RegressionTestSuite)
             var rp = JTRegTypes.RegressionParameters.New(DEFAULT_PARAM_TAG, testSuite);
