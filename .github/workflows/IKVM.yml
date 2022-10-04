@@ -144,7 +144,7 @@ jobs:
           g++
     - name: Move Temporary Directory
       shell: pwsh
-      run: Add-Content $env:GITHUB_ENV "`nTMP=${{ runner.temp }}`nTMP=${{ runner.temp }}"
+      run: Add-Content $env:GITHUB_ENV "`nTMP=${{ runner.temp }}`nTEMP=${{ runner.temp }}"
     - name: Move NuGet Directory
       shell: pwsh
       run: Add-Content $env:GITHUB_ENV "`nNUGET_PACKAGES=${{ runner.temp }}\nuget\packages"
@@ -366,7 +366,7 @@ jobs:
         dotnet-version: 6.0.x
     - name: Move Temporary Directory
       shell: pwsh
-      run: Add-Content $env:GITHUB_ENV "`nTMP=${{ runner.temp }}`nTMP=${{ runner.temp }}"
+      run: Add-Content $env:GITHUB_ENV "`nTMP=${{ runner.temp }}`nTEMP=${{ runner.temp }}"
     - name: Download Tests
       uses: actions/download-artifact@v3
       with:
