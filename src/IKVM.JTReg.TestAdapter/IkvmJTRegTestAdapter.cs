@@ -83,7 +83,7 @@ namespace IKVM.JTReg.TestAdapter
         protected static string GetSourceHash(string source)
         {
             var b = MD5.ComputeHash(Encoding.UTF8.GetBytes(source));
-            var s = new StringBuilder();
+            var s = new StringBuilder(32);
             for (int i = 0; i < b.Length; i++)
                 s.Append(b[i].ToString("x2"));
             return s.ToString();
