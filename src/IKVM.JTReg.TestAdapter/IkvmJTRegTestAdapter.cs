@@ -43,6 +43,33 @@ namespace IKVM.JTReg.TestAdapter
         /// </summary>
         static IkvmJTRegTestAdapter()
         {
+            // executable permissions may not have made it onto the JRE binaries so attempt to set them
+            if (RuntimeInformation.IsOSPlatform(OSPlatform.Linux))
+            {
+                var javaHome = java.lang.System.getProperty("java.home");
+                foreach (var exec in new[] { "java", "javac", "jar", "jarsigner", "javadoc", "javah", "javap", "jdeps", "keytool", "policytool", "rmic", "wsgen", "wsimport" })
+                {
+                    var execPath = Path.Combine(javaHome, "bin", exec);
+                    if (File.Exists(execPath))
+                    {
+                        try
+                        {
+                            var psx = Mono.Unix.UnixFileSystemInfo.GetFileSystemEntry(execPath);
+                            if (psx.FileAccessPermissions.HasFlag(Mono.Unix.FileAccessPermissions.UserExecute) == false)
+                                psx.FileAccessPermissions |= Mono.Unix.FileAccessPermissions.UserExecute;
+                            if (psx.FileAccessPermissions.HasFlag(Mono.Unix.FileAccessPermissions.GroupExecute) == false)
+                                psx.FileAccessPermissions |= Mono.Unix.FileAccessPermissions.GroupExecute;
+                            if (psx.FileAccessPermissions.HasFlag(Mono.Unix.FileAccessPermissions.OtherExecute) == false)
+                                psx.FileAccessPermissions |= Mono.Unix.FileAccessPermissions.OtherExecute;
+                        }
+                        catch
+                        {
+
+                        }
+                    }
+                }
+            }
+
             // need to do some static configuration on the harness
             if (JTRegTypes.Harness.GetClassDirMethod.invoke(null) == null)
                 JTRegTypes.Harness.SetClassDirMethod.invoke(null, JTRegTypes.ProductInfo.GetJavaTestClassDirMethod.invoke(null));
@@ -56,7 +83,7 @@ namespace IKVM.JTReg.TestAdapter
         protected static string GetSourceHash(string source)
         {
             var b = MD5.ComputeHash(Encoding.UTF8.GetBytes(source));
-            var s = new StringBuilder();
+            var s = new StringBuilder(32);
             for (int i = 0; i < b.Length; i++)
                 s.Append(b[i].ToString("x2"));
             return s.ToString();

@@ -144,7 +144,7 @@ jobs:
           g++
     - name: Move Temporary Directory
       shell: pwsh
-      run: Add-Content $env:GITHUB_ENV "`nTMP=${{ runner.temp }}`nTMP=${{ runner.temp }}"
+      run: Add-Content $env:GITHUB_ENV "`nTMP=${{ runner.temp }}`nTEMP=${{ runner.temp }}"
     - name: Move NuGet Directory
       shell: pwsh
       run: Add-Content $env:GITHUB_ENV "`nNUGET_PACKAGES=${{ runner.temp }}\nuget\packages"
@@ -152,7 +152,7 @@ jobs:
       uses: actions/cache@v3
       with:
         path: ${{ runner.temp }}\nuget\packages
-        key: ${{ runner.os }}-nuget-${{ hashFiles('**\*.sln', '**\*.csproj', '**\*.msbuildproj', '!dist') }}
+        key: ${{ runner.os }}-nuget-${{ hashFiles('IKVM.sln', 'src\**\*.csproj', 'src\**\*.msbuildproj') }}
         restore-keys: ${{ runner.os }}-nuget-
     - name: Add msbuild to PATH
       uses: microsoft/setup-msbuild@v1.1
@@ -164,6 +164,14 @@ jobs:
     - name: Restore OpenJDK 8 Build
       run: unzip -o openjdk-build-linux-x86_64-normal-server-release.zip
       working-directory: openjdk/build
+    - name: Download JTReg Build
+      uses: actions/download-artifact@v3
+      with:
+        name: jtreg-build
+        path: jtreg
+    - name: Restore JTReg Build
+      run: unzip -o jtreg-build.zip
+      working-directory: jtreg
     - name: NuGet Restore
       run: dotnet restore IKVM.sln
     - name: Build Artifacts
@@ -358,7 +366,7 @@ jobs:
         dotnet-version: 6.0.x
     - name: Move Temporary Directory
       shell: pwsh
-      run: Add-Content $env:GITHUB_ENV "`nTMP=${{ runner.temp }}`nTMP=${{ runner.temp }}"
+      run: Add-Content $env:GITHUB_ENV "`nTMP=${{ runner.temp }}`nTEMP=${{ runner.temp }}"
     - name: Download Tests
       uses: actions/download-artifact@v3
       with:
@@ -394,10 +402,10 @@ jobs:
         # if a query was specified, add to test command
         if ($tests) {
             if ($qry -ne "" -and $qry -ne $null) {
-                Write-Host "::set-env name=RET::TestResults--$tst-$qry--$tfm--$sys"
+                Add-Content $env:GITHUB_ENV "`nRET=TestResults--$tst-$qry--$tfm--$sys"
                 dotnet test -f $tfm --blame -v 2 --results-directory "TestResults" --logger:"console;verbosity=detailed" --logger:trx --collect "Code Coverage" --filter "$qry" $tests
             } else {
-                Write-Host "::set-env name=RET::TestResults--$tst--$tfm--$sys"
+                Add-Content $env:GITHUB_ENV "`nRET=TestResults--$tst--$tfm--$sys"
                 dotnet test -f $tfm --blame -v 2 --results-directory "TestResults" --logger:"console;verbosity=detailed" --logger:trx --collect "Code Coverage" $tests
             }
         }
