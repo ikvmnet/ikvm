@@ -152,7 +152,7 @@ jobs:
       uses: actions/cache@v3
       with:
         path: ${{ runner.temp }}\nuget\packages
-        key: ${{ runner.os }}-nuget-${{ hashFiles('**\*.sln', '**\*.csproj', '**\*.msbuildproj', '!dist') }}
+        key: ${{ runner.os }}-nuget-${{ hashFiles('IKVM.sln', 'src\**\*.csproj', 'src\**\*.msbuildproj') }}
         restore-keys: ${{ runner.os }}-nuget-
     - name: Add msbuild to PATH
       uses: microsoft/setup-msbuild@v1.1
