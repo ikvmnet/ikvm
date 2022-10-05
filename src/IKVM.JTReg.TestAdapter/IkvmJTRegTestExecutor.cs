@@ -61,7 +61,6 @@ namespace IKVM.JTReg.TestAdapter
         /// <param name="runContext"></param>
         /// <param name="frameworkHandle"></param>
         /// <param name="tests"></param>
-        /// <exception cref="NotImplementedException"></exception>
         internal void RunTests(IEnumerable<string> sources, IRunContext runContext, IFrameworkHandle frameworkHandle, IEnumerable<TestCase> tests = null)
         {
             try
