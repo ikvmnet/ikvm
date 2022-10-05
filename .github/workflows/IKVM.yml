@@ -351,6 +351,38 @@ jobs:
           tfm: net48
         - run: ikvmc.Tests
           tfm: net6.0
+        - run: IKVM.Java.Tests?TestPartition=0
+          sys: ubuntu
+        - run: IKVM.Java.Tests?TestPartition=1
+          sys: ubuntu
+        - run: IKVM.Java.Tests?TestPartition=2
+          sys: ubuntu
+        - run: IKVM.Java.Tests?TestPartition=3
+          sys: ubuntu
+        - run: IKVM.Java.Tests?TestPartition=4
+          sys: ubuntu
+        - run: IKVM.Java.Tests?TestPartition=5
+          sys: ubuntu
+        - run: IKVM.Java.Tests?TestPartition=6
+          sys: ubuntu
+        - run: IKVM.Java.Tests?TestPartition=7
+          sys: ubuntu
+        - run: IKVM.Java.Tests?TestPartition=8
+          sys: ubuntu
+        - run: IKVM.Java.Tests?TestPartition=9
+          sys: ubuntu
+        - run: IKVM.Java.Tests?TestPartition=10
+          sys: ubuntu
+        - run: IKVM.Java.Tests?TestPartition=11
+          sys: ubuntu
+        - run: IKVM.Java.Tests?TestPartition=12
+          sys: ubuntu
+        - run: IKVM.Java.Tests?TestPartition=13
+          sys: ubuntu
+        - run: IKVM.Java.Tests?TestPartition=14
+          sys: ubuntu
+        - run: IKVM.Java.Tests?TestPartition=15
+          sys: ubuntu
     name: Test IKVM (${{ matrix.run }}:${{ matrix.tfm }}:${{ matrix.sys }}
     needs:
     - build-ikvm
