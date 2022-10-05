@@ -55,13 +55,9 @@ namespace IKVM.JTReg.TestAdapter
                     {
                         var psx = Mono.Unix.UnixFileSystemInfo.GetFileSystemEntry(execPath);
                         var prm = psx.FileAccessPermissions;
-                        if (prm.HasFlag(Mono.Unix.FileAccessPermissions.UserExecute) == false)
-                            prm |= Mono.Unix.FileAccessPermissions.UserExecute;
-                        if (prm.HasFlag(Mono.Unix.FileAccessPermissions.GroupExecute) == false)
-                            prm |= Mono.Unix.FileAccessPermissions.GroupExecute;
-                        if (prm.HasFlag(Mono.Unix.FileAccessPermissions.OtherExecute) == false)
-                            prm |= Mono.Unix.FileAccessPermissions.OtherExecute;
-
+                        prm |= Mono.Unix.FileAccessPermissions.UserExecute;
+                        prm |= Mono.Unix.FileAccessPermissions.GroupExecute;
+                        prm |= Mono.Unix.FileAccessPermissions.OtherExecute;
                         psx.FileAccessPermissions = prm;
                     }
                 }
