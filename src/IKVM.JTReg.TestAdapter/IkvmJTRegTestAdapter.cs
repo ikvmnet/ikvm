@@ -58,7 +58,8 @@ namespace IKVM.JTReg.TestAdapter
                         prm |= Mono.Unix.FileAccessPermissions.UserExecute;
                         prm |= Mono.Unix.FileAccessPermissions.GroupExecute;
                         prm |= Mono.Unix.FileAccessPermissions.OtherExecute;
-                        psx.FileAccessPermissions = prm;
+                        if (prm != psx.FileAccessPermissions)
+                            psx.FileAccessPermissions = prm;
                     }
                 }
             }
