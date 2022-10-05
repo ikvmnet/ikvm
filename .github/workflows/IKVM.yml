@@ -116,7 +116,6 @@ jobs:
     - name: Checkout Source
       uses: actions/checkout@v3
       with:
-        fetch-depth: 0
         submodules: recursive
     - name: Install GitVersion
       uses: gittools/actions/gitversion/setup@v0.9.13
