@@ -60,8 +60,6 @@ namespace IKVM.JTReg.TestAdapter
                     var execPath = Path.Combine(javaHome, "bin", exec);
                     if (File.Exists(execPath))
                     {
-                        try
-                        {
                             var psx = Mono.Unix.UnixFileSystemInfo.GetFileSystemEntry(execPath);
                             if (psx.FileAccessPermissions.HasFlag(Mono.Unix.FileAccessPermissions.UserExecute) == false)
                                 psx.FileAccessPermissions |= Mono.Unix.FileAccessPermissions.UserExecute;
@@ -69,11 +67,6 @@ namespace IKVM.JTReg.TestAdapter
                                 psx.FileAccessPermissions |= Mono.Unix.FileAccessPermissions.GroupExecute;
                             if (psx.FileAccessPermissions.HasFlag(Mono.Unix.FileAccessPermissions.OtherExecute) == false)
                                 psx.FileAccessPermissions |= Mono.Unix.FileAccessPermissions.OtherExecute;
-                        }
-                        catch
-                        {
-
-                        }
                     }
                 }
             }
