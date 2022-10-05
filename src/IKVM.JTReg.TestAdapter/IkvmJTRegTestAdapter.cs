@@ -43,6 +43,7 @@ namespace IKVM.JTReg.TestAdapter
         /// </summary>
         static IkvmJTRegTestAdapter()
         {
+#if NETCOREAPP
             // executable permissions may not have made it onto the JRE binaries so attempt to set them
             if (RuntimeInformation.IsOSPlatform(OSPlatform.Linux))
             {
@@ -52,23 +53,17 @@ namespace IKVM.JTReg.TestAdapter
                     var execPath = Path.Combine(javaHome, "bin", exec);
                     if (File.Exists(execPath))
                     {
-                        try
-                        {
-                            var psx = Mono.Unix.UnixFileSystemInfo.GetFileSystemEntry(execPath);
-                            if (psx.FileAccessPermissions.HasFlag(Mono.Unix.FileAccessPermissions.UserExecute) == false)
-                                psx.FileAccessPermissions |= Mono.Unix.FileAccessPermissions.UserExecute;
-                            if (psx.FileAccessPermissions.HasFlag(Mono.Unix.FileAccessPermissions.GroupExecute) == false)
-                                psx.FileAccessPermissions |= Mono.Unix.FileAccessPermissions.GroupExecute;
-                            if (psx.FileAccessPermissions.HasFlag(Mono.Unix.FileAccessPermissions.OtherExecute) == false)
-                                psx.FileAccessPermissions |= Mono.Unix.FileAccessPermissions.OtherExecute;
-                        }
-                        catch
-                        {
-
-                        }
+                        var psx = Mono.Unix.UnixFileSystemInfo.GetFileSystemEntry(execPath);
+                        var prm = psx.FileAccessPermissions;
+                        prm |= Mono.Unix.FileAccessPermissions.UserExecute;
+                        prm |= Mono.Unix.FileAccessPermissions.GroupExecute;
+                        prm |= Mono.Unix.FileAccessPermissions.OtherExecute;
+                        if (prm != psx.FileAccessPermissions)
+                            psx.FileAccessPermissions = prm;
                     }
                 }
             }
+#endif
 
             // need to do some static configuration on the harness
             if (JTRegTypes.Harness.GetClassDirMethod.invoke(null) == null)
