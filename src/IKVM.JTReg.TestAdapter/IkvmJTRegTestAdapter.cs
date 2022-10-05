@@ -39,17 +39,9 @@ namespace IKVM.JTReg.TestAdapter
         protected static readonly string[] DEFAULT_UNIX_ENV_VARS = { "PATH", "DISPLAY", "GNOME_DESKTOP_SESSION_ID", "HOME", "LANG", "LC_ALL", "LC_CTYPE", "LPDEST", "PRINTER", "TZ", "XMODIFIERS" };
 
         /// <summary>
-        /// Initializes the static instance.
-        /// </summary>
-        static IkvmJTRegTestAdapter()
-        {
-            Init();
-        }
-
-        /// <summary>
         /// Initializes various static information.
         /// </summary>
-        static void Init()
+        static void Initialize()
         {
             // executable permissions may not have made it onto the JRE binaries so attempt to set them
             if (RuntimeInformation.IsOSPlatform(OSPlatform.Linux))
@@ -97,6 +89,8 @@ namespace IKVM.JTReg.TestAdapter
         /// </summary>
         protected IkvmJTRegTestAdapter()
         {
+            Initialize();
+
             properties.Add(IkvmJTRegTestProperties.TestSuiteRootProperty.Label, IkvmJTRegTestProperties.TestSuiteRootProperty);
             properties.Add(IkvmJTRegTestProperties.TestSuiteNameProperty.Label, IkvmJTRegTestProperties.TestSuiteNameProperty);
             properties.Add(IkvmJTRegTestProperties.TestPathNameProperty.Label, IkvmJTRegTestProperties.TestPathNameProperty);
@@ -159,8 +153,6 @@ namespace IKVM.JTReg.TestAdapter
                 throw new ArgumentNullException(nameof(testManager));
             if (testSuite is null)
                 throw new ArgumentNullException(nameof(testSuite));
-
-            Init();
 
             // invoke new RegressionParameters(string, RegressionTestSuite)
             var rp = JTRegTypes.RegressionParameters.New(DEFAULT_PARAM_TAG, testSuite);
