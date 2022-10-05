@@ -39,10 +39,11 @@ namespace IKVM.JTReg.TestAdapter
         protected static readonly string[] DEFAULT_UNIX_ENV_VARS = { "PATH", "DISPLAY", "GNOME_DESKTOP_SESSION_ID", "HOME", "LANG", "LC_ALL", "LC_CTYPE", "LPDEST", "PRINTER", "TZ", "XMODIFIERS" };
 
         /// <summary>
-        /// Initializes various static information.
+        /// Initializes the static instance.
         /// </summary>
-        static void Initialize()
+        static IkvmJTRegTestAdapter()
         {
+#if NETCOREAPP
             // executable permissions may not have made it onto the JRE binaries so attempt to set them
             if (RuntimeInformation.IsOSPlatform(OSPlatform.Linux))
             {
@@ -52,16 +53,20 @@ namespace IKVM.JTReg.TestAdapter
                     var execPath = Path.Combine(javaHome, "bin", exec);
                     if (File.Exists(execPath))
                     {
-                            var psx = Mono.Unix.UnixFileSystemInfo.GetFileSystemEntry(execPath);
-                            if (psx.FileAccessPermissions.HasFlag(Mono.Unix.FileAccessPermissions.UserExecute) == false)
-                                psx.FileAccessPermissions |= Mono.Unix.FileAccessPermissions.UserExecute;
-                            if (psx.FileAccessPermissions.HasFlag(Mono.Unix.FileAccessPermissions.GroupExecute) == false)
-                                psx.FileAccessPermissions |= Mono.Unix.FileAccessPermissions.GroupExecute;
-                            if (psx.FileAccessPermissions.HasFlag(Mono.Unix.FileAccessPermissions.OtherExecute) == false)
-                                psx.FileAccessPermissions |= Mono.Unix.FileAccessPermissions.OtherExecute;
+                        var psx = Mono.Unix.UnixFileSystemInfo.GetFileSystemEntry(execPath);
+                        var prm = psx.FileAccessPermissions;
+                        if (prm.HasFlag(Mono.Unix.FileAccessPermissions.UserExecute) == false)
+                            prm |= Mono.Unix.FileAccessPermissions.UserExecute;
+                        if (prm.HasFlag(Mono.Unix.FileAccessPermissions.GroupExecute) == false)
+                            prm |= Mono.Unix.FileAccessPermissions.GroupExecute;
+                        if (prm.HasFlag(Mono.Unix.FileAccessPermissions.OtherExecute) == false)
+                            prm |= Mono.Unix.FileAccessPermissions.OtherExecute;
+
+                        psx.FileAccessPermissions = prm;
                     }
                 }
             }
+#endif
 
             // need to do some static configuration on the harness
             if (JTRegTypes.Harness.GetClassDirMethod.invoke(null) == null)
@@ -89,8 +94,6 @@ namespace IKVM.JTReg.TestAdapter
         /// </summary>
         protected IkvmJTRegTestAdapter()
         {
-            Initialize();
-
             properties.Add(IkvmJTRegTestProperties.TestSuiteRootProperty.Label, IkvmJTRegTestProperties.TestSuiteRootProperty);
             properties.Add(IkvmJTRegTestProperties.TestSuiteNameProperty.Label, IkvmJTRegTestProperties.TestSuiteNameProperty);
             properties.Add(IkvmJTRegTestProperties.TestPathNameProperty.Label, IkvmJTRegTestProperties.TestPathNameProperty);
