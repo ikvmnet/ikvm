@@ -387,7 +387,7 @@ jobs:
     name: Test IKVM (${{ matrix.run }}:${{ matrix.tfm }}:${{ matrix.sys }}
     needs:
     - build-ikvm
-    runs-on: ${{ fromJSON('{"windows":["self-hosted","Windows"],"linux":":["self-hosted","Linux"]}')[matrix.sys] }}
+    runs-on: ${{ fromJSON('{"windows":["windows-2022"],"linux":":["ubuntu-22.04"]}')[matrix.sys] }}
     steps:
     - name: Setup .NET 3.1
       uses: actions/setup-dotnet@v2
