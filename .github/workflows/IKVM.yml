@@ -18,7 +18,6 @@ jobs:
     - name: Checkout Source
       uses: actions/checkout@v1
       with:
-        fetch-depth: 0
         submodules: recursive
     - name: Cache OpenJDK Build
       uses: actions/cache@v3
@@ -128,7 +127,8 @@ jobs:
       with:
         useConfigFile: true
     - name: Setup .NET
-      run: ac $env:GITHUB_ENV "`nDOTNET_INSTALL_DIR=${{ runner.temp }}\dotnet"
+      shell: pwsh
+      run: Add-Content $env:GITHUB_ENV "`nDOTNET_INSTALL_DIR=${{ runner.temp }}\dotnet"
     - name: Setup .NET 3.1
       uses: actions/setup-dotnet@v2
       with:
@@ -164,7 +164,7 @@ jobs:
         path: openjdk/build
     - name: Restore OpenJDK 8 Build
       shell: pwsh
-      run: Expand-Archive openjdk-build-linux-x86_64-normal-server-release.zip
+      run: Expand-Archive openjdk-build-linux-x86_64-normal-server-release.zip .
       working-directory: openjdk/build
     - name: Download JTReg Build
       uses: actions/download-artifact@v3
@@ -173,7 +173,7 @@ jobs:
         path: jtreg
     - name: Restore JTReg Build
       shell: pwsh
-      run: Expand-Archive jtreg-build.zip
+      run: Expand-Archive jtreg-build.zip .
       working-directory: jtreg
     - name: NuGet Restore
       run: dotnet restore IKVM.sln
