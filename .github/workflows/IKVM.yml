@@ -252,20 +252,10 @@ jobs:
       with:
         name: tests
         path: dist/tests.tar.gz
-    - name: Delete Tests
-      shell: pwsh
-      run: ri tests.tar.gz
-      working-directory: dist
-    - name: Delete Files
-      shell: pwsh
-      run: ri dist -Recurse -Force
     - name: Clean Solution
       run: |
-        msbuild /m `
-          /p:Configuration="Release" `
-          /p:Platform="Any CPU" `
-          /t:Clean `
-          IKVM.sln
+        git reset --hard
+        git clean -qfdx
   test-ikvm:
     strategy:
       matrix:
