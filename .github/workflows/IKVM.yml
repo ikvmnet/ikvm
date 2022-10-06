@@ -161,7 +161,8 @@ jobs:
         name: openjdk-build-linux-x86_64-normal-server-release
         path: openjdk/build
     - name: Restore OpenJDK 8 Build
-      run: unzip -o openjdk-build-linux-x86_64-normal-server-release.zip
+      shell: pwsh
+      run: Expand-Archive openjdk-build-linux-x86_64-normal-server-release.zip
       working-directory: openjdk/build
     - name: Download JTReg Build
       uses: actions/download-artifact@v3
@@ -169,7 +170,8 @@ jobs:
         name: jtreg-build
         path: jtreg
     - name: Restore JTReg Build
-      run: unzip -o jtreg-build.zip
+      shell: pwsh
+      run: Expand-Archive jtreg-build.zip
       working-directory: jtreg
     - name: NuGet Restore
       run: dotnet restore IKVM.sln
