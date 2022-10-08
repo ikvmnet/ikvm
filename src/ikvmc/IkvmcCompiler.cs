@@ -1219,7 +1219,7 @@ namespace ikvmc
             return false;
         }
 
-        private static bool IsMultiModuleClassFile(CompilerOptions options, ZipEntry ze, out int majorVersion)
+        private static bool IsMultiReleaseClassFile(CompilerOptions options, ZipEntry ze, out int majorVersion)
         {
             int nextSlashIndex;
             string name = ze.Name;
@@ -1282,7 +1282,7 @@ namespace ikvmc
                             // or we can use it as a filter for major version. It is in place to mimic Java SE 8 tools, which ignore
                             // .class files in the META-INF/versions folder. This must be run before IsExcludedOrStubLegacy(), since
                             // that method expects Java SE 8 format and if we don't have it it fails to properly exclude stuff.
-                            if (IsMultiModuleClassFile(options, ze, out _))
+                            if (IsMultiReleaseClassFile(options, ze, out _))
                             {
                                 continue;
                             }
