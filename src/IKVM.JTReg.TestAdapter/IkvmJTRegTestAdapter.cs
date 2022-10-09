@@ -7,7 +7,9 @@ using System.Runtime.InteropServices;
 using System.Security.Cryptography;
 using System.Text;
 
+using Microsoft.VisualStudio.TestPlatform.CoreUtilities.Extensions;
 using Microsoft.VisualStudio.TestPlatform.ObjectModel;
+using Microsoft.VisualStudio.TestPlatform.ObjectModel.Adapter;
 using Microsoft.VisualStudio.TestPlatform.ObjectModel.Logging;
 
 namespace IKVM.JTReg.TestAdapter
@@ -142,8 +144,9 @@ namespace IKVM.JTReg.TestAdapter
         /// <param name="testManager"></param>
         /// <param name="testSuite"></param>
         /// <param name="tests"></param>
+        /// <param name="debugHost"></param>
         /// <returns></returns>
-        protected dynamic CreateParameters(string source, string baseDir, dynamic testManager, dynamic testSuite, IEnumerable<TestCase> tests)
+        protected dynamic CreateParameters(string source, string baseDir, dynamic testManager, dynamic testSuite, IEnumerable<TestCase> tests, string debugHost)
         {
             if (source is null)
                 throw new ArgumentNullException(nameof(source));
@@ -192,12 +195,23 @@ namespace IKVM.JTReg.TestAdapter
                 includeFileList.Add(new java.io.File(new java.io.File(tf).getAbsoluteFile().toURI().normalize()));
             }
 
+            var args = new List<string>();
+
+            // instruct child processes to signal debug attach
+            if (debugHost != null)
+            {
+                args.Add($"-Xdebughost:{debugHost}");
+                args.Add($"-Xdebugwait:60");
+            }
+
             rp.setTests((java.util.Set)testManager.getTests(testSuite));
             rp.setExecMode(testSuite.getDefaultExecMode() ?? JTRegTypes.ExecMode.OTHERVM);
             rp.setCheck(false);
             rp.setCompileJDK(JTRegTypes.JDK.Of(new java.io.File(java.lang.System.getProperty("java.home"))));
             rp.setTestJDK(rp.getCompileJDK());
+            rp.setTestVMOptions(java.util.Arrays.asList(args.ToArray()));
             rp.setTestCompilerOptions(java.util.Collections.emptyList());
+            rp.setTestJavaOptions(java.util.Collections.emptyList());
             rp.setFile((java.io.File)wd.getFile("config.jti"));
             rp.setEnvVars(GetEnvVars());
             rp.setConcurrency(Environment.ProcessorCount);

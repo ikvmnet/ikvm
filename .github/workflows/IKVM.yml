@@ -294,18 +294,18 @@ jobs:
         - net6.0
         sys:
         - windows
-        - ubuntu
+        - linux
         exclude:
-        - sys: ubuntu
+        - sys: linux
           tfm: net461
-        - sys: ubuntu
+        - sys: linux
           tfm: net472
-        - sys: ubuntu
+        - sys: linux
           tfm: net48
         - run: IKVM.MSBuild.Tasks.Tests
-          sys: ubuntu
+          sys: linux
         - run: IKVM.MSBuild.Tests
-          sys: ubuntu
+          sys: linux
         - run: IKVM.MSBuild.Tests
           tfm: net461
         - run: IKVM.MSBuild.Tests
@@ -315,7 +315,7 @@ jobs:
         - run: IKVM.MSBuild.Tests
           tfm: netcoreapp3.1
         - run: IKVM.NET.Sdk.Tests
-          sys: ubuntu
+          sys: linux
         - run: IKVM.NET.Sdk.Tests
           tfm: net461
         - run: IKVM.NET.Sdk.Tests
@@ -345,37 +345,37 @@ jobs:
         - run: ikvmc.Tests
           tfm: net6.0
         - run: IKVM.Java.Tests?TestPartition=0
-          sys: ubuntu
+          sys: linux
         - run: IKVM.Java.Tests?TestPartition=1
-          sys: ubuntu
+          sys: linux
         - run: IKVM.Java.Tests?TestPartition=2
-          sys: ubuntu
+          sys: linux
         - run: IKVM.Java.Tests?TestPartition=3
-          sys: ubuntu
+          sys: linux
         - run: IKVM.Java.Tests?TestPartition=4
-          sys: ubuntu
+          sys: linux
         - run: IKVM.Java.Tests?TestPartition=5
-          sys: ubuntu
+          sys: linux
         - run: IKVM.Java.Tests?TestPartition=6
-          sys: ubuntu
+          sys: linux
         - run: IKVM.Java.Tests?TestPartition=7
-          sys: ubuntu
+          sys: linux
         - run: IKVM.Java.Tests?TestPartition=8
-          sys: ubuntu
+          sys: linux
         - run: IKVM.Java.Tests?TestPartition=9
-          sys: ubuntu
+          sys: linux
         - run: IKVM.Java.Tests?TestPartition=10
-          sys: ubuntu
+          sys: linux
         - run: IKVM.Java.Tests?TestPartition=11
-          sys: ubuntu
+          sys: linux
         - run: IKVM.Java.Tests?TestPartition=12
-          sys: ubuntu
+          sys: linux
         - run: IKVM.Java.Tests?TestPartition=13
-          sys: ubuntu
+          sys: linux
         - run: IKVM.Java.Tests?TestPartition=14
-          sys: ubuntu
+          sys: linux
         - run: IKVM.Java.Tests?TestPartition=15
-          sys: ubuntu
+          sys: linux
     name: Test IKVM (${{ matrix.run }}:${{ matrix.tfm }}:${{ matrix.sys }}
     needs:
     - build-ikvm

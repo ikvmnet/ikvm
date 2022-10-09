@@ -61,14 +61,30 @@ namespace IKVM.JTReg.TestAdapter
         /// <param name="runContext"></param>
         /// <param name="frameworkHandle"></param>
         /// <param name="tests"></param>
-        internal void RunTests(IEnumerable<string> sources, IRunContext runContext, IFrameworkHandle frameworkHandle, IEnumerable<TestCase> tests = null)
+        internal void RunTests(IEnumerable<string> sources, IRunContext runContext, IFrameworkHandle frameworkHandle, IEnumerable<TestCase> tests)
         {
             try
             {
                 cts = new CancellationTokenSource();
+                DebugServer debug = null;
 
-                foreach (var source in sources)
-                    RunTestForSource(source, runContext, frameworkHandle, tests?.Where(i => i.Source == source), cts.Token);
+                try
+                {
+                    // if we have the capability of attaching to child process, start debug server to listen for child processes
+                    if (frameworkHandle is IFrameworkHandle2 fh2)
+                    {
+                        debug = new DebugServer(runContext, fh2);
+                        debug.Start();
+                    }
+
+                    foreach (var source in sources)
+                        RunTestForSource(source, runContext, frameworkHandle, tests?.Where(i => i.Source == source), debug?.EndPoint.ToString(), cts.Token);
+                }
+                finally
+                {
+                    if (debug != null)
+                        debug.Stop();
+                }
             }
             catch (OperationCanceledException)
             {
@@ -91,8 +107,9 @@ namespace IKVM.JTReg.TestAdapter
         /// <param name="runContext"></param>
         /// <param name="frameworkHandle"></param>
         /// <param name="tests"></param>
+        /// <param name="debugHost"></param>
         /// <param name="cancellationToken"></param>
-        internal void RunTestForSource(string source, IRunContext runContext, IFrameworkHandle frameworkHandle, IEnumerable<TestCase> tests, CancellationToken cancellationToken)
+        internal void RunTestForSource(string source, IRunContext runContext, IFrameworkHandle frameworkHandle, IEnumerable<TestCase> tests, string debugHost, CancellationToken cancellationToken)
         {
             if (string.IsNullOrEmpty(source))
                 throw new ArgumentException($"'{nameof(source)}' cannot be null or empty.", nameof(source));
@@ -139,7 +156,7 @@ namespace IKVM.JTReg.TestAdapter
 
                     // discover the full set of tests
                     foreach (dynamic testSuite in Util.GetTestSuites(source, testManager))
-                        foreach (var testResult in GetTestResults(source, testSuite, CreateParameters(source, baseDir, testManager, testSuite, null)))
+                        foreach (var testResult in GetTestResults(source, testSuite, CreateParameters(source, baseDir, testManager, testSuite, null, debugHost)))
                             l.Add(Util.ToTestCase(source, testSuite, testResult, testCount++ % PARTITION_COUNT));
 
                     tests = l;
@@ -154,7 +171,7 @@ namespace IKVM.JTReg.TestAdapter
                 foreach (dynamic testSuite in (IEnumerable)testManager.getTestSuites())
                 {
                     frameworkHandle.SendMessage(TestMessageLevel.Informational, "JTReg: " + $"Running test suite: {testSuite.getName()}");
-                    RunTests(source, testSuite, runContext, frameworkHandle, tests, CreateParameters(source, baseDir, testManager, testSuite, tests), cancellationToken);
+                    RunTests(source, testSuite, runContext, frameworkHandle, tests, CreateParameters(source, baseDir, testManager, testSuite, tests, debugHost), cancellationToken);
                 }
             }
             catch (Exception e)

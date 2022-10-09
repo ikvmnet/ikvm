@@ -4,7 +4,12 @@ using System.Collections.Generic;
 using System.Diagnostics;
 using System.IO;
 using System.Linq;
+using System.Net;
+using System.Net.Sockets;
 using System.Reflection;
+using System.Text;
+using System.Text.Json;
+using System.Text.Json.Serialization;
 using System.Threading;
 
 using IKVM.Internal;
@@ -19,7 +24,16 @@ namespace IKVM.Runtime
     static class Launcher
     {
 
-        const string DEFAULT_RUNTIME_ARG_PREFIX = "-J";
+        /// <summary>
+        /// Data sent as part of the debug ping protocol.
+        /// </summary>
+        class DebugPing
+        {
+
+            [JsonPropertyName("processId")]
+            public int ProcessId { get; set; }
+
+        }
 
         /// <summary>
         /// Returns an enumeration with the given argument prepended.
@@ -230,6 +244,8 @@ namespace IKVM.Runtime
             var initialize = properties != null ? new Dictionary<string, string>(properties) : new Dictionary<string, string>();
             var showversion = false;
             var hasMainArg = false;
+            var debugWait = 0;
+            var debugPing = (IPEndPoint)null;
             var jvmArgs = args.Where(i => rarg != null).Where(i => i.StartsWith(rarg)).Select(i => i.Substring(rarg.Length)).ToList();
             var appArgs = args.Where(i => rarg == null || i.StartsWith(rarg) == false).ToList();
             var appArgsReset = false;
@@ -270,7 +286,7 @@ namespace IKVM.Runtime
                     if (arg.StartsWith("-ea:".AsSpan()) || arg.StartsWith("-enableassertions:".AsSpan()))
                     {
                         if (arg.IndexOf(':') is int v && v > -1)
-                            Assertions.EnableAssertions(arg.Slice(v).ToString());
+                            Assertions.EnableAssertions(arg.Slice(+1).ToString());
                     }
 
                     if (ArgEquals(arg, "-da") || ArgEquals(arg, "-disableassertions"))
@@ -282,7 +298,7 @@ namespace IKVM.Runtime
                     if (arg.StartsWith("-da:".AsSpan()) || arg.StartsWith("-disableassertions:".AsSpan()))
                     {
                         if (arg.IndexOf(':') is int v && v > -1)
-                            Assertions.DisableAssertions(arg.Slice(v).ToString());
+                            Assertions.DisableAssertions(arg.Slice(v + 1).ToString());
                     }
 
                     if (ArgEquals(arg, "-esa") || ArgEquals(arg, "-enablesystemassertions"))
@@ -369,7 +385,7 @@ namespace IKVM.Runtime
                     if (arg.StartsWith("-Xtrace:".AsSpan()))
                     {
                         if (arg.IndexOf(':') is int v && v > -1)
-                            Tracer.SetTraceLevel(arg.Slice(v).ToString());
+                            Tracer.SetTraceLevel(arg.Slice(+1).ToString());
 
                         continue;
                     }
@@ -377,7 +393,7 @@ namespace IKVM.Runtime
                     if (arg.StartsWith("-Xmethodtrace:".AsSpan()))
                     {
                         if (arg.IndexOf(':') is int v && v > -1)
-                            Tracer.HandleMethodTrace(arg.Slice(v).ToString());
+                            Tracer.HandleMethodTrace(arg.Slice(v + 1).ToString());
 
                         continue;
                     }
@@ -385,7 +401,7 @@ namespace IKVM.Runtime
                     if (arg.StartsWith("-Xreference:".AsSpan()))
                     {
                         if (arg.IndexOf(':') is int v && v > -1)
-                            AddBootClassPathAssembly(Assembly.LoadFrom(arg.Slice(v).ToString()));
+                            AddBootClassPathAssembly(Assembly.LoadFrom(arg.Slice(v + 1).ToString()));
 
                         continue;
                     }
@@ -393,6 +409,41 @@ namespace IKVM.Runtime
                     if (ArgEquals(arg, "-XX:+AllowNonVirtualCalls"))
                     {
                         JVM.AllowNonVirtualCalls = true;
+                        continue;
+                    }
+
+                    // wait some number of seconds for a debugger to attach
+                    if (arg.StartsWith("-Xdebugwait:".AsSpan()))
+                    {
+                        if (arg.IndexOf(':') is int v && v > -1 && int.TryParse(arg.Slice(v + 1).ToString(), out var i))
+                            debugWait = i;
+
+                        continue;
+                    }
+
+                    // send a ping message to the given hostname and port to signal a debugger to attach
+                    if (arg.StartsWith("-Xdebughost:".AsSpan()))
+                    {
+                        if (arg.IndexOf(':') is int v && v > -1)
+                        {
+#if NETFRAMEWORK
+                            static IPEndPoint ParseIPEndPoint(string text)
+                            {
+                                if (Uri.TryCreate(text, UriKind.Absolute, out Uri uri))
+                                    return new IPEndPoint(IPAddress.Parse(uri.Host), uri.Port < 0 ? 0 : uri.Port);
+                                if (Uri.TryCreate(string.Concat("udp://", text), UriKind.Absolute, out uri))
+                                    return new IPEndPoint(IPAddress.Parse(uri.Host), uri.Port < 0 ? 0 : uri.Port);
+                                if (Uri.TryCreate(string.Concat("udp://", string.Concat("[", text, "]")), UriKind.Absolute, out uri))
+                                    return new IPEndPoint(IPAddress.Parse(uri.Host), uri.Port < 0 ? 0 : uri.Port);
+                                throw new FormatException("Failed to parse text to IPEndPoint");
+                            }
+
+                            debugPing = ParseIPEndPoint(arg.Slice(v + 1).ToString());
+#else
+                            debugPing = IPEndPoint.Parse(arg.Slice(v + 1));
+#endif
+                        }
+
                         continue;
                     }
 
@@ -442,6 +493,41 @@ namespace IKVM.Runtime
 
             try
             {
+                // send a ping message to the given endpoint
+                if (debugPing != null)
+                {
+                    var b = Encoding.UTF8.GetBytes(JsonSerializer.Serialize(new DebugPing()
+                    {
+                        ProcessId = Process.GetCurrentProcess().Id,
+                    }));
+
+                    using var c = new UdpClient();
+                    c.Send(b, b.Length, debugPing);
+                }
+
+                // wait for debugger to attach
+                if (debugWait > 0)
+                {
+                    Console.Write("Waiting for debugger...");
+
+                    // waits for the debugger to be attached
+                    var cts = new CancellationTokenSource(TimeSpan.FromSeconds(debugWait));
+                    while (Debugger.IsAttached == false && cts.IsCancellationRequested == false)
+                    {
+                        Thread.Sleep(1000);
+                        Console.Write(".");
+                    }
+
+                    Console.WriteLine();
+
+                    // not attached, and cancelled?
+                    if (Debugger.IsAttached == false && cts.IsCancellationRequested)
+                    {
+                        Console.Error.WriteLine("Debugger wait timed out.");
+                        return 1;
+                    }
+                }
+
                 // if a jar file is specified, we're going to set the classpath to the jar itself
                 if (jar)
                     initialize["java.class.path"] = main;
