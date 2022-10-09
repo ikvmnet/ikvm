@@ -11,11 +11,11 @@
         <IkvmExporterToolPath>$(MSBuildThisFileDirectory)..\..\bin\ikvmstub</IkvmExporterToolPath>
     </PropertyGroup>
 
-    <UsingTask TaskName="IkvmGetReferenceAssemblies" AssemblyFile="$(IkvmMSBuildTaskAssembly)" Condition="Exists('$(IkvmMSBuildTaskAssembly)')" />
-    <UsingTask TaskName="IkvmReferenceItemPrepare" AssemblyFile="$(IkvmMSBuildTaskAssembly)" Condition="Exists('$(IkvmMSBuildTaskAssembly)')" />
-    <UsingTask TaskName="IkvmCompiler" AssemblyFile="$(IkvmMSBuildTaskAssembly)" Condition="Exists('$(IkvmMSBuildTaskAssembly)')" />
-    <UsingTask TaskName="IkvmExporter" AssemblyFile="$(IkvmMSBuildTaskAssembly)" Condition="Exists('$(IkvmMSBuildTaskAssembly)')" />
-    <UsingTask TaskName="IkvmJavaCompiler" AssemblyFile="$(IkvmMSBuildTaskAssembly)" Condition="Exists('$(IkvmMSBuildTaskAssembly)')" />
+    <UsingTask TaskName="IkvmGetReferenceAssemblies" AssemblyFile="$(IkvmMSBuildTaskAssembly)" TaskFactory="TaskHostFactory" Condition="Exists('$(IkvmMSBuildTaskAssembly)')" />
+    <UsingTask TaskName="IkvmReferenceItemPrepare" AssemblyFile="$(IkvmMSBuildTaskAssembly)" TaskFactory="TaskHostFactory" Condition="Exists('$(IkvmMSBuildTaskAssembly)')" />
+    <UsingTask TaskName="IkvmCompiler" AssemblyFile="$(IkvmMSBuildTaskAssembly)" TaskFactory="TaskHostFactory" Condition="Exists('$(IkvmMSBuildTaskAssembly)')" />
+    <UsingTask TaskName="IkvmExporter" AssemblyFile="$(IkvmMSBuildTaskAssembly)" TaskFactory="TaskHostFactory" Condition="Exists('$(IkvmMSBuildTaskAssembly)')" />
+    <UsingTask TaskName="IkvmJavaCompiler" AssemblyFile="$(IkvmMSBuildTaskAssembly)" TaskFactory="TaskHostFactory" Condition="Exists('$(IkvmMSBuildTaskAssembly)')" />
 
     <!-- Gathers those references which are either related to the Framework itself, or IKVM. -->
     <Target Name="ResolveIkvmFrameworkReferences" DependsOnTargets="$(ResolveIkvmFrameworkReferencesDependsOn)">
