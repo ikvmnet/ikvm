@@ -56,7 +56,7 @@ Name of a Java `.class` or `.jar file`. May contain wildcards (`*.class`).
 |---|---|
 | `-r:\|-reference:<library-filespec>` | Add a reference to a class library DLL (.NET assembly). When building Java projects (`.jar` or `.class` files), this can be used to add dependent projects that had previously been compiled.  The dependency must be compiled first. This option can appear more than once to reference multiple libraries. |
 | `-recurse:<filespec>` | Processes all files matching `filespec` in and under the directory specified by `filespec`. Example: `-recurse:*.class` |
-| `-exclude:<filename>` | `filename` is a file containing a list of classes to exclude. |
+| `-exclude:<filename>` | `filename` is a file containing a list of class names to exclude. The file may contain a single .NET-compatible regular expression per line. If the line starts with a `\`, it will be ignored as a comment. |
 
 ### Resources
 
