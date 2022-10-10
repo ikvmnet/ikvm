@@ -286,7 +286,7 @@ namespace IKVM.Runtime
                     if (arg.StartsWith("-ea:".AsSpan()) || arg.StartsWith("-enableassertions:".AsSpan()))
                     {
                         if (arg.IndexOf(':') is int v && v > -1)
-                            Assertions.EnableAssertions(arg.Slice(+1).ToString());
+                            Assertions.EnableAssertions(arg.Slice(v + 1).ToString());
                     }
 
                     if (ArgEquals(arg, "-da") || ArgEquals(arg, "-disableassertions"))
@@ -385,7 +385,7 @@ namespace IKVM.Runtime
                     if (arg.StartsWith("-Xtrace:".AsSpan()))
                     {
                         if (arg.IndexOf(':') is int v && v > -1)
-                            Tracer.SetTraceLevel(arg.Slice(+1).ToString());
+                            Tracer.SetTraceLevel(arg.Slice(v + 1).ToString());
 
                         continue;
                     }
