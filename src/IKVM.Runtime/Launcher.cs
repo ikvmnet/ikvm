@@ -270,7 +270,7 @@ namespace IKVM.Runtime
                     if (arg.StartsWith("-ea:".AsSpan()) || arg.StartsWith("-enableassertions:".AsSpan()))
                     {
                         if (arg.IndexOf(':') is int v && v > -1)
-                            Assertions.EnableAssertions(arg.Slice(v).ToString());
+                            Assertions.EnableAssertions(arg.Slice(v + 1).ToString());
                     }
 
                     if (ArgEquals(arg, "-da") || ArgEquals(arg, "-disableassertions"))
@@ -282,7 +282,7 @@ namespace IKVM.Runtime
                     if (arg.StartsWith("-da:".AsSpan()) || arg.StartsWith("-disableassertions:".AsSpan()))
                     {
                         if (arg.IndexOf(':') is int v && v > -1)
-                            Assertions.DisableAssertions(arg.Slice(v).ToString());
+                            Assertions.DisableAssertions(arg.Slice(v + 1).ToString());
                     }
 
                     if (ArgEquals(arg, "-esa") || ArgEquals(arg, "-enablesystemassertions"))
@@ -369,7 +369,7 @@ namespace IKVM.Runtime
                     if (arg.StartsWith("-Xtrace:".AsSpan()))
                     {
                         if (arg.IndexOf(':') is int v && v > -1)
-                            Tracer.SetTraceLevel(arg.Slice(v).ToString());
+                            Tracer.SetTraceLevel(arg.Slice(v + 1).ToString());
 
                         continue;
                     }
@@ -377,7 +377,7 @@ namespace IKVM.Runtime
                     if (arg.StartsWith("-Xmethodtrace:".AsSpan()))
                     {
                         if (arg.IndexOf(':') is int v && v > -1)
-                            Tracer.HandleMethodTrace(arg.Slice(v).ToString());
+                            Tracer.HandleMethodTrace(arg.Slice(v + 1).ToString());
 
                         continue;
                     }
@@ -385,7 +385,7 @@ namespace IKVM.Runtime
                     if (arg.StartsWith("-Xreference:".AsSpan()))
                     {
                         if (arg.IndexOf(':') is int v && v > -1)
-                            AddBootClassPathAssembly(Assembly.LoadFrom(arg.Slice(v).ToString()));
+                            AddBootClassPathAssembly(Assembly.LoadFrom(arg.Slice(v + 1).ToString()));
 
                         continue;
                     }
