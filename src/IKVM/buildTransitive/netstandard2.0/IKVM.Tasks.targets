@@ -20,6 +20,11 @@
         <MakeDir Directories="$([System.IO.Path]::GetDirectoryName('%(IkvmReferenceItem.StagePath)'))" />
         <MakeDir Directories="$([System.IO.Path]::GetDirectoryName('%(IkvmReferenceItem.CachePath)'))" />
 
+        <ItemGroup>
+            <_IkvmReferenceItemResolvedReference Remove="@(_IkvmReferenceItemResolvedReference)" />
+            <_IkvmReferenceItemResolvedReference Include="%(IkvmReferenceItem.ResolvedReferences)" />
+        </ItemGroup>
+
         <!-- Compile the reference item to the stage path. -->
         <IkvmCompiler
             ToolPath="$(IkvmCompilerToolPath)"
@@ -38,7 +43,7 @@
             CompressResources="true"
             ClassLoader="%(IkvmReferenceItem.ClassLoader)"
             NoStdLib="true"
-            References="@(IkvmFrameworkReference);$(IkvmBaseAssembly);$(IkvmRuntimeAssembly);$(IkvmRuntimeJNIAssembly);;@(_IkvmReferenceItemResolvedReference->Distinct())"
+            References="@(IkvmFrameworkReference);$(IkvmBaseAssembly);$(IkvmRuntimeAssembly);$(IkvmRuntimeJNIAssembly);@(_IkvmReferenceItemResolvedReference)"
             Input="%(IkvmReferenceItem.Compile)"
             Condition=" '%(IkvmReferenceItem.Compile)' != '' "/>
 

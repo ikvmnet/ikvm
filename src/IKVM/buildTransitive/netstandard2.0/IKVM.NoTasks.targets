@@ -28,6 +28,8 @@
         <MakeDir Directories="$([System.IO.Path]::GetDirectoryName('%(IkvmReferenceItem.StagePath)'))" />
         <MakeDir Directories="$([System.IO.Path]::GetDirectoryName('%(IkvmReferenceItem.CachePath)'))" />
 
+
+
         <ItemGroup>
             <_IkvmCompilerArgs Remove="@(_IkvmCompilerArgs)" />
             <_IkvmCompilerArgs Include="-debug" Condition=" '%(IkvmReferenceItem.Debug)' == 'true' " />
@@ -45,7 +47,9 @@
             <_IkvmCompilerArgs Include="-nostdlib" />
             <_IkvmCompilerArgs Include="-classloader:%(IkvmReferenceItem.ClassLoader)" Condition=" '%(IkvmReferenceItem.ClassLoader)' != '' " />
             <_IkvmCompilerReferencePath Remove="@(_IkvmCompilerReferencePath)" />
-            <_IkvmCompilerReferencePath Include="@(IkvmFrameworkReference);$(IkvmBaseAssembly);$(IkvmRuntimeAssembly);$(IkvmRuntimeJNIAssembly);@(_IkvmReferenceItemResolvedReference->Distinct())" />
+            <_IkvmReferenceItemResolvedReference Remove="@(_IkvmReferenceItemResolvedReference)" />
+            <_IkvmReferenceItemResolvedReference Include="%(IkvmReferenceItem.ResolvedReferences)" />
+            <_IkvmCompilerReferencePath Include="@(IkvmFrameworkReference);$(IkvmBaseAssembly);$(IkvmRuntimeAssembly);$(IkvmRuntimeJNIAssembly);@(_IkvmReferenceItemResolvedReference)" />
             <_IkvmCompilerArgs Include="@(_IkvmCompilerReferencePath->'-reference:%(FullPath)')" />
             <_IkvmCompilerArgs Include="-out:%(IkvmReferenceItem.StagePath)" />
             <_IkvmCompilerArgs Include="%(IkvmReferenceItem.Compile)" />
