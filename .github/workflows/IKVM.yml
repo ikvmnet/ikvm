@@ -245,6 +245,10 @@ jobs:
       shell: pwsh
       run: ri tests.tar.gz
       working-directory: dist
+    - name: Clean Solution
+      run: |
+        git reset --hard
+        git clean -qfdx
   test-ikvm:
     strategy:
       matrix:
