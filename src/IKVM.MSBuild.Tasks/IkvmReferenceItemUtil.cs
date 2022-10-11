@@ -114,8 +114,7 @@ namespace IKVM.MSBuild.Tasks
             if (string.IsNullOrEmpty(itemSpec))
                 throw new ArgumentException($"'{nameof(itemSpec)}' cannot be null or empty.", nameof(itemSpec));
 
-            resolved = map.TryGetValue(NormalizeItemSpec(itemSpec), out var r) ? r : null;
-            return resolved != null;
+            return map.TryGetValue(NormalizeItemSpec(itemSpec), out resolved);
         }
 
     }
