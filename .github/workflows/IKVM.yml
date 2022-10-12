@@ -209,52 +209,52 @@ jobs:
         name: nuget
         path: dist/nuget/*.nupkg
     - name: Package Binaries
-      run: tar czvf bin.tar.gz bin
+      run: tar czvf ${{ runner.temp }}\bin.tar.gz bin
       working-directory: dist
     - name: Upload Binaries
       uses: actions/upload-artifact@v3
       with:
         name: bin
-        path: dist/bin.tar.gz
+        path: ${{ runner.temp }}\bin.tar.gz
     - name: Delete Binaries
       shell: pwsh
-      run: ri bin.tar.gz
+      run: ri ${{ runner.temp }}\bin.tar.gz
       working-directory: dist
     - name: Package Tools
-      run: tar czvf tools.tar.gz tools
+      run: tar czvf ${{ runner.temp }}\tools.tar.gz tools
       working-directory: dist
     - name: Upload Tools
       uses: actions/upload-artifact@v3
       with:
         name: tools
-        path: dist/tools.tar.gz
+        path: ${{ runner.temp }}\tools.tar.gz
     - name: Delete Tools
       shell: pwsh
-      run: ri tools.tar.gz
+      run: ri ${{ runner.temp }}\tools.tar.gz
       working-directory: dist
     - name: Package Image
-      run: tar czvf image.tar.gz image
+      run: tar czvf ${{ runner.temp }}\image.tar.gz image
       working-directory: dist
     - name: Upload Image
       uses: actions/upload-artifact@v3
       with:
         name: image
-        path: dist/image.tar.gz
+        path: ${{ runner.temp }}\image.tar.gz
     - name: Delete Image
       shell: pwsh
-      run: ri image.tar.gz
+      run: ri ${{ runner.temp }}\image.tar.gz
       working-directory: dist
     - name: Package Tests
-      run: tar czvf tests.tar.gz tests
+      run: tar czvf ${{ runner.temp }}\tests.tar.gz tests
       working-directory: dist
     - name: Upload Tests
       uses: actions/upload-artifact@v3
       with:
         name: tests
-        path: dist/tests.tar.gz
+        path: ${{ runner.temp }}\tests.tar.gz
     - name: Delete Tests
       shell: pwsh
-      run: ri tests.tar.gz
+      run: ri ${{ runner.temp }}\tests.tar.gz
       working-directory: dist
     - name: Clean Solution
       run: |
