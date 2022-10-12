@@ -68,6 +68,10 @@ namespace IKVM.MSBuild.Tasks
                 item.Aliases = item.Item.GetMetadata(IkvmReferenceItemMetadata.Aliases);
                 item.Private = string.Equals(item.Item.GetMetadata(IkvmReferenceItemMetadata.Private), "true", StringComparison.OrdinalIgnoreCase);
                 item.ReferenceOutputAssembly = string.Equals(item.Item.GetMetadata(IkvmReferenceItemMetadata.ReferenceOutputAssembly), "true", StringComparison.OrdinalIgnoreCase);
+                item.CachePath = item.Item.GetMetadata(IkvmReferenceItemMetadata.CachePath);
+                item.CacheSymbolsPath = item.Item.GetMetadata(IkvmReferenceItemMetadata.CacheSymbolsPath);
+                item.StagePath = item.Item.GetMetadata(IkvmReferenceItemMetadata.StagePath);
+                item.StageSymbolsPath = item.Item.GetMetadata(IkvmReferenceItemMetadata.StageSymbolsPath);
                 item.Save();
             }
 

@@ -654,7 +654,9 @@ namespace IKVM.MSBuild.Tasks
         {
             item.IkvmIdentity = CalculateIkvmIdentity(item);
             item.CachePath = Path.Combine(CacheDir, item.IkvmIdentity, item.AssemblyName + ".dll");
+            item.CacheSymbolsPath = Path.Combine(CacheDir, item.IkvmIdentity, item.AssemblyName + ".pdb");
             item.StagePath = Path.Combine(StageDir, item.IkvmIdentity, item.AssemblyName + ".dll");
+            item.StageSymbolsPath = Path.Combine(StageDir, item.IkvmIdentity, item.AssemblyName + ".pdb");
             item.Save();
         }
 
