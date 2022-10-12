@@ -15,7 +15,7 @@ namespace IKVM.Runtime
 
         public const string LIB_NAME = "ikvm-native";
 
-#if NET461
+#if NETFRAMEWORK
 
         /// <summary>
         /// Native Win32 LoadLibrary method.
