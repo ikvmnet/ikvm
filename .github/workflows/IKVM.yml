@@ -208,6 +208,10 @@ jobs:
       with:
         name: nuget
         path: dist/nuget/*.nupkg
+    - name: Delete NuGet Packages
+      shell: pwsh
+      run: ri nuget -Recurse -Force
+      working-directory: dist
     - name: Package Binaries
       run: tar czvf ${{ runner.temp }}\bin.tar.gz bin
       working-directory: dist
@@ -218,7 +222,7 @@ jobs:
         path: ${{ runner.temp }}\bin.tar.gz
     - name: Delete Binaries
       shell: pwsh
-      run: ri ${{ runner.temp }}\bin.tar.gz
+      run: ri ${{ runner.temp }}\bin.tar.gz bin -Recurse -Force
       working-directory: dist
     - name: Package Tools
       run: tar czvf ${{ runner.temp }}\tools.tar.gz tools
@@ -230,7 +234,7 @@ jobs:
         path: ${{ runner.temp }}\tools.tar.gz
     - name: Delete Tools
       shell: pwsh
-      run: ri ${{ runner.temp }}\tools.tar.gz
+      run: ri ${{ runner.temp }}\tools.tar.gz tools -Recurse -Force
       working-directory: dist
     - name: Package Image
       run: tar czvf ${{ runner.temp }}\image.tar.gz image
@@ -242,19 +246,19 @@ jobs:
         path: ${{ runner.temp }}\image.tar.gz
     - name: Delete Image
       shell: pwsh
-      run: ri ${{ runner.temp }}\image.tar.gz
+      run: ri ${{ runner.temp }}\image.tar.gz image -Recurse -Force
       working-directory: dist
     - name: Package Tests
-      run: tar cJvf ${{ runner.temp }}\tests.tar.xz tests
+      run: tar czvf ${{ runner.temp }}\tests.tar.gz tests
       working-directory: dist
     - name: Upload Tests
       uses: actions/upload-artifact@v3
       with:
         name: tests
-        path: ${{ runner.temp }}\tests.tar.xz
+        path: ${{ runner.temp }}\tests.tar.gz
     - name: Delete Tests
       shell: pwsh
-      run: ri ${{ runner.temp }}\tests.tar.xz
+      run: ri ${{ runner.temp }}\tests.tar.gz tests -Recurse -Force
       working-directory: dist
     - name: Clean Solution
       run: |
@@ -402,11 +406,11 @@ jobs:
         name: tests
         path: dist
     - name: Restore Tests
-      run: tar xJvf tests.tar.xz
+      run: tar xzvf tests.tar.gz
       working-directory: dist
     - name: Delete Tests
       shell: pwsh
-      run: ri tests.tar.xz
+      run: ri tests.tar.gz
       working-directory: dist
     - name: Execute Tests
       shell: pwsh
