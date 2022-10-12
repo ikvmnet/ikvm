@@ -32,14 +32,14 @@ namespace IKVM.Runtime
         /// </summary>
         static Native()
         {
-#if NET461
+#if NETFRAMEWORK
             LegacyImportDll();
 #else
             NativeLibrary.SetDllImportResolver(typeof(Native).Assembly, DllImportResolver);
 #endif
         }
 
-#if NET461
+#if NETFRAMEWORK
 
         /// <summary>
         /// Preloads the native DLL for down-level platforms.
@@ -58,7 +58,7 @@ namespace IKVM.Runtime
                 if (h != IntPtr.Zero)
                     return;
             }
-    }
+        }
 
 #endif
 
@@ -94,10 +94,12 @@ namespace IKVM.Runtime
         /// Gets the RID architecture.
         /// </summary>
         /// <returns></returns>
-        static string GetRuntimeIdentifierArch() => IntPtr.Size switch
+        static string GetRuntimeIdentifierArch() => RuntimeInformation.ProcessArchitecture switch
         {
-            4 => "x86",
-            8 => "x64",
+            Architecture.X86 => "x86",
+            Architecture.X64 => "x64",
+            Architecture.Arm => "arm",
+            Architecture.Arm64 => "arm64",
             _ => throw new NotSupportedException(),
         };
 
@@ -109,11 +111,11 @@ namespace IKVM.Runtime
         {
             var arch = GetRuntimeIdentifierArch();
 
-#if NET461
-            yield return $"win7-{arch}";
+#if NETFRAMEWORK
+            yield return $"win-{arch}";
 #else
             if (RuntimeInformation.IsOSPlatform(OSPlatform.Windows))
-                yield return $"win7-{arch}";
+                yield return $"win-{arch}";
 
             if (RuntimeInformation.IsOSPlatform(OSPlatform.Linux))
                 yield return $"linux-{arch}";
@@ -127,7 +129,7 @@ namespace IKVM.Runtime
         /// <returns></returns>
         static string GetLibraryFileName(string name)
         {
-#if NET461
+#if NETFRAMEWORK
             return $"{name}.dll";
 #else
             if (RuntimeInformation.IsOSPlatform(OSPlatform.Windows))
