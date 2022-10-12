@@ -26,9 +26,9 @@
 
         <!-- Output to stage path then copy to cache path to be atomic. -->
         <MakeDir Directories="$([System.IO.Path]::GetDirectoryName('%(IkvmReferenceItem.StagePath)'))" />
+        <MakeDir Directories="$([System.IO.Path]::GetDirectoryName('%(IkvmReferenceItem.StageSymbolsPath)'))" />
         <MakeDir Directories="$([System.IO.Path]::GetDirectoryName('%(IkvmReferenceItem.CachePath)'))" />
-
-
+        <MakeDir Directories="$([System.IO.Path]::GetDirectoryName('%(IkvmReferenceItem.CacheSymbolsPath)'))" />
 
         <ItemGroup>
             <_IkvmCompilerArgs Remove="@(_IkvmCompilerArgs)" />
@@ -58,7 +58,19 @@
 
         <Delete Files="%(IkvmReferenceItem.StagePath)" Condition="Exists('%(IkvmReferenceItem.StagePath)')" />
         <Exec Command="$(IkvmCompilerExec) @%(IkvmReferenceItem.StagePath).rsp" />
-        <Copy SourceFiles="%(IkvmReferenceItem.StagePath)" DestinationFiles="%(IkvmReferenceItem.CachePath)" OverwriteReadOnlyFiles="true" />
+
+        <!-- Copy the compiled assembly to its cache path. -->
+        <Copy
+            SourceFiles="%(IkvmReferenceItem.StagePath)"
+            DestinationFiles="%(IkvmReferenceItem.CachePath)"
+            OverwriteReadOnlyFiles="true" />
+
+        <!-- Copy the compiled assembly symbols to its cache path. -->
+        <Copy
+            SourceFiles="%(IkvmReferenceItem.StageSymbolsPath)"
+            DestinationFiles="%(IkvmReferenceItem.CacheSymbolsPath)"
+            OverwriteReadOnlyFiles="true"
+            Condition="Exists('%(IkvmReferenceItem.StageSymbolsPath)')"/>
 
         <ItemGroup>
             <FileWrites Include="%(IkvmReferenceItem.StagePath)" />
