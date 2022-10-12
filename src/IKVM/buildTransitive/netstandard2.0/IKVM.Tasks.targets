@@ -27,6 +27,8 @@
             <_IkvmReferenceItemResolvedReference Include="%(IkvmReferenceItem.ResolvedReferences)" />
         </ItemGroup>
 
+        <Delete Files="%(IkvmReferenceItem.StagePath)" Condition="Exists('%(IkvmReferenceItem.StagePath)')" />
+
         <!-- Compile the reference item to the stage path. -->
         <IkvmCompiler
             ToolPath="$(IkvmCompilerToolPath)"

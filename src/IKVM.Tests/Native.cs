@@ -46,7 +46,7 @@ namespace IKVM.Tests
             var arch = GetRuntimeIdentifierArch();
 
 #if NET461
-            yield return $"win7-{arch}";
+            yield return $"win-{arch}";
 #else
             if (RuntimeInformation.IsOSPlatform(OSPlatform.Windows))
                 yield return $"win7-{arch}";
