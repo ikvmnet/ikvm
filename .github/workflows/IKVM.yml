@@ -252,6 +252,10 @@ jobs:
       with:
         name: tests
         path: dist/tests.tar.gz
+    - name: Delete Tests
+      shell: pwsh
+      run: ri tests.tar.gz
+      working-directory: dist
     - name: Clean Solution
       run: |
         git reset --hard

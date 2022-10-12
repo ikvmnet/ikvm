@@ -18,7 +18,14 @@
 
         <!-- Output to stage path then copy to cache path to be atomic. -->
         <MakeDir Directories="$([System.IO.Path]::GetDirectoryName('%(IkvmReferenceItem.StagePath)'))" />
+        <MakeDir Directories="$([System.IO.Path]::GetDirectoryName('%(IkvmReferenceItem.StageSymbolsPath)'))" />
         <MakeDir Directories="$([System.IO.Path]::GetDirectoryName('%(IkvmReferenceItem.CachePath)'))" />
+        <MakeDir Directories="$([System.IO.Path]::GetDirectoryName('%(IkvmReferenceItem.CacheSymbolsPath)'))" />
+
+        <ItemGroup>
+            <_IkvmReferenceItemResolvedReference Remove="@(_IkvmReferenceItemResolvedReference)" />
+            <_IkvmReferenceItemResolvedReference Include="%(IkvmReferenceItem.ResolvedReferences)" />
+        </ItemGroup>
 
         <!-- Compile the reference item to the stage path. -->
         <IkvmCompiler
@@ -38,7 +45,7 @@
             CompressResources="true"
             ClassLoader="%(IkvmReferenceItem.ClassLoader)"
             NoStdLib="true"
-            References="@(IkvmFrameworkReference);$(IkvmBaseAssembly);$(IkvmRuntimeAssembly);$(IkvmRuntimeJNIAssembly);;@(_IkvmReferenceItemResolvedReference->Distinct())"
+            References="@(IkvmFrameworkReference);$(IkvmBaseAssembly);$(IkvmRuntimeAssembly);$(IkvmRuntimeJNIAssembly);@(_IkvmReferenceItemResolvedReference)"
             Input="%(IkvmReferenceItem.Compile)"
             Condition=" '%(IkvmReferenceItem.Compile)' != '' "/>
 
@@ -47,6 +54,13 @@
             SourceFiles="%(IkvmReferenceItem.StagePath)"
             DestinationFiles="%(IkvmReferenceItem.CachePath)"
             OverwriteReadOnlyFiles="true" />
+
+        <!-- Copy the compiled assembly symbols to its cache path. -->
+        <Copy
+            SourceFiles="%(IkvmReferenceItem.StageSymbolsPath)"
+            DestinationFiles="%(IkvmReferenceItem.CacheSymbolsPath)"
+            OverwriteReadOnlyFiles="true"
+            Condition="Exists('%(IkvmReferenceItem.StageSymbolsPath)')"/>
 
         <ItemGroup>
             <FileWrites Include="%(IkvmReferenceItem.StagePath)" />
