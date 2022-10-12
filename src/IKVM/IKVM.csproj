@@ -86,11 +86,11 @@
     <ItemGroup Condition=" '$(TargetFramework)' == '' ">
         <LibProjectReference Include="..\ikvm-native\ikvm-native-win.vcxproj">
             <SetPlatform>Platform=x64</SetPlatform>
-            <LibPackagePath>runtimes\win7-x64\native</LibPackagePath>
+            <LibPackagePath>runtimes\win-x64\native</LibPackagePath>
         </LibProjectReference>
         <LibProjectReference Include="..\ikvm-native\ikvm-native-win.vcxproj">
             <SetPlatform>Platform=Win32</SetPlatform>
-            <LibPackagePath>runtimes\win7-x86\native</LibPackagePath>
+            <LibPackagePath>runtimes\win-x86\native</LibPackagePath>
         </LibProjectReference>
         <LibProjectReference Include="..\ikvm-native\ikvm-native-linux.vcxproj">
             <SetPlatform>Platform=x64</SetPlatform>

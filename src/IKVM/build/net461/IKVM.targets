@@ -4,13 +4,13 @@
     </PropertyGroup>
 
     <ItemGroup>
-        <ContentWithTargetPath Include="$(MSBuildThisFileDirectory)..\..\runtimes\win7-x64\native\ikvm-native.dll">
+        <ContentWithTargetPath Include="$(MSBuildThisFileDirectory)..\..\runtimes\win-x64\native\ikvm-native.dll">
             <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
-            <TargetPath>runtimes\win7-x64\native\ikvm-native.dll</TargetPath>
+            <TargetPath>runtimes\win-x64\native\ikvm-native.dll</TargetPath>
         </ContentWithTargetPath>
-        <ContentWithTargetPath Include="$(MSBuildThisFileDirectory)..\..\runtimes\win7-x86\native\ikvm-native.dll">
+        <ContentWithTargetPath Include="$(MSBuildThisFileDirectory)..\..\runtimes\win-x86\native\ikvm-native.dll">
             <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
-            <TargetPath>runtimes\win7-x86\native\ikvm-native.dll</TargetPath>
+            <TargetPath>runtimes\win-x86\native\ikvm-native.dll</TargetPath>
         </ContentWithTargetPath>
     </ItemGroup>
 
