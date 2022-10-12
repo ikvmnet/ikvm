@@ -245,16 +245,16 @@ jobs:
       run: ri ${{ runner.temp }}\image.tar.gz
       working-directory: dist
     - name: Package Tests
-      run: tar czvf ${{ runner.temp }}\tests.tar.gz tests
+      run: tar cJvf ${{ runner.temp }}\tests.tar.xz tests
       working-directory: dist
     - name: Upload Tests
       uses: actions/upload-artifact@v3
       with:
         name: tests
-        path: ${{ runner.temp }}\tests.tar.gz
+        path: ${{ runner.temp }}\tests.tar.xz
     - name: Delete Tests
       shell: pwsh
-      run: ri ${{ runner.temp }}\tests.tar.gz
+      run: ri ${{ runner.temp }}\tests.tar.xz
       working-directory: dist
     - name: Clean Solution
       run: |
@@ -402,11 +402,11 @@ jobs:
         name: tests
         path: dist
     - name: Restore Tests
-      run: tar xzvf tests.tar.gz
+      run: tar xJvf tests.tar.xz
       working-directory: dist
     - name: Delete Tests
       shell: pwsh
-      run: ri tests.tar.gz
+      run: ri tests.tar.xz
       working-directory: dist
     - name: Execute Tests
       shell: pwsh
