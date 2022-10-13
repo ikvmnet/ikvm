@@ -234,7 +234,7 @@ jobs:
         path: ${{ runner.temp }}\tools.tar.gz
     - name: Delete Tools
       shell: pwsh
-      run: ri ${{ runner.temp }}\tools.tar.gz tools -Recurse -Force
+      run: ri ${{ runner.temp }}\tools.tar.gz, tools -Recurse -Force
       working-directory: dist
     - name: Package Image
       run: tar czvf ${{ runner.temp }}\image.tar.gz image
@@ -246,7 +246,7 @@ jobs:
         path: ${{ runner.temp }}\image.tar.gz
     - name: Delete Image
       shell: pwsh
-      run: ri ${{ runner.temp }}\image.tar.gz image -Recurse -Force
+      run: ri ${{ runner.temp }}\image.tar.gz, image -Recurse -Force
       working-directory: dist
     - name: Package Tests
       run: tar czvf ${{ runner.temp }}\tests.tar.gz tests
@@ -258,7 +258,7 @@ jobs:
         path: ${{ runner.temp }}\tests.tar.gz
     - name: Delete Tests
       shell: pwsh
-      run: ri ${{ runner.temp }}\tests.tar.gz tests -Recurse -Force
+      run: ri ${{ runner.temp }}\tests.tar.gz, tests -Recurse -Force
       working-directory: dist
     - name: Clean Solution
       run: |
