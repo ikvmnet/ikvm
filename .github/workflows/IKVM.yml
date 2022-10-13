@@ -222,7 +222,7 @@ jobs:
         path: ${{ runner.temp }}\bin.tar.gz
     - name: Delete Binaries
       shell: pwsh
-      run: ri ${{ runner.temp }}\bin.tar.gz bin -Recurse -Force
+      run: ri ${{ runner.temp }}\bin.tar.gz, bin -Recurse -Force
       working-directory: dist
     - name: Package Tools
       run: tar czvf ${{ runner.temp }}\tools.tar.gz tools
