@@ -249,16 +249,16 @@ jobs:
       run: ri ${{ runner.temp }}\image.tar.gz, image -Recurse -Force
       working-directory: dist
     - name: Package Tests
-      run: tar czvf ${{ runner.temp }}\tests.tar.gz tests
+      run: tar czvf tests.tar.gz tests
       working-directory: dist
     - name: Upload Tests
       uses: actions/upload-artifact@v3
       with:
         name: tests
-        path: ${{ runner.temp }}\tests.tar.gz
+        path: tests.tar.gz
     - name: Delete Tests
       shell: pwsh
-      run: ri ${{ runner.temp }}\tests.tar.gz, tests -Recurse -Force
+      run: ri tests.tar.gz, tests -Recurse -Force
       working-directory: dist
     - name: Clean Solution
       run: |
