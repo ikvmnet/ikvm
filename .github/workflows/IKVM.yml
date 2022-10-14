@@ -249,8 +249,12 @@ jobs:
       run: ri ${{ runner.temp }}\image.tar.gz, image -Recurse -Force
       working-directory: dist
     - name: Package Tests
-      run: tar czvf tests.tar.gz tests
-      working-directory: dist
+      uses: a7ul/tar-action@v1.1.0
+      with:
+        command: c
+        cwd: dist
+        files: tests
+        outPath: tests.tar.gz
     - name: Upload Tests
       uses: actions/upload-artifact@v3
       with:
