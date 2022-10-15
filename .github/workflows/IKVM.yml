@@ -248,6 +248,9 @@ jobs:
       shell: pwsh
       run: ri ${{ runner.temp }}\image.tar.gz, image -Recurse -Force
       working-directory: dist
+    - name: gsjdjd
+      shell: pwsh
+      run: Get-PSDrive
     - name: Package Tests
       uses: a7ul/tar-action@v1.1.0
       with:
