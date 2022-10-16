@@ -27,7 +27,7 @@ namespace IKVM.Runtime
         /// <summary>
         /// Data sent as part of the debug ping protocol.
         /// </summary>
-        class DebugPing
+        class IkvmStartEvent
         {
 
             [JsonPropertyName("processId")]
@@ -241,11 +241,11 @@ namespace IKVM.Runtime
 #if FIRST_PASS || STATIC_COMPILER
             throw new NotImplementedException();
 #else
+            HandleDebugTrace();
+
             var initialize = properties != null ? new Dictionary<string, string>(properties) : new Dictionary<string, string>();
             var showversion = false;
             var hasMainArg = false;
-            var debugWait = 0;
-            var debugPing = (IPEndPoint)null;
             var jvmArgs = args.Where(i => rarg != null).Where(i => i.StartsWith(rarg)).Select(i => i.Substring(rarg.Length)).ToList();
             var appArgs = args.Where(i => rarg == null || i.StartsWith(rarg) == false).ToList();
             var appArgsReset = false;
@@ -257,7 +257,7 @@ namespace IKVM.Runtime
 
             // ikvm.home from environmente by default
             initialize["ikvm.home"] = "ikvm";
-            if (Environment.GetEnvironmentVariable("IKVM_HOME") is String ih && !string.IsNullOrEmpty(ih))
+            if (Environment.GetEnvironmentVariable("IKVM_HOME") is string ih && !string.IsNullOrEmpty(ih))
                 initialize["ikvm.home"] = ih;
 
             // process through each incoming argument
@@ -412,41 +412,6 @@ namespace IKVM.Runtime
                         continue;
                     }
 
-                    // wait some number of seconds for a debugger to attach
-                    if (arg.StartsWith("-Xdebugwait:".AsSpan()))
-                    {
-                        if (arg.IndexOf(':') is int v && v > -1 && int.TryParse(arg.Slice(v + 1).ToString(), out var i))
-                            debugWait = i;
-
-                        continue;
-                    }
-
-                    // send a ping message to the given hostname and port to signal a debugger to attach
-                    if (arg.StartsWith("-Xdebughost:".AsSpan()))
-                    {
-                        if (arg.IndexOf(':') is int v && v > -1)
-                        {
-#if NETFRAMEWORK
-                            static IPEndPoint ParseIPEndPoint(string text)
-                            {
-                                if (Uri.TryCreate(text, UriKind.Absolute, out Uri uri))
-                                    return new IPEndPoint(IPAddress.Parse(uri.Host), uri.Port < 0 ? 0 : uri.Port);
-                                if (Uri.TryCreate(string.Concat("udp://", text), UriKind.Absolute, out uri))
-                                    return new IPEndPoint(IPAddress.Parse(uri.Host), uri.Port < 0 ? 0 : uri.Port);
-                                if (Uri.TryCreate(string.Concat("udp://", string.Concat("[", text, "]")), UriKind.Absolute, out uri))
-                                    return new IPEndPoint(IPAddress.Parse(uri.Host), uri.Port < 0 ? 0 : uri.Port);
-                                throw new FormatException("Failed to parse text to IPEndPoint");
-                            }
-
-                            debugPing = ParseIPEndPoint(arg.Slice(v + 1).ToString());
-#else
-                            debugPing = IPEndPoint.Parse(arg.Slice(v + 1));
-#endif
-                        }
-
-                        continue;
-                    }
-
                     if (arg.StartsWith("-Xms".AsSpan()) ||
                         arg.StartsWith("-Xmx".AsSpan()) ||
                         arg.StartsWith("-Xmn".AsSpan()) ||
@@ -493,41 +458,6 @@ namespace IKVM.Runtime
 
             try
             {
-                // send a ping message to the given endpoint
-                if (debugPing != null)
-                {
-                    var b = Encoding.UTF8.GetBytes(JsonSerializer.Serialize(new DebugPing()
-                    {
-                        ProcessId = Process.GetCurrentProcess().Id,
-                    }));
-
-                    using var c = new UdpClient();
-                    c.Send(b, b.Length, debugPing);
-                }
-
-                // wait for debugger to attach
-                if (debugWait > 0)
-                {
-                    Console.Write("Waiting for debugger...");
-
-                    // waits for the debugger to be attached
-                    var cts = new CancellationTokenSource(TimeSpan.FromSeconds(debugWait));
-                    while (Debugger.IsAttached == false && cts.IsCancellationRequested == false)
-                    {
-                        Thread.Sleep(1000);
-                        Console.Write(".");
-                    }
-
-                    Console.WriteLine();
-
-                    // not attached, and cancelled?
-                    if (Debugger.IsAttached == false && cts.IsCancellationRequested)
-                    {
-                        Console.Error.WriteLine("Debugger wait timed out.");
-                        return 1;
-                    }
-                }
-
                 // if a jar file is specified, we're going to set the classpath to the jar itself
                 if (jar)
                     initialize["java.class.path"] = main;
@@ -582,6 +512,72 @@ namespace IKVM.Runtime
 
             return 1;
 #endif
+        }
+
+        /// <summary>
+        /// Handles the configured IKVM debug trace settings.
+        /// </summary>
+        static void HandleDebugTrace()
+        {
+            var debugWait = 0;
+            var debugHost = (IPEndPoint)null;
+
+            // wait some number of seconds for a debugger to attach
+            if (Environment.GetEnvironmentVariable("IKVM_DEBUG_TRACE_WAIT") is string debugWait_)
+                if (int.TryParse(debugWait_, out var i))
+                    debugWait = i;
+
+            // send a ping message to the given hostname and port to signal a debugger to attach
+            if (Environment.GetEnvironmentVariable("IKVM_DEBUG_TRACE_HOST") is string debugHost_)
+            {
+#if NETFRAMEWORK
+                static IPEndPoint ParseIPEndPoint(string text)
+                {
+                    if (Uri.TryCreate(text, UriKind.Absolute, out Uri uri))
+                        return new IPEndPoint(IPAddress.Parse(uri.Host), uri.Port < 0 ? 0 : uri.Port);
+                    if (Uri.TryCreate(string.Concat("tcp://", text), UriKind.Absolute, out uri))
+                        return new IPEndPoint(IPAddress.Parse(uri.Host), uri.Port < 0 ? 0 : uri.Port);
+                    if (Uri.TryCreate(string.Concat("tcp://", string.Concat("[", text, "]")), UriKind.Absolute, out uri))
+                        return new IPEndPoint(IPAddress.Parse(uri.Host), uri.Port < 0 ? 0 : uri.Port);
+                    throw new FormatException("Failed to parse text to IPEndPoint");
+                }
+
+                debugHost = ParseIPEndPoint(debugHost_);
+#else
+                debugHost = IPEndPoint.Parse(debugHost_);
+#endif
+            }
+
+            // send a start event to the host
+            if (debugHost != null)
+            {
+                var message = Encoding.UTF8.GetBytes(JsonSerializer.Serialize(new IkvmStartEvent() { ProcessId = Process.GetCurrentProcess().Id, }));
+                using var c = new TcpClient();
+                c.Connect(debugHost);
+                c.GetStream().Write(message, 0, message.Length);
+                c.GetStream().WriteByte(0);
+                c.Close();
+            }
+
+            // wait for debugger to attach
+            if (debugWait > 0)
+            {
+                Console.Write("Waiting for debugger...");
+
+                // waits for the debugger to be attached
+                var cts = new CancellationTokenSource(TimeSpan.FromSeconds(debugWait));
+                while (Debugger.IsAttached == false && cts.IsCancellationRequested == false)
+                {
+                    Thread.Sleep(1000);
+                    Console.Write(".");
+                }
+
+                Console.WriteLine();
+
+                // not attached, and cancelled?
+                if (Debugger.IsAttached == false && cts.IsCancellationRequested)
+                    Console.Error.WriteLine("Debugger wait timed out.");
+            }
         }
 
         /// <summary>

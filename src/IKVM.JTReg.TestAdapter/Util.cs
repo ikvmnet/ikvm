@@ -1,12 +1,16 @@
 ﻿using System;
 using System.Collections;
 using System.Collections.Generic;
+using System.IO;
 using System.Linq;
+using System.Reflection;
 
+using java.lang;
 using java.text;
 using java.util;
 
 using Microsoft.VisualStudio.TestPlatform.ObjectModel;
+using Microsoft.VisualStudio.TestPlatform.ObjectModel.Logging;
 
 namespace IKVM.JTReg.TestAdapter
 {
@@ -16,6 +20,40 @@ namespace IKVM.JTReg.TestAdapter
     /// </summary>
     static class Util
     {
+
+        /// <summary>
+        /// Discovers the test suite directories specified by the given source.
+        /// </summary>
+        /// <param name="source"></param>
+        /// <param name="logger"></param>
+        /// <returns></returns>
+        public static IEnumerable<string> GetTestSuiteDirectories(string source, IMessageLogger logger)
+        {
+            if (source is null)
+                throw new ArgumentNullException(nameof(source));
+            if (logger is null)
+                throw new ArgumentNullException(nameof(logger));
+
+            // normalize source path
+            source = Path.GetFullPath(source);
+            logger.SendMessage(TestMessageLevel.Informational, "JTReg: " + $"Scanning for test suites for '{source}'.");
+
+            var assembly = Assembly.LoadFrom(source);
+            foreach (var testAttr in assembly.GetCustomAttributes<JTRegTestSuiteAttribute>())
+            {
+                // relative root is relative to test assembly
+                var testPath = Path.IsPathRooted(testAttr.Path) ? testAttr.Path : Path.Combine(Path.GetDirectoryName(assembly.Location), testAttr.Path);
+                var rootFile = Path.Combine(testPath, IkvmJTRegTestAdapter.TEST_ROOT_FILE_NAME);
+                if (File.Exists(rootFile) == false)
+                {
+                    logger.SendMessage(TestMessageLevel.Error, "JTReg: " + $"Missing test root file: {rootFile}");
+                    continue;
+                }
+
+                logger.SendMessage(TestMessageLevel.Informational, "JTReg: " + $"Found test suite: {testPath}");
+                yield return testPath;
+            }
+        }
 
         /// <summary>
         /// Gets the test suites within the given test manager, properly sorted.
@@ -92,16 +130,78 @@ namespace IKVM.JTReg.TestAdapter
 
             for (int i = 0; i < testResult.getSectionCount(); i++)
             {
-                var s = testResult.getSection(i);
-                foreach (var j in s.getOutputNames())
-                {
-                    var o = s.getOutput(j);
-                    var m = new TestResultMessage($"{s.getTitle()} - {j}", o);
-                    r.Messages.Add(m);
-                }
+                var section = testResult.getSection(i);
+                if (section != null)
+                    foreach (var message in GetTestResultSectionMessages(section))
+                        r.Messages.Add(message);
             }
 
             return r;
+        }
+
+        /// <summary>
+        /// For a given section, returns a new test result message that document's it's completion.
+        /// </summary>
+        /// <param name="section"></param>
+        /// <returns></returns>
+        static IEnumerable<TestResultMessage> GetTestResultSectionMessages(dynamic section)
+        {
+            var header = new System.Text.StringBuilder();
+            header.AppendLine($"ACTION: {(string)section.getTitle()}");
+            header.AppendLine($"STATUS: {section.getStatus()}");
+            var m = (string)section.getOutput("messages");
+            if (m != null)
+                header.AppendLine(m.Trim());
+
+            var outOutput = (string)section.getOutput("System.out");
+            if (outOutput != null)
+            {
+                var outText = new System.Text.StringBuilder();
+                outText.AppendLine(header.ToString());
+                outText.AppendLine(outOutput.Trim());
+                outText.AppendLine("----");
+                yield return new TestResultMessage(TestResultMessage.StandardOutCategory, outText.ToString());
+            }
+
+            var errOutput = (string)section.getOutput("System.err");
+            if (errOutput != null)
+            {
+                var errText = new System.Text.StringBuilder();
+                errText.AppendLine(header.ToString());
+                errText.AppendLine(errOutput.Trim());
+                errText.AppendLine("----");
+                yield return new TestResultMessage(TestResultMessage.StandardErrorCategory, errText.ToString());
+            }
+        }
+
+        /// <summary>
+        /// Find the reason that the action was run. This method takes advantage of the fact that the reason string begins with a known value and ends with a line seperator.
+        /// </summary>
+        /// <param name="section"></param>
+        /// <returns></returns>
+        static string GetTestResultSectionReason(dynamic section)
+        {
+            const string SEARCH = "reason: ";
+
+            var o = (string)section.getOutput("messages");
+            var posBeg = o.IndexOf(SEARCH) + SEARCH.Length;
+            var posEnd = o.IndexOf(Environment.NewLine, posBeg);
+            return o.Substring(posBeg, posEnd);
+        }
+
+        /// <summary>
+        /// Finds the elapsed time for the action. This method takes advantage of the fact that the string containing the elapsed time begins with a known value and ends with a line seperator.
+        /// </summary>
+        /// <param name="section"></param>
+        /// <returns></returns>
+        static string GetElapsedTime(dynamic section)
+        {
+            const string SEARCH = "elased time (seconds): ";
+
+            var o = (string)section.getOutput("messages");
+            var posBeg = o.IndexOf(SEARCH) + SEARCH.Length;
+            var posEnd = o.IndexOf(Environment.NewLine, posBeg);
+            return o.Substring(posBeg, posEnd);
         }
 
         /// <summary>

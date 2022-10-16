@@ -1,5 +1,7 @@
 ﻿using System;
-using System.IO;
+
+using Microsoft.VisualStudio.TestPlatform.ObjectModel.Adapter;
+using Microsoft.VisualStudio.TestPlatform.ObjectModel.Logging;
 
 namespace IKVM.JTReg.TestAdapter
 {
@@ -9,21 +11,21 @@ namespace IKVM.JTReg.TestAdapter
     class ErrorHandlerImplementation
     {
 
-        readonly TextWriter writer;
+        readonly IMessageLogger logger;
 
         /// <summary>
         /// Initializes a new instance.
         /// </summary>
-        /// <param name="writer"></param>
+        /// <param name="logger"></param>
         /// <exception cref="ArgumentNullException"></exception>
-        public ErrorHandlerImplementation(TextWriter writer)
+        public ErrorHandlerImplementation(IMessageLogger logger)
         {
-            this.writer = writer ?? throw new ArgumentNullException(nameof(writer));
+            this.logger = logger ?? throw new ArgumentNullException(nameof(logger));
         }
 
         public void error(dynamic proxy, string msg)
         {
-            writer.WriteLine(msg);
+            logger.SendMessage(TestMessageLevel.Error, msg);
         }
 
     }

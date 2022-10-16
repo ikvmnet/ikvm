@@ -66,14 +66,14 @@ namespace IKVM.JTReg.TestAdapter
             try
             {
                 cts = new CancellationTokenSource();
-                DebugServer debug = null;
+                IkvmTraceServer debug = null;
 
                 try
                 {
                     // if we have the capability of attaching to child process, start debug server to listen for child processes
                     if (frameworkHandle is IFrameworkHandle2 fh2)
                     {
-                        debug = new DebugServer(runContext, fh2);
+                        debug = new IkvmTraceServer(fh2);
                         debug.Start();
                     }
 
@@ -122,29 +122,23 @@ namespace IKVM.JTReg.TestAdapter
             {
                 cancellationToken.ThrowIfCancellationRequested();
 
-                // normalize source path
-                source = Path.GetFullPath(source);
-                frameworkHandle.SendMessage(TestMessageLevel.Informational, "JTReg: " + $"Scanning for test roots for '{source}'.");
-
-                // discover all root test directories
+                // discover test suites from test assembly
                 var testDirs = new java.util.ArrayList();
-                foreach (var rootFile in Directory.GetFiles(Path.GetDirectoryName(source), TEST_ROOT_FILE_NAME, SearchOption.AllDirectories))
-                {
-                    frameworkHandle.SendMessage(TestMessageLevel.Informational, "JTReg: " + $"Found test root file: {rootFile}");
-                    testDirs.add(new java.io.File(Path.GetDirectoryName(rootFile)));
-                }
+                foreach (var testRoot in Util.GetTestSuiteDirectories(source, frameworkHandle))
+                    testDirs.add(new java.io.File(testRoot));
+                if (testDirs.size() == 0)
+                    return;
 
                 // output path for jtreg state
                 var id = GetSourceHash(source);
-                var baseDir = Path.Combine(Path.GetTempPath(), BASEDIR_PREFIX + id);
+                var baseDir = Path.Combine(runContext.TestRunDirectory, BASEDIR_PREFIX + id);
                 Directory.CreateDirectory(baseDir);
 
-                // setup output logs to rundir
-                using var output = new java.io.PrintWriter(Path.Combine(baseDir, DEFAULT_OUT_FILE_NAME));
-                using var errors = new StreamWriter(File.OpenWrite(Path.Combine(baseDir, DEFAULT_LOG_FILE_NAME)));
+                // output to framework
+                using var output = new MessageLoggerWriter(frameworkHandle, TestMessageLevel.Informational);
 
                 // initialize the test manager with the discovered roots
-                var testManager = CreateTestManager(frameworkHandle, baseDir, output, errors);
+                var testManager = CreateTestManager(frameworkHandle, baseDir, new java.io.PrintWriter(output));
                 testManager.addTestFiles(testDirs, false);
 
                 // we will need a full list of tests to apply any filters to
@@ -171,7 +165,7 @@ namespace IKVM.JTReg.TestAdapter
                 foreach (dynamic testSuite in (IEnumerable)testManager.getTestSuites())
                 {
                     frameworkHandle.SendMessage(TestMessageLevel.Informational, "JTReg: " + $"Running test suite: {testSuite.getName()}");
-                    RunTests(source, testSuite, runContext, frameworkHandle, tests, CreateParameters(source, baseDir, testManager, testSuite, tests, debugHost), cancellationToken);
+                    RunTests(source, testManager, testSuite, runContext, frameworkHandle, tests, output, CreateParameters(source, baseDir, testManager, testSuite, tests, debugHost), cancellationToken);
                 }
             }
             catch (Exception e)
@@ -184,15 +178,20 @@ namespace IKVM.JTReg.TestAdapter
         /// Executes the tests for the given parameters.
         /// </summary>
         /// <param name="source"></param>
+        /// <param name="testManager"></param>
+        /// <param name="testSuite"></param>
         /// <param name="runContext"></param>
         /// <param name="frameworkHandle"></param>
         /// <param name="tests"></param>
+        /// <param name="output"></param>
         /// <param name="parameters"></param>
         /// <param name="cancellationToken"></param>
-        internal void RunTests(string source, dynamic testSuite, IRunContext runContext, IFrameworkHandle frameworkHandle, IEnumerable<TestCase> tests, dynamic parameters, CancellationToken cancellationToken)
+        internal void RunTests(string source, dynamic testManager, dynamic testSuite, IRunContext runContext, IFrameworkHandle frameworkHandle, IEnumerable<TestCase> tests, java.io.Writer output, dynamic parameters, CancellationToken cancellationToken)
         {
             if (string.IsNullOrEmpty(source))
                 throw new ArgumentException($"'{nameof(source)}' cannot be null or empty.", nameof(source));
+            if (testManager is null)
+                throw new ArgumentNullException(nameof(testManager));
             if (testSuite is null)
                 throw new ArgumentNullException(nameof(testSuite));
             if (runContext is null)
@@ -213,10 +212,19 @@ namespace IKVM.JTReg.TestAdapter
 
             try
             {
+
                 // observe harness for test results
                 var harness = JTRegTypes.Harness.New();
                 var observer = HarnessObserverInterceptor.Create(new HarnessObserverImplementation(source, testSuite, runContext, frameworkHandle, tests));
                 harness.addObserver(observer);
+
+                // collect test stats
+                var stats = JTRegTypes.TestStats.New();
+                stats.register(harness);
+
+                // required for reporting
+                var elapsedTimeHandler = JTRegTypes.ElapsedTimeHandler.New();
+                elapsedTimeHandler.register(harness);
 
                 // begin harness execution asynchronously, thus allowing potential cancellation
                 harness.start(parameters);
@@ -226,6 +234,13 @@ namespace IKVM.JTReg.TestAdapter
                 harness.waitUntilDone();
                 harness.stop();
                 harness.removeObserver(observer);
+
+                // show result stats
+                stats.showResultStats(new java.io.PrintWriter(output));
+
+                // generate reports after execution
+                var reporter = JTRegTypes.RegressionReporter.New(new java.io.PrintWriter(output));
+                reporter.report(testManager);
             }
             catch (java.lang.InterruptedException)
             {

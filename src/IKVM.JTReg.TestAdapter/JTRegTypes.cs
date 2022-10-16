@@ -46,7 +46,6 @@ namespace IKVM.JTReg.TestAdapter
 
             }
 
-
         }
 
         public static class ProductInfo
@@ -58,6 +57,69 @@ namespace IKVM.JTReg.TestAdapter
 
         }
 
+        public static class ElapsedTimeHandler
+        {
+
+            public static readonly Class Class = Class.forName("com.sun.javatest.regtest.report.ElapsedTimeHandler", true, ClassLoader);
+            public static readonly Type Type = ikvm.runtime.Util.getInstanceTypeFromClass(Class);
+            public static readonly Constructor Constructor1 = Class.getConstructor();
+
+            public static dynamic New() => Constructor1.newInstance();
+
+        }
+
+        public static class TestStats
+        {
+
+            public static readonly Class Class = Class.forName("com.sun.javatest.regtest.report.TestStats", true, ClassLoader);
+            public static readonly Type Type = ikvm.runtime.Util.getInstanceTypeFromClass(Class);
+            public static readonly Constructor Constructor1 = Class.getConstructor();
+
+            public static dynamic New() => Constructor1.newInstance();
+
+        }
+
+        public static class TestFilter
+        {
+
+            public static readonly Class Class = Class.forName("com.sun.javatest.TestFilter", true, ClassLoader);
+            public static readonly Type Type = ikvm.runtime.Util.getInstanceTypeFromClass(Class);
+
+        }
+
+        public static class ParameterFilter
+        {
+
+            public static readonly Class Class = Class.forName("com.sun.javatest.ParameterFilter", true, ClassLoader);
+            public static readonly Type Type = ikvm.runtime.Util.getInstanceTypeFromClass(Class);
+            public static readonly Constructor Constructor1 = Class.getConstructor();
+
+            public static dynamic New() => Constructor1.newInstance();
+
+        }
+
+        public static class StatusFilter
+        {
+
+            public static readonly Class Class = Class.forName("com.sun.javatest.StatusFilter", true, ClassLoader);
+            public static readonly Type Type = ikvm.runtime.Util.getInstanceTypeFromClass(Class);
+            public static readonly Constructor Constructor1 = Class.getConstructor(typeof(bool[]), TestResultTable.Class);
+
+            public static dynamic New(bool[] statusValues, object trt) => Constructor1.newInstance(statusValues, trt);
+
+        }
+
+        public static class RegressionReporter
+        {
+
+            public static readonly Class Class = Class.forName("com.sun.javatest.regtest.report.RegressionReporter", true, ClassLoader);
+            public static readonly Type Type = ikvm.runtime.Util.getInstanceTypeFromClass(Class);
+            public static readonly Constructor Constructor1 = Class.getConstructor(typeof(java.io.PrintWriter));
+
+            public static dynamic New(java.io.PrintWriter out_) => Constructor1.newInstance(out_);
+
+        }
+
         public static class TestManager
         {
 
@@ -66,6 +128,14 @@ namespace IKVM.JTReg.TestAdapter
             public static readonly Constructor Constructor1 = Class.getConstructor(typeof(java.io.PrintWriter), typeof(java.io.File), TestFinder.ErrorHandler.Class);
 
             public static dynamic New(java.io.PrintWriter pw, java.io.File file, dynamic errorHandler) => Constructor1.newInstance(pw, file, errorHandler);
+
+        }
+
+        public static class TestResultTable
+        {
+
+            public static readonly Class Class = Class.forName("com.sun.javatest.regtest.TestResultTable", true, ClassLoader);
+            public static readonly Type Type = ikvm.runtime.Util.getInstanceTypeFromClass(Class);
 
         }
 

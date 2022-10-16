@@ -21,19 +21,17 @@ namespace IKVM.JTReg.TestAdapter
     public abstract class IkvmJTRegTestAdapter
     {
 
-        protected const int PARTITION_COUNT = 16;
+        internal const int PARTITION_COUNT = 16;
 
-        protected const string BASEDIR_PREFIX = "ikvm-jtreg-";
-        protected const string TEST_ROOT_FILE_NAME = "TEST.ROOT";
-        protected const string TEST_PROBLEM_LIST_FILE_NAME = "ProblemList.txt";
-        protected const string TEST_EXCLUDE_LIST_FILE_NAME = "ExcludeList.txt";
-        protected const string TEST_INCLUDE_LIST_FILE_NAME = "IncludeList.txt";
-        protected const string DEFAULT_OUT_FILE_NAME = "jtreg.out";
-        protected const string DEFAULT_LOG_FILE_NAME = "jtreg.log";
-        protected const string DEFAULT_WORK_DIR_NAME = "JTwork";
-        protected const string DEFAULT_REPORT_DIR_NAME = "JTreport";
-        protected const string DEFAULT_PARAM_TAG = "regtest";
-        protected const string ENV_PREFIX = "JTREG_";
+        internal const string BASEDIR_PREFIX = "ikvm-jtreg-";
+        internal const string TEST_ROOT_FILE_NAME = "TEST.ROOT";
+        internal const string TEST_PROBLEM_LIST_FILE_NAME = "ProblemList.txt";
+        internal const string TEST_EXCLUDE_LIST_FILE_NAME = "ExcludeList.txt";
+        internal const string TEST_INCLUDE_LIST_FILE_NAME = "IncludeList.txt";
+        internal const string DEFAULT_WORK_DIR_NAME = "work";
+        internal const string DEFAULT_REPORT_DIR_NAME = "report";
+        internal const string DEFAULT_PARAM_TAG = "regtest";
+        internal const string ENV_PREFIX = "JTREG_";
 
         protected static readonly MD5 MD5 = MD5.Create();
 
@@ -112,16 +110,14 @@ namespace IKVM.JTReg.TestAdapter
         /// <param name="output"></param>
         /// <param name="errors"></param>
         /// <returns></returns>
-        protected dynamic CreateTestManager(IMessageLogger logger, string baseDir, java.io.PrintWriter output, TextWriter errors)
+        protected dynamic CreateTestManager(IMessageLogger logger, string baseDir, java.io.PrintWriter output)
         {
             if (string.IsNullOrEmpty(baseDir))
                 throw new ArgumentException($"'{nameof(baseDir)}' cannot be null or empty.", nameof(baseDir));
             if (output is null)
                 throw new ArgumentNullException(nameof(output));
-            if (errors is null)
-                throw new ArgumentNullException(nameof(errors));
 
-            var errorHandler = ErrorHandlerInterceptor.Create(new ErrorHandlerImplementation(errors));
+            var errorHandler = ErrorHandlerInterceptor.Create(new ErrorHandlerImplementation(logger));
             var testManager = JTRegTypes.TestManager.New(output, new java.io.File(Environment.CurrentDirectory), errorHandler);
 
             var workDirectory = Path.Combine(baseDir, DEFAULT_WORK_DIR_NAME);
@@ -195,25 +191,16 @@ namespace IKVM.JTReg.TestAdapter
                 includeFileList.Add(new java.io.File(new java.io.File(tf).getAbsoluteFile().toURI().normalize()));
             }
 
-            var args = new List<string>();
-
-            // instruct child processes to signal debug attach
-            if (debugHost != null)
-            {
-                args.Add($"-Xdebughost:{debugHost}");
-                args.Add($"-Xdebugwait:60");
-            }
-
             rp.setTests((java.util.Set)testManager.getTests(testSuite));
             rp.setExecMode(testSuite.getDefaultExecMode() ?? JTRegTypes.ExecMode.OTHERVM);
             rp.setCheck(false);
             rp.setCompileJDK(JTRegTypes.JDK.Of(new java.io.File(java.lang.System.getProperty("java.home"))));
             rp.setTestJDK(rp.getCompileJDK());
-            rp.setTestVMOptions(java.util.Arrays.asList(args.ToArray()));
+            rp.setTestVMOptions(java.util.Collections.emptyList());
             rp.setTestCompilerOptions(java.util.Collections.emptyList());
             rp.setTestJavaOptions(java.util.Collections.emptyList());
             rp.setFile((java.io.File)wd.getFile("config.jti"));
-            rp.setEnvVars(GetEnvVars());
+            rp.setEnvVars(GetEnvVars(debugHost));
             rp.setConcurrency(Environment.ProcessorCount);
             rp.setTimeLimit(15000);
             rp.setRetainArgs(java.util.Collections.singletonList("all"));
@@ -244,7 +231,7 @@ namespace IKVM.JTReg.TestAdapter
 
             // final initialization
             rp.initExprContext();
-            if (rp.isValid() == false)
+            if ((bool)rp.isValid() == false)
                 throw new Exception();
 
             return rp;
@@ -253,8 +240,9 @@ namespace IKVM.JTReg.TestAdapter
         /// <summary>
         /// Gets the set of environment variables to include with the tests by default.
         /// </summary>
+        /// <param name="debugHost"></param>
         /// <returns></returns>
-        java.util.Map GetEnvVars()
+        java.util.Map GetEnvVars(string debugHost)
         {
             var envVars = new java.util.TreeMap();
 
@@ -267,6 +255,13 @@ namespace IKVM.JTReg.TestAdapter
             foreach (DictionaryEntry entry in Environment.GetEnvironmentVariables())
                 if (((string)entry.Key).StartsWith(ENV_PREFIX))
                     envVars.put((string)entry.Key, (string)entry.Value);
+
+            // instruct child processes to signal debug attach
+            if (debugHost != null)
+            {
+                envVars.put("IKVM_DEBUG_TRACE_HOST", debugHost);
+                envVars.put("IKVM_DEBUG_TRACE_WAIT", "60");
+            }
 
             return envVars;
         }

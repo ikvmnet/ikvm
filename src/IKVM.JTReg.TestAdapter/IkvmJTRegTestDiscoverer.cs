@@ -2,10 +2,12 @@
 using System.Collections.Generic;
 using System.Diagnostics;
 using System.IO;
+using System.Reflection;
 
 using Microsoft.VisualStudio.TestPlatform.ObjectModel;
 using Microsoft.VisualStudio.TestPlatform.ObjectModel.Adapter;
 using Microsoft.VisualStudio.TestPlatform.ObjectModel.Logging;
+using Microsoft.VisualStudio.TestPlatform.ObjectModel.Utilities;
 
 namespace IKVM.JTReg.TestAdapter
 {
@@ -66,17 +68,12 @@ namespace IKVM.JTReg.TestAdapter
 
             try
             {
-                // normalize source path
-                source = Path.GetFullPath(source);
-                logger.SendMessage(TestMessageLevel.Informational, "JTReg: " + $"Scanning for test roots for '{source}'.");
-
-                // discover all root test directories
+                // discover test suites from test assembly
                 var testDirs = new java.util.ArrayList();
-                foreach (var rootFile in Directory.GetFiles(Path.GetDirectoryName(source), TEST_ROOT_FILE_NAME, SearchOption.AllDirectories))
-                {
-                    logger.SendMessage(TestMessageLevel.Informational, "JTReg: " + $"Found test root file: {rootFile}");
-                    testDirs.add(new java.io.File(Path.GetDirectoryName(rootFile)));
-                }
+                foreach (var testRoot in Util.GetTestSuiteDirectories(source, logger))
+                    testDirs.add(new java.io.File(testRoot));
+                if (testDirs.size() == 0)
+                    return;
 
                 // output path for jtreg state
                 var id = GetSourceHash(source);
@@ -86,11 +83,11 @@ namespace IKVM.JTReg.TestAdapter
                 logger.SendMessage(TestMessageLevel.Informational, "JTReg: " + $"Using run directory: {baseDir}");
                 Directory.CreateDirectory(baseDir);
 
-                using var output = new java.io.PrintWriter(Path.Combine(baseDir, DEFAULT_OUT_FILE_NAME));
-                using var errors = new StreamWriter(File.OpenWrite(Path.Combine(baseDir, DEFAULT_LOG_FILE_NAME)));
+                // output to framework
+                using var output = new MessageLoggerWriter(logger, TestMessageLevel.Informational);
 
                 // initialize the test manager with the discovered roots
-                var testManager = CreateTestManager(logger, baseDir, output, errors);
+                var testManager = CreateTestManager(logger, baseDir, new java.io.PrintWriter(output));
                 testManager.addTestFiles(testDirs, false);
 
                 // track metrics related to tests

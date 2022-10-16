@@ -3,7 +3,10 @@
 namespace IKVM.JTReg.TestAdapter
 {
 
-    class DebugMessage
+    /// <summary>
+    /// Data sent as part of the debug ping protocol.
+    /// </summary>
+    class IkvmStartEvent
     {
 
         [JsonPropertyName("processId")]
