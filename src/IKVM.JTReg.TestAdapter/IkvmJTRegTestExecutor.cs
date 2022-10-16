@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Collections;
 using System.Collections.Generic;
+using System.Diagnostics;
 using System.IO;
 using System.Linq;
 using System.Threading;
@@ -71,7 +72,7 @@ namespace IKVM.JTReg.TestAdapter
                 try
                 {
                     // if we have the capability of attaching to child process, start debug server to listen for child processes
-                    if (frameworkHandle is IFrameworkHandle2 fh2)
+                    if (frameworkHandle is IFrameworkHandle2 fh2 && Debugger.IsAttached)
                     {
                         debug = new IkvmTraceServer(fh2);
                         debug.Start();
