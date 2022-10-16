@@ -208,46 +208,30 @@ jobs:
       with:
         name: nuget
         path: dist/nuget/*.nupkg
-    - name: Delete NuGet Packages
-      shell: pwsh
-      run: ri nuget -Recurse -Force
-      working-directory: dist
     - name: Package Binaries
-      run: tar czvf ${{ runner.temp }}\bin.tar.gz bin
+      run: tar czvf C:\bin.tar.gz bin
       working-directory: dist
     - name: Upload Binaries
       uses: actions/upload-artifact@v3
       with:
         name: bin
-        path: ${{ runner.temp }}\bin.tar.gz
-    - name: Delete Binaries
-      shell: pwsh
-      run: ri ${{ runner.temp }}\bin.tar.gz, bin -Recurse -Force
-      working-directory: dist
+        path: C:\bin.tar.gz
     - name: Package Tools
-      run: tar czvf ${{ runner.temp }}\tools.tar.gz tools
+      run: tar czvf C:\tools.tar.gz tools
       working-directory: dist
     - name: Upload Tools
       uses: actions/upload-artifact@v3
       with:
         name: tools
-        path: ${{ runner.temp }}\tools.tar.gz
-    - name: Delete Tools
-      shell: pwsh
-      run: ri ${{ runner.temp }}\tools.tar.gz, tools -Recurse -Force
-      working-directory: dist
+        path: C:\tools.tar.gz
     - name: Package Image
-      run: tar czvf ${{ runner.temp }}\image.tar.gz image
+      run: tar czvf C:\image.tar.gz image
       working-directory: dist
     - name: Upload Image
       uses: actions/upload-artifact@v3
       with:
         name: image
-        path: ${{ runner.temp }}\image.tar.gz
-    - name: Delete Image
-      shell: pwsh
-      run: ri ${{ runner.temp }}\image.tar.gz, image -Recurse -Force
-      working-directory: dist
+        path: C:\image.tar.gz
     - name: Package Tests
       run: tar czvf C:\tests.tar.gz tests
       working-directory: dist
@@ -256,14 +240,6 @@ jobs:
       with:
         name: tests
         path: C:\tests.tar.gz
-    - name: Delete Tests
-      shell: pwsh
-      run: ri C:\tests.tar.gz, tests -Recurse -Force
-      working-directory: dist
-    - name: Clean Solution
-      run: |
-        git reset --hard
-        git clean -qfdx
   test-ikvm:
     strategy:
       matrix:
