@@ -121,12 +121,12 @@ namespace IKVM.JTReg.TestAdapter
             var testManager = JTRegTypes.TestManager.New(output, new java.io.File(Environment.CurrentDirectory), errorHandler);
 
             var workDirectory = Path.Combine(baseDir, DEFAULT_WORK_DIR_NAME);
-            logger.SendMessage(TestMessageLevel.Informational, "JTReg: " + $"Using work directory: '{workDirectory}'.");
+            logger.SendMessage(TestMessageLevel.Informational, $"JTReg: Using work directory: '{workDirectory}'.");
             Directory.CreateDirectory(workDirectory);
             testManager.setWorkDirectory(new java.io.File(workDirectory));
 
             var reportDirectory = Path.Combine(baseDir, DEFAULT_REPORT_DIR_NAME);
-            logger.SendMessage(TestMessageLevel.Informational, "JTReg: " + $"Using report directory: '{reportDirectory}'.");
+            logger.SendMessage(TestMessageLevel.Informational, $"JTReg: Using report directory: '{reportDirectory}'.");
             Directory.CreateDirectory(reportDirectory);
             testManager.setReportDirectory(new java.io.File(reportDirectory));
             return testManager;
@@ -140,9 +140,9 @@ namespace IKVM.JTReg.TestAdapter
         /// <param name="testManager"></param>
         /// <param name="testSuite"></param>
         /// <param name="tests"></param>
-        /// <param name="debugHost"></param>
+        /// <param name="debugUri"></param>
         /// <returns></returns>
-        protected dynamic CreateParameters(string source, string baseDir, dynamic testManager, dynamic testSuite, IEnumerable<TestCase> tests, string debugHost)
+        protected dynamic CreateParameters(string source, string baseDir, dynamic testManager, dynamic testSuite, IEnumerable<TestCase> tests, Uri debugUri)
         {
             if (source is null)
                 throw new ArgumentNullException(nameof(source));
@@ -200,7 +200,7 @@ namespace IKVM.JTReg.TestAdapter
             rp.setTestCompilerOptions(java.util.Collections.emptyList());
             rp.setTestJavaOptions(java.util.Collections.emptyList());
             rp.setFile((java.io.File)wd.getFile("config.jti"));
-            rp.setEnvVars(GetEnvVars(debugHost));
+            rp.setEnvVars(GetEnvVars(debugUri));
             rp.setConcurrency(Environment.ProcessorCount);
             rp.setTimeLimit(15000);
             rp.setRetainArgs(java.util.Collections.singletonList("all"));
@@ -212,8 +212,8 @@ namespace IKVM.JTReg.TestAdapter
 
             // configure keywords to filter based on
             string keywordsExpr = null;
-            keywordsExpr = combineKeywords(keywordsExpr, "!ignore");
-            keywordsExpr = combineKeywords(keywordsExpr, "!manual");
+            keywordsExpr = CombineKeywords(keywordsExpr, "!ignore");
+            keywordsExpr = CombineKeywords(keywordsExpr, "!manual");
             if (string.IsNullOrWhiteSpace(keywordsExpr) == false)
                 rp.setKeywordsExpr(keywordsExpr);
 
@@ -240,9 +240,9 @@ namespace IKVM.JTReg.TestAdapter
         /// <summary>
         /// Gets the set of environment variables to include with the tests by default.
         /// </summary>
-        /// <param name="debugHost"></param>
+        /// <param name="debugUri"></param>
         /// <returns></returns>
-        java.util.Map GetEnvVars(string debugHost)
+        java.util.Map GetEnvVars(Uri debugUri)
         {
             var envVars = new java.util.TreeMap();
 
@@ -257,10 +257,10 @@ namespace IKVM.JTReg.TestAdapter
                     envVars.put((string)entry.Key, (string)entry.Value);
 
             // instruct child processes to signal debug attach
-            if (debugHost != null)
+            if (debugUri != null)
             {
-                envVars.put("IKVM_DEBUG_TRACE_HOST", debugHost);
-                envVars.put("IKVM_DEBUG_TRACE_WAIT", "60");
+                envVars.put("IKVM_DEBUG_URI", debugUri.ToString());
+                envVars.put("IKVM_DEBUG_WAIT", "60");
             }
 
             return envVars;
@@ -294,7 +294,7 @@ namespace IKVM.JTReg.TestAdapter
             if (tests == null)
                 return ((IEnumerable<dynamic>)rtltrmethod.Invoke(null, new[] { (java.util.Iterator)trt.getIterator() })).OrderBy(i => Util.GetTestPathName(source, testSuite, i));
             else if (tests.Length == 0)
-                return (IEnumerable<dynamic>)Array.CreateInstance(ikvm.runtime.Util.getInstanceTypeFromClass(JTRegTypes.TestResult.Class), 0);
+                return Array.Empty<object>();
             else
                 return ((IEnumerable<dynamic>)rtltrmethod.Invoke(null, new[] { (java.util.Iterator)trt.getIterator() })).OrderBy(i => Util.GetTestPathName(source, testSuite, i));
         }
@@ -305,7 +305,7 @@ namespace IKVM.JTReg.TestAdapter
         /// <param name="kw1"></param>
         /// <param name="kw2"></param>
         /// <returns></returns>
-        string combineKeywords(string kw1, string kw2)
+        string CombineKeywords(string kw1, string kw2)
         {
             return kw1 == null ? kw2 : kw1 + " & " + kw2;
         }

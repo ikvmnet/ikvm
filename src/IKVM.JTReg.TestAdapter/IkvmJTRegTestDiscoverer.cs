@@ -2,12 +2,10 @@
 using System.Collections.Generic;
 using System.Diagnostics;
 using System.IO;
-using System.Reflection;
 
 using Microsoft.VisualStudio.TestPlatform.ObjectModel;
 using Microsoft.VisualStudio.TestPlatform.ObjectModel.Adapter;
 using Microsoft.VisualStudio.TestPlatform.ObjectModel.Logging;
-using Microsoft.VisualStudio.TestPlatform.ObjectModel.Utilities;
 
 namespace IKVM.JTReg.TestAdapter
 {
@@ -44,7 +42,7 @@ namespace IKVM.JTReg.TestAdapter
             }
             catch (Exception e)
             {
-                logger.SendMessage(TestMessageLevel.Error, "JTReg: " + $"An exception occurred discovering tests.\n\n{e.Message}\n{e.StackTrace}");
+                logger.SendMessage(TestMessageLevel.Error, $"JTReg: An exception occurred discovering tests.\n{e}");
             }
         }
 
@@ -80,7 +78,7 @@ namespace IKVM.JTReg.TestAdapter
                 var baseDir = Path.Combine(Path.GetTempPath(), BASEDIR_PREFIX + id);
 
                 // attempt to create a temporary directory as scratch space for this test
-                logger.SendMessage(TestMessageLevel.Informational, "JTReg: " + $"Using run directory: {baseDir}");
+                logger.SendMessage(TestMessageLevel.Informational, $"JTReg: Using run directory: {baseDir}");
                 Directory.CreateDirectory(baseDir);
 
                 // output to framework
@@ -98,22 +96,22 @@ namespace IKVM.JTReg.TestAdapter
                 // for each suite, get the results and transform a test case
                 foreach (dynamic testSuite in Util.GetTestSuites(source, testManager))
                 {
-                    logger.SendMessage(TestMessageLevel.Informational, "JTReg: " + $"Discovered test suite: {testSuite.getName()}");
+                    logger.SendMessage(TestMessageLevel.Informational, $"JTReg: Discovered test suite: {testSuite.getName()}");
 
                     foreach (var testResult in GetTestResults(source, testSuite, CreateParameters(source, baseDir, testManager, testSuite, null, null)))
                     {
                         var testCase = (TestCase)Util.ToTestCase(source, testSuite, testResult, testCount++ % PARTITION_COUNT);
-                        logger.SendMessage(TestMessageLevel.Informational, "JTReg: " + $"Discovered test: {testCase.FullyQualifiedName}");
+                        logger.SendMessage(TestMessageLevel.Informational, $"JTReg: Discovered test: {testCase.FullyQualifiedName}");
                         discoverySink.SendTestCase(testCase);
                     }
                 }
 
                 testWatch.Stop();
-                logger.SendMessage(TestMessageLevel.Informational, "JTReg: " + $"Discovered {testCount} tests for '{source}' in {testWatch.Elapsed.TotalSeconds} seconds.");
+                logger.SendMessage(TestMessageLevel.Informational, $"JTReg: Discovered {testCount} tests for '{source}' in {testWatch.Elapsed.TotalSeconds} seconds.");
             }
             catch (Exception e)
             {
-                logger.SendMessage(TestMessageLevel.Error, "JTReg: " + $"An exception occurred discovering tests for '{source}'.\n\n{e.Message}\n{e.StackTrace}");
+                logger.SendMessage(TestMessageLevel.Error, $"JTReg: An exception occurred discovering tests for '{source}'.\n{e}");
             }
         }
 

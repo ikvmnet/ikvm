@@ -515,48 +515,40 @@ namespace IKVM.Runtime
         }
 
         /// <summary>
-        /// Handles the configured IKVM debug trace settings.
+        /// Handles the configured IKVM debug settings.
         /// </summary>
         static void HandleDebugTrace()
         {
             var debugWait = 0;
-            var debugHost = (IPEndPoint)null;
+            var debugUri = (Uri)null;
 
             // wait some number of seconds for a debugger to attach
-            if (Environment.GetEnvironmentVariable("IKVM_DEBUG_TRACE_WAIT") is string debugWait_)
+            if (Environment.GetEnvironmentVariable("IKVM_DEBUG_WAIT") is string debugWait_)
                 if (int.TryParse(debugWait_, out var i))
                     debugWait = i;
 
             // send a ping message to the given hostname and port to signal a debugger to attach
-            if (Environment.GetEnvironmentVariable("IKVM_DEBUG_TRACE_HOST") is string debugHost_)
-            {
-#if NETFRAMEWORK
-                static IPEndPoint ParseIPEndPoint(string text)
-                {
-                    if (Uri.TryCreate(text, UriKind.Absolute, out Uri uri))
-                        return new IPEndPoint(IPAddress.Parse(uri.Host), uri.Port < 0 ? 0 : uri.Port);
-                    if (Uri.TryCreate(string.Concat("tcp://", text), UriKind.Absolute, out uri))
-                        return new IPEndPoint(IPAddress.Parse(uri.Host), uri.Port < 0 ? 0 : uri.Port);
-                    if (Uri.TryCreate(string.Concat("tcp://", string.Concat("[", text, "]")), UriKind.Absolute, out uri))
-                        return new IPEndPoint(IPAddress.Parse(uri.Host), uri.Port < 0 ? 0 : uri.Port);
-                    throw new FormatException("Failed to parse text to IPEndPoint");
-                }
-
-                debugHost = ParseIPEndPoint(debugHost_);
-#else
-                debugHost = IPEndPoint.Parse(debugHost_);
-#endif
-            }
+            if (Environment.GetEnvironmentVariable("IKVM_DEBUG_URI") is string debugUri_)
+                if (Uri.TryCreate(debugUri_, UriKind.Absolute, out var u))
+                    debugUri = u;
 
             // send a start event to the host
-            if (debugHost != null)
+            if (debugUri != null)
             {
-                var message = Encoding.UTF8.GetBytes(JsonSerializer.Serialize(new IkvmStartEvent() { ProcessId = Process.GetCurrentProcess().Id, }));
-                using var c = new TcpClient();
-                c.Connect(debugHost);
-                c.GetStream().Write(message, 0, message.Length);
-                c.GetStream().WriteByte(0);
-                c.Close();
+                if (debugUri.Scheme == "tcp" &&  IPAddress.TryParse(debugUri.Host, out var ip) && debugUri.Port > 0)
+                {
+                    var message = Encoding.UTF8.GetBytes(JsonSerializer.Serialize(new IkvmStartEvent() { ProcessId = Process.GetCurrentProcess().Id, }));
+                    using var c = new TcpClient();
+                    c.Connect(new IPEndPoint(ip, debugUri.Port));
+                    c.GetStream().Write(message, 0, message.Length);
+                    c.GetStream().WriteByte(0);
+                    c.GetStream().Flush();
+                    c.Close();
+                }
+                else
+                {
+                    Console.Error.WriteLine("Invalid debug URI: {0}", debugUri);
+                }
             }
 
             // wait for debugger to attach

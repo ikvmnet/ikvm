@@ -63,9 +63,9 @@ namespace IKVM.JTReg.TestAdapter
         /// <summary>
         /// Gets the local endpoint of the server.
         /// </summary>
-        public IPEndPoint EndPoint
+        public Uri Uri
         {
-            get => (IPEndPoint)listener?.LocalEndpoint;
+            get => listener != null ? new UriBuilder("tcp", ((IPEndPoint)listener.LocalEndpoint).Address.ToString(), ((IPEndPoint)listener.LocalEndpoint).Port).Uri : null;
         }
 
         /// <summary>

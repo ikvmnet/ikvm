@@ -78,12 +78,15 @@ namespace IKVM.JTReg.TestAdapter
                     }
 
                     foreach (var source in sources)
-                        RunTestForSource(source, runContext, frameworkHandle, tests?.Where(i => i.Source == source), debug?.EndPoint.ToString(), cts.Token);
+                        RunTestForSource(source, runContext, frameworkHandle, tests?.Where(i => i.Source == source), debug?.Uri, cts.Token);
                 }
                 finally
                 {
                     if (debug != null)
+                    {
                         debug.Stop();
+                        debug = null;
+                    }
                 }
             }
             catch (OperationCanceledException)
@@ -92,7 +95,7 @@ namespace IKVM.JTReg.TestAdapter
             }
             catch (Exception e)
             {
-                frameworkHandle.SendMessage(TestMessageLevel.Error, "JTReg: " + $"Exception occurred running tests.\n\n{e.Message}\n{e.StackTrace}");
+                frameworkHandle.SendMessage(TestMessageLevel.Error, $"JTReg: Exception occurred running tests.\n{e}");
             }
             finally
             {
@@ -107,9 +110,9 @@ namespace IKVM.JTReg.TestAdapter
         /// <param name="runContext"></param>
         /// <param name="frameworkHandle"></param>
         /// <param name="tests"></param>
-        /// <param name="debugHost"></param>
+        /// <param name="debugUri"></param>
         /// <param name="cancellationToken"></param>
-        internal void RunTestForSource(string source, IRunContext runContext, IFrameworkHandle frameworkHandle, IEnumerable<TestCase> tests, string debugHost, CancellationToken cancellationToken)
+        internal void RunTestForSource(string source, IRunContext runContext, IFrameworkHandle frameworkHandle, IEnumerable<TestCase> tests, Uri debugUri, CancellationToken cancellationToken)
         {
             if (string.IsNullOrEmpty(source))
                 throw new ArgumentException($"'{nameof(source)}' cannot be null or empty.", nameof(source));
@@ -150,7 +153,7 @@ namespace IKVM.JTReg.TestAdapter
 
                     // discover the full set of tests
                     foreach (dynamic testSuite in Util.GetTestSuites(source, testManager))
-                        foreach (var testResult in GetTestResults(source, testSuite, CreateParameters(source, baseDir, testManager, testSuite, null, debugHost)))
+                        foreach (var testResult in GetTestResults(source, testSuite, CreateParameters(source, baseDir, testManager, testSuite, null, debugUri)))
                             l.Add(Util.ToTestCase(source, testSuite, testResult, testCount++ % PARTITION_COUNT));
 
                     tests = l;
@@ -164,13 +167,13 @@ namespace IKVM.JTReg.TestAdapter
                 // invoke each test suite
                 foreach (dynamic testSuite in (IEnumerable)testManager.getTestSuites())
                 {
-                    frameworkHandle.SendMessage(TestMessageLevel.Informational, "JTReg: " + $"Running test suite: {testSuite.getName()}");
-                    RunTests(source, testManager, testSuite, runContext, frameworkHandle, tests, output, CreateParameters(source, baseDir, testManager, testSuite, tests, debugHost), cancellationToken);
+                    frameworkHandle.SendMessage(TestMessageLevel.Informational, $"JTReg: Running test suite: {testSuite.getName()}");
+                    RunTests(source, testManager, testSuite, runContext, frameworkHandle, tests, output, CreateParameters(source, baseDir, testManager, testSuite, tests, debugUri), cancellationToken);
                 }
             }
             catch (Exception e)
             {
-                frameworkHandle.SendMessage(TestMessageLevel.Error, "JTReg: " + $"Exception occurred running tests for '{source}'.\n\n{e.Message}\n{e.StackTrace}");
+                frameworkHandle.SendMessage(TestMessageLevel.Error, $"JTReg: Exception occurred running tests for '{source}'.\n{e}");
             }
         }
 
@@ -248,7 +251,7 @@ namespace IKVM.JTReg.TestAdapter
             }
             catch (Exception e)
             {
-                frameworkHandle.SendMessage(TestMessageLevel.Error, "JTReg: " + e.ToString());
+                frameworkHandle.SendMessage(TestMessageLevel.Error, $"JTReg: Exception occurred running tests for '{source}'.\n{e}");
             }
         }
 
