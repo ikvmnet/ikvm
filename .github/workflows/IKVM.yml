@@ -249,20 +249,16 @@ jobs:
       run: ri ${{ runner.temp }}\image.tar.gz, image -Recurse -Force
       working-directory: dist
     - name: Package Tests
-      uses: a7ul/tar-action@v1.1.0
-      with:
-        command: c
-        cwd: dist
-        files: tests
-        outPath: tests.tar.gz
+      run: tar czvf C:\tests.tar.gz tests
+      working-directory: dist
     - name: Upload Tests
       uses: actions/upload-artifact@v3
       with:
         name: tests
-        path: tests.tar.gz
+        path: C:\tests.tar.gz
     - name: Delete Tests
       shell: pwsh
-      run: ri tests.tar.gz, tests -Recurse -Force
+      run: ri C:\tests.tar.gz, tests -Recurse -Force
       working-directory: dist
     - name: Clean Solution
       run: |
