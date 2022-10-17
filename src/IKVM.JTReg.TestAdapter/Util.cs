@@ -128,6 +128,15 @@ namespace IKVM.JTReg.TestAdapter
                 ErrorMessage = testResult.getProperty("execStatus"),
             };
 
+            // create an attachment set for our results
+            var attachments = new AttachmentSet(new Uri("executor://ikvmjtregtestadapter/v1"), "IkvmJTRegTestAdapter");
+            r.Attachments.Add(attachments);
+
+            // if a JTR file is available, add it as an attachment
+            var jtrFile = (java.io.File)testResult.getFile();
+            if (jtrFile != null && jtrFile.exists())
+                attachments.Attachments.Add(new UriDataAttachment(new Uri(jtrFile.getAbsolutePath()), jtrFile.getName()));
+
             for (int i = 0; i < testResult.getSectionCount(); i++)
             {
                 var section = testResult.getSection(i);
@@ -146,6 +155,7 @@ namespace IKVM.JTReg.TestAdapter
         /// <returns></returns>
         static IEnumerable<TestResultMessage> GetTestResultSectionMessages(dynamic section)
         {
+            // since vstest splits output by category, append a common header to each to make them distinguishable
             var header = new System.Text.StringBuilder();
             header.AppendLine($"ACTION: {(string)section.getTitle()}");
             header.AppendLine($"STATUS: {section.getStatus()}");
@@ -153,24 +163,22 @@ namespace IKVM.JTReg.TestAdapter
             if (m != null)
                 header.AppendLine(m.Trim());
 
-            var outOutput = (string)section.getOutput("System.out");
-            if (outOutput != null)
+            // each section contains one or more outputs
+            foreach (var outputName in section.getOutputNames())
             {
-                var outText = new System.Text.StringBuilder();
-                outText.AppendLine(header.ToString());
-                outText.AppendLine(outOutput.Trim());
-                outText.AppendLine("----");
-                yield return new TestResultMessage(TestResultMessage.StandardOutCategory, outText.ToString());
-            }
+                var messageCategory = outputName switch
+                {
+                    "System.out" => TestResultMessage.StandardOutCategory,
+                    "System.err" => TestResultMessage.StandardErrorCategory,
+                    _ => TestResultMessage.AdditionalInfoCategory,
+                };
 
-            var errOutput = (string)section.getOutput("System.err");
-            if (errOutput != null)
-            {
-                var errText = new System.Text.StringBuilder();
-                errText.AppendLine(header.ToString());
-                errText.AppendLine(errOutput.Trim());
-                errText.AppendLine("----");
-                yield return new TestResultMessage(TestResultMessage.StandardErrorCategory, errText.ToString());
+                var output = (string)section.getOutput(outputName);
+                var text = new System.Text.StringBuilder();
+                text.AppendLine(header.ToString());
+                text.AppendLine(output.Trim());
+                text.AppendLine("----");
+                yield return new TestResultMessage(messageCategory, text.ToString());
             }
         }
 
