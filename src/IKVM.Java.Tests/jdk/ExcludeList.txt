@@ -2470,7 +2470,7 @@ javax/swing/JFileChooser/8046391/bug8046391.java                                
 javax/swing/JFileChooser/8062561/bug8062561.java                                                                        generic-all
 javax/swing/JFileChooser/FileFilterDescription/FileFilterDescription.java                                               generic-all
 javax/swing/JFormattedTextField/Test6462562.java                                                                        generic-all
-javax/swing/JFrame/4962534/bug4962534.java                                                                              generic-all
+javax/swing/JFrame/4962534/bug4962534.html                                                                              generic-all
 javax/swing/JFrame/8016356/bug8016356.java                                                                              generic-all
 javax/swing/JFrame/HangNonVolatileBuffer/HangNonVolatileBuffer.java                                                     generic-all
 javax/swing/JFrame/NSTexturedJFrame/NSTexturedJFrame.java                                                               generic-all
@@ -2795,7 +2795,7 @@ jdk/lambda/vm/DefaultMethodRegressionTests.java                                 
 jdk/lambda/vm/InterfaceAccessFlagsTest.java                                                                             generic-all
 jdk/lambda/vm/StrictfpDefault.java                                                                                      generic-all
 jdk/net/Sockets/Test.java                                                                                               generic-all
-lib/security/java_policy/Ext_AllPolicy.sh                                                                               generic-all
+lib/security/java.policy/Ext_AllPolicy.sh                                                                               generic-all
 lib/testlibrary/AssertsTest.java                                                                                        generic-all
 lib/testlibrary/OutputAnalyzerReportingTest.java                                                                        generic-all
 lib/testlibrary/OutputAnalyzerTest.java                                                                                 generic-all
@@ -2849,7 +2849,7 @@ sun/java2d/cmm/ColorConvertOp/ColCvtAlpha.java                                  
 sun/java2d/cmm/ColorConvertOp/ColCvtIntARGB.java                                                                        generic-all
 sun/java2d/cmm/ColorConvertOp/ColorConvertTest.java                                                                     generic-all
 sun/java2d/cmm/ColorConvertOp/ColorSpaceCvtCrashTest/ColorSpaceCvtCrashTest.java                                        generic-all
-sun/java2d/cmm/ColorConvertOp/ConstructorsNullTest/ConstructorsNullTest.java                                            generic-all
+sun/java2d/cmm/ColorConvertOp/ConstructorsNullTest/ConstructorsNullTest.html                                            generic-all
 sun/java2d/cmm/ColorConvertOp/GrayTest.java                                                                             generic-all
 sun/java2d/cmm/ColorConvertOp/MTColConvTest.java                                                                        generic-all
 sun/java2d/cmm/ColorConvertOp/MTSafetyTest.java                                                                         generic-all
