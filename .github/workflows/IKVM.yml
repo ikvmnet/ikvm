@@ -329,6 +329,38 @@ jobs:
         - run: ikvmc.Tests
           tfm: net6.0
         - run: IKVM.Java.Tests?TestPartition=0
+          tfm: net472
+        - run: IKVM.Java.Tests?TestPartition=1
+          tfm: net472
+        - run: IKVM.Java.Tests?TestPartition=2
+          tfm: net472
+        - run: IKVM.Java.Tests?TestPartition=3
+          tfm: net472
+        - run: IKVM.Java.Tests?TestPartition=4
+          tfm: net472
+        - run: IKVM.Java.Tests?TestPartition=5
+          tfm: net472
+        - run: IKVM.Java.Tests?TestPartition=6
+          tfm: net472
+        - run: IKVM.Java.Tests?TestPartition=7
+          tfm: net472
+        - run: IKVM.Java.Tests?TestPartition=8
+          tfm: net472
+        - run: IKVM.Java.Tests?TestPartition=9
+          tfm: net472
+        - run: IKVM.Java.Tests?TestPartition=10
+          tfm: net472
+        - run: IKVM.Java.Tests?TestPartition=11
+          tfm: net472
+        - run: IKVM.Java.Tests?TestPartition=12
+          tfm: net472
+        - run: IKVM.Java.Tests?TestPartition=13
+          tfm: net472
+        - run: IKVM.Java.Tests?TestPartition=14
+          tfm: net472
+        - run: IKVM.Java.Tests?TestPartition=15
+          tfm: net472
+        - run: IKVM.Java.Tests?TestPartition=0
           sys: linux
         - run: IKVM.Java.Tests?TestPartition=1
           sys: linux
