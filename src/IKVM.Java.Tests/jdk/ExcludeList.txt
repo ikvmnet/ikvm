@@ -3299,7 +3299,7 @@ tools/launcher/UnresolvedExceptions.java                                        
 tools/launcher/VersionCheck.java                                                                                        generic-all
 tools/pack200/AttributeTests.java                                                                                       generic-all
 tools/pack200/BandIntegrity.java                                                                                        generic-all
-tools/pack200/CommandLineTests.sh                                                                                       generic-all
+tools/pack200/CommandLineTests.java                                                                                     generic-all
 tools/pack200/InstructionTests.java                                                                                     generic-all
 tools/pack200/NoBeans.java                                                                                              generic-all
 tools/pack200/Pack200Props.java                                                                                         generic-all
