@@ -128,6 +128,12 @@ namespace IKVM.JTReg.TestAdapter
                 ErrorMessage = testResult.getProperty("execStatus"),
             };
 
+            // jtreg outputs sections, each with multiple output, translate to messages
+            for (int i = 0; i < testResult.getSectionCount(); i++)
+                if (testResult.getSection(i) != null)
+                    foreach (var message in GetTestResultSectionMessages(testResult.getSection(i)))
+                        r.Messages.Add(message);
+
             // create an attachment set for our results
             var attachments = new AttachmentSet(new Uri("executor://ikvmjtregtestadapter/v1"), "IkvmJTRegTestAdapter");
             r.Attachments.Add(attachments);
@@ -136,12 +142,6 @@ namespace IKVM.JTReg.TestAdapter
             var jtrFile = (java.io.File)testResult.getFile();
             if (jtrFile != null && jtrFile.exists())
                 attachments.Attachments.Add(new UriDataAttachment(new Uri(jtrFile.getAbsolutePath()), jtrFile.getName()));
-
-            // jtreg outputs sections, each with multiple output, translate to messages
-            for (int i = 0; i < testResult.getSectionCount(); i++)
-                if (testResult.getSection(i) != null)
-                    foreach (var message in GetTestResultSectionMessages(testResult.getSection(i)))
-                        r.Messages.Add(message);
 
             return r;
         }
