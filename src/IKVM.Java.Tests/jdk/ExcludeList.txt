@@ -3139,6 +3139,7 @@ sun/security/ssl/javax/net/ssl/NewAPIs/SSLEngine/LargePacket.java               
 sun/security/ssl/javax/net/ssl/NewAPIs/SSLEngine/NoAuthClientAuth.java                                                  generic-all
 sun/security/ssl/javax/net/ssl/NewAPIs/SSLEngine/SSLEngineResultArgs.java                                               generic-all
 sun/security/ssl/javax/net/ssl/NewAPIs/SSLEngineResult/Deserialize.java                                                 generic-all
+sun/security/ssl/javax/net/ssl/NewAPIs/testEnabledProtocols.java                                                        generic-all
 sun/security/ssl/javax/net/ssl/ServerName/SSLEngineExplorer.java                                                        generic-all
 sun/security/ssl/javax/net/ssl/ServerName/SSLEngineExplorerMatchedSNI.java                                              generic-all
 sun/security/ssl/javax/net/ssl/ServerName/SSLEngineExplorerUnmatchedSNI.java                                            generic-all
@@ -3315,4 +3316,3 @@ tools/pack200/typeannos/TestTypeAnnotations.java                                
 vm/verifier/TestStaticIF.java                                                                                           generic-all
 vm/verifier/VerifyProtectedConstructor.java                                                                             generic-all
 vm/verifier/defaultMethods/DefaultMethodRegressionTestsRun.java                                                         generic-all
-sun/security/ssl/javax/net/ssl/NewAPIs/testEnabledProtocols.java                                                        generic-all
