@@ -3050,7 +3050,7 @@ sun/security/pkcs11/KeyAgreement/TestShort.java                                 
 sun/security/pkcs11/KeyGenerator/DESParity.java                                                                         generic-all
 sun/security/pkcs11/KeyGenerator/TestKeyGenerator.java                                                                  generic-all
 sun/security/pkcs11/KeyPairGenerator/TestDH2048.java                                                                    generic-all
-sun/security/pkcs11/KeyStore/SecretKeysBasic.java                                                                       generic-all
+sun/security/pkcs11/KeyStore/SecretKeysBasic.sh                                                                         generic-all
 sun/security/pkcs11/Mac/ReinitMac.java                                                                                  generic-all
 sun/security/pkcs11/MessageDigest/ByteBuffers.java                                                                      generic-all
 sun/security/pkcs11/MessageDigest/DigestKAT.java                                                                        generic-all
@@ -3097,6 +3097,7 @@ sun/security/pkcs12/StoreSecretKeyTest.java                                     
 sun/security/pkcs12/StoreTrustedCertTest.java                                                                           generic-all
 sun/security/provider/KeyStore/DKSTest.sh                                                                               generic-all
 sun/security/provider/KeyStore/WrongPassword.java                                                                       generic-all
+sun/security/provider/PolicyFile/EmailAddress.java                                                                      generic-all
 sun/security/provider/PolicyFile/TokenStore.java                                                                        generic-all
 sun/security/provider/PolicyFile/getinstance/getinstance.sh                                                             generic-all
 sun/security/provider/PolicyParser/BogusGrants.java                                                                     generic-all
