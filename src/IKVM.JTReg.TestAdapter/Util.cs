@@ -137,13 +137,11 @@ namespace IKVM.JTReg.TestAdapter
             if (jtrFile != null && jtrFile.exists())
                 attachments.Attachments.Add(new UriDataAttachment(new Uri(jtrFile.getAbsolutePath()), jtrFile.getName()));
 
+            // jtreg outputs sections, each with multiple output, translate to messages
             for (int i = 0; i < testResult.getSectionCount(); i++)
-            {
-                var section = testResult.getSection(i);
-                if (section != null)
-                    foreach (var message in GetTestResultSectionMessages(section))
+                if (testResult.getSection(i) != null)
+                    foreach (var message in GetTestResultSectionMessages(testResult.getSection(i)))
                         r.Messages.Add(message);
-            }
 
             return r;
         }
