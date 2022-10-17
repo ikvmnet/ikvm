@@ -1138,7 +1138,7 @@ java/lang/instrument/GetAllLoadedClassesTest.java                               
 java/lang/instrument/GetInitiatedClassesTest.java                                                                       generic-all
 java/lang/instrument/GetObjectSizeTest.java                                                                             generic-all
 java/lang/instrument/IsModifiableClassAgent.java                                                                        generic-all
-java/lang/instrument/ManifestTest.java                                                                                  generic-all
+java/lang/instrument/ManifestTest.sh                                                                                    generic-all
 java/lang/instrument/NativeMethodPrefixAgent.java                                                                       generic-all
 java/lang/instrument/NoTransformerAddedTest.java                                                                        generic-all
 java/lang/instrument/NullGetObjectSizeTest.java                                                                         generic-all
@@ -2470,7 +2470,7 @@ javax/swing/JFileChooser/8046391/bug8046391.java                                
 javax/swing/JFileChooser/8062561/bug8062561.java                                                                        generic-all
 javax/swing/JFileChooser/FileFilterDescription/FileFilterDescription.java                                               generic-all
 javax/swing/JFormattedTextField/Test6462562.java                                                                        generic-all
-javax/swing/JFrame/4962534/bug4962534.sh                                                                                generic-all
+javax/swing/JFrame/4962534/bug4962534.java                                                                              generic-all
 javax/swing/JFrame/8016356/bug8016356.java                                                                              generic-all
 javax/swing/JFrame/HangNonVolatileBuffer/HangNonVolatileBuffer.java                                                     generic-all
 javax/swing/JFrame/NSTexturedJFrame/NSTexturedJFrame.java                                                               generic-all
@@ -2918,7 +2918,7 @@ sun/net/www/protocol/http/TunnelThroughProxy.java                               
 sun/net/www/protocol/jar/B5105410.sh                                                                                    generic-all
 sun/net/www/protocol/jar/B6449504.java                                                                                  generic-all
 sun/net/www/protocol/jar/GetContentType.java                                                                            generic-all
-sun/net/www/protocol/jar/jarbug/run.java                                                                                generic-all
+sun/net/www/protocol/jar/jarbug/run.sh                                                                                  generic-all
 sun/nio/ch/Basic.java                                                                                                   generic-all
 sun/nio/ch/TempBuffer.java                                                                                              generic-all
 sun/nio/cs/FindASCIICodingBugs.java                                                                                     generic-all
