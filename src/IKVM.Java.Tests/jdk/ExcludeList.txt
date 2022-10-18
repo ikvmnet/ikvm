@@ -3316,3 +3316,9 @@ tools/pack200/typeannos/TestTypeAnnotations.java                                
 vm/verifier/TestStaticIF.java                                                                                           generic-all
 vm/verifier/VerifyProtectedConstructor.java                                                                             generic-all
 vm/verifier/defaultMethods/DefaultMethodRegressionTestsRun.java                                                         generic-all
+com/sun/jdi/CatchPatternTest.sh                                                                                         generic-all
+com/sun/jdi/GetLocalVariables4Test.sh                                                                                   generic-all
+com/sun/jdi/NullLocalVariable.sh                                                                                        generic-all
+com/sun/jdi/RedefineFinal.sh                                                                                            generic-all
+com/sun/jdi/RedefineIntConstantToLong.sh                                                                                generic-all
+com/sun/jdi/StringConvertTest.sh                                                                                        generic-all
