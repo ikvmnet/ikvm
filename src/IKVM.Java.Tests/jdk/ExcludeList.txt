@@ -28,6 +28,7 @@ com/sun/jdi/BreakpointTest.java                                                 
 com/sun/jdi/BreakpointWithFullGC.sh                                                                                     generic-all
 com/sun/jdi/CatchAllTest.sh                                                                                             generic-all
 com/sun/jdi/CatchCaughtTest.sh                                                                                          generic-all
+com/sun/jdi/CatchPatternTest.sh                                                                                         generic-all
 com/sun/jdi/ClassLoaderClassesTest.java                                                                                 generic-all
 com/sun/jdi/ClassesByName.java                                                                                          generic-all
 com/sun/jdi/ClassesByName2Test.java                                                                                     generic-all
@@ -60,6 +61,7 @@ com/sun/jdi/FramesTest.java                                                     
 com/sun/jdi/GenericsTest.java                                                                                           generic-all
 com/sun/jdi/GetLocalVariables2Test.java                                                                                 generic-all
 com/sun/jdi/GetLocalVariables3Test.sh                                                                                   generic-all
+com/sun/jdi/GetLocalVariables4Test.sh                                                                                   generic-all
 com/sun/jdi/GetUninitializedStringValue.java                                                                            generic-all
 com/sun/jdi/HomeTest.java                                                                                               generic-all
 com/sun/jdi/ImmutableResourceTest.sh                                                                                    generic-all
@@ -95,6 +97,7 @@ com/sun/jdi/NewInstanceTest.java                                                
 com/sun/jdi/NoLaunchOptionTest.java                                                                                     generic-all
 com/sun/jdi/NoLocInfoTest.java                                                                                          generic-all
 com/sun/jdi/NotAField.sh                                                                                                generic-all
+com/sun/jdi/NullLocalVariable.sh                                                                                        generic-all
 com/sun/jdi/NullThreadGroupNameTest.java                                                                                generic-all
 com/sun/jdi/OnThrowTest.java                                                                                            generic-all
 com/sun/jdi/OptionTest.java                                                                                             generic-all
@@ -112,7 +115,9 @@ com/sun/jdi/RedefineClearBreakpoint.sh                                          
 com/sun/jdi/RedefineCrossEvent.java                                                                                     generic-all
 com/sun/jdi/RedefineCrossStart.java                                                                                     generic-all
 com/sun/jdi/RedefineException.sh                                                                                        generic-all
+com/sun/jdi/RedefineFinal.sh                                                                                            generic-all
 com/sun/jdi/RedefineImplementor.sh                                                                                      generic-all
+com/sun/jdi/RedefineIntConstantToLong.sh                                                                                generic-all
 com/sun/jdi/RedefineMulti.sh                                                                                            generic-all
 com/sun/jdi/RedefinePop.sh                                                                                              generic-all
 com/sun/jdi/RedefineStep.sh                                                                                             generic-all
@@ -126,6 +131,7 @@ com/sun/jdi/SDENullTest.java                                                    
 com/sun/jdi/SimulResumerTest.java                                                                                       generic-all
 com/sun/jdi/SourceNameFilterTest.java                                                                                   generic-all
 com/sun/jdi/StepTest.java                                                                                               generic-all
+com/sun/jdi/StringConvertTest.sh                                                                                        generic-all
 com/sun/jdi/SuspendNoFlagTest.sh                                                                                        generic-all
 com/sun/jdi/SuspendThreadTest.java                                                                                      generic-all
 com/sun/jdi/TemplateTest.java                                                                                           generic-all
@@ -3316,9 +3322,3 @@ tools/pack200/typeannos/TestTypeAnnotations.java                                
 vm/verifier/TestStaticIF.java                                                                                           generic-all
 vm/verifier/VerifyProtectedConstructor.java                                                                             generic-all
 vm/verifier/defaultMethods/DefaultMethodRegressionTestsRun.java                                                         generic-all
-com/sun/jdi/CatchPatternTest.sh                                                                                         generic-all
-com/sun/jdi/GetLocalVariables4Test.sh                                                                                   generic-all
-com/sun/jdi/NullLocalVariable.sh                                                                                        generic-all
-com/sun/jdi/RedefineFinal.sh                                                                                            generic-all
-com/sun/jdi/RedefineIntConstantToLong.sh                                                                                generic-all
-com/sun/jdi/StringConvertTest.sh                                                                                        generic-all
