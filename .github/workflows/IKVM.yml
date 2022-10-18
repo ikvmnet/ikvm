@@ -240,6 +240,10 @@ jobs:
       with:
         name: tests
         path: C:\tests.tar.gz
+    - name: Clean Solution
+      run: |
+        git reset --hard
+        git clean -qfdx
   test-ikvm:
     strategy:
       matrix:
