@@ -130,7 +130,7 @@ tools/javac/MethodParametersTest.java                                           
 tools/javac/MissingInclude/MissingIncludeTest.java                                                                      generic-all
 tools/javac/NoStringToLower.java                                                                                        generic-all
 tools/javac/Paths/6638501/JarFromManifestFailure.java                                                                   generic-all
-tools/javac/Paths/Class-Path.java                                                                                       generic-all
+tools/javac/Paths/Class-Path.sh                                                                                         generic-all
 tools/javac/Paths/Class-Path2.java                                                                                      generic-all
 tools/javac/Paths/Diagnostics.java                                                                                      generic-all
 tools/javac/Paths/Help.java                                                                                             generic-all
