@@ -3323,3 +3323,5 @@ tools/pack200/typeannos/TestTypeAnnotations.java                                
 vm/verifier/TestStaticIF.java                                                                                           generic-all
 vm/verifier/VerifyProtectedConstructor.java                                                                             generic-all
 vm/verifier/defaultMethods/DefaultMethodRegressionTestsRun.java                                                         generic-all
+lib/security/CheckBlacklistedCerts.java                                                                                 generic-all
+sun/security/rsa/TestCACerts.java                                                                                       generic-all
