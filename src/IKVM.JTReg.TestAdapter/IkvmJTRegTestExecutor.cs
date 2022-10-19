@@ -264,7 +264,7 @@ namespace IKVM.JTReg.TestAdapter
             }
 
             // shutdown pool
-            pool.Flush();
+            pool.flush();
 
             // show result stats
             stats.showResultStats(new java.io.PrintWriter(output));
