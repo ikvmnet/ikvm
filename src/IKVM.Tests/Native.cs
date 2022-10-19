@@ -49,7 +49,7 @@ namespace IKVM.Tests
             yield return $"win-{arch}";
 #else
             if (RuntimeInformation.IsOSPlatform(OSPlatform.Windows))
-                yield return $"win7-{arch}";
+                yield return $"win-{arch}";
 
             if (RuntimeInformation.IsOSPlatform(OSPlatform.Linux))
                 yield return $"linux-{arch}";
