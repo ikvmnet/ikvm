@@ -245,18 +245,12 @@ namespace IKVM.JTReg.TestAdapter
             rp.setReportDir(rd);
 
             // if a ProblemList.txt or ExcludeList.txt file exists in the root, add them as exclude files
-            var excludeFileList = new List<java.io.File>();
-            foreach (var n in new[] { TEST_PROBLEM_LIST_FILE_NAME, TEST_EXCLUDE_LIST_FILE_NAME })
-                if (Path.Combine(((java.io.File)testSuite.getRootDir()).toString(), n) is string f && File.Exists(f))
-                    excludeFileList.Add(new java.io.File(new java.io.File(f).getAbsoluteFile().toURI().normalize()));
+            var excludeFileList = GetExcludeListFiles(testSuite);
 
             // if a IncludeList.txt file exists in the root, add it as include files
-            var includeFileList = new List<java.io.File>();
-            foreach (var n in new[] { TEST_INCLUDE_LIST_FILE_NAME })
-                if (Path.Combine(((java.io.File)testSuite.getRootDir()).toString(), n) is string f && File.Exists(f))
-                    includeFileList.Add(new java.io.File(new java.io.File(f).getAbsoluteFile().toURI().normalize()));
+            var includeFileList = GetIncludeListFiles(testSuite);
 
-            // passed in an explicit set of tests, add to an include file
+            // explicit tests specified, append to include list
             if (tests != null)
             {
                 // name of the current suite

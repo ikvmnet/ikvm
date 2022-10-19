@@ -1,10 +1,18 @@
 ﻿using System;
+using System.Collections;
 using System.Collections.Generic;
+using System.Diagnostics;
 using System.IO;
+using System.Linq;
+using System.Runtime.InteropServices;
 using System.Security.Cryptography;
 using System.Text;
+using System.Threading;
+
+using IKVM.JTReg.TestAdapter;
 
 using Microsoft.VisualStudio.TestPlatform.ObjectModel;
+using Microsoft.VisualStudio.TestPlatform.ObjectModel.Adapter;
 using Microsoft.VisualStudio.TestPlatform.ObjectModel.Logging;
 
 namespace IKVM.JTReg.TestAdapter
@@ -89,6 +97,45 @@ namespace IKVM.JTReg.TestAdapter
             Directory.CreateDirectory(reportDirectory);
             testManager.setReportDirectory(new java.io.File(reportDirectory));
             return testManager;
+        }
+
+        /// <summary>
+        /// Gets the set of files that represent the exclusions for a suite.
+        /// </summary>
+        /// <param name="testSuite"></param>
+        /// <exception cref="ArgumentNullException"></exception>
+        public List<java.io.File> GetExcludeListFiles(dynamic testSuite)
+        {
+            if (testSuite is null)
+                throw new ArgumentNullException(nameof(testSuite));
+
+            // if a ProblemList.txt or ExcludeList.txt file exists in the root, add them as exclude files
+            var excludeFileList = new List<java.io.File>();
+            foreach (var n in new[] { TEST_PROBLEM_LIST_FILE_NAME, TEST_EXCLUDE_LIST_FILE_NAME })
+                if (Path.Combine(((java.io.File)testSuite.getRootDir()).toString(), n) is string f && File.Exists(f))
+                    excludeFileList.Add(new java.io.File(new java.io.File(f).getAbsoluteFile().toURI().normalize()));
+
+            return excludeFileList;
+        }
+
+        /// <summary>
+        /// Gets the set of files that represent the inclusions for a suite.
+        /// </summary>
+        /// <param name="testSuite"></param>
+        /// <returns></returns>
+        /// <exception cref="ArgumentNullException"></exception>
+        public List<java.io.File> GetIncludeListFiles(dynamic testSuite)
+        {
+            if (testSuite is null)
+                throw new ArgumentNullException(nameof(testSuite));
+
+            // if a IncludeList.txt file exists in the root, add it as include files
+            var includeFileList = new List<java.io.File>();
+            foreach (var n in new[] { TEST_INCLUDE_LIST_FILE_NAME })
+                if (Path.Combine(((java.io.File)testSuite.getRootDir()).toString(), n) is string f && File.Exists(f))
+                    includeFileList.Add(new java.io.File(new java.io.File(f).getAbsoluteFile().toURI().normalize()));
+
+            return includeFileList;
         }
 
     }
