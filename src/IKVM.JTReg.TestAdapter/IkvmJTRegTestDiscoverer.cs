@@ -95,7 +95,7 @@ namespace IKVM.JTReg.TestAdapter
 
                 // for each suite, get the results and transform a test case
                 foreach (dynamic testSuite in Util.GetTestSuites(source, testManager))
-                    foreach (var testCase in Util.GetTestCases(source, testManager, testSuite))
+                    foreach (var testCase in (IEnumerable<TestCase>)Util.GetTestCases(source, testManager, testSuite))
                         discoverySink.SendTestCase(testCase);
 
                 testWatch.Stop();

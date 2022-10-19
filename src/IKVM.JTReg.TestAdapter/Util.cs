@@ -22,6 +22,7 @@ namespace IKVM.JTReg.TestAdapter
 
         internal const int PARTITION_COUNT = 16;
 
+        static readonly SimpleDateFormat TestResultDateFormat = new SimpleDateFormat("EEE MMM dd HH:mm:ss z yyyy", Locale.US);
         static readonly MethodInfo RemainingToListOfTestResultMethod = typeof(IteratorExtensions).GetMethod(nameof(IteratorExtensions.RemainingToList)).MakeGenericMethod(JTRegTypes.TestResult.Type);
 
         /// <summary>
@@ -143,6 +144,7 @@ namespace IKVM.JTReg.TestAdapter
         /// <param name="source"></param>
         /// <param name="testSuite"></param>
         /// <param name="testResult"></param>
+        /// <param name="partition"></param>
         /// <returns></returns>
         public static TestCase ToTestCase(string source, dynamic testSuite, dynamic testResult, int partition)
         {
@@ -187,9 +189,9 @@ namespace IKVM.JTReg.TestAdapter
             {
                 DisplayName = Util.GetTestDisplayName(testResult),
                 ComputerName = testResult.getProperty("hostname"),
-                Duration = ParseElapsed(testResult.getProperty("elapsed")),
-                StartTime = ParseLogDate(testResult.getProperty("start")),
-                EndTime = ParseLogDate(testResult.getProperty("end")),
+                Duration = ParseTestResultTimeSpan(testResult.getProperty("elapsed")),
+                StartTime = ParseTestResultDate(testResult.getProperty("start")),
+                EndTime = ParseTestResultDate(testResult.getProperty("end")),
                 Outcome = ToTestOutcome(testResult.getStatus()),
                 ErrorMessage = testResult.getProperty("execStatus"),
             };
@@ -219,6 +221,9 @@ namespace IKVM.JTReg.TestAdapter
         /// <returns></returns>
         static IEnumerable<TestResultMessage> GetTestResultSectionMessages(dynamic section)
         {
+            if (section is null)
+                throw new ArgumentNullException(nameof(section));
+
             // since vstest splits output by category, append a common header to each to make them distinguishable
             var header = new System.Text.StringBuilder();
             header.AppendLine($"ACTION: {(string)section.getTitle()}");
@@ -313,7 +318,7 @@ namespace IKVM.JTReg.TestAdapter
             if (testResult is null)
                 throw new ArgumentNullException(nameof(testResult));
 
-            return testResult.getDescription().getId();
+            return (string)testResult.getDescription().getId();
         }
 
         /// <summary>
@@ -332,7 +337,7 @@ namespace IKVM.JTReg.TestAdapter
             if (testResult is null)
                 throw new ArgumentNullException(nameof(testResult));
 
-            return testResult.getDescription().getName();
+            return (string)testResult.getDescription().getName();
         }
 
         /// <summary>
@@ -412,32 +417,27 @@ namespace IKVM.JTReg.TestAdapter
             var rootPath = ((java.io.File)testSuite.getRootDir()).toPath();
             var testPath = ((java.io.File)testResult.getDescription().getDir()).toPath();
             var pathName = rootPath.relativize(testPath).toString().Replace('.', '_').Replace('\\', '/');
-
-            // test name
             var testName = testResult.getDescription().getName().Replace('.', '_').Replace('\\', '/');
-
             return $"{GetTestSuiteName(source, testSuite)}.{pathName}.{testName}";
         }
-
-        static readonly SimpleDateFormat logFormat = new SimpleDateFormat("EEE MMM dd HH:mm:ss z yyyy", Locale.US);
 
         /// <summary>
         /// Parses the common date time format used by jtreg.
         /// </summary>
         /// <param name="v"></param>
         /// <returns></returns>
-        static DateTimeOffset ParseLogDate(string v)
+        static DateTimeOffset ParseTestResultDate(string v)
         {
             try
             {
                 if (v != null)
                 {
-                    var p = logFormat.parse(v);
+                    var p = TestResultDateFormat.parse(v);
                     var d = DateTimeOffset.FromUnixTimeMilliseconds(p.getTime()).ToOffset(new TimeSpan(0, -p.getTimezoneOffset(), 0));
                     return d;
                 }
             }
-            catch (java.text.ParseException)
+            catch (ParseException)
             {
                 // ignore
             }
@@ -445,7 +445,7 @@ namespace IKVM.JTReg.TestAdapter
             return DateTimeOffset.MinValue;
         }
 
-        static TimeSpan ParseElapsed(string v)
+        static TimeSpan ParseTestResultTimeSpan(string v)
         {
             return v != null && int.TryParse(v.Split(' ')[0], out var s) ? TimeSpan.FromMilliseconds(s) : TimeSpan.Zero;
         }

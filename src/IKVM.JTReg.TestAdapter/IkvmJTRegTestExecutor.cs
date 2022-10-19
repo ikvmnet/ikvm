@@ -188,7 +188,7 @@ namespace IKVM.JTReg.TestAdapter
 
                     // discover the full set of tests
                     foreach (dynamic testSuite in Util.GetTestSuites(source, testManager))
-                        foreach (var testCase in Util.GetTestCases(source, testManager, testSuite))
+                        foreach (var testCase in (IEnumerable<TestCase>)Util.GetTestCases(source, testManager, testSuite))
                             l.Add(testCase);
 
                     tests = l;
