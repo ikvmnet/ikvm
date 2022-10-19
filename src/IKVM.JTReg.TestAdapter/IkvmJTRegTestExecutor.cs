@@ -214,21 +214,36 @@ namespace IKVM.JTReg.TestAdapter
             if (firstTestResult is null)
                 return;
 
+            // generate a policy file for the test run
+            var policyFile = (java.io.File)parameters.getWorkDirectory().getFile("jtreg.policy");
+            using (var policyFileStream = new StreamWriter(File.OpenWrite(policyFile.toString())))
+            {
+                foreach (var jarName in new[] { "jtreg.jar", "javatest.jar" })
+                {
+                    var jar = java.nio.file.Paths.get(Path.Combine(Path.GetDirectoryName(typeof(IkvmJTRegTestAdapter).Assembly.Location), "jtreg", jarName));
+                    policyFileStream.WriteLine(@"grant codebase ""{0}"" {{", jar.toUri().toURL().toString());
+                    policyFileStream.WriteLine(@"    permission java.security.AllPermission;");
+                    policyFileStream.WriteLine(@"};");
+                }
+            }
+
+            // set parameters on pool
+            var pool = JTRegTypes.Agent.Pool.Instance();
+            pool.setSecurityPolicy(policyFile);
+
+            // before we install our own security manager (which will restrict access to the system properties) take a copy of the system properties
+            JTRegTypes.TestEnvironment.AddDefaultPropTable("(system properties)", java.lang.System.getProperties());
+
+            // collect events from the harness
+            var stats = JTRegTypes.TestStats.New();
+
             try
             {
-
                 // observe harness for test results
                 var harness = JTRegTypes.Harness.New();
                 var observer = HarnessObserverInterceptor.Create(new HarnessObserverImplementation(source, testSuite, runContext, frameworkHandle, tests));
                 harness.addObserver(observer);
-
-                // collect test stats
-                var stats = JTRegTypes.TestStats.New();
                 stats.register(harness);
-
-                // required for reporting
-                var elapsedTimeHandler = JTRegTypes.ElapsedTimeHandler.New();
-                elapsedTimeHandler.register(harness);
 
                 // begin harness execution asynchronously, thus allowing potential cancellation
                 harness.start(parameters);
@@ -238,13 +253,6 @@ namespace IKVM.JTReg.TestAdapter
                 harness.waitUntilDone();
                 harness.stop();
                 harness.removeObserver(observer);
-
-                // show result stats
-                stats.showResultStats(new java.io.PrintWriter(output));
-
-                // generate reports after execution
-                var reporter = JTRegTypes.RegressionReporter.New(new java.io.PrintWriter(output));
-                reporter.report(testManager);
             }
             catch (java.lang.InterruptedException)
             {
@@ -254,6 +262,16 @@ namespace IKVM.JTReg.TestAdapter
             {
                 frameworkHandle.SendMessage(TestMessageLevel.Error, $"JTReg: Exception occurred running tests for '{source}'.\n{e}");
             }
+
+            // shutdown pool
+            pool.Flush();
+
+            // show result stats
+            stats.showResultStats(new java.io.PrintWriter(output));
+
+            // generate reports after execution
+            var reporter = JTRegTypes.RegressionReporter.New(new java.io.PrintWriter(output));
+            reporter.report(testManager);
         }
 
         /// <summary>

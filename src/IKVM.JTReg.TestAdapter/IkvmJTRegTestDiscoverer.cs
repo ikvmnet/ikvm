@@ -99,11 +99,7 @@ namespace IKVM.JTReg.TestAdapter
                     logger.SendMessage(TestMessageLevel.Informational, $"JTReg: Discovered test suite: {testSuite.getName()}");
 
                     foreach (var testResult in GetTestResults(source, testSuite, CreateParameters(source, baseDir, testManager, testSuite, null, null)))
-                    {
-                        var testCase = (TestCase)Util.ToTestCase(source, testSuite, testResult, testCount++ % PARTITION_COUNT);
-                        logger.SendMessage(TestMessageLevel.Informational, $"JTReg: Discovered test: {testCase.FullyQualifiedName}");
-                        discoverySink.SendTestCase(testCase);
-                    }
+                        discoverySink.SendTestCase((TestCase)Util.ToTestCase(source, testSuite, testResult, testCount++ % PARTITION_COUNT));
                 }
 
                 testWatch.Stop();

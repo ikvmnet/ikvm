@@ -182,17 +182,17 @@ namespace IKVM.JTReg.TestAdapter
                 var testSuiteName = Util.GetTestSuiteName(source, testSuite);
 
                 // fill in include list containing tests located within the suite
-                var tf = Path.Combine(baseDir, testSuiteName + "-IncludeList.txt");
-                using (var ts = File.CreateText(tf))
+                var includeListFile = (java.io.File)wd.getFile("IncludeList.txt");
+                using (var includeList = File.CreateText(includeListFile.toString()))
                     foreach (var test in tests)
                         if (string.Equals(test.GetPropertyValue(IkvmJTRegTestProperties.TestSuiteNameProperty), testSuiteName))
-                            ts.WriteLine(test.GetPropertyValue(IkvmJTRegTestProperties.TestPathNameProperty) + " generic-all");
+                            includeList.WriteLine(test.GetPropertyValue(IkvmJTRegTestProperties.TestPathNameProperty) + " generic-all");
 
-                includeFileList.Add(new java.io.File(new java.io.File(tf).getAbsoluteFile().toURI().normalize()));
+                includeFileList.Add(new java.io.File(includeListFile.getAbsoluteFile().toURI().normalize()));
             }
 
             rp.setTests((java.util.Set)testManager.getTests(testSuite));
-            rp.setExecMode(testSuite.getDefaultExecMode() ?? JTRegTypes.ExecMode.OTHERVM);
+            rp.setExecMode(testSuite.getDefaultExecMode() ?? JTRegTypes.ExecMode.AGENTVM);
             rp.setCheck(false);
             rp.setCompileJDK(JTRegTypes.JDK.Of(new java.io.File(java.lang.System.getProperty("java.home"))));
             rp.setTestJDK(rp.getCompileJDK());

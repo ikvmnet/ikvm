@@ -17,6 +17,37 @@ namespace IKVM.JTReg.TestAdapter
         static readonly string[] libs = Directory.GetFiles(Path.Combine(Path.GetDirectoryName(typeof(IkvmJTRegTestAdapter).Assembly.Location), "jtreg"), "*.jar");
         public static readonly URLClassLoader ClassLoader = new URLClassLoader(libs.Select(i => new java.io.File(i).toURI().toURL()).ToArray());
 
+        public static class TestEnvironment
+        {
+
+            public static readonly Class Class = Class.forName("com.sun.javatest.TestEnvironment", true, ClassLoader);
+            public static readonly Type Type = ikvm.runtime.Util.getInstanceTypeFromClass(Class);
+
+            public static readonly Method AddDefaultPropTableMethod = Class.getMethod("addDefaultPropTable", typeof(string), typeof(java.util.Properties));
+            public static dynamic AddDefaultPropTable(string name, java.util.Properties propTable) => AddDefaultPropTableMethod.invoke(null, name, propTable);
+
+
+        }
+
+        public static class Agent
+        {
+
+            public static readonly Class Class = Class.forName("com.sun.javatest.regtest.exec.Agent", true, ClassLoader);
+            public static readonly Type Type = ikvm.runtime.Util.getInstanceTypeFromClass(Class);
+
+            public static class Pool
+            {
+
+                public static readonly Class Class = Class.forName("com.sun.javatest.regtest.exec.Agent$Pool", true, ClassLoader);
+                public static readonly Type Type = ikvm.runtime.Util.getInstanceTypeFromClass(Class);
+
+                public static readonly Method InstanceMethod = Class.getMethod("instance");
+                public static dynamic Instance() => InstanceMethod.invoke(null);
+
+            }
+
+        }
+
         public static class SearchPath
         {
 
