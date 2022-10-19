@@ -10,7 +10,7 @@ using Microsoft.VisualStudio.TestPlatform.ObjectModel.Logging;
 namespace IKVM.JTReg.TestAdapter
 {
 
-    [DefaultExecutorUri("executor://ikvmjtregtestadapter/v1")]
+    [DefaultExecutorUri(URI)]
     [FileExtension(".dll")]
     [FileExtension(".exe")]
     public class IkvmJTRegTestDiscoverer : IkvmJTRegTestAdapter, ITestDiscoverer
@@ -95,12 +95,8 @@ namespace IKVM.JTReg.TestAdapter
 
                 // for each suite, get the results and transform a test case
                 foreach (dynamic testSuite in Util.GetTestSuites(source, testManager))
-                {
-                    logger.SendMessage(TestMessageLevel.Informational, $"JTReg: Discovered test suite: {testSuite.getName()}");
-
-                    foreach (var testResult in GetTestResults(source, testSuite, CreateParameters(source, baseDir, testManager, testSuite, null, null)))
-                        discoverySink.SendTestCase((TestCase)Util.ToTestCase(source, testSuite, testResult, testCount++ % PARTITION_COUNT));
-                }
+                    foreach (var testCase in Util.GetTestCases(source, testManager, testSuite))
+                        discoverySink.SendTestCase(testCase);
 
                 testWatch.Stop();
                 logger.SendMessage(TestMessageLevel.Informational, $"JTReg: Discovered {testCount} tests for '{source}' in {testWatch.Elapsed.TotalSeconds} seconds.");
@@ -110,7 +106,6 @@ namespace IKVM.JTReg.TestAdapter
                 logger.SendMessage(TestMessageLevel.Error, $"JTReg: An exception occurred discovering tests for '{source}'.\n{e}");
             }
         }
-
 
     }
 

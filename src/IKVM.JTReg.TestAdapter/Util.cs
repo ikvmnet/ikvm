@@ -5,7 +5,6 @@ using System.IO;
 using System.Linq;
 using System.Reflection;
 
-using java.lang;
 using java.text;
 using java.util;
 
@@ -20,6 +19,10 @@ namespace IKVM.JTReg.TestAdapter
     /// </summary>
     static class Util
     {
+
+        internal const int PARTITION_COUNT = 16;
+
+        static readonly MethodInfo RemainingToListOfTestResultMethod = typeof(IteratorExtensions).GetMethod(nameof(IteratorExtensions.RemainingToList)).MakeGenericMethod(JTRegTypes.TestResult.Type);
 
         /// <summary>
         /// Discovers the test suite directories specified by the given source.
@@ -36,7 +39,7 @@ namespace IKVM.JTReg.TestAdapter
 
             // normalize source path
             source = Path.GetFullPath(source);
-            logger.SendMessage(TestMessageLevel.Informational, "JTReg: " + $"Scanning for test suites for '{source}'.");
+            logger.SendMessage(TestMessageLevel.Informational, $"JTReg: Scanning for test suites for '{source}'.");
 
             var assembly = Assembly.LoadFrom(source);
             foreach (var testAttr in assembly.GetCustomAttributes<JTRegTestSuiteAttribute>())
@@ -46,11 +49,11 @@ namespace IKVM.JTReg.TestAdapter
                 var rootFile = Path.Combine(testPath, IkvmJTRegTestAdapter.TEST_ROOT_FILE_NAME);
                 if (File.Exists(rootFile) == false)
                 {
-                    logger.SendMessage(TestMessageLevel.Error, "JTReg: " + $"Missing test root file: {rootFile}");
+                    logger.SendMessage(TestMessageLevel.Error, $"JTReg: Missing test root file: {rootFile}");
                     continue;
                 }
 
-                logger.SendMessage(TestMessageLevel.Informational, "JTReg: " + $"Found test suite: {testPath}");
+                logger.SendMessage(TestMessageLevel.Informational, $"JTReg: Found test suite: {testPath}");
                 yield return testPath;
             }
         }
@@ -72,6 +75,69 @@ namespace IKVM.JTReg.TestAdapter
         }
 
         /// <summary>
+        /// Gets the results of an interview.
+        /// </summary>
+        /// <param name="source"></param>
+        /// <param name="testManager"></param>
+        /// <param name="testSuite"></param>
+        /// <returns></returns>
+        /// <exception cref="ArgumentNullException"></exception>
+        public static IEnumerable<dynamic> GetTestResults(string source, dynamic testManager, dynamic testSuite)
+        {
+            if (source is null)
+                throw new ArgumentNullException(nameof(source));
+            if (testManager is null)
+                throw new ArgumentNullException(nameof(testManager));
+            if (testSuite is null)
+                throw new ArgumentNullException(nameof(testSuite));
+
+            // wait until result is initialized
+            var trt = testManager.getWorkDirectory(testSuite).getTestResultTable();
+            trt.waitUntilReady();
+            return RemainingToListOfTestResult((Iterator)trt.getIterator());
+        }
+
+        /// <summary>
+        /// Invokes the RemainingToList generic method for an iterator of TestResult objects.
+        /// </summary>
+        /// <param name="iter"></param>
+        /// <returns></returns>
+        static IEnumerable<dynamic> RemainingToListOfTestResult(Iterator iter)
+        {
+            if (iter is null)
+                throw new ArgumentNullException(nameof(iter));
+
+            return (IEnumerable<dynamic>)RemainingToListOfTestResultMethod.Invoke(null, new[] { iter });
+        }
+
+        /// <summary>
+        /// Returns an enumerable of the test cases within the given suite with parameters.
+        /// </summary>
+        /// <param name="source"></param>
+        /// <param name="testManager"></param>
+        /// <param name="testSuite"></param>
+        /// <returns></returns>
+        public static IEnumerable<TestCase> GetTestCases(string source, dynamic testManager, dynamic testSuite)
+        {
+            if (string.IsNullOrEmpty(source))
+                throw new ArgumentException($"'{nameof(source)}' cannot be null or empty.", nameof(source));
+            if (testManager is null)
+                throw new ArgumentNullException(nameof(testManager));
+            if (testSuite is null)
+                throw new ArgumentNullException(nameof(testSuite));
+
+            var c = 0;
+
+            // obtain enumerable of the test results within the suite
+            var testResults = (IEnumerable<dynamic>)GetTestResults(source, testManager, testSuite);
+            testResults = testResults.OrderBy(i => GetTestPathName(source, testSuite, i));
+
+            // yield converted results
+            foreach (var testResult in testResults)
+                yield return ToTestCase(source, testSuite, testResult, c++ % PARTITION_COUNT);
+        }
+
+        /// <summary>
         /// Creates a new <see cref="TestCase"/> from the given test result.
         /// </summary>
         /// <param name="source"></param>
@@ -87,7 +153,7 @@ namespace IKVM.JTReg.TestAdapter
             if (testResult is null)
                 throw new ArgumentNullException(nameof(testResult));
 
-            var testCase = new TestCase(Util.GetFullyQualifiedTestName(source, testSuite, testResult), new Uri("executor://ikvmjtregtestadapter/v1"), source);
+            var testCase = new TestCase(Util.GetFullyQualifiedTestName(source, testSuite, testResult), new Uri(IkvmJTRegTestAdapter.URI), source);
             testCase.CodeFilePath = ((java.io.File)testResult.getDescription().getFile())?.toPath().toAbsolutePath().toString();
             testCase.SetPropertyValue(IkvmJTRegTestProperties.TestSuiteRootProperty, ((java.io.File)testSuite.getRootDir()).toPath().toAbsolutePath().toString());
             testCase.SetPropertyValue(IkvmJTRegTestProperties.TestSuiteNameProperty, GetTestSuiteName(source, testSuite));
@@ -135,7 +201,7 @@ namespace IKVM.JTReg.TestAdapter
                         r.Messages.Add(message);
 
             // create an attachment set for our results
-            var attachments = new AttachmentSet(new Uri("executor://ikvmjtregtestadapter/v1"), "IkvmJTRegTestAdapter");
+            var attachments = new AttachmentSet(new Uri(IkvmJTRegTestAdapter.URI), "IkvmJTRegTestAdapter");
             r.Attachments.Add(attachments);
 
             // if a JTR file is available, add it as an attachment
@@ -178,36 +244,6 @@ namespace IKVM.JTReg.TestAdapter
                 text.AppendLine("----");
                 yield return new TestResultMessage(messageCategory, text.ToString());
             }
-        }
-
-        /// <summary>
-        /// Find the reason that the action was run. This method takes advantage of the fact that the reason string begins with a known value and ends with a line seperator.
-        /// </summary>
-        /// <param name="section"></param>
-        /// <returns></returns>
-        static string GetTestResultSectionReason(dynamic section)
-        {
-            const string SEARCH = "reason: ";
-
-            var o = (string)section.getOutput("messages");
-            var posBeg = o.IndexOf(SEARCH) + SEARCH.Length;
-            var posEnd = o.IndexOf(Environment.NewLine, posBeg);
-            return o.Substring(posBeg, posEnd);
-        }
-
-        /// <summary>
-        /// Finds the elapsed time for the action. This method takes advantage of the fact that the string containing the elapsed time begins with a known value and ends with a line seperator.
-        /// </summary>
-        /// <param name="section"></param>
-        /// <returns></returns>
-        static string GetElapsedTime(dynamic section)
-        {
-            const string SEARCH = "elased time (seconds): ";
-
-            var o = (string)section.getOutput("messages");
-            var posBeg = o.IndexOf(SEARCH) + SEARCH.Length;
-            var posEnd = o.IndexOf(Environment.NewLine, posBeg);
-            return o.Substring(posBeg, posEnd);
         }
 
         /// <summary>
