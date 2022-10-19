@@ -73,6 +73,7 @@ com/sun/jdi/InvokeHangTest.java                                                 
 com/sun/jdi/InvokeTest.java                                                                                             generic-all
 com/sun/jdi/JITDebug.sh                                                                                                 generic-all
 com/sun/jdi/Java_gTest.java                                                                                             generic-all
+com/sun/jdi/JdbArgTest.sh                                                                                               generic-all
 com/sun/jdi/JdbLockTest.sh                                                                                              generic-all
 com/sun/jdi/JdbMethodExitTest.sh                                                                                        generic-all
 com/sun/jdi/JdbMissStep.sh                                                                                              generic-all
