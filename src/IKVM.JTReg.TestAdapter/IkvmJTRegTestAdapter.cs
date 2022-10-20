@@ -25,6 +25,7 @@ namespace IKVM.JTReg.TestAdapter
     {
 
         internal const string URI = "executor://ikvmjtregtestadapter/v1";
+        internal static readonly string JTREG_LIB = Path.Combine(Path.GetDirectoryName(typeof(IkvmJTRegTestAdapter).Assembly.Location), "jtreg");
 
         internal const string BASEDIR_PREFIX = "ikvm-jtreg-";
         internal const string TEST_ROOT_FILE_NAME = "TEST.ROOT";

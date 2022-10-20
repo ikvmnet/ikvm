@@ -203,7 +203,7 @@ namespace IKVM.JTReg.TestAdapter
                 foreach (dynamic testSuite in (IEnumerable)testManager.getTestSuites())
                 {
                     frameworkHandle.SendMessage(TestMessageLevel.Informational, $"JTReg: Running test suite: {testSuite.getName()}");
-                    RunTests(source, testManager, testSuite, runContext, frameworkHandle, tests, output, CreateParameters(source, baseDir, testManager, testSuite, tests, debugUri), cancellationToken);
+                    RunTests(source, testManager, testSuite, runContext, frameworkHandle, tests, output, CreateParameters(source, testManager, testSuite, tests, debugUri), cancellationToken);
                 }
             }
             catch (Exception e)
@@ -216,18 +216,15 @@ namespace IKVM.JTReg.TestAdapter
         /// Creates the parameters for a given suite.
         /// </summary>
         /// <param name="source"></param>
-        /// <param name="baseDir"></param>
         /// <param name="testManager"></param>
         /// <param name="testSuite"></param>
         /// <param name="tests"></param>
         /// <param name="debugUri"></param>
         /// <returns></returns>
-        dynamic CreateParameters(string source, string baseDir, dynamic testManager, dynamic testSuite, IEnumerable<TestCase> tests, Uri debugUri)
+        dynamic CreateParameters(string source,  dynamic testManager, dynamic testSuite, IEnumerable<TestCase> tests, Uri debugUri)
         {
             if (source is null)
                 throw new ArgumentNullException(nameof(source));
-            if (baseDir is null)
-                throw new ArgumentNullException(nameof(baseDir));
             if (testManager is null)
                 throw new ArgumentNullException(nameof(testManager));
             if (testSuite is null)
@@ -245,14 +242,16 @@ namespace IKVM.JTReg.TestAdapter
             rp.setReportDir(rd);
 
             // if a ProblemList.txt or ExcludeList.txt file exists in the root, add them as exclude files
-            var excludeFileList = GetExcludeListFiles(testSuite);
+            var excludeFileList = (List<java.io.File>)GetExcludeListFiles(testSuite);
 
             // if a IncludeList.txt file exists in the root, add it as include files
-            var includeFileList = GetIncludeListFiles(testSuite);
+            var includeFileList = (List<java.io.File>)GetIncludeListFiles(testSuite);
 
-            // explicit tests specified, append to include list
+            // explicit tests specified, replace include list
             if (tests != null)
             {
+                includeFileList.Clear();
+
                 // name of the current suite
                 var testSuiteName = Util.GetTestSuiteName(source, testSuite);
 
@@ -284,6 +283,9 @@ namespace IKVM.JTReg.TestAdapter
             rp.setIgnoreKind(JTRegTypes.IgnoreKind.QUIET);
             rp.setPriorStatusValues(null);
             rp.setUseWindowsSubsystemForLinux(true);
+            rp.setTestNGPath(JTRegTypes.SearchPath.New(Path.Combine(JTREG_LIB, "testng.jar")));
+            rp.setJUnitPath(JTRegTypes.SearchPath.New(Path.Combine(JTREG_LIB, "junit.jar")));
+            rp.setAsmToolsPath(JTRegTypes.SearchPath.New(Path.Combine(JTREG_LIB, "asmtools.jar")));
 
             // configure keywords to filter based on
             string keywordsExpr = null;
@@ -291,18 +293,6 @@ namespace IKVM.JTReg.TestAdapter
             keywordsExpr = CombineKeywords(keywordsExpr, "!manual");
             if (string.IsNullOrWhiteSpace(keywordsExpr) == false)
                 rp.setKeywordsExpr(keywordsExpr);
-
-            // locate and configure TestNG
-            var testNGPath = Path.Combine(Path.GetDirectoryName(typeof(IkvmJTRegTestAdapter).Assembly.Location), "jtreg", "testng.jar");
-            rp.setTestNGPath(JTRegTypes.SearchPath.New(testNGPath));
-
-            // locate and configure JUnit
-            var junitPath = Path.Combine(Path.GetDirectoryName(typeof(IkvmJTRegTestAdapter).Assembly.Location), "jtreg", "junit.jar");
-            rp.setJUnitPath(JTRegTypes.SearchPath.New(junitPath));
-
-            // locate and configure JUnit
-            var asmtoolsPath = Path.Combine(Path.GetDirectoryName(typeof(IkvmJTRegTestAdapter).Assembly.Location), "jtreg", "asmtools.jar");
-            rp.setAsmToolsPath(JTRegTypes.SearchPath.New(asmtoolsPath));
 
             // final initialization
             rp.initExprContext();
