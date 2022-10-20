@@ -1088,6 +1088,7 @@ java/io/Serializable/subclass/Test.java                                         
 java/io/Serializable/subclassGC/SubclassGC.java                                                                         generic-all
 java/io/Serializable/superclassDataLoss/run.sh                                                                          generic-all
 java/io/Serializable/unnamedPackageSwitch/run.sh                                                                        generic-all
+java/io/Serializable/unresolvableObjectStreamClass/UnresolvableObjectStreamClass.java                                   generic-all
 java/io/Serializable/userRWObjError/UserRWObjError.java                                                                 generic-all
 java/io/pathNames/GeneralWin32.java                                                                                     generic-all
 java/io/pathNames/win32/RenameDelete.java                                                                               generic-all
@@ -1586,7 +1587,7 @@ java/security/cert/CertPathValidatorException/ReasonTest.java                   
 java/security/cert/CertPathValidatorException/Serial.java                                                               generic-all
 java/security/cert/CertificateFactory/openssl/BadFooter.java                                                            generic-all
 java/security/cert/CertificateFactory/slowstream.sh                                                                     generic-all
-java/security/cert/CertificateRevokedException/Basic                                                                    generic-all
+java/security/cert/CertificateRevokedException/Basic.java                                                               generic-all
 java/security/cert/PKIXRevocationChecker/OcspUnauthorized.java                                                          generic-all
 java/security/cert/PKIXRevocationChecker/UnitTest.java                                                                  generic-all
 java/security/cert/PolicyNode/GetPolicyQualifiers.java                                                                  generic-all
