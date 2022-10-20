@@ -44,8 +44,10 @@ using Throwable = java.lang.Throwable;
 
 namespace IKVM.Internal
 {
+
     static class ExceptionHelper
     {
+
         private static readonly Dictionary<string, string> failedTypes = new Dictionary<string, string>();
         private static readonly Key EXCEPTION_DATA_KEY = new Key();
         private static readonly Exception NOT_REMAPPED = new Exception();
@@ -920,5 +922,7 @@ namespace IKVM.Internal
             return null;
 #endif
         }
+
     }
+
 }
