@@ -108,6 +108,9 @@ tools/javac/8005931/CheckACC_STRICTFlagOnPkgAccessClassTest.java                
 tools/javac/8009170/RedundantByteCodeInArrayTest.java                                                                   generic-all
 tools/javac/AnonymousSubclassTest.java                                                                                  generic-all
 tools/javac/ArrayCloneCodeGen.java                                                                                      generic-all
+tools/javac/BadOptimization/DeadCode3.java                                                                              generic-all
+tools/javac/BadOptimization/DeadCode4.java                                                                              generic-all
+tools/javac/BadOptimization/DeadCode5.java                                                                              generic-all
 tools/javac/ClassPathTest/ClassPathTest.java                                                                            generic-all
 tools/javac/Diagnostics/6769027/T6769027.java                                                                           generic-all
 tools/javac/Diagnostics/7010608/Test.java                                                                               generic-all
@@ -324,6 +327,7 @@ tools/javac/api/ToolProvider/ToolProviderTest2.java                             
 tools/javac/api/guide/Test.java                                                                                         generic-all
 tools/javac/api/taskListeners/EventsBalancedTest.java                                                                   generic-all
 tools/javac/api/taskListeners/TestSimpleAddRemove.java                                                                  generic-all
+tools/javac/assert/Position.java                                                                                        generic-all
 tools/javac/cast/intersection/IntersectionTypeCastTest.java                                                             generic-all
 tools/javac/cast/intersection/IntersectionTypeParserTest.java                                                           generic-all
 tools/javac/cast/intersection/model/Model01.java                                                                        generic-all
