@@ -4154,20 +4154,20 @@ namespace IKVM.Internal
 #if STATIC_COMPILER || FIRST_PASS
                 throw new InvalidOperationException();
 #else
-				EmitLiveObjectLoad(ilgen, DynamicCallerIDProvider.CreateCallerID(host));
-				CoreClasses.ikvm.@internal.CallerID.Wrapper.EmitCheckcast(ilgen);
+                EmitLiveObjectLoad(ilgen, DynamicCallerIDProvider.CreateCallerID(host));
+                CoreClasses.ikvm.@internal.CallerID.Wrapper.EmitCheckcast(ilgen);
 #endif
             }
 
             internal void EmitCallerID(CodeEmitter ilgen, bool dynamic)
             {
 #if !FIRST_PASS && !STATIC_COMPILER
-				if (dynamic)
-				{
-					EmitLiveObjectLoad(ilgen, DynamicCallerIDProvider.Instance);
-					ilgen.Emit(OpCodes.Call, ByteCodeHelperMethods.DynamicCallerID);
-					return;
-				}
+                if (dynamic)
+                {
+                    EmitLiveObjectLoad(ilgen, DynamicCallerIDProvider.Instance);
+                    ilgen.Emit(OpCodes.Call, ByteCodeHelperMethods.DynamicCallerID);
+                    return;
+                }
 #endif
                 if (callerIDMethod == null)
                 {
@@ -5761,7 +5761,7 @@ namespace IKVM.Internal
 #elif FIRST_PASS
                 private static readonly Type localRefStructType = null;
 #else
-				private static readonly Type localRefStructType = JVM.LoadType(typeof(IKVM.Runtime.JNI.Frame));
+                private static readonly Type localRefStructType = JVM.LoadType(typeof(IKVM.Runtime.JNI.Frame));
 #endif
                 private static readonly MethodInfo jniFuncPtrMethod = localRefStructType.GetMethod("GetFuncPtr");
                 private static readonly MethodInfo enterLocalRefStruct = localRefStructType.GetMethod("Enter");
@@ -6899,42 +6899,61 @@ namespace IKVM.Internal
             return sourceFileName;
         }
 
-        private int GetMethodBaseToken(MethodBase mb)
+        /// <summary>
+        /// Returns the index of this method within the type wrapper method list.
+        /// </summary>
+        /// <param name="methodBase"></param>
+        /// <returns></returns>
+        int GetMethodIndex(MethodBase methodBase)
         {
-            MethodBuilder mbld = mb as MethodBuilder;
-            if (mbld != null)
+            if (methodBase is null)
+                throw new ArgumentNullException(nameof(methodBase));
+
+            var methodWrappers = GetMethods();
+
+            for (int i = 0; i < methodWrappers.Length; i++)
             {
+                var methodWrapper = methodWrappers[i];
+                var method = methodWrapper.GetMethod();
+
+                if (method is MethodBuilder methodBuilder)
+                {
 #if NETFRAMEWORK
-                return mbld.GetToken().Token;
+                    // framework allows retrieval of the metadata token through a builder
+                    if (methodBuilder.GetToken().Token == methodBase.MetadataToken)
+                        return i;
 #else
-                BindingFlags flags = BindingFlags.DeclaredOnly;
-                flags |= mbld.IsPublic ? BindingFlags.Public : BindingFlags.NonPublic;
-                flags |= mbld.IsStatic ? BindingFlags.Static : BindingFlags.Instance;
-                MethodInfo mi = TypeAsTBD.GetMethod(mbld.Name, flags, null, mbld.GetParameters().Select(p => p.ParameterType).ToArray(), null);
-                return mi.MetadataToken;
+                    // fallback for Core, search for matching method wrapper by signature
+                    if (methodBuilder.Name == methodBase.Name &&
+                        methodBuilder.IsPublic == methodBase.IsPublic &&
+                        methodBuilder.IsPrivate == methodBase.IsPrivate &&
+                        methodBuilder.IsStatic == methodBase.IsStatic &&
+                        methodWrapper.GetParametersForDefineMethod().SequenceEqual(methodBase.GetParameters().Select(i => i.ParameterType)))
+                        return i;
 #endif
+                }
+                else if (method.MetadataToken == methodBase.MetadataToken)
+                    return i;
             }
-            return mb.MetadataToken;
+
+            return -1;
         }
 
-        internal override int GetSourceLineNumber(MethodBase mb, int ilOffset)
+        /// <summary>
+        /// Gets the source code line number for the given IL offset within the specified method.
+        /// </summary>
+        /// <param name="methodBase"></param>
+        /// <param name="ilOffset"></param>
+        /// <returns></returns>
+        internal override int GetSourceLineNumber(MethodBase methodBase, int ilOffset)
         {
             if (lineNumberTables != null)
             {
-                int token = GetMethodBaseToken(mb);
-                MethodWrapper[] methods = GetMethods();
-                for (int i = 0; i < methods.Length; i++)
-                {
-                    if (GetMethodBaseToken(methods[i].GetMethod()) == token)
-                    {
-                        if (lineNumberTables[i] != null)
-                        {
-                            return new LineNumberTableAttribute(lineNumberTables[i]).GetLineNumber(ilOffset);
-                        }
-                        break;
-                    }
-                }
+                var i = GetMethodIndex(methodBase);
+                if (i > -1 && lineNumberTables[i] != null)
+                    return new LineNumberTableAttribute(lineNumberTables[i]).GetLineNumber(ilOffset);
             }
+
             return -1;
         }
 
@@ -7256,7 +7275,7 @@ namespace IKVM.Internal
                 if (method == null)
                 {
 #if !FIRST_PASS
-					return ikvm.@internal.CallerID.create(null, null);
+                    return ikvm.@internal.CallerID.create(null, null);
 #endif
                 }
                 if (IKVM.Java.Externs.sun.reflect.Reflection.IsHideFromStackWalk(method))
@@ -7273,9 +7292,12 @@ namespace IKVM.Internal
 #if FIRST_PASS
             return null;
 #else
-			return ikvm.@internal.CallerID.create(tw.ClassObject, tw.GetClassLoader().GetJavaClassLoader());
+            return ikvm.@internal.CallerID.create(tw.ClassObject, tw.GetClassLoader().GetJavaClassLoader());
 #endif
         }
     }
+
+
 #endif
+
 }
