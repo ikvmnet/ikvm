@@ -3080,6 +3080,7 @@ sun/security/krb5/auto/W83.java                                                 
 sun/security/krb5/ccache/EmptyCC.java                                                                                   generic-all
 sun/security/krb5/config/dns.sh                                                                                         generic-all
 sun/security/krb5/runNameEquals.sh                                                                                      generic-all
+sun/security/krb5/tools/ktcheck.sh                                                                                      generic-all
 sun/security/mscapi/AccessKeyStore.sh                                                                                   generic-all
 sun/security/mscapi/IsSunMSCAPIAvailable.sh                                                                             generic-all
 sun/security/mscapi/KeyStoreCompatibilityMode.sh                                                                        generic-all
