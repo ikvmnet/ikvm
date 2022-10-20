@@ -2034,6 +2034,7 @@ javax/management/MBeanServer/PostRegisterDeadlockTest.java                      
 javax/management/generified/GenericTest.java                                                                            generic-all
 javax/management/modelmbean/DescriptorSupportSerialTest.java                                                            generic-all
 javax/management/modelmbean/UnserializableTargetObjectTest.java                                                         generic-all
+javax/management/monitor/CounterMonitorTest.java                                                                        generic-all
 javax/management/monitor/GaugeMonitorDeadlockTest.java                                                                  generic-all
 javax/management/monitor/StartStopTest.java                                                                             generic-all
 javax/management/mxbean/GenericArrayTypeTest.java                                                                       generic-all
@@ -2802,6 +2803,7 @@ jdk/lambda/vm/DefaultMethodRegressionTests.java                                 
 jdk/lambda/vm/InterfaceAccessFlagsTest.java                                                                             generic-all
 jdk/lambda/vm/StrictfpDefault.java                                                                                      generic-all
 jdk/net/Sockets/Test.java                                                                                               generic-all
+lib/security/CheckBlacklistedCerts.java                                                                                 generic-all
 lib/security/java.policy/Ext_AllPolicy.sh                                                                               generic-all
 lib/testlibrary/AssertsTest.java                                                                                        generic-all
 lib/testlibrary/OutputAnalyzerReportingTest.java                                                                        generic-all
@@ -2910,6 +2912,7 @@ sun/misc/Version/Version.java                                                   
 sun/net/ftp/MarkResetTest.sh                                                                                            generic-all
 sun/net/www/http/HttpClient/B8025710.java                                                                               generic-all
 sun/net/www/http/HttpClient/IsKeepingAlive.java                                                                         generic-all
+sun/net/www/http/HttpClient/MultiThreadTest.java                                                                        generic-all
 sun/net/www/http/HttpClient/OpenServer.java                                                                             generic-all
 sun/net/www/http/HttpClient/ProxyFromCache.java                                                                         generic-all
 sun/net/www/http/HttpClient/ProxyTest.java                                                                              generic-all
@@ -3115,6 +3118,7 @@ sun/security/provider/certpath/DisabledAlgorithms/CPValidatorEndEntity.java     
 sun/security/provider/certpath/DisabledAlgorithms/CPValidatorIntermediate.java                                          generic-all
 sun/security/provider/certpath/DisabledAlgorithms/CPValidatorTrustAnchor.java                                           generic-all
 sun/security/provider/certpath/ReverseBuilder/BuildPath.java                                                            generic-all
+sun/security/rsa/TestCACerts.java                                                                                       generic-all
 sun/security/ssl/com/sun/net/ssl/SSLSecurity/ProviderTest.java                                                          generic-all
 sun/security/ssl/com/sun/net/ssl/internal/ssl/DHKeyExchange/DHEKeySizing.java                                           generic-all
 sun/security/ssl/com/sun/net/ssl/internal/ssl/EngineArgs/DebugReportsOneExtraByte.sh                                    generic-all
@@ -3323,5 +3327,3 @@ tools/pack200/typeannos/TestTypeAnnotations.java                                
 vm/verifier/TestStaticIF.java                                                                                           generic-all
 vm/verifier/VerifyProtectedConstructor.java                                                                             generic-all
 vm/verifier/defaultMethods/DefaultMethodRegressionTestsRun.java                                                         generic-all
-lib/security/CheckBlacklistedCerts.java                                                                                 generic-all
-sun/security/rsa/TestCACerts.java                                                                                       generic-all
