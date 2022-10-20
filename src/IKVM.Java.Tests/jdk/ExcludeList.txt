@@ -3149,6 +3149,7 @@ sun/security/pkcs12/Bug6415637.java                                             
 sun/security/pkcs12/StorePasswordTest.java                                                                              generic-all
 sun/security/pkcs12/StoreSecretKeyTest.java                                                                             generic-all
 sun/security/pkcs12/StoreTrustedCertTest.java                                                                           generic-all
+sun/security/provider/DSA/TestAlgParameterGenerator.java                                                                generic-all
 sun/security/provider/KeyStore/DKSTest.sh                                                                               generic-all
 sun/security/provider/KeyStore/WrongPassword.java                                                                       generic-all
 sun/security/provider/PolicyFile/EmailAddress.java                                                                      generic-all
