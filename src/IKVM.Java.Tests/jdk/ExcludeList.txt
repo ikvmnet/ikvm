@@ -1145,7 +1145,6 @@ java/lang/Throwable/ChainedExceptions.java                                      
 java/lang/Throwable/LegacyChainedExceptionSerialization.java                                                            generic-all
 java/lang/Throwable/StackTraceSerialization.java                                                                        generic-all
 java/lang/Throwable/SuppressedExceptions.java                                                                           generic-all
-java/lang/Throwable/SuppressedExceptions.java                                                                           generic-all
 java/lang/annotation/AnnotationType/AnnotationTypeDeadlockTest.java                                                     generic-all
 java/lang/annotation/AnnotationType/AnnotationTypeRuntimeAssumptionTest.java                                            generic-all
 java/lang/annotation/ParameterAnnotations.java                                                                          generic-all
