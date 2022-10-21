@@ -1407,12 +1407,14 @@ java/nio/channels/Selector/TemporarySelector.java                               
 java/nio/channels/Selector/WakeupNow.java                                                                               generic-all
 java/nio/channels/Selector/lots_of_updates.sh                                                                           generic-all
 java/nio/channels/SocketChannel/IsConnectable.java                                                                      generic-all
+java/nio/channels/SocketChannel/Open.sh                                                                                 generic-all
 java/nio/channels/SocketChannel/OpenLeak.java                                                                           generic-all
 java/nio/channels/SocketChannel/ShortWrite.java                                                                         generic-all
 java/nio/channels/SocketChannel/SocketInheritance.java                                                                  generic-all
 java/nio/channels/SocketChannel/SocketOptionTests.java                                                                  generic-all
 java/nio/channels/SocketChannel/VectorParams.java                                                                       generic-all
 java/nio/channels/spi/AsynchronousChannelProvider/custom_provider.sh                                                    generic-all
+java/nio/channels/spi/SelectorProvider/inheritedChannel/run_tests.sh                                                    generic-all
 java/nio/charset/Charset/default.sh                                                                                     generic-all
 java/nio/charset/coders/Check.java                                                                                      generic-all
 java/nio/charset/coders/CheckSJISMappingProp.sh                                                                         generic-all
