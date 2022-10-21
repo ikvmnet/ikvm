@@ -382,15 +382,8 @@ namespace IKVM.JTReg.TestAdapter
             // generate a policy file for the test run
             var policyFile = (java.io.File)parameters.getWorkDirectory().getFile("jtreg.policy");
             using (var policyFileStream = new StreamWriter(File.OpenWrite(policyFile.toString())))
-            {
                 foreach (var jarName in new[] { "jtreg.jar", "javatest.jar" })
-                {
-                    var jar = java.nio.file.Paths.get(Path.Combine(JTREG_LIB, jarName));
-                    policyFileStream.WriteLine(@"grant codebase ""{0}"" {{", jar.toUri().toURL().toString());
-                    policyFileStream.WriteLine(@"    permission java.security.AllPermission;");
-                    policyFileStream.WriteLine(@"};");
-                }
-            }
+                    policyFileStream.WriteLine($@"grant codebase ""{java.nio.file.Paths.get(Path.Combine(JTREG_LIB, jarName)).toUri().toURL()}"" {{ permission java.security.AllPermission; }};");
 
             // set parameters on pool
             var pool = JTRegTypes.Agent.Pool.Instance();
