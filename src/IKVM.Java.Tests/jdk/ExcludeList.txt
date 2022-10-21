@@ -3245,9 +3245,11 @@ sun/security/tools/keytool/CloneKeyAskPassword.sh                               
 sun/security/tools/keytool/ListKeychainStore.sh                                                                         generic-all
 sun/security/tools/keytool/NoExtNPE.sh                                                                                  generic-all
 sun/security/tools/keytool/SecretKeyKS.sh                                                                               generic-all
+sun/security/tools/keytool/StandardAlgName.sh                                                                           generic-all
 sun/security/tools/keytool/StorePasswords.java                                                                          generic-all
 sun/security/tools/keytool/StorePasswordsByShell.sh                                                                     generic-all
 sun/security/tools/keytool/autotest.sh                                                                                  generic-all
+sun/security/tools/keytool/console.sh                                                                                   generic-all
 sun/security/tools/keytool/emptysubject.sh                                                                              generic-all
 sun/security/tools/keytool/file-in-help.sh                                                                              generic-all
 sun/security/tools/keytool/importreadall.sh                                                                             generic-all
@@ -3255,6 +3257,7 @@ sun/security/tools/keytool/newhelp.sh                                           
 sun/security/tools/keytool/p12importks.sh                                                                               generic-all
 sun/security/tools/keytool/printssl.sh                                                                                  generic-all
 sun/security/tools/keytool/readjar.sh                                                                                   generic-all
+sun/security/tools/keytool/resource.sh                                                                                  generic-all
 sun/security/tools/keytool/selfissued.sh                                                                                generic-all
 sun/security/tools/keytool/standard.sh                                                                                  generic-all
 sun/security/tools/keytool/trystore.sh                                                                                  generic-all
