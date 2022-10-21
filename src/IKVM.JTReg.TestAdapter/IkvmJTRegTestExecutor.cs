@@ -4,6 +4,7 @@ using System.Collections.Generic;
 using System.Diagnostics;
 using System.IO;
 using System.Linq;
+using System.Reflection;
 using System.Runtime.InteropServices;
 using System.Threading;
 
@@ -51,6 +52,10 @@ namespace IKVM.JTReg.TestAdapter
             // need to do some static configuration on the harness
             if (JTRegTypes.Harness.GetClassDirMethod.invoke(null) == null)
                 JTRegTypes.Harness.SetClassDirMethod.invoke(null, JTRegTypes.ProductInfo.GetJavaTestClassDirMethod.invoke(null));
+
+            // HACK replace zero tests error value with zero tests good
+            var zeroTestsErrorField = JTRegTypes.Harness.Type.GetField("ZERO_TESTS_ERROR", BindingFlags.Static | BindingFlags.NonPublic);
+            zeroTestsErrorField.SetValue(null, true);
         }
 
         CancellationTokenSource cts;
