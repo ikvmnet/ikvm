@@ -1331,6 +1331,7 @@ java/net/Authenticator/Deadlock.java                                            
 java/net/DatagramSocket/B6411513.java                                                                                   generic-all
 java/net/DatagramSocket/InheritHandle.java                                                                              generic-all
 java/net/DatagramSocket/SetDatagramSocketImplFactory/ADatagramSocket.java                                               generic-all
+java/net/InetAddress/ptr/lookup.sh                                                                                      generic-all
 java/net/NetworkInterface/IPv4Only.java                                                                                 generic-all
 java/net/NetworkInterface/Test.java                                                                                     generic-all
 java/net/ProxySelector/B6737819.java                                                                                    generic-all
