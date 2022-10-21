@@ -81,7 +81,7 @@ namespace IKVM.JTReg.TestAdapter
 
         public void finishedTestRun(dynamic self, bool success)
         {
-            frameworkHandle.SendMessage(success ? TestMessageLevel.Informational : TestMessageLevel.Error, $"JTReg: finished test run with overall result '{success}'");
+            frameworkHandle.SendMessage(success ? TestMessageLevel.Informational : TestMessageLevel.Warning, $"JTReg: finished test run with overall result '{success}'");
         }
 
     }

@@ -52,10 +52,6 @@ namespace IKVM.JTReg.TestAdapter
             // need to do some static configuration on the harness
             if (JTRegTypes.Harness.GetClassDirMethod.invoke(null) == null)
                 JTRegTypes.Harness.SetClassDirMethod.invoke(null, JTRegTypes.ProductInfo.GetJavaTestClassDirMethod.invoke(null));
-
-            // HACK replace zero tests error value with zero tests good
-            var zeroTestsErrorField = JTRegTypes.Harness.Type.GetField("ZERO_TESTS_ERROR", BindingFlags.Static | BindingFlags.NonPublic);
-            zeroTestsErrorField.SetValue(null, true);
         }
 
         CancellationTokenSource cts;
@@ -389,7 +385,7 @@ namespace IKVM.JTReg.TestAdapter
             {
                 foreach (var jarName in new[] { "jtreg.jar", "javatest.jar" })
                 {
-                    var jar = java.nio.file.Paths.get(Path.Combine(Path.GetDirectoryName(typeof(IkvmJTRegTestAdapter).Assembly.Location), "jtreg", jarName));
+                    var jar = java.nio.file.Paths.get(Path.Combine(JTREG_LIB, jarName));
                     policyFileStream.WriteLine(@"grant codebase ""{0}"" {{", jar.toUri().toURL().toString());
                     policyFileStream.WriteLine(@"    permission java.security.AllPermission;");
                     policyFileStream.WriteLine(@"};");
@@ -415,13 +411,8 @@ namespace IKVM.JTReg.TestAdapter
                 stats.register(harness);
 
                 // begin harness execution asynchronously, thus allowing potential cancellation
-                harness.start(parameters);
                 cancellationToken.Register(() => harness.stop());
-
-                // wait until canceled or finished and cleanup
-                harness.waitUntilDone();
-                harness.stop();
-                harness.removeObserver(observer);
+                harness.batch(parameters);
             }
             catch (java.lang.InterruptedException)
             {
