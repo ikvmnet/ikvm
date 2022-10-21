@@ -1050,6 +1050,7 @@ java/io/File/Basic.java                                                         
 java/io/File/DeleteOnExit.java                                                                                          generic-all
 java/io/File/DeleteOnExitLong.java                                                                                      generic-all
 java/io/File/DeleteOnExitNPE.java                                                                                       generic-all
+java/io/File/GetAbsolutePath.java                                                                                       generic-all
 java/io/File/MacPathTest.java                                                                                           generic-all
 java/io/File/MaxPathLength.java                                                                                         generic-all
 java/io/File/SetAccess.java                                                                                             generic-all
@@ -3339,6 +3340,7 @@ sun/util/logging/PlatformLoggerTest.java                                        
 sun/util/resources/TimeZone/Bug4640234.java                                                                             generic-all
 tools/jar/ChangeDir.java                                                                                                generic-all
 tools/jar/JarEntryTime.java                                                                                             generic-all
+tools/jar/UpdateManifest.java                                                                                           generic-all
 tools/jar/normalize/TestNormal.java                                                                                     generic-all
 tools/launcher/6842838/Test6842838.sh                                                                                   generic-all
 tools/launcher/Arrrghs.java                                                                                             generic-all
