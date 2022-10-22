@@ -20,7 +20,7 @@ namespace IKVM.JTReg.TestAdapter
     static class Util
     {
 
-        internal const int PARTITION_COUNT = 16;
+        internal const int PARTITION_COUNT = 8;
 
         static readonly SimpleDateFormat TestResultDateFormat = new SimpleDateFormat("EEE MMM dd HH:mm:ss z yyyy", Locale.US);
         static readonly MethodInfo RemainingToListOfTestResultMethod = typeof(IteratorExtensions).GetMethod(nameof(IteratorExtensions.RemainingToList)).MakeGenericMethod(JTRegTypes.TestResult.Type);

@@ -266,14 +266,6 @@ jobs:
         - IKVM.Java.Tests?TestPartition=5
         - IKVM.Java.Tests?TestPartition=6
         - IKVM.Java.Tests?TestPartition=7
-        - IKVM.Java.Tests?TestPartition=8
-        - IKVM.Java.Tests?TestPartition=9
-        - IKVM.Java.Tests?TestPartition=10
-        - IKVM.Java.Tests?TestPartition=11
-        - IKVM.Java.Tests?TestPartition=12
-        - IKVM.Java.Tests?TestPartition=13
-        - IKVM.Java.Tests?TestPartition=14
-        - IKVM.Java.Tests?TestPartition=15
         tfm:
         - net461
         - net472
@@ -348,22 +340,6 @@ jobs:
           tfm: net472
         - run: IKVM.Java.Tests?TestPartition=7
           tfm: net472
-        - run: IKVM.Java.Tests?TestPartition=8
-          tfm: net472
-        - run: IKVM.Java.Tests?TestPartition=9
-          tfm: net472
-        - run: IKVM.Java.Tests?TestPartition=10
-          tfm: net472
-        - run: IKVM.Java.Tests?TestPartition=11
-          tfm: net472
-        - run: IKVM.Java.Tests?TestPartition=12
-          tfm: net472
-        - run: IKVM.Java.Tests?TestPartition=13
-          tfm: net472
-        - run: IKVM.Java.Tests?TestPartition=14
-          tfm: net472
-        - run: IKVM.Java.Tests?TestPartition=15
-          tfm: net472
         - run: IKVM.Java.Tests?TestPartition=0
           sys: linux
         - run: IKVM.Java.Tests?TestPartition=1
@@ -379,22 +355,6 @@ jobs:
         - run: IKVM.Java.Tests?TestPartition=6
           sys: linux
         - run: IKVM.Java.Tests?TestPartition=7
-          sys: linux
-        - run: IKVM.Java.Tests?TestPartition=8
-          sys: linux
-        - run: IKVM.Java.Tests?TestPartition=9
-          sys: linux
-        - run: IKVM.Java.Tests?TestPartition=10
-          sys: linux
-        - run: IKVM.Java.Tests?TestPartition=11
-          sys: linux
-        - run: IKVM.Java.Tests?TestPartition=12
-          sys: linux
-        - run: IKVM.Java.Tests?TestPartition=13
-          sys: linux
-        - run: IKVM.Java.Tests?TestPartition=14
-          sys: linux
-        - run: IKVM.Java.Tests?TestPartition=15
           sys: linux
     name: Test IKVM (${{ matrix.run }}:${{ matrix.tfm }}:${{ matrix.sys }}
     needs:
