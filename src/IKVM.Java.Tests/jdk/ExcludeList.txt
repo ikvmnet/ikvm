@@ -1407,6 +1407,7 @@ java/nio/channels/Selector/TemporarySelector.java                               
 java/nio/channels/Selector/WakeupNow.java                                                                               generic-all
 java/nio/channels/Selector/lots_of_updates.sh                                                                           generic-all
 java/nio/channels/SocketChannel/IsConnectable.java                                                                      generic-all
+java/nio/channels/SocketChannel/Open.java                                                                               generic-all
 java/nio/channels/SocketChannel/Open.sh                                                                                 generic-all
 java/nio/channels/SocketChannel/OpenLeak.java                                                                           generic-all
 java/nio/channels/SocketChannel/ShortWrite.java                                                                         generic-all
