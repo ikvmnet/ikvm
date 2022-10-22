@@ -2951,6 +2951,7 @@ sun/management/jmxremote/bootstrap/RmiRegistrySslTest.sh                        
 sun/management/jmxremote/bootstrap/RmiSslNoKeyStoreTest.sh                                                              generic-all
 sun/management/jmxremote/bootstrap/SSLConfigFilePermissionTest.sh                                                       generic-all
 sun/management/jmxremote/startstop/JMXStartStopTest.java                                                                generic-all
+sun/misc/Cleaner/exitOnThrow.sh                                                                                         generic-all
 sun/misc/CopyMemory.java                                                                                                generic-all
 sun/misc/EscapePath.java                                                                                                generic-all
 sun/misc/JarIndex/JarIndexMergeForClassLoaderTest.java                                                                  generic-all
