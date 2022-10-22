@@ -1204,6 +1204,7 @@ java/lang/instrument/RemoveTransformerTest.java                                 
 java/lang/instrument/RetransformAgent.java                                                                              generic-all
 java/lang/instrument/RetransformBigClass.sh                                                                             generic-all
 java/lang/instrument/SingleTransformerTest.java                                                                         generic-all
+java/lang/instrument/StressGetObjectSizeTest.sh                                                                         generic-all
 java/lang/instrument/TransformMethodTest.java                                                                           generic-all
 java/lang/instrument/TransformerManagementThreadAddTests.java                                                           generic-all
 java/lang/instrument/TransformerManagementThreadRemoveTests.java                                                        generic-all
@@ -1354,6 +1355,7 @@ java/net/URLClassLoader/closetest/CloseTest.java                                
 java/net/URLClassLoader/closetest/GetResourceAsStream.java                                                              generic-all
 java/net/URLClassLoader/getresourceasstream/test.sh                                                                     generic-all
 java/net/URLClassLoader/sealing/CheckSealed.java                                                                        generic-all
+java/net/URLConnection/UNCTest.sh                                                                                       generic-all
 java/net/URLPermission/OpenURL.java                                                                                     generic-all
 java/net/URLPermission/URLTest.java                                                                                     generic-all
 java/net/URLPermission/nstest/lookup.sh                                                                                 generic-all
