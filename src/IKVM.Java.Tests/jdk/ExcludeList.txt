@@ -1207,6 +1207,8 @@ java/lang/instrument/SingleTransformerTest.java                                 
 java/lang/instrument/TransformMethodTest.java                                                                           generic-all
 java/lang/instrument/TransformerManagementThreadAddTests.java                                                           generic-all
 java/lang/instrument/TransformerManagementThreadRemoveTests.java                                                        generic-all
+java/lang/instrument/VerifyLocalVariableTableOnRetransformTest.java                                                     generic-all
+java/lang/instrument/VerifyLocalVariableTableOnRetransformTest.sh                                                       generic-all
 java/lang/instrument/appendToClassLoaderSearch/CircularityErrorTest.sh                                                  generic-all
 java/lang/instrument/appendToClassLoaderSearch/ClassUnloadTest.sh                                                       generic-all
 java/lang/instrument/appendToClassLoaderSearch/run_tests.sh                                                             generic-all
