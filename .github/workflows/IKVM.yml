@@ -136,11 +136,11 @@ jobs:
       shell: pwsh
       run: Add-Content $env:GITHUB_ENV "`nDOTNET_INSTALL_DIR=${{ runner.temp }}\dotnet"
     - name: Setup .NET 3.1
-      uses: actions/setup-dotnet@v2
+      uses: actions/setup-dotnet@v3
       with:
         dotnet-version: 3.1.x
     - name: Setup .NET 6.0
-      uses: actions/setup-dotnet@v2
+      uses: actions/setup-dotnet@v3
       with:
         dotnet-version: 6.0.x
     - name: Move Temporary Directory
