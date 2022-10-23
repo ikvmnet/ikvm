@@ -258,14 +258,14 @@ jobs:
         - IKVM.MSBuild.Tests
         - IKVM.NET.Sdk.Tests
         - IKVM.JTReg.TestAdapter.Tests
-        - IKVM.Java.Tests?TestPartition=0
-        - IKVM.Java.Tests?TestPartition=1
-        - IKVM.Java.Tests?TestPartition=2
-        - IKVM.Java.Tests?TestPartition=3
-        - IKVM.Java.Tests?TestPartition=4
-        - IKVM.Java.Tests?TestPartition=5
-        - IKVM.Java.Tests?TestPartition=6
-        - IKVM.Java.Tests?TestPartition=7
+        - IKVM.OpenJDK.Tests?TestPartition=0
+        - IKVM.OpenJDK.Tests?TestPartition=1
+        - IKVM.OpenJDK.Tests?TestPartition=2
+        - IKVM.OpenJDK.Tests?TestPartition=3
+        - IKVM.OpenJDK.Tests?TestPartition=4
+        - IKVM.OpenJDK.Tests?TestPartition=5
+        - IKVM.OpenJDK.Tests?TestPartition=6
+        - IKVM.OpenJDK.Tests?TestPartition=7
         tfm:
         - net461
         - net472
@@ -324,37 +324,37 @@ jobs:
           tfm: net48
         - run: ikvmc.Tests
           tfm: net6.0
-        - run: IKVM.Java.Tests?TestPartition=0
+        - run: IKVM.OpenJDK.Tests?TestPartition=0
           tfm: net472
-        - run: IKVM.Java.Tests?TestPartition=1
+        - run: IKVM.OpenJDK.Tests?TestPartition=1
           tfm: net472
-        - run: IKVM.Java.Tests?TestPartition=2
+        - run: IKVM.OpenJDK.Tests?TestPartition=2
           tfm: net472
-        - run: IKVM.Java.Tests?TestPartition=3
+        - run: IKVM.OpenJDK.Tests?TestPartition=3
           tfm: net472
-        - run: IKVM.Java.Tests?TestPartition=4
+        - run: IKVM.OpenJDK.Tests?TestPartition=4
           tfm: net472
-        - run: IKVM.Java.Tests?TestPartition=5
+        - run: IKVM.OpenJDK.Tests?TestPartition=5
           tfm: net472
-        - run: IKVM.Java.Tests?TestPartition=6
+        - run: IKVM.OpenJDK.Tests?TestPartition=6
           tfm: net472
-        - run: IKVM.Java.Tests?TestPartition=7
+        - run: IKVM.OpenJDK.Tests?TestPartition=7
           tfm: net472
-        - run: IKVM.Java.Tests?TestPartition=0
+        - run: IKVM.OpenJDK.Tests?TestPartition=0
           sys: linux
-        - run: IKVM.Java.Tests?TestPartition=1
+        - run: IKVM.OpenJDK.Tests?TestPartition=1
           sys: linux
-        - run: IKVM.Java.Tests?TestPartition=2
+        - run: IKVM.OpenJDK.Tests?TestPartition=2
           sys: linux
-        - run: IKVM.Java.Tests?TestPartition=3
+        - run: IKVM.OpenJDK.Tests?TestPartition=3
           sys: linux
-        - run: IKVM.Java.Tests?TestPartition=4
+        - run: IKVM.OpenJDK.Tests?TestPartition=4
           sys: linux
-        - run: IKVM.Java.Tests?TestPartition=5
+        - run: IKVM.OpenJDK.Tests?TestPartition=5
           sys: linux
-        - run: IKVM.Java.Tests?TestPartition=6
+        - run: IKVM.OpenJDK.Tests?TestPartition=6
           sys: linux
-        - run: IKVM.Java.Tests?TestPartition=7
+        - run: IKVM.OpenJDK.Tests?TestPartition=7
           sys: linux
     name: Test IKVM (${{ matrix.run }}:${{ matrix.tfm }}:${{ matrix.sys }}
     needs:

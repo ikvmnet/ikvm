@@ -85,7 +85,7 @@ Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "javac", "src\javac\javac.ms
 EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "java", "src\java\java.csproj", "{4F7D51D0-F52D-46EF-94DF-C4081587FBB4}"
 EndProject
-Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "IKVM.Java.Tests", "src\IKVM.Java.Tests\IKVM.Java.Tests.csproj", "{32C0A6DA-5A2D-40FE-91B0-0B341FB1D4FD}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "IKVM.OpenJDK.Tests", "src\IKVM.OpenJDK.Tests\IKVM.OpenJDK.Tests.csproj", "{32C0A6DA-5A2D-40FE-91B0-0B341FB1D4FD}"
 EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "IKVM.JTReg.TestAdapter", "src\IKVM.JTReg.TestAdapter\IKVM.JTReg.TestAdapter.csproj", "{4A119F2F-6128-4D6C-B8D1-CE874CACCCC7}"
 EndProject
