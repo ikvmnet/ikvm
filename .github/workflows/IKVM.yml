@@ -391,6 +391,7 @@ jobs:
       run: ri tests.tar.gz
       working-directory: dist
     - name: Execute Tests
+      timeout-minutes: 60
       shell: pwsh
       run: |
         # assign powershell variables
