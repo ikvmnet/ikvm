@@ -366,7 +366,7 @@ jobs:
       uses: Vampire/setup-wsl@v1
     - name: Setup .NET
       shell: pwsh
-      run: Add-Content $env:GITHUB_ENV "`nDOTNET_INSTALL_DIR=${{ runner.temp }}\dotnet"
+      run: Add-Content $env:GITHUB_ENV "`nDOTNET_INSTALL_DIR=${{ runner.temp }}/dotnet"
     - name: Setup .NET 3.1
       uses: actions/setup-dotnet@v3
       with:
