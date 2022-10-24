@@ -324,6 +324,8 @@ jobs:
           tfm: net48
         - run: ikvmc.Tests
           tfm: net6.0
+        - run: IKVM.JTReg.TestAdapter.Tests
+          tfm: net472
         - run: IKVM.OpenJDK.Tests?TestPartition=0
           tfm: net472
         - run: IKVM.OpenJDK.Tests?TestPartition=1
