@@ -4,7 +4,9 @@ on:
   push:
     branches:
     - main
+    - hotfix/*
     - develop
+    - release/*
   pull_request:
     branches:
     - main
