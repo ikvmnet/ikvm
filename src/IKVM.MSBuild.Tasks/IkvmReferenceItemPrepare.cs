@@ -3,6 +3,8 @@ using System.Collections.Generic;
 using System.IO;
 using System.Linq;
 using System.Reflection;
+using System.Reflection.Metadata;
+using System.Reflection.PortableExecutable;
 using System.Security.Cryptography;
 using System.Text;
 
@@ -336,13 +338,13 @@ namespace IKVM.MSBuild.Tasks
             var manifest = new StringWriter();
             manifest.WriteLine("ToolVersion={0}", ToolVersion);
             manifest.WriteLine("TargetFramework={0}", TargetFramework);
-            manifest.WriteLine("RuntimeAssembly={0}", GetHashForFile(RuntimeAssembly));
+            manifest.WriteLine("RuntimeAssembly={0}", GetIdentityForFile(RuntimeAssembly));
             manifest.WriteLine("AssemblyName={0}", item.AssemblyName);
             manifest.WriteLine("AssemblyVersion={0}", item.AssemblyVersion);
             manifest.WriteLine("AssemblyFileVersion={0}", item.AssemblyFileVersion);
             manifest.WriteLine("ClassLoader={0}", item.ClassLoader);
             manifest.WriteLine("Debug={0}", item.Debug ? "true" : "false");
-            manifest.WriteLine("KeyFile={0}", string.IsNullOrWhiteSpace(item.KeyFile) == false ? GetHashForFile(item.KeyFile) : "");
+            manifest.WriteLine("KeyFile={0}", string.IsNullOrWhiteSpace(item.KeyFile) == false ? GetIdentityForFile(item.KeyFile) : "");
             manifest.WriteLine("DelaySign={0}", item.DelaySign ? "true" : "false");
 
             // each Compile item should be a jar or class file
@@ -396,7 +398,7 @@ namespace IKVM.MSBuild.Tasks
         /// </summary>
         /// <param name="file"></param>
         /// <returns></returns>
-        string GetHashForFile(string file)
+        string GetIdentityForFile(string file)
         {
             if (string.IsNullOrWhiteSpace(file))
                 throw new ArgumentException($"'{nameof(file)}' cannot be null or whitespace.", nameof(file));
@@ -415,6 +417,11 @@ namespace IKVM.MSBuild.Tasks
                 if (File.ReadAllText(md5File) is string h)
                     return h.Trim();
 
+            // if the file is potentially a .NET assembly
+            if (Path.GetExtension(file) == ".dll" || Path.GetExtension(file) == ".exe")
+                if (TryGetIdentityForAssembly(file) is string h)
+                    return h;
+
             using var stm = File.OpenRead(file);
             var hsh = md5.ComputeHash(stm);
             var bld = new StringBuilder(hsh.Length * 2);
@@ -422,6 +429,27 @@ namespace IKVM.MSBuild.Tasks
                 bld.Append(b.ToString("x2"));
 
             return bld.ToString();
+        }
+
+        /// <summary>
+        /// Attempts to get an identity value for a file that might be an assembly.
+        /// </summary>
+        /// <param name="file"></param>
+        /// <returns></returns>
+        string TryGetIdentityForAssembly(string file)
+        {
+            try
+            {
+                using var fsstm = new FileStream(file, FileMode.Open, FileAccess.Read, FileShare.Read);
+                using var perdr = new PEReader(fsstm);
+                var mrdr = perdr.GetMetadataReader();
+                var mvid = mrdr.GetGuid(mrdr.GetModuleDefinition().Mvid);
+                return $"MVID:{mvid}";
+            }
+            catch
+            {
+                return null;
+            }
         }
 
         /// <summary>
@@ -437,7 +465,7 @@ namespace IKVM.MSBuild.Tasks
             if (File.Exists(path) == false)
                 throw new FileNotFoundException($"Cannot generate hash for missing file '{path}' on '{item.ItemSpec}'.");
 
-            return $"Compile={GetHashForFile(path)}";
+            return $"Compile={GetIdentityForFile(path)}";
         }
 
         /// <summary>
@@ -460,7 +488,7 @@ namespace IKVM.MSBuild.Tasks
             if (File.Exists(reference.ItemSpec) == false)
                 throw new FileNotFoundException($"Could not find reference file '{reference.ItemSpec}'.");
 
-            return $"Reference={GetHashForFile(reference.ItemSpec)}";
+            return $"Reference={GetIdentityForFile(reference.ItemSpec)}";
         }
 
         /// <summary>
