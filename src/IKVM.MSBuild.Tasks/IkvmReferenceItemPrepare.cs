@@ -403,6 +403,18 @@ namespace IKVM.MSBuild.Tasks
             if (File.Exists(file) == false)
                 throw new FileNotFoundException($"Could not find file '{file}'.");
 
+            // file might have a companion SHA1 hash, let's use it, no calculation required
+            var sha1File = file + ".sha1";
+            if (File.Exists(sha1File))
+                if (File.ReadAllText(sha1File) is string h)
+                    return h.Trim();
+
+            // file might have a companion MD5 hash, let's use it, no calculation required
+            var md5File = file + ".md5";
+            if (File.Exists(md5File))
+                if (File.ReadAllText(md5File) is string h)
+                    return h.Trim();
+
             using var stm = File.OpenRead(file);
             var hsh = md5.ComputeHash(stm);
             var bld = new StringBuilder(hsh.Length * 2);
