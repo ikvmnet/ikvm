@@ -2,7 +2,7 @@ DO NOT TRANSLATE OR LOCALIZE.
 -----------------------------
 
 %% This notice is provided with respect to ASM Bytecode Manipulation 
-Framework v5.0, which may be included with JRE 8, and JDK 8, and 
+Framework v5.0.3, which may be included with JRE 8, and JDK 8, and 
 OpenJDK 8.
 
 --- begin of LICENSE ---
@@ -1250,7 +1250,7 @@ included with JDK 8 and OpenJDK 8 source distributions.
 
 -------------------------------------------------------------------------------
 
-%% This notice is provided with respect to libpng 1.5.4, which may be 
+%% This notice is provided with respect to libpng 1.6.16, which may be
 included with JRE 8, JDK 8, and OpenJDK 8.
 
 --- begin of LICENSE ---
@@ -1266,8 +1266,8 @@ this sentence.
 
 This code is released under the libpng license.
 
-libpng versions 1.2.6, August 15, 2004, through 1.5.4, July 7, 2011, are
-Copyright (c) 2004, 2006-2011 Glenn Randers-Pehrson, and are
+libpng versions 1.2.6, August 15, 2004, through 1.6.16, December 22, 2014, are
+Copyright (c) 2004, 2006-2014 Glenn Randers-Pehrson, and are
 distributed according to the same disclaimer and license as libpng-1.2.5
 with the following individual added to the list of Contributing Authors
 
@@ -1364,7 +1364,7 @@ certification mark of the Open Source Initiative.
 
 Glenn Randers-Pehrson
 glennrp at users.sourceforge.net
-July 7, 2011
+December 22, 2014
 
 --- end of LICENSE ---
 
@@ -1399,13 +1399,13 @@ THE SOFTWARE.
 
 -------------------------------------------------------------------------------
 
-%% This notice is provided with respect to Little CMS 2.4, which may be 
+%% This notice is provided with respect to Little CMS 2.5, which may be 
 included with JRE 8, JDK 8, and OpenJDK 8.
 
 --- begin of LICENSE ---
 
 Little CMS
-Copyright (c) 1998-2010 Marti Maria Saguer
+Copyright (c) 1998-2011 Marti Maria Saguer
 
 Permission is hereby granted, free of charge, to any person obtaining a copy
 of this software and associated documentation files (the "Software"), to deal
@@ -1471,7 +1471,7 @@ source code repository. It is licensed under Mozilla Public License (MPL),
 version 2.0.
 
 The NSS libraries are supplied in executable form, built from unmodified
-NSS source code labeled with the "NSS_3.13.1_RTM" release tag.
+NSS source code labeled with the "NSS_3_16_RTM" HG tag.
 
 The NSS source code is available in the OpenJDK source code repository at:
     jdk/test/sun/security/pkcs11/nss/src
@@ -3349,14 +3349,14 @@ info@urwpp.de or design@bigelowandholmes.com
 
 -------------------------------------------------------------------------------
 
-%% This notice is provided with respect to zlib v1.2.5, which may be included 
+%% This notice is provided with respect to zlib v1.2.8, which may be included 
 with JRE 8, JDK 8, and OpenJDK 8.
 
 --- begin of LICENSE ---
 
-  version 1.2.5, July 18th, 2005
+  version 1.2.8, April 28th, 2013
 
-  Copyright (C) 1995-2005 Jean-loup Gailly and Mark Adler
+  Copyright (C) 1995-2013 Jean-loup Gailly and Mark Adler
 
   This software is provided 'as-is', without any express or implied
   warranty.  In no event will the authors be held liable for any damages
@@ -3382,11 +3382,11 @@ with JRE 8, JDK 8, and OpenJDK 8.
 -------------------------------------------------------------------------------
 
 %% This notice is provided with respect to the following which may be 
-included with JRE 8, JDK 8, and OpenJDK 8, except where noted:
+included with JRE 8, JDK 8, and OpenJDK 8.
 
-  Apache Commons Math 2.2
-  Apache Derby 10.10.1.2        [included with JDK 8]
-  Apache Jakarta BCEL 5.2 
+  Apache Commons Math 3.2
+  Apache Derby 10.11.1.2
+  Apache Jakarta BCEL 5.1 
   Apache Jakarta Regexp 1.4 
   Apache Santuario XML Security for Java 1.5.4
   Apache Xalan-Java 2.7.1 
