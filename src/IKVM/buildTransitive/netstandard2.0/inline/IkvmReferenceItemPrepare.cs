@@ -572,13 +572,13 @@ namespace IKVM.MSBuild.Tasks
             var manifest = new StringWriter();
             manifest.WriteLine("ToolVersion={0}", ToolVersion);
             manifest.WriteLine("ToolFramework={0}", ToolFramework);
-            manifest.WriteLine("RuntimeAssembly={0}", GetHashForFile(RuntimeAssembly));
+            manifest.WriteLine("RuntimeAssembly={0}", GetIdentityForFile(RuntimeAssembly));
             manifest.WriteLine("AssemblyName={0}", item.AssemblyName);
             manifest.WriteLine("AssemblyVersion={0}", item.AssemblyVersion);
             manifest.WriteLine("AssemblyFileVersion={0}", item.AssemblyFileVersion);
             manifest.WriteLine("ClassLoader={0}", item.ClassLoader);
             manifest.WriteLine("Debug={0}", item.Debug ? "true" : "false");
-            manifest.WriteLine("KeyFile={0}", string.IsNullOrWhiteSpace(item.KeyFile) == false ? GetHashForFile(item.KeyFile) : "");
+            manifest.WriteLine("KeyFile={0}", string.IsNullOrWhiteSpace(item.KeyFile) == false ? GetIdentityForFile(item.KeyFile) : "");
             manifest.WriteLine("DelaySign={0}", item.DelaySign ? "true" : "false");
 
             // each Compile item should be a jar or class file
@@ -632,12 +632,24 @@ namespace IKVM.MSBuild.Tasks
         /// </summary>
         /// <param name="file"></param>
         /// <returns></returns>
-        string GetHashForFile(string file)
+        string GetIdentityForFile(string file)
         {
             if (string.IsNullOrWhiteSpace(file))
                 throw new ArgumentException($"'{nameof(file)}' cannot be null or whitespace.", nameof(file));
             if (File.Exists(file) == false)
                 throw new FileNotFoundException($"Could not find file '{file}'.");
+
+            // file might have a companion SHA1 hash, let's use it, no calculation required
+            var sha1File = file + ".sha1";
+            if (File.Exists(sha1File))
+                if (File.ReadAllText(sha1File) is string h)
+                    return h.Trim();
+
+            // file might have a companion MD5 hash, let's use it, no calculation required
+            var md5File = file + ".md5";
+            if (File.Exists(md5File))
+                if (File.ReadAllText(md5File) is string h)
+                    return h.Trim();
 
             using var stm = File.OpenRead(file);
             var hsh = md5.ComputeHash(stm);
@@ -661,7 +673,7 @@ namespace IKVM.MSBuild.Tasks
             if (File.Exists(path) == false)
                 throw new FileNotFoundException($"Cannot generate hash for missing file '{path}' on '{item.ItemSpec}'.");
 
-            return $"Compile={GetHashForFile(path)}";
+            return $"Compile={GetIdentityForFile(path)}";
         }
 
         /// <summary>
@@ -684,7 +696,7 @@ namespace IKVM.MSBuild.Tasks
             if (File.Exists(reference.ItemSpec) == false)
                 throw new FileNotFoundException($"Could not find reference file '{reference.ItemSpec}'.");
 
-            return $"Reference={GetHashForFile(reference.ItemSpec)}";
+            return $"Reference={GetIdentityForFile(reference.ItemSpec)}";
         }
 
         /// <summary>
