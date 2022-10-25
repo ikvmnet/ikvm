@@ -7,6 +7,7 @@ using System.Reflection.Metadata;
 using System.Reflection.PortableExecutable;
 using System.Security.Cryptography;
 using System.Text;
+using System.Text.RegularExpressions;
 
 using IKVM.Util.Jar;
 using IKVM.Util.Modules;
@@ -457,13 +458,13 @@ namespace IKVM.MSBuild.Tasks
             var sha1File = file + ".sha1";
             if (File.Exists(sha1File))
                 if (File.ReadAllText(sha1File) is string h)
-                    return h.Trim();
+                    return $"SHA1:{Regex.Match(h.Trim(), @"^([\w\-]+)").Value}";
 
             // file might have a companion MD5 hash, let's use it, no calculation required
             var md5File = file + ".md5";
             if (File.Exists(md5File))
                 if (File.ReadAllText(md5File) is string h)
-                    return h.Trim();
+                    return $"MD5:{Regex.Match(h.Trim(), @"^([\w\-]+)").Value}";
 
             // if the file is potentially a .NET assembly
             if (Path.GetExtension(file) == ".dll" || Path.GetExtension(file) == ".exe")
