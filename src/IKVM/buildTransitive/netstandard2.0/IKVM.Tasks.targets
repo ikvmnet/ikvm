@@ -82,6 +82,7 @@
         <ItemGroup>
             <FileWrites Include="%(IkvmReferenceItem.StagePath)" />
             <FileWrites Include="%(IkvmReferenceItem.StagePath).rsp" />
+            <FileWrites Include="%(IkvmReferenceItem.StagePath).log" />
         </ItemGroup>
     </Target>
 
