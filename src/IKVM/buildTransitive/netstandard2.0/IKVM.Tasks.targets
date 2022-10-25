@@ -33,6 +33,7 @@
         <IkvmCompiler
             ToolPath="$(IkvmCompilerToolPath)"
             ToolFramework="$(IkvmToolFramework)"
+            LogFile="%(IkvmReferenceItem.StagePath).log"
             ResponseFile="%(IkvmReferenceItem.StagePath).rsp"
             Output="%(IkvmReferenceItem.StagePath)"
             Assembly="%(IkvmReferenceItem.AssemblyName)"
@@ -64,9 +65,24 @@
             OverwriteReadOnlyFiles="true"
             Condition="Exists('%(IkvmReferenceItem.StageSymbolsPath)')"/>
 
+        <!-- Copy the response file to the cache path. -->
+        <Copy
+            SourceFiles="%(IkvmReferenceItem.StagePath).rsp"
+            DestinationFiles="%(IkvmReferenceItem.CachePath).rsp"
+            OverwriteReadOnlyFiles="true"
+            Condition="Exists('%(IkvmReferenceItem.StagePath).rsp')"/>
+
+        <!-- Copy the log file to the cache path. -->
+        <Copy
+            SourceFiles="%(IkvmReferenceItem.StagePath).log"
+            DestinationFiles="%(IkvmReferenceItem.CachePath).log"
+            OverwriteReadOnlyFiles="true"
+            Condition="Exists('%(IkvmReferenceItem.StagePath).log')"/>
+
         <ItemGroup>
             <FileWrites Include="%(IkvmReferenceItem.StagePath)" />
             <FileWrites Include="%(IkvmReferenceItem.StagePath).rsp" />
+            <FileWrites Include="%(IkvmReferenceItem.StagePath).log" />
         </ItemGroup>
     </Target>
 
