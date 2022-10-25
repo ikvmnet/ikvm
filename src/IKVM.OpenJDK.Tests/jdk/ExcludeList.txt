@@ -666,6 +666,7 @@ java/awt/event/InputEvent/EventWhenTest/EventWhenTest.java                      
 java/awt/event/InvocationEvent/InvocationEventTest.java                                                                 generic-all
 java/awt/event/KeyEvent/8020209/bug8020209.java                                                                         generic-all
 java/awt/event/KeyEvent/AcceleratorTest/AcceleratorTest.java                                                            generic-all
+java/awt/event/KeyEvent/AltCharAcceleratorTest/AltCharAcceleratorTest.java                                              generic-all
 java/awt/event/KeyEvent/CorrectTime/CorrectTime.java                                                                    generic-all
 java/awt/event/KeyEvent/DeadKey/DeadKeyMacOSXInputText.java                                                             generic-all
 java/awt/event/KeyEvent/DeadKey/DeadKeySystemAssertionDialog.java                                                       generic-all
