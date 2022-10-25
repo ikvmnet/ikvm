@@ -4,7 +4,9 @@ on:
   push:
     branches:
     - main
+    - hotfix/*
     - develop
+    - release/*
   pull_request:
     branches:
     - main
@@ -97,7 +99,7 @@ jobs:
         files: jtreg/build/stamp
     - name: Build OpenJDK Test Harness
       if: steps.jtreg-build-stamp.outputs.files_exists != 'true'
-      run: patch -p1 -f < ../jtreg.patch && bash make/build-all.sh `realpath ../openjdk/build/linux-x86_64-normal-server-release/images/j2sdk-image` && touch build/stamp
+      run: bash make/build-all.sh `realpath ../openjdk/build/linux-x86_64-normal-server-release/images/j2sdk-image` && touch build/stamp
       working-directory: jtreg
     - name: Package OpenJDK Test Harness
       run: zip -r jtreg-build.zip build
