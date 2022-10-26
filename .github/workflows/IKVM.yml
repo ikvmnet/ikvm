@@ -205,11 +205,14 @@ jobs:
       with:
         name: msbuild.binlog
         path: msbuild.binlog
+    - name: Package NuGet Packages
+      run: tar czvf C:\nuget.tar.gz nuget
+      working-directory: dist
     - name: Upload NuGet Packages
       uses: actions/upload-artifact@v3
       with:
         name: nuget
-        path: dist/nuget/*.nupkg
+        path: C:\nuget.tar.gz
     - name: Package Binaries
       run: tar czvf C:\bin.tar.gz bin
       working-directory: dist
@@ -455,7 +458,10 @@ jobs:
       uses: actions/download-artifact@v3
       with:
         name: nuget
-        path: dist/nuget
+        path: dist
+    - name: Restore NuGet Packages
+      run: tar xzvf nuget.tar.gz
+      working-directory: dist
     - name: Download Binaries
       uses: actions/download-artifact@v3
       with:
