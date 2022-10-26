@@ -370,6 +370,7 @@ java/awt/Frame/InitialMaximizedTest/InitialMaximizedTest.java                   
 java/awt/Frame/InvisibleOwner/InvisibleOwner.java                                                                       generic-all
 java/awt/Frame/LayoutOnMaximizeTest/LayoutOnMaximizeTest.java                                                           generic-all
 java/awt/Frame/MaximizedByPlatform/MaximizedByPlatform.java                                                             generic-all
+java/awt/Frame/MaximizedNormalBoundsUndecoratedTest/MaximizedNormalBoundsUndecoratedTest.java                           generic-all
 java/awt/Frame/MaximizedToIconified/MaximizedToIconified.java                                                           generic-all
 java/awt/Frame/MaximizedToMaximized/MaximizedToMaximized.java                                                           generic-all
 java/awt/Frame/ResizeAfterSetFont/ResizeAfterSetFont.java                                                               generic-all
@@ -2666,6 +2667,7 @@ javax/swing/JTree/8003830/bug8003830.java                                       
 javax/swing/JTree/8004298/bug8004298.java                                                                               generic-all
 javax/swing/JTree/8013571/Test8013571.java                                                                              generic-all
 javax/swing/JTree/8038113/bug8038113.java                                                                               generic-all
+javax/swing/JTree/8072676/TreeClipTest.java                                                                             generic-all
 javax/swing/JViewport/6953396/bug6953396.java                                                                           generic-all
 javax/swing/JViewport/7107099/bug7107099.java                                                                           generic-all
 javax/swing/KeyboardManager/8013370/Test8013370.java                                                                    generic-all
