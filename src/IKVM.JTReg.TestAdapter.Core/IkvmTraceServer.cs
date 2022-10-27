@@ -6,10 +6,7 @@ using System.Net.Sockets;
 using System.Text.Json;
 using System.Threading.Tasks;
 
-using Microsoft.VisualStudio.TestPlatform.ObjectModel.Adapter;
-using Microsoft.VisualStudio.TestPlatform.ObjectModel.Logging;
-
-namespace IKVM.JTReg.TestAdapter
+namespace IKVM.JTReg.TestAdapter.Core
 {
 
     /// <summary>
@@ -19,17 +16,17 @@ namespace IKVM.JTReg.TestAdapter
     {
 
         readonly object syncRoot = new object();
-        readonly IFrameworkHandle2 frameworkHandle;
+        readonly IJTRegExecutionContext context;
         TcpListener listener;
 
         /// <summary>
         /// Initializes a new instance.
         /// </summary>
-        /// <param name="frameworkHandle"></param>
+        /// <param name="context"></param>
         /// <exception cref="ArgumentNullException"></exception>
-        public IkvmTraceServer(IFrameworkHandle2 frameworkHandle)
+        public IkvmTraceServer(IJTRegExecutionContext context)
         {
-            this.frameworkHandle = frameworkHandle ?? throw new ArgumentNullException(nameof(frameworkHandle));
+            this.context = context ?? throw new ArgumentNullException(nameof(context));
         }
 
         /// <summary>
@@ -89,7 +86,7 @@ namespace IKVM.JTReg.TestAdapter
                 }
                 catch (Exception e)
                 {
-                    frameworkHandle.SendMessage(TestMessageLevel.Error, $"Exception accepting TCP socket for trace.\n{e}");
+                    context.SendMessage(JTRegTestMessageLevel.Error, $"Exception accepting TCP socket for trace.\n{e}");
                 }
 
                 listener.BeginAcceptSocket(OnAcceptSocket, null);
@@ -126,7 +123,7 @@ namespace IKVM.JTReg.TestAdapter
                 }
                 catch (Exception e)
                 {
-                    frameworkHandle.SendMessage(TestMessageLevel.Error, $"Exception reading socket for Trace.\n{e}");
+                    context.SendMessage(JTRegTestMessageLevel.Error, $"Exception reading socket for Trace.\n{e}");
                     break;
                 }
 
@@ -196,7 +193,7 @@ namespace IKVM.JTReg.TestAdapter
             }
             catch (Exception e)
             {
-                frameworkHandle.SendMessage(TestMessageLevel.Error, $"Exception reading message for trace.\n{e}");
+                context.SendMessage(JTRegTestMessageLevel.Error, $"Exception reading message for trace.\n{e}");
             }
         }
 
@@ -209,11 +206,11 @@ namespace IKVM.JTReg.TestAdapter
             try
             {
                 if (@event.ProcessId > 0)
-                    frameworkHandle.AttachDebuggerToProcess(@event.ProcessId);
+                    context.AttachDebuggerToProcess(@event.ProcessId);
             }
             catch (Exception e)
             {
-                frameworkHandle.SendMessage(TestMessageLevel.Error, $"Exception handling IKVM start event for trace.\n{e}");
+                context.SendMessage(JTRegTestMessageLevel.Error, $"Exception handling IKVM start event for trace.\n{e}");
             }
         }
 

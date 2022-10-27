@@ -2,9 +2,7 @@
 
 using java.io;
 
-using Microsoft.VisualStudio.TestPlatform.ObjectModel.Logging;
-
-namespace IKVM.JTReg.TestAdapter
+namespace IKVM.JTReg.TestAdapter.Core
 {
 
     /// <summary>
@@ -13,15 +11,15 @@ namespace IKVM.JTReg.TestAdapter
     class MessageLoggerWriter : Writer
     {
 
-        readonly IMessageLogger logger;
-        readonly TestMessageLevel messageLevel;
+        readonly IJTRegLoggerContext logger;
+        readonly JTRegTestMessageLevel messageLevel;
 
         /// <summary>
         /// Initializes a new instance.
         /// </summary>
         /// <param name="logger"></param>
         /// <param name="messageLevel"></param>
-        public MessageLoggerWriter(IMessageLogger logger, TestMessageLevel messageLevel)
+        public MessageLoggerWriter(IJTRegLoggerContext logger, JTRegTestMessageLevel messageLevel)
         {
             this.logger = logger ?? throw new ArgumentNullException(nameof(logger));
             this.messageLevel = messageLevel;

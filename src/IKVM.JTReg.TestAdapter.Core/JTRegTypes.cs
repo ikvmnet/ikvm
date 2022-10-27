@@ -1,5 +1,4 @@
-﻿using System.Configuration;
-using System.IO;
+﻿using System.IO;
 using System.Linq;
 
 using java.lang;
@@ -8,13 +7,13 @@ using java.net;
 
 using Type = System.Type;
 
-namespace IKVM.JTReg.TestAdapter
+namespace IKVM.JTReg.TestAdapter.Core
 {
 
     static class JTRegTypes
     {
 
-        static readonly string[] libs = Directory.GetFiles(Path.Combine(Path.GetDirectoryName(typeof(IkvmJTRegTestAdapter).Assembly.Location), "jtreg"), "*.jar");
+        static readonly string[] libs = Directory.GetFiles(Path.Combine(Path.GetDirectoryName(typeof(JTRegTestManager).Assembly.Location), "jtreg"), "*.jar");
         public static readonly URLClassLoader ClassLoader = new URLClassLoader(libs.Select(i => new java.io.File(i).toURI().toURL()).ToArray());
 
         public static class TestEnvironment

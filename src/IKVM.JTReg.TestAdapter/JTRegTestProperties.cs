@@ -3,7 +3,7 @@
 namespace IKVM.JTReg.TestAdapter
 {
 
-    static class IkvmJTRegTestProperties
+    static class JTRegTestProperties
     {
 
         public static readonly TestProperty TestSuiteRootProperty = TestProperty.Register("IkvmJTReg.TestSuiteRoot", "TestSuiteRoot", typeof(string), TestPropertyAttributes.Immutable, typeof(TestCase));

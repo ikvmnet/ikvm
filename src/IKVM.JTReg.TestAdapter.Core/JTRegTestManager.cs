@@ -4,28 +4,47 @@ using System.Collections.Generic;
 using System.Diagnostics;
 using System.IO;
 using System.Linq;
-using System.Reflection;
 using System.Runtime.InteropServices;
+using System.Security.Cryptography;
+using System.Text;
 using System.Threading;
 
-using Microsoft.VisualStudio.TestPlatform.ObjectModel;
-using Microsoft.VisualStudio.TestPlatform.ObjectModel.Adapter;
-using Microsoft.VisualStudio.TestPlatform.ObjectModel.Logging;
+using IKVM.JTReg.TestAdapter.Core;
 
-namespace IKVM.JTReg.TestAdapter
+namespace IKVM.JTReg.TestAdapter.Core
 {
 
-    [ExtensionUri(URI)]
-    public class IkvmJTRegTestExecutor : IkvmJTRegTestAdapter, ITestExecutor
+    /// <summary>
+    /// Manages access to JTReg tests.
+    /// </summary>
+    public class JTRegTestManager :
+#if NETFRAMEWORK
+        MarshalByRefObject
+#else
+        object
+#endif
     {
 
-        protected static readonly string[] DEFAULT_WINDOWS_ENV_VARS = { "PATH", "SystemDrive", "SystemRoot", "windir", "TMP", "TEMP", "TZ" };
-        protected static readonly string[] DEFAULT_UNIX_ENV_VARS = { "PATH", "DISPLAY", "GNOME_DESKTOP_SESSION_ID", "HOME", "LANG", "LC_ALL", "LC_CTYPE", "LPDEST", "PRINTER", "TZ", "XMODIFIERS" };
+        public const string URI = "executor://ikvmjtregtestadapter/v1";
+
+        internal static readonly string JTREG_LIB = Path.Combine(Path.GetDirectoryName(typeof(JTRegTestManager).Assembly.Location), "jtreg");
+
+        internal const string BASEDIR_PREFIX = "ikvm-jtreg-";
+        internal const string TEST_ROOT_FILE_NAME = "TEST.ROOT";
+        internal const string TEST_PROBLEM_LIST_FILE_NAME = "ProblemList.txt";
+        internal const string TEST_EXCLUDE_LIST_FILE_NAME = "ExcludeList.txt";
+        internal const string TEST_INCLUDE_LIST_FILE_NAME = "IncludeList.txt";
+        internal const string DEFAULT_WORK_DIR_NAME = "work";
+        internal const string DEFAULT_REPORT_DIR_NAME = "report";
+        internal const string DEFAULT_PARAM_TAG = "regtest";
+        internal const string ENV_PREFIX = "JTREG_";
+
+        protected static readonly MD5 MD5 = MD5.Create();
 
         /// <summary>
         /// Initializes the static instance.
         /// </summary>
-        static IkvmJTRegTestExecutor()
+        static JTRegTestManager()
         {
 #if NETCOREAPP
             // executable permissions may not have made it onto the JRE binaries so attempt to set them
@@ -54,52 +73,209 @@ namespace IKVM.JTReg.TestAdapter
                 JTRegTypes.Harness.SetClassDirMethod.invoke(null, JTRegTypes.ProductInfo.GetJavaTestClassDirMethod.invoke(null));
         }
 
+        /// <summary>
+        /// Creates a short hash of the given string to uniquely identify it.
+        /// </summary>
+        /// <param name="source"></param>
+        /// <returns></returns>
+        protected static string GetSourceHash(string source)
+        {
+            var b = MD5.ComputeHash(Encoding.UTF8.GetBytes(source));
+            var s = new StringBuilder(32);
+            for (int i = 0; i < b.Length; i++)
+                s.Append(b[i].ToString("x2"));
+            return s.ToString();
+        }
+
+
         CancellationTokenSource cts;
+
+        /// <summary>
+        /// Creates a new TestManager.
+        /// </summary>
+        /// <param name="logger"></param>
+        /// <param name="baseDir"></param>
+        /// <param name="output"></param>
+        /// <returns></returns>
+        protected dynamic CreateTestManager(IJTRegLoggerContext logger, string baseDir, java.io.PrintWriter output)
+        {
+            if (string.IsNullOrEmpty(baseDir))
+                throw new ArgumentException($"'{nameof(baseDir)}' cannot be null or empty.", nameof(baseDir));
+            if (output is null)
+                throw new ArgumentNullException(nameof(output));
+
+            var errorHandler = ErrorHandlerInterceptor.Create(new ErrorHandlerImplementation(logger));
+            var testManager = JTRegTypes.TestManager.New(output, new java.io.File(Environment.CurrentDirectory), errorHandler);
+
+            var workDirectory = Path.Combine(baseDir, DEFAULT_WORK_DIR_NAME);
+            logger.SendMessage(JTRegTestMessageLevel.Informational, $"JTReg: Using work directory: '{workDirectory}'.");
+            Directory.CreateDirectory(workDirectory);
+            testManager.setWorkDirectory(new java.io.File(workDirectory));
+
+            var reportDirectory = Path.Combine(baseDir, DEFAULT_REPORT_DIR_NAME);
+            logger.SendMessage(JTRegTestMessageLevel.Informational, $"JTReg: Using report directory: '{reportDirectory}'.");
+            Directory.CreateDirectory(reportDirectory);
+            testManager.setReportDirectory(new java.io.File(reportDirectory));
+            return testManager;
+        }
+
+        /// <summary>
+        /// Gets the set of files that represent the exclusions for a suite.
+        /// </summary>
+        /// <param name="testSuite"></param>
+        /// <exception cref="ArgumentNullException"></exception>
+        public List<java.io.File> GetExcludeListFiles(dynamic testSuite)
+        {
+            if (testSuite is null)
+                throw new ArgumentNullException(nameof(testSuite));
+
+            // if a ProblemList.txt or ExcludeList.txt file exists in the root, add them as exclude files
+            var excludeFileList = new List<java.io.File>();
+            foreach (var n in new[] { TEST_PROBLEM_LIST_FILE_NAME, TEST_EXCLUDE_LIST_FILE_NAME })
+                if (Path.Combine(((java.io.File)testSuite.getRootDir()).toString(), n) is string f && File.Exists(f))
+                    excludeFileList.Add(new java.io.File(new java.io.File(f).getAbsoluteFile().toURI().normalize()));
+
+            return excludeFileList;
+        }
+
+        /// <summary>
+        /// Gets the set of files that represent the inclusions for a suite.
+        /// </summary>
+        /// <param name="testSuite"></param>
+        /// <returns></returns>
+        /// <exception cref="ArgumentNullException"></exception>
+        public List<java.io.File> GetIncludeListFiles(dynamic testSuite)
+        {
+            if (testSuite is null)
+                throw new ArgumentNullException(nameof(testSuite));
+
+            // if a IncludeList.txt file exists in the root, add it as include files
+            var includeFileList = new List<java.io.File>();
+            foreach (var n in new[] { TEST_INCLUDE_LIST_FILE_NAME })
+                if (Path.Combine(((java.io.File)testSuite.getRootDir()).toString(), n) is string f && File.Exists(f))
+                    includeFileList.Add(new java.io.File(new java.io.File(f).getAbsoluteFile().toURI().normalize()));
+
+            return includeFileList;
+        }
+
+        /// <summary>
+        /// Discovers the available OpenJDK tests.
+        /// </summary>
+        /// <param name="sources"></param>
+        /// <param name="discoveryContext"></param>
+        public void DiscoverTests(List<string> sources, IJTRegDiscoveryContext discoveryContext)
+        {
+            if (sources is null)
+                throw new ArgumentNullException(nameof(sources));
+            if (discoveryContext is null)
+                throw new ArgumentNullException(nameof(discoveryContext));
+
+            try
+            {
+                foreach (var source in sources)
+                    DiscoverTests(source, discoveryContext);
+            }
+            catch (Exception e)
+            {
+                discoveryContext.SendMessage(JTRegTestMessageLevel.Error, $"JTReg: An exception occurred discovering tests.\n{e}");
+            }
+        }
+
+        /// <summary>
+        /// Discovers the available tests.
+        /// </summary>
+        /// <param name="source"></param>
+        /// <param name="discoveryContext"></param>
+        internal void DiscoverTests(string source, IJTRegDiscoveryContext discoveryContext)
+        {
+            if (string.IsNullOrEmpty(source))
+                throw new ArgumentException($"'{nameof(source)}' cannot be null or empty.", nameof(source));
+            if (discoveryContext is null)
+                throw new ArgumentNullException(nameof(discoveryContext));
+
+            try
+            {
+                // discover test suites from test assembly
+                var testDirs = new java.util.ArrayList();
+                foreach (var testRoot in Util.GetTestSuiteDirectories(source, discoveryContext))
+                    testDirs.add(new java.io.File(testRoot));
+                if (testDirs.size() == 0)
+                    return;
+
+                // output path for jtreg state
+                var id = GetSourceHash(source);
+                var baseDir = Path.Combine(Path.GetTempPath(), BASEDIR_PREFIX + id);
+
+                // attempt to create a temporary directory as scratch space for this test
+                discoveryContext.SendMessage(JTRegTestMessageLevel.Informational, $"JTReg: Using run directory: {baseDir}");
+                Directory.CreateDirectory(baseDir);
+
+                // output to framework
+                using var output = new MessageLoggerWriter(discoveryContext, JTRegTestMessageLevel.Informational);
+
+                // initialize the test manager with the discovered roots
+                var testManager = CreateTestManager(discoveryContext, baseDir, new java.io.PrintWriter(output));
+                testManager.addTestFiles(testDirs, false);
+
+                // track metrics related to tests
+                int testCount = 0;
+                var testWatch = new Stopwatch();
+                testWatch.Start();
+
+                // for each suite, get the results and transform a test case
+                foreach (dynamic testSuite in Util.GetTestSuites(source, testManager))
+                    foreach (var testCase in (IEnumerable<JTRegTestCase>)Util.GetTestCases(source, testManager, testSuite))
+                        discoveryContext.SendTestCase(testCase);
+
+                testWatch.Stop();
+                discoveryContext.SendMessage(JTRegTestMessageLevel.Informational, $"JTReg: Discovered {testCount} tests for '{source}' in {testWatch.Elapsed.TotalSeconds} seconds.");
+            }
+            catch (Exception e)
+            {
+                discoveryContext.SendMessage(JTRegTestMessageLevel.Error, $"JTReg: An exception occurred discovering tests for '{source}'.\n{e}");
+            }
+        }
+
+        protected static readonly string[] DEFAULT_WINDOWS_ENV_VARS = { "PATH", "SystemDrive", "SystemRoot", "windir", "TMP", "TEMP", "TZ" };
+        protected static readonly string[] DEFAULT_UNIX_ENV_VARS = { "PATH", "DISPLAY", "GNOME_DESKTOP_SESSION_ID", "HOME", "LANG", "LC_ALL", "LC_CTYPE", "LPDEST", "PRINTER", "TZ", "XMODIFIERS" };
 
         /// <summary>
         /// Runs the given test cases.
         /// </summary>
         /// <param name="tests"></param>
-        /// <param name="runContext"></param>
-        /// <param name="frameworkHandle"></param>
-        public void RunTests(IEnumerable<TestCase> tests, IRunContext runContext, IFrameworkHandle frameworkHandle)
+        /// <param name="executionContext"></param>
+        public void RunTests(List<JTRegTestCase> tests, IJTRegExecutionContext executionContext)
         {
             if (tests is null)
                 throw new ArgumentNullException(nameof(tests));
-            if (runContext is null)
-                throw new ArgumentNullException(nameof(runContext));
-            if (frameworkHandle is null)
-                throw new ArgumentNullException(nameof(frameworkHandle));
+            if (executionContext is null)
+                throw new ArgumentNullException(nameof(executionContext));
 
-            RunTests(tests.Select(i => i.Source).Distinct(), runContext, frameworkHandle, tests);
+            RunTests(tests.Select(i => i.Source).Distinct().ToList(), executionContext, tests);
         }
 
         /// <summary>
         /// Runs all the test cases in the sources.
         /// </summary>
         /// <param name="sources"></param>
-        /// <param name="runContext"></param>
-        /// <param name="frameworkHandle"></param>
-        public void RunTests(IEnumerable<string> sources, IRunContext runContext, IFrameworkHandle frameworkHandle)
+        /// <param name="executionContext"></param>
+        public void RunTests(List<string> sources, IJTRegExecutionContext executionContext)
         {
             if (sources is null)
                 throw new ArgumentNullException(nameof(sources));
-            if (runContext is null)
-                throw new ArgumentNullException(nameof(runContext));
-            if (frameworkHandle is null)
-                throw new ArgumentNullException(nameof(frameworkHandle));
+            if (executionContext is null)
+                throw new ArgumentNullException(nameof(executionContext));
 
-            RunTests(sources, runContext, frameworkHandle, null);
+            RunTests(sources, executionContext, null);
         }
 
         /// <summary>
         /// Runs the specified test cases, if provided, in the sources.
         /// </summary>
         /// <param name="sources"></param>
-        /// <param name="runContext"></param>
-        /// <param name="frameworkHandle"></param>
+        /// <param name="executionContext"></param>
         /// <param name="tests"></param>
-        internal void RunTests(IEnumerable<string> sources, IRunContext runContext, IFrameworkHandle frameworkHandle, IEnumerable<TestCase> tests)
+        internal void RunTests(List<string> sources, IJTRegExecutionContext executionContext, IEnumerable<JTRegTestCase> tests)
         {
             try
             {
@@ -109,14 +285,14 @@ namespace IKVM.JTReg.TestAdapter
                 try
                 {
                     // if we have the capability of attaching to child process, start debug server to listen for child processes
-                    if (frameworkHandle is IFrameworkHandle2 fh2 && Debugger.IsAttached)
+                    if (executionContext.CanAttachDebuggerToProcess && Debugger.IsAttached)
                     {
-                        debug = new IkvmTraceServer(fh2);
+                        debug = new IkvmTraceServer(executionContext);
                         debug.Start();
                     }
 
                     foreach (var source in sources)
-                        RunTestForSource(source, runContext, frameworkHandle, tests?.Where(i => i.Source == source), debug?.Uri, cts.Token);
+                        RunTestForSource(source, executionContext, tests?.Where(i => i.Source == source), debug?.Uri, cts.Token);
                 }
                 finally
                 {
@@ -133,7 +309,7 @@ namespace IKVM.JTReg.TestAdapter
             }
             catch (Exception e)
             {
-                frameworkHandle.SendMessage(TestMessageLevel.Error, $"JTReg: Exception occurred running tests.\n{e}");
+                executionContext.SendMessage(JTRegTestMessageLevel.Error, $"JTReg: Exception occurred running tests.\n{e}");
             }
             finally
             {
@@ -145,19 +321,16 @@ namespace IKVM.JTReg.TestAdapter
         /// Runs the tests in the given source, optionally filtered by specific test case.
         /// </summary>
         /// <param name="source"></param>
-        /// <param name="runContext"></param>
-        /// <param name="frameworkHandle"></param>
+        /// <param name="context"></param>
         /// <param name="tests"></param>
         /// <param name="debugUri"></param>
         /// <param name="cancellationToken"></param>
-        internal void RunTestForSource(string source, IRunContext runContext, IFrameworkHandle frameworkHandle, IEnumerable<TestCase> tests, Uri debugUri, CancellationToken cancellationToken)
+        internal void RunTestForSource(string source, IJTRegExecutionContext context, IEnumerable<JTRegTestCase> tests, Uri debugUri, CancellationToken cancellationToken)
         {
             if (string.IsNullOrEmpty(source))
                 throw new ArgumentException($"'{nameof(source)}' cannot be null or empty.", nameof(source));
-            if (runContext is null)
-                throw new ArgumentNullException(nameof(runContext));
-            if (frameworkHandle is null)
-                throw new ArgumentNullException(nameof(frameworkHandle));
+            if (context is null)
+                throw new ArgumentNullException(nameof(context));
 
             try
             {
@@ -165,51 +338,49 @@ namespace IKVM.JTReg.TestAdapter
 
                 // discover test suites from test assembly
                 var testDirs = new java.util.ArrayList();
-                foreach (var testRoot in Util.GetTestSuiteDirectories(source, frameworkHandle))
+                foreach (var testRoot in Util.GetTestSuiteDirectories(source, context))
                     testDirs.add(new java.io.File(testRoot));
                 if (testDirs.size() == 0)
                     return;
 
                 // output path for jtreg state
                 var id = GetSourceHash(source);
-                var baseDir = Path.Combine(runContext.TestRunDirectory, BASEDIR_PREFIX + id);
+                var baseDir = Path.Combine(context.TestRunDirectory, BASEDIR_PREFIX + id);
                 Directory.CreateDirectory(baseDir);
 
                 // output to framework
-                using var output = new MessageLoggerWriter(frameworkHandle, TestMessageLevel.Informational);
+                using var output = new MessageLoggerWriter(context, JTRegTestMessageLevel.Informational);
 
                 // initialize the test manager with the discovered roots
-                var testManager = CreateTestManager(frameworkHandle, baseDir, new java.io.PrintWriter(output));
+                var testManager = CreateTestManager(context, baseDir, new java.io.PrintWriter(output));
                 testManager.addTestFiles(testDirs, false);
 
                 // we will need a full list of tests to apply any filters to
                 if (tests == null)
                 {
-                    var l = new List<TestCase>();
+                    var l = new List<JTRegTestCase>();
 
                     // discover the full set of tests
                     foreach (dynamic testSuite in Util.GetTestSuites(source, testManager))
-                        foreach (var testCase in (IEnumerable<TestCase>)Util.GetTestCases(source, testManager, testSuite))
+                        foreach (var testCase in (IEnumerable<JTRegTestCase>)Util.GetTestCases(source, testManager, testSuite))
                             l.Add(testCase);
 
                     tests = l;
                 }
 
                 // filter the tests
-                var filter = runContext.GetTestCaseFilter(properties.Keys, s => properties.TryGetValue(s, out var v) ? v : null);
-                if (filter != null)
-                    tests = tests.Where(i => filter.MatchTestCase(i, s => properties.TryGetValue(s, out var v) ? i.GetPropertyValue(v) : null));
+                tests = context.FilterTestCases(tests).ToList();
 
                 // invoke each test suite
                 foreach (dynamic testSuite in (IEnumerable)testManager.getTestSuites())
                 {
-                    frameworkHandle.SendMessage(TestMessageLevel.Informational, $"JTReg: Running test suite: {testSuite.getName()}");
-                    RunTests(source, testManager, testSuite, runContext, frameworkHandle, tests, output, CreateParameters(source, testManager, testSuite, tests, debugUri), cancellationToken);
+                    context.SendMessage(JTRegTestMessageLevel.Informational, $"JTReg: Running test suite: {testSuite.getName()}");
+                    RunTests(source, testManager, testSuite, context, tests, output, CreateParameters(source, testManager, testSuite, tests, debugUri), cancellationToken);
                 }
             }
             catch (Exception e)
             {
-                frameworkHandle.SendMessage(TestMessageLevel.Error, $"JTReg: Exception occurred running tests for '{source}'.\n{e}");
+                context.SendMessage(JTRegTestMessageLevel.Error, $"JTReg: Exception occurred running tests for '{source}'.\n{e}");
             }
         }
 
@@ -222,7 +393,7 @@ namespace IKVM.JTReg.TestAdapter
         /// <param name="tests"></param>
         /// <param name="debugUri"></param>
         /// <returns></returns>
-        dynamic CreateParameters(string source,  dynamic testManager, dynamic testSuite, IEnumerable<TestCase> tests, Uri debugUri)
+        dynamic CreateParameters(string source, dynamic testManager, dynamic testSuite, IEnumerable<JTRegTestCase> tests, Uri debugUri)
         {
             if (source is null)
                 throw new ArgumentNullException(nameof(source));
@@ -260,8 +431,8 @@ namespace IKVM.JTReg.TestAdapter
                 var includeListFile = (java.io.File)wd.getFile("IncludeList.txt");
                 using (var includeList = File.CreateText(includeListFile.toString()))
                     foreach (var test in tests)
-                        if (string.Equals(test.GetPropertyValue(IkvmJTRegTestProperties.TestSuiteNameProperty), testSuiteName))
-                            includeList.WriteLine(test.GetPropertyValue(IkvmJTRegTestProperties.TestPathNameProperty) + " generic-all");
+                        if (string.Equals(test.TestSuiteName, testSuiteName))
+                            includeList.WriteLine(test.TestPathName + " generic-all");
 
                 includeFileList.Add(new java.io.File(includeListFile.getAbsoluteFile().toURI().normalize()));
             }
@@ -349,13 +520,12 @@ namespace IKVM.JTReg.TestAdapter
         /// <param name="source"></param>
         /// <param name="testManager"></param>
         /// <param name="testSuite"></param>
-        /// <param name="runContext"></param>
-        /// <param name="frameworkHandle"></param>
+        /// <param name="context"></param>
         /// <param name="tests"></param>
         /// <param name="output"></param>
         /// <param name="parameters"></param>
         /// <param name="cancellationToken"></param>
-        internal void RunTests(string source, dynamic testManager, dynamic testSuite, IRunContext runContext, IFrameworkHandle frameworkHandle, IEnumerable<TestCase> tests, java.io.Writer output, dynamic parameters, CancellationToken cancellationToken)
+        internal void RunTests(string source, dynamic testManager, dynamic testSuite, IJTRegExecutionContext context, IEnumerable<JTRegTestCase> tests, java.io.Writer output, dynamic parameters, CancellationToken cancellationToken)
         {
             if (string.IsNullOrEmpty(source))
                 throw new ArgumentException($"'{nameof(source)}' cannot be null or empty.", nameof(source));
@@ -363,10 +533,8 @@ namespace IKVM.JTReg.TestAdapter
                 throw new ArgumentNullException(nameof(testManager));
             if (testSuite is null)
                 throw new ArgumentNullException(nameof(testSuite));
-            if (runContext is null)
-                throw new ArgumentNullException(nameof(runContext));
-            if (frameworkHandle is null)
-                throw new ArgumentNullException(nameof(frameworkHandle));
+            if (context is null)
+                throw new ArgumentNullException(nameof(context));
             if (tests is null)
                 throw new ArgumentNullException(nameof(tests));
             if (parameters is null)
@@ -399,7 +567,7 @@ namespace IKVM.JTReg.TestAdapter
             {
                 // observe harness for test results
                 var harness = JTRegTypes.Harness.New();
-                var observer = HarnessObserverInterceptor.Create(new HarnessObserverImplementation(source, testSuite, runContext, frameworkHandle, tests));
+                var observer = HarnessObserverInterceptor.Create(new HarnessObserverImplementation(source, testSuite, context, tests));
                 harness.addObserver(observer);
                 stats.register(harness);
 
@@ -413,7 +581,7 @@ namespace IKVM.JTReg.TestAdapter
             }
             catch (Exception e)
             {
-                frameworkHandle.SendMessage(TestMessageLevel.Error, $"JTReg: Exception occurred running tests for '{source}'.\n{e}");
+                context.SendMessage(JTRegTestMessageLevel.Error, $"JTReg: Exception occurred running tests for '{source}'.\n{e}");
             }
 
             // shutdown pool

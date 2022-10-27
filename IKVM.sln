@@ -153,6 +153,8 @@ Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "IKVM.Tests.JDK", "src\IKVM.
 EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "IKVM.Tests.JRE", "src\IKVM.Tests.JRE\IKVM.Tests.JRE.csproj", "{C99721D9-6CD4-4FD8-B9C1-4906EF9F05EE}"
 EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "IKVM.JTReg.TestAdapter.Core", "src\IKVM.JTReg.TestAdapter.Core\IKVM.JTReg.TestAdapter.Core.csproj", "{DD5AEB88-DC55-43C8-81C1-2879F73C8DE0}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -939,6 +941,18 @@ Global
 		{C99721D9-6CD4-4FD8-B9C1-4906EF9F05EE}.Release|x64.Build.0 = Release|Any CPU
 		{C99721D9-6CD4-4FD8-B9C1-4906EF9F05EE}.Release|x86.ActiveCfg = Release|Any CPU
 		{C99721D9-6CD4-4FD8-B9C1-4906EF9F05EE}.Release|x86.Build.0 = Release|Any CPU
+		{DD5AEB88-DC55-43C8-81C1-2879F73C8DE0}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{DD5AEB88-DC55-43C8-81C1-2879F73C8DE0}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{DD5AEB88-DC55-43C8-81C1-2879F73C8DE0}.Debug|x64.ActiveCfg = Debug|Any CPU
+		{DD5AEB88-DC55-43C8-81C1-2879F73C8DE0}.Debug|x64.Build.0 = Debug|Any CPU
+		{DD5AEB88-DC55-43C8-81C1-2879F73C8DE0}.Debug|x86.ActiveCfg = Debug|Any CPU
+		{DD5AEB88-DC55-43C8-81C1-2879F73C8DE0}.Debug|x86.Build.0 = Debug|Any CPU
+		{DD5AEB88-DC55-43C8-81C1-2879F73C8DE0}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{DD5AEB88-DC55-43C8-81C1-2879F73C8DE0}.Release|Any CPU.Build.0 = Release|Any CPU
+		{DD5AEB88-DC55-43C8-81C1-2879F73C8DE0}.Release|x64.ActiveCfg = Release|Any CPU
+		{DD5AEB88-DC55-43C8-81C1-2879F73C8DE0}.Release|x64.Build.0 = Release|Any CPU
+		{DD5AEB88-DC55-43C8-81C1-2879F73C8DE0}.Release|x86.ActiveCfg = Release|Any CPU
+		{DD5AEB88-DC55-43C8-81C1-2879F73C8DE0}.Release|x86.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE

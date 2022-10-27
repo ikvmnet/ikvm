@@ -28,8 +28,8 @@ namespace IKVM.JTReg.TestAdapter.Tests
             var testCases = new List<TestCase>();
             testCaseDiscoverySink.Setup(x => x.SendTestCase(It.IsAny<TestCase>())).Callback((TestCase x) => testCases.Add(x));
 
-            var adp = new IkvmJTRegTestDiscoverer();
-            adp.DiscoverTests(typeof(JTRegTestAdapterTests).Assembly.Location, discoveryContext.Object, messageLogger.Object, testCaseDiscoverySink.Object);
+            var adp = new JTRegTestDiscoverer();
+            adp.DiscoverTests(new[] { typeof(JTRegTestAdapterTests).Assembly.Location }, discoveryContext.Object, messageLogger.Object, testCaseDiscoverySink.Object);
             testCases.Should().HaveCountGreaterThanOrEqualTo(1);
         }
 
@@ -45,7 +45,7 @@ namespace IKVM.JTReg.TestAdapter.Tests
             var sources = new[] { typeof(JTRegTestAdapterTests).Assembly.Location };
 
             // execute tests
-            var adp = new IkvmJTRegTestExecutor();
+            var adp = new JTRegTestExecutor();
             adp.RunTests(sources, runContext.Object, frameworkHandle.Object);
             testResults.Should().HaveCountGreaterThanOrEqualTo(1);
         }

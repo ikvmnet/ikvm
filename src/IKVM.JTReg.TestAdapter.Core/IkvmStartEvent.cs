@@ -1,6 +1,6 @@
 ﻿using System.Text.Json.Serialization;
 
-namespace IKVM.JTReg.TestAdapter
+namespace IKVM.JTReg.TestAdapter.Core
 {
 
     /// <summary>

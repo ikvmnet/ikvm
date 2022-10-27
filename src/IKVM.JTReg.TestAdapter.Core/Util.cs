@@ -8,10 +8,7 @@ using System.Reflection;
 using java.text;
 using java.util;
 
-using Microsoft.VisualStudio.TestPlatform.ObjectModel;
-using Microsoft.VisualStudio.TestPlatform.ObjectModel.Logging;
-
-namespace IKVM.JTReg.TestAdapter
+namespace IKVM.JTReg.TestAdapter.Core
 {
 
     /// <summary>
@@ -31,7 +28,7 @@ namespace IKVM.JTReg.TestAdapter
         /// <param name="source"></param>
         /// <param name="logger"></param>
         /// <returns></returns>
-        public static IEnumerable<string> GetTestSuiteDirectories(string source, IMessageLogger logger)
+        public static IEnumerable<string> GetTestSuiteDirectories(string source, IJTRegLoggerContext logger)
         {
             if (source is null)
                 throw new ArgumentNullException(nameof(source));
@@ -40,21 +37,21 @@ namespace IKVM.JTReg.TestAdapter
 
             // normalize source path
             source = Path.GetFullPath(source);
-            logger.SendMessage(TestMessageLevel.Informational, $"JTReg: Scanning for test suites for '{source}'.");
+            logger.SendMessage(JTRegTestMessageLevel.Informational, $"JTReg: Scanning for test suites for '{source}'.");
 
             var assembly = Assembly.LoadFrom(source);
             foreach (var testAttr in assembly.GetCustomAttributes<JTRegTestSuiteAttribute>())
             {
                 // relative root is relative to test assembly
                 var testPath = Path.IsPathRooted(testAttr.Path) ? testAttr.Path : Path.Combine(Path.GetDirectoryName(assembly.Location), testAttr.Path);
-                var rootFile = Path.Combine(testPath, IkvmJTRegTestAdapter.TEST_ROOT_FILE_NAME);
+                var rootFile = Path.Combine(testPath, JTRegTestManager.TEST_ROOT_FILE_NAME);
                 if (File.Exists(rootFile) == false)
                 {
-                    logger.SendMessage(TestMessageLevel.Error, $"JTReg: Missing test root file: {rootFile}");
+                    logger.SendMessage(JTRegTestMessageLevel.Error, $"JTReg: Missing test root file: {rootFile}");
                     continue;
                 }
 
-                logger.SendMessage(TestMessageLevel.Informational, $"JTReg: Found test suite: {testPath}");
+                logger.SendMessage(JTRegTestMessageLevel.Informational, $"JTReg: Found test suite: {testPath}");
                 yield return testPath;
             }
         }
@@ -118,7 +115,7 @@ namespace IKVM.JTReg.TestAdapter
         /// <param name="testManager"></param>
         /// <param name="testSuite"></param>
         /// <returns></returns>
-        public static IEnumerable<TestCase> GetTestCases(string source, dynamic testManager, dynamic testSuite)
+        public static IEnumerable<JTRegTestCase> GetTestCases(string source, dynamic testManager, dynamic testSuite)
         {
             if (string.IsNullOrEmpty(source))
                 throw new ArgumentException($"'{nameof(source)}' cannot be null or empty.", nameof(source));
@@ -146,7 +143,7 @@ namespace IKVM.JTReg.TestAdapter
         /// <param name="testResult"></param>
         /// <param name="partition"></param>
         /// <returns></returns>
-        public static TestCase ToTestCase(string source, dynamic testSuite, dynamic testResult, int partition)
+        public static JTRegTestCase ToTestCase(string source, dynamic testSuite, dynamic testResult, int partition)
         {
             if (source is null)
                 throw new ArgumentNullException(nameof(source));
@@ -155,16 +152,16 @@ namespace IKVM.JTReg.TestAdapter
             if (testResult is null)
                 throw new ArgumentNullException(nameof(testResult));
 
-            var testCase = new TestCase(Util.GetFullyQualifiedTestName(source, testSuite, testResult), new Uri(IkvmJTRegTestAdapter.URI), source);
+            var testCase = new JTRegTestCase((string)Util.GetFullyQualifiedTestName(source, testSuite, testResult), new Uri(JTRegTestManager.URI), source);
             testCase.CodeFilePath = ((java.io.File)testResult.getDescription().getFile())?.toPath().toAbsolutePath().toString();
-            testCase.SetPropertyValue(IkvmJTRegTestProperties.TestSuiteRootProperty, ((java.io.File)testSuite.getRootDir()).toPath().toAbsolutePath().toString());
-            testCase.SetPropertyValue(IkvmJTRegTestProperties.TestSuiteNameProperty, GetTestSuiteName(source, testSuite));
-            testCase.SetPropertyValue(IkvmJTRegTestProperties.TestPathNameProperty, GetTestPathName(source, testSuite, testResult));
-            testCase.SetPropertyValue(IkvmJTRegTestProperties.TestIdProperty, GetTestId(source, testSuite, testResult));
-            testCase.SetPropertyValue(IkvmJTRegTestProperties.TestTitleProperty, GetTestTitle(source, testSuite, testResult));
-            testCase.SetPropertyValue(IkvmJTRegTestProperties.TestAuthorProperty, GetTestAuthor(source, testSuite, testResult));
-            testCase.SetPropertyValue(IkvmJTRegTestProperties.TestCategoryProperty, GetTestKeywords(source, testSuite, testResult));
-            testCase.SetPropertyValue(IkvmJTRegTestProperties.TestPartitionProperty, partition);
+            testCase.TestSuiteRoot = ((java.io.File)testSuite.getRootDir()).toPath().toAbsolutePath().toString();
+            testCase.TestSuiteName = GetTestSuiteName(source, testSuite);
+            testCase.TestPathName = GetTestPathName(source, testSuite, testResult);
+            testCase.TestId = GetTestId(source, testSuite, testResult);
+            testCase.TestTitle = GetTestTitle(source, testSuite, testResult);
+            testCase.TestAuthor = GetTestAuthor(source, testSuite, testResult);
+            testCase.TestCategory = (string[])GetTestKeywords(source, testSuite, testResult);
+            testCase.TestPartition = partition;
             testCase.Traits.Add("Partition", partition.ToString());
             return testCase;
         }
@@ -176,7 +173,7 @@ namespace IKVM.JTReg.TestAdapter
         /// <param name="testResult"></param>
         /// <param name="testCase"></param>
         /// <returns></returns>
-        public static TestResult ToTestResult(string source, dynamic testResult, TestCase testCase)
+        public static JTRegTestResult ToTestResult(string source, dynamic testResult, JTRegTestCase testCase)
         {
             if (source is null)
                 throw new ArgumentNullException(nameof(source));
@@ -185,7 +182,7 @@ namespace IKVM.JTReg.TestAdapter
             if (testCase is null)
                 throw new ArgumentNullException(nameof(testCase));
 
-            var r = new TestResult(testCase)
+            var r = new JTRegTestResult(testCase)
             {
                 DisplayName = Util.GetTestDisplayName(testResult),
                 ComputerName = testResult.getProperty("hostname"),
@@ -203,13 +200,13 @@ namespace IKVM.JTReg.TestAdapter
                         r.Messages.Add(message);
 
             // create an attachment set for our results
-            var attachments = new AttachmentSet(new Uri(IkvmJTRegTestAdapter.URI), "IkvmJTRegTestAdapter");
+            var attachments = new JTRegAttachmentSet(new Uri(JTRegTestManager.URI), "IkvmJTRegTestAdapter");
             r.Attachments.Add(attachments);
 
             // if a JTR file is available, add it as an attachment
             var jtrFile = (java.io.File)testResult.getFile();
             if (jtrFile != null && jtrFile.exists())
-                attachments.Attachments.Add(new UriDataAttachment(new Uri(jtrFile.getAbsolutePath()), jtrFile.getName()));
+                attachments.Attachments.Add(new JTRegUriDataAttachment(new Uri(jtrFile.getAbsolutePath()), jtrFile.getName()));
 
             return r;
         }
@@ -219,7 +216,7 @@ namespace IKVM.JTReg.TestAdapter
         /// </summary>
         /// <param name="section"></param>
         /// <returns></returns>
-        static IEnumerable<TestResultMessage> GetTestResultSectionMessages(dynamic section)
+        static IEnumerable<JTRegTestResultMessage> GetTestResultSectionMessages(dynamic section)
         {
             if (section is null)
                 throw new ArgumentNullException(nameof(section));
@@ -237,9 +234,9 @@ namespace IKVM.JTReg.TestAdapter
             {
                 var messageCategory = outputName switch
                 {
-                    "System.out" => TestResultMessage.StandardOutCategory,
-                    "System.err" => TestResultMessage.StandardErrorCategory,
-                    _ => TestResultMessage.AdditionalInfoCategory,
+                    "System.out" => JTRegTestResultMessageCategory.StandardOut,
+                    "System.err" => JTRegTestResultMessageCategory.StandardError,
+                    _ => JTRegTestResultMessageCategory.AdditionalInfo,
                 };
 
                 var output = (string)section.getOutput(outputName);
@@ -247,7 +244,7 @@ namespace IKVM.JTReg.TestAdapter
                 text.AppendLine(header.ToString());
                 text.AppendLine(output.Trim());
                 text.AppendLine("----");
-                yield return new TestResultMessage(messageCategory, text.ToString());
+                yield return new JTRegTestResultMessage(messageCategory, text.ToString());
             }
         }
 
@@ -455,18 +452,18 @@ namespace IKVM.JTReg.TestAdapter
         /// </summary>
         /// <param name="status"></param>
         /// <returns></returns>
-        public static TestOutcome ToTestOutcome(dynamic status)
+        public static JTRegTestOutcome ToTestOutcome(dynamic status)
         {
             if (status.isPassed())
-                return TestOutcome.Passed;
+                return JTRegTestOutcome.Passed;
             else if (status.isFailed())
-                return TestOutcome.Failed;
+                return JTRegTestOutcome.Failed;
             else if (status.isError())
-                return TestOutcome.Failed;
+                return JTRegTestOutcome.Failed;
             else if (status.isNotRun())
-                return TestOutcome.Skipped;
+                return JTRegTestOutcome.Skipped;
             else
-                return TestOutcome.None;
+                return JTRegTestOutcome.None;
         }
 
     }

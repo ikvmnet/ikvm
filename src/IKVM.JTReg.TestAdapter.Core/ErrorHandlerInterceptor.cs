@@ -1,10 +1,8 @@
 ﻿using System;
-using System.Reflection;
-using System.Reflection.Emit;
 
 using Castle.DynamicProxy;
 
-namespace IKVM.JTReg.TestAdapter
+namespace IKVM.JTReg.TestAdapter.Core
 {
 
     /// <summary>
