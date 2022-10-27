@@ -68,11 +68,11 @@ namespace IKVM.JTReg.TestAdapter
             return filter.MatchTestCase(t, s => properties.TryGetValue(s, out var v) ? t.GetPropertyValue(v) : null);
         }
 
-        public IEnumerable<JTRegTestCase> FilterTestCases(IEnumerable<JTRegTestCase> tests)
+        public List<JTRegTestCase> FilterTestCases(List<JTRegTestCase> tests)
         {
             var filter = runContext.GetTestCaseFilter(properties.Keys, s => properties.TryGetValue(s, out var v) ? v : null);
             if (filter != null)
-                tests = tests.Where(i => MatchTestCase(filter, i));
+                tests = tests.Where(i => MatchTestCase(filter, i)).ToList();
 
             return tests;
         }

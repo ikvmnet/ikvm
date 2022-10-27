@@ -16,7 +16,7 @@ namespace IKVM.JTReg.TestAdapter.Core
         /// </summary>
         /// <param name="tests"></param>
         /// <returns></returns>
-        IEnumerable<JTRegTestCase> FilterTestCases(IEnumerable<JTRegTestCase> tests);
+        List<JTRegTestCase> FilterTestCases(List<JTRegTestCase> tests);
 
         /// <summary>
         /// Returns <c>true</c> if the test host can attach a debugger.
