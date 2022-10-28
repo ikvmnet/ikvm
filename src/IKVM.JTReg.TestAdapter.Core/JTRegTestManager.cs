@@ -9,8 +9,6 @@ using System.Security.Cryptography;
 using System.Text;
 using System.Threading;
 
-using IKVM.JTReg.TestAdapter.Core;
-
 namespace IKVM.JTReg.TestAdapter.Core
 {
 
@@ -20,9 +18,8 @@ namespace IKVM.JTReg.TestAdapter.Core
     public class JTRegTestManager :
 #if NETFRAMEWORK
         MarshalByRefObject
-#else
-        IJTRegTestManager
 #endif
+        IJTRegTestManager
     {
 
         public const string URI = "executor://ikvmjtregtestadapter/v1";
