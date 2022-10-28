@@ -14,7 +14,6 @@ namespace IKVM.JTReg.TestAdapter.Core
 
         void Cancel();
 
-
     }
 
 }
