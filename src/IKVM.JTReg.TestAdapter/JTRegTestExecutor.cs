@@ -17,12 +17,12 @@ namespace IKVM.JTReg.TestAdapter
 
         public void RunTests(IEnumerable<string> sources, IRunContext runContext, IFrameworkHandle frameworkHandle)
         {
-            manager.RunTests(sources.ToList(), new JTRegExecutionContextProxy(runContext, (IFrameworkHandle2)frameworkHandle));
+            manager.RunTests(sources.ToList(), new JTRegExecutionContextProxy(runContext, frameworkHandle));
         }
 
         public void RunTests(IEnumerable<TestCase> tests, IRunContext runContext, IFrameworkHandle frameworkHandle)
         {
-            manager.RunTests(JTRegProxyUtil.Convert(tests).ToList(), new JTRegExecutionContextProxy(runContext, (IFrameworkHandle2)frameworkHandle));
+            manager.RunTests(JTRegProxyUtil.Convert(tests).ToList(), new JTRegExecutionContextProxy(runContext, frameworkHandle));
         }
 
         public void Cancel()

@@ -39,7 +39,7 @@ namespace IKVM.JTReg.TestAdapter
         }
 
         readonly IRunContext runContext;
-        readonly IFrameworkHandle2 frameworkHandle;
+        readonly IFrameworkHandle frameworkHandle;
 
         /// <summary>
         /// Initializes a new instance.
@@ -47,7 +47,7 @@ namespace IKVM.JTReg.TestAdapter
         /// <param name="runContext"></param>
         /// <param name="frameworkHandle"></param>
         /// <exception cref="ArgumentNullException"></exception>
-        public JTRegExecutionContextProxy(IRunContext runContext, IFrameworkHandle2 frameworkHandle)
+        public JTRegExecutionContextProxy(IRunContext runContext, IFrameworkHandle frameworkHandle)
         {
             this.runContext = runContext ?? throw new ArgumentNullException(nameof(runContext));
             this.frameworkHandle = frameworkHandle ?? throw new ArgumentNullException(nameof(frameworkHandle));
@@ -55,11 +55,11 @@ namespace IKVM.JTReg.TestAdapter
 
         public string TestRunDirectory => runContext.TestRunDirectory;
 
-        public bool CanAttachDebuggerToProcess => true;
+        public bool CanAttachDebuggerToProcess => frameworkHandle is IFrameworkHandle2;
 
         public bool AttachDebuggerToProcess(int pid)
         {
-            return frameworkHandle.AttachDebuggerToProcess(pid);
+            return frameworkHandle is IFrameworkHandle2 h && h.AttachDebuggerToProcess(pid);
         }
 
         bool MatchTestCase(ITestCaseFilterExpression filter, JTRegTestCase testCase)
