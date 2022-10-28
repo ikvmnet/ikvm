@@ -80,6 +80,15 @@ namespace IKVM.JTReg.TestAdapter.Core
                 registered.Remove(cancellationTokenCancellationProxy);
         }
 
+#if NETFRAMEWORK
+
+        public override object InitializeLifetimeService()
+        {
+            return null;
+        }
+
+#endif
+
     }
 
 }

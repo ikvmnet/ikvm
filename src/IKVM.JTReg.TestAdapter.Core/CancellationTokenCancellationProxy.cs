@@ -7,7 +7,12 @@ namespace IKVM.JTReg.TestAdapter.Core
     /// <summary>
     /// Proxy to a <see cref="CancellationToken"/> that can be marshalled by reference.
     /// </summary>
-    public class CancellationTokenCancellationProxy : MarshalByRefObject
+    public class CancellationTokenCancellationProxy :
+#if NETFRAMEWORK
+        MarshalByRefObject
+#else
+        object
+#endif
     {
 
         readonly CancellationTokenSource cts;
@@ -31,6 +36,15 @@ namespace IKVM.JTReg.TestAdapter.Core
         /// Underlying local token.
         /// </summary>
         public CancellationToken Token => cts.Token;
+
+#if NETFRAMEWORK
+
+        public override object InitializeLifetimeService()
+        {
+            return null;
+        }
+
+#endif
 
     }
 

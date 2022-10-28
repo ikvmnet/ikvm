@@ -78,6 +78,15 @@ namespace IKVM.JTReg.TestAdapter
             _ => throw new NotImplementedException(),
         };
 
+#if NETFRAMEWORK
+
+        public override object InitializeLifetimeService()
+        {
+            return null;
+        }
+
+#endif
+
     }
 
 }

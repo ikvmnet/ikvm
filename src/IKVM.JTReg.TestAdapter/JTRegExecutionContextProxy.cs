@@ -97,6 +97,15 @@ namespace IKVM.JTReg.TestAdapter
             frameworkHandle.SendMessage(JTRegProxyUtil.Convert(level), message);
         }
 
+#if NETFRAMEWORK
+
+        public override object InitializeLifetimeService()
+        {
+            return null;
+        }
+
+#endif
+
     }
 
 }

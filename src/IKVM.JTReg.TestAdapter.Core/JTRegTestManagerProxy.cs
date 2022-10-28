@@ -60,6 +60,15 @@ namespace IKVM.JTReg.TestAdapter.Core
             }
         }
 
+#if NETFRAMEWORK
+
+        public override object InitializeLifetimeService()
+        {
+            return null;
+        }
+
+#endif
+
     }
 
 }
