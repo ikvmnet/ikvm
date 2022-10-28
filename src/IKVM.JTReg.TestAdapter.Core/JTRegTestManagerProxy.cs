@@ -6,10 +6,9 @@ namespace IKVM.JTReg.TestAdapter.Core
 
     public class JTRegTestManagerProxy :
 #if NETFRAMEWORK
-        MarshalByRefObject
-#else
-        IJTRegTestManager
+        MarshalByRefObject,
 #endif
+        IJTRegTestManager
     {
 
         readonly IJTRegTestManager real;
