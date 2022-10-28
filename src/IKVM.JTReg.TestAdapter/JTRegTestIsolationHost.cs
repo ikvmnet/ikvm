@@ -32,7 +32,7 @@ namespace IKVM.JTReg.TestAdapter
         public static IJTRegTestManager CreateManager()
         {
 #if NETFRAMEWORK
-            return (IJTRegTestManager)appdomain.CreateInstanceAndUnwrap(typeof(IJTRegTestManager).Assembly.FullName, typeof(IJTRegTestManager).FullName);
+            return (IJTRegTestManager)appdomain.CreateInstanceAndUnwrap(typeof(JTRegTestManagerProxy).Assembly.FullName, typeof(JTRegTestManagerProxy).FullName);
 #else
             return new JTRegTestManager();
 #endif
