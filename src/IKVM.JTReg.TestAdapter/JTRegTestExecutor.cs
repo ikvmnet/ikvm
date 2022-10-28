@@ -13,7 +13,7 @@ namespace IKVM.JTReg.TestAdapter
     public class JTRegTestExecutor : ITestExecutor
     {
 
-        readonly JTRegTestManager manager = JTRegTestIsolationHost.CreateManager();
+        readonly IJTRegTestManager manager = JTRegTestIsolationHost.CreateManager();
 
         public void RunTests(IEnumerable<string> sources, IRunContext runContext, IFrameworkHandle frameworkHandle)
         {

@@ -16,7 +16,7 @@ namespace IKVM.JTReg.TestAdapter
     public class JTRegTestDiscoverer : ITestDiscoverer
     {
 
-        readonly JTRegTestManager manager = JTRegTestIsolationHost.CreateManager();
+        readonly IJTRegTestManager manager = JTRegTestIsolationHost.CreateManager();
 
         public void DiscoverTests(IEnumerable<string> sources, IDiscoveryContext discoveryContext, IMessageLogger logger, ITestCaseDiscoverySink discoverySink)
         {

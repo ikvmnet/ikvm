@@ -22,17 +22,17 @@ namespace IKVM.JTReg.TestAdapter
         static JTRegTestIsolationHost()
         {
             var setup = new AppDomainSetup();
-            setup.ApplicationBase = Path.GetDirectoryName(typeof(JTRegTestManager).Assembly.Location);
-            setup.ConfigurationFile = typeof(JTRegTestManager).Assembly.Location + ".config";
+            setup.ApplicationBase = Path.GetDirectoryName(typeof(IJTRegTestManager).Assembly.Location);
+            setup.ConfigurationFile = typeof(IJTRegTestManager).Assembly.Location + ".config";
             appdomain = AppDomain.CreateDomain("JTReg", null, setup);
         }
 
 #endif
 
-        public static JTRegTestManager CreateManager()
+        public static IJTRegTestManager CreateManager()
         {
 #if NETFRAMEWORK
-            return (JTRegTestManager)appdomain.CreateInstanceAndUnwrap(typeof(JTRegTestManager).Assembly.FullName, typeof(JTRegTestManager).FullName);
+            return (IJTRegTestManager)appdomain.CreateInstanceAndUnwrap(typeof(IJTRegTestManager).Assembly.FullName, typeof(IJTRegTestManager).FullName);
 #else
             return new JTRegTestManager();
 #endif

@@ -21,7 +21,7 @@ namespace IKVM.JTReg.TestAdapter.Core
 #if NETFRAMEWORK
         MarshalByRefObject
 #else
-        object
+        IJTRegTestManager
 #endif
     {
 
