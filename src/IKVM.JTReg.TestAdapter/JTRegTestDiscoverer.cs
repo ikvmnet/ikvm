@@ -1,5 +1,5 @@
 ﻿using System.Collections.Generic;
-using System.Linq;
+using System.Threading;
 
 using IKVM.JTReg.TestAdapter.Core;
 
@@ -16,11 +16,17 @@ namespace IKVM.JTReg.TestAdapter
     public class JTRegTestDiscoverer : ITestDiscoverer
     {
 
-        readonly IJTRegTestManager manager = JTRegTestIsolationHost.CreateManager();
-
         public void DiscoverTests(IEnumerable<string> sources, IDiscoveryContext discoveryContext, IMessageLogger logger, ITestCaseDiscoverySink discoverySink)
         {
-            manager.DiscoverTests(sources.ToList(), new JTRegDiscoveryContextProxy(discoveryContext, logger, discoverySink));
+            foreach (var source in sources)
+            {
+                // setup isolation host for source
+                using var host = new JTRegTestIsolationHost(source);
+                var proxy = host.CreateManager();
+
+                // discover tests from source
+                proxy.DiscoverTests(source, new JTRegDiscoveryContextProxy(discoveryContext, logger, discoverySink), new CancellationTokenProxy(CancellationToken.None));
+            }
         }
 
     }

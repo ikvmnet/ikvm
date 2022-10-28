@@ -42,11 +42,8 @@ namespace IKVM.JTReg.TestAdapter.Tests
             var testResults = new ConcurrentBag<Microsoft.VisualStudio.TestPlatform.ObjectModel.TestResult>();
             frameworkHandle.Setup(x => x.RecordResult(It.IsAny<Microsoft.VisualStudio.TestPlatform.ObjectModel.TestResult>())).Callback((Microsoft.VisualStudio.TestPlatform.ObjectModel.TestResult x) => testResults.Add(x));
 
-            var sources = new[] { typeof(JTRegTestAdapterTests).Assembly.Location };
-
-            // execute tests
             var adp = new JTRegTestExecutor();
-            adp.RunTests(sources, runContext.Object, frameworkHandle.Object);
+            adp.RunTests(new[] { typeof(JTRegTestAdapterTests).Assembly.Location }, runContext.Object, frameworkHandle.Object);
             testResults.Should().HaveCountGreaterThanOrEqualTo(1);
         }
 

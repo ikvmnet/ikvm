@@ -4,41 +4,60 @@ using System.Collections.Generic;
 namespace IKVM.JTReg.TestAdapter.Core
 {
 
+    /// <summary>
+    /// Proxy to a <see cref="JTRegTestManager"/> instance that can be marshalled by reference.
+    /// </summary>
     public class JTRegTestManagerProxy :
 #if NETFRAMEWORK
-        MarshalByRefObject,
+        MarshalByRefObject
+#else
+        object
 #endif
-        IJTRegTestManager
     {
 
-        readonly IJTRegTestManager real;
+        readonly JTRegTestManager real = new JTRegTestManager();
 
         /// <summary>
-        /// Initializes a new instance.
+        /// Initiates a discovery of the tests of the given source.
         /// </summary>
-        public JTRegTestManagerProxy()
+        /// <param name="source"></param>
+        /// <param name="context"></param>
+        /// <param name="cancellationTokenProxy"></param>
+        public void DiscoverTests(string source, IJTRegDiscoveryContext context, CancellationTokenProxy cancellationTokenProxy)
         {
-            this.real = new JTRegTestManager();
+            var ctp = new CancellationTokenCancellationProxy();
+
+            try
+            {
+                cancellationTokenProxy.Register(ctp);
+                real.DiscoverTests(source, context, ctp.Token);
+            }
+            finally
+            {
+                cancellationTokenProxy.Unregister(ctp);
+            }
         }
 
-        public void DiscoverTests(List<string> sources, IJTRegDiscoveryContext context)
+        /// <summary>
+        /// Initiates a run of the given source, optionally with the specified tests.
+        /// </summary>
+        /// <param name="source"></param>
+        /// <param name="tests"></param>
+        /// <param name="context"></param>
+        /// <param name="cancellationTokenProxy"></param>
+        public void RunTests(string source, List<JTRegTestCase> tests, IJTRegExecutionContext context, CancellationTokenProxy cancellationTokenProxy)
         {
-            real.DiscoverTests(sources, context);
-        }
+            var ctp = new CancellationTokenCancellationProxy();
 
-        public void RunTests(List<JTRegTestCase> tests, IJTRegExecutionContext context)
-        {
-            real.RunTests(tests, context);
-        }
-
-        public void RunTests(List<string> sources, IJTRegExecutionContext context)
-        {
-            real.RunTests(sources, context);
-        }
-
-        public void Cancel()
-        {
-            real.Cancel();
+            try
+            {
+                cancellationTokenProxy.Register(ctp);
+                real.RunTests(source, tests, context, ctp.Token);
+            }
+            finally
+            {
+                cancellationTokenProxy.Unregister(ctp);
+            }
         }
 
     }

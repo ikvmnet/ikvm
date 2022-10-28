@@ -15,11 +15,7 @@ namespace IKVM.JTReg.TestAdapter.Core
     /// <summary>
     /// Manages access to JTReg tests.
     /// </summary>
-    public class JTRegTestManager :
-#if NETFRAMEWORK
-        MarshalByRefObject,
-#endif
-        IJTRegTestManager
+    public class JTRegTestManager
     {
 
         public const string URI = "executor://ikvmjtregtestadapter/v1";
@@ -84,8 +80,6 @@ namespace IKVM.JTReg.TestAdapter.Core
             return s.ToString();
         }
 
-
-        CancellationTokenSource cts;
 
         /// <summary>
         /// Creates a new TestManager.
@@ -156,34 +150,12 @@ namespace IKVM.JTReg.TestAdapter.Core
         }
 
         /// <summary>
-        /// Discovers the available OpenJDK tests.
-        /// </summary>
-        /// <param name="sources"></param>
-        /// <param name="context"></param>
-        public void DiscoverTests(List<string> sources, IJTRegDiscoveryContext context)
-        {
-            if (sources is null)
-                throw new ArgumentNullException(nameof(sources));
-            if (context is null)
-                throw new ArgumentNullException(nameof(context));
-
-            try
-            {
-                foreach (var source in sources)
-                    DiscoverTests(source, context);
-            }
-            catch (Exception e)
-            {
-                context.SendMessage(JTRegTestMessageLevel.Error, $"JTReg: An exception occurred discovering tests.\n{e}");
-            }
-        }
-
-        /// <summary>
         /// Discovers the available tests.
         /// </summary>
         /// <param name="source"></param>
         /// <param name="context"></param>
-        internal void DiscoverTests(string source, IJTRegDiscoveryContext context)
+        /// <param name="cancellationToken"></param>
+        public void DiscoverTests(string source, IJTRegDiscoveryContext context, CancellationToken cancellationToken)
         {
             if (string.IsNullOrEmpty(source))
                 throw new ArgumentException($"'{nameof(source)}' cannot be null or empty.", nameof(source));
@@ -237,46 +209,16 @@ namespace IKVM.JTReg.TestAdapter.Core
         protected static readonly string[] DEFAULT_UNIX_ENV_VARS = { "PATH", "DISPLAY", "GNOME_DESKTOP_SESSION_ID", "HOME", "LANG", "LC_ALL", "LC_CTYPE", "LPDEST", "PRINTER", "TZ", "XMODIFIERS" };
 
         /// <summary>
-        /// Runs the given test cases.
-        /// </summary>
-        /// <param name="tests"></param>
-        /// <param name="context"></param>
-        public void RunTests(List<JTRegTestCase> tests, IJTRegExecutionContext context)
-        {
-            if (tests is null)
-                throw new ArgumentNullException(nameof(tests));
-            if (context is null)
-                throw new ArgumentNullException(nameof(context));
-
-            RunTests(tests.Select(i => i.Source).Distinct().ToList(), context, tests);
-        }
-
-        /// <summary>
-        /// Runs all the test cases in the sources.
-        /// </summary>
-        /// <param name="sources"></param>
-        /// <param name="context"></param>
-        public void RunTests(List<string> sources, IJTRegExecutionContext context)
-        {
-            if (sources is null)
-                throw new ArgumentNullException(nameof(sources));
-            if (context is null)
-                throw new ArgumentNullException(nameof(context));
-
-            RunTests(sources, context, null);
-        }
-
-        /// <summary>
         /// Runs the specified test cases, if provided, in the sources.
         /// </summary>
-        /// <param name="sources"></param>
-        /// <param name="context"></param>
+        /// <param name="source"></param>
         /// <param name="tests"></param>
-        internal void RunTests(List<string> sources, IJTRegExecutionContext context, List<JTRegTestCase> tests)
+        /// <param name="context"></param>
+        /// <param name="cancellationToken"></param>
+        public void RunTests(string source, List<JTRegTestCase> tests, IJTRegExecutionContext context, CancellationToken cancellationToken)
         {
             try
             {
-                cts = new CancellationTokenSource();
                 IkvmTraceServer debug = null;
 
                 try
@@ -288,8 +230,7 @@ namespace IKVM.JTReg.TestAdapter.Core
                         debug.Start();
                     }
 
-                    foreach (var source in sources)
-                        RunTestForSource(source, context, tests?.Where(i => i.Source == source).ToList(), debug?.Uri, cts.Token);
+                    RunTestForSource(source, context, tests?.Where(i => i.Source == source).ToList(), debug?.Uri, cancellationToken);
                 }
                 finally
                 {
@@ -307,10 +248,6 @@ namespace IKVM.JTReg.TestAdapter.Core
             catch (Exception e)
             {
                 context.SendMessage(JTRegTestMessageLevel.Error, $"JTReg: Exception occurred running tests.\n{e}");
-            }
-            finally
-            {
-                cts = null;
             }
         }
 
@@ -590,15 +527,6 @@ namespace IKVM.JTReg.TestAdapter.Core
             // generate reports after execution
             var reporter = JTRegTypes.RegressionReporter.New(new java.io.PrintWriter(output));
             reporter.report(testManager);
-        }
-
-        /// <summary>
-        /// Initiates a cancellation of the test discovery or execution.
-        /// </summary>
-        public void Cancel()
-        {
-            cts?.Cancel();
-            cts = null;
         }
 
     }
