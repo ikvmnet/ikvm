@@ -22,8 +22,8 @@ namespace IKVM.JTReg.TestAdapter
         static JTRegTestIsolationHost()
         {
             var setup = new AppDomainSetup();
-            setup.ApplicationBase = Path.GetDirectoryName(typeof(IJTRegTestManager).Assembly.Location);
-            setup.ConfigurationFile = typeof(IJTRegTestManager).Assembly.Location + ".config";
+            setup.ApplicationBase = Path.GetDirectoryName(typeof(JTRegTestManagerProxy).Assembly.Location);
+            setup.ConfigurationFile = typeof(JTRegTestManagerProxy).Assembly.Location + ".config";
             appdomain = AppDomain.CreateDomain("JTReg", null, setup);
         }
 
