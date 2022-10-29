@@ -1059,6 +1059,7 @@ java/io/File/SetAccess.java                                                     
 java/io/File/SetReadOnly.java                                                                                           generic-all
 java/io/File/createTempFile/SpecialTempFile.java                                                                        generic-all
 java/io/FileOutputStream/AtomicAppend.java                                                                              generic-all
+java/io/PipedInputStream/CloseAndAvailableRC.java                                                                       generic-all
 java/io/PipedInputStream/WriterLoop.java                                                                                generic-all
 java/io/Serializable/ClassCastExceptionDetail/Write.java                                                                generic-all
 java/io/Serializable/GetField/Write.java                                                                                generic-all
