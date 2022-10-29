@@ -2966,6 +2966,7 @@ sun/misc/URLClassPath/FileLoaderTest.java                                       
 sun/misc/Version/Version.java                                                                                           generic-all
 sun/net/InetAddress/nameservice/dns/cname.sh                                                                            generic-all
 sun/net/ftp/MarkResetTest.sh                                                                                            generic-all
+sun/net/www/http/ChunkedOutputStream/checkError.java                                                                    generic-all
 sun/net/www/http/HttpClient/B8025710.java                                                                               generic-all
 sun/net/www/http/HttpClient/IsKeepingAlive.java                                                                         generic-all
 sun/net/www/http/HttpClient/MultiThreadTest.java                                                                        generic-all
