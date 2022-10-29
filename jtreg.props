@@ -1,0 +1,11 @@
+﻿<Project>
+    <PropertyGroup>
+        <JTRegDir>$(MSBuildThisFileDirectory)jtreg\</JTRegDir>
+    </PropertyGroup>
+
+    <ItemGroup>
+        <JTRegJar Include="$(JTRegDir)build\images\jtreg\lib\*.jar" />
+        <JTRegJar Include="$(JTRegDir)build\ant\apache-ant-1.9.4\lib\*.jar" />
+    </ItemGroup>
+
+</Project>
