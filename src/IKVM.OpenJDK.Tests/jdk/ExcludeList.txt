@@ -1298,6 +1298,7 @@ java/lang/management/OperatingSystemMXBean/TestSystemLoadAvg.sh                 
 java/lang/management/RuntimeMXBean/GetSystemProperties.java                                                             generic-all
 java/lang/management/RuntimeMXBean/PropertiesTest.java                                                                  generic-all
 java/lang/management/RuntimeMXBean/TestInputArgument.sh                                                                 generic-all
+java/lang/management/RuntimeMXBean/UpTime.java                                                                          generic-all
 java/lang/management/ThreadMXBean/AllThreadIds.java                                                                     generic-all
 java/lang/management/ThreadMXBean/FindDeadlocks.java                                                                    generic-all
 java/lang/management/ThreadMXBean/FindMonitorDeadlock.java                                                              generic-all
