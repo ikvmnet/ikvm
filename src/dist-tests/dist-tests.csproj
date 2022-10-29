@@ -7,37 +7,30 @@
 
     <ItemGroup>
         <TestTarget Include="IKVM.Tests|net461" ProjectName="IKVM.Tests" TargetFramework="net461" />
-        <TestTarget Include="IKVM.Tests|net48" ProjectName="IKVM.Tests" TargetFramework="net48" />
         <TestTarget Include="IKVM.Tests|netcoreapp3.1" ProjectName="IKVM.Tests" TargetFramework="netcoreapp3.1" />
         <TestTarget Include="IKVM.Tests|net6.0" ProjectName="IKVM.Tests" TargetFramework="net6.0" />
         <TestTarget Include="IKVM.Tests.JRE|net461" ProjectName="IKVM.Tests.JRE" TargetFramework="net461" />
-        <TestTarget Include="IKVM.Tests.JRE|net48" ProjectName="IKVM.Tests.JRE" TargetFramework="net48" />
         <TestTarget Include="IKVM.Tests.JRE|netcoreapp3.1" ProjectName="IKVM.Tests.JRE" TargetFramework="netcoreapp3.1" />
         <TestTarget Include="IKVM.Tests.JRE|net6.0" ProjectName="IKVM.Tests.JRE" TargetFramework="net6.0" />
         <TestTarget Include="IKVM.Tests.JDK|net461" ProjectName="IKVM.Tests.JDK" TargetFramework="net461" />
-        <TestTarget Include="IKVM.Tests.JDK|net48" ProjectName="IKVM.Tests.JDK" TargetFramework="net48" />
         <TestTarget Include="IKVM.Tests.JDK|netcoreapp3.1" ProjectName="IKVM.Tests.JDK" TargetFramework="netcoreapp3.1" />
         <TestTarget Include="IKVM.Tests.JDK|net6.0" ProjectName="IKVM.Tests.JDK" TargetFramework="net6.0" />
         <TestTarget Include="ikvmc.Tests|net461" ProjectName="ikvmc.Tests" TargetFramework="net461" />
         <TestTarget Include="ikvmc.Tests|netcoreapp3.1" ProjectName="ikvmc.Tests" TargetFramework="netcoreapp3.1" />
         <TestTarget Include="IKVM.Tools.Tests|net461" ProjectName="IKVM.Tools.Tests" TargetFramework="net461" />
-        <TestTarget Include="IKVM.Tools.Tests|net48" ProjectName="IKVM.Tools.Tests" TargetFramework="net48" />
         <TestTarget Include="IKVM.Tools.Tests|netcoreapp3.1" ProjectName="IKVM.Tools.Tests" TargetFramework="netcoreapp3.1" />
         <TestTarget Include="IKVM.Tools.Tests|net6.0" ProjectName="IKVM.Tools.Tests" TargetFramework="net6.0" />
         <TestTarget Include="IKVM.Tools.Exporter.Tests|net461" ProjectName="IKVM.Tools.Exporter.Tests" TargetFramework="net461" />
         <TestTarget Include="IKVM.Tools.Exporter.Tests|netcoreapp3.1" ProjectName="IKVM.Tools.Exporter.Tests" TargetFramework="netcoreapp3.1" />
         <TestTarget Include="IKVM.MSBuild.Tasks.Tests|net472" ProjectName="IKVM.MSBuild.Tasks.Tests" TargetFramework="net472" />
-        <TestTarget Include="IKVM.MSBuild.Tasks.Tests|net48" ProjectName="IKVM.MSBuild.Tasks.Tests" TargetFramework="net48" />
         <TestTarget Include="IKVM.MSBuild.Tasks.Tests|netcoreapp3.1" ProjectName="IKVM.MSBuild.Tasks.Tests" TargetFramework="netcoreapp3.1" />
         <TestTarget Include="IKVM.MSBuild.Tasks.Tests|net6.0" ProjectName="IKVM.MSBuild.Tasks.Tests" TargetFramework="net6.0" />
         <TestTarget Include="IKVM.MSBuild.Tests|net6.0" ProjectName="IKVM.MSBuild.Tests" TargetFramework="net6.0" />
         <TestTarget Include="IKVM.NET.Sdk.Tests|net6.0" ProjectName="IKVM.NET.Sdk.Tests" TargetFramework="net6.0" />
         <TestTarget Include="IKVM.JTReg.TestAdapter.Tests|net461" ProjectName="IKVM.JTReg.TestAdapter.Tests" TargetFramework="net461" />
-        <TestTarget Include="IKVM.JTReg.TestAdapter.Tests|net48" ProjectName="IKVM.JTReg.TestAdapter.Tests" TargetFramework="net48" />
         <TestTarget Include="IKVM.JTReg.TestAdapter.Tests|netcoreapp3.1" ProjectName="IKVM.JTReg.TestAdapter.Tests" TargetFramework="netcoreapp3.1" />
         <TestTarget Include="IKVM.JTReg.TestAdapter.Tests|net6.0" ProjectName="IKVM.JTReg.TestAdapter.Tests" TargetFramework="net6.0" />
         <TestTarget Include="IKVM.OpenJDK.Tests|net461" ProjectName="IKVM.OpenJDK.Tests" TargetFramework="net461" />
-        <TestTarget Include="IKVM.OpenJDK.Tests|net48" ProjectName="IKVM.OpenJDK.Tests" TargetFramework="net48" />
         <TestTarget Include="IKVM.OpenJDK.Tests|netcoreapp3.1" ProjectName="IKVM.OpenJDK.Tests" TargetFramework="netcoreapp3.1" />
         <TestTarget Include="IKVM.OpenJDK.Tests|net6.0" ProjectName="IKVM.OpenJDK.Tests" TargetFramework="net6.0" />
     </ItemGroup>
