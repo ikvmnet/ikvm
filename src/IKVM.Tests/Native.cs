@@ -30,10 +30,12 @@ namespace IKVM.Tests
         /// Gets the RID architecture.
         /// </summary>
         /// <returns></returns>
-        static string GetRuntimeIdentifierArch() => IntPtr.Size switch
+        static string GetRuntimeIdentifierArch() => RuntimeInformation.ProcessArchitecture switch
         {
-            4 => "x86",
-            8 => "x64",
+            Architecture.X86 => "x86",
+            Architecture.X64 => "x64",
+            Architecture.Arm => "arm",
+            Architecture.Arm64 => "arm64",
             _ => throw new NotSupportedException(),
         };
 
@@ -45,15 +47,11 @@ namespace IKVM.Tests
         {
             var arch = GetRuntimeIdentifierArch();
 
-#if NETFRAMEWORK
-            yield return $"win-{arch}";
-#else
             if (RuntimeInformation.IsOSPlatform(OSPlatform.Windows))
                 yield return $"win-{arch}";
 
             if (RuntimeInformation.IsOSPlatform(OSPlatform.Linux))
                 yield return $"linux-{arch}";
-#endif
         }
 
         /// <summary>
@@ -63,15 +61,11 @@ namespace IKVM.Tests
         /// <returns></returns>
         static string GetLibraryFileName(string name)
         {
-#if NET461
-            return $"{name}.dll";
-#else
             if (RuntimeInformation.IsOSPlatform(OSPlatform.Windows))
                 return $"{name}.dll";
 
             if (RuntimeInformation.IsOSPlatform(OSPlatform.Linux))
                 return $"lib{name}.so";
-#endif
 
             throw new NotSupportedException();
         }

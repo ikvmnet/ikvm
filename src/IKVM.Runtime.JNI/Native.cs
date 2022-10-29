@@ -62,7 +62,7 @@ namespace IKVM.Runtime
 
 #endif
 
-#if NETCOREAPP3_1_OR_GREATER
+#if NETCOREAPP
 
         /// <summary>
         /// Attempts to resolve the specified assembly when running on .NET Core 3.1 and above.
@@ -111,15 +111,11 @@ namespace IKVM.Runtime
         {
             var arch = GetRuntimeIdentifierArch();
 
-#if NETFRAMEWORK
-            yield return $"win-{arch}";
-#else
             if (RuntimeInformation.IsOSPlatform(OSPlatform.Windows))
                 yield return $"win-{arch}";
 
             if (RuntimeInformation.IsOSPlatform(OSPlatform.Linux))
                 yield return $"linux-{arch}";
-#endif
         }
 
         /// <summary>
@@ -129,15 +125,11 @@ namespace IKVM.Runtime
         /// <returns></returns>
         static string GetLibraryFileName(string name)
         {
-#if NETFRAMEWORK
-            return $"{name}.dll";
-#else
             if (RuntimeInformation.IsOSPlatform(OSPlatform.Windows))
                 return $"{name}.dll";
 
             if (RuntimeInformation.IsOSPlatform(OSPlatform.Linux))
                 return $"lib{name}.so";
-#endif
 
             throw new NotSupportedException();
         }

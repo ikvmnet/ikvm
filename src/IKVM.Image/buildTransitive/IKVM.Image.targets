@@ -101,6 +101,7 @@
     <ItemGroup>
         <IkvmImageRuntimeIdentifiers Include="win7-x64" />
         <IkvmImageRuntimeIdentifiers Include="win7-x86" />
+        <IkvmImageRuntimeIdentifiers Include="win7-arm" />
         <IkvmImageRuntimeIdentifiers Include="linux-x64" />
     </ItemGroup>
 

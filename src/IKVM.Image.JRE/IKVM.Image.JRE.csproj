@@ -22,6 +22,9 @@
         <ProjectReference Include="..\IKVM.Image.JRE.runtime.win7-x86\IKVM.Image.JRE.runtime.win7-x86.csproj">
             <ReferenceOutputAssembly>true</ReferenceOutputAssembly>
         </ProjectReference>
+        <ProjectReference Include="..\IKVM.Image.JRE.runtime.win7-arm\IKVM.Image.JRE.runtime.win7-arm.csproj">
+            <ReferenceOutputAssembly>true</ReferenceOutputAssembly>
+        </ProjectReference>
         <ProjectReference Include="..\IKVM.Image.JRE.runtime.linux-x64\IKVM.Image.JRE.runtime.linux-x64.csproj">
             <ReferenceOutputAssembly>true</ReferenceOutputAssembly>
         </ProjectReference>
