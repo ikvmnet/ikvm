@@ -1316,6 +1316,7 @@ java/lang/management/ThreadMXBean/ThreadLists.java                              
 java/lang/management/ThreadMXBean/ThreadMXBeanStateTest.java                                                            generic-all
 java/lang/management/ThreadMXBean/ThreadStackTrace.java                                                                 generic-all
 java/lang/management/ThreadMXBean/ThreadUserTime.java                                                                   generic-all
+java/lang/ref/EarlyTimeout.java                                                                                         generic-all
 java/lang/ref/FinalizeOverride.java                                                                                     generic-all
 java/lang/ref/NullQueue.java                                                                                            generic-all
 java/lang/ref/OOMEInReferenceHandler.java                                                                               generic-all
