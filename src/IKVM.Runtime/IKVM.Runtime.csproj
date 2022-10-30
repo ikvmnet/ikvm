@@ -22,8 +22,10 @@
         <Reference Include="System.Configuration" />
         <Reference Include="System.IO.Compression" />
         <Reference Include="System.Security" />
+        <PackageReference Include="System.Runtime.CompilerServices.Unsafe" Version="6.0.0" />
         <PackageReference Include="System.Runtime.InteropServices.RuntimeInformation" Version="4.3.0" />
         <PackageReference Include="System.ValueTuple" Version="4.5.0" />
+        <PackageReference Include="System.Text.Json" Version="6.0.6" />
     </ItemGroup>
 
     <ItemGroup Condition=" '$(TargetFramework)' == 'netcoreapp3.1' ">
@@ -53,11 +55,11 @@
     <ItemGroup>
         <LibProjectReference Include="..\ikvm-native\ikvm-native-win.vcxproj">
             <SetPlatform>Platform=x64</SetPlatform>
-            <LibTargetPath>runtimes\win7-x64\native</LibTargetPath>
+            <LibTargetPath>runtimes\win-x64\native</LibTargetPath>
         </LibProjectReference>
         <LibProjectReference Include="..\ikvm-native\ikvm-native-win.vcxproj">
             <SetPlatform>Platform=Win32</SetPlatform>
-            <LibTargetPath>runtimes\win7-x86\native</LibTargetPath>
+            <LibTargetPath>runtimes\win-x86\native</LibTargetPath>
         </LibProjectReference>
         <LibProjectReference Include="..\ikvm-native\ikvm-native-linux.vcxproj">
             <SetPlatform>Platform=x64</SetPlatform>

@@ -1,29 +1,29 @@
 ﻿using System;
-using System.IO;
 
-namespace IKVM.JTReg.TestAdapter
+namespace IKVM.JTReg.TestAdapter.Core
 {
+
     /// <summary>
     /// Proxied implementation of 'com.sun.javatest.TestFinder$ErrorHandler'.
     /// </summary>
     class ErrorHandlerImplementation
     {
 
-        readonly TextWriter writer;
+        readonly IJTRegLoggerContext logger;
 
         /// <summary>
         /// Initializes a new instance.
         /// </summary>
-        /// <param name="writer"></param>
+        /// <param name="logger"></param>
         /// <exception cref="ArgumentNullException"></exception>
-        public ErrorHandlerImplementation(TextWriter writer)
+        public ErrorHandlerImplementation(IJTRegLoggerContext logger)
         {
-            this.writer = writer ?? throw new ArgumentNullException(nameof(writer));
+            this.logger = logger ?? throw new ArgumentNullException(nameof(logger));
         }
 
         public void error(dynamic proxy, string msg)
         {
-            writer.WriteLine(msg);
+            logger.SendMessage(JTRegTestMessageLevel.Error, msg);
         }
 
     }

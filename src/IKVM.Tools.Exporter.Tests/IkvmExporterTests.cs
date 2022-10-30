@@ -1,13 +1,12 @@
 ﻿using System.IO;
 using System.Linq;
 using System.Runtime.InteropServices;
+using System.Threading;
+using System.Threading.Tasks;
 
 using FluentAssertions;
 
 using Microsoft.VisualStudio.TestTools.UnitTesting;
-using System.Threading.Tasks;
-using System.Collections.Generic;
-using System.Threading;
 
 #if NETCOREAPP3_1_OR_GREATER
 using Microsoft.Extensions.DependencyModel;

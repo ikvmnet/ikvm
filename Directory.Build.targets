@@ -213,6 +213,7 @@
         <ItemGroup>
             <_PublishProjectReferencesToTarget Include="@(_PublishProjectReference)" RemoveMetadata="ProjectName;ProjectTargetPath;ProjectPackagePath" />
         </ItemGroup>
+        <MSBuild Projects="@(_PublishProjectReferencesToTarget)" Targets="Build" BuildInParallel="$(BuildInParallel)" Properties="%(_PublishProjectReferencesToTarget.SetConfiguration);%(_PublishProjectReferencesToTarget.SetPlatform);%(_PublishProjectReferencesToTarget.SetTargetFramework);%(_PublishProjectReferencesToTarget.SetRuntimeIdentifier)" RemoveProperties="$(_GlobalPropertiesToRemoveFromProjectReferences);%(_PublishProjectReferencesToTarget.GlobalPropertiesToRemove)" />
         <MSBuild Projects="@(_PublishProjectReferencesToTarget)" Targets="PublishAndGetPublishDir" BuildInParallel="$(BuildInParallel)" Properties="%(_PublishProjectReferencesToTarget.SetConfiguration);%(_PublishProjectReferencesToTarget.SetPlatform);%(_PublishProjectReferencesToTarget.SetTargetFramework);%(_PublishProjectReferencesToTarget.SetRuntimeIdentifier)" RemoveProperties="$(_GlobalPropertiesToRemoveFromProjectReferences);%(_PublishProjectReferencesToTarget.GlobalPropertiesToRemove)" RebaseOutputs="true">
             <Output TaskParameter="TargetOutputs" PropertyName="_PublishProjectReferencePublishDir" />
         </MSBuild>

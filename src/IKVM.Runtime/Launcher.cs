@@ -4,7 +4,12 @@ using System.Collections.Generic;
 using System.Diagnostics;
 using System.IO;
 using System.Linq;
+using System.Net;
+using System.Net.Sockets;
 using System.Reflection;
+using System.Text;
+using System.Text.Json;
+using System.Text.Json.Serialization;
 using System.Threading;
 
 using IKVM.Internal;
@@ -19,7 +24,16 @@ namespace IKVM.Runtime
     static class Launcher
     {
 
-        const string DEFAULT_RUNTIME_ARG_PREFIX = "-J";
+        /// <summary>
+        /// Data sent as part of the debug ping protocol.
+        /// </summary>
+        class IkvmStartEvent
+        {
+
+            [JsonPropertyName("processId")]
+            public int ProcessId { get; set; }
+
+        }
 
         /// <summary>
         /// Returns an enumeration with the given argument prepended.
@@ -227,6 +241,8 @@ namespace IKVM.Runtime
 #if FIRST_PASS || STATIC_COMPILER
             throw new NotImplementedException();
 #else
+            HandleDebugTrace();
+
             var initialize = properties != null ? new Dictionary<string, string>(properties) : new Dictionary<string, string>();
             var showversion = false;
             var hasMainArg = false;
@@ -241,7 +257,7 @@ namespace IKVM.Runtime
 
             // ikvm.home from environmente by default
             initialize["ikvm.home"] = "ikvm";
-            if (Environment.GetEnvironmentVariable("IKVM_HOME") is String ih && !string.IsNullOrEmpty(ih))
+            if (Environment.GetEnvironmentVariable("IKVM_HOME") is string ih && !string.IsNullOrEmpty(ih))
                 initialize["ikvm.home"] = ih;
 
             // process through each incoming argument
@@ -270,7 +286,7 @@ namespace IKVM.Runtime
                     if (arg.StartsWith("-ea:".AsSpan()) || arg.StartsWith("-enableassertions:".AsSpan()))
                     {
                         if (arg.IndexOf(':') is int v && v > -1)
-                            Assertions.EnableAssertions(arg.Slice(v).ToString());
+                            Assertions.EnableAssertions(arg.Slice(v + 1).ToString());
                     }
 
                     if (ArgEquals(arg, "-da") || ArgEquals(arg, "-disableassertions"))
@@ -282,7 +298,7 @@ namespace IKVM.Runtime
                     if (arg.StartsWith("-da:".AsSpan()) || arg.StartsWith("-disableassertions:".AsSpan()))
                     {
                         if (arg.IndexOf(':') is int v && v > -1)
-                            Assertions.DisableAssertions(arg.Slice(v).ToString());
+                            Assertions.DisableAssertions(arg.Slice(v + 1).ToString());
                     }
 
                     if (ArgEquals(arg, "-esa") || ArgEquals(arg, "-enablesystemassertions"))
@@ -369,7 +385,7 @@ namespace IKVM.Runtime
                     if (arg.StartsWith("-Xtrace:".AsSpan()))
                     {
                         if (arg.IndexOf(':') is int v && v > -1)
-                            Tracer.SetTraceLevel(arg.Slice(v).ToString());
+                            Tracer.SetTraceLevel(arg.Slice(v + 1).ToString());
 
                         continue;
                     }
@@ -377,7 +393,7 @@ namespace IKVM.Runtime
                     if (arg.StartsWith("-Xmethodtrace:".AsSpan()))
                     {
                         if (arg.IndexOf(':') is int v && v > -1)
-                            Tracer.HandleMethodTrace(arg.Slice(v).ToString());
+                            Tracer.HandleMethodTrace(arg.Slice(v + 1).ToString());
 
                         continue;
                     }
@@ -385,7 +401,7 @@ namespace IKVM.Runtime
                     if (arg.StartsWith("-Xreference:".AsSpan()))
                     {
                         if (arg.IndexOf(':') is int v && v > -1)
-                            AddBootClassPathAssembly(Assembly.LoadFrom(arg.Slice(v).ToString()));
+                            AddBootClassPathAssembly(Assembly.LoadFrom(arg.Slice(v + 1).ToString()));
 
                         continue;
                     }
@@ -496,6 +512,64 @@ namespace IKVM.Runtime
 
             return 1;
 #endif
+        }
+
+        /// <summary>
+        /// Handles the configured IKVM debug settings.
+        /// </summary>
+        static void HandleDebugTrace()
+        {
+            var debugWait = 0;
+            var debugUri = (Uri)null;
+
+            // wait some number of seconds for a debugger to attach
+            if (Environment.GetEnvironmentVariable("IKVM_DEBUG_WAIT") is string debugWait_)
+                if (int.TryParse(debugWait_, out var i))
+                    debugWait = i;
+
+            // send a ping message to the given hostname and port to signal a debugger to attach
+            if (Environment.GetEnvironmentVariable("IKVM_DEBUG_URI") is string debugUri_)
+                if (Uri.TryCreate(debugUri_, UriKind.Absolute, out var u))
+                    debugUri = u;
+
+            // send a start event to the host
+            if (debugUri != null)
+            {
+                if (debugUri.Scheme == "tcp" &&  IPAddress.TryParse(debugUri.Host, out var ip) && debugUri.Port > 0)
+                {
+                    var message = Encoding.UTF8.GetBytes(JsonSerializer.Serialize(new IkvmStartEvent() { ProcessId = Process.GetCurrentProcess().Id, }));
+                    using var c = new TcpClient();
+                    c.Connect(new IPEndPoint(ip, debugUri.Port));
+                    c.GetStream().Write(message, 0, message.Length);
+                    c.GetStream().WriteByte(0);
+                    c.GetStream().Flush();
+                    c.Close();
+                }
+                else
+                {
+                    Console.Error.WriteLine("Invalid debug URI: {0}", debugUri);
+                }
+            }
+
+            // wait for debugger to attach
+            if (debugWait > 0)
+            {
+                Console.Write("Waiting for debugger...");
+
+                // waits for the debugger to be attached
+                var cts = new CancellationTokenSource(TimeSpan.FromSeconds(debugWait));
+                while (Debugger.IsAttached == false && cts.IsCancellationRequested == false)
+                {
+                    Thread.Sleep(1000);
+                    Console.Write(".");
+                }
+
+                Console.WriteLine();
+
+                // not attached, and cancelled?
+                if (Debugger.IsAttached == false && cts.IsCancellationRequested)
+                    Console.Error.WriteLine("Debugger wait timed out.");
+            }
         }
 
         /// <summary>

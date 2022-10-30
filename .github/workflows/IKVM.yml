@@ -4,7 +4,9 @@ on:
   push:
     branches:
     - main
+    - hotfix/*
     - develop
+    - release/*
   pull_request:
     branches:
     - main
@@ -97,7 +99,7 @@ jobs:
         files: jtreg/build/stamp
     - name: Build OpenJDK Test Harness
       if: steps.jtreg-build-stamp.outputs.files_exists != 'true'
-      run: patch -p1 -f < ../jtreg.patch && bash make/build-all.sh `realpath ../openjdk/build/linux-x86_64-normal-server-release/images/j2sdk-image` && touch build/stamp
+      run: bash make/build-all.sh `realpath ../openjdk/build/linux-x86_64-normal-server-release/images/j2sdk-image` && touch build/stamp
       working-directory: jtreg
     - name: Package OpenJDK Test Harness
       run: zip -r jtreg-build.zip build
@@ -126,25 +128,26 @@ jobs:
       uses: gittools/actions/gitversion/execute@v0.9.13
       with:
         useConfigFile: true
-    - name: Setup .NET
-      run: ac $env:GITHUB_ENV "`nDOTNET_INSTALL_DIR=${{ runner.temp }}\dotnet"
-    - name: Setup .NET 3.1
-      uses: actions/setup-dotnet@v2
-      with:
-        dotnet-version: 3.1.x
-    - name: Setup .NET 6.0
-      uses: actions/setup-dotnet@v2
-      with:
-        dotnet-version: 6.0.x
     - name: Setup WSL
       uses: Vampire/setup-wsl@v1
       with:
         additional-packages:
           gcc
           g++
+    - name: Setup .NET
+      shell: pwsh
+      run: Add-Content $env:GITHUB_ENV "`nDOTNET_INSTALL_DIR=${{ runner.temp }}\dotnet"
+    - name: Setup .NET 3.1
+      uses: actions/setup-dotnet@v3
+      with:
+        dotnet-version: 3.1.x
+    - name: Setup .NET 6.0
+      uses: actions/setup-dotnet@v3
+      with:
+        dotnet-version: 6.0.x
     - name: Move Temporary Directory
       shell: pwsh
-      run: Add-Content $env:GITHUB_ENV "`nTMP=${{ runner.temp }}`nTEMP=${{ runner.temp }}"
+      run: Add-Content $env:GITHUB_ENV "`nTMP=${{ runner.temp }}`nTEMP=${{ runner.temp }}`nTMPDIR=${{ runner.temp }}"
     - name: Move NuGet Directory
       shell: pwsh
       run: Add-Content $env:GITHUB_ENV "`nNUGET_PACKAGES=${{ runner.temp }}\nuget\packages"
@@ -162,7 +165,8 @@ jobs:
         name: openjdk-build-linux-x86_64-normal-server-release
         path: openjdk/build
     - name: Restore OpenJDK 8 Build
-      run: unzip -o openjdk-build-linux-x86_64-normal-server-release.zip
+      shell: pwsh
+      run: Expand-Archive openjdk-build-linux-x86_64-normal-server-release.zip .
       working-directory: openjdk/build
     - name: Download JTReg Build
       uses: actions/download-artifact@v3
@@ -170,7 +174,8 @@ jobs:
         name: jtreg-build
         path: jtreg
     - name: Restore JTReg Build
-      run: unzip -o jtreg-build.zip
+      shell: pwsh
+      run: Expand-Archive jtreg-build.zip .
       working-directory: jtreg
     - name: NuGet Restore
       run: dotnet restore IKVM.sln
@@ -200,69 +205,50 @@ jobs:
       with:
         name: msbuild.binlog
         path: msbuild.binlog
+    - name: Package NuGet Packages
+      run: tar czvf C:\nuget.tar.gz nuget
+      working-directory: dist
     - name: Upload NuGet Packages
       uses: actions/upload-artifact@v3
       with:
         name: nuget
-        path: dist/nuget/*.nupkg
+        path: C:\nuget.tar.gz
     - name: Package Binaries
-      run: tar czvf bin.tar.gz bin
+      run: tar czvf C:\bin.tar.gz bin
       working-directory: dist
     - name: Upload Binaries
       uses: actions/upload-artifact@v3
       with:
         name: bin
-        path: dist/bin.tar.gz
-    - name: Delete Binaries
-      shell: pwsh
-      run: ri bin.tar.gz
-      working-directory: dist
+        path: C:\bin.tar.gz
     - name: Package Tools
-      run: tar czvf tools.tar.gz tools
+      run: tar czvf C:\tools.tar.gz tools
       working-directory: dist
     - name: Upload Tools
       uses: actions/upload-artifact@v3
       with:
         name: tools
-        path: dist/tools.tar.gz
-    - name: Delete Tools
-      shell: pwsh
-      run: ri tools.tar.gz
-      working-directory: dist
+        path: C:\tools.tar.gz
     - name: Package Image
-      run: tar czvf image.tar.gz image
+      run: tar czvf C:\image.tar.gz image
       working-directory: dist
     - name: Upload Image
       uses: actions/upload-artifact@v3
       with:
         name: image
-        path: dist/image.tar.gz
-    - name: Delete Image
-      shell: pwsh
-      run: ri image.tar.gz
-      working-directory: dist
+        path: C:\image.tar.gz
     - name: Package Tests
-      run: tar czvf tests.tar.gz tests
+      run: tar czvf C:\tests.tar.gz tests
       working-directory: dist
     - name: Upload Tests
       uses: actions/upload-artifact@v3
       with:
         name: tests
-        path: dist/tests.tar.gz
-    - name: Delete Tests
-      shell: pwsh
-      run: ri tests.tar.gz
-      working-directory: dist
-    - name: Delete Files
-      shell: pwsh
-      run: ri dist -Recurse -Force
+        path: C:\tests.tar.gz
     - name: Clean Solution
       run: |
-        msbuild /m `
-          /p:Configuration="Release" `
-          /p:Platform="Any CPU" `
-          /t:Clean `
-          IKVM.sln
+        git reset --hard
+        git clean -qfdx
   test-ikvm:
     strategy:
       matrix:
@@ -273,95 +259,78 @@ jobs:
         - ikvmc.Tests
         - IKVM.Tools.Exporter.Tests
         - IKVM.Tools.Tests
-        - IKVM.MSBuild.Tasks.Tests
-        - IKVM.MSBuild.Tests
-        - IKVM.NET.Sdk.Tests
         - IKVM.JTReg.TestAdapter.Tests
-        - IKVM.Java.Tests?TestPartition=0
-        - IKVM.Java.Tests?TestPartition=1
-        - IKVM.Java.Tests?TestPartition=2
-        - IKVM.Java.Tests?TestPartition=3
-        - IKVM.Java.Tests?TestPartition=4
-        - IKVM.Java.Tests?TestPartition=5
-        - IKVM.Java.Tests?TestPartition=6
-        - IKVM.Java.Tests?TestPartition=7
-        - IKVM.Java.Tests?TestPartition=8
-        - IKVM.Java.Tests?TestPartition=9
-        - IKVM.Java.Tests?TestPartition=10
-        - IKVM.Java.Tests?TestPartition=11
-        - IKVM.Java.Tests?TestPartition=12
-        - IKVM.Java.Tests?TestPartition=13
-        - IKVM.Java.Tests?TestPartition=14
-        - IKVM.Java.Tests?TestPartition=15
+        - IKVM.OpenJDK.Tests?TestPartition=0
+        - IKVM.OpenJDK.Tests?TestPartition=1
+        - IKVM.OpenJDK.Tests?TestPartition=2
+        - IKVM.OpenJDK.Tests?TestPartition=3
+        - IKVM.OpenJDK.Tests?TestPartition=4
+        - IKVM.OpenJDK.Tests?TestPartition=5
+        - IKVM.OpenJDK.Tests?TestPartition=6
+        - IKVM.OpenJDK.Tests?TestPartition=7
         tfm:
         - net461
-        - net472
-        - net48
         - netcoreapp3.1
         - net6.0
         sys:
         - windows
-        - ubuntu
+        - linux
         exclude:
-        - sys: ubuntu
-          tfm: net461
-        - sys: ubuntu
-          tfm: net472
-        - sys: ubuntu
-          tfm: net48
+        - tfm: net461
+          sys: linux
+        - run: IKVM.Tools.Exporter.Tests
+          tfm: net6.0
+        - run: ikvmc.Tests
+          tfm: net6.0
+        - run: IKVM.OpenJDK.Tests?TestPartition=0
+          sys: linux
+        - run: IKVM.OpenJDK.Tests?TestPartition=1
+          sys: linux
+        - run: IKVM.OpenJDK.Tests?TestPartition=2
+          sys: linux
+        - run: IKVM.OpenJDK.Tests?TestPartition=3
+          sys: linux
+        - run: IKVM.OpenJDK.Tests?TestPartition=4
+          sys: linux
+        - run: IKVM.OpenJDK.Tests?TestPartition=5
+          sys: linux
+        - run: IKVM.OpenJDK.Tests?TestPartition=6
+          sys: linux
+        - run: IKVM.OpenJDK.Tests?TestPartition=7
+          sys: linux
+        include:
         - run: IKVM.MSBuild.Tasks.Tests
-          sys: ubuntu
-        - run: IKVM.MSBuild.Tests
-          sys: ubuntu
-        - run: IKVM.MSBuild.Tests
-          tfm: net461
-        - run: IKVM.MSBuild.Tests
           tfm: net472
-        - run: IKVM.MSBuild.Tests
-          tfm: net48
-        - run: IKVM.MSBuild.Tests
+          sys: windows
+        - run: IKVM.MSBuild.Tasks.Tests
           tfm: netcoreapp3.1
-        - run: IKVM.NET.Sdk.Tests
-          sys: ubuntu
-        - run: IKVM.NET.Sdk.Tests
-          tfm: net461
-        - run: IKVM.NET.Sdk.Tests
-          tfm: net472
-        - run: IKVM.NET.Sdk.Tests
-          tfm: net48
-        - run: IKVM.NET.Sdk.Tests
-          tfm: netcoreapp3.1
-        - run: IKVM.Tests
-          tfm: net472
-        - run: IKVM.Tests.JRE
-          tfm: net472
-        - run: IKVM.Tests.JDK
-          tfm: net472
-        - run: IKVM.Tools.Exporter.Tests
-          tfm: net472
-        - run: IKVM.Tools.Exporter.Tests
-          tfm: net48
-        - run: IKVM.Tools.Exporter.Tests
+          sys: windows
+        - run: IKVM.MSBuild.Tasks.Tests
           tfm: net6.0
-        - run: IKVM.Tools.Tests
-          tfm: net472
-        - run: ikvmc.Tests
-          tfm: net472
-        - run: ikvmc.Tests
-          tfm: net48
-        - run: ikvmc.Tests
+          sys: windows
+        - run: IKVM.MSBuild.Tests
           tfm: net6.0
+          sys: windows
+        - run: IKVM.NET.Sdk.Tests
+          tfm: net6.0
+          sys: windows
     name: Test IKVM (${{ matrix.run }}:${{ matrix.tfm }}:${{ matrix.sys }}
     needs:
     - build-ikvm
-    runs-on: ${{ matrix.sys }}-latest
+    runs-on: ${{ fromJSON('{"windows":["windows-2022"],"linux":["ubuntu-22.04"]}')[matrix.sys] }}
     steps:
+    - name: Setup WSL
+      if: matrix.sys == 'windows'
+      uses: Vampire/setup-wsl@v1
+    - name: Setup .NET
+      shell: pwsh
+      run: Add-Content $env:GITHUB_ENV "`nDOTNET_INSTALL_DIR=${{ runner.temp }}/dotnet"
     - name: Setup .NET 3.1
-      uses: actions/setup-dotnet@v2
+      uses: actions/setup-dotnet@v3
       with:
         dotnet-version: 3.1.x
     - name: Setup .NET 6.0
-      uses: actions/setup-dotnet@v2
+      uses: actions/setup-dotnet@v3
       with:
         dotnet-version: 6.0.x
     - name: Move Temporary Directory
@@ -380,6 +349,7 @@ jobs:
       run: ri tests.tar.gz
       working-directory: dist
     - name: Execute Tests
+      timeout-minutes: 120
       shell: pwsh
       run: |
         # assign powershell variables
@@ -410,7 +380,7 @@ jobs:
             }
         }
     - name: Upload Test Results
-      if: ${{ always() && startsWith(env.RET, 'TestResults--') }}
+      if: always() && startsWith(env.RET, 'TestResults--')
       uses: actions/upload-artifact@v3
       with:
         name: ${{ env.RET }}
@@ -439,7 +409,10 @@ jobs:
       uses: actions/download-artifact@v3
       with:
         name: nuget
-        path: dist/nuget
+        path: dist
+    - name: Restore NuGet Packages
+      run: tar xzvf nuget.tar.gz
+      working-directory: dist
     - name: Download Binaries
       uses: actions/download-artifact@v3
       with:

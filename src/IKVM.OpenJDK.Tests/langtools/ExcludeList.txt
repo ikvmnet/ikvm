@@ -108,6 +108,9 @@ tools/javac/8005931/CheckACC_STRICTFlagOnPkgAccessClassTest.java                
 tools/javac/8009170/RedundantByteCodeInArrayTest.java                                                                   generic-all
 tools/javac/AnonymousSubclassTest.java                                                                                  generic-all
 tools/javac/ArrayCloneCodeGen.java                                                                                      generic-all
+tools/javac/BadOptimization/DeadCode3.java                                                                              generic-all
+tools/javac/BadOptimization/DeadCode4.java                                                                              generic-all
+tools/javac/BadOptimization/DeadCode5.java                                                                              generic-all
 tools/javac/ClassPathTest/ClassPathTest.java                                                                            generic-all
 tools/javac/Diagnostics/6769027/T6769027.java                                                                           generic-all
 tools/javac/Diagnostics/7010608/Test.java                                                                               generic-all
@@ -130,13 +133,13 @@ tools/javac/MethodParametersTest.java                                           
 tools/javac/MissingInclude/MissingIncludeTest.java                                                                      generic-all
 tools/javac/NoStringToLower.java                                                                                        generic-all
 tools/javac/Paths/6638501/JarFromManifestFailure.java                                                                   generic-all
-tools/javac/Paths/Class-Path.java                                                                                       generic-all
-tools/javac/Paths/Class-Path2.java                                                                                      generic-all
-tools/javac/Paths/Diagnostics.java                                                                                      generic-all
-tools/javac/Paths/Help.java                                                                                             generic-all
-tools/javac/Paths/MineField.java                                                                                        generic-all
+tools/javac/Paths/Class-Path.sh                                                                                         generic-all
+tools/javac/Paths/Class-Path2.sh                                                                                        generic-all
+tools/javac/Paths/Diagnostics.sh                                                                                        generic-all
+tools/javac/Paths/Help.sh                                                                                               generic-all
+tools/javac/Paths/MineField.sh                                                                                          generic-all
 tools/javac/Paths/TestCompileJARInClassPath.java                                                                        generic-all
-tools/javac/Paths/wcMineField.java                                                                                      generic-all
+tools/javac/Paths/wcMineField.sh                                                                                        generic-all
 tools/javac/ProtectedInnerClass/ProtectedInnerClassesTest.java                                                          generic-all
 tools/javac/T5090006/AssertionFailureTest.java                                                                          generic-all
 tools/javac/T6214885.java                                                                                               generic-all
@@ -324,6 +327,7 @@ tools/javac/api/ToolProvider/ToolProviderTest2.java                             
 tools/javac/api/guide/Test.java                                                                                         generic-all
 tools/javac/api/taskListeners/EventsBalancedTest.java                                                                   generic-all
 tools/javac/api/taskListeners/TestSimpleAddRemove.java                                                                  generic-all
+tools/javac/assert/Position.java                                                                                        generic-all
 tools/javac/cast/intersection/IntersectionTypeCastTest.java                                                             generic-all
 tools/javac/cast/intersection/IntersectionTypeParserTest.java                                                           generic-all
 tools/javac/cast/intersection/model/Model01.java                                                                        generic-all
@@ -841,7 +845,7 @@ tools/javac/varargs/7043922/T7043922.java                                       
 tools/javac/varargs/MethodHandleCrash.java                                                                              generic-all
 tools/javac/varargs/warning/Warn4.java                                                                                  generic-all
 tools/javac/varargs/warning/Warn5.java                                                                                  generic-all
-tools/javac/versions/check.java                                                                                         generic-all
+tools/javac/versions/check.sh                                                                                           generic-all
 tools/javac/warnings/6594914/T6594914b.java                                                                             generic-all
 tools/javac/warnings/suppress/Overridden.java                                                                           generic-all
 tools/javac/warnings/suppress/T6480588.java                                                                             generic-all
@@ -890,7 +894,7 @@ tools/javadoc/generics/tparamTagOnType/Main.java                                
 tools/javadoc/generics/wildcards/Main.java                                                                              generic-all
 tools/javadoc/varArgs/Main.java                                                                                         generic-all
 tools/javah/6257087/T6257087.java                                                                                       generic-all
-tools/javah/ReadOldClass.java                                                                                           generic-all
+tools/javah/ReadOldClass.sh                                                                                             generic-all
 tools/javah/T4942232/MissingParamClassTest.java                                                                         generic-all
 tools/javah/T5070898.java                                                                                               generic-all
 tools/javah/T6893943.java                                                                                               generic-all

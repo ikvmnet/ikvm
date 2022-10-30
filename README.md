@@ -19,13 +19,14 @@ These tasks can be done **without porting source code** to .NET.
 * A .NET implementation of the Java class libraries
 * A tool that translates Java bytecode (JAR files) to .NET IL (DLL or EXE files).
 * Tools that enable Java and .NET interoperability
+* A full JRE/JDK 8 runtime image.
 
 ### Run Java Applications with .NET
 
 1. **Statically:** By compiling a Java application into a .NET assembly using `<MavenReference>`, `<IkvmReference>` or `ikvmc`.
    - Libary assemblies can be referenced by any .NET application with a compatible target framework and platform. Types can be referenced by using the Java package name like a .NET namespace.
    - Executable assemblies can be launched by specifying the class containing the `main()` method to execute at runtime when building using `ikvmc`.
-2. **Dynamically:** By running a Java application using the `ikvm` tool, which can be used as a direct replacement for `java.exe`. The Java bytecode is converted on-the-fly to CIL and executed.
+2. **Dynamically:** By running a Java application using the `java` executable inside of the JDK Runtime Image. The Java bytecode is converted on-the-fly to CIL and executed. The experience should be identical to a normal JDK.
 
 ## What IKVM is Not
 
@@ -61,6 +62,12 @@ PM> Install-Package IKVM.Maven.Sdk
 ### Tools
 
 The tools are available for download on the [Releases](https://github.com/ikvm-revived/ikvm/releases) page.
+
+### Runtime Images
+
+Both a JRE and JDK runtime image are available. These images are standard JRE or JDK directory structures containing all of the standard tools: javac, jdeps, policytool, keytool, etc. Some Java libraries may require either a JRE or JDK, and if so, the IKVM.Image.JRE or IKVM.Image.JDK package should be added to your project respectively.
+
+Also, a standalone JDK distributable is available for download on the [Releases](https://github.com/ikvm-revived/ikvm/releases) page. This directory structure should suffice as a JAVA_HOME path for standard Java applications.
 
 ## Usage
 

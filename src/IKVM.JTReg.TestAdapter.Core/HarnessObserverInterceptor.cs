@@ -2,7 +2,7 @@
 
 using Castle.DynamicProxy;
 
-namespace IKVM.JTReg.TestAdapter
+namespace IKVM.JTReg.TestAdapter.Core
 {
 
     /// <summary>
