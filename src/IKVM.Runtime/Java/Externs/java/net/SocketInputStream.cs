@@ -15,7 +15,7 @@ namespace IKVM.Java.Externs.java.net
         public static int socketRead0(object self, global::java.io.FileDescriptor fd, byte[] b, int off, int len, int timeout)
         {
 #if FIRST_PASS
-			throw new NotImplementedException();
+            throw new NotImplementedException();
 #else
             Socket socket = null;
             int nread;
