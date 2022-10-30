@@ -55,10 +55,12 @@ namespace IKVM.Java.Externs.java.lang
         /// Gets the RID architecture.
         /// </summary>
         /// <returns></returns>
-        static string GetRuntimeIdentifierArch() => IntPtr.Size switch
+        static string GetRuntimeIdentifierArch() => RuntimeInformation.ProcessArchitecture switch
         {
-            4 => "x86",
-            8 => "x64",
+            Architecture.X86 => "x86",
+            Architecture.X64 => "x64",
+            Architecture.Arm => "arm",
+            Architecture.Arm64 => "arm64",
             _ => throw new NotSupportedException(),
         };
 
@@ -68,15 +70,30 @@ namespace IKVM.Java.Externs.java.lang
         /// <returns></returns>
         public static string getIkvmHomeArch()
         {
-#if NETFRAMEWORK
-            return $"win7-{GetRuntimeIdentifierArch()}";
-#else
+            var arch = GetRuntimeIdentifierArch();
+
             if (RuntimeInformation.IsOSPlatform(OSPlatform.Windows))
-                return $"win7-{GetRuntimeIdentifierArch()}";
+            {
+                var v = Environment.OSVersion.Version;
+
+                // Windows 10
+                if (v.Major > 10 || (v.Major == 10 && v.Minor >= 0))
+                    return $"win10-{arch}";
+
+                // Windows 8.1
+                if (v.Major > 6 || (v.Major == 6 && v.Minor >= 3))
+                    return $"win81-{arch}";
+
+                // Windows 7
+                if (v.Major > 6 || (v.Major == 6 && v.Minor >= 1))
+                    return $"win7-{arch}";
+
+                // fallback
+                return "win-{arch}";
+            }
 
             if (RuntimeInformation.IsOSPlatform(OSPlatform.Linux))
-                return $"linux-{GetRuntimeIdentifierArch()}";
-#endif
+                return $"linux-{arch}";
 
             return null;
         }

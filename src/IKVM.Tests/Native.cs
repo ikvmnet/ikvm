@@ -48,7 +48,24 @@ namespace IKVM.Tests
             var arch = GetRuntimeIdentifierArch();
 
             if (RuntimeInformation.IsOSPlatform(OSPlatform.Windows))
+            {
+                var v = Environment.OSVersion.Version;
+
+                // Windows 10
+                if (v.Major > 10 || (v.Major == 10 && v.Minor >= 0))
+                    yield return $"win10-{arch}";
+
+                // Windows 8.1
+                if (v.Major > 6 || (v.Major == 6 && v.Minor >= 3))
+                    yield return $"win81-{arch}";
+
+                // Windows 7
+                if (v.Major > 6 || (v.Major == 6 && v.Minor >= 1))
+                    yield return $"win7-{arch}";
+
+                // fallback
                 yield return $"win-{arch}";
+            }
 
             if (RuntimeInformation.IsOSPlatform(OSPlatform.Linux))
                 yield return $"linux-{arch}";

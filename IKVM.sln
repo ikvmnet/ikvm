@@ -148,9 +148,9 @@ Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "IKVM.Tests.JDK", "src\IKVM.
 EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "IKVM.Tests.JRE", "src\IKVM.Tests.JRE\IKVM.Tests.JRE.csproj", "{C99721D9-6CD4-4FD8-B9C1-4906EF9F05EE}"
 EndProject
-Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "IKVM.Image.JDK.runtime.win7-arm", "src\IKVM.Image.JDK.runtime.win7-arm\IKVM.Image.JDK.runtime.win7-arm.csproj", "{9076FCBF-A85C-4118-8E29-013B06B1421B}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "IKVM.Image.JDK.runtime.win81-arm", "src\IKVM.Image.JDK.runtime.win81-arm\IKVM.Image.JDK.runtime.win81-arm.csproj", "{9076FCBF-A85C-4118-8E29-013B06B1421B}"
 EndProject
-Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "IKVM.Image.JRE.runtime.win7-arm", "src\IKVM.Image.JRE.runtime.win7-arm\IKVM.Image.JRE.runtime.win7-arm.csproj", "{EC20F011-6846-405D-B6CA-2C851DAF50B0}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "IKVM.Image.JRE.runtime.win81-arm", "src\IKVM.Image.JRE.runtime.win81-arm\IKVM.Image.JRE.runtime.win81-arm.csproj", "{EC20F011-6846-405D-B6CA-2C851DAF50B0}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution

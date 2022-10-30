@@ -4,14 +4,14 @@
     </PropertyGroup>
 
     <ItemGroup>
-        <IkvmImageItem Include="$(MSBuildThisFileDirectory)..\ikvm\net461\win7-arm\**\*">
+        <IkvmImageItem Include="$(MSBuildThisFileDirectory)..\ikvm\net461\win81-arm\**\*">
             <TargetFramework>net461</TargetFramework>
-            <RuntimeIdentifier>win7-arm</RuntimeIdentifier>
+            <RuntimeIdentifier>win81-arm</RuntimeIdentifier>
             <TargetPath>%(RecursiveDir)%(FileName)%(Extension)</TargetPath>
         </IkvmImageItem>
-        <IkvmImageItem Include="$(MSBuildThisFileDirectory)..\ikvm\netcoreapp3.1\win7-arm\**\*">
+        <IkvmImageItem Include="$(MSBuildThisFileDirectory)..\ikvm\netcoreapp3.1\win81-arm\**\*">
             <TargetFramework>netcoreapp3.1</TargetFramework>
-            <RuntimeIdentifier>win7-arm</RuntimeIdentifier>
+            <RuntimeIdentifier>win81-arm</RuntimeIdentifier>
             <TargetPath>%(RecursiveDir)%(FileName)%(Extension)</TargetPath>
         </IkvmImageItem>
     </ItemGroup>

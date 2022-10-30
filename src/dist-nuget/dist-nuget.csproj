@@ -1,4 +1,4 @@
-<Project Sdk="Microsoft.Build.NoTargets/3.5.6">
+﻿<Project Sdk="Microsoft.Build.NoTargets/3.5.6">
     <PropertyGroup>
         <TargetFramework>netstandard2.0</TargetFramework>
         <AppendTargetFrameworkToOutputPath>false</AppendTargetFrameworkToOutputPath>
@@ -27,7 +27,7 @@
         <PackageProjectReference Include="..\IKVM.Image.JRE.runtime.win7-x86\IKVM.Image.JRE.runtime.win7-x86.csproj">
             <PackageTargetPath>.</PackageTargetPath>
         </PackageProjectReference>
-        <PackageProjectReference Include="..\IKVM.Image.JRE.runtime.win7-arm\IKVM.Image.JRE.runtime.win7-arm.csproj">
+        <PackageProjectReference Include="..\IKVM.Image.JRE.runtime.win81-arm\IKVM.Image.JRE.runtime.win81-arm.csproj">
             <PackageTargetPath>.</PackageTargetPath>
         </PackageProjectReference>
         <PackageProjectReference Include="..\IKVM.Image.JRE.runtime.linux-x64\IKVM.Image.JRE.runtime.linux-x64.csproj">
@@ -42,7 +42,7 @@
         <PackageProjectReference Include="..\IKVM.Image.JDK.runtime.win7-x86\IKVM.Image.JDK.runtime.win7-x86.csproj">
             <PackageTargetPath>.</PackageTargetPath>
         </PackageProjectReference>
-        <PackageProjectReference Include="..\IKVM.Image.JDK.runtime.win7-arm\IKVM.Image.JDK.runtime.win7-arm.csproj">
+        <PackageProjectReference Include="..\IKVM.Image.JDK.runtime.win81-arm\IKVM.Image.JDK.runtime.win81-arm.csproj">
             <PackageTargetPath>.</PackageTargetPath>
         </PackageProjectReference>
         <PackageProjectReference Include="..\IKVM.Image.JDK.runtime.linux-x64\IKVM.Image.JDK.runtime.linux-x64.csproj">
