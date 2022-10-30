@@ -90,6 +90,7 @@
         <Error Text="Could not locate ikvmc executable." Condition=" '$(IkvmCompilerPath)' == '' " />
         <Error Text="ikvmc could not be located at '$(IkvmCompilerPath)'." Condition="!Exists('$(IkvmCompilerPath)')" />
 
+        <Delete Files="$(_ExcludeFilePath)" />
         <WriteLinesToFile File="$(_ExcludeFilePath)" Lines="@(ExcludeRegex)" Overwrite="true" Condition=" '@(ExcludeRegex)' != '' " />
 
         <ItemGroup>
@@ -113,6 +114,7 @@
             <_IkvmCompilerArgs Include="-strictfinalfieldsemantics" Condition=" '$(StrictFinalFieldSemantics)' == 'true' " />
             <_IkvmCompilerArgs Include="-removeassertions" Condition=" '$(RemoveAssertions)' == 'true' " />
             <_IkvmCompilerArgs Include="-target:$(OutputType.ToLowerInvariant())" />
+            <_IkvmCompilerArgs Include="-platform:$(PlatformTarget.ToLowerInvariant())" Condition=" '$(PlatformTarget)' != '' " />
             <_IkvmCompilerArgs Include="-main:$(StartupObject)" Condition=" '$(StartupObject)' != '' " />
             <_IkvmCompilerArgs Include="-nostdlib" Condition=" '$(NoCompilerStandardLib)' == 'true' " />
             <_IkvmCompilerArgs Include="-sharedclassloader" Condition=" '$(SharedClassLoader)' == 'true' " />
