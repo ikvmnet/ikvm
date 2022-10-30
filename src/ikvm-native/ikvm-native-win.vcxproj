@@ -30,7 +30,7 @@
     <Keyword>Win32Proj</Keyword>
     <ProjectGuid>{D8B580D1-D12B-39CD-A42B-BAEE36602AA1}</ProjectGuid>
     <RootNamespace>ikvm-native</RootNamespace>
-    <WindowsTargetPlatformVersion>8.1</WindowsTargetPlatformVersion>
+    <WindowsTargetPlatformVersion>10.0</WindowsTargetPlatformVersion>
     <ProjectName>ikvm-native-win</ProjectName>
   </PropertyGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.Default.props" />
