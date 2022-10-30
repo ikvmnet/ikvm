@@ -3,7 +3,7 @@
     <Import Project="..\..\ikvm.refs.props" />
 
     <PropertyGroup>
-        <TargetFrameworks>net461;net48;netcoreapp3.1;net6.0</TargetFrameworks>
+        <TargetFrameworks>net461;netcoreapp3.1;net6.0</TargetFrameworks>
         <AllowUnsafeBlocks>true</AllowUnsafeBlocks>
         <PreserveCompilationContext>true</PreserveCompilationContext>
         <ErrorOnDuplicatePublishOutputFiles>false</ErrorOnDuplicatePublishOutputFiles>
