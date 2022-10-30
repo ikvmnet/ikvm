@@ -89,7 +89,7 @@ namespace IKVM.Java.Externs.java.lang
                     return $"win7-{arch}";
 
                 // fallback
-                return "win-{arch}";
+                return $"win-{arch}";
             }
 
             if (RuntimeInformation.IsOSPlatform(OSPlatform.Linux))
