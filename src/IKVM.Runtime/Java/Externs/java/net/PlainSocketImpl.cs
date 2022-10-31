@@ -33,12 +33,12 @@ namespace IKVM.Java.Externs.java.net
             return e.Compile();
         }
 
-        static readonly FieldInfo PlainSocketImplLocalPortField = typeof(global::java.net.PlainSocketImpl).GetField("localport", BindingFlags.NonPublic | BindingFlags.Instance);
-        static readonly Func<global::java.net.PlainSocketImpl, int> PlainSocketImplLocalPortGetter = MakeFieldGetter<global::java.net.PlainSocketImpl, int>(PlainSocketImplLocalPortField);
+        static readonly FieldInfo SocketImplLocalPortField = typeof(global::java.net.SocketImpl).GetField("localport", BindingFlags.NonPublic | BindingFlags.Instance);
+        static readonly Func<global::java.net.PlainSocketImpl, int> SocketImplLocalPortGetter = MakeFieldGetter<global::java.net.SocketImpl, int>(SocketImplLocalPortField);
         static readonly FieldInfo AbstractPlainSocketImplTrafficClassField = typeof(global::java.net.AbstractPlainSocketImpl).GetField("trafficClass", BindingFlags.NonPublic | BindingFlags.Instance);
-        static readonly Func<global::java.net.PlainSocketImpl, int> AbstractPlainSocketImplTrafficClassGetter = MakeFieldGetter<global::java.net.PlainSocketImpl, int>(AbstractPlainSocketImplTrafficClassField);
-        static readonly FieldInfo PlainSocketImplServerSocketField = typeof(global::java.net.PlainSocketImpl).GetField("serverSocket", BindingFlags.NonPublic | BindingFlags.Instance);
-        static readonly Func<global::java.net.PlainSocketImpl, global::java.net.ServerSocket> PlainSocketImplServerSocketGetter = MakeFieldGetter<global::java.net.PlainSocketImpl, global::java.net.ServerSocket>(PlainSocketImplServerSocketField);
+        static readonly Func<global::java.net.AbstractPlainSocketImpl, int> AbstractPlainSocketImplTrafficClassGetter = MakeFieldGetter<global::java.net.AbstractPlainSocketImpl, int>(AbstractPlainSocketImplTrafficClassField);
+        static readonly FieldInfo AbstractPlainSocketImplServerSocketField = typeof(global::java.net.AbstractPlainSocketImpl).GetField("serverSocket", BindingFlags.NonPublic | BindingFlags.Instance);
+        static readonly Func<global::java.net.AbstractPlainSocketImpl, global::java.net.ServerSocket> AbstractPlainSocketImplServerSocketGetter = MakeFieldGetter<global::java.net.AbstractPlainSocketImpl, global::java.net.ServerSocket>(AbstractPlainSocketImplServerSocketField);
 
 #endif
 
@@ -67,7 +67,7 @@ namespace IKVM.Java.Externs.java.net
                     socket.SetSocketOption(SocketOptionLevel.IPv6, SocketOptionName.IPv6Only, false);
 
                 // if this is a server socket then enable SO_REUSEADDR automatically
-                if (PlainSocketImplServerSocketGetter(impl) != null)
+                if (AbstractPlainSocketImplServerSocketGetter(impl) != null)
                     socket.ExclusiveAddressUse = false;
 
                 impl.fd.setSocket(socket);
@@ -106,7 +106,7 @@ namespace IKVM.Java.Externs.java.net
                     impl.setAddress(address);
                     impl.setPort(port);
 
-                    var localPort = PlainSocketImplLocalPortGetter(impl);
+                    var localPort = SocketImplLocalPortGetter(impl);
                     if (localPort == 0)
                         impl.setLocalPort(((IPEndPoint)socket.LocalEndPoint).Port);
                 });
@@ -159,7 +159,7 @@ namespace IKVM.Java.Externs.java.net
 #if FIRST_PASS
             throw new NotImplementedException();
 #else
-            InvokeAction<global::java.net.PlainSocketImpl, global::java.net.AbstractPlainSocketImpl>(this_, s_, (impl, s) =>
+            InvokeAction<global::java.net.PlainSocketImpl, global::java.net.SocketImpl>(this_, s_, (impl, s) =>
             {
                 InvokeActionWithSocket(impl, socket =>
                 {
@@ -188,10 +188,10 @@ namespace IKVM.Java.Externs.java.net
 
                         // populate newly accepted socket
                         var remoteIpEndPoint = (IPEndPoint)newSocket.RemoteEndPoint;
-                        s.setFileDescriptor(newfd);
-                        s.setAddress(remoteIpEndPoint.ToInetAddress());
-                        s.setPort(remoteIpEndPoint.Port);
-                        s.setLocalPort(impl.port);
+                        s.fd = newfd;
+                        s.address = remoteIpEndPoint.ToInetAddress();
+                        s.port = remoteIpEndPoint.Port;
+                        s.localport = impl.port;
                     }
                     finally
                     {

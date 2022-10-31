@@ -195,6 +195,21 @@ namespace IKVM.Tests.Java.java.net
             s1.close();
         }
 
+        [TestMethod]
+        public void AddressShouldMatchAfterClose()
+        {
+            var ss = new ServerSocket(0, 0, null);
+            var ssInetAddress = ss.getInetAddress();
+            var ssLocalPort = ss.getLocalPort();
+            var ssLocalSocketAddress = ss.getLocalSocketAddress();
+            ss.close();
+
+            ss.getInetAddress().Should().Be(ssInetAddress);
+            ss.getLocalPort().Should().Be(ssLocalPort);
+            ss.getLocalSocketAddress().Should().Be(ssLocalSocketAddress);
+            ss.isBound().Should().BeTrue();
+        }
+
     }
 
 }
