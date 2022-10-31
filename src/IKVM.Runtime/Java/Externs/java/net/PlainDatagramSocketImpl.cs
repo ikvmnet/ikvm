@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Buffers.Binary;
 using System.Collections.Generic;
+using System.Linq.Expressions;
 using System.Net;
 using System.Net.Sockets;
 using System.Reflection;
@@ -20,14 +21,65 @@ namespace IKVM.Java.Externs.java.net
 
 #if !FIRST_PASS
 
+        /// <summary>
+        /// Compiles a fast getter for a <see cref="FieldInfo"/>.
+        /// </summary>
+        /// <typeparam name="T"></typeparam>
+        /// <typeparam name="R"></typeparam>
+        /// <param name="field"></param>
+        /// <returns></returns>
+        static Func<T, R> MakeFieldGetter<T, R>(FieldInfo field)
+        {
+            var p = Expression.Parameter(typeof(T));
+            var e = Expression.Lambda<Func<T, R>>(Expression.Field(Expression.ConvertChecked(p, field.DeclaringType), field), p);
+            return e.Compile();
+        }
+
+        /// <summary>
+        /// Compiles a fast setter for a <see cref="FieldInfo"/>.
+        /// </summary>
+        /// <typeparam name="T"></typeparam>
+        /// <typeparam name="V"></typeparam>
+        /// <param name="field"></param>
+        /// <returns></returns>
+        static Action<T, V> MakeFieldSetter<T, V>(FieldInfo field)
+        {
+            var p = Expression.Parameter(typeof(T));
+            var v = Expression.Parameter(typeof(V));
+            var e = Expression.Lambda<Action<T, V>>(Expression.Assign(Expression.Field(field.DeclaringType.IsValueType ? Expression.Unbox(p, field.DeclaringType) : Expression.ConvertChecked(p, field.DeclaringType), field), v), p, v);
+            return e.Compile();
+        }
+
+        /// <summary>
+        /// Compiles a fast method invoker for a <see cref="MethodInfo"/>.
+        /// </summary>
+        /// <typeparam name="T"></typeparam>
+        /// <typeparam name="TArg"></typeparam>
+        /// <param name="method"></param>
+        /// <returns></returns>
+        static Action<T, TArg> MakeAnonymousTypeDelegate<T, TArg>(MethodInfo method)
+        {
+            var p = Expression.Parameter(typeof(T));
+            var arg = Expression.Parameter(typeof(TArg));
+            var e = Expression.Lambda<Action<T, TArg>>(Expression.Call(Expression.ConvertChecked(p, method.DeclaringType), method, arg), p, arg);
+            return e.Compile();
+        }
+
         static readonly byte[] PeekBuffer = new byte[1];
         static readonly MethodInfo InetAddressHolderMethod = typeof(global::java.net.InetAddress).GetMethod("holder", BindingFlags.NonPublic | BindingFlags.Instance);
-        static readonly FieldInfo InetAddressHolderAddressField = typeof(global::java.net.InetAddress).GetNestedType("InetAddressHolder", BindingFlags.NonPublic).GetField("address", BindingFlags.NonPublic);
-        static readonly MethodInfo Inet6AddressHolderMethod = typeof(global::java.net.Inet6Address).GetMethod("holder6", BindingFlags.NonPublic | BindingFlags.Instance);
-        static readonly MethodInfo Inet6AddressHolderSetIpAddressMethod = typeof(global::java.net.Inet6Address).GetNestedType("Inet6AddressHolder", BindingFlags.NonPublic).GetMethod("setAddr", BindingFlags.NonPublic);
+        static readonly Func<global::java.net.InetAddress, object> InetAddressHolderDelegate = (Func<global::java.net.InetAddress, object>)InetAddressHolderMethod.CreateDelegate(typeof(Func<global::java.net.InetAddress, object>));
+        static readonly FieldInfo InetAddressHolderAddressField = typeof(global::java.net.InetAddress).GetNestedType("InetAddressHolder", BindingFlags.NonPublic).GetField("address", BindingFlags.NonPublic | BindingFlags.Instance);
+        static readonly Action<object, int> InetAddressHolderAddressSetter = MakeFieldSetter<object, int>(InetAddressHolderAddressField);
+        static readonly FieldInfo Inet6AddressHolderField = typeof(global::java.net.Inet6Address).GetField("holder6", BindingFlags.NonPublic | BindingFlags.Instance);
+        static readonly Func<global::java.net.Inet6Address, object> Inet6AddressHolderGetter = MakeFieldGetter<global::java.net.Inet6Address, object>(Inet6AddressHolderField);
+        static readonly MethodInfo Inet6AddressHolderSetIpAddressMethod = typeof(global::java.net.Inet6Address).GetNestedType("Inet6AddressHolder", BindingFlags.NonPublic).GetMethod("setAddr", BindingFlags.NonPublic | BindingFlags.Instance);
+        static readonly Action<object, byte[]> Inet6AddressHolderSetIpAddressDelegate = MakeAnonymousTypeDelegate<object, byte[]>(Inet6AddressHolderSetIpAddressMethod);
         static readonly FieldInfo NetworkInterfaceIndexField = typeof(global::java.net.NetworkInterface).GetField("index", BindingFlags.NonPublic | BindingFlags.Instance);
+        static readonly Action<global::java.net.NetworkInterface, int> NetworkInterfaceIndexSetter = MakeFieldSetter<global::java.net.NetworkInterface, int>(NetworkInterfaceIndexField);
         static readonly FieldInfo NetworkInterfaceAddrsField = typeof(global::java.net.NetworkInterface).GetField("addrs", BindingFlags.NonPublic | BindingFlags.Instance);
+        static readonly Action<global::java.net.NetworkInterface, global::java.net.InetAddress[]> NetworkInterfaceAddrsSetter = MakeFieldSetter<global::java.net.NetworkInterface, global::java.net.InetAddress[]>(NetworkInterfaceAddrsField);
         static readonly FieldInfo NetworkInterfaceNameField = typeof(global::java.net.NetworkInterface).GetField("name", BindingFlags.NonPublic | BindingFlags.Instance);
+        static readonly Action<global::java.net.NetworkInterface, string> NetworkInterfaceNameSetter = MakeFieldSetter<global::java.net.NetworkInterface, string>(NetworkInterfaceNameField);
 
 #endif
 
@@ -184,52 +236,52 @@ namespace IKVM.Java.Externs.java.net
 
                     if (ipRemoteEndpoint.AddressFamily == AddressFamily.InterNetworkV6)
                     {
-                        if (address is global::java.net.Inet6Address)
+                        if (address is global::java.net.Inet6Address address6)
                         {
                             // InetAddress stores its data on a nested 'holder' instance
-                            var holder = Inet6AddressHolderMethod.Invoke(address, Array.Empty<object>());
+                            var holder = Inet6AddressHolderGetter(address6);
                             if (holder == null)
                                 throw new global::java.net.SocketException("Could not get Inet6Address holder.");
 
                             // set the address directly onto the holder
                             var bytes = ipRemoteEndpoint.Address.GetAddressBytes();
-                            Inet6AddressHolderSetIpAddressMethod.Invoke(holder, new[] { bytes });
+                            Inet6AddressHolderSetIpAddressDelegate(holder, bytes);
                         }
                         else if (ipRemoteEndpoint.Address.IsIPv4MappedToIPv6)
                         {
                             // InetAddress stores its data on a nested 'holder' instance
-                            var holder = InetAddressHolderMethod.Invoke(address, Array.Empty<object>());
+                            var holder = InetAddressHolderDelegate(address);
                             if (holder == null)
                                 throw new global::java.net.SocketException("Could not get InetAddress holder.");
 
                             // set the address directly onto the holder
                             var bytes = BinaryPrimitives.ReadInt32BigEndian(ipRemoteEndpoint.Address.MapToIPv4().GetAddressBytes());
-                            InetAddressHolderAddressField.SetValue(holder, bytes);
+                            InetAddressHolderAddressSetter(holder, bytes);
                         }
                     }
                     else if (ipRemoteEndpoint.AddressFamily == AddressFamily.InterNetwork)
                     {
-                        if (address is global::java.net.Inet6Address)
+                        if (address is global::java.net.Inet6Address address6)
                         {
                             // InetAddress stores its data on a nested 'holder' instance
-                            var holder = Inet6AddressHolderMethod.Invoke(address, Array.Empty<object>());
+                            var holder = Inet6AddressHolderGetter(address6);
                             if (holder == null)
                                 throw new global::java.net.SocketException("Could not get Inet6Address holder.");
 
                             // set the address directly onto the holder
                             var bytes = ipRemoteEndpoint.Address.MapToIPv6().GetAddressBytes();
-                            Inet6AddressHolderSetIpAddressMethod.Invoke(holder, new[] { bytes });
+                            Inet6AddressHolderSetIpAddressDelegate(holder, bytes);
                         }
                         else
                         {
                             // InetAddress stores its data on a nested 'holder' instance
-                            var holder = InetAddressHolderMethod.Invoke(address, Array.Empty<object>());
+                            var holder = InetAddressHolderDelegate(address);
                             if (holder == null)
                                 throw new global::java.net.SocketException("Could not get InetAddress holder.");
 
                             // set the address directly onto the holder
                             var bytes = BinaryPrimitives.ReadInt32BigEndian(ipRemoteEndpoint.Address.GetAddressBytes());
-                            InetAddressHolderAddressField.SetValue(holder, bytes);
+                            InetAddressHolderAddressSetter(holder, bytes);
                         }
                     }
 
@@ -538,9 +590,9 @@ namespace IKVM.Java.Externs.java.net
 
             // return a new anonymous network interface with index -1 and empty address array
             var anon = new global::java.net.NetworkInterface();
-            NetworkInterfaceIndexField.SetValue(anon, -1);
-            NetworkInterfaceAddrsField.SetValue(anon, new global::java.net.InetAddress[0]);
-            NetworkInterfaceNameField.SetValue(anon, "");
+            NetworkInterfaceIndexSetter(anon, -1);
+            NetworkInterfaceAddrsSetter(anon, Array.Empty<global::java.net.InetAddress>());
+            NetworkInterfaceNameSetter(anon, "");
             return anon;
         }
 

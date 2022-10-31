@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Linq.Expressions;
 using System.Net;
 using System.Net.Sockets;
 using System.Reflection;
@@ -18,10 +19,26 @@ namespace IKVM.Java.Externs.java.net
 
 #if !FIRST_PASS
 
-        static readonly byte[] PeekBuffer = new byte[1];
+        /// <summary>
+        /// Compiles a fast getter for a <see cref="FieldInfo"/>.
+        /// </summary>
+        /// <typeparam name="T"></typeparam>
+        /// <typeparam name="R"></typeparam>
+        /// <param name="field"></param>
+        /// <returns></returns>
+        static Func<T, R> MakeFieldGetter<T, R>(FieldInfo field)
+        {
+            var p = Expression.Parameter(typeof(T));
+            var e = Expression.Lambda<Func<T, R>>(Expression.Field(Expression.ConvertChecked(p, field.DeclaringType), field), p);
+            return e.Compile();
+        }
+
         static readonly FieldInfo PlainSocketImplLocalPortField = typeof(global::java.net.PlainSocketImpl).GetField("localport", BindingFlags.NonPublic | BindingFlags.Instance);
+        static readonly Func<global::java.net.PlainSocketImpl, int> PlainSocketImplLocalPortGetter = MakeFieldGetter<global::java.net.PlainSocketImpl, int>(PlainSocketImplLocalPortField);
         static readonly FieldInfo AbstractPlainSocketImplTrafficClassField = typeof(global::java.net.AbstractPlainSocketImpl).GetField("trafficClass", BindingFlags.NonPublic | BindingFlags.Instance);
+        static readonly Func<global::java.net.PlainSocketImpl, int> AbstractPlainSocketImplTrafficClassGetter = MakeFieldGetter<global::java.net.PlainSocketImpl, int>(AbstractPlainSocketImplTrafficClassField);
         static readonly FieldInfo PlainSocketImplServerSocketField = typeof(global::java.net.PlainSocketImpl).GetField("serverSocket", BindingFlags.NonPublic | BindingFlags.Instance);
+        static readonly Func<global::java.net.PlainSocketImpl, global::java.net.ServerSocket> PlainSocketImplServerSocketGetter = MakeFieldGetter<global::java.net.PlainSocketImpl, global::java.net.ServerSocket>(PlainSocketImplServerSocketField);
 
 #endif
 
@@ -39,7 +56,7 @@ namespace IKVM.Java.Externs.java.net
         public static void socketCreate(object this_, bool stream)
         {
 #if FIRST_PASS
-            throw new NotSupportedException();
+            throw new NotImplementedException();
 #else
             InvokeAction<global::java.net.PlainSocketImpl>(this_, impl =>
             {
@@ -50,7 +67,7 @@ namespace IKVM.Java.Externs.java.net
                     socket.SetSocketOption(SocketOptionLevel.IPv6, SocketOptionName.IPv6Only, false);
 
                 // if this is a server socket then enable SO_REUSEADDR automatically
-                if (PlainSocketImplServerSocketField.GetValue(impl) != null)
+                if (PlainSocketImplServerSocketGetter(impl) != null)
                     socket.ExclusiveAddressUse = false;
 
                 impl.fd.setSocket(socket);
@@ -64,7 +81,7 @@ namespace IKVM.Java.Externs.java.net
         public static void socketConnect(object this_, object address_, int port, int timeout)
         {
 #if FIRST_PASS
-            throw new NotSupportedException();
+            throw new NotImplementedException();
 #else
             InvokeAction<global::java.net.PlainSocketImpl, global::java.net.InetAddress>(this_, address_, (impl, address) =>
             {
@@ -72,7 +89,7 @@ namespace IKVM.Java.Externs.java.net
                 {
                     if (Socket.OSSupportsIPv6)
                     {
-                        var trafficClass = (int)AbstractPlainSocketImplTrafficClassField.GetValue(impl);
+                        var trafficClass = AbstractPlainSocketImplTrafficClassGetter(impl);
                         if (trafficClass != 0)
                             socket.SetSocketOption(SocketOptionLevel.IP, SocketOptionName.TypeOfService, trafficClass);
                     }
@@ -89,7 +106,7 @@ namespace IKVM.Java.Externs.java.net
                     impl.setAddress(address);
                     impl.setPort(port);
 
-                    var localPort = (int)PlainSocketImplLocalPortField.GetValue(impl);
+                    var localPort = PlainSocketImplLocalPortGetter(impl);
                     if (localPort == 0)
                         impl.setLocalPort(((IPEndPoint)socket.LocalEndPoint).Port);
                 });
@@ -103,7 +120,7 @@ namespace IKVM.Java.Externs.java.net
         public static void socketBind(object this_, global::java.net.InetAddress address_, int port)
         {
 #if FIRST_PASS
-            throw new NotSupportedException();
+            throw new NotImplementedException();
 #else
             InvokeAction<global::java.net.PlainSocketImpl, global::java.net.InetAddress>(this_, address_, (impl, address) =>
             {
@@ -122,7 +139,7 @@ namespace IKVM.Java.Externs.java.net
         public static void socketListen(object this_, int count)
         {
 #if FIRST_PASS
-            throw new NotSupportedException();
+            throw new NotImplementedException();
 #else
             InvokeAction<global::java.net.PlainSocketImpl>(this_, impl =>
             {
@@ -140,7 +157,7 @@ namespace IKVM.Java.Externs.java.net
         public static void socketAccept(object this_, object s_)
         {
 #if FIRST_PASS
-            throw new NotSupportedException();
+            throw new NotImplementedException();
 #else
             InvokeAction<global::java.net.PlainSocketImpl, global::java.net.AbstractPlainSocketImpl>(this_, s_, (impl, s) =>
             {
@@ -188,7 +205,7 @@ namespace IKVM.Java.Externs.java.net
         public static int socketAvailable(object this_)
         {
 #if FIRST_PASS
-            throw new NotSupportedException();
+            throw new NotImplementedException();
 #else
             return InvokeFunc<global::java.net.PlainSocketImpl, int>(this_, impl =>
             {
@@ -206,7 +223,7 @@ namespace IKVM.Java.Externs.java.net
         public static void socketClose0(object this_, bool useDeferredClose)
         {
 #if FIRST_PASS
-            throw new NotSupportedException();
+            throw new NotImplementedException();
 #else
             InvokeAction<global::java.net.PlainSocketImpl>(this_, impl =>
             {
@@ -229,7 +246,7 @@ namespace IKVM.Java.Externs.java.net
         public static void socketShutdown(object this_, int howto)
         {
 #if FIRST_PASS
-            throw new NotSupportedException();
+            throw new NotImplementedException();
 #else
             InvokeAction<global::java.net.PlainSocketImpl>(this_, impl =>
             {
@@ -244,10 +261,10 @@ namespace IKVM.Java.Externs.java.net
         /// <summary>
         /// Implements the native method for 'socketSetOption0'.
         /// </summary>
-        public static void socketSetOption(object this_, int cmd, bool on, object value)
+        public static void socketSetOption0(object this_, int cmd, bool on, object value)
         {
 #if FIRST_PASS
-            throw new NotSupportedException();
+            throw new NotImplementedException();
 #else
             InvokeAction<global::java.net.PlainSocketImpl>(this_, impl =>
             {
@@ -291,7 +308,7 @@ namespace IKVM.Java.Externs.java.net
         public static int socketGetOption(object this_, int opt, object iaContainerObj_)
         {
 #if FIRST_PASS
-            throw new NotSupportedException();
+            throw new NotImplementedException();
 #else
             return InvokeFunc<global::java.net.PlainSocketImpl, global::java.net.InetAddressContainer, int>(this_, iaContainerObj_, (impl, iaContainerObj) =>
             {
@@ -328,7 +345,7 @@ namespace IKVM.Java.Externs.java.net
         public static void socketSendUrgentData(object this_, int data)
         {
 #if FIRST_PASS
-            throw new NotSupportedException();
+            throw new NotImplementedException();
 #else
             InvokeAction<global::java.net.PlainSocketImpl>(this_, impl =>
             {
@@ -361,7 +378,6 @@ namespace IKVM.Java.Externs.java.net
         /// <summary>
         /// Invokes the given action with the current socket, catching and mapping any resulting .NET exceptions.
         /// </summary>
-        /// <typeparam name="T"></typeparam>
         /// <param name="impl"></param>
         /// <param name="action"></param>
         /// <returns></returns>
@@ -369,7 +385,7 @@ namespace IKVM.Java.Externs.java.net
         /// <exception cref="global::java.net.SocketException"></exception>
         static void InvokeActionWithSocket(global::java.net.PlainSocketImpl impl, Action<Socket> action)
         {
-            var socket = (Socket)impl.fd?.getSocket();
+            var socket = impl.fd?.getSocket();
             if (socket == null)
                 throw new global::java.net.SocketException("Socket closed.");
 
@@ -387,7 +403,7 @@ namespace IKVM.Java.Externs.java.net
         /// <exception cref="global::java.net.SocketException"></exception>
         static TResult InvokeFuncWithSocket<TResult>(global::java.net.PlainSocketImpl impl, Func<Socket, TResult> func)
         {
-            var socket = (Socket)impl.fd?.getSocket();
+            var socket = impl.fd?.getSocket();
             if (socket == null)
                 throw new global::java.net.SocketException("Socket closed.");
 
