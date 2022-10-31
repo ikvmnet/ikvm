@@ -17,13 +17,10 @@ namespace IKVM.Java.Externs.java.net
 #if FIRST_PASS
             throw new NotImplementedException();
 #else
-            Socket socket = null;
-            int nread;
-
             if (fd == null)
                 throw new global::java.net.SocketException("Socket closed.");
 
-            socket = fd.getSocket();
+            var socket = fd.getSocket();
             if (socket == null)
                 throw new global::java.net.SocketException("Socket closed.");
 
@@ -32,7 +29,7 @@ namespace IKVM.Java.Externs.java.net
             try
             {
                 socket.ReceiveTimeout = timeout;
-                nread = socket.Receive(b, off, len, SocketFlags.None);
+                return socket.Receive(b, off, len, SocketFlags.None);
             }
             catch (SocketException e)
             {
@@ -42,8 +39,6 @@ namespace IKVM.Java.Externs.java.net
             {
                 socket.ReceiveTimeout = prevRecv;
             }
-
-            return nread;
 #endif
         }
 

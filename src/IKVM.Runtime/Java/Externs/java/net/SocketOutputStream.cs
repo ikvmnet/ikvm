@@ -53,12 +53,12 @@ namespace IKVM.Java.Externs.java.net
         public static void socketWrite0(object self, global::java.io.FileDescriptor fd, byte[] data, int off, int len)
         {
 #if FIRST_PASS
-			throw new NotSupportedException();
+			throw new NotImplementedException();
 #else
             if (fd == null)
                 throw new global::java.net.SocketException("Socket is closed.");
 
-            var socket = (Socket)fd.getSocket();
+            var socket = fd.getSocket();
             if (socket == null)
                 throw new global::java.net.SocketException("Socket is closed.");
 

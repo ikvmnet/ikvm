@@ -187,6 +187,7 @@ namespace IKVM.Tests.Java.java.net
         public void BindingToSamePortShouldThrowBindException()
         {
             var s1 = new ServerSocket();
+            s1.setReuseAddress(false);
             s1.bind(new InetSocketAddress(0));
             var s2 = new ServerSocket();
             s2.bind(new InetSocketAddress(s1.getLocalPort()));

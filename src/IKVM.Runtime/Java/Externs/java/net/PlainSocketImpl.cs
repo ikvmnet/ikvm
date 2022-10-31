@@ -66,9 +66,12 @@ namespace IKVM.Java.Externs.java.net
                 if (Socket.OSSupportsIPv6)
                     socket.SetSocketOption(SocketOptionLevel.IPv6, SocketOptionName.IPv6Only, false);
 
-                // if this is a server socket then enable SO_REUSEADDR automatically
+                // if this is a server socket then enable SO_REUSEADDR automatically and set to non blocking
                 if (AbstractPlainSocketImplServerSocketGetter(impl) != null)
-                    socket.ExclusiveAddressUse = false;
+                {
+                    socket.Blocking = false;
+                    socket.SetSocketOption(SocketOptionLevel.Socket, SocketOptionName.ReuseAddress, true);
+                }
 
                 impl.fd.setSocket(socket);
             });
@@ -94,21 +97,40 @@ namespace IKVM.Java.Externs.java.net
                             socket.SetSocketOption(SocketOptionLevel.IP, SocketOptionName.TypeOfService, trafficClass);
                     }
 
-                    var result = socket.BeginConnect(address.ToIPAddress(), port, null, null);
-                    if (timeout > 0 && result.AsyncWaitHandle.WaitOne(timeout, true) == false)
+                    var prevBlocking = socket.Blocking;
+
+                    try
                     {
-                        socket.Close();
-                        throw new global::java.net.SocketTimeoutException("Connect timed out.");
+                        if (timeout > 0)
+                        {
+                            try
+                            {
+                                socket.Blocking = false;
+                                socket.Connect(address.ToIPAddress(), port);
+                            }
+                            catch (SocketException e) when (e.SocketErrorCode == SocketError.WouldBlock)
+                            {
+                                if (socket.Poll(timeout * 1000, SelectMode.SelectWrite) == false)
+                                    throw new global::java.net.SocketTimeoutException("Connect timed out.");
+                            }
+                        }
+                        else
+                        {
+                            socket.Blocking = true;
+                            socket.Connect(address.ToIPAddress(), port);
+                        }
+
+                        impl.setAddress(address);
+                        impl.setPort(port);
+
+                        var localPort = SocketImplLocalPortGetter(impl);
+                        if (localPort == 0)
+                            impl.setLocalPort(((IPEndPoint)socket.LocalEndPoint).Port);
                     }
-
-                    socket.EndConnect(result);
-
-                    impl.setAddress(address);
-                    impl.setPort(port);
-
-                    var localPort = SocketImplLocalPortGetter(impl);
-                    if (localPort == 0)
-                        impl.setLocalPort(((IPEndPoint)socket.LocalEndPoint).Port);
+                    finally
+                    {
+                        socket.Blocking = prevBlocking;
+                    }
                 });
             });
 #endif
@@ -163,22 +185,25 @@ namespace IKVM.Java.Externs.java.net
             {
                 InvokeActionWithSocket(impl, socket =>
                 {
-                    var prevTimeout = socket.ReceiveTimeout;
+                    var prevBlocking = socket.Blocking;
 
                     try
                     {
-                        socket.ReceiveTimeout = impl.timeout;
 
                         // wait for connection attempt
-                        var result = socket.BeginAccept(null, null);
-                        if (impl.timeout > 0 && result.AsyncWaitHandle.WaitOne(impl.timeout, true) == false)
+                        if (impl.timeout > 0)
                         {
-                            socket.Close();
-                            throw new global::java.net.SocketTimeoutException("Accept timed out.");
+                            socket.Blocking = false;
+                            if (socket.Poll(impl.timeout * 1000, SelectMode.SelectRead) == false)
+                                throw new global::java.net.SocketTimeoutException("Accept timed out.");
+                        }
+                        else
+                        {
+                            socket.Blocking = true;
                         }
 
                         // process results
-                        var newSocket = socket.EndAccept(result);
+                        var newSocket = socket.Accept();
                         if (newSocket == null)
                             throw new global::java.net.SocketException("Invalid socket.");
 
@@ -195,7 +220,7 @@ namespace IKVM.Java.Externs.java.net
                     }
                     finally
                     {
-                        socket.ReceiveTimeout = prevTimeout;
+                        socket.Blocking = prevBlocking;
                     }
                 });
             });
@@ -230,6 +255,14 @@ namespace IKVM.Java.Externs.java.net
 #else
             InvokeAction<global::java.net.PlainSocketImpl>(this_, impl =>
             {
+                // close fails early if already closed
+                if (impl.fd == null)
+                    throw new global::java.net.SocketException("Socket already closed.");
+
+                // fd still present, but socket gone, silently exit
+                if (impl.fd != null && impl.fd.getSocket() == null)
+                    return;
+
                 InvokeActionWithSocket(impl, socket =>
                 {
                     // intended to "pre-close" the file descriptor, not useful on .NET
@@ -253,6 +286,9 @@ namespace IKVM.Java.Externs.java.net
 #else
             InvokeAction<global::java.net.PlainSocketImpl>(this_, impl =>
             {
+                if (impl.fd == null)
+                    throw new global::java.net.SocketException("Socket already closed.");
+
                 InvokeActionWithSocket(impl, socket =>
                 {
                     socket.Shutdown((SocketShutdown)howto);
@@ -458,21 +494,20 @@ namespace IKVM.Java.Externs.java.net
             {
                 InvokeActionWithSocket(impl, socket =>
                 {
+                    var prevBlocking = socket.Blocking;
                     var prevTimeout = socket.SendTimeout;
 
                     try
                     {
+                        socket.Blocking = true;
                         socket.SendTimeout = impl.timeout;
 
                         var buffer = new byte[] { (byte)data };
-                        var result = socket.BeginSend(buffer, 0, 1, SocketFlags.OutOfBand, null, null);
-                        if (impl.timeout > 0 && result.AsyncWaitHandle.WaitOne(impl.timeout, true) == false)
-                            throw new global::java.net.SocketTimeoutException("Send timed out.");
-
-                        socket.EndSend(result);
+                        socket.Send(buffer, 0, 1, SocketFlags.OutOfBand);
                     }
                     finally
                     {
+                        socket.Blocking = prevBlocking;
                         socket.SendTimeout = prevTimeout;
                     }
                 });
