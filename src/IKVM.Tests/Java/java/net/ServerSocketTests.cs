@@ -3,6 +3,9 @@ using System.Collections.Generic;
 
 using FluentAssertions;
 
+using java.io;
+using java.net;
+
 using Microsoft.VisualStudio.TestTools.UnitTesting;
 
 namespace IKVM.Tests.Java.java.net
@@ -18,10 +21,14 @@ namespace IKVM.Tests.Java.java.net
         class EchoSocketServer : global::java.lang.Thread
         {
 
-            readonly int port;
-
+            int port;
             global::java.net.ServerSocket serverSocket;
             bool running = false;
+
+            /// <summary>
+            /// Gets the current port.
+            /// </summary>
+            public int Port => port;
 
             /// <summary>
             /// Initializes a new instance.
@@ -40,10 +47,12 @@ namespace IKVM.Tests.Java.java.net
             {
                 try
                 {
-                    serverSocket = new global::java.net.ServerSocket(port);
+                    serverSocket = new ServerSocket(port);
+                    port = serverSocket.getLocalPort();
+                    serverSocket.setSoTimeout(2000);
                     base.start();
                 }
-                catch (global::java.io.IOException e)
+                catch (IOException e)
                 {
                     e.printStackTrace();
                 }
@@ -67,7 +76,7 @@ namespace IKVM.Tests.Java.java.net
                         {
                             new ClientHandler(serverSocket.accept()).start();
                         }
-                        catch (global::java.io.IOException e)
+                        catch (IOException e)
                         {
                             e.printStackTrace();
                         }
@@ -124,16 +133,16 @@ namespace IKVM.Tests.Java.java.net
         }
 
         [TestMethod]
-        public void Can_listen()
+        public void EchoTest()
         {
             var l = new List<string>();
 
-            var server = new EchoSocketServer(51041);
+            var server = new EchoSocketServer(0);
             server.Start();
 
-            var socket = new global::java.net.Socket("localhost", 51041);
-            var wrt = new global::java.io.PrintStream(socket.getOutputStream());
-            var rdr = new global::java.io.BufferedReader(new global::java.io.InputStreamReader(socket.getInputStream()));
+            var socket = new Socket("localhost", server.Port);
+            var wrt = new PrintStream(socket.getOutputStream());
+            var rdr = new BufferedReader(new InputStreamReader(socket.getInputStream()));
 
             // send a handful of test messages
             wrt.println("MESSAGEA");
@@ -160,6 +169,30 @@ namespace IKVM.Tests.Java.java.net
             l[2].Should().Be("RECEIVED MESSAGEB");
             l[3].Should().Be("RECEIVED MESSAGEC");
             l[4].Should().Be("GOODBYE");
+        }
+
+        [TestMethod]
+        public void ReuseAddressShouldWork()
+        {
+            var s1 = new ServerSocket();
+            s1.setReuseAddress(true);
+            s1.getReuseAddress().Should().BeTrue();
+            s1.setReuseAddress(false);
+            s1.getReuseAddress().Should().BeFalse();
+            s1.close();
+        }
+
+        [TestMethod]
+        [ExpectedException(typeof(BindException))]
+        public void BindingToSamePortShouldThrowBindException()
+        {
+            var s1 = new ServerSocket();
+            s1.bind(new InetSocketAddress(0));
+            var s2 = new ServerSocket();
+            s2.bind(new InetSocketAddress(s1.getLocalPort()));
+
+            s2.close();
+            s1.close();
         }
 
     }

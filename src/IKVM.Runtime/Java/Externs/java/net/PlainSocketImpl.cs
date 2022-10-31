@@ -172,7 +172,10 @@ namespace IKVM.Java.Externs.java.net
                         // wait for connection attempt
                         var result = socket.BeginAccept(null, null);
                         if (impl.timeout > 0 && result.AsyncWaitHandle.WaitOne(impl.timeout, true) == false)
+                        {
+                            socket.Close();
                             throw new global::java.net.SocketTimeoutException("Accept timed out.");
+                        }
 
                         // process results
                         var newSocket = socket.EndAccept(result);
@@ -274,10 +277,34 @@ namespace IKVM.Java.Externs.java.net
                         throw new global::java.lang.NullPointerException(nameof(value));
 
                     // .NET provides property
+                    if (cmd == global::java.net.SocketOptions.SO_TIMEOUT)
+                    {
+                        var timeout = (global::java.lang.Integer)value;
+                        socket.ReceiveTimeout = timeout.intValue();
+                        return;
+                    }
+
+                    // .NET provides property
                     if (cmd == global::java.net.SocketOptions.SO_LINGER)
                     {
                         var linger = (global::java.lang.Integer)value;
                         socket.LingerState = new LingerOption(on, linger.intValue());
+                        return;
+                    }
+
+                    // .NET provides a property
+                    if (cmd == global::java.net.SocketOptions.SO_RCVBUF)
+                    {
+                        var val = (global::java.lang.Integer)value;
+                        socket.ReceiveBufferSize = val.intValue();
+                        return;
+                    }
+
+                    // .NET provides a property
+                    if (cmd == global::java.net.SocketOptions.SO_SNDBUF)
+                    {
+                        var val = (global::java.lang.Integer)value;
+                        socket.SendBufferSize = val.intValue();
                         return;
                     }
 
@@ -288,14 +315,16 @@ namespace IKVM.Java.Externs.java.net
                         return;
                     }
 
+                    // lookup option options
                     if (SocketOptionUtil.TryGetDotNetSocketOption(cmd, out var options) == false)
                         throw new global::java.net.SocketException("Invalid option.");
 
+                    // configure socket
                     socket.SetSocketOption(options.Level, options.Name, value switch
                     {
-                        global::java.lang.Integer i => i.intValue(),
-                        global::java.lang.Boolean b => b.booleanValue(),
-                        _ => new global::java.net.SocketException("Invalid option value."),
+                        global::java.lang.Boolean b => GetSocketOptionSetValue(options.Type, b.booleanValue()),
+                        global::java.lang.Integer i => GetSocketOptionSetValue(options.Type, i.intValue()),
+                        _ => throw new global::java.net.SocketException("Invalid option value."),
                     });
                 });
             });
@@ -312,8 +341,24 @@ namespace IKVM.Java.Externs.java.net
 #else
             return InvokeFunc<global::java.net.PlainSocketImpl, global::java.net.InetAddressContainer, int>(this_, iaContainerObj_, (impl, iaContainerObj) =>
             {
-                return InvokeFuncWithSocket<int>(impl, socket =>
+                return InvokeFuncWithSocket(impl, socket =>
                 {
+                    // .NET provides property
+                    if (opt == global::java.net.SocketOptions.SO_TIMEOUT)
+                        return socket.ReceiveTimeout;
+
+                    // .NET provides property
+                    if (opt == global::java.net.SocketOptions.SO_LINGER)
+                        return socket.LingerState.Enabled ? socket.LingerState.LingerTime : -1;
+
+                    // .NET provides property
+                    if (opt == global::java.net.SocketOptions.SO_RCVBUF)
+                        return socket.ReceiveBufferSize;
+
+                    // .NET provides property
+                    if (opt == global::java.net.SocketOptions.SO_SNDBUF)
+                        return socket.SendBufferSize;
+
                     // .NET provides property
                     if (opt == global::java.net.SocketOptions.SO_BINDADDR)
                     {
@@ -322,22 +367,84 @@ namespace IKVM.Java.Externs.java.net
                     }
 
                     // .NET provides property
-                    if (opt == global::java.net.SocketOptions.SO_LINGER)
-                        return socket.LingerState.Enabled ? socket.LingerState.LingerTime : -1;
+                    if (opt == global::java.net.SocketOptions.TCP_NODELAY)
+                        return socket.NoDelay ? 1 : -1;
 
+                    // lookup option options
                     if (SocketOptionUtil.TryGetDotNetSocketOption(opt, out var options) == false)
                         throw new global::java.net.SocketException("Invalid option.");
 
+                    // configure socket
                     return socket.GetSocketOption(options.Level, options.Name) switch
                     {
-                        bool b => b ? 1 : -1,
-                        int i => i,
+                        bool b => GetSocketOptionGetValue(options.Type, b),
+                        int i => GetSocketOptionGetValue(options.Type, i),
                         _ => throw new global::java.net.SocketException("Invalid option value."),
                     };
                 });
             });
 #endif
         }
+
+#if !FIRST_PASS
+
+        /// <summary>
+        /// Handles socket options stored as a boolean.
+        /// </summary>
+        /// <param name="type"></param>
+        /// <param name="value"></param>
+        /// <returns></returns>
+        /// <exception cref="global::java.net.SocketException"></exception>
+        static int GetSocketOptionSetValue(SocketOptionUtil.SocketOptionType type, bool value) => type switch
+        {
+            SocketOptionUtil.SocketOptionType.Boolean => value ? 1 : 0,
+            SocketOptionUtil.SocketOptionType.Integer => value ? 1 : 0,
+            _ => throw new global::java.net.SocketException("Invalid option value."),
+        };
+
+        /// <summary>
+        /// Handles socket options stored as an integer.
+        /// </summary>
+        /// <param name="type"></param>
+        /// <param name="value"></param>
+        /// <returns></returns>
+        /// <exception cref="global::java.net.SocketException"></exception>
+        static int GetSocketOptionSetValue(SocketOptionUtil.SocketOptionType type, int value) => type switch
+        {
+            SocketOptionUtil.SocketOptionType.Boolean => (value != -1) ? 1 : 0,
+            SocketOptionUtil.SocketOptionType.Integer => value,
+            _ => throw new global::java.net.SocketException("Invalid option value."),
+        };
+
+        /// <summary>
+        /// Handles socket options stored as a boolean.
+        /// </summary>
+        /// <param name="type"></param>
+        /// <param name="value"></param>
+        /// <returns></returns>
+        /// <exception cref="global::java.net.SocketException"></exception>
+        static int GetSocketOptionGetValue(SocketOptionUtil.SocketOptionType type, bool value) => type switch
+        {
+            SocketOptionUtil.SocketOptionType.Boolean => value ? 1 : -1,
+            _ => throw new global::java.net.SocketException("Invalid option value."),
+        };
+
+        /// <summary>
+        /// Handles socket options stored as an integer.
+        /// </summary>
+        /// <param name="type"></param>
+        /// <param name="value"></param>
+        /// <returns></returns>
+        /// <exception cref="global::java.net.SocketException"></exception>
+        static int GetSocketOptionGetValue(SocketOptionUtil.SocketOptionType type, int value) => type switch
+        {
+            SocketOptionUtil.SocketOptionType.Boolean => value == 0 ? -1 : 1,
+            SocketOptionUtil.SocketOptionType.Integer => value,
+            SocketOptionUtil.SocketOptionType.Unknown => value,
+            _ => throw new global::java.net.SocketException("Invalid option value."),
+        };
+
+#endif
 
         /// <summary>
         /// Implements the native method for 'socketSendUrgentData'.
