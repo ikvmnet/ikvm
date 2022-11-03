@@ -1,4 +1,6 @@
-﻿using FluentAssertions;
+﻿using System.Threading.Tasks;
+
+using FluentAssertions;
 
 using java.net;
 

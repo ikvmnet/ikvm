@@ -58,7 +58,7 @@ namespace IKVM.Java.Externs.java.net
 
             }
 
-            throw new global::java.net.SocketException("Socket closed.");
+            throw new global::java.net.SocketException("Socket closed");
 #endif
         }
 

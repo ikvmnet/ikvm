@@ -1,9 +1,11 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Threading.Tasks;
 
 using FluentAssertions;
 
 using java.io;
+using java.lang;
 using java.net;
 
 using Microsoft.VisualStudio.TestTools.UnitTesting;
@@ -209,6 +211,33 @@ namespace IKVM.Tests.Java.java.net
             ss.getLocalPort().Should().Be(ssLocalPort);
             ss.getLocalSocketAddress().Should().Be(ssLocalSocketAddress);
             ss.isBound().Should().BeTrue();
+        }
+
+        [TestMethod]
+        public void ShouldAbortCancelWhenClosed()
+        {
+            var ss = new ServerSocket(0);
+            var ex = (global::java.net.SocketException)null;
+
+            var task = Task.Run(() =>
+            {
+                try
+                {
+                    ss.setSoTimeout(60000);
+                    ss.accept();
+                }
+                catch (SocketException e)
+                {
+                    ex = e;
+                }
+            });
+
+            Thread.sleep(1000);
+            ss.close();
+            Thread.sleep(1000);
+            task.Wait();
+
+            ex.Should().BeAssignableTo<SocketException>();
         }
 
     }

@@ -18,7 +18,12 @@ namespace IKVM.Runtime.Java.Externs.java.net
         /// <returns></returns>
         public static IPAddress ToIPAddress(this global::java.net.InetAddress self)
         {
-            return self != null ? new IPAddress(self.getAddress()) : null;
+            if (self == null)
+                return null;
+            else if (self is global::java.net.Inet6Address ip6)
+                return new IPAddress(self.getAddress(), ip6.getScopeId());
+            else
+                return new IPAddress(self.getAddress());
         }
 
         /// <summary>

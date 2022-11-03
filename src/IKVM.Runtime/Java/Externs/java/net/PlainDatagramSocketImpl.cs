@@ -5,6 +5,7 @@ using System.Linq.Expressions;
 using System.Net;
 using System.Net.Sockets;
 using System.Reflection;
+using System.Runtime.InteropServices;
 
 using IKVM.Runtime.Java.Externs.java.net;
 
@@ -65,7 +66,6 @@ namespace IKVM.Java.Externs.java.net
             return e.Compile();
         }
 
-        static readonly byte[] PeekBuffer = new byte[1];
         static readonly MethodInfo InetAddressHolderMethod = typeof(global::java.net.InetAddress).GetMethod("holder", BindingFlags.NonPublic | BindingFlags.Instance);
         static readonly Func<global::java.net.InetAddress, object> InetAddressHolderDelegate = (Func<global::java.net.InetAddress, object>)InetAddressHolderMethod.CreateDelegate(typeof(Func<global::java.net.InetAddress, object>));
         static readonly FieldInfo InetAddressHolderAddressField = typeof(global::java.net.InetAddress).GetNestedType("InetAddressHolder", BindingFlags.NonPublic).GetField("address", BindingFlags.NonPublic | BindingFlags.Instance);
@@ -80,8 +80,16 @@ namespace IKVM.Java.Externs.java.net
         static readonly Action<global::java.net.NetworkInterface, global::java.net.InetAddress[]> NetworkInterfaceAddrsSetter = MakeFieldSetter<global::java.net.NetworkInterface, global::java.net.InetAddress[]>(NetworkInterfaceAddrsField);
         static readonly FieldInfo NetworkInterfaceNameField = typeof(global::java.net.NetworkInterface).GetField("name", BindingFlags.NonPublic | BindingFlags.Instance);
         static readonly Action<global::java.net.NetworkInterface, string> NetworkInterfaceNameSetter = MakeFieldSetter<global::java.net.NetworkInterface, string>(NetworkInterfaceNameField);
+        static readonly FieldInfo AbstractPlainDatagramSocketImplTrafficClassField = typeof(global::java.net.AbstractPlainDatagramSocketImpl).GetField("trafficClass", BindingFlags.NonPublic | BindingFlags.Instance);
+        static readonly Func<global::java.net.AbstractPlainDatagramSocketImpl, int> AbstractPlainDatagramSocketImplTrafficClassGetter = MakeFieldGetter<global::java.net.AbstractPlainDatagramSocketImpl, int>(AbstractPlainDatagramSocketImplTrafficClassField);
 
 #endif
+
+        const IOControlCode SIO_UDP_CONNRESET = (IOControlCode)(-1744830452);
+        const IOControlCode SIO_UDP_NETRESET = (IOControlCode)2550136847;
+        static readonly byte[] IOControlTrueBuffer = BitConverter.GetBytes(1);
+        static readonly byte[] IOControlFalseBuffer = BitConverter.GetBytes(0);
+        static readonly byte[] PeekBuffer = new byte[1];
 
         /// <summary>
         /// Implements the native method for 'init'.
@@ -99,13 +107,22 @@ namespace IKVM.Java.Externs.java.net
         public static void datagramSocketCreate(object this_)
         {
 #if FIRST_PASS
-            throw new NotSupportedException();
+            throw new NotImplementedException();
 #else
             InvokeAction<global::java.net.PlainDatagramSocketImpl>(this_, impl =>
             {
                 var socket = new Socket(SocketType.Dgram, ProtocolType.Udp);
-                if (Socket.OSSupportsIPv6)
-                    socket.SetSocketOption(SocketOptionLevel.IPv6, SocketOptionName.IPv6Only, false);
+
+                // enable broadcast
+                socket.SetSocketOption(SocketOptionLevel.Socket, SocketOptionName.Broadcast, true);
+
+                // SIO_UDP_CONNRESET fixes a "bug" introduced in Windows 2000, which
+                // returns connection reset errors on unconnected UDP sockets (as well
+                // as connected sockets). The solution is to only enable this feature
+                // when the socket is connected.
+                if (RuntimeInformation.IsOSPlatform(OSPlatform.Windows))
+                    socket.IOControl(SIO_UDP_CONNRESET, IOControlFalseBuffer, null);
+
                 impl.fd.setSocket(socket);
             });
 #endif
@@ -120,11 +137,11 @@ namespace IKVM.Java.Externs.java.net
         public static void datagramSocketClose(object this_)
         {
 #if FIRST_PASS
-            throw new NotSupportedException();
+            throw new NotImplementedException();
 #else
             InvokeAction<global::java.net.PlainDatagramSocketImpl>(this_, (impl) =>
             {
-                var socket = (Socket)impl.fd?.getSocket();
+                var socket = impl.fd?.getSocket();
                 if (socket == null)
                     return;
 
@@ -132,6 +149,67 @@ namespace IKVM.Java.Externs.java.net
                 {
                     socket.Close();
                     impl.fd.setSocket(null);
+                });
+            });
+#endif
+        }
+
+        /// <summary>
+        /// Implements the native method for 'connect0'.
+        /// </summary>
+        /// <param name="this_"></param>
+        /// <param name="address_"></param>
+        /// <param name="port"></param>
+        /// <exception cref="global::java.lang.NullPointerException"></exception>
+        /// <exception cref="global::java.net.SocketException"></exception>
+        public static void connect0(object this_, object address_, int port)
+        {
+#if FIRST_PASS
+            throw new NotImplementedException();
+#else
+            InvokeAction<global::java.net.PlainDatagramSocketImpl, global::java.net.InetAddress>(this_, address_, (impl, address) =>
+            {
+                InvokeWithSocket(impl, socket =>
+                {
+                    if (address == null)
+                        throw new global::java.lang.NullPointerException(nameof(address));
+
+                    socket.Connect(address.ToIPAddress(), port);
+
+                    // see comment in in socketCreate
+                    if (RuntimeInformation.IsOSPlatform(OSPlatform.Windows))
+                        socket.IOControl(SIO_UDP_CONNRESET, IOControlTrueBuffer, null);
+                });
+            });
+#endif
+        }
+
+        /// <summary>
+        /// Implements the native method for 'disconnect0'.
+        /// </summary>
+        /// <param name="this_"></param>
+        /// <param name="family"></param>
+        /// <exception cref="global::java.lang.NullPointerException"></exception>
+        /// <exception cref="global::java.net.SocketException"></exception>
+        public static void disconnect0(object this_, int family)
+        {
+#if FIRST_PASS
+            throw new NotImplementedException();
+#else
+            InvokeAction<global::java.net.PlainDatagramSocketImpl>(this_, impl =>
+            {
+                if (impl.fd == null || impl.fd.getSocket() == null)
+                    return;
+
+                InvokeWithSocket(impl, socket =>
+                {
+                    // only disconnect if connected
+                    if (socket.Connected)
+                        socket.Disconnect(false);
+
+                    // see comment in in socketCreate
+                    if (RuntimeInformation.IsOSPlatform(OSPlatform.Windows))
+                        socket.IOControl(SIO_UDP_CONNRESET, IOControlFalseBuffer, null);
                 });
             });
 #endif
@@ -148,7 +226,7 @@ namespace IKVM.Java.Externs.java.net
         public static void bind0(object this_, int localPort, object localAddress_)
         {
 #if FIRST_PASS
-            throw new NotSupportedException();
+            throw new NotImplementedException();
 #else
             InvokeAction<global::java.net.PlainDatagramSocketImpl, global::java.net.InetAddress>(this_, localAddress_, (impl, localAddress) =>
             {
@@ -157,7 +235,8 @@ namespace IKVM.Java.Externs.java.net
                     if (localAddress == null)
                         throw new global::java.lang.NullPointerException(nameof(localAddress));
 
-                    socket.Bind(new IPEndPoint(localAddress.ToIPAddress(), localPort));
+                    // bind to appropriate address
+                    socket.Bind(new IPEndPoint(localAddress.isAnyLocalAddress() ? IPAddress.IPv6Any : localAddress.ToIPAddress(), localPort));
 
                     // check that we bound to an IP endpoint
                     var localEndpoint = socket.LocalEndPoint;
@@ -181,7 +260,7 @@ namespace IKVM.Java.Externs.java.net
         public static void send(object this_, object packet_)
         {
 #if FIRST_PASS
-            throw new NotSupportedException();
+            throw new NotImplementedException();
 #else
             InvokeAction<global::java.net.PlainDatagramSocketImpl, global::java.net.DatagramPacket>(this_, packet_, (impl, packet) =>
             {
@@ -190,12 +269,49 @@ namespace IKVM.Java.Externs.java.net
                     if (packet == null)
                         throw new global::java.lang.NullPointerException(nameof(packet));
 
-                    socket.SendTimeout = impl.timeout;
-                    var result = socket.BeginSendTo(packet.getData(), packet.getOffset(), packet.getLength(), SocketFlags.None, new IPEndPoint(packet.getAddress().ToIPAddress(), packet.getPort()), null, null);
-                    if (impl.timeout > 0 && result.AsyncWaitHandle.WaitOne(impl.timeout, true) == false)
-                        throw new global::java.net.SocketTimeoutException("Send timed out.");
+                    if (Socket.OSSupportsIPv6)
+                    {
+                        var trafficClass = AbstractPlainDatagramSocketImplTrafficClassGetter(impl);
+                        if (trafficClass != 0)
+                            socket.SetSocketOption(SocketOptionLevel.IP, SocketOptionName.TypeOfService, trafficClass);
+                    }
 
-                    var n = socket.EndSendTo(result);
+                    var prevBlocking = socket.Blocking;
+                    var prevSendTimeout = socket.SendTimeout;
+
+                    try
+                    {
+                        socket.Blocking = true;
+                        socket.SendTimeout = 0;
+                        socket.SendTo(packet.buf, packet.offset, packet.length, SocketFlags.None, new IPEndPoint(packet.getAddress().ToIPAddress(), packet.getPort()));
+                    }
+                    finally
+                    {
+                        socket.Blocking = prevBlocking;
+                        socket.SendTimeout = prevSendTimeout;
+                    }
+                });
+            });
+#endif
+        }
+
+        /// <summary>
+        /// Implements the native method for 'dataAvailable'.
+        /// </summary>
+        /// <param name="this_"></param>
+        /// <returns></returns>
+        /// <exception cref="global::java.lang.NullPointerException"></exception>
+        /// <exception cref="global::java.net.SocketException"></exception>
+        public static int dataAvailable(object this_)
+        {
+#if FIRST_PASS
+            throw new NotImplementedException();
+#else
+            return InvokeFunc<global::java.net.PlainDatagramSocketImpl, int>(this_, impl =>
+            {
+                return InvokeWithSocket(impl, socket =>
+                {
+                    return socket.Available;
                 });
             });
 #endif
@@ -212,7 +328,7 @@ namespace IKVM.Java.Externs.java.net
         public static int peek(object this_, object address_)
         {
 #if FIRST_PASS
-            throw new NotSupportedException();
+            throw new NotImplementedException();
 #else
             return InvokeFunc<global::java.net.PlainDatagramSocketImpl, global::java.net.InetAddress, int>(this_, address_, (impl, address) =>
             {
@@ -221,71 +337,90 @@ namespace IKVM.Java.Externs.java.net
                     if (address == null)
                         throw new global::java.lang.NullPointerException(nameof(address));
 
-                    // use asynchronous completion to allow cancelation through Close()
-                    var remoteEndpoint = (EndPoint)new IPEndPoint(IPAddress.Any, 0);
-                    socket.ReceiveTimeout = impl.timeout;
-                    var result = socket.BeginReceiveFrom(PeekBuffer, 0, 1, SocketFlags.Peek, ref remoteEndpoint, null, null);
-                    if (impl.timeout > 0 && result.AsyncWaitHandle.WaitOne(impl.timeout, true) == false)
-                        throw new global::java.net.SocketTimeoutException("Peek data timed out.");
+                    var prevBlocking = socket.Blocking;
+                    var prevReceiveTimeout = socket.ReceiveTimeout;
 
-                    var n = socket.EndReceiveFrom(result, ref remoteEndpoint);
-
-                    // check that we received an IP endpoint
-                    if (remoteEndpoint is not IPEndPoint ipRemoteEndpoint)
-                        throw new global::java.net.SocketException("Unexpected resulting endpoint type.");
-
-                    if (ipRemoteEndpoint.AddressFamily == AddressFamily.InterNetworkV6)
+                    try
                     {
-                        if (address is global::java.net.Inet6Address address6)
+                        if (impl.timeout > 0)
                         {
-                            // InetAddress stores its data on a nested 'holder' instance
-                            var holder = Inet6AddressHolderGetter(address6);
-                            if (holder == null)
-                                throw new global::java.net.SocketException("Could not get Inet6Address holder.");
-
-                            // set the address directly onto the holder
-                            var bytes = ipRemoteEndpoint.Address.GetAddressBytes();
-                            Inet6AddressHolderSetIpAddressDelegate(holder, bytes);
-                        }
-                        else if (ipRemoteEndpoint.Address.IsIPv4MappedToIPv6)
-                        {
-                            // InetAddress stores its data on a nested 'holder' instance
-                            var holder = InetAddressHolderDelegate(address);
-                            if (holder == null)
-                                throw new global::java.net.SocketException("Could not get InetAddress holder.");
-
-                            // set the address directly onto the holder
-                            var bytes = BinaryPrimitives.ReadInt32BigEndian(ipRemoteEndpoint.Address.MapToIPv4().GetAddressBytes());
-                            InetAddressHolderAddressSetter(holder, bytes);
-                        }
-                    }
-                    else if (ipRemoteEndpoint.AddressFamily == AddressFamily.InterNetwork)
-                    {
-                        if (address is global::java.net.Inet6Address address6)
-                        {
-                            // InetAddress stores its data on a nested 'holder' instance
-                            var holder = Inet6AddressHolderGetter(address6);
-                            if (holder == null)
-                                throw new global::java.net.SocketException("Could not get Inet6Address holder.");
-
-                            // set the address directly onto the holder
-                            var bytes = ipRemoteEndpoint.Address.MapToIPv6().GetAddressBytes();
-                            Inet6AddressHolderSetIpAddressDelegate(holder, bytes);
+                            // wait for data to be available
+                            socket.Blocking = false;
+                            socket.ReceiveTimeout = impl.timeout;
+                            if (socket.Poll(impl.timeout * 1000, SelectMode.SelectRead) == false)
+                                throw new global::java.net.SocketTimeoutException("Peek timed out.");
                         }
                         else
                         {
-                            // InetAddress stores its data on a nested 'holder' instance
-                            var holder = InetAddressHolderDelegate(address);
-                            if (holder == null)
-                                throw new global::java.net.SocketException("Could not get InetAddress holder.");
-
-                            // set the address directly onto the holder
-                            var bytes = BinaryPrimitives.ReadInt32BigEndian(ipRemoteEndpoint.Address.GetAddressBytes());
-                            InetAddressHolderAddressSetter(holder, bytes);
+                            socket.Blocking = true;
+                            socket.ReceiveTimeout = 0;
                         }
-                    }
 
-                    return ipRemoteEndpoint.Port;
+                        var remoteEndpoint = (EndPoint)new IPEndPoint(IPAddress.IPv6Any, 0);
+                        var length = socket.ReceiveFrom(PeekBuffer, 0, 1, SocketFlags.Peek, ref remoteEndpoint);
+
+                        // check that we received an IP endpoint
+                        if (remoteEndpoint is not IPEndPoint ipRemoteEndpoint)
+                            throw new global::java.net.SocketException("Unexpected resulting endpoint type.");
+
+                        if (ipRemoteEndpoint.AddressFamily == AddressFamily.InterNetworkV6)
+                        {
+                            if (address is global::java.net.Inet6Address address6)
+                            {
+                                // InetAddress stores its data on a nested 'holder' instance
+                                var holder = Inet6AddressHolderGetter(address6);
+                                if (holder == null)
+                                    throw new global::java.net.SocketException("Could not get Inet6Address holder.");
+
+                                // set the address directly onto the holder
+                                var bytes = ipRemoteEndpoint.Address.GetAddressBytes();
+                                Inet6AddressHolderSetIpAddressDelegate(holder, bytes);
+                            }
+                            else if (ipRemoteEndpoint.Address.IsIPv4MappedToIPv6)
+                            {
+                                // InetAddress stores its data on a nested 'holder' instance
+                                var holder = InetAddressHolderDelegate(address);
+                                if (holder == null)
+                                    throw new global::java.net.SocketException("Could not get InetAddress holder.");
+
+                                // set the address directly onto the holder
+                                var bytes = BinaryPrimitives.ReadInt32BigEndian(ipRemoteEndpoint.Address.MapToIPv4().GetAddressBytes());
+                                InetAddressHolderAddressSetter(holder, bytes);
+                            }
+                        }
+                        else if (ipRemoteEndpoint.AddressFamily == AddressFamily.InterNetwork)
+                        {
+                            if (address is global::java.net.Inet6Address address6)
+                            {
+                                // InetAddress stores its data on a nested 'holder' instance
+                                var holder = Inet6AddressHolderGetter(address6);
+                                if (holder == null)
+                                    throw new global::java.net.SocketException("Could not get Inet6Address holder.");
+
+                                // set the address directly onto the holder
+                                var bytes = ipRemoteEndpoint.Address.MapToIPv6().GetAddressBytes();
+                                Inet6AddressHolderSetIpAddressDelegate(holder, bytes);
+                            }
+                            else
+                            {
+                                // InetAddress stores its data on a nested 'holder' instance
+                                var holder = InetAddressHolderDelegate(address);
+                                if (holder == null)
+                                    throw new global::java.net.SocketException("Could not get InetAddress holder.");
+
+                                // set the address directly onto the holder
+                                var bytes = BinaryPrimitives.ReadInt32BigEndian(ipRemoteEndpoint.Address.GetAddressBytes());
+                                InetAddressHolderAddressSetter(holder, bytes);
+                            }
+                        }
+
+                        return ipRemoteEndpoint.Port;
+                    }
+                    finally
+                    {
+                        socket.Blocking = prevBlocking;
+                        socket.ReceiveTimeout = prevReceiveTimeout;
+                    }
                 });
             });
 #endif
@@ -302,36 +437,75 @@ namespace IKVM.Java.Externs.java.net
         public static int peekData(object this_, object packet_)
         {
 #if FIRST_PASS
-            throw new NotSupportedException();
+            throw new NotImplementedException();
 #else
             return InvokeFunc<global::java.net.PlainDatagramSocketImpl, global::java.net.DatagramPacket, int>(this_, packet_, (impl, packet) =>
             {
-                return InvokeWithSocket(impl, socket =>
+                return InvokeWithSocket<int>(impl, socket =>
                 {
                     if (packet == null)
-                        throw new global::java.lang.NullPointerException(nameof(packet));
+                        throw new global::java.lang.NullPointerException("packet");
+                    if (packet.buf == null)
+                        throw new global::java.lang.NullPointerException("packet buffer");
 
-                    // use asynchronous completion to allow cancelation through Close()
-                    var remoteEndpoint = (EndPoint)new IPEndPoint(IPAddress.Any, 0);
-                    socket.ReceiveTimeout = impl.timeout;
-                    var result = socket.BeginReceiveFrom(packet.getData(), packet.getOffset(), packet.getLength(), SocketFlags.Peek, ref remoteEndpoint, null, null);
-                    if (impl.timeout > 0 && result.AsyncWaitHandle.WaitOne(impl.timeout, true) == false)
-                        throw new global::java.net.SocketTimeoutException("Peek data timed out.");
+                    var prevBlocking = socket.Blocking;
+                    var prevReceiveTimeout = socket.ReceiveTimeout;
 
-                    var n = socket.EndReceiveFrom(result, ref remoteEndpoint);
+                    try
+                    {
+                        var remoteEndpoint = (EndPoint)new IPEndPoint(IPAddress.IPv6Any, 0);
+                        var length = 0;
 
-                    // check that we received an IP endpoint
-                    if (remoteEndpoint is not IPEndPoint ipRemoteEndpoint)
-                        throw new global::java.net.SocketException("Unexpected resulting endpoint type.");
+                        if (impl.timeout > 0)
+                        {
+                            // wait for data to be available
+                            socket.Blocking = false;
+                            socket.ReceiveTimeout = impl.timeout;
+                            if (socket.Poll(impl.timeout * 1000, SelectMode.SelectRead) == false)
+                                throw new global::java.net.SocketTimeoutException("Peek data timed out.");
+                        }
+                        else
+                        {
+                            socket.Blocking = true;
+                            socket.ReceiveTimeout = 0;
+                        }
 
-                    var remoteAddress = ipRemoteEndpoint.ToInetAddress();
-                    var packetAddress = packet.getAddress();
-                    if (packetAddress == null || packetAddress.equals(remoteAddress) == false)
-                        packet.setAddress(ipRemoteEndpoint.ToInetAddress());
+                        try
+                        {
+                            length = socket.ReceiveFrom(packet.buf, packet.offset, packet.bufLength, SocketFlags.Peek, ref remoteEndpoint);
+                        }
+                        catch (SocketException e) when (e.SocketErrorCode == SocketError.MessageSize)
+                        {
+                            // message size error indicates we did read something, but not the whole message
+                            // just return what we did read, since it's UDP and nobody cares anyways
+                            length = packet.bufLength;
+                        }
+                        catch
+                        {
+                            // some other exception, report no data read
+                            packet.port = 0;
+                            packet.length = 0;
+                            throw;
+                        }
 
-                    packet.setPort(ipRemoteEndpoint.Port);
-                    packet.setLength(n);
-                    return ipRemoteEndpoint.Port;
+                        // check that we received an IP endpoint
+                        if (remoteEndpoint is not IPEndPoint ipRemoteEndpoint)
+                            throw new global::java.net.SocketException("Unexpected resulting endpoint type.");
+
+                        var remoteAddress = ipRemoteEndpoint.ToInetAddress();
+                        var packetAddress = packet.address;
+                        if (packetAddress == null || packetAddress.equals(remoteAddress) == false)
+                            packet.address = ipRemoteEndpoint.ToInetAddress();
+
+                        packet.port = ipRemoteEndpoint.Port;
+                        packet.length = length;
+                        return ipRemoteEndpoint.Port;
+                    }
+                    finally
+                    {
+                        socket.Blocking = prevBlocking;
+                        socket.ReceiveTimeout = prevReceiveTimeout;
+                    }
                 });
             });
 #endif
@@ -347,35 +521,75 @@ namespace IKVM.Java.Externs.java.net
         public static void receive0(object this_, object packet_)
         {
 #if FIRST_PASS
-            throw new NotSupportedException();
+            throw new NotImplementedException();
 #else
             InvokeAction<global::java.net.PlainDatagramSocketImpl, global::java.net.DatagramPacket>(this_, packet_, (impl, packet) =>
             {
                 InvokeWithSocket(impl, socket =>
                 {
                     if (packet == null)
-                        throw new global::java.lang.NullPointerException(nameof(packet));
+                        throw new global::java.lang.NullPointerException("packet");
+                    if (packet.buf == null)
+                        throw new global::java.lang.NullPointerException("packet buffer");
 
-                    // use asynchronous completion to allow cancelation through Close()
-                    var remoteEndpoint = (EndPoint)new IPEndPoint(IPAddress.Any, 0);
-                    socket.ReceiveTimeout = impl.timeout;
-                    var result = socket.BeginReceiveFrom(packet.getData(), packet.getOffset(), packet.getLength(), SocketFlags.None, ref remoteEndpoint, null, null);
-                    if (impl.timeout > 0 && result.AsyncWaitHandle.WaitOne(impl.timeout, true) == false)
-                        throw new global::java.net.SocketTimeoutException("Receive timed out.");
+                    var prevBlocking = socket.Blocking;
+                    var prevReceiveTimeout = socket.ReceiveTimeout;
 
-                    var n = socket.EndReceiveFrom(result, ref remoteEndpoint);
+                    try
+                    {
+                        var remoteEndpoint = (EndPoint)new IPEndPoint(IPAddress.IPv6Any, 0);
+                        var length = 0;
 
-                    // check that we received an IP endpoint
-                    if (remoteEndpoint is not IPEndPoint ipRemoteEndpoint)
-                        throw new global::java.net.SocketException("Unexpected resulting endpoint type.");
+                        if (impl.timeout > 0)
+                        {
+                            // wait for data to be available
+                            socket.Blocking = false;
+                            socket.ReceiveTimeout = impl.timeout;
+                            if (socket.Poll(impl.timeout * 1000, SelectMode.SelectRead) == false)
+                                throw new global::java.net.SocketTimeoutException("Receive timed out.");
+                        }
+                        else
+                        {
+                            socket.Blocking = true;
+                            socket.ReceiveTimeout = 0;
+                        }
 
-                    var remoteAddress = ipRemoteEndpoint.ToInetAddress();
-                    var packetAddress = packet.getAddress();
-                    if (packetAddress == null || packetAddress.equals(remoteAddress) == false)
-                        packet.setAddress(ipRemoteEndpoint.ToInetAddress());
+                        try
+                        {
+                            length = socket.ReceiveFrom(packet.buf, packet.offset, packet.bufLength, SocketFlags.None, ref remoteEndpoint);
+                        }
+                        catch (SocketException e) when (e.SocketErrorCode == SocketError.MessageSize)
+                        {
+                            // message size error indicates we did read something, but not the whole message
+                            // just return what we did read, since it's UDP and nobody cares anyways
+                            length = packet.bufLength;
+                        }
+                        catch
+                        {
+                            // some other exception, report no data read
+                            packet.offset = 0;
+                            packet.length = 0;
+                            throw;
+                        }
 
-                    packet.setPort(ipRemoteEndpoint.Port);
-                    packet.setLength(n);
+                        // check that we received an IP endpoint
+                        if (remoteEndpoint is not IPEndPoint ipRemoteEndpoint)
+                            throw new global::java.net.SocketException("Unexpected resulting endpoint type.");
+
+                        var remoteAddress = ipRemoteEndpoint.ToInetAddress();
+                        var packetAddress = packet.address;
+                        if (packetAddress == null || packetAddress.equals(remoteAddress) == false)
+                            packet.address = ipRemoteEndpoint.ToInetAddress();
+
+                        packet.port = ipRemoteEndpoint.Port;
+                        packet.length = length;
+                        return ipRemoteEndpoint.Port;
+                    }
+                    finally
+                    {
+                        socket.Blocking = prevBlocking;
+                        socket.ReceiveTimeout = prevReceiveTimeout;
+                    }
                 });
             });
 #endif
@@ -391,7 +605,7 @@ namespace IKVM.Java.Externs.java.net
         public static void setTimeToLive(object this_, int ttl)
         {
 #if FIRST_PASS
-            throw new NotSupportedException();
+            throw new NotImplementedException();
 #else
             InvokeAction<global::java.net.PlainDatagramSocketImpl>(this_, (impl) =>
             {
@@ -413,7 +627,7 @@ namespace IKVM.Java.Externs.java.net
         public static int getTimeToLive(object this_)
         {
 #if FIRST_PASS
-            throw new NotSupportedException();
+            throw new NotImplementedException();
 #else
             return InvokeFunc<global::java.net.PlainDatagramSocketImpl, int>(this_, (impl) =>
             {
@@ -465,13 +679,13 @@ namespace IKVM.Java.Externs.java.net
             if (inetaddr == null)
                 throw new global::java.lang.NullPointerException(nameof(inetaddr));
 
-            // we start by favoring IPv6
-            var ipv6 = Socket.OSSupportsIPv6;
+            var addr = inetaddr.ToIPAddress();
+            var ipv6 = Socket.OSSupportsIPv6 && addr.AddressFamily == AddressFamily.InterNetworkV6;
 
             // attempt to join IPv6 multicast
             if (ipv6)
             {
-                var o = new IPv6MulticastOption(inetaddr.ToIPAddress());
+                var o = new IPv6MulticastOption(addr);
                 if (netIf != null)
                     o.InterfaceIndex = netIf.getIndex();
 
@@ -487,7 +701,7 @@ namespace IKVM.Java.Externs.java.net
 
             if (ipv6 == false)
             {
-                var o = new MulticastOption(inetaddr.ToIPAddress());
+                var o = new MulticastOption(addr);
                 if (netIf != null)
                     o.InterfaceIndex = netIf.getIndex();
 
@@ -508,7 +722,7 @@ namespace IKVM.Java.Externs.java.net
         public static void join(object this_, object inetaddr_, object netIf_)
         {
 #if FIRST_PASS
-            throw new NotSupportedException();
+            throw new NotImplementedException();
 #else
             InvokeAction<global::java.net.PlainDatagramSocketImpl, global::java.net.InetAddress, global::java.net.NetworkInterface>(this_, inetaddr_, netIf_, (impl, inetaddr, netIf) =>
             {
@@ -531,7 +745,7 @@ namespace IKVM.Java.Externs.java.net
         public static void leave(object this_, object inetaddr_, object netIf_)
         {
 #if FIRST_PASS
-            throw new NotSupportedException();
+            throw new NotImplementedException();
 #else
             InvokeAction<global::java.net.PlainDatagramSocketImpl, global::java.net.InetAddress, global::java.net.NetworkInterface>(this_, inetaddr_, netIf_, (impl, inetaddr, netIf) =>
             {
@@ -609,11 +823,11 @@ namespace IKVM.Java.Externs.java.net
         public static object socketGetOption(object this_, int opt)
         {
 #if FIRST_PASS
-            throw new NotSupportedException();
+            throw new NotImplementedException();
 #else
             return InvokeFunc<global::java.net.PlainDatagramSocketImpl, object>(this_, impl =>
             {
-                return InvokeWithSocket<object>(impl, socket =>
+                return InvokeWithSocket(impl, socket =>
                 {
                     // IP_MULTICAST_IF returns an InetAddress while IP_MULTICAST_IF2 returns a NetworkInterface
                     if (opt == global::java.net.SocketOptions.IP_MULTICAST_IF ||
@@ -623,14 +837,36 @@ namespace IKVM.Java.Externs.java.net
                     // .NET provides property
                     if (opt == global::java.net.SocketOptions.SO_BINDADDR)
                         return ((IPEndPoint)socket.LocalEndPoint).ToInetAddress();
-                    
+
+                    // .NET provides property
+                    if (opt == global::java.net.SocketOptions.SO_TIMEOUT)
+                        return socket.ReceiveTimeout;
+
+                    // .NET provides property
+                    if (opt == global::java.net.SocketOptions.SO_LINGER)
+                        return socket.LingerState.Enabled ? socket.LingerState.LingerTime : -1;
+
+                    // .NET provides property
+                    if (opt == global::java.net.SocketOptions.SO_RCVBUF)
+                        return socket.ReceiveBufferSize;
+
+                    // .NET provides property
+                    if (opt == global::java.net.SocketOptions.SO_SNDBUF)
+                        return socket.SendBufferSize;
+
+                    // .NET provides property
+                    if (opt == global::java.net.SocketOptions.TCP_NODELAY)
+                        return socket.NoDelay ? 1 : -1;
+
+                    // lookup option options
                     if (SocketOptionUtil.TryGetDotNetSocketOption(opt, out var options) == false)
                         throw new global::java.net.SocketException("Invalid option.");
 
+                    // configure socket
                     return socket.GetSocketOption(options.Level, options.Name) switch
                     {
-                        bool b => b ? 1 : -1,
-                        int i => i,
+                        bool b => GetSocketOptionGetValue(options.Type, b),
+                        int i => GetSocketOptionGetValue(options.Type, i),
                         _ => throw new global::java.net.SocketException("Invalid option value."),
                     };
                 });
@@ -689,25 +925,6 @@ namespace IKVM.Java.Externs.java.net
             return;
         }
 
-        /// <summary>
-        /// Implements the setter of the socket options IP_MULTICAST_LOOP.
-        /// </summary>
-        /// <param name="socket"></param>
-        /// <param name="opt"></param>
-        /// <param name="val"></param>
-        /// <exception cref="global::java.lang.NullPointerException"></exception>
-        /// <exception cref="global::java.net.SocketException"></exception>
-        static void SetMulticastLoopbackMode(Socket socket, int opt, object val)
-        {
-            if (val is not global::java.lang.Boolean b)
-                throw new global::java.net.SocketException("Bad argument for IP_MULTICAST_LOOP: value is not a boolean");
-
-            if (Socket.OSSupportsIPv6)
-                socket.SetSocketOption(SocketOptionLevel.IPv6, SocketOptionName.MulticastLoopback, b);
-            else
-                socket.SetSocketOption(SocketOptionLevel.IP, SocketOptionName.MulticastLoopback, b);
-        }
-
 #endif
 
         /// <summary>
@@ -715,119 +932,143 @@ namespace IKVM.Java.Externs.java.net
         /// </summary>
         /// <param name="this_"></param>
         /// <param name="opt"></param>
-        /// <param name="val"></param>
+        /// <param name="value"></param>
         /// <exception cref="global::java.lang.NullPointerException"></exception>
         /// <exception cref="global::java.net.SocketException"></exception>
-        public static void socketSetOption(object this_, int opt, object val)
+        public static void socketSetOption0(object this_, int opt, object value)
         {
 #if FIRST_PASS
-            throw new NotSupportedException();
+            throw new NotImplementedException();
 #else
             InvokeAction<global::java.net.PlainDatagramSocketImpl>(this_, impl =>
             {
                 InvokeWithSocket(impl, socket =>
                 {
-                    if (val == null)
-                        throw new global::java.lang.NullPointerException(nameof(val));
+                    if (value == null)
+                        throw new global::java.lang.NullPointerException(nameof(value));
 
                     // multicast options may receive InetAddress or NetworkInterface
                     if (opt == global::java.net.SocketOptions.IP_MULTICAST_IF ||
                         opt == global::java.net.SocketOptions.IP_MULTICAST_IF2)
                     {
-                        SetMulticastInterface(socket, opt, val);
+                        SetMulticastInterface(socket, opt, value);
                         return;
                     }
 
                     // implementation changes based on IP/IPv6
                     if (opt == global::java.net.SocketOptions.IP_MULTICAST_LOOP)
                     {
-                        SetMulticastLoopbackMode(socket, opt, val);
+                        var val = (global::java.lang.Boolean)value;
+                        socket.MulticastLoopback = val.booleanValue();
+                        return;
+                    }
+                    // .NET provides property
+                    if (opt == global::java.net.SocketOptions.SO_TIMEOUT)
+                    {
+                        var val = (global::java.lang.Integer)value;
+                        socket.ReceiveTimeout = val.intValue();
                         return;
                     }
 
+                    // .NET provides a property
+                    if (opt == global::java.net.SocketOptions.SO_RCVBUF)
+                    {
+                        var val = (global::java.lang.Integer)value;
+                        socket.ReceiveBufferSize = val.intValue();
+                        return;
+                    }
+
+                    // .NET provides a property
+                    if (opt == global::java.net.SocketOptions.SO_SNDBUF)
+                    {
+                        var val = (global::java.lang.Integer)value;
+                        socket.SendBufferSize = val.intValue();
+                        return;
+                    }
+
+                    // .NET provides a property
+                    if (opt == global::java.net.SocketOptions.TCP_NODELAY)
+                    {
+                        var val = (global::java.lang.Integer)value;
+                        socket.NoDelay = val.intValue() != -1;
+                        return;
+                    }
+
+                    // lookup option options
                     if (SocketOptionUtil.TryGetDotNetSocketOption(opt, out var options) == false)
                         throw new global::java.net.SocketException("Invalid option.");
 
-                    socket.SetSocketOption(options.Level, options.Name, val switch
+                    // configure socket
+                    socket.SetSocketOption(options.Level, options.Name, value switch
                     {
-                        global::java.lang.Integer i => i.intValue(),
-                        global::java.lang.Boolean b => b.booleanValue(),
-                        _ => new global::java.net.SocketException("Invalid option value."),
+                        global::java.lang.Boolean b => GetSocketOptionSetValue(options.Type, b.booleanValue()),
+                        global::java.lang.Integer i => GetSocketOptionSetValue(options.Type, i.intValue()),
+                        _ => throw new global::java.net.SocketException("Invalid option value."),
                     });
                 });
             });
 #endif
         }
 
-        /// <summary>
-        /// Implements the native method for 'connect0'.
-        /// </summary>
-        /// <param name="this_"></param>
-        /// <param name="address"></param>
-        /// <param name="port"></param>
-        /// <exception cref="global::java.lang.NullPointerException"></exception>
-        /// <exception cref="global::java.net.SocketException"></exception>
-        public static void connect0(object this_, object address_, int port)
-        {
-#if FIRST_PASS
-            throw new NotSupportedException();
-#else
-            InvokeAction<global::java.net.PlainDatagramSocketImpl, global::java.net.InetAddress>(this_, address_, (impl, address) =>
-            {
-                InvokeWithSocket(impl, socket =>
-                {
-                    if (address == null)
-                        throw new global::java.lang.NullPointerException(nameof(address));
-
-                    socket.Connect(address.ToIPAddress(), port);
-                });
-            });
-#endif
-        }
+#if !FIRST_PASS
 
         /// <summary>
-        /// Implements the native method for 'disconnect0'.
+        /// Handles socket options stored as a boolean.
         /// </summary>
-        /// <param name="this_"></param>
-        /// <param name="family"></param>
-        /// <exception cref="global::java.lang.NullPointerException"></exception>
-        /// <exception cref="global::java.net.SocketException"></exception>
-        public static void disconnect0(object this_, int family)
-        {
-#if FIRST_PASS
-            throw new NotSupportedException();
-#else
-            InvokeAction<global::java.net.PlainDatagramSocketImpl>(this_, impl =>
-            {
-                InvokeWithSocket(impl, socket =>
-                {
-                    socket.Disconnect(false);
-                });
-            });
-#endif
-        }
-
-        /// <summary>
-        /// Implements the native method for 'dataAvailable'.
-        /// </summary>
-        /// <param name="this_"></param>
+        /// <param name="type"></param>
+        /// <param name="value"></param>
         /// <returns></returns>
-        /// <exception cref="global::java.lang.NullPointerException"></exception>
         /// <exception cref="global::java.net.SocketException"></exception>
-        public static int dataAvailable(object this_)
+        static int GetSocketOptionSetValue(SocketOptionUtil.SocketOptionType type, bool value) => type switch
         {
-#if FIRST_PASS
-            throw new NotSupportedException();
-#else
-            return InvokeFunc<global::java.net.PlainDatagramSocketImpl, int>(this_, impl =>
-            {
-                return InvokeWithSocket(impl, socket =>
-                {
-                    return socket.Available;
-                });
-            });
+            SocketOptionUtil.SocketOptionType.Boolean => value ? 1 : 0,
+            SocketOptionUtil.SocketOptionType.Integer => value ? 1 : 0,
+            _ => throw new global::java.net.SocketException("Invalid option value."),
+        };
+
+        /// <summary>
+        /// Handles socket options stored as an integer.
+        /// </summary>
+        /// <param name="type"></param>
+        /// <param name="value"></param>
+        /// <returns></returns>
+        /// <exception cref="global::java.net.SocketException"></exception>
+        static int GetSocketOptionSetValue(SocketOptionUtil.SocketOptionType type, int value) => type switch
+        {
+            SocketOptionUtil.SocketOptionType.Boolean => (value != -1) ? 1 : 0,
+            SocketOptionUtil.SocketOptionType.Integer => value,
+            _ => throw new global::java.net.SocketException("Invalid option value."),
+        };
+
+        /// <summary>
+        /// Handles socket options stored as a boolean.
+        /// </summary>
+        /// <param name="type"></param>
+        /// <param name="value"></param>
+        /// <returns></returns>
+        /// <exception cref="global::java.net.SocketException"></exception>
+        static object GetSocketOptionGetValue(SocketOptionUtil.SocketOptionType type, bool value) => type switch
+        {
+            SocketOptionUtil.SocketOptionType.Boolean => new global::java.lang.Boolean(value),
+            _ => throw new global::java.net.SocketException("Invalid option value."),
+        };
+
+        /// <summary>
+        /// Handles socket options stored as an integer.
+        /// </summary>
+        /// <param name="type"></param>
+        /// <param name="value"></param>
+        /// <returns></returns>
+        /// <exception cref="global::java.net.SocketException"></exception>
+        static object GetSocketOptionGetValue(SocketOptionUtil.SocketOptionType type, int value) => type switch
+        {
+            SocketOptionUtil.SocketOptionType.Boolean => value == 0 ? global::java.lang.Boolean.FALSE : global::java.lang.Boolean.TRUE,
+            SocketOptionUtil.SocketOptionType.Integer => new global::java.lang.Integer(value),
+            SocketOptionUtil.SocketOptionType.Unknown => value,
+            _ => throw new global::java.net.SocketException("Invalid option value."),
+        };
+
 #endif
-        }
 
 #if !FIRST_PASS
 
@@ -842,9 +1083,9 @@ namespace IKVM.Java.Externs.java.net
         /// <exception cref="global::java.net.SocketException"></exception>
         static void InvokeWithSocket(global::java.net.PlainDatagramSocketImpl impl, Action<Socket> action)
         {
-            var socket = (Socket)impl.fd?.getSocket();
+            var socket = impl.fd?.getSocket();
             if (socket == null)
-                throw new global::java.net.SocketException("Socket closed.");
+                throw new global::java.net.SocketException("Socket closed");
 
             action(socket);
         }
@@ -860,9 +1101,9 @@ namespace IKVM.Java.Externs.java.net
         /// <exception cref="global::java.net.SocketException"></exception>
         static TResult InvokeWithSocket<TResult>(global::java.net.PlainDatagramSocketImpl impl, Func<Socket, TResult> func)
         {
-            var socket = (Socket)impl.fd?.getSocket();
+            var socket = impl.fd?.getSocket();
             if (socket == null)
-                throw new global::java.net.SocketException("Socket closed.");
+                throw new global::java.net.SocketException("Socket closed");
 
             return func(socket);
         }

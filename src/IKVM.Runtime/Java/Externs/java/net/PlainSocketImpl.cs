@@ -33,14 +33,14 @@ namespace IKVM.Java.Externs.java.net
             return e.Compile();
         }
 
-        static readonly FieldInfo SocketImplLocalPortField = typeof(global::java.net.SocketImpl).GetField("localport", BindingFlags.NonPublic | BindingFlags.Instance);
-        static readonly Func<global::java.net.PlainSocketImpl, int> SocketImplLocalPortGetter = MakeFieldGetter<global::java.net.SocketImpl, int>(SocketImplLocalPortField);
         static readonly FieldInfo AbstractPlainSocketImplTrafficClassField = typeof(global::java.net.AbstractPlainSocketImpl).GetField("trafficClass", BindingFlags.NonPublic | BindingFlags.Instance);
         static readonly Func<global::java.net.AbstractPlainSocketImpl, int> AbstractPlainSocketImplTrafficClassGetter = MakeFieldGetter<global::java.net.AbstractPlainSocketImpl, int>(AbstractPlainSocketImplTrafficClassField);
         static readonly FieldInfo AbstractPlainSocketImplServerSocketField = typeof(global::java.net.AbstractPlainSocketImpl).GetField("serverSocket", BindingFlags.NonPublic | BindingFlags.Instance);
         static readonly Func<global::java.net.AbstractPlainSocketImpl, global::java.net.ServerSocket> AbstractPlainSocketImplServerSocketGetter = MakeFieldGetter<global::java.net.AbstractPlainSocketImpl, global::java.net.ServerSocket>(AbstractPlainSocketImplServerSocketField);
 
 #endif
+
+        static readonly byte[] PeekBuffer = new byte[1];
 
         /// <summary>
         /// Implements the native method for 'initProto'.
@@ -53,18 +53,14 @@ namespace IKVM.Java.Externs.java.net
         /// <summary>
         /// Implements the native method for 'socketCreate'.
         /// </summary>
-        public static void socketCreate(object this_, bool stream)
+        public static void socketCreate(object this_, bool isServer)
         {
 #if FIRST_PASS
             throw new NotImplementedException();
 #else
             InvokeAction<global::java.net.PlainSocketImpl>(this_, impl =>
             {
-                var socket = new Socket(stream ? SocketType.Stream : SocketType.Dgram, ProtocolType.Unspecified);
-
-                // disable IPV6_V6ONLY to ensure dual-socket support
-                if (Socket.OSSupportsIPv6)
-                    socket.SetSocketOption(SocketOptionLevel.IPv6, SocketOptionName.IPv6Only, false);
+                var socket = new Socket(isServer ? SocketType.Stream : SocketType.Dgram, ProtocolType.Tcp);
 
                 // if this is a server socket then enable SO_REUSEADDR automatically and set to non blocking
                 if (AbstractPlainSocketImplServerSocketGetter(impl) != null)
@@ -103,29 +99,21 @@ namespace IKVM.Java.Externs.java.net
                     {
                         if (timeout > 0)
                         {
-                            try
-                            {
-                                socket.Blocking = false;
-                                socket.Connect(address.ToIPAddress(), port);
-                            }
-                            catch (SocketException e) when (e.SocketErrorCode == SocketError.WouldBlock)
-                            {
-                                if (socket.Poll(timeout * 1000, SelectMode.SelectWrite) == false)
-                                    throw new global::java.net.SocketTimeoutException("Connect timed out.");
-                            }
+                            socket.Blocking = false;
+                            if (socket.Poll(timeout * 1000, SelectMode.SelectWrite) == false)
+                                throw new global::java.net.SocketTimeoutException("Connect timed out.");
                         }
                         else
                         {
                             socket.Blocking = true;
-                            socket.Connect(address.ToIPAddress(), port);
                         }
 
-                        impl.setAddress(address);
-                        impl.setPort(port);
+                        socket.Connect(address.ToIPAddress(), port);
+                        impl.address = address;
+                        impl.port = port;
 
-                        var localPort = SocketImplLocalPortGetter(impl);
-                        if (localPort == 0)
-                            impl.setLocalPort(((IPEndPoint)socket.LocalEndPoint).Port);
+                        if (impl.localport == 0)
+                            impl.localport = ((IPEndPoint)socket.LocalEndPoint).Port;
                     }
                     finally
                     {
@@ -139,17 +127,18 @@ namespace IKVM.Java.Externs.java.net
         /// <summary>
         /// Implements the native method for 'socketBind'.
         /// </summary>
-        public static void socketBind(object this_, global::java.net.InetAddress address_, int port)
+        public static void socketBind(object this_, global::java.net.InetAddress address, int port)
         {
 #if FIRST_PASS
             throw new NotImplementedException();
 #else
-            InvokeAction<global::java.net.PlainSocketImpl, global::java.net.InetAddress>(this_, address_, (impl, address) =>
+            InvokeAction<global::java.net.PlainSocketImpl>(this_, impl =>
             {
                 InvokeActionWithSocket(impl, socket =>
                 {
-                    socket.Bind(new IPEndPoint(address.ToIPAddress(), port));
-                    impl.setLocalPort(port == 0 ? ((IPEndPoint)socket.LocalEndPoint).Port : port);
+                    socket.Bind(new IPEndPoint(address.isAnyLocalAddress() ? IPAddress.IPv6Any : address.ToIPAddress(), port));
+                    impl.address = address;
+                    impl.localport = port == 0 ? ((IPEndPoint)socket.LocalEndPoint).Port : port;
                 });
             });
 #endif
@@ -189,10 +178,9 @@ namespace IKVM.Java.Externs.java.net
 
                     try
                     {
-
-                        // wait for connection attempt
                         if (impl.timeout > 0)
                         {
+                            // wait for connection attempt
                             socket.Blocking = false;
                             if (socket.Poll(impl.timeout * 1000, SelectMode.SelectRead) == false)
                                 throw new global::java.net.SocketTimeoutException("Accept timed out.");
@@ -202,7 +190,7 @@ namespace IKVM.Java.Externs.java.net
                             socket.Blocking = true;
                         }
 
-                        // process results
+                        // accept new socket
                         var newSocket = socket.Accept();
                         if (newSocket == null)
                             throw new global::java.net.SocketException("Invalid socket.");
@@ -265,10 +253,6 @@ namespace IKVM.Java.Externs.java.net
 
                 InvokeActionWithSocket(impl, socket =>
                 {
-                    // intended to "pre-close" the file descriptor, not useful on .NET
-                    if (useDeferredClose)
-                        return;
-
                     socket.Close();
                     impl.fd.setSocket(null);
                 });

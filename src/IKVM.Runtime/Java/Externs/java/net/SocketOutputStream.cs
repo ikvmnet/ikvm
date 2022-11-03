@@ -26,6 +26,8 @@
 using System;
 using System.Net.Sockets;
 
+using static IKVM.Java.Externs.java.net.SocketImplUtil;
+
 namespace IKVM.Java.Externs.java.net
 {
 
@@ -43,42 +45,64 @@ namespace IKVM.Java.Externs.java.net
         /// <summary>
         /// Implements the native method for 'socketWrite0'.
         /// </summary>
-        /// <param name="self"></param>
+        /// <param name="this_"></param>
         /// <param name="fd"></param>
         /// <param name="data"></param>
         /// <param name="off"></param>
         /// <param name="len"></param>
         /// <exception cref="global::java.net.SocketException"></exception>
         /// <exception cref="global::java.lang.NullPointerException"></exception>
-        public static void socketWrite0(object self, global::java.io.FileDescriptor fd, byte[] data, int off, int len)
+        public static void socketWrite0(object this_, global::java.io.FileDescriptor fd, byte[] data, int off, int len)
         {
 #if FIRST_PASS
-			throw new NotImplementedException();
+            throw new NotImplementedException();
 #else
-            if (fd == null)
-                throw new global::java.net.SocketException("Socket is closed.");
-
-            var socket = fd.getSocket();
-            if (socket == null)
-                throw new global::java.net.SocketException("Socket is closed.");
-
             if (data == null)
                 throw new global::java.lang.NullPointerException("data argument.");
 
-            try
+            InvokeAction<global::java.net.SocketOutputStream>(this_, impl =>
             {
-                socket.Send(data, off, Math.Min(len, data.Length - off), SocketFlags.None);
-            }
-            catch (SocketException e)
-            {
-                throw e.ToIOException();
-            }
-            catch (ObjectDisposedException)
-            {
-                throw new global::java.net.SocketException("Socket is closed.");
-            }
+                InvokeActionWithSocket(fd, socket =>
+                {
+                    var prevBlocking = socket.Blocking;
+                    var prevSendTimeout = socket.SendTimeout;
+
+                    try
+                    {
+                        socket.Blocking = true;
+                        socket.SendTimeout = 0;
+                        socket.Send(data, off, Math.Min(len, data.Length - off), SocketFlags.None);
+                    }
+                    finally
+                    {
+                        socket.Blocking = prevBlocking;
+                        socket.SendTimeout = prevSendTimeout;
+                    }
+                });
+            });
 #endif
         }
+
+#if !FIRST_PASS
+
+        /// <summary>
+        /// Invokes the given action with the current socket, catching and mapping any resulting .NET exceptions.
+        /// </summary>
+        /// <param name="fd"></param>
+        /// <param name="action"></param>
+        /// <returns></returns>
+        /// <exception cref="global::java.lang.NullPointerException"></exception>
+        /// <exception cref="global::java.net.SocketException"></exception>
+        static void InvokeActionWithSocket(global::java.io.FileDescriptor fd, Action<Socket> action)
+        {
+            var socket = fd?.getSocket();
+            if (socket == null)
+                throw new global::java.net.SocketException("Socket closed");
+
+            action(socket);
+        }
+
+#endif
 
     }
 
