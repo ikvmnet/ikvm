@@ -203,9 +203,8 @@ namespace IKVM.Java.Externs.java.net
 
                 InvokeWithSocket(impl, socket =>
                 {
-                    // only disconnect if connected
-                    if (socket.Connected)
-                        socket.Disconnect(false);
+                    // for a UDP socket, disconnect is just connecting to the any address
+                    socket.Connect(new IPEndPoint(IPAddress.IPv6Any, 0));
 
                     // see comment in in socketCreate
                     if (RuntimeInformation.IsOSPlatform(OSPlatform.Windows))

@@ -6,6 +6,7 @@ using System.Threading.Tasks;
 
 using FluentAssertions;
 
+using java.io;
 using java.lang;
 using java.net;
 
@@ -152,7 +153,7 @@ namespace IKVM.Tests.Java.java.net
                 }
                 catch (global::java.lang.Exception e)
                 {
-                    Console.WriteLine(e.StackTrace);
+                    System.Console.WriteLine(e.StackTrace);
                 }
             }
 
@@ -173,7 +174,7 @@ namespace IKVM.Tests.Java.java.net
             packet = new DatagramPacket(b, b.Length, addr, serverPort);
             clientSock.setSoTimeout(10000);
             clientSock.receive(packet);
-            Console.WriteLine("client received data packet " + Encoding.ASCII.GetString(packet.getData()));
+            System.Console.WriteLine("client received data packet " + Encoding.ASCII.GetString(packet.getData()));
 
             // done
             clientSock.close();
@@ -245,6 +246,144 @@ namespace IKVM.Tests.Java.java.net
             task.Wait();
 
             ex.Should().BeAssignableTo<SocketException>();
+        }
+        class BadAddressServer
+        {
+
+            DatagramSocket server;
+            byte[] buf = new byte[128];
+            DatagramPacket pack;
+
+            public BadAddressServer(DatagramSocket s)
+            {
+                server = s;
+                pack = new DatagramPacket(buf, buf.Length);
+            }
+
+            public void receive(int loop, bool expectError)
+            {
+                for (int i = 0; i < loop; i++)
+                {
+                    try
+                    {
+                        server.receive(pack);
+                    }
+                    catch (global::java.lang.Exception e)
+                    {
+                        if (expectError)
+                        {
+                            System.Console.WriteLine("Got expected error: " + e);
+                            continue;
+                        }
+                        else
+                        {
+                            System.Console.WriteLine("Got: " + Encoding.UTF8.GetString(pack.getData()));
+                            System.Console.WriteLine("Expected: " + Encoding.UTF8.GetString(buf));
+                            throw new global::java.lang.Exception("Error reading data: Iter " + i);
+                        }
+                    }
+                    var s1 = "Hello, server" + i;
+                    byte[] buf2 = Encoding.UTF8.GetBytes(s1);
+                    if (!s1.Equals(Encoding.UTF8.GetString(pack.getData(), pack.getOffset(), pack.getLength())))
+                    {
+                        System.Console.WriteLine("Got: " + Encoding.UTF8.GetString(pack.getData()));
+                        System.Console.WriteLine("Expected: " + Encoding.UTF8.GetString(buf2));
+                        throw new global::java.lang.Exception("Error comparing data: Iter " + i);
+                    }
+                }
+            }
+        }
+
+        [TestMethod]
+        public void BadAddress()
+        {
+            var host = "127.0.0.1";
+            var addr = InetAddress.getByName(host);
+            var sock = new DatagramSocket();
+            var serversock = new DatagramSocket(0);
+            DatagramPacket p;
+            byte[] buf;
+            int port = serversock.getLocalPort();
+            const int loop = 5;
+            var s = new BadAddressServer(serversock);
+            int i;
+
+            System.Console.WriteLine("Checking send to connected address ...");
+            sock.connect(addr, port);
+
+            for (i = 0; i < loop; i++)
+            {
+                try
+                {
+                    buf = Encoding.UTF8.GetBytes("Hello, server" + i);
+                    if (i % 2 == 1)
+                        p = new DatagramPacket(buf, buf.Length, addr, port);
+                    else
+                        p = new DatagramPacket(buf, buf.Length);
+                    sock.send(p);
+                }
+                catch (global::java.lang.Exception ex)
+                {
+                    System.Console.WriteLine("Got unexpected exception: " + ex);
+                    throw new global::java.lang.Exception("Error sending data: ");
+                }
+            }
+
+            s.receive(loop, false);
+
+            // check disconnect() works
+
+            System.Console.WriteLine("Checking send to non-connected address ...");
+            sock.disconnect();
+            buf = Encoding.UTF8.GetBytes("Hello, server" + 0);
+            p = new DatagramPacket(buf, buf.Length, addr, port);
+            sock.send(p);
+            s.receive(1, false);
+
+            // check send() to invalid destination followed by a blocking receive
+            // returns an error
+
+            System.Console.WriteLine("Checking send to invalid address ...");
+            sock.connect(addr, port);
+            serversock.close();
+            try
+            {
+                sock.setSoTimeout(4000);
+            }
+            catch (global::java.lang.Exception e)
+            {
+                System.Console.WriteLine("could not set timeout");
+                throw e;
+            }
+
+            var goterror = false;
+
+            for (i = 0; i < loop; i++)
+            {
+                try
+                {
+                    buf = Encoding.UTF8.GetBytes("Hello, server" + i);
+                    p = new DatagramPacket(buf, buf.Length, addr, port);
+                    sock.send(p);
+                    p = new DatagramPacket(buf, buf.Length, addr, port);
+                    sock.receive(p);
+                }
+                catch (InterruptedIOException ex)
+                {
+                    System.Console.WriteLine("socket timeout");
+                }
+                catch (global::java.lang.Exception ex)
+                {
+                    System.Console.WriteLine("Got expected exception: " + ex);
+                    goterror = true;
+                }
+            }
+
+            if (!goterror)
+            {
+                System.Console.WriteLine("Didnt get expected exception: ");
+                throw new global::java.lang.Exception("send did not return expected error");
+            }
         }
 
     }
