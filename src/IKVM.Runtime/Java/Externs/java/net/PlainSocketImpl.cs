@@ -121,6 +121,11 @@ namespace IKVM.Java.Externs.java.net
                         if (impl.localport == 0)
                             impl.localport = ((IPEndPoint)socket.LocalEndPoint).Port;
                     }
+                    catch (SocketException e) when (e.SocketErrorCode == SocketError.ConnectionRefused)
+                    {
+                        // normal PortUnreachable doesn't suffice for Connect
+                        throw new global::java.net.ConnectException(e.Message);
+                    }
                     finally
                     {
                         socket.Blocking = prevBlocking;
