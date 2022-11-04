@@ -112,7 +112,7 @@ namespace IKVM.Java.Externs.java.net
             {
                 var socket = new Socket(SocketType.Dgram, ProtocolType.Udp);
 
-                // enable broadcast
+                // default socket options
                 socket.SetSocketOption(SocketOptionLevel.Socket, SocketOptionName.Broadcast, true);
 
                 // SIO_UDP_CONNRESET fixes a "bug" introduced in Windows 2000, which
@@ -657,7 +657,7 @@ namespace IKVM.Java.Externs.java.net
             {
                 InvokeWithSocket(impl, socket =>
                 {
-                    socket.Ttl = (short)ttl;
+                    socket.SetSocketOption(SocketOptionLevel.IPv6, SocketOptionName.MulticastTimeToLive, ttl);
                 });
             });
 #endif
@@ -679,7 +679,7 @@ namespace IKVM.Java.Externs.java.net
             {
                 return InvokeWithSocket(impl, socket =>
                 {
-                    return (int)socket.Ttl;
+                    return (int)socket.GetSocketOption(SocketOptionLevel.IPv6, SocketOptionName.MulticastTimeToLive);
                 });
             });
 #endif
@@ -875,11 +875,6 @@ namespace IKVM.Java.Externs.java.net
             {
                 return InvokeWithSocket(impl, socket =>
                 {
-                    // IP_MULTICAST_IF returns an InetAddress while IP_MULTICAST_IF2 returns a NetworkInterface
-                    if (opt == global::java.net.SocketOptions.IP_MULTICAST_IF ||
-                        opt == global::java.net.SocketOptions.IP_MULTICAST_IF2)
-                        return GetMulticastInterfaceOption(socket, opt);
-
                     // .NET provides property
                     if (opt == global::java.net.SocketOptions.SO_BINDADDR)
                         return ((IPEndPoint)socket.LocalEndPoint).ToInetAddress();
@@ -902,7 +897,12 @@ namespace IKVM.Java.Externs.java.net
 
                     // .NET provides property
                     if (opt == global::java.net.SocketOptions.IP_MULTICAST_LOOP)
-                        return socket.MulticastLoopback ? 1 : -1;
+                        return socket.MulticastLoopback ? global::java.lang.Boolean.TRUE : global::java.lang.Boolean.FALSE;
+
+                    // IP_MULTICAST_IF returns an InetAddress while IP_MULTICAST_IF2 returns a NetworkInterface
+                    if (opt == global::java.net.SocketOptions.IP_MULTICAST_IF ||
+                        opt == global::java.net.SocketOptions.IP_MULTICAST_IF2)
+                        return GetMulticastInterfaceOption(socket, opt);
 
                     // .NET provides property
                     if (opt == global::java.net.SocketOptions.TCP_NODELAY)
