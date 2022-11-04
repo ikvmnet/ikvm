@@ -901,6 +901,10 @@ namespace IKVM.Java.Externs.java.net
                         return socket.SendBufferSize;
 
                     // .NET provides property
+                    if (opt == global::java.net.SocketOptions.IP_MULTICAST_LOOP)
+                        return socket.MulticastLoopback ? 1 : -1;
+
+                    // .NET provides property
                     if (opt == global::java.net.SocketOptions.TCP_NODELAY)
                         return socket.NoDelay ? 1 : -1;
 
@@ -992,22 +996,6 @@ namespace IKVM.Java.Externs.java.net
                 {
                     if (value == null)
                         throw new global::java.lang.NullPointerException(nameof(value));
-
-                    // multicast options may receive InetAddress or NetworkInterface
-                    if (opt == global::java.net.SocketOptions.IP_MULTICAST_IF ||
-                        opt == global::java.net.SocketOptions.IP_MULTICAST_IF2)
-                    {
-                        SetMulticastInterface(socket, opt, value);
-                        return;
-                    }
-
-                    // implementation changes based on IP/IPv6
-                    if (opt == global::java.net.SocketOptions.IP_MULTICAST_LOOP)
-                    {
-                        var val = (global::java.lang.Boolean)value;
-                        socket.MulticastLoopback = val.booleanValue();
-                        return;
-                    }
                     // .NET provides property
                     if (opt == global::java.net.SocketOptions.SO_TIMEOUT)
                     {
@@ -1029,6 +1017,22 @@ namespace IKVM.Java.Externs.java.net
                     {
                         var val = (global::java.lang.Integer)value;
                         socket.SendBufferSize = val.intValue();
+                        return;
+                    }
+
+                    // multicast options may receive InetAddress or NetworkInterface
+                    if (opt == global::java.net.SocketOptions.IP_MULTICAST_IF ||
+                        opt == global::java.net.SocketOptions.IP_MULTICAST_IF2)
+                    {
+                        SetMulticastInterface(socket, opt, value);
+                        return;
+                    }
+
+                    // implementation changes based on IP/IPv6
+                    if (opt == global::java.net.SocketOptions.IP_MULTICAST_LOOP)
+                    {
+                        var val = (global::java.lang.Boolean)value;
+                        socket.MulticastLoopback = val.booleanValue();
                         return;
                     }
 
