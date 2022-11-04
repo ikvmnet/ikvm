@@ -86,12 +86,9 @@ namespace IKVM.Java.Externs.java.net
             {
                 InvokeActionWithSocket(impl, socket =>
                 {
-                    if (Socket.OSSupportsIPv6)
-                    {
-                        var trafficClass = AbstractPlainSocketImplTrafficClassGetter(impl);
-                        if (trafficClass != 0)
-                            socket.SetSocketOption(SocketOptionLevel.IP, SocketOptionName.TypeOfService, trafficClass);
-                    }
+                    var trafficClass = AbstractPlainSocketImplTrafficClassGetter(impl);
+                    if (trafficClass != 0)
+                        socket.SetSocketOption(SocketOptionLevel.IP, SocketOptionName.TypeOfService, trafficClass);
 
                     var prevBlocking = socket.Blocking;
 
@@ -100,15 +97,24 @@ namespace IKVM.Java.Externs.java.net
                         if (timeout > 0)
                         {
                             socket.Blocking = false;
-                            if (socket.Poll(timeout * 1000, SelectMode.SelectWrite) == false)
-                                throw new global::java.net.SocketTimeoutException("Connect timed out.");
+
+                            // non-blocking connect throws a WouldBlock exception, after which we Poll for completion
+                            try
+                            {
+                                socket.Connect(address.ToIPAddress(), port);
+                            }
+                            catch (SocketException e) when (e.SocketErrorCode == SocketError.WouldBlock)
+                            {
+                                if (socket.Poll(timeout * 1000, SelectMode.SelectWrite) == false)
+                                    throw new global::java.net.SocketTimeoutException("Connect timed out.");
+                            }
                         }
                         else
                         {
                             socket.Blocking = true;
+                            socket.Connect(address.ToIPAddress(), port);
                         }
 
-                        socket.Connect(address.ToIPAddress(), port);
                         impl.address = address;
                         impl.port = port;
 

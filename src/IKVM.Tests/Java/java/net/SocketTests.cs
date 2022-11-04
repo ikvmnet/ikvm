@@ -1,8 +1,10 @@
-﻿using System.Threading.Tasks;
+﻿using System.Linq;
 
 using FluentAssertions;
 
+using java.lang;
 using java.net;
+using java.util;
 
 using Microsoft.VisualStudio.TestTools.UnitTesting;
 
@@ -35,6 +37,36 @@ namespace IKVM.Tests.Java.java.net
             s2.bind(new InetSocketAddress(s1.getLocalPort()));
             s2.close();
             s1.close();
+        }
+
+        [TestMethod]
+        [ExpectedException(typeof(SocketTimeoutException))]
+        public void AcceptShouldTimeOut()
+        {
+            var server = new ServerSocket(0);
+            server.setSoTimeout(5000);
+            server.accept();
+            throw new System.Exception("accept should not have returned");
+        }
+
+        [TestMethod]
+        public void ConnectShouldNotTimeOut()
+        {
+            var server = new ServerSocket(0);
+            server.setSoTimeout(5000);
+            int port = server.getLocalPort();
+
+            var dest = NetworkInterface.getNetworkInterfaces()
+                .AsEnumerable<NetworkInterface>()
+                .Where(i => i.isUp())
+                .SelectMany(i => i.getInterfaceAddresses().AsEnumerable<InterfaceAddress>())
+                .Select(i => i.getAddress())
+                .OfType<Inet4Address>()
+                .FirstOrDefault(i => i.isLoopbackAddress() == false && !i.isAnyLocalAddress());
+
+            var c1 = new Socket();
+            c1.connect(new InetSocketAddress(dest, port), 1000);
+            var s1 = server.accept();
         }
 
     }

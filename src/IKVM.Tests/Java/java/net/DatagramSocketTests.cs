@@ -12,6 +12,8 @@ using java.net;
 
 using Microsoft.VisualStudio.TestTools.UnitTesting;
 
+using static com.sun.xml.@internal.bind.v2.runtime.reflect.Lister;
+
 namespace IKVM.Tests.Java.java.net
 {
 
@@ -73,26 +75,26 @@ namespace IKVM.Tests.Java.java.net
         [TestMethod]
         public async Task Can_send_and_receive()
         {
-            var localhost = global::java.net.InetAddress.getLocalHost();
+            var localhost = InetAddress.getLocalHost();
             var received = new List<string>();
 
             // simple loop that listens and waits
+            using var serverSocket = new DatagramSocket(0, localhost);
             var serverCts = new CancellationTokenSource(TimeSpan.FromSeconds(30));
             var server = Task.Run(() =>
             {
-                using var s = new global::java.net.DatagramSocket(41041, localhost);
-                serverCts.Token.Register(() => s.close());
+                serverCts.Token.Register(() => serverSocket.close());
                 var b = new byte[65535];
 
                 while (serverCts.IsCancellationRequested == false)
                 {
                     try
                     {
-                        var packet = new global::java.net.DatagramPacket(b, b.Length);
-                        s.receive(packet);
+                        var packet = new DatagramPacket(b, b.Length);
+                        serverSocket.receive(packet);
                         received.Add(Encoding.UTF8.GetString(b, packet.getOffset(), packet.getLength()));
                     }
-                    catch (global::java.net.SocketException e)
+                    catch (SocketException e)
                     {
 
                     }
@@ -102,8 +104,8 @@ namespace IKVM.Tests.Java.java.net
             void Send(string text)
             {
                 var buffer = Encoding.UTF8.GetBytes(text);
-                var packet = new global::java.net.DatagramPacket(buffer, buffer.Length, localhost, 41041);
-                using var client = new global::java.net.DatagramSocket();
+                var packet = new DatagramPacket(buffer, buffer.Length, localhost, serverSocket.getLocalPort());
+                using var client = new DatagramSocket();
                 client.send(packet);
             }
 
@@ -207,17 +209,19 @@ namespace IKVM.Tests.Java.java.net
                 ds.close();
             });
 
+            using var dc = new DatagramSocket();
             var b = new byte[100];
             var dp = new DatagramPacket(b, b.Length);
 
             for (int i = 0; i < msgs.Length; i++)
             {
-                ds.send(new DatagramPacket(Encoding.ASCII.GetBytes(msgs[i]), msgs[i].Length, InetAddress.getLocalHost(), port));
-                ds.receive(dp);
+                dc.send(new DatagramPacket(Encoding.ASCII.GetBytes(msgs[i]), msgs[i].Length, InetAddress.getLocalHost(), port));
+                dc.receive(dp);
                 Encoding.ASCII.GetString(dp.getData(), dp.getOffset(), dp.getLength()).Should().Be(msgs[i]);
             }
 
             st.Wait();
+            dc.close();
             ds.close();
         }
 
@@ -225,7 +229,7 @@ namespace IKVM.Tests.Java.java.net
         public void ShouldAbortCancelWhenClosed()
         {
             var ds = new DatagramSocket(0);
-            var ex = (global::java.net.SocketException)null;
+            var ex = (SocketException)null;
 
             var task = Task.Run(() =>
             {
@@ -247,143 +251,38 @@ namespace IKVM.Tests.Java.java.net
 
             ex.Should().BeAssignableTo<SocketException>();
         }
-        class BadAddressServer
-        {
-
-            DatagramSocket server;
-            byte[] buf = new byte[128];
-            DatagramPacket pack;
-
-            public BadAddressServer(DatagramSocket s)
-            {
-                server = s;
-                pack = new DatagramPacket(buf, buf.Length);
-            }
-
-            public void receive(int loop, bool expectError)
-            {
-                for (int i = 0; i < loop; i++)
-                {
-                    try
-                    {
-                        server.receive(pack);
-                    }
-                    catch (global::java.lang.Exception e)
-                    {
-                        if (expectError)
-                        {
-                            System.Console.WriteLine("Got expected error: " + e);
-                            continue;
-                        }
-                        else
-                        {
-                            System.Console.WriteLine("Got: " + Encoding.UTF8.GetString(pack.getData()));
-                            System.Console.WriteLine("Expected: " + Encoding.UTF8.GetString(buf));
-                            throw new global::java.lang.Exception("Error reading data: Iter " + i);
-                        }
-                    }
-                    var s1 = "Hello, server" + i;
-                    byte[] buf2 = Encoding.UTF8.GetBytes(s1);
-                    if (!s1.Equals(Encoding.UTF8.GetString(pack.getData(), pack.getOffset(), pack.getLength())))
-                    {
-                        System.Console.WriteLine("Got: " + Encoding.UTF8.GetString(pack.getData()));
-                        System.Console.WriteLine("Expected: " + Encoding.UTF8.GetString(buf2));
-                        throw new global::java.lang.Exception("Error comparing data: Iter " + i);
-                    }
-                }
-            }
-        }
 
         [TestMethod]
         public void BadAddress()
         {
-            var host = "127.0.0.1";
-            var addr = InetAddress.getByName(host);
+            // open a socket to get a local port
+            var srvr = new DatagramSocket(0);
+            var port = srvr.getLocalPort();
+            srvr.close();
+
+            // create a new socket to be a client
             var sock = new DatagramSocket();
-            var serversock = new DatagramSocket(0);
-            DatagramPacket p;
-            byte[] buf;
-            int port = serversock.getLocalPort();
-            const int loop = 5;
-            var s = new BadAddressServer(serversock);
-            int i;
-
-            System.Console.WriteLine("Checking send to connected address ...");
+            sock.setSoTimeout(2000);
+            var addr = InetAddress.getByName("127.0.0.1");
             sock.connect(addr, port);
 
-            for (i = 0; i < loop; i++)
-            {
-                try
-                {
-                    buf = Encoding.UTF8.GetBytes("Hello, server" + i);
-                    if (i % 2 == 1)
-                        p = new DatagramPacket(buf, buf.Length, addr, port);
-                    else
-                        p = new DatagramPacket(buf, buf.Length);
-                    sock.send(p);
-                }
-                catch (global::java.lang.Exception ex)
-                {
-                    System.Console.WriteLine("Got unexpected exception: " + ex);
-                    throw new global::java.lang.Exception("Error sending data: ");
-                }
-            }
+            // send should pass, but obviously nothing went anywhere
+            var buff = new byte[1024];
+            var p1 = new DatagramPacket(buff, buff.Length, addr, port);
+            sock.send(p1);
 
-            s.receive(loop, false);
-
-            // check disconnect() works
-
-            System.Console.WriteLine("Checking send to non-connected address ...");
-            sock.disconnect();
-            buf = Encoding.UTF8.GetBytes("Hello, server" + 0);
-            p = new DatagramPacket(buf, buf.Length, addr, port);
-            sock.send(p);
-            s.receive(1, false);
-
-            // check send() to invalid destination followed by a blocking receive
-            // returns an error
-
-            System.Console.WriteLine("Checking send to invalid address ...");
-            sock.connect(addr, port);
-            serversock.close();
             try
             {
-                sock.setSoTimeout(4000);
+                // next attempt to receive should fail with ICMP
+                var p2 = new DatagramPacket(buff, buff.Length, addr, port);
+                sock.receive(p2);
             }
-            catch (global::java.lang.Exception e)
+            catch (PortUnreachableException e)
             {
-                System.Console.WriteLine("could not set timeout");
-                throw e;
+                return;
             }
 
-            var goterror = false;
-
-            for (i = 0; i < loop; i++)
-            {
-                try
-                {
-                    buf = Encoding.UTF8.GetBytes("Hello, server" + i);
-                    p = new DatagramPacket(buf, buf.Length, addr, port);
-                    sock.send(p);
-                    p = new DatagramPacket(buf, buf.Length, addr, port);
-                    sock.receive(p);
-                }
-                catch (InterruptedIOException ex)
-                {
-                    System.Console.WriteLine("socket timeout");
-                }
-                catch (global::java.lang.Exception ex)
-                {
-                    System.Console.WriteLine("Got expected exception: " + ex);
-                    goterror = true;
-                }
-            }
-
-            if (!goterror)
-            {
-                System.Console.WriteLine("Didnt get expected exception: ");
-                throw new global::java.lang.Exception("send did not return expected error");
-            }
+            throw new System.Exception("Did not receive exception.");
         }
 
     }

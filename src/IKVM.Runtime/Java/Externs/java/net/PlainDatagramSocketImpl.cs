@@ -86,10 +86,9 @@ namespace IKVM.Java.Externs.java.net
 #endif
 
         const IOControlCode SIO_UDP_CONNRESET = (IOControlCode)(-1744830452);
-        const IOControlCode SIO_UDP_NETRESET = (IOControlCode)2550136847;
         static readonly byte[] IOControlTrueBuffer = BitConverter.GetBytes(1);
         static readonly byte[] IOControlFalseBuffer = BitConverter.GetBytes(0);
-        static readonly byte[] PeekBuffer = new byte[1];
+        static readonly byte[] TempBuffer = new byte[1];
 
         /// <summary>
         /// Implements the native method for 'init'.
@@ -356,7 +355,7 @@ namespace IKVM.Java.Externs.java.net
                         }
 
                         var remoteEndpoint = (EndPoint)new IPEndPoint(IPAddress.IPv6Any, 0);
-                        var length = socket.ReceiveFrom(PeekBuffer, 0, 1, SocketFlags.Peek, ref remoteEndpoint);
+                        var length = socket.ReceiveFrom(TempBuffer, 0, 1, SocketFlags.Peek, ref remoteEndpoint);
 
                         // check that we received an IP endpoint
                         if (remoteEndpoint is not IPEndPoint ipRemoteEndpoint)
@@ -426,6 +425,42 @@ namespace IKVM.Java.Externs.java.net
         }
 
         /// <summary>
+        /// Peek at the queue to see if there is an ICMP port unreachable. If there is, then receive it.
+        /// </summary>
+        /// <param name="socket"></param>
+        static void PurgeOutstandingICMP(Socket socket)
+        {
+            while (true)
+            {
+                // check for outstanding packet
+                if (socket.Poll(0, SelectMode.SelectRead) == false)
+                    break;
+
+                try
+                {
+                    var ep = (EndPoint)new IPEndPoint(IPAddress.IPv6Any, 0);
+                    socket.ReceiveFrom(TempBuffer, SocketFlags.Peek, ref ep);
+                }
+                catch (SocketException e) when (e.SocketErrorCode == SocketError.ConnectionReset)
+                {
+                    try
+                    {
+                        var ep = (EndPoint)new IPEndPoint(IPAddress.IPv6Any, 0);
+                        socket.ReceiveFrom(TempBuffer, SocketFlags.None, ref ep);
+                    }
+                    catch (SocketException e2) when (e2.SocketErrorCode == SocketError.ConnectionReset)
+                    {
+
+                    }
+
+                    continue;
+                }
+
+                break;
+            }
+        }
+
+        /// <summary>
         /// Implements the native method for 'peekData'.
         /// </summary>
         /// <param name="this_"></param>
@@ -478,6 +513,12 @@ namespace IKVM.Java.Externs.java.net
                             // message size error indicates we did read something, but not the whole message
                             // just return what we did read, since it's UDP and nobody cares anyways
                             length = packet.bufLength;
+                        }
+                        catch (SocketException e) when (e.SocketErrorCode == SocketError.ConnectionReset)
+                        {
+                            // Windows might leave more of these around, clear them all
+                            PurgeOutstandingICMP(socket);
+                            throw new global::java.net.PortUnreachableException("ICMP Port Unreachable");
                         }
                         catch
                         {
@@ -562,6 +603,12 @@ namespace IKVM.Java.Externs.java.net
                             // message size error indicates we did read something, but not the whole message
                             // just return what we did read, since it's UDP and nobody cares anyways
                             length = packet.bufLength;
+                        }
+                        catch (SocketException e) when (e.SocketErrorCode == SocketError.ConnectionReset)
+                        {
+                            // Windows might leave more of these around, clear them all
+                            PurgeOutstandingICMP(socket);
+                            throw new global::java.net.PortUnreachableException("ICMP Port Unreachable");
                         }
                         catch
                         {

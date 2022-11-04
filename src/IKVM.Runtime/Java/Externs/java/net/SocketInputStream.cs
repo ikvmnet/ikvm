@@ -28,9 +28,18 @@ namespace IKVM.Java.Externs.java.net
 
                     try
                     {
-                        socket.Blocking = true;
-                        socket.ReceiveTimeout = timeout;
-                        return socket.Receive(b, off, len, SocketFlags.None);
+                        if (timeout > 0)
+                        {
+                            socket.Blocking = true;
+                            socket.ReceiveTimeout = timeout;
+                            return socket.Receive(b, off, len, SocketFlags.None);
+                        }
+                        else
+                        {
+                            socket.Blocking = true;
+                            socket.ReceiveTimeout = 0;
+                            return socket.Receive(b, off, len, SocketFlags.None);
+                        }
                     }
                     finally
                     {
