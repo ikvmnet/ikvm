@@ -61,10 +61,10 @@ namespace IKVM.Tests.Java.java.net
             }
 
             mc.setLoopbackMode(true);
-            Test().Should().BeTrue();
+            Test().Should().BeFalse();
 
             mc.setLoopbackMode(false);
-            Test().Should().BeFalse();
+            Test().Should().BeTrue();
         }
 
     }

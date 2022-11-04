@@ -897,7 +897,7 @@ namespace IKVM.Java.Externs.java.net
 
                     // .NET provides property
                     if (opt == global::java.net.SocketOptions.IP_MULTICAST_LOOP)
-                        return socket.MulticastLoopback ? global::java.lang.Boolean.TRUE : global::java.lang.Boolean.FALSE;
+                        return socket.MulticastLoopback ? global::java.lang.Boolean.FALSE : global::java.lang.Boolean.TRUE;
 
                     // IP_MULTICAST_IF returns an InetAddress while IP_MULTICAST_IF2 returns a NetworkInterface
                     if (opt == global::java.net.SocketOptions.IP_MULTICAST_IF ||
@@ -1032,7 +1032,7 @@ namespace IKVM.Java.Externs.java.net
                     if (opt == global::java.net.SocketOptions.IP_MULTICAST_LOOP)
                     {
                         var val = (global::java.lang.Boolean)value;
-                        socket.MulticastLoopback = val.booleanValue();
+                        socket.MulticastLoopback = !val.booleanValue();
                         return;
                     }
 
