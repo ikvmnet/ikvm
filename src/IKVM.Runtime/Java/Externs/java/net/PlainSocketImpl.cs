@@ -107,6 +107,7 @@ namespace IKVM.Java.Externs.java.net
                             {
                                 if (socket.Poll(timeout * 1000, SelectMode.SelectWrite) == false)
                                     throw new global::java.net.SocketTimeoutException("Connect timed out.");
+                                var er = (int)socket.GetSocketOption(SocketOptionLevel.Socket, SocketOptionName.Error);
                             }
                         }
                         else
