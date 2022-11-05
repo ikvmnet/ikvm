@@ -298,7 +298,6 @@ namespace IKVM.Java.Externs.java.net
         /// </summary>
         /// <param name="this_"></param>
         /// <returns></returns>
-        /// <exception cref="global::java.lang.NullPointerException"></exception>
         /// <exception cref="global::java.net.SocketException"></exception>
         public static int dataAvailable(object this_)
         {
@@ -950,11 +949,7 @@ namespace IKVM.Java.Externs.java.net
                 if (iface == null)
                     throw new global::java.net.SocketException("Bad argument for IP_MULTICAST_IF: address not bound to any interface.");
 
-                if (Socket.OSSupportsIPv6)
-                    socket.SetSocketOption(SocketOptionLevel.IPv6, SocketOptionName.MulticastInterface, iface.getIndex());
-                else
-                    socket.SetSocketOption(SocketOptionLevel.IP, SocketOptionName.MulticastInterface, iface.getIndex());
-
+                socket.SetSocketOption(SocketOptionLevel.IPv6, SocketOptionName.MulticastInterface, iface.getIndex());
                 return;
             }
 
@@ -964,11 +959,7 @@ namespace IKVM.Java.Externs.java.net
                 if (value is not global::java.net.NetworkInterface ni)
                     throw new global::java.net.SocketException("Bad argument for IP_MULTICAST_IF2: value is not an interface");
 
-                if (Socket.OSSupportsIPv6)
-                    socket.SetSocketOption(SocketOptionLevel.IPv6, SocketOptionName.MulticastInterface, ni.getIndex());
-                else
-                    socket.SetSocketOption(SocketOptionLevel.IP, SocketOptionName.MulticastInterface, ni.getIndex());
-
+                socket.SetSocketOption(SocketOptionLevel.IPv6, SocketOptionName.MulticastInterface, ni.getIndex());
                 return;
             }
 
