@@ -69,6 +69,17 @@ namespace IKVM.Tests.Java.java.net
             var s1 = server.accept();
         }
 
+        [TestMethod]
+        [ExpectedException(typeof(ConnectException))]
+        public void ConnectWithNoListeningServerShouldThrowConnectException()
+        {
+            var server = new ServerSocket(0);
+            int port = server.getLocalPort();
+            server.close();
+            var client = new Socket();
+            client.connect(new InetSocketAddress(InetAddress.getByName("127.0.0.1"), port), 2000);
+        }
+
     }
 
 }

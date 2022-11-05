@@ -1,4 +1,6 @@
 ﻿using System;
+using System.Collections.Generic;
+using System.Linq;
 using System.Linq.Expressions;
 using System.Net;
 using System.Net.Sockets;
@@ -105,9 +107,14 @@ namespace IKVM.Java.Externs.java.net
                             }
                             catch (SocketException e) when (e.SocketErrorCode == SocketError.WouldBlock)
                             {
-                                if (socket.Poll(timeout * 1000, SelectMode.SelectWrite) == false)
-                                    throw new global::java.net.SocketTimeoutException("Connect timed out.");
+                                var wr = new List<Socket>() { socket };
+                                var ex = new List<Socket>() { socket };
+                                Socket.Select(null, wr, ex, timeout * 1000 > int.MaxValue ? int.MaxValue : timeout * 1000);
                                 var er = (int)socket.GetSocketOption(SocketOptionLevel.Socket, SocketOptionName.Error);
+                                if (er != 0)
+                                    throw new SocketException(er);
+                                if (wr.Count == 0)
+                                    throw new global::java.net.SocketTimeoutException("Connect timed out.");
                             }
                         }
                         else
@@ -194,7 +201,7 @@ namespace IKVM.Java.Externs.java.net
                         {
                             // wait for connection attempt
                             socket.Blocking = false;
-                            if (socket.Poll(impl.timeout * 1000, SelectMode.SelectRead) == false)
+                            if (socket.Poll(impl.timeout * 1000 > int.MaxValue ? int.MaxValue : impl.timeout * 1000, SelectMode.SelectRead) == false)
                                 throw new global::java.net.SocketTimeoutException("Accept timed out.");
                         }
                         else

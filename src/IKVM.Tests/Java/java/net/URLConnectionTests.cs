@@ -5,6 +5,7 @@ using System.Threading.Tasks;
 
 using FluentAssertions;
 
+using java.io;
 using java.lang;
 using java.net;
 
@@ -103,5 +104,103 @@ namespace IKVM.Tests.Java.java.net
             ss.close();
         }
 
+        [TestMethod]
+        public void CanCloseKeepAliveStreamWithWrongContentLength()
+        {
+            var serversocket = new ServerSocket(0);
+            var port = serversocket.getLocalPort();
+
+            var task = Task.Run(() =>
+            {
+                OutputStream ost = null;
+
+                try
+                {
+                    var s = serversocket.accept();
+                    var ist = s.getInputStream();
+
+                    // read the first ten bytes
+                    for (int i = 0; i < 10; i++)
+                        ist.read();
+
+                    var ow = new OutputStreamWriter(ost = s.getOutputStream());
+                    ow.write("HTTP/1.0 200 OK\n");
+
+                    // Note: The client expects 10 bytes.
+                    ow.write("Content-Length: 10\n");
+                    ow.write("Content-Type: text/html\n");
+
+                    // Note: If this line is missing, everything works fine.
+                    ow.write("Connection: Keep-Alive\n");
+                    ow.write("\n");
+
+                    // Note: The (buggy) server only sends 9 bytes.
+                    ow.write("123456789");
+                    ow.flush();
+                }
+                catch (global::java.lang.Exception e)
+                {
+
+                }
+                finally
+                {
+                    try
+                    {
+                        if (ost != null)
+                            ost.close();
+                    }
+                    catch (global::java.io.IOException e)
+                    {
+
+                    }
+                }
+            });
+
+            try
+            {
+                var url = new URL("http://localhost:" + port);
+                var urlc = (HttpURLConnection)url.openConnection();
+                var st = urlc.getInputStream();
+                int c = 0;
+                while (c != -1)
+                {
+                    try
+                    {
+                        c = st.read();
+                    }
+                    catch (global::java.io.IOException)
+                    {
+                        st.read();
+                        break;
+                    }
+                }
+
+                st.close();
+            }
+            catch (global::java.io.IOException e)
+            {
+                return;
+            }
+            catch (global::java.lang.NullPointerException e)
+            {
+                throw new RuntimeException(e);
+            }
+            finally
+            {
+                task.Wait();
+
+                if (serversocket != null)
+                    serversocket.close();
+            }
+        }
+
+        [TestMethod]
+        [ExpectedException(typeof(ConnectException))]
+        public void ConnectToBeURLShouldThrowConnectException()
+        {
+            new URL("http://localhost:8812").getContent();
+        }
+
     }
+
 }

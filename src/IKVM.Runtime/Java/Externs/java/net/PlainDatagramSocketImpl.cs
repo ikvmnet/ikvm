@@ -344,7 +344,7 @@ namespace IKVM.Java.Externs.java.net
                             // wait for data to be available
                             socket.Blocking = false;
                             socket.ReceiveTimeout = impl.timeout;
-                            if (socket.Poll(impl.timeout * 1000, SelectMode.SelectRead) == false)
+                            if (socket.Poll(impl.timeout * 1000 > int.MaxValue ? int.MaxValue : impl.timeout * 1000, SelectMode.SelectRead) == false)
                                 throw new global::java.net.SocketTimeoutException("Peek timed out.");
                         }
                         else
@@ -494,7 +494,7 @@ namespace IKVM.Java.Externs.java.net
                             // wait for data to be available
                             socket.Blocking = false;
                             socket.ReceiveTimeout = impl.timeout;
-                            if (socket.Poll(impl.timeout * 1000, SelectMode.SelectRead) == false)
+                            if (socket.Poll(impl.timeout * 1000 > int.MaxValue ? int.MaxValue : impl.timeout * 1000, SelectMode.SelectRead) == false)
                                 throw new global::java.net.SocketTimeoutException("Peek data timed out.");
                         }
                         else
@@ -584,7 +584,7 @@ namespace IKVM.Java.Externs.java.net
                             // wait for data to be available
                             socket.Blocking = false;
                             socket.ReceiveTimeout = impl.timeout;
-                            if (socket.Poll(impl.timeout * 1000, SelectMode.SelectRead) == false)
+                            if (socket.Poll(impl.timeout * 1000 > int.MaxValue ? int.MaxValue : impl.timeout * 1000, SelectMode.SelectRead) == false)
                                 throw new global::java.net.SocketTimeoutException("Receive timed out.");
                         }
                         else

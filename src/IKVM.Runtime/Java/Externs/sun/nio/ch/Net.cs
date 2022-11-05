@@ -685,8 +685,7 @@ namespace IKVM.Java.Externs.sun.nio.ch
                         _ => throw new NotSupportedException(),
                     };
 
-                    var microSeconds = timeout >= int.MaxValue / 1000 ? int.MaxValue : (int)(timeout * 1000);
-                    if (socket.Poll(microSeconds, selectMode))
+                    if (socket.Poll(timeout * 1000 > int.MaxValue ? int.MaxValue : (int)timeout * 1000, selectMode))
                         return events;
 
                     return 0;
