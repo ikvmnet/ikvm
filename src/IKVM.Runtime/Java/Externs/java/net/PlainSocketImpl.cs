@@ -262,18 +262,26 @@ namespace IKVM.Java.Externs.java.net
 #else
             InvokeAction<global::java.net.PlainSocketImpl>(this_, impl =>
             {
-                // close fails early if already closed
                 if (impl.fd == null)
                     throw new global::java.net.SocketException("Socket already closed.");
 
                 // fd still present, but socket gone, silently exit
-                if (impl.fd != null && impl.fd.getSocket() == null)
+                if (impl.fd.getSocket() == null)
                     return;
 
                 InvokeActionWithSocket(impl, socket =>
                 {
-                    socket.Close();
-                    impl.fd.setSocket(null);
+                    if (useDeferredClose)
+                    {
+                        // suspend any more reads/writes
+                        socket.Shutdown(SocketShutdown.Both);
+                    }
+                    else
+                    {
+                        // null socket before close, as close may take a minute to flush
+                        impl.fd.setSocket(null);
+                        socket.Close();
+                    }
                 });
             });
 #endif
