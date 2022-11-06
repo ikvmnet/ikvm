@@ -263,6 +263,10 @@ namespace IKVM.Java.Externs.java.net
                         s.port = remoteIpEndPoint.Port;
                         s.localport = impl.port;
                     }
+                    catch (SocketException e) when (e.SocketErrorCode == SocketError.Interrupted)
+                    {
+                        throw new global::java.io.InterruptedIOException(e.Message);
+                    }
                     finally
                     {
                         socket.Blocking = prevBlocking;
@@ -569,6 +573,10 @@ namespace IKVM.Java.Externs.java.net
 
                         var buffer = new byte[] { (byte)data };
                         socket.Send(buffer, 0, 1, SocketFlags.OutOfBand);
+                    }
+                    catch (SocketException e) when (e.SocketErrorCode == SocketError.Interrupted)
+                    {
+                        throw new global::java.io.InterruptedIOException(e.Message);
                     }
                     finally
                     {
