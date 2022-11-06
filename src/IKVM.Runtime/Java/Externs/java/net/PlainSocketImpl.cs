@@ -129,10 +129,29 @@ namespace IKVM.Java.Externs.java.net
                         if (impl.localport == 0)
                             impl.localport = ((IPEndPoint)socket.LocalEndPoint).Port;
                     }
+                    catch (SocketException e) when (e.SocketErrorCode == SocketError.InvalidArgument)
+                    {
+                        throw new global::java.net.SocketException(e.Message);
+                    }
                     catch (SocketException e) when (e.SocketErrorCode == SocketError.ConnectionRefused)
                     {
-                        // normal PortUnreachable doesn't suffice for Connect
                         throw new global::java.net.ConnectException(e.Message);
+                    }
+                    catch (SocketException e) when (e.SocketErrorCode == SocketError.HostUnreachable)
+                    {
+                        throw new global::java.net.NoRouteToHostException(e.Message);
+                    }
+                    catch (SocketException e) when (e.SocketErrorCode == SocketError.AddressNotAvailable)
+                    {
+                        throw new global::java.net.NoRouteToHostException(e.Message);
+                    }
+                    catch (SocketException e) when (e.SocketErrorCode == SocketError.TimedOut)
+                    {
+                        throw new global::java.net.ConnectException(e.Message);
+                    }
+                    catch (SocketException e) when (e.SocketErrorCode == SocketError.IsConnected)
+                    {
+                        throw new global::java.net.SocketException("Socket closed");
                     }
                     finally
                     {
@@ -155,9 +174,28 @@ namespace IKVM.Java.Externs.java.net
             {
                 InvokeActionWithSocket(impl, socket =>
                 {
-                    socket.Bind(new IPEndPoint(address.isAnyLocalAddress() ? IPAddress.IPv6Any : address.ToIPAddress(), port));
-                    impl.address = address;
-                    impl.localport = port == 0 ? ((IPEndPoint)socket.LocalEndPoint).Port : port;
+                    try
+                    {
+                        socket.Bind(new IPEndPoint(address.isAnyLocalAddress() ? IPAddress.IPv6Any : address.ToIPAddress(), port));
+                        impl.address = address;
+                        impl.localport = port == 0 ? ((IPEndPoint)socket.LocalEndPoint).Port : port;
+                    }
+                    catch (SocketException e) when (e.SocketErrorCode == SocketError.AddressAlreadyInUse)
+                    {
+                        throw new global::java.net.BindException("Bind failed");
+                    }
+                    catch (SocketException e) when (e.SocketErrorCode == SocketError.AddressNotAvailable)
+                    {
+                        throw new global::java.net.BindException("Bind failed");
+                    }
+                    catch (SocketException e) when (e.SocketErrorCode == SocketError.AccessDenied)
+                    {
+                        throw new global::java.net.BindException("Bind failed");
+                    }
+                    catch (SocketException)
+                    {
+                        throw new global::java.net.SocketException("Bind failed");
+                    }
                 });
             });
 #endif
@@ -246,7 +284,18 @@ namespace IKVM.Java.Externs.java.net
             {
                 return InvokeFuncWithSocket(impl, socket =>
                 {
-                    return socket.Available;
+                    try
+                    {
+                        return socket.Available;
+                    }
+                    catch (SocketException e) when (e.SocketErrorCode == SocketError.ConnectionReset)
+                    {
+                        throw new global::sun.net.ConnectionResetException();
+                    }
+                    catch (SocketException e)
+                    {
+                        throw new global::java.net.SocketException(e.Message);
+                    }
                 });
             });
 #endif
@@ -271,17 +320,22 @@ namespace IKVM.Java.Externs.java.net
 
                 InvokeActionWithSocket(impl, socket =>
                 {
-                    if (useDeferredClose)
+                    // if we're not configured to linger, disable sending, but continue to allow receive
+                    if (socket.LingerState.Enabled == false)
                     {
-                        // suspend any more reads/writes
-                        socket.Shutdown(SocketShutdown.Both);
+                        try
+                        {
+                            socket.Shutdown(SocketShutdown.Send);
+                        }
+                        catch (SocketException)
+                        {
+                            // ignore
+                        }
                     }
-                    else
-                    {
-                        // null socket before close, as close may take a minute to flush
-                        impl.fd.setSocket(null);
-                        socket.Close();
-                    }
+
+                    // null socket before close, as close may take a minute to flush
+                    impl.fd.setSocket(null);
+                    socket.Close();
                 });
             });
 #endif

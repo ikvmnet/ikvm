@@ -25,6 +25,8 @@ namespace IKVM.Java.Externs.java.net
 
             switch (self.SocketErrorCode)
             {
+                case SocketError.Interrupted:
+                    throw new global::java.io.InterruptedIOException(self.Message);
                 case SocketError.AddressAlreadyInUse:
                 case SocketError.AddressNotAvailable:
                 case SocketError.AccessDenied:
@@ -40,6 +42,8 @@ namespace IKVM.Java.Externs.java.net
                     return new global::sun.net.ConnectionResetException(self.Message);
                 case SocketError.HostNotFound:
                     return new global::java.net.UnknownHostException(self.Message);
+                case SocketError.ProtocolNotSupported:
+                    return new global::java.net.ProtocolException(self.Message);
                 default:
                     return new global::java.net.SocketException($"{self.Message} [{self.SocketErrorCode}]");
             }
