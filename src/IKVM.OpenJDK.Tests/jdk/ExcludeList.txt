@@ -1130,6 +1130,7 @@ java/lang/StrictMath/Log10Tests.java                                            
 java/lang/String/StringJoinTest.java                                                                                    generic-all
 java/lang/StringBuffer/TestSynchronization.java                                                                         generic-all
 java/lang/StringCoding/CheckEncodings.sh                                                                                generic-all
+java/lang/System/MacEncoding/MacJNUEncoding.sh                                                                          generic-all
 java/lang/System/MacEncoding/TestFileEncoding.java                                                                      generic-all
 java/lang/System/Versions.java                                                                                          generic-all
 java/lang/System/finalization/FinExit.java                                                                              generic-all
@@ -3001,6 +3002,7 @@ sun/nio/cs/FindDecoderBugs.java                                                 
 sun/nio/cs/FindEncoderBugs.java                                                                                         generic-all
 sun/nio/cs/ISO8859x.java                                                                                                generic-all
 sun/nio/cs/OLD/TestIBMDB.java                                                                                           generic-all
+sun/nio/cs/Test4200310.sh                                                                                               generic-all
 sun/nio/cs/TestEUC_TW.java                                                                                              generic-all
 sun/nio/cs/TestX11CNS.java                                                                                              generic-all
 sun/nio/cs/UkrainianIsNotRussian.java                                                                                   generic-all
