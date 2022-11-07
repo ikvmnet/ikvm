@@ -81,7 +81,7 @@ namespace IKVM.Tests.Java.java.net
             int port = server.getLocalPort();
             server.close();
             var client = new Socket();
-            client.connect(new InetSocketAddress(InetAddress.getByName("127.0.0.1"), port), 2000);
+            client.connect(new InetSocketAddress(InetAddress.getByName("127.0.0.1"), port), 8888);
         }
 
         [TestMethod]

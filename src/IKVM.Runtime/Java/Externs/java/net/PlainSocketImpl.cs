@@ -107,9 +107,10 @@ namespace IKVM.Java.Externs.java.net
                             }
                             catch (SocketException e) when (e.SocketErrorCode == SocketError.WouldBlock)
                             {
+                                var re = new List<Socket>() { socket };
                                 var wr = new List<Socket>() { socket };
                                 var ex = new List<Socket>() { socket };
-                                Socket.Select(null, wr, ex, timeout * 1000 > int.MaxValue ? int.MaxValue : timeout * 1000);
+                                Socket.Select(re, wr, ex, timeout * 1000 > int.MaxValue ? int.MaxValue : timeout * 1000);
                                 var er = (int)socket.GetSocketOption(SocketOptionLevel.Socket, SocketOptionName.Error);
                                 if (er != 0)
                                     throw new SocketException(er);
