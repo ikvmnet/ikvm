@@ -6,13 +6,10 @@ using System.Threading.Tasks;
 
 using FluentAssertions;
 
-using java.io;
 using java.lang;
 using java.net;
 
 using Microsoft.VisualStudio.TestTools.UnitTesting;
-
-using static com.sun.xml.@internal.bind.v2.runtime.reflect.Lister;
 
 namespace IKVM.Tests.Java.java.net
 {
