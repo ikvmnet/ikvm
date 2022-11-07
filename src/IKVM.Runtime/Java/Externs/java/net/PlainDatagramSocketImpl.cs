@@ -83,6 +83,12 @@ namespace IKVM.Java.Externs.java.net
         static readonly FieldInfo AbstractPlainDatagramSocketImplTrafficClassField = typeof(global::java.net.AbstractPlainDatagramSocketImpl).GetField("trafficClass", BindingFlags.NonPublic | BindingFlags.Instance);
         static readonly Func<global::java.net.AbstractPlainDatagramSocketImpl, int> AbstractPlainDatagramSocketImplTrafficClassGetter = MakeFieldGetter<global::java.net.AbstractPlainDatagramSocketImpl, int>(AbstractPlainDatagramSocketImplTrafficClassField);
 
+#if NETCOREAPP3_1_OR_GREATER
+        // HACK .NET Core has an explicit check for _isConnected https://github.com/dotnet/runtime/issues/77962
+        static readonly FieldInfo SocketIsConnectedField = typeof(Socket).GetField("_isConnected", BindingFlags.NonPublic | BindingFlags.Instance);
+        static readonly Action<Socket, bool> SocketIsConnectedFieldSetter = MakeFieldSetter<Socket, bool>(SocketIsConnectedField);
+#endif
+
 #endif
 
         const IOControlCode SIO_UDP_CONNRESET = (IOControlCode)(-1744830452);
@@ -173,7 +179,11 @@ namespace IKVM.Java.Externs.java.net
                     if (address == null)
                         throw new global::java.lang.NullPointerException(nameof(address));
 
-                    socket.Connect(address.ToIPAddress(), port);
+#if NETCOREAPP3_1_OR_GREATER
+                    // HACK .NET Core has an explicit check for _isConnected https://github.com/dotnet/runtime/issues/77962
+                    SocketIsConnectedFieldSetter(socket, false);
+#endif
+                    socket.EndConnect(socket.BeginConnect(address.ToIPAddress(), port, null, null));
 
                     // see comment in in socketCreate
                     if (RuntimeInformation.IsOSPlatform(OSPlatform.Windows))
@@ -195,7 +205,7 @@ namespace IKVM.Java.Externs.java.net
 #if FIRST_PASS
             throw new NotImplementedException();
 #else
-            InvokeAction<global::java.net.PlainDatagramSocketImpl>(this_, impl =>
+            InvokeAction(this_, (Action<global::java.net.PlainDatagramSocketImpl>)(impl =>
             {
                 if (impl.fd == null || impl.fd.getSocket() == null)
                     return;
@@ -203,13 +213,17 @@ namespace IKVM.Java.Externs.java.net
                 InvokeWithSocket(impl, socket =>
                 {
                     // NOTE we use async connect to work around the issue that the .NET Socket class disallows sync Connect after the socket has received WSAECONNRESET
+#if NETCOREAPP3_1_OR_GREATER
+                    // HACK .NET Core has an explicit check for _isConnected https://github.com/dotnet/runtime/issues/77962
+                    SocketIsConnectedFieldSetter(socket, false);
+#endif
                     socket.EndConnect(socket.BeginConnect(new IPEndPoint(IPAddress.IPv6Any, 0), null, null));
 
                     // see comment in in socketCreate
                     if (RuntimeInformation.IsOSPlatform(OSPlatform.Windows))
                         socket.IOControl(SIO_UDP_CONNRESET, IOControlFalseBuffer, null);
                 });
-            });
+            }));
 #endif
         }
 
