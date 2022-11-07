@@ -253,7 +253,7 @@ namespace IKVM.Tests.Java.java.net
         }
 
         [TestMethod]
-        public void BadAddress()
+        public void SendDatagramToBadAddress()
         {
             // open a socket to get a local port
             var srvr = new DatagramSocket(0);
@@ -277,12 +277,27 @@ namespace IKVM.Tests.Java.java.net
                 var p2 = new DatagramPacket(buff, buff.Length, addr, port);
                 sock.receive(p2);
             }
-            catch (PortUnreachableException e)
+            catch (PortUnreachableException)
             {
                 return;
             }
 
             throw new System.Exception("Did not receive exception.");
+        }
+
+        [TestMethod]
+        public void ConnectAfterDisconnect()
+        {
+            var addr = InetAddress.getByName("127.0.0.1");
+            using var srvr = new DatagramSocket(0);
+            var port = srvr.getLocalPort();
+            srvr.close();
+
+            using var sock = new DatagramSocket();
+            sock.connect(addr, port);
+            sock.disconnect();
+            sock.connect(addr, port);
+            sock.disconnect();
         }
 
     }

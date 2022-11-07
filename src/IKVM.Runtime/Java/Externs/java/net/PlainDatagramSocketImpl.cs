@@ -202,8 +202,8 @@ namespace IKVM.Java.Externs.java.net
 
                 InvokeWithSocket(impl, socket =>
                 {
-                    // for a UDP socket, disconnect is just connecting to the any address
-                    socket.Connect(new IPEndPoint(IPAddress.IPv6Any, 0));
+                    // NOTE we use async connect to work around the issue that the .NET Socket class disallows sync Connect after the socket has received WSAECONNRESET
+                    socket.EndConnect(socket.BeginConnect(new IPEndPoint(IPAddress.IPv6Any, 0), null, null));
 
                     // see comment in in socketCreate
                     if (RuntimeInformation.IsOSPlatform(OSPlatform.Windows))
