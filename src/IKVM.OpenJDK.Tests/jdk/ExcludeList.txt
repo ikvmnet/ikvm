@@ -1608,6 +1608,7 @@ java/security/cert/CertificateRevokedException/Basic.java                       
 java/security/cert/PKIXRevocationChecker/OcspUnauthorized.java                                                          generic-all
 java/security/cert/PKIXRevocationChecker/UnitTest.java                                                                  generic-all
 java/security/cert/PolicyNode/GetPolicyQualifiers.java                                                                  generic-all
+java/security/cert/pkix/policyChanges/TestPolicy.java                                                                   generic-all # expired cert
 java/text/Bidi/BidiConformance.java                                                                                     generic-all
 java/text/Bidi/BidiEmbeddingTest.java                                                                                   generic-all
 java/text/Format/DateFormat/Bug6645292.java                                                                             generic-all
