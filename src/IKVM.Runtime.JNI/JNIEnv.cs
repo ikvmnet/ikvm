@@ -343,17 +343,6 @@ namespace IKVM.Runtime
             TlsHack.ManagedJNIEnv = null;
         }
 
-        internal static string StringFromOEM(byte* psz)
-        {
-            for (int i = 0; ; i++)
-            {
-                if (psz[i] == 0)
-                {
-                    return new String((sbyte*)psz, 0, i, Encoding.Default);
-                }
-            }
-        }
-
         internal static string StringFromUTF8(byte* psz)
         {
             // Sun's modified UTF8 encoding is not compatible with System.Text.Encoding.UTF8,
