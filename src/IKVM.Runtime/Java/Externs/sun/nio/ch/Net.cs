@@ -244,7 +244,7 @@ namespace IKVM.Java.Externs.sun.nio.ch
                 {
                     var sol = (SocketOptionLevel)level;
                     var son = (SocketOptionName)opt;
-                    
+
                     if (sol == SocketOptionLevel.IPv6 && opt == global::ikvm.@internal.Winsock.IPV6_TCLASS)
                         return;
 
@@ -613,14 +613,16 @@ namespace IKVM.Java.Externs.sun.nio.ch
 
         internal static void setConnectionReset(Socket socket, bool enable)
         {
-            // Windows 2000 introduced a "feature" that causes it to return WSAECONNRESET from receive,
-            // if a previous send resulted in an ICMP port unreachable. For unconnected datagram sockets,
-            // we disable this feature by using this ioctl.
-            const int IOC_IN = unchecked((int)0x80000000);
-            const int IOC_VENDOR = 0x18000000;
-            const int SIO_UDP_CONNRESET = IOC_IN | IOC_VENDOR | 12;
-
-            socket.IOControl(SIO_UDP_CONNRESET, new byte[] { enable ? (byte)1 : (byte)0 }, null);
+            if (RuntimeInformation.IsOSPlatform(OSPlatform.Windows))
+            {
+                // Windows 2000 introduced a "feature" that causes it to return WSAECONNRESET from receive,
+                // if a previous send resulted in an ICMP port unreachable. For unconnected datagram sockets,
+                // we disable this feature by using this ioctl.
+                const int IOC_IN = unchecked((int)0x80000000);
+                const int IOC_VENDOR = 0x18000000;
+                const int SIO_UDP_CONNRESET = IOC_IN | IOC_VENDOR | 12;
+                socket.IOControl(SIO_UDP_CONNRESET, new byte[] { enable ? (byte)1 : (byte)0 }, null);
+            }
         }
 
         /// <summary>
