@@ -1589,6 +1589,7 @@ java/security/cert/CertPathBuilder/akiExt/AKISerialNumber.java                  
 java/security/cert/CertPathBuilder/selfIssued/DisableRevocation.java                                                    generic-all
 java/security/cert/CertPathBuilder/selfIssued/KeyUsageMatters.java                                                      generic-all
 java/security/cert/CertPathBuilder/selfIssued/StatusLoopDependency.java                                                 generic-all
+java/security/cert/CertPathBuilder/targetConstraints/BuildEEBasicConstraints.java                                       generic-all
 java/security/cert/CertPathValidator/OCSP/FailoverToCRL.java                                                            generic-all
 java/security/cert/CertPathValidator/indirectCRL/CircularCRLOneLevel.java                                               generic-all
 java/security/cert/CertPathValidator/indirectCRL/CircularCRLOneLevelRevoked.java                                        generic-all
@@ -1606,6 +1607,7 @@ java/security/cert/CertificateRevokedException/Basic.java                       
 java/security/cert/PKIXRevocationChecker/OcspUnauthorized.java                                                          generic-all
 java/security/cert/PKIXRevocationChecker/UnitTest.java                                                                  generic-all
 java/security/cert/PolicyNode/GetPolicyQualifiers.java                                                                  generic-all
+java/security/cert/pkix/policyChanges/TestPolicy.java                                                                   generic-all
 java/text/Bidi/BidiConformance.java                                                                                     generic-all
 java/text/Bidi/BidiEmbeddingTest.java                                                                                   generic-all
 java/text/Format/DateFormat/Bug6645292.java                                                                             generic-all
