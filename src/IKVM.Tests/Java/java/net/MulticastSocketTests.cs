@@ -18,14 +18,25 @@ namespace IKVM.Tests.Java.java.net
         [TestMethod]
         public void DefaultTimeToLive()
         {
-            var mc = new MulticastSocket();
+            using var mc = new MulticastSocket();
             mc.getTimeToLive().Should().Be(1);
+        }
+
+        [TestMethod]
+        public void GetLoopbackMode()
+        {
+            using var mc = new MulticastSocket();
+            mc.getLoopbackMode().Should().Be(false);
+            mc.setLoopbackMode(true);
+            mc.getLoopbackMode().Should().Be(true);
+            mc.setLoopbackMode(false);
+            mc.getLoopbackMode().Should().Be(false);
         }
 
         [TestMethod]
         public void SetLoopbackMode()
         {
-            var mc = new MulticastSocket();
+            using var mc = new MulticastSocket();
             var grp = InetAddress.getByName("ff01::1");
 
             // join group
@@ -46,6 +57,7 @@ namespace IKVM.Tests.Java.java.net
                     b = new byte[16];
                     p = new DatagramPacket(b, b.Length);
                     mc.receive(p);
+                    Encoding.UTF8.GetString(b, 0, p.getLength()).Should().Be("hello");
                     s = true;
 
                     /* purge any additional copies of the packet */
@@ -61,9 +73,11 @@ namespace IKVM.Tests.Java.java.net
             }
 
             mc.setLoopbackMode(true);
+            mc.getLoopbackMode().Should().BeTrue();
             Test().Should().BeFalse();
 
             mc.setLoopbackMode(false);
+            mc.getLoopbackMode().Should().BeFalse();
             Test().Should().BeTrue();
         }
 

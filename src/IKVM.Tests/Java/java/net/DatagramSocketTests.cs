@@ -59,7 +59,7 @@ namespace IKVM.Tests.Java.java.net
 
         [TestMethod]
         [ExpectedException(typeof(global::java.net.SocketTimeoutException))]
-        public void Should_throw_on_receive_timeout()
+        public void ShouldThrowOnReceiveTimeout()
         {
             var localhost = global::java.net.InetAddress.getLocalHost();
             using var s = new global::java.net.DatagramSocket(41021, localhost);
@@ -70,7 +70,7 @@ namespace IKVM.Tests.Java.java.net
         }
 
         [TestMethod]
-        public async Task Can_send_and_receive()
+        public async Task CanSendAndReceive()
         {
             var localhost = InetAddress.getLocalHost();
             var received = new List<string>();

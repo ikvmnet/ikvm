@@ -87,6 +87,18 @@ namespace IKVM.Java.Externs.java.net
         // HACK .NET Core has an explicit check for _isConnected https://github.com/dotnet/runtime/issues/77962
         static readonly FieldInfo SocketIsConnectedField = typeof(Socket).GetField("_isConnected", BindingFlags.NonPublic | BindingFlags.Instance);
         static readonly Action<Socket, bool> SocketIsConnectedFieldSetter = MakeFieldSetter<Socket, bool>(SocketIsConnectedField);
+
+        [DllImport("libc", SetLastError = true)]
+        static unsafe extern int setsockopt(SafeHandle sockfd, int level, int optname, void* optval, int optlen);
+
+        [DllImport("libc", SetLastError = true)]
+        static unsafe extern int getsockopt(SafeHandle sockfd, int level, int optname, void* optval, int* optlen);
+
+        const int IPPROTO_IP = 0;
+        const int IPPROTO_IPV6 = 41;
+        const int IP_MULTICAST_LOOP = 34;
+        const int IPV6_MULTICAST_LOOP = 19;
+
 #endif
 
 #endif
@@ -358,7 +370,7 @@ namespace IKVM.Java.Externs.java.net
                             // wait for data to be available
                             socket.Blocking = false;
                             socket.ReceiveTimeout = impl.timeout;
-                            if (socket.Poll(impl.timeout * 1000 > int.MaxValue ? int.MaxValue : impl.timeout * 1000, SelectMode.SelectRead) == false)
+                            if (socket.Poll(impl.timeout * 1000L > int.MaxValue ? int.MaxValue : impl.timeout * 1000, SelectMode.SelectRead) == false)
                                 throw new global::java.net.SocketTimeoutException("Peek timed out.");
                         }
                         else
@@ -500,37 +512,50 @@ namespace IKVM.Java.Externs.java.net
 
                     try
                     {
-                        var remoteEndpoint = (EndPoint)new IPEndPoint(IPAddress.IPv6Any, 0);
-                        var length = 0;
-
-                        if (impl.timeout > 0)
+                        // Windows Poll method reports errors as readable, however, Linux reports it as errored, so
+                        // we can use Poll on Windows for both errors, but must use Select on Linux to trap both
+                        // read and error states
+                        if (RuntimeInformation.IsOSPlatform(OSPlatform.Windows))
                         {
                             // wait for data to be available
-                            socket.Blocking = false;
-                            socket.ReceiveTimeout = impl.timeout;
-                            if (socket.Poll(impl.timeout * 1000 > int.MaxValue ? int.MaxValue : impl.timeout * 1000, SelectMode.SelectRead) == false)
-                                throw new global::java.net.SocketTimeoutException("Peek data timed out.");
+                            if (socket.Poll(impl.timeout * 1000L > int.MaxValue ? int.MaxValue : impl.timeout * 1000, SelectMode.SelectRead) == false)
+                                throw new global::java.net.SocketTimeoutException("Receive timed out.");
                         }
                         else
                         {
-                            socket.Blocking = true;
-                            socket.ReceiveTimeout = 0;
+                            try
+                            {
+                                var rl = new List<Socket>() { socket };
+                                var el = new List<Socket>() { socket };
+                                Socket.Select(rl, null, el, impl.timeout * 1000L > int.MaxValue ? int.MaxValue : impl.timeout * 1000);
+                                if (rl.Count == 0 && el.Count == 0)
+                                    throw new global::java.net.SocketTimeoutException("Receive timed out.");
+                            }
+                            catch (SocketException e) when (e.SocketErrorCode == SocketError.TimedOut)
+                            {
+                                throw new global::java.net.SocketTimeoutException("Receive timed out.");
+                            }
                         }
+
+                        var remoteEndpoint = (EndPoint)new IPEndPoint(IPAddress.IPv6Any, 0);
+                        var length = 0;
 
                         try
                         {
+                            socket.Blocking = true;
+                            socket.ReceiveTimeout = 0;
                             length = socket.ReceiveFrom(packet.buf, packet.offset, packet.bufLength, SocketFlags.Peek, ref remoteEndpoint);
-                        }
-                        catch (SocketException e) when (e.SocketErrorCode == SocketError.MessageSize)
-                        {
-                            // message size error indicates we did read something, but not the whole message
-                            // just return what we did read, since it's UDP and nobody cares anyways
-                            length = packet.bufLength;
                         }
                         catch (SocketException e) when (e.SocketErrorCode == SocketError.ConnectionReset)
                         {
-                            // Windows might leave more of these around, clear them all
-                            PurgeOutstandingICMP(socket);
+                            // Windows may leave multiple ICMP packets on the socket, purge them
+                            if (RuntimeInformation.IsOSPlatform(OSPlatform.Windows))
+                                PurgeOutstandingICMP(socket);
+
+                            throw new global::java.net.PortUnreachableException("ICMP Port Unreachable");
+                        }
+                        catch (SocketException e) when (e.SocketErrorCode == SocketError.ConnectionRefused)
+                        {
                             throw new global::java.net.PortUnreachableException("ICMP Port Unreachable");
                         }
                         catch
@@ -585,30 +610,47 @@ namespace IKVM.Java.Externs.java.net
                     if (packet.buf == null)
                         throw new global::java.lang.NullPointerException("packet buffer");
 
-                    var prevBlocking = socket.Blocking;
-                    var prevReceiveTimeout = socket.ReceiveTimeout;
+                    var previousBlocking = socket.Blocking;
+                    var previousReceiveTimeout = socket.ReceiveTimeout;
 
                     try
                     {
+                        if (impl.timeout > 0)
+                        {
+                            // Windows Poll method reports errors as readable, however, Linux reports it as errored, so
+                            // we can use Poll on Windows for both errors, but must use Select on Linux to trap both
+                            // read and error states
+                            if (RuntimeInformation.IsOSPlatform(OSPlatform.Windows))
+                            {
+                                // wait for data to be available
+                                if (socket.Poll(impl.timeout * 1000L > int.MaxValue ? int.MaxValue : impl.timeout * 1000, SelectMode.SelectRead) == false)
+                                    throw new global::java.net.SocketTimeoutException("Receive timed out.");
+                            }
+                            else
+                            {
+                                try
+                                {
+                                    var rl = new List<Socket>() { socket };
+                                    var el = new List<Socket>() { socket };
+                                    Socket.Select(rl, null, el, impl.timeout * 1000L > int.MaxValue ? int.MaxValue : impl.timeout * 1000);
+                                    if (rl.Count == 0 && el.Count == 0)
+                                        throw new global::java.net.SocketTimeoutException("Receive timed out.");
+                                }
+                                catch (SocketException e) when (e.SocketErrorCode == SocketError.TimedOut)
+                                {
+                                    throw new global::java.net.SocketTimeoutException("Receive timed out.");
+                                }
+                            }
+
+                        }
+
                         var remoteEndpoint = (EndPoint)new IPEndPoint(IPAddress.IPv6Any, 0);
                         var length = 0;
 
-                        if (impl.timeout > 0)
-                        {
-                            // wait for data to be available
-                            socket.Blocking = false;
-                            socket.ReceiveTimeout = impl.timeout;
-                            if (socket.Poll(impl.timeout * 1000 > int.MaxValue ? int.MaxValue : impl.timeout * 1000, SelectMode.SelectRead) == false)
-                                throw new global::java.net.SocketTimeoutException("Receive timed out.");
-                        }
-                        else
+                        try
                         {
                             socket.Blocking = true;
                             socket.ReceiveTimeout = 0;
-                        }
-
-                        try
-                        {
                             length = socket.ReceiveFrom(packet.buf, packet.offset, packet.bufLength, SocketFlags.None, ref remoteEndpoint);
                         }
                         catch (SocketException e) when (e.SocketErrorCode == SocketError.MessageSize)
@@ -619,8 +661,14 @@ namespace IKVM.Java.Externs.java.net
                         }
                         catch (SocketException e) when (e.SocketErrorCode == SocketError.ConnectionReset)
                         {
-                            // Windows might leave more of these around, clear them all
-                            PurgeOutstandingICMP(socket);
+                            // Windows may leave multiple ICMP packets on the socket, purge them
+                            if (RuntimeInformation.IsOSPlatform(OSPlatform.Windows))
+                                PurgeOutstandingICMP(socket);
+
+                            throw new global::java.net.PortUnreachableException("ICMP Port Unreachable");
+                        }
+                        catch (SocketException e) when (e.SocketErrorCode == SocketError.ConnectionRefused)
+                        {
                             throw new global::java.net.PortUnreachableException("ICMP Port Unreachable");
                         }
                         catch
@@ -646,8 +694,8 @@ namespace IKVM.Java.Externs.java.net
                     }
                     finally
                     {
-                        socket.Blocking = prevBlocking;
-                        socket.ReceiveTimeout = prevReceiveTimeout;
+                        socket.Blocking = previousBlocking;
+                        socket.ReceiveTimeout = previousReceiveTimeout;
                     }
                 });
             });
@@ -910,7 +958,26 @@ namespace IKVM.Java.Externs.java.net
 
                     // .NET provides property
                     if (opt == global::java.net.SocketOptions.IP_MULTICAST_LOOP)
+                    {
+#if NETCOREAPP3_1_OR_GREATER
+                        if (RuntimeInformation.IsOSPlatform(OSPlatform.Windows))
+                            return socket.MulticastLoopback ? global::java.lang.Boolean.FALSE : global::java.lang.Boolean.TRUE;
+                        else
+                        {
+                            unsafe
+                            {
+                                var val = 0;
+                                var len = sizeof(int);
+                                if (getsockopt(socket.SafeHandle, IPPROTO_IPV6, IPV6_MULTICAST_LOOP, &val, &len) != 0)
+                                    throw new SocketException(Marshal.GetLastWin32Error());
+
+                                return val != 0 ? global::java.lang.Boolean.FALSE : global::java.lang.Boolean.TRUE;
+                            }
+                        }
+#else
                         return socket.MulticastLoopback ? global::java.lang.Boolean.FALSE : global::java.lang.Boolean.TRUE;
+#endif
+                    }
 
                     // IP_MULTICAST_IF returns an InetAddress while IP_MULTICAST_IF2 returns a NetworkInterface
                     if (opt == global::java.net.SocketOptions.IP_MULTICAST_IF ||
@@ -1001,6 +1068,7 @@ namespace IKVM.Java.Externs.java.net
                 {
                     if (value == null)
                         throw new global::java.lang.NullPointerException(nameof(value));
+
                     // .NET provides property
                     if (opt == global::java.net.SocketOptions.SO_TIMEOUT)
                     {
@@ -1036,9 +1104,29 @@ namespace IKVM.Java.Externs.java.net
                     // implementation changes based on IP/IPv6
                     if (opt == global::java.net.SocketOptions.IP_MULTICAST_LOOP)
                     {
+#if NETCOREAPP3_1_OR_GREATER
+                        if (RuntimeInformation.IsOSPlatform(OSPlatform.Windows))
+                        {
+                            var val = (global::java.lang.Boolean)value;
+                            socket.MulticastLoopback = !val.booleanValue();
+                            return;
+                        }
+                        else
+                        {
+                            unsafe
+                            {
+                                var val = ((global::java.lang.Boolean)value).booleanValue() ? 0 : 1;
+                                if (setsockopt(socket.SafeHandle, IPPROTO_IPV6, IPV6_MULTICAST_LOOP, &val, sizeof(int)) != 0)
+                                    throw new SocketException(Marshal.GetLastWin32Error());
+                            }
+
+                            return;
+                        }
+#else
                         var val = (global::java.lang.Boolean)value;
                         socket.MulticastLoopback = !val.booleanValue();
                         return;
+#endif
                     }
 
                     // .NET provides a property
