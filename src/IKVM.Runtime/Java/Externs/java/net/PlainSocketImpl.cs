@@ -66,10 +66,7 @@ namespace IKVM.Java.Externs.java.net
 
                 // if this is a server socket then enable SO_REUSEADDR automatically and set to non blocking
                 if (AbstractPlainSocketImplServerSocketGetter(impl) != null)
-                {
-                    socket.Blocking = false;
                     socket.SetSocketOption(SocketOptionLevel.Socket, SocketOptionName.ReuseAddress, true);
-                }
 
                 impl.fd.setSocket(socket);
             });
