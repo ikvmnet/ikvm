@@ -51,6 +51,8 @@ namespace IKVM.Java.Externs.sun.nio.ch
         const int IPPROTO_IPV6 = 41;
         const int IP_ADD_SOURCE_MEMBERSHIP = 39;
         const int IP_DROP_SOURCE_MEMBERSHIP = 40;
+        const int MCAST_BLOCK_SOURCE = 43;
+        const int MCAST_UNBLOCK_SOURCE = 44;
         const int MCAST_JOIN_SOURCE_GROUP = 46;
         const int MCAST_LEAVE_SOURCE_GROUP = 47;
 
