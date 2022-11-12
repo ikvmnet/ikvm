@@ -37,6 +37,27 @@ namespace IKVM.Java.Externs.sun.nio.ch
     static class Net
     {
 
+#if !FIRST_PASS
+
+#if  NETCOREAPP3_1_OR_GREATER
+
+        [DllImport("libc", SetLastError = true)]
+        static unsafe extern int setsockopt(SafeHandle sockfd, int level, int optname, void* optval, int optlen);
+
+        [DllImport("libc", SetLastError = true)]
+        static unsafe extern int getsockopt(SafeHandle sockfd, int level, int optname, void* optval, int* optlen);
+
+        const int IPPROTO_IP = 0;
+        const int IPPROTO_IPV6 = 41;
+        const int IP_ADD_SOURCE_MEMBERSHIP = 39;
+        const int IP_DROP_SOURCE_MEMBERSHIP = 40;
+        const int MCAST_JOIN_SOURCE_GROUP = 46;
+        const int MCAST_LEAVE_SOURCE_GROUP = 47;
+
+#endif
+
+#endif
+
         /// <summary>
         /// Implements the native method for 'initIDs'.
         /// </summary>
@@ -311,7 +332,28 @@ namespace IKVM.Java.Externs.sun.nio.ch
                         PutInt(optionValue, 0, group);
                         PutInt(optionValue, 4, source);
                         PutInt(optionValue, 8, interf);
+
+#if NETCOREAPP3_1_OR_GREATER
+                        if (RuntimeInformation.IsOSPlatform(OSPlatform.Windows))
+                        {
+                            socket.SetSocketOption(SocketOptionLevel.IP, join ? SocketOptionName.AddSourceMembership : SocketOptionName.DropSourceMembership, optionValue);
+                        }
+                        else if (RuntimeInformation.IsOSPlatform(OSPlatform.Linux))
+                        {
+                            unsafe
+                            {
+                                fixed (void* v = optionValue)
+                                    if (setsockopt(socket.SafeHandle, IPPROTO_IP, join ? IP_ADD_SOURCE_MEMBERSHIP : IP_DROP_SOURCE_MEMBERSHIP, v, optionValue.Length) != 0)
+                                        throw new SocketException(Marshal.GetLastWin32Error());
+                            }
+                        }
+                        else
+                        {
+                            throw new global::java.net.SocketException("Invalid option.");
+                        }
+#else
                         socket.SetSocketOption(SocketOptionLevel.IP, join ? SocketOptionName.AddSourceMembership : SocketOptionName.DropSourceMembership, optionValue);
+#endif
                     }
 
                     return 0;
@@ -391,9 +433,6 @@ namespace IKVM.Java.Externs.sun.nio.ch
                     }
                     else
                     {
-                        const SocketOptionName MCAST_JOIN_SOURCE_GROUP = (SocketOptionName)45;
-                        const SocketOptionName MCAST_LEAVE_SOURCE_GROUP = (SocketOptionName)46;
-
                         // group_source_req
                         var optionValue = new byte[264];
                         optionValue[0] = (byte)index;
@@ -402,8 +441,30 @@ namespace IKVM.Java.Externs.sun.nio.ch
                         optionValue[3] = (byte)(index >> 24);
                         PutSockAddrIn6(optionValue, 8, group);
                         PutSockAddrIn6(optionValue, 136, source);
-                        socket.SetSocketOption(SocketOptionLevel.IPv6, join ? MCAST_JOIN_SOURCE_GROUP : MCAST_LEAVE_SOURCE_GROUP, optionValue);
+
+#if NETCOREAPP3_1_OR_GREATER
+                        if (RuntimeInformation.IsOSPlatform(OSPlatform.Windows))
+                        {
+                            socket.SetSocketOption(SocketOptionLevel.IPv6, join ? SocketOptionName.AddSourceMembership : SocketOptionName.DropSourceMembership, optionValue);
+                        }
+                        else if (RuntimeInformation.IsOSPlatform(OSPlatform.Linux))
+                        {
+                            unsafe
+                            {
+                                fixed (void* v = optionValue)
+                                    if (setsockopt(socket.SafeHandle, IPPROTO_IPV6, join ? MCAST_JOIN_SOURCE_GROUP : MCAST_LEAVE_SOURCE_GROUP, v, optionValue.Length) != 0)
+                                        throw new SocketException(Marshal.GetLastWin32Error());
+                            }
+                        }
+                        else
+                        {
+                            throw new global::java.net.SocketException("Invalid option.");
+                        }
+#else
+                        socket.SetSocketOption(SocketOptionLevel.IPv6, join ? SocketOptionName.AddSourceMembership : SocketOptionName.DropSourceMembership, optionValue);
+#endif
                     }
+
                     return 0;
                 });
             });
@@ -429,9 +490,6 @@ namespace IKVM.Java.Externs.sun.nio.ch
             {
                 return InvokeWithSocket(fd, socket =>
                 {
-                    const SocketOptionName MCAST_BLOCK_SOURCE = (SocketOptionName)43;
-                    const SocketOptionName MCAST_UNBLOCK_SOURCE = (SocketOptionName)44;
-
                     // group_source_req
                     var optionValue = new byte[264];
                     optionValue[0] = (byte)index;
@@ -440,7 +498,7 @@ namespace IKVM.Java.Externs.sun.nio.ch
                     optionValue[3] = (byte)(index >> 24);
                     PutSockAddrIn6(optionValue, 8, group);
                     PutSockAddrIn6(optionValue, 136, source);
-                    socket.SetSocketOption(SocketOptionLevel.IPv6, block ? MCAST_BLOCK_SOURCE : MCAST_UNBLOCK_SOURCE, optionValue);
+                    socket.SetSocketOption(SocketOptionLevel.IPv6, block ? SocketOptionName.BlockSource : SocketOptionName.UnblockSource, optionValue);
                     return 0;
                 });
             });

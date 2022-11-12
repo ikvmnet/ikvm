@@ -1111,7 +1111,7 @@ namespace IKVM.Java.Externs.java.net
                             socket.MulticastLoopback = !val.booleanValue();
                             return;
                         }
-                        else
+                        else if (RuntimeInformation.IsOSPlatform(OSPlatform.Linux))
                         {
                             unsafe
                             {
@@ -1121,6 +1121,10 @@ namespace IKVM.Java.Externs.java.net
                             }
 
                             return;
+                        }
+                        else
+                        {
+                            throw new global::java.net.SocketException("Invalid option.");
                         }
 #else
                         var val = (global::java.lang.Boolean)value;
