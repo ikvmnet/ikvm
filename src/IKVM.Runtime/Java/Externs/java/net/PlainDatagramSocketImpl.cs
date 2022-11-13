@@ -512,28 +512,31 @@ namespace IKVM.Java.Externs.java.net
 
                     try
                     {
-                        // Windows Poll method reports errors as readable, however, Linux reports it as errored, so
-                        // we can use Poll on Windows for both errors, but must use Select on Linux to trap both
-                        // read and error states
-                        if (RuntimeInformation.IsOSPlatform(OSPlatform.Windows))
+                        if (impl.timeout > 0)
                         {
-                            // wait for data to be available
-                            if (socket.Poll(impl.timeout * 1000L > int.MaxValue ? int.MaxValue : impl.timeout * 1000, SelectMode.SelectRead) == false)
-                                throw new global::java.net.SocketTimeoutException("Receive timed out.");
-                        }
-                        else
-                        {
-                            try
+                            // Windows Poll method reports errors as readable, however, Linux reports it as errored, so
+                            // we can use Poll on Windows for both errors, but must use Select on Linux to trap both
+                            // read and error states
+                            if (RuntimeInformation.IsOSPlatform(OSPlatform.Windows))
                             {
-                                var rl = new List<Socket>() { socket };
-                                var el = new List<Socket>() { socket };
-                                Socket.Select(rl, null, el, impl.timeout * 1000L > int.MaxValue ? int.MaxValue : impl.timeout * 1000);
-                                if (rl.Count == 0 && el.Count == 0)
+                                // wait for data to be available
+                                if (socket.Poll(impl.timeout * 1000L > int.MaxValue ? int.MaxValue : impl.timeout * 1000, SelectMode.SelectRead) == false)
                                     throw new global::java.net.SocketTimeoutException("Receive timed out.");
                             }
-                            catch (SocketException e) when (e.SocketErrorCode == SocketError.TimedOut)
+                            else
                             {
-                                throw new global::java.net.SocketTimeoutException("Receive timed out.");
+                                try
+                                {
+                                    var rl = new List<Socket>() { socket };
+                                    var el = new List<Socket>() { socket };
+                                    Socket.Select(rl, null, el, impl.timeout * 1000L > int.MaxValue ? int.MaxValue : impl.timeout * 1000);
+                                    if (rl.Count == 0 && el.Count == 0)
+                                        throw new global::java.net.SocketTimeoutException("Receive timed out.");
+                                }
+                                catch (SocketException e) when (e.SocketErrorCode == SocketError.TimedOut)
+                                {
+                                    throw new global::java.net.SocketTimeoutException("Receive timed out.");
+                                }
                             }
                         }
 
@@ -647,7 +650,6 @@ namespace IKVM.Java.Externs.java.net
                                     throw new global::java.net.SocketTimeoutException("Receive timed out.");
                                 }
                             }
-
                         }
 
                         var remoteEndpoint = (EndPoint)new IPEndPoint(IPAddress.IPv6Any, 0);
