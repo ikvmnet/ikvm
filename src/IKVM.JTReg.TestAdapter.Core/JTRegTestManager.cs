@@ -193,8 +193,13 @@ namespace IKVM.JTReg.TestAdapter.Core
 
                 // for each suite, get the results and transform a test case
                 foreach (dynamic testSuite in Util.GetTestSuites(source, testManager))
+                {
                     foreach (var testCase in (IEnumerable<JTRegTestCase>)Util.GetTestCases(source, testManager, testSuite))
+                    {
                         context.SendTestCase(testCase);
+                        testCount++;
+                    }
+                }
 
                 testWatch.Stop();
                 context.SendMessage(JTRegTestMessageLevel.Informational, $"JTReg: Discovered {testCount} tests for '{source}' in {testWatch.Elapsed.TotalSeconds} seconds.");
