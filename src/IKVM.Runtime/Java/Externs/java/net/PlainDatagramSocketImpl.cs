@@ -546,6 +546,12 @@ namespace IKVM.Java.Externs.java.net
                             socket.ReceiveTimeout = 0;
                             length = socket.ReceiveFrom(packet.buf, packet.offset, packet.bufLength, SocketFlags.Peek, ref remoteEndpoint);
                         }
+                        catch (SocketException e) when (e.SocketErrorCode == SocketError.MessageSize)
+                        {
+                            // message size error indicates we did read something, but not the whole message
+                            // just return what we did read, since it's UDP and nobody cares anyways
+                            length = packet.bufLength;
+                        }
                         catch (SocketException e) when (e.SocketErrorCode == SocketError.ConnectionReset)
                         {
                             // Windows may leave multiple ICMP packets on the socket, purge them

@@ -1,30 +1,8 @@
-﻿/*
-  Copyright (C) 2011 Jeroen Frijters
-
-  This software is provided 'as-is', without any express or implied
-  warranty.  In no event will the authors be held liable for any damages
-  arising from the use of this software.
-
-  Permission is granted to anyone to use this software for any purpose,
-  including commercial applications, and to alter it and redistribute it
-  freely, subject to the following restrictions:
-
-  1. The origin of this software must not be misrepresented; you must not
-     claim that you wrote the original software. If you use this software
-     in a product, an acknowledgment in the product documentation would be
-     appreciated but is not required.
-  2. Altered source versions must be plainly marked as such, and must not be
-     misrepresented as being the original software.
-  3. This notice may not be removed or altered from any source distribution.
-
-  Jeroen Frijters
-  jeroen@frijters.net
-  
-*/
-
-using System;
+﻿using System;
+using System.Buffers;
 using System.Net;
 using System.Net.Sockets;
+using System.Runtime.CompilerServices;
 using System.Runtime.InteropServices;
 
 using IKVM.Runtime.Java.Externs.java.net;
@@ -34,12 +12,117 @@ using static IKVM.Java.Externs.java.net.SocketImplUtil;
 namespace IKVM.Java.Externs.sun.nio.ch
 {
 
+    /// <summary>
+    /// Implements the external methods for <see cref="global::sun.nio.ch.Net"/>.
+    /// </summary>
     static class Net
     {
 
 #if !FIRST_PASS
 
-#if  NETCOREAPP3_1_OR_GREATER
+        [StructLayout(LayoutKind.Explicit)]
+        unsafe struct sockaddr_storage
+        {
+
+            [FieldOffset(0)]
+            void* __ss_align;
+
+            [FieldOffset(0)]
+            fixed byte __ss_size[128];
+
+            [FieldOffset(0)]
+            ushort __ss_family;
+
+            public ushort ss_family { get => __ss_family; set => __ss_family = value; }
+
+        }
+
+        [StructLayout(LayoutKind.Explicit)]
+        public unsafe struct in_addr
+        {
+
+            [FieldOffset(0)]
+            uint __align;
+
+            [FieldOffset(0)]
+            public fixed byte s_addr[4];
+
+        }
+
+        [StructLayout(LayoutKind.Sequential)]
+        unsafe struct sockaddr_in
+        {
+
+            public ushort sin_family;
+
+            public ushort sin_port;
+
+            public in_addr sin_addr;
+
+            fixed byte __sin_zero[8];
+
+        }
+
+        [StructLayout(LayoutKind.Explicit)]
+        unsafe struct in6_addr
+        {
+
+            [FieldOffset(0)]
+            uint __align;
+
+            [FieldOffset(0)]
+            public fixed byte s6_addr[16];
+
+        }
+
+        [StructLayout(LayoutKind.Sequential)]
+        struct sockaddr_in6
+        {
+
+            public ushort sin6_family;
+
+            public ushort sin6_port;
+
+            public uint sin6_flowinfo;
+
+            public in6_addr sin6_addr;
+
+            public uint sin6_scope_id;
+
+        }
+
+        [StructLayout(LayoutKind.Sequential)]
+        struct ip_mreq_source
+        {
+
+            public in_addr imr_multiaddr;
+            public in_addr imr_sourceaddr;
+            public in_addr imr_interface;
+
+        }
+
+        [StructLayout(LayoutKind.Sequential)]
+        struct group_source_req
+        {
+
+            public uint gsr_interface;
+            public sockaddr_storage gsr_group;
+            public sockaddr_storage gsr_source;
+
+        }
+
+        static readonly ushort AF_UNSPEC;
+        static readonly ushort AF_INET;
+        static readonly ushort AF_INET6;
+
+        static readonly int IPPROTO_IP;
+        static readonly int IPPROTO_IPV6;
+        static readonly int IP_ADD_SOURCE_MEMBERSHIP;
+        static readonly int IP_DROP_SOURCE_MEMBERSHIP;
+        static readonly int MCAST_BLOCK_SOURCE;
+        static readonly int MCAST_UNBLOCK_SOURCE;
+        static readonly int MCAST_JOIN_SOURCE_GROUP;
+        static readonly int MCAST_LEAVE_SOURCE_GROUP;
 
         [DllImport("libc", SetLastError = true)]
         static unsafe extern int setsockopt(SafeHandle sockfd, int level, int optname, void* optval, int optlen);
@@ -47,16 +130,44 @@ namespace IKVM.Java.Externs.sun.nio.ch
         [DllImport("libc", SetLastError = true)]
         static unsafe extern int getsockopt(SafeHandle sockfd, int level, int optname, void* optval, int* optlen);
 
-        const int IPPROTO_IP = 0;
-        const int IPPROTO_IPV6 = 41;
-        const int IP_ADD_SOURCE_MEMBERSHIP = 39;
-        const int IP_DROP_SOURCE_MEMBERSHIP = 40;
-        const int MCAST_BLOCK_SOURCE = 43;
-        const int MCAST_UNBLOCK_SOURCE = 44;
-        const int MCAST_JOIN_SOURCE_GROUP = 46;
-        const int MCAST_LEAVE_SOURCE_GROUP = 47;
-
-#endif
+        /// <summary>
+        /// Initializes the static instance.
+        /// </summary>
+        static Net()
+        {
+            if (RuntimeInformation.IsOSPlatform(OSPlatform.Windows))
+            {
+                AF_UNSPEC = 0;
+                AF_INET = 2;
+                AF_INET6 = 23;
+                IPPROTO_IP = 0;
+                IPPROTO_IPV6 = 41;
+                IP_ADD_SOURCE_MEMBERSHIP = 39;
+                IP_DROP_SOURCE_MEMBERSHIP = 40;
+                MCAST_BLOCK_SOURCE = 43;
+                MCAST_UNBLOCK_SOURCE = 44;
+                MCAST_JOIN_SOURCE_GROUP = 45;
+                MCAST_LEAVE_SOURCE_GROUP = 46;
+            }
+            else if (RuntimeInformation.IsOSPlatform(OSPlatform.Linux))
+            {
+                AF_UNSPEC = 0;
+                AF_INET = 2;
+                AF_INET6 = 10;
+                IPPROTO_IP = 0;
+                IPPROTO_IPV6 = 41;
+                IP_ADD_SOURCE_MEMBERSHIP = 39;
+                IP_DROP_SOURCE_MEMBERSHIP = 40;
+                MCAST_BLOCK_SOURCE = 43;
+                MCAST_UNBLOCK_SOURCE = 44;
+                MCAST_JOIN_SOURCE_GROUP = 46;
+                MCAST_LEAVE_SOURCE_GROUP = 47;
+            }
+            else
+            {
+                throw new PlatformNotSupportedException();
+            }
+        }
 
 #endif
 
@@ -296,14 +407,6 @@ namespace IKVM.Java.Externs.sun.nio.ch
 #endif
         }
 
-        static void PutInt(byte[] buf, int pos, int value)
-        {
-            buf[pos + 0] = (byte)(value >> 24);
-            buf[pos + 1] = (byte)(value >> 16);
-            buf[pos + 2] = (byte)(value >> 8);
-            buf[pos + 3] = (byte)(value >> 0);
-        }
-
         /// <summary>
         /// Implements the native method for 'joinOrDrop4'.
         /// </summary>
@@ -314,7 +417,7 @@ namespace IKVM.Java.Externs.sun.nio.ch
         /// <param name="source"></param>
         /// <returns></returns>
         /// <exception cref="global::java.net.SocketException"></exception>
-        public static int joinOrDrop4(bool join, global::java.io.FileDescriptor fd, int group, int interf, int source)
+        public unsafe static int joinOrDrop4(bool join, global::java.io.FileDescriptor fd, int group, int interf, int source)
         {
 #if FIRST_PASS
             throw new NotImplementedException();
@@ -329,33 +432,44 @@ namespace IKVM.Java.Externs.sun.nio.ch
                     }
                     else
                     {
-                        // ip_mreq_source
-                        var optionValue = new byte[12];
-                        PutInt(optionValue, 0, group);
-                        PutInt(optionValue, 4, source);
-                        PutInt(optionValue, 8, interf);
+                        var imrMultiAddr = IPAddress.HostToNetworkOrder(group);
+                        var imrSourceAddr = IPAddress.HostToNetworkOrder(source);
+                        var imrInterface = IPAddress.HostToNetworkOrder(interf);
 
-#if NETCOREAPP3_1_OR_GREATER
+                        var optionValue = new ip_mreq_source();
+                        optionValue.imr_multiaddr = Unsafe.As<int, in_addr>(ref imrMultiAddr);
+                        optionValue.imr_sourceaddr = Unsafe.As<int, in_addr>(ref imrSourceAddr);
+                        optionValue.imr_interface = Unsafe.As<int, in_addr>(ref imrInterface);
+
                         if (RuntimeInformation.IsOSPlatform(OSPlatform.Windows))
                         {
-                            socket.SetSocketOption(SocketOptionLevel.IP, join ? SocketOptionName.AddSourceMembership : SocketOptionName.DropSourceMembership, optionValue);
+                            var v = ArrayPool<byte>.Shared.Rent(sizeof(ip_mreq_source));
+
+                            try
+                            {
+                                fixed (byte* vptr = v)
+                                    Buffer.MemoryCopy(&optionValue, vptr, v.Length, sizeof(ip_mreq_source));
+
+                                socket.SetSocketOption(SocketOptionLevel.IP, join ? SocketOptionName.AddSourceMembership : SocketOptionName.DropSourceMembership, v);
+                            }
+                            finally
+                            {
+                                ArrayPool<byte>.Shared.Return(v);
+                            }
                         }
                         else if (RuntimeInformation.IsOSPlatform(OSPlatform.Linux))
                         {
-                            unsafe
-                            {
-                                fixed (void* v = optionValue)
-                                    if (setsockopt(socket.SafeHandle, IPPROTO_IP, join ? IP_ADD_SOURCE_MEMBERSHIP : IP_DROP_SOURCE_MEMBERSHIP, v, optionValue.Length) != 0)
-                                        throw new SocketException(Marshal.GetLastWin32Error());
-                            }
+#if NETCOREAPP
+                            if (setsockopt(socket.SafeHandle, IPPROTO_IP, join ? IP_ADD_SOURCE_MEMBERSHIP : IP_DROP_SOURCE_MEMBERSHIP, &optionValue, sizeof(ip_mreq_source)) != 0)
+                                throw new SocketException(Marshal.GetLastWin32Error());
+#else
+                            throw new PlatformNotSupportedException();
+#endif
                         }
                         else
                         {
                             throw new global::java.net.SocketException("Invalid option.");
                         }
-#else
-                        socket.SetSocketOption(SocketOptionLevel.IP, join ? SocketOptionName.AddSourceMembership : SocketOptionName.DropSourceMembership, optionValue);
-#endif
                     }
 
                     return 0;
@@ -374,7 +488,7 @@ namespace IKVM.Java.Externs.sun.nio.ch
         /// <param name="source"></param>
         /// <returns></returns>
         /// <exception cref="global::java.net.SocketException"></exception>
-        public static int blockOrUnblock4(bool block, global::java.io.FileDescriptor fd, int group, int interf, int source)
+        public static unsafe int blockOrUnblock4(bool block, global::java.io.FileDescriptor fd, int group, int interf, int source)
         {
 #if FIRST_PASS
             throw new NotImplementedException();
@@ -383,31 +497,32 @@ namespace IKVM.Java.Externs.sun.nio.ch
             {
                 return InvokeWithSocket(fd, socket =>
                 {
-                    // ip_mreq_source
-                    var optionValue = new byte[12];
-                    PutInt(optionValue, 0, group);
-                    PutInt(optionValue, 4, source);
-                    PutInt(optionValue, 8, interf);
-                    socket.SetSocketOption(SocketOptionLevel.IP, block ? SocketOptionName.BlockSource : SocketOptionName.UnblockSource, optionValue);
-                    return 0;
+                    var imrMultiAddr = IPAddress.HostToNetworkOrder(group);
+                    var imrSourceAddr = IPAddress.HostToNetworkOrder(source);
+                    var imrInterface = IPAddress.HostToNetworkOrder(interf);
+
+                    var optionValue = new ip_mreq_source();
+                    optionValue.imr_multiaddr = Unsafe.As<int, in_addr>(ref imrMultiAddr);
+                    optionValue.imr_sourceaddr = Unsafe.As<int, in_addr>(ref imrSourceAddr);
+                    optionValue.imr_interface = Unsafe.As<int, in_addr>(ref imrInterface);
+
+                    var v = ArrayPool<byte>.Shared.Rent(sizeof(ip_mreq_source));
+
+                    try
+                    {
+                        fixed (byte* vptr = v)
+                            Buffer.MemoryCopy(&optionValue, vptr, v.Length, sizeof(ip_mreq_source));
+
+                        socket.SetSocketOption(SocketOptionLevel.IP, block ? SocketOptionName.BlockSource : SocketOptionName.UnblockSource, v);
+                        return 0;
+                    }
+                    finally
+                    {
+                        ArrayPool<byte>.Shared.Return(v);
+                    }
                 });
             });
 #endif
-        }
-
-        /// <summary>
-        /// Write a sockaddr_in6 into optionValue at offset pos.
-        /// </summary>
-        /// <param name="optionValue"></param>
-        /// <param name="pos"></param>
-        /// <param name="addr"></param>
-        static void PutSockAddrIn6(byte[] optionValue, int pos, byte[] addr)
-        {
-            // sin6_family
-            optionValue[pos] = 23; // AF_INET6
-
-            // sin6_addr
-            Buffer.BlockCopy(addr, 0, optionValue, pos + 8, addr.Length);
         }
 
         /// <summary>
@@ -420,7 +535,7 @@ namespace IKVM.Java.Externs.sun.nio.ch
         /// <param name="source"></param>
         /// <returns></returns>
         /// <exception cref="global::java.net.SocketException"></exception>
-        public static int joinOrDrop6(bool join, global::java.io.FileDescriptor fd, byte[] group, int index, byte[] source)
+        public static unsafe int joinOrDrop6(bool join, global::java.io.FileDescriptor fd, byte[] group, int index, byte[] source)
         {
 #if FIRST_PASS
             throw new NotImplementedException();
@@ -435,36 +550,58 @@ namespace IKVM.Java.Externs.sun.nio.ch
                     }
                     else
                     {
-                        // group_source_req
-                        var optionValue = new byte[264];
-                        optionValue[0] = (byte)index;
-                        optionValue[1] = (byte)(index >> 8);
-                        optionValue[2] = (byte)(index >> 16);
-                        optionValue[3] = (byte)(index >> 24);
-                        PutSockAddrIn6(optionValue, 8, group);
-                        PutSockAddrIn6(optionValue, 136, source);
+                        var groupSockAddr = new sockaddr_in6();
+                        groupSockAddr.sin6_family = AF_INET6;
+#if NETCOREAPP
+                        groupSockAddr.sin6_addr = MemoryMarshal.AsRef<in6_addr>(group);
+#else
+                        fixed (byte* groupBufPtr = group)
+                            groupSockAddr.sin6_addr = Marshal.PtrToStructure<in6_addr>((IntPtr)groupBufPtr);
+#endif
 
-#if NETCOREAPP3_1_OR_GREATER
+                        var sourceSockAddr = new sockaddr_in6();
+                        sourceSockAddr.sin6_family = AF_INET6;
+#if NETCOREAPP
+                        sourceSockAddr.sin6_addr = MemoryMarshal.AsRef<in6_addr>(source);
+#else
+                        fixed (byte* sourceBufPtr = source)
+                            sourceSockAddr.sin6_addr = Marshal.PtrToStructure<in6_addr>((IntPtr)sourceBufPtr);
+#endif
+
+                        var groupSourceReq = new group_source_req();
+                        groupSourceReq.gsr_interface = (uint)index;
+                        groupSourceReq.gsr_group = Unsafe.As<sockaddr_in6, sockaddr_storage>(ref groupSockAddr);
+                        groupSourceReq.gsr_source = Unsafe.As<sockaddr_in6, sockaddr_storage>(ref sourceSockAddr);
+
                         if (RuntimeInformation.IsOSPlatform(OSPlatform.Windows))
                         {
-                            socket.SetSocketOption(SocketOptionLevel.IPv6, join ? SocketOptionName.AddSourceMembership : SocketOptionName.DropSourceMembership, optionValue);
+                            var v = ArrayPool<byte>.Shared.Rent(sizeof(group_source_req));
+
+                            try
+                            {
+                                fixed (byte* vptr = v)
+                                    Buffer.MemoryCopy(&groupSourceReq, vptr, v.Length, sizeof(group_source_req));
+
+                                socket.SetSocketOption(SocketOptionLevel.IPv6, join ? (SocketOptionName)MCAST_JOIN_SOURCE_GROUP : (SocketOptionName)MCAST_LEAVE_SOURCE_GROUP, v);
+                            }
+                            finally
+                            {
+                                ArrayPool<byte>.Shared.Return(v);
+                            }
                         }
                         else if (RuntimeInformation.IsOSPlatform(OSPlatform.Linux))
                         {
-                            unsafe
-                            {
-                                fixed (void* v = optionValue)
-                                    if (setsockopt(socket.SafeHandle, IPPROTO_IPV6, join ? MCAST_JOIN_SOURCE_GROUP : MCAST_LEAVE_SOURCE_GROUP, v, optionValue.Length) != 0)
-                                        throw new SocketException(Marshal.GetLastWin32Error());
-                            }
+#if NETCOREAPP
+                            if (setsockopt(socket.SafeHandle, IPPROTO_IPV6, join ? MCAST_JOIN_SOURCE_GROUP : MCAST_LEAVE_SOURCE_GROUP, &groupSourceReq, sizeof(group_source_req)) != 0)
+                                throw new SocketException(Marshal.GetLastWin32Error());
+#else
+                            throw new PlatformNotSupportedException();
+#endif
                         }
                         else
                         {
                             throw new global::java.net.SocketException("Invalid option.");
                         }
-#else
-                        socket.SetSocketOption(SocketOptionLevel.IPv6, join ? SocketOptionName.AddSourceMembership : SocketOptionName.DropSourceMembership, optionValue);
-#endif
                     }
 
                     return 0;
@@ -483,7 +620,7 @@ namespace IKVM.Java.Externs.sun.nio.ch
         /// <param name="source"></param>
         /// <returns></returns>
         /// <exception cref="global::java.net.SocketException"></exception>
-        public static int blockOrUnblock6(bool block, global::java.io.FileDescriptor fd, byte[] group, int index, byte[] source)
+        public static unsafe int blockOrUnblock6(bool block, global::java.io.FileDescriptor fd, byte[] group, int index, byte[] source)
         {
 #if FIRST_PASS
             throw new NotImplementedException();
@@ -493,14 +630,43 @@ namespace IKVM.Java.Externs.sun.nio.ch
                 return InvokeWithSocket(fd, socket =>
                 {
                     // group_source_req
-                    var optionValue = new byte[264];
-                    optionValue[0] = (byte)index;
-                    optionValue[1] = (byte)(index >> 8);
-                    optionValue[2] = (byte)(index >> 16);
-                    optionValue[3] = (byte)(index >> 24);
-                    PutSockAddrIn6(optionValue, 8, group);
-                    PutSockAddrIn6(optionValue, 136, source);
-                    socket.SetSocketOption(SocketOptionLevel.IPv6, block ? SocketOptionName.BlockSource : SocketOptionName.UnblockSource, optionValue);
+                    var groupSockAddr = new sockaddr_in6();
+                    groupSockAddr.sin6_family = AF_INET6;
+#if NETCOREAPP
+                    groupSockAddr.sin6_addr = MemoryMarshal.AsRef<in6_addr>(group);
+#else
+                    fixed (byte* groupBufPtr = group)
+                        groupSockAddr.sin6_addr = Marshal.PtrToStructure<in6_addr>((IntPtr)groupBufPtr);
+#endif
+
+                    var sourceSockAddr = new sockaddr_in6();
+                    sourceSockAddr.sin6_family = AF_INET6;
+#if NETCOREAPP
+                    sourceSockAddr.sin6_addr = MemoryMarshal.AsRef<in6_addr>(source);
+#else
+                    fixed (byte* sourceBufPtr = source)
+                        sourceSockAddr.sin6_addr = Marshal.PtrToStructure<in6_addr>((IntPtr)sourceBufPtr);
+#endif
+
+                    var groupSourceReq = new group_source_req();
+                    groupSourceReq.gsr_interface = (uint)index;
+                    groupSourceReq.gsr_group = Unsafe.As<sockaddr_in6, sockaddr_storage>(ref groupSockAddr);
+                    groupSourceReq.gsr_source = Unsafe.As<sockaddr_in6, sockaddr_storage>(ref sourceSockAddr);
+
+                    var v = ArrayPool<byte>.Shared.Rent(sizeof(group_source_req));
+
+                    try
+                    {
+                        fixed (byte* vptr = v)
+                            Buffer.MemoryCopy(&groupSourceReq, vptr, v.Length, sizeof(group_source_req));
+
+                        socket.SetSocketOption(SocketOptionLevel.IPv6, block ? SocketOptionName.BlockSource : SocketOptionName.UnblockSource, v);
+                    }
+                    finally
+                    {
+                        ArrayPool<byte>.Shared.Return(v);
+                    }
+
                     return 0;
                 });
             });
@@ -702,7 +868,7 @@ namespace IKVM.Java.Externs.sun.nio.ch
             {
                 return InvokeWithSocket(fd, socket =>
                 {
-                    var ep = new System.Net.IPEndPoint(global::java.net.SocketUtil.getAddressFromInetAddress(remote, preferIPv6), remotePort);
+                    var ep = new IPEndPoint(remote.ToIPAddress(), remotePort);
                     var datagram = socket.SocketType == SocketType.Dgram;
                     if (datagram || fd.isSocketBlocking())
                     {
@@ -747,7 +913,7 @@ namespace IKVM.Java.Externs.sun.nio.ch
                         _ => throw new NotSupportedException(),
                     };
 
-                    if (socket.Poll(timeout * 1000 > int.MaxValue ? int.MaxValue : (int)timeout * 1000, selectMode))
+                    if (socket.Poll(timeout * 1000L > int.MaxValue ? int.MaxValue : (int)timeout * 1000, selectMode))
                         return events;
 
                     return 0;
