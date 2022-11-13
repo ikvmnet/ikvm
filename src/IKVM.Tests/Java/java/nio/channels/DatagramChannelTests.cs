@@ -1,19 +1,9 @@
-﻿using com.sun.org.apache.bcel.@internal.generic;
+﻿using FluentAssertions;
 
-using FluentAssertions;
-
-using java.lang;
 using java.net;
 using java.nio.channels;
 
 using Microsoft.VisualStudio.TestTools.UnitTesting;
-
-using static com.sun.tools.javac.tree.DCTree;
-using sun.net.www.content.image;
-using java.util;
-using System.Linq;
-using System.Collections.Generic;
-using System;
 
 namespace IKVM.Tests.Java.java.nio.channels
 {

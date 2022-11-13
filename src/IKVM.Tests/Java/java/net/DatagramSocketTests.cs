@@ -77,6 +77,7 @@ namespace IKVM.Tests.Java.java.net
 
             // simple loop that listens and waits
             using var serverSocket = new DatagramSocket(0, localhost);
+            serverSocket.setSoTimeout(5000);
             var serverCts = new CancellationTokenSource(TimeSpan.FromSeconds(30));
             var server = Task.Run(() =>
             {

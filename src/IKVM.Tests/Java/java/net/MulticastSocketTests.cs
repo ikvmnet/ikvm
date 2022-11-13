@@ -6,7 +6,6 @@ using java.net;
 
 using Microsoft.VisualStudio.TestTools.UnitTesting;
 
-
 namespace IKVM.Tests.Java.java.net
 {
 

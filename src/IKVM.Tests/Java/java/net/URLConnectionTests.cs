@@ -1,5 +1,4 @@
-﻿using System;
-using System.Text;
+﻿using System.Text;
 using System.Threading;
 using System.Threading.Tasks;
 
@@ -8,8 +7,6 @@ using FluentAssertions;
 using java.io;
 using java.lang;
 using java.net;
-
-using jdk.nashorn.@internal.objects;
 
 using Microsoft.VisualStudio.TestTools.UnitTesting;
 

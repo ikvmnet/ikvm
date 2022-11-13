@@ -49,6 +49,25 @@ namespace IKVM.Tests.Java.java.net
             test.Wait();
         }
 
+        [TestMethod]
+        public void CanBindLocalWithoutScope()
+        {
+            var addr = NetworkInterface.getNetworkInterfaces().AsEnumerable<NetworkInterface>()
+                .SelectMany(i => i.getInetAddresses().AsEnumerable<InetAddress>())
+                .OfType<Inet6Address>()
+                .FirstOrDefault(i => i.isLinkLocalAddress());
+            if (addr == null)
+                throw new System.Exception("Could not find a link-local address");
+
+            using var ss = new ServerSocket();
+            ss.bind(new InetSocketAddress(addr, 0));
+
+            // need to remove the %scope suffix
+            var addr2 = (Inet6Address)InetAddress.getByAddress(addr.getAddress());
+            using var ss2 = new ServerSocket();
+            ss2.bind(new InetSocketAddress(addr2, 0));
+        }
+
     }
 
 }
