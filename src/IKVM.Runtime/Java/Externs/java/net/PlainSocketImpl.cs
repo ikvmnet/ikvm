@@ -102,6 +102,7 @@ namespace IKVM.Java.Externs.java.net
             var l = System.Net.NetworkInformation.NetworkInterface.GetAllNetworkInterfaces()
                 .SelectMany(i => i.GetIPProperties().UnicastAddresses)
                 .Where(i => i.Address.IsIPv6LinkLocal && i.Address.ScopeId != 0)
+                .Where(i => MemoryExtensions.SequenceEqual(i.Address.GetAddressBytes().AsSpan(), address.getAddress().AsSpan()))
                 .Take(2)
                 .ToList();
 
