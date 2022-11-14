@@ -23,7 +23,6 @@
 */
 using System;
 using System.Collections;
-using System.Collections.Generic;
 using System.Diagnostics;
 using System.Reflection;
 using System.Runtime.InteropServices;
@@ -55,12 +54,19 @@ namespace IKVM.Java.Externs.java.lang
         /// Gets the RID architecture.
         /// </summary>
         /// <returns></returns>
-        static string GetRuntimeIdentifierArch() => IntPtr.Size switch
+        static string GetRuntimeIdentifierArch()
         {
-            4 => "x86",
-            8 => "x64",
-            _ => throw new NotSupportedException(),
-        };
+            if (RuntimeInformation.ProcessArchitecture == Architecture.X86)
+                return "x86";
+            else if (RuntimeInformation.ProcessArchitecture == Architecture.X64)
+                return "x64";
+            else if (RuntimeInformation.ProcessArchitecture == Architecture.Arm)
+                return "arm";
+            else if (RuntimeInformation.ProcessArchitecture == Architecture.Arm64)
+                return "arm64";
+            else
+                return null;
+        }
 
         /// <summary>
         /// Returns the architecture name of the ikvm.home directory to use for this run.
@@ -76,6 +82,9 @@ namespace IKVM.Java.Externs.java.lang
 
             if (RuntimeInformation.IsOSPlatform(OSPlatform.Linux))
                 return $"linux-{GetRuntimeIdentifierArch()}";
+
+            if (RuntimeInformation.IsOSPlatform(OSPlatform.OSX))
+                return $"osx-{GetRuntimeIdentifierArch()}";
 #endif
 
             return null;

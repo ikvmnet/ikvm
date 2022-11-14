@@ -75,6 +75,23 @@ namespace IKVM.Tools.Runner
                     IkvmToolFramework.NetFramework => "win7-x64",
                     IkvmToolFramework.NetCore when platform == OSPlatform.Windows => "win7-x64",
                     IkvmToolFramework.NetCore when platform == OSPlatform.Linux => "linux-x64",
+                    IkvmToolFramework.NetCore when platform == OSPlatform.OSX => "osx-x64",
+                    _ => throw new NotImplementedException(),
+                },
+                Architecture.Arm => framework switch
+                {
+                    IkvmToolFramework.NetFramework => "win7-arm",
+                    IkvmToolFramework.NetCore when platform == OSPlatform.Windows => "win7-arm",
+                    IkvmToolFramework.NetCore when platform == OSPlatform.Linux => "linux-arm",
+                    IkvmToolFramework.NetCore when platform == OSPlatform.OSX => "osx-arm",
+                    _ => throw new NotImplementedException(),
+                },
+                Architecture.Arm64 => framework switch
+                {
+                    IkvmToolFramework.NetFramework => "win7-arm64",
+                    IkvmToolFramework.NetCore when platform == OSPlatform.Windows => "win7-arm64",
+                    IkvmToolFramework.NetCore when platform == OSPlatform.Linux => "linux-arm64",
+                    IkvmToolFramework.NetCore when platform == OSPlatform.OSX => "osx-arm64",
                     _ => throw new NotImplementedException(),
                 },
                 _ => throw new NotImplementedException(),

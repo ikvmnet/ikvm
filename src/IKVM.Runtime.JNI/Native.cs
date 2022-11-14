@@ -135,9 +135,9 @@ namespace IKVM.Runtime
             else if (RuntimeInformation.IsOSPlatform(OSPlatform.OSX))
             {
                 if (RuntimeInformation.ProcessArchitecture == Architecture.X64)
-                    yield return $"osx-11.0-x64";
+                    yield return $"osx-x64";
                 else if (RuntimeInformation.ProcessArchitecture == Architecture.Arm64)
-                    yield return $"osx-11.0-arm64";
+                    yield return $"osx-arm64";
             }
 #endif
         }

@@ -30,12 +30,19 @@ namespace IKVM.Tests
         /// Gets the RID architecture.
         /// </summary>
         /// <returns></returns>
-        static string GetRuntimeIdentifierArch() => IntPtr.Size switch
+        static string GetRuntimeIdentifierArch()
         {
-            4 => "x86",
-            8 => "x64",
-            _ => throw new NotSupportedException(),
-        };
+            if (RuntimeInformation.ProcessArchitecture == Architecture.X86)
+                return "x86";
+            else if (RuntimeInformation.ProcessArchitecture == Architecture.X64)
+                return "x64";
+            else if (RuntimeInformation.ProcessArchitecture == Architecture.Arm)
+                return "arm";
+            else if (RuntimeInformation.ProcessArchitecture == Architecture.Arm64)
+                return "arm64";
+            else
+                return null;
+        }
 
         /// <summary>
         /// Gets the runtime identifiers of the current platform.
@@ -53,6 +60,9 @@ namespace IKVM.Tests
 
             if (RuntimeInformation.IsOSPlatform(OSPlatform.Linux))
                 yield return $"linux-{arch}";
+
+            if (RuntimeInformation.IsOSPlatform(OSPlatform.OSX))
+                yield return $"osx-{arch}";
 #endif
         }
 
@@ -63,7 +73,7 @@ namespace IKVM.Tests
         /// <returns></returns>
         static string GetLibraryFileName(string name)
         {
-#if NET461
+#if NETFRAMEWORK
             return $"{name}.dll";
 #else
             if (RuntimeInformation.IsOSPlatform(OSPlatform.Windows))
@@ -71,6 +81,9 @@ namespace IKVM.Tests
 
             if (RuntimeInformation.IsOSPlatform(OSPlatform.Linux))
                 return $"lib{name}.so";
+
+            if (RuntimeInformation.IsOSPlatform(OSPlatform.OSX))
+                return $"lib{name}.dynlib";
 #endif
 
             throw new NotSupportedException();

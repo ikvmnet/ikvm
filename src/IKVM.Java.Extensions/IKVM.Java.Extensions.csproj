@@ -9,14 +9,14 @@
         <PackageReference Include="System.Memory" Version="4.5.5" />
     </ItemGroup>
 
-    <ItemGroup Condition=" '$(TargetFramework)' == 'net461' ">
+    <ItemGroup Condition="$([MSBuild]::IsTargetFrameworkCompatible('$(TargetFramework)', 'net461'))">
         <Reference Include="System.Configuration" />
         <Reference Include="System.IO.Compression" />
         <Reference Include="System.Security" />
         <PackageReference Include="System.Runtime.InteropServices.RuntimeInformation" Version="4.3.0" />
     </ItemGroup>
 
-    <ItemGroup Condition=" '$(TargetFramework)' == 'netcoreapp3.1' ">
+    <ItemGroup Condition="$([MSBuild]::IsTargetFrameworkCompatible('$(TargetFramework)', 'netcoreapp3.1'))">
         <PackageReference Include="Microsoft.Extensions.DependencyModel" Version="6.0.0" />
         <PackageReference Include="Microsoft.Win32.Registry" Version="5.0.0" />
         <PackageReference Include="System.Configuration.ConfigurationManager" Version="6.0.0" />
