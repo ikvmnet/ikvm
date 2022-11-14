@@ -6,6 +6,7 @@ using System.Threading.Tasks;
 
 using FluentAssertions;
 
+using java.io;
 using java.lang;
 using java.net;
 
@@ -92,7 +93,7 @@ namespace IKVM.Tests.Java.java.net
                         serverSocket.receive(packet);
                         received.Add(Encoding.UTF8.GetString(b, packet.getOffset(), packet.getLength()));
                     }
-                    catch (SocketTimeoutException e)
+                    catch (InterruptedIOException e)
                     {
 
                     }
