@@ -36,7 +36,7 @@ namespace IKVM.Java.Externs.sun.net.spi
 
         public static object getSystemProxy(object thisDefaultProxySelector, string protocol, string host)
         {
-            // TODO on Whidbey we might be able to use System.Net.Configuration.DefaultProxySection.Proxy
+            // TODO
             return null;
         }
 

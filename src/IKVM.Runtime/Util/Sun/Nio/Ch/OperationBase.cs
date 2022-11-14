@@ -24,90 +24,93 @@
 
 using System;
 
-#if !FIRST_PASS
+using System.Net.Sockets;
+
 namespace IKVM.Runtime.Util.Sun.Nio.Ch
 {
-    using System.Net.Sockets;
+
+#if !FIRST_PASS
 
     abstract class OperationBase<TInput>
-	{
-		private static readonly AsyncCallback callback = CallbackProc;
-		private Socket socket;
-		private sun.nio.ch.Iocp.ResultHandler handler;
-		private int result;
-		private Exception exception;
+    {
 
-		internal int Do(Socket socket, TInput input, object handler)
-		{
-			try
-			{
-				this.socket = socket;
-				this.handler = (sun.nio.ch.Iocp.ResultHandler)handler;
-				IAsyncResult ar = Begin(socket, input, callback, this);
-				if (ar.CompletedSynchronously)
-				{
-					if (exception != null)
-					{
-						throw exception;
-					}
-					return result;
-				}
-				else
-				{
-					return sun.nio.ch.IOStatus.UNAVAILABLE;
-				}
-			}
-			catch (SocketException x)
-			{
-				throw java.net.SocketUtil.convertSocketExceptionToIOException(x);
-			}
-			catch (ObjectDisposedException)
-			{
-				throw new java.nio.channels.ClosedChannelException();
-			}
-		}
+        static readonly AsyncCallback callback = CallbackProc;
+        Socket socket;
+        global::sun.nio.ch.Iocp.ResultHandler handler;
+        int result;
+        Exception exception;
 
-		private static void CallbackProc(IAsyncResult ar)
-		{
-			OperationBase<TInput> obj = (OperationBase<TInput>)ar.AsyncState;
-			try
-			{
-				int result = obj.End(obj.socket, ar);
-				if (ar.CompletedSynchronously)
-				{
-					obj.result = result;
-				}
-				else
-				{
-					obj.handler.completed(result, false);
-				}
-			}
-			catch (SocketException x)
-			{
-				if (ar.CompletedSynchronously)
-				{
-					obj.exception = x;
-				}
-				else
-				{
-					obj.handler.failed(x.ErrorCode, java.net.SocketUtil.convertSocketExceptionToIOException(x));
-				}
-			}
-			catch (ObjectDisposedException x)
-			{
-				if (ar.CompletedSynchronously)
-				{
-					obj.exception = x;
-				}
-				else
-				{
-					obj.handler.failed(0, new java.nio.channels.ClosedChannelException());
-				}
-			}
-		}
+        internal int Do(Socket socket, TInput input, object handler)
+        {
+            try
+            {
+                this.socket = socket;
+                this.handler = (global::sun.nio.ch.Iocp.ResultHandler)handler;
+                var ar = Begin(socket, input, callback, this);
+                if (ar.CompletedSynchronously)
+                {
+                    if (exception != null)
+                        throw exception;
 
-		protected abstract IAsyncResult Begin(Socket socket, TInput input, AsyncCallback callback, object state);
-		protected abstract int End(Socket socket, IAsyncResult ar);
-	}
-}
+                    return result;
+                }
+                else
+                {
+                    return global::sun.nio.ch.IOStatus.UNAVAILABLE;
+                }
+            }
+            catch (SocketException e)
+            {
+                throw java.net.SocketUtil.convertSocketExceptionToIOException(e);
+            }
+            catch (ObjectDisposedException)
+            {
+                throw new java.nio.channels.ClosedChannelException();
+            }
+        }
+
+        static void CallbackProc(IAsyncResult ar)
+        {
+            var obj = (OperationBase<TInput>)ar.AsyncState;
+
+            try
+            {
+                var result = obj.End(obj.socket, ar);
+                if (ar.CompletedSynchronously)
+                    obj.result = result;
+                else
+                    obj.handler.completed(result, false);
+            }
+            catch (SocketException e)
+            {
+                if (ar.CompletedSynchronously)
+                {
+                    obj.exception = e;
+                }
+                else
+                {
+                    obj.handler.failed((int)e.SocketErrorCode, global::java.net.SocketUtil.convertSocketExceptionToIOException(e));
+                }
+            }
+            catch (ObjectDisposedException e)
+            {
+                if (ar.CompletedSynchronously)
+                {
+                    obj.exception = e;
+                }
+                else
+                {
+                    obj.handler.failed(0, new global::java.nio.channels.ClosedChannelException());
+                }
+            }
+        }
+
+        protected abstract IAsyncResult Begin(Socket socket, TInput input, AsyncCallback callback, object state);
+
+        protected abstract int End(Socket socket, IAsyncResult ar);
+
+    }
+
 #endif
+
+}

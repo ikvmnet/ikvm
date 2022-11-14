@@ -42,6 +42,7 @@
         <PackageReference Include="System.Security.Permissions" Version="6.0.0" />
         <PackageReference Include="System.Security.Principal.Windows" Version="5.0.0" />
         <PackageReference Include="System.Threading.AccessControl" Version="6.0.0" />
+        <PackageReference Include="Mono.Posix" Version="7.1.0-final.1.21458.1" />
     </ItemGroup>
 
     <ItemGroup>

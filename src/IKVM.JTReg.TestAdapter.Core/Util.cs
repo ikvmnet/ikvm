@@ -199,14 +199,10 @@ namespace IKVM.JTReg.TestAdapter.Core
                     foreach (var message in GetTestResultSectionMessages(testResult.getSection(i)))
                         r.Messages.Add(message);
 
-            // create an attachment set for our results
-            var attachments = new JTRegAttachmentSet(new Uri(JTRegTestManager.URI), "IkvmJTRegTestAdapter");
-            r.Attachments.Add(attachments);
-
             // if a JTR file is available, add it as an attachment
             var jtrFile = (java.io.File)testResult.getFile();
             if (jtrFile != null && jtrFile.exists())
-                attachments.Attachments.Add(new JTRegUriDataAttachment(new Uri(jtrFile.getAbsolutePath()), jtrFile.getName()));
+                r.Attachments.Add(new JTRegAttachment(jtrFile.getAbsolutePath(), jtrFile.getName()));
 
             return r;
         }
