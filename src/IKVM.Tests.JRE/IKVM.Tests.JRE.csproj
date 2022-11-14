@@ -1,4 +1,4 @@
-<Project Sdk="Microsoft.NET.Sdk">
+﻿<Project Sdk="Microsoft.NET.Sdk">
 
     <PropertyGroup>
         <TargetFrameworks>net461;netcoreapp3.1;net6.0</TargetFrameworks>
@@ -40,6 +40,14 @@
         <LibProjectReference Include="..\ikvm-native\ikvm-native-linux.vcxproj">
             <SetPlatform>Platform=x64</SetPlatform>
             <LibTargetPath>runtimes\linux-x64\native</LibTargetPath>
+        </LibProjectReference>
+        <LibProjectReference Include="..\ikvm-native\ikvm-native-osx-x64.vcxproj">
+            <SetPlatform>Platform=x64</SetPlatform>
+            <LibTargetPath>runtimes\osx-x64\native</LibTargetPath>
+        </LibProjectReference>
+        <LibProjectReference Include="..\ikvm-native\ikvm-native-osx-arm64.vcxproj">
+            <SetPlatform>Platform=x64</SetPlatform>
+            <LibTargetPath>runtimes\osx-arm64\native</LibTargetPath>
         </LibProjectReference>
     </ItemGroup>
 
@@ -118,6 +126,28 @@
             <SetTargetFramework>TargetFramework=netcoreapp3.1</SetTargetFramework>
             <SetRuntimeIdentifier>RuntimeIdentifier=linux-x64</SetRuntimeIdentifier>
             <ProjectTargetPath>ikvmstub\netcoreapp3.1\linux-x64</ProjectTargetPath>
+        </PublishProjectReference>
+
+        <PublishProjectReference Include="..\ikvmc\ikvmc.csproj">
+            <SetTargetFramework>TargetFramework=netcoreapp3.1</SetTargetFramework>
+            <SetRuntimeIdentifier>RuntimeIdentifier=osx-x64</SetRuntimeIdentifier>
+            <ProjectTargetPath>ikvmc\netcoreapp3.1\osx-x64</ProjectTargetPath>
+        </PublishProjectReference>
+        <PublishProjectReference Include="..\ikvmstub\ikvmstub.csproj">
+            <SetTargetFramework>TargetFramework=netcoreapp3.1</SetTargetFramework>
+            <SetRuntimeIdentifier>RuntimeIdentifier=osx-x64</SetRuntimeIdentifier>
+            <ProjectTargetPath>ikvmstub\netcoreapp3.1\osx-x64</ProjectTargetPath>
+        </PublishProjectReference>
+
+        <PublishProjectReference Include="..\ikvmc\ikvmc.csproj">
+            <SetTargetFramework>TargetFramework=netcoreapp3.1</SetTargetFramework>
+            <SetRuntimeIdentifier>RuntimeIdentifier=osx-arm64</SetRuntimeIdentifier>
+            <ProjectTargetPath>ikvmc\netcoreapp3.1\osx-arm64</ProjectTargetPath>
+        </PublishProjectReference>
+        <PublishProjectReference Include="..\ikvmstub\ikvmstub.csproj">
+            <SetTargetFramework>TargetFramework=netcoreapp3.1</SetTargetFramework>
+            <SetRuntimeIdentifier>RuntimeIdentifier=osx-arm64</SetRuntimeIdentifier>
+            <ProjectTargetPath>ikvmstub\netcoreapp3.1\osx-arm64</ProjectTargetPath>
         </PublishProjectReference>
 
     </ItemGroup>

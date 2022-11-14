@@ -41,30 +41,6 @@
     </ItemGroup>
 
     <ItemGroup>
-        <LibProjectReference Include="ikvm-native-win-x64">
-            <ProjectFile>..\ikvm-native\ikvm-native-win.vcxproj</ProjectFile>
-            <Platform>x64</Platform>
-            <Configuration>$(Configuration)</Configuration>
-            <OutputDir>runtimes\win-x64\native</OutputDir>
-        </LibProjectReference>
-        <LibProjectReference Include="ikvm-native-linux-x64">
-            <ProjectFile>..\ikvm-native\ikvm-native-linux.vcxproj</ProjectFile>
-            <Platform>x64</Platform>
-            <Configuration>$(Configuration)</Configuration>
-            <OutputDir>runtimes\linux-x64\native</OutputDir>
-        </LibProjectReference>
-        <LibProjectReference Include="ikvm-native-osx-11.0-x64">
-            <ProjectFile>..\ikvm-native\ikvm-native-osx-x64.vcxproj</ProjectFile>
-            <Platform>x64</Platform>
-            <Configuration>$(Configuration)</Configuration>
-            <OutputDir>runtimes\osx-11.0-x64\native</OutputDir>
-        </LibProjectReference>
-        <LibProjectReference Include="ikvm-native-osx-11.0-arm64">
-            <ProjectFile>..\ikvm-native\ikvm-native-osx-arm64.vcxproj</ProjectFile>
-            <Platform>x64</Platform>
-            <Configuration>$(Configuration)</Configuration>
-            <OutputDir>runtimes\osx-11.0-arm64\native</OutputDir>
-        </LibProjectReference>
         <ProjectReference Include="..\IKVM.Runtime-ref\IKVM.Runtime-ref.csproj" Private="False" PrivateAssets="All" />
         <ProjectReference Include="..\IKVM.Java\IKVM.Java.msbuildproj" />
     </ItemGroup>
@@ -81,6 +57,14 @@
         <LibProjectReference Include="..\ikvm-native\ikvm-native-linux.vcxproj">
             <SetPlatform>Platform=x64</SetPlatform>
             <LibTargetPath>runtimes\linux-x64\native</LibTargetPath>
+        </LibProjectReference>
+        <LibProjectReference Include="..\ikvm-native\ikvm-native-osx-x64.vcxproj">
+            <SetPlatform>Platform=x64</SetPlatform>
+            <LibTargetPath>runtimes\osx-x64\native</LibTargetPath>
+        </LibProjectReference>
+        <LibProjectReference Include="..\ikvm-native\ikvm-native-osx-arm64.vcxproj">
+            <SetPlatform>Platform=x64</SetPlatform>
+            <LibTargetPath>runtimes\osx-arm64\native</LibTargetPath>
         </LibProjectReference>
     </ItemGroup>
 
