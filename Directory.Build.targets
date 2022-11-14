@@ -74,15 +74,25 @@
     -->
 
     <Target Name="AssignLibProjectConfiguration" Condition=" '$(DesignTimeBuild)' != 'true' And '@(LibProjectReference)' != '' ">
+        <ItemGroup>
+            <___LibProjectReference Include="@(LibProjectReference)">
+                <_SetPlatform>%(SetPlatform)</_SetPlatform>
+            </___LibProjectReference>
+        </ItemGroup>
         <PropertyGroup>
             <OnlyReferenceAndBuildProjectsEnabledInSolutionConfiguration Condition="'$(OnlyReferenceAndBuildProjectsEnabledInSolutionConfiguration)' == ''">true</OnlyReferenceAndBuildProjectsEnabledInSolutionConfiguration>
             <ShouldUnsetParentConfigurationAndPlatform Condition="'$(ShouldUnsetParentConfigurationAndPlatform)' == '' and ('$(BuildingInsideVisualStudio)' == 'true' or '$(BuildingSolutionFile)' == 'true')">true</ShouldUnsetParentConfigurationAndPlatform>
             <ShouldUnsetParentConfigurationAndPlatform Condition="'$(ShouldUnsetParentConfigurationAndPlatform)' == ''">false</ShouldUnsetParentConfigurationAndPlatform>
         </PropertyGroup>
-        <AssignProjectConfiguration ProjectReferences="@(LibProjectReference)" CurrentProject="$(MSBuildProjectFullPath)" CurrentProjectConfiguration="$(Configuration)" CurrentProjectPlatform="$(Platform)" DefaultToVcxPlatformMapping="$(DefaultToVcxPlatformMapping)" VcxToDefaultPlatformMapping="$(VcxToDefaultPlatformMapping)" OutputType="$(OutputType)" ResolveConfigurationPlatformUsingMappings="false" SolutionConfigurationContents="$(CurrentSolutionConfigurationContents)" AddSyntheticProjectReferencesForSolutionDependencies="false" OnlyReferenceAndBuildProjectsEnabledInSolutionConfiguration="$(OnlyReferenceAndBuildProjectsEnabledInSolutionConfiguration)" ShouldUnsetParentConfigurationAndPlatform="$(ShouldUnsetParentConfigurationAndPlatform)">
-            <Output TaskParameter="AssignedProjects" ItemName="_LibProjectReferenceWithConfiguration"/>
-            <Output TaskParameter="UnassignedProjects" ItemName="_LibProjectReferenceWithConfiguration"/>
+        <AssignProjectConfiguration ProjectReferences="@(___LibProjectReference)" CurrentProject="$(MSBuildProjectFullPath)" CurrentProjectConfiguration="$(Configuration)" CurrentProjectPlatform="$(Platform)" DefaultToVcxPlatformMapping="$(DefaultToVcxPlatformMapping)" VcxToDefaultPlatformMapping="$(VcxToDefaultPlatformMapping)" OutputType="$(OutputType)" ResolveConfigurationPlatformUsingMappings="true" SolutionConfigurationContents="$(CurrentSolutionConfigurationContents)" AddSyntheticProjectReferencesForSolutionDependencies="false" OnlyReferenceAndBuildProjectsEnabledInSolutionConfiguration="$(OnlyReferenceAndBuildProjectsEnabledInSolutionConfiguration)" ShouldUnsetParentConfigurationAndPlatform="$(ShouldUnsetParentConfigurationAndPlatform)">
+            <Output TaskParameter="AssignedProjects" ItemName="__LibProjectReferenceWithConfiguration"/>
+            <Output TaskParameter="UnassignedProjects" ItemName="__LibProjectReferenceWithConfiguration"/>
         </AssignProjectConfiguration>
+        <ItemGroup>
+            <_LibProjectReferenceWithConfiguration Include="@(__LibProjectReferenceWithConfiguration)">
+                <SetPlatform>%(_SetPlatform)</SetPlatform>
+            </_LibProjectReferenceWithConfiguration>
+        </ItemGroup>
     </Target>
 
     <Target Name="GetLibProjectReferences" DependsOnTargets="AssignLibProjectConfiguration" Condition=" '@(_LibProjectReferenceWithConfiguration)' != '' ">
