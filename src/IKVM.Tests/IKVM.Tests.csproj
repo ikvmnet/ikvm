@@ -35,6 +35,7 @@
     </ItemGroup>
 
     <ItemGroup>
+        <ProjectReference Include="..\IKVM.Java.Extensions\IKVM.Java.Extensions.csproj" />
         <ProjectReference Include="..\IKVM.Reflection\IKVM.Reflection.csproj" />
         <ProjectReference Include="..\IKVM.Runtime\IKVM.Runtime.csproj" />
         <ProjectReference Include="..\IKVM.Runtime.JNI\IKVM.Runtime.JNI.csproj" />

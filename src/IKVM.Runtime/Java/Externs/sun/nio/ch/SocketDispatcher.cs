@@ -24,9 +24,9 @@
 
 using System;
 using System.Collections.Generic;
+using System.Net.Sockets;
 
-using ByteBuffer = java.nio.ByteBuffer;
-using FileDescriptor = java.io.FileDescriptor;
+using IKVM.Java.Externs.java.net;
 
 namespace IKVM.Java.Externs.sun.nio.ch
 {
@@ -34,23 +34,23 @@ namespace IKVM.Java.Externs.sun.nio.ch
     static class SocketDispatcher
     {
 
-        public static long read(object nd, FileDescriptor fd, ByteBuffer[] bufs, int offset, int length)
+        public static long read(object nd, global::java.io.FileDescriptor fd, global::java.nio.ByteBuffer[] bufs, int offset, int length)
         {
 #if FIRST_PASS
-			return 0;
+            throw new NotSupportedException();
 #else
-            ByteBuffer[] altBufs = null;
-            List<ArraySegment<byte>> list = new List<ArraySegment<byte>>(length);
+            global::java.nio.ByteBuffer[] altBufs = null;
+            var list = new List<ArraySegment<byte>>(length);
             for (int i = 0; i < length; i++)
             {
-                ByteBuffer bb = bufs[i + offset];
+                var bb = bufs[i + offset];
                 if (!bb.hasArray())
                 {
                     if (altBufs == null)
                     {
-                        altBufs = new ByteBuffer[bufs.Length];
+                        altBufs = new global::java.nio.ByteBuffer[bufs.Length];
                     }
-                    bb = altBufs[i + offset] = ByteBuffer.allocate(bb.remaining());
+                    bb = altBufs[i + offset] = global::java.nio.ByteBuffer.allocate(bb.remaining());
                 }
                 list.Add(new ArraySegment<byte>(bb.array(), bb.arrayOffset() + bb.position(), bb.remaining()));
             }
@@ -59,15 +59,15 @@ namespace IKVM.Java.Externs.sun.nio.ch
             {
                 count = fd.getSocket().Receive(list);
             }
-            catch (System.Net.Sockets.SocketException x)
+            catch (SocketException x)
             {
-                if (x.ErrorCode == global::java.net.SocketUtil.WSAEWOULDBLOCK)
+                if (x.SocketErrorCode == SocketError.WouldBlock)
                 {
                     count = 0;
                 }
                 else
                 {
-                    throw global::java.net.SocketUtil.convertSocketExceptionToIOException(x);
+                    throw x.ToIOException();
                 }
             }
             catch (ObjectDisposedException)
@@ -77,8 +77,8 @@ namespace IKVM.Java.Externs.sun.nio.ch
             int total = count;
             for (int i = 0; total > 0 && i < length; i++)
             {
-                ByteBuffer bb = bufs[i + offset];
-                ByteBuffer abb;
+                global::java.nio.ByteBuffer bb = bufs[i + offset];
+                global::java.nio.ByteBuffer abb;
                 int consumed = Math.Min(total, bb.remaining());
                 if (altBufs != null && (abb = altBufs[i + offset]) != null)
                 {
@@ -96,23 +96,23 @@ namespace IKVM.Java.Externs.sun.nio.ch
 #endif
         }
 
-        public static long write(object nd, FileDescriptor fd, ByteBuffer[] bufs, int offset, int length)
+        public static long write(object nd, global::java.io.FileDescriptor fd, global::java.nio.ByteBuffer[] bufs, int offset, int length)
         {
 #if FIRST_PASS
-			return 0;
+            throw new NotSupportedException();
 #else
-            ByteBuffer[] altBufs = null;
-            List<ArraySegment<byte>> list = new List<ArraySegment<byte>>(length);
+            global::java.nio.ByteBuffer[] altBufs = null;
+            var list = new List<ArraySegment<byte>>(length);
             for (int i = 0; i < length; i++)
             {
-                ByteBuffer bb = bufs[i + offset];
+                var bb = bufs[i + offset];
                 if (!bb.hasArray())
                 {
                     if (altBufs == null)
                     {
-                        altBufs = new ByteBuffer[bufs.Length];
+                        altBufs = new global::java.nio.ByteBuffer[bufs.Length];
                     }
-                    ByteBuffer abb = ByteBuffer.allocate(bb.remaining());
+                    var abb = global::java.nio.ByteBuffer.allocate(bb.remaining());
                     int pos = bb.position();
                     abb.put(bb);
                     bb.position(pos);
@@ -126,29 +126,26 @@ namespace IKVM.Java.Externs.sun.nio.ch
             {
                 count = fd.getSocket().Send(list);
             }
-            catch (System.Net.Sockets.SocketException x)
+            catch (SocketException e)
             {
-                if (x.ErrorCode == global::java.net.SocketUtil.WSAEWOULDBLOCK)
-                {
+                if (e.SocketErrorCode == SocketError.WouldBlock)
                     count = 0;
-                }
                 else
-                {
-                    throw global::java.net.SocketUtil.convertSocketExceptionToIOException(x);
-                }
+                    throw e.ToIOException();
             }
-            catch (ObjectDisposedException)
+            catch (ObjectDisposedException e)
             {
                 throw new global::java.net.SocketException("Socket is closed");
             }
             int total = count;
             for (int i = 0; total > 0 && i < length; i++)
             {
-                ByteBuffer bb = bufs[i + offset];
+                var bb = bufs[i + offset];
                 int consumed = Math.Min(total, bb.remaining());
                 bb.position(bb.position() + consumed);
                 total -= consumed;
             }
+
             return count;
 #endif
         }

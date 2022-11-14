@@ -21,7 +21,6 @@
   jeroen@frijters.net
   
 */
-using System.Net;
 
 namespace IKVM.Java.Externs.java.net
 {
@@ -33,22 +32,6 @@ namespace IKVM.Java.Externs.java.net
         {
 
         }
-
-#if !FIRST_PASS
-
-        internal static global::java.net.InetAddress ConvertIPAddress(IPAddress address, string hostname)
-        {
-            if (address.IsIPv6LinkLocal || address.IsIPv6SiteLocal)
-            {
-                return global::java.net.Inet6Address.getByAddress(hostname, address.GetAddressBytes(), (int)address.ScopeId);
-            }
-            else
-            {
-                return global::java.net.InetAddress.getByAddress(hostname, address.GetAddressBytes());
-            }
-        }
-
-#endif
 
     }
 

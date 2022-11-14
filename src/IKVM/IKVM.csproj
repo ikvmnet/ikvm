@@ -48,6 +48,7 @@
     <ItemGroup Condition="$([MSBuild]::IsTargetFrameworkCompatible('$(TargetFramework)', 'netcoreapp3.1'))">
         <PackageReference Include="Microsoft.Extensions.DependencyModel" Version="6.0.0" />
         <PackageReference Include="Microsoft.Win32.Registry" Version="5.0.0" />
+        <PackageReference Include="Mono.Posix" Version="7.1.0-final.1.21458.1" />
         <PackageReference Include="System.Configuration.ConfigurationManager" Version="6.0.0" />
         <PackageReference Include="System.Drawing.Common" Version="6.0.0" />
         <PackageReference Include="System.Data.Odbc" Version="6.0.0" />
