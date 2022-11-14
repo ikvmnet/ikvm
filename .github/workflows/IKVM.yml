@@ -142,7 +142,7 @@ jobs:
         name: osxcross-target
         path: osxcross/osxcross-target.zip
   build-ikvm:
-    name: Build IKVM (Windows)
+    name: Build IKVM
     needs:
     - build-openjdk
     - build-osxcross
@@ -183,8 +183,6 @@ jobs:
       uses: Vampire/setup-wsl@v1
       with:
         additional-packages:
-          gcc
-          g++
           zlib1g-dev
           libmpc-dev
           libmpfr-dev
@@ -304,7 +302,7 @@ jobs:
       run: |
         git reset --hard
         git clean -qfdx
-  test-ikvm:
+  test:
     strategy:
       matrix:
         run:
@@ -388,7 +386,7 @@ jobs:
         - run: IKVM.NET.Sdk.Tests
           tfm: net6.0
           sys: windows
-    name: Test IKVM (${{ matrix.run }}:${{ matrix.tfm }}:${{ matrix.sys }}
+    name: Test (${{ matrix.run }}:${{ matrix.tfm }}:${{ matrix.sys }}
     needs:
     - build-ikvm
     runs-on: ${{ fromJSON('{"windows":["windows-2022"],"linux":["ubuntu-22.04"],"osx":["macos-12"]}')[matrix.sys] }}
@@ -463,7 +461,7 @@ jobs:
     name: Release
     if: github.ref == 'refs/heads/main' || github.ref == 'refs/heads/develop' || startsWith(github.ref, 'refs/heads/release/')
     needs:
-    - test-ikvm
+    - test
     runs-on: ubuntu-latest
     steps:
     - name: Checkout Source
