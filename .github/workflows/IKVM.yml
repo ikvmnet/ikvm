@@ -330,9 +330,12 @@ jobs:
         sys:
         - windows
         - linux
+        - osx
         exclude:
         - tfm: net461
           sys: linux
+        - tfm: net461
+          sys: osx
         - run: IKVM.Tools.Exporter.Tests
           tfm: net6.0
         - run: ikvmc.Tests
@@ -353,6 +356,22 @@ jobs:
           sys: linux
         - run: IKVM.OpenJDK.Tests?TestPartition=7
           sys: linux
+        - run: IKVM.OpenJDK.Tests?TestPartition=0
+          sys: osx
+        - run: IKVM.OpenJDK.Tests?TestPartition=1
+          sys: osx
+        - run: IKVM.OpenJDK.Tests?TestPartition=2
+          sys: osx
+        - run: IKVM.OpenJDK.Tests?TestPartition=3
+          sys: osx
+        - run: IKVM.OpenJDK.Tests?TestPartition=4
+          sys: osx
+        - run: IKVM.OpenJDK.Tests?TestPartition=5
+          sys: osx
+        - run: IKVM.OpenJDK.Tests?TestPartition=6
+          sys: osx
+        - run: IKVM.OpenJDK.Tests?TestPartition=7
+          sys: osx
         include:
         - run: IKVM.MSBuild.Tasks.Tests
           tfm: net472
@@ -372,7 +391,7 @@ jobs:
     name: Test IKVM (${{ matrix.run }}:${{ matrix.tfm }}:${{ matrix.sys }}
     needs:
     - build-ikvm
-    runs-on: ${{ fromJSON('{"windows":["windows-2022"],"linux":["ubuntu-22.04"]}')[matrix.sys] }}
+    runs-on: ${{ fromJSON('{"windows":["windows-2022"],"linux":["ubuntu-22.04"],"osx":["macos-12"]}')[matrix.sys] }}
     steps:
     - name: Setup WSL
       if: matrix.sys == 'windows'
@@ -439,40 +458,6 @@ jobs:
       uses: actions/upload-artifact@v3
       with:
         name: ${{ env.RET }}
-        path: TestResults
-  test-ikvm-osx:
-    name: Test IKVM (OS X)
-    needs:
-    - build-ikvm
-    runs-on: macos-latest
-    steps:
-    - name: Setup .NET 3.1
-      uses: actions/setup-dotnet@v2
-      with:
-        dotnet-version: 3.1.x
-    - name: Setup .NET 5.0
-      uses: actions/setup-dotnet@v2
-      with:
-        dotnet-version: 5.0.x
-    - name: Setup .NET 6.0
-      uses: actions/setup-dotnet@v2
-      with:
-        dotnet-version: 6.0.x
-    - name: Download Tests
-      uses: actions/download-artifact@v3
-      with:
-        name: tests
-        path: build
-    - name: Restore Tests
-      run: tar xzvf tests.tar.gz
-      working-directory: build
-    - name: Execute Tests
-      shell: pwsh
-      run: gci ./build/tests/ -Recurse -Filter '*.Tests.dll' | group { $_.Directory.BaseName } | ?{ $_.Name -notin @('net461', 'net472', 'net48') } | %{ dotnet test $_.Group --blame -v 3 --results-directory ./TestResults --logger "trx;LogFileName=$($_.Name).trx" }
-    - name: Upload Test Results
-      uses: actions/upload-artifact@v3
-      with:
-        name: TestResults-linux
         path: TestResults
   release:
     name: Release
