@@ -9,7 +9,7 @@ using IKVM.Tests.Util;
 
 using Microsoft.VisualStudio.TestTools.UnitTesting;
 
-#if NETCOREAPP3_1_OR_GREATER
+#if NETCOREAPP
 using Microsoft.Extensions.DependencyModel;
 #endif
 
@@ -30,7 +30,7 @@ namespace ikvmc.Tests
             var j = Path.Combine(Path.GetTempPath(), Guid.NewGuid().ToString("n") + ".jar");
             c.WriteJar(j);
 
-#if NET461
+#if NETFRAMEWORK
             var a = new[] { $"-lib:{RuntimeEnvironment.GetRuntimeDirectory()}" };
 #else
             var a = DependencyContext.Default.CompileLibraries.SelectMany(i => i.ResolveReferencePaths()).Select(i => $"-r:{i}");

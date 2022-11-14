@@ -3,50 +3,76 @@
         <MSBuildAllProjects>$(MSBuildAllProjects);$(MSBuildThisFileFullPath)</MSBuildAllProjects>
     </PropertyGroup>
 
-    <PropertyGroup>
+    <PropertyGroup Condition=" '$(TargetFramework)' != '' ">
         <UseIkvmTasks Condition=" '$(UseIkvmTasks)' == '' ">true</UseIkvmTasks>
-        <ReferenceExportOutputPath>$(IntermediateOutputPath)refexp\</ReferenceExportOutputPath>
+    </PropertyGroup>
+
+    <PropertyGroup>
         <ClassOutputPath>$(IntermediateOutputPath)classes\</ClassOutputPath>
     </PropertyGroup>
 
-    <Target Name="ResolveReferenceExports" DependsOnTargets="ResolveReferences;FindReferenceAssembliesForReferences">
+    <!-- References may be derived from various sources: ProjectReference or IkvmReference. In each case, compilation of the Java
+         code requires the original Java class or JAR files as input. These are attached as metadata to each possible reference.
+    -->
+    <Target Name="GetReferenceClasspath" DependsOnTargets="ResolveReferences;FindReferenceAssembliesForReferences" AfterTargets="ExportReferences">
         <ItemGroup>
-            <ReferenceExport Include="@(ReferencePath->'$(ReferenceExportOutputPath)%(Filename).jar')" Condition="'%(Filename)' != 'System.Runtime.Serialization'">
-                <AssemblyFile>%(Identity)</AssemblyFile>
+            <Classpath Include="%(ReferencePath.JavaClasspath)" Condition=" '%(ReferencePath.HideFromJava)' != 'true' And '%(ReferencePath.JavaClasspath)' != '' And '%(Filename)' != 'IKVM.Java' " />
+        </ItemGroup>
+    </Target>
+
+    <!-- Assigns additional metadata to the reference export. -->
+    <UsingTask TaskName="IkvmReferenceExportPrepare" TaskFactory="RoslynCodeTaskFactory" AssemblyFile="$(MSBuildToolsPath)\Microsoft.Build.Tasks.Core.dll">
+        <Task>
+            <Code Type="Class" Source="$(MSBuildThisFileDirectory)inline\IkvmReferenceExportPrepare.cs" Language="cs" />
+        </Task>
+    </UsingTask>
+
+    <!-- Compiles the set of exports to be made, along with their original assembly file path. -->
+    <Target Name="ResolveReferenceExports" DependsOnTargets="ResolveReferences;FindReferenceAssembliesForReferences;ResolveIkvmRuntimeAssembly">
+        <ItemGroup>
+            <_ReferenceExport Include="@(ReferencePath)" Condition=" '%(ReferencePath.HideFromJava)' != 'true' And '%(ReferencePath.JavaClasspath)' == '' And '%(Filename)' != 'IKVM.Java' And '%(Filename)' != 'System.Runtime.Serialization' " />
+        </ItemGroup>
+        <IkvmReferenceExportPrepare Items="@(_ReferenceExport)" ToolVersion="$(IkvmVersion)" ToolFramework="$(IkvmToolFramework)" References="@(ReferencePathWithRefAssemblies)" Bootstrap="$(Bootstrap)" NoStdLib="$(NoCompilerStandardLib)">
+            <Output TaskParameter="Items" ItemName="ReferenceExport" />
+        </IkvmReferenceExportPrepare>
+        <ItemGroup>
+            <ReferenceExport Update="@(ReferenceExport)">
+                <StagePath>$(IkvmExportStageDir)%(IkvmIdentity)\%(Filename).jar</StagePath>
+                <CachePath>$(IkvmExportCacheDir)%(IkvmIdentity)\%(Filename).jar</CachePath>
             </ReferenceExport>
         </ItemGroup>
     </Target>
 
-    <Target Name="_BuildReferenceExports" DependsOnTargets="ResolveReferenceExports" Inputs="%(ReferenceExport.AssemblyFile)" Outputs="%(ReferenceExport.Identity)">
-        <Error Text="_BuildReferenceExports not implemented." />
+    <!-- Abstract target to conduct actual assembly exports. Overridden either by Command or Task implementation. -->
+    <Target Name="_ExportReferences" DependsOnTargets="ResolveReferenceExports" Inputs="@(ReferenceExport)" Outputs="%(ReferenceExport.CachePath)">
+        <Error Text="_ExportReferences not implemented." />
     </Target>
 
     <PropertyGroup>
-        <BuildReferenceExportsDependsOn>
-            $(BuildReferenceExportsDependsOn);
+        <ExportReferencesDependsOn>
+            $(ExportReferencesDependsOn);
             ResolveReferences;
             FindReferenceAssembliesForReferences;
             ResolveReferenceExports;
-            _BuildReferenceExports;
-        </BuildReferenceExportsDependsOn>
+            _ExportReferences;
+        </ExportReferencesDependsOn>
     </PropertyGroup>
 
-    <Target Name="BuildReferenceExports" DependsOnTargets="$(BuildReferenceExportsDependsOn)">
+    <Target Name="ExportReferences" DependsOnTargets="$(ExportReferencesDependsOn)">
         <ItemGroup>
-            <Classpath Include="@(ReferenceExport)" />
+            <Classpath Include="@(ReferenceExport->'%(CachePath)')" />
         </ItemGroup>
     </Target>
 
     <Target Name="CleanReferenceExports">
-        <Delete Files="@(ReferenceExport)" />
-        <RemoveDir Directories="$(ReferenceExportOutputPath);$(ReferenceExportOutputPath)tmp" />
+        <Delete Files="@(ReferenceExport->'%(StagePath)')" />
     </Target>
 
     <PropertyGroup>
-        <CleanDependsOn>
-            $(CleanDependsOn);
+        <CoreCleanDependsOn>
+            $(CoreCleanDependsOn);
             CleanReferenceExports;
-        </CleanDependsOn>
+        </CoreCleanDependsOn>
     </PropertyGroup>
 
     <PropertyGroup>
@@ -54,14 +80,48 @@
         <_CompileJavaResponseFile>$(IntermediateOutputPath)$(MSBuildProjectName).javac.rsp</_CompileJavaResponseFile>
     </PropertyGroup>
 
-    <Target Name="_CompileJava" DependsOnTargets="BuildReferenceExports" Inputs="@(Compile);@(Classpath)" Outputs="$(_CompileJavaStampFile)">
+    <UsingTask TaskName="ClasspathToClasspathFiles" TaskFactory="RoslynCodeTaskFactory" AssemblyFile="$(MSBuildToolsPath)\Microsoft.Build.Tasks.Core.dll">
+        <ParameterGroup>
+            <Items ParameterType="Microsoft.Build.Framework.ITaskItem[]" Required="true" />
+            <Files ParameterType="Microsoft.Build.Framework.ITaskItem[]" Output="true" />
+        </ParameterGroup>
+        <Task>
+            <Using Namespace="System"/>
+            <Using Namespace="System.IO"/>
+            <Code Type="Fragment" Language="cs">
+                <![CDATA[
+var files = new List<ITaskItem>();
+foreach (var item in Items)
+    if (File.Exists(item.ItemSpec))
+        files.Add(item);
+    else if (Directory.Exists(item.ItemSpec))
+        foreach (var file in Directory.GetFiles(item.ItemSpec, "*", SearchOption.AllDirectories))
+            files.Add(new TaskItem(file));
+
+Files = files.ToArray();
+]]>
+            </Code>
+        </Task>
+    </UsingTask>
+
+    <!-- Classpath can contain both files and directories. We transform it to files so Inputs can recognize it. -->
+    <Target Name="_ResolveClasspathFiles" DependsOnTargets="GetReferenceClasspath;ExportReferences">
+        <ClasspathToClasspathFiles Items="@(Classpath)">
+            <Output TaskParameter="Files" ItemName="ClasspathFiles" />
+        </ClasspathToClasspathFiles>
+    </Target>
+
+    <!-- Abstract target to conduct actual Java compilation. Overridden either by Command or Task implementation. -->
+    <Target Name="_CompileJava" DependsOnTargets="ExportReferences;_ResolveClasspathFiles" Inputs="@(Compile);@(ClasspathFiles)" Outputs="$(_CompileJavaStampFile)">
         <Error Text="_CompileJava not implemented." />
     </Target>
 
     <PropertyGroup>
         <CompileJavaDependsOn>
             $(CompileJavaDependsOn)
-            BuildReferenceExports;
+            GetReferenceClasspath;
+            ExportReferences;
+            _ResolveClasspathFiles;
             _CompileJava;
         </CompileJavaDependsOn>
     </PropertyGroup>
@@ -79,10 +139,10 @@
     </Target>
 
     <PropertyGroup>
-        <CleanDependsOn>
-            $(CleanDependsOn);
+        <CoreCleanDependsOn>
+            $(CoreCleanDependsOn);
             CleanCompileJava;
-        </CleanDependsOn>
+        </CoreCleanDependsOn>
     </PropertyGroup>
 
     <PropertyGroup>
@@ -91,6 +151,7 @@
         <_IkvmCompilerResponseFile>$(IntermediateOutputPath)$(MSBuildProjectName).ikvmc.rsp</_IkvmCompilerResponseFile>
     </PropertyGroup>
 
+    <!-- Abstract target to conduct compilation. Overridden either by Command or Task implementation. -->
     <Target Name="_CoreCompile" DependsOnTargets="CompileJava" Inputs="$(IkvmRuntimeAssembly);$(KeyOriginatorFile);@(MapFile);@(ReferencePathWithRefAssemblies);@(Class);@(JavaResource);$(_CompileJavaStampFile)" Outputs="@(IntermediateAssembly);@(_DebugSymbolsIntermediatePath)">
         <Error Text="_CoreCompile not implemented." />
     </Target>
@@ -104,7 +165,7 @@
     </PropertyGroup>
 
     <Target Name="CoreCompile" DependsOnTargets="$(CoreCompileDependsOn)">
-        <CallTarget Targets="$(TargetsTriggeredByCompilation)" Condition="'$(TargetsTriggeredByCompilation)' != ''" />
+        <CallTarget Targets="$(TargetsTriggeredByCompilation)" Condition=" '$(TargetsTriggeredByCompilation)' != '' " />
     </Target>
 
     <Target Name="CleanCoreCompile">
@@ -114,13 +175,14 @@
     </Target>
 
     <PropertyGroup>
-        <CleanDependsOn>
-            $(CleanDependsOn);
+        <CoreCleanDependsOn>
+            $(CoreCleanDependsOn);
             CleanCoreCompile;
-        </CleanDependsOn>
+        </CoreCleanDependsOn>
     </PropertyGroup>
 
-    <Import Project="IKVM.Java.Core.Tasks.targets" Condition=" '$(UseIkvmTasks)' == 'true' "/>
-    <Import Project="IKVM.Java.Core.Commands.targets" Condition=" '$(UseIkvmTasks)' != 'true' "/>
+    <!-- Include Task or Command implementation of targets. -->
+    <Import Project="IKVM.Java.Core.Tasks.targets" Condition=" '$(UseIkvmTasks)' != 'false' "/>
+    <Import Project="IKVM.Java.Core.NoTasks.targets" Condition=" '$(UseIkvmTasks)' == 'false' "/>
 
 </Project>

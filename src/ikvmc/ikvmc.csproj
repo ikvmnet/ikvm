@@ -1,12 +1,9 @@
 ﻿<Project Sdk="Microsoft.NET.Sdk">
 
     <PropertyGroup>
-        <PackageId>ikvmc</PackageId>
         <OutputType>Exe</OutputType>
         <TargetFrameworks>net461;netcoreapp3.1</TargetFrameworks>
-        <RuntimeIdentifiers>win7-x64;linux-x64</RuntimeIdentifiers>
-        <AssemblyTitle>IKVM.NET Compiler</AssemblyTitle>
-        <Description>JVM for .NET</Description>
+        <RuntimeIdentifiers>win7-x64;win7-x86;linux-x64</RuntimeIdentifiers>
         <DefineConstants>$(DefineConstants);STATIC_COMPILER;EMITTERS</DefineConstants>
         <AutoGenerateBindingRedirects>true</AutoGenerateBindingRedirects>
         <PreserveCompilationContext>true</PreserveCompilationContext>
@@ -25,6 +22,8 @@
         <Reference Include="System.Configuration" />
         <Reference Include="System.IO.Compression" />
         <Reference Include="System.Security" />
+        <PackageReference Include="System.Runtime.CompilerServices.Unsafe" Version="6.0.0" />
+        <PackageReference Include="System.Text.Json" Version="6.0.6" />
     </ItemGroup>
 
     <ItemGroup Condition=" '$(TargetFramework)' == 'netcoreapp3.1' ">
@@ -64,9 +63,6 @@
         <ExcludeFromCompile Include="..\IKVM.Runtime\DynamicMethodUtils.cs" />
         <ExcludeFromCompile Include="..\IKVM.Runtime\ExceptionHelper.cs" />
         <ExcludeFromCompile Include="..\IKVM.Runtime\PassiveWeakDictionary.cs" />
-    </ItemGroup>
-
-    <ItemGroup>
         <Compile Include="..\IKVM.Runtime\**\*.cs" LinkBase="runtime" Exclude="@(ExcludeFromCompile)" />
     </ItemGroup>
 

@@ -3,7 +3,7 @@ using System.IO;
 using System.Runtime.InteropServices;
 using System.Threading;
 
-using IKVM.Tool;
+using IKVM.Tools.Runner;
 
 using Microsoft.Build.Framework;
 using Microsoft.Build.Utilities;
@@ -44,6 +44,11 @@ namespace IKVM.MSBuild.Tasks
         public string ToolFramework { get; set; } = "NetCore";
 
         /// <summary>
+        /// Optional path to a log file to copy messages to.
+        /// </summary>
+        public string LogFile { get; set; }
+
+        /// <summary>
         /// Number of milliseconds to wait for the command to execute.
         /// </summary>
         public int Timeout { get; set; } = System.Threading.Timeout.Infinite;
@@ -66,16 +71,33 @@ namespace IKVM.MSBuild.Tasks
             if (ToolPath == null || Directory.Exists(ToolPath) == false)
                 throw new IkvmTaskException($"Missing tool path: '{ToolPath}'.");
 
-            // kick off the launcher with the configured options
-            var run = System.Threading.Tasks.Task.Run(() => ExecuteAsync(toolFramework, new IkvmToolTaskDiagnosticWriter(Log), CancellationToken.None));
+            TextWriter log = null;
 
-            // yield and wait for the task to complete
-            BuildEngine3.Yield();
-            var rsl = run.GetAwaiter().GetResult();
-            BuildEngine3.Reacquire();
+            try
+            {
+                // optionally copy output to a text file
+                if (LogFile != null)
+                    log = new StreamWriter(File.OpenWrite(LogFile));
 
-            // check that we exited successfully
-            return rsl;
+                // kick off the launcher with the configured options
+                var run = System.Threading.Tasks.Task.Run(() => ExecuteAsync(toolFramework, new IkvmToolTaskDiagnosticWriter(Log, log), CancellationToken.None));
+
+                // yield and wait for the task to complete
+                BuildEngine3.Yield();
+                var rsl = run.GetAwaiter().GetResult();
+                BuildEngine3.Reacquire();
+
+                // check that we exited successfully
+                return rsl;
+            }
+            finally
+            {
+                if (log != null)
+                {
+                    log.Dispose();
+                    log = null;
+                }
+            }
         }
 
         /// <summary>

@@ -7,9 +7,9 @@
         <PackageReference Include="IKVM" Version="$(IkvmVersion)" Condition=" '$(DisableImplicitIkvmPackageReference)' != 'true' " />
         <PackageReference Include="IKVM.MSBuild" Version="$(IkvmVersion)" Condition=" '$(DisableImplicitIkvmMSBuildPackageReference)' != 'true' " />
     </ItemGroup>
-    
+
     <Import Sdk="Microsoft.NET.Sdk" Project="Sdk.targets" />
-    
+
     <PropertyGroup Condition=" '$(DisableImplicitConfigurationDefines)' != 'true' ">
         <ImplicitConfigurationDefine>$(Configuration.ToUpperInvariant())</ImplicitConfigurationDefine>
         <ImplicitConfigurationDefine>$(ImplicitConfigurationDefine.Replace('-', '_'))</ImplicitConfigurationDefine>
@@ -17,7 +17,7 @@
         <ImplicitConfigurationDefine>$(ImplicitConfigurationDefine.Replace(' ', '_'))</ImplicitConfigurationDefine>
         <DefineConstants>$(DefineConstants);$(ImplicitConfigurationDefine)</DefineConstants>
     </PropertyGroup>
-    
+
     <PropertyGroup>
         <DefineConstants>$(DefineConstants);$(VersionlessImplicitFrameworkDefine);$(ImplicitFrameworkDefine);$(BackwardsCompatFrameworkDefine)</DefineConstants>
     </PropertyGroup>

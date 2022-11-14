@@ -20,7 +20,9 @@
         public static readonly string ClassLoader = "ClassLoader";
         public static readonly string IkvmIdentity = "IkvmIdentity";
         public static readonly string CachePath = "CachePath";
+        public static readonly string CacheSymbolsPath = "CacheSymbolsPath";
         public static readonly string StagePath = "StagePath";
+        public static readonly string StageSymbolsPath = "StageSymbolsPath";
         public static readonly string ResolvedReferences = "ResolvedReferences";
         public static readonly string Debug = "Debug";
         public static readonly string KeyFile = "KeyFile";

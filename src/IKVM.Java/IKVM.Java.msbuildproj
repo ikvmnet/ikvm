@@ -1,19 +1,13 @@
 ﻿<Project>
     <Import Project="$(MSBuildThisFileDirectory)..\IKVM.NET.Sdk\Sdk\Sdk.props" />
+    <Import Project="$(MSBuildThisFileDirectory)..\IKVM.MSBuild\buildTransitive\netstandard2.0\IKVM.MSBuild.props" />
     <Import Project="$(MSBuildThisFileDirectory)..\..\openjdk.props" />
 
     <PropertyGroup>
         <PackageId>IKVM.Java</PackageId>
         <TargetFrameworks>net461;netcoreapp3.1</TargetFrameworks>
-        <AssemblyName>IKVM.Java</AssemblyName>
-        <AssemblyTitle>IKVM.NET Java Standard Edition 8 Platform</AssemblyTitle>
-        <Description>IKVM.NET Java Standard Edition 8 Platform</Description>
         <TransformOnBuild>true</TransformOnBuild>
         <Bootstrap>true</Bootstrap>
-        <UseIkvmTasks>false</UseIkvmTasks>
-        <UseIkvmProjectReferences>true</UseIkvmProjectReferences>
-        <DisableImplicitIkvmPackageReference>true</DisableImplicitIkvmPackageReference>
-        <DisableImplicitIkvmMSBuildPackageReference>true</DisableImplicitIkvmMSBuildPackageReference>
     </PropertyGroup>
 
     <ItemGroup>
@@ -21,7 +15,7 @@
         <InternalsVisibleTo Include="IKVM.Runtime.JNI" />
         <InternalsVisibleTo Include="IKVM.AWT.WinForms" />
     </ItemGroup>
-
+    
     <ItemGroup>
         <PackageReference Include="SharpZipLib" Version="1.3.3" />
         <PackageReference Include="System.Memory" Version="4.5.5" />
@@ -31,6 +25,8 @@
         <Reference Include="System.Configuration" />
         <Reference Include="System.IO.Compression" />
         <Reference Include="System.Security" />
+        <PackageReference Include="System.Runtime.CompilerServices.Unsafe" Version="6.0.0" />
+        <PackageReference Include="System.Runtime.InteropServices.RuntimeInformation" Version="4.3.0" />
     </ItemGroup>
 
     <ItemGroup Condition=" '$(TargetFramework)' == 'netcoreapp3.1' ">
@@ -51,61 +47,15 @@
         <PackageReference Include="System.Threading.AccessControl" Version="6.0.0" />
     </ItemGroup>
 
-    <Choose>
-        <!-- This is a major limitation which prevents building on Linux.
-             The version of the tool that is executed should be that of the current MSBuild platform, not that being targeted.
-             However, at present Frameworks builds of IKVM cannot generate Core version assemblies. -->
-        <When Condition=" '$(TargetFramework)' == 'netcoreapp3.1' ">
-            <PropertyGroup>
-                <_IkvmTargetFramework>netcoreapp3.1</_IkvmTargetFramework>
-                <_IkvmToolExecPrefix>dotnet exec </_IkvmToolExecPrefix>
-            </PropertyGroup>
-        </When>
-        <When Condition=" '$(TargetFramework)' == 'net461' ">
-            <PropertyGroup>
-                <_IkvmTargetFramework>net461</_IkvmTargetFramework>
-                <_IkvmToolExecPrefix></_IkvmToolExecPrefix>
-            </PropertyGroup>
-        </When>
-    </Choose>
-
     <ItemGroup>
-        <ProjectReference Include="..\IKVM.Runtime-ref\IKVM.Runtime-ref.csproj">
-            <PrivateAssets>All</PrivateAssets>
-            <Private>False</Private>
-            <IsIkvmRuntimeAssembly>true</IsIkvmRuntimeAssembly>
-        </ProjectReference>
-        <ProjectReference Include="..\ikvmc\ikvmc.csproj" Condition=" '$(_IkvmTargetFramework)' != '' ">
-            <PrivateAssets>All</PrivateAssets>
-            <ReferenceOutputAssembly>false</ReferenceOutputAssembly>
-            <Private>False</Private>
-            <IsIkvmCompiler>true</IsIkvmCompiler>
-            <SetTargetFramework>TargetFramework=$(_IkvmTargetFramework)</SetTargetFramework>
-        </ProjectReference>
-        <ProjectReference Include="..\ikvmstub\ikvmstub.csproj" Condition=" '$(_IkvmTargetFramework)' != '' ">
-            <PrivateAssets>All</PrivateAssets>
-            <ReferenceOutputAssembly>false</ReferenceOutputAssembly>
-            <Private>False</Private>
-            <IsIkvmExporter>true</IsIkvmExporter>
-            <SetTargetFramework>TargetFramework=$(_IkvmTargetFramework)</SetTargetFramework>
-        </ProjectReference>
+        <ProjectReference Include="..\IKVM.Runtime-ref\IKVM.Runtime-ref.csproj" Private="False" PrivateAssets="All" />
+        <ProjectReference Include="..\IKVM.Runtime.JNI-ref\IKVM.Runtime.JNI-ref.csproj" Private="False" PrivateAssets="All" HideFromJava="true" />
+        <ProjectReference Include="..\IKVM.Java-ref\IKVM.Java-ref.csproj" Private="False" PrivateAssets="All" HideFromJava="true" />
     </ItemGroup>
 
     <ItemGroup>
-        <T4ParameterValues Include="OpenJdkImplementationVersion">
-            <Value>$(OpenJdkImplementationVersion)</Value>
-            <Visible>False</Visible>
-        </T4ParameterValues>
-        <T4ParameterValues Include="OpenJdkSpecificationVersion">
-            <Value>$(OpenJdkSpecificationVersion)</Value>
-            <Visible>False</Visible>
-        </T4ParameterValues>
-        <T4ParameterValues Include="OpenJdkFullVersion">
-            <Value>$(OpenJdkFullVersion)</Value>
-            <Visible>False</Visible>
-        </T4ParameterValues>
-        <T4ParameterValues Include="OpenJdkVersion">
-            <Value>$(OpenJdkVersion)</Value>
+        <T4ParameterValues Include="Name">
+            <Value>$(ProductName)</Value>
             <Visible>False</Visible>
         </T4ParameterValues>
         <T4ParameterValues Include="Version">
@@ -116,6 +66,42 @@
             <Value>$(FileVersion)</Value>
             <Visible>False</Visible>
         </T4ParameterValues>
+        <T4ParameterValues Include="VendorUrl">
+            <Value>$(PackageProjectUrl)</Value>
+            <Visible>False</Visible>
+        </T4ParameterValues>
+        <T4ParameterValues Include="VendorUrlBug">
+            <Value>$(PackageProjectUrl)/issues/</Value>
+            <Visible>False</Visible>
+        </T4ParameterValues>
+        <T4ParameterValues Include="OpenJdkVersion">
+            <Value>$(OpenJdkVersion)</Value>
+            <Visible>False</Visible>
+        </T4ParameterValues>
+        <T4ParameterValues Include="OpenJdkFullVersion">
+            <Value>$(OpenJdkFullVersion)</Value>
+            <Visible>False</Visible>
+        </T4ParameterValues>
+        <T4ParameterValues Include="OpenJdkVendor">
+            <Value>$(OpenJdkVendor)</Value>
+            <Visible>False</Visible>
+        </T4ParameterValues>
+        <T4ParameterValues Include="OpenJdkImplementationVendor">
+            <Value>$(OpenJdkImplementationVendor)</Value>
+            <Visible>False</Visible>
+        </T4ParameterValues>
+        <T4ParameterValues Include="OpenJdkImplementationVersion">
+            <Value>$(OpenJdkImplementationVersion)</Value>
+            <Visible>False</Visible>
+        </T4ParameterValues>
+        <T4ParameterValues Include="OpenJdkSpecificationVersion">
+            <Value>$(OpenJdkSpecificationVersion)</Value>
+            <Visible>False</Visible>
+        </T4ParameterValues>
+        <T4ParameterValues Include="OpenJdkSpecificationVendor">
+            <Value>$(OpenJdkSpecificationVendor)</Value>
+            <Visible>False</Visible>
+        </T4ParameterValues>
     </ItemGroup>
 
     <ItemGroup>
@@ -123,7 +109,14 @@
     </ItemGroup>
 
     <ItemGroup>
-        <Compile Include="@(OpenJdkSource)" LinkBase="openjdk" />
+        <None Include="classpath\**\*" />
+        <None Include="icedtea_jce\**\*" />
+        <None Include="icedtea_rt\**\*" />
+        <None Include="local\**\*" />
+        <None Include="@(OpenJdkSource)">
+            <LinkBase>openjdk\$([MSBuild]::MakeRelative('$(OpenJdkDir)', '%(RootDir)%(Directory)'))</LinkBase>
+        </None>
+        <Compile Include="@(OpenJdkSource)" />
         <JavaResource Include="@(OpenJdkResource)" LinkBase="openjdk" />
         <ExcludeRegex Include="@(OpenJdkExcludeRegex)" />
     </ItemGroup>
@@ -171,7 +164,19 @@
     </ItemGroup>
 
     <Import Project="$(MSBuildThisFileDirectory)..\IKVM.NET.Sdk\Sdk\Sdk.targets" />
+    <Import Project="$(MSBuildThisFileDirectory)..\IKVM.MSBuild\buildTransitive\netstandard2.0\IKVM.MSBuild.targets" />
     <Import Project="$(MSBuildExtensionsPath)\Microsoft\VisualStudio\v$(VisualStudioVersion)\TextTemplating\Microsoft.TextTemplating.targets" Condition="Exists('$(MSBuildExtensionsPath)\Microsoft\VisualStudio\v$(VisualStudioVersion)\TextTemplating\Microsoft.TextTemplating.targets')" />
+
+    <!-- IKVM.Java uses the javac executable from JAVA_HOME: bootstrap -->
+    <Target Name="ResolveJavaCompiler" Condition=" '$(JAVA_HOME)' != '' And '$(JavaCompilerPath)' == '' ">
+        <PropertyGroup>
+            <JavaCompilerPath Condition=" '$([MSBuild]::IsOSUnixLike())' == 'true' And Exists('$(JAVA_HOME)\bin\javac') ">$([System.IO.Path]::GetFullPath('$(JAVA_HOME)\bin\javac'))</JavaCompilerPath>
+            <JavaCompilerPath Condition=" '$([MSBuild]::IsOSUnixLike())' != 'true' And Exists('$(JAVA_HOME)\bin\javac.exe') ">$([System.IO.Path]::GetFullPath('$(JAVA_HOME)\bin\javac.exe'))</JavaCompilerPath>
+            <JavaCompilerArgs>-J-Xmx1536M</JavaCompilerArgs>
+            <JavaCompilerExec Condition=" '$(JavaCompilerPath)' != '' ">"$(JavaCompilerPath)" $(JavaCompilerArgs)</JavaCompilerExec>
+        </PropertyGroup>
+        <Message Text="Using javac executable found in JAVA_HOME at '$(JavaCompilerPath)'." Importance="high" Condition=" '$(JavaCompilerPath)' != '' " />
+    </Target>
 
     <Target Name="ResolveRmiStubInputItems" DependsOnTargets="CompileJava">
         <ItemGroup>
@@ -231,10 +236,10 @@
     </Target>
 
     <PropertyGroup>
-        <CleanDependsOn>
-            $(CleanDependsOn);
+        <CoreCleanDependsOn>
+            $(CoreCleanDependsOn);
             CleanRmiStubs;
-        </CleanDependsOn>
+        </CoreCleanDependsOn>
     </PropertyGroup>
 
     <PropertyGroup>

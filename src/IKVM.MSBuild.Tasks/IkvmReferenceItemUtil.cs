@@ -68,6 +68,10 @@ namespace IKVM.MSBuild.Tasks
                 item.Aliases = item.Item.GetMetadata(IkvmReferenceItemMetadata.Aliases);
                 item.Private = string.Equals(item.Item.GetMetadata(IkvmReferenceItemMetadata.Private), "true", StringComparison.OrdinalIgnoreCase);
                 item.ReferenceOutputAssembly = string.Equals(item.Item.GetMetadata(IkvmReferenceItemMetadata.ReferenceOutputAssembly), "true", StringComparison.OrdinalIgnoreCase);
+                item.CachePath = item.Item.GetMetadata(IkvmReferenceItemMetadata.CachePath);
+                item.CacheSymbolsPath = item.Item.GetMetadata(IkvmReferenceItemMetadata.CacheSymbolsPath);
+                item.StagePath = item.Item.GetMetadata(IkvmReferenceItemMetadata.StagePath);
+                item.StageSymbolsPath = item.Item.GetMetadata(IkvmReferenceItemMetadata.StageSymbolsPath);
                 item.Save();
             }
 
@@ -114,8 +118,7 @@ namespace IKVM.MSBuild.Tasks
             if (string.IsNullOrEmpty(itemSpec))
                 throw new ArgumentException($"'{nameof(itemSpec)}' cannot be null or empty.", nameof(itemSpec));
 
-            resolved = map.TryGetValue(NormalizeItemSpec(itemSpec), out var r) ? r : null;
-            return resolved != null;
+            return map.TryGetValue(NormalizeItemSpec(itemSpec), out resolved);
         }
 
     }

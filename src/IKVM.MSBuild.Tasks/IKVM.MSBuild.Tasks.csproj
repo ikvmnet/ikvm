@@ -9,16 +9,18 @@
 
     <ItemGroup>
         <PackageReference Include="CliWrap" Version="3.4.4" />
-        <PackageReference Include="Microsoft.Build" Version="16.9.0" />
-        <PackageReference Include="Microsoft.Build.Utilities.Core" Version="16.9.0" />
+        <PackageReference Include="Microsoft.Build" Version="16.9.0" PrivateAssets="All" />
+        <PackageReference Include="Microsoft.Build.Utilities.Core" Version="16.9.0" PrivateAssets="All" />
         <PackageReference Include="System.Reflection.Metadata" Version="6.0.1" />
     </ItemGroup>
 
     <ItemGroup>
         <ProjectReference Include="..\IKVM.Runtime\IKVM.Runtime.csproj" />
         <ProjectReference Include="..\IKVM.Java\IKVM.Java.msbuildproj" />
-        <ProjectReference Include="..\IKVM.Tool\IKVM.Tool.csproj" />
+        <ProjectReference Include="..\IKVM.Java.Extensions\IKVM.Java.Extensions.csproj" />
+        <ProjectReference Include="..\IKVM.Image\IKVM.Image.csproj" />
         <ProjectReference Include="..\IKVM.Util\IKVM.Util.csproj" />
+        <ProjectReference Include="..\IKVM.Tools.Runner\IKVM.Tools.Runner.csproj" />
     </ItemGroup>
 
     <ItemGroup>

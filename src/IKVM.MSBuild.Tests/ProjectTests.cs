@@ -1,7 +1,8 @@
-﻿using System;
+using System;
 using System.IO;
 using System.Linq;
 using System.Runtime.InteropServices;
+using System.Xml.Linq;
 
 using Buildalyzer;
 using Buildalyzer.Environment;
@@ -59,7 +60,10 @@ namespace IKVM.MSBuild.Tests
             var ikvmCachePath = Path.Combine(Path.GetTempPath(), "IKVM.MSBuild.Tests", "ikvm", "cache");
             if (Directory.Exists(ikvmCachePath))
                 Directory.Delete(ikvmCachePath, true);
-            Directory.CreateDirectory(ikvmCachePath);
+
+            var ikvmExportCachePath = Path.Combine(Path.GetTempPath(), "IKVM.MSBuild.Tests", "ikvm", "expcache");
+            if (Directory.Exists(ikvmExportCachePath))
+                Directory.Delete(ikvmExportCachePath, true);
 
             var targets = new[]
             {
@@ -67,10 +71,8 @@ namespace IKVM.MSBuild.Tests
                 ("net472",          "win7-x64"),
                 ("net48",           "win7-x64"),
                 ("netcoreapp3.1",   "win7-x64"),
-                ("net5.0",          "win7-x64"),
                 ("net6.0",          "win7-x64"),
                 ("netcoreapp3.1",   "linux-x64"),
-                ("net5.0",          "linux-x64"),
                 ("net6.0",          "linux-x64"),
             };
 
@@ -79,29 +81,51 @@ namespace IKVM.MSBuild.Tests
                 targets = new[]
                 {
                     ("netcoreapp3.1",   "win7-x64"),
-                    ("net5.0",          "win7-x64"),
                     ("net6.0",          "win7-x64"),
                     ("netcoreapp3.1",   "linux-x64"),
-                    ("net5.0",          "linux-x64"),
                     ("net6.0",          "linux-x64"),
                 };
             }
 
+            // write out nuget.config with package sources
+            // can't use property for sdk resolver
+            new XDocument(
+                new XElement("configuration",
+                    new XElement("config",
+                        new XElement("add",
+                            new XAttribute("key", "globalPackagesFolder"),
+                            new XAttribute("value", nugetPackageRoot))),
+                    new XElement("packageSources",
+                        new XElement("add",
+                            new XAttribute("key", "dev"),
+                            new XAttribute("value", Path.Combine(Path.GetDirectoryName(typeof(ProjectTests).Assembly.Location), @"nuget"))))))
+                .Save(Path.Combine(@"Project", "nuget.config"));
+
             var manager = new AnalyzerManager();
             var analyzer = manager.GetProject(Path.Combine(@"Project", "Exe", "ProjectExe.csproj"));
             analyzer.SetGlobalProperty("IkvmCacheDir", ikvmCachePath + Path.DirectorySeparatorChar);
+            analyzer.SetGlobalProperty("IkvmExportCacheDir", ikvmCachePath + Path.DirectorySeparatorChar);
             analyzer.SetGlobalProperty("PackageVersion", properties["PackageVersion"]);
-            analyzer.SetGlobalProperty("RestoreSources", string.Join("%3B", "https://api.nuget.org/v3/index.json", Path.GetFullPath(@"nuget")));
             analyzer.SetGlobalProperty("RestorePackagesPath", nugetPackageRoot + Path.DirectorySeparatorChar);
+            analyzer.SetGlobalProperty("CreateHardLinksForAdditionalFilesIfPossible", "true");
+            analyzer.SetGlobalProperty("CreateHardLinksForCopyAdditionalFilesIfPossible", "true");
+            analyzer.SetGlobalProperty("CreateHardLinksForCopyFilesToOutputDirectoryIfPossible", "true");
+            analyzer.SetGlobalProperty("CreateHardLinksForCopyLocalIfPossible", "true");
+            analyzer.SetGlobalProperty("CreateHardLinksForPublishFilesIfPossible", "true");
 
             // allow NuGet to locate packages in existing global packages folder if set
             // else fallback to standard location
             if (Environment.GetEnvironmentVariable("NUGET_PACKAGES") is string nugetPackagesDir && Directory.Exists(nugetPackagesDir))
                 analyzer.SetGlobalProperty("RestoreAdditionalProjectFallbackFolders", nugetPackagesDir);
             else
-                analyzer.SetGlobalProperty("RestoreAdditionalProjectFallbackFolders", Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.UserProfile), ".nuget", "packages"));
+            {
+                var d = Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.UserProfile), ".nuget", "packages");
+                Directory.CreateDirectory(d);
+                analyzer.SetGlobalProperty("RestoreAdditionalProjectFallbackFolders", d);
+            }
 
-            analyzer.AddBuildLogger(new TargetLogger(TestContext));
+            analyzer.AddBuildLogger(new TargetLogger(TestContext) { Verbosity = LoggerVerbosity.Detailed });
+            analyzer.AddBinaryLogger(Path.Combine(TestContext.ResultsDirectory, "msbuild.binlog"));
 
             {
                 var options = new EnvironmentOptions();
@@ -119,6 +143,7 @@ namespace IKVM.MSBuild.Tests
 
                 var options = new EnvironmentOptions();
                 options.DesignTime = false;
+                options.Arguments.Add("-bl");
                 options.Restore = false;
                 options.GlobalProperties.Add("TargetFramework", tfm);
                 options.GlobalProperties.Add("RuntimeIdentifier", rid);

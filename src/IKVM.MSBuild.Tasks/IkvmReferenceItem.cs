@@ -99,9 +99,19 @@ namespace IKVM.MSBuild.Tasks
         public string CachePath { get; set; }
 
         /// <summary>
-        /// Path to temporarily generate item.
+        /// path in cache where the resulting symbols will be stored.
+        /// </summary>
+        public string CacheSymbolsPath { get; set; }
+
+        /// <summary>
+        /// Path to temporarily generated item.
         /// </summary>
         public string StagePath { get; set; }
+
+        /// <summary>
+        /// Path to the temporarily generated symbols file.
+        /// </summary>
+        public string StageSymbolsPath { get; set; }
 
         /// <summary>
         /// Aliases to make the assembly available under.
@@ -157,7 +167,9 @@ namespace IKVM.MSBuild.Tasks
             Item.SetMetadata(IkvmReferenceItemMetadata.ClassLoader, ClassLoader);
             Item.SetMetadata(IkvmReferenceItemMetadata.IkvmIdentity, IkvmIdentity);
             Item.SetMetadata(IkvmReferenceItemMetadata.CachePath, CachePath);
+            Item.SetMetadata(IkvmReferenceItemMetadata.CacheSymbolsPath, CacheSymbolsPath);
             Item.SetMetadata(IkvmReferenceItemMetadata.StagePath, StagePath);
+            Item.SetMetadata(IkvmReferenceItemMetadata.StageSymbolsPath, StageSymbolsPath);
             Item.SetMetadata(IkvmReferenceItemMetadata.Aliases, Aliases);
             Item.SetMetadata(IkvmReferenceItemMetadata.Debug, Debug ? "true" : "false");
             Item.SetMetadata(IkvmReferenceItemMetadata.KeyFile, KeyFile);

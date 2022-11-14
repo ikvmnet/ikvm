@@ -1,0 +1,127 @@
+﻿<Project>
+    <PropertyGroup>
+        <MSBuildAllProjects>$(MSBuildAllProjects);$(MSBuildThisFileFullPath)</MSBuildAllProjects>
+    </PropertyGroup>
+
+    <!-- Transforms the IkvmReference item group into IkvmReferenceItem items. -->
+    <Target Name="GetIkvmReferenceItemsFromIkvmReferences">
+        <ItemGroup>
+            <IkvmReferenceItem Include="@(IkvmReference)">
+
+            </IkvmReferenceItem>
+        </ItemGroup>
+    </Target>
+
+    <!-- Populates the IkvmReferenceItem set with required metadata. -->
+    <Target Name="_UpdateIkvmReferenceItemsMetadata" DependsOnTargets="GetIkvmReferenceItemsFromIkvmReferences;ResolveIkvmRuntimeAssembly;ResolveIkvmRuntimeJNIAssembly;ResolveIkvmBaseAssembly;ResolveIkvmFrameworkReferences" Condition=" '@(IkvmReferenceItem)' != '' ">
+        <Error Text="Could not locate IKVM.Runtime assembly." Condition=" '$(IkvmRuntimeAssembly)' == '' " />
+        <Error Text="IKVM.Runtime.dll could not be located at '$(IkvmRuntimeAssembly)'." Condition="!Exists('$(IkvmRuntimeAssembly)')" />
+        <Error Text="Could not locate IKVM.Runtime.JNI assembly." Condition=" '$(IkvmRuntimeJNIAssembly)' == '' " />
+        <Error Text="IKVM.Runtime.JNI.dll could not be located at '$(IkvmRuntimeJNIAssembly)'." Condition="!Exists('$(IkvmRuntimeJNIAssembly)')" />
+        <Error Text="Could not locate IKVM.Java assembly." Condition=" '$(IkvmBaseAssembly)' == '' " />
+        <Error Text="IKVM.Java.dll could not be located at '$(IkvmBaseAssembly)'." Condition="!Exists('$(IkvmBaseAssembly)')" />
+
+        <ItemGroup>
+            <_IkvmReferenceReferences Include="$(IkvmRuntimeAssembly);$(IkvmRuntimeJNIAssembly);$(IkvmBaseAssembly)" />
+            <_IkvmReferenceReferences Include="@(IkvmFrameworkReference)" />
+        </ItemGroup>
+
+        <!-- Populates metadata, validates, resolves references, and emits in build order. -->
+        <IkvmReferenceItemPrepare Items="@(IkvmReferenceItem)" ToolVersion="$(IkvmVersion)" ToolFramework="$(IkvmToolFramework)" RuntimeAssembly="$(IkvmRuntimeAssembly)" References="@(_IkvmReferenceReferences)" StageDir="$(IkvmStageDir)" CacheDir="$(IkvmCacheDir)">
+            <Output TaskParameter="Items" ItemName="_IkvmReferenceItemWithMetadata" />
+        </IkvmReferenceItemPrepare>
+
+        <!-- Assign newly discovered items. -->
+        <ItemGroup>
+            <IkvmReferenceItem Remove="@(IkvmReferenceItem)"/>
+            <IkvmReferenceItem Include="@(_IkvmReferenceItemWithMetadata)" />
+        </ItemGroup>
+    </Target>
+
+    <PropertyGroup>
+        <GetIkvmReferenceItemsDependsOn>
+            $(GetIkvmReferenceItemsDependsOn);
+            ResolveIkvmFrameworkReferences;
+            GetIkvmReferenceItemsFromIkvmReferences;
+            _UpdateIkvmReferenceItemsMetadata;
+        </GetIkvmReferenceItemsDependsOn>
+    </PropertyGroup>
+
+    <!-- Assembles the set of IkvmReferenceItems from various sources. -->
+    <Target Name="GetIkvmReferenceItems" DependsOnTargets="$(GetIkvmReferenceItemsDependsOn)" Returns="@(IkvmReferenceItem)">
+
+    </Target>
+
+    <!-- Builds the IkvmReferenceItem set into their output items within the cache. -->
+    <Target Name="_CompileIkvmReferences" DependsOnTargets="ResolveIkvmRuntimeAssembly;ResolveIkvmRuntimeJNIAssembly;ResolveIkvmBaseAssembly;ResolveIkvmFrameworkReferences" Inputs="%(IkvmReferenceItem.Compile)" Outputs="%(IkvmReferenceItem.CachePath)">
+        <Error Text="_CompileIkvmReferences has no implementation." />
+    </Target>
+
+    <PropertyGroup>
+        <CompileIkvmReferencesDependsOn>
+            $(CompileIkvmReferenceAssemblies);
+            GetIkvmReferenceItems;
+            ResolveIkvmFrameworkReferences;
+            _CompileIkvmReferences;
+        </CompileIkvmReferencesDependsOn>
+    </PropertyGroup>
+
+    <Target Name="CompileIkvmReferences" DependsOnTargets="$(CompileIkvmReferencesDependsOn)">
+
+    </Target>
+
+    <!-- Ensure the IkvmReference assemblies are built before compile. -->
+    <PropertyGroup Condition=" '$(TargetFramework)' != '' ">
+        <CompileDependsOn>
+            CompileIkvmReferences;
+            $(CompileDependsOn);
+        </CompileDependsOn>
+    </PropertyGroup>
+
+    <!-- Adds the expected IkvmReferences to the Reference set. -->
+    <Target Name="_ResolveIkvmReferences" DependsOnTargets="GetIkvmReferenceItems">
+        <ItemGroup>
+            <Reference Include="@(IkvmReferenceItem->'%(AssemblyName), Version=%(AssemblyVersion)')">
+                <ReferenceSourceTarget>ResolveIkvmReferences</ReferenceSourceTarget>
+                <HintPath>%(IkvmReferenceItem.CachePath)</HintPath>
+                <Aliases>%(IkvmReferenceItem.Aliases)</Aliases>
+                <Private>%(IkvmReferenceItem.Private)</Private>
+                <ReferenceOutputAssembly>%(IkvmReferenceItem.ReferenceOutputAssembly)</ReferenceOutputAssembly>
+                <JavaClasspath>%(IkvmReferenceItem.Compile)</JavaClasspath>
+            </Reference>
+        </ItemGroup>
+    </Target>
+
+    <PropertyGroup>
+        <ResolveIkvmReferencesDependsOn>
+            $(ResolveIkvmReferencesDependsOn);
+            CompileIkvmReferences;
+            GetIkvmReferenceItems;
+            _ResolveIkvmReferences;
+        </ResolveIkvmReferencesDependsOn>
+    </PropertyGroup>
+
+    <Target Name="ResolveIkvmReferences" DependsOnTargets="$(ResolveIkvmReferencesDependsOn)">
+
+    </Target>
+
+    <PropertyGroup Condition=" '$(TargetFramework)' != '' ">
+        <ResolveAssemblyReferencesDependsOn>
+            ResolveIkvmReferences;
+            $(ResolveAssemblyReferencesDependsOn);
+        </ResolveAssemblyReferencesDependsOn>
+    </PropertyGroup>
+
+    <PropertyGroup>
+        <ResolveIkvmFrameworkReferencesDependsOn>
+            $(ResolveIkvmFrameworkReferencesDependsOn);
+            ResolveIkvmRuntimeAssembly;
+            ResolveIkvmRuntimeJNIAssembly;
+            ResolveIkvmBaseAssembly;
+        </ResolveIkvmFrameworkReferencesDependsOn>
+    </PropertyGroup>
+
+    <!-- Include Task or NoTask implementation of targets. -->
+    <Import Project="IKVM.Tasks.targets" Condition=" '$(UseIkvmTasks)' != 'false' "/>
+    <Import Project="IKVM.NoTasks.targets" Condition=" '$(UseIkvmTasks)' == 'false' "/>
+</Project>

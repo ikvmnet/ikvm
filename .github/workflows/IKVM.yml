@@ -4,12 +4,12 @@ on:
   push:
     branches:
     - main
-    - master
+    - hotfix/*
     - develop
+    - release/*
   pull_request:
     branches:
     - main
-    - master
     - develop
 
 jobs:
@@ -25,7 +25,7 @@ jobs:
       uses: actions/cache@v3
       with:
         path: openjdk/build/linux-x86_64-normal-server-release
-        key: openjdk-build-linux-x86_64-normal-server-release--${{ runner.os }}--${{ hashFiles('openjdk/**', '!openjdk/build') }}-7
+        key: openjdk-build-linux-x86_64-normal-server-release--${{ runner.os }}--${{ hashFiles('openjdk/**', '!openjdk/build') }}-8
     - name: Check OpenJDK Build Stamp
       id: openjdk-build-stamp
       uses: andstor/file-existence-action@v1
@@ -79,7 +79,8 @@ jobs:
           linux-x86_64-normal-server-release/jdk/gensrc \
           linux-x86_64-normal-server-release/jdk/impsrc \
           linux-x86_64-normal-server-release/jdk/lib \
-          linux-x86_64-normal-server-release/jdk/classes
+          linux-x86_64-normal-server-release/jdk/classes \
+          linux-x86_64-normal-server-release/images
       working-directory: openjdk/build
     - name: Upload OpenJDK
       uses: actions/upload-artifact@v3
@@ -98,8 +99,8 @@ jobs:
         files: jtreg/build/stamp
     - name: Build OpenJDK Test Harness
       if: steps.jtreg-build-stamp.outputs.files_exists != 'true'
-      run: bash ./build.sh --jdk `realpath ../../openjdk/build/linux-x86_64-normal-server-release/images/j2sdk-image` && touch ../build/stamp
-      working-directory: jtreg/make
+      run: bash make/build-all.sh `realpath ../openjdk/build/linux-x86_64-normal-server-release/images/j2sdk-image` && touch build/stamp
+      working-directory: jtreg
     - name: Package OpenJDK Test Harness
       run: zip -r jtreg-build.zip build
       working-directory: jtreg
@@ -161,18 +162,21 @@ jobs:
       uses: gittools/actions/gitversion/execute@v0.9.13
       with:
         useConfigFile: true
+    - name: Setup WSL
+      uses: Vampire/setup-wsl@v1
+      with:
+        additional-packages:
+          gcc
+          g++
     - name: Setup .NET
-      run: ac $env:GITHUB_ENV "`nDOTNET_INSTALL_DIR=${{ runner.temp }}\dotnet"
+      shell: pwsh
+      run: Add-Content $env:GITHUB_ENV "`nDOTNET_INSTALL_DIR=${{ runner.temp }}\dotnet"
     - name: Setup .NET 3.1
-      uses: actions/setup-dotnet@v2
+      uses: actions/setup-dotnet@v3
       with:
         dotnet-version: 3.1.x
-    - name: Setup .NET 5.0
-      uses: actions/setup-dotnet@v2
-      with:
-        dotnet-version: 5.0.x
     - name: Setup .NET 6.0
-      uses: actions/setup-dotnet@v2
+      uses: actions/setup-dotnet@v3
       with:
         dotnet-version: 6.0.x
     - name: Setup WSL
@@ -188,13 +192,17 @@ jobs:
           clang
           llvm
           llvm-dev
-    - name: Setup NuGet
-      run: ac $env:GITHUB_ENV "`nNUGET_PACKAGES=${{ runner.temp }}\nuget\packages"
+    - name: Move Temporary Directory
+      shell: pwsh
+      run: Add-Content $env:GITHUB_ENV "`nTMP=${{ runner.temp }}`nTEMP=${{ runner.temp }}`nTMPDIR=${{ runner.temp }}"
+    - name: Move NuGet Directory
+      shell: pwsh
+      run: Add-Content $env:GITHUB_ENV "`nNUGET_PACKAGES=${{ runner.temp }}\nuget\packages"
     - name: Cache NuGet
       uses: actions/cache@v3
       with:
         path: ${{ runner.temp }}\nuget\packages
-        key: ${{ runner.os }}-nuget-${{ hashFiles('**\*.csproj', '**\*.msbuildproj') }}
+        key: ${{ runner.os }}-nuget-${{ hashFiles('IKVM.sln', 'src\**\*.csproj', 'src\**\*.msbuildproj') }}
         restore-keys: ${{ runner.os }}-nuget-
     - name: Add msbuild to PATH
       uses: microsoft/setup-msbuild@v1.1
@@ -204,8 +212,18 @@ jobs:
         name: openjdk-build-linux-x86_64-normal-server-release
         path: openjdk/build
     - name: Restore OpenJDK 8 Build
-      run: unzip -o openjdk-build-linux-x86_64-normal-server-release.zip
+      shell: pwsh
+      run: Expand-Archive openjdk-build-linux-x86_64-normal-server-release.zip .
       working-directory: openjdk/build
+    - name: Download JTReg Build
+      uses: actions/download-artifact@v3
+      with:
+        name: jtreg-build
+        path: jtreg
+    - name: Restore JTReg Build
+      shell: pwsh
+      run: Expand-Archive jtreg-build.zip .
+      working-directory: jtreg
     - name: Download OS X Cross Build
       uses: actions/download-artifact@v3
       with:
@@ -217,16 +235,8 @@ jobs:
     - name: NuGet Restore
       run: dotnet restore IKVM.sln
     - name: Build Artifacts
-      timeout-minutes: 600
       run: |
-        msbuild /m:1 `
-          /p:BuildInParallel=false `
-          /p:CreateHardLinksForAdditionalFilesIfPossible=true `
-          /p:CreateHardLinksForCopyAdditionalFilesIfPossible=true `
-          /p:CreateHardLinksForCopyFilesToOutputDirectoryIfPossible=true `
-          /p:CreateHardLinksForCopyLocalIfPossible=true `
-          /p:CreateHardLinksForPublishFilesIfPossible=true `
-          /p:ContinuousIntegrationBuild=true `
+        msbuild /m /bl `
           /p:Configuration="Release" `
           /p:Platform="Any CPU" `
           /p:Version=${env:GitVersion_FullSemVer} `
@@ -236,103 +246,199 @@ jobs:
           /p:PackageVersion=${env:GitVersion_NuGetVersionV2} `
           /p:RepositoryUrl="${env:GITHUB_SERVER_URL}/${env:GITHUB_REPOSITORY}.git" `
           /p:PackageProjectUrl="${env:GITHUB_SERVER_URL}/${env:GITHUB_REPOSITORY}" `
-          IKVM.artifacts.msbuildproj
+          /p:BuildInParallel=true `
+          /p:CreateHardLinksForAdditionalFilesIfPossible=true `
+          /p:CreateHardLinksForCopyAdditionalFilesIfPossible=true `
+          /p:CreateHardLinksForCopyFilesToOutputDirectoryIfPossible=true `
+          /p:CreateHardLinksForCopyLocalIfPossible=true `
+          /p:CreateHardLinksForPublishFilesIfPossible=true `
+          /p:ContinuousIntegrationBuild=true `
+          IKVM.dist.msbuildproj
+    - name: Upload MSBuild Log
+      if: ${{ always() }}
+      uses: actions/upload-artifact@v3
+      with:
+        name: msbuild.binlog
+        path: msbuild.binlog
+    - name: Package NuGet Packages
+      run: tar czvf C:\nuget.tar.gz nuget
+      working-directory: dist
     - name: Upload NuGet Packages
       uses: actions/upload-artifact@v3
       with:
         name: nuget
-        path: build/nuget/*.nupkg
+        path: C:\nuget.tar.gz
     - name: Package Binaries
-      run: tar czvf bin.tar.gz bin
-      working-directory: build
+      run: tar czvf C:\bin.tar.gz bin
+      working-directory: dist
     - name: Upload Binaries
       uses: actions/upload-artifact@v3
       with:
         name: bin
-        path: build/bin.tar.gz
+        path: C:\bin.tar.gz
     - name: Package Tools
-      run: tar czvf tools.tar.gz tools
-      working-directory: build
+      run: tar czvf C:\tools.tar.gz tools
+      working-directory: dist
     - name: Upload Tools
       uses: actions/upload-artifact@v3
       with:
         name: tools
-        path: build/tools.tar.gz
+        path: C:\tools.tar.gz
+    - name: Package Image
+      run: tar czvf C:\image.tar.gz image
+      working-directory: dist
+    - name: Upload Image
+      uses: actions/upload-artifact@v3
+      with:
+        name: image
+        path: C:\image.tar.gz
     - name: Package Tests
-      run: tar czvf tests.tar.gz tests
-      working-directory: build
+      run: tar czvf C:\tests.tar.gz tests
+      working-directory: dist
     - name: Upload Tests
       uses: actions/upload-artifact@v3
       with:
         name: tests
-        path: build/tests.tar.gz
-  test-ikvm-windows:
-    name: Test IKVM (Windows)
+        path: C:\tests.tar.gz
+    - name: Clean Solution
+      run: |
+        git reset --hard
+        git clean -qfdx
+  test-ikvm:
+    strategy:
+      matrix:
+        run:
+        - IKVM.Tests
+        - IKVM.Tests.JRE
+        - IKVM.Tests.JDK
+        - ikvmc.Tests
+        - IKVM.Tools.Exporter.Tests
+        - IKVM.Tools.Tests
+        - IKVM.JTReg.TestAdapter.Tests
+        - IKVM.OpenJDK.Tests?TestPartition=0
+        - IKVM.OpenJDK.Tests?TestPartition=1
+        - IKVM.OpenJDK.Tests?TestPartition=2
+        - IKVM.OpenJDK.Tests?TestPartition=3
+        - IKVM.OpenJDK.Tests?TestPartition=4
+        - IKVM.OpenJDK.Tests?TestPartition=5
+        - IKVM.OpenJDK.Tests?TestPartition=6
+        - IKVM.OpenJDK.Tests?TestPartition=7
+        tfm:
+        - net461
+        - netcoreapp3.1
+        - net6.0
+        sys:
+        - windows
+        - linux
+        exclude:
+        - tfm: net461
+          sys: linux
+        - run: IKVM.Tools.Exporter.Tests
+          tfm: net6.0
+        - run: ikvmc.Tests
+          tfm: net6.0
+        - run: IKVM.OpenJDK.Tests?TestPartition=0
+          sys: linux
+        - run: IKVM.OpenJDK.Tests?TestPartition=1
+          sys: linux
+        - run: IKVM.OpenJDK.Tests?TestPartition=2
+          sys: linux
+        - run: IKVM.OpenJDK.Tests?TestPartition=3
+          sys: linux
+        - run: IKVM.OpenJDK.Tests?TestPartition=4
+          sys: linux
+        - run: IKVM.OpenJDK.Tests?TestPartition=5
+          sys: linux
+        - run: IKVM.OpenJDK.Tests?TestPartition=6
+          sys: linux
+        - run: IKVM.OpenJDK.Tests?TestPartition=7
+          sys: linux
+        include:
+        - run: IKVM.MSBuild.Tasks.Tests
+          tfm: net472
+          sys: windows
+        - run: IKVM.MSBuild.Tasks.Tests
+          tfm: netcoreapp3.1
+          sys: windows
+        - run: IKVM.MSBuild.Tasks.Tests
+          tfm: net6.0
+          sys: windows
+        - run: IKVM.MSBuild.Tests
+          tfm: net6.0
+          sys: windows
+        - run: IKVM.NET.Sdk.Tests
+          tfm: net6.0
+          sys: windows
+    name: Test IKVM (${{ matrix.run }}:${{ matrix.tfm }}:${{ matrix.sys }}
     needs:
     - build-ikvm
-    runs-on: windows-latest
+    runs-on: ${{ fromJSON('{"windows":["windows-2022"],"linux":["ubuntu-22.04"]}')[matrix.sys] }}
     steps:
+    - name: Setup WSL
+      if: matrix.sys == 'windows'
+      uses: Vampire/setup-wsl@v1
+    - name: Setup .NET
+      shell: pwsh
+      run: Add-Content $env:GITHUB_ENV "`nDOTNET_INSTALL_DIR=${{ runner.temp }}/dotnet"
     - name: Setup .NET 3.1
-      uses: actions/setup-dotnet@v2
+      uses: actions/setup-dotnet@v3
       with:
         dotnet-version: 3.1.x
-    - name: Setup .NET 5.0
-      uses: actions/setup-dotnet@v2
-      with:
-        dotnet-version: 5.0.x
     - name: Setup .NET 6.0
-      uses: actions/setup-dotnet@v2
+      uses: actions/setup-dotnet@v3
       with:
         dotnet-version: 6.0.x
+    - name: Move Temporary Directory
+      shell: pwsh
+      run: Add-Content $env:GITHUB_ENV "`nTMP=${{ runner.temp }}`nTEMP=${{ runner.temp }}`nTMPDIR=${{ runner.temp }}"
     - name: Download Tests
       uses: actions/download-artifact@v3
       with:
         name: tests
-        path: build
+        path: dist
     - name: Restore Tests
       run: tar xzvf tests.tar.gz
-      working-directory: build
-    - name: Execute Tests
+      working-directory: dist
+    - name: Delete Tests
       shell: pwsh
-      run: gci .\build\tests\ -Recurse -Filter '*.Tests.dll' | group { $_.Directory.BaseName } | %{ dotnet test $_.Group --blame -v 3 --results-directory .\TestResults --logger "trx;LogFileName=$($_.Name).trx" }
+      run: ri tests.tar.gz
+      working-directory: dist
+    - name: Execute Tests
+      timeout-minutes: 120
+      shell: pwsh
+      run: |
+        # assign powershell variables
+        $run = "${{ matrix.run }}"
+        $tfm = "${{ matrix.tfm }}"
+        $sys = "${{ matrix.sys }}"
+
+        # suite name can contain filter expression after ?
+        $split = $run.IndexOf("?")
+        if ($split -gt -1) {
+            $tst = $run.Substring(0, $split)
+            $qry = $run.Substring($split + 1)
+        } else {
+            $tst = $run
+        }
+
+        # scan for test assemblies
+        $tests = $(gci .\dist\tests\$tst\$tfm -Recurse -Filter '*.Tests.dll')
+
+        # if a query was specified, add to test command
+        if ($tests) {
+            if ($qry -ne "" -and $qry -ne $null) {
+                Add-Content $env:GITHUB_ENV "`nRET=TestResults--$tst-$qry--$tfm--$sys"
+                dotnet test -f $tfm --blame -v 2 --results-directory "TestResults" --logger:"console;verbosity=detailed" --logger:trx --collect "Code Coverage" --filter "$qry" $tests
+            } else {
+                Add-Content $env:GITHUB_ENV "`nRET=TestResults--$tst--$tfm--$sys"
+                dotnet test -f $tfm --blame -v 2 --results-directory "TestResults" --logger:"console;verbosity=detailed" --logger:trx --collect "Code Coverage" $tests
+            }
+        }
     - name: Upload Test Results
+      if: always() && startsWith(env.RET, 'TestResults--')
       uses: actions/upload-artifact@v3
       with:
-        name: TestResults-windows
-        path: TestResults
-  test-ikvm-linux:
-    name: Test IKVM (Linux)
-    needs:
-    - build-ikvm
-    runs-on: ubuntu-latest
-    steps:
-    - name: Setup .NET 3.1
-      uses: actions/setup-dotnet@v2
-      with:
-        dotnet-version: 3.1.x
-    - name: Setup .NET 5.0
-      uses: actions/setup-dotnet@v2
-      with:
-        dotnet-version: 5.0.x
-    - name: Setup .NET 6.0
-      uses: actions/setup-dotnet@v2
-      with:
-        dotnet-version: 6.0.x
-    - name: Download Tests
-      uses: actions/download-artifact@v3
-      with:
-        name: tests
-        path: build
-    - name: Restore Tests
-      run: tar xzvf tests.tar.gz
-      working-directory: build
-    - name: Execute Tests
-      shell: pwsh
-      run: gci ./build/tests/ -Recurse -Filter '*.Tests.dll' | group { $_.Directory.BaseName } | ?{ $_.Name -notin @('net461', 'net472', 'net48') } | %{ dotnet test $_.Group --blame -v 3 --results-directory ./TestResults --logger "trx;LogFileName=$($_.Name).trx" }
-    - name: Upload Test Results
-      uses: actions/upload-artifact@v3
-      with:
-        name: TestResults-linux
+        name: ${{ env.RET }}
         path: TestResults
   test-ikvm-osx:
     name: Test IKVM (OS X)
@@ -370,11 +476,9 @@ jobs:
         path: TestResults
   release:
     name: Release
-    if: github.ref == 'refs/heads/master' || github.ref == 'refs/heads/main' || github.ref == 'refs/heads/develop'
+    if: github.ref == 'refs/heads/main' || github.ref == 'refs/heads/develop' || startsWith(github.ref, 'refs/heads/release/')
     needs:
-    - test-ikvm-windows
-    - test-ikvm-linux
-    - test-ikvm-osx
+    - test-ikvm
     runs-on: ubuntu-latest
     steps:
     - name: Checkout Source
@@ -394,41 +498,55 @@ jobs:
       uses: actions/download-artifact@v3
       with:
         name: nuget
-        path: build/nuget
+        path: dist
+    - name: Restore NuGet Packages
+      run: tar xzvf nuget.tar.gz
+      working-directory: dist
     - name: Download Binaries
       uses: actions/download-artifact@v3
       with:
         name: bin
-        path: build
+        path: dist
     - name: Restore Binaries
       run: tar xzvf bin.tar.gz
-      working-directory: build
+      working-directory: dist
     - name: Compress Binaries
       shell: pwsh
-      run: cd build && gi bin/* | %{ $tfm = $_.Name; Push-Location "bin/$tfm"; zip -r "../IKVM-${env:GitVersion_SemVer}-bin-$tfm.zip" .; Pop-Location }
+      run: cd dist && gi bin/* | %{ $tfm = $_.Name; Push-Location "bin/$tfm"; zip -r "../IKVM-${env:GitVersion_SemVer}-bin-$tfm.zip" .; Pop-Location }
     - name: Download Tools
       uses: actions/download-artifact@v3
       with:
         name: tools
-        path: build
+        path: dist
     - name: Restore Tools
       run: tar xzvf tools.tar.gz
-      working-directory: build
+      working-directory: dist
     - name: Compress Tools
       shell: pwsh
-      run: cd build && gi tools/*/* | group { $_.Parent.Name } | %{ $tfm = $_.Name; $_.Group | %{ $rid=$_.Name; Push-Location "tools/$tfm/$rid"; zip -r "../../IKVM-${env:GitVersion_SemVer}-tools-$tfm-$rid.zip" .; Pop-Location  } }
+      run: cd dist && gi tools/*/* | %{ $tfm = $_.Parent.Name; $rid = $_.Name; Push-Location "tools/$tfm/$rid"; zip -r "../../IKVM-${env:GitVersion_SemVer}-tools-$tfm-$rid.zip" .; Pop-Location }
+    - name: Download Image
+      uses: actions/download-artifact@v3
+      with:
+        name: image
+        path: dist
+    - name: Restore Image
+      run: tar xzvf image.tar.gz
+      working-directory: dist
+    - name: Compress Image
+      shell: pwsh
+      run: cd dist && gi image/*/* | %{ $tfm = $_.Parent.Name; $rid = $_.Name; Push-Location "image/$tfm/$rid"; zip -r "../../IKVM-${env:GitVersion_SemVer}-image-$tfm-$rid.zip" .; Pop-Location }
     - name: Create Release
-      if: github.ref == 'refs/heads/master' || github.ref == 'refs/heads/main' || github.event.head_commit.message == '+prerelease'
+      if: github.ref == 'refs/heads/main' || github.event.head_commit.message == '+push'
       uses: ncipollo/release-action@v1.10.0
       with:
         tag: ${{ steps.GitVersion.outputs.semVer }}
-        artifacts: build/bin/*.zip,build/nuget/*.nupkg,build/tools/*.zip
+        artifacts: dist/nuget/*.nupkg,dist/bin/*.zip,dist/tools/*.zip,dist/image/*.zip
         generateReleaseNotes: true
         prerelease: ${{ github.ref == 'refs/heads/develop' }}
         token: ${{ secrets.GITHUB_TOKEN }}
     - name: Push NuGet (GitHub)
       shell: pwsh
-      run: dotnet nuget push build/nuget/*.nupkg --source $env:GITHUB_REPOS --api-key $env:GITHUB_TOKEN --skip-duplicate --no-symbols
+      run: dotnet nuget push dist/nuget/*.nupkg --source $env:GITHUB_REPOS --api-key $env:GITHUB_TOKEN --skip-duplicate --no-symbols
       env:
         GITHUB_REPOS: https://nuget.pkg.github.com/${{ github.repository_owner }}/index.json
         GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
@@ -436,14 +554,14 @@ jobs:
       shell: pwsh
       run: |
         dotnet nuget add source $env:AZUREDEVOPS_REPOS --name az --username az --password $env:AZUREDEVOPS_TOKEN --store-password-in-clear-text
-        dotnet nuget push build/nuget/*.nupkg --source az --api-key az --skip-duplicate --no-symbols
+        dotnet nuget push dist/nuget/*.nupkg --source az --api-key az --skip-duplicate --no-symbols
       env:
         AZUREDEVOPS_REPOS: https://pkgs.dev.azure.com/ikvm-revived/ikvm/_packaging/ikvm-ci/nuget/v3/index.json
         AZUREDEVOPS_TOKEN: ${{ secrets.AZUREDEVOPS_PAT }}
     - name: Push NuGet
-      if: github.ref == 'refs/heads/master' || github.ref == 'refs/heads/main' || github.event.head_commit.message == '+prerelease'
+      if: github.ref == 'refs/heads/main' || github.event.head_commit.message == '+push'
       shell: pwsh
-      run: dotnet nuget push build/nuget/*.nupkg --source $env:NUGET_REPOS --api-key $env:NUGET_TOKEN --skip-duplicate
+      run: dotnet nuget push dist/nuget/*.nupkg --source $env:NUGET_REPOS --api-key $env:NUGET_TOKEN --skip-duplicate
       env:
         NUGET_REPOS: https://api.nuget.org/v3/index.json
         NUGET_TOKEN: ${{ secrets.NUGET_TOKEN }}

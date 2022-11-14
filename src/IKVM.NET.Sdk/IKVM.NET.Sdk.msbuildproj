@@ -4,7 +4,7 @@
         <TargetFramework>netstandard2.0</TargetFramework>
         <PackageLicenseFile>LICENSE.md</PackageLicenseFile>
         <PackageReadmeFile>README.md</PackageReadmeFile>
-        <Description>Java SE 8 Virtual Machine for .NET (Java Language SDK)</Description>
+        <Description>IKVM Managed SDK</Description>
         <GenerateDocumentationFile>false</GenerateDocumentationFile>
         <IncludeBuildOutput>false</IncludeBuildOutput>
     </PropertyGroup>
@@ -18,17 +18,6 @@
         <None Include="targets\**\*" Pack="true" PackagePath="targets\%(RecursiveDir)%(Filename)%(Extension)" />
         <None Include="..\..\LICENSE.md" Pack="true" PackagePath="." />
         <None Include="README.md" Pack="true" PackagePath="." />
-    </ItemGroup>
-
-    <ItemGroup>
-        <None Update="targets\IKVM.Java.Core.ProjectReferences.targets">
-            <PackagePath>targets\%(RecursiveDir)%(Filename)%(Extension)</PackagePath>
-            <Pack>true</Pack>
-        </None>
-        <None Update="targets\IKVM.Java.Core.Commands.targets">
-            <PackagePath>targets\%(RecursiveDir)%(Filename)%(Extension)</PackagePath>
-            <Pack>true</Pack>
-        </None>
     </ItemGroup>
 
     <Target Name="MakeGeneratedPropsFile" Outputs="$(IntermediateOutputPath)generated.props" BeforeTargets="_GetPackageFiles">

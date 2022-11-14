@@ -24,6 +24,7 @@
 using System;
 using System.Collections.Generic;
 using System.IO;
+using System.Security.Cryptography;
 using System.Security.Cryptography.X509Certificates;
 
 namespace IKVM.Runtime.Vfs
@@ -54,32 +55,43 @@ namespace IKVM.Runtime.Vfs
         byte[] GenerateCacertsFile()
         {
 #if FIRST_PASS
-            return null;
+            throw new NotImplementedException();
 #else
-            var jstore = global::java.security.KeyStore.getInstance("jks");
+            var jstore = java.security.KeyStore.getInstance("jks");
             jstore.load(null);
-            var cf = global::java.security.cert.CertificateFactory.getInstance("X509");
+            var cf = java.security.cert.CertificateFactory.getInstance("X509");
+            var aliases = new HashSet<string>();
 
-            using var store = new X509Store(StoreName.Root, StoreLocation.LocalMachine);
-            store.Open(OpenFlags.ReadOnly | OpenFlags.OpenExistingOnly);
-
-            var aliases = new Dictionary<string, string>();
-            foreach (X509Certificate2 cert in store.Certificates)
+            // import both local machine and current user certificates
+            foreach (var storeLocation in new[] { StoreLocation.LocalMachine, StoreLocation.CurrentUser })
             {
-                if (cert.HasPrivateKey)
-                    continue;
+                try
+                {
+                    using var store = new X509Store(StoreName.Root, storeLocation);
+                    store.Open(OpenFlags.ReadOnly | OpenFlags.OpenExistingOnly);
 
-                // the alias must be unique, otherwise we overwrite the previous certificate with that alias
-                var alias = cert.Subject;
-                var unique = 0;
-                while (aliases.ContainsKey(alias))
-                    alias = cert.Subject + " #" + (++unique);
+                    foreach (X509Certificate2 cert in store.Certificates)
+                    {
+                        // only interested in trust information
+                        if (cert.HasPrivateKey)
+                            continue;
 
-                aliases.Add(alias, null);
-                jstore.setCertificateEntry(alias, cf.generateCertificate(new global::java.io.ByteArrayInputStream(cert.RawData)));
+                        // the alias must be unique, otherwise we overwrite the previous certificate with that alias
+                        var alias = cert.Subject;
+                        var index = 0;
+                        while (aliases.Add(alias) == false)
+                            alias = cert.Subject + " #" + (++index);
+
+                        jstore.setCertificateEntry(alias, cf.generateCertificate(new java.io.ByteArrayInputStream(cert.RawData)));
+                    }
+                }
+                catch (CryptographicException)
+                {
+                    // ignore
+                }
             }
 
-            global::java.io.ByteArrayOutputStream baos = new global::java.io.ByteArrayOutputStream();
+            var baos = new java.io.ByteArrayOutputStream();
             jstore.store(baos, new char[0]);
             return baos.toByteArray();
 #endif

@@ -1,17 +1,21 @@
-﻿<Project Sdk="IKVM.NET.Sdk/8.0.0-dev">
+﻿<Project>
     <PropertyGroup>
         <ImportDirectoryBuildProps>false</ImportDirectoryBuildProps>
         <ImportDirectoryBuildTargets>false</ImportDirectoryBuildTargets>
     </PropertyGroup>
+    <Import Sdk="IKVM.NET.Sdk" Version="$(PackageVersion)" Project="Sdk.props" />
 
     <PropertyGroup>
         <OutputType>Exe</OutputType>
         <TargetFrameworks>net461;netcoreapp3.1</TargetFrameworks>
         <RuntimeIdentifiers>win7-x64;linux-x64</RuntimeIdentifiers>
+        <RootNamespace>project.exe</RootNamespace>
+        <StartupObject>project.exe.Main</StartupObject>
     </PropertyGroup>
 
     <ItemGroup>
         <ProjectReference Include="..\Lib\ProjectLib.msbuildproj" />
     </ItemGroup>
-    
+
+    <Import Sdk="IKVM.NET.Sdk" Version="$(PackageVersion)" Project="Sdk.targets" />
 </Project>

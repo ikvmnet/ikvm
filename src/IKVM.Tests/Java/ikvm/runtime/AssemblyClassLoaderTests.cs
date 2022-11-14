@@ -6,8 +6,8 @@ using System.Threading.Tasks;
 
 using FluentAssertions;
 
-using IKVM.Tool;
-using IKVM.Tool.Compiler;
+using IKVM.Tools.Runner;
+using IKVM.Tools.Runner.Compiler;
 
 using Microsoft.VisualStudio.TestTools.UnitTesting;
 

@@ -1,4 +1,4 @@
-package IKVM.NET.Sdk.Tests.Project.Lib;
+package project.lib;
 
 public final class Helloworld
 {

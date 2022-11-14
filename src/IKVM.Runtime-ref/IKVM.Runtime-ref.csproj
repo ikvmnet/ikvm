@@ -21,6 +21,8 @@
         <Reference Include="System.Configuration" />
         <Reference Include="System.IO.Compression" />
         <Reference Include="System.Security" />
+        <PackageReference Include="System.Runtime.InteropServices.RuntimeInformation" Version="4.3.0" />
+        <PackageReference Include="System.Text.Json" Version="6.0.6" />
     </ItemGroup>
 
     <ItemGroup Condition=" '$(TargetFramework)' == 'netcoreapp3.1' ">
@@ -32,8 +34,8 @@
         <PackageReference Include="System.IO.Compression" Version="4.3.0" />
         <PackageReference Include="System.IO.FileSystem.AccessControl" Version="5.0.0" />
         <PackageReference Include="System.Runtime" Version="4.3.1" />
-        <PackageReference Include="System.Runtime.InteropServices" Version="4.3.0" />
         <PackageReference Include="System.Runtime.Loader" Version="4.3.0" />
+        <PackageReference Include="System.Runtime.InteropServices" Version="4.3.0" />
         <PackageReference Include="System.Security.Cryptography.Pkcs" Version="6.0.1" />
         <PackageReference Include="System.Security.AccessControl" Version="6.0.0" />
         <PackageReference Include="System.Security.Permissions" Version="6.0.0" />
@@ -42,20 +44,13 @@
     </ItemGroup>
 
     <ItemGroup>
-        <ProjectReference Include="..\IKVM.Java-ref\IKVM.Java-ref.csproj">
-            <PrivateAssets>All</PrivateAssets>
-        </ProjectReference>
-        <ProjectReference Include="..\IKVM.Runtime.JNI-ref\IKVM.Runtime.JNI-ref.csproj">
-            <PrivateAssets>All</PrivateAssets>
-        </ProjectReference>
+        <ProjectReference Include="..\IKVM.Runtime.JNI-ref\IKVM.Runtime.JNI-ref.csproj" Private="False" PrivateAssets="All" />
+        <ProjectReference Include="..\IKVM.Java-ref\IKVM.Java-ref.csproj" Private="False" PrivateAssets="All" />
     </ItemGroup>
 
     <ItemGroup>
         <ExcludeFromCompile Include="..\IKVM.Runtime\bin\**\*.cs" />
         <ExcludeFromCompile Include="..\IKVM.Runtime\obj\**\*.cs" />
-    </ItemGroup>
-
-    <ItemGroup>
         <Compile Include="..\IKVM.Runtime\**\*.cs" LinkBase="" Exclude="@(ExcludeFromCompile)" />
     </ItemGroup>
 

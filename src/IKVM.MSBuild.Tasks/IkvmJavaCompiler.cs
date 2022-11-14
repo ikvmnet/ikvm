@@ -1,23 +1,17 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Linq;
-using System.Threading.Tasks;
 
-using com.sun.org.apache.bcel.@internal.classfile;
 using com.sun.tools.javac.util;
 
 using java.io;
 using java.lang;
 using java.util;
-using java.util.concurrent;
-using java.util.function;
 
 using javax.tools;
 
 using Microsoft.Build.Framework;
 using Microsoft.Build.Utilities;
-
-using static com.sun.tools.javac.code.Scope;
 
 namespace IKVM.MSBuild.Tasks
 {
@@ -31,15 +25,17 @@ namespace IKVM.MSBuild.Tasks
         [Required]
         public ITaskItem[] Classpath { get; set; }
 
+        [Required]
         public ITaskItem[] Sources { get; set; }
 
-        public ITaskItem[] Classes { get; set; }
-
+        [Required]
         public string Destination { get; set; }
 
         public string Debug { get; set; }
 
         public bool NoWarn { get; set; }
+
+        public bool Verbose { get; set; }
 
         public string Source { get; set; }
 
@@ -48,6 +44,7 @@ namespace IKVM.MSBuild.Tasks
         public override bool Execute()
         {
             var diagnostics = new MSBuildDiagnosticListener(Log);
+            var javacArgLog = new List<string>();
 
             var compiler = ToolProvider.getSystemJavaCompiler();
             if (compiler == null)
@@ -61,14 +58,18 @@ namespace IKVM.MSBuild.Tasks
                 throw new IkvmTaskException("Invalid destination.");
 
             // create destination directory
-            var destination = new File(Destination);
+            var destination = new File(System.IO.Path.GetFullPath(Destination));
             destination.mkdirs();
 
             // set output path
             fileManager.setLocation(StandardLocation.CLASS_OUTPUT, Collections.singletonList(destination));
+            javacArgLog.Add($"-d");
+            javacArgLog.Add($"\"{string.Join(System.IO.Path.PathSeparator.ToString(), fileManager.getLocation(StandardLocation.CLASS_OUTPUT).AsEnumerable<File>().Select(i => i.getPath()))}\"");
 
             // get set of source items to compile
-            var compilationUnits = fileManager.getJavaFileObjectsFromFiles(Arrays.asList(Sources.Select(i => new File(i.ItemSpec)).ToArray()));
+            var compilationUnits = fileManager.getJavaFileObjectsFromFiles(Arrays.asList(Sources.Select(i => new File(System.IO.Path.GetFullPath(i.ItemSpec))).Cast<object>().ToArray()));
+            foreach (var i in Sources)
+                javacArgLog.Add($"\"{System.IO.Path.GetFullPath(i.ItemSpec)}\"");
 
             // build options set
             var options = new ArrayList();
@@ -88,6 +89,14 @@ namespace IKVM.MSBuild.Tasks
                     options.add("-nowarn");
                 else
                     Log.LogWarning("Unsupported option '-nowarn'. Ignoring.");
+            }
+
+            if (Verbose)
+            {
+                if (compiler.isSupportedOption("-verbose") >= 0)
+                    options.add("-verbose");
+                else
+                    Log.LogWarning("Unsupported option '-verbose'. Ignoring.");
             }
 
             if (Source != null)
@@ -112,10 +121,22 @@ namespace IKVM.MSBuild.Tasks
                     Log.LogWarning("Unsupported option '-target'. Ignoring.");
             }
 
+            javacArgLog.AddRange(options.AsEnumerable<string>());
+
             // apply classpath
-            if (Classpath != null)
-                if (Classpath.Length > 0)
-                    fileManager.setLocation(StandardLocation.CLASS_PATH, Arrays.asList(Classpath.Select(i => new File(System.IO.Path.GetFullPath(i.ItemSpec))).ToArray()));
+            if (Classpath != null && Classpath.Length > 0)
+            {
+                var cp = new ArrayList();
+                foreach (var i in Classpath)
+                    cp.add(new File(System.IO.Path.GetFullPath(i.ItemSpec)));
+
+                fileManager.setLocation(StandardLocation.CLASS_PATH, cp);
+                javacArgLog.Add("-cp");
+                javacArgLog.Add($"\"{string.Join(System.IO.Path.PathSeparator.ToString(), fileManager.getLocation(StandardLocation.CLASS_PATH).AsEnumerable<File>().Select(i => i.getPath()))}\"");
+            }
+
+            // emit log about command
+            Log.LogMessage(MessageImportance.Low, $"javac {string.Join(" ", javacArgLog)}");
 
             // yield and wait for the task to complete
             BuildEngine3.Yield();

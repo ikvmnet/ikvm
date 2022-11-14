@@ -127,9 +127,10 @@ namespace IKVM.Runtime
                 // the JDK allows detaching from an already detached thread
                 return JNIEnv.JNI_OK;
             }
+
             // TODO if we set Thread.IsBackground to false when we attached, now might be a good time to set it back to true.
             JNIEnv.FreeJNIEnv();
-            IKVM.Java.Externs.ikvm.runtime.Startup.jniDetach();
+            java.lang.Thread.currentThread().die();
             return JNIEnv.JNI_OK;
         }
 

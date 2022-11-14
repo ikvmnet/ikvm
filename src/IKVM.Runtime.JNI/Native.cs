@@ -91,16 +91,28 @@ namespace IKVM.Runtime
 #endif
 
         /// <summary>
+        /// Gets the RID architecture.
+        /// </summary>
+        /// <returns></returns>
+        static string GetRuntimeIdentifierArch() => RuntimeInformation.ProcessArchitecture switch
+        {
+            Architecture.X86 => "x86",
+            Architecture.X64 => "x64",
+            Architecture.Arm => "arm",
+            Architecture.Arm64 => "arm64",
+            _ => throw new NotSupportedException(),
+        };
+
+        /// <summary>
         /// Gets the runtime identifiers of the current platform.
         /// </summary>
         /// <returns></returns>
         static IEnumerable<string> GetRuntimeIdentifiers()
         {
+            var arch = GetRuntimeIdentifierArch();
+
 #if NETFRAMEWORK
-            if (IntPtr.Size == 4)
-                yield return $"win-x86";
-            else if (IntPtr.Size == 8)
-                yield return $"win-x64";
+            yield return $"win-{arch}";
 #else
             if (RuntimeInformation.IsOSPlatform(OSPlatform.Windows))
             {
