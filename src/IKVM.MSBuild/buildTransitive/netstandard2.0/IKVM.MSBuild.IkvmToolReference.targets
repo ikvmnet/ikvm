@@ -1,0 +1,141 @@
+<Project xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+    <PropertyGroup>
+        <MSBuildAllProjects>$(MSBuildAllProjects);$(MSBuildThisFileFullPath)</MSBuildAllProjects>
+    </PropertyGroup>
+
+    <!--
+    This file contains targets which resolve various items by ProjectReference.
+    -->
+    
+    <Choose>
+        <When Condition=" '$(IkvmToolFramework)' == 'NetFramework' ">
+            <PropertyGroup>
+                <IkvmToolTargetFramework>net461</IkvmToolTargetFramework>
+            </PropertyGroup>
+        </When>
+        <When Condition=" '$(IkvmToolFramework)' == 'NetCore' ">
+            <PropertyGroup>
+                <IkvmToolTargetFramework>netcoreapp3.1</IkvmToolTargetFramework>
+            </PropertyGroup>
+        </When>
+    </Choose>
+
+    <Target Name="_AssignIkvmToolReferenceConfiguration" Condition=" '@(IkvmToolReference)' != '' ">
+        <ItemGroup>
+            <_IkvmToolReferenceToConfigure Include="@(IkvmToolReference)">
+                <SetTargetFramework>TargetFramework=$(IkvmToolTargetFramework)</SetTargetFramework>
+                <SetRuntimeIdentifier>RuntimeIdentifier=$(IkvmToolRuntime)</SetRuntimeIdentifier>
+            </_IkvmToolReferenceToConfigure>
+        </ItemGroup>
+        <PropertyGroup>
+            <OnlyReferenceAndBuildProjectsEnabledInSolutionConfiguration Condition="'$(OnlyReferenceAndBuildProjectsEnabledInSolutionConfiguration)' == ''">true</OnlyReferenceAndBuildProjectsEnabledInSolutionConfiguration>
+            <ShouldUnsetParentConfigurationAndPlatform Condition="'$(ShouldUnsetParentConfigurationAndPlatform)' == '' and ('$(BuildingInsideVisualStudio)' == 'true' or '$(BuildingSolutionFile)' == 'true')">true</ShouldUnsetParentConfigurationAndPlatform>
+            <ShouldUnsetParentConfigurationAndPlatform Condition="'$(ShouldUnsetParentConfigurationAndPlatform)' == ''">false</ShouldUnsetParentConfigurationAndPlatform>
+        </PropertyGroup>
+        <AssignProjectConfiguration
+            ProjectReferences="@(_IkvmToolReferenceToConfigure)"
+            CurrentProject="$(MSBuildProjectFullPath)"
+            CurrentProjectConfiguration="$(Configuration)"
+            CurrentProjectPlatform="$(Platform)"
+            DefaultToVcxPlatformMapping="$(DefaultToVcxPlatformMapping)"
+            VcxToDefaultPlatformMapping="$(VcxToDefaultPlatformMapping)"
+            OutputType="$(OutputType)"
+            ResolveConfigurationPlatformUsingMappings="false"
+            SolutionConfigurationContents="$(CurrentSolutionConfigurationContents)"
+            AddSyntheticProjectReferencesForSolutionDependencies="false"
+            OnlyReferenceAndBuildProjectsEnabledInSolutionConfiguration="$(OnlyReferenceAndBuildProjectsEnabledInSolutionConfiguration)"
+            ShouldUnsetParentConfigurationAndPlatform="$(ShouldUnsetParentConfigurationAndPlatform)">
+            <Output TaskParameter="AssignedProjects" ItemName="_IkvmToolReferenceWithConfiguration"/>
+            <Output TaskParameter="UnassignedProjects" ItemName="_IkvmToolReferenceWithConfiguration"/>
+        </AssignProjectConfiguration>
+    </Target>
+
+    <Target Name="_ResolveIkvmToolReferences" DependsOnTargets="_AssignIkvmToolReferenceConfiguration" Condition=" '@(_IkvmToolReferenceWithConfiguration)' != '' ">
+        <ItemGroup>
+            <_IkvmToolReference Include="@(_IkvmToolReferenceWithConfiguration)">
+                <ProjectName>$([System.IO.Path]::GetFileNameWithoutExtension('%(Identity)'))</ProjectName>
+            </_IkvmToolReference>
+        </ItemGroup>
+    </Target>
+
+    <PropertyGroup>
+        <ResolveJavaCompilerDependsOn>
+            $(ResolveJavaCompilerDependsOn);
+            _AssignIkvmToolReferenceConfiguration;
+            _ResolveIkvmToolReferences;
+        </ResolveJavaCompilerDependsOn>
+    </PropertyGroup>
+
+    <!-- Resolve JavaCompiler from project marked with IsJavaCompiler. -->
+    <Target Name="ResolveJavaCompiler" DependsOnTargets="$(ResolveJavaCompilerDependsOn)">
+        <MSBuild Projects="@(_IkvmToolReference)" Targets="Build" BuildInParallel="$(BuildInParallel)" Properties="%(_IkvmToolReference.SetConfiguration);%(_IkvmToolReference.SetPlatform)" RemoveProperties="%(_IkvmToolReference.GlobalPropertiesToRemove)$(_GlobalPropertiesToRemoveFromProjectReferences);TargetFramework;RuntimeIdentifer;PublishDir;PublishUrl;Location" Condition=" '%(_IkvmToolReference.IsJavaCompiler)' == 'true' " />
+        <MSBuild Projects="@(_IkvmToolReference)" Targets="PublishAndGetPublishDir" BuildInParallel="$(BuildInParallel)" Properties="%(_IkvmToolReference.SetConfiguration);%(_IkvmToolReference.SetPlatform);%(_IkvmToolReference.SetTargetFramework);%(_IkvmToolReference.SetRuntimeIdentifier)" RemoveProperties="%(_IkvmToolReference.GlobalPropertiesToRemove);$(_GlobalPropertiesToRemoveFromProjectReferences);PublishDir;PublishUrl;Location" Condition=" '%(_IkvmToolReference.IsJavaCompiler)' == 'true' ">
+            <Output TaskParameter="TargetOutputs" PropertyName="_JavaCompilerPublishDir" />
+        </MSBuild>
+        <PropertyGroup>
+            <JavaCompilerPath Condition=" '$(JavaCompilerPath)' == '' And Exists('$(_JavaCompilerPublishDir)javac.exe') ">$([System.IO.Path]::GetFullPath('$(_JavaCompilerPublishDir)\javac.exe'))</JavaCompilerPath>
+            <JavaCompilerExec Condition=" '$(JavaCompilerExec)' == '' ">$(JavaCompilerPath)</JavaCompilerExec>
+        </PropertyGroup>
+        <Error Text="Could not locate javac executable." Condition=" '$(JavaCompilerPath)' == '' " />
+        <Message Text="Resolved javac executable from project at '$(JavaCompilerPath)'." Importance="high" Condition=" '@(_JavaCompilerPath)' != '' " />
+    </Target>
+
+    <PropertyGroup>
+        <ResolveIkvmCompilerDependsOn>
+            $(ResolveIkvmCompilerDependsOn);
+            _AssignIkvmToolReferenceConfiguration;
+            _ResolveIkvmToolReferences;
+        </ResolveIkvmCompilerDependsOn>
+    </PropertyGroup>
+
+    <!-- Resolve IkvmCompiler from project marked with IsIkvmCompiler. -->
+    <Target Name="ResolveIkvmCompiler" DependsOnTargets="$(ResolveIkvmCompilerDependsOn)">
+        <MSBuild Projects="@(_IkvmToolReference)" Targets="Build" BuildInParallel="$(BuildInParallel)" Properties="%(_IkvmToolReference.SetConfiguration);%(_IkvmToolReference.SetPlatform)" RemoveProperties="%(_IkvmToolReference.GlobalPropertiesToRemove)$(_GlobalPropertiesToRemoveFromProjectReferences);TargetFramework;RuntimeIdentifer;PublishDir;PublishUrl;Location" Condition=" '%(_IkvmToolReference.IsIkvmCompiler)' == 'true' " />
+        <MSBuild Projects="@(_IkvmToolReference)" Targets="PublishAndGetPublishDir" BuildInParallel="$(BuildInParallel)" Properties="%(_IkvmToolReference.SetConfiguration);%(_IkvmToolReference.SetPlatform);%(_IkvmToolReference.SetTargetFramework);%(_IkvmToolReference.SetRuntimeIdentifier)" RemoveProperties="%(_IkvmToolReference.GlobalPropertiesToRemove);$(_GlobalPropertiesToRemoveFromProjectReferences);PublishDir;PublishUrl;Location" Condition=" '%(_IkvmToolReference.IsIkvmCompiler)' == 'true' ">
+            <Output TaskParameter="TargetOutputs" PropertyName="_IkvmCompilerPublishDir" />
+        </MSBuild>
+        <PropertyGroup>
+            <IkvmCompilerPath Condition=" '$(IkvmCompilerPath)' == '' And Exists('$(_IkvmCompilerPublishDir)\ikvmc.exe') ">$([System.IO.Path]::GetFullPath('$(_IkvmCompilerPublishDir)\ikvmc.exe'))</IkvmCompilerPath>
+            <IkvmCompilerExec Condition=" '$(IkvmCompilerExec)' == '' ">$(IkvmCompilerPath)</IkvmCompilerExec>
+        </PropertyGroup>
+        <Error Text="Could not locate ikvmc executable." Condition=" '$(IkvmCompilerPath)' == '' " />
+        <Message Text="Using ikvmc executable from project at '$(IkvmCompilerPath)'." Importance="high" Condition=" '$(IkvmCompilerPath)' != '' " />
+    </Target>
+
+    <PropertyGroup>
+        <ResolveIkvmExporterDependsOn>
+            $(ResolveIkvmExporterDependsOn);
+            _AssignIkvmToolReferenceConfiguration;
+            _ResolveIkvmToolReferences;
+        </ResolveIkvmExporterDependsOn>
+    </PropertyGroup>
+
+    <!-- Resolve IkvmExporter from project marked with IsIkvmExporter. -->
+    <Target Name="ResolveIkvmExporter" DependsOnTargets="$(ResolveIkvmExporterDependsOn)">
+        <MSBuild Projects="@(_IkvmToolReference)" Targets="Build" BuildInParallel="$(BuildInParallel)" Properties="%(_IkvmToolReference.SetConfiguration);%(_IkvmToolReference.SetPlatform)" RemoveProperties="%(_IkvmToolReference.GlobalPropertiesToRemove)$(_GlobalPropertiesToRemoveFromProjectReferences);TargetFramework;RuntimeIdentifer;PublishDir;PublishUrl;Location" Condition=" '%(_IkvmToolReference.IsIkvmExporter)' == 'true' " />
+        <MSBuild Projects="@(_IkvmToolReference)" Targets="PublishAndGetPublishDir" BuildInParallel="$(BuildInParallel)" Properties="%(_IkvmToolReference.SetConfiguration);%(_IkvmToolReference.SetPlatform);%(_IkvmToolReference.SetTargetFramework);%(_IkvmToolReference.SetRuntimeIdentifier)" RemoveProperties="%(_IkvmToolReference.GlobalPropertiesToRemove);$(_GlobalPropertiesToRemoveFromProjectReferences);PublishDir;PublishUrl;Location" Condition=" '%(_IkvmToolReference.IsIkvmExporter)' == 'true' ">
+            <Output TaskParameter="TargetOutputs" PropertyName="_IkvmExporterPublishDir" />
+        </MSBuild>
+        <PropertyGroup>
+            <IkvmExporterPath Condition=" '$(IkvmExporterPath)' == '' And Exists('$(_IkvmExporterPublishDir)ikvmstub.exe')">$([System.IO.Path]::GetFullPath('$(_IkvmExporterPublishDir)ikvmstub.exe'))</IkvmExporterPath>
+            <IkvmExporterExec Condition=" '$(IkvmExporterExec)' == '' ">$(IkvmExporterPath)</IkvmExporterExec>
+        </PropertyGroup>
+        <Error Text="Could not locate ikvmstub executable." Condition=" '$(IkvmExporterPath)' == '' " />
+        <Message Text="Using ikvmstub executable from project at '$(IkvmExporterPath)'." Importance="high" Condition=" '$(IkvmExporterPath)' != '' " />
+    </Target>
+
+    <PropertyGroup>
+        <ResolveIkvmFrameworkReferencesDependsOn>
+            $(ResolveIkvmFrameworkReferencesDependsOn);
+            ResolveIkvmCompiler;
+        </ResolveIkvmFrameworkReferencesDependsOn>
+    </PropertyGroup>
+
+    <!-- Gathers those references which are either related to the Framework itself, or IKVM. -->
+    <Target Name="ResolveIkvmFrameworkReferences" DependsOnTargets="$(ResolveIkvmFrameworkReferencesDependsOn)">
+        <ItemGroup>
+            <IkvmFrameworkReference Include="$(_IkvmCompilerPublishDir)refs\*.dll" />
+        </ItemGroup>
+    </Target>
+
+</Project>

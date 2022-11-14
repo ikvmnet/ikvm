@@ -2,8 +2,6 @@
 
 using FluentAssertions;
 
-using IKVM.Runtime.Vfs;
-
 using Microsoft.VisualStudio.TestTools.UnitTesting;
 
 namespace IKVM.Tests.Java.java.lang
@@ -41,18 +39,6 @@ namespace IKVM.Tests.Java.java.lang
             r.nextLine().Should().Be("TEST");
             r.hasNextLine().Should().BeFalse();
             r.close();
-        }
-
-        [TestMethod]
-        public void Can_check_if_vfs_file_exists()
-        {
-            new global::java.io.File(Path.Combine(VfsTable.HomePath, "lib", "tzdb.dat")).exists().Should().BeTrue();
-        }
-
-        [TestMethod]
-        public void Can_check_vfs_file_length()
-        {
-            new global::java.io.File(Path.Combine(VfsTable.HomePath, "lib", "tzdb.dat")).length().Should().BeGreaterThan(1);
         }
 
     }

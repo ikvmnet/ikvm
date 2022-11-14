@@ -3,7 +3,8 @@ using System.Collections.Generic;
 using System.IO;
 using System.Linq;
 
-using IKVM.Tool.Compiler;
+using IKVM.Tools.Runner;
+using IKVM.Tools.Runner.Compiler;
 
 using Microsoft.Build.Framework;
 using Microsoft.Build.Utilities;
@@ -21,13 +22,13 @@ namespace IKVM.MSBuild.Tasks
         /// Root of the tools directory.
         /// </summary>
         [Required]
-        public string ToolsPath { get; set; }
+        public string ToolPath { get; set; }
 
         /// <summary>
         /// Whether we are generating a NetFramework or NetCore assembly.
         /// </summary>
         [Required]
-        public string TargetFramework { get; set; } = "NetCore";
+        public string ToolFramework { get; set; } = "NetCore";
 
         /// <summary>
         /// Set of input references.
@@ -51,8 +52,8 @@ namespace IKVM.MSBuild.Tasks
         /// <returns></returns>
         IEnumerable<string> GetReferenceAssemblies()
         {
-            var l = new IkvmCompilerLauncher(ToolsPath);
-            var f = ParseTargetFramework(TargetFramework);
+            var l = new IkvmCompilerLauncher(ToolPath);
+            var f = ParseToolFramework(ToolFramework);
 
             // gets the reference assemblies
             foreach (var path in Directory.GetFiles(l.GetReferenceAssemblyDirectory(f), "*.dll"))
@@ -65,10 +66,10 @@ namespace IKVM.MSBuild.Tasks
         /// <param name="targetFramework"></param>
         /// <returns></returns>
         /// <exception cref="NotImplementedException"></exception>
-        IkvmCompilerTargetFramework ParseTargetFramework(string targetFramework) => targetFramework switch
+        IkvmToolFramework ParseToolFramework(string targetFramework) => targetFramework switch
         {
-            "NetCore" => IkvmCompilerTargetFramework.NetCore,
-            "NetFramework" => IkvmCompilerTargetFramework.NetFramework,
+            "NetCore" => IkvmToolFramework.NetCore,
+            "NetFramework" => IkvmToolFramework.NetFramework,
             _ => throw new NotImplementedException(),
         };
 

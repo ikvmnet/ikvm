@@ -1,0 +1,20 @@
+<ProjectSchemaDefinitions xmlns="http://schemas.microsoft.com/build/2009/properties">
+
+    <ContentType
+        Name="JavaSourceFile"
+        DisplayName="Java source file"
+        ItemType="Compile">
+    </ContentType>
+
+    <ContentType
+        Name="JavaClassFile"
+        DisplayName="Java class file"
+        ItemType="Class">
+    </ContentType>
+
+    <ItemType Name="Compile" UpToDateCheckInput="true" DisplayName="Compile" />
+    <ItemType Name="Class" UpToDateCheckInput="true" DisplayName="Class" />
+
+    <FileExtension Name=".java" ContentType="JavaSourceFile"/>
+    <FileExtension Name=".class" ContentType="JavaClassFile"/>
+</ProjectSchemaDefinitions>

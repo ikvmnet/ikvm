@@ -46,8 +46,12 @@ using Type = IKVM.Reflection.Type;
 
 namespace IKVM.Internal
 {
+
     sealed class CompilerClassLoader : ClassLoaderWrapper
     {
+
+        const string DEFAULT_RUNTIME_ARGS_PREFIX = "-J";
+
         private Dictionary<string, Jar.Item> classes;
         private Dictionary<string, RemapperTypeWrapper> remapped = new Dictionary<string, RemapperTypeWrapper>();
         private string assemblyName;
@@ -465,76 +469,74 @@ namespace IKVM.Internal
             AttributeHelper.SetInternalsVisibleToAttribute(this.assemblyBuilder, name);
         }
 
-        internal void SetMain(MethodInfo m, PEFileKinds target, Dictionary<string, string> props, bool noglobbing, Type apartmentAttributeType)
+        /// <summary>
+        /// Emits a global Main method that launches the Java main method on the given type.
+        /// </summary>
+        /// <param name="type"></param>
+        /// <param name="target"></param>
+        /// <param name="properties"></param>
+        /// <param name="noglobbing"></param>
+        /// <param name="apartmentAttributeType"></param>
+        void SetMain(TypeWrapper type, PEFileKinds target, IDictionary<string, string> properties, bool noglobbing, Type apartmentAttributeType)
         {
-            MethodBuilder mainStub = this.GetTypeWrapperFactory().ModuleBuilder.DefineGlobalMethod("main", MethodAttributes.Public | MethodAttributes.Static, Types.Int32, new Type[] { Types.String.MakeArrayType() });
+            if (type is null)
+                throw new ArgumentNullException(nameof(type));
+            if (properties is null)
+                throw new ArgumentNullException(nameof(properties));
+
+            // global main method decorated with appropriate apartment type
+            var mainMethodProxy = GetTypeWrapperFactory().ModuleBuilder.DefineGlobalMethod("Main", MethodAttributes.Public | MethodAttributes.Static, Types.Int32, new Type[] { Types.String.MakeArrayType() });
             if (apartmentAttributeType != null)
+                mainMethodProxy.SetCustomAttribute(new CustomAttributeBuilder(apartmentAttributeType.GetConstructor(Type.EmptyTypes), new object[0]));
+
+            var ilgen = CodeEmitter.Create(mainMethodProxy);
+            var propertiesType = LoadClassByDottedName("java.util.Properties").TypeAsTBD;
+            var launcherType = LoadClassByDottedName("ikvm.runtime.Launcher").TypeAsTBD;
+            var launchMethod = launcherType.GetMethod("run", new Type[] { Types.Type, Types.String.MakeArrayType(), Types.String, propertiesType });
+
+            // first argument to Launch (Class)
+            ilgen.Emit(OpCodes.Ldtoken, type.TypeAsTBD);
+            ilgen.Emit(OpCodes.Call, Types.Type.GetMethod("GetTypeFromHandle"));
+
+            // second argument: args
+            ilgen.Emit(OpCodes.Ldarg_0);
+
+            // third argument, runtime prefix
+            ilgen.Emit(OpCodes.Ldstr, DEFAULT_RUNTIME_ARGS_PREFIX);
+
+            // fourth argument, property set to initialize JVM with
+            ilgen.Emit(OpCodes.Newobj, propertiesType.GetConstructor(Type.EmptyTypes));
+            if (properties.Count > 0)
             {
-                mainStub.SetCustomAttribute(new CustomAttributeBuilder(apartmentAttributeType.GetConstructor(Type.EmptyTypes), new object[0]));
-            }
-            CodeEmitter ilgen = CodeEmitter.Create(mainStub);
-            CodeEmitterLocal rc = ilgen.DeclareLocal(Types.Int32);
-            TypeWrapper startupType = LoadClassByDottedName("ikvm.runtime.Startup");
-            if (props.Count > 0)
-            {
-                ilgen.Emit(OpCodes.Newobj, JVM.Import(typeof(System.Collections.Generic.Dictionary<string, string>)).GetConstructor(Type.EmptyTypes));
-                foreach (KeyValuePair<string, string> kv in props)
+                foreach (var kvp in properties)
                 {
                     ilgen.Emit(OpCodes.Dup);
-                    ilgen.Emit(OpCodes.Ldstr, kv.Key);
-                    ilgen.Emit(OpCodes.Ldstr, kv.Value);
-                    if (kv.Value.IndexOf('%') < kv.Value.LastIndexOf('%'))
-                    {
-                        ilgen.Emit(OpCodes.Call, JVM.Import(typeof(Environment)).GetMethod("ExpandEnvironmentVariables", new Type[] { Types.String }));
-                    }
-                    ilgen.Emit(OpCodes.Callvirt, JVM.Import(typeof(System.Collections.Generic.Dictionary<string, string>)).GetMethod("Add"));
+                    ilgen.Emit(OpCodes.Ldstr, kvp.Key);
+                    ilgen.Emit(OpCodes.Ldstr, kvp.Value);
+
+                    // property value can reference an environmental variable (reassess the requirment for this)
+                    if (kvp.Value.IndexOf('%') < kvp.Value.LastIndexOf('%'))
+                        ilgen.Emit(OpCodes.Call, JVM.Import(typeof(Environment)).GetMethod(nameof(Environment.ExpandEnvironmentVariables), new[] { Types.String }));
+
+                    ilgen.Emit(OpCodes.Callvirt, propertiesType.GetMethod("setProperty", new Type[] { Types.Object, Types.Object }));
                 }
-                startupType.GetMethodWrapper("setProperties", "(Lcli.System.Collections.IDictionary;)V", false).EmitCall(ilgen);
             }
-            ilgen.BeginExceptionBlock();
-            startupType.GetMethodWrapper("enterMainThread", "()V", false).EmitCall(ilgen);
-            ilgen.Emit(OpCodes.Ldarg_0);
-            if (!noglobbing)
-            {
-                ilgen.Emit(OpCodes.Ldc_I4_0);
-                startupType.GetMethodWrapper("glob", "([Ljava.lang.String;I)[Ljava.lang.String;", false).EmitCall(ilgen);
-            }
-            ilgen.Emit(OpCodes.Call, m);
-            CodeEmitterLabel label = ilgen.DefineLabel();
-            ilgen.EmitLeave(label);
-            ilgen.BeginCatchBlock(Types.Exception);
-            LoadClassByDottedName("ikvm.runtime.Util").GetMethodWrapper("mapException", "(Ljava.lang.Throwable;)Ljava.lang.Throwable;", false).EmitCall(ilgen);
-            CodeEmitterLocal exceptionLocal = ilgen.DeclareLocal(Types.Exception);
-            ilgen.Emit(OpCodes.Stloc, exceptionLocal);
-            TypeWrapper threadTypeWrapper = ClassLoaderWrapper.LoadClassCritical("java.lang.Thread");
-            CodeEmitterLocal threadLocal = ilgen.DeclareLocal(threadTypeWrapper.TypeAsLocalOrStackType);
-            threadTypeWrapper.GetMethodWrapper("currentThread", "()Ljava.lang.Thread;", false).EmitCall(ilgen);
-            ilgen.Emit(OpCodes.Stloc, threadLocal);
-            ilgen.Emit(OpCodes.Ldloc, threadLocal);
-            threadTypeWrapper.GetMethodWrapper("getThreadGroup", "()Ljava.lang.ThreadGroup;", false).EmitCallvirt(ilgen);
-            ilgen.Emit(OpCodes.Ldloc, threadLocal);
-            ilgen.Emit(OpCodes.Ldloc, exceptionLocal);
-            ClassLoaderWrapper.LoadClassCritical("java.lang.ThreadGroup").GetMethodWrapper("uncaughtException", "(Ljava.lang.Thread;Ljava.lang.Throwable;)V", false).EmitCallvirt(ilgen);
-            ilgen.Emit(OpCodes.Ldc_I4_1);
-            ilgen.Emit(OpCodes.Stloc, rc);
-            ilgen.EmitLeave(label);
-            ilgen.BeginFinallyBlock();
-            startupType.GetMethodWrapper("exitMainThread", "()V", false).EmitCall(ilgen);
-            ilgen.Emit(OpCodes.Endfinally);
-            ilgen.EndExceptionBlock();
-            ilgen.MarkLabel(label);
-            ilgen.Emit(OpCodes.Ldloc, rc);
+
+            // invoke the launcher main method
+            ilgen.Emit(OpCodes.Call, launchMethod);
             ilgen.Emit(OpCodes.Ret);
+
+            // generate entry point
             ilgen.DoEmit();
-            assemblyBuilder.SetEntryPoint(mainStub, target);
+            assemblyBuilder.SetEntryPoint(mainMethodProxy, target);
         }
 
-        private void PrepareSave()
+        void PrepareSave()
         {
             ((DynamicClassLoader)this.GetTypeWrapperFactory()).FinishAll();
         }
 
-        private void Save()
+        void Save()
         {
             ModuleBuilder mb = GetTypeWrapperFactory().ModuleBuilder;
             if (targetIsModule)
@@ -2547,28 +2549,27 @@ namespace IKVM.Internal
             return false;
         }
 
-        internal static int Compile(string runtimeAssembly, List<CompilerOptions> optionsList)
+        internal static int Compile(string runtimeAssembly, string runtimeJniAssembly, List<CompilerOptions> optionsList)
         {
             try
             {
-                if (runtimeAssembly == null)
-                {
-                    // we assume that the runtime is in the same directory as the compiler
-                    runtimeAssembly = Path.Combine(typeof(CompilerClassLoader).Assembly.Location, ".." + Path.DirectorySeparatorChar + "IKVM.Runtime.dll");
-                }
-
-                StaticCompiler.runtimeAssembly = StaticCompiler.LoadFile(runtimeAssembly);
-                StaticCompiler.runtimeJniAssembly = StaticCompiler.LoadFile(Path.Combine(StaticCompiler.runtimeAssembly.Location, ".." + Path.DirectorySeparatorChar + "IKVM.Runtime.JNI.dll"));
+                StaticCompiler.runtimeAssembly = StaticCompiler.LoadFile(runtimeAssembly ?? Path.Combine(Path.GetDirectoryName(typeof(CompilerClassLoader).Assembly.Location), "IKVM.Runtime.dll"));
+                StaticCompiler.runtimeJniAssembly = StaticCompiler.LoadFile(runtimeJniAssembly ?? Path.Combine(Path.GetDirectoryName(StaticCompiler.runtimeAssembly.Location), "IKVM.Runtime.JNI.dll"));
             }
             catch (FileNotFoundException)
             {
+                // runtime assembly is required
                 if (StaticCompiler.runtimeAssembly == null)
-                {
                     throw new FatalCompilerErrorException(Message.RuntimeNotFound);
-                }
 
-                StaticCompiler.IssueMessage(Message.NoJniRuntime);
+                // JNI will issue warning
+                if (StaticCompiler.runtimeJniAssembly == null)
+                    StaticCompiler.IssueMessage(Message.NoJniRuntime);
+
+                // some unknown error
+                throw new FatalCompilerErrorException(Message.FileNotFound);
             }
+
             Tracer.Info(Tracer.Compiler, "Loaded runtime assembly: {0}", StaticCompiler.runtimeAssembly.FullName);
             bool compilingCoreAssembly = false;
             List<CompilerClassLoader> compilers = new List<CompilerClassLoader>();
@@ -3030,9 +3031,11 @@ namespace IKVM.Internal
             {
                 ProxyGenerator.Create(this, proxy);
             }
+
             if (options.mainClass != null)
             {
                 TypeWrapper wrapper = null;
+
                 try
                 {
                     wrapper = LoadClassByDottedNameFast(options.mainClass);
@@ -3044,33 +3047,32 @@ namespace IKVM.Internal
                 {
                     throw new FatalCompilerErrorException(Message.MainClassNotFound);
                 }
-                MethodWrapper mw = wrapper.GetMethodWrapper("main", "([Ljava.lang.String;)V", false);
+
+                var mw = wrapper.GetMethodWrapper("main", "([Ljava.lang.String;)V", false);
                 if (mw == null || !mw.IsStatic)
-                {
                     throw new FatalCompilerErrorException(Message.MainMethodNotFound);
-                }
+
                 mw.Link();
-                MethodInfo method = mw.GetMethod() as MethodInfo;
+
+                var method = mw.GetMethod() as MethodInfo;
                 if (method == null)
-                {
                     throw new FatalCompilerErrorException(Message.UnsupportedMainMethod);
-                }
-                if (!ReflectUtil.IsFromAssembly(method.DeclaringType, assemblyBuilder)
-                    && (!method.IsPublic || !method.DeclaringType.IsPublic))
+
+                if (!ReflectUtil.IsFromAssembly(method.DeclaringType, assemblyBuilder) && (!method.IsPublic || !method.DeclaringType.IsPublic))
                 {
                     throw new FatalCompilerErrorException(Message.ExternalMainNotAccessible);
                 }
-                Type apartmentAttributeType = null;
-                if (options.apartment == ApartmentState.STA)
+
+                var apartmentAttributeType = options.apartment switch
                 {
-                    apartmentAttributeType = JVM.Import(typeof(STAThreadAttribute));
-                }
-                else if (options.apartment == ApartmentState.MTA)
-                {
-                    apartmentAttributeType = JVM.Import(typeof(MTAThreadAttribute));
-                }
-                SetMain(method, options.target, options.props, options.noglobbing, apartmentAttributeType);
+                    ApartmentState.STA => JVM.Import(typeof(STAThreadAttribute)),
+                    ApartmentState.MTA => JVM.Import(typeof(MTAThreadAttribute)),
+                    _ => throw new NotImplementedException(),
+                };
+
+                SetMain(wrapper, options.target, options.props, options.noglobbing, apartmentAttributeType);
             }
+
             if (map != null)
             {
                 LoadMappedExceptions(map);

@@ -41,7 +41,7 @@ namespace IKVM.Runtime.Vfs
 
         readonly Assembly assembly;
         readonly JavaPackageName package;
-        readonly ConcurrentDictionary<string, VfsAssemblyClassDirectory> directories = new();
+        readonly ConcurrentDictionary<string, VfsEntry> cache = new();
 
         /// <summary>
         /// Initializes a new instance.
@@ -63,6 +63,16 @@ namespace IKVM.Runtime.Vfs
         /// <param name="name"></param>
         /// <returns></returns>
         public override VfsEntry GetEntry(string name)
+        {
+            return cache.GetOrAdd(name, CreateEntry);
+        }
+
+        /// <summary>
+        /// Creates a new entry for the specified name.
+        /// </summary>
+        /// <param name="name"></param>
+        /// <returns></returns>
+        VfsEntry CreateEntry(string name)
         {
             if (name.EndsWith(".class", StringComparison.Ordinal))
                 return GetClassEntry(new JavaTypeName(package, new JavaUnqualifiedTypeName(name.Substring(0, name.Length - ".class".Length))));

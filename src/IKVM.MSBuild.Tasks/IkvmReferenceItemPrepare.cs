@@ -98,7 +98,7 @@ namespace IKVM.MSBuild.Tasks
         /// IKVM target framework.
         /// </summary>
         [Required]
-        public string TargetFramework { get; set; }
+        public string ToolFramework { get; set; }
 
         /// <summary>
         /// Other references that will be used to generate the assemblies.
@@ -185,8 +185,56 @@ namespace IKVM.MSBuild.Tasks
             if (string.IsNullOrWhiteSpace(item.AssemblyFileVersion))
                 item.AssemblyFileVersion = item.AssemblyVersion;
 
+            // clean up values
+            item.AssemblyVersion = NormalizeAssemblyVersion(item.AssemblyVersion);
+            item.AssemblyFileVersion = NormalizeAssemblyFileVersion(item.AssemblyFileVersion);
+
             // save changes to item
             item.Save();
+        }
+
+        /// <summary>
+        /// Normalizes an assembly version.
+        /// </summary>
+        /// <param name="version"></param>
+        /// <returns></returns>
+        static string NormalizeAssemblyVersion(string version)
+        {
+            if (string.IsNullOrWhiteSpace(version))
+                return null;
+
+            if (Version.TryParse(version, out var v))
+            {
+                var major = v.Major;
+                var minor = v.Minor;
+                var build = v.Build;
+                var patch = v.Revision;
+                return new Version(major, minor, build > -1 ? build : 0, patch > -1 ? patch : 0).ToString();
+            }
+
+            return null;
+        }
+
+        /// <summary>
+        /// Normalizes an assembly version.
+        /// </summary>
+        /// <param name="version"></param>
+        /// <returns></returns>
+        static string NormalizeAssemblyFileVersion(string version)
+        {
+            if (string.IsNullOrWhiteSpace(version))
+                return null;
+
+            if (Version.TryParse(version, out var v))
+            {
+                var major = v.Major;
+                var minor = v.Minor;
+                var build = v.Build;
+                var patch = v.Revision;
+                return new Version(major, minor, build >= 0 ? build : 0, patch >= 0 ? patch : 0).ToString();
+            }
+
+            return null;
         }
 
         /// <summary>
@@ -338,7 +386,7 @@ namespace IKVM.MSBuild.Tasks
 
             var manifest = new StringWriter();
             manifest.WriteLine("ToolVersion={0}", ToolVersion);
-            manifest.WriteLine("TargetFramework={0}", TargetFramework);
+            manifest.WriteLine("ToolFramework={0}", ToolFramework);
             manifest.WriteLine("RuntimeAssembly={0}", GetIdentityForFile(RuntimeAssembly));
             manifest.WriteLine("AssemblyName={0}", item.AssemblyName);
             manifest.WriteLine("AssemblyVersion={0}", item.AssemblyVersion);
@@ -423,6 +471,7 @@ namespace IKVM.MSBuild.Tasks
                 if (TryGetIdentityForAssembly(file) is string h)
                     return h;
 
+            // fallback to a standard full MD5 of the file
             using var stm = File.OpenRead(file);
             var hsh = md5.ComputeHash(stm);
             var bld = new StringBuilder(hsh.Length * 2);
@@ -647,7 +696,9 @@ namespace IKVM.MSBuild.Tasks
         {
             item.IkvmIdentity = CalculateIkvmIdentity(item);
             item.CachePath = Path.Combine(CacheDir, item.IkvmIdentity, item.AssemblyName + ".dll");
+            item.CacheSymbolsPath = Path.Combine(CacheDir, item.IkvmIdentity, item.AssemblyName + ".pdb");
             item.StagePath = Path.Combine(StageDir, item.IkvmIdentity, item.AssemblyName + ".dll");
+            item.StageSymbolsPath = Path.Combine(StageDir, item.IkvmIdentity, item.AssemblyName + ".pdb");
             item.Save();
         }
 

@@ -1,0 +1,33 @@
+﻿<Project Sdk="Microsoft.Build.NoTargets/3.5.6">
+    <PropertyGroup>
+        <TargetFramework>netstandard2.0</TargetFramework>
+        <AppendTargetFrameworkToOutputPath>false</AppendTargetFrameworkToOutputPath>
+        <AppendRuntimeIdentifierToOutputPath>false</AppendRuntimeIdentifierToOutputPath>
+    </PropertyGroup>
+
+    <ItemGroup>
+        <BinTarget Include="IKVM|net461" ProjectName="IKVM" TargetFramework="net461" />
+        <BinTarget Include="IKVM|netcoreapp3.1" ProjectName="IKVM" TargetFramework="netcoreapp3.1" />
+    </ItemGroup>
+
+    <!-- Runs once per TFM/RID combination to generate individual output. -->
+    <Target Name="GetCopyToOutputDirectoryItemsByBinTarget" BeforeTargets="BeforeBuild" Inputs="@(BinTarget)" Outputs="%(Identity)\null">
+
+        <!-- batch values to properties -->
+        <PropertyGroup>
+            <_ProjectName>%(BinTarget.ProjectName)</_ProjectName>
+            <_ProjectFile>%(TestTarget.ProjectFile)</_ProjectFile>
+            <_ProjectFile Condition=" '$(_ProjectFile)' == '' ">..\$(_ProjectName)\$(_ProjectName).csproj</_ProjectFile>
+            <_TargetFramework>%(BinTarget.TargetFramework)</_TargetFramework>
+        </PropertyGroup>
+
+        <!-- output for the TFM -->
+        <ItemGroup>
+            <PublishProjectReference Include="$(_ProjectFile)">
+                <SetTargetFramework>TargetFramework=$(_TargetFramework)</SetTargetFramework>
+                <ProjectTargetPath>$(_TargetFramework)</ProjectTargetPath>
+            </PublishProjectReference>
+        </ItemGroup>
+    </Target>
+
+</Project>

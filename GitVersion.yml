@@ -1,3 +1,8 @@
 major-version-bump-message: '\+semver:\s?(major)'
 minor-version-bump-message: '\+semver:\s?(minor)'
 patch-version-bump-message: '\+semver:\s?(patch)'
+branches:
+  develop:
+    tag: develop
+  release:
+    tag: prerelease

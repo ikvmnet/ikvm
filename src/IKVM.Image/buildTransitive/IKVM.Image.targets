@@ -1,0 +1,166 @@
+<Project xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+    <PropertyGroup>
+        <MSBuildAllProjects>$(MSBuildAllProjects);$(MSBuildThisFileFullPath)</MSBuildAllProjects>
+    </PropertyGroup>
+
+    <!-- Adds an index value to each item. Can be used to ensure at least one unique metadata value is available on each item. -->
+    <UsingTask TaskName="_IkvmImageItemDistinct" TaskFactory="RoslynCodeTaskFactory" AssemblyFile="$(MSBuildToolsPath)\Microsoft.Build.Tasks.Core.dll">
+        <ParameterGroup>
+            <Items ParameterType="Microsoft.Build.Framework.ITaskItem[]" Required="true" Output="true" />
+        </ParameterGroup>
+        <Task>
+            <Using Namespace="System" />
+            <Using Namespace="System.Collections.Generic" />
+            <Code Type="Fragment" Language="cs">
+                <![CDATA[
+                var hs = new HashSet<string>();
+                var ls = new List<ITaskItem>();
+                foreach (var item in Items)
+                    if (hs.Add(item.GetMetadata("TargetPath")))
+                        ls.Add(item);
+                        
+                Items = ls.ToArray();
+                ]]>
+            </Code>
+        </Task>
+    </UsingTask>
+
+    <Choose>
+        <When Condition="$([MSBuild]::IsTargetFrameworkCompatible('$(TargetFramework)', 'net461'))">
+            <PropertyGroup>
+                <_IkvmImageTargetFramework>net461</_IkvmImageTargetFramework>
+            </PropertyGroup>
+        </When>
+        <When Condition="$([MSBuild]::IsTargetFrameworkCompatible('$(TargetFramework)', 'netcoreapp3.1'))">
+            <PropertyGroup>
+                <_IkvmImageTargetFramework>netcoreapp3.1</_IkvmImageTargetFramework>
+            </PropertyGroup>
+        </When>
+    </Choose>
+
+    <Choose>
+        <When Condition="$(RuntimeIdentifier.StartsWith('win'))">
+            <Choose>
+                <When Condition="$(RuntimeIdentifier.EndsWith('-x64'))">
+                    <PropertyGroup>
+                        <_IkvmImageRuntimeIdentifier>win7-x64</_IkvmImageRuntimeIdentifier>
+                    </PropertyGroup>
+                </When>
+                <When Condition="$(RuntimeIdentifier.EndsWith('-x86'))">
+                    <PropertyGroup>
+                        <_IkvmImageRuntimeIdentifier>win7-x86</_IkvmImageRuntimeIdentifier>
+                    </PropertyGroup>
+                </When>
+                <When Condition="$(RuntimeIdentifier.EndsWith('-arm'))">
+                    <PropertyGroup>
+                        <_IkvmImageRuntimeIdentifier>win7-arm</_IkvmImageRuntimeIdentifier>
+                    </PropertyGroup>
+                </When>
+                <When Condition="$(RuntimeIdentifier.EndsWith('-arm64'))">
+                    <PropertyGroup>
+                        <_IkvmImageRuntimeIdentifier>win7-arm64</_IkvmImageRuntimeIdentifier>
+                    </PropertyGroup>
+                </When>
+            </Choose>
+        </When>
+        <When Condition="$(RuntimeIdentifier.StartsWith('linux'))">
+            <Choose>
+                <When Condition="$(RuntimeIdentifier.EndsWith('-x64'))">
+                    <PropertyGroup>
+                        <_IkvmImageRuntimeIdentifier>linux-x64</_IkvmImageRuntimeIdentifier>
+                    </PropertyGroup>
+                </When>
+                <When Condition="$(RuntimeIdentifier.EndsWith('-arm'))">
+                    <PropertyGroup>
+                        <_IkvmImageRuntimeIdentifier>linux-arm</_IkvmImageRuntimeIdentifier>
+                    </PropertyGroup>
+                </When>
+                <When Condition="$(RuntimeIdentifier.EndsWith('-arm64'))">
+                    <PropertyGroup>
+                        <_IkvmImageRuntimeIdentifier>linux-arm64</_IkvmImageRuntimeIdentifier>
+                    </PropertyGroup>
+                </When>
+            </Choose>
+        </When>
+        <When Condition="$(RuntimeIdentifier.StartsWith('osx'))">
+            <Choose>
+                <When Condition="$(RuntimeIdentifier.EndsWith('-x64'))">
+                    <PropertyGroup>
+                        <_IkvmImageRuntimeIdentifier>osx-x64</_IkvmImageRuntimeIdentifier>
+                    </PropertyGroup>
+                </When>
+                <When Condition="$(RuntimeIdentifier.EndsWith('-arm64'))">
+                    <PropertyGroup>
+                        <_IkvmImageRuntimeIdentifier>osx-arm64</_IkvmImageRuntimeIdentifier>
+                    </PropertyGroup>
+                </When>
+            </Choose>
+        </When>
+    </Choose>
+
+    <ItemGroup>
+        <IkvmImageRuntimeIdentifiers Include="win7-x64" />
+        <IkvmImageRuntimeIdentifiers Include="win7-x86" />
+        <IkvmImageRuntimeIdentifiers Include="linux-x64" />
+    </ItemGroup>
+
+    <Target Name="GetIkvmImageItemsForRuntimeIdentifier" Outputs="%(IkvmImageRuntimeIdentifiers.Identity)">
+        <PropertyGroup>
+            <_IkvmImageRuntimeIdentifiers>%(IkvmImageRuntimeIdentifiers.Identity)</_IkvmImageRuntimeIdentifiers>
+        </PropertyGroup>
+
+        <ItemGroup>
+            <_IkvmImageItem Include="@(IkvmImageItem)" Condition=" '%(IkvmImageItem.TargetFramework)' == 'any' And '%(IkvmImageItem.RuntimeIdentifier)' == 'any' ">
+                <TargetFramework>$(_IkvmImageTargetFramework)</TargetFramework>
+                <RuntimeIdentifier>$(_IkvmImageRuntimeIdentifiers)</RuntimeIdentifier>
+            </_IkvmImageItem>
+            <_IkvmImageItem Include="@(IkvmImageItem)" Condition=" '%(IkvmImageItem.TargetFramework)' == '$(_IkvmImageTargetFramework)' And '%(IkvmImageItem.RuntimeIdentifier)' == 'any' ">
+                <TargetFramework>$(_IkvmImageTargetFramework)</TargetFramework>
+                <RuntimeIdentifier>$(_IkvmImageRuntimeIdentifiers)</RuntimeIdentifier>
+            </_IkvmImageItem>
+            <_IkvmImageItem Include="@(IkvmImageItem)" Condition=" '%(IkvmImageItem.TargetFramework)' == '$(_IkvmImageTargetFramework)' And '%(IkvmImageItem.RuntimeIdentifier)' == '$(_IkvmImageRuntimeIdentifiers)' ">
+                <TargetFramework>$(_IkvmImageTargetFramework)</TargetFramework>
+                <RuntimeIdentifier>$(_IkvmImageRuntimeIdentifiers)</RuntimeIdentifier>
+            </_IkvmImageItem>
+        </ItemGroup>
+    </Target>
+
+    <Target Name="GetIkvmImageItems" DependsOnTargets="GetIkvmImageItemsForRuntimeIdentifier" BeforeTargets="AssignLinkMetadata;AssignTargetPaths">
+        <ItemGroup>
+            <__IkvmImageItem Include="@(_IkvmImageItem)" RemoveMetadata="RuntimeIdentifier;TargetFramework">
+                <Pack>false</Pack>
+                <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+                <CopyToPublishDirectory>Never</CopyToPublishDirectory>
+                <CopyToPublishDirectory Condition=" '$(_IkvmImageRuntimeIdentifier)' == '' Or '$(_IkvmImageRuntimeIdentifier)' == '%(_IkvmImageItem.RuntimeIdentifier)' ">PreserveNewest</CopyToPublishDirectory>
+                <TargetPath>ikvm\%(_IkvmImageItem.RuntimeIdentifier)\%(_IkvmImageItem.TargetPath)</TargetPath>
+                <DestinationSubDirectory>$([System.IO.Path]::GetDirectoryName('ikvm\%(_IkvmImageItem.RuntimeIdentifier)\%(_IkvmImageItem.TargetPath)'))</DestinationSubDirectory>
+                <Private>true</Private>
+                <Link>ikvm\%(_IkvmImageItem.RuntimeIdentifier)\%(_IkvmImageItem.TargetPath)</Link>
+            </__IkvmImageItem>
+        </ItemGroup>
+        <_IkvmImageItemDistinct Items="@(__IkvmImageItem)">
+            <Output TaskParameter="Items" ItemName="None" />
+        </_IkvmImageItemDistinct>
+    </Target>
+
+    <Target Name="GetDefaultIkvmPropertiesFile" BeforeTargets="AssignLinkMetadata;AssignTargetPaths">
+        <ItemGroup>
+            <None Include="$(MSBuildThisFileDirectory)..\content\ikvm.properties" Condition="Exists('$(MSBuildThisFileDirectory)..\content\ikvm.properties')">
+                <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+                <TargetPath>ikvm.properties</TargetPath>
+                <Private>true</Private>
+                <Link>ikvm.properties</Link>
+            </None>
+        </ItemGroup>
+    </Target>
+
+    <PropertyGroup>
+        <AssignTargetPathsDependsOn>
+            GetIkvmImageItemsForRuntimeIdentifier;
+            GetIkvmImageItems;
+            GetDefaultIkvmPropertiesFile;
+            $(AssignTargetPathsDependsOn);
+        </AssignTargetPathsDependsOn>
+    </PropertyGroup>
+
+</Project>

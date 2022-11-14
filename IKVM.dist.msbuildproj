@@ -1,0 +1,44 @@
+<Project DefaultTargets="Publish">
+    <PropertyGroup>
+        <DistDir Condition="'$(DistDir)' == ''">$(DISTDIR)</DistDir>
+        <DistDir Condition="'$(DistDir)' == ''">$([System.IO.Path]::Combine('$(MSBuildThisFileDirectory)', 'dist'))</DistDir>
+        <DistDir>$([System.IO.Path]::GetFullPath('$(DistDir)'))</DistDir>
+        <SolutionFile>$([System.IO.Path]::Combine('$(MSBuildThisFileDirectory)', 'IKVM.sln'))</SolutionFile>
+        <Configuration Condition=" '$(Configuration)' == '' ">Release</Configuration>
+        <Platform Condition=" '$(Platform)' == '' ">Any CPU</Platform>
+    </PropertyGroup>
+
+    <ItemGroup>
+        <TargetsForPublish Include="$(SolutionFile)">
+            <Targets>dist-bin:Publish</Targets>
+            <Properties>PublishDir=$(DistDir)\bin</Properties>
+        </TargetsForPublish>
+        <TargetsForPublish Include="$(SolutionFile)">
+            <Targets>dist-tools:Publish</Targets>
+            <Properties>PublishDir=$(DistDir)\tools</Properties>
+        </TargetsForPublish>
+        <TargetsForPublish Include="$(SolutionFile)">
+            <Targets>dist-image:Publish</Targets>
+            <Properties>PublishDir=$(DistDir)\image</Properties>
+        </TargetsForPublish>
+        <TargetsForPublish Include="$(SolutionFile)">
+            <Targets>dist-nuget:Publish</Targets>
+            <Properties>PublishDir=$(DistDir)\nuget</Properties>
+        </TargetsForPublish>
+        <TargetsForPublish Include="$(SolutionFile)">
+            <Targets>dist-tests:Publish</Targets>
+            <Properties>PublishDir=$(DistDir)\tests</Properties>
+        </TargetsForPublish>
+    </ItemGroup>
+
+    <Target Name="Publish">
+        <ItemGroup>
+            <_TargetsForPublish Include="@(TargetsForPublish)">
+                <Properties>%(TargetsForPublish.Properties)</Properties>
+            </_TargetsForPublish>
+        </ItemGroup>
+
+        <MSBuild BuildInParallel="$(BuildInParallel)" ContinueOnError="false" Projects="@(_TargetsForPublish)" Targets="%(_TargetsForPublish.Targets)" />
+    </Target>
+
+</Project>

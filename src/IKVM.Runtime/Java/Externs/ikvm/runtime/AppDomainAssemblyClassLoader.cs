@@ -50,11 +50,15 @@ namespace IKVM.Java.Externs.ikvm.runtime
         /// <exception cref="ClassNotFoundException"></exception>
         public static global::java.lang.Class findClass(object thisObj, string name)
         {
+#if FIRST_PASS
+            throw new NotImplementedException();
+#else
             foreach (var assembly in AppDomain.CurrentDomain.GetAssemblies())
                 if (LoadClassFromAssembly(assembly, name) is global::java.lang.Class c)
                     return c;
 
-            throw new ClassNotFoundException(name);
+            throw new global::java.lang.ClassNotFoundException(name);
+#endif
         }
 
         /// <summary>
@@ -99,7 +103,9 @@ namespace IKVM.Java.Externs.ikvm.runtime
         /// <param name="name"></param>
         public static void getResources(global::java.util.Vector v, string name)
         {
-#if !FIRST_PASS
+#if FIRST_PASS
+            throw new NotImplementedException();
+#else
             foreach (var url in FindResources(name))
                 if (url != null && !v.contains(url))
                     v.add(url);
