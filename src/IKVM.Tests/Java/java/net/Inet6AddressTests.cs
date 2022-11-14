@@ -58,7 +58,7 @@ namespace IKVM.Tests.Java.java.net
                 .FirstOrDefault(i => i.isLinkLocalAddress());
             if (addr == null)
                 throw new System.Exception("Could not find a link-local address");
-
+            
             using var ss = new ServerSocket();
             ss.bind(new InetSocketAddress(addr, 0));
 

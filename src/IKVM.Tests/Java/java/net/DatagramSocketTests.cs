@@ -92,6 +92,10 @@ namespace IKVM.Tests.Java.java.net
                         serverSocket.receive(packet);
                         received.Add(Encoding.UTF8.GetString(b, packet.getOffset(), packet.getLength()));
                     }
+                    catch (SocketTimeoutException e)
+                    {
+
+                    }
                     catch (SocketException e)
                     {
 
@@ -226,7 +230,7 @@ namespace IKVM.Tests.Java.java.net
         [TestMethod]
         public void ShouldAbortCancelWhenClosed()
         {
-            var ds = new DatagramSocket(0);
+            using var ds = new DatagramSocket(0);
             var ex = (SocketException)null;
 
             var task = Task.Run(() =>
@@ -254,7 +258,7 @@ namespace IKVM.Tests.Java.java.net
         public void SendDatagramToBadAddress()
         {
             // open a socket to get a local port
-            var srvr = new DatagramSocket(0);
+            using var srvr = new DatagramSocket(0);
             var port = srvr.getLocalPort();
             srvr.close();
 

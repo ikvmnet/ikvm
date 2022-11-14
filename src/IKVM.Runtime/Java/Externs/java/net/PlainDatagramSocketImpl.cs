@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Buffers.Binary;
 using System.Collections.Generic;
+using System.Linq;
 using System.Linq.Expressions;
 using System.Net;
 using System.Net.Sockets;
@@ -82,6 +83,9 @@ namespace IKVM.Java.Externs.java.net
         static readonly Action<global::java.net.NetworkInterface, string> NetworkInterfaceNameSetter = MakeFieldSetter<global::java.net.NetworkInterface, string>(NetworkInterfaceNameField);
         static readonly FieldInfo AbstractPlainDatagramSocketImplTrafficClassField = typeof(global::java.net.AbstractPlainDatagramSocketImpl).GetField("trafficClass", BindingFlags.NonPublic | BindingFlags.Instance);
         static readonly Func<global::java.net.AbstractPlainDatagramSocketImpl, int> AbstractPlainDatagramSocketImplTrafficClassGetter = MakeFieldGetter<global::java.net.AbstractPlainDatagramSocketImpl, int>(AbstractPlainDatagramSocketImplTrafficClassField);
+        static readonly FieldInfo Inet6AddressCachedScopeIdField = typeof(global::java.net.Inet6Address).GetField("cached_scope_id", BindingFlags.NonPublic | BindingFlags.Instance);
+        static readonly Action<global::java.net.Inet6Address, int> Inet6AddressCachedScopeIdSetter = MakeFieldSetter<global::java.net.Inet6Address, int>(Inet6AddressCachedScopeIdField);
+        static readonly Func<global::java.net.Inet6Address, int> Inet6AddressCachedScopeIdGetter = MakeFieldGetter<global::java.net.Inet6Address, int>(Inet6AddressCachedScopeIdField);
 
 #if NETCOREAPP3_1_OR_GREATER
         // HACK .NET Core has an explicit check for _isConnected https://github.com/dotnet/runtime/issues/77962
@@ -101,12 +105,66 @@ namespace IKVM.Java.Externs.java.net
 
 #endif
 
-#endif
-
         const IOControlCode SIO_UDP_CONNRESET = (IOControlCode)(-1744830452);
         static readonly byte[] IOControlTrueBuffer = BitConverter.GetBytes(1);
         static readonly byte[] IOControlFalseBuffer = BitConverter.GetBytes(0);
         static readonly byte[] TempBuffer = new byte[1];
+
+        /// <summary>
+        /// Converts the given <see cref="InetAddress"/> into an appropriate endpoint address.
+        /// </summary>
+        /// <param name="address"></param>
+        /// <returns></returns>
+        static IPAddress GetEndPointAddress(global::java.net.InetAddress address)
+        {
+            var a = address.ToIPAddress();
+            if (address is global::java.net.Inet6Address ip6 && a.IsIPv6LinkLocal && a.ScopeId == 0)
+                a.ScopeId = GetDefaultScopeId(ip6);
+            return a;
+        }
+
+        /// <summary>
+        /// Attempts to get the scope ID of a link-local <see cref="global::java.net.Inet6Address"/>.
+        /// </summary>
+        /// <param name="address"></param>
+        /// <returns></returns>
+        static int GetDefaultScopeId(global::java.net.Inet6Address address)
+        {
+            if (Inet6AddressCachedScopeIdGetter(address) is int s2 and not 0)
+                return s2;
+
+            // for Linux we need to obtain the default scope ID by effectively doing a route lookup
+            if (RuntimeInformation.IsOSPlatform(OSPlatform.Linux) && FindScopeId(address) is int s3 and not 0)
+            {
+                Inet6AddressCachedScopeIdSetter(address, s3);
+                return s3;
+            }
+
+            return 0;
+        }
+
+        /// <summary>
+        /// Attempts to lookup the scope id from a non-scoped address.
+        /// </summary>
+        /// <param name="address"></param>
+        /// <returns></returns>
+        static int FindScopeId(global::java.net.Inet6Address address)
+        {
+            var l = System.Net.NetworkInformation.NetworkInterface.GetAllNetworkInterfaces()
+                .SelectMany(i => i.GetIPProperties().UnicastAddresses)
+                .Where(i => i.Address.IsIPv6LinkLocal && i.Address.ScopeId != 0)
+                .Take(2)
+                .ToList();
+
+            if (l.Count > 1)
+                throw new global::java.net.SocketException("Duplicate link local addresses: must specify scope-id");
+            if (l.Count > 0)
+                return (int)l[0].Address.ScopeId;
+
+            return 0;
+        }
+
+#endif
 
         /// <summary>
         /// Implements the native method for 'init'.
@@ -195,7 +253,7 @@ namespace IKVM.Java.Externs.java.net
                     // HACK .NET Core has an explicit check for _isConnected https://github.com/dotnet/runtime/issues/77962
                     SocketIsConnectedFieldSetter(socket, false);
 #endif
-                    socket.EndConnect(socket.BeginConnect(address.ToIPAddress(), port, null, null));
+                    socket.EndConnect(socket.BeginConnect(GetEndPointAddress(address), port, null, null));
 
                     // see comment in in socketCreate
                     if (RuntimeInformation.IsOSPlatform(OSPlatform.Windows))
@@ -260,7 +318,7 @@ namespace IKVM.Java.Externs.java.net
                         throw new global::java.lang.NullPointerException(nameof(localAddress));
 
                     // bind to appropriate address
-                    socket.Bind(new IPEndPoint(localAddress.isAnyLocalAddress() ? IPAddress.IPv6Any : localAddress.ToIPAddress(), localPort));
+                    socket.Bind(new IPEndPoint(localAddress.isAnyLocalAddress() ? IPAddress.IPv6Any : GetEndPointAddress(localAddress), localPort));
 
                     // check that we bound to an IP endpoint
                     var localEndpoint = socket.LocalEndPoint;
@@ -307,7 +365,7 @@ namespace IKVM.Java.Externs.java.net
                     {
                         socket.Blocking = true;
                         socket.SendTimeout = 0;
-                        socket.SendTo(packet.buf, packet.offset, packet.length, SocketFlags.None, new IPEndPoint(packet.getAddress().ToIPAddress(), packet.getPort()));
+                        socket.SendTo(packet.buf, packet.offset, packet.length, SocketFlags.None, new IPEndPoint(GetEndPointAddress(packet.getAddress()), packet.getPort()));
                     }
                     finally
                     {
@@ -360,27 +418,17 @@ namespace IKVM.Java.Externs.java.net
                     if (address == null)
                         throw new global::java.lang.NullPointerException(nameof(address));
 
-                    var prevBlocking = socket.Blocking;
-                    var prevReceiveTimeout = socket.ReceiveTimeout;
-
                     try
                     {
                         if (impl.timeout > 0)
                         {
                             // wait for data to be available
-                            socket.Blocking = false;
-                            socket.ReceiveTimeout = impl.timeout;
                             if (socket.Poll(impl.timeout * 1000L > int.MaxValue ? int.MaxValue : impl.timeout * 1000, SelectMode.SelectRead) == false)
                                 throw new global::java.net.SocketTimeoutException("Peek timed out.");
                         }
-                        else
-                        {
-                            socket.Blocking = true;
-                            socket.ReceiveTimeout = 0;
-                        }
 
                         var remoteEndpoint = (EndPoint)new IPEndPoint(IPAddress.IPv6Any, 0);
-                        var length = socket.ReceiveFrom(TempBuffer, 0, 1, SocketFlags.Peek, ref remoteEndpoint);
+                        var length = socket.EndReceiveFrom(socket.BeginReceiveFrom(TempBuffer, 0, 1, SocketFlags.Peek, ref remoteEndpoint, null, null), ref remoteEndpoint);
 
                         // check that we received an IP endpoint
                         if (remoteEndpoint is not IPEndPoint ipRemoteEndpoint)
@@ -441,13 +489,14 @@ namespace IKVM.Java.Externs.java.net
                     }
                     finally
                     {
-                        socket.Blocking = prevBlocking;
-                        socket.ReceiveTimeout = prevReceiveTimeout;
+
                     }
                 });
             });
 #endif
         }
+
+#if !FIRST_PASS
 
         /// <summary>
         /// Peek at the queue to see if there is an ICMP port unreachable. If there is, then receive it.
@@ -464,14 +513,14 @@ namespace IKVM.Java.Externs.java.net
                 try
                 {
                     var ep = (EndPoint)new IPEndPoint(IPAddress.IPv6Any, 0);
-                    socket.ReceiveFrom(TempBuffer, SocketFlags.Peek, ref ep);
+                    socket.EndReceiveFrom(socket.BeginReceiveFrom(TempBuffer, 0, TempBuffer.Length, SocketFlags.Peek, ref ep, null, null), ref ep);
                 }
                 catch (SocketException e) when (e.SocketErrorCode == SocketError.ConnectionReset)
                 {
                     try
                     {
                         var ep = (EndPoint)new IPEndPoint(IPAddress.IPv6Any, 0);
-                        socket.ReceiveFrom(TempBuffer, SocketFlags.None, ref ep);
+                        socket.EndReceiveFrom(socket.BeginReceiveFrom(TempBuffer, 0, TempBuffer.Length, SocketFlags.Peek, ref ep, null, null), ref ep);
                     }
                     catch (SocketException e2) when (e2.SocketErrorCode == SocketError.ConnectionReset)
                     {
@@ -484,6 +533,8 @@ namespace IKVM.Java.Externs.java.net
                 break;
             }
         }
+
+#endif
 
         /// <summary>
         /// Implements the native method for 'peekData'.
@@ -506,9 +557,6 @@ namespace IKVM.Java.Externs.java.net
                         throw new global::java.lang.NullPointerException("packet");
                     if (packet.buf == null)
                         throw new global::java.lang.NullPointerException("packet buffer");
-
-                    var prevBlocking = socket.Blocking;
-                    var prevReceiveTimeout = socket.ReceiveTimeout;
 
                     try
                     {
@@ -545,9 +593,7 @@ namespace IKVM.Java.Externs.java.net
 
                         try
                         {
-                            socket.Blocking = true;
-                            socket.ReceiveTimeout = 0;
-                            length = socket.ReceiveFrom(packet.buf, packet.offset, packet.bufLength, SocketFlags.Peek, ref remoteEndpoint);
+                            length = socket.EndReceiveFrom(socket.BeginReceiveFrom(packet.buf, packet.offset, packet.bufLength, SocketFlags.Peek, ref remoteEndpoint, null, null), ref remoteEndpoint);
                         }
                         catch (SocketException e) when (e.SocketErrorCode == SocketError.MessageSize)
                         {
@@ -590,8 +636,7 @@ namespace IKVM.Java.Externs.java.net
                     }
                     finally
                     {
-                        socket.Blocking = prevBlocking;
-                        socket.ReceiveTimeout = prevReceiveTimeout;
+
                     }
                 });
             });
@@ -618,9 +663,6 @@ namespace IKVM.Java.Externs.java.net
                         throw new global::java.lang.NullPointerException("packet");
                     if (packet.buf == null)
                         throw new global::java.lang.NullPointerException("packet buffer");
-
-                    var previousBlocking = socket.Blocking;
-                    var previousReceiveTimeout = socket.ReceiveTimeout;
 
                     try
                     {
@@ -657,9 +699,7 @@ namespace IKVM.Java.Externs.java.net
 
                         try
                         {
-                            socket.Blocking = true;
-                            socket.ReceiveTimeout = 0;
-                            length = socket.ReceiveFrom(packet.buf, packet.offset, packet.bufLength, SocketFlags.None, ref remoteEndpoint);
+                            length = socket.EndReceiveFrom(socket.BeginReceiveFrom(packet.buf, packet.offset, packet.bufLength, SocketFlags.None, ref remoteEndpoint, null, null), ref remoteEndpoint);
                         }
                         catch (SocketException e) when (e.SocketErrorCode == SocketError.MessageSize)
                         {
@@ -702,8 +742,7 @@ namespace IKVM.Java.Externs.java.net
                     }
                     finally
                     {
-                        socket.Blocking = previousBlocking;
-                        socket.ReceiveTimeout = previousReceiveTimeout;
+
                     }
                 });
             });
@@ -794,7 +833,7 @@ namespace IKVM.Java.Externs.java.net
             if (inetaddr == null)
                 throw new global::java.lang.NullPointerException(nameof(inetaddr));
 
-            var addr = inetaddr.ToIPAddress();
+            var addr = GetEndPointAddress(inetaddr);
             var ipv6 = Socket.OSSupportsIPv6 && addr.AddressFamily == AddressFamily.InterNetworkV6;
 
             // attempt to join IPv6 multicast

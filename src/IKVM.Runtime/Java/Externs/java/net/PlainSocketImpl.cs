@@ -5,6 +5,7 @@ using System.Linq.Expressions;
 using System.Net;
 using System.Net.Sockets;
 using System.Reflection;
+using System.Runtime.InteropServices;
 
 using IKVM.Runtime.Java.Externs.java.net;
 
@@ -35,10 +36,82 @@ namespace IKVM.Java.Externs.java.net
             return e.Compile();
         }
 
+        /// <summary>
+        /// Compiles a fast setter for a <see cref="FieldInfo"/>.
+        /// </summary>
+        /// <typeparam name="T"></typeparam>
+        /// <typeparam name="V"></typeparam>
+        /// <param name="field"></param>
+        /// <returns></returns>
+        static Action<T, V> MakeFieldSetter<T, V>(FieldInfo field)
+        {
+            var p = Expression.Parameter(typeof(T));
+            var v = Expression.Parameter(typeof(V));
+            var e = Expression.Lambda<Action<T, V>>(Expression.Assign(Expression.Field(field.DeclaringType.IsValueType ? Expression.Unbox(p, field.DeclaringType) : Expression.ConvertChecked(p, field.DeclaringType), field), v), p, v);
+            return e.Compile();
+        }
+
         static readonly FieldInfo AbstractPlainSocketImplTrafficClassField = typeof(global::java.net.AbstractPlainSocketImpl).GetField("trafficClass", BindingFlags.NonPublic | BindingFlags.Instance);
         static readonly Func<global::java.net.AbstractPlainSocketImpl, int> AbstractPlainSocketImplTrafficClassGetter = MakeFieldGetter<global::java.net.AbstractPlainSocketImpl, int>(AbstractPlainSocketImplTrafficClassField);
         static readonly FieldInfo AbstractPlainSocketImplServerSocketField = typeof(global::java.net.AbstractPlainSocketImpl).GetField("serverSocket", BindingFlags.NonPublic | BindingFlags.Instance);
         static readonly Func<global::java.net.AbstractPlainSocketImpl, global::java.net.ServerSocket> AbstractPlainSocketImplServerSocketGetter = MakeFieldGetter<global::java.net.AbstractPlainSocketImpl, global::java.net.ServerSocket>(AbstractPlainSocketImplServerSocketField);
+        static readonly FieldInfo Inet6AddressCachedScopeIdField = typeof(global::java.net.Inet6Address).GetField("cached_scope_id", BindingFlags.NonPublic | BindingFlags.Instance);
+        static readonly Action<global::java.net.Inet6Address, int> Inet6AddressCachedScopeIdSetter = MakeFieldSetter<global::java.net.Inet6Address, int>(Inet6AddressCachedScopeIdField);
+        static readonly Func<global::java.net.Inet6Address, int> Inet6AddressCachedScopeIdGetter = MakeFieldGetter<global::java.net.Inet6Address, int>(Inet6AddressCachedScopeIdField);
+
+        /// <summary>
+        /// Converts the given <see cref="InetAddress"/> into an appropriate endpoint address.
+        /// </summary>
+        /// <param name="address"></param>
+        /// <returns></returns>
+        static IPAddress GetEndPointAddress(global::java.net.InetAddress address)
+        {
+            var a = address.ToIPAddress();
+            if (address is global::java.net.Inet6Address ip6 && a.IsIPv6LinkLocal && a.ScopeId == 0)
+                a.ScopeId = GetDefaultScopeId(ip6);
+            return a;
+        }
+
+        /// <summary>
+        /// Attempts to get the scope ID of a link-local <see cref="global::java.net.Inet6Address"/>.
+        /// </summary>
+        /// <param name="address"></param>
+        /// <returns></returns>
+        static int GetDefaultScopeId(global::java.net.Inet6Address address)
+        {
+            if (Inet6AddressCachedScopeIdGetter(address) is int s2 and not 0)
+                return s2;
+
+            // for Linux we need to obtain the default scope ID by effectively doing a route lookup
+            if (RuntimeInformation.IsOSPlatform(OSPlatform.Linux) && FindScopeId(address) is int s3 and not 0)
+            {
+                Inet6AddressCachedScopeIdSetter(address, s3);
+                return s3;
+            }
+
+            return 0;
+        }
+
+        /// <summary>
+        /// Attempts to lookup the scope id from a non-scoped address.
+        /// </summary>
+        /// <param name="address"></param>
+        /// <returns></returns>
+        static int FindScopeId(global::java.net.Inet6Address address)
+        {
+            var l = System.Net.NetworkInformation.NetworkInterface.GetAllNetworkInterfaces()
+                .SelectMany(i => i.GetIPProperties().UnicastAddresses)
+                .Where(i => i.Address.IsIPv6LinkLocal && i.Address.ScopeId != 0)
+                .Take(2)
+                .ToList();
+
+            if (l.Count > 1)
+                throw new global::java.net.SocketException("Duplicate link local addresses: must specify scope-id");
+            if (l.Count > 0)
+                return (int)l[0].Address.ScopeId;
+
+            return 0;
+        }
 
 #endif
 
@@ -100,7 +173,7 @@ namespace IKVM.Java.Externs.java.net
                             // non-blocking connect throws a WouldBlock exception, after which we Poll for completion
                             try
                             {
-                                socket.Connect(address.ToIPAddress(), port);
+                                socket.Connect(GetEndPointAddress(address), port);
                             }
                             catch (SocketException e) when (e.SocketErrorCode == SocketError.WouldBlock)
                             {
@@ -118,7 +191,7 @@ namespace IKVM.Java.Externs.java.net
                         else
                         {
                             socket.Blocking = true;
-                            socket.Connect(address.ToIPAddress(), port);
+                            socket.Connect(GetEndPointAddress(address), port);
                         }
 
                         impl.address = address;
@@ -174,7 +247,7 @@ namespace IKVM.Java.Externs.java.net
                 {
                     try
                     {
-                        socket.Bind(new IPEndPoint(address.isAnyLocalAddress() ? IPAddress.IPv6Any : address.ToIPAddress(), port));
+                        socket.Bind(new IPEndPoint(address.isAnyLocalAddress() ? IPAddress.IPv6Any : GetEndPointAddress(address), port));
                         impl.address = address;
                         impl.localport = port == 0 ? ((IPEndPoint)socket.LocalEndPoint).Port : port;
                     }
