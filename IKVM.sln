@@ -25,7 +25,9 @@ Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Solution Items", "Solution 
 		Directory.Build.targets = Directory.Build.targets
 		GitVersion.yml = GitVersion.yml
 		global.json = global.json
+		IKVM.deps.props = IKVM.deps.props
 		IKVM.dist.msbuildproj = IKVM.dist.msbuildproj
+		IKVM.refs.props = IKVM.refs.props
 		.github\workflows\IKVM.yml = .github\workflows\IKVM.yml
 		jtreg.props = jtreg.props
 		LICENSE.md = LICENSE.md
@@ -166,6 +168,7 @@ EndProject
 Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "ikvm-native-osx-x64", "src\ikvm-native\ikvm-native-osx-x64.vcxproj", "{FDB14447-010D-47C5-87C7-24BD17D7273C}"
 EndProject
 Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "ikvm-native-osx-arm64", "src\ikvm-native\ikvm-native-osx-arm64.vcxproj", "{01E7A7F2-49EF-455B-AF8B-D219D1CC2B32}"
+Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "dist", "dist", "{CED2AF2A-30B2-46A0-81EC-7EFE23325D9B}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
@@ -472,6 +475,11 @@ Global
 		{E566FE94-C551-43A7-843C-5E8199CA7373} = {B6083619-C4E8-4D8E-95BD-217E3663134C}
 		{FDB14447-010D-47C5-87C7-24BD17D7273C} = {0606E530-F834-44A3-9B4E-37852A06D11B}
 		{01E7A7F2-49EF-455B-AF8B-D219D1CC2B32} = {0606E530-F834-44A3-9B4E-37852A06D11B}
+		{4A140FDF-9F39-47DE-BD81-CD7A4998AB41} = {CED2AF2A-30B2-46A0-81EC-7EFE23325D9B}
+		{22835332-F418-4086-9FB1-0DE3397A2D15} = {CED2AF2A-30B2-46A0-81EC-7EFE23325D9B}
+		{BEB24DF0-A5AA-4FF4-BEBE-82600BA01E15} = {CED2AF2A-30B2-46A0-81EC-7EFE23325D9B}
+		{7B499B90-6AE8-48E8-976A-2B84945E26ED} = {CED2AF2A-30B2-46A0-81EC-7EFE23325D9B}
+		{1E2E88BE-09E0-4D9C-A465-B15FD6CB8667} = {CED2AF2A-30B2-46A0-81EC-7EFE23325D9B}
 	EndGlobalSection
 	GlobalSection(ExtensibilityGlobals) = postSolution
 		SolutionGuid = {A03ACB78-6C3F-4E09-BAF1-16E41D5A3945}

@@ -1,5 +1,6 @@
-﻿<Project>
-    <Import Sdk="Microsoft.Build.NoTargets" Version="3.5.6" Project="Sdk.props" />
+﻿<Project Sdk="Microsoft.Build.NoTargets/3.5.6">
+    <Import Project="$(MSBuildThisFileDirectory)..\..\ikvm.deps.props" />
+    <Import Project="$(MSBuildThisFileDirectory)..\..\ikvm.refs.props" />
 
     <PropertyGroup>
         <TargetFrameworks>net461;netcoreapp3.1</TargetFrameworks>
@@ -112,6 +113,11 @@
         </LibProjectReference>
     </ItemGroup>
 
+    <ItemGroup>
+        <ProjectReference Include="..\IKVM.MSBuild\IKVM.MSBuild.msbuildproj" />
+        <ProjectReference Include="..\IKVM.Image\IKVM.Image.csproj" />
+    </ItemGroup>
+
     <Target Name="GetProjectReferenceBuildOutputInPackage" DependsOnTargets="ResolveReferences">
         <ItemGroup>
             <BuildOutputInPackage Include="@(ReferenceCopyLocalPaths-&gt;WithMetadataValue('ReferenceSourceTarget', 'ProjectReference')-&gt;WithMetadataValue('PrivateAssets', 'all'))" />
@@ -136,5 +142,4 @@
         </ItemGroup>
     </Target>
 
-    <Import Sdk="Microsoft.Build.NoTargets" Version="3.5.6" Project="Sdk.targets" />
 </Project>

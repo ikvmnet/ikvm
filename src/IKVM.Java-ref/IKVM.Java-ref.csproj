@@ -1,5 +1,4 @@
 ﻿<Project Sdk="Microsoft.NET.Sdk">
-
     <PropertyGroup>
         <PackageId>IKVM.Java-ref</PackageId>
         <TargetFrameworks>net461;netcoreapp3.1</TargetFrameworks>
