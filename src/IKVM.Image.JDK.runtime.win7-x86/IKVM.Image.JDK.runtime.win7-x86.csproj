@@ -37,6 +37,7 @@
             <SetTargetFramework>TargetFramework=$(TargetFramework)</SetTargetFramework>
             <SetRuntimeIdentifier>RuntimeIdentifier=win7-x86</SetRuntimeIdentifier>
             <ProjectTargetPath>ikvm\win7-x86\bin</ProjectTargetPath>
+            <Pack>false</Pack>
         </PublishProjectReference>
     </ItemGroup>
 

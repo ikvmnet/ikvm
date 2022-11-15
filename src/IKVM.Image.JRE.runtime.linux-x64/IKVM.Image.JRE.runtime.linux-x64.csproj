@@ -32,6 +32,7 @@
             <SetTargetFramework>TargetFramework=$(TargetFramework)</SetTargetFramework>
             <SetRuntimeIdentifier>RuntimeIdentifier=linux-x64</SetRuntimeIdentifier>
             <ProjectTargetPath>ikvm\linux-x64\bin</ProjectTargetPath>
+            <Pack>false</Pack>
         </PublishProjectReference>
     </ItemGroup>
 
