@@ -20,9 +20,9 @@
         <ProjectReference Include="..\IKVM.Image\IKVM.Image.csproj" />
     </ItemGroup>
 
-    <Import Project="..\IKVM.NET.Sdk\Sdk\Sdk.targets" />
-    <Import Project="..\IKVM\buildTransitive\netstandard2.0\IKVM.targets" />
-    <Import Project="..\IKVM.MSBuild\buildTransitive\netstandard2.0\IKVM.MSBuild.targets" />
+    <Import Project="$(MSBuildThisFileDirectory)..\IKVM.NET.Sdk\Sdk\Sdk.targets" />
+    <Import Project="$(MSBuildThisFileDirectory)..\IKVM\buildTransitive\netstandard2.0\IKVM.targets" />
+    <Import Project="$(MSBuildThisFileDirectory)..\IKVM.MSBuild\buildTransitive\netstandard2.0\IKVM.MSBuild.targets" />
 
     <!-- javac-ref uses the javac executable from JAVA_HOME: bootstrap -->
     <Target Name="ResolveJavaCompiler" Condition=" '$(JAVA_HOME)' != '' And '$(JavaCompilerPath)' == '' ">
