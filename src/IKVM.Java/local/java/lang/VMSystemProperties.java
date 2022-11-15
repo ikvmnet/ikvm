@@ -469,7 +469,7 @@ final class VMSystemProperties
     
     private static native cli.System.Collections.IDictionary get_ImportProperties();
     private static native cli.System.Reflection.Assembly getRuntimeAssembly();
-    private static native String getIkvmHomeArchs();
+    private static native String[] getIkvmHomeArchs();
     private static native String getVirtualFileSystemRoot();
     private static native String getBootClassPath();
     private static native String getStdoutEncoding();
