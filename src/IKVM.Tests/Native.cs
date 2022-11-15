@@ -30,19 +30,14 @@ namespace IKVM.Tests
         /// Gets the RID architecture.
         /// </summary>
         /// <returns></returns>
-        static string GetRuntimeIdentifierArch()
+        static string GetRuntimeIdentifierArch() => RuntimeInformation.ProcessArchitecture switch
         {
-            if (RuntimeInformation.ProcessArchitecture == Architecture.X86)
-                return "x86";
-            else if (RuntimeInformation.ProcessArchitecture == Architecture.X64)
-                return "x64";
-            else if (RuntimeInformation.ProcessArchitecture == Architecture.Arm)
-                return "arm";
-            else if (RuntimeInformation.ProcessArchitecture == Architecture.Arm64)
-                return "arm64";
-            else
-                return null;
-        }
+            Architecture.X86 => "x86",
+            Architecture.X64 => "x64",
+            Architecture.Arm => "arm",
+            Architecture.Arm64 => "arm64",
+            _ => null,
+        };
 
         /// <summary>
         /// Gets the runtime identifiers of the current platform.
@@ -51,19 +46,38 @@ namespace IKVM.Tests
         static IEnumerable<string> GetRuntimeIdentifiers()
         {
             var arch = GetRuntimeIdentifierArch();
+            if (arch == null)
+                yield break;
 
-#if NETFRAMEWORK
-            yield return $"win-{arch}";
-#else
             if (RuntimeInformation.IsOSPlatform(OSPlatform.Windows))
+            {
+                var v = Environment.OSVersion.Version;
+
+                // Windows 10
+                if (v.Major > 10 || (v.Major == 10 && v.Minor >= 0))
+                    yield return $"win10-{arch}";
+
+                // Windows 8.1
+                if (v.Major > 6 || (v.Major == 6 && v.Minor >= 3))
+                    yield return $"win81-{arch}";
+
+                // Windows 7
+                if (v.Major > 6 || (v.Major == 6 && v.Minor >= 1))
+                    yield return $"win7-{arch}";
+
+                // fallback
                 yield return $"win-{arch}";
+            }
 
             if (RuntimeInformation.IsOSPlatform(OSPlatform.Linux))
+            {
                 yield return $"linux-{arch}";
+            }
 
             if (RuntimeInformation.IsOSPlatform(OSPlatform.OSX))
+            {
                 yield return $"osx-{arch}";
-#endif
+            }
         }
 
         /// <summary>
@@ -73,9 +87,6 @@ namespace IKVM.Tests
         /// <returns></returns>
         static string GetLibraryFileName(string name)
         {
-#if NETFRAMEWORK
-            return $"{name}.dll";
-#else
             if (RuntimeInformation.IsOSPlatform(OSPlatform.Windows))
                 return $"{name}.dll";
 
@@ -84,7 +95,6 @@ namespace IKVM.Tests
 
             if (RuntimeInformation.IsOSPlatform(OSPlatform.OSX))
                 return $"lib{name}.dynlib";
-#endif
 
             throw new NotSupportedException();
         }
