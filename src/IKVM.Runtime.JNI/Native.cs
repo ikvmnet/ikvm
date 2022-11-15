@@ -153,9 +153,11 @@ namespace IKVM.Runtime
         {
             if (RuntimeInformation.IsOSPlatform(OSPlatform.Windows))
                 return $"{name}.dll";
-            else if (RuntimeInformation.IsOSPlatform(OSPlatform.Linux))
+
+            if (RuntimeInformation.IsOSPlatform(OSPlatform.Linux))
                 return $"lib{name}.so";
-            else if (RuntimeInformation.IsOSPlatform(OSPlatform.OSX))
+
+            if (RuntimeInformation.IsOSPlatform(OSPlatform.OSX))
                 return $"lib{name}.dynlib";
 
             throw new NotSupportedException();

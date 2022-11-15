@@ -166,8 +166,13 @@ jobs:
       uses: Vampire/setup-wsl@v1
       with:
         additional-packages:
-          gcc
-          g++
+          zlib1g-dev
+          libmpc-dev
+          libmpfr-dev
+          libgmp-dev
+          clang
+          llvm
+          llvm-dev
     - name: Setup .NET
       shell: pwsh
       run: Add-Content $env:GITHUB_ENV "`nDOTNET_INSTALL_DIR=${{ runner.temp }}\dotnet"
@@ -179,17 +184,6 @@ jobs:
       uses: actions/setup-dotnet@v3
       with:
         dotnet-version: 6.0.x
-    - name: Setup WSL
-      uses: Vampire/setup-wsl@v1
-      with:
-        additional-packages:
-          zlib1g-dev
-          libmpc-dev
-          libmpfr-dev
-          libgmp-dev
-          clang
-          llvm
-          llvm-dev
     - name: Move Temporary Directory
       shell: pwsh
       run: Add-Content $env:GITHUB_ENV "`nTMP=${{ runner.temp }}`nTEMP=${{ runner.temp }}`nTMPDIR=${{ runner.temp }}"
