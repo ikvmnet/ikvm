@@ -1589,6 +1589,7 @@ java/security/cert/CertPathBuilder/akiExt/AKISerialNumber.java                  
 java/security/cert/CertPathBuilder/selfIssued/DisableRevocation.java                                                    generic-all
 java/security/cert/CertPathBuilder/selfIssued/KeyUsageMatters.java                                                      generic-all
 java/security/cert/CertPathBuilder/selfIssued/StatusLoopDependency.java                                                 generic-all
+java/security/cert/CertPathBuilder/targetConstraints/BuildEEBasicConstraints.java                                       generic-all
 java/security/cert/CertPathValidator/OCSP/FailoverToCRL.java                                                            generic-all
 java/security/cert/CertPathValidator/indirectCRL/CircularCRLOneLevel.java                                               generic-all
 java/security/cert/CertPathValidator/indirectCRL/CircularCRLOneLevelRevoked.java                                        generic-all
