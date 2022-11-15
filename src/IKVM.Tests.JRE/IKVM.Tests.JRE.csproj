@@ -1,6 +1,6 @@
-<Project Sdk="Microsoft.NET.Sdk">
-    <Import Project="..\..\ikvm.deps.props" />
-    <Import Project="..\..\ikvm.refs.props" />
+﻿<Project Sdk="Microsoft.NET.Sdk">
+    <Import Project="$(MSBuildThisFileDirectory)..\..\ikvm.deps.props" />
+    <Import Project="$(MSBuildThisFileDirectory)..\..\ikvm.refs.props" />
 
     <PropertyGroup>
         <TargetFrameworks>net461;netcoreapp3.1;net6.0</TargetFrameworks>
