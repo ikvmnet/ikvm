@@ -1,4 +1,5 @@
 <Project Sdk="Microsoft.NET.Sdk">
+﻿<Project Sdk="Microsoft.NET.Sdk">
     <Import Project="$(MSBuildThisFileDirectory)..\..\ikvm.deps.props" />
     <Import Project="$(MSBuildThisFileDirectory)..\..\ikvm.refs.props" />
 

@@ -100,7 +100,7 @@ namespace IKVM.Runtime
             Architecture.X64 => "x64",
             Architecture.Arm => "arm",
             Architecture.Arm64 => "arm64",
-            _ => throw new NotSupportedException(),
+            _ => null,
         };
 
         /// <summary>
@@ -110,6 +110,8 @@ namespace IKVM.Runtime
         static IEnumerable<string> GetRuntimeIdentifiers()
         {
             var arch = GetRuntimeIdentifierArch();
+            if (arch == null)
+                yield break;
 
             if (RuntimeInformation.IsOSPlatform(OSPlatform.Windows))
             {
@@ -132,7 +134,9 @@ namespace IKVM.Runtime
             }
 
             if (RuntimeInformation.IsOSPlatform(OSPlatform.Linux))
+            {
                 yield return $"linux-{arch}";
+            }
         }
 
         /// <summary>

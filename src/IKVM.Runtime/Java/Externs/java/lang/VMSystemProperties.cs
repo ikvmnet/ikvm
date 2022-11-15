@@ -72,6 +72,8 @@ namespace IKVM.Java.Externs.java.lang
         static IEnumerable<string> GetIkvmHomeArchsEnumerator()
         {
             var arch = GetRuntimeIdentifierArchitecture();
+            if (arch == null)
+                yield break;
 
             if (RuntimeInformation.IsOSPlatform(OSPlatform.Windows))
             {
@@ -94,7 +96,9 @@ namespace IKVM.Java.Externs.java.lang
             }
 
             if (RuntimeInformation.IsOSPlatform(OSPlatform.Linux))
+            {
                 yield return $"linux-{arch}";
+            }
         }
 
         /// <summary>
