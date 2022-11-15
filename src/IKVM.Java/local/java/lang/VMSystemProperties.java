@@ -130,11 +130,14 @@ final class VMSystemProperties
             if (ikvmHomeRoot != null) {
                 String ikvmHomeRootPath = cli.System.IO.Path.Combine(runtimePath, ikvmHomeRoot);
                 if (cli.System.IO.Directory.Exists(ikvmHomeRootPath)) {
-                    String ikvmHomeArch = getIkvmHomeArch();
-                    if (ikvmHomeArch != null) {
-                        String ikvmHomePath = cli.System.IO.Path.Combine(ikvmHomeRootPath, ikvmHomeArch);
-                        if (cli.System.IO.Directory.Exists(ikvmHomePath)) {
-                            ikvmHome = cli.System.IO.Path.Combine(ikvmHomeRoot, ikvmHomeArch);
+                    String[] ikvmHomeArchs = getIkvmHomeArchs();
+                    if (ikvmHomeArchs != null) {
+                        for (String ikvmHomeArch : ikvmHomeArchs) {
+                            String ikvmHomePath = cli.System.IO.Path.Combine(ikvmHomeRootPath, ikvmHomeArch);
+                            if (cli.System.IO.Directory.Exists(ikvmHomePath)) {
+                                ikvmHome = ikvmHomePath;
+                                break;
+                            }
                         }
                     }
                 }
@@ -466,7 +469,7 @@ final class VMSystemProperties
     
     private static native cli.System.Collections.IDictionary get_ImportProperties();
     private static native cli.System.Reflection.Assembly getRuntimeAssembly();
-    private static native String getIkvmHomeArch();
+    private static native String[] getIkvmHomeArchs();
     private static native String getVirtualFileSystemRoot();
     private static native String getBootClassPath();
     private static native String getStdoutEncoding();

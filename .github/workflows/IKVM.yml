@@ -110,7 +110,7 @@ jobs:
         name: jtreg-build
         path: jtreg/jtreg-build.zip
   build-ikvm:
-    name: Build IKVM (Windows)
+    name: Build IKVM
     needs:
     - build-openjdk
     runs-on: windows-latest
