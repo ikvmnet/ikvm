@@ -24,6 +24,7 @@
 using System;
 using System.Collections;
 using System.Diagnostics;
+using System.Linq;
 using System.Reflection;
 using System.Runtime.InteropServices;
 
@@ -54,40 +55,63 @@ namespace IKVM.Java.Externs.java.lang
         /// Gets the RID architecture.
         /// </summary>
         /// <returns></returns>
-        static string GetRuntimeIdentifierArch()
+        static string GetRuntimeIdentifierArchitecture() => RuntimeInformation.ProcessArchitecture switch
         {
-            if (RuntimeInformation.ProcessArchitecture == Architecture.X86)
-                return "x86";
-            else if (RuntimeInformation.ProcessArchitecture == Architecture.X64)
-                return "x64";
-            else if (RuntimeInformation.ProcessArchitecture == Architecture.Arm)
-                return "arm";
-            else if (RuntimeInformation.ProcessArchitecture == Architecture.Arm64)
-                return "arm64";
-            else
-                return null;
+            Architecture.X86 => "x86",
+            Architecture.X64 => "x64",
+            Architecture.Arm => "arm",
+            Architecture.Arm64 => "arm64",
+            _ => throw new NotSupportedException(),
+        };
+
+        /// <summary>
+        /// Returns the architecture name of the ikvm.home directory to use for this run.
+        /// </summary>
+        /// <returns></returns>
+        static IEnumerable<string> GetIkvmHomeArchsEnumerator()
+        {
+            var arch = GetRuntimeIdentifierArchitecture();
+            if (arch == null)
+                yield break;
+
+            if (RuntimeInformation.IsOSPlatform(OSPlatform.Windows))
+            {
+                var v = Environment.OSVersion.Version;
+
+                // Windows 10
+                if (v.Major > 10 || (v.Major == 10 && v.Minor >= 0))
+                    yield return $"win10-{arch}";
+
+                // Windows 8.1
+                if (v.Major > 6 || (v.Major == 6 && v.Minor >= 3))
+                    yield return $"win81-{arch}";
+
+                // Windows 7
+                if (v.Major > 6 || (v.Major == 6 && v.Minor >= 1))
+                    yield return $"win7-{arch}";
+
+                // fallback
+                yield return $"win-{arch}";
+            }
+
+            if (RuntimeInformation.IsOSPlatform(OSPlatform.Linux))
+            {
+                yield return $"linux-{arch}";
+            }
+
+            if (RuntimeInformation.IsOSPlatform(OSPlatform.OSX))
+            {
+                yield return $"osx-{arch}";
+            }
         }
 
         /// <summary>
         /// Returns the architecture name of the ikvm.home directory to use for this run.
         /// </summary>
         /// <returns></returns>
-        public static string getIkvmHomeArch()
+        public static string[] getIkvmHomeArchs()
         {
-#if NETFRAMEWORK
-            return $"win7-{GetRuntimeIdentifierArch()}";
-#else
-            if (RuntimeInformation.IsOSPlatform(OSPlatform.Windows))
-                return $"win7-{GetRuntimeIdentifierArch()}";
-
-            if (RuntimeInformation.IsOSPlatform(OSPlatform.Linux))
-                return $"linux-{GetRuntimeIdentifierArch()}";
-
-            if (RuntimeInformation.IsOSPlatform(OSPlatform.OSX))
-                return $"osx-{GetRuntimeIdentifierArch()}";
-#endif
-
-            return null;
+            return GetIkvmHomeArchsEnumerator().ToArray();
         }
 
         /// <summary>
