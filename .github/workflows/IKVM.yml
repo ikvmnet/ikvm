@@ -132,8 +132,13 @@ jobs:
       uses: Vampire/setup-wsl@v1
       with:
         additional-packages:
-          gcc
-          g++
+          zlib1g-dev
+          libmpc-dev
+          libmpfr-dev
+          libgmp-dev
+          clang
+          llvm
+          llvm-dev
     - name: Setup .NET
       shell: pwsh
       run: Add-Content $env:GITHUB_ENV "`nDOTNET_INSTALL_DIR=${{ runner.temp }}\dotnet"
