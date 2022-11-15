@@ -1,0 +1,48 @@
+<Project>
+
+    <ItemGroup>
+        <ProjectReference Include="$(MSBuildThisFileDirectory)src\IKVM.Java\IKVM.Java.msbuildproj">
+            <ReferenceOutputAssembly>true</ReferenceOutputAssembly>
+            <PrivateAssets>all</PrivateAssets>
+        </ProjectReference>
+        <ProjectReference Include="$(MSBuildThisFileDirectory)src\IKVM.Runtime\IKVM.Runtime.csproj">
+            <ReferenceOutputAssembly>true</ReferenceOutputAssembly>
+            <PrivateAssets>all</PrivateAssets>
+        </ProjectReference>
+        <ProjectReference Include="$(MSBuildThisFileDirectory)src\IKVM.Runtime.JNI\IKVM.Runtime.JNI.csproj">
+            <ReferenceOutputAssembly>true</ReferenceOutputAssembly>
+            <PrivateAssets>all</PrivateAssets>
+        </ProjectReference>
+    </ItemGroup>
+
+    <ItemGroup Condition=" '$(TargetFramework)' != '' ">
+        <LibProjectReference Include="$(MSBuildThisFileDirectory)src\ikvm-native\ikvm-native-win.vcxproj">
+            <SetPlatform>Platform=x64</SetPlatform>
+            <LibTargetPath>runtimes\win-x64\native</LibTargetPath>
+        </LibProjectReference>
+        <LibProjectReference Include="$(MSBuildThisFileDirectory)src\ikvm-native\ikvm-native-win.vcxproj">
+            <SetPlatform>Platform=Win32</SetPlatform>
+            <LibTargetPath>runtimes\win-x86\native</LibTargetPath>
+        </LibProjectReference>
+        <LibProjectReference Include="$(MSBuildThisFileDirectory)src\ikvm-native\ikvm-native-linux.vcxproj">
+            <SetPlatform>Platform=x64</SetPlatform>
+            <LibTargetPath>runtimes\linux-x64\native</LibTargetPath>
+        </LibProjectReference>
+    </ItemGroup>
+
+    <ItemGroup Condition=" '$(TargetFramework)' == '' ">
+        <LibProjectReference Include="$(MSBuildThisFileDirectory)src\ikvm-native\ikvm-native-win.vcxproj">
+            <SetPlatform>Platform=x64</SetPlatform>
+            <LibPackagePath>runtimes\win-x64\native</LibPackagePath>
+        </LibProjectReference>
+        <LibProjectReference Include="$(MSBuildThisFileDirectory)src\ikvm-native\ikvm-native-win.vcxproj">
+            <SetPlatform>Platform=Win32</SetPlatform>
+            <LibPackagePath>runtimes\win-x86\native</LibPackagePath>
+        </LibProjectReference>
+        <LibProjectReference Include="$(MSBuildThisFileDirectory)src\ikvm-native\ikvm-native-linux.vcxproj">
+            <SetPlatform>Platform=x64</SetPlatform>
+            <LibPackagePath>runtimes\linux-x64\native</LibPackagePath>
+        </LibProjectReference>
+    </ItemGroup>
+
+</Project>
