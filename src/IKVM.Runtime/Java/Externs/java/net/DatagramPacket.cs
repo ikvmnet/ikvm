@@ -25,6 +25,9 @@
 namespace IKVM.Java.Externs.java.net
 {
 
+    /// <summary>
+    /// Implements the external methods for <see cref="global::java.net.DatagramPacket"/>.
+    /// </summary>
     static class DatagramPacket
     {
 

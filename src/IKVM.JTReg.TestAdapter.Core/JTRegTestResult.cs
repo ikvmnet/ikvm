@@ -37,7 +37,7 @@ namespace IKVM.JTReg.TestAdapter.Core
 
         public List<JTRegTestResultMessage> Messages { get; set; } = new();
 
-        public List<JTRegAttachmentSet> Attachments { get; set; } = new();
+        public List<JTRegAttachment> Attachments { get; set; } = new();
 
     }
 

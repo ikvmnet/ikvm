@@ -1,8 +1,8 @@
 ﻿<Project>
-    <Import Project="..\IKVM.NET.Sdk\Sdk\Sdk.props" />
-    <Import Project="..\IKVM.MSBuild\buildTransitive\netstandard2.0\IKVM.MSBuild.props" />
-    <Import Project="..\..\openjdk.props" />
-    <Import Project="..\..\ikvm.deps.props" />
+    <Import Project="$(MSBuildThisFileDirectory)..\IKVM.NET.Sdk\Sdk\Sdk.props" />
+    <Import Project="$(MSBuildThisFileDirectory)..\IKVM.MSBuild\buildTransitive\netstandard2.0\IKVM.MSBuild.props" />
+    <Import Project="$(MSBuildThisFileDirectory)..\..\openjdk.props" />
+    <Import Project="$(MSBuildThisFileDirectory)..\..\ikvm.deps.props" />
 
     <PropertyGroup>
         <PackageId>IKVM.Java</PackageId>

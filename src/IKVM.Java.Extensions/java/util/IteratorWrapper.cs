@@ -2,8 +2,6 @@
 using System.Collections;
 using System.Collections.Generic;
 
-using java.lang;
-
 namespace java.util
 {
 
@@ -38,7 +36,6 @@ namespace java.util
         /// Moves to the next instance.
         /// </summary>
         /// <returns></returns>
-        /// <exception cref="NotImplementedException"></exception>
         public bool MoveNext()
         {
             if (iterator.hasNext())
@@ -54,11 +51,9 @@ namespace java.util
         /// <summary>
         /// Disposes of the instance.
         /// </summary>
-        /// <exception cref="NotImplementedException"></exception>
         public void Dispose()
         {
-            if (iterator is AutoCloseable c)
-                c.Dispose();
+
         }
 
         /// <summary>

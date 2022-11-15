@@ -1,21 +1,22 @@
 ﻿<Project>
-    <Import Project="..\IKVM.NET.Sdk\Sdk\Sdk.props" />
-    <Import Project="..\IKVM\buildTransitive\netstandard2.0\IKVM.props" />
-    <Import Project="..\IKVM.MSBuild\buildTransitive\netstandard2.0\IKVM.MSBuild.props" />
-    <Import Project="..\..\ikvm.deps.props" />
-    <Import Project="..\..\ikvm.refs.props" />
+    <Import Project="$(MSBuildThisFileDirectory)..\IKVM.NET.Sdk\Sdk\Sdk.props" />
+    <Import Project="$(MSBuildThisFileDirectory)..\IKVM\buildTransitive\netstandard2.0\IKVM.props" />
+    <Import Project="$(MSBuildThisFileDirectory)..\IKVM.MSBuild\buildTransitive\netstandard2.0\IKVM.MSBuild.props" />
+    <Import Project="$(MSBuildThisFileDirectory)..\..\ikvm.deps.props" />
+    <Import Project="$(MSBuildThisFileDirectory)..\..\ikvm.refs.props" />
 
     <PropertyGroup>
         <OutputType>Exe</OutputType>
         <TargetFrameworks>net461;netcoreapp3.1</TargetFrameworks>
         <RuntimeIdentifiers>win7-x64;win7-x86;win81-arm;linux-x64</RuntimeIdentifiers>
-        <AutoGenerateBindingRedirects>true</AutoGenerateBindingRedirects>
+        <AutoGenerateBindingRedirects Condition="$([MSBuild]::IsTargetFrameworkCompatible('$(TargetFramework)', 'net461'))">true</AutoGenerateBindingRedirects>
+        <GenerateBindingRedirectsOutputType Condition="$([MSBuild]::IsTargetFrameworkCompatible('$(TargetFramework)', 'net461'))">true</GenerateBindingRedirectsOutputType>
         <StartupObject>com.sun.tools.javadoc.Main</StartupObject>
         <RootNamespace>ikvm.tools.javadoc</RootNamespace>
     </PropertyGroup>
 
-    <Import Project="..\IKVM.NET.Sdk\Sdk\Sdk.targets" />
-    <Import Project="..\IKVM\buildTransitive\netstandard2.0\IKVM.targets" />
-    <Import Project="..\IKVM.MSBuild\buildTransitive\netstandard2.0\IKVM.MSBuild.targets" />
+    <Import Project="$(MSBuildThisFileDirectory)..\IKVM.NET.Sdk\Sdk\Sdk.targets" />
+    <Import Project="$(MSBuildThisFileDirectory)..\IKVM\buildTransitive\netstandard2.0\IKVM.targets" />
+    <Import Project="$(MSBuildThisFileDirectory)..\IKVM.MSBuild\buildTransitive\netstandard2.0\IKVM.MSBuild.targets" />
 </Project>
 

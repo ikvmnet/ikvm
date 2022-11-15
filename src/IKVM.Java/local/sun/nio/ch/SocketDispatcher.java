@@ -29,20 +29,22 @@ import java.io.*;
 import java.net.SocketException;
 import java.net.SocketUtil;
 import java.nio.ByteBuffer;
+
+import cli.System.Net.Sockets.SocketError;
 import cli.System.Net.Sockets.SocketFlags;
 
 /**
  * Allows different platforms to call different native methods
  * for read and write operations.
  */
-
 class SocketDispatcher extends NativeDispatcher
 {
-    int read(FileDescriptor fd, byte[] buf, int offset, int length) throws IOException {
+
+    int read(FileDescriptor fd, byte[] buf, int offset, int length) throws IOException
+    {
         if (length == 0)
-        {
             return 0;
-        }
+
         try
         {
             if (false) throw new cli.System.Net.Sockets.SocketException();
@@ -50,44 +52,47 @@ class SocketDispatcher extends NativeDispatcher
             int read = fd.getSocket().Receive(buf, offset, length, SocketFlags.wrap(SocketFlags.None));
             return read == 0 ? IOStatus.EOF : read;
         }
-        catch (cli.System.Net.Sockets.SocketException x)
+        catch (cli.System.Net.Sockets.SocketException e)
         {
-            if (x.get_ErrorCode() == SocketUtil.WSAESHUTDOWN)
+            switch (e.get_SocketErrorCode().Value)
             {
-                // the socket was shutdown, so we have to return EOF
-                return IOStatus.EOF;
+                case SocketError.Shutdown:
+                    // the socket was shutdown, so we have to return EOF
+                    return IOStatus.EOF;
+                case SocketError.WouldBlock:
+                    // nothing to read and would block
+                    return IOStatus.UNAVAILABLE;
+                default:
+                    throw SocketUtil.convertSocketExceptionToIOException(e);
             }
-            else if (x.get_ErrorCode() == SocketUtil.WSAEWOULDBLOCK)
-            {
-                // nothing to read and would block
-                return IOStatus.UNAVAILABLE;
-            }
-            throw SocketUtil.convertSocketExceptionToIOException(x);
         }
-        catch (cli.System.ObjectDisposedException x1)
+        catch (cli.System.ObjectDisposedException e)
         {
-            throw new SocketException("Socket is closed");
+            throw new SocketException("Socket is closed.");
         }
     }
 
-    int write(FileDescriptor fd, byte[] buf, int offset, int length) throws IOException {
+    int write(FileDescriptor fd, byte[] buf, int offset, int length) throws IOException
+    {
         try
         {
             if (false) throw new cli.System.Net.Sockets.SocketException();
             if (false) throw new cli.System.ObjectDisposedException("");
             return fd.getSocket().Send(buf, offset, length, SocketFlags.wrap(SocketFlags.None));
         }
-        catch (cli.System.Net.Sockets.SocketException x)
+        catch (cli.System.Net.Sockets.SocketException e)
         {
-            if (x.get_ErrorCode() == SocketUtil.WSAEWOULDBLOCK)
+            switch (e.get_SocketErrorCode().Value)
             {
-                return IOStatus.UNAVAILABLE;
+                case SocketError.WouldBlock:
+                    return IOStatus.UNAVAILABLE;
+                default:
+                    throw SocketUtil.convertSocketExceptionToIOException(e);
             }
-            throw SocketUtil.convertSocketExceptionToIOException(x);
         }
-        catch (cli.System.ObjectDisposedException x1)
+        catch (cli.System.ObjectDisposedException e)
         {
-            throw new SocketException("Socket is closed");
+            throw new SocketException("Socket is closed.");
         }
     }
 
@@ -95,27 +100,33 @@ class SocketDispatcher extends NativeDispatcher
 
     native long write(FileDescriptor fd, ByteBuffer[] bufs, int offset, int length) throws IOException;
 
-    void close(FileDescriptor fd) throws IOException {
+    void close(FileDescriptor fd) throws IOException
+    {
+
     }
 
-    void preClose(FileDescriptor fd) throws IOException {
+    void preClose(FileDescriptor fd) throws IOException
+    {
         closeImpl(fd);
     }
 
-    static void closeImpl(FileDescriptor fd) throws IOException {
+    static void closeImpl(FileDescriptor fd) throws IOException
+    {
         try
         {
             if (false) throw new cli.System.Net.Sockets.SocketException();
             if (false) throw new cli.System.ObjectDisposedException("");
             fd.getSocket().Close();
         }
-        catch (cli.System.Net.Sockets.SocketException x)
+        catch (cli.System.Net.Sockets.SocketException e)
         {
-            throw java.net.SocketUtil.convertSocketExceptionToIOException(x);
+            throw java.net.SocketUtil.convertSocketExceptionToIOException(e);
         }
-        catch (cli.System.ObjectDisposedException x1)
+        catch (cli.System.ObjectDisposedException e)
         {
             throw new java.net.SocketException("Socket is closed");
         }
+
     }
+
 }

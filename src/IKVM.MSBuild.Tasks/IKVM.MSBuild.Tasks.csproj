@@ -1,4 +1,7 @@
 ﻿<Project Sdk="Microsoft.NET.Sdk">
+    <Import Project="$(MSBuildThisFileDirectory)..\..\ikvm.deps.props" />
+    <Import Project="$(MSBuildThisFileDirectory)..\..\ikvm.refs.props" />
+    
     <PropertyGroup>
         <TargetFrameworks>net472;netcoreapp3.1</TargetFrameworks>
     </PropertyGroup>
@@ -15,8 +18,6 @@
     </ItemGroup>
 
     <ItemGroup>
-        <ProjectReference Include="..\IKVM.Runtime\IKVM.Runtime.csproj" />
-        <ProjectReference Include="..\IKVM.Java\IKVM.Java.msbuildproj" />
         <ProjectReference Include="..\IKVM.Java.Extensions\IKVM.Java.Extensions.csproj" />
         <ProjectReference Include="..\IKVM.Image\IKVM.Image.csproj" />
         <ProjectReference Include="..\IKVM.Util\IKVM.Util.csproj" />

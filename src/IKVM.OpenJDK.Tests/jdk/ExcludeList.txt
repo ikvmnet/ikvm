@@ -1130,6 +1130,7 @@ java/lang/StrictMath/Log10Tests.java                                            
 java/lang/String/StringJoinTest.java                                                                                    generic-all
 java/lang/StringBuffer/TestSynchronization.java                                                                         generic-all
 java/lang/StringCoding/CheckEncodings.sh                                                                                generic-all
+java/lang/System/MacEncoding/MacJNUEncoding.sh                                                                          generic-all
 java/lang/System/MacEncoding/TestFileEncoding.java                                                                      generic-all
 java/lang/System/Versions.java                                                                                          generic-all
 java/lang/System/finalization/FinExit.java                                                                              generic-all
@@ -1589,6 +1590,7 @@ java/security/cert/CertPathBuilder/akiExt/AKISerialNumber.java                  
 java/security/cert/CertPathBuilder/selfIssued/DisableRevocation.java                                                    generic-all
 java/security/cert/CertPathBuilder/selfIssued/KeyUsageMatters.java                                                      generic-all
 java/security/cert/CertPathBuilder/selfIssued/StatusLoopDependency.java                                                 generic-all
+java/security/cert/CertPathBuilder/targetConstraints/BuildEEBasicConstraints.java                                       generic-all
 java/security/cert/CertPathValidator/OCSP/FailoverToCRL.java                                                            generic-all
 java/security/cert/CertPathValidator/indirectCRL/CircularCRLOneLevel.java                                               generic-all
 java/security/cert/CertPathValidator/indirectCRL/CircularCRLOneLevelRevoked.java                                        generic-all
@@ -1606,6 +1608,7 @@ java/security/cert/CertificateRevokedException/Basic.java                       
 java/security/cert/PKIXRevocationChecker/OcspUnauthorized.java                                                          generic-all
 java/security/cert/PKIXRevocationChecker/UnitTest.java                                                                  generic-all
 java/security/cert/PolicyNode/GetPolicyQualifiers.java                                                                  generic-all
+java/security/cert/pkix/policyChanges/TestPolicy.java                                                                   generic-all
 java/text/Bidi/BidiConformance.java                                                                                     generic-all
 java/text/Bidi/BidiEmbeddingTest.java                                                                                   generic-all
 java/text/Format/DateFormat/Bug6645292.java                                                                             generic-all
@@ -3001,6 +3004,7 @@ sun/nio/cs/FindDecoderBugs.java                                                 
 sun/nio/cs/FindEncoderBugs.java                                                                                         generic-all
 sun/nio/cs/ISO8859x.java                                                                                                generic-all
 sun/nio/cs/OLD/TestIBMDB.java                                                                                           generic-all
+sun/nio/cs/Test4200310.sh                                                                                               generic-all
 sun/nio/cs/TestEUC_TW.java                                                                                              generic-all
 sun/nio/cs/TestX11CNS.java                                                                                              generic-all
 sun/nio/cs/UkrainianIsNotRussian.java                                                                                   generic-all
