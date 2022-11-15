@@ -130,11 +130,14 @@ final class VMSystemProperties
             if (ikvmHomeRoot != null) {
                 String ikvmHomeRootPath = cli.System.IO.Path.Combine(runtimePath, ikvmHomeRoot);
                 if (cli.System.IO.Directory.Exists(ikvmHomeRootPath)) {
-                    String ikvmHomeArch = getIkvmHomeArch();
-                    if (ikvmHomeArch != null) {
-                        String ikvmHomePath = cli.System.IO.Path.Combine(ikvmHomeRootPath, ikvmHomeArch);
-                        if (cli.System.IO.Directory.Exists(ikvmHomePath)) {
-                            ikvmHome = cli.System.IO.Path.Combine(ikvmHomeRoot, ikvmHomeArch);
+                    String[] ikvmHomeArchs = getIkvmHomeArchs();
+                    if (ikvmHomeArchs != null) {
+                        for (String ikvmHomeArch : ikvmHomeArchNames) {
+                            String ikvmHomePath = cli.System.IO.Path.Combine(ikvmHomeRootPath, ikvmHomeArch);
+                            if (cli.System.IO.Directory.Exists(ikvmHomePath)) {
+                                ikvmHome = cli.System.IO.Path.Combine(ikvmHomeRoot, ikvmHomeArch);
+                                break;
+                            }
                         }
                     }
                 }

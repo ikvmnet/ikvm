@@ -25,6 +25,7 @@ using System;
 using System.Collections;
 using System.Collections.Generic;
 using System.Diagnostics;
+using System.Linq;
 using System.Reflection;
 using System.Runtime.InteropServices;
 
@@ -55,7 +56,7 @@ namespace IKVM.Java.Externs.java.lang
         /// Gets the RID architecture.
         /// </summary>
         /// <returns></returns>
-        static string GetRuntimeIdentifierArch() => RuntimeInformation.ProcessArchitecture switch
+        static string GetRuntimeIdentifierArchitecture() => RuntimeInformation.ProcessArchitecture switch
         {
             Architecture.X86 => "x86",
             Architecture.X64 => "x64",
@@ -68,9 +69,9 @@ namespace IKVM.Java.Externs.java.lang
         /// Returns the architecture name of the ikvm.home directory to use for this run.
         /// </summary>
         /// <returns></returns>
-        public static string getIkvmHomeArch()
+        static IEnumerable<string> GetIkvmHomeArchsEnumerator()
         {
-            var arch = GetRuntimeIdentifierArch();
+            var arch = GetRuntimeIdentifierArchitecture();
 
             if (RuntimeInformation.IsOSPlatform(OSPlatform.Windows))
             {
@@ -78,24 +79,31 @@ namespace IKVM.Java.Externs.java.lang
 
                 // Windows 10
                 if (v.Major > 10 || (v.Major == 10 && v.Minor >= 0))
-                    return $"win10-{arch}";
+                    yield return $"win10-{arch}";
 
                 // Windows 8.1
                 if (v.Major > 6 || (v.Major == 6 && v.Minor >= 3))
-                    return $"win81-{arch}";
+                    yield return $"win81-{arch}";
 
                 // Windows 7
                 if (v.Major > 6 || (v.Major == 6 && v.Minor >= 1))
-                    return $"win7-{arch}";
+                    yield return $"win7-{arch}";
 
                 // fallback
-                return $"win-{arch}";
+                yield return $"win-{arch}";
             }
 
             if (RuntimeInformation.IsOSPlatform(OSPlatform.Linux))
-                return $"linux-{arch}";
+                yield return $"linux-{arch}";
+        }
 
-            return null;
+        /// <summary>
+        /// Returns the architecture name of the ikvm.home directory to use for this run.
+        /// </summary>
+        /// <returns></returns>
+        public static string[] getIkvmHomeArchs()
+        {
+            return GetIkvmHomeArchsEnumerator().ToArray();
         }
 
         /// <summary>

@@ -19,7 +19,6 @@
         <ProjectReference Include="..\IKVM.Runtime.JNI-ref\IKVM.Runtime.JNI-ref.csproj" Private="False" PrivateAssets="All" />
         <ProjectReference Include="..\IKVM.Java\IKVM.Java.msbuildproj" />
     </ItemGroup>
-    
 
     <Import Project="Sdk.targets" Sdk="Microsoft.NET.Sdk" />
 

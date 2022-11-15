@@ -12,10 +12,6 @@
     </PropertyGroup>
 
     <ItemGroup>
-        <InternalsVisibleTo Include="IKVM.Java" />
-    </ItemGroup>
-
-    <ItemGroup>
         <ProjectReference Include="..\IKVM.Reflection\IKVM.Reflection.csproj" />
     </ItemGroup>
 
