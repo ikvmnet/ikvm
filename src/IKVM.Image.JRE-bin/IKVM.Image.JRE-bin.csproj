@@ -1,6 +1,4 @@
 ﻿<Project Sdk="Microsoft.Build.NoTargets/3.5.6">
-    <Import Project="..\..\openjdk.props" />
-<Project Sdk="Microsoft.Build.NoTargets/3.5.6">
     <Import Project="$(MSBuildThisFileDirectory)..\..\openjdk.props" />
 
     <PropertyGroup>
