@@ -1604,6 +1604,7 @@ java/security/cert/CertPathValidatorException/Serial.java                       
 java/security/cert/CertificateFactory/openssl/BadFooter.java                                                            generic-all
 java/security/cert/CertificateFactory/slowstream.sh                                                                     generic-all
 java/security/cert/CertificateRevokedException/Basic.java                                                               generic-all
+java/security/cert/pkix/policyChanges/TestPolicy.java                                                                   generic-all
 java/security/cert/PKIXRevocationChecker/OcspUnauthorized.java                                                          generic-all
 java/security/cert/PKIXRevocationChecker/UnitTest.java                                                                  generic-all
 java/security/cert/PolicyNode/GetPolicyQualifiers.java                                                                  generic-all
