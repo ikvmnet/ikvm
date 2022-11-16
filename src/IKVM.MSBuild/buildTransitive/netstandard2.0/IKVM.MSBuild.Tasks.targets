@@ -7,8 +7,8 @@
         <IkvmMSBuildTaskFolder Condition=" '$(MSBuildRuntimeType)' == 'Core' ">netcoreapp3.1</IkvmMSBuildTaskFolder>
         <IkvmMSBuildTaskFolder Condition=" '$(MSBuildRuntimeType)' != 'Core' ">net472</IkvmMSBuildTaskFolder>
         <IkvmMSBuildTaskAssembly>$(MSBuildThisFileDirectory)..\..\tasks\$(IkvmMSBuildTaskFolder)\IKVM.MSBuild.Tasks.dll</IkvmMSBuildTaskAssembly>
-        <IkvmCompilerToolPath>$(MSBuildThisFileDirectory)..\..\bin\ikvmc</IkvmCompilerToolPath>
-        <IkvmExporterToolPath>$(MSBuildThisFileDirectory)..\..\bin\ikvmstub</IkvmExporterToolPath>
+        <IkvmCompilerToolPath>@(IkvmCompilerToolPath->WithMetadata('TargetFramework', '$(IkvmToolFramework)')->WithMetadata('RuntimeIdentifier', '$(IkvmToolRuntime)'))</IkvmCompilerToolPath>
+        <IkvmExporterToolPath>@(IkvmExporterToolPath->WithMetadata('TargetFramework', '$(IkvmToolFramework)')->WithMetadata('RuntimeIdentifier', '$(IkvmToolRuntime)'))</IkvmExporterToolPath>
     </PropertyGroup>
 
     <UsingTask TaskName="IkvmGetReferenceAssemblies" AssemblyFile="$(IkvmMSBuildTaskAssembly)" TaskFactory="TaskHostFactory" Condition="Exists('$(IkvmMSBuildTaskAssembly)')" />
@@ -19,7 +19,7 @@
 
     <!-- Gathers those references which are either related to the Framework itself, or IKVM. -->
     <Target Name="ResolveIkvmFrameworkReferences" DependsOnTargets="$(ResolveIkvmFrameworkReferencesDependsOn)">
-        <IkvmGetReferenceAssemblies ToolPath="$(IkvmCompilerToolPath)" ToolFramework="$(IkvmToolFramework)">
+        <IkvmGetReferenceAssemblies ToolPath="$(IkvmCompilerToolPath)">
             <Output TaskParameter="ResolvedFrameworkReferences" ItemName="IkvmFrameworkReference" />
         </IkvmGetReferenceAssemblies>
     </Target>

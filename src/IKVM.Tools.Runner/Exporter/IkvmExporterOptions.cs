@@ -10,11 +10,6 @@ namespace IKVM.Tools.Runner.Exporter
     {
 
         /// <summary>
-        /// Version of the tool to use.
-        /// </summary>
-        public IkvmToolFramework ToolFramework { get; set; } = IkvmToolFramework.NetCore;
-
-        /// <summary>
         /// Number of milliseconds to wait for the command to execute.
         /// </summary>
         public int Timeout { get; set; } = System.Threading.Timeout.Infinite;

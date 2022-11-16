@@ -15,7 +15,7 @@ namespace IKVM.MSBuild.Tasks
         /// <returns></returns>
         public static string GetRelativePath(string relativeTo, string path)
         {
-#if NET472
+#if NETFRAMEWORK
             var pathUri = new Uri(Path.GetFullPath(path));
             if (relativeTo.EndsWith(Path.DirectorySeparatorChar.ToString()) == false)
                 relativeTo += Path.DirectorySeparatorChar;
