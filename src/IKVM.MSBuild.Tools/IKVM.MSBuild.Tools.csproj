@@ -11,8 +11,12 @@
     </PropertyGroup>
 
     <ItemGroup>
-        <ProjectReference Include="..\IKVM.MSBuild.Tools.runtime.linux-x64\IKVM.MSBuild.Tools.runtime.linux-x64.csproj" />
-        <ProjectReference Include="..\IKVM.MSBuild.Tools.runtime.win7-x64\IKVM.MSBuild.Tools.runtime.win7-x64.csproj" />
+        <ProjectReference Include="..\IKVM.MSBuild.Tools.runtime.linux-x64\IKVM.MSBuild.Tools.runtime.linux-x64.csproj">
+            <ReferenceOutputAssembly>true</ReferenceOutputAssembly>
+        </ProjectReference>
+        <ProjectReference Include="..\IKVM.MSBuild.Tools.runtime.win7-x64\IKVM.MSBuild.Tools.runtime.win7-x64.csproj">
+            <ReferenceOutputAssembly>true</ReferenceOutputAssembly>
+        </ProjectReference>
     </ItemGroup>
 
     <ItemGroup>
