@@ -30,8 +30,14 @@ namespace IKVM.Tools.Tests.Runner.Exporter
             var p = Path.Combine(Path.GetTempPath(), Guid.NewGuid().ToString(), Path.ChangeExtension(a, ".jar"));
             Directory.CreateDirectory(Path.GetDirectoryName(p));
 
+            var rid = "";
+            if (RuntimeInformation.IsOSPlatform(OSPlatform.Windows))
+                rid = "win7-x64";
+            if (RuntimeInformation.IsOSPlatform(OSPlatform.Linux))
+                rid = "linux-x64";
+
             var e = new List<IkvmToolDiagnosticEvent>();
-            var l = new IkvmExporterLauncher(new IkvmToolDelegateDiagnosticListener(evt => { e.Add(evt); TestContext.WriteLine(evt.Message, evt.MessageArgs); }));
+            var l = new IkvmExporterLauncher(Path.Combine(Path.GetDirectoryName(typeof(IkvmExporterLauncherTests).Assembly.Location), "ikvmstub", tfm, rid), new IkvmToolDelegateDiagnosticListener(evt => { e.Add(evt); TestContext.WriteLine(evt.Message, evt.MessageArgs); }));
             var o = new IkvmExporterOptions()
             {
                 NoStdLib = true,

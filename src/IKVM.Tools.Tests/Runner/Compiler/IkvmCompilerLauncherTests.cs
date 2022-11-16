@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Drawing.Drawing2D;
 using System.IO;
 using System.Runtime.InteropServices;
 using System.Threading.Tasks;
@@ -28,8 +29,14 @@ namespace IKVM.Tools.Runner.Test.Compiler
             var p = Path.Combine(Path.GetTempPath(), Guid.NewGuid().ToString(), "ext", tfm, "helloworld-2.0.dll");
             Directory.CreateDirectory(Path.GetDirectoryName(p));
 
+            var rid = "";
+            if (RuntimeInformation.IsOSPlatform(OSPlatform.Windows))
+                rid = "win7-x64";
+            if (RuntimeInformation.IsOSPlatform(OSPlatform.Linux))
+                rid = "linux-x64";
+
             var e = new List<IkvmToolDiagnosticEvent>();
-            var l = new IkvmCompilerLauncher(new IkvmToolDelegateDiagnosticListener(evt => { e.Add(evt); TestContext.WriteLine(evt.Message, evt.MessageArgs); }));
+            var l = new IkvmCompilerLauncher(Path.Combine(Path.GetDirectoryName(typeof(IkvmCompilerLauncherTests).Assembly.Location), "ikvmc", tfm, rid), new IkvmToolDelegateDiagnosticListener(evt => { e.Add(evt); TestContext.WriteLine(evt.Message, evt.MessageArgs); }));
             var o = new IkvmCompilerOptions()
             {
                 Runtime = Path.Combine(TESTBASE, "lib", tfm, "IKVM.Runtime.dll"),
