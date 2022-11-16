@@ -394,7 +394,7 @@ namespace IKVM.MSBuild.Tasks
             manifest.WriteLine("ClassLoader={0}", item.ClassLoader);
             manifest.WriteLine("Debug={0}", item.Debug ? "true" : "false");
             manifest.WriteLine("KeyFile={0}", string.IsNullOrWhiteSpace(item.KeyFile) == false ? GetIdentityForFile(item.KeyFile) : "");
-            manifest.WriteLine("DelaySign={0}", item.DelaySign ? "true" : "false");
+            manifest.WriteLine("DelaySign={0}", item.DelaySign ? "true" : "false");  
 
             // each Compile item should be a jar or class file
             var compiles = new List<string>(16);

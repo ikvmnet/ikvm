@@ -6,24 +6,11 @@
     <!--
     This file contains targets which resolve various items by ProjectReference.
     -->
-    
-    <Choose>
-        <When Condition=" '$(IkvmToolFramework)' == 'NetFramework' ">
-            <PropertyGroup>
-                <IkvmToolTargetFramework>net461</IkvmToolTargetFramework>
-            </PropertyGroup>
-        </When>
-        <When Condition=" '$(IkvmToolFramework)' == 'NetCore' ">
-            <PropertyGroup>
-                <IkvmToolTargetFramework>netcoreapp3.1</IkvmToolTargetFramework>
-            </PropertyGroup>
-        </When>
-    </Choose>
 
     <Target Name="_AssignIkvmToolReferenceConfiguration" Condition=" '@(IkvmToolReference)' != '' ">
         <ItemGroup>
             <_IkvmToolReferenceToConfigure Include="@(IkvmToolReference)">
-                <SetTargetFramework>TargetFramework=$(IkvmToolTargetFramework)</SetTargetFramework>
+                <SetTargetFramework>TargetFramework=$(IkvmToolFramework)</SetTargetFramework>
                 <SetRuntimeIdentifier>RuntimeIdentifier=$(IkvmToolRuntime)</SetRuntimeIdentifier>
             </_IkvmToolReferenceToConfigure>
         </ItemGroup>

@@ -32,7 +32,6 @@
         <!-- Compile the reference item to the stage path. -->
         <IkvmCompiler
             ToolPath="$(IkvmCompilerToolPath)"
-            ToolFramework="$(IkvmToolFramework)"
             LogFile="%(IkvmReferenceItem.StagePath).log"
             ResponseFile="%(IkvmReferenceItem.StagePath).rsp"
             Output="%(IkvmReferenceItem.StagePath)"

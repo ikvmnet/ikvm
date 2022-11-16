@@ -2,10 +2,5 @@
     <PropertyGroup>
         <MSBuildAllProjects>$(MSBuildAllProjects);$(MSBuildThisFileFullPath)</MSBuildAllProjects>
     </PropertyGroup>
-
-    <PropertyGroup>
-        <IkvmCompilerToolPath>$(MSBuildThisFileDirectory)..\..\ikvmc</IkvmCompilerToolPath>
-        <IkvmExporterToolPath>$(MSBuildThisFileDirectory)..\..\ikvmstub</IkvmExporterToolPath>
-    </PropertyGroup>
     
 </Project>

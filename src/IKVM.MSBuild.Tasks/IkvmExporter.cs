@@ -1,7 +1,6 @@
 ﻿using System.Threading;
 using System.Threading.Tasks;
 
-using IKVM.Tools.Runner;
 using IKVM.Tools.Runner.Exporter;
 
 using Microsoft.Build.Framework;
@@ -47,10 +46,9 @@ namespace IKVM.MSBuild.Tasks
 
         public bool Bootstrap { get; set; }
 
-        protected override async Task<bool> ExecuteAsync(IkvmToolFramework toolFramework, IkvmToolTaskDiagnosticWriter writer, CancellationToken cancellationToken)
+        protected override async Task<bool> ExecuteAsync(IkvmToolTaskDiagnosticWriter writer, CancellationToken cancellationToken)
         {
             var options = new IkvmExporterOptions();
-            options.ToolFramework = toolFramework;
             options.Output = Output;
             options.Input = Input;
 

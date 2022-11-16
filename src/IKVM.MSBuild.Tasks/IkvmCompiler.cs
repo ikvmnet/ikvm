@@ -134,10 +134,9 @@ namespace IKVM.MSBuild.Tasks
 
         public string Remap { get; set; }
 
-        protected override async Task<bool> ExecuteAsync(IkvmToolFramework targetFramework, IkvmToolTaskDiagnosticWriter writer, CancellationToken cancellationToken)
+        protected override async Task<bool> ExecuteAsync(IkvmToolTaskDiagnosticWriter writer, CancellationToken cancellationToken)
         {
             var options = new IkvmCompilerOptions();
-            options.ToolFramework = targetFramework;
             options.ResponseFile = ResponseFile;
             options.Output = Output;
             options.Assembly = Assembly;
