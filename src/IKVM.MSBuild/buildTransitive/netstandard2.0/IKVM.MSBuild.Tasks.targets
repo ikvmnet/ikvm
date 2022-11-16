@@ -7,8 +7,8 @@
         <IkvmMSBuildTaskFolder Condition=" '$(MSBuildRuntimeType)' == 'Core' ">netcoreapp3.1</IkvmMSBuildTaskFolder>
         <IkvmMSBuildTaskFolder Condition=" '$(MSBuildRuntimeType)' != 'Core' ">net472</IkvmMSBuildTaskFolder>
         <IkvmMSBuildTaskAssembly>$(MSBuildThisFileDirectory)..\..\tasks\$(IkvmMSBuildTaskFolder)\IKVM.MSBuild.Tasks.dll</IkvmMSBuildTaskAssembly>
-        <IkvmCompilerToolPath>@(IkvmCompilerToolPath->WithMetadata('TargetFramework', '$(IkvmToolFramework)')->WithMetadata('RuntimeIdentifier', '$(IkvmToolRuntime)'))</IkvmCompilerToolPath>
-        <IkvmExporterToolPath>@(IkvmExporterToolPath->WithMetadata('TargetFramework', '$(IkvmToolFramework)')->WithMetadata('RuntimeIdentifier', '$(IkvmToolRuntime)'))</IkvmExporterToolPath>
+        <IkvmCompilerToolPath>@(IkvmCompilerToolPath->WithMetadataValue('TargetFramework', '$(IkvmToolFramework)')->WithMetadataValue('RuntimeIdentifier', '$(IkvmToolRuntime)'))</IkvmCompilerToolPath>
+        <IkvmExporterToolPath>@(IkvmExporterToolPath->WithMetadataValue('TargetFramework', '$(IkvmToolFramework)')->WithMetadataValue('RuntimeIdentifier', '$(IkvmToolRuntime)'))</IkvmExporterToolPath>
     </PropertyGroup>
 
     <UsingTask TaskName="IkvmGetReferenceAssemblies" AssemblyFile="$(IkvmMSBuildTaskAssembly)" TaskFactory="TaskHostFactory" Condition="Exists('$(IkvmMSBuildTaskAssembly)')" />
