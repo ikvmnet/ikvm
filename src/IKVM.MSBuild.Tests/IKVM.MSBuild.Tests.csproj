@@ -31,6 +31,9 @@
     
     <ItemGroup Condition=" '$(TargetFramework)' != '' ">
         <PackageProjectReference Include="..\IKVM.MSBuild\IKVM.MSBuild.msbuildproj" PackageTargetPath="nuget" />
+        <PackageProjectReference Include="..\IKVM.MSBuild.Tools\IKVM.MSBuild.Tools.csproj" PackageTargetPath="nuget" />
+        <PackageProjectReference Include="..\IKVM.MSBuild.Tools.runtime.win7-x64\IKVM.MSBuild.Tools.runtime.win7-x64.csproj" PackageTargetPath="nuget" />
+        <PackageProjectReference Include="..\IKVM.MSBuild.Tools.runtime.linux-x64\IKVM.MSBuild.Tools.runtime.linux-x64.csproj" PackageTargetPath="nuget" />
         <PackageProjectReference Include="..\IKVM\IKVM.csproj" PackageTargetPath="nuget" />
         <PackageProjectReference Include="..\IKVM.Image\IKVM.Image.csproj" PackageTargetPath="nuget" />
         <PackageProjectReference Include="..\IKVM.Image.JRE\IKVM.Image.JRE.csproj" PackageTargetPath="nuget" />

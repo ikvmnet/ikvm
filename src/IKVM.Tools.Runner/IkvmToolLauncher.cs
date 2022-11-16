@@ -42,77 +42,16 @@ namespace IKVM.Tools.Runner
         }
 
         /// <summary>
-        /// Gets the path to the tool directory for the given environment.
-        /// </summary>
-        /// <param name="framework"></param>
-        /// <param name="platform"></param>
-        /// <param name="architecture"></param>
-        /// <returns></returns>
-        /// <exception cref="ArgumentNullException"></exception>
-        /// <exception cref="NotImplementedException"></exception>
-        public string GetToolDir(IkvmToolFramework framework, OSPlatform platform, Architecture architecture)
-        {
-            // determine the TFM of the tool to be executed
-            var tfm = framework switch
-            {
-                IkvmToolFramework.NetFramework => "net461",
-                IkvmToolFramework.NetCore => "netcoreapp3.1",
-                _ => throw new NotImplementedException(),
-            };
-
-            // determine the RID of the tool to be executed
-            var rid = architecture switch
-            {
-                Architecture.X86 => framework switch
-                {
-                    IkvmToolFramework.NetFramework => "win7-x86",
-                    IkvmToolFramework.NetCore when platform == OSPlatform.Windows => "win7-x86",
-                    IkvmToolFramework.NetCore when platform == OSPlatform.Linux => "linux-x86",
-                    _ => throw new NotImplementedException(),
-                },
-                Architecture.X64 => framework switch
-                {
-                    IkvmToolFramework.NetFramework => "win7-x64",
-                    IkvmToolFramework.NetCore when platform == OSPlatform.Windows => "win7-x64",
-                    IkvmToolFramework.NetCore when platform == OSPlatform.Linux => "linux-x64",
-                    IkvmToolFramework.NetCore when platform == OSPlatform.OSX => "osx-x64",
-                    _ => throw new NotImplementedException(),
-                },
-                Architecture.Arm => framework switch
-                {
-                    IkvmToolFramework.NetFramework => "win7-arm",
-                    IkvmToolFramework.NetCore when platform == OSPlatform.Windows => "win7-arm",
-                    IkvmToolFramework.NetCore when platform == OSPlatform.Linux => "linux-arm",
-                    IkvmToolFramework.NetCore when platform == OSPlatform.OSX => "osx-arm",
-                    _ => throw new NotImplementedException(),
-                },
-                Architecture.Arm64 => framework switch
-                {
-                    IkvmToolFramework.NetFramework => "win7-arm64",
-                    IkvmToolFramework.NetCore when platform == OSPlatform.Windows => "win7-arm64",
-                    IkvmToolFramework.NetCore when platform == OSPlatform.Linux => "linux-arm64",
-                    IkvmToolFramework.NetCore when platform == OSPlatform.OSX => "osx-arm64",
-                    _ => throw new NotImplementedException(),
-                },
-                _ => throw new NotImplementedException(),
-            };
-
-            // we use a different path and args set based on which version we're running
-            return Path.Combine(toolPath, tfm, rid);
-        }
-
-        /// <summary>
         /// Gets the path to executable for the given environment.
         /// </summary>
-        /// <param name="framework"></param>
         /// <param name="platform"></param>
         /// <param name="architecture"></param>
         /// <returns></returns>
         /// <exception cref="ArgumentNullException"></exception>
         /// <exception cref="NotImplementedException"></exception>
-        public string GetToolExe(IkvmToolFramework framework, OSPlatform platform, Architecture architecture)
+        public string GetToolExe(OSPlatform platform, Architecture architecture)
         {
-            return Path.Combine(GetToolDir(framework, platform, architecture), platform == OSPlatform.Windows ? $"{toolName}.exe" : toolName);
+            return Path.Combine(toolPath, platform == OSPlatform.Windows ? $"{toolName}.exe" : toolName);
         }
 
         /// <summary>
@@ -122,9 +61,9 @@ namespace IKVM.Tools.Runner
         /// <returns></returns>
         /// <exception cref="ArgumentNullException"></exception>
         /// <exception cref="NotImplementedException"></exception>
-        public string GetToolExe(IkvmToolFramework framework)
+        public string GetToolExe()
         {
-            return GetToolExe(framework, GetOSPlatform(), RuntimeInformation.OSArchitecture);
+            return GetToolExe(GetOSPlatform(), RuntimeInformation.OSArchitecture);
         }
 
         /// <summary>
@@ -136,21 +75,9 @@ namespace IKVM.Tools.Runner
         /// <returns></returns>
         /// <exception cref="ArgumentNullException"></exception>
         /// <exception cref="NotImplementedException"></exception>
-        public string GetReferenceAssemblyDirectory(IkvmToolFramework framework, OSPlatform platform, Architecture architecture)
+        public string GetReferenceAssemblyDirectory()
         {
-            return Path.Combine(GetToolDir(framework, platform, architecture), "refs");
-        }
-
-        /// <summary>
-        /// Gets the path to the reference assemblies for the given environment.
-        /// </summary>
-        /// <param name="framework"></param>
-        /// <returns></returns>
-        /// <exception cref="ArgumentNullException"></exception>
-        /// <exception cref="NotImplementedException"></exception>
-        public string GetReferenceAssemblyDirectory(IkvmToolFramework framework)
-        {
-            return GetReferenceAssemblyDirectory(framework, GetOSPlatform(), RuntimeInformation.OSArchitecture);
+            return Path.Combine(toolPath, "refs");
         }
 
         /// <summary>

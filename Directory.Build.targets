@@ -120,6 +120,7 @@
             <_ProjectName>%(_LibProjectReference.ProjectName)</_ProjectName>
             <_LibTargetPath>%(_LibProjectReference.LibTargetPath)</_LibTargetPath>
             <_LibPackagePath>%(_LibProjectReference.LibPackagePath)</_LibPackagePath>
+            <_Pack>%(_LibProjectReference.Pack)</_Pack>
         </PropertyGroup>
         <ItemGroup>
             <_LibProjectReferenceItems Include="@(_LibProjectReferenceTargetOutput)">
@@ -127,6 +128,7 @@
                 <LibTargetPath>$(_LibTargetPath)</LibTargetPath>
                 <LibPackagePath>$(_LibPackagePath)</LibPackagePath>
                 <TargetPath>%(RecursiveDir)%(Filename)%(Extension)</TargetPath>
+                <Pack>$(_Pack)</Pack>
             </_LibProjectReferenceItems>
         </ItemGroup>
     </Target>
@@ -136,6 +138,7 @@
             <ContentWithTargetPath Include="@(_LibProjectReferenceItems)" Condition=" '%(_LibProjectReferenceItems.LibTargetPath)' != '' ">
                 <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
                 <TargetPath>$([MSBuild]::MakeRelative('.', '%(_LibProjectReferenceItems.LibTargetPath)%(_LibProjectReferenceItems.TargetPath)'))</TargetPath>
+                <Pack>false</Pack>
             </ContentWithTargetPath>
         </ItemGroup>
     </Target>
@@ -156,17 +159,16 @@
 
     <Target Name="GetLibProjectReferenceTfmSpecificContent" DependsOnTargets="GetLibProjectReferenceItems" Condition=" '$(DesignTimeBuild)' != 'true' and '@(_LibProjectReferenceItems)' != '' ">
         <ItemGroup>
-            <TfmSpecificPackageFile Include="@(_LibProjectReferenceItems)" Condition=" '%(_LibProjectReferenceItems.LibTargetPath)' != '' ">
+            <TfmSpecificPackageFile Include="@(_LibProjectReferenceItems)" Condition=" '%(_LibProjectReferenceItems.LibTargetPath)' != '' And '%(_LibProjectReferenceItems.Pack)' != 'false' ">
                 <PackagePath>contentFiles\any\$(TargetFramework)\%(_LibProjectReferenceItems.LibTargetPath)</PackagePath>
                 <PackagePath Condition=" '%(_LibProjectReferenceItems.LibPackagePath)' != '' ">contentFiles\any\$(TargetFramework)\%(_LibProjectReferenceItems.LibPackagePath)</PackagePath>
-                <PackageCopyToOutput>true</PackageCopyToOutput>
             </TfmSpecificPackageFile>
         </ItemGroup>
     </Target>
 
     <Target Name="GetLibProjectReferencePackageItems" DependsOnTargets="GetLibProjectReferenceItems" Condition=" '$(DesignTimeBuild)' != 'true' And '@(_LibProjectReferenceItems)' != '' ">
         <ItemGroup>
-            <_PackageFiles Include="@(_LibProjectReferenceItems)" Condition=" '%(_LibProjectReferenceItems.LibPackagePath)' != '' ">
+            <_PackageFiles Include="@(_LibProjectReferenceItems)" Condition=" '%(_LibProjectReferenceItems.LibPackagePath)' != '' And '%(_LibProjectReferenceItems.Pack)' != 'false' ">
                 <PackagePath>%(_LibProjectReferenceItems.LibPackagePath)</PackagePath>
             </_PackageFiles>
         </ItemGroup>
@@ -280,7 +282,7 @@
 
     <Target Name="GetPublishProjectReferencePackageItems" DependsOnTargets="GetPublishProjectReferenceItems" Condition=" '$(DesignTimeBuild)' != 'true' And '@(_PublishProjectReferenceItems)' != '' ">
         <ItemGroup>
-            <_PackageFiles Include="@(_PublishProjectReferenceItems)" Condition=" '%(_PublishProjectReferenceItems.ProjectPackagePath)' != '' ">
+            <_PackageFiles Include="@(_PublishProjectReferenceItems)" Condition=" '%(_PublishProjectReferenceItems.ProjectPackagePath)' != '' And '%(_PublishProjectReferenceItems.Pack)' != 'false' ">
                 <PackagePath>%(_PublishProjectReferenceItems.ProjectPackagePath)</PackagePath>
             </_PackageFiles>
         </ItemGroup>
@@ -345,6 +347,7 @@
             <_ProjectName>%(_IncludeProjectReference.ProjectName)</_ProjectName>
             <_IncludeTargetPath>%(_IncludeProjectReference.IncludeTargetPath)</_IncludeTargetPath>
             <_IncludePackagePath>%(_IncludeProjectReference.IncludePackagePath)</_IncludePackagePath>
+            <_Pack>%(_IncludeProjectReference.Pack)</_Pack>
         </PropertyGroup>
         <ItemGroup>
             <_IncludeProjectReferenceItems Include="@(_IncludeProjectReferenceItemsInput)">
@@ -352,6 +355,7 @@
                 <IncludeTargetPath>$(_IncludeTargetPath)</IncludeTargetPath>
                 <IncludePackagePath>$(_IncludePackagePath)</IncludePackagePath>
                 <TargetPath>%(RecursiveDir)%(Filename)%(Extension)</TargetPath>
+                <Pack>$(_Pack)</Pack>
             </_IncludeProjectReferenceItems>
         </ItemGroup>
     </Target>
@@ -361,6 +365,7 @@
             <ContentWithTargetPath Include="@(_IncludeProjectReferenceItems)" Condition=" '%(_IncludeProjectReferenceItems.IncludeTargetPath)' != '' And '%(_IncludeProjectReferenceItems.TargetPath)' != '' ">
                 <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
                 <TargetPath>$([MSBuild]::MakeRelative('.', '%(_IncludeProjectReferenceItems.IncludeTargetPath)%(_IncludeProjectReferenceItems.TargetPath)'))</TargetPath>
+                <Pack>false</Pack>
             </ContentWithTargetPath>
         </ItemGroup>
     </Target>
@@ -379,19 +384,18 @@
         <TargetsForTfmSpecificContentInPackage>$(TargetsForTfmSpecificContentInPackage);GetIncludeProjectReferenceTfmSpecificContent</TargetsForTfmSpecificContentInPackage>
     </PropertyGroup>
 
-    <Target Name="GetIncludeProjectReferenceTfmSpecificContent" DependsOnTargets="GetIncludeProjectReferenceItems" Condition=" '$(DesignTimeBuild)' != 'true' and '@(_IncludeProjectReferenceItems)' != '' ">
+    <Target Name="GetIncludeProjectReferenceTfmSpecificContent" DependsOnTargets="GetIncludeProjectReferenceItems" Condition=" '$(DesignTimeBuild)' != 'true' And '@(_IncludeProjectReferenceItems)' != '' ">
         <ItemGroup>
-            <TfmSpecificPackageFile Include="@(_IncludeProjectReferenceItems)" Condition=" '%(_IncludeProjectReferenceItems.IncludeTargetPath)' != '' ">
+            <TfmSpecificPackageFile Include="@(_IncludeProjectReferenceItems)" Condition=" '%(_IncludeProjectReferenceItems.IncludeTargetPath)' != '' And '%(_IncludeProjectReferenceItems.Pack)' != 'false' ">
                 <PackagePath>contentFiles\any\$(TargetFramework)\%(_IncludeProjectReferenceItems.IncludeTargetPath)</PackagePath>
                 <PackagePath Condition=" '%(_IncludeProjectReferenceItems.IncludePackagePath)' != '' ">contentFiles\any\$(TargetFramework)\%(_IncludeProjectReferenceItems.IncludePackagePath)</PackagePath>
-                <PackageCopyToOutput>true</PackageCopyToOutput>
             </TfmSpecificPackageFile>
         </ItemGroup>
     </Target>
 
     <Target Name="GetIncludeProjectReferencePackageItems" DependsOnTargets="GetIncludeProjectReferenceItems" Condition=" '$(DesignTimeBuild)' != 'true' And '@(_IncludeProjectReferenceItems)' != '' ">
         <ItemGroup>
-            <_PackageFiles Include="@(_IncludeProjectReferenceItems)" Condition=" '%(_IncludeProjectReferenceItems.IncludePackagePath)' != '' ">
+            <_PackageFiles Include="@(_IncludeProjectReferenceItems)" Condition=" '%(_IncludeProjectReferenceItems.IncludePackagePath)' != '' And '%(_IncludeProjectReferenceItems.Pack)' != 'false' ">
                 <PackagePath>%(_IncludeProjectReferenceItems.IncludePackagePath)</PackagePath>
             </_PackageFiles>
         </ItemGroup>
@@ -460,6 +464,7 @@
             <_ProjectName>%(_PackageProjectReference.ProjectName)</_ProjectName>
             <_PackageTargetPath>%(_PackageProjectReference.PackageTargetPath)</_PackageTargetPath>
             <_PackagePackagePath>%(_PackageProjectReference.PackagePackagePath)</_PackagePackagePath>
+            <_Pack>%(_PackageProjectReference.Pack)</_Pack>
         </PropertyGroup>
         <ItemGroup>
             <_PackageProjectReferenceItemsInput Include="%(_ResolvedPackageOutputPath.Identity)\*.nupkg" Condition=" '%(_ResolvedPackageOutputPath.Identity)' != '' " />
@@ -468,6 +473,7 @@
                 <PackageTargetPath>$(_PackageTargetPath)</PackageTargetPath>
                 <PackagePackagePath>$(_PackagePackagePath)</PackagePackagePath>
                 <TargetPath>%(RecursiveDir)%(Filename)%(Extension)</TargetPath>
+                <Pack>$(_Pack)</Pack>
             </_PackageProjectReferenceItems>
         </ItemGroup>
     </Target>
@@ -477,6 +483,7 @@
             <ContentWithTargetPath Include="@(_PackageProjectReferenceItems)" Condition=" '%(_PackageProjectReferenceItems.PackageTargetPath)' != '' ">
                 <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
                 <TargetPath>$([MSBuild]::MakeRelative('.', '%(_PackageProjectReferenceItems.PackageTargetPath)%(_PackageProjectReferenceItems.TargetPath)'))</TargetPath>
+                <Pack>false</Pack>
             </ContentWithTargetPath>
         </ItemGroup>
     </Target>
@@ -497,17 +504,16 @@
 
     <Target Name="GetPackageProjectReferenceTfmSpecificContent" DependsOnTargets="GetPackageProjectReferenceItems" Condition=" '$(DesignTimeBuild)' != 'true' and '@(_PackageProjectReferenceItems)' != '' ">
         <ItemGroup>
-            <TfmSpecificPackageFile Include="@(_PackageProjectReferenceItems)" Condition=" '%(_PackageProjectReferenceItems.PackageTargetPath)' != '' ">
+            <TfmSpecificPackageFile Include="@(_PackageProjectReferenceItems)" Condition=" '%(_PackageProjectReferenceItems.PackageTargetPath)' != '' And '%(_PackageProjectReferenceItems.Pack)' != 'false' ">
                 <PackagePath>contentFiles\any\$(TargetFramework)\%(_PackageProjectReferenceItems.PackageTargetPath)</PackagePath>
                 <PackagePath Condition=" '%(_PackageProjectReferenceItems.PackagePackagePath)' != '' ">contentFiles\any\$(TargetFramework)\%(_PackageProjectReferenceItems.PackagePackagePath)</PackagePath>
-                <PackageCopyToOutput>true</PackageCopyToOutput>
             </TfmSpecificPackageFile>
         </ItemGroup>
     </Target>
 
     <Target Name="GetPackageProjectReferencePackageItems" DependsOnTargets="GetPackageProjectReferenceItems" Condition=" '$(DesignTimeBuild)' != 'true' And '@(_PackageProjectReferenceItems)' != '' ">
         <ItemGroup>
-            <_PackageFiles Include="@(_PackageProjectReferenceItems)" Condition=" '%(_PackageProjectReferenceItems.PackagePackagePath)' != '' ">
+            <_PackageFiles Include="@(_PackageProjectReferenceItems)" Condition=" '%(_PackageProjectReferenceItems.PackagePackagePath)' != '' And '%(_PackageProjectReferenceItems.Pack)' != 'false' ">
                 <PackagePath>%(_PackageProjectReferenceItems.PackagePackagePath)</PackagePath>
             </_PackageFiles>
         </ItemGroup>

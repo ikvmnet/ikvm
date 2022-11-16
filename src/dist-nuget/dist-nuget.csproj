@@ -9,6 +9,15 @@
         <PackageProjectReference Include="..\IKVM.MSBuild\IKVM.MSBuild.msbuildproj">
             <PackageTargetPath>.</PackageTargetPath>
         </PackageProjectReference>
+        <PackageProjectReference Include="..\IKVM.MSBuild.Tools\IKVM.MSBuild.Tools.csproj">
+            <PackageTargetPath>.</PackageTargetPath>
+        </PackageProjectReference>
+        <PackageProjectReference Include="..\IKVM.MSBuild.Tools.runtime.win7-x64\IKVM.MSBuild.Tools.runtime.win7-x64.csproj">
+            <PackageTargetPath>.</PackageTargetPath>
+        </PackageProjectReference>
+        <PackageProjectReference Include="..\IKVM.MSBuild.Tools.runtime.linux-x64\IKVM.MSBuild.Tools.runtime.linux-x64.csproj">
+            <PackageTargetPath>.</PackageTargetPath>
+        </PackageProjectReference>
         <PackageProjectReference Include="..\IKVM.NET.Sdk\IKVM.NET.Sdk.msbuildproj">
             <PackageTargetPath>.</PackageTargetPath>
         </PackageProjectReference>

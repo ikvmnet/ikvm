@@ -95,7 +95,7 @@ namespace IKVM.Tools.Runner.Compiler
             }
 
             if (options.Platform is not null)
-                w.WriteLine($"-platform:{options.Platform}");
+                w.WriteLine($"-platform:{options.Platform.ToString().ToLowerInvariant()}");
 
             if (options.KeyFile is not null)
                 w.WriteLine($"-keyfile:{options.KeyFile}");
@@ -262,13 +262,9 @@ namespace IKVM.Tools.Runner.Compiler
                 File.WriteAllText(response, w.ToString());
 
                 // locate EXE file
-                var exe = GetToolExe(options.ToolFramework);
+                var exe = GetToolExe();
                 if (File.Exists(exe) == false)
                     throw new FileNotFoundException($"Could not locate tool at '{exe}'.");
-
-                // check for supported platform
-                if (RuntimeInformation.IsOSPlatform(OSPlatform.Windows) == false && options.ToolFramework == IkvmToolFramework.NetFramework)
-                    throw new IkvmToolException("IKVM generation for .NET Framework assemblies is not supported on Linux operating system.");
 
                 // if we're running on Linux, we might need to set the execute bit on the file,
                 // since the NuGet package is built on Windows
