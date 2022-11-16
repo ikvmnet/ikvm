@@ -18,6 +18,9 @@
         <PackageProjectReference Include="..\IKVM.MSBuild.Tools.runtime.linux-x64\IKVM.MSBuild.Tools.runtime.linux-x64.csproj">
             <PackageTargetPath>.</PackageTargetPath>
         </PackageProjectReference>
+        <PackageProjectReference Include="..\IKVM.MSBuild.Tools.runtime.osx-x64\IKVM.MSBuild.Tools.runtime.osx-x64.csproj">
+            <PackageTargetPath>.</PackageTargetPath>
+        </PackageProjectReference>
         <PackageProjectReference Include="..\IKVM.NET.Sdk\IKVM.NET.Sdk.msbuildproj">
             <PackageTargetPath>.</PackageTargetPath>
         </PackageProjectReference>

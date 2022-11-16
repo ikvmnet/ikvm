@@ -177,6 +177,8 @@ Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "IKVM.MSBuild.Tools.runtime.
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "IKVM.MSBuild.Tools.runtime.linux-x64", "src\IKVM.MSBuild.Tools.runtime.linux-x64\IKVM.MSBuild.Tools.runtime.linux-x64.csproj", "{F162126C-DA9C-4195-B295-CF1020DBA98A}"
 EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "IKVM.MSBuild.Tools.runtime.osx-x64", "src\IKVM.MSBuild.Tools.runtime.osx-x64\IKVM.MSBuild.Tools.runtime.osx-x64.csproj", "{E690EC25-3A73-408F-93B8-36990B2A9D0E}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -483,6 +485,10 @@ Global
 		{F162126C-DA9C-4195-B295-CF1020DBA98A}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{F162126C-DA9C-4195-B295-CF1020DBA98A}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{F162126C-DA9C-4195-B295-CF1020DBA98A}.Release|Any CPU.Build.0 = Release|Any CPU
+		{E690EC25-3A73-408F-93B8-36990B2A9D0E}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{E690EC25-3A73-408F-93B8-36990B2A9D0E}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{E690EC25-3A73-408F-93B8-36990B2A9D0E}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{E690EC25-3A73-408F-93B8-36990B2A9D0E}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE

@@ -35,6 +35,8 @@ namespace IKVM.Tools.Tests.Runner.Exporter
                 rid = "win7-x64";
             if (RuntimeInformation.IsOSPlatform(OSPlatform.Linux))
                 rid = "linux-x64";
+            if (RuntimeInformation.IsOSPlatform(OSPlatform.OSX))
+                rid = "osx-x64";
 
             var e = new List<IkvmToolDiagnosticEvent>();
             var l = new IkvmExporterLauncher(Path.Combine(Path.GetDirectoryName(typeof(IkvmExporterLauncherTests).Assembly.Location), "ikvmstub", tfm, rid), new IkvmToolDelegateDiagnosticListener(evt => { e.Add(evt); TestContext.WriteLine(evt.Message, evt.MessageArgs); }));
