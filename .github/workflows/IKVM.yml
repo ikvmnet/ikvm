@@ -113,6 +113,7 @@ jobs:
     name: Build IKVM
     needs:
     - build-openjdk
+    timeout-minutes: 120
     runs-on: windows-latest
     steps:
     - name: Checkout Source
@@ -326,6 +327,7 @@ jobs:
     name: Test (${{ matrix.run }}:${{ matrix.tfm }}:${{ matrix.sys }}
     needs:
     - build-ikvm
+    timeout-minutes: 240
     runs-on: ${{ fromJSON('{"windows":["windows-2022"],"linux":["ubuntu-22.04"]}')[matrix.sys] }}
     steps:
     - name: Setup .NET
