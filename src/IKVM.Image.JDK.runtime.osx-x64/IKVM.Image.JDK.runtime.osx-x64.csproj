@@ -32,6 +32,7 @@
             <SetTargetFramework>TargetFramework=$(TargetFramework)</SetTargetFramework>
             <SetRuntimeIdentifier>RuntimeIdentifier=osx-x64</SetRuntimeIdentifier>
             <ProjectTargetPath>ikvm\osx-x64\bin</ProjectTargetPath>
+            <Pack>false</Pack>
         </PublishProjectReference>
     </ItemGroup>
 
