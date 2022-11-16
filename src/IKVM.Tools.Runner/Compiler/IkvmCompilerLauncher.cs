@@ -95,7 +95,7 @@ namespace IKVM.Tools.Runner.Compiler
             }
 
             if (options.Platform is not null)
-                w.WriteLine($"-platform:{options.Platform}");
+                w.WriteLine($"-platform:{options.Platform.ToString().ToLowerInvariant()}");
 
             if (options.KeyFile is not null)
                 w.WriteLine($"-keyfile:{options.KeyFile}");
