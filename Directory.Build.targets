@@ -231,6 +231,7 @@
             <_ProjectName>%(_PublishProjectReference.ProjectName)</_ProjectName>
             <_ProjectTargetPath>%(_PublishProjectReference.ProjectTargetPath)</_ProjectTargetPath>
             <_ProjectPackagePath>%(_PublishProjectReference.ProjectPackagePath)</_ProjectPackagePath>
+            <_Pack>%(_PublishProjectReference.Pack)</_Pack>
         </PropertyGroup>
         <ItemGroup>
             <_PublishProjectReferenceItemsInput Include="$(_PublishProjectReferencePublishDir)\**\*" />
@@ -239,6 +240,7 @@
                 <ProjectTargetPath>$(_ProjectTargetPath)</ProjectTargetPath>
                 <ProjectPackagePath>$(_ProjectPackagePath)</ProjectPackagePath>
                 <TargetPath>%(RecursiveDir)%(Filename)%(Extension)</TargetPath>
+                <Pack>$(_Pack)</Pack>
             </_PublishProjectReferenceItems>
         </ItemGroup>
     </Target>
@@ -248,6 +250,7 @@
             <ContentWithTargetPath Include="@(_PublishProjectReferenceItems)" Condition=" '%(_PublishProjectReferenceItems.ProjectTargetPath)' != '' ">
                 <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
                 <TargetPath>$([MSBuild]::MakeRelative('.', '%(_PublishProjectReferenceItems.ProjectTargetPath)%(_PublishProjectReferenceItems.TargetPath)'))</TargetPath>
+                <Pack>false</Pack>
             </ContentWithTargetPath>
         </ItemGroup>
     </Target>
@@ -268,10 +271,9 @@
 
     <Target Name="GetPublishProjectReferenceTfmSpecificContent" DependsOnTargets="GetPublishProjectReferenceItems" Condition=" '$(DesignTimeBuild)' != 'true' and '@(_PublishProjectReferenceItems)' != '' ">
         <ItemGroup>
-            <TfmSpecificPackageFile Include="@(_PublishProjectReferenceItems)" Condition=" '%(_PublishProjectReferenceItems.ProjectTargetPath)' != '' ">
+            <TfmSpecificPackageFile Include="@(_PublishProjectReferenceItems)" Condition=" '%(_PublishProjectReferenceItems.ProjectTargetPath)' != '' And '%(_PublishProjectReferenceItems.Pack)' != 'false' ">
                 <PackagePath>contentFiles\any\$(TargetFramework)\%(_PublishProjectReferenceItems.ProjectTargetPath)</PackagePath>
                 <PackagePath Condition=" '%(_PublishProjectReferenceItems.ProjectPackagePath)' != '' ">contentFiles\any\$(TargetFramework)\%(_PublishProjectReferenceItems.ProjectPackagePath)</PackagePath>
-                <PackageCopyToOutput>true</PackageCopyToOutput>
             </TfmSpecificPackageFile>
         </ItemGroup>
     </Target>
