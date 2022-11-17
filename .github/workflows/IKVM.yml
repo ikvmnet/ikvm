@@ -391,7 +391,7 @@ jobs:
     needs:
     - build-ikvm
     timeout-minutes: 240
-    runs-on: ${{ fromJSON('{"windows":["windows-2022"],"linux":["ubuntu-22.04"],"osx":["macos-12"]}')[matrix.sys] }}
+    runs-on: ${{ fromJSON('{"windows":["windows-2022"],"linux":["ubuntu-22.04"],"osx":["ghcr.io/cirruslabs/macos-ventura-xcode:latest"]}')[matrix.sys] }}
     steps:
     - name: Move Temporary Directory
       shell: pwsh
