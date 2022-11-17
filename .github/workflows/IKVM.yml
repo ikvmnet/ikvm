@@ -159,9 +159,10 @@ jobs:
           llvm
           llvm-dev
           gcc
-          gcc-arm-linux-gnueabihf
           g++
           g++-arm-linux-gnueabihf
+          gcc-arm-linux-gnueabihf
+          libc6-armhf-cross
     - name: Move NuGet Directory
       shell: pwsh
       run: Add-Content $env:GITHUB_ENV "`nNUGET_PACKAGES=${{ runner.temp }}\nuget\packages"

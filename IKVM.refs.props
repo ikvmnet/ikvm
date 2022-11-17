@@ -51,7 +51,7 @@
             <Pack>false</Pack>
         </LibProjectReference>
         <LibProjectReference Include="$(MSBuildThisFileDirectory)src\ikvm-native\ikvm-native-linux-arm.vcxproj">
-            <SetPlatform>Platform=x64</SetPlatform>
+            <SetPlatform>Platform=x86</SetPlatform>
             <LibTargetPath>runtimes\linux-arm\native</LibTargetPath>
             <Pack>false</Pack>
         </LibProjectReference>
