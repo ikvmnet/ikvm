@@ -3,7 +3,7 @@
 
     <PropertyGroup>
         <TargetFrameworks>net461;netcoreapp3.1</TargetFrameworks>
-        <RuntimeIdentifiers>win7-x64;win7-x86;linux-x64</RuntimeIdentifiers>
+        <RuntimeIdentifiers>win7-x64;win7-x86;win81-arm;win10-arm64;linux-x64</RuntimeIdentifiers>
         <ErrorOnDuplicatePublishOutputFiles>false</ErrorOnDuplicatePublishOutputFiles>
     </PropertyGroup>
 
