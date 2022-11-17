@@ -1,4 +1,4 @@
-﻿namespace IKVM.Runtime.Java.Externs.sun.java2d
+﻿namespace IKVM.Java.Externs.sun.java2d
 {
 
     /// <summary>
@@ -8,7 +8,7 @@
     {
 
         /// <summary>
-        /// Implements the native method for 'init'.
+        /// Implements the native method for 'initIDs'.
         /// </summary>
         public static void initIDs()
         {
