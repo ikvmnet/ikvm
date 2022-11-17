@@ -23,12 +23,12 @@
     <Import Project="$(VCTargetsPath)\Microsoft.Cpp.Default.props" />
     <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'" Label="Configuration">
         <UseDebugLibraries>true</UseDebugLibraries>
-        <PlatformToolset>WSL_Clang_1_0</PlatformToolset>
+        <PlatformToolset>WSL_1_0</PlatformToolset>
         <ConfigurationType>DynamicLibrary</ConfigurationType>
     </PropertyGroup>
     <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'" Label="Configuration">
         <UseDebugLibraries>false</UseDebugLibraries>
-        <PlatformToolset>WSL_Clang_1_0</PlatformToolset>
+        <PlatformToolset>WSL_1_0</PlatformToolset>
         <ConfigurationType>DynamicLibrary</ConfigurationType>
     </PropertyGroup>
     <Import Project="$(VCTargetsPath)\Microsoft.Cpp.props" />
@@ -43,9 +43,9 @@
         <LocalRemoteCopySources>true</LocalRemoteCopySources>
         <WSLPath>default</WSLPath>
         <TargetExt>.dynlib</TargetExt>
-        <RemoteCCompileToolExe>LD_LIBRARY_PATH=`wslpath -a '$(ProjectDir)..\..\osxcross\target\lib'` `wslpath -a '$(ProjectDir)..\..\osxcross\target\bin'`/x86_64-apple-darwin20.2-clang++</RemoteCCompileToolExe>
-        <RemoteCppCompileToolExe>LD_LIBRARY_PATH=`wslpath -a '$(ProjectDir)..\..\osxcross\target\lib'` `wslpath -a '$(ProjectDir)..\..\osxcross\target\bin'`/x86_64-apple-darwin20.2-clang++</RemoteCppCompileToolExe>
-        <RemoteLdToolExe>LD_LIBRARY_PATH=`wslpath -a '$(ProjectDir)..\..\osxcross\target\lib'` `wslpath -a '$(ProjectDir)..\..\osxcross\target\bin'`/x86_64-apple-darwin20.2-clang++</RemoteLdToolExe>
+        <RemoteCCompileToolExe>LD_LIBRARY_PATH=`wslpath -a '$(ProjectDir)..\..\osxcross\target\lib'` `wslpath -a '$(ProjectDir)..\..\osxcross\target\bin'`/x86_64-apple-darwin20.2-gcc</RemoteCCompileToolExe>
+        <RemoteCppCompileToolExe>LD_LIBRARY_PATH=`wslpath -a '$(ProjectDir)..\..\osxcross\target\lib'` `wslpath -a '$(ProjectDir)..\..\osxcross\target\bin'`/x86_64-apple-darwin20.2-g++</RemoteCppCompileToolExe>
+        <RemoteLdToolExe>LD_LIBRARY_PATH=`wslpath -a '$(ProjectDir)..\..\osxcross\target\lib'` `wslpath -a '$(ProjectDir)..\..\osxcross\target\bin'`/x86_64-apple-darwin20.2-ld</RemoteLdToolExe>
     </PropertyGroup>
     <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'">
         <TargetName>libikvm-native</TargetName>
@@ -54,13 +54,13 @@
         <LocalRemoteCopySources>true</LocalRemoteCopySources>
         <WSLPath>default</WSLPath>
         <TargetExt>.dynlib</TargetExt>
-        <RemoteCCompileToolExe>LD_LIBRARY_PATH=`wslpath -a '$(ProjectDir)..\..\osxcross\target\lib'` `wslpath -a '$(ProjectDir)..\..\osxcross\target\bin'`/x86_64-apple-darwin20.2-clang++</RemoteCCompileToolExe>
-        <RemoteCppCompileToolExe>LD_LIBRARY_PATH=`wslpath -a '$(ProjectDir)..\..\osxcross\target\lib'` `wslpath -a '$(ProjectDir)..\..\osxcross\target\bin'`/x86_64-apple-darwin20.2-clang++</RemoteCppCompileToolExe>
-        <RemoteLdToolExe>LD_LIBRARY_PATH=`wslpath -a '$(ProjectDir)..\..\osxcross\target\lib'` `wslpath -a '$(ProjectDir)..\..\osxcross\target\bin'`/x86_64-apple-darwin20.2-clang++</RemoteLdToolExe>
+        <RemoteCCompileToolExe>LD_LIBRARY_PATH=`wslpath -a '$(ProjectDir)..\..\osxcross\target\lib'` `wslpath -a '$(ProjectDir)..\..\osxcross\target\bin'`/x86_64-apple-darwin20.2-gcc</RemoteCCompileToolExe>
+        <RemoteCppCompileToolExe>LD_LIBRARY_PATH=`wslpath -a '$(ProjectDir)..\..\osxcross\target\lib'` `wslpath -a '$(ProjectDir)..\..\osxcross\target\bin'`/x86_64-apple-darwin20.2-g++</RemoteCppCompileToolExe>
+        <RemoteLdToolExe>LD_LIBRARY_PATH=`wslpath -a '$(ProjectDir)..\..\osxcross\target\lib'` `wslpath -a '$(ProjectDir)..\..\osxcross\target\bin'`/x86_64-apple-darwin20.2-ld</RemoteLdToolExe>
     </PropertyGroup>
     <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">
         <Link>
-            <AdditionalOptions>--ld-path=`wslpath -a '$(ProjectDir)..\..\osxcross\target\bin'`/x86_64-apple-darwin20.2-ld</AdditionalOptions>
+            <AdditionalOptions></AdditionalOptions>
             <LibraryDependencies>dl</LibraryDependencies>
             <UnresolvedSymbolReferences>false</UnresolvedSymbolReferences>
             <FunctionBinding>false</FunctionBinding>
@@ -71,7 +71,7 @@
     </ItemDefinitionGroup>
     <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'">
         <Link>
-            <AdditionalOptions>--ld-path=`wslpath -a '$(ProjectDir)..\..\osxcross\target\bin'`/x86_64-apple-darwin20.2-ld</AdditionalOptions>
+            <AdditionalOptions></AdditionalOptions>
             <LibraryDependencies>dl</LibraryDependencies>
             <UnresolvedSymbolReferences>false</UnresolvedSymbolReferences>
             <FunctionBinding>false</FunctionBinding>
