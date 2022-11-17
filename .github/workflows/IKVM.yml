@@ -146,6 +146,7 @@ jobs:
     needs:
     - build-openjdk
     - build-osxcross
+    timeout-minutes: 120
     runs-on: windows-latest
     timeout-minutes: 600
     steps:
@@ -191,6 +192,8 @@ jobs:
           clang
           llvm
           llvm-dev
+          gcc
+          g++
     - name: Move NuGet Directory
       shell: pwsh
       run: Add-Content $env:GITHUB_ENV "`nNUGET_PACKAGES=${{ runner.temp }}\nuget\packages"
@@ -387,8 +390,12 @@ jobs:
     name: Test (${{ matrix.run }}:${{ matrix.tfm }}:${{ matrix.sys }}
     needs:
     - build-ikvm
+    timeout-minutes: 240
     runs-on: ${{ fromJSON('{"windows":["windows-2022"],"linux":["ubuntu-22.04"],"osx":["macos-12"]}')[matrix.sys] }}
     steps:
+    - name: Move Temporary Directory
+      shell: pwsh
+      run: Add-Content $env:GITHUB_ENV "`nTMP=${{ runner.temp }}`nTEMP=${{ runner.temp }}`nTMPDIR=${{ runner.temp }}"
     - name: Setup .NET
       shell: pwsh
       run: Add-Content $env:GITHUB_ENV "`nDOTNET_INSTALL_DIR=${{ runner.temp }}/dotnet"
@@ -407,9 +414,6 @@ jobs:
     - name: Setup WSL
       if: matrix.sys == 'windows'
       uses: Vampire/setup-wsl@v1
-    - name: Move Temporary Directory
-      shell: pwsh
-      run: Add-Content $env:GITHUB_ENV "`nTMP=${{ runner.temp }}`nTEMP=${{ runner.temp }}`nTMPDIR=${{ runner.temp }}"
     - name: Download Tests
       uses: actions/download-artifact@v3
       with:
@@ -470,6 +474,13 @@ jobs:
       uses: actions/checkout@v3
       with:
         fetch-depth: 0
+    - name: Setup .NET
+      shell: pwsh
+      run: Add-Content $env:GITHUB_ENV "`nDOTNET_INSTALL_DIR=${{ runner.temp }}/dotnet"
+    - name: Setup .NET 7.0
+      uses: actions/setup-dotnet@v3
+      with:
+        dotnet-version: 7.0.x
     - name: Install GitVersion
       uses: gittools/actions/gitversion/setup@v0.9.13
       with:
