@@ -15,7 +15,7 @@
         <InternalsVisibleTo Include="IKVM.Runtime.JNI" />
         <InternalsVisibleTo Include="IKVM.AWT.WinForms" />
     </ItemGroup>
-    
+
     <ItemGroup>
         <PackageReference Include="SharpZipLib" Version="1.3.3" />
         <PackageReference Include="System.Memory" Version="4.5.5" />
@@ -185,33 +185,37 @@
         </ItemGroup>
     </Target>
 
-    <Target Name="GetRmicExe">
+    <Target Name="ResolveRmiCompiler" Condition=" '$(JAVA_HOME)' != '' And '$(RmiCompilerPath)' == '' ">
         <PropertyGroup>
-            <Rmic>rmic</Rmic>
+            <RmiCompilerPath Condition=" '$([MSBuild]::IsOSUnixLike())' == 'true' And Exists('$(JAVA_HOME)\bin\rmic') ">$([System.IO.Path]::GetFullPath('$(JAVA_HOME)\bin\rmic'))</RmiCompilerPath>
+            <RmiCompilerPath Condition=" '$([MSBuild]::IsOSUnixLike())' != 'true' And Exists('$(JAVA_HOME)\bin\rmic.exe') ">$([System.IO.Path]::GetFullPath('$(JAVA_HOME)\bin\rmic.exe'))</RmiCompilerPath>
+            <RmiCompilerArgs>-J-client -J-Xms128m</RmiCompilerArgs>
+            <RmiCompilerExec Condition=" '$(RmiCompilerPath)' != '' ">"$(RmiCompilerPath)" $(RmiCompilerArgs)</RmiCompilerExec>
         </PropertyGroup>
+        <Message Text="Using rmic executable found in JAVA_HOME at '$(RmiCompilerPath)'." Importance="high" Condition=" '$(RmiCompilerPath)' != '' " />
     </Target>
 
     <PropertyGroup>
         <RmiStubsOutputPath>$(IntermediateOutputPath)rmistubs\</RmiStubsOutputPath>
+        <_BuildRmiStubsCoreStampFile>$(RmiStubsOutputPath)stamp</_BuildRmiStubsCoreStampFile>
     </PropertyGroup>
 
-    <Target Name="_BuildRmiStubs" DependsOnTargets="GetRmicExe;ResolveRmiStubInputItems" Inputs="@(RmiStubInputItem)" Outputs="$(_BuildRmiStubsCoreStampFile)">
+    <Target Name="_BuildRmiStubs" DependsOnTargets="ResolveRmiCompiler;ResolveRmiStubInputItems" Inputs="@(RmiStubInputItem)" Outputs="$(_BuildRmiStubsCoreStampFile)">
         <ItemGroup>
-            <_RmicClasspath Include="@(Classpath);$(ClassOutputPath)" />
-            <_RmicArgs Include="-J-client" />
-            <_RmicArgs Include="-J-Xms128m" />
-            <_RmicArgs Include="-nowarn" />
-            <_RmicArgs Include="-bootclasspath" />
-            <_RmicArgs Include="@(_RmicClasspath, '$([System.IO.Path]::PathSeparator)')" />
-            <_RmicArgs Include="-d" />
-            <_RmicArgs Include="$(RmiStubsOutputPath)" />
+            <_RmiCompilerClasspath Include="@(Classpath);$(ClassOutputPath)" />
+            <_RmiCompilerArgs Include="@(RmiCompilerArgs)" />
+            <_RmiCompilerArgs Include="-nowarn" />
+            <_RmiCompilerArgs Include="-bootclasspath" />
+            <_RmiCompilerArgs Include="@(_RmiCompilerClasspath, '$([System.IO.Path]::PathSeparator)')" />
+            <_RmiCompilerArgs Include="-d" />
+            <_RmiCompilerArgs Include="$(RmiStubsOutputPath)" />
         </ItemGroup>
         <PropertyGroup>
-            <_RmicArgs>@(_RmicArgs, ' ')</_RmicArgs>
+            <_RmiCompilerArgs>@(_RmiCompilerArgs, ' ')</_RmiCompilerArgs>
         </PropertyGroup>
         <Delete Files="$(RmiStubsOutputPath)**\*" />
         <MakeDir Directories="$(RmiStubsOutputPath)" />
-        <Exec Command="$(Rmic) $(_RmicArgs) %(OpenJdkRmiStub.Flags) %(OpenJdkRmiStub.Identity)" />
+        <Exec Command="$(RmiCompilerExec) $(_RmiCompilerArgs) %(OpenJdkRmiStub.Flags) %(OpenJdkRmiStub.Identity)" />
         <Touch Files="$(_BuildRmiStubsCoreStampFile)" AlwaysCreate="true" ForceTouch="true" />
     </Target>
 
