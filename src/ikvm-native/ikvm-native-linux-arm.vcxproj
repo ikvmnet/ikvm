@@ -40,7 +40,7 @@
         <TargetName>libikvm-native</TargetName>
         <OutDir>$(ProjectDir)bin\$(Configuration)\linux-arm\</OutDir>
         <IntDir>$(ProjectDir)obj\$(Configuration)\linux-arm\</IntDir>
-        <IncludePath>/usr/include;/usr/local/include</IncludePath>
+        <IncludePath>/usr/arm-linux-gnueabi/include/</IncludePath>
         <LocalRemoteCopySources>true</LocalRemoteCopySources>
         <WSLPath>default</WSLPath>
         <TargetExt>.so</TargetExt>
@@ -52,7 +52,7 @@
         <TargetName>libikvm-native</TargetName>
         <OutDir>$(ProjectDir)bin\$(Configuration)\linux-arm\</OutDir>
         <IntDir>$(ProjectDir)obj\$(Configuration)\linux-arm\</IntDir>
-        <IncludePath>/usr/include;/usr/local/include</IncludePath>
+        <IncludePath>/usr/arm-linux-gnueabi/include/</IncludePath>
         <LocalRemoteCopySources>true</LocalRemoteCopySources>
         <WSLPath>default</WSLPath>
         <TargetExt>.so</TargetExt>
