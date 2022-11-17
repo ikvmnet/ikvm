@@ -158,6 +158,8 @@ jobs:
           clang
           llvm
           llvm-dev
+          gcc
+          g++
     - name: Move NuGet Directory
       shell: pwsh
       run: Add-Content $env:GITHUB_ENV "`nNUGET_PACKAGES=${{ runner.temp }}\nuget\packages"
