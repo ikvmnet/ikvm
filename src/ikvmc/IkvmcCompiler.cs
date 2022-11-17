@@ -1219,6 +1219,30 @@ namespace ikvmc
             return false;
         }
 
+        internal static bool IsMetaInfClassFile(string name) // internal for testing
+        {
+            if (name.EndsWith(".class", StringComparison.OrdinalIgnoreCase) &&
+                name.StartsWith("META-INF/", StringComparison.Ordinal))
+            {
+                return true;
+            }
+            return false;
+        }
+
+        internal static bool IsMultiReleaseClassFile(string name, out int majorVersion) // internal for testing
+        {
+            int nextSlashIndex;
+            if (name.EndsWith(".class", StringComparison.OrdinalIgnoreCase) &&
+                name.StartsWith("META-INF/versions/", StringComparison.Ordinal) &&
+                (nextSlashIndex = name.IndexOf('/', 18)) != -1 &&
+                int.TryParse(name.Substring(18, nextSlashIndex - 18), System.Globalization.NumberStyles.Integer, System.Globalization.NumberFormatInfo.InvariantInfo, out majorVersion))
+            {
+                return true;
+            }
+            majorVersion = default;
+            return false;
+        }
+
         private void ProcessManifest(CompilerOptions options, ZipFile zf, ZipEntry ze)
         {
             if (manifestMainClass == null)
@@ -1263,8 +1287,16 @@ namespace ikvmc
                         else
                         {
                             found = true;
+                            // TODO: Java SE 9 UPGRADE (JEP 238). When multi-release JAR support is added, this check can be removed.
+                            // It is in place to mimic Java SE 8 tools, which ignore .class files in the META-INF folder.
+                            if (IsMetaInfClassFile(ze.Name))
+                            {
+                                continue;
+                            }
                             byte[] data = ReadFromZip(zf, ze);
-                            if (IsExcludedOrStubLegacy(options, ze, data))
+                            // TODO: Java SE 9 UPGRADE (JEP 238). When multi-release JAR support is added, the majorVersion value can be used to
+                            // choose the binary format for the specific Java SE version the IsExcludedOrStubLegacy uses when checking class names.
+                            if (IsMultiReleaseClassFile(ze.Name, out int majorVersion) || IsExcludedOrStubLegacy(options, ze, data))
                             {
                                 continue;
                             }

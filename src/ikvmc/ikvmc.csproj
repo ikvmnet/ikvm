@@ -13,6 +13,7 @@
 
     <ItemGroup>
         <InternalsVisibleTo Include="IKVM.Java" />
+        <InternalsVisibleTo Include="ikvmc.Tests" />
     </ItemGroup>
 
     <ItemGroup>
