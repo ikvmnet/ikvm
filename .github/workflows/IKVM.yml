@@ -330,6 +330,9 @@ jobs:
     timeout-minutes: 240
     runs-on: ${{ fromJSON('{"windows":["windows-2022"],"linux":["ubuntu-22.04"]}')[matrix.sys] }}
     steps:
+    - name: Move Temporary Directory
+      shell: pwsh
+      run: Add-Content $env:GITHUB_ENV "`nTMP=${{ runner.temp }}`nTEMP=${{ runner.temp }}`nTMPDIR=${{ runner.temp }}"
     - name: Setup .NET
       shell: pwsh
       run: Add-Content $env:GITHUB_ENV "`nDOTNET_INSTALL_DIR=${{ runner.temp }}/dotnet"
@@ -348,9 +351,6 @@ jobs:
     - name: Setup WSL
       if: matrix.sys == 'windows'
       uses: Vampire/setup-wsl@v1
-    - name: Move Temporary Directory
-      shell: pwsh
-      run: Add-Content $env:GITHUB_ENV "`nTMP=${{ runner.temp }}`nTEMP=${{ runner.temp }}`nTMPDIR=${{ runner.temp }}"
     - name: Download Tests
       uses: actions/download-artifact@v3
       with:
