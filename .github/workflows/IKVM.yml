@@ -159,6 +159,7 @@ jobs:
           llvm
           llvm-dev
           gcc
+          gcc-multilib
           g++
           g++-multilib
           gcc-aarch64-linux-gnu
