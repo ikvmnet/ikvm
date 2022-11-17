@@ -396,6 +396,10 @@ jobs:
       uses: actions/checkout@v3
       with:
         fetch-depth: 0
+    - name: Setup .NET 6.0
+      uses: actions/setup-dotnet@v3
+      with:
+        dotnet-version: 6.0.x
     - name: Install GitVersion
       uses: gittools/actions/gitversion/setup@v0.9.13
       with:
