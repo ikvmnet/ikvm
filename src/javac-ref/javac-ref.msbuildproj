@@ -9,7 +9,7 @@
         <OutputType>Exe</OutputType>
         <AssemblyName>javac</AssemblyName>
         <TargetFrameworks>net461;netcoreapp3.1</TargetFrameworks>
-        <RuntimeIdentifiers>win7-x64;win7-x86;linux-x64</RuntimeIdentifiers>
+        <RuntimeIdentifiers>win7-x64;win7-x86;linux-x64;linux-arm</RuntimeIdentifiers>
         <AutoGenerateBindingRedirects Condition="$([MSBuild]::IsTargetFrameworkCompatible('$(TargetFramework)', 'net461'))">true</AutoGenerateBindingRedirects>
         <GenerateBindingRedirectsOutputType Condition="$([MSBuild]::IsTargetFrameworkCompatible('$(TargetFramework)', 'net461'))">true</GenerateBindingRedirectsOutputType>
         <StartupObject>com.sun.tools.javac.Main</StartupObject>
