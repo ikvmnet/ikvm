@@ -70,6 +70,7 @@ namespace IKVM.NET.Sdk.Tests
                 ("net461",          "win7-x64"),
                 ("netcoreapp3.1",   "win7-x64"),
                 ("netcoreapp3.1",   "linux-x64"),
+                ("netcoreapp3.1",   "linux-arm64"),
             };
 
             if (RuntimeInformation.IsOSPlatform(OSPlatform.Linux))
@@ -78,6 +79,7 @@ namespace IKVM.NET.Sdk.Tests
                 {
                     ("netcoreapp3.1",   "win7-x64"),
                     ("netcoreapp3.1",   "linux-x64"),
+                    ("netcoreapp3.1",   "linux-arm64"),
                 };
             }
 
