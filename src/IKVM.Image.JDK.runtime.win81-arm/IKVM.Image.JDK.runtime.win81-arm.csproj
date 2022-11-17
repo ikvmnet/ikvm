@@ -37,6 +37,7 @@
             <SetTargetFramework>TargetFramework=$(TargetFramework)</SetTargetFramework>
             <SetRuntimeIdentifier>RuntimeIdentifier=win81-arm</SetRuntimeIdentifier>
             <ProjectTargetPath>ikvm\win81-arm\bin</ProjectTargetPath>
+            <Pack>false</Pack>
         </PublishProjectReference>
     </ItemGroup>
 
