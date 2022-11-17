@@ -49,7 +49,8 @@
         <!-- openjdk contents -->
         <None Include="@(OpenJdkImageContent)">
             <Pack>true</Pack>
-            <PackagePath>$([System.IO.Path]::GetDirectoryName('ikvm\any\any\%(ImagePath)'))</PackagePath>
+            <PackagePath>ikvm\any\any\%(ImagePath)</PackagePath>
+            <PackagePath Condition="!$([System.IO.Path]::HasExtension('%(ImagePath)'))">$([System.IO.Path]::GetDirectoryName('ikvm\any\any\%(ImagePath)'))</PackagePath>
             <Link>ikvm\any\any\%(ImagePath)</Link>
         </None>
     </ItemGroup>
