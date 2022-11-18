@@ -23,12 +23,12 @@
     <Import Project="$(VCTargetsPath)\Microsoft.Cpp.Default.props" />
     <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'" Label="Configuration">
         <UseDebugLibraries>true</UseDebugLibraries>
-        <PlatformToolset>WSL_Clang_1_0</PlatformToolset>
+        <PlatformToolset>WSL_1_0</PlatformToolset>
         <ConfigurationType>DynamicLibrary</ConfigurationType>
     </PropertyGroup>
     <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'" Label="Configuration">
         <UseDebugLibraries>false</UseDebugLibraries>
-        <PlatformToolset>WSL_Clang_1_0</PlatformToolset>
+        <PlatformToolset>WSL_1_0</PlatformToolset>
         <ConfigurationType>DynamicLibrary</ConfigurationType>
     </PropertyGroup>
     <Import Project="$(VCTargetsPath)\Microsoft.Cpp.props" />
@@ -40,46 +40,44 @@
         <TargetName>libikvm-native</TargetName>
         <OutDir>$(ProjectDir)bin\$(Configuration)\linux-arm64\</OutDir>
         <IntDir>$(ProjectDir)obj\$(Configuration)\linux-arm64\</IntDir>
+        <IncludePath>/usr/aarch64-linux-gnu/include/</IncludePath>
         <LocalRemoteCopySources>true</LocalRemoteCopySources>
         <WSLPath>default</WSLPath>
         <TargetExt>.so</TargetExt>
         <RemoteCCompileToolExe>/usr/bin/aarch64-linux-gnu-gcc</RemoteCCompileToolExe>
-        <RemoteCppCompileToolExe>/usr/bin/aarch64-linux-gnu-gcc</RemoteCppCompileToolExe>
+        <RemoteCppCompileToolExe>/usr/bin/aarch64-linux-gnu-g++</RemoteCppCompileToolExe>
         <RemoteLdToolExe>/usr/bin/aarch64-linux-gnu-ld</RemoteLdToolExe>
     </PropertyGroup>
     <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'">
         <TargetName>libikvm-native</TargetName>
         <OutDir>$(ProjectDir)bin\$(Configuration)\linux-arm64\</OutDir>
         <IntDir>$(ProjectDir)obj\$(Configuration)\linux-arm64\</IntDir>
+        <IncludePath>/usr/aarch64-linux-gnu/include/</IncludePath>
         <LocalRemoteCopySources>true</LocalRemoteCopySources>
         <WSLPath>default</WSLPath>
         <TargetExt>.so</TargetExt>
         <RemoteCCompileToolExe>/usr/bin/aarch64-linux-gnu-gcc</RemoteCCompileToolExe>
-        <RemoteCppCompileToolExe>/usr/bin/aarch64-linux-gnu-gcc</RemoteCppCompileToolExe>
+        <RemoteCppCompileToolExe>/usr/bin/aarch64-linux-gnu-g++</RemoteCppCompileToolExe>
         <RemoteLdToolExe>/usr/bin/aarch64-linux-gnu-ld</RemoteLdToolExe>
     </PropertyGroup>
     <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">
         <Link>
-            <AdditionalOptions>
-            </AdditionalOptions>
+            <AdditionalOptions></AdditionalOptions>
             <LibraryDependencies>dl</LibraryDependencies>
             <UnresolvedSymbolReferences>false</UnresolvedSymbolReferences>
             <FunctionBinding>false</FunctionBinding>
+            <Relocation></Relocation>
             <NoExecStackRequired>false</NoExecStackRequired>
-            <Relocation>
-            </Relocation>
         </Link>
     </ItemDefinitionGroup>
     <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'">
         <Link>
-            <AdditionalOptions>
-            </AdditionalOptions>
+            <AdditionalOptions></AdditionalOptions>
             <LibraryDependencies>dl</LibraryDependencies>
             <UnresolvedSymbolReferences>false</UnresolvedSymbolReferences>
             <FunctionBinding>false</FunctionBinding>
+            <Relocation></Relocation>
             <NoExecStackRequired>false</NoExecStackRequired>
-            <Relocation>
-            </Relocation>
         </Link>
     </ItemDefinitionGroup>
     <ItemGroup>
