@@ -43,8 +43,8 @@
         <LocalRemoteCopySources>true</LocalRemoteCopySources>
         <WSLPath>default</WSLPath>
         <TargetExt>.dynlib</TargetExt>
-        <RemoteCCompileToolExe>LD_LIBRARY_PATH=`wslpath -a '$(ProjectDir)..\..\osxcross\target\lib'` `wslpath -a '$(ProjectDir)..\..\osxcross\target\bin'`/x86_64-apple-darwin20.2-gcc</RemoteCCompileToolExe>
-        <RemoteCppCompileToolExe>LD_LIBRARY_PATH=`wslpath -a '$(ProjectDir)..\..\osxcross\target\lib'` `wslpath -a '$(ProjectDir)..\..\osxcross\target\bin'`/x86_64-apple-darwin20.2-g++</RemoteCppCompileToolExe>
+        <RemoteCCompileToolExe>LD_LIBRARY_PATH=`wslpath -a '$(ProjectDir)..\..\osxcross\target\lib'` `wslpath -a '$(ProjectDir)..\..\osxcross\target\bin'`/o64-gcc</RemoteCCompileToolExe>
+        <RemoteCppCompileToolExe>LD_LIBRARY_PATH=`wslpath -a '$(ProjectDir)..\..\osxcross\target\lib'` `wslpath -a '$(ProjectDir)..\..\osxcross\target\bin'`/o64-g++</RemoteCppCompileToolExe>
         <RemoteLdToolExe>LD_LIBRARY_PATH=`wslpath -a '$(ProjectDir)..\..\osxcross\target\lib'` `wslpath -a '$(ProjectDir)..\..\osxcross\target\bin'`/x86_64-apple-darwin20.2-ld</RemoteLdToolExe>
     </PropertyGroup>
     <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'">
@@ -54,8 +54,8 @@
         <LocalRemoteCopySources>true</LocalRemoteCopySources>
         <WSLPath>default</WSLPath>
         <TargetExt>.dynlib</TargetExt>
-        <RemoteCCompileToolExe>LD_LIBRARY_PATH=`wslpath -a '$(ProjectDir)..\..\osxcross\target\lib'` `wslpath -a '$(ProjectDir)..\..\osxcross\target\bin'`/x86_64-apple-darwin20.2-gcc</RemoteCCompileToolExe>
-        <RemoteCppCompileToolExe>LD_LIBRARY_PATH=`wslpath -a '$(ProjectDir)..\..\osxcross\target\lib'` `wslpath -a '$(ProjectDir)..\..\osxcross\target\bin'`/x86_64-apple-darwin20.2-g++</RemoteCppCompileToolExe>
+        <RemoteCCompileToolExe>LD_LIBRARY_PATH=`wslpath -a '$(ProjectDir)..\..\osxcross\target\lib'` `wslpath -a '$(ProjectDir)..\..\osxcross\target\bin'`/o64-gcc</RemoteCCompileToolExe>
+        <RemoteCppCompileToolExe>LD_LIBRARY_PATH=`wslpath -a '$(ProjectDir)..\..\osxcross\target\lib'` `wslpath -a '$(ProjectDir)..\..\osxcross\target\bin'`/o64-g++</RemoteCppCompileToolExe>
         <RemoteLdToolExe>LD_LIBRARY_PATH=`wslpath -a '$(ProjectDir)..\..\osxcross\target\lib'` `wslpath -a '$(ProjectDir)..\..\osxcross\target\bin'`/x86_64-apple-darwin20.2-ld</RemoteLdToolExe>
     </PropertyGroup>
     <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">
