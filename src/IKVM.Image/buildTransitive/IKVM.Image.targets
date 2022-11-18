@@ -104,6 +104,7 @@
         <IkvmImageRuntimeIdentifiers Include="win81-arm" />
         <IkvmImageRuntimeIdentifiers Include="win10-arm64" />
         <IkvmImageRuntimeIdentifiers Include="linux-x64" />
+        <IkvmImageRuntimeIdentifiers Include="linux-arm" />
     </ItemGroup>
 
     <Target Name="GetIkvmImageItemsForRuntimeIdentifier" Outputs="%(IkvmImageRuntimeIdentifiers.Identity)">

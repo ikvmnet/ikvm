@@ -160,6 +160,9 @@ jobs:
           llvm-dev
           gcc
           g++
+          g++-arm-linux-gnueabihf
+          gcc-arm-linux-gnueabihf
+          libc6-armhf-cross
           gcc-aarch64-linux-gnu
           g++-aarch64-linux-gnu
           libc6-arm64-cross
