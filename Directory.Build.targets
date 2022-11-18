@@ -120,9 +120,7 @@
 
     <Target Name="GetLibProjectReferenceItems" DependsOnTargets="GetLibProjectReferences" Inputs="@(_LibProjectReference)" Outputs="@(_LibProjectReference->'%(Identity)\%(_Index)\null" Condition=" '$(DesignTimeBuild)' != 'true' And '@(_LibProjectReference)' != '' ">
         <ItemGroup>
-            <_LibProjectReferencesToTarget Include="@(_LibProjectReference)">
-                <Properties>%(_LibProjectReference.SetConfiguration);%(_LibProjectReference.SetPlatform)</Properties>
-            </_LibProjectReferencesToTarget>
+            <_LibProjectReferencesToTarget Include="@(_LibProjectReference)" RemoveMetadata="_Index;ProjectName;LibTargetPath;LibPackagePath;Pack" />
         </ItemGroup>
         <MSBuild Projects="@(_LibProjectReferencesToTarget)" Targets="Build" BuildInParallel="$(BuildInParallel)" RemoveProperties="$(_GlobalPropertiesToRemoveFromProjectReferences);TargetFramework;RuntimeIdentifier" RebaseOutputs="true" />
         <MSBuild Projects="@(_LibProjectReferencesToTarget)" Targets="GetTargetPath" BuildInParallel="$(BuildInParallel)" RemoveProperties="$(_GlobalPropertiesToRemoveFromProjectReferences);TargetFramework;RuntimeIdentifier" RebaseOutputs="true">
@@ -225,9 +223,7 @@
 
     <Target Name="GetPublishProjectReferenceItems" DependsOnTargets="GetPublishProjectReferences" Inputs="@(_PublishProjectReference)" Outputs="@(_PublishProjectReference->'%(Identity)\%(_Index)\null')" Condition=" '$(DesignTimeBuild)' != 'true' And '@(_PublishProjectReference)' != '' ">
         <ItemGroup>
-            <_PublishProjectReferencesToTarget Include="@(_PublishProjectReference)">
-                <Properties>%(_PublishProjectReference.SetConfiguration);%(_PublishProjectReference.SetPlatform);%(_PublishProjectReference.SetTargetFramework);%(_PublishProjectReference.SetRuntimeIdentifier)</Properties>
-            </_PublishProjectReferencesToTarget>
+            <_PublishProjectReferencesToTarget Include="@(_PublishProjectReference)" RemoveMetadata="_Index;ProjectName;ProjectTargetPath;ProjectPackagePath;Pack" />
         </ItemGroup>
         <MSBuild Projects="@(_PublishProjectReferencesToTarget)" Targets="GetPublishOutput" BuildInParallel="$(BuildInParallel)" RemoveProperties="$(_GlobalPropertiesToRemoveFromProjectReferences)" RebaseOutputs="true">
             <Output TaskParameter="TargetOutputs" ItemName="_PublishProjectReferenceItems" />
@@ -324,7 +320,7 @@
 
     <Target Name="GetIncludeProjectReferenceItems" DependsOnTargets="GetIncludeProjectReferences" Inputs="@(_IncludeProjectReference)" Outputs="%(_IncludeProjectReference.Identity)\%(_IncludeProjectReference._Index)\null" Condition=" '$(DesignTimeBuild)' != 'true' And '@(_IncludeProjectReference)' != '' ">
         <ItemGroup>
-            <_IncludeProjectReferencesToTarget Include="@(_IncludeProjectReference)" RemoveMetadata="ProjectName;IncludeTargetPath;IncludePackagePath" />
+            <_IncludeProjectReferencesToTarget Include="@(_IncludeProjectReference)" RemoveMetadata="_Index;ProjectName;IncludeTargetPath;IncludePackagePath;Pack" />
         </ItemGroup>
         <MSBuild Projects="@(_IncludeProjectReferencesToTarget)" Targets="Build" BuildInParallel="$(BuildInParallel)" Properties="%(_IncludeProjectReferencesToTarget.SetConfiguration);%(_IncludeProjectReferencesToTarget.SetPlatform);%(_IncludeProjectReferencesToTarget.SetTargetFramework)" RemoveProperties="$(_GlobalPropertiesToRemoveFromProjectReferences);%(_IncludeProjectReferencesToTarget.GlobalPropertiesToRemove);RuntimeIdentifier" RebaseOutputs="true" />
         <MSBuild Projects="@(_IncludeProjectReferencesToTarget)" Targets="BuiltProjectOutputGroup" BuildInParallel="$(BuildInParallel)" Properties="%(_IncludeProjectReferencesToTarget.SetConfiguration);%(_IncludeProjectReferencesToTarget.SetPlatform);%(_IncludeProjectReferencesToTarget.SetTargetFramework)" RemoveProperties="$(_GlobalPropertiesToRemoveFromProjectReferences);%(_IncludeProjectReferencesToTarget.GlobalPropertiesToRemove);RuntimeIdentifier" RebaseOutputs="true">
@@ -441,9 +437,7 @@
 
     <Target Name="GetPackageProjectReferenceItems" DependsOnTargets="GetPackageProjectReferences" Inputs="@(_PackageProjectReference)" Outputs="@(_PackageProjectReference->'%(Identity)\%(_Index)\null" Condition=" '$(DesignTimeBuild)' != 'true' And '@(_PackageProjectReference)' != '' ">
         <ItemGroup>
-            <_PackageProjectReferencesToTarget Include="@(_PackageProjectReference)">
-                <Properties>%(_PackageProjectReference.SetConfiguration);%(_PackageProjectReference.SetPlatform)</Properties>
-            </_PackageProjectReferencesToTarget>
+            <_PackageProjectReferencesToTarget Include="@(_PackageProjectReference)" RemoveMetadata="_Index;ProjectName;PackageTargetPath;PackagePackagePath;Pack" />
         </ItemGroup>
         <MSBuild Projects="@(_PackageProjectReferencesToTarget)" Targets="Build" BuildInParallel="$(BuildInParallel)" RemoveProperties="$(_GlobalPropertiesToRemoveFromProjectReferences);TargetFramework;RuntimeIdentifier" RebaseOutputs="true" />
         <MSBuild Projects="@(_PackageProjectReferencesToTarget)" Targets="_CleanPackageFiles;Pack;GetPackageOutputPath" BuildInParallel="$(BuildInParallel)" RemoveProperties="$(_GlobalPropertiesToRemoveFromProjectReferences);TargetFramework;RuntimeIdentifier" RebaseOutputs="true">
