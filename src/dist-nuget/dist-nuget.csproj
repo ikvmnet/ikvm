@@ -18,8 +18,10 @@
         <PackageProjectReference Include="..\IKVM.MSBuild.Tools.runtime.linux-x64\IKVM.MSBuild.Tools.runtime.linux-x64.csproj">
             <PackageTargetPath>.</PackageTargetPath>
         </PackageProjectReference>
-        <PackageProjectReference Include="..\IKVM.MSBuild.Tools.runtime.linux-arm64\IKVM.MSBuild.Tools.runtime.linux-arm64.csproj">
         <PackageProjectReference Include="..\IKVM.MSBuild.Tools.runtime.linux-arm\IKVM.MSBuild.Tools.runtime.linux-arm.csproj">
+            <PackageTargetPath>.</PackageTargetPath>
+        </PackageProjectReference>
+        <PackageProjectReference Include="..\IKVM.MSBuild.Tools.runtime.linux-arm64\IKVM.MSBuild.Tools.runtime.linux-arm64.csproj">
             <PackageTargetPath>.</PackageTargetPath>
         </PackageProjectReference>
         <PackageProjectReference Include="..\IKVM.NET.Sdk\IKVM.NET.Sdk.msbuildproj">
@@ -46,8 +48,10 @@
         <PackageProjectReference Include="..\IKVM.Image.JRE.runtime.linux-x64\IKVM.Image.JRE.runtime.linux-x64.csproj">
             <PackageTargetPath>.</PackageTargetPath>
         </PackageProjectReference>
-        <PackageProjectReference Include="..\IKVM.Image.JRE.runtime.linux-arm64\IKVM.Image.JRE.runtime.linux-arm64.csproj">
         <PackageProjectReference Include="..\IKVM.Image.JRE.runtime.linux-arm\IKVM.Image.JRE.runtime.linux-arm.csproj">
+            <PackageTargetPath>.</PackageTargetPath>
+        </PackageProjectReference>
+        <PackageProjectReference Include="..\IKVM.Image.JRE.runtime.linux-arm64\IKVM.Image.JRE.runtime.linux-arm64.csproj">
             <PackageTargetPath>.</PackageTargetPath>
         </PackageProjectReference>
         <PackageProjectReference Include="..\IKVM.Image.JDK\IKVM.Image.JDK.csproj">
@@ -65,8 +69,10 @@
         <PackageProjectReference Include="..\IKVM.Image.JDK.runtime.linux-x64\IKVM.Image.JDK.runtime.linux-x64.csproj">
             <PackageTargetPath>.</PackageTargetPath>
         </PackageProjectReference>
-        <PackageProjectReference Include="..\IKVM.Image.JDK.runtime.linux-arm64\IKVM.Image.JDK.runtime.linux-arm64.csproj">
         <PackageProjectReference Include="..\IKVM.Image.JDK.runtime.linux-arm\IKVM.Image.JDK.runtime.linux-arm.csproj">
+            <PackageTargetPath>.</PackageTargetPath>
+        </PackageProjectReference>
+        <PackageProjectReference Include="..\IKVM.Image.JDK.runtime.linux-arm64\IKVM.Image.JDK.runtime.linux-arm64.csproj">
             <PackageTargetPath>.</PackageTargetPath>
         </PackageProjectReference>
     </ItemGroup>

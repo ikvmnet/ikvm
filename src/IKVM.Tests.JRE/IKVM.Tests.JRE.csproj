@@ -105,13 +105,6 @@
 
         <PublishProjectReference Include="..\ikvmc\ikvmc.csproj">
             <SetTargetFramework>TargetFramework=netcoreapp3.1</SetTargetFramework>
-            <SetRuntimeIdentifier>RuntimeIdentifier=linux-arm64</SetRuntimeIdentifier>
-            <ProjectTargetPath>ikvmc\netcoreapp3.1\linux-arm64</ProjectTargetPath>
-        </PublishProjectReference>
-        <PublishProjectReference Include="..\ikvmstub\ikvmstub.csproj">
-            <SetTargetFramework>TargetFramework=netcoreapp3.1</SetTargetFramework>
-            <SetRuntimeIdentifier>RuntimeIdentifier=linux-arm64</SetRuntimeIdentifier>
-            <ProjectTargetPath>ikvmstub\netcoreapp3.1\linux-arm64</ProjectTargetPath>
             <SetRuntimeIdentifier>RuntimeIdentifier=linux-arm</SetRuntimeIdentifier>
             <ProjectTargetPath>ikvmc\netcoreapp3.1\linux-arm</ProjectTargetPath>
         </PublishProjectReference>
@@ -119,6 +112,17 @@
             <SetTargetFramework>TargetFramework=netcoreapp3.1</SetTargetFramework>
             <SetRuntimeIdentifier>RuntimeIdentifier=linux-arm</SetRuntimeIdentifier>
             <ProjectTargetPath>ikvmstub\netcoreapp3.1\linux-arm</ProjectTargetPath>
+        </PublishProjectReference>
+
+        <PublishProjectReference Include="..\ikvmc\ikvmc.csproj">
+            <SetTargetFramework>TargetFramework=netcoreapp3.1</SetTargetFramework>
+            <SetRuntimeIdentifier>RuntimeIdentifier=linux-arm64</SetRuntimeIdentifier>
+            <ProjectTargetPath>ikvmc\netcoreapp3.1\linux-arm64</ProjectTargetPath>
+        </PublishProjectReference>
+        <PublishProjectReference Include="..\ikvmstub\ikvmstub.csproj">
+            <SetTargetFramework>TargetFramework=netcoreapp3.1</SetTargetFramework>
+            <SetRuntimeIdentifier>RuntimeIdentifier=linux-arm64</SetRuntimeIdentifier>
+            <ProjectTargetPath>ikvmstub\netcoreapp3.1\linux-arm64</ProjectTargetPath>
         </PublishProjectReference>
 
     </ItemGroup>
