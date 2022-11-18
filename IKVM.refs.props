@@ -24,6 +24,10 @@
             <SetPlatform>Platform=Win32</SetPlatform>
             <LibPackagePath>runtimes\win-x86\native</LibPackagePath>
         </LibProjectReference>
+        <LibProjectReference Include="$(MSBuildThisFileDirectory)src\ikvm-native\ikvm-native-win.vcxproj">
+            <SetPlatform>Platform=ARM</SetPlatform>
+            <LibPackagePath>runtimes\win-arm\native</LibPackagePath>
+        </LibProjectReference>
         <LibProjectReference Include="$(MSBuildThisFileDirectory)src\ikvm-native\ikvm-native-linux.vcxproj">
             <SetPlatform>Platform=x64</SetPlatform>
             <LibPackagePath>runtimes\linux-x64\native</LibPackagePath>
@@ -39,6 +43,11 @@
         <LibProjectReference Include="$(MSBuildThisFileDirectory)src\ikvm-native\ikvm-native-win.vcxproj">
             <SetPlatform>Platform=Win32</SetPlatform>
             <LibTargetPath>runtimes\win-x86\native</LibTargetPath>
+            <Pack>false</Pack>
+        </LibProjectReference>
+        <LibProjectReference Include="$(MSBuildThisFileDirectory)src\ikvm-native\ikvm-native-win.vcxproj">
+            <SetPlatform>Platform=ARM</SetPlatform>
+            <LibTargetPath>runtimes\win-arm\native</LibTargetPath>
             <Pack>false</Pack>
         </LibProjectReference>
         <LibProjectReference Include="$(MSBuildThisFileDirectory)src\ikvm-native\ikvm-native-linux.vcxproj">
