@@ -26,9 +26,6 @@
             <SetRuntimeIdentifier>RuntimeIdentifier=linux-x64</SetRuntimeIdentifier>
             <ProjectPackagePath>ikvmc\netcoreapp3.1\linux-x64</ProjectPackagePath>
         </PublishProjectReference>
-    </ItemGroup>
-
-    <ItemGroup Condition=" '$(TargetFramework)' == '' ">
         <PublishProjectReference Include="..\ikvmstub\ikvmstub.csproj">
             <SetTargetFramework>TargetFramework=netcoreapp3.1</SetTargetFramework>
             <SetRuntimeIdentifier>RuntimeIdentifier=linux-x64</SetRuntimeIdentifier>

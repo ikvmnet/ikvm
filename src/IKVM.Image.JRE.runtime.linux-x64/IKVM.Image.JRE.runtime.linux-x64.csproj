@@ -27,7 +27,7 @@
         </PublishProjectReference>
     </ItemGroup>
 
-    <ItemGroup Condition=" '$(TargetFramework)' != '' ">
+    <ItemGroup Condition=" '$(TargetFramework)' == 'netcoreapp3.1' ">
         <PublishProjectReference Include="..\IKVM.Image.JRE-bin\IKVM.Image.JRE-bin.csproj">
             <SetTargetFramework>TargetFramework=$(TargetFramework)</SetTargetFramework>
             <SetRuntimeIdentifier>RuntimeIdentifier=linux-x64</SetRuntimeIdentifier>
