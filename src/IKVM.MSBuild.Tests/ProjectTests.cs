@@ -67,13 +67,25 @@ namespace IKVM.MSBuild.Tests
 
             var targets = new[]
             {
+                ("net461",          "win7-x86"),
+                ("net472",          "win7-x86"),
+                ("net48",           "win7-x86"),
+                ("netcoreapp3.1",   "win7-x86"),
+                ("net6.0",          "win7-x86"),
                 ("net461",          "win7-x64"),
                 ("net472",          "win7-x64"),
                 ("net48",           "win7-x64"),
                 ("netcoreapp3.1",   "win7-x64"),
                 ("net6.0",          "win7-x64"),
+                ("net461",          "win81-arm"),
+                ("net472",          "win81-arm"),
+                ("net48",           "win81-arm"),
+                ("netcoreapp3.1",   "win81-arm"),
+                ("net6.0",          "win81-arm"),
                 ("netcoreapp3.1",   "linux-x64"),
                 ("net6.0",          "linux-x64"),
+                ("netcoreapp3.1",   "linux-arm"),
+                ("net6.0",          "linux-arm"),
                 ("netcoreapp3.1",   "linux-arm64"),
                 ("net6.0",          "linux-arm64"),
             };
@@ -82,10 +94,16 @@ namespace IKVM.MSBuild.Tests
             {
                 targets = new[]
                 {
+                    ("netcoreapp3.1",   "win7-x86"),
+                    ("net6.0",          "win7-x86"),
                     ("netcoreapp3.1",   "win7-x64"),
                     ("net6.0",          "win7-x64"),
+                    ("netcoreapp3.1",   "win81-arm"),
+                    ("net6.0",          "win81-arm"),
                     ("netcoreapp3.1",   "linux-x64"),
                     ("net6.0",          "linux-x64"),
+                    ("netcoreapp3.1",   "linux-arm"),
+                    ("net6.0",          "linux-arm"),
                     ("netcoreapp3.1",   "linux-arm64"),
                     ("net6.0",          "linux-arm64"),
                 };
