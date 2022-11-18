@@ -163,11 +163,19 @@ Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "dist-tests", "src\dist-test
 EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "dist-tools", "src\dist-tools\dist-tools.csproj", "{04344989-84DC-4D21-BC9F-C4A23D251568}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "IKVM.MSBuild.Tools", "src\IKVM.MSBuild.Tools\IKVM.MSBuild.Tools.csproj", "{005AD593-ADEC-4646-80F9-4E866B7D8533}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "IKVM.MSBuild.Tools", "src\IKVM.MSBuild.Tools\IKVM.MSBuild.Tools.csproj", "{005AD593-ADEC-4646-80F9-4E866B7D8533}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "IKVM.MSBuild.Tools.runtime.win7-x64", "src\IKVM.MSBuild.Tools.runtime.win7-x64\IKVM.MSBuild.Tools.runtime.win7-x64.csproj", "{04D3450A-9443-48C4-9BF0-4ADC8C5E35C5}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "IKVM.MSBuild.Tools.runtime.win7-x64", "src\IKVM.MSBuild.Tools.runtime.win7-x64\IKVM.MSBuild.Tools.runtime.win7-x64.csproj", "{04D3450A-9443-48C4-9BF0-4ADC8C5E35C5}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "IKVM.MSBuild.Tools.runtime.linux-x64", "src\IKVM.MSBuild.Tools.runtime.linux-x64\IKVM.MSBuild.Tools.runtime.linux-x64.csproj", "{F162126C-DA9C-4195-B295-CF1020DBA98A}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "IKVM.MSBuild.Tools.runtime.linux-x64", "src\IKVM.MSBuild.Tools.runtime.linux-x64\IKVM.MSBuild.Tools.runtime.linux-x64.csproj", "{F162126C-DA9C-4195-B295-CF1020DBA98A}"
+EndProject
+Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "ikvm-native-linux-arm", "src\ikvm-native\ikvm-native-linux-arm.vcxproj", "{8A321DFF-99AB-4279-828A-A9BA872010FD}"
+EndProject
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "IKVM.Image.JDK.runtime.linux-arm", "src\IKVM.Image.JDK.runtime.linux-arm\IKVM.Image.JDK.runtime.linux-arm.csproj", "{721F5DBA-694D-4151-BA24-B1910CD2048F}"
+EndProject
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "IKVM.Image.JRE.runtime.linux-arm", "src\IKVM.Image.JRE.runtime.linux-arm\IKVM.Image.JRE.runtime.linux-arm.csproj", "{346B752D-EA92-4D42-BF72-F4AA513412FD}"
+EndProject
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "IKVM.MSBuild.Tools.runtime.linux-arm", "src\IKVM.MSBuild.Tools.runtime.linux-arm\IKVM.MSBuild.Tools.runtime.linux-arm.csproj", "{112FA431-B433-46E2-B805-D45ED6418E30}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
@@ -455,6 +463,21 @@ Global
 		{F162126C-DA9C-4195-B295-CF1020DBA98A}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{F162126C-DA9C-4195-B295-CF1020DBA98A}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{F162126C-DA9C-4195-B295-CF1020DBA98A}.Release|Any CPU.Build.0 = Release|Any CPU
+		{8A321DFF-99AB-4279-828A-A9BA872010FD}.Debug|Any CPU.ActiveCfg = Debug|x86
+		{8A321DFF-99AB-4279-828A-A9BA872010FD}.Debug|Any CPU.Build.0 = Debug|x86
+		{8A321DFF-99AB-4279-828A-A9BA872010FD}.Release|Any CPU.ActiveCfg = Release|x86
+		{721F5DBA-694D-4151-BA24-B1910CD2048F}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{721F5DBA-694D-4151-BA24-B1910CD2048F}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{721F5DBA-694D-4151-BA24-B1910CD2048F}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{721F5DBA-694D-4151-BA24-B1910CD2048F}.Release|Any CPU.Build.0 = Release|Any CPU
+		{346B752D-EA92-4D42-BF72-F4AA513412FD}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{346B752D-EA92-4D42-BF72-F4AA513412FD}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{346B752D-EA92-4D42-BF72-F4AA513412FD}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{346B752D-EA92-4D42-BF72-F4AA513412FD}.Release|Any CPU.Build.0 = Release|Any CPU
+		{112FA431-B433-46E2-B805-D45ED6418E30}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{112FA431-B433-46E2-B805-D45ED6418E30}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{112FA431-B433-46E2-B805-D45ED6418E30}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{112FA431-B433-46E2-B805-D45ED6418E30}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
@@ -469,6 +492,7 @@ Global
 		{6C106109-0131-4413-8D41-348256EADC7E} = {F8B6B3D8-006C-4D8F-8883-EB48D9EB417F}
 		{5BBD66DA-83E0-4FCA-967E-75A87C21E89A} = {F8B6B3D8-006C-4D8F-8883-EB48D9EB417F}
 		{04344989-84DC-4D21-BC9F-C4A23D251568} = {F8B6B3D8-006C-4D8F-8883-EB48D9EB417F}
+		{8A321DFF-99AB-4279-828A-A9BA872010FD} = {0606E530-F834-44A3-9B4E-37852A06D11B}
 	EndGlobalSection
 	GlobalSection(ExtensibilityGlobals) = postSolution
 		SolutionGuid = {A03ACB78-6C3F-4E09-BAF1-16E41D5A3945}
