@@ -1,15 +1,3 @@
-<#@ template language="C#" hostspecific="true" #>
-<#@ parameter type="System.String" name="Name" #>
-<#@ parameter type="System.String" name="Version" #>
-<#@ parameter type="System.String" name="VendorUrl" #>
-<#@ parameter type="System.String" name="VendorUrlBug" #>
-<#@ parameter type="System.String" name="OpenJdkVersion" #>
-<#@ parameter type="System.String" name="OpenJdkFullVersion" #>
-<#@ parameter type="System.String" name="OpenJdkVendor" #>
-<#@ parameter type="System.String" name="OpenJdkImplementationVersion" #>
-<#@ parameter type="System.String" name="OpenJdkSpecificationVersion" #>
-<#@ parameter type="System.String" name="OpenJdkSpecificationVendor" #>
-
 /*
   Copyright (C) 2007, 2009 Jeroen Frijters
 
@@ -38,24 +26,24 @@ package java.lang;
 interface PropertyConstants {
 
     String java_runtime_name = "OpenJDK Runtime Environment";
-    String java_runtime_version = "<#= OpenJdkFullVersion #>";
+    String java_runtime_version = "#OpenJdkFullVersion#";
 
-    String java_vm_name = "<#= Name #>";
-    String java_vm_version = "<#= Version #>";
-    String java_vm_vendor = "<#= Name #>";
+    String java_vm_name = "#Name#";
+    String java_vm_version = "#Version#";
+    String java_vm_vendor = "#Name#";
 
-    String java_vm_specification_version = "<#= OpenJdkSpecificationVersion #>";
-    String java_vm_specification_vendor = "<#= OpenJdkSpecificationVendor #>";
+    String java_vm_specification_version = "#OpenJdkSpecificationVersion#";
+    String java_vm_specification_vendor = "#OpenJdkSpecificationVendor#";
 
-    String java_version = "<#= OpenJdkImplementationVersion #>";
-    String java_vendor = "<#= Name #>";
-    String java_vendor_url = "<#= VendorUrl #>";
-    String java_vendor_url_bug = "<#= VendorUrlBug #>";
+    String java_version = "#OpenJdkImplementationVersion#";
+    String java_vendor = "#Name#";
+    String java_vendor_url = "#VendorUrl#";
+    String java_vendor_url_bug = "#VendorUrlBug#";
 
-    String java_specification_version = "<#= OpenJdkSpecificationVersion #>";
-    String java_specification_vendor = "<#= OpenJdkSpecificationVendor #>";
+    String java_specification_version = "#OpenJdkSpecificationVersion#";
+    String java_specification_vendor = "#OpenJdkSpecificationVendor#";
 
-    String openjdk_version = "<#= OpenJdkVersion #>";
-    String openjdk_vendor = "<#= OpenJdkVendor #>";
+    String openjdk_version = "#OpenJdkVersion#";
+    String openjdk_vendor = "#OpenJdkVendor#";
 
 }

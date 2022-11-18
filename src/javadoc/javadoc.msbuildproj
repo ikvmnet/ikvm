@@ -13,6 +13,7 @@
         <GenerateBindingRedirectsOutputType Condition="$([MSBuild]::IsTargetFrameworkCompatible('$(TargetFramework)', 'net461'))">true</GenerateBindingRedirectsOutputType>
         <StartupObject>com.sun.tools.javadoc.Main</StartupObject>
         <RootNamespace>ikvm.tools.javadoc</RootNamespace>
+        <PlatformTarget Condition="$([MSBuild]::IsTargetFrameworkCompatible('$(TargetFramework)', 'netcoreapp3.1'))">AnyCPU</PlatformTarget>
     </PropertyGroup>
 
     <Import Project="$(MSBuildThisFileDirectory)..\IKVM.NET.Sdk\Sdk\Sdk.targets" />

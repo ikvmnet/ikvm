@@ -5,9 +5,7 @@
     <Import Project="$(MSBuildThisFileDirectory)..\..\ikvm.deps.props" />
 
     <PropertyGroup>
-        <PackageId>IKVM.Java</PackageId>
         <TargetFrameworks>net461;netcoreapp3.1</TargetFrameworks>
-        <TransformOnBuild>true</TransformOnBuild>
         <Bootstrap>true</Bootstrap>
     </PropertyGroup>
 
@@ -24,54 +22,18 @@
     </ItemGroup>
 
     <ItemGroup>
-        <T4ParameterValues Include="Name">
-            <Value>$(ProductName)</Value>
-            <Visible>False</Visible>
-        </T4ParameterValues>
-        <T4ParameterValues Include="Version">
-            <Value>$(Version)</Value>
-            <Visible>False</Visible>
-        </T4ParameterValues>
-        <T4ParameterValues Include="FileVersion">
-            <Value>$(FileVersion)</Value>
-            <Visible>False</Visible>
-        </T4ParameterValues>
-        <T4ParameterValues Include="VendorUrl">
-            <Value>$(PackageProjectUrl)</Value>
-            <Visible>False</Visible>
-        </T4ParameterValues>
-        <T4ParameterValues Include="VendorUrlBug">
-            <Value>$(PackageProjectUrl)/issues/</Value>
-            <Visible>False</Visible>
-        </T4ParameterValues>
-        <T4ParameterValues Include="OpenJdkVersion">
-            <Value>$(OpenJdkVersion)</Value>
-            <Visible>False</Visible>
-        </T4ParameterValues>
-        <T4ParameterValues Include="OpenJdkFullVersion">
-            <Value>$(OpenJdkFullVersion)</Value>
-            <Visible>False</Visible>
-        </T4ParameterValues>
-        <T4ParameterValues Include="OpenJdkVendor">
-            <Value>$(OpenJdkVendor)</Value>
-            <Visible>False</Visible>
-        </T4ParameterValues>
-        <T4ParameterValues Include="OpenJdkImplementationVendor">
-            <Value>$(OpenJdkImplementationVendor)</Value>
-            <Visible>False</Visible>
-        </T4ParameterValues>
-        <T4ParameterValues Include="OpenJdkImplementationVersion">
-            <Value>$(OpenJdkImplementationVersion)</Value>
-            <Visible>False</Visible>
-        </T4ParameterValues>
-        <T4ParameterValues Include="OpenJdkSpecificationVersion">
-            <Value>$(OpenJdkSpecificationVersion)</Value>
-            <Visible>False</Visible>
-        </T4ParameterValues>
-        <T4ParameterValues Include="OpenJdkSpecificationVendor">
-            <Value>$(OpenJdkSpecificationVendor)</Value>
-            <Visible>False</Visible>
-        </T4ParameterValues>
+        <TransformValues Include="Name" Value="$(ProductName)" />
+        <TransformValues Include="Version" Value="$(Version)" />
+        <TransformValues Include="FileVersion" Value="$(FileVersion)" />
+        <TransformValues Include="VendorUrl" Value="$(PackageProjectUrl)" />
+        <TransformValues Include="VendorUrlBug" Value="$(PackageProjectUrl)/issues/" />
+        <TransformValues Include="OpenJdkVersion" Value="$(OpenJdkVersion)" />
+        <TransformValues Include="OpenJdkFullVersion" Value="$(OpenJdkFullVersion)" />
+        <TransformValues Include="OpenJdkVendor" Value="$(OpenJdkVendor)" />
+        <TransformValues Include="OpenJdkImplementationVendor" Value="$(OpenJdkImplementationVendor)" />
+        <TransformValues Include="OpenJdkImplementationVersion" Value="$(OpenJdkImplementationVersion)" />
+        <TransformValues Include="OpenJdkSpecificationVersion" Value="$(OpenJdkSpecificationVersion)" />
+        <TransformValues Include="OpenJdkSpecificationVendor" Value="$(OpenJdkSpecificationVendor)" />
     </ItemGroup>
 
     <ItemGroup>
@@ -92,41 +54,12 @@
     </ItemGroup>
 
     <ItemGroup>
-        <None Include="local\java\lang\PropertyConstants.java.tt">
-            <Generator>TextTemplatingFileGenerator</Generator>
-            <OutputFileName>PropertyConstants.java</OutputFileName>
-        </None>
-        <Compile Remove="local\java\lang\PropertyConstants.java" />
-        <Compile Include="local\java\lang\PropertyConstants.java">
-            <AutoGen>True</AutoGen>
-            <DependentUpon>PropertyConstants.java.tt</DependentUpon>
-        </Compile>
-    </ItemGroup>
-
-    <ItemGroup>
-        <None Include="local\META-INF\MANIFEST.MF.tt">
-            <Generator>TextTemplatingFileGenerator</Generator>
-            <OutputFileName>MANIFEST.MF</OutputFileName>
-        </None>
-        <JavaResource Remove="local\META-INF\MANIFEST.MF" />
-        <JavaResource Include="local\META-INF\MANIFEST.MF">
-            <AutoGen>True</AutoGen>
-            <DependentUpon>MANIFEST.MF.tt</DependentUpon>
-            <ResourcePath>META-INF\MANIFEST.MF</ResourcePath>
-        </JavaResource>
-    </ItemGroup>
-
-    <ItemGroup>
-        <None Include="local\nashorn\version.properties.tt">
-            <Generator>TextTemplatingFileGenerator</Generator>
-            <OutputFileName>version.properties</OutputFileName>
-        </None>
-        <JavaResource Remove="local\nashorn\version.properties" />
-        <JavaResource Include="local\nashorn\version.properties">
-            <AutoGen>True</AutoGen>
-            <DependentUpon>version.properties.tt</DependentUpon>
-            <ResourcePath>nashorn/version.properties</ResourcePath>
-        </JavaResource>
+        <Transform Include="local\java\lang\PropertyConstants.java.tt" TargetPath="$(IntermediateOutputPath)transform\local\java\lang\PropertyConstants.java" />
+        <Compile Include="$(IntermediateOutputPath)transform\local\java\lang\PropertyConstants.java" Visible="False" Link="local\java\lang\PropertyConstants.java" />
+        <Transform Include="local\META-INF\MANIFEST.MF.tt" TargetPath="$(IntermediateOutputPath)transform\local\META-INF\MANIFEST.MF" />
+        <JavaResource Include="$(IntermediateOutputPath)transform\local\META-INF\MANIFEST.MF" Visible="False" ResourcePath="META-INF/MANIFEST.MF" Link="local\META-INF\MANIFEST.MF" />
+        <Transform Include="local\nashorn\version.properties.tt" TargetPath="$(IntermediateOutputPath)transform\local\nashorn\version.properties" />
+        <JavaResource Include="$(IntermediateOutputPath)transform\local\nashorn\version.properties" Visible="False" ResourcePath="nashorn/version.properties" Link="local\nashorn\version.properties" />
     </ItemGroup>
 
     <ItemGroup>
@@ -135,7 +68,6 @@
 
     <Import Project="$(MSBuildThisFileDirectory)..\IKVM.NET.Sdk\Sdk\Sdk.targets" />
     <Import Project="$(MSBuildThisFileDirectory)..\IKVM.MSBuild\buildTransitive\netstandard2.0\IKVM.MSBuild.targets" />
-    <Import Project="$(MSBuildExtensionsPath)\Microsoft\VisualStudio\v$(VisualStudioVersion)\TextTemplating\Microsoft.TextTemplating.targets" Condition="Exists('$(MSBuildExtensionsPath)\Microsoft\VisualStudio\v$(VisualStudioVersion)\TextTemplating\Microsoft.TextTemplating.targets')" />
 
     <!-- IKVM.Java uses the javac executable from JAVA_HOME: bootstrap -->
     <Target Name="ResolveJavaCompiler" Condition=" '$(JAVA_HOME)' != '' And '$(JavaCompilerPath)' == '' ">

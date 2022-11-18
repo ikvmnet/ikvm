@@ -14,6 +14,7 @@
         <GenerateBindingRedirectsOutputType Condition="$([MSBuild]::IsTargetFrameworkCompatible('$(TargetFramework)', 'net461'))">true</GenerateBindingRedirectsOutputType>
         <StartupObject>com.sun.tools.javac.Main</StartupObject>
         <RootNamespace>ikvm.tools.javac</RootNamespace>
+        <PlatformTarget Condition="$([MSBuild]::IsTargetFrameworkCompatible('$(TargetFramework)', 'netcoreapp3.1'))">AnyCPU</PlatformTarget>
     </PropertyGroup>
 
     <ItemGroup>

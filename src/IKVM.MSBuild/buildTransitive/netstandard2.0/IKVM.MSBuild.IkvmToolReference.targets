@@ -55,7 +55,6 @@
 
     <!-- Resolve JavaCompiler from project marked with IsJavaCompiler. -->
     <Target Name="ResolveJavaCompiler" DependsOnTargets="$(ResolveJavaCompilerDependsOn)">
-        <MSBuild Projects="@(_IkvmToolReference)" Targets="Build" BuildInParallel="$(BuildInParallel)" Properties="%(_IkvmToolReference.SetConfiguration);%(_IkvmToolReference.SetPlatform)" RemoveProperties="%(_IkvmToolReference.GlobalPropertiesToRemove)$(_GlobalPropertiesToRemoveFromProjectReferences);TargetFramework;RuntimeIdentifer;PublishDir;PublishUrl;Location" Condition=" '%(_IkvmToolReference.IsJavaCompiler)' == 'true' " />
         <MSBuild Projects="@(_IkvmToolReference)" Targets="Publish;GetPublishDir" BuildInParallel="$(BuildInParallel)" Properties="%(_IkvmToolReference.SetConfiguration);%(_IkvmToolReference.SetPlatform);%(_IkvmToolReference.SetTargetFramework);%(_IkvmToolReference.SetRuntimeIdentifier)" RemoveProperties="%(_IkvmToolReference.GlobalPropertiesToRemove);$(_GlobalPropertiesToRemoveFromProjectReferences);PublishDir;PublishUrl;Location" Condition=" '%(_IkvmToolReference.IsJavaCompiler)' == 'true' ">
             <Output TaskParameter="TargetOutputs" PropertyName="_JavaCompilerPublishDir" />
         </MSBuild>
@@ -77,7 +76,7 @@
 
     <!-- Resolve IkvmCompiler from project marked with IsIkvmCompiler. -->
     <Target Name="ResolveIkvmCompiler" DependsOnTargets="$(ResolveIkvmCompilerDependsOn)">
-        <MSBuild Projects="@(_IkvmToolReference)" Targets="Build" BuildInParallel="$(BuildInParallel)" Properties="%(_IkvmToolReference.SetConfiguration);%(_IkvmToolReference.SetPlatform)" RemoveProperties="%(_IkvmToolReference.GlobalPropertiesToRemove)$(_GlobalPropertiesToRemoveFromProjectReferences);TargetFramework;RuntimeIdentifer;PublishDir;PublishUrl;Location" Condition=" '%(_IkvmToolReference.IsIkvmCompiler)' == 'true' " />
+        <MSBuild Projects="@(_IkvmToolReference)" Targets="Build" BuildInParallel="$(BuildInParallel)" Properties="%(_IkvmToolReference.SetConfiguration);%(_IkvmToolReference.SetPlatform);%(_IkvmToolReference.SetTargetFramework)" RemoveProperties="%(_IkvmToolReference.GlobalPropertiesToRemove);$(_GlobalPropertiesToRemoveFromProjectReferences);PublishDir;PublishUrl;Location;RuntimeIdentifier" Condition=" '%(_IkvmToolReference.IsIkvmCompiler)' == 'true' " />
         <MSBuild Projects="@(_IkvmToolReference)" Targets="Publish;GetPublishDir" BuildInParallel="$(BuildInParallel)" Properties="%(_IkvmToolReference.SetConfiguration);%(_IkvmToolReference.SetPlatform);%(_IkvmToolReference.SetTargetFramework);%(_IkvmToolReference.SetRuntimeIdentifier)" RemoveProperties="%(_IkvmToolReference.GlobalPropertiesToRemove);$(_GlobalPropertiesToRemoveFromProjectReferences);PublishDir;PublishUrl;Location" Condition=" '%(_IkvmToolReference.IsIkvmCompiler)' == 'true' ">
             <Output TaskParameter="TargetOutputs" PropertyName="_IkvmCompilerPublishDir" />
         </MSBuild>
@@ -99,7 +98,7 @@
 
     <!-- Resolve IkvmExporter from project marked with IsIkvmExporter. -->
     <Target Name="ResolveIkvmExporter" DependsOnTargets="$(ResolveIkvmExporterDependsOn)">
-        <MSBuild Projects="@(_IkvmToolReference)" Targets="Build" BuildInParallel="$(BuildInParallel)" Properties="%(_IkvmToolReference.SetConfiguration);%(_IkvmToolReference.SetPlatform)" RemoveProperties="%(_IkvmToolReference.GlobalPropertiesToRemove)$(_GlobalPropertiesToRemoveFromProjectReferences);TargetFramework;RuntimeIdentifer;PublishDir;PublishUrl;Location" Condition=" '%(_IkvmToolReference.IsIkvmExporter)' == 'true' " />
+        <MSBuild Projects="@(_IkvmToolReference)" Targets="Build" BuildInParallel="$(BuildInParallel)" Properties="%(_IkvmToolReference.SetConfiguration);%(_IkvmToolReference.SetPlatform);%(_IkvmToolReference.SetTargetFramework)" RemoveProperties="%(_IkvmToolReference.GlobalPropertiesToRemove);$(_GlobalPropertiesToRemoveFromProjectReferences);PublishDir;PublishUrl;Location;RuntimeIdentifier" Condition=" '%(_IkvmToolReference.IsIkvmExporter)' == 'true' " />
         <MSBuild Projects="@(_IkvmToolReference)" Targets="Publish;GetPublishDir" BuildInParallel="$(BuildInParallel)" Properties="%(_IkvmToolReference.SetConfiguration);%(_IkvmToolReference.SetPlatform);%(_IkvmToolReference.SetTargetFramework);%(_IkvmToolReference.SetRuntimeIdentifier)" RemoveProperties="%(_IkvmToolReference.GlobalPropertiesToRemove);$(_GlobalPropertiesToRemoveFromProjectReferences);PublishDir;PublishUrl;Location" Condition=" '%(_IkvmToolReference.IsIkvmExporter)' == 'true' ">
             <Output TaskParameter="TargetOutputs" PropertyName="_IkvmExporterPublishDir" />
         </MSBuild>

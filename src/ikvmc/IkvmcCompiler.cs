@@ -488,6 +488,10 @@ namespace ikvmc
                                 options.pekind = PortableExecutableKinds.ILOnly;
                                 options.imageFileMachine = ImageFileMachine.ARM;
                                 break;
+                            case "-platform:arm64":
+                                options.pekind = PortableExecutableKinds.ILOnly;
+                                options.imageFileMachine = ImageFileMachine.ARM64;
+                                break;
                             case "-platform:anycpu32bitpreferred":
                                 options.pekind = PortableExecutableKinds.ILOnly | PortableExecutableKinds.Preferred32Bit;
                                 options.imageFileMachine = ImageFileMachine.I386;
