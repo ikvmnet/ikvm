@@ -36,6 +36,10 @@
             <SetPlatform>Platform=x86</SetPlatform>
             <LibPackagePath>runtimes\linux-arm\native</LibPackagePath>
         </LibProjectReference>
+        <LibProjectReference Include="$(MSBuildThisFileDirectory)src\ikvm-native\ikvm-native-linux-arm64.vcxproj">
+            <SetPlatform>Platform=x64</SetPlatform>
+            <LibPackagePath>runtimes\linux-arm64\native</LibPackagePath>
+        </LibProjectReference>
     </ItemGroup>
 
     <ItemGroup Condition=" '$(TargetFramework)' != '' ">
@@ -62,6 +66,11 @@
         <LibProjectReference Include="$(MSBuildThisFileDirectory)src\ikvm-native\ikvm-native-linux-arm.vcxproj">
             <SetPlatform>Platform=x86</SetPlatform>
             <LibTargetPath>runtimes\linux-arm\native</LibTargetPath>
+            <Pack>false</Pack>
+        </LibProjectReference>
+        <LibProjectReference Include="$(MSBuildThisFileDirectory)src\ikvm-native\ikvm-native-linux-arm64.vcxproj">
+            <SetPlatform>Platform=x64</SetPlatform>
+            <LibTargetPath>runtimes\linux-arm64\native</LibTargetPath>
             <Pack>false</Pack>
         </LibProjectReference>
     </ItemGroup>

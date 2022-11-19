@@ -31,9 +31,6 @@
             <SetRuntimeIdentifier>RuntimeIdentifier=win7-x64</SetRuntimeIdentifier>
             <ProjectPackagePath>ikvmc\netcoreapp3.1\win7-x64</ProjectPackagePath>
         </PublishProjectReference>
-    </ItemGroup>
-
-    <ItemGroup Condition=" '$(TargetFramework)' == '' ">
         <PublishProjectReference Include="..\ikvmstub\ikvmstub.csproj">
             <SetTargetFramework>TargetFramework=net461</SetTargetFramework>
             <SetRuntimeIdentifier>RuntimeIdentifier=win7-x64</SetRuntimeIdentifier>

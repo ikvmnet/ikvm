@@ -10,6 +10,44 @@
         </ResolvedFileToPublish>
     </ItemDefinitionGroup>
 
+    <UsingTask TaskName="Transform" TaskFactory="RoslynCodeTaskFactory" AssemblyFile="$(MSBuildToolsPath)\Microsoft.Build.Tasks.Core.dll">
+        <ParameterGroup>
+            <Items ParameterType="Microsoft.Build.Framework.ITaskItem[]" Required="true" />
+            <Parameters ParameterType="Microsoft.Build.Framework.ITaskItem[]" Required="true" />
+        </ParameterGroup>
+        <Task>
+            <Using Namespace="System" />
+            <Using Namespace="System.IO" />
+            <Code Type="Fragment" Language="cs">
+                <![CDATA[
+                foreach (var file in Items)
+                {
+                    var i = file.ItemSpec;
+                    var o = file.GetMetadata("TargetPath");
+                    var c = File.ReadAllText(i);
+                    foreach (var parameter in Parameters)
+                    {
+                        var n = parameter.ItemSpec;
+                        var v = parameter.GetMetadata("Value");
+                        c = c.Replace($"#{n}#", v);
+                    }
+                    
+                    // check that there is actually a change
+                    if (File.Exists(o) && File.ReadAllText(o) == c)
+                        continue;
+                    
+                    Directory.CreateDirectory(Path.GetDirectoryName(o));
+                    File.WriteAllText(o, c);
+                }
+                ]]>
+            </Code>
+        </Task>
+    </UsingTask>
+
+    <Target Name="Transform" BeforeTargets="BeforeBuild" Inputs="@(Transform)" Outputs="@(Transform->'%(TargetPath)')" Condition=" '$(TargetFramework)' != '' ">
+        <Transform Items="@(Transform)" Parameters="@(TransformValues)" />
+    </Target>
+
     <!-- Adds an index value to each item. Can be used to ensure at least one unique metadata value is available on each item. -->
     <UsingTask TaskName="AddIndexMetadata" TaskFactory="RoslynCodeTaskFactory" AssemblyFile="$(MSBuildToolsPath)\Microsoft.Build.Tasks.Core.dll">
         <ParameterGroup>
@@ -114,8 +152,8 @@
                 <Properties>%(_LibProjectReference.SetConfiguration);%(_LibProjectReference.SetPlatform)</Properties>
             </_LibProjectReferencesToTarget>
         </ItemGroup>
-        <MSBuild Projects="@(_LibProjectReferencesToTarget)" Targets="Build" BuildInParallel="$(BuildInParallel)" RemoveProperties="$(_GlobalPropertiesToRemoveFromProjectReferences);TargetFramework;RuntimeIdentifier" />
-        <MSBuild Projects="@(_LibProjectReferencesToTarget)" Targets="GetTargetPath" BuildInParallel="$(BuildInParallel)" RemoveProperties="$(_GlobalPropertiesToRemoveFromProjectReferences);TargetFramework;RuntimeIdentifier" RebaseOutputs="true">
+        <MSBuild Projects="@(_LibProjectReferencesToTarget)" Targets="Build" BuildInParallel="False" RemoveProperties="$(_GlobalPropertiesToRemoveFromProjectReferences);TargetFramework;RuntimeIdentifier" />
+        <MSBuild Projects="@(_LibProjectReferencesToTarget)" Targets="GetTargetPath" BuildInParallel="False" RemoveProperties="$(_GlobalPropertiesToRemoveFromProjectReferences);TargetFramework;RuntimeIdentifier" RebaseOutputs="true">
             <Output TaskParameter="TargetOutputs" ItemName="_ResolvedLibProjectReferenceTargetOutput" />
         </MSBuild>
         <ItemGroup>
@@ -221,12 +259,15 @@
 
     <Target Name="GetPublishProjectReferenceItems" DependsOnTargets="GetPublishProjectReferences" Inputs="@(_PublishProjectReference)" Outputs="@(_PublishProjectReference->'%(Identity)\%(_Index)\null')" Condition=" '$(DesignTimeBuild)' != 'true' And '@(_PublishProjectReference)' != '' ">
         <ItemGroup>
-            <_PublishProjectReferencesToTarget Include="@(_PublishProjectReference)">
+            <_PublishProjectReferencesToBuildTarget Include="@(_PublishProjectReference)">
+                <Properties>%(_PublishProjectReference.SetConfiguration);%(_PublishProjectReference.SetPlatform);%(_PublishProjectReference.SetTargetFramework)</Properties>
+            </_PublishProjectReferencesToBuildTarget>
+            <_PublishProjectReferencesToPublishTarget Include="@(_PublishProjectReference)">
                 <Properties>%(_PublishProjectReference.SetConfiguration);%(_PublishProjectReference.SetPlatform);%(_PublishProjectReference.SetTargetFramework);%(_PublishProjectReference.SetRuntimeIdentifier)</Properties>
-            </_PublishProjectReferencesToTarget>
+            </_PublishProjectReferencesToPublishTarget>
         </ItemGroup>
-        <MSBuild Projects="@(_PublishProjectReferencesToTarget)" Targets="Build" BuildInParallel="$(BuildInParallel)" RemoveProperties="$(_GlobalPropertiesToRemoveFromProjectReferences)" />
-        <MSBuild Projects="@(_PublishProjectReferencesToTarget)" Targets="GetPublishDir" BuildInParallel="$(BuildInParallel)" RemoveProperties="$(_GlobalPropertiesToRemoveFromProjectReferences)" RebaseOutputs="true">
+        <MSBuild Projects="@(_PublishProjectReferencesToBuildTarget)" Targets="Build" BuildInParallel="$(BuildInParallel)" RemoveProperties="$(_GlobalPropertiesToRemoveFromProjectReferences);RuntimeIdentifier" />
+        <MSBuild Projects="@(_PublishProjectReferencesToPublishTarget)" Targets="GetPublishDir" BuildInParallel="$(BuildInParallel)" RemoveProperties="$(_GlobalPropertiesToRemoveFromProjectReferences)" RebaseOutputs="true">
             <Output TaskParameter="TargetOutputs" ItemName="_ResolvedPublishProjectReferencePublishDir" />
         </MSBuild>
         <ItemGroup>
@@ -333,7 +374,7 @@
     <Target Name="GetIncludeProjectReferenceItems" DependsOnTargets="GetIncludeProjectReferences" Inputs="@(_IncludeProjectReference)" Outputs="@(_IncludeProjectReference->'%(Identity)\%(_Index)\null')" Condition=" '$(DesignTimeBuild)' != 'true' And '@(_IncludeProjectReference)' != '' ">
         <ItemGroup>
             <_IncludeProjectReferencesToTarget Include="@(_IncludeProjectReference)">
-                <Properties>%(_IncludeProjectReferencesToTarget.SetConfiguration);%(_IncludeProjectReferencesToTarget.SetPlatform);%(_IncludeProjectReferencesToTarget.SetTargetFramework)</Properties>
+                <Properties>%(_IncludeProjectReference.SetConfiguration);%(_IncludeProjectReference.SetPlatform);%(_IncludeProjectReference.SetTargetFramework)</Properties>
             </_IncludeProjectReferencesToTarget>
         </ItemGroup>
         <MSBuild Projects="@(_IncludeProjectReferencesToTarget)" Targets="Build" BuildInParallel="$(BuildInParallel)" RemoveProperties="$(_GlobalPropertiesToRemoveFromProjectReferences);RuntimeIdentifier" />

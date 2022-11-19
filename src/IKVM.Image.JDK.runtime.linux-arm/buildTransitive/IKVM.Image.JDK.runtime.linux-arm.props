@@ -4,9 +4,9 @@
     </PropertyGroup>
 
     <ItemGroup>
-        <IkvmImageItem Include="$(MSBuildThisFileDirectory)..\ikvm\netcoreapp3.1\linux-x64\**\*">
+        <IkvmImageItem Include="$(MSBuildThisFileDirectory)..\ikvm\netcoreapp3.1\linux-arm\**\*">
             <TargetFramework>netcoreapp3.1</TargetFramework>
-            <RuntimeIdentifier>linux-x64</RuntimeIdentifier>
+            <RuntimeIdentifier>linux-arm</RuntimeIdentifier>
             <TargetPath>%(RecursiveDir)%(FileName)%(Extension)</TargetPath>
         </IkvmImageItem>
     </ItemGroup>
