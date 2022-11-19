@@ -359,6 +359,9 @@ jobs:
     - name: Setup WSL
       if: matrix.sys == 'windows'
       uses: Vampire/setup-wsl@v1
+    - name: Move NuGet Directory
+      shell: pwsh
+      run: Add-Content $env:GITHUB_ENV "`nNUGET_PACKAGES=${{ runner.temp }}\nuget\packages"
     - name: Download Tests
       uses: actions/download-artifact@v3
       with:
