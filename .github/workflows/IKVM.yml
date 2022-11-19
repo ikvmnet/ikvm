@@ -188,6 +188,7 @@ jobs:
           libmpc-dev
           libmpfr-dev
           libgmp-dev
+          libxml2
           clang
           llvm
           llvm-dev
