@@ -40,7 +40,7 @@ namespace IKVM.MSBuild.Tests
 
             public override void Initialize(IEventSource eventSource)
             {
-                eventSource.AnyEventRaised += (sender, evt) => context.WriteLine($"{evt.Message}");
+                eventSource.AnyEventRaised += (sender, evt) => context.WriteLine(evt.Message);
             }
 
         }
@@ -165,7 +165,6 @@ namespace IKVM.MSBuild.Tests
 
                 var options = new EnvironmentOptions();
                 options.DesignTime = false;
-                options.Arguments.Add("-bl");
                 options.Restore = false;
                 options.GlobalProperties.Add("TargetFramework", tfm);
                 options.GlobalProperties.Add("RuntimeIdentifier", rid);
