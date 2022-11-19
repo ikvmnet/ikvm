@@ -332,6 +332,12 @@ jobs:
         - run: IKVM.NET.Sdk.Tests
           tfm: net6.0
           sys: windows
+        - run: IKVM.MSBuild.Tests
+          tfm: net6.0
+          sys: linux
+        - run: IKVM.NET.Sdk.Tests
+          tfm: net6.0
+          sys: linux
     name: Test (${{ matrix.run }}:${{ matrix.tfm }}:${{ matrix.sys }}
     needs:
     - build-ikvm
