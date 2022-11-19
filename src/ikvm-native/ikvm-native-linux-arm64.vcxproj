@@ -1,0 +1,92 @@
+﻿<Project DefaultTargets="Build" ToolsVersion="15.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+    <ItemGroup Label="ProjectConfigurations">
+        <ProjectConfiguration Include="Debug|x64">
+            <Configuration>Debug</Configuration>
+            <Platform>x64</Platform>
+        </ProjectConfiguration>
+        <ProjectConfiguration Include="Release|x64">
+            <Configuration>Release</Configuration>
+            <Platform>x64</Platform>
+        </ProjectConfiguration>
+    </ItemGroup>
+    <PropertyGroup Label="Globals">
+        <ProjectGuid>{BE117661-1954-42C3-8A16-3F89815F7222}</ProjectGuid>
+        <Keyword>Linux</Keyword>
+        <RootNamespace>libikvm-native</RootNamespace>
+        <MinimumVisualStudioVersion>15.0</MinimumVisualStudioVersion>
+        <ApplicationType>Linux</ApplicationType>
+        <ApplicationTypeRevision>1.0</ApplicationTypeRevision>
+        <TargetLinuxPlatform>Generic</TargetLinuxPlatform>
+        <LinuxProjectType>{D51BCBC9-82E9-4017-911E-C93873C4EA2B}</LinuxProjectType>
+        <ProjectName>ikvm-native-linux-arm64</ProjectName>
+    </PropertyGroup>
+    <Import Project="$(VCTargetsPath)\Microsoft.Cpp.Default.props" />
+    <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'" Label="Configuration">
+        <UseDebugLibraries>true</UseDebugLibraries>
+        <PlatformToolset>WSL_1_0</PlatformToolset>
+        <ConfigurationType>DynamicLibrary</ConfigurationType>
+    </PropertyGroup>
+    <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'" Label="Configuration">
+        <UseDebugLibraries>false</UseDebugLibraries>
+        <PlatformToolset>WSL_1_0</PlatformToolset>
+        <ConfigurationType>DynamicLibrary</ConfigurationType>
+    </PropertyGroup>
+    <Import Project="$(VCTargetsPath)\Microsoft.Cpp.props" />
+    <ImportGroup Label="ExtensionSettings" />
+    <ImportGroup Label="Shared" />
+    <ImportGroup Label="PropertySheets" />
+    <PropertyGroup Label="UserMacros" />
+    <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">
+        <TargetName>libikvm-native</TargetName>
+        <OutDir>$(ProjectDir)bin\$(Configuration)\linux-arm64\</OutDir>
+        <IntDir>$(ProjectDir)obj\$(Configuration)\linux-arm64\</IntDir>
+        <IncludePath>/usr/aarch64-linux-gnu/include/</IncludePath>
+        <LocalRemoteCopySources>true</LocalRemoteCopySources>
+        <WSLPath>default</WSLPath>
+        <TargetExt>.so</TargetExt>
+        <RemoteCCompileToolExe>/usr/bin/aarch64-linux-gnu-gcc</RemoteCCompileToolExe>
+        <RemoteCppCompileToolExe>/usr/bin/aarch64-linux-gnu-g++</RemoteCppCompileToolExe>
+        <RemoteLdToolExe>/usr/bin/aarch64-linux-gnu-ld</RemoteLdToolExe>
+    </PropertyGroup>
+    <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'">
+        <TargetName>libikvm-native</TargetName>
+        <OutDir>$(ProjectDir)bin\$(Configuration)\linux-arm64\</OutDir>
+        <IntDir>$(ProjectDir)obj\$(Configuration)\linux-arm64\</IntDir>
+        <IncludePath>/usr/aarch64-linux-gnu/include/</IncludePath>
+        <LocalRemoteCopySources>true</LocalRemoteCopySources>
+        <WSLPath>default</WSLPath>
+        <TargetExt>.so</TargetExt>
+        <RemoteCCompileToolExe>/usr/bin/aarch64-linux-gnu-gcc</RemoteCCompileToolExe>
+        <RemoteCppCompileToolExe>/usr/bin/aarch64-linux-gnu-g++</RemoteCppCompileToolExe>
+        <RemoteLdToolExe>/usr/bin/aarch64-linux-gnu-ld</RemoteLdToolExe>
+    </PropertyGroup>
+    <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">
+        <Link>
+            <AdditionalOptions></AdditionalOptions>
+            <LibraryDependencies>dl</LibraryDependencies>
+            <UnresolvedSymbolReferences>false</UnresolvedSymbolReferences>
+            <FunctionBinding>false</FunctionBinding>
+            <Relocation></Relocation>
+            <NoExecStackRequired>false</NoExecStackRequired>
+        </Link>
+    </ItemDefinitionGroup>
+    <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'">
+        <Link>
+            <AdditionalOptions></AdditionalOptions>
+            <LibraryDependencies>dl</LibraryDependencies>
+            <UnresolvedSymbolReferences>false</UnresolvedSymbolReferences>
+            <FunctionBinding>false</FunctionBinding>
+            <Relocation></Relocation>
+            <NoExecStackRequired>false</NoExecStackRequired>
+        </Link>
+    </ItemDefinitionGroup>
+    <ItemGroup>
+        <ClCompile Include="jni.c" />
+        <ClCompile Include="os.c" />
+    </ItemGroup>
+    <ItemGroup>
+        <ClInclude Include="jni.h" />
+    </ItemGroup>
+    <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
+    <ImportGroup Label="ExtensionTargets" />
+</Project>

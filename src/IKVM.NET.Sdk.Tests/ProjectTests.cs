@@ -67,17 +67,27 @@ namespace IKVM.NET.Sdk.Tests
 
             var targets = new[]
             {
+                ("net461",          "win7-x86"),
                 ("net461",          "win7-x64"),
+                ("net461",          "win81-arm"),
+                ("netcoreapp3.1",   "win7-x86"),
                 ("netcoreapp3.1",   "win7-x64"),
+                ("netcoreapp3.1",   "win81-arm"),
                 ("netcoreapp3.1",   "linux-x64"),
+                ("netcoreapp3.1",   "linux-arm"),
+                ("netcoreapp3.1",   "linux-arm64"),
             };
 
             if (RuntimeInformation.IsOSPlatform(OSPlatform.Linux))
             {
                 targets = new[]
                 {
+                    ("netcoreapp3.1",   "win7-x86"),
                     ("netcoreapp3.1",   "win7-x64"),
+                    ("netcoreapp3.1",   "win81-arm"),
                     ("netcoreapp3.1",   "linux-x64"),
+                    ("netcoreapp3.1",   "linux-arm"),
+                    ("netcoreapp3.1",   "linux-arm64"),
                 };
             }
 
@@ -119,7 +129,6 @@ namespace IKVM.NET.Sdk.Tests
             }
 
             analyzer.AddBuildLogger(new TargetLogger(TestContext) { Verbosity = LoggerVerbosity.Detailed });
-            analyzer.AddBinaryLogger(Path.Combine(TestContext.ResultsDirectory, "msbuild.binlog"));
 
             {
                 var options = new EnvironmentOptions();

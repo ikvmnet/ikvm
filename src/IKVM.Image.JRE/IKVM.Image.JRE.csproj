@@ -31,6 +31,9 @@
         <ProjectReference Include="..\IKVM.Image.JRE.runtime.linux-arm\IKVM.Image.JRE.runtime.linux-arm.csproj">
             <ReferenceOutputAssembly>true</ReferenceOutputAssembly>
         </ProjectReference>
+        <ProjectReference Include="..\IKVM.Image.JRE.runtime.linux-arm64\IKVM.Image.JRE.runtime.linux-arm64.csproj">
+            <ReferenceOutputAssembly>true</ReferenceOutputAssembly>
+        </ProjectReference>
     </ItemGroup>
 
     <ItemGroup>

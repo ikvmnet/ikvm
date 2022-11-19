@@ -160,6 +160,7 @@ namespace IKVM.MSBuild.Tasks
                 "x86" => IkvmCompilerPlatform.X86,
                 "x64" => IkvmCompilerPlatform.X64,
                 "arm" => IkvmCompilerPlatform.ARM,
+                "arm64" => IkvmCompilerPlatform.ARM64,
                 _ => throw new NotImplementedException(),
             };
 

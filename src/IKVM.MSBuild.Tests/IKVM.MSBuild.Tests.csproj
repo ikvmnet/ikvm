@@ -35,6 +35,7 @@
         <PackageProjectReference Include="..\IKVM.MSBuild.Tools.runtime.win7-x64\IKVM.MSBuild.Tools.runtime.win7-x64.csproj" PackageTargetPath="nuget" />
         <PackageProjectReference Include="..\IKVM.MSBuild.Tools.runtime.linux-x64\IKVM.MSBuild.Tools.runtime.linux-x64.csproj" PackageTargetPath="nuget" />
         <PackageProjectReference Include="..\IKVM.MSBuild.Tools.runtime.linux-arm\IKVM.MSBuild.Tools.runtime.linux-arm.csproj" PackageTargetPath="nuget" />
+        <PackageProjectReference Include="..\IKVM.MSBuild.Tools.runtime.linux-arm64\IKVM.MSBuild.Tools.runtime.linux-arm64.csproj" PackageTargetPath="nuget" />
         <PackageProjectReference Include="..\IKVM\IKVM.csproj" PackageTargetPath="nuget" />
         <PackageProjectReference Include="..\IKVM.Image\IKVM.Image.csproj" PackageTargetPath="nuget" />
         <PackageProjectReference Include="..\IKVM.Image.JRE\IKVM.Image.JRE.csproj" PackageTargetPath="nuget" />
@@ -43,12 +44,14 @@
         <PackageProjectReference Include="..\IKVM.Image.JRE.runtime.win81-arm\IKVM.Image.JRE.runtime.win81-arm.csproj" PackageTargetPath="nuget" />
         <PackageProjectReference Include="..\IKVM.Image.JRE.runtime.linux-x64\IKVM.Image.JRE.runtime.linux-x64.csproj" PackageTargetPath="nuget" />
         <PackageProjectReference Include="..\IKVM.Image.JRE.runtime.linux-arm\IKVM.Image.JRE.runtime.linux-arm.csproj" PackageTargetPath="nuget" />
+        <PackageProjectReference Include="..\IKVM.Image.JRE.runtime.linux-arm64\IKVM.Image.JRE.runtime.linux-arm64.csproj" PackageTargetPath="nuget" />
         <PackageProjectReference Include="..\IKVM.Image.JDK\IKVM.Image.JDK.csproj" PackageTargetPath="nuget" />
         <PackageProjectReference Include="..\IKVM.Image.JDK.runtime.win7-x64\IKVM.Image.JDK.runtime.win7-x64.csproj" PackageTargetPath="nuget" />
         <PackageProjectReference Include="..\IKVM.Image.JDK.runtime.win7-x86\IKVM.Image.JDK.runtime.win7-x86.csproj" PackageTargetPath="nuget" />
         <PackageProjectReference Include="..\IKVM.Image.JDK.runtime.win81-arm\IKVM.Image.JDK.runtime.win81-arm.csproj" PackageTargetPath="nuget" />
         <PackageProjectReference Include="..\IKVM.Image.JDK.runtime.linux-x64\IKVM.Image.JDK.runtime.linux-x64.csproj" PackageTargetPath="nuget" />
         <PackageProjectReference Include="..\IKVM.Image.JDK.runtime.linux-arm\IKVM.Image.JDK.runtime.linux-arm.csproj" PackageTargetPath="nuget" />
+        <PackageProjectReference Include="..\IKVM.Image.JDK.runtime.linux-arm64\IKVM.Image.JDK.runtime.linux-arm64.csproj" PackageTargetPath="nuget" />
     </ItemGroup>
 
     <Import Project="Sdk.targets" Sdk="Microsoft.NET.Sdk" />
