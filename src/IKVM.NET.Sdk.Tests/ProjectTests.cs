@@ -129,7 +129,6 @@ namespace IKVM.NET.Sdk.Tests
             }
 
             analyzer.AddBuildLogger(new TargetLogger(TestContext) { Verbosity = LoggerVerbosity.Detailed });
-            analyzer.AddBinaryLogger(Path.Combine(TestContext.ResultsDirectory, "msbuild.binlog"));
 
             {
                 var options = new EnvironmentOptions();
