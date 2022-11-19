@@ -339,7 +339,7 @@ jobs:
     runs-on: ${{ fromJSON('{"windows":["windows-2022"],"linux":["ubuntu-22.04"]}')[matrix.sys] }}
     steps:
     - name: Set Paths (Windows)
-      if: matrix.sys == 'windows'
+      if: runner.os == 'Windows'
       shell: pwsh
       run: |
         $dir="C:\run"
@@ -354,6 +354,22 @@ jobs:
         Add-Content $env:GITHUB_ENV "`nTMP=$dir\temp`nTEMP=$dir\temp`nTMPDIR=$dir\temp"
         Add-Content $env:GITHUB_ENV "`nDOTNET_INSTALL_DIR=$dir\dotnet"
         Add-Content $env:GITHUB_ENV "`nNUGET_PACKAGES=$dir\nuget\packages"
+    - name: Set Paths (Linux)
+      if: runner.os == 'Linux'
+      shell: pwsh
+      run: |
+        $dir="${{ runner.temp }}/run"
+        mkdir $dir
+        mkdir $dir/temp
+        mkdir $dir/dotnet
+        mkdir $dir/nuget
+        mkdir $dir/nuget/packages
+        mkdir $dir/ikvm
+        mkdir $dir/ikvm/dist
+        Add-Content $env:GITHUB_ENV "`nIKVMPATH=$dir/ikvm"
+        Add-Content $env:GITHUB_ENV "`nTMP=$dir/temp`nTEMP=$dir/temp`nTMPDIR=$dir/temp"
+        Add-Content $env:GITHUB_ENV "`nDOTNET_INSTALL_DIR=$dir/dotnet"
+        Add-Content $env:GITHUB_ENV "`nNUGET_PACKAGES=$dir/nuget/packages"
     - name: Setup .NET 3.1
       uses: actions/setup-dotnet@v3
       with:
