@@ -23,7 +23,7 @@
     <!-- Assigns additional metadata to the reference export. -->
     <UsingTask TaskName="IkvmReferenceExportPrepare" TaskFactory="RoslynCodeTaskFactory" AssemblyFile="$(MSBuildToolsPath)\Microsoft.Build.Tasks.Core.dll">
         <Task>
-            <Code Type="Class" Source="$(MSBuildThisFileDirectory)inline\IkvmReferenceExportPrepare.cs" Language="cs" />
+            <Code Type="Class" Source="$([System.IO.Path]::Combine('$(MSBuildThisFileDirectory)', 'inline', 'IkvmReferenceExportPrepare.cs'))" Language="cs" />
         </Task>
     </UsingTask>
 
