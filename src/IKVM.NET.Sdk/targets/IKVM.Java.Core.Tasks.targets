@@ -87,7 +87,7 @@
             <_IkvmCompilerReferencePath Include="@(ReferencePathWithRefAssemblies)" Condition=" '%(ReferencePathWithRefAssemblies.HideFromJava)' != 'true' " />
             <_IkvmCompilerResource Include="@(JavaResource)" ResourcePath="$([System.String]::new('%(JavaResource.ResourcePath)').Replace('\', '/'))" Condition=" '%(Identity)' != '' " />
         </ItemGroup>
-
+        
         <!-- Build Java assembly into temporary directory. -->
         <RemoveDir Directories="$(_AssemblyTempPath)" />
         <MakeDir Directories="$(_AssemblyTempPath)" />
