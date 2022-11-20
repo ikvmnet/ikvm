@@ -7,6 +7,26 @@
     This file contains targets which invoke the jobs in 'NoTask' mode.
     -->
 
+    <PropertyGroup>
+        <___IkvmReferenceExportItemCs>$([System.IO.File]::ReadAllText('$([System.IO.Path]::Combine('$(MSBuildThisFileDirectory)', '..', '..', 'IKVM.MSBuild.Tasks', 'IkvmReferenceExportItem.cs'))'))</___IkvmReferenceExportItemCs>
+        <___IkvmReferenceExportItemMetadataCs>$([System.IO.File]::ReadAllText('$([System.IO.Path]::Combine('$(MSBuildThisFileDirectory)', '..', '..', 'IKVM.MSBuild.Tasks', 'IkvmReferenceExportItemMetadata.cs'))'))</___IkvmReferenceExportItemMetadataCs>
+        <___IkvmReferenceExportItemPrepareCs>$([System.IO.File]::ReadAllText('$([System.IO.Path]::Combine('$(MSBuildThisFileDirectory)', '..', '..', 'IKVM.MSBuild.Tasks', 'IkvmReferenceExportItemPrepare.cs'))'))</___IkvmReferenceExportItemPrepareCs>
+    </PropertyGroup>
+
+    <UsingTask TaskName="IkvmReferenceExportItemPrepare" TaskFactory="RoslynCodeTaskFactory" AssemblyFile="$(MSBuildToolsPath)\Microsoft.Build.Tasks.Core.dll">
+        <Task>
+            <Reference Include="System.Collections.Immutable" />
+            <Reference Include="System.Reflection.Metadata" />
+            <Code Type="Class" Language="cs">
+                <![CDATA[
+$([MSBuild]::Unescape('$(___IkvmReferenceExportItemCs)'))
+$([MSBuild]::Unescape('$(___IkvmReferenceExportItemMetadataCs)'))
+$([MSBuild]::Unescape('$(___IkvmReferenceExportItemPrepareCs)'))
+            ]]>
+            </Code>
+        </Task>
+    </UsingTask>
+
     <!-- Override IKVM.NET.Sdk: directly invoke executable  -->
     <Target Name="_ExportReferences" DependsOnTargets="ResolveIkvmExporter;ResolveReferenceExports" Inputs="@(ReferenceExport)" Outputs="%(ReferenceExport.CachePath)">
         <Error Text="Could not locate ikvmstub executable." Condition=" '$(IkvmExporterPath)' == '' " />

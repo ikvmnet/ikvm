@@ -26,10 +26,19 @@ namespace IKVM.MSBuild.Tasks
         [Required]
         public string Output { get; set; }
 
+        /// <summary>
+        /// References used to resolve assemblies while exporting.
+        /// </summary>
         public ITaskItem[] References { get; set; }
 
+        /// <summary>
+        /// Namespaces to include.
+        /// </summary>
         public ITaskItem[] Namespaces { get; set; }
 
+        /// <summary>
+        /// Whether errors should be skipped during export.
+        /// </summary>
         public bool SkipError { get; set; }
 
         public bool Shared { get; set; }

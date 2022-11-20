@@ -65,6 +65,37 @@ namespace IKVM.NET.Sdk.Tests
             if (Directory.Exists(ikvmExportCachePath))
                 Directory.Delete(ikvmExportCachePath, true);
 
+            new XDocument(
+                new XElement("configuration",
+                    new XElement("config",
+                        new XElement("add",
+                            new XAttribute("key", "globalPackagesFolder"),
+                            new XAttribute("value", nugetPackageRoot))),
+                    new XElement("packageSources",
+                        new XElement("add",
+                            new XAttribute("key", "dev"),
+                            new XAttribute("value", Path.Combine(Path.GetDirectoryName(typeof(ProjectTests).Assembly.Location), @"nuget"))),
+                        new XElement("add",
+                            new XAttribute("key", "nuget.org"),
+                            new XAttribute("value", "https://api.nuget.org/v3/index.json")))))
+                .Save(Path.Combine(@"Project", "nuget.config"));
+
+            var manager = new AnalyzerManager();
+            var analyzer = manager.GetProject(Path.Combine(@"Project", "Exe", "ProjectExe.msbuildproj"));
+            analyzer.SetGlobalProperty("ImportDirectoryBuildProps", "false");
+            analyzer.SetGlobalProperty("ImportDirectoryBuildTargets", "false");
+            analyzer.SetGlobalProperty("IkvmCacheDir", ikvmCachePath + Path.DirectorySeparatorChar);
+            analyzer.SetGlobalProperty("IkvmExportCacheDir", ikvmExportCachePath + Path.DirectorySeparatorChar);
+            analyzer.SetGlobalProperty("PackageVersion", properties["PackageVersion"]);
+            analyzer.SetGlobalProperty("RestorePackagesPath", nugetPackageRoot + Path.DirectorySeparatorChar);
+            analyzer.SetGlobalProperty("CreateHardLinksForAdditionalFilesIfPossible", "true");
+            analyzer.SetGlobalProperty("CreateHardLinksForCopyAdditionalFilesIfPossible", "true");
+            analyzer.SetGlobalProperty("CreateHardLinksForCopyFilesToOutputDirectoryIfPossible", "true");
+            analyzer.SetGlobalProperty("CreateHardLinksForCopyLocalIfPossible", "true");
+            analyzer.SetGlobalProperty("CreateHardLinksForPublishFilesIfPossible", "true");
+
+            analyzer.AddBuildLogger(new TargetLogger(TestContext) { Verbosity = LoggerVerbosity.Detailed });
+
             var targets = new[]
             {
                 ("net461",          "win7-x86"),
@@ -91,70 +122,27 @@ namespace IKVM.NET.Sdk.Tests
                 };
             }
 
-            // write out nuget.config with package sources
-            // can't use property for sdk resolver
-            new XDocument(
-                new XElement("configuration",
-                    new XElement("config",
-                        new XElement("add",
-                            new XAttribute("key", "globalPackagesFolder"),
-                            new XAttribute("value", nugetPackageRoot))),
-                    new XElement("packageSources",
-                        new XElement("add",
-                            new XAttribute("key", "dev"),
-                            new XAttribute("value", Path.GetFullPath(@"nuget"))))))
-                .Save(Path.Combine(@"Project", "nuget.config"));
-
-            var manager = new AnalyzerManager();
-            var analyzer = manager.GetProject(Path.Combine(@"Project", "Exe", "ProjectExe.msbuildproj"));
-            analyzer.SetGlobalProperty("ImportDirectoryBuildProps", "false");
-            analyzer.SetGlobalProperty("ImportDirectoryBuildTargets", "false");
-            analyzer.SetGlobalProperty("IkvmCacheDir", ikvmCachePath + Path.DirectorySeparatorChar);
-            analyzer.SetGlobalProperty("IkvmExportCacheDir", ikvmExportCachePath + Path.DirectorySeparatorChar);
-            analyzer.SetGlobalProperty("PackageVersion", properties["PackageVersion"]);
-            analyzer.SetGlobalProperty("RestorePackagesPath", nugetPackageRoot + Path.DirectorySeparatorChar);
-            analyzer.SetGlobalProperty("CreateHardLinksForAdditionalFilesIfPossible", "true");
-            analyzer.SetGlobalProperty("CreateHardLinksForCopyAdditionalFilesIfPossible", "true");
-            analyzer.SetGlobalProperty("CreateHardLinksForCopyFilesToOutputDirectoryIfPossible", "true");
-            analyzer.SetGlobalProperty("CreateHardLinksForCopyLocalIfPossible", "true");
-            analyzer.SetGlobalProperty("CreateHardLinksForPublishFilesIfPossible", "true");
-
-            // allow NuGet to locate packages in existing global packages folder if set
-            // else fallback to standard location
-            if (Environment.GetEnvironmentVariable("NUGET_PACKAGES") is string nugetPackagesDir && Directory.Exists(nugetPackagesDir))
-                analyzer.SetGlobalProperty("RestoreAdditionalProjectFallbackFolders", nugetPackagesDir);
-            else
-            {
-                var d = Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.UserProfile), ".nuget", "packages");
-                Directory.CreateDirectory(d);
-                analyzer.SetGlobalProperty("RestoreAdditionalProjectFallbackFolders", d);
-            }
-
-            analyzer.AddBuildLogger(new TargetLogger(TestContext) { Verbosity = LoggerVerbosity.Detailed });
-
-            {
-                var options = new EnvironmentOptions();
-                options.DesignTime = false;
-                options.TargetsToBuild.Clear();
-                options.TargetsToBuild.Add("Restore");
-                options.TargetsToBuild.Add("Clean");
-                var results = analyzer.Build(options);
-                results.OverallSuccess.Should().Be(true);
-            }
-
             foreach (var (tfm, rid) in targets)
             {
                 TestContext.WriteLine("Publishing with TargetFramework {0} and RuntimeIdentifier {1}.", tfm, rid);
 
-                var options = new EnvironmentOptions();
-                options.DesignTime = false;
-                options.Restore = false;
-                options.GlobalProperties.Add("TargetFramework", tfm);
-                options.GlobalProperties.Add("RuntimeIdentifier", rid);
-                options.TargetsToBuild.Clear();
-                options.TargetsToBuild.Add("Build");
-                options.TargetsToBuild.Add("Publish");
-                var results = analyzer.Build(options);
+                var results = analyzer.Build(new EnvironmentOptions()
+                {
+                    DesignTime = false,
+                    Restore = true,
+                    GlobalProperties =
+                    {
+                        ["Configuration"] = "Release",
+                        ["TargetFramework"] = tfm,
+                        ["RuntimeIdentifier"] = rid,
+                    },
+                    TargetsToBuild =
+                    {
+                        "Build",
+                        "Publish"
+                    }
+                });
+
                 results.OverallSuccess.Should().Be(true);
             }
         }

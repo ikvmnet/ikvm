@@ -1,23 +1,23 @@
-﻿using System;
-using System.Collections.Generic;
-using System.IO;
-using System.Linq;
-using System.Reflection;
-using System.Reflection.Metadata;
-using System.Reflection.PortableExecutable;
-using System.Security.Cryptography;
-using System.Text;
-using System.Text.RegularExpressions;
-
-using IKVM.Util.Jar;
-using IKVM.Util.Modules;
-
-using Microsoft.Build.Framework;
-using Microsoft.Build.Globbing;
-using Microsoft.Build.Utilities;
-
-namespace IKVM.MSBuild.Tasks
+﻿namespace IKVM.MSBuild.Tasks
 {
+
+    using System;
+    using System.Collections.Generic;
+    using System.IO;
+    using System.Linq;
+    using System.Reflection;
+    using System.Reflection.Metadata;
+    using System.Reflection.PortableExecutable;
+    using System.Security.Cryptography;
+    using System.Text;
+    using System.Text.RegularExpressions;
+
+    using IKVM.Util.Jar;
+    using IKVM.Util.Modules;
+
+    using Microsoft.Build.Framework;
+    using Microsoft.Build.Globbing;
+    using Microsoft.Build.Utilities;
 
     /// <summary>
     /// For each <see cref="IkvmReferenceItem"/> passed in, assigns default metadata if required.
@@ -130,7 +130,7 @@ namespace IKVM.MSBuild.Tasks
         /// <returns></returns>
         public override bool Execute()
         {
-            var items = IkvmReferenceItemUtil.Import(Items);
+            var items = IkvmReferenceItem.Import(Items);
 
             // populate and normalize metadata
             AssignMetadata(items);

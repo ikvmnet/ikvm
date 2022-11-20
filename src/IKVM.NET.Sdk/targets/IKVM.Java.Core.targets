@@ -20,21 +20,17 @@
         </ItemGroup>
     </Target>
 
-    <!-- Assigns additional metadata to the reference export. -->
-    <UsingTask TaskName="IkvmReferenceExportPrepare" TaskFactory="RoslynCodeTaskFactory" AssemblyFile="$(MSBuildToolsPath)\Microsoft.Build.Tasks.Core.dll">
-        <Task>
-            <Code Type="Class" Source="$([System.IO.Path]::Combine('$(MSBuildThisFileDirectory)', 'inline', 'IkvmReferenceExportPrepare.cs'))" Language="cs" />
-        </Task>
-    </UsingTask>
-
     <!-- Compiles the set of exports to be made, along with their original assembly file path. -->
     <Target Name="ResolveReferenceExports" DependsOnTargets="ResolveReferences;FindReferenceAssembliesForReferences;ResolveIkvmRuntimeAssembly">
         <ItemGroup>
-            <_ReferenceExport Include="@(ReferencePath)" Condition=" '%(ReferencePath.HideFromJava)' != 'true' And '%(ReferencePath.JavaClasspath)' == '' And '%(Filename)' != 'IKVM.Java' And '%(Filename)' != 'System.Runtime.Serialization' " />
+            <_ReferenceExport Include="@(ReferencePath)" Condition=" '%(ReferencePath.HideFromJava)' != 'true' And '%(ReferencePath.JavaClasspath)' == '' And '%(Filename)' != 'IKVM.Java' And '%(Filename)' != 'System.Runtime.Serialization' ">
+                <Bootstrap>$(Bootstrap)</Bootstrap>
+                <NoStdLib>$(NoStdLib)</NoStdLib>
+            </_ReferenceExport>
         </ItemGroup>
-        <IkvmReferenceExportPrepare Items="@(_ReferenceExport)" ToolVersion="$(IkvmVersion)" ToolFramework="$(IkvmToolFramework)" References="@(ReferencePathWithRefAssemblies)" Bootstrap="$(Bootstrap)" NoStdLib="$(NoCompilerStandardLib)">
+        <IkvmReferenceExportItemPrepare Items="@(_ReferenceExport)" ToolVersion="$(IkvmVersion)" ToolFramework="$(IkvmToolFramework)" References="@(ReferencePathWithRefAssemblies)">
             <Output TaskParameter="Items" ItemName="ReferenceExport" />
-        </IkvmReferenceExportPrepare>
+        </IkvmReferenceExportItemPrepare>
         <ItemGroup>
             <ReferenceExport Update="@(ReferenceExport)">
                 <StagePath>$(IkvmExportStageDir)%(IkvmIdentity)\%(Filename).jar</StagePath>
