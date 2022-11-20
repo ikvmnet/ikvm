@@ -6,16 +6,18 @@
     <PropertyGroup>
         <IkvmMSBuildTaskFolder Condition=" '$(MSBuildRuntimeType)' == 'Core' ">netcoreapp3.1</IkvmMSBuildTaskFolder>
         <IkvmMSBuildTaskFolder Condition=" '$(MSBuildRuntimeType)' != 'Core' ">net472</IkvmMSBuildTaskFolder>
+        <IkvmMSBuildTaskFactory Condition=" '$(MSBuildRuntimeType)' == 'Core' "></IkvmMSBuildTaskFactory>
+        <IkvmMSBuildTaskFactory Condition=" '$(MSBuildRuntimeType)' != 'Core' ">TaskHostFactory</IkvmMSBuildTaskFactory>
         <IkvmMSBuildTaskAssembly>$(MSBuildThisFileDirectory)..\..\tasks\$(IkvmMSBuildTaskFolder)\IKVM.MSBuild.Tasks.dll</IkvmMSBuildTaskAssembly>
         <IkvmCompilerToolPath>@(IkvmCompilerToolPath->WithMetadataValue('TargetFramework', '$(IkvmToolFramework)')->WithMetadataValue('RuntimeIdentifier', '$(IkvmToolRuntime)'))</IkvmCompilerToolPath>
         <IkvmExporterToolPath>@(IkvmExporterToolPath->WithMetadataValue('TargetFramework', '$(IkvmToolFramework)')->WithMetadataValue('RuntimeIdentifier', '$(IkvmToolRuntime)'))</IkvmExporterToolPath>
     </PropertyGroup>
 
-    <UsingTask TaskName="IkvmGetReferenceAssemblies" AssemblyFile="$(IkvmMSBuildTaskAssembly)" TaskFactory="TaskHostFactory" Condition="Exists('$(IkvmMSBuildTaskAssembly)')" />
-    <UsingTask TaskName="IkvmReferenceItemPrepare" AssemblyFile="$(IkvmMSBuildTaskAssembly)" TaskFactory="TaskHostFactory" Condition="Exists('$(IkvmMSBuildTaskAssembly)')" />
-    <UsingTask TaskName="IkvmCompiler" AssemblyFile="$(IkvmMSBuildTaskAssembly)" TaskFactory="TaskHostFactory" Condition="Exists('$(IkvmMSBuildTaskAssembly)')" />
-    <UsingTask TaskName="IkvmExporter" AssemblyFile="$(IkvmMSBuildTaskAssembly)" TaskFactory="TaskHostFactory" Condition="Exists('$(IkvmMSBuildTaskAssembly)')" />
-    <UsingTask TaskName="IkvmJavaCompiler" AssemblyFile="$(IkvmMSBuildTaskAssembly)" TaskFactory="TaskHostFactory" Condition="Exists('$(IkvmMSBuildTaskAssembly)')" />
+    <UsingTask TaskName="IkvmGetReferenceAssemblies" AssemblyFile="$(IkvmMSBuildTaskAssembly)" TaskFactory="$(IkvmMSBuildTaskFactory)" Condition="Exists('$(IkvmMSBuildTaskAssembly)')" />
+    <UsingTask TaskName="IkvmReferenceItemPrepare" AssemblyFile="$(IkvmMSBuildTaskAssembly)" TaskFactory="$(IkvmMSBuildTaskFactory)" Condition="Exists('$(IkvmMSBuildTaskAssembly)')" />
+    <UsingTask TaskName="IkvmCompiler" AssemblyFile="$(IkvmMSBuildTaskAssembly)" TaskFactory="$(IkvmMSBuildTaskFactory)" Condition="Exists('$(IkvmMSBuildTaskAssembly)')" />
+    <UsingTask TaskName="IkvmExporter" AssemblyFile="$(IkvmMSBuildTaskAssembly)" TaskFactory="$(IkvmMSBuildTaskFactory)" Condition="Exists('$(IkvmMSBuildTaskAssembly)')" />
+    <UsingTask TaskName="IkvmJavaCompiler" AssemblyFile="$(IkvmMSBuildTaskAssembly)" TaskFactory="$(IkvmMSBuildTaskFactory)" Condition="Exists('$(IkvmMSBuildTaskAssembly)')" />
 
     <!-- Gathers those references which are either related to the Framework itself, or IKVM. -->
     <Target Name="ResolveIkvmFrameworkReferences" DependsOnTargets="$(ResolveIkvmFrameworkReferencesDependsOn)">
