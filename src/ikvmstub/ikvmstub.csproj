@@ -9,7 +9,6 @@
     </PropertyGroup>
 
     <ItemGroup Condition="$([MSBuild]::IsTargetFrameworkCompatible('$(TargetFramework)', 'net461'))">
-    <ItemGroup Condition=" '$(TargetFramework)' == 'net461' ">
         <PackageReference Include="System.Runtime.CompilerServices.Unsafe" Version="6.0.0" />
     </ItemGroup>
 
