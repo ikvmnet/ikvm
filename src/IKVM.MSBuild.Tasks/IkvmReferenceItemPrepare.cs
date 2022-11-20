@@ -684,8 +684,7 @@
         /// <param name="items"></param>
         internal void AssignBuildInfo(IEnumerable<IkvmReferenceItem> items)
         {
-            foreach (var item in items)
-                AssignBuildInfo(item);
+            items.AsParallel().ForAll(AssignBuildInfo);
         }
 
         /// <summary>

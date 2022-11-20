@@ -66,14 +66,27 @@
         public override bool Execute()
         {
             var items = IkvmReferenceExportItem.Import(Items);
-
-            foreach (var item in items)
-            {
-                item.IkvmIdentity = CalculateIkvmIdentity(item);
-                item.Save();
-            }
-
+            AssignBuildInfo(items);
             return true;
+        }
+
+        /// <summary>
+        /// Assigns build information to the items.
+        /// </summary>
+        /// <param name="items"></param>
+        internal void AssignBuildInfo(IEnumerable<IkvmReferenceExportItem> items)
+        {
+            items.AsParallel().ForAll(AssignBuildInfo);
+        }
+
+        /// <summary>
+        /// Assigns build information to the item.
+        /// </summary>
+        /// <param name="item"></param>
+        internal void AssignBuildInfo(IkvmReferenceExportItem item)
+        {
+            item.IkvmIdentity = CalculateIkvmIdentity(item);
+            item.Save();
         }
 
         /// <summary>
