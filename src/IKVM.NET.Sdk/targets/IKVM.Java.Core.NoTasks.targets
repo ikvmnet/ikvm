@@ -31,6 +31,11 @@ $([MSBuild]::Unescape('$(___IkvmReferenceExportItemPrepareCs)'))
     <Target Name="_ExportReferences" DependsOnTargets="ResolveIkvmExporter;ResolveReferenceExports" Inputs="@(ReferenceExport)" Outputs="%(ReferenceExport.CachePath)">
         <Error Text="Could not locate ikvmstub executable." Condition=" '$(IkvmExporterPath)' == '' " />
         <Error Text="ikvmstub executable could not be located at '$(IkvmExporterPath)'" Condition="!Exists('$(IkvmExporterPath)')" />
+        
+        <ItemGroup>
+            <_ReferenceExportReference Remove="@(_ReferenceExportReference)" />
+            <_ReferenceExportReference Include="@(ReferencePathWithRefAssemblies)" Condition=" '%(Filename)' != '%(ReferenceExport.Filename)' "/>
+        </ItemGroup>
 
         <!-- Output to stage path then copy to cache path to be atomic. -->
         <MakeDir Directories="$([System.IO.Path]::GetDirectoryName('%(ReferenceExport.StagePath)'))" />
@@ -38,9 +43,9 @@ $([MSBuild]::Unescape('$(___IkvmReferenceExportItemPrepareCs)'))
 
         <ItemGroup>
             <_IkvmExporterArgs Remove="@(_IkvmExporterArgs)" />
-            <_IkvmExporterArgs Include="-bootstrap" Condition=" '$(Bootstrap)' == 'true' " />
-            <_IkvmExporterArgs Include="@(ReferencePathWithRefAssemblies->'-r:&quot;%(FullPath)&quot;')"  Condition=" '%(Filename)' != '%(ReferenceExport.Filename)' "/>
-            <_IkvmExporterArgs Include="-nostdlib" Condition=" '$(NoCompilerStandardLib)' == 'true' " />
+            <_IkvmExporterArgs Include="-bootstrap" Condition=" '%(ReferenceExport.Bootstrap)' == 'true' " />
+            <_IkvmExporterArgs Include="@(_ReferenceExportReference->'-r:&quot;%(FullPath)&quot;')" />
+            <_IkvmExporterArgs Include="-nostdlib" Condition=" '%(ReferenceExport.NoStdLib)' == 'true' " />
             <_IkvmExporterArgs Include="-out:&quot;%(ReferenceExport.StagePath)&quot;" />
             <_IkvmExporterArgs Include="&quot;%(ReferenceExport.Identity)&quot;" />
         </ItemGroup>

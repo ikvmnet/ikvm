@@ -25,7 +25,7 @@
         <ItemGroup>
             <_ReferenceExport Include="@(ReferencePath)" Condition=" '%(ReferencePath.HideFromJava)' != 'true' And '%(ReferencePath.JavaClasspath)' == '' And '%(Filename)' != 'IKVM.Java' And '%(Filename)' != 'System.Runtime.Serialization' ">
                 <Bootstrap>$(Bootstrap)</Bootstrap>
-                <NoStdLib>$(NoStdLib)</NoStdLib>
+                <NoStdLib>$(NoCompilerStandardLib)</NoStdLib>
             </_ReferenceExport>
         </ItemGroup>
         <IkvmReferenceExportItemPrepare Items="@(_ReferenceExport)" ToolVersion="$(IkvmVersion)" ToolFramework="$(IkvmToolFramework)" References="@(ReferencePathWithRefAssemblies)">
