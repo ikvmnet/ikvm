@@ -3406,3 +3406,85 @@ tools/pack200/typeannos/TestTypeAnnotations.java                                
 vm/verifier/TestStaticIF.java                                                                                           generic-all
 vm/verifier/VerifyProtectedConstructor.java                                                                             generic-all
 vm/verifier/defaultMethods/DefaultMethodRegressionTestsRun.java                                                         generic-all
+
+# we never implemented memory MX stuff for Linux
+com/sun/management/OperatingSystemMXBean/GetCommittedVirtualMemorySize.java                                             linux-all
+com/sun/management/OperatingSystemMXBean/GetFreePhysicalMemorySize.java                                                 linux-all
+com/sun/management/OperatingSystemMXBean/GetFreeSwapSpaceSize.java                                                      linux-all
+com/sun/management/OperatingSystemMXBean/GetTotalPhysicalMemorySize.java                                                linux-all
+
+demo/zipfs/ZFSTests.java                                                                                                linux-all
+
+java/io/FileDescriptor/Sharing.java                                                                                     linux-all
+java/io/FileOutputStream/LargeFileAvailable.java                                                                        linux-all
+java/io/pathNames/GeneralSolaris.java                                                                                   linux-all
+java/io/RandomAccessFile/ReadWritePrimitives.java                                                                       linux-all
+
+java/lang/ProcessBuilder/DestroyTests.java                                                                              linux-all
+java/lang/ProcessBuilder/Zombies.java                                                                                   linux-all
+java/lang/Runtime/exec/ConcurrentRead.java                                                                              linux-all
+java/lang/Runtime/exec/LotsOfDestroys.java                                                                              linux-all
+java/lang/Runtime/exec/LotsOfOutput.java                                                                                linux-all
+
+java/net/BindException/Test.java                                                                                        linux-all
+java/net/InetAddress/IsReachable.java                                                                                   linux-all
+java/net/PortUnreachableException/Concurrent.java                                                                       linux-all
+
+java/net/Socket/InheritHandle.java                                                                                      linux-all
+java/net/Socket/LingerTest.java                                                                                         linux-all
+java/net/Socket/NullHost.java                                                                                           linux-all
+java/net/Socket/asyncClose/AsyncClose.java                                                                              linux-all
+java/net/Socket/setReuseAddress/Basic.java                                                                              linux-all
+
+java/net/URL/B5086147.sh                                                                                                linux-all
+java/net/URLConnection/DisconectAfterEOF.java                                                                           linux-all
+java/net/URLConnection/Responses.java                                                                                   linux-all
+java/net/URLConnection/6212146/test.sh                                                                                  linux-all
+
+java/nio/channels/AsynchronousChannelGroup/Unbounded.java                                                               linux-all
+java/nio/channels/AsynchronousServerSocketChannel/Basic.java                                                            linux-all
+java/nio/channels/AsynchronousSocketChannel/DieBeforeComplete.java                                                      linux-all
+java/nio/channels/AsynchronousSocketChannel/StressLoopback.java                                                         linux-all
+java/nio/channels/Channels/Basic2.java                                                                                  linux-all
+java/nio/channels/DatagramChannel/EmptyBuffer.java                                                                      linux-all
+java/nio/channels/DatagramChannel/Promiscuous.java                                                                      linux-all
+java/nio/channels/etc/AdaptorCloseAndInterrupt.java                                                                     linux-all
+java/nio/channels/FileChannel/Release.java                                                                              linux-all
+java/nio/channels/FileChannel/TryLock.java                                                                              linux-all
+java/nio/channels/Selector/Alias.java                                                                                   linux-all
+java/nio/channels/Selector/BasicConnect.java                                                                            linux-all
+java/nio/channels/Selector/CloseWhenKeyIdle.java                                                                        linux-all
+java/nio/channels/Selector/Connect.java                                                                                 linux-all
+java/nio/channels/SocketChannel/AdaptSocket.java                                                                        linux-all
+java/nio/channels/SocketChannel/AsyncCloseChannel.java                                                                  linux-all
+java/nio/channels/SocketChannel/Basic.java                                                                              linux-all
+java/nio/channels/SocketChannel/CoseDuringWrite.java                                                                    linux-all
+java/nio/channels/SocketChannel/Shutdown.java                                                                           linux-all
+
+java/nio/charset/RemovingSunIO/TestCOMP.java                                                                            linux-all
+
+java/nio/file/attribute/DosFileAttributeView/Basic.java                                                                 linux-all
+java/nio/file/Files/FileAttributes.java                                                                                 linux-all
+java/nio/file/FileStore/Basic.java                                                                                      linux-all
+java/nio/file/Path/UriImportExport.java                                                                                 linux-all
+
+sun/management/jmxremote/LocalRMIServerSocketFactoryTest.java                                                           linux-all
+sun/management/jmxremote/bootstrap/RmiSslBootstrapTest.sh                                                               linux-all
+sun/net/ftp/FtpGetContent.java                                                                                          linux-all
+
+# likely files because java.net.preferIPv4Stack isn't implemented
+sun/net/sdp/sanity.sh                                                                                                   linux-all
+
+sun/net/www/protocol/http/RetryUponTimeout.java                                                                         linux-all
+sun/nio/cs/TestCompoundTest.java                                                                                        linux-all
+sun/rmi/rmic/extraCompilation/run.sh                                                                                    linux-all
+sun/security/krb5/ccache/DefaultFile.java                                                                               linux-all
+sun/security/pkcs11/KeyStore/Basic.sh                                                                                   linux-all
+sun/security/pkcs11/KeyStore/ClientAuth.sh                                                                              linux-all
+sun/security/pkcs11/KeyStore/Solaris.sh                                                                                 linux-all
+
+sun/security/provider/PolicyFile/CanonPath.java                                                                         linux-all
+sun/security/ssl/com/sun/net/ssl/internal/ssl/SSLSocketImpl/AsyncSSLSocketClose.java                                    linux-all
+
+sun/tools/native2ascii.java                                                                                             linux-all
+tools/jar/UpdateJar.java                                                                                                linux-all
