@@ -32,11 +32,44 @@ using System.Runtime.InteropServices;
 using IKVM.Internal;
 using IKVM.Runtime.Vfs;
 
+#if NETCOREAPP
+using Mono.Unix.Native;
+#endif
+
 namespace IKVM.Java.Externs.java.lang
 {
 
     static class VMSystemProperties
     {
+
+        [StructLayout(LayoutKind.Sequential, CharSet = CharSet.Unicode)]
+        struct OSVERSIONINFOEXW
+        {
+            public int dwOSVersionInfoSize;
+            public int dwMajorVersion;
+            public int dwMinorVersion;
+            public int dwBuildNumber;
+            public int dwPlatformId;
+            [MarshalAs(UnmanagedType.ByValTStr, SizeConst = 128)]
+            public string szCSDVersion;
+            public ushort wServicePackMajor;
+            public ushort wServicePackMinor;
+            public ushort wSuiteMask;
+            public VER_NT wProductType;
+            public byte wReserved;
+        }
+
+        /// <summary>
+        /// VER_NT_* values.
+        /// </summary>
+        enum VER_NT : byte
+        {
+
+            VER_NT_DOMAIN_CONTROLLER = 0x0000002,
+            VER_NT_SERVER = 0x0000003,
+            VER_NT_WORKSTATION = 0x0000001,
+
+        }
 
         /// <summary>
         /// Set of properties to initially import upon startup.
@@ -164,6 +197,41 @@ namespace IKVM.Java.Externs.java.lang
             return codepage is >= 847 and <= 950 ? $"ms{codepage}" : $"cp{codepage}";
         }
 
+        [DllImport("ntdll.dll", SetLastError = true)]
+        static extern int RtlGetVersion(ref OSVERSIONINFOEXW versionInfo);
+
+        /// <summary>
+        /// Gets the Windows ProductType.
+        /// </summary>
+        /// <returns></returns>
+        public static byte getWindowsProductType()
+        {
+            var osvi = default(OSVERSIONINFOEXW);
+            osvi.dwOSVersionInfoSize = Marshal.SizeOf(typeof(OSVERSIONINFOEXW));
+            var result = RtlGetVersion(ref osvi);
+            if (result != 0)
+            {
+                return 0;
+            }
+            else
+            {
+                return (byte)osvi.wProductType;
+            }
+        }
+
+        /// <summary>
+        /// Gets the 'sysname' on Unix.
+        /// </summary>
+        /// <returns></returns>
+        public static string[] getLinuxSysnameAndRelease()
+        {
+#if NETFRAMEWORK
+            return null;
+#else
+            Syscall.uname(out var utsname);
+            return new[] { utsname.sysname, utsname.release };
+#endif
+        }
 
     }
 
