@@ -130,23 +130,15 @@ namespace IKVM.NET.Sdk.Tests
             foreach (var (tfm, rid) in targets)
             {
                 TestContext.WriteLine("Publishing with TargetFramework {0} and RuntimeIdentifier {1}.", tfm, rid);
-
-                var results = analyzer.Build(new EnvironmentOptions()
-                {
-                    DesignTime = false,
-                    Restore = false,
-                    GlobalProperties =
-                    {
-                        ["TargetFramework"] = tfm,
-                        ["RuntimeIdentifier"] = rid,
-                    },
-                    TargetsToBuild =
-                    {
-                        "Publish"
-                    }
-                });
-
-                results.OverallSuccess.Should().Be(true);
+                var options = new EnvironmentOptions();
+                options.DesignTime = false;
+                options.Restore = false;
+                options.GlobalProperties["TargetFramework"] = tfm;
+                options.GlobalProperties["RuntimeIdentifier"] = rid;
+                options.TargetsToBuild.Clear();
+                options.TargetsToBuild.Add("Build");
+                options.TargetsToBuild.Add("Publish");
+                analyzer.Build(o).OverallSuccess.Should().Be(true);
             }
         }
 
