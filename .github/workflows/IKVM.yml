@@ -300,22 +300,6 @@ jobs:
           tfm: net6.0
         - run: ikvmc.Tests
           tfm: net6.0
-        - run: IKVM.OpenJDK.Tests?TestPartition=0
-          sys: linux
-        - run: IKVM.OpenJDK.Tests?TestPartition=1
-          sys: linux
-        - run: IKVM.OpenJDK.Tests?TestPartition=2
-          sys: linux
-        - run: IKVM.OpenJDK.Tests?TestPartition=3
-          sys: linux
-        - run: IKVM.OpenJDK.Tests?TestPartition=4
-          sys: linux
-        - run: IKVM.OpenJDK.Tests?TestPartition=5
-          sys: linux
-        - run: IKVM.OpenJDK.Tests?TestPartition=6
-          sys: linux
-        - run: IKVM.OpenJDK.Tests?TestPartition=7
-          sys: linux
         include:
         - run: IKVM.MSBuild.Tasks.Tests
           tfm: net472
@@ -326,6 +310,12 @@ jobs:
         - run: IKVM.MSBuild.Tasks.Tests
           tfm: net6.0
           sys: windows
+        - run: IKVM.MSBuild.Tasks.Tests
+          tfm: netcoreapp3.1
+          sys: linux
+        - run: IKVM.MSBuild.Tasks.Tests
+          tfm: net6.0
+          sys: linux
         - run: IKVM.MSBuild.Tests
           tfm: net6.0
           sys: windows
@@ -335,9 +325,6 @@ jobs:
         - run: IKVM.NET.Sdk.Tests
           tfm: net6.0
           sys: windows
-        - run: IKVM.MSBuild.Tests
-          tfm: net6.0
-          sys: linux
         - run: IKVM.NET.Sdk.Tests
           tfm: net6.0
           sys: linux
