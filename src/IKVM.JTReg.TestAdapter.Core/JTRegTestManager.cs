@@ -44,7 +44,7 @@ namespace IKVM.JTReg.TestAdapter.Core
             if (RuntimeInformation.IsOSPlatform(OSPlatform.Linux))
             {
                 var javaHome = java.lang.System.getProperty("java.home");
-                foreach (var exec in new[] { "java", "javac", "jar", "jarsigner", "javadoc", "javah", "javap", "jdeps", "keytool", "policytool", "rmic", "wsgen", "wsimport" })
+                foreach (var exec in new[] { "java", "javac", "jar", "jarsigner", "javadoc", "javah", "javap", "jdeps", "keytool", "native2ascii", "policytool", "rmic", "wsgen", "wsimport" })
                 {
                     var execPath = Path.Combine(javaHome, "bin", exec);
                     if (File.Exists(execPath))
@@ -294,13 +294,16 @@ namespace IKVM.JTReg.TestAdapter.Core
                 var testManager = CreateTestManager(context, baseDir, new java.io.PrintWriter(output));
                 testManager.addTestFiles(testDirs, false);
 
+                // load the set of suites
+                var testSuites = Util.GetTestSuites(source, testManager).ToList();
+
                 // we will need a full list of tests to apply any filters to
                 if (tests == null)
                 {
-                    var l = new List<JTRegTestCase>();
-
+                    var l = new List<JTRegTestCase>(512);
+                    
                     // discover the full set of tests
-                    foreach (dynamic testSuite in Util.GetTestSuites(source, testManager))
+                    foreach (dynamic testSuite in testSuites)
                         foreach (var testCase in (IEnumerable<JTRegTestCase>)Util.GetTestCases(source, testManager, testSuite))
                             l.Add(testCase);
 
@@ -311,7 +314,7 @@ namespace IKVM.JTReg.TestAdapter.Core
                 tests = context.FilterTestCases(tests);
 
                 // invoke each test suite
-                foreach (dynamic testSuite in (IEnumerable)testManager.getTestSuites())
+                foreach (dynamic testSuite in testSuites)
                 {
                     context.SendMessage(JTRegTestMessageLevel.Informational, $"JTReg: Running test suite: {(string)testSuite.getName()}");
                     RunTests(source, testManager, testSuite, context, tests, output, CreateParameters(source, testManager, testSuite, tests, debugUri), cancellationToken);

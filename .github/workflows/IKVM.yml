@@ -272,8 +272,6 @@ jobs:
       matrix:
         run:
         - IKVM.Tests
-        - IKVM.Tests.JRE
-        - IKVM.Tests.JDK
         - ikvmc.Tests
         - IKVM.Tools.Exporter.Tests
         - IKVM.Tools.Tests
