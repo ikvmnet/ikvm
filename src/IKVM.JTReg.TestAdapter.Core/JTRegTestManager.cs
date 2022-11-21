@@ -192,7 +192,7 @@ namespace IKVM.JTReg.TestAdapter.Core
                 testWatch.Start();
 
                 // for each suite, get the results and transform a test case
-                foreach (dynamic testSuite in Util.GetTestSuites(source, testManager))
+                foreach (dynamic testSuite in (IEnumerable<dynamic>)Util.GetTestSuites(source, testManager))
                 {
                     foreach (var testCase in (IEnumerable<JTRegTestCase>)Util.GetTestCases(source, testManager, testSuite))
                     {
@@ -295,7 +295,7 @@ namespace IKVM.JTReg.TestAdapter.Core
                 testManager.addTestFiles(testDirs, false);
 
                 // load the set of suites
-                var testSuites = Util.GetTestSuites(source, testManager).ToList();
+                var testSuites = ((IEnumerable<dynamic>)Util.GetTestSuites(source, testManager)).ToList();
 
                 // we will need a full list of tests to apply any filters to
                 if (tests == null)
