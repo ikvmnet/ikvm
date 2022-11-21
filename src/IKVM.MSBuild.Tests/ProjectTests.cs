@@ -93,8 +93,13 @@ namespace IKVM.MSBuild.Tests
             analyzer.SetGlobalProperty("CreateHardLinksForCopyFilesToOutputDirectoryIfPossible", "true");
             analyzer.SetGlobalProperty("CreateHardLinksForCopyLocalIfPossible", "true");
             analyzer.SetGlobalProperty("CreateHardLinksForPublishFilesIfPossible", "true");
+            analyzer.SetGlobalProperty("Configuration", "Release");
 
             analyzer.AddBuildLogger(new TargetLogger(TestContext) { Verbosity = LoggerVerbosity.Detailed });
+            var o = new EnvironmentOptions();
+            o.TargetsToBuild.Clear();
+            o.TargetsToBuild.Add("Restore");
+            analyzer.Build(o).OverallSuccess.Should().BeTrue();
 
             var targets = new[]
             {
@@ -147,16 +152,14 @@ namespace IKVM.MSBuild.Tests
                 var results = analyzer.Build(new EnvironmentOptions()
                 {
                     DesignTime = false,
-                    Restore = true,
+                    Restore = false,
                     GlobalProperties =
                     {
-                        ["Configuration"] = "Release",
                         ["TargetFramework"] = tfm,
                         ["RuntimeIdentifier"] = rid,
                     },
                     TargetsToBuild =
                     {
-                        "Build",
                         "Publish"
                     }
                 });

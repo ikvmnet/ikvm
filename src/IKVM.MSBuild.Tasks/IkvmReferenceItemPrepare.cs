@@ -434,7 +434,10 @@
             if (value is null)
                 throw new ArgumentNullException(nameof(value));
 
-            var hsh = md5.ComputeHash(Encoding.UTF8.GetBytes(value));
+            byte[] hsh;
+            lock (md5)
+                hsh = md5.ComputeHash(Encoding.UTF8.GetBytes(value));
+
             var bld = new StringBuilder(hsh.Length * 2);
             foreach (var b in hsh)
                 bld.Append(b.ToString("x2"));

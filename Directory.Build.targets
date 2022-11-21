@@ -1,14 +1,10 @@
 <Project>
 
     <ItemGroup>
-        <PackageReference Include="IKVM.Core.MSBuild" Version="0.1.10">
+        <PackageReference Include="IKVM.Core.MSBuild" Version="0.1.11">
             <PrivateAssets>all</PrivateAssets>
             <IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
         </PackageReference>
     </ItemGroup>
-
-    <Target Name="GetPackageOutputPath" DependsOnTargets="_GetAbsoluteOutputPathsForPack" Returns="$(PackageOutputAbsolutePath)">
-
-    </Target>
 
 </Project>

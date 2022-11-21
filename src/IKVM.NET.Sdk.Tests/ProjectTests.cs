@@ -1,6 +1,7 @@
 ﻿using System;
 using System.IO;
 using System.Linq;
+using System.Net.NetworkInformation;
 using System.Runtime.InteropServices;
 using System.Xml.Linq;
 
@@ -95,6 +96,10 @@ namespace IKVM.NET.Sdk.Tests
             analyzer.SetGlobalProperty("CreateHardLinksForPublishFilesIfPossible", "true");
 
             analyzer.AddBuildLogger(new TargetLogger(TestContext) { Verbosity = LoggerVerbosity.Detailed });
+            var o = new EnvironmentOptions();
+            o.TargetsToBuild.Clear();
+            o.TargetsToBuild.Add("Restore");
+            analyzer.Build(o).OverallSuccess.Should().BeTrue();
 
             var targets = new[]
             {
@@ -129,16 +134,14 @@ namespace IKVM.NET.Sdk.Tests
                 var results = analyzer.Build(new EnvironmentOptions()
                 {
                     DesignTime = false,
-                    Restore = true,
+                    Restore = false,
                     GlobalProperties =
                     {
-                        ["Configuration"] = "Release",
                         ["TargetFramework"] = tfm,
                         ["RuntimeIdentifier"] = rid,
                     },
                     TargetsToBuild =
                     {
-                        "Build",
                         "Publish"
                     }
                 });
