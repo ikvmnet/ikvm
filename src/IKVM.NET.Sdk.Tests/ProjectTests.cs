@@ -99,6 +99,7 @@ namespace IKVM.NET.Sdk.Tests
             var o = new EnvironmentOptions();
             o.TargetsToBuild.Clear();
             o.TargetsToBuild.Add("Restore");
+            o.TargetsToBuild.Add("Clean");
             analyzer.Build(o).OverallSuccess.Should().BeTrue();
 
             var targets = new[]
