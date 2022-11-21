@@ -185,6 +185,8 @@ Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "IKVM.Image.JDK.runtime.linu
 EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "IKVM.Image.JRE.runtime.linux-arm", "src\IKVM.Image.JRE.runtime.linux-arm\IKVM.Image.JRE.runtime.linux-arm.csproj", "{833EAB0B-F2EE-47B5-8A54-EDE4DC655122}"
 EndProject
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "native2ascii", "src\native2ascii\native2ascii.msbuildproj", "{7BC3FC79-5938-4CD7-9528-47D5DC18729E}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -507,6 +509,10 @@ Global
 		{833EAB0B-F2EE-47B5-8A54-EDE4DC655122}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{833EAB0B-F2EE-47B5-8A54-EDE4DC655122}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{833EAB0B-F2EE-47B5-8A54-EDE4DC655122}.Release|Any CPU.Build.0 = Release|Any CPU
+		{7BC3FC79-5938-4CD7-9528-47D5DC18729E}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{7BC3FC79-5938-4CD7-9528-47D5DC18729E}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{7BC3FC79-5938-4CD7-9528-47D5DC18729E}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{7BC3FC79-5938-4CD7-9528-47D5DC18729E}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE

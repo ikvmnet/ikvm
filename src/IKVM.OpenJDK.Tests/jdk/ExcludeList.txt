@@ -3472,7 +3472,7 @@ sun/management/jmxremote/LocalRMIServerSocketFactoryTest.java                   
 sun/management/jmxremote/bootstrap/RmiSslBootstrapTest.sh                                                               linux-all
 sun/net/ftp/FtpGetContent.java                                                                                          linux-all
 
-# likely files because java.net.preferIPv4Stack isn't implemented
+# likely fails because java.net.preferIPv4Stack isn't implemented
 sun/net/sdp/sanity.sh                                                                                                   linux-all
 
 sun/net/www/protocol/http/RetryUponTimeout.java                                                                         linux-all
