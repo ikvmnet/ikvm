@@ -23,6 +23,28 @@
         readonly static MD5 md5 = MD5.Create();
 
         /// <summary>
+        /// Calculates the hash of the value.
+        /// </summary>
+        /// <param name="buffer"></param>
+        /// <returns></returns>
+        static byte[] ComputeHash(byte[] buffer)
+        {
+            lock (md5)
+                return md5.ComputeHash(buffer);
+        }
+
+        /// <summary>
+        /// Calculates the hash of the value.
+        /// </summary>
+        /// <param name="stream"></param>
+        /// <returns></returns>
+        static byte[] ComputeHash(Stream stream)
+        {
+            lock (md5)
+                return md5.ComputeHash(stream);
+        }
+
+        /// <summary>
         /// Initializes a new instance.
         /// </summary>
         public IkvmReferenceExportItemPrepare()
@@ -156,10 +178,7 @@
             if (value is null)
                 throw new ArgumentNullException(nameof(value));
 
-            byte[] hsh;
-            lock (md5)
-                hsh = md5.ComputeHash(Encoding.UTF8.GetBytes(value));
-
+            var hsh = ComputeHash(Encoding.UTF8.GetBytes(value));
             var bld = new StringBuilder(hsh.Length * 2);
             foreach (var b in hsh)
                 bld.Append(b.ToString("x2"));
@@ -198,7 +217,7 @@
 
             // fallback to a standard full MD5 of the file
             using var stm = File.OpenRead(file);
-            var hsh = md5.ComputeHash(stm);
+            var hsh = ComputeHash(stm);
             var bld = new StringBuilder(hsh.Length * 2);
             foreach (var b in hsh)
                 bld.Append(b.ToString("x2"));

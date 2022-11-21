@@ -32,7 +32,18 @@ namespace IKVM.JTReg.TestAdapter.Core
         internal const string DEFAULT_PARAM_TAG = "regtest";
         internal const string ENV_PREFIX = "JTREG_";
 
-        protected static readonly MD5 MD5 = MD5.Create();
+        static readonly MD5 md5 = MD5.Create();
+
+        /// <summary>
+        /// Computes the hash of the value.
+        /// </summary>
+        /// <param name="buffer"></param>
+        /// <returns></returns>
+        static byte[] ComputeHash(byte[] buffer)
+        {
+            lock (md5)
+                return md5.ComputeHash(buffer);
+        }
 
         /// <summary>
         /// Initializes the static instance.
@@ -73,7 +84,7 @@ namespace IKVM.JTReg.TestAdapter.Core
         /// <returns></returns>
         protected static string GetSourceHash(string source)
         {
-            var b = MD5.ComputeHash(Encoding.UTF8.GetBytes(source));
+            var b = ComputeHash(Encoding.UTF8.GetBytes(source));
             var s = new StringBuilder(32);
             for (int i = 0; i < b.Length; i++)
                 s.Append(b[i].ToString("x2"));
@@ -301,7 +312,7 @@ namespace IKVM.JTReg.TestAdapter.Core
                 if (tests == null)
                 {
                     var l = new List<JTRegTestCase>(512);
-                    
+
                     // discover the full set of tests
                     foreach (dynamic testSuite in testSuites)
                         foreach (var testCase in (IEnumerable<JTRegTestCase>)Util.GetTestCases(source, testManager, testSuite))
