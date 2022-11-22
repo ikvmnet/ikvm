@@ -3477,6 +3477,7 @@ sun/net/sdp/sanity.sh                                                           
 
 sun/net/www/protocol/http/RetryUponTimeout.java                                                                         linux-all
 sun/nio/cs/TestCompoundTest.java                                                                                        linux-all
+sun/nio/cs/FindOneCharEncoderBugs.java                                                                                  linux-all
 sun/rmi/rmic/extraCompilation/run.sh                                                                                    linux-all
 sun/security/krb5/ccache/DefaultFile.java                                                                               linux-all
 sun/security/pkcs11/KeyStore/Basic.sh                                                                                   linux-all
