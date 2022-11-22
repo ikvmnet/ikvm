@@ -3432,6 +3432,7 @@ java/lang/Runtime/exec/Status.java                                              
 java/net/BindException/Test.java                                                                                        linux-all
 java/net/ipv6tests/B6521014.java                                                                                        linux-all
 java/net/InetAddress/IsReachable.java                                                                                   linux-all
+java/net/Inet4Address/PingThis.java                                                                                     linux-all
 java/net/PortUnreachableException/Concurrent.java                                                                       linux-all
 
 java/net/Socket/InheritHandle.java                                                                                      linux-all
