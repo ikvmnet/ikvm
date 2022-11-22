@@ -421,20 +421,11 @@ namespace IKVM.Runtime
 
         internal static jint GetMethodArgs(JNIEnv* pEnv, IntPtr method, byte* sig)
         {
-            TypeWrapper[] argTypes = MethodWrapper.FromCookie(method).GetParameters();
-            for (int i = 0; i < argTypes.Length; i++)
-            {
-                TypeWrapper tw = argTypes[i];
-                if (tw.IsPrimitive)
-                {
-                    sig[i] = (byte)tw.SigName[0];
-                }
-                else
-                {
-                    sig[i] = (byte)'L';
-                }
-            }
-            return argTypes.Length;
+            var args = MethodWrapper.FromCookie(method).GetParameters();
+            for (var i = 0; i < args.Length; i++)
+                sig[i] = args[i].IsPrimitive ? (byte)args[i].SigName[0] : (byte)'L';
+
+            return args.Length;
         }
 
         internal static jint GetVersion(JNIEnv* pEnv)

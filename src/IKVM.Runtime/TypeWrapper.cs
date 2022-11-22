@@ -3777,17 +3777,14 @@ namespace IKVM.Internal
         /// </summary>
         /// <param name="type"></param>
         /// <param name="sigName"></param>
-        private PrimitiveTypeWrapper(Type type, string sigName)
-            : base(TypeFlags.None, Modifiers.Public | Modifiers.Abstract | Modifiers.Final, null)
+        private PrimitiveTypeWrapper(Type type, string sigName) :
+            base(TypeFlags.None, Modifiers.Public | Modifiers.Abstract | Modifiers.Final, null)
         {
             this.type = type;
             this.sigName = sigName;
         }
 
-        internal override TypeWrapper BaseTypeWrapper
-        {
-            get { return null; }
-        }
+        internal override TypeWrapper BaseTypeWrapper => null;
 
         internal static bool IsPrimitiveType(Type type)
         {
@@ -3802,31 +3799,14 @@ namespace IKVM.Internal
                 || type == VOID.type;
         }
 
-        internal override string SigName
-        {
-            get
-            {
-                return sigName;
-            }
-        }
+        internal override string SigName => sigName;
 
-        internal override ClassLoaderWrapper GetClassLoader()
-        {
-            return ClassLoaderWrapper.GetBootstrapClassLoader();
-        }
+        internal override ClassLoaderWrapper GetClassLoader() => ClassLoaderWrapper.GetBootstrapClassLoader();
 
-        internal override Type TypeAsTBD
-        {
-            get
-            {
-                return type;
-            }
-        }
+        internal override Type TypeAsTBD => type;
 
-        public override string ToString()
-        {
-            return "PrimitiveTypeWrapper[" + sigName + "]";
-        }
+        public override string ToString() => "PrimitiveTypeWrapper[" + sigName + "]";
+
     }
 
     class CompiledTypeWrapper : TypeWrapper
