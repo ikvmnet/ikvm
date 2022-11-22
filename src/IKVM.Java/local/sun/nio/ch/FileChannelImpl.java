@@ -1100,7 +1100,7 @@ public class FileChannelImpl
     {
         byte writeable = prot != MAP_RO ? (byte)1 : (byte)0;
         byte copy_on_write = prot == MAP_PV ? (byte)1 : (byte)0;
-        IntPtr p = ikvm_mmap(fs.get_SafeFileHandle(), writeable, copy_on_write, position, (int)length);
+        IntPtr p = ikvm_mmap(fs, writeable, copy_on_write, position, (int)length);
         cli.System.GC.KeepAlive(fs);
         // HACK ikvm_mmap should really be changed to return a null pointer on failure,
         // instead of whatever MAP_FAILED is defined to on the particular system we're running on,
@@ -1125,8 +1125,7 @@ public class FileChannelImpl
     @DllImportAttribute.Annotation(value="libc", EntryPoint="munmap")
     private static native int munmap(IntPtr address, int size);
 
-    @DllImportAttribute.Annotation("ikvm-native")
-    private static native IntPtr ikvm_mmap(SafeFileHandle handle, byte writeable, byte copy_on_write, long position, int size);
+    private static native IntPtr ikvm_mmap(FileStream handle, byte writeable, byte copy_on_write, long position, int size);
 
     // Removes an existing mapping
     @cli.System.Security.SecuritySafeCriticalAttribute.Annotation
