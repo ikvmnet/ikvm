@@ -3491,6 +3491,7 @@ sun/nio/cs/TestCompoundTest.java                                                
 
 # this is broken on .NET Core 3.1, but seems to work on .NET 6
 sun/nio/cs/FindOneCharEncoderBugs.java                                                                                  linux-all
+sun/nio/cs/DecoderOverflow.java                                                                                         linux-all
 
 sun/nio/ch/SelProvider.java                                                                                             linux-all
 
