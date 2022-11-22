@@ -3466,6 +3466,8 @@ java/nio/charset/RemovingSunIO/TestCOMP.java                                    
 java/nio/file/attribute/DosFileAttributeView/Basic.java                                                                 linux-all
 java/nio/file/Files/FileAttributes.java                                                                                 linux-all
 java/nio/file/FileStore/Basic.java                                                                                      linux-all
+# posix isn't supported on IKVM
+java/nio/file/FileSystem/Basic.java                                                                                     linux-all
 java/nio/file/Path/UriImportExport.java                                                                                 linux-all
 
 sun/management/jmxremote/LocalRMIServerSocketFactoryTest.java                                                           linux-all
