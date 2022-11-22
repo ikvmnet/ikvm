@@ -3419,12 +3419,15 @@ java/io/FileDescriptor/Sharing.java                                             
 java/io/FileInputStream/LargeFileAvailable.java                                                                         linux-all
 java/io/pathNames/GeneralSolaris.java                                                                                   linux-all
 java/io/RandomAccessFile/ReadWritePrimitives.java                                                                       linux-all
+java/io/FileOutputStream/FileOpen.sh                                                                                    linux-all
 
-java/lang/ProcessBuilder/DestroyTests.java                                                                              linux-all
+java/lang/ProcessBuilder/DestroyTest.java                                                                               linux-all
 java/lang/ProcessBuilder/Zombies.java                                                                                   linux-all
 java/lang/Runtime/exec/ConcurrentRead.java                                                                              linux-all
 java/lang/Runtime/exec/LotsOfDestroys.java                                                                              linux-all
 java/lang/Runtime/exec/LotsOfOutput.java                                                                                linux-all
+java/lang/Runtime/exec/ExecWithInput.java                                                                               linux-all
+java/lang/Runtime/exec/Status.java                                                                                      linux-all
 
 java/net/BindException/Test.java                                                                                        linux-all
 java/net/InetAddress/IsReachable.java                                                                                   linux-all
@@ -3437,7 +3440,8 @@ java/net/Socket/asyncClose/AsyncClose.java                                      
 java/net/Socket/setReuseAddress/Basic.java                                                                              linux-all
 
 java/net/URL/B5086147.sh                                                                                                linux-all
-java/net/URLConnection/DisconectAfterEOF.java                                                                           linux-all
+java/net/URL/B5086147.java                                                                                              linux-all
+java/net/URLConnection/DisconnectAfterEOF.java                                                                          linux-all
 java/net/URLConnection/Responses.java                                                                                   linux-all
 java/net/URLConnection/6212146/test.sh                                                                                  linux-all
 
@@ -3458,10 +3462,13 @@ java/nio/channels/Selector/Connect.java                                         
 java/nio/channels/SocketChannel/AdaptSocket.java                                                                        linux-all
 java/nio/channels/SocketChannel/AsyncCloseChannel.java                                                                  linux-all
 java/nio/channels/SocketChannel/Basic.java                                                                              linux-all
-java/nio/channels/SocketChannel/CoseDuringWrite.java                                                                    linux-all
+java/nio/channels/SocketChannel/CloseDuringWrite.java                                                                   linux-all
 java/nio/channels/SocketChannel/Shutdown.java                                                                           linux-all
+java/nio/channels/SocketChannel/LocalAddress.java                                                                       linux-all
 
 java/nio/charset/RemovingSunIO/TestCOMP.java                                                                            linux-all
+java/nio/charset/Charset/AvailableCharsetNames.java                                                                     linux-all
+java/nio/charset/Charset/NIOCharsetAvailabilityTest.java                                                                linux-all
 
 java/nio/file/attribute/DosFileAttributeView/Basic.java                                                                 linux-all
 java/nio/file/Files/FileAttributes.java                                                                                 linux-all
@@ -3483,6 +3490,8 @@ sun/nio/cs/TestCompoundTest.java                                                
 # this is broken on .NET Core 3.1, but seems to work on .NET 6
 sun/nio/cs/FindOneCharEncoderBugs.java                                                                                  linux-all
 
+sun/nio/ch/SelProvider.java                                                                                             linux-all
+
 sun/rmi/rmic/extraCompilation/run.sh                                                                                    linux-all
 sun/security/krb5/ccache/DefaultFile.java                                                                               linux-all
 sun/security/pkcs11/KeyStore/Basic.sh                                                                                   linux-all
@@ -3492,5 +3501,5 @@ sun/security/pkcs11/KeyStore/Solaris.sh                                         
 sun/security/provider/PolicyFile/CanonPath.java                                                                         linux-all
 sun/security/ssl/com/sun/net/ssl/internal/ssl/SSLSocketImpl/AsyncSSLSocketClose.java                                    linux-all
 
-sun/tools/native2ascii.java                                                                                             linux-all
+sun/tools/native2ascii/Permission.java                                                                                  linux-all
 tools/jar/UpdateJar.java                                                                                                linux-all
