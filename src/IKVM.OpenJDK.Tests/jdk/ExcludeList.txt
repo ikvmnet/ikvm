@@ -3416,7 +3416,7 @@ com/sun/management/OperatingSystemMXBean/GetTotalPhysicalMemorySize.java        
 demo/zipfs/ZFSTests.java                                                                                                linux-all
 
 java/io/FileDescriptor/Sharing.java                                                                                     linux-all
-java/io/FileOutputStream/LargeFileAvailable.java                                                                        linux-all
+java/io/FileInputStream/LargeFileAvailable.java                                                                         linux-all
 java/io/pathNames/GeneralSolaris.java                                                                                   linux-all
 java/io/RandomAccessFile/ReadWritePrimitives.java                                                                       linux-all
 
