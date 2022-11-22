@@ -125,13 +125,13 @@
         <OutDir>$(ProjectDir)bin\$(Configuration)\win-arm\</OutDir>
         <IntDir>$(ProjectDir)obj\$(Configuration)\win-arm\</IntDir>
         <TargetName>ikvm-native</TargetName>
-        <IncludePath>$(ProjectDir)\include;$(ProjectDir)\include\windows;$(VC_IncludePath);$(WindowsSDK_IncludePath);</IncludePath>
+        <IncludePath>..\..\openjdk\jdk\src\share\javavm\export;..\..\openjdk\jdk\src\windows\javavm\export;$(VC_IncludePath);$(WindowsSDK_IncludePath)</IncludePath>
     </PropertyGroup>
     <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|ARM'">
         <OutDir>$(ProjectDir)bin\$(Configuration)\win-arm\</OutDir>
         <IntDir>$(ProjectDir)obj\$(Configuration)\win-arm\</IntDir>
         <TargetName>ikvm-native</TargetName>
-        <IncludePath>$(ProjectDir)\include;$(ProjectDir)\include\windows;$(VC_IncludePath);$(WindowsSDK_IncludePath);</IncludePath>
+        <IncludePath>..\..\openjdk\jdk\src\share\javavm\export;..\..\openjdk\jdk\src\windows\javavm\export;$(VC_IncludePath);$(WindowsSDK_IncludePath)</IncludePath>
     </PropertyGroup>
     <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">
         <ClCompile>
