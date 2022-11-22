@@ -9,11 +9,6 @@
     </Filter>
   </ItemGroup>
   <ItemGroup>
-    <ClInclude Include="..\ikvm-native\jni.h">
-      <Filter>Header Files</Filter>
-    </ClInclude>
-  </ItemGroup>
-  <ItemGroup>
     <ClCompile Include="JniTests.c">
       <Filter>Source Files</Filter>
     </ClCompile>

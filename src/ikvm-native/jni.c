@@ -22,7 +22,7 @@
   
 */
 #include <stdarg.h>
-#include "jni.h"
+#include <jni.h>
 
 #ifdef _WIN32
 #include <malloc.h>
@@ -35,6 +35,9 @@
 #endif
 #define ALLOCA alloca
 #endif
+
+typedef jint(*_GetMethodArgs)(JNIEnv* pEnv, jmethodID method, jbyte* sig);
+#define GetMethodArgs(pEnv, method, sig) (((_GetMethodArgs)((*pEnv)->reserved0))(pEnv, methodID, sig))
 
 static jobject JNICALL NewObject(JNIEnv* pEnv, jclass clazz, jmethodID methodID, ...)
 {
@@ -49,7 +52,7 @@ static jobject JNICALL NewObject(JNIEnv* pEnv, jclass clazz, jmethodID methodID,
 #define MAKE_ARG_ARRAY(pEnv, args, argarray) \
 do { \
 	jbyte sig[257];\
-	int argc = (*pEnv)->GetMethodArgs(pEnv, methodID, sig);\
+	int argc = GetMethodArgs(pEnv, methodID, sig);\
 	int i;\
 	argarray = (jvalue*)ALLOCA(argc * sizeof(jvalue));\
 	for(i = 0; i < argc; i++)\
