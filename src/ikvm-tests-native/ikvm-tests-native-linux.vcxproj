@@ -64,28 +64,28 @@
         <TargetName>libikvm-tests-native</TargetName>
         <OutDir>$(ProjectDir)bin\$(Configuration)\linux-x64\</OutDir>
         <IntDir>$(ProjectDir)obj\$(Configuration)\linux-x64\</IntDir>
-        <IncludePath>$(ProjectDir)/../ikvm-native/include;$(ProjectDir)/../ikvm-native/include/linux;/usr/include;/usr/local/include</IncludePath>
+        <IncludePath>../../openjdk/jdk/src/share/javavm/export/;../../openjdk/jdk/src/solaris/javavm/export/;/usr/include;/usr/local/include</IncludePath>
         <WSLPath>default</WSLPath>
     </PropertyGroup>
     <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x86'">
         <TargetName>libikvm-tests-native</TargetName>
         <OutDir>$(ProjectDir)bin\$(Configuration)\linux-x86\</OutDir>
         <IntDir>$(ProjectDir)obj\$(Configuration)\linux-x86\</IntDir>
-        <IncludePath>$(ProjectDir)/../ikvm-native/include;$(ProjectDir)/../ikvm-native/include/linux;/usr/include;/usr/local/include</IncludePath>
+        <IncludePath>../../openjdk/jdk/src/share/javavm/export/;../../openjdk/jdk/src/solaris/javavm/export/;/usr/include;/usr/local/include</IncludePath>
         <WSLPath>default</WSLPath>
     </PropertyGroup>
     <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'">
         <TargetName>libikvm-tests-native</TargetName>
         <OutDir>$(ProjectDir)bin\$(Configuration)\linux-x64\</OutDir>
         <IntDir>$(ProjectDir)obj\$(Configuration)\linux-x64\</IntDir>
-        <IncludePath>$(ProjectDir)/../ikvm-native/include;$(ProjectDir)/../ikvm-native/include/linux;/usr/include;/usr/local/include</IncludePath>
+        <IncludePath>../../openjdk/jdk/src/share/javavm/export/;../../openjdk/jdk/src/solaris/javavm/export/;/usr/include;/usr/local/include</IncludePath>
         <WSLPath>default</WSLPath>
     </PropertyGroup>
     <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|x86'">
         <TargetName>libikvm-tests-native</TargetName>
         <OutDir>$(ProjectDir)bin\$(Configuration)\linux-x86\</OutDir>
         <IntDir>$(ProjectDir)obj\$(Configuration)\linux-x86\</IntDir>
-        <IncludePath>$(ProjectDir)/../ikvm-native/include;$(ProjectDir)/../ikvm-native/include/linux;/usr/include;/usr/local/include</IncludePath>
+        <IncludePath>../../openjdk/jdk/src/share/javavm/export/;../../openjdk/jdk/src/solaris/javavm/export/;/usr/include;/usr/local/include</IncludePath>
         <WSLPath>default</WSLPath>
     </PropertyGroup>
     <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
