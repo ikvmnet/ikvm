@@ -21,20 +21,23 @@
   jeroen@frijters.net
   
 */
-using System;
 using System.Runtime.InteropServices;
-// Java type JNI aliases
 
 namespace IKVM.Runtime
 {
-    static class JniMem
+
+    /// <summary>
+    /// Provides methods to assist in allocating memory for JNI.
+    /// </summary>
+    static class JniMemory
     {
-        internal static IntPtr Alloc(int cb)
+
+        internal static nint Alloc(int cb)
         {
             return Marshal.AllocHGlobal(cb);
         }
 
-        internal static void Free(IntPtr p)
+        internal static void Free(nint p)
         {
             Marshal.FreeHGlobal(p);
         }

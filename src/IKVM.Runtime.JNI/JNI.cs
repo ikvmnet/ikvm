@@ -23,6 +23,7 @@
 */
 using System;
 using System.Collections;
+using System.Collections.Generic;
 using System.Diagnostics;
 using System.Text;
 
@@ -176,7 +177,7 @@ namespace IKVM.Runtime
                 return sb.ToString();
             }
 
-            public IntPtr MakeLocalRef(object obj)
+            public nint MakeLocalRef(object obj)
             {
                 return env.MakeLocalRef(obj);
             }
@@ -213,7 +214,7 @@ namespace IKVM.Runtime
             if (jvmCreated)
                 return JNIEnv.JNI_ERR;
 
-            var properties = new Hashtable();
+            var properties = new Dictionary<string, string>();
             for (int i = 0; i < pInitArgs->nOptions; i++)
             {
                 var option = JNIEnv.StringFromOEM(pInitArgs->options[i].optionString);
@@ -257,18 +258,14 @@ namespace IKVM.Runtime
             if (jvmCreated)
             {
                 if (bufLen >= 1)
-                {
                     *((void**)ppvmBuf) = JavaVM.pJavaVM;
-                }
+
                 if (nVMs != null)
-                {
                     *nVMs = 1;
-                }
             }
             else if (nVMs != null)
-            {
                 *nVMs = 0;
-            }
+
             return JNIEnv.JNI_OK;
         }
 

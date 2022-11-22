@@ -53,7 +53,7 @@ namespace IKVM.Runtime
         static JavaVM()
         {
             JNI.jvmCreated = true;
-            pJavaVM = (JavaVM*)(void*)JniMem.Alloc(IntPtr.Size * (1 + vtableDelegates.Length));
+            pJavaVM = (JavaVM*)(void*)JniMemory.Alloc(IntPtr.Size * (1 + vtableDelegates.Length));
             pJavaVM->vtable = &pJavaVM->firstVtableEntry;
             for (int i = 0; i < vtableDelegates.Length; i++)
             {
