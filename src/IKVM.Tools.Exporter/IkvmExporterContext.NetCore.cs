@@ -95,9 +95,9 @@ namespace IKVM.Tools.Exporter
         /// <param name="cancellationToken"></param>
         /// <returns></returns>
         /// <exception cref="NotImplementedException"></exception>
-        public partial Task<int> ExecuteAsync(CancellationToken cancellationToken)
+        public partial async Task<int> ExecuteAsync(CancellationToken cancellationToken)
         {
-            return Task.Run(() => (int)dispatcher.GetType().GetMethod(nameof(IkvmExporterDispatcher.Execute), BindingFlags.Public | BindingFlags.Instance).Invoke(dispatcher, Array.Empty<object>()));
+            return await Task.Run(() => (int)dispatcher.GetType().GetMethod(nameof(IkvmExporterDispatcher.Execute), BindingFlags.Public | BindingFlags.Instance).Invoke(dispatcher, Array.Empty<object>()));
         }
 
         /// <summary>
