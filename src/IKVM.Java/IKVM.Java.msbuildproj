@@ -11,13 +11,11 @@
 
     <ItemGroup>
         <InternalsVisibleTo Include="IKVM.Runtime" />
-        <InternalsVisibleTo Include="IKVM.Runtime.JNI" />
         <InternalsVisibleTo Include="IKVM.AWT.WinForms" />
     </ItemGroup>
 
     <ItemGroup>
         <ProjectReference Include="..\IKVM.Runtime-ref\IKVM.Runtime-ref.csproj" Private="False" PrivateAssets="All" />
-        <ProjectReference Include="..\IKVM.Runtime.JNI-ref\IKVM.Runtime.JNI-ref.csproj" Private="False" PrivateAssets="All" HideFromJava="true" />
         <ProjectReference Include="..\IKVM.Java-ref\IKVM.Java-ref.csproj" Private="False" PrivateAssets="All" HideFromJava="true" />
     </ItemGroup>
 

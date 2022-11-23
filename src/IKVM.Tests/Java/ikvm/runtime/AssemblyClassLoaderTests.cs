@@ -61,7 +61,6 @@ namespace IKVM.Tests.Java.ikvm.runtime
 
             o.References.Add(Path.Combine("lib", tfm, "IKVM.Java.dll"));
             o.References.Add(Path.Combine("lib", tfm, "IKVM.Runtime.dll"));
-            o.References.Add(Path.Combine("lib", tfm, "IKVM.Runtime.JNI.dll"));
             foreach (var f in Directory.GetFiles(l.GetReferenceAssemblyDirectory()))
                 o.References.Add(f);
 

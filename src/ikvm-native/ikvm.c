@@ -1,63 +1,17 @@
-/*
-  Copyright (C) 2004 Jeroen Frijters
+#include "ikvm.h"
 
-  This software is provided 'as-is', without any express or implied
-  warranty.  In no event will the authors be held liable for any damages
-  arising from the use of this software.
-
-  Permission is granted to anyone to use this software for any purpose,
-  including commercial applications, and to alter it and redistribute it
-  freely, subject to the following restrictions:
-
-  1. The origin of this software must not be misrepresented; you must not
-     claim that you wrote the original software. If you use this software
-     in a product, an acknowledgment in the product documentation would be
-     appreciated but is not required.
-  2. Altered source versions must be plainly marked as such, and must not be
-     misrepresented as being the original software.
-  3. This notice may not be removed or altered from any source distribution.
-
-  Jeroen Frijters
-  jeroen@frijters.net
-  
-*/
-#include <stdarg.h>
-#include <jni.h>
-
-#ifdef _WIN32
-#include <malloc.h>
-#define ALLOCA _alloca
-#else
-#if defined(__FreeBSD__) || defined(__NetBSD__) || defined(__OpenBSD__)
-#include <stdlib.h>
-#else
-#include <alloca.h>
-#endif
-#define ALLOCA alloca
-#endif
-
-typedef int(*_GetMethodArgs)(JNIEnv* pEnv, jmethodID method, char* sig);
-#define GetMethodArgs(pEnv, method, sig) (((_GetMethodArgs)((*pEnv)->reserved0))(pEnv, methodID, sig))
-
-static jobject JNICALL NewObject(JNIEnv* pEnv, jclass clazz, jmethodID methodID, ...)
-{
-	jobject o;
-	va_list args;
-	va_start(args, methodID);
-	o = (*pEnv)->NewObjectV(pEnv, clazz, methodID, args);
-	va_end(args);
-	return o;
-}
+typedef int (*GetMethodArgs_t)(JNIEnv* pEnv, jmethodID method, char* sig);
+#define GET_METHOD_ARGS(pEnv, method, sig) (((GetMethodArgs_t)((*pEnv)->reserved0))(pEnv, methodID, sig))
 
 #define MAKE_ARG_ARRAY(pEnv, args, argarray) \
 do { \
 	jbyte sig[257];\
-	int argc = GetMethodArgs(pEnv, methodID, sig);\
+	int argc = GET_METHOD_ARGS(pEnv, methodID, sig);\
 	int i;\
 	argarray = (jvalue*)ALLOCA((long unsigned int)argc * sizeof(jvalue));\
-	for(i = 0; i < argc; i++)\
+	for (i = 0; i < argc; i++)\
 	{\
-		switch(sig[i])\
+		switch (sig[i])\
 		{\
 			case 'Z':\
 				argarray[i].z = (jboolean)va_arg(args, int);\
@@ -89,13 +43,6 @@ do { \
 		}\
 	}\
 } while(0);
-
-static jobject JNICALL NewObjectV(JNIEnv* pEnv, jclass clazz, jmethodID methodID, va_list args)
-{
-	jvalue* argarray;
-	MAKE_ARG_ARRAY(pEnv, args, argarray);
-	return (*pEnv)->NewObjectA(pEnv, clazz, methodID, argarray);
-}
 
 #define MAKE_METHOD(Type, type) \
 static type JNICALL Call##Type##Method(JNIEnv* pEnv, jobject obj, jmethodID methodID, ...)\
@@ -154,6 +101,23 @@ MAKE_METHOD(Long, jlong)
 MAKE_METHOD(Float, jfloat)
 MAKE_METHOD(Double, jdouble)
 
+static jobject JNICALL NewObject(JNIEnv* pEnv, jclass clazz, jmethodID methodID, ...)
+{
+	jobject o;
+	va_list args;
+	va_start(args, methodID);
+	o = (*pEnv)->NewObjectV(pEnv, clazz, methodID, args);
+	va_end(args);
+	return o;
+}
+
+static jobject JNICALL NewObjectV(JNIEnv* pEnv, jclass clazz, jmethodID methodID, va_list args)
+{
+	jvalue* argarray;
+	MAKE_ARG_ARRAY(pEnv, args, argarray);
+	return (*pEnv)->NewObjectA(pEnv, clazz, methodID, argarray);
+}
+
 static void JNICALL CallVoidMethod(JNIEnv* pEnv, jobject obj, jmethodID methodID, ...)
 {
 	va_list args;
@@ -194,7 +158,7 @@ static void JNICALL CallStaticVoidMethodV(JNIEnv* pEnv, jclass clazz, jmethodID 
 	(*pEnv)->CallStaticVoidMethodA(pEnv, clazz, methodID, argarray);
 }
 
-static void* JNIEnv_vtable[] = 
+static void* JNIEnv_vtable[] =
 {
 	0, // void JNICALL reserved0();
 	0, // void JNICALL reserved1();
@@ -497,7 +461,7 @@ static void* JNIEnv_vtable[] =
 	0  // jlong JNICALL GetDirectBufferCapacity(jobject buf);
 };
 
-JNIEXPORT void** JNICALL ikvm_GetJNIEnvVTable()
+EXPORT void** ikvm_GetJNIEnvVTable()
 {
 	return JNIEnv_vtable;
 }

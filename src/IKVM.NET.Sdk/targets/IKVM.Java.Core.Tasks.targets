@@ -65,7 +65,7 @@
     </Target>
 
     <!-- Override IKVM.NET.Sdk: invoke compiler through task  -->
-    <Target Name="_CoreCompile" DependsOnTargets="ResolveIkvmRuntimeAssembly;ResolveIkvmRuntimeJNIAssembly;CompileJava" Inputs="$(IkvmRuntimeAssembly);$(IkvmRuntimeJNIAssembly);$(KeyOriginatorFile);@(MapFile);@(ReferencePathWithRefAssemblies);@(Class);@(JavaResource);$(_CompileJavaStampFile)" Outputs="@(IntermediateAssembly);@(_DebugSymbolsIntermediatePath)">
+    <Target Name="_CoreCompile" DependsOnTargets="ResolveIkvmRuntimeAssembly;CompileJava" Inputs="$(IkvmRuntimeAssembly);$(KeyOriginatorFile);@(MapFile);@(ReferencePathWithRefAssemblies);@(Class);@(JavaResource);$(_CompileJavaStampFile)" Outputs="@(IntermediateAssembly);@(_DebugSymbolsIntermediatePath)">
         <Error Text="IKVM.NET.Sdk cannot currently build assemblies targeting '$(TargetFramework)'. Either target 'net461' or 'netcoreapp3.1'." Condition=" '$(TargetFramework)' != 'net461' And '$(TargetFramework)' != 'netcoreapp3.1' " />
         <Error Text="Could not locate IKVM.Runtime assembly." Condition=" '$(IkvmRuntimeAssembly)' == '' " />
         <Error Text="IKVM.Runtime.dll could not be located at '$(IkvmRuntimeAssembly)'." Condition="!Exists('$(IkvmRuntimeAssembly)')" />
@@ -103,7 +103,6 @@
             Version="$(AssemblyVersion)"
             FileVersion="$(FileVersion)"
             Runtime="$(IkvmRuntimeAssembly)"
-            JNI="$(IkvmRuntimeJNIAssembly)"
             Target="$(OutputType.ToLowerInvariant())"
             Platform="$(PlatformTarget.ToLowerInvariant())"
             Main="$(StartupObject)"

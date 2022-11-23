@@ -24,13 +24,22 @@
 using System;
 using System.Runtime.InteropServices;
 
-namespace IKVM.Runtime
+namespace IKVM.Runtime.JNI
 {
 
-    /// <summary>
-    /// Populates the JNIEnv table of methods with implementations that call back into managed code.
-    /// </summary>
-    unsafe class VtableBuilder
+	using jboolean = System.SByte;
+	using jbyte = System.SByte;
+	using jchar = System.UInt16;
+	using jdouble = System.Double;
+	using jfloat = System.Single;
+	using jint = System.Int32;
+	using jlong = System.Int64;
+	using jshort = System.Int16;
+
+	/// <summary>
+	/// Populates the JNIEnv table of methods with implementations that call back into managed code.
+	/// </summary>
+	unsafe class VtableBuilder
     {
 
         delegate int GetMethodArgs(JNIEnv* pEnv, nint p1, byte* p2);
@@ -76,24 +85,24 @@ namespace IKVM.Runtime
         delegate void pf_void_nint_int_nint(JNIEnv* pEnv, nint p1, int p2, nint p3);
         delegate nint pf_nint_int(JNIEnv* pEnv, int p1);
         delegate void pf_void_nint_int_int_nint(JNIEnv* pEnv, nint p1, int p2, int p3, nint p4);
-        delegate nint pf_nint_nint_nint_pjvalue(JNIEnv* pEnv, nint p1, nint p2, JNIEnv.jvalue* p3);
-        delegate sbyte pf_sbyte_nint_nint_pjvalue(JNIEnv* pEnv, nint p1, nint p2, JNIEnv.jvalue* p3);
-        delegate short pf_short_nint_nint_pjvalue(JNIEnv* pEnv, nint p1, nint p2, JNIEnv.jvalue* p3);
-        delegate ushort pf_ushort_nint_nint_pjvalue(JNIEnv* pEnv, nint p1, nint p2, JNIEnv.jvalue* p3);
-        delegate int pf_int_nint_nint_pjvalue(JNIEnv* pEnv, nint p1, nint p2, JNIEnv.jvalue* p3);
-        delegate long pf_long_nint_nint_pjvalue(JNIEnv* pEnv, nint p1, nint p2, JNIEnv.jvalue* p3);
-        delegate float pf_float_nint_nint_pjvalue(JNIEnv* pEnv, nint p1, nint p2, JNIEnv.jvalue* p3);
-        delegate double pf_double_nint_nint_pjvalue(JNIEnv* pEnv, nint p1, nint p2, JNIEnv.jvalue* p3);
-        delegate void pf_void_nint_nint_pjvalue(JNIEnv* pEnv, nint p1, nint p2, JNIEnv.jvalue* p3);
-        delegate nint pf_nint_nint_nint_nint_pjvalue(JNIEnv* pEnv, nint p1, nint p2, nint p3, JNIEnv.jvalue* p4);
-        delegate sbyte pf_sbyte_nint_nint_nint_pjvalue(JNIEnv* pEnv, nint p1, nint p2, nint p3, JNIEnv.jvalue* p4);
-        delegate ushort pf_ushort_nint_nint_nint_pjvalue(JNIEnv* pEnv, nint p1, nint p2, nint p3, JNIEnv.jvalue* p4);
-        delegate short pf_short_nint_nint_nint_pjvalue(JNIEnv* pEnv, nint p1, nint p2, nint p3, JNIEnv.jvalue* p4);
-        delegate int pf_int_nint_nint_nint_pjvalue(JNIEnv* pEnv, nint p1, nint p2, nint p3, JNIEnv.jvalue* p4);
-        delegate long pf_long_nint_nint_nint_pjvalue(JNIEnv* pEnv, nint p1, nint p2, nint p3, JNIEnv.jvalue* p4);
-        delegate float pf_float_nint_nint_nint_pjvalue(JNIEnv* pEnv, nint p1, nint p2, nint p3, JNIEnv.jvalue* p4);
-        delegate double pf_double_nint_nint_nint_pjvalue(JNIEnv* pEnv, nint p1, nint p2, nint p3, JNIEnv.jvalue* p4);
-        delegate void pf_void_nint_nint_nint_pjvalue(JNIEnv* pEnv, nint p1, nint p2, nint p3, JNIEnv.jvalue* p4);
+        delegate nint pf_nint_nint_nint_pjvalue(JNIEnv* pEnv, nint p1, nint p2, jvalue* p3);
+        delegate sbyte pf_sbyte_nint_nint_pjvalue(JNIEnv* pEnv, nint p1, nint p2, jvalue* p3);
+        delegate short pf_short_nint_nint_pjvalue(JNIEnv* pEnv, nint p1, nint p2, jvalue* p3);
+        delegate ushort pf_ushort_nint_nint_pjvalue(JNIEnv* pEnv, nint p1, nint p2, jvalue* p3);
+        delegate int pf_int_nint_nint_pjvalue(JNIEnv* pEnv, nint p1, nint p2, jvalue* p3);
+        delegate long pf_long_nint_nint_pjvalue(JNIEnv* pEnv, nint p1, nint p2, jvalue* p3);
+        delegate float pf_float_nint_nint_pjvalue(JNIEnv* pEnv, nint p1, nint p2, jvalue* p3);
+        delegate double pf_double_nint_nint_pjvalue(JNIEnv* pEnv, nint p1, nint p2, jvalue* p3);
+        delegate void pf_void_nint_nint_pjvalue(JNIEnv* pEnv, nint p1, nint p2, jvalue* p3);
+        delegate nint pf_nint_nint_nint_nint_pjvalue(JNIEnv* pEnv, nint p1, nint p2, nint p3, jvalue* p4);
+        delegate sbyte pf_sbyte_nint_nint_nint_pjvalue(JNIEnv* pEnv, nint p1, nint p2, nint p3, jvalue* p4);
+        delegate ushort pf_ushort_nint_nint_nint_pjvalue(JNIEnv* pEnv, nint p1, nint p2, nint p3, jvalue* p4);
+        delegate short pf_short_nint_nint_nint_pjvalue(JNIEnv* pEnv, nint p1, nint p2, nint p3, jvalue* p4);
+        delegate int pf_int_nint_nint_nint_pjvalue(JNIEnv* pEnv, nint p1, nint p2, nint p3, jvalue* p4);
+        delegate long pf_long_nint_nint_nint_pjvalue(JNIEnv* pEnv, nint p1, nint p2, nint p3, jvalue* p4);
+        delegate float pf_float_nint_nint_nint_pjvalue(JNIEnv* pEnv, nint p1, nint p2, nint p3, jvalue* p4);
+        delegate double pf_double_nint_nint_nint_pjvalue(JNIEnv* pEnv, nint p1, nint p2, nint p3, jvalue* p4);
+        delegate void pf_void_nint_nint_nint_pjvalue(JNIEnv* pEnv, nint p1, nint p2, nint p3, jvalue* p4);
         delegate byte* pf_pbyte_nint_pjboolean(JNIEnv* pEnv, nint p1, jboolean* p2);
         delegate void pf_void_nint_pbyte(JNIEnv* pEnv, nint p1, byte* p2);
         delegate jboolean* pf_pjboolean_nint_pjboolean(JNIEnv* pEnv, nint p1, jboolean* p2);
@@ -123,11 +132,11 @@ namespace IKVM.Runtime
         /// </summary>
         static VtableBuilder()
         {
-            JNI.jvmCreated = true;
+            JNIVM.jvmCreated = true;
 
             // native library provides an initial template with functions for variadic implementations
             var pmcpp = Native.ikvm_GetJNIEnvVTable();
-            var p = (void**)JniMemory.Alloc(sizeof(nint) * delegates.Length);
+            var p = (void**)JNIMemory.Alloc(sizeof(nint) * delegates.Length);
             for (int i = 0; i < delegates.Length; i++)
                 p[i] = delegates[i] != null ? (void*)Marshal.GetFunctionPointerForDelegate(delegates[i]) : pmcpp[i];
 
@@ -140,11 +149,11 @@ namespace IKVM.Runtime
         static Delegate[] delegates =
         {
             new GetMethodArgs(JNIEnv.GetMethodArgs),
-			null,
-			null,
-			null,
+            null,
+            null,
+            null,
 
-			new pf_int(JNIEnv.GetVersion), //virtual jint JNICALL GetVersion();
+            new pf_int(JNIEnv.GetVersion), //virtual jint JNICALL GetVersion();
 
 			new pf_nint_pbyte_nint_psbyte_nint(JNIEnv.DefineClass), //virtual jclass JNICALL DefineClass(const char *name, jobject loader, const jbyte *buf, jsize len);
 			new pf_nint_pbyte(JNIEnv.FindClass), //virtual jclass JNICALL FindClass(const char *name);

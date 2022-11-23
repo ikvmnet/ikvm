@@ -23,24 +23,20 @@
 */
 using System.Runtime.InteropServices;
 
-namespace IKVM.Runtime
+namespace IKVM.Runtime.JNI
 {
 
-    /// <summary>
-    /// Provides methods to assist in allocating memory for JNI.
-    /// </summary>
-    static class JniMemory
+    using jboolean = System.SByte;
+    using jint = System.Int32;
+
+    [StructLayout(LayoutKind.Sequential)]
+    unsafe struct JavaVMInitArgs
     {
 
-        internal static nint Alloc(int cb)
-        {
-            return Marshal.AllocHGlobal(cb);
-        }
-
-        internal static void Free(nint p)
-        {
-            Marshal.FreeHGlobal(p);
-        }
+        internal jint version;
+        internal jint nOptions;
+        internal JavaVMOption* options;
+        internal jboolean ignoreUnrecognized;
 
     }
 

@@ -24,8 +24,10 @@
 using System;
 using System.Runtime.InteropServices;
 
-namespace IKVM.Runtime
+namespace IKVM.Runtime.JNI
 {
+
+    using jint = System.Int32;
 
     [StructLayout(LayoutKind.Sequential)]
     unsafe struct JavaVM
@@ -52,8 +54,8 @@ namespace IKVM.Runtime
 
         static JavaVM()
         {
-            JNI.jvmCreated = true;
-            pJavaVM = (JavaVM*)(void*)JniMemory.Alloc(IntPtr.Size * (1 + vtableDelegates.Length));
+            JNIVM.jvmCreated = true;
+            pJavaVM = (JavaVM*)(void*)JNIMemory.Alloc(IntPtr.Size * (1 + vtableDelegates.Length));
             pJavaVM->vtable = &pJavaVM->firstVtableEntry;
             for (int i = 0; i < vtableDelegates.Length; i++)
             {
@@ -63,11 +65,11 @@ namespace IKVM.Runtime
 
         internal static jint DestroyJavaVM(JavaVM* pJVM)
         {
-            if (JNI.jvmDestroyed)
+            if (JNIVM.jvmDestroyed)
             {
                 return JNIEnv.JNI_ERR;
             }
-            JNI.jvmDestroyed = true;
+            JNIVM.jvmDestroyed = true;
             IKVM.Java.Externs.java.lang.Thread.WaitUntilLastJniThread();
             return JNIEnv.JNI_OK;
         }
@@ -81,7 +83,7 @@ namespace IKVM.Runtime
         {
             if (pAttachArgs != null)
             {
-                if (!JNI.IsSupportedJniVersion(pAttachArgs->version) || pAttachArgs->version == JNIEnv.JNI_VERSION_1_1)
+                if (!JNIVM.IsSupportedJniVersion(pAttachArgs->version) || pAttachArgs->version == JNIEnv.JNI_VERSION_1_1)
                 {
                     *penv = null;
                     return JNIEnv.JNI_EVERSION;
@@ -110,7 +112,7 @@ namespace IKVM.Runtime
                         // someone beat us to it...
                     }
                 }
-                object threadGroup = GlobalRefs.Unwrap(pAttachArgs->group.ToInt32());
+                object threadGroup = JNIGlobalRefTable.Unwrap(pAttachArgs->group.ToInt32());
                 if (threadGroup != null)
                 {
                     IKVM.Java.Externs.java.lang.Thread.AttachThreadFromJni(threadGroup);
@@ -136,7 +138,7 @@ namespace IKVM.Runtime
 
         internal static jint GetEnv(JavaVM* pJVM, void** penv, jint version)
         {
-            if (JNI.IsSupportedJniVersion(version))
+            if (JNIVM.IsSupportedJniVersion(version))
             {
                 JNIEnv.ManagedJNIEnv env = TlsHack.ManagedJNIEnv;
                 if (env != null)

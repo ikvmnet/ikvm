@@ -23,15 +23,18 @@
 */
 using System.Runtime.InteropServices;
 
-namespace IKVM.Runtime
+namespace IKVM.Runtime.JNI
 {
 
-    [StructLayout(LayoutKind.Sequential)]
-    unsafe struct JavaVMOption
+    /// <summary>
+    /// Provides methods to assist in allocating memory for JNI.
+    /// </summary>
+    static class JNIMemory
     {
 
-        internal byte* optionString;
-        internal void* extraInfo;
+        public static nint Alloc(int cb) => Marshal.AllocHGlobal(cb);
+
+        public static void Free(nint p) => Marshal.FreeHGlobal(p);
 
     }
 

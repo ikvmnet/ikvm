@@ -7,7 +7,7 @@ namespace IKVM.Runtime
     /// <summary>
     /// Provides methods to load a library.
     /// </summary>
-    static class JniNativeLibrary
+    static class NativeLibrary
     {
 
 #if NETFRAMEWORK
@@ -90,7 +90,6 @@ namespace IKVM.Runtime
         /// <returns></returns>
         static string GetWin32ExportName(string name, int argl)
         {
-            // long paths not supported on Win32
             return name.Length <= 512 - 11 ? "_" + name + "@" + argl : null;
         }
 
@@ -110,7 +109,7 @@ namespace IKVM.Runtime
             else
                 throw new PlatformNotSupportedException();
 #else
-            return NativeLibrary.TryLoad(path, out var h) ? h : IntPtr.Zero;
+            return System.Runtime.InteropServices.NativeLibrary.TryLoad(path, out var h) ? h : 0;
 #endif
         }
 
@@ -130,7 +129,7 @@ namespace IKVM.Runtime
             else
                 throw new PlatformNotSupportedException();
 #else
-            NativeLibrary.Free(handle);
+            System.Runtime.InteropServices.NativeLibrary.Free(handle);
 #endif
         }
 
@@ -153,13 +152,15 @@ namespace IKVM.Runtime
                     h = Environment.Is64BitProcess == false ? GetProcAddress32(handle, name, argl) : GetProcAddress(handle, name);
                 else if (RuntimeInformation.IsOSPlatform(OSPlatform.Linux))
                     h = dlsym(handle, name);
+                else
+                    throw new PlatformNotSupportedException();
 #else
                 if (RuntimeInformation.IsOSPlatform(OSPlatform.Windows))
                     if (Environment.Is64BitProcess == false && GetWin32ExportName(name, argl) is string n)
-                        NativeLibrary.TryGetExport(handle, n, out h);
+                        System.Runtime.InteropServices.NativeLibrary.TryGetExport(handle, n, out h);
 
                 if (h == 0)
-                    NativeLibrary.TryGetExport(handle, name, out h);
+                    System.Runtime.InteropServices.NativeLibrary.TryGetExport(handle, name, out h);
 #endif
 
                 return h;

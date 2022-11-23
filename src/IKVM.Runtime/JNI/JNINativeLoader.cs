@@ -27,78 +27,74 @@ using System.Runtime.InteropServices;
 
 using IKVM.Internal;
 
-namespace IKVM.Runtime
+namespace IKVM.Runtime.JNI
 {
 
-    sealed partial class JniHelper
+    /// <summary>
+    /// Manages the set of loaded native JNI libraries.
+    /// </summary>
+    static unsafe class JNINativeLoader
     {
 
-        static List<IntPtr> nativeLibraries = new List<IntPtr>();
-        internal static readonly object JniLock = new object();
+        public static readonly object SyncRoot = new object();
+        static List<nint> loaded = new List<nint>();
 
-        // MONOBUG with mcs we can't pass ClassLoaderWrapper from IKVM.Runtime.dll to IKVM.Runtime.JNI.dll
-        internal unsafe static long LoadLibrary(string filename, object loader)
-        {
-            return LoadLibrary(filename, (ClassLoaderWrapper)loader);
-        }
-
-        // MONOBUG with mcs we can't pass ClassLoaderWrapper from IKVM.Runtime.dll to IKVM.Runtime.JNI.dll
-        internal static void UnloadLibrary(long handle, object loader)
-        {
-            UnloadLibrary(handle, (ClassLoaderWrapper)loader);
-        }
-
-        unsafe static long LoadLibrary(string filename, ClassLoaderWrapper loader)
+        /// <summary>
+        /// Initiates a load of the given JNI library by the specified class loader.
+        /// </summary>
+        /// <param name="filename"></param>
+        /// <param name="loader"></param>
+        /// <returns></returns>
+        public static long LoadLibrary(string filename, ClassLoaderWrapper loader)
         {
             Tracer.Info(Tracer.Jni, "loadLibrary: {0}, class loader: {1}", filename, loader);
 
-            lock (JniLock)
+            lock (SyncRoot)
             {
-                var p = IntPtr.Zero;
+                nint p = 0;
 
                 try
                 {
                     // attempt to load the native library
-                    p = JniNativeLibrary.Load(filename);
-                    if (p == IntPtr.Zero)
+                    if ((p = NativeLibrary.Load(filename)) == 0)
                     {
                         Tracer.Info(Tracer.Jni, "Failed to load library: path = '{0}', message = {2}", filename, "NULL handle returned.");
                         return 0;
                     }
 
                     // find whether the native library was already loaded
-                    foreach (var tmp in loader.GetNativeLibraries())
+                    foreach (var h in loader.GetNativeLibraries())
                     {
-                        if (tmp == p)
+                        if (h == p)
                         {
-                            JniNativeLibrary.Free(p);
+                            NativeLibrary.Free(p);
                             Tracer.Warning(Tracer.Jni, "Library was already loaded, returning same reference.", filename);
-                            return p.ToInt64();
+                            return p;
                         }
                     }
 
                     // library was loaded by another classloader, that's a link error
-                    if (nativeLibraries.Contains(p))
+                    if (loaded.Contains(p))
                     {
                         var msg = $"Native library '{filename}' already loaded in another classloader.";
                         Tracer.Error(Tracer.Jni, "UnsatisfiedLinkError: {0}", msg);
                         throw new java.lang.UnsatisfiedLinkError(msg);
                     }
 
-                    Tracer.Info(Tracer.Jni, "Library loaded: {0}, handle = 0x{1:X}", filename, p.ToInt64());
+                    Tracer.Info(Tracer.Jni, "Library loaded: {0}, handle = 0x{1:X}", filename, p);
 
                     try
                     {
-                        var onload = JniNativeLibrary.GetExport(p, "JNI_OnLoad", IntPtr.Size * 2);
-                        if (onload != IntPtr.Zero)
+                        var onload = NativeLibrary.GetExport(p, "JNI_OnLoad", sizeof(nint) * 2);
+                        if (onload != 0)
                         {
                             Tracer.Info(Tracer.Jni, "Calling JNI_OnLoad on: {0}", filename);
-                            var f = new JNI.Frame();
+                            var f = new JNIFrame();
                             int v;
                             var w = f.Enter(loader);
                             try
                             {
-                                v = Marshal.GetDelegateForFunctionPointer<Func<IntPtr, IntPtr, int>>(onload)((IntPtr)JavaVM.pJavaVM, IntPtr.Zero);
+                                v = Marshal.GetDelegateForFunctionPointer<Func<nint, nint, int>>(onload)((nint)JavaVM.pJavaVM, 0);
                                 Tracer.Info(Tracer.Jni, "JNI_OnLoad returned: 0x{0:X8}", v);
                             }
                             finally
@@ -106,7 +102,7 @@ namespace IKVM.Runtime
                                 f.Leave(w);
                             }
 
-                            if (JNI.IsSupportedJniVersion(v) == false)
+                            if (JNIVM.IsSupportedJniVersion(v) == false)
                             {
                                 var msg = $"Unsupported JNI version 0x{v:X} required by {filename}";
                                 Tracer.Error(Tracer.Jni, "UnsatisfiedLinkError: {0}", msg);
@@ -120,9 +116,9 @@ namespace IKVM.Runtime
                     }
 
                     // record addition of native library
-                    nativeLibraries.Add(p);
+                    loaded.Add(p);
                     loader.RegisterNativeLibrary(p);
-                    return p.ToInt64();
+                    return p;
                 }
                 catch (DllNotFoundException e)
                 {
@@ -132,32 +128,37 @@ namespace IKVM.Runtime
                 catch (Exception e)
                 {
                     Tracer.Info(Tracer.Jni, "Failed to load library: path = '{0}', error = {1}, message = {2}", filename, "Exception", e.Message);
-                    JniNativeLibrary.Free(p);
+                    NativeLibrary.Free(p);
                     throw;
                 }
             }
         }
 
-        private unsafe static void UnloadLibrary(long handle, ClassLoaderWrapper loader)
+        /// <summary>
+        /// Initiates an unload of the given native library for the specified class loader.
+        /// </summary>
+        /// <param name="handle"></param>
+        /// <param name="loader"></param>
+        public static void UnloadLibrary(long handle, ClassLoaderWrapper loader)
         {
-            var p = (IntPtr)handle;
+            var p = (nint)handle;
 
-            lock (JniLock)
+            lock (SyncRoot)
             {
                 Tracer.Info(Tracer.Jni, "Unloading library: handle = 0x{0:X}, class loader = {1}", handle, loader);
 
                 try
                 {
-                    var onunload = JniNativeLibrary.GetExport(p, "JNI_OnUnload", IntPtr.Size * 2);
-                    if (onunload != IntPtr.Zero)
+                    var onunload = NativeLibrary.GetExport(p, "JNI_OnUnload", sizeof(nint) * 2);
+                    if (onunload != 0)
                     {
                         Tracer.Info(Tracer.Jni, "Calling JNI_OnUnload on: handle = 0x{0:X}", handle);
 
-                        var f = new JNI.Frame();
+                        var f = new JNIFrame();
                         var w = f.Enter(loader);
                         try
                         {
-                            Marshal.GetDelegateForFunctionPointer<Func<IntPtr, IntPtr, int>>(onunload)((IntPtr)JavaVM.pJavaVM, IntPtr.Zero);
+                            Marshal.GetDelegateForFunctionPointer<Func<nint, nint, int>>(onunload)((nint)JavaVM.pJavaVM, 0);
                         }
                         finally
                         {
@@ -171,9 +172,9 @@ namespace IKVM.Runtime
                 }
 
                 // remove record of native library
-                nativeLibraries.Remove(p);
+                loaded.Remove(p);
                 loader.UnregisterNativeLibrary(p);
-                JniNativeLibrary.Free((IntPtr)handle);
+                NativeLibrary.Free(p);
             }
         }
 

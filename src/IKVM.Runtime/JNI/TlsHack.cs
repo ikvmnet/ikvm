@@ -1,4 +1,4 @@
-﻿/*
+/*
   Copyright (C) 2002-2014 Jeroen Frijters
 
   This software is provided 'as-is', without any express or implied
@@ -21,19 +21,16 @@
   jeroen@frijters.net
   
 */
-using System.Runtime.InteropServices;
+using System;
 
-namespace IKVM.Runtime
+namespace IKVM.Runtime.JNI
 {
 
-    [StructLayout(LayoutKind.Sequential)]
-    unsafe struct JavaVMInitArgs
+    static class TlsHack
     {
 
-        internal jint version;
-        internal jint nOptions;
-        internal JavaVMOption* options;
-        internal jboolean ignoreUnrecognized;
+        [ThreadStatic]
+        internal static JNIEnv.ManagedJNIEnv ManagedJNIEnv;
 
     }
 

@@ -23,8 +23,11 @@
 */
 using System.Runtime.InteropServices;
 
-namespace IKVM.Runtime
+namespace IKVM.Runtime.JNI
 {
+
+    using jint = System.Int32;
+    using jobject = System.IntPtr;
 
     [StructLayout(LayoutKind.Sequential)]
     unsafe struct JavaVMAttachArgs

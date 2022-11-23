@@ -109,7 +109,7 @@ $([MSBuild]::Unescape('$(___IkvmReferenceExportItemPrepareCs)'))
         </ItemGroup>
     </Target>
 
-    <Target Name="_CoreCompile" DependsOnTargets="ResolveIkvmCompiler;ResolveIkvmRuntimeAssembly;ResolveIkvmRuntimeJNIAssembly;CompileJava" Inputs="$(IkvmRuntimeAssembly);$(IkvmRuntimeJNIAssembly);$(KeyOriginatorFile);@(MapFile);@(ReferencePathWithRefAssemblies);@(Class);@(JavaResource);$(_CompileJavaStampFile)" Outputs="@(IntermediateAssembly);@(_DebugSymbolsIntermediatePath)">
+    <Target Name="_CoreCompile" DependsOnTargets="ResolveIkvmCompiler;ResolveIkvmRuntimeAssembly;CompileJava" Inputs="$(IkvmRuntimeAssembly);$(KeyOriginatorFile);@(MapFile);@(ReferencePathWithRefAssemblies);@(Class);@(JavaResource);$(_CompileJavaStampFile)" Outputs="@(IntermediateAssembly);@(_DebugSymbolsIntermediatePath)">
         <Error Text="Could not locate IKVM.Runtime assembly." Condition=" '$(IkvmRuntimeAssembly)' == '' " />
         <Error Text="IKVM.Runtime.dll could not be located at '$(IkvmRuntimeAssembly)'." Condition="!Exists('$(IkvmRuntimeAssembly)')" />
         <Error Text="Could not locate ikvmc executable." Condition=" '$(IkvmCompilerPath)' == '' " />
@@ -131,7 +131,6 @@ $([MSBuild]::Unescape('$(___IkvmReferenceExportItemPrepareCs)'))
             <_IkvmCompilerArgs Include="-assembly:$(AssemblyName)" />
             <_IkvmCompilerArgs Include="-version:$(AssemblyVersion)" />
             <_IkvmCompilerArgs Include="-runtime:$(IkvmRuntimeAssembly)" />
-            <_IkvmCompilerArgs Include="-jni:$(IkvmRuntimeJNIAssembly)" Condition=" '$(IkvmRuntimeJNIAssembly)' != '' " />
             <_IkvmCompilerArgs Include="-keyfile:$(KeyOriginatorFile)" Condition=" '$(KeyOriginatorFile)' != '' " />
             <_IkvmCompilerArgs Include="@(MapFile->'-remap:%(FullPath)')" Condition=" '@(MapFile)' != '' " />
             <_IkvmCompilerArgs Include="-compressresources" Condition=" '$(CompressResources)' == 'true' " />

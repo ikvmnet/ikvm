@@ -4,7 +4,7 @@ using System.IO;
 using System.Reflection;
 using System.Runtime.InteropServices;
 
-namespace IKVM.Runtime
+namespace IKVM.Runtime.JNI
 {
 
     /// <summary>
@@ -15,27 +15,15 @@ namespace IKVM.Runtime
 
         public const string LIB_NAME = "ikvm-native";
 
-#if NETFRAMEWORK
-
-        /// <summary>
-        /// Native Win32 LoadLibrary method.
-        /// </summary>
-        /// <param name="dllToLoad"></param>
-        /// <returns></returns>
-        [DllImport("kernel32.dll", SetLastError = true)]
-        public static extern IntPtr LoadLibrary(string dllToLoad);
-
-#endif
-
         /// <summary>
         /// Initializes the static instance.
         /// </summary>
         static Native()
         {
 #if NETFRAMEWORK
-            LegacyImportDll();
+            Load();
 #else
-            NativeLibrary.SetDllImportResolver(typeof(Native).Assembly, DllImportResolver);
+            System.Runtime.InteropServices.NativeLibrary.SetDllImportResolver(typeof(Native).Assembly, DllImportResolver);
 #endif
         }
 
@@ -44,17 +32,17 @@ namespace IKVM.Runtime
         /// <summary>
         /// Preloads the native DLL for down-level platforms.
         /// </summary>
-        static void LegacyImportDll()
+        static void Load()
         {
             // attempt to load with default loader
-            var h = LoadLibrary(LIB_NAME);
+            var h = NativeLibrary.Load(LIB_NAME);
             if (h != IntPtr.Zero)
                 return;
 
             // scan known paths
             foreach (var path in GetLibraryPaths(LIB_NAME))
             {
-                h = LoadLibrary(path);
+                h = NativeLibrary.Load(path);
                 if (h != IntPtr.Zero)
                     return;
             }
@@ -71,21 +59,23 @@ namespace IKVM.Runtime
         /// <param name="assembly"></param>
         /// <param name="searchPath"></param>
         /// <returns></returns>
-        static IntPtr DllImportResolver(string libraryName, Assembly assembly, DllImportSearchPath? searchPath)
+        static nint DllImportResolver(string libraryName, Assembly assembly, DllImportSearchPath? searchPath)
         {
             if (libraryName == LIB_NAME)
             {
+                nint h;
+
                 // attempt to load with default loader
-                if (NativeLibrary.TryLoad(libraryName, out var h) && h != IntPtr.Zero)
+                if ((h = NativeLibrary.Load(libraryName)) != 0)
                     return h;
 
                 // scan known paths
                 foreach (var path in GetLibraryPaths(libraryName))
-                    if (NativeLibrary.TryLoad(path, out h) && h != IntPtr.Zero)
+                    if ((h = NativeLibrary.Load(path)) != 0)
                         return h;
             }
 
-            return IntPtr.Zero;
+            return 0;
         }
 
 #endif

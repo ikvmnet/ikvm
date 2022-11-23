@@ -258,7 +258,6 @@ namespace IKVM.MSBuild.Tasks
                     options.AssemblyAttributes.Add(i.ItemSpec);
 
             options.Runtime = Runtime;
-            options.JNI = JNI;
 
             if (options.WarningLevel is not null)
                 options.WarningLevel = int.Parse(WarningLevel);
