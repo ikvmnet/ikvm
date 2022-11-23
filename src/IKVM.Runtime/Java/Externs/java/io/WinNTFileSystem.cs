@@ -79,8 +79,10 @@ namespace IKVM.Java.Externs.java.io
 
                 // trailing slash would result in a last path element of empty string
                 var name = Path.GetFileName(path);
-                if (name == "")
+                if (name == "" || name == ".")
                     return parent;
+                if (name == "..")
+                    return Path.GetDirectoryName(parent);
 
                 try
                 {
