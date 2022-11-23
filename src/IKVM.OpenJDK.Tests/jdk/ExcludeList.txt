@@ -3468,6 +3468,7 @@ java/nio/channels/SocketChannel/Basic.java                                      
 java/nio/channels/SocketChannel/CloseDuringWrite.java                                                                   linux-all
 java/nio/channels/SocketChannel/Shutdown.java                                                                           linux-all
 java/nio/channels/SocketChannel/LocalAddress.java                                                                       linux-all
+java/nio/channels/SocketChannel/Connect.java                                                                            linux-all
 
 java/nio/charset/RemovingSunIO/TestCOMP.java                                                                            linux-all
 java/nio/charset/Charset/AvailableCharsetNames.java                                                                     linux-all
