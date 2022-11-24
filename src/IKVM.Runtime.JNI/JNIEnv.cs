@@ -100,7 +100,7 @@ namespace IKVM.Runtime
             /// </summary>
             internal ManagedJNIEnv()
             {
-                pJNIEnv = (JNIEnv*)JniMem.Alloc(sizeof(JNIEnv));
+                pJNIEnv = (JNIEnv*)JniMemory.Alloc(sizeof(JNIEnv));
                 localRefs = new object[32][];
                 active = localRefs[0] = new object[LOCAL_REF_INITIAL_BUCKET_SIZE];
                 // stuff something in the first entry to make sure we don't hand out a zero handle
@@ -126,7 +126,7 @@ namespace IKVM.Runtime
                         if (pJNIEnv->pinHandles[i].IsAllocated)
                             pJNIEnv->pinHandles[i].Free();
 
-                    JniMem.Free((IntPtr)(void*)pJNIEnv);
+                    JniMemory.Free((IntPtr)(void*)pJNIEnv);
                 }
 
             }
@@ -407,22 +407,13 @@ namespace IKVM.Runtime
             return len;
         }
 
-        internal static jint GetMethodArgs(JNIEnv* pEnv, IntPtr method, byte* sig)
+        internal static int GetMethodArgs(JNIEnv* pEnv, nint method, byte* sig)
         {
-            TypeWrapper[] argTypes = MethodWrapper.FromCookie(method).GetParameters();
-            for (int i = 0; i < argTypes.Length; i++)
-            {
-                TypeWrapper tw = argTypes[i];
-                if (tw.IsPrimitive)
-                {
-                    sig[i] = (byte)tw.SigName[0];
-                }
-                else
-                {
-                    sig[i] = (byte)'L';
-                }
-            }
-            return argTypes.Length;
+            var args = MethodWrapper.FromCookie(method).GetParameters();
+            for (var i = 0; i < args.Length; i++)
+                sig[i] = args[i].IsPrimitive ? (byte)args[i].SigName[0] : (byte)'L';
+
+            return args.Length;
         }
 
         internal static jint GetVersion(JNIEnv* pEnv)
@@ -434,32 +425,29 @@ namespace IKVM.Runtime
         {
             try
             {
-                byte[] buf = new byte[length];
-                Marshal.Copy((IntPtr)(void*)pbuf, buf, 0, length);
+                var buf = new byte[length];
+                Marshal.Copy((nint)(void*)pbuf, buf, 0, length);
                 // TODO what should the protection domain be?
                 // NOTE I'm assuming name is platform encoded (as opposed to UTF-8), but the Sun JVM only seems to work for ASCII.
-                global::java.lang.ClassLoader classLoader = (global::java.lang.ClassLoader)pEnv->UnwrapRef(loader);
+                var classLoader = (java.lang.ClassLoader)pEnv->UnwrapRef(loader);
                 return pEnv->MakeLocalRef(IKVM.Java.Externs.java.lang.ClassLoader.defineClass0(classLoader, name != null ? StringFromUTF8(name) : null, buf, 0, buf.Length, null));
             }
-            catch (Exception x)
+            catch (Exception e)
             {
-                SetPendingException(pEnv, x);
+                SetPendingException(pEnv, e);
                 return IntPtr.Zero;
             }
         }
 
-        private static ClassLoaderWrapper FindNativeMethodClassLoader(JNIEnv* pEnv)
+        static ClassLoaderWrapper FindNativeMethodClassLoader(JNIEnv* pEnv)
         {
-            ManagedJNIEnv env = pEnv->GetManagedJNIEnv();
+            var env = pEnv->GetManagedJNIEnv();
             if (env.callerID != null)
-            {
                 return ClassLoaderWrapper.FromCallerID(env.callerID);
-            }
-            if (env.classLoader != null)
-            {
+            else if (env.classLoader != null)
                 return env.classLoader;
-            }
-            return ClassLoaderWrapper.GetClassLoaderWrapper(java.lang.ClassLoader.getSystemClassLoader());
+            else
+                return ClassLoaderWrapper.GetClassLoaderWrapper(java.lang.ClassLoader.getSystemClassLoader());
         }
 
         internal static jclass FindClass(JNIEnv* pEnv, byte* pszName)
@@ -1550,7 +1538,7 @@ namespace IKVM.Runtime
         internal static byte* GetStringUTFChars(JNIEnv* pEnv, jstring str, jboolean* isCopy)
         {
             string s = (string)pEnv->UnwrapRef(str);
-            byte* buf = (byte*)JniMem.Alloc(StringUTF8Length(s) + 1);
+            byte* buf = (byte*)JniMemory.Alloc(StringUTF8Length(s) + 1);
             int j = 0;
             for (int i = 0; i < s.Length; i++)
             {
@@ -1581,7 +1569,7 @@ namespace IKVM.Runtime
 
         internal static void ReleaseStringUTFChars(JNIEnv* pEnv, jstring str, byte* chars)
         {
-            JniMem.Free((IntPtr)(void*)chars);
+            JniMemory.Free((IntPtr)(void*)chars);
         }
 
         internal static jsize GetArrayLength(JNIEnv* pEnv, jarray array)
@@ -1751,7 +1739,7 @@ namespace IKVM.Runtime
         internal static jboolean* GetBooleanArrayElements(JNIEnv* pEnv, jbooleanArray array, jboolean* isCopy)
         {
             bool[] b = (bool[])pEnv->UnwrapRef(array);
-            jboolean* p = (jboolean*)(void*)JniMem.Alloc(b.Length * 1);
+            jboolean* p = (jboolean*)(void*)JniMemory.Alloc(b.Length * 1);
             for (int i = 0; i < b.Length; i++)
             {
                 p[i] = b[i] ? JNI_TRUE : JNI_FALSE;
@@ -1766,7 +1754,7 @@ namespace IKVM.Runtime
         internal static jbyte* GetByteArrayElements(JNIEnv* pEnv, jbyteArray array, jboolean* isCopy)
         {
             byte[] b = (byte[])pEnv->UnwrapRef(array);
-            jbyte* p = (jbyte*)(void*)JniMem.Alloc(b.Length * 1);
+            jbyte* p = (jbyte*)(void*)JniMemory.Alloc(b.Length * 1);
             for (int i = 0; i < b.Length; i++)
             {
                 p[i] = (jbyte)b[i];
@@ -1781,7 +1769,7 @@ namespace IKVM.Runtime
         internal static jchar* GetCharArrayElements(JNIEnv* pEnv, jcharArray array, jboolean* isCopy)
         {
             char[] b = (char[])pEnv->UnwrapRef(array);
-            IntPtr buf = JniMem.Alloc(b.Length * 2);
+            IntPtr buf = JniMemory.Alloc(b.Length * 2);
             Marshal.Copy(b, 0, buf, b.Length);
             if (isCopy != null)
             {
@@ -1793,7 +1781,7 @@ namespace IKVM.Runtime
         internal static jshort* GetShortArrayElements(JNIEnv* pEnv, jshortArray array, jboolean* isCopy)
         {
             short[] b = (short[])pEnv->UnwrapRef(array);
-            IntPtr buf = JniMem.Alloc(b.Length * 2);
+            IntPtr buf = JniMemory.Alloc(b.Length * 2);
             Marshal.Copy(b, 0, buf, b.Length);
             if (isCopy != null)
             {
@@ -1805,7 +1793,7 @@ namespace IKVM.Runtime
         internal static jint* GetIntArrayElements(JNIEnv* pEnv, jintArray array, jboolean* isCopy)
         {
             int[] b = (int[])pEnv->UnwrapRef(array);
-            IntPtr buf = JniMem.Alloc(b.Length * 4);
+            IntPtr buf = JniMemory.Alloc(b.Length * 4);
             Marshal.Copy(b, 0, buf, b.Length);
             if (isCopy != null)
             {
@@ -1817,7 +1805,7 @@ namespace IKVM.Runtime
         internal static jlong* GetLongArrayElements(JNIEnv* pEnv, jlongArray array, jboolean* isCopy)
         {
             long[] b = (long[])pEnv->UnwrapRef(array);
-            IntPtr buf = JniMem.Alloc(b.Length * 8);
+            IntPtr buf = JniMemory.Alloc(b.Length * 8);
             Marshal.Copy(b, 0, buf, b.Length);
             if (isCopy != null)
             {
@@ -1829,7 +1817,7 @@ namespace IKVM.Runtime
         internal static jfloat* GetFloatArrayElements(JNIEnv* pEnv, jfloatArray array, jboolean* isCopy)
         {
             float[] b = (float[])pEnv->UnwrapRef(array);
-            IntPtr buf = JniMem.Alloc(b.Length * 4);
+            IntPtr buf = JniMemory.Alloc(b.Length * 4);
             Marshal.Copy(b, 0, buf, b.Length);
             if (isCopy != null)
             {
@@ -1841,7 +1829,7 @@ namespace IKVM.Runtime
         internal static jdouble* GetDoubleArrayElements(JNIEnv* pEnv, jdoubleArray array, jboolean* isCopy)
         {
             double[] b = (double[])pEnv->UnwrapRef(array);
-            IntPtr buf = JniMem.Alloc(b.Length * 8);
+            IntPtr buf = JniMemory.Alloc(b.Length * 8);
             Marshal.Copy(b, 0, buf, b.Length);
             if (isCopy != null)
             {
@@ -1862,7 +1850,7 @@ namespace IKVM.Runtime
             }
             if (mode == 0 || mode == JNI_ABORT)
             {
-                JniMem.Free((IntPtr)(void*)elems);
+                JniMemory.Free((IntPtr)(void*)elems);
             }
         }
 
@@ -1878,7 +1866,7 @@ namespace IKVM.Runtime
             }
             if (mode == 0 || mode == JNI_ABORT)
             {
-                JniMem.Free((IntPtr)(void*)elems);
+                JniMemory.Free((IntPtr)(void*)elems);
             }
         }
 
@@ -1891,7 +1879,7 @@ namespace IKVM.Runtime
             }
             if (mode == 0 || mode == JNI_ABORT)
             {
-                JniMem.Free((IntPtr)(void*)elems);
+                JniMemory.Free((IntPtr)(void*)elems);
             }
         }
 
@@ -1904,7 +1892,7 @@ namespace IKVM.Runtime
             }
             if (mode == 0 || mode == JNI_ABORT)
             {
-                JniMem.Free((IntPtr)(void*)elems);
+                JniMemory.Free((IntPtr)(void*)elems);
             }
         }
 
@@ -1917,7 +1905,7 @@ namespace IKVM.Runtime
             }
             if (mode == 0 || mode == JNI_ABORT)
             {
-                JniMem.Free((IntPtr)(void*)elems);
+                JniMemory.Free((IntPtr)(void*)elems);
             }
         }
 
@@ -1930,7 +1918,7 @@ namespace IKVM.Runtime
             }
             if (mode == 0 || mode == JNI_ABORT)
             {
-                JniMem.Free((IntPtr)(void*)elems);
+                JniMemory.Free((IntPtr)(void*)elems);
             }
         }
 
@@ -1943,7 +1931,7 @@ namespace IKVM.Runtime
             }
             if (mode == 0 || mode == JNI_ABORT)
             {
-                JniMem.Free((IntPtr)(void*)elems);
+                JniMemory.Free((IntPtr)(void*)elems);
             }
         }
 
@@ -1956,7 +1944,7 @@ namespace IKVM.Runtime
             }
             if (mode == 0 || mode == JNI_ABORT)
             {
-                JniMem.Free((IntPtr)(void*)elems);
+                JniMemory.Free((IntPtr)(void*)elems);
             }
         }
 
@@ -2373,7 +2361,7 @@ namespace IKVM.Runtime
             if (pinHandleInUseCount == pinHandleMaxCount)
             {
                 int newCount = pinHandleMaxCount + 32;
-                GCHandle* pNew = (GCHandle*)JniMem.Alloc(sizeof(GCHandle) * newCount);
+                GCHandle* pNew = (GCHandle*)JniMemory.Alloc(sizeof(GCHandle) * newCount);
                 for (int i = 0; i < pinHandleMaxCount; i++)
                 {
                     pNew[i] = pinHandles[i];
@@ -2382,7 +2370,7 @@ namespace IKVM.Runtime
                 {
                     pNew[i] = new GCHandle();
                 }
-                JniMem.Free((IntPtr)pinHandles);
+                JniMemory.Free((IntPtr)pinHandles);
                 pinHandles = pNew;
                 pinHandleMaxCount = newCount;
             }

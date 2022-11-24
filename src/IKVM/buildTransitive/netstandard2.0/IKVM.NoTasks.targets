@@ -7,9 +7,23 @@
     This file contains targets which invoke the jobs in 'NoTask' mode. The tasks provided by MSBuild are not used.
     -->
 
+    <PropertyGroup>
+        <___IkvmReferenceItemCs>$([System.IO.File]::ReadAllText('$([System.IO.Path]::Combine('$(MSBuildThisFileDirectory)', '..', '..', '..', 'IKVM.MSBuild.Tasks', 'IkvmReferenceItem.cs'))'))</___IkvmReferenceItemCs>
+        <___IkvmReferenceItemMetadataCs>$([System.IO.File]::ReadAllText('$([System.IO.Path]::Combine('$(MSBuildThisFileDirectory)', '..', '..', '..', 'IKVM.MSBuild.Tasks', 'IkvmReferenceItemMetadata.cs'))'))</___IkvmReferenceItemMetadataCs>
+        <___IkvmReferenceItemPrepareCs>$([System.IO.File]::ReadAllText('$([System.IO.Path]::Combine('$(MSBuildThisFileDirectory)', '..', '..', '..', 'IKVM.MSBuild.Tasks', 'IkvmReferenceItemPrepare.cs'))'))</___IkvmReferenceItemPrepareCs>
+    </PropertyGroup>
+
     <UsingTask TaskName="IkvmReferenceItemPrepare" TaskFactory="RoslynCodeTaskFactory" AssemblyFile="$(MSBuildToolsPath)\Microsoft.Build.Tasks.Core.dll">
         <Task>
-            <Code Type="Class" Source="$(MSBuildThisFileDirectory)inline\IkvmReferenceItemPrepare.cs" Language="cs" />
+            <Reference Include="System.Collections.Immutable" />
+            <Reference Include="System.Reflection.Metadata" />
+            <Code Type="Class" Language="cs">
+                <![CDATA[
+$([MSBuild]::Unescape('$(___IkvmReferenceItemCs)'))
+$([MSBuild]::Unescape('$(___IkvmReferenceItemMetadataCs)'))
+$([MSBuild]::Unescape('$(___IkvmReferenceItemPrepareCs)'))
+            ]]>
+            </Code>
         </Task>
     </UsingTask>
 

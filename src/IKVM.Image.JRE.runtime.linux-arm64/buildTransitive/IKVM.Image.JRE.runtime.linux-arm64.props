@@ -1,0 +1,14 @@
+<Project xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+    <PropertyGroup>
+        <MSBuildAllProjects>$(MSBuildAllProjects);$(MSBuildThisFileFullPath)</MSBuildAllProjects>
+    </PropertyGroup>
+
+    <ItemGroup>
+        <IkvmImageItem Include="$(MSBuildThisFileDirectory)..\ikvm\netcoreapp3.1\linux-arm64\**\*">
+            <TargetFramework>netcoreapp3.1</TargetFramework>
+            <RuntimeIdentifier>linux-arm64</RuntimeIdentifier>
+            <TargetPath>%(RecursiveDir)%(FileName)%(Extension)</TargetPath>
+        </IkvmImageItem>
+    </ItemGroup>
+
+</Project>

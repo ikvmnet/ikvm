@@ -3,18 +3,13 @@
         <TargetFramework>netstandard2.0</TargetFramework>
         <AppendTargetFrameworkToOutputPath>false</AppendTargetFrameworkToOutputPath>
         <AppendRuntimeIdentifierToOutputPath>false</AppendRuntimeIdentifierToOutputPath>
+        <ErrorOnDuplicatePublishOutputFiles>false</ErrorOnDuplicatePublishOutputFiles>
     </PropertyGroup>
 
     <ItemGroup>
         <TestTarget Include="IKVM.Tests|net461" ProjectName="IKVM.Tests" TargetFramework="net461" />
         <TestTarget Include="IKVM.Tests|netcoreapp3.1" ProjectName="IKVM.Tests" TargetFramework="netcoreapp3.1" />
         <TestTarget Include="IKVM.Tests|net6.0" ProjectName="IKVM.Tests" TargetFramework="net6.0" />
-        <TestTarget Include="IKVM.Tests.JRE|net461" ProjectName="IKVM.Tests.JRE" TargetFramework="net461" />
-        <TestTarget Include="IKVM.Tests.JRE|netcoreapp3.1" ProjectName="IKVM.Tests.JRE" TargetFramework="netcoreapp3.1" />
-        <TestTarget Include="IKVM.Tests.JRE|net6.0" ProjectName="IKVM.Tests.JRE" TargetFramework="net6.0" />
-        <TestTarget Include="IKVM.Tests.JDK|net461" ProjectName="IKVM.Tests.JDK" TargetFramework="net461" />
-        <TestTarget Include="IKVM.Tests.JDK|netcoreapp3.1" ProjectName="IKVM.Tests.JDK" TargetFramework="netcoreapp3.1" />
-        <TestTarget Include="IKVM.Tests.JDK|net6.0" ProjectName="IKVM.Tests.JDK" TargetFramework="net6.0" />
         <TestTarget Include="ikvmc.Tests|net461" ProjectName="ikvmc.Tests" TargetFramework="net461" />
         <TestTarget Include="ikvmc.Tests|netcoreapp3.1" ProjectName="ikvmc.Tests" TargetFramework="netcoreapp3.1" />
         <TestTarget Include="IKVM.Tools.Tests|net461" ProjectName="IKVM.Tools.Tests" TargetFramework="net461" />
@@ -32,7 +27,6 @@
         <TestTarget Include="IKVM.JTReg.TestAdapter.Tests|net6.0" ProjectName="IKVM.JTReg.TestAdapter.Tests" TargetFramework="net6.0" />
         <TestTarget Include="IKVM.OpenJDK.Tests|net461" ProjectName="IKVM.OpenJDK.Tests" TargetFramework="net461" />
         <TestTarget Include="IKVM.OpenJDK.Tests|netcoreapp3.1" ProjectName="IKVM.OpenJDK.Tests" TargetFramework="netcoreapp3.1" />
-        <TestTarget Include="IKVM.OpenJDK.Tests|net6.0" ProjectName="IKVM.OpenJDK.Tests" TargetFramework="net6.0" />
     </ItemGroup>
 
     <!-- Runs once per TFM/RID combination to generate individual output. -->

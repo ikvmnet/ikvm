@@ -32,7 +32,7 @@ namespace IKVM.Tools.Exporter.Tests
                 }
             };
 
-#if NET461
+#if NETFRAMEWORK
             options.Libraries.Add(RuntimeEnvironment.GetRuntimeDirectory());
             options.Assembly = typeof(System.Linq.Enumerable).Assembly.Location;
             options.Output = Path.Combine(Path.GetTempPath(), Path.GetFileName(Path.ChangeExtension(options.Assembly, ".jar")));

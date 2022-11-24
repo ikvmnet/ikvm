@@ -1,0 +1,36 @@
+<Project Sdk="Microsoft.Build.NoTargets/3.5.6">
+    <PropertyGroup>
+        <TargetFrameworks>net461;netcoreapp3.1</TargetFrameworks>
+        <PackageLicenseFile>LICENSE.md</PackageLicenseFile>
+        <PackageReadmeFile>README.md</PackageReadmeFile>
+        <Description>IKVM MSBuild Tools</Description>
+    </PropertyGroup>
+
+    <PropertyGroup>
+        <PublishRepositoryUrl>true</PublishRepositoryUrl>
+    </PropertyGroup>
+
+    <ItemGroup>
+        <None Include="buildTransitive\**\*" Pack="true" PackagePath="buildTransitive\%(RecursiveDir)%(Filename)%(Extension)" />
+        <None Include="lib\**\*" Pack="true" PackagePath="lib\%(RecursiveDir)%(Filename)%(Extension)" />
+    </ItemGroup>
+
+    <ItemGroup>
+        <None Include="..\..\LICENSE.md" Pack="true" PackagePath="." />
+        <None Include="..\..\README.md" Pack="true" PackagePath="." />
+    </ItemGroup>
+
+    <ItemGroup Condition=" '$(TargetFramework)' == '' ">
+        <PublishProjectReference Include="..\ikvmc\ikvmc.csproj">
+            <SetTargetFramework>TargetFramework=netcoreapp3.1</SetTargetFramework>
+            <SetRuntimeIdentifier>RuntimeIdentifier=linux-arm64</SetRuntimeIdentifier>
+            <ProjectPackagePath>ikvmc\netcoreapp3.1\linux-arm64</ProjectPackagePath>
+        </PublishProjectReference>
+        <PublishProjectReference Include="..\ikvmstub\ikvmstub.csproj">
+            <SetTargetFramework>TargetFramework=netcoreapp3.1</SetTargetFramework>
+            <SetRuntimeIdentifier>RuntimeIdentifier=linux-arm64</SetRuntimeIdentifier>
+            <ProjectPackagePath>ikvmstub\netcoreapp3.1\linux-arm64</ProjectPackagePath>
+        </PublishProjectReference>
+    </ItemGroup>
+
+</Project>

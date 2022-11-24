@@ -1,0 +1,11 @@
+<Project xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+    <PropertyGroup>
+        <MSBuildAllProjects>$(MSBuildAllProjects);$(MSBuildThisFileFullPath)</MSBuildAllProjects>
+    </PropertyGroup>
+
+    <ItemGroup>
+        <IkvmCompilerToolPath Include="$(MSBuildThisFileDirectory)..\..\ikvmc\netcoreapp3.1\linux-x64\" TargetFramework="netcoreapp3.1" RuntimeIdentifier="linux-x64" />
+        <IkvmExporterToolPath Include="$(MSBuildThisFileDirectory)..\..\ikvmstub\netcoreapp3.1\linux-x64\" TargetFramework="netcoreapp3.1" RuntimeIdentifier="linux-x64" />
+    </ItemGroup>
+    
+</Project>

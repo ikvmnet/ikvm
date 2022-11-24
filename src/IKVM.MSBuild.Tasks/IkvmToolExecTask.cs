@@ -3,8 +3,6 @@ using System.IO;
 using System.Runtime.InteropServices;
 using System.Threading;
 
-using IKVM.Tools.Runner;
-
 using Microsoft.Build.Framework;
 using Microsoft.Build.Utilities;
 
@@ -38,12 +36,6 @@ namespace IKVM.MSBuild.Tasks
         public string ToolPath { get; set; }
 
         /// <summary>
-        /// Whether we are generating a NetFramework or NetCore assembly.
-        /// </summary>
-        [Required]
-        public string ToolFramework { get; set; } = "NetCore";
-
-        /// <summary>
         /// Optional path to a log file to copy messages to.
         /// </summary>
         public string LogFile { get; set; }
@@ -60,13 +52,6 @@ namespace IKVM.MSBuild.Tasks
         /// <exception cref="NullReferenceException"></exception>
         public override bool Execute()
         {
-            var toolFramework = ToolFramework switch
-            {
-                "NetCore" => IkvmToolFramework.NetCore,
-                "NetFramework" => IkvmToolFramework.NetFramework,
-                _ => throw new IkvmTaskException("Invalid ToolFramework."),
-            };
-
             // check that the tools exist
             if (ToolPath == null || Directory.Exists(ToolPath) == false)
                 throw new IkvmTaskException($"Missing tool path: '{ToolPath}'.");
@@ -80,7 +65,7 @@ namespace IKVM.MSBuild.Tasks
                     log = new StreamWriter(File.OpenWrite(LogFile));
 
                 // kick off the launcher with the configured options
-                var run = System.Threading.Tasks.Task.Run(() => ExecuteAsync(toolFramework, new IkvmToolTaskDiagnosticWriter(Log, log), CancellationToken.None));
+                var run = System.Threading.Tasks.Task.Run(() => ExecuteAsync(new IkvmToolTaskDiagnosticWriter(Log, log), CancellationToken.None));
 
                 // yield and wait for the task to complete
                 BuildEngine3.Yield();
@@ -103,11 +88,10 @@ namespace IKVM.MSBuild.Tasks
         /// <summary>
         /// Executes the tool.
         /// </summary>
-        /// <param name="targetFramework"></param>
         /// <param name="writer"></param>
         /// <param name="cancellationToken"></param>
         /// <returns></returns>
-        protected abstract System.Threading.Tasks.Task<bool> ExecuteAsync(IkvmToolFramework targetFramework, IkvmToolTaskDiagnosticWriter writer, CancellationToken cancellationToken);
+        protected abstract System.Threading.Tasks.Task<bool> ExecuteAsync(IkvmToolTaskDiagnosticWriter writer, CancellationToken cancellationToken);
 
     }
 

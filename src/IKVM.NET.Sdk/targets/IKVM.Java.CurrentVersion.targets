@@ -15,6 +15,9 @@
         <DefineCommonCapabilities Condition=" '$(DefineCommonCapabilities)' == '' ">true</DefineCommonCapabilities>
         <SynthesizeLinkMetadata Condition=" '$(SynthesizeLinkMetadata)' == '' And '$(HasSharedItems)' == 'true' ">true</SynthesizeLinkMetadata>
         <AppDesignerFolder Condition="'$(AppDesignerFolder)' == ''">Properties</AppDesignerFolder>
+        
+        <!-- Always generate AnyCPU assemblies when targeting CoreCLR -->
+        <PlatformTarget Condition="$([MSBuild]::IsTargetFrameworkCompatible('$(TargetFramework)', 'netcoreapp3.1'))">AnyCPU</PlatformTarget>
     </PropertyGroup>
 
     <ItemGroup Condition=" '$(DefineJavaItemSchemas)' != 'false' ">

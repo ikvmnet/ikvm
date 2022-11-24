@@ -21,7 +21,7 @@
         <MakeDir Directories="$([System.IO.Path]::GetDirectoryName('%(ReferenceExport.CachePath)'))" />
 
         <Delete Files="%(ReferenceExport.StagePath)" Condition="Exists('%(ReferenceExport.StagePath)')" />
-        <IkvmExporter ToolPath="$(IkvmExporterToolPath)" ToolFramework="$(IkvmToolFramework)" Input="%(ReferenceExport.Identity)" Bootstrap="$(Bootstrap)" NoStdLib="$(NoCompilerStandardLib)" References="@(_ReferenceExportReference)" Output="%(ReferenceExport.StagePath)" />
+        <IkvmExporter ToolPath="$(IkvmExporterToolPath)" Input="%(ReferenceExport.Identity)" Bootstrap="%(ReferenceExport.Bootstrap)" NoStdLib="%(ReferenceExport.NoStdLib)" References="@(_ReferenceExportReference)" Output="%(ReferenceExport.StagePath)" />
         <Copy SourceFiles="%(ReferenceExport.StagePath)" DestinationFiles="%(ReferenceExport.CachePath)" OverwriteReadOnlyFiles="true" />
 
         <ItemGroup>
@@ -87,7 +87,7 @@
             <_IkvmCompilerReferencePath Include="@(ReferencePathWithRefAssemblies)" Condition=" '%(ReferencePathWithRefAssemblies.HideFromJava)' != 'true' " />
             <_IkvmCompilerResource Include="@(JavaResource)" ResourcePath="$([System.String]::new('%(JavaResource.ResourcePath)').Replace('\', '/'))" Condition=" '%(Identity)' != '' " />
         </ItemGroup>
-
+        
         <!-- Build Java assembly into temporary directory. -->
         <RemoveDir Directories="$(_AssemblyTempPath)" />
         <MakeDir Directories="$(_AssemblyTempPath)" />
@@ -95,7 +95,6 @@
         <!-- Compile the reference item. -->
         <IkvmCompiler
             ToolPath="$(IkvmCompilerToolPath)"
-            ToolFramework="$(IkvmToolFramework)"
             ResponseFile="$(_IkvmCompilerResponseFile)"
             Output="$(_AssemblyTempPath)$(TargetName)$(TargetExt)"
             Assembly="$(AssemblyName)"
@@ -106,6 +105,7 @@
             Runtime="$(IkvmRuntimeAssembly)"
             JNI="$(IkvmRuntimeJNIAssembly)"
             Target="$(OutputType.ToLowerInvariant())"
+            Platform="$(PlatformTarget.ToLowerInvariant())"
             Main="$(StartupObject)"
             Debug="$(_IkvmCompilerDebug)"
             KeyFile="$(KeyOriginatorFile)"

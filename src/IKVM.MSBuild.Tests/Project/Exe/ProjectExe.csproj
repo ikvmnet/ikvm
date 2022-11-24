@@ -9,7 +9,8 @@
     <PropertyGroup>
         <OutputType>Exe</OutputType>
         <TargetFrameworks>net461;net472;net48;netcoreapp3.1;net6.0</TargetFrameworks>
-        <RuntimeIdentifiers>win7-x64;linux-x64</RuntimeIdentifiers>
+        <RuntimeIdentifiers>win7-x86;win7-x64;win81-arm;linux-x64;linux-arm;linux-arm64</RuntimeIdentifiers>
+        <PlatformTarget Condition="$([MSBuild]::IsTargetFrameworkCompatible('$(TargetFramework)', 'netcoreapp3.1'))">AnyCPU</PlatformTarget>
     </PropertyGroup>
 
     <ItemGroup>

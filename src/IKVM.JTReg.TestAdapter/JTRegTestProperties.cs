@@ -17,7 +17,6 @@ namespace IKVM.JTReg.TestAdapter
 
         public static readonly TestProperty TestCategoryProperty = TestProperty.Register("MSTestDiscoverer.TestCategory", "TestCategory", typeof(string[]), TestPropertyAttributes.Hidden | TestPropertyAttributes.Trait, typeof(TestCase));
 
-
     }
 
 }

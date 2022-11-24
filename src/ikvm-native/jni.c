@@ -22,7 +22,7 @@
   
 */
 #include <stdarg.h>
-#include "jni.h"
+#include <jni.h>
 
 #ifdef _WIN32
 #include <malloc.h>
@@ -35,6 +35,9 @@
 #endif
 #define ALLOCA alloca
 #endif
+
+typedef int(*_GetMethodArgs)(JNIEnv* pEnv, jmethodID method, char* sig);
+#define GetMethodArgs(pEnv, method, sig) (((_GetMethodArgs)((*pEnv)->reserved0))(pEnv, methodID, sig))
 
 static jobject JNICALL NewObject(JNIEnv* pEnv, jclass clazz, jmethodID methodID, ...)
 {
@@ -49,32 +52,40 @@ static jobject JNICALL NewObject(JNIEnv* pEnv, jclass clazz, jmethodID methodID,
 #define MAKE_ARG_ARRAY(pEnv, args, argarray) \
 do { \
 	jbyte sig[257];\
-	int argc = (*pEnv)->GetMethodArgs(pEnv, methodID, sig);\
+	int argc = GetMethodArgs(pEnv, methodID, sig);\
 	int i;\
-	argarray = (jvalue*)ALLOCA(argc * sizeof(jvalue));\
+	argarray = (jvalue*)ALLOCA((long unsigned int)argc * sizeof(jvalue));\
 	for(i = 0; i < argc; i++)\
 	{\
 		switch(sig[i])\
 		{\
-		case 'Z':\
-		case 'B':\
-		case 'S':\
-		case 'C':\
-		case 'I':\
-			argarray[i].i = va_arg(args, jint);\
-			break;\
-		case 'J':\
-			argarray[i].j = va_arg(args, jlong);\
-			break;\
-		case 'L':\
-			argarray[i].l = va_arg(args, jobject);\
-			break;\
-		case 'D':\
-			argarray[i].d = va_arg(args, double);\
-			break;\
-		case 'F':\
-			argarray[i].f = (float)va_arg(args, double);\
-			break;\
+			case 'Z':\
+				argarray[i].z = (jboolean)va_arg(args, int);\
+				break;\
+			case 'B':\
+				argarray[i].b = (jbyte)va_arg(args, int);\
+				break;\
+			case 'S':\
+				argarray[i].s = (jshort)va_arg(args, int);\
+				break;\
+			case 'C':\
+				argarray[i].i = (jchar)va_arg(args, int);\
+				break;\
+			case 'I':\
+				argarray[i].i = (jint)va_arg(args, int);\
+				break;\
+			case 'J':\
+				argarray[i].j = (jlong)va_arg(args, long);\
+				break;\
+			case 'D':\
+				argarray[i].d = (jdouble)va_arg(args, double);\
+				break;\
+			case 'F':\
+				argarray[i].f = (jfloat)va_arg(args, double);\
+				break;\
+			case 'L':\
+				argarray[i].l = (jobject)va_arg(args, void*);\
+				break;\
 		}\
 	}\
 } while(0);

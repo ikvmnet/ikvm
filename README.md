@@ -40,6 +40,8 @@ These tasks can be done **without porting source code** to .NET.
 - .NET Core 3.1 and higher
 - .NET 5 and higher
 - Java SE 8
+- Windows x86/x64
+- Linux x64
 
 ## Documentation
 
@@ -65,9 +67,14 @@ The tools are available for download on the [Releases](https://github.com/ikvm-r
 
 ### Runtime Images
 
-Both a JRE and JDK runtime image are available. These images are standard JRE or JDK directory structures containing all of the standard tools: javac, jdeps, policytool, keytool, etc. Some Java libraries may require either a JRE or JDK, and if so, the IKVM.Image.JRE or IKVM.Image.JDK package should be added to your project respectively.
+Both a JRE and JDK runtime image are available. These images are standard JRE or JDK directory structures containing all of the standard tools: javac, jdeps, policytool, keytool, etc. Some Java libraries may require either a JRE or JDK, and if so, the `IKVM.Image.JRE` or `IKVM.Image.JDK` package should be added to your project.
 
-Also, a standalone JDK distributable is available for download on the [Releases](https://github.com/ikvm-revived/ikvm/releases) page. This directory structure should suffice as a JAVA_HOME path for standard Java applications.
+```console
+PM> Install-Package IKVM.Image.JRE
+PM> Install-Package IKVM.Image.JDK
+```
+
+A standalone JDK distributable is available for download on the [Releases](https://github.com/ikvm-revived/ikvm/releases) page. This directory structure should suffice as a `JAVA_HOME` path for standard Java applications.
 
 ## Usage
 
@@ -81,7 +88,7 @@ IKVM includes build-time support for translating Java libraries to .NET assembli
 
 ```xml
 <ItemGroup>
-  <PackageReference Include="IKVM" Version="8.2.0" />
+  <PackageReference Include="IKVM" Version="Version" />
 </ItemGroup>
 
 <ItemGroup>

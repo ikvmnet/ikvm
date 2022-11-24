@@ -1,10 +1,11 @@
 ﻿using System.IO;
+using System.Runtime.InteropServices;
 
 using FluentAssertions;
 
 using Microsoft.VisualStudio.TestTools.UnitTesting;
 
-namespace IKVM.Tests.Java.java.lang
+namespace IKVM.Tests.Java.java.io
 {
 
     [TestClass]
@@ -39,6 +40,24 @@ namespace IKVM.Tests.Java.java.lang
             r.nextLine().Should().Be("TEST");
             r.hasNextLine().Should().BeFalse();
             r.close();
+        }
+
+        [TestMethod]
+        public void ShouldRemoveDotFromCanonicalizedPath()
+        {
+            if (RuntimeInformation.IsOSPlatform(OSPlatform.Windows))
+                new global::java.io.File(@"C:\Windows\.\System32").getCanonicalPath().Should().Be(@"C:\Windows\System32");
+            else if (RuntimeInformation.IsOSPlatform(OSPlatform.Linux))
+                new global::java.io.File(@"/usr/./lib").getCanonicalPath().Should().Be(@"/usr/lib");
+        }
+
+        [TestMethod]
+        public void ShouldRemoveDotDotDotFromCanonicalizedPath()
+        {
+            if (RuntimeInformation.IsOSPlatform(OSPlatform.Windows))
+                new global::java.io.File(@"C:\Windows\..\Windows\System32").getCanonicalPath().Should().Be(@"C:\Windows\System32");
+            else if (RuntimeInformation.IsOSPlatform(OSPlatform.Linux))
+                new global::java.io.File(@"/usr/../usr/lib").getCanonicalPath().Should().Be(@"/usr/lib");
         }
 
     }
