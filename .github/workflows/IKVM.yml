@@ -298,6 +298,22 @@ jobs:
           tfm: net6.0
         - run: ikvmc.Tests
           tfm: net6.0
+        - run: IKVM.OpenJDK.Tests?TestPartition=0
+          tfm: net6.0
+        - run: IKVM.OpenJDK.Tests?TestPartition=1
+          tfm: net6.0
+        - run: IKVM.OpenJDK.Tests?TestPartition=2
+          tfm: net6.0
+        - run: IKVM.OpenJDK.Tests?TestPartition=3
+          tfm: net6.0
+        - run: IKVM.OpenJDK.Tests?TestPartition=4
+          tfm: net6.0
+        - run: IKVM.OpenJDK.Tests?TestPartition=5
+          tfm: net6.0
+        - run: IKVM.OpenJDK.Tests?TestPartition=6
+          tfm: net6.0
+        - run: IKVM.OpenJDK.Tests?TestPartition=7
+          tfm: net6.0
         include:
         - run: IKVM.MSBuild.Tasks.Tests
           tfm: net472
