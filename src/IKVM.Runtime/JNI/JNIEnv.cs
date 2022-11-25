@@ -2169,7 +2169,7 @@ namespace IKVM.Runtime.JNI
 
                     // don't allow dotted names!
                     if (methodSig.IndexOf('.') < 0)
-                        fi = wrapper.TypeAsTBD.GetField(JNI.METHOD_PTR_FIELD_PREFIX + methodName + methodSig, BindingFlags.Static | BindingFlags.NonPublic);
+                        fi = wrapper.TypeAsTBD.GetField(JNIVM.METHOD_PTR_FIELD_PREFIX + methodName + methodSig, BindingFlags.Static | BindingFlags.NonPublic);
 
                     if (fi == null)
                     {
