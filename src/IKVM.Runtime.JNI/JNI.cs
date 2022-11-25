@@ -206,6 +206,21 @@ namespace IKVM.Runtime
 
         public static int CreateJavaVM(void* ppvm, void* ppenv, void* args)
         {
+            static string ToString(byte* psz)
+            {
+                if (psz is null)
+                {
+                    return string.Empty;
+                }
+                for (int i = 0; ; i++)
+                {
+                    if (psz[i] == 0)
+                    {
+                        return new string((sbyte*)psz, 0, i, Encoding.UTF8);
+                    }
+                }
+            }
+
             JavaVMInitArgs* pInitArgs = (JavaVMInitArgs*)args;
 
             // we don't support the JDK 1.1 JavaVMInitArgs
@@ -217,7 +232,7 @@ namespace IKVM.Runtime
             var properties = new Dictionary<string, string>();
             for (int i = 0; i < pInitArgs->nOptions; i++)
             {
-                var option = JNIEnv.StringFromOEM(pInitArgs->options[i].optionString);
+                var option = ToString(pInitArgs->options[i].optionString);
                 if (option.StartsWith("-D"))
                 {
                     var idx = option.IndexOf('=', 2);

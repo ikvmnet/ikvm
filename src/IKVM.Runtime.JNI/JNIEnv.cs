@@ -343,18 +343,6 @@ namespace IKVM.Runtime
             TlsHack.ManagedJNIEnv = null;
         }
 
-        internal static string StringFromOEM(byte* psz)
-        {
-            for (int i = 0; ; i++)
-            {
-                if (psz[i] == 0)
-                {
-                    int oem = System.Globalization.CultureInfo.CurrentCulture.TextInfo.OEMCodePage;
-                    return new String((sbyte*)psz, 0, i, Encoding.GetEncoding(oem));
-                }
-            }
-        }
-
         internal static string StringFromUTF8(byte* psz)
         {
             // Sun's modified UTF8 encoding is not compatible with System.Text.Encoding.UTF8,
@@ -442,7 +430,7 @@ namespace IKVM.Runtime
                 // TODO what should the protection domain be?
                 // NOTE I'm assuming name is platform encoded (as opposed to UTF-8), but the Sun JVM only seems to work for ASCII.
                 var classLoader = (java.lang.ClassLoader)pEnv->UnwrapRef(loader);
-                return pEnv->MakeLocalRef(IKVM.Java.Externs.java.lang.ClassLoader.defineClass0(classLoader, name != null ? StringFromOEM(name) : null, buf, 0, buf.Length, null));
+                return pEnv->MakeLocalRef(IKVM.Java.Externs.java.lang.ClassLoader.defineClass0(classLoader, name != null ? StringFromUTF8(name) : null, buf, 0, buf.Length, null));
             }
             catch (Exception e)
             {
@@ -466,7 +454,7 @@ namespace IKVM.Runtime
         {
             try
             {
-                string name = StringFromOEM(pszName);
+                string name = StringFromUTF8(pszName);
 
                 // don't allow dotted names!
                 if (name.IndexOf('.') >= 0)
@@ -565,7 +553,7 @@ namespace IKVM.Runtime
                 {
                     wrapper.Finish();
                     java.lang.reflect.Constructor cons = (java.lang.reflect.Constructor)mw.ToMethodOrConstructor(false);
-                    exception = (Exception)cons.newInstance(msg == null ? new object[0] : new object[] { StringFromOEM(msg) }, env.callerID);
+                    exception = (Exception)cons.newInstance(msg == null ? new object[0] : new object[] { StringFromUTF8(msg) }, env.callerID);
                     rc = JNI_OK;
                 }
                 catch (RetargetableJavaException x)
@@ -620,7 +608,7 @@ namespace IKVM.Runtime
 
         internal static void FatalError(JNIEnv* pEnv, byte* msg)
         {
-            Console.Error.WriteLine("FATAL ERROR in native method: {0}", msg == null ? "(null)" : StringFromOEM(msg));
+            Console.Error.WriteLine("FATAL ERROR in native method: {0}", msg == null ? "(null)" : StringFromUTF8(msg));
             Console.Error.WriteLine(new StackTrace(1, true));
             Environment.Exit(1);
         }
