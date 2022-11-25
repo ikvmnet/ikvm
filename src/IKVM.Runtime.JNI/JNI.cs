@@ -27,7 +27,10 @@ using System.Collections.Generic;
 using System.Diagnostics;
 using System.Text;
 
+using com.sun.org.apache.xpath.@internal;
+
 using IKVM.Internal;
+using IKVM.Runtime.Text;
 
 namespace IKVM.Runtime
 {
@@ -194,6 +197,12 @@ namespace IKVM.Runtime
         internal static volatile bool jvmDestroyed;
         internal const string METHOD_PTR_FIELD_PREFIX = "__<jniptr>";
 
+#if NETFRAMEWORK
+        static readonly Encoding platformEncoding = Encoding.Default;
+#else
+        static readonly Encoding platformEncoding = CodePagesEncodingProvider.Instance.GetEncoding(0);
+#endif
+
         internal static bool IsSupportedJniVersion(jint version)
         {
             return version == JNIEnv.JNI_VERSION_1_1
@@ -204,35 +213,43 @@ namespace IKVM.Runtime
                 ;
         }
 
-        public static int CreateJavaVM(void* ppvm, void* ppenv, void* args)
+        /// <summary>
+        /// Decodes a pointer to the specified NULL-terminated string in platform format.
+        /// </summary>
+        /// <param name="psz"></param>
+        /// <returns></returns>
+        static string DecodePlatformString(byte* psz)
         {
-            static string ToString(byte* psz)
-            {
-                if (psz is null)
-                {
-                    return string.Empty;
-                }
-                for (int i = 0; ; i++)
-                {
-                    if (psz[i] == 0)
-                    {
-                        return new string((sbyte*)psz, 0, i, Encoding.UTF8);
-                    }
-                }
-            }
+            var p = MUTF8Encoding.IndexOfNull(psz);
+            return p < 0 ? null : platformEncoding.GetString(psz, p);
+        }
 
-            JavaVMInitArgs* pInitArgs = (JavaVMInitArgs*)args;
+        /// <summary>
+        /// Implements the JNI_CreateJavaVM native method.
+        /// </summary>
+        /// <param name="p_vm"></param>
+        /// <param name="p_env"></param>
+        /// <param name="vm_args"></param>
+        /// <returns></returns>
+        public static int CreateJavaVM(JavaVM** p_vm, void* p_env, void* vm_args)
+        {
+            var pInitArgs = (JavaVMInitArgs*)vm_args;
 
             // we don't support the JDK 1.1 JavaVMInitArgs
             if (!IsSupportedJniVersion(pInitArgs->version) || pInitArgs->version == JNIEnv.JNI_VERSION_1_1)
                 return JNIEnv.JNI_EVERSION;
+
+            // JVM is already created, only one allowed at a time
             if (jvmCreated)
                 return JNIEnv.JNI_ERR;
 
             var properties = new Dictionary<string, string>();
             for (int i = 0; i < pInitArgs->nOptions; i++)
             {
-                var option = ToString(pInitArgs->options[i].optionString);
+                var option = DecodePlatformString(pInitArgs->options[i].optionString);
+                if (option == null)
+                    return JNIEnv.JNI_ERR;
+
                 if (option.StartsWith("-D"))
                 {
                     var idx = option.IndexOf('=', 2);
@@ -252,14 +269,12 @@ namespace IKVM.Runtime
                 }
             }
 
-            // set properties to be imported
+            // initialize the JVM
             IKVM.Java.Externs.java.lang.VMSystemProperties.ImportProperties = properties;
-
-            // initialize the class library
             java.lang.Thread.currentThread();
+            *p_vm = JavaVM.pJavaVM;
 
-            *(void**)ppvm = JavaVM.pJavaVM;
-            return JavaVM.AttachCurrentThread(JavaVM.pJavaVM, (void**)ppenv, null);
+            return JavaVM.AttachCurrentThread(JavaVM.pJavaVM, (void**)p_env, null);
         }
 
         public static int GetDefaultJavaVMInitArgs(void* vm_args)
