@@ -278,6 +278,10 @@ namespace IKVM.Runtime.Text
 
         public unsafe int GetChars(ReadOnlySpan<byte> bytes, Span<char> chars)
         {
+            // avoid problems with empty buffer
+            if (bytes.Length == 0)
+                return 0;
+
             fixed (byte* bptr = bytes)
             fixed (char* cptr = chars)
                 return GetChars(bptr, bytes.Length, cptr, chars.Length);
