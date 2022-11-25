@@ -60,7 +60,7 @@ namespace IKVM.Runtime.JNI
         /// <returns></returns>
         static string DecodePlatformString(byte* psz)
         {
-            var p = MUTF8Encoding.IndexOfNull(psz);
+            var p = psz is not null ? MUTF8Encoding.IndexOfNull(psz) : -1;
             return p < 0 ? null : platformEncoding.GetString(psz, p);
         }
 

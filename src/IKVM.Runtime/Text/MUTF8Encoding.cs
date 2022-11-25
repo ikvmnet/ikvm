@@ -25,6 +25,11 @@ namespace IKVM.Runtime.Text
         /// <returns></returns>
         public static unsafe int IndexOfNull(byte* ptr, int max = int.MaxValue)
         {
+            if (ptr is null)
+                throw new ArgumentNullException(nameof(ptr));
+            if (max < 0)
+                throw new ArgumentOutOfRangeException(nameof(max));
+
             for (int i = 0; i < max; i++)
                 if (ptr[i] == 0)
                     return i;
@@ -49,6 +54,9 @@ namespace IKVM.Runtime.Text
 
         public unsafe int GetByteCount(ReadOnlySpan<char> chars)
         {
+            if (chars.Length == 0)
+                return 0;
+
             fixed (char* c = chars)
                 return GetByteCount(c, chars.Length);
         }
@@ -58,6 +66,15 @@ namespace IKVM.Runtime.Text
         /// <inheritdoc />
         public override unsafe int GetByteCount(char* chars, int count)
         {
+            if (chars is null)
+                throw new ArgumentNullException(nameof(chars));
+            if (count < 0)
+                throw new ArgumentOutOfRangeException(nameof(count));
+
+            // avoid problems with empty buffer
+            if (count == 0)
+                return 0;
+
             int len = 0;
 
             for (int i = 0; i < count; i++)
@@ -76,6 +93,17 @@ namespace IKVM.Runtime.Text
 
         public override int GetBytes(string s, int charIndex, int charCount, byte[] bytes, int byteIndex)
         {
+            if (s is null)
+                throw new ArgumentNullException(nameof(s));
+            if (charIndex < 0)
+                throw new ArgumentOutOfRangeException(nameof(charIndex));
+            if (charCount < 0)
+                throw new ArgumentOutOfRangeException(nameof(charCount));
+            if (bytes is null)
+                throw new ArgumentNullException(nameof(bytes));
+            if (byteIndex < 0)
+                throw new ArgumentOutOfRangeException(nameof(byteIndex));
+
             return GetBytes(s.AsSpan(charIndex, charCount), bytes.AsSpan(byteIndex));
         }
 
@@ -100,6 +128,9 @@ namespace IKVM.Runtime.Text
 
         public unsafe int GetBytes(ReadOnlySpan<char> chars, Span<byte> bytes)
         {
+            if (chars.Length == 0)
+                return 0;
+
             fixed (char* cptr = chars)
             fixed (byte* bptr = bytes)
                 return GetBytes(cptr, chars.Length, bptr, bytes.Length);
@@ -110,10 +141,18 @@ namespace IKVM.Runtime.Text
         /// <inheritdoc />
         public override unsafe int GetBytes(char* chars, int charCount, byte* bytes, int byteCount)
         {
+            if (chars is null)
+                throw new ArgumentNullException(nameof(chars));
             if (charCount < 0)
                 throw new ArgumentOutOfRangeException(nameof(charCount));
+            if (bytes is null)
+                throw new ArgumentNullException(nameof(bytes));
             if (byteCount < 0)
                 throw new ArgumentOutOfRangeException(nameof(byteCount));
+
+            // avoid problems with empty buffer
+            if (charCount == 0)
+                return 0;
 
             int j = 0;
 
@@ -149,6 +188,34 @@ namespace IKVM.Runtime.Text
             return j;
         }
 
+#if NETFRAMEWORK
+
+        public unsafe int GetCharCount(ReadOnlySpan<byte> bytes)
+        {
+            if (bytes.Length == 0)
+                return 0;
+
+            fixed (byte* ptr = bytes)
+                return GetCharCount(ptr, bytes.Length);
+        }
+
+#endif
+
+        /// <inheritdoc />
+        public unsafe override int GetCharCount(byte[] bytes, int index, int count)
+        {
+            if (bytes is null)
+                throw new ArgumentNullException(nameof(bytes));
+            if (index < 0)
+                throw new ArgumentOutOfRangeException(nameof(index));
+            if (count < 0)
+                throw new ArgumentOutOfRangeException(nameof(count));
+            if (index + count > bytes.Length)
+                throw new ArgumentOutOfRangeException(nameof(count));
+
+            return GetCharCount(bytes.AsSpan(index, count));
+        }
+
         /// <inheritdoc />
         public override unsafe int GetCharCount(byte* bytes, int count)
         {
@@ -156,6 +223,10 @@ namespace IKVM.Runtime.Text
                 throw new ArgumentNullException(nameof(bytes));
             if (count < 0)
                 throw new ArgumentOutOfRangeException(nameof(count));
+
+            // avoid problems with empty buffer
+            if (count == 0)
+                return 0;
 
             var hasNonAscii = false;
             for (int i = 0; i < count; i++)
@@ -197,31 +268,6 @@ namespace IKVM.Runtime.Text
             return l;
         }
 
-#if NETFRAMEWORK
-
-        public unsafe int GetCharCount(ReadOnlySpan<byte> bytes)
-        {
-            fixed (byte* ptr = bytes)
-                return GetCharCount(ptr, bytes.Length);
-        }
-
-#endif
-
-        /// <inheritdoc />
-        public unsafe override int GetCharCount(byte[] bytes, int index, int count)
-        {
-            if (bytes is null)
-                throw new ArgumentNullException(nameof(bytes));
-            if (index < 0)
-                throw new ArgumentOutOfRangeException(nameof(index));
-            if (count < 0)
-                throw new ArgumentOutOfRangeException(nameof(count));
-            if (index + count > bytes.Length)
-                throw new ArgumentOutOfRangeException(nameof(count));
-
-            return GetCharCount(bytes.AsSpan(index, count));
-        }
-
         /// <inheritdoc />
         public unsafe override int GetChars(byte[] bytes, int byteIndex, int byteCount, char[] chars, int charIndex)
         {
@@ -250,6 +296,10 @@ namespace IKVM.Runtime.Text
                 throw new ArgumentNullException(nameof(chars));
             if (charCount < 0)
                 throw new ArgumentOutOfRangeException(nameof(byteCount));
+
+            // avoid problems with empty buffer
+            if (byteCount == 0)
+                return 0;
 
             var hasNonAscii = false;
             for (int i = 0; i < byteCount; i++)
