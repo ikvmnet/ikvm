@@ -26,9 +26,9 @@ using System.Collections.Generic;
 using System.Diagnostics;
 using System.Reflection;
 using System.Runtime.InteropServices;
-using System.Text;
 
 using IKVM.Internal;
+using IKVM.Runtime.Text;
 
 namespace IKVM.Runtime
 {
@@ -100,7 +100,7 @@ namespace IKVM.Runtime
             /// </summary>
             internal ManagedJNIEnv()
             {
-                pJNIEnv = (JNIEnv*)JniMem.Alloc(sizeof(JNIEnv));
+                pJNIEnv = (JNIEnv*)JniMemory.Alloc(sizeof(JNIEnv));
                 localRefs = new object[32][];
                 active = localRefs[0] = new object[LOCAL_REF_INITIAL_BUCKET_SIZE];
                 // stuff something in the first entry to make sure we don't hand out a zero handle
@@ -126,7 +126,7 @@ namespace IKVM.Runtime
                         if (pJNIEnv->pinHandles[i].IsAllocated)
                             pJNIEnv->pinHandles[i].Free();
 
-                    JniMem.Free((IntPtr)(void*)pJNIEnv);
+                    JniMemory.Free((IntPtr)(void*)pJNIEnv);
                 }
 
             }
@@ -343,98 +343,62 @@ namespace IKVM.Runtime
             TlsHack.ManagedJNIEnv = null;
         }
 
-        internal static string StringFromOEM(byte* psz)
+        /// <summary>
+        /// Decodes the NULL terminated modified UTF-8 string pointed to by the given pointer.
+        /// </summary>
+        /// <param name="psz"></param>
+        /// <returns></returns>
+        /// <exception cref="java.lang.IllegalArgumentException"></exception>
+        internal static string DecodeMUTF8Argument(byte* psz, string arg)
         {
-            for (int i = 0; ; i++)
-            {
-                if (psz[i] == 0)
-                {
-                    int oem = System.Globalization.CultureInfo.CurrentCulture.TextInfo.OEMCodePage;
-                    return new String((sbyte*)psz, 0, i, Encoding.GetEncoding(oem));
-                }
-            }
+            if (psz is null)
+                return null;
+
+            var l = MUTF8Encoding.IndexOfNull(psz);
+            if (l < 0)
+                throw new java.lang.IllegalArgumentException(arg);
+
+            var v = MUTF8Encoding.MUTF8.GetString(psz, l);
+            return v;
         }
 
-        internal static string StringFromUTF8(byte* psz)
+        /// <summary>
+        /// Decodes the NULL terminated modified UTF-8 string pointed to by the given pointer.
+        /// </summary>
+        /// <param name="psz"></param>
+        /// <returns></returns>
+        /// <exception cref="java.lang.IllegalArgumentException"></exception>
+        internal static string DecodeMUTF8(byte* psz)
         {
-            // Sun's modified UTF8 encoding is not compatible with System.Text.Encoding.UTF8,
-            // so we need to roll our own
-            int len = 0;
-            bool hasNonAscii = false;
-            while (psz[len] != 0)
-            {
-                hasNonAscii |= psz[len] >= 128;
-                len++;
-            }
-            if (!hasNonAscii)
-            {
-                // optimize the common case of 7-bit ASCII
-                return new String((sbyte*)psz);
-            }
-            StringBuilder sb = new StringBuilder(len);
-            for (int i = 0; i < len; i++)
-            {
-                int c = *psz++;
-                int char2, char3;
-                switch (c >> 4)
-                {
-                    case 12:
-                    case 13:
-                        char2 = *psz++;
-                        i++;
-                        c = (((c & 0x1F) << 6) | (char2 & 0x3F));
-                        break;
-                    case 14:
-                        char2 = *psz++;
-                        char3 = *psz++;
-                        i++;
-                        i++;
-                        c = ((c & 0x0F) << 12) | ((char2 & 0x3F) << 6) | (char3 & 0x3F);
-                        break;
-                }
-                sb.Append((char)c);
-            }
-            return sb.ToString();
+            if (psz is null)
+                return null;
+
+            var l = MUTF8Encoding.IndexOfNull(psz);
+            if (l < 0)
+                throw new java.lang.IllegalArgumentException();
+
+            var v = MUTF8Encoding.MUTF8.GetString(psz, l);
+            return v;
         }
 
-        private static int StringUTF8Length(string s)
+        /// <summary>
+        /// Returns the number of characters of the modified UTF-8 string.
+        /// </summary>
+        /// <param name="psz"></param>
+        /// <returns></returns>
+        /// <exception cref="java.lang.IllegalArgumentException"></exception>
+        internal int GetMUTF8ArgumentLength(byte* psz)
         {
-            int len = 0;
-            for (int i = 0; i < s.Length; i++)
-            {
-                char ch = s[i];
-                if ((ch != 0) && (ch <= 0x7F))
-                {
-                    len++;
-                }
-                else if (ch <= 0x7FF)
-                {
-                    len += 2;
-                }
-                else
-                {
-                    len += 3;
-                }
-            }
-            return len;
+            return psz is null ? -1 : MUTF8Encoding.IndexOfNull(psz);
         }
 
-        internal static jint GetMethodArgs(JNIEnv* pEnv, IntPtr method, byte* sig)
+        internal static int GetMethodArgs(JNIEnv* pEnv, nint method, byte* sig)
         {
-            TypeWrapper[] argTypes = MethodWrapper.FromCookie(method).GetParameters();
-            for (int i = 0; i < argTypes.Length; i++)
-            {
-                TypeWrapper tw = argTypes[i];
-                if (tw.IsPrimitive)
-                {
-                    sig[i] = (byte)tw.SigName[0];
-                }
-                else
-                {
-                    sig[i] = (byte)'L';
-                }
-            }
-            return argTypes.Length;
+            var args = MethodWrapper.FromCookie(method).GetParameters();
+            for (var i = 0; i < args.Length; i++)
+                sig[i] = args[i].IsPrimitive ? (byte)args[i].SigName[0] : (byte)'L';
+
+            return args.Length;
         }
 
         internal static jint GetVersion(JNIEnv* pEnv)
@@ -446,71 +410,59 @@ namespace IKVM.Runtime
         {
             try
             {
-                byte[] buf = new byte[length];
-                Marshal.Copy((IntPtr)(void*)pbuf, buf, 0, length);
+                var buf = new byte[length];
+                Marshal.Copy((nint)(void*)pbuf, buf, 0, length);
                 // TODO what should the protection domain be?
                 // NOTE I'm assuming name is platform encoded (as opposed to UTF-8), but the Sun JVM only seems to work for ASCII.
-                global::java.lang.ClassLoader classLoader = (global::java.lang.ClassLoader)pEnv->UnwrapRef(loader);
-                return pEnv->MakeLocalRef(IKVM.Java.Externs.java.lang.ClassLoader.defineClass0(classLoader, name != null ? StringFromOEM(name) : null, buf, 0, buf.Length, null));
+                var classLoader = (java.lang.ClassLoader)pEnv->UnwrapRef(loader);
+                return pEnv->MakeLocalRef(IKVM.Java.Externs.java.lang.ClassLoader.defineClass0(classLoader, name != null ? DecodeMUTF8Argument(name, nameof(name)) : null, buf, 0, buf.Length, null));
             }
-            catch (Exception x)
+            catch (Exception e)
             {
-                SetPendingException(pEnv, x);
+                SetPendingException(pEnv, e);
                 return IntPtr.Zero;
             }
         }
 
-        private static ClassLoaderWrapper FindNativeMethodClassLoader(JNIEnv* pEnv)
+        static ClassLoaderWrapper FindNativeMethodClassLoader(JNIEnv* pEnv)
         {
-            ManagedJNIEnv env = pEnv->GetManagedJNIEnv();
+            var env = pEnv->GetManagedJNIEnv();
             if (env.callerID != null)
-            {
                 return ClassLoaderWrapper.FromCallerID(env.callerID);
-            }
-            if (env.classLoader != null)
-            {
+            else if (env.classLoader != null)
                 return env.classLoader;
-            }
-            return ClassLoaderWrapper.GetClassLoaderWrapper(java.lang.ClassLoader.getSystemClassLoader());
+            else
+                return ClassLoaderWrapper.GetClassLoaderWrapper(java.lang.ClassLoader.getSystemClassLoader());
         }
 
-        internal static jclass FindClass(JNIEnv* pEnv, byte* pszName)
+        internal static jclass FindClass(JNIEnv* pEnv, byte* name)
         {
             try
             {
-                string name = StringFromOEM(pszName);
+                var n = DecodeMUTF8Argument(name, nameof(name));
 
                 // don't allow dotted names!
-                if (name.IndexOf('.') >= 0)
-                {
-                    SetPendingException(pEnv, new java.lang.NoClassDefFoundError(name));
-                    return IntPtr.Zero;
-                }
+                if (n.IndexOf('.') >= 0)
+                    throw new java.lang.NoClassDefFoundError(n);
 
                 // spec doesn't say it, but Sun allows signature format class names (but not for primitives)
-                if (name.StartsWith("L") && name.EndsWith(";"))
-                {
-                    name = name.Substring(1, name.Length - 2);
-                }
+                if (n.StartsWith("L") && n.EndsWith(";"))
+                    n = n.Substring(1, n.Length - 2);
 
-                TypeWrapper wrapper = FindNativeMethodClassLoader(pEnv).LoadClassByDottedNameFast(name.Replace('/', '.'));
-                if (wrapper == null)
-                {
-                    SetPendingException(pEnv, new java.lang.NoClassDefFoundError(name));
-                    return IntPtr.Zero;
-                }
-                wrapper.Finish();
-                // spec doesn't say it, but Sun runs the static initializer
-                wrapper.RunClassInit();
-                return pEnv->MakeLocalRef(wrapper.ClassObject);
+                var w = FindNativeMethodClassLoader(pEnv).LoadClassByDottedNameFast(n.Replace('/', '.'));
+                if (w == null)
+                    throw new java.lang.NoClassDefFoundError(n);
+
+                w.Finish();
+                w.RunClassInit(); // spec doesn't say it, but Sun runs the static initializer
+                return pEnv->MakeLocalRef(w.ClassObject);
             }
-            catch (Exception x)
+            catch (Exception e)
             {
-                if (x is RetargetableJavaException)
-                {
-                    x = ((RetargetableJavaException)x).ToJava();
-                }
-                SetPendingException(pEnv, x);
+                if (e is RetargetableJavaException r)
+                    e = r.ToJava();
+
+                SetPendingException(pEnv, e);
                 return IntPtr.Zero;
             }
         }
@@ -566,18 +518,19 @@ namespace IKVM.Runtime
 
         internal static jint ThrowNew(JNIEnv* pEnv, jclass clazz, byte* msg)
         {
-            ManagedJNIEnv env = pEnv->GetManagedJNIEnv();
-            TypeWrapper wrapper = TypeWrapper.FromClass((java.lang.Class)UnwrapRef(env, clazz));
-            MethodWrapper mw = wrapper.GetMethodWrapper("<init>", msg == null ? "()V" : "(Ljava.lang.String;)V", false);
+            var env = pEnv->GetManagedJNIEnv();
+            var wrapper = TypeWrapper.FromClass((java.lang.Class)UnwrapRef(env, clazz));
+            var mw = wrapper.GetMethodWrapper("<init>", msg == null ? "()V" : "(Ljava.lang.String;)V", false);
             if (mw != null)
             {
                 jint rc;
                 Exception exception;
+
                 try
                 {
                     wrapper.Finish();
                     java.lang.reflect.Constructor cons = (java.lang.reflect.Constructor)mw.ToMethodOrConstructor(false);
-                    exception = (Exception)cons.newInstance(msg == null ? new object[0] : new object[] { StringFromOEM(msg) }, env.callerID);
+                    exception = (Exception)cons.newInstance(msg == null ? new object[0] : new object[] { DecodeMUTF8Argument(msg, nameof(msg)) }, env.callerID);
                     rc = JNI_OK;
                 }
                 catch (RetargetableJavaException x)
@@ -590,6 +543,7 @@ namespace IKVM.Runtime
                     exception = x;
                     rc = JNI_ERR;
                 }
+
                 SetPendingException(pEnv, exception);
                 return rc;
             }
@@ -632,7 +586,7 @@ namespace IKVM.Runtime
 
         internal static void FatalError(JNIEnv* pEnv, byte* msg)
         {
-            Console.Error.WriteLine("FATAL ERROR in native method: {0}", msg == null ? "(null)" : StringFromOEM(msg));
+            Console.Error.WriteLine("FATAL ERROR in native method: {0}", msg == null ? "(null)" : DecodeMUTF8Argument(msg, nameof(msg)));
             Console.Error.WriteLine(new StackTrace(1, true));
             Environment.Exit(1);
         }
@@ -950,38 +904,33 @@ namespace IKVM.Runtime
             return null;
         }
 
-        private static jmethodID FindMethodID(JNIEnv* pEnv, jclass clazz, byte* name, byte* sig, bool isstatic)
+        private static jmethodID FindMethodID(JNIEnv* pEnv, jclass clazz, byte* name, byte* sig, bool isStatic)
         {
             try
             {
-                TypeWrapper wrapper = TypeWrapper.FromClass((java.lang.Class)pEnv->UnwrapRef(clazz));
-                wrapper.Finish();
+                var tw = TypeWrapper.FromClass((java.lang.Class)pEnv->UnwrapRef(clazz));
+                tw.Finish();
+
                 // if name == NULL, the JDK returns the constructor
-                string methodname = (IntPtr)name == IntPtr.Zero ? "<init>" : StringFromUTF8(name);
-                string methodsig = StringFromUTF8(sig);
+                var methodname = (jshortArray)name == IntPtr.Zero ? "<init>" : DecodeMUTF8Argument(name, nameof(name));
+                var methodsig = DecodeMUTF8Argument(sig, nameof(sig));
+
                 MethodWrapper mw = null;
                 // don't allow dotted names!
                 if (methodsig.IndexOf('.') < 0)
                 {
                     methodsig = methodsig.Replace('/', '.');
                     if (methodname == "<init>" || methodname == "<clinit>")
-                    {
-                        mw = wrapper.GetMethodWrapper(methodname, methodsig, false);
-                    }
+                        mw = tw.GetMethodWrapper(methodname, methodsig, false);
                     else
-                    {
-                        mw = GetMethodImpl(wrapper, methodname, methodsig);
-                        if (mw == null)
-                        {
-                            mw = GetInterfaceMethodImpl(wrapper, methodname, methodsig);
-                        }
-                    }
+                        mw = GetMethodImpl(tw, methodname, methodsig) ?? GetInterfaceMethodImpl(tw, methodname, methodsig);
                 }
-                if (mw != null && mw.IsStatic == isstatic)
+                if (mw != null && mw.IsStatic == isStatic)
                 {
                     mw.Link();
                     return mw.Cookie;
                 }
+
                 SetPendingException(pEnv, new java.lang.NoSuchMethodError(string.Format("{0}{1}", methodname, methodsig)));
             }
             catch (RetargetableJavaException x)
@@ -992,6 +941,7 @@ namespace IKVM.Runtime
             {
                 SetPendingException(pEnv, x);
             }
+
             return IntPtr.Zero;
         }
 
@@ -1197,26 +1147,26 @@ namespace IKVM.Runtime
             }
         }
 
-        private static jfieldID FindFieldID(JNIEnv* pEnv, jclass clazz, byte* name, byte* sig, bool isstatic)
+        static jfieldID FindFieldID(JNIEnv* pEnv, jclass clazz, byte* name, byte* sig, bool isStatic)
         {
             try
             {
-                TypeWrapper wrapper = TypeWrapper.FromClass((java.lang.Class)pEnv->UnwrapRef(clazz));
-                wrapper.Finish();
-                string fieldsig = StringFromUTF8(sig);
+                var n = DecodeMUTF8Argument(name, nameof(name));
+                var s = DecodeMUTF8Argument(sig, nameof(sig));
+
+                var tw = TypeWrapper.FromClass((java.lang.Class)pEnv->UnwrapRef(clazz));
+                tw.Finish();
+
                 // don't allow dotted names!
-                if (fieldsig.IndexOf('.') < 0)
+                if (s.IndexOf('.') < 0)
                 {
-                    FieldWrapper fw = GetFieldImpl(wrapper, StringFromUTF8(name), fieldsig.Replace('/', '.'));
+                    var fw = GetFieldImpl(tw, n, s.Replace('/', '.'));
                     if (fw != null)
-                    {
-                        if (fw.IsStatic == isstatic)
-                        {
+                        if (fw.IsStatic == isStatic)
                             return fw.Cookie;
-                        }
-                    }
                 }
-                SetPendingException(pEnv, new java.lang.NoSuchFieldError((isstatic ? "Static" : "Instance") + " field '" + StringFromUTF8(name) + "' with signature '" + fieldsig + "' not found in class '" + wrapper.Name + "'"));
+
+                SetPendingException(pEnv, new java.lang.NoSuchFieldError($"{(isStatic ? "Static" : "Instance")} field '{n}' with signature '{s}' not found in class '{tw.Name}'"));
             }
             catch (RetargetableJavaException x)
             {
@@ -1226,6 +1176,7 @@ namespace IKVM.Runtime
             {
                 SetPendingException(pEnv, x);
             }
+
             return IntPtr.Zero;
         }
 
@@ -1544,29 +1495,26 @@ namespace IKVM.Runtime
             Marshal.FreeHGlobal((IntPtr)(void*)chars);
         }
 
-        internal static jobject NewStringUTF(JNIEnv* pEnv, byte* psz)
+        internal static jobject NewStringUTF(JNIEnv* pEnv, byte* bytes)
         {
-            if (psz == null)
-            {
-                // The JNI spec does not explicitly allow a null pointer, but the JDK accepts it
-                return IntPtr.Zero;
-            }
-            return pEnv->MakeLocalRef(StringFromUTF8(psz));
+            // the JNI spec does not explicitly allow a null pointer, but the JDK accepts it
+            return bytes == null ? IntPtr.Zero : pEnv->MakeLocalRef(DecodeMUTF8Argument(bytes, nameof(bytes)));
         }
 
         internal static jint GetStringUTFLength(JNIEnv* pEnv, jstring str)
         {
-            return StringUTF8Length((string)pEnv->UnwrapRef(str));
+            return MUTF8Encoding.MUTF8.GetByteCount((string)pEnv->UnwrapRef(str));
         }
 
-        internal static byte* GetStringUTFChars(JNIEnv* pEnv, jstring str, jboolean* isCopy)
+        internal static byte* GetStringUTFChars(JNIEnv* pEnv, jstring @string, jboolean* isCopy)
         {
-            string s = (string)pEnv->UnwrapRef(str);
-            byte* buf = (byte*)JniMem.Alloc(StringUTF8Length(s) + 1);
+            var s = (string)pEnv->UnwrapRef(@string);
+            var buf = (byte*)JniMemory.Alloc(MUTF8Encoding.MUTF8.GetByteCount(s) + 1);
             int j = 0;
+
             for (int i = 0; i < s.Length; i++)
             {
-                char ch = s[i];
+                var ch = s[i];
                 if ((ch != 0) && (ch <= 0x7F))
                 {
                     buf[j++] = (byte)ch;
@@ -1583,17 +1531,18 @@ namespace IKVM.Runtime
                     buf[j++] = (byte)((ch & 0x3F) | 0x80);
                 }
             }
+
             buf[j] = 0;
+
             if (isCopy != null)
-            {
                 *isCopy = JNI_TRUE;
-            }
+
             return buf;
         }
 
-        internal static void ReleaseStringUTFChars(JNIEnv* pEnv, jstring str, byte* chars)
+        internal static void ReleaseStringUTFChars(JNIEnv* pEnv, jstring @string, byte* utf)
         {
-            JniMem.Free((IntPtr)(void*)chars);
+            JniMemory.Free((IntPtr)(void*)utf);
         }
 
         internal static jsize GetArrayLength(JNIEnv* pEnv, jarray array)
@@ -1763,7 +1712,7 @@ namespace IKVM.Runtime
         internal static jboolean* GetBooleanArrayElements(JNIEnv* pEnv, jbooleanArray array, jboolean* isCopy)
         {
             bool[] b = (bool[])pEnv->UnwrapRef(array);
-            jboolean* p = (jboolean*)(void*)JniMem.Alloc(b.Length * 1);
+            jboolean* p = (jboolean*)(void*)JniMemory.Alloc(b.Length * 1);
             for (int i = 0; i < b.Length; i++)
             {
                 p[i] = b[i] ? JNI_TRUE : JNI_FALSE;
@@ -1778,7 +1727,7 @@ namespace IKVM.Runtime
         internal static jbyte* GetByteArrayElements(JNIEnv* pEnv, jbyteArray array, jboolean* isCopy)
         {
             byte[] b = (byte[])pEnv->UnwrapRef(array);
-            jbyte* p = (jbyte*)(void*)JniMem.Alloc(b.Length * 1);
+            jbyte* p = (jbyte*)(void*)JniMemory.Alloc(b.Length * 1);
             for (int i = 0; i < b.Length; i++)
             {
                 p[i] = (jbyte)b[i];
@@ -1793,7 +1742,7 @@ namespace IKVM.Runtime
         internal static jchar* GetCharArrayElements(JNIEnv* pEnv, jcharArray array, jboolean* isCopy)
         {
             char[] b = (char[])pEnv->UnwrapRef(array);
-            IntPtr buf = JniMem.Alloc(b.Length * 2);
+            IntPtr buf = JniMemory.Alloc(b.Length * 2);
             Marshal.Copy(b, 0, buf, b.Length);
             if (isCopy != null)
             {
@@ -1805,7 +1754,7 @@ namespace IKVM.Runtime
         internal static jshort* GetShortArrayElements(JNIEnv* pEnv, jshortArray array, jboolean* isCopy)
         {
             short[] b = (short[])pEnv->UnwrapRef(array);
-            IntPtr buf = JniMem.Alloc(b.Length * 2);
+            IntPtr buf = JniMemory.Alloc(b.Length * 2);
             Marshal.Copy(b, 0, buf, b.Length);
             if (isCopy != null)
             {
@@ -1817,7 +1766,7 @@ namespace IKVM.Runtime
         internal static jint* GetIntArrayElements(JNIEnv* pEnv, jintArray array, jboolean* isCopy)
         {
             int[] b = (int[])pEnv->UnwrapRef(array);
-            IntPtr buf = JniMem.Alloc(b.Length * 4);
+            IntPtr buf = JniMemory.Alloc(b.Length * 4);
             Marshal.Copy(b, 0, buf, b.Length);
             if (isCopy != null)
             {
@@ -1829,7 +1778,7 @@ namespace IKVM.Runtime
         internal static jlong* GetLongArrayElements(JNIEnv* pEnv, jlongArray array, jboolean* isCopy)
         {
             long[] b = (long[])pEnv->UnwrapRef(array);
-            IntPtr buf = JniMem.Alloc(b.Length * 8);
+            IntPtr buf = JniMemory.Alloc(b.Length * 8);
             Marshal.Copy(b, 0, buf, b.Length);
             if (isCopy != null)
             {
@@ -1841,7 +1790,7 @@ namespace IKVM.Runtime
         internal static jfloat* GetFloatArrayElements(JNIEnv* pEnv, jfloatArray array, jboolean* isCopy)
         {
             float[] b = (float[])pEnv->UnwrapRef(array);
-            IntPtr buf = JniMem.Alloc(b.Length * 4);
+            IntPtr buf = JniMemory.Alloc(b.Length * 4);
             Marshal.Copy(b, 0, buf, b.Length);
             if (isCopy != null)
             {
@@ -1853,7 +1802,7 @@ namespace IKVM.Runtime
         internal static jdouble* GetDoubleArrayElements(JNIEnv* pEnv, jdoubleArray array, jboolean* isCopy)
         {
             double[] b = (double[])pEnv->UnwrapRef(array);
-            IntPtr buf = JniMem.Alloc(b.Length * 8);
+            IntPtr buf = JniMemory.Alloc(b.Length * 8);
             Marshal.Copy(b, 0, buf, b.Length);
             if (isCopy != null)
             {
@@ -1874,7 +1823,7 @@ namespace IKVM.Runtime
             }
             if (mode == 0 || mode == JNI_ABORT)
             {
-                JniMem.Free((IntPtr)(void*)elems);
+                JniMemory.Free((IntPtr)(void*)elems);
             }
         }
 
@@ -1890,7 +1839,7 @@ namespace IKVM.Runtime
             }
             if (mode == 0 || mode == JNI_ABORT)
             {
-                JniMem.Free((IntPtr)(void*)elems);
+                JniMemory.Free((IntPtr)(void*)elems);
             }
         }
 
@@ -1903,7 +1852,7 @@ namespace IKVM.Runtime
             }
             if (mode == 0 || mode == JNI_ABORT)
             {
-                JniMem.Free((IntPtr)(void*)elems);
+                JniMemory.Free((IntPtr)(void*)elems);
             }
         }
 
@@ -1916,7 +1865,7 @@ namespace IKVM.Runtime
             }
             if (mode == 0 || mode == JNI_ABORT)
             {
-                JniMem.Free((IntPtr)(void*)elems);
+                JniMemory.Free((IntPtr)(void*)elems);
             }
         }
 
@@ -1929,7 +1878,7 @@ namespace IKVM.Runtime
             }
             if (mode == 0 || mode == JNI_ABORT)
             {
-                JniMem.Free((IntPtr)(void*)elems);
+                JniMemory.Free((IntPtr)(void*)elems);
             }
         }
 
@@ -1942,7 +1891,7 @@ namespace IKVM.Runtime
             }
             if (mode == 0 || mode == JNI_ABORT)
             {
-                JniMem.Free((IntPtr)(void*)elems);
+                JniMemory.Free((IntPtr)(void*)elems);
             }
         }
 
@@ -1955,7 +1904,7 @@ namespace IKVM.Runtime
             }
             if (mode == 0 || mode == JNI_ABORT)
             {
-                JniMem.Free((IntPtr)(void*)elems);
+                JniMemory.Free((IntPtr)(void*)elems);
             }
         }
 
@@ -1968,7 +1917,7 @@ namespace IKVM.Runtime
             }
             if (mode == 0 || mode == JNI_ABORT)
             {
-                JniMem.Free((IntPtr)(void*)elems);
+                JniMemory.Free((IntPtr)(void*)elems);
             }
         }
 
@@ -2212,34 +2161,34 @@ namespace IKVM.Runtime
                 wrapper.Finish();
                 for (int i = 0; i < nMethods; i++)
                 {
-                    string methodName = StringFromUTF8(methods[i].name);
-                    string methodSig = StringFromUTF8(methods[i].signature);
+                    var methodName = DecodeMUTF8(methods[i].name);
+                    var methodSig = DecodeMUTF8(methods[i].signature);
+
                     Tracer.Info(Tracer.Jni, "Registering native method: {0}.{1}{2}, fnPtr = 0x{3:X}", wrapper.Name, methodName, methodSig, ((IntPtr)methods[i].fnPtr).ToInt64());
                     FieldInfo fi = null;
+
                     // don't allow dotted names!
                     if (methodSig.IndexOf('.') < 0)
-                    {
-                        // TODO this won't work when we're putting the JNI methods in jniproxy.dll
                         fi = wrapper.TypeAsTBD.GetField(JNI.METHOD_PTR_FIELD_PREFIX + methodName + methodSig, BindingFlags.Static | BindingFlags.NonPublic);
-                    }
+
                     if (fi == null)
                     {
                         Tracer.Error(Tracer.Jni, "Failed to register native method: {0}.{1}{2}", wrapper.Name, methodName, methodSig);
-                        SetPendingException(pEnv, new java.lang.NoSuchMethodError(methodName));
-                        return JNI_ERR;
+                        throw new java.lang.NoSuchMethodError(methodName);
                     }
+
                     fi.SetValue(null, (IntPtr)methods[i].fnPtr);
                 }
                 return JNI_OK;
             }
-            catch (RetargetableJavaException x)
+            catch (RetargetableJavaException e)
             {
-                SetPendingException(pEnv, x.ToJava());
+                SetPendingException(pEnv, e.ToJava());
                 return JNI_ERR;
             }
-            catch (Exception x)
+            catch (Exception e)
             {
-                SetPendingException(pEnv, x);
+                SetPendingException(pEnv, e);
                 return JNI_ERR;
             }
         }
@@ -2385,7 +2334,7 @@ namespace IKVM.Runtime
             if (pinHandleInUseCount == pinHandleMaxCount)
             {
                 int newCount = pinHandleMaxCount + 32;
-                GCHandle* pNew = (GCHandle*)JniMem.Alloc(sizeof(GCHandle) * newCount);
+                GCHandle* pNew = (GCHandle*)JniMemory.Alloc(sizeof(GCHandle) * newCount);
                 for (int i = 0; i < pinHandleMaxCount; i++)
                 {
                     pNew[i] = pinHandles[i];
@@ -2394,7 +2343,7 @@ namespace IKVM.Runtime
                 {
                     pNew[i] = new GCHandle();
                 }
-                JniMem.Free((IntPtr)pinHandles);
+                JniMemory.Free((IntPtr)pinHandles);
                 pinHandles = pNew;
                 pinHandleMaxCount = newCount;
             }

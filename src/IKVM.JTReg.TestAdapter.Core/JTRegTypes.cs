@@ -10,7 +10,10 @@ using Type = System.Type;
 namespace IKVM.JTReg.TestAdapter.Core
 {
 
-    static class JTRegTypes
+    /// <summary>
+    /// Provides information and accessors for JTReg types, which are dynamically loaded.
+    /// </summary>
+    internal static class JTRegTypes
     {
 
         static readonly string[] libs = Directory.GetFiles(Path.Combine(Path.GetDirectoryName(typeof(JTRegTestManager).Assembly.Location), "jtreg"), "*.jar");

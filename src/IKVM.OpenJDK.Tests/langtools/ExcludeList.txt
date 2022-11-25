@@ -918,3 +918,6 @@ tools/jdeps/APIDeps.java                                                        
 tools/jdeps/Basic.java                                                                                                  generic-all
 tools/jdeps/DotFileTest.java                                                                                            generic-all
 tools/sjavac/SJavacWrapper.java                                                                                         generic-all
+
+# likely fails because the file takes too long to build
+tools/javac/file/zip/T6836682.java                                                                                      linux-all

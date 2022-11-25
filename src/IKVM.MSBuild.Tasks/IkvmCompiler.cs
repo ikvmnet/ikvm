@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Linq;
+using System.Runtime.InteropServices;
 using System.Threading;
 using System.Threading.Tasks;
 
@@ -136,6 +137,12 @@ namespace IKVM.MSBuild.Tasks
 
         protected override async Task<bool> ExecuteAsync(IkvmToolTaskDiagnosticWriter writer, CancellationToken cancellationToken)
         {
+            if (Debug && RuntimeInformation.IsOSPlatform(OSPlatform.Windows) == false)
+            {
+                Log.LogWarning("Emitting debug symbols from ikvmc is not supported on platforms other than Windows. Continuing without.");
+                Debug = false;
+            }
+
             var options = new IkvmCompilerOptions();
             options.ResponseFile = ResponseFile;
             options.Output = Output;
@@ -160,6 +167,7 @@ namespace IKVM.MSBuild.Tasks
                 "x86" => IkvmCompilerPlatform.X86,
                 "x64" => IkvmCompilerPlatform.X64,
                 "arm" => IkvmCompilerPlatform.ARM,
+                "arm64" => IkvmCompilerPlatform.ARM64,
                 _ => throw new NotImplementedException(),
             };
 

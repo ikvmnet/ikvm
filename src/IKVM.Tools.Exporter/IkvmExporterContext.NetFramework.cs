@@ -75,9 +75,9 @@ namespace IKVM.Tools.Exporter
         /// <param name="cancellationToken"></param>
         /// <returns></returns>
         /// <exception cref="NotImplementedException"></exception>
-        public partial Task<int> ExecuteAsync(CancellationToken cancellationToken)
+        public partial async Task<int> ExecuteAsync(CancellationToken cancellationToken)
         {
-            return Task.Run(dispatcher.Execute);
+            return await Task.Run(dispatcher.Execute);
         }
 
         /// <summary>

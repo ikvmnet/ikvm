@@ -32,7 +32,18 @@ namespace IKVM.JTReg.TestAdapter.Core
         internal const string DEFAULT_PARAM_TAG = "regtest";
         internal const string ENV_PREFIX = "JTREG_";
 
-        protected static readonly MD5 MD5 = MD5.Create();
+        static readonly MD5 md5 = MD5.Create();
+
+        /// <summary>
+        /// Computes the hash of the value.
+        /// </summary>
+        /// <param name="buffer"></param>
+        /// <returns></returns>
+        static byte[] ComputeHash(byte[] buffer)
+        {
+            lock (md5)
+                return md5.ComputeHash(buffer);
+        }
 
         /// <summary>
         /// Initializes the static instance.
@@ -44,7 +55,7 @@ namespace IKVM.JTReg.TestAdapter.Core
             if (RuntimeInformation.IsOSPlatform(OSPlatform.Linux))
             {
                 var javaHome = java.lang.System.getProperty("java.home");
-                foreach (var exec in new[] { "java", "javac", "jar", "jarsigner", "javadoc", "javah", "javap", "jdeps", "keytool", "policytool", "rmic", "wsgen", "wsimport" })
+                foreach (var exec in new[] { "java", "javac", "jar", "jarsigner", "javadoc", "javah", "javap", "jdeps", "keytool", "native2ascii", "policytool", "rmic", "wsgen", "wsimport" })
                 {
                     var execPath = Path.Combine(javaHome, "bin", exec);
                     if (File.Exists(execPath))
@@ -73,7 +84,7 @@ namespace IKVM.JTReg.TestAdapter.Core
         /// <returns></returns>
         protected static string GetSourceHash(string source)
         {
-            var b = MD5.ComputeHash(Encoding.UTF8.GetBytes(source));
+            var b = ComputeHash(Encoding.UTF8.GetBytes(source));
             var s = new StringBuilder(32);
             for (int i = 0; i < b.Length; i++)
                 s.Append(b[i].ToString("x2"));
@@ -192,7 +203,7 @@ namespace IKVM.JTReg.TestAdapter.Core
                 testWatch.Start();
 
                 // for each suite, get the results and transform a test case
-                foreach (dynamic testSuite in Util.GetTestSuites(source, testManager))
+                foreach (dynamic testSuite in (IEnumerable<dynamic>)Util.GetTestSuites(source, testManager))
                 {
                     foreach (var testCase in (IEnumerable<JTRegTestCase>)Util.GetTestCases(source, testManager, testSuite))
                     {
@@ -294,13 +305,16 @@ namespace IKVM.JTReg.TestAdapter.Core
                 var testManager = CreateTestManager(context, baseDir, new java.io.PrintWriter(output));
                 testManager.addTestFiles(testDirs, false);
 
+                // load the set of suites
+                var testSuites = ((IEnumerable<dynamic>)Util.GetTestSuites(source, testManager)).ToList();
+
                 // we will need a full list of tests to apply any filters to
                 if (tests == null)
                 {
-                    var l = new List<JTRegTestCase>();
+                    var l = new List<JTRegTestCase>(512);
 
                     // discover the full set of tests
-                    foreach (dynamic testSuite in Util.GetTestSuites(source, testManager))
+                    foreach (dynamic testSuite in testSuites)
                         foreach (var testCase in (IEnumerable<JTRegTestCase>)Util.GetTestCases(source, testManager, testSuite))
                             l.Add(testCase);
 
@@ -311,7 +325,7 @@ namespace IKVM.JTReg.TestAdapter.Core
                 tests = context.FilterTestCases(tests);
 
                 // invoke each test suite
-                foreach (dynamic testSuite in (IEnumerable)testManager.getTestSuites())
+                foreach (dynamic testSuite in testSuites)
                 {
                     context.SendMessage(JTRegTestMessageLevel.Informational, $"JTReg: Running test suite: {(string)testSuite.getName()}");
                     RunTests(source, testManager, testSuite, context, tests, output, CreateParameters(source, testManager, testSuite, tests, debugUri), cancellationToken);
@@ -421,7 +435,7 @@ namespace IKVM.JTReg.TestAdapter.Core
         java.util.Map GetEnvVars(Uri debugUri)
         {
             var envVars = new java.util.TreeMap();
-
+            var os = (string)JTRegTypes.OS.Current().family;
             // import existing variables based on the current OS
             foreach (var var in ((string)JTRegTypes.OS.Current().family) == "windows" ? DEFAULT_WINDOWS_ENV_VARS : DEFAULT_UNIX_ENV_VARS)
                 if (Environment.GetEnvironmentVariable(var) is string val)

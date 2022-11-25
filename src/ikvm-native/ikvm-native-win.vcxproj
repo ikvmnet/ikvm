@@ -101,31 +101,37 @@
         <OutDir>$(ProjectDir)bin\$(Configuration)\win-x64\</OutDir>
         <IntDir>$(ProjectDir)obj\$(Configuration)\win-x64\</IntDir>
         <TargetName>ikvm-native</TargetName>
+        <IncludePath>..\..\openjdk\jdk\src\share\javavm\export;..\..\openjdk\jdk\src\windows\javavm\export;$(VC_IncludePath);$(WindowsSDK_IncludePath)</IncludePath>
     </PropertyGroup>
     <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'">
         <OutDir>$(ProjectDir)bin\$(Configuration)\win-x64\</OutDir>
         <IntDir>$(ProjectDir)obj\$(Configuration)\win-x64\</IntDir>
         <TargetName>ikvm-native</TargetName>
+        <IncludePath>..\..\openjdk\jdk\src\share\javavm\export;..\..\openjdk\jdk\src\windows\javavm\export;$(VC_IncludePath);$(WindowsSDK_IncludePath)</IncludePath>
     </PropertyGroup>
     <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">
         <OutDir>$(ProjectDir)bin\$(Configuration)\win-x86\</OutDir>
         <IntDir>$(ProjectDir)obj\$(Configuration)\win-x86\</IntDir>
         <TargetName>ikvm-native</TargetName>
+        <IncludePath>..\..\openjdk\jdk\src\share\javavm\export;..\..\openjdk\jdk\src\windows\javavm\export;$(VC_IncludePath);$(WindowsSDK_IncludePath)</IncludePath>
     </PropertyGroup>
     <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">
         <OutDir>$(ProjectDir)bin\$(Configuration)\win-x86\</OutDir>
         <IntDir>$(ProjectDir)obj\$(Configuration)\win-x86\</IntDir>
         <TargetName>ikvm-native</TargetName>
+        <IncludePath>..\..\openjdk\jdk\src\share\javavm\export;..\..\openjdk\jdk\src\windows\javavm\export;$(VC_IncludePath);$(WindowsSDK_IncludePath)</IncludePath>
     </PropertyGroup>
     <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|ARM'">
         <OutDir>$(ProjectDir)bin\$(Configuration)\win-arm\</OutDir>
         <IntDir>$(ProjectDir)obj\$(Configuration)\win-arm\</IntDir>
         <TargetName>ikvm-native</TargetName>
+        <IncludePath>..\..\openjdk\jdk\src\share\javavm\export;..\..\openjdk\jdk\src\windows\javavm\export;$(VC_IncludePath);$(WindowsSDK_IncludePath)</IncludePath>
     </PropertyGroup>
     <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|ARM'">
         <OutDir>$(ProjectDir)bin\$(Configuration)\win-arm\</OutDir>
         <IntDir>$(ProjectDir)obj\$(Configuration)\win-arm\</IntDir>
         <TargetName>ikvm-native</TargetName>
+        <IncludePath>..\..\openjdk\jdk\src\share\javavm\export;..\..\openjdk\jdk\src\windows\javavm\export;$(VC_IncludePath);$(WindowsSDK_IncludePath)</IncludePath>
     </PropertyGroup>
     <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">
         <ClCompile>
@@ -207,10 +213,6 @@
     </ItemDefinitionGroup>
     <ItemGroup>
         <ClCompile Include="jni.c" />
-        <ClCompile Include="os.c" />
-    </ItemGroup>
-    <ItemGroup>
-        <ClInclude Include="jni.h" />
     </ItemGroup>
     <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
     <ImportGroup Label="ExtensionTargets">

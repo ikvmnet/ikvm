@@ -7,9 +7,7 @@
     <Import Project="$(MSBuildThisFileDirectory)..\..\ikvm.refs.props" />
 
     <PropertyGroup>
-        <TargetFrameworks>net461;net472;net48;netcoreapp3.1;net6.0</TargetFrameworks>
-        <AutoGenerateBindingRedirects Condition="$([MSBuild]::IsTargetFrameworkCompatible('$(TargetFramework)', 'net461'))">true</AutoGenerateBindingRedirects>
-        <GenerateBindingRedirectsOutputType Condition="$([MSBuild]::IsTargetFrameworkCompatible('$(TargetFramework)', 'net461'))">true</GenerateBindingRedirectsOutputType>
+        <TargetFrameworks>net461;netcoreapp3.1</TargetFrameworks>
         <ErrorOnDuplicatePublishOutputFiles>false</ErrorOnDuplicatePublishOutputFiles>
     </PropertyGroup>
 

@@ -130,9 +130,10 @@ namespace IKVM.Reflection
 		ARM = 452,
 		IA64 = 512,
 		AMD64 = 34404,
-	}
+        ARM64 = 0xAA64,
+    }
 
-	[FlagsAttribute]
+    [FlagsAttribute]
 	public enum MemberTypes
 	{
 		Constructor = 0x01,
@@ -236,6 +237,7 @@ namespace IKVM.Reflection
 		IA64 = 3,
 		Amd64 = 4,
 		Arm = 5,
+		Arm64 = 6,
 		// if an item is added here, make sure to update AssemblyName.ProcessorArchitecture,
 		// AssemblyReader.GetNameImpl() and Fusion.ParseAssemblyName as well
 	}

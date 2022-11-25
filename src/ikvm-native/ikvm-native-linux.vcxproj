@@ -58,60 +58,32 @@
         <TargetName>libikvm-native</TargetName>
         <OutDir>$(ProjectDir)bin\$(Configuration)\linux-x64\</OutDir>
         <IntDir>$(ProjectDir)obj\$(Configuration)\linux-x64\</IntDir>
-        <IncludePath>/usr/include;/usr/local/include</IncludePath>
-        <LocalRemoteCopySources>true</LocalRemoteCopySources>
+        <IncludePath>../../openjdk/jdk/src/share/javavm/export/;../../openjdk/jdk/src/solaris/javavm/export/;/usr/include;/usr/local/include</IncludePath>
         <WSLPath>default</WSLPath>
     </PropertyGroup>
     <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x86'">
         <TargetName>libikvm-native</TargetName>
         <OutDir>$(ProjectDir)bin\$(Configuration)\linux-x86\</OutDir>
         <IntDir>$(ProjectDir)obj\$(Configuration)\linux-x86\</IntDir>
-        <IncludePath>/usr/include;/usr/local/include</IncludePath>
-        <LocalRemoteCopySources>true</LocalRemoteCopySources>
+        <IncludePath>../../openjdk/jdk/src/share/javavm/export/;../../openjdk/jdk/src/solaris/javavm/export/;/usr/include;/usr/local/include</IncludePath>
         <WSLPath>default</WSLPath>
     </PropertyGroup>
     <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'">
         <TargetName>libikvm-native</TargetName>
         <OutDir>$(ProjectDir)bin\$(Configuration)\linux-x64\</OutDir>
         <IntDir>$(ProjectDir)obj\$(Configuration)\linux-x64\</IntDir>
-        <IncludePath>/usr/include;/usr/local/include</IncludePath>
-        <LocalRemoteCopySources>true</LocalRemoteCopySources>
+        <IncludePath>../../openjdk/jdk/src/share/javavm/export/;../../openjdk/jdk/src/solaris/javavm/export/;/usr/include;/usr/local/include</IncludePath>
         <WSLPath>default</WSLPath>
     </PropertyGroup>
     <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|x86'">
         <TargetName>libikvm-native</TargetName>
         <OutDir>$(ProjectDir)bin\$(Configuration)\linux-x86\</OutDir>
         <IntDir>$(ProjectDir)obj\$(Configuration)\linux-x86\</IntDir>
-        <IncludePath>/usr/include;/usr/local/include</IncludePath>
-        <LocalRemoteCopySources>true</LocalRemoteCopySources>
+        <IncludePath>../../openjdk/jdk/src/share/javavm/export/../../openjdk/jdk/src/solaris/javavm/export/;/usr/include;/usr/local/include</IncludePath>
         <WSLPath>default</WSLPath>
     </PropertyGroup>
-    <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">
-        <Link>
-            <LibraryDependencies>dl</LibraryDependencies>
-        </Link>
-    </ItemDefinitionGroup>
-    <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x86'">
-        <Link>
-            <LibraryDependencies>dl</LibraryDependencies>
-        </Link>
-    </ItemDefinitionGroup>
-    <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'">
-        <Link>
-            <LibraryDependencies>dl</LibraryDependencies>
-        </Link>
-    </ItemDefinitionGroup>
-    <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Release|x86'">
-        <Link>
-            <LibraryDependencies>dl</LibraryDependencies>
-        </Link>
-    </ItemDefinitionGroup>
     <ItemGroup>
         <ClCompile Include="jni.c" />
-        <ClCompile Include="os.c" />
-    </ItemGroup>
-    <ItemGroup>
-        <ClInclude Include="jni.h" />
     </ItemGroup>
     <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
     <ImportGroup Label="ExtensionTargets" />

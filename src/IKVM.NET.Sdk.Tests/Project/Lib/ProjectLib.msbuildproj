@@ -1,8 +1,4 @@
 ﻿<Project>
-    <PropertyGroup>
-        <ImportDirectoryBuildProps>false</ImportDirectoryBuildProps>
-        <ImportDirectoryBuildTargets>false</ImportDirectoryBuildTargets>
-    </PropertyGroup>
     <Import Sdk="IKVM.NET.Sdk" Version="$(PackageVersion)" Project="Sdk.props" />
 
     <PropertyGroup>

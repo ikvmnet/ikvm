@@ -1,14 +1,9 @@
-<#@ template language="c#" hostspecific="true" #>
-<#@ parameter type="System.String" name="Name" #>
-<#@ parameter type="System.String" name="Version" #>
-<#@ parameter type="System.String" name="OpenJdkSpecificationVendor" #>
-<#@ parameter type="System.String" name="OpenJdkSpecificationVersion" #>
 Manifest-Version: 1.0
-Created-By: <#= Version #> (<#= Name #>)
-Implementation-Vendor: <#= Name #>
+Created-By: #Version# (#Name#)
+Implementation-Vendor: #Name#
 Implementation-Title: Java Runtime Environment
-Implementation-Version: <#= Version #>
-Specification-Vendor: <#= OpenJdkSpecificationVendor #>
+Implementation-Version: #Version#
+Specification-Vendor: #OpenJdkSpecificationVendor#
 Specification-Title: Java Platform API Specification
-Specification-Version: <#= OpenJdkSpecificationVersion #>
+Specification-Version: #OpenJdkSpecificationVersion#
 

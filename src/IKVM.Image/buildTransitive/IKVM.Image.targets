@@ -104,6 +104,8 @@
         <IkvmImageRuntimeIdentifiers Include="win81-arm" />
         <IkvmImageRuntimeIdentifiers Include="win10-arm64" />
         <IkvmImageRuntimeIdentifiers Include="linux-x64" />
+        <IkvmImageRuntimeIdentifiers Include="linux-arm" />
+        <IkvmImageRuntimeIdentifiers Include="linux-arm64" />
         <IkvmImageRuntimeIdentifiers Include="osx-x64" />
     </ItemGroup>
 

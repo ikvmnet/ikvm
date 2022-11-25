@@ -24,12 +24,10 @@
 
 package java.io;
 
-class DefaultFileSystem
-{
-    static FileSystem getFileSystem()
-    {
-        return ikvm.internal.Util.WINDOWS
-            ? new WinNTFileSystem()
-            : new UnixFileSystem();
+class DefaultFileSystem {
+
+    static FileSystem getFileSystem() {
+        return ikvm.internal.Util.WINDOWS ? new WinNTFileSystem() : new UnixFileSystem();
     }
+
 }

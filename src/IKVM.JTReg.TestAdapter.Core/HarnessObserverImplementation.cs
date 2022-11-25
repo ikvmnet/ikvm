@@ -14,7 +14,7 @@ namespace IKVM.JTReg.TestAdapter.Core
         readonly string source;
         readonly dynamic testSuite;
         readonly IJTRegExecutionContext context;
-        readonly IEnumerable<JTRegTestCase> tests;
+        readonly IDictionary<string, JTRegTestCase> tests;
 
         /// <summary>
         /// Initializes a new instance.
@@ -29,7 +29,7 @@ namespace IKVM.JTReg.TestAdapter.Core
             this.source = source ?? throw new ArgumentNullException(nameof(source));
             this.testSuite = testSuite ?? throw new ArgumentNullException(nameof(testSuite));
             this.context = context ?? throw new ArgumentNullException(nameof(context));
-            this.tests = tests ?? throw new ArgumentNullException(nameof(tests));
+            this.tests = tests.Where(i => i.Source == source).ToDictionary(i => i.FullyQualifiedName, i => i) ?? throw new ArgumentNullException(nameof(tests));
         }
 
         public void startingTestRun(dynamic self, dynamic parameters)
@@ -40,7 +40,7 @@ namespace IKVM.JTReg.TestAdapter.Core
         public void startingTest(dynamic self, dynamic testResult)
         {
             var name = (string)Util.GetFullyQualifiedTestName(source, testSuite, testResult);
-            var test = tests.FirstOrDefault(i => i.Source == source && i.FullyQualifiedName == name);
+            var test = tests.TryGetValue(name, out var t) ? t : null;
 
             context.SendMessage(JTRegTestMessageLevel.Informational, $"JTReg: starting test '{test.FullyQualifiedName}'");
             context.RecordStart(test);
@@ -59,7 +59,7 @@ namespace IKVM.JTReg.TestAdapter.Core
         public void finishedTest(dynamic self, dynamic testResult)
         {
             var name = (string)Util.GetFullyQualifiedTestName(source, testSuite, testResult);
-            var test = tests.FirstOrDefault(i => i.Source == source && i.FullyQualifiedName == name);
+            var test = tests.TryGetValue(name, out var t) ? t : null;
             var rslt = (JTRegTestResult)Util.ToTestResult(source, testResult, test);
 
             context.SendMessage(JTRegTestMessageLevel.Informational, $"JTReg: finished test '{test.FullyQualifiedName}'. [{rslt.Outcome}]");

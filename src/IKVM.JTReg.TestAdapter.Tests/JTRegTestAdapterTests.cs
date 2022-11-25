@@ -1,7 +1,10 @@
 ﻿using System.Collections.Concurrent;
 using System.Collections.Generic;
+using System.Runtime.InteropServices;
 
 using FluentAssertions;
+
+using IKVM.JTReg.TestAdapter.Core;
 
 using Microsoft.VisualStudio.TestPlatform.ObjectModel;
 using Microsoft.VisualStudio.TestPlatform.ObjectModel.Adapter;
@@ -20,10 +23,10 @@ namespace IKVM.JTReg.TestAdapter.Tests
         public TestContext TestContext { get; set; }
 
         [TestMethod]
-        public void Can_locate_test()
+        public void CanDiscoverTests()
         {
             var discoveryContext = new Mock<IDiscoveryContext>();
-            var messageLogger = new Mock<IMessageLogger>(); 
+            var messageLogger = new Mock<IMessageLogger>();
             var testCaseDiscoverySink = new Mock<ITestCaseDiscoverySink>();
             var testCases = new List<TestCase>();
             testCaseDiscoverySink.Setup(x => x.SendTestCase(It.IsAny<TestCase>())).Callback((TestCase x) => testCases.Add(x));
@@ -34,7 +37,7 @@ namespace IKVM.JTReg.TestAdapter.Tests
         }
 
         [TestMethod]
-        public void Can_execute_test()
+        public void CanExecuteTests()
         {
             var runContext = new Mock<IRunContext>();
             runContext.Setup(x => x.TestRunDirectory).Returns(TestContext.TestRunDirectory);
@@ -45,6 +48,15 @@ namespace IKVM.JTReg.TestAdapter.Tests
             var adp = new JTRegTestExecutor();
             adp.RunTests(new[] { typeof(JTRegTestAdapterTests).Assembly.Location }, runContext.Object, frameworkHandle.Object);
             testResults.Should().HaveCountGreaterThanOrEqualTo(1);
+        }
+
+        [TestMethod]
+        public void CurrentOSFamilyShouldBeCorrect()
+        {
+            if (RuntimeInformation.IsOSPlatform(OSPlatform.Windows))
+                ((string)JTRegTypes.OS.Current().family).Should().Be("windows");
+            else if (RuntimeInformation.IsOSPlatform(OSPlatform.Linux))
+                ((string)JTRegTypes.OS.Current().family).Should().Be("linux");
         }
 
     }
