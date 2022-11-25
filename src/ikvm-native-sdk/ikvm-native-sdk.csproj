@@ -1,0 +1,45 @@
+﻿<Project Sdk="Microsoft.Build.NoTargets/3.5.6">
+    <PropertyGroup>
+        <TargetFrameworks>netstandard2.0</TargetFrameworks>
+        <TargetName>ikvm-native</TargetName>
+        <_DefaultLLVMInstallDir Condition="'$(_DefaultLLVMInstallDir)' == ''">$(VsInstallRoot)\VC\Tools\Llvm\x64</_DefaultLLVMInstallDir>
+        <LLVMInstallDir Condition="'$(LLVMInstallDir)' == ''">$(_DefaultLLVMInstallDir)</LLVMInstallDir>
+    </PropertyGroup>
+
+    <ItemGroup>
+        <Build Include="osx-x64">
+            <Architecture>x64_86-apple-darwin</Architecture>
+            <TargetExt>.dynlib</TargetExt>
+            <ISysroot>..\..\osxcross\target\SDK\MacOSX11.1.sdk</ISysroot>
+            <Include>..\..\openjdk\jdk\src\share\javavm\export;..\..\openjdk\jdk\src\solaris\javavm\export</Include>
+        </Build>
+    </ItemGroup>
+
+    <ItemGroup>
+        <CCompile Include="**\*.c" />
+    </ItemGroup>
+
+    <Target Name="CLangCompile" Inputs="@(CCompile)" Outputs="$(IntermediateOutputPath)%(Build.Identity)\$(TargetName)%(Build.TargetExt)">
+        <ItemGroup>
+            <_CLangArgs Include="-shared" />
+            <_CLangArgs Include="-fuse-ld=lld" />
+            <_CLangArgs Include="-target=%(Build.Architecture)" />
+            <_CLangArgs Include="-isysroot" Condition=" '%(Build.ISysroot)' != '' " />
+            <_CLangArgs Include="%(Build.ISysroot)" Condition=" '%(Build.ISysroot)' != '' " />
+            <_ClangInclude Include="%(Build.Include)" />
+            <_CLangArgs Include="@(_ClangInclude->'-I%(Identity)')" Condition=" '@(_ClangInclude)' != '' " />
+            <_CLangArgs Include="-o" />
+            <_CLangArgs Include="$(IntermediateOutputPath)%(Build.Identity)\$(TargetName)%(Build.TargetExt)" />
+            <_CLangArgs Include="@(CCompile)" />
+        </ItemGroup>
+        <Exec Command="clang @(_CLangArgs, ' ')" />
+    </Target>
+
+    <PropertyGroup>
+        <CoreCompileDependsOn>
+            CLangCompile;
+            $(CoreCompileDependsOn)
+        </CoreCompileDependsOn>
+    </PropertyGroup>
+
+</Project>
