@@ -231,7 +231,7 @@ namespace IKVM.Runtime
         /// <param name="p_env"></param>
         /// <param name="vm_args"></param>
         /// <returns></returns>
-        public static int CreateJavaVM(JavaVM** p_vm, void* p_env, void* vm_args)
+        public static int CreateJavaVM(void** p_vm, void* p_env, void* vm_args)
         {
             var pInitArgs = (JavaVMInitArgs*)vm_args;
 
