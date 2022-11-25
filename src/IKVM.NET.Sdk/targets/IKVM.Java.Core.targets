@@ -111,6 +111,10 @@ Files = files.ToArray();
         </ClasspathToClasspathFiles>
     </Target>
 
+    <ItemGroup>
+        <Compile Include="$(MSBuildThisFileDirectory)_.java" />
+    </ItemGroup>
+
     <!-- Abstract target to conduct actual Java compilation. Overridden either by Command or Task implementation. -->
     <Target Name="_CompileJava" DependsOnTargets="ExportReferences;_ResolveClasspathFiles" Inputs="@(Compile);@(ClasspathFiles)" Outputs="$(_CompileJavaStampFile)">
         <Error Text="_CompileJava not implemented." />

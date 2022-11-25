@@ -64,10 +64,17 @@ EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "IKVM.MSBuild.Tasks.Tests", "src\IKVM.MSBuild.Tasks.Tests\IKVM.MSBuild.Tasks.Tests.csproj", "{E7C0E8FA-F34C-48C6-AD55-FD9798F5BC71}"
 EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "IKVM.Java", "src\IKVM.Java\IKVM.Java.msbuildproj", "{ABD81C7E-F986-4018-986E-ACAF82C64D3A}"
+	ProjectSection(ProjectDependencies) = postProject
+		{0A87FF49-AC9D-479A-ACBB-F4028A0BE1F7} = {0A87FF49-AC9D-479A-ACBB-F4028A0BE1F7}
+		{2F29E48C-63C3-4E47-BCBA-A7454B9119CF} = {2F29E48C-63C3-4E47-BCBA-A7454B9119CF}
+	EndProjectSection
 EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "IKVM.NET.Sdk", "src\IKVM.NET.Sdk\IKVM.NET.Sdk.msbuildproj", "{704BD7C7-7746-4D72-A86E-ECFE7BBD80CC}"
 EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "IKVM.MSBuild", "src\IKVM.MSBuild\IKVM.MSBuild.msbuildproj", "{AE5BFBC6-7DD4-4ACA-BEA7-86F842F38B64}"
+	ProjectSection(ProjectDependencies) = postProject
+		{158C3707-74CC-429B-8348-F5B08584F4F6} = {158C3707-74CC-429B-8348-F5B08584F4F6}
+	EndProjectSection
 EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "IKVM", "src\IKVM\IKVM.csproj", "{95F23908-2D65-40C7-9EF1-B5C8543503AA}"
 EndProject
@@ -114,12 +121,24 @@ EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "wsimport", "src\wsimport\wsimport.msbuildproj", "{004561E2-DED0-464D-A7B9-85D98281FED4}"
 EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "IKVM.Image.JRE.runtime.linux-x64", "src\IKVM.Image.JRE.runtime.linux-x64\IKVM.Image.JRE.runtime.linux-x64.csproj", "{8068292D-8B2E-417B-B7CE-0E7159881C50}"
+	ProjectSection(ProjectDependencies) = postProject
+		{162A1F6D-7752-4686-A6C2-923633F4E4C0} = {162A1F6D-7752-4686-A6C2-923633F4E4C0}
+	EndProjectSection
 EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "IKVM.Image.JRE.runtime.win7-x64", "src\IKVM.Image.JRE.runtime.win7-x64\IKVM.Image.JRE.runtime.win7-x64.csproj", "{27D0142E-7643-4E64-A6B2-995E76EF00A2}"
+	ProjectSection(ProjectDependencies) = postProject
+		{162A1F6D-7752-4686-A6C2-923633F4E4C0} = {162A1F6D-7752-4686-A6C2-923633F4E4C0}
+	EndProjectSection
 EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "IKVM.Image.JDK.runtime.linux-x64", "src\IKVM.Image.JDK.runtime.linux-x64\IKVM.Image.JDK.runtime.linux-x64.csproj", "{BE31AC7C-79CC-4180-A5E8-BEB3FD7579DC}"
+	ProjectSection(ProjectDependencies) = postProject
+		{CCE3DE31-5DE7-4157-90D1-BAFA08C181EC} = {CCE3DE31-5DE7-4157-90D1-BAFA08C181EC}
+	EndProjectSection
 EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "IKVM.Image.JDK.runtime.win7-x64", "src\IKVM.Image.JDK.runtime.win7-x64\IKVM.Image.JDK.runtime.win7-x64.csproj", "{71444CB1-778F-4DD5-9BDF-ACB310C97345}"
+	ProjectSection(ProjectDependencies) = postProject
+		{CCE3DE31-5DE7-4157-90D1-BAFA08C181EC} = {CCE3DE31-5DE7-4157-90D1-BAFA08C181EC}
+	EndProjectSection
 EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "IKVM.Image", "src\IKVM.Image\IKVM.Image.csproj", "{95C8865C-AB87-4998-880E-38B7F76BAC57}"
 EndProject
@@ -128,18 +147,48 @@ EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "IKVM.Image.JRE", "src\IKVM.Image.JRE\IKVM.Image.JRE.csproj", "{A204C3A9-F559-4E50-B667-F8B5D27501D1}"
 EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "IKVM.Image.JRE.runtime.win7-x86", "src\IKVM.Image.JRE.runtime.win7-x86\IKVM.Image.JRE.runtime.win7-x86.csproj", "{CBB5E3B3-2B0F-41F3-8110-FDD9614FCE5D}"
+	ProjectSection(ProjectDependencies) = postProject
+		{162A1F6D-7752-4686-A6C2-923633F4E4C0} = {162A1F6D-7752-4686-A6C2-923633F4E4C0}
+	EndProjectSection
 EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "IKVM.Image.JDK.runtime.win7-x86", "src\IKVM.Image.JDK.runtime.win7-x86\IKVM.Image.JDK.runtime.win7-x86.csproj", "{3E91FECF-80C0-463C-AD62-40062E0D313F}"
+	ProjectSection(ProjectDependencies) = postProject
+		{CCE3DE31-5DE7-4157-90D1-BAFA08C181EC} = {CCE3DE31-5DE7-4157-90D1-BAFA08C181EC}
+	EndProjectSection
 EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "IKVM.Image.JDK-bin", "src\IKVM.Image.JDK-bin\IKVM.Image.JDK-bin.csproj", "{CCE3DE31-5DE7-4157-90D1-BAFA08C181EC}"
+	ProjectSection(ProjectDependencies) = postProject
+		{004561E2-DED0-464D-A7B9-85D98281FED4} = {004561E2-DED0-464D-A7B9-85D98281FED4}
+		{03F00630-3625-440D-BE43-51751FCE7806} = {03F00630-3625-440D-BE43-51751FCE7806}
+		{1685EDBF-1A43-46C1-BC3B-378C909CA3DF} = {1685EDBF-1A43-46C1-BC3B-378C909CA3DF}
+		{2B536749-A2CD-4873-803A-5553D25E88EC} = {2B536749-A2CD-4873-803A-5553D25E88EC}
+		{4371190E-AD8B-4625-A520-B745B05DE005} = {4371190E-AD8B-4625-A520-B745B05DE005}
+		{78BE5834-EC02-48C5-A83A-2693D777375A} = {78BE5834-EC02-48C5-A83A-2693D777375A}
+		{7BC3FC79-5938-4CD7-9528-47D5DC18729E} = {7BC3FC79-5938-4CD7-9528-47D5DC18729E}
+		{B240F8BA-6C35-4C19-9035-2821CC6BFEA8} = {B240F8BA-6C35-4C19-9035-2821CC6BFEA8}
+		{C6C34134-D80C-43CC-A477-32B4172374D2} = {C6C34134-D80C-43CC-A477-32B4172374D2}
+		{ECF6B110-DF3B-4D29-91C8-45AD4C7D4B17} = {ECF6B110-DF3B-4D29-91C8-45AD4C7D4B17}
+		{FB1F02F2-3A18-49CC-A288-EC0834D90EED} = {FB1F02F2-3A18-49CC-A288-EC0834D90EED}
+	EndProjectSection
 EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "IKVM.Image.JRE-bin", "src\IKVM.Image.JRE-bin\IKVM.Image.JRE-bin.csproj", "{162A1F6D-7752-4686-A6C2-923633F4E4C0}"
+	ProjectSection(ProjectDependencies) = postProject
+		{4F7D51D0-F52D-46EF-94DF-C4081587FBB4} = {4F7D51D0-F52D-46EF-94DF-C4081587FBB4}
+		{7C7BCE2E-88CE-4EA8-863E-37F6B8A824C4} = {7C7BCE2E-88CE-4EA8-863E-37F6B8A824C4}
+		{B2EF307F-90AA-4CFE-B7F3-FF741545E35B} = {B2EF307F-90AA-4CFE-B7F3-FF741545E35B}
+	EndProjectSection
 EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "javac-ref", "src\javac-ref\javac-ref.msbuildproj", "{5DC963FD-6742-47BB-BC96-365B82F73C88}"
 EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "IKVM.Image.JDK.runtime.win81-arm", "src\IKVM.Image.JDK.runtime.win81-arm\IKVM.Image.JDK.runtime.win81-arm.csproj", "{9076FCBF-A85C-4118-8E29-013B06B1421B}"
+	ProjectSection(ProjectDependencies) = postProject
+		{CCE3DE31-5DE7-4157-90D1-BAFA08C181EC} = {CCE3DE31-5DE7-4157-90D1-BAFA08C181EC}
+	EndProjectSection
 EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "IKVM.Image.JRE.runtime.win81-arm", "src\IKVM.Image.JRE.runtime.win81-arm\IKVM.Image.JRE.runtime.win81-arm.csproj", "{EC20F011-6846-405D-B6CA-2C851DAF50B0}"
+	ProjectSection(ProjectDependencies) = postProject
+		{162A1F6D-7752-4686-A6C2-923633F4E4C0} = {162A1F6D-7752-4686-A6C2-923633F4E4C0}
+	EndProjectSection
 EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "IKVM.JTReg.TestAdapter.Core", "src\IKVM.JTReg.TestAdapter.Core\IKVM.JTReg.TestAdapter.Core.csproj", "{DD5AEB88-DC55-43C8-81C1-2879F73C8DE0}"
 EndProject
@@ -158,24 +207,52 @@ EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "IKVM.MSBuild.Tools", "src\IKVM.MSBuild.Tools\IKVM.MSBuild.Tools.csproj", "{005AD593-ADEC-4646-80F9-4E866B7D8533}"
 EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "IKVM.MSBuild.Tools.runtime.win7-x64", "src\IKVM.MSBuild.Tools.runtime.win7-x64\IKVM.MSBuild.Tools.runtime.win7-x64.csproj", "{04D3450A-9443-48C4-9BF0-4ADC8C5E35C5}"
+	ProjectSection(ProjectDependencies) = postProject
+		{0A87FF49-AC9D-479A-ACBB-F4028A0BE1F7} = {0A87FF49-AC9D-479A-ACBB-F4028A0BE1F7}
+		{2F29E48C-63C3-4E47-BCBA-A7454B9119CF} = {2F29E48C-63C3-4E47-BCBA-A7454B9119CF}
+	EndProjectSection
 EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "IKVM.MSBuild.Tools.runtime.linux-x64", "src\IKVM.MSBuild.Tools.runtime.linux-x64\IKVM.MSBuild.Tools.runtime.linux-x64.csproj", "{F162126C-DA9C-4195-B295-CF1020DBA98A}"
+	ProjectSection(ProjectDependencies) = postProject
+		{0A87FF49-AC9D-479A-ACBB-F4028A0BE1F7} = {0A87FF49-AC9D-479A-ACBB-F4028A0BE1F7}
+		{2F29E48C-63C3-4E47-BCBA-A7454B9119CF} = {2F29E48C-63C3-4E47-BCBA-A7454B9119CF}
+	EndProjectSection
 EndProject
 Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "ikvm-native-linux-arm64", "src\ikvm-native\ikvm-native-linux-arm64.vcxproj", "{BE117661-1954-42C3-8A16-3F89815F7222}"
 EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "IKVM.Image.JDK.runtime.linux-arm64", "src\IKVM.Image.JDK.runtime.linux-arm64\IKVM.Image.JDK.runtime.linux-arm64.csproj", "{DF09A175-C790-434D-9810-A6BBB3EEC548}"
+	ProjectSection(ProjectDependencies) = postProject
+		{CCE3DE31-5DE7-4157-90D1-BAFA08C181EC} = {CCE3DE31-5DE7-4157-90D1-BAFA08C181EC}
+	EndProjectSection
 EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "IKVM.Image.JRE.runtime.linux-arm64", "src\IKVM.Image.JRE.runtime.linux-arm64\IKVM.Image.JRE.runtime.linux-arm64.csproj", "{2D787827-44DA-406C-8DAC-34CE61D658B0}"
+	ProjectSection(ProjectDependencies) = postProject
+		{162A1F6D-7752-4686-A6C2-923633F4E4C0} = {162A1F6D-7752-4686-A6C2-923633F4E4C0}
+	EndProjectSection
 EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "IKVM.MSBuild.Tools.runtime.linux-arm64", "src\IKVM.MSBuild.Tools.runtime.linux-arm64\IKVM.MSBuild.Tools.runtime.linux-arm64.csproj", "{5D5A51AC-95FE-42DE-BEBE-560109003C1D}"
+	ProjectSection(ProjectDependencies) = postProject
+		{0A87FF49-AC9D-479A-ACBB-F4028A0BE1F7} = {0A87FF49-AC9D-479A-ACBB-F4028A0BE1F7}
+		{2F29E48C-63C3-4E47-BCBA-A7454B9119CF} = {2F29E48C-63C3-4E47-BCBA-A7454B9119CF}
+	EndProjectSection
 EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "IKVM.MSBuild.Tools.runtime.linux-arm", "src\IKVM.MSBuild.Tools.runtime.linux-arm\IKVM.MSBuild.Tools.runtime.linux-arm.csproj", "{9AE06A6D-1335-482C-8ABF-2FE1BADF5AD7}"
+	ProjectSection(ProjectDependencies) = postProject
+		{0A87FF49-AC9D-479A-ACBB-F4028A0BE1F7} = {0A87FF49-AC9D-479A-ACBB-F4028A0BE1F7}
+		{2F29E48C-63C3-4E47-BCBA-A7454B9119CF} = {2F29E48C-63C3-4E47-BCBA-A7454B9119CF}
+	EndProjectSection
 EndProject
 Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "ikvm-native-linux-arm", "src\ikvm-native\ikvm-native-linux-arm.vcxproj", "{8A321DFF-99AB-4279-828A-A9BA872010FD}"
 EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "IKVM.Image.JDK.runtime.linux-arm", "src\IKVM.Image.JDK.runtime.linux-arm\IKVM.Image.JDK.runtime.linux-arm.csproj", "{437506E7-B124-4808-8AE7-8864AC9EA36A}"
+	ProjectSection(ProjectDependencies) = postProject
+		{CCE3DE31-5DE7-4157-90D1-BAFA08C181EC} = {CCE3DE31-5DE7-4157-90D1-BAFA08C181EC}
+	EndProjectSection
 EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "IKVM.Image.JRE.runtime.linux-arm", "src\IKVM.Image.JRE.runtime.linux-arm\IKVM.Image.JRE.runtime.linux-arm.csproj", "{833EAB0B-F2EE-47B5-8A54-EDE4DC655122}"
+	ProjectSection(ProjectDependencies) = postProject
+		{162A1F6D-7752-4686-A6C2-923633F4E4C0} = {162A1F6D-7752-4686-A6C2-923633F4E4C0}
+	EndProjectSection
 EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "native2ascii", "src\native2ascii\native2ascii.msbuildproj", "{7BC3FC79-5938-4CD7-9528-47D5DC18729E}"
 EndProject
