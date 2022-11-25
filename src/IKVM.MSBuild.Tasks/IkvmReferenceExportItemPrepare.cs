@@ -140,24 +140,27 @@
             var references = new List<string>(16);
             if (References != null)
                 foreach (var reference in References)
-                    references.Add(GetReferenceLine(item, reference.ItemSpec));
+                    references.Add(GetIdentity(item, reference.ItemSpec));
             if (item.References != null)
                 foreach (var reference in item.References)
-                    references.Add(GetReferenceLine(item, reference));
+                    references.Add(GetIdentity(item, reference));
 
             // write sorted reference lines
             foreach (var reference in references.OrderBy(i => i))
-                writer.WriteLine(reference);
+                writer.WriteLine($"Reference={reference}");
 
             // gather library lines
             var libraries = new List<string>(16);
+            if (Libraries != null)
+                foreach (var library in Libraries)
+                    libraries.Add(GetIdentity(item, library.ItemSpec));
             if (item.Libraries != null)
-                foreach (var library in item.Libraries.OrderBy(i => i))
-                    libraries.Add($"Library={library}");
+                foreach (var library in item.Libraries)
+                    libraries.Add(GetIdentity(item, library));
 
             // write sorted library lines
             foreach (var library in libraries.OrderBy(i => i))
-                writer.WriteLine(library);
+                writer.WriteLine($"Library={library}");
 
             // gather namespaces
             if (item.Namespaces != null)
@@ -247,26 +250,30 @@
         }
 
         /// <summary>
-        /// Writes a Reference entry for the given ReferenceExport item.
+        /// Gets the identity for a given value. Value may be a file path.
         /// </summary>
         /// <param name="item"></param>
-        /// <param name="reference"></param>
-        string GetReferenceLine(IkvmReferenceExportItem item, string reference)
+        /// <param name="value"></param>
+        string GetIdentity(IkvmReferenceExportItem item, string value)
         {
             if (item is null)
                 throw new ArgumentNullException(nameof(item));
-            if (reference is null)
-                throw new ArgumentNullException(nameof(reference));
+            if (value is null)
+                throw new ArgumentNullException(nameof(value));
 
             // Framework references may not be paths
-            if (reference.Contains(Path.DirectorySeparatorChar.ToString()) == false)
-                return $"Reference={reference}";
+            if (value.Contains(Path.DirectorySeparatorChar.ToString()) == false)
+                return value;
+
+            // resolve absolute directory path, but can't acquire an identity for a directory in any other way
+            if (Directory.Exists(value))
+                return value;
 
             // others should exist
-            if (File.Exists(reference) == false)
-                throw new FileNotFoundException($"Could not find reference file '{reference}'.");
+            if (File.Exists(value))
+                return GetIdentityForFile(value);
 
-            return $"Reference={GetIdentityForFile(reference)}";
+            throw new Exception($"Could not resolve identity for '{value}'.");
         }
 
     }
