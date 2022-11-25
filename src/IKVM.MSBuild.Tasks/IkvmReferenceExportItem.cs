@@ -42,6 +42,7 @@
                 item.JApi = string.Equals(item.Item.GetMetadata(IkvmReferenceExportItemMetadata.JApi), "true", StringComparison.OrdinalIgnoreCase);
                 item.Bootstrap = string.Equals(item.Item.GetMetadata(IkvmReferenceExportItemMetadata.Bootstrap), "true", StringComparison.OrdinalIgnoreCase);
                 item.IkvmIdentity = item.Item.GetMetadata(IkvmReferenceExportItemMetadata.IkvmIdentity);
+                item.RandomIndex = item.Item.GetMetadata(IkvmReferenceExportItemMetadata.RandomIndex) is string s && int.TryParse(s, out var i) ? i : null;
                 item.Save();
             }
 
@@ -101,6 +102,8 @@
         /// </summary>
         public string IkvmIdentity { get; set; }
 
+        public int? RandomIndex { get; set; }
+
         /// <summary>
         /// Writes the metadata to the item.
         /// </summary>
@@ -117,6 +120,7 @@
             Item.SetMetadata(IkvmReferenceExportItemMetadata.JApi, JApi ? "true" : "false");
             Item.SetMetadata(IkvmReferenceExportItemMetadata.Bootstrap, Bootstrap ? "true" : "false");
             Item.SetMetadata(IkvmReferenceExportItemMetadata.IkvmIdentity, IkvmIdentity);
+            Item.SetMetadata(IkvmReferenceExportItemMetadata.RandomIndex, RandomIndex?.ToString());
         }
 
     }

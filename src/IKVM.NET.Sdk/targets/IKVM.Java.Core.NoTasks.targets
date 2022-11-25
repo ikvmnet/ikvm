@@ -16,6 +16,7 @@
     <UsingTask TaskName="IkvmReferenceExportItemPrepare" TaskFactory="RoslynCodeTaskFactory" AssemblyFile="$(MSBuildToolsPath)\Microsoft.Build.Tasks.Core.dll">
         <Task>
             <Reference Include="System.Collections.Immutable" />
+            <Reference Include="System.Memory" />
             <Reference Include="System.Reflection.Metadata" />
             <Code Type="Class" Language="cs">
                 <![CDATA[
@@ -51,9 +52,9 @@ $([MSBuild]::Unescape('$(___IkvmReferenceExportItemPrepareCs)'))
         </ItemGroup>
 
         <Delete Files="%(ReferenceExport.StagePath)" Condition="Exists('%(ReferenceExport.StagePath)')" />
-        <Message Text="$(IkvmExporterExec) @(_IkvmExporterArgs, ' ')" Importance="low" />
-        <Exec Command="$(IkvmExporterExec) @(_IkvmExporterArgs, ' ')" />
-        <Copy SourceFiles="%(ReferenceExport.StagePath)" DestinationFiles="%(ReferenceExport.CachePath)" OverwriteReadOnlyFiles="true" />
+        <Message Text="$(IkvmExporterExec) @(_IkvmExporterArgs, ' ')" Importance="low" Condition="!Exists('%(ReferenceExport.CachePath)')" />
+        <Exec Command="$(IkvmExporterExec) @(_IkvmExporterArgs, ' ')" Condition="!Exists('%(ReferenceExport.CachePath)')" />
+        <Copy SourceFiles="%(ReferenceExport.StagePath)" DestinationFiles="%(ReferenceExport.CachePath)" OverwriteReadOnlyFiles="true" Condition="Exists('%(ReferenceExport.StagePath)') And !Exists('%(ReferenceExport.CachePath)')" />
 
         <ItemGroup>
             <FileWrites Include="%(ReferenceExport.StagePath)" />
