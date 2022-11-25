@@ -35,7 +35,7 @@ namespace IKVM.Tests.Java.com.sun.net.httpserver
         }
 
         /// <summary>
-        /// 
+        /// Copied from OpenJDK. Failing on CI/CD.
         /// </summary>
         /// <exception cref="RuntimeException"></exception>
         [TestMethod]
