@@ -24,6 +24,8 @@
 using System;
 using System.Runtime.InteropServices;
 
+using IKVM.Runtime.Text;
+
 namespace IKVM.Runtime
 {
 
@@ -87,12 +89,14 @@ namespace IKVM.Runtime
                     return JNIEnv.JNI_EVERSION;
                 }
             }
-            JNIEnv.ManagedJNIEnv env = TlsHack.ManagedJNIEnv;
+
+            var env = TlsHack.ManagedJNIEnv;
             if (env != null)
             {
                 *penv = env.pJNIEnv;
                 return JNIEnv.JNI_OK;
             }
+
             // NOTE if we're here, it is *very* likely that the thread was created by native code and not by managed code,
             // but it's not impossible that the thread started life as a managed thread and if it did the changes to the
             // thread we're making are somewhat dubious.
@@ -103,19 +107,23 @@ namespace IKVM.Runtime
                 {
                     try
                     {
-                        System.Threading.Thread.CurrentThread.Name = JNIEnv.StringFromUTF8(pAttachArgs->name);
+                        var l = MUTF8Encoding.IndexOfNull(pAttachArgs->name);
+                        if (l < 0)
+                            return JNIEnv.JNI_ERR;
+
+                        System.Threading.Thread.CurrentThread.Name = MUTF8Encoding.MUTF8.GetString(pAttachArgs->name, l);
                     }
                     catch (InvalidOperationException)
                     {
                         // someone beat us to it...
                     }
                 }
-                object threadGroup = GlobalRefs.Unwrap(pAttachArgs->group.ToInt32());
+
+                var threadGroup = GlobalRefs.Unwrap(pAttachArgs->group.ToInt32());
                 if (threadGroup != null)
-                {
                     IKVM.Java.Externs.java.lang.Thread.AttachThreadFromJni(threadGroup);
-                }
             }
+
             *penv = JNIEnv.CreateJNIEnv();
             return JNIEnv.JNI_OK;
         }
