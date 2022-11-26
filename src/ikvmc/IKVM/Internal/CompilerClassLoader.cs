@@ -2549,22 +2549,17 @@ namespace IKVM.Internal
             return false;
         }
 
-        internal static int Compile(string runtimeAssembly, string runtimeJniAssembly, List<CompilerOptions> optionsList)
+        internal static int Compile(string runtimeAssembly, List<CompilerOptions> optionsList)
         {
             try
             {
                 StaticCompiler.runtimeAssembly = StaticCompiler.LoadFile(runtimeAssembly ?? Path.Combine(Path.GetDirectoryName(typeof(CompilerClassLoader).Assembly.Location), "IKVM.Runtime.dll"));
-                StaticCompiler.runtimeJniAssembly = StaticCompiler.LoadFile(runtimeJniAssembly ?? Path.Combine(Path.GetDirectoryName(StaticCompiler.runtimeAssembly.Location), "IKVM.Runtime.JNI.dll"));
             }
             catch (FileNotFoundException)
             {
                 // runtime assembly is required
                 if (StaticCompiler.runtimeAssembly == null)
                     throw new FatalCompilerErrorException(Message.RuntimeNotFound);
-
-                // JNI will issue warning
-                if (StaticCompiler.runtimeJniAssembly == null)
-                    StaticCompiler.IssueMessage(Message.NoJniRuntime);
 
                 // some unknown error
                 throw new FatalCompilerErrorException(Message.FileNotFound);
@@ -3749,7 +3744,6 @@ namespace IKVM.Internal
     {
         private static Universe universe;
         internal static Assembly runtimeAssembly;
-        internal static Assembly runtimeJniAssembly;
         internal static CompilerOptions toplevel;
         internal static int errorCount;
 
@@ -3798,55 +3792,32 @@ namespace IKVM.Internal
 
         internal static Type GetRuntimeType(string name)
         {
-            Type type = runtimeAssembly.GetType(name);
-            if (type != null)
-            {
-                return type;
-            }
-            if (runtimeJniAssembly != null)
-            {
-                return runtimeJniAssembly.GetType(name, true);
-            }
-            else
-            {
-                throw new TypeLoadException(name);
-            }
+            return runtimeAssembly.GetType(name) ?? throw new TypeLoadException(name);
         }
 
         internal static Type GetTypeForMapXml(ClassLoaderWrapper loader, string name)
         {
-            Type type = GetType(loader, name);
-            if (type == null)
-            {
-                throw new FatalCompilerErrorException(Message.MapFileTypeNotFound, name);
-            }
-            return type;
+            return GetType(loader, name) ?? throw new FatalCompilerErrorException(Message.MapFileTypeNotFound, name);
         }
 
         internal static TypeWrapper GetClassForMapXml(ClassLoaderWrapper loader, string name)
         {
-            TypeWrapper tw = loader.LoadClassByDottedNameFast(name);
-            if (tw == null)
-            {
-                throw new FatalCompilerErrorException(Message.MapFileClassNotFound, name);
-            }
-            return tw;
+            return loader.LoadClassByDottedNameFast(name) ?? throw new FatalCompilerErrorException(Message.MapFileClassNotFound, name);
         }
 
         internal static FieldWrapper GetFieldForMapXml(ClassLoaderWrapper loader, string clazz, string name, string sig)
         {
-            FieldWrapper fw = GetClassForMapXml(loader, clazz).GetFieldWrapper(name, sig);
+            var fw = GetClassForMapXml(loader, clazz).GetFieldWrapper(name, sig);
             if (fw == null)
-            {
                 throw new FatalCompilerErrorException(Message.MapFileFieldNotFound, name, clazz);
-            }
+
             fw.Link();
             return fw;
         }
 
         internal static Type GetType(ClassLoaderWrapper loader, string name)
         {
-            CompilerClassLoader ccl = (CompilerClassLoader)loader;
+            var ccl = (CompilerClassLoader)loader;
             return ccl.GetTypeFromReferencedAssembly(name);
         }
 
@@ -3862,6 +3833,7 @@ namespace IKVM.Internal
                 // don't display any warnings after we've emitted an error message
                 return;
             }
+
             string key = ((int)msgId).ToString();
             for (int i = 0; ; i++)
             {

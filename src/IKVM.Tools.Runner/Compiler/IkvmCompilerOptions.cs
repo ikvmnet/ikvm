@@ -163,8 +163,6 @@ namespace IKVM.Tools.Runner.Compiler
 
         public string Runtime { get; set; }
 
-        public string JNI { get; set; }
-
         public int? WarningLevel { get; set; }
 
         public bool NoParameterReflection { get; set; }

@@ -1,8 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
 
-using com.sun.tools.javac.util;
-
 namespace IKVM.JTReg.TestAdapter.Core
 {
 

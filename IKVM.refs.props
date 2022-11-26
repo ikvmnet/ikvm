@@ -9,10 +9,6 @@
             <ReferenceOutputAssembly>true</ReferenceOutputAssembly>
             <PrivateAssets>all</PrivateAssets>
         </ProjectReference>
-        <ProjectReference Include="$(MSBuildThisFileDirectory)src\IKVM.Runtime.JNI\IKVM.Runtime.JNI.csproj">
-            <ReferenceOutputAssembly>true</ReferenceOutputAssembly>
-            <PrivateAssets>all</PrivateAssets>
-        </ProjectReference>
     </ItemGroup>
 
     <ItemGroup Condition=" '$(TargetFramework)' == '' ">
