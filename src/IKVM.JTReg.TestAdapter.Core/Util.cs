@@ -23,6 +23,23 @@ namespace IKVM.JTReg.TestAdapter.Core
         static readonly MethodInfo RemainingToListOfTestResultMethod = typeof(IteratorExtensions).GetMethod(nameof(IteratorExtensions.RemainingToList)).MakeGenericMethod(JTRegTypes.TestResult.Type);
 
         /// <summary>
+        /// Attempts to load the assembly at the given path.
+        /// </summary>
+        /// <param name="path"></param>
+        /// <returns></returns>
+        static Assembly TryLoadAssembly(string path)
+        {
+            try
+            {
+                return Assembly.LoadFrom(path);
+            }
+            catch
+            {
+                return null;
+            }
+        }
+
+        /// <summary>
         /// Discovers the test suite directories specified by the given source.
         /// </summary>
         /// <param name="source"></param>
@@ -39,7 +56,11 @@ namespace IKVM.JTReg.TestAdapter.Core
             source = Path.GetFullPath(source);
             logger.SendMessage(JTRegTestMessageLevel.Informational, $"JTReg: Scanning for test suites for '{source}'.");
 
-            var assembly = Assembly.LoadFrom(source);
+            // load source as assembly
+            var assembly = TryLoadAssembly(source);
+            if (assembly == null)
+                yield break;
+
             foreach (var testAttr in assembly.GetCustomAttributes<JTRegTestSuiteAttribute>())
             {
                 // relative root is relative to test assembly

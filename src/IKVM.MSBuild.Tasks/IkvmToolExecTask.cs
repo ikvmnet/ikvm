@@ -23,8 +23,15 @@ namespace IKVM.MSBuild.Tasks
         static IkvmToolExecTask()
         {
             // preload Mono.Unix native library, MSBuild isn't capable of following dependency context
-            if (RuntimeInformation.IsOSPlatform(OSPlatform.Linux) && Environment.Is64BitProcess)
-                NativeLibrary.Load(Path.Combine(Path.GetDirectoryName(typeof(IkvmToolExecTask).Assembly.Location), "runtimes", "linux-x64", "native", "libMono.Unix.so"));
+            if (RuntimeInformation.IsOSPlatform(OSPlatform.Linux))
+            {
+                if (RuntimeInformation.ProcessArchitecture == Architecture.X64)
+                    NativeLibrary.Load(Path.Combine(Path.GetDirectoryName(typeof(IkvmToolExecTask).Assembly.Location), "runtimes", "linux-x64", "native", "libMono.Unix.so"));
+                else if (RuntimeInformation.ProcessArchitecture == Architecture.Arm)
+                    NativeLibrary.Load(Path.Combine(Path.GetDirectoryName(typeof(IkvmToolExecTask).Assembly.Location), "runtimes", "linux-arm", "native", "libMono.Unix.so"));
+                else if (RuntimeInformation.ProcessArchitecture == Architecture.Arm64)
+                    NativeLibrary.Load(Path.Combine(Path.GetDirectoryName(typeof(IkvmToolExecTask).Assembly.Location), "runtimes", "linux-arm64", "native", "libMono.Unix.so"));
+            }
         }
 
 #endif
