@@ -40,6 +40,7 @@ namespace IKVM.JTReg.TestAdapter
 
         readonly IRunContext runContext;
         readonly IFrameworkHandle frameworkHandle;
+        readonly ITestCaseFilterExpression filterExpression;
 
         /// <summary>
         /// Initializes a new instance.
@@ -51,6 +52,7 @@ namespace IKVM.JTReg.TestAdapter
         {
             this.runContext = runContext ?? throw new ArgumentNullException(nameof(runContext));
             this.frameworkHandle = frameworkHandle ?? throw new ArgumentNullException(nameof(frameworkHandle));
+            this.filterExpression = runContext.GetTestCaseFilter(properties.Keys, s => properties.TryGetValue(s, out var v) ? v : null);
         }
 
         public string TestRunDirectory => runContext.TestRunDirectory;
@@ -62,19 +64,13 @@ namespace IKVM.JTReg.TestAdapter
             return frameworkHandle is IFrameworkHandle2 h && h.AttachDebuggerToProcess(pid);
         }
 
-        bool MatchTestCase(ITestCaseFilterExpression filter, JTRegTestCase testCase)
+        public bool FilterTestCase(JTRegTestCase test)
         {
-            var t = JTRegProxyUtil.Convert(testCase);
-            return filter.MatchTestCase(t, s => properties.TryGetValue(s, out var v) ? t.GetPropertyValue(v) : null);
-        }
+            if (filterExpression == null)
+                return true;
 
-        public List<JTRegTestCase> FilterTestCases(List<JTRegTestCase> tests)
-        {
-            var filter = runContext.GetTestCaseFilter(properties.Keys, s => properties.TryGetValue(s, out var v) ? v : null);
-            if (filter != null)
-                tests = tests.Where(i => MatchTestCase(filter, i)).ToList();
-
-            return tests;
+            var t = JTRegProxyUtil.Convert(test);
+            return filterExpression.MatchTestCase(t, s => properties.TryGetValue(s, out var v) ? t.GetPropertyValue(v) : null);
         }
 
         public void RecordEnd(JTRegTestCase test, JTRegTestOutcome outcome)
