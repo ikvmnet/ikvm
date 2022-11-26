@@ -3509,3 +3509,4 @@ sun/security/ssl/com/sun/net/ssl/internal/ssl/SSLSocketImpl/AsyncSSLSocketClose.
 
 sun/tools/native2ascii/Permission.java                                                                                  linux-all
 tools/jar/UpdateJar.java                                                                                                linux-all
+com/sun/net/httpserver/bugs/B6886436.java                                                                               linux-all
