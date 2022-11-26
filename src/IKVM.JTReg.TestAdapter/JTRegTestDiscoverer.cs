@@ -1,4 +1,6 @@
-﻿using System.Collections.Generic;
+﻿using System;
+using System.Collections.Generic;
+using System.IO;
 using System.Threading;
 
 using IKVM.JTReg.TestAdapter.Core;
@@ -20,12 +22,20 @@ namespace IKVM.JTReg.TestAdapter
         {
             foreach (var source in sources)
             {
-                // setup isolation host for source
-                using var host = new JTRegTestIsolationHost(source);
-                var proxy = host.CreateManager();
+                if (Path.GetExtension(source) is not ".exe" and not ".dll")
+                    continue;
 
-                // discover tests from source
-                proxy.DiscoverTests(source, new JTRegDiscoveryContextProxy(discoveryContext, logger, discoverySink), new CancellationTokenProxy(CancellationToken.None));
+                try
+                {
+                    // setup isolation host for source
+                    using var host = new JTRegTestIsolationHost(source);
+                    var proxy = host.CreateManager();
+                    proxy.DiscoverTests(source, new JTRegDiscoveryContextProxy(discoveryContext, logger, discoverySink), new CancellationTokenProxy(CancellationToken.None));
+                }
+                catch (Exception e)
+                {
+                    logger.SendMessage(TestMessageLevel.Error, $"JTReg: An exception occurred discovering tests for '{source}': {e.Message}.\n{e}");
+                }
             }
         }
 

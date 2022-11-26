@@ -106,8 +106,7 @@ namespace IKVM.JTReg.TestAdapter.Core
             if (output is null)
                 throw new ArgumentNullException(nameof(output));
 
-            var errorHandler = ErrorHandlerInterceptor.Create(new ErrorHandlerImplementation(logger));
-            var testManager = JTRegTypes.TestManager.New(output, new java.io.File(Environment.CurrentDirectory), errorHandler);
+            var testManager = JTRegTypes.TestManager.New(output, new java.io.File(Environment.CurrentDirectory), ErrorHandlerInterceptor.Create(logger));
 
             var workDirectory = Path.Combine(baseDir, DEFAULT_WORK_DIR_NAME);
             logger.SendMessage(JTRegTestMessageLevel.Informational, $"JTReg: Using work directory: '{workDirectory}'.");
@@ -308,27 +307,15 @@ namespace IKVM.JTReg.TestAdapter.Core
                 // load the set of suites
                 var testSuites = ((IEnumerable<dynamic>)Util.GetTestSuites(source, testManager)).ToList();
 
-                // we will need a full list of tests to apply any filters to
-                if (tests == null)
-                {
-                    var l = new List<JTRegTestCase>(512);
-
-                    // discover the full set of tests
-                    foreach (dynamic testSuite in testSuites)
-                        foreach (var testCase in (IEnumerable<JTRegTestCase>)Util.GetTestCases(source, testManager, testSuite))
-                            l.Add(testCase);
-
-                    tests = l;
-                }
-
-                // filter the tests
-                tests = context.FilterTestCases(tests);
-
                 // invoke each test suite
                 foreach (dynamic testSuite in testSuites)
                 {
+                    bool FilterByList(dynamic td) => tests == null || tests.Any(i => i.TestPathName == (string)Util.GetTestPathName(source, testSuite, td));
+                    bool FilterByContext(dynamic td) => context.FilterTestCase(Util.ToTestCase(source, testSuite, td));
+                    bool Filter(dynamic td) => FilterByList(td) && FilterByContext(td);
+
                     context.SendMessage(JTRegTestMessageLevel.Informational, $"JTReg: Running test suite: {(string)testSuite.getName()}");
-                    RunTests(source, testManager, testSuite, context, tests, output, CreateParameters(source, testManager, testSuite, tests, debugUri), cancellationToken);
+                    RunTests(source, testManager, testSuite, context, tests, output, CreateParameters(source, testManager, testSuite, (Func<dynamic, bool>)Filter, debugUri), cancellationToken);
                 }
             }
             catch (Exception e)
@@ -343,10 +330,10 @@ namespace IKVM.JTReg.TestAdapter.Core
         /// <param name="source"></param>
         /// <param name="testManager"></param>
         /// <param name="testSuite"></param>
-        /// <param name="tests"></param>
+        /// <param name="filter"></param>
         /// <param name="debugUri"></param>
         /// <returns></returns>
-        dynamic CreateParameters(string source, dynamic testManager, dynamic testSuite, IEnumerable<JTRegTestCase> tests, Uri debugUri)
+        dynamic CreateParameters(string source, dynamic testManager, dynamic testSuite, Func<dynamic, bool> filter, Uri debugUri)
         {
             if (source is null)
                 throw new ArgumentNullException(nameof(source));
@@ -356,7 +343,7 @@ namespace IKVM.JTReg.TestAdapter.Core
                 throw new ArgumentNullException(nameof(testSuite));
 
             // invoke new RegressionParameters(string, RegressionTestSuite)
-            var rp = JTRegTypes.RegressionParameters.New(DEFAULT_PARAM_TAG, testSuite);
+            var rp = RegressionParametersInterceptor.Create(DEFAULT_PARAM_TAG, testSuite, filter);
 
             // configure work directory
             var wd = testManager.getWorkDirectory(testSuite);
@@ -371,24 +358,6 @@ namespace IKVM.JTReg.TestAdapter.Core
 
             // if a IncludeList.txt file exists in the root, add it as include files
             var includeFileList = (List<java.io.File>)GetIncludeListFiles(testSuite);
-
-            // explicit tests specified, replace include list
-            if (tests != null)
-            {
-                includeFileList.Clear();
-
-                // name of the current suite
-                var testSuiteName = Util.GetTestSuiteName(source, testSuite);
-
-                // fill in include list containing tests located within the suite
-                var includeListFile = (java.io.File)wd.getFile("IncludeList.txt");
-                using (var includeList = File.CreateText(includeListFile.toString()))
-                    foreach (var test in tests)
-                        if (string.Equals(test.TestSuiteName, testSuiteName))
-                            includeList.WriteLine(test.TestPathName + " generic-all");
-
-                includeFileList.Add(new java.io.File(includeListFile.getAbsoluteFile().toURI().normalize()));
-            }
 
             rp.setTests((java.util.Set)testManager.getTests(testSuite));
             rp.setExecMode(testSuite.getDefaultExecMode() ?? JTRegTypes.ExecMode.AGENTVM);
@@ -488,8 +457,6 @@ namespace IKVM.JTReg.TestAdapter.Core
                 throw new ArgumentNullException(nameof(testSuite));
             if (context is null)
                 throw new ArgumentNullException(nameof(context));
-            if (tests is null)
-                throw new ArgumentNullException(nameof(tests));
             if (parameters is null)
                 throw new ArgumentNullException(nameof(parameters));
 
@@ -520,7 +487,7 @@ namespace IKVM.JTReg.TestAdapter.Core
             {
                 // observe harness for test results
                 var harness = JTRegTypes.Harness.New();
-                var observer = HarnessObserverInterceptor.Create(new HarnessObserverImplementation(source, testSuite, context, tests));
+                var observer = HarnessObserverInterceptor.Create(source, testSuite, context, tests);
                 harness.addObserver(observer);
                 stats.register(harness);
 

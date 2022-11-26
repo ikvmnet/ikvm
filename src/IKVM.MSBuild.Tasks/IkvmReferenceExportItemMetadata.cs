@@ -17,6 +17,7 @@
         public static readonly string JApi = "JApi";
         public static readonly string Bootstrap = "Bootstrap";
         public static readonly string IkvmIdentity = "IkvmIdentity";
+        public static readonly string RandomIndex = "RandomIndex";
 
     }
 

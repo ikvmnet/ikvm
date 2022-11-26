@@ -16,6 +16,7 @@
     <UsingTask TaskName="IkvmReferenceExportItemPrepare" TaskFactory="RoslynCodeTaskFactory" AssemblyFile="$(MSBuildToolsPath)\Microsoft.Build.Tasks.Core.dll">
         <Task>
             <Reference Include="System.Collections.Immutable" />
+            <Reference Include="System.Memory" />
             <Reference Include="System.Reflection.Metadata" />
             <Code Type="Class" Language="cs">
                 <![CDATA[
@@ -28,7 +29,7 @@ $([MSBuild]::Unescape('$(___IkvmReferenceExportItemPrepareCs)'))
     </UsingTask>
 
     <!-- Override IKVM.NET.Sdk: directly invoke executable  -->
-    <Target Name="_ExportReferences" DependsOnTargets="ResolveIkvmExporter;ResolveReferenceExports" Inputs="@(ReferenceExport)" Outputs="%(ReferenceExport.CachePath)">
+    <Target Name="_ExportReference" DependsOnTargets="ResolveIkvmExporter;ResolveReferenceExports" Inputs="@(ReferenceExport)" Outputs="%(ReferenceExport.CachePath)">
         <Error Text="Could not locate ikvmstub executable." Condition=" '$(IkvmExporterPath)' == '' " />
         <Error Text="ikvmstub executable could not be located at '$(IkvmExporterPath)'" Condition="!Exists('$(IkvmExporterPath)')" />
         
@@ -51,9 +52,9 @@ $([MSBuild]::Unescape('$(___IkvmReferenceExportItemPrepareCs)'))
         </ItemGroup>
 
         <Delete Files="%(ReferenceExport.StagePath)" Condition="Exists('%(ReferenceExport.StagePath)')" />
-        <Message Text="$(IkvmExporterExec) @(_IkvmExporterArgs, ' ')" Importance="low" />
-        <Exec Command="$(IkvmExporterExec) @(_IkvmExporterArgs, ' ')" />
-        <Copy SourceFiles="%(ReferenceExport.StagePath)" DestinationFiles="%(ReferenceExport.CachePath)" OverwriteReadOnlyFiles="true" />
+        <Message Text="$(IkvmExporterExec) @(_IkvmExporterArgs, ' ')" Importance="low" Condition="!Exists('%(ReferenceExport.CachePath)')" />
+        <Exec Command="$(IkvmExporterExec) @(_IkvmExporterArgs, ' ')" Condition="!Exists('%(ReferenceExport.CachePath)')" />
+        <Copy SourceFiles="%(ReferenceExport.StagePath)" DestinationFiles="%(ReferenceExport.CachePath)" OverwriteReadOnlyFiles="true" Condition="Exists('%(ReferenceExport.StagePath)') And !Exists('%(ReferenceExport.CachePath)')" />
 
         <ItemGroup>
             <FileWrites Include="%(ReferenceExport.StagePath)" />
@@ -109,7 +110,7 @@ $([MSBuild]::Unescape('$(___IkvmReferenceExportItemPrepareCs)'))
         </ItemGroup>
     </Target>
 
-    <Target Name="_CoreCompile" DependsOnTargets="ResolveIkvmCompiler;ResolveIkvmRuntimeAssembly;ResolveIkvmRuntimeJNIAssembly;CompileJava" Inputs="$(IkvmRuntimeAssembly);$(IkvmRuntimeJNIAssembly);$(KeyOriginatorFile);@(MapFile);@(ReferencePathWithRefAssemblies);@(Class);@(JavaResource);$(_CompileJavaStampFile)" Outputs="@(IntermediateAssembly);@(_DebugSymbolsIntermediatePath)">
+    <Target Name="_CoreCompile" DependsOnTargets="ResolveIkvmCompiler;ResolveIkvmRuntimeAssembly;CompileJava" Inputs="$(IkvmRuntimeAssembly);$(KeyOriginatorFile);@(MapFile);@(ReferencePathWithRefAssemblies);@(Class);@(JavaResource);$(_CompileJavaStampFile)" Outputs="@(IntermediateAssembly);@(_DebugSymbolsIntermediatePath)">
         <Error Text="Could not locate IKVM.Runtime assembly." Condition=" '$(IkvmRuntimeAssembly)' == '' " />
         <Error Text="IKVM.Runtime.dll could not be located at '$(IkvmRuntimeAssembly)'." Condition="!Exists('$(IkvmRuntimeAssembly)')" />
         <Error Text="Could not locate ikvmc executable." Condition=" '$(IkvmCompilerPath)' == '' " />
@@ -131,7 +132,6 @@ $([MSBuild]::Unescape('$(___IkvmReferenceExportItemPrepareCs)'))
             <_IkvmCompilerArgs Include="-assembly:$(AssemblyName)" />
             <_IkvmCompilerArgs Include="-version:$(AssemblyVersion)" />
             <_IkvmCompilerArgs Include="-runtime:$(IkvmRuntimeAssembly)" />
-            <_IkvmCompilerArgs Include="-jni:$(IkvmRuntimeJNIAssembly)" Condition=" '$(IkvmRuntimeJNIAssembly)' != '' " />
             <_IkvmCompilerArgs Include="-keyfile:$(KeyOriginatorFile)" Condition=" '$(KeyOriginatorFile)' != '' " />
             <_IkvmCompilerArgs Include="@(MapFile->'-remap:%(FullPath)')" Condition=" '@(MapFile)' != '' " />
             <_IkvmCompilerArgs Include="-compressresources" Condition=" '$(CompressResources)' == 'true' " />

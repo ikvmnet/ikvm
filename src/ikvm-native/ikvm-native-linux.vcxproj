@@ -83,7 +83,10 @@
         <WSLPath>default</WSLPath>
     </PropertyGroup>
     <ItemGroup>
-        <ClCompile Include="jni.c" />
+        <ClCompile Include="ikvm.c" />
+    </ItemGroup>
+    <ItemGroup>
+        <ClInclude Include="ikvm.h" />
     </ItemGroup>
     <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
     <ImportGroup Label="ExtensionTargets" />

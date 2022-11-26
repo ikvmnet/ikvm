@@ -18,8 +18,6 @@ IKVM includes a native library named 'ikvm-native' which must be built for the J
   MSBuild project file that builds the output artifacts, including the NuGet packages.
 + IKVM.Runtime
   The main executable core of IKVM. Provides services used by IKVM.Java.
-+ IKVM.Runtime.JNI
-  Additional support for IKVM to handle the Java Native Interface. Depends on the ikvm-native library.
 + IKVM.Java
   The OpenJDK distribution included with IKVM. This project is heavily customized to compile the OpenJDK Java source files and produce a .NET assembly from them.
 + IKVM.Image

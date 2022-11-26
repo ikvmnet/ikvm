@@ -11,8 +11,6 @@
     <Target Name="_CompileIkvmReferences" DependsOnTargets="ResolveIkvmRuntimeAssembly;ResolveIkvmFrameworkReferences" Inputs="%(IkvmReferenceItem.Compile)" Outputs="%(IkvmReferenceItem.CachePath)">
         <Error Text="Could not locate IKVM.Runtime assembly." Condition=" '$(IkvmRuntimeAssembly)' == '' " />
         <Error Text="IKVM.Runtime.dll could not be located at '$(IkvmRuntimeAssembly)'." Condition="!Exists('$(IkvmRuntimeAssembly)')" />
-        <Error Text="Could not locate IKVM.Runtime.JNI assembly." Condition=" '$(IkvmRuntimeJNIAssembly)' == '' " />
-        <Error Text="IKVM.Runtime.JNI.dll could not be located at '$(IkvmRuntimeJNIAssembly)'." Condition="!Exists('$(IkvmRuntimeJNIAssembly)')" />
         <Error Text="Could not locate IKVM.Java assembly." Condition=" '$(IkvmBaseAssembly)' == '' " />
         <Error Text="IKVM.Java.dll could not be located at '$(IkvmBaseAssembly)'." Condition="!Exists('$(IkvmBaseAssembly)')" />
 
@@ -39,7 +37,6 @@
             Version="%(IkvmReferenceItem.AssemblyVersion)"
             FileVersion="%(IkvmReferenceItem.AssemblyFileVersion)"
             Runtime="$(IkvmRuntimeAssembly)"
-            JNI="$(IkvmRuntimeJNIAssembly)"
             Target="library"
             Debug="%(IkvmReferenceItem.Debug)"
             KeyFile="%(IkvmReferenceItem.KeyFile)"
