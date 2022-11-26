@@ -2,8 +2,8 @@
     <Import Project="$(MSBuildThisFileDirectory)..\IKVM.NET.Sdk\Sdk\Sdk.props" />
     <Import Project="$(MSBuildThisFileDirectory)..\IKVM\buildTransitive\netstandard2.0\IKVM.props" />
     <Import Project="$(MSBuildThisFileDirectory)..\IKVM.MSBuild\buildTransitive\netstandard2.0\IKVM.MSBuild.props" />
-    <Import Project="$(MSBuildThisFileDirectory)..\..\ikvm.deps.props" />
-    <Import Project="$(MSBuildThisFileDirectory)..\..\ikvm.refs.props" />
+    <Import Project="$(MSBuildThisFileDirectory)..\..\IKVM.deps.props" />
+    <Import Project="$(MSBuildThisFileDirectory)..\..\IKVM.refs.props" />
 
     <PropertyGroup>
         <OutputType>Exe</OutputType>
