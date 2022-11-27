@@ -1,5 +1,5 @@
 ﻿<Project Sdk="Microsoft.NET.Sdk">
-    <Import Project="$(MSBuildThisFileDirectory)..\..\ikvm.deps.props" />
+    <Import Project="$(MSBuildThisFileDirectory)..\..\IKVM.deps.props" />
     
     <PropertyGroup>
         <TargetFrameworks>net461;netcoreapp3.1</TargetFrameworks>
