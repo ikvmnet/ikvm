@@ -22,63 +22,27 @@ namespace IKVM.Runtime.JNI
         {
 #if NETFRAMEWORK
             Load();
-#else
-            System.Runtime.InteropServices.NativeLibrary.SetDllImportResolver(typeof(Native).Assembly, DllImportResolver);
 #endif
         }
-
-#if NETFRAMEWORK
 
         /// <summary>
         /// Preloads the native DLL for down-level platforms.
         /// </summary>
-        static void Load()
+        static nint Load()
         {
+            nint h;
+
             // attempt to load with default loader
-            var h = NativeLibrary.Load(LIB_NAME);
-            if (h != IntPtr.Zero)
-                return;
+            if ((h = NativeLibrary.Load(LIB_NAME)) != 0)
+                return h;
 
             // scan known paths
             foreach (var path in GetLibraryPaths(LIB_NAME))
-            {
-                h = NativeLibrary.Load(path);
-                if (h != IntPtr.Zero)
-                    return;
-            }
-        }
-
-#endif
-
-#if NETCOREAPP
-
-        /// <summary>
-        /// Attempts to resolve the specified assembly when running on .NET Core 3.1 and above.
-        /// </summary>
-        /// <param name="libraryName"></param>
-        /// <param name="assembly"></param>
-        /// <param name="searchPath"></param>
-        /// <returns></returns>
-        static nint DllImportResolver(string libraryName, Assembly assembly, DllImportSearchPath? searchPath)
-        {
-            if (libraryName == LIB_NAME)
-            {
-                nint h;
-
-                // attempt to load with default loader
-                if ((h = NativeLibrary.Load(libraryName)) != 0)
+                if ((h = NativeLibrary.Load(path)) != 0)
                     return h;
-
-                // scan known paths
-                foreach (var path in GetLibraryPaths(libraryName))
-                    if ((h = NativeLibrary.Load(path)) != 0)
-                        return h;
-            }
 
             return 0;
         }
-
-#endif
 
         /// <summary>
         /// Gets the RID architecture.
@@ -162,8 +126,16 @@ namespace IKVM.Runtime.JNI
                 yield return Path.Combine(self, "runtimes", rid, "native", file);
         }
 
-        [DllImport(LIB_NAME, EntryPoint = "ikvm_GetJNIEnvVTable")]
-        public static extern void** ikvm_GetJNIEnvVTable();
+        /// <summary>
+        /// Attempts to get the given named export.
+        /// </summary>
+        /// <param name="name"></param>
+        /// <param name="argl"></param>
+        /// <returns></returns>
+        public static nint GetExport(string name, int argl)
+        {
+            return NativeLibrary.GetExport(NativeLibrary.Load(LIB_NAME), name, argl);
+        }
 
     }
 

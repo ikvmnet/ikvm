@@ -8,12 +8,22 @@ public class JniTests
 		System.load("@@IKVM_TESTS_NATIVE@@");
 	}
 
-	public static String echo(String value)
-	{
-		String ret = echoImpl(value);
-		return ret;
-	}
+	public native void getVersionTest();
 
-	public static native String echoImpl(String value);
+	public native void defineClassTest();
+
+	public native void findClassTest();
+
+	public native void getSuperclassTest();
+
+	public native void throwTest();
+
+	public native void throwNewTest();
+
+	public native void newObjectTest();
+
+	public native void newObjectVTest();
+
+	public native void newObjectATest();
 
 }

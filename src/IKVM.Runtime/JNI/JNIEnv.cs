@@ -356,7 +356,7 @@ namespace IKVM.Runtime.JNI
             ManagedJNIEnv env = new ManagedJNIEnv();
             TlsHack.ManagedJNIEnv = env;
             JNIEnv* pJNIEnv = env.pJNIEnv;
-            pJNIEnv->vtable = VtableBuilder.vtable;
+            pJNIEnv->vtable = JNINativeInterface.Pointer;
             pJNIEnv->managedJNIEnv = GCHandle.Alloc(env, GCHandleType.WeakTrackResurrection);
             pJNIEnv->pinHandles = null;
             pJNIEnv->pinHandleMaxCount = 0;

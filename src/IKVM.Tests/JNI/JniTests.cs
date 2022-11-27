@@ -14,21 +14,78 @@ namespace IKVM.Tests.JNI
     public partial class JniTests
     {
 
-        [TestMethod]
-        public void Can_invoke_native_method()
-        {
-            var s = new StreamReader(typeof(JniTests).Assembly.GetManifestResourceStream("IKVM.Tests.JNI.JniTests.java")).ReadToEnd();
-            s = s.Replace("@@IKVM_TESTS_NATIVE@@", Native.GetLibraryPath().Replace(@"\", @"\\"));
-            var f = new InMemoryCodeUnit("ikvm.tests.jni.JniTests", s);
-            var c = new InMemoryCompiler(new[] { f });
-            c.Compile();
-            var z = c.GetClass("ikvm.tests.jni.JniTests");
-            if (z == null)
-                throw new Exception();
+        static dynamic test;
 
-            var m = z.getDeclaredMethod("echo", typeof(string));
-            var r = (string)m.invoke(null, "TEST");
-            r.Should().Be("TEST");
+        [ClassInitialize]
+        public static void Initialize()
+        {
+            // compile the java test code on the fly
+            var source = new StreamReader(typeof(JniTests).Assembly.GetManifestResourceStream("IKVM.Tests.JNI.JniTests.java")).ReadToEnd();
+            source = source.Replace("@@IKVM_TESTS_NATIVE@@", Native.GetLibraryPath().Replace(@"\", @"\\"));
+            var unit = new InMemoryCodeUnit("ikvm.tests.jni.JniTests", source);
+            var compiler = new InMemoryCompiler(new[] { unit });
+            compiler.Compile();
+
+            // create an isntance of the JniTests class
+            var clazz = compiler.GetClass("ikvm.tests.jni.JniTests");
+            var ctor = clazz.getConstructor();
+            test = ctor.newInstance(System.Array.Empty<object>());
+        }
+
+        [TestMethod]
+        public void GetVersionTest()
+        {
+            test.getVersionTest();
+        }
+
+        [TestMethod]
+        public void DefineClassTest()
+        {
+            test.defineClassTest();
+        }
+
+        [TestMethod]
+        public void FindClassTest()
+        {
+            test.findClassTest();
+        }
+
+        [TestMethod]
+        public void GetSuperclassTest()
+        {
+            test.getSuperclassTest();
+        }
+
+        [TestMethod]
+        [ExpectedException(typeof(global::java.lang.RuntimeException))]
+        public void ThrowTest()
+        {
+            test.throwTest();
+        }
+
+        [TestMethod]
+        [ExpectedException(typeof(global::java.lang.RuntimeException))]
+        public void ThrowNewTest()
+        {
+            test.throwNewTest();
+        }
+
+        [TestMethod]
+        public void NewObjectTest()
+        {
+            test.newObjectTest();
+        }
+
+        [TestMethod]
+        public void NewObjectVTest()
+        {
+            test.newObjectVTest();
+        }
+
+        [TestMethod]
+        public void NewObjectATest()
+        {
+            test.newObjectATest();
         }
 
     }
