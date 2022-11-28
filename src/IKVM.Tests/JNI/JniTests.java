@@ -22,8 +22,6 @@ public class JniTests
 
 	public native void newObjectTest();
 
-	public native void newObjectVTest();
-
 	public native void newObjectATest();
 
 }

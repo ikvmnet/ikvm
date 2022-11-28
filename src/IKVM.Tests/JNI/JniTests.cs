@@ -17,7 +17,7 @@ namespace IKVM.Tests.JNI
         static dynamic test;
 
         [ClassInitialize]
-        public static void Initialize()
+        public static void Initialize(TestContext context)
         {
             // compile the java test code on the fly
             var source = new StreamReader(typeof(JniTests).Assembly.GetManifestResourceStream("IKVM.Tests.JNI.JniTests.java")).ReadToEnd();
@@ -74,12 +74,6 @@ namespace IKVM.Tests.JNI
         public void NewObjectTest()
         {
             test.newObjectTest();
-        }
-
-        [TestMethod]
-        public void NewObjectVTest()
-        {
-            test.newObjectVTest();
         }
 
         [TestMethod]

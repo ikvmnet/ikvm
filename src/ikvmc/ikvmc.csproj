@@ -27,6 +27,7 @@
         <ExcludeFromCompile Include="..\IKVM.Runtime\DynamicMethodUtils.cs" />
         <ExcludeFromCompile Include="..\IKVM.Runtime\ExceptionHelper.cs" />
         <ExcludeFromCompile Include="..\IKVM.Runtime\PassiveWeakDictionary.cs" />
+        <ExcludeFromCompile Include="..\IKVM.Runtime\IR\**\*.cs" />
         <ExcludeFromCompile Include="..\IKVM.Runtime\JNI\**\*.cs" />
         <Compile Include="..\IKVM.Runtime\**\*.cs" LinkBase="runtime" Exclude="@(ExcludeFromCompile)" />
     </ItemGroup>

@@ -1,4 +1,5 @@
-﻿<Project Sdk="Microsoft.NET.Sdk">
+﻿<Project>
+    <Import Sdk="Microsoft.NET.Sdk" Project="Sdk.props" />
     <Import Project="$(MSBuildThisFileDirectory)..\..\openjdk.props" />
     <Import Project="$(MSBuildThisFileDirectory)..\..\IKVM.deps.props" />
 
@@ -16,5 +17,183 @@
     <ItemGroup>
         <ProjectReference Include="..\IKVM.Java\IKVM.Java.msbuildproj" />
     </ItemGroup>
+
+    <ItemGroup>
+        <IRRuntimeIdentifier Include="win7-x64" TargetName="x86_64-pc-windows-msvc" Arguments="-O3" />
+        <IRRuntimeIdentifier Include="win7-x86" TargetName="i686-pc-windows-msvc" Arguments="-O3" />
+        <!--<IRRuntimeIdentifier Include="win81-arm" TargetName="thumbv7-pc-windows-msvc" Arguments="-O3" />-->
+        <IRRuntimeIdentifier Include="win10-arm64" TargetName="aarch64-pc-windows-msvc" Arguments="-O3" />
+        <IRRuntimeIdentifier Include="linux-x64" TargetName="x86_64-pc-linux-gnueabihf" Arguments="-O3" />
+        <!--<IRRuntimeIdentifier Include="linux-arm" TargetName="armv7-pc-linux-gnueabihf" Arguments="-O3" />-->
+        <IRRuntimeIdentifier Include="linux-arm64" TargetName="aarch64-pc-linux-gnueabihf" Arguments="-O3" />
+    </ItemGroup>
+
+    <Import Sdk="Microsoft.NET.Sdk" Project="Sdk.targets" />
+
+    <PropertyGroup>
+        <IRSourceDirectory>$(MSBuildThisFileDirectory)IR\</IRSourceDirectory>
+        <IRIntermediateDirectory>$(IntermediateOutputPath)ir\</IRIntermediateDirectory>
+        <CLangCommand>clang</CLangCommand>
+        <ObjDumpCommand>llvm-objdump</ObjDumpCommand>
+    </PropertyGroup>
+
+    <Target Name="CompileIR" Inputs="$(IRSourceDirectory)%(IRRuntimeIdentifier.Identity).ll" Outputs="$(IRIntermediateDirectory)%(IRRuntimeIdentifier.Identity).o" Condition=" '$(TargetFramework)' != '' ">
+        <MakeDir Directories="$(IRIntermediateDirectory)" />
+        <Exec Command="&quot;$(CLangCommand)&quot; -c &quot;$(IRSourceDirectory)%(IRRuntimeIdentifier.Identity).ll&quot; -o &quot;$(IRIntermediateDirectory)%(IRRuntimeIdentifier.Identity).o&quot; --target=%(IRRuntimeIdentifier.TargetName) %(IRRuntimeIdentifier.Arguments)" />
+        <ItemGroup>
+            <FileWrites Include="$(IRIntermediateDirectory)%(IRRuntimeIdentifier.Identity).o" />
+        </ItemGroup>
+    </Target>
+
+    <Target Name="DisassembleIR" DependsOnTargets="CompileIR" Inputs="$(IRIntermediateDirectory)%(IRRuntimeIdentifier.Identity).o" Outputs="$(IRIntermediateDirectory)%(IRRuntimeIdentifier.Identity).s" Condition=" '$(TargetFramework)' != '' ">
+        <MakeDir Directories="$(IRIntermediateDirectory)" />
+        <Exec Command="&quot;$(ObjDumpCommand)&quot; --demangle -d &quot;$(IRIntermediateDirectory)%(IRRuntimeIdentifier.Identity).o&quot; -M intel &gt; &quot;$(IRIntermediateDirectory)%(IRRuntimeIdentifier.Identity).s&quot;" />
+        <ItemGroup>
+            <FileWrites Include="$(IRIntermediateDirectory)%(IRRuntimeIdentifier.Identity).s" />
+        </ItemGroup>
+    </Target>
+
+    <UsingTask TaskName="BuildIRCodeFile" TaskFactory="RoslynCodeTaskFactory" AssemblyFile="$(MSBuildToolsPath)\Microsoft.Build.Tasks.Core.dll">
+        <Task>
+            <Code Type="Class" Language="CS">
+                <![CDATA[
+                using System;
+                using System.Linq;
+                using System.IO;
+                using System.Collections.Generic;
+                using System.Text.RegularExpressions;
+                
+                using Microsoft.Build.Framework;
+                using Microsoft.Build.Utilities;
+                
+                public class BuildIRCodeFile : Task
+                {
+                
+                    static readonly Regex SymbolLineRegex = new Regex(@"^([0-9a-fA-F]{8,16}).+\<(.+)\>\:\w*$", RegexOptions.IgnoreCase);
+                    static readonly Regex CodeLineRegex = new Regex(@"^([0-9a-fA-F ]{8})\: ([0-9a-fA-F ]+)\t.+$", RegexOptions.IgnoreCase);
+                    
+                    public string Namespace { get; set; }
+                    
+                    public string ClassName { get; set; }
+                
+                    public string AssemblerFile { get; set; }
+                
+                    public string BuildCodeFile { get; set; }
+
+                    public override bool Execute()
+                    {
+                        using var o = new StreamWriter(File.Create(BuildCodeFile));
+                        using var s = new StreamReader(File.OpenRead(AssemblerFile));
+
+                        o.Write("namespace ");
+                        o.Write(Namespace);
+                        o.Write(" {");
+                        o.WriteLine();
+                        o.Write("class ");
+                        o.Write(ClassName);
+                        o.Write(" : IKVM.Runtime.IR.IRFunctionTable {");
+                        o.WriteLine();
+
+                        string currentFunc = null;
+                        List<byte> currentBody = null;
+
+                        do
+                        {
+                            var line = s.ReadLine();
+                            if (line == null)
+                            {
+                                WriteFunc(o, currentFunc, currentBody);
+                                break;
+                            }
+
+                            if (currentFunc == null)
+                            {
+                                var m = SymbolLineRegex.Match(line);
+                                if (m.Success == false)
+                                    continue;
+
+                                var z = m.Groups[1].Value;
+                                var i = m.Groups[2].Value.TrimStart('_');
+                                currentFunc = i;
+                                currentBody = new List<byte>(128);
+                                continue;
+                            }
+                            else
+                            {
+                                var m =CodeLineRegex.Match(line);
+                                if (m.Success == false)
+                                {
+                                    WriteFunc(o, currentFunc, currentBody);
+                                    currentFunc = null;
+                                    currentBody = null;
+                                    continue;
+                                }
+
+                                var z = m.Groups[1].Value;
+                                var i = m.Groups[2].Value.Split(' ').Select(j => j.Trim()).Where(j => j != "").ToArray();
+
+                                foreach (var w in i)
+                                    for (int l = 0; l < w.Length; l += 2)
+                                        currentBody.Add(ParseHex(w.Substring(l, 2))[0]);
+
+                            }
+                        }
+                        while(true);
+
+                        o.WriteLine("}");
+                        o.WriteLine("}");
+
+                        return true;
+                    }
+
+                    void WriteFunc(StreamWriter writer, string name, List<byte> body)
+                    {
+                        writer.Write("static readonly byte[] _");
+                        writer.Write(name);
+                        writer.Write(" = new byte[] {");
+                        for (int i = 0; i < body.Count; i++)
+                        {
+                            writer.Write("0x");
+                            writer.Write(BitConverter.ToString(new byte[] { body[i] }).Replace("-", ""));
+                            writer.Write(", ");
+                        }
+                        writer.Write("};");
+                        writer.WriteLine();
+                        
+                        writer.Write("protected override byte[] ");
+                        writer.Write(name);
+                        writer.Write(" => _");
+                        writer.Write(name);
+                        writer.Write(";");
+                        writer.WriteLine();
+                    }
+
+                    static byte[] ParseHex(string hex)
+                    {
+                        static int GetHexVal(char hex) => hex - (hex < 58 ? 48 : (hex < 97 ? 55 : 87));
+
+                        var arr = new byte[hex.Length >> 1];
+                        for (int i = 0; i < hex.Length >> 1; ++i)
+                            arr[i] = (byte)((GetHexVal(hex[i << 1]) << 4) + GetHexVal(hex[(i << 1) + 1]));
+
+                        return arr;
+                    }
+                
+                }
+                
+                ]]>
+            </Code>
+        </Task>
+    </UsingTask>
+
+    <Target Name="GenerateIR" BeforeTargets="CoreCompile" DependsOnTargets="DisassembleIR" Inputs="$(IRIntermediateDirectory)%(IRRuntimeIdentifier.Identity).s" Outputs="$(IRIntermediateDirectory)%(IRRuntimeIdentifier.Identity).cs" Condition=" '$(TargetFramework)' != '' ">
+        <Message Text="$(IRIntermediateDirectory)%(IRRuntimeIdentifier.Identity).s -&gt; $(IRIntermediateDirectory)%(IRRuntimeIdentifier.Identity).cs" />
+        <MakeDir Directories="$(IRIntermediateDirectory)" />
+        <BuildIRCodeFile Namespace="IKVM.Runtime.IR" ClassName="$([System.String]::Copy('IR_%(IRRuntimeIdentifier.Identity)').Replace('-', '_').Replace('.', '_'))" AssemblerFile="$(IRIntermediateDirectory)%(IRRuntimeIdentifier.Identity).s" BuildCodeFile="$(IRIntermediateDirectory)%(IRRuntimeIdentifier.Identity).cs" />
+        <ItemGroup>
+            <FileWrites Include="$(IRIntermediateDirectory)%(IRRuntimeIdentifier.Identity).cs" />
+            <Compile Include="$(IRIntermediateDirectory)%(IRRuntimeIdentifier.Identity).cs" />
+        </ItemGroup>
+    </Target>
 
 </Project>

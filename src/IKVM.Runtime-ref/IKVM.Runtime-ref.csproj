@@ -20,6 +20,8 @@
     <ItemGroup>
         <ExcludeFromCompile Include="..\IKVM.Runtime\bin\**\*.cs" />
         <ExcludeFromCompile Include="..\IKVM.Runtime\obj\**\*.cs" />
+        <ExcludeFromCompile Include="..\IKVM.Runtime\IR\**\*.cs" />
+        <ExcludeFromCompile Include="..\IKVM.Runtime\JNI\**\*.cs" />
         <Compile Include="..\IKVM.Runtime\**\*.cs" LinkBase="" Exclude="@(ExcludeFromCompile)" />
     </ItemGroup>
 

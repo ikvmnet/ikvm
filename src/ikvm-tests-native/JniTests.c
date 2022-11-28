@@ -28,8 +28,14 @@ JNIEXPORT void JNICALL Java_ikvm_tests_jni_JniTests_findClassTest(JNIEnv* env) {
 JNIEXPORT void JNICALL Java_ikvm_tests_jni_JniTests_getSuperclassTest(JNIEnv* env) {
     jclass exceptionClass = (*env)->FindClass(env, "java/lang/Exception");
 
-    jclass integerClass = (*env)->FindClass(env, "java/lang/Integer");
-    if (integerClass == 0) {
+    jclass numberClass = (*env)->FindClass(env, "java/lang/Number");
+    if (numberClass == 0) {
+        (*env)->ThrowNew(env, exceptionClass, "failed");
+        return;
+    }
+
+    jclass superClass = (*env)->GetSuperclass(env, numberClass);
+    if (superClass == 0) {
         (*env)->ThrowNew(env, exceptionClass, "failed");
         return;
     }
@@ -40,13 +46,7 @@ JNIEXPORT void JNICALL Java_ikvm_tests_jni_JniTests_getSuperclassTest(JNIEnv* en
         return;
     }
 
-    jclass superClass = (*env)->GetSuperclass(env, integerClass);
-    if (superClass == 0) {
-        (*env)->ThrowNew(env, exceptionClass, "failed");
-        return;
-    }
-
-    if (superClass != objectClass) {
+    if ((*env)->IsSameObject(env, superClass, objectClass) != JNI_TRUE) {
         (*env)->ThrowNew(env, exceptionClass, "failed");
         return;
     }
@@ -61,13 +61,19 @@ JNIEXPORT void JNICALL Java_ikvm_tests_jni_JniTests_throwTest(JNIEnv* env) {
         return;
     }
 
-    jmethodID runtimeExceptionClassCtor = (*env)->GetMethodID(env, exceptionClass, "<init>", "(Ljava/lang/String;)V");
+    jmethodID runtimeExceptionClassCtor = (*env)->GetMethodID(env, runtimeExceptionClass, "<init>", "(Ljava/lang/String;)V");
     if (runtimeExceptionClassCtor == 0) {
         (*env)->ThrowNew(env, exceptionClass, "failed");
         return;
     }
 
-    jthrowable runtimeException = (*env)->NewObject(env, exceptionClass, runtimeExceptionClassCtor, "success");
+    jstring message = (*env)->NewStringUTF(env, "success");
+    if (message == 0) {
+        (*env)->ThrowNew(env, exceptionClass, "failed");
+        return;
+    }
+
+    jthrowable runtimeException = (*env)->NewObject(env, runtimeExceptionClass, runtimeExceptionClassCtor, message);
     if (runtimeException == 0) {
         (*env)->ThrowNew(env, exceptionClass, "failed");
         return;
@@ -97,35 +103,13 @@ JNIEXPORT void JNICALL Java_ikvm_tests_jni_JniTests_newObjectTest(JNIEnv* env) {
         return;
     }
 
-    jmethodID integerClassCtor = (*env)->GetMethodID(env, exceptionClass, "<init>", "(I)V");
+    jmethodID integerClassCtor = (*env)->GetMethodID(env, integerClass, "<init>", "(I)V");
     if (integerClassCtor == 0) {
         (*env)->ThrowNew(env, exceptionClass, "failed");
         return;
     }
 
-    jobject integer = (*env)->NewObject(env, exceptionClass, integerClassCtor, 1);
-    if (integer == 0) {
-        (*env)->ThrowNew(env, exceptionClass, "failed");
-        return;
-    }
-}
-
-JNIEXPORT void JNICALL Java_ikvm_tests_jni_JniTests_newObjectVTest(JNIEnv* env) {
-    jclass exceptionClass = (*env)->FindClass(env, "java/lang/Exception");
-
-    jclass integerClass = (*env)->FindClass(env, "java/lang/Integer");
-    if (integerClass == 0) {
-        (*env)->ThrowNew(env, exceptionClass, "failed");
-        return;
-    }
-
-    jmethodID integerClassCtor = (*env)->GetMethodID(env, exceptionClass, "<init>", "(I)V");
-    if (integerClassCtor == 0) {
-        (*env)->ThrowNew(env, exceptionClass, "failed");
-        return;
-    }
-
-    jobject integer = (*env)->NewObjectV(env, exceptionClass, integerClassCtor, 1);
+    jobject integer = (*env)->NewObject(env, integerClass, integerClassCtor, 1);
     if (integer == 0) {
         (*env)->ThrowNew(env, exceptionClass, "failed");
         return;
@@ -141,7 +125,7 @@ JNIEXPORT void JNICALL Java_ikvm_tests_jni_JniTests_newObjectATest(JNIEnv* env) 
         return;
     }
 
-    jmethodID integerClassCtor = (*env)->GetMethodID(env, exceptionClass, "<init>", "(I)V");
+    jmethodID integerClassCtor = (*env)->GetMethodID(env, integerClass, "<init>", "(I)V");
     if (integerClassCtor == 0) {
         (*env)->ThrowNew(env, exceptionClass, "failed");
         return;
@@ -150,7 +134,7 @@ JNIEXPORT void JNICALL Java_ikvm_tests_jni_JniTests_newObjectATest(JNIEnv* env) 
     jvalue a[1];
     a[0].i = 1;
 
-    jobject integer = (*env)->NewObjectA(env, exceptionClass, integerClassCtor, a);
+    jobject integer = (*env)->NewObjectA(env, integerClass, integerClassCtor, a);
     if (integer == 0) {
         (*env)->ThrowNew(env, exceptionClass, "failed");
         return;
