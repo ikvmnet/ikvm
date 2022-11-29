@@ -19,41 +19,41 @@
     </ItemGroup>
 
     <ItemGroup>
-        <IRRuntimeIdentifier Include="win7-x64" TargetName="x86_64-pc-windows-msvc" Arguments="-O3" />
-        <IRRuntimeIdentifier Include="win7-x86" TargetName="i686-pc-windows-msvc" Arguments="-O3" />
-        <!--<IRRuntimeIdentifier Include="win81-arm" TargetName="thumbv7-pc-windows-msvc" Arguments="-O3" />-->
-        <IRRuntimeIdentifier Include="win10-arm64" TargetName="aarch64-pc-windows-msvc" Arguments="-O3" />
-        <IRRuntimeIdentifier Include="linux-x64" TargetName="x86_64-pc-linux-gnueabihf" Arguments="-O3" />
-        <!--<IRRuntimeIdentifier Include="linux-arm" TargetName="armv7-pc-linux-gnueabihf" Arguments="-O3" />-->
-        <IRRuntimeIdentifier Include="linux-arm64" TargetName="aarch64-pc-linux-gnueabihf" Arguments="-O3" />
+        <LLIRRuntimeIdentifier Include="win7-x64" TargetName="x86_64-pc-windows-msvc" Arguments="-O3" />
+        <LLIRRuntimeIdentifier Include="win7-x86" TargetName="i686-pc-windows-msvc" Arguments="-O3" />
+        <LLIRRuntimeIdentifier Include="win81-arm" TargetName="thumbv7-pc-windows-msvc" Arguments="-O3" />
+        <LLIRRuntimeIdentifier Include="win10-arm64" TargetName="aarch64-pc-windows-msvc" Arguments="-O3" />
+        <LLIRRuntimeIdentifier Include="linux-x64" TargetName="x86_64-pc-linux-gnueabihf" Arguments="-O3" />
+        <LLIRRuntimeIdentifier Include="linux-arm" TargetName="armv7-pc-linux-gnueabihf" Arguments="-O3" />
+        <LLIRRuntimeIdentifier Include="linux-arm64" TargetName="aarch64-pc-linux-gnueabihf" Arguments="-O3" />
     </ItemGroup>
 
     <Import Sdk="Microsoft.NET.Sdk" Project="Sdk.targets" />
 
     <PropertyGroup>
-        <IRSourceDirectory>$(MSBuildThisFileDirectory)IR\</IRSourceDirectory>
-        <IRIntermediateDirectory>$(IntermediateOutputPath)ir\</IRIntermediateDirectory>
+        <LLIRRuntimeIdentifier>$(MSBuildThisFileDirectory)LLIR\</LLIRRuntimeIdentifier>
+        <LLIRIntermediateDirectory>$(IntermediateOutputPath)llir\</LLIRIntermediateDirectory>
         <CLangCommand>clang</CLangCommand>
         <ObjDumpCommand>llvm-objdump</ObjDumpCommand>
     </PropertyGroup>
 
-    <Target Name="CompileIR" Inputs="$(IRSourceDirectory)%(IRRuntimeIdentifier.Identity).ll" Outputs="$(IRIntermediateDirectory)%(IRRuntimeIdentifier.Identity).o" Condition=" '$(TargetFramework)' != '' ">
-        <MakeDir Directories="$(IRIntermediateDirectory)" />
-        <Exec Command="&quot;$(CLangCommand)&quot; -c &quot;$(IRSourceDirectory)%(IRRuntimeIdentifier.Identity).ll&quot; -o &quot;$(IRIntermediateDirectory)%(IRRuntimeIdentifier.Identity).o&quot; --target=%(IRRuntimeIdentifier.TargetName) %(IRRuntimeIdentifier.Arguments)" />
+    <Target Name="CompileLLIR" Inputs="$(LLIRRuntimeIdentifier)%(LLIRRuntimeIdentifier.Identity).ll" Outputs="$(LLIRIntermediateDirectory)%(LLIRRuntimeIdentifier.Identity).o" Condition=" '$(TargetFramework)' != '' ">
+        <MakeDir Directories="$(LLIRIntermediateDirectory)" />
+        <Exec Command="&quot;$(CLangCommand)&quot; -c &quot;$(LLIRRuntimeIdentifier)%(LLIRRuntimeIdentifier.Identity).ll&quot; -o &quot;$(LLIRIntermediateDirectory)%(LLIRRuntimeIdentifier.Identity).o&quot; --target=%(LLIRRuntimeIdentifier.TargetName) %(LLIRRuntimeIdentifier.Arguments)" />
         <ItemGroup>
-            <FileWrites Include="$(IRIntermediateDirectory)%(IRRuntimeIdentifier.Identity).o" />
+            <FileWrites Include="$(LLIRIntermediateDirectory)%(LLIRRuntimeIdentifier.Identity).o" />
         </ItemGroup>
     </Target>
 
-    <Target Name="DisassembleIR" DependsOnTargets="CompileIR" Inputs="$(IRIntermediateDirectory)%(IRRuntimeIdentifier.Identity).o" Outputs="$(IRIntermediateDirectory)%(IRRuntimeIdentifier.Identity).s" Condition=" '$(TargetFramework)' != '' ">
-        <MakeDir Directories="$(IRIntermediateDirectory)" />
-        <Exec Command="&quot;$(ObjDumpCommand)&quot; --demangle -d &quot;$(IRIntermediateDirectory)%(IRRuntimeIdentifier.Identity).o&quot; -M intel &gt; &quot;$(IRIntermediateDirectory)%(IRRuntimeIdentifier.Identity).s&quot;" />
+    <Target Name="DisassembleLLIR" DependsOnTargets="CompileLLIR" Inputs="$(LLIRIntermediateDirectory)%(LLIRRuntimeIdentifier.Identity).o" Outputs="$(LLIRIntermediateDirectory)%(LLIRRuntimeIdentifier.Identity).s" Condition=" '$(TargetFramework)' != '' ">
+        <MakeDir Directories="$(LLIRIntermediateDirectory)" />
+        <Exec Command="&quot;$(ObjDumpCommand)&quot; --demangle -d &quot;$(LLIRIntermediateDirectory)%(LLIRRuntimeIdentifier.Identity).o&quot; -M intel &gt; &quot;$(LLIRIntermediateDirectory)%(LLIRRuntimeIdentifier.Identity).s&quot;" />
         <ItemGroup>
-            <FileWrites Include="$(IRIntermediateDirectory)%(IRRuntimeIdentifier.Identity).s" />
+            <FileWrites Include="$(LLIRIntermediateDirectory)%(LLIRRuntimeIdentifier.Identity).s" />
         </ItemGroup>
     </Target>
 
-    <UsingTask TaskName="BuildIRCodeFile" TaskFactory="RoslynCodeTaskFactory" AssemblyFile="$(MSBuildToolsPath)\Microsoft.Build.Tasks.Core.dll">
+    <UsingTask TaskName="BuildLLIRCodeFile" TaskFactory="RoslynCodeTaskFactory" AssemblyFile="$(MSBuildToolsPath)\Microsoft.Build.Tasks.Core.dll">
         <Task>
             <Code Type="Class" Language="CS">
                 <![CDATA[
@@ -66,7 +66,7 @@
                 using Microsoft.Build.Framework;
                 using Microsoft.Build.Utilities;
                 
-                public class BuildIRCodeFile : Task
+                public class BuildLLIRCodeFile : Task
                 {
                 
                     static readonly Regex SymbolLineRegex = new Regex(@"^([0-9a-fA-F]{8,16}).+\<(.+)\>\:\w*$", RegexOptions.IgnoreCase);
@@ -80,6 +80,7 @@
                 
                     public string BuildCodeFile { get; set; }
 
+
                     public override bool Execute()
                     {
                         using var o = new StreamWriter(File.Create(BuildCodeFile));
@@ -91,54 +92,64 @@
                         o.WriteLine();
                         o.Write("class ");
                         o.Write(ClassName);
-                        o.Write(" : IKVM.Runtime.IR.IRFunctionTable {");
+                        o.Write(" : IKVM.Runtime.LLIR.LLIRFunctionTable {");
                         o.WriteLine();
 
-                        string currentFunc = null;
-                        List<byte> currentBody = null;
+                        var currentName = (string)null;
+                        var currentIndx = (int)-1;
+                        var text = new List<byte>(16384);
+                        var syms = new Dictionary<string, int>();
+
+                        void InsertText(int pos, byte val)
+                        {
+                            // ensure capacity
+                            while (text.Count < pos)
+                                text.Add(0);
+                        
+                            text.Insert(pos, val);
+                        }
 
                         do
                         {
                             var line = s.ReadLine();
                             if (line == null)
-                            {
-                                WriteFunc(o, currentFunc, currentBody);
                                 break;
-                            }
 
-                            if (currentFunc == null)
+                            if (currentName == null)
                             {
                                 var m = SymbolLineRegex.Match(line);
                                 if (m.Success == false)
                                     continue;
 
-                                var z = m.Groups[1].Value;
+                                var z = m.Groups[1].Value.Trim().PadLeft(16, '0');
                                 var i = m.Groups[2].Value.TrimStart('_');
-                                currentFunc = i;
-                                currentBody = new List<byte>(128);
+                                currentName = i;
+                                currentIndx = (int)ParseInt64BigEndian(ParseHex(z));
+                                syms.Add(currentName, currentIndx);
                                 continue;
                             }
                             else
                             {
-                                var m =CodeLineRegex.Match(line);
+                                var m = CodeLineRegex.Match(line);
                                 if (m.Success == false)
                                 {
-                                    WriteFunc(o, currentFunc, currentBody);
-                                    currentFunc = null;
-                                    currentBody = null;
+                                    currentName = null;
                                     continue;
                                 }
 
-                                var z = m.Groups[1].Value;
-                                var i = m.Groups[2].Value.Split(' ').Select(j => j.Trim()).Where(j => j != "").ToArray();
+                                var z = m.Groups[1].Value.Trim().PadLeft(16, '0');
+                                var i = string.Join("", m.Groups[2].Value.Split(' ').Select(j => j.Trim()).Where(j => j != "").ToArray());
+                                currentIndx = (int)ParseInt64BigEndian(ParseHex(z));
 
-                                foreach (var w in i)
-                                    for (int l = 0; l < w.Length; l += 2)
-                                        currentBody.Add(ParseHex(w.Substring(l, 2))[0]);
-
+                                var b = ParseHex(i);
+                                for (int p = 0; p < b.Length; p++)
+                                    InsertText(currentIndx + p, b[p]);
                             }
                         }
-                        while(true);
+                        while (true);
+
+                        WriteText(o, text);
+                        WriteSyms(o, syms);
 
                         o.WriteLine("}");
                         o.WriteLine("}");
@@ -146,26 +157,50 @@
                         return true;
                     }
 
-                    void WriteFunc(StreamWriter writer, string name, List<byte> body)
+                    void WriteText(StreamWriter writer, List<byte> text)
                     {
-                        writer.Write("static readonly byte[] _");
-                        writer.Write(name);
-                        writer.Write(" = new byte[] {");
-                        for (int i = 0; i < body.Count; i++)
+                        writer.WriteLine("static readonly byte[] text = new byte[]");
+                        writer.WriteLine("{");
+                        
+                        for (int i = 0; i < text.Count; i++)
                         {
                             writer.Write("0x");
-                            writer.Write(BitConverter.ToString(new byte[] { body[i] }).Replace("-", ""));
+                            writer.Write(text[i].ToString("X2"));
                             writer.Write(", ");
+                            
+                            if ((i + 1) % 32 == 0)
+                                writer.WriteLine();
                         }
-                        writer.Write("};");
-                        writer.WriteLine();
                         
-                        writer.Write("protected override byte[] ");
-                        writer.Write(name);
-                        writer.Write(" => _");
-                        writer.Write(name);
-                        writer.Write(";");
                         writer.WriteLine();
+                        writer.WriteLine("};");
+                        writer.WriteLine();
+
+                        writer.WriteLine("protected override byte[] Text => text;");
+                    }
+
+                    void WriteSyms(StreamWriter writer, Dictionary<string, int> syms)
+                    {
+                        foreach (var kvp in syms)
+                        {
+                            var name = kvp.Key;
+                            var offs = kvp.Value;
+
+                            if (name.StartsWith("$") || name.StartsWith("."))
+                                continue;
+
+                            writer.Write("static readonly int _idx_");
+                            writer.Write(name);
+                            writer.Write(" = 0x");
+                            writer.Write(offs.ToString("x2"));
+                            writer.WriteLine(";");
+
+                            writer.Write("protected override int idx_");
+                            writer.Write(name);
+                            writer.Write(" => _idx_");
+                            writer.Write(name);
+                            writer.WriteLine(";");
+                        }
                     }
 
                     static byte[] ParseHex(string hex)
@@ -178,6 +213,19 @@
 
                         return arr;
                     }
+
+                    static int ParseInt32BigEndian(byte[] bytes, int off = 0)
+                    {
+                        return ((bytes[off + 0] & 0xff) << 24) | ((bytes[off + 1] & 0xff) << 16) | ((bytes[off + 2] & 0xff) << 8) | (bytes[off + 3] & 0xff);
+                    }
+
+                    static long ParseInt64BigEndian(byte[] bytes, int off = 0)
+                    {
+                        var a = (long)ParseInt32BigEndian(bytes, off);
+                        var b = (long)ParseInt32BigEndian(bytes, off + 4);
+                        var i = (a << 32) | b;
+                        return i;
+                    }
                 
                 }
                 
@@ -186,13 +234,13 @@
         </Task>
     </UsingTask>
 
-    <Target Name="GenerateIR" BeforeTargets="CoreCompile" DependsOnTargets="DisassembleIR" Inputs="$(IRIntermediateDirectory)%(IRRuntimeIdentifier.Identity).s" Outputs="$(IRIntermediateDirectory)%(IRRuntimeIdentifier.Identity).cs" Condition=" '$(TargetFramework)' != '' ">
-        <Message Text="$(IRIntermediateDirectory)%(IRRuntimeIdentifier.Identity).s -&gt; $(IRIntermediateDirectory)%(IRRuntimeIdentifier.Identity).cs" />
-        <MakeDir Directories="$(IRIntermediateDirectory)" />
-        <BuildIRCodeFile Namespace="IKVM.Runtime.IR" ClassName="$([System.String]::Copy('IR_%(IRRuntimeIdentifier.Identity)').Replace('-', '_').Replace('.', '_'))" AssemblerFile="$(IRIntermediateDirectory)%(IRRuntimeIdentifier.Identity).s" BuildCodeFile="$(IRIntermediateDirectory)%(IRRuntimeIdentifier.Identity).cs" />
+    <Target Name="GenerateLLIRCode" BeforeTargets="CoreCompile" DependsOnTargets="DisassembleLLIR" Inputs="$(LLIRIntermediateDirectory)%(LLIRRuntimeIdentifier.Identity).s" Outputs="$(LLIRIntermediateDirectory)%(LLIRRuntimeIdentifier.Identity).cs" Condition=" '$(TargetFramework)' != '' ">
+        <Message Text="$(LLIRIntermediateDirectory)%(LLIRRuntimeIdentifier.Identity).s -&gt; $(LLIRIntermediateDirectory)%(LLIRRuntimeIdentifier.Identity).cs" />
+        <MakeDir Directories="$(LLIRIntermediateDirectory)" />
+        <BuildLLIRCodeFile Namespace="IKVM.Runtime.LLIR" ClassName="$([System.String]::Copy('LLIR_%(LLIRRuntimeIdentifier.Identity)').Replace('-', '_').Replace('.', '_'))" AssemblerFile="$(LLIRIntermediateDirectory)%(LLIRRuntimeIdentifier.Identity).s" BuildCodeFile="$(LLIRIntermediateDirectory)%(LLIRRuntimeIdentifier.Identity).cs" />
         <ItemGroup>
-            <FileWrites Include="$(IRIntermediateDirectory)%(IRRuntimeIdentifier.Identity).cs" />
-            <Compile Include="$(IRIntermediateDirectory)%(IRRuntimeIdentifier.Identity).cs" />
+            <FileWrites Include="$(LLIRIntermediateDirectory)%(LLIRRuntimeIdentifier.Identity).cs" />
+            <Compile Include="$(LLIRIntermediateDirectory)%(LLIRRuntimeIdentifier.Identity).cs" />
         </ItemGroup>
     </Target>
 

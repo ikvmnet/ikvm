@@ -97,7 +97,7 @@ IMPL type JNI_Call##Type##Method(JNIEnv* pEnv, jobject obj, jmethodID methodID, 
 	type ret;\
 	va_list args;\
 	va_start(args, methodID);\
-	ret = JNI_Call##Type##MethodV(pEnv, obj, methodID, args);\
+	ret = (*pEnv)->Call##Type##MethodV(pEnv, obj, methodID, args);\
 	va_end(args);\
 	return ret;\
 }\
@@ -112,7 +112,7 @@ IMPL type JNI_CallNonvirtual##Type##Method(JNIEnv* pEnv, jobject obj, jclass cla
 	type ret;\
 	va_list args;\
 	va_start(args, methodID);\
-	ret = JNI_CallNonvirtual##Type##MethodV(pEnv, obj, clazz, methodID, args);\
+	ret = (*pEnv)->CallNonvirtual##Type##MethodV(pEnv, obj, clazz, methodID, args);\
 	va_end(args);\
 	return ret;\
 }\
@@ -127,7 +127,7 @@ IMPL type JNI_CallStatic##Type##Method(JNIEnv* pEnv, jclass clazz, jmethodID met
 	type ret;\
 	va_list args;\
 	va_start(args, methodID);\
-	ret = JNI_CallStatic##Type##MethodV(pEnv, clazz, methodID, args);\
+	ret = (*pEnv)->CallStatic##Type##MethodV(pEnv, clazz, methodID, args);\
 	va_end(args);\
 	return ret;\
 }\

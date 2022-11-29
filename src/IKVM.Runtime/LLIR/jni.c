@@ -15,7 +15,7 @@ IMPL jobject JNI_NewObject(JNIEnv* pEnv, jclass clazz, jmethodID methodID, ...)
 	jobject o;
 	va_list args;
 	va_start(args, methodID);
-	o = JNI_NewObjectV(pEnv, clazz, methodID, args);
+	o = (*pEnv)->NewObjectV(pEnv, clazz, methodID, args);
 	va_end(args);
 	return o;
 }
@@ -31,7 +31,7 @@ IMPL void JNI_CallVoidMethod(JNIEnv* pEnv, jobject obj, jmethodID methodID, ...)
 {
 	va_list args;
 	va_start(args, methodID);
-	JNI_CallVoidMethodV(pEnv, obj, methodID, args);
+	(*pEnv)->CallVoidMethodV(pEnv, obj, methodID, args);
 	va_end(args);
 }
 
@@ -46,7 +46,7 @@ IMPL void JNI_CallNonvirtualVoidMethod(JNIEnv* pEnv, jobject obj, jclass clazz, 
 {
 	va_list args;
 	va_start(args, methodID);
-	JNI_CallNonvirtualVoidMethodV(pEnv, obj, clazz, methodID, args);
+	(*pEnv)->CallNonvirtualVoidMethodV(pEnv, obj, clazz, methodID, args);
 	va_end(args);
 }
 
@@ -61,7 +61,7 @@ IMPL void JNI_CallStaticVoidMethod(JNIEnv* pEnv, jclass clazz, jmethodID methodI
 {
 	va_list args;
 	va_start(args, methodID);
-	JNI_CallStaticVoidMethodV(pEnv, clazz, methodID, args);
+	(*pEnv)->CallStaticVoidMethodV(pEnv, clazz, methodID, args);
 	va_end(args);
 }
 
