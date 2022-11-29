@@ -26,8 +26,8 @@ namespace IKVM.Runtime.IR
         /// <returns></returns>
         static IRFunctionTable CreateInstance()
         {
-#if STATIC_COMPILER || STUB_GENERATOR
-            throw new NotImplementedException();
+#if FIRST_PASS
+            return null;
 #else
             if (RuntimeInformation.IsOSPlatform(OSPlatform.Windows))
             {
