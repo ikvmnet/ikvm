@@ -1,7 +1,4 @@
-﻿using System;
-using System.IO;
-
-using FluentAssertions;
+﻿using System.IO;
 
 using IKVM.Tests.Util;
 
