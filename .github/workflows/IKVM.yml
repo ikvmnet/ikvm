@@ -139,6 +139,17 @@ jobs:
       uses: actions/setup-dotnet@v3
       with:
         dotnet-version: 7.0.x
+    - name: Cache LLVM and Clang
+      id: cache-llvm
+      uses: actions/cache@v2
+      with:
+        path: C:/Program Files/LLVM
+        key: llvm-15.0
+    - name: Install LLVM and Clang
+      uses: KyleMayes/install-llvm-action@v1
+      with:
+        version: "15.0"
+        cached: ${{ steps.cache-llvm.outputs.cache-hit }}
     - name: Install GitVersion
       uses: gittools/actions/gitversion/setup@v0.9.13
       with:
