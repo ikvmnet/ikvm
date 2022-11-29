@@ -26,6 +26,9 @@ namespace IKVM.Runtime.IR
         /// <returns></returns>
         static IRFunctionTable CreateInstance()
         {
+#if STATIC_COMPILER || STUB_GENERATOR
+            throw new NotImplementedException();
+#else
             if (RuntimeInformation.IsOSPlatform(OSPlatform.Windows))
             {
                 if (RuntimeInformation.ProcessArchitecture == Architecture.X86)
@@ -48,6 +51,7 @@ namespace IKVM.Runtime.IR
             }
 
             throw new PlatformNotSupportedException();
+#endif
         }
 
         readonly ExecutableMemory _NewObjectRef;
