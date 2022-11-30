@@ -872,6 +872,9 @@ namespace IKVM.Runtime.JNI
             }
         }
 
+        [UnmanagedFunctionPointer(CallingConvention.StdCall)]
+        public delegate jobject NewObjectADelegate(JNIEnv* pEnv, jclass clazz, jmethodID methodID, jvalue* args);
+
         public static jobject NewObjectA(JNIEnv* pEnv, jclass clazz, jmethodID methodID, jvalue* args)
         {
             var wrapper = TypeWrapper.FromClass((java.lang.Class)pEnv->UnwrapRef(clazz));

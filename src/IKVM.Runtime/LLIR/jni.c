@@ -10,7 +10,7 @@ MAKE_METHOD(Long, jlong)
 MAKE_METHOD(Float, jfloat)
 MAKE_METHOD(Double, jdouble)
 
-IMPL jobject JNI_NewObject(JNIEnv* pEnv, jclass clazz, jmethodID methodID, ...)
+EXPORT jobject JNI_NewObject(JNIEnv* pEnv, jclass clazz, jmethodID methodID, ...)
 {
 	jobject o;
 	va_list args;
@@ -20,14 +20,14 @@ IMPL jobject JNI_NewObject(JNIEnv* pEnv, jclass clazz, jmethodID methodID, ...)
 	return o;
 }
 
-IMPL jobject JNI_NewObjectV(JNIEnv* pEnv, jclass clazz, jmethodID methodID, va_list args)
+EXPORT jobject JNI_NewObjectV(JNIEnv* pEnv, jclass clazz, jmethodID methodID, va_list args)
 {
 	jvalue* argarray;
 	MAKE_ARG_ARRAY(pEnv, args, argarray);
 	return (*pEnv)->NewObjectA(pEnv, clazz, methodID, argarray);
 }
 
-IMPL void JNI_CallVoidMethod(JNIEnv* pEnv, jobject obj, jmethodID methodID, ...)
+EXPORT void JNI_CallVoidMethod(JNIEnv* pEnv, jobject obj, jmethodID methodID, ...)
 {
 	va_list args;
 	va_start(args, methodID);
@@ -35,14 +35,14 @@ IMPL void JNI_CallVoidMethod(JNIEnv* pEnv, jobject obj, jmethodID methodID, ...)
 	va_end(args);
 }
 
-IMPL void JNI_CallVoidMethodV(JNIEnv* pEnv, jobject obj, jmethodID methodID, va_list args)
+EXPORT void JNI_CallVoidMethodV(JNIEnv* pEnv, jobject obj, jmethodID methodID, va_list args)
 {
 	jvalue* argarray;
 	MAKE_ARG_ARRAY(pEnv, args, argarray);
 	(*pEnv)->CallVoidMethodA(pEnv, obj, methodID, argarray);
 }
 
-IMPL void JNI_CallNonvirtualVoidMethod(JNIEnv* pEnv, jobject obj, jclass clazz, jmethodID methodID, ...)
+EXPORT void JNI_CallNonvirtualVoidMethod(JNIEnv* pEnv, jobject obj, jclass clazz, jmethodID methodID, ...)
 {
 	va_list args;
 	va_start(args, methodID);
@@ -50,14 +50,14 @@ IMPL void JNI_CallNonvirtualVoidMethod(JNIEnv* pEnv, jobject obj, jclass clazz, 
 	va_end(args);
 }
 
-IMPL void JNI_CallNonvirtualVoidMethodV(JNIEnv* pEnv, jobject obj, jclass clazz, jmethodID methodID, va_list args)
+EXPORT void JNI_CallNonvirtualVoidMethodV(JNIEnv* pEnv, jobject obj, jclass clazz, jmethodID methodID, va_list args)
 {
 	jvalue* argarray;
 	MAKE_ARG_ARRAY(pEnv, args, argarray);
 	(*pEnv)->CallNonvirtualVoidMethodA(pEnv, obj, clazz, methodID, argarray);
 }
 
-IMPL void JNI_CallStaticVoidMethod(JNIEnv* pEnv, jclass clazz, jmethodID methodID, ...)
+EXPORT void JNI_CallStaticVoidMethod(JNIEnv* pEnv, jclass clazz, jmethodID methodID, ...)
 {
 	va_list args;
 	va_start(args, methodID);
@@ -65,7 +65,7 @@ IMPL void JNI_CallStaticVoidMethod(JNIEnv* pEnv, jclass clazz, jmethodID methodI
 	va_end(args);
 }
 
-IMPL void JNI_CallStaticVoidMethodV(JNIEnv* pEnv, jclass clazz, jmethodID methodID, va_list args)
+EXPORT void JNI_CallStaticVoidMethodV(JNIEnv* pEnv, jclass clazz, jmethodID methodID, va_list args)
 {
 	jvalue* argarray;
 	MAKE_ARG_ARRAY(pEnv, args, argarray);

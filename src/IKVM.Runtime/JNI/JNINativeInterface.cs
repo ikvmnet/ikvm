@@ -90,7 +90,7 @@ namespace IKVM.Runtime.JNI
             ni->AllocObject = (void*)Marshal.GetFunctionPointerForDelegate(JNIEnv.AllocObject);
             ni->NewObject = (void*)LLIRFunctionTable.Instance.JNI_NewObject;
             ni->NewObjectV = (void*)LLIRFunctionTable.Instance.JNI_NewObjectV;
-            ni->NewObjectA = (void*)Marshal.GetFunctionPointerForDelegate(JNIEnv.NewObjectA);
+            ni->NewObjectA = (void*)Marshal.GetFunctionPointerForDelegate((JNIEnv.NewObjectADelegate)JNIEnv.NewObjectA);
 
             ni->GetObjectClass = (void*)Marshal.GetFunctionPointerForDelegate(JNIEnv.GetObjectClass);
             ni->IsInstanceOf = (void*)Marshal.GetFunctionPointerForDelegate(JNIEnv.IsInstanceOf);
