@@ -106,27 +106,20 @@ define dso_local dllexport ptr @JNI_CallObjectMethod(ptr noundef %0, ptr noundef
   store ptr %2, ptr %4, align 8
   store ptr %1, ptr %5, align 8
   store ptr %0, ptr %6, align 8
-  call void @llvm.va_start(ptr %8)
-  %9 = load ptr, ptr %6, align 8
-  %10 = load ptr, ptr %9, align 8
-  %11 = getelementptr inbounds %struct.JNINativeInterface_, ptr %10, i32 0, i32 35
-  %12 = load ptr, ptr %11, align 8
-  %13 = load ptr, ptr %8, align 8
-  %14 = load ptr, ptr %4, align 8
-  %15 = load ptr, ptr %5, align 8
-  %16 = load ptr, ptr %6, align 8
-  %17 = call ptr %12(ptr noundef %16, ptr noundef %15, ptr noundef %14, ptr noundef %13)
-  store ptr %17, ptr %7, align 8
-  call void @llvm.va_end(ptr %8)
-  %18 = load ptr, ptr %7, align 8
-  ret ptr %18
+  call void @llvm.va_start(ptr %7)
+  %9 = load ptr, ptr %7, align 8
+  %10 = load ptr, ptr %4, align 8
+  %11 = load ptr, ptr %5, align 8
+  %12 = load ptr, ptr %6, align 8
+  %13 = call ptr @JNI_CallObjectMethodV(ptr noundef %12, ptr noundef %11, ptr noundef %10, ptr noundef %9)
+  store ptr %13, ptr %8, align 8
+  call void @llvm.va_end(ptr %7)
+  %14 = load ptr, ptr %8, align 8
+  ret ptr %14
 }
 
 ; Function Attrs: nocallback nofree nosync nounwind willreturn
 declare void @llvm.va_start(ptr) #1
-
-; Function Attrs: nocallback nofree nosync nounwind willreturn
-declare void @llvm.va_end(ptr) #1
 
 ; Function Attrs: noinline nounwind optnone uwtable
 define dso_local dllexport ptr @JNI_CallObjectMethodV(ptr noundef %0, ptr noundef %1, ptr noundef %2, ptr noundef %3) #0 {
@@ -134,197 +127,199 @@ define dso_local dllexport ptr @JNI_CallObjectMethodV(ptr noundef %0, ptr nounde
   %6 = alloca ptr, align 8
   %7 = alloca ptr, align 8
   %8 = alloca ptr, align 8
-  %9 = alloca ptr, align 8
-  %10 = alloca [257 x i8], align 16
-  %11 = alloca i32, align 4
-  %12 = alloca i32, align 4
+  %9 = alloca [256 x i8], align 16
+  %10 = alloca i32, align 4
+  %11 = alloca ptr, align 8
+  %12 = alloca i64, align 8
+  %13 = alloca i32, align 4
   store ptr %3, ptr %5, align 8
   store ptr %2, ptr %6, align 8
   store ptr %1, ptr %7, align 8
   store ptr %0, ptr %8, align 8
-  br label %13
-
-13:                                               ; preds = %4
   %14 = load ptr, ptr %8, align 8
   %15 = load ptr, ptr %14, align 8
   %16 = getelementptr inbounds %struct.JNINativeInterface_, ptr %15, i32 0, i32 0
   %17 = load ptr, ptr %16, align 8
-  %18 = getelementptr inbounds [257 x i8], ptr %10, i64 0, i64 0
+  %18 = getelementptr inbounds [256 x i8], ptr %9, i64 0, i64 0
   %19 = load ptr, ptr %6, align 8
   %20 = load ptr, ptr %8, align 8
   %21 = call i32 %17(ptr noundef %20, ptr noundef %19, ptr noundef %18)
-  store i32 %21, ptr %11, align 4
-  %22 = load i32, ptr %11, align 4
-  %23 = zext i32 %22 to i64
-  %24 = mul i64 %23, 8
-  %25 = alloca i8, i64 %24, align 16
-  store ptr %25, ptr %9, align 8
-  store i32 0, ptr %12, align 4
-  br label %26
+  store i32 %21, ptr %10, align 4
+  %22 = load ptr, ptr %8, align 8
+  %23 = load ptr, ptr %22, align 8
+  %24 = getelementptr inbounds %struct.JNINativeInterface_, ptr %23, i32 0, i32 1
+  %25 = load ptr, ptr %24, align 8
+  %26 = load i32, ptr %10, align 4
+  call void %25(i32 noundef %26)
+  %27 = load i32, ptr %10, align 4
+  %28 = zext i32 %27 to i64
+  %29 = call ptr @llvm.stacksave()
+  store ptr %29, ptr %11, align 8
+  %30 = alloca %union.jvalue, i64 %28, align 16
+  store i64 %28, ptr %12, align 8
+  store i32 0, ptr %13, align 4
+  br label %31
 
-26:                                               ; preds = %116, %13
-  %27 = load i32, ptr %12, align 4
-  %28 = load i32, ptr %11, align 4
-  %29 = icmp slt i32 %27, %28
-  br i1 %29, label %30, label %119
+31:                                               ; preds = %111, %4
+  %32 = load i32, ptr %13, align 4
+  %33 = load i32, ptr %10, align 4
+  %34 = icmp slt i32 %32, %33
+  br i1 %34, label %35, label %114
 
-30:                                               ; preds = %26
-  %31 = load i32, ptr %12, align 4
-  %32 = sext i32 %31 to i64
-  %33 = getelementptr inbounds [257 x i8], ptr %10, i64 0, i64 %32
-  %34 = load i8, ptr %33, align 1
-  %35 = sext i8 %34 to i32
-  switch i32 %35, label %115 [
-    i32 90, label %36
-    i32 66, label %45
-    i32 83, label %54
-    i32 67, label %63
+35:                                               ; preds = %31
+  %36 = load i32, ptr %13, align 4
+  %37 = sext i32 %36 to i64
+  %38 = getelementptr inbounds [256 x i8], ptr %9, i64 0, i64 %37
+  %39 = load i8, ptr %38, align 1
+  %40 = sext i8 %39 to i32
+  switch i32 %40, label %110 [
+    i32 90, label %41
+    i32 66, label %49
+    i32 67, label %57
+    i32 83, label %65
     i32 73, label %73
-    i32 74, label %81
-    i32 68, label %90
-    i32 70, label %98
-    i32 76, label %107
+    i32 74, label %80
+    i32 70, label %88
+    i32 68, label %96
+    i32 76, label %103
   ]
 
-36:                                               ; preds = %30
-  %37 = load ptr, ptr %5, align 8
-  %38 = getelementptr inbounds i8, ptr %37, i64 8
-  store ptr %38, ptr %5, align 8
-  %39 = load i32, ptr %37, align 8
-  %40 = trunc i32 %39 to i8
-  %41 = load ptr, ptr %9, align 8
-  %42 = load i32, ptr %12, align 4
-  %43 = sext i32 %42 to i64
-  %44 = getelementptr inbounds %union.jvalue, ptr %41, i64 %43
-  store i8 %40, ptr %44, align 8
-  br label %115
+41:                                               ; preds = %35
+  %42 = load ptr, ptr %5, align 8
+  %43 = getelementptr inbounds i8, ptr %42, i64 8
+  store ptr %43, ptr %5, align 8
+  %44 = load i32, ptr %42, align 8
+  %45 = trunc i32 %44 to i8
+  %46 = load i32, ptr %13, align 4
+  %47 = sext i32 %46 to i64
+  %48 = getelementptr inbounds %union.jvalue, ptr %30, i64 %47
+  store i8 %45, ptr %48, align 8
+  br label %110
 
-45:                                               ; preds = %30
-  %46 = load ptr, ptr %5, align 8
-  %47 = getelementptr inbounds i8, ptr %46, i64 8
-  store ptr %47, ptr %5, align 8
-  %48 = load i32, ptr %46, align 8
-  %49 = trunc i32 %48 to i8
-  %50 = load ptr, ptr %9, align 8
-  %51 = load i32, ptr %12, align 4
-  %52 = sext i32 %51 to i64
-  %53 = getelementptr inbounds %union.jvalue, ptr %50, i64 %52
-  store i8 %49, ptr %53, align 8
-  br label %115
+49:                                               ; preds = %35
+  %50 = load ptr, ptr %5, align 8
+  %51 = getelementptr inbounds i8, ptr %50, i64 8
+  store ptr %51, ptr %5, align 8
+  %52 = load i32, ptr %50, align 8
+  %53 = trunc i32 %52 to i8
+  %54 = load i32, ptr %13, align 4
+  %55 = sext i32 %54 to i64
+  %56 = getelementptr inbounds %union.jvalue, ptr %30, i64 %55
+  store i8 %53, ptr %56, align 8
+  br label %110
 
-54:                                               ; preds = %30
-  %55 = load ptr, ptr %5, align 8
-  %56 = getelementptr inbounds i8, ptr %55, i64 8
-  store ptr %56, ptr %5, align 8
-  %57 = load i32, ptr %55, align 8
-  %58 = trunc i32 %57 to i16
-  %59 = load ptr, ptr %9, align 8
-  %60 = load i32, ptr %12, align 4
-  %61 = sext i32 %60 to i64
-  %62 = getelementptr inbounds %union.jvalue, ptr %59, i64 %61
-  store i16 %58, ptr %62, align 8
-  br label %115
+57:                                               ; preds = %35
+  %58 = load ptr, ptr %5, align 8
+  %59 = getelementptr inbounds i8, ptr %58, i64 8
+  store ptr %59, ptr %5, align 8
+  %60 = load i32, ptr %58, align 8
+  %61 = trunc i32 %60 to i16
+  %62 = load i32, ptr %13, align 4
+  %63 = sext i32 %62 to i64
+  %64 = getelementptr inbounds %union.jvalue, ptr %30, i64 %63
+  store i16 %61, ptr %64, align 8
+  br label %110
 
-63:                                               ; preds = %30
-  %64 = load ptr, ptr %5, align 8
-  %65 = getelementptr inbounds i8, ptr %64, i64 8
-  store ptr %65, ptr %5, align 8
-  %66 = load i32, ptr %64, align 8
-  %67 = trunc i32 %66 to i16
-  %68 = zext i16 %67 to i32
-  %69 = load ptr, ptr %9, align 8
-  %70 = load i32, ptr %12, align 4
+65:                                               ; preds = %35
+  %66 = load ptr, ptr %5, align 8
+  %67 = getelementptr inbounds i8, ptr %66, i64 8
+  store ptr %67, ptr %5, align 8
+  %68 = load i32, ptr %66, align 8
+  %69 = trunc i32 %68 to i16
+  %70 = load i32, ptr %13, align 4
   %71 = sext i32 %70 to i64
-  %72 = getelementptr inbounds %union.jvalue, ptr %69, i64 %71
-  store i32 %68, ptr %72, align 8
-  br label %115
+  %72 = getelementptr inbounds %union.jvalue, ptr %30, i64 %71
+  store i16 %69, ptr %72, align 8
+  br label %110
 
-73:                                               ; preds = %30
+73:                                               ; preds = %35
   %74 = load ptr, ptr %5, align 8
   %75 = getelementptr inbounds i8, ptr %74, i64 8
   store ptr %75, ptr %5, align 8
   %76 = load i32, ptr %74, align 8
-  %77 = load ptr, ptr %9, align 8
-  %78 = load i32, ptr %12, align 4
-  %79 = sext i32 %78 to i64
-  %80 = getelementptr inbounds %union.jvalue, ptr %77, i64 %79
-  store i32 %76, ptr %80, align 8
-  br label %115
+  %77 = load i32, ptr %13, align 4
+  %78 = sext i32 %77 to i64
+  %79 = getelementptr inbounds %union.jvalue, ptr %30, i64 %78
+  store i32 %76, ptr %79, align 8
+  br label %110
 
-81:                                               ; preds = %30
-  %82 = load ptr, ptr %5, align 8
-  %83 = getelementptr inbounds i8, ptr %82, i64 8
-  store ptr %83, ptr %5, align 8
-  %84 = load i32, ptr %82, align 8
-  %85 = sext i32 %84 to i64
-  %86 = load ptr, ptr %9, align 8
-  %87 = load i32, ptr %12, align 4
-  %88 = sext i32 %87 to i64
-  %89 = getelementptr inbounds %union.jvalue, ptr %86, i64 %88
-  store i64 %85, ptr %89, align 8
-  br label %115
+80:                                               ; preds = %35
+  %81 = load ptr, ptr %5, align 8
+  %82 = getelementptr inbounds i8, ptr %81, i64 8
+  store ptr %82, ptr %5, align 8
+  %83 = load i32, ptr %81, align 8
+  %84 = sext i32 %83 to i64
+  %85 = load i32, ptr %13, align 4
+  %86 = sext i32 %85 to i64
+  %87 = getelementptr inbounds %union.jvalue, ptr %30, i64 %86
+  store i64 %84, ptr %87, align 8
+  br label %110
 
-90:                                               ; preds = %30
-  %91 = load ptr, ptr %5, align 8
-  %92 = getelementptr inbounds i8, ptr %91, i64 8
-  store ptr %92, ptr %5, align 8
-  %93 = load double, ptr %91, align 8
-  %94 = load ptr, ptr %9, align 8
-  %95 = load i32, ptr %12, align 4
-  %96 = sext i32 %95 to i64
-  %97 = getelementptr inbounds %union.jvalue, ptr %94, i64 %96
-  store double %93, ptr %97, align 8
-  br label %115
+88:                                               ; preds = %35
+  %89 = load ptr, ptr %5, align 8
+  %90 = getelementptr inbounds i8, ptr %89, i64 8
+  store ptr %90, ptr %5, align 8
+  %91 = load double, ptr %89, align 8
+  %92 = fptrunc double %91 to float
+  %93 = load i32, ptr %13, align 4
+  %94 = sext i32 %93 to i64
+  %95 = getelementptr inbounds %union.jvalue, ptr %30, i64 %94
+  store float %92, ptr %95, align 8
+  br label %110
 
-98:                                               ; preds = %30
-  %99 = load ptr, ptr %5, align 8
-  %100 = getelementptr inbounds i8, ptr %99, i64 8
-  store ptr %100, ptr %5, align 8
-  %101 = load double, ptr %99, align 8
-  %102 = fptrunc double %101 to float
-  %103 = load ptr, ptr %9, align 8
-  %104 = load i32, ptr %12, align 4
-  %105 = sext i32 %104 to i64
-  %106 = getelementptr inbounds %union.jvalue, ptr %103, i64 %105
-  store float %102, ptr %106, align 8
-  br label %115
+96:                                               ; preds = %35
+  %97 = load ptr, ptr %5, align 8
+  %98 = getelementptr inbounds i8, ptr %97, i64 8
+  store ptr %98, ptr %5, align 8
+  %99 = load double, ptr %97, align 8
+  %100 = load i32, ptr %13, align 4
+  %101 = sext i32 %100 to i64
+  %102 = getelementptr inbounds %union.jvalue, ptr %30, i64 %101
+  store double %99, ptr %102, align 8
+  br label %110
 
-107:                                              ; preds = %30
-  %108 = load ptr, ptr %5, align 8
-  %109 = getelementptr inbounds i8, ptr %108, i64 8
-  store ptr %109, ptr %5, align 8
-  %110 = load ptr, ptr %108, align 8
-  %111 = load ptr, ptr %9, align 8
-  %112 = load i32, ptr %12, align 4
-  %113 = sext i32 %112 to i64
-  %114 = getelementptr inbounds %union.jvalue, ptr %111, i64 %113
-  store ptr %110, ptr %114, align 8
-  br label %115
+103:                                              ; preds = %35
+  %104 = load ptr, ptr %5, align 8
+  %105 = getelementptr inbounds i8, ptr %104, i64 8
+  store ptr %105, ptr %5, align 8
+  %106 = load ptr, ptr %104, align 8
+  %107 = load i32, ptr %13, align 4
+  %108 = sext i32 %107 to i64
+  %109 = getelementptr inbounds %union.jvalue, ptr %30, i64 %108
+  store ptr %106, ptr %109, align 8
+  br label %110
 
-115:                                              ; preds = %30, %107, %98, %90, %81, %73, %63, %54, %45, %36
-  br label %116
+110:                                              ; preds = %35, %103, %96, %88, %80, %73, %65, %57, %49, %41
+  br label %111
 
-116:                                              ; preds = %115
-  %117 = load i32, ptr %12, align 4
-  %118 = add nsw i32 %117, 1
-  store i32 %118, ptr %12, align 4
-  br label %26, !llvm.loop !4
+111:                                              ; preds = %110
+  %112 = load i32, ptr %13, align 4
+  %113 = add nsw i32 %112, 1
+  store i32 %113, ptr %13, align 4
+  br label %31, !llvm.loop !4
 
-119:                                              ; preds = %26
-  br label %120
-
-120:                                              ; preds = %119
+114:                                              ; preds = %31
+  %115 = load ptr, ptr %8, align 8
+  %116 = load ptr, ptr %115, align 8
+  %117 = getelementptr inbounds %struct.JNINativeInterface_, ptr %116, i32 0, i32 36
+  %118 = load ptr, ptr %117, align 8
+  %119 = load ptr, ptr %6, align 8
+  %120 = load ptr, ptr %7, align 8
   %121 = load ptr, ptr %8, align 8
-  %122 = load ptr, ptr %121, align 8
-  %123 = getelementptr inbounds %struct.JNINativeInterface_, ptr %122, i32 0, i32 36
-  %124 = load ptr, ptr %123, align 8
-  %125 = load ptr, ptr %9, align 8
-  %126 = load ptr, ptr %6, align 8
-  %127 = load ptr, ptr %7, align 8
-  %128 = load ptr, ptr %8, align 8
-  %129 = call ptr %124(ptr noundef %128, ptr noundef %127, ptr noundef %126, ptr noundef %125)
-  ret ptr %129
+  %122 = call ptr %118(ptr noundef %121, ptr noundef %120, ptr noundef %119, ptr noundef %30)
+  %123 = load ptr, ptr %11, align 8
+  call void @llvm.stackrestore(ptr %123)
+  ret ptr %122
 }
+
+; Function Attrs: nocallback nofree nosync nounwind willreturn
+declare void @llvm.va_end(ptr) #1
+
+; Function Attrs: nocallback nofree nosync nounwind willreturn
+declare ptr @llvm.stacksave() #1
+
+; Function Attrs: nocallback nofree nosync nounwind willreturn
+declare void @llvm.stackrestore(ptr) #1
 
 ; Function Attrs: noinline nounwind optnone uwtable
 define dso_local dllexport ptr @JNI_CallNonvirtualObjectMethod(ptr noundef %0, ptr noundef %1, ptr noundef %2, ptr noundef %3, ...) #0 {
@@ -338,21 +333,17 @@ define dso_local dllexport ptr @JNI_CallNonvirtualObjectMethod(ptr noundef %0, p
   store ptr %2, ptr %6, align 8
   store ptr %1, ptr %7, align 8
   store ptr %0, ptr %8, align 8
-  call void @llvm.va_start(ptr %10)
-  %11 = load ptr, ptr %8, align 8
-  %12 = load ptr, ptr %11, align 8
-  %13 = getelementptr inbounds %struct.JNINativeInterface_, ptr %12, i32 0, i32 65
-  %14 = load ptr, ptr %13, align 8
-  %15 = load ptr, ptr %10, align 8
-  %16 = load ptr, ptr %5, align 8
-  %17 = load ptr, ptr %6, align 8
-  %18 = load ptr, ptr %7, align 8
-  %19 = load ptr, ptr %8, align 8
-  %20 = call ptr %14(ptr noundef %19, ptr noundef %18, ptr noundef %17, ptr noundef %16, ptr noundef %15)
-  store ptr %20, ptr %9, align 8
-  call void @llvm.va_end(ptr %10)
-  %21 = load ptr, ptr %9, align 8
-  ret ptr %21
+  call void @llvm.va_start(ptr %9)
+  %11 = load ptr, ptr %9, align 8
+  %12 = load ptr, ptr %5, align 8
+  %13 = load ptr, ptr %6, align 8
+  %14 = load ptr, ptr %7, align 8
+  %15 = load ptr, ptr %8, align 8
+  %16 = call ptr @JNI_CallNonvirtualObjectMethodV(ptr noundef %15, ptr noundef %14, ptr noundef %13, ptr noundef %12, ptr noundef %11)
+  store ptr %16, ptr %10, align 8
+  call void @llvm.va_end(ptr %9)
+  %17 = load ptr, ptr %10, align 8
+  ret ptr %17
 }
 
 ; Function Attrs: noinline nounwind optnone uwtable
@@ -362,198 +353,191 @@ define dso_local dllexport ptr @JNI_CallNonvirtualObjectMethodV(ptr noundef %0, 
   %8 = alloca ptr, align 8
   %9 = alloca ptr, align 8
   %10 = alloca ptr, align 8
-  %11 = alloca ptr, align 8
-  %12 = alloca [257 x i8], align 16
-  %13 = alloca i32, align 4
-  %14 = alloca i32, align 4
+  %11 = alloca [256 x i8], align 16
+  %12 = alloca i32, align 4
+  %13 = alloca ptr, align 8
+  %14 = alloca i64, align 8
+  %15 = alloca i32, align 4
   store ptr %4, ptr %6, align 8
   store ptr %3, ptr %7, align 8
   store ptr %2, ptr %8, align 8
   store ptr %1, ptr %9, align 8
   store ptr %0, ptr %10, align 8
-  br label %15
-
-15:                                               ; preds = %5
   %16 = load ptr, ptr %10, align 8
   %17 = load ptr, ptr %16, align 8
   %18 = getelementptr inbounds %struct.JNINativeInterface_, ptr %17, i32 0, i32 0
   %19 = load ptr, ptr %18, align 8
-  %20 = getelementptr inbounds [257 x i8], ptr %12, i64 0, i64 0
+  %20 = getelementptr inbounds [256 x i8], ptr %11, i64 0, i64 0
   %21 = load ptr, ptr %7, align 8
   %22 = load ptr, ptr %10, align 8
   %23 = call i32 %19(ptr noundef %22, ptr noundef %21, ptr noundef %20)
-  store i32 %23, ptr %13, align 4
-  %24 = load i32, ptr %13, align 4
-  %25 = zext i32 %24 to i64
-  %26 = mul i64 %25, 8
-  %27 = alloca i8, i64 %26, align 16
-  store ptr %27, ptr %11, align 8
-  store i32 0, ptr %14, align 4
-  br label %28
+  store i32 %23, ptr %12, align 4
+  %24 = load ptr, ptr %10, align 8
+  %25 = load ptr, ptr %24, align 8
+  %26 = getelementptr inbounds %struct.JNINativeInterface_, ptr %25, i32 0, i32 1
+  %27 = load ptr, ptr %26, align 8
+  %28 = load i32, ptr %12, align 4
+  call void %27(i32 noundef %28)
+  %29 = load i32, ptr %12, align 4
+  %30 = zext i32 %29 to i64
+  %31 = call ptr @llvm.stacksave()
+  store ptr %31, ptr %13, align 8
+  %32 = alloca %union.jvalue, i64 %30, align 16
+  store i64 %30, ptr %14, align 8
+  store i32 0, ptr %15, align 4
+  br label %33
 
-28:                                               ; preds = %118, %15
-  %29 = load i32, ptr %14, align 4
-  %30 = load i32, ptr %13, align 4
-  %31 = icmp slt i32 %29, %30
-  br i1 %31, label %32, label %121
+33:                                               ; preds = %113, %5
+  %34 = load i32, ptr %15, align 4
+  %35 = load i32, ptr %12, align 4
+  %36 = icmp slt i32 %34, %35
+  br i1 %36, label %37, label %116
 
-32:                                               ; preds = %28
-  %33 = load i32, ptr %14, align 4
-  %34 = sext i32 %33 to i64
-  %35 = getelementptr inbounds [257 x i8], ptr %12, i64 0, i64 %34
-  %36 = load i8, ptr %35, align 1
-  %37 = sext i8 %36 to i32
-  switch i32 %37, label %117 [
-    i32 90, label %38
-    i32 66, label %47
-    i32 83, label %56
-    i32 67, label %65
+37:                                               ; preds = %33
+  %38 = load i32, ptr %15, align 4
+  %39 = sext i32 %38 to i64
+  %40 = getelementptr inbounds [256 x i8], ptr %11, i64 0, i64 %39
+  %41 = load i8, ptr %40, align 1
+  %42 = sext i8 %41 to i32
+  switch i32 %42, label %112 [
+    i32 90, label %43
+    i32 66, label %51
+    i32 67, label %59
+    i32 83, label %67
     i32 73, label %75
-    i32 74, label %83
-    i32 68, label %92
-    i32 70, label %100
-    i32 76, label %109
+    i32 74, label %82
+    i32 70, label %90
+    i32 68, label %98
+    i32 76, label %105
   ]
 
-38:                                               ; preds = %32
-  %39 = load ptr, ptr %6, align 8
-  %40 = getelementptr inbounds i8, ptr %39, i64 8
-  store ptr %40, ptr %6, align 8
-  %41 = load i32, ptr %39, align 8
-  %42 = trunc i32 %41 to i8
-  %43 = load ptr, ptr %11, align 8
-  %44 = load i32, ptr %14, align 4
-  %45 = sext i32 %44 to i64
-  %46 = getelementptr inbounds %union.jvalue, ptr %43, i64 %45
-  store i8 %42, ptr %46, align 8
-  br label %117
+43:                                               ; preds = %37
+  %44 = load ptr, ptr %6, align 8
+  %45 = getelementptr inbounds i8, ptr %44, i64 8
+  store ptr %45, ptr %6, align 8
+  %46 = load i32, ptr %44, align 8
+  %47 = trunc i32 %46 to i8
+  %48 = load i32, ptr %15, align 4
+  %49 = sext i32 %48 to i64
+  %50 = getelementptr inbounds %union.jvalue, ptr %32, i64 %49
+  store i8 %47, ptr %50, align 8
+  br label %112
 
-47:                                               ; preds = %32
-  %48 = load ptr, ptr %6, align 8
-  %49 = getelementptr inbounds i8, ptr %48, i64 8
-  store ptr %49, ptr %6, align 8
-  %50 = load i32, ptr %48, align 8
-  %51 = trunc i32 %50 to i8
-  %52 = load ptr, ptr %11, align 8
-  %53 = load i32, ptr %14, align 4
-  %54 = sext i32 %53 to i64
-  %55 = getelementptr inbounds %union.jvalue, ptr %52, i64 %54
-  store i8 %51, ptr %55, align 8
-  br label %117
+51:                                               ; preds = %37
+  %52 = load ptr, ptr %6, align 8
+  %53 = getelementptr inbounds i8, ptr %52, i64 8
+  store ptr %53, ptr %6, align 8
+  %54 = load i32, ptr %52, align 8
+  %55 = trunc i32 %54 to i8
+  %56 = load i32, ptr %15, align 4
+  %57 = sext i32 %56 to i64
+  %58 = getelementptr inbounds %union.jvalue, ptr %32, i64 %57
+  store i8 %55, ptr %58, align 8
+  br label %112
 
-56:                                               ; preds = %32
-  %57 = load ptr, ptr %6, align 8
-  %58 = getelementptr inbounds i8, ptr %57, i64 8
-  store ptr %58, ptr %6, align 8
-  %59 = load i32, ptr %57, align 8
-  %60 = trunc i32 %59 to i16
-  %61 = load ptr, ptr %11, align 8
-  %62 = load i32, ptr %14, align 4
-  %63 = sext i32 %62 to i64
-  %64 = getelementptr inbounds %union.jvalue, ptr %61, i64 %63
-  store i16 %60, ptr %64, align 8
-  br label %117
+59:                                               ; preds = %37
+  %60 = load ptr, ptr %6, align 8
+  %61 = getelementptr inbounds i8, ptr %60, i64 8
+  store ptr %61, ptr %6, align 8
+  %62 = load i32, ptr %60, align 8
+  %63 = trunc i32 %62 to i16
+  %64 = load i32, ptr %15, align 4
+  %65 = sext i32 %64 to i64
+  %66 = getelementptr inbounds %union.jvalue, ptr %32, i64 %65
+  store i16 %63, ptr %66, align 8
+  br label %112
 
-65:                                               ; preds = %32
-  %66 = load ptr, ptr %6, align 8
-  %67 = getelementptr inbounds i8, ptr %66, i64 8
-  store ptr %67, ptr %6, align 8
-  %68 = load i32, ptr %66, align 8
-  %69 = trunc i32 %68 to i16
-  %70 = zext i16 %69 to i32
-  %71 = load ptr, ptr %11, align 8
-  %72 = load i32, ptr %14, align 4
+67:                                               ; preds = %37
+  %68 = load ptr, ptr %6, align 8
+  %69 = getelementptr inbounds i8, ptr %68, i64 8
+  store ptr %69, ptr %6, align 8
+  %70 = load i32, ptr %68, align 8
+  %71 = trunc i32 %70 to i16
+  %72 = load i32, ptr %15, align 4
   %73 = sext i32 %72 to i64
-  %74 = getelementptr inbounds %union.jvalue, ptr %71, i64 %73
-  store i32 %70, ptr %74, align 8
-  br label %117
+  %74 = getelementptr inbounds %union.jvalue, ptr %32, i64 %73
+  store i16 %71, ptr %74, align 8
+  br label %112
 
-75:                                               ; preds = %32
+75:                                               ; preds = %37
   %76 = load ptr, ptr %6, align 8
   %77 = getelementptr inbounds i8, ptr %76, i64 8
   store ptr %77, ptr %6, align 8
   %78 = load i32, ptr %76, align 8
-  %79 = load ptr, ptr %11, align 8
-  %80 = load i32, ptr %14, align 4
-  %81 = sext i32 %80 to i64
-  %82 = getelementptr inbounds %union.jvalue, ptr %79, i64 %81
-  store i32 %78, ptr %82, align 8
-  br label %117
+  %79 = load i32, ptr %15, align 4
+  %80 = sext i32 %79 to i64
+  %81 = getelementptr inbounds %union.jvalue, ptr %32, i64 %80
+  store i32 %78, ptr %81, align 8
+  br label %112
 
-83:                                               ; preds = %32
-  %84 = load ptr, ptr %6, align 8
-  %85 = getelementptr inbounds i8, ptr %84, i64 8
-  store ptr %85, ptr %6, align 8
-  %86 = load i32, ptr %84, align 8
-  %87 = sext i32 %86 to i64
-  %88 = load ptr, ptr %11, align 8
-  %89 = load i32, ptr %14, align 4
-  %90 = sext i32 %89 to i64
-  %91 = getelementptr inbounds %union.jvalue, ptr %88, i64 %90
-  store i64 %87, ptr %91, align 8
-  br label %117
+82:                                               ; preds = %37
+  %83 = load ptr, ptr %6, align 8
+  %84 = getelementptr inbounds i8, ptr %83, i64 8
+  store ptr %84, ptr %6, align 8
+  %85 = load i32, ptr %83, align 8
+  %86 = sext i32 %85 to i64
+  %87 = load i32, ptr %15, align 4
+  %88 = sext i32 %87 to i64
+  %89 = getelementptr inbounds %union.jvalue, ptr %32, i64 %88
+  store i64 %86, ptr %89, align 8
+  br label %112
 
-92:                                               ; preds = %32
-  %93 = load ptr, ptr %6, align 8
-  %94 = getelementptr inbounds i8, ptr %93, i64 8
-  store ptr %94, ptr %6, align 8
-  %95 = load double, ptr %93, align 8
-  %96 = load ptr, ptr %11, align 8
-  %97 = load i32, ptr %14, align 4
-  %98 = sext i32 %97 to i64
-  %99 = getelementptr inbounds %union.jvalue, ptr %96, i64 %98
-  store double %95, ptr %99, align 8
-  br label %117
+90:                                               ; preds = %37
+  %91 = load ptr, ptr %6, align 8
+  %92 = getelementptr inbounds i8, ptr %91, i64 8
+  store ptr %92, ptr %6, align 8
+  %93 = load double, ptr %91, align 8
+  %94 = fptrunc double %93 to float
+  %95 = load i32, ptr %15, align 4
+  %96 = sext i32 %95 to i64
+  %97 = getelementptr inbounds %union.jvalue, ptr %32, i64 %96
+  store float %94, ptr %97, align 8
+  br label %112
 
-100:                                              ; preds = %32
-  %101 = load ptr, ptr %6, align 8
-  %102 = getelementptr inbounds i8, ptr %101, i64 8
-  store ptr %102, ptr %6, align 8
-  %103 = load double, ptr %101, align 8
-  %104 = fptrunc double %103 to float
-  %105 = load ptr, ptr %11, align 8
-  %106 = load i32, ptr %14, align 4
-  %107 = sext i32 %106 to i64
-  %108 = getelementptr inbounds %union.jvalue, ptr %105, i64 %107
-  store float %104, ptr %108, align 8
-  br label %117
+98:                                               ; preds = %37
+  %99 = load ptr, ptr %6, align 8
+  %100 = getelementptr inbounds i8, ptr %99, i64 8
+  store ptr %100, ptr %6, align 8
+  %101 = load double, ptr %99, align 8
+  %102 = load i32, ptr %15, align 4
+  %103 = sext i32 %102 to i64
+  %104 = getelementptr inbounds %union.jvalue, ptr %32, i64 %103
+  store double %101, ptr %104, align 8
+  br label %112
 
-109:                                              ; preds = %32
-  %110 = load ptr, ptr %6, align 8
-  %111 = getelementptr inbounds i8, ptr %110, i64 8
-  store ptr %111, ptr %6, align 8
-  %112 = load ptr, ptr %110, align 8
-  %113 = load ptr, ptr %11, align 8
-  %114 = load i32, ptr %14, align 4
-  %115 = sext i32 %114 to i64
-  %116 = getelementptr inbounds %union.jvalue, ptr %113, i64 %115
-  store ptr %112, ptr %116, align 8
-  br label %117
+105:                                              ; preds = %37
+  %106 = load ptr, ptr %6, align 8
+  %107 = getelementptr inbounds i8, ptr %106, i64 8
+  store ptr %107, ptr %6, align 8
+  %108 = load ptr, ptr %106, align 8
+  %109 = load i32, ptr %15, align 4
+  %110 = sext i32 %109 to i64
+  %111 = getelementptr inbounds %union.jvalue, ptr %32, i64 %110
+  store ptr %108, ptr %111, align 8
+  br label %112
 
-117:                                              ; preds = %32, %109, %100, %92, %83, %75, %65, %56, %47, %38
-  br label %118
+112:                                              ; preds = %37, %105, %98, %90, %82, %75, %67, %59, %51, %43
+  br label %113
 
-118:                                              ; preds = %117
-  %119 = load i32, ptr %14, align 4
-  %120 = add nsw i32 %119, 1
-  store i32 %120, ptr %14, align 4
-  br label %28, !llvm.loop !6
+113:                                              ; preds = %112
+  %114 = load i32, ptr %15, align 4
+  %115 = add nsw i32 %114, 1
+  store i32 %115, ptr %15, align 4
+  br label %33, !llvm.loop !6
 
-121:                                              ; preds = %28
-  br label %122
-
-122:                                              ; preds = %121
-  %123 = load ptr, ptr %10, align 8
-  %124 = load ptr, ptr %123, align 8
-  %125 = getelementptr inbounds %struct.JNINativeInterface_, ptr %124, i32 0, i32 66
-  %126 = load ptr, ptr %125, align 8
-  %127 = load ptr, ptr %11, align 8
-  %128 = load ptr, ptr %7, align 8
-  %129 = load ptr, ptr %8, align 8
-  %130 = load ptr, ptr %9, align 8
-  %131 = load ptr, ptr %10, align 8
-  %132 = call ptr %126(ptr noundef %131, ptr noundef %130, ptr noundef %129, ptr noundef %128, ptr noundef %127)
-  ret ptr %132
+116:                                              ; preds = %33
+  %117 = load ptr, ptr %10, align 8
+  %118 = load ptr, ptr %117, align 8
+  %119 = getelementptr inbounds %struct.JNINativeInterface_, ptr %118, i32 0, i32 66
+  %120 = load ptr, ptr %119, align 8
+  %121 = load ptr, ptr %7, align 8
+  %122 = load ptr, ptr %8, align 8
+  %123 = load ptr, ptr %9, align 8
+  %124 = load ptr, ptr %10, align 8
+  %125 = call ptr %120(ptr noundef %124, ptr noundef %123, ptr noundef %122, ptr noundef %121, ptr noundef %32)
+  %126 = load ptr, ptr %13, align 8
+  call void @llvm.stackrestore(ptr %126)
+  ret ptr %125
 }
 
 ; Function Attrs: noinline nounwind optnone uwtable
@@ -566,20 +550,16 @@ define dso_local dllexport ptr @JNI_CallStaticObjectMethod(ptr noundef %0, ptr n
   store ptr %2, ptr %4, align 8
   store ptr %1, ptr %5, align 8
   store ptr %0, ptr %6, align 8
-  call void @llvm.va_start(ptr %8)
-  %9 = load ptr, ptr %6, align 8
-  %10 = load ptr, ptr %9, align 8
-  %11 = getelementptr inbounds %struct.JNINativeInterface_, ptr %10, i32 0, i32 115
-  %12 = load ptr, ptr %11, align 8
-  %13 = load ptr, ptr %8, align 8
-  %14 = load ptr, ptr %4, align 8
-  %15 = load ptr, ptr %5, align 8
-  %16 = load ptr, ptr %6, align 8
-  %17 = call ptr %12(ptr noundef %16, ptr noundef %15, ptr noundef %14, ptr noundef %13)
-  store ptr %17, ptr %7, align 8
-  call void @llvm.va_end(ptr %8)
-  %18 = load ptr, ptr %7, align 8
-  ret ptr %18
+  call void @llvm.va_start(ptr %7)
+  %9 = load ptr, ptr %7, align 8
+  %10 = load ptr, ptr %4, align 8
+  %11 = load ptr, ptr %5, align 8
+  %12 = load ptr, ptr %6, align 8
+  %13 = call ptr @JNI_CallStaticObjectMethodV(ptr noundef %12, ptr noundef %11, ptr noundef %10, ptr noundef %9)
+  store ptr %13, ptr %8, align 8
+  call void @llvm.va_end(ptr %7)
+  %14 = load ptr, ptr %8, align 8
+  ret ptr %14
 }
 
 ; Function Attrs: noinline nounwind optnone uwtable
@@ -588,196 +568,189 @@ define dso_local dllexport ptr @JNI_CallStaticObjectMethodV(ptr noundef %0, ptr 
   %6 = alloca ptr, align 8
   %7 = alloca ptr, align 8
   %8 = alloca ptr, align 8
-  %9 = alloca ptr, align 8
-  %10 = alloca [257 x i8], align 16
-  %11 = alloca i32, align 4
-  %12 = alloca i32, align 4
+  %9 = alloca [256 x i8], align 16
+  %10 = alloca i32, align 4
+  %11 = alloca ptr, align 8
+  %12 = alloca i64, align 8
+  %13 = alloca i32, align 4
   store ptr %3, ptr %5, align 8
   store ptr %2, ptr %6, align 8
   store ptr %1, ptr %7, align 8
   store ptr %0, ptr %8, align 8
-  br label %13
-
-13:                                               ; preds = %4
   %14 = load ptr, ptr %8, align 8
   %15 = load ptr, ptr %14, align 8
   %16 = getelementptr inbounds %struct.JNINativeInterface_, ptr %15, i32 0, i32 0
   %17 = load ptr, ptr %16, align 8
-  %18 = getelementptr inbounds [257 x i8], ptr %10, i64 0, i64 0
+  %18 = getelementptr inbounds [256 x i8], ptr %9, i64 0, i64 0
   %19 = load ptr, ptr %6, align 8
   %20 = load ptr, ptr %8, align 8
   %21 = call i32 %17(ptr noundef %20, ptr noundef %19, ptr noundef %18)
-  store i32 %21, ptr %11, align 4
-  %22 = load i32, ptr %11, align 4
-  %23 = zext i32 %22 to i64
-  %24 = mul i64 %23, 8
-  %25 = alloca i8, i64 %24, align 16
-  store ptr %25, ptr %9, align 8
-  store i32 0, ptr %12, align 4
-  br label %26
+  store i32 %21, ptr %10, align 4
+  %22 = load ptr, ptr %8, align 8
+  %23 = load ptr, ptr %22, align 8
+  %24 = getelementptr inbounds %struct.JNINativeInterface_, ptr %23, i32 0, i32 1
+  %25 = load ptr, ptr %24, align 8
+  %26 = load i32, ptr %10, align 4
+  call void %25(i32 noundef %26)
+  %27 = load i32, ptr %10, align 4
+  %28 = zext i32 %27 to i64
+  %29 = call ptr @llvm.stacksave()
+  store ptr %29, ptr %11, align 8
+  %30 = alloca %union.jvalue, i64 %28, align 16
+  store i64 %28, ptr %12, align 8
+  store i32 0, ptr %13, align 4
+  br label %31
 
-26:                                               ; preds = %116, %13
-  %27 = load i32, ptr %12, align 4
-  %28 = load i32, ptr %11, align 4
-  %29 = icmp slt i32 %27, %28
-  br i1 %29, label %30, label %119
+31:                                               ; preds = %111, %4
+  %32 = load i32, ptr %13, align 4
+  %33 = load i32, ptr %10, align 4
+  %34 = icmp slt i32 %32, %33
+  br i1 %34, label %35, label %114
 
-30:                                               ; preds = %26
-  %31 = load i32, ptr %12, align 4
-  %32 = sext i32 %31 to i64
-  %33 = getelementptr inbounds [257 x i8], ptr %10, i64 0, i64 %32
-  %34 = load i8, ptr %33, align 1
-  %35 = sext i8 %34 to i32
-  switch i32 %35, label %115 [
-    i32 90, label %36
-    i32 66, label %45
-    i32 83, label %54
-    i32 67, label %63
+35:                                               ; preds = %31
+  %36 = load i32, ptr %13, align 4
+  %37 = sext i32 %36 to i64
+  %38 = getelementptr inbounds [256 x i8], ptr %9, i64 0, i64 %37
+  %39 = load i8, ptr %38, align 1
+  %40 = sext i8 %39 to i32
+  switch i32 %40, label %110 [
+    i32 90, label %41
+    i32 66, label %49
+    i32 67, label %57
+    i32 83, label %65
     i32 73, label %73
-    i32 74, label %81
-    i32 68, label %90
-    i32 70, label %98
-    i32 76, label %107
+    i32 74, label %80
+    i32 70, label %88
+    i32 68, label %96
+    i32 76, label %103
   ]
 
-36:                                               ; preds = %30
-  %37 = load ptr, ptr %5, align 8
-  %38 = getelementptr inbounds i8, ptr %37, i64 8
-  store ptr %38, ptr %5, align 8
-  %39 = load i32, ptr %37, align 8
-  %40 = trunc i32 %39 to i8
-  %41 = load ptr, ptr %9, align 8
-  %42 = load i32, ptr %12, align 4
-  %43 = sext i32 %42 to i64
-  %44 = getelementptr inbounds %union.jvalue, ptr %41, i64 %43
-  store i8 %40, ptr %44, align 8
-  br label %115
+41:                                               ; preds = %35
+  %42 = load ptr, ptr %5, align 8
+  %43 = getelementptr inbounds i8, ptr %42, i64 8
+  store ptr %43, ptr %5, align 8
+  %44 = load i32, ptr %42, align 8
+  %45 = trunc i32 %44 to i8
+  %46 = load i32, ptr %13, align 4
+  %47 = sext i32 %46 to i64
+  %48 = getelementptr inbounds %union.jvalue, ptr %30, i64 %47
+  store i8 %45, ptr %48, align 8
+  br label %110
 
-45:                                               ; preds = %30
-  %46 = load ptr, ptr %5, align 8
-  %47 = getelementptr inbounds i8, ptr %46, i64 8
-  store ptr %47, ptr %5, align 8
-  %48 = load i32, ptr %46, align 8
-  %49 = trunc i32 %48 to i8
-  %50 = load ptr, ptr %9, align 8
-  %51 = load i32, ptr %12, align 4
-  %52 = sext i32 %51 to i64
-  %53 = getelementptr inbounds %union.jvalue, ptr %50, i64 %52
-  store i8 %49, ptr %53, align 8
-  br label %115
+49:                                               ; preds = %35
+  %50 = load ptr, ptr %5, align 8
+  %51 = getelementptr inbounds i8, ptr %50, i64 8
+  store ptr %51, ptr %5, align 8
+  %52 = load i32, ptr %50, align 8
+  %53 = trunc i32 %52 to i8
+  %54 = load i32, ptr %13, align 4
+  %55 = sext i32 %54 to i64
+  %56 = getelementptr inbounds %union.jvalue, ptr %30, i64 %55
+  store i8 %53, ptr %56, align 8
+  br label %110
 
-54:                                               ; preds = %30
-  %55 = load ptr, ptr %5, align 8
-  %56 = getelementptr inbounds i8, ptr %55, i64 8
-  store ptr %56, ptr %5, align 8
-  %57 = load i32, ptr %55, align 8
-  %58 = trunc i32 %57 to i16
-  %59 = load ptr, ptr %9, align 8
-  %60 = load i32, ptr %12, align 4
-  %61 = sext i32 %60 to i64
-  %62 = getelementptr inbounds %union.jvalue, ptr %59, i64 %61
-  store i16 %58, ptr %62, align 8
-  br label %115
+57:                                               ; preds = %35
+  %58 = load ptr, ptr %5, align 8
+  %59 = getelementptr inbounds i8, ptr %58, i64 8
+  store ptr %59, ptr %5, align 8
+  %60 = load i32, ptr %58, align 8
+  %61 = trunc i32 %60 to i16
+  %62 = load i32, ptr %13, align 4
+  %63 = sext i32 %62 to i64
+  %64 = getelementptr inbounds %union.jvalue, ptr %30, i64 %63
+  store i16 %61, ptr %64, align 8
+  br label %110
 
-63:                                               ; preds = %30
-  %64 = load ptr, ptr %5, align 8
-  %65 = getelementptr inbounds i8, ptr %64, i64 8
-  store ptr %65, ptr %5, align 8
-  %66 = load i32, ptr %64, align 8
-  %67 = trunc i32 %66 to i16
-  %68 = zext i16 %67 to i32
-  %69 = load ptr, ptr %9, align 8
-  %70 = load i32, ptr %12, align 4
+65:                                               ; preds = %35
+  %66 = load ptr, ptr %5, align 8
+  %67 = getelementptr inbounds i8, ptr %66, i64 8
+  store ptr %67, ptr %5, align 8
+  %68 = load i32, ptr %66, align 8
+  %69 = trunc i32 %68 to i16
+  %70 = load i32, ptr %13, align 4
   %71 = sext i32 %70 to i64
-  %72 = getelementptr inbounds %union.jvalue, ptr %69, i64 %71
-  store i32 %68, ptr %72, align 8
-  br label %115
+  %72 = getelementptr inbounds %union.jvalue, ptr %30, i64 %71
+  store i16 %69, ptr %72, align 8
+  br label %110
 
-73:                                               ; preds = %30
+73:                                               ; preds = %35
   %74 = load ptr, ptr %5, align 8
   %75 = getelementptr inbounds i8, ptr %74, i64 8
   store ptr %75, ptr %5, align 8
   %76 = load i32, ptr %74, align 8
-  %77 = load ptr, ptr %9, align 8
-  %78 = load i32, ptr %12, align 4
-  %79 = sext i32 %78 to i64
-  %80 = getelementptr inbounds %union.jvalue, ptr %77, i64 %79
-  store i32 %76, ptr %80, align 8
-  br label %115
+  %77 = load i32, ptr %13, align 4
+  %78 = sext i32 %77 to i64
+  %79 = getelementptr inbounds %union.jvalue, ptr %30, i64 %78
+  store i32 %76, ptr %79, align 8
+  br label %110
 
-81:                                               ; preds = %30
-  %82 = load ptr, ptr %5, align 8
-  %83 = getelementptr inbounds i8, ptr %82, i64 8
-  store ptr %83, ptr %5, align 8
-  %84 = load i32, ptr %82, align 8
-  %85 = sext i32 %84 to i64
-  %86 = load ptr, ptr %9, align 8
-  %87 = load i32, ptr %12, align 4
-  %88 = sext i32 %87 to i64
-  %89 = getelementptr inbounds %union.jvalue, ptr %86, i64 %88
-  store i64 %85, ptr %89, align 8
-  br label %115
+80:                                               ; preds = %35
+  %81 = load ptr, ptr %5, align 8
+  %82 = getelementptr inbounds i8, ptr %81, i64 8
+  store ptr %82, ptr %5, align 8
+  %83 = load i32, ptr %81, align 8
+  %84 = sext i32 %83 to i64
+  %85 = load i32, ptr %13, align 4
+  %86 = sext i32 %85 to i64
+  %87 = getelementptr inbounds %union.jvalue, ptr %30, i64 %86
+  store i64 %84, ptr %87, align 8
+  br label %110
 
-90:                                               ; preds = %30
-  %91 = load ptr, ptr %5, align 8
-  %92 = getelementptr inbounds i8, ptr %91, i64 8
-  store ptr %92, ptr %5, align 8
-  %93 = load double, ptr %91, align 8
-  %94 = load ptr, ptr %9, align 8
-  %95 = load i32, ptr %12, align 4
-  %96 = sext i32 %95 to i64
-  %97 = getelementptr inbounds %union.jvalue, ptr %94, i64 %96
-  store double %93, ptr %97, align 8
-  br label %115
+88:                                               ; preds = %35
+  %89 = load ptr, ptr %5, align 8
+  %90 = getelementptr inbounds i8, ptr %89, i64 8
+  store ptr %90, ptr %5, align 8
+  %91 = load double, ptr %89, align 8
+  %92 = fptrunc double %91 to float
+  %93 = load i32, ptr %13, align 4
+  %94 = sext i32 %93 to i64
+  %95 = getelementptr inbounds %union.jvalue, ptr %30, i64 %94
+  store float %92, ptr %95, align 8
+  br label %110
 
-98:                                               ; preds = %30
-  %99 = load ptr, ptr %5, align 8
-  %100 = getelementptr inbounds i8, ptr %99, i64 8
-  store ptr %100, ptr %5, align 8
-  %101 = load double, ptr %99, align 8
-  %102 = fptrunc double %101 to float
-  %103 = load ptr, ptr %9, align 8
-  %104 = load i32, ptr %12, align 4
-  %105 = sext i32 %104 to i64
-  %106 = getelementptr inbounds %union.jvalue, ptr %103, i64 %105
-  store float %102, ptr %106, align 8
-  br label %115
+96:                                               ; preds = %35
+  %97 = load ptr, ptr %5, align 8
+  %98 = getelementptr inbounds i8, ptr %97, i64 8
+  store ptr %98, ptr %5, align 8
+  %99 = load double, ptr %97, align 8
+  %100 = load i32, ptr %13, align 4
+  %101 = sext i32 %100 to i64
+  %102 = getelementptr inbounds %union.jvalue, ptr %30, i64 %101
+  store double %99, ptr %102, align 8
+  br label %110
 
-107:                                              ; preds = %30
-  %108 = load ptr, ptr %5, align 8
-  %109 = getelementptr inbounds i8, ptr %108, i64 8
-  store ptr %109, ptr %5, align 8
-  %110 = load ptr, ptr %108, align 8
-  %111 = load ptr, ptr %9, align 8
-  %112 = load i32, ptr %12, align 4
-  %113 = sext i32 %112 to i64
-  %114 = getelementptr inbounds %union.jvalue, ptr %111, i64 %113
-  store ptr %110, ptr %114, align 8
-  br label %115
+103:                                              ; preds = %35
+  %104 = load ptr, ptr %5, align 8
+  %105 = getelementptr inbounds i8, ptr %104, i64 8
+  store ptr %105, ptr %5, align 8
+  %106 = load ptr, ptr %104, align 8
+  %107 = load i32, ptr %13, align 4
+  %108 = sext i32 %107 to i64
+  %109 = getelementptr inbounds %union.jvalue, ptr %30, i64 %108
+  store ptr %106, ptr %109, align 8
+  br label %110
 
-115:                                              ; preds = %30, %107, %98, %90, %81, %73, %63, %54, %45, %36
-  br label %116
+110:                                              ; preds = %35, %103, %96, %88, %80, %73, %65, %57, %49, %41
+  br label %111
 
-116:                                              ; preds = %115
-  %117 = load i32, ptr %12, align 4
-  %118 = add nsw i32 %117, 1
-  store i32 %118, ptr %12, align 4
-  br label %26, !llvm.loop !7
+111:                                              ; preds = %110
+  %112 = load i32, ptr %13, align 4
+  %113 = add nsw i32 %112, 1
+  store i32 %113, ptr %13, align 4
+  br label %31, !llvm.loop !7
 
-119:                                              ; preds = %26
-  br label %120
-
-120:                                              ; preds = %119
+114:                                              ; preds = %31
+  %115 = load ptr, ptr %8, align 8
+  %116 = load ptr, ptr %115, align 8
+  %117 = getelementptr inbounds %struct.JNINativeInterface_, ptr %116, i32 0, i32 116
+  %118 = load ptr, ptr %117, align 8
+  %119 = load ptr, ptr %6, align 8
+  %120 = load ptr, ptr %7, align 8
   %121 = load ptr, ptr %8, align 8
-  %122 = load ptr, ptr %121, align 8
-  %123 = getelementptr inbounds %struct.JNINativeInterface_, ptr %122, i32 0, i32 116
-  %124 = load ptr, ptr %123, align 8
-  %125 = load ptr, ptr %9, align 8
-  %126 = load ptr, ptr %6, align 8
-  %127 = load ptr, ptr %7, align 8
-  %128 = load ptr, ptr %8, align 8
-  %129 = call ptr %124(ptr noundef %128, ptr noundef %127, ptr noundef %126, ptr noundef %125)
-  ret ptr %129
+  %122 = call ptr %118(ptr noundef %121, ptr noundef %120, ptr noundef %119, ptr noundef %30)
+  %123 = load ptr, ptr %11, align 8
+  call void @llvm.stackrestore(ptr %123)
+  ret ptr %122
 }
 
 ; Function Attrs: noinline nounwind optnone uwtable
@@ -785,25 +758,21 @@ define dso_local dllexport i8 @JNI_CallBooleanMethod(ptr noundef %0, ptr noundef
   %4 = alloca ptr, align 8
   %5 = alloca ptr, align 8
   %6 = alloca ptr, align 8
-  %7 = alloca i8, align 1
-  %8 = alloca ptr, align 8
+  %7 = alloca ptr, align 8
+  %8 = alloca i8, align 1
   store ptr %2, ptr %4, align 8
   store ptr %1, ptr %5, align 8
   store ptr %0, ptr %6, align 8
-  call void @llvm.va_start(ptr %8)
-  %9 = load ptr, ptr %6, align 8
-  %10 = load ptr, ptr %9, align 8
-  %11 = getelementptr inbounds %struct.JNINativeInterface_, ptr %10, i32 0, i32 38
-  %12 = load ptr, ptr %11, align 8
-  %13 = load ptr, ptr %8, align 8
-  %14 = load ptr, ptr %4, align 8
-  %15 = load ptr, ptr %5, align 8
-  %16 = load ptr, ptr %6, align 8
-  %17 = call i8 %12(ptr noundef %16, ptr noundef %15, ptr noundef %14, ptr noundef %13)
-  store i8 %17, ptr %7, align 1
-  call void @llvm.va_end(ptr %8)
-  %18 = load i8, ptr %7, align 1
-  ret i8 %18
+  call void @llvm.va_start(ptr %7)
+  %9 = load ptr, ptr %7, align 8
+  %10 = load ptr, ptr %4, align 8
+  %11 = load ptr, ptr %5, align 8
+  %12 = load ptr, ptr %6, align 8
+  %13 = call i8 @JNI_CallBooleanMethodV(ptr noundef %12, ptr noundef %11, ptr noundef %10, ptr noundef %9)
+  store i8 %13, ptr %8, align 1
+  call void @llvm.va_end(ptr %7)
+  %14 = load i8, ptr %8, align 1
+  ret i8 %14
 }
 
 ; Function Attrs: noinline nounwind optnone uwtable
@@ -812,196 +781,189 @@ define dso_local dllexport i8 @JNI_CallBooleanMethodV(ptr noundef %0, ptr nounde
   %6 = alloca ptr, align 8
   %7 = alloca ptr, align 8
   %8 = alloca ptr, align 8
-  %9 = alloca ptr, align 8
-  %10 = alloca [257 x i8], align 16
-  %11 = alloca i32, align 4
-  %12 = alloca i32, align 4
+  %9 = alloca [256 x i8], align 16
+  %10 = alloca i32, align 4
+  %11 = alloca ptr, align 8
+  %12 = alloca i64, align 8
+  %13 = alloca i32, align 4
   store ptr %3, ptr %5, align 8
   store ptr %2, ptr %6, align 8
   store ptr %1, ptr %7, align 8
   store ptr %0, ptr %8, align 8
-  br label %13
-
-13:                                               ; preds = %4
   %14 = load ptr, ptr %8, align 8
   %15 = load ptr, ptr %14, align 8
   %16 = getelementptr inbounds %struct.JNINativeInterface_, ptr %15, i32 0, i32 0
   %17 = load ptr, ptr %16, align 8
-  %18 = getelementptr inbounds [257 x i8], ptr %10, i64 0, i64 0
+  %18 = getelementptr inbounds [256 x i8], ptr %9, i64 0, i64 0
   %19 = load ptr, ptr %6, align 8
   %20 = load ptr, ptr %8, align 8
   %21 = call i32 %17(ptr noundef %20, ptr noundef %19, ptr noundef %18)
-  store i32 %21, ptr %11, align 4
-  %22 = load i32, ptr %11, align 4
-  %23 = zext i32 %22 to i64
-  %24 = mul i64 %23, 8
-  %25 = alloca i8, i64 %24, align 16
-  store ptr %25, ptr %9, align 8
-  store i32 0, ptr %12, align 4
-  br label %26
+  store i32 %21, ptr %10, align 4
+  %22 = load ptr, ptr %8, align 8
+  %23 = load ptr, ptr %22, align 8
+  %24 = getelementptr inbounds %struct.JNINativeInterface_, ptr %23, i32 0, i32 1
+  %25 = load ptr, ptr %24, align 8
+  %26 = load i32, ptr %10, align 4
+  call void %25(i32 noundef %26)
+  %27 = load i32, ptr %10, align 4
+  %28 = zext i32 %27 to i64
+  %29 = call ptr @llvm.stacksave()
+  store ptr %29, ptr %11, align 8
+  %30 = alloca %union.jvalue, i64 %28, align 16
+  store i64 %28, ptr %12, align 8
+  store i32 0, ptr %13, align 4
+  br label %31
 
-26:                                               ; preds = %116, %13
-  %27 = load i32, ptr %12, align 4
-  %28 = load i32, ptr %11, align 4
-  %29 = icmp slt i32 %27, %28
-  br i1 %29, label %30, label %119
+31:                                               ; preds = %111, %4
+  %32 = load i32, ptr %13, align 4
+  %33 = load i32, ptr %10, align 4
+  %34 = icmp slt i32 %32, %33
+  br i1 %34, label %35, label %114
 
-30:                                               ; preds = %26
-  %31 = load i32, ptr %12, align 4
-  %32 = sext i32 %31 to i64
-  %33 = getelementptr inbounds [257 x i8], ptr %10, i64 0, i64 %32
-  %34 = load i8, ptr %33, align 1
-  %35 = sext i8 %34 to i32
-  switch i32 %35, label %115 [
-    i32 90, label %36
-    i32 66, label %45
-    i32 83, label %54
-    i32 67, label %63
+35:                                               ; preds = %31
+  %36 = load i32, ptr %13, align 4
+  %37 = sext i32 %36 to i64
+  %38 = getelementptr inbounds [256 x i8], ptr %9, i64 0, i64 %37
+  %39 = load i8, ptr %38, align 1
+  %40 = sext i8 %39 to i32
+  switch i32 %40, label %110 [
+    i32 90, label %41
+    i32 66, label %49
+    i32 67, label %57
+    i32 83, label %65
     i32 73, label %73
-    i32 74, label %81
-    i32 68, label %90
-    i32 70, label %98
-    i32 76, label %107
+    i32 74, label %80
+    i32 70, label %88
+    i32 68, label %96
+    i32 76, label %103
   ]
 
-36:                                               ; preds = %30
-  %37 = load ptr, ptr %5, align 8
-  %38 = getelementptr inbounds i8, ptr %37, i64 8
-  store ptr %38, ptr %5, align 8
-  %39 = load i32, ptr %37, align 8
-  %40 = trunc i32 %39 to i8
-  %41 = load ptr, ptr %9, align 8
-  %42 = load i32, ptr %12, align 4
-  %43 = sext i32 %42 to i64
-  %44 = getelementptr inbounds %union.jvalue, ptr %41, i64 %43
-  store i8 %40, ptr %44, align 8
-  br label %115
+41:                                               ; preds = %35
+  %42 = load ptr, ptr %5, align 8
+  %43 = getelementptr inbounds i8, ptr %42, i64 8
+  store ptr %43, ptr %5, align 8
+  %44 = load i32, ptr %42, align 8
+  %45 = trunc i32 %44 to i8
+  %46 = load i32, ptr %13, align 4
+  %47 = sext i32 %46 to i64
+  %48 = getelementptr inbounds %union.jvalue, ptr %30, i64 %47
+  store i8 %45, ptr %48, align 8
+  br label %110
 
-45:                                               ; preds = %30
-  %46 = load ptr, ptr %5, align 8
-  %47 = getelementptr inbounds i8, ptr %46, i64 8
-  store ptr %47, ptr %5, align 8
-  %48 = load i32, ptr %46, align 8
-  %49 = trunc i32 %48 to i8
-  %50 = load ptr, ptr %9, align 8
-  %51 = load i32, ptr %12, align 4
-  %52 = sext i32 %51 to i64
-  %53 = getelementptr inbounds %union.jvalue, ptr %50, i64 %52
-  store i8 %49, ptr %53, align 8
-  br label %115
+49:                                               ; preds = %35
+  %50 = load ptr, ptr %5, align 8
+  %51 = getelementptr inbounds i8, ptr %50, i64 8
+  store ptr %51, ptr %5, align 8
+  %52 = load i32, ptr %50, align 8
+  %53 = trunc i32 %52 to i8
+  %54 = load i32, ptr %13, align 4
+  %55 = sext i32 %54 to i64
+  %56 = getelementptr inbounds %union.jvalue, ptr %30, i64 %55
+  store i8 %53, ptr %56, align 8
+  br label %110
 
-54:                                               ; preds = %30
-  %55 = load ptr, ptr %5, align 8
-  %56 = getelementptr inbounds i8, ptr %55, i64 8
-  store ptr %56, ptr %5, align 8
-  %57 = load i32, ptr %55, align 8
-  %58 = trunc i32 %57 to i16
-  %59 = load ptr, ptr %9, align 8
-  %60 = load i32, ptr %12, align 4
-  %61 = sext i32 %60 to i64
-  %62 = getelementptr inbounds %union.jvalue, ptr %59, i64 %61
-  store i16 %58, ptr %62, align 8
-  br label %115
+57:                                               ; preds = %35
+  %58 = load ptr, ptr %5, align 8
+  %59 = getelementptr inbounds i8, ptr %58, i64 8
+  store ptr %59, ptr %5, align 8
+  %60 = load i32, ptr %58, align 8
+  %61 = trunc i32 %60 to i16
+  %62 = load i32, ptr %13, align 4
+  %63 = sext i32 %62 to i64
+  %64 = getelementptr inbounds %union.jvalue, ptr %30, i64 %63
+  store i16 %61, ptr %64, align 8
+  br label %110
 
-63:                                               ; preds = %30
-  %64 = load ptr, ptr %5, align 8
-  %65 = getelementptr inbounds i8, ptr %64, i64 8
-  store ptr %65, ptr %5, align 8
-  %66 = load i32, ptr %64, align 8
-  %67 = trunc i32 %66 to i16
-  %68 = zext i16 %67 to i32
-  %69 = load ptr, ptr %9, align 8
-  %70 = load i32, ptr %12, align 4
+65:                                               ; preds = %35
+  %66 = load ptr, ptr %5, align 8
+  %67 = getelementptr inbounds i8, ptr %66, i64 8
+  store ptr %67, ptr %5, align 8
+  %68 = load i32, ptr %66, align 8
+  %69 = trunc i32 %68 to i16
+  %70 = load i32, ptr %13, align 4
   %71 = sext i32 %70 to i64
-  %72 = getelementptr inbounds %union.jvalue, ptr %69, i64 %71
-  store i32 %68, ptr %72, align 8
-  br label %115
+  %72 = getelementptr inbounds %union.jvalue, ptr %30, i64 %71
+  store i16 %69, ptr %72, align 8
+  br label %110
 
-73:                                               ; preds = %30
+73:                                               ; preds = %35
   %74 = load ptr, ptr %5, align 8
   %75 = getelementptr inbounds i8, ptr %74, i64 8
   store ptr %75, ptr %5, align 8
   %76 = load i32, ptr %74, align 8
-  %77 = load ptr, ptr %9, align 8
-  %78 = load i32, ptr %12, align 4
-  %79 = sext i32 %78 to i64
-  %80 = getelementptr inbounds %union.jvalue, ptr %77, i64 %79
-  store i32 %76, ptr %80, align 8
-  br label %115
+  %77 = load i32, ptr %13, align 4
+  %78 = sext i32 %77 to i64
+  %79 = getelementptr inbounds %union.jvalue, ptr %30, i64 %78
+  store i32 %76, ptr %79, align 8
+  br label %110
 
-81:                                               ; preds = %30
-  %82 = load ptr, ptr %5, align 8
-  %83 = getelementptr inbounds i8, ptr %82, i64 8
-  store ptr %83, ptr %5, align 8
-  %84 = load i32, ptr %82, align 8
-  %85 = sext i32 %84 to i64
-  %86 = load ptr, ptr %9, align 8
-  %87 = load i32, ptr %12, align 4
-  %88 = sext i32 %87 to i64
-  %89 = getelementptr inbounds %union.jvalue, ptr %86, i64 %88
-  store i64 %85, ptr %89, align 8
-  br label %115
+80:                                               ; preds = %35
+  %81 = load ptr, ptr %5, align 8
+  %82 = getelementptr inbounds i8, ptr %81, i64 8
+  store ptr %82, ptr %5, align 8
+  %83 = load i32, ptr %81, align 8
+  %84 = sext i32 %83 to i64
+  %85 = load i32, ptr %13, align 4
+  %86 = sext i32 %85 to i64
+  %87 = getelementptr inbounds %union.jvalue, ptr %30, i64 %86
+  store i64 %84, ptr %87, align 8
+  br label %110
 
-90:                                               ; preds = %30
-  %91 = load ptr, ptr %5, align 8
-  %92 = getelementptr inbounds i8, ptr %91, i64 8
-  store ptr %92, ptr %5, align 8
-  %93 = load double, ptr %91, align 8
-  %94 = load ptr, ptr %9, align 8
-  %95 = load i32, ptr %12, align 4
-  %96 = sext i32 %95 to i64
-  %97 = getelementptr inbounds %union.jvalue, ptr %94, i64 %96
-  store double %93, ptr %97, align 8
-  br label %115
+88:                                               ; preds = %35
+  %89 = load ptr, ptr %5, align 8
+  %90 = getelementptr inbounds i8, ptr %89, i64 8
+  store ptr %90, ptr %5, align 8
+  %91 = load double, ptr %89, align 8
+  %92 = fptrunc double %91 to float
+  %93 = load i32, ptr %13, align 4
+  %94 = sext i32 %93 to i64
+  %95 = getelementptr inbounds %union.jvalue, ptr %30, i64 %94
+  store float %92, ptr %95, align 8
+  br label %110
 
-98:                                               ; preds = %30
-  %99 = load ptr, ptr %5, align 8
-  %100 = getelementptr inbounds i8, ptr %99, i64 8
-  store ptr %100, ptr %5, align 8
-  %101 = load double, ptr %99, align 8
-  %102 = fptrunc double %101 to float
-  %103 = load ptr, ptr %9, align 8
-  %104 = load i32, ptr %12, align 4
-  %105 = sext i32 %104 to i64
-  %106 = getelementptr inbounds %union.jvalue, ptr %103, i64 %105
-  store float %102, ptr %106, align 8
-  br label %115
+96:                                               ; preds = %35
+  %97 = load ptr, ptr %5, align 8
+  %98 = getelementptr inbounds i8, ptr %97, i64 8
+  store ptr %98, ptr %5, align 8
+  %99 = load double, ptr %97, align 8
+  %100 = load i32, ptr %13, align 4
+  %101 = sext i32 %100 to i64
+  %102 = getelementptr inbounds %union.jvalue, ptr %30, i64 %101
+  store double %99, ptr %102, align 8
+  br label %110
 
-107:                                              ; preds = %30
-  %108 = load ptr, ptr %5, align 8
-  %109 = getelementptr inbounds i8, ptr %108, i64 8
-  store ptr %109, ptr %5, align 8
-  %110 = load ptr, ptr %108, align 8
-  %111 = load ptr, ptr %9, align 8
-  %112 = load i32, ptr %12, align 4
-  %113 = sext i32 %112 to i64
-  %114 = getelementptr inbounds %union.jvalue, ptr %111, i64 %113
-  store ptr %110, ptr %114, align 8
-  br label %115
+103:                                              ; preds = %35
+  %104 = load ptr, ptr %5, align 8
+  %105 = getelementptr inbounds i8, ptr %104, i64 8
+  store ptr %105, ptr %5, align 8
+  %106 = load ptr, ptr %104, align 8
+  %107 = load i32, ptr %13, align 4
+  %108 = sext i32 %107 to i64
+  %109 = getelementptr inbounds %union.jvalue, ptr %30, i64 %108
+  store ptr %106, ptr %109, align 8
+  br label %110
 
-115:                                              ; preds = %30, %107, %98, %90, %81, %73, %63, %54, %45, %36
-  br label %116
+110:                                              ; preds = %35, %103, %96, %88, %80, %73, %65, %57, %49, %41
+  br label %111
 
-116:                                              ; preds = %115
-  %117 = load i32, ptr %12, align 4
-  %118 = add nsw i32 %117, 1
-  store i32 %118, ptr %12, align 4
-  br label %26, !llvm.loop !8
+111:                                              ; preds = %110
+  %112 = load i32, ptr %13, align 4
+  %113 = add nsw i32 %112, 1
+  store i32 %113, ptr %13, align 4
+  br label %31, !llvm.loop !8
 
-119:                                              ; preds = %26
-  br label %120
-
-120:                                              ; preds = %119
+114:                                              ; preds = %31
+  %115 = load ptr, ptr %8, align 8
+  %116 = load ptr, ptr %115, align 8
+  %117 = getelementptr inbounds %struct.JNINativeInterface_, ptr %116, i32 0, i32 39
+  %118 = load ptr, ptr %117, align 8
+  %119 = load ptr, ptr %6, align 8
+  %120 = load ptr, ptr %7, align 8
   %121 = load ptr, ptr %8, align 8
-  %122 = load ptr, ptr %121, align 8
-  %123 = getelementptr inbounds %struct.JNINativeInterface_, ptr %122, i32 0, i32 39
-  %124 = load ptr, ptr %123, align 8
-  %125 = load ptr, ptr %9, align 8
-  %126 = load ptr, ptr %6, align 8
-  %127 = load ptr, ptr %7, align 8
-  %128 = load ptr, ptr %8, align 8
-  %129 = call i8 %124(ptr noundef %128, ptr noundef %127, ptr noundef %126, ptr noundef %125)
-  ret i8 %129
+  %122 = call i8 %118(ptr noundef %121, ptr noundef %120, ptr noundef %119, ptr noundef %30)
+  %123 = load ptr, ptr %11, align 8
+  call void @llvm.stackrestore(ptr %123)
+  ret i8 %122
 }
 
 ; Function Attrs: noinline nounwind optnone uwtable
@@ -1010,27 +972,23 @@ define dso_local dllexport i8 @JNI_CallNonvirtualBooleanMethod(ptr noundef %0, p
   %6 = alloca ptr, align 8
   %7 = alloca ptr, align 8
   %8 = alloca ptr, align 8
-  %9 = alloca i8, align 1
-  %10 = alloca ptr, align 8
+  %9 = alloca ptr, align 8
+  %10 = alloca i8, align 1
   store ptr %3, ptr %5, align 8
   store ptr %2, ptr %6, align 8
   store ptr %1, ptr %7, align 8
   store ptr %0, ptr %8, align 8
-  call void @llvm.va_start(ptr %10)
-  %11 = load ptr, ptr %8, align 8
-  %12 = load ptr, ptr %11, align 8
-  %13 = getelementptr inbounds %struct.JNINativeInterface_, ptr %12, i32 0, i32 68
-  %14 = load ptr, ptr %13, align 8
-  %15 = load ptr, ptr %10, align 8
-  %16 = load ptr, ptr %5, align 8
-  %17 = load ptr, ptr %6, align 8
-  %18 = load ptr, ptr %7, align 8
-  %19 = load ptr, ptr %8, align 8
-  %20 = call i8 %14(ptr noundef %19, ptr noundef %18, ptr noundef %17, ptr noundef %16, ptr noundef %15)
-  store i8 %20, ptr %9, align 1
-  call void @llvm.va_end(ptr %10)
-  %21 = load i8, ptr %9, align 1
-  ret i8 %21
+  call void @llvm.va_start(ptr %9)
+  %11 = load ptr, ptr %9, align 8
+  %12 = load ptr, ptr %5, align 8
+  %13 = load ptr, ptr %6, align 8
+  %14 = load ptr, ptr %7, align 8
+  %15 = load ptr, ptr %8, align 8
+  %16 = call i8 @JNI_CallNonvirtualBooleanMethodV(ptr noundef %15, ptr noundef %14, ptr noundef %13, ptr noundef %12, ptr noundef %11)
+  store i8 %16, ptr %10, align 1
+  call void @llvm.va_end(ptr %9)
+  %17 = load i8, ptr %10, align 1
+  ret i8 %17
 }
 
 ; Function Attrs: noinline nounwind optnone uwtable
@@ -1040,198 +998,191 @@ define dso_local dllexport i8 @JNI_CallNonvirtualBooleanMethodV(ptr noundef %0, 
   %8 = alloca ptr, align 8
   %9 = alloca ptr, align 8
   %10 = alloca ptr, align 8
-  %11 = alloca ptr, align 8
-  %12 = alloca [257 x i8], align 16
-  %13 = alloca i32, align 4
-  %14 = alloca i32, align 4
+  %11 = alloca [256 x i8], align 16
+  %12 = alloca i32, align 4
+  %13 = alloca ptr, align 8
+  %14 = alloca i64, align 8
+  %15 = alloca i32, align 4
   store ptr %4, ptr %6, align 8
   store ptr %3, ptr %7, align 8
   store ptr %2, ptr %8, align 8
   store ptr %1, ptr %9, align 8
   store ptr %0, ptr %10, align 8
-  br label %15
-
-15:                                               ; preds = %5
   %16 = load ptr, ptr %10, align 8
   %17 = load ptr, ptr %16, align 8
   %18 = getelementptr inbounds %struct.JNINativeInterface_, ptr %17, i32 0, i32 0
   %19 = load ptr, ptr %18, align 8
-  %20 = getelementptr inbounds [257 x i8], ptr %12, i64 0, i64 0
+  %20 = getelementptr inbounds [256 x i8], ptr %11, i64 0, i64 0
   %21 = load ptr, ptr %7, align 8
   %22 = load ptr, ptr %10, align 8
   %23 = call i32 %19(ptr noundef %22, ptr noundef %21, ptr noundef %20)
-  store i32 %23, ptr %13, align 4
-  %24 = load i32, ptr %13, align 4
-  %25 = zext i32 %24 to i64
-  %26 = mul i64 %25, 8
-  %27 = alloca i8, i64 %26, align 16
-  store ptr %27, ptr %11, align 8
-  store i32 0, ptr %14, align 4
-  br label %28
+  store i32 %23, ptr %12, align 4
+  %24 = load ptr, ptr %10, align 8
+  %25 = load ptr, ptr %24, align 8
+  %26 = getelementptr inbounds %struct.JNINativeInterface_, ptr %25, i32 0, i32 1
+  %27 = load ptr, ptr %26, align 8
+  %28 = load i32, ptr %12, align 4
+  call void %27(i32 noundef %28)
+  %29 = load i32, ptr %12, align 4
+  %30 = zext i32 %29 to i64
+  %31 = call ptr @llvm.stacksave()
+  store ptr %31, ptr %13, align 8
+  %32 = alloca %union.jvalue, i64 %30, align 16
+  store i64 %30, ptr %14, align 8
+  store i32 0, ptr %15, align 4
+  br label %33
 
-28:                                               ; preds = %118, %15
-  %29 = load i32, ptr %14, align 4
-  %30 = load i32, ptr %13, align 4
-  %31 = icmp slt i32 %29, %30
-  br i1 %31, label %32, label %121
+33:                                               ; preds = %113, %5
+  %34 = load i32, ptr %15, align 4
+  %35 = load i32, ptr %12, align 4
+  %36 = icmp slt i32 %34, %35
+  br i1 %36, label %37, label %116
 
-32:                                               ; preds = %28
-  %33 = load i32, ptr %14, align 4
-  %34 = sext i32 %33 to i64
-  %35 = getelementptr inbounds [257 x i8], ptr %12, i64 0, i64 %34
-  %36 = load i8, ptr %35, align 1
-  %37 = sext i8 %36 to i32
-  switch i32 %37, label %117 [
-    i32 90, label %38
-    i32 66, label %47
-    i32 83, label %56
-    i32 67, label %65
+37:                                               ; preds = %33
+  %38 = load i32, ptr %15, align 4
+  %39 = sext i32 %38 to i64
+  %40 = getelementptr inbounds [256 x i8], ptr %11, i64 0, i64 %39
+  %41 = load i8, ptr %40, align 1
+  %42 = sext i8 %41 to i32
+  switch i32 %42, label %112 [
+    i32 90, label %43
+    i32 66, label %51
+    i32 67, label %59
+    i32 83, label %67
     i32 73, label %75
-    i32 74, label %83
-    i32 68, label %92
-    i32 70, label %100
-    i32 76, label %109
+    i32 74, label %82
+    i32 70, label %90
+    i32 68, label %98
+    i32 76, label %105
   ]
 
-38:                                               ; preds = %32
-  %39 = load ptr, ptr %6, align 8
-  %40 = getelementptr inbounds i8, ptr %39, i64 8
-  store ptr %40, ptr %6, align 8
-  %41 = load i32, ptr %39, align 8
-  %42 = trunc i32 %41 to i8
-  %43 = load ptr, ptr %11, align 8
-  %44 = load i32, ptr %14, align 4
-  %45 = sext i32 %44 to i64
-  %46 = getelementptr inbounds %union.jvalue, ptr %43, i64 %45
-  store i8 %42, ptr %46, align 8
-  br label %117
+43:                                               ; preds = %37
+  %44 = load ptr, ptr %6, align 8
+  %45 = getelementptr inbounds i8, ptr %44, i64 8
+  store ptr %45, ptr %6, align 8
+  %46 = load i32, ptr %44, align 8
+  %47 = trunc i32 %46 to i8
+  %48 = load i32, ptr %15, align 4
+  %49 = sext i32 %48 to i64
+  %50 = getelementptr inbounds %union.jvalue, ptr %32, i64 %49
+  store i8 %47, ptr %50, align 8
+  br label %112
 
-47:                                               ; preds = %32
-  %48 = load ptr, ptr %6, align 8
-  %49 = getelementptr inbounds i8, ptr %48, i64 8
-  store ptr %49, ptr %6, align 8
-  %50 = load i32, ptr %48, align 8
-  %51 = trunc i32 %50 to i8
-  %52 = load ptr, ptr %11, align 8
-  %53 = load i32, ptr %14, align 4
-  %54 = sext i32 %53 to i64
-  %55 = getelementptr inbounds %union.jvalue, ptr %52, i64 %54
-  store i8 %51, ptr %55, align 8
-  br label %117
+51:                                               ; preds = %37
+  %52 = load ptr, ptr %6, align 8
+  %53 = getelementptr inbounds i8, ptr %52, i64 8
+  store ptr %53, ptr %6, align 8
+  %54 = load i32, ptr %52, align 8
+  %55 = trunc i32 %54 to i8
+  %56 = load i32, ptr %15, align 4
+  %57 = sext i32 %56 to i64
+  %58 = getelementptr inbounds %union.jvalue, ptr %32, i64 %57
+  store i8 %55, ptr %58, align 8
+  br label %112
 
-56:                                               ; preds = %32
-  %57 = load ptr, ptr %6, align 8
-  %58 = getelementptr inbounds i8, ptr %57, i64 8
-  store ptr %58, ptr %6, align 8
-  %59 = load i32, ptr %57, align 8
-  %60 = trunc i32 %59 to i16
-  %61 = load ptr, ptr %11, align 8
-  %62 = load i32, ptr %14, align 4
-  %63 = sext i32 %62 to i64
-  %64 = getelementptr inbounds %union.jvalue, ptr %61, i64 %63
-  store i16 %60, ptr %64, align 8
-  br label %117
+59:                                               ; preds = %37
+  %60 = load ptr, ptr %6, align 8
+  %61 = getelementptr inbounds i8, ptr %60, i64 8
+  store ptr %61, ptr %6, align 8
+  %62 = load i32, ptr %60, align 8
+  %63 = trunc i32 %62 to i16
+  %64 = load i32, ptr %15, align 4
+  %65 = sext i32 %64 to i64
+  %66 = getelementptr inbounds %union.jvalue, ptr %32, i64 %65
+  store i16 %63, ptr %66, align 8
+  br label %112
 
-65:                                               ; preds = %32
-  %66 = load ptr, ptr %6, align 8
-  %67 = getelementptr inbounds i8, ptr %66, i64 8
-  store ptr %67, ptr %6, align 8
-  %68 = load i32, ptr %66, align 8
-  %69 = trunc i32 %68 to i16
-  %70 = zext i16 %69 to i32
-  %71 = load ptr, ptr %11, align 8
-  %72 = load i32, ptr %14, align 4
+67:                                               ; preds = %37
+  %68 = load ptr, ptr %6, align 8
+  %69 = getelementptr inbounds i8, ptr %68, i64 8
+  store ptr %69, ptr %6, align 8
+  %70 = load i32, ptr %68, align 8
+  %71 = trunc i32 %70 to i16
+  %72 = load i32, ptr %15, align 4
   %73 = sext i32 %72 to i64
-  %74 = getelementptr inbounds %union.jvalue, ptr %71, i64 %73
-  store i32 %70, ptr %74, align 8
-  br label %117
+  %74 = getelementptr inbounds %union.jvalue, ptr %32, i64 %73
+  store i16 %71, ptr %74, align 8
+  br label %112
 
-75:                                               ; preds = %32
+75:                                               ; preds = %37
   %76 = load ptr, ptr %6, align 8
   %77 = getelementptr inbounds i8, ptr %76, i64 8
   store ptr %77, ptr %6, align 8
   %78 = load i32, ptr %76, align 8
-  %79 = load ptr, ptr %11, align 8
-  %80 = load i32, ptr %14, align 4
-  %81 = sext i32 %80 to i64
-  %82 = getelementptr inbounds %union.jvalue, ptr %79, i64 %81
-  store i32 %78, ptr %82, align 8
-  br label %117
+  %79 = load i32, ptr %15, align 4
+  %80 = sext i32 %79 to i64
+  %81 = getelementptr inbounds %union.jvalue, ptr %32, i64 %80
+  store i32 %78, ptr %81, align 8
+  br label %112
 
-83:                                               ; preds = %32
-  %84 = load ptr, ptr %6, align 8
-  %85 = getelementptr inbounds i8, ptr %84, i64 8
-  store ptr %85, ptr %6, align 8
-  %86 = load i32, ptr %84, align 8
-  %87 = sext i32 %86 to i64
-  %88 = load ptr, ptr %11, align 8
-  %89 = load i32, ptr %14, align 4
-  %90 = sext i32 %89 to i64
-  %91 = getelementptr inbounds %union.jvalue, ptr %88, i64 %90
-  store i64 %87, ptr %91, align 8
-  br label %117
+82:                                               ; preds = %37
+  %83 = load ptr, ptr %6, align 8
+  %84 = getelementptr inbounds i8, ptr %83, i64 8
+  store ptr %84, ptr %6, align 8
+  %85 = load i32, ptr %83, align 8
+  %86 = sext i32 %85 to i64
+  %87 = load i32, ptr %15, align 4
+  %88 = sext i32 %87 to i64
+  %89 = getelementptr inbounds %union.jvalue, ptr %32, i64 %88
+  store i64 %86, ptr %89, align 8
+  br label %112
 
-92:                                               ; preds = %32
-  %93 = load ptr, ptr %6, align 8
-  %94 = getelementptr inbounds i8, ptr %93, i64 8
-  store ptr %94, ptr %6, align 8
-  %95 = load double, ptr %93, align 8
-  %96 = load ptr, ptr %11, align 8
-  %97 = load i32, ptr %14, align 4
-  %98 = sext i32 %97 to i64
-  %99 = getelementptr inbounds %union.jvalue, ptr %96, i64 %98
-  store double %95, ptr %99, align 8
-  br label %117
+90:                                               ; preds = %37
+  %91 = load ptr, ptr %6, align 8
+  %92 = getelementptr inbounds i8, ptr %91, i64 8
+  store ptr %92, ptr %6, align 8
+  %93 = load double, ptr %91, align 8
+  %94 = fptrunc double %93 to float
+  %95 = load i32, ptr %15, align 4
+  %96 = sext i32 %95 to i64
+  %97 = getelementptr inbounds %union.jvalue, ptr %32, i64 %96
+  store float %94, ptr %97, align 8
+  br label %112
 
-100:                                              ; preds = %32
-  %101 = load ptr, ptr %6, align 8
-  %102 = getelementptr inbounds i8, ptr %101, i64 8
-  store ptr %102, ptr %6, align 8
-  %103 = load double, ptr %101, align 8
-  %104 = fptrunc double %103 to float
-  %105 = load ptr, ptr %11, align 8
-  %106 = load i32, ptr %14, align 4
-  %107 = sext i32 %106 to i64
-  %108 = getelementptr inbounds %union.jvalue, ptr %105, i64 %107
-  store float %104, ptr %108, align 8
-  br label %117
+98:                                               ; preds = %37
+  %99 = load ptr, ptr %6, align 8
+  %100 = getelementptr inbounds i8, ptr %99, i64 8
+  store ptr %100, ptr %6, align 8
+  %101 = load double, ptr %99, align 8
+  %102 = load i32, ptr %15, align 4
+  %103 = sext i32 %102 to i64
+  %104 = getelementptr inbounds %union.jvalue, ptr %32, i64 %103
+  store double %101, ptr %104, align 8
+  br label %112
 
-109:                                              ; preds = %32
-  %110 = load ptr, ptr %6, align 8
-  %111 = getelementptr inbounds i8, ptr %110, i64 8
-  store ptr %111, ptr %6, align 8
-  %112 = load ptr, ptr %110, align 8
-  %113 = load ptr, ptr %11, align 8
-  %114 = load i32, ptr %14, align 4
-  %115 = sext i32 %114 to i64
-  %116 = getelementptr inbounds %union.jvalue, ptr %113, i64 %115
-  store ptr %112, ptr %116, align 8
-  br label %117
+105:                                              ; preds = %37
+  %106 = load ptr, ptr %6, align 8
+  %107 = getelementptr inbounds i8, ptr %106, i64 8
+  store ptr %107, ptr %6, align 8
+  %108 = load ptr, ptr %106, align 8
+  %109 = load i32, ptr %15, align 4
+  %110 = sext i32 %109 to i64
+  %111 = getelementptr inbounds %union.jvalue, ptr %32, i64 %110
+  store ptr %108, ptr %111, align 8
+  br label %112
 
-117:                                              ; preds = %32, %109, %100, %92, %83, %75, %65, %56, %47, %38
-  br label %118
+112:                                              ; preds = %37, %105, %98, %90, %82, %75, %67, %59, %51, %43
+  br label %113
 
-118:                                              ; preds = %117
-  %119 = load i32, ptr %14, align 4
-  %120 = add nsw i32 %119, 1
-  store i32 %120, ptr %14, align 4
-  br label %28, !llvm.loop !9
+113:                                              ; preds = %112
+  %114 = load i32, ptr %15, align 4
+  %115 = add nsw i32 %114, 1
+  store i32 %115, ptr %15, align 4
+  br label %33, !llvm.loop !9
 
-121:                                              ; preds = %28
-  br label %122
-
-122:                                              ; preds = %121
-  %123 = load ptr, ptr %10, align 8
-  %124 = load ptr, ptr %123, align 8
-  %125 = getelementptr inbounds %struct.JNINativeInterface_, ptr %124, i32 0, i32 69
-  %126 = load ptr, ptr %125, align 8
-  %127 = load ptr, ptr %11, align 8
-  %128 = load ptr, ptr %7, align 8
-  %129 = load ptr, ptr %8, align 8
-  %130 = load ptr, ptr %9, align 8
-  %131 = load ptr, ptr %10, align 8
-  %132 = call i8 %126(ptr noundef %131, ptr noundef %130, ptr noundef %129, ptr noundef %128, ptr noundef %127)
-  ret i8 %132
+116:                                              ; preds = %33
+  %117 = load ptr, ptr %10, align 8
+  %118 = load ptr, ptr %117, align 8
+  %119 = getelementptr inbounds %struct.JNINativeInterface_, ptr %118, i32 0, i32 69
+  %120 = load ptr, ptr %119, align 8
+  %121 = load ptr, ptr %7, align 8
+  %122 = load ptr, ptr %8, align 8
+  %123 = load ptr, ptr %9, align 8
+  %124 = load ptr, ptr %10, align 8
+  %125 = call i8 %120(ptr noundef %124, ptr noundef %123, ptr noundef %122, ptr noundef %121, ptr noundef %32)
+  %126 = load ptr, ptr %13, align 8
+  call void @llvm.stackrestore(ptr %126)
+  ret i8 %125
 }
 
 ; Function Attrs: noinline nounwind optnone uwtable
@@ -1239,25 +1190,21 @@ define dso_local dllexport i8 @JNI_CallStaticBooleanMethod(ptr noundef %0, ptr n
   %4 = alloca ptr, align 8
   %5 = alloca ptr, align 8
   %6 = alloca ptr, align 8
-  %7 = alloca i8, align 1
-  %8 = alloca ptr, align 8
+  %7 = alloca ptr, align 8
+  %8 = alloca i8, align 1
   store ptr %2, ptr %4, align 8
   store ptr %1, ptr %5, align 8
   store ptr %0, ptr %6, align 8
-  call void @llvm.va_start(ptr %8)
-  %9 = load ptr, ptr %6, align 8
-  %10 = load ptr, ptr %9, align 8
-  %11 = getelementptr inbounds %struct.JNINativeInterface_, ptr %10, i32 0, i32 118
-  %12 = load ptr, ptr %11, align 8
-  %13 = load ptr, ptr %8, align 8
-  %14 = load ptr, ptr %4, align 8
-  %15 = load ptr, ptr %5, align 8
-  %16 = load ptr, ptr %6, align 8
-  %17 = call i8 %12(ptr noundef %16, ptr noundef %15, ptr noundef %14, ptr noundef %13)
-  store i8 %17, ptr %7, align 1
-  call void @llvm.va_end(ptr %8)
-  %18 = load i8, ptr %7, align 1
-  ret i8 %18
+  call void @llvm.va_start(ptr %7)
+  %9 = load ptr, ptr %7, align 8
+  %10 = load ptr, ptr %4, align 8
+  %11 = load ptr, ptr %5, align 8
+  %12 = load ptr, ptr %6, align 8
+  %13 = call i8 @JNI_CallStaticBooleanMethodV(ptr noundef %12, ptr noundef %11, ptr noundef %10, ptr noundef %9)
+  store i8 %13, ptr %8, align 1
+  call void @llvm.va_end(ptr %7)
+  %14 = load i8, ptr %8, align 1
+  ret i8 %14
 }
 
 ; Function Attrs: noinline nounwind optnone uwtable
@@ -1266,196 +1213,189 @@ define dso_local dllexport i8 @JNI_CallStaticBooleanMethodV(ptr noundef %0, ptr 
   %6 = alloca ptr, align 8
   %7 = alloca ptr, align 8
   %8 = alloca ptr, align 8
-  %9 = alloca ptr, align 8
-  %10 = alloca [257 x i8], align 16
-  %11 = alloca i32, align 4
-  %12 = alloca i32, align 4
+  %9 = alloca [256 x i8], align 16
+  %10 = alloca i32, align 4
+  %11 = alloca ptr, align 8
+  %12 = alloca i64, align 8
+  %13 = alloca i32, align 4
   store ptr %3, ptr %5, align 8
   store ptr %2, ptr %6, align 8
   store ptr %1, ptr %7, align 8
   store ptr %0, ptr %8, align 8
-  br label %13
-
-13:                                               ; preds = %4
   %14 = load ptr, ptr %8, align 8
   %15 = load ptr, ptr %14, align 8
   %16 = getelementptr inbounds %struct.JNINativeInterface_, ptr %15, i32 0, i32 0
   %17 = load ptr, ptr %16, align 8
-  %18 = getelementptr inbounds [257 x i8], ptr %10, i64 0, i64 0
+  %18 = getelementptr inbounds [256 x i8], ptr %9, i64 0, i64 0
   %19 = load ptr, ptr %6, align 8
   %20 = load ptr, ptr %8, align 8
   %21 = call i32 %17(ptr noundef %20, ptr noundef %19, ptr noundef %18)
-  store i32 %21, ptr %11, align 4
-  %22 = load i32, ptr %11, align 4
-  %23 = zext i32 %22 to i64
-  %24 = mul i64 %23, 8
-  %25 = alloca i8, i64 %24, align 16
-  store ptr %25, ptr %9, align 8
-  store i32 0, ptr %12, align 4
-  br label %26
+  store i32 %21, ptr %10, align 4
+  %22 = load ptr, ptr %8, align 8
+  %23 = load ptr, ptr %22, align 8
+  %24 = getelementptr inbounds %struct.JNINativeInterface_, ptr %23, i32 0, i32 1
+  %25 = load ptr, ptr %24, align 8
+  %26 = load i32, ptr %10, align 4
+  call void %25(i32 noundef %26)
+  %27 = load i32, ptr %10, align 4
+  %28 = zext i32 %27 to i64
+  %29 = call ptr @llvm.stacksave()
+  store ptr %29, ptr %11, align 8
+  %30 = alloca %union.jvalue, i64 %28, align 16
+  store i64 %28, ptr %12, align 8
+  store i32 0, ptr %13, align 4
+  br label %31
 
-26:                                               ; preds = %116, %13
-  %27 = load i32, ptr %12, align 4
-  %28 = load i32, ptr %11, align 4
-  %29 = icmp slt i32 %27, %28
-  br i1 %29, label %30, label %119
+31:                                               ; preds = %111, %4
+  %32 = load i32, ptr %13, align 4
+  %33 = load i32, ptr %10, align 4
+  %34 = icmp slt i32 %32, %33
+  br i1 %34, label %35, label %114
 
-30:                                               ; preds = %26
-  %31 = load i32, ptr %12, align 4
-  %32 = sext i32 %31 to i64
-  %33 = getelementptr inbounds [257 x i8], ptr %10, i64 0, i64 %32
-  %34 = load i8, ptr %33, align 1
-  %35 = sext i8 %34 to i32
-  switch i32 %35, label %115 [
-    i32 90, label %36
-    i32 66, label %45
-    i32 83, label %54
-    i32 67, label %63
+35:                                               ; preds = %31
+  %36 = load i32, ptr %13, align 4
+  %37 = sext i32 %36 to i64
+  %38 = getelementptr inbounds [256 x i8], ptr %9, i64 0, i64 %37
+  %39 = load i8, ptr %38, align 1
+  %40 = sext i8 %39 to i32
+  switch i32 %40, label %110 [
+    i32 90, label %41
+    i32 66, label %49
+    i32 67, label %57
+    i32 83, label %65
     i32 73, label %73
-    i32 74, label %81
-    i32 68, label %90
-    i32 70, label %98
-    i32 76, label %107
+    i32 74, label %80
+    i32 70, label %88
+    i32 68, label %96
+    i32 76, label %103
   ]
 
-36:                                               ; preds = %30
-  %37 = load ptr, ptr %5, align 8
-  %38 = getelementptr inbounds i8, ptr %37, i64 8
-  store ptr %38, ptr %5, align 8
-  %39 = load i32, ptr %37, align 8
-  %40 = trunc i32 %39 to i8
-  %41 = load ptr, ptr %9, align 8
-  %42 = load i32, ptr %12, align 4
-  %43 = sext i32 %42 to i64
-  %44 = getelementptr inbounds %union.jvalue, ptr %41, i64 %43
-  store i8 %40, ptr %44, align 8
-  br label %115
+41:                                               ; preds = %35
+  %42 = load ptr, ptr %5, align 8
+  %43 = getelementptr inbounds i8, ptr %42, i64 8
+  store ptr %43, ptr %5, align 8
+  %44 = load i32, ptr %42, align 8
+  %45 = trunc i32 %44 to i8
+  %46 = load i32, ptr %13, align 4
+  %47 = sext i32 %46 to i64
+  %48 = getelementptr inbounds %union.jvalue, ptr %30, i64 %47
+  store i8 %45, ptr %48, align 8
+  br label %110
 
-45:                                               ; preds = %30
-  %46 = load ptr, ptr %5, align 8
-  %47 = getelementptr inbounds i8, ptr %46, i64 8
-  store ptr %47, ptr %5, align 8
-  %48 = load i32, ptr %46, align 8
-  %49 = trunc i32 %48 to i8
-  %50 = load ptr, ptr %9, align 8
-  %51 = load i32, ptr %12, align 4
-  %52 = sext i32 %51 to i64
-  %53 = getelementptr inbounds %union.jvalue, ptr %50, i64 %52
-  store i8 %49, ptr %53, align 8
-  br label %115
+49:                                               ; preds = %35
+  %50 = load ptr, ptr %5, align 8
+  %51 = getelementptr inbounds i8, ptr %50, i64 8
+  store ptr %51, ptr %5, align 8
+  %52 = load i32, ptr %50, align 8
+  %53 = trunc i32 %52 to i8
+  %54 = load i32, ptr %13, align 4
+  %55 = sext i32 %54 to i64
+  %56 = getelementptr inbounds %union.jvalue, ptr %30, i64 %55
+  store i8 %53, ptr %56, align 8
+  br label %110
 
-54:                                               ; preds = %30
-  %55 = load ptr, ptr %5, align 8
-  %56 = getelementptr inbounds i8, ptr %55, i64 8
-  store ptr %56, ptr %5, align 8
-  %57 = load i32, ptr %55, align 8
-  %58 = trunc i32 %57 to i16
-  %59 = load ptr, ptr %9, align 8
-  %60 = load i32, ptr %12, align 4
-  %61 = sext i32 %60 to i64
-  %62 = getelementptr inbounds %union.jvalue, ptr %59, i64 %61
-  store i16 %58, ptr %62, align 8
-  br label %115
+57:                                               ; preds = %35
+  %58 = load ptr, ptr %5, align 8
+  %59 = getelementptr inbounds i8, ptr %58, i64 8
+  store ptr %59, ptr %5, align 8
+  %60 = load i32, ptr %58, align 8
+  %61 = trunc i32 %60 to i16
+  %62 = load i32, ptr %13, align 4
+  %63 = sext i32 %62 to i64
+  %64 = getelementptr inbounds %union.jvalue, ptr %30, i64 %63
+  store i16 %61, ptr %64, align 8
+  br label %110
 
-63:                                               ; preds = %30
-  %64 = load ptr, ptr %5, align 8
-  %65 = getelementptr inbounds i8, ptr %64, i64 8
-  store ptr %65, ptr %5, align 8
-  %66 = load i32, ptr %64, align 8
-  %67 = trunc i32 %66 to i16
-  %68 = zext i16 %67 to i32
-  %69 = load ptr, ptr %9, align 8
-  %70 = load i32, ptr %12, align 4
+65:                                               ; preds = %35
+  %66 = load ptr, ptr %5, align 8
+  %67 = getelementptr inbounds i8, ptr %66, i64 8
+  store ptr %67, ptr %5, align 8
+  %68 = load i32, ptr %66, align 8
+  %69 = trunc i32 %68 to i16
+  %70 = load i32, ptr %13, align 4
   %71 = sext i32 %70 to i64
-  %72 = getelementptr inbounds %union.jvalue, ptr %69, i64 %71
-  store i32 %68, ptr %72, align 8
-  br label %115
+  %72 = getelementptr inbounds %union.jvalue, ptr %30, i64 %71
+  store i16 %69, ptr %72, align 8
+  br label %110
 
-73:                                               ; preds = %30
+73:                                               ; preds = %35
   %74 = load ptr, ptr %5, align 8
   %75 = getelementptr inbounds i8, ptr %74, i64 8
   store ptr %75, ptr %5, align 8
   %76 = load i32, ptr %74, align 8
-  %77 = load ptr, ptr %9, align 8
-  %78 = load i32, ptr %12, align 4
-  %79 = sext i32 %78 to i64
-  %80 = getelementptr inbounds %union.jvalue, ptr %77, i64 %79
-  store i32 %76, ptr %80, align 8
-  br label %115
+  %77 = load i32, ptr %13, align 4
+  %78 = sext i32 %77 to i64
+  %79 = getelementptr inbounds %union.jvalue, ptr %30, i64 %78
+  store i32 %76, ptr %79, align 8
+  br label %110
 
-81:                                               ; preds = %30
-  %82 = load ptr, ptr %5, align 8
-  %83 = getelementptr inbounds i8, ptr %82, i64 8
-  store ptr %83, ptr %5, align 8
-  %84 = load i32, ptr %82, align 8
-  %85 = sext i32 %84 to i64
-  %86 = load ptr, ptr %9, align 8
-  %87 = load i32, ptr %12, align 4
-  %88 = sext i32 %87 to i64
-  %89 = getelementptr inbounds %union.jvalue, ptr %86, i64 %88
-  store i64 %85, ptr %89, align 8
-  br label %115
+80:                                               ; preds = %35
+  %81 = load ptr, ptr %5, align 8
+  %82 = getelementptr inbounds i8, ptr %81, i64 8
+  store ptr %82, ptr %5, align 8
+  %83 = load i32, ptr %81, align 8
+  %84 = sext i32 %83 to i64
+  %85 = load i32, ptr %13, align 4
+  %86 = sext i32 %85 to i64
+  %87 = getelementptr inbounds %union.jvalue, ptr %30, i64 %86
+  store i64 %84, ptr %87, align 8
+  br label %110
 
-90:                                               ; preds = %30
-  %91 = load ptr, ptr %5, align 8
-  %92 = getelementptr inbounds i8, ptr %91, i64 8
-  store ptr %92, ptr %5, align 8
-  %93 = load double, ptr %91, align 8
-  %94 = load ptr, ptr %9, align 8
-  %95 = load i32, ptr %12, align 4
-  %96 = sext i32 %95 to i64
-  %97 = getelementptr inbounds %union.jvalue, ptr %94, i64 %96
-  store double %93, ptr %97, align 8
-  br label %115
+88:                                               ; preds = %35
+  %89 = load ptr, ptr %5, align 8
+  %90 = getelementptr inbounds i8, ptr %89, i64 8
+  store ptr %90, ptr %5, align 8
+  %91 = load double, ptr %89, align 8
+  %92 = fptrunc double %91 to float
+  %93 = load i32, ptr %13, align 4
+  %94 = sext i32 %93 to i64
+  %95 = getelementptr inbounds %union.jvalue, ptr %30, i64 %94
+  store float %92, ptr %95, align 8
+  br label %110
 
-98:                                               ; preds = %30
-  %99 = load ptr, ptr %5, align 8
-  %100 = getelementptr inbounds i8, ptr %99, i64 8
-  store ptr %100, ptr %5, align 8
-  %101 = load double, ptr %99, align 8
-  %102 = fptrunc double %101 to float
-  %103 = load ptr, ptr %9, align 8
-  %104 = load i32, ptr %12, align 4
-  %105 = sext i32 %104 to i64
-  %106 = getelementptr inbounds %union.jvalue, ptr %103, i64 %105
-  store float %102, ptr %106, align 8
-  br label %115
+96:                                               ; preds = %35
+  %97 = load ptr, ptr %5, align 8
+  %98 = getelementptr inbounds i8, ptr %97, i64 8
+  store ptr %98, ptr %5, align 8
+  %99 = load double, ptr %97, align 8
+  %100 = load i32, ptr %13, align 4
+  %101 = sext i32 %100 to i64
+  %102 = getelementptr inbounds %union.jvalue, ptr %30, i64 %101
+  store double %99, ptr %102, align 8
+  br label %110
 
-107:                                              ; preds = %30
-  %108 = load ptr, ptr %5, align 8
-  %109 = getelementptr inbounds i8, ptr %108, i64 8
-  store ptr %109, ptr %5, align 8
-  %110 = load ptr, ptr %108, align 8
-  %111 = load ptr, ptr %9, align 8
-  %112 = load i32, ptr %12, align 4
-  %113 = sext i32 %112 to i64
-  %114 = getelementptr inbounds %union.jvalue, ptr %111, i64 %113
-  store ptr %110, ptr %114, align 8
-  br label %115
+103:                                              ; preds = %35
+  %104 = load ptr, ptr %5, align 8
+  %105 = getelementptr inbounds i8, ptr %104, i64 8
+  store ptr %105, ptr %5, align 8
+  %106 = load ptr, ptr %104, align 8
+  %107 = load i32, ptr %13, align 4
+  %108 = sext i32 %107 to i64
+  %109 = getelementptr inbounds %union.jvalue, ptr %30, i64 %108
+  store ptr %106, ptr %109, align 8
+  br label %110
 
-115:                                              ; preds = %30, %107, %98, %90, %81, %73, %63, %54, %45, %36
-  br label %116
+110:                                              ; preds = %35, %103, %96, %88, %80, %73, %65, %57, %49, %41
+  br label %111
 
-116:                                              ; preds = %115
-  %117 = load i32, ptr %12, align 4
-  %118 = add nsw i32 %117, 1
-  store i32 %118, ptr %12, align 4
-  br label %26, !llvm.loop !10
+111:                                              ; preds = %110
+  %112 = load i32, ptr %13, align 4
+  %113 = add nsw i32 %112, 1
+  store i32 %113, ptr %13, align 4
+  br label %31, !llvm.loop !10
 
-119:                                              ; preds = %26
-  br label %120
-
-120:                                              ; preds = %119
+114:                                              ; preds = %31
+  %115 = load ptr, ptr %8, align 8
+  %116 = load ptr, ptr %115, align 8
+  %117 = getelementptr inbounds %struct.JNINativeInterface_, ptr %116, i32 0, i32 119
+  %118 = load ptr, ptr %117, align 8
+  %119 = load ptr, ptr %6, align 8
+  %120 = load ptr, ptr %7, align 8
   %121 = load ptr, ptr %8, align 8
-  %122 = load ptr, ptr %121, align 8
-  %123 = getelementptr inbounds %struct.JNINativeInterface_, ptr %122, i32 0, i32 119
-  %124 = load ptr, ptr %123, align 8
-  %125 = load ptr, ptr %9, align 8
-  %126 = load ptr, ptr %6, align 8
-  %127 = load ptr, ptr %7, align 8
-  %128 = load ptr, ptr %8, align 8
-  %129 = call i8 %124(ptr noundef %128, ptr noundef %127, ptr noundef %126, ptr noundef %125)
-  ret i8 %129
+  %122 = call i8 %118(ptr noundef %121, ptr noundef %120, ptr noundef %119, ptr noundef %30)
+  %123 = load ptr, ptr %11, align 8
+  call void @llvm.stackrestore(ptr %123)
+  ret i8 %122
 }
 
 ; Function Attrs: noinline nounwind optnone uwtable
@@ -1463,25 +1403,21 @@ define dso_local dllexport i8 @JNI_CallByteMethod(ptr noundef %0, ptr noundef %1
   %4 = alloca ptr, align 8
   %5 = alloca ptr, align 8
   %6 = alloca ptr, align 8
-  %7 = alloca i8, align 1
-  %8 = alloca ptr, align 8
+  %7 = alloca ptr, align 8
+  %8 = alloca i8, align 1
   store ptr %2, ptr %4, align 8
   store ptr %1, ptr %5, align 8
   store ptr %0, ptr %6, align 8
-  call void @llvm.va_start(ptr %8)
-  %9 = load ptr, ptr %6, align 8
-  %10 = load ptr, ptr %9, align 8
-  %11 = getelementptr inbounds %struct.JNINativeInterface_, ptr %10, i32 0, i32 41
-  %12 = load ptr, ptr %11, align 8
-  %13 = load ptr, ptr %8, align 8
-  %14 = load ptr, ptr %4, align 8
-  %15 = load ptr, ptr %5, align 8
-  %16 = load ptr, ptr %6, align 8
-  %17 = call i8 %12(ptr noundef %16, ptr noundef %15, ptr noundef %14, ptr noundef %13)
-  store i8 %17, ptr %7, align 1
-  call void @llvm.va_end(ptr %8)
-  %18 = load i8, ptr %7, align 1
-  ret i8 %18
+  call void @llvm.va_start(ptr %7)
+  %9 = load ptr, ptr %7, align 8
+  %10 = load ptr, ptr %4, align 8
+  %11 = load ptr, ptr %5, align 8
+  %12 = load ptr, ptr %6, align 8
+  %13 = call i8 @JNI_CallByteMethodV(ptr noundef %12, ptr noundef %11, ptr noundef %10, ptr noundef %9)
+  store i8 %13, ptr %8, align 1
+  call void @llvm.va_end(ptr %7)
+  %14 = load i8, ptr %8, align 1
+  ret i8 %14
 }
 
 ; Function Attrs: noinline nounwind optnone uwtable
@@ -1490,196 +1426,189 @@ define dso_local dllexport i8 @JNI_CallByteMethodV(ptr noundef %0, ptr noundef %
   %6 = alloca ptr, align 8
   %7 = alloca ptr, align 8
   %8 = alloca ptr, align 8
-  %9 = alloca ptr, align 8
-  %10 = alloca [257 x i8], align 16
-  %11 = alloca i32, align 4
-  %12 = alloca i32, align 4
+  %9 = alloca [256 x i8], align 16
+  %10 = alloca i32, align 4
+  %11 = alloca ptr, align 8
+  %12 = alloca i64, align 8
+  %13 = alloca i32, align 4
   store ptr %3, ptr %5, align 8
   store ptr %2, ptr %6, align 8
   store ptr %1, ptr %7, align 8
   store ptr %0, ptr %8, align 8
-  br label %13
-
-13:                                               ; preds = %4
   %14 = load ptr, ptr %8, align 8
   %15 = load ptr, ptr %14, align 8
   %16 = getelementptr inbounds %struct.JNINativeInterface_, ptr %15, i32 0, i32 0
   %17 = load ptr, ptr %16, align 8
-  %18 = getelementptr inbounds [257 x i8], ptr %10, i64 0, i64 0
+  %18 = getelementptr inbounds [256 x i8], ptr %9, i64 0, i64 0
   %19 = load ptr, ptr %6, align 8
   %20 = load ptr, ptr %8, align 8
   %21 = call i32 %17(ptr noundef %20, ptr noundef %19, ptr noundef %18)
-  store i32 %21, ptr %11, align 4
-  %22 = load i32, ptr %11, align 4
-  %23 = zext i32 %22 to i64
-  %24 = mul i64 %23, 8
-  %25 = alloca i8, i64 %24, align 16
-  store ptr %25, ptr %9, align 8
-  store i32 0, ptr %12, align 4
-  br label %26
+  store i32 %21, ptr %10, align 4
+  %22 = load ptr, ptr %8, align 8
+  %23 = load ptr, ptr %22, align 8
+  %24 = getelementptr inbounds %struct.JNINativeInterface_, ptr %23, i32 0, i32 1
+  %25 = load ptr, ptr %24, align 8
+  %26 = load i32, ptr %10, align 4
+  call void %25(i32 noundef %26)
+  %27 = load i32, ptr %10, align 4
+  %28 = zext i32 %27 to i64
+  %29 = call ptr @llvm.stacksave()
+  store ptr %29, ptr %11, align 8
+  %30 = alloca %union.jvalue, i64 %28, align 16
+  store i64 %28, ptr %12, align 8
+  store i32 0, ptr %13, align 4
+  br label %31
 
-26:                                               ; preds = %116, %13
-  %27 = load i32, ptr %12, align 4
-  %28 = load i32, ptr %11, align 4
-  %29 = icmp slt i32 %27, %28
-  br i1 %29, label %30, label %119
+31:                                               ; preds = %111, %4
+  %32 = load i32, ptr %13, align 4
+  %33 = load i32, ptr %10, align 4
+  %34 = icmp slt i32 %32, %33
+  br i1 %34, label %35, label %114
 
-30:                                               ; preds = %26
-  %31 = load i32, ptr %12, align 4
-  %32 = sext i32 %31 to i64
-  %33 = getelementptr inbounds [257 x i8], ptr %10, i64 0, i64 %32
-  %34 = load i8, ptr %33, align 1
-  %35 = sext i8 %34 to i32
-  switch i32 %35, label %115 [
-    i32 90, label %36
-    i32 66, label %45
-    i32 83, label %54
-    i32 67, label %63
+35:                                               ; preds = %31
+  %36 = load i32, ptr %13, align 4
+  %37 = sext i32 %36 to i64
+  %38 = getelementptr inbounds [256 x i8], ptr %9, i64 0, i64 %37
+  %39 = load i8, ptr %38, align 1
+  %40 = sext i8 %39 to i32
+  switch i32 %40, label %110 [
+    i32 90, label %41
+    i32 66, label %49
+    i32 67, label %57
+    i32 83, label %65
     i32 73, label %73
-    i32 74, label %81
-    i32 68, label %90
-    i32 70, label %98
-    i32 76, label %107
+    i32 74, label %80
+    i32 70, label %88
+    i32 68, label %96
+    i32 76, label %103
   ]
 
-36:                                               ; preds = %30
-  %37 = load ptr, ptr %5, align 8
-  %38 = getelementptr inbounds i8, ptr %37, i64 8
-  store ptr %38, ptr %5, align 8
-  %39 = load i32, ptr %37, align 8
-  %40 = trunc i32 %39 to i8
-  %41 = load ptr, ptr %9, align 8
-  %42 = load i32, ptr %12, align 4
-  %43 = sext i32 %42 to i64
-  %44 = getelementptr inbounds %union.jvalue, ptr %41, i64 %43
-  store i8 %40, ptr %44, align 8
-  br label %115
+41:                                               ; preds = %35
+  %42 = load ptr, ptr %5, align 8
+  %43 = getelementptr inbounds i8, ptr %42, i64 8
+  store ptr %43, ptr %5, align 8
+  %44 = load i32, ptr %42, align 8
+  %45 = trunc i32 %44 to i8
+  %46 = load i32, ptr %13, align 4
+  %47 = sext i32 %46 to i64
+  %48 = getelementptr inbounds %union.jvalue, ptr %30, i64 %47
+  store i8 %45, ptr %48, align 8
+  br label %110
 
-45:                                               ; preds = %30
-  %46 = load ptr, ptr %5, align 8
-  %47 = getelementptr inbounds i8, ptr %46, i64 8
-  store ptr %47, ptr %5, align 8
-  %48 = load i32, ptr %46, align 8
-  %49 = trunc i32 %48 to i8
-  %50 = load ptr, ptr %9, align 8
-  %51 = load i32, ptr %12, align 4
-  %52 = sext i32 %51 to i64
-  %53 = getelementptr inbounds %union.jvalue, ptr %50, i64 %52
-  store i8 %49, ptr %53, align 8
-  br label %115
+49:                                               ; preds = %35
+  %50 = load ptr, ptr %5, align 8
+  %51 = getelementptr inbounds i8, ptr %50, i64 8
+  store ptr %51, ptr %5, align 8
+  %52 = load i32, ptr %50, align 8
+  %53 = trunc i32 %52 to i8
+  %54 = load i32, ptr %13, align 4
+  %55 = sext i32 %54 to i64
+  %56 = getelementptr inbounds %union.jvalue, ptr %30, i64 %55
+  store i8 %53, ptr %56, align 8
+  br label %110
 
-54:                                               ; preds = %30
-  %55 = load ptr, ptr %5, align 8
-  %56 = getelementptr inbounds i8, ptr %55, i64 8
-  store ptr %56, ptr %5, align 8
-  %57 = load i32, ptr %55, align 8
-  %58 = trunc i32 %57 to i16
-  %59 = load ptr, ptr %9, align 8
-  %60 = load i32, ptr %12, align 4
-  %61 = sext i32 %60 to i64
-  %62 = getelementptr inbounds %union.jvalue, ptr %59, i64 %61
-  store i16 %58, ptr %62, align 8
-  br label %115
+57:                                               ; preds = %35
+  %58 = load ptr, ptr %5, align 8
+  %59 = getelementptr inbounds i8, ptr %58, i64 8
+  store ptr %59, ptr %5, align 8
+  %60 = load i32, ptr %58, align 8
+  %61 = trunc i32 %60 to i16
+  %62 = load i32, ptr %13, align 4
+  %63 = sext i32 %62 to i64
+  %64 = getelementptr inbounds %union.jvalue, ptr %30, i64 %63
+  store i16 %61, ptr %64, align 8
+  br label %110
 
-63:                                               ; preds = %30
-  %64 = load ptr, ptr %5, align 8
-  %65 = getelementptr inbounds i8, ptr %64, i64 8
-  store ptr %65, ptr %5, align 8
-  %66 = load i32, ptr %64, align 8
-  %67 = trunc i32 %66 to i16
-  %68 = zext i16 %67 to i32
-  %69 = load ptr, ptr %9, align 8
-  %70 = load i32, ptr %12, align 4
+65:                                               ; preds = %35
+  %66 = load ptr, ptr %5, align 8
+  %67 = getelementptr inbounds i8, ptr %66, i64 8
+  store ptr %67, ptr %5, align 8
+  %68 = load i32, ptr %66, align 8
+  %69 = trunc i32 %68 to i16
+  %70 = load i32, ptr %13, align 4
   %71 = sext i32 %70 to i64
-  %72 = getelementptr inbounds %union.jvalue, ptr %69, i64 %71
-  store i32 %68, ptr %72, align 8
-  br label %115
+  %72 = getelementptr inbounds %union.jvalue, ptr %30, i64 %71
+  store i16 %69, ptr %72, align 8
+  br label %110
 
-73:                                               ; preds = %30
+73:                                               ; preds = %35
   %74 = load ptr, ptr %5, align 8
   %75 = getelementptr inbounds i8, ptr %74, i64 8
   store ptr %75, ptr %5, align 8
   %76 = load i32, ptr %74, align 8
-  %77 = load ptr, ptr %9, align 8
-  %78 = load i32, ptr %12, align 4
-  %79 = sext i32 %78 to i64
-  %80 = getelementptr inbounds %union.jvalue, ptr %77, i64 %79
-  store i32 %76, ptr %80, align 8
-  br label %115
+  %77 = load i32, ptr %13, align 4
+  %78 = sext i32 %77 to i64
+  %79 = getelementptr inbounds %union.jvalue, ptr %30, i64 %78
+  store i32 %76, ptr %79, align 8
+  br label %110
 
-81:                                               ; preds = %30
-  %82 = load ptr, ptr %5, align 8
-  %83 = getelementptr inbounds i8, ptr %82, i64 8
-  store ptr %83, ptr %5, align 8
-  %84 = load i32, ptr %82, align 8
-  %85 = sext i32 %84 to i64
-  %86 = load ptr, ptr %9, align 8
-  %87 = load i32, ptr %12, align 4
-  %88 = sext i32 %87 to i64
-  %89 = getelementptr inbounds %union.jvalue, ptr %86, i64 %88
-  store i64 %85, ptr %89, align 8
-  br label %115
+80:                                               ; preds = %35
+  %81 = load ptr, ptr %5, align 8
+  %82 = getelementptr inbounds i8, ptr %81, i64 8
+  store ptr %82, ptr %5, align 8
+  %83 = load i32, ptr %81, align 8
+  %84 = sext i32 %83 to i64
+  %85 = load i32, ptr %13, align 4
+  %86 = sext i32 %85 to i64
+  %87 = getelementptr inbounds %union.jvalue, ptr %30, i64 %86
+  store i64 %84, ptr %87, align 8
+  br label %110
 
-90:                                               ; preds = %30
-  %91 = load ptr, ptr %5, align 8
-  %92 = getelementptr inbounds i8, ptr %91, i64 8
-  store ptr %92, ptr %5, align 8
-  %93 = load double, ptr %91, align 8
-  %94 = load ptr, ptr %9, align 8
-  %95 = load i32, ptr %12, align 4
-  %96 = sext i32 %95 to i64
-  %97 = getelementptr inbounds %union.jvalue, ptr %94, i64 %96
-  store double %93, ptr %97, align 8
-  br label %115
+88:                                               ; preds = %35
+  %89 = load ptr, ptr %5, align 8
+  %90 = getelementptr inbounds i8, ptr %89, i64 8
+  store ptr %90, ptr %5, align 8
+  %91 = load double, ptr %89, align 8
+  %92 = fptrunc double %91 to float
+  %93 = load i32, ptr %13, align 4
+  %94 = sext i32 %93 to i64
+  %95 = getelementptr inbounds %union.jvalue, ptr %30, i64 %94
+  store float %92, ptr %95, align 8
+  br label %110
 
-98:                                               ; preds = %30
-  %99 = load ptr, ptr %5, align 8
-  %100 = getelementptr inbounds i8, ptr %99, i64 8
-  store ptr %100, ptr %5, align 8
-  %101 = load double, ptr %99, align 8
-  %102 = fptrunc double %101 to float
-  %103 = load ptr, ptr %9, align 8
-  %104 = load i32, ptr %12, align 4
-  %105 = sext i32 %104 to i64
-  %106 = getelementptr inbounds %union.jvalue, ptr %103, i64 %105
-  store float %102, ptr %106, align 8
-  br label %115
+96:                                               ; preds = %35
+  %97 = load ptr, ptr %5, align 8
+  %98 = getelementptr inbounds i8, ptr %97, i64 8
+  store ptr %98, ptr %5, align 8
+  %99 = load double, ptr %97, align 8
+  %100 = load i32, ptr %13, align 4
+  %101 = sext i32 %100 to i64
+  %102 = getelementptr inbounds %union.jvalue, ptr %30, i64 %101
+  store double %99, ptr %102, align 8
+  br label %110
 
-107:                                              ; preds = %30
-  %108 = load ptr, ptr %5, align 8
-  %109 = getelementptr inbounds i8, ptr %108, i64 8
-  store ptr %109, ptr %5, align 8
-  %110 = load ptr, ptr %108, align 8
-  %111 = load ptr, ptr %9, align 8
-  %112 = load i32, ptr %12, align 4
-  %113 = sext i32 %112 to i64
-  %114 = getelementptr inbounds %union.jvalue, ptr %111, i64 %113
-  store ptr %110, ptr %114, align 8
-  br label %115
+103:                                              ; preds = %35
+  %104 = load ptr, ptr %5, align 8
+  %105 = getelementptr inbounds i8, ptr %104, i64 8
+  store ptr %105, ptr %5, align 8
+  %106 = load ptr, ptr %104, align 8
+  %107 = load i32, ptr %13, align 4
+  %108 = sext i32 %107 to i64
+  %109 = getelementptr inbounds %union.jvalue, ptr %30, i64 %108
+  store ptr %106, ptr %109, align 8
+  br label %110
 
-115:                                              ; preds = %30, %107, %98, %90, %81, %73, %63, %54, %45, %36
-  br label %116
+110:                                              ; preds = %35, %103, %96, %88, %80, %73, %65, %57, %49, %41
+  br label %111
 
-116:                                              ; preds = %115
-  %117 = load i32, ptr %12, align 4
-  %118 = add nsw i32 %117, 1
-  store i32 %118, ptr %12, align 4
-  br label %26, !llvm.loop !11
+111:                                              ; preds = %110
+  %112 = load i32, ptr %13, align 4
+  %113 = add nsw i32 %112, 1
+  store i32 %113, ptr %13, align 4
+  br label %31, !llvm.loop !11
 
-119:                                              ; preds = %26
-  br label %120
-
-120:                                              ; preds = %119
+114:                                              ; preds = %31
+  %115 = load ptr, ptr %8, align 8
+  %116 = load ptr, ptr %115, align 8
+  %117 = getelementptr inbounds %struct.JNINativeInterface_, ptr %116, i32 0, i32 42
+  %118 = load ptr, ptr %117, align 8
+  %119 = load ptr, ptr %6, align 8
+  %120 = load ptr, ptr %7, align 8
   %121 = load ptr, ptr %8, align 8
-  %122 = load ptr, ptr %121, align 8
-  %123 = getelementptr inbounds %struct.JNINativeInterface_, ptr %122, i32 0, i32 42
-  %124 = load ptr, ptr %123, align 8
-  %125 = load ptr, ptr %9, align 8
-  %126 = load ptr, ptr %6, align 8
-  %127 = load ptr, ptr %7, align 8
-  %128 = load ptr, ptr %8, align 8
-  %129 = call i8 %124(ptr noundef %128, ptr noundef %127, ptr noundef %126, ptr noundef %125)
-  ret i8 %129
+  %122 = call i8 %118(ptr noundef %121, ptr noundef %120, ptr noundef %119, ptr noundef %30)
+  %123 = load ptr, ptr %11, align 8
+  call void @llvm.stackrestore(ptr %123)
+  ret i8 %122
 }
 
 ; Function Attrs: noinline nounwind optnone uwtable
@@ -1688,27 +1617,23 @@ define dso_local dllexport i8 @JNI_CallNonvirtualByteMethod(ptr noundef %0, ptr 
   %6 = alloca ptr, align 8
   %7 = alloca ptr, align 8
   %8 = alloca ptr, align 8
-  %9 = alloca i8, align 1
-  %10 = alloca ptr, align 8
+  %9 = alloca ptr, align 8
+  %10 = alloca i8, align 1
   store ptr %3, ptr %5, align 8
   store ptr %2, ptr %6, align 8
   store ptr %1, ptr %7, align 8
   store ptr %0, ptr %8, align 8
-  call void @llvm.va_start(ptr %10)
-  %11 = load ptr, ptr %8, align 8
-  %12 = load ptr, ptr %11, align 8
-  %13 = getelementptr inbounds %struct.JNINativeInterface_, ptr %12, i32 0, i32 71
-  %14 = load ptr, ptr %13, align 8
-  %15 = load ptr, ptr %10, align 8
-  %16 = load ptr, ptr %5, align 8
-  %17 = load ptr, ptr %6, align 8
-  %18 = load ptr, ptr %7, align 8
-  %19 = load ptr, ptr %8, align 8
-  %20 = call i8 %14(ptr noundef %19, ptr noundef %18, ptr noundef %17, ptr noundef %16, ptr noundef %15)
-  store i8 %20, ptr %9, align 1
-  call void @llvm.va_end(ptr %10)
-  %21 = load i8, ptr %9, align 1
-  ret i8 %21
+  call void @llvm.va_start(ptr %9)
+  %11 = load ptr, ptr %9, align 8
+  %12 = load ptr, ptr %5, align 8
+  %13 = load ptr, ptr %6, align 8
+  %14 = load ptr, ptr %7, align 8
+  %15 = load ptr, ptr %8, align 8
+  %16 = call i8 @JNI_CallNonvirtualByteMethodV(ptr noundef %15, ptr noundef %14, ptr noundef %13, ptr noundef %12, ptr noundef %11)
+  store i8 %16, ptr %10, align 1
+  call void @llvm.va_end(ptr %9)
+  %17 = load i8, ptr %10, align 1
+  ret i8 %17
 }
 
 ; Function Attrs: noinline nounwind optnone uwtable
@@ -1718,198 +1643,191 @@ define dso_local dllexport i8 @JNI_CallNonvirtualByteMethodV(ptr noundef %0, ptr
   %8 = alloca ptr, align 8
   %9 = alloca ptr, align 8
   %10 = alloca ptr, align 8
-  %11 = alloca ptr, align 8
-  %12 = alloca [257 x i8], align 16
-  %13 = alloca i32, align 4
-  %14 = alloca i32, align 4
+  %11 = alloca [256 x i8], align 16
+  %12 = alloca i32, align 4
+  %13 = alloca ptr, align 8
+  %14 = alloca i64, align 8
+  %15 = alloca i32, align 4
   store ptr %4, ptr %6, align 8
   store ptr %3, ptr %7, align 8
   store ptr %2, ptr %8, align 8
   store ptr %1, ptr %9, align 8
   store ptr %0, ptr %10, align 8
-  br label %15
-
-15:                                               ; preds = %5
   %16 = load ptr, ptr %10, align 8
   %17 = load ptr, ptr %16, align 8
   %18 = getelementptr inbounds %struct.JNINativeInterface_, ptr %17, i32 0, i32 0
   %19 = load ptr, ptr %18, align 8
-  %20 = getelementptr inbounds [257 x i8], ptr %12, i64 0, i64 0
+  %20 = getelementptr inbounds [256 x i8], ptr %11, i64 0, i64 0
   %21 = load ptr, ptr %7, align 8
   %22 = load ptr, ptr %10, align 8
   %23 = call i32 %19(ptr noundef %22, ptr noundef %21, ptr noundef %20)
-  store i32 %23, ptr %13, align 4
-  %24 = load i32, ptr %13, align 4
-  %25 = zext i32 %24 to i64
-  %26 = mul i64 %25, 8
-  %27 = alloca i8, i64 %26, align 16
-  store ptr %27, ptr %11, align 8
-  store i32 0, ptr %14, align 4
-  br label %28
+  store i32 %23, ptr %12, align 4
+  %24 = load ptr, ptr %10, align 8
+  %25 = load ptr, ptr %24, align 8
+  %26 = getelementptr inbounds %struct.JNINativeInterface_, ptr %25, i32 0, i32 1
+  %27 = load ptr, ptr %26, align 8
+  %28 = load i32, ptr %12, align 4
+  call void %27(i32 noundef %28)
+  %29 = load i32, ptr %12, align 4
+  %30 = zext i32 %29 to i64
+  %31 = call ptr @llvm.stacksave()
+  store ptr %31, ptr %13, align 8
+  %32 = alloca %union.jvalue, i64 %30, align 16
+  store i64 %30, ptr %14, align 8
+  store i32 0, ptr %15, align 4
+  br label %33
 
-28:                                               ; preds = %118, %15
-  %29 = load i32, ptr %14, align 4
-  %30 = load i32, ptr %13, align 4
-  %31 = icmp slt i32 %29, %30
-  br i1 %31, label %32, label %121
+33:                                               ; preds = %113, %5
+  %34 = load i32, ptr %15, align 4
+  %35 = load i32, ptr %12, align 4
+  %36 = icmp slt i32 %34, %35
+  br i1 %36, label %37, label %116
 
-32:                                               ; preds = %28
-  %33 = load i32, ptr %14, align 4
-  %34 = sext i32 %33 to i64
-  %35 = getelementptr inbounds [257 x i8], ptr %12, i64 0, i64 %34
-  %36 = load i8, ptr %35, align 1
-  %37 = sext i8 %36 to i32
-  switch i32 %37, label %117 [
-    i32 90, label %38
-    i32 66, label %47
-    i32 83, label %56
-    i32 67, label %65
+37:                                               ; preds = %33
+  %38 = load i32, ptr %15, align 4
+  %39 = sext i32 %38 to i64
+  %40 = getelementptr inbounds [256 x i8], ptr %11, i64 0, i64 %39
+  %41 = load i8, ptr %40, align 1
+  %42 = sext i8 %41 to i32
+  switch i32 %42, label %112 [
+    i32 90, label %43
+    i32 66, label %51
+    i32 67, label %59
+    i32 83, label %67
     i32 73, label %75
-    i32 74, label %83
-    i32 68, label %92
-    i32 70, label %100
-    i32 76, label %109
+    i32 74, label %82
+    i32 70, label %90
+    i32 68, label %98
+    i32 76, label %105
   ]
 
-38:                                               ; preds = %32
-  %39 = load ptr, ptr %6, align 8
-  %40 = getelementptr inbounds i8, ptr %39, i64 8
-  store ptr %40, ptr %6, align 8
-  %41 = load i32, ptr %39, align 8
-  %42 = trunc i32 %41 to i8
-  %43 = load ptr, ptr %11, align 8
-  %44 = load i32, ptr %14, align 4
-  %45 = sext i32 %44 to i64
-  %46 = getelementptr inbounds %union.jvalue, ptr %43, i64 %45
-  store i8 %42, ptr %46, align 8
-  br label %117
+43:                                               ; preds = %37
+  %44 = load ptr, ptr %6, align 8
+  %45 = getelementptr inbounds i8, ptr %44, i64 8
+  store ptr %45, ptr %6, align 8
+  %46 = load i32, ptr %44, align 8
+  %47 = trunc i32 %46 to i8
+  %48 = load i32, ptr %15, align 4
+  %49 = sext i32 %48 to i64
+  %50 = getelementptr inbounds %union.jvalue, ptr %32, i64 %49
+  store i8 %47, ptr %50, align 8
+  br label %112
 
-47:                                               ; preds = %32
-  %48 = load ptr, ptr %6, align 8
-  %49 = getelementptr inbounds i8, ptr %48, i64 8
-  store ptr %49, ptr %6, align 8
-  %50 = load i32, ptr %48, align 8
-  %51 = trunc i32 %50 to i8
-  %52 = load ptr, ptr %11, align 8
-  %53 = load i32, ptr %14, align 4
-  %54 = sext i32 %53 to i64
-  %55 = getelementptr inbounds %union.jvalue, ptr %52, i64 %54
-  store i8 %51, ptr %55, align 8
-  br label %117
+51:                                               ; preds = %37
+  %52 = load ptr, ptr %6, align 8
+  %53 = getelementptr inbounds i8, ptr %52, i64 8
+  store ptr %53, ptr %6, align 8
+  %54 = load i32, ptr %52, align 8
+  %55 = trunc i32 %54 to i8
+  %56 = load i32, ptr %15, align 4
+  %57 = sext i32 %56 to i64
+  %58 = getelementptr inbounds %union.jvalue, ptr %32, i64 %57
+  store i8 %55, ptr %58, align 8
+  br label %112
 
-56:                                               ; preds = %32
-  %57 = load ptr, ptr %6, align 8
-  %58 = getelementptr inbounds i8, ptr %57, i64 8
-  store ptr %58, ptr %6, align 8
-  %59 = load i32, ptr %57, align 8
-  %60 = trunc i32 %59 to i16
-  %61 = load ptr, ptr %11, align 8
-  %62 = load i32, ptr %14, align 4
-  %63 = sext i32 %62 to i64
-  %64 = getelementptr inbounds %union.jvalue, ptr %61, i64 %63
-  store i16 %60, ptr %64, align 8
-  br label %117
+59:                                               ; preds = %37
+  %60 = load ptr, ptr %6, align 8
+  %61 = getelementptr inbounds i8, ptr %60, i64 8
+  store ptr %61, ptr %6, align 8
+  %62 = load i32, ptr %60, align 8
+  %63 = trunc i32 %62 to i16
+  %64 = load i32, ptr %15, align 4
+  %65 = sext i32 %64 to i64
+  %66 = getelementptr inbounds %union.jvalue, ptr %32, i64 %65
+  store i16 %63, ptr %66, align 8
+  br label %112
 
-65:                                               ; preds = %32
-  %66 = load ptr, ptr %6, align 8
-  %67 = getelementptr inbounds i8, ptr %66, i64 8
-  store ptr %67, ptr %6, align 8
-  %68 = load i32, ptr %66, align 8
-  %69 = trunc i32 %68 to i16
-  %70 = zext i16 %69 to i32
-  %71 = load ptr, ptr %11, align 8
-  %72 = load i32, ptr %14, align 4
+67:                                               ; preds = %37
+  %68 = load ptr, ptr %6, align 8
+  %69 = getelementptr inbounds i8, ptr %68, i64 8
+  store ptr %69, ptr %6, align 8
+  %70 = load i32, ptr %68, align 8
+  %71 = trunc i32 %70 to i16
+  %72 = load i32, ptr %15, align 4
   %73 = sext i32 %72 to i64
-  %74 = getelementptr inbounds %union.jvalue, ptr %71, i64 %73
-  store i32 %70, ptr %74, align 8
-  br label %117
+  %74 = getelementptr inbounds %union.jvalue, ptr %32, i64 %73
+  store i16 %71, ptr %74, align 8
+  br label %112
 
-75:                                               ; preds = %32
+75:                                               ; preds = %37
   %76 = load ptr, ptr %6, align 8
   %77 = getelementptr inbounds i8, ptr %76, i64 8
   store ptr %77, ptr %6, align 8
   %78 = load i32, ptr %76, align 8
-  %79 = load ptr, ptr %11, align 8
-  %80 = load i32, ptr %14, align 4
-  %81 = sext i32 %80 to i64
-  %82 = getelementptr inbounds %union.jvalue, ptr %79, i64 %81
-  store i32 %78, ptr %82, align 8
-  br label %117
+  %79 = load i32, ptr %15, align 4
+  %80 = sext i32 %79 to i64
+  %81 = getelementptr inbounds %union.jvalue, ptr %32, i64 %80
+  store i32 %78, ptr %81, align 8
+  br label %112
 
-83:                                               ; preds = %32
-  %84 = load ptr, ptr %6, align 8
-  %85 = getelementptr inbounds i8, ptr %84, i64 8
-  store ptr %85, ptr %6, align 8
-  %86 = load i32, ptr %84, align 8
-  %87 = sext i32 %86 to i64
-  %88 = load ptr, ptr %11, align 8
-  %89 = load i32, ptr %14, align 4
-  %90 = sext i32 %89 to i64
-  %91 = getelementptr inbounds %union.jvalue, ptr %88, i64 %90
-  store i64 %87, ptr %91, align 8
-  br label %117
+82:                                               ; preds = %37
+  %83 = load ptr, ptr %6, align 8
+  %84 = getelementptr inbounds i8, ptr %83, i64 8
+  store ptr %84, ptr %6, align 8
+  %85 = load i32, ptr %83, align 8
+  %86 = sext i32 %85 to i64
+  %87 = load i32, ptr %15, align 4
+  %88 = sext i32 %87 to i64
+  %89 = getelementptr inbounds %union.jvalue, ptr %32, i64 %88
+  store i64 %86, ptr %89, align 8
+  br label %112
 
-92:                                               ; preds = %32
-  %93 = load ptr, ptr %6, align 8
-  %94 = getelementptr inbounds i8, ptr %93, i64 8
-  store ptr %94, ptr %6, align 8
-  %95 = load double, ptr %93, align 8
-  %96 = load ptr, ptr %11, align 8
-  %97 = load i32, ptr %14, align 4
-  %98 = sext i32 %97 to i64
-  %99 = getelementptr inbounds %union.jvalue, ptr %96, i64 %98
-  store double %95, ptr %99, align 8
-  br label %117
+90:                                               ; preds = %37
+  %91 = load ptr, ptr %6, align 8
+  %92 = getelementptr inbounds i8, ptr %91, i64 8
+  store ptr %92, ptr %6, align 8
+  %93 = load double, ptr %91, align 8
+  %94 = fptrunc double %93 to float
+  %95 = load i32, ptr %15, align 4
+  %96 = sext i32 %95 to i64
+  %97 = getelementptr inbounds %union.jvalue, ptr %32, i64 %96
+  store float %94, ptr %97, align 8
+  br label %112
 
-100:                                              ; preds = %32
-  %101 = load ptr, ptr %6, align 8
-  %102 = getelementptr inbounds i8, ptr %101, i64 8
-  store ptr %102, ptr %6, align 8
-  %103 = load double, ptr %101, align 8
-  %104 = fptrunc double %103 to float
-  %105 = load ptr, ptr %11, align 8
-  %106 = load i32, ptr %14, align 4
-  %107 = sext i32 %106 to i64
-  %108 = getelementptr inbounds %union.jvalue, ptr %105, i64 %107
-  store float %104, ptr %108, align 8
-  br label %117
+98:                                               ; preds = %37
+  %99 = load ptr, ptr %6, align 8
+  %100 = getelementptr inbounds i8, ptr %99, i64 8
+  store ptr %100, ptr %6, align 8
+  %101 = load double, ptr %99, align 8
+  %102 = load i32, ptr %15, align 4
+  %103 = sext i32 %102 to i64
+  %104 = getelementptr inbounds %union.jvalue, ptr %32, i64 %103
+  store double %101, ptr %104, align 8
+  br label %112
 
-109:                                              ; preds = %32
-  %110 = load ptr, ptr %6, align 8
-  %111 = getelementptr inbounds i8, ptr %110, i64 8
-  store ptr %111, ptr %6, align 8
-  %112 = load ptr, ptr %110, align 8
-  %113 = load ptr, ptr %11, align 8
-  %114 = load i32, ptr %14, align 4
-  %115 = sext i32 %114 to i64
-  %116 = getelementptr inbounds %union.jvalue, ptr %113, i64 %115
-  store ptr %112, ptr %116, align 8
-  br label %117
+105:                                              ; preds = %37
+  %106 = load ptr, ptr %6, align 8
+  %107 = getelementptr inbounds i8, ptr %106, i64 8
+  store ptr %107, ptr %6, align 8
+  %108 = load ptr, ptr %106, align 8
+  %109 = load i32, ptr %15, align 4
+  %110 = sext i32 %109 to i64
+  %111 = getelementptr inbounds %union.jvalue, ptr %32, i64 %110
+  store ptr %108, ptr %111, align 8
+  br label %112
 
-117:                                              ; preds = %32, %109, %100, %92, %83, %75, %65, %56, %47, %38
-  br label %118
+112:                                              ; preds = %37, %105, %98, %90, %82, %75, %67, %59, %51, %43
+  br label %113
 
-118:                                              ; preds = %117
-  %119 = load i32, ptr %14, align 4
-  %120 = add nsw i32 %119, 1
-  store i32 %120, ptr %14, align 4
-  br label %28, !llvm.loop !12
+113:                                              ; preds = %112
+  %114 = load i32, ptr %15, align 4
+  %115 = add nsw i32 %114, 1
+  store i32 %115, ptr %15, align 4
+  br label %33, !llvm.loop !12
 
-121:                                              ; preds = %28
-  br label %122
-
-122:                                              ; preds = %121
-  %123 = load ptr, ptr %10, align 8
-  %124 = load ptr, ptr %123, align 8
-  %125 = getelementptr inbounds %struct.JNINativeInterface_, ptr %124, i32 0, i32 72
-  %126 = load ptr, ptr %125, align 8
-  %127 = load ptr, ptr %11, align 8
-  %128 = load ptr, ptr %7, align 8
-  %129 = load ptr, ptr %8, align 8
-  %130 = load ptr, ptr %9, align 8
-  %131 = load ptr, ptr %10, align 8
-  %132 = call i8 %126(ptr noundef %131, ptr noundef %130, ptr noundef %129, ptr noundef %128, ptr noundef %127)
-  ret i8 %132
+116:                                              ; preds = %33
+  %117 = load ptr, ptr %10, align 8
+  %118 = load ptr, ptr %117, align 8
+  %119 = getelementptr inbounds %struct.JNINativeInterface_, ptr %118, i32 0, i32 72
+  %120 = load ptr, ptr %119, align 8
+  %121 = load ptr, ptr %7, align 8
+  %122 = load ptr, ptr %8, align 8
+  %123 = load ptr, ptr %9, align 8
+  %124 = load ptr, ptr %10, align 8
+  %125 = call i8 %120(ptr noundef %124, ptr noundef %123, ptr noundef %122, ptr noundef %121, ptr noundef %32)
+  %126 = load ptr, ptr %13, align 8
+  call void @llvm.stackrestore(ptr %126)
+  ret i8 %125
 }
 
 ; Function Attrs: noinline nounwind optnone uwtable
@@ -1917,25 +1835,21 @@ define dso_local dllexport i8 @JNI_CallStaticByteMethod(ptr noundef %0, ptr noun
   %4 = alloca ptr, align 8
   %5 = alloca ptr, align 8
   %6 = alloca ptr, align 8
-  %7 = alloca i8, align 1
-  %8 = alloca ptr, align 8
+  %7 = alloca ptr, align 8
+  %8 = alloca i8, align 1
   store ptr %2, ptr %4, align 8
   store ptr %1, ptr %5, align 8
   store ptr %0, ptr %6, align 8
-  call void @llvm.va_start(ptr %8)
-  %9 = load ptr, ptr %6, align 8
-  %10 = load ptr, ptr %9, align 8
-  %11 = getelementptr inbounds %struct.JNINativeInterface_, ptr %10, i32 0, i32 121
-  %12 = load ptr, ptr %11, align 8
-  %13 = load ptr, ptr %8, align 8
-  %14 = load ptr, ptr %4, align 8
-  %15 = load ptr, ptr %5, align 8
-  %16 = load ptr, ptr %6, align 8
-  %17 = call i8 %12(ptr noundef %16, ptr noundef %15, ptr noundef %14, ptr noundef %13)
-  store i8 %17, ptr %7, align 1
-  call void @llvm.va_end(ptr %8)
-  %18 = load i8, ptr %7, align 1
-  ret i8 %18
+  call void @llvm.va_start(ptr %7)
+  %9 = load ptr, ptr %7, align 8
+  %10 = load ptr, ptr %4, align 8
+  %11 = load ptr, ptr %5, align 8
+  %12 = load ptr, ptr %6, align 8
+  %13 = call i8 @JNI_CallStaticByteMethodV(ptr noundef %12, ptr noundef %11, ptr noundef %10, ptr noundef %9)
+  store i8 %13, ptr %8, align 1
+  call void @llvm.va_end(ptr %7)
+  %14 = load i8, ptr %8, align 1
+  ret i8 %14
 }
 
 ; Function Attrs: noinline nounwind optnone uwtable
@@ -1944,196 +1858,189 @@ define dso_local dllexport i8 @JNI_CallStaticByteMethodV(ptr noundef %0, ptr nou
   %6 = alloca ptr, align 8
   %7 = alloca ptr, align 8
   %8 = alloca ptr, align 8
-  %9 = alloca ptr, align 8
-  %10 = alloca [257 x i8], align 16
-  %11 = alloca i32, align 4
-  %12 = alloca i32, align 4
+  %9 = alloca [256 x i8], align 16
+  %10 = alloca i32, align 4
+  %11 = alloca ptr, align 8
+  %12 = alloca i64, align 8
+  %13 = alloca i32, align 4
   store ptr %3, ptr %5, align 8
   store ptr %2, ptr %6, align 8
   store ptr %1, ptr %7, align 8
   store ptr %0, ptr %8, align 8
-  br label %13
-
-13:                                               ; preds = %4
   %14 = load ptr, ptr %8, align 8
   %15 = load ptr, ptr %14, align 8
   %16 = getelementptr inbounds %struct.JNINativeInterface_, ptr %15, i32 0, i32 0
   %17 = load ptr, ptr %16, align 8
-  %18 = getelementptr inbounds [257 x i8], ptr %10, i64 0, i64 0
+  %18 = getelementptr inbounds [256 x i8], ptr %9, i64 0, i64 0
   %19 = load ptr, ptr %6, align 8
   %20 = load ptr, ptr %8, align 8
   %21 = call i32 %17(ptr noundef %20, ptr noundef %19, ptr noundef %18)
-  store i32 %21, ptr %11, align 4
-  %22 = load i32, ptr %11, align 4
-  %23 = zext i32 %22 to i64
-  %24 = mul i64 %23, 8
-  %25 = alloca i8, i64 %24, align 16
-  store ptr %25, ptr %9, align 8
-  store i32 0, ptr %12, align 4
-  br label %26
+  store i32 %21, ptr %10, align 4
+  %22 = load ptr, ptr %8, align 8
+  %23 = load ptr, ptr %22, align 8
+  %24 = getelementptr inbounds %struct.JNINativeInterface_, ptr %23, i32 0, i32 1
+  %25 = load ptr, ptr %24, align 8
+  %26 = load i32, ptr %10, align 4
+  call void %25(i32 noundef %26)
+  %27 = load i32, ptr %10, align 4
+  %28 = zext i32 %27 to i64
+  %29 = call ptr @llvm.stacksave()
+  store ptr %29, ptr %11, align 8
+  %30 = alloca %union.jvalue, i64 %28, align 16
+  store i64 %28, ptr %12, align 8
+  store i32 0, ptr %13, align 4
+  br label %31
 
-26:                                               ; preds = %116, %13
-  %27 = load i32, ptr %12, align 4
-  %28 = load i32, ptr %11, align 4
-  %29 = icmp slt i32 %27, %28
-  br i1 %29, label %30, label %119
+31:                                               ; preds = %111, %4
+  %32 = load i32, ptr %13, align 4
+  %33 = load i32, ptr %10, align 4
+  %34 = icmp slt i32 %32, %33
+  br i1 %34, label %35, label %114
 
-30:                                               ; preds = %26
-  %31 = load i32, ptr %12, align 4
-  %32 = sext i32 %31 to i64
-  %33 = getelementptr inbounds [257 x i8], ptr %10, i64 0, i64 %32
-  %34 = load i8, ptr %33, align 1
-  %35 = sext i8 %34 to i32
-  switch i32 %35, label %115 [
-    i32 90, label %36
-    i32 66, label %45
-    i32 83, label %54
-    i32 67, label %63
+35:                                               ; preds = %31
+  %36 = load i32, ptr %13, align 4
+  %37 = sext i32 %36 to i64
+  %38 = getelementptr inbounds [256 x i8], ptr %9, i64 0, i64 %37
+  %39 = load i8, ptr %38, align 1
+  %40 = sext i8 %39 to i32
+  switch i32 %40, label %110 [
+    i32 90, label %41
+    i32 66, label %49
+    i32 67, label %57
+    i32 83, label %65
     i32 73, label %73
-    i32 74, label %81
-    i32 68, label %90
-    i32 70, label %98
-    i32 76, label %107
+    i32 74, label %80
+    i32 70, label %88
+    i32 68, label %96
+    i32 76, label %103
   ]
 
-36:                                               ; preds = %30
-  %37 = load ptr, ptr %5, align 8
-  %38 = getelementptr inbounds i8, ptr %37, i64 8
-  store ptr %38, ptr %5, align 8
-  %39 = load i32, ptr %37, align 8
-  %40 = trunc i32 %39 to i8
-  %41 = load ptr, ptr %9, align 8
-  %42 = load i32, ptr %12, align 4
-  %43 = sext i32 %42 to i64
-  %44 = getelementptr inbounds %union.jvalue, ptr %41, i64 %43
-  store i8 %40, ptr %44, align 8
-  br label %115
+41:                                               ; preds = %35
+  %42 = load ptr, ptr %5, align 8
+  %43 = getelementptr inbounds i8, ptr %42, i64 8
+  store ptr %43, ptr %5, align 8
+  %44 = load i32, ptr %42, align 8
+  %45 = trunc i32 %44 to i8
+  %46 = load i32, ptr %13, align 4
+  %47 = sext i32 %46 to i64
+  %48 = getelementptr inbounds %union.jvalue, ptr %30, i64 %47
+  store i8 %45, ptr %48, align 8
+  br label %110
 
-45:                                               ; preds = %30
-  %46 = load ptr, ptr %5, align 8
-  %47 = getelementptr inbounds i8, ptr %46, i64 8
-  store ptr %47, ptr %5, align 8
-  %48 = load i32, ptr %46, align 8
-  %49 = trunc i32 %48 to i8
-  %50 = load ptr, ptr %9, align 8
-  %51 = load i32, ptr %12, align 4
-  %52 = sext i32 %51 to i64
-  %53 = getelementptr inbounds %union.jvalue, ptr %50, i64 %52
-  store i8 %49, ptr %53, align 8
-  br label %115
+49:                                               ; preds = %35
+  %50 = load ptr, ptr %5, align 8
+  %51 = getelementptr inbounds i8, ptr %50, i64 8
+  store ptr %51, ptr %5, align 8
+  %52 = load i32, ptr %50, align 8
+  %53 = trunc i32 %52 to i8
+  %54 = load i32, ptr %13, align 4
+  %55 = sext i32 %54 to i64
+  %56 = getelementptr inbounds %union.jvalue, ptr %30, i64 %55
+  store i8 %53, ptr %56, align 8
+  br label %110
 
-54:                                               ; preds = %30
-  %55 = load ptr, ptr %5, align 8
-  %56 = getelementptr inbounds i8, ptr %55, i64 8
-  store ptr %56, ptr %5, align 8
-  %57 = load i32, ptr %55, align 8
-  %58 = trunc i32 %57 to i16
-  %59 = load ptr, ptr %9, align 8
-  %60 = load i32, ptr %12, align 4
-  %61 = sext i32 %60 to i64
-  %62 = getelementptr inbounds %union.jvalue, ptr %59, i64 %61
-  store i16 %58, ptr %62, align 8
-  br label %115
+57:                                               ; preds = %35
+  %58 = load ptr, ptr %5, align 8
+  %59 = getelementptr inbounds i8, ptr %58, i64 8
+  store ptr %59, ptr %5, align 8
+  %60 = load i32, ptr %58, align 8
+  %61 = trunc i32 %60 to i16
+  %62 = load i32, ptr %13, align 4
+  %63 = sext i32 %62 to i64
+  %64 = getelementptr inbounds %union.jvalue, ptr %30, i64 %63
+  store i16 %61, ptr %64, align 8
+  br label %110
 
-63:                                               ; preds = %30
-  %64 = load ptr, ptr %5, align 8
-  %65 = getelementptr inbounds i8, ptr %64, i64 8
-  store ptr %65, ptr %5, align 8
-  %66 = load i32, ptr %64, align 8
-  %67 = trunc i32 %66 to i16
-  %68 = zext i16 %67 to i32
-  %69 = load ptr, ptr %9, align 8
-  %70 = load i32, ptr %12, align 4
+65:                                               ; preds = %35
+  %66 = load ptr, ptr %5, align 8
+  %67 = getelementptr inbounds i8, ptr %66, i64 8
+  store ptr %67, ptr %5, align 8
+  %68 = load i32, ptr %66, align 8
+  %69 = trunc i32 %68 to i16
+  %70 = load i32, ptr %13, align 4
   %71 = sext i32 %70 to i64
-  %72 = getelementptr inbounds %union.jvalue, ptr %69, i64 %71
-  store i32 %68, ptr %72, align 8
-  br label %115
+  %72 = getelementptr inbounds %union.jvalue, ptr %30, i64 %71
+  store i16 %69, ptr %72, align 8
+  br label %110
 
-73:                                               ; preds = %30
+73:                                               ; preds = %35
   %74 = load ptr, ptr %5, align 8
   %75 = getelementptr inbounds i8, ptr %74, i64 8
   store ptr %75, ptr %5, align 8
   %76 = load i32, ptr %74, align 8
-  %77 = load ptr, ptr %9, align 8
-  %78 = load i32, ptr %12, align 4
-  %79 = sext i32 %78 to i64
-  %80 = getelementptr inbounds %union.jvalue, ptr %77, i64 %79
-  store i32 %76, ptr %80, align 8
-  br label %115
+  %77 = load i32, ptr %13, align 4
+  %78 = sext i32 %77 to i64
+  %79 = getelementptr inbounds %union.jvalue, ptr %30, i64 %78
+  store i32 %76, ptr %79, align 8
+  br label %110
 
-81:                                               ; preds = %30
-  %82 = load ptr, ptr %5, align 8
-  %83 = getelementptr inbounds i8, ptr %82, i64 8
-  store ptr %83, ptr %5, align 8
-  %84 = load i32, ptr %82, align 8
-  %85 = sext i32 %84 to i64
-  %86 = load ptr, ptr %9, align 8
-  %87 = load i32, ptr %12, align 4
-  %88 = sext i32 %87 to i64
-  %89 = getelementptr inbounds %union.jvalue, ptr %86, i64 %88
-  store i64 %85, ptr %89, align 8
-  br label %115
+80:                                               ; preds = %35
+  %81 = load ptr, ptr %5, align 8
+  %82 = getelementptr inbounds i8, ptr %81, i64 8
+  store ptr %82, ptr %5, align 8
+  %83 = load i32, ptr %81, align 8
+  %84 = sext i32 %83 to i64
+  %85 = load i32, ptr %13, align 4
+  %86 = sext i32 %85 to i64
+  %87 = getelementptr inbounds %union.jvalue, ptr %30, i64 %86
+  store i64 %84, ptr %87, align 8
+  br label %110
 
-90:                                               ; preds = %30
-  %91 = load ptr, ptr %5, align 8
-  %92 = getelementptr inbounds i8, ptr %91, i64 8
-  store ptr %92, ptr %5, align 8
-  %93 = load double, ptr %91, align 8
-  %94 = load ptr, ptr %9, align 8
-  %95 = load i32, ptr %12, align 4
-  %96 = sext i32 %95 to i64
-  %97 = getelementptr inbounds %union.jvalue, ptr %94, i64 %96
-  store double %93, ptr %97, align 8
-  br label %115
+88:                                               ; preds = %35
+  %89 = load ptr, ptr %5, align 8
+  %90 = getelementptr inbounds i8, ptr %89, i64 8
+  store ptr %90, ptr %5, align 8
+  %91 = load double, ptr %89, align 8
+  %92 = fptrunc double %91 to float
+  %93 = load i32, ptr %13, align 4
+  %94 = sext i32 %93 to i64
+  %95 = getelementptr inbounds %union.jvalue, ptr %30, i64 %94
+  store float %92, ptr %95, align 8
+  br label %110
 
-98:                                               ; preds = %30
-  %99 = load ptr, ptr %5, align 8
-  %100 = getelementptr inbounds i8, ptr %99, i64 8
-  store ptr %100, ptr %5, align 8
-  %101 = load double, ptr %99, align 8
-  %102 = fptrunc double %101 to float
-  %103 = load ptr, ptr %9, align 8
-  %104 = load i32, ptr %12, align 4
-  %105 = sext i32 %104 to i64
-  %106 = getelementptr inbounds %union.jvalue, ptr %103, i64 %105
-  store float %102, ptr %106, align 8
-  br label %115
+96:                                               ; preds = %35
+  %97 = load ptr, ptr %5, align 8
+  %98 = getelementptr inbounds i8, ptr %97, i64 8
+  store ptr %98, ptr %5, align 8
+  %99 = load double, ptr %97, align 8
+  %100 = load i32, ptr %13, align 4
+  %101 = sext i32 %100 to i64
+  %102 = getelementptr inbounds %union.jvalue, ptr %30, i64 %101
+  store double %99, ptr %102, align 8
+  br label %110
 
-107:                                              ; preds = %30
-  %108 = load ptr, ptr %5, align 8
-  %109 = getelementptr inbounds i8, ptr %108, i64 8
-  store ptr %109, ptr %5, align 8
-  %110 = load ptr, ptr %108, align 8
-  %111 = load ptr, ptr %9, align 8
-  %112 = load i32, ptr %12, align 4
-  %113 = sext i32 %112 to i64
-  %114 = getelementptr inbounds %union.jvalue, ptr %111, i64 %113
-  store ptr %110, ptr %114, align 8
-  br label %115
+103:                                              ; preds = %35
+  %104 = load ptr, ptr %5, align 8
+  %105 = getelementptr inbounds i8, ptr %104, i64 8
+  store ptr %105, ptr %5, align 8
+  %106 = load ptr, ptr %104, align 8
+  %107 = load i32, ptr %13, align 4
+  %108 = sext i32 %107 to i64
+  %109 = getelementptr inbounds %union.jvalue, ptr %30, i64 %108
+  store ptr %106, ptr %109, align 8
+  br label %110
 
-115:                                              ; preds = %30, %107, %98, %90, %81, %73, %63, %54, %45, %36
-  br label %116
+110:                                              ; preds = %35, %103, %96, %88, %80, %73, %65, %57, %49, %41
+  br label %111
 
-116:                                              ; preds = %115
-  %117 = load i32, ptr %12, align 4
-  %118 = add nsw i32 %117, 1
-  store i32 %118, ptr %12, align 4
-  br label %26, !llvm.loop !13
+111:                                              ; preds = %110
+  %112 = load i32, ptr %13, align 4
+  %113 = add nsw i32 %112, 1
+  store i32 %113, ptr %13, align 4
+  br label %31, !llvm.loop !13
 
-119:                                              ; preds = %26
-  br label %120
-
-120:                                              ; preds = %119
+114:                                              ; preds = %31
+  %115 = load ptr, ptr %8, align 8
+  %116 = load ptr, ptr %115, align 8
+  %117 = getelementptr inbounds %struct.JNINativeInterface_, ptr %116, i32 0, i32 122
+  %118 = load ptr, ptr %117, align 8
+  %119 = load ptr, ptr %6, align 8
+  %120 = load ptr, ptr %7, align 8
   %121 = load ptr, ptr %8, align 8
-  %122 = load ptr, ptr %121, align 8
-  %123 = getelementptr inbounds %struct.JNINativeInterface_, ptr %122, i32 0, i32 122
-  %124 = load ptr, ptr %123, align 8
-  %125 = load ptr, ptr %9, align 8
-  %126 = load ptr, ptr %6, align 8
-  %127 = load ptr, ptr %7, align 8
-  %128 = load ptr, ptr %8, align 8
-  %129 = call i8 %124(ptr noundef %128, ptr noundef %127, ptr noundef %126, ptr noundef %125)
-  ret i8 %129
+  %122 = call i8 %118(ptr noundef %121, ptr noundef %120, ptr noundef %119, ptr noundef %30)
+  %123 = load ptr, ptr %11, align 8
+  call void @llvm.stackrestore(ptr %123)
+  ret i8 %122
 }
 
 ; Function Attrs: noinline nounwind optnone uwtable
@@ -2141,25 +2048,21 @@ define dso_local dllexport i16 @JNI_CallCharMethod(ptr noundef %0, ptr noundef %
   %4 = alloca ptr, align 8
   %5 = alloca ptr, align 8
   %6 = alloca ptr, align 8
-  %7 = alloca i16, align 2
-  %8 = alloca ptr, align 8
+  %7 = alloca ptr, align 8
+  %8 = alloca i16, align 2
   store ptr %2, ptr %4, align 8
   store ptr %1, ptr %5, align 8
   store ptr %0, ptr %6, align 8
-  call void @llvm.va_start(ptr %8)
-  %9 = load ptr, ptr %6, align 8
-  %10 = load ptr, ptr %9, align 8
-  %11 = getelementptr inbounds %struct.JNINativeInterface_, ptr %10, i32 0, i32 44
-  %12 = load ptr, ptr %11, align 8
-  %13 = load ptr, ptr %8, align 8
-  %14 = load ptr, ptr %4, align 8
-  %15 = load ptr, ptr %5, align 8
-  %16 = load ptr, ptr %6, align 8
-  %17 = call i16 %12(ptr noundef %16, ptr noundef %15, ptr noundef %14, ptr noundef %13)
-  store i16 %17, ptr %7, align 2
-  call void @llvm.va_end(ptr %8)
-  %18 = load i16, ptr %7, align 2
-  ret i16 %18
+  call void @llvm.va_start(ptr %7)
+  %9 = load ptr, ptr %7, align 8
+  %10 = load ptr, ptr %4, align 8
+  %11 = load ptr, ptr %5, align 8
+  %12 = load ptr, ptr %6, align 8
+  %13 = call i16 @JNI_CallCharMethodV(ptr noundef %12, ptr noundef %11, ptr noundef %10, ptr noundef %9)
+  store i16 %13, ptr %8, align 2
+  call void @llvm.va_end(ptr %7)
+  %14 = load i16, ptr %8, align 2
+  ret i16 %14
 }
 
 ; Function Attrs: noinline nounwind optnone uwtable
@@ -2168,196 +2071,189 @@ define dso_local dllexport i16 @JNI_CallCharMethodV(ptr noundef %0, ptr noundef 
   %6 = alloca ptr, align 8
   %7 = alloca ptr, align 8
   %8 = alloca ptr, align 8
-  %9 = alloca ptr, align 8
-  %10 = alloca [257 x i8], align 16
-  %11 = alloca i32, align 4
-  %12 = alloca i32, align 4
+  %9 = alloca [256 x i8], align 16
+  %10 = alloca i32, align 4
+  %11 = alloca ptr, align 8
+  %12 = alloca i64, align 8
+  %13 = alloca i32, align 4
   store ptr %3, ptr %5, align 8
   store ptr %2, ptr %6, align 8
   store ptr %1, ptr %7, align 8
   store ptr %0, ptr %8, align 8
-  br label %13
-
-13:                                               ; preds = %4
   %14 = load ptr, ptr %8, align 8
   %15 = load ptr, ptr %14, align 8
   %16 = getelementptr inbounds %struct.JNINativeInterface_, ptr %15, i32 0, i32 0
   %17 = load ptr, ptr %16, align 8
-  %18 = getelementptr inbounds [257 x i8], ptr %10, i64 0, i64 0
+  %18 = getelementptr inbounds [256 x i8], ptr %9, i64 0, i64 0
   %19 = load ptr, ptr %6, align 8
   %20 = load ptr, ptr %8, align 8
   %21 = call i32 %17(ptr noundef %20, ptr noundef %19, ptr noundef %18)
-  store i32 %21, ptr %11, align 4
-  %22 = load i32, ptr %11, align 4
-  %23 = zext i32 %22 to i64
-  %24 = mul i64 %23, 8
-  %25 = alloca i8, i64 %24, align 16
-  store ptr %25, ptr %9, align 8
-  store i32 0, ptr %12, align 4
-  br label %26
+  store i32 %21, ptr %10, align 4
+  %22 = load ptr, ptr %8, align 8
+  %23 = load ptr, ptr %22, align 8
+  %24 = getelementptr inbounds %struct.JNINativeInterface_, ptr %23, i32 0, i32 1
+  %25 = load ptr, ptr %24, align 8
+  %26 = load i32, ptr %10, align 4
+  call void %25(i32 noundef %26)
+  %27 = load i32, ptr %10, align 4
+  %28 = zext i32 %27 to i64
+  %29 = call ptr @llvm.stacksave()
+  store ptr %29, ptr %11, align 8
+  %30 = alloca %union.jvalue, i64 %28, align 16
+  store i64 %28, ptr %12, align 8
+  store i32 0, ptr %13, align 4
+  br label %31
 
-26:                                               ; preds = %116, %13
-  %27 = load i32, ptr %12, align 4
-  %28 = load i32, ptr %11, align 4
-  %29 = icmp slt i32 %27, %28
-  br i1 %29, label %30, label %119
+31:                                               ; preds = %111, %4
+  %32 = load i32, ptr %13, align 4
+  %33 = load i32, ptr %10, align 4
+  %34 = icmp slt i32 %32, %33
+  br i1 %34, label %35, label %114
 
-30:                                               ; preds = %26
-  %31 = load i32, ptr %12, align 4
-  %32 = sext i32 %31 to i64
-  %33 = getelementptr inbounds [257 x i8], ptr %10, i64 0, i64 %32
-  %34 = load i8, ptr %33, align 1
-  %35 = sext i8 %34 to i32
-  switch i32 %35, label %115 [
-    i32 90, label %36
-    i32 66, label %45
-    i32 83, label %54
-    i32 67, label %63
+35:                                               ; preds = %31
+  %36 = load i32, ptr %13, align 4
+  %37 = sext i32 %36 to i64
+  %38 = getelementptr inbounds [256 x i8], ptr %9, i64 0, i64 %37
+  %39 = load i8, ptr %38, align 1
+  %40 = sext i8 %39 to i32
+  switch i32 %40, label %110 [
+    i32 90, label %41
+    i32 66, label %49
+    i32 67, label %57
+    i32 83, label %65
     i32 73, label %73
-    i32 74, label %81
-    i32 68, label %90
-    i32 70, label %98
-    i32 76, label %107
+    i32 74, label %80
+    i32 70, label %88
+    i32 68, label %96
+    i32 76, label %103
   ]
 
-36:                                               ; preds = %30
-  %37 = load ptr, ptr %5, align 8
-  %38 = getelementptr inbounds i8, ptr %37, i64 8
-  store ptr %38, ptr %5, align 8
-  %39 = load i32, ptr %37, align 8
-  %40 = trunc i32 %39 to i8
-  %41 = load ptr, ptr %9, align 8
-  %42 = load i32, ptr %12, align 4
-  %43 = sext i32 %42 to i64
-  %44 = getelementptr inbounds %union.jvalue, ptr %41, i64 %43
-  store i8 %40, ptr %44, align 8
-  br label %115
+41:                                               ; preds = %35
+  %42 = load ptr, ptr %5, align 8
+  %43 = getelementptr inbounds i8, ptr %42, i64 8
+  store ptr %43, ptr %5, align 8
+  %44 = load i32, ptr %42, align 8
+  %45 = trunc i32 %44 to i8
+  %46 = load i32, ptr %13, align 4
+  %47 = sext i32 %46 to i64
+  %48 = getelementptr inbounds %union.jvalue, ptr %30, i64 %47
+  store i8 %45, ptr %48, align 8
+  br label %110
 
-45:                                               ; preds = %30
-  %46 = load ptr, ptr %5, align 8
-  %47 = getelementptr inbounds i8, ptr %46, i64 8
-  store ptr %47, ptr %5, align 8
-  %48 = load i32, ptr %46, align 8
-  %49 = trunc i32 %48 to i8
-  %50 = load ptr, ptr %9, align 8
-  %51 = load i32, ptr %12, align 4
-  %52 = sext i32 %51 to i64
-  %53 = getelementptr inbounds %union.jvalue, ptr %50, i64 %52
-  store i8 %49, ptr %53, align 8
-  br label %115
+49:                                               ; preds = %35
+  %50 = load ptr, ptr %5, align 8
+  %51 = getelementptr inbounds i8, ptr %50, i64 8
+  store ptr %51, ptr %5, align 8
+  %52 = load i32, ptr %50, align 8
+  %53 = trunc i32 %52 to i8
+  %54 = load i32, ptr %13, align 4
+  %55 = sext i32 %54 to i64
+  %56 = getelementptr inbounds %union.jvalue, ptr %30, i64 %55
+  store i8 %53, ptr %56, align 8
+  br label %110
 
-54:                                               ; preds = %30
-  %55 = load ptr, ptr %5, align 8
-  %56 = getelementptr inbounds i8, ptr %55, i64 8
-  store ptr %56, ptr %5, align 8
-  %57 = load i32, ptr %55, align 8
-  %58 = trunc i32 %57 to i16
-  %59 = load ptr, ptr %9, align 8
-  %60 = load i32, ptr %12, align 4
-  %61 = sext i32 %60 to i64
-  %62 = getelementptr inbounds %union.jvalue, ptr %59, i64 %61
-  store i16 %58, ptr %62, align 8
-  br label %115
+57:                                               ; preds = %35
+  %58 = load ptr, ptr %5, align 8
+  %59 = getelementptr inbounds i8, ptr %58, i64 8
+  store ptr %59, ptr %5, align 8
+  %60 = load i32, ptr %58, align 8
+  %61 = trunc i32 %60 to i16
+  %62 = load i32, ptr %13, align 4
+  %63 = sext i32 %62 to i64
+  %64 = getelementptr inbounds %union.jvalue, ptr %30, i64 %63
+  store i16 %61, ptr %64, align 8
+  br label %110
 
-63:                                               ; preds = %30
-  %64 = load ptr, ptr %5, align 8
-  %65 = getelementptr inbounds i8, ptr %64, i64 8
-  store ptr %65, ptr %5, align 8
-  %66 = load i32, ptr %64, align 8
-  %67 = trunc i32 %66 to i16
-  %68 = zext i16 %67 to i32
-  %69 = load ptr, ptr %9, align 8
-  %70 = load i32, ptr %12, align 4
+65:                                               ; preds = %35
+  %66 = load ptr, ptr %5, align 8
+  %67 = getelementptr inbounds i8, ptr %66, i64 8
+  store ptr %67, ptr %5, align 8
+  %68 = load i32, ptr %66, align 8
+  %69 = trunc i32 %68 to i16
+  %70 = load i32, ptr %13, align 4
   %71 = sext i32 %70 to i64
-  %72 = getelementptr inbounds %union.jvalue, ptr %69, i64 %71
-  store i32 %68, ptr %72, align 8
-  br label %115
+  %72 = getelementptr inbounds %union.jvalue, ptr %30, i64 %71
+  store i16 %69, ptr %72, align 8
+  br label %110
 
-73:                                               ; preds = %30
+73:                                               ; preds = %35
   %74 = load ptr, ptr %5, align 8
   %75 = getelementptr inbounds i8, ptr %74, i64 8
   store ptr %75, ptr %5, align 8
   %76 = load i32, ptr %74, align 8
-  %77 = load ptr, ptr %9, align 8
-  %78 = load i32, ptr %12, align 4
-  %79 = sext i32 %78 to i64
-  %80 = getelementptr inbounds %union.jvalue, ptr %77, i64 %79
-  store i32 %76, ptr %80, align 8
-  br label %115
+  %77 = load i32, ptr %13, align 4
+  %78 = sext i32 %77 to i64
+  %79 = getelementptr inbounds %union.jvalue, ptr %30, i64 %78
+  store i32 %76, ptr %79, align 8
+  br label %110
 
-81:                                               ; preds = %30
-  %82 = load ptr, ptr %5, align 8
-  %83 = getelementptr inbounds i8, ptr %82, i64 8
-  store ptr %83, ptr %5, align 8
-  %84 = load i32, ptr %82, align 8
-  %85 = sext i32 %84 to i64
-  %86 = load ptr, ptr %9, align 8
-  %87 = load i32, ptr %12, align 4
-  %88 = sext i32 %87 to i64
-  %89 = getelementptr inbounds %union.jvalue, ptr %86, i64 %88
-  store i64 %85, ptr %89, align 8
-  br label %115
+80:                                               ; preds = %35
+  %81 = load ptr, ptr %5, align 8
+  %82 = getelementptr inbounds i8, ptr %81, i64 8
+  store ptr %82, ptr %5, align 8
+  %83 = load i32, ptr %81, align 8
+  %84 = sext i32 %83 to i64
+  %85 = load i32, ptr %13, align 4
+  %86 = sext i32 %85 to i64
+  %87 = getelementptr inbounds %union.jvalue, ptr %30, i64 %86
+  store i64 %84, ptr %87, align 8
+  br label %110
 
-90:                                               ; preds = %30
-  %91 = load ptr, ptr %5, align 8
-  %92 = getelementptr inbounds i8, ptr %91, i64 8
-  store ptr %92, ptr %5, align 8
-  %93 = load double, ptr %91, align 8
-  %94 = load ptr, ptr %9, align 8
-  %95 = load i32, ptr %12, align 4
-  %96 = sext i32 %95 to i64
-  %97 = getelementptr inbounds %union.jvalue, ptr %94, i64 %96
-  store double %93, ptr %97, align 8
-  br label %115
+88:                                               ; preds = %35
+  %89 = load ptr, ptr %5, align 8
+  %90 = getelementptr inbounds i8, ptr %89, i64 8
+  store ptr %90, ptr %5, align 8
+  %91 = load double, ptr %89, align 8
+  %92 = fptrunc double %91 to float
+  %93 = load i32, ptr %13, align 4
+  %94 = sext i32 %93 to i64
+  %95 = getelementptr inbounds %union.jvalue, ptr %30, i64 %94
+  store float %92, ptr %95, align 8
+  br label %110
 
-98:                                               ; preds = %30
-  %99 = load ptr, ptr %5, align 8
-  %100 = getelementptr inbounds i8, ptr %99, i64 8
-  store ptr %100, ptr %5, align 8
-  %101 = load double, ptr %99, align 8
-  %102 = fptrunc double %101 to float
-  %103 = load ptr, ptr %9, align 8
-  %104 = load i32, ptr %12, align 4
-  %105 = sext i32 %104 to i64
-  %106 = getelementptr inbounds %union.jvalue, ptr %103, i64 %105
-  store float %102, ptr %106, align 8
-  br label %115
+96:                                               ; preds = %35
+  %97 = load ptr, ptr %5, align 8
+  %98 = getelementptr inbounds i8, ptr %97, i64 8
+  store ptr %98, ptr %5, align 8
+  %99 = load double, ptr %97, align 8
+  %100 = load i32, ptr %13, align 4
+  %101 = sext i32 %100 to i64
+  %102 = getelementptr inbounds %union.jvalue, ptr %30, i64 %101
+  store double %99, ptr %102, align 8
+  br label %110
 
-107:                                              ; preds = %30
-  %108 = load ptr, ptr %5, align 8
-  %109 = getelementptr inbounds i8, ptr %108, i64 8
-  store ptr %109, ptr %5, align 8
-  %110 = load ptr, ptr %108, align 8
-  %111 = load ptr, ptr %9, align 8
-  %112 = load i32, ptr %12, align 4
-  %113 = sext i32 %112 to i64
-  %114 = getelementptr inbounds %union.jvalue, ptr %111, i64 %113
-  store ptr %110, ptr %114, align 8
-  br label %115
+103:                                              ; preds = %35
+  %104 = load ptr, ptr %5, align 8
+  %105 = getelementptr inbounds i8, ptr %104, i64 8
+  store ptr %105, ptr %5, align 8
+  %106 = load ptr, ptr %104, align 8
+  %107 = load i32, ptr %13, align 4
+  %108 = sext i32 %107 to i64
+  %109 = getelementptr inbounds %union.jvalue, ptr %30, i64 %108
+  store ptr %106, ptr %109, align 8
+  br label %110
 
-115:                                              ; preds = %30, %107, %98, %90, %81, %73, %63, %54, %45, %36
-  br label %116
+110:                                              ; preds = %35, %103, %96, %88, %80, %73, %65, %57, %49, %41
+  br label %111
 
-116:                                              ; preds = %115
-  %117 = load i32, ptr %12, align 4
-  %118 = add nsw i32 %117, 1
-  store i32 %118, ptr %12, align 4
-  br label %26, !llvm.loop !14
+111:                                              ; preds = %110
+  %112 = load i32, ptr %13, align 4
+  %113 = add nsw i32 %112, 1
+  store i32 %113, ptr %13, align 4
+  br label %31, !llvm.loop !14
 
-119:                                              ; preds = %26
-  br label %120
-
-120:                                              ; preds = %119
+114:                                              ; preds = %31
+  %115 = load ptr, ptr %8, align 8
+  %116 = load ptr, ptr %115, align 8
+  %117 = getelementptr inbounds %struct.JNINativeInterface_, ptr %116, i32 0, i32 45
+  %118 = load ptr, ptr %117, align 8
+  %119 = load ptr, ptr %6, align 8
+  %120 = load ptr, ptr %7, align 8
   %121 = load ptr, ptr %8, align 8
-  %122 = load ptr, ptr %121, align 8
-  %123 = getelementptr inbounds %struct.JNINativeInterface_, ptr %122, i32 0, i32 45
-  %124 = load ptr, ptr %123, align 8
-  %125 = load ptr, ptr %9, align 8
-  %126 = load ptr, ptr %6, align 8
-  %127 = load ptr, ptr %7, align 8
-  %128 = load ptr, ptr %8, align 8
-  %129 = call i16 %124(ptr noundef %128, ptr noundef %127, ptr noundef %126, ptr noundef %125)
-  ret i16 %129
+  %122 = call i16 %118(ptr noundef %121, ptr noundef %120, ptr noundef %119, ptr noundef %30)
+  %123 = load ptr, ptr %11, align 8
+  call void @llvm.stackrestore(ptr %123)
+  ret i16 %122
 }
 
 ; Function Attrs: noinline nounwind optnone uwtable
@@ -2366,27 +2262,23 @@ define dso_local dllexport i16 @JNI_CallNonvirtualCharMethod(ptr noundef %0, ptr
   %6 = alloca ptr, align 8
   %7 = alloca ptr, align 8
   %8 = alloca ptr, align 8
-  %9 = alloca i16, align 2
-  %10 = alloca ptr, align 8
+  %9 = alloca ptr, align 8
+  %10 = alloca i16, align 2
   store ptr %3, ptr %5, align 8
   store ptr %2, ptr %6, align 8
   store ptr %1, ptr %7, align 8
   store ptr %0, ptr %8, align 8
-  call void @llvm.va_start(ptr %10)
-  %11 = load ptr, ptr %8, align 8
-  %12 = load ptr, ptr %11, align 8
-  %13 = getelementptr inbounds %struct.JNINativeInterface_, ptr %12, i32 0, i32 74
-  %14 = load ptr, ptr %13, align 8
-  %15 = load ptr, ptr %10, align 8
-  %16 = load ptr, ptr %5, align 8
-  %17 = load ptr, ptr %6, align 8
-  %18 = load ptr, ptr %7, align 8
-  %19 = load ptr, ptr %8, align 8
-  %20 = call i16 %14(ptr noundef %19, ptr noundef %18, ptr noundef %17, ptr noundef %16, ptr noundef %15)
-  store i16 %20, ptr %9, align 2
-  call void @llvm.va_end(ptr %10)
-  %21 = load i16, ptr %9, align 2
-  ret i16 %21
+  call void @llvm.va_start(ptr %9)
+  %11 = load ptr, ptr %9, align 8
+  %12 = load ptr, ptr %5, align 8
+  %13 = load ptr, ptr %6, align 8
+  %14 = load ptr, ptr %7, align 8
+  %15 = load ptr, ptr %8, align 8
+  %16 = call i16 @JNI_CallNonvirtualCharMethodV(ptr noundef %15, ptr noundef %14, ptr noundef %13, ptr noundef %12, ptr noundef %11)
+  store i16 %16, ptr %10, align 2
+  call void @llvm.va_end(ptr %9)
+  %17 = load i16, ptr %10, align 2
+  ret i16 %17
 }
 
 ; Function Attrs: noinline nounwind optnone uwtable
@@ -2396,198 +2288,191 @@ define dso_local dllexport i16 @JNI_CallNonvirtualCharMethodV(ptr noundef %0, pt
   %8 = alloca ptr, align 8
   %9 = alloca ptr, align 8
   %10 = alloca ptr, align 8
-  %11 = alloca ptr, align 8
-  %12 = alloca [257 x i8], align 16
-  %13 = alloca i32, align 4
-  %14 = alloca i32, align 4
+  %11 = alloca [256 x i8], align 16
+  %12 = alloca i32, align 4
+  %13 = alloca ptr, align 8
+  %14 = alloca i64, align 8
+  %15 = alloca i32, align 4
   store ptr %4, ptr %6, align 8
   store ptr %3, ptr %7, align 8
   store ptr %2, ptr %8, align 8
   store ptr %1, ptr %9, align 8
   store ptr %0, ptr %10, align 8
-  br label %15
-
-15:                                               ; preds = %5
   %16 = load ptr, ptr %10, align 8
   %17 = load ptr, ptr %16, align 8
   %18 = getelementptr inbounds %struct.JNINativeInterface_, ptr %17, i32 0, i32 0
   %19 = load ptr, ptr %18, align 8
-  %20 = getelementptr inbounds [257 x i8], ptr %12, i64 0, i64 0
+  %20 = getelementptr inbounds [256 x i8], ptr %11, i64 0, i64 0
   %21 = load ptr, ptr %7, align 8
   %22 = load ptr, ptr %10, align 8
   %23 = call i32 %19(ptr noundef %22, ptr noundef %21, ptr noundef %20)
-  store i32 %23, ptr %13, align 4
-  %24 = load i32, ptr %13, align 4
-  %25 = zext i32 %24 to i64
-  %26 = mul i64 %25, 8
-  %27 = alloca i8, i64 %26, align 16
-  store ptr %27, ptr %11, align 8
-  store i32 0, ptr %14, align 4
-  br label %28
+  store i32 %23, ptr %12, align 4
+  %24 = load ptr, ptr %10, align 8
+  %25 = load ptr, ptr %24, align 8
+  %26 = getelementptr inbounds %struct.JNINativeInterface_, ptr %25, i32 0, i32 1
+  %27 = load ptr, ptr %26, align 8
+  %28 = load i32, ptr %12, align 4
+  call void %27(i32 noundef %28)
+  %29 = load i32, ptr %12, align 4
+  %30 = zext i32 %29 to i64
+  %31 = call ptr @llvm.stacksave()
+  store ptr %31, ptr %13, align 8
+  %32 = alloca %union.jvalue, i64 %30, align 16
+  store i64 %30, ptr %14, align 8
+  store i32 0, ptr %15, align 4
+  br label %33
 
-28:                                               ; preds = %118, %15
-  %29 = load i32, ptr %14, align 4
-  %30 = load i32, ptr %13, align 4
-  %31 = icmp slt i32 %29, %30
-  br i1 %31, label %32, label %121
+33:                                               ; preds = %113, %5
+  %34 = load i32, ptr %15, align 4
+  %35 = load i32, ptr %12, align 4
+  %36 = icmp slt i32 %34, %35
+  br i1 %36, label %37, label %116
 
-32:                                               ; preds = %28
-  %33 = load i32, ptr %14, align 4
-  %34 = sext i32 %33 to i64
-  %35 = getelementptr inbounds [257 x i8], ptr %12, i64 0, i64 %34
-  %36 = load i8, ptr %35, align 1
-  %37 = sext i8 %36 to i32
-  switch i32 %37, label %117 [
-    i32 90, label %38
-    i32 66, label %47
-    i32 83, label %56
-    i32 67, label %65
+37:                                               ; preds = %33
+  %38 = load i32, ptr %15, align 4
+  %39 = sext i32 %38 to i64
+  %40 = getelementptr inbounds [256 x i8], ptr %11, i64 0, i64 %39
+  %41 = load i8, ptr %40, align 1
+  %42 = sext i8 %41 to i32
+  switch i32 %42, label %112 [
+    i32 90, label %43
+    i32 66, label %51
+    i32 67, label %59
+    i32 83, label %67
     i32 73, label %75
-    i32 74, label %83
-    i32 68, label %92
-    i32 70, label %100
-    i32 76, label %109
+    i32 74, label %82
+    i32 70, label %90
+    i32 68, label %98
+    i32 76, label %105
   ]
 
-38:                                               ; preds = %32
-  %39 = load ptr, ptr %6, align 8
-  %40 = getelementptr inbounds i8, ptr %39, i64 8
-  store ptr %40, ptr %6, align 8
-  %41 = load i32, ptr %39, align 8
-  %42 = trunc i32 %41 to i8
-  %43 = load ptr, ptr %11, align 8
-  %44 = load i32, ptr %14, align 4
-  %45 = sext i32 %44 to i64
-  %46 = getelementptr inbounds %union.jvalue, ptr %43, i64 %45
-  store i8 %42, ptr %46, align 8
-  br label %117
+43:                                               ; preds = %37
+  %44 = load ptr, ptr %6, align 8
+  %45 = getelementptr inbounds i8, ptr %44, i64 8
+  store ptr %45, ptr %6, align 8
+  %46 = load i32, ptr %44, align 8
+  %47 = trunc i32 %46 to i8
+  %48 = load i32, ptr %15, align 4
+  %49 = sext i32 %48 to i64
+  %50 = getelementptr inbounds %union.jvalue, ptr %32, i64 %49
+  store i8 %47, ptr %50, align 8
+  br label %112
 
-47:                                               ; preds = %32
-  %48 = load ptr, ptr %6, align 8
-  %49 = getelementptr inbounds i8, ptr %48, i64 8
-  store ptr %49, ptr %6, align 8
-  %50 = load i32, ptr %48, align 8
-  %51 = trunc i32 %50 to i8
-  %52 = load ptr, ptr %11, align 8
-  %53 = load i32, ptr %14, align 4
-  %54 = sext i32 %53 to i64
-  %55 = getelementptr inbounds %union.jvalue, ptr %52, i64 %54
-  store i8 %51, ptr %55, align 8
-  br label %117
+51:                                               ; preds = %37
+  %52 = load ptr, ptr %6, align 8
+  %53 = getelementptr inbounds i8, ptr %52, i64 8
+  store ptr %53, ptr %6, align 8
+  %54 = load i32, ptr %52, align 8
+  %55 = trunc i32 %54 to i8
+  %56 = load i32, ptr %15, align 4
+  %57 = sext i32 %56 to i64
+  %58 = getelementptr inbounds %union.jvalue, ptr %32, i64 %57
+  store i8 %55, ptr %58, align 8
+  br label %112
 
-56:                                               ; preds = %32
-  %57 = load ptr, ptr %6, align 8
-  %58 = getelementptr inbounds i8, ptr %57, i64 8
-  store ptr %58, ptr %6, align 8
-  %59 = load i32, ptr %57, align 8
-  %60 = trunc i32 %59 to i16
-  %61 = load ptr, ptr %11, align 8
-  %62 = load i32, ptr %14, align 4
-  %63 = sext i32 %62 to i64
-  %64 = getelementptr inbounds %union.jvalue, ptr %61, i64 %63
-  store i16 %60, ptr %64, align 8
-  br label %117
+59:                                               ; preds = %37
+  %60 = load ptr, ptr %6, align 8
+  %61 = getelementptr inbounds i8, ptr %60, i64 8
+  store ptr %61, ptr %6, align 8
+  %62 = load i32, ptr %60, align 8
+  %63 = trunc i32 %62 to i16
+  %64 = load i32, ptr %15, align 4
+  %65 = sext i32 %64 to i64
+  %66 = getelementptr inbounds %union.jvalue, ptr %32, i64 %65
+  store i16 %63, ptr %66, align 8
+  br label %112
 
-65:                                               ; preds = %32
-  %66 = load ptr, ptr %6, align 8
-  %67 = getelementptr inbounds i8, ptr %66, i64 8
-  store ptr %67, ptr %6, align 8
-  %68 = load i32, ptr %66, align 8
-  %69 = trunc i32 %68 to i16
-  %70 = zext i16 %69 to i32
-  %71 = load ptr, ptr %11, align 8
-  %72 = load i32, ptr %14, align 4
+67:                                               ; preds = %37
+  %68 = load ptr, ptr %6, align 8
+  %69 = getelementptr inbounds i8, ptr %68, i64 8
+  store ptr %69, ptr %6, align 8
+  %70 = load i32, ptr %68, align 8
+  %71 = trunc i32 %70 to i16
+  %72 = load i32, ptr %15, align 4
   %73 = sext i32 %72 to i64
-  %74 = getelementptr inbounds %union.jvalue, ptr %71, i64 %73
-  store i32 %70, ptr %74, align 8
-  br label %117
+  %74 = getelementptr inbounds %union.jvalue, ptr %32, i64 %73
+  store i16 %71, ptr %74, align 8
+  br label %112
 
-75:                                               ; preds = %32
+75:                                               ; preds = %37
   %76 = load ptr, ptr %6, align 8
   %77 = getelementptr inbounds i8, ptr %76, i64 8
   store ptr %77, ptr %6, align 8
   %78 = load i32, ptr %76, align 8
-  %79 = load ptr, ptr %11, align 8
-  %80 = load i32, ptr %14, align 4
-  %81 = sext i32 %80 to i64
-  %82 = getelementptr inbounds %union.jvalue, ptr %79, i64 %81
-  store i32 %78, ptr %82, align 8
-  br label %117
+  %79 = load i32, ptr %15, align 4
+  %80 = sext i32 %79 to i64
+  %81 = getelementptr inbounds %union.jvalue, ptr %32, i64 %80
+  store i32 %78, ptr %81, align 8
+  br label %112
 
-83:                                               ; preds = %32
-  %84 = load ptr, ptr %6, align 8
-  %85 = getelementptr inbounds i8, ptr %84, i64 8
-  store ptr %85, ptr %6, align 8
-  %86 = load i32, ptr %84, align 8
-  %87 = sext i32 %86 to i64
-  %88 = load ptr, ptr %11, align 8
-  %89 = load i32, ptr %14, align 4
-  %90 = sext i32 %89 to i64
-  %91 = getelementptr inbounds %union.jvalue, ptr %88, i64 %90
-  store i64 %87, ptr %91, align 8
-  br label %117
+82:                                               ; preds = %37
+  %83 = load ptr, ptr %6, align 8
+  %84 = getelementptr inbounds i8, ptr %83, i64 8
+  store ptr %84, ptr %6, align 8
+  %85 = load i32, ptr %83, align 8
+  %86 = sext i32 %85 to i64
+  %87 = load i32, ptr %15, align 4
+  %88 = sext i32 %87 to i64
+  %89 = getelementptr inbounds %union.jvalue, ptr %32, i64 %88
+  store i64 %86, ptr %89, align 8
+  br label %112
 
-92:                                               ; preds = %32
-  %93 = load ptr, ptr %6, align 8
-  %94 = getelementptr inbounds i8, ptr %93, i64 8
-  store ptr %94, ptr %6, align 8
-  %95 = load double, ptr %93, align 8
-  %96 = load ptr, ptr %11, align 8
-  %97 = load i32, ptr %14, align 4
-  %98 = sext i32 %97 to i64
-  %99 = getelementptr inbounds %union.jvalue, ptr %96, i64 %98
-  store double %95, ptr %99, align 8
-  br label %117
+90:                                               ; preds = %37
+  %91 = load ptr, ptr %6, align 8
+  %92 = getelementptr inbounds i8, ptr %91, i64 8
+  store ptr %92, ptr %6, align 8
+  %93 = load double, ptr %91, align 8
+  %94 = fptrunc double %93 to float
+  %95 = load i32, ptr %15, align 4
+  %96 = sext i32 %95 to i64
+  %97 = getelementptr inbounds %union.jvalue, ptr %32, i64 %96
+  store float %94, ptr %97, align 8
+  br label %112
 
-100:                                              ; preds = %32
-  %101 = load ptr, ptr %6, align 8
-  %102 = getelementptr inbounds i8, ptr %101, i64 8
-  store ptr %102, ptr %6, align 8
-  %103 = load double, ptr %101, align 8
-  %104 = fptrunc double %103 to float
-  %105 = load ptr, ptr %11, align 8
-  %106 = load i32, ptr %14, align 4
-  %107 = sext i32 %106 to i64
-  %108 = getelementptr inbounds %union.jvalue, ptr %105, i64 %107
-  store float %104, ptr %108, align 8
-  br label %117
+98:                                               ; preds = %37
+  %99 = load ptr, ptr %6, align 8
+  %100 = getelementptr inbounds i8, ptr %99, i64 8
+  store ptr %100, ptr %6, align 8
+  %101 = load double, ptr %99, align 8
+  %102 = load i32, ptr %15, align 4
+  %103 = sext i32 %102 to i64
+  %104 = getelementptr inbounds %union.jvalue, ptr %32, i64 %103
+  store double %101, ptr %104, align 8
+  br label %112
 
-109:                                              ; preds = %32
-  %110 = load ptr, ptr %6, align 8
-  %111 = getelementptr inbounds i8, ptr %110, i64 8
-  store ptr %111, ptr %6, align 8
-  %112 = load ptr, ptr %110, align 8
-  %113 = load ptr, ptr %11, align 8
-  %114 = load i32, ptr %14, align 4
-  %115 = sext i32 %114 to i64
-  %116 = getelementptr inbounds %union.jvalue, ptr %113, i64 %115
-  store ptr %112, ptr %116, align 8
-  br label %117
+105:                                              ; preds = %37
+  %106 = load ptr, ptr %6, align 8
+  %107 = getelementptr inbounds i8, ptr %106, i64 8
+  store ptr %107, ptr %6, align 8
+  %108 = load ptr, ptr %106, align 8
+  %109 = load i32, ptr %15, align 4
+  %110 = sext i32 %109 to i64
+  %111 = getelementptr inbounds %union.jvalue, ptr %32, i64 %110
+  store ptr %108, ptr %111, align 8
+  br label %112
 
-117:                                              ; preds = %32, %109, %100, %92, %83, %75, %65, %56, %47, %38
-  br label %118
+112:                                              ; preds = %37, %105, %98, %90, %82, %75, %67, %59, %51, %43
+  br label %113
 
-118:                                              ; preds = %117
-  %119 = load i32, ptr %14, align 4
-  %120 = add nsw i32 %119, 1
-  store i32 %120, ptr %14, align 4
-  br label %28, !llvm.loop !15
+113:                                              ; preds = %112
+  %114 = load i32, ptr %15, align 4
+  %115 = add nsw i32 %114, 1
+  store i32 %115, ptr %15, align 4
+  br label %33, !llvm.loop !15
 
-121:                                              ; preds = %28
-  br label %122
-
-122:                                              ; preds = %121
-  %123 = load ptr, ptr %10, align 8
-  %124 = load ptr, ptr %123, align 8
-  %125 = getelementptr inbounds %struct.JNINativeInterface_, ptr %124, i32 0, i32 75
-  %126 = load ptr, ptr %125, align 8
-  %127 = load ptr, ptr %11, align 8
-  %128 = load ptr, ptr %7, align 8
-  %129 = load ptr, ptr %8, align 8
-  %130 = load ptr, ptr %9, align 8
-  %131 = load ptr, ptr %10, align 8
-  %132 = call i16 %126(ptr noundef %131, ptr noundef %130, ptr noundef %129, ptr noundef %128, ptr noundef %127)
-  ret i16 %132
+116:                                              ; preds = %33
+  %117 = load ptr, ptr %10, align 8
+  %118 = load ptr, ptr %117, align 8
+  %119 = getelementptr inbounds %struct.JNINativeInterface_, ptr %118, i32 0, i32 75
+  %120 = load ptr, ptr %119, align 8
+  %121 = load ptr, ptr %7, align 8
+  %122 = load ptr, ptr %8, align 8
+  %123 = load ptr, ptr %9, align 8
+  %124 = load ptr, ptr %10, align 8
+  %125 = call i16 %120(ptr noundef %124, ptr noundef %123, ptr noundef %122, ptr noundef %121, ptr noundef %32)
+  %126 = load ptr, ptr %13, align 8
+  call void @llvm.stackrestore(ptr %126)
+  ret i16 %125
 }
 
 ; Function Attrs: noinline nounwind optnone uwtable
@@ -2595,25 +2480,21 @@ define dso_local dllexport i16 @JNI_CallStaticCharMethod(ptr noundef %0, ptr nou
   %4 = alloca ptr, align 8
   %5 = alloca ptr, align 8
   %6 = alloca ptr, align 8
-  %7 = alloca i16, align 2
-  %8 = alloca ptr, align 8
+  %7 = alloca ptr, align 8
+  %8 = alloca i16, align 2
   store ptr %2, ptr %4, align 8
   store ptr %1, ptr %5, align 8
   store ptr %0, ptr %6, align 8
-  call void @llvm.va_start(ptr %8)
-  %9 = load ptr, ptr %6, align 8
-  %10 = load ptr, ptr %9, align 8
-  %11 = getelementptr inbounds %struct.JNINativeInterface_, ptr %10, i32 0, i32 124
-  %12 = load ptr, ptr %11, align 8
-  %13 = load ptr, ptr %8, align 8
-  %14 = load ptr, ptr %4, align 8
-  %15 = load ptr, ptr %5, align 8
-  %16 = load ptr, ptr %6, align 8
-  %17 = call i16 %12(ptr noundef %16, ptr noundef %15, ptr noundef %14, ptr noundef %13)
-  store i16 %17, ptr %7, align 2
-  call void @llvm.va_end(ptr %8)
-  %18 = load i16, ptr %7, align 2
-  ret i16 %18
+  call void @llvm.va_start(ptr %7)
+  %9 = load ptr, ptr %7, align 8
+  %10 = load ptr, ptr %4, align 8
+  %11 = load ptr, ptr %5, align 8
+  %12 = load ptr, ptr %6, align 8
+  %13 = call i16 @JNI_CallStaticCharMethodV(ptr noundef %12, ptr noundef %11, ptr noundef %10, ptr noundef %9)
+  store i16 %13, ptr %8, align 2
+  call void @llvm.va_end(ptr %7)
+  %14 = load i16, ptr %8, align 2
+  ret i16 %14
 }
 
 ; Function Attrs: noinline nounwind optnone uwtable
@@ -2622,196 +2503,189 @@ define dso_local dllexport i16 @JNI_CallStaticCharMethodV(ptr noundef %0, ptr no
   %6 = alloca ptr, align 8
   %7 = alloca ptr, align 8
   %8 = alloca ptr, align 8
-  %9 = alloca ptr, align 8
-  %10 = alloca [257 x i8], align 16
-  %11 = alloca i32, align 4
-  %12 = alloca i32, align 4
+  %9 = alloca [256 x i8], align 16
+  %10 = alloca i32, align 4
+  %11 = alloca ptr, align 8
+  %12 = alloca i64, align 8
+  %13 = alloca i32, align 4
   store ptr %3, ptr %5, align 8
   store ptr %2, ptr %6, align 8
   store ptr %1, ptr %7, align 8
   store ptr %0, ptr %8, align 8
-  br label %13
-
-13:                                               ; preds = %4
   %14 = load ptr, ptr %8, align 8
   %15 = load ptr, ptr %14, align 8
   %16 = getelementptr inbounds %struct.JNINativeInterface_, ptr %15, i32 0, i32 0
   %17 = load ptr, ptr %16, align 8
-  %18 = getelementptr inbounds [257 x i8], ptr %10, i64 0, i64 0
+  %18 = getelementptr inbounds [256 x i8], ptr %9, i64 0, i64 0
   %19 = load ptr, ptr %6, align 8
   %20 = load ptr, ptr %8, align 8
   %21 = call i32 %17(ptr noundef %20, ptr noundef %19, ptr noundef %18)
-  store i32 %21, ptr %11, align 4
-  %22 = load i32, ptr %11, align 4
-  %23 = zext i32 %22 to i64
-  %24 = mul i64 %23, 8
-  %25 = alloca i8, i64 %24, align 16
-  store ptr %25, ptr %9, align 8
-  store i32 0, ptr %12, align 4
-  br label %26
+  store i32 %21, ptr %10, align 4
+  %22 = load ptr, ptr %8, align 8
+  %23 = load ptr, ptr %22, align 8
+  %24 = getelementptr inbounds %struct.JNINativeInterface_, ptr %23, i32 0, i32 1
+  %25 = load ptr, ptr %24, align 8
+  %26 = load i32, ptr %10, align 4
+  call void %25(i32 noundef %26)
+  %27 = load i32, ptr %10, align 4
+  %28 = zext i32 %27 to i64
+  %29 = call ptr @llvm.stacksave()
+  store ptr %29, ptr %11, align 8
+  %30 = alloca %union.jvalue, i64 %28, align 16
+  store i64 %28, ptr %12, align 8
+  store i32 0, ptr %13, align 4
+  br label %31
 
-26:                                               ; preds = %116, %13
-  %27 = load i32, ptr %12, align 4
-  %28 = load i32, ptr %11, align 4
-  %29 = icmp slt i32 %27, %28
-  br i1 %29, label %30, label %119
+31:                                               ; preds = %111, %4
+  %32 = load i32, ptr %13, align 4
+  %33 = load i32, ptr %10, align 4
+  %34 = icmp slt i32 %32, %33
+  br i1 %34, label %35, label %114
 
-30:                                               ; preds = %26
-  %31 = load i32, ptr %12, align 4
-  %32 = sext i32 %31 to i64
-  %33 = getelementptr inbounds [257 x i8], ptr %10, i64 0, i64 %32
-  %34 = load i8, ptr %33, align 1
-  %35 = sext i8 %34 to i32
-  switch i32 %35, label %115 [
-    i32 90, label %36
-    i32 66, label %45
-    i32 83, label %54
-    i32 67, label %63
+35:                                               ; preds = %31
+  %36 = load i32, ptr %13, align 4
+  %37 = sext i32 %36 to i64
+  %38 = getelementptr inbounds [256 x i8], ptr %9, i64 0, i64 %37
+  %39 = load i8, ptr %38, align 1
+  %40 = sext i8 %39 to i32
+  switch i32 %40, label %110 [
+    i32 90, label %41
+    i32 66, label %49
+    i32 67, label %57
+    i32 83, label %65
     i32 73, label %73
-    i32 74, label %81
-    i32 68, label %90
-    i32 70, label %98
-    i32 76, label %107
+    i32 74, label %80
+    i32 70, label %88
+    i32 68, label %96
+    i32 76, label %103
   ]
 
-36:                                               ; preds = %30
-  %37 = load ptr, ptr %5, align 8
-  %38 = getelementptr inbounds i8, ptr %37, i64 8
-  store ptr %38, ptr %5, align 8
-  %39 = load i32, ptr %37, align 8
-  %40 = trunc i32 %39 to i8
-  %41 = load ptr, ptr %9, align 8
-  %42 = load i32, ptr %12, align 4
-  %43 = sext i32 %42 to i64
-  %44 = getelementptr inbounds %union.jvalue, ptr %41, i64 %43
-  store i8 %40, ptr %44, align 8
-  br label %115
+41:                                               ; preds = %35
+  %42 = load ptr, ptr %5, align 8
+  %43 = getelementptr inbounds i8, ptr %42, i64 8
+  store ptr %43, ptr %5, align 8
+  %44 = load i32, ptr %42, align 8
+  %45 = trunc i32 %44 to i8
+  %46 = load i32, ptr %13, align 4
+  %47 = sext i32 %46 to i64
+  %48 = getelementptr inbounds %union.jvalue, ptr %30, i64 %47
+  store i8 %45, ptr %48, align 8
+  br label %110
 
-45:                                               ; preds = %30
-  %46 = load ptr, ptr %5, align 8
-  %47 = getelementptr inbounds i8, ptr %46, i64 8
-  store ptr %47, ptr %5, align 8
-  %48 = load i32, ptr %46, align 8
-  %49 = trunc i32 %48 to i8
-  %50 = load ptr, ptr %9, align 8
-  %51 = load i32, ptr %12, align 4
-  %52 = sext i32 %51 to i64
-  %53 = getelementptr inbounds %union.jvalue, ptr %50, i64 %52
-  store i8 %49, ptr %53, align 8
-  br label %115
+49:                                               ; preds = %35
+  %50 = load ptr, ptr %5, align 8
+  %51 = getelementptr inbounds i8, ptr %50, i64 8
+  store ptr %51, ptr %5, align 8
+  %52 = load i32, ptr %50, align 8
+  %53 = trunc i32 %52 to i8
+  %54 = load i32, ptr %13, align 4
+  %55 = sext i32 %54 to i64
+  %56 = getelementptr inbounds %union.jvalue, ptr %30, i64 %55
+  store i8 %53, ptr %56, align 8
+  br label %110
 
-54:                                               ; preds = %30
-  %55 = load ptr, ptr %5, align 8
-  %56 = getelementptr inbounds i8, ptr %55, i64 8
-  store ptr %56, ptr %5, align 8
-  %57 = load i32, ptr %55, align 8
-  %58 = trunc i32 %57 to i16
-  %59 = load ptr, ptr %9, align 8
-  %60 = load i32, ptr %12, align 4
-  %61 = sext i32 %60 to i64
-  %62 = getelementptr inbounds %union.jvalue, ptr %59, i64 %61
-  store i16 %58, ptr %62, align 8
-  br label %115
+57:                                               ; preds = %35
+  %58 = load ptr, ptr %5, align 8
+  %59 = getelementptr inbounds i8, ptr %58, i64 8
+  store ptr %59, ptr %5, align 8
+  %60 = load i32, ptr %58, align 8
+  %61 = trunc i32 %60 to i16
+  %62 = load i32, ptr %13, align 4
+  %63 = sext i32 %62 to i64
+  %64 = getelementptr inbounds %union.jvalue, ptr %30, i64 %63
+  store i16 %61, ptr %64, align 8
+  br label %110
 
-63:                                               ; preds = %30
-  %64 = load ptr, ptr %5, align 8
-  %65 = getelementptr inbounds i8, ptr %64, i64 8
-  store ptr %65, ptr %5, align 8
-  %66 = load i32, ptr %64, align 8
-  %67 = trunc i32 %66 to i16
-  %68 = zext i16 %67 to i32
-  %69 = load ptr, ptr %9, align 8
-  %70 = load i32, ptr %12, align 4
+65:                                               ; preds = %35
+  %66 = load ptr, ptr %5, align 8
+  %67 = getelementptr inbounds i8, ptr %66, i64 8
+  store ptr %67, ptr %5, align 8
+  %68 = load i32, ptr %66, align 8
+  %69 = trunc i32 %68 to i16
+  %70 = load i32, ptr %13, align 4
   %71 = sext i32 %70 to i64
-  %72 = getelementptr inbounds %union.jvalue, ptr %69, i64 %71
-  store i32 %68, ptr %72, align 8
-  br label %115
+  %72 = getelementptr inbounds %union.jvalue, ptr %30, i64 %71
+  store i16 %69, ptr %72, align 8
+  br label %110
 
-73:                                               ; preds = %30
+73:                                               ; preds = %35
   %74 = load ptr, ptr %5, align 8
   %75 = getelementptr inbounds i8, ptr %74, i64 8
   store ptr %75, ptr %5, align 8
   %76 = load i32, ptr %74, align 8
-  %77 = load ptr, ptr %9, align 8
-  %78 = load i32, ptr %12, align 4
-  %79 = sext i32 %78 to i64
-  %80 = getelementptr inbounds %union.jvalue, ptr %77, i64 %79
-  store i32 %76, ptr %80, align 8
-  br label %115
+  %77 = load i32, ptr %13, align 4
+  %78 = sext i32 %77 to i64
+  %79 = getelementptr inbounds %union.jvalue, ptr %30, i64 %78
+  store i32 %76, ptr %79, align 8
+  br label %110
 
-81:                                               ; preds = %30
-  %82 = load ptr, ptr %5, align 8
-  %83 = getelementptr inbounds i8, ptr %82, i64 8
-  store ptr %83, ptr %5, align 8
-  %84 = load i32, ptr %82, align 8
-  %85 = sext i32 %84 to i64
-  %86 = load ptr, ptr %9, align 8
-  %87 = load i32, ptr %12, align 4
-  %88 = sext i32 %87 to i64
-  %89 = getelementptr inbounds %union.jvalue, ptr %86, i64 %88
-  store i64 %85, ptr %89, align 8
-  br label %115
+80:                                               ; preds = %35
+  %81 = load ptr, ptr %5, align 8
+  %82 = getelementptr inbounds i8, ptr %81, i64 8
+  store ptr %82, ptr %5, align 8
+  %83 = load i32, ptr %81, align 8
+  %84 = sext i32 %83 to i64
+  %85 = load i32, ptr %13, align 4
+  %86 = sext i32 %85 to i64
+  %87 = getelementptr inbounds %union.jvalue, ptr %30, i64 %86
+  store i64 %84, ptr %87, align 8
+  br label %110
 
-90:                                               ; preds = %30
-  %91 = load ptr, ptr %5, align 8
-  %92 = getelementptr inbounds i8, ptr %91, i64 8
-  store ptr %92, ptr %5, align 8
-  %93 = load double, ptr %91, align 8
-  %94 = load ptr, ptr %9, align 8
-  %95 = load i32, ptr %12, align 4
-  %96 = sext i32 %95 to i64
-  %97 = getelementptr inbounds %union.jvalue, ptr %94, i64 %96
-  store double %93, ptr %97, align 8
-  br label %115
+88:                                               ; preds = %35
+  %89 = load ptr, ptr %5, align 8
+  %90 = getelementptr inbounds i8, ptr %89, i64 8
+  store ptr %90, ptr %5, align 8
+  %91 = load double, ptr %89, align 8
+  %92 = fptrunc double %91 to float
+  %93 = load i32, ptr %13, align 4
+  %94 = sext i32 %93 to i64
+  %95 = getelementptr inbounds %union.jvalue, ptr %30, i64 %94
+  store float %92, ptr %95, align 8
+  br label %110
 
-98:                                               ; preds = %30
-  %99 = load ptr, ptr %5, align 8
-  %100 = getelementptr inbounds i8, ptr %99, i64 8
-  store ptr %100, ptr %5, align 8
-  %101 = load double, ptr %99, align 8
-  %102 = fptrunc double %101 to float
-  %103 = load ptr, ptr %9, align 8
-  %104 = load i32, ptr %12, align 4
-  %105 = sext i32 %104 to i64
-  %106 = getelementptr inbounds %union.jvalue, ptr %103, i64 %105
-  store float %102, ptr %106, align 8
-  br label %115
+96:                                               ; preds = %35
+  %97 = load ptr, ptr %5, align 8
+  %98 = getelementptr inbounds i8, ptr %97, i64 8
+  store ptr %98, ptr %5, align 8
+  %99 = load double, ptr %97, align 8
+  %100 = load i32, ptr %13, align 4
+  %101 = sext i32 %100 to i64
+  %102 = getelementptr inbounds %union.jvalue, ptr %30, i64 %101
+  store double %99, ptr %102, align 8
+  br label %110
 
-107:                                              ; preds = %30
-  %108 = load ptr, ptr %5, align 8
-  %109 = getelementptr inbounds i8, ptr %108, i64 8
-  store ptr %109, ptr %5, align 8
-  %110 = load ptr, ptr %108, align 8
-  %111 = load ptr, ptr %9, align 8
-  %112 = load i32, ptr %12, align 4
-  %113 = sext i32 %112 to i64
-  %114 = getelementptr inbounds %union.jvalue, ptr %111, i64 %113
-  store ptr %110, ptr %114, align 8
-  br label %115
+103:                                              ; preds = %35
+  %104 = load ptr, ptr %5, align 8
+  %105 = getelementptr inbounds i8, ptr %104, i64 8
+  store ptr %105, ptr %5, align 8
+  %106 = load ptr, ptr %104, align 8
+  %107 = load i32, ptr %13, align 4
+  %108 = sext i32 %107 to i64
+  %109 = getelementptr inbounds %union.jvalue, ptr %30, i64 %108
+  store ptr %106, ptr %109, align 8
+  br label %110
 
-115:                                              ; preds = %30, %107, %98, %90, %81, %73, %63, %54, %45, %36
-  br label %116
+110:                                              ; preds = %35, %103, %96, %88, %80, %73, %65, %57, %49, %41
+  br label %111
 
-116:                                              ; preds = %115
-  %117 = load i32, ptr %12, align 4
-  %118 = add nsw i32 %117, 1
-  store i32 %118, ptr %12, align 4
-  br label %26, !llvm.loop !16
+111:                                              ; preds = %110
+  %112 = load i32, ptr %13, align 4
+  %113 = add nsw i32 %112, 1
+  store i32 %113, ptr %13, align 4
+  br label %31, !llvm.loop !16
 
-119:                                              ; preds = %26
-  br label %120
-
-120:                                              ; preds = %119
+114:                                              ; preds = %31
+  %115 = load ptr, ptr %8, align 8
+  %116 = load ptr, ptr %115, align 8
+  %117 = getelementptr inbounds %struct.JNINativeInterface_, ptr %116, i32 0, i32 125
+  %118 = load ptr, ptr %117, align 8
+  %119 = load ptr, ptr %6, align 8
+  %120 = load ptr, ptr %7, align 8
   %121 = load ptr, ptr %8, align 8
-  %122 = load ptr, ptr %121, align 8
-  %123 = getelementptr inbounds %struct.JNINativeInterface_, ptr %122, i32 0, i32 125
-  %124 = load ptr, ptr %123, align 8
-  %125 = load ptr, ptr %9, align 8
-  %126 = load ptr, ptr %6, align 8
-  %127 = load ptr, ptr %7, align 8
-  %128 = load ptr, ptr %8, align 8
-  %129 = call i16 %124(ptr noundef %128, ptr noundef %127, ptr noundef %126, ptr noundef %125)
-  ret i16 %129
+  %122 = call i16 %118(ptr noundef %121, ptr noundef %120, ptr noundef %119, ptr noundef %30)
+  %123 = load ptr, ptr %11, align 8
+  call void @llvm.stackrestore(ptr %123)
+  ret i16 %122
 }
 
 ; Function Attrs: noinline nounwind optnone uwtable
@@ -2819,25 +2693,21 @@ define dso_local dllexport i16 @JNI_CallShortMethod(ptr noundef %0, ptr noundef 
   %4 = alloca ptr, align 8
   %5 = alloca ptr, align 8
   %6 = alloca ptr, align 8
-  %7 = alloca i16, align 2
-  %8 = alloca ptr, align 8
+  %7 = alloca ptr, align 8
+  %8 = alloca i16, align 2
   store ptr %2, ptr %4, align 8
   store ptr %1, ptr %5, align 8
   store ptr %0, ptr %6, align 8
-  call void @llvm.va_start(ptr %8)
-  %9 = load ptr, ptr %6, align 8
-  %10 = load ptr, ptr %9, align 8
-  %11 = getelementptr inbounds %struct.JNINativeInterface_, ptr %10, i32 0, i32 47
-  %12 = load ptr, ptr %11, align 8
-  %13 = load ptr, ptr %8, align 8
-  %14 = load ptr, ptr %4, align 8
-  %15 = load ptr, ptr %5, align 8
-  %16 = load ptr, ptr %6, align 8
-  %17 = call i16 %12(ptr noundef %16, ptr noundef %15, ptr noundef %14, ptr noundef %13)
-  store i16 %17, ptr %7, align 2
-  call void @llvm.va_end(ptr %8)
-  %18 = load i16, ptr %7, align 2
-  ret i16 %18
+  call void @llvm.va_start(ptr %7)
+  %9 = load ptr, ptr %7, align 8
+  %10 = load ptr, ptr %4, align 8
+  %11 = load ptr, ptr %5, align 8
+  %12 = load ptr, ptr %6, align 8
+  %13 = call i16 @JNI_CallShortMethodV(ptr noundef %12, ptr noundef %11, ptr noundef %10, ptr noundef %9)
+  store i16 %13, ptr %8, align 2
+  call void @llvm.va_end(ptr %7)
+  %14 = load i16, ptr %8, align 2
+  ret i16 %14
 }
 
 ; Function Attrs: noinline nounwind optnone uwtable
@@ -2846,196 +2716,189 @@ define dso_local dllexport i16 @JNI_CallShortMethodV(ptr noundef %0, ptr noundef
   %6 = alloca ptr, align 8
   %7 = alloca ptr, align 8
   %8 = alloca ptr, align 8
-  %9 = alloca ptr, align 8
-  %10 = alloca [257 x i8], align 16
-  %11 = alloca i32, align 4
-  %12 = alloca i32, align 4
+  %9 = alloca [256 x i8], align 16
+  %10 = alloca i32, align 4
+  %11 = alloca ptr, align 8
+  %12 = alloca i64, align 8
+  %13 = alloca i32, align 4
   store ptr %3, ptr %5, align 8
   store ptr %2, ptr %6, align 8
   store ptr %1, ptr %7, align 8
   store ptr %0, ptr %8, align 8
-  br label %13
-
-13:                                               ; preds = %4
   %14 = load ptr, ptr %8, align 8
   %15 = load ptr, ptr %14, align 8
   %16 = getelementptr inbounds %struct.JNINativeInterface_, ptr %15, i32 0, i32 0
   %17 = load ptr, ptr %16, align 8
-  %18 = getelementptr inbounds [257 x i8], ptr %10, i64 0, i64 0
+  %18 = getelementptr inbounds [256 x i8], ptr %9, i64 0, i64 0
   %19 = load ptr, ptr %6, align 8
   %20 = load ptr, ptr %8, align 8
   %21 = call i32 %17(ptr noundef %20, ptr noundef %19, ptr noundef %18)
-  store i32 %21, ptr %11, align 4
-  %22 = load i32, ptr %11, align 4
-  %23 = zext i32 %22 to i64
-  %24 = mul i64 %23, 8
-  %25 = alloca i8, i64 %24, align 16
-  store ptr %25, ptr %9, align 8
-  store i32 0, ptr %12, align 4
-  br label %26
+  store i32 %21, ptr %10, align 4
+  %22 = load ptr, ptr %8, align 8
+  %23 = load ptr, ptr %22, align 8
+  %24 = getelementptr inbounds %struct.JNINativeInterface_, ptr %23, i32 0, i32 1
+  %25 = load ptr, ptr %24, align 8
+  %26 = load i32, ptr %10, align 4
+  call void %25(i32 noundef %26)
+  %27 = load i32, ptr %10, align 4
+  %28 = zext i32 %27 to i64
+  %29 = call ptr @llvm.stacksave()
+  store ptr %29, ptr %11, align 8
+  %30 = alloca %union.jvalue, i64 %28, align 16
+  store i64 %28, ptr %12, align 8
+  store i32 0, ptr %13, align 4
+  br label %31
 
-26:                                               ; preds = %116, %13
-  %27 = load i32, ptr %12, align 4
-  %28 = load i32, ptr %11, align 4
-  %29 = icmp slt i32 %27, %28
-  br i1 %29, label %30, label %119
+31:                                               ; preds = %111, %4
+  %32 = load i32, ptr %13, align 4
+  %33 = load i32, ptr %10, align 4
+  %34 = icmp slt i32 %32, %33
+  br i1 %34, label %35, label %114
 
-30:                                               ; preds = %26
-  %31 = load i32, ptr %12, align 4
-  %32 = sext i32 %31 to i64
-  %33 = getelementptr inbounds [257 x i8], ptr %10, i64 0, i64 %32
-  %34 = load i8, ptr %33, align 1
-  %35 = sext i8 %34 to i32
-  switch i32 %35, label %115 [
-    i32 90, label %36
-    i32 66, label %45
-    i32 83, label %54
-    i32 67, label %63
+35:                                               ; preds = %31
+  %36 = load i32, ptr %13, align 4
+  %37 = sext i32 %36 to i64
+  %38 = getelementptr inbounds [256 x i8], ptr %9, i64 0, i64 %37
+  %39 = load i8, ptr %38, align 1
+  %40 = sext i8 %39 to i32
+  switch i32 %40, label %110 [
+    i32 90, label %41
+    i32 66, label %49
+    i32 67, label %57
+    i32 83, label %65
     i32 73, label %73
-    i32 74, label %81
-    i32 68, label %90
-    i32 70, label %98
-    i32 76, label %107
+    i32 74, label %80
+    i32 70, label %88
+    i32 68, label %96
+    i32 76, label %103
   ]
 
-36:                                               ; preds = %30
-  %37 = load ptr, ptr %5, align 8
-  %38 = getelementptr inbounds i8, ptr %37, i64 8
-  store ptr %38, ptr %5, align 8
-  %39 = load i32, ptr %37, align 8
-  %40 = trunc i32 %39 to i8
-  %41 = load ptr, ptr %9, align 8
-  %42 = load i32, ptr %12, align 4
-  %43 = sext i32 %42 to i64
-  %44 = getelementptr inbounds %union.jvalue, ptr %41, i64 %43
-  store i8 %40, ptr %44, align 8
-  br label %115
+41:                                               ; preds = %35
+  %42 = load ptr, ptr %5, align 8
+  %43 = getelementptr inbounds i8, ptr %42, i64 8
+  store ptr %43, ptr %5, align 8
+  %44 = load i32, ptr %42, align 8
+  %45 = trunc i32 %44 to i8
+  %46 = load i32, ptr %13, align 4
+  %47 = sext i32 %46 to i64
+  %48 = getelementptr inbounds %union.jvalue, ptr %30, i64 %47
+  store i8 %45, ptr %48, align 8
+  br label %110
 
-45:                                               ; preds = %30
-  %46 = load ptr, ptr %5, align 8
-  %47 = getelementptr inbounds i8, ptr %46, i64 8
-  store ptr %47, ptr %5, align 8
-  %48 = load i32, ptr %46, align 8
-  %49 = trunc i32 %48 to i8
-  %50 = load ptr, ptr %9, align 8
-  %51 = load i32, ptr %12, align 4
-  %52 = sext i32 %51 to i64
-  %53 = getelementptr inbounds %union.jvalue, ptr %50, i64 %52
-  store i8 %49, ptr %53, align 8
-  br label %115
+49:                                               ; preds = %35
+  %50 = load ptr, ptr %5, align 8
+  %51 = getelementptr inbounds i8, ptr %50, i64 8
+  store ptr %51, ptr %5, align 8
+  %52 = load i32, ptr %50, align 8
+  %53 = trunc i32 %52 to i8
+  %54 = load i32, ptr %13, align 4
+  %55 = sext i32 %54 to i64
+  %56 = getelementptr inbounds %union.jvalue, ptr %30, i64 %55
+  store i8 %53, ptr %56, align 8
+  br label %110
 
-54:                                               ; preds = %30
-  %55 = load ptr, ptr %5, align 8
-  %56 = getelementptr inbounds i8, ptr %55, i64 8
-  store ptr %56, ptr %5, align 8
-  %57 = load i32, ptr %55, align 8
-  %58 = trunc i32 %57 to i16
-  %59 = load ptr, ptr %9, align 8
-  %60 = load i32, ptr %12, align 4
-  %61 = sext i32 %60 to i64
-  %62 = getelementptr inbounds %union.jvalue, ptr %59, i64 %61
-  store i16 %58, ptr %62, align 8
-  br label %115
+57:                                               ; preds = %35
+  %58 = load ptr, ptr %5, align 8
+  %59 = getelementptr inbounds i8, ptr %58, i64 8
+  store ptr %59, ptr %5, align 8
+  %60 = load i32, ptr %58, align 8
+  %61 = trunc i32 %60 to i16
+  %62 = load i32, ptr %13, align 4
+  %63 = sext i32 %62 to i64
+  %64 = getelementptr inbounds %union.jvalue, ptr %30, i64 %63
+  store i16 %61, ptr %64, align 8
+  br label %110
 
-63:                                               ; preds = %30
-  %64 = load ptr, ptr %5, align 8
-  %65 = getelementptr inbounds i8, ptr %64, i64 8
-  store ptr %65, ptr %5, align 8
-  %66 = load i32, ptr %64, align 8
-  %67 = trunc i32 %66 to i16
-  %68 = zext i16 %67 to i32
-  %69 = load ptr, ptr %9, align 8
-  %70 = load i32, ptr %12, align 4
+65:                                               ; preds = %35
+  %66 = load ptr, ptr %5, align 8
+  %67 = getelementptr inbounds i8, ptr %66, i64 8
+  store ptr %67, ptr %5, align 8
+  %68 = load i32, ptr %66, align 8
+  %69 = trunc i32 %68 to i16
+  %70 = load i32, ptr %13, align 4
   %71 = sext i32 %70 to i64
-  %72 = getelementptr inbounds %union.jvalue, ptr %69, i64 %71
-  store i32 %68, ptr %72, align 8
-  br label %115
+  %72 = getelementptr inbounds %union.jvalue, ptr %30, i64 %71
+  store i16 %69, ptr %72, align 8
+  br label %110
 
-73:                                               ; preds = %30
+73:                                               ; preds = %35
   %74 = load ptr, ptr %5, align 8
   %75 = getelementptr inbounds i8, ptr %74, i64 8
   store ptr %75, ptr %5, align 8
   %76 = load i32, ptr %74, align 8
-  %77 = load ptr, ptr %9, align 8
-  %78 = load i32, ptr %12, align 4
-  %79 = sext i32 %78 to i64
-  %80 = getelementptr inbounds %union.jvalue, ptr %77, i64 %79
-  store i32 %76, ptr %80, align 8
-  br label %115
+  %77 = load i32, ptr %13, align 4
+  %78 = sext i32 %77 to i64
+  %79 = getelementptr inbounds %union.jvalue, ptr %30, i64 %78
+  store i32 %76, ptr %79, align 8
+  br label %110
 
-81:                                               ; preds = %30
-  %82 = load ptr, ptr %5, align 8
-  %83 = getelementptr inbounds i8, ptr %82, i64 8
-  store ptr %83, ptr %5, align 8
-  %84 = load i32, ptr %82, align 8
-  %85 = sext i32 %84 to i64
-  %86 = load ptr, ptr %9, align 8
-  %87 = load i32, ptr %12, align 4
-  %88 = sext i32 %87 to i64
-  %89 = getelementptr inbounds %union.jvalue, ptr %86, i64 %88
-  store i64 %85, ptr %89, align 8
-  br label %115
+80:                                               ; preds = %35
+  %81 = load ptr, ptr %5, align 8
+  %82 = getelementptr inbounds i8, ptr %81, i64 8
+  store ptr %82, ptr %5, align 8
+  %83 = load i32, ptr %81, align 8
+  %84 = sext i32 %83 to i64
+  %85 = load i32, ptr %13, align 4
+  %86 = sext i32 %85 to i64
+  %87 = getelementptr inbounds %union.jvalue, ptr %30, i64 %86
+  store i64 %84, ptr %87, align 8
+  br label %110
 
-90:                                               ; preds = %30
-  %91 = load ptr, ptr %5, align 8
-  %92 = getelementptr inbounds i8, ptr %91, i64 8
-  store ptr %92, ptr %5, align 8
-  %93 = load double, ptr %91, align 8
-  %94 = load ptr, ptr %9, align 8
-  %95 = load i32, ptr %12, align 4
-  %96 = sext i32 %95 to i64
-  %97 = getelementptr inbounds %union.jvalue, ptr %94, i64 %96
-  store double %93, ptr %97, align 8
-  br label %115
+88:                                               ; preds = %35
+  %89 = load ptr, ptr %5, align 8
+  %90 = getelementptr inbounds i8, ptr %89, i64 8
+  store ptr %90, ptr %5, align 8
+  %91 = load double, ptr %89, align 8
+  %92 = fptrunc double %91 to float
+  %93 = load i32, ptr %13, align 4
+  %94 = sext i32 %93 to i64
+  %95 = getelementptr inbounds %union.jvalue, ptr %30, i64 %94
+  store float %92, ptr %95, align 8
+  br label %110
 
-98:                                               ; preds = %30
-  %99 = load ptr, ptr %5, align 8
-  %100 = getelementptr inbounds i8, ptr %99, i64 8
-  store ptr %100, ptr %5, align 8
-  %101 = load double, ptr %99, align 8
-  %102 = fptrunc double %101 to float
-  %103 = load ptr, ptr %9, align 8
-  %104 = load i32, ptr %12, align 4
-  %105 = sext i32 %104 to i64
-  %106 = getelementptr inbounds %union.jvalue, ptr %103, i64 %105
-  store float %102, ptr %106, align 8
-  br label %115
+96:                                               ; preds = %35
+  %97 = load ptr, ptr %5, align 8
+  %98 = getelementptr inbounds i8, ptr %97, i64 8
+  store ptr %98, ptr %5, align 8
+  %99 = load double, ptr %97, align 8
+  %100 = load i32, ptr %13, align 4
+  %101 = sext i32 %100 to i64
+  %102 = getelementptr inbounds %union.jvalue, ptr %30, i64 %101
+  store double %99, ptr %102, align 8
+  br label %110
 
-107:                                              ; preds = %30
-  %108 = load ptr, ptr %5, align 8
-  %109 = getelementptr inbounds i8, ptr %108, i64 8
-  store ptr %109, ptr %5, align 8
-  %110 = load ptr, ptr %108, align 8
-  %111 = load ptr, ptr %9, align 8
-  %112 = load i32, ptr %12, align 4
-  %113 = sext i32 %112 to i64
-  %114 = getelementptr inbounds %union.jvalue, ptr %111, i64 %113
-  store ptr %110, ptr %114, align 8
-  br label %115
+103:                                              ; preds = %35
+  %104 = load ptr, ptr %5, align 8
+  %105 = getelementptr inbounds i8, ptr %104, i64 8
+  store ptr %105, ptr %5, align 8
+  %106 = load ptr, ptr %104, align 8
+  %107 = load i32, ptr %13, align 4
+  %108 = sext i32 %107 to i64
+  %109 = getelementptr inbounds %union.jvalue, ptr %30, i64 %108
+  store ptr %106, ptr %109, align 8
+  br label %110
 
-115:                                              ; preds = %30, %107, %98, %90, %81, %73, %63, %54, %45, %36
-  br label %116
+110:                                              ; preds = %35, %103, %96, %88, %80, %73, %65, %57, %49, %41
+  br label %111
 
-116:                                              ; preds = %115
-  %117 = load i32, ptr %12, align 4
-  %118 = add nsw i32 %117, 1
-  store i32 %118, ptr %12, align 4
-  br label %26, !llvm.loop !17
+111:                                              ; preds = %110
+  %112 = load i32, ptr %13, align 4
+  %113 = add nsw i32 %112, 1
+  store i32 %113, ptr %13, align 4
+  br label %31, !llvm.loop !17
 
-119:                                              ; preds = %26
-  br label %120
-
-120:                                              ; preds = %119
+114:                                              ; preds = %31
+  %115 = load ptr, ptr %8, align 8
+  %116 = load ptr, ptr %115, align 8
+  %117 = getelementptr inbounds %struct.JNINativeInterface_, ptr %116, i32 0, i32 48
+  %118 = load ptr, ptr %117, align 8
+  %119 = load ptr, ptr %6, align 8
+  %120 = load ptr, ptr %7, align 8
   %121 = load ptr, ptr %8, align 8
-  %122 = load ptr, ptr %121, align 8
-  %123 = getelementptr inbounds %struct.JNINativeInterface_, ptr %122, i32 0, i32 48
-  %124 = load ptr, ptr %123, align 8
-  %125 = load ptr, ptr %9, align 8
-  %126 = load ptr, ptr %6, align 8
-  %127 = load ptr, ptr %7, align 8
-  %128 = load ptr, ptr %8, align 8
-  %129 = call i16 %124(ptr noundef %128, ptr noundef %127, ptr noundef %126, ptr noundef %125)
-  ret i16 %129
+  %122 = call i16 %118(ptr noundef %121, ptr noundef %120, ptr noundef %119, ptr noundef %30)
+  %123 = load ptr, ptr %11, align 8
+  call void @llvm.stackrestore(ptr %123)
+  ret i16 %122
 }
 
 ; Function Attrs: noinline nounwind optnone uwtable
@@ -3044,27 +2907,23 @@ define dso_local dllexport i16 @JNI_CallNonvirtualShortMethod(ptr noundef %0, pt
   %6 = alloca ptr, align 8
   %7 = alloca ptr, align 8
   %8 = alloca ptr, align 8
-  %9 = alloca i16, align 2
-  %10 = alloca ptr, align 8
+  %9 = alloca ptr, align 8
+  %10 = alloca i16, align 2
   store ptr %3, ptr %5, align 8
   store ptr %2, ptr %6, align 8
   store ptr %1, ptr %7, align 8
   store ptr %0, ptr %8, align 8
-  call void @llvm.va_start(ptr %10)
-  %11 = load ptr, ptr %8, align 8
-  %12 = load ptr, ptr %11, align 8
-  %13 = getelementptr inbounds %struct.JNINativeInterface_, ptr %12, i32 0, i32 77
-  %14 = load ptr, ptr %13, align 8
-  %15 = load ptr, ptr %10, align 8
-  %16 = load ptr, ptr %5, align 8
-  %17 = load ptr, ptr %6, align 8
-  %18 = load ptr, ptr %7, align 8
-  %19 = load ptr, ptr %8, align 8
-  %20 = call i16 %14(ptr noundef %19, ptr noundef %18, ptr noundef %17, ptr noundef %16, ptr noundef %15)
-  store i16 %20, ptr %9, align 2
-  call void @llvm.va_end(ptr %10)
-  %21 = load i16, ptr %9, align 2
-  ret i16 %21
+  call void @llvm.va_start(ptr %9)
+  %11 = load ptr, ptr %9, align 8
+  %12 = load ptr, ptr %5, align 8
+  %13 = load ptr, ptr %6, align 8
+  %14 = load ptr, ptr %7, align 8
+  %15 = load ptr, ptr %8, align 8
+  %16 = call i16 @JNI_CallNonvirtualShortMethodV(ptr noundef %15, ptr noundef %14, ptr noundef %13, ptr noundef %12, ptr noundef %11)
+  store i16 %16, ptr %10, align 2
+  call void @llvm.va_end(ptr %9)
+  %17 = load i16, ptr %10, align 2
+  ret i16 %17
 }
 
 ; Function Attrs: noinline nounwind optnone uwtable
@@ -3074,198 +2933,191 @@ define dso_local dllexport i16 @JNI_CallNonvirtualShortMethodV(ptr noundef %0, p
   %8 = alloca ptr, align 8
   %9 = alloca ptr, align 8
   %10 = alloca ptr, align 8
-  %11 = alloca ptr, align 8
-  %12 = alloca [257 x i8], align 16
-  %13 = alloca i32, align 4
-  %14 = alloca i32, align 4
+  %11 = alloca [256 x i8], align 16
+  %12 = alloca i32, align 4
+  %13 = alloca ptr, align 8
+  %14 = alloca i64, align 8
+  %15 = alloca i32, align 4
   store ptr %4, ptr %6, align 8
   store ptr %3, ptr %7, align 8
   store ptr %2, ptr %8, align 8
   store ptr %1, ptr %9, align 8
   store ptr %0, ptr %10, align 8
-  br label %15
-
-15:                                               ; preds = %5
   %16 = load ptr, ptr %10, align 8
   %17 = load ptr, ptr %16, align 8
   %18 = getelementptr inbounds %struct.JNINativeInterface_, ptr %17, i32 0, i32 0
   %19 = load ptr, ptr %18, align 8
-  %20 = getelementptr inbounds [257 x i8], ptr %12, i64 0, i64 0
+  %20 = getelementptr inbounds [256 x i8], ptr %11, i64 0, i64 0
   %21 = load ptr, ptr %7, align 8
   %22 = load ptr, ptr %10, align 8
   %23 = call i32 %19(ptr noundef %22, ptr noundef %21, ptr noundef %20)
-  store i32 %23, ptr %13, align 4
-  %24 = load i32, ptr %13, align 4
-  %25 = zext i32 %24 to i64
-  %26 = mul i64 %25, 8
-  %27 = alloca i8, i64 %26, align 16
-  store ptr %27, ptr %11, align 8
-  store i32 0, ptr %14, align 4
-  br label %28
+  store i32 %23, ptr %12, align 4
+  %24 = load ptr, ptr %10, align 8
+  %25 = load ptr, ptr %24, align 8
+  %26 = getelementptr inbounds %struct.JNINativeInterface_, ptr %25, i32 0, i32 1
+  %27 = load ptr, ptr %26, align 8
+  %28 = load i32, ptr %12, align 4
+  call void %27(i32 noundef %28)
+  %29 = load i32, ptr %12, align 4
+  %30 = zext i32 %29 to i64
+  %31 = call ptr @llvm.stacksave()
+  store ptr %31, ptr %13, align 8
+  %32 = alloca %union.jvalue, i64 %30, align 16
+  store i64 %30, ptr %14, align 8
+  store i32 0, ptr %15, align 4
+  br label %33
 
-28:                                               ; preds = %118, %15
-  %29 = load i32, ptr %14, align 4
-  %30 = load i32, ptr %13, align 4
-  %31 = icmp slt i32 %29, %30
-  br i1 %31, label %32, label %121
+33:                                               ; preds = %113, %5
+  %34 = load i32, ptr %15, align 4
+  %35 = load i32, ptr %12, align 4
+  %36 = icmp slt i32 %34, %35
+  br i1 %36, label %37, label %116
 
-32:                                               ; preds = %28
-  %33 = load i32, ptr %14, align 4
-  %34 = sext i32 %33 to i64
-  %35 = getelementptr inbounds [257 x i8], ptr %12, i64 0, i64 %34
-  %36 = load i8, ptr %35, align 1
-  %37 = sext i8 %36 to i32
-  switch i32 %37, label %117 [
-    i32 90, label %38
-    i32 66, label %47
-    i32 83, label %56
-    i32 67, label %65
+37:                                               ; preds = %33
+  %38 = load i32, ptr %15, align 4
+  %39 = sext i32 %38 to i64
+  %40 = getelementptr inbounds [256 x i8], ptr %11, i64 0, i64 %39
+  %41 = load i8, ptr %40, align 1
+  %42 = sext i8 %41 to i32
+  switch i32 %42, label %112 [
+    i32 90, label %43
+    i32 66, label %51
+    i32 67, label %59
+    i32 83, label %67
     i32 73, label %75
-    i32 74, label %83
-    i32 68, label %92
-    i32 70, label %100
-    i32 76, label %109
+    i32 74, label %82
+    i32 70, label %90
+    i32 68, label %98
+    i32 76, label %105
   ]
 
-38:                                               ; preds = %32
-  %39 = load ptr, ptr %6, align 8
-  %40 = getelementptr inbounds i8, ptr %39, i64 8
-  store ptr %40, ptr %6, align 8
-  %41 = load i32, ptr %39, align 8
-  %42 = trunc i32 %41 to i8
-  %43 = load ptr, ptr %11, align 8
-  %44 = load i32, ptr %14, align 4
-  %45 = sext i32 %44 to i64
-  %46 = getelementptr inbounds %union.jvalue, ptr %43, i64 %45
-  store i8 %42, ptr %46, align 8
-  br label %117
+43:                                               ; preds = %37
+  %44 = load ptr, ptr %6, align 8
+  %45 = getelementptr inbounds i8, ptr %44, i64 8
+  store ptr %45, ptr %6, align 8
+  %46 = load i32, ptr %44, align 8
+  %47 = trunc i32 %46 to i8
+  %48 = load i32, ptr %15, align 4
+  %49 = sext i32 %48 to i64
+  %50 = getelementptr inbounds %union.jvalue, ptr %32, i64 %49
+  store i8 %47, ptr %50, align 8
+  br label %112
 
-47:                                               ; preds = %32
-  %48 = load ptr, ptr %6, align 8
-  %49 = getelementptr inbounds i8, ptr %48, i64 8
-  store ptr %49, ptr %6, align 8
-  %50 = load i32, ptr %48, align 8
-  %51 = trunc i32 %50 to i8
-  %52 = load ptr, ptr %11, align 8
-  %53 = load i32, ptr %14, align 4
-  %54 = sext i32 %53 to i64
-  %55 = getelementptr inbounds %union.jvalue, ptr %52, i64 %54
-  store i8 %51, ptr %55, align 8
-  br label %117
+51:                                               ; preds = %37
+  %52 = load ptr, ptr %6, align 8
+  %53 = getelementptr inbounds i8, ptr %52, i64 8
+  store ptr %53, ptr %6, align 8
+  %54 = load i32, ptr %52, align 8
+  %55 = trunc i32 %54 to i8
+  %56 = load i32, ptr %15, align 4
+  %57 = sext i32 %56 to i64
+  %58 = getelementptr inbounds %union.jvalue, ptr %32, i64 %57
+  store i8 %55, ptr %58, align 8
+  br label %112
 
-56:                                               ; preds = %32
-  %57 = load ptr, ptr %6, align 8
-  %58 = getelementptr inbounds i8, ptr %57, i64 8
-  store ptr %58, ptr %6, align 8
-  %59 = load i32, ptr %57, align 8
-  %60 = trunc i32 %59 to i16
-  %61 = load ptr, ptr %11, align 8
-  %62 = load i32, ptr %14, align 4
-  %63 = sext i32 %62 to i64
-  %64 = getelementptr inbounds %union.jvalue, ptr %61, i64 %63
-  store i16 %60, ptr %64, align 8
-  br label %117
+59:                                               ; preds = %37
+  %60 = load ptr, ptr %6, align 8
+  %61 = getelementptr inbounds i8, ptr %60, i64 8
+  store ptr %61, ptr %6, align 8
+  %62 = load i32, ptr %60, align 8
+  %63 = trunc i32 %62 to i16
+  %64 = load i32, ptr %15, align 4
+  %65 = sext i32 %64 to i64
+  %66 = getelementptr inbounds %union.jvalue, ptr %32, i64 %65
+  store i16 %63, ptr %66, align 8
+  br label %112
 
-65:                                               ; preds = %32
-  %66 = load ptr, ptr %6, align 8
-  %67 = getelementptr inbounds i8, ptr %66, i64 8
-  store ptr %67, ptr %6, align 8
-  %68 = load i32, ptr %66, align 8
-  %69 = trunc i32 %68 to i16
-  %70 = zext i16 %69 to i32
-  %71 = load ptr, ptr %11, align 8
-  %72 = load i32, ptr %14, align 4
+67:                                               ; preds = %37
+  %68 = load ptr, ptr %6, align 8
+  %69 = getelementptr inbounds i8, ptr %68, i64 8
+  store ptr %69, ptr %6, align 8
+  %70 = load i32, ptr %68, align 8
+  %71 = trunc i32 %70 to i16
+  %72 = load i32, ptr %15, align 4
   %73 = sext i32 %72 to i64
-  %74 = getelementptr inbounds %union.jvalue, ptr %71, i64 %73
-  store i32 %70, ptr %74, align 8
-  br label %117
+  %74 = getelementptr inbounds %union.jvalue, ptr %32, i64 %73
+  store i16 %71, ptr %74, align 8
+  br label %112
 
-75:                                               ; preds = %32
+75:                                               ; preds = %37
   %76 = load ptr, ptr %6, align 8
   %77 = getelementptr inbounds i8, ptr %76, i64 8
   store ptr %77, ptr %6, align 8
   %78 = load i32, ptr %76, align 8
-  %79 = load ptr, ptr %11, align 8
-  %80 = load i32, ptr %14, align 4
-  %81 = sext i32 %80 to i64
-  %82 = getelementptr inbounds %union.jvalue, ptr %79, i64 %81
-  store i32 %78, ptr %82, align 8
-  br label %117
+  %79 = load i32, ptr %15, align 4
+  %80 = sext i32 %79 to i64
+  %81 = getelementptr inbounds %union.jvalue, ptr %32, i64 %80
+  store i32 %78, ptr %81, align 8
+  br label %112
 
-83:                                               ; preds = %32
-  %84 = load ptr, ptr %6, align 8
-  %85 = getelementptr inbounds i8, ptr %84, i64 8
-  store ptr %85, ptr %6, align 8
-  %86 = load i32, ptr %84, align 8
-  %87 = sext i32 %86 to i64
-  %88 = load ptr, ptr %11, align 8
-  %89 = load i32, ptr %14, align 4
-  %90 = sext i32 %89 to i64
-  %91 = getelementptr inbounds %union.jvalue, ptr %88, i64 %90
-  store i64 %87, ptr %91, align 8
-  br label %117
+82:                                               ; preds = %37
+  %83 = load ptr, ptr %6, align 8
+  %84 = getelementptr inbounds i8, ptr %83, i64 8
+  store ptr %84, ptr %6, align 8
+  %85 = load i32, ptr %83, align 8
+  %86 = sext i32 %85 to i64
+  %87 = load i32, ptr %15, align 4
+  %88 = sext i32 %87 to i64
+  %89 = getelementptr inbounds %union.jvalue, ptr %32, i64 %88
+  store i64 %86, ptr %89, align 8
+  br label %112
 
-92:                                               ; preds = %32
-  %93 = load ptr, ptr %6, align 8
-  %94 = getelementptr inbounds i8, ptr %93, i64 8
-  store ptr %94, ptr %6, align 8
-  %95 = load double, ptr %93, align 8
-  %96 = load ptr, ptr %11, align 8
-  %97 = load i32, ptr %14, align 4
-  %98 = sext i32 %97 to i64
-  %99 = getelementptr inbounds %union.jvalue, ptr %96, i64 %98
-  store double %95, ptr %99, align 8
-  br label %117
+90:                                               ; preds = %37
+  %91 = load ptr, ptr %6, align 8
+  %92 = getelementptr inbounds i8, ptr %91, i64 8
+  store ptr %92, ptr %6, align 8
+  %93 = load double, ptr %91, align 8
+  %94 = fptrunc double %93 to float
+  %95 = load i32, ptr %15, align 4
+  %96 = sext i32 %95 to i64
+  %97 = getelementptr inbounds %union.jvalue, ptr %32, i64 %96
+  store float %94, ptr %97, align 8
+  br label %112
 
-100:                                              ; preds = %32
-  %101 = load ptr, ptr %6, align 8
-  %102 = getelementptr inbounds i8, ptr %101, i64 8
-  store ptr %102, ptr %6, align 8
-  %103 = load double, ptr %101, align 8
-  %104 = fptrunc double %103 to float
-  %105 = load ptr, ptr %11, align 8
-  %106 = load i32, ptr %14, align 4
-  %107 = sext i32 %106 to i64
-  %108 = getelementptr inbounds %union.jvalue, ptr %105, i64 %107
-  store float %104, ptr %108, align 8
-  br label %117
+98:                                               ; preds = %37
+  %99 = load ptr, ptr %6, align 8
+  %100 = getelementptr inbounds i8, ptr %99, i64 8
+  store ptr %100, ptr %6, align 8
+  %101 = load double, ptr %99, align 8
+  %102 = load i32, ptr %15, align 4
+  %103 = sext i32 %102 to i64
+  %104 = getelementptr inbounds %union.jvalue, ptr %32, i64 %103
+  store double %101, ptr %104, align 8
+  br label %112
 
-109:                                              ; preds = %32
-  %110 = load ptr, ptr %6, align 8
-  %111 = getelementptr inbounds i8, ptr %110, i64 8
-  store ptr %111, ptr %6, align 8
-  %112 = load ptr, ptr %110, align 8
-  %113 = load ptr, ptr %11, align 8
-  %114 = load i32, ptr %14, align 4
-  %115 = sext i32 %114 to i64
-  %116 = getelementptr inbounds %union.jvalue, ptr %113, i64 %115
-  store ptr %112, ptr %116, align 8
-  br label %117
+105:                                              ; preds = %37
+  %106 = load ptr, ptr %6, align 8
+  %107 = getelementptr inbounds i8, ptr %106, i64 8
+  store ptr %107, ptr %6, align 8
+  %108 = load ptr, ptr %106, align 8
+  %109 = load i32, ptr %15, align 4
+  %110 = sext i32 %109 to i64
+  %111 = getelementptr inbounds %union.jvalue, ptr %32, i64 %110
+  store ptr %108, ptr %111, align 8
+  br label %112
 
-117:                                              ; preds = %32, %109, %100, %92, %83, %75, %65, %56, %47, %38
-  br label %118
+112:                                              ; preds = %37, %105, %98, %90, %82, %75, %67, %59, %51, %43
+  br label %113
 
-118:                                              ; preds = %117
-  %119 = load i32, ptr %14, align 4
-  %120 = add nsw i32 %119, 1
-  store i32 %120, ptr %14, align 4
-  br label %28, !llvm.loop !18
+113:                                              ; preds = %112
+  %114 = load i32, ptr %15, align 4
+  %115 = add nsw i32 %114, 1
+  store i32 %115, ptr %15, align 4
+  br label %33, !llvm.loop !18
 
-121:                                              ; preds = %28
-  br label %122
-
-122:                                              ; preds = %121
-  %123 = load ptr, ptr %10, align 8
-  %124 = load ptr, ptr %123, align 8
-  %125 = getelementptr inbounds %struct.JNINativeInterface_, ptr %124, i32 0, i32 78
-  %126 = load ptr, ptr %125, align 8
-  %127 = load ptr, ptr %11, align 8
-  %128 = load ptr, ptr %7, align 8
-  %129 = load ptr, ptr %8, align 8
-  %130 = load ptr, ptr %9, align 8
-  %131 = load ptr, ptr %10, align 8
-  %132 = call i16 %126(ptr noundef %131, ptr noundef %130, ptr noundef %129, ptr noundef %128, ptr noundef %127)
-  ret i16 %132
+116:                                              ; preds = %33
+  %117 = load ptr, ptr %10, align 8
+  %118 = load ptr, ptr %117, align 8
+  %119 = getelementptr inbounds %struct.JNINativeInterface_, ptr %118, i32 0, i32 78
+  %120 = load ptr, ptr %119, align 8
+  %121 = load ptr, ptr %7, align 8
+  %122 = load ptr, ptr %8, align 8
+  %123 = load ptr, ptr %9, align 8
+  %124 = load ptr, ptr %10, align 8
+  %125 = call i16 %120(ptr noundef %124, ptr noundef %123, ptr noundef %122, ptr noundef %121, ptr noundef %32)
+  %126 = load ptr, ptr %13, align 8
+  call void @llvm.stackrestore(ptr %126)
+  ret i16 %125
 }
 
 ; Function Attrs: noinline nounwind optnone uwtable
@@ -3273,25 +3125,21 @@ define dso_local dllexport i16 @JNI_CallStaticShortMethod(ptr noundef %0, ptr no
   %4 = alloca ptr, align 8
   %5 = alloca ptr, align 8
   %6 = alloca ptr, align 8
-  %7 = alloca i16, align 2
-  %8 = alloca ptr, align 8
+  %7 = alloca ptr, align 8
+  %8 = alloca i16, align 2
   store ptr %2, ptr %4, align 8
   store ptr %1, ptr %5, align 8
   store ptr %0, ptr %6, align 8
-  call void @llvm.va_start(ptr %8)
-  %9 = load ptr, ptr %6, align 8
-  %10 = load ptr, ptr %9, align 8
-  %11 = getelementptr inbounds %struct.JNINativeInterface_, ptr %10, i32 0, i32 127
-  %12 = load ptr, ptr %11, align 8
-  %13 = load ptr, ptr %8, align 8
-  %14 = load ptr, ptr %4, align 8
-  %15 = load ptr, ptr %5, align 8
-  %16 = load ptr, ptr %6, align 8
-  %17 = call i16 %12(ptr noundef %16, ptr noundef %15, ptr noundef %14, ptr noundef %13)
-  store i16 %17, ptr %7, align 2
-  call void @llvm.va_end(ptr %8)
-  %18 = load i16, ptr %7, align 2
-  ret i16 %18
+  call void @llvm.va_start(ptr %7)
+  %9 = load ptr, ptr %7, align 8
+  %10 = load ptr, ptr %4, align 8
+  %11 = load ptr, ptr %5, align 8
+  %12 = load ptr, ptr %6, align 8
+  %13 = call i16 @JNI_CallStaticShortMethodV(ptr noundef %12, ptr noundef %11, ptr noundef %10, ptr noundef %9)
+  store i16 %13, ptr %8, align 2
+  call void @llvm.va_end(ptr %7)
+  %14 = load i16, ptr %8, align 2
+  ret i16 %14
 }
 
 ; Function Attrs: noinline nounwind optnone uwtable
@@ -3300,196 +3148,189 @@ define dso_local dllexport i16 @JNI_CallStaticShortMethodV(ptr noundef %0, ptr n
   %6 = alloca ptr, align 8
   %7 = alloca ptr, align 8
   %8 = alloca ptr, align 8
-  %9 = alloca ptr, align 8
-  %10 = alloca [257 x i8], align 16
-  %11 = alloca i32, align 4
-  %12 = alloca i32, align 4
+  %9 = alloca [256 x i8], align 16
+  %10 = alloca i32, align 4
+  %11 = alloca ptr, align 8
+  %12 = alloca i64, align 8
+  %13 = alloca i32, align 4
   store ptr %3, ptr %5, align 8
   store ptr %2, ptr %6, align 8
   store ptr %1, ptr %7, align 8
   store ptr %0, ptr %8, align 8
-  br label %13
-
-13:                                               ; preds = %4
   %14 = load ptr, ptr %8, align 8
   %15 = load ptr, ptr %14, align 8
   %16 = getelementptr inbounds %struct.JNINativeInterface_, ptr %15, i32 0, i32 0
   %17 = load ptr, ptr %16, align 8
-  %18 = getelementptr inbounds [257 x i8], ptr %10, i64 0, i64 0
+  %18 = getelementptr inbounds [256 x i8], ptr %9, i64 0, i64 0
   %19 = load ptr, ptr %6, align 8
   %20 = load ptr, ptr %8, align 8
   %21 = call i32 %17(ptr noundef %20, ptr noundef %19, ptr noundef %18)
-  store i32 %21, ptr %11, align 4
-  %22 = load i32, ptr %11, align 4
-  %23 = zext i32 %22 to i64
-  %24 = mul i64 %23, 8
-  %25 = alloca i8, i64 %24, align 16
-  store ptr %25, ptr %9, align 8
-  store i32 0, ptr %12, align 4
-  br label %26
+  store i32 %21, ptr %10, align 4
+  %22 = load ptr, ptr %8, align 8
+  %23 = load ptr, ptr %22, align 8
+  %24 = getelementptr inbounds %struct.JNINativeInterface_, ptr %23, i32 0, i32 1
+  %25 = load ptr, ptr %24, align 8
+  %26 = load i32, ptr %10, align 4
+  call void %25(i32 noundef %26)
+  %27 = load i32, ptr %10, align 4
+  %28 = zext i32 %27 to i64
+  %29 = call ptr @llvm.stacksave()
+  store ptr %29, ptr %11, align 8
+  %30 = alloca %union.jvalue, i64 %28, align 16
+  store i64 %28, ptr %12, align 8
+  store i32 0, ptr %13, align 4
+  br label %31
 
-26:                                               ; preds = %116, %13
-  %27 = load i32, ptr %12, align 4
-  %28 = load i32, ptr %11, align 4
-  %29 = icmp slt i32 %27, %28
-  br i1 %29, label %30, label %119
+31:                                               ; preds = %111, %4
+  %32 = load i32, ptr %13, align 4
+  %33 = load i32, ptr %10, align 4
+  %34 = icmp slt i32 %32, %33
+  br i1 %34, label %35, label %114
 
-30:                                               ; preds = %26
-  %31 = load i32, ptr %12, align 4
-  %32 = sext i32 %31 to i64
-  %33 = getelementptr inbounds [257 x i8], ptr %10, i64 0, i64 %32
-  %34 = load i8, ptr %33, align 1
-  %35 = sext i8 %34 to i32
-  switch i32 %35, label %115 [
-    i32 90, label %36
-    i32 66, label %45
-    i32 83, label %54
-    i32 67, label %63
+35:                                               ; preds = %31
+  %36 = load i32, ptr %13, align 4
+  %37 = sext i32 %36 to i64
+  %38 = getelementptr inbounds [256 x i8], ptr %9, i64 0, i64 %37
+  %39 = load i8, ptr %38, align 1
+  %40 = sext i8 %39 to i32
+  switch i32 %40, label %110 [
+    i32 90, label %41
+    i32 66, label %49
+    i32 67, label %57
+    i32 83, label %65
     i32 73, label %73
-    i32 74, label %81
-    i32 68, label %90
-    i32 70, label %98
-    i32 76, label %107
+    i32 74, label %80
+    i32 70, label %88
+    i32 68, label %96
+    i32 76, label %103
   ]
 
-36:                                               ; preds = %30
-  %37 = load ptr, ptr %5, align 8
-  %38 = getelementptr inbounds i8, ptr %37, i64 8
-  store ptr %38, ptr %5, align 8
-  %39 = load i32, ptr %37, align 8
-  %40 = trunc i32 %39 to i8
-  %41 = load ptr, ptr %9, align 8
-  %42 = load i32, ptr %12, align 4
-  %43 = sext i32 %42 to i64
-  %44 = getelementptr inbounds %union.jvalue, ptr %41, i64 %43
-  store i8 %40, ptr %44, align 8
-  br label %115
+41:                                               ; preds = %35
+  %42 = load ptr, ptr %5, align 8
+  %43 = getelementptr inbounds i8, ptr %42, i64 8
+  store ptr %43, ptr %5, align 8
+  %44 = load i32, ptr %42, align 8
+  %45 = trunc i32 %44 to i8
+  %46 = load i32, ptr %13, align 4
+  %47 = sext i32 %46 to i64
+  %48 = getelementptr inbounds %union.jvalue, ptr %30, i64 %47
+  store i8 %45, ptr %48, align 8
+  br label %110
 
-45:                                               ; preds = %30
-  %46 = load ptr, ptr %5, align 8
-  %47 = getelementptr inbounds i8, ptr %46, i64 8
-  store ptr %47, ptr %5, align 8
-  %48 = load i32, ptr %46, align 8
-  %49 = trunc i32 %48 to i8
-  %50 = load ptr, ptr %9, align 8
-  %51 = load i32, ptr %12, align 4
-  %52 = sext i32 %51 to i64
-  %53 = getelementptr inbounds %union.jvalue, ptr %50, i64 %52
-  store i8 %49, ptr %53, align 8
-  br label %115
+49:                                               ; preds = %35
+  %50 = load ptr, ptr %5, align 8
+  %51 = getelementptr inbounds i8, ptr %50, i64 8
+  store ptr %51, ptr %5, align 8
+  %52 = load i32, ptr %50, align 8
+  %53 = trunc i32 %52 to i8
+  %54 = load i32, ptr %13, align 4
+  %55 = sext i32 %54 to i64
+  %56 = getelementptr inbounds %union.jvalue, ptr %30, i64 %55
+  store i8 %53, ptr %56, align 8
+  br label %110
 
-54:                                               ; preds = %30
-  %55 = load ptr, ptr %5, align 8
-  %56 = getelementptr inbounds i8, ptr %55, i64 8
-  store ptr %56, ptr %5, align 8
-  %57 = load i32, ptr %55, align 8
-  %58 = trunc i32 %57 to i16
-  %59 = load ptr, ptr %9, align 8
-  %60 = load i32, ptr %12, align 4
-  %61 = sext i32 %60 to i64
-  %62 = getelementptr inbounds %union.jvalue, ptr %59, i64 %61
-  store i16 %58, ptr %62, align 8
-  br label %115
+57:                                               ; preds = %35
+  %58 = load ptr, ptr %5, align 8
+  %59 = getelementptr inbounds i8, ptr %58, i64 8
+  store ptr %59, ptr %5, align 8
+  %60 = load i32, ptr %58, align 8
+  %61 = trunc i32 %60 to i16
+  %62 = load i32, ptr %13, align 4
+  %63 = sext i32 %62 to i64
+  %64 = getelementptr inbounds %union.jvalue, ptr %30, i64 %63
+  store i16 %61, ptr %64, align 8
+  br label %110
 
-63:                                               ; preds = %30
-  %64 = load ptr, ptr %5, align 8
-  %65 = getelementptr inbounds i8, ptr %64, i64 8
-  store ptr %65, ptr %5, align 8
-  %66 = load i32, ptr %64, align 8
-  %67 = trunc i32 %66 to i16
-  %68 = zext i16 %67 to i32
-  %69 = load ptr, ptr %9, align 8
-  %70 = load i32, ptr %12, align 4
+65:                                               ; preds = %35
+  %66 = load ptr, ptr %5, align 8
+  %67 = getelementptr inbounds i8, ptr %66, i64 8
+  store ptr %67, ptr %5, align 8
+  %68 = load i32, ptr %66, align 8
+  %69 = trunc i32 %68 to i16
+  %70 = load i32, ptr %13, align 4
   %71 = sext i32 %70 to i64
-  %72 = getelementptr inbounds %union.jvalue, ptr %69, i64 %71
-  store i32 %68, ptr %72, align 8
-  br label %115
+  %72 = getelementptr inbounds %union.jvalue, ptr %30, i64 %71
+  store i16 %69, ptr %72, align 8
+  br label %110
 
-73:                                               ; preds = %30
+73:                                               ; preds = %35
   %74 = load ptr, ptr %5, align 8
   %75 = getelementptr inbounds i8, ptr %74, i64 8
   store ptr %75, ptr %5, align 8
   %76 = load i32, ptr %74, align 8
-  %77 = load ptr, ptr %9, align 8
-  %78 = load i32, ptr %12, align 4
-  %79 = sext i32 %78 to i64
-  %80 = getelementptr inbounds %union.jvalue, ptr %77, i64 %79
-  store i32 %76, ptr %80, align 8
-  br label %115
+  %77 = load i32, ptr %13, align 4
+  %78 = sext i32 %77 to i64
+  %79 = getelementptr inbounds %union.jvalue, ptr %30, i64 %78
+  store i32 %76, ptr %79, align 8
+  br label %110
 
-81:                                               ; preds = %30
-  %82 = load ptr, ptr %5, align 8
-  %83 = getelementptr inbounds i8, ptr %82, i64 8
-  store ptr %83, ptr %5, align 8
-  %84 = load i32, ptr %82, align 8
-  %85 = sext i32 %84 to i64
-  %86 = load ptr, ptr %9, align 8
-  %87 = load i32, ptr %12, align 4
-  %88 = sext i32 %87 to i64
-  %89 = getelementptr inbounds %union.jvalue, ptr %86, i64 %88
-  store i64 %85, ptr %89, align 8
-  br label %115
+80:                                               ; preds = %35
+  %81 = load ptr, ptr %5, align 8
+  %82 = getelementptr inbounds i8, ptr %81, i64 8
+  store ptr %82, ptr %5, align 8
+  %83 = load i32, ptr %81, align 8
+  %84 = sext i32 %83 to i64
+  %85 = load i32, ptr %13, align 4
+  %86 = sext i32 %85 to i64
+  %87 = getelementptr inbounds %union.jvalue, ptr %30, i64 %86
+  store i64 %84, ptr %87, align 8
+  br label %110
 
-90:                                               ; preds = %30
-  %91 = load ptr, ptr %5, align 8
-  %92 = getelementptr inbounds i8, ptr %91, i64 8
-  store ptr %92, ptr %5, align 8
-  %93 = load double, ptr %91, align 8
-  %94 = load ptr, ptr %9, align 8
-  %95 = load i32, ptr %12, align 4
-  %96 = sext i32 %95 to i64
-  %97 = getelementptr inbounds %union.jvalue, ptr %94, i64 %96
-  store double %93, ptr %97, align 8
-  br label %115
+88:                                               ; preds = %35
+  %89 = load ptr, ptr %5, align 8
+  %90 = getelementptr inbounds i8, ptr %89, i64 8
+  store ptr %90, ptr %5, align 8
+  %91 = load double, ptr %89, align 8
+  %92 = fptrunc double %91 to float
+  %93 = load i32, ptr %13, align 4
+  %94 = sext i32 %93 to i64
+  %95 = getelementptr inbounds %union.jvalue, ptr %30, i64 %94
+  store float %92, ptr %95, align 8
+  br label %110
 
-98:                                               ; preds = %30
-  %99 = load ptr, ptr %5, align 8
-  %100 = getelementptr inbounds i8, ptr %99, i64 8
-  store ptr %100, ptr %5, align 8
-  %101 = load double, ptr %99, align 8
-  %102 = fptrunc double %101 to float
-  %103 = load ptr, ptr %9, align 8
-  %104 = load i32, ptr %12, align 4
-  %105 = sext i32 %104 to i64
-  %106 = getelementptr inbounds %union.jvalue, ptr %103, i64 %105
-  store float %102, ptr %106, align 8
-  br label %115
+96:                                               ; preds = %35
+  %97 = load ptr, ptr %5, align 8
+  %98 = getelementptr inbounds i8, ptr %97, i64 8
+  store ptr %98, ptr %5, align 8
+  %99 = load double, ptr %97, align 8
+  %100 = load i32, ptr %13, align 4
+  %101 = sext i32 %100 to i64
+  %102 = getelementptr inbounds %union.jvalue, ptr %30, i64 %101
+  store double %99, ptr %102, align 8
+  br label %110
 
-107:                                              ; preds = %30
-  %108 = load ptr, ptr %5, align 8
-  %109 = getelementptr inbounds i8, ptr %108, i64 8
-  store ptr %109, ptr %5, align 8
-  %110 = load ptr, ptr %108, align 8
-  %111 = load ptr, ptr %9, align 8
-  %112 = load i32, ptr %12, align 4
-  %113 = sext i32 %112 to i64
-  %114 = getelementptr inbounds %union.jvalue, ptr %111, i64 %113
-  store ptr %110, ptr %114, align 8
-  br label %115
+103:                                              ; preds = %35
+  %104 = load ptr, ptr %5, align 8
+  %105 = getelementptr inbounds i8, ptr %104, i64 8
+  store ptr %105, ptr %5, align 8
+  %106 = load ptr, ptr %104, align 8
+  %107 = load i32, ptr %13, align 4
+  %108 = sext i32 %107 to i64
+  %109 = getelementptr inbounds %union.jvalue, ptr %30, i64 %108
+  store ptr %106, ptr %109, align 8
+  br label %110
 
-115:                                              ; preds = %30, %107, %98, %90, %81, %73, %63, %54, %45, %36
-  br label %116
+110:                                              ; preds = %35, %103, %96, %88, %80, %73, %65, %57, %49, %41
+  br label %111
 
-116:                                              ; preds = %115
-  %117 = load i32, ptr %12, align 4
-  %118 = add nsw i32 %117, 1
-  store i32 %118, ptr %12, align 4
-  br label %26, !llvm.loop !19
+111:                                              ; preds = %110
+  %112 = load i32, ptr %13, align 4
+  %113 = add nsw i32 %112, 1
+  store i32 %113, ptr %13, align 4
+  br label %31, !llvm.loop !19
 
-119:                                              ; preds = %26
-  br label %120
-
-120:                                              ; preds = %119
+114:                                              ; preds = %31
+  %115 = load ptr, ptr %8, align 8
+  %116 = load ptr, ptr %115, align 8
+  %117 = getelementptr inbounds %struct.JNINativeInterface_, ptr %116, i32 0, i32 128
+  %118 = load ptr, ptr %117, align 8
+  %119 = load ptr, ptr %6, align 8
+  %120 = load ptr, ptr %7, align 8
   %121 = load ptr, ptr %8, align 8
-  %122 = load ptr, ptr %121, align 8
-  %123 = getelementptr inbounds %struct.JNINativeInterface_, ptr %122, i32 0, i32 128
-  %124 = load ptr, ptr %123, align 8
-  %125 = load ptr, ptr %9, align 8
-  %126 = load ptr, ptr %6, align 8
-  %127 = load ptr, ptr %7, align 8
-  %128 = load ptr, ptr %8, align 8
-  %129 = call i16 %124(ptr noundef %128, ptr noundef %127, ptr noundef %126, ptr noundef %125)
-  ret i16 %129
+  %122 = call i16 %118(ptr noundef %121, ptr noundef %120, ptr noundef %119, ptr noundef %30)
+  %123 = load ptr, ptr %11, align 8
+  call void @llvm.stackrestore(ptr %123)
+  ret i16 %122
 }
 
 ; Function Attrs: noinline nounwind optnone uwtable
@@ -3497,25 +3338,21 @@ define dso_local dllexport i32 @JNI_CallIntMethod(ptr noundef %0, ptr noundef %1
   %4 = alloca ptr, align 8
   %5 = alloca ptr, align 8
   %6 = alloca ptr, align 8
-  %7 = alloca i32, align 4
-  %8 = alloca ptr, align 8
+  %7 = alloca ptr, align 8
+  %8 = alloca i32, align 4
   store ptr %2, ptr %4, align 8
   store ptr %1, ptr %5, align 8
   store ptr %0, ptr %6, align 8
-  call void @llvm.va_start(ptr %8)
-  %9 = load ptr, ptr %6, align 8
-  %10 = load ptr, ptr %9, align 8
-  %11 = getelementptr inbounds %struct.JNINativeInterface_, ptr %10, i32 0, i32 50
-  %12 = load ptr, ptr %11, align 8
-  %13 = load ptr, ptr %8, align 8
-  %14 = load ptr, ptr %4, align 8
-  %15 = load ptr, ptr %5, align 8
-  %16 = load ptr, ptr %6, align 8
-  %17 = call i32 %12(ptr noundef %16, ptr noundef %15, ptr noundef %14, ptr noundef %13)
-  store i32 %17, ptr %7, align 4
-  call void @llvm.va_end(ptr %8)
-  %18 = load i32, ptr %7, align 4
-  ret i32 %18
+  call void @llvm.va_start(ptr %7)
+  %9 = load ptr, ptr %7, align 8
+  %10 = load ptr, ptr %4, align 8
+  %11 = load ptr, ptr %5, align 8
+  %12 = load ptr, ptr %6, align 8
+  %13 = call i32 @JNI_CallIntMethodV(ptr noundef %12, ptr noundef %11, ptr noundef %10, ptr noundef %9)
+  store i32 %13, ptr %8, align 4
+  call void @llvm.va_end(ptr %7)
+  %14 = load i32, ptr %8, align 4
+  ret i32 %14
 }
 
 ; Function Attrs: noinline nounwind optnone uwtable
@@ -3524,196 +3361,189 @@ define dso_local dllexport i32 @JNI_CallIntMethodV(ptr noundef %0, ptr noundef %
   %6 = alloca ptr, align 8
   %7 = alloca ptr, align 8
   %8 = alloca ptr, align 8
-  %9 = alloca ptr, align 8
-  %10 = alloca [257 x i8], align 16
-  %11 = alloca i32, align 4
-  %12 = alloca i32, align 4
+  %9 = alloca [256 x i8], align 16
+  %10 = alloca i32, align 4
+  %11 = alloca ptr, align 8
+  %12 = alloca i64, align 8
+  %13 = alloca i32, align 4
   store ptr %3, ptr %5, align 8
   store ptr %2, ptr %6, align 8
   store ptr %1, ptr %7, align 8
   store ptr %0, ptr %8, align 8
-  br label %13
-
-13:                                               ; preds = %4
   %14 = load ptr, ptr %8, align 8
   %15 = load ptr, ptr %14, align 8
   %16 = getelementptr inbounds %struct.JNINativeInterface_, ptr %15, i32 0, i32 0
   %17 = load ptr, ptr %16, align 8
-  %18 = getelementptr inbounds [257 x i8], ptr %10, i64 0, i64 0
+  %18 = getelementptr inbounds [256 x i8], ptr %9, i64 0, i64 0
   %19 = load ptr, ptr %6, align 8
   %20 = load ptr, ptr %8, align 8
   %21 = call i32 %17(ptr noundef %20, ptr noundef %19, ptr noundef %18)
-  store i32 %21, ptr %11, align 4
-  %22 = load i32, ptr %11, align 4
-  %23 = zext i32 %22 to i64
-  %24 = mul i64 %23, 8
-  %25 = alloca i8, i64 %24, align 16
-  store ptr %25, ptr %9, align 8
-  store i32 0, ptr %12, align 4
-  br label %26
+  store i32 %21, ptr %10, align 4
+  %22 = load ptr, ptr %8, align 8
+  %23 = load ptr, ptr %22, align 8
+  %24 = getelementptr inbounds %struct.JNINativeInterface_, ptr %23, i32 0, i32 1
+  %25 = load ptr, ptr %24, align 8
+  %26 = load i32, ptr %10, align 4
+  call void %25(i32 noundef %26)
+  %27 = load i32, ptr %10, align 4
+  %28 = zext i32 %27 to i64
+  %29 = call ptr @llvm.stacksave()
+  store ptr %29, ptr %11, align 8
+  %30 = alloca %union.jvalue, i64 %28, align 16
+  store i64 %28, ptr %12, align 8
+  store i32 0, ptr %13, align 4
+  br label %31
 
-26:                                               ; preds = %116, %13
-  %27 = load i32, ptr %12, align 4
-  %28 = load i32, ptr %11, align 4
-  %29 = icmp slt i32 %27, %28
-  br i1 %29, label %30, label %119
+31:                                               ; preds = %111, %4
+  %32 = load i32, ptr %13, align 4
+  %33 = load i32, ptr %10, align 4
+  %34 = icmp slt i32 %32, %33
+  br i1 %34, label %35, label %114
 
-30:                                               ; preds = %26
-  %31 = load i32, ptr %12, align 4
-  %32 = sext i32 %31 to i64
-  %33 = getelementptr inbounds [257 x i8], ptr %10, i64 0, i64 %32
-  %34 = load i8, ptr %33, align 1
-  %35 = sext i8 %34 to i32
-  switch i32 %35, label %115 [
-    i32 90, label %36
-    i32 66, label %45
-    i32 83, label %54
-    i32 67, label %63
+35:                                               ; preds = %31
+  %36 = load i32, ptr %13, align 4
+  %37 = sext i32 %36 to i64
+  %38 = getelementptr inbounds [256 x i8], ptr %9, i64 0, i64 %37
+  %39 = load i8, ptr %38, align 1
+  %40 = sext i8 %39 to i32
+  switch i32 %40, label %110 [
+    i32 90, label %41
+    i32 66, label %49
+    i32 67, label %57
+    i32 83, label %65
     i32 73, label %73
-    i32 74, label %81
-    i32 68, label %90
-    i32 70, label %98
-    i32 76, label %107
+    i32 74, label %80
+    i32 70, label %88
+    i32 68, label %96
+    i32 76, label %103
   ]
 
-36:                                               ; preds = %30
-  %37 = load ptr, ptr %5, align 8
-  %38 = getelementptr inbounds i8, ptr %37, i64 8
-  store ptr %38, ptr %5, align 8
-  %39 = load i32, ptr %37, align 8
-  %40 = trunc i32 %39 to i8
-  %41 = load ptr, ptr %9, align 8
-  %42 = load i32, ptr %12, align 4
-  %43 = sext i32 %42 to i64
-  %44 = getelementptr inbounds %union.jvalue, ptr %41, i64 %43
-  store i8 %40, ptr %44, align 8
-  br label %115
+41:                                               ; preds = %35
+  %42 = load ptr, ptr %5, align 8
+  %43 = getelementptr inbounds i8, ptr %42, i64 8
+  store ptr %43, ptr %5, align 8
+  %44 = load i32, ptr %42, align 8
+  %45 = trunc i32 %44 to i8
+  %46 = load i32, ptr %13, align 4
+  %47 = sext i32 %46 to i64
+  %48 = getelementptr inbounds %union.jvalue, ptr %30, i64 %47
+  store i8 %45, ptr %48, align 8
+  br label %110
 
-45:                                               ; preds = %30
-  %46 = load ptr, ptr %5, align 8
-  %47 = getelementptr inbounds i8, ptr %46, i64 8
-  store ptr %47, ptr %5, align 8
-  %48 = load i32, ptr %46, align 8
-  %49 = trunc i32 %48 to i8
-  %50 = load ptr, ptr %9, align 8
-  %51 = load i32, ptr %12, align 4
-  %52 = sext i32 %51 to i64
-  %53 = getelementptr inbounds %union.jvalue, ptr %50, i64 %52
-  store i8 %49, ptr %53, align 8
-  br label %115
+49:                                               ; preds = %35
+  %50 = load ptr, ptr %5, align 8
+  %51 = getelementptr inbounds i8, ptr %50, i64 8
+  store ptr %51, ptr %5, align 8
+  %52 = load i32, ptr %50, align 8
+  %53 = trunc i32 %52 to i8
+  %54 = load i32, ptr %13, align 4
+  %55 = sext i32 %54 to i64
+  %56 = getelementptr inbounds %union.jvalue, ptr %30, i64 %55
+  store i8 %53, ptr %56, align 8
+  br label %110
 
-54:                                               ; preds = %30
-  %55 = load ptr, ptr %5, align 8
-  %56 = getelementptr inbounds i8, ptr %55, i64 8
-  store ptr %56, ptr %5, align 8
-  %57 = load i32, ptr %55, align 8
-  %58 = trunc i32 %57 to i16
-  %59 = load ptr, ptr %9, align 8
-  %60 = load i32, ptr %12, align 4
-  %61 = sext i32 %60 to i64
-  %62 = getelementptr inbounds %union.jvalue, ptr %59, i64 %61
-  store i16 %58, ptr %62, align 8
-  br label %115
+57:                                               ; preds = %35
+  %58 = load ptr, ptr %5, align 8
+  %59 = getelementptr inbounds i8, ptr %58, i64 8
+  store ptr %59, ptr %5, align 8
+  %60 = load i32, ptr %58, align 8
+  %61 = trunc i32 %60 to i16
+  %62 = load i32, ptr %13, align 4
+  %63 = sext i32 %62 to i64
+  %64 = getelementptr inbounds %union.jvalue, ptr %30, i64 %63
+  store i16 %61, ptr %64, align 8
+  br label %110
 
-63:                                               ; preds = %30
-  %64 = load ptr, ptr %5, align 8
-  %65 = getelementptr inbounds i8, ptr %64, i64 8
-  store ptr %65, ptr %5, align 8
-  %66 = load i32, ptr %64, align 8
-  %67 = trunc i32 %66 to i16
-  %68 = zext i16 %67 to i32
-  %69 = load ptr, ptr %9, align 8
-  %70 = load i32, ptr %12, align 4
+65:                                               ; preds = %35
+  %66 = load ptr, ptr %5, align 8
+  %67 = getelementptr inbounds i8, ptr %66, i64 8
+  store ptr %67, ptr %5, align 8
+  %68 = load i32, ptr %66, align 8
+  %69 = trunc i32 %68 to i16
+  %70 = load i32, ptr %13, align 4
   %71 = sext i32 %70 to i64
-  %72 = getelementptr inbounds %union.jvalue, ptr %69, i64 %71
-  store i32 %68, ptr %72, align 8
-  br label %115
+  %72 = getelementptr inbounds %union.jvalue, ptr %30, i64 %71
+  store i16 %69, ptr %72, align 8
+  br label %110
 
-73:                                               ; preds = %30
+73:                                               ; preds = %35
   %74 = load ptr, ptr %5, align 8
   %75 = getelementptr inbounds i8, ptr %74, i64 8
   store ptr %75, ptr %5, align 8
   %76 = load i32, ptr %74, align 8
-  %77 = load ptr, ptr %9, align 8
-  %78 = load i32, ptr %12, align 4
-  %79 = sext i32 %78 to i64
-  %80 = getelementptr inbounds %union.jvalue, ptr %77, i64 %79
-  store i32 %76, ptr %80, align 8
-  br label %115
+  %77 = load i32, ptr %13, align 4
+  %78 = sext i32 %77 to i64
+  %79 = getelementptr inbounds %union.jvalue, ptr %30, i64 %78
+  store i32 %76, ptr %79, align 8
+  br label %110
 
-81:                                               ; preds = %30
-  %82 = load ptr, ptr %5, align 8
-  %83 = getelementptr inbounds i8, ptr %82, i64 8
-  store ptr %83, ptr %5, align 8
-  %84 = load i32, ptr %82, align 8
-  %85 = sext i32 %84 to i64
-  %86 = load ptr, ptr %9, align 8
-  %87 = load i32, ptr %12, align 4
-  %88 = sext i32 %87 to i64
-  %89 = getelementptr inbounds %union.jvalue, ptr %86, i64 %88
-  store i64 %85, ptr %89, align 8
-  br label %115
+80:                                               ; preds = %35
+  %81 = load ptr, ptr %5, align 8
+  %82 = getelementptr inbounds i8, ptr %81, i64 8
+  store ptr %82, ptr %5, align 8
+  %83 = load i32, ptr %81, align 8
+  %84 = sext i32 %83 to i64
+  %85 = load i32, ptr %13, align 4
+  %86 = sext i32 %85 to i64
+  %87 = getelementptr inbounds %union.jvalue, ptr %30, i64 %86
+  store i64 %84, ptr %87, align 8
+  br label %110
 
-90:                                               ; preds = %30
-  %91 = load ptr, ptr %5, align 8
-  %92 = getelementptr inbounds i8, ptr %91, i64 8
-  store ptr %92, ptr %5, align 8
-  %93 = load double, ptr %91, align 8
-  %94 = load ptr, ptr %9, align 8
-  %95 = load i32, ptr %12, align 4
-  %96 = sext i32 %95 to i64
-  %97 = getelementptr inbounds %union.jvalue, ptr %94, i64 %96
-  store double %93, ptr %97, align 8
-  br label %115
+88:                                               ; preds = %35
+  %89 = load ptr, ptr %5, align 8
+  %90 = getelementptr inbounds i8, ptr %89, i64 8
+  store ptr %90, ptr %5, align 8
+  %91 = load double, ptr %89, align 8
+  %92 = fptrunc double %91 to float
+  %93 = load i32, ptr %13, align 4
+  %94 = sext i32 %93 to i64
+  %95 = getelementptr inbounds %union.jvalue, ptr %30, i64 %94
+  store float %92, ptr %95, align 8
+  br label %110
 
-98:                                               ; preds = %30
-  %99 = load ptr, ptr %5, align 8
-  %100 = getelementptr inbounds i8, ptr %99, i64 8
-  store ptr %100, ptr %5, align 8
-  %101 = load double, ptr %99, align 8
-  %102 = fptrunc double %101 to float
-  %103 = load ptr, ptr %9, align 8
-  %104 = load i32, ptr %12, align 4
-  %105 = sext i32 %104 to i64
-  %106 = getelementptr inbounds %union.jvalue, ptr %103, i64 %105
-  store float %102, ptr %106, align 8
-  br label %115
+96:                                               ; preds = %35
+  %97 = load ptr, ptr %5, align 8
+  %98 = getelementptr inbounds i8, ptr %97, i64 8
+  store ptr %98, ptr %5, align 8
+  %99 = load double, ptr %97, align 8
+  %100 = load i32, ptr %13, align 4
+  %101 = sext i32 %100 to i64
+  %102 = getelementptr inbounds %union.jvalue, ptr %30, i64 %101
+  store double %99, ptr %102, align 8
+  br label %110
 
-107:                                              ; preds = %30
-  %108 = load ptr, ptr %5, align 8
-  %109 = getelementptr inbounds i8, ptr %108, i64 8
-  store ptr %109, ptr %5, align 8
-  %110 = load ptr, ptr %108, align 8
-  %111 = load ptr, ptr %9, align 8
-  %112 = load i32, ptr %12, align 4
-  %113 = sext i32 %112 to i64
-  %114 = getelementptr inbounds %union.jvalue, ptr %111, i64 %113
-  store ptr %110, ptr %114, align 8
-  br label %115
+103:                                              ; preds = %35
+  %104 = load ptr, ptr %5, align 8
+  %105 = getelementptr inbounds i8, ptr %104, i64 8
+  store ptr %105, ptr %5, align 8
+  %106 = load ptr, ptr %104, align 8
+  %107 = load i32, ptr %13, align 4
+  %108 = sext i32 %107 to i64
+  %109 = getelementptr inbounds %union.jvalue, ptr %30, i64 %108
+  store ptr %106, ptr %109, align 8
+  br label %110
 
-115:                                              ; preds = %30, %107, %98, %90, %81, %73, %63, %54, %45, %36
-  br label %116
+110:                                              ; preds = %35, %103, %96, %88, %80, %73, %65, %57, %49, %41
+  br label %111
 
-116:                                              ; preds = %115
-  %117 = load i32, ptr %12, align 4
-  %118 = add nsw i32 %117, 1
-  store i32 %118, ptr %12, align 4
-  br label %26, !llvm.loop !20
+111:                                              ; preds = %110
+  %112 = load i32, ptr %13, align 4
+  %113 = add nsw i32 %112, 1
+  store i32 %113, ptr %13, align 4
+  br label %31, !llvm.loop !20
 
-119:                                              ; preds = %26
-  br label %120
-
-120:                                              ; preds = %119
+114:                                              ; preds = %31
+  %115 = load ptr, ptr %8, align 8
+  %116 = load ptr, ptr %115, align 8
+  %117 = getelementptr inbounds %struct.JNINativeInterface_, ptr %116, i32 0, i32 51
+  %118 = load ptr, ptr %117, align 8
+  %119 = load ptr, ptr %6, align 8
+  %120 = load ptr, ptr %7, align 8
   %121 = load ptr, ptr %8, align 8
-  %122 = load ptr, ptr %121, align 8
-  %123 = getelementptr inbounds %struct.JNINativeInterface_, ptr %122, i32 0, i32 51
-  %124 = load ptr, ptr %123, align 8
-  %125 = load ptr, ptr %9, align 8
-  %126 = load ptr, ptr %6, align 8
-  %127 = load ptr, ptr %7, align 8
-  %128 = load ptr, ptr %8, align 8
-  %129 = call i32 %124(ptr noundef %128, ptr noundef %127, ptr noundef %126, ptr noundef %125)
-  ret i32 %129
+  %122 = call i32 %118(ptr noundef %121, ptr noundef %120, ptr noundef %119, ptr noundef %30)
+  %123 = load ptr, ptr %11, align 8
+  call void @llvm.stackrestore(ptr %123)
+  ret i32 %122
 }
 
 ; Function Attrs: noinline nounwind optnone uwtable
@@ -3722,27 +3552,23 @@ define dso_local dllexport i32 @JNI_CallNonvirtualIntMethod(ptr noundef %0, ptr 
   %6 = alloca ptr, align 8
   %7 = alloca ptr, align 8
   %8 = alloca ptr, align 8
-  %9 = alloca i32, align 4
-  %10 = alloca ptr, align 8
+  %9 = alloca ptr, align 8
+  %10 = alloca i32, align 4
   store ptr %3, ptr %5, align 8
   store ptr %2, ptr %6, align 8
   store ptr %1, ptr %7, align 8
   store ptr %0, ptr %8, align 8
-  call void @llvm.va_start(ptr %10)
-  %11 = load ptr, ptr %8, align 8
-  %12 = load ptr, ptr %11, align 8
-  %13 = getelementptr inbounds %struct.JNINativeInterface_, ptr %12, i32 0, i32 80
-  %14 = load ptr, ptr %13, align 8
-  %15 = load ptr, ptr %10, align 8
-  %16 = load ptr, ptr %5, align 8
-  %17 = load ptr, ptr %6, align 8
-  %18 = load ptr, ptr %7, align 8
-  %19 = load ptr, ptr %8, align 8
-  %20 = call i32 %14(ptr noundef %19, ptr noundef %18, ptr noundef %17, ptr noundef %16, ptr noundef %15)
-  store i32 %20, ptr %9, align 4
-  call void @llvm.va_end(ptr %10)
-  %21 = load i32, ptr %9, align 4
-  ret i32 %21
+  call void @llvm.va_start(ptr %9)
+  %11 = load ptr, ptr %9, align 8
+  %12 = load ptr, ptr %5, align 8
+  %13 = load ptr, ptr %6, align 8
+  %14 = load ptr, ptr %7, align 8
+  %15 = load ptr, ptr %8, align 8
+  %16 = call i32 @JNI_CallNonvirtualIntMethodV(ptr noundef %15, ptr noundef %14, ptr noundef %13, ptr noundef %12, ptr noundef %11)
+  store i32 %16, ptr %10, align 4
+  call void @llvm.va_end(ptr %9)
+  %17 = load i32, ptr %10, align 4
+  ret i32 %17
 }
 
 ; Function Attrs: noinline nounwind optnone uwtable
@@ -3752,198 +3578,191 @@ define dso_local dllexport i32 @JNI_CallNonvirtualIntMethodV(ptr noundef %0, ptr
   %8 = alloca ptr, align 8
   %9 = alloca ptr, align 8
   %10 = alloca ptr, align 8
-  %11 = alloca ptr, align 8
-  %12 = alloca [257 x i8], align 16
-  %13 = alloca i32, align 4
-  %14 = alloca i32, align 4
+  %11 = alloca [256 x i8], align 16
+  %12 = alloca i32, align 4
+  %13 = alloca ptr, align 8
+  %14 = alloca i64, align 8
+  %15 = alloca i32, align 4
   store ptr %4, ptr %6, align 8
   store ptr %3, ptr %7, align 8
   store ptr %2, ptr %8, align 8
   store ptr %1, ptr %9, align 8
   store ptr %0, ptr %10, align 8
-  br label %15
-
-15:                                               ; preds = %5
   %16 = load ptr, ptr %10, align 8
   %17 = load ptr, ptr %16, align 8
   %18 = getelementptr inbounds %struct.JNINativeInterface_, ptr %17, i32 0, i32 0
   %19 = load ptr, ptr %18, align 8
-  %20 = getelementptr inbounds [257 x i8], ptr %12, i64 0, i64 0
+  %20 = getelementptr inbounds [256 x i8], ptr %11, i64 0, i64 0
   %21 = load ptr, ptr %7, align 8
   %22 = load ptr, ptr %10, align 8
   %23 = call i32 %19(ptr noundef %22, ptr noundef %21, ptr noundef %20)
-  store i32 %23, ptr %13, align 4
-  %24 = load i32, ptr %13, align 4
-  %25 = zext i32 %24 to i64
-  %26 = mul i64 %25, 8
-  %27 = alloca i8, i64 %26, align 16
-  store ptr %27, ptr %11, align 8
-  store i32 0, ptr %14, align 4
-  br label %28
+  store i32 %23, ptr %12, align 4
+  %24 = load ptr, ptr %10, align 8
+  %25 = load ptr, ptr %24, align 8
+  %26 = getelementptr inbounds %struct.JNINativeInterface_, ptr %25, i32 0, i32 1
+  %27 = load ptr, ptr %26, align 8
+  %28 = load i32, ptr %12, align 4
+  call void %27(i32 noundef %28)
+  %29 = load i32, ptr %12, align 4
+  %30 = zext i32 %29 to i64
+  %31 = call ptr @llvm.stacksave()
+  store ptr %31, ptr %13, align 8
+  %32 = alloca %union.jvalue, i64 %30, align 16
+  store i64 %30, ptr %14, align 8
+  store i32 0, ptr %15, align 4
+  br label %33
 
-28:                                               ; preds = %118, %15
-  %29 = load i32, ptr %14, align 4
-  %30 = load i32, ptr %13, align 4
-  %31 = icmp slt i32 %29, %30
-  br i1 %31, label %32, label %121
+33:                                               ; preds = %113, %5
+  %34 = load i32, ptr %15, align 4
+  %35 = load i32, ptr %12, align 4
+  %36 = icmp slt i32 %34, %35
+  br i1 %36, label %37, label %116
 
-32:                                               ; preds = %28
-  %33 = load i32, ptr %14, align 4
-  %34 = sext i32 %33 to i64
-  %35 = getelementptr inbounds [257 x i8], ptr %12, i64 0, i64 %34
-  %36 = load i8, ptr %35, align 1
-  %37 = sext i8 %36 to i32
-  switch i32 %37, label %117 [
-    i32 90, label %38
-    i32 66, label %47
-    i32 83, label %56
-    i32 67, label %65
+37:                                               ; preds = %33
+  %38 = load i32, ptr %15, align 4
+  %39 = sext i32 %38 to i64
+  %40 = getelementptr inbounds [256 x i8], ptr %11, i64 0, i64 %39
+  %41 = load i8, ptr %40, align 1
+  %42 = sext i8 %41 to i32
+  switch i32 %42, label %112 [
+    i32 90, label %43
+    i32 66, label %51
+    i32 67, label %59
+    i32 83, label %67
     i32 73, label %75
-    i32 74, label %83
-    i32 68, label %92
-    i32 70, label %100
-    i32 76, label %109
+    i32 74, label %82
+    i32 70, label %90
+    i32 68, label %98
+    i32 76, label %105
   ]
 
-38:                                               ; preds = %32
-  %39 = load ptr, ptr %6, align 8
-  %40 = getelementptr inbounds i8, ptr %39, i64 8
-  store ptr %40, ptr %6, align 8
-  %41 = load i32, ptr %39, align 8
-  %42 = trunc i32 %41 to i8
-  %43 = load ptr, ptr %11, align 8
-  %44 = load i32, ptr %14, align 4
-  %45 = sext i32 %44 to i64
-  %46 = getelementptr inbounds %union.jvalue, ptr %43, i64 %45
-  store i8 %42, ptr %46, align 8
-  br label %117
+43:                                               ; preds = %37
+  %44 = load ptr, ptr %6, align 8
+  %45 = getelementptr inbounds i8, ptr %44, i64 8
+  store ptr %45, ptr %6, align 8
+  %46 = load i32, ptr %44, align 8
+  %47 = trunc i32 %46 to i8
+  %48 = load i32, ptr %15, align 4
+  %49 = sext i32 %48 to i64
+  %50 = getelementptr inbounds %union.jvalue, ptr %32, i64 %49
+  store i8 %47, ptr %50, align 8
+  br label %112
 
-47:                                               ; preds = %32
-  %48 = load ptr, ptr %6, align 8
-  %49 = getelementptr inbounds i8, ptr %48, i64 8
-  store ptr %49, ptr %6, align 8
-  %50 = load i32, ptr %48, align 8
-  %51 = trunc i32 %50 to i8
-  %52 = load ptr, ptr %11, align 8
-  %53 = load i32, ptr %14, align 4
-  %54 = sext i32 %53 to i64
-  %55 = getelementptr inbounds %union.jvalue, ptr %52, i64 %54
-  store i8 %51, ptr %55, align 8
-  br label %117
+51:                                               ; preds = %37
+  %52 = load ptr, ptr %6, align 8
+  %53 = getelementptr inbounds i8, ptr %52, i64 8
+  store ptr %53, ptr %6, align 8
+  %54 = load i32, ptr %52, align 8
+  %55 = trunc i32 %54 to i8
+  %56 = load i32, ptr %15, align 4
+  %57 = sext i32 %56 to i64
+  %58 = getelementptr inbounds %union.jvalue, ptr %32, i64 %57
+  store i8 %55, ptr %58, align 8
+  br label %112
 
-56:                                               ; preds = %32
-  %57 = load ptr, ptr %6, align 8
-  %58 = getelementptr inbounds i8, ptr %57, i64 8
-  store ptr %58, ptr %6, align 8
-  %59 = load i32, ptr %57, align 8
-  %60 = trunc i32 %59 to i16
-  %61 = load ptr, ptr %11, align 8
-  %62 = load i32, ptr %14, align 4
-  %63 = sext i32 %62 to i64
-  %64 = getelementptr inbounds %union.jvalue, ptr %61, i64 %63
-  store i16 %60, ptr %64, align 8
-  br label %117
+59:                                               ; preds = %37
+  %60 = load ptr, ptr %6, align 8
+  %61 = getelementptr inbounds i8, ptr %60, i64 8
+  store ptr %61, ptr %6, align 8
+  %62 = load i32, ptr %60, align 8
+  %63 = trunc i32 %62 to i16
+  %64 = load i32, ptr %15, align 4
+  %65 = sext i32 %64 to i64
+  %66 = getelementptr inbounds %union.jvalue, ptr %32, i64 %65
+  store i16 %63, ptr %66, align 8
+  br label %112
 
-65:                                               ; preds = %32
-  %66 = load ptr, ptr %6, align 8
-  %67 = getelementptr inbounds i8, ptr %66, i64 8
-  store ptr %67, ptr %6, align 8
-  %68 = load i32, ptr %66, align 8
-  %69 = trunc i32 %68 to i16
-  %70 = zext i16 %69 to i32
-  %71 = load ptr, ptr %11, align 8
-  %72 = load i32, ptr %14, align 4
+67:                                               ; preds = %37
+  %68 = load ptr, ptr %6, align 8
+  %69 = getelementptr inbounds i8, ptr %68, i64 8
+  store ptr %69, ptr %6, align 8
+  %70 = load i32, ptr %68, align 8
+  %71 = trunc i32 %70 to i16
+  %72 = load i32, ptr %15, align 4
   %73 = sext i32 %72 to i64
-  %74 = getelementptr inbounds %union.jvalue, ptr %71, i64 %73
-  store i32 %70, ptr %74, align 8
-  br label %117
+  %74 = getelementptr inbounds %union.jvalue, ptr %32, i64 %73
+  store i16 %71, ptr %74, align 8
+  br label %112
 
-75:                                               ; preds = %32
+75:                                               ; preds = %37
   %76 = load ptr, ptr %6, align 8
   %77 = getelementptr inbounds i8, ptr %76, i64 8
   store ptr %77, ptr %6, align 8
   %78 = load i32, ptr %76, align 8
-  %79 = load ptr, ptr %11, align 8
-  %80 = load i32, ptr %14, align 4
-  %81 = sext i32 %80 to i64
-  %82 = getelementptr inbounds %union.jvalue, ptr %79, i64 %81
-  store i32 %78, ptr %82, align 8
-  br label %117
+  %79 = load i32, ptr %15, align 4
+  %80 = sext i32 %79 to i64
+  %81 = getelementptr inbounds %union.jvalue, ptr %32, i64 %80
+  store i32 %78, ptr %81, align 8
+  br label %112
 
-83:                                               ; preds = %32
-  %84 = load ptr, ptr %6, align 8
-  %85 = getelementptr inbounds i8, ptr %84, i64 8
-  store ptr %85, ptr %6, align 8
-  %86 = load i32, ptr %84, align 8
-  %87 = sext i32 %86 to i64
-  %88 = load ptr, ptr %11, align 8
-  %89 = load i32, ptr %14, align 4
-  %90 = sext i32 %89 to i64
-  %91 = getelementptr inbounds %union.jvalue, ptr %88, i64 %90
-  store i64 %87, ptr %91, align 8
-  br label %117
+82:                                               ; preds = %37
+  %83 = load ptr, ptr %6, align 8
+  %84 = getelementptr inbounds i8, ptr %83, i64 8
+  store ptr %84, ptr %6, align 8
+  %85 = load i32, ptr %83, align 8
+  %86 = sext i32 %85 to i64
+  %87 = load i32, ptr %15, align 4
+  %88 = sext i32 %87 to i64
+  %89 = getelementptr inbounds %union.jvalue, ptr %32, i64 %88
+  store i64 %86, ptr %89, align 8
+  br label %112
 
-92:                                               ; preds = %32
-  %93 = load ptr, ptr %6, align 8
-  %94 = getelementptr inbounds i8, ptr %93, i64 8
-  store ptr %94, ptr %6, align 8
-  %95 = load double, ptr %93, align 8
-  %96 = load ptr, ptr %11, align 8
-  %97 = load i32, ptr %14, align 4
-  %98 = sext i32 %97 to i64
-  %99 = getelementptr inbounds %union.jvalue, ptr %96, i64 %98
-  store double %95, ptr %99, align 8
-  br label %117
+90:                                               ; preds = %37
+  %91 = load ptr, ptr %6, align 8
+  %92 = getelementptr inbounds i8, ptr %91, i64 8
+  store ptr %92, ptr %6, align 8
+  %93 = load double, ptr %91, align 8
+  %94 = fptrunc double %93 to float
+  %95 = load i32, ptr %15, align 4
+  %96 = sext i32 %95 to i64
+  %97 = getelementptr inbounds %union.jvalue, ptr %32, i64 %96
+  store float %94, ptr %97, align 8
+  br label %112
 
-100:                                              ; preds = %32
-  %101 = load ptr, ptr %6, align 8
-  %102 = getelementptr inbounds i8, ptr %101, i64 8
-  store ptr %102, ptr %6, align 8
-  %103 = load double, ptr %101, align 8
-  %104 = fptrunc double %103 to float
-  %105 = load ptr, ptr %11, align 8
-  %106 = load i32, ptr %14, align 4
-  %107 = sext i32 %106 to i64
-  %108 = getelementptr inbounds %union.jvalue, ptr %105, i64 %107
-  store float %104, ptr %108, align 8
-  br label %117
+98:                                               ; preds = %37
+  %99 = load ptr, ptr %6, align 8
+  %100 = getelementptr inbounds i8, ptr %99, i64 8
+  store ptr %100, ptr %6, align 8
+  %101 = load double, ptr %99, align 8
+  %102 = load i32, ptr %15, align 4
+  %103 = sext i32 %102 to i64
+  %104 = getelementptr inbounds %union.jvalue, ptr %32, i64 %103
+  store double %101, ptr %104, align 8
+  br label %112
 
-109:                                              ; preds = %32
-  %110 = load ptr, ptr %6, align 8
-  %111 = getelementptr inbounds i8, ptr %110, i64 8
-  store ptr %111, ptr %6, align 8
-  %112 = load ptr, ptr %110, align 8
-  %113 = load ptr, ptr %11, align 8
-  %114 = load i32, ptr %14, align 4
-  %115 = sext i32 %114 to i64
-  %116 = getelementptr inbounds %union.jvalue, ptr %113, i64 %115
-  store ptr %112, ptr %116, align 8
-  br label %117
+105:                                              ; preds = %37
+  %106 = load ptr, ptr %6, align 8
+  %107 = getelementptr inbounds i8, ptr %106, i64 8
+  store ptr %107, ptr %6, align 8
+  %108 = load ptr, ptr %106, align 8
+  %109 = load i32, ptr %15, align 4
+  %110 = sext i32 %109 to i64
+  %111 = getelementptr inbounds %union.jvalue, ptr %32, i64 %110
+  store ptr %108, ptr %111, align 8
+  br label %112
 
-117:                                              ; preds = %32, %109, %100, %92, %83, %75, %65, %56, %47, %38
-  br label %118
+112:                                              ; preds = %37, %105, %98, %90, %82, %75, %67, %59, %51, %43
+  br label %113
 
-118:                                              ; preds = %117
-  %119 = load i32, ptr %14, align 4
-  %120 = add nsw i32 %119, 1
-  store i32 %120, ptr %14, align 4
-  br label %28, !llvm.loop !21
+113:                                              ; preds = %112
+  %114 = load i32, ptr %15, align 4
+  %115 = add nsw i32 %114, 1
+  store i32 %115, ptr %15, align 4
+  br label %33, !llvm.loop !21
 
-121:                                              ; preds = %28
-  br label %122
-
-122:                                              ; preds = %121
-  %123 = load ptr, ptr %10, align 8
-  %124 = load ptr, ptr %123, align 8
-  %125 = getelementptr inbounds %struct.JNINativeInterface_, ptr %124, i32 0, i32 81
-  %126 = load ptr, ptr %125, align 8
-  %127 = load ptr, ptr %11, align 8
-  %128 = load ptr, ptr %7, align 8
-  %129 = load ptr, ptr %8, align 8
-  %130 = load ptr, ptr %9, align 8
-  %131 = load ptr, ptr %10, align 8
-  %132 = call i32 %126(ptr noundef %131, ptr noundef %130, ptr noundef %129, ptr noundef %128, ptr noundef %127)
-  ret i32 %132
+116:                                              ; preds = %33
+  %117 = load ptr, ptr %10, align 8
+  %118 = load ptr, ptr %117, align 8
+  %119 = getelementptr inbounds %struct.JNINativeInterface_, ptr %118, i32 0, i32 81
+  %120 = load ptr, ptr %119, align 8
+  %121 = load ptr, ptr %7, align 8
+  %122 = load ptr, ptr %8, align 8
+  %123 = load ptr, ptr %9, align 8
+  %124 = load ptr, ptr %10, align 8
+  %125 = call i32 %120(ptr noundef %124, ptr noundef %123, ptr noundef %122, ptr noundef %121, ptr noundef %32)
+  %126 = load ptr, ptr %13, align 8
+  call void @llvm.stackrestore(ptr %126)
+  ret i32 %125
 }
 
 ; Function Attrs: noinline nounwind optnone uwtable
@@ -3951,25 +3770,21 @@ define dso_local dllexport i32 @JNI_CallStaticIntMethod(ptr noundef %0, ptr noun
   %4 = alloca ptr, align 8
   %5 = alloca ptr, align 8
   %6 = alloca ptr, align 8
-  %7 = alloca i32, align 4
-  %8 = alloca ptr, align 8
+  %7 = alloca ptr, align 8
+  %8 = alloca i32, align 4
   store ptr %2, ptr %4, align 8
   store ptr %1, ptr %5, align 8
   store ptr %0, ptr %6, align 8
-  call void @llvm.va_start(ptr %8)
-  %9 = load ptr, ptr %6, align 8
-  %10 = load ptr, ptr %9, align 8
-  %11 = getelementptr inbounds %struct.JNINativeInterface_, ptr %10, i32 0, i32 130
-  %12 = load ptr, ptr %11, align 8
-  %13 = load ptr, ptr %8, align 8
-  %14 = load ptr, ptr %4, align 8
-  %15 = load ptr, ptr %5, align 8
-  %16 = load ptr, ptr %6, align 8
-  %17 = call i32 %12(ptr noundef %16, ptr noundef %15, ptr noundef %14, ptr noundef %13)
-  store i32 %17, ptr %7, align 4
-  call void @llvm.va_end(ptr %8)
-  %18 = load i32, ptr %7, align 4
-  ret i32 %18
+  call void @llvm.va_start(ptr %7)
+  %9 = load ptr, ptr %7, align 8
+  %10 = load ptr, ptr %4, align 8
+  %11 = load ptr, ptr %5, align 8
+  %12 = load ptr, ptr %6, align 8
+  %13 = call i32 @JNI_CallStaticIntMethodV(ptr noundef %12, ptr noundef %11, ptr noundef %10, ptr noundef %9)
+  store i32 %13, ptr %8, align 4
+  call void @llvm.va_end(ptr %7)
+  %14 = load i32, ptr %8, align 4
+  ret i32 %14
 }
 
 ; Function Attrs: noinline nounwind optnone uwtable
@@ -3978,196 +3793,189 @@ define dso_local dllexport i32 @JNI_CallStaticIntMethodV(ptr noundef %0, ptr nou
   %6 = alloca ptr, align 8
   %7 = alloca ptr, align 8
   %8 = alloca ptr, align 8
-  %9 = alloca ptr, align 8
-  %10 = alloca [257 x i8], align 16
-  %11 = alloca i32, align 4
-  %12 = alloca i32, align 4
+  %9 = alloca [256 x i8], align 16
+  %10 = alloca i32, align 4
+  %11 = alloca ptr, align 8
+  %12 = alloca i64, align 8
+  %13 = alloca i32, align 4
   store ptr %3, ptr %5, align 8
   store ptr %2, ptr %6, align 8
   store ptr %1, ptr %7, align 8
   store ptr %0, ptr %8, align 8
-  br label %13
-
-13:                                               ; preds = %4
   %14 = load ptr, ptr %8, align 8
   %15 = load ptr, ptr %14, align 8
   %16 = getelementptr inbounds %struct.JNINativeInterface_, ptr %15, i32 0, i32 0
   %17 = load ptr, ptr %16, align 8
-  %18 = getelementptr inbounds [257 x i8], ptr %10, i64 0, i64 0
+  %18 = getelementptr inbounds [256 x i8], ptr %9, i64 0, i64 0
   %19 = load ptr, ptr %6, align 8
   %20 = load ptr, ptr %8, align 8
   %21 = call i32 %17(ptr noundef %20, ptr noundef %19, ptr noundef %18)
-  store i32 %21, ptr %11, align 4
-  %22 = load i32, ptr %11, align 4
-  %23 = zext i32 %22 to i64
-  %24 = mul i64 %23, 8
-  %25 = alloca i8, i64 %24, align 16
-  store ptr %25, ptr %9, align 8
-  store i32 0, ptr %12, align 4
-  br label %26
+  store i32 %21, ptr %10, align 4
+  %22 = load ptr, ptr %8, align 8
+  %23 = load ptr, ptr %22, align 8
+  %24 = getelementptr inbounds %struct.JNINativeInterface_, ptr %23, i32 0, i32 1
+  %25 = load ptr, ptr %24, align 8
+  %26 = load i32, ptr %10, align 4
+  call void %25(i32 noundef %26)
+  %27 = load i32, ptr %10, align 4
+  %28 = zext i32 %27 to i64
+  %29 = call ptr @llvm.stacksave()
+  store ptr %29, ptr %11, align 8
+  %30 = alloca %union.jvalue, i64 %28, align 16
+  store i64 %28, ptr %12, align 8
+  store i32 0, ptr %13, align 4
+  br label %31
 
-26:                                               ; preds = %116, %13
-  %27 = load i32, ptr %12, align 4
-  %28 = load i32, ptr %11, align 4
-  %29 = icmp slt i32 %27, %28
-  br i1 %29, label %30, label %119
+31:                                               ; preds = %111, %4
+  %32 = load i32, ptr %13, align 4
+  %33 = load i32, ptr %10, align 4
+  %34 = icmp slt i32 %32, %33
+  br i1 %34, label %35, label %114
 
-30:                                               ; preds = %26
-  %31 = load i32, ptr %12, align 4
-  %32 = sext i32 %31 to i64
-  %33 = getelementptr inbounds [257 x i8], ptr %10, i64 0, i64 %32
-  %34 = load i8, ptr %33, align 1
-  %35 = sext i8 %34 to i32
-  switch i32 %35, label %115 [
-    i32 90, label %36
-    i32 66, label %45
-    i32 83, label %54
-    i32 67, label %63
+35:                                               ; preds = %31
+  %36 = load i32, ptr %13, align 4
+  %37 = sext i32 %36 to i64
+  %38 = getelementptr inbounds [256 x i8], ptr %9, i64 0, i64 %37
+  %39 = load i8, ptr %38, align 1
+  %40 = sext i8 %39 to i32
+  switch i32 %40, label %110 [
+    i32 90, label %41
+    i32 66, label %49
+    i32 67, label %57
+    i32 83, label %65
     i32 73, label %73
-    i32 74, label %81
-    i32 68, label %90
-    i32 70, label %98
-    i32 76, label %107
+    i32 74, label %80
+    i32 70, label %88
+    i32 68, label %96
+    i32 76, label %103
   ]
 
-36:                                               ; preds = %30
-  %37 = load ptr, ptr %5, align 8
-  %38 = getelementptr inbounds i8, ptr %37, i64 8
-  store ptr %38, ptr %5, align 8
-  %39 = load i32, ptr %37, align 8
-  %40 = trunc i32 %39 to i8
-  %41 = load ptr, ptr %9, align 8
-  %42 = load i32, ptr %12, align 4
-  %43 = sext i32 %42 to i64
-  %44 = getelementptr inbounds %union.jvalue, ptr %41, i64 %43
-  store i8 %40, ptr %44, align 8
-  br label %115
+41:                                               ; preds = %35
+  %42 = load ptr, ptr %5, align 8
+  %43 = getelementptr inbounds i8, ptr %42, i64 8
+  store ptr %43, ptr %5, align 8
+  %44 = load i32, ptr %42, align 8
+  %45 = trunc i32 %44 to i8
+  %46 = load i32, ptr %13, align 4
+  %47 = sext i32 %46 to i64
+  %48 = getelementptr inbounds %union.jvalue, ptr %30, i64 %47
+  store i8 %45, ptr %48, align 8
+  br label %110
 
-45:                                               ; preds = %30
-  %46 = load ptr, ptr %5, align 8
-  %47 = getelementptr inbounds i8, ptr %46, i64 8
-  store ptr %47, ptr %5, align 8
-  %48 = load i32, ptr %46, align 8
-  %49 = trunc i32 %48 to i8
-  %50 = load ptr, ptr %9, align 8
-  %51 = load i32, ptr %12, align 4
-  %52 = sext i32 %51 to i64
-  %53 = getelementptr inbounds %union.jvalue, ptr %50, i64 %52
-  store i8 %49, ptr %53, align 8
-  br label %115
+49:                                               ; preds = %35
+  %50 = load ptr, ptr %5, align 8
+  %51 = getelementptr inbounds i8, ptr %50, i64 8
+  store ptr %51, ptr %5, align 8
+  %52 = load i32, ptr %50, align 8
+  %53 = trunc i32 %52 to i8
+  %54 = load i32, ptr %13, align 4
+  %55 = sext i32 %54 to i64
+  %56 = getelementptr inbounds %union.jvalue, ptr %30, i64 %55
+  store i8 %53, ptr %56, align 8
+  br label %110
 
-54:                                               ; preds = %30
-  %55 = load ptr, ptr %5, align 8
-  %56 = getelementptr inbounds i8, ptr %55, i64 8
-  store ptr %56, ptr %5, align 8
-  %57 = load i32, ptr %55, align 8
-  %58 = trunc i32 %57 to i16
-  %59 = load ptr, ptr %9, align 8
-  %60 = load i32, ptr %12, align 4
-  %61 = sext i32 %60 to i64
-  %62 = getelementptr inbounds %union.jvalue, ptr %59, i64 %61
-  store i16 %58, ptr %62, align 8
-  br label %115
+57:                                               ; preds = %35
+  %58 = load ptr, ptr %5, align 8
+  %59 = getelementptr inbounds i8, ptr %58, i64 8
+  store ptr %59, ptr %5, align 8
+  %60 = load i32, ptr %58, align 8
+  %61 = trunc i32 %60 to i16
+  %62 = load i32, ptr %13, align 4
+  %63 = sext i32 %62 to i64
+  %64 = getelementptr inbounds %union.jvalue, ptr %30, i64 %63
+  store i16 %61, ptr %64, align 8
+  br label %110
 
-63:                                               ; preds = %30
-  %64 = load ptr, ptr %5, align 8
-  %65 = getelementptr inbounds i8, ptr %64, i64 8
-  store ptr %65, ptr %5, align 8
-  %66 = load i32, ptr %64, align 8
-  %67 = trunc i32 %66 to i16
-  %68 = zext i16 %67 to i32
-  %69 = load ptr, ptr %9, align 8
-  %70 = load i32, ptr %12, align 4
+65:                                               ; preds = %35
+  %66 = load ptr, ptr %5, align 8
+  %67 = getelementptr inbounds i8, ptr %66, i64 8
+  store ptr %67, ptr %5, align 8
+  %68 = load i32, ptr %66, align 8
+  %69 = trunc i32 %68 to i16
+  %70 = load i32, ptr %13, align 4
   %71 = sext i32 %70 to i64
-  %72 = getelementptr inbounds %union.jvalue, ptr %69, i64 %71
-  store i32 %68, ptr %72, align 8
-  br label %115
+  %72 = getelementptr inbounds %union.jvalue, ptr %30, i64 %71
+  store i16 %69, ptr %72, align 8
+  br label %110
 
-73:                                               ; preds = %30
+73:                                               ; preds = %35
   %74 = load ptr, ptr %5, align 8
   %75 = getelementptr inbounds i8, ptr %74, i64 8
   store ptr %75, ptr %5, align 8
   %76 = load i32, ptr %74, align 8
-  %77 = load ptr, ptr %9, align 8
-  %78 = load i32, ptr %12, align 4
-  %79 = sext i32 %78 to i64
-  %80 = getelementptr inbounds %union.jvalue, ptr %77, i64 %79
-  store i32 %76, ptr %80, align 8
-  br label %115
+  %77 = load i32, ptr %13, align 4
+  %78 = sext i32 %77 to i64
+  %79 = getelementptr inbounds %union.jvalue, ptr %30, i64 %78
+  store i32 %76, ptr %79, align 8
+  br label %110
 
-81:                                               ; preds = %30
-  %82 = load ptr, ptr %5, align 8
-  %83 = getelementptr inbounds i8, ptr %82, i64 8
-  store ptr %83, ptr %5, align 8
-  %84 = load i32, ptr %82, align 8
-  %85 = sext i32 %84 to i64
-  %86 = load ptr, ptr %9, align 8
-  %87 = load i32, ptr %12, align 4
-  %88 = sext i32 %87 to i64
-  %89 = getelementptr inbounds %union.jvalue, ptr %86, i64 %88
-  store i64 %85, ptr %89, align 8
-  br label %115
+80:                                               ; preds = %35
+  %81 = load ptr, ptr %5, align 8
+  %82 = getelementptr inbounds i8, ptr %81, i64 8
+  store ptr %82, ptr %5, align 8
+  %83 = load i32, ptr %81, align 8
+  %84 = sext i32 %83 to i64
+  %85 = load i32, ptr %13, align 4
+  %86 = sext i32 %85 to i64
+  %87 = getelementptr inbounds %union.jvalue, ptr %30, i64 %86
+  store i64 %84, ptr %87, align 8
+  br label %110
 
-90:                                               ; preds = %30
-  %91 = load ptr, ptr %5, align 8
-  %92 = getelementptr inbounds i8, ptr %91, i64 8
-  store ptr %92, ptr %5, align 8
-  %93 = load double, ptr %91, align 8
-  %94 = load ptr, ptr %9, align 8
-  %95 = load i32, ptr %12, align 4
-  %96 = sext i32 %95 to i64
-  %97 = getelementptr inbounds %union.jvalue, ptr %94, i64 %96
-  store double %93, ptr %97, align 8
-  br label %115
+88:                                               ; preds = %35
+  %89 = load ptr, ptr %5, align 8
+  %90 = getelementptr inbounds i8, ptr %89, i64 8
+  store ptr %90, ptr %5, align 8
+  %91 = load double, ptr %89, align 8
+  %92 = fptrunc double %91 to float
+  %93 = load i32, ptr %13, align 4
+  %94 = sext i32 %93 to i64
+  %95 = getelementptr inbounds %union.jvalue, ptr %30, i64 %94
+  store float %92, ptr %95, align 8
+  br label %110
 
-98:                                               ; preds = %30
-  %99 = load ptr, ptr %5, align 8
-  %100 = getelementptr inbounds i8, ptr %99, i64 8
-  store ptr %100, ptr %5, align 8
-  %101 = load double, ptr %99, align 8
-  %102 = fptrunc double %101 to float
-  %103 = load ptr, ptr %9, align 8
-  %104 = load i32, ptr %12, align 4
-  %105 = sext i32 %104 to i64
-  %106 = getelementptr inbounds %union.jvalue, ptr %103, i64 %105
-  store float %102, ptr %106, align 8
-  br label %115
+96:                                               ; preds = %35
+  %97 = load ptr, ptr %5, align 8
+  %98 = getelementptr inbounds i8, ptr %97, i64 8
+  store ptr %98, ptr %5, align 8
+  %99 = load double, ptr %97, align 8
+  %100 = load i32, ptr %13, align 4
+  %101 = sext i32 %100 to i64
+  %102 = getelementptr inbounds %union.jvalue, ptr %30, i64 %101
+  store double %99, ptr %102, align 8
+  br label %110
 
-107:                                              ; preds = %30
-  %108 = load ptr, ptr %5, align 8
-  %109 = getelementptr inbounds i8, ptr %108, i64 8
-  store ptr %109, ptr %5, align 8
-  %110 = load ptr, ptr %108, align 8
-  %111 = load ptr, ptr %9, align 8
-  %112 = load i32, ptr %12, align 4
-  %113 = sext i32 %112 to i64
-  %114 = getelementptr inbounds %union.jvalue, ptr %111, i64 %113
-  store ptr %110, ptr %114, align 8
-  br label %115
+103:                                              ; preds = %35
+  %104 = load ptr, ptr %5, align 8
+  %105 = getelementptr inbounds i8, ptr %104, i64 8
+  store ptr %105, ptr %5, align 8
+  %106 = load ptr, ptr %104, align 8
+  %107 = load i32, ptr %13, align 4
+  %108 = sext i32 %107 to i64
+  %109 = getelementptr inbounds %union.jvalue, ptr %30, i64 %108
+  store ptr %106, ptr %109, align 8
+  br label %110
 
-115:                                              ; preds = %30, %107, %98, %90, %81, %73, %63, %54, %45, %36
-  br label %116
+110:                                              ; preds = %35, %103, %96, %88, %80, %73, %65, %57, %49, %41
+  br label %111
 
-116:                                              ; preds = %115
-  %117 = load i32, ptr %12, align 4
-  %118 = add nsw i32 %117, 1
-  store i32 %118, ptr %12, align 4
-  br label %26, !llvm.loop !22
+111:                                              ; preds = %110
+  %112 = load i32, ptr %13, align 4
+  %113 = add nsw i32 %112, 1
+  store i32 %113, ptr %13, align 4
+  br label %31, !llvm.loop !22
 
-119:                                              ; preds = %26
-  br label %120
-
-120:                                              ; preds = %119
+114:                                              ; preds = %31
+  %115 = load ptr, ptr %8, align 8
+  %116 = load ptr, ptr %115, align 8
+  %117 = getelementptr inbounds %struct.JNINativeInterface_, ptr %116, i32 0, i32 131
+  %118 = load ptr, ptr %117, align 8
+  %119 = load ptr, ptr %6, align 8
+  %120 = load ptr, ptr %7, align 8
   %121 = load ptr, ptr %8, align 8
-  %122 = load ptr, ptr %121, align 8
-  %123 = getelementptr inbounds %struct.JNINativeInterface_, ptr %122, i32 0, i32 131
-  %124 = load ptr, ptr %123, align 8
-  %125 = load ptr, ptr %9, align 8
-  %126 = load ptr, ptr %6, align 8
-  %127 = load ptr, ptr %7, align 8
-  %128 = load ptr, ptr %8, align 8
-  %129 = call i32 %124(ptr noundef %128, ptr noundef %127, ptr noundef %126, ptr noundef %125)
-  ret i32 %129
+  %122 = call i32 %118(ptr noundef %121, ptr noundef %120, ptr noundef %119, ptr noundef %30)
+  %123 = load ptr, ptr %11, align 8
+  call void @llvm.stackrestore(ptr %123)
+  ret i32 %122
 }
 
 ; Function Attrs: noinline nounwind optnone uwtable
@@ -4175,25 +3983,21 @@ define dso_local dllexport i64 @JNI_CallLongMethod(ptr noundef %0, ptr noundef %
   %4 = alloca ptr, align 8
   %5 = alloca ptr, align 8
   %6 = alloca ptr, align 8
-  %7 = alloca i64, align 8
-  %8 = alloca ptr, align 8
+  %7 = alloca ptr, align 8
+  %8 = alloca i64, align 8
   store ptr %2, ptr %4, align 8
   store ptr %1, ptr %5, align 8
   store ptr %0, ptr %6, align 8
-  call void @llvm.va_start(ptr %8)
-  %9 = load ptr, ptr %6, align 8
-  %10 = load ptr, ptr %9, align 8
-  %11 = getelementptr inbounds %struct.JNINativeInterface_, ptr %10, i32 0, i32 53
-  %12 = load ptr, ptr %11, align 8
-  %13 = load ptr, ptr %8, align 8
-  %14 = load ptr, ptr %4, align 8
-  %15 = load ptr, ptr %5, align 8
-  %16 = load ptr, ptr %6, align 8
-  %17 = call i64 %12(ptr noundef %16, ptr noundef %15, ptr noundef %14, ptr noundef %13)
-  store i64 %17, ptr %7, align 8
-  call void @llvm.va_end(ptr %8)
-  %18 = load i64, ptr %7, align 8
-  ret i64 %18
+  call void @llvm.va_start(ptr %7)
+  %9 = load ptr, ptr %7, align 8
+  %10 = load ptr, ptr %4, align 8
+  %11 = load ptr, ptr %5, align 8
+  %12 = load ptr, ptr %6, align 8
+  %13 = call i64 @JNI_CallLongMethodV(ptr noundef %12, ptr noundef %11, ptr noundef %10, ptr noundef %9)
+  store i64 %13, ptr %8, align 8
+  call void @llvm.va_end(ptr %7)
+  %14 = load i64, ptr %8, align 8
+  ret i64 %14
 }
 
 ; Function Attrs: noinline nounwind optnone uwtable
@@ -4202,196 +4006,189 @@ define dso_local dllexport i64 @JNI_CallLongMethodV(ptr noundef %0, ptr noundef 
   %6 = alloca ptr, align 8
   %7 = alloca ptr, align 8
   %8 = alloca ptr, align 8
-  %9 = alloca ptr, align 8
-  %10 = alloca [257 x i8], align 16
-  %11 = alloca i32, align 4
-  %12 = alloca i32, align 4
+  %9 = alloca [256 x i8], align 16
+  %10 = alloca i32, align 4
+  %11 = alloca ptr, align 8
+  %12 = alloca i64, align 8
+  %13 = alloca i32, align 4
   store ptr %3, ptr %5, align 8
   store ptr %2, ptr %6, align 8
   store ptr %1, ptr %7, align 8
   store ptr %0, ptr %8, align 8
-  br label %13
-
-13:                                               ; preds = %4
   %14 = load ptr, ptr %8, align 8
   %15 = load ptr, ptr %14, align 8
   %16 = getelementptr inbounds %struct.JNINativeInterface_, ptr %15, i32 0, i32 0
   %17 = load ptr, ptr %16, align 8
-  %18 = getelementptr inbounds [257 x i8], ptr %10, i64 0, i64 0
+  %18 = getelementptr inbounds [256 x i8], ptr %9, i64 0, i64 0
   %19 = load ptr, ptr %6, align 8
   %20 = load ptr, ptr %8, align 8
   %21 = call i32 %17(ptr noundef %20, ptr noundef %19, ptr noundef %18)
-  store i32 %21, ptr %11, align 4
-  %22 = load i32, ptr %11, align 4
-  %23 = zext i32 %22 to i64
-  %24 = mul i64 %23, 8
-  %25 = alloca i8, i64 %24, align 16
-  store ptr %25, ptr %9, align 8
-  store i32 0, ptr %12, align 4
-  br label %26
+  store i32 %21, ptr %10, align 4
+  %22 = load ptr, ptr %8, align 8
+  %23 = load ptr, ptr %22, align 8
+  %24 = getelementptr inbounds %struct.JNINativeInterface_, ptr %23, i32 0, i32 1
+  %25 = load ptr, ptr %24, align 8
+  %26 = load i32, ptr %10, align 4
+  call void %25(i32 noundef %26)
+  %27 = load i32, ptr %10, align 4
+  %28 = zext i32 %27 to i64
+  %29 = call ptr @llvm.stacksave()
+  store ptr %29, ptr %11, align 8
+  %30 = alloca %union.jvalue, i64 %28, align 16
+  store i64 %28, ptr %12, align 8
+  store i32 0, ptr %13, align 4
+  br label %31
 
-26:                                               ; preds = %116, %13
-  %27 = load i32, ptr %12, align 4
-  %28 = load i32, ptr %11, align 4
-  %29 = icmp slt i32 %27, %28
-  br i1 %29, label %30, label %119
+31:                                               ; preds = %111, %4
+  %32 = load i32, ptr %13, align 4
+  %33 = load i32, ptr %10, align 4
+  %34 = icmp slt i32 %32, %33
+  br i1 %34, label %35, label %114
 
-30:                                               ; preds = %26
-  %31 = load i32, ptr %12, align 4
-  %32 = sext i32 %31 to i64
-  %33 = getelementptr inbounds [257 x i8], ptr %10, i64 0, i64 %32
-  %34 = load i8, ptr %33, align 1
-  %35 = sext i8 %34 to i32
-  switch i32 %35, label %115 [
-    i32 90, label %36
-    i32 66, label %45
-    i32 83, label %54
-    i32 67, label %63
+35:                                               ; preds = %31
+  %36 = load i32, ptr %13, align 4
+  %37 = sext i32 %36 to i64
+  %38 = getelementptr inbounds [256 x i8], ptr %9, i64 0, i64 %37
+  %39 = load i8, ptr %38, align 1
+  %40 = sext i8 %39 to i32
+  switch i32 %40, label %110 [
+    i32 90, label %41
+    i32 66, label %49
+    i32 67, label %57
+    i32 83, label %65
     i32 73, label %73
-    i32 74, label %81
-    i32 68, label %90
-    i32 70, label %98
-    i32 76, label %107
+    i32 74, label %80
+    i32 70, label %88
+    i32 68, label %96
+    i32 76, label %103
   ]
 
-36:                                               ; preds = %30
-  %37 = load ptr, ptr %5, align 8
-  %38 = getelementptr inbounds i8, ptr %37, i64 8
-  store ptr %38, ptr %5, align 8
-  %39 = load i32, ptr %37, align 8
-  %40 = trunc i32 %39 to i8
-  %41 = load ptr, ptr %9, align 8
-  %42 = load i32, ptr %12, align 4
-  %43 = sext i32 %42 to i64
-  %44 = getelementptr inbounds %union.jvalue, ptr %41, i64 %43
-  store i8 %40, ptr %44, align 8
-  br label %115
+41:                                               ; preds = %35
+  %42 = load ptr, ptr %5, align 8
+  %43 = getelementptr inbounds i8, ptr %42, i64 8
+  store ptr %43, ptr %5, align 8
+  %44 = load i32, ptr %42, align 8
+  %45 = trunc i32 %44 to i8
+  %46 = load i32, ptr %13, align 4
+  %47 = sext i32 %46 to i64
+  %48 = getelementptr inbounds %union.jvalue, ptr %30, i64 %47
+  store i8 %45, ptr %48, align 8
+  br label %110
 
-45:                                               ; preds = %30
-  %46 = load ptr, ptr %5, align 8
-  %47 = getelementptr inbounds i8, ptr %46, i64 8
-  store ptr %47, ptr %5, align 8
-  %48 = load i32, ptr %46, align 8
-  %49 = trunc i32 %48 to i8
-  %50 = load ptr, ptr %9, align 8
-  %51 = load i32, ptr %12, align 4
-  %52 = sext i32 %51 to i64
-  %53 = getelementptr inbounds %union.jvalue, ptr %50, i64 %52
-  store i8 %49, ptr %53, align 8
-  br label %115
+49:                                               ; preds = %35
+  %50 = load ptr, ptr %5, align 8
+  %51 = getelementptr inbounds i8, ptr %50, i64 8
+  store ptr %51, ptr %5, align 8
+  %52 = load i32, ptr %50, align 8
+  %53 = trunc i32 %52 to i8
+  %54 = load i32, ptr %13, align 4
+  %55 = sext i32 %54 to i64
+  %56 = getelementptr inbounds %union.jvalue, ptr %30, i64 %55
+  store i8 %53, ptr %56, align 8
+  br label %110
 
-54:                                               ; preds = %30
-  %55 = load ptr, ptr %5, align 8
-  %56 = getelementptr inbounds i8, ptr %55, i64 8
-  store ptr %56, ptr %5, align 8
-  %57 = load i32, ptr %55, align 8
-  %58 = trunc i32 %57 to i16
-  %59 = load ptr, ptr %9, align 8
-  %60 = load i32, ptr %12, align 4
-  %61 = sext i32 %60 to i64
-  %62 = getelementptr inbounds %union.jvalue, ptr %59, i64 %61
-  store i16 %58, ptr %62, align 8
-  br label %115
+57:                                               ; preds = %35
+  %58 = load ptr, ptr %5, align 8
+  %59 = getelementptr inbounds i8, ptr %58, i64 8
+  store ptr %59, ptr %5, align 8
+  %60 = load i32, ptr %58, align 8
+  %61 = trunc i32 %60 to i16
+  %62 = load i32, ptr %13, align 4
+  %63 = sext i32 %62 to i64
+  %64 = getelementptr inbounds %union.jvalue, ptr %30, i64 %63
+  store i16 %61, ptr %64, align 8
+  br label %110
 
-63:                                               ; preds = %30
-  %64 = load ptr, ptr %5, align 8
-  %65 = getelementptr inbounds i8, ptr %64, i64 8
-  store ptr %65, ptr %5, align 8
-  %66 = load i32, ptr %64, align 8
-  %67 = trunc i32 %66 to i16
-  %68 = zext i16 %67 to i32
-  %69 = load ptr, ptr %9, align 8
-  %70 = load i32, ptr %12, align 4
+65:                                               ; preds = %35
+  %66 = load ptr, ptr %5, align 8
+  %67 = getelementptr inbounds i8, ptr %66, i64 8
+  store ptr %67, ptr %5, align 8
+  %68 = load i32, ptr %66, align 8
+  %69 = trunc i32 %68 to i16
+  %70 = load i32, ptr %13, align 4
   %71 = sext i32 %70 to i64
-  %72 = getelementptr inbounds %union.jvalue, ptr %69, i64 %71
-  store i32 %68, ptr %72, align 8
-  br label %115
+  %72 = getelementptr inbounds %union.jvalue, ptr %30, i64 %71
+  store i16 %69, ptr %72, align 8
+  br label %110
 
-73:                                               ; preds = %30
+73:                                               ; preds = %35
   %74 = load ptr, ptr %5, align 8
   %75 = getelementptr inbounds i8, ptr %74, i64 8
   store ptr %75, ptr %5, align 8
   %76 = load i32, ptr %74, align 8
-  %77 = load ptr, ptr %9, align 8
-  %78 = load i32, ptr %12, align 4
-  %79 = sext i32 %78 to i64
-  %80 = getelementptr inbounds %union.jvalue, ptr %77, i64 %79
-  store i32 %76, ptr %80, align 8
-  br label %115
+  %77 = load i32, ptr %13, align 4
+  %78 = sext i32 %77 to i64
+  %79 = getelementptr inbounds %union.jvalue, ptr %30, i64 %78
+  store i32 %76, ptr %79, align 8
+  br label %110
 
-81:                                               ; preds = %30
-  %82 = load ptr, ptr %5, align 8
-  %83 = getelementptr inbounds i8, ptr %82, i64 8
-  store ptr %83, ptr %5, align 8
-  %84 = load i32, ptr %82, align 8
-  %85 = sext i32 %84 to i64
-  %86 = load ptr, ptr %9, align 8
-  %87 = load i32, ptr %12, align 4
-  %88 = sext i32 %87 to i64
-  %89 = getelementptr inbounds %union.jvalue, ptr %86, i64 %88
-  store i64 %85, ptr %89, align 8
-  br label %115
+80:                                               ; preds = %35
+  %81 = load ptr, ptr %5, align 8
+  %82 = getelementptr inbounds i8, ptr %81, i64 8
+  store ptr %82, ptr %5, align 8
+  %83 = load i32, ptr %81, align 8
+  %84 = sext i32 %83 to i64
+  %85 = load i32, ptr %13, align 4
+  %86 = sext i32 %85 to i64
+  %87 = getelementptr inbounds %union.jvalue, ptr %30, i64 %86
+  store i64 %84, ptr %87, align 8
+  br label %110
 
-90:                                               ; preds = %30
-  %91 = load ptr, ptr %5, align 8
-  %92 = getelementptr inbounds i8, ptr %91, i64 8
-  store ptr %92, ptr %5, align 8
-  %93 = load double, ptr %91, align 8
-  %94 = load ptr, ptr %9, align 8
-  %95 = load i32, ptr %12, align 4
-  %96 = sext i32 %95 to i64
-  %97 = getelementptr inbounds %union.jvalue, ptr %94, i64 %96
-  store double %93, ptr %97, align 8
-  br label %115
+88:                                               ; preds = %35
+  %89 = load ptr, ptr %5, align 8
+  %90 = getelementptr inbounds i8, ptr %89, i64 8
+  store ptr %90, ptr %5, align 8
+  %91 = load double, ptr %89, align 8
+  %92 = fptrunc double %91 to float
+  %93 = load i32, ptr %13, align 4
+  %94 = sext i32 %93 to i64
+  %95 = getelementptr inbounds %union.jvalue, ptr %30, i64 %94
+  store float %92, ptr %95, align 8
+  br label %110
 
-98:                                               ; preds = %30
-  %99 = load ptr, ptr %5, align 8
-  %100 = getelementptr inbounds i8, ptr %99, i64 8
-  store ptr %100, ptr %5, align 8
-  %101 = load double, ptr %99, align 8
-  %102 = fptrunc double %101 to float
-  %103 = load ptr, ptr %9, align 8
-  %104 = load i32, ptr %12, align 4
-  %105 = sext i32 %104 to i64
-  %106 = getelementptr inbounds %union.jvalue, ptr %103, i64 %105
-  store float %102, ptr %106, align 8
-  br label %115
+96:                                               ; preds = %35
+  %97 = load ptr, ptr %5, align 8
+  %98 = getelementptr inbounds i8, ptr %97, i64 8
+  store ptr %98, ptr %5, align 8
+  %99 = load double, ptr %97, align 8
+  %100 = load i32, ptr %13, align 4
+  %101 = sext i32 %100 to i64
+  %102 = getelementptr inbounds %union.jvalue, ptr %30, i64 %101
+  store double %99, ptr %102, align 8
+  br label %110
 
-107:                                              ; preds = %30
-  %108 = load ptr, ptr %5, align 8
-  %109 = getelementptr inbounds i8, ptr %108, i64 8
-  store ptr %109, ptr %5, align 8
-  %110 = load ptr, ptr %108, align 8
-  %111 = load ptr, ptr %9, align 8
-  %112 = load i32, ptr %12, align 4
-  %113 = sext i32 %112 to i64
-  %114 = getelementptr inbounds %union.jvalue, ptr %111, i64 %113
-  store ptr %110, ptr %114, align 8
-  br label %115
+103:                                              ; preds = %35
+  %104 = load ptr, ptr %5, align 8
+  %105 = getelementptr inbounds i8, ptr %104, i64 8
+  store ptr %105, ptr %5, align 8
+  %106 = load ptr, ptr %104, align 8
+  %107 = load i32, ptr %13, align 4
+  %108 = sext i32 %107 to i64
+  %109 = getelementptr inbounds %union.jvalue, ptr %30, i64 %108
+  store ptr %106, ptr %109, align 8
+  br label %110
 
-115:                                              ; preds = %30, %107, %98, %90, %81, %73, %63, %54, %45, %36
-  br label %116
+110:                                              ; preds = %35, %103, %96, %88, %80, %73, %65, %57, %49, %41
+  br label %111
 
-116:                                              ; preds = %115
-  %117 = load i32, ptr %12, align 4
-  %118 = add nsw i32 %117, 1
-  store i32 %118, ptr %12, align 4
-  br label %26, !llvm.loop !23
+111:                                              ; preds = %110
+  %112 = load i32, ptr %13, align 4
+  %113 = add nsw i32 %112, 1
+  store i32 %113, ptr %13, align 4
+  br label %31, !llvm.loop !23
 
-119:                                              ; preds = %26
-  br label %120
-
-120:                                              ; preds = %119
+114:                                              ; preds = %31
+  %115 = load ptr, ptr %8, align 8
+  %116 = load ptr, ptr %115, align 8
+  %117 = getelementptr inbounds %struct.JNINativeInterface_, ptr %116, i32 0, i32 54
+  %118 = load ptr, ptr %117, align 8
+  %119 = load ptr, ptr %6, align 8
+  %120 = load ptr, ptr %7, align 8
   %121 = load ptr, ptr %8, align 8
-  %122 = load ptr, ptr %121, align 8
-  %123 = getelementptr inbounds %struct.JNINativeInterface_, ptr %122, i32 0, i32 54
-  %124 = load ptr, ptr %123, align 8
-  %125 = load ptr, ptr %9, align 8
-  %126 = load ptr, ptr %6, align 8
-  %127 = load ptr, ptr %7, align 8
-  %128 = load ptr, ptr %8, align 8
-  %129 = call i64 %124(ptr noundef %128, ptr noundef %127, ptr noundef %126, ptr noundef %125)
-  ret i64 %129
+  %122 = call i64 %118(ptr noundef %121, ptr noundef %120, ptr noundef %119, ptr noundef %30)
+  %123 = load ptr, ptr %11, align 8
+  call void @llvm.stackrestore(ptr %123)
+  ret i64 %122
 }
 
 ; Function Attrs: noinline nounwind optnone uwtable
@@ -4400,27 +4197,23 @@ define dso_local dllexport i64 @JNI_CallNonvirtualLongMethod(ptr noundef %0, ptr
   %6 = alloca ptr, align 8
   %7 = alloca ptr, align 8
   %8 = alloca ptr, align 8
-  %9 = alloca i64, align 8
-  %10 = alloca ptr, align 8
+  %9 = alloca ptr, align 8
+  %10 = alloca i64, align 8
   store ptr %3, ptr %5, align 8
   store ptr %2, ptr %6, align 8
   store ptr %1, ptr %7, align 8
   store ptr %0, ptr %8, align 8
-  call void @llvm.va_start(ptr %10)
-  %11 = load ptr, ptr %8, align 8
-  %12 = load ptr, ptr %11, align 8
-  %13 = getelementptr inbounds %struct.JNINativeInterface_, ptr %12, i32 0, i32 83
-  %14 = load ptr, ptr %13, align 8
-  %15 = load ptr, ptr %10, align 8
-  %16 = load ptr, ptr %5, align 8
-  %17 = load ptr, ptr %6, align 8
-  %18 = load ptr, ptr %7, align 8
-  %19 = load ptr, ptr %8, align 8
-  %20 = call i64 %14(ptr noundef %19, ptr noundef %18, ptr noundef %17, ptr noundef %16, ptr noundef %15)
-  store i64 %20, ptr %9, align 8
-  call void @llvm.va_end(ptr %10)
-  %21 = load i64, ptr %9, align 8
-  ret i64 %21
+  call void @llvm.va_start(ptr %9)
+  %11 = load ptr, ptr %9, align 8
+  %12 = load ptr, ptr %5, align 8
+  %13 = load ptr, ptr %6, align 8
+  %14 = load ptr, ptr %7, align 8
+  %15 = load ptr, ptr %8, align 8
+  %16 = call i64 @JNI_CallNonvirtualLongMethodV(ptr noundef %15, ptr noundef %14, ptr noundef %13, ptr noundef %12, ptr noundef %11)
+  store i64 %16, ptr %10, align 8
+  call void @llvm.va_end(ptr %9)
+  %17 = load i64, ptr %10, align 8
+  ret i64 %17
 }
 
 ; Function Attrs: noinline nounwind optnone uwtable
@@ -4430,198 +4223,191 @@ define dso_local dllexport i64 @JNI_CallNonvirtualLongMethodV(ptr noundef %0, pt
   %8 = alloca ptr, align 8
   %9 = alloca ptr, align 8
   %10 = alloca ptr, align 8
-  %11 = alloca ptr, align 8
-  %12 = alloca [257 x i8], align 16
-  %13 = alloca i32, align 4
-  %14 = alloca i32, align 4
+  %11 = alloca [256 x i8], align 16
+  %12 = alloca i32, align 4
+  %13 = alloca ptr, align 8
+  %14 = alloca i64, align 8
+  %15 = alloca i32, align 4
   store ptr %4, ptr %6, align 8
   store ptr %3, ptr %7, align 8
   store ptr %2, ptr %8, align 8
   store ptr %1, ptr %9, align 8
   store ptr %0, ptr %10, align 8
-  br label %15
-
-15:                                               ; preds = %5
   %16 = load ptr, ptr %10, align 8
   %17 = load ptr, ptr %16, align 8
   %18 = getelementptr inbounds %struct.JNINativeInterface_, ptr %17, i32 0, i32 0
   %19 = load ptr, ptr %18, align 8
-  %20 = getelementptr inbounds [257 x i8], ptr %12, i64 0, i64 0
+  %20 = getelementptr inbounds [256 x i8], ptr %11, i64 0, i64 0
   %21 = load ptr, ptr %7, align 8
   %22 = load ptr, ptr %10, align 8
   %23 = call i32 %19(ptr noundef %22, ptr noundef %21, ptr noundef %20)
-  store i32 %23, ptr %13, align 4
-  %24 = load i32, ptr %13, align 4
-  %25 = zext i32 %24 to i64
-  %26 = mul i64 %25, 8
-  %27 = alloca i8, i64 %26, align 16
-  store ptr %27, ptr %11, align 8
-  store i32 0, ptr %14, align 4
-  br label %28
+  store i32 %23, ptr %12, align 4
+  %24 = load ptr, ptr %10, align 8
+  %25 = load ptr, ptr %24, align 8
+  %26 = getelementptr inbounds %struct.JNINativeInterface_, ptr %25, i32 0, i32 1
+  %27 = load ptr, ptr %26, align 8
+  %28 = load i32, ptr %12, align 4
+  call void %27(i32 noundef %28)
+  %29 = load i32, ptr %12, align 4
+  %30 = zext i32 %29 to i64
+  %31 = call ptr @llvm.stacksave()
+  store ptr %31, ptr %13, align 8
+  %32 = alloca %union.jvalue, i64 %30, align 16
+  store i64 %30, ptr %14, align 8
+  store i32 0, ptr %15, align 4
+  br label %33
 
-28:                                               ; preds = %118, %15
-  %29 = load i32, ptr %14, align 4
-  %30 = load i32, ptr %13, align 4
-  %31 = icmp slt i32 %29, %30
-  br i1 %31, label %32, label %121
+33:                                               ; preds = %113, %5
+  %34 = load i32, ptr %15, align 4
+  %35 = load i32, ptr %12, align 4
+  %36 = icmp slt i32 %34, %35
+  br i1 %36, label %37, label %116
 
-32:                                               ; preds = %28
-  %33 = load i32, ptr %14, align 4
-  %34 = sext i32 %33 to i64
-  %35 = getelementptr inbounds [257 x i8], ptr %12, i64 0, i64 %34
-  %36 = load i8, ptr %35, align 1
-  %37 = sext i8 %36 to i32
-  switch i32 %37, label %117 [
-    i32 90, label %38
-    i32 66, label %47
-    i32 83, label %56
-    i32 67, label %65
+37:                                               ; preds = %33
+  %38 = load i32, ptr %15, align 4
+  %39 = sext i32 %38 to i64
+  %40 = getelementptr inbounds [256 x i8], ptr %11, i64 0, i64 %39
+  %41 = load i8, ptr %40, align 1
+  %42 = sext i8 %41 to i32
+  switch i32 %42, label %112 [
+    i32 90, label %43
+    i32 66, label %51
+    i32 67, label %59
+    i32 83, label %67
     i32 73, label %75
-    i32 74, label %83
-    i32 68, label %92
-    i32 70, label %100
-    i32 76, label %109
+    i32 74, label %82
+    i32 70, label %90
+    i32 68, label %98
+    i32 76, label %105
   ]
 
-38:                                               ; preds = %32
-  %39 = load ptr, ptr %6, align 8
-  %40 = getelementptr inbounds i8, ptr %39, i64 8
-  store ptr %40, ptr %6, align 8
-  %41 = load i32, ptr %39, align 8
-  %42 = trunc i32 %41 to i8
-  %43 = load ptr, ptr %11, align 8
-  %44 = load i32, ptr %14, align 4
-  %45 = sext i32 %44 to i64
-  %46 = getelementptr inbounds %union.jvalue, ptr %43, i64 %45
-  store i8 %42, ptr %46, align 8
-  br label %117
+43:                                               ; preds = %37
+  %44 = load ptr, ptr %6, align 8
+  %45 = getelementptr inbounds i8, ptr %44, i64 8
+  store ptr %45, ptr %6, align 8
+  %46 = load i32, ptr %44, align 8
+  %47 = trunc i32 %46 to i8
+  %48 = load i32, ptr %15, align 4
+  %49 = sext i32 %48 to i64
+  %50 = getelementptr inbounds %union.jvalue, ptr %32, i64 %49
+  store i8 %47, ptr %50, align 8
+  br label %112
 
-47:                                               ; preds = %32
-  %48 = load ptr, ptr %6, align 8
-  %49 = getelementptr inbounds i8, ptr %48, i64 8
-  store ptr %49, ptr %6, align 8
-  %50 = load i32, ptr %48, align 8
-  %51 = trunc i32 %50 to i8
-  %52 = load ptr, ptr %11, align 8
-  %53 = load i32, ptr %14, align 4
-  %54 = sext i32 %53 to i64
-  %55 = getelementptr inbounds %union.jvalue, ptr %52, i64 %54
-  store i8 %51, ptr %55, align 8
-  br label %117
+51:                                               ; preds = %37
+  %52 = load ptr, ptr %6, align 8
+  %53 = getelementptr inbounds i8, ptr %52, i64 8
+  store ptr %53, ptr %6, align 8
+  %54 = load i32, ptr %52, align 8
+  %55 = trunc i32 %54 to i8
+  %56 = load i32, ptr %15, align 4
+  %57 = sext i32 %56 to i64
+  %58 = getelementptr inbounds %union.jvalue, ptr %32, i64 %57
+  store i8 %55, ptr %58, align 8
+  br label %112
 
-56:                                               ; preds = %32
-  %57 = load ptr, ptr %6, align 8
-  %58 = getelementptr inbounds i8, ptr %57, i64 8
-  store ptr %58, ptr %6, align 8
-  %59 = load i32, ptr %57, align 8
-  %60 = trunc i32 %59 to i16
-  %61 = load ptr, ptr %11, align 8
-  %62 = load i32, ptr %14, align 4
-  %63 = sext i32 %62 to i64
-  %64 = getelementptr inbounds %union.jvalue, ptr %61, i64 %63
-  store i16 %60, ptr %64, align 8
-  br label %117
+59:                                               ; preds = %37
+  %60 = load ptr, ptr %6, align 8
+  %61 = getelementptr inbounds i8, ptr %60, i64 8
+  store ptr %61, ptr %6, align 8
+  %62 = load i32, ptr %60, align 8
+  %63 = trunc i32 %62 to i16
+  %64 = load i32, ptr %15, align 4
+  %65 = sext i32 %64 to i64
+  %66 = getelementptr inbounds %union.jvalue, ptr %32, i64 %65
+  store i16 %63, ptr %66, align 8
+  br label %112
 
-65:                                               ; preds = %32
-  %66 = load ptr, ptr %6, align 8
-  %67 = getelementptr inbounds i8, ptr %66, i64 8
-  store ptr %67, ptr %6, align 8
-  %68 = load i32, ptr %66, align 8
-  %69 = trunc i32 %68 to i16
-  %70 = zext i16 %69 to i32
-  %71 = load ptr, ptr %11, align 8
-  %72 = load i32, ptr %14, align 4
+67:                                               ; preds = %37
+  %68 = load ptr, ptr %6, align 8
+  %69 = getelementptr inbounds i8, ptr %68, i64 8
+  store ptr %69, ptr %6, align 8
+  %70 = load i32, ptr %68, align 8
+  %71 = trunc i32 %70 to i16
+  %72 = load i32, ptr %15, align 4
   %73 = sext i32 %72 to i64
-  %74 = getelementptr inbounds %union.jvalue, ptr %71, i64 %73
-  store i32 %70, ptr %74, align 8
-  br label %117
+  %74 = getelementptr inbounds %union.jvalue, ptr %32, i64 %73
+  store i16 %71, ptr %74, align 8
+  br label %112
 
-75:                                               ; preds = %32
+75:                                               ; preds = %37
   %76 = load ptr, ptr %6, align 8
   %77 = getelementptr inbounds i8, ptr %76, i64 8
   store ptr %77, ptr %6, align 8
   %78 = load i32, ptr %76, align 8
-  %79 = load ptr, ptr %11, align 8
-  %80 = load i32, ptr %14, align 4
-  %81 = sext i32 %80 to i64
-  %82 = getelementptr inbounds %union.jvalue, ptr %79, i64 %81
-  store i32 %78, ptr %82, align 8
-  br label %117
+  %79 = load i32, ptr %15, align 4
+  %80 = sext i32 %79 to i64
+  %81 = getelementptr inbounds %union.jvalue, ptr %32, i64 %80
+  store i32 %78, ptr %81, align 8
+  br label %112
 
-83:                                               ; preds = %32
-  %84 = load ptr, ptr %6, align 8
-  %85 = getelementptr inbounds i8, ptr %84, i64 8
-  store ptr %85, ptr %6, align 8
-  %86 = load i32, ptr %84, align 8
-  %87 = sext i32 %86 to i64
-  %88 = load ptr, ptr %11, align 8
-  %89 = load i32, ptr %14, align 4
-  %90 = sext i32 %89 to i64
-  %91 = getelementptr inbounds %union.jvalue, ptr %88, i64 %90
-  store i64 %87, ptr %91, align 8
-  br label %117
+82:                                               ; preds = %37
+  %83 = load ptr, ptr %6, align 8
+  %84 = getelementptr inbounds i8, ptr %83, i64 8
+  store ptr %84, ptr %6, align 8
+  %85 = load i32, ptr %83, align 8
+  %86 = sext i32 %85 to i64
+  %87 = load i32, ptr %15, align 4
+  %88 = sext i32 %87 to i64
+  %89 = getelementptr inbounds %union.jvalue, ptr %32, i64 %88
+  store i64 %86, ptr %89, align 8
+  br label %112
 
-92:                                               ; preds = %32
-  %93 = load ptr, ptr %6, align 8
-  %94 = getelementptr inbounds i8, ptr %93, i64 8
-  store ptr %94, ptr %6, align 8
-  %95 = load double, ptr %93, align 8
-  %96 = load ptr, ptr %11, align 8
-  %97 = load i32, ptr %14, align 4
-  %98 = sext i32 %97 to i64
-  %99 = getelementptr inbounds %union.jvalue, ptr %96, i64 %98
-  store double %95, ptr %99, align 8
-  br label %117
+90:                                               ; preds = %37
+  %91 = load ptr, ptr %6, align 8
+  %92 = getelementptr inbounds i8, ptr %91, i64 8
+  store ptr %92, ptr %6, align 8
+  %93 = load double, ptr %91, align 8
+  %94 = fptrunc double %93 to float
+  %95 = load i32, ptr %15, align 4
+  %96 = sext i32 %95 to i64
+  %97 = getelementptr inbounds %union.jvalue, ptr %32, i64 %96
+  store float %94, ptr %97, align 8
+  br label %112
 
-100:                                              ; preds = %32
-  %101 = load ptr, ptr %6, align 8
-  %102 = getelementptr inbounds i8, ptr %101, i64 8
-  store ptr %102, ptr %6, align 8
-  %103 = load double, ptr %101, align 8
-  %104 = fptrunc double %103 to float
-  %105 = load ptr, ptr %11, align 8
-  %106 = load i32, ptr %14, align 4
-  %107 = sext i32 %106 to i64
-  %108 = getelementptr inbounds %union.jvalue, ptr %105, i64 %107
-  store float %104, ptr %108, align 8
-  br label %117
+98:                                               ; preds = %37
+  %99 = load ptr, ptr %6, align 8
+  %100 = getelementptr inbounds i8, ptr %99, i64 8
+  store ptr %100, ptr %6, align 8
+  %101 = load double, ptr %99, align 8
+  %102 = load i32, ptr %15, align 4
+  %103 = sext i32 %102 to i64
+  %104 = getelementptr inbounds %union.jvalue, ptr %32, i64 %103
+  store double %101, ptr %104, align 8
+  br label %112
 
-109:                                              ; preds = %32
-  %110 = load ptr, ptr %6, align 8
-  %111 = getelementptr inbounds i8, ptr %110, i64 8
-  store ptr %111, ptr %6, align 8
-  %112 = load ptr, ptr %110, align 8
-  %113 = load ptr, ptr %11, align 8
-  %114 = load i32, ptr %14, align 4
-  %115 = sext i32 %114 to i64
-  %116 = getelementptr inbounds %union.jvalue, ptr %113, i64 %115
-  store ptr %112, ptr %116, align 8
-  br label %117
+105:                                              ; preds = %37
+  %106 = load ptr, ptr %6, align 8
+  %107 = getelementptr inbounds i8, ptr %106, i64 8
+  store ptr %107, ptr %6, align 8
+  %108 = load ptr, ptr %106, align 8
+  %109 = load i32, ptr %15, align 4
+  %110 = sext i32 %109 to i64
+  %111 = getelementptr inbounds %union.jvalue, ptr %32, i64 %110
+  store ptr %108, ptr %111, align 8
+  br label %112
 
-117:                                              ; preds = %32, %109, %100, %92, %83, %75, %65, %56, %47, %38
-  br label %118
+112:                                              ; preds = %37, %105, %98, %90, %82, %75, %67, %59, %51, %43
+  br label %113
 
-118:                                              ; preds = %117
-  %119 = load i32, ptr %14, align 4
-  %120 = add nsw i32 %119, 1
-  store i32 %120, ptr %14, align 4
-  br label %28, !llvm.loop !24
+113:                                              ; preds = %112
+  %114 = load i32, ptr %15, align 4
+  %115 = add nsw i32 %114, 1
+  store i32 %115, ptr %15, align 4
+  br label %33, !llvm.loop !24
 
-121:                                              ; preds = %28
-  br label %122
-
-122:                                              ; preds = %121
-  %123 = load ptr, ptr %10, align 8
-  %124 = load ptr, ptr %123, align 8
-  %125 = getelementptr inbounds %struct.JNINativeInterface_, ptr %124, i32 0, i32 84
-  %126 = load ptr, ptr %125, align 8
-  %127 = load ptr, ptr %11, align 8
-  %128 = load ptr, ptr %7, align 8
-  %129 = load ptr, ptr %8, align 8
-  %130 = load ptr, ptr %9, align 8
-  %131 = load ptr, ptr %10, align 8
-  %132 = call i64 %126(ptr noundef %131, ptr noundef %130, ptr noundef %129, ptr noundef %128, ptr noundef %127)
-  ret i64 %132
+116:                                              ; preds = %33
+  %117 = load ptr, ptr %10, align 8
+  %118 = load ptr, ptr %117, align 8
+  %119 = getelementptr inbounds %struct.JNINativeInterface_, ptr %118, i32 0, i32 84
+  %120 = load ptr, ptr %119, align 8
+  %121 = load ptr, ptr %7, align 8
+  %122 = load ptr, ptr %8, align 8
+  %123 = load ptr, ptr %9, align 8
+  %124 = load ptr, ptr %10, align 8
+  %125 = call i64 %120(ptr noundef %124, ptr noundef %123, ptr noundef %122, ptr noundef %121, ptr noundef %32)
+  %126 = load ptr, ptr %13, align 8
+  call void @llvm.stackrestore(ptr %126)
+  ret i64 %125
 }
 
 ; Function Attrs: noinline nounwind optnone uwtable
@@ -4629,25 +4415,21 @@ define dso_local dllexport i64 @JNI_CallStaticLongMethod(ptr noundef %0, ptr nou
   %4 = alloca ptr, align 8
   %5 = alloca ptr, align 8
   %6 = alloca ptr, align 8
-  %7 = alloca i64, align 8
-  %8 = alloca ptr, align 8
+  %7 = alloca ptr, align 8
+  %8 = alloca i64, align 8
   store ptr %2, ptr %4, align 8
   store ptr %1, ptr %5, align 8
   store ptr %0, ptr %6, align 8
-  call void @llvm.va_start(ptr %8)
-  %9 = load ptr, ptr %6, align 8
-  %10 = load ptr, ptr %9, align 8
-  %11 = getelementptr inbounds %struct.JNINativeInterface_, ptr %10, i32 0, i32 133
-  %12 = load ptr, ptr %11, align 8
-  %13 = load ptr, ptr %8, align 8
-  %14 = load ptr, ptr %4, align 8
-  %15 = load ptr, ptr %5, align 8
-  %16 = load ptr, ptr %6, align 8
-  %17 = call i64 %12(ptr noundef %16, ptr noundef %15, ptr noundef %14, ptr noundef %13)
-  store i64 %17, ptr %7, align 8
-  call void @llvm.va_end(ptr %8)
-  %18 = load i64, ptr %7, align 8
-  ret i64 %18
+  call void @llvm.va_start(ptr %7)
+  %9 = load ptr, ptr %7, align 8
+  %10 = load ptr, ptr %4, align 8
+  %11 = load ptr, ptr %5, align 8
+  %12 = load ptr, ptr %6, align 8
+  %13 = call i64 @JNI_CallStaticLongMethodV(ptr noundef %12, ptr noundef %11, ptr noundef %10, ptr noundef %9)
+  store i64 %13, ptr %8, align 8
+  call void @llvm.va_end(ptr %7)
+  %14 = load i64, ptr %8, align 8
+  ret i64 %14
 }
 
 ; Function Attrs: noinline nounwind optnone uwtable
@@ -4656,196 +4438,189 @@ define dso_local dllexport i64 @JNI_CallStaticLongMethodV(ptr noundef %0, ptr no
   %6 = alloca ptr, align 8
   %7 = alloca ptr, align 8
   %8 = alloca ptr, align 8
-  %9 = alloca ptr, align 8
-  %10 = alloca [257 x i8], align 16
-  %11 = alloca i32, align 4
-  %12 = alloca i32, align 4
+  %9 = alloca [256 x i8], align 16
+  %10 = alloca i32, align 4
+  %11 = alloca ptr, align 8
+  %12 = alloca i64, align 8
+  %13 = alloca i32, align 4
   store ptr %3, ptr %5, align 8
   store ptr %2, ptr %6, align 8
   store ptr %1, ptr %7, align 8
   store ptr %0, ptr %8, align 8
-  br label %13
-
-13:                                               ; preds = %4
   %14 = load ptr, ptr %8, align 8
   %15 = load ptr, ptr %14, align 8
   %16 = getelementptr inbounds %struct.JNINativeInterface_, ptr %15, i32 0, i32 0
   %17 = load ptr, ptr %16, align 8
-  %18 = getelementptr inbounds [257 x i8], ptr %10, i64 0, i64 0
+  %18 = getelementptr inbounds [256 x i8], ptr %9, i64 0, i64 0
   %19 = load ptr, ptr %6, align 8
   %20 = load ptr, ptr %8, align 8
   %21 = call i32 %17(ptr noundef %20, ptr noundef %19, ptr noundef %18)
-  store i32 %21, ptr %11, align 4
-  %22 = load i32, ptr %11, align 4
-  %23 = zext i32 %22 to i64
-  %24 = mul i64 %23, 8
-  %25 = alloca i8, i64 %24, align 16
-  store ptr %25, ptr %9, align 8
-  store i32 0, ptr %12, align 4
-  br label %26
+  store i32 %21, ptr %10, align 4
+  %22 = load ptr, ptr %8, align 8
+  %23 = load ptr, ptr %22, align 8
+  %24 = getelementptr inbounds %struct.JNINativeInterface_, ptr %23, i32 0, i32 1
+  %25 = load ptr, ptr %24, align 8
+  %26 = load i32, ptr %10, align 4
+  call void %25(i32 noundef %26)
+  %27 = load i32, ptr %10, align 4
+  %28 = zext i32 %27 to i64
+  %29 = call ptr @llvm.stacksave()
+  store ptr %29, ptr %11, align 8
+  %30 = alloca %union.jvalue, i64 %28, align 16
+  store i64 %28, ptr %12, align 8
+  store i32 0, ptr %13, align 4
+  br label %31
 
-26:                                               ; preds = %116, %13
-  %27 = load i32, ptr %12, align 4
-  %28 = load i32, ptr %11, align 4
-  %29 = icmp slt i32 %27, %28
-  br i1 %29, label %30, label %119
+31:                                               ; preds = %111, %4
+  %32 = load i32, ptr %13, align 4
+  %33 = load i32, ptr %10, align 4
+  %34 = icmp slt i32 %32, %33
+  br i1 %34, label %35, label %114
 
-30:                                               ; preds = %26
-  %31 = load i32, ptr %12, align 4
-  %32 = sext i32 %31 to i64
-  %33 = getelementptr inbounds [257 x i8], ptr %10, i64 0, i64 %32
-  %34 = load i8, ptr %33, align 1
-  %35 = sext i8 %34 to i32
-  switch i32 %35, label %115 [
-    i32 90, label %36
-    i32 66, label %45
-    i32 83, label %54
-    i32 67, label %63
+35:                                               ; preds = %31
+  %36 = load i32, ptr %13, align 4
+  %37 = sext i32 %36 to i64
+  %38 = getelementptr inbounds [256 x i8], ptr %9, i64 0, i64 %37
+  %39 = load i8, ptr %38, align 1
+  %40 = sext i8 %39 to i32
+  switch i32 %40, label %110 [
+    i32 90, label %41
+    i32 66, label %49
+    i32 67, label %57
+    i32 83, label %65
     i32 73, label %73
-    i32 74, label %81
-    i32 68, label %90
-    i32 70, label %98
-    i32 76, label %107
+    i32 74, label %80
+    i32 70, label %88
+    i32 68, label %96
+    i32 76, label %103
   ]
 
-36:                                               ; preds = %30
-  %37 = load ptr, ptr %5, align 8
-  %38 = getelementptr inbounds i8, ptr %37, i64 8
-  store ptr %38, ptr %5, align 8
-  %39 = load i32, ptr %37, align 8
-  %40 = trunc i32 %39 to i8
-  %41 = load ptr, ptr %9, align 8
-  %42 = load i32, ptr %12, align 4
-  %43 = sext i32 %42 to i64
-  %44 = getelementptr inbounds %union.jvalue, ptr %41, i64 %43
-  store i8 %40, ptr %44, align 8
-  br label %115
+41:                                               ; preds = %35
+  %42 = load ptr, ptr %5, align 8
+  %43 = getelementptr inbounds i8, ptr %42, i64 8
+  store ptr %43, ptr %5, align 8
+  %44 = load i32, ptr %42, align 8
+  %45 = trunc i32 %44 to i8
+  %46 = load i32, ptr %13, align 4
+  %47 = sext i32 %46 to i64
+  %48 = getelementptr inbounds %union.jvalue, ptr %30, i64 %47
+  store i8 %45, ptr %48, align 8
+  br label %110
 
-45:                                               ; preds = %30
-  %46 = load ptr, ptr %5, align 8
-  %47 = getelementptr inbounds i8, ptr %46, i64 8
-  store ptr %47, ptr %5, align 8
-  %48 = load i32, ptr %46, align 8
-  %49 = trunc i32 %48 to i8
-  %50 = load ptr, ptr %9, align 8
-  %51 = load i32, ptr %12, align 4
-  %52 = sext i32 %51 to i64
-  %53 = getelementptr inbounds %union.jvalue, ptr %50, i64 %52
-  store i8 %49, ptr %53, align 8
-  br label %115
+49:                                               ; preds = %35
+  %50 = load ptr, ptr %5, align 8
+  %51 = getelementptr inbounds i8, ptr %50, i64 8
+  store ptr %51, ptr %5, align 8
+  %52 = load i32, ptr %50, align 8
+  %53 = trunc i32 %52 to i8
+  %54 = load i32, ptr %13, align 4
+  %55 = sext i32 %54 to i64
+  %56 = getelementptr inbounds %union.jvalue, ptr %30, i64 %55
+  store i8 %53, ptr %56, align 8
+  br label %110
 
-54:                                               ; preds = %30
-  %55 = load ptr, ptr %5, align 8
-  %56 = getelementptr inbounds i8, ptr %55, i64 8
-  store ptr %56, ptr %5, align 8
-  %57 = load i32, ptr %55, align 8
-  %58 = trunc i32 %57 to i16
-  %59 = load ptr, ptr %9, align 8
-  %60 = load i32, ptr %12, align 4
-  %61 = sext i32 %60 to i64
-  %62 = getelementptr inbounds %union.jvalue, ptr %59, i64 %61
-  store i16 %58, ptr %62, align 8
-  br label %115
+57:                                               ; preds = %35
+  %58 = load ptr, ptr %5, align 8
+  %59 = getelementptr inbounds i8, ptr %58, i64 8
+  store ptr %59, ptr %5, align 8
+  %60 = load i32, ptr %58, align 8
+  %61 = trunc i32 %60 to i16
+  %62 = load i32, ptr %13, align 4
+  %63 = sext i32 %62 to i64
+  %64 = getelementptr inbounds %union.jvalue, ptr %30, i64 %63
+  store i16 %61, ptr %64, align 8
+  br label %110
 
-63:                                               ; preds = %30
-  %64 = load ptr, ptr %5, align 8
-  %65 = getelementptr inbounds i8, ptr %64, i64 8
-  store ptr %65, ptr %5, align 8
-  %66 = load i32, ptr %64, align 8
-  %67 = trunc i32 %66 to i16
-  %68 = zext i16 %67 to i32
-  %69 = load ptr, ptr %9, align 8
-  %70 = load i32, ptr %12, align 4
+65:                                               ; preds = %35
+  %66 = load ptr, ptr %5, align 8
+  %67 = getelementptr inbounds i8, ptr %66, i64 8
+  store ptr %67, ptr %5, align 8
+  %68 = load i32, ptr %66, align 8
+  %69 = trunc i32 %68 to i16
+  %70 = load i32, ptr %13, align 4
   %71 = sext i32 %70 to i64
-  %72 = getelementptr inbounds %union.jvalue, ptr %69, i64 %71
-  store i32 %68, ptr %72, align 8
-  br label %115
+  %72 = getelementptr inbounds %union.jvalue, ptr %30, i64 %71
+  store i16 %69, ptr %72, align 8
+  br label %110
 
-73:                                               ; preds = %30
+73:                                               ; preds = %35
   %74 = load ptr, ptr %5, align 8
   %75 = getelementptr inbounds i8, ptr %74, i64 8
   store ptr %75, ptr %5, align 8
   %76 = load i32, ptr %74, align 8
-  %77 = load ptr, ptr %9, align 8
-  %78 = load i32, ptr %12, align 4
-  %79 = sext i32 %78 to i64
-  %80 = getelementptr inbounds %union.jvalue, ptr %77, i64 %79
-  store i32 %76, ptr %80, align 8
-  br label %115
+  %77 = load i32, ptr %13, align 4
+  %78 = sext i32 %77 to i64
+  %79 = getelementptr inbounds %union.jvalue, ptr %30, i64 %78
+  store i32 %76, ptr %79, align 8
+  br label %110
 
-81:                                               ; preds = %30
-  %82 = load ptr, ptr %5, align 8
-  %83 = getelementptr inbounds i8, ptr %82, i64 8
-  store ptr %83, ptr %5, align 8
-  %84 = load i32, ptr %82, align 8
-  %85 = sext i32 %84 to i64
-  %86 = load ptr, ptr %9, align 8
-  %87 = load i32, ptr %12, align 4
-  %88 = sext i32 %87 to i64
-  %89 = getelementptr inbounds %union.jvalue, ptr %86, i64 %88
-  store i64 %85, ptr %89, align 8
-  br label %115
+80:                                               ; preds = %35
+  %81 = load ptr, ptr %5, align 8
+  %82 = getelementptr inbounds i8, ptr %81, i64 8
+  store ptr %82, ptr %5, align 8
+  %83 = load i32, ptr %81, align 8
+  %84 = sext i32 %83 to i64
+  %85 = load i32, ptr %13, align 4
+  %86 = sext i32 %85 to i64
+  %87 = getelementptr inbounds %union.jvalue, ptr %30, i64 %86
+  store i64 %84, ptr %87, align 8
+  br label %110
 
-90:                                               ; preds = %30
-  %91 = load ptr, ptr %5, align 8
-  %92 = getelementptr inbounds i8, ptr %91, i64 8
-  store ptr %92, ptr %5, align 8
-  %93 = load double, ptr %91, align 8
-  %94 = load ptr, ptr %9, align 8
-  %95 = load i32, ptr %12, align 4
-  %96 = sext i32 %95 to i64
-  %97 = getelementptr inbounds %union.jvalue, ptr %94, i64 %96
-  store double %93, ptr %97, align 8
-  br label %115
+88:                                               ; preds = %35
+  %89 = load ptr, ptr %5, align 8
+  %90 = getelementptr inbounds i8, ptr %89, i64 8
+  store ptr %90, ptr %5, align 8
+  %91 = load double, ptr %89, align 8
+  %92 = fptrunc double %91 to float
+  %93 = load i32, ptr %13, align 4
+  %94 = sext i32 %93 to i64
+  %95 = getelementptr inbounds %union.jvalue, ptr %30, i64 %94
+  store float %92, ptr %95, align 8
+  br label %110
 
-98:                                               ; preds = %30
-  %99 = load ptr, ptr %5, align 8
-  %100 = getelementptr inbounds i8, ptr %99, i64 8
-  store ptr %100, ptr %5, align 8
-  %101 = load double, ptr %99, align 8
-  %102 = fptrunc double %101 to float
-  %103 = load ptr, ptr %9, align 8
-  %104 = load i32, ptr %12, align 4
-  %105 = sext i32 %104 to i64
-  %106 = getelementptr inbounds %union.jvalue, ptr %103, i64 %105
-  store float %102, ptr %106, align 8
-  br label %115
+96:                                               ; preds = %35
+  %97 = load ptr, ptr %5, align 8
+  %98 = getelementptr inbounds i8, ptr %97, i64 8
+  store ptr %98, ptr %5, align 8
+  %99 = load double, ptr %97, align 8
+  %100 = load i32, ptr %13, align 4
+  %101 = sext i32 %100 to i64
+  %102 = getelementptr inbounds %union.jvalue, ptr %30, i64 %101
+  store double %99, ptr %102, align 8
+  br label %110
 
-107:                                              ; preds = %30
-  %108 = load ptr, ptr %5, align 8
-  %109 = getelementptr inbounds i8, ptr %108, i64 8
-  store ptr %109, ptr %5, align 8
-  %110 = load ptr, ptr %108, align 8
-  %111 = load ptr, ptr %9, align 8
-  %112 = load i32, ptr %12, align 4
-  %113 = sext i32 %112 to i64
-  %114 = getelementptr inbounds %union.jvalue, ptr %111, i64 %113
-  store ptr %110, ptr %114, align 8
-  br label %115
+103:                                              ; preds = %35
+  %104 = load ptr, ptr %5, align 8
+  %105 = getelementptr inbounds i8, ptr %104, i64 8
+  store ptr %105, ptr %5, align 8
+  %106 = load ptr, ptr %104, align 8
+  %107 = load i32, ptr %13, align 4
+  %108 = sext i32 %107 to i64
+  %109 = getelementptr inbounds %union.jvalue, ptr %30, i64 %108
+  store ptr %106, ptr %109, align 8
+  br label %110
 
-115:                                              ; preds = %30, %107, %98, %90, %81, %73, %63, %54, %45, %36
-  br label %116
+110:                                              ; preds = %35, %103, %96, %88, %80, %73, %65, %57, %49, %41
+  br label %111
 
-116:                                              ; preds = %115
-  %117 = load i32, ptr %12, align 4
-  %118 = add nsw i32 %117, 1
-  store i32 %118, ptr %12, align 4
-  br label %26, !llvm.loop !25
+111:                                              ; preds = %110
+  %112 = load i32, ptr %13, align 4
+  %113 = add nsw i32 %112, 1
+  store i32 %113, ptr %13, align 4
+  br label %31, !llvm.loop !25
 
-119:                                              ; preds = %26
-  br label %120
-
-120:                                              ; preds = %119
+114:                                              ; preds = %31
+  %115 = load ptr, ptr %8, align 8
+  %116 = load ptr, ptr %115, align 8
+  %117 = getelementptr inbounds %struct.JNINativeInterface_, ptr %116, i32 0, i32 134
+  %118 = load ptr, ptr %117, align 8
+  %119 = load ptr, ptr %6, align 8
+  %120 = load ptr, ptr %7, align 8
   %121 = load ptr, ptr %8, align 8
-  %122 = load ptr, ptr %121, align 8
-  %123 = getelementptr inbounds %struct.JNINativeInterface_, ptr %122, i32 0, i32 134
-  %124 = load ptr, ptr %123, align 8
-  %125 = load ptr, ptr %9, align 8
-  %126 = load ptr, ptr %6, align 8
-  %127 = load ptr, ptr %7, align 8
-  %128 = load ptr, ptr %8, align 8
-  %129 = call i64 %124(ptr noundef %128, ptr noundef %127, ptr noundef %126, ptr noundef %125)
-  ret i64 %129
+  %122 = call i64 %118(ptr noundef %121, ptr noundef %120, ptr noundef %119, ptr noundef %30)
+  %123 = load ptr, ptr %11, align 8
+  call void @llvm.stackrestore(ptr %123)
+  ret i64 %122
 }
 
 ; Function Attrs: noinline nounwind optnone uwtable
@@ -4853,25 +4628,21 @@ define dso_local dllexport float @JNI_CallFloatMethod(ptr noundef %0, ptr nounde
   %4 = alloca ptr, align 8
   %5 = alloca ptr, align 8
   %6 = alloca ptr, align 8
-  %7 = alloca float, align 4
-  %8 = alloca ptr, align 8
+  %7 = alloca ptr, align 8
+  %8 = alloca float, align 4
   store ptr %2, ptr %4, align 8
   store ptr %1, ptr %5, align 8
   store ptr %0, ptr %6, align 8
-  call void @llvm.va_start(ptr %8)
-  %9 = load ptr, ptr %6, align 8
-  %10 = load ptr, ptr %9, align 8
-  %11 = getelementptr inbounds %struct.JNINativeInterface_, ptr %10, i32 0, i32 56
-  %12 = load ptr, ptr %11, align 8
-  %13 = load ptr, ptr %8, align 8
-  %14 = load ptr, ptr %4, align 8
-  %15 = load ptr, ptr %5, align 8
-  %16 = load ptr, ptr %6, align 8
-  %17 = call float %12(ptr noundef %16, ptr noundef %15, ptr noundef %14, ptr noundef %13)
-  store float %17, ptr %7, align 4
-  call void @llvm.va_end(ptr %8)
-  %18 = load float, ptr %7, align 4
-  ret float %18
+  call void @llvm.va_start(ptr %7)
+  %9 = load ptr, ptr %7, align 8
+  %10 = load ptr, ptr %4, align 8
+  %11 = load ptr, ptr %5, align 8
+  %12 = load ptr, ptr %6, align 8
+  %13 = call float @JNI_CallFloatMethodV(ptr noundef %12, ptr noundef %11, ptr noundef %10, ptr noundef %9)
+  store float %13, ptr %8, align 4
+  call void @llvm.va_end(ptr %7)
+  %14 = load float, ptr %8, align 4
+  ret float %14
 }
 
 ; Function Attrs: noinline nounwind optnone uwtable
@@ -4880,196 +4651,189 @@ define dso_local dllexport float @JNI_CallFloatMethodV(ptr noundef %0, ptr nound
   %6 = alloca ptr, align 8
   %7 = alloca ptr, align 8
   %8 = alloca ptr, align 8
-  %9 = alloca ptr, align 8
-  %10 = alloca [257 x i8], align 16
-  %11 = alloca i32, align 4
-  %12 = alloca i32, align 4
+  %9 = alloca [256 x i8], align 16
+  %10 = alloca i32, align 4
+  %11 = alloca ptr, align 8
+  %12 = alloca i64, align 8
+  %13 = alloca i32, align 4
   store ptr %3, ptr %5, align 8
   store ptr %2, ptr %6, align 8
   store ptr %1, ptr %7, align 8
   store ptr %0, ptr %8, align 8
-  br label %13
-
-13:                                               ; preds = %4
   %14 = load ptr, ptr %8, align 8
   %15 = load ptr, ptr %14, align 8
   %16 = getelementptr inbounds %struct.JNINativeInterface_, ptr %15, i32 0, i32 0
   %17 = load ptr, ptr %16, align 8
-  %18 = getelementptr inbounds [257 x i8], ptr %10, i64 0, i64 0
+  %18 = getelementptr inbounds [256 x i8], ptr %9, i64 0, i64 0
   %19 = load ptr, ptr %6, align 8
   %20 = load ptr, ptr %8, align 8
   %21 = call i32 %17(ptr noundef %20, ptr noundef %19, ptr noundef %18)
-  store i32 %21, ptr %11, align 4
-  %22 = load i32, ptr %11, align 4
-  %23 = zext i32 %22 to i64
-  %24 = mul i64 %23, 8
-  %25 = alloca i8, i64 %24, align 16
-  store ptr %25, ptr %9, align 8
-  store i32 0, ptr %12, align 4
-  br label %26
+  store i32 %21, ptr %10, align 4
+  %22 = load ptr, ptr %8, align 8
+  %23 = load ptr, ptr %22, align 8
+  %24 = getelementptr inbounds %struct.JNINativeInterface_, ptr %23, i32 0, i32 1
+  %25 = load ptr, ptr %24, align 8
+  %26 = load i32, ptr %10, align 4
+  call void %25(i32 noundef %26)
+  %27 = load i32, ptr %10, align 4
+  %28 = zext i32 %27 to i64
+  %29 = call ptr @llvm.stacksave()
+  store ptr %29, ptr %11, align 8
+  %30 = alloca %union.jvalue, i64 %28, align 16
+  store i64 %28, ptr %12, align 8
+  store i32 0, ptr %13, align 4
+  br label %31
 
-26:                                               ; preds = %116, %13
-  %27 = load i32, ptr %12, align 4
-  %28 = load i32, ptr %11, align 4
-  %29 = icmp slt i32 %27, %28
-  br i1 %29, label %30, label %119
+31:                                               ; preds = %111, %4
+  %32 = load i32, ptr %13, align 4
+  %33 = load i32, ptr %10, align 4
+  %34 = icmp slt i32 %32, %33
+  br i1 %34, label %35, label %114
 
-30:                                               ; preds = %26
-  %31 = load i32, ptr %12, align 4
-  %32 = sext i32 %31 to i64
-  %33 = getelementptr inbounds [257 x i8], ptr %10, i64 0, i64 %32
-  %34 = load i8, ptr %33, align 1
-  %35 = sext i8 %34 to i32
-  switch i32 %35, label %115 [
-    i32 90, label %36
-    i32 66, label %45
-    i32 83, label %54
-    i32 67, label %63
+35:                                               ; preds = %31
+  %36 = load i32, ptr %13, align 4
+  %37 = sext i32 %36 to i64
+  %38 = getelementptr inbounds [256 x i8], ptr %9, i64 0, i64 %37
+  %39 = load i8, ptr %38, align 1
+  %40 = sext i8 %39 to i32
+  switch i32 %40, label %110 [
+    i32 90, label %41
+    i32 66, label %49
+    i32 67, label %57
+    i32 83, label %65
     i32 73, label %73
-    i32 74, label %81
-    i32 68, label %90
-    i32 70, label %98
-    i32 76, label %107
+    i32 74, label %80
+    i32 70, label %88
+    i32 68, label %96
+    i32 76, label %103
   ]
 
-36:                                               ; preds = %30
-  %37 = load ptr, ptr %5, align 8
-  %38 = getelementptr inbounds i8, ptr %37, i64 8
-  store ptr %38, ptr %5, align 8
-  %39 = load i32, ptr %37, align 8
-  %40 = trunc i32 %39 to i8
-  %41 = load ptr, ptr %9, align 8
-  %42 = load i32, ptr %12, align 4
-  %43 = sext i32 %42 to i64
-  %44 = getelementptr inbounds %union.jvalue, ptr %41, i64 %43
-  store i8 %40, ptr %44, align 8
-  br label %115
+41:                                               ; preds = %35
+  %42 = load ptr, ptr %5, align 8
+  %43 = getelementptr inbounds i8, ptr %42, i64 8
+  store ptr %43, ptr %5, align 8
+  %44 = load i32, ptr %42, align 8
+  %45 = trunc i32 %44 to i8
+  %46 = load i32, ptr %13, align 4
+  %47 = sext i32 %46 to i64
+  %48 = getelementptr inbounds %union.jvalue, ptr %30, i64 %47
+  store i8 %45, ptr %48, align 8
+  br label %110
 
-45:                                               ; preds = %30
-  %46 = load ptr, ptr %5, align 8
-  %47 = getelementptr inbounds i8, ptr %46, i64 8
-  store ptr %47, ptr %5, align 8
-  %48 = load i32, ptr %46, align 8
-  %49 = trunc i32 %48 to i8
-  %50 = load ptr, ptr %9, align 8
-  %51 = load i32, ptr %12, align 4
-  %52 = sext i32 %51 to i64
-  %53 = getelementptr inbounds %union.jvalue, ptr %50, i64 %52
-  store i8 %49, ptr %53, align 8
-  br label %115
+49:                                               ; preds = %35
+  %50 = load ptr, ptr %5, align 8
+  %51 = getelementptr inbounds i8, ptr %50, i64 8
+  store ptr %51, ptr %5, align 8
+  %52 = load i32, ptr %50, align 8
+  %53 = trunc i32 %52 to i8
+  %54 = load i32, ptr %13, align 4
+  %55 = sext i32 %54 to i64
+  %56 = getelementptr inbounds %union.jvalue, ptr %30, i64 %55
+  store i8 %53, ptr %56, align 8
+  br label %110
 
-54:                                               ; preds = %30
-  %55 = load ptr, ptr %5, align 8
-  %56 = getelementptr inbounds i8, ptr %55, i64 8
-  store ptr %56, ptr %5, align 8
-  %57 = load i32, ptr %55, align 8
-  %58 = trunc i32 %57 to i16
-  %59 = load ptr, ptr %9, align 8
-  %60 = load i32, ptr %12, align 4
-  %61 = sext i32 %60 to i64
-  %62 = getelementptr inbounds %union.jvalue, ptr %59, i64 %61
-  store i16 %58, ptr %62, align 8
-  br label %115
+57:                                               ; preds = %35
+  %58 = load ptr, ptr %5, align 8
+  %59 = getelementptr inbounds i8, ptr %58, i64 8
+  store ptr %59, ptr %5, align 8
+  %60 = load i32, ptr %58, align 8
+  %61 = trunc i32 %60 to i16
+  %62 = load i32, ptr %13, align 4
+  %63 = sext i32 %62 to i64
+  %64 = getelementptr inbounds %union.jvalue, ptr %30, i64 %63
+  store i16 %61, ptr %64, align 8
+  br label %110
 
-63:                                               ; preds = %30
-  %64 = load ptr, ptr %5, align 8
-  %65 = getelementptr inbounds i8, ptr %64, i64 8
-  store ptr %65, ptr %5, align 8
-  %66 = load i32, ptr %64, align 8
-  %67 = trunc i32 %66 to i16
-  %68 = zext i16 %67 to i32
-  %69 = load ptr, ptr %9, align 8
-  %70 = load i32, ptr %12, align 4
+65:                                               ; preds = %35
+  %66 = load ptr, ptr %5, align 8
+  %67 = getelementptr inbounds i8, ptr %66, i64 8
+  store ptr %67, ptr %5, align 8
+  %68 = load i32, ptr %66, align 8
+  %69 = trunc i32 %68 to i16
+  %70 = load i32, ptr %13, align 4
   %71 = sext i32 %70 to i64
-  %72 = getelementptr inbounds %union.jvalue, ptr %69, i64 %71
-  store i32 %68, ptr %72, align 8
-  br label %115
+  %72 = getelementptr inbounds %union.jvalue, ptr %30, i64 %71
+  store i16 %69, ptr %72, align 8
+  br label %110
 
-73:                                               ; preds = %30
+73:                                               ; preds = %35
   %74 = load ptr, ptr %5, align 8
   %75 = getelementptr inbounds i8, ptr %74, i64 8
   store ptr %75, ptr %5, align 8
   %76 = load i32, ptr %74, align 8
-  %77 = load ptr, ptr %9, align 8
-  %78 = load i32, ptr %12, align 4
-  %79 = sext i32 %78 to i64
-  %80 = getelementptr inbounds %union.jvalue, ptr %77, i64 %79
-  store i32 %76, ptr %80, align 8
-  br label %115
+  %77 = load i32, ptr %13, align 4
+  %78 = sext i32 %77 to i64
+  %79 = getelementptr inbounds %union.jvalue, ptr %30, i64 %78
+  store i32 %76, ptr %79, align 8
+  br label %110
 
-81:                                               ; preds = %30
-  %82 = load ptr, ptr %5, align 8
-  %83 = getelementptr inbounds i8, ptr %82, i64 8
-  store ptr %83, ptr %5, align 8
-  %84 = load i32, ptr %82, align 8
-  %85 = sext i32 %84 to i64
-  %86 = load ptr, ptr %9, align 8
-  %87 = load i32, ptr %12, align 4
-  %88 = sext i32 %87 to i64
-  %89 = getelementptr inbounds %union.jvalue, ptr %86, i64 %88
-  store i64 %85, ptr %89, align 8
-  br label %115
+80:                                               ; preds = %35
+  %81 = load ptr, ptr %5, align 8
+  %82 = getelementptr inbounds i8, ptr %81, i64 8
+  store ptr %82, ptr %5, align 8
+  %83 = load i32, ptr %81, align 8
+  %84 = sext i32 %83 to i64
+  %85 = load i32, ptr %13, align 4
+  %86 = sext i32 %85 to i64
+  %87 = getelementptr inbounds %union.jvalue, ptr %30, i64 %86
+  store i64 %84, ptr %87, align 8
+  br label %110
 
-90:                                               ; preds = %30
-  %91 = load ptr, ptr %5, align 8
-  %92 = getelementptr inbounds i8, ptr %91, i64 8
-  store ptr %92, ptr %5, align 8
-  %93 = load double, ptr %91, align 8
-  %94 = load ptr, ptr %9, align 8
-  %95 = load i32, ptr %12, align 4
-  %96 = sext i32 %95 to i64
-  %97 = getelementptr inbounds %union.jvalue, ptr %94, i64 %96
-  store double %93, ptr %97, align 8
-  br label %115
+88:                                               ; preds = %35
+  %89 = load ptr, ptr %5, align 8
+  %90 = getelementptr inbounds i8, ptr %89, i64 8
+  store ptr %90, ptr %5, align 8
+  %91 = load double, ptr %89, align 8
+  %92 = fptrunc double %91 to float
+  %93 = load i32, ptr %13, align 4
+  %94 = sext i32 %93 to i64
+  %95 = getelementptr inbounds %union.jvalue, ptr %30, i64 %94
+  store float %92, ptr %95, align 8
+  br label %110
 
-98:                                               ; preds = %30
-  %99 = load ptr, ptr %5, align 8
-  %100 = getelementptr inbounds i8, ptr %99, i64 8
-  store ptr %100, ptr %5, align 8
-  %101 = load double, ptr %99, align 8
-  %102 = fptrunc double %101 to float
-  %103 = load ptr, ptr %9, align 8
-  %104 = load i32, ptr %12, align 4
-  %105 = sext i32 %104 to i64
-  %106 = getelementptr inbounds %union.jvalue, ptr %103, i64 %105
-  store float %102, ptr %106, align 8
-  br label %115
+96:                                               ; preds = %35
+  %97 = load ptr, ptr %5, align 8
+  %98 = getelementptr inbounds i8, ptr %97, i64 8
+  store ptr %98, ptr %5, align 8
+  %99 = load double, ptr %97, align 8
+  %100 = load i32, ptr %13, align 4
+  %101 = sext i32 %100 to i64
+  %102 = getelementptr inbounds %union.jvalue, ptr %30, i64 %101
+  store double %99, ptr %102, align 8
+  br label %110
 
-107:                                              ; preds = %30
-  %108 = load ptr, ptr %5, align 8
-  %109 = getelementptr inbounds i8, ptr %108, i64 8
-  store ptr %109, ptr %5, align 8
-  %110 = load ptr, ptr %108, align 8
-  %111 = load ptr, ptr %9, align 8
-  %112 = load i32, ptr %12, align 4
-  %113 = sext i32 %112 to i64
-  %114 = getelementptr inbounds %union.jvalue, ptr %111, i64 %113
-  store ptr %110, ptr %114, align 8
-  br label %115
+103:                                              ; preds = %35
+  %104 = load ptr, ptr %5, align 8
+  %105 = getelementptr inbounds i8, ptr %104, i64 8
+  store ptr %105, ptr %5, align 8
+  %106 = load ptr, ptr %104, align 8
+  %107 = load i32, ptr %13, align 4
+  %108 = sext i32 %107 to i64
+  %109 = getelementptr inbounds %union.jvalue, ptr %30, i64 %108
+  store ptr %106, ptr %109, align 8
+  br label %110
 
-115:                                              ; preds = %30, %107, %98, %90, %81, %73, %63, %54, %45, %36
-  br label %116
+110:                                              ; preds = %35, %103, %96, %88, %80, %73, %65, %57, %49, %41
+  br label %111
 
-116:                                              ; preds = %115
-  %117 = load i32, ptr %12, align 4
-  %118 = add nsw i32 %117, 1
-  store i32 %118, ptr %12, align 4
-  br label %26, !llvm.loop !26
+111:                                              ; preds = %110
+  %112 = load i32, ptr %13, align 4
+  %113 = add nsw i32 %112, 1
+  store i32 %113, ptr %13, align 4
+  br label %31, !llvm.loop !26
 
-119:                                              ; preds = %26
-  br label %120
-
-120:                                              ; preds = %119
+114:                                              ; preds = %31
+  %115 = load ptr, ptr %8, align 8
+  %116 = load ptr, ptr %115, align 8
+  %117 = getelementptr inbounds %struct.JNINativeInterface_, ptr %116, i32 0, i32 57
+  %118 = load ptr, ptr %117, align 8
+  %119 = load ptr, ptr %6, align 8
+  %120 = load ptr, ptr %7, align 8
   %121 = load ptr, ptr %8, align 8
-  %122 = load ptr, ptr %121, align 8
-  %123 = getelementptr inbounds %struct.JNINativeInterface_, ptr %122, i32 0, i32 57
-  %124 = load ptr, ptr %123, align 8
-  %125 = load ptr, ptr %9, align 8
-  %126 = load ptr, ptr %6, align 8
-  %127 = load ptr, ptr %7, align 8
-  %128 = load ptr, ptr %8, align 8
-  %129 = call float %124(ptr noundef %128, ptr noundef %127, ptr noundef %126, ptr noundef %125)
-  ret float %129
+  %122 = call float %118(ptr noundef %121, ptr noundef %120, ptr noundef %119, ptr noundef %30)
+  %123 = load ptr, ptr %11, align 8
+  call void @llvm.stackrestore(ptr %123)
+  ret float %122
 }
 
 ; Function Attrs: noinline nounwind optnone uwtable
@@ -5078,27 +4842,23 @@ define dso_local dllexport float @JNI_CallNonvirtualFloatMethod(ptr noundef %0, 
   %6 = alloca ptr, align 8
   %7 = alloca ptr, align 8
   %8 = alloca ptr, align 8
-  %9 = alloca float, align 4
-  %10 = alloca ptr, align 8
+  %9 = alloca ptr, align 8
+  %10 = alloca float, align 4
   store ptr %3, ptr %5, align 8
   store ptr %2, ptr %6, align 8
   store ptr %1, ptr %7, align 8
   store ptr %0, ptr %8, align 8
-  call void @llvm.va_start(ptr %10)
-  %11 = load ptr, ptr %8, align 8
-  %12 = load ptr, ptr %11, align 8
-  %13 = getelementptr inbounds %struct.JNINativeInterface_, ptr %12, i32 0, i32 86
-  %14 = load ptr, ptr %13, align 8
-  %15 = load ptr, ptr %10, align 8
-  %16 = load ptr, ptr %5, align 8
-  %17 = load ptr, ptr %6, align 8
-  %18 = load ptr, ptr %7, align 8
-  %19 = load ptr, ptr %8, align 8
-  %20 = call float %14(ptr noundef %19, ptr noundef %18, ptr noundef %17, ptr noundef %16, ptr noundef %15)
-  store float %20, ptr %9, align 4
-  call void @llvm.va_end(ptr %10)
-  %21 = load float, ptr %9, align 4
-  ret float %21
+  call void @llvm.va_start(ptr %9)
+  %11 = load ptr, ptr %9, align 8
+  %12 = load ptr, ptr %5, align 8
+  %13 = load ptr, ptr %6, align 8
+  %14 = load ptr, ptr %7, align 8
+  %15 = load ptr, ptr %8, align 8
+  %16 = call float @JNI_CallNonvirtualFloatMethodV(ptr noundef %15, ptr noundef %14, ptr noundef %13, ptr noundef %12, ptr noundef %11)
+  store float %16, ptr %10, align 4
+  call void @llvm.va_end(ptr %9)
+  %17 = load float, ptr %10, align 4
+  ret float %17
 }
 
 ; Function Attrs: noinline nounwind optnone uwtable
@@ -5108,198 +4868,191 @@ define dso_local dllexport float @JNI_CallNonvirtualFloatMethodV(ptr noundef %0,
   %8 = alloca ptr, align 8
   %9 = alloca ptr, align 8
   %10 = alloca ptr, align 8
-  %11 = alloca ptr, align 8
-  %12 = alloca [257 x i8], align 16
-  %13 = alloca i32, align 4
-  %14 = alloca i32, align 4
+  %11 = alloca [256 x i8], align 16
+  %12 = alloca i32, align 4
+  %13 = alloca ptr, align 8
+  %14 = alloca i64, align 8
+  %15 = alloca i32, align 4
   store ptr %4, ptr %6, align 8
   store ptr %3, ptr %7, align 8
   store ptr %2, ptr %8, align 8
   store ptr %1, ptr %9, align 8
   store ptr %0, ptr %10, align 8
-  br label %15
-
-15:                                               ; preds = %5
   %16 = load ptr, ptr %10, align 8
   %17 = load ptr, ptr %16, align 8
   %18 = getelementptr inbounds %struct.JNINativeInterface_, ptr %17, i32 0, i32 0
   %19 = load ptr, ptr %18, align 8
-  %20 = getelementptr inbounds [257 x i8], ptr %12, i64 0, i64 0
+  %20 = getelementptr inbounds [256 x i8], ptr %11, i64 0, i64 0
   %21 = load ptr, ptr %7, align 8
   %22 = load ptr, ptr %10, align 8
   %23 = call i32 %19(ptr noundef %22, ptr noundef %21, ptr noundef %20)
-  store i32 %23, ptr %13, align 4
-  %24 = load i32, ptr %13, align 4
-  %25 = zext i32 %24 to i64
-  %26 = mul i64 %25, 8
-  %27 = alloca i8, i64 %26, align 16
-  store ptr %27, ptr %11, align 8
-  store i32 0, ptr %14, align 4
-  br label %28
+  store i32 %23, ptr %12, align 4
+  %24 = load ptr, ptr %10, align 8
+  %25 = load ptr, ptr %24, align 8
+  %26 = getelementptr inbounds %struct.JNINativeInterface_, ptr %25, i32 0, i32 1
+  %27 = load ptr, ptr %26, align 8
+  %28 = load i32, ptr %12, align 4
+  call void %27(i32 noundef %28)
+  %29 = load i32, ptr %12, align 4
+  %30 = zext i32 %29 to i64
+  %31 = call ptr @llvm.stacksave()
+  store ptr %31, ptr %13, align 8
+  %32 = alloca %union.jvalue, i64 %30, align 16
+  store i64 %30, ptr %14, align 8
+  store i32 0, ptr %15, align 4
+  br label %33
 
-28:                                               ; preds = %118, %15
-  %29 = load i32, ptr %14, align 4
-  %30 = load i32, ptr %13, align 4
-  %31 = icmp slt i32 %29, %30
-  br i1 %31, label %32, label %121
+33:                                               ; preds = %113, %5
+  %34 = load i32, ptr %15, align 4
+  %35 = load i32, ptr %12, align 4
+  %36 = icmp slt i32 %34, %35
+  br i1 %36, label %37, label %116
 
-32:                                               ; preds = %28
-  %33 = load i32, ptr %14, align 4
-  %34 = sext i32 %33 to i64
-  %35 = getelementptr inbounds [257 x i8], ptr %12, i64 0, i64 %34
-  %36 = load i8, ptr %35, align 1
-  %37 = sext i8 %36 to i32
-  switch i32 %37, label %117 [
-    i32 90, label %38
-    i32 66, label %47
-    i32 83, label %56
-    i32 67, label %65
+37:                                               ; preds = %33
+  %38 = load i32, ptr %15, align 4
+  %39 = sext i32 %38 to i64
+  %40 = getelementptr inbounds [256 x i8], ptr %11, i64 0, i64 %39
+  %41 = load i8, ptr %40, align 1
+  %42 = sext i8 %41 to i32
+  switch i32 %42, label %112 [
+    i32 90, label %43
+    i32 66, label %51
+    i32 67, label %59
+    i32 83, label %67
     i32 73, label %75
-    i32 74, label %83
-    i32 68, label %92
-    i32 70, label %100
-    i32 76, label %109
+    i32 74, label %82
+    i32 70, label %90
+    i32 68, label %98
+    i32 76, label %105
   ]
 
-38:                                               ; preds = %32
-  %39 = load ptr, ptr %6, align 8
-  %40 = getelementptr inbounds i8, ptr %39, i64 8
-  store ptr %40, ptr %6, align 8
-  %41 = load i32, ptr %39, align 8
-  %42 = trunc i32 %41 to i8
-  %43 = load ptr, ptr %11, align 8
-  %44 = load i32, ptr %14, align 4
-  %45 = sext i32 %44 to i64
-  %46 = getelementptr inbounds %union.jvalue, ptr %43, i64 %45
-  store i8 %42, ptr %46, align 8
-  br label %117
+43:                                               ; preds = %37
+  %44 = load ptr, ptr %6, align 8
+  %45 = getelementptr inbounds i8, ptr %44, i64 8
+  store ptr %45, ptr %6, align 8
+  %46 = load i32, ptr %44, align 8
+  %47 = trunc i32 %46 to i8
+  %48 = load i32, ptr %15, align 4
+  %49 = sext i32 %48 to i64
+  %50 = getelementptr inbounds %union.jvalue, ptr %32, i64 %49
+  store i8 %47, ptr %50, align 8
+  br label %112
 
-47:                                               ; preds = %32
-  %48 = load ptr, ptr %6, align 8
-  %49 = getelementptr inbounds i8, ptr %48, i64 8
-  store ptr %49, ptr %6, align 8
-  %50 = load i32, ptr %48, align 8
-  %51 = trunc i32 %50 to i8
-  %52 = load ptr, ptr %11, align 8
-  %53 = load i32, ptr %14, align 4
-  %54 = sext i32 %53 to i64
-  %55 = getelementptr inbounds %union.jvalue, ptr %52, i64 %54
-  store i8 %51, ptr %55, align 8
-  br label %117
+51:                                               ; preds = %37
+  %52 = load ptr, ptr %6, align 8
+  %53 = getelementptr inbounds i8, ptr %52, i64 8
+  store ptr %53, ptr %6, align 8
+  %54 = load i32, ptr %52, align 8
+  %55 = trunc i32 %54 to i8
+  %56 = load i32, ptr %15, align 4
+  %57 = sext i32 %56 to i64
+  %58 = getelementptr inbounds %union.jvalue, ptr %32, i64 %57
+  store i8 %55, ptr %58, align 8
+  br label %112
 
-56:                                               ; preds = %32
-  %57 = load ptr, ptr %6, align 8
-  %58 = getelementptr inbounds i8, ptr %57, i64 8
-  store ptr %58, ptr %6, align 8
-  %59 = load i32, ptr %57, align 8
-  %60 = trunc i32 %59 to i16
-  %61 = load ptr, ptr %11, align 8
-  %62 = load i32, ptr %14, align 4
-  %63 = sext i32 %62 to i64
-  %64 = getelementptr inbounds %union.jvalue, ptr %61, i64 %63
-  store i16 %60, ptr %64, align 8
-  br label %117
+59:                                               ; preds = %37
+  %60 = load ptr, ptr %6, align 8
+  %61 = getelementptr inbounds i8, ptr %60, i64 8
+  store ptr %61, ptr %6, align 8
+  %62 = load i32, ptr %60, align 8
+  %63 = trunc i32 %62 to i16
+  %64 = load i32, ptr %15, align 4
+  %65 = sext i32 %64 to i64
+  %66 = getelementptr inbounds %union.jvalue, ptr %32, i64 %65
+  store i16 %63, ptr %66, align 8
+  br label %112
 
-65:                                               ; preds = %32
-  %66 = load ptr, ptr %6, align 8
-  %67 = getelementptr inbounds i8, ptr %66, i64 8
-  store ptr %67, ptr %6, align 8
-  %68 = load i32, ptr %66, align 8
-  %69 = trunc i32 %68 to i16
-  %70 = zext i16 %69 to i32
-  %71 = load ptr, ptr %11, align 8
-  %72 = load i32, ptr %14, align 4
+67:                                               ; preds = %37
+  %68 = load ptr, ptr %6, align 8
+  %69 = getelementptr inbounds i8, ptr %68, i64 8
+  store ptr %69, ptr %6, align 8
+  %70 = load i32, ptr %68, align 8
+  %71 = trunc i32 %70 to i16
+  %72 = load i32, ptr %15, align 4
   %73 = sext i32 %72 to i64
-  %74 = getelementptr inbounds %union.jvalue, ptr %71, i64 %73
-  store i32 %70, ptr %74, align 8
-  br label %117
+  %74 = getelementptr inbounds %union.jvalue, ptr %32, i64 %73
+  store i16 %71, ptr %74, align 8
+  br label %112
 
-75:                                               ; preds = %32
+75:                                               ; preds = %37
   %76 = load ptr, ptr %6, align 8
   %77 = getelementptr inbounds i8, ptr %76, i64 8
   store ptr %77, ptr %6, align 8
   %78 = load i32, ptr %76, align 8
-  %79 = load ptr, ptr %11, align 8
-  %80 = load i32, ptr %14, align 4
-  %81 = sext i32 %80 to i64
-  %82 = getelementptr inbounds %union.jvalue, ptr %79, i64 %81
-  store i32 %78, ptr %82, align 8
-  br label %117
+  %79 = load i32, ptr %15, align 4
+  %80 = sext i32 %79 to i64
+  %81 = getelementptr inbounds %union.jvalue, ptr %32, i64 %80
+  store i32 %78, ptr %81, align 8
+  br label %112
 
-83:                                               ; preds = %32
-  %84 = load ptr, ptr %6, align 8
-  %85 = getelementptr inbounds i8, ptr %84, i64 8
-  store ptr %85, ptr %6, align 8
-  %86 = load i32, ptr %84, align 8
-  %87 = sext i32 %86 to i64
-  %88 = load ptr, ptr %11, align 8
-  %89 = load i32, ptr %14, align 4
-  %90 = sext i32 %89 to i64
-  %91 = getelementptr inbounds %union.jvalue, ptr %88, i64 %90
-  store i64 %87, ptr %91, align 8
-  br label %117
+82:                                               ; preds = %37
+  %83 = load ptr, ptr %6, align 8
+  %84 = getelementptr inbounds i8, ptr %83, i64 8
+  store ptr %84, ptr %6, align 8
+  %85 = load i32, ptr %83, align 8
+  %86 = sext i32 %85 to i64
+  %87 = load i32, ptr %15, align 4
+  %88 = sext i32 %87 to i64
+  %89 = getelementptr inbounds %union.jvalue, ptr %32, i64 %88
+  store i64 %86, ptr %89, align 8
+  br label %112
 
-92:                                               ; preds = %32
-  %93 = load ptr, ptr %6, align 8
-  %94 = getelementptr inbounds i8, ptr %93, i64 8
-  store ptr %94, ptr %6, align 8
-  %95 = load double, ptr %93, align 8
-  %96 = load ptr, ptr %11, align 8
-  %97 = load i32, ptr %14, align 4
-  %98 = sext i32 %97 to i64
-  %99 = getelementptr inbounds %union.jvalue, ptr %96, i64 %98
-  store double %95, ptr %99, align 8
-  br label %117
+90:                                               ; preds = %37
+  %91 = load ptr, ptr %6, align 8
+  %92 = getelementptr inbounds i8, ptr %91, i64 8
+  store ptr %92, ptr %6, align 8
+  %93 = load double, ptr %91, align 8
+  %94 = fptrunc double %93 to float
+  %95 = load i32, ptr %15, align 4
+  %96 = sext i32 %95 to i64
+  %97 = getelementptr inbounds %union.jvalue, ptr %32, i64 %96
+  store float %94, ptr %97, align 8
+  br label %112
 
-100:                                              ; preds = %32
-  %101 = load ptr, ptr %6, align 8
-  %102 = getelementptr inbounds i8, ptr %101, i64 8
-  store ptr %102, ptr %6, align 8
-  %103 = load double, ptr %101, align 8
-  %104 = fptrunc double %103 to float
-  %105 = load ptr, ptr %11, align 8
-  %106 = load i32, ptr %14, align 4
-  %107 = sext i32 %106 to i64
-  %108 = getelementptr inbounds %union.jvalue, ptr %105, i64 %107
-  store float %104, ptr %108, align 8
-  br label %117
+98:                                               ; preds = %37
+  %99 = load ptr, ptr %6, align 8
+  %100 = getelementptr inbounds i8, ptr %99, i64 8
+  store ptr %100, ptr %6, align 8
+  %101 = load double, ptr %99, align 8
+  %102 = load i32, ptr %15, align 4
+  %103 = sext i32 %102 to i64
+  %104 = getelementptr inbounds %union.jvalue, ptr %32, i64 %103
+  store double %101, ptr %104, align 8
+  br label %112
 
-109:                                              ; preds = %32
-  %110 = load ptr, ptr %6, align 8
-  %111 = getelementptr inbounds i8, ptr %110, i64 8
-  store ptr %111, ptr %6, align 8
-  %112 = load ptr, ptr %110, align 8
-  %113 = load ptr, ptr %11, align 8
-  %114 = load i32, ptr %14, align 4
-  %115 = sext i32 %114 to i64
-  %116 = getelementptr inbounds %union.jvalue, ptr %113, i64 %115
-  store ptr %112, ptr %116, align 8
-  br label %117
+105:                                              ; preds = %37
+  %106 = load ptr, ptr %6, align 8
+  %107 = getelementptr inbounds i8, ptr %106, i64 8
+  store ptr %107, ptr %6, align 8
+  %108 = load ptr, ptr %106, align 8
+  %109 = load i32, ptr %15, align 4
+  %110 = sext i32 %109 to i64
+  %111 = getelementptr inbounds %union.jvalue, ptr %32, i64 %110
+  store ptr %108, ptr %111, align 8
+  br label %112
 
-117:                                              ; preds = %32, %109, %100, %92, %83, %75, %65, %56, %47, %38
-  br label %118
+112:                                              ; preds = %37, %105, %98, %90, %82, %75, %67, %59, %51, %43
+  br label %113
 
-118:                                              ; preds = %117
-  %119 = load i32, ptr %14, align 4
-  %120 = add nsw i32 %119, 1
-  store i32 %120, ptr %14, align 4
-  br label %28, !llvm.loop !27
+113:                                              ; preds = %112
+  %114 = load i32, ptr %15, align 4
+  %115 = add nsw i32 %114, 1
+  store i32 %115, ptr %15, align 4
+  br label %33, !llvm.loop !27
 
-121:                                              ; preds = %28
-  br label %122
-
-122:                                              ; preds = %121
-  %123 = load ptr, ptr %10, align 8
-  %124 = load ptr, ptr %123, align 8
-  %125 = getelementptr inbounds %struct.JNINativeInterface_, ptr %124, i32 0, i32 87
-  %126 = load ptr, ptr %125, align 8
-  %127 = load ptr, ptr %11, align 8
-  %128 = load ptr, ptr %7, align 8
-  %129 = load ptr, ptr %8, align 8
-  %130 = load ptr, ptr %9, align 8
-  %131 = load ptr, ptr %10, align 8
-  %132 = call float %126(ptr noundef %131, ptr noundef %130, ptr noundef %129, ptr noundef %128, ptr noundef %127)
-  ret float %132
+116:                                              ; preds = %33
+  %117 = load ptr, ptr %10, align 8
+  %118 = load ptr, ptr %117, align 8
+  %119 = getelementptr inbounds %struct.JNINativeInterface_, ptr %118, i32 0, i32 87
+  %120 = load ptr, ptr %119, align 8
+  %121 = load ptr, ptr %7, align 8
+  %122 = load ptr, ptr %8, align 8
+  %123 = load ptr, ptr %9, align 8
+  %124 = load ptr, ptr %10, align 8
+  %125 = call float %120(ptr noundef %124, ptr noundef %123, ptr noundef %122, ptr noundef %121, ptr noundef %32)
+  %126 = load ptr, ptr %13, align 8
+  call void @llvm.stackrestore(ptr %126)
+  ret float %125
 }
 
 ; Function Attrs: noinline nounwind optnone uwtable
@@ -5307,25 +5060,21 @@ define dso_local dllexport float @JNI_CallStaticFloatMethod(ptr noundef %0, ptr 
   %4 = alloca ptr, align 8
   %5 = alloca ptr, align 8
   %6 = alloca ptr, align 8
-  %7 = alloca float, align 4
-  %8 = alloca ptr, align 8
+  %7 = alloca ptr, align 8
+  %8 = alloca float, align 4
   store ptr %2, ptr %4, align 8
   store ptr %1, ptr %5, align 8
   store ptr %0, ptr %6, align 8
-  call void @llvm.va_start(ptr %8)
-  %9 = load ptr, ptr %6, align 8
-  %10 = load ptr, ptr %9, align 8
-  %11 = getelementptr inbounds %struct.JNINativeInterface_, ptr %10, i32 0, i32 136
-  %12 = load ptr, ptr %11, align 8
-  %13 = load ptr, ptr %8, align 8
-  %14 = load ptr, ptr %4, align 8
-  %15 = load ptr, ptr %5, align 8
-  %16 = load ptr, ptr %6, align 8
-  %17 = call float %12(ptr noundef %16, ptr noundef %15, ptr noundef %14, ptr noundef %13)
-  store float %17, ptr %7, align 4
-  call void @llvm.va_end(ptr %8)
-  %18 = load float, ptr %7, align 4
-  ret float %18
+  call void @llvm.va_start(ptr %7)
+  %9 = load ptr, ptr %7, align 8
+  %10 = load ptr, ptr %4, align 8
+  %11 = load ptr, ptr %5, align 8
+  %12 = load ptr, ptr %6, align 8
+  %13 = call float @JNI_CallStaticFloatMethodV(ptr noundef %12, ptr noundef %11, ptr noundef %10, ptr noundef %9)
+  store float %13, ptr %8, align 4
+  call void @llvm.va_end(ptr %7)
+  %14 = load float, ptr %8, align 4
+  ret float %14
 }
 
 ; Function Attrs: noinline nounwind optnone uwtable
@@ -5334,196 +5083,189 @@ define dso_local dllexport float @JNI_CallStaticFloatMethodV(ptr noundef %0, ptr
   %6 = alloca ptr, align 8
   %7 = alloca ptr, align 8
   %8 = alloca ptr, align 8
-  %9 = alloca ptr, align 8
-  %10 = alloca [257 x i8], align 16
-  %11 = alloca i32, align 4
-  %12 = alloca i32, align 4
+  %9 = alloca [256 x i8], align 16
+  %10 = alloca i32, align 4
+  %11 = alloca ptr, align 8
+  %12 = alloca i64, align 8
+  %13 = alloca i32, align 4
   store ptr %3, ptr %5, align 8
   store ptr %2, ptr %6, align 8
   store ptr %1, ptr %7, align 8
   store ptr %0, ptr %8, align 8
-  br label %13
-
-13:                                               ; preds = %4
   %14 = load ptr, ptr %8, align 8
   %15 = load ptr, ptr %14, align 8
   %16 = getelementptr inbounds %struct.JNINativeInterface_, ptr %15, i32 0, i32 0
   %17 = load ptr, ptr %16, align 8
-  %18 = getelementptr inbounds [257 x i8], ptr %10, i64 0, i64 0
+  %18 = getelementptr inbounds [256 x i8], ptr %9, i64 0, i64 0
   %19 = load ptr, ptr %6, align 8
   %20 = load ptr, ptr %8, align 8
   %21 = call i32 %17(ptr noundef %20, ptr noundef %19, ptr noundef %18)
-  store i32 %21, ptr %11, align 4
-  %22 = load i32, ptr %11, align 4
-  %23 = zext i32 %22 to i64
-  %24 = mul i64 %23, 8
-  %25 = alloca i8, i64 %24, align 16
-  store ptr %25, ptr %9, align 8
-  store i32 0, ptr %12, align 4
-  br label %26
+  store i32 %21, ptr %10, align 4
+  %22 = load ptr, ptr %8, align 8
+  %23 = load ptr, ptr %22, align 8
+  %24 = getelementptr inbounds %struct.JNINativeInterface_, ptr %23, i32 0, i32 1
+  %25 = load ptr, ptr %24, align 8
+  %26 = load i32, ptr %10, align 4
+  call void %25(i32 noundef %26)
+  %27 = load i32, ptr %10, align 4
+  %28 = zext i32 %27 to i64
+  %29 = call ptr @llvm.stacksave()
+  store ptr %29, ptr %11, align 8
+  %30 = alloca %union.jvalue, i64 %28, align 16
+  store i64 %28, ptr %12, align 8
+  store i32 0, ptr %13, align 4
+  br label %31
 
-26:                                               ; preds = %116, %13
-  %27 = load i32, ptr %12, align 4
-  %28 = load i32, ptr %11, align 4
-  %29 = icmp slt i32 %27, %28
-  br i1 %29, label %30, label %119
+31:                                               ; preds = %111, %4
+  %32 = load i32, ptr %13, align 4
+  %33 = load i32, ptr %10, align 4
+  %34 = icmp slt i32 %32, %33
+  br i1 %34, label %35, label %114
 
-30:                                               ; preds = %26
-  %31 = load i32, ptr %12, align 4
-  %32 = sext i32 %31 to i64
-  %33 = getelementptr inbounds [257 x i8], ptr %10, i64 0, i64 %32
-  %34 = load i8, ptr %33, align 1
-  %35 = sext i8 %34 to i32
-  switch i32 %35, label %115 [
-    i32 90, label %36
-    i32 66, label %45
-    i32 83, label %54
-    i32 67, label %63
+35:                                               ; preds = %31
+  %36 = load i32, ptr %13, align 4
+  %37 = sext i32 %36 to i64
+  %38 = getelementptr inbounds [256 x i8], ptr %9, i64 0, i64 %37
+  %39 = load i8, ptr %38, align 1
+  %40 = sext i8 %39 to i32
+  switch i32 %40, label %110 [
+    i32 90, label %41
+    i32 66, label %49
+    i32 67, label %57
+    i32 83, label %65
     i32 73, label %73
-    i32 74, label %81
-    i32 68, label %90
-    i32 70, label %98
-    i32 76, label %107
+    i32 74, label %80
+    i32 70, label %88
+    i32 68, label %96
+    i32 76, label %103
   ]
 
-36:                                               ; preds = %30
-  %37 = load ptr, ptr %5, align 8
-  %38 = getelementptr inbounds i8, ptr %37, i64 8
-  store ptr %38, ptr %5, align 8
-  %39 = load i32, ptr %37, align 8
-  %40 = trunc i32 %39 to i8
-  %41 = load ptr, ptr %9, align 8
-  %42 = load i32, ptr %12, align 4
-  %43 = sext i32 %42 to i64
-  %44 = getelementptr inbounds %union.jvalue, ptr %41, i64 %43
-  store i8 %40, ptr %44, align 8
-  br label %115
+41:                                               ; preds = %35
+  %42 = load ptr, ptr %5, align 8
+  %43 = getelementptr inbounds i8, ptr %42, i64 8
+  store ptr %43, ptr %5, align 8
+  %44 = load i32, ptr %42, align 8
+  %45 = trunc i32 %44 to i8
+  %46 = load i32, ptr %13, align 4
+  %47 = sext i32 %46 to i64
+  %48 = getelementptr inbounds %union.jvalue, ptr %30, i64 %47
+  store i8 %45, ptr %48, align 8
+  br label %110
 
-45:                                               ; preds = %30
-  %46 = load ptr, ptr %5, align 8
-  %47 = getelementptr inbounds i8, ptr %46, i64 8
-  store ptr %47, ptr %5, align 8
-  %48 = load i32, ptr %46, align 8
-  %49 = trunc i32 %48 to i8
-  %50 = load ptr, ptr %9, align 8
-  %51 = load i32, ptr %12, align 4
-  %52 = sext i32 %51 to i64
-  %53 = getelementptr inbounds %union.jvalue, ptr %50, i64 %52
-  store i8 %49, ptr %53, align 8
-  br label %115
+49:                                               ; preds = %35
+  %50 = load ptr, ptr %5, align 8
+  %51 = getelementptr inbounds i8, ptr %50, i64 8
+  store ptr %51, ptr %5, align 8
+  %52 = load i32, ptr %50, align 8
+  %53 = trunc i32 %52 to i8
+  %54 = load i32, ptr %13, align 4
+  %55 = sext i32 %54 to i64
+  %56 = getelementptr inbounds %union.jvalue, ptr %30, i64 %55
+  store i8 %53, ptr %56, align 8
+  br label %110
 
-54:                                               ; preds = %30
-  %55 = load ptr, ptr %5, align 8
-  %56 = getelementptr inbounds i8, ptr %55, i64 8
-  store ptr %56, ptr %5, align 8
-  %57 = load i32, ptr %55, align 8
-  %58 = trunc i32 %57 to i16
-  %59 = load ptr, ptr %9, align 8
-  %60 = load i32, ptr %12, align 4
-  %61 = sext i32 %60 to i64
-  %62 = getelementptr inbounds %union.jvalue, ptr %59, i64 %61
-  store i16 %58, ptr %62, align 8
-  br label %115
+57:                                               ; preds = %35
+  %58 = load ptr, ptr %5, align 8
+  %59 = getelementptr inbounds i8, ptr %58, i64 8
+  store ptr %59, ptr %5, align 8
+  %60 = load i32, ptr %58, align 8
+  %61 = trunc i32 %60 to i16
+  %62 = load i32, ptr %13, align 4
+  %63 = sext i32 %62 to i64
+  %64 = getelementptr inbounds %union.jvalue, ptr %30, i64 %63
+  store i16 %61, ptr %64, align 8
+  br label %110
 
-63:                                               ; preds = %30
-  %64 = load ptr, ptr %5, align 8
-  %65 = getelementptr inbounds i8, ptr %64, i64 8
-  store ptr %65, ptr %5, align 8
-  %66 = load i32, ptr %64, align 8
-  %67 = trunc i32 %66 to i16
-  %68 = zext i16 %67 to i32
-  %69 = load ptr, ptr %9, align 8
-  %70 = load i32, ptr %12, align 4
+65:                                               ; preds = %35
+  %66 = load ptr, ptr %5, align 8
+  %67 = getelementptr inbounds i8, ptr %66, i64 8
+  store ptr %67, ptr %5, align 8
+  %68 = load i32, ptr %66, align 8
+  %69 = trunc i32 %68 to i16
+  %70 = load i32, ptr %13, align 4
   %71 = sext i32 %70 to i64
-  %72 = getelementptr inbounds %union.jvalue, ptr %69, i64 %71
-  store i32 %68, ptr %72, align 8
-  br label %115
+  %72 = getelementptr inbounds %union.jvalue, ptr %30, i64 %71
+  store i16 %69, ptr %72, align 8
+  br label %110
 
-73:                                               ; preds = %30
+73:                                               ; preds = %35
   %74 = load ptr, ptr %5, align 8
   %75 = getelementptr inbounds i8, ptr %74, i64 8
   store ptr %75, ptr %5, align 8
   %76 = load i32, ptr %74, align 8
-  %77 = load ptr, ptr %9, align 8
-  %78 = load i32, ptr %12, align 4
-  %79 = sext i32 %78 to i64
-  %80 = getelementptr inbounds %union.jvalue, ptr %77, i64 %79
-  store i32 %76, ptr %80, align 8
-  br label %115
+  %77 = load i32, ptr %13, align 4
+  %78 = sext i32 %77 to i64
+  %79 = getelementptr inbounds %union.jvalue, ptr %30, i64 %78
+  store i32 %76, ptr %79, align 8
+  br label %110
 
-81:                                               ; preds = %30
-  %82 = load ptr, ptr %5, align 8
-  %83 = getelementptr inbounds i8, ptr %82, i64 8
-  store ptr %83, ptr %5, align 8
-  %84 = load i32, ptr %82, align 8
-  %85 = sext i32 %84 to i64
-  %86 = load ptr, ptr %9, align 8
-  %87 = load i32, ptr %12, align 4
-  %88 = sext i32 %87 to i64
-  %89 = getelementptr inbounds %union.jvalue, ptr %86, i64 %88
-  store i64 %85, ptr %89, align 8
-  br label %115
+80:                                               ; preds = %35
+  %81 = load ptr, ptr %5, align 8
+  %82 = getelementptr inbounds i8, ptr %81, i64 8
+  store ptr %82, ptr %5, align 8
+  %83 = load i32, ptr %81, align 8
+  %84 = sext i32 %83 to i64
+  %85 = load i32, ptr %13, align 4
+  %86 = sext i32 %85 to i64
+  %87 = getelementptr inbounds %union.jvalue, ptr %30, i64 %86
+  store i64 %84, ptr %87, align 8
+  br label %110
 
-90:                                               ; preds = %30
-  %91 = load ptr, ptr %5, align 8
-  %92 = getelementptr inbounds i8, ptr %91, i64 8
-  store ptr %92, ptr %5, align 8
-  %93 = load double, ptr %91, align 8
-  %94 = load ptr, ptr %9, align 8
-  %95 = load i32, ptr %12, align 4
-  %96 = sext i32 %95 to i64
-  %97 = getelementptr inbounds %union.jvalue, ptr %94, i64 %96
-  store double %93, ptr %97, align 8
-  br label %115
+88:                                               ; preds = %35
+  %89 = load ptr, ptr %5, align 8
+  %90 = getelementptr inbounds i8, ptr %89, i64 8
+  store ptr %90, ptr %5, align 8
+  %91 = load double, ptr %89, align 8
+  %92 = fptrunc double %91 to float
+  %93 = load i32, ptr %13, align 4
+  %94 = sext i32 %93 to i64
+  %95 = getelementptr inbounds %union.jvalue, ptr %30, i64 %94
+  store float %92, ptr %95, align 8
+  br label %110
 
-98:                                               ; preds = %30
-  %99 = load ptr, ptr %5, align 8
-  %100 = getelementptr inbounds i8, ptr %99, i64 8
-  store ptr %100, ptr %5, align 8
-  %101 = load double, ptr %99, align 8
-  %102 = fptrunc double %101 to float
-  %103 = load ptr, ptr %9, align 8
-  %104 = load i32, ptr %12, align 4
-  %105 = sext i32 %104 to i64
-  %106 = getelementptr inbounds %union.jvalue, ptr %103, i64 %105
-  store float %102, ptr %106, align 8
-  br label %115
+96:                                               ; preds = %35
+  %97 = load ptr, ptr %5, align 8
+  %98 = getelementptr inbounds i8, ptr %97, i64 8
+  store ptr %98, ptr %5, align 8
+  %99 = load double, ptr %97, align 8
+  %100 = load i32, ptr %13, align 4
+  %101 = sext i32 %100 to i64
+  %102 = getelementptr inbounds %union.jvalue, ptr %30, i64 %101
+  store double %99, ptr %102, align 8
+  br label %110
 
-107:                                              ; preds = %30
-  %108 = load ptr, ptr %5, align 8
-  %109 = getelementptr inbounds i8, ptr %108, i64 8
-  store ptr %109, ptr %5, align 8
-  %110 = load ptr, ptr %108, align 8
-  %111 = load ptr, ptr %9, align 8
-  %112 = load i32, ptr %12, align 4
-  %113 = sext i32 %112 to i64
-  %114 = getelementptr inbounds %union.jvalue, ptr %111, i64 %113
-  store ptr %110, ptr %114, align 8
-  br label %115
+103:                                              ; preds = %35
+  %104 = load ptr, ptr %5, align 8
+  %105 = getelementptr inbounds i8, ptr %104, i64 8
+  store ptr %105, ptr %5, align 8
+  %106 = load ptr, ptr %104, align 8
+  %107 = load i32, ptr %13, align 4
+  %108 = sext i32 %107 to i64
+  %109 = getelementptr inbounds %union.jvalue, ptr %30, i64 %108
+  store ptr %106, ptr %109, align 8
+  br label %110
 
-115:                                              ; preds = %30, %107, %98, %90, %81, %73, %63, %54, %45, %36
-  br label %116
+110:                                              ; preds = %35, %103, %96, %88, %80, %73, %65, %57, %49, %41
+  br label %111
 
-116:                                              ; preds = %115
-  %117 = load i32, ptr %12, align 4
-  %118 = add nsw i32 %117, 1
-  store i32 %118, ptr %12, align 4
-  br label %26, !llvm.loop !28
+111:                                              ; preds = %110
+  %112 = load i32, ptr %13, align 4
+  %113 = add nsw i32 %112, 1
+  store i32 %113, ptr %13, align 4
+  br label %31, !llvm.loop !28
 
-119:                                              ; preds = %26
-  br label %120
-
-120:                                              ; preds = %119
+114:                                              ; preds = %31
+  %115 = load ptr, ptr %8, align 8
+  %116 = load ptr, ptr %115, align 8
+  %117 = getelementptr inbounds %struct.JNINativeInterface_, ptr %116, i32 0, i32 137
+  %118 = load ptr, ptr %117, align 8
+  %119 = load ptr, ptr %6, align 8
+  %120 = load ptr, ptr %7, align 8
   %121 = load ptr, ptr %8, align 8
-  %122 = load ptr, ptr %121, align 8
-  %123 = getelementptr inbounds %struct.JNINativeInterface_, ptr %122, i32 0, i32 137
-  %124 = load ptr, ptr %123, align 8
-  %125 = load ptr, ptr %9, align 8
-  %126 = load ptr, ptr %6, align 8
-  %127 = load ptr, ptr %7, align 8
-  %128 = load ptr, ptr %8, align 8
-  %129 = call float %124(ptr noundef %128, ptr noundef %127, ptr noundef %126, ptr noundef %125)
-  ret float %129
+  %122 = call float %118(ptr noundef %121, ptr noundef %120, ptr noundef %119, ptr noundef %30)
+  %123 = load ptr, ptr %11, align 8
+  call void @llvm.stackrestore(ptr %123)
+  ret float %122
 }
 
 ; Function Attrs: noinline nounwind optnone uwtable
@@ -5531,25 +5273,21 @@ define dso_local dllexport double @JNI_CallDoubleMethod(ptr noundef %0, ptr noun
   %4 = alloca ptr, align 8
   %5 = alloca ptr, align 8
   %6 = alloca ptr, align 8
-  %7 = alloca double, align 8
-  %8 = alloca ptr, align 8
+  %7 = alloca ptr, align 8
+  %8 = alloca double, align 8
   store ptr %2, ptr %4, align 8
   store ptr %1, ptr %5, align 8
   store ptr %0, ptr %6, align 8
-  call void @llvm.va_start(ptr %8)
-  %9 = load ptr, ptr %6, align 8
-  %10 = load ptr, ptr %9, align 8
-  %11 = getelementptr inbounds %struct.JNINativeInterface_, ptr %10, i32 0, i32 59
-  %12 = load ptr, ptr %11, align 8
-  %13 = load ptr, ptr %8, align 8
-  %14 = load ptr, ptr %4, align 8
-  %15 = load ptr, ptr %5, align 8
-  %16 = load ptr, ptr %6, align 8
-  %17 = call double %12(ptr noundef %16, ptr noundef %15, ptr noundef %14, ptr noundef %13)
-  store double %17, ptr %7, align 8
-  call void @llvm.va_end(ptr %8)
-  %18 = load double, ptr %7, align 8
-  ret double %18
+  call void @llvm.va_start(ptr %7)
+  %9 = load ptr, ptr %7, align 8
+  %10 = load ptr, ptr %4, align 8
+  %11 = load ptr, ptr %5, align 8
+  %12 = load ptr, ptr %6, align 8
+  %13 = call double @JNI_CallDoubleMethodV(ptr noundef %12, ptr noundef %11, ptr noundef %10, ptr noundef %9)
+  store double %13, ptr %8, align 8
+  call void @llvm.va_end(ptr %7)
+  %14 = load double, ptr %8, align 8
+  ret double %14
 }
 
 ; Function Attrs: noinline nounwind optnone uwtable
@@ -5558,196 +5296,189 @@ define dso_local dllexport double @JNI_CallDoubleMethodV(ptr noundef %0, ptr nou
   %6 = alloca ptr, align 8
   %7 = alloca ptr, align 8
   %8 = alloca ptr, align 8
-  %9 = alloca ptr, align 8
-  %10 = alloca [257 x i8], align 16
-  %11 = alloca i32, align 4
-  %12 = alloca i32, align 4
+  %9 = alloca [256 x i8], align 16
+  %10 = alloca i32, align 4
+  %11 = alloca ptr, align 8
+  %12 = alloca i64, align 8
+  %13 = alloca i32, align 4
   store ptr %3, ptr %5, align 8
   store ptr %2, ptr %6, align 8
   store ptr %1, ptr %7, align 8
   store ptr %0, ptr %8, align 8
-  br label %13
-
-13:                                               ; preds = %4
   %14 = load ptr, ptr %8, align 8
   %15 = load ptr, ptr %14, align 8
   %16 = getelementptr inbounds %struct.JNINativeInterface_, ptr %15, i32 0, i32 0
   %17 = load ptr, ptr %16, align 8
-  %18 = getelementptr inbounds [257 x i8], ptr %10, i64 0, i64 0
+  %18 = getelementptr inbounds [256 x i8], ptr %9, i64 0, i64 0
   %19 = load ptr, ptr %6, align 8
   %20 = load ptr, ptr %8, align 8
   %21 = call i32 %17(ptr noundef %20, ptr noundef %19, ptr noundef %18)
-  store i32 %21, ptr %11, align 4
-  %22 = load i32, ptr %11, align 4
-  %23 = zext i32 %22 to i64
-  %24 = mul i64 %23, 8
-  %25 = alloca i8, i64 %24, align 16
-  store ptr %25, ptr %9, align 8
-  store i32 0, ptr %12, align 4
-  br label %26
+  store i32 %21, ptr %10, align 4
+  %22 = load ptr, ptr %8, align 8
+  %23 = load ptr, ptr %22, align 8
+  %24 = getelementptr inbounds %struct.JNINativeInterface_, ptr %23, i32 0, i32 1
+  %25 = load ptr, ptr %24, align 8
+  %26 = load i32, ptr %10, align 4
+  call void %25(i32 noundef %26)
+  %27 = load i32, ptr %10, align 4
+  %28 = zext i32 %27 to i64
+  %29 = call ptr @llvm.stacksave()
+  store ptr %29, ptr %11, align 8
+  %30 = alloca %union.jvalue, i64 %28, align 16
+  store i64 %28, ptr %12, align 8
+  store i32 0, ptr %13, align 4
+  br label %31
 
-26:                                               ; preds = %116, %13
-  %27 = load i32, ptr %12, align 4
-  %28 = load i32, ptr %11, align 4
-  %29 = icmp slt i32 %27, %28
-  br i1 %29, label %30, label %119
+31:                                               ; preds = %111, %4
+  %32 = load i32, ptr %13, align 4
+  %33 = load i32, ptr %10, align 4
+  %34 = icmp slt i32 %32, %33
+  br i1 %34, label %35, label %114
 
-30:                                               ; preds = %26
-  %31 = load i32, ptr %12, align 4
-  %32 = sext i32 %31 to i64
-  %33 = getelementptr inbounds [257 x i8], ptr %10, i64 0, i64 %32
-  %34 = load i8, ptr %33, align 1
-  %35 = sext i8 %34 to i32
-  switch i32 %35, label %115 [
-    i32 90, label %36
-    i32 66, label %45
-    i32 83, label %54
-    i32 67, label %63
+35:                                               ; preds = %31
+  %36 = load i32, ptr %13, align 4
+  %37 = sext i32 %36 to i64
+  %38 = getelementptr inbounds [256 x i8], ptr %9, i64 0, i64 %37
+  %39 = load i8, ptr %38, align 1
+  %40 = sext i8 %39 to i32
+  switch i32 %40, label %110 [
+    i32 90, label %41
+    i32 66, label %49
+    i32 67, label %57
+    i32 83, label %65
     i32 73, label %73
-    i32 74, label %81
-    i32 68, label %90
-    i32 70, label %98
-    i32 76, label %107
+    i32 74, label %80
+    i32 70, label %88
+    i32 68, label %96
+    i32 76, label %103
   ]
 
-36:                                               ; preds = %30
-  %37 = load ptr, ptr %5, align 8
-  %38 = getelementptr inbounds i8, ptr %37, i64 8
-  store ptr %38, ptr %5, align 8
-  %39 = load i32, ptr %37, align 8
-  %40 = trunc i32 %39 to i8
-  %41 = load ptr, ptr %9, align 8
-  %42 = load i32, ptr %12, align 4
-  %43 = sext i32 %42 to i64
-  %44 = getelementptr inbounds %union.jvalue, ptr %41, i64 %43
-  store i8 %40, ptr %44, align 8
-  br label %115
+41:                                               ; preds = %35
+  %42 = load ptr, ptr %5, align 8
+  %43 = getelementptr inbounds i8, ptr %42, i64 8
+  store ptr %43, ptr %5, align 8
+  %44 = load i32, ptr %42, align 8
+  %45 = trunc i32 %44 to i8
+  %46 = load i32, ptr %13, align 4
+  %47 = sext i32 %46 to i64
+  %48 = getelementptr inbounds %union.jvalue, ptr %30, i64 %47
+  store i8 %45, ptr %48, align 8
+  br label %110
 
-45:                                               ; preds = %30
-  %46 = load ptr, ptr %5, align 8
-  %47 = getelementptr inbounds i8, ptr %46, i64 8
-  store ptr %47, ptr %5, align 8
-  %48 = load i32, ptr %46, align 8
-  %49 = trunc i32 %48 to i8
-  %50 = load ptr, ptr %9, align 8
-  %51 = load i32, ptr %12, align 4
-  %52 = sext i32 %51 to i64
-  %53 = getelementptr inbounds %union.jvalue, ptr %50, i64 %52
-  store i8 %49, ptr %53, align 8
-  br label %115
+49:                                               ; preds = %35
+  %50 = load ptr, ptr %5, align 8
+  %51 = getelementptr inbounds i8, ptr %50, i64 8
+  store ptr %51, ptr %5, align 8
+  %52 = load i32, ptr %50, align 8
+  %53 = trunc i32 %52 to i8
+  %54 = load i32, ptr %13, align 4
+  %55 = sext i32 %54 to i64
+  %56 = getelementptr inbounds %union.jvalue, ptr %30, i64 %55
+  store i8 %53, ptr %56, align 8
+  br label %110
 
-54:                                               ; preds = %30
-  %55 = load ptr, ptr %5, align 8
-  %56 = getelementptr inbounds i8, ptr %55, i64 8
-  store ptr %56, ptr %5, align 8
-  %57 = load i32, ptr %55, align 8
-  %58 = trunc i32 %57 to i16
-  %59 = load ptr, ptr %9, align 8
-  %60 = load i32, ptr %12, align 4
-  %61 = sext i32 %60 to i64
-  %62 = getelementptr inbounds %union.jvalue, ptr %59, i64 %61
-  store i16 %58, ptr %62, align 8
-  br label %115
+57:                                               ; preds = %35
+  %58 = load ptr, ptr %5, align 8
+  %59 = getelementptr inbounds i8, ptr %58, i64 8
+  store ptr %59, ptr %5, align 8
+  %60 = load i32, ptr %58, align 8
+  %61 = trunc i32 %60 to i16
+  %62 = load i32, ptr %13, align 4
+  %63 = sext i32 %62 to i64
+  %64 = getelementptr inbounds %union.jvalue, ptr %30, i64 %63
+  store i16 %61, ptr %64, align 8
+  br label %110
 
-63:                                               ; preds = %30
-  %64 = load ptr, ptr %5, align 8
-  %65 = getelementptr inbounds i8, ptr %64, i64 8
-  store ptr %65, ptr %5, align 8
-  %66 = load i32, ptr %64, align 8
-  %67 = trunc i32 %66 to i16
-  %68 = zext i16 %67 to i32
-  %69 = load ptr, ptr %9, align 8
-  %70 = load i32, ptr %12, align 4
+65:                                               ; preds = %35
+  %66 = load ptr, ptr %5, align 8
+  %67 = getelementptr inbounds i8, ptr %66, i64 8
+  store ptr %67, ptr %5, align 8
+  %68 = load i32, ptr %66, align 8
+  %69 = trunc i32 %68 to i16
+  %70 = load i32, ptr %13, align 4
   %71 = sext i32 %70 to i64
-  %72 = getelementptr inbounds %union.jvalue, ptr %69, i64 %71
-  store i32 %68, ptr %72, align 8
-  br label %115
+  %72 = getelementptr inbounds %union.jvalue, ptr %30, i64 %71
+  store i16 %69, ptr %72, align 8
+  br label %110
 
-73:                                               ; preds = %30
+73:                                               ; preds = %35
   %74 = load ptr, ptr %5, align 8
   %75 = getelementptr inbounds i8, ptr %74, i64 8
   store ptr %75, ptr %5, align 8
   %76 = load i32, ptr %74, align 8
-  %77 = load ptr, ptr %9, align 8
-  %78 = load i32, ptr %12, align 4
-  %79 = sext i32 %78 to i64
-  %80 = getelementptr inbounds %union.jvalue, ptr %77, i64 %79
-  store i32 %76, ptr %80, align 8
-  br label %115
+  %77 = load i32, ptr %13, align 4
+  %78 = sext i32 %77 to i64
+  %79 = getelementptr inbounds %union.jvalue, ptr %30, i64 %78
+  store i32 %76, ptr %79, align 8
+  br label %110
 
-81:                                               ; preds = %30
-  %82 = load ptr, ptr %5, align 8
-  %83 = getelementptr inbounds i8, ptr %82, i64 8
-  store ptr %83, ptr %5, align 8
-  %84 = load i32, ptr %82, align 8
-  %85 = sext i32 %84 to i64
-  %86 = load ptr, ptr %9, align 8
-  %87 = load i32, ptr %12, align 4
-  %88 = sext i32 %87 to i64
-  %89 = getelementptr inbounds %union.jvalue, ptr %86, i64 %88
-  store i64 %85, ptr %89, align 8
-  br label %115
+80:                                               ; preds = %35
+  %81 = load ptr, ptr %5, align 8
+  %82 = getelementptr inbounds i8, ptr %81, i64 8
+  store ptr %82, ptr %5, align 8
+  %83 = load i32, ptr %81, align 8
+  %84 = sext i32 %83 to i64
+  %85 = load i32, ptr %13, align 4
+  %86 = sext i32 %85 to i64
+  %87 = getelementptr inbounds %union.jvalue, ptr %30, i64 %86
+  store i64 %84, ptr %87, align 8
+  br label %110
 
-90:                                               ; preds = %30
-  %91 = load ptr, ptr %5, align 8
-  %92 = getelementptr inbounds i8, ptr %91, i64 8
-  store ptr %92, ptr %5, align 8
-  %93 = load double, ptr %91, align 8
-  %94 = load ptr, ptr %9, align 8
-  %95 = load i32, ptr %12, align 4
-  %96 = sext i32 %95 to i64
-  %97 = getelementptr inbounds %union.jvalue, ptr %94, i64 %96
-  store double %93, ptr %97, align 8
-  br label %115
+88:                                               ; preds = %35
+  %89 = load ptr, ptr %5, align 8
+  %90 = getelementptr inbounds i8, ptr %89, i64 8
+  store ptr %90, ptr %5, align 8
+  %91 = load double, ptr %89, align 8
+  %92 = fptrunc double %91 to float
+  %93 = load i32, ptr %13, align 4
+  %94 = sext i32 %93 to i64
+  %95 = getelementptr inbounds %union.jvalue, ptr %30, i64 %94
+  store float %92, ptr %95, align 8
+  br label %110
 
-98:                                               ; preds = %30
-  %99 = load ptr, ptr %5, align 8
-  %100 = getelementptr inbounds i8, ptr %99, i64 8
-  store ptr %100, ptr %5, align 8
-  %101 = load double, ptr %99, align 8
-  %102 = fptrunc double %101 to float
-  %103 = load ptr, ptr %9, align 8
-  %104 = load i32, ptr %12, align 4
-  %105 = sext i32 %104 to i64
-  %106 = getelementptr inbounds %union.jvalue, ptr %103, i64 %105
-  store float %102, ptr %106, align 8
-  br label %115
+96:                                               ; preds = %35
+  %97 = load ptr, ptr %5, align 8
+  %98 = getelementptr inbounds i8, ptr %97, i64 8
+  store ptr %98, ptr %5, align 8
+  %99 = load double, ptr %97, align 8
+  %100 = load i32, ptr %13, align 4
+  %101 = sext i32 %100 to i64
+  %102 = getelementptr inbounds %union.jvalue, ptr %30, i64 %101
+  store double %99, ptr %102, align 8
+  br label %110
 
-107:                                              ; preds = %30
-  %108 = load ptr, ptr %5, align 8
-  %109 = getelementptr inbounds i8, ptr %108, i64 8
-  store ptr %109, ptr %5, align 8
-  %110 = load ptr, ptr %108, align 8
-  %111 = load ptr, ptr %9, align 8
-  %112 = load i32, ptr %12, align 4
-  %113 = sext i32 %112 to i64
-  %114 = getelementptr inbounds %union.jvalue, ptr %111, i64 %113
-  store ptr %110, ptr %114, align 8
-  br label %115
+103:                                              ; preds = %35
+  %104 = load ptr, ptr %5, align 8
+  %105 = getelementptr inbounds i8, ptr %104, i64 8
+  store ptr %105, ptr %5, align 8
+  %106 = load ptr, ptr %104, align 8
+  %107 = load i32, ptr %13, align 4
+  %108 = sext i32 %107 to i64
+  %109 = getelementptr inbounds %union.jvalue, ptr %30, i64 %108
+  store ptr %106, ptr %109, align 8
+  br label %110
 
-115:                                              ; preds = %30, %107, %98, %90, %81, %73, %63, %54, %45, %36
-  br label %116
+110:                                              ; preds = %35, %103, %96, %88, %80, %73, %65, %57, %49, %41
+  br label %111
 
-116:                                              ; preds = %115
-  %117 = load i32, ptr %12, align 4
-  %118 = add nsw i32 %117, 1
-  store i32 %118, ptr %12, align 4
-  br label %26, !llvm.loop !29
+111:                                              ; preds = %110
+  %112 = load i32, ptr %13, align 4
+  %113 = add nsw i32 %112, 1
+  store i32 %113, ptr %13, align 4
+  br label %31, !llvm.loop !29
 
-119:                                              ; preds = %26
-  br label %120
-
-120:                                              ; preds = %119
+114:                                              ; preds = %31
+  %115 = load ptr, ptr %8, align 8
+  %116 = load ptr, ptr %115, align 8
+  %117 = getelementptr inbounds %struct.JNINativeInterface_, ptr %116, i32 0, i32 60
+  %118 = load ptr, ptr %117, align 8
+  %119 = load ptr, ptr %6, align 8
+  %120 = load ptr, ptr %7, align 8
   %121 = load ptr, ptr %8, align 8
-  %122 = load ptr, ptr %121, align 8
-  %123 = getelementptr inbounds %struct.JNINativeInterface_, ptr %122, i32 0, i32 60
-  %124 = load ptr, ptr %123, align 8
-  %125 = load ptr, ptr %9, align 8
-  %126 = load ptr, ptr %6, align 8
-  %127 = load ptr, ptr %7, align 8
-  %128 = load ptr, ptr %8, align 8
-  %129 = call double %124(ptr noundef %128, ptr noundef %127, ptr noundef %126, ptr noundef %125)
-  ret double %129
+  %122 = call double %118(ptr noundef %121, ptr noundef %120, ptr noundef %119, ptr noundef %30)
+  %123 = load ptr, ptr %11, align 8
+  call void @llvm.stackrestore(ptr %123)
+  ret double %122
 }
 
 ; Function Attrs: noinline nounwind optnone uwtable
@@ -5756,27 +5487,23 @@ define dso_local dllexport double @JNI_CallNonvirtualDoubleMethod(ptr noundef %0
   %6 = alloca ptr, align 8
   %7 = alloca ptr, align 8
   %8 = alloca ptr, align 8
-  %9 = alloca double, align 8
-  %10 = alloca ptr, align 8
+  %9 = alloca ptr, align 8
+  %10 = alloca double, align 8
   store ptr %3, ptr %5, align 8
   store ptr %2, ptr %6, align 8
   store ptr %1, ptr %7, align 8
   store ptr %0, ptr %8, align 8
-  call void @llvm.va_start(ptr %10)
-  %11 = load ptr, ptr %8, align 8
-  %12 = load ptr, ptr %11, align 8
-  %13 = getelementptr inbounds %struct.JNINativeInterface_, ptr %12, i32 0, i32 89
-  %14 = load ptr, ptr %13, align 8
-  %15 = load ptr, ptr %10, align 8
-  %16 = load ptr, ptr %5, align 8
-  %17 = load ptr, ptr %6, align 8
-  %18 = load ptr, ptr %7, align 8
-  %19 = load ptr, ptr %8, align 8
-  %20 = call double %14(ptr noundef %19, ptr noundef %18, ptr noundef %17, ptr noundef %16, ptr noundef %15)
-  store double %20, ptr %9, align 8
-  call void @llvm.va_end(ptr %10)
-  %21 = load double, ptr %9, align 8
-  ret double %21
+  call void @llvm.va_start(ptr %9)
+  %11 = load ptr, ptr %9, align 8
+  %12 = load ptr, ptr %5, align 8
+  %13 = load ptr, ptr %6, align 8
+  %14 = load ptr, ptr %7, align 8
+  %15 = load ptr, ptr %8, align 8
+  %16 = call double @JNI_CallNonvirtualDoubleMethodV(ptr noundef %15, ptr noundef %14, ptr noundef %13, ptr noundef %12, ptr noundef %11)
+  store double %16, ptr %10, align 8
+  call void @llvm.va_end(ptr %9)
+  %17 = load double, ptr %10, align 8
+  ret double %17
 }
 
 ; Function Attrs: noinline nounwind optnone uwtable
@@ -5786,198 +5513,191 @@ define dso_local dllexport double @JNI_CallNonvirtualDoubleMethodV(ptr noundef %
   %8 = alloca ptr, align 8
   %9 = alloca ptr, align 8
   %10 = alloca ptr, align 8
-  %11 = alloca ptr, align 8
-  %12 = alloca [257 x i8], align 16
-  %13 = alloca i32, align 4
-  %14 = alloca i32, align 4
+  %11 = alloca [256 x i8], align 16
+  %12 = alloca i32, align 4
+  %13 = alloca ptr, align 8
+  %14 = alloca i64, align 8
+  %15 = alloca i32, align 4
   store ptr %4, ptr %6, align 8
   store ptr %3, ptr %7, align 8
   store ptr %2, ptr %8, align 8
   store ptr %1, ptr %9, align 8
   store ptr %0, ptr %10, align 8
-  br label %15
-
-15:                                               ; preds = %5
   %16 = load ptr, ptr %10, align 8
   %17 = load ptr, ptr %16, align 8
   %18 = getelementptr inbounds %struct.JNINativeInterface_, ptr %17, i32 0, i32 0
   %19 = load ptr, ptr %18, align 8
-  %20 = getelementptr inbounds [257 x i8], ptr %12, i64 0, i64 0
+  %20 = getelementptr inbounds [256 x i8], ptr %11, i64 0, i64 0
   %21 = load ptr, ptr %7, align 8
   %22 = load ptr, ptr %10, align 8
   %23 = call i32 %19(ptr noundef %22, ptr noundef %21, ptr noundef %20)
-  store i32 %23, ptr %13, align 4
-  %24 = load i32, ptr %13, align 4
-  %25 = zext i32 %24 to i64
-  %26 = mul i64 %25, 8
-  %27 = alloca i8, i64 %26, align 16
-  store ptr %27, ptr %11, align 8
-  store i32 0, ptr %14, align 4
-  br label %28
+  store i32 %23, ptr %12, align 4
+  %24 = load ptr, ptr %10, align 8
+  %25 = load ptr, ptr %24, align 8
+  %26 = getelementptr inbounds %struct.JNINativeInterface_, ptr %25, i32 0, i32 1
+  %27 = load ptr, ptr %26, align 8
+  %28 = load i32, ptr %12, align 4
+  call void %27(i32 noundef %28)
+  %29 = load i32, ptr %12, align 4
+  %30 = zext i32 %29 to i64
+  %31 = call ptr @llvm.stacksave()
+  store ptr %31, ptr %13, align 8
+  %32 = alloca %union.jvalue, i64 %30, align 16
+  store i64 %30, ptr %14, align 8
+  store i32 0, ptr %15, align 4
+  br label %33
 
-28:                                               ; preds = %118, %15
-  %29 = load i32, ptr %14, align 4
-  %30 = load i32, ptr %13, align 4
-  %31 = icmp slt i32 %29, %30
-  br i1 %31, label %32, label %121
+33:                                               ; preds = %113, %5
+  %34 = load i32, ptr %15, align 4
+  %35 = load i32, ptr %12, align 4
+  %36 = icmp slt i32 %34, %35
+  br i1 %36, label %37, label %116
 
-32:                                               ; preds = %28
-  %33 = load i32, ptr %14, align 4
-  %34 = sext i32 %33 to i64
-  %35 = getelementptr inbounds [257 x i8], ptr %12, i64 0, i64 %34
-  %36 = load i8, ptr %35, align 1
-  %37 = sext i8 %36 to i32
-  switch i32 %37, label %117 [
-    i32 90, label %38
-    i32 66, label %47
-    i32 83, label %56
-    i32 67, label %65
+37:                                               ; preds = %33
+  %38 = load i32, ptr %15, align 4
+  %39 = sext i32 %38 to i64
+  %40 = getelementptr inbounds [256 x i8], ptr %11, i64 0, i64 %39
+  %41 = load i8, ptr %40, align 1
+  %42 = sext i8 %41 to i32
+  switch i32 %42, label %112 [
+    i32 90, label %43
+    i32 66, label %51
+    i32 67, label %59
+    i32 83, label %67
     i32 73, label %75
-    i32 74, label %83
-    i32 68, label %92
-    i32 70, label %100
-    i32 76, label %109
+    i32 74, label %82
+    i32 70, label %90
+    i32 68, label %98
+    i32 76, label %105
   ]
 
-38:                                               ; preds = %32
-  %39 = load ptr, ptr %6, align 8
-  %40 = getelementptr inbounds i8, ptr %39, i64 8
-  store ptr %40, ptr %6, align 8
-  %41 = load i32, ptr %39, align 8
-  %42 = trunc i32 %41 to i8
-  %43 = load ptr, ptr %11, align 8
-  %44 = load i32, ptr %14, align 4
-  %45 = sext i32 %44 to i64
-  %46 = getelementptr inbounds %union.jvalue, ptr %43, i64 %45
-  store i8 %42, ptr %46, align 8
-  br label %117
+43:                                               ; preds = %37
+  %44 = load ptr, ptr %6, align 8
+  %45 = getelementptr inbounds i8, ptr %44, i64 8
+  store ptr %45, ptr %6, align 8
+  %46 = load i32, ptr %44, align 8
+  %47 = trunc i32 %46 to i8
+  %48 = load i32, ptr %15, align 4
+  %49 = sext i32 %48 to i64
+  %50 = getelementptr inbounds %union.jvalue, ptr %32, i64 %49
+  store i8 %47, ptr %50, align 8
+  br label %112
 
-47:                                               ; preds = %32
-  %48 = load ptr, ptr %6, align 8
-  %49 = getelementptr inbounds i8, ptr %48, i64 8
-  store ptr %49, ptr %6, align 8
-  %50 = load i32, ptr %48, align 8
-  %51 = trunc i32 %50 to i8
-  %52 = load ptr, ptr %11, align 8
-  %53 = load i32, ptr %14, align 4
-  %54 = sext i32 %53 to i64
-  %55 = getelementptr inbounds %union.jvalue, ptr %52, i64 %54
-  store i8 %51, ptr %55, align 8
-  br label %117
+51:                                               ; preds = %37
+  %52 = load ptr, ptr %6, align 8
+  %53 = getelementptr inbounds i8, ptr %52, i64 8
+  store ptr %53, ptr %6, align 8
+  %54 = load i32, ptr %52, align 8
+  %55 = trunc i32 %54 to i8
+  %56 = load i32, ptr %15, align 4
+  %57 = sext i32 %56 to i64
+  %58 = getelementptr inbounds %union.jvalue, ptr %32, i64 %57
+  store i8 %55, ptr %58, align 8
+  br label %112
 
-56:                                               ; preds = %32
-  %57 = load ptr, ptr %6, align 8
-  %58 = getelementptr inbounds i8, ptr %57, i64 8
-  store ptr %58, ptr %6, align 8
-  %59 = load i32, ptr %57, align 8
-  %60 = trunc i32 %59 to i16
-  %61 = load ptr, ptr %11, align 8
-  %62 = load i32, ptr %14, align 4
-  %63 = sext i32 %62 to i64
-  %64 = getelementptr inbounds %union.jvalue, ptr %61, i64 %63
-  store i16 %60, ptr %64, align 8
-  br label %117
+59:                                               ; preds = %37
+  %60 = load ptr, ptr %6, align 8
+  %61 = getelementptr inbounds i8, ptr %60, i64 8
+  store ptr %61, ptr %6, align 8
+  %62 = load i32, ptr %60, align 8
+  %63 = trunc i32 %62 to i16
+  %64 = load i32, ptr %15, align 4
+  %65 = sext i32 %64 to i64
+  %66 = getelementptr inbounds %union.jvalue, ptr %32, i64 %65
+  store i16 %63, ptr %66, align 8
+  br label %112
 
-65:                                               ; preds = %32
-  %66 = load ptr, ptr %6, align 8
-  %67 = getelementptr inbounds i8, ptr %66, i64 8
-  store ptr %67, ptr %6, align 8
-  %68 = load i32, ptr %66, align 8
-  %69 = trunc i32 %68 to i16
-  %70 = zext i16 %69 to i32
-  %71 = load ptr, ptr %11, align 8
-  %72 = load i32, ptr %14, align 4
+67:                                               ; preds = %37
+  %68 = load ptr, ptr %6, align 8
+  %69 = getelementptr inbounds i8, ptr %68, i64 8
+  store ptr %69, ptr %6, align 8
+  %70 = load i32, ptr %68, align 8
+  %71 = trunc i32 %70 to i16
+  %72 = load i32, ptr %15, align 4
   %73 = sext i32 %72 to i64
-  %74 = getelementptr inbounds %union.jvalue, ptr %71, i64 %73
-  store i32 %70, ptr %74, align 8
-  br label %117
+  %74 = getelementptr inbounds %union.jvalue, ptr %32, i64 %73
+  store i16 %71, ptr %74, align 8
+  br label %112
 
-75:                                               ; preds = %32
+75:                                               ; preds = %37
   %76 = load ptr, ptr %6, align 8
   %77 = getelementptr inbounds i8, ptr %76, i64 8
   store ptr %77, ptr %6, align 8
   %78 = load i32, ptr %76, align 8
-  %79 = load ptr, ptr %11, align 8
-  %80 = load i32, ptr %14, align 4
-  %81 = sext i32 %80 to i64
-  %82 = getelementptr inbounds %union.jvalue, ptr %79, i64 %81
-  store i32 %78, ptr %82, align 8
-  br label %117
+  %79 = load i32, ptr %15, align 4
+  %80 = sext i32 %79 to i64
+  %81 = getelementptr inbounds %union.jvalue, ptr %32, i64 %80
+  store i32 %78, ptr %81, align 8
+  br label %112
 
-83:                                               ; preds = %32
-  %84 = load ptr, ptr %6, align 8
-  %85 = getelementptr inbounds i8, ptr %84, i64 8
-  store ptr %85, ptr %6, align 8
-  %86 = load i32, ptr %84, align 8
-  %87 = sext i32 %86 to i64
-  %88 = load ptr, ptr %11, align 8
-  %89 = load i32, ptr %14, align 4
-  %90 = sext i32 %89 to i64
-  %91 = getelementptr inbounds %union.jvalue, ptr %88, i64 %90
-  store i64 %87, ptr %91, align 8
-  br label %117
+82:                                               ; preds = %37
+  %83 = load ptr, ptr %6, align 8
+  %84 = getelementptr inbounds i8, ptr %83, i64 8
+  store ptr %84, ptr %6, align 8
+  %85 = load i32, ptr %83, align 8
+  %86 = sext i32 %85 to i64
+  %87 = load i32, ptr %15, align 4
+  %88 = sext i32 %87 to i64
+  %89 = getelementptr inbounds %union.jvalue, ptr %32, i64 %88
+  store i64 %86, ptr %89, align 8
+  br label %112
 
-92:                                               ; preds = %32
-  %93 = load ptr, ptr %6, align 8
-  %94 = getelementptr inbounds i8, ptr %93, i64 8
-  store ptr %94, ptr %6, align 8
-  %95 = load double, ptr %93, align 8
-  %96 = load ptr, ptr %11, align 8
-  %97 = load i32, ptr %14, align 4
-  %98 = sext i32 %97 to i64
-  %99 = getelementptr inbounds %union.jvalue, ptr %96, i64 %98
-  store double %95, ptr %99, align 8
-  br label %117
+90:                                               ; preds = %37
+  %91 = load ptr, ptr %6, align 8
+  %92 = getelementptr inbounds i8, ptr %91, i64 8
+  store ptr %92, ptr %6, align 8
+  %93 = load double, ptr %91, align 8
+  %94 = fptrunc double %93 to float
+  %95 = load i32, ptr %15, align 4
+  %96 = sext i32 %95 to i64
+  %97 = getelementptr inbounds %union.jvalue, ptr %32, i64 %96
+  store float %94, ptr %97, align 8
+  br label %112
 
-100:                                              ; preds = %32
-  %101 = load ptr, ptr %6, align 8
-  %102 = getelementptr inbounds i8, ptr %101, i64 8
-  store ptr %102, ptr %6, align 8
-  %103 = load double, ptr %101, align 8
-  %104 = fptrunc double %103 to float
-  %105 = load ptr, ptr %11, align 8
-  %106 = load i32, ptr %14, align 4
-  %107 = sext i32 %106 to i64
-  %108 = getelementptr inbounds %union.jvalue, ptr %105, i64 %107
-  store float %104, ptr %108, align 8
-  br label %117
+98:                                               ; preds = %37
+  %99 = load ptr, ptr %6, align 8
+  %100 = getelementptr inbounds i8, ptr %99, i64 8
+  store ptr %100, ptr %6, align 8
+  %101 = load double, ptr %99, align 8
+  %102 = load i32, ptr %15, align 4
+  %103 = sext i32 %102 to i64
+  %104 = getelementptr inbounds %union.jvalue, ptr %32, i64 %103
+  store double %101, ptr %104, align 8
+  br label %112
 
-109:                                              ; preds = %32
-  %110 = load ptr, ptr %6, align 8
-  %111 = getelementptr inbounds i8, ptr %110, i64 8
-  store ptr %111, ptr %6, align 8
-  %112 = load ptr, ptr %110, align 8
-  %113 = load ptr, ptr %11, align 8
-  %114 = load i32, ptr %14, align 4
-  %115 = sext i32 %114 to i64
-  %116 = getelementptr inbounds %union.jvalue, ptr %113, i64 %115
-  store ptr %112, ptr %116, align 8
-  br label %117
+105:                                              ; preds = %37
+  %106 = load ptr, ptr %6, align 8
+  %107 = getelementptr inbounds i8, ptr %106, i64 8
+  store ptr %107, ptr %6, align 8
+  %108 = load ptr, ptr %106, align 8
+  %109 = load i32, ptr %15, align 4
+  %110 = sext i32 %109 to i64
+  %111 = getelementptr inbounds %union.jvalue, ptr %32, i64 %110
+  store ptr %108, ptr %111, align 8
+  br label %112
 
-117:                                              ; preds = %32, %109, %100, %92, %83, %75, %65, %56, %47, %38
-  br label %118
+112:                                              ; preds = %37, %105, %98, %90, %82, %75, %67, %59, %51, %43
+  br label %113
 
-118:                                              ; preds = %117
-  %119 = load i32, ptr %14, align 4
-  %120 = add nsw i32 %119, 1
-  store i32 %120, ptr %14, align 4
-  br label %28, !llvm.loop !30
+113:                                              ; preds = %112
+  %114 = load i32, ptr %15, align 4
+  %115 = add nsw i32 %114, 1
+  store i32 %115, ptr %15, align 4
+  br label %33, !llvm.loop !30
 
-121:                                              ; preds = %28
-  br label %122
-
-122:                                              ; preds = %121
-  %123 = load ptr, ptr %10, align 8
-  %124 = load ptr, ptr %123, align 8
-  %125 = getelementptr inbounds %struct.JNINativeInterface_, ptr %124, i32 0, i32 90
-  %126 = load ptr, ptr %125, align 8
-  %127 = load ptr, ptr %11, align 8
-  %128 = load ptr, ptr %7, align 8
-  %129 = load ptr, ptr %8, align 8
-  %130 = load ptr, ptr %9, align 8
-  %131 = load ptr, ptr %10, align 8
-  %132 = call double %126(ptr noundef %131, ptr noundef %130, ptr noundef %129, ptr noundef %128, ptr noundef %127)
-  ret double %132
+116:                                              ; preds = %33
+  %117 = load ptr, ptr %10, align 8
+  %118 = load ptr, ptr %117, align 8
+  %119 = getelementptr inbounds %struct.JNINativeInterface_, ptr %118, i32 0, i32 90
+  %120 = load ptr, ptr %119, align 8
+  %121 = load ptr, ptr %7, align 8
+  %122 = load ptr, ptr %8, align 8
+  %123 = load ptr, ptr %9, align 8
+  %124 = load ptr, ptr %10, align 8
+  %125 = call double %120(ptr noundef %124, ptr noundef %123, ptr noundef %122, ptr noundef %121, ptr noundef %32)
+  %126 = load ptr, ptr %13, align 8
+  call void @llvm.stackrestore(ptr %126)
+  ret double %125
 }
 
 ; Function Attrs: noinline nounwind optnone uwtable
@@ -5985,25 +5705,21 @@ define dso_local dllexport double @JNI_CallStaticDoubleMethod(ptr noundef %0, pt
   %4 = alloca ptr, align 8
   %5 = alloca ptr, align 8
   %6 = alloca ptr, align 8
-  %7 = alloca double, align 8
-  %8 = alloca ptr, align 8
+  %7 = alloca ptr, align 8
+  %8 = alloca double, align 8
   store ptr %2, ptr %4, align 8
   store ptr %1, ptr %5, align 8
   store ptr %0, ptr %6, align 8
-  call void @llvm.va_start(ptr %8)
-  %9 = load ptr, ptr %6, align 8
-  %10 = load ptr, ptr %9, align 8
-  %11 = getelementptr inbounds %struct.JNINativeInterface_, ptr %10, i32 0, i32 139
-  %12 = load ptr, ptr %11, align 8
-  %13 = load ptr, ptr %8, align 8
-  %14 = load ptr, ptr %4, align 8
-  %15 = load ptr, ptr %5, align 8
-  %16 = load ptr, ptr %6, align 8
-  %17 = call double %12(ptr noundef %16, ptr noundef %15, ptr noundef %14, ptr noundef %13)
-  store double %17, ptr %7, align 8
-  call void @llvm.va_end(ptr %8)
-  %18 = load double, ptr %7, align 8
-  ret double %18
+  call void @llvm.va_start(ptr %7)
+  %9 = load ptr, ptr %7, align 8
+  %10 = load ptr, ptr %4, align 8
+  %11 = load ptr, ptr %5, align 8
+  %12 = load ptr, ptr %6, align 8
+  %13 = call double @JNI_CallStaticDoubleMethodV(ptr noundef %12, ptr noundef %11, ptr noundef %10, ptr noundef %9)
+  store double %13, ptr %8, align 8
+  call void @llvm.va_end(ptr %7)
+  %14 = load double, ptr %8, align 8
+  ret double %14
 }
 
 ; Function Attrs: noinline nounwind optnone uwtable
@@ -6012,196 +5728,189 @@ define dso_local dllexport double @JNI_CallStaticDoubleMethodV(ptr noundef %0, p
   %6 = alloca ptr, align 8
   %7 = alloca ptr, align 8
   %8 = alloca ptr, align 8
-  %9 = alloca ptr, align 8
-  %10 = alloca [257 x i8], align 16
-  %11 = alloca i32, align 4
-  %12 = alloca i32, align 4
+  %9 = alloca [256 x i8], align 16
+  %10 = alloca i32, align 4
+  %11 = alloca ptr, align 8
+  %12 = alloca i64, align 8
+  %13 = alloca i32, align 4
   store ptr %3, ptr %5, align 8
   store ptr %2, ptr %6, align 8
   store ptr %1, ptr %7, align 8
   store ptr %0, ptr %8, align 8
-  br label %13
-
-13:                                               ; preds = %4
   %14 = load ptr, ptr %8, align 8
   %15 = load ptr, ptr %14, align 8
   %16 = getelementptr inbounds %struct.JNINativeInterface_, ptr %15, i32 0, i32 0
   %17 = load ptr, ptr %16, align 8
-  %18 = getelementptr inbounds [257 x i8], ptr %10, i64 0, i64 0
+  %18 = getelementptr inbounds [256 x i8], ptr %9, i64 0, i64 0
   %19 = load ptr, ptr %6, align 8
   %20 = load ptr, ptr %8, align 8
   %21 = call i32 %17(ptr noundef %20, ptr noundef %19, ptr noundef %18)
-  store i32 %21, ptr %11, align 4
-  %22 = load i32, ptr %11, align 4
-  %23 = zext i32 %22 to i64
-  %24 = mul i64 %23, 8
-  %25 = alloca i8, i64 %24, align 16
-  store ptr %25, ptr %9, align 8
-  store i32 0, ptr %12, align 4
-  br label %26
+  store i32 %21, ptr %10, align 4
+  %22 = load ptr, ptr %8, align 8
+  %23 = load ptr, ptr %22, align 8
+  %24 = getelementptr inbounds %struct.JNINativeInterface_, ptr %23, i32 0, i32 1
+  %25 = load ptr, ptr %24, align 8
+  %26 = load i32, ptr %10, align 4
+  call void %25(i32 noundef %26)
+  %27 = load i32, ptr %10, align 4
+  %28 = zext i32 %27 to i64
+  %29 = call ptr @llvm.stacksave()
+  store ptr %29, ptr %11, align 8
+  %30 = alloca %union.jvalue, i64 %28, align 16
+  store i64 %28, ptr %12, align 8
+  store i32 0, ptr %13, align 4
+  br label %31
 
-26:                                               ; preds = %116, %13
-  %27 = load i32, ptr %12, align 4
-  %28 = load i32, ptr %11, align 4
-  %29 = icmp slt i32 %27, %28
-  br i1 %29, label %30, label %119
+31:                                               ; preds = %111, %4
+  %32 = load i32, ptr %13, align 4
+  %33 = load i32, ptr %10, align 4
+  %34 = icmp slt i32 %32, %33
+  br i1 %34, label %35, label %114
 
-30:                                               ; preds = %26
-  %31 = load i32, ptr %12, align 4
-  %32 = sext i32 %31 to i64
-  %33 = getelementptr inbounds [257 x i8], ptr %10, i64 0, i64 %32
-  %34 = load i8, ptr %33, align 1
-  %35 = sext i8 %34 to i32
-  switch i32 %35, label %115 [
-    i32 90, label %36
-    i32 66, label %45
-    i32 83, label %54
-    i32 67, label %63
+35:                                               ; preds = %31
+  %36 = load i32, ptr %13, align 4
+  %37 = sext i32 %36 to i64
+  %38 = getelementptr inbounds [256 x i8], ptr %9, i64 0, i64 %37
+  %39 = load i8, ptr %38, align 1
+  %40 = sext i8 %39 to i32
+  switch i32 %40, label %110 [
+    i32 90, label %41
+    i32 66, label %49
+    i32 67, label %57
+    i32 83, label %65
     i32 73, label %73
-    i32 74, label %81
-    i32 68, label %90
-    i32 70, label %98
-    i32 76, label %107
+    i32 74, label %80
+    i32 70, label %88
+    i32 68, label %96
+    i32 76, label %103
   ]
 
-36:                                               ; preds = %30
-  %37 = load ptr, ptr %5, align 8
-  %38 = getelementptr inbounds i8, ptr %37, i64 8
-  store ptr %38, ptr %5, align 8
-  %39 = load i32, ptr %37, align 8
-  %40 = trunc i32 %39 to i8
-  %41 = load ptr, ptr %9, align 8
-  %42 = load i32, ptr %12, align 4
-  %43 = sext i32 %42 to i64
-  %44 = getelementptr inbounds %union.jvalue, ptr %41, i64 %43
-  store i8 %40, ptr %44, align 8
-  br label %115
+41:                                               ; preds = %35
+  %42 = load ptr, ptr %5, align 8
+  %43 = getelementptr inbounds i8, ptr %42, i64 8
+  store ptr %43, ptr %5, align 8
+  %44 = load i32, ptr %42, align 8
+  %45 = trunc i32 %44 to i8
+  %46 = load i32, ptr %13, align 4
+  %47 = sext i32 %46 to i64
+  %48 = getelementptr inbounds %union.jvalue, ptr %30, i64 %47
+  store i8 %45, ptr %48, align 8
+  br label %110
 
-45:                                               ; preds = %30
-  %46 = load ptr, ptr %5, align 8
-  %47 = getelementptr inbounds i8, ptr %46, i64 8
-  store ptr %47, ptr %5, align 8
-  %48 = load i32, ptr %46, align 8
-  %49 = trunc i32 %48 to i8
-  %50 = load ptr, ptr %9, align 8
-  %51 = load i32, ptr %12, align 4
-  %52 = sext i32 %51 to i64
-  %53 = getelementptr inbounds %union.jvalue, ptr %50, i64 %52
-  store i8 %49, ptr %53, align 8
-  br label %115
+49:                                               ; preds = %35
+  %50 = load ptr, ptr %5, align 8
+  %51 = getelementptr inbounds i8, ptr %50, i64 8
+  store ptr %51, ptr %5, align 8
+  %52 = load i32, ptr %50, align 8
+  %53 = trunc i32 %52 to i8
+  %54 = load i32, ptr %13, align 4
+  %55 = sext i32 %54 to i64
+  %56 = getelementptr inbounds %union.jvalue, ptr %30, i64 %55
+  store i8 %53, ptr %56, align 8
+  br label %110
 
-54:                                               ; preds = %30
-  %55 = load ptr, ptr %5, align 8
-  %56 = getelementptr inbounds i8, ptr %55, i64 8
-  store ptr %56, ptr %5, align 8
-  %57 = load i32, ptr %55, align 8
-  %58 = trunc i32 %57 to i16
-  %59 = load ptr, ptr %9, align 8
-  %60 = load i32, ptr %12, align 4
-  %61 = sext i32 %60 to i64
-  %62 = getelementptr inbounds %union.jvalue, ptr %59, i64 %61
-  store i16 %58, ptr %62, align 8
-  br label %115
+57:                                               ; preds = %35
+  %58 = load ptr, ptr %5, align 8
+  %59 = getelementptr inbounds i8, ptr %58, i64 8
+  store ptr %59, ptr %5, align 8
+  %60 = load i32, ptr %58, align 8
+  %61 = trunc i32 %60 to i16
+  %62 = load i32, ptr %13, align 4
+  %63 = sext i32 %62 to i64
+  %64 = getelementptr inbounds %union.jvalue, ptr %30, i64 %63
+  store i16 %61, ptr %64, align 8
+  br label %110
 
-63:                                               ; preds = %30
-  %64 = load ptr, ptr %5, align 8
-  %65 = getelementptr inbounds i8, ptr %64, i64 8
-  store ptr %65, ptr %5, align 8
-  %66 = load i32, ptr %64, align 8
-  %67 = trunc i32 %66 to i16
-  %68 = zext i16 %67 to i32
-  %69 = load ptr, ptr %9, align 8
-  %70 = load i32, ptr %12, align 4
+65:                                               ; preds = %35
+  %66 = load ptr, ptr %5, align 8
+  %67 = getelementptr inbounds i8, ptr %66, i64 8
+  store ptr %67, ptr %5, align 8
+  %68 = load i32, ptr %66, align 8
+  %69 = trunc i32 %68 to i16
+  %70 = load i32, ptr %13, align 4
   %71 = sext i32 %70 to i64
-  %72 = getelementptr inbounds %union.jvalue, ptr %69, i64 %71
-  store i32 %68, ptr %72, align 8
-  br label %115
+  %72 = getelementptr inbounds %union.jvalue, ptr %30, i64 %71
+  store i16 %69, ptr %72, align 8
+  br label %110
 
-73:                                               ; preds = %30
+73:                                               ; preds = %35
   %74 = load ptr, ptr %5, align 8
   %75 = getelementptr inbounds i8, ptr %74, i64 8
   store ptr %75, ptr %5, align 8
   %76 = load i32, ptr %74, align 8
-  %77 = load ptr, ptr %9, align 8
-  %78 = load i32, ptr %12, align 4
-  %79 = sext i32 %78 to i64
-  %80 = getelementptr inbounds %union.jvalue, ptr %77, i64 %79
-  store i32 %76, ptr %80, align 8
-  br label %115
+  %77 = load i32, ptr %13, align 4
+  %78 = sext i32 %77 to i64
+  %79 = getelementptr inbounds %union.jvalue, ptr %30, i64 %78
+  store i32 %76, ptr %79, align 8
+  br label %110
 
-81:                                               ; preds = %30
-  %82 = load ptr, ptr %5, align 8
-  %83 = getelementptr inbounds i8, ptr %82, i64 8
-  store ptr %83, ptr %5, align 8
-  %84 = load i32, ptr %82, align 8
-  %85 = sext i32 %84 to i64
-  %86 = load ptr, ptr %9, align 8
-  %87 = load i32, ptr %12, align 4
-  %88 = sext i32 %87 to i64
-  %89 = getelementptr inbounds %union.jvalue, ptr %86, i64 %88
-  store i64 %85, ptr %89, align 8
-  br label %115
+80:                                               ; preds = %35
+  %81 = load ptr, ptr %5, align 8
+  %82 = getelementptr inbounds i8, ptr %81, i64 8
+  store ptr %82, ptr %5, align 8
+  %83 = load i32, ptr %81, align 8
+  %84 = sext i32 %83 to i64
+  %85 = load i32, ptr %13, align 4
+  %86 = sext i32 %85 to i64
+  %87 = getelementptr inbounds %union.jvalue, ptr %30, i64 %86
+  store i64 %84, ptr %87, align 8
+  br label %110
 
-90:                                               ; preds = %30
-  %91 = load ptr, ptr %5, align 8
-  %92 = getelementptr inbounds i8, ptr %91, i64 8
-  store ptr %92, ptr %5, align 8
-  %93 = load double, ptr %91, align 8
-  %94 = load ptr, ptr %9, align 8
-  %95 = load i32, ptr %12, align 4
-  %96 = sext i32 %95 to i64
-  %97 = getelementptr inbounds %union.jvalue, ptr %94, i64 %96
-  store double %93, ptr %97, align 8
-  br label %115
+88:                                               ; preds = %35
+  %89 = load ptr, ptr %5, align 8
+  %90 = getelementptr inbounds i8, ptr %89, i64 8
+  store ptr %90, ptr %5, align 8
+  %91 = load double, ptr %89, align 8
+  %92 = fptrunc double %91 to float
+  %93 = load i32, ptr %13, align 4
+  %94 = sext i32 %93 to i64
+  %95 = getelementptr inbounds %union.jvalue, ptr %30, i64 %94
+  store float %92, ptr %95, align 8
+  br label %110
 
-98:                                               ; preds = %30
-  %99 = load ptr, ptr %5, align 8
-  %100 = getelementptr inbounds i8, ptr %99, i64 8
-  store ptr %100, ptr %5, align 8
-  %101 = load double, ptr %99, align 8
-  %102 = fptrunc double %101 to float
-  %103 = load ptr, ptr %9, align 8
-  %104 = load i32, ptr %12, align 4
-  %105 = sext i32 %104 to i64
-  %106 = getelementptr inbounds %union.jvalue, ptr %103, i64 %105
-  store float %102, ptr %106, align 8
-  br label %115
+96:                                               ; preds = %35
+  %97 = load ptr, ptr %5, align 8
+  %98 = getelementptr inbounds i8, ptr %97, i64 8
+  store ptr %98, ptr %5, align 8
+  %99 = load double, ptr %97, align 8
+  %100 = load i32, ptr %13, align 4
+  %101 = sext i32 %100 to i64
+  %102 = getelementptr inbounds %union.jvalue, ptr %30, i64 %101
+  store double %99, ptr %102, align 8
+  br label %110
 
-107:                                              ; preds = %30
-  %108 = load ptr, ptr %5, align 8
-  %109 = getelementptr inbounds i8, ptr %108, i64 8
-  store ptr %109, ptr %5, align 8
-  %110 = load ptr, ptr %108, align 8
-  %111 = load ptr, ptr %9, align 8
-  %112 = load i32, ptr %12, align 4
-  %113 = sext i32 %112 to i64
-  %114 = getelementptr inbounds %union.jvalue, ptr %111, i64 %113
-  store ptr %110, ptr %114, align 8
-  br label %115
+103:                                              ; preds = %35
+  %104 = load ptr, ptr %5, align 8
+  %105 = getelementptr inbounds i8, ptr %104, i64 8
+  store ptr %105, ptr %5, align 8
+  %106 = load ptr, ptr %104, align 8
+  %107 = load i32, ptr %13, align 4
+  %108 = sext i32 %107 to i64
+  %109 = getelementptr inbounds %union.jvalue, ptr %30, i64 %108
+  store ptr %106, ptr %109, align 8
+  br label %110
 
-115:                                              ; preds = %30, %107, %98, %90, %81, %73, %63, %54, %45, %36
-  br label %116
+110:                                              ; preds = %35, %103, %96, %88, %80, %73, %65, %57, %49, %41
+  br label %111
 
-116:                                              ; preds = %115
-  %117 = load i32, ptr %12, align 4
-  %118 = add nsw i32 %117, 1
-  store i32 %118, ptr %12, align 4
-  br label %26, !llvm.loop !31
+111:                                              ; preds = %110
+  %112 = load i32, ptr %13, align 4
+  %113 = add nsw i32 %112, 1
+  store i32 %113, ptr %13, align 4
+  br label %31, !llvm.loop !31
 
-119:                                              ; preds = %26
-  br label %120
-
-120:                                              ; preds = %119
+114:                                              ; preds = %31
+  %115 = load ptr, ptr %8, align 8
+  %116 = load ptr, ptr %115, align 8
+  %117 = getelementptr inbounds %struct.JNINativeInterface_, ptr %116, i32 0, i32 140
+  %118 = load ptr, ptr %117, align 8
+  %119 = load ptr, ptr %6, align 8
+  %120 = load ptr, ptr %7, align 8
   %121 = load ptr, ptr %8, align 8
-  %122 = load ptr, ptr %121, align 8
-  %123 = getelementptr inbounds %struct.JNINativeInterface_, ptr %122, i32 0, i32 140
-  %124 = load ptr, ptr %123, align 8
-  %125 = load ptr, ptr %9, align 8
-  %126 = load ptr, ptr %6, align 8
-  %127 = load ptr, ptr %7, align 8
-  %128 = load ptr, ptr %8, align 8
-  %129 = call double %124(ptr noundef %128, ptr noundef %127, ptr noundef %126, ptr noundef %125)
-  ret double %129
+  %122 = call double %118(ptr noundef %121, ptr noundef %120, ptr noundef %119, ptr noundef %30)
+  %123 = load ptr, ptr %11, align 8
+  call void @llvm.stackrestore(ptr %123)
+  ret double %122
 }
 
 ; Function Attrs: noinline nounwind optnone uwtable
@@ -6214,20 +5923,16 @@ define dso_local dllexport ptr @JNI_NewObject(ptr noundef %0, ptr noundef %1, pt
   store ptr %2, ptr %4, align 8
   store ptr %1, ptr %5, align 8
   store ptr %0, ptr %6, align 8
-  call void @llvm.va_start(ptr %8)
-  %9 = load ptr, ptr %6, align 8
-  %10 = load ptr, ptr %9, align 8
-  %11 = getelementptr inbounds %struct.JNINativeInterface_, ptr %10, i32 0, i32 29
-  %12 = load ptr, ptr %11, align 8
-  %13 = load ptr, ptr %8, align 8
-  %14 = load ptr, ptr %4, align 8
-  %15 = load ptr, ptr %5, align 8
-  %16 = load ptr, ptr %6, align 8
-  %17 = call ptr %12(ptr noundef %16, ptr noundef %15, ptr noundef %14, ptr noundef %13)
-  store ptr %17, ptr %7, align 8
-  call void @llvm.va_end(ptr %8)
-  %18 = load ptr, ptr %7, align 8
-  ret ptr %18
+  call void @llvm.va_start(ptr %7)
+  %9 = load ptr, ptr %7, align 8
+  %10 = load ptr, ptr %4, align 8
+  %11 = load ptr, ptr %5, align 8
+  %12 = load ptr, ptr %6, align 8
+  %13 = call ptr @JNI_NewObjectV(ptr noundef %12, ptr noundef %11, ptr noundef %10, ptr noundef %9)
+  store ptr %13, ptr %8, align 8
+  call void @llvm.va_end(ptr %7)
+  %14 = load ptr, ptr %8, align 8
+  ret ptr %14
 }
 
 ; Function Attrs: noinline nounwind optnone uwtable
@@ -6236,196 +5941,189 @@ define dso_local dllexport ptr @JNI_NewObjectV(ptr noundef %0, ptr noundef %1, p
   %6 = alloca ptr, align 8
   %7 = alloca ptr, align 8
   %8 = alloca ptr, align 8
-  %9 = alloca ptr, align 8
-  %10 = alloca [257 x i8], align 16
-  %11 = alloca i32, align 4
-  %12 = alloca i32, align 4
+  %9 = alloca [256 x i8], align 16
+  %10 = alloca i32, align 4
+  %11 = alloca ptr, align 8
+  %12 = alloca i64, align 8
+  %13 = alloca i32, align 4
   store ptr %3, ptr %5, align 8
   store ptr %2, ptr %6, align 8
   store ptr %1, ptr %7, align 8
   store ptr %0, ptr %8, align 8
-  br label %13
-
-13:                                               ; preds = %4
   %14 = load ptr, ptr %8, align 8
   %15 = load ptr, ptr %14, align 8
   %16 = getelementptr inbounds %struct.JNINativeInterface_, ptr %15, i32 0, i32 0
   %17 = load ptr, ptr %16, align 8
-  %18 = getelementptr inbounds [257 x i8], ptr %10, i64 0, i64 0
+  %18 = getelementptr inbounds [256 x i8], ptr %9, i64 0, i64 0
   %19 = load ptr, ptr %6, align 8
   %20 = load ptr, ptr %8, align 8
   %21 = call i32 %17(ptr noundef %20, ptr noundef %19, ptr noundef %18)
-  store i32 %21, ptr %11, align 4
-  %22 = load i32, ptr %11, align 4
-  %23 = zext i32 %22 to i64
-  %24 = mul i64 %23, 8
-  %25 = alloca i8, i64 %24, align 16
-  store ptr %25, ptr %9, align 8
-  store i32 0, ptr %12, align 4
-  br label %26
+  store i32 %21, ptr %10, align 4
+  %22 = load ptr, ptr %8, align 8
+  %23 = load ptr, ptr %22, align 8
+  %24 = getelementptr inbounds %struct.JNINativeInterface_, ptr %23, i32 0, i32 1
+  %25 = load ptr, ptr %24, align 8
+  %26 = load i32, ptr %10, align 4
+  call void %25(i32 noundef %26)
+  %27 = load i32, ptr %10, align 4
+  %28 = zext i32 %27 to i64
+  %29 = call ptr @llvm.stacksave()
+  store ptr %29, ptr %11, align 8
+  %30 = alloca %union.jvalue, i64 %28, align 16
+  store i64 %28, ptr %12, align 8
+  store i32 0, ptr %13, align 4
+  br label %31
 
-26:                                               ; preds = %116, %13
-  %27 = load i32, ptr %12, align 4
-  %28 = load i32, ptr %11, align 4
-  %29 = icmp slt i32 %27, %28
-  br i1 %29, label %30, label %119
+31:                                               ; preds = %111, %4
+  %32 = load i32, ptr %13, align 4
+  %33 = load i32, ptr %10, align 4
+  %34 = icmp slt i32 %32, %33
+  br i1 %34, label %35, label %114
 
-30:                                               ; preds = %26
-  %31 = load i32, ptr %12, align 4
-  %32 = sext i32 %31 to i64
-  %33 = getelementptr inbounds [257 x i8], ptr %10, i64 0, i64 %32
-  %34 = load i8, ptr %33, align 1
-  %35 = sext i8 %34 to i32
-  switch i32 %35, label %115 [
-    i32 90, label %36
-    i32 66, label %45
-    i32 83, label %54
-    i32 67, label %63
+35:                                               ; preds = %31
+  %36 = load i32, ptr %13, align 4
+  %37 = sext i32 %36 to i64
+  %38 = getelementptr inbounds [256 x i8], ptr %9, i64 0, i64 %37
+  %39 = load i8, ptr %38, align 1
+  %40 = sext i8 %39 to i32
+  switch i32 %40, label %110 [
+    i32 90, label %41
+    i32 66, label %49
+    i32 67, label %57
+    i32 83, label %65
     i32 73, label %73
-    i32 74, label %81
-    i32 68, label %90
-    i32 70, label %98
-    i32 76, label %107
+    i32 74, label %80
+    i32 70, label %88
+    i32 68, label %96
+    i32 76, label %103
   ]
 
-36:                                               ; preds = %30
-  %37 = load ptr, ptr %5, align 8
-  %38 = getelementptr inbounds i8, ptr %37, i64 8
-  store ptr %38, ptr %5, align 8
-  %39 = load i32, ptr %37, align 8
-  %40 = trunc i32 %39 to i8
-  %41 = load ptr, ptr %9, align 8
-  %42 = load i32, ptr %12, align 4
-  %43 = sext i32 %42 to i64
-  %44 = getelementptr inbounds %union.jvalue, ptr %41, i64 %43
-  store i8 %40, ptr %44, align 8
-  br label %115
+41:                                               ; preds = %35
+  %42 = load ptr, ptr %5, align 8
+  %43 = getelementptr inbounds i8, ptr %42, i64 8
+  store ptr %43, ptr %5, align 8
+  %44 = load i32, ptr %42, align 8
+  %45 = trunc i32 %44 to i8
+  %46 = load i32, ptr %13, align 4
+  %47 = sext i32 %46 to i64
+  %48 = getelementptr inbounds %union.jvalue, ptr %30, i64 %47
+  store i8 %45, ptr %48, align 8
+  br label %110
 
-45:                                               ; preds = %30
-  %46 = load ptr, ptr %5, align 8
-  %47 = getelementptr inbounds i8, ptr %46, i64 8
-  store ptr %47, ptr %5, align 8
-  %48 = load i32, ptr %46, align 8
-  %49 = trunc i32 %48 to i8
-  %50 = load ptr, ptr %9, align 8
-  %51 = load i32, ptr %12, align 4
-  %52 = sext i32 %51 to i64
-  %53 = getelementptr inbounds %union.jvalue, ptr %50, i64 %52
-  store i8 %49, ptr %53, align 8
-  br label %115
+49:                                               ; preds = %35
+  %50 = load ptr, ptr %5, align 8
+  %51 = getelementptr inbounds i8, ptr %50, i64 8
+  store ptr %51, ptr %5, align 8
+  %52 = load i32, ptr %50, align 8
+  %53 = trunc i32 %52 to i8
+  %54 = load i32, ptr %13, align 4
+  %55 = sext i32 %54 to i64
+  %56 = getelementptr inbounds %union.jvalue, ptr %30, i64 %55
+  store i8 %53, ptr %56, align 8
+  br label %110
 
-54:                                               ; preds = %30
-  %55 = load ptr, ptr %5, align 8
-  %56 = getelementptr inbounds i8, ptr %55, i64 8
-  store ptr %56, ptr %5, align 8
-  %57 = load i32, ptr %55, align 8
-  %58 = trunc i32 %57 to i16
-  %59 = load ptr, ptr %9, align 8
-  %60 = load i32, ptr %12, align 4
-  %61 = sext i32 %60 to i64
-  %62 = getelementptr inbounds %union.jvalue, ptr %59, i64 %61
-  store i16 %58, ptr %62, align 8
-  br label %115
+57:                                               ; preds = %35
+  %58 = load ptr, ptr %5, align 8
+  %59 = getelementptr inbounds i8, ptr %58, i64 8
+  store ptr %59, ptr %5, align 8
+  %60 = load i32, ptr %58, align 8
+  %61 = trunc i32 %60 to i16
+  %62 = load i32, ptr %13, align 4
+  %63 = sext i32 %62 to i64
+  %64 = getelementptr inbounds %union.jvalue, ptr %30, i64 %63
+  store i16 %61, ptr %64, align 8
+  br label %110
 
-63:                                               ; preds = %30
-  %64 = load ptr, ptr %5, align 8
-  %65 = getelementptr inbounds i8, ptr %64, i64 8
-  store ptr %65, ptr %5, align 8
-  %66 = load i32, ptr %64, align 8
-  %67 = trunc i32 %66 to i16
-  %68 = zext i16 %67 to i32
-  %69 = load ptr, ptr %9, align 8
-  %70 = load i32, ptr %12, align 4
+65:                                               ; preds = %35
+  %66 = load ptr, ptr %5, align 8
+  %67 = getelementptr inbounds i8, ptr %66, i64 8
+  store ptr %67, ptr %5, align 8
+  %68 = load i32, ptr %66, align 8
+  %69 = trunc i32 %68 to i16
+  %70 = load i32, ptr %13, align 4
   %71 = sext i32 %70 to i64
-  %72 = getelementptr inbounds %union.jvalue, ptr %69, i64 %71
-  store i32 %68, ptr %72, align 8
-  br label %115
+  %72 = getelementptr inbounds %union.jvalue, ptr %30, i64 %71
+  store i16 %69, ptr %72, align 8
+  br label %110
 
-73:                                               ; preds = %30
+73:                                               ; preds = %35
   %74 = load ptr, ptr %5, align 8
   %75 = getelementptr inbounds i8, ptr %74, i64 8
   store ptr %75, ptr %5, align 8
   %76 = load i32, ptr %74, align 8
-  %77 = load ptr, ptr %9, align 8
-  %78 = load i32, ptr %12, align 4
-  %79 = sext i32 %78 to i64
-  %80 = getelementptr inbounds %union.jvalue, ptr %77, i64 %79
-  store i32 %76, ptr %80, align 8
-  br label %115
+  %77 = load i32, ptr %13, align 4
+  %78 = sext i32 %77 to i64
+  %79 = getelementptr inbounds %union.jvalue, ptr %30, i64 %78
+  store i32 %76, ptr %79, align 8
+  br label %110
 
-81:                                               ; preds = %30
-  %82 = load ptr, ptr %5, align 8
-  %83 = getelementptr inbounds i8, ptr %82, i64 8
-  store ptr %83, ptr %5, align 8
-  %84 = load i32, ptr %82, align 8
-  %85 = sext i32 %84 to i64
-  %86 = load ptr, ptr %9, align 8
-  %87 = load i32, ptr %12, align 4
-  %88 = sext i32 %87 to i64
-  %89 = getelementptr inbounds %union.jvalue, ptr %86, i64 %88
-  store i64 %85, ptr %89, align 8
-  br label %115
+80:                                               ; preds = %35
+  %81 = load ptr, ptr %5, align 8
+  %82 = getelementptr inbounds i8, ptr %81, i64 8
+  store ptr %82, ptr %5, align 8
+  %83 = load i32, ptr %81, align 8
+  %84 = sext i32 %83 to i64
+  %85 = load i32, ptr %13, align 4
+  %86 = sext i32 %85 to i64
+  %87 = getelementptr inbounds %union.jvalue, ptr %30, i64 %86
+  store i64 %84, ptr %87, align 8
+  br label %110
 
-90:                                               ; preds = %30
-  %91 = load ptr, ptr %5, align 8
-  %92 = getelementptr inbounds i8, ptr %91, i64 8
-  store ptr %92, ptr %5, align 8
-  %93 = load double, ptr %91, align 8
-  %94 = load ptr, ptr %9, align 8
-  %95 = load i32, ptr %12, align 4
-  %96 = sext i32 %95 to i64
-  %97 = getelementptr inbounds %union.jvalue, ptr %94, i64 %96
-  store double %93, ptr %97, align 8
-  br label %115
+88:                                               ; preds = %35
+  %89 = load ptr, ptr %5, align 8
+  %90 = getelementptr inbounds i8, ptr %89, i64 8
+  store ptr %90, ptr %5, align 8
+  %91 = load double, ptr %89, align 8
+  %92 = fptrunc double %91 to float
+  %93 = load i32, ptr %13, align 4
+  %94 = sext i32 %93 to i64
+  %95 = getelementptr inbounds %union.jvalue, ptr %30, i64 %94
+  store float %92, ptr %95, align 8
+  br label %110
 
-98:                                               ; preds = %30
-  %99 = load ptr, ptr %5, align 8
-  %100 = getelementptr inbounds i8, ptr %99, i64 8
-  store ptr %100, ptr %5, align 8
-  %101 = load double, ptr %99, align 8
-  %102 = fptrunc double %101 to float
-  %103 = load ptr, ptr %9, align 8
-  %104 = load i32, ptr %12, align 4
-  %105 = sext i32 %104 to i64
-  %106 = getelementptr inbounds %union.jvalue, ptr %103, i64 %105
-  store float %102, ptr %106, align 8
-  br label %115
+96:                                               ; preds = %35
+  %97 = load ptr, ptr %5, align 8
+  %98 = getelementptr inbounds i8, ptr %97, i64 8
+  store ptr %98, ptr %5, align 8
+  %99 = load double, ptr %97, align 8
+  %100 = load i32, ptr %13, align 4
+  %101 = sext i32 %100 to i64
+  %102 = getelementptr inbounds %union.jvalue, ptr %30, i64 %101
+  store double %99, ptr %102, align 8
+  br label %110
 
-107:                                              ; preds = %30
-  %108 = load ptr, ptr %5, align 8
-  %109 = getelementptr inbounds i8, ptr %108, i64 8
-  store ptr %109, ptr %5, align 8
-  %110 = load ptr, ptr %108, align 8
-  %111 = load ptr, ptr %9, align 8
-  %112 = load i32, ptr %12, align 4
-  %113 = sext i32 %112 to i64
-  %114 = getelementptr inbounds %union.jvalue, ptr %111, i64 %113
-  store ptr %110, ptr %114, align 8
-  br label %115
+103:                                              ; preds = %35
+  %104 = load ptr, ptr %5, align 8
+  %105 = getelementptr inbounds i8, ptr %104, i64 8
+  store ptr %105, ptr %5, align 8
+  %106 = load ptr, ptr %104, align 8
+  %107 = load i32, ptr %13, align 4
+  %108 = sext i32 %107 to i64
+  %109 = getelementptr inbounds %union.jvalue, ptr %30, i64 %108
+  store ptr %106, ptr %109, align 8
+  br label %110
 
-115:                                              ; preds = %30, %107, %98, %90, %81, %73, %63, %54, %45, %36
-  br label %116
+110:                                              ; preds = %35, %103, %96, %88, %80, %73, %65, %57, %49, %41
+  br label %111
 
-116:                                              ; preds = %115
-  %117 = load i32, ptr %12, align 4
-  %118 = add nsw i32 %117, 1
-  store i32 %118, ptr %12, align 4
-  br label %26, !llvm.loop !32
+111:                                              ; preds = %110
+  %112 = load i32, ptr %13, align 4
+  %113 = add nsw i32 %112, 1
+  store i32 %113, ptr %13, align 4
+  br label %31, !llvm.loop !32
 
-119:                                              ; preds = %26
-  br label %120
-
-120:                                              ; preds = %119
+114:                                              ; preds = %31
+  %115 = load ptr, ptr %8, align 8
+  %116 = load ptr, ptr %115, align 8
+  %117 = getelementptr inbounds %struct.JNINativeInterface_, ptr %116, i32 0, i32 30
+  %118 = load ptr, ptr %117, align 8
+  %119 = load ptr, ptr %6, align 8
+  %120 = load ptr, ptr %7, align 8
   %121 = load ptr, ptr %8, align 8
-  %122 = load ptr, ptr %121, align 8
-  %123 = getelementptr inbounds %struct.JNINativeInterface_, ptr %122, i32 0, i32 30
-  %124 = load ptr, ptr %123, align 8
-  %125 = load ptr, ptr %9, align 8
-  %126 = load ptr, ptr %6, align 8
-  %127 = load ptr, ptr %7, align 8
-  %128 = load ptr, ptr %8, align 8
-  %129 = call ptr %124(ptr noundef %128, ptr noundef %127, ptr noundef %126, ptr noundef %125)
-  ret ptr %129
+  %122 = call ptr %118(ptr noundef %121, ptr noundef %120, ptr noundef %119, ptr noundef %30)
+  %123 = load ptr, ptr %11, align 8
+  call void @llvm.stackrestore(ptr %123)
+  ret ptr %122
 }
 
 ; Function Attrs: noinline nounwind optnone uwtable
@@ -6438,15 +6136,11 @@ define dso_local dllexport void @JNI_CallVoidMethod(ptr noundef %0, ptr noundef 
   store ptr %1, ptr %5, align 8
   store ptr %0, ptr %6, align 8
   call void @llvm.va_start(ptr %7)
-  %8 = load ptr, ptr %6, align 8
-  %9 = load ptr, ptr %8, align 8
-  %10 = getelementptr inbounds %struct.JNINativeInterface_, ptr %9, i32 0, i32 62
-  %11 = load ptr, ptr %10, align 8
-  %12 = load ptr, ptr %7, align 8
-  %13 = load ptr, ptr %4, align 8
-  %14 = load ptr, ptr %5, align 8
-  %15 = load ptr, ptr %6, align 8
-  call void %11(ptr noundef %15, ptr noundef %14, ptr noundef %13, ptr noundef %12)
+  %8 = load ptr, ptr %7, align 8
+  %9 = load ptr, ptr %4, align 8
+  %10 = load ptr, ptr %5, align 8
+  %11 = load ptr, ptr %6, align 8
+  call void @JNI_CallVoidMethodV(ptr noundef %11, ptr noundef %10, ptr noundef %9, ptr noundef %8)
   call void @llvm.va_end(ptr %7)
   ret void
 }
@@ -6457,195 +6151,188 @@ define dso_local dllexport void @JNI_CallVoidMethodV(ptr noundef %0, ptr noundef
   %6 = alloca ptr, align 8
   %7 = alloca ptr, align 8
   %8 = alloca ptr, align 8
-  %9 = alloca ptr, align 8
-  %10 = alloca [257 x i8], align 16
-  %11 = alloca i32, align 4
-  %12 = alloca i32, align 4
+  %9 = alloca [256 x i8], align 16
+  %10 = alloca i32, align 4
+  %11 = alloca ptr, align 8
+  %12 = alloca i64, align 8
+  %13 = alloca i32, align 4
   store ptr %3, ptr %5, align 8
   store ptr %2, ptr %6, align 8
   store ptr %1, ptr %7, align 8
   store ptr %0, ptr %8, align 8
-  br label %13
-
-13:                                               ; preds = %4
   %14 = load ptr, ptr %8, align 8
   %15 = load ptr, ptr %14, align 8
   %16 = getelementptr inbounds %struct.JNINativeInterface_, ptr %15, i32 0, i32 0
   %17 = load ptr, ptr %16, align 8
-  %18 = getelementptr inbounds [257 x i8], ptr %10, i64 0, i64 0
+  %18 = getelementptr inbounds [256 x i8], ptr %9, i64 0, i64 0
   %19 = load ptr, ptr %6, align 8
   %20 = load ptr, ptr %8, align 8
   %21 = call i32 %17(ptr noundef %20, ptr noundef %19, ptr noundef %18)
-  store i32 %21, ptr %11, align 4
-  %22 = load i32, ptr %11, align 4
-  %23 = zext i32 %22 to i64
-  %24 = mul i64 %23, 8
-  %25 = alloca i8, i64 %24, align 16
-  store ptr %25, ptr %9, align 8
-  store i32 0, ptr %12, align 4
-  br label %26
+  store i32 %21, ptr %10, align 4
+  %22 = load ptr, ptr %8, align 8
+  %23 = load ptr, ptr %22, align 8
+  %24 = getelementptr inbounds %struct.JNINativeInterface_, ptr %23, i32 0, i32 1
+  %25 = load ptr, ptr %24, align 8
+  %26 = load i32, ptr %10, align 4
+  call void %25(i32 noundef %26)
+  %27 = load i32, ptr %10, align 4
+  %28 = zext i32 %27 to i64
+  %29 = call ptr @llvm.stacksave()
+  store ptr %29, ptr %11, align 8
+  %30 = alloca %union.jvalue, i64 %28, align 16
+  store i64 %28, ptr %12, align 8
+  store i32 0, ptr %13, align 4
+  br label %31
 
-26:                                               ; preds = %116, %13
-  %27 = load i32, ptr %12, align 4
-  %28 = load i32, ptr %11, align 4
-  %29 = icmp slt i32 %27, %28
-  br i1 %29, label %30, label %119
+31:                                               ; preds = %111, %4
+  %32 = load i32, ptr %13, align 4
+  %33 = load i32, ptr %10, align 4
+  %34 = icmp slt i32 %32, %33
+  br i1 %34, label %35, label %114
 
-30:                                               ; preds = %26
-  %31 = load i32, ptr %12, align 4
-  %32 = sext i32 %31 to i64
-  %33 = getelementptr inbounds [257 x i8], ptr %10, i64 0, i64 %32
-  %34 = load i8, ptr %33, align 1
-  %35 = sext i8 %34 to i32
-  switch i32 %35, label %115 [
-    i32 90, label %36
-    i32 66, label %45
-    i32 83, label %54
-    i32 67, label %63
+35:                                               ; preds = %31
+  %36 = load i32, ptr %13, align 4
+  %37 = sext i32 %36 to i64
+  %38 = getelementptr inbounds [256 x i8], ptr %9, i64 0, i64 %37
+  %39 = load i8, ptr %38, align 1
+  %40 = sext i8 %39 to i32
+  switch i32 %40, label %110 [
+    i32 90, label %41
+    i32 66, label %49
+    i32 67, label %57
+    i32 83, label %65
     i32 73, label %73
-    i32 74, label %81
-    i32 68, label %90
-    i32 70, label %98
-    i32 76, label %107
+    i32 74, label %80
+    i32 70, label %88
+    i32 68, label %96
+    i32 76, label %103
   ]
 
-36:                                               ; preds = %30
-  %37 = load ptr, ptr %5, align 8
-  %38 = getelementptr inbounds i8, ptr %37, i64 8
-  store ptr %38, ptr %5, align 8
-  %39 = load i32, ptr %37, align 8
-  %40 = trunc i32 %39 to i8
-  %41 = load ptr, ptr %9, align 8
-  %42 = load i32, ptr %12, align 4
-  %43 = sext i32 %42 to i64
-  %44 = getelementptr inbounds %union.jvalue, ptr %41, i64 %43
-  store i8 %40, ptr %44, align 8
-  br label %115
+41:                                               ; preds = %35
+  %42 = load ptr, ptr %5, align 8
+  %43 = getelementptr inbounds i8, ptr %42, i64 8
+  store ptr %43, ptr %5, align 8
+  %44 = load i32, ptr %42, align 8
+  %45 = trunc i32 %44 to i8
+  %46 = load i32, ptr %13, align 4
+  %47 = sext i32 %46 to i64
+  %48 = getelementptr inbounds %union.jvalue, ptr %30, i64 %47
+  store i8 %45, ptr %48, align 8
+  br label %110
 
-45:                                               ; preds = %30
-  %46 = load ptr, ptr %5, align 8
-  %47 = getelementptr inbounds i8, ptr %46, i64 8
-  store ptr %47, ptr %5, align 8
-  %48 = load i32, ptr %46, align 8
-  %49 = trunc i32 %48 to i8
-  %50 = load ptr, ptr %9, align 8
-  %51 = load i32, ptr %12, align 4
-  %52 = sext i32 %51 to i64
-  %53 = getelementptr inbounds %union.jvalue, ptr %50, i64 %52
-  store i8 %49, ptr %53, align 8
-  br label %115
+49:                                               ; preds = %35
+  %50 = load ptr, ptr %5, align 8
+  %51 = getelementptr inbounds i8, ptr %50, i64 8
+  store ptr %51, ptr %5, align 8
+  %52 = load i32, ptr %50, align 8
+  %53 = trunc i32 %52 to i8
+  %54 = load i32, ptr %13, align 4
+  %55 = sext i32 %54 to i64
+  %56 = getelementptr inbounds %union.jvalue, ptr %30, i64 %55
+  store i8 %53, ptr %56, align 8
+  br label %110
 
-54:                                               ; preds = %30
-  %55 = load ptr, ptr %5, align 8
-  %56 = getelementptr inbounds i8, ptr %55, i64 8
-  store ptr %56, ptr %5, align 8
-  %57 = load i32, ptr %55, align 8
-  %58 = trunc i32 %57 to i16
-  %59 = load ptr, ptr %9, align 8
-  %60 = load i32, ptr %12, align 4
-  %61 = sext i32 %60 to i64
-  %62 = getelementptr inbounds %union.jvalue, ptr %59, i64 %61
-  store i16 %58, ptr %62, align 8
-  br label %115
+57:                                               ; preds = %35
+  %58 = load ptr, ptr %5, align 8
+  %59 = getelementptr inbounds i8, ptr %58, i64 8
+  store ptr %59, ptr %5, align 8
+  %60 = load i32, ptr %58, align 8
+  %61 = trunc i32 %60 to i16
+  %62 = load i32, ptr %13, align 4
+  %63 = sext i32 %62 to i64
+  %64 = getelementptr inbounds %union.jvalue, ptr %30, i64 %63
+  store i16 %61, ptr %64, align 8
+  br label %110
 
-63:                                               ; preds = %30
-  %64 = load ptr, ptr %5, align 8
-  %65 = getelementptr inbounds i8, ptr %64, i64 8
-  store ptr %65, ptr %5, align 8
-  %66 = load i32, ptr %64, align 8
-  %67 = trunc i32 %66 to i16
-  %68 = zext i16 %67 to i32
-  %69 = load ptr, ptr %9, align 8
-  %70 = load i32, ptr %12, align 4
+65:                                               ; preds = %35
+  %66 = load ptr, ptr %5, align 8
+  %67 = getelementptr inbounds i8, ptr %66, i64 8
+  store ptr %67, ptr %5, align 8
+  %68 = load i32, ptr %66, align 8
+  %69 = trunc i32 %68 to i16
+  %70 = load i32, ptr %13, align 4
   %71 = sext i32 %70 to i64
-  %72 = getelementptr inbounds %union.jvalue, ptr %69, i64 %71
-  store i32 %68, ptr %72, align 8
-  br label %115
+  %72 = getelementptr inbounds %union.jvalue, ptr %30, i64 %71
+  store i16 %69, ptr %72, align 8
+  br label %110
 
-73:                                               ; preds = %30
+73:                                               ; preds = %35
   %74 = load ptr, ptr %5, align 8
   %75 = getelementptr inbounds i8, ptr %74, i64 8
   store ptr %75, ptr %5, align 8
   %76 = load i32, ptr %74, align 8
-  %77 = load ptr, ptr %9, align 8
-  %78 = load i32, ptr %12, align 4
-  %79 = sext i32 %78 to i64
-  %80 = getelementptr inbounds %union.jvalue, ptr %77, i64 %79
-  store i32 %76, ptr %80, align 8
-  br label %115
+  %77 = load i32, ptr %13, align 4
+  %78 = sext i32 %77 to i64
+  %79 = getelementptr inbounds %union.jvalue, ptr %30, i64 %78
+  store i32 %76, ptr %79, align 8
+  br label %110
 
-81:                                               ; preds = %30
-  %82 = load ptr, ptr %5, align 8
-  %83 = getelementptr inbounds i8, ptr %82, i64 8
-  store ptr %83, ptr %5, align 8
-  %84 = load i32, ptr %82, align 8
-  %85 = sext i32 %84 to i64
-  %86 = load ptr, ptr %9, align 8
-  %87 = load i32, ptr %12, align 4
-  %88 = sext i32 %87 to i64
-  %89 = getelementptr inbounds %union.jvalue, ptr %86, i64 %88
-  store i64 %85, ptr %89, align 8
-  br label %115
+80:                                               ; preds = %35
+  %81 = load ptr, ptr %5, align 8
+  %82 = getelementptr inbounds i8, ptr %81, i64 8
+  store ptr %82, ptr %5, align 8
+  %83 = load i32, ptr %81, align 8
+  %84 = sext i32 %83 to i64
+  %85 = load i32, ptr %13, align 4
+  %86 = sext i32 %85 to i64
+  %87 = getelementptr inbounds %union.jvalue, ptr %30, i64 %86
+  store i64 %84, ptr %87, align 8
+  br label %110
 
-90:                                               ; preds = %30
-  %91 = load ptr, ptr %5, align 8
-  %92 = getelementptr inbounds i8, ptr %91, i64 8
-  store ptr %92, ptr %5, align 8
-  %93 = load double, ptr %91, align 8
-  %94 = load ptr, ptr %9, align 8
-  %95 = load i32, ptr %12, align 4
-  %96 = sext i32 %95 to i64
-  %97 = getelementptr inbounds %union.jvalue, ptr %94, i64 %96
-  store double %93, ptr %97, align 8
-  br label %115
+88:                                               ; preds = %35
+  %89 = load ptr, ptr %5, align 8
+  %90 = getelementptr inbounds i8, ptr %89, i64 8
+  store ptr %90, ptr %5, align 8
+  %91 = load double, ptr %89, align 8
+  %92 = fptrunc double %91 to float
+  %93 = load i32, ptr %13, align 4
+  %94 = sext i32 %93 to i64
+  %95 = getelementptr inbounds %union.jvalue, ptr %30, i64 %94
+  store float %92, ptr %95, align 8
+  br label %110
 
-98:                                               ; preds = %30
-  %99 = load ptr, ptr %5, align 8
-  %100 = getelementptr inbounds i8, ptr %99, i64 8
-  store ptr %100, ptr %5, align 8
-  %101 = load double, ptr %99, align 8
-  %102 = fptrunc double %101 to float
-  %103 = load ptr, ptr %9, align 8
-  %104 = load i32, ptr %12, align 4
-  %105 = sext i32 %104 to i64
-  %106 = getelementptr inbounds %union.jvalue, ptr %103, i64 %105
-  store float %102, ptr %106, align 8
-  br label %115
+96:                                               ; preds = %35
+  %97 = load ptr, ptr %5, align 8
+  %98 = getelementptr inbounds i8, ptr %97, i64 8
+  store ptr %98, ptr %5, align 8
+  %99 = load double, ptr %97, align 8
+  %100 = load i32, ptr %13, align 4
+  %101 = sext i32 %100 to i64
+  %102 = getelementptr inbounds %union.jvalue, ptr %30, i64 %101
+  store double %99, ptr %102, align 8
+  br label %110
 
-107:                                              ; preds = %30
-  %108 = load ptr, ptr %5, align 8
-  %109 = getelementptr inbounds i8, ptr %108, i64 8
-  store ptr %109, ptr %5, align 8
-  %110 = load ptr, ptr %108, align 8
-  %111 = load ptr, ptr %9, align 8
-  %112 = load i32, ptr %12, align 4
-  %113 = sext i32 %112 to i64
-  %114 = getelementptr inbounds %union.jvalue, ptr %111, i64 %113
-  store ptr %110, ptr %114, align 8
-  br label %115
+103:                                              ; preds = %35
+  %104 = load ptr, ptr %5, align 8
+  %105 = getelementptr inbounds i8, ptr %104, i64 8
+  store ptr %105, ptr %5, align 8
+  %106 = load ptr, ptr %104, align 8
+  %107 = load i32, ptr %13, align 4
+  %108 = sext i32 %107 to i64
+  %109 = getelementptr inbounds %union.jvalue, ptr %30, i64 %108
+  store ptr %106, ptr %109, align 8
+  br label %110
 
-115:                                              ; preds = %30, %107, %98, %90, %81, %73, %63, %54, %45, %36
-  br label %116
+110:                                              ; preds = %35, %103, %96, %88, %80, %73, %65, %57, %49, %41
+  br label %111
 
-116:                                              ; preds = %115
-  %117 = load i32, ptr %12, align 4
-  %118 = add nsw i32 %117, 1
-  store i32 %118, ptr %12, align 4
-  br label %26, !llvm.loop !33
+111:                                              ; preds = %110
+  %112 = load i32, ptr %13, align 4
+  %113 = add nsw i32 %112, 1
+  store i32 %113, ptr %13, align 4
+  br label %31, !llvm.loop !33
 
-119:                                              ; preds = %26
-  br label %120
-
-120:                                              ; preds = %119
+114:                                              ; preds = %31
+  %115 = load ptr, ptr %8, align 8
+  %116 = load ptr, ptr %115, align 8
+  %117 = getelementptr inbounds %struct.JNINativeInterface_, ptr %116, i32 0, i32 63
+  %118 = load ptr, ptr %117, align 8
+  %119 = load ptr, ptr %6, align 8
+  %120 = load ptr, ptr %7, align 8
   %121 = load ptr, ptr %8, align 8
-  %122 = load ptr, ptr %121, align 8
-  %123 = getelementptr inbounds %struct.JNINativeInterface_, ptr %122, i32 0, i32 63
-  %124 = load ptr, ptr %123, align 8
-  %125 = load ptr, ptr %9, align 8
-  %126 = load ptr, ptr %6, align 8
-  %127 = load ptr, ptr %7, align 8
-  %128 = load ptr, ptr %8, align 8
-  call void %124(ptr noundef %128, ptr noundef %127, ptr noundef %126, ptr noundef %125)
+  call void %118(ptr noundef %121, ptr noundef %120, ptr noundef %119, ptr noundef %30)
+  %122 = load ptr, ptr %11, align 8
+  call void @llvm.stackrestore(ptr %122)
   ret void
 }
 
@@ -6661,16 +6348,12 @@ define dso_local dllexport void @JNI_CallNonvirtualVoidMethod(ptr noundef %0, pt
   store ptr %1, ptr %7, align 8
   store ptr %0, ptr %8, align 8
   call void @llvm.va_start(ptr %9)
-  %10 = load ptr, ptr %8, align 8
-  %11 = load ptr, ptr %10, align 8
-  %12 = getelementptr inbounds %struct.JNINativeInterface_, ptr %11, i32 0, i32 92
-  %13 = load ptr, ptr %12, align 8
-  %14 = load ptr, ptr %9, align 8
-  %15 = load ptr, ptr %5, align 8
-  %16 = load ptr, ptr %6, align 8
-  %17 = load ptr, ptr %7, align 8
-  %18 = load ptr, ptr %8, align 8
-  call void %13(ptr noundef %18, ptr noundef %17, ptr noundef %16, ptr noundef %15, ptr noundef %14)
+  %10 = load ptr, ptr %9, align 8
+  %11 = load ptr, ptr %5, align 8
+  %12 = load ptr, ptr %6, align 8
+  %13 = load ptr, ptr %7, align 8
+  %14 = load ptr, ptr %8, align 8
+  call void @JNI_CallNonvirtualVoidMethodV(ptr noundef %14, ptr noundef %13, ptr noundef %12, ptr noundef %11, ptr noundef %10)
   call void @llvm.va_end(ptr %9)
   ret void
 }
@@ -6682,197 +6365,190 @@ define dso_local dllexport void @JNI_CallNonvirtualVoidMethodV(ptr noundef %0, p
   %8 = alloca ptr, align 8
   %9 = alloca ptr, align 8
   %10 = alloca ptr, align 8
-  %11 = alloca ptr, align 8
-  %12 = alloca [257 x i8], align 16
-  %13 = alloca i32, align 4
-  %14 = alloca i32, align 4
+  %11 = alloca [256 x i8], align 16
+  %12 = alloca i32, align 4
+  %13 = alloca ptr, align 8
+  %14 = alloca i64, align 8
+  %15 = alloca i32, align 4
   store ptr %4, ptr %6, align 8
   store ptr %3, ptr %7, align 8
   store ptr %2, ptr %8, align 8
   store ptr %1, ptr %9, align 8
   store ptr %0, ptr %10, align 8
-  br label %15
-
-15:                                               ; preds = %5
   %16 = load ptr, ptr %10, align 8
   %17 = load ptr, ptr %16, align 8
   %18 = getelementptr inbounds %struct.JNINativeInterface_, ptr %17, i32 0, i32 0
   %19 = load ptr, ptr %18, align 8
-  %20 = getelementptr inbounds [257 x i8], ptr %12, i64 0, i64 0
+  %20 = getelementptr inbounds [256 x i8], ptr %11, i64 0, i64 0
   %21 = load ptr, ptr %7, align 8
   %22 = load ptr, ptr %10, align 8
   %23 = call i32 %19(ptr noundef %22, ptr noundef %21, ptr noundef %20)
-  store i32 %23, ptr %13, align 4
-  %24 = load i32, ptr %13, align 4
-  %25 = zext i32 %24 to i64
-  %26 = mul i64 %25, 8
-  %27 = alloca i8, i64 %26, align 16
-  store ptr %27, ptr %11, align 8
-  store i32 0, ptr %14, align 4
-  br label %28
+  store i32 %23, ptr %12, align 4
+  %24 = load ptr, ptr %10, align 8
+  %25 = load ptr, ptr %24, align 8
+  %26 = getelementptr inbounds %struct.JNINativeInterface_, ptr %25, i32 0, i32 1
+  %27 = load ptr, ptr %26, align 8
+  %28 = load i32, ptr %12, align 4
+  call void %27(i32 noundef %28)
+  %29 = load i32, ptr %12, align 4
+  %30 = zext i32 %29 to i64
+  %31 = call ptr @llvm.stacksave()
+  store ptr %31, ptr %13, align 8
+  %32 = alloca %union.jvalue, i64 %30, align 16
+  store i64 %30, ptr %14, align 8
+  store i32 0, ptr %15, align 4
+  br label %33
 
-28:                                               ; preds = %118, %15
-  %29 = load i32, ptr %14, align 4
-  %30 = load i32, ptr %13, align 4
-  %31 = icmp slt i32 %29, %30
-  br i1 %31, label %32, label %121
+33:                                               ; preds = %113, %5
+  %34 = load i32, ptr %15, align 4
+  %35 = load i32, ptr %12, align 4
+  %36 = icmp slt i32 %34, %35
+  br i1 %36, label %37, label %116
 
-32:                                               ; preds = %28
-  %33 = load i32, ptr %14, align 4
-  %34 = sext i32 %33 to i64
-  %35 = getelementptr inbounds [257 x i8], ptr %12, i64 0, i64 %34
-  %36 = load i8, ptr %35, align 1
-  %37 = sext i8 %36 to i32
-  switch i32 %37, label %117 [
-    i32 90, label %38
-    i32 66, label %47
-    i32 83, label %56
-    i32 67, label %65
+37:                                               ; preds = %33
+  %38 = load i32, ptr %15, align 4
+  %39 = sext i32 %38 to i64
+  %40 = getelementptr inbounds [256 x i8], ptr %11, i64 0, i64 %39
+  %41 = load i8, ptr %40, align 1
+  %42 = sext i8 %41 to i32
+  switch i32 %42, label %112 [
+    i32 90, label %43
+    i32 66, label %51
+    i32 67, label %59
+    i32 83, label %67
     i32 73, label %75
-    i32 74, label %83
-    i32 68, label %92
-    i32 70, label %100
-    i32 76, label %109
+    i32 74, label %82
+    i32 70, label %90
+    i32 68, label %98
+    i32 76, label %105
   ]
 
-38:                                               ; preds = %32
-  %39 = load ptr, ptr %6, align 8
-  %40 = getelementptr inbounds i8, ptr %39, i64 8
-  store ptr %40, ptr %6, align 8
-  %41 = load i32, ptr %39, align 8
-  %42 = trunc i32 %41 to i8
-  %43 = load ptr, ptr %11, align 8
-  %44 = load i32, ptr %14, align 4
-  %45 = sext i32 %44 to i64
-  %46 = getelementptr inbounds %union.jvalue, ptr %43, i64 %45
-  store i8 %42, ptr %46, align 8
-  br label %117
+43:                                               ; preds = %37
+  %44 = load ptr, ptr %6, align 8
+  %45 = getelementptr inbounds i8, ptr %44, i64 8
+  store ptr %45, ptr %6, align 8
+  %46 = load i32, ptr %44, align 8
+  %47 = trunc i32 %46 to i8
+  %48 = load i32, ptr %15, align 4
+  %49 = sext i32 %48 to i64
+  %50 = getelementptr inbounds %union.jvalue, ptr %32, i64 %49
+  store i8 %47, ptr %50, align 8
+  br label %112
 
-47:                                               ; preds = %32
-  %48 = load ptr, ptr %6, align 8
-  %49 = getelementptr inbounds i8, ptr %48, i64 8
-  store ptr %49, ptr %6, align 8
-  %50 = load i32, ptr %48, align 8
-  %51 = trunc i32 %50 to i8
-  %52 = load ptr, ptr %11, align 8
-  %53 = load i32, ptr %14, align 4
-  %54 = sext i32 %53 to i64
-  %55 = getelementptr inbounds %union.jvalue, ptr %52, i64 %54
-  store i8 %51, ptr %55, align 8
-  br label %117
+51:                                               ; preds = %37
+  %52 = load ptr, ptr %6, align 8
+  %53 = getelementptr inbounds i8, ptr %52, i64 8
+  store ptr %53, ptr %6, align 8
+  %54 = load i32, ptr %52, align 8
+  %55 = trunc i32 %54 to i8
+  %56 = load i32, ptr %15, align 4
+  %57 = sext i32 %56 to i64
+  %58 = getelementptr inbounds %union.jvalue, ptr %32, i64 %57
+  store i8 %55, ptr %58, align 8
+  br label %112
 
-56:                                               ; preds = %32
-  %57 = load ptr, ptr %6, align 8
-  %58 = getelementptr inbounds i8, ptr %57, i64 8
-  store ptr %58, ptr %6, align 8
-  %59 = load i32, ptr %57, align 8
-  %60 = trunc i32 %59 to i16
-  %61 = load ptr, ptr %11, align 8
-  %62 = load i32, ptr %14, align 4
-  %63 = sext i32 %62 to i64
-  %64 = getelementptr inbounds %union.jvalue, ptr %61, i64 %63
-  store i16 %60, ptr %64, align 8
-  br label %117
+59:                                               ; preds = %37
+  %60 = load ptr, ptr %6, align 8
+  %61 = getelementptr inbounds i8, ptr %60, i64 8
+  store ptr %61, ptr %6, align 8
+  %62 = load i32, ptr %60, align 8
+  %63 = trunc i32 %62 to i16
+  %64 = load i32, ptr %15, align 4
+  %65 = sext i32 %64 to i64
+  %66 = getelementptr inbounds %union.jvalue, ptr %32, i64 %65
+  store i16 %63, ptr %66, align 8
+  br label %112
 
-65:                                               ; preds = %32
-  %66 = load ptr, ptr %6, align 8
-  %67 = getelementptr inbounds i8, ptr %66, i64 8
-  store ptr %67, ptr %6, align 8
-  %68 = load i32, ptr %66, align 8
-  %69 = trunc i32 %68 to i16
-  %70 = zext i16 %69 to i32
-  %71 = load ptr, ptr %11, align 8
-  %72 = load i32, ptr %14, align 4
+67:                                               ; preds = %37
+  %68 = load ptr, ptr %6, align 8
+  %69 = getelementptr inbounds i8, ptr %68, i64 8
+  store ptr %69, ptr %6, align 8
+  %70 = load i32, ptr %68, align 8
+  %71 = trunc i32 %70 to i16
+  %72 = load i32, ptr %15, align 4
   %73 = sext i32 %72 to i64
-  %74 = getelementptr inbounds %union.jvalue, ptr %71, i64 %73
-  store i32 %70, ptr %74, align 8
-  br label %117
+  %74 = getelementptr inbounds %union.jvalue, ptr %32, i64 %73
+  store i16 %71, ptr %74, align 8
+  br label %112
 
-75:                                               ; preds = %32
+75:                                               ; preds = %37
   %76 = load ptr, ptr %6, align 8
   %77 = getelementptr inbounds i8, ptr %76, i64 8
   store ptr %77, ptr %6, align 8
   %78 = load i32, ptr %76, align 8
-  %79 = load ptr, ptr %11, align 8
-  %80 = load i32, ptr %14, align 4
-  %81 = sext i32 %80 to i64
-  %82 = getelementptr inbounds %union.jvalue, ptr %79, i64 %81
-  store i32 %78, ptr %82, align 8
-  br label %117
+  %79 = load i32, ptr %15, align 4
+  %80 = sext i32 %79 to i64
+  %81 = getelementptr inbounds %union.jvalue, ptr %32, i64 %80
+  store i32 %78, ptr %81, align 8
+  br label %112
 
-83:                                               ; preds = %32
-  %84 = load ptr, ptr %6, align 8
-  %85 = getelementptr inbounds i8, ptr %84, i64 8
-  store ptr %85, ptr %6, align 8
-  %86 = load i32, ptr %84, align 8
-  %87 = sext i32 %86 to i64
-  %88 = load ptr, ptr %11, align 8
-  %89 = load i32, ptr %14, align 4
-  %90 = sext i32 %89 to i64
-  %91 = getelementptr inbounds %union.jvalue, ptr %88, i64 %90
-  store i64 %87, ptr %91, align 8
-  br label %117
+82:                                               ; preds = %37
+  %83 = load ptr, ptr %6, align 8
+  %84 = getelementptr inbounds i8, ptr %83, i64 8
+  store ptr %84, ptr %6, align 8
+  %85 = load i32, ptr %83, align 8
+  %86 = sext i32 %85 to i64
+  %87 = load i32, ptr %15, align 4
+  %88 = sext i32 %87 to i64
+  %89 = getelementptr inbounds %union.jvalue, ptr %32, i64 %88
+  store i64 %86, ptr %89, align 8
+  br label %112
 
-92:                                               ; preds = %32
-  %93 = load ptr, ptr %6, align 8
-  %94 = getelementptr inbounds i8, ptr %93, i64 8
-  store ptr %94, ptr %6, align 8
-  %95 = load double, ptr %93, align 8
-  %96 = load ptr, ptr %11, align 8
-  %97 = load i32, ptr %14, align 4
-  %98 = sext i32 %97 to i64
-  %99 = getelementptr inbounds %union.jvalue, ptr %96, i64 %98
-  store double %95, ptr %99, align 8
-  br label %117
+90:                                               ; preds = %37
+  %91 = load ptr, ptr %6, align 8
+  %92 = getelementptr inbounds i8, ptr %91, i64 8
+  store ptr %92, ptr %6, align 8
+  %93 = load double, ptr %91, align 8
+  %94 = fptrunc double %93 to float
+  %95 = load i32, ptr %15, align 4
+  %96 = sext i32 %95 to i64
+  %97 = getelementptr inbounds %union.jvalue, ptr %32, i64 %96
+  store float %94, ptr %97, align 8
+  br label %112
 
-100:                                              ; preds = %32
-  %101 = load ptr, ptr %6, align 8
-  %102 = getelementptr inbounds i8, ptr %101, i64 8
-  store ptr %102, ptr %6, align 8
-  %103 = load double, ptr %101, align 8
-  %104 = fptrunc double %103 to float
-  %105 = load ptr, ptr %11, align 8
-  %106 = load i32, ptr %14, align 4
-  %107 = sext i32 %106 to i64
-  %108 = getelementptr inbounds %union.jvalue, ptr %105, i64 %107
-  store float %104, ptr %108, align 8
-  br label %117
+98:                                               ; preds = %37
+  %99 = load ptr, ptr %6, align 8
+  %100 = getelementptr inbounds i8, ptr %99, i64 8
+  store ptr %100, ptr %6, align 8
+  %101 = load double, ptr %99, align 8
+  %102 = load i32, ptr %15, align 4
+  %103 = sext i32 %102 to i64
+  %104 = getelementptr inbounds %union.jvalue, ptr %32, i64 %103
+  store double %101, ptr %104, align 8
+  br label %112
 
-109:                                              ; preds = %32
-  %110 = load ptr, ptr %6, align 8
-  %111 = getelementptr inbounds i8, ptr %110, i64 8
-  store ptr %111, ptr %6, align 8
-  %112 = load ptr, ptr %110, align 8
-  %113 = load ptr, ptr %11, align 8
-  %114 = load i32, ptr %14, align 4
-  %115 = sext i32 %114 to i64
-  %116 = getelementptr inbounds %union.jvalue, ptr %113, i64 %115
-  store ptr %112, ptr %116, align 8
-  br label %117
+105:                                              ; preds = %37
+  %106 = load ptr, ptr %6, align 8
+  %107 = getelementptr inbounds i8, ptr %106, i64 8
+  store ptr %107, ptr %6, align 8
+  %108 = load ptr, ptr %106, align 8
+  %109 = load i32, ptr %15, align 4
+  %110 = sext i32 %109 to i64
+  %111 = getelementptr inbounds %union.jvalue, ptr %32, i64 %110
+  store ptr %108, ptr %111, align 8
+  br label %112
 
-117:                                              ; preds = %32, %109, %100, %92, %83, %75, %65, %56, %47, %38
-  br label %118
+112:                                              ; preds = %37, %105, %98, %90, %82, %75, %67, %59, %51, %43
+  br label %113
 
-118:                                              ; preds = %117
-  %119 = load i32, ptr %14, align 4
-  %120 = add nsw i32 %119, 1
-  store i32 %120, ptr %14, align 4
-  br label %28, !llvm.loop !34
+113:                                              ; preds = %112
+  %114 = load i32, ptr %15, align 4
+  %115 = add nsw i32 %114, 1
+  store i32 %115, ptr %15, align 4
+  br label %33, !llvm.loop !34
 
-121:                                              ; preds = %28
-  br label %122
-
-122:                                              ; preds = %121
-  %123 = load ptr, ptr %10, align 8
-  %124 = load ptr, ptr %123, align 8
-  %125 = getelementptr inbounds %struct.JNINativeInterface_, ptr %124, i32 0, i32 93
-  %126 = load ptr, ptr %125, align 8
-  %127 = load ptr, ptr %11, align 8
-  %128 = load ptr, ptr %7, align 8
-  %129 = load ptr, ptr %8, align 8
-  %130 = load ptr, ptr %9, align 8
-  %131 = load ptr, ptr %10, align 8
-  call void %126(ptr noundef %131, ptr noundef %130, ptr noundef %129, ptr noundef %128, ptr noundef %127)
+116:                                              ; preds = %33
+  %117 = load ptr, ptr %10, align 8
+  %118 = load ptr, ptr %117, align 8
+  %119 = getelementptr inbounds %struct.JNINativeInterface_, ptr %118, i32 0, i32 93
+  %120 = load ptr, ptr %119, align 8
+  %121 = load ptr, ptr %7, align 8
+  %122 = load ptr, ptr %8, align 8
+  %123 = load ptr, ptr %9, align 8
+  %124 = load ptr, ptr %10, align 8
+  call void %120(ptr noundef %124, ptr noundef %123, ptr noundef %122, ptr noundef %121, ptr noundef %32)
+  %125 = load ptr, ptr %13, align 8
+  call void @llvm.stackrestore(ptr %125)
   ret void
 }
 
@@ -6886,15 +6562,11 @@ define dso_local dllexport void @JNI_CallStaticVoidMethod(ptr noundef %0, ptr no
   store ptr %1, ptr %5, align 8
   store ptr %0, ptr %6, align 8
   call void @llvm.va_start(ptr %7)
-  %8 = load ptr, ptr %6, align 8
-  %9 = load ptr, ptr %8, align 8
-  %10 = getelementptr inbounds %struct.JNINativeInterface_, ptr %9, i32 0, i32 142
-  %11 = load ptr, ptr %10, align 8
-  %12 = load ptr, ptr %7, align 8
-  %13 = load ptr, ptr %4, align 8
-  %14 = load ptr, ptr %5, align 8
-  %15 = load ptr, ptr %6, align 8
-  call void %11(ptr noundef %15, ptr noundef %14, ptr noundef %13, ptr noundef %12)
+  %8 = load ptr, ptr %7, align 8
+  %9 = load ptr, ptr %4, align 8
+  %10 = load ptr, ptr %5, align 8
+  %11 = load ptr, ptr %6, align 8
+  call void @JNI_CallStaticVoidMethodV(ptr noundef %11, ptr noundef %10, ptr noundef %9, ptr noundef %8)
   call void @llvm.va_end(ptr %7)
   ret void
 }
@@ -6905,195 +6577,188 @@ define dso_local dllexport void @JNI_CallStaticVoidMethodV(ptr noundef %0, ptr n
   %6 = alloca ptr, align 8
   %7 = alloca ptr, align 8
   %8 = alloca ptr, align 8
-  %9 = alloca ptr, align 8
-  %10 = alloca [257 x i8], align 16
-  %11 = alloca i32, align 4
-  %12 = alloca i32, align 4
+  %9 = alloca [256 x i8], align 16
+  %10 = alloca i32, align 4
+  %11 = alloca ptr, align 8
+  %12 = alloca i64, align 8
+  %13 = alloca i32, align 4
   store ptr %3, ptr %5, align 8
   store ptr %2, ptr %6, align 8
   store ptr %1, ptr %7, align 8
   store ptr %0, ptr %8, align 8
-  br label %13
-
-13:                                               ; preds = %4
   %14 = load ptr, ptr %8, align 8
   %15 = load ptr, ptr %14, align 8
   %16 = getelementptr inbounds %struct.JNINativeInterface_, ptr %15, i32 0, i32 0
   %17 = load ptr, ptr %16, align 8
-  %18 = getelementptr inbounds [257 x i8], ptr %10, i64 0, i64 0
+  %18 = getelementptr inbounds [256 x i8], ptr %9, i64 0, i64 0
   %19 = load ptr, ptr %6, align 8
   %20 = load ptr, ptr %8, align 8
   %21 = call i32 %17(ptr noundef %20, ptr noundef %19, ptr noundef %18)
-  store i32 %21, ptr %11, align 4
-  %22 = load i32, ptr %11, align 4
-  %23 = zext i32 %22 to i64
-  %24 = mul i64 %23, 8
-  %25 = alloca i8, i64 %24, align 16
-  store ptr %25, ptr %9, align 8
-  store i32 0, ptr %12, align 4
-  br label %26
+  store i32 %21, ptr %10, align 4
+  %22 = load ptr, ptr %8, align 8
+  %23 = load ptr, ptr %22, align 8
+  %24 = getelementptr inbounds %struct.JNINativeInterface_, ptr %23, i32 0, i32 1
+  %25 = load ptr, ptr %24, align 8
+  %26 = load i32, ptr %10, align 4
+  call void %25(i32 noundef %26)
+  %27 = load i32, ptr %10, align 4
+  %28 = zext i32 %27 to i64
+  %29 = call ptr @llvm.stacksave()
+  store ptr %29, ptr %11, align 8
+  %30 = alloca %union.jvalue, i64 %28, align 16
+  store i64 %28, ptr %12, align 8
+  store i32 0, ptr %13, align 4
+  br label %31
 
-26:                                               ; preds = %116, %13
-  %27 = load i32, ptr %12, align 4
-  %28 = load i32, ptr %11, align 4
-  %29 = icmp slt i32 %27, %28
-  br i1 %29, label %30, label %119
+31:                                               ; preds = %111, %4
+  %32 = load i32, ptr %13, align 4
+  %33 = load i32, ptr %10, align 4
+  %34 = icmp slt i32 %32, %33
+  br i1 %34, label %35, label %114
 
-30:                                               ; preds = %26
-  %31 = load i32, ptr %12, align 4
-  %32 = sext i32 %31 to i64
-  %33 = getelementptr inbounds [257 x i8], ptr %10, i64 0, i64 %32
-  %34 = load i8, ptr %33, align 1
-  %35 = sext i8 %34 to i32
-  switch i32 %35, label %115 [
-    i32 90, label %36
-    i32 66, label %45
-    i32 83, label %54
-    i32 67, label %63
+35:                                               ; preds = %31
+  %36 = load i32, ptr %13, align 4
+  %37 = sext i32 %36 to i64
+  %38 = getelementptr inbounds [256 x i8], ptr %9, i64 0, i64 %37
+  %39 = load i8, ptr %38, align 1
+  %40 = sext i8 %39 to i32
+  switch i32 %40, label %110 [
+    i32 90, label %41
+    i32 66, label %49
+    i32 67, label %57
+    i32 83, label %65
     i32 73, label %73
-    i32 74, label %81
-    i32 68, label %90
-    i32 70, label %98
-    i32 76, label %107
+    i32 74, label %80
+    i32 70, label %88
+    i32 68, label %96
+    i32 76, label %103
   ]
 
-36:                                               ; preds = %30
-  %37 = load ptr, ptr %5, align 8
-  %38 = getelementptr inbounds i8, ptr %37, i64 8
-  store ptr %38, ptr %5, align 8
-  %39 = load i32, ptr %37, align 8
-  %40 = trunc i32 %39 to i8
-  %41 = load ptr, ptr %9, align 8
-  %42 = load i32, ptr %12, align 4
-  %43 = sext i32 %42 to i64
-  %44 = getelementptr inbounds %union.jvalue, ptr %41, i64 %43
-  store i8 %40, ptr %44, align 8
-  br label %115
+41:                                               ; preds = %35
+  %42 = load ptr, ptr %5, align 8
+  %43 = getelementptr inbounds i8, ptr %42, i64 8
+  store ptr %43, ptr %5, align 8
+  %44 = load i32, ptr %42, align 8
+  %45 = trunc i32 %44 to i8
+  %46 = load i32, ptr %13, align 4
+  %47 = sext i32 %46 to i64
+  %48 = getelementptr inbounds %union.jvalue, ptr %30, i64 %47
+  store i8 %45, ptr %48, align 8
+  br label %110
 
-45:                                               ; preds = %30
-  %46 = load ptr, ptr %5, align 8
-  %47 = getelementptr inbounds i8, ptr %46, i64 8
-  store ptr %47, ptr %5, align 8
-  %48 = load i32, ptr %46, align 8
-  %49 = trunc i32 %48 to i8
-  %50 = load ptr, ptr %9, align 8
-  %51 = load i32, ptr %12, align 4
-  %52 = sext i32 %51 to i64
-  %53 = getelementptr inbounds %union.jvalue, ptr %50, i64 %52
-  store i8 %49, ptr %53, align 8
-  br label %115
+49:                                               ; preds = %35
+  %50 = load ptr, ptr %5, align 8
+  %51 = getelementptr inbounds i8, ptr %50, i64 8
+  store ptr %51, ptr %5, align 8
+  %52 = load i32, ptr %50, align 8
+  %53 = trunc i32 %52 to i8
+  %54 = load i32, ptr %13, align 4
+  %55 = sext i32 %54 to i64
+  %56 = getelementptr inbounds %union.jvalue, ptr %30, i64 %55
+  store i8 %53, ptr %56, align 8
+  br label %110
 
-54:                                               ; preds = %30
-  %55 = load ptr, ptr %5, align 8
-  %56 = getelementptr inbounds i8, ptr %55, i64 8
-  store ptr %56, ptr %5, align 8
-  %57 = load i32, ptr %55, align 8
-  %58 = trunc i32 %57 to i16
-  %59 = load ptr, ptr %9, align 8
-  %60 = load i32, ptr %12, align 4
-  %61 = sext i32 %60 to i64
-  %62 = getelementptr inbounds %union.jvalue, ptr %59, i64 %61
-  store i16 %58, ptr %62, align 8
-  br label %115
+57:                                               ; preds = %35
+  %58 = load ptr, ptr %5, align 8
+  %59 = getelementptr inbounds i8, ptr %58, i64 8
+  store ptr %59, ptr %5, align 8
+  %60 = load i32, ptr %58, align 8
+  %61 = trunc i32 %60 to i16
+  %62 = load i32, ptr %13, align 4
+  %63 = sext i32 %62 to i64
+  %64 = getelementptr inbounds %union.jvalue, ptr %30, i64 %63
+  store i16 %61, ptr %64, align 8
+  br label %110
 
-63:                                               ; preds = %30
-  %64 = load ptr, ptr %5, align 8
-  %65 = getelementptr inbounds i8, ptr %64, i64 8
-  store ptr %65, ptr %5, align 8
-  %66 = load i32, ptr %64, align 8
-  %67 = trunc i32 %66 to i16
-  %68 = zext i16 %67 to i32
-  %69 = load ptr, ptr %9, align 8
-  %70 = load i32, ptr %12, align 4
+65:                                               ; preds = %35
+  %66 = load ptr, ptr %5, align 8
+  %67 = getelementptr inbounds i8, ptr %66, i64 8
+  store ptr %67, ptr %5, align 8
+  %68 = load i32, ptr %66, align 8
+  %69 = trunc i32 %68 to i16
+  %70 = load i32, ptr %13, align 4
   %71 = sext i32 %70 to i64
-  %72 = getelementptr inbounds %union.jvalue, ptr %69, i64 %71
-  store i32 %68, ptr %72, align 8
-  br label %115
+  %72 = getelementptr inbounds %union.jvalue, ptr %30, i64 %71
+  store i16 %69, ptr %72, align 8
+  br label %110
 
-73:                                               ; preds = %30
+73:                                               ; preds = %35
   %74 = load ptr, ptr %5, align 8
   %75 = getelementptr inbounds i8, ptr %74, i64 8
   store ptr %75, ptr %5, align 8
   %76 = load i32, ptr %74, align 8
-  %77 = load ptr, ptr %9, align 8
-  %78 = load i32, ptr %12, align 4
-  %79 = sext i32 %78 to i64
-  %80 = getelementptr inbounds %union.jvalue, ptr %77, i64 %79
-  store i32 %76, ptr %80, align 8
-  br label %115
+  %77 = load i32, ptr %13, align 4
+  %78 = sext i32 %77 to i64
+  %79 = getelementptr inbounds %union.jvalue, ptr %30, i64 %78
+  store i32 %76, ptr %79, align 8
+  br label %110
 
-81:                                               ; preds = %30
-  %82 = load ptr, ptr %5, align 8
-  %83 = getelementptr inbounds i8, ptr %82, i64 8
-  store ptr %83, ptr %5, align 8
-  %84 = load i32, ptr %82, align 8
-  %85 = sext i32 %84 to i64
-  %86 = load ptr, ptr %9, align 8
-  %87 = load i32, ptr %12, align 4
-  %88 = sext i32 %87 to i64
-  %89 = getelementptr inbounds %union.jvalue, ptr %86, i64 %88
-  store i64 %85, ptr %89, align 8
-  br label %115
+80:                                               ; preds = %35
+  %81 = load ptr, ptr %5, align 8
+  %82 = getelementptr inbounds i8, ptr %81, i64 8
+  store ptr %82, ptr %5, align 8
+  %83 = load i32, ptr %81, align 8
+  %84 = sext i32 %83 to i64
+  %85 = load i32, ptr %13, align 4
+  %86 = sext i32 %85 to i64
+  %87 = getelementptr inbounds %union.jvalue, ptr %30, i64 %86
+  store i64 %84, ptr %87, align 8
+  br label %110
 
-90:                                               ; preds = %30
-  %91 = load ptr, ptr %5, align 8
-  %92 = getelementptr inbounds i8, ptr %91, i64 8
-  store ptr %92, ptr %5, align 8
-  %93 = load double, ptr %91, align 8
-  %94 = load ptr, ptr %9, align 8
-  %95 = load i32, ptr %12, align 4
-  %96 = sext i32 %95 to i64
-  %97 = getelementptr inbounds %union.jvalue, ptr %94, i64 %96
-  store double %93, ptr %97, align 8
-  br label %115
+88:                                               ; preds = %35
+  %89 = load ptr, ptr %5, align 8
+  %90 = getelementptr inbounds i8, ptr %89, i64 8
+  store ptr %90, ptr %5, align 8
+  %91 = load double, ptr %89, align 8
+  %92 = fptrunc double %91 to float
+  %93 = load i32, ptr %13, align 4
+  %94 = sext i32 %93 to i64
+  %95 = getelementptr inbounds %union.jvalue, ptr %30, i64 %94
+  store float %92, ptr %95, align 8
+  br label %110
 
-98:                                               ; preds = %30
-  %99 = load ptr, ptr %5, align 8
-  %100 = getelementptr inbounds i8, ptr %99, i64 8
-  store ptr %100, ptr %5, align 8
-  %101 = load double, ptr %99, align 8
-  %102 = fptrunc double %101 to float
-  %103 = load ptr, ptr %9, align 8
-  %104 = load i32, ptr %12, align 4
-  %105 = sext i32 %104 to i64
-  %106 = getelementptr inbounds %union.jvalue, ptr %103, i64 %105
-  store float %102, ptr %106, align 8
-  br label %115
+96:                                               ; preds = %35
+  %97 = load ptr, ptr %5, align 8
+  %98 = getelementptr inbounds i8, ptr %97, i64 8
+  store ptr %98, ptr %5, align 8
+  %99 = load double, ptr %97, align 8
+  %100 = load i32, ptr %13, align 4
+  %101 = sext i32 %100 to i64
+  %102 = getelementptr inbounds %union.jvalue, ptr %30, i64 %101
+  store double %99, ptr %102, align 8
+  br label %110
 
-107:                                              ; preds = %30
-  %108 = load ptr, ptr %5, align 8
-  %109 = getelementptr inbounds i8, ptr %108, i64 8
-  store ptr %109, ptr %5, align 8
-  %110 = load ptr, ptr %108, align 8
-  %111 = load ptr, ptr %9, align 8
-  %112 = load i32, ptr %12, align 4
-  %113 = sext i32 %112 to i64
-  %114 = getelementptr inbounds %union.jvalue, ptr %111, i64 %113
-  store ptr %110, ptr %114, align 8
-  br label %115
+103:                                              ; preds = %35
+  %104 = load ptr, ptr %5, align 8
+  %105 = getelementptr inbounds i8, ptr %104, i64 8
+  store ptr %105, ptr %5, align 8
+  %106 = load ptr, ptr %104, align 8
+  %107 = load i32, ptr %13, align 4
+  %108 = sext i32 %107 to i64
+  %109 = getelementptr inbounds %union.jvalue, ptr %30, i64 %108
+  store ptr %106, ptr %109, align 8
+  br label %110
 
-115:                                              ; preds = %30, %107, %98, %90, %81, %73, %63, %54, %45, %36
-  br label %116
+110:                                              ; preds = %35, %103, %96, %88, %80, %73, %65, %57, %49, %41
+  br label %111
 
-116:                                              ; preds = %115
-  %117 = load i32, ptr %12, align 4
-  %118 = add nsw i32 %117, 1
-  store i32 %118, ptr %12, align 4
-  br label %26, !llvm.loop !35
+111:                                              ; preds = %110
+  %112 = load i32, ptr %13, align 4
+  %113 = add nsw i32 %112, 1
+  store i32 %113, ptr %13, align 4
+  br label %31, !llvm.loop !35
 
-119:                                              ; preds = %26
-  br label %120
-
-120:                                              ; preds = %119
+114:                                              ; preds = %31
+  %115 = load ptr, ptr %8, align 8
+  %116 = load ptr, ptr %115, align 8
+  %117 = getelementptr inbounds %struct.JNINativeInterface_, ptr %116, i32 0, i32 143
+  %118 = load ptr, ptr %117, align 8
+  %119 = load ptr, ptr %6, align 8
+  %120 = load ptr, ptr %7, align 8
   %121 = load ptr, ptr %8, align 8
-  %122 = load ptr, ptr %121, align 8
-  %123 = getelementptr inbounds %struct.JNINativeInterface_, ptr %122, i32 0, i32 143
-  %124 = load ptr, ptr %123, align 8
-  %125 = load ptr, ptr %9, align 8
-  %126 = load ptr, ptr %6, align 8
-  %127 = load ptr, ptr %7, align 8
-  %128 = load ptr, ptr %8, align 8
-  call void %124(ptr noundef %128, ptr noundef %127, ptr noundef %126, ptr noundef %125)
+  call void %118(ptr noundef %121, ptr noundef %120, ptr noundef %119, ptr noundef %30)
+  %122 = load ptr, ptr %11, align 8
+  call void @llvm.stackrestore(ptr %122)
   ret void
 }
 
