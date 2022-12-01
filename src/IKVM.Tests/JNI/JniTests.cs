@@ -74,9 +74,33 @@ namespace IKVM.Tests.JNI
         }
 
         [TestMethod]
+        public void NewObjectVTest()
+        {
+            test.newObjectVTest();
+        }
+
+        [TestMethod]
         public void NewObjectATest()
         {
             test.newObjectATest();
+        }
+
+        [TestMethod]
+        public void NewObjectTestWithArg()
+        {
+            test.newObjectTestWithArg();
+        }
+
+        [TestMethod]
+        public void NewObjectVTestWithArg()
+        {
+            test.newObjectVTestWithArg();
+        }
+
+        [TestMethod]
+        public void NewObjectATestWithArg()
+        {
+            test.newObjectATestWithArg();
         }
 
     }

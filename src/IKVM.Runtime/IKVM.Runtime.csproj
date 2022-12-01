@@ -39,7 +39,7 @@
 
     <Target Name="CompileLLIR" Inputs="$(LLIRRuntimeIdentifier)%(LLIRRuntimeIdentifier.Identity).ll" Outputs="$(LLIRIntermediateDirectory)%(LLIRRuntimeIdentifier.Identity).o" Condition=" '$(TargetFramework)' != '' ">
         <MakeDir Directories="$(LLIRIntermediateDirectory)" />
-        <Exec Command="&quot;$(CLangCommand)&quot; -c &quot;$(LLIRRuntimeIdentifier)%(LLIRRuntimeIdentifier.Identity).ll&quot; -o &quot;$(LLIRIntermediateDirectory)%(LLIRRuntimeIdentifier.Identity).o&quot; --target=%(LLIRRuntimeIdentifier.TargetName) %(LLIRRuntimeIdentifier.Arguments)" />
+        <Exec Command="&quot;$(CLangCommand)&quot; -c &quot;$(LLIRRuntimeIdentifier)%(LLIRRuntimeIdentifier.Identity).ll&quot; -o &quot;$(LLIRIntermediateDirectory)%(LLIRRuntimeIdentifier.Identity).o&quot; --target=%(LLIRRuntimeIdentifier.TargetName) -g %(LLIRRuntimeIdentifier.Arguments)" />
         <ItemGroup>
             <FileWrites Include="$(LLIRIntermediateDirectory)%(LLIRRuntimeIdentifier.Identity).o" />
         </ItemGroup>
@@ -234,7 +234,7 @@
         </Task>
     </UsingTask>
 
-    <Target Name="GenerateLLIRCode" BeforeTargets="CoreCompile" DependsOnTargets="DisassembleLLIR" Inputs="$(LLIRIntermediateDirectory)%(LLIRRuntimeIdentifier.Identity).s" Outputs="$(LLIRIntermediateDirectory)%(LLIRRuntimeIdentifier.Identity).cs" Condition=" '$(TargetFramework)' != '' ">
+    <Target Name="GenerateLLIRCode" DependsOnTargets="DisassembleLLIR" Inputs="$(LLIRIntermediateDirectory)%(LLIRRuntimeIdentifier.Identity).s" Outputs="$(LLIRIntermediateDirectory)%(LLIRRuntimeIdentifier.Identity).cs" Condition=" '$(TargetFramework)' != '' ">
         <Message Text="$(LLIRIntermediateDirectory)%(LLIRRuntimeIdentifier.Identity).s -&gt; $(LLIRIntermediateDirectory)%(LLIRRuntimeIdentifier.Identity).cs" />
         <MakeDir Directories="$(LLIRIntermediateDirectory)" />
         <BuildLLIRCodeFile Namespace="IKVM.Runtime.LLIR" ClassName="$([System.String]::Copy('LLIR_%(LLIRRuntimeIdentifier.Identity)').Replace('-', '_').Replace('.', '_'))" AssemblerFile="$(LLIRIntermediateDirectory)%(LLIRRuntimeIdentifier.Identity).s" BuildCodeFile="$(LLIRIntermediateDirectory)%(LLIRRuntimeIdentifier.Identity).cs" />
@@ -243,5 +243,19 @@
             <Compile Include="$(LLIRIntermediateDirectory)%(LLIRRuntimeIdentifier.Identity).cs" />
         </ItemGroup>
     </Target>
+
+    <PropertyGroup>
+        <CompileDependsOn>
+            GenerateLLIRCode;
+            $(CompileDependsOn);
+        </CompileDependsOn>
+    </PropertyGroup>
+    
+    <PropertyGroup>
+        <GetCopyToOutputDirectoryItemsDependsOn>
+            GenerateLLIRCode;
+            $(GetCopyToOutputDirectoryItemsDependsOn);
+        </GetCopyToOutputDirectoryItemsDependsOn>
+    </PropertyGroup>
 
 </Project>

@@ -872,19 +872,16 @@ namespace IKVM.Runtime.JNI
             }
         }
 
-        [UnmanagedFunctionPointer(CallingConvention.StdCall)]
-        public delegate jobject NewObjectADelegate(JNIEnv* pEnv, jclass clazz, jmethodID methodID, jvalue* args);
-
-        public static jobject NewObjectA(JNIEnv* pEnv, jclass clazz, jmethodID methodID, jvalue* args)
+        public static jobject NewObjectA(JNIEnv* pEnv, jclass clazz, jmethodID methodID, IntPtr args)
         {
             var wrapper = TypeWrapper.FromClass((java.lang.Class)pEnv->UnwrapRef(clazz));
             if (wrapper.IsAbstract == false && wrapper.TypeAsBaseType.IsAbstract)
-                return pEnv->MakeLocalRef(InvokeHelper(pEnv, IntPtr.Zero, methodID, args, false)); // static newinstance helper method
+                return pEnv->MakeLocalRef(InvokeHelper(pEnv, IntPtr.Zero, methodID, (jvalue*)args, false)); // static newinstance helper method
 
             var obj = AllocObjectImpl(pEnv, wrapper);
             if (obj != IntPtr.Zero)
             {
-                InvokeHelper(pEnv, obj, methodID, args, false);
+                InvokeHelper(pEnv, obj, methodID, (jvalue*)args, false);
 
                 if (ExceptionCheck(pEnv) == JNI_TRUE)
                 {
