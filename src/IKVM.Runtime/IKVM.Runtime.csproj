@@ -123,7 +123,7 @@
 
                                 var z = m.Groups[1].Value.Trim().PadLeft(16, '0');
                                 var i = m.Groups[2].Value.TrimStart('_');
-                                currentName = i;
+                                currentName = DemangleName(i);
                                 currentIndx = (int)ParseInt64BigEndian(ParseHex(z));
                                 syms.Add(currentName, currentIndx);
                                 continue;
@@ -155,6 +155,18 @@
                         o.WriteLine("}");
 
                         return true;
+                    }
+                    
+                    string DemangleName(string name)
+                    {
+                        if (name.StartsWith("\\1"))
+                            name = name.Substring(2);
+
+                        var at = name.IndexOf('@');
+                        if (at != -1)
+                            name = name.Substring(0, at);
+                        
+                        return name;
                     }
 
                     void WriteText(StreamWriter writer, List<byte> text)
