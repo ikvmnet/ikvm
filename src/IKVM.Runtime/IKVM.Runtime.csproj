@@ -1,4 +1,5 @@
-﻿<Project Sdk="Microsoft.NET.Sdk">
+﻿<Project>
+    <Import Sdk="Microsoft.NET.Sdk" Project="Sdk.props" />
     <Import Project="$(MSBuildThisFileDirectory)..\..\openjdk.props" />
     <Import Project="$(MSBuildThisFileDirectory)..\..\IKVM.deps.props" />
 
@@ -16,5 +17,257 @@
     <ItemGroup>
         <ProjectReference Include="..\IKVM.Java\IKVM.Java.msbuildproj" />
     </ItemGroup>
+
+    <ItemGroup>
+        <LLIRRuntimeIdentifier Include="win7-x64" TargetName="x86_64-pc-windows-msvc" Arguments="-O3" />
+        <LLIRRuntimeIdentifier Include="win7-x86" TargetName="i686-pc-windows-msvc" Arguments="-O3" />
+        <LLIRRuntimeIdentifier Include="win81-arm" TargetName="thumbv7-pc-windows-msvc" Arguments="-O3" />
+        <LLIRRuntimeIdentifier Include="win10-arm64" TargetName="aarch64-pc-windows-msvc" Arguments="-O3" />
+        <LLIRRuntimeIdentifier Include="linux-x64" TargetName="x86_64-unknown-linux-gnu" Arguments="-O3" />
+        <LLIRRuntimeIdentifier Include="linux-arm" TargetName="armv7-unknown-linux-gnueabihf" Arguments="-O3" />
+        <LLIRRuntimeIdentifier Include="linux-arm64" TargetName="aarch64-unknown-linux-gnueabihf" Arguments="-O3" />
+    </ItemGroup>
+
+    <Import Sdk="Microsoft.NET.Sdk" Project="Sdk.targets" />
+
+    <PropertyGroup>
+        <LLIRRuntimeIdentifier>$(MSBuildThisFileDirectory)LLIR\</LLIRRuntimeIdentifier>
+        <LLIRIntermediateDirectory>$(IntermediateOutputPath)llir\</LLIRIntermediateDirectory>
+        <CLangCommand>clang</CLangCommand>
+        <ObjDumpCommand>llvm-objdump</ObjDumpCommand>
+    </PropertyGroup>
+
+    <Target Name="CompileLLIR" Inputs="$(LLIRRuntimeIdentifier)%(LLIRRuntimeIdentifier.Identity).ll" Outputs="$(LLIRIntermediateDirectory)%(LLIRRuntimeIdentifier.Identity).o" Condition=" '$(TargetFramework)' != '' ">
+        <MakeDir Directories="$(LLIRIntermediateDirectory)" />
+        <Exec Command="&quot;$(CLangCommand)&quot; -c &quot;$(LLIRRuntimeIdentifier)%(LLIRRuntimeIdentifier.Identity).ll&quot; -o &quot;$(LLIRIntermediateDirectory)%(LLIRRuntimeIdentifier.Identity).o&quot; --target=%(LLIRRuntimeIdentifier.TargetName) -g %(LLIRRuntimeIdentifier.Arguments)" />
+        <ItemGroup>
+            <FileWrites Include="$(LLIRIntermediateDirectory)%(LLIRRuntimeIdentifier.Identity).o" />
+        </ItemGroup>
+    </Target>
+
+    <Target Name="DisassembleLLIR" DependsOnTargets="CompileLLIR" Inputs="$(LLIRIntermediateDirectory)%(LLIRRuntimeIdentifier.Identity).o" Outputs="$(LLIRIntermediateDirectory)%(LLIRRuntimeIdentifier.Identity).s" Condition=" '$(TargetFramework)' != '' ">
+        <MakeDir Directories="$(LLIRIntermediateDirectory)" />
+        <Exec Command="&quot;$(ObjDumpCommand)&quot; --demangle -d &quot;$(LLIRIntermediateDirectory)%(LLIRRuntimeIdentifier.Identity).o&quot; -M intel &gt; &quot;$(LLIRIntermediateDirectory)%(LLIRRuntimeIdentifier.Identity).s&quot;" />
+        <ItemGroup>
+            <FileWrites Include="$(LLIRIntermediateDirectory)%(LLIRRuntimeIdentifier.Identity).s" />
+        </ItemGroup>
+    </Target>
+
+    <UsingTask TaskName="BuildLLIRCodeFile" TaskFactory="RoslynCodeTaskFactory" AssemblyFile="$(MSBuildToolsPath)\Microsoft.Build.Tasks.Core.dll">
+        <Task>
+            <Code Type="Class" Language="CS">
+                <![CDATA[
+                using System;
+                using System.Linq;
+                using System.IO;
+                using System.Collections.Generic;
+                using System.Text.RegularExpressions;
+                
+                using Microsoft.Build.Framework;
+                using Microsoft.Build.Utilities;
+                
+                public class BuildLLIRCodeFile : Task
+                {
+                
+                    static readonly Regex SymbolLineRegex = new Regex(@"^([0-9a-fA-F]{8,16}).+\<(.+)\>\:\w*$", RegexOptions.IgnoreCase);
+                    static readonly Regex CodeLineRegex = new Regex(@"^([0-9a-fA-F ]{8})\: ([0-9a-fA-F ]+)\t.+$", RegexOptions.IgnoreCase);
+                    
+                    public string Namespace { get; set; }
+                    
+                    public string ClassName { get; set; }
+                
+                    public string AssemblerFile { get; set; }
+                
+                    public string BuildCodeFile { get; set; }
+
+
+                    public override bool Execute()
+                    {
+                        using var o = new StreamWriter(File.Create(BuildCodeFile));
+                        using var s = new StreamReader(File.OpenRead(AssemblerFile));
+
+                        o.Write("namespace ");
+                        o.Write(Namespace);
+                        o.Write(" {");
+                        o.WriteLine();
+                        o.Write("class ");
+                        o.Write(ClassName);
+                        o.Write(" : IKVM.Runtime.LLIR.LLIRFunctionTable {");
+                        o.WriteLine();
+
+                        var currentName = (string)null;
+                        var currentIndx = (int)-1;
+                        var text = new List<byte>(16384);
+                        var syms = new Dictionary<string, int>();
+
+                        void InsertText(int pos, byte val)
+                        {
+                            // ensure capacity
+                            while (text.Count < pos)
+                                text.Add(0);
+                        
+                            text.Insert(pos, val);
+                        }
+
+                        do
+                        {
+                            var line = s.ReadLine();
+                            if (line == null)
+                                break;
+
+                            if (currentName == null)
+                            {
+                                var m = SymbolLineRegex.Match(line);
+                                if (m.Success == false)
+                                    continue;
+
+                                var z = m.Groups[1].Value.Trim().PadLeft(16, '0');
+                                var i = m.Groups[2].Value.TrimStart('_');
+                                currentName = DemangleName(i);
+                                currentIndx = (int)ParseInt64BigEndian(ParseHex(z));
+                                syms.Add(currentName, currentIndx);
+                                continue;
+                            }
+                            else
+                            {
+                                var m = CodeLineRegex.Match(line);
+                                if (m.Success == false)
+                                {
+                                    currentName = null;
+                                    continue;
+                                }
+
+                                var z = m.Groups[1].Value.Trim().PadLeft(16, '0');
+                                var i = string.Join("", m.Groups[2].Value.Split(' ').Select(j => j.Trim()).Where(j => j != "").ToArray());
+                                currentIndx = (int)ParseInt64BigEndian(ParseHex(z));
+
+                                var b = ParseHex(i);
+                                for (int p = 0; p < b.Length; p++)
+                                    InsertText(currentIndx + p, b[p]);
+                            }
+                        }
+                        while (true);
+
+                        WriteText(o, text);
+                        WriteSyms(o, syms);
+
+                        o.WriteLine("}");
+                        o.WriteLine("}");
+
+                        return true;
+                    }
+                    
+                    string DemangleName(string name)
+                    {
+                        if (name.StartsWith("\\1"))
+                            name = name.Substring(2);
+
+                        var at = name.IndexOf('@');
+                        if (at != -1)
+                            name = name.Substring(0, at);
+                        
+                        return name;
+                    }
+
+                    void WriteText(StreamWriter writer, List<byte> text)
+                    {
+                        writer.WriteLine("static readonly byte[] text = new byte[]");
+                        writer.WriteLine("{");
+                        
+                        for (int i = 0; i < text.Count; i++)
+                        {
+                            writer.Write("0x");
+                            writer.Write(text[i].ToString("X2"));
+                            writer.Write(", ");
+                            
+                            if ((i + 1) % 32 == 0)
+                                writer.WriteLine();
+                        }
+                        
+                        writer.WriteLine();
+                        writer.WriteLine("};");
+                        writer.WriteLine();
+
+                        writer.WriteLine("protected override byte[] Text => text;");
+                    }
+
+                    void WriteSyms(StreamWriter writer, Dictionary<string, int> syms)
+                    {
+                        foreach (var kvp in syms)
+                        {
+                            var name = kvp.Key;
+                            var offs = kvp.Value;
+
+                            if (name.StartsWith("$") || name.StartsWith("."))
+                                continue;
+
+                            writer.Write("static readonly int _idx_");
+                            writer.Write(name);
+                            writer.Write(" = 0x");
+                            writer.Write(offs.ToString("x2"));
+                            writer.WriteLine(";");
+
+                            writer.Write("protected override int idx_");
+                            writer.Write(name);
+                            writer.Write(" => _idx_");
+                            writer.Write(name);
+                            writer.WriteLine(";");
+                        }
+                    }
+
+                    static byte[] ParseHex(string hex)
+                    {
+                        static int GetHexVal(char hex) => hex - (hex < 58 ? 48 : (hex < 97 ? 55 : 87));
+
+                        var arr = new byte[hex.Length >> 1];
+                        for (int i = 0; i < hex.Length >> 1; ++i)
+                            arr[i] = (byte)((GetHexVal(hex[i << 1]) << 4) + GetHexVal(hex[(i << 1) + 1]));
+
+                        return arr;
+                    }
+
+                    static int ParseInt32BigEndian(byte[] bytes, int off = 0)
+                    {
+                        return ((bytes[off + 0] & 0xff) << 24) | ((bytes[off + 1] & 0xff) << 16) | ((bytes[off + 2] & 0xff) << 8) | (bytes[off + 3] & 0xff);
+                    }
+
+                    static long ParseInt64BigEndian(byte[] bytes, int off = 0)
+                    {
+                        var a = (long)ParseInt32BigEndian(bytes, off);
+                        var b = (long)ParseInt32BigEndian(bytes, off + 4);
+                        var i = (a << 32) | b;
+                        return i;
+                    }
+                
+                }
+                
+                ]]>
+            </Code>
+        </Task>
+    </UsingTask>
+
+    <Target Name="GenerateLLIRCode" DependsOnTargets="DisassembleLLIR" Inputs="$(LLIRIntermediateDirectory)%(LLIRRuntimeIdentifier.Identity).s" Outputs="$(LLIRIntermediateDirectory)%(LLIRRuntimeIdentifier.Identity).cs" Condition=" '$(TargetFramework)' != '' ">
+        <Message Text="$(LLIRIntermediateDirectory)%(LLIRRuntimeIdentifier.Identity).s -&gt; $(LLIRIntermediateDirectory)%(LLIRRuntimeIdentifier.Identity).cs" />
+        <MakeDir Directories="$(LLIRIntermediateDirectory)" />
+        <BuildLLIRCodeFile Namespace="IKVM.Runtime.LLIR" ClassName="$([System.String]::Copy('LLIR_%(LLIRRuntimeIdentifier.Identity)').Replace('-', '_').Replace('.', '_'))" AssemblerFile="$(LLIRIntermediateDirectory)%(LLIRRuntimeIdentifier.Identity).s" BuildCodeFile="$(LLIRIntermediateDirectory)%(LLIRRuntimeIdentifier.Identity).cs" />
+        <ItemGroup>
+            <FileWrites Include="$(LLIRIntermediateDirectory)%(LLIRRuntimeIdentifier.Identity).cs" />
+            <Compile Include="$(LLIRIntermediateDirectory)%(LLIRRuntimeIdentifier.Identity).cs" />
+        </ItemGroup>
+    </Target>
+
+    <PropertyGroup>
+        <CompileDependsOn>
+            GenerateLLIRCode;
+            $(CompileDependsOn);
+        </CompileDependsOn>
+    </PropertyGroup>
+    
+    <PropertyGroup>
+        <GetCopyToOutputDirectoryItemsDependsOn>
+            GenerateLLIRCode;
+            $(GetCopyToOutputDirectoryItemsDependsOn);
+        </GetCopyToOutputDirectoryItemsDependsOn>
+    </PropertyGroup>
 
 </Project>

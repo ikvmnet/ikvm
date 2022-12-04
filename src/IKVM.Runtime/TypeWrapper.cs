@@ -2813,22 +2813,12 @@ namespace IKVM.Internal
             this.fields = fields;
         }
 
-        internal string Name
-        {
-            get
-            {
-                return name;
-            }
-        }
+        internal string Name => name;
 
-        // the name of the type as it appears in a Java signature string (e.g. "Ljava.lang.Object;" or "I")
-        internal virtual string SigName
-        {
-            get
-            {
-                return "L" + this.Name + ";";
-            }
-        }
+        /// <summary>
+        /// The name of the type as it appears in a Java signature string (e.g. "Ljava.lang.Object;" or "I").
+        /// </summary>
+        internal virtual string SigName => "L" + Name + ";";
 
         // returns true iff wrapper is allowed to access us
         internal bool IsAccessibleFrom(TypeWrapper wrapper)

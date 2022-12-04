@@ -1,7 +1,11 @@
-﻿using System.Runtime.InteropServices;
+﻿using System;
+using System.Runtime.InteropServices;
+
+using IKVM.Runtime.LLIR;
 
 namespace IKVM.Runtime.JNI
 {
+
     [StructLayout(LayoutKind.Sequential)]
     unsafe struct JNINativeInterface
     {
@@ -85,8 +89,8 @@ namespace IKVM.Runtime.JNI
             ni->EnsureLocalCapacity = (void*)Marshal.GetFunctionPointerForDelegate(JNIEnv.EnsureLocalCapacity);
 
             ni->AllocObject = (void*)Marshal.GetFunctionPointerForDelegate(JNIEnv.AllocObject);
-            ni->NewObject = (void*)Native.GetExport("JNI_NewObject", 3);
-            ni->NewObjectV = (void*)Native.GetExport("JNI_NewObjectV", 3);
+            ni->NewObject = (void*)LLIRFunctionTable.Instance.JNI_NewObject;
+            ni->NewObjectV = (void*)LLIRFunctionTable.Instance.JNI_NewObjectV;
             ni->NewObjectA = (void*)Marshal.GetFunctionPointerForDelegate(JNIEnv.NewObjectA);
 
             ni->GetObjectClass = (void*)Marshal.GetFunctionPointerForDelegate(JNIEnv.GetObjectClass);
@@ -94,84 +98,84 @@ namespace IKVM.Runtime.JNI
 
             ni->GetMethodID = (void*)Marshal.GetFunctionPointerForDelegate(JNIEnv.GetMethodID);
 
-            ni->CallObjectMethod = (void*)Native.GetExport("JNI_CallObjectMethod", 3);
-            ni->CallObjectMethodV = (void*)Native.GetExport("JNI_CallObjectMethodV", 3);
+            ni->CallObjectMethod = (void*)LLIRFunctionTable.Instance.JNI_CallObjectMethod;
+            ni->CallObjectMethodV = (void*)LLIRFunctionTable.Instance.JNI_CallObjectMethodV;
             ni->CallObjectMethodA = (void*)Marshal.GetFunctionPointerForDelegate(JNIEnv.CallObjectMethodA);
 
-            ni->CallBooleanMethod = (void*)Native.GetExport("JNI_CallBooleanMethod", 3);
-            ni->CallBooleanMethodV = (void*)Native.GetExport("JNI_CallBooleanMethodV", 3);
+            ni->CallBooleanMethod = (void*)LLIRFunctionTable.Instance.JNI_CallBooleanMethod;
+            ni->CallBooleanMethodV = (void*)LLIRFunctionTable.Instance.JNI_CallBooleanMethodV;
             ni->CallBooleanMethodA = (void*)Marshal.GetFunctionPointerForDelegate(JNIEnv.CallBooleanMethodA);
 
-            ni->CallByteMethod = (void*)Native.GetExport("JNI_CallByteMethod", 3);
-            ni->CallByteMethodV = (void*)Native.GetExport("JNI_CallByteMethodV", 3);
+            ni->CallByteMethod = (void*)LLIRFunctionTable.Instance.JNI_CallByteMethod;
+            ni->CallByteMethodV = (void*)LLIRFunctionTable.Instance.JNI_CallByteMethodV;
             ni->CallByteMethodA = (void*)Marshal.GetFunctionPointerForDelegate(JNIEnv.CallByteMethodA);
 
-            ni->CallCharMethod = (void*)Native.GetExport("JNI_CallCharMethod", 3);
-            ni->CallCharMethodV = (void*)Native.GetExport("JNI_CallCharMethodV", 3);
+            ni->CallCharMethod = (void*)LLIRFunctionTable.Instance.JNI_CallCharMethod;
+            ni->CallCharMethodV = (void*)LLIRFunctionTable.Instance.JNI_CallCharMethodV;
             ni->CallCharMethodA = (void*)Marshal.GetFunctionPointerForDelegate(JNIEnv.CallCharMethodA);
 
-            ni->CallShortMethod = (void*)Native.GetExport("JNI_CallShortMethod", 3);
-            ni->CallShortMethodV = (void*)Native.GetExport("JNI_CallShortMethodV", 3);
+            ni->CallShortMethod = (void*)LLIRFunctionTable.Instance.JNI_CallShortMethod;
+            ni->CallShortMethodV = (void*)LLIRFunctionTable.Instance.JNI_CallShortMethodV;
             ni->CallShortMethodA = (void*)Marshal.GetFunctionPointerForDelegate(JNIEnv.CallShortMethodA);
 
-            ni->CallIntMethod = (void*)Native.GetExport("JNI_CallIntMethod", 3);
-            ni->CallIntMethodV = (void*)Native.GetExport("JNI_CallIntMethodV", 3);
+            ni->CallIntMethod = (void*)LLIRFunctionTable.Instance.JNI_CallIntMethod;
+            ni->CallIntMethodV = (void*)LLIRFunctionTable.Instance.JNI_CallIntMethodV;
             ni->CallIntMethodA = (void*)Marshal.GetFunctionPointerForDelegate(JNIEnv.CallIntMethodA);
 
-            ni->CallLongMethod = (void*)Native.GetExport("JNI_CallLongMethod", 3);
-            ni->CallLongMethodV = (void*)Native.GetExport("JNI_CallLongMethodV", 3);
+            ni->CallLongMethod = (void*)LLIRFunctionTable.Instance.JNI_CallLongMethod;
+            ni->CallLongMethodV = (void*)LLIRFunctionTable.Instance.JNI_CallLongMethodV;
             ni->CallLongMethodA = (void*)Marshal.GetFunctionPointerForDelegate(JNIEnv.CallLongMethodA);
 
-            ni->CallFloatMethod = (void*)Native.GetExport("JNI_CallFloatMethod", 3);
-            ni->CallFloatMethodV = (void*)Native.GetExport("JNI_CallFloatMethodV", 3);
+            ni->CallFloatMethod = (void*)LLIRFunctionTable.Instance.JNI_CallFloatMethod;
+            ni->CallFloatMethodV = (void*)LLIRFunctionTable.Instance.JNI_CallFloatMethodV;
             ni->CallFloatMethodA = (void*)Marshal.GetFunctionPointerForDelegate(JNIEnv.CallFloatMethodA);
 
-            ni->CallDoubleMethod = (void*)Native.GetExport("JNI_CallDoubleMethod", 3);
-            ni->CallDoubleMethodV = (void*)Native.GetExport("JNI_CallDoubleMethodV", 3);
+            ni->CallDoubleMethod = (void*)LLIRFunctionTable.Instance.JNI_CallDoubleMethod;
+            ni->CallDoubleMethodV = (void*)LLIRFunctionTable.Instance.JNI_CallDoubleMethodV;
             ni->CallDoubleMethodA = (void*)Marshal.GetFunctionPointerForDelegate(JNIEnv.CallDoubleMethodA);
 
-            ni->CallVoidMethod = (void*)Native.GetExport("JNI_CallVoidMethod", 3);
-            ni->CallVoidMethodV = (void*)Native.GetExport("JNI_CallVoidMethodV", 3);
+            ni->CallVoidMethod = (void*)LLIRFunctionTable.Instance.JNI_CallVoidMethod;
+            ni->CallVoidMethodV = (void*)LLIRFunctionTable.Instance.JNI_CallVoidMethodV;
             ni->CallVoidMethodA = (void*)Marshal.GetFunctionPointerForDelegate(JNIEnv.CallVoidMethodA);
 
-            ni->CallNonvirtualObjectMethod = (void*)Native.GetExport("JNI_CallNonvirtualObjectMethod", 4);
-            ni->CallNonvirtualObjectMethodV = (void*)Native.GetExport("JNI_CallNonvirtualObjectMethodV", 4);
+            ni->CallNonvirtualObjectMethod = (void*)LLIRFunctionTable.Instance.JNI_CallNonvirtualObjectMethod;
+            ni->CallNonvirtualObjectMethodV = (void*)LLIRFunctionTable.Instance.JNI_CallNonvirtualObjectMethodV;
             ni->CallNonvirtualObjectMethodA = (void*)Marshal.GetFunctionPointerForDelegate(JNIEnv.CallNonvirtualObjectMethodA);
 
-            ni->CallNonvirtualBooleanMethod = (void*)Native.GetExport("JNI_CallNonvirtualBooleanMethod", 4);
-            ni->CallNonvirtualBooleanMethodV = (void*)Native.GetExport("JNI_CallNonvirtualBooleanMethodV", 4);
+            ni->CallNonvirtualBooleanMethod = (void*)LLIRFunctionTable.Instance.JNI_CallNonvirtualBooleanMethod;
+            ni->CallNonvirtualBooleanMethodV = (void*)LLIRFunctionTable.Instance.JNI_CallNonvirtualBooleanMethodV;
             ni->CallNonvirtualBooleanMethodA = (void*)Marshal.GetFunctionPointerForDelegate(JNIEnv.CallNonvirtualBooleanMethodA);
 
-            ni->CallNonvirtualByteMethod = (void*)Native.GetExport("JNI_CallNonvirtualByteMethod", 4);
-            ni->CallNonvirtualByteMethodV = (void*)Native.GetExport("JNI_CallNonvirtualByteMethodV", 4);
+            ni->CallNonvirtualByteMethod = (void*)LLIRFunctionTable.Instance.JNI_CallNonvirtualByteMethod;
+            ni->CallNonvirtualByteMethodV = (void*)LLIRFunctionTable.Instance.JNI_CallNonvirtualByteMethodV;
             ni->CallNonvirtualByteMethodA = (void*)Marshal.GetFunctionPointerForDelegate(JNIEnv.CallNonvirtualByteMethodA);
 
-            ni->CallNonvirtualCharMethod = (void*)Native.GetExport("JNI_CallNonvirtualCharMethod", 4);
-            ni->CallNonvirtualCharMethodV = (void*)Native.GetExport("JNI_CallNonvirtualCharMethodV", 4);
+            ni->CallNonvirtualCharMethod = (void*)LLIRFunctionTable.Instance.JNI_CallNonvirtualCharMethod;
+            ni->CallNonvirtualCharMethodV = (void*)LLIRFunctionTable.Instance.JNI_CallNonvirtualCharMethodV;
             ni->CallNonvirtualCharMethodA = (void*)Marshal.GetFunctionPointerForDelegate(JNIEnv.CallNonvirtualCharMethodA);
 
-            ni->CallNonvirtualShortMethod = (void*)Native.GetExport("JNI_CallNonvirtualShortMethod", 4);
-            ni->CallNonvirtualShortMethodV = (void*)Native.GetExport("JNI_CallNonvirtualShortMethodV", 4);
+            ni->CallNonvirtualShortMethod = (void*)LLIRFunctionTable.Instance.JNI_CallNonvirtualShortMethod;
+            ni->CallNonvirtualShortMethodV = (void*)LLIRFunctionTable.Instance.JNI_CallNonvirtualShortMethodV;
             ni->CallNonvirtualShortMethodA = (void*)Marshal.GetFunctionPointerForDelegate(JNIEnv.CallNonvirtualShortMethodA);
 
-            ni->CallNonvirtualIntMethod = (void*)Native.GetExport("JNI_CallNonvirtualIntMethod", 4);
-            ni->CallNonvirtualIntMethodV = (void*)Native.GetExport("JNI_CallNonvirtualIntMethodV", 4);
+            ni->CallNonvirtualIntMethod = (void*)LLIRFunctionTable.Instance.JNI_CallNonvirtualIntMethod;
+            ni->CallNonvirtualIntMethodV = (void*)LLIRFunctionTable.Instance.JNI_CallNonvirtualIntMethodV;
             ni->CallNonvirtualIntMethodA = (void*)Marshal.GetFunctionPointerForDelegate(JNIEnv.CallNonvirtualIntMethodA);
 
-            ni->CallNonvirtualLongMethod = (void*)Native.GetExport("JNI_CallNonvirtualLongMethod", 4);
-            ni->CallNonvirtualLongMethodV = (void*)Native.GetExport("JNI_CallNonvirtualLongMethodV", 4);
+            ni->CallNonvirtualLongMethod = (void*)LLIRFunctionTable.Instance.JNI_CallNonvirtualLongMethod;
+            ni->CallNonvirtualLongMethodV = (void*)LLIRFunctionTable.Instance.JNI_CallNonvirtualLongMethodV;
             ni->CallNonvirtualLongMethodA = (void*)Marshal.GetFunctionPointerForDelegate(JNIEnv.CallNonvirtualLongMethodA);
 
-            ni->CallNonvirtualFloatMethod = (void*)Native.GetExport("JNI_CallNonvirtualFloatMethod", 4);
-            ni->CallNonvirtualFloatMethodV = (void*)Native.GetExport("JNI_CallNonvirtualFloatMethodV", 4);
+            ni->CallNonvirtualFloatMethod = (void*)LLIRFunctionTable.Instance.JNI_CallNonvirtualFloatMethod;
+            ni->CallNonvirtualFloatMethodV = (void*)LLIRFunctionTable.Instance.JNI_CallNonvirtualFloatMethodV;
             ni->CallNonvirtualFloatMethodA = (void*)Marshal.GetFunctionPointerForDelegate(JNIEnv.CallNonvirtualFloatMethodA);
 
-            ni->CallNonvirtualDoubleMethod = (void*)Native.GetExport("JNI_CallNonvirtualDoubleMethod", 4);
-            ni->CallNonvirtualDoubleMethodV = (void*)Native.GetExport("JNI_CallNonvirtualDoubleMethodV", 4);
+            ni->CallNonvirtualDoubleMethod = (void*)LLIRFunctionTable.Instance.JNI_CallNonvirtualDoubleMethod;
+            ni->CallNonvirtualDoubleMethodV = (void*)LLIRFunctionTable.Instance.JNI_CallNonvirtualDoubleMethodV;
             ni->CallNonvirtualDoubleMethodA = (void*)Marshal.GetFunctionPointerForDelegate(JNIEnv.CallNonvirtualDoubleMethodA);
 
-            ni->CallNonvirtualVoidMethod = (void*)Native.GetExport("JNI_CallNonvirtualVoidMethod", 4);
-            ni->CallNonvirtualVoidMethodV = (void*)Native.GetExport("JNI_CallNonvirtualVoidMethodV", 4);
+            ni->CallNonvirtualVoidMethod = (void*)LLIRFunctionTable.Instance.JNI_CallNonvirtualVoidMethod;
+            ni->CallNonvirtualVoidMethodV = (void*)LLIRFunctionTable.Instance.JNI_CallNonvirtualVoidMethodV;
             ni->CallNonvirtualVoidMethodA = (void*)Marshal.GetFunctionPointerForDelegate(JNIEnv.CallNonvirtualVoidMethodA);
 
             ni->GetFieldID = (void*)Marshal.GetFunctionPointerForDelegate(JNIEnv.GetFieldID);
@@ -198,44 +202,44 @@ namespace IKVM.Runtime.JNI
 
             ni->GetStaticMethodID = (void*)Marshal.GetFunctionPointerForDelegate(JNIEnv.GetStaticMethodID);
 
-            ni->CallStaticObjectMethod = (void*)Native.GetExport("JNI_CallStaticObjectMethod", 3);
-            ni->CallStaticObjectMethodV = (void*)Native.GetExport("JNI_CallStaticObjectMethodV", 3);
+            ni->CallStaticObjectMethod = (void*)LLIRFunctionTable.Instance.JNI_CallStaticObjectMethod;
+            ni->CallStaticObjectMethodV = (void*)LLIRFunctionTable.Instance.JNI_CallStaticObjectMethodV;
             ni->CallStaticObjectMethodA = (void*)Marshal.GetFunctionPointerForDelegate(JNIEnv.CallStaticObjectMethodA);
 
-            ni->CallStaticBooleanMethod = (void*)Native.GetExport("JNI_CallStaticBooleanMethod", 3);
-            ni->CallStaticBooleanMethodV = (void*)Native.GetExport("JNI_CallStaticBooleanMethodV", 3);
+            ni->CallStaticBooleanMethod = (void*)LLIRFunctionTable.Instance.JNI_CallStaticBooleanMethod;
+            ni->CallStaticBooleanMethodV = (void*)LLIRFunctionTable.Instance.JNI_CallStaticBooleanMethodV;
             ni->CallStaticBooleanMethodA = (void*)Marshal.GetFunctionPointerForDelegate(JNIEnv.CallStaticBooleanMethodA);
 
-            ni->CallStaticByteMethod = (void*)Native.GetExport("JNI_CallStaticByteMethod", 3);
-            ni->CallStaticByteMethodV = (void*)Native.GetExport("JNI_CallStaticByteMethodV", 3);
+            ni->CallStaticByteMethod = (void*)LLIRFunctionTable.Instance.JNI_CallStaticByteMethod;
+            ni->CallStaticByteMethodV = (void*)LLIRFunctionTable.Instance.JNI_CallStaticByteMethodV;
             ni->CallStaticByteMethodA = (void*)Marshal.GetFunctionPointerForDelegate(JNIEnv.CallStaticByteMethodA);
 
-            ni->CallStaticCharMethod = (void*)Native.GetExport("JNI_CallStaticCharMethod", 3);
-            ni->CallStaticCharMethodV = (void*)Native.GetExport("JNI_CallStaticCharMethodV", 3);
+            ni->CallStaticCharMethod = (void*)LLIRFunctionTable.Instance.JNI_CallStaticCharMethod;
+            ni->CallStaticCharMethodV = (void*)LLIRFunctionTable.Instance.JNI_CallStaticCharMethodV;
             ni->CallStaticCharMethodA = (void*)Marshal.GetFunctionPointerForDelegate(JNIEnv.CallStaticCharMethodA);
 
-            ni->CallStaticShortMethod = (void*)Native.GetExport("JNI_CallStaticShortMethod", 3);
-            ni->CallStaticShortMethodV = (void*)Native.GetExport("JNI_CallStaticShortMethodV", 3);
+            ni->CallStaticShortMethod = (void*)LLIRFunctionTable.Instance.JNI_CallStaticShortMethod;
+            ni->CallStaticShortMethodV = (void*)LLIRFunctionTable.Instance.JNI_CallStaticShortMethodV;
             ni->CallStaticShortMethodA = (void*)Marshal.GetFunctionPointerForDelegate(JNIEnv.CallStaticShortMethodA);
 
-            ni->CallStaticIntMethod = (void*)Native.GetExport("JNI_CallStaticIntMethod", 3);
-            ni->CallStaticIntMethodV = (void*)Native.GetExport("JNI_CallStaticIntMethodV", 3);
+            ni->CallStaticIntMethod = (void*)LLIRFunctionTable.Instance.JNI_CallStaticIntMethod;
+            ni->CallStaticIntMethodV = (void*)LLIRFunctionTable.Instance.JNI_CallStaticIntMethodV;
             ni->CallStaticIntMethodA = (void*)Marshal.GetFunctionPointerForDelegate(JNIEnv.CallStaticIntMethodA);
 
-            ni->CallStaticLongMethod = (void*)Native.GetExport("JNI_CallStaticLongMethod", 3);
-            ni->CallStaticLongMethodV = (void*)Native.GetExport("JNI_CallStaticLongMethodV", 3);
+            ni->CallStaticLongMethod = (void*)LLIRFunctionTable.Instance.JNI_CallStaticLongMethod;
+            ni->CallStaticLongMethodV = (void*)LLIRFunctionTable.Instance.JNI_CallStaticLongMethodV;
             ni->CallStaticLongMethodA = (void*)Marshal.GetFunctionPointerForDelegate(JNIEnv.CallStaticLongMethodA);
 
-            ni->CallStaticFloatMethod = (void*)Native.GetExport("JNI_CallStaticFloatMethod", 3);
-            ni->CallStaticFloatMethodV = (void*)Native.GetExport("JNI_CallStaticFloatMethodV", 3);
+            ni->CallStaticFloatMethod = (void*)LLIRFunctionTable.Instance.JNI_CallStaticFloatMethod;
+            ni->CallStaticFloatMethodV = (void*)LLIRFunctionTable.Instance.JNI_CallStaticFloatMethodV;
             ni->CallStaticFloatMethodA = (void*)Marshal.GetFunctionPointerForDelegate(JNIEnv.CallStaticFloatMethodA);
 
-            ni->CallStaticDoubleMethod = (void*)Native.GetExport("JNI_CallStaticDoubleMethod", 3);
-            ni->CallStaticDoubleMethodV = (void*)Native.GetExport("JNI_CallStaticDoubleMethodV", 3);
+            ni->CallStaticDoubleMethod = (void*)LLIRFunctionTable.Instance.JNI_CallStaticDoubleMethod;
+            ni->CallStaticDoubleMethodV = (void*)LLIRFunctionTable.Instance.JNI_CallStaticDoubleMethodV;
             ni->CallStaticDoubleMethodA = (void*)Marshal.GetFunctionPointerForDelegate(JNIEnv.CallStaticDoubleMethodA);
 
-            ni->CallStaticVoidMethod = (void*)Native.GetExport("JNI_CallStaticVoidMethod", 3);
-            ni->CallStaticVoidMethodV = (void*)Native.GetExport("JNI_CallStaticVoidMethodV", 3);
+            ni->CallStaticVoidMethod = (void*)LLIRFunctionTable.Instance.JNI_CallStaticVoidMethod;
+            ni->CallStaticVoidMethodV = (void*)LLIRFunctionTable.Instance.JNI_CallStaticVoidMethodV;
             ni->CallStaticVoidMethodA = (void*)Marshal.GetFunctionPointerForDelegate(JNIEnv.CallStaticVoidMethodA);
 
             ni->GetStaticFieldID = (void*)Marshal.GetFunctionPointerForDelegate(JNIEnv.GetStaticFieldID);

@@ -26,4 +26,10 @@ public class JniTests
 
 	public native void newObjectATest();
 
+	public native void newObjectTestWithArg();
+
+	public native void newObjectVTestWithArg();
+
+	public native void newObjectATestWithArg();
+
 }

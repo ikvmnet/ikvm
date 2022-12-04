@@ -408,16 +408,12 @@ namespace IKVM.Runtime.JNI
         }
 
         /// <summary>
-        /// Returns the number of characters of the modified UTF-8 string.
+        /// Outputs an encoded signature of the arguments available to the method.
         /// </summary>
-        /// <param name="psz"></param>
+        /// <param name="pEnv"></param>
+        /// <param name="method"></param>
+        /// <param name="sig"></param>
         /// <returns></returns>
-        /// <exception cref="java.lang.IllegalArgumentException"></exception>
-        internal int GetMUTF8ArgumentLength(byte* psz)
-        {
-            return psz is null ? -1 : MUTF8Encoding.IndexOfNull(psz);
-        }
-
         internal static int GetMethodArgs(JNIEnv* pEnv, nint method, byte* sig)
         {
             var args = MethodWrapper.FromCookie(method).GetParameters();

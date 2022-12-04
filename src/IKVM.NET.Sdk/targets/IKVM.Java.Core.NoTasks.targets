@@ -100,7 +100,7 @@ $([MSBuild]::Unescape('$(___IkvmReferenceExportItemPrepareCs)'))
         <!-- Remove files that were not modified by this compilation. -->
         <ItemGroup>
             <_CompileJavaClassFiles Include="$(ClassOutputPath)**\*.class" />
-            <_CompileJavaStaleFiles Include="@(_CompileJavaClassFiles)" Condition="$([System.DateTime]::Parse('%(ModifiedTime)').Ticks) &lt; $(_CompileJavaStartTime) " />
+            <_CompileJavaStaleFiles Include="@(_CompileJavaClassFiles)" Condition=" '%(ModifiedTime)' == '' Or $([System.DateTime]::Parse('%(ModifiedTime)').Ticks) &lt; $(_CompileJavaStartTime) " />
         </ItemGroup>
         <Delete Files="@(_CompileJavaStaleFiles)" />
 

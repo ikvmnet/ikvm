@@ -1,7 +1,4 @@
-﻿using System;
-using System.IO;
-
-using FluentAssertions;
+﻿using System.IO;
 
 using IKVM.Tests.Util;
 
@@ -17,7 +14,7 @@ namespace IKVM.Tests.JNI
         static dynamic test;
 
         [ClassInitialize]
-        public static void Initialize()
+        public static void Initialize(TestContext context)
         {
             // compile the java test code on the fly
             var source = new StreamReader(typeof(JniTests).Assembly.GetManifestResourceStream("IKVM.Tests.JNI.JniTests.java")).ReadToEnd();
@@ -86,6 +83,24 @@ namespace IKVM.Tests.JNI
         public void NewObjectATest()
         {
             test.newObjectATest();
+        }
+
+        [TestMethod]
+        public void NewObjectTestWithArg()
+        {
+            test.newObjectTestWithArg();
+        }
+
+        [TestMethod]
+        public void NewObjectVTestWithArg()
+        {
+            test.newObjectVTestWithArg();
+        }
+
+        [TestMethod]
+        public void NewObjectATestWithArg()
+        {
+            test.newObjectATestWithArg();
         }
 
     }
