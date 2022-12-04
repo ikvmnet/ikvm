@@ -23,43 +23,30 @@ typedef int (*GetMethodArgs_t)(JNIEnv* pEnv, jmethodID method, char* sig);
 
 #define MAKE_ARG_ARRAY(pEnv, args) \
 	char sig[256];\
-	int argc = GET_METHOD_ARGS(pEnv, methodID, sig);\
 	jvalue argv[256];\
+	int argc = GET_METHOD_ARGS(pEnv, methodID, sig);\
 	for (int i = 0; i < argc; i++)\
 	{\
-		switch (sig[i])\
-		{\
-			case 'Z':\
-				argv[i].z = (jboolean)va_arg(args, int);\
-				break;\
-			case 'B':\
-				argv[i].b = (jbyte)va_arg(args, int);\
-				break;\
-			case 'C':\
-				argv[i].c = (jchar)va_arg(args, int);\
-				break;\
-			case 'S':\
-				argv[i].s = (jshort)va_arg(args, int);\
-				break;\
-			case 'I':\
-				argv[i].i = (jint)va_arg(args, int);\
-				break;\
-			case 'J':\
-				argv[i].j = (jlong)va_arg(args, long);\
-				break;\
-			case 'F':\
-				argv[i].f = (jfloat)va_arg(args, double);\
-				break;\
-			case 'D':\
-				argv[i].d = (jdouble)va_arg(args, double);\
-				break;\
-			case 'L':\
-				argv[i].l = (jobject)va_arg(args, void*);\
-				break;\
-			default:\
-				break; \
-		}\
+		if (sig[i] == 'Z')\
+			argv[i].z = (jboolean)va_arg(args, int);\
+		else if (sig[i] == 'B')\
+			argv[i].b = (jbyte)va_arg(args, int);\
+		else if (sig[i] == 'C')\
+			argv[i].c = (jchar)va_arg(args, int);\
+		else if (sig[i] == 'S')\
+			argv[i].s = (jshort)va_arg(args, int);\
+		else if (sig[i] == 'I')\
+			argv[i].i = (jint)va_arg(args, int);\
+		else if (sig[i] == 'J')\
+			argv[i].j = (jlong)va_arg(args, long);\
+		else if (sig[i] == 'F')\
+			argv[i].f = (jfloat)va_arg(args, double);\
+		else if (sig[i] == 'D')\
+			argv[i].d = (jdouble)va_arg(args, double);\
+		else if (sig[i] == 'L')\
+			argv[i].l = (jobject)va_arg(args, void*);\
 	}
+
 
 #define MAKE_METHOD_SIGNATURE(Type, type) \
 JNIEXPORT type JNICALL JNI_Call##Type##Method(JNIEnv* pEnv, jobject obj, jmethodID methodID, ...);\

@@ -94,6 +94,15 @@ JNIEXPORT void JNICALL Java_ikvm_tests_jni_JniTests_throwNewTest(JNIEnv *env) {
     (*env)->ThrowNew(env, runtimeExceptionClass, "success");
 }
 
+jobject newObject(JNIEnv* pEnv, jclass clazz, jmethodID methodID, ...) {
+
+    va_list args;
+    va_start(args, methodID);
+    jobject o = (*pEnv)->NewObjectV(pEnv, clazz, methodID, args);
+    va_end(args);
+    return o;
+}
+
 JNIEXPORT void JNICALL Java_ikvm_tests_jni_JniTests_newObjectTest(JNIEnv *env) {
     jclass exceptionClass = (*env)->FindClass(env, "java/lang/Exception");
 
@@ -131,7 +140,7 @@ JNIEXPORT void JNICALL Java_ikvm_tests_jni_JniTests_newObjectVTest(JNIEnv *env) 
         return;
     }
 
-    jobject object = (*env)->NewObject(env, objectClass, objectClassCtor);
+    jobject object = newObject(env, objectClass, objectClassCtor);
     if (object == 0) {
         (*env)->ThrowNew(env, exceptionClass, "failed");
         return;
@@ -209,7 +218,7 @@ JNIEXPORT void JNICALL Java_ikvm_tests_jni_JniTests_newObjectVTestWithArg(JNIEnv
         return;
     }
 
-    jobject integer = (*env)->NewObject(env, integerClass, integerClassCtor, 1);
+    jobject integer = newObject(env, integerClass, integerClassCtor, 1);
     if (integer == 0) {
         (*env)->ThrowNew(env, exceptionClass, "failed");
         return;

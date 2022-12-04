@@ -408,17 +408,6 @@ namespace IKVM.Runtime.JNI
         }
 
         /// <summary>
-        /// Returns the number of characters of the modified UTF-8 string.
-        /// </summary>
-        /// <param name="psz"></param>
-        /// <returns></returns>
-        /// <exception cref="java.lang.IllegalArgumentException"></exception>
-        internal int GetMUTF8ArgumentLength(byte* psz)
-        {
-            return psz is null ? -1 : MUTF8Encoding.IndexOfNull(psz);
-        }
-
-        /// <summary>
         /// Outputs an encoded signature of the arguments available to the method.
         /// </summary>
         /// <param name="pEnv"></param>
@@ -872,16 +861,16 @@ namespace IKVM.Runtime.JNI
             }
         }
 
-        public static jobject NewObjectA(JNIEnv* pEnv, jclass clazz, jmethodID methodID, IntPtr args)
+        public static jobject NewObjectA(JNIEnv* pEnv, jclass clazz, jmethodID methodID, jvalue* args)
         {
             var wrapper = TypeWrapper.FromClass((java.lang.Class)pEnv->UnwrapRef(clazz));
             if (wrapper.IsAbstract == false && wrapper.TypeAsBaseType.IsAbstract)
-                return pEnv->MakeLocalRef(InvokeHelper(pEnv, IntPtr.Zero, methodID, (jvalue*)args, false)); // static newinstance helper method
+                return pEnv->MakeLocalRef(InvokeHelper(pEnv, IntPtr.Zero, methodID, args, false)); // static newinstance helper method
 
             var obj = AllocObjectImpl(pEnv, wrapper);
             if (obj != IntPtr.Zero)
             {
-                InvokeHelper(pEnv, obj, methodID, (jvalue*)args, false);
+                InvokeHelper(pEnv, obj, methodID, args, false);
 
                 if (ExceptionCheck(pEnv) == JNI_TRUE)
                 {
