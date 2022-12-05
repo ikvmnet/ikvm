@@ -94,7 +94,7 @@ namespace IKVM.Tests
                 return $"lib{name}.so";
 
             if (RuntimeInformation.IsOSPlatform(OSPlatform.OSX))
-                return $"lib{name}.dynlib";
+                return $"lib{name}.dylib";
 
             throw new NotSupportedException();
         }
