@@ -269,6 +269,10 @@ Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "IKVM.Image.JRE.runtime.linu
 EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "native2ascii", "src\native2ascii\native2ascii.msbuildproj", "{7BC3FC79-5938-4CD7-9528-47D5DC18729E}"
 EndProject
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "IKVM.Image.JDK", "src\IKVM.Image.JDK\IKVM.Image.JDK.csproj", "{7C97E1C8-7FEB-4C2A-A149-7D77E15838BF}"
+EndProject
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "IKVM.Image.JRE", "src\IKVM.Image.JRE\IKVM.Image.JRE.csproj", "{819C752E-1F74-4447-9214-86EF337A1DEF}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -563,6 +567,14 @@ Global
 		{7BC3FC79-5938-4CD7-9528-47D5DC18729E}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{7BC3FC79-5938-4CD7-9528-47D5DC18729E}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{7BC3FC79-5938-4CD7-9528-47D5DC18729E}.Release|Any CPU.Build.0 = Release|Any CPU
+		{7C97E1C8-7FEB-4C2A-A149-7D77E15838BF}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{7C97E1C8-7FEB-4C2A-A149-7D77E15838BF}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{7C97E1C8-7FEB-4C2A-A149-7D77E15838BF}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{7C97E1C8-7FEB-4C2A-A149-7D77E15838BF}.Release|Any CPU.Build.0 = Release|Any CPU
+		{819C752E-1F74-4447-9214-86EF337A1DEF}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{819C752E-1F74-4447-9214-86EF337A1DEF}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{819C752E-1F74-4447-9214-86EF337A1DEF}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{819C752E-1F74-4447-9214-86EF337A1DEF}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
