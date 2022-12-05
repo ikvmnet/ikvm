@@ -26,6 +26,7 @@
         <LLIRRuntimeIdentifier Include="linux-x64" TargetName="x86_64-unknown-linux-gnu" Arguments="-O3" />
         <LLIRRuntimeIdentifier Include="linux-arm" TargetName="armv7-unknown-linux-gnueabihf" Arguments="-O3" />
         <LLIRRuntimeIdentifier Include="linux-arm64" TargetName="aarch64-unknown-linux-gnueabihf" Arguments="-O3" />
+        <LLIRRuntimeIdentifier Include="osx-x64" TargetName="x86_64-apple-macosx" Arguments="-O3" />
     </ItemGroup>
 
     <Import Sdk="Microsoft.NET.Sdk" Project="Sdk.targets" />

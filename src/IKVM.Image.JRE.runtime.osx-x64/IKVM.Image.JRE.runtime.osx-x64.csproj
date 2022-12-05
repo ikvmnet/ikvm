@@ -20,6 +20,11 @@
 
     <ItemGroup Condition=" '$(TargetFramework)' == '' ">
         <PublishProjectReference Include="..\IKVM.Image.JRE-bin\IKVM.Image.JRE-bin.csproj">
+            <SetTargetFramework>TargetFramework=net461</SetTargetFramework>
+            <SetRuntimeIdentifier>RuntimeIdentifier=osx-x64</SetRuntimeIdentifier>
+            <ProjectPackagePath>ikvm\net461\osx-x64\bin</ProjectPackagePath>
+        </PublishProjectReference>
+        <PublishProjectReference Include="..\IKVM.Image.JRE-bin\IKVM.Image.JRE-bin.csproj">
             <SetTargetFramework>TargetFramework=netcoreapp3.1</SetTargetFramework>
             <SetRuntimeIdentifier>RuntimeIdentifier=osx-x64</SetRuntimeIdentifier>
             <ProjectPackagePath>ikvm\netcoreapp3.1\osx-x64\bin</ProjectPackagePath>

@@ -49,6 +49,11 @@ namespace IKVM.Runtime.LLIR
                 else if (RuntimeInformation.ProcessArchitecture == Architecture.Arm64)
                     return new LLIR_linux_arm64();
             }
+            else if (RuntimeInformation.IsOSPlatform(OSPlatform.OSX))
+            {
+                if (RuntimeInformation.ProcessArchitecture == Architecture.X64)
+                    return new LLIR_osx_x64();
+            }
 
             throw new PlatformNotSupportedException();
 #endif
