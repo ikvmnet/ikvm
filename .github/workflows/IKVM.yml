@@ -420,7 +420,7 @@ jobs:
       run: ri tests.tar.gz
       working-directory: ${{ env.IKVMPATH }}/dist
     - name: Execute Tests
-      timeout-minutes: 240
+      timeout-minutes: 120
       shell: pwsh
       run: |
         # assign powershell variables
