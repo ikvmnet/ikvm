@@ -109,43 +109,10 @@ jobs:
       with:
         name: jtreg-build
         path: jtreg/jtreg-build.zip
-  build-osxcross:
-    name: Build OS X Cross
-    runs-on: ubuntu-latest
-    steps:
-    - name: Checkout Source
-      uses: actions/checkout@v1
-      with:
-        submodules: recursive
-    - name: Cache OS X Cross Build
-      uses: actions/cache@v3
-      with:
-        path: osxcross/target
-        key: osxcross-target--${{ runner.os }}--${{ hashFiles('/osxcross.build.sh', '/osxcross/**', '!/osxcross/target/**') }}-1
-    - name: Check OS X Cross Build Stamp
-      id: osxcross-target-stamp
-      uses: andstor/file-existence-action@v1
-      with:
-        files: osxcross/target/stamp
-    - name: Install Packages
-      if: steps.jtreg-build-stamp.outputs.files_exists != 'true'
-      run: sudo apt-get install -y gcc g++ zlib1g-dev libmpc-dev libmpfr-dev libgmp-dev clang llvm llvm-dev
-    - name: Build OS X Cross
-      if: steps.osxcross-target-stamp.outputs.files_exists != 'true'
-      run: ./osxcross.build.sh && touch osxcross/target/stamp
-    - name: Package OS X Cross
-      run: tar czvf osxcross-target.tar.gz target
-      working-directory: osxcross
-    - name: Upload OS X Cross
-      uses: actions/upload-artifact@v3
-      with:
-        name: osxcross-target
-        path: osxcross/osxcross-target.tar.gz
   build-ikvm:
     name: Build IKVM
     needs:
     - build-openjdk
-    - build-osxcross
     runs-on: windows-latest
     timeout-minutes: 120
     steps:
@@ -240,14 +207,6 @@ jobs:
       shell: pwsh
       run: Expand-Archive jtreg-build.zip .
       working-directory: jtreg
-    - name: Download OS X Cross Build
-      uses: actions/download-artifact@v3
-      with:
-        name: osxcross-target
-        path: osxcross
-    - name: Restore OS X Cross Build
-      run: tar xzvf osxcross-target.tar.gz
-      working-directory: osxcross
     - name: NuGet Restore
       run: dotnet restore IKVM.sln
     - name: Build Artifacts
