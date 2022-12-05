@@ -23,12 +23,12 @@
 */
 using System;
 using System.IO;
-using System.Runtime.CompilerServices;
 using System.Runtime.InteropServices;
 using System.Security;
 using System.Threading;
 
 using IKVM.Internal;
+using IKVM.Runtime.JNI;
 
 namespace IKVM.Java.Externs.java.lang
 {
@@ -50,27 +50,8 @@ namespace IKVM.Java.Externs.java.lang
 #if FIRST_PASS
                 throw new NotImplementedException();
 #else
-                LoadImpl(self, name, isBuiltin);
-#endif
-            }
-
-            /// <summary>
-            /// </summary>
-            /// <remarks>
-            /// Method avoids inlining to ensure IKVM.Runtime.JNI does not get loaded.
-            /// </remarks>
-            /// <param name="self"></param>
-            /// <param name="name"></param>
-            /// <param name="isBuiltin"></param>
-            [MethodImpl(MethodImplOptions.NoInlining)]
-            [SecuritySafeCritical]
-            static void LoadImpl(object self, string name, bool isBuiltin)
-            {
-#if FIRST_PASS
-                throw new NotImplementedException();
-#else
                 var lib = (global::java.lang.ClassLoader.NativeLibrary)self;
-                lib.handle = isBuiltin ? 0 : IKVM.Runtime.JniHelper.LoadLibrary(name, TypeWrapper.FromClass(global::java.lang.ClassLoader.NativeLibrary.getFromClass()).GetClassLoader());
+                lib.handle = isBuiltin ? 0 : JNINativeLoader.LoadLibrary(name, TypeWrapper.FromClass(global::java.lang.ClassLoader.NativeLibrary.getFromClass()).GetClassLoader());
                 lib.loaded = true;
 #endif
             }
@@ -104,7 +85,7 @@ namespace IKVM.Java.Externs.java.lang
                     var lib = (global::java.lang.ClassLoader.NativeLibrary)thisNativeLibrary;
                     var handle = Interlocked.Exchange(ref lib.handle, 0);
                     if (handle != 0)
-                        IKVM.Runtime.JniHelper.UnloadLibrary(handle, TypeWrapper.FromClass(global::java.lang.ClassLoader.NativeLibrary.getFromClass()).GetClassLoader());
+                        JNINativeLoader.UnloadLibrary(handle, TypeWrapper.FromClass(global::java.lang.ClassLoader.NativeLibrary.getFromClass()).GetClassLoader());
                 }
 #endif
             }

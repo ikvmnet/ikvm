@@ -2,7 +2,7 @@
     <Import Project="$(MSBuildThisFileDirectory)..\IKVM.NET.Sdk\Sdk\Sdk.props" />
     <Import Project="$(MSBuildThisFileDirectory)..\IKVM.MSBuild\buildTransitive\netstandard2.0\IKVM.MSBuild.props" />
     <Import Project="$(MSBuildThisFileDirectory)..\..\openjdk.props" />
-    <Import Project="$(MSBuildThisFileDirectory)..\..\ikvm.deps.props" />
+    <Import Project="$(MSBuildThisFileDirectory)..\..\IKVM.deps.props" />
 
     <PropertyGroup>
         <TargetFrameworks>net461;netcoreapp3.1</TargetFrameworks>
@@ -11,13 +11,11 @@
 
     <ItemGroup>
         <InternalsVisibleTo Include="IKVM.Runtime" />
-        <InternalsVisibleTo Include="IKVM.Runtime.JNI" />
         <InternalsVisibleTo Include="IKVM.AWT.WinForms" />
     </ItemGroup>
 
     <ItemGroup>
         <ProjectReference Include="..\IKVM.Runtime-ref\IKVM.Runtime-ref.csproj" Private="False" PrivateAssets="All" />
-        <ProjectReference Include="..\IKVM.Runtime.JNI-ref\IKVM.Runtime.JNI-ref.csproj" Private="False" PrivateAssets="All" HideFromJava="true" />
         <ProjectReference Include="..\IKVM.Java-ref\IKVM.Java-ref.csproj" Private="False" PrivateAssets="All" HideFromJava="true" />
     </ItemGroup>
 

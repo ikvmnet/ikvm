@@ -40,8 +40,12 @@
     </Target>
 
     <!-- Abstract target to conduct actual assembly exports. Overridden either by Command or Task implementation. -->
-    <Target Name="_ExportReferences" DependsOnTargets="ResolveReferenceExports" Inputs="@(ReferenceExport)" Outputs="%(ReferenceExport.CachePath)">
-        <Error Text="_ExportReferences not implemented." />
+    <Target Name="_ExportReference" DependsOnTargets="ResolveReferenceExports" Inputs="@(ReferenceExport)" Outputs="%(ReferenceExport.CachePath)">
+        <Error Text="_ExportReference not implemented." />
+    </Target>
+
+    <Target Name="_ExportReferences" DependsOnTargets="ResolveReferenceExports" Inputs="@(ReferenceExport)" Outputs="@(ReferenceExport->'%(CachePath)')">
+        <CallTarget Targets="_ExportReference" />
     </Target>
 
     <PropertyGroup>
@@ -106,6 +110,10 @@ Files = files.ToArray();
             <Output TaskParameter="Files" ItemName="ClasspathFiles" />
         </ClasspathToClasspathFiles>
     </Target>
+
+    <ItemGroup>
+        <Compile Include="$(MSBuildThisFileDirectory)_.java" />
+    </ItemGroup>
 
     <!-- Abstract target to conduct actual Java compilation. Overridden either by Command or Task implementation. -->
     <Target Name="_CompileJava" DependsOnTargets="ExportReferences;_ResolveClasspathFiles" Inputs="@(Compile);@(ClasspathFiles)" Outputs="$(_CompileJavaStampFile)">

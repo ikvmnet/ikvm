@@ -1,5 +1,5 @@
 ﻿<Project Sdk="Microsoft.NET.Sdk">
-    <Import Project="$(MSBuildThisFileDirectory)..\..\ikvm.deps.props" />
+    <Import Project="$(MSBuildThisFileDirectory)..\..\IKVM.deps.props" />
 
     <PropertyGroup>
         <OutputType>Exe</OutputType>
@@ -28,6 +28,8 @@
         <ExcludeFromCompile Include="..\IKVM.Runtime\DynamicMethodUtils.cs" />
         <ExcludeFromCompile Include="..\IKVM.Runtime\ExceptionHelper.cs" />
         <ExcludeFromCompile Include="..\IKVM.Runtime\PassiveWeakDictionary.cs" />
+        <ExcludeFromCompile Include="..\IKVM.Runtime\LLIR\**\*.cs" />
+        <ExcludeFromCompile Include="..\IKVM.Runtime\JNI\**\*.cs" />
         <Compile Include="..\IKVM.Runtime\**\*.cs" LinkBase="runtime" Exclude="@(ExcludeFromCompile)" />
     </ItemGroup>
 

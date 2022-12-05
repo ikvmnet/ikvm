@@ -42,25 +42,6 @@
     </Target>
 
     <PropertyGroup>
-        <ResolveIkvmRuntimeJNIAssemblyDependsOn>
-            $(ResolveIkvmRuntimeJNIAssemblyDependsOn);
-            ResolvePackageDependenciesForBuild;
-            ResolveProjectReferences;
-        </ResolveIkvmRuntimeJNIAssemblyDependsOn>
-    </PropertyGroup>
-
-    <!-- Locates the IKVM.Runtime.JNI assembly from among the current references of the project. -->
-    <Target Name="ResolveIkvmRuntimeJNIAssembly" DependsOnTargets="$(ResolveIkvmRuntimeJNIAssemblyDependsOn)">
-        <ItemGroup>
-            <_IkvmRuntimeJNIAssembly Include="@(Reference);@(_ResolvedProjectReferencePaths)" Condition=" '%(Filename)%(Extension)' == 'IKVM.Runtime.JNI.dll' " />
-        </ItemGroup>
-        <PropertyGroup>
-            <IkvmRuntimeJNIAssembly>@(_IkvmRuntimeJNIAssembly)</IkvmRuntimeJNIAssembly>
-        </PropertyGroup>
-        <Error Text="Could not locate IKVM.Runtime.JNI.dll." Condition=" '$(IkvmRuntimeJNIAssembly)' == '' " />
-    </Target>
-
-    <PropertyGroup>
         <ResolveIkvmBaseAssemblyDependsOn>
             $(ResolveIkvmBaseAssemblyDependsOn);
             ResolvePackageDependenciesForBuild;

@@ -156,19 +156,18 @@ namespace IKVM.JTReg.TestAdapter.Core
         }
 
         /// <summary>
-        /// Attempts to rad a complete message from the buffer, searching for a NULL.
+        /// Attempts to read a complete message from the buffer, searching for a NULL.
         /// </summary>
         /// <param name="buffer"></param>
         /// <param name="message"></param>
         /// <returns></returns>
         bool TryReadMessage(ref ReadOnlySequence<byte> buffer, out ReadOnlySequence<byte> message)
         {
+            message = default;
+
             var position = buffer.PositionOf((byte)'\0');
             if (position == null)
-            {
-                message = default;
                 return false;
-            }
 
             // select the results up to the NULL and skip
             message = buffer.Slice(0, position.Value);

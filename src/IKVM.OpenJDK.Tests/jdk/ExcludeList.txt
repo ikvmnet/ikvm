@@ -181,6 +181,7 @@ com/sun/management/ThreadMXBean/ThreadAllocatedMemoryArray.java                 
 com/sun/management/ThreadMXBean/ThreadCpuTimeArray.java                                                                 generic-all
 com/sun/management/UnixOperatingSystemMXBean/GetMaxFileDescriptorCount.sh                                               generic-all
 com/sun/management/UnixOperatingSystemMXBean/GetOpenFileDescriptorCount.sh                                              generic-all
+com/sun/net/httpserver/bugs/B6886436.java                                                                               generic-all
 com/sun/net/httpserver/SelCacheTest.java                                                                                generic-all
 com/sun/net/httpserver/Test1.java                                                                                       generic-all
 com/sun/net/httpserver/Test12.java                                                                                      generic-all

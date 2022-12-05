@@ -2,6 +2,8 @@
 {
 
     using System;
+    using System.Buffers.Binary;
+    using System.Collections.Concurrent;
     using System.Collections.Generic;
     using System.IO;
     using System.Linq;
@@ -20,7 +22,9 @@
     public class IkvmReferenceExportItemPrepare : Task
     {
 
+        readonly static RandomNumberGenerator rng = RandomNumberGenerator.Create();
         readonly static MD5 md5 = MD5.Create();
+        readonly static ConcurrentDictionary<(string, DateTime), string> fileIdentityCache = new ConcurrentDictionary<(string, DateTime), string>();
 
         /// <summary>
         /// Calculates the hash of the value.
@@ -89,6 +93,7 @@
         {
             var items = IkvmReferenceExportItem.Import(Items);
             AssignBuildInfo(items);
+            Items = items.OrderBy(i => i.RandomIndex).Select(i => i.Item).ToArray(); // randomize order to allow multiple processes to interleave
             return true;
         }
 
@@ -102,12 +107,24 @@
         }
 
         /// <summary>
+        /// Generates a unique random number for this export item.
+        /// </summary>
+        /// <returns></returns>
+        int GetRandomNumber()
+        {
+            var b = new byte[4];
+            rng.GetBytes(b);
+            return BinaryPrimitives.ReadInt32LittleEndian(b);
+        }
+
+        /// <summary>
         /// Assigns build information to the item.
         /// </summary>
         /// <param name="item"></param>
         internal void AssignBuildInfo(IkvmReferenceExportItem item)
         {
             item.IkvmIdentity = CalculateIkvmIdentity(item);
+            item.RandomIndex ??= GetRandomNumber();
             item.Save();
         }
 
@@ -194,7 +211,7 @@
         /// </summary>
         /// <param name="file"></param>
         /// <returns></returns>
-        string GetIdentityForFile(string file)
+        string CreateIdentityForFile(string file)
         {
             if (string.IsNullOrWhiteSpace(file))
                 throw new ArgumentException($"'{nameof(file)}' cannot be null or whitespace.", nameof(file));
@@ -247,6 +264,21 @@
             {
                 return null;
             }
+        }
+
+        /// <summary>
+        /// Gets the hash value for the given file.
+        /// </summary>
+        /// <param name="file"></param>
+        /// <returns></returns>
+        string GetIdentityForFile(string file)
+        {
+            if (string.IsNullOrWhiteSpace(file))
+                throw new ArgumentException($"'{nameof(file)}' cannot be null or whitespace.", nameof(file));
+            if (File.Exists(file) == false)
+                throw new FileNotFoundException($"Could not find file '{file}'.");
+
+            return fileIdentityCache.GetOrAdd((file, File.GetLastWriteTimeUtc(file)), _ => CreateIdentityForFile(_.Item1));
         }
 
         /// <summary>

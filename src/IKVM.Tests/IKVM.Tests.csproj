@@ -1,12 +1,13 @@
 ﻿<Project Sdk="Microsoft.NET.Sdk">
-    <Import Project="$(MSBuildThisFileDirectory)..\..\ikvm.deps.props" />
-    <Import Project="$(MSBuildThisFileDirectory)..\..\ikvm.refs.props" />
+    <Import Project="$(MSBuildThisFileDirectory)..\..\IKVM.deps.props" />
+    <Import Project="$(MSBuildThisFileDirectory)..\..\IKVM.refs.props" />
     
     <PropertyGroup>
         <TargetFrameworks>net461;netcoreapp3.1;net6.0</TargetFrameworks>
         <AllowUnsafeBlocks>true</AllowUnsafeBlocks>
         <PreserveCompilationContext>true</PreserveCompilationContext>
         <ErrorOnDuplicatePublishOutputFiles>false</ErrorOnDuplicatePublishOutputFiles>
+        <UserSecretsId>4af78a62-ef1f-4082-9790-c9eb6c75aee6</UserSecretsId>
     </PropertyGroup>
 
     <ItemGroup>
@@ -30,6 +31,7 @@
     <ItemGroup>
         <PackageReference Include="FluentAssertions" Version="6.8.0" />
         <PackageReference Include="Microsoft.CodeCoverage" Version="17.4.0" />
+        <PackageReference Include="Microsoft.CSharp" Version="4.7.0" />
         <PackageReference Include="Microsoft.NET.Test.Sdk" Version="17.4.0" />
         <PackageReference Include="MSTest.TestAdapter" Version="2.2.10" />
         <PackageReference Include="MSTest.TestFramework" Version="2.2.10" />
@@ -64,19 +66,11 @@
             <SetTargetFramework>TargetFramework=net461</SetTargetFramework>
             <IncludeTargetPath>lib\net461\</IncludeTargetPath>
         </IncludeProjectReference>
-        <IncludeProjectReference Include="..\IKVM.Runtime.JNI\IKVM.Runtime.JNI.csproj">
-            <SetTargetFramework>TargetFramework=net461</SetTargetFramework>
-            <IncludeTargetPath>lib\net461\</IncludeTargetPath>
-        </IncludeProjectReference>
         <IncludeProjectReference Include="..\IKVM.Java\IKVM.Java.msbuildproj">
             <SetTargetFramework>TargetFramework=net461</SetTargetFramework>
             <IncludeTargetPath>lib\net461\</IncludeTargetPath>
         </IncludeProjectReference>
         <IncludeProjectReference Include="..\IKVM.Runtime\IKVM.Runtime.csproj">
-            <SetTargetFramework>TargetFramework=netcoreapp3.1</SetTargetFramework>
-            <IncludeTargetPath>lib\netcoreapp3.1\</IncludeTargetPath>
-        </IncludeProjectReference>
-        <IncludeProjectReference Include="..\IKVM.Runtime.JNI\IKVM.Runtime.JNI.csproj">
             <SetTargetFramework>TargetFramework=netcoreapp3.1</SetTargetFramework>
             <IncludeTargetPath>lib\netcoreapp3.1\</IncludeTargetPath>
         </IncludeProjectReference>
