@@ -303,12 +303,9 @@ jobs:
         sys:
         - windows
         - linux
-        - osx
         exclude:
         - tfm: net461
           sys: linux
-        - tfm: net461
-          sys: osx
         - run: IKVM.Tools.Exporter.Tests
           tfm: net6.0
         - run: ikvmc.Tests
@@ -329,22 +326,6 @@ jobs:
           tfm: net6.0
         - run: IKVM.OpenJDK.Tests?TestPartition=7
           tfm: net6.0
-        - run: IKVM.OpenJDK.Tests?TestPartition=0
-          sys: osx
-        - run: IKVM.OpenJDK.Tests?TestPartition=1
-          sys: osx
-        - run: IKVM.OpenJDK.Tests?TestPartition=2
-          sys: osx
-        - run: IKVM.OpenJDK.Tests?TestPartition=3
-          sys: osx
-        - run: IKVM.OpenJDK.Tests?TestPartition=4
-          sys: osx
-        - run: IKVM.OpenJDK.Tests?TestPartition=5
-          sys: osx
-        - run: IKVM.OpenJDK.Tests?TestPartition=6
-          sys: osx
-        - run: IKVM.OpenJDK.Tests?TestPartition=7
-          sys: osx
         include:
         - run: IKVM.MSBuild.Tasks.Tests
           tfm: net472
