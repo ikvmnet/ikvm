@@ -21,47 +21,46 @@
     <Import Sdk="Microsoft.NET.Sdk" Project="Sdk.targets" />
 
     <PropertyGroup>
-        <LLIRSourceDirectory>$(MSBuildThisFileDirectory)LLIR\</LLIRSourceDirectory>
-        <LLIRIntermediateDirectory>$(MSBuildThisFileDirectory)$(IntermediateOutputPath)LLIR\</LLIRIntermediateDirectory>
-        <JNIHeaderDirShare>$(MSBuildThisFileDirectory)..\..\openjdk\jdk\src\share\javavm\export</JNIHeaderDirShare>
-        <JNIHeaderDirWindows>$(MSBuildThisFileDirectory)..\..\openjdk\jdk\src\windows\javavm\export</JNIHeaderDirWindows>
-        <JNIHeaderDirSolaris>$(MSBuildThisFileDirectory)..\..\openjdk\jdk\src\solaris\javavm\export</JNIHeaderDirSolaris>
+        <JNITrampolineSourceDirectory>$(MSBuildThisFileDirectory)JNI\Trampolines\</JNITrampolineSourceDirectory>
+        <JNITrampolineIntermediateDirectory>$(MSBuildThisFileDirectory)$(IntermediateOutputPath)jni-trampolines\</JNITrampolineIntermediateDirectory>
+        <JNIHeaderDirShare>$(OpenJdkDir)jdk\src\share\javavm\export</JNIHeaderDirShare>
+        <JNIHeaderDirWindows>$(OpenJdkDir)jdk\src\windows\javavm\export</JNIHeaderDirWindows>
+        <JNIHeaderDirSolaris>$(OpenJdkDir)jdk\src\solaris\javavm\export</JNIHeaderDirSolaris>
         <CLangCommand>clang</CLangCommand>
         <ObjDumpCommand>llvm-objdump</ObjDumpCommand>
     </PropertyGroup>
 
     <ItemGroup>
-        <LLIRRuntimeIdentifier Include="win7-x64" TargetName="x86_64-pc-windows-msvc" Includes="$(JNIHeaderDirShare);$(JNIHeaderDirWindows);$(LLIRSourceDirectory)include" Arguments="-O3" />
-        <LLIRRuntimeIdentifier Include="win7-x86" TargetName="i686-pc-windows-msvc" Includes="$(JNIHeaderDirShare);$(JNIHeaderDirWindows);$(LLIRSourceDirectory)include" Arguments="-O3" />
-        <LLIRRuntimeIdentifier Include="win81-arm" TargetName="thumbv7-pc-windows-msvc" Includes="$(JNIHeaderDirShare);$(JNIHeaderDirWindows);$(LLIRSourceDirectory)include" Arguments="-O3" />
-        <LLIRRuntimeIdentifier Include="win10-arm64" TargetName="aarch64-pc-windows-msvc" Includes="$(JNIHeaderDirShare);$(JNIHeaderDirWindows);$(LLIRSourceDirectory)include" Arguments="-O3" />
-        <LLIRRuntimeIdentifier Include="linux-x64" TargetName="x86_64-unknown-linux-gnu" Includes="$(JNIHeaderDirShare);$(JNIHeaderDirSolaris);$(LLIRSourceDirectory)include" Arguments="-O3" />
-        <LLIRRuntimeIdentifier Include="linux-arm" TargetName="armv7-unknown-linux-gnueabihf" Includes="$(JNIHeaderDirShare);$(JNIHeaderDirSolaris);$(LLIRSourceDirectory)include" Arguments="-O3" />
-        <LLIRRuntimeIdentifier Include="linux-arm64" TargetName="aarch64-unknown-linux-gnueabihf" Includes="$(JNIHeaderDirShare);$(JNIHeaderDirSolaris);$(LLIRSourceDirectory)include" Arguments="-O3" />
+        <JNITrampolineRuntimeIdentifier Include="win7-x64" TargetName="x86_64-pc-windows-msvc" Includes="$(JNIHeaderDirShare);$(JNIHeaderDirWindows);$(JNITrampolineSourceDirectory)include" Arguments="-O3" />
+        <JNITrampolineRuntimeIdentifier Include="win7-x86" TargetName="i686-pc-windows-msvc" Includes="$(JNIHeaderDirShare);$(JNIHeaderDirWindows);$(JNITrampolineSourceDirectory)include" Arguments="-O3" />
+        <JNITrampolineRuntimeIdentifier Include="win81-arm" TargetName="thumbv7-pc-windows-msvc" Includes="$(JNIHeaderDirShare);$(JNIHeaderDirWindows);$(JNITrampolineSourceDirectory)include" Arguments="-O3" />
+        <JNITrampolineRuntimeIdentifier Include="win10-arm64" TargetName="aarch64-pc-windows-msvc" Includes="$(JNIHeaderDirShare);$(JNIHeaderDirWindows);$(JNITrampolineSourceDirectory)include" Arguments="-O3" />
+        <JNITrampolineRuntimeIdentifier Include="linux-x64" TargetName="x86_64-unknown-linux-gnu" Includes="$(JNIHeaderDirShare);$(JNIHeaderDirSolaris);$(JNITrampolineSourceDirectory)include" Arguments="-O3" />
+        <JNITrampolineRuntimeIdentifier Include="linux-arm" TargetName="armv7-unknown-linux-gnueabihf" Includes="$(JNIHeaderDirShare);$(JNIHeaderDirSolaris);$(JNITrampolineSourceDirectory)include" Arguments="-O3" />
+        <JNITrampolineRuntimeIdentifier Include="linux-arm64" TargetName="aarch64-unknown-linux-gnueabihf" Includes="$(JNIHeaderDirShare);$(JNIHeaderDirSolaris);$(JNITrampolineSourceDirectory)include" Arguments="-O3" />
     </ItemGroup>
 
-    <Target Name="CompileLLIR" Inputs="$(LLIRSourceDirectory)ikvm.c;$(LLIRSourceDirectory)ikvm.h" Outputs="$(LLIRIntermediateDirectory)%(LLIRRuntimeIdentifier.Identity).o" Condition=" '$(TargetFramework)' != '' ">
+    <Target Name="CompileJNITrampolines" Inputs="$(JNITrampolineSourceDirectory)ikvm.c;$(JNITrampolineSourceDirectory)ikvm.h" Outputs="$(JNITrampolineIntermediateDirectory)%(JNITrampolineRuntimeIdentifier.Identity).o" Condition=" '$(TargetFramework)' != '' ">
         <ItemGroup>
-            <__LLIRIncludes Include="%(LLIRRuntimeIdentifier.Includes)" />
-            <_LLIRIncludes Include="@(__LLIRIncludes->'%(FullPath)')" />
+            <_JNITrampolinesIncludes Include="%(JNITrampolineRuntimeIdentifier.Includes)" />
         </ItemGroup>
         
-        <MakeDir Directories="$(LLIRIntermediateDirectory)" />
-        <Exec WorkingDirectory="LLIR" Command="&quot;$(CLangCommand)&quot; -c &quot;ikvm.c&quot; -o &quot;$(LLIRIntermediateDirectory)%(LLIRRuntimeIdentifier.Identity).o&quot; --target=%(LLIRRuntimeIdentifier.TargetName) @(_LLIRIncludes->'-I%(Identity)', ' ') -g %(LLIRRuntimeIdentifier.Arguments)" />
+        <MakeDir Directories="$(JNITrampolineIntermediateDirectory)" />
+        <Exec WorkingDirectory="$(JNITrampolineSourceDirectory)" Command="&quot;$(CLangCommand)&quot; -c &quot;ikvm.c&quot; -o &quot;$(JNITrampolineIntermediateDirectory)%(JNITrampolineRuntimeIdentifier.Identity).o&quot; --target=%(JNITrampolineRuntimeIdentifier.TargetName) @(_JNITrampolinesIncludes->'-I%(FullPath)', ' ') -g %(JNITrampolineRuntimeIdentifier.Arguments)" />
         <ItemGroup>
-            <FileWrites Include="$(LLIRIntermediateDirectory)%(LLIRRuntimeIdentifier.Identity).o" />
+            <FileWrites Include="$(JNITrampolineIntermediateDirectory)%(JNITrampolineRuntimeIdentifier.Identity).o" />
         </ItemGroup>
     </Target>
 
-    <Target Name="DisassembleLLIR" DependsOnTargets="CompileLLIR" Inputs="$(LLIRIntermediateDirectory)%(LLIRRuntimeIdentifier.Identity).o" Outputs="$(LLIRIntermediateDirectory)%(LLIRRuntimeIdentifier.Identity).s" Condition=" '$(TargetFramework)' != '' ">
-        <MakeDir Directories="$(LLIRIntermediateDirectory)" />
-        <Exec Command="&quot;$(ObjDumpCommand)&quot; --demangle -d &quot;$(LLIRIntermediateDirectory)%(LLIRRuntimeIdentifier.Identity).o&quot; -M intel &gt; &quot;$(LLIRIntermediateDirectory)%(LLIRRuntimeIdentifier.Identity).s&quot;" />
+    <Target Name="DisassembleJNITrampolines" DependsOnTargets="CompileJNITrampolines" Inputs="$(JNITrampolineIntermediateDirectory)%(JNITrampolineRuntimeIdentifier.Identity).o" Outputs="$(JNITrampolineIntermediateDirectory)%(JNITrampolineRuntimeIdentifier.Identity).s" Condition=" '$(TargetFramework)' != '' ">
+        <MakeDir Directories="$(JNITrampolineIntermediateDirectory)" />
+        <Exec Command="&quot;$(ObjDumpCommand)&quot; --demangle -d &quot;$(JNITrampolineIntermediateDirectory)%(JNITrampolineRuntimeIdentifier.Identity).o&quot; -M intel &gt; &quot;$(JNITrampolineIntermediateDirectory)%(JNITrampolineRuntimeIdentifier.Identity).s&quot;" />
         <ItemGroup>
-            <FileWrites Include="$(LLIRIntermediateDirectory)%(LLIRRuntimeIdentifier.Identity).s" />
+            <FileWrites Include="$(JNITrampolineIntermediateDirectory)%(JNITrampolineRuntimeIdentifier.Identity).s" />
         </ItemGroup>
     </Target>
 
-    <UsingTask TaskName="BuildLLIRCodeFile" TaskFactory="RoslynCodeTaskFactory" AssemblyFile="$(MSBuildToolsPath)\Microsoft.Build.Tasks.Core.dll">
+    <UsingTask TaskName="GenerateJNITrampolinesFunctionTable" TaskFactory="RoslynCodeTaskFactory" AssemblyFile="$(MSBuildToolsPath)\Microsoft.Build.Tasks.Core.dll">
         <Task>
             <Code Type="Class" Language="CS">
                 <![CDATA[
@@ -74,7 +73,7 @@
                 using Microsoft.Build.Framework;
                 using Microsoft.Build.Utilities;
                 
-                public class BuildLLIRCodeFile : Task
+                public class GenerateJNITrampolinesFunctionTable : Task
                 {
                 
                     static readonly Regex SymbolLineRegex = new Regex(@"^([0-9a-fA-F]{8,16}).+\<(.+)\>\:\w*$", RegexOptions.IgnoreCase);
@@ -100,7 +99,7 @@
                         o.WriteLine();
                         o.Write("class ");
                         o.Write(ClassName);
-                        o.Write(" : IKVM.Runtime.LLIR.LLIRFunctionTable {");
+                        o.Write(" : IKVM.Runtime.JNI.Trampolines.FunctionTable {");
                         o.WriteLine();
 
                         var currentName = (string)null;
@@ -254,26 +253,26 @@
         </Task>
     </UsingTask>
 
-    <Target Name="GenerateLLIRCode" DependsOnTargets="DisassembleLLIR" Inputs="$(LLIRIntermediateDirectory)%(LLIRRuntimeIdentifier.Identity).s" Outputs="$(LLIRIntermediateDirectory)%(LLIRRuntimeIdentifier.Identity).cs" Condition=" '$(TargetFramework)' != '' ">
-        <Message Text="$(LLIRIntermediateDirectory)%(LLIRRuntimeIdentifier.Identity).s -&gt; $(LLIRIntermediateDirectory)%(LLIRRuntimeIdentifier.Identity).cs" />
-        <MakeDir Directories="$(LLIRIntermediateDirectory)" />
-        <BuildLLIRCodeFile Namespace="IKVM.Runtime.LLIR" ClassName="$([System.String]::Copy('LLIR_%(LLIRRuntimeIdentifier.Identity)').Replace('-', '_').Replace('.', '_'))" AssemblerFile="$(LLIRIntermediateDirectory)%(LLIRRuntimeIdentifier.Identity).s" BuildCodeFile="$(LLIRIntermediateDirectory)%(LLIRRuntimeIdentifier.Identity).cs" />
+    <Target Name="GenerateJNITrampolines" DependsOnTargets="DisassembleJNITrampolines" Inputs="$(JNITrampolineIntermediateDirectory)%(JNITrampolineRuntimeIdentifier.Identity).s" Outputs="$(JNITrampolineIntermediateDirectory)%(JNITrampolineRuntimeIdentifier.Identity).cs" Condition=" '$(TargetFramework)' != '' ">
+        <Message Text="$(JNITrampolineIntermediateDirectory)%(JNITrampolineRuntimeIdentifier.Identity).s -&gt; $(JNITrampolineIntermediateDirectory)%(JNITrampolineRuntimeIdentifier.Identity).cs" />
+        <MakeDir Directories="$(JNITrampolineIntermediateDirectory)" />
+        <GenerateJNITrampolinesFunctionTable Namespace="IKVM.Runtime.JNI.Trampolines" ClassName="$([System.String]::Copy('FunctionTable_%(JNITrampolineRuntimeIdentifier.Identity)').Replace('-', '_').Replace('.', '_'))" AssemblerFile="$(JNITrampolineIntermediateDirectory)%(JNITrampolineRuntimeIdentifier.Identity).s" BuildCodeFile="$(JNITrampolineIntermediateDirectory)%(JNITrampolineRuntimeIdentifier.Identity).g.cs" />
         <ItemGroup>
-            <FileWrites Include="$(LLIRIntermediateDirectory)%(LLIRRuntimeIdentifier.Identity).cs" />
-            <Compile Include="$(LLIRIntermediateDirectory)%(LLIRRuntimeIdentifier.Identity).cs" />
+            <FileWrites Include="$(JNITrampolineIntermediateDirectory)%(JNITrampolineRuntimeIdentifier.Identity).g.cs" />
+            <Compile Include="$(JNITrampolineIntermediateDirectory)%(JNITrampolineRuntimeIdentifier.Identity).g.cs" />
         </ItemGroup>
     </Target>
 
     <PropertyGroup>
         <CompileDependsOn>
-            GenerateLLIRCode;
+            GenerateJNITrampolines;
             $(CompileDependsOn);
         </CompileDependsOn>
     </PropertyGroup>
     
     <PropertyGroup>
         <GetCopyToOutputDirectoryItemsDependsOn>
-            GenerateLLIRCode;
+            GenerateJNITrampolines;
             $(GetCopyToOutputDirectoryItemsDependsOn);
         </GetCopyToOutputDirectoryItemsDependsOn>
     </PropertyGroup>

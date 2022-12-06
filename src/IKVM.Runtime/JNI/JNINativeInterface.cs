@@ -1,11 +1,14 @@
 ﻿using System;
 using System.Runtime.InteropServices;
 
-using IKVM.Runtime.LLIR;
+using IKVM.Runtime.JNI.Trampolines;
 
 namespace IKVM.Runtime.JNI
 {
 
+    /// <summary>
+    /// Manged implementation of the JNINativeInterface structure.
+    /// </summary>
     [StructLayout(LayoutKind.Sequential)]
     unsafe struct JNINativeInterface
     {
@@ -13,36 +16,36 @@ namespace IKVM.Runtime.JNI
         /// <summary>
         /// Maintains a <see cref="JNINativeInterface"/> structure in memory.
         /// </summary>
-        class ManagedRef
+        class JNINativeInterfaceMemory
         {
 
-            internal readonly JNINativeInterface* ptr;
+            internal readonly JNINativeInterface* handle;
 
             /// <summary>
             /// Initializes a new instance.
             /// </summary>
-            public ManagedRef()
+            public JNINativeInterfaceMemory()
             {
-                ptr = (JNINativeInterface*)Marshal.AllocHGlobal(sizeof(JNINativeInterface));
+                handle = (JNINativeInterface*)Marshal.AllocHGlobal(sizeof(JNINativeInterface));
             }
 
             /// <summary>
             /// Finalizes the instance.
             /// </summary>
-            ~ManagedRef()
+            ~JNINativeInterfaceMemory()
             {
-                Marshal.FreeHGlobal((nint)ptr);
+                Marshal.FreeHGlobal((nint)handle);
             }
 
         }
 
-        static readonly ManagedRef _ni = new();
-        static readonly JNINativeInterface* ni = _ni.ptr;
+        static readonly JNINativeInterfaceMemory memory = new();
+        static readonly JNINativeInterface* handle = memory.handle;
 
         /// <summary>
         /// Gets a pointer to the JNINativeInterface table.
         /// </summary>
-        public static JNINativeInterface* Pointer => ni;
+        public static JNINativeInterface* Handle => handle;
 
         /// <summary>
         /// Initializes the static instance.
@@ -51,612 +54,308 @@ namespace IKVM.Runtime.JNI
         {
             JNIVM.jvmCreated = true;
 
-            ni->GetMethodArgs = (void*)Marshal.GetFunctionPointerForDelegate(JNIEnv.GetMethodArgs);
-            ni->reserved1 = null;
-            ni->reserved2 = null;
+            handle->GetMethodArgs = (void*)Marshal.GetFunctionPointerForDelegate(JNIEnv.GetMethodArgs);
+            handle->reserved1 = null;
+            handle->reserved2 = null;
 
-            ni->reserved3 = null;
-            ni->GetVersion = (void*)Marshal.GetFunctionPointerForDelegate(JNIEnv.GetVersion);
+            handle->reserved3 = null;
+            handle->GetVersion = (void*)Marshal.GetFunctionPointerForDelegate(JNIEnv.GetVersion);
 
-            ni->DefineClass = (void*)Marshal.GetFunctionPointerForDelegate(JNIEnv.DefineClass);
-            ni->FindClass = (void*)Marshal.GetFunctionPointerForDelegate(JNIEnv.FindClass);
+            handle->DefineClass = (void*)Marshal.GetFunctionPointerForDelegate(JNIEnv.DefineClass);
+            handle->FindClass = (void*)Marshal.GetFunctionPointerForDelegate(JNIEnv.FindClass);
 
-            ni->FromReflectedMethod = (void*)Marshal.GetFunctionPointerForDelegate(JNIEnv.FromReflectedMethod);
-            ni->FromReflectedField = (void*)Marshal.GetFunctionPointerForDelegate(JNIEnv.FromReflectedField);
-            ni->ToReflectedMethod = (void*)Marshal.GetFunctionPointerForDelegate(JNIEnv.ToReflectedMethod);
+            handle->FromReflectedMethod = (void*)Marshal.GetFunctionPointerForDelegate(JNIEnv.FromReflectedMethod);
+            handle->FromReflectedField = (void*)Marshal.GetFunctionPointerForDelegate(JNIEnv.FromReflectedField);
+            handle->ToReflectedMethod = (void*)Marshal.GetFunctionPointerForDelegate(JNIEnv.ToReflectedMethod);
 
-            ni->GetSuperclass = (void*)Marshal.GetFunctionPointerForDelegate(JNIEnv.GetSuperclass);
-            ni->IsAssignableFrom = (void*)Marshal.GetFunctionPointerForDelegate(JNIEnv.IsAssignableFrom);
+            handle->GetSuperclass = (void*)Marshal.GetFunctionPointerForDelegate(JNIEnv.GetSuperclass);
+            handle->IsAssignableFrom = (void*)Marshal.GetFunctionPointerForDelegate(JNIEnv.IsAssignableFrom);
 
-            ni->ToReflectedField = (void*)Marshal.GetFunctionPointerForDelegate(JNIEnv.ToReflectedField);
+            handle->ToReflectedField = (void*)Marshal.GetFunctionPointerForDelegate(JNIEnv.ToReflectedField);
 
-            ni->Throw = (void*)Marshal.GetFunctionPointerForDelegate(JNIEnv.Throw);
-            ni->ThrowNew = (void*)Marshal.GetFunctionPointerForDelegate(JNIEnv.ThrowNew);
-            ni->ExceptionOccurred = (void*)Marshal.GetFunctionPointerForDelegate(JNIEnv.ExceptionOccurred);
-            ni->ExceptionDescribe = (void*)Marshal.GetFunctionPointerForDelegate(JNIEnv.ExceptionDescribe);
-            ni->ExceptionClear = (void*)Marshal.GetFunctionPointerForDelegate(JNIEnv.ExceptionClear);
-            ni->FatalError = (void*)Marshal.GetFunctionPointerForDelegate(JNIEnv.FatalError);
+            handle->Throw = (void*)Marshal.GetFunctionPointerForDelegate(JNIEnv.Throw);
+            handle->ThrowNew = (void*)Marshal.GetFunctionPointerForDelegate(JNIEnv.ThrowNew);
+            handle->ExceptionOccurred = (void*)Marshal.GetFunctionPointerForDelegate(JNIEnv.ExceptionOccurred);
+            handle->ExceptionDescribe = (void*)Marshal.GetFunctionPointerForDelegate(JNIEnv.ExceptionDescribe);
+            handle->ExceptionClear = (void*)Marshal.GetFunctionPointerForDelegate(JNIEnv.ExceptionClear);
+            handle->FatalError = (void*)Marshal.GetFunctionPointerForDelegate(JNIEnv.FatalError);
 
-            ni->PushLocalFrame = (void*)Marshal.GetFunctionPointerForDelegate(JNIEnv.PushLocalFrame);
-            ni->PopLocalFrame = (void*)Marshal.GetFunctionPointerForDelegate(JNIEnv.PopLocalFrame);
+            handle->PushLocalFrame = (void*)Marshal.GetFunctionPointerForDelegate(JNIEnv.PushLocalFrame);
+            handle->PopLocalFrame = (void*)Marshal.GetFunctionPointerForDelegate(JNIEnv.PopLocalFrame);
 
-            ni->NewGlobalRef = (void*)Marshal.GetFunctionPointerForDelegate(JNIEnv.NewGlobalRef);
-            ni->DeleteGlobalRef = (void*)Marshal.GetFunctionPointerForDelegate(JNIEnv.DeleteGlobalRef);
-            ni->DeleteLocalRef = (void*)Marshal.GetFunctionPointerForDelegate(JNIEnv.DeleteLocalRef);
-            ni->IsSameObject = (void*)Marshal.GetFunctionPointerForDelegate(JNIEnv.IsSameObject);
+            handle->NewGlobalRef = (void*)Marshal.GetFunctionPointerForDelegate(JNIEnv.NewGlobalRef);
+            handle->DeleteGlobalRef = (void*)Marshal.GetFunctionPointerForDelegate(JNIEnv.DeleteGlobalRef);
+            handle->DeleteLocalRef = (void*)Marshal.GetFunctionPointerForDelegate(JNIEnv.DeleteLocalRef);
+            handle->IsSameObject = (void*)Marshal.GetFunctionPointerForDelegate(JNIEnv.IsSameObject);
 
-            ni->NewLocalRef = (void*)Marshal.GetFunctionPointerForDelegate(JNIEnv.NewLocalRef);
-            ni->EnsureLocalCapacity = (void*)Marshal.GetFunctionPointerForDelegate(JNIEnv.EnsureLocalCapacity);
+            handle->NewLocalRef = (void*)Marshal.GetFunctionPointerForDelegate(JNIEnv.NewLocalRef);
+            handle->EnsureLocalCapacity = (void*)Marshal.GetFunctionPointerForDelegate(JNIEnv.EnsureLocalCapacity);
 
-            ni->AllocObject = (void*)Marshal.GetFunctionPointerForDelegate(JNIEnv.AllocObject);
-            ni->NewObject = (void*)LLIRFunctionTable.Instance.JNI_NewObject;
-            ni->NewObjectV = (void*)LLIRFunctionTable.Instance.JNI_NewObjectV;
-            ni->NewObjectA = (void*)Marshal.GetFunctionPointerForDelegate(JNIEnv.NewObjectA);
-
-            ni->GetObjectClass = (void*)Marshal.GetFunctionPointerForDelegate(JNIEnv.GetObjectClass);
-            ni->IsInstanceOf = (void*)Marshal.GetFunctionPointerForDelegate(JNIEnv.IsInstanceOf);
-
-            ni->GetMethodID = (void*)Marshal.GetFunctionPointerForDelegate(JNIEnv.GetMethodID);
-
-            ni->CallObjectMethod = (void*)LLIRFunctionTable.Instance.JNI_CallObjectMethod;
-            ni->CallObjectMethodV = (void*)LLIRFunctionTable.Instance.JNI_CallObjectMethodV;
-            ni->CallObjectMethodA = (void*)Marshal.GetFunctionPointerForDelegate(JNIEnv.CallObjectMethodA);
-
-            ni->CallBooleanMethod = (void*)LLIRFunctionTable.Instance.JNI_CallBooleanMethod;
-            ni->CallBooleanMethodV = (void*)LLIRFunctionTable.Instance.JNI_CallBooleanMethodV;
-            ni->CallBooleanMethodA = (void*)Marshal.GetFunctionPointerForDelegate(JNIEnv.CallBooleanMethodA);
-
-            ni->CallByteMethod = (void*)LLIRFunctionTable.Instance.JNI_CallByteMethod;
-            ni->CallByteMethodV = (void*)LLIRFunctionTable.Instance.JNI_CallByteMethodV;
-            ni->CallByteMethodA = (void*)Marshal.GetFunctionPointerForDelegate(JNIEnv.CallByteMethodA);
-
-            ni->CallCharMethod = (void*)LLIRFunctionTable.Instance.JNI_CallCharMethod;
-            ni->CallCharMethodV = (void*)LLIRFunctionTable.Instance.JNI_CallCharMethodV;
-            ni->CallCharMethodA = (void*)Marshal.GetFunctionPointerForDelegate(JNIEnv.CallCharMethodA);
-
-            ni->CallShortMethod = (void*)LLIRFunctionTable.Instance.JNI_CallShortMethod;
-            ni->CallShortMethodV = (void*)LLIRFunctionTable.Instance.JNI_CallShortMethodV;
-            ni->CallShortMethodA = (void*)Marshal.GetFunctionPointerForDelegate(JNIEnv.CallShortMethodA);
-
-            ni->CallIntMethod = (void*)LLIRFunctionTable.Instance.JNI_CallIntMethod;
-            ni->CallIntMethodV = (void*)LLIRFunctionTable.Instance.JNI_CallIntMethodV;
-            ni->CallIntMethodA = (void*)Marshal.GetFunctionPointerForDelegate(JNIEnv.CallIntMethodA);
-
-            ni->CallLongMethod = (void*)LLIRFunctionTable.Instance.JNI_CallLongMethod;
-            ni->CallLongMethodV = (void*)LLIRFunctionTable.Instance.JNI_CallLongMethodV;
-            ni->CallLongMethodA = (void*)Marshal.GetFunctionPointerForDelegate(JNIEnv.CallLongMethodA);
-
-            ni->CallFloatMethod = (void*)LLIRFunctionTable.Instance.JNI_CallFloatMethod;
-            ni->CallFloatMethodV = (void*)LLIRFunctionTable.Instance.JNI_CallFloatMethodV;
-            ni->CallFloatMethodA = (void*)Marshal.GetFunctionPointerForDelegate(JNIEnv.CallFloatMethodA);
-
-            ni->CallDoubleMethod = (void*)LLIRFunctionTable.Instance.JNI_CallDoubleMethod;
-            ni->CallDoubleMethodV = (void*)LLIRFunctionTable.Instance.JNI_CallDoubleMethodV;
-            ni->CallDoubleMethodA = (void*)Marshal.GetFunctionPointerForDelegate(JNIEnv.CallDoubleMethodA);
-
-            ni->CallVoidMethod = (void*)LLIRFunctionTable.Instance.JNI_CallVoidMethod;
-            ni->CallVoidMethodV = (void*)LLIRFunctionTable.Instance.JNI_CallVoidMethodV;
-            ni->CallVoidMethodA = (void*)Marshal.GetFunctionPointerForDelegate(JNIEnv.CallVoidMethodA);
-
-            ni->CallNonvirtualObjectMethod = (void*)LLIRFunctionTable.Instance.JNI_CallNonvirtualObjectMethod;
-            ni->CallNonvirtualObjectMethodV = (void*)LLIRFunctionTable.Instance.JNI_CallNonvirtualObjectMethodV;
-            ni->CallNonvirtualObjectMethodA = (void*)Marshal.GetFunctionPointerForDelegate(JNIEnv.CallNonvirtualObjectMethodA);
-
-            ni->CallNonvirtualBooleanMethod = (void*)LLIRFunctionTable.Instance.JNI_CallNonvirtualBooleanMethod;
-            ni->CallNonvirtualBooleanMethodV = (void*)LLIRFunctionTable.Instance.JNI_CallNonvirtualBooleanMethodV;
-            ni->CallNonvirtualBooleanMethodA = (void*)Marshal.GetFunctionPointerForDelegate(JNIEnv.CallNonvirtualBooleanMethodA);
-
-            ni->CallNonvirtualByteMethod = (void*)LLIRFunctionTable.Instance.JNI_CallNonvirtualByteMethod;
-            ni->CallNonvirtualByteMethodV = (void*)LLIRFunctionTable.Instance.JNI_CallNonvirtualByteMethodV;
-            ni->CallNonvirtualByteMethodA = (void*)Marshal.GetFunctionPointerForDelegate(JNIEnv.CallNonvirtualByteMethodA);
-
-            ni->CallNonvirtualCharMethod = (void*)LLIRFunctionTable.Instance.JNI_CallNonvirtualCharMethod;
-            ni->CallNonvirtualCharMethodV = (void*)LLIRFunctionTable.Instance.JNI_CallNonvirtualCharMethodV;
-            ni->CallNonvirtualCharMethodA = (void*)Marshal.GetFunctionPointerForDelegate(JNIEnv.CallNonvirtualCharMethodA);
-
-            ni->CallNonvirtualShortMethod = (void*)LLIRFunctionTable.Instance.JNI_CallNonvirtualShortMethod;
-            ni->CallNonvirtualShortMethodV = (void*)LLIRFunctionTable.Instance.JNI_CallNonvirtualShortMethodV;
-            ni->CallNonvirtualShortMethodA = (void*)Marshal.GetFunctionPointerForDelegate(JNIEnv.CallNonvirtualShortMethodA);
-
-            ni->CallNonvirtualIntMethod = (void*)LLIRFunctionTable.Instance.JNI_CallNonvirtualIntMethod;
-            ni->CallNonvirtualIntMethodV = (void*)LLIRFunctionTable.Instance.JNI_CallNonvirtualIntMethodV;
-            ni->CallNonvirtualIntMethodA = (void*)Marshal.GetFunctionPointerForDelegate(JNIEnv.CallNonvirtualIntMethodA);
-
-            ni->CallNonvirtualLongMethod = (void*)LLIRFunctionTable.Instance.JNI_CallNonvirtualLongMethod;
-            ni->CallNonvirtualLongMethodV = (void*)LLIRFunctionTable.Instance.JNI_CallNonvirtualLongMethodV;
-            ni->CallNonvirtualLongMethodA = (void*)Marshal.GetFunctionPointerForDelegate(JNIEnv.CallNonvirtualLongMethodA);
-
-            ni->CallNonvirtualFloatMethod = (void*)LLIRFunctionTable.Instance.JNI_CallNonvirtualFloatMethod;
-            ni->CallNonvirtualFloatMethodV = (void*)LLIRFunctionTable.Instance.JNI_CallNonvirtualFloatMethodV;
-            ni->CallNonvirtualFloatMethodA = (void*)Marshal.GetFunctionPointerForDelegate(JNIEnv.CallNonvirtualFloatMethodA);
-
-            ni->CallNonvirtualDoubleMethod = (void*)LLIRFunctionTable.Instance.JNI_CallNonvirtualDoubleMethod;
-            ni->CallNonvirtualDoubleMethodV = (void*)LLIRFunctionTable.Instance.JNI_CallNonvirtualDoubleMethodV;
-            ni->CallNonvirtualDoubleMethodA = (void*)Marshal.GetFunctionPointerForDelegate(JNIEnv.CallNonvirtualDoubleMethodA);
-
-            ni->CallNonvirtualVoidMethod = (void*)LLIRFunctionTable.Instance.JNI_CallNonvirtualVoidMethod;
-            ni->CallNonvirtualVoidMethodV = (void*)LLIRFunctionTable.Instance.JNI_CallNonvirtualVoidMethodV;
-            ni->CallNonvirtualVoidMethodA = (void*)Marshal.GetFunctionPointerForDelegate(JNIEnv.CallNonvirtualVoidMethodA);
-
-            ni->GetFieldID = (void*)Marshal.GetFunctionPointerForDelegate(JNIEnv.GetFieldID);
-
-            ni->GetObjectField = (void*)Marshal.GetFunctionPointerForDelegate(JNIEnv.GetObjectField);
-            ni->GetBooleanField = (void*)Marshal.GetFunctionPointerForDelegate(JNIEnv.GetBooleanField);
-            ni->GetByteField = (void*)Marshal.GetFunctionPointerForDelegate(JNIEnv.GetByteField);
-            ni->GetCharField = (void*)Marshal.GetFunctionPointerForDelegate(JNIEnv.GetCharField);
-            ni->GetShortField = (void*)Marshal.GetFunctionPointerForDelegate(JNIEnv.GetShortField);
-            ni->GetIntField = (void*)Marshal.GetFunctionPointerForDelegate(JNIEnv.GetIntField);
-            ni->GetLongField = (void*)Marshal.GetFunctionPointerForDelegate(JNIEnv.GetLongField);
-            ni->GetFloatField = (void*)Marshal.GetFunctionPointerForDelegate(JNIEnv.GetFloatField);
-            ni->GetDoubleField = (void*)Marshal.GetFunctionPointerForDelegate(JNIEnv.GetDoubleField);
-
-            ni->SetObjectField = (void*)Marshal.GetFunctionPointerForDelegate(JNIEnv.SetObjectField);
-            ni->SetBooleanField = (void*)Marshal.GetFunctionPointerForDelegate(JNIEnv.SetBooleanField);
-            ni->SetByteField = (void*)Marshal.GetFunctionPointerForDelegate(JNIEnv.SetByteField);
-            ni->SetCharField = (void*)Marshal.GetFunctionPointerForDelegate(JNIEnv.SetCharField);
-            ni->SetShortField = (void*)Marshal.GetFunctionPointerForDelegate(JNIEnv.SetShortField);
-            ni->SetIntField = (void*)Marshal.GetFunctionPointerForDelegate(JNIEnv.SetIntField);
-            ni->SetLongField = (void*)Marshal.GetFunctionPointerForDelegate(JNIEnv.SetLongField);
-            ni->SetFloatField = (void*)Marshal.GetFunctionPointerForDelegate(JNIEnv.SetFloatField);
-            ni->SetDoubleField = (void*)Marshal.GetFunctionPointerForDelegate(JNIEnv.SetDoubleField);
-
-            ni->GetStaticMethodID = (void*)Marshal.GetFunctionPointerForDelegate(JNIEnv.GetStaticMethodID);
-
-            ni->CallStaticObjectMethod = (void*)LLIRFunctionTable.Instance.JNI_CallStaticObjectMethod;
-            ni->CallStaticObjectMethodV = (void*)LLIRFunctionTable.Instance.JNI_CallStaticObjectMethodV;
-            ni->CallStaticObjectMethodA = (void*)Marshal.GetFunctionPointerForDelegate(JNIEnv.CallStaticObjectMethodA);
-
-            ni->CallStaticBooleanMethod = (void*)LLIRFunctionTable.Instance.JNI_CallStaticBooleanMethod;
-            ni->CallStaticBooleanMethodV = (void*)LLIRFunctionTable.Instance.JNI_CallStaticBooleanMethodV;
-            ni->CallStaticBooleanMethodA = (void*)Marshal.GetFunctionPointerForDelegate(JNIEnv.CallStaticBooleanMethodA);
-
-            ni->CallStaticByteMethod = (void*)LLIRFunctionTable.Instance.JNI_CallStaticByteMethod;
-            ni->CallStaticByteMethodV = (void*)LLIRFunctionTable.Instance.JNI_CallStaticByteMethodV;
-            ni->CallStaticByteMethodA = (void*)Marshal.GetFunctionPointerForDelegate(JNIEnv.CallStaticByteMethodA);
-
-            ni->CallStaticCharMethod = (void*)LLIRFunctionTable.Instance.JNI_CallStaticCharMethod;
-            ni->CallStaticCharMethodV = (void*)LLIRFunctionTable.Instance.JNI_CallStaticCharMethodV;
-            ni->CallStaticCharMethodA = (void*)Marshal.GetFunctionPointerForDelegate(JNIEnv.CallStaticCharMethodA);
-
-            ni->CallStaticShortMethod = (void*)LLIRFunctionTable.Instance.JNI_CallStaticShortMethod;
-            ni->CallStaticShortMethodV = (void*)LLIRFunctionTable.Instance.JNI_CallStaticShortMethodV;
-            ni->CallStaticShortMethodA = (void*)Marshal.GetFunctionPointerForDelegate(JNIEnv.CallStaticShortMethodA);
-
-            ni->CallStaticIntMethod = (void*)LLIRFunctionTable.Instance.JNI_CallStaticIntMethod;
-            ni->CallStaticIntMethodV = (void*)LLIRFunctionTable.Instance.JNI_CallStaticIntMethodV;
-            ni->CallStaticIntMethodA = (void*)Marshal.GetFunctionPointerForDelegate(JNIEnv.CallStaticIntMethodA);
-
-            ni->CallStaticLongMethod = (void*)LLIRFunctionTable.Instance.JNI_CallStaticLongMethod;
-            ni->CallStaticLongMethodV = (void*)LLIRFunctionTable.Instance.JNI_CallStaticLongMethodV;
-            ni->CallStaticLongMethodA = (void*)Marshal.GetFunctionPointerForDelegate(JNIEnv.CallStaticLongMethodA);
-
-            ni->CallStaticFloatMethod = (void*)LLIRFunctionTable.Instance.JNI_CallStaticFloatMethod;
-            ni->CallStaticFloatMethodV = (void*)LLIRFunctionTable.Instance.JNI_CallStaticFloatMethodV;
-            ni->CallStaticFloatMethodA = (void*)Marshal.GetFunctionPointerForDelegate(JNIEnv.CallStaticFloatMethodA);
-
-            ni->CallStaticDoubleMethod = (void*)LLIRFunctionTable.Instance.JNI_CallStaticDoubleMethod;
-            ni->CallStaticDoubleMethodV = (void*)LLIRFunctionTable.Instance.JNI_CallStaticDoubleMethodV;
-            ni->CallStaticDoubleMethodA = (void*)Marshal.GetFunctionPointerForDelegate(JNIEnv.CallStaticDoubleMethodA);
-
-            ni->CallStaticVoidMethod = (void*)LLIRFunctionTable.Instance.JNI_CallStaticVoidMethod;
-            ni->CallStaticVoidMethodV = (void*)LLIRFunctionTable.Instance.JNI_CallStaticVoidMethodV;
-            ni->CallStaticVoidMethodA = (void*)Marshal.GetFunctionPointerForDelegate(JNIEnv.CallStaticVoidMethodA);
-
-            ni->GetStaticFieldID = (void*)Marshal.GetFunctionPointerForDelegate(JNIEnv.GetStaticFieldID);
-
-            ni->GetStaticObjectField = (void*)Marshal.GetFunctionPointerForDelegate(JNIEnv.GetStaticObjectField);
-            ni->GetStaticBooleanField = (void*)Marshal.GetFunctionPointerForDelegate(JNIEnv.GetStaticBooleanField);
-            ni->GetStaticByteField = (void*)Marshal.GetFunctionPointerForDelegate(JNIEnv.GetStaticByteField);
-            ni->GetStaticCharField = (void*)Marshal.GetFunctionPointerForDelegate(JNIEnv.GetStaticCharField);
-            ni->GetStaticShortField = (void*)Marshal.GetFunctionPointerForDelegate(JNIEnv.GetStaticShortField);
-            ni->GetStaticIntField = (void*)Marshal.GetFunctionPointerForDelegate(JNIEnv.GetStaticIntField);
-            ni->GetStaticLongField = (void*)Marshal.GetFunctionPointerForDelegate(JNIEnv.GetStaticLongField);
-            ni->GetStaticFloatField = (void*)Marshal.GetFunctionPointerForDelegate(JNIEnv.GetStaticFloatField);
-            ni->GetStaticDoubleField = (void*)Marshal.GetFunctionPointerForDelegate(JNIEnv.GetStaticDoubleField);
-
-            ni->SetStaticObjectField = (void*)Marshal.GetFunctionPointerForDelegate(JNIEnv.SetStaticObjectField);
-            ni->SetStaticBooleanField = (void*)Marshal.GetFunctionPointerForDelegate(JNIEnv.SetStaticBooleanField);
-            ni->SetStaticByteField = (void*)Marshal.GetFunctionPointerForDelegate(JNIEnv.SetStaticByteField);
-            ni->SetStaticCharField = (void*)Marshal.GetFunctionPointerForDelegate(JNIEnv.SetStaticCharField);
-            ni->SetStaticShortField = (void*)Marshal.GetFunctionPointerForDelegate(JNIEnv.SetStaticShortField);
-            ni->SetStaticIntField = (void*)Marshal.GetFunctionPointerForDelegate(JNIEnv.SetStaticIntField);
-            ni->SetStaticLongField = (void*)Marshal.GetFunctionPointerForDelegate(JNIEnv.SetStaticLongField);
-            ni->SetStaticFloatField = (void*)Marshal.GetFunctionPointerForDelegate(JNIEnv.SetStaticFloatField);
-            ni->SetStaticDoubleField = (void*)Marshal.GetFunctionPointerForDelegate(JNIEnv.SetStaticDoubleField);
-
-            ni->NewString = (void*)Marshal.GetFunctionPointerForDelegate(JNIEnv.NewString);
-            ni->GetStringLength = (void*)Marshal.GetFunctionPointerForDelegate(JNIEnv.GetStringLength);
-            ni->GetStringChars = (void*)Marshal.GetFunctionPointerForDelegate(JNIEnv.GetStringChars);
-            ni->ReleaseStringChars = (void*)Marshal.GetFunctionPointerForDelegate(JNIEnv.ReleaseStringChars);
-
-            ni->NewStringUTF = (void*)Marshal.GetFunctionPointerForDelegate(JNIEnv.NewStringUTF);
-            ni->GetStringUTFLength = (void*)Marshal.GetFunctionPointerForDelegate(JNIEnv.GetStringUTFLength);
-            ni->GetStringUTFChars = (void*)Marshal.GetFunctionPointerForDelegate(JNIEnv.GetStringUTFChars);
-            ni->ReleaseStringUTFChars = (void*)Marshal.GetFunctionPointerForDelegate(JNIEnv.ReleaseStringUTFChars);
-
-            ni->GetArrayLength = (void*)Marshal.GetFunctionPointerForDelegate(JNIEnv.GetArrayLength);
-
-            ni->NewObjectArray = (void*)Marshal.GetFunctionPointerForDelegate(JNIEnv.NewObjectArray);
-            ni->GetObjectArrayElement = (void*)Marshal.GetFunctionPointerForDelegate(JNIEnv.GetObjectArrayElement);
-            ni->SetObjectArrayElement = (void*)Marshal.GetFunctionPointerForDelegate(JNIEnv.SetObjectArrayElement);
-
-            ni->NewBooleanArray = (void*)Marshal.GetFunctionPointerForDelegate(JNIEnv.NewBooleanArray);
-            ni->NewByteArray = (void*)Marshal.GetFunctionPointerForDelegate(JNIEnv.NewByteArray);
-            ni->NewCharArray = (void*)Marshal.GetFunctionPointerForDelegate(JNIEnv.NewCharArray);
-            ni->NewShortArray = (void*)Marshal.GetFunctionPointerForDelegate(JNIEnv.NewShortArray);
-            ni->NewIntArray = (void*)Marshal.GetFunctionPointerForDelegate(JNIEnv.NewIntArray);
-            ni->NewLongArray = (void*)Marshal.GetFunctionPointerForDelegate(JNIEnv.NewLongArray);
-            ni->NewFloatArray = (void*)Marshal.GetFunctionPointerForDelegate(JNIEnv.NewFloatArray);
-            ni->NewDoubleArray = (void*)Marshal.GetFunctionPointerForDelegate(JNIEnv.NewDoubleArray);
-
-            ni->GetBooleanArrayElements = (void*)Marshal.GetFunctionPointerForDelegate(JNIEnv.GetBooleanArrayElements);
-            ni->GetByteArrayElements = (void*)Marshal.GetFunctionPointerForDelegate(JNIEnv.GetByteArrayElements);
-            ni->GetCharArrayElements = (void*)Marshal.GetFunctionPointerForDelegate(JNIEnv.GetCharArrayElements);
-            ni->GetShortArrayElements = (void*)Marshal.GetFunctionPointerForDelegate(JNIEnv.GetShortArrayElements);
-            ni->GetIntArrayElements = (void*)Marshal.GetFunctionPointerForDelegate(JNIEnv.GetIntArrayElements);
-            ni->GetLongArrayElements = (void*)Marshal.GetFunctionPointerForDelegate(JNIEnv.GetLongArrayElements);
-            ni->GetFloatArrayElements = (void*)Marshal.GetFunctionPointerForDelegate(JNIEnv.GetFloatArrayElements);
-            ni->GetDoubleArrayElements = (void*)Marshal.GetFunctionPointerForDelegate(JNIEnv.GetDoubleArrayElements);
-
-            ni->ReleaseBooleanArrayElements = (void*)Marshal.GetFunctionPointerForDelegate(JNIEnv.ReleaseBooleanArrayElements);
-            ni->ReleaseByteArrayElements = (void*)Marshal.GetFunctionPointerForDelegate(JNIEnv.ReleaseByteArrayElements);
-            ni->ReleaseCharArrayElements = (void*)Marshal.GetFunctionPointerForDelegate(JNIEnv.ReleaseCharArrayElements);
-            ni->ReleaseShortArrayElements = (void*)Marshal.GetFunctionPointerForDelegate(JNIEnv.ReleaseShortArrayElements);
-            ni->ReleaseIntArrayElements = (void*)Marshal.GetFunctionPointerForDelegate(JNIEnv.ReleaseIntArrayElements);
-            ni->ReleaseLongArrayElements = (void*)Marshal.GetFunctionPointerForDelegate(JNIEnv.ReleaseLongArrayElements);
-            ni->ReleaseFloatArrayElements = (void*)Marshal.GetFunctionPointerForDelegate(JNIEnv.ReleaseFloatArrayElements);
-            ni->ReleaseDoubleArrayElements = (void*)Marshal.GetFunctionPointerForDelegate(JNIEnv.ReleaseDoubleArrayElements);
-
-            ni->GetBooleanArrayRegion = (void*)Marshal.GetFunctionPointerForDelegate(JNIEnv.GetBooleanArrayRegion);
-            ni->GetByteArrayRegion = (void*)Marshal.GetFunctionPointerForDelegate(JNIEnv.GetByteArrayRegion);
-            ni->GetCharArrayRegion = (void*)Marshal.GetFunctionPointerForDelegate(JNIEnv.GetCharArrayRegion);
-            ni->GetShortArrayRegion = (void*)Marshal.GetFunctionPointerForDelegate(JNIEnv.GetShortArrayRegion);
-            ni->GetIntArrayRegion = (void*)Marshal.GetFunctionPointerForDelegate(JNIEnv.GetIntArrayRegion);
-            ni->GetLongArrayRegion = (void*)Marshal.GetFunctionPointerForDelegate(JNIEnv.GetLongArrayRegion);
-            ni->GetFloatArrayRegion = (void*)Marshal.GetFunctionPointerForDelegate(JNIEnv.GetFloatArrayRegion);
-            ni->GetDoubleArrayRegion = (void*)Marshal.GetFunctionPointerForDelegate(JNIEnv.GetDoubleArrayRegion);
-
-            ni->SetBooleanArrayRegion = (void*)Marshal.GetFunctionPointerForDelegate(JNIEnv.SetBooleanArrayRegion);
-            ni->SetByteArrayRegion = (void*)Marshal.GetFunctionPointerForDelegate(JNIEnv.SetByteArrayRegion);
-            ni->SetCharArrayRegion = (void*)Marshal.GetFunctionPointerForDelegate(JNIEnv.SetCharArrayRegion);
-            ni->SetShortArrayRegion = (void*)Marshal.GetFunctionPointerForDelegate(JNIEnv.SetShortArrayRegion);
-            ni->SetIntArrayRegion = (void*)Marshal.GetFunctionPointerForDelegate(JNIEnv.SetIntArrayRegion);
-            ni->SetLongArrayRegion = (void*)Marshal.GetFunctionPointerForDelegate(JNIEnv.SetLongArrayRegion);
-            ni->SetFloatArrayRegion = (void*)Marshal.GetFunctionPointerForDelegate(JNIEnv.SetFloatArrayRegion);
-            ni->SetDoubleArrayRegion = (void*)Marshal.GetFunctionPointerForDelegate(JNIEnv.SetDoubleArrayRegion);
-
-            ni->RegisterNatives = (void*)Marshal.GetFunctionPointerForDelegate(JNIEnv.RegisterNatives);
-            ni->UnregisterNatives = (void*)Marshal.GetFunctionPointerForDelegate(JNIEnv.UnregisterNatives);
-
-            ni->MonitorEnter = (void*)Marshal.GetFunctionPointerForDelegate(JNIEnv.MonitorEnter);
-            ni->MonitorExit = (void*)Marshal.GetFunctionPointerForDelegate(JNIEnv.MonitorExit);
-
-            ni->GetJavaVM = (void*)Marshal.GetFunctionPointerForDelegate(JNIEnv.GetJavaVM);
-
-            ni->GetStringRegion = (void*)Marshal.GetFunctionPointerForDelegate(JNIEnv.GetStringRegion);
-            ni->GetStringUTFRegion = (void*)Marshal.GetFunctionPointerForDelegate(JNIEnv.GetStringUTFRegion);
-
-            ni->GetPrimitiveArrayCritical = (void*)Marshal.GetFunctionPointerForDelegate(JNIEnv.GetPrimitiveArrayCritical);
-            ni->ReleasePrimitiveArrayCritical = (void*)Marshal.GetFunctionPointerForDelegate(JNIEnv.ReleasePrimitiveArrayCritical);
-
-            ni->GetStringCritical = (void*)Marshal.GetFunctionPointerForDelegate(JNIEnv.GetStringCritical);
-            ni->ReleaseStringCritical = (void*)Marshal.GetFunctionPointerForDelegate(JNIEnv.ReleaseStringCritical);
-
-            ni->NewWeakGlobalRef = (void*)Marshal.GetFunctionPointerForDelegate(JNIEnv.NewWeakGlobalRef);
-            ni->DeleteWeakGlobalRef = (void*)Marshal.GetFunctionPointerForDelegate(JNIEnv.DeleteWeakGlobalRef);
-
-            ni->ExceptionCheck = (void*)Marshal.GetFunctionPointerForDelegate(JNIEnv.ExceptionCheck);
-
-            ni->NewDirectByteBuffer = (void*)Marshal.GetFunctionPointerForDelegate(JNIEnv.NewDirectByteBuffer);
-            ni->GetDirectBufferAddress = (void*)Marshal.GetFunctionPointerForDelegate(JNIEnv.GetDirectBufferAddress);
-            ni->GetDirectBufferCapacity = (void*)Marshal.GetFunctionPointerForDelegate(JNIEnv.GetDirectBufferCapacity);
-
-            ni->GetObjectRefType = (void*)Marshal.GetFunctionPointerForDelegate(JNIEnv.GetObjectRefType);
+            handle->AllocObject = (void*)Marshal.GetFunctionPointerForDelegate(JNIEnv.AllocObject);
+            handle->NewObject = (void*)FunctionTable.Instance.JNI_NewObject;
+            handle->NewObjectV = (void*)FunctionTable.Instance.JNI_NewObjectV;
+            handle->NewObjectA = (void*)Marshal.GetFunctionPointerForDelegate(JNIEnv.NewObjectA);
+
+            handle->GetObjectClass = (void*)Marshal.GetFunctionPointerForDelegate(JNIEnv.GetObjectClass);
+            handle->IsInstanceOf = (void*)Marshal.GetFunctionPointerForDelegate(JNIEnv.IsInstanceOf);
+
+            handle->GetMethodID = (void*)Marshal.GetFunctionPointerForDelegate(JNIEnv.GetMethodID);
+
+            handle->CallObjectMethod = (void*)FunctionTable.Instance.JNI_CallObjectMethod;
+            handle->CallObjectMethodV = (void*)FunctionTable.Instance.JNI_CallObjectMethodV;
+            handle->CallObjectMethodA = (void*)Marshal.GetFunctionPointerForDelegate(JNIEnv.CallObjectMethodA);
+
+            handle->CallBooleanMethod = (void*)FunctionTable.Instance.JNI_CallBooleanMethod;
+            handle->CallBooleanMethodV = (void*)FunctionTable.Instance.JNI_CallBooleanMethodV;
+            handle->CallBooleanMethodA = (void*)Marshal.GetFunctionPointerForDelegate(JNIEnv.CallBooleanMethodA);
+
+            handle->CallByteMethod = (void*)FunctionTable.Instance.JNI_CallByteMethod;
+            handle->CallByteMethodV = (void*)FunctionTable.Instance.JNI_CallByteMethodV;
+            handle->CallByteMethodA = (void*)Marshal.GetFunctionPointerForDelegate(JNIEnv.CallByteMethodA);
+
+            handle->CallCharMethod = (void*)FunctionTable.Instance.JNI_CallCharMethod;
+            handle->CallCharMethodV = (void*)FunctionTable.Instance.JNI_CallCharMethodV;
+            handle->CallCharMethodA = (void*)Marshal.GetFunctionPointerForDelegate(JNIEnv.CallCharMethodA);
+
+            handle->CallShortMethod = (void*)FunctionTable.Instance.JNI_CallShortMethod;
+            handle->CallShortMethodV = (void*)FunctionTable.Instance.JNI_CallShortMethodV;
+            handle->CallShortMethodA = (void*)Marshal.GetFunctionPointerForDelegate(JNIEnv.CallShortMethodA);
+
+            handle->CallIntMethod = (void*)FunctionTable.Instance.JNI_CallIntMethod;
+            handle->CallIntMethodV = (void*)FunctionTable.Instance.JNI_CallIntMethodV;
+            handle->CallIntMethodA = (void*)Marshal.GetFunctionPointerForDelegate(JNIEnv.CallIntMethodA);
+
+            handle->CallLongMethod = (void*)FunctionTable.Instance.JNI_CallLongMethod;
+            handle->CallLongMethodV = (void*)FunctionTable.Instance.JNI_CallLongMethodV;
+            handle->CallLongMethodA = (void*)Marshal.GetFunctionPointerForDelegate(JNIEnv.CallLongMethodA);
+
+            handle->CallFloatMethod = (void*)FunctionTable.Instance.JNI_CallFloatMethod;
+            handle->CallFloatMethodV = (void*)FunctionTable.Instance.JNI_CallFloatMethodV;
+            handle->CallFloatMethodA = (void*)Marshal.GetFunctionPointerForDelegate(JNIEnv.CallFloatMethodA);
+
+            handle->CallDoubleMethod = (void*)FunctionTable.Instance.JNI_CallDoubleMethod;
+            handle->CallDoubleMethodV = (void*)FunctionTable.Instance.JNI_CallDoubleMethodV;
+            handle->CallDoubleMethodA = (void*)Marshal.GetFunctionPointerForDelegate(JNIEnv.CallDoubleMethodA);
+
+            handle->CallVoidMethod = (void*)FunctionTable.Instance.JNI_CallVoidMethod;
+            handle->CallVoidMethodV = (void*)FunctionTable.Instance.JNI_CallVoidMethodV;
+            handle->CallVoidMethodA = (void*)Marshal.GetFunctionPointerForDelegate(JNIEnv.CallVoidMethodA);
+
+            handle->CallNonvirtualObjectMethod = (void*)FunctionTable.Instance.JNI_CallNonvirtualObjectMethod;
+            handle->CallNonvirtualObjectMethodV = (void*)FunctionTable.Instance.JNI_CallNonvirtualObjectMethodV;
+            handle->CallNonvirtualObjectMethodA = (void*)Marshal.GetFunctionPointerForDelegate(JNIEnv.CallNonvirtualObjectMethodA);
+
+            handle->CallNonvirtualBooleanMethod = (void*)FunctionTable.Instance.JNI_CallNonvirtualBooleanMethod;
+            handle->CallNonvirtualBooleanMethodV = (void*)FunctionTable.Instance.JNI_CallNonvirtualBooleanMethodV;
+            handle->CallNonvirtualBooleanMethodA = (void*)Marshal.GetFunctionPointerForDelegate(JNIEnv.CallNonvirtualBooleanMethodA);
+
+            handle->CallNonvirtualByteMethod = (void*)FunctionTable.Instance.JNI_CallNonvirtualByteMethod;
+            handle->CallNonvirtualByteMethodV = (void*)FunctionTable.Instance.JNI_CallNonvirtualByteMethodV;
+            handle->CallNonvirtualByteMethodA = (void*)Marshal.GetFunctionPointerForDelegate(JNIEnv.CallNonvirtualByteMethodA);
+
+            handle->CallNonvirtualCharMethod = (void*)FunctionTable.Instance.JNI_CallNonvirtualCharMethod;
+            handle->CallNonvirtualCharMethodV = (void*)FunctionTable.Instance.JNI_CallNonvirtualCharMethodV;
+            handle->CallNonvirtualCharMethodA = (void*)Marshal.GetFunctionPointerForDelegate(JNIEnv.CallNonvirtualCharMethodA);
+
+            handle->CallNonvirtualShortMethod = (void*)FunctionTable.Instance.JNI_CallNonvirtualShortMethod;
+            handle->CallNonvirtualShortMethodV = (void*)FunctionTable.Instance.JNI_CallNonvirtualShortMethodV;
+            handle->CallNonvirtualShortMethodA = (void*)Marshal.GetFunctionPointerForDelegate(JNIEnv.CallNonvirtualShortMethodA);
+
+            handle->CallNonvirtualIntMethod = (void*)FunctionTable.Instance.JNI_CallNonvirtualIntMethod;
+            handle->CallNonvirtualIntMethodV = (void*)FunctionTable.Instance.JNI_CallNonvirtualIntMethodV;
+            handle->CallNonvirtualIntMethodA = (void*)Marshal.GetFunctionPointerForDelegate(JNIEnv.CallNonvirtualIntMethodA);
+
+            handle->CallNonvirtualLongMethod = (void*)FunctionTable.Instance.JNI_CallNonvirtualLongMethod;
+            handle->CallNonvirtualLongMethodV = (void*)FunctionTable.Instance.JNI_CallNonvirtualLongMethodV;
+            handle->CallNonvirtualLongMethodA = (void*)Marshal.GetFunctionPointerForDelegate(JNIEnv.CallNonvirtualLongMethodA);
+
+            handle->CallNonvirtualFloatMethod = (void*)FunctionTable.Instance.JNI_CallNonvirtualFloatMethod;
+            handle->CallNonvirtualFloatMethodV = (void*)FunctionTable.Instance.JNI_CallNonvirtualFloatMethodV;
+            handle->CallNonvirtualFloatMethodA = (void*)Marshal.GetFunctionPointerForDelegate(JNIEnv.CallNonvirtualFloatMethodA);
+
+            handle->CallNonvirtualDoubleMethod = (void*)FunctionTable.Instance.JNI_CallNonvirtualDoubleMethod;
+            handle->CallNonvirtualDoubleMethodV = (void*)FunctionTable.Instance.JNI_CallNonvirtualDoubleMethodV;
+            handle->CallNonvirtualDoubleMethodA = (void*)Marshal.GetFunctionPointerForDelegate(JNIEnv.CallNonvirtualDoubleMethodA);
+
+            handle->CallNonvirtualVoidMethod = (void*)FunctionTable.Instance.JNI_CallNonvirtualVoidMethod;
+            handle->CallNonvirtualVoidMethodV = (void*)FunctionTable.Instance.JNI_CallNonvirtualVoidMethodV;
+            handle->CallNonvirtualVoidMethodA = (void*)Marshal.GetFunctionPointerForDelegate(JNIEnv.CallNonvirtualVoidMethodA);
+
+            handle->GetFieldID = (void*)Marshal.GetFunctionPointerForDelegate(JNIEnv.GetFieldID);
+
+            handle->GetObjectField = (void*)Marshal.GetFunctionPointerForDelegate(JNIEnv.GetObjectField);
+            handle->GetBooleanField = (void*)Marshal.GetFunctionPointerForDelegate(JNIEnv.GetBooleanField);
+            handle->GetByteField = (void*)Marshal.GetFunctionPointerForDelegate(JNIEnv.GetByteField);
+            handle->GetCharField = (void*)Marshal.GetFunctionPointerForDelegate(JNIEnv.GetCharField);
+            handle->GetShortField = (void*)Marshal.GetFunctionPointerForDelegate(JNIEnv.GetShortField);
+            handle->GetIntField = (void*)Marshal.GetFunctionPointerForDelegate(JNIEnv.GetIntField);
+            handle->GetLongField = (void*)Marshal.GetFunctionPointerForDelegate(JNIEnv.GetLongField);
+            handle->GetFloatField = (void*)Marshal.GetFunctionPointerForDelegate(JNIEnv.GetFloatField);
+            handle->GetDoubleField = (void*)Marshal.GetFunctionPointerForDelegate(JNIEnv.GetDoubleField);
+
+            handle->SetObjectField = (void*)Marshal.GetFunctionPointerForDelegate(JNIEnv.SetObjectField);
+            handle->SetBooleanField = (void*)Marshal.GetFunctionPointerForDelegate(JNIEnv.SetBooleanField);
+            handle->SetByteField = (void*)Marshal.GetFunctionPointerForDelegate(JNIEnv.SetByteField);
+            handle->SetCharField = (void*)Marshal.GetFunctionPointerForDelegate(JNIEnv.SetCharField);
+            handle->SetShortField = (void*)Marshal.GetFunctionPointerForDelegate(JNIEnv.SetShortField);
+            handle->SetIntField = (void*)Marshal.GetFunctionPointerForDelegate(JNIEnv.SetIntField);
+            handle->SetLongField = (void*)Marshal.GetFunctionPointerForDelegate(JNIEnv.SetLongField);
+            handle->SetFloatField = (void*)Marshal.GetFunctionPointerForDelegate(JNIEnv.SetFloatField);
+            handle->SetDoubleField = (void*)Marshal.GetFunctionPointerForDelegate(JNIEnv.SetDoubleField);
+
+            handle->GetStaticMethodID = (void*)Marshal.GetFunctionPointerForDelegate(JNIEnv.GetStaticMethodID);
+
+            handle->CallStaticObjectMethod = (void*)FunctionTable.Instance.JNI_CallStaticObjectMethod;
+            handle->CallStaticObjectMethodV = (void*)FunctionTable.Instance.JNI_CallStaticObjectMethodV;
+            handle->CallStaticObjectMethodA = (void*)Marshal.GetFunctionPointerForDelegate(JNIEnv.CallStaticObjectMethodA);
+
+            handle->CallStaticBooleanMethod = (void*)FunctionTable.Instance.JNI_CallStaticBooleanMethod;
+            handle->CallStaticBooleanMethodV = (void*)FunctionTable.Instance.JNI_CallStaticBooleanMethodV;
+            handle->CallStaticBooleanMethodA = (void*)Marshal.GetFunctionPointerForDelegate(JNIEnv.CallStaticBooleanMethodA);
+
+            handle->CallStaticByteMethod = (void*)FunctionTable.Instance.JNI_CallStaticByteMethod;
+            handle->CallStaticByteMethodV = (void*)FunctionTable.Instance.JNI_CallStaticByteMethodV;
+            handle->CallStaticByteMethodA = (void*)Marshal.GetFunctionPointerForDelegate(JNIEnv.CallStaticByteMethodA);
+
+            handle->CallStaticCharMethod = (void*)FunctionTable.Instance.JNI_CallStaticCharMethod;
+            handle->CallStaticCharMethodV = (void*)FunctionTable.Instance.JNI_CallStaticCharMethodV;
+            handle->CallStaticCharMethodA = (void*)Marshal.GetFunctionPointerForDelegate(JNIEnv.CallStaticCharMethodA);
+
+            handle->CallStaticShortMethod = (void*)FunctionTable.Instance.JNI_CallStaticShortMethod;
+            handle->CallStaticShortMethodV = (void*)FunctionTable.Instance.JNI_CallStaticShortMethodV;
+            handle->CallStaticShortMethodA = (void*)Marshal.GetFunctionPointerForDelegate(JNIEnv.CallStaticShortMethodA);
+
+            handle->CallStaticIntMethod = (void*)FunctionTable.Instance.JNI_CallStaticIntMethod;
+            handle->CallStaticIntMethodV = (void*)FunctionTable.Instance.JNI_CallStaticIntMethodV;
+            handle->CallStaticIntMethodA = (void*)Marshal.GetFunctionPointerForDelegate(JNIEnv.CallStaticIntMethodA);
+
+            handle->CallStaticLongMethod = (void*)FunctionTable.Instance.JNI_CallStaticLongMethod;
+            handle->CallStaticLongMethodV = (void*)FunctionTable.Instance.JNI_CallStaticLongMethodV;
+            handle->CallStaticLongMethodA = (void*)Marshal.GetFunctionPointerForDelegate(JNIEnv.CallStaticLongMethodA);
+
+            handle->CallStaticFloatMethod = (void*)FunctionTable.Instance.JNI_CallStaticFloatMethod;
+            handle->CallStaticFloatMethodV = (void*)FunctionTable.Instance.JNI_CallStaticFloatMethodV;
+            handle->CallStaticFloatMethodA = (void*)Marshal.GetFunctionPointerForDelegate(JNIEnv.CallStaticFloatMethodA);
+
+            handle->CallStaticDoubleMethod = (void*)FunctionTable.Instance.JNI_CallStaticDoubleMethod;
+            handle->CallStaticDoubleMethodV = (void*)FunctionTable.Instance.JNI_CallStaticDoubleMethodV;
+            handle->CallStaticDoubleMethodA = (void*)Marshal.GetFunctionPointerForDelegate(JNIEnv.CallStaticDoubleMethodA);
+
+            handle->CallStaticVoidMethod = (void*)FunctionTable.Instance.JNI_CallStaticVoidMethod;
+            handle->CallStaticVoidMethodV = (void*)FunctionTable.Instance.JNI_CallStaticVoidMethodV;
+            handle->CallStaticVoidMethodA = (void*)Marshal.GetFunctionPointerForDelegate(JNIEnv.CallStaticVoidMethodA);
+
+            handle->GetStaticFieldID = (void*)Marshal.GetFunctionPointerForDelegate(JNIEnv.GetStaticFieldID);
+
+            handle->GetStaticObjectField = (void*)Marshal.GetFunctionPointerForDelegate(JNIEnv.GetStaticObjectField);
+            handle->GetStaticBooleanField = (void*)Marshal.GetFunctionPointerForDelegate(JNIEnv.GetStaticBooleanField);
+            handle->GetStaticByteField = (void*)Marshal.GetFunctionPointerForDelegate(JNIEnv.GetStaticByteField);
+            handle->GetStaticCharField = (void*)Marshal.GetFunctionPointerForDelegate(JNIEnv.GetStaticCharField);
+            handle->GetStaticShortField = (void*)Marshal.GetFunctionPointerForDelegate(JNIEnv.GetStaticShortField);
+            handle->GetStaticIntField = (void*)Marshal.GetFunctionPointerForDelegate(JNIEnv.GetStaticIntField);
+            handle->GetStaticLongField = (void*)Marshal.GetFunctionPointerForDelegate(JNIEnv.GetStaticLongField);
+            handle->GetStaticFloatField = (void*)Marshal.GetFunctionPointerForDelegate(JNIEnv.GetStaticFloatField);
+            handle->GetStaticDoubleField = (void*)Marshal.GetFunctionPointerForDelegate(JNIEnv.GetStaticDoubleField);
+
+            handle->SetStaticObjectField = (void*)Marshal.GetFunctionPointerForDelegate(JNIEnv.SetStaticObjectField);
+            handle->SetStaticBooleanField = (void*)Marshal.GetFunctionPointerForDelegate(JNIEnv.SetStaticBooleanField);
+            handle->SetStaticByteField = (void*)Marshal.GetFunctionPointerForDelegate(JNIEnv.SetStaticByteField);
+            handle->SetStaticCharField = (void*)Marshal.GetFunctionPointerForDelegate(JNIEnv.SetStaticCharField);
+            handle->SetStaticShortField = (void*)Marshal.GetFunctionPointerForDelegate(JNIEnv.SetStaticShortField);
+            handle->SetStaticIntField = (void*)Marshal.GetFunctionPointerForDelegate(JNIEnv.SetStaticIntField);
+            handle->SetStaticLongField = (void*)Marshal.GetFunctionPointerForDelegate(JNIEnv.SetStaticLongField);
+            handle->SetStaticFloatField = (void*)Marshal.GetFunctionPointerForDelegate(JNIEnv.SetStaticFloatField);
+            handle->SetStaticDoubleField = (void*)Marshal.GetFunctionPointerForDelegate(JNIEnv.SetStaticDoubleField);
+
+            handle->NewString = (void*)Marshal.GetFunctionPointerForDelegate(JNIEnv.NewString);
+            handle->GetStringLength = (void*)Marshal.GetFunctionPointerForDelegate(JNIEnv.GetStringLength);
+            handle->GetStringChars = (void*)Marshal.GetFunctionPointerForDelegate(JNIEnv.GetStringChars);
+            handle->ReleaseStringChars = (void*)Marshal.GetFunctionPointerForDelegate(JNIEnv.ReleaseStringChars);
+
+            handle->NewStringUTF = (void*)Marshal.GetFunctionPointerForDelegate(JNIEnv.NewStringUTF);
+            handle->GetStringUTFLength = (void*)Marshal.GetFunctionPointerForDelegate(JNIEnv.GetStringUTFLength);
+            handle->GetStringUTFChars = (void*)Marshal.GetFunctionPointerForDelegate(JNIEnv.GetStringUTFChars);
+            handle->ReleaseStringUTFChars = (void*)Marshal.GetFunctionPointerForDelegate(JNIEnv.ReleaseStringUTFChars);
+
+            handle->GetArrayLength = (void*)Marshal.GetFunctionPointerForDelegate(JNIEnv.GetArrayLength);
+
+            handle->NewObjectArray = (void*)Marshal.GetFunctionPointerForDelegate(JNIEnv.NewObjectArray);
+            handle->GetObjectArrayElement = (void*)Marshal.GetFunctionPointerForDelegate(JNIEnv.GetObjectArrayElement);
+            handle->SetObjectArrayElement = (void*)Marshal.GetFunctionPointerForDelegate(JNIEnv.SetObjectArrayElement);
+
+            handle->NewBooleanArray = (void*)Marshal.GetFunctionPointerForDelegate(JNIEnv.NewBooleanArray);
+            handle->NewByteArray = (void*)Marshal.GetFunctionPointerForDelegate(JNIEnv.NewByteArray);
+            handle->NewCharArray = (void*)Marshal.GetFunctionPointerForDelegate(JNIEnv.NewCharArray);
+            handle->NewShortArray = (void*)Marshal.GetFunctionPointerForDelegate(JNIEnv.NewShortArray);
+            handle->NewIntArray = (void*)Marshal.GetFunctionPointerForDelegate(JNIEnv.NewIntArray);
+            handle->NewLongArray = (void*)Marshal.GetFunctionPointerForDelegate(JNIEnv.NewLongArray);
+            handle->NewFloatArray = (void*)Marshal.GetFunctionPointerForDelegate(JNIEnv.NewFloatArray);
+            handle->NewDoubleArray = (void*)Marshal.GetFunctionPointerForDelegate(JNIEnv.NewDoubleArray);
+
+            handle->GetBooleanArrayElements = (void*)Marshal.GetFunctionPointerForDelegate(JNIEnv.GetBooleanArrayElements);
+            handle->GetByteArrayElements = (void*)Marshal.GetFunctionPointerForDelegate(JNIEnv.GetByteArrayElements);
+            handle->GetCharArrayElements = (void*)Marshal.GetFunctionPointerForDelegate(JNIEnv.GetCharArrayElements);
+            handle->GetShortArrayElements = (void*)Marshal.GetFunctionPointerForDelegate(JNIEnv.GetShortArrayElements);
+            handle->GetIntArrayElements = (void*)Marshal.GetFunctionPointerForDelegate(JNIEnv.GetIntArrayElements);
+            handle->GetLongArrayElements = (void*)Marshal.GetFunctionPointerForDelegate(JNIEnv.GetLongArrayElements);
+            handle->GetFloatArrayElements = (void*)Marshal.GetFunctionPointerForDelegate(JNIEnv.GetFloatArrayElements);
+            handle->GetDoubleArrayElements = (void*)Marshal.GetFunctionPointerForDelegate(JNIEnv.GetDoubleArrayElements);
+
+            handle->ReleaseBooleanArrayElements = (void*)Marshal.GetFunctionPointerForDelegate(JNIEnv.ReleaseBooleanArrayElements);
+            handle->ReleaseByteArrayElements = (void*)Marshal.GetFunctionPointerForDelegate(JNIEnv.ReleaseByteArrayElements);
+            handle->ReleaseCharArrayElements = (void*)Marshal.GetFunctionPointerForDelegate(JNIEnv.ReleaseCharArrayElements);
+            handle->ReleaseShortArrayElements = (void*)Marshal.GetFunctionPointerForDelegate(JNIEnv.ReleaseShortArrayElements);
+            handle->ReleaseIntArrayElements = (void*)Marshal.GetFunctionPointerForDelegate(JNIEnv.ReleaseIntArrayElements);
+            handle->ReleaseLongArrayElements = (void*)Marshal.GetFunctionPointerForDelegate(JNIEnv.ReleaseLongArrayElements);
+            handle->ReleaseFloatArrayElements = (void*)Marshal.GetFunctionPointerForDelegate(JNIEnv.ReleaseFloatArrayElements);
+            handle->ReleaseDoubleArrayElements = (void*)Marshal.GetFunctionPointerForDelegate(JNIEnv.ReleaseDoubleArrayElements);
+
+            handle->GetBooleanArrayRegion = (void*)Marshal.GetFunctionPointerForDelegate(JNIEnv.GetBooleanArrayRegion);
+            handle->GetByteArrayRegion = (void*)Marshal.GetFunctionPointerForDelegate(JNIEnv.GetByteArrayRegion);
+            handle->GetCharArrayRegion = (void*)Marshal.GetFunctionPointerForDelegate(JNIEnv.GetCharArrayRegion);
+            handle->GetShortArrayRegion = (void*)Marshal.GetFunctionPointerForDelegate(JNIEnv.GetShortArrayRegion);
+            handle->GetIntArrayRegion = (void*)Marshal.GetFunctionPointerForDelegate(JNIEnv.GetIntArrayRegion);
+            handle->GetLongArrayRegion = (void*)Marshal.GetFunctionPointerForDelegate(JNIEnv.GetLongArrayRegion);
+            handle->GetFloatArrayRegion = (void*)Marshal.GetFunctionPointerForDelegate(JNIEnv.GetFloatArrayRegion);
+            handle->GetDoubleArrayRegion = (void*)Marshal.GetFunctionPointerForDelegate(JNIEnv.GetDoubleArrayRegion);
+
+            handle->SetBooleanArrayRegion = (void*)Marshal.GetFunctionPointerForDelegate(JNIEnv.SetBooleanArrayRegion);
+            handle->SetByteArrayRegion = (void*)Marshal.GetFunctionPointerForDelegate(JNIEnv.SetByteArrayRegion);
+            handle->SetCharArrayRegion = (void*)Marshal.GetFunctionPointerForDelegate(JNIEnv.SetCharArrayRegion);
+            handle->SetShortArrayRegion = (void*)Marshal.GetFunctionPointerForDelegate(JNIEnv.SetShortArrayRegion);
+            handle->SetIntArrayRegion = (void*)Marshal.GetFunctionPointerForDelegate(JNIEnv.SetIntArrayRegion);
+            handle->SetLongArrayRegion = (void*)Marshal.GetFunctionPointerForDelegate(JNIEnv.SetLongArrayRegion);
+            handle->SetFloatArrayRegion = (void*)Marshal.GetFunctionPointerForDelegate(JNIEnv.SetFloatArrayRegion);
+            handle->SetDoubleArrayRegion = (void*)Marshal.GetFunctionPointerForDelegate(JNIEnv.SetDoubleArrayRegion);
+
+            handle->RegisterNatives = (void*)Marshal.GetFunctionPointerForDelegate(JNIEnv.RegisterNatives);
+            handle->UnregisterNatives = (void*)Marshal.GetFunctionPointerForDelegate(JNIEnv.UnregisterNatives);
+
+            handle->MonitorEnter = (void*)Marshal.GetFunctionPointerForDelegate(JNIEnv.MonitorEnter);
+            handle->MonitorExit = (void*)Marshal.GetFunctionPointerForDelegate(JNIEnv.MonitorExit);
+
+            handle->GetJavaVM = (void*)Marshal.GetFunctionPointerForDelegate(JNIEnv.GetJavaVM);
+
+            handle->GetStringRegion = (void*)Marshal.GetFunctionPointerForDelegate(JNIEnv.GetStringRegion);
+            handle->GetStringUTFRegion = (void*)Marshal.GetFunctionPointerForDelegate(JNIEnv.GetStringUTFRegion);
+
+            handle->GetPrimitiveArrayCritical = (void*)Marshal.GetFunctionPointerForDelegate(JNIEnv.GetPrimitiveArrayCritical);
+            handle->ReleasePrimitiveArrayCritical = (void*)Marshal.GetFunctionPointerForDelegate(JNIEnv.ReleasePrimitiveArrayCritical);
+
+            handle->GetStringCritical = (void*)Marshal.GetFunctionPointerForDelegate(JNIEnv.GetStringCritical);
+            handle->ReleaseStringCritical = (void*)Marshal.GetFunctionPointerForDelegate(JNIEnv.ReleaseStringCritical);
+
+            handle->NewWeakGlobalRef = (void*)Marshal.GetFunctionPointerForDelegate(JNIEnv.NewWeakGlobalRef);
+            handle->DeleteWeakGlobalRef = (void*)Marshal.GetFunctionPointerForDelegate(JNIEnv.DeleteWeakGlobalRef);
+
+            handle->ExceptionCheck = (void*)Marshal.GetFunctionPointerForDelegate(JNIEnv.ExceptionCheck);
+
+            handle->NewDirectByteBuffer = (void*)Marshal.GetFunctionPointerForDelegate(JNIEnv.NewDirectByteBuffer);
+            handle->GetDirectBufferAddress = (void*)Marshal.GetFunctionPointerForDelegate(JNIEnv.GetDirectBufferAddress);
+            handle->GetDirectBufferCapacity = (void*)Marshal.GetFunctionPointerForDelegate(JNIEnv.GetDirectBufferCapacity);
+
+            handle->GetObjectRefType = (void*)Marshal.GetFunctionPointerForDelegate(JNIEnv.GetObjectRefType);
         }
-
-#if NET5
-
-        public delegate* unmanaged[Cdecl]<JNIEnv*, jmethodID, byte*, int> GetMethodArgs;
-        public void* reserved1;
-        public void* reserved2;
-
-        public void* reserved3;
-        public delegate* unmanaged[Cdecl]<JNIEnv*, jint> GetVersion;
-        public delegate* unmanaged[Cdecl]<JNIEnv*, in byte*, jobject, jbyte*, jsize, jclass> DefineClass;
-        public delegate* unmanaged[Cdecl]<JNIEnv*, in byte*, jclass> FindClass;
-
-        public delegate* unmanaged[Cdecl]<JNIEnv*, jobject, jmethodID> FromReflectedMethod;
-        public delegate* unmanaged[Cdecl]<JNIEnv*, jobject, jfieldID> FromReflectedField;
-
-        public delegate* unmanaged[Cdecl]<JNIEnv*, jclass, jmethodID, jboolean, jobject> ToReflectedMethod;
-
-        public delegate* unmanaged[Cdecl]<JNIEnv*, jclass, jclass> GetSuperclass;
-        public delegate* unmanaged[Cdecl]<JNIEnv*, jclass, jclass, jboolean> IsAssignableFrom;
-
-        public delegate* unmanaged[Cdecl]<JNIEnv*, jclass, jfieldID, jboolean, jobject> ToReflectedField;
-
-        public delegate* unmanaged[Cdecl]<JNIEnv*, jthrowable, jint> Throw;
-        public delegate* unmanaged[Cdecl]<JNIEnv*, jclass, in byte*, jint> ThrowNew;
-        public delegate* unmanaged[Cdecl]<JNIEnv*, jthrowable> ExceptionOccurred;
-        public delegate* unmanaged[Cdecl]<JNIEnv*, void> ExceptionDescribe;
-        public delegate* unmanaged[Cdecl]<JNIEnv*, void> ExceptionClear;
-        public delegate* unmanaged[Cdecl]<JNIEnv*, in byte*, void> FatalError;
-
-        public delegate* unmanaged[Cdecl]<JNIEnv*, jint, jint> PushLocalFrame;
-        public delegate* unmanaged[Cdecl]<JNIEnv*, jobject, jobject> PopLocalFrame;
-
-        public delegate* unmanaged[Cdecl]<JNIEnv*, jobject, jobject> NewGlobalRef;
-        public delegate* unmanaged[Cdecl]<JNIEnv*, jobject, void> DeleteGlobalRef;
-        public delegate* unmanaged[Cdecl]<JNIEnv*, jobject, void> DeleteLocalRef;
-        public delegate* unmanaged[Cdecl]<JNIEnv*, jobject, jobject, jboolean> IsSameObject;
-        public delegate* unmanaged[Cdecl]<JNIEnv*, jobject, jobject> NewLocalRef;
-        public delegate* unmanaged[Cdecl]<JNIEnv*, jint, jint> EnsureLocalCapacity;
-
-        public delegate* unmanaged[Cdecl]<JNIEnv*, jclass, jobject> AllocObject;
-        public void* NewObject;
-        public void* NewObjectV;
-        public delegate* unmanaged[Cdecl]<JNIEnv*, jclass, jmethodID, ref jvalue> NewObjectA;
-
-        public delegate* unmanaged[Cdecl]<JNIEnv*, jobject, jclass> GetObjectClass;
-        public delegate* unmanaged[Cdecl]<JNIEnv*, jobject, jclass, jboolean> IsInstanceOf;
-
-        public delegate* unmanaged[Cdecl]<JNIEnv*, jclass, in byte, in byte, jmethodID> GetMethodID;
-
-        public void* CallObjectMethod;
-        public void* CallObjectMethodV;
-        public delegate* unmanaged[Cdecl]<JNIEnv*, jobject, jmethodID, in jvalue, jobject> CallObjectMethodA;
-
-        public void* CallBooleanMethod;
-        public void* CallBooleanMethodV;
-        public delegate* unmanaged[Cdecl]<JNIEnv*, jobject, jmethodID, in jvalue, jboolean> CallBooleanMethodA;
-
-        public void* CallByteMethod;
-        public void* CallByteMethodV;
-        public delegate* unmanaged[Cdecl]<JNIEnv*, jobject, jmethodID, in jvalue, jbyte> CallByteMethodA;
-
-        public void* CallCharMethod;
-        public void* CallCharMethodV;
-        public delegate* unmanaged[Cdecl]<JNIEnv*, jobject, jmethodID, in jvalue, jchar> CallCharMethodA;
-
-        public void* CallShortMethod;
-        public void* CallShortMethodV;
-        public delegate* unmanaged[Cdecl]<JNIEnv*, jobject, jmethodID, in jvalue, jshort> CallShortMethodA;
-
-        public void* CallIntMethod;
-        public void* CallIntMethodV;
-        public delegate* unmanaged[Cdecl]<JNIEnv*, jobject, jmethodID, in jvalue, jint> CallIntMethodA;
-
-        public void* CallLongMethod;
-        public void* CallLongMethodV;
-        public delegate* unmanaged[Cdecl]<JNIEnv*, jobject, jmethodID, in jvalue, jlong> CallLongMethodA;
-
-        public void* CallFloatMethod;
-        public void* CallFloatMethodV;
-        public delegate* unmanaged[Cdecl]<JNIEnv*, jobject, jmethodID, in jvalue, jfloat> CallFloatMethodA;
-
-        public void* CallDoubleMethod;
-        public void* CallDoubleMethodV;
-        public delegate* unmanaged[Cdecl]<JNIEnv*, jobject, jmethodID, in jvalue, jdouble> CallDoubleMethodA;
-
-        public void* CallVoidMethod;
-        public void* CallVoidMethodV;
-        public delegate* unmanaged[Cdecl]<JNIEnv*, jobject, jmethodID, in jvalue, void> CallVoidMethodA;
-
-        public void* CallNonvirtualObjectMethod;
-        public void* CallNonvirtualObjectMethodV;
-        public delegate* unmanaged[Cdecl]<JNIEnv*, jobject, jclass, jmethodID, in jvalue, jobject> CallNonvirtualObjectMethodA;
-
-        public void* CallNonvirtualBooleanMethod;
-        public void* CallNonvirtualBooleanMethodV;
-        public delegate* unmanaged[Cdecl]<JNIEnv*, jobject, jclass, jmethodID, in jvalue, jboolean> CallNonvirtualBooleanMethodA;
-
-        public void* CallNonvirtualByteMethod;
-        public void* CallNonvirtualByteMethodV;
-        public delegate* unmanaged[Cdecl]<JNIEnv*, jobject, jclass, jmethodID, in jvalue, jbyte> CallNonvirtualByteMethodA;
-
-        public void* CallNonvirtualCharMethod;
-        public void* CallNonvirtualCharMethodV;
-        public delegate* unmanaged[Cdecl]<JNIEnv*, jobject, jclass, jmethodID, in jvalue, jchar> CallNonvirtualCharMethodA;
-
-        public void* CallNonvirtualShortMethod;
-        public void* CallNonvirtualShortMethodV;
-        public delegate* unmanaged[Cdecl]<JNIEnv*, jobject, jclass, jmethodID, in jvalue, jshort> CallNonvirtualShortMethodA;
-
-        public void* CallNonvirtualIntMethod;
-        public void* CallNonvirtualIntMethodV;
-        public delegate* unmanaged[Cdecl]<JNIEnv*, jobject, jclass, jmethodID, in jvalue, jint> CallNonvirtualIntMethodA;
-
-        public void* CallNonvirtualLongMethod;
-        public void* CallNonvirtualLongMethodV;
-        public delegate* unmanaged[Cdecl]<JNIEnv*, jobject, jclass, jmethodID, in jvalue, jlong> CallNonvirtualLongMethodA;
-
-        public void* CallNonvirtualFloatMethod;
-        public void* CallNonvirtualFloatMethodV;
-        public delegate* unmanaged[Cdecl]<JNIEnv*, jobject, jclass, jmethodID, in jvalue, jfloat> CallNonvirtualFloatMethodA;
-
-        public void* CallNonvirtualDoubleMethod;
-        public void* CallNonvirtualDoubleMethodV;
-        public delegate* unmanaged[Cdecl]<JNIEnv*, jobject, jclass, jmethodID, in jvalue, jdouble> CallNonvirtualDoubleMethodA;
-
-        public void* CallNonvirtualVoidMethod;
-        public void* CallNonvirtualVoidMethodV;
-        public delegate* unmanaged[Cdecl]<JNIEnv*, jobject, jclass, jmethodID, in jvalue, void> CallNonvirtualVoidMethodA;
-
-        public delegate* unmanaged[Cdecl]<JNIEnv*, jclass, in byte, in byte, jfieldID> GetFieldID;
-
-        public delegate* unmanaged[Cdecl]<JNIEnv*, jobject, jfieldID, jobject> GetObjectField;
-        public delegate* unmanaged[Cdecl]<JNIEnv*, jobject, jfieldID, jboolean> GetBooleanField;
-        public delegate* unmanaged[Cdecl]<JNIEnv*, jobject, jfieldID, jbyte> GetByteField;
-        public delegate* unmanaged[Cdecl]<JNIEnv*, jobject, jfieldID, jchar> GetCharField;
-        public delegate* unmanaged[Cdecl]<JNIEnv*, jobject, jfieldID, jshort> GetShortField;
-        public delegate* unmanaged[Cdecl]<JNIEnv*, jobject, jfieldID, jint> GetIntField;
-        public delegate* unmanaged[Cdecl]<JNIEnv*, jobject, jfieldID, jlong> GetLongField;
-        public delegate* unmanaged[Cdecl]<JNIEnv*, jobject, jfieldID, jfloat> GetFloatField;
-        public delegate* unmanaged[Cdecl]<JNIEnv*, jobject, jfieldID, jdouble> GetDoubleField;
-
-        public delegate* unmanaged[Cdecl]<JNIEnv*, jobject, jfieldID, jobject, void> SetObjectField;
-        public delegate* unmanaged[Cdecl]<JNIEnv*, jobject, jfieldID, jboolean, void> SetBooleanField;
-        public delegate* unmanaged[Cdecl]<JNIEnv*, jobject, jfieldID, jbyte, void> SetByteField;
-        public delegate* unmanaged[Cdecl]<JNIEnv*, jobject, jfieldID, jchar, void> SetCharField;
-        public delegate* unmanaged[Cdecl]<JNIEnv*, jobject, jfieldID, jshort, void> SetShortField;
-        public delegate* unmanaged[Cdecl]<JNIEnv*, jobject, jfieldID, jint, void> SetIntField;
-        public delegate* unmanaged[Cdecl]<JNIEnv*, jobject, jfieldID, jlong, void> SetLongField;
-        public delegate* unmanaged[Cdecl]<JNIEnv*, jobject, jfieldID, jfloat, void> SetFloatField;
-        public delegate* unmanaged[Cdecl]<JNIEnv*, jobject, jfieldID, jdouble, void> SetDoubleField;
-
-        public delegate* unmanaged[Cdecl]<JNIEnv*, jclass, byte, byte, jmethodID> GetStaticMethodID;
-
-        public void* CallStaticObjectMethod;
-        public void* CallStaticObjectMethodV;
-        public delegate* unmanaged[Cdecl]<JNIEnv*, jclass, jmethodID, in jvalue, jobject> CallStaticObjectMethodA;
-
-        public void* CallStaticBooleanMethod;
-        public void* CallStaticBooleanMethodV;
-        public delegate* unmanaged[Cdecl]<JNIEnv*, jclass, jmethodID, in jvalue, jboolean> CallStaticBooleanMethodA;
-
-        public void* CallStaticByteMethod;
-        public void* CallStaticByteMethodV;
-        public delegate* unmanaged[Cdecl]<JNIEnv*, jclass, jmethodID, in jvalue, jbyte> CallStaticByteMethodA;
-
-        public void* CallStaticCharMethod;
-        public void* CallStaticCharMethodV;
-        public delegate* unmanaged[Cdecl]<JNIEnv*, jclass, jmethodID, in jvalue, jchar> CallStaticCharMethodA;
-
-        public void* CallStaticShortMethod;
-        public void* CallStaticShortMethodV;
-        public delegate* unmanaged[Cdecl]<JNIEnv*, jclass, jmethodID, in jvalue, jshort> CallStaticShortMethodA;
-
-        public void* CallStaticIntMethod;
-        public void* CallStaticIntMethodV;
-        public delegate* unmanaged[Cdecl]<JNIEnv*, jclass, jmethodID, in jvalue, jint> CallStaticIntMethodA;
-
-        public void* CallStaticLongMethod;
-        public void* CallStaticLongMethodV;
-        public delegate* unmanaged[Cdecl]<JNIEnv*, jclass, jmethodID, in jvalue, jlong> CallStaticLongMethodA;
-
-        public void* CallStaticFloatMethod;
-        public void* CallStaticFloatMethodV;
-        public delegate* unmanaged[Cdecl]<JNIEnv*, jclass, jmethodID, in jvalue, jfloat> CallStaticFloatMethodA;
-
-        public void* CallStaticDoubleMethod;
-        public void* CallStaticDoubleMethodV;
-        public delegate* unmanaged[Cdecl]<JNIEnv*, jclass, jmethodID, in jvalue, jdouble> CallStaticDoubleMethodA;
-
-        public void* CallStaticVoidMethod;
-        public void* CallStaticVoidMethodV;
-        public delegate* unmanaged[Cdecl]<JNIEnv*, jclass, jmethodID, in jvalue, void> CallStaticVoidMethodA;
-
-        public delegate* unmanaged[Cdecl]<JNIEnv*, jclass, in byte, in byte, jfieldID> GetStaticFieldID;
-        public delegate* unmanaged[Cdecl]<JNIEnv*, jclass, jfieldID, jobject> GetStaticObjectField;
-        public delegate* unmanaged[Cdecl]<JNIEnv*, jclass, jfieldID, jboolean> GetStaticBooleanField;
-        public delegate* unmanaged[Cdecl]<JNIEnv*, jclass, jfieldID, jbyte> GetStaticByteField;
-        public delegate* unmanaged[Cdecl]<JNIEnv*, jclass, jfieldID, jchar> GetStaticCharField;
-        public delegate* unmanaged[Cdecl]<JNIEnv*, jclass, jfieldID, jshort> GetStaticShortField;
-        public delegate* unmanaged[Cdecl]<JNIEnv*, jclass, jfieldID, jint> GetStaticIntField;
-        public delegate* unmanaged[Cdecl]<JNIEnv*, jclass, jfieldID, jlong> GetStaticLongField;
-        public delegate* unmanaged[Cdecl]<JNIEnv*, jclass, jfieldID, jfloat> GetStaticFloatField;
-        public delegate* unmanaged[Cdecl]<JNIEnv*, jclass, jfieldID, jdouble> GetStaticDoubleField;
-
-        public delegate* unmanaged[Cdecl]<JNIEnv*, jclass, jfieldID, jobject, void> SetStaticObjectField;
-        public delegate* unmanaged[Cdecl]<JNIEnv*, jclass, jfieldID, jboolean, void> SetStaticBooleanField;
-        public delegate* unmanaged[Cdecl]<JNIEnv*, jclass, jfieldID, jbyte, void> SetStaticByteField;
-        public delegate* unmanaged[Cdecl]<JNIEnv*, jclass, jfieldID, jchar, void> SetStaticCharField;
-        public delegate* unmanaged[Cdecl]<JNIEnv*, jclass, jfieldID, jshort, void> SetStaticShortField;
-        public delegate* unmanaged[Cdecl]<JNIEnv*, jclass, jfieldID, jint, void> SetStaticIntField;
-        public delegate* unmanaged[Cdecl]<JNIEnv*, jclass, jfieldID, jlong, void> SetStaticLongField;
-        public delegate* unmanaged[Cdecl]<JNIEnv*, jclass, jfieldID, jfloat, void> SetStaticFloatField;
-        public delegate* unmanaged[Cdecl]<JNIEnv*, jclass, jfieldID, jdouble, void> SetStaticDoubleField;
-
-        public delegate* unmanaged[Cdecl]<JNIEnv*, in jchar, jsize, jstring> NewString;
-        public delegate* unmanaged[Cdecl]<JNIEnv*, jstring, jsize> GetStringLength;
-        public delegate* unmanaged[Cdecl]<JNIEnv*, jstring, jboolean*, jchar*> GetStringChars;
-        public delegate* unmanaged[Cdecl]<JNIEnv*, jstring, jchar*, void> ReleaseStringChars;
-
-        public delegate* unmanaged[Cdecl]<JNIEnv*, in byte, jstring> NewStringUTF;
-        public delegate* unmanaged[Cdecl]<JNIEnv*, jstring, jsize> GetStringUTFLength;
-        public delegate* unmanaged[Cdecl]<JNIEnv*, jstring, jboolean, byte*> GetStringUTFChars;
-        public delegate* unmanaged[Cdecl]<JNIEnv*, jstring, byte, void> ReleaseStringUTFChars;
-
-        public delegate* unmanaged[Cdecl]<JNIEnv*, jarray, jsize> GetArrayLength;
-
-        public delegate* unmanaged[Cdecl]<JNIEnv*, jsize, jclass, jobject, jobjectArray> NewObjectArray;
-        public delegate* unmanaged[Cdecl]<JNIEnv*, jobjectArray, jsize, jobject> GetObjectArrayElement;
-        public delegate* unmanaged[Cdecl]<JNIEnv*, jobject, jsize, jvalue, void> SetObjectArrayElement;
-
-        public delegate* unmanaged[Cdecl]<JNIEnv*, jsize, jbooleanArray> NewBooleanArray;
-        public delegate* unmanaged[Cdecl]<JNIEnv*, jsize, jbyteArray> NewByteArray;
-        public delegate* unmanaged[Cdecl]<JNIEnv*, jsize, jcharArray> NewCharArray;
-        public delegate* unmanaged[Cdecl]<JNIEnv*, jsize, jshortArray> NewShortArray;
-        public delegate* unmanaged[Cdecl]<JNIEnv*, jsize, jintArray> NewIntArray;
-        public delegate* unmanaged[Cdecl]<JNIEnv*, jsize, jlongArray> NewLongArray;
-        public delegate* unmanaged[Cdecl]<JNIEnv*, jsize, jfloatArray> NewFloatArray;
-        public delegate* unmanaged[Cdecl]<JNIEnv*, jsize, jdoubleArray> NewDoubleArray;
-
-        public delegate* unmanaged[Cdecl]<JNIEnv*, jbooleanArray, jboolean*, jboolean*> GetBooleanArrayElements;
-        public delegate* unmanaged[Cdecl]<JNIEnv*, jbyteArray, jboolean*, jbyte*> GetByteArrayElements;
-        public delegate* unmanaged[Cdecl]<JNIEnv*, jcharArray, jboolean*, jchar*> GetCharArrayElements;
-        public delegate* unmanaged[Cdecl]<JNIEnv*, jshortArray, jboolean*, jshort*> GetShortArrayElements;
-        public delegate* unmanaged[Cdecl]<JNIEnv*, jintArray, jboolean*, jint*> GetIntArrayElements;
-        public delegate* unmanaged[Cdecl]<JNIEnv*, jlongArray, jboolean*, jlong*> GetLongArrayElements;
-        public delegate* unmanaged[Cdecl]<JNIEnv*, jfloatArray, jboolean*, jfloat*> GetFloatArrayElements;
-        public delegate* unmanaged[Cdecl]<JNIEnv*, jdoubleArray, jboolean*, jdouble*> GetDoubleArrayElements;
-
-        public delegate* unmanaged[Cdecl]<JNIEnv*, jbooleanArray, jboolean*, jint, void> ReleaseBooleanArrayElements;
-        public delegate* unmanaged[Cdecl]<JNIEnv*, jbyteArray, jbyte*, jint, void> ReleaseByteArrayElements;
-        public delegate* unmanaged[Cdecl]<JNIEnv*, jcharArray, jchar*, jint, void> ReleaseCharArrayElements;
-        public delegate* unmanaged[Cdecl]<JNIEnv*, jshortArray, jshort*, jint, void> ReleaseShortArrayElements;
-        public delegate* unmanaged[Cdecl]<JNIEnv*, jintArray, jint*, jint, void> ReleaseIntArrayElements;
-        public delegate* unmanaged[Cdecl]<JNIEnv*, jlongArray, jlong*, jint, void> ReleaseLongArrayElements;
-        public delegate* unmanaged[Cdecl]<JNIEnv*, jfloatArray, jfloat*, jint, void> ReleaseFloatArrayElements;
-        public delegate* unmanaged[Cdecl]<JNIEnv*, jdoubleArray, jdouble*, jint, void> ReleaseDoubleArrayElements;
-
-        public delegate* unmanaged[Cdecl]<JNIEnv*, jbooleanArray, jsize, jsize, jboolean*, void> GetBooleanArrayRegion;
-        public delegate* unmanaged[Cdecl]<JNIEnv*, jbyteArray, jsize, jsize, jbyte*, void> GetByteArrayRegion;
-        public delegate* unmanaged[Cdecl]<JNIEnv*, jcharArray, jsize, jsize, jchar*, void> GetCharArrayRegion;
-        public delegate* unmanaged[Cdecl]<JNIEnv*, jshortArray, jsize, jsize, jshort*, void> GetShortArrayRegion;
-        public delegate* unmanaged[Cdecl]<JNIEnv*, jintArray, jsize, jsize, jint*, void> GetIntArrayRegion;
-        public delegate* unmanaged[Cdecl]<JNIEnv*, jlongArray, jsize, jsize, jlong*, void> GetLongArrayRegion;
-        public delegate* unmanaged[Cdecl]<JNIEnv*, jfloatArray, jsize, jsize, jfloat*, void> GetFloatArrayRegion;
-        public delegate* unmanaged[Cdecl]<JNIEnv*, jdoubleArray, jsize, jsize, jdouble*, void> GetDoubleArrayRegion;
-
-        public delegate* unmanaged[Cdecl]<JNIEnv*, jbooleanArray, jsize, jsize, in jboolean, void> SetBooleanArrayRegion;
-        public delegate* unmanaged[Cdecl]<JNIEnv*, jbyteArray, jsize, jsize, in jbyte, void> SetByteArrayRegion;
-        public delegate* unmanaged[Cdecl]<JNIEnv*, jcharArray, jsize, jsize, in jchar, void> SetCharArrayRegion;
-        public delegate* unmanaged[Cdecl]<JNIEnv*, jshortArray, jsize, jsize, in jshort, void> SetShortArrayRegion;
-        public delegate* unmanaged[Cdecl]<JNIEnv*, jintArray, jsize, jsize, in jint, void> SetIntArrayRegion;
-        public delegate* unmanaged[Cdecl]<JNIEnv*, jlongArray, jsize, jsize, in jlong, void> SetLongArrayRegion;
-        public delegate* unmanaged[Cdecl]<JNIEnv*, jfloatArray, jsize, jsize, in jfloat, void> SetFloatArrayRegion;
-        public delegate* unmanaged[Cdecl]<JNIEnv*, jdoubleArray, jsize, jsize, in jdouble, void> SetDoubleArrayRegion;
-
-        public delegate* unmanaged[Cdecl]<JNIEnv*, jclass, in JNINativeMethod, jint, jint> RegisterNatives;
-        public delegate* unmanaged[Cdecl]<JNIEnv*, jclass, jint> UnegisterNatives;
-
-        public delegate* unmanaged[Cdecl]<JNIEnv*, jobject, jint> MonitorEnter;
-        public delegate* unmanaged[Cdecl]<JNIEnv*, jobject, jint> MonitorExit;
-
-        public delegate* unmanaged[Cdecl]<JNIEnv*, JavaVM**, jint> GetJavaVM;
-
-        public delegate* unmanaged[Cdecl]<JNIEnv*, jstring, jsize, jsize, out jchar, void> GetStringRegion;
-        public delegate* unmanaged[Cdecl]<JNIEnv*, jstring, jsize, jsize, out byte, void> GetStringUTFRegion;
-
-        public delegate* unmanaged[Cdecl]<JNIEnv*, jarray, out jboolean, void*> GetPrimitiveArrayCritical;
-        public delegate* unmanaged[Cdecl]<JNIEnv*, jarray, void*, void> ReleasePrimitiveArrayCritical;
-
-        public delegate* unmanaged[Cdecl]<JNIEnv*, jstring, out jboolean, ref jchar> GetStringCritical;
-        public delegate* unmanaged[Cdecl]<JNIEnv*, jstring, in jchar, void> ReleaseStringCritical;
-
-        public delegate* unmanaged[Cdecl]<JNIEnv*, jobject, jweak> NewWeakGlobalRef;
-        public delegate* unmanaged[Cdecl]<JNIEnv*, jweak, void> DeleteWeakGlobalRef;
-
-        public delegate* unmanaged[Cdecl]<JNIEnv*, jboolean> ExceptionCheck;
-
-        public delegate* unmanaged[Cdecl]<JNIEnv*, void*, jlong, jobject> NewDirectByteBuffer;
-        public delegate* unmanaged[Cdecl]<JNIEnv*, jobject, void*> GetDirectBufferAddress;
-        public delegate* unmanaged[Cdecl]<JNIEnv*, jobject, jlong> GetDirectBufferCapacity;
-
-        public delegate* unmanaged[Cdecl]<JNIEnv*, jobject, jobjectRefType> GetObjectRefType;
-
-#else
 
         public void* GetMethodArgs;
         public void* reserved1;
@@ -957,9 +656,6 @@ namespace IKVM.Runtime.JNI
         public void* GetDirectBufferCapacity;
 
         public void* GetObjectRefType;
-
-#endif
-
 
     }
 
