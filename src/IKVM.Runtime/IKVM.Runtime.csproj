@@ -18,28 +18,32 @@
         <ProjectReference Include="..\IKVM.Java\IKVM.Java.msbuildproj" />
     </ItemGroup>
 
-    <ItemGroup>
-        <LLIRRuntimeIdentifier Include="win7-x64" TargetName="x86_64-pc-windows-msvc" Arguments="-O3" />
-        <LLIRRuntimeIdentifier Include="win7-x86" TargetName="i686-pc-windows-msvc" Arguments="-O3" />
-        <LLIRRuntimeIdentifier Include="win81-arm" TargetName="thumbv7-pc-windows-msvc" Arguments="-O3" />
-        <LLIRRuntimeIdentifier Include="win10-arm64" TargetName="aarch64-pc-windows-msvc" Arguments="-O3" />
-        <LLIRRuntimeIdentifier Include="linux-x64" TargetName="x86_64-unknown-linux-gnu" Arguments="-O3" />
-        <LLIRRuntimeIdentifier Include="linux-arm" TargetName="armv7-unknown-linux-gnueabihf" Arguments="-O3" />
-        <LLIRRuntimeIdentifier Include="linux-arm64" TargetName="aarch64-unknown-linux-gnueabihf" Arguments="-O3" />
-    </ItemGroup>
-
     <Import Sdk="Microsoft.NET.Sdk" Project="Sdk.targets" />
 
     <PropertyGroup>
-        <LLIRRuntimeIdentifier>$(MSBuildThisFileDirectory)LLIR\</LLIRRuntimeIdentifier>
-        <LLIRIntermediateDirectory>$(IntermediateOutputPath)llir\</LLIRIntermediateDirectory>
+        <LLIRSourceDirectory>$(MSBuildThisFileDirectory)LLIR\</LLIRSourceDirectory>
+        <LLIRIntermediateDirectory>$(MSBuildThisFileDirectory)$(IntermediateOutputPath)LLIR\</LLIRIntermediateDirectory>
         <CLangCommand>clang</CLangCommand>
         <ObjDumpCommand>llvm-objdump</ObjDumpCommand>
     </PropertyGroup>
 
-    <Target Name="CompileLLIR" Inputs="$(LLIRRuntimeIdentifier)%(LLIRRuntimeIdentifier.Identity).ll" Outputs="$(LLIRIntermediateDirectory)%(LLIRRuntimeIdentifier.Identity).o" Condition=" '$(TargetFramework)' != '' ">
+    <ItemGroup>
+        <LLIRRuntimeIdentifier Include="win7-x64" TargetName="x86_64-pc-windows-msvc" Includes="$(LLIRSourceDirectory)includes;$(LLIRSourceDirectory)includes\windows" Arguments="-O3" />
+        <LLIRRuntimeIdentifier Include="win7-x86" TargetName="i686-pc-windows-msvc" Includes="$(LLIRSourceDirectory)includes;$(LLIRSourceDirectory)includes\windows" Arguments="-O3" />
+        <LLIRRuntimeIdentifier Include="win81-arm" TargetName="thumbv7-pc-windows-msvc" Includes="$(LLIRSourceDirectory)includes;$(LLIRSourceDirectory)includes\windows" Arguments="-O3" />
+        <LLIRRuntimeIdentifier Include="win10-arm64" TargetName="aarch64-pc-windows-msvc" Includes="$(LLIRSourceDirectory)includes;$(LLIRSourceDirectory)includes\windows" Arguments="-O3" />
+        <LLIRRuntimeIdentifier Include="linux-x64" TargetName="x86_64-unknown-linux-gnu" Includes="$(LLIRSourceDirectory)includes;$(LLIRSourceDirectory)includes\solaris" Arguments="-O3" />
+        <LLIRRuntimeIdentifier Include="linux-arm" TargetName="armv7-unknown-linux-gnueabihf" Includes="$(LLIRSourceDirectory)includes;$(LLIRSourceDirectory)includes\solaris" Arguments="-O3" />
+        <LLIRRuntimeIdentifier Include="linux-arm64" TargetName="aarch64-unknown-linux-gnueabihf" Includes="$(LLIRSourceDirectory)includes;$(LLIRSourceDirectory)includes\solaris" Arguments="-O3" />
+    </ItemGroup>
+
+    <Target Name="CompileLLIR" Inputs="$(LLIRSourceDirectory)ikvm.c;$(LLIRSourceDirectory)ikvm.h" Outputs="$(LLIRIntermediateDirectory)%(LLIRRuntimeIdentifier.Identity).o" Condition=" '$(TargetFramework)' != '' ">
+        <ItemGroup>
+            <_LLIRIncludes Include="%(LLIRRuntimeIdentifier.Includes)" />
+        </ItemGroup>
+        
         <MakeDir Directories="$(LLIRIntermediateDirectory)" />
-        <Exec Command="&quot;$(CLangCommand)&quot; -c &quot;$(LLIRRuntimeIdentifier)%(LLIRRuntimeIdentifier.Identity).ll&quot; -o &quot;$(LLIRIntermediateDirectory)%(LLIRRuntimeIdentifier.Identity).o&quot; --target=%(LLIRRuntimeIdentifier.TargetName) -g %(LLIRRuntimeIdentifier.Arguments)" />
+        <Exec WorkingDirectory="LLIR" Command="&quot;$(CLangCommand)&quot; -c &quot;ikvm.c&quot; -o &quot;$(LLIRIntermediateDirectory)%(LLIRRuntimeIdentifier.Identity).o&quot; --target=%(LLIRRuntimeIdentifier.TargetName) @(_LLIRIncludes->'-I%(Identity)', ' ') -g %(LLIRRuntimeIdentifier.Arguments)" />
         <ItemGroup>
             <FileWrites Include="$(LLIRIntermediateDirectory)%(LLIRRuntimeIdentifier.Identity).o" />
         </ItemGroup>

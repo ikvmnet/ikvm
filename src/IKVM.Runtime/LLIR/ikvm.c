@@ -1,4 +1,4 @@
-#include "jni.h"
+#include "ikvm.h"
 
 MAKE_METHOD(Object, jobject)
 MAKE_METHOD(Boolean, jboolean)

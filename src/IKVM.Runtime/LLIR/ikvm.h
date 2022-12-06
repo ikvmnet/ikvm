@@ -4,20 +4,6 @@
 #include <stdarg.h>
 #include <jni.h>
 
-#define EXPOR
-
-#if defined(_WIN32) || defined(_WIN64)
-#include <malloc.h>
-#define ALLOCA _alloca
-#else
-#if defined(__FreeBSD__) || defined(__NetBSD__) || defined(__OpenBSD__)
-#include <stdlib.h>
-#else
-#include <alloca.h>
-#endif
-#define ALLOCA alloca
-#endif
-
 typedef int (*GetMethodArgs_t)(JNIEnv* pEnv, jmethodID method, char* sig);
 #define GET_METHOD_ARGS(pEnv, method, sig) (((GetMethodArgs_t)((*pEnv)->reserved0))(pEnv, methodID, sig))
 
