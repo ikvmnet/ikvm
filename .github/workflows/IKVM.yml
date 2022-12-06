@@ -227,7 +227,6 @@ jobs:
           /p:CreateHardLinksForCopyLocalIfPossible=true `
           /p:CreateHardLinksForPublishFilesIfPossible=true `
           /p:ContinuousIntegrationBuild=true `
-          /p:CopyRetryCount=512 `
           IKVM.dist.msbuildproj
     - name: Upload MSBuild Log
       if: ${{ always() }}
