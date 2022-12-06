@@ -18,9 +18,6 @@
         </ProjectConfiguration>
     </ItemGroup>
     <ItemGroup>
-        <ClInclude Include="..\ikvm-native\jni.h" />
-    </ItemGroup>
-    <ItemGroup>
         <ClCompile Include="JniTests.c" />
     </ItemGroup>
     <PropertyGroup Label="Globals">
@@ -80,29 +77,28 @@
         <OutDir>$(ProjectDir)bin\$(Configuration)\win-x64\</OutDir>
         <IntDir>$(ProjectDir)obj\$(Configuration)\win-x64\</IntDir>
         <TargetName>ikvm-tests-native</TargetName>
-        <IncludePath>$(VC_IncludePath);$(WindowsSDK_IncludePath);..\ikvm-native</IncludePath>
+        <IncludePath>..\..\openjdk\jdk\src\share\javavm\export;..\..\openjdk\jdk\src\windows\javavm\export;$(VC_IncludePath);$(WindowsSDK_IncludePath)</IncludePath>
     </PropertyGroup>
     <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'">
         <OutDir>$(ProjectDir)bin\$(Configuration)\win-x64\</OutDir>
         <IntDir>$(ProjectDir)obj\$(Configuration)\win-x64\</IntDir>
         <TargetName>ikvm-tests-native</TargetName>
-        <IncludePath>$(VC_IncludePath);$(WindowsSDK_IncludePath);..\ikvm-native</IncludePath>
+        <IncludePath>..\..\openjdk\jdk\src\share\javavm\export;..\..\openjdk\jdk\src\windows\javavm\export;$(VC_IncludePath);$(WindowsSDK_IncludePath)</IncludePath>
     </PropertyGroup>
     <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">
         <OutDir>$(ProjectDir)bin\$(Configuration)\win-x86\</OutDir>
         <IntDir>$(ProjectDir)obj\$(Configuration)\win-x86\</IntDir>
         <TargetName>ikvm-tests-native</TargetName>
-        <IncludePath>$(VC_IncludePath);$(WindowsSDK_IncludePath);..\ikvm-native</IncludePath>
+        <IncludePath>..\..\openjdk\jdk\src\share\javavm\export;..\..\openjdk\jdk\src\windows\javavm\export;$(VC_IncludePath);$(WindowsSDK_IncludePath)</IncludePath>
     </PropertyGroup>
     <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">
         <OutDir>$(ProjectDir)bin\$(Configuration)\win-x86\</OutDir>
         <IntDir>$(ProjectDir)obj\$(Configuration)\win-x86\</IntDir>
         <TargetName>ikvm-tests-native</TargetName>
-        <IncludePath>$(VC_IncludePath);$(WindowsSDK_IncludePath);..\ikvm-native</IncludePath>
+        <IncludePath>..\..\openjdk\jdk\src\share\javavm\export;..\..\openjdk\jdk\src\windows\javavm\export;$(VC_IncludePath);$(WindowsSDK_IncludePath)</IncludePath>
     </PropertyGroup>
     <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">
         <ClCompile>
-            <WarningLevel>Level3</WarningLevel>
             <SDLCheck>true</SDLCheck>
             <PreprocessorDefinitions>_DEBUG;_CONSOLE;%(PreprocessorDefinitions);_WIN64</PreprocessorDefinitions>
             <LanguageStandard_C>stdc11</LanguageStandard_C>
@@ -113,7 +109,6 @@
     </ItemDefinitionGroup>
     <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'">
         <ClCompile>
-            <WarningLevel>Level3</WarningLevel>
             <FunctionLevelLinking>true</FunctionLevelLinking>
             <IntrinsicFunctions>true</IntrinsicFunctions>
             <SDLCheck>true</SDLCheck>
@@ -128,7 +123,6 @@
     </ItemDefinitionGroup>
     <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">
         <ClCompile>
-            <WarningLevel>Level3</WarningLevel>
             <SDLCheck>true</SDLCheck>
             <PreprocessorDefinitions>_DEBUG;_CONSOLE;%(PreprocessorDefinitions)</PreprocessorDefinitions>
             <LanguageStandard_C>stdc11</LanguageStandard_C>
@@ -139,7 +133,6 @@
     </ItemDefinitionGroup>
     <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">
         <ClCompile>
-            <WarningLevel>Level3</WarningLevel>
             <FunctionLevelLinking>true</FunctionLevelLinking>
             <IntrinsicFunctions>true</IntrinsicFunctions>
             <SDLCheck>true</SDLCheck>

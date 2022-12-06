@@ -17,30 +17,22 @@ namespace IKVM.JTReg.TestAdapter.Core
         /// Creates a new implementation of 'com.sun.javatest.TestFinder$ErrorHandler'.
         /// </summary>
         /// <returns></returns>
-        public static dynamic Create(ErrorHandlerImplementation implementation)
+        public static dynamic Create(IJTRegLoggerContext logger)
         {
-            if (implementation is null)
-                throw new ArgumentNullException(nameof(implementation));
-
-            return DefaultProxyGenerator.CreateInterfaceProxyWithoutTarget(JTRegTypes.TestFinder.ErrorHandler.Type, new ErrorHandlerInterceptor(implementation));
+            return DefaultProxyGenerator.CreateInterfaceProxyWithoutTarget(JTRegTypes.TestFinder.ErrorHandler.Type, new ErrorHandlerInterceptor(logger));
         }
 
-        readonly ErrorHandlerImplementation implementation;
+        readonly IJTRegLoggerContext logger;
 
         /// <summary>
         /// Initializes a new instance.
         /// </summary>
-        /// <param name="implementation"></param>
+        /// <param name="logger"></param>
         /// <exception cref="ArgumentNullException"></exception>
-        public ErrorHandlerInterceptor(ErrorHandlerImplementation implementation)
+        public ErrorHandlerInterceptor(IJTRegLoggerContext logger)
         {
-            this.implementation = implementation ?? throw new ArgumentNullException(nameof(implementation));
+            this.logger = logger ?? throw new ArgumentNullException(nameof(logger));
         }
-
-        /// <summary>
-        /// Gets the underlying type instance.
-        /// </summary>
-        public ErrorHandlerImplementation Implementation => implementation;
 
         /// <summary>
         /// 
@@ -51,12 +43,17 @@ namespace IKVM.JTReg.TestAdapter.Core
             switch (invocation.Method.Name)
             {
                 case "error":
-                    implementation.error(invocation.Proxy, (string)invocation.GetArgumentValue(0));
+                    error(invocation.Proxy, (string)invocation.GetArgumentValue(0));
                     break;
                 default:
                     invocation.Proceed();
                     break;
             }
+        }
+
+        public void error(dynamic proxy, string msg)
+        {
+            logger.SendMessage(JTRegTestMessageLevel.Error, msg);
         }
 
     }

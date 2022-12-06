@@ -46,7 +46,6 @@ namespace ikvmc
         private string defaultAssemblyName;
         private static bool time;
         private static string runtimeAssembly;
-        private static string runtimeJniAssembly;
         private static bool nostdlib;
         private static bool nonDeterministicOutput;
         private static readonly List<string> libpaths = new List<string>();
@@ -190,7 +189,7 @@ namespace ikvmc
 
             try
             {
-                return CompilerClassLoader.Compile(runtimeAssembly, runtimeJniAssembly, targets);
+                return CompilerClassLoader.Compile(runtimeAssembly, targets);
             }
             catch (FileFormatLimitationExceededException x)
             {
@@ -315,7 +314,6 @@ namespace ikvmc
             Console.Error.WriteLine("                               x86, x64, arm, anycpu32bitpreferred, or");
             Console.Error.WriteLine("                               anycpu. The default is anycpu.");
             Console.Error.WriteLine("-runtime:<filespec>            Use the specified IKVM runtime assembly.");
-            Console.Error.WriteLine("-jni:<filespec>                Use the specified IKVM JNI assembly.");
             Console.Error.WriteLine("-keyfile:<keyfilename>         Use keyfile to sign the assembly");
             Console.Error.WriteLine("-key:<keycontainer>            Use keycontainer to sign the assembly");
             Console.Error.WriteLine("-delaysign                     Delay-sign the assembly");
@@ -487,6 +485,10 @@ namespace ikvmc
                             case "-platform:arm":
                                 options.pekind = PortableExecutableKinds.ILOnly;
                                 options.imageFileMachine = ImageFileMachine.ARM;
+                                break;
+                            case "-platform:arm64":
+                                options.pekind = PortableExecutableKinds.ILOnly;
+                                options.imageFileMachine = ImageFileMachine.ARM64;
                                 break;
                             case "-platform:anycpu32bitpreferred":
                                 options.pekind = PortableExecutableKinds.ILOnly | PortableExecutableKinds.Preferred32Bit;
@@ -758,11 +760,6 @@ namespace ikvmc
                     {
                         // NOTE this is an undocumented option
                         runtimeAssembly = s.Substring(9);
-                    }
-                    else if (s.StartsWith("-jni:"))
-                    {
-                        // NOTE this is an undocumented option
-                        runtimeJniAssembly = s.Substring(5);
                     }
                     else if (s == "-time")
                     {

@@ -1,0 +1,38 @@
+﻿<Project Sdk="Microsoft.Build.NoTargets/3.5.6">
+    <PropertyGroup>
+        <TargetFrameworks>net461;netcoreapp3.1</TargetFrameworks>
+        <PackageLicenseFile>LICENSE.md</PackageLicenseFile>
+        <PackageReadmeFile>README.md</PackageReadmeFile>
+        <Description>IKVM MSBuild Tools</Description>
+    </PropertyGroup>
+
+    <PropertyGroup>
+        <PublishRepositoryUrl>true</PublishRepositoryUrl>
+    </PropertyGroup>
+
+    <ItemGroup>
+        <ProjectReference Include="..\IKVM.MSBuild.Tools.runtime.win7-x64\IKVM.MSBuild.Tools.runtime.win7-x64.csproj">
+            <ReferenceOutputAssembly>true</ReferenceOutputAssembly>
+        </ProjectReference>
+        <ProjectReference Include="..\IKVM.MSBuild.Tools.runtime.linux-x64\IKVM.MSBuild.Tools.runtime.linux-x64.csproj">
+            <ReferenceOutputAssembly>true</ReferenceOutputAssembly>
+        </ProjectReference>
+        <ProjectReference Include="..\IKVM.MSBuild.Tools.runtime.linux-arm\IKVM.MSBuild.Tools.runtime.linux-arm.csproj">
+            <ReferenceOutputAssembly>true</ReferenceOutputAssembly>
+        </ProjectReference>
+        <ProjectReference Include="..\IKVM.MSBuild.Tools.runtime.linux-arm64\IKVM.MSBuild.Tools.runtime.linux-arm64.csproj">
+            <ReferenceOutputAssembly>true</ReferenceOutputAssembly>
+        </ProjectReference>
+    </ItemGroup>
+
+    <ItemGroup>
+        <None Include="buildTransitive\**\*" Pack="true" PackagePath="buildTransitive\%(RecursiveDir)%(Filename)%(Extension)" />
+        <None Include="lib\**\*" Pack="true" PackagePath="lib\%(RecursiveDir)%(Filename)%(Extension)" />
+    </ItemGroup>
+
+    <ItemGroup>
+        <None Include="..\..\LICENSE.md" Pack="true" PackagePath="." />
+        <None Include="..\..\README.md" Pack="true" PackagePath="." />
+    </ItemGroup>
+
+</Project>

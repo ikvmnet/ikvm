@@ -10,11 +10,6 @@ namespace IKVM.Tools.Runner.Compiler
     {
 
         /// <summary>
-        /// Version of the tool to use.
-        /// </summary>
-        public IkvmToolFramework ToolFramework { get; set; } = IkvmToolFramework.NetCore;
-
-        /// <summary>
         /// Number of milliseconds to wait for the command to execute.
         /// </summary>
         public int Timeout { get; set; } = System.Threading.Timeout.Infinite;
@@ -167,8 +162,6 @@ namespace IKVM.Tools.Runner.Compiler
         public IList<string> AssemblyAttributes { get; set; } = new List<string>();
 
         public string Runtime { get; set; }
-
-        public string JNI { get; set; }
 
         public int? WarningLevel { get; set; }
 

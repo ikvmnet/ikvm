@@ -1,14 +1,12 @@
 ﻿<Project Sdk="Microsoft.NET.Sdk">
-
     <PropertyGroup>
         <OutputType>Exe</OutputType>
         <TargetFrameworks>net461;netcoreapp3.1</TargetFrameworks>
-        <RuntimeIdentifiers>win7-x64;win7-x86;linux-x64</RuntimeIdentifiers>
-        <AutoGenerateBindingRedirects>true</AutoGenerateBindingRedirects>
+        <RuntimeIdentifiers>win7-x64;win7-x86;win81-arm;linux-x64;linux-arm;linux-arm64</RuntimeIdentifiers>
         <PreserveCompilationContext>true</PreserveCompilationContext>
     </PropertyGroup>
 
-    <ItemGroup Condition=" '$(TargetFramework)' == 'net461' ">
+    <ItemGroup Condition="$([MSBuild]::IsTargetFrameworkCompatible('$(TargetFramework)', 'net461'))">
         <PackageReference Include="System.Runtime.CompilerServices.Unsafe" Version="6.0.0" />
     </ItemGroup>
 

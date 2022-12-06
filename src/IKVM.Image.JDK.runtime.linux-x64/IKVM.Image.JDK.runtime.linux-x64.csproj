@@ -4,7 +4,6 @@
         <PackageLicenseFile>LICENSE.md</PackageLicenseFile>
         <PackageReadmeFile>README.md</PackageReadmeFile>
         <Description>IKVM JDK Runtime Image</Description>
-        <NoWarn>NU5118;NU5100</NoWarn>
     </PropertyGroup>
 
     <PropertyGroup>
@@ -20,6 +19,11 @@
     </ItemGroup>
 
     <ItemGroup Condition=" '$(TargetFramework)' == '' ">
+        <PublishProjectReference Include="..\IKVM.Image.JDK-bin\IKVM.Image.JDK-bin.csproj">
+            <SetTargetFramework>TargetFramework=net461</SetTargetFramework>
+            <SetRuntimeIdentifier>RuntimeIdentifier=linux-x64</SetRuntimeIdentifier>
+            <ProjectPackagePath>ikvm\net461\linux-x64\bin</ProjectPackagePath>
+        </PublishProjectReference>
         <PublishProjectReference Include="..\IKVM.Image.JDK-bin\IKVM.Image.JDK-bin.csproj">
             <SetTargetFramework>TargetFramework=netcoreapp3.1</SetTargetFramework>
             <SetRuntimeIdentifier>RuntimeIdentifier=linux-x64</SetRuntimeIdentifier>

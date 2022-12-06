@@ -27,6 +27,9 @@ using System.Net.Sockets;
 namespace IKVM.Java.Externs.java.net
 {
 
+    /// <summary>
+    /// Implements the external methods for <see cref="global::java.net.AbstractPlainDatagramSocketImpl"/>.
+    /// </summary>
     static class AbstractPlainDatagramSocketImpl
     {
 
@@ -35,18 +38,16 @@ namespace IKVM.Java.Externs.java.net
 
         }
 
-        public static int dataAvailable(object _this)
+        public static int dataAvailable(object self)
         {
 #if FIRST_PASS
-			return 0;
+            throw new NotSupportedException();
 #else
             try
             {
-                global::java.net.AbstractPlainDatagramSocketImpl obj = (global::java.net.AbstractPlainDatagramSocketImpl)_this;
+                var obj = (global::java.net.AbstractPlainDatagramSocketImpl)self;
                 if (obj.fd != null)
-                {
                     return obj.fd.getSocket().Available;
-                }
             }
             catch (ObjectDisposedException)
             {

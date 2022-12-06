@@ -74,9 +74,9 @@ namespace IKVM.Java.Externs.sun.nio.ch
                 fd.getSocket().Send(new byte[] { data }, 1, System.Net.Sockets.SocketFlags.OutOfBand);
                 return 1;
             }
-            catch (System.Net.Sockets.SocketException x)
+            catch (System.Net.Sockets.SocketException e)
             {
-                throw new global::java.net.ConnectException(x.Message);
+                throw new global::java.net.ConnectException(e.Message);
             }
             catch (ObjectDisposedException)
             {

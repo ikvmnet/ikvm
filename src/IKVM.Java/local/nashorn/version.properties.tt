@@ -1,5 +1,2 @@
-<#@ template language="c#" hostspecific="true" #>
-<#@ parameter type="System.String" name="OpenJdkFullVersion" #>
-<#@ parameter type="System.String" name="OpenJdkImplementationVersion" #>
-full=<#= OpenJdkFullVersion #>
-release=<#= OpenJdkImplementationVersion #>
+full=#OpenJdkFullVersion#
+release=#OpenJdkImplementationVersion#

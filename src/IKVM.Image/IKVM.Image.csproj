@@ -1,13 +1,12 @@
 ﻿<Project >
     <Import Sdk="Microsoft.Build.NoTargets" Version="3.5.6" Project="Sdk.props" />
-    <Import Project="..\..\openjdk.props" />
+    <Import Project="$(MSBuildThisFileDirectory)..\..\openjdk.props" />
 
     <PropertyGroup>
         <TargetFrameworks>net461;netcoreapp3.1</TargetFrameworks>
         <PackageLicenseFile>LICENSE.md</PackageLicenseFile>
         <PackageReadmeFile>README.md</PackageReadmeFile>
         <Description>IKVM Runtime Image</Description>
-        <NoWarn>NU5118</NoWarn>
     </PropertyGroup>
 
     <PropertyGroup>
@@ -87,5 +86,5 @@
     </ItemGroup>
 
     <Import Sdk="Microsoft.Build.NoTargets" Version="3.5.6" Project="Sdk.targets" />
-    <Import Project="buildTransitive\IKVM.Image.targets" />
+    <Import Project="$(MSBuildThisFileDirectory)buildTransitive\IKVM.Image.targets" />
 </Project>

@@ -1,4 +1,7 @@
 ﻿<Project Sdk="Microsoft.NET.Sdk">
+    <Import Project="$(MSBuildThisFileDirectory)..\..\ikvm.deps.props" />
+    <Import Project="$(MSBuildThisFileDirectory)..\..\ikvm.refs.props" />
+    
     <PropertyGroup>
         <TargetFrameworks>net472;netcoreapp3.1;net6.0</TargetFrameworks>
     </PropertyGroup>
@@ -13,10 +16,10 @@
     </ItemGroup>
 
     <ItemGroup>
-        <PackageReference Include="FluentAssertions" Version="6.7.0" />
-        <PackageReference Include="Microsoft.CodeCoverage" Version="17.2.0" />
-        <PackageReference Include="Microsoft.NET.Test.Sdk" Version="17.2.0" />
-        <PackageReference Include="Moq" Version="4.18.1" />
+        <PackageReference Include="FluentAssertions" Version="6.8.0" />
+        <PackageReference Include="Microsoft.CodeCoverage" Version="17.4.0" />
+        <PackageReference Include="Microsoft.NET.Test.Sdk" Version="17.4.0" />
+        <PackageReference Include="Moq" Version="4.18.2" />
         <PackageReference Include="MSTest.TestAdapter" Version="2.2.10" />
         <PackageReference Include="MSTest.TestFramework" Version="2.2.10" />
         <PackageReference Include="Microsoft.Build" Version="16.9.0" />
@@ -24,7 +27,6 @@
     </ItemGroup>
 
     <ItemGroup>
-        <ProjectReference Include="..\IKVM.Runtime\IKVM.Runtime.csproj" />
         <ProjectReference Include="..\IKVM.MSBuild.Tasks\IKVM.MSBuild.Tasks.csproj" />
     </ItemGroup>
 

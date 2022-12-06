@@ -135,7 +135,7 @@ namespace IKVM.MSBuild.Tasks
 
         public string Remap { get; set; }
 
-        protected override async Task<bool> ExecuteAsync(IkvmToolFramework targetFramework, IkvmToolTaskDiagnosticWriter writer, CancellationToken cancellationToken)
+        protected override async Task<bool> ExecuteAsync(IkvmToolTaskDiagnosticWriter writer, CancellationToken cancellationToken)
         {
             if (Debug && RuntimeInformation.IsOSPlatform(OSPlatform.Windows) == false)
             {
@@ -144,7 +144,6 @@ namespace IKVM.MSBuild.Tasks
             }
 
             var options = new IkvmCompilerOptions();
-            options.ToolFramework = targetFramework;
             options.ResponseFile = ResponseFile;
             options.Output = Output;
             options.Assembly = Assembly;
@@ -168,6 +167,7 @@ namespace IKVM.MSBuild.Tasks
                 "x86" => IkvmCompilerPlatform.X86,
                 "x64" => IkvmCompilerPlatform.X64,
                 "arm" => IkvmCompilerPlatform.ARM,
+                "arm64" => IkvmCompilerPlatform.ARM64,
                 _ => throw new NotImplementedException(),
             };
 
@@ -258,7 +258,6 @@ namespace IKVM.MSBuild.Tasks
                     options.AssemblyAttributes.Add(i.ItemSpec);
 
             options.Runtime = Runtime;
-            options.JNI = JNI;
 
             if (options.WarningLevel is not null)
                 options.WarningLevel = int.Parse(WarningLevel);

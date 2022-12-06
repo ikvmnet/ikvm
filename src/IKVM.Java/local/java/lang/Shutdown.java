@@ -89,6 +89,7 @@ class Shutdown {
             }
         }
         catch (cli.System.Security.SecurityException _) {
+            
         }
     }
 

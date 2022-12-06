@@ -110,9 +110,10 @@ jobs:
         name: jtreg-build
         path: jtreg/jtreg-build.zip
   build-ikvm:
-    name: Build IKVM (Windows)
+    name: Build IKVM
     needs:
     - build-openjdk
+    timeout-minutes: 120
     runs-on: windows-latest
     steps:
     - name: Checkout Source
@@ -120,6 +121,9 @@ jobs:
       with:
         fetch-depth: 0
         submodules: recursive
+    - name: Move Temporary Directory
+      shell: pwsh
+      run: Add-Content $env:GITHUB_ENV "`nTMP=${{ runner.temp }}`nTEMP=${{ runner.temp }}`nTMPDIR=${{ runner.temp }}"
     - name: Setup .NET
       shell: pwsh
       run: Add-Content $env:GITHUB_ENV "`nDOTNET_INSTALL_DIR=${{ runner.temp }}\dotnet"
@@ -131,6 +135,10 @@ jobs:
       uses: actions/setup-dotnet@v3
       with:
         dotnet-version: 6.0.x
+    - name: Setup .NET 7.0
+      uses: actions/setup-dotnet@v3
+      with:
+        dotnet-version: 7.0.x
     - name: Install GitVersion
       uses: gittools/actions/gitversion/setup@v0.9.13
       with:
@@ -143,11 +151,21 @@ jobs:
       uses: Vampire/setup-wsl@v1
       with:
         additional-packages:
+          zlib1g-dev
+          libmpc-dev
+          libmpfr-dev
+          libgmp-dev
+          clang
+          llvm
+          llvm-dev
           gcc
           g++
-    - name: Move Temporary Directory
-      shell: pwsh
-      run: Add-Content $env:GITHUB_ENV "`nTMP=${{ runner.temp }}`nTEMP=${{ runner.temp }}`nTMPDIR=${{ runner.temp }}"
+          g++-arm-linux-gnueabihf
+          gcc-arm-linux-gnueabihf
+          libc6-armhf-cross
+          gcc-aarch64-linux-gnu
+          g++-aarch64-linux-gnu
+          libc6-arm64-cross
     - name: Move NuGet Directory
       shell: pwsh
       run: Add-Content $env:GITHUB_ENV "`nNUGET_PACKAGES=${{ runner.temp }}\nuget\packages"
@@ -249,13 +267,11 @@ jobs:
       run: |
         git reset --hard
         git clean -qfdx
-  test-ikvm:
+  test:
     strategy:
       matrix:
         run:
         - IKVM.Tests
-        - IKVM.Tests.JRE
-        - IKVM.Tests.JDK
         - ikvmc.Tests
         - IKVM.Tools.Exporter.Tests
         - IKVM.Tools.Tests
@@ -283,21 +299,21 @@ jobs:
         - run: ikvmc.Tests
           tfm: net6.0
         - run: IKVM.OpenJDK.Tests?TestPartition=0
-          sys: linux
+          tfm: net6.0
         - run: IKVM.OpenJDK.Tests?TestPartition=1
-          sys: linux
+          tfm: net6.0
         - run: IKVM.OpenJDK.Tests?TestPartition=2
-          sys: linux
+          tfm: net6.0
         - run: IKVM.OpenJDK.Tests?TestPartition=3
-          sys: linux
+          tfm: net6.0
         - run: IKVM.OpenJDK.Tests?TestPartition=4
-          sys: linux
+          tfm: net6.0
         - run: IKVM.OpenJDK.Tests?TestPartition=5
-          sys: linux
+          tfm: net6.0
         - run: IKVM.OpenJDK.Tests?TestPartition=6
-          sys: linux
+          tfm: net6.0
         - run: IKVM.OpenJDK.Tests?TestPartition=7
-          sys: linux
+          tfm: net6.0
         include:
         - run: IKVM.MSBuild.Tasks.Tests
           tfm: net472
@@ -308,6 +324,12 @@ jobs:
         - run: IKVM.MSBuild.Tasks.Tests
           tfm: net6.0
           sys: windows
+        - run: IKVM.MSBuild.Tasks.Tests
+          tfm: netcoreapp3.1
+          sys: linux
+        - run: IKVM.MSBuild.Tasks.Tests
+          tfm: net6.0
+          sys: linux
         - run: IKVM.MSBuild.Tests
           tfm: net6.0
           sys: windows
@@ -320,17 +342,44 @@ jobs:
         - run: IKVM.NET.Sdk.Tests
           tfm: net6.0
           sys: linux
-    name: Test IKVM (${{ matrix.run }}:${{ matrix.tfm }}:${{ matrix.sys }}
+    name: Test (${{ matrix.run }}:${{ matrix.tfm }}:${{ matrix.sys }}
     needs:
     - build-ikvm
+    timeout-minutes: 240
     runs-on: ${{ fromJSON('{"windows":["windows-2022"],"linux":["ubuntu-22.04"]}')[matrix.sys] }}
     steps:
-    - name: Setup WSL
-      if: matrix.sys == 'windows'
-      uses: Vampire/setup-wsl@v1
-    - name: Setup .NET
+    - name: Set Paths (Windows)
+      if: runner.os == 'Windows'
       shell: pwsh
-      run: Add-Content $env:GITHUB_ENV "`nDOTNET_INSTALL_DIR=${{ runner.temp }}/dotnet"
+      run: |
+        $dir="C:\run"
+        mkdir $dir
+        mkdir $dir\temp
+        mkdir $dir\dotnet
+        mkdir $dir\nuget
+        mkdir $dir\nuget\packages
+        mkdir $dir\ikvm
+        mkdir $dir\ikvm\dist
+        Add-Content $env:GITHUB_ENV "`nIKVMPATH=$dir\ikvm"
+        Add-Content $env:GITHUB_ENV "`nTMP=$dir\temp`nTEMP=$dir\temp`nTMPDIR=$dir\temp"
+        Add-Content $env:GITHUB_ENV "`nDOTNET_INSTALL_DIR=$dir\dotnet"
+        Add-Content $env:GITHUB_ENV "`nNUGET_PACKAGES=$dir\nuget\packages"
+    - name: Set Paths (Linux)
+      if: runner.os == 'Linux'
+      shell: pwsh
+      run: |
+        $dir="${{ runner.temp }}/run"
+        mkdir $dir
+        mkdir $dir/temp
+        mkdir $dir/dotnet
+        mkdir $dir/nuget
+        mkdir $dir/nuget/packages
+        mkdir $dir/ikvm
+        mkdir $dir/ikvm/dist
+        Add-Content $env:GITHUB_ENV "`nIKVMPATH=$dir/ikvm"
+        Add-Content $env:GITHUB_ENV "`nTMP=$dir/temp`nTEMP=$dir/temp`nTMPDIR=$dir/temp"
+        Add-Content $env:GITHUB_ENV "`nDOTNET_INSTALL_DIR=$dir/dotnet"
+        Add-Content $env:GITHUB_ENV "`nNUGET_PACKAGES=$dir/nuget/packages"
     - name: Setup .NET 3.1
       uses: actions/setup-dotnet@v3
       with:
@@ -339,21 +388,25 @@ jobs:
       uses: actions/setup-dotnet@v3
       with:
         dotnet-version: 6.0.x
-    - name: Move Temporary Directory
-      shell: pwsh
-      run: Add-Content $env:GITHUB_ENV "`nTMP=${{ runner.temp }}`nTEMP=${{ runner.temp }}`nTMPDIR=${{ runner.temp }}"
+    - name: Setup .NET 7.0
+      uses: actions/setup-dotnet@v3
+      with:
+        dotnet-version: 7.0.x
+    - name: Setup WSL
+      if: matrix.sys == 'windows'
+      uses: Vampire/setup-wsl@v1
     - name: Download Tests
       uses: actions/download-artifact@v3
       with:
         name: tests
-        path: dist
+        path: ${{ env.IKVMPATH }}/dist
     - name: Restore Tests
       run: tar xzvf tests.tar.gz
-      working-directory: dist
+      working-directory: ${{ env.IKVMPATH }}/dist
     - name: Delete Tests
       shell: pwsh
       run: ri tests.tar.gz
-      working-directory: dist
+      working-directory: ${{ env.IKVMPATH }}/dist
     - name: Execute Tests
       timeout-minutes: 120
       shell: pwsh
@@ -373,7 +426,7 @@ jobs:
         }
 
         # scan for test assemblies
-        $tests = $(gci .\dist\tests\$tst\$tfm -Recurse -Filter '*.Tests.dll')
+        $tests = $(gci .\tests\$tst\$tfm -Recurse -Filter '*.Tests.dll')
 
         # if a query was specified, add to test command
         if ($tests) {
@@ -385,27 +438,31 @@ jobs:
                 dotnet test -f $tfm --blame -v 2 --results-directory "TestResults" --logger:"console;verbosity=detailed" --logger:trx --collect "Code Coverage" $tests
             }
         }
+      working-directory: ${{ env.IKVMPATH }}/dist
     - name: Upload Test Results
       if: always() && startsWith(env.RET, 'TestResults--')
       uses: actions/upload-artifact@v3
       with:
         name: ${{ env.RET }}
-        path: TestResults
+        path: ${{ env.IKVMPATH }}/dist/TestResults
   release:
     name: Release
     if: github.ref == 'refs/heads/main' || github.ref == 'refs/heads/develop' || startsWith(github.ref, 'refs/heads/release/')
     needs:
-    - test-ikvm
+    - test
     runs-on: ubuntu-latest
     steps:
     - name: Checkout Source
       uses: actions/checkout@v3
       with:
         fetch-depth: 0
-    - name: Setup .NET 6.0
+    - name: Setup .NET
+      shell: pwsh
+      run: Add-Content $env:GITHUB_ENV "`nDOTNET_INSTALL_DIR=${{ runner.temp }}/dotnet"
+    - name: Setup .NET 7.0
       uses: actions/setup-dotnet@v3
       with:
-        dotnet-version: 6.0.x
+        dotnet-version: 7.0.x
     - name: Install GitVersion
       uses: gittools/actions/gitversion/setup@v0.9.13
       with:
@@ -433,7 +490,7 @@ jobs:
       working-directory: dist
     - name: Compress Binaries
       shell: pwsh
-      run: cd dist && gi bin/* | %{ $tfm = $_.Name; Push-Location "bin/$tfm"; zip -r "../IKVM-${env:GitVersion_SemVer}-bin-$tfm.zip" .; Pop-Location }
+      run: cd dist && gi bin/* | %{ $tfm = $_.Name; Push-Location "bin/$tfm"; zip -r "../IKVM-${env:GitVersion_SemVer}-bin-$tfm.zip" .; tar czvf "../IKVM-${env:GitVersion_SemVer}-bin-$tfm.zip" .; Pop-Location }
     - name: Download Tools
       uses: actions/download-artifact@v3
       with:
@@ -444,7 +501,7 @@ jobs:
       working-directory: dist
     - name: Compress Tools
       shell: pwsh
-      run: cd dist && gi tools/*/* | %{ $tfm = $_.Parent.Name; $rid = $_.Name; Push-Location "tools/$tfm/$rid"; zip -r "../../IKVM-${env:GitVersion_SemVer}-tools-$tfm-$rid.zip" .; Pop-Location }
+      run: cd dist && gi tools/*/* | %{ $tfm = $_.Parent.Name; $rid = $_.Name; Push-Location "tools/$tfm/$rid"; zip -r "../../IKVM-${env:GitVersion_SemVer}-tools-$tfm-$rid.zip" .; tar czvf "../../IKVM-${env:GitVersion_SemVer}-tools-$tfm-$rid.tar.gz" .; Pop-Location }
     - name: Download Image
       uses: actions/download-artifact@v3
       with:
@@ -455,13 +512,13 @@ jobs:
       working-directory: dist
     - name: Compress Image
       shell: pwsh
-      run: cd dist && gi image/*/* | %{ $tfm = $_.Parent.Name; $rid = $_.Name; Push-Location "image/$tfm/$rid"; zip -r "../../IKVM-${env:GitVersion_SemVer}-image-$tfm-$rid.zip" .; Pop-Location }
+      run: cd dist && gi image/*/* | %{ $tfm = $_.Parent.Name; $rid = $_.Name; Push-Location "image/$tfm/$rid"; zip -r "../../IKVM-${env:GitVersion_SemVer}-image-$tfm-$rid.zip" .; tar czvf "../../IKVM-${env:GitVersion_SemVer}-image-$tfm-$rid.tar.gz" .; Pop-Location }
     - name: Create Release
       if: github.ref == 'refs/heads/main' || github.event.head_commit.message == '+push'
       uses: ncipollo/release-action@v1.10.0
       with:
         tag: ${{ steps.GitVersion.outputs.semVer }}
-        artifacts: dist/nuget/*.nupkg,dist/bin/*.zip,dist/tools/*.zip,dist/image/*.zip
+        artifacts: dist/nuget/*.nupkg,dist/bin/*.zip,dist/bin/*.tar.gz,dist/image/*.zip,dist/image/*.tar.gz,dist/tools/*.zip,dist/tools/*.tar.gz
         generateReleaseNotes: true
         prerelease: ${{ github.ref == 'refs/heads/develop' }}
         token: ${{ secrets.GITHUB_TOKEN }}

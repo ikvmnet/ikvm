@@ -25,9 +25,7 @@
 using System;
 using System.Collections.Generic;
 
-using ByteBuffer = java.nio.ByteBuffer;
-using FileDescriptor = java.io.FileDescriptor;
-using InetAddress = java.net.InetAddress;
+using IKVM.Runtime.Util.Sun.Nio.Ch;
 
 namespace IKVM.Java.Externs.sun.nio.ch
 {
@@ -37,102 +35,107 @@ namespace IKVM.Java.Externs.sun.nio.ch
 
 #if !FIRST_PASS
 
-		sealed class Connect : IKVM.Runtime.Util.Sun.Nio.Ch.OperationBase<System.Net.IPEndPoint>
-		{
-			protected override IAsyncResult Begin(System.Net.Sockets.Socket socket, System.Net.IPEndPoint remoteEP, AsyncCallback callback, object state)
-			{
-				return socket.BeginConnect(remoteEP, callback, state);
-			}
+        sealed class Connect : OperationBase<System.Net.IPEndPoint>
+        {
 
-			protected override int End(System.Net.Sockets.Socket socket, IAsyncResult ar)
-			{
-				socket.EndConnect(ar);
-				return 0;
-			}
-		}
+            protected override IAsyncResult Begin(System.Net.Sockets.Socket socket, System.Net.IPEndPoint remoteEP, AsyncCallback callback, object state)
+            {
+                return socket.BeginConnect(remoteEP, callback, state);
+            }
 
-		private static List<ArraySegment<byte>> ByteBuffersToList(ByteBuffer[] bufs)
-		{
-			List<ArraySegment<byte>> list = new List<ArraySegment<byte>>(bufs.Length);
-			foreach (ByteBuffer bb in bufs)
-			{
-				list.Add(new ArraySegment<byte>(bb.array(), bb.arrayOffset() + bb.position(), bb.remaining()));
-			}
-			return list;
-		}
+            protected override int End(System.Net.Sockets.Socket socket, IAsyncResult ar)
+            {
+                socket.EndConnect(ar);
+                return 0;
+            }
+        }
 
-		sealed class Receive : IKVM.Runtime.Util.Sun.Nio.Ch.OperationBase<ByteBuffer[]>
-		{
-			protected override IAsyncResult Begin(System.Net.Sockets.Socket socket, ByteBuffer[] bufs, AsyncCallback callback, object state)
-			{
-				return socket.BeginReceive(ByteBuffersToList(bufs), System.Net.Sockets.SocketFlags.None, callback, state);
-			}
+        static List<ArraySegment<byte>> ByteBuffersToList(global::java.nio.ByteBuffer[] bufs)
+        {
+            var list = new List<ArraySegment<byte>>(bufs.Length);
+            foreach (var bb in bufs)
+                list.Add(new ArraySegment<byte>(bb.array(), bb.arrayOffset() + bb.position(), bb.remaining()));
 
-			protected override int End(System.Net.Sockets.Socket socket, IAsyncResult ar)
-			{
-				return socket.EndReceive(ar);
-			}
-		}
+            return list;
+        }
 
-		sealed class Send : IKVM.Runtime.Util.Sun.Nio.Ch.OperationBase<ByteBuffer[]>
-		{
-			protected override IAsyncResult Begin(System.Net.Sockets.Socket socket, ByteBuffer[] bufs, AsyncCallback callback, object state)
-			{
-				return socket.BeginSend(ByteBuffersToList(bufs), System.Net.Sockets.SocketFlags.None, callback, state);
-			}
+        sealed class Receive : OperationBase<global::java.nio.ByteBuffer[]>
+        {
 
-			protected override int End(System.Net.Sockets.Socket socket, IAsyncResult ar)
-			{
-				return socket.EndSend(ar);
-			}
-		}
+            protected override IAsyncResult Begin(System.Net.Sockets.Socket socket, global::java.nio.ByteBuffer[] bufs, AsyncCallback callback, object state)
+            {
+                return socket.BeginReceive(ByteBuffersToList(bufs), System.Net.Sockets.SocketFlags.None, callback, state);
+            }
+
+            protected override int End(System.Net.Sockets.Socket socket, IAsyncResult ar)
+            {
+                return socket.EndReceive(ar);
+            }
+
+        }
+
+        sealed class Send : OperationBase<global::java.nio.ByteBuffer[]>
+        {
+
+            protected override IAsyncResult Begin(System.Net.Sockets.Socket socket, global::java.nio.ByteBuffer[] bufs, AsyncCallback callback, object state)
+            {
+                return socket.BeginSend(ByteBuffersToList(bufs), System.Net.Sockets.SocketFlags.None, callback, state);
+            }
+
+            protected override int End(System.Net.Sockets.Socket socket, IAsyncResult ar)
+            {
+                return socket.EndSend(ar);
+            }
+
+        }
 
 #endif
 
-        public static void initIDs()
-        {
-        }
-
-        public static int connect0(FileDescriptor fd, bool preferIPv6, InetAddress remote, int remotePort, object handler)
+        public static int connect0(global::java.io.FileDescriptor fd, bool preferIPv6, global::java.net.InetAddress remote, int remotePort, object handler)
         {
 #if FIRST_PASS
-            return 0;
+            throw new NotSupportedException();
 #else
-			return new Connect().Do(fd.getSocket(), new System.Net.IPEndPoint(global::java.net.SocketUtil.getAddressFromInetAddress(remote, preferIPv6), remotePort), handler);
+            return new Connect().Do(fd.getSocket(), new System.Net.IPEndPoint(global::java.net.SocketUtil.getAddressFromInetAddress(remote, preferIPv6), remotePort), handler);
 #endif
         }
 
-        public static void updateConnectContext(FileDescriptor fd)
+        public static void updateConnectContext(global::java.io.FileDescriptor fd)
         {
-            // already handled by .NET Framework
+
         }
 
-        public static int read0(FileDescriptor fd, ByteBuffer[] bufs, object handler)
+        public static int read0(global::java.io.FileDescriptor fd, global::java.nio.ByteBuffer[] bufs, object handler)
         {
 #if FIRST_PASS
-            return 0;
+            throw new NotSupportedException();
 #else
-			return new Receive().Do(fd.getSocket(), bufs, handler);
+            return new Receive().Do(fd.getSocket(), bufs, handler);
 #endif
         }
 
-        public static int write0(FileDescriptor fd, ByteBuffer[] bufs, object handler)
+        public static int write0(global::java.io.FileDescriptor fd, global::java.nio.ByteBuffer[] bufs, object handler)
         {
 #if FIRST_PASS
-            return 0;
+            throw new NotSupportedException();
 #else
-			return new Send().Do(fd.getSocket(), bufs, handler);
+            return new Send().Do(fd.getSocket(), bufs, handler);
 #endif
         }
 
         public static void shutdown0(long socket, int how)
         {
-            // unused
+
         }
 
         public static void closesocket0(long socket)
         {
-            // unused
+
+        }
+
+        public static void initIDs()
+        {
+
         }
 
     }
