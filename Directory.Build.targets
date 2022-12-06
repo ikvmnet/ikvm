@@ -1,5 +1,10 @@
 <Project>
 
+    <PropertyGroup>
+        <CopyRetryCount>30</CopyRetryCount>
+        <CopyRetryDelayMilliseconds>60000</CopyRetryDelayMilliseconds>
+    </PropertyGroup>
+
     <ItemGroup>
         <PackageReference Include="IKVM.Core.MSBuild" Version="0.1.27">
             <PrivateAssets>all</PrivateAssets>
