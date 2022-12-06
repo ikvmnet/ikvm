@@ -5,7 +5,7 @@
         <AutoGenerateBindingRedirects Condition="$([MSBuild]::IsTargetFrameworkCompatible('$(TargetFramework)', 'net461'))">true</AutoGenerateBindingRedirects>
         <GenerateBindingRedirectsOutputType Condition="$([MSBuild]::IsTargetFrameworkCompatible('$(TargetFramework)', 'net461'))">true</GenerateBindingRedirectsOutputType>
         <CopyRetryCount>30</CopyRetryCount>
-        <CopyRetryDelayMilliseconds>15000</CopyRetryDelayMilliseconds>
+        <CopyRetryDelayMilliseconds>60000</CopyRetryDelayMilliseconds>
         <AddSyntheticProjectReferencesForSolutionDependencies>false</AddSyntheticProjectReferencesForSolutionDependencies>
     </PropertyGroup>
 
