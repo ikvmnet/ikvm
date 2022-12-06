@@ -32,7 +32,7 @@
 
     <ItemGroup>
         <JNITrampolineRuntimeIdentifier Include="win7-x64" TargetName="x86_64-pc-windows-msvc" Includes="$(JNIHeaderDirShare);$(JNIHeaderDirWindows);$(JNITrampolineSourceDirectory)include" Arguments="-O3" />
-        <JNITrampolineRuntimeIdentifier Include="win7-x86" TargetName="i686-pc-windows-msvc" Includes="$(JNIHeaderDirShare);$(JNIHeaderDirWindows);$(JNITrampolineSourceDirectory)include" Arguments="-O3" />
+        <JNITrampolineRuntimeIdentifier Include="win7-x86" TargetName="i686-pc-windows-msvc" Includes="$(JNIHeaderDirShare);$(JNIHeaderDirWindows);$(JNITrampolineSourceDirectory)include" Arguments="-Wno-ignored-attributes -O3" />
         <JNITrampolineRuntimeIdentifier Include="win81-arm" TargetName="thumbv7-pc-windows-msvc" Includes="$(JNIHeaderDirShare);$(JNIHeaderDirWindows);$(JNITrampolineSourceDirectory)include" Arguments="-O3" />
         <JNITrampolineRuntimeIdentifier Include="win10-arm64" TargetName="aarch64-pc-windows-msvc" Includes="$(JNIHeaderDirShare);$(JNIHeaderDirWindows);$(JNITrampolineSourceDirectory)include" Arguments="-O3" />
         <JNITrampolineRuntimeIdentifier Include="linux-x64" TargetName="x86_64-unknown-linux-gnu" Includes="$(JNIHeaderDirShare);$(JNIHeaderDirSolaris);$(JNITrampolineSourceDirectory)include" Arguments="-O3" />
