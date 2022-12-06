@@ -23,23 +23,27 @@
     <PropertyGroup>
         <LLIRSourceDirectory>$(MSBuildThisFileDirectory)LLIR\</LLIRSourceDirectory>
         <LLIRIntermediateDirectory>$(MSBuildThisFileDirectory)$(IntermediateOutputPath)LLIR\</LLIRIntermediateDirectory>
+        <JNIHeaderDirShare>$(MSBuildThisFileDirectory)..\..\openjdk\jdk\src\share\javavm\export</JNIHeaderDirShare>
+        <JNIHeaderDirWindows>$(MSBuildThisFileDirectory)..\..\openjdk\jdk\src\windows\javavm\export</JNIHeaderDirWindows>
+        <JNIHeaderDirSolaris>$(MSBuildThisFileDirectory)..\..\openjdk\jdk\src\solaris\javavm\export</JNIHeaderDirSolaris>
         <CLangCommand>clang</CLangCommand>
         <ObjDumpCommand>llvm-objdump</ObjDumpCommand>
     </PropertyGroup>
 
     <ItemGroup>
-        <LLIRRuntimeIdentifier Include="win7-x64" TargetName="x86_64-pc-windows-msvc" Includes="$(LLIRSourceDirectory)includes;$(LLIRSourceDirectory)includes\windows" Arguments="-O3" />
-        <LLIRRuntimeIdentifier Include="win7-x86" TargetName="i686-pc-windows-msvc" Includes="$(LLIRSourceDirectory)includes;$(LLIRSourceDirectory)includes\windows" Arguments="-O3" />
-        <LLIRRuntimeIdentifier Include="win81-arm" TargetName="thumbv7-pc-windows-msvc" Includes="$(LLIRSourceDirectory)includes;$(LLIRSourceDirectory)includes\windows" Arguments="-O3" />
-        <LLIRRuntimeIdentifier Include="win10-arm64" TargetName="aarch64-pc-windows-msvc" Includes="$(LLIRSourceDirectory)includes;$(LLIRSourceDirectory)includes\windows" Arguments="-O3" />
-        <LLIRRuntimeIdentifier Include="linux-x64" TargetName="x86_64-unknown-linux-gnu" Includes="$(LLIRSourceDirectory)includes;$(LLIRSourceDirectory)includes\solaris" Arguments="-O3" />
-        <LLIRRuntimeIdentifier Include="linux-arm" TargetName="armv7-unknown-linux-gnueabihf" Includes="$(LLIRSourceDirectory)includes;$(LLIRSourceDirectory)includes\solaris" Arguments="-O3" />
-        <LLIRRuntimeIdentifier Include="linux-arm64" TargetName="aarch64-unknown-linux-gnueabihf" Includes="$(LLIRSourceDirectory)includes;$(LLIRSourceDirectory)includes\solaris" Arguments="-O3" />
+        <LLIRRuntimeIdentifier Include="win7-x64" TargetName="x86_64-pc-windows-msvc" Includes="$(JNIHeaderDirShare);$(JNIHeaderDirWindows);$(LLIRSourceDirectory)include" Arguments="-O3" />
+        <LLIRRuntimeIdentifier Include="win7-x86" TargetName="i686-pc-windows-msvc" Includes="$(JNIHeaderDirShare);$(JNIHeaderDirWindows);$(LLIRSourceDirectory)include" Arguments="-O3" />
+        <LLIRRuntimeIdentifier Include="win81-arm" TargetName="thumbv7-pc-windows-msvc" Includes="$(JNIHeaderDirShare);$(JNIHeaderDirWindows);$(LLIRSourceDirectory)include" Arguments="-O3" />
+        <LLIRRuntimeIdentifier Include="win10-arm64" TargetName="aarch64-pc-windows-msvc" Includes="$(JNIHeaderDirShare);$(JNIHeaderDirWindows);$(LLIRSourceDirectory)include" Arguments="-O3" />
+        <LLIRRuntimeIdentifier Include="linux-x64" TargetName="x86_64-unknown-linux-gnu" Includes="$(JNIHeaderDirShare);$(JNIHeaderDirSolaris);$(LLIRSourceDirectory)include" Arguments="-O3" />
+        <LLIRRuntimeIdentifier Include="linux-arm" TargetName="armv7-unknown-linux-gnueabihf" Includes="$(JNIHeaderDirShare);$(JNIHeaderDirSolaris);$(LLIRSourceDirectory)include" Arguments="-O3" />
+        <LLIRRuntimeIdentifier Include="linux-arm64" TargetName="aarch64-unknown-linux-gnueabihf" Includes="$(JNIHeaderDirShare);$(JNIHeaderDirSolaris);$(LLIRSourceDirectory)include" Arguments="-O3" />
     </ItemGroup>
 
     <Target Name="CompileLLIR" Inputs="$(LLIRSourceDirectory)ikvm.c;$(LLIRSourceDirectory)ikvm.h" Outputs="$(LLIRIntermediateDirectory)%(LLIRRuntimeIdentifier.Identity).o" Condition=" '$(TargetFramework)' != '' ">
         <ItemGroup>
-            <_LLIRIncludes Include="%(LLIRRuntimeIdentifier.Includes)" />
+            <__LLIRIncludes Include="%(LLIRRuntimeIdentifier.Includes)" />
+            <_LLIRIncludes Include="@(__LLIRIncludes->'%(FullPath)')" />
         </ItemGroup>
         
         <MakeDir Directories="$(LLIRIntermediateDirectory)" />
