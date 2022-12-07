@@ -52,7 +52,7 @@ namespace IKVM.Runtime.JNI.Trampolines
             else if (RuntimeInformation.IsOSPlatform(OSPlatform.OSX))
             {
                 if (RuntimeInformation.ProcessArchitecture == Architecture.X64)
-                    return new LLIR_osx_x64();
+                    return new FunctionTable_osx_x64();
             }
 
             throw new PlatformNotSupportedException();
