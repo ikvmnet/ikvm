@@ -39,17 +39,26 @@
         <JNITrampolineRuntimeIdentifier Include="linux-arm" TargetName="armv7-unknown-linux-gnueabihf" Includes="$(JNIHeaderDirShare);$(JNIHeaderDirSolaris);$(JNITrampolineSourceDirectory)include" Arguments="-O3" />
         <JNITrampolineRuntimeIdentifier Include="linux-arm64" TargetName="aarch64-unknown-linux-gnueabihf" Includes="$(JNIHeaderDirShare);$(JNIHeaderDirSolaris);$(JNITrampolineSourceDirectory)include" Arguments="-O3" />
         <JNITrampolineRuntimeIdentifier Include="osx-x64" TargetName="x86_64-apple-macosx" Includes="$(JNIHeaderDirShare);$(JNIHeaderDirSolaris);$(JNITrampolineSourceDirectory)include" Arguments="-O3" />
+        <JNITrampolineRuntimeIdentifier Include="win7-x64" TargetName="x86_64-pc-windows-msvc" Includes="$(JNIHeaderDirShare);$(JNIHeaderDirWindows);$(JNITrampolineSourceDirectory)include" Arguments="-O0" />
+        <JNITrampolineRuntimeIdentifier Include="win7-x86" TargetName="i686-pc-windows-msvc" Includes="$(JNIHeaderDirShare);$(JNIHeaderDirWindows);$(JNITrampolineSourceDirectory)include" Arguments="-Wno-ignored-attributes -O0" />
+        <JNITrampolineRuntimeIdentifier Include="win81-arm" TargetName="thumbv7-pc-windows-msvc" Includes="$(JNIHeaderDirShare);$(JNIHeaderDirWindows);$(JNITrampolineSourceDirectory)include" Arguments="-O0" />
+        <JNITrampolineRuntimeIdentifier Include="win10-arm64" TargetName="aarch64-pc-windows-msvc" Includes="$(JNIHeaderDirShare);$(JNIHeaderDirWindows);$(JNITrampolineSourceDirectory)include" Arguments="-O0" />
+        <JNITrampolineRuntimeIdentifier Include="linux-x64" TargetName="x86_64-unknown-linux-gnu" Includes="$(JNIHeaderDirShare);$(JNIHeaderDirSolaris);$(JNITrampolineSourceDirectory)include" Arguments="-O0" />
+        <JNITrampolineRuntimeIdentifier Include="linux-arm" TargetName="armv7-unknown-linux-gnueabihf" Includes="$(JNIHeaderDirShare);$(JNIHeaderDirSolaris);$(JNITrampolineSourceDirectory)include" Arguments="-O0" />
+        <JNITrampolineRuntimeIdentifier Include="linux-arm64" TargetName="aarch64-unknown-linux-gnueabihf" Includes="$(JNIHeaderDirShare);$(JNIHeaderDirSolaris);$(JNITrampolineSourceDirectory)include" Arguments="-O0" />
     </ItemGroup>
 
-    <Target Name="CompileJNITrampolines" Inputs="$(JNITrampolineSourceDirectory)ikvm.c;$(JNITrampolineSourceDirectory)ikvm.h" Outputs="$(JNITrampolineIntermediateDirectory)%(JNITrampolineRuntimeIdentifier.Identity).o" Condition=" '$(TargetFramework)' != '' ">
+    <Target Name="CompileJNITrampolines" Inputs="$(JNITrampolineSourceDirectory)ikvm.c;$(JNITrampolineSourceDirectory)ikvm.h" Outputs="$(JNITrampolineIntermediateDirectory)%(JNITrampolineRuntimeIdentifier.Identity).o;$(JNITrampolineIntermediateDirectory)%(JNITrampolineRuntimeIdentifier.Identity).ll" Condition=" '$(TargetFramework)' != '' ">
         <ItemGroup>
             <_JNITrampolinesIncludes Include="%(JNITrampolineRuntimeIdentifier.Includes)" />
         </ItemGroup>
 
         <MakeDir Directories="$(JNITrampolineIntermediateDirectory)" />
         <Exec WorkingDirectory="$(JNITrampolineSourceDirectory)" Command="&quot;$(CLangCommand)&quot; -c &quot;ikvm.c&quot; -o &quot;$(JNITrampolineIntermediateDirectory)%(JNITrampolineRuntimeIdentifier.Identity).o&quot; --target=%(JNITrampolineRuntimeIdentifier.TargetName) @(_JNITrampolinesIncludes->'-I%(FullPath)', ' ') -g %(JNITrampolineRuntimeIdentifier.Arguments)" />
+        <Exec WorkingDirectory="$(JNITrampolineSourceDirectory)" Command="&quot;$(CLangCommand)&quot; -S &quot;ikvm.c&quot; -emit-llvm -o &quot;$(JNITrampolineIntermediateDirectory)%(JNITrampolineRuntimeIdentifier.Identity).ll&quot; --target=%(JNITrampolineRuntimeIdentifier.TargetName) @(_JNITrampolinesIncludes->'-I%(FullPath)', ' ') -g %(JNITrampolineRuntimeIdentifier.Arguments)" />
         <ItemGroup>
             <FileWrites Include="$(JNITrampolineIntermediateDirectory)%(JNITrampolineRuntimeIdentifier.Identity).o" />
+            <FileWrites Include="$(JNITrampolineIntermediateDirectory)%(JNITrampolineRuntimeIdentifier.Identity).ll" />
         </ItemGroup>
     </Target>
 
