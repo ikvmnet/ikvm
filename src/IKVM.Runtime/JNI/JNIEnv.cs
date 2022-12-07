@@ -957,7 +957,7 @@ namespace IKVM.Runtime.JNI
                 tw.Finish();
 
                 // if name == NULL, the JDK returns the constructor
-                var methodname = (jshortArray)name == IntPtr.Zero ? "<init>" : DecodeMUTF8Argument(name, nameof(name));
+                var methodname = (IntPtr)name == IntPtr.Zero ? "<init>" : DecodeMUTF8Argument(name, nameof(name));
                 var methodsig = DecodeMUTF8Argument(sig, nameof(sig));
 
                 MethodWrapper mw = null;
