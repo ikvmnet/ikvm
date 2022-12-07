@@ -58,6 +58,7 @@ namespace IKVM.Runtime.JNI
     using jstring = System.IntPtr;
     using jthrowable = System.IntPtr;
     using jweak = System.IntPtr;
+    using jobjectArray = System.IntPtr;
 
     [StructLayout(LayoutKind.Sequential)]
     unsafe partial struct JNIEnv
@@ -1550,7 +1551,7 @@ namespace IKVM.Runtime.JNI
             return ((Array)pEnv->UnwrapRef(array)).Length;
         }
 
-        internal static jobject NewObjectArray(JNIEnv* pEnv, jsize len, jclass clazz, jobject init)
+        internal static jobjectArray NewObjectArray(JNIEnv* pEnv, jsize len, jclass clazz, jobject init)
         {
             try
             {
@@ -1917,7 +1918,7 @@ namespace IKVM.Runtime.JNI
             }
         }
 
-        internal static void GetBooleanArrayRegion(JNIEnv* pEnv, IntPtr array, int start, int len, IntPtr buf)
+        internal static void GetBooleanArrayRegion(JNIEnv* pEnv, jbooleanArray array, int start, int len, jboolean* buf)
         {
             try
             {
@@ -1934,7 +1935,7 @@ namespace IKVM.Runtime.JNI
             }
         }
 
-        internal static void GetByteArrayRegion(JNIEnv* pEnv, IntPtr array, int start, int len, IntPtr buf)
+        internal static void GetByteArrayRegion(JNIEnv* pEnv, jbyteArray array, int start, int len, jbyte* buf)
         {
             try
             {
@@ -1951,12 +1952,12 @@ namespace IKVM.Runtime.JNI
             }
         }
 
-        internal static void GetCharArrayRegion(JNIEnv* pEnv, IntPtr array, int start, int len, IntPtr buf)
+        internal static void GetCharArrayRegion(JNIEnv* pEnv, jcharArray array, int start, int len, jchar* buf)
         {
             try
             {
                 char[] b = (char[])pEnv->UnwrapRef(array);
-                Marshal.Copy(b, start, buf, len);
+                Marshal.Copy(b, start, (IntPtr)buf, len);
             }
             catch (ArgumentOutOfRangeException)
             {
@@ -1964,12 +1965,12 @@ namespace IKVM.Runtime.JNI
             }
         }
 
-        internal static void GetShortArrayRegion(JNIEnv* pEnv, IntPtr array, int start, int len, IntPtr buf)
+        internal static void GetShortArrayRegion(JNIEnv* pEnv, jshortArray array, int start, int len, jshort* buf)
         {
             try
             {
                 short[] b = (short[])pEnv->UnwrapRef(array);
-                Marshal.Copy(b, start, buf, len);
+                Marshal.Copy(b, start, (IntPtr)buf, len);
             }
             catch (ArgumentOutOfRangeException)
             {
@@ -1977,12 +1978,12 @@ namespace IKVM.Runtime.JNI
             }
         }
 
-        internal static void GetIntArrayRegion(JNIEnv* pEnv, IntPtr array, int start, int len, IntPtr buf)
+        internal static void GetIntArrayRegion(JNIEnv* pEnv, jintArray array, int start, int len, jint* buf)
         {
             try
             {
                 int[] b = (int[])pEnv->UnwrapRef(array);
-                Marshal.Copy(b, start, buf, len);
+                Marshal.Copy(b, start, (IntPtr)buf, len);
             }
             catch (ArgumentOutOfRangeException)
             {
@@ -1990,12 +1991,12 @@ namespace IKVM.Runtime.JNI
             }
         }
 
-        internal static void GetLongArrayRegion(JNIEnv* pEnv, IntPtr array, int start, int len, IntPtr buf)
+        internal static void GetLongArrayRegion(JNIEnv* pEnv, jlongArray array, int start, int len, jlong* buf)
         {
             try
             {
                 long[] b = (long[])pEnv->UnwrapRef(array);
-                Marshal.Copy(b, start, buf, len);
+                Marshal.Copy(b, start, (IntPtr)buf, len);
             }
             catch (ArgumentOutOfRangeException)
             {
@@ -2003,12 +2004,12 @@ namespace IKVM.Runtime.JNI
             }
         }
 
-        internal static void GetFloatArrayRegion(JNIEnv* pEnv, IntPtr array, int start, int len, IntPtr buf)
+        internal static void GetFloatArrayRegion(JNIEnv* pEnv, jfloatArray array, int start, int len, jfloat* buf)
         {
             try
             {
                 float[] b = (float[])pEnv->UnwrapRef(array);
-                Marshal.Copy(b, start, buf, len);
+                Marshal.Copy(b, start, (IntPtr)buf, len);
             }
             catch (ArgumentOutOfRangeException)
             {
@@ -2016,12 +2017,12 @@ namespace IKVM.Runtime.JNI
             }
         }
 
-        internal static void GetDoubleArrayRegion(JNIEnv* pEnv, IntPtr array, int start, int len, IntPtr buf)
+        internal static void GetDoubleArrayRegion(JNIEnv* pEnv, jdoubleArray array, int start, int len, jdouble* buf)
         {
             try
             {
                 double[] b = (double[])pEnv->UnwrapRef(array);
-                Marshal.Copy(b, start, buf, len);
+                Marshal.Copy(b, start, (IntPtr)buf, len);
             }
             catch (ArgumentOutOfRangeException)
             {
@@ -2029,7 +2030,7 @@ namespace IKVM.Runtime.JNI
             }
         }
 
-        internal static void SetBooleanArrayRegion(JNIEnv* pEnv, IntPtr array, int start, int len, IntPtr buf)
+        internal static void SetBooleanArrayRegion(JNIEnv* pEnv, jbooleanArray array, int start, int len, jboolean* buf)
         {
             try
             {
@@ -2046,7 +2047,7 @@ namespace IKVM.Runtime.JNI
             }
         }
 
-        internal static void SetByteArrayRegion(JNIEnv* pEnv, IntPtr array, int start, int len, IntPtr buf)
+        internal static void SetByteArrayRegion(JNIEnv* pEnv, jbyteArray array, int start, int len, jbyte* buf)
         {
             try
             {
@@ -2063,12 +2064,12 @@ namespace IKVM.Runtime.JNI
             }
         }
 
-        internal static void SetCharArrayRegion(JNIEnv* pEnv, IntPtr array, int start, int len, IntPtr buf)
+        internal static void SetCharArrayRegion(JNIEnv* pEnv, jcharArray array, int start, int len, jchar* buf)
         {
             try
             {
                 char[] b = (char[])pEnv->UnwrapRef(array);
-                Marshal.Copy(buf, b, start, len);
+                Marshal.Copy((IntPtr)buf, b, start, len);
             }
             catch (ArgumentOutOfRangeException)
             {
@@ -2076,12 +2077,12 @@ namespace IKVM.Runtime.JNI
             }
         }
 
-        internal static void SetShortArrayRegion(JNIEnv* pEnv, IntPtr array, int start, int len, IntPtr buf)
+        internal static void SetShortArrayRegion(JNIEnv* pEnv, jshortArray array, int start, int len, jshort* buf)
         {
             try
             {
                 short[] b = (short[])pEnv->UnwrapRef(array);
-                Marshal.Copy(buf, b, start, len);
+                Marshal.Copy((IntPtr)buf, b, start, len);
             }
             catch (ArgumentOutOfRangeException)
             {
@@ -2089,12 +2090,12 @@ namespace IKVM.Runtime.JNI
             }
         }
 
-        internal static void SetIntArrayRegion(JNIEnv* pEnv, IntPtr array, int start, int len, IntPtr buf)
+        internal static void SetIntArrayRegion(JNIEnv* pEnv, jintArray array, int start, int len, jint* buf)
         {
             try
             {
                 int[] b = (int[])pEnv->UnwrapRef(array);
-                Marshal.Copy(buf, b, start, len);
+                Marshal.Copy((IntPtr)buf, b, start, len);
             }
             catch (ArgumentOutOfRangeException)
             {
@@ -2102,12 +2103,12 @@ namespace IKVM.Runtime.JNI
             }
         }
 
-        internal static void SetLongArrayRegion(JNIEnv* pEnv, IntPtr array, int start, int len, IntPtr buf)
+        internal static void SetLongArrayRegion(JNIEnv* pEnv, jlongArray array, int start, int len, jlong* buf)
         {
             try
             {
                 long[] b = (long[])pEnv->UnwrapRef(array);
-                Marshal.Copy(buf, b, start, len);
+                Marshal.Copy((IntPtr)buf, b, start, len);
             }
             catch (ArgumentOutOfRangeException)
             {
@@ -2115,12 +2116,12 @@ namespace IKVM.Runtime.JNI
             }
         }
 
-        internal static void SetFloatArrayRegion(JNIEnv* pEnv, IntPtr array, int start, int len, IntPtr buf)
+        internal static void SetFloatArrayRegion(JNIEnv* pEnv, jfloatArray array, int start, int len, jfloat* buf)
         {
             try
             {
                 float[] b = (float[])pEnv->UnwrapRef(array);
-                Marshal.Copy(buf, b, start, len);
+                Marshal.Copy((IntPtr)buf, b, start, len);
             }
             catch (ArgumentOutOfRangeException)
             {
@@ -2128,12 +2129,12 @@ namespace IKVM.Runtime.JNI
             }
         }
 
-        internal static void SetDoubleArrayRegion(JNIEnv* pEnv, IntPtr array, int start, int len, IntPtr buf)
+        internal static void SetDoubleArrayRegion(JNIEnv* pEnv, jdoubleArray array, int start, int len, jdouble* buf)
         {
             try
             {
                 double[] b = (double[])pEnv->UnwrapRef(array);
-                Marshal.Copy(buf, b, start, len);
+                Marshal.Copy((IntPtr)buf, b, start, len);
             }
             catch (ArgumentOutOfRangeException)
             {
@@ -2149,7 +2150,7 @@ namespace IKVM.Runtime.JNI
             public void* fnPtr;
         }
 
-        internal static int RegisterNatives(JNIEnv* pEnv, IntPtr clazz, JNINativeMethod* methods, int nMethods)
+        internal static jint RegisterNatives(JNIEnv* pEnv, jclass clazz, JNINativeMethod* methods, jint nMethods)
         {
             try
             {
@@ -2189,7 +2190,7 @@ namespace IKVM.Runtime.JNI
             }
         }
 
-        internal static int UnregisterNatives(JNIEnv* pEnv, IntPtr clazz)
+        internal static jint UnregisterNatives(JNIEnv* pEnv, jclass clazz)
         {
             try
             {
@@ -2219,7 +2220,7 @@ namespace IKVM.Runtime.JNI
             }
         }
 
-        internal static int MonitorEnter(JNIEnv* pEnv, IntPtr obj)
+        internal static jint MonitorEnter(JNIEnv* pEnv, jobject obj)
         {
             try
             {
@@ -2237,7 +2238,7 @@ namespace IKVM.Runtime.JNI
             }
         }
 
-        internal static int MonitorExit(JNIEnv* pEnv, IntPtr obj)
+        internal static jint MonitorExit(JNIEnv* pEnv, jobject obj)
         {
             try
             {
@@ -2251,13 +2252,13 @@ namespace IKVM.Runtime.JNI
             }
         }
 
-        internal static int GetJavaVM(JNIEnv* pEnv, JavaVM** ppJavaVM)
+        internal static jint GetJavaVM(JNIEnv* pEnv, JavaVM** ppJavaVM)
         {
             *ppJavaVM = JavaVM.pJavaVM;
             return JNI_OK;
         }
 
-        internal static void GetStringRegion(JNIEnv* pEnv, IntPtr str, int start, int len, IntPtr buf)
+        internal static void GetStringRegion(JNIEnv* pEnv, jstring str, jsize start, jsize len, jchar* buf)
         {
             string s = (string)pEnv->UnwrapRef(str);
             if (s != null)
@@ -2284,7 +2285,7 @@ namespace IKVM.Runtime.JNI
             }
         }
 
-        internal static void GetStringUTFRegion(JNIEnv* pEnv, IntPtr str, int start, int len, IntPtr buf)
+        internal static void GetStringUTFRegion(JNIEnv* pEnv, jstring str, jsize start, jsize len, byte* buf)
         {
             string s = (string)pEnv->UnwrapRef(str);
             if (s != null)
@@ -2458,16 +2459,16 @@ namespace IKVM.Runtime.JNI
             }
         }
 
-        internal static IntPtr GetDirectBufferAddress(JNIEnv* pEnv, jobject buf)
+        internal static void* GetDirectBufferAddress(JNIEnv* pEnv, jobject buf)
         {
             try
             {
-                return (IntPtr)((sun.nio.ch.DirectBuffer)pEnv->UnwrapRef(buf)).address();
+                return (void*)(IntPtr)((sun.nio.ch.DirectBuffer)pEnv->UnwrapRef(buf)).address();
             }
             catch (Exception x)
             {
                 SetPendingException(pEnv, ikvm.runtime.Util.mapException(x));
-                return IntPtr.Zero;
+                return (void*)IntPtr.Zero;
             }
         }
 
@@ -2484,21 +2485,21 @@ namespace IKVM.Runtime.JNI
             }
         }
 
-        internal static int GetObjectRefType(JNIEnv* pEnv, jobject obj)
+        internal static jobjectRefType GetObjectRefType(JNIEnv* pEnv, jobject obj)
         {
             int i = obj.ToInt32();
             if (i >= 0)
             {
-                return JNILocalRefType;
+                return jobjectRefType.JNILocalRefType;
             }
             i = -i;
             if ((i & (1 << 30)) != 0)
             {
-                return JNIWeakGlobalRefType;
+                return jobjectRefType.JNIWeakGlobalRefType;
             }
             else
             {
-                return JNIGlobalRefType;
+                return jobjectRefType.JNIGlobalRefType;
             }
         }
 
