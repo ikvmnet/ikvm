@@ -7,7 +7,6 @@
         <AllowUnsafeBlocks>true</AllowUnsafeBlocks>
         <PreserveCompilationContext>true</PreserveCompilationContext>
         <ErrorOnDuplicatePublishOutputFiles>false</ErrorOnDuplicatePublishOutputFiles>
-        <UserSecretsId>4af78a62-ef1f-4082-9790-c9eb6c75aee6</UserSecretsId>
     </PropertyGroup>
 
     <ItemGroup>
@@ -135,6 +134,17 @@
             <SetTargetFramework>TargetFramework=netcoreapp3.1</SetTargetFramework>
             <SetRuntimeIdentifier>RuntimeIdentifier=linux-arm64</SetRuntimeIdentifier>
             <ProjectTargetPath>ikvmstub\netcoreapp3.1\linux-arm64</ProjectTargetPath>
+        </PublishProjectReference>
+
+        <PublishProjectReference Include="..\ikvmc\ikvmc.csproj">
+            <SetTargetFramework>TargetFramework=netcoreapp3.1</SetTargetFramework>
+            <SetRuntimeIdentifier>RuntimeIdentifier=osx-x64</SetRuntimeIdentifier>
+            <ProjectTargetPath>ikvmc\netcoreapp3.1\osx-x64</ProjectTargetPath>
+        </PublishProjectReference>
+        <PublishProjectReference Include="..\ikvmstub\ikvmstub.csproj">
+            <SetTargetFramework>TargetFramework=netcoreapp3.1</SetTargetFramework>
+            <SetRuntimeIdentifier>RuntimeIdentifier=osx-x64</SetRuntimeIdentifier>
+            <ProjectTargetPath>ikvmstub\netcoreapp3.1\osx-x64</ProjectTargetPath>
         </PublishProjectReference>
 
     </ItemGroup>

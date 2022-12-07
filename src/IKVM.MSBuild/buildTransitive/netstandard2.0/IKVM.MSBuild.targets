@@ -10,6 +10,8 @@
         <IkvmToolRuntime Condition="$([MSBuild]::IsOSPlatform('Windows')) And '$([System.Runtime.InteropServices.RuntimeInformation]::OSArchitecture)' == 'X86'">win7-x86</IkvmToolRuntime>
         <IkvmToolRuntime Condition="$([MSBuild]::IsOSPlatform('Windows')) And '$([System.Runtime.InteropServices.RuntimeInformation]::OSArchitecture)' == 'X64'">win7-x64</IkvmToolRuntime>
         <IkvmToolRuntime Condition="$([MSBuild]::IsOSPlatform('Linux')) And '$([System.Runtime.InteropServices.RuntimeInformation]::OSArchitecture)' == 'X64'">linux-x64</IkvmToolRuntime>
+        <IkvmToolRuntime Condition="$([MSBuild]::IsOSPlatform('OSX')) And '$([System.Runtime.InteropServices.RuntimeInformation]::OSArchitecture)' == 'X64'">osx-x64</IkvmToolRuntime>
+        <IkvmToolRuntime Condition="$([MSBuild]::IsOSPlatform('OSX')) And '$([System.Runtime.InteropServices.RuntimeInformation]::OSArchitecture)' == 'ARM64'">osx-arm64</IkvmToolRuntime>
     </PropertyGroup>
 
     <!-- Set up default cache information. -->

@@ -73,6 +73,10 @@ namespace IKVM.NET.Sdk.Tests
                             new XAttribute("key", "globalPackagesFolder"),
                             new XAttribute("value", nugetPackageRoot))),
                     new XElement("packageSources",
+                        new XElement("clear"),
+                        new XElement("add",
+                            new XAttribute("key", "nuget.org"),
+                            new XAttribute("value", "https://api.nuget.org/v3/index.json")),
                         new XElement("add",
                             new XAttribute("key", "dev"),
                             new XAttribute("value", Path.Combine(Path.GetDirectoryName(typeof(ProjectTests).Assembly.Location), @"nuget"))),
@@ -113,6 +117,7 @@ namespace IKVM.NET.Sdk.Tests
                 ("netcoreapp3.1",   "linux-x64"),
                 ("netcoreapp3.1",   "linux-arm"),
                 ("netcoreapp3.1",   "linux-arm64"),
+                ("netcoreapp3.1",   "osx-x64"),
             };
 
             if (RuntimeInformation.IsOSPlatform(OSPlatform.Linux))
@@ -125,6 +130,7 @@ namespace IKVM.NET.Sdk.Tests
                     ("netcoreapp3.1",   "linux-x64"),
                     ("netcoreapp3.1",   "linux-arm"),
                     ("netcoreapp3.1",   "linux-arm64"),
+                    ("netcoreapp3.1",   "osx-x64"),
                 };
             }
 
