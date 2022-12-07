@@ -1,6 +1,6 @@
 ﻿<Project>
     <PropertyGroup>
-        <OpenJdkDir>$(MSBuildThisFileDirectory)openjdk</OpenJdkDir>
+        <OpenJdkDir>$(MSBuildThisFileDirectory)openjdk\</OpenJdkDir>
         <OpenJdkVersion>OpenJDK 8u45 b37</OpenJdkVersion>
         <OpenJdkFullVersion>1.8.0_45-b37</OpenJdkFullVersion>
         <OpenJdkVendor>Oracle</OpenJdkVendor>

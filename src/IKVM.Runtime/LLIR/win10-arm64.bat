@@ -1,1 +1,0 @@
-clang -S -emit-llvm jni.c -Wall -I..\..\..\openjdk\jdk\src\share\javavm\export\ -I..\..\..\openjdk\jdk\src\windows\javavm\export\ -o win10-arm64.ll --target=aarch64-pc-windows-msvc -g

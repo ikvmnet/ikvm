@@ -40,7 +40,7 @@ These tasks can be done **without porting source code** to .NET.
 - .NET Core 3.1 and higher
 - .NET 5 and higher
 - Java SE 8
-- Windows x86/x64/ARM
+- Windows x86/x64/ARM/ARM64
 - Linux x64/ARM/ARM64
 
 ## Documentation

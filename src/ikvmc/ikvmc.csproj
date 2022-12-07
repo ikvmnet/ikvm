@@ -29,7 +29,7 @@
         <ExcludeFromCompile Include="..\IKVM.Runtime\PassiveWeakDictionary.cs" />
         <ExcludeFromCompile Include="..\IKVM.Runtime\LLIR\**\*.cs" />
         <ExcludeFromCompile Include="..\IKVM.Runtime\JNI\**\*.cs" />
-        <Compile Include="..\IKVM.Runtime\**\*.cs" LinkBase="runtime" Exclude="@(ExcludeFromCompile)" />
+        <Compile Include="..\IKVM.Runtime\**\*.cs" LinkBase="IKVM\Runtime" Exclude="@(ExcludeFromCompile)" />
     </ItemGroup>
 
 </Project>

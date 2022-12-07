@@ -3,28 +3,28 @@ using System.Runtime.InteropServices;
 
 using IKVM.Runtime.JNI.Memory;
 
-namespace IKVM.Runtime.LLIR
+namespace IKVM.Runtime.JNI.Trampolines
 {
 
     /// <summary>
     /// Maintains a set of LLIR function pointers.
     /// </summary>
-    abstract class LLIRFunctionTable
+    abstract class FunctionTable
     {
 
-        static LLIRFunctionTable instance;
+        static FunctionTable instance;
 
         /// <summary>
         /// Gets the instance of the function table based on the current platform.
         /// </summary>
         /// <returns></returns>
-        public static LLIRFunctionTable Instance => instance ??= CreateInstance();
+        public static FunctionTable Instance => instance ??= CreateInstance();
 
         /// <summary>
         /// Gets the instance of the function table based on the current platform.
         /// </summary>
         /// <returns></returns>
-        static LLIRFunctionTable CreateInstance()
+        static FunctionTable CreateInstance()
         {
 #if FIRST_PASS
             return null;
@@ -32,22 +32,22 @@ namespace IKVM.Runtime.LLIR
             if (RuntimeInformation.IsOSPlatform(OSPlatform.Windows))
             {
                 if (RuntimeInformation.ProcessArchitecture == Architecture.X86)
-                    return new LLIR_win7_x86();
+                    return new FunctionTable_win7_x86();
                 else if (RuntimeInformation.ProcessArchitecture == Architecture.X64)
-                    return new LLIR_win7_x64();
+                    return new FunctionTable_win7_x64();
                 else if (RuntimeInformation.ProcessArchitecture == Architecture.Arm)
-                    return new LLIR_win81_arm();
+                    return new FunctionTable_win81_arm();
                 else if (RuntimeInformation.ProcessArchitecture == Architecture.Arm64)
-                    return new LLIR_win10_arm64();
+                    return new FunctionTable_win10_arm64();
             }
             else if (RuntimeInformation.IsOSPlatform(OSPlatform.Linux))
             {
                 if (RuntimeInformation.ProcessArchitecture == Architecture.X64)
-                    return new LLIR_linux_x64();
+                    return new FunctionTable_linux_x64();
                 else if (RuntimeInformation.ProcessArchitecture == Architecture.Arm)
-                    return new LLIR_linux_arm();
+                    return new FunctionTable_linux_arm();
                 else if (RuntimeInformation.ProcessArchitecture == Architecture.Arm64)
-                    return new LLIR_linux_arm64();
+                    return new FunctionTable_linux_arm64();
             }
             else if (RuntimeInformation.IsOSPlatform(OSPlatform.OSX))
             {
@@ -79,7 +79,7 @@ namespace IKVM.Runtime.LLIR
         /// <summary>
         /// Initializes a new instance.
         /// </summary>
-        public LLIRFunctionTable()
+        public FunctionTable()
         {
             memory = AllocateMemory(Text);
         }
