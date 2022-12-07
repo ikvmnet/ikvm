@@ -18,17 +18,6 @@
         <ProjectReference Include="..\IKVM.Java\IKVM.Java.msbuildproj" />
     </ItemGroup>
 
-    <ItemGroup>
-        <LLIRRuntimeIdentifier Include="win7-x64" TargetName="x86_64-pc-windows-msvc" Arguments="-O3" />
-        <LLIRRuntimeIdentifier Include="win7-x86" TargetName="i686-pc-windows-msvc" Arguments="-O3" />
-        <LLIRRuntimeIdentifier Include="win81-arm" TargetName="thumbv7-pc-windows-msvc" Arguments="-O3" />
-        <LLIRRuntimeIdentifier Include="win10-arm64" TargetName="aarch64-pc-windows-msvc" Arguments="-O3" />
-        <LLIRRuntimeIdentifier Include="linux-x64" TargetName="x86_64-unknown-linux-gnu" Arguments="-O3" />
-        <LLIRRuntimeIdentifier Include="linux-arm" TargetName="armv7-unknown-linux-gnueabihf" Arguments="-O3" />
-        <LLIRRuntimeIdentifier Include="linux-arm64" TargetName="aarch64-unknown-linux-gnueabihf" Arguments="-O3" />
-        <LLIRRuntimeIdentifier Include="osx-x64" TargetName="x86_64-apple-macosx" Arguments="-O3" />
-    </ItemGroup>
-
     <Import Sdk="Microsoft.NET.Sdk" Project="Sdk.targets" />
 
     <PropertyGroup>
@@ -49,6 +38,7 @@
         <JNITrampolineRuntimeIdentifier Include="linux-x64" TargetName="x86_64-unknown-linux-gnu" Includes="$(JNIHeaderDirShare);$(JNIHeaderDirSolaris);$(JNITrampolineSourceDirectory)include" Arguments="-O3" />
         <JNITrampolineRuntimeIdentifier Include="linux-arm" TargetName="armv7-unknown-linux-gnueabihf" Includes="$(JNIHeaderDirShare);$(JNIHeaderDirSolaris);$(JNITrampolineSourceDirectory)include" Arguments="-O3" />
         <JNITrampolineRuntimeIdentifier Include="linux-arm64" TargetName="aarch64-unknown-linux-gnueabihf" Includes="$(JNIHeaderDirShare);$(JNIHeaderDirSolaris);$(JNITrampolineSourceDirectory)include" Arguments="-O3" />
+        <JNITrampolineRuntimeIdentifier Include="osx-x64" TargetName="x86_64-apple-macosx" Includes="$(JNIHeaderDirShare);$(JNIHeaderDirSolaris);$(JNITrampolineSourceDirectory)include" Arguments="-O3" />
     </ItemGroup>
 
     <Target Name="CompileJNITrampolines" Inputs="$(JNITrampolineSourceDirectory)ikvm.c;$(JNITrampolineSourceDirectory)ikvm.h" Outputs="$(JNITrampolineIntermediateDirectory)%(JNITrampolineRuntimeIdentifier.Identity).o" Condition=" '$(TargetFramework)' != '' ">
