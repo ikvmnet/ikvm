@@ -273,6 +273,8 @@ Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "IKVM.Image.JDK", "src\IKVM.
 EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "IKVM.Image.JRE", "src\IKVM.Image.JRE\IKVM.Image.JRE.csproj", "{819C752E-1F74-4447-9214-86EF337A1DEF}"
 EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "IKVM.Tools.Importer", "src\IKVM.Tools.Importer\IKVM.Tools.Importer.csproj", "{50954AE0-E513-4CE7-AC8E-F3896CA0BEB7}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -575,6 +577,10 @@ Global
 		{819C752E-1F74-4447-9214-86EF337A1DEF}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{819C752E-1F74-4447-9214-86EF337A1DEF}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{819C752E-1F74-4447-9214-86EF337A1DEF}.Release|Any CPU.Build.0 = Release|Any CPU
+		{50954AE0-E513-4CE7-AC8E-F3896CA0BEB7}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{50954AE0-E513-4CE7-AC8E-F3896CA0BEB7}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{50954AE0-E513-4CE7-AC8E-F3896CA0BEB7}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{50954AE0-E513-4CE7-AC8E-F3896CA0BEB7}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE

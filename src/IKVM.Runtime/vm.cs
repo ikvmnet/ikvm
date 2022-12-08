@@ -27,7 +27,7 @@ using System.Diagnostics;
 using System.Text;
 using System.Security;
 
-#if STATIC_COMPILER || STUB_GENERATOR
+#if IMPORTER || EXPORTER
 using IKVM.Reflection;
 
 using Type = IKVM.Reflection.Type;
@@ -35,7 +35,11 @@ using Type = IKVM.Reflection.Type;
 using System.Reflection;
 #endif
 
-#if !STATIC_COMPILER && !STUB_GENERATOR
+#if IMPORTER
+using IKVM.Tools.Importer;
+#endif
+
+#if !IMPORTER && !EXPORTER
 
 namespace IKVM.Internal
 {
@@ -47,7 +51,7 @@ namespace IKVM.Internal
 
 }
 
-#endif // !STATIC_COMPILER && !STUB_GENERATOR
+#endif // !IMPORTER && !EXPORTER
 
 namespace IKVM.Internal
 {
@@ -57,7 +61,7 @@ namespace IKVM.Internal
 
         internal const string JarClassList = "--ikvm-classes--/";
 
-#if !STUB_GENERATOR
+#if !EXPORTER
         private static int emitSymbols;
 #if CLASSGC
 		internal static bool classUnloading = true;
@@ -65,13 +69,13 @@ namespace IKVM.Internal
 #endif
         private static Assembly coreAssembly;
 
-#if !STUB_GENERATOR
+#if !EXPORTER
         internal static bool relaxedVerification = true;
         internal static bool AllowNonVirtualCalls;
         internal static readonly bool DisableEagerClassLoading = SafeGetEnvironmentVariable("IKVM_DISABLE_EAGER_CLASS_LOADING") != null;
 #endif
 
-#if !STATIC_COMPILER && !STUB_GENERATOR && !FIRST_PASS
+#if !IMPORTER && !EXPORTER && !FIRST_PASS
 
         static JVM()
         {
@@ -114,7 +118,7 @@ namespace IKVM.Internal
         {
             get
             {
-#if !STATIC_COMPILER && !STUB_GENERATOR
+#if !IMPORTER && !EXPORTER
                 if (coreAssembly == null)
                 {
 #if FIRST_PASS
@@ -123,7 +127,7 @@ namespace IKVM.Internal
                     coreAssembly = typeof(java.lang.Object).Assembly;
 #endif
                 }
-#endif // !STATIC_COMPILER
+#endif // !IMPORTER
                 return coreAssembly;
             }
             set
@@ -132,7 +136,7 @@ namespace IKVM.Internal
             }
         }
 
-#if !STATIC_COMPILER && !STUB_GENERATOR
+#if !IMPORTER && !EXPORTER
 
         internal static bool EmitSymbols
         {
@@ -159,7 +163,7 @@ namespace IKVM.Internal
                 return emitSymbols == 1;
             }
         }
-#endif // !STATIC_COMPILER && !STUB_GENERATOR
+#endif // !IMPORTER && !EXPORTER
 
         internal static bool IsUnix
         {
@@ -215,7 +219,7 @@ namespace IKVM.Internal
             return (int)key;
         }
 
-#if !STATIC_COMPILER
+#if !IMPORTER
 
         internal static void CriticalFailure(string message, Exception x)
         {
@@ -223,7 +227,7 @@ namespace IKVM.Internal
             {
                 Tracer.Error(Tracer.Runtime, "CRITICAL FAILURE: {0}", message);
                 System.Type messageBox = null;
-#if !STUB_GENERATOR
+#if !EXPORTER
                 // NOTE we use reflection to invoke MessageBox.Show, to make sure we run in environments where WinForms isn't available
                 Assembly winForms = IsUnix ? null : Assembly.Load("System.Windows.Forms, Version=1.0.5000.0, Culture=neutral, PublicKeyToken=b77a5c561934e089");
                 if (winForms != null)
@@ -275,9 +279,9 @@ namespace IKVM.Internal
                 Environment.Exit(666);
             }
         }
-#endif // !STATIC_COMPILER
+#endif // !IMPORTER
 
-#if STATIC_COMPILER || STUB_GENERATOR
+#if IMPORTER || EXPORTER
 		internal static Type LoadType(System.Type type)
 		{
 			return StaticCompiler.GetRuntimeType(type.FullName);
@@ -289,7 +293,7 @@ namespace IKVM.Internal
         // with can be different from the one we're compiling against.)
         internal static Type LoadType(Type type)
         {
-#if STATIC_COMPILER || STUB_GENERATOR
+#if IMPORTER || EXPORTER
 			return StaticCompiler.GetRuntimeType(type.FullName);
 #else
             return type;
@@ -298,7 +302,7 @@ namespace IKVM.Internal
 
         internal static object Box(object val)
         {
-#if STATIC_COMPILER || FIRST_PASS || STUB_GENERATOR
+#if IMPORTER || FIRST_PASS || EXPORTER
 			return null;
 #else
             if (val is byte)
@@ -342,7 +346,7 @@ namespace IKVM.Internal
 
         internal static object Unbox(object val)
         {
-#if STATIC_COMPILER || FIRST_PASS || STUB_GENERATOR
+#if IMPORTER || FIRST_PASS || EXPORTER
 			return null;
 #else
             java.lang.Byte b = val as java.lang.Byte;
@@ -392,7 +396,7 @@ namespace IKVM.Internal
 #endif
         }
 
-#if !STATIC_COMPILER && !STUB_GENERATOR
+#if !IMPORTER && !EXPORTER
         internal static object NewAnnotation(java.lang.ClassLoader classLoader, object definition)
         {
 #if !FIRST_PASS
@@ -411,7 +415,7 @@ namespace IKVM.Internal
         }
 #endif
 
-#if !STATIC_COMPILER && !STUB_GENERATOR
+#if !IMPORTER && !EXPORTER
         internal static object NewAnnotationElementValue(java.lang.ClassLoader classLoader, java.lang.Class expectedClass, object definition)
         {
 #if FIRST_PASS
@@ -430,7 +434,7 @@ namespace IKVM.Internal
         }
 #endif
 
-#if !STATIC_COMPILER && !STUB_GENERATOR
+#if !IMPORTER && !EXPORTER
         // helper for JNI (which doesn't have access to core library internals)
         internal static object NewDirectByteBuffer(long address, int capacity)
         {
@@ -444,7 +448,7 @@ namespace IKVM.Internal
 
         internal static Type Import(System.Type type)
         {
-#if STATIC_COMPILER || STUB_GENERATOR
+#if IMPORTER || EXPORTER
 			return StaticCompiler.Universe.Import(type);
 #else
             return type;

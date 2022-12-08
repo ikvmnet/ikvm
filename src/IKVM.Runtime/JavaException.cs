@@ -55,7 +55,7 @@ abstract class RetargetableJavaException : ApplicationException
         return args == null || args.Length == 0 ? s : string.Format(s, args);
     }
 
-#if !STATIC_COMPILER && !FIRST_PASS && !STUB_GENERATOR
+#if !IMPORTER && !FIRST_PASS && !EXPORTER
 
     internal abstract Exception ToJava();
 
@@ -90,7 +90,7 @@ sealed class ClassLoadingException : RetargetableJavaException
 
     }
 
-#if !STATIC_COMPILER && !FIRST_PASS && !STUB_GENERATOR
+#if !IMPORTER && !FIRST_PASS && !EXPORTER
 
     internal override Exception ToJava()
     {
@@ -127,7 +127,7 @@ class LinkageError : RetargetableJavaException
 
     }
 
-#if !STATIC_COMPILER && !FIRST_PASS && !STUB_GENERATOR
+#if !IMPORTER && !FIRST_PASS && !EXPORTER
 
     internal override Exception ToJava()
     {
@@ -170,7 +170,7 @@ sealed class VerifyError : LinkageError
 
     }
 
-#if !STATIC_COMPILER && !FIRST_PASS && !STUB_GENERATOR
+#if !IMPORTER && !FIRST_PASS && !EXPORTER
 
     internal override Exception ToJava()
     {
@@ -194,7 +194,7 @@ sealed class ClassNotFoundException : RetargetableJavaException
 
     }
 
-#if !STATIC_COMPILER && !FIRST_PASS && !STUB_GENERATOR
+#if !IMPORTER && !FIRST_PASS && !EXPORTER
 
     internal override Exception ToJava()
     {
@@ -218,7 +218,7 @@ sealed class ClassCircularityError : LinkageError
 
     }
 
-#if !STATIC_COMPILER && !FIRST_PASS && !STUB_GENERATOR
+#if !IMPORTER && !FIRST_PASS && !EXPORTER
 
     internal override Exception ToJava()
     {
@@ -242,7 +242,7 @@ sealed class NoClassDefFoundError : LinkageError
 
     }
 
-#if !STATIC_COMPILER && !FIRST_PASS && !STUB_GENERATOR
+#if !IMPORTER && !FIRST_PASS && !EXPORTER
 
     internal override Exception ToJava()
     {
@@ -266,7 +266,7 @@ class IncompatibleClassChangeError : LinkageError
 
     }
 
-#if !STATIC_COMPILER && !FIRST_PASS && !STUB_GENERATOR
+#if !IMPORTER && !FIRST_PASS && !EXPORTER
 
     internal override Exception ToJava()
     {
@@ -290,7 +290,7 @@ sealed class IllegalAccessError : IncompatibleClassChangeError
 
     }
 
-#if !STATIC_COMPILER && !FIRST_PASS && !STUB_GENERATOR
+#if !IMPORTER && !FIRST_PASS && !EXPORTER
     internal override Exception ToJava()
     {
         return new java.lang.IllegalAccessError(Message);
@@ -314,7 +314,7 @@ class ClassFormatError : LinkageError
 
     }
 
-#if !STATIC_COMPILER && !FIRST_PASS && !STUB_GENERATOR
+#if !IMPORTER && !FIRST_PASS && !EXPORTER
 
     internal override Exception ToJava()
     {
@@ -338,7 +338,7 @@ sealed class UnsupportedClassVersionError : ClassFormatError
 
     }
 
-#if !STATIC_COMPILER && !FIRST_PASS && !STUB_GENERATOR
+#if !IMPORTER && !FIRST_PASS && !EXPORTER
 
     internal override Exception ToJava()
     {
@@ -362,7 +362,7 @@ sealed class JavaSecurityException : RetargetableJavaException
 
     }
 
-#if !STATIC_COMPILER && !FIRST_PASS && !STUB_GENERATOR
+#if !IMPORTER && !FIRST_PASS && !EXPORTER
 
     internal override Exception ToJava()
     {

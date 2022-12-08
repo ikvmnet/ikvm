@@ -13,7 +13,7 @@ using Microsoft.VisualStudio.TestTools.UnitTesting;
 using Microsoft.Extensions.DependencyModel;
 #endif
 
-namespace ikvmc.Tests
+namespace IKVM.Tools.Importer.Tests
 {
 
     [TestClass]
@@ -37,7 +37,7 @@ namespace ikvmc.Tests
 #endif
 
             var asm = Path.ChangeExtension(j, ".dll");
-            var ret = ikvmc.IkvmcCompiler.Main(a.Concat(new[] { "-nostdlib", "-assembly:ikvmc.Tests.Java", $"-out:{asm}", j }).ToArray());
+            var ret = IKVM.Tools.Importer.IkvmImporterTool.Main(a.Concat(new[] { "-nostdlib", "-assembly:ikvmc.Tests.Java", $"-out:{asm}", j }).ToArray());
             ret.Should().Be(0);
             File.Exists(asm).Should().BeTrue();
         }

@@ -26,11 +26,11 @@ using System.Collections.Generic;
 using System.Diagnostics;
 using System.Runtime.CompilerServices;
 using System.Runtime.Serialization;
-using System.Security.Cryptography;
 
-#if STATIC_COMPILER
+#if IMPORTER
 using IKVM.Reflection;
 using IKVM.Reflection.Emit;
+using IKVM.Tools.Importer;
 
 using Type = IKVM.Reflection.Type;
 using ProtectionDomain = System.Object;
@@ -56,11 +56,11 @@ namespace IKVM.Internal
         internal const string DynamicAssemblySuffixAndPublicKey = "-ikvm-runtime-injected";
 #endif
 
-#if !STATIC_COMPILER
+#if !IMPORTER
         static AssemblyBuilder jniProxyAssemblyBuilder;
 #endif
 
-#if STATIC_COMPILER || CLASSGC
+#if IMPORTER || CLASSGC
         readonly Dictionary<string, TypeWrapper> dynamicTypes = new Dictionary<string, TypeWrapper>();
 #else
         static readonly Dictionary<string, TypeWrapper> dynamicTypes = new Dictionary<string, TypeWrapper>();
@@ -68,7 +68,7 @@ namespace IKVM.Internal
         readonly ModuleBuilder moduleBuilder;
         readonly bool hasInternalAccess;
 
-#if STATIC_COMPILER
+#if IMPORTER
         TypeBuilder proxiesContainer;
         List<TypeBuilder> proxies;
 #endif
@@ -77,7 +77,7 @@ namespace IKVM.Internal
         TypeBuilder unloadableContainer;
         Type[] delegates;
 
-#if !STATIC_COMPILER && !CLASSGC
+#if !IMPORTER && !CLASSGC
         static DynamicClassLoader instance = new DynamicClassLoader(CreateModuleBuilder(), false);
 #endif
 
@@ -91,7 +91,7 @@ namespace IKVM.Internal
         [System.Security.SecuritySafeCritical]
         static DynamicClassLoader()
         {
-#if !STATIC_COMPILER
+#if !IMPORTER
             // TODO AppDomain.TypeResolve requires ControlAppDomain permission, but if we don't have that,
             // we should handle that by disabling dynamic class loading
             AppDomain.CurrentDomain.TypeResolve += new ResolveEventHandler(OnTypeResolve);
@@ -100,7 +100,7 @@ namespace IKVM.Internal
             // (since it already defines a pseudo-type named <Module> for global methods and fields)
             dynamicTypes.Add("<Module>", null);
 #endif // !CLASSGC
-#endif // !STATIC_COMPILER
+#endif // !IMPORTER
         }
 
         /// <summary>
@@ -113,7 +113,7 @@ namespace IKVM.Internal
             this.moduleBuilder = moduleBuilder;
             this.hasInternalAccess = hasInternalAccess;
 
-#if STATIC_COMPILER || CLASSGC
+#if IMPORTER || CLASSGC
             // Ref.Emit doesn't like the "<Module>" name for types
             // (since it already defines a pseudo-type named <Module> for global methods and fields)
             dynamicTypes.Add("<Module>", null);
@@ -135,7 +135,7 @@ namespace IKVM.Internal
         }
 #endif
 
-#if !STATIC_COMPILER
+#if !IMPORTER
         static Assembly OnTypeResolve(object sender, ResolveEventArgs args)
         {
 #if CLASSGC
@@ -213,7 +213,7 @@ namespace IKVM.Internal
             // it loses the trailing period in the name that gets passed in the TypeResolve event.
             if (dict.ContainsKey(mangledTypeName) || mangledTypeName.EndsWith("."))
             {
-#if STATIC_COMPILER
+#if IMPORTER
                 Tracer.Warning(Tracer.Compiler, "Class name clash: {0}", mangledTypeName);
 #endif
                 // Java class names cannot contain slashes (since they are converted into periods),
@@ -231,7 +231,7 @@ namespace IKVM.Internal
 
         internal sealed override TypeWrapper DefineClassImpl(Dictionary<string, TypeWrapper> types, TypeWrapper host, ClassFile f, ClassLoaderWrapper classLoader, ProtectionDomain protectionDomain)
         {
-#if STATIC_COMPILER
+#if IMPORTER
             AotTypeWrapper type = new AotTypeWrapper(f, (CompilerClassLoader)classLoader);
             type.CreateStep1();
             types[f.Name] = type;
@@ -271,10 +271,10 @@ namespace IKVM.Internal
                 }
             }
             return type;
-#endif // STATIC_COMPILER
+#endif // IMPORTER
         }
 
-#if !STATIC_COMPILER && !FIRST_PASS
+#if !IMPORTER && !FIRST_PASS
         private static java.lang.Class TieClassAndWrapper(TypeWrapper type, ProtectionDomain protectionDomain)
         {
             java.lang.Class clazz = new java.lang.Class(null);
@@ -289,7 +289,7 @@ namespace IKVM.Internal
         }
 #endif
 
-#if STATIC_COMPILER
+#if IMPORTER
         internal TypeBuilder DefineProxy(string name, TypeAttributes typeAttributes, Type parent, Type[] interfaces)
         {
             if (proxiesContainer == null)
@@ -402,7 +402,7 @@ namespace IKVM.Internal
                     tb.CreateType();
                 }
             }
-#if STATIC_COMPILER
+#if IMPORTER
             if (proxiesContainer != null)
             {
                 proxiesContainer.CreateType();
@@ -411,10 +411,10 @@ namespace IKVM.Internal
                     tb.CreateType();
                 }
             }
-#endif // STATIC_COMPILER
+#endif // IMPORTER
         }
 
-#if !STATIC_COMPILER
+#if !IMPORTER
 
         internal static ModuleBuilder CreateJniProxyModuleBuilder()
         {
@@ -431,7 +431,7 @@ namespace IKVM.Internal
         [System.Security.SecuritySafeCritical]
         internal static DynamicClassLoader Get(ClassLoaderWrapper loader)
         {
-#if STATIC_COMPILER
+#if IMPORTER
             return new DynamicClassLoader(((CompilerClassLoader)loader).CreateModuleBuilder(), false);
 #else
             var acl = loader as AssemblyClassLoader;
@@ -458,7 +458,7 @@ namespace IKVM.Internal
 #endif
         }
 
-#if !STATIC_COMPILER
+#if !IMPORTER
 
 #if NETFRAMEWORK
 

@@ -23,18 +23,22 @@
 */
 using System;
 using System.Collections.Generic;
-#if STATIC_COMPILER
+using System.Diagnostics;
+using System.Diagnostics.SymbolStore;
+
+using IKVM.Attributes;
+using IKVM.Internal;
+
+#if IMPORTER
 using IKVM.Reflection;
 using IKVM.Reflection.Emit;
+using IKVM.Tools.Importer;
+
 using Type = IKVM.Reflection.Type;
 #else
 using System.Reflection;
 using System.Reflection.Emit;
 #endif
-using System.Diagnostics;
-using System.Diagnostics.SymbolStore;
-using IKVM.Attributes;
-using IKVM.Internal;
 
 using ExceptionTableEntry = IKVM.Internal.ClassFile.Method.ExceptionTableEntry;
 using LocalVariableTableEntry = IKVM.Internal.ClassFile.Method.LocalVariableTableEntry;
@@ -43,6 +47,7 @@ using InstructionFlags = IKVM.Internal.ClassFile.Method.InstructionFlags;
 
 static class ByteCodeHelperMethods
 {
+
 	internal static readonly MethodInfo multianewarray;
 	internal static readonly MethodInfo multianewarray_ghost;
 	internal static readonly MethodInfo anewarray_ghost;
@@ -87,7 +92,7 @@ static class ByteCodeHelperMethods
 
 	static ByteCodeHelperMethods()
 	{
-#if STATIC_COMPILER
+#if IMPORTER
 		Type typeofByteCodeHelper = StaticCompiler.GetRuntimeType("IKVM.Runtime.ByteCodeHelper");
 #else
 		Type typeofByteCodeHelper = typeof(IKVM.Runtime.ByteCodeHelper);
@@ -143,7 +148,7 @@ static class ByteCodeHelperMethods
 	private static MethodInfo GetHelper(Type type, string method, Type[] parameters)
 	{
 		MethodInfo mi = parameters == null ? type.GetMethod(method) : type.GetMethod(method, parameters);
-#if STATIC_COMPILER
+#if IMPORTER
 		if (mi == null)
 		{
 			throw new FatalCompilerErrorException(Message.RuntimeMethodMissing, method);
@@ -207,7 +212,7 @@ namespace IKVM.Runtime
 		private readonly bool emitLineNumbers;
 		private int[] scopeBegin;
 		private int[] scopeClose;
-#if STATIC_COMPILER
+#if IMPORTER
 	private readonly MethodWrapper[] replacedMethodWrappers;
 #endif
 
@@ -257,7 +262,7 @@ namespace IKVM.Runtime
 				MethodWrapper finalize = clazz.GetMethodWrapper(StringConstants.FINALIZE, StringConstants.SIG_VOID, true);
 				keepAlive = finalize != null && finalize.DeclaringType != CoreClasses.java.lang.Object.Wrapper && finalize.DeclaringType != CoreClasses.cli.System.Object.Wrapper && finalize.DeclaringType != CoreClasses.java.lang.Throwable.Wrapper && finalize.DeclaringType != CoreClasses.cli.System.Exception.Wrapper;
 			}
-#if STATIC_COMPILER
+#if IMPORTER
 		replacedMethodWrappers = clazz.GetReplacedMethodsFor(mw);
 #endif
 
@@ -688,7 +693,7 @@ namespace IKVM.Runtime
 			}
 			catch (VerifyError x)
 			{
-#if STATIC_COMPILER
+#if IMPORTER
 			classLoader.IssueMessage(Message.EmittedVerificationError, classFile.Name + "." + m.Name + m.Signature, x.Message);
 #endif
 				Tracer.Error(Tracer.Verifier, x.ToString());
@@ -700,7 +705,7 @@ namespace IKVM.Runtime
 			}
 			catch (ClassFormatError x)
 			{
-#if STATIC_COMPILER
+#if IMPORTER
 			classLoader.IssueMessage(Message.EmittedClassFormatError, classFile.Name + "." + m.Name + m.Signature, x.Message);
 #endif
 				Tracer.Error(Tracer.Verifier, x.ToString());
@@ -2769,7 +2774,7 @@ namespace IKVM.Runtime
 				case ClassFile.ConstantType.MethodType:
 					context.GetValue<MethodTypeConstant>(constant).Emit(this, ilgen, constant);
 					break;
-#if !STATIC_COMPILER
+#if !IMPORTER
 				case ClassFile.ConstantType.LiveObject:
 					context.EmitLiveObjectLoad(ilgen, classFile.GetConstantPoolConstantLiveObject(constant));
 					break;
@@ -2844,7 +2849,7 @@ namespace IKVM.Runtime
 
 			static InvokeDynamicBuilder()
 			{
-#if STATIC_COMPILER
+#if IMPORTER
 			typeofOpenIndyCallSite = StaticCompiler.GetRuntimeType("IKVM.Runtime.IndyCallSite`1");
 			typeofCallSite = ClassLoaderWrapper.LoadClassCritical("java.lang.invoke.CallSite").TypeAsSignatureType;
 #elif !FIRST_PASS
@@ -3570,7 +3575,7 @@ namespace IKVM.Runtime
 
 			internal static void EmitLinkToCall(CodeEmitter ilgen, TypeWrapper[] args, TypeWrapper retType)
 			{
-#if !FIRST_PASS && !STATIC_COMPILER
+#if !FIRST_PASS && !IMPORTER
 				CodeEmitterLocal[] temps = new CodeEmitterLocal[args.Length];
 				for (int i = args.Length - 1; i > 0; i--)
 				{
@@ -3663,7 +3668,7 @@ namespace IKVM.Runtime
 				Type delegateType = MethodHandleUtil.CreateMethodHandleDelegateType(args, cpi.GetRetType());
 				MethodInfo mi = ByteCodeHelperMethods.GetDelegateForInvoke.MakeGenericMethod(delegateType);
 				Type typeofInvokeCache;
-#if STATIC_COMPILER
+#if IMPORTER
 			typeofInvokeCache = StaticCompiler.GetRuntimeType("IKVM.Runtime.InvokeCache`1");
 #else
 				typeofInvokeCache = typeof(IKVM.Runtime.InvokeCache<>);
@@ -3901,7 +3906,7 @@ namespace IKVM.Runtime
 		private MethodWrapper GetMethodCallEmitter(NormalizedByteCode invoke, int constantPoolIndex)
 		{
 			ClassFile.ConstantPoolItemMI cpi = classFile.GetMethodref(constantPoolIndex);
-#if STATIC_COMPILER
+#if IMPORTER
 		if(replacedMethodWrappers != null)
 		{
 			for(int i = 0; i < replacedMethodWrappers.Length; i++)
