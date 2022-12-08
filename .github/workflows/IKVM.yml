@@ -284,7 +284,7 @@ jobs:
       matrix:
         run:
         - IKVM.Tests
-        - ikvmc.Tests
+        - IKVM.Tools.Importer.Tests
         - IKVM.Tools.Exporter.Tests
         - IKVM.Tools.Tests
         - IKVM.JTReg.TestAdapter.Tests
@@ -308,7 +308,7 @@ jobs:
           sys: linux
         - run: IKVM.Tools.Exporter.Tests
           tfm: net6.0
-        - run: ikvmc.Tests
+        - run: IKVM.Tools.Importer.Tests
           tfm: net6.0
         - run: IKVM.OpenJDK.Tests?TestPartition=0
           tfm: net6.0
