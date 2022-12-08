@@ -1,6 +1,9 @@
-﻿using System.Threading.Tasks;
+﻿using System.Threading;
+using System.Threading.Tasks;
 
-namespace IKVM.Tools.Importer
+using IKVM.Tools.Importer;
+
+namespace ikvmc
 {
 
     public static class Program
@@ -8,7 +11,7 @@ namespace IKVM.Tools.Importer
 
         public static Task<int> Main(string[] args)
         {
-            return Task.FromResult(IkvmImporterInternal.Execute(args));
+            return IkvmImporterTool.Main(args, CancellationToken.None);
         }
 
     }

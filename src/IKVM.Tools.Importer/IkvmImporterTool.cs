@@ -1,4 +1,5 @@
-﻿using System.Threading.Tasks;
+﻿using System.Threading;
+using System.Threading.Tasks;
 
 namespace IKVM.Tools.Importer
 {
@@ -10,18 +11,26 @@ namespace IKVM.Tools.Importer
     {
 
         /// <summary>
+        /// Executes the importer.
+        /// </summary>
+        /// <param name="args"></param>
+        /// <param name="cancellationToken"></param>
+        /// <returns></returns>
+        public static Task<int> Main(string[] args, CancellationToken cancellationToken)
+        {
+            return new IkvmImporterTool().ExecuteAsync(args, cancellationToken);
+        }
+
+        /// <summary>
         /// Executes the exporter.
         /// </summary>
         /// <param name="args"></param>
+        /// <param name="cancellationToken"></param>
         /// <returns></returns>
-        public static Task<int> Main(string[] args)
+        Task<int> ExecuteAsync(string[] args, CancellationToken cancellationToken)
         {
-            return new IkvmImporterTool().ExecuteAsync(args);
-        }
-
-        Task<int> ExecuteAsync(string[] args)
-        {
-            return Task.FromResult(IkvmImporterInternal.Execute(args));
+            using var context = new IkvmImporterContext(args);
+            return context.ExecuteAsync(cancellationToken);
         }
 
     }

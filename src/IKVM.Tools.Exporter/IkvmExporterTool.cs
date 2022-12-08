@@ -2,6 +2,7 @@
 using System.CommandLine.Invocation;
 using System.IO;
 using System.Linq;
+using System.Threading;
 using System.Threading.Tasks;
 
 namespace IKVM.Tools.Exporter
@@ -18,9 +19,21 @@ namespace IKVM.Tools.Exporter
         /// </summary>
         /// <param name="args"></param>
         /// <returns></returns>
-        public static Task<int> Main(string[] args)
+        public static Task<int> Main(string[] args, CancellationToken cancellationToken)
         {
-            return new IkvmExporterTool().ExecuteAsync(args);
+            return new IkvmExporterTool().ExecuteAsync(args, cancellationToken);
+        }
+
+        /// <summary>
+        /// Executes the exporter.
+        /// </summary>
+        /// <param name="options"></param>
+        /// <param name="cancellationToken"></param>
+        /// <returns></returns>
+        public static Task<int> ExecuteAsync(IkvmExporterOptions options, CancellationToken cancellationToken)
+        {
+            using var exporter = new IkvmExporterContext(options);
+            return exporter.ExecuteAsync(cancellationToken);
         }
 
         readonly RootCommand command;
@@ -95,8 +108,9 @@ namespace IKVM.Tools.Exporter
         /// Executes the exporter.
         /// </summary>
         /// <param name="args"></param>
+        /// <param name="cancellationToken"></param>
         /// <returns></returns>
-        Task<int> ExecuteAsync(string[] args)
+        Task<int> ExecuteAsync(string[] args, CancellationToken cancellationToken)
         {
             return command.InvokeAsync(args);
         }
@@ -108,7 +122,7 @@ namespace IKVM.Tools.Exporter
         /// <returns></returns>
         Task ExecuteAsync(InvocationContext context)
         {
-            return Task.FromResult(IkvmExporterInternal.Execute(new IkvmExporterOptions()
+            return ExecuteAsync(new IkvmExporterOptions()
             {
                 Output = context.ParseResult.GetValueForOption(outputOption).FullName,
                 References = context.ParseResult.GetValueForOption(referenceOption).Select(i => i.FullName).ToList(),
@@ -122,7 +136,7 @@ namespace IKVM.Tools.Exporter
                 Parameters = context.ParseResult.GetValueForOption(parametersOption),
                 Boostrap = context.ParseResult.GetValueForOption(bootstrapOption),
                 Assembly = context.ParseResult.GetValueForArgument(assemblyAttribute)
-            }));
+            }, CancellationToken.None);
         }
 
     }
