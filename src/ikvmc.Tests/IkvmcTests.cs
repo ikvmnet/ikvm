@@ -37,7 +37,7 @@ namespace IKVM.Tools.Importer.Tests
 #endif
 
             var asm = Path.ChangeExtension(j, ".dll");
-            var ret = IKVM.Tools.Importer.IkvmImporterTool.Main(a.Concat(new[] { "-nostdlib", "-assembly:ikvmc.Tests.Java", $"-out:{asm}", j }).ToArray());
+            var ret = IKVM.Tools.Importer.IkvmImporterInternal.Main(a.Concat(new[] { "-nostdlib", "-assembly:ikvmc.Tests.Java", $"-out:{asm}", j }).ToArray());
             ret.Should().Be(0);
             File.Exists(asm).Should().BeTrue();
         }

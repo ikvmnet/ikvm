@@ -1,4 +1,4 @@
-<Project Sdk="Microsoft.NET.Sdk">
+﻿<Project Sdk="Microsoft.NET.Sdk">
     <Import Project="$(MSBuildThisFileDirectory)..\..\IKVM.deps.props" />
     
     <PropertyGroup>
@@ -6,6 +6,10 @@
         <DefineConstants>$(DefineConstants);IMPORTER;EMITTERS</DefineConstants>
         <AllowUnsafeBlocks>true</AllowUnsafeBlocks>
     </PropertyGroup>
+
+    <ItemGroup>
+        <InternalsVisibleTo Include="ikvmc" />
+    </ItemGroup>
 
     <ItemGroup>
         <PackageReference Include="Newtonsoft.Json" Version="13.0.2" />
@@ -31,7 +35,7 @@
         <ExcludeFromCompile Include="..\IKVM.Runtime\PassiveWeakDictionary.cs" />
         <ExcludeFromCompile Include="..\IKVM.Runtime\LLIR\**\*.cs" />
         <ExcludeFromCompile Include="..\IKVM.Runtime\JNI\**\*.cs" />
-        <Compile Include="..\IKVM.Runtime\**\*.cs" LinkBase="IKVM\Runtime" Exclude="@(ExcludeFromCompile)" />
+        <Compile Include="..\IKVM.Runtime\**\*.cs" LinkBase="IKVM.Runtime" Exclude="@(ExcludeFromCompile)" />
     </ItemGroup>
 
 </Project>

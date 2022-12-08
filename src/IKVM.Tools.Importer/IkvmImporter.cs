@@ -2,25 +2,25 @@
 using System.Threading;
 using System.Threading.Tasks;
 
-namespace IKVM.Tools.Exporter
+namespace IKVM.Tools.Importer
 {
 
     /// <summary>
-    /// Exports a .NET assembly to a Java JAR.
+    /// Processes a set of arguments to import a Java library or class files into a .NET assembly.
     /// </summary>
-    public class IkvmExporter : IDisposable
+    public class IkvmImporter : IDisposable
     {
 
-        readonly IkvmExporterContext context;
+        readonly IkvmImporterContext context;
 
         /// <summary>
         /// Initializes a new instance.
         /// </summary>
         /// <param name="options"></param>
         /// <exception cref="ArgumentNullException"></exception>
-        public IkvmExporter(IkvmExporterOptions options)
+        public IkvmImporter(string[] args)
         {
-            this.context = new IkvmExporterContext(options ?? throw new ArgumentNullException(nameof(options)));
+            this.context = new IkvmImporterContext(args ?? throw new ArgumentNullException(nameof(args)));
         }
 
         /// <summary>

@@ -2806,16 +2806,16 @@ namespace IKVM.Tools.Importer
                 {
                     if (options.targetIsModule)
                     {
-                        options.path = IkvmImporterTool.GetFileInfo(options.assembly + ".netmodule");
+                        options.path = IkvmImporterInternal.GetFileInfo(options.assembly + ".netmodule");
                     }
                     else
                     {
-                        options.path = IkvmImporterTool.GetFileInfo(options.assembly + ".dll");
+                        options.path = IkvmImporterInternal.GetFileInfo(options.assembly + ".dll");
                     }
                 }
                 else
                 {
-                    options.path = IkvmImporterTool.GetFileInfo(options.assembly + ".exe");
+                    options.path = IkvmImporterInternal.GetFileInfo(options.assembly + ".exe");
                 }
                 StaticCompiler.IssueMessage(Message.OutputFileIs, options.path.ToString());
             }
@@ -3155,11 +3155,11 @@ namespace IKVM.Tools.Importer
             }
             if (options.iconfile != null)
             {
-                assemblyBuilder.__DefineIconResource(IkvmImporterTool.ReadAllBytes(options.iconfile));
+                assemblyBuilder.__DefineIconResource(IkvmImporterInternal.ReadAllBytes(options.iconfile));
             }
             if (options.manifestFile != null)
             {
-                assemblyBuilder.__DefineManifestResource(IkvmImporterTool.ReadAllBytes(options.manifestFile));
+                assemblyBuilder.__DefineManifestResource(IkvmImporterInternal.ReadAllBytes(options.manifestFile));
             }
             assemblyBuilder.DefineVersionInfoResource();
             return 0;

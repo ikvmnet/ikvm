@@ -1,7 +1,5 @@
 ﻿using System.Threading.Tasks;
 
-using IKVM.Tools.Importer;
-
 namespace IKVM.Tools.Importer
 {
 
@@ -10,7 +8,7 @@ namespace IKVM.Tools.Importer
 
         public static Task<int> Main(string[] args)
         {
-            return IkvmImporterTool.Main(args);
+            return Task.FromResult(IkvmImporterInternal.Execute(args));
         }
 
     }
