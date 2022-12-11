@@ -16,9 +16,9 @@ namespace IKVM.Tools.Importer
         /// <param name="args"></param>
         /// <param name="cancellationToken"></param>
         /// <returns></returns>
-        public static Task<int> Main(string[] args, CancellationToken cancellationToken)
+        public static async Task<int> Main(string[] args, CancellationToken cancellationToken)
         {
-            return new IkvmImporterTool().ExecuteAsync(args, cancellationToken);
+            return await new IkvmImporterTool().ExecuteAsync(args, cancellationToken);
         }
 
         /// <summary>
@@ -27,10 +27,10 @@ namespace IKVM.Tools.Importer
         /// <param name="args"></param>
         /// <param name="cancellationToken"></param>
         /// <returns></returns>
-        Task<int> ExecuteAsync(string[] args, CancellationToken cancellationToken)
+        async Task<int> ExecuteAsync(string[] args, CancellationToken cancellationToken)
         {
             using var context = new IkvmImporterContext(args);
-            return context.ExecuteAsync(cancellationToken);
+            return await context.ExecuteAsync(cancellationToken);
         }
 
     }

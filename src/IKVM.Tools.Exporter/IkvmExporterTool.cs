@@ -19,9 +19,9 @@ namespace IKVM.Tools.Exporter
         /// </summary>
         /// <param name="args"></param>
         /// <returns></returns>
-        public static Task<int> Main(string[] args, CancellationToken cancellationToken)
+        public static async Task<int> Main(string[] args, CancellationToken cancellationToken)
         {
-            return new IkvmExporterTool().ExecuteAsync(args, cancellationToken);
+            return await new IkvmExporterTool().ExecuteAsync(args, cancellationToken);
         }
 
         /// <summary>
@@ -30,10 +30,10 @@ namespace IKVM.Tools.Exporter
         /// <param name="options"></param>
         /// <param name="cancellationToken"></param>
         /// <returns></returns>
-        public static Task<int> ExecuteAsync(IkvmExporterOptions options, CancellationToken cancellationToken)
+        public static async Task<int> ExecuteAsync(IkvmExporterOptions options, CancellationToken cancellationToken)
         {
             using var exporter = new IkvmExporterContext(options);
-            return exporter.ExecuteAsync(cancellationToken);
+            return await exporter.ExecuteAsync(cancellationToken);
         }
 
         readonly RootCommand command;
@@ -110,9 +110,9 @@ namespace IKVM.Tools.Exporter
         /// <param name="args"></param>
         /// <param name="cancellationToken"></param>
         /// <returns></returns>
-        Task<int> ExecuteAsync(string[] args, CancellationToken cancellationToken)
+        async Task<int> ExecuteAsync(string[] args, CancellationToken cancellationToken)
         {
-            return command.InvokeAsync(args);
+            return await command.InvokeAsync(args);
         }
 
         /// <summary>
@@ -120,24 +120,21 @@ namespace IKVM.Tools.Exporter
         /// </summary>
         /// <param name="context"></param>
         /// <returns></returns>
-        Task ExecuteAsync(InvocationContext context)
+        async Task ExecuteAsync(InvocationContext context) => await ExecuteAsync(new IkvmExporterOptions()
         {
-            return ExecuteAsync(new IkvmExporterOptions()
-            {
-                Output = context.ParseResult.GetValueForOption(outputOption).FullName,
-                References = context.ParseResult.GetValueForOption(referenceOption).Select(i => i.FullName).ToList(),
-                JApi = context.ParseResult.GetValueForOption(japiOption),
-                SkipError = context.ParseResult.GetValueForOption(skipErrorOption),
-                Shared = context.ParseResult.GetValueForOption(sharedOption),
-                NoStdLib = context.ParseResult.GetValueForOption(noStdLibOption),
-                Libraries = context.ParseResult.GetValueForOption(libraryOption).Select(i => i.FullName).ToList(),
-                Namespaces = context.ParseResult.GetValueForOption(namespaceOption).ToList(),
-                Forwarders = context.ParseResult.GetValueForOption(forwardersOption),
-                Parameters = context.ParseResult.GetValueForOption(parametersOption),
-                Boostrap = context.ParseResult.GetValueForOption(bootstrapOption),
-                Assembly = context.ParseResult.GetValueForArgument(assemblyAttribute)
-            }, CancellationToken.None);
-        }
+            Output = context.ParseResult.GetValueForOption(outputOption).FullName,
+            References = context.ParseResult.GetValueForOption(referenceOption).Select(i => i.FullName).ToList(),
+            JApi = context.ParseResult.GetValueForOption(japiOption),
+            SkipError = context.ParseResult.GetValueForOption(skipErrorOption),
+            Shared = context.ParseResult.GetValueForOption(sharedOption),
+            NoStdLib = context.ParseResult.GetValueForOption(noStdLibOption),
+            Libraries = context.ParseResult.GetValueForOption(libraryOption).Select(i => i.FullName).ToList(),
+            Namespaces = context.ParseResult.GetValueForOption(namespaceOption).ToList(),
+            Forwarders = context.ParseResult.GetValueForOption(forwardersOption),
+            Parameters = context.ParseResult.GetValueForOption(parametersOption),
+            Boostrap = context.ParseResult.GetValueForOption(bootstrapOption),
+            Assembly = context.ParseResult.GetValueForArgument(assemblyAttribute)
+        }, CancellationToken.None);
 
     }
 
