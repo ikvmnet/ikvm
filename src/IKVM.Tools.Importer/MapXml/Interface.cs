@@ -22,15 +22,43 @@
   
 */
 
-using System.Xml.Serialization;
+using System.Linq;
+using System.Xml.Linq;
 
 namespace IKVM.Tools.Importer.MapXml
 {
-    public sealed class Interface
+
+    public sealed class Interface : MapXmlElement
     {
-        [XmlAttribute("class")]
-        public string Name;
-        [XmlElement("method")]
-        public Method[] Methods;
+
+        /// <summary>
+        /// Reads the XML element into a new <see cref="Interface"/> instance.
+        /// </summary>
+        /// <param name="element"></param>
+        /// <returns></returns>
+        public static Interface Read(XElement element)
+        {
+            var iface = new Interface();
+            Load(iface, element);
+            return iface;
+        }
+
+        /// <summary>
+        /// Loads the XML element into the instruction.
+        /// </summary>
+        /// <param name="iface"></param>
+        /// <param name="element"></param>
+        public static void Load(Interface iface, XElement element)
+        {
+            Load((MapXmlElement)iface, element);
+            iface.Name = (string)element.Attribute("name");
+            iface.Methods = element.Elements(MapXmlSerializer.NS + "method").Select(Method.Read).ToArray();
+        }
+
+        public string Name { get; set; }
+
+        public Method[] Methods { get; set; }
+
     }
+
 }

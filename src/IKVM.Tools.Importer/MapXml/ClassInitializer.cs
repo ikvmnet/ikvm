@@ -22,6 +22,9 @@
   
 */
 
+using System.Linq;
+using System.Xml.Linq;
+
 using IKVM.Internal;
 
 namespace IKVM.Tools.Importer.MapXml
@@ -29,6 +32,28 @@ namespace IKVM.Tools.Importer.MapXml
 
     public sealed class ClassInitializer : MethodBase
     {
+
+        /// <summary>
+        /// Reads the XML element into a new <see cref="ClassInitializer"/> instance.
+        /// </summary>
+        /// <param name="element"></param>
+        /// <returns></returns>
+        public static ClassInitializer Read(XElement element)
+        {
+            var clinit = new ClassInitializer();
+            Load(clinit, element);
+            return clinit;
+        }
+
+        /// <summary>
+        /// Loads the XML element into the instance.
+        /// </summary>
+        /// <param name="clinit"></param>
+        /// <param name="element"></param>
+        public static void Load(ClassInitializer clinit, XElement element)
+        {
+            Load((MethodBase)clinit, element);
+        }
 
         internal override MethodKey ToMethodKey(string className)
         {

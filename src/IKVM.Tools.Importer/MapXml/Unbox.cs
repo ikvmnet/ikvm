@@ -22,17 +22,42 @@
   
 */
 
-using System.Xml.Serialization;
+using System.Xml.Linq;
 
 using IKVM.Reflection.Emit;
 
 namespace IKVM.Tools.Importer.MapXml
 {
 
-    [XmlType("unbox")]
+    [Instruction("unbox")]
     public sealed class Unbox : TypeInstruction
     {
 
+        /// <summary>
+        /// Reads the XML element into a new <see cref="Unbox"/> instance.
+        /// </summary>
+        /// <param name="element"></param>
+        /// <returns></returns>
+        public static new Unbox Read(XElement element)
+        {
+            var inst = new Unbox();
+            Load(inst, element);
+            return inst;
+        }
+
+        /// <summary>
+        /// Loads the XML element into the instruction.
+        /// </summary>
+        /// <param name="inst"></param>
+        /// <param name="element"></param>
+        public static void Load(Unbox inst, XElement element)
+        {
+            Load((TypeInstruction)inst, element);
+        }
+
+        /// <summary>
+        /// Initializes a new instance.
+        /// </summary>
         public Unbox() : base(OpCodes.Unbox)
         {
 

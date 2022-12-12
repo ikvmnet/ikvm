@@ -1,73 +1,54 @@
-﻿/*
-  Copyright (C) 2002-2010 Jeroen Frijters
-
-  This software is provided 'as-is', without any express or implied
-  warranty.  In no event will the authors be held liable for any damages
-  arising from the use of this software.
-
-  Permission is granted to anyone to use this software for any purpose,
-  including commercial applications, and to alter it and redistribute it
-  freely, subject to the following restrictions:
-
-  1. The origin of this software must not be misrepresented; you must not
-     claim that you wrote the original software. If you use this software
-     in a product, an acknowledgment in the product documentation would be
-     appreciated but is not required.
-  2. Altered source versions must be plainly marked as such, and must not be
-     misrepresented as being the original software.
-  3. This notice may not be removed or altered from any source distribution.
-
-  Jeroen Frijters
-  jeroen@frijters.net
-  
-*/
-
-using System.Xml.Serialization;
+﻿using System.Collections.Generic;
+using System.Linq;
+using System.Reflection;
+using System.Xml.Linq;
 
 using IKVM.Internal;
 
 namespace IKVM.Tools.Importer.MapXml
 {
 
-    public abstract class Instruction
+    /// <summary>
+    /// Base class for MapXML instruction instances.
+    /// </summary>
+    public abstract class Instruction : MapXmlElement
     {
 
-        private int lineNumber = Root.LineNumber;
+        static readonly Dictionary<XName, MethodInfo> readMethodsByName;
 
-        internal int LineNumber => lineNumber;
+        /// <summary>
+        /// Initializes the static instance.
+        /// </summary>
+        static Instruction()
+        {
+            readMethodsByName = typeof(Instruction).Assembly.GetTypes()
+                .Where(i => i.IsSubclassOf(typeof(Instruction)))
+                .Where(i => i.GetCustomAttribute<InstructionAttribute>() is InstructionAttribute ia)
+                .Select(i => new { ElementName = MapXmlSerializer.NS + i.GetCustomAttribute<InstructionAttribute>().ElementName, Type = i })
+                .Select(i => new { i.ElementName, Method = i.Type.GetMethod("Read", BindingFlags.Public | BindingFlags.Static) })
+                .ToDictionary(i => i.ElementName, i => i.Method);
+        }
 
+        /// <summary>
+        /// Reads the XML element into a new <see cref="InstructionList"/> instance.
+        /// </summary>
+        /// <param name="element"></param>
+        /// <returns></returns>
+        public static Instruction Read(XElement element)
+        {
+            if (readMethodsByName.TryGetValue(element.Name, out var m) == false)
+                throw new MapXmlException($"Could not find instruction type for '{element.Name}'.");
+
+            return (Instruction)m.Invoke(null, new[] { element });
+        }
+
+        /// <summary>
+        /// Emits the instruction to the code generator.
+        /// </summary>
+        /// <param name="context"></param>
+        /// <param name="ilgen"></param>
         internal abstract void Generate(CodeGenContext context, CodeEmitter ilgen);
 
-        public override string ToString()
-        {
-            System.Text.StringBuilder sb = new System.Text.StringBuilder();
-            sb.Append('<');
-            object[] attr = GetType().GetCustomAttributes(typeof(XmlTypeAttribute), false);
-            if (attr.Length == 1)
-            {
-                sb.Append(((XmlTypeAttribute)attr[0]).TypeName);
-            }
-            else
-            {
-                sb.Append(GetType().Name);
-            }
-            foreach (System.Reflection.FieldInfo field in GetType().GetFields())
-            {
-                if (!field.IsStatic)
-                {
-                    object value = field.GetValue(this);
-                    if (value != null)
-                    {
-                        attr = field.GetCustomAttributes(typeof(XmlAttributeAttribute), false);
-                        if (attr.Length == 1)
-                        {
-                            sb.AppendFormat(" {0}=\"{1}\"", ((XmlAttributeAttribute)attr[0]).AttributeName, value);
-                        }
-                    }
-                }
-            }
-            sb.Append(" />");
-            return sb.ToString();
-        }
     }
+
 }

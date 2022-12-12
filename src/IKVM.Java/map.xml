@@ -22,7 +22,7 @@
   jeroen@frijters.net
   
 -->
-<root>
+<root xmlns="http://ikvm.net/schemas/mapxml">
     <assembly>
         <class name="java.lang.Object" shadows="System.Object" modifiers="public">
             <attribute type="System.SerializableAttribute" sig="()V" />
@@ -679,7 +679,7 @@
                 <parameter name="anotherString" />
                 <redirect class="java.lang.StringHelper" type="static" sig="(Ljava.lang.String;Ljava.lang.String;)I" />
             </method>
-            <method name="compareTo" sig="(Ljava.lang.Object;)I" modifiers="public ACC_BRIDGE ACC_SYNTHETIC">
+            <method name="compareTo" sig="(Ljava.lang.Object;)I" modifiers="public bridge synthetic">
                 <parameter name="o" />
                 <body>
                     <ldarg_0 />

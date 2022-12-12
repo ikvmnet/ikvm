@@ -22,25 +22,43 @@
   
 */
 
-using System.Xml.Serialization;
+using System.Linq;
+using System.Xml.Linq;
 
 namespace IKVM.Tools.Importer.MapXml
 {
-    [XmlRoot("root")]
-    public sealed class Root
-    {
-        internal static System.Xml.XmlTextReader xmlReader;
 
-        internal static int LineNumber
+    public sealed class Root : MapXmlElement
+    {
+
+        /// <summary>
+        /// Reads the XML element into a new <see cref="Root"/> instance.
+        /// </summary>
+        /// <param name="element"></param>
+        /// <returns></returns>
+        public static Root Read(XElement element)
         {
-            get
-            {
-                return xmlReader == null ? -1 : xmlReader.LineNumber;
-            }
+            var root = new Root();
+            Load(root, element);
+            return root;
         }
 
-        [XmlElement("assembly")]
-        public Assembly assembly;
-        public ExceptionMapping[] exceptionMappings;
+        /// <summary>
+        /// Loads the XML element into the instruction.
+        /// </summary>
+        /// <param name="root"></param>
+        /// <param name="element"></param>
+        public static void Load(Root root, XElement element)
+        {
+            Load((MapXmlElement)root, element);
+            root.Assembly = element.Elements(MapXmlSerializer.NS + "assembly").Select(Assembly.Read).FirstOrDefault();
+            root.ExceptionMappings = element.Elements(MapXmlSerializer.NS + "exceptionMappings").Select(ExceptionMapping.Read).ToArray();
+        }
+
+        public Assembly Assembly { get; set; }
+
+        public ExceptionMapping[] ExceptionMappings { get; set; }
+
     }
+
 }

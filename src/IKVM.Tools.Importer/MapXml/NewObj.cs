@@ -22,17 +22,47 @@
   
 */
 
-using System.Xml.Serialization;
+using System.Xml.Linq;
 
 using IKVM.Reflection.Emit;
 
 namespace IKVM.Tools.Importer.MapXml
 {
-    [XmlType("newobj")]
+
+    [Instruction("newobj")]
     public sealed class NewObj : Call
     {
+
+        /// <summary>
+        /// Reads the XML element into a new <see cref="NewObj"/> instance.
+        /// </summary>
+        /// <param name="element"></param>
+        /// <returns></returns>
+        public static new NewObj Read(XElement element)
+        {
+            var inst = new NewObj();
+            Load(inst, element);
+            return inst;
+        }
+
+        /// <summary>
+        /// Loads the XML element into the instruction.
+        /// </summary>
+        /// <param name="inst"></param>
+        /// <param name="element"></param>
+        public static void Load(NewObj inst, XElement element)
+        {
+            Load((Call)inst, element);
+        }
+
+        /// <summary>
+        /// Initializes a new instance.
+        /// </summary>
         public NewObj() : base(OpCodes.Newobj)
         {
+
         }
+
     }
+
 }

@@ -22,7 +22,7 @@
   
 */
 
-using System.Xml.Serialization;
+using System.Xml.Linq;
 
 using IKVM.Internal;
 using IKVM.Reflection;
@@ -31,18 +31,43 @@ using IKVM.Reflection.Emit;
 namespace IKVM.Tools.Importer.MapXml
 {
 
-    [XmlType("ldsfld")]
+    [Instruction("ldsfld")]
     public sealed class Ldsfld : Instruction
     {
 
-        [XmlAttribute("class")]
-        public string Class;
-        [XmlAttribute("type")]
-        public string Type;
-        [XmlAttribute("name")]
-        public string Name;
-        [XmlAttribute("sig")]
-        public string Sig;
+        /// <summary>
+        /// Reads the XML element into a new <see cref="Ldsfld"/> instance.
+        /// </summary>
+        /// <param name="element"></param>
+        /// <returns></returns>
+        public static new Ldsfld Read(XElement element)
+        {
+            var inst = new Ldsfld();
+            Load(inst, element);
+            return inst;
+        }
+
+        /// <summary>
+        /// Loads the XML element into the instruction.
+        /// </summary>
+        /// <param name="inst"></param>
+        /// <param name="element"></param>
+        public static void Load(Ldsfld inst, XElement element)
+        {
+            Load((Instruction)inst, element);
+            inst.Class = (string)element.Attribute("class");
+            inst.Type = (string)element.Attribute("type");
+            inst.Name = (string)element.Attribute("name");
+            inst.Sig = (string)element.Attribute("sig");
+        }
+
+        public string Class { get; set; }
+
+        public string Type { get; set; }
+
+        public string Name { get; set; }
+
+        public string Sig { get; set; }
 
         internal override void Generate(CodeGenContext context, CodeEmitter ilgen)
         {

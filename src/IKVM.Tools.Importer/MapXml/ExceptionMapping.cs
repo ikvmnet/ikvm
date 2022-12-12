@@ -22,17 +22,46 @@
   
 */
 
-using System.Xml.Serialization;
+using System.Linq;
+using System.Xml.Linq;
 
 namespace IKVM.Tools.Importer.MapXml
 {
-    [XmlType("exception")]
-    public sealed class ExceptionMapping
+
+    public sealed class ExceptionMapping : MapXmlElement
     {
-        [XmlAttribute]
-        public string src;
-        [XmlAttribute]
-        public string dst;
-        public InstructionList code;
+
+        /// <summary>
+        /// Reads the XML element into a new <see cref="ExceptionMapping"/> instance.
+        /// </summary>
+        /// <param name="element"></param>
+        /// <returns></returns>
+        public static ExceptionMapping Read(XElement element)
+        {
+            var mapping = new ExceptionMapping();
+            Load(mapping, element);
+            return mapping;
+        }
+
+        /// <summary>
+        /// Loads the XML element into the instruction.
+        /// </summary>
+        /// <param name="exception"></param>
+        /// <param name="element"></param>
+        public static void Load(ExceptionMapping exception, XElement element)
+        {
+            Load((MapXmlElement)exception, element);
+            exception.Source = (string)element.Attribute("src");
+            exception.Destination = (string)element.Attribute("dst");
+            exception.Code = element.Elements("code").Select(InstructionList.Read).FirstOrDefault();
+        }
+
+        public string Source { get; set; }
+
+        public string Destination { get; set; }
+
+        public InstructionList Code { get; set; }
+
     }
+
 }

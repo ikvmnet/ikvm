@@ -22,13 +22,38 @@
   
 */
 
-using System.Xml.Serialization;
+using System.Xml.Linq;
 
 namespace IKVM.Tools.Importer.MapXml
 {
+
     public sealed class Throws
     {
-        [XmlAttribute("class")]
-        public string Class;
+
+        /// <summary>
+        /// Reads the XML element into a new <see cref="Throws"/> instance.
+        /// </summary>
+        /// <param name="element"></param>
+        /// <returns></returns>
+        public static Throws Read(XElement element)
+        {
+            var inst = new Throws();
+            Load(inst, element);
+            return inst;
+        }
+
+        /// <summary>
+        /// Loads the XML element into the instruction.
+        /// </summary>
+        /// <param name="inst"></param>
+        /// <param name="element"></param>
+        public static void Load(Throws inst, XElement element)
+        {
+            inst.Class = (string)element.Attribute("class");
+        }
+
+        public string Class { get; set; }
+
     }
+
 }

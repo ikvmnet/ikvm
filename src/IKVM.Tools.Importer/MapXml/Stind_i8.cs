@@ -22,18 +22,48 @@
   
 */
 
+using System.Xml.Linq;
 using System.Xml.Serialization;
 
 using IKVM.Reflection.Emit;
 
 namespace IKVM.Tools.Importer.MapXml
 {
-    [XmlType("stind_i8")]
+
+    [Instruction("stind_i8")]
     public sealed class Stind_i8 : Simple
     {
-        public Stind_i8()
-            : base(OpCodes.Stind_I8)
+
+        /// <summary>
+        /// Reads the XML element into a new <see cref="Stind_i8"/> instance.
+        /// </summary>
+        /// <param name="element"></param>
+        /// <returns></returns>
+        public static new Stind_i8 Read(XElement element)
         {
+            var inst = new Stind_i8();
+            Load(inst, element);
+            return inst;
         }
+
+        /// <summary>
+        /// Loads the XML element into the instruction.
+        /// </summary>
+        /// <param name="inst"></param>
+        /// <param name="element"></param>
+        public static void Load(Stind_i8 inst, XElement element)
+        {
+            Load((Simple)inst, element);
+        }
+
+        /// <summary>
+        /// Initializes a new instance.
+        /// </summary>
+        public Stind_i8() : base(OpCodes.Stind_I8)
+        {
+
+        }
+
     }
+
 }

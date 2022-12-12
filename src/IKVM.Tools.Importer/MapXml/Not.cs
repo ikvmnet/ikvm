@@ -22,18 +22,48 @@
   
 */
 
+using System.Xml.Linq;
 using System.Xml.Serialization;
 
 using IKVM.Reflection.Emit;
 
 namespace IKVM.Tools.Importer.MapXml
 {
-    [XmlType("not")]
+
+    [Instruction("not")]
     public sealed class Not : Simple
     {
-        public Not()
-            : base(OpCodes.Not)
+
+        /// <summary>
+        /// Reads the XML element into a new <see cref="Not"/> instance.
+        /// </summary>
+        /// <param name="element"></param>
+        /// <returns></returns>
+        public static new Not Read(XElement element)
         {
+            var inst = new Not();
+            Load(inst, element);
+            return inst;
         }
+
+        /// <summary>
+        /// Loads the XML element into the instruction.
+        /// </summary>
+        /// <param name="inst"></param>
+        /// <param name="element"></param>
+        public static void Load(Not inst, XElement element)
+        {
+            Load((Simple)inst, element);
+        }
+
+        /// <summary>
+        /// Initializes a new instance.
+        /// </summary>
+        public Not() : base(OpCodes.Not)
+        {
+
+        }
+
     }
+
 }

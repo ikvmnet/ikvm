@@ -22,18 +22,48 @@
   
 */
 
+using System.Xml.Linq;
 using System.Xml.Serialization;
 
 using IKVM.Reflection.Emit;
 
 namespace IKVM.Tools.Importer.MapXml
 {
-    [XmlType("rem_un")]
+
+    [Instruction("rem_un")]
     public sealed class Rem_Un : Simple
     {
-        public Rem_Un()
-            : base(OpCodes.Rem_Un)
+
+        /// <summary>
+        /// Reads the XML element into a new <see cref="Rem_Un"/> instance.
+        /// </summary>
+        /// <param name="element"></param>
+        /// <returns></returns>
+        public static new Rem_Un Read(XElement element)
         {
+            var inst = new Rem_Un();
+            Load(inst, element);
+            return inst;
         }
+
+        /// <summary>
+        /// Loads the XML element into the instruction.
+        /// </summary>
+        /// <param name="inst"></param>
+        /// <param name="element"></param>
+        public static void Load(Rem_Un inst, XElement element)
+        {
+            Load((Simple)inst, element);
+        }
+
+        /// <summary>
+        /// Initializes a new instance.
+        /// </summary>
+        public Rem_Un() : base(OpCodes.Rem_Un)
+        {
+
+        }
+
     }
+
 }

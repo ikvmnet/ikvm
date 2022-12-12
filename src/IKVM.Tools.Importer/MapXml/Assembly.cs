@@ -22,15 +22,43 @@
   
 */
 
-using System.Xml.Serialization;
+using System.Linq;
+using System.Xml.Linq;
 
 namespace IKVM.Tools.Importer.MapXml
 {
-    public sealed class Assembly
+
+    public sealed class Assembly : MapXmlElement
     {
-        [XmlElement("class")]
-        public Class[] Classes;
-        [XmlElement("attribute")]
-        public Attribute[] Attributes;
+
+        /// <summary>
+        /// Reads the XML element into a new <see cref="Assembly"/> instance.
+        /// </summary>
+        /// <param name="element"></param>
+        /// <returns></returns>
+        public static Assembly Read(XElement element)
+        {
+            var assembly = new Assembly();
+            Load(assembly, element);
+            return assembly;
+        }
+
+        /// <summary>
+        /// Loads the XML element into the instruction.
+        /// </summary>
+        /// <param name="assembly"></param>
+        /// <param name="element"></param>
+        public static void Load(Assembly assembly, XElement element)
+        {
+            Load((MapXmlElement)assembly, element);
+            assembly.Classes = element.Elements(MapXmlSerializer.NS + "class").Select(Class.Read).ToArray();
+            assembly.Attributes = element.Elements(MapXmlSerializer.NS + "attribute").Select(Attribute.Read).ToArray();
+        }
+
+        public Class[] Classes { get; set; }
+
+        public Attribute[] Attributes { get; set; }
+
     }
+
 }

@@ -23,7 +23,7 @@
 */
 
 using System.Diagnostics;
-using System.Xml.Serialization;
+using System.Xml.Linq;
 
 using IKVM.Internal;
 
@@ -31,30 +31,46 @@ using Type = IKVM.Reflection.Type;
 
 namespace IKVM.Tools.Importer.MapXml
 {
+
     public abstract class TypeOrTypeWrapperInstruction : Instruction
     {
-        [XmlAttribute("class")]
-        public string Class;
-        [XmlAttribute("type")]
-        public string type;
+
+        /// <summary>
+        /// Loads the XML element into a <see cref="TypeOrTypeWrapperInstruction"/> instance.
+        /// </summary>
+        /// <param name="inst"></param>
+        /// <param name="element"></param>
+        /// <returns></returns>
+        public static void Load(TypeOrTypeWrapperInstruction inst, XElement element)
+        {
+            Load((Instruction)inst, element);
+            inst.Class = (string)element.Attribute("class");
+            inst.Type = (string)element.Attribute("type");
+        }
 
         internal TypeWrapper typeWrapper;
         internal Type typeType;
+
+        public string Class { get; set; }
+
+        public string Type { get; set; }
 
         internal override void Generate(CodeGenContext context, CodeEmitter ilgen)
         {
             if (typeWrapper == null && typeType == null)
             {
-                Debug.Assert(Class == null ^ type == null);
+                Debug.Assert(Class == null ^ Type == null);
                 if (Class != null)
                 {
                     typeWrapper = context.ClassLoader.LoadClassByDottedName(Class);
                 }
                 else
                 {
-                    typeType = StaticCompiler.GetTypeForMapXml(context.ClassLoader, type);
+                    typeType = StaticCompiler.GetTypeForMapXml(context.ClassLoader, Type);
                 }
             }
         }
+
     }
+
 }

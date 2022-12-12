@@ -22,6 +22,7 @@
   
 */
 
+using System.Xml.Linq;
 using System.Xml.Serialization;
 
 using IKVM.Internal;
@@ -31,36 +32,60 @@ using Type = IKVM.Reflection.Type;
 namespace IKVM.Tools.Importer.MapXml
 {
 
-    [XmlType("exceptionBlock")]
+    [Instruction("exceptionBlock")]
     public sealed class ExceptionBlock : Instruction
     {
 
-        public InstructionList @try;
-        public CatchBlock @catch;
-        public InstructionList @finally;
+        /// <summary>
+        /// Reads the XML element into a new <see cref="ExceptionBlock"/> instance.
+        /// </summary>
+        /// <param name="element"></param>
+        /// <returns></returns>
+        public static new ExceptionBlock Read(XElement element)
+        {
+            var inst = new ExceptionBlock();
+            Load(inst, element);
+            return inst;
+        }
+
+        /// <summary>
+        /// Loads the XML element into the instruction.
+        /// </summary>
+        /// <param name="inst"></param>
+        /// <param name="element"></param>
+        public static void Load(ExceptionBlock inst, XElement element)
+        {
+            Load((Instruction)inst, element);
+        }
+
+        public InstructionList Try { get; set; }
+
+        public CatchBlock Catch { get; set; }
+
+        public InstructionList Finally { get; set; }
 
         internal override void Generate(CodeGenContext context, CodeEmitter ilgen)
         {
             ilgen.BeginExceptionBlock();
-            @try.Generate(context, ilgen);
-            if (@catch != null)
+            Try.Generate(context, ilgen);
+            if (Catch != null)
             {
                 Type type;
-                if (@catch.type != null)
+                if (Catch.Type != null)
                 {
-                    type = StaticCompiler.GetTypeForMapXml(context.ClassLoader, @catch.type);
+                    type = StaticCompiler.GetTypeForMapXml(context.ClassLoader, Catch.Type);
                 }
                 else
                 {
-                    type = context.ClassLoader.LoadClassByDottedName(@catch.Class).TypeAsExceptionType;
+                    type = context.ClassLoader.LoadClassByDottedName(Catch.Class).TypeAsExceptionType;
                 }
                 ilgen.BeginCatchBlock(type);
-                @catch.Generate(context, ilgen);
+                Catch.Generate(context, ilgen);
             }
-            if (@finally != null)
+            if (Finally != null)
             {
                 ilgen.BeginFinallyBlock();
-                @finally.Generate(context, ilgen);
+                Finally.Generate(context, ilgen);
             }
             ilgen.EndExceptionBlock();
         }

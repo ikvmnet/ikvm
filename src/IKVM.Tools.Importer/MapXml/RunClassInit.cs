@@ -22,19 +22,41 @@
   
 */
 
-using System.Xml.Serialization;
+using System.Xml.Linq;
 
 using IKVM.Internal;
 
 namespace IKVM.Tools.Importer.MapXml
 {
 
-    [XmlType("runclassinit")]
+    [Instruction("runclassinit")]
     public sealed class RunClassInit : Instruction
     {
 
-        [XmlAttribute("class")]
-        public string Class;
+        /// <summary>
+        /// Reads the XML element into a new <see cref="RunClassInit"/> instance.
+        /// </summary>
+        /// <param name="element"></param>
+        /// <returns></returns>
+        public static new RunClassInit Read(XElement element)
+        {
+            var inst = new RunClassInit();
+            Load(inst, element);
+            return inst;
+        }
+
+        /// <summary>
+        /// Loads the XML element into the instruction.
+        /// </summary>
+        /// <param name="inst"></param>
+        /// <param name="element"></param>
+        public static void Load(RunClassInit inst, XElement element)
+        {
+            Load((Instruction)inst, element);
+            inst.Class = (string)element.Attribute("class");
+        }
+
+        public string Class { get; set; }
 
         internal override void Generate(CodeGenContext context, CodeEmitter ilgen)
         {

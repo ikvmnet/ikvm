@@ -22,17 +22,47 @@
   
 */
 
-using System.Xml.Serialization;
+using System.Xml.Linq;
 
 using IKVM.Reflection.Emit;
 
 namespace IKVM.Tools.Importer.MapXml
 {
-    [XmlType("stind_ref")]
+
+    [Instruction("stind_ref")]
     public sealed class Stind_ref : Simple
     {
+
+        /// <summary>
+        /// Reads the XML element into a new <see cref="Stind_ref"/> instance.
+        /// </summary>
+        /// <param name="element"></param>
+        /// <returns></returns>
+        public static new Stind_ref Read(XElement element)
+        {
+            var inst = new Stind_ref();
+            Load(inst, element);
+            return inst;
+        }
+
+        /// <summary>
+        /// Loads the XML element into the instruction.
+        /// </summary>
+        /// <param name="inst"></param>
+        /// <param name="element"></param>
+        public static void Load(Stind_ref inst, XElement element)
+        {
+            Load((Simple)inst, element);
+        }
+
+        /// <summary>
+        /// Initializes a new instance.
+        /// </summary>
         public Stind_ref() : base(OpCodes.Stind_Ref)
         {
+
         }
+
     }
+
 }

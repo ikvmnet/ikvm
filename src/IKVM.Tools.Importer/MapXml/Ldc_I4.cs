@@ -22,23 +22,45 @@
   
 */
 
-using System.Xml.Serialization;
+using System.Xml.Linq;
 
 using IKVM.Internal;
 
 namespace IKVM.Tools.Importer.MapXml
 {
 
-    [XmlType("ldc_i4")]
+    [Instruction("ldc_i4")]
     public sealed class Ldc_I4 : Instruction
     {
 
-        [XmlAttribute("value")]
-        public int val;
+        /// <summary>
+        /// Reads the XML element into a new <see cref="Ldc_I4"/> instance.
+        /// </summary>
+        /// <param name="element"></param>
+        /// <returns></returns>
+        public static new Ldc_I4 Read(XElement element)
+        {
+            var inst = new Ldc_I4();
+            Load(inst, element);
+            return inst;
+        }
+
+        /// <summary>
+        /// Loads the XML element into the instruction.
+        /// </summary>
+        /// <param name="inst"></param>
+        /// <param name="element"></param>
+        public static void Load(Ldc_I4 inst, XElement element)
+        {
+            Load((Instruction)inst, element);
+            inst.Value = (int)element.Attribute("value");
+        }
+
+        public int Value { get; set; }
 
         internal override void Generate(CodeGenContext context, CodeEmitter ilgen)
         {
-            ilgen.EmitLdc_I4(val);
+            ilgen.EmitLdc_I4(Value);
         }
 
     }

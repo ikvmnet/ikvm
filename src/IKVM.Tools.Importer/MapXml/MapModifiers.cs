@@ -23,32 +23,26 @@
 */
 
 using System;
-using System.Xml.Serialization;
 
 using IKVM.Attributes;
 
 namespace IKVM.Tools.Importer.MapXml
 {
+
     [Flags]
     public enum MapModifiers
     {
-        [XmlEnum("public")]
+
         Public = Modifiers.Public,
-        [XmlEnum("protected")]
         Protected = Modifiers.Protected,
-        [XmlEnum("private")]
         Private = Modifiers.Private,
-        [XmlEnum("final")]
         Final = Modifiers.Final,
-        [XmlEnum("interface")]
         Interface = Modifiers.Interface,
-        [XmlEnum("static")]
         Static = Modifiers.Static,
-        [XmlEnum("abstract")]
         Abstract = Modifiers.Abstract,
-        [XmlEnum("ACC_BRIDGE")]
         Bridge = Modifiers.Bridge,
-        [XmlEnum("ACC_SYNTHETIC")]
         Synthetic = Modifiers.Synthetic,
+
     }
+
 }

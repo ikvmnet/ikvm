@@ -22,15 +22,42 @@
   
 */
 
-using System.Xml.Serialization;
+using System.Xml.Linq;
 
 namespace IKVM.Tools.Importer.MapXml
 {
+
     public sealed class Override
     {
-        [XmlAttribute("class")]
-        public string Class;
-        [XmlAttribute("name")]
-        public string Name;
+
+        /// <summary>
+        /// Reads the XML element into a new <see cref="Override"/> instance.
+        /// </summary>
+        /// <param name="element"></param>
+        /// <returns></returns>
+        public static Override Read(XElement element)
+        {
+            var inst = new Override();
+            Load(inst, element);
+            return inst;
+        }
+
+        /// <summary>
+        /// Loads the XML element into the instruction.
+        /// </summary>
+        /// <param name="inst"></param>
+        /// <param name="element"></param>
+        public static void Load(Override inst, XElement element)
+        {
+            inst.Class = (string)element.Attribute("class");
+            inst.Name = (string)element.Attribute("name");
+        }
+
+
+        public string Class { get; set; }
+
+        public string Name { get; set; }
+
     }
+
 }

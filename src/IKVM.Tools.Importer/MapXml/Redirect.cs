@@ -23,7 +23,7 @@
 */
 
 using System;
-using System.Xml.Serialization;
+using System.Xml.Linq;
 
 using IKVM.Internal;
 using IKVM.Reflection;
@@ -34,28 +34,48 @@ using Type = IKVM.Reflection.Type;
 namespace IKVM.Tools.Importer.MapXml
 {
 
-    public sealed class Redirect
+    public sealed class Redirect : MapXmlElement
     {
 
-        private int linenum = Root.LineNumber;
+        /// <summary>
+        /// Reads the XML element into a new <see cref="Redirect"/> instance.
+        /// </summary>
+        /// <param name="element"></param>
+        /// <returns></returns>
+        public static Redirect Read(XElement element)
+        {
+            var redirect = new Redirect();
+            Load(redirect, element);
+            return redirect;
+        }
 
-        internal int LineNumber => linenum;
+        /// <summary>
+        /// Loads the XML element into the instance.
+        /// </summary>
+        /// <param name="redirect"></param>
+        /// <param name="element"></param>
+        public static void Load(Redirect redirect, XElement element)
+        {
+            Load((MapXmlElement)redirect, element);
+            redirect.Class = (string)element.Attribute("class");
+            redirect.Name = (string)element.Attribute("name");
+            redirect.Sig = (string)element.Attribute("sig");
+            redirect.Type = (string)element.Attribute("type");
+        }
 
-        [XmlAttribute("class")]
-        public string Class;
-        [XmlAttribute("name")]
-        public string Name;
-        [XmlAttribute("sig")]
-        public string Sig;
-        [XmlAttribute("type")]
-        public string Type;
+        public string Class { get; set; }
+
+        public string Name { get; set; }
+
+        public string Sig { get; set; }
+
+        public string Type { get; set; }
 
         internal void Emit(ClassLoaderWrapper loader, CodeEmitter ilgen)
         {
             if (Type != "static" || Class == null || Name == null || Sig == null)
-            {
                 throw new NotImplementedException();
-            }
+
             Type[] redirParamTypes = loader.ArgTypeListFromSig(Sig);
             for (int i = 0; i < redirParamTypes.Length; i++)
             {

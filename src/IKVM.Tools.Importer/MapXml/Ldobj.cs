@@ -22,17 +22,47 @@
   
 */
 
-using System.Xml.Serialization;
+using System.Xml.Linq;
 
 using IKVM.Reflection.Emit;
 
 namespace IKVM.Tools.Importer.MapXml
 {
-    [XmlType("ldobj")]
+
+    [Instruction("ldobj")]
     public sealed class Ldobj : TypeInstruction
     {
+
+        /// <summary>
+        /// Reads the XML element into a new <see cref="Ldobj"/> instance.
+        /// </summary>
+        /// <param name="element"></param>
+        /// <returns></returns>
+        public static new Ldobj Read(XElement element)
+        {
+            var inst = new Ldobj();
+            Load(inst, element);
+            return inst;
+        }
+
+        /// <summary>
+        /// Loads the XML element into the instruction.
+        /// </summary>
+        /// <param name="inst"></param>
+        /// <param name="element"></param>
+        public static void Load(Ldobj inst, XElement element)
+        {
+            Load((TypeInstruction)inst, element);
+        }
+
+        /// <summary>
+        /// Initializes a new instance.
+        /// </summary>
         public Ldobj() : base(OpCodes.Ldobj)
         {
+
         }
+
     }
+
 }

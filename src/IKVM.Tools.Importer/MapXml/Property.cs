@@ -22,21 +22,51 @@
   
 */
 
-using System.Xml.Serialization;
+using System.Linq;
+using System.Xml.Linq;
 
 namespace IKVM.Tools.Importer.MapXml
 {
 
     public sealed class Property
     {
-        [XmlAttribute("name")]
-        public string Name;
-        [XmlAttribute("sig")]
-        public string Sig;
-        public Method getter;
-        public Method setter;
-        [XmlElement("attribute")]
-        public Attribute[] Attributes;
+
+        /// <summary>
+        /// Reads the XML element into a new <see cref="Property"/> instance.
+        /// </summary>
+        /// <param name="element"></param>
+        /// <returns></returns>
+        public static Property Read(XElement element)
+        {
+            var property = new Property();
+            Load(property, element);
+            return property;
+        }
+
+        /// <summary>
+        /// Loads the XML element into the class.
+        /// </summary>
+        /// <param name="property"></param>
+        /// <param name="element"></param>
+        public static void Load(Property property, XElement element)
+        {
+            property.Name = (string)element.Attribute("name");
+            property.Sig = (string)element.Attribute("sig");
+            property.Getter = element.Elements(MapXmlSerializer.NS + "getter").Select(Method.Read).FirstOrDefault();
+            property.Setter = element.Elements(MapXmlSerializer.NS + "setter").Select(Method.Read).FirstOrDefault();
+            property.Attributes = element.Elements(MapXmlSerializer.NS + "attribute").Select(Attribute.Read).ToArray();
+        }
+
+        public string Name { get; set; }
+
+        public string Sig { get; set; }
+
+        public Method Getter { get; set; }
+
+        public Method Setter { get; set; }
+
+        public Attribute[] Attributes { get; set; }
+
     }
 
 }

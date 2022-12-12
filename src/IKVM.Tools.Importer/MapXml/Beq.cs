@@ -22,16 +22,38 @@
   
 */
 
-using System.Xml.Serialization;
+using System.Xml.Linq;
 
 using IKVM.Internal;
 
 namespace IKVM.Tools.Importer.MapXml
 {
 
-    [XmlType("beq")]
+    [Instruction("beq")]
     public sealed class Beq : Branch
     {
+
+        /// <summary>
+        /// Reads the XML element into a new <see cref="Beq"/> instance.
+        /// </summary>
+        /// <param name="element"></param>
+        /// <returns></returns>
+        public static new Beq Read(XElement element)
+        {
+            var inst = new Beq();
+            Load(inst, element);
+            return inst;
+        }
+
+        /// <summary>
+        /// Loads the XML element into the instruction.
+        /// </summary>
+        /// <param name="inst"></param>
+        /// <param name="element"></param>
+        public static void Load(Beq inst, XElement element)
+        {
+            Load((Branch)inst, element);
+        }
 
         internal override void Emit(CodeEmitter ilgen, CodeEmitterLabel label)
         {

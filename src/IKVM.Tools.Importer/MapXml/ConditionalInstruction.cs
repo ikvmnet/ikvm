@@ -23,26 +23,51 @@
 */
 
 using System;
-using System.Xml.Serialization;
+using System.Linq;
+using System.Xml.Linq;
 
 using IKVM.Internal;
 
 namespace IKVM.Tools.Importer.MapXml
 {
 
-    [XmlType("conditional")]
+    [Instruction("conditional")]
     public sealed class ConditionalInstruction : Instruction
     {
 
-        [XmlAttribute("framework")]
-        public string framework;
-        public InstructionList code;
+        /// <summary>
+        /// Reads the XML element into a new instance.
+        /// </summary>
+        /// <param name="element"></param>
+        /// <returns></returns>
+        public static new ConditionalInstruction Read(XElement element)
+        {
+            var inst = new ConditionalInstruction();
+            Load(inst, element);
+            return inst;
+        }
+
+        /// <summary>
+        /// Loads the XML element into the instance.
+        /// </summary>
+        /// <param name="element"></param>
+        /// <returns></returns>
+        public static void Load(ConditionalInstruction inst, XElement element)
+        {
+            Load((Instruction)inst, element);
+            inst.Framework = (string)element.Attribute("framework");
+            inst.Code = element.Elements(MapXmlSerializer.NS + "code").Select(InstructionList.Read).FirstOrDefault();
+        }
+
+        public string Framework { get; set; }
+
+        public InstructionList Code { get; set; }
 
         internal override void Generate(CodeGenContext context, CodeEmitter ilgen)
         {
-            if (Environment.Version.ToString().StartsWith(framework))
+            if (Environment.Version.ToString().StartsWith(Framework))
             {
-                code.Generate(context, ilgen);
+                Code.Generate(context, ilgen);
             }
         }
 

@@ -22,6 +22,7 @@
   
 */
 
+using System.Xml.Linq;
 using System.Xml.Serialization;
 
 using IKVM.Internal;
@@ -29,9 +30,31 @@ using IKVM.Internal;
 namespace IKVM.Tools.Importer.MapXml
 {
 
-    [XmlType("brfalse")]
+    [Instruction("brfalse")]
     public sealed class BrFalse : Branch
     {
+
+        /// <summary>
+        /// Reads the XML element into a new <see cref="BrFalse"/> instance.
+        /// </summary>
+        /// <param name="element"></param>
+        /// <returns></returns>
+        public static new BrFalse Read(XElement element)
+        {
+            var inst = new BrFalse();
+            Load(inst, element);
+            return inst;
+        }
+
+        /// <summary>
+        /// Loads the XML element into the instruction.
+        /// </summary>
+        /// <param name="inst"></param>
+        /// <param name="element"></param>
+        public static void Load(BrFalse inst, XElement element)
+        {
+            Load((Branch)inst, element);
+        }
 
         internal override void Emit(CodeEmitter ilgen, CodeEmitterLabel label)
         {

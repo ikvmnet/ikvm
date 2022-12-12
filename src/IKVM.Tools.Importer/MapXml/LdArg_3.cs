@@ -22,17 +22,47 @@
   
 */
 
-using System.Xml.Serialization;
+using System.Xml.Linq;
 
 using IKVM.Reflection.Emit;
 
 namespace IKVM.Tools.Importer.MapXml
 {
-    [XmlType("ldarg_3")]
+
+    [Instruction("ldarg_3")]
     public sealed class LdArg_3 : Simple
     {
+
+        /// <summary>
+        /// Reads the XML element into a new <see cref="LdArg_3"/> instance.
+        /// </summary>
+        /// <param name="element"></param>
+        /// <returns></returns>
+        public static new LdArg_3 Read(XElement element)
+        {
+            var inst = new LdArg_3();
+            Load(inst, element);
+            return inst;
+        }
+
+        /// <summary>
+        /// Loads the XML element into the instruction.
+        /// </summary>
+        /// <param name="inst"></param>
+        /// <param name="element"></param>
+        public static void Load(LdArg_3 inst, XElement element)
+        {
+            Load((Simple)inst, element);
+        }
+
+        /// <summary>
+        /// Initializes a new instance.
+        /// </summary>
         public LdArg_3() : base(OpCodes.Ldarg_3)
         {
+
         }
+
     }
+
 }

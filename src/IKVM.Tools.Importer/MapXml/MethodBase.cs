@@ -22,25 +22,47 @@
   
 */
 
-using System.Xml.Serialization;
+using System.Linq;
+using System.Xml.Linq;
 
 using IKVM.Reflection;
 
 namespace IKVM.Tools.Importer.MapXml
 {
-    public abstract class MethodBase
+
+    public abstract class MethodBase : MapXmlElement
     {
-        [XmlAttribute("attributes")]
-        public MethodAttributes MethodAttributes;
-        public InstructionList body;
-        [XmlElement("throws", typeof(Throws))]
-        public Throws[] throws;
-        [XmlElement("attribute")]
-        public Attribute[] Attributes;
-        [XmlElement("replace-method-call")]
-        public ReplaceMethodCall[] ReplaceMethodCalls;
-        public InstructionList prologue;
+
+        /// <summary>
+        /// Loads the XML element into the instance.
+        /// </summary>
+        /// <param name="method"></param>
+        /// <param name="element"></param>
+        public static void Load(MethodBase method, XElement element)
+        {
+            Load((MapXmlElement)method, element);
+            method.MethodAttributes = MapXmlSerializer.ReadMethodAttributes((string)element.Attribute("attributes"));
+            method.Body = element.Elements(MapXmlSerializer.NS + "body").Select(InstructionList.Read).FirstOrDefault();
+            method.Throws = element.Elements(MapXmlSerializer.NS + "throws").Select(MapXml.Throws.Read).ToArray();
+            method.Attributes = element.Elements(MapXmlSerializer.NS + "attribute").Select(Attribute.Read).ToArray();
+            method.ReplaceMethodCalls = element.Elements(MapXmlSerializer.NS + "replace-method-call").Select(ReplaceMethodCall.Read).ToArray();
+            method.Prologue = element.Elements(MapXmlSerializer.NS + "prologue").Select(InstructionList.Read).FirstOrDefault();
+        }
+
+        public MethodAttributes MethodAttributes { get; set; }
+
+        public InstructionList Body { get; set; }
+
+        public Throws[] Throws { get; set; }
+
+        public Attribute[] Attributes { get; set; }
+
+        public ReplaceMethodCall[] ReplaceMethodCalls { get; set; }
+
+        public InstructionList Prologue { get; set; }
 
         internal abstract MethodKey ToMethodKey(string className);
+
     }
+
 }

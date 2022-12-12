@@ -22,19 +22,41 @@
   
 */
 
-using System.Xml.Serialization;
+using System.Xml.Linq;
 
 using IKVM.Internal;
 
 namespace IKVM.Tools.Importer.MapXml
 {
 
-    [XmlType("ldarg_s")]
+    [Instruction("ldarg_s")]
     public sealed class LdArg_S : Instruction
     {
 
-        [XmlAttribute("argNum")]
-        public byte ArgNum;
+        /// <summary>
+        /// Reads the XML element into a new <see cref="LdArg_S"/> instance.
+        /// </summary>
+        /// <param name="element"></param>
+        /// <returns></returns>
+        public static new LdArg_S Read(XElement element)
+        {
+            var inst = new LdArg_S();
+            Load(inst, element);
+            return inst;
+        }
+
+        /// <summary>
+        /// Loads the XML element into the instruction.
+        /// </summary>
+        /// <param name="inst"></param>
+        /// <param name="element"></param>
+        public static void Load(LdArg_S inst, XElement element)
+        {
+            Load((Instruction)inst, element);
+            inst.ArgNum = (byte)(int)element.Attribute("argNum");
+        }
+
+        public byte ArgNum { get; set; }
 
         internal override void Generate(CodeGenContext context, CodeEmitter ilgen)
         {

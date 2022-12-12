@@ -22,21 +22,52 @@
   
 */
 
-using System.Xml.Serialization;
+using System.Linq;
+using System.Xml.Linq;
 
 namespace IKVM.Tools.Importer.MapXml
 {
-    public sealed class Field
+
+    public sealed class Field : MapXmlElement
     {
-        [XmlAttribute("name")]
-        public string Name;
-        [XmlAttribute("sig")]
-        public string Sig;
-        [XmlAttribute("modifiers")]
-        public MapModifiers Modifiers;
-        [XmlAttribute("constant")]
-        public string Constant;
-        [XmlElement("attribute")]
-        public Attribute[] Attributes;
+
+        /// <summary>
+        /// Reads the XML element into a new <see cref="Field"/> instance.
+        /// </summary>
+        /// <param name="element"></param>
+        /// <returns></returns>
+        public static Field Read(XElement element)
+        {
+            var field = new Field();
+            Load(field, element);
+            return field;
+        }
+
+        /// <summary>
+        /// Loads the XML element into the instruction.
+        /// </summary>
+        /// <param name="field"></param>
+        /// <param name="element"></param>
+        public static void Load(Field field, XElement element)
+        {
+            Load((MapXmlElement)field, element);
+            field.Name = (string)element.Attribute("name");
+            field.Sig = (string)element.Attribute("sig");
+            field.Modifiers = MapXmlSerializer.ReadMapModifiers((string)element.Attribute("modifiers"));
+            field.Constant = (string)element.Attribute("constant");
+            field.Attributes = element.Elements(MapXmlSerializer.NS + "attribute").Select(Attribute.Read).ToArray();
+        }
+
+        public string Name { get; set; }
+
+        public string Sig { get; set; }
+
+        public MapModifiers Modifiers { get; set; }
+
+        public string Constant { get; set; }
+
+        public Attribute[] Attributes { get; set; }
+
     }
+
 }

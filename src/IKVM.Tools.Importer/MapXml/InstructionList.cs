@@ -22,119 +22,47 @@
   
 */
 
-using System.Xml.Serialization;
+using System.Linq;
+using System.Xml.Linq;
 
 using IKVM.Internal;
 
 namespace IKVM.Tools.Importer.MapXml
 {
 
-    public class InstructionList
+    public class InstructionList : MapXmlElement
     {
 
-        [XmlElement(typeof(Ldstr))]
-        [XmlElement(typeof(Call))]
-        [XmlElement(typeof(Callvirt))]
-        [XmlElement(typeof(Ldftn))]
-        [XmlElement(typeof(Ldvirtftn))]
-        [XmlElement(typeof(Dup))]
-        [XmlElement(typeof(Pop))]
-        [XmlElement(typeof(IsInst))]
-        [XmlElement(typeof(Castclass))]
-        [XmlElement(typeof(Castclass_impl))]
-        [XmlElement(typeof(Ldobj))]
-        [XmlElement(typeof(Unbox))]
-        [XmlElement(typeof(Box))]
-        [XmlElement(typeof(BrFalse))]
-        [XmlElement(typeof(BrTrue))]
-        [XmlElement(typeof(Br))]
-        [XmlElement(typeof(Beq))]
-        [XmlElement(typeof(Bne_Un))]
-        [XmlElement(typeof(Bge_Un))]
-        [XmlElement(typeof(Ble_Un))]
-        [XmlElement(typeof(Blt))]
-        [XmlElement(typeof(Blt_Un))]
-        [XmlElement(typeof(BrLabel))]
-        [XmlElement(typeof(NewObj))]
-        [XmlElement(typeof(StLoc))]
-        [XmlElement(typeof(LdLoc))]
-        [XmlElement(typeof(LdArga))]
-        [XmlElement(typeof(LdArg_S))]
-        [XmlElement(typeof(LdArg_0))]
-        [XmlElement(typeof(LdArg_1))]
-        [XmlElement(typeof(LdArg_2))]
-        [XmlElement(typeof(LdArg_3))]
-        [XmlElement(typeof(Ldind_i1))]
-        [XmlElement(typeof(Ldind_i2))]
-        [XmlElement(typeof(Ldind_i4))]
-        [XmlElement(typeof(Ldind_i8))]
-        [XmlElement(typeof(Ldind_r4))]
-        [XmlElement(typeof(Ldind_r8))]
-        [XmlElement(typeof(Ldind_ref))]
-        [XmlElement(typeof(Stind_i1))]
-        [XmlElement(typeof(Stind_i2))]
-        [XmlElement(typeof(Stind_i4))]
-        [XmlElement(typeof(Stind_i8))]
-        [XmlElement(typeof(Stind_ref))]
-        [XmlElement(typeof(Ret))]
-        [XmlElement(typeof(Throw))]
-        [XmlElement(typeof(Ldnull))]
-        [XmlElement(typeof(Ldflda))]
-        [XmlElement(typeof(Ldfld))]
-        [XmlElement(typeof(Ldsfld))]
-        [XmlElement(typeof(Stfld))]
-        [XmlElement(typeof(Stsfld))]
-        [XmlElement(typeof(Ldc_I4))]
-        [XmlElement(typeof(Ldc_I4_0))]
-        [XmlElement(typeof(Ldc_I4_1))]
-        [XmlElement(typeof(Ldc_I4_M1))]
-        [XmlElement(typeof(Conv_I))]
-        [XmlElement(typeof(Conv_I1))]
-        [XmlElement(typeof(Conv_U1))]
-        [XmlElement(typeof(Conv_I2))]
-        [XmlElement(typeof(Conv_U2))]
-        [XmlElement(typeof(Conv_I4))]
-        [XmlElement(typeof(Conv_U4))]
-        [XmlElement(typeof(Conv_I8))]
-        [XmlElement(typeof(Conv_U8))]
-        [XmlElement(typeof(Ldlen))]
-        [XmlElement(typeof(ExceptionBlock))]
-        [XmlElement(typeof(Add))]
-        [XmlElement(typeof(Sub))]
-        [XmlElement(typeof(Mul))]
-        [XmlElement(typeof(Div_Un))]
-        [XmlElement(typeof(Rem_Un))]
-        [XmlElement(typeof(And))]
-        [XmlElement(typeof(Or))]
-        [XmlElement(typeof(Xor))]
-        [XmlElement(typeof(Not))]
-        [XmlElement(typeof(Unaligned))]
-        [XmlElement(typeof(Cpblk))]
-        [XmlElement(typeof(Ceq))]
-        [XmlElement(typeof(ConditionalInstruction))]
-        [XmlElement(typeof(Volatile))]
-        [XmlElement(typeof(Ldelema))]
-        [XmlElement(typeof(Newarr))]
-        [XmlElement(typeof(Ldtoken))]
-        [XmlElement(typeof(Leave))]
-        [XmlElement(typeof(Endfinally))]
-        [XmlElement(typeof(RunClassInit))]
-        [XmlElement(typeof(EmitExceptionMapping))]
-        public Instruction[] invoke;
+        /// <summary>
+        /// Reads the XML element into a new <see cref="InstructionList"/> instance.
+        /// </summary>
+        /// <param name="element"></param>
+        /// <returns></returns>
+        public static InstructionList Read(XElement element)
+        {
+            var list = new InstructionList();
+            Load(list, element);
+            return list;
+        }
+
+        /// <summary>
+        /// Loads the XML element into a <see cref="InstructionList"/> instance.
+        /// </summary>
+        /// <param name="element"></param>
+        /// <returns></returns>
+        public static void Load(InstructionList list, XElement element)
+        {
+            Load((MapXmlElement)list, element);
+            list.Instructions = element.Elements().Select(Instruction.Read).ToArray();
+        }
+
+        public Instruction[] Instructions { get; set; }
 
         internal void Generate(CodeGenContext context, CodeEmitter ilgen)
         {
-            if (invoke != null)
-            {
-                for (int i = 0; i < invoke.Length; i++)
-                {
-                    if (invoke[i].LineNumber != -1)
-                    {
-                        ilgen.SetLineNumber((ushort)invoke[i].LineNumber);
-                    }
-                    invoke[i].Generate(context, ilgen);
-                }
-            }
+            if (Instructions != null)
+                for (int i = 0; i < Instructions.Length; i++)
+                    Instructions[i].Generate(context, ilgen);
         }
 
         internal void Emit(ClassLoaderWrapper loader, CodeEmitter ilgen)

@@ -23,7 +23,7 @@
 */
 
 using System.Diagnostics;
-using System.Xml.Serialization;
+using System.Xml.Linq;
 
 using IKVM.Internal;
 using IKVM.Reflection.Emit;
@@ -33,40 +33,62 @@ using Type = IKVM.Reflection.Type;
 namespace IKVM.Tools.Importer.MapXml
 {
 
-    [XmlType("stloc")]
+    [Instruction("stloc")]
     public sealed class StLoc : Instruction
     {
 
-        [XmlAttribute("name")]
-        public string Name;
-        [XmlAttribute("class")]
-        public string Class;
-        [XmlAttribute("type")]
-        public string type;
+        /// <summary>
+        /// Reads the XML element into a new <see cref="stloc"/> instance.
+        /// </summary>
+        /// <param name="element"></param>
+        /// <returns></returns>
+        public static new StLoc Read(XElement element)
+        {
+            var inst = new StLoc();
+            Load(inst, element);
+            return inst;
+        }
 
-        private TypeWrapper typeWrapper;
-        private Type typeType;
+        /// <summary>
+        /// Loads the XML element into the instruction.
+        /// </summary>
+        /// <param name="inst"></param>
+        /// <param name="element"></param>
+        public static void Load(StLoc inst, XElement element)
+        {
+            Load((Instruction)inst, element);
+            inst.Name = (string)element.Attribute("name");
+            inst.Class = (string)element.Attribute("class");
+            inst.Type = (string)element.Attribute("type");
+        }
+
+        TypeWrapper typeWrapper;
+        Type typeType;
+
+        public string Name { get; set; }
+
+        public string Class { get; set; }
+
+        public string Type { get; set; }
 
         internal override void Generate(CodeGenContext context, CodeEmitter ilgen)
         {
-            CodeEmitterLocal lb = (CodeEmitterLocal)context[Name];
+            var lb = (CodeEmitterLocal)context[Name];
             if (lb == null)
             {
                 if (typeWrapper == null && typeType == null)
                 {
-                    Debug.Assert(Class == null ^ type == null);
-                    if (type != null)
-                    {
-                        typeType = StaticCompiler.GetTypeForMapXml(context.ClassLoader, type);
-                    }
+                    Debug.Assert(Class == null ^ Type == null);
+                    if (Type != null)
+                        typeType = StaticCompiler.GetTypeForMapXml(context.ClassLoader, Type);
                     else
-                    {
                         typeWrapper = context.ClassLoader.LoadClassByDottedName(Class);
-                    }
                 }
+
                 lb = ilgen.DeclareLocal(typeType != null ? typeType : typeWrapper.TypeAsTBD);
                 context[Name] = lb;
             }
+
             ilgen.Emit(OpCodes.Stloc, lb);
         }
 

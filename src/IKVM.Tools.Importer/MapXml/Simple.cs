@@ -22,6 +22,8 @@
   
 */
 
+using System.Xml.Linq;
+
 using IKVM.Internal;
 using IKVM.Reflection.Emit;
 
@@ -31,8 +33,23 @@ namespace IKVM.Tools.Importer.MapXml
     public abstract class Simple : Instruction
     {
 
-        private OpCode opcode;
+        /// <summary>
+        /// Loads the XML element into a <see cref="Simple"/> instance.
+        /// </summary>
+        /// <param name="inst"></param>
+        /// <param name="element"></param>
+        /// <returns></returns>
+        public static void Load(Simple inst, XElement element)
+        {
+            Load((Instruction)inst, element);
+        }
 
+        readonly OpCode opcode;
+
+        /// <summary>
+        /// Initializes a new instance.
+        /// </summary>
+        /// <param name="opcode"></param>
         public Simple(OpCode opcode)
         {
             this.opcode = opcode;

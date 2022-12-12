@@ -46,6 +46,9 @@ namespace IKVM.Tools.Importer
 
         }
 
+        /// <summary>
+        /// Manages a separate isolated copy of the assemblies.
+        /// </summary>
         class IsolatedAssemblyLoadContext : AssemblyLoadContext
         {
 
@@ -56,7 +59,7 @@ namespace IKVM.Tools.Importer
             /// </summary>
             /// <param name="name"></param>
             /// <param name="isCollectible"></param>
-            public IsolatedAssemblyLoadContext(string name, bool isCollectible = false) :
+            public IsolatedAssemblyLoadContext(string name, bool isCollectible = true) :
                 base(name, isCollectible)
             {
                 resolver = new AssemblyDependencyResolver(Assembly.GetEntryAssembly().Location);
@@ -69,7 +72,8 @@ namespace IKVM.Tools.Importer
 
         }
 
-        readonly object dispatcher;
+        IsolatedAssemblyLoadContext context;
+        object dispatcher;
 
         /// <summary>
         /// Initializes a new instance.
@@ -79,8 +83,8 @@ namespace IKVM.Tools.Importer
         public IkvmImporterContext(string[] args)
         {
             // load the importer in a nested assembly context
-            var ctx = new IsolatedAssemblyLoadContext("IkvmImporter", true);
-            var asm = ctx.LoadFromAssemblyName(typeof(IkvmImporterDispatcher).Assembly.GetName());
+            context = new IsolatedAssemblyLoadContext("IkvmImporter", true);
+            var asm = context.LoadFromAssemblyName(typeof(IkvmImporterDispatcher).Assembly.GetName());
             var typ = asm.GetType(typeof(IkvmImporterDispatcher).FullName);
             dispatcher = Activator.CreateInstance(typ, new[] { JsonConvert.SerializeObject(args) });
         }
@@ -101,6 +105,17 @@ namespace IKVM.Tools.Importer
         /// </summary>
         public void Dispose()
         {
+            try
+            {
+                dispatcher = null;
+                if (context != null)
+                    context.Unload();
+            }
+            finally
+            {
+                context = null;
+            }
+
             GC.SuppressFinalize(this);
         }
 

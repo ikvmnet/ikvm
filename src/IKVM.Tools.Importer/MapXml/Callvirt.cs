@@ -22,17 +22,38 @@
   
 */
 
+using System.Xml.Linq;
 using System.Xml.Serialization;
 
 using IKVM.Reflection.Emit;
 
 namespace IKVM.Tools.Importer.MapXml
 {
-    [XmlType("callvirt")]
+
+    [Instruction("callvirt")]
     public sealed class Callvirt : Call
     {
+
+        /// <summary>
+        /// Reads the XML element into a new <see cref="Call"/> instance.
+        /// </summary>
+        /// <param name="element"></param>
+        /// <returns></returns>
+        public static new Call Read(XElement element)
+        {
+            var inst = new Call();
+            Load(inst, element);
+            return inst;
+        }
+
+        /// <summary>
+        /// Initializes a new instance.
+        /// </summary>
         public Callvirt() : base(OpCodes.Callvirt)
         {
+
         }
+
     }
+
 }

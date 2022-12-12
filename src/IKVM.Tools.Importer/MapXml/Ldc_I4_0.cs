@@ -22,17 +22,47 @@
   
 */
 
-using System.Xml.Serialization;
+using System.Xml.Linq;
 
 using IKVM.Reflection.Emit;
 
 namespace IKVM.Tools.Importer.MapXml
 {
-    [XmlType("ldc_i4_0")]
+
+    [Instruction("ldc_i4_0")]
     public sealed class Ldc_I4_0 : Simple
     {
+
+        /// <summary>
+        /// Reads the XML element into a new <see cref="Ldc_I4_0"/> instance.
+        /// </summary>
+        /// <param name="element"></param>
+        /// <returns></returns>
+        public static new Ldc_I4_0 Read(XElement element)
+        {
+            var inst = new Ldc_I4_0();
+            Load(inst, element);
+            return inst;
+        }
+
+        /// <summary>
+        /// Loads the XML element into the instruction.
+        /// </summary>
+        /// <param name="inst"></param>
+        /// <param name="element"></param>
+        public static void Load(Ldc_I4_0 inst, XElement element)
+        {
+            Load((Simple)inst, element);
+        }
+
+        /// <summary>
+        /// Initializes a new instance.
+        /// </summary>
         public Ldc_I4_0() : base(OpCodes.Ldc_I4_0)
         {
+
         }
+
     }
+
 }

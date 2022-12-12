@@ -22,16 +22,38 @@
   
 */
 
-using System.Xml.Serialization;
+using System.Xml.Linq;
 
 using IKVM.Internal;
 
 namespace IKVM.Tools.Importer.MapXml
 {
 
-    [XmlType("ble_un")]
+    [Instruction("ble_un")]
     public sealed class Ble_Un : Branch
     {
+
+        /// <summary>
+        /// Reads the XML element into a new <see cref="Ble_Un"/> instance.
+        /// </summary>
+        /// <param name="element"></param>
+        /// <returns></returns>
+        public static new Ble_Un Read(XElement element)
+        {
+            var inst = new Ble_Un();
+            Load(inst, element);
+            return inst;
+        }
+
+        /// <summary>
+        /// Loads the XML element into the instruction.
+        /// </summary>
+        /// <param name="inst"></param>
+        /// <param name="element"></param>
+        public static void Load(Ble_Un inst, XElement element)
+        {
+            Load((Branch)inst, element);
+        }
 
         internal override void Emit(CodeEmitter ilgen, CodeEmitterLabel label)
         {

@@ -22,16 +22,38 @@
   
 */
 
-using System.Xml.Serialization;
+using System.Xml.Linq;
 
 using IKVM.Internal;
 
 namespace IKVM.Tools.Importer.MapXml
 {
 
-    [XmlType("br")]
+    [Instruction("br")]
     public sealed class Br : Branch
     {
+
+        /// <summary>
+        /// Reads the XML element into a new <see cref="Br"/> instance.
+        /// </summary>
+        /// <param name="element"></param>
+        /// <returns></returns>
+        public static new Br Read(XElement element)
+        {
+            var inst = new Br();
+            Load(inst, element);
+            return inst;
+        }
+
+        /// <summary>
+        /// Loads the XML element into the instruction.
+        /// </summary>
+        /// <param name="inst"></param>
+        /// <param name="element"></param>
+        public static void Load(Br inst, XElement element)
+        {
+            Load((Branch)inst, element);
+        }
 
         internal override void Emit(CodeEmitter ilgen, CodeEmitterLabel label)
         {

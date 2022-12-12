@@ -22,15 +22,32 @@
   
 */
 
-using System.Xml.Serialization;
+using System.Xml.Linq;
 
 namespace IKVM.Tools.Importer.MapXml
 {
+
     public sealed class CatchBlock : InstructionList
     {
-        [XmlAttribute("type")]
-        public string type;
-        [XmlAttribute("class")]
-        public string Class;
+
+        /// <summary>
+        /// Reads the XML element into a new <see cref="CatchBlock"/> instance.
+        /// </summary>
+        /// <param name="element"></param>
+        /// <returns></returns>
+        public static new CatchBlock Read(XElement element)
+        {
+            var list = new CatchBlock();
+            Load(list, element);
+            list.Type = (string)element.Attribute("type");
+            list.Class = (string)element.Attribute("class");
+            return list;
+        }
+
+        public string Type { get; set; }
+
+        public string Class { get; set; }
+
     }
+
 }

@@ -22,6 +22,7 @@
   
 */
 
+using System.Xml.Linq;
 using System.Xml.Serialization;
 
 using IKVM.Internal;
@@ -30,10 +31,35 @@ using IKVM.Reflection.Emit;
 namespace IKVM.Tools.Importer.MapXml
 {
 
-    [XmlType("pop")]
+    [Instruction("pop")]
     public sealed class Pop : Instruction
     {
 
+        /// <summary>
+        /// Reads the XML element into a new <see cref="Pop"/> instance.
+        /// </summary>
+        /// <param name="element"></param>
+        /// <returns></returns>
+        public static new Pop Read(XElement element)
+        {
+            var inst = new Pop();
+            Load(inst, element);
+            return inst;
+        }
+
+        /// <summary>
+        /// Loads the XML element into the instruction.
+        /// </summary>
+        /// <param name="inst"></param>
+        /// <param name="element"></param>
+        public static void Load(Pop inst, XElement element)
+        {
+            Load((Instruction)inst, element);
+        }
+
+        /// <summary>
+        /// Initializes a new instance.
+        /// </summary>
         internal override void Generate(CodeGenContext context, CodeEmitter ilgen)
         {
             ilgen.Emit(OpCodes.Pop);

@@ -420,17 +420,17 @@ namespace IKVM.Tools.Importer
                 }
                 MethodWrapper getter = null;
                 MethodWrapper setter = null;
-                if (prop.getter != null)
+                if (prop.Getter != null)
                 {
-                    getter = GetMethodWrapper(prop.getter.Name, prop.getter.Sig, true);
+                    getter = GetMethodWrapper(prop.Getter.Name, prop.Getter.Sig, true);
                     if (getter == null)
                     {
                         Console.Error.WriteLine("Warning: getter not found for {0}::{1}", clazz.Name, prop.Name);
                     }
                 }
-                if (prop.setter != null)
+                if (prop.Setter != null)
                 {
-                    setter = GetMethodWrapper(prop.setter.Name, prop.setter.Sig, true);
+                    setter = GetMethodWrapper(prop.Setter.Name, prop.Setter.Sig, true);
                     if (setter == null)
                     {
                         Console.Error.WriteLine("Warning: setter not found for {0}::{1}", clazz.Name, prop.Name);
@@ -637,7 +637,7 @@ namespace IKVM.Tools.Importer
                             // are we adding a new constructor?
                             if (GetMethodWrapper(StringConstants.INIT, constructor.Sig, false) == null)
                             {
-                                if (constructor.body == null)
+                                if (constructor.Body == null)
                                 {
                                     Console.Error.WriteLine("Error: Constructor {0}.<init>{1} in xml remap file doesn't have a body.", clazz.Name, constructor.Sig);
                                     continue;
@@ -653,7 +653,7 @@ namespace IKVM.Tools.Importer
                                 {
                                     AttributeHelper.SetModifiers(cb, (Modifiers)constructor.Modifiers, false);
                                 }
-                                CompilerClassLoader.AddDeclaredExceptions(cb, constructor.throws);
+                                CompilerClassLoader.AddDeclaredExceptions(cb, constructor.Throws);
                                 CodeEmitter ilgen = CodeEmitter.Create(cb);
                                 constructor.Emit(classLoader, ilgen);
                                 ilgen.DoEmit();
@@ -698,7 +698,7 @@ namespace IKVM.Tools.Importer
                                 bool setmodifiers = false;
                                 MethodAttributes attribs = method.MethodAttributes;
                                 MapModifiers(method.Modifiers, false, out setmodifiers, ref attribs, BaseTypeWrapper == null || BaseTypeWrapper.GetMethodWrapper(method.Name, method.Sig, true) == null);
-                                if (method.body == null && (attribs & MethodAttributes.Abstract) == 0)
+                                if (method.Body == null && (attribs & MethodAttributes.Abstract) == 0)
                                 {
                                     Console.Error.WriteLine("Error: Method {0}.{1}{2} in xml remap file doesn't have a body.", clazz.Name, method.Name, method.Sig);
                                     continue;
@@ -711,14 +711,14 @@ namespace IKVM.Tools.Importer
                                 {
                                     AttributeHelper.SetModifiers(mb, (Modifiers)method.Modifiers, false);
                                 }
-                                if (method.@override != null)
+                                if (method.Override != null)
                                 {
-                                    MethodWrapper mw = GetClassLoader().LoadClassByDottedName(method.@override.Class).GetMethodWrapper(method.@override.Name, method.Sig, true);
+                                    MethodWrapper mw = GetClassLoader().LoadClassByDottedName(method.Override.Class).GetMethodWrapper(method.Override.Name, method.Sig, true);
                                     mw.Link();
                                     typeBuilder.DefineMethodOverride(mb, (MethodInfo)mw.GetMethod());
                                 }
-                                CompilerClassLoader.AddDeclaredExceptions(mb, method.throws);
-                                if (method.body != null)
+                                CompilerClassLoader.AddDeclaredExceptions(mb, method.Throws);
+                                if (method.Body != null)
                                 {
                                     CodeEmitter ilgen = CodeEmitter.Create(mb);
                                     method.Emit(classLoader, ilgen);
@@ -1220,9 +1220,9 @@ namespace IKVM.Tools.Importer
             {
                 IKVM.Tools.Importer.MapXml.CodeGenContext context = new IKVM.Tools.Importer.MapXml.CodeGenContext(this.DeclaringType.GetClassLoader());
                 // we don't want the line numbers from map.xml, so we have our own emit loop
-                for (int i = 0; i < code.invoke.Length; i++)
+                for (int i = 0; i < code.Instructions.Length; i++)
                 {
-                    code.invoke[i].Generate(context, ilgen);
+                    code.Instructions[i].Generate(context, ilgen);
                 }
             }
 
@@ -1253,7 +1253,7 @@ namespace IKVM.Tools.Importer
                 {
                     for (int i = 0; i < replacedMethods.Length; i++)
                     {
-                        list.Add(new ReplacedMethodWrapper(GetClassLoader().LoadClassByDottedName(replacedMethods[i].Class), replacedMethods[i].Name, replacedMethods[i].Sig, replacedMethods[i].code));
+                        list.Add(new ReplacedMethodWrapper(GetClassLoader().LoadClassByDottedName(replacedMethods[i].Class), replacedMethods[i].Name, replacedMethods[i].Sig, replacedMethods[i].Code));
                     }
                 }
                 if (baseReplacedMethodWrappers != null)

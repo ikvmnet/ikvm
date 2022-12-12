@@ -22,7 +22,7 @@
   
 */
 
-using System.Xml.Serialization;
+using System.Xml.Linq;
 
 using IKVM.Internal;
 using IKVM.Reflection.Emit;
@@ -30,16 +30,32 @@ using IKVM.Reflection.Emit;
 namespace IKVM.Tools.Importer.MapXml
 {
 
-    [XmlType("castclass_impl")]
+    [Instruction("castclass_impl")]
     public sealed class Castclass_impl : Instruction
     {
 
-        [XmlAttribute("class")]
-        public string Class;
+        /// <summary>
+        /// Reads the XML element into a new <see cref="Castclass_impl"/> instance.
+        /// </summary>
+        /// <param name="element"></param>
+        /// <returns></returns>
+        public static new Castclass_impl Read(XElement element)
+        {
+            var inst = new Castclass_impl();
+            Load(inst, element);
+            inst.Class = (string)element.Attribute("class");
+            return inst;
+        }
 
+        /// <summary>
+        /// Initializes a new instance.
+        /// </summary>
         public Castclass_impl()
         {
+
         }
+
+        public string Class { get; set; }
 
         internal override void Generate(CodeGenContext context, CodeEmitter ilgen)
         {

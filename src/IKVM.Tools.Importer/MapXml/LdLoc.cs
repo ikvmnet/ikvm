@@ -22,6 +22,7 @@
   
 */
 
+using System.Xml.Linq;
 using System.Xml.Serialization;
 
 using IKVM.Internal;
@@ -30,12 +31,35 @@ using IKVM.Reflection.Emit;
 namespace IKVM.Tools.Importer.MapXml
 {
 
-    [XmlType("ldloc")]
+    [Instruction("ldloc")]
     public sealed class LdLoc : Instruction
     {
 
-        [XmlAttribute("name")]
-        public string Name;
+        /// <summary>
+        /// Reads the XML element into a new <see cref="LdLoc"/> instance.
+        /// </summary>
+        /// <param name="element"></param>
+        /// <returns></returns>
+        public static new LdLoc Read(XElement element)
+        {
+            var inst = new LdLoc();
+            Load(inst, element);
+            return inst;
+        }
+
+        /// <summary>
+        /// Loads the XML element into the instruction.
+        /// </summary>
+        /// <param name="inst"></param>
+        /// <param name="element"></param>
+        public static void Load(LdLoc inst, XElement element)
+        {
+            Load((Instruction)inst, element);
+            inst.Name = (string)element.Attribute("name");
+        }
+
+
+        public string Name { get; set; }
 
         internal override void Generate(CodeGenContext context, CodeEmitter ilgen)
         {

@@ -22,19 +22,41 @@
   
 */
 
-using System.Xml.Serialization;
+using System.Xml.Linq;
 
 using IKVM.Internal;
 
 namespace IKVM.Tools.Importer.MapXml
 {
 
-    [XmlType("unaligned")]
+    [Instruction("unaligned")]
     public sealed class Unaligned : Instruction
     {
 
-        [XmlAttribute("alignment")]
-        public int Alignment;
+        /// <summary>
+        /// Reads the XML element into a new <see cref="Unaligned"/> instance.
+        /// </summary>
+        /// <param name="element"></param>
+        /// <returns></returns>
+        public static new Unaligned Read(XElement element)
+        {
+            var inst = new Unaligned();
+            Load(inst, element);
+            return inst;
+        }
+
+        /// <summary>
+        /// Loads the XML element into the instruction.
+        /// </summary>
+        /// <param name="inst"></param>
+        /// <param name="element"></param>
+        public static void Load(Unaligned inst, XElement element)
+        {
+            Load((Instruction)inst, element);
+            inst.Alignment = (int)element.Attribute("alignment");
+        }
+
+        public int Alignment { get; set; }
 
         internal override void Generate(CodeGenContext context, CodeEmitter ilgen)
         {

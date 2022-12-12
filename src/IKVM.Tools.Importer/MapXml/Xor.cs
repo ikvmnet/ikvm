@@ -22,19 +22,43 @@
   
 */
 
-using System.Xml.Serialization;
+using System.Xml.Linq;
 
 using IKVM.Reflection.Emit;
 
 namespace IKVM.Tools.Importer.MapXml
 {
 
-    [XmlType("xor")]
+    [Instruction("xor")]
     public sealed class Xor : Simple
     {
 
-        public Xor() :
-            base(OpCodes.Xor)
+        /// <summary>
+        /// Reads the XML element into a new <see cref="Xor"/> instance.
+        /// </summary>
+        /// <param name="element"></param>
+        /// <returns></returns>
+        public static new Xor Read(XElement element)
+        {
+            var inst = new Xor();
+            Load(inst, element);
+            return inst;
+        }
+
+        /// <summary>
+        /// Loads the XML element into the instruction.
+        /// </summary>
+        /// <param name="inst"></param>
+        /// <param name="element"></param>
+        public static void Load(Xor inst, XElement element)
+        {
+            Load((Simple)inst, element);
+        }
+
+        /// <summary>
+        /// Initializes a new instance.
+        /// </summary>
+        public Xor() : base(OpCodes.Xor)
         {
 
         }

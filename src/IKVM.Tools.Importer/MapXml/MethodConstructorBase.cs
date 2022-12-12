@@ -22,7 +22,8 @@
   
 */
 
-using System.Xml.Serialization;
+using System.Linq;
+using System.Xml.Linq;
 
 using IKVM.Internal;
 
@@ -32,29 +33,35 @@ namespace IKVM.Tools.Importer.MapXml
     public abstract class MethodConstructorBase : MethodBase
     {
 
-        [XmlAttribute("sig")]
-        public string Sig;
-        [XmlAttribute("modifiers")]
-        public MapModifiers Modifiers;
-        [XmlElement("parameter")]
-        public Param[] Params;
-        public InstructionList alternateBody;
-        public Redirect redirect;
+        public static void Load(MethodConstructorBase o, XElement element)
+        {
+            Load((MethodBase)o, element);
+            o.Sig = (string)element.Attribute("sig");
+            o.Modifiers = MapXmlSerializer.ReadMapModifiers((string)element.Attribute("modifiers"));
+            o.Params = element.Elements(MapXmlSerializer.NS + "parameter").Select(Param.Read).ToArray();
+            o.AlternateBody = element.Elements(MapXmlSerializer.NS + "alternateBody").Select(InstructionList.Read).FirstOrDefault();
+            o.Redirect = element.Elements(MapXmlSerializer.NS + "redirect").Select(Redirect.Read).FirstOrDefault();
+        }
+
+        public string Sig { get; set; }
+
+        public MapModifiers Modifiers { get; set; }
+
+        public Param[] Params { get; set; }
+
+        public InstructionList AlternateBody { get; set; }
+
+        public Redirect Redirect { get; set; }
 
         internal void Emit(ClassLoaderWrapper loader, CodeEmitter ilgen)
         {
-            if (prologue != null)
-            {
-                prologue.Emit(loader, ilgen);
-            }
-            if (redirect != null)
-            {
-                redirect.Emit(loader, ilgen);
-            }
+            if (Prologue != null)
+                Prologue.Emit(loader, ilgen);
+
+            if (Redirect != null)
+                Redirect.Emit(loader, ilgen);
             else
-            {
-                body.Emit(loader, ilgen);
-            }
+                Body.Emit(loader, ilgen);
         }
 
     }

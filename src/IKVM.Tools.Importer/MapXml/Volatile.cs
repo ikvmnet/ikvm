@@ -22,17 +22,47 @@
   
 */
 
-using System.Xml.Serialization;
+using System.Xml.Linq;
 
 using IKVM.Reflection.Emit;
 
 namespace IKVM.Tools.Importer.MapXml
 {
-    [XmlType("volatile")]
+
+    [Instruction("volatile")]
     public sealed class Volatile : Simple
     {
+
+        /// <summary>
+        /// Reads the XML element into a new <see cref="Volatile"/> instance.
+        /// </summary>
+        /// <param name="element"></param>
+        /// <returns></returns>
+        public static new Volatile Read(XElement element)
+        {
+            var inst = new Volatile();
+            Load(inst, element);
+            return inst;
+        }
+
+        /// <summary>
+        /// Loads the XML element into the instruction.
+        /// </summary>
+        /// <param name="inst"></param>
+        /// <param name="element"></param>
+        public static void Load(Volatile inst, XElement element)
+        {
+            Load((Simple)inst, element);
+        }
+
+        /// <summary>
+        /// Initializes a new instance.
+        /// </summary>
         public Volatile() : base(OpCodes.Volatile)
         {
+
         }
+
     }
+
 }

@@ -22,18 +22,47 @@
   
 */
 
-using System.Xml.Serialization;
+using System.Xml.Linq;
 
 using IKVM.Reflection.Emit;
 
 namespace IKVM.Tools.Importer.MapXml
 {
-    [XmlType("or")]
+
+    [Instruction("or")]
     public sealed class Or : Simple
     {
-        public Or()
-            : base(OpCodes.Or)
+
+        /// <summary>
+        /// Reads the XML element into a new <see cref="Or"/> instance.
+        /// </summary>
+        /// <param name="element"></param>
+        /// <returns></returns>
+        public static new Or Read(XElement element)
         {
+            var inst = new Or();
+            Load(inst, element);
+            return inst;
         }
+
+        /// <summary>
+        /// Loads the XML element into the instruction.
+        /// </summary>
+        /// <param name="inst"></param>
+        /// <param name="element"></param>
+        public static void Load(Or inst, XElement element)
+        {
+            Load((Simple)inst, element);
+        }
+
+        /// <summary>
+        /// Initializes a new instance.
+        /// </summary>
+        public Or() : base(OpCodes.Or)
+        {
+
+        }
+
     }
+
 }

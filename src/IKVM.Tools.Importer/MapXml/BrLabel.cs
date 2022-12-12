@@ -22,6 +22,7 @@
   
 */
 
+using System.Xml.Linq;
 using System.Xml.Serialization;
 
 using IKVM.Internal;
@@ -29,12 +30,35 @@ using IKVM.Internal;
 namespace IKVM.Tools.Importer.MapXml
 {
 
-    [XmlType("label")]
+    [Instruction("label")]
     public sealed class BrLabel : Instruction
     {
 
+        /// <summary>
+        /// Reads the XML element into a new <see cref="BrLabel"/> instance.
+        /// </summary>
+        /// <param name="element"></param>
+        /// <returns></returns>
+        public static new BrLabel Read(XElement element)
+        {
+            var inst = new BrLabel();
+            Load(inst, element);
+            return inst;
+        }
+
+        /// <summary>
+        /// Reads the XML element into a new <see cref="BrLabel"/> instance.
+        /// </summary>
+        /// <param name="element"></param>
+        /// <returns></returns>
+        public static void Load(BrLabel inst, XElement element)
+        {
+            Load((Instruction)inst, element);
+            inst.Name = (string)element.Attribute("name");
+        }
+
         [XmlAttribute("name")]
-        public string Name;
+        public string Name { get; set; }
 
         internal override void Generate(CodeGenContext context, CodeEmitter ilgen)
         {
@@ -48,6 +72,7 @@ namespace IKVM.Tools.Importer.MapXml
             {
                 l = (CodeEmitterLabel)context[Name];
             }
+
             ilgen.MarkLabel(l);
         }
 

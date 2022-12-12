@@ -22,17 +22,47 @@
   
 */
 
-using System.Xml.Serialization;
+using System.Xml.Linq;
 
 using IKVM.Reflection.Emit;
 
 namespace IKVM.Tools.Importer.MapXml
 {
-    [XmlType("ldnull")]
+
+    [Instruction("ldnull")]
     public sealed class Ldnull : Simple
     {
+
+        /// <summary>
+        /// Reads the XML element into a new <see cref="Ldnull"/> instance.
+        /// </summary>
+        /// <param name="element"></param>
+        /// <returns></returns>
+        public static new Ldnull Read(XElement element)
+        {
+            var inst = new Ldnull();
+            Load(inst, element);
+            return inst;
+        }
+
+        /// <summary>
+        /// Loads the XML element into the instruction.
+        /// </summary>
+        /// <param name="inst"></param>
+        /// <param name="element"></param>
+        public static void Load(Ldnull inst, XElement element)
+        {
+            Load((Simple)inst, element);
+        }
+
+        /// <summary>
+        /// Initializes a new instance.
+        /// </summary>
         public Ldnull() : base(OpCodes.Ldnull)
         {
+
         }
+
     }
+
 }

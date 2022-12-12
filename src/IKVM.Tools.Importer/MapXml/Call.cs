@@ -25,7 +25,7 @@
 using System;
 using System.Diagnostics;
 using System.Linq;
-using System.Xml.Serialization;
+using System.Xml.Linq;
 
 using IKVM.Internal;
 using IKVM.Reflection;
@@ -35,47 +35,80 @@ using Type = IKVM.Reflection.Type;
 
 namespace IKVM.Tools.Importer.MapXml
 {
-    [XmlType("call")]
+
+    [Instruction("call")]
     public class Call : Instruction
     {
 
-        public Call() : this(OpCodes.Call)
+        /// <summary>
+        /// Reads the XML element into a new <see cref="Call"/> instance.
+        /// </summary>
+        /// <param name="element"></param>
+        /// <returns></returns>
+        public static new Call Read(XElement element)
         {
+            var inst = new Call();
+            Load(inst, element);
+            return inst;
         }
 
-        internal Call(OpCode opcode)
+        /// <summary>
+        /// Loads the XML element into the instruction.
+        /// </summary>
+        /// <param name="inst"></param>
+        /// <param name="element"></param>
+        public static void Load(Call inst, XElement element)
+        {
+            inst.Class = (string)element.Attribute("class");
+            inst.Type = (string)element.Attribute("type");
+            inst.Name = (string)element.Attribute("name");
+            inst.Sig = (string)element.Attribute("sig");
+        }
+
+        readonly OpCode opcode;
+
+        /// <summary>
+        /// Initializes a new instance.
+        /// </summary>
+        public Call() : this(OpCodes.Call)
+        {
+
+        }
+
+        /// <summary>
+        /// Initializes a new instance.
+        /// </summary>
+        /// <param name="opcode"></param>
+        protected Call(OpCode opcode)
         {
             this.opcode = opcode;
         }
 
-        [XmlAttribute("class")]
-        public string Class;
-        [XmlAttribute("type")]
-        public string type;
-        [XmlAttribute("name")]
-        public string Name;
-        [XmlAttribute("sig")]
-        public string Sig;
+        public string Class { get; set; }
 
-        private OpCode opcode;
+        public string Type { get; set; }
+
+        public string Name { get; set; }
+
+        public string Sig { get; set; }
 
         internal sealed override void Generate(CodeGenContext context, CodeEmitter ilgen)
         {
             Debug.Assert(Name != null);
             if (Name == ".ctor")
             {
-                Debug.Assert(Class == null && type != null);
+                Debug.Assert(Class == null && Type != null);
                 Type[] argTypes = context.ClassLoader.ArgTypeListFromSig(Sig);
-                ConstructorInfo ci = StaticCompiler.GetTypeForMapXml(context.ClassLoader, type).GetConstructor(BindingFlags.Public | BindingFlags.NonPublic | BindingFlags.Instance, null, CallingConventions.Standard, argTypes, null);
+                ConstructorInfo ci = StaticCompiler.GetTypeForMapXml(context.ClassLoader, Type).GetConstructor(BindingFlags.Public | BindingFlags.NonPublic | BindingFlags.Instance, null, CallingConventions.Standard, argTypes, null);
                 if (ci == null)
                 {
-                    throw new InvalidOperationException("Missing .ctor: " + type + "..ctor" + Sig);
+                    throw new InvalidOperationException("Missing .ctor: " + Type + "..ctor" + Sig);
                 }
                 ilgen.Emit(opcode, ci);
             }
             else
             {
-                Debug.Assert(Class == null ^ type == null);
+                Debug.Assert(Class == null ^ Type == null);
                 if (Class != null)
                 {
                     Debug.Assert(Sig != null);
@@ -152,7 +185,7 @@ namespace IKVM.Tools.Importer.MapXml
                     }
                     else if (Sig == "")
                     {
-                        argTypes = Type.EmptyTypes;
+                        argTypes = Reflection.Type.EmptyTypes;
                     }
                     else
                     {
@@ -164,10 +197,10 @@ namespace IKVM.Tools.Importer.MapXml
                         }
                     }
 
-                    Type ti = StaticCompiler.GetTypeForMapXml(context.ClassLoader, type);
+                    Type ti = StaticCompiler.GetTypeForMapXml(context.ClassLoader, Type);
                     if (ti == null)
                     {
-                        throw new InvalidOperationException("Missing type: " + type);
+                        throw new InvalidOperationException("Missing type: " + Type);
                     }
 
                     MethodInfo mi = ti.GetMethod(Name, BindingFlags.Public | BindingFlags.NonPublic | BindingFlags.Instance | BindingFlags.Static, null, argTypes, null);
@@ -181,5 +214,7 @@ namespace IKVM.Tools.Importer.MapXml
                 }
             }
         }
+
     }
+
 }

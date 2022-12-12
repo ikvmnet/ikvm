@@ -22,17 +22,47 @@
   
 */
 
-using System.Xml.Serialization;
+using System.Xml.Linq;
 
 using IKVM.Reflection.Emit;
 
 namespace IKVM.Tools.Importer.MapXml
 {
-    [XmlType("endfinally")]
+
+    [Instruction("endfinally")]
     public sealed class Endfinally : Simple
     {
+
+        /// <summary>
+        /// Reads the XML element into a new instance.
+        /// </summary>
+        /// <param name="element"></param>
+        /// <returns></returns>
+        public static new Endfinally Read(XElement element)
+        {
+            var e = new Endfinally();
+            Load(e, element);
+            return e;
+        }
+
+        /// <summary>
+        /// Loads the XML element into the instruction.
+        /// </summary>
+        /// <param name="e"></param>
+        /// <param name="element"></param>
+        public static void Load(Endfinally e, XElement element)
+        {
+            Load((Simple)e, element);
+        }
+
+        /// <summary>
+        /// Initializes a new instance.
+        /// </summary>
         public Endfinally() : base(OpCodes.Endfinally)
         {
+
         }
+
     }
+
 }

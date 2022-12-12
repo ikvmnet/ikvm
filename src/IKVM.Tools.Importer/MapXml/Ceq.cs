@@ -22,17 +22,47 @@
   
 */
 
-using System.Xml.Serialization;
+using System.Xml.Linq;
 
 using IKVM.Reflection.Emit;
 
 namespace IKVM.Tools.Importer.MapXml
 {
-    [XmlType("ceq")]
+
+    [Instruction("ceq")]
     public sealed class Ceq : Simple
     {
+
+        /// <summary>
+        /// Reads the XML element into a new <see cref="Ceq"/> instance.
+        /// </summary>
+        /// <param name="element"></param>
+        /// <returns></returns>
+        public static new Ceq Read(XElement element)
+        {
+            var list = new Ceq();
+            Load(list, element);
+            return list;
+        }
+
+        /// <summary>
+        /// Loads the XML element into a <see cref="Ceq"/> instance.
+        /// </summary>
+        /// <param name="element"></param>
+        /// <returns></returns>
+        public static void Load(Ceq inst, XElement element)
+        {
+            Load((Simple)inst, element);
+        }
+
+        /// <summary>
+        /// Initializes a new instance.
+        /// </summary>
         public Ceq() : base(OpCodes.Ceq)
         {
+
         }
+
     }
+
 }

@@ -22,22 +22,54 @@
   
 */
 
-using System.Xml.Serialization;
+using System.Linq;
+using System.Xml.Linq;
 
 namespace IKVM.Tools.Importer.MapXml
 {
+
     public sealed class Method : MethodConstructorBase
     {
-        [XmlAttribute("name")]
-        public string Name;
-        [XmlAttribute("nonullcheck")]
-        public bool NoNullCheck;
-        public InstructionList nonvirtualAlternateBody;
-        public Override @override;
+
+        /// <summary>
+        /// Reads the XML element into a new <see cref="Method"/> instance.
+        /// </summary>
+        /// <param name="element"></param>
+        /// <returns></returns>
+        public static Method Read(XElement element)
+        {
+            var redirect = new Method();
+            Load(redirect, element);
+            return redirect;
+        }
+
+        /// <summary>
+        /// Loads the XML element into the instance.
+        /// </summary>
+        /// <param name="method"></param>
+        /// <param name="element"></param>
+        public static void Load(Method method, XElement element)
+        {
+            Load((MethodConstructorBase)method, element);
+            method.Name = (string)element.Attribute("name");
+            method.NoNullCheck = (bool?)element.Attribute("nonullcheck") ?? true;
+            method.NonVirtualAlternateBody = element.Elements(MapXmlSerializer.NS + "nonvirtualAlternateBody").Select(InstructionList.Read).FirstOrDefault();
+            method.Override = element.Elements(MapXmlSerializer.NS + "override").Select(Override.Read).FirstOrDefault();
+        }
+
+        public string Name { get; set; }
+
+        public bool NoNullCheck { get; set; }
+
+        public InstructionList NonVirtualAlternateBody { get; set; }
+
+        public Override Override { get; set; }
 
         internal override MethodKey ToMethodKey(string className)
         {
             return new MethodKey(className, Name, Sig);
         }
+
     }
+
 }

@@ -22,18 +22,48 @@
   
 */
 
+using System.Xml.Linq;
 using System.Xml.Serialization;
 
 using IKVM.Reflection.Emit;
 
 namespace IKVM.Tools.Importer.MapXml
 {
-    [XmlType("div_un")]
+
+    [Instruction("div_un")]
     public sealed class Div_Un : Simple
     {
-        public Div_Un()
-            : base(OpCodes.Div_Un)
+
+        /// <summary>
+        /// Reads the XML element into a new <see cref="Div_Un"/> instance.
+        /// </summary>
+        /// <param name="element"></param>
+        /// <returns></returns>
+        public static new Div_Un Read(XElement element)
         {
+            var inst = new Div_Un();
+            Load(inst, element);
+            return inst;
         }
+
+        /// <summary>
+        /// Loads the XML element into the instruction.
+        /// </summary>
+        /// <param name="inst"></param>
+        /// <param name="element"></param>
+        public static void Load(Div_Un inst, XElement element)
+        {
+            Load((Simple)inst, element);
+        }
+
+        /// <summary>
+        /// Initializes a new instance.
+        /// </summary>
+        public Div_Un() : base(OpCodes.Div_Un)
+        {
+
+        }
+
     }
+
 }

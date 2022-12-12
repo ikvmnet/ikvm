@@ -32,8 +32,8 @@ namespace IKVM.Tools.Importer.MapXml
     sealed class CodeGenContext
     {
 
-        private ClassLoaderWrapper classLoader;
-        private readonly Dictionary<string, object> h = new Dictionary<string, object>();
+        readonly ClassLoaderWrapper classLoader;
+        readonly Dictionary<string, object> h = new Dictionary<string, object>();
 
         /// <summary>
         /// Initializes a new instance.
@@ -46,12 +46,7 @@ namespace IKVM.Tools.Importer.MapXml
 
         internal object this[string key]
         {
-            get
-            {
-                object val;
-                h.TryGetValue(key, out val);
-                return val;
-            }
+            get => h.TryGetValue(key, out var val) ? val : null;
             set { h[key] = value; }
         }
 

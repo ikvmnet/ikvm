@@ -22,7 +22,7 @@
   
 */
 
-using System.Xml.Serialization;
+using System.Xml.Linq;
 
 using IKVM.Internal;
 using IKVM.Reflection.Emit;
@@ -30,16 +30,40 @@ using IKVM.Reflection.Emit;
 namespace IKVM.Tools.Importer.MapXml
 {
 
-    [XmlType("stsfld")]
+    [Instruction("stsfld")]
     public sealed class Stsfld : Instruction
     {
 
-        [XmlAttribute("class")]
-        public string Class;
-        [XmlAttribute("name")]
-        public string Name;
-        [XmlAttribute("sig")]
-        public string Sig;
+        /// <summary>
+        /// Reads the XML element into a new <see cref="Stsfld"/> instance.
+        /// </summary>
+        /// <param name="element"></param>
+        /// <returns></returns>
+        public static new Stsfld Read(XElement element)
+        {
+            var inst = new Stsfld();
+            Load(inst, element);
+            return inst;
+        }
+
+        /// <summary>
+        /// Loads the XML element into the instruction.
+        /// </summary>
+        /// <param name="inst"></param>
+        /// <param name="element"></param>
+        public static void Load(Stsfld inst, XElement element)
+        {
+            Load((Instruction)inst, element);
+            inst.Class = (string)element.Attribute("class");
+            inst.Name = (string)element.Attribute("name");
+            inst.Sig = (string)element.Attribute("sig");
+        }
+
+        public string Class { get; set; }
+
+        public string Name { get; set; }
+
+        public string Sig { get; set; }
 
         internal override void Generate(CodeGenContext context, CodeEmitter ilgen)
         {

@@ -22,7 +22,7 @@
   
 */
 
-using System.Xml.Serialization;
+using System.Xml.Linq;
 
 using IKVM.Internal;
 using IKVM.Reflection.Emit;
@@ -30,12 +30,34 @@ using IKVM.Reflection.Emit;
 namespace IKVM.Tools.Importer.MapXml
 {
 
-    [XmlType("newarr")]
+    [Instruction("newarr")]
     public sealed class Newarr : Instruction
     {
 
-        [XmlAttribute("sig")]
-        public string Sig;
+        /// <summary>
+        /// Reads the XML element into a new <see cref="Newarr"/> instance.
+        /// </summary>
+        /// <param name="element"></param>
+        /// <returns></returns>
+        public static new Newarr Read(XElement element)
+        {
+            var inst = new Newarr();
+            Load(inst, element);
+            return inst;
+        }
+
+        /// <summary>
+        /// Loads the XML element into the instruction.
+        /// </summary>
+        /// <param name="inst"></param>
+        /// <param name="element"></param>
+        public static void Load(Newarr inst, XElement element)
+        {
+            Load((Instruction)inst, element);
+            inst.Sig = (string)element.Attribute("sig");
+        }
+
+        public string Sig { get; set; }
 
         internal override void Generate(CodeGenContext context, CodeEmitter ilgen)
         {

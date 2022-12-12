@@ -22,17 +22,47 @@
   
 */
 
-using System.Xml.Serialization;
+using System.Xml.Linq;
 
 using IKVM.Reflection.Emit;
 
 namespace IKVM.Tools.Importer.MapXml
 {
-    [XmlType("conv_i")]
+
+    [Instruction("conv_i")]
     public sealed class Conv_I : Simple
     {
+
+        /// <summary>
+        /// Reads the XML element into a new <see cref="Conv_I"/> instance.
+        /// </summary>
+        /// <param name="element"></param>
+        /// <returns></returns>
+        public static new Conv_I Read(XElement element)
+        {
+            var inst = new Conv_I();
+            Load(inst, element);
+            return inst;
+        }
+
+        /// <summary>
+        /// Loads the XML element into the instruction.
+        /// </summary>
+        /// <param name="inst"></param>
+        /// <param name="element"></param>
+        public static void Load(Conv_I inst, XElement element)
+        {
+            Load((Simple)inst, element);
+        }
+
+        /// <summary>
+        /// Initializes a new instance.
+        /// </summary>
         public Conv_I() : base(OpCodes.Conv_I)
         {
+
         }
+
     }
+
 }

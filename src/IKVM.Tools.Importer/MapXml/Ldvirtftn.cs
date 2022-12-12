@@ -22,17 +22,45 @@
   
 */
 
+using System.Xml.Linq;
 using System.Xml.Serialization;
 
 using IKVM.Reflection.Emit;
 
 namespace IKVM.Tools.Importer.MapXml
 {
-    [XmlType("ldvirtftn")]
+
+    [Instruction("ldvirtftn")]
     public sealed class Ldvirtftn : Call
     {
+
+        /// <summary>
+        /// Reads the XML element into a new <see cref="Ldvirtftn"/> instance.
+        /// </summary>
+        /// <param name="element"></param>
+        /// <returns></returns>
+        public static new Ldvirtftn Read(XElement element)
+        {
+            var inst = new Ldvirtftn();
+            Load(inst, element);
+            return inst;
+        }
+
+        /// <summary>
+        /// Loads the XML element into the instruction.
+        /// </summary>
+        /// <param name="inst"></param>
+        /// <param name="element"></param>
+        public static void Load(Ldvirtftn inst, XElement element)
+        {
+            Load((Call)inst, element);
+        }
+
         public Ldvirtftn() : base(OpCodes.Ldvirtftn)
         {
+
         }
+
     }
+
 }

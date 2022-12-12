@@ -23,7 +23,7 @@
 */
 
 using System.Diagnostics;
-using System.Xml.Serialization;
+using System.Xml.Linq;
 
 using IKVM.Internal;
 using IKVM.Reflection.Emit;
@@ -36,11 +36,15 @@ namespace IKVM.Tools.Importer.MapXml
     public abstract class TypeInstruction : Instruction
     {
 
-        [XmlAttribute("type")]
-        public string type;
+        public static void Load(TypeInstruction inst, XElement element)
+        {
+            inst.Type = (string)element.Attribute("type");
+        }
 
-        private OpCode opcode;
-        private Type typeType;
+        readonly OpCode opcode;
+        Type typeType;
+
+        public string Type { get; set; }
 
         internal TypeInstruction(OpCode opcode)
         {
@@ -51,9 +55,10 @@ namespace IKVM.Tools.Importer.MapXml
         {
             if (typeType == null)
             {
-                Debug.Assert(type != null);
-                typeType = StaticCompiler.GetTypeForMapXml(context.ClassLoader, type);
+                Debug.Assert(Type != null);
+                typeType = StaticCompiler.GetTypeForMapXml(context.ClassLoader, Type);
             }
+
             ilgen.Emit(opcode, typeType);
         }
 

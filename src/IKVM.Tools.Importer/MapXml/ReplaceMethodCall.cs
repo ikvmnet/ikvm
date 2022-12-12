@@ -22,18 +22,49 @@
   
 */
 
-using System.Xml.Serialization;
+using System.Linq;
+using System.Xml.Linq;
 
 namespace IKVM.Tools.Importer.MapXml
 {
-    public sealed class ReplaceMethodCall
+
+    public sealed class ReplaceMethodCall : MapXmlElement
     {
-        [XmlAttribute("class")]
-        public string Class;
-        [XmlAttribute("name")]
-        public string Name;
-        [XmlAttribute("sig")]
-        public string Sig;
-        public InstructionList code;
+
+        /// <summary>
+        /// Reads the XML element into a new <see cref="ReplaceMethodCall"/> instance.
+        /// </summary>
+        /// <param name="element"></param>
+        /// <returns></returns>
+        public static ReplaceMethodCall Read(XElement element)
+        {
+            var inst = new ReplaceMethodCall();
+            Load(inst, element);
+            return inst;
+        }
+
+        /// <summary>
+        /// Loads the XML element into the instruction.
+        /// </summary>
+        /// <param name="inst"></param>
+        /// <param name="element"></param>
+        public static void Load(ReplaceMethodCall inst, XElement element)
+        {
+            Load((MapXmlElement)inst, element);
+            inst.Class = (string)element.Attribute("class");
+            inst.Name = (string)element.Attribute("name");
+            inst.Sig = (string)element.Attribute("sig");
+            inst.Code = element.Elements(MapXmlSerializer.NS + "code").Select(InstructionList.Read).FirstOrDefault();
+        }
+
+        public string Class { get; set; }
+
+        public string Name { get; set; }
+
+        public string Sig { get; set; }
+
+        public InstructionList Code { get; set; }
+
     }
+
 }

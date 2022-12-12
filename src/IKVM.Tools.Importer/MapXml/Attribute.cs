@@ -22,26 +22,55 @@
   
 */
 
-using System.Xml.Serialization;
+using System.Linq;
+using System.Xml.Linq;
 
 namespace IKVM.Tools.Importer.MapXml
 {
 
-    public sealed class Attribute
+    public sealed class Attribute : MapXmlElement
     {
 
-        [XmlAttribute("type")]
-        public string Type;
-        [XmlAttribute("class")]
-        public string Class;
-        [XmlAttribute("sig")]
-        public string Sig;
-        [XmlElement("parameter")]
-        public Param[] Params;
-        [XmlElement("property")]
-        public Param[] Properties;
-        [XmlElement("field")]
-        public Param[] Fields;
+        /// <summary>
+        /// Reads the XML element into a new <see cref="Attribute"/> instance.
+        /// </summary>
+        /// <param name="element"></param>
+        /// <returns></returns>
+        public static Attribute Read(XElement element)
+        {
+            var attribute = new Attribute();
+            Load(attribute, element);
+            return attribute;
+        }
+
+        /// <summary>
+        /// Loads the XML element into the instance.
+        /// </summary>
+        /// <param name="attribute"></param>
+        /// <param name="element"></param>
+        public static void Load(Attribute attribute, XElement element)
+        {
+            Load((MapXmlElement)attribute, element);
+            attribute.Type = (string)element.Attribute("type");
+            attribute.Class = (string)element.Attribute("class");
+            attribute.Sig = (string)element.Attribute("sig");
+            attribute.Params = element.Elements(MapXmlSerializer.NS + "parameter").Select(Param.Read).ToArray();
+            attribute.Properties = element.Elements(MapXmlSerializer.NS + "property").Select(Param.Read).ToArray();
+            attribute.Fields = element.Elements(MapXmlSerializer.NS + "field").Select(Param.Read).ToArray();
+        }
+
+        public string Type { get; set; }
+
+        public string Class { get; set; }
+
+        public string Sig { get; set; }
+
+        public Param[] Params { get; set; }
+
+        public Param[] Properties { get; set; }
+
+        public Param[] Fields { get; set; }
+
     }
 
 }

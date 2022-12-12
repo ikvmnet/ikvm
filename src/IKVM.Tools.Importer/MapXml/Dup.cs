@@ -22,17 +22,48 @@
   
 */
 
+using System.Xml.Linq;
 using System.Xml.Serialization;
 
 using IKVM.Reflection.Emit;
 
 namespace IKVM.Tools.Importer.MapXml
 {
-    [XmlType("dup")]
+
+    [Instruction("dup")]
     public sealed class Dup : Simple
     {
+
+        /// <summary>
+        /// Reads the XML element into a new <see cref="Dup"/> instance.
+        /// </summary>
+        /// <param name="element"></param>
+        /// <returns></returns>
+        public static new Dup Read(XElement element)
+        {
+            var inst = new Dup();
+            Load(inst, element);
+            return inst;
+        }
+
+        /// <summary>
+        /// Loads the XML element into the instruction.
+        /// </summary>
+        /// <param name="inst"></param>
+        /// <param name="element"></param>
+        public static void Load(Dup inst, XElement element)
+        {
+            Load((Simple)inst, element);
+        }
+
+        /// <summary>
+        /// Initializes a new instance.
+        /// </summary>
         public Dup() : base(OpCodes.Dup)
         {
+
         }
+
     }
+
 }

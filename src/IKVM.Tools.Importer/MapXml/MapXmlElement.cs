@@ -22,47 +22,35 @@
   
 */
 
+using System.Xml;
 using System.Xml.Linq;
-using System.Xml.Serialization;
-
-using IKVM.Reflection.Emit;
 
 namespace IKVM.Tools.Importer.MapXml
 {
 
-    [Instruction("conv_i8")]
-    public sealed class Conv_I8 : Simple
+    public abstract class MapXmlElement
     {
 
         /// <summary>
-        /// Reads the XML element into a new <see cref="Conv_I8"/> instance.
+        /// Loads the XML element into the instance.
         /// </summary>
+        /// <param name="e"></param>
         /// <param name="element"></param>
-        /// <returns></returns>
-        public static new Conv_I8 Read(XElement element)
+        protected static void Load(MapXmlElement e, XElement element)
         {
-            var inst = new Conv_I8();
-            Load(inst, element);
-            return inst;
+            e.LineNumber = ((IXmlLineInfo)element).LineNumber;
+            e.LinePosition = ((IXmlLineInfo)element).LinePosition;
         }
 
         /// <summary>
-        /// Loads the XML element into the instruction.
+        /// Gets the line number in the source file where this element occurs.
         /// </summary>
-        /// <param name="inst"></param>
-        /// <param name="element"></param>
-        public static void Load(Conv_I8 inst, XElement element)
-        {
-            Load((Simple)inst, element);
-        }
+        public int LineNumber { get; set; }
 
         /// <summary>
-        /// Initializes a new instance.
+        /// Gets the line position in the source file where this element occurs.
         /// </summary>
-        public Conv_I8() : base(OpCodes.Conv_I8)
-        {
-
-        }
+        public int LinePosition { get; set; }
 
     }
 

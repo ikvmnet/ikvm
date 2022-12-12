@@ -22,6 +22,8 @@
   
 */
 
+using System.Xml.Linq;
+
 using IKVM.Internal;
 
 namespace IKVM.Tools.Importer.MapXml
@@ -29,6 +31,13 @@ namespace IKVM.Tools.Importer.MapXml
 
     public sealed class Constructor : MethodConstructorBase
     {
+
+        public static Constructor Read(XElement element)
+        {
+            var ctor = new Constructor();
+            Load(ctor, element);
+            return ctor;
+        }
 
         internal override MethodKey ToMethodKey(string className)
         {

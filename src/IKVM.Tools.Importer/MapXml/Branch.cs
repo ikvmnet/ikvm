@@ -22,7 +22,7 @@
   
 */
 
-using System.Xml.Serialization;
+using System.Xml.Linq;
 
 using IKVM.Internal;
 
@@ -31,6 +31,19 @@ namespace IKVM.Tools.Importer.MapXml
 
     public abstract class Branch : Instruction
     {
+
+        /// <summary>
+        /// Loads the XML element into the instruction.
+        /// </summary>
+        /// <param name="inst"></param>
+        /// <param name="element"></param>
+        public static void Load(Branch inst, XElement element)
+        {
+            Load((Instruction)inst, element);
+            inst.Name = (string)element.Attribute("name");
+        }
+
+        public string Name { get; set; }
 
         internal sealed override void Generate(CodeGenContext context, CodeEmitter ilgen)
         {
@@ -48,9 +61,6 @@ namespace IKVM.Tools.Importer.MapXml
         }
 
         internal abstract void Emit(CodeEmitter ilgen, CodeEmitterLabel label);
-
-        [XmlAttribute("name")]
-        public string Name;
 
     }
 

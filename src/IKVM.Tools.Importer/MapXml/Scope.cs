@@ -22,15 +22,16 @@
   
 */
 
-using System.Xml.Serialization;
-
 namespace IKVM.Tools.Importer.MapXml
 {
+
     public enum Scope
     {
-        [XmlEnum("public")]
+
         Public = 0,
-        [XmlEnum("private")]
+
         Private = 1
+
     }
+
 }

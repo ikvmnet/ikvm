@@ -22,13 +22,39 @@
   
 */
 
-using System.Xml.Serialization;
+using System.Xml.Linq;
 
 namespace IKVM.Tools.Importer.MapXml
 {
-    public sealed class Element
+
+    public sealed class Element : MapXmlElement
     {
-        [XmlText]
-        public string Value;
+
+        /// <summary>
+        /// Reads the XML element into a new <see cref="Element"/> instance.
+        /// </summary>
+        /// <param name="element"></param>
+        /// <returns></returns>
+        public static Element Read(XElement element)
+        {
+            var e = new Element();
+            Load(e, element);
+            return e;
+        }
+
+        /// <summary>
+        /// Loads the XML element into the instruction.
+        /// </summary>
+        /// <param name="e"></param>
+        /// <param name="element"></param>
+        public static void Load(Element e, XElement element)
+        {
+            Load((MapXmlElement)e, element);
+            e.Value = element.Value;
+        }
+
+        public string Value { get; set; }
+
     }
+
 }

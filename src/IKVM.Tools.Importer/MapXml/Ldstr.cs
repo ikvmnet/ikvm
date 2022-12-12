@@ -22,7 +22,7 @@
   
 */
 
-using System.Xml.Serialization;
+using System.Xml.Linq;
 
 using IKVM.Internal;
 using IKVM.Reflection.Emit;
@@ -30,12 +30,34 @@ using IKVM.Reflection.Emit;
 namespace IKVM.Tools.Importer.MapXml
 {
 
-    [XmlType("ldstr")]
+    [Instruction("ldstr")]
     public sealed class Ldstr : Instruction
     {
 
-        [XmlAttribute("value")]
-        public string Value;
+        /// <summary>
+        /// Reads the XML element into a new <see cref="Ldstr"/> instance.
+        /// </summary>
+        /// <param name="element"></param>
+        /// <returns></returns>
+        public static new Ldstr Read(XElement element)
+        {
+            var inst = new Ldstr();
+            Load(inst, element);
+            return inst;
+        }
+
+        /// <summary>
+        /// Loads the XML element into the instruction.
+        /// </summary>
+        /// <param name="inst"></param>
+        /// <param name="element"></param>
+        public static void Load(Ldstr inst, XElement element)
+        {
+            Load((Instruction)inst, element);
+            inst.Value = (string)element.Attribute("value");
+        }
+
+        public string Value { get; set; }
 
         internal override void Generate(CodeGenContext context, CodeEmitter ilgen)
         {

@@ -23,6 +23,7 @@
 */
 
 using System;
+using System.Xml.Linq;
 using System.Xml.Serialization;
 
 using IKVM.Internal;
@@ -34,19 +35,46 @@ using Type = IKVM.Reflection.Type;
 namespace IKVM.Tools.Importer.MapXml
 {
 
-    [XmlType("ldtoken")]
+    [Instruction("ldtoken")]
     public sealed class Ldtoken : Instruction
     {
-        [XmlAttribute("type")]
-        public string type;
-        [XmlAttribute("class")]
-        public string Class;
-        [XmlAttribute("method")]
-        public string Method;
-        [XmlAttribute("field")]
-        public string Field;
-        [XmlAttribute("sig")]
-        public string Sig;
+
+        /// <summary>
+        /// Reads the XML element into a new <see cref="Ldtoken"/> instance.
+        /// </summary>
+        /// <param name="element"></param>
+        /// <returns></returns>
+        public static new Ldtoken Read(XElement element)
+        {
+            var inst = new Ldtoken();
+            Load(inst, element);
+            return inst;
+        }
+
+        /// <summary>
+        /// Loads the XML element into the instruction.
+        /// </summary>
+        /// <param name="inst"></param>
+        /// <param name="element"></param>
+        public static void Load(Ldtoken inst, XElement element)
+        {
+            Load((Instruction)inst, element);
+            inst.Type = (string)element.Attribute("type");
+            inst.Class = (string)element.Attribute("class");
+            inst.Method = (string)element.Attribute("method");
+            inst.Field = (string)element.Attribute("field");
+            inst.Sig = (string)element.Attribute("sig");
+        }
+
+        public string Type { get; set; }
+
+        public string Class { get; set; }
+
+        public string Method { get; set; }
+
+        public string Field { get; set; }
+
+        public string Sig { get; set; }
 
         internal override void Generate(CodeGenContext context, CodeEmitter ilgen)
         {
@@ -85,7 +113,7 @@ namespace IKVM.Tools.Importer.MapXml
 
         private bool Validate()
         {
-            if (type != null && Class == null)
+            if (Type != null && Class == null)
             {
                 if (Method != null || Field != null || Sig != null)
                 {
@@ -94,7 +122,7 @@ namespace IKVM.Tools.Importer.MapXml
                 }
                 return true;
             }
-            else if (Class != null && type == null)
+            else if (Class != null && Type == null)
             {
                 if (Method == null && Field == null)
                 {
@@ -120,13 +148,13 @@ namespace IKVM.Tools.Importer.MapXml
 
         private MemberInfo Resolve(CodeGenContext context)
         {
-            if (type != null)
+            if (Type != null)
             {
                 if (Class != null || Method != null || Field != null || Sig != null)
                 {
                     throw new NotImplementedException();
                 }
-                return StaticCompiler.GetTypeForMapXml(context.ClassLoader, type);
+                return StaticCompiler.GetTypeForMapXml(context.ClassLoader, Type);
             }
             else if (Class != null)
             {
@@ -163,5 +191,7 @@ namespace IKVM.Tools.Importer.MapXml
                 return null;
             }
         }
+
     }
+
 }

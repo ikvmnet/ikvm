@@ -22,7 +22,7 @@
   
 */
 
-using System.Xml.Serialization;
+using System.Xml.Linq;
 
 using IKVM.Internal;
 using IKVM.Reflection.Emit;
@@ -30,10 +30,25 @@ using IKVM.Reflection.Emit;
 namespace IKVM.Tools.Importer.MapXml
 {
 
-    [XmlType("castclass")]
+    [Instruction("castclass")]
     public sealed class Castclass : TypeOrTypeWrapperInstruction
     {
 
+        /// <summary>
+        /// Reads the XML element into a new <see cref="Castclass"/> instance.
+        /// </summary>
+        /// <param name="element"></param>
+        /// <returns></returns>
+        public static new Castclass Read(XElement element)
+        {
+            var inst = new Castclass();
+            Load(inst, element);
+            return inst;
+        }
+
+        /// <summary>
+        /// Initializes a new instance.
+        /// </summary>
         public Castclass()
         {
 
@@ -42,14 +57,11 @@ namespace IKVM.Tools.Importer.MapXml
         internal override void Generate(CodeGenContext context, CodeEmitter ilgen)
         {
             base.Generate(context, ilgen);
+
             if (typeType != null)
-            {
                 ilgen.Emit(OpCodes.Castclass, typeType);
-            }
             else
-            {
                 typeWrapper.EmitCheckcast(ilgen);
-            }
         }
 
     }

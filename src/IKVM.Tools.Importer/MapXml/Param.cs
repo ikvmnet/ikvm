@@ -22,21 +22,51 @@
   
 */
 
-using System.Xml.Serialization;
+using System.Linq;
+using System.Xml.Linq;
 
 namespace IKVM.Tools.Importer.MapXml
 {
+
     public sealed class Param
     {
-        [XmlText]
-        public string Value;
-        [XmlAttribute("name")]
-        public string Name;
-        [XmlAttribute("sig")]
-        public string Sig;      // optional (for object type args)
-        [XmlElement("element")]
-        public Element[] Elements;
-        [XmlElement("attribute")]
-        public Attribute[] Attributes;
+
+        /// <summary>
+        /// Reads the XML element into a new <see cref="Param"/> instance.
+        /// </summary>
+        /// <param name="element"></param>
+        /// <returns></returns>
+        public static Param Read(XElement element)
+        {
+            var param = new Param();
+            Load(param, element);
+            return param;
+        }
+
+        /// <summary>
+        /// Loads the XML element into the instruction.
+        /// </summary>
+        /// <param name="param"></param>
+        /// <param name="element"></param>
+        public static void Load(Param param, XElement element)
+        {
+            param.Value = element.Value;
+            param.Name = (string)element.Attribute("name");
+            param.Sig = (string)element.Attribute("sig");
+            param.Elements = element.Elements(MapXmlSerializer.NS + "element").Select(Element.Read).ToArray();
+            param.Attributes = element.Elements(MapXmlSerializer.NS + "attribute").Select(Attribute.Read).ToArray();
+        }
+
+        public string Value { get; set; }
+
+        public string Name { get; set; }
+
+        public string Sig { get; set; }
+
+        public Element[] Elements { get; set; }
+
+        public Attribute[] Attributes { get; set; }
+
     }
+
 }

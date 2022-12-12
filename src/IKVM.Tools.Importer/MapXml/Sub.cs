@@ -22,18 +22,48 @@
   
 */
 
+using System.Xml.Linq;
 using System.Xml.Serialization;
 
 using IKVM.Reflection.Emit;
 
 namespace IKVM.Tools.Importer.MapXml
 {
-    [XmlType("sub")]
+
+    [Instruction("sub")]
     public sealed class Sub : Simple
     {
-        public Sub()
-            : base(OpCodes.Sub)
+
+        /// <summary>
+        /// Reads the XML element into a new <see cref="Sub"/> instance.
+        /// </summary>
+        /// <param name="element"></param>
+        /// <returns></returns>
+        public static new Sub Read(XElement element)
         {
+            var inst = new Sub();
+            Load(inst, element);
+            return inst;
         }
+
+        /// <summary>
+        /// Loads the XML element into the instruction.
+        /// </summary>
+        /// <param name="inst"></param>
+        /// <param name="element"></param>
+        public static void Load(Sub inst, XElement element)
+        {
+            Load((Simple)inst, element);
+        }
+
+        /// <summary>
+        /// Initializes a new instance.
+        /// </summary>
+        public Sub() : base(OpCodes.Sub)
+        {
+
+        }
+
     }
+
 }
