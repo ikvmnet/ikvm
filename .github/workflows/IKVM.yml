@@ -172,12 +172,6 @@ jobs:
           llvm-dev
           gcc
           g++
-          g++-arm-linux-gnueabihf
-          gcc-arm-linux-gnueabihf
-          libc6-armhf-cross
-          gcc-aarch64-linux-gnu
-          g++-aarch64-linux-gnu
-          libc6-arm64-cross
     - name: Move NuGet Directory
       shell: pwsh
       run: Add-Content $env:GITHUB_ENV "`nNUGET_PACKAGES=${{ runner.temp }}\nuget\packages"
@@ -185,8 +179,8 @@ jobs:
       uses: actions/cache@v3
       with:
         path: ${{ runner.temp }}\nuget\packages
-        key: ${{ runner.os }}-nuget-${{ hashFiles('IKVM.sln', 'src\**\*.csproj', 'src\**\*.msbuildproj') }}
-        restore-keys: ${{ runner.os }}-nuget-
+        key: ${{ runner.os }}-nuget-2-${{ hashFiles('IKVM.sln', 'src\**\*.csproj', 'src\**\*.msbuildproj') }}
+        restore-keys: ${{ runner.os }}-nuget-2-
     - name: Add msbuild to PATH
       uses: microsoft/setup-msbuild@v1.1
     - name: Download OpenJDK 8 Build
