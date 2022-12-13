@@ -167,9 +167,6 @@ jobs:
           libmpfr-dev
           libgmp-dev
           libxml2
-          clang
-          llvm
-          llvm-dev
           gcc
           g++
     - name: Move NuGet Directory
