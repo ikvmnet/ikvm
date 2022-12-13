@@ -116,17 +116,26 @@ jobs:
     timeout-minutes: 120
     runs-on: windows-latest
     steps:
+    - name: Set Paths (Windows)
+      shell: pwsh
+      run: |
+        $WORKPATH="C:\work"
+        mkdir $WORKPATH
+        mkdir $WORKPATH\temp
+        mkdir $WORKPATH\dotnet
+        mkdir $WORKPATH\nuget
+        mkdir $WORKPATH\nuget\packages
+        mkdir $WORKPATH\ikvm
+        Add-Content $env:GITHUB_ENV "`nWORKPATH=$WORKPATH"
+        Add-Content $env:GITHUB_ENV "`nTMP=$WORKPATH\temp`nTEMP=$WORKPATH\temp`nTMPDIR=$WORKPATH\temp"
+        Add-Content $env:GITHUB_ENV "`nDOTNET_INSTALL_DIR=$WORKPATH\dotnet"
+        Add-Content $env:GITHUB_ENV "`nNUGET_PACKAGES=$WORKPATH\nuget\packages"
     - name: Checkout Source
       uses: actions/checkout@v3
       with:
+        path: ${{ env.WORKPATH }}\ikvm
         fetch-depth: 0
         submodules: recursive
-    - name: Move Temporary Directory
-      shell: pwsh
-      run: Add-Content $env:GITHUB_ENV "`nTMP=${{ runner.temp }}`nTEMP=${{ runner.temp }}`nTMPDIR=${{ runner.temp }}"
-    - name: Setup .NET
-      shell: pwsh
-      run: Add-Content $env:GITHUB_ENV "`nDOTNET_INSTALL_DIR=${{ runner.temp }}\dotnet"
     - name: Setup .NET 3.1
       uses: actions/setup-dotnet@v3
       with:
@@ -169,13 +178,10 @@ jobs:
           libxml2
           gcc
           g++
-    - name: Move NuGet Directory
-      shell: pwsh
-      run: Add-Content $env:GITHUB_ENV "`nNUGET_PACKAGES=${{ runner.temp }}\nuget\packages"
     - name: Cache NuGet
       uses: actions/cache@v3
       with:
-        path: ${{ runner.temp }}\nuget\packages
+        path: ${{ env.NUGET_PACKAGES }}
         key: ${{ runner.os }}-nuget-2-${{ hashFiles('IKVM.sln', 'src\**\*.csproj', 'src\**\*.msbuildproj') }}
         restore-keys: ${{ runner.os }}-nuget-2-
     - name: Add msbuild to PATH
@@ -184,11 +190,11 @@ jobs:
       uses: actions/download-artifact@v3
       with:
         name: openjdk-build-linux-x86_64-normal-server-release
-        path: openjdk/build
+        path: ${{ env.WORKPATH }}/ikvm/openjdk/build
     - name: Restore OpenJDK 8 Build
       shell: pwsh
       run: Expand-Archive openjdk-build-linux-x86_64-normal-server-release.zip .
-      working-directory: openjdk/build
+      working-directory: ${{ env.WORKPATH }}\ikvm\openjdk\build
     - name: Download JTReg Build
       uses: actions/download-artifact@v3
       with:
@@ -197,7 +203,7 @@ jobs:
     - name: Restore JTReg Build
       shell: pwsh
       run: Expand-Archive jtreg-build.zip .
-      working-directory: jtreg
+      working-directory: ${{ env.WORKPATH }}\ikvm\jtreg
     - name: NuGet Restore
       run: dotnet restore IKVM.sln
     - name: Build Artifacts
@@ -219,16 +225,16 @@ jobs:
           /p:CreateHardLinksForCopyLocalIfPossible=true `
           /p:CreateHardLinksForPublishFilesIfPossible=true `
           /p:ContinuousIntegrationBuild=true `
-          IKVM.dist.msbuildproj
+          ${{ env.WORKPATH }}\ikvm\IKVM.dist.msbuildproj
     - name: Upload MSBuild Log
       if: ${{ always() }}
       uses: actions/upload-artifact@v3
       with:
         name: msbuild.binlog
-        path: msbuild.binlog
+        path: ${{ env.WORKPATH }}\ikvm\msbuild.binlog
     - name: Package NuGet Packages
       run: tar czvf C:\nuget.tar.gz nuget
-      working-directory: dist
+      working-directory: ${{ env.WORKPATH }}\ikvm\dist
     - name: Upload NuGet Packages
       uses: actions/upload-artifact@v3
       with:
@@ -236,7 +242,7 @@ jobs:
         path: C:\nuget.tar.gz
     - name: Package Binaries
       run: tar czvf C:\bin.tar.gz bin
-      working-directory: dist
+      working-directory: ${{ env.WORKPATH }}\ikvm\dist
     - name: Upload Binaries
       uses: actions/upload-artifact@v3
       with:
@@ -244,7 +250,7 @@ jobs:
         path: C:\bin.tar.gz
     - name: Package Tools
       run: tar czvf C:\tools.tar.gz tools
-      working-directory: dist
+      working-directory: ${{ env.WORKPATH }}\ikvm\dist
     - name: Upload Tools
       uses: actions/upload-artifact@v3
       with:
@@ -252,7 +258,7 @@ jobs:
         path: C:\tools.tar.gz
     - name: Package Image
       run: tar czvf C:\image.tar.gz image
-      working-directory: dist
+      working-directory: ${{ env.WORKPATH }}\ikvm\dist
     - name: Upload Image
       uses: actions/upload-artifact@v3
       with:
@@ -260,7 +266,7 @@ jobs:
         path: C:\image.tar.gz
     - name: Package Tests
       run: tar czvf C:\tests.tar.gz tests
-      working-directory: dist
+      working-directory: ${{ env.WORKPATH }}\ikvm\dist
     - name: Upload Tests
       uses: actions/upload-artifact@v3
       with:
@@ -270,6 +276,7 @@ jobs:
       run: |
         git reset --hard
         git clean -qfdx
+      working-directory: ${{ env.WORKPATH }}\ikvm
   test:
     strategy:
       matrix:
@@ -355,7 +362,7 @@ jobs:
       if: runner.os == 'Windows'
       shell: pwsh
       run: |
-        $dir="C:\run"
+        $dir="C:\work"
         mkdir $dir
         mkdir $dir\temp
         mkdir $dir\dotnet
@@ -371,7 +378,7 @@ jobs:
       if: runner.os == 'Linux'
       shell: pwsh
       run: |
-        $dir="${{ runner.temp }}/run"
+        $dir="${{ runner.temp }}/work"
         mkdir $dir
         mkdir $dir/temp
         mkdir $dir/dotnet
