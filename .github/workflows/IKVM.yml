@@ -136,6 +136,9 @@ jobs:
       with:
         fetch-depth: 0
         submodules: recursive
+    - name: Get
+      shell: pwsh
+      run: dir $env:WORKPATH\ikvm
     - name: Setup .NET 3.1
       uses: actions/setup-dotnet@v3
       with:
