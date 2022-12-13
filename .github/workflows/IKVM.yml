@@ -130,7 +130,7 @@ jobs:
         Add-Content $env:GITHUB_ENV "`nTMP=$WORKPATH\temp`nTEMP=$WORKPATH\temp`nTMPDIR=$WORKPATH\temp"
         Add-Content $env:GITHUB_ENV "`nDOTNET_INSTALL_DIR=$WORKPATH\dotnet"
         Add-Content $env:GITHUB_ENV "`nNUGET_PACKAGES=$WORKPATH\nuget\packages"
-        New-Item -Path ${{ env.GITHUB_WORKSPACE }}\ikvm\ikvm -ItemType SymbolicLink -Value ${{ env.WORKPATH }}\ikvm
+        New-Item -Path ${env.GITHUB_WORKSPACE}\ikvm\ikvm -ItemType SymbolicLink -Value ${WORKPATH}\ikvm
     - name: Checkout Source
       uses: actions/checkout@v3
       with:
