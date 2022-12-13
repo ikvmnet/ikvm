@@ -226,6 +226,7 @@ jobs:
           /p:CreateHardLinksForPublishFilesIfPossible=true `
           /p:ContinuousIntegrationBuild=true `
           IKVM.dist.msbuildproj
+      working-directory: ${{ env.WORKPATH }}\ikvm
     - name: Upload MSBuild Log
       if: ${{ always() }}
       uses: actions/upload-artifact@v3
