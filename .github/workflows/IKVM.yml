@@ -200,7 +200,7 @@ jobs:
       uses: actions/download-artifact@v3
       with:
         name: jtreg-build
-        path: jtreg
+        path: ${{ env.WORKPATH }}/ikvm/jtreg
     - name: Restore JTReg Build
       shell: pwsh
       run: Expand-Archive jtreg-build.zip .
