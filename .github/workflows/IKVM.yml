@@ -130,10 +130,10 @@ jobs:
         Add-Content $env:GITHUB_ENV "`nTMP=$WORKPATH\temp`nTEMP=$WORKPATH\temp`nTMPDIR=$WORKPATH\temp"
         Add-Content $env:GITHUB_ENV "`nDOTNET_INSTALL_DIR=$WORKPATH\dotnet"
         Add-Content $env:GITHUB_ENV "`nNUGET_PACKAGES=$WORKPATH\nuget\packages"
+        mklink /D ${{ GITHUB_WORKSPACE }}\ikvm $WORKPATH\ikvm
     - name: Checkout Source
       uses: actions/checkout@v3
       with:
-        path: ${{ env.WORKPATH }}\ikvm
         fetch-depth: 0
         submodules: recursive
     - name: Setup .NET 3.1
@@ -225,7 +225,8 @@ jobs:
           /p:CreateHardLinksForCopyLocalIfPossible=true `
           /p:CreateHardLinksForPublishFilesIfPossible=true `
           /p:ContinuousIntegrationBuild=true `
-          ${{ env.WORKPATH }}\ikvm\IKVM.dist.msbuildproj
+          IKVM.dist.msbuildproj
+      working-directory: ${{ env.WORKPATH }}\ikvm
     - name: Upload MSBuild Log
       if: ${{ always() }}
       uses: actions/upload-artifact@v3
