@@ -26,7 +26,7 @@ namespace IKVM.Tools.Importer.Tests
         [TestMethod]
         public async Task Should_convert_simple_jar()
         {
-            var s = new StreamReader(typeof(IkvmImporterTests).Assembly.GetManifestResourceStream("IKVM.Tools.Importer.Tests.IkvmcTests.java")).ReadToEnd();
+            var s = new StreamReader(typeof(IkvmImporterTests).Assembly.GetManifestResourceStream("IKVM.Tools.Importer.Tests.IkvmImporterTests.java")).ReadToEnd();
             var f = new InMemoryCodeUnit("ikvm.tools.importer.tests.IkvmImporterTests", s);
             var c = new InMemoryCompiler(new[] { f });
             c.Compile();
