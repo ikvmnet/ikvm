@@ -37,11 +37,21 @@ namespace IKVM.Tools.Importer.MapXml
         /// <returns></returns>
         public static new CatchBlock Read(XElement element)
         {
-            var list = new CatchBlock();
-            Load(list, element);
-            list.Type = (string)element.Attribute("type");
-            list.Class = (string)element.Attribute("class");
-            return list;
+            var block = new CatchBlock();
+            Load(block, element);
+            return block;
+        }
+
+        /// <summary>
+        /// Loads the XML element into the instruction.
+        /// </summary>
+        /// <param name="block"></param>
+        /// <param name="element"></param>
+        public static void Load(CatchBlock block, XElement element)
+        {
+            Load((InstructionList)block, element);
+            block.Type = (string)element.Attribute("type");
+            block.Class = (string)element.Attribute("class");
         }
 
         public string Type { get; set; }

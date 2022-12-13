@@ -35,7 +35,7 @@ namespace IKVM.Tools.Importer.MapXml
             clazz.Methods = element.Elements(MapXmlSerializer.NS + "method").Select(Method.Read).ToArray();
             clazz.Fields = element.Elements(MapXmlSerializer.NS + "field").Select(Field.Read).ToArray();
             clazz.Properties = element.Elements(MapXmlSerializer.NS + "property").Select(Property.Read).ToArray();
-            clazz.Interfaces = element.Elements(MapXmlSerializer.NS + "implements").Select(Interface.Read).ToArray();
+            clazz.Interfaces = element.Elements(MapXmlSerializer.NS + "implements").Select(Implements.Read).ToArray();
             clazz.Clinit = element.Elements(MapXmlSerializer.NS + "clinit").Select(ClassInitializer.Read).FirstOrDefault();
             clazz.Attributes = element.Elements(MapXmlSerializer.NS + "attribute").Select(Attribute.Read).ToArray();
         }
@@ -56,7 +56,7 @@ namespace IKVM.Tools.Importer.MapXml
 
         public Property[] Properties { get; set; }
 
-        public Interface[] Interfaces { get; set; }
+        public Implements[] Interfaces { get; set; }
 
         public ClassInitializer Clinit { get; set; }
 

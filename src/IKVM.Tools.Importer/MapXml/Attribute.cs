@@ -54,9 +54,9 @@ namespace IKVM.Tools.Importer.MapXml
             attribute.Type = (string)element.Attribute("type");
             attribute.Class = (string)element.Attribute("class");
             attribute.Sig = (string)element.Attribute("sig");
-            attribute.Params = element.Elements(MapXmlSerializer.NS + "parameter").Select(Param.Read).ToArray();
-            attribute.Properties = element.Elements(MapXmlSerializer.NS + "property").Select(Param.Read).ToArray();
-            attribute.Fields = element.Elements(MapXmlSerializer.NS + "field").Select(Param.Read).ToArray();
+            attribute.Params = element.Elements(MapXmlSerializer.NS + "parameter").Select(Parameter.Read).ToArray();
+            attribute.Properties = element.Elements(MapXmlSerializer.NS + "property").Select(Parameter.Read).ToArray();
+            attribute.Fields = element.Elements(MapXmlSerializer.NS + "field").Select(Parameter.Read).ToArray();
         }
 
         public string Type { get; set; }
@@ -65,11 +65,11 @@ namespace IKVM.Tools.Importer.MapXml
 
         public string Sig { get; set; }
 
-        public Param[] Params { get; set; }
+        public Parameter[] Params { get; set; }
 
-        public Param[] Properties { get; set; }
+        public Parameter[] Properties { get; set; }
 
-        public Param[] Fields { get; set; }
+        public Parameter[] Fields { get; set; }
 
     }
 

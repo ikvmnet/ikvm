@@ -5029,6 +5029,7 @@ namespace IKVM.Internal
             {
                 parameterNames = null;
                 ParameterBuilder[] parameterBuilders = null;
+
                 if (wrapper.GetClassLoader().EmitDebugInfo
 #if IMPORTER
                     || (classFile.IsPublic && (m.IsPublic || m.IsProtected))
@@ -5050,36 +5051,30 @@ namespace IKVM.Internal
 #endif
                     parameterBuilders = GetParameterBuilders(mb, parameterNames.Length, parameterNames);
                 }
+
 #if IMPORTER
                 if ((m.Modifiers & Modifiers.VarArgs) != 0 && !mw.HasCallerID)
                 {
-                    if (parameterBuilders == null)
-                    {
-                        parameterBuilders = GetParameterBuilders(mb, mw.GetParameters().Length, null);
-                    }
+                    parameterBuilders ??= GetParameterBuilders(mb, mw.GetParameters().Length, null);
                     if (parameterBuilders.Length > 0)
-                    {
                         AttributeHelper.SetParamArrayAttribute(parameterBuilders[parameterBuilders.Length - 1]);
-                    }
                 }
+
                 wrapper.AddXmlMapParameterAttributes(mb, classFile.Name, m.Name, m.Signature, ref parameterBuilders);
 #endif
+
                 if (m.ParameterAnnotations != null)
                 {
-                    if (parameterBuilders == null)
-                    {
-                        parameterBuilders = GetParameterBuilders(mb, mw.GetParameters().Length, null);
-                    }
+                    parameterBuilders ??= GetParameterBuilders(mb, mw.GetParameters().Length, null);
+
                     object[][] defs = m.ParameterAnnotations;
                     for (int j = 0; j < defs.Length; j++)
                     {
                         foreach (object[] def in defs[j])
                         {
-                            Annotation annotation = Annotation.Load(wrapper, def);
+                            var annotation = Annotation.Load(wrapper, def);
                             if (annotation != null)
-                            {
                                 annotation.Apply(wrapper.GetClassLoader(), parameterBuilders[j], def);
-                            }
                         }
                     }
                 }
@@ -5088,7 +5083,7 @@ namespace IKVM.Internal
 #if IMPORTER
             private void AddImplementsAttribute()
             {
-                TypeWrapper[] interfaces = wrapper.Interfaces;
+                var interfaces = wrapper.Interfaces;
                 if (wrapper.BaseTypeWrapper == CoreClasses.java.lang.Object.Wrapper)
                 {
                     // We special case classes extending java.lang.Object to optimize the metadata encoding
@@ -6699,7 +6694,7 @@ namespace IKVM.Internal
 
         protected static ParameterBuilder[] GetParameterBuilders(MethodBuilder mb, int parameterCount, string[] parameterNames)
         {
-            ParameterBuilder[] parameterBuilders = new ParameterBuilder[parameterCount];
+            var parameterBuilders = new ParameterBuilder[parameterCount];
             Dictionary<string, int> clashes = null;
             for (int i = 0; i < parameterBuilders.Length; i++)
             {

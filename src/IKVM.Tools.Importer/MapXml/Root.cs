@@ -52,7 +52,7 @@ namespace IKVM.Tools.Importer.MapXml
         {
             Load((MapXmlElement)root, element);
             root.Assembly = element.Elements(MapXmlSerializer.NS + "assembly").Select(Assembly.Read).FirstOrDefault();
-            root.ExceptionMappings = element.Elements(MapXmlSerializer.NS + "exceptionMappings").Select(ExceptionMapping.Read).ToArray();
+            root.ExceptionMappings = element.Elements(MapXmlSerializer.NS + "exceptionMappings").Elements(MapXmlSerializer.NS + "exception").Select(ExceptionMapping.Read).ToArray();
         }
 
         public Assembly Assembly { get; set; }

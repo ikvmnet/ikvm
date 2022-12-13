@@ -53,7 +53,7 @@ namespace IKVM.Tools.Importer.MapXml
             Load((MapXmlElement)exception, element);
             exception.Source = (string)element.Attribute("src");
             exception.Destination = (string)element.Attribute("dst");
-            exception.Code = element.Elements("code").Select(InstructionList.Read).FirstOrDefault();
+            exception.Code = element.Elements(MapXmlSerializer.NS + "code").Select(InstructionList.Read).FirstOrDefault();
         }
 
         public string Source { get; set; }

@@ -22,6 +22,7 @@
   
 */
 
+using System.Linq;
 using System.Xml.Linq;
 using System.Xml.Serialization;
 
@@ -56,6 +57,9 @@ namespace IKVM.Tools.Importer.MapXml
         public static void Load(ExceptionBlock inst, XElement element)
         {
             Load((Instruction)inst, element);
+            inst.Try = element.Elements(MapXmlSerializer.NS + "try").Select(InstructionList.Read).FirstOrDefault();
+            inst.Catch = element.Elements(MapXmlSerializer.NS + "catch").Select(CatchBlock.Read).FirstOrDefault();
+            inst.Finally = element.Elements(MapXmlSerializer.NS + "finally").Select(InstructionList.Read).FirstOrDefault();
         }
 
         public InstructionList Try { get; set; }
@@ -67,7 +71,9 @@ namespace IKVM.Tools.Importer.MapXml
         internal override void Generate(CodeGenContext context, CodeEmitter ilgen)
         {
             ilgen.BeginExceptionBlock();
+
             Try.Generate(context, ilgen);
+
             if (Catch != null)
             {
                 Type type;
@@ -79,14 +85,17 @@ namespace IKVM.Tools.Importer.MapXml
                 {
                     type = context.ClassLoader.LoadClassByDottedName(Catch.Class).TypeAsExceptionType;
                 }
+
                 ilgen.BeginCatchBlock(type);
                 Catch.Generate(context, ilgen);
             }
+
             if (Finally != null)
             {
                 ilgen.BeginFinallyBlock();
                 Finally.Generate(context, ilgen);
             }
+
             ilgen.EndExceptionBlock();
         }
 

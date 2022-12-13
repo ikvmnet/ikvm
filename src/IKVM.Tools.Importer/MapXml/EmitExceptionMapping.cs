@@ -22,7 +22,6 @@
   
 */
 
-using System.Linq;
 using System.Xml.Linq;
 
 using IKVM.Internal;
@@ -54,7 +53,6 @@ namespace IKVM.Tools.Importer.MapXml
         public static void Load(EmitExceptionMapping inst, XElement element)
         {
             Load((Instruction)inst, element);
-            inst.mapping = element.Elements(MapXmlSerializer.NS + "mapping").Select(ExceptionMapping.Read).ToArray();
         }
 
         /// <summary>
@@ -66,7 +64,7 @@ namespace IKVM.Tools.Importer.MapXml
 
         internal override void Generate(CodeGenContext context, CodeEmitter ilgen)
         {
-            CompilerClassLoader.ExceptionMapEmitter emitter = new CompilerClassLoader.ExceptionMapEmitter(mapping);
+            var emitter = new CompilerClassLoader.ExceptionMapEmitter(mapping);
             emitter.Emit(context, ilgen);
         }
 

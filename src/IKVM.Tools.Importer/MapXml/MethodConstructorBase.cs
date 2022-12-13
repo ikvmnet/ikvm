@@ -38,7 +38,7 @@ namespace IKVM.Tools.Importer.MapXml
             Load((MethodBase)o, element);
             o.Sig = (string)element.Attribute("sig");
             o.Modifiers = MapXmlSerializer.ReadMapModifiers((string)element.Attribute("modifiers"));
-            o.Params = element.Elements(MapXmlSerializer.NS + "parameter").Select(Param.Read).ToArray();
+            o.Parameters = element.Elements(MapXmlSerializer.NS + "parameter").Select(Parameter.Read).ToArray();
             o.AlternateBody = element.Elements(MapXmlSerializer.NS + "alternateBody").Select(InstructionList.Read).FirstOrDefault();
             o.Redirect = element.Elements(MapXmlSerializer.NS + "redirect").Select(Redirect.Read).FirstOrDefault();
         }
@@ -47,7 +47,7 @@ namespace IKVM.Tools.Importer.MapXml
 
         public MapModifiers Modifiers { get; set; }
 
-        public Param[] Params { get; set; }
+        public Parameter[] Parameters { get; set; }
 
         public InstructionList AlternateBody { get; set; }
 

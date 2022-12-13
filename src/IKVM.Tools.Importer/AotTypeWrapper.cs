@@ -226,39 +226,26 @@ namespace IKVM.Tools.Importer
 
         internal void GetParameterNamesFromXml(string methodName, string methodSig, string[] parameterNames)
         {
-            IKVM.Tools.Importer.MapXml.Param[] parameters = classLoader.GetXmlMapParameters(Name, methodName, methodSig);
+            var parameters = classLoader.GetXmlMapParameters(Name, methodName, methodSig);
             if (parameters != null)
-            {
                 for (int i = 0; i < parameters.Length; i++)
-                {
                     if (parameters[i].Name != null)
-                    {
                         parameterNames[i] = parameters[i].Name;
-                    }
-                }
-            }
         }
 
-        internal void AddXmlMapParameterAttributes(MethodBuilder method, string className, string methodName, string methodSig, ref ParameterBuilder[] pbs)
+        internal void AddXmlMapParameterAttributes(MethodBuilder method, string className, string methodName, string methodSig, ref ParameterBuilder[] parameterBuilders)
         {
-            IKVM.Tools.Importer.MapXml.Param[] parameters = classLoader.GetXmlMapParameters(className, methodName, methodSig);
+            var parameters = classLoader.GetXmlMapParameters(className, methodName, methodSig);
             if (parameters != null)
             {
-                if (pbs == null)
-                {
-                    // let's hope that the parameters array is the right length
-                    pbs = GetParameterBuilders(method, parameters.Length, null);
-                }
-                for (int i = 0; i < pbs.Length; i++)
-                {
+                parameterBuilders ??= GetParameterBuilders(method, parameters.Length, null);
+                if (parameters.Length > parameterBuilders.Length)
+                    throw new InvalidOperationException($"Number of parameters in map XML exceeds the number of parameters being built for '{className}:{methodName}' ({parameters.Length} > {parameterBuilders.Length}).");
+
+                for (int i = 0; i < parameters.Length; i++)
                     if (parameters[i].Attributes != null)
-                    {
-                        foreach (IKVM.Tools.Importer.MapXml.Attribute attr in parameters[i].Attributes)
-                        {
-                            AttributeHelper.SetCustomAttribute(classLoader, pbs[i], attr);
-                        }
-                    }
-                }
+                        foreach (var attr in parameters[i].Attributes)
+                            AttributeHelper.SetCustomAttribute(classLoader, parameterBuilders[i], attr);
             }
         }
 
@@ -276,92 +263,86 @@ namespace IKVM.Tools.Importer
             {
                 pbs = GetParameterBuilders(method, mw.GetParameters().Length, null);
             }
+
             if ((mw.Modifiers & Modifiers.VarArgs) != 0 && pbs.Length > 0)
-            {
                 AttributeHelper.SetParamArrayAttribute(pbs[pbs.Length - 1]);
-            }
+
             AddXmlMapParameterAttributes(method, Name, mw.Name, mw.Signature, ref pbs);
         }
 
+        /// <summary>
+        /// Applies fields from the map XML.
+        /// </summary>
+        /// <param name="fields"></param>
         protected override void AddMapXmlFields(ref FieldWrapper[] fields)
         {
-            Dictionary<string, IKVM.Tools.Importer.MapXml.Class> mapxml = classLoader.GetMapXmlClasses();
-            if (mapxml != null)
+            var mapxml = classLoader.GetMapXmlClasses();
+            if (mapxml != null && mapxml.TryGetValue(Name, out var clazz) && clazz.Fields != null)
             {
-                IKVM.Tools.Importer.MapXml.Class clazz;
-                if (mapxml.TryGetValue(this.Name, out clazz))
+                foreach (var field in clazz.Fields)
                 {
-                    if (clazz.Fields != null)
+                    // are we adding a new field?
+                    bool found = false;
+                    foreach (var fw in fields)
                     {
-                        foreach (IKVM.Tools.Importer.MapXml.Field field in clazz.Fields)
+                        if (fw.Name == field.Name && fw.Signature == field.Sig)
                         {
-                            // are we adding a new field?
-                            bool found = false;
-                            foreach (FieldWrapper fw in fields)
-                            {
-                                if (fw.Name == field.Name && fw.Signature == field.Sig)
-                                {
-                                    found = true;
-                                    break;
-                                }
-                            }
-                            if (!found)
-                            {
-                                fields = ArrayUtil.Concat(fields, FieldWrapper.Create(this, null, null, field.Name, field.Sig, new ExModifiers((Modifiers)field.Modifiers, false)));
-                            }
+                            found = true;
+                            break;
                         }
                     }
+
+                    if (found == false)
+                        fields = ArrayUtil.Concat(fields, FieldWrapper.Create(this, null, null, field.Name, field.Sig, new ExModifiers((Modifiers)field.Modifiers, false)));
                 }
             }
         }
 
         protected override bool EmitMapXmlMethodPrologueAndOrBody(CodeEmitter ilgen, ClassFile f, ClassFile.Method m)
         {
-            IKVM.Tools.Importer.MapXml.InstructionList prologue = classLoader.GetMethodPrologue(new MethodKey(f.Name, m.Name, m.Signature));
+            var prologue = classLoader.GetMethodPrologue(new MethodKey(f.Name, m.Name, m.Signature));
             if (prologue != null)
-            {
                 prologue.Emit(classLoader, ilgen);
-            }
-            Dictionary<MethodKey, IKVM.Tools.Importer.MapXml.InstructionList> mapxml = classLoader.GetMapXmlMethodBodies();
-            if (mapxml != null)
+
+            var mapxml = classLoader.GetMapXmlMethodBodies();
+            if (mapxml != null && mapxml.TryGetValue(new MethodKey(f.Name, m.Name, m.Signature), out var opcodes))
             {
-                IKVM.Tools.Importer.MapXml.InstructionList opcodes;
-                if (mapxml.TryGetValue(new MethodKey(f.Name, m.Name, m.Signature), out opcodes))
-                {
-                    opcodes.Emit(classLoader, ilgen);
-                    return true;
-                }
+                opcodes.Emit(classLoader, ilgen);
+                return true;
             }
+
             return false;
         }
 
-        private void PublishAttributes(TypeBuilder typeBuilder, IKVM.Tools.Importer.MapXml.Class clazz)
+        void PublishAttributes(TypeBuilder typeBuilder, Class clazz)
         {
-            foreach (IKVM.Tools.Importer.MapXml.Attribute attr in clazz.Attributes)
-            {
+            foreach (var attr in clazz.Attributes)
                 AttributeHelper.SetCustomAttribute(classLoader, typeBuilder, attr);
-            }
         }
 
-        private static bool CheckPropertyArgs(Type[] args1, Type[] args2)
+        /// <summary>
+        /// Returns <c>true</c> if the given type arrays are equal.
+        /// </summary>
+        /// <param name="args1"></param>
+        /// <param name="args2"></param>
+        /// <returns></returns>
+        static bool CheckPropertyArgs(Type[] args1, Type[] args2)
         {
             if (args1.Length == args2.Length)
             {
                 for (int i = 0; i < args1.Length; i++)
-                {
                     if (args1[i] != args2[i])
-                    {
                         return false;
-                    }
-                }
+
                 return true;
             }
+
             return false;
         }
 
-        private static MethodAttributes GetPropertyMethodAttributes(MethodWrapper mw, bool final)
+        static MethodAttributes GetPropertyMethodAttributes(MethodWrapper mw, bool final)
         {
-            MethodAttributes attribs = MethodAttributes.HideBySig;
+            var attribs = MethodAttributes.HideBySig;
             if (mw.IsStatic)
             {
                 attribs |= MethodAttributes.Static;
@@ -374,33 +355,25 @@ namespace IKVM.Tools.Importer
                 // or not (and vice versa).
                 attribs |= MethodAttributes.Virtual | MethodAttributes.NewSlot | MethodAttributes.CheckAccessOnOverride;
                 if (final)
-                {
                     attribs |= MethodAttributes.Final;
-                }
             }
+
             // TODO what happens if accessibility doesn't match our peer?
             if (mw.IsPublic)
-            {
                 attribs |= MethodAttributes.Public;
-            }
             else if (mw.IsProtected)
-            {
                 attribs |= MethodAttributes.FamORAssem;
-            }
             else if (mw.IsPrivate)
-            {
                 attribs |= MethodAttributes.Private;
-            }
             else
-            {
                 attribs |= MethodAttributes.Assembly;
-            }
+
             return attribs;
         }
 
-        private void PublishProperties(TypeBuilder typeBuilder, IKVM.Tools.Importer.MapXml.Class clazz)
+        private void PublishProperties(TypeBuilder typeBuilder, Class clazz)
         {
-            foreach (IKVM.Tools.Importer.MapXml.Property prop in clazz.Properties)
+            foreach (var prop in clazz.Properties)
             {
                 TypeWrapper typeWrapper = GetClassLoader().RetTypeWrapperFromSig(prop.Sig, LoadMode.Link);
                 TypeWrapper[] propargs = GetClassLoader().ArgTypeWrapperListFromSig(prop.Sig, LoadMode.Link);
@@ -756,9 +729,9 @@ namespace IKVM.Tools.Importer
                     }
                     if (clazz.Interfaces != null)
                     {
-                        foreach (Interface iface in clazz.Interfaces)
+                        foreach (Implements iface in clazz.Interfaces)
                         {
-                            TypeWrapper tw = GetClassLoader().LoadClassByDottedName(iface.Name);
+                            TypeWrapper tw = GetClassLoader().LoadClassByDottedName(iface.Class);
                             // NOTE since this interface won't be part of the list in the ImplementAttribute,
                             // it won't be visible from Java that the type implements this interface.
                             typeBuilder.AddInterfaceImplementation(tw.TypeAsBaseType);

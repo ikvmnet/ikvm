@@ -32,11 +32,26 @@ namespace IKVM.Tools.Importer.MapXml
     public sealed class Constructor : MethodConstructorBase
     {
 
+        /// <summary>
+        /// Reads the XML element into a new instance.
+        /// </summary>
+        /// <param name="element"></param>
+        /// <returns></returns>
         public static Constructor Read(XElement element)
         {
             var ctor = new Constructor();
             Load(ctor, element);
             return ctor;
+        }
+
+        /// <summary>
+        /// Loads the XML element into the instance.
+        /// </summary>
+        /// <param name="element"></param>
+        /// <returns></returns>
+        public static void Load(Constructor ctor, XElement element)
+        {
+            Load((MethodConstructorBase)ctor, element);
         }
 
         internal override MethodKey ToMethodKey(string className)

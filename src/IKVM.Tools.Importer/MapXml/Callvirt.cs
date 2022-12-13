@@ -35,15 +35,25 @@ namespace IKVM.Tools.Importer.MapXml
     {
 
         /// <summary>
-        /// Reads the XML element into a new <see cref="Call"/> instance.
+        /// Reads the XML element into a new <see cref="Callvirt"/> instance.
         /// </summary>
         /// <param name="element"></param>
         /// <returns></returns>
-        public static new Call Read(XElement element)
+        public static new Callvirt Read(XElement element)
         {
-            var inst = new Call();
+            var inst = new Callvirt();
             Load(inst, element);
             return inst;
+        }
+
+        /// <summary>
+        /// Loads the XML element into the instruction.
+        /// </summary>
+        /// <param name="inst"></param>
+        /// <param name="element"></param>
+        public static void Load(Callvirt inst, XElement element)
+        {
+            Load((Call)inst, element);
         }
 
         /// <summary>

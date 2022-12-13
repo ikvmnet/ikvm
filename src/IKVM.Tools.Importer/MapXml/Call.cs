@@ -94,7 +94,9 @@ namespace IKVM.Tools.Importer.MapXml
 
         internal sealed override void Generate(CodeGenContext context, CodeEmitter ilgen)
         {
-            Debug.Assert(Name != null);
+            if (Name == null)
+                throw new MapXmlException("Missing name.");
+
             if (Name == ".ctor")
             {
                 Debug.Assert(Class == null && Type != null);

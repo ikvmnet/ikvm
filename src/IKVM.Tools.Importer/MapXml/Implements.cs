@@ -28,17 +28,17 @@ using System.Xml.Linq;
 namespace IKVM.Tools.Importer.MapXml
 {
 
-    public sealed class Interface : MapXmlElement
+    public sealed class Implements : MapXmlElement
     {
 
         /// <summary>
-        /// Reads the XML element into a new <see cref="Interface"/> instance.
+        /// Reads the XML element into a new <see cref="Implements"/> instance.
         /// </summary>
         /// <param name="element"></param>
         /// <returns></returns>
-        public static Interface Read(XElement element)
+        public static Implements Read(XElement element)
         {
-            var iface = new Interface();
+            var iface = new Implements();
             Load(iface, element);
             return iface;
         }
@@ -48,14 +48,14 @@ namespace IKVM.Tools.Importer.MapXml
         /// </summary>
         /// <param name="iface"></param>
         /// <param name="element"></param>
-        public static void Load(Interface iface, XElement element)
+        public static void Load(Implements iface, XElement element)
         {
             Load((MapXmlElement)iface, element);
-            iface.Name = (string)element.Attribute("name");
+            iface.Class = (string)element.Attribute("class");
             iface.Methods = element.Elements(MapXmlSerializer.NS + "method").Select(Method.Read).ToArray();
         }
 
-        public string Name { get; set; }
+        public string Class { get; set; }
 
         public Method[] Methods { get; set; }
 

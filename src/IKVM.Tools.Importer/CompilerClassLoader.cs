@@ -985,7 +985,7 @@ namespace IKVM.Tools.Importer
                     interfaceWrappers = new TypeWrapper[c.Interfaces.Length];
                     for (int i = 0; i < c.Interfaces.Length; i++)
                     {
-                        TypeWrapper iface = classLoader.LoadClassByDottedName(c.Interfaces[i].Name);
+                        TypeWrapper iface = classLoader.LoadClassByDottedName(c.Interfaces[i].Class);
                         interfaceWrappers[i] = iface;
                         foreach (MethodWrapper mw in iface.GetMethods())
                         {
@@ -1076,7 +1076,7 @@ namespace IKVM.Tools.Importer
                                 AttributeHelper.SetCustomAttribute(DeclaringType.GetClassLoader(), mbHelper, custattr);
                             }
                         }
-                        SetParameters(DeclaringType.GetClassLoader(), mbHelper, m.Params);
+                        SetParameters(DeclaringType.GetClassLoader(), mbHelper, m.Parameters);
                         AttributeHelper.SetModifiers(mbHelper, (Modifiers)m.Modifiers, false);
                         AttributeHelper.SetNameSig(mbHelper, "<init>", m.Sig);
                         AddDeclaredExceptions(mbHelper, m.Throws);
@@ -1091,7 +1091,7 @@ namespace IKVM.Tools.Importer
                                 AttributeHelper.SetCustomAttribute(DeclaringType.GetClassLoader(), cbCore, custattr);
                             }
                         }
-                        SetParameters(DeclaringType.GetClassLoader(), cbCore, m.Params);
+                        SetParameters(DeclaringType.GetClassLoader(), cbCore, m.Parameters);
                         AddDeclaredExceptions(cbCore, m.Throws);
                     }
                     return cbCore;
@@ -1308,7 +1308,7 @@ namespace IKVM.Tools.Importer
                                     AttributeHelper.SetCustomAttribute(DeclaringType.GetClassLoader(), helper, custattr);
                                 }
                             }
-                            SetParameters(DeclaringType.GetClassLoader(), helper, m.Params);
+                            SetParameters(DeclaringType.GetClassLoader(), helper, m.Parameters);
                             ilgen = CodeEmitter.Create(helper);
                             foreach (IKVM.Tools.Importer.MapXml.Class c in specialCases)
                             {
@@ -1409,7 +1409,7 @@ namespace IKVM.Tools.Importer
                                     AttributeHelper.SetCustomAttribute(DeclaringType.GetClassLoader(), mbCore, custattr);
                                 }
                             }
-                            SetParameters(DeclaringType.GetClassLoader(), mbCore, m.Params);
+                            SetParameters(DeclaringType.GetClassLoader(), mbCore, m.Parameters);
                             if (overrideMethod != null && !inherited)
                             {
                                 typeWrapper.typeBuilder.DefineMethodOverride(mbCore, overrideMethod);
@@ -1440,17 +1440,17 @@ namespace IKVM.Tools.Importer
                                     AttributeHelper.SetCustomAttribute(DeclaringType.GetClassLoader(), mbHelper, custattr);
                                 }
                             }
-                            IKVM.Tools.Importer.MapXml.Param[] parameters;
-                            if (m.Params == null)
+                            IKVM.Tools.Importer.MapXml.Parameter[] parameters;
+                            if (m.Parameters == null)
                             {
-                                parameters = new IKVM.Tools.Importer.MapXml.Param[1];
+                                parameters = new IKVM.Tools.Importer.MapXml.Parameter[1];
                             }
                             else
                             {
-                                parameters = new IKVM.Tools.Importer.MapXml.Param[m.Params.Length + 1];
-                                m.Params.CopyTo(parameters, 1);
+                                parameters = new IKVM.Tools.Importer.MapXml.Parameter[m.Parameters.Length + 1];
+                                m.Parameters.CopyTo(parameters, 1);
                             }
-                            parameters[0] = new IKVM.Tools.Importer.MapXml.Param();
+                            parameters[0] = new IKVM.Tools.Importer.MapXml.Parameter();
                             parameters[0].Name = "this";
                             SetParameters(DeclaringType.GetClassLoader(), mbHelper, parameters);
                             if (!typeWrapper.IsFinal)
@@ -1637,84 +1637,80 @@ namespace IKVM.Tools.Importer
                             {
                                 ilgen.SetLineNumber((ushort)m.Redirect.LineNumber);
                             }
-                            Type shadowType = ((RemapperTypeWrapper)DeclaringType).shadowType;
+
+                            var shadowType = ((RemapperTypeWrapper)DeclaringType).shadowType;
                             for (int i = 0; i < paramTypes.Length + 1; i++)
-                            {
                                 ilgen.EmitLdarg(i);
-                            }
+
                             if (m.Redirect != null)
                             {
                                 EmitRedirect(shadowType, ilgen);
                             }
                             else if (m.Override != null)
                             {
-                                MethodInfo baseMethod = shadowType.GetMethod(m.Override.Name, BindingFlags.Instance | BindingFlags.Public, null, paramTypes, null);
+                                var baseMethod = shadowType.GetMethod(m.Override.Name, BindingFlags.Instance | BindingFlags.Public, null, paramTypes, null);
                                 if (baseMethod == null)
-                                {
                                     throw new InvalidOperationException(DeclaringType.Name + "." + m.Name + m.Sig);
-                                }
+
                                 ilgen.Emit(OpCodes.Callvirt, baseMethod);
                             }
                             else
                             {
-                                RemappedMethodWrapper baseMethod = DeclaringType.BaseTypeWrapper.GetMethodWrapper(Name, Signature, true) as RemappedMethodWrapper;
+                                var baseMethod = DeclaringType.BaseTypeWrapper.GetMethodWrapper(Name, Signature, true) as RemappedMethodWrapper;
                                 if (baseMethod == null || baseMethod.m.Override == null)
-                                {
                                     throw new InvalidOperationException(DeclaringType.Name + "." + m.Name + m.Sig);
-                                }
-                                MethodInfo overrideMethod = shadowType.GetMethod(baseMethod.m.Override.Name, BindingFlags.Instance | BindingFlags.Public, null, paramTypes, null);
+
+                                var overrideMethod = shadowType.GetMethod(baseMethod.m.Override.Name, BindingFlags.Instance | BindingFlags.Public, null, paramTypes, null);
                                 if (overrideMethod == null)
-                                {
                                     throw new InvalidOperationException(DeclaringType.Name + "." + m.Name + m.Sig);
-                                }
+
                                 ilgen.Emit(OpCodes.Callvirt, overrideMethod);
                             }
-                            this.ReturnType.EmitConvStackTypeToSignatureType(ilgen, null);
+
+                            ReturnType.EmitConvStackTypeToSignatureType(ilgen, null);
                             ilgen.Emit(OpCodes.Ret);
                         }
+
                         ilgen.DoEmit();
-                        if (this.DeclaringType.GetClassLoader().EmitStackTraceInfo)
-                        {
+
+                        if (DeclaringType.GetClassLoader().EmitStackTraceInfo)
                             ilgen.EmitLineNumberTable(mbHelper);
-                        }
                     }
 
                     // do we need a helper for non-virtual reflection invocation?
                     if (m.NonVirtualAlternateBody != null || (m.Override != null && overriders.Count > 0))
                     {
-                        RemapperTypeWrapper typeWrapper = (RemapperTypeWrapper)DeclaringType;
-                        MethodBuilder mb = typeWrapper.typeBuilder.DefineMethod("nonvirtualhelper/" + this.Name, MethodAttributes.Private | MethodAttributes.Static,
-                            ReturnTypeForDefineMethod, ArrayUtil.Concat(typeWrapper.TypeAsSignatureType, GetParametersForDefineMethod()));
+                        var tw = (RemapperTypeWrapper)DeclaringType;
+                        var mb = tw.typeBuilder.DefineMethod("nonvirtualhelper/" + Name, MethodAttributes.Private | MethodAttributes.Static, ReturnTypeForDefineMethod, ArrayUtil.Concat(tw.TypeAsSignatureType, GetParametersForDefineMethod()));
+
+                        // apply custom attributes from map XML
                         if (m.Attributes != null)
-                        {
-                            foreach (IKVM.Tools.Importer.MapXml.Attribute custattr in m.Attributes)
-                            {
+                            foreach (var custattr in m.Attributes)
                                 AttributeHelper.SetCustomAttribute(DeclaringType.GetClassLoader(), mb, custattr);
-                            }
-                        }
-                        SetParameters(DeclaringType.GetClassLoader(), mb, m.Params);
+
+                        SetParameters(DeclaringType.GetClassLoader(), mb, m.Parameters);
                         AttributeHelper.HideFromJava(mb);
-                        CodeEmitter ilgen = CodeEmitter.Create(mb);
+
+                        var ilgen = CodeEmitter.Create(mb);
                         if (m.NonVirtualAlternateBody != null)
                         {
                             m.NonVirtualAlternateBody.Emit(DeclaringType.GetClassLoader(), ilgen);
                         }
                         else
                         {
-                            Type shadowType = ((RemapperTypeWrapper)DeclaringType).shadowType;
-                            MethodInfo baseMethod = shadowType.GetMethod(m.Override.Name, BindingFlags.Instance | BindingFlags.Public, null, paramTypes, null);
+                            var shadowType = ((RemapperTypeWrapper)DeclaringType).shadowType;
+                            var baseMethod = shadowType.GetMethod(m.Override.Name, BindingFlags.Instance | BindingFlags.Public, null, paramTypes, null);
                             if (baseMethod == null)
-                            {
                                 throw new InvalidOperationException(DeclaringType.Name + "." + m.Name + m.Sig);
-                            }
+
                             ilgen.Emit(OpCodes.Ldarg_0);
                             for (int i = 0; i < paramTypes.Length; i++)
-                            {
                                 ilgen.EmitLdarg(i + 1);
-                            }
+
                             ilgen.Emit(OpCodes.Call, baseMethod);
                             ilgen.Emit(OpCodes.Ret);
                         }
+
                         ilgen.DoEmit();
                     }
                 }
@@ -1759,7 +1755,7 @@ namespace IKVM.Tools.Importer
                 }
             }
 
-            private static void SetParameters(ClassLoaderWrapper loader, MethodBuilder mb, IKVM.Tools.Importer.MapXml.Param[] parameters)
+            private static void SetParameters(ClassLoaderWrapper loader, MethodBuilder mb, IKVM.Tools.Importer.MapXml.Parameter[] parameters)
             {
                 if (parameters != null)
                 {
@@ -1876,9 +1872,9 @@ namespace IKVM.Tools.Importer
                 // we need to explicitly finish the interface we implement (if they are ghosts, we need the nested __Interface type)
                 if (classDef.Interfaces != null)
                 {
-                    foreach (IKVM.Tools.Importer.MapXml.Interface iface in classDef.Interfaces)
+                    foreach (IKVM.Tools.Importer.MapXml.Implements iface in classDef.Interfaces)
                     {
-                        GetClassLoader().LoadClassByDottedName(iface.Name).Finish();
+                        GetClassLoader().LoadClassByDottedName(iface.Class).Finish();
                     }
                 }
 
@@ -2213,113 +2209,102 @@ namespace IKVM.Tools.Importer
         internal bool IsMapUnsafeException(TypeWrapper tw)
         {
             if (mappedExceptions != null)
-            {
                 for (int i = 0; i < mappedExceptions.Length; i++)
-                {
-                    if (mappedExceptions[i].IsSubTypeOf(tw) ||
-                        (mappedExceptionsAllSubClasses[i] && tw.IsSubTypeOf(mappedExceptions[i])))
-                    {
+                    if (mappedExceptions[i].IsSubTypeOf(tw) || (mappedExceptionsAllSubClasses[i] && tw.IsSubTypeOf(mappedExceptions[i])))
                         return true;
-                    }
-                }
-            }
+
             return false;
         }
 
-        internal void LoadMappedExceptions(IKVM.Tools.Importer.MapXml.Root map)
+        internal void LoadMappedExceptions(MapXml.Root map)
         {
-            if (map.ExceptionMappings != null)
+            if (map.ExceptionMappings.Length > 0)
             {
                 mappedExceptionsAllSubClasses = new bool[map.ExceptionMappings.Length];
                 mappedExceptions = new TypeWrapper[map.ExceptionMappings.Length];
                 for (int i = 0; i < mappedExceptions.Length; i++)
                 {
-                    string dst = map.ExceptionMappings[i].Destination;
+                    var dst = map.ExceptionMappings[i].Destination;
                     if (dst[0] == '*')
                     {
                         mappedExceptionsAllSubClasses[i] = true;
                         dst = dst.Substring(1);
                     }
+
                     mappedExceptions[i] = LoadClassByDottedName(dst);
                 }
+
                 // HACK we need to find the <exceptionMapping /> element and bind it
-                foreach (IKVM.Tools.Importer.MapXml.Class c in map.Assembly.Classes)
-                {
-                    if (c.Methods != null)
-                    {
-                        foreach (IKVM.Tools.Importer.MapXml.Method m in c.Methods)
-                        {
-                            if (m.Body != null && m.Body.Instructions != null)
-                            {
-                                foreach (IKVM.Tools.Importer.MapXml.Instruction instr in m.Body.Instructions)
-                                {
-                                    IKVM.Tools.Importer.MapXml.EmitExceptionMapping eem = instr as IKVM.Tools.Importer.MapXml.EmitExceptionMapping;
-                                    if (eem != null)
-                                    {
-                                        eem.mapping = map.ExceptionMappings;
-                                    }
-                                }
-                            }
-                        }
-                    }
-                }
+                foreach (var c in map.Assembly.Classes)
+                    foreach (var m in c.Methods)
+                        if (m.Body != null)
+                            foreach (var instr in m.Body.Instructions)
+                                if (instr is MapXml.EmitExceptionMapping eem)
+                                    eem.mapping = map.ExceptionMappings;
             }
         }
 
         internal sealed class ExceptionMapEmitter
         {
-            private IKVM.Tools.Importer.MapXml.ExceptionMapping[] map;
 
-            internal ExceptionMapEmitter(IKVM.Tools.Importer.MapXml.ExceptionMapping[] map)
+            readonly MapXml.ExceptionMapping[] map;
+
+            /// <summary>
+            /// Initializes a new instance.
+            /// </summary>
+            /// <param name="map"></param>
+            internal ExceptionMapEmitter(MapXml.ExceptionMapping[] map)
             {
                 this.map = map;
             }
 
-            internal void Emit(IKVM.Tools.Importer.MapXml.CodeGenContext context, CodeEmitter ilgen)
+            internal void Emit(MapXml.CodeGenContext context, CodeEmitter ilgen)
             {
-                MethodWrapper mwSuppressFillInStackTrace = CoreClasses.java.lang.Throwable.Wrapper.GetMethodWrapper("__<suppressFillInStackTrace>", "()V", false);
+                var mwSuppressFillInStackTrace = CoreClasses.java.lang.Throwable.Wrapper.GetMethodWrapper("__<suppressFillInStackTrace>", "()V", false);
                 mwSuppressFillInStackTrace.Link();
                 ilgen.Emit(OpCodes.Ldarg_0);
                 ilgen.Emit(OpCodes.Callvirt, Compiler.getTypeMethod);
+
                 for (int i = 0; i < map.Length; i++)
                 {
                     ilgen.Emit(OpCodes.Dup);
                     ilgen.Emit(OpCodes.Ldtoken, StaticCompiler.Universe.GetType(map[i].Source, true));
                     ilgen.Emit(OpCodes.Call, Compiler.getTypeFromHandleMethod);
                     ilgen.Emit(OpCodes.Ceq);
-                    CodeEmitterLabel label = ilgen.DefineLabel();
+                    var label = ilgen.DefineLabel();
                     ilgen.EmitBrfalse(label);
                     ilgen.Emit(OpCodes.Pop);
                     if (map[i].Code != null)
                     {
                         ilgen.Emit(OpCodes.Ldarg_0);
-                        if (map[i].Code.Instructions != null)
+
+                        if (map[i].Code.Instructions.Length > 0)
                         {
-                            foreach (MapXml.Instruction instr in map[i].Code.Instructions)
+                            foreach (var instr in map[i].Code.Instructions)
                             {
-                                MapXml.NewObj newobj = instr as MapXml.NewObj;
-                                if (newobj != null
-                                    && newobj.Class != null
-                                    && context.ClassLoader.LoadClassByDottedName(newobj.Class).IsSubTypeOf(CoreClasses.java.lang.Throwable.Wrapper))
-                                {
+                                var newobj = instr as MapXml.NewObj;
+                                if (newobj != null && newobj.Class != null && context.ClassLoader.LoadClassByDottedName(newobj.Class).IsSubTypeOf(CoreClasses.java.lang.Throwable.Wrapper))
                                     mwSuppressFillInStackTrace.EmitCall(ilgen);
-                                }
+
                                 instr.Generate(context, ilgen);
                             }
                         }
+
                         ilgen.Emit(OpCodes.Ret);
                     }
                     else
                     {
-                        TypeWrapper tw = context.ClassLoader.LoadClassByDottedName(map[i].Destination);
-                        MethodWrapper mw = tw.GetMethodWrapper("<init>", "()V", false);
+                        var tw = context.ClassLoader.LoadClassByDottedName(map[i].Destination);
+                        var mw = tw.GetMethodWrapper("<init>", "()V", false);
                         mw.Link();
                         mwSuppressFillInStackTrace.EmitCall(ilgen);
                         mw.EmitNewobj(ilgen);
                         ilgen.Emit(OpCodes.Ret);
                     }
+
                     ilgen.MarkLabel(label);
                 }
+
                 ilgen.Emit(OpCodes.Pop);
                 ilgen.Emit(OpCodes.Ldarg_0);
                 ilgen.Emit(OpCodes.Ret);
@@ -2328,13 +2313,14 @@ namespace IKVM.Tools.Importer
 
         internal void LoadMapXml()
         {
-            if (map.Assembly.Classes != null)
+            if (map.Assembly.Classes.Length > 0)
             {
-                mapxml_Classes = new Dictionary<string, IKVM.Tools.Importer.MapXml.Class>();
-                mapxml_MethodBodies = new Dictionary<MethodKey, IKVM.Tools.Importer.MapXml.InstructionList>();
-                mapxml_ReplacedMethods = new Dictionary<MethodKey, IKVM.Tools.Importer.MapXml.ReplaceMethodCall[]>();
-                mapxml_MethodPrologues = new Dictionary<MethodKey, IKVM.Tools.Importer.MapXml.InstructionList>();
-                foreach (IKVM.Tools.Importer.MapXml.Class c in map.Assembly.Classes)
+                mapxml_Classes = new Dictionary<string, MapXml.Class>();
+                mapxml_MethodBodies = new Dictionary<MethodKey, MapXml.InstructionList>();
+                mapxml_ReplacedMethods = new Dictionary<MethodKey, MapXml.ReplaceMethodCall[]>();
+                mapxml_MethodPrologues = new Dictionary<MethodKey, MapXml.InstructionList>();
+
+                foreach (var c in map.Assembly.Classes)
                 {
                     // if it is not a remapped type, it must be a container for native, patched or augmented methods
                     if (c.Shadows == null)
@@ -2344,102 +2330,80 @@ namespace IKVM.Tools.Importer
                         AddMapXmlMethods(className, c.Constructors);
                         AddMapXmlMethods(className, c.Methods);
                         if (c.Clinit != null)
-                        {
                             AddMapXmlMethod(className, c.Clinit);
-                        }
                     }
                 }
             }
         }
 
-        private void AddMapXmlMethods(string className, IKVM.Tools.Importer.MapXml.MethodBase[] methods)
+        private void AddMapXmlMethods(string className, MapXml.MethodBase[] methods)
         {
             if (methods != null)
-            {
-                foreach (IKVM.Tools.Importer.MapXml.MethodBase method in methods)
-                {
+                foreach (var method in methods)
                     AddMapXmlMethod(className, method);
-                }
-            }
         }
 
-        private void AddMapXmlMethod(string className, IKVM.Tools.Importer.MapXml.MethodBase method)
+        private void AddMapXmlMethod(string className, MapXml.MethodBase method)
         {
             if (method.Body != null)
-            {
                 mapxml_MethodBodies.Add(method.ToMethodKey(className), method.Body);
-            }
-            if (method.ReplaceMethodCalls != null)
-            {
+
+            if (method.ReplaceMethodCalls.Length > 0)
                 mapxml_ReplacedMethods.Add(method.ToMethodKey(className), method.ReplaceMethodCalls);
-            }
+
             if (method.Prologue != null)
-            {
                 mapxml_MethodPrologues.Add(method.ToMethodKey(className), method.Prologue);
-            }
         }
 
-        internal IKVM.Tools.Importer.MapXml.InstructionList GetMethodPrologue(MethodKey method)
+        internal MapXml.InstructionList GetMethodPrologue(MethodKey method)
         {
             if (mapxml_MethodPrologues == null)
-            {
                 return null;
-            }
-            IKVM.Tools.Importer.MapXml.InstructionList prologue;
-            mapxml_MethodPrologues.TryGetValue(method, out prologue);
+
+            mapxml_MethodPrologues.TryGetValue(method, out var prologue);
             return prologue;
         }
 
-        internal IKVM.Tools.Importer.MapXml.ReplaceMethodCall[] GetReplacedMethodsFor(MethodWrapper mw)
+        internal MapXml.ReplaceMethodCall[] GetReplacedMethodsFor(MethodWrapper mw)
         {
             if (mapxml_ReplacedMethods == null)
-            {
                 return null;
-            }
-            IKVM.Tools.Importer.MapXml.ReplaceMethodCall[] rmc;
-            mapxml_ReplacedMethods.TryGetValue(new MethodKey(mw.DeclaringType.Name, mw.Name, mw.Signature), out rmc);
+
+            mapxml_ReplacedMethods.TryGetValue(new MethodKey(mw.DeclaringType.Name, mw.Name, mw.Signature), out var rmc);
             return rmc;
         }
 
-        internal Dictionary<string, IKVM.Tools.Importer.MapXml.Class> GetMapXmlClasses()
+        internal Dictionary<string, MapXml.Class> GetMapXmlClasses()
         {
             return mapxml_Classes;
         }
 
-        internal Dictionary<MethodKey, IKVM.Tools.Importer.MapXml.InstructionList> GetMapXmlMethodBodies()
+        internal Dictionary<MethodKey, MapXml.InstructionList> GetMapXmlMethodBodies()
         {
             return mapxml_MethodBodies;
         }
 
-        internal IKVM.Tools.Importer.MapXml.Param[] GetXmlMapParameters(string classname, string method, string sig)
+        internal MapXml.Parameter[] GetXmlMapParameters(string classname, string method, string sig)
         {
             if (mapxml_Classes != null)
             {
-                IKVM.Tools.Importer.MapXml.Class clazz;
-                if (mapxml_Classes.TryGetValue(classname, out clazz))
+                if (mapxml_Classes.TryGetValue(classname, out var clazz))
                 {
-                    if (method == "<init>" && clazz.Constructors != null)
+                    if (method == "<init>" && clazz.Constructors.Length > 0)
                     {
                         for (int i = 0; i < clazz.Constructors.Length; i++)
-                        {
                             if (clazz.Constructors[i].Sig == sig)
-                            {
-                                return clazz.Constructors[i].Params;
-                            }
-                        }
+                                return clazz.Constructors[i].Parameters;
                     }
-                    else if (clazz.Methods != null)
+                    else if (clazz.Methods.Length > 0)
                     {
                         for (int i = 0; i < clazz.Methods.Length; i++)
-                        {
                             if (clazz.Methods[i].Name == method && clazz.Methods[i].Sig == sig)
-                            {
-                                return clazz.Methods[i].Params;
-                            }
-                        }
+                                return clazz.Methods[i].Parameters;
                     }
                 }
             }
+
             return null;
         }
 
@@ -2448,53 +2412,48 @@ namespace IKVM.Tools.Importer
             return ghosts != null && tw.IsInterface && ghosts.ContainsKey(tw.Name);
         }
 
-        private void SetupGhosts(IKVM.Tools.Importer.MapXml.Root map)
+        void SetupGhosts(MapXml.Root map)
         {
             ghosts = new Dictionary<string, List<TypeWrapper>>();
 
             // find the ghost interfaces
-            foreach (IKVM.Tools.Importer.MapXml.Class c in map.Assembly.Classes)
+            foreach (var c in map.Assembly.Classes)
             {
-                if (c.Shadows != null && c.Interfaces != null)
+                if (c.Shadows != null && c.Interfaces.Length > 0)
                 {
                     // NOTE we don't support interfaces that inherit from other interfaces
                     // (actually, if they are explicitly listed it would probably work)
-                    TypeWrapper typeWrapper = FindLoadedClass(c.Name);
-                    foreach (IKVM.Tools.Importer.MapXml.Interface iface in c.Interfaces)
+                    var typeWrapper = FindLoadedClass(c.Name);
+
+                    foreach (var iface in c.Interfaces)
                     {
-                        TypeWrapper ifaceWrapper = FindLoadedClass(iface.Name);
+                        var ifaceWrapper = FindLoadedClass(iface.Class);
                         if (ifaceWrapper == null || !ifaceWrapper.TypeAsTBD.IsAssignableFrom(typeWrapper.TypeAsTBD))
-                        {
-                            AddGhost(iface.Name, typeWrapper);
-                        }
+                            AddGhost(iface.Class, typeWrapper);
                     }
                 }
             }
+
             // we manually add the array ghost interfaces
-            TypeWrapper array = ClassLoaderWrapper.GetWrapperFromType(Types.Array);
+            var array = ClassLoaderWrapper.GetWrapperFromType(Types.Array);
             AddGhost("java.io.Serializable", array);
             AddGhost("java.lang.Cloneable", array);
         }
 
         private void AddGhost(string interfaceName, TypeWrapper implementer)
         {
-            List<TypeWrapper> list;
-            if (!ghosts.TryGetValue(interfaceName, out list))
+            if (!ghosts.TryGetValue(interfaceName, out var list))
             {
                 list = new List<TypeWrapper>();
                 ghosts[interfaceName] = list;
             }
+
             list.Add(implementer);
         }
 
         internal TypeWrapper[] GetGhostImplementers(TypeWrapper wrapper)
         {
-            List<TypeWrapper> list;
-            if (!ghosts.TryGetValue(wrapper.Name, out list))
-            {
-                return TypeWrapper.EmptyArray;
-            }
-            return list.ToArray();
+            return ghosts.TryGetValue(wrapper.Name, out var list) ? list.ToArray() : TypeWrapper.EmptyArray;
         }
 
         internal void FinishRemappedTypes()
@@ -2502,23 +2461,16 @@ namespace IKVM.Tools.Importer
             // 3rd pass, link the methods. Note that a side effect of the linking is the
             // twiddling with the overriders array in the base methods, so we need to do this
             // as a separate pass before we compile the methods
-            foreach (RemapperTypeWrapper typeWrapper in remapped.Values)
-            {
+            foreach (var typeWrapper in remapped.Values)
                 typeWrapper.Process3rdPass();
-            }
+
             // 4th pass, implement methods/fields and bake the type
-            foreach (RemapperTypeWrapper typeWrapper in remapped.Values)
-            {
+            foreach (var typeWrapper in remapped.Values)
                 typeWrapper.Process4thPass(remapped.Values);
-            }
 
             if (assemblyAttributes != null)
-            {
-                foreach (IKVM.Tools.Importer.MapXml.Attribute attr in assemblyAttributes)
-                {
+                foreach (MapXml.Attribute attr in assemblyAttributes)
                     AttributeHelper.SetCustomAttribute(this, assemblyBuilder, attr);
-                }
-            }
         }
 
         private static bool IsSigned(Assembly asm)
@@ -2535,15 +2487,10 @@ namespace IKVM.Tools.Importer
         private bool CheckCompilingCoreAssembly()
         {
             if (map != null && map.Assembly != null && map.Assembly.Classes != null)
-            {
                 foreach (IKVM.Tools.Importer.MapXml.Class c in map.Assembly.Classes)
-                {
                     if (c.Shadows != null && c.Name == "java.lang.Object")
-                    {
                         return compilingCoreAssembly = true;
-                    }
-                }
-            }
+
             return false;
         }
 
@@ -2864,7 +2811,7 @@ namespace IKVM.Tools.Importer
 
                     try
                     {
-                        map = new MapXml.MapXmlSerializer().Read(XDocument.Load(fs));
+                        map = new MapXml.MapXmlSerializer().Read(XDocument.Load(fs, LoadOptions.SetLineInfo));
                     }
                     catch (MapXml.MapXmlException x)
                     {

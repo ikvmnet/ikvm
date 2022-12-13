@@ -28,17 +28,17 @@ using System.Xml.Linq;
 namespace IKVM.Tools.Importer.MapXml
 {
 
-    public sealed class Param
+    public sealed class Parameter
     {
 
         /// <summary>
-        /// Reads the XML element into a new <see cref="Param"/> instance.
+        /// Reads the XML element into a new <see cref="Parameter"/> instance.
         /// </summary>
         /// <param name="element"></param>
         /// <returns></returns>
-        public static Param Read(XElement element)
+        public static Parameter Read(XElement element)
         {
-            var param = new Param();
+            var param = new Parameter();
             Load(param, element);
             return param;
         }
@@ -48,16 +48,14 @@ namespace IKVM.Tools.Importer.MapXml
         /// </summary>
         /// <param name="param"></param>
         /// <param name="element"></param>
-        public static void Load(Param param, XElement element)
+        public static void Load(Parameter param, XElement element)
         {
-            param.Value = element.Value;
             param.Name = (string)element.Attribute("name");
             param.Sig = (string)element.Attribute("sig");
             param.Elements = element.Elements(MapXmlSerializer.NS + "element").Select(Element.Read).ToArray();
             param.Attributes = element.Elements(MapXmlSerializer.NS + "attribute").Select(Attribute.Read).ToArray();
+            param.Value = element.Value;
         }
-
-        public string Value { get; set; }
 
         public string Name { get; set; }
 
@@ -66,6 +64,8 @@ namespace IKVM.Tools.Importer.MapXml
         public Element[] Elements { get; set; }
 
         public Attribute[] Attributes { get; set; }
+
+        public string Value { get; set; }
 
     }
 
