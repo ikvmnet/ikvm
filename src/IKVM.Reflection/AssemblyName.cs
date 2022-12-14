@@ -23,10 +23,10 @@
 */
 using System;
 using System.Globalization;
-using System.Configuration.Assemblies;
 using System.IO;
 using System.Security.Cryptography;
 using System.Text;
+
 using IKVM.Reflection.Reader;
 
 namespace IKVM.Reflection
