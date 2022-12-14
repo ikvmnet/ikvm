@@ -86,11 +86,9 @@ namespace IKVM.Reflection.Writer
             }
 
             if (resources != null)
-            {
                 resources.Finish();
-            }
 
-            PEWriter writer = new PEWriter(stream);
+            var writer = new PEWriter(stream);
             writer.Headers.OptionalHeader.FileAlignment = (uint)moduleBuilder.__FileAlignment;
             switch (imageFileMachine)
             {
@@ -135,10 +133,9 @@ namespace IKVM.Reflection.Writer
                 default:
                     throw new ArgumentOutOfRangeException("imageFileMachine");
             }
+
             if (fileKind == PEFileKinds.Dll)
-            {
                 writer.Headers.FileHeader.Characteristics |= IMAGE_FILE_HEADER.IMAGE_FILE_DLL;
-            }
 
             switch (fileKind)
             {
@@ -151,39 +148,35 @@ namespace IKVM.Reflection.Writer
             }
             writer.Headers.OptionalHeader.DllCharacteristics = (ushort)moduleBuilder.__DllCharacteristics;
 
-            CliHeader cliHeader = new CliHeader();
+            var cliHeader = new CliHeader();
             cliHeader.Cb = 0x48;
             cliHeader.MajorRuntimeVersion = 2;
             cliHeader.MinorRuntimeVersion = moduleBuilder.MDStreamVersion < 0x20000 ? (ushort)0 : (ushort)5;
+
             if ((portableExecutableKind & PortableExecutableKinds.ILOnly) != 0)
-            {
                 cliHeader.Flags |= CliHeader.COMIMAGE_FLAGS_ILONLY;
-            }
+
             if ((portableExecutableKind & PortableExecutableKinds.Required32Bit) != 0)
-            {
                 cliHeader.Flags |= CliHeader.COMIMAGE_FLAGS_32BITREQUIRED;
-            }
+
             if ((portableExecutableKind & PortableExecutableKinds.Preferred32Bit) != 0)
-            {
                 cliHeader.Flags |= CliHeader.COMIMAGE_FLAGS_32BITREQUIRED | CliHeader.COMIMAGE_FLAGS_32BITPREFERRED;
-            }
+
             if (keyPair != null)
-            {
                 cliHeader.Flags |= CliHeader.COMIMAGE_FLAGS_STRONGNAMESIGNED;
-            }
+
             if (ModuleBuilder.IsPseudoToken(entryPointToken))
-            {
                 entryPointToken = moduleBuilder.ResolvePseudoToken(entryPointToken);
-            }
+
             cliHeader.EntryPointToken = (uint)entryPointToken;
 
             moduleBuilder.Strings.Freeze();
             moduleBuilder.UserStrings.Freeze();
             moduleBuilder.Guids.Freeze();
             moduleBuilder.Blobs.Freeze();
-            MetadataWriter mw = new MetadataWriter(moduleBuilder, stream);
+            var mw = new MetadataWriter(moduleBuilder, stream);
             moduleBuilder.Tables.Freeze(mw);
-            TextSection code = new TextSection(writer, cliHeader, moduleBuilder, ComputeStrongNameSignatureLength(publicKey));
+            var code = new TextSection(writer, cliHeader, moduleBuilder, ComputeStrongNameSignatureLength(publicKey));
 
             // Export Directory
             if (code.ExportDirectoryLength != 0)
@@ -235,7 +228,7 @@ namespace IKVM.Reflection.Writer
                 writer.Headers.FileHeader.NumberOfSections++;
             }
 
-            SectionHeader text = new SectionHeader();
+            var text = new SectionHeader();
             text.Name = ".text";
             text.VirtualAddress = code.BaseRVA;
             text.VirtualSize = (uint)code.Length;
@@ -243,7 +236,7 @@ namespace IKVM.Reflection.Writer
             text.SizeOfRawData = writer.ToFileAlignment((uint)code.Length);
             text.Characteristics = SectionHeader.IMAGE_SCN_CNT_CODE | SectionHeader.IMAGE_SCN_MEM_EXECUTE | SectionHeader.IMAGE_SCN_MEM_READ;
 
-            SectionHeader sdata = new SectionHeader();
+            var sdata = new SectionHeader();
             sdata.Name = ".sdata";
             sdata.VirtualAddress = text.VirtualAddress + writer.ToSectionAlignment(text.VirtualSize);
             sdata.VirtualSize = (uint)moduleBuilder.initializedData.Length;
@@ -251,7 +244,7 @@ namespace IKVM.Reflection.Writer
             sdata.SizeOfRawData = writer.ToFileAlignment((uint)moduleBuilder.initializedData.Length);
             sdata.Characteristics = SectionHeader.IMAGE_SCN_CNT_INITIALIZED_DATA | SectionHeader.IMAGE_SCN_MEM_READ | SectionHeader.IMAGE_SCN_MEM_WRITE;
 
-            SectionHeader rsrc = new SectionHeader();
+            var rsrc = new SectionHeader();
             rsrc.Name = ".rsrc";
             rsrc.VirtualAddress = sdata.VirtualAddress + writer.ToSectionAlignment(sdata.VirtualSize);
             rsrc.PointerToRawData = sdata.PointerToRawData + sdata.SizeOfRawData;
@@ -266,7 +259,7 @@ namespace IKVM.Reflection.Writer
                 writer.Headers.OptionalHeader.DataDirectory[2].Size = rsrc.VirtualSize;
             }
 
-            SectionHeader reloc = new SectionHeader();
+            var reloc = new SectionHeader();
             reloc.Name = ".reloc";
             reloc.VirtualAddress = rsrc.VirtualAddress + writer.ToSectionAlignment(rsrc.VirtualSize);
             reloc.VirtualSize = code.PackRelocations();
@@ -304,21 +297,14 @@ namespace IKVM.Reflection.Writer
             writer.WritePEHeaders();
             writer.WriteSectionHeader(text);
             if (sdata.SizeOfRawData != 0)
-            {
                 writer.WriteSectionHeader(sdata);
-            }
             if (rsrc.SizeOfRawData != 0)
-            {
                 writer.WriteSectionHeader(rsrc);
-            }
             if (reloc.SizeOfRawData != 0)
-            {
                 writer.WriteSectionHeader(reloc);
-            }
 
             stream.Seek(text.PointerToRawData, SeekOrigin.Begin);
-            uint guidHeapOffset;
-            code.Write(mw, sdata.VirtualAddress, out guidHeapOffset);
+            code.Write(mw, sdata.VirtualAddress, out var guidHeapOffset);
 
             if (sdata.SizeOfRawData != 0)
             {

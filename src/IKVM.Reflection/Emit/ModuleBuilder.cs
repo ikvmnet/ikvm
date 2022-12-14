@@ -508,7 +508,7 @@ namespace IKVM.Reflection.Emit
             rec.Parent = token;
             rec.Type = asm.IsWindowsRuntime ? customBuilder.Constructor.ImportTo(this) : GetConstructorToken(customBuilder.Constructor).Token;
             rec.Value = customBuilder.WriteBlob(this);
-            this.CustomAttribute.AddRecord(rec);
+            CustomAttribute.AddRecord(rec);
         }
 
         private void AddDeclSecurityRecord(int token, int action, int blob)
@@ -517,7 +517,7 @@ namespace IKVM.Reflection.Emit
             rec.Action = (short)action;
             rec.Parent = token;
             rec.PermissionSet = blob;
-            this.DeclSecurity.AddRecord(rec);
+            DeclSecurity.AddRecord(rec);
         }
 
         internal void AddDeclarativeSecurity(int token, System.Security.Permissions.SecurityAction securityAction, System.Security.PermissionSet permissionSet)
