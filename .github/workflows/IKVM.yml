@@ -167,6 +167,7 @@ jobs:
     - name: Execute GitVersion
       uses: gittools/actions/gitversion/execute@v0.9.13
       with:
+        targetPath: ${{ env.WORKPATH }}/ikvm
         useConfigFile: true
     - name: Setup WSL
       uses: Vampire/setup-wsl@v1
