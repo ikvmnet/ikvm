@@ -169,7 +169,7 @@ jobs:
       with:
         targetPath: ${{ env.WORKPATH }}\ikvm
         useConfigFile: true
-        configFile: ${{ env.WORKPATH }}\ikvm\GitVersion.yml
+        configFilePath: ${{ env.WORKPATH }}\ikvm\GitVersion.yml
     - name: Setup WSL
       uses: Vampire/setup-wsl@v1
       with:
