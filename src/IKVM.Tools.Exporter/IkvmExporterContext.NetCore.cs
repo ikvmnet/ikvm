@@ -73,7 +73,8 @@ namespace IKVM.Tools.Exporter
 
         }
 
-        readonly object dispatcher;
+        IsolatedAssemblyLoadContext context;
+        object dispatcher;
 
         /// <summary>
         /// Initializes a new instance.
@@ -83,8 +84,8 @@ namespace IKVM.Tools.Exporter
         public IkvmExporterContext(IkvmExporterOptions options)
         {
             // load the exporter in a nested assembly context
-            var ctx = new IsolatedAssemblyLoadContext("IkvmExporter", true);
-            var asm = ctx.LoadFromAssemblyName(typeof(IkvmExporterDispatcher).Assembly.GetName());
+            context = new IsolatedAssemblyLoadContext("IkvmExporter", true);
+            var asm = context.LoadFromAssemblyName(typeof(IkvmExporterDispatcher).Assembly.GetName());
             var typ = asm.GetType(typeof(IkvmExporterDispatcher).FullName);
             dispatcher = Activator.CreateInstance(typ, new[] { JsonConvert.SerializeObject(options) });
         }
@@ -105,6 +106,17 @@ namespace IKVM.Tools.Exporter
         /// </summary>
         public void Dispose()
         {
+            try
+            {
+                dispatcher = null;
+                if (context != null)
+                    context.Unload();
+            }
+            finally
+            {
+                context = null;
+            }
+
             GC.SuppressFinalize(this);
         }
 

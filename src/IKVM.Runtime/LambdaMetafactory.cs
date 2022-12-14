@@ -24,9 +24,12 @@
 using System;
 using System.Collections.Generic;
 using System.Diagnostics;
-#if STATIC_COMPILER
+
+#if IMPORTER
 using IKVM.Reflection;
 using IKVM.Reflection.Emit;
+using IKVM.Tools.Importer;
+
 using Type = IKVM.Reflection.Type;
 #else
 using System.Reflection;
@@ -49,7 +52,7 @@ namespace IKVM.Internal
 			LambdaMetafactory lmf = context.GetValue<LambdaMetafactory>(constantPoolIndex);
 			if (lmf.ctor == null && !lmf.EmitImpl(context, classFile, cpi, bsm, ilgen))
 			{
-#if STATIC_COMPILER
+#if IMPORTER
 				if (context.TypeWrapper.GetClassLoader().DisableDynamicBinding)
 				{
 					StaticCompiler.IssueMessage(Message.UnableToCreateLambdaFactory);

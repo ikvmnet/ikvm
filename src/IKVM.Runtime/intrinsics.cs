@@ -24,18 +24,22 @@
 
 using System;
 using System.Collections.Generic;
-#if STATIC_COMPILER
+
+using IKVM.Runtime;
+
+#if IMPORTER
 using IKVM.Reflection;
 using IKVM.Reflection.Emit;
+using IKVM.Tools.Importer;
+
 using Type = IKVM.Reflection.Type;
 #else
 using System.Reflection;
 using System.Reflection.Emit;
 #endif
-using System.Diagnostics;
+
 using Instruction = IKVM.Internal.ClassFile.Method.Instruction;
 using InstructionFlags = IKVM.Internal.ClassFile.Method.InstructionFlags;
-using IKVM.Runtime;
 
 namespace IKVM.Internal
 {
@@ -171,7 +175,7 @@ namespace IKVM.Internal
             }
         }
         private static readonly Dictionary<IntrinsicKey, Emitter> intrinsics = Register();
-#if STATIC_COMPILER
+#if IMPORTER
         private static readonly Type typeofFloatConverter = StaticCompiler.GetRuntimeType("IKVM.Runtime.FloatConverter");
         private static readonly Type typeofDoubleConverter = StaticCompiler.GetRuntimeType("IKVM.Runtime.DoubleConverter");
 #else
@@ -190,12 +194,12 @@ namespace IKVM.Internal
             intrinsics.Add(new IntrinsicKey("java.lang.Double", "longBitsToDouble", "(J)D"), Double_longBitsToDouble);
             intrinsics.Add(new IntrinsicKey("java.lang.System", "arraycopy", "(Ljava.lang.Object;ILjava.lang.Object;II)V"), System_arraycopy);
             intrinsics.Add(new IntrinsicKey("java.util.concurrent.atomic.AtomicReferenceFieldUpdater", "newUpdater", "(Ljava.lang.Class;Ljava.lang.Class;Ljava.lang.String;)Ljava.util.concurrent.atomic.AtomicReferenceFieldUpdater;"), AtomicReferenceFieldUpdater_newUpdater);
-#if STATIC_COMPILER
+#if IMPORTER
             intrinsics.Add(new IntrinsicKey("sun.reflect.Reflection", "getCallerClass", "()Ljava.lang.Class;"), Reflection_getCallerClass);
             intrinsics.Add(new IntrinsicKey("ikvm.internal.CallerID", "getCallerID", "()Likvm.internal.CallerID;"), CallerID_getCallerID);
 #endif
             intrinsics.Add(new IntrinsicKey("ikvm.runtime.Util", "getInstanceTypeFromClass", "(Ljava.lang.Class;)Lcli.System.Type;"), Util_getInstanceTypeFromClass);
-#if STATIC_COMPILER
+#if IMPORTER
             // this only applies to the core class library, so makes no sense in dynamic mode
             intrinsics.Add(new IntrinsicKey("java.lang.Class", "getPrimitiveClass", "(Ljava.lang.String;)Ljava.lang.Class;"), Class_getPrimitiveClass);
             intrinsics.Add(new IntrinsicKey("java.lang.Class", "getDeclaredField", "(Ljava.lang.String;)Ljava.lang.reflect.Field;"), Class_getDeclaredField);
@@ -288,7 +292,7 @@ namespace IKVM.Internal
             return false;
         }
 
-#if STATIC_COMPILER
+#if IMPORTER
         // this intrinsifies the following two patterns:
         //   unsafe.objectFieldOffset(XXX.class.getDeclaredField("xxx"));
         // and
@@ -451,7 +455,7 @@ namespace IKVM.Internal
             return AtomicReferenceFieldUpdaterEmitter.Emit(eic.Context, eic.Caller.DeclaringType, eic.Emitter, eic.ClassFile, eic.OpcodeIndex, eic.Code, eic.Flags);
         }
 
-#if STATIC_COMPILER
+#if IMPORTER
 
         private static bool Reflection_getCallerClass(EmitIntrinsicContext eic)
         {
@@ -537,7 +541,7 @@ namespace IKVM.Internal
             return false;
         }
 
-#if STATIC_COMPILER
+#if IMPORTER
         private static bool Class_getPrimitiveClass(EmitIntrinsicContext eic)
         {
             eic.Emitter.Emit(OpCodes.Pop);
@@ -1058,7 +1062,7 @@ namespace IKVM.Internal
 
         private static void EmitConsumeUnsafe(EmitIntrinsicContext eic)
         {
-#if STATIC_COMPILER
+#if IMPORTER
             if (eic.Caller.DeclaringType.GetClassLoader() == CoreClasses.java.lang.Object.Wrapper.GetClassLoader())
             {
                 // we're compiling the core library (which is obviously trusted), so we don't need to check

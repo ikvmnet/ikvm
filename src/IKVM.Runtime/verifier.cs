@@ -27,13 +27,19 @@ using System.Diagnostics;
 
 using IKVM.Internal;
 
+#if IMPORTER
+using IKVM.Tools.Importer;
+#endif
+
 using ExceptionTableEntry = IKVM.Internal.ClassFile.Method.ExceptionTableEntry;
 using InstructionFlags = IKVM.Internal.ClassFile.Method.InstructionFlags;
 
 sealed class InstructionState
 {
+
     private struct LocalStoreSites
     {
+
         private int[] data;
         private int count;
         private bool shared;
@@ -409,7 +415,7 @@ sealed class InstructionState
 
     private static bool HasMissingBaseType(Stack<TypeWrapper> st)
     {
-#if STATIC_COMPILER
+#if IMPORTER
         if (st.Pop().IsUnloadable)
         {
             // we have a missing type in base class hierarchy
@@ -801,7 +807,7 @@ sealed class InstructionState
 
     private static bool HasMissingBaseType(TypeWrapper tw)
     {
-#if STATIC_COMPILER
+#if IMPORTER
         for (TypeWrapper baseTypeWrapper; (baseTypeWrapper = tw.BaseTypeWrapper) != null; tw = baseTypeWrapper)
         {
             if (baseTypeWrapper.IsUnloadable)
@@ -3542,7 +3548,7 @@ sealed class MethodAnalyzer
     private void SetHardError(ClassLoaderWrapper classLoader, ref ClassFile.Method.Instruction instruction, HardError hardError, string message, params object[] args)
     {
         string text = string.Format(message, args);
-#if STATIC_COMPILER
+#if IMPORTER
         Message msg;
         switch (hardError)
         {
@@ -3864,7 +3870,7 @@ sealed class MethodAnalyzer
             }
             if (false && cpi.GetFieldType() != field.FieldTypeWrapper && !cpi.GetFieldType().IsUnloadable & !field.FieldTypeWrapper.IsUnloadable)
             {
-#if STATIC_COMPILER
+#if IMPORTER
                 StaticCompiler.LinkageError("Field \"{2}.{3}\" is of type \"{0}\" instead of type \"{1}\" as expected by \"{4}\"", field.FieldTypeWrapper, cpi.GetFieldType(), cpi.GetClassType().Name, cpi.Name, wrapper.Name);
 #endif
                 SetHardError(wrapper.GetClassLoader(), ref instr, HardError.LinkageError, "Loader constraints violated: {0}.{1}", field.DeclaringType.Name, field.Name);
@@ -3930,7 +3936,7 @@ sealed class MethodAnalyzer
         if (cpi.GetRetType() != mw.ReturnType && cpi.GetRetType().Name != mw.ReturnType.Name && !cpi.GetRetType().IsUnloadable && !mw.ReturnType.IsUnloadable)
 #endif
         {
-#if STATIC_COMPILER
+#if IMPORTER
             StaticCompiler.LinkageError("Method \"{2}.{3}{4}\" has a return type \"{0}\" instead of type \"{1}\" as expected by \"{5}\"", mw.ReturnType, cpi.GetRetType(), cpi.GetClassType().Name, cpi.Name, cpi.Signature, classFile.Name);
 #endif
             return "Loader constraints violated (return type): " + mw.DeclaringType.Name + "." + mw.Name + mw.Signature;
@@ -3945,7 +3951,7 @@ sealed class MethodAnalyzer
             if (here[i] != there[i] && here[i].Name != there[i].Name && !here[i].IsUnloadable && !there[i].IsUnloadable)
 #endif
             {
-#if STATIC_COMPILER
+#if IMPORTER
                 StaticCompiler.LinkageError("Method \"{2}.{3}{4}\" has a argument type \"{0}\" instead of type \"{1}\" as expected by \"{5}\"", there[i], here[i], cpi.GetClassType().Name, cpi.Name, cpi.Signature, classFile.Name);
 #endif
                 return "Loader constraints violated (arg " + i + "): " + mw.DeclaringType.Name + "." + mw.Name + mw.Signature;

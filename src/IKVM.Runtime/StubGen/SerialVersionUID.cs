@@ -27,7 +27,7 @@ using System.IO;
 
 using IKVM.Attributes;
 using IKVM.Internal;
-#if STUB_GENERATOR
+#if EXPORTER
 using Type = IKVM.Reflection.Type;
 #endif
 

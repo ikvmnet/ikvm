@@ -23,6 +23,10 @@
 */
 using IKVM.Attributes;
 
+#if IMPORTER
+using IKVM.Tools.Importer;
+#endif
+
 namespace IKVM.Internal
 {
 
@@ -127,7 +131,7 @@ namespace IKVM.Internal
 								{
 									switch((string)annot[1])
 									{
-#if STATIC_COMPILER
+#if IMPORTER
 										case "Lsun/reflect/CallerSensitive;":
 											flags |= FLAG_CALLERSENSITIVE;
 											break;
@@ -191,7 +195,7 @@ namespace IKVM.Internal
 							}
 							break;
 						}
-#if STATIC_COMPILER
+#if IMPORTER
 						case "RuntimeInvisibleAnnotations":
 							if(classFile.MajorVersion < 49)
 							{
@@ -380,7 +384,7 @@ namespace IKVM.Internal
 				}
 			}
 
-#if STATIC_COMPILER
+#if IMPORTER
 			internal bool IsCallerSensitive
 			{
 				get
@@ -438,7 +442,7 @@ namespace IKVM.Internal
 				}
 			}
 
-#if STATIC_COMPILER
+#if IMPORTER
 			internal string DllExportName
 			{
 				get

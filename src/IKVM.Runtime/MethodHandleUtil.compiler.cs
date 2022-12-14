@@ -1,6 +1,6 @@
 ﻿using System;
 
-#if STATIC_COMPILER
+#if IMPORTER
 using IKVM.Reflection;
 using IKVM.Reflection.Emit;
 using Type = IKVM.Reflection.Type;

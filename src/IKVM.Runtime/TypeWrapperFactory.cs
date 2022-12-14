@@ -29,7 +29,7 @@ using System.Collections.Generic;
 using System.Runtime.Loader;
 #endif
 
-#if STATIC_COMPILER || STUB_GENERATOR
+#if IMPORTER || EXPORTER
 using IKVM.Reflection;
 using IKVM.Reflection.Emit;
 using Type = IKVM.Reflection.Type;
@@ -44,7 +44,7 @@ using ProtectionDomain = java.security.ProtectionDomain;
 namespace IKVM.Internal
 {
 
-#if !STUB_GENERATOR
+#if !EXPORTER
 
     abstract class TypeWrapperFactory
     {

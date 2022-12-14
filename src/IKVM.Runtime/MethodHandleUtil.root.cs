@@ -25,9 +25,11 @@ using System;
 
 using IKVM.Internal;
 
-#if STATIC_COMPILER
+#if IMPORTER
 using IKVM.Reflection;
 using IKVM.Reflection.Emit;
+using IKVM.Tools.Importer;
+
 using Type = IKVM.Reflection.Type;
 #else
 using System.Reflection;
@@ -43,7 +45,7 @@ static partial class MethodHandleUtil
 
     static MethodHandleUtil()
     {
-#if STATIC_COMPILER
+#if IMPORTER
 		typeofMHA = StaticCompiler.GetRuntimeType("IKVM.Runtime.MHA`8");
 		typeofMHV = new Type[] {
 			StaticCompiler.GetRuntimeType("IKVM.Runtime.MHV"),
