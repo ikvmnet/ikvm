@@ -385,7 +385,7 @@ namespace IKVM.Reflection.Emit
             types.Add(typeBuilder);
             return typeBuilder;
         }
-        s
+
         public EnumBuilder DefineEnum(string name, TypeAttributes visibility, Type underlyingType)
         {
             var tb = DefineType(name, (visibility & TypeAttributes.VisibilityMask) | TypeAttributes.Sealed, universe.System_Enum);
