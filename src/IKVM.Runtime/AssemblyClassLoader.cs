@@ -95,36 +95,45 @@ namespace IKVM.Internal
         /// <returns></returns>
         static AssemblyClassLoader Create(Assembly assembly)
         {
-            // If the assembly is a part of a multi-assembly shared class loader,
-            // it will export the __<MainAssembly> type from the main assembly in the group.
-            var forwarder = assembly.GetType("__<MainAssembly>");
-            if (forwarder != null)
+            try
             {
-                var mainAssembly = forwarder.Assembly;
-                if (mainAssembly != assembly)
-                    return FromAssembly(mainAssembly);
-            }
+                // If the assembly is a part of a multi-assembly shared class loader,
+                // it will export the __<MainAssembly> type from the main assembly in the group.
+                var forwarder = assembly.GetType("__<MainAssembly>");
+                if (forwarder != null)
+                {
+                    var mainAssembly = forwarder.Assembly;
+                    if (mainAssembly != assembly)
+                        return FromAssembly(mainAssembly);
+                }
 
 #if IMPORTER
 
-			if (JVM.CoreAssembly == null && CompilerClassLoader.IsCoreAssembly(assembly))
-			{
-				JVM.CoreAssembly = assembly;
-				ClassLoaderWrapper.LoadRemappedTypes();
-			}
+                if (JVM.CoreAssembly == null && CompilerClassLoader.IsCoreAssembly(assembly))
+                {
+                    JVM.CoreAssembly = assembly;
+                    ClassLoaderWrapper.LoadRemappedTypes();
+                }
 
 #endif
 
-            if (assembly == JVM.CoreAssembly)
-            {
-                // This cast is necessary for ikvmc and a no-op for the runtime.
-                // Note that the cast cannot fail, because ikvmc will only return a non AssemblyClassLoader
-                // from GetBootstrapClassLoader() when compiling the core assembly and in that case JVM.CoreAssembly
-                // will be null.
-                return (AssemblyClassLoader)GetBootstrapClassLoader();
-            }
+                if (assembly == JVM.CoreAssembly)
+                {
+                    // This cast is necessary for ikvmc and a no-op for the runtime.
+                    // Note that the cast cannot fail, because ikvmc will only return a non AssemblyClassLoader
+                    // from GetBootstrapClassLoader() when compiling the core assembly and in that case JVM.CoreAssembly
+                    // will be null.
+                    return (AssemblyClassLoader)GetBootstrapClassLoader();
+                }
 
-            return new AssemblyClassLoader(assembly);
+                return new AssemblyClassLoader(assembly);
+            }
+            catch (Exception e)
+            {
+                Console.WriteLine(assembly);
+                Console.WriteLine(JVM.CoreAssembly);
+                throw;
+            }
         }
 
         AssemblyLoader assemblyLoader;
