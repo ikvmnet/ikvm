@@ -1050,14 +1050,15 @@ namespace IKVM.Internal
             }
 #endif
 
-            private void AddClinitTrigger()
+            void AddClinitTrigger()
             {
                 // We create a empty method that we can use to trigger our .cctor
                 // (previously we used RuntimeHelpers.RunClassConstructor, but that is slow and requires additional privileges)
-                MethodAttributes attribs = MethodAttributes.Static | MethodAttributes.SpecialName;
+                var attribs = MethodAttributes.Static | MethodAttributes.SpecialName;
                 if (classFile.IsAbstract)
                 {
-                    bool hasfields = false;
+                    var hasfields = false;
+
                     // If we have any public static fields, the cctor trigger must (and may) be public as well
                     foreach (ClassFile.Field fld in classFile.Fields)
                     {
@@ -1067,18 +1068,16 @@ namespace IKVM.Internal
                             break;
                         }
                     }
+
                     attribs |= hasfields ? MethodAttributes.Public : MethodAttributes.FamORAssem;
                 }
                 else
                 {
                     attribs |= MethodAttributes.Public;
                 }
+
                 clinitMethod = typeBuilder.DefineMethod("__<clinit>", attribs, null, null);
                 clinitMethod.GetILGenerator().Emit(OpCodes.Ret);
-                // FXBUG on .NET 2.0 RTM x64 the JIT sometimes throws an InvalidProgramException while trying to inline this method,
-                // so we prevent inlining for now (it also turns out that on x86 not inlining this method actually has a positive perf impact in some cases...)
-                // http://connect.microsoft.com/VisualStudio/feedback/ViewFeedback.aspx?FeedbackID=285772
-                clinitMethod.SetImplementationFlags(clinitMethod.GetMethodImplementationFlags() | MethodImplAttributes.NoInlining);
             }
 
             private sealed class DelegateConstructorMethodWrapper : MethodWrapper
@@ -3397,28 +3396,22 @@ namespace IKVM.Internal
 #endif // IMPORTER
                 }
 
+                // method is a synchronized method
                 if ((methods[index].Modifiers & (Modifiers.Synchronized | Modifiers.Static)) == Modifiers.Synchronized)
-                {
                     mb.SetImplementationFlags(mb.GetMethodImplementationFlags() | MethodImplAttributes.Synchronized);
-                }
 
+                // java method specifies to force inline, the best we can do is set aggressive inlining
                 if (classFile.Methods[index].IsForceInline)
-                {
-                    const MethodImplAttributes AggressiveInlining = (MethodImplAttributes)256;
-                    mb.SetImplementationFlags(mb.GetMethodImplementationFlags() | AggressiveInlining);
-                }
+                    mb.SetImplementationFlags(mb.GetMethodImplementationFlags() | MethodImplAttributes.AggressiveInlining);
 
                 if (classFile.Methods[index].IsLambdaFormCompiled || classFile.Methods[index].IsLambdaFormHidden)
                 {
-                    HideFromJavaFlags flags = HideFromJavaFlags.None;
+                    var flags = HideFromJavaFlags.None;
                     if (classFile.Methods[index].IsLambdaFormCompiled)
-                    {
                         flags |= HideFromJavaFlags.StackWalk;
-                    }
                     if (classFile.Methods[index].IsLambdaFormHidden)
-                    {
                         flags |= HideFromJavaFlags.StackTrace;
-                    }
+
                     AttributeHelper.HideFromJava(mb, flags);
                 }
 
@@ -4510,18 +4503,17 @@ namespace IKVM.Internal
                                 CreateDefaultMethodInterop(ref tbDefaultMethods, mb, methods[i]);
 #endif
                             }
-                            CodeEmitter ilGenerator = CodeEmitter.Create(mb);
+                            var ilGenerator = CodeEmitter.Create(mb);
                             if (!m.IsStatic && !m.IsPublic && classFile.IsInterface)
                             {
                                 // Java 8 non-virtual interface method that we compile as a static method,
                                 // we need to make sure the passed in this reference isn't null
                                 ilGenerator.EmitLdarg(0);
                                 if (wrapper.IsGhost)
-                                {
                                     ilGenerator.Emit(OpCodes.Ldfld, wrapper.GhostRefField);
-                                }
                                 ilGenerator.EmitNullCheck();
                             }
+
                             TraceHelper.EmitMethodTrace(ilGenerator, classFile.Name + "." + m.Name + m.Signature);
 #if IMPORTER
                             // do we have an implementation in map.xml?
@@ -4531,24 +4523,17 @@ namespace IKVM.Internal
                                 continue;
                             }
 #endif // IMPORTER
-                            bool nonleaf = false;
+                            var nonleaf = false;
                             Compiler.Compile(this, host, wrapper, methods[i], classFile, m, ilGenerator, ref nonleaf);
                             ilGenerator.CheckLabels();
                             ilGenerator.DoEmit();
-                            if (nonleaf && !m.IsForceInline)
-                            {
-                                mb.SetImplementationFlags(mb.GetMethodImplementationFlags() | MethodImplAttributes.NoInlining);
-                            }
 #if IMPORTER
                             ilGenerator.EmitLineNumberTable(mb);
 #else // IMPORTER
-                            byte[] linenumbers = ilGenerator.GetLineNumberTable();
+                            var linenumbers = ilGenerator.GetLineNumberTable();
                             if (linenumbers != null)
                             {
-                                if (wrapper.lineNumberTables == null)
-                                {
-                                    wrapper.lineNumberTables = new byte[methods.Length][];
-                                }
+                                wrapper.lineNumberTables ??= new byte[methods.Length][];
                                 wrapper.lineNumberTables[i] = linenumbers;
                             }
 #endif // IMPORTER
@@ -4570,13 +4555,13 @@ namespace IKVM.Internal
                         cb = ReflectUtil.DefineTypeInitializer(typeBuilder, wrapper.classLoader);
                         AttributeHelper.HideFromJava(cb);
                     }
-                    CodeEmitter ilGenerator = CodeEmitter.Create(cb);
+                    var ilGenerator = CodeEmitter.Create(cb);
+
                     // before we call the base class initializer, we need to set the non-final static ConstantValue fields
                     EmitConstantValueInitialization(fields, ilGenerator);
                     if (basehasclinit)
-                    {
                         wrapper.BaseTypeWrapper.EmitRunClassConstructor(ilGenerator);
-                    }
+
                     if (clinitIndex != -1)
                     {
                         CompileConstructorBody(this, ilGenerator, clinitIndex);
@@ -4586,6 +4571,7 @@ namespace IKVM.Internal
                         ilGenerator.Emit(OpCodes.Ret);
                         ilGenerator.DoEmit();
                     }
+
                     ilGenerator.CheckLabels();
                 }
 

@@ -24,6 +24,7 @@
 */
 
 using System;
+using System.Linq.Expressions;
 using System.Reflection;
 using System.Reflection.Emit;
 using System.Runtime.CompilerServices;
@@ -39,9 +40,67 @@ namespace IKVM.Java.Externs.sun.misc
     static class Unsafe
     {
 
+        static readonly ConditionalWeakTable<FieldInfo, Delegate> getFieldCache = new ConditionalWeakTable<FieldInfo, Delegate>();
+        static readonly ConditionalWeakTable<FieldInfo, Delegate> putFieldCache = new ConditionalWeakTable<FieldInfo, Delegate>();
+
+        delegate int CompareExchangeInt32(object obj, int value, int comparand);
+        delegate long CompareExchangeInt64(object obj, long value, long comparand);
+        delegate object CompareExchangeObject(object obj, object value, object comparand);
+
+        static readonly ConditionalWeakTable<FieldInfo, CompareExchangeInt32> compareExchangeInt32Cache = new ConditionalWeakTable<FieldInfo, CompareExchangeInt32>();
+        static readonly ConditionalWeakTable<FieldInfo, CompareExchangeInt64> compareExchangeInt64Cache = new ConditionalWeakTable<FieldInfo, CompareExchangeInt64>();
+        static readonly ConditionalWeakTable<FieldInfo, CompareExchangeObject> compareExchangeObjectCache = new ConditionalWeakTable<FieldInfo, CompareExchangeObject>();
+
         public static void registerNatives()
         {
 
+        }
+
+        /// <summary>
+        /// Creates a delegate capable of accessing a field of a specific type.
+        /// </summary>
+        /// <typeparam name="TField"></typeparam>
+        /// <param name="f"></param>
+        /// <returns></returns>
+        static Func<object, TField> CreateGetFieldDelegate<TField>(FieldInfo f)
+        {
+            var p = Expression.Parameter(typeof(object));
+            return Expression.Lambda<Func<object, TField>>(Expression.Convert(Expression.Field(Expression.Convert(p, f.DeclaringType), f), typeof(TField)), p).Compile();
+        }
+
+        /// <summary>
+        /// Creates a delegate capable of accessing a field of a specific type.
+        /// </summary>
+        /// <typeparam name="TField"></typeparam>
+        /// <param name="f"></param>
+        /// <returns></returns>
+        static Func<object, TField> GetOrCreateGetFieldDelegate<TField>(FieldInfo f)
+        {
+            return (Func<object, TField>)getFieldCache.GetValue(f, _ => CreateGetFieldDelegate<TField>(_));
+        }
+
+        /// <summary>
+        /// Creates a delegate capable of accessing a field of a specific type.
+        /// </summary>
+        /// <typeparam name="TField"></typeparam>
+        /// <param name="f"></param>
+        /// <returns></returns>
+        static Action<object, TField> CreatePutFieldDelegate<TField>(FieldInfo f)
+        {
+            var p = Expression.Parameter(typeof(object));
+            var v = Expression.Parameter(typeof(TField));
+            return Expression.Lambda<Action<object, TField>>(Expression.Assign(Expression.Field(Expression.Convert(p, f.DeclaringType), f), v)).Compile();
+        }
+
+        /// <summary>
+        /// Creates a delegate capable of assigning a field of a specific type.
+        /// </summary>
+        /// <typeparam name="TField"></typeparam>
+        /// <param name="f"></param>
+        /// <returns></returns>
+        static Action<object, TField> GetOrCreatePutFieldDelegate<TField>(FieldInfo f)
+        {
+            return (Action<object, TField>)putFieldCache.GetValue(f, _ => CreatePutFieldDelegate<TField>(_));
         }
 
         public static int getInt(object self, object o, long offset)
@@ -57,9 +116,9 @@ namespace IKVM.Java.Externs.sun.misc
             {
                 try
                 {
-                    return GetField(offset).getInt(o);
+                    return GetOrCreateGetFieldDelegate<int>(GetFieldInfo(offset))(o);
                 }
-                catch (global::java.lang.IllegalAccessException e)
+                catch (Exception e)
                 {
                     throw (global::java.lang.InternalError)new global::java.lang.InternalError().initCause(e);
                 }
@@ -80,9 +139,9 @@ namespace IKVM.Java.Externs.sun.misc
             {
                 try
                 {
-                    GetField(offset).setInt(o, x);
+                    GetOrCreatePutFieldDelegate<int>(GetFieldInfo(offset))(o, x);
                 }
-                catch (global::java.lang.IllegalAccessException e)
+                catch (Exception e)
                 {
                     throw (global::java.lang.InternalError)new global::java.lang.InternalError().initCause(e);
                 }
@@ -103,9 +162,9 @@ namespace IKVM.Java.Externs.sun.misc
             {
                 try
                 {
-                    return GetField(offset).get(o);
+                    return GetOrCreateGetFieldDelegate<object>(GetFieldInfo(offset))(o);
                 }
-                catch (global::java.lang.IllegalAccessException e)
+                catch (Exception e)
                 {
                     throw (global::java.lang.InternalError)new global::java.lang.InternalError().initCause(e);
                 }
@@ -126,9 +185,9 @@ namespace IKVM.Java.Externs.sun.misc
             {
                 try
                 {
-                    GetField(offset).set(o, x);
+                    GetOrCreatePutFieldDelegate<object>(GetFieldInfo(offset))(o, x);
                 }
-                catch (global::java.lang.IllegalAccessException e)
+                catch (Exception e)
                 {
                     throw (global::java.lang.InternalError)new global::java.lang.InternalError().initCause(e);
                 }
@@ -149,9 +208,9 @@ namespace IKVM.Java.Externs.sun.misc
             {
                 try
                 {
-                    return GetField(offset).getBoolean(o);
+                    return GetOrCreateGetFieldDelegate<bool>(GetFieldInfo(offset))(o);
                 }
-                catch (global::java.lang.IllegalAccessException e)
+                catch (Exception e)
                 {
                     throw (global::java.lang.InternalError)new global::java.lang.InternalError().initCause(e);
                 }
@@ -172,9 +231,9 @@ namespace IKVM.Java.Externs.sun.misc
             {
                 try
                 {
-                    GetField(offset).setBoolean(o, x);
+                    GetOrCreatePutFieldDelegate<bool>(GetFieldInfo(offset))(o, x);
                 }
-                catch (global::java.lang.IllegalAccessException e)
+                catch (Exception e)
                 {
                     throw (global::java.lang.InternalError)new global::java.lang.InternalError().initCause(e);
                 }
@@ -195,9 +254,9 @@ namespace IKVM.Java.Externs.sun.misc
             {
                 try
                 {
-                    return GetField(offset).getByte(o);
+                    return GetOrCreateGetFieldDelegate<byte>(GetFieldInfo(offset))(o);
                 }
-                catch (global::java.lang.IllegalAccessException e)
+                catch (Exception e)
                 {
                     throw (global::java.lang.InternalError)new global::java.lang.InternalError().initCause(e);
                 }
@@ -218,9 +277,9 @@ namespace IKVM.Java.Externs.sun.misc
             {
                 try
                 {
-                    GetField(offset).setByte(o, x);
+                    GetOrCreatePutFieldDelegate<byte>(GetFieldInfo(offset))(o, x);
                 }
-                catch (global::java.lang.IllegalAccessException e)
+                catch (Exception e)
                 {
                     throw (global::java.lang.InternalError)new global::java.lang.InternalError().initCause(e);
                 }
@@ -241,9 +300,9 @@ namespace IKVM.Java.Externs.sun.misc
             {
                 try
                 {
-                    return GetField(offset).getShort(o);
+                    return GetOrCreateGetFieldDelegate<short>(GetFieldInfo(offset))(o);
                 }
-                catch (global::java.lang.IllegalAccessException e)
+                catch (Exception e)
                 {
                     throw (global::java.lang.InternalError)new global::java.lang.InternalError().initCause(e);
                 }
@@ -264,9 +323,9 @@ namespace IKVM.Java.Externs.sun.misc
             {
                 try
                 {
-                    GetField(offset).setShort(o, x);
+                    GetOrCreatePutFieldDelegate<short>(GetFieldInfo(offset))(o, x);
                 }
-                catch (global::java.lang.IllegalAccessException e)
+                catch (Exception e)
                 {
                     throw (global::java.lang.InternalError)new global::java.lang.InternalError().initCause(e);
                 }
@@ -287,9 +346,9 @@ namespace IKVM.Java.Externs.sun.misc
             {
                 try
                 {
-                    return GetField(offset).getChar(o);
+                    return GetOrCreateGetFieldDelegate<char>(GetFieldInfo(offset))(o);
                 }
-                catch (global::java.lang.IllegalAccessException e)
+                catch (Exception e)
                 {
                     throw (global::java.lang.InternalError)new global::java.lang.InternalError().initCause(e);
                 }
@@ -310,9 +369,9 @@ namespace IKVM.Java.Externs.sun.misc
             {
                 try
                 {
-                    GetField(offset).setChar(o, x);
+                    GetOrCreatePutFieldDelegate<char>(GetFieldInfo(offset))(o, x);
                 }
-                catch (global::java.lang.IllegalAccessException e)
+                catch (Exception e)
                 {
                     throw (global::java.lang.InternalError)new global::java.lang.InternalError().initCause(e);
                 }
@@ -333,9 +392,9 @@ namespace IKVM.Java.Externs.sun.misc
             {
                 try
                 {
-                    return GetField(offset).getLong(o);
+                    return GetOrCreateGetFieldDelegate<long>(GetFieldInfo(offset))(o);
                 }
-                catch (global::java.lang.IllegalAccessException e)
+                catch (Exception e)
                 {
                     throw (global::java.lang.InternalError)new global::java.lang.InternalError().initCause(e);
                 }
@@ -356,9 +415,9 @@ namespace IKVM.Java.Externs.sun.misc
             {
                 try
                 {
-                    GetField(offset).setLong(o, x);
+                    GetOrCreatePutFieldDelegate<long>(GetFieldInfo(offset))(o, x);
                 }
-                catch (global::java.lang.IllegalAccessException e)
+                catch (Exception e)
                 {
                     throw (global::java.lang.InternalError)new global::java.lang.InternalError().initCause(e);
                 }
@@ -379,9 +438,9 @@ namespace IKVM.Java.Externs.sun.misc
             {
                 try
                 {
-                    return GetField(offset).getFloat(o);
+                    return GetOrCreateGetFieldDelegate<float>(GetFieldInfo(offset))(o);
                 }
-                catch (global::java.lang.IllegalAccessException e)
+                catch (Exception e)
                 {
                     throw (global::java.lang.InternalError)new global::java.lang.InternalError().initCause(e);
                 }
@@ -402,9 +461,9 @@ namespace IKVM.Java.Externs.sun.misc
             {
                 try
                 {
-                    GetField(offset).setFloat(o, x);
+                    GetOrCreatePutFieldDelegate<float>(GetFieldInfo(offset))(o, x);
                 }
-                catch (global::java.lang.IllegalAccessException e)
+                catch (Exception e)
                 {
                     throw (global::java.lang.InternalError)new global::java.lang.InternalError().initCause(e);
                 }
@@ -425,9 +484,9 @@ namespace IKVM.Java.Externs.sun.misc
             {
                 try
                 {
-                    return GetField(offset).getDouble(o);
+                    return GetOrCreateGetFieldDelegate<double>(GetFieldInfo(offset))(o);
                 }
-                catch (global::java.lang.IllegalAccessException e)
+                catch (Exception e)
                 {
                     throw (global::java.lang.InternalError)new global::java.lang.InternalError().initCause(e);
                 }
@@ -448,9 +507,9 @@ namespace IKVM.Java.Externs.sun.misc
             {
                 try
                 {
-                    GetField(offset).setDouble(o, x);
+                    GetOrCreatePutFieldDelegate<double>(GetFieldInfo(offset))(o, x);
                 }
-                catch (global::java.lang.IllegalAccessException e)
+                catch (Exception e)
                 {
                     throw (global::java.lang.InternalError)new global::java.lang.InternalError().initCause(e);
                 }
@@ -997,6 +1056,16 @@ namespace IKVM.Java.Externs.sun.misc
             throw ee;
         }
 
+        /// <summary>
+        /// Implementation of native method 'compareAndSwapObject'.
+        /// </summary>
+        /// <param name="self"></param>
+        /// <param name="o"></param>
+        /// <param name="offset"></param>
+        /// <param name="expected"></param>
+        /// <param name="x"></param>
+        /// <returns></returns>
+        /// <exception cref="InvalidOperationException"></exception>
         public static bool compareAndSwapObject(object self, object o, long offset, object expected, object x)
         {
 #if FIRST_PASS
@@ -1008,17 +1077,27 @@ namespace IKVM.Java.Externs.sun.misc
             }
             else
             {
-                if (offset >= cacheCompareExchangeObject.Length || cacheCompareExchangeObject[offset] == null)
-                {
-                    InterlockedResize(ref cacheCompareExchangeObject, (int)offset + 1);
-                    cacheCompareExchangeObject[offset] = (CompareExchangeObject)CreateCompareExchangeDelegate(offset);
-                }
+                var field = GetFieldInfo(offset);
+                if (field == null)
+                    throw new InvalidOperationException();
 
-                return cacheCompareExchangeObject[offset](o, x, expected) == expected;
+                // get or create delegate for field
+                var d = compareExchangeObjectCache.GetValue(field, _ => (CompareExchangeObject)CreateCompareExchangeDelegate(_));
+                return d(o, x, expected) == expected;
             }
 #endif
         }
 
+        /// <summary>
+        /// Implementation of native method 'compareAndSwapInt'.
+        /// </summary>
+        /// <param name="self"></param>
+        /// <param name="o"></param>
+        /// <param name="offset"></param>
+        /// <param name="expected"></param>
+        /// <param name="x"></param>
+        /// <returns></returns>
+        /// <exception cref="InvalidOperationException"></exception>
         public static bool compareAndSwapInt(object self, object o, long offset, int expected, int x)
         {
 #if FIRST_PASS
@@ -1044,17 +1123,27 @@ namespace IKVM.Java.Externs.sun.misc
             }
             else
             {
-                if (offset >= cacheCompareExchangeInt32.Length || cacheCompareExchangeInt32[offset] == null)
-                {
-                    InterlockedResize(ref cacheCompareExchangeInt32, (int)offset + 1);
-                    cacheCompareExchangeInt32[offset] = (CompareExchangeInt32)CreateCompareExchangeDelegate(offset);
-                }
+                var field = GetFieldInfo(offset);
+                if (field == null)
+                    throw new InvalidOperationException();
 
-                return cacheCompareExchangeInt32[offset](o, x, expected) == expected;
+                // get or create delegate for field
+                var d = compareExchangeInt32Cache.GetValue(field, _ => (CompareExchangeInt32)CreateCompareExchangeDelegate(_));
+                return d(o, x, expected) == expected;
             }
 #endif
         }
 
+        /// <summary>
+        /// Implementation of native method 'compareAndSwapLong'.
+        /// </summary>
+        /// <param name="self"></param>
+        /// <param name="o"></param>
+        /// <param name="offset"></param>
+        /// <param name="expected"></param>
+        /// <param name="x"></param>
+        /// <returns></returns>
+        /// <exception cref="InvalidOperationException"></exception>
         public static bool compareAndSwapLong(object self, object o, long offset, long expected, long x)
         {
 #if FIRST_PASS
@@ -1080,17 +1169,48 @@ namespace IKVM.Java.Externs.sun.misc
             }
             else
             {
-                if (offset >= cacheCompareExchangeInt64.Length || cacheCompareExchangeInt64[offset] == null)
-                {
-                    InterlockedResize(ref cacheCompareExchangeInt64, (int)offset + 1);
-                    cacheCompareExchangeInt64[offset] = (CompareExchangeInt64)CreateCompareExchangeDelegate(offset);
-                }
+                var field = GetFieldInfo(offset);
+                if (field == null)
+                    throw new InvalidOperationException();
 
-                return cacheCompareExchangeInt64[offset](o, x, expected) == expected;
+                // get or create delegate for field
+                var d = compareExchangeInt64Cache.GetValue(field, _ => (CompareExchangeInt64)CreateCompareExchangeDelegate(_));
+                return d(o, x, expected) == expected;
             }
 #endif
         }
 
+        /// <summary>
+        /// Implementation of native method 'getObjectVolatile'.
+        /// </summary>
+        /// <param name="self"></param>
+        /// <param name="o"></param>
+        /// <param name="offset"></param>
+        /// <returns></returns>
+        public static object getObjectVolatile(object self, object o, long offset)
+        {
+#if FIRST_PASS
+            throw new NotImplementedException();
+#else
+            if (o is object[] array)
+            {
+                lock (self)
+                    return array[(int)offset];
+            }
+            else
+            {
+                return getObject(self, o, offset);
+            }
+#endif
+        }
+
+        /// <summary>
+        /// Implementation of native method 'putObjectVolatile'.
+        /// </summary>
+        /// <param name="self"></param>
+        /// <param name="o"></param>
+        /// <param name="offset"></param>
+        /// <param name="x"></param>
         public static void putObjectVolatile(object self, object o, long offset, object x)
         {
 #if FIRST_PASS
@@ -1103,23 +1223,18 @@ namespace IKVM.Java.Externs.sun.misc
             }
             else
             {
-                var field = GetField(offset);
-
-                lock (field)
-                {
-                    try
-                    {
-                        field.set(o, x);
-                    }
-                    catch (global::java.lang.IllegalAccessException e)
-                    {
-                        throw (global::java.lang.InternalError)new global::java.lang.InternalError().initCause(e);
-                    }
-                }
+                putObject(self, o, offset, x);
             }
 #endif
         }
 
+        /// <summary>
+        /// Implementation of native method 'getIntVolatile'.
+        /// </summary>
+        /// <param name="self"></param>
+        /// <param name="o"></param>
+        /// <param name="offset"></param>
+        /// <returns></returns>
         public static int getIntVolatile(object self, object o, long offset)
         {
 #if FIRST_PASS
@@ -1132,23 +1247,18 @@ namespace IKVM.Java.Externs.sun.misc
             }
             else
             {
-                var field = GetField(offset);
-
-                lock (field)
-                {
-                    try
-                    {
-                        return field.getInt(o);
-                    }
-                    catch (global::java.lang.IllegalAccessException e)
-                    {
-                        throw (global::java.lang.InternalError)new global::java.lang.InternalError().initCause(e);
-                    }
-                }
+                return getInt(self, o, offset);
             }
 #endif
         }
 
+        /// <summary>
+        /// Implementation of native method 'putIntVolatile'.
+        /// </summary>
+        /// <param name="self"></param>
+        /// <param name="o"></param>
+        /// <param name="offset"></param>
+        /// <param name="x"></param>
         public static void putIntVolatile(object self, object o, long offset, int x)
         {
 #if FIRST_PASS
@@ -1157,67 +1267,171 @@ namespace IKVM.Java.Externs.sun.misc
             if (o is Array array)
             {
                 lock (self)
-                    WriteInt32(array, offset, x);
+                    putInt(self, array, offset, x);
             }
             else
             {
-                var field = GetField(offset);
-
-                lock (field)
-                {
-                    try
-                    {
-                        field.setInt(o, x);
-                    }
-                    catch (global::java.lang.IllegalAccessException e)
-                    {
-                        throw (global::java.lang.InternalError)new global::java.lang.InternalError().initCause(e);
-                    }
-                }
+                lock (GetFieldInfo(offset))
+                    putInt(self, o, offset, x);
             }
 #endif
         }
 
+        /// <summary>
+        /// Implementation of native method 'getBooleanVolatile'.
+        /// </summary>
+        /// <param name="self"></param>
+        /// <param name="o"></param>
+        /// <param name="offset"></param>
+        /// <returns></returns>
         public static bool getBooleanVolatile(object self, object o, long offset)
         {
             return getBoolean(self, o, offset);
         }
 
+        /// <summary>
+        /// Implementation of native method 'putBooleanVolatile'.
+        /// </summary>
+        /// <param name="self"></param>
+        /// <param name="o"></param>
+        /// <param name="offset"></param>
+        /// <param name="x"></param>
         public static void putBooleanVolatile(object self, object o, long offset, bool x)
         {
-            putBoolean(self, o, offset, x);
+#if FIRST_PASS
+            throw new NotImplementedException();
+#else
+            if (o is Array array)
+            {
+                lock (self)
+                    putBoolean(self, array, offset, x);
+            }
+            else
+            {
+                lock (GetFieldInfo(offset))
+                    putBoolean(self, o, offset, x);
+            }
+#endif
         }
 
+        /// <summary>
+        /// Implementation of native method 'getByteVolatile'.
+        /// </summary>
+        /// <param name="self"></param>
+        /// <param name="o"></param>
+        /// <param name="offset"></param>
+        /// <returns></returns>
         public static byte getByteVolatile(object self, object o, long offset)
         {
             return getByte(self, o, offset);
         }
 
+        /// <summary>
+        /// Implementation of native method 'putByteVolatile'.
+        /// </summary>
+        /// <param name="self"></param>
+        /// <param name="o"></param>
+        /// <param name="offset"></param>
+        /// <param name="x"></param>
         public static void putByteVolatile(object self, object o, long offset, byte x)
         {
-            putByte(self, o, offset, x);
+#if FIRST_PASS
+            throw new NotImplementedException();
+#else
+            if (o is Array array)
+            {
+                lock (self)
+                    putByte(self, array, offset, x);
+            }
+            else
+            {
+                lock (GetFieldInfo(offset))
+                    putByte(self, o, offset, x);
+            }
+#endif
         }
 
+        /// <summary>
+        /// Implementation of native method 'getShortVolatile'.
+        /// </summary>
+        /// <param name="self"></param>
+        /// <param name="o"></param>
+        /// <param name="offset"></param>
+        /// <returns></returns>
         public static short getShortVolatile(object self, object o, long offset)
         {
             return getShort(self, o, offset);
         }
 
+        /// <summary>
+        /// Implementation of native method 'putShortVolatile'.
+        /// </summary>
+        /// <param name="self"></param>
+        /// <param name="o"></param>
+        /// <param name="offset"></param>
+        /// <param name="x"></param>
         public static void putShortVolatile(object self, object o, long offset, short x)
         {
-            putShort(self, o, offset, x);
+#if FIRST_PASS
+            throw new NotImplementedException();
+#else
+            if (o is Array array)
+            {
+                lock (self)
+                    putShort(self, array, offset, x);
+            }
+            else
+            {
+                lock (GetFieldInfo(offset))
+                    putShort(self, o, offset, x);
+            }
+#endif
         }
 
+        /// <summary>
+        /// Implementation of native method 'getCharVolatile'.
+        /// </summary>
+        /// <param name="self"></param>
+        /// <param name="o"></param>
+        /// <param name="offset"></param>
+        /// <returns></returns>
         public static char getCharVolatile(object self, object o, long offset)
         {
             return getChar(self, o, offset);
         }
 
+        /// <summary>
+        /// Implementation of native method 'putCharVolatile'.
+        /// </summary>
+        /// <param name="self"></param>
+        /// <param name="o"></param>
+        /// <param name="offset"></param>
+        /// <param name="x"></param>
         public static void putCharVolatile(object self, object o, long offset, char x)
         {
-            putChar(self, o, offset, x);
+#if FIRST_PASS
+            throw new NotImplementedException();
+#else
+            if (o is Array array)
+            {
+                lock (self)
+                    putChar(self, array, offset, x);
+            }
+            else
+            {
+                lock (GetFieldInfo(offset))
+                    putChar(self, o, offset, x);
+            }
+#endif
         }
 
+        /// <summary>
+        /// Implementation of native method 'getLongVolatile'.
+        /// </summary>
+        /// <param name="self"></param>
+        /// <param name="o"></param>
+        /// <param name="offset"></param>
+        /// <returns></returns>
         public static long getLongVolatile(object self, object o, long offset)
         {
 #if FIRST_PASS
@@ -1230,19 +1444,8 @@ namespace IKVM.Java.Externs.sun.misc
             }
             else
             {
-                var field = GetField(offset);
-
-                lock (field)
-                {
-                    try
-                    {
-                        return field.getLong(o);
-                    }
-                    catch (global::java.lang.IllegalAccessException e)
-                    {
-                        throw (global::java.lang.InternalError)new global::java.lang.InternalError().initCause(e);
-                    }
-                }
+                lock (GetFieldInfo(offset))
+                    return getLong(self, o, offset);
             }
 #endif
         }
@@ -1259,19 +1462,8 @@ namespace IKVM.Java.Externs.sun.misc
             }
             else
             {
-                var field = GetField(offset);
-
-                lock (field)
-                {
-                    try
-                    {
-                        field.setLong(o, x);
-                    }
-                    catch (global::java.lang.IllegalAccessException e)
-                    {
-                        throw (global::java.lang.InternalError)new global::java.lang.InternalError().initCause(e);
-                    }
-                }
+                lock (GetFieldInfo(offset))
+                    putLong(self, o, offset, x);
             }
 #endif
         }
@@ -1283,7 +1475,16 @@ namespace IKVM.Java.Externs.sun.misc
 
         public static void putFloatVolatile(object self, object o, long offset, float x)
         {
-            putFloat(self, o, offset, x);
+            if (o is Array array)
+            {
+                lock (self)
+                    putFloat(self, array, offset, x);
+            }
+            else
+            {
+                lock (GetFieldInfo(offset))
+                    putFloat(self, o, offset, x);
+            }
         }
 
         public static double getDoubleVolatile(object self, object o, long offset)
@@ -1294,8 +1495,16 @@ namespace IKVM.Java.Externs.sun.misc
 
         public static void putDoubleVolatile(object self, object o, long offset, double x)
         {
-            lock (self)
-                putDouble(self, o, offset, x);
+            if (o is Array array)
+            {
+                lock (self)
+                    putDouble(self, array, offset, x);
+            }
+            else
+            {
+                lock (GetFieldInfo(offset))
+                    putDouble(self, o, offset, x);
+            }
         }
 
         public static void putOrderedObject(object self, object o, long offset, object x)
@@ -1447,41 +1656,15 @@ namespace IKVM.Java.Externs.sun.misc
             handle.Free();
         }
 
-        delegate int CompareExchangeInt32(object obj, int value, int comparand);
-        delegate long CompareExchangeInt64(object obj, long value, long comparand);
-        delegate object CompareExchangeObject(object obj, object value, object comparand);
-        static CompareExchangeInt32[] cacheCompareExchangeInt32 = new CompareExchangeInt32[0];
-        static CompareExchangeInt64[] cacheCompareExchangeInt64 = new CompareExchangeInt64[0];
-        static CompareExchangeObject[] cacheCompareExchangeObject = new CompareExchangeObject[0];
-
-        static void InterlockedResize<T>(ref T[] array, int newSize)
-        {
-            for (; ; )
-            {
-                T[] oldArray = array;
-                T[] newArray = oldArray;
-                if (oldArray.Length >= newSize)
-                {
-                    return;
-                }
-                Array.Resize(ref newArray, newSize);
-                if (Interlocked.CompareExchange(ref array, newArray, oldArray) == oldArray)
-                {
-                    return;
-                }
-            }
-        }
-
 #if !FIRST_PASS
 
         /// <summary>
         /// Creates a dynamic method that implements the compare and exchange logic for a given field.
         /// </summary>
-        /// <param name="fieldOffset"></param>
+        /// <param name="field"></param>
         /// <returns></returns>
-        static Delegate CreateCompareExchangeDelegate(long fieldOffset)
+        static Delegate CreateCompareExchangeDelegate(FieldInfo field)
         {
-            var field = GetFieldInfo(fieldOffset);
             var primitive = field.FieldType.IsPrimitive;
             var signatureType = primitive ? field.FieldType : typeof(object);
 

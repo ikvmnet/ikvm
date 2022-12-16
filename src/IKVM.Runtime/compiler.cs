@@ -650,15 +650,16 @@ namespace IKVM.Runtime
 
 		internal static void Compile(DynamicTypeWrapper.FinishContext context, TypeWrapper host, DynamicTypeWrapper clazz, MethodWrapper mw, ClassFile classFile, ClassFile.Method m, CodeEmitter ilGenerator, ref bool nonleaf)
 		{
-			ClassLoaderWrapper classLoader = clazz.GetClassLoader();
+			var classLoader = clazz.GetClassLoader();
 			if (classLoader.EmitDebugInfo)
 			{
 				if (classFile.SourcePath != null)
 				{
 					ilGenerator.DefineSymbolDocument(classLoader.GetTypeWrapperFactory().ModuleBuilder, classFile.SourcePath, SymLanguageType.Java, Guid.Empty, SymDocumentType.Text);
+
 					// the very first instruction in the method must have an associated line number, to be able
 					// to step into the method in Visual Studio .NET
-					ClassFile.Method.LineNumberTableEntry[] table = m.LineNumberTableAttribute;
+					var table = m.LineNumberTableAttribute;
 					if (table != null)
 					{
 						int firstPC = int.MaxValue;
@@ -671,10 +672,9 @@ namespace IKVM.Runtime
 								firstPC = table[i].start_pc;
 							}
 						}
+
 						if (firstLine > 0)
-						{
 							ilGenerator.SetLineNumber((ushort)firstLine);
-						}
 					}
 				}
 			}
@@ -694,7 +694,7 @@ namespace IKVM.Runtime
 			catch (VerifyError x)
 			{
 #if IMPORTER
-			classLoader.IssueMessage(Message.EmittedVerificationError, classFile.Name + "." + m.Name + m.Signature, x.Message);
+				classLoader.IssueMessage(Message.EmittedVerificationError, classFile.Name + "." + m.Name + m.Signature, x.Message);
 #endif
 				Tracer.Error(Tracer.Verifier, x.ToString());
 				clazz.SetHasVerifyError();
@@ -706,14 +706,16 @@ namespace IKVM.Runtime
 			catch (ClassFormatError x)
 			{
 #if IMPORTER
-			classLoader.IssueMessage(Message.EmittedClassFormatError, classFile.Name + "." + m.Name + m.Signature, x.Message);
+				classLoader.IssueMessage(Message.EmittedClassFormatError, classFile.Name + "." + m.Name + m.Signature, x.Message);
 #endif
 				Tracer.Error(Tracer.Verifier, x.ToString());
 				clazz.SetHasClassFormatError();
 				ilGenerator.EmitThrow("java.lang.ClassFormatError", x.Message);
 				return;
 			}
+
 			Profiler.Enter("Compile");
+
 			try
 			{
 				if (m.IsSynchronized && m.IsStatic)
@@ -724,7 +726,7 @@ namespace IKVM.Runtime
 					ilGenerator.Emit(OpCodes.Stloc, monitor);
 					ilGenerator.EmitMonitorEnter();
 					ilGenerator.BeginExceptionBlock();
-					Block b = new Block(c, 0, int.MaxValue, -1, new List<object>(), true);
+					var b = new Block(c, 0, int.MaxValue, -1, new List<object>(), true);
 					c.Compile(b, 0);
 					b.Leave();
 					ilGenerator.BeginFinallyBlock();
@@ -736,10 +738,11 @@ namespace IKVM.Runtime
 				}
 				else
 				{
-					Block b = new Block(c, 0, int.MaxValue, -1, null, false);
+					var b = new Block(c, 0, int.MaxValue, -1, null, false);
 					c.Compile(b, 0);
 					b.Leave();
 				}
+
 				nonleaf = c.nonleaf;
 			}
 			finally
@@ -1234,13 +1237,11 @@ namespace IKVM.Runtime
 				{
 					case NormalizedByteCode.__getstatic:
 						{
-							ClassFile.ConstantPoolItemFieldref cpi = classFile.GetFieldref(instr.Arg1);
+							var cpi = classFile.GetFieldref(instr.Arg1);
 							if (cpi.GetClassType() != clazz)
-							{
-								// we may trigger a static initializer, which is equivalent to a call
-								nonleaf = true;
-							}
-							FieldWrapper field = cpi.GetField();
+								nonleaf = true; // we may trigger a static initializer, which is equivalent to a call
+
+							var field = cpi.GetField();
 							field.EmitGet(ilGenerator);
 							field.FieldTypeWrapper.EmitConvSignatureTypeToStackType(ilGenerator);
 							break;
@@ -1268,12 +1269,9 @@ namespace IKVM.Runtime
 						}
 					case NormalizedByteCode.__putstatic:
 						{
-							ClassFile.ConstantPoolItemFieldref cpi = classFile.GetFieldref(instr.Arg1);
+							var cpi = classFile.GetFieldref(instr.Arg1);
 							if (cpi.GetClassType() != clazz)
-							{
-								// we may trigger a static initializer, which is equivalent to a call
-								nonleaf = true;
-							}
+								nonleaf = true; // we may trigger a static initializer, which is equivalent to a call
 							FieldWrapper field = cpi.GetField();
 							TypeWrapper tw = field.FieldTypeWrapper;
 							tw.EmitConvStackTypeToSignatureType(ilGenerator, ma.GetStackTypeWrapper(i, 0));
@@ -1359,7 +1357,7 @@ namespace IKVM.Runtime
 						break;
 					case NormalizedByteCode.__invokedynamic:
 						{
-							ClassFile.ConstantPoolItemInvokeDynamic cpi = classFile.GetInvokeDynamic(instr.Arg1);
+							var cpi = classFile.GetInvokeDynamic(instr.Arg1);
 							CastInterfaceArgs(null, cpi.GetArgTypes(), i, false);
 							if (!LambdaMetafactory.Emit(context, classFile, instr.Arg1, cpi, ilGenerator))
 							{
@@ -1401,15 +1399,15 @@ namespace IKVM.Runtime
 					case NormalizedByteCode.__invokespecial:
 					case NormalizedByteCode.__methodhandle_invoke:
 						{
-							bool isinvokespecial = instr.NormalizedOpCode == NormalizedByteCode.__invokespecial
+							var isinvokespecial = instr.NormalizedOpCode == NormalizedByteCode.__invokespecial
 								|| instr.NormalizedOpCode == NormalizedByteCode.__dynamic_invokespecial
 								|| instr.NormalizedOpCode == NormalizedByteCode.__privileged_invokespecial;
-							MethodWrapper method = GetMethodCallEmitter(instr.NormalizedOpCode, instr.Arg1);
-							int argcount = method.GetParameters().Length;
-							TypeWrapper type = ma.GetRawStackTypeWrapper(i, argcount);
+							var method = GetMethodCallEmitter(instr.NormalizedOpCode, instr.Arg1);
+							var argcount = method.GetParameters().Length;
+							var type = ma.GetRawStackTypeWrapper(i, argcount);
 							TypeWrapper thisType = ComputeThisType(type, method, instr.NormalizedOpCode);
 
-							EmitIntrinsicContext eic = new EmitIntrinsicContext(method, context, ilGenerator, ma, i, mw, classFile, code, flags);
+							var eic = new EmitIntrinsicContext(method, context, ilGenerator, ma, i, mw, classFile, code, flags);
 							if (method.IsIntrinsic && method.EmitIntrinsic(eic))
 							{
 								nonleaf |= eic.NonLeaf;
