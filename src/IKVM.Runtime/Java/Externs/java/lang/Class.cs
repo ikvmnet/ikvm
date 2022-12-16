@@ -35,8 +35,11 @@ namespace IKVM.Java.Externs.java.lang
         public static global::java.lang.Class forName0(string name, bool initialize, global::java.lang.ClassLoader loader, global::java.lang.Class caller)
         {
 #if FIRST_PASS
-            return null;
+            throw new NotImplementedException();
 #else
+            if (name == null)
+                throw new global::java.lang.NullPointerException();
+
             //Console.WriteLine("forName: " + name + ", loader = " + loader);
             TypeWrapper tw = null;
             if (name.IndexOf(',') > 0)
@@ -523,7 +526,7 @@ namespace IKVM.Java.Externs.java.lang
         public static object getDeclaredMethods0(global::java.lang.Class thisClass, bool publicOnly)
         {
 #if FIRST_PASS
-            return null;
+            throw new NotImplementedException();
 #else
             Profiler.Enter("Class.getDeclaredMethods0");
             try

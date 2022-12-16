@@ -179,8 +179,8 @@ namespace IKVM.Internal
         private static readonly Type typeofFloatConverter = StaticCompiler.GetRuntimeType("IKVM.Runtime.FloatConverter");
         private static readonly Type typeofDoubleConverter = StaticCompiler.GetRuntimeType("IKVM.Runtime.DoubleConverter");
 #else
-		private static readonly Type typeofFloatConverter = typeof(IKVM.Runtime.FloatConverter);
-		private static readonly Type typeofDoubleConverter = typeof(IKVM.Runtime.DoubleConverter);
+        private static readonly Type typeofFloatConverter = typeof(IKVM.Runtime.FloatConverter);
+        private static readonly Type typeofDoubleConverter = typeof(IKVM.Runtime.DoubleConverter);
 #endif
 
         private static Dictionary<IntrinsicKey, Emitter> Register()
@@ -293,6 +293,7 @@ namespace IKVM.Internal
         }
 
 #if IMPORTER
+
         // this intrinsifies the following two patterns:
         //   unsafe.objectFieldOffset(XXX.class.getDeclaredField("xxx"));
         // and
@@ -306,6 +307,7 @@ namespace IKVM.Internal
                 // we can only do this optimization when compiling the trusted core classes
                 return false;
             }
+
             TypeWrapper fieldClass;
             if (eic.MatchRange(-2, 4)
                 && eic.Match(-2, NormalizedByteCode.__ldc)
@@ -331,35 +333,36 @@ namespace IKVM.Internal
             {
                 return false;
             }
+
             FieldWrapper field = null;
-            string fieldName = eic.GetStringLiteral(-1);
-            foreach (FieldWrapper fw in fieldClass.GetFields())
+            var fieldName = eic.GetStringLiteral(-1);
+            foreach (var fw in fieldClass.GetFields())
             {
                 if (fw.Name == fieldName)
                 {
                     if (field != null)
-                    {
                         return false;
-                    }
+
                     field = fw;
                 }
             }
+
             if (field == null || field.IsStatic)
-            {
                 return false;
-            }
-            ClassFile.ConstantPoolItemMI cpi = eic.GetMethodref(1);
+
+            var cpi = eic.GetMethodref(1);
             if (cpi.Class == "sun.misc.Unsafe" && cpi.Name == "objectFieldOffset" && cpi.Signature == "(Ljava.lang.reflect.Field;)J")
             {
-                MethodWrapper mw = ClassLoaderWrapper.LoadClassCritical("sun.misc.Unsafe")
-                    .GetMethodWrapper("objectFieldOffset", "(Ljava.lang.Class;Ljava.lang.String;)J", false);
+                var mw = ClassLoaderWrapper.LoadClassCritical("sun.misc.Unsafe").GetMethodWrapper("objectFieldOffset", "(Ljava.lang.Class;Ljava.lang.String;)J", false);
                 mw.Link();
                 mw.EmitCallvirt(eic.Emitter);
                 eic.PatchOpCode(1, NormalizedByteCode.__nop);
                 return true;
             }
+
             return false;
         }
+
 #endif
 
         private static bool IsSafeForGetClassOptimization(TypeWrapper tw)
@@ -729,7 +732,7 @@ namespace IKVM.Internal
 
         private static bool Unsafe_compareAndSwapObject(EmitIntrinsicContext eic)
         {
-            TypeWrapper tw = eic.GetStackTypeWrapper(0, 3);
+            var tw = eic.GetStackTypeWrapper(0, 3);
             if (IsSupportedArrayTypeForUnsafeOperation(tw)
                 && eic.GetStackTypeWrapper(0, 0).IsAssignableTo(tw.ElementTypeWrapper)
                 && eic.GetStackTypeWrapper(0, 1).IsAssignableTo(tw.ElementTypeWrapper))

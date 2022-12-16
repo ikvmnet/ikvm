@@ -1,1300 +1,1142 @@
 /*
-  Copyright (C) 2006-2014 Jeroen Frijters
-
-  This software is provided 'as-is', without any express or implied
-  warranty.  In no event will the authors be held liable for any damages
-  arising from the use of this software.
-
-  Permission is granted to anyone to use this software for any purpose,
-  including commercial applications, and to alter it and redistribute it
-  freely, subject to the following restrictions:
-
-  1. The origin of this software must not be misrepresented; you must not
-     claim that you wrote the original software. If you use this software
-     in a product, an acknowledgment in the product documentation would be
-     appreciated but is not required.
-  2. Altered source versions must be plainly marked as such, and must not be
-     misrepresented as being the original software.
-  3. This notice may not be removed or altered from any source distribution.
-
-  Jeroen Frijters
-  jeroen@frijters.net
-  
-*/
+ * Copyright (c) 2000, 2013, Oracle and/or its affiliates. All rights reserved.
+ * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
+ *
+ * This code is free software; you can redistribute it and/or modify it
+ * under the terms of the GNU General Public License version 2 only, as
+ * published by the Free Software Foundation.  Oracle designates this
+ * particular file as subject to the "Classpath" exception as provided
+ * by Oracle in the LICENSE file that accompanied this code.
+ *
+ * This code is distributed in the hope that it will be useful, but WITHOUT
+ * ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or
+ * FITNESS FOR A PARTICULAR PURPOSE.  See the GNU General Public License
+ * version 2 for more details (a copy is included in the LICENSE file that
+ * accompanied this code).
+ *
+ * You should have received a copy of the GNU General Public License version
+ * 2 along with this work; if not, write to the Free Software Foundation,
+ * Inc., 51 Franklin St, Fifth Floor, Boston, MA 02110-1301 USA.
+ *
+ * Please contact Oracle, 500 Oracle Parkway, Redwood Shores, CA 94065 USA
+ * or visit www.oracle.com if you need additional information or have any
+ * questions.
+ */
 
 package sun.misc;
 
-import cli.System.Buffer;
-import cli.System.IntPtr;
-import cli.System.Runtime.InteropServices.Marshal;
-import cli.System.Security.Permissions.SecurityAction;
-import cli.System.Security.Permissions.SecurityPermissionAttribute;
-import ikvm.lang.Internal;
-import java.lang.reflect.Field;
-import java.lang.reflect.Modifier;
-import java.security.ProtectionDomain;
-import java.util.ArrayList;
+import java.security.*;
+import java.lang.reflect.*;
 
-public final class Unsafe
-{
-    public static final int INVALID_FIELD_OFFSET = -1;
-    public static final int ARRAY_BYTE_BASE_OFFSET = 0;
-    // NOTE sun.corba.Bridge actually access this field directly (via reflection),
-    // so the name must match the JDK name.
+import sun.reflect.CallerSensitive;
+import sun.reflect.Reflection;
+
+
+/**
+ * A collection of methods for performing low-level, unsafe operations.
+ * Although the class and all methods are public, use of this class is
+ * limited because only trusted code can obtain instances of it.
+ *
+ * @author John R. Rose
+ * @see #getUnsafe
+ */
+
+public final class Unsafe {
+
+    private static native void registerNatives();
+    static {
+        registerNatives();
+        sun.reflect.Reflection.registerMethodsToFilter(Unsafe.class, "getUnsafe");
+    }
+
+    private Unsafe() {}
+
     private static final Unsafe theUnsafe = new Unsafe();
-    private static final ArrayList<Field> fields = new ArrayList<Field>();
 
-    private Unsafe() { }
-
-    @sun.reflect.CallerSensitive
-    public static Unsafe getUnsafe()
-    {
-        if(!VM.isSystemDomainLoader(ikvm.internal.CallerID.getCallerID().getCallerClassLoader()))
-        {
+    /**
+     * Provides the caller with the capability of performing unsafe
+     * operations.
+     *
+     * <p> The returned <code>Unsafe</code> object should be carefully guarded
+     * by the caller, since it can be used to read and write data at arbitrary
+     * memory addresses.  It must never be passed to untrusted code.
+     *
+     * <p> Most methods in this class are very low-level, and correspond to a
+     * small number of hardware instructions (on typical machines).  Compilers
+     * are encouraged to optimize these methods accordingly.
+     *
+     * <p> Here is a suggested idiom for using unsafe operations:
+     *
+     * <blockquote><pre>
+     * class MyTrustedClass {
+     *   private static final Unsafe unsafe = Unsafe.getUnsafe();
+     *   ...
+     *   private long myCountAddress = ...;
+     *   public int getCount() { return unsafe.getByte(myCountAddress); }
+     * }
+     * </pre></blockquote>
+     *
+     * (It may assist compilers to make the local variable be
+     * <code>final</code>.)
+     *
+     * @exception  SecurityException  if a security manager exists and its
+     *             <code>checkPropertiesAccess</code> method doesn't allow
+     *             access to the system properties.
+     */
+    @CallerSensitive
+    public static Unsafe getUnsafe() {
+        Class<?> caller = Reflection.getCallerClass();
+        if (!VM.isSystemDomainLoader(caller.getClassLoader()))
             throw new SecurityException("Unsafe");
-        }
         return theUnsafe;
     }
 
-    private static native Field createFieldAndMakeAccessible(Class c, String field);
-    private static native Field copyFieldAndMakeAccessible(Field field);
+    /// peek and poke operations
+    /// (compilers should optimize these to memory ops)
 
-    // this is the intrinsified version of objectFieldOffset(XXX.class.getDeclaredField("xxx"))
-    public long objectFieldOffset(Class c, String field)
-    {
-        return allocateUnsafeFieldId(createFieldAndMakeAccessible(c, field));
-    }
+    // These work on object fields in the Java heap.
+    // They will not work on elements of packed arrays.
 
-    // NOTE we have a really lame (and slow) implementation!
-    public long objectFieldOffset(Field field)
-    {
-        if(Modifier.isStatic(field.getModifiers()))
-        {
-            throw new IllegalArgumentException();
-        }
-        return allocateUnsafeFieldId(field);
-    }
-    
-    public long staticFieldOffset(Field field)
-    {
-        if(!Modifier.isStatic(field.getModifiers()))
-        {
-            throw new IllegalArgumentException();
-        }
-        return allocateUnsafeFieldId(field);
-    }
+    /**
+     * Fetches a value from a given Java variable.
+     * More specifically, fetches a field or array element within the given
+     * object <code>o</code> at the given offset, or (if <code>o</code> is
+     * null) from the memory address whose numerical value is the given
+     * offset.
+     * <p>
+     * The results are undefined unless one of the following cases is true:
+     * <ul>
+     * <li>The offset was obtained from {@link #objectFieldOffset} on
+     * the {@link java.lang.reflect.Field} of some Java field and the object
+     * referred to by <code>o</code> is of a class compatible with that
+     * field's class.
+     *
+     * <li>The offset and object reference <code>o</code> (either null or
+     * non-null) were both obtained via {@link #staticFieldOffset}
+     * and {@link #staticFieldBase} (respectively) from the
+     * reflective {@link Field} representation of some Java field.
+     *
+     * <li>The object referred to by <code>o</code> is an array, and the offset
+     * is an integer of the form <code>B+N*S</code>, where <code>N</code> is
+     * a valid index into the array, and <code>B</code> and <code>S</code> are
+     * the values obtained by {@link #arrayBaseOffset} and {@link
+     * #arrayIndexScale} (respectively) from the array's class.  The value
+     * referred to is the <code>N</code><em>th</em> element of the array.
+     *
+     * </ul>
+     * <p>
+     * If one of the above cases is true, the call references a specific Java
+     * variable (field or array element).  However, the results are undefined
+     * if that variable is not in fact of the type returned by this method.
+     * <p>
+     * This method refers to a variable by means of two parameters, and so
+     * it provides (in effect) a <em>double-register</em> addressing mode
+     * for Java variables.  When the object reference is null, this method
+     * uses its offset as an absolute address.  This is similar in operation
+     * to methods such as {@link #getInt(long)}, which provide (in effect) a
+     * <em>single-register</em> addressing mode for non-Java variables.
+     * However, because Java variables may have a different layout in memory
+     * from non-Java variables, programmers should not assume that these
+     * two addressing modes are ever equivalent.  Also, programmers should
+     * remember that offsets from the double-register addressing mode cannot
+     * be portably confused with longs used in the single-register addressing
+     * mode.
+     *
+     * @param o Java heap object in which the variable resides, if any, else
+     *        null
+     * @param offset indication of where the variable resides in a Java heap
+     *        object, if any, else a memory address locating the variable
+     *        statically
+     * @return the value fetched from the indicated Java variable
+     * @throws RuntimeException No defined exceptions are thrown, not even
+     *         {@link NullPointerException}
+     */
+    public native int getInt(Object o, long offset);
 
+    /**
+     * Stores a value into a given Java variable.
+     * <p>
+     * The first two parameters are interpreted exactly as with
+     * {@link #getInt(Object, long)} to refer to a specific
+     * Java variable (field or array element).  The given value
+     * is stored into that variable.
+     * <p>
+     * The variable must be of the same type as the method
+     * parameter <code>x</code>.
+     *
+     * @param o Java heap object in which the variable resides, if any, else
+     *        null
+     * @param offset indication of where the variable resides in a Java heap
+     *        object, if any, else a memory address locating the variable
+     *        statically
+     * @param x the value to store into the indicated Java variable
+     * @throws RuntimeException No defined exceptions are thrown, not even
+     *         {@link NullPointerException}
+     */
+    public native void putInt(Object o, long offset, int x);
+
+    /**
+     * Fetches a reference value from a given Java variable.
+     * @see #getInt(Object, long)
+     */
+    public native Object getObject(Object o, long offset);
+
+    /**
+     * Stores a reference value into a given Java variable.
+     * <p>
+     * Unless the reference <code>x</code> being stored is either null
+     * or matches the field type, the results are undefined.
+     * If the reference <code>o</code> is non-null, car marks or
+     * other store barriers for that object (if the VM requires them)
+     * are updated.
+     * @see #putInt(Object, int, int)
+     */
+    public native void putObject(Object o, long offset, Object x);
+
+    /** @see #getInt(Object, long) */
+    public native boolean getBoolean(Object o, long offset);
+    /** @see #putInt(Object, int, int) */
+    public native void    putBoolean(Object o, long offset, boolean x);
+    /** @see #getInt(Object, long) */
+    public native byte    getByte(Object o, long offset);
+    /** @see #putInt(Object, int, int) */
+    public native void    putByte(Object o, long offset, byte x);
+    /** @see #getInt(Object, long) */
+    public native short   getShort(Object o, long offset);
+    /** @see #putInt(Object, int, int) */
+    public native void    putShort(Object o, long offset, short x);
+    /** @see #getInt(Object, long) */
+    public native char    getChar(Object o, long offset);
+    /** @see #putInt(Object, int, int) */
+    public native void    putChar(Object o, long offset, char x);
+    /** @see #getInt(Object, long) */
+    public native long    getLong(Object o, long offset);
+    /** @see #putInt(Object, int, int) */
+    public native void    putLong(Object o, long offset, long x);
+    /** @see #getInt(Object, long) */
+    public native float   getFloat(Object o, long offset);
+    /** @see #putInt(Object, int, int) */
+    public native void    putFloat(Object o, long offset, float x);
+    /** @see #getInt(Object, long) */
+    public native double  getDouble(Object o, long offset);
+    /** @see #putInt(Object, int, int) */
+    public native void    putDouble(Object o, long offset, double x);
+
+    /**
+     * This method, like all others with 32-bit offsets, was native
+     * in a previous release but is now a wrapper which simply casts
+     * the offset to a long value.  It provides backward compatibility
+     * with bytecodes compiled against 1.4.
+     * @deprecated As of 1.4.1, cast the 32-bit offset argument to a long.
+     * See {@link #staticFieldOffset}.
+     */
     @Deprecated
-    public int fieldOffset(Field original)
-    {
-        return allocateUnsafeFieldId(original);
-    }
-    
-    static int allocateUnsafeFieldId(Field original)
-    {
-        Field copy = copyFieldAndMakeAccessible(original);
-        synchronized(fields)
-        {
-            int id = fields.size();
-            fields.add(copy);
-            return id;
-        }
-    }
-
-    public int arrayBaseOffset(Class c)
-    {
-        // don't change this, the Unsafe intrinsics depend on this value
-        return 0;
-    }
-
-    public int arrayIndexScale(Class c)
-    {
-        if (c == byte[].class || c == boolean[].class)
-        {
-            return 1;
-        }
-        if (c == char[].class || c == short[].class)
-        {
-            return 2;
-        }
-        if (c == int[].class || c == float[].class || c == Object[].class)
-        {
-            return 4;
-        }
-        if (c == long[].class || c == double[].class)
-        {
-            return 8;
-        }
-        // don't change this, the Unsafe intrinsics depend on this value
-        return 1;
-    }
-
-    static Field getField(long offset)
-    {
-        synchronized(fields)
-        {
-            return fields.get((int)offset);
-        }
-    }
-
-    public final native boolean compareAndSwapObject(Object obj, long offset, Object expect, Object update);
-
-    public void putObjectVolatile(Object obj, long offset, Object newValue)
-    {
-        if(obj instanceof Object[])
-        {
-            synchronized(this)
-            {
-                ((Object[])obj)[(int)offset] = newValue;
-            }
-        }
-        else
-        {
-            Field field = getField(offset);
-            synchronized(field)
-            {
-                try
-                {
-                    field.set(obj, newValue);
-                }
-                catch(IllegalAccessException x)
-                {
-                    throw (InternalError)new InternalError().initCause(x);
-                }
-            }
-        }
-    }
-
-    public void putOrderedObject(Object obj, long offset, Object newValue)
-    {
-        putObjectVolatile(obj, offset, newValue);
-    }
-
-    public Object getObjectVolatile(Object obj, long offset)
-    {
-        if(obj instanceof Object[])
-        {
-            synchronized(this)
-            {
-                return ((Object[])obj)[(int)offset];
-            }
-        }
-        else
-        {
-            Field field = getField(offset);
-            synchronized(field)
-            {
-                try
-                {
-                    return field.get(obj);
-                }
-                catch(IllegalAccessException x)
-                {
-                    throw (InternalError)new InternalError().initCause(x);
-                }
-            }
-        }
-    }
-
-    private static native short ReadInt16(Object obj, long offset);
-    private static native int ReadInt32(Object obj, long offset);
-    private static native long ReadInt64(Object obj, long offset);
-    private static native void WriteInt16(Object obj, long offset, short value);
-    private static native void WriteInt32(Object obj, long offset, int value);
-    private static native void WriteInt64(Object obj, long offset, long value);
-
-    public final native boolean compareAndSwapInt(Object obj, long offset, int expect, int update);
-
-    public void putIntVolatile(Object obj, long offset, int newValue)
-    {
-        if (obj instanceof cli.System.Array)
-        {
-            synchronized(this)
-            {
-                WriteInt32(obj, offset, newValue);
-            }
-        }
-        else
-        {
-            Field field = getField(offset);
-            synchronized(field)
-            {
-                try
-                {
-                    field.setInt(obj, newValue);
-                }
-                catch(IllegalAccessException x)
-                {
-                    throw (InternalError)new InternalError().initCause(x);
-                }
-            }
-        }
-    }
-
-    public void putOrderedInt(Object obj, long offset, int newValue)
-    {
-        putIntVolatile(obj, offset, newValue);
-    }
-
-    public int getIntVolatile(Object obj, long offset)
-    {
-        if (obj instanceof cli.System.Array)
-        {
-            synchronized(this)
-            {
-                return ReadInt32(obj, offset);
-            }
-        }
-        else
-        {
-            Field field = getField(offset);
-            synchronized(field)
-            {
-                try
-                {
-                    return field.getInt(obj);
-                }
-                catch(IllegalAccessException x)
-                {
-                    throw (InternalError)new InternalError().initCause(x);
-                }
-            }
-        }
-    }
-
-    public final native boolean compareAndSwapLong(Object obj, long offset, long expect, long update);
-
-    public void putLongVolatile(Object obj, long offset, long newValue)
-    {
-        if (obj instanceof cli.System.Array)
-        {
-            synchronized(this)
-            {
-                WriteInt64(obj, offset, newValue);
-            }
-        }
-        else
-        {
-            Field field = getField(offset);
-            synchronized(field)
-            {
-                try
-                {
-                    field.setLong(obj, newValue);
-                }
-                catch(IllegalAccessException x)
-                {
-                    throw (InternalError)new InternalError().initCause(x);
-                }
-            }
-        }
-    }
-
-    public void putOrderedLong(Object obj, long offset, long newValue)
-    {
-        putLongVolatile(obj, offset, newValue);
-    }
-
-    public long getLongVolatile(Object obj, long offset)
-    {
-        if (obj instanceof cli.System.Array)
-        {
-            synchronized(this)
-            {
-                return ReadInt64(obj, offset);
-            }
-        }
-        else
-        {
-            Field field = getField(offset);
-            synchronized(field)
-            {
-                try
-                {
-                    return field.getLong(obj);
-                }
-                catch(IllegalAccessException x)
-                {
-                    throw (InternalError)new InternalError().initCause(x);
-                }
-            }
-        }
-    }
-
-    public void putBoolean(Object obj, long offset, boolean newValue)
-    {
-        if (obj instanceof cli.System.Array)
-        {
-            Buffer.SetByte((cli.System.Array)obj, (int)offset, newValue ? (byte)1 : (byte)0);
-        }
-        else
-        {
-            try
-            {
-                getField(offset).setBoolean(obj, newValue);
-            }
-            catch (IllegalAccessException x)
-            {
-                throw (InternalError)new InternalError().initCause(x);
-            }
-        }
-    }
-
-    public void putBooleanVolatile(Object obj, long offset, boolean newValue)
-    {
-        putBoolean(obj, offset, newValue);
-    }
-
-    public boolean getBoolean(Object obj, long offset)
-    {
-        if (obj instanceof cli.System.Array)
-        {
-            return Buffer.GetByte((cli.System.Array)obj, (int)offset) != 0;
-        }
-        else
-        {
-            try
-            {
-                return getField(offset).getBoolean(obj);
-            }
-            catch (IllegalAccessException x)
-            {
-                throw (InternalError)new InternalError().initCause(x);
-            }
-        }
-    }
-
-    public boolean getBooleanVolatile(Object obj, long offset)
-    {
-        return getBoolean(obj, offset);
-    }
-
-    public void putByte(Object obj, long offset, byte newValue)
-    {
-        if (obj instanceof cli.System.Array)
-        {
-            Buffer.SetByte((cli.System.Array)obj, (int)offset, newValue);
-        }
-        else
-        {
-            try
-            {
-                getField(offset).setByte(obj, newValue);
-            }
-            catch (IllegalAccessException x)
-            {
-                throw (InternalError)new InternalError().initCause(x);
-            }
-        }
-    }
-
-    public void putByteVolatile(Object obj, long offset, byte newValue)
-    {
-        putByte(obj, offset, newValue);
-    }
-
-    public byte getByte(Object obj, long offset)
-    {
-        if (obj instanceof cli.System.Array)
-        {
-            return Buffer.GetByte((cli.System.Array)obj, (int)offset);
-        }
-        else
-        {
-            try
-            {
-                return getField(offset).getByte(obj);
-            }
-            catch (IllegalAccessException x)
-            {
-                throw (InternalError)new InternalError().initCause(x);
-            }
-        }
-    }
-
-    public byte getByteVolatile(Object obj, long offset)
-    {
-        return getByte(obj, offset);
-    }
-
-    public void putChar(Object obj, long offset, char newValue)
-    {
-        if (obj instanceof cli.System.Array)
-        {
-            WriteInt16(obj, offset, (short)newValue);
-        }
-        else
-        {
-            try
-            {
-                getField(offset).setChar(obj, newValue);
-            }
-            catch (IllegalAccessException x)
-            {
-                throw (InternalError)new InternalError().initCause(x);
-            }
-        }
-    }
-
-    public void putCharVolatile(Object obj, long offset, char newValue)
-    {
-        putChar(obj, offset, newValue);
-    }
-
-    public char getChar(Object obj, long offset)
-    {
-        if (obj instanceof cli.System.Array)
-        {
-            return (char)ReadInt16(obj, offset);
-        }
-        else
-        {
-            try
-            {
-                return getField(offset).getChar(obj);
-            }
-            catch (IllegalAccessException x)
-            {
-                throw (InternalError)new InternalError().initCause(x);
-            }
-        }
-    }
-
-    public char getCharVolatile(Object obj, long offset)
-    {
-        return getChar(obj, offset);
-    }
-
-    public void putShort(Object obj, long offset, short newValue)
-    {
-        if (obj instanceof cli.System.Array)
-        {
-            WriteInt16(obj, offset, newValue);
-        }
-        else
-        {
-            try
-            {
-                getField(offset).setShort(obj, newValue);
-            }
-            catch (IllegalAccessException x)
-            {
-                throw (InternalError)new InternalError().initCause(x);
-            }
-        }
-    }
-
-    public void putShortVolatile(Object obj, long offset, short newValue)
-    {
-        putShort(obj, offset, newValue);
-    }
-
-    public short getShort(Object obj, long offset)
-    {
-        if (obj instanceof cli.System.Array)
-        {
-            return ReadInt16(obj, offset);
-        }
-        else
-        {
-            try
-            {
-                return getField(offset).getShort(obj);
-            }
-            catch (IllegalAccessException x)
-            {
-                throw (InternalError)new InternalError().initCause(x);
-            }
-        }
-    }
-
-    public short getShortVolatile(Object obj, long offset)
-    {
-        return getShort(obj, offset);
-    }
-
-    public void putInt(Object obj, long offset, int newValue)
-    {
-        if (obj instanceof cli.System.Array)
-        {
-            WriteInt32(obj, offset, newValue);
-        }
-        else
-        {
-            try
-            {
-                getField(offset).setInt(obj, newValue);
-            }
-            catch (IllegalAccessException x)
-            {
-                throw (InternalError)new InternalError().initCause(x);
-            }
-        }
-    }
-
-    public int getInt(Object obj, long offset)
-    {
-        if (obj instanceof cli.System.Array)
-        {
-            return ReadInt32(obj, offset);
-        }
-        else
-        {
-            try
-            {
-                return getField(offset).getInt(obj);
-            }
-            catch (IllegalAccessException x)
-            {
-                throw (InternalError)new InternalError().initCause(x);
-            }
-        }
-    }
-
-    public void putFloat(Object obj, long offset, float newValue)
-    {
-        if (obj instanceof cli.System.Array)
-        {
-            WriteInt32(obj, offset, Float.floatToRawIntBits(newValue));
-        }
-        else
-        {
-            try
-            {
-                getField(offset).setFloat(obj, newValue);
-            }
-            catch (IllegalAccessException x)
-            {
-                throw (InternalError)new InternalError().initCause(x);
-            }
-        }
-    }
-
-    public void putFloatVolatile(Object obj, long offset, float newValue)
-    {
-        putFloat(obj, offset, newValue);
-    }
-
-    public float getFloat(Object obj, long offset)
-    {
-        if (obj instanceof cli.System.Array)
-        {
-            return Float.intBitsToFloat(ReadInt32(obj, offset));
-        }
-        else
-        {
-            try
-            {
-                return getField(offset).getFloat(obj);
-            }
-            catch (IllegalAccessException x)
-            {
-                throw (InternalError)new InternalError().initCause(x);
-            }
-        }
-    }
-
-    public float getFloatVolatile(Object obj, long offset)
-    {
-        return getFloat(obj, offset);
-    }
-
-    public void putLong(Object obj, long offset, long newValue)
-    {
-        if (obj instanceof cli.System.Array)
-        {
-            WriteInt64(obj, offset, newValue);
-        }
-        else
-        {
-            try
-            {
-                getField(offset).setLong(obj, newValue);
-            }
-            catch (IllegalAccessException x)
-            {
-                throw (InternalError)new InternalError().initCause(x);
-            }
-        }
-    }
-
-    public long getLong(Object obj, long offset)
-    {
-        if (obj instanceof cli.System.Array)
-        {
-            return ReadInt64(obj, offset);
-        }
-        else
-        {
-            try
-            {
-                return getField(offset).getLong(obj);
-            }
-            catch (IllegalAccessException x)
-            {
-                throw (InternalError)new InternalError().initCause(x);
-            }
-        }
-    }
-
-    public void putDouble(Object obj, long offset, double newValue)
-    {
-        if (obj instanceof cli.System.Array)
-        {
-            WriteInt64(obj, offset, Double.doubleToRawLongBits(newValue));
-        }
-        else
-        {
-            try
-            {
-                getField(offset).setDouble(obj, newValue);
-            }
-            catch (IllegalAccessException x)
-            {
-                throw (InternalError)new InternalError().initCause(x);
-            }
-        }
-    }
-
-    public void putDoubleVolatile(Object obj, long offset, double newValue)
-    {
-        synchronized (this)
-        {
-            putDouble(obj, offset, newValue);
-        }
-    }
-
-    public double getDouble(Object obj, long offset)
-    {
-        if (obj instanceof cli.System.Array)
-        {
-            return Double.longBitsToDouble(ReadInt64(obj, offset));
-        }
-        else
-        {
-            try
-            {
-                return getField(offset).getDouble(obj);
-            }
-            catch (IllegalAccessException x)
-            {
-                throw (InternalError)new InternalError().initCause(x);
-            }
-        }
-    }
-
-    public double getDoubleVolatile(Object obj, long offset)
-    {
-        synchronized (this)
-        {
-            return getDouble(obj, offset);
-        }
-    }
-
-    public void putObject(Object obj, long offset, Object newValue)
-    {
-        if (obj instanceof Object[])
-        {
-            ((Object[])obj)[(int)offset] = newValue;
-        }
-        else
-        {
-            try
-            {
-                getField(offset).set(obj, newValue);
-            }
-            catch (IllegalAccessException x)
-            {
-                throw (InternalError)new InternalError().initCause(x);
-            }
-        }
-    }
-
-    public Object getObject(Object obj, long offset)
-    {
-        if (obj instanceof Object[])
-        {
-            return ((Object[])obj)[(int)offset];
-        }
-        else
-        {
-            try
-            {
-                return getField(offset).get(obj);
-            }
-            catch (IllegalAccessException x)
-            {
-                throw (InternalError)new InternalError().initCause(x);
-            }
-        }
-    }
-
-    @Deprecated
-    public int getInt(Object o, int offset)
-    {
+    public int getInt(Object o, int offset) {
         return getInt(o, (long)offset);
     }
 
+    /**
+     * @deprecated As of 1.4.1, cast the 32-bit offset argument to a long.
+     * See {@link #staticFieldOffset}.
+     */
     @Deprecated
-    public void putInt(Object o, int offset, int x)
-    {
+    public void putInt(Object o, int offset, int x) {
         putInt(o, (long)offset, x);
     }
 
+    /**
+     * @deprecated As of 1.4.1, cast the 32-bit offset argument to a long.
+     * See {@link #staticFieldOffset}.
+     */
     @Deprecated
-    public Object getObject(Object o, int offset)
-    {
+    public Object getObject(Object o, int offset) {
         return getObject(o, (long)offset);
     }
 
+    /**
+     * @deprecated As of 1.4.1, cast the 32-bit offset argument to a long.
+     * See {@link #staticFieldOffset}.
+     */
     @Deprecated
-    public void putObject(Object o, int offset, Object x)
-    {
+    public void putObject(Object o, int offset, Object x) {
         putObject(o, (long)offset, x);
     }
 
+    /**
+     * @deprecated As of 1.4.1, cast the 32-bit offset argument to a long.
+     * See {@link #staticFieldOffset}.
+     */
     @Deprecated
-    public boolean getBoolean(Object o, int offset)
-    {
+    public boolean getBoolean(Object o, int offset) {
         return getBoolean(o, (long)offset);
     }
 
+    /**
+     * @deprecated As of 1.4.1, cast the 32-bit offset argument to a long.
+     * See {@link #staticFieldOffset}.
+     */
     @Deprecated
-    public void putBoolean(Object o, int offset, boolean x)
-    {
+    public void putBoolean(Object o, int offset, boolean x) {
         putBoolean(o, (long)offset, x);
     }
 
+    /**
+     * @deprecated As of 1.4.1, cast the 32-bit offset argument to a long.
+     * See {@link #staticFieldOffset}.
+     */
     @Deprecated
-    public byte getByte(Object o, int offset)
-    {
+    public byte getByte(Object o, int offset) {
         return getByte(o, (long)offset);
     }
 
+    /**
+     * @deprecated As of 1.4.1, cast the 32-bit offset argument to a long.
+     * See {@link #staticFieldOffset}.
+     */
     @Deprecated
-    public void putByte(Object o, int offset, byte x)
-    {
+    public void putByte(Object o, int offset, byte x) {
         putByte(o, (long)offset, x);
     }
 
+    /**
+     * @deprecated As of 1.4.1, cast the 32-bit offset argument to a long.
+     * See {@link #staticFieldOffset}.
+     */
     @Deprecated
-    public short getShort(Object o, int offset)
-    {
+    public short getShort(Object o, int offset) {
         return getShort(o, (long)offset);
     }
 
+    /**
+     * @deprecated As of 1.4.1, cast the 32-bit offset argument to a long.
+     * See {@link #staticFieldOffset}.
+     */
     @Deprecated
-    public void putShort(Object o, int offset, short x)
-    {
+    public void putShort(Object o, int offset, short x) {
         putShort(o, (long)offset, x);
     }
 
+    /**
+     * @deprecated As of 1.4.1, cast the 32-bit offset argument to a long.
+     * See {@link #staticFieldOffset}.
+     */
     @Deprecated
-    public char getChar(Object o, int offset)
-    {
+    public char getChar(Object o, int offset) {
         return getChar(o, (long)offset);
     }
 
+    /**
+     * @deprecated As of 1.4.1, cast the 32-bit offset argument to a long.
+     * See {@link #staticFieldOffset}.
+     */
     @Deprecated
-    public void putChar(Object o, int offset, char x)
-    {
+    public void putChar(Object o, int offset, char x) {
         putChar(o, (long)offset, x);
     }
 
+    /**
+     * @deprecated As of 1.4.1, cast the 32-bit offset argument to a long.
+     * See {@link #staticFieldOffset}.
+     */
     @Deprecated
-    public long getLong(Object o, int offset)
-    {
+    public long getLong(Object o, int offset) {
         return getLong(o, (long)offset);
     }
 
+    /**
+     * @deprecated As of 1.4.1, cast the 32-bit offset argument to a long.
+     * See {@link #staticFieldOffset}.
+     */
     @Deprecated
-    public void putLong(Object o, int offset, long x)
-    {
+    public void putLong(Object o, int offset, long x) {
         putLong(o, (long)offset, x);
     }
 
+    /**
+     * @deprecated As of 1.4.1, cast the 32-bit offset argument to a long.
+     * See {@link #staticFieldOffset}.
+     */
     @Deprecated
-    public float getFloat(Object o, int offset)
-    {
+    public float getFloat(Object o, int offset) {
         return getFloat(o, (long)offset);
     }
 
+    /**
+     * @deprecated As of 1.4.1, cast the 32-bit offset argument to a long.
+     * See {@link #staticFieldOffset}.
+     */
     @Deprecated
-    public void putFloat(Object o, int offset, float x)
-    {
+    public void putFloat(Object o, int offset, float x) {
         putFloat(o, (long)offset, x);
     }
 
+    /**
+     * @deprecated As of 1.4.1, cast the 32-bit offset argument to a long.
+     * See {@link #staticFieldOffset}.
+     */
     @Deprecated
-    public double getDouble(Object o, int offset)
-    {
+    public double getDouble(Object o, int offset) {
         return getDouble(o, (long)offset);
     }
 
+    /**
+     * @deprecated As of 1.4.1, cast the 32-bit offset argument to a long.
+     * See {@link #staticFieldOffset}.
+     */
     @Deprecated
-    public void putDouble(Object o, int offset, double x)
-    {
+    public void putDouble(Object o, int offset, double x) {
         putDouble(o, (long)offset, x);
     }
 
-    public native void throwException(Throwable t);
+    // These work on values in the C heap.
 
-    public native void ensureClassInitialized(Class clazz);
+    /**
+     * Fetches a value from a given memory address.  If the address is zero, or
+     * does not point into a block obtained from {@link #allocateMemory}, the
+     * results are undefined.
+     *
+     * @see #allocateMemory
+     */
+    public native byte    getByte(long address);
 
-    @SecurityPermissionAttribute.Annotation(value = SecurityAction.__Enum.LinkDemand, SerializationFormatter = true)
-    @cli.System.Security.SecurityCriticalAttribute.Annotation
-    public native Object allocateInstance(Class clazz) throws InstantiationException;
+    /**
+     * Stores a value into a given memory address.  If the address is zero, or
+     * does not point into a block obtained from {@link #allocateMemory}, the
+     * results are undefined.
+     *
+     * @see #getByte(long)
+     */
+    public native void    putByte(long address, byte x);
 
-    public int addressSize()
-    {
-        return IntPtr.get_Size();
+    /** @see #getByte(long) */
+    public native short   getShort(long address);
+    /** @see #putByte(long, byte) */
+    public native void    putShort(long address, short x);
+    /** @see #getByte(long) */
+    public native char    getChar(long address);
+    /** @see #putByte(long, byte) */
+    public native void    putChar(long address, char x);
+    /** @see #getByte(long) */
+    public native int     getInt(long address);
+    /** @see #putByte(long, byte) */
+    public native void    putInt(long address, int x);
+    /** @see #getByte(long) */
+    public native long    getLong(long address);
+    /** @see #putByte(long, byte) */
+    public native void    putLong(long address, long x);
+    /** @see #getByte(long) */
+    public native float   getFloat(long address);
+    /** @see #putByte(long, byte) */
+    public native void    putFloat(long address, float x);
+    /** @see #getByte(long) */
+    public native double  getDouble(long address);
+    /** @see #putByte(long, byte) */
+    public native void    putDouble(long address, double x);
+
+    /**
+     * Fetches a native pointer from a given memory address.  If the address is
+     * zero, or does not point into a block obtained from {@link
+     * #allocateMemory}, the results are undefined.
+     *
+     * <p> If the native pointer is less than 64 bits wide, it is extended as
+     * an unsigned number to a Java long.  The pointer may be indexed by any
+     * given byte offset, simply by adding that offset (as a simple integer) to
+     * the long representing the pointer.  The number of bytes actually read
+     * from the target address maybe determined by consulting {@link
+     * #addressSize}.
+     *
+     * @see #allocateMemory
+     */
+    public native long getAddress(long address);
+
+    /**
+     * Stores a native pointer into a given memory address.  If the address is
+     * zero, or does not point into a block obtained from {@link
+     * #allocateMemory}, the results are undefined.
+     *
+     * <p> The number of bytes actually written at the target address maybe
+     * determined by consulting {@link #addressSize}.
+     *
+     * @see #getAddress(long)
+     */
+    public native void putAddress(long address, long x);
+
+    /// wrappers for malloc, realloc, free:
+
+    /**
+     * Allocates a new block of native memory, of the given size in bytes.  The
+     * contents of the memory are uninitialized; they will generally be
+     * garbage.  The resulting native pointer will never be zero, and will be
+     * aligned for all value types.  Dispose of this memory by calling {@link
+     * #freeMemory}, or resize it with {@link #reallocateMemory}.
+     *
+     * @throws IllegalArgumentException if the size is negative or too large
+     *         for the native size_t type
+     *
+     * @throws OutOfMemoryError if the allocation is refused by the system
+     *
+     * @see #getByte(long)
+     * @see #putByte(long, byte)
+     */
+    public native long allocateMemory(long bytes);
+
+    /**
+     * Resizes a new block of native memory, to the given size in bytes.  The
+     * contents of the new block past the size of the old block are
+     * uninitialized; they will generally be garbage.  The resulting native
+     * pointer will be zero if and only if the requested size is zero.  The
+     * resulting native pointer will be aligned for all value types.  Dispose
+     * of this memory by calling {@link #freeMemory}, or resize it with {@link
+     * #reallocateMemory}.  The address passed to this method may be null, in
+     * which case an allocation will be performed.
+     *
+     * @throws IllegalArgumentException if the size is negative or too large
+     *         for the native size_t type
+     *
+     * @throws OutOfMemoryError if the allocation is refused by the system
+     *
+     * @see #allocateMemory
+     */
+    public native long reallocateMemory(long address, long bytes);
+
+    /**
+     * Sets all bytes in a given block of memory to a fixed value
+     * (usually zero).
+     *
+     * <p>This method determines a block's base address by means of two parameters,
+     * and so it provides (in effect) a <em>double-register</em> addressing mode,
+     * as discussed in {@link #getInt(Object,long)}.  When the object reference is null,
+     * the offset supplies an absolute base address.
+     *
+     * <p>The stores are in coherent (atomic) units of a size determined
+     * by the address and length parameters.  If the effective address and
+     * length are all even modulo 8, the stores take place in 'long' units.
+     * If the effective address and length are (resp.) even modulo 4 or 2,
+     * the stores take place in units of 'int' or 'short'.
+     *
+     * @since 1.7
+     */
+    public native void setMemory(Object o, long offset, long bytes, byte value);
+
+    /**
+     * Sets all bytes in a given block of memory to a fixed value
+     * (usually zero).  This provides a <em>single-register</em> addressing mode,
+     * as discussed in {@link #getInt(Object,long)}.
+     *
+     * <p>Equivalent to <code>setMemory(null, address, bytes, value)</code>.
+     */
+    public void setMemory(long address, long bytes, byte value) {
+        setMemory(null, address, bytes, value);
     }
 
-    public int pageSize()
-    {
-        return 4096;
+    /**
+     * Sets all bytes in a given block of memory to a copy of another
+     * block.
+     *
+     * <p>This method determines each block's base address by means of two parameters,
+     * and so it provides (in effect) a <em>double-register</em> addressing mode,
+     * as discussed in {@link #getInt(Object,long)}.  When the object reference is null,
+     * the offset supplies an absolute base address.
+     *
+     * <p>The transfers are in coherent (atomic) units of a size determined
+     * by the address and length parameters.  If the effective addresses and
+     * length are all even modulo 8, the transfer takes place in 'long' units.
+     * If the effective addresses and length are (resp.) even modulo 4 or 2,
+     * the transfer takes place in units of 'int' or 'short'.
+     *
+     * @since 1.7
+     */
+    public native void copyMemory(Object srcBase, long srcOffset,
+                                  Object destBase, long destOffset,
+                                  long bytes);
+    /**
+     * Sets all bytes in a given block of memory to a copy of another
+     * block.  This provides a <em>single-register</em> addressing mode,
+     * as discussed in {@link #getInt(Object,long)}.
+     *
+     * Equivalent to <code>copyMemory(null, srcAddress, null, destAddress, bytes)</code>.
+     */
+    public void copyMemory(long srcAddress, long destAddress, long bytes) {
+        copyMemory(null, srcAddress, null, destAddress, bytes);
     }
 
-    // The really unsafe methods start here. They are all have a LinkDemand for unmanaged code.
+    /**
+     * Disposes of a block of native memory, as obtained from {@link
+     * #allocateMemory} or {@link #reallocateMemory}.  The address passed to
+     * this method may be null, in which case no action is taken.
+     *
+     * @see #allocateMemory
+     */
+    public native void freeMemory(long address);
 
-    @SecurityPermissionAttribute.Annotation(value = SecurityAction.__Enum.LinkDemand, UnmanagedCode = true)
-    @cli.System.Security.SecurityCriticalAttribute.Annotation
-    public long allocateMemory(long bytes)
-    {
-        if (bytes == 0)
-        {
-            return 0;
-        }
-        try
-        {
-            if (false) throw new cli.System.OutOfMemoryException();
-            return Marshal.AllocHGlobal(IntPtr.op_Explicit(bytes)).ToInt64();
-        }
-        catch (cli.System.OutOfMemoryException x)
-        {
-            throw new OutOfMemoryError(x.get_Message());
-        }
-    }
+    /// random queries
 
-    @SecurityPermissionAttribute.Annotation(value = SecurityAction.__Enum.LinkDemand, UnmanagedCode = true)
-    @cli.System.Security.SecurityCriticalAttribute.Annotation
-    public long reallocateMemory(long address, long bytes)
-    {
-        if (bytes == 0)
-        {
-            freeMemory(address);
-            return 0;
-        }
-        try
-        {
-            if (false) throw new cli.System.OutOfMemoryException();
-            return Marshal.ReAllocHGlobal(IntPtr.op_Explicit(address), IntPtr.op_Explicit(bytes)).ToInt64();
-        }
-        catch (cli.System.OutOfMemoryException x)
-        {
-            throw new OutOfMemoryError(x.get_Message());
-        }
-    }
+    /**
+     * This constant differs from all results that will ever be returned from
+     * {@link #staticFieldOffset}, {@link #objectFieldOffset},
+     * or {@link #arrayBaseOffset}.
+     */
+    public static final int INVALID_FIELD_OFFSET   = -1;
 
-    @SecurityPermissionAttribute.Annotation(value = SecurityAction.__Enum.LinkDemand, UnmanagedCode = true)
-    @cli.System.Security.SecurityCriticalAttribute.Annotation
-    public void freeMemory(long address)
-    {
-        Marshal.FreeHGlobal(IntPtr.op_Explicit(address));
-    }
-
-    @SecurityPermissionAttribute.Annotation(value = SecurityAction.__Enum.LinkDemand, UnmanagedCode = true)
-    @cli.System.Security.SecurityCriticalAttribute.Annotation
-    public void setMemory(long address, long bytes, byte value)
-    {
-        while (bytes-- > 0)
-        {
-            putByte(address++, value);
-        }
-    }
-
-    @SecurityPermissionAttribute.Annotation(value = SecurityAction.__Enum.LinkDemand, UnmanagedCode = true)
-    @cli.System.Security.SecurityCriticalAttribute.Annotation
-    public void setMemory(Object o, long offset, long bytes, byte value)
-    {
-        if (o == null)
-        {
-            setMemory(offset, bytes, value);
-        }
-        else if (o instanceof byte[])
-        {
-            byte[] array = (byte[])o;
-            for (int i = 0; i < bytes; i++)
-            {
-                array[(int)(offset + i)] = value;
-            }
-        }
-        else if (o instanceof cli.System.Array)
-        {
-            cli.System.Array array = (cli.System.Array)o;
-            for (int i = 0; i < bytes; i++)
-            {
-                cli.System.Buffer.SetByte(array, (int)(offset + i), value);
-            }
-        }
-        else
-        {
-            throw new IllegalArgumentException();
-        }
-    }
-
-    @SecurityPermissionAttribute.Annotation(value = SecurityAction.__Enum.LinkDemand, UnmanagedCode = true)
-    @cli.System.Security.SecurityCriticalAttribute.Annotation
-    public void copyMemory(long srcAddress, long destAddress, long bytes)
-    {
-	while (bytes-- > 0)
-	{
-	    putByte(destAddress++, getByte(srcAddress++));
-	}
-    }
-    
-    @SecurityPermissionAttribute.Annotation(value = SecurityAction.__Enum.LinkDemand, UnmanagedCode = true)
-    @cli.System.Security.SecurityCriticalAttribute.Annotation
-    public void copyMemory(Object srcBase, long srcOffset, Object destBase, long destOffset, long bytes)
-    {
-        if (srcBase == null)
-        {
-            if (destBase instanceof byte[])
-            {
-                cli.System.Runtime.InteropServices.Marshal.Copy(IntPtr.op_Explicit(srcOffset), (byte[])destBase, (int)destOffset, (int)bytes);
-            }
-            else if (destBase instanceof boolean[])
-            {
-                byte[] tmp = new byte[(int)bytes];
-                copyMemory(srcBase, srcOffset, tmp, 0, bytes);
-                copyMemory(tmp, 0, destBase, destOffset, bytes);
-            }
-            else if (destBase instanceof short[])
-            {
-                cli.System.Runtime.InteropServices.Marshal.Copy(IntPtr.op_Explicit(srcOffset), (short[])destBase, (int)(destOffset >> 1), (int)(bytes >> 1));
-            }
-            else if (destBase instanceof char[])
-            {
-                cli.System.Runtime.InteropServices.Marshal.Copy(IntPtr.op_Explicit(srcOffset), (char[])destBase, (int)(destOffset >> 1), (int)(bytes >> 1));
-            }
-            else if (destBase instanceof int[])
-            {
-                cli.System.Runtime.InteropServices.Marshal.Copy(IntPtr.op_Explicit(srcOffset), (int[])destBase, (int)(destOffset >> 2), (int)(bytes >> 2));
-            }
-            else if (destBase instanceof float[])
-            {
-                cli.System.Runtime.InteropServices.Marshal.Copy(IntPtr.op_Explicit(srcOffset), (float[])destBase, (int)(destOffset >> 2), (int)(bytes >> 2));
-            }
-            else if (destBase instanceof long[])
-            {
-                cli.System.Runtime.InteropServices.Marshal.Copy(IntPtr.op_Explicit(srcOffset), (long[])destBase, (int)(destOffset >> 3), (int)(bytes >> 3));
-            }
-            else if (destBase instanceof double[])
-            {
-                cli.System.Runtime.InteropServices.Marshal.Copy(IntPtr.op_Explicit(srcOffset), (double[])destBase, (int)(destOffset >> 3), (int)(bytes >> 3));
-            }
-            else if (destBase == null)
-            {
-                copyMemory(srcOffset, destOffset, bytes);
-            }
-            else
-            {
-                throw new IllegalArgumentException();
-            }
-        }
-        else if (srcBase instanceof cli.System.Array && destBase instanceof cli.System.Array)
-        {
-            cli.System.Buffer.BlockCopy((cli.System.Array)srcBase, (int)srcOffset, (cli.System.Array)destBase, (int)destOffset, (int)bytes);
-        }
-        else
-        {
-            if (srcBase instanceof byte[])
-            {
-                cli.System.Runtime.InteropServices.Marshal.Copy((byte[])srcBase, (int)srcOffset, IntPtr.op_Explicit(destOffset), (int)bytes);
-            }
-            else if (srcBase instanceof boolean[])
-            {
-                byte[] tmp = new byte[(int)bytes];
-                copyMemory(srcBase, srcOffset, tmp, 0, bytes);
-                copyMemory(tmp, 0, destBase, destOffset, bytes);
-            }
-            else if (srcBase instanceof short[])
-            {
-                cli.System.Runtime.InteropServices.Marshal.Copy((short[])srcBase, (int)(srcOffset >> 1), IntPtr.op_Explicit(destOffset), (int)(bytes >> 1));
-            }
-            else if (srcBase instanceof char[])
-            {
-                cli.System.Runtime.InteropServices.Marshal.Copy((char[])srcBase, (int)(srcOffset >> 1), IntPtr.op_Explicit(destOffset), (int)(bytes >> 1));
-            }
-            else if (srcBase instanceof int[])
-            {
-                cli.System.Runtime.InteropServices.Marshal.Copy((int[])srcBase, (int)(srcOffset >> 2), IntPtr.op_Explicit(destOffset), (int)(bytes >> 2));
-            }
-            else if (srcBase instanceof float[])
-            {
-                cli.System.Runtime.InteropServices.Marshal.Copy((float[])srcBase, (int)(srcOffset >> 2), IntPtr.op_Explicit(destOffset), (int)(bytes >> 2));
-            }
-            else if (srcBase instanceof long[])
-            {
-                cli.System.Runtime.InteropServices.Marshal.Copy((long[])srcBase, (int)(srcOffset >> 3), IntPtr.op_Explicit(destOffset), (int)(bytes >> 3));
-            }
-            else if (srcBase instanceof double[])
-            {
-                cli.System.Runtime.InteropServices.Marshal.Copy((double[])srcBase, (int)(srcOffset >> 3), IntPtr.op_Explicit(destOffset), (int)(bytes >> 3));
-            }
-            else
-            {
-                throw new IllegalArgumentException();
-            }
-        }
-    }
-
-    @SecurityPermissionAttribute.Annotation(value = SecurityAction.__Enum.LinkDemand, UnmanagedCode = true)
-    @cli.System.Security.SecurityCriticalAttribute.Annotation
-    public byte getByte(long address)
-    {
-	return cli.System.Runtime.InteropServices.Marshal.ReadByte(IntPtr.op_Explicit(address));
-    }
-
-    @SecurityPermissionAttribute.Annotation(value = SecurityAction.__Enum.LinkDemand, UnmanagedCode = true)
-    @cli.System.Security.SecurityCriticalAttribute.Annotation
-    public void putByte(long address, byte x)
-    {
-	cli.System.Runtime.InteropServices.Marshal.WriteByte(IntPtr.op_Explicit(address), x);
-    }
-
-    @SecurityPermissionAttribute.Annotation(value = SecurityAction.__Enum.LinkDemand, UnmanagedCode = true)
-    @cli.System.Security.SecurityCriticalAttribute.Annotation
-    public short getShort(long address)
-    {
-	return cli.System.Runtime.InteropServices.Marshal.ReadInt16(IntPtr.op_Explicit(address));
-    }
-
-    @SecurityPermissionAttribute.Annotation(value = SecurityAction.__Enum.LinkDemand, UnmanagedCode = true)
-    @cli.System.Security.SecurityCriticalAttribute.Annotation
-    public void putShort(long address, short x)
-    {
-	cli.System.Runtime.InteropServices.Marshal.WriteInt16(IntPtr.op_Explicit(address), x);
-    }
-
-    @SecurityPermissionAttribute.Annotation(value = SecurityAction.__Enum.LinkDemand, UnmanagedCode = true)
-    @cli.System.Security.SecurityCriticalAttribute.Annotation
-    public char getChar(long address)
-    {
-        return (char)cli.System.Runtime.InteropServices.Marshal.ReadInt16(IntPtr.op_Explicit(address));
-    }
-
-    @SecurityPermissionAttribute.Annotation(value = SecurityAction.__Enum.LinkDemand, UnmanagedCode = true)
-    @cli.System.Security.SecurityCriticalAttribute.Annotation
-    public void putChar(long address, char x)
-    {
-        cli.System.Runtime.InteropServices.Marshal.WriteInt16(IntPtr.op_Explicit(address), (short)x);
-    }
-
-    @SecurityPermissionAttribute.Annotation(value = SecurityAction.__Enum.LinkDemand, UnmanagedCode = true)
-    @cli.System.Security.SecurityCriticalAttribute.Annotation
-    public int getInt(long address)
-    {
-	return cli.System.Runtime.InteropServices.Marshal.ReadInt32(IntPtr.op_Explicit(address));
-    }
-
-    @SecurityPermissionAttribute.Annotation(value = SecurityAction.__Enum.LinkDemand, UnmanagedCode = true)
-    @cli.System.Security.SecurityCriticalAttribute.Annotation
-    public void putInt(long address, int x)
-    {
-	cli.System.Runtime.InteropServices.Marshal.WriteInt32(IntPtr.op_Explicit(address), x);
-    }
-
-    @SecurityPermissionAttribute.Annotation(value = SecurityAction.__Enum.LinkDemand, UnmanagedCode = true)
-    @cli.System.Security.SecurityCriticalAttribute.Annotation
-    public long getLong(long address)
-    {
-	return cli.System.Runtime.InteropServices.Marshal.ReadInt64(IntPtr.op_Explicit(address));
-    }
-
-    @SecurityPermissionAttribute.Annotation(value = SecurityAction.__Enum.LinkDemand, UnmanagedCode = true)
-    @cli.System.Security.SecurityCriticalAttribute.Annotation
-    public void putLong(long address, long x)
-    {
-	cli.System.Runtime.InteropServices.Marshal.WriteInt64(IntPtr.op_Explicit(address), x);
-    }
-
-    @SecurityPermissionAttribute.Annotation(value = SecurityAction.__Enum.LinkDemand, UnmanagedCode = true)
-    @cli.System.Security.SecurityCriticalAttribute.Annotation
-    public long getAddress(long address)
-    {
-	return cli.System.Runtime.InteropServices.Marshal.ReadIntPtr(IntPtr.op_Explicit(address)).ToInt64();
-    }
-
-    @SecurityPermissionAttribute.Annotation(value = SecurityAction.__Enum.LinkDemand, UnmanagedCode = true)
-    @cli.System.Security.SecurityCriticalAttribute.Annotation
-    public void putAddress(long address, long x)
-    {
-	cli.System.Runtime.InteropServices.Marshal.WriteIntPtr(IntPtr.op_Explicit(address), IntPtr.op_Explicit(x));
-    }
-
-    @SecurityPermissionAttribute.Annotation(value = SecurityAction.__Enum.LinkDemand, UnmanagedCode = true)
-    @cli.System.Security.SecurityCriticalAttribute.Annotation
-    public float getFloat(long address)
-    {
-        return Float.intBitsToFloat(getInt(address));
-    }
-
-    @SecurityPermissionAttribute.Annotation(value = SecurityAction.__Enum.LinkDemand, UnmanagedCode = true)
-    @cli.System.Security.SecurityCriticalAttribute.Annotation
-    public void putFloat(long address, float x)
-    {
-        putInt(address, Float.floatToIntBits(x));
-    }
-
-    @SecurityPermissionAttribute.Annotation(value = SecurityAction.__Enum.LinkDemand, UnmanagedCode = true)
-    @cli.System.Security.SecurityCriticalAttribute.Annotation
-    public double getDouble(long address)
-    {
-        return Double.longBitsToDouble(getLong(address));
-    }
-
-    @SecurityPermissionAttribute.Annotation(value = SecurityAction.__Enum.LinkDemand, UnmanagedCode = true)
-    @cli.System.Security.SecurityCriticalAttribute.Annotation
-    public void putDouble(long address, double x)
-    {
-        putLong(address, Double.doubleToLongBits(x));
-    }
-    
-    public int getLoadAverage(double[] loadavg, int nelems)
-    {
-        return -1;
-    }
-
-    public void park(boolean isAbsolute, long time)
-    {
-        if (isAbsolute)
-        {
-            java.util.concurrent.locks.LockSupport.parkUntil(time);
-        }
-        else
-        {
-            if (time == 0)
-            {
-                time = Long.MAX_VALUE;
-            }
-            java.util.concurrent.locks.LockSupport.parkNanos(time);
-        }
-    }
-
-    public void unpark(Object thread)
-    {
-        java.util.concurrent.locks.LockSupport.unpark((Thread)thread);
-    }
-
-    public Object staticFieldBase(Field f)
-    {
-        return null;
-    }
-    
+    /**
+     * Returns the offset of a field, truncated to 32 bits.
+     * This method is implemented as follows:
+     * <blockquote><pre>
+     * public int fieldOffset(Field f) {
+     *     if (Modifier.isStatic(f.getModifiers()))
+     *         return (int) staticFieldOffset(f);
+     *     else
+     *         return (int) objectFieldOffset(f);
+     * }
+     * </pre></blockquote>
+     * @deprecated As of 1.4.1, use {@link #staticFieldOffset} for static
+     * fields and {@link #objectFieldOffset} for non-static fields.
+     */
     @Deprecated
-    public Object staticFieldBase(Class<?> c)
-    {
+    public int fieldOffset(Field f) {
+        if (Modifier.isStatic(f.getModifiers()))
+            return (int) staticFieldOffset(f);
+        else
+            return (int) objectFieldOffset(f);
+    }
+
+    /**
+     * Returns the base address for accessing some static field
+     * in the given class.  This method is implemented as follows:
+     * <blockquote><pre>
+     * public Object staticFieldBase(Class c) {
+     *     Field[] fields = c.getDeclaredFields();
+     *     for (int i = 0; i < fields.length; i++) {
+     *         if (Modifier.isStatic(fields[i].getModifiers())) {
+     *             return staticFieldBase(fields[i]);
+     *         }
+     *     }
+     *     return null;
+     * }
+     * </pre></blockquote>
+     * @deprecated As of 1.4.1, use {@link #staticFieldBase(Field)}
+     * to obtain the base pertaining to a specific {@link Field}.
+     * This method works only for JVMs which store all statics
+     * for a given class in one place.
+     */
+    @Deprecated
+    public Object staticFieldBase(Class<?> c) {
+        Field[] fields = c.getDeclaredFields();
+        for (int i = 0; i < fields.length; i++) {
+            if (Modifier.isStatic(fields[i].getModifiers())) {
+                return staticFieldBase(fields[i]);
+            }
+        }
         return null;
     }
 
+    /**
+     * Report the location of a given field in the storage allocation of its
+     * class.  Do not expect to perform any sort of arithmetic on this offset;
+     * it is just a cookie which is passed to the unsafe heap memory accessors.
+     *
+     * <p>Any given field will always have the same offset and base, and no
+     * two distinct fields of the same class will ever have the same offset
+     * and base.
+     *
+     * <p>As of 1.4.1, offsets for fields are represented as long values,
+     * although the Sun JVM does not use the most significant 32 bits.
+     * However, JVM implementations which store static fields at absolute
+     * addresses can use long offsets and null base pointers to express
+     * the field locations in a form usable by {@link #getInt(Object,long)}.
+     * Therefore, code which will be ported to such JVMs on 64-bit platforms
+     * must preserve all bits of static field offsets.
+     * @see #getInt(Object, long)
+     */
+    public native long staticFieldOffset(Field f);
+
+    /**
+     * Report the location of a given static field, in conjunction with {@link
+     * #staticFieldBase}.
+     * <p>Do not expect to perform any sort of arithmetic on this offset;
+     * it is just a cookie which is passed to the unsafe heap memory accessors.
+     *
+     * <p>Any given field will always have the same offset, and no two distinct
+     * fields of the same class will ever have the same offset.
+     *
+     * <p>As of 1.4.1, offsets for fields are represented as long values,
+     * although the Sun JVM does not use the most significant 32 bits.
+     * It is hard to imagine a JVM technology which needs more than
+     * a few bits to encode an offset within a non-array object,
+     * However, for consistency with other methods in this class,
+     * this method reports its result as a long value.
+     * @see #getInt(Object, long)
+     */
+    public native long objectFieldOffset(Field f);
+
+    /**
+     * Report the location of a given static field, in conjunction with {@link
+     * #staticFieldOffset}.
+     * <p>Fetch the base "Object", if any, with which static fields of the
+     * given class can be accessed via methods like {@link #getInt(Object,
+     * long)}.  This value may be null.  This value may refer to an object
+     * which is a "cookie", not guaranteed to be a real Object, and it should
+     * not be used in any way except as argument to the get and put routines in
+     * this class.
+     */
+    public native Object staticFieldBase(Field f);
+
+    /**
+     * Detect if the given class may need to be initialized. This is often
+     * needed in conjunction with obtaining the static field base of a
+     * class.
+     * @return false only if a call to {@code ensureClassInitialized} would have no effect
+     */
     public native boolean shouldBeInitialized(Class<?> c);
 
-    public native Class defineClass(String name, byte[] buf, int offset, int length, ClassLoader cl, ProtectionDomain pd);
+    /**
+     * Ensure the given class has been initialized. This is often
+     * needed in conjunction with obtaining the static field base of a
+     * class.
+     */
+    public native void ensureClassInitialized(Class<?> c);
 
-    @Deprecated
-    @sun.reflect.CallerSensitive
-    public native Class defineClass(String name, byte[] b, int off, int len);
+    /**
+     * Report the offset of the first element in the storage allocation of a
+     * given array class.  If {@link #arrayIndexScale} returns a non-zero value
+     * for the same class, you may use that scale factor, together with this
+     * base offset, to form new offsets to access elements of arrays of the
+     * given class.
+     *
+     * @see #getInt(Object, long)
+     * @see #putInt(Object, long, int)
+     */
+    public native int arrayBaseOffset(Class<?> arrayClass);
 
-    public native Class defineAnonymousClass(Class hostClass, byte[] data, Object[] cpPatches);
+    /** The value of {@code arrayBaseOffset(boolean[].class)} */
+    public static final int ARRAY_BOOLEAN_BASE_OFFSET
+            = theUnsafe.arrayBaseOffset(boolean[].class);
 
-    public void monitorEnter(Object o)
-    {
-        cli.System.Threading.Monitor.Enter(o);
+    /** The value of {@code arrayBaseOffset(byte[].class)} */
+    public static final int ARRAY_BYTE_BASE_OFFSET
+            = theUnsafe.arrayBaseOffset(byte[].class);
+
+    /** The value of {@code arrayBaseOffset(short[].class)} */
+    public static final int ARRAY_SHORT_BASE_OFFSET
+            = theUnsafe.arrayBaseOffset(short[].class);
+
+    /** The value of {@code arrayBaseOffset(char[].class)} */
+    public static final int ARRAY_CHAR_BASE_OFFSET
+            = theUnsafe.arrayBaseOffset(char[].class);
+
+    /** The value of {@code arrayBaseOffset(int[].class)} */
+    public static final int ARRAY_INT_BASE_OFFSET
+            = theUnsafe.arrayBaseOffset(int[].class);
+
+    /** The value of {@code arrayBaseOffset(long[].class)} */
+    public static final int ARRAY_LONG_BASE_OFFSET
+            = theUnsafe.arrayBaseOffset(long[].class);
+
+    /** The value of {@code arrayBaseOffset(float[].class)} */
+    public static final int ARRAY_FLOAT_BASE_OFFSET
+            = theUnsafe.arrayBaseOffset(float[].class);
+
+    /** The value of {@code arrayBaseOffset(double[].class)} */
+    public static final int ARRAY_DOUBLE_BASE_OFFSET
+            = theUnsafe.arrayBaseOffset(double[].class);
+
+    /** The value of {@code arrayBaseOffset(Object[].class)} */
+    public static final int ARRAY_OBJECT_BASE_OFFSET
+            = theUnsafe.arrayBaseOffset(Object[].class);
+
+    /**
+     * Report the scale factor for addressing elements in the storage
+     * allocation of a given array class.  However, arrays of "narrow" types
+     * will generally not work properly with accessors like {@link
+     * #getByte(Object, int)}, so the scale factor for such classes is reported
+     * as zero.
+     *
+     * @see #arrayBaseOffset
+     * @see #getInt(Object, long)
+     * @see #putInt(Object, long, int)
+     */
+    public native int arrayIndexScale(Class<?> arrayClass);
+
+    /** The value of {@code arrayIndexScale(boolean[].class)} */
+    public static final int ARRAY_BOOLEAN_INDEX_SCALE
+            = theUnsafe.arrayIndexScale(boolean[].class);
+
+    /** The value of {@code arrayIndexScale(byte[].class)} */
+    public static final int ARRAY_BYTE_INDEX_SCALE
+            = theUnsafe.arrayIndexScale(byte[].class);
+
+    /** The value of {@code arrayIndexScale(short[].class)} */
+    public static final int ARRAY_SHORT_INDEX_SCALE
+            = theUnsafe.arrayIndexScale(short[].class);
+
+    /** The value of {@code arrayIndexScale(char[].class)} */
+    public static final int ARRAY_CHAR_INDEX_SCALE
+            = theUnsafe.arrayIndexScale(char[].class);
+
+    /** The value of {@code arrayIndexScale(int[].class)} */
+    public static final int ARRAY_INT_INDEX_SCALE
+            = theUnsafe.arrayIndexScale(int[].class);
+
+    /** The value of {@code arrayIndexScale(long[].class)} */
+    public static final int ARRAY_LONG_INDEX_SCALE
+            = theUnsafe.arrayIndexScale(long[].class);
+
+    /** The value of {@code arrayIndexScale(float[].class)} */
+    public static final int ARRAY_FLOAT_INDEX_SCALE
+            = theUnsafe.arrayIndexScale(float[].class);
+
+    /** The value of {@code arrayIndexScale(double[].class)} */
+    public static final int ARRAY_DOUBLE_INDEX_SCALE
+            = theUnsafe.arrayIndexScale(double[].class);
+
+    /** The value of {@code arrayIndexScale(Object[].class)} */
+    public static final int ARRAY_OBJECT_INDEX_SCALE
+            = theUnsafe.arrayIndexScale(Object[].class);
+
+    /**
+     * Report the size in bytes of a native pointer, as stored via {@link
+     * #putAddress}.  This value will be either 4 or 8.  Note that the sizes of
+     * other primitive types (as stored in native memory blocks) is determined
+     * fully by their information content.
+     */
+    public native int addressSize();
+
+    /** The value of {@code addressSize()} */
+    public static final int ADDRESS_SIZE = theUnsafe.addressSize();
+
+    /**
+     * Report the size in bytes of a native memory page (whatever that is).
+     * This value will always be a power of two.
+     */
+    public native int pageSize();
+
+
+    /// random trusted operations from JNI:
+
+    /**
+     * Tell the VM to define a class, without security checks.  By default, the
+     * class loader and protection domain come from the caller's class.
+     */
+    public native Class<?> defineClass(String name, byte[] b, int off, int len,
+                                       ClassLoader loader,
+                                       ProtectionDomain protectionDomain);
+
+    /**
+     * Define a class but do not make it known to the class loader or system dictionary.
+     * <p>
+     * For each CP entry, the corresponding CP patch must either be null or have
+     * the a format that matches its tag:
+     * <ul>
+     * <li>Integer, Long, Float, Double: the corresponding wrapper object type from java.lang
+     * <li>Utf8: a string (must have suitable syntax if used as signature or name)
+     * <li>Class: any java.lang.Class object
+     * <li>String: any object (not just a java.lang.String)
+     * <li>InterfaceMethodRef: (NYI) a method handle to invoke on that call site's arguments
+     * </ul>
+     * @params hostClass context for linkage, access control, protection domain, and class loader
+     * @params data      bytes of a class file
+     * @params cpPatches where non-null entries exist, they replace corresponding CP entries in data
+     */
+    public native Class<?> defineAnonymousClass(Class<?> hostClass, byte[] data, Object[] cpPatches);
+
+
+    /** Allocate an instance but do not run any constructor.
+        Initializes the class if it has not yet been. */
+    public native Object allocateInstance(Class<?> cls)
+        throws InstantiationException;
+
+    /** Lock the object.  It must get unlocked via {@link #monitorExit}. */
+    public native void monitorEnter(Object o);
+
+    /**
+     * Unlock the object.  It must have been locked via {@link
+     * #monitorEnter}.
+     */
+    public native void monitorExit(Object o);
+
+    /**
+     * Tries to lock the object.  Returns true or false to indicate
+     * whether the lock succeeded.  If it did, the object must be
+     * unlocked via {@link #monitorExit}.
+     */
+    public native boolean tryMonitorEnter(Object o);
+
+    /** Throw the exception without telling the verifier. */
+    public native void throwException(Throwable ee);
+
+
+    /**
+     * Atomically update Java variable to <tt>x</tt> if it is currently
+     * holding <tt>expected</tt>.
+     * @return <tt>true</tt> if successful
+     */
+    public final native boolean compareAndSwapObject(Object o, long offset,
+                                                     Object expected,
+                                                     Object x);
+
+    /**
+     * Atomically update Java variable to <tt>x</tt> if it is currently
+     * holding <tt>expected</tt>.
+     * @return <tt>true</tt> if successful
+     */
+    public final native boolean compareAndSwapInt(Object o, long offset,
+                                                  int expected,
+                                                  int x);
+
+    /**
+     * Atomically update Java variable to <tt>x</tt> if it is currently
+     * holding <tt>expected</tt>.
+     * @return <tt>true</tt> if successful
+     */
+    public final native boolean compareAndSwapLong(Object o, long offset,
+                                                   long expected,
+                                                   long x);
+
+    /**
+     * Fetches a reference value from a given Java variable, with volatile
+     * load semantics. Otherwise identical to {@link #getObject(Object, long)}
+     */
+    public native Object getObjectVolatile(Object o, long offset);
+
+    /**
+     * Stores a reference value into a given Java variable, with
+     * volatile store semantics. Otherwise identical to {@link #putObject(Object, long, Object)}
+     */
+    public native void    putObjectVolatile(Object o, long offset, Object x);
+
+    /** Volatile version of {@link #getInt(Object, long)}  */
+    public native int     getIntVolatile(Object o, long offset);
+
+    /** Volatile version of {@link #putInt(Object, long, int)}  */
+    public native void    putIntVolatile(Object o, long offset, int x);
+
+    /** Volatile version of {@link #getBoolean(Object, long)}  */
+    public native boolean getBooleanVolatile(Object o, long offset);
+
+    /** Volatile version of {@link #putBoolean(Object, long, boolean)}  */
+    public native void    putBooleanVolatile(Object o, long offset, boolean x);
+
+    /** Volatile version of {@link #getByte(Object, long)}  */
+    public native byte    getByteVolatile(Object o, long offset);
+
+    /** Volatile version of {@link #putByte(Object, long, byte)}  */
+    public native void    putByteVolatile(Object o, long offset, byte x);
+
+    /** Volatile version of {@link #getShort(Object, long)}  */
+    public native short   getShortVolatile(Object o, long offset);
+
+    /** Volatile version of {@link #putShort(Object, long, short)}  */
+    public native void    putShortVolatile(Object o, long offset, short x);
+
+    /** Volatile version of {@link #getChar(Object, long)}  */
+    public native char    getCharVolatile(Object o, long offset);
+
+    /** Volatile version of {@link #putChar(Object, long, char)}  */
+    public native void    putCharVolatile(Object o, long offset, char x);
+
+    /** Volatile version of {@link #getLong(Object, long)}  */
+    public native long    getLongVolatile(Object o, long offset);
+
+    /** Volatile version of {@link #putLong(Object, long, long)}  */
+    public native void    putLongVolatile(Object o, long offset, long x);
+
+    /** Volatile version of {@link #getFloat(Object, long)}  */
+    public native float   getFloatVolatile(Object o, long offset);
+
+    /** Volatile version of {@link #putFloat(Object, long, float)}  */
+    public native void    putFloatVolatile(Object o, long offset, float x);
+
+    /** Volatile version of {@link #getDouble(Object, long)}  */
+    public native double  getDoubleVolatile(Object o, long offset);
+
+    /** Volatile version of {@link #putDouble(Object, long, double)}  */
+    public native void    putDoubleVolatile(Object o, long offset, double x);
+
+    /**
+     * Version of {@link #putObjectVolatile(Object, long, Object)}
+     * that does not guarantee immediate visibility of the store to
+     * other threads. This method is generally only useful if the
+     * underlying field is a Java volatile (or if an array cell, one
+     * that is otherwise only accessed using volatile accesses).
+     */
+    public native void    putOrderedObject(Object o, long offset, Object x);
+
+    /** Ordered/Lazy version of {@link #putIntVolatile(Object, long, int)}  */
+    public native void    putOrderedInt(Object o, long offset, int x);
+
+    /** Ordered/Lazy version of {@link #putLongVolatile(Object, long, long)} */
+    public native void    putOrderedLong(Object o, long offset, long x);
+
+    /**
+     * Unblock the given thread blocked on <tt>park</tt>, or, if it is
+     * not blocked, cause the subsequent call to <tt>park</tt> not to
+     * block.  Note: this operation is "unsafe" solely because the
+     * caller must somehow ensure that the thread has not been
+     * destroyed. Nothing special is usually required to ensure this
+     * when called from Java (in which there will ordinarily be a live
+     * reference to the thread) but this is not nearly-automatically
+     * so when calling from native code.
+     * @param thread the thread to unpark.
+     *
+     */
+    public native void unpark(Object thread);
+
+    /**
+     * Block current thread, returning when a balancing
+     * <tt>unpark</tt> occurs, or a balancing <tt>unpark</tt> has
+     * already occurred, or the thread is interrupted, or, if not
+     * absolute and time is not zero, the given time nanoseconds have
+     * elapsed, or if absolute, the given deadline in milliseconds
+     * since Epoch has passed, or spuriously (i.e., returning for no
+     * "reason"). Note: This operation is in the Unsafe class only
+     * because <tt>unpark</tt> is, so it would be strange to place it
+     * elsewhere.
+     */
+    public native void park(boolean isAbsolute, long time);
+
+    /**
+     * Gets the load average in the system run queue assigned
+     * to the available processors averaged over various periods of time.
+     * This method retrieves the given <tt>nelem</tt> samples and
+     * assigns to the elements of the given <tt>loadavg</tt> array.
+     * The system imposes a maximum of 3 samples, representing
+     * averages over the last 1,  5,  and  15 minutes, respectively.
+     *
+     * @params loadavg an array of double of size nelems
+     * @params nelems the number of samples to be retrieved and
+     *         must be 1 to 3.
+     *
+     * @return the number of samples actually retrieved; or -1
+     *         if the load average is unobtainable.
+     */
+    public native int getLoadAverage(double[] loadavg, int nelems);
+
+    // The following contain CAS-based Java implementations used on
+    // platforms not supporting native instructions
+
+    /**
+     * Atomically adds the given value to the current value of a field
+     * or array element within the given object <code>o</code>
+     * at the given <code>offset</code>.
+     *
+     * @param o object/array to update the field/element in
+     * @param offset field/element offset
+     * @param delta the value to add
+     * @return the previous value
+     * @since 1.8
+     */
+    public final int getAndAddInt(Object o, long offset, int delta) {
+        int v;
+        do {
+            v = getIntVolatile(o, offset);
+        } while (!compareAndSwapInt(o, offset, v, v + delta));
+        return v;
     }
 
-    public void monitorExit(Object o)
-    {
-        cli.System.Threading.Monitor.Exit(o);
+    /**
+     * Atomically adds the given value to the current value of a field
+     * or array element within the given object <code>o</code>
+     * at the given <code>offset</code>.
+     *
+     * @param o object/array to update the field/element in
+     * @param offset field/element offset
+     * @param delta the value to add
+     * @return the previous value
+     * @since 1.8
+     */
+    public final long getAndAddLong(Object o, long offset, long delta) {
+        long v;
+        do {
+            v = getLongVolatile(o, offset);
+        } while (!compareAndSwapLong(o, offset, v, v + delta));
+        return v;
     }
 
-    public boolean tryMonitorEnter(Object o)
-    {
-        return cli.System.Threading.Monitor.TryEnter(o);
+    /**
+     * Atomically exchanges the given value with the current value of
+     * a field or array element within the given object <code>o</code>
+     * at the given <code>offset</code>.
+     *
+     * @param o object/array to update the field/element in
+     * @param offset field/element offset
+     * @param newValue new value
+     * @return the previous value
+     * @since 1.8
+     */
+    public final int getAndSetInt(Object o, long offset, int newValue) {
+        int v;
+        do {
+            v = getIntVolatile(o, offset);
+        } while (!compareAndSwapInt(o, offset, v, newValue));
+        return v;
     }
 
-    public final int getAndAddInt(Object o, long offset, int delta)
-    {
-        for (;;)
-        {
-            int value = getIntVolatile(o, offset);
-            if (compareAndSwapInt(o, offset, value, value + delta))
-            {
-                return value;
-            }
-        }
+    /**
+     * Atomically exchanges the given value with the current value of
+     * a field or array element within the given object <code>o</code>
+     * at the given <code>offset</code>.
+     *
+     * @param o object/array to update the field/element in
+     * @param offset field/element offset
+     * @param newValue new value
+     * @return the previous value
+     * @since 1.8
+     */
+    public final long getAndSetLong(Object o, long offset, long newValue) {
+        long v;
+        do {
+            v = getLongVolatile(o, offset);
+        } while (!compareAndSwapLong(o, offset, v, newValue));
+        return v;
     }
 
-    public final long getAndAddLong(Object o, long offset, long delta)
-    {
-        for (;;)
-        {
-            long value = getLongVolatile(o, offset);
-            if (compareAndSwapLong(o, offset, value, value + delta))
-            {
-                return value;
-            }
-        }
+    /**
+     * Atomically exchanges the given reference value with the current
+     * reference value of a field or array element within the given
+     * object <code>o</code> at the given <code>offset</code>.
+     *
+     * @param o object/array to update the field/element in
+     * @param offset field/element offset
+     * @param newValue new value
+     * @return the previous value
+     * @since 1.8
+     */
+    public final Object getAndSetObject(Object o, long offset, Object newValue) {
+        Object v;
+        do {
+            v = getObjectVolatile(o, offset);
+        } while (!compareAndSwapObject(o, offset, v, newValue));
+        return v;
     }
 
-    public final int getAndSetInt(Object o, long offset, int newValue)
-    {
-        for (;;)
-        {
-            int value = getIntVolatile(o, offset);
-            if (compareAndSwapInt(o, offset, value, newValue))
-            {
-                return value;
-            }
-        }
+
+    /**
+     * Ensures lack of reordering of loads before the fence
+     * with loads or stores after the fence.
+     * @since 1.8
+     */
+    public native void loadFence();
+
+    /**
+     * Ensures lack of reordering of stores before the fence
+     * with loads or stores after the fence.
+     * @since 1.8
+     */
+    public native void storeFence();
+
+    /**
+     * Ensures lack of reordering of loads or stores before the fence
+     * with loads or stores after the fence.
+     * @since 1.8
+     */
+    public native void fullFence();
+
+    /**
+     * Throws IllegalAccessError; for use by the VM.
+     * @since 1.8
+     */
+    private static void throwIllegalAccessError() {
+       throw new IllegalAccessError();
     }
 
-    public final long getAndSetLong(Object o, long offset, long newValue)
-    {
-        for (;;)
-        {
-            long value = getLongVolatile(o, offset);
-            if (compareAndSwapLong(o, offset, value, newValue))
-            {
-                return value;
-            }
-        }
-    }
-
-    public final Object getAndSetObject(Object o, long offset, Object newValue)
-    {
-        for (;;)
-        {
-            Object value = getObjectVolatile(o, offset);
-            if (compareAndSwapObject(o, offset, value, newValue))
-            {
-                return value;
-            }
-        }
-    }
-
-    public void loadFence()
-    {
-        cli.System.Threading.Thread.MemoryBarrier();
-    }
-
-    public void storeFence()
-    {
-        cli.System.Threading.Thread.MemoryBarrier();
-    }
-
-    public void fullFence()
-    {
-        cli.System.Threading.Thread.MemoryBarrier();
-    }
 }

@@ -35,7 +35,7 @@ namespace IKVM.Java.Externs.java.lang.invoke
         // called from map.xml as a replacement for Class.isInstance() in JlInvoke.MethodHandleImpl.castReference()
         public static bool Class_isInstance(global::java.lang.Class clazz, object obj)
         {
-            TypeWrapper tw = TypeWrapper.FromClass(clazz);
+            var tw = TypeWrapper.FromClass(clazz);
             // handle the type system hole that is caused by arrays being both derived from cli.System.Array and directly from java.lang.Object
             return tw.IsInstance(obj) || (tw == CoreClasses.cli.System.Object.Wrapper && obj is Array);
         }
@@ -48,7 +48,9 @@ namespace IKVM.Java.Externs.java.lang.invoke
         // this overload is called via a map.xml patch to the MemberName(Method, boolean) constructor, because we need wantSpecial
         public static void init(global::java.lang.invoke.MemberName self, object refObj, bool wantSpecial)
         {
-#if !FIRST_PASS
+#if FIRST_PASS
+            throw new NotImplementedException();
+#else
             global::java.lang.reflect.Method method;
             global::java.lang.reflect.Constructor constructor;
             global::java.lang.reflect.Field field;
@@ -75,9 +77,11 @@ namespace IKVM.Java.Externs.java.lang.invoke
 #endif
         }
 
-        private static void InitMethodImpl(global::java.lang.invoke.MemberName self, MethodWrapper mw, bool wantSpecial)
+        static void InitMethodImpl(global::java.lang.invoke.MemberName self, MethodWrapper mw, bool wantSpecial)
         {
-#if !FIRST_PASS
+#if FIRST_PASS
+            throw new NotImplementedException();
+#else
             int flags = (int)mw.Modifiers;
             flags |= mw.IsConstructor ? global::java.lang.invoke.MethodHandleNatives.Constants.MN_IS_CONSTRUCTOR : global::java.lang.invoke.MethodHandleNatives.Constants.MN_IS_METHOD;
             if (mw.IsStatic)
@@ -135,10 +139,12 @@ namespace IKVM.Java.Externs.java.lang.invoke
         }
 
 #if !FIRST_PASS
-        private static void SetModifiers(global::java.lang.invoke.MemberName self, MemberWrapper mw)
+
+        static void SetModifiers(global::java.lang.invoke.MemberName self, MemberWrapper mw)
         {
             self._flags(self._flags() | (int)mw.Modifiers);
         }
+
 #endif
 
         public static void expand(global::java.lang.invoke.MemberName self)
@@ -202,7 +208,7 @@ namespace IKVM.Java.Externs.java.lang.invoke
         }
 
 #if !FIRST_PASS
-        private static void ResolveMethod(global::java.lang.invoke.MemberName self, global::java.lang.Class caller)
+        static void ResolveMethod(global::java.lang.invoke.MemberName self, global::java.lang.Class caller)
         {
             bool invokeSpecial = self.getReferenceKind() == global::java.lang.invoke.MethodHandleNatives.Constants.REF_invokeSpecial;
             bool newInvokeSpecial = self.getReferenceKind() == global::java.lang.invoke.MethodHandleNatives.Constants.REF_newInvokeSpecial;
@@ -330,10 +336,10 @@ namespace IKVM.Java.Externs.java.lang.invoke
 #endif
 
         // TODO consider caching this delegate in MethodWrapper
-        private static Delegate CreateMemberNameDelegate(MethodWrapper mw, global::java.lang.Class caller, bool doDispatch, global::java.lang.invoke.MethodType type)
+        static Delegate CreateMemberNameDelegate(MethodWrapper mw, global::java.lang.Class caller, bool doDispatch, global::java.lang.invoke.MethodType type)
         {
 #if FIRST_PASS
-		return null;
+            throw new NotImplementedException();
 #else
             if (mw.IsDynamicOnly)
             {
@@ -382,20 +388,16 @@ namespace IKVM.Java.Externs.java.lang.invoke
         public static int getMembers(global::java.lang.Class defc, string matchName, string matchSig, int matchFlags, global::java.lang.Class caller, int skip, global::java.lang.invoke.MemberName[] results)
         {
 #if FIRST_PASS
-		return 0;
+            throw new NotImplementedException();
 #else
             if (matchName != null || matchSig != null || matchFlags != global::java.lang.invoke.MethodHandleNatives.Constants.MN_IS_METHOD)
-            {
                 throw new NotImplementedException();
-            }
-            MethodWrapper[] methods = TypeWrapper.FromClass(defc).GetMethods();
+
+            var methods = TypeWrapper.FromClass(defc).GetMethods();
             for (int i = skip, len = Math.Min(results.Length, methods.Length - skip); i < len; i++)
-            {
                 if (!methods[i].IsConstructor && !methods[i].IsClassInitializer)
-                {
                     results[i - skip] = new global::java.lang.invoke.MemberName((global::java.lang.reflect.Method)methods[i].ToMethodOrConstructor(true), false);
-                }
-            }
+
             return methods.Length - skip;
 #endif
         }
@@ -403,17 +405,21 @@ namespace IKVM.Java.Externs.java.lang.invoke
         public static long objectFieldOffset(global::java.lang.invoke.MemberName self)
         {
 #if FIRST_PASS
-		return 0;
+            throw new NotImplementedException();
 #else
-            global::java.lang.reflect.Field field = (global::java.lang.reflect.Field)TypeWrapper.FromClass(self.getDeclaringClass())
-                .GetFieldWrapper(self.getName(), self.getSignature().Replace('/', '.')).ToField(false);
-            return global::sun.misc.Unsafe.allocateUnsafeFieldId(field);
+            var fw = TypeWrapper.FromClass(self.getDeclaringClass()).GetFieldWrapper(self.getName(), self.getSignature().Replace('/', '.'));
+            return (long)fw.Cookie;
 #endif
         }
 
         public static long staticFieldOffset(global::java.lang.invoke.MemberName self)
         {
-            return objectFieldOffset(self);
+#if FIRST_PASS
+            throw new NotImplementedException();
+#else
+            var fw = TypeWrapper.FromClass(self.getDeclaringClass()).GetFieldWrapper(self.getName(), self.getSignature().Replace('/', '.'));
+            return (long)fw.Cookie;
+#endif
         }
 
         public static object staticFieldBase(global::java.lang.invoke.MemberName self)
@@ -432,11 +438,12 @@ namespace IKVM.Java.Externs.java.lang.invoke
 
         public static void setCallSiteTargetNormal(global::java.lang.invoke.CallSite site, global::java.lang.invoke.MethodHandle target)
         {
-#if !FIRST_PASS
+#if FIRST_PASS
+            throw new NotImplementedException();
+#else
             if (site.ics == null)
-            {
                 InitializeCallSite(site);
-            }
+
             lock (site.ics)
             {
                 site.target = target;
@@ -458,7 +465,7 @@ namespace IKVM.Java.Externs.java.lang.invoke
         public static object getMemberVMInfo(global::java.lang.invoke.MemberName self)
         {
 #if FIRST_PASS
-		    return null;
+            throw new NotImplementedException();
 #else
             if (self.isField())
             {
@@ -480,9 +487,9 @@ namespace IKVM.Java.Externs.java.lang.invoke
         public static int getNamedCon(int which, object[] name)
         {
 #if FIRST_PASS
-		    return 0;
+            throw new NotImplementedException();
 #else
-            FieldInfo[] fields = typeof(global::java.lang.invoke.MethodHandleNatives.Constants).GetFields(BindingFlags.Static | BindingFlags.NonPublic);
+            var fields = typeof(global::java.lang.invoke.MethodHandleNatives.Constants).GetFields(BindingFlags.Static | BindingFlags.NonPublic);
             if (which >= fields.Length)
             {
                 name[0] = null;
