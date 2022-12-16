@@ -273,18 +273,19 @@ namespace IKVM.Internal
             }
         }
 
-        private static bool IsNative(MethodBase m)
+        static bool IsNative(MethodBase m)
         {
-            object[] methodFlagAttribs = m.GetCustomAttributes(typeof(ModifiersAttribute), false);
+            var methodFlagAttribs = m.GetCustomAttributes(typeof(ModifiersAttribute), false);
             if (methodFlagAttribs.Length == 1)
             {
                 ModifiersAttribute modifiersAttrib = (ModifiersAttribute)methodFlagAttribs[0];
                 return (modifiersAttrib.Modifiers & Modifiers.Native) != 0;
             }
+
             return false;
         }
 
-        private static string GetMethodName(MethodBase mb)
+        static string GetMethodName(MethodBase mb)
         {
             object[] attr = mb.GetCustomAttributes(typeof(NameSigAttribute), false);
             if (attr.Length == 1)
@@ -320,7 +321,7 @@ namespace IKVM.Internal
         private static bool IsHideFromJava(MethodBase mb)
         {
 #if FIRST_PASS
-			return false;
+            return false;
 #else
             return (IKVM.Java.Externs.sun.reflect.Reflection.GetHideFromJavaFlags(mb) & HideFromJavaFlags.StackTrace) != 0
                 || (mb.DeclaringType == typeof(ikvm.runtime.Util) && mb.Name == "mapException");
@@ -399,7 +400,7 @@ namespace IKVM.Internal
         internal static ObjectStreamField[] getPersistentFields()
         {
 #if FIRST_PASS
-			return null;
+            return null;
 #else
             return new ObjectStreamField[] {
                 new ObjectStreamField("detailMessage", typeof(global::java.lang.String)),
@@ -530,7 +531,7 @@ namespace IKVM.Internal
         internal static string GetMessageFromCause(Exception cause)
         {
 #if FIRST_PASS
-			return null;
+            return null;
 #else
             if (cause == null)
             {
@@ -543,7 +544,7 @@ namespace IKVM.Internal
         internal static string getLocalizedMessage(Exception x)
         {
 #if FIRST_PASS
-			return null;
+            return null;
 #else
             return ikvm.extensions.ExtensionMethods.getMessage(x);
 #endif
@@ -552,7 +553,7 @@ namespace IKVM.Internal
         internal static string toString(Exception x)
         {
 #if FIRST_PASS
-			return null;
+            return null;
 #else
             string message = ikvm.extensions.ExtensionMethods.getLocalizedMessage(x);
             if (message == null)
@@ -566,7 +567,7 @@ namespace IKVM.Internal
         internal static Exception getCause(Exception _this)
         {
 #if FIRST_PASS
-			return null;
+            return null;
 #else
             lock (_this)
             {
@@ -627,7 +628,7 @@ namespace IKVM.Internal
         internal static Exception[] getSuppressed(Exception _this)
         {
 #if FIRST_PASS
-			return null;
+            return null;
 #else
             lock (_this)
             {
@@ -663,7 +664,7 @@ namespace IKVM.Internal
         internal static StackTraceElement[] getOurStackTrace(Exception x)
         {
 #if FIRST_PASS
-			return null;
+            return null;
 #else
             Throwable _this = x as Throwable;
             if (_this == null)
@@ -780,7 +781,7 @@ namespace IKVM.Internal
         internal static Exception UnmapException(Exception x)
         {
 #if FIRST_PASS
-			return null;
+            return null;
 #else
             if (x is Throwable)
             {
@@ -799,7 +800,7 @@ namespace IKVM.Internal
         private static Exception MapTypeInitializeException(TypeInitializationException t, Type handler)
         {
 #if FIRST_PASS
-			return null;
+            return null;
 #else
             bool wrapped = false;
             Exception r = MapException<Exception>(t.InnerException, true, false);
@@ -836,7 +837,7 @@ namespace IKVM.Internal
             where T : Exception
         {
 #if FIRST_PASS
-			return false;
+            return false;
 #else
             if (!remap && typeof(T) == typeof(Exception))
             {
@@ -851,7 +852,7 @@ namespace IKVM.Internal
             where T : Exception
         {
 #if FIRST_PASS
-			return null;
+            return null;
 #else
             Exception org = x;
             bool nonJavaException = !(x is Throwable);
