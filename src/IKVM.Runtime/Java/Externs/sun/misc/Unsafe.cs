@@ -24,8 +24,6 @@
 */
 
 using System;
-using System.Collections.Generic;
-using System.Diagnostics;
 using System.Reflection;
 using System.Reflection.Emit;
 using System.Runtime.CompilerServices;
@@ -394,7 +392,527 @@ namespace IKVM.Java.Externs.sun.misc
         public static void putFloat(object self, object o, long offset, float x)
         {
 #if FIRST_PASS
-		    return null;
+            throw new NotImplementedException();
+#else
+            if (o is Array array)
+            {
+                WriteInt32(array, offset, global::java.lang.Float.floatToRawIntBits(x));
+            }
+            else
+            {
+                try
+                {
+                    GetField(offset).setFloat(o, x);
+                }
+                catch (global::java.lang.IllegalAccessException e)
+                {
+                    throw (global::java.lang.InternalError)new global::java.lang.InternalError().initCause(e);
+                }
+            }
+#endif
+        }
+
+        public static double getDouble(object self, object o, long offset)
+        {
+#if FIRST_PASS
+            throw new NotImplementedException();
+#else
+            if (o is Array array)
+            {
+                return global::java.lang.Double.longBitsToDouble(ReadInt64(array, offset));
+            }
+            else
+            {
+                try
+                {
+                    return GetField(offset).getDouble(o);
+                }
+                catch (global::java.lang.IllegalAccessException e)
+                {
+                    throw (global::java.lang.InternalError)new global::java.lang.InternalError().initCause(e);
+                }
+            }
+#endif
+        }
+
+        public static void putDouble(object self, object o, long offset, double x)
+        {
+#if FIRST_PASS
+            throw new NotImplementedException();
+#else
+            if (o is Array array)
+            {
+                WriteInt64(array, offset, global::java.lang.Double.doubleToRawLongBits(x));
+            }
+            else
+            {
+                try
+                {
+                    GetField(offset).setDouble(o, x);
+                }
+                catch (global::java.lang.IllegalAccessException e)
+                {
+                    throw (global::java.lang.InternalError)new global::java.lang.InternalError().initCause(e);
+                }
+            }
+#endif
+        }
+
+        public static byte getByte(object self, long address)
+        {
+            return Marshal.ReadByte((IntPtr)address);
+        }
+
+        public static void putByte(object self, long address, byte x)
+        {
+            Marshal.WriteByte((IntPtr)address, x);
+        }
+
+        public static short getShort(object self, long address)
+        {
+            return Marshal.ReadInt16((IntPtr)address);
+        }
+
+        public static void putShort(object self, long address, short x)
+        {
+            Marshal.WriteInt16((IntPtr)address, x);
+        }
+
+        public static char getChar(object self, long address)
+        {
+            return (char)Marshal.ReadInt16((IntPtr)address);
+        }
+
+        public static void putChar(object self, long address, char x)
+        {
+            Marshal.WriteInt16((IntPtr)address, (short)x);
+        }
+
+        public static int getInt(object self, long address)
+        {
+            return Marshal.ReadInt32((IntPtr)address);
+        }
+
+        public static void putInt(object self, long address, int x)
+        {
+            Marshal.WriteInt32((IntPtr)address, x);
+        }
+
+        public static long getLong(object self, long address)
+        {
+            return Marshal.ReadInt64((IntPtr)address);
+        }
+
+        public static void putLong(object self, long address, long x)
+        {
+            Marshal.WriteInt64((IntPtr)address, x);
+        }
+
+        public static float getFloat(object self, long address)
+        {
+#if FIRST_PASS
+            throw new NotImplementedException();
+#else
+            return global::java.lang.Float.intBitsToFloat(getInt(self, address));
+#endif
+        }
+
+        public static void putFloat(object self, long address, float x)
+        {
+#if FIRST_PASS
+            throw new NotImplementedException();
+#else
+            putInt(self, address, global::java.lang.Float.floatToIntBits(x));
+#endif
+        }
+
+        public static double getDouble(object self, long address)
+        {
+#if FIRST_PASS
+            throw new NotImplementedException();
+#else
+            return global::java.lang.Double.longBitsToDouble(getLong(self, address));
+#endif
+        }
+
+        public static void putDouble(object self, long address, double x)
+        {
+#if FIRST_PASS
+            throw new NotImplementedException();
+#else
+            putLong(self, address, global::java.lang.Double.doubleToLongBits(x));
+#endif
+        }
+
+        public static long getAddress(object self, long address)
+        {
+            return Marshal.ReadIntPtr((IntPtr)address).ToInt64();
+        }
+
+        public static void putAddress(object self, long address, long x)
+        {
+            Marshal.WriteIntPtr((IntPtr)address, (IntPtr)x);
+        }
+
+        /// <summary>
+        /// Implementation of native method 'allocateMemory'.
+        /// </summary>
+        /// <param name="self"></param>
+        /// <param name="bytes"></param>
+        /// <returns></returns>
+        /// <exception cref="global::java.lang.OutOfMemoryError"></exception>
+        public static long allocateMemory(object self, long bytes)
+        {
+#if FIRST_PASS
+            throw new NotImplementedException();
+#else
+            if (bytes == 0)
+            {
+                return 0;
+            }
+            try
+            {
+                return Marshal.AllocHGlobal((IntPtr)bytes).ToInt64();
+            }
+            catch (OutOfMemoryException e)
+            {
+                throw new global::java.lang.OutOfMemoryError(e.Message);
+            }
+#endif
+        }
+
+        /// <summary>
+        /// Implementation of native method 'reallocateMemory'.
+        /// </summary>
+        /// <param name="self"></param>
+        /// <param name="address"></param>
+        /// <param name="bytes"></param>
+        /// <returns></returns>
+        /// <exception cref="global::java.lang.OutOfMemoryError"></exception>
+        public static long reallocateMemory(object self, long address, long bytes)
+        {
+#if FIRST_PASS
+            throw new NotImplementedException();
+#else
+            if (bytes == 0)
+            {
+                freeMemory(self, address);
+                return 0;
+            }
+            try
+            {
+                return Marshal.ReAllocHGlobal((IntPtr)address, (IntPtr)bytes).ToInt64();
+            }
+            catch (OutOfMemoryException e)
+            {
+                throw new global::java.lang.OutOfMemoryError(e.Message);
+            }
+#endif
+        }
+
+        /// <summary>
+        /// Implementation of native method 'setMemory'.
+        /// </summary>
+        /// <param name="self"></param>
+        /// <param name="o"></param>
+        /// <param name="offset"></param>
+        /// <param name="bytes"></param>
+        /// <param name="value"></param>
+        /// <exception cref="global::java.lang.IllegalArgumentException"></exception>
+        public static void setMemory(object self, object o, long offset, long bytes, byte value)
+        {
+#if FIRST_PASS
+            throw new NotImplementedException();
+#else
+            if (o == null)
+                while (bytes-- > 0)
+                    putByte(self, offset++, value);
+            else if (o is byte[] array)
+                ((Span<byte>)array).Slice((int)offset, (int)bytes).Fill(value);
+            else if (o is Array df)
+                for (int i = 0; i < bytes; i++)
+                    Buffer.SetByte(df, (int)(offset + i), value);
+            else
+                throw new global::java.lang.IllegalArgumentException();
+#endif
+        }
+
+        /// <summary>
+        /// Implementation of native method 'copyMemory'.
+        /// </summary>
+        /// <param name="self"></param>
+        /// <param name="srcBase"></param>
+        /// <param name="srcOffset"></param>
+        /// <param name="destBase"></param>
+        /// <param name="destOffset"></param>
+        /// <param name="bytes"></param>
+        /// <exception cref="global::java.lang.IllegalArgumentException"></exception>
+        public static void copyMemory(object self, object srcBase, long srcOffset, object destBase, long destOffset, long bytes)
+        {
+            void copyMemory2(long srcAddress, long destAddress, long bytes)
+            {
+                while (bytes-- > 0)
+                    putByte(self, destAddress++, getByte(self, srcAddress++));
+            }
+
+            if (srcBase == null)
+            {
+                if (destBase is byte[] byteArray)
+                {
+                    Marshal.Copy((IntPtr)(srcOffset), byteArray, (int)destOffset, (int)bytes);
+                }
+                else if (destBase is bool[])
+                {
+                    byte[] tmp = new byte[(int)bytes];
+                    copyMemory(self, srcBase, srcOffset, tmp, 0, bytes);
+                    copyMemory(self, tmp, 0, destBase, destOffset, bytes);
+                }
+                else if (destBase is short[] shortArray)
+                {
+                    Marshal.Copy((IntPtr)(srcOffset), shortArray, (int)(destOffset >> 1), (int)(bytes >> 1));
+                }
+                else if (destBase is char[] charArray)
+                {
+                    Marshal.Copy((IntPtr)(srcOffset), charArray, (int)(destOffset >> 1), (int)(bytes >> 1));
+                }
+                else if (destBase is int[] intArray)
+                {
+                    Marshal.Copy((IntPtr)srcOffset, intArray, (int)(destOffset >> 2), (int)(bytes >> 2));
+                }
+                else if (destBase is float[] floatArray)
+                {
+                    Marshal.Copy((IntPtr)(srcOffset), floatArray, (int)(destOffset >> 2), (int)(bytes >> 2));
+                }
+                else if (destBase is long[] longArray)
+                {
+                    Marshal.Copy((IntPtr)(srcOffset), longArray, (int)(destOffset >> 3), (int)(bytes >> 3));
+                }
+                else if (destBase is double[] doubleArray)
+                {
+                    Marshal.Copy((IntPtr)(srcOffset), doubleArray, (int)(destOffset >> 3), (int)(bytes >> 3));
+                }
+                else if (destBase == null)
+                {
+                    copyMemory2(srcOffset, destOffset, bytes);
+                }
+                else
+                {
+                    throw new global::java.lang.IllegalArgumentException();
+                }
+            }
+            else if (srcBase is Array && destBase is Array)
+            {
+                Buffer.BlockCopy((Array)srcBase, (int)srcOffset, (Array)destBase, (int)destOffset, (int)bytes);
+            }
+            else
+            {
+                if (srcBase is byte[] byteArray)
+                {
+                    Marshal.Copy(byteArray, (int)srcOffset, (IntPtr)(destOffset), (int)bytes);
+                }
+                else if (srcBase is bool[])
+                {
+                    byte[] tmp = new byte[(int)bytes];
+                    copyMemory(self, srcBase, srcOffset, tmp, 0, bytes);
+                    copyMemory(self, tmp, 0, destBase, destOffset, bytes);
+                }
+                else if (srcBase is short[] shortArray)
+                {
+                    Marshal.Copy(shortArray, (int)(srcOffset >> 1), (IntPtr)(destOffset), (int)(bytes >> 1));
+                }
+                else if (srcBase is char[] charArray)
+                {
+                    Marshal.Copy(charArray, (int)(srcOffset >> 1), (IntPtr)(destOffset), (int)(bytes >> 1));
+                }
+                else if (srcBase is int[] intArray)
+                {
+                    Marshal.Copy(intArray, (int)(srcOffset >> 2), (IntPtr)(destOffset), (int)(bytes >> 2));
+                }
+                else if (srcBase is float[] floatArray)
+                {
+                    Marshal.Copy(floatArray, (int)(srcOffset >> 2), (IntPtr)(destOffset), (int)(bytes >> 2));
+                }
+                else if (srcBase is long[] longArray)
+                {
+                    Marshal.Copy(longArray, (int)(srcOffset >> 3), (IntPtr)(destOffset), (int)(bytes >> 3));
+                }
+                else if (srcBase is double[] doubleArray)
+                {
+                    Marshal.Copy(doubleArray, (int)(srcOffset >> 3), (IntPtr)(destOffset), (int)(bytes >> 3));
+                }
+                else
+                {
+                    throw new global::java.lang.IllegalArgumentException();
+                }
+            }
+        }
+
+        /// <summary>
+        /// Implementation of native method 'freeMemory'.
+        /// </summary>
+        /// <param name="self"></param>
+        /// <param name="address"></param>
+        public static void freeMemory(object self, long address)
+        {
+            Marshal.FreeHGlobal((IntPtr)address);
+        }
+
+        /// <summary>
+        /// Implementation of native method 'staticFieldOffset'.
+        /// </summary>
+        /// <param name="self"></param>
+        /// <param name="f"></param>
+        /// <returns></returns>
+        public static long staticFieldOffset(object self, global::java.lang.reflect.Field f)
+        {
+            var fw = FieldWrapper.FromField(f);
+            return (long)fw.Cookie;
+        }
+
+        /// <summary>
+        /// Implementation of native method 'objectFieldOffset'.
+        /// </summary>
+        /// <param name="self"></param>
+        /// <param name="f"></param>
+        /// <returns></returns>
+        public static long objectFieldOffset(object self, global::java.lang.reflect.Field f)
+        {
+            var fw = FieldWrapper.FromField(f);
+            return (long)fw.Cookie;
+        }
+
+        /// <summary>
+        /// Implementation of native method 'staticFieldBase'.
+        /// </summary>
+        /// <param name="self"></param>
+        /// <param name="f"></param>
+        /// <returns></returns>
+        public static object staticFieldBase(object self, global::java.lang.reflect.Field f)
+        {
+            return null;
+        }
+
+        /// <summary>
+        /// Implementation of native method 'shouldBeInitialized'.
+        /// </summary>
+        /// <param name="self"></param>
+        /// <param name="c"></param>
+        /// <returns></returns>
+        public static bool shouldBeInitialized(object self, global::java.lang.Class c)
+        {
+            return TypeWrapper.FromClass(c).HasStaticInitializer;
+        }
+
+        /// <summary>
+        /// Implementation of native method 'ensureClassInitialized'.
+        /// </summary>
+        /// <param name="self"></param>
+        /// <param name="c"></param>
+        public static void ensureClassInitialized(object self, global::java.lang.Class c)
+        {
+            var tw = TypeWrapper.FromClass(c);
+            if (tw.IsArray == false)
+            {
+                try
+                {
+                    tw.Finish();
+                }
+                catch (RetargetableJavaException x)
+                {
+                    throw x.ToJava();
+                }
+
+                tw.RunClassInit();
+            }
+        }
+
+        /// <summary>
+        /// Implementation of native method 'arrayBaseOffset'.
+        /// </summary>
+        /// <param name="self"></param>
+        /// <param name="arrayClass"></param>
+        /// <returns></returns>
+        public static int arrayBaseOffset(object self, global::java.lang.Class arrayClass)
+        {
+            return 0;
+        }
+
+        /// <summary>
+        /// Implementation of native method 'arrayIndexScale'.
+        /// </summary>
+        /// <param name="self"></param>
+        /// <param name="arrayClass"></param>
+        /// <returns></returns>
+        public static int arrayIndexScale(object self, global::java.lang.Class arrayClass)
+        {
+            var tw = TypeWrapper.FromClass(arrayClass);
+            var ac = tw.TypeAsTBD;
+
+            if (ac == typeof(byte[]) || ac == typeof(bool[]))
+                return 1;
+
+            if (ac == typeof(char[]) || ac == typeof(short[]))
+                return 2;
+
+            if (ac == typeof(int[]) || ac == typeof(float[]) || ac == typeof(Object[]))
+                return 4;
+
+            if (ac == typeof(long[]) || ac == typeof(double[]))
+                return 8;
+
+            // don't change this, the Unsafe intrinsics depend on this value
+            return 1;
+        }
+
+        /// <summary>
+        /// Implementation of native method 'addressSize'.
+        /// </summary>
+        /// <param name="self"></param>
+        /// <returns></returns>
+        public static int addressSize(object self)
+        {
+            return IntPtr.Size;
+        }
+
+        /// <summary>
+        /// Implementation of native method 'pageSize'.
+        /// </summary>
+        /// <param name="self"></param>
+        /// <returns></returns>
+        public static int pageSize(object self)
+        {
+            return Environment.SystemPageSize;
+        }
+
+        /// <summary>
+        /// Implementation of native method 'defineClass'.
+        /// </summary>
+        /// <param name="self"></param>
+        /// <param name="name"></param>
+        /// <param name="b"></param>
+        /// <param name="off"></param>
+        /// <param name="len"></param>
+        /// <param name="loader"></param>
+        /// <param name="protectionDomain"></param>
+        /// <returns></returns>
+        public static global::java.lang.Class defineClass(object self, string name, byte[] b, int off, int len, global::java.lang.ClassLoader loader, global::java.security.ProtectionDomain protectionDomain)
+        {
+            return IKVM.Java.Externs.java.lang.ClassLoader.defineClass1(loader, name.Replace('/', '.'), b, off, len, protectionDomain, null);
+        }
+
+        /// <summary>
+        /// Implementation of native method 'defineAnonymousClass'.
+        /// </summary>
+        /// <param name="self"></param>
+        /// <param name="hostClass"></param>
+        /// <param name="data"></param>
+        /// <param name="cpPatches"></param>
+        /// <returns></returns>
+        /// <exception cref="global::java.lang.ClassFormatError"></exception>
+        public static global::java.lang.Class defineAnonymousClass(object self, global::java.lang.Class hostClass, byte[] data, object[] cpPatches)
+        {
+#if FIRST_PASS
+            throw new NotImplementedException();
 #else
             try
             {
@@ -405,13 +923,98 @@ namespace IKVM.Java.Externs.sun.misc
                 {
                     // if this happens, the OpenJDK is probably trying to load an OpenJDK class file as a resource,
                     // make sure the build process includes the original class file as a resource in that case
-                    throw new global::java.lang.ClassFormatError("Trying to define anonymous class based on stub class: " + classFile.Name);
+                    throw new global::java.lang.ClassFormatError("Trying to define anonymous class based on stub class: " + cf.Name);
                 }
-                return loader.GetTypeWrapperFactory().DefineClassImpl(null, TypeWrapper.FromClass(host), classFile, loader, host.pd).ClassObject;
+
+                return cl.GetTypeWrapperFactory().DefineClassImpl(null, tw, cf, cl, hostClass.pd).ClassObject;
             }
             catch (RetargetableJavaException x)
             {
                 throw x.ToJava();
+            }
+#endif
+        }
+
+        /// <summary>
+        /// Implementation of native method 'allocateInstance'.
+        /// </summary>
+        /// <param name="self"></param>
+        /// <param name="cls"></param>
+        /// <returns></returns>
+        public static object allocateInstance(object self, global::java.lang.Class cls)
+        {
+            var wrapper = TypeWrapper.FromClass(cls);
+            try
+            {
+                wrapper.Finish();
+            }
+            catch (RetargetableJavaException x)
+            {
+                throw x.ToJava();
+            }
+
+            return FormatterServices.GetUninitializedObject(wrapper.TypeAsBaseType);
+        }
+
+        /// <summary>
+        /// Implementation of native method 'monitorEnter'.
+        /// </summary>
+        /// <param name="self"></param>
+        /// <param name="o"></param>
+        public static void monitorEnter(object self, object o)
+        {
+            Monitor.Enter(o);
+        }
+
+        /// <summary>
+        /// Implementation of native method 'monitorExit'.
+        /// </summary>
+        /// <param name="self"></param>
+        /// <param name="o"></param>
+        public static void monitorExit(object self, object o)
+        {
+            Monitor.Exit(o);
+        }
+
+        /// <summary>
+        /// Implementation of native method 'tryMonitorEnter'.
+        /// </summary>
+        /// <param name="self"></param>
+        /// <param name="o"></param>
+        /// <returns></returns>
+        public static bool tryMonitorEnter(object self, object o)
+        {
+            return Monitor.TryEnter(o);
+        }
+
+        /// <summary>
+        /// Implementation of native method 'throwException'.
+        /// </summary>
+        /// <param name="self"></param>
+        /// <param name="ee"></param>
+        public static void throwException(object self, Exception ee)
+        {
+            throw ee;
+        }
+
+        public static bool compareAndSwapObject(object self, object o, long offset, object expected, object x)
+        {
+#if FIRST_PASS
+            throw new NotImplementedException();
+#else
+            if (o is object[] array)
+            {
+                return AtomicArray.CompareExchange(array, (int)offset, x, expected) == expected;
+            }
+            else
+            {
+                if (offset >= cacheCompareExchangeObject.Length || cacheCompareExchangeObject[offset] == null)
+                {
+                    InterlockedResize(ref cacheCompareExchangeObject, (int)offset + 1);
+                    cacheCompareExchangeObject[offset] = (CompareExchangeObject)CreateCompareExchangeDelegate(offset);
+                }
+
+                return cacheCompareExchangeObject[offset](o, x, expected) == expected;
             }
 #endif
         }
@@ -480,10 +1083,39 @@ namespace IKVM.Java.Externs.sun.misc
                 if (offset >= cacheCompareExchangeInt64.Length || cacheCompareExchangeInt64[offset] == null)
                 {
                     InterlockedResize(ref cacheCompareExchangeInt64, (int)offset + 1);
-                    cacheCompareExchangeInt64[offset] = (CompareExchangeInt64)CreateCompareExchange(offset);
+                    cacheCompareExchangeInt64[offset] = (CompareExchangeInt64)CreateCompareExchangeDelegate(offset);
                 }
-                Stats.Log("compareAndSwapLong.", offset);
-                return cacheCompareExchangeInt64[offset](obj, update, expect) == expect;
+
+                return cacheCompareExchangeInt64[offset](o, x, expected) == expected;
+            }
+#endif
+        }
+
+        public static void putObjectVolatile(object self, object o, long offset, object x)
+        {
+#if FIRST_PASS
+            throw new NotImplementedException();
+#else
+            if (o is object[] array)
+            {
+                lock (self)
+                    array[(int)offset] = x;
+            }
+            else
+            {
+                var field = GetField(offset);
+
+                lock (field)
+                {
+                    try
+                    {
+                        field.set(o, x);
+                    }
+                    catch (global::java.lang.IllegalAccessException e)
+                    {
+                        throw (global::java.lang.InternalError)new global::java.lang.InternalError().initCause(e);
+                    }
+                }
             }
 #endif
         }
@@ -502,106 +1134,212 @@ namespace IKVM.Java.Externs.sun.misc
             {
                 var field = GetField(offset);
 
-        private delegate int CompareExchangeInt32(object obj, int value, int comparand);
-        private delegate long CompareExchangeInt64(object obj, long value, long comparand);
-        private delegate object CompareExchangeObject(object obj, object value, object comparand);
-        private static CompareExchangeInt32[] cacheCompareExchangeInt32 = new CompareExchangeInt32[0];
-        private static CompareExchangeInt64[] cacheCompareExchangeInt64 = new CompareExchangeInt64[0];
-        private static CompareExchangeObject[] cacheCompareExchangeObject = new CompareExchangeObject[0];
-
-        private static void InterlockedResize<T>(ref T[] array, int newSize)
-        {
-            for (; ; )
-            {
-                T[] oldArray = array;
-                T[] newArray = oldArray;
-                if (oldArray.Length >= newSize)
+                lock (field)
                 {
-                    return;
-                }
-                Array.Resize(ref newArray, newSize);
-                if (Interlocked.CompareExchange(ref array, newArray, oldArray) == oldArray)
-                {
-                    return;
+                    try
+                    {
+                        return field.getInt(o);
+                    }
+                    catch (global::java.lang.IllegalAccessException e)
+                    {
+                        throw (global::java.lang.InternalError)new global::java.lang.InternalError().initCause(e);
+                    }
                 }
             }
-        }
-
-#if !FIRST_PASS
-        private static Delegate CreateCompareExchange(long fieldOffset)
-        {
-            FieldInfo field = GetFieldInfo(fieldOffset);
-            bool primitive = field.FieldType.IsPrimitive;
-            Type signatureType = primitive ? field.FieldType : typeof(object);
-            MethodInfo compareExchange;
-            Type delegateType;
-            if (signatureType == typeof(int))
-            {
-                compareExchange = InterlockedMethods.CompareExchangeInt32;
-                delegateType = typeof(CompareExchangeInt32);
-            }
-            else if (signatureType == typeof(long))
-            {
-                compareExchange = InterlockedMethods.CompareExchangeInt64;
-                delegateType = typeof(CompareExchangeInt64);
-            }
-            else
-            {
-                compareExchange = InterlockedMethods.CompareExchangeOfT.MakeGenericMethod(field.FieldType);
-                delegateType = typeof(CompareExchangeObject);
-            }
-            DynamicMethod dm = new DynamicMethod("CompareExchange", signatureType, new Type[] { typeof(object), signatureType, signatureType }, field.DeclaringType);
-            ILGenerator ilgen = dm.GetILGenerator();
-            // note that we don't bother will special casing static fields, because it is legal to use ldflda on a static field
-            ilgen.Emit(OpCodes.Ldarg_0);
-            ilgen.Emit(OpCodes.Castclass, field.DeclaringType);
-            ilgen.Emit(OpCodes.Ldflda, field);
-            ilgen.Emit(OpCodes.Ldarg_1);
-            if (!primitive)
-            {
-                ilgen.Emit(OpCodes.Castclass, field.FieldType);
-            }
-            ilgen.Emit(OpCodes.Ldarg_2);
-            if (!primitive)
-            {
-                ilgen.Emit(OpCodes.Castclass, field.FieldType);
-            }
-            ilgen.Emit(OpCodes.Call, compareExchange);
-            ilgen.Emit(OpCodes.Ret);
-            return dm.CreateDelegate(delegateType);
-        }
-
-        private static FieldInfo GetFieldInfo(long offset)
-        {
-            FieldWrapper fw = FieldWrapper.FromField(global::sun.misc.Unsafe.getField(offset));
-            fw.Link();
-            fw.ResolveField();
-            return fw.GetField();
-        }
 #endif
+        }
 
-        public static bool compareAndSwapObject(object thisUnsafe, object obj, long offset, object expect, object update)
+        public static void putIntVolatile(object self, object o, long offset, int x)
         {
 #if FIRST_PASS
-		return false;
+            throw new NotImplementedException();
 #else
-            object[] array = obj as object[];
-            if (array != null)
+            if (o is Array array)
             {
-                Stats.Log("compareAndSwapObject.array");
-                return Atomic.CompareExchange(array, (int)offset, update, expect) == expect;
+                lock (self)
+                    WriteInt32(array, offset, x);
             }
             else
             {
-                if (offset >= cacheCompareExchangeObject.Length || cacheCompareExchangeObject[offset] == null)
+                var field = GetField(offset);
+
+                lock (field)
                 {
-                    InterlockedResize(ref cacheCompareExchangeObject, (int)offset + 1);
-                    cacheCompareExchangeObject[offset] = (CompareExchangeObject)CreateCompareExchange(offset);
+                    try
+                    {
+                        field.setInt(o, x);
+                    }
+                    catch (global::java.lang.IllegalAccessException e)
+                    {
+                        throw (global::java.lang.InternalError)new global::java.lang.InternalError().initCause(e);
+                    }
                 }
-                Stats.Log("compareAndSwapObject.", offset);
-                return cacheCompareExchangeObject[offset](obj, update, expect) == expect;
             }
 #endif
+        }
+
+        public static bool getBooleanVolatile(object self, object o, long offset)
+        {
+            return getBoolean(self, o, offset);
+        }
+
+        public static void putBooleanVolatile(object self, object o, long offset, bool x)
+        {
+            putBoolean(self, o, offset, x);
+        }
+
+        public static byte getByteVolatile(object self, object o, long offset)
+        {
+            return getByte(self, o, offset);
+        }
+
+        public static void putByteVolatile(object self, object o, long offset, byte x)
+        {
+            putByte(self, o, offset, x);
+        }
+
+        public static short getShortVolatile(object self, object o, long offset)
+        {
+            return getShort(self, o, offset);
+        }
+
+        public static void putShortVolatile(object self, object o, long offset, short x)
+        {
+            putShort(self, o, offset, x);
+        }
+
+        public static char getCharVolatile(object self, object o, long offset)
+        {
+            return getChar(self, o, offset);
+        }
+
+        public static void putCharVolatile(object self, object o, long offset, char x)
+        {
+            putChar(self, o, offset, x);
+        }
+
+        public static long getLongVolatile(object self, object o, long offset)
+        {
+#if FIRST_PASS
+            throw new NotImplementedException();
+#else
+            if (o is Array array)
+            {
+                lock (self)
+                    return ReadInt64(array, offset);
+            }
+            else
+            {
+                var field = GetField(offset);
+
+                lock (field)
+                {
+                    try
+                    {
+                        return field.getLong(o);
+                    }
+                    catch (global::java.lang.IllegalAccessException e)
+                    {
+                        throw (global::java.lang.InternalError)new global::java.lang.InternalError().initCause(e);
+                    }
+                }
+            }
+#endif
+        }
+
+        public static void putLongVolatile(object self, object o, long offset, long x)
+        {
+#if FIRST_PASS
+            throw new NotImplementedException();
+#else
+            if (o is Array array)
+            {
+                lock (self)
+                    WriteInt64(array, offset, x);
+            }
+            else
+            {
+                var field = GetField(offset);
+
+                lock (field)
+                {
+                    try
+                    {
+                        field.setLong(o, x);
+                    }
+                    catch (global::java.lang.IllegalAccessException e)
+                    {
+                        throw (global::java.lang.InternalError)new global::java.lang.InternalError().initCause(e);
+                    }
+                }
+            }
+#endif
+        }
+
+        public static float getFloatVolatile(object self, object o, long offset)
+        {
+            return getFloat(self, o, offset);
+        }
+
+        public static void putFloatVolatile(object self, object o, long offset, float x)
+        {
+            putFloat(self, o, offset, x);
+        }
+
+        public static double getDoubleVolatile(object self, object o, long offset)
+        {
+            lock (self)
+                return getDouble(self, o, offset);
+        }
+
+        public static void putDoubleVolatile(object self, object o, long offset, double x)
+        {
+            lock (self)
+                putDouble(self, o, offset, x);
+        }
+
+        public static void putOrderedObject(object self, object o, long offset, object x)
+        {
+            putObjectVolatile(self, o, offset, x);
+        }
+
+        public static void putOrderedInt(object self, object o, long offset, int x)
+        {
+            putIntVolatile(self, o, offset, x);
+        }
+
+        public static void putOrderedLong(object self, object o, long offset, long x)
+        {
+            putLongVolatile(self, o, offset, x);
+        }
+
+        public static void unpark(object self, object thread)
+        {
+#if FIRST_PASS
+            throw new NotImplementedException();
+#else
+            global::java.util.concurrent.locks.LockSupport.unpark((global::java.lang.Thread)thread);
+#endif
+        }
+
+        public static void park(object self, bool isAbsolute, long time)
+        {
+#if FIRST_PASS
+            throw new NotImplementedException();
+#else
+            if (isAbsolute)
+            {
+                global::java.util.concurrent.locks.LockSupport.parkUntil(time);
+            }
+            else
+            {
+                if (time == 0)
+                    time = global::java.lang.Long.MAX_VALUE;
+
+                global::java.util.concurrent.locks.LockSupport.parkNanos(time);
+            }
+#endif
+        }
 
         public static int getLoadAverage(object self, double[] loadavg, int nelems)
         {
@@ -615,8 +1353,8 @@ namespace IKVM.Java.Externs.sun.misc
 
         public static void storeFence(object self)
         {
-            // NOTE we don't care that we keep the Type alive, because Unsafe should only be used inside the core class libraries
-            private static Dictionary<Type, Atomic> impls = new Dictionary<Type, Atomic>();
+            System.Threading.Thread.MemoryBarrier();
+        }
 
         public static void fullFence(object self)
         {
@@ -667,61 +1405,172 @@ namespace IKVM.Java.Externs.sun.misc
             return value;
         }
 
-            sealed class Impl<T> : Atomic
-                where T : class
+        static int ReadInt32(Array obj, long offset)
+        {
+            CheckArrayBounds(obj, offset, 4);
+            var handle = GCHandle.Alloc(obj, GCHandleType.Pinned);
+            var value = Marshal.ReadInt32((IntPtr)(handle.AddrOfPinnedObject().ToInt64() + offset));
+            handle.Free();
+            return value;
+        }
+
+        static long ReadInt64(Array obj, long offset)
+        {
+            CheckArrayBounds(obj, offset, 8);
+            var handle = GCHandle.Alloc(obj, GCHandleType.Pinned);
+            var value = Marshal.ReadInt64((IntPtr)(handle.AddrOfPinnedObject().ToInt64() + offset));
+            handle.Free();
+            return value;
+        }
+
+        static void WriteInt16(Array obj, long offset, short value)
+        {
+            CheckArrayBounds(obj, offset, 2);
+            var handle = GCHandle.Alloc(obj, GCHandleType.Pinned);
+            Marshal.WriteInt16((IntPtr)(handle.AddrOfPinnedObject().ToInt64() + offset), value);
+            handle.Free();
+        }
+
+        static void WriteInt32(Array obj, long offset, int value)
+        {
+            CheckArrayBounds(obj, offset, 4);
+            var handle = GCHandle.Alloc(obj, GCHandleType.Pinned);
+            Marshal.WriteInt32((IntPtr)(handle.AddrOfPinnedObject().ToInt64() + offset), value);
+            handle.Free();
+        }
+
+        static void WriteInt64(Array obj, long offset, long value)
+        {
+            CheckArrayBounds(obj, offset, 8);
+            var handle = GCHandle.Alloc(obj, GCHandleType.Pinned);
+            Marshal.WriteInt64((IntPtr)(handle.AddrOfPinnedObject().ToInt64() + offset), value);
+            handle.Free();
+        }
+
+        delegate int CompareExchangeInt32(object obj, int value, int comparand);
+        delegate long CompareExchangeInt64(object obj, long value, long comparand);
+        delegate object CompareExchangeObject(object obj, object value, object comparand);
+        static CompareExchangeInt32[] cacheCompareExchangeInt32 = new CompareExchangeInt32[0];
+        static CompareExchangeInt64[] cacheCompareExchangeInt64 = new CompareExchangeInt64[0];
+        static CompareExchangeObject[] cacheCompareExchangeObject = new CompareExchangeObject[0];
+
+        static void InterlockedResize<T>(ref T[] array, int newSize)
+        {
+            for (; ; )
             {
-                protected override object CompareExchangeImpl(object[] array, int index, object value, object comparand)
+                T[] oldArray = array;
+                T[] newArray = oldArray;
+                if (oldArray.Length >= newSize)
                 {
-                    return Interlocked.CompareExchange<T>(ref ((T[])array)[index], (T)value, (T)comparand);
+                    return;
+                }
+                Array.Resize(ref newArray, newSize);
+                if (Interlocked.CompareExchange(ref array, newArray, oldArray) == oldArray)
+                {
+                    return;
                 }
             }
         }
 
-        static class Stats
+#if !FIRST_PASS
+
+        /// <summary>
+        /// Creates a dynamic method that implements the compare and exchange logic for a given field.
+        /// </summary>
+        /// <param name="fieldOffset"></param>
+        /// <returns></returns>
+        static Delegate CreateCompareExchangeDelegate(long fieldOffset)
         {
-#if !FIRST_PASS && UNSAFE_STATISTICS
-		    private static readonly Dictionary<string, int> dict = new Dictionary<string, int>();
+            var field = GetFieldInfo(fieldOffset);
+            var primitive = field.FieldType.IsPrimitive;
+            var signatureType = primitive ? field.FieldType : typeof(object);
 
-		    static Stats()
-		    {
-			    java.lang.Runtime.getRuntime().addShutdownHook(new DumpStats());
-		    }
+            MethodInfo compareExchange;
+            Type delegateType;
 
-		    sealed class DumpStats : java.lang.Thread
-		    {
-			    public override void run()
-			    {
-				    List<KeyValuePair<string, int>> list = new List<KeyValuePair<string, int>>(dict);
-				    list.Sort(delegate(KeyValuePair<string, int> kv1, KeyValuePair<string, int> kv2) { return kv1.Value.CompareTo(kv2.Value); });
-				    foreach (KeyValuePair<string, int> kv in list)
-				    {
-					    Console.WriteLine("{0,10}: {1}", kv.Value, kv.Key);
-				    }
-			    }
-		    }
-#endif
-
-            [Conditional("UNSAFE_STATISTICS")]
-            internal static void Log(string key)
+            if (signatureType == typeof(int))
             {
-#if !FIRST_PASS && UNSAFE_STATISTICS
-				lock (dict)
-				{
-					int count;
-					dict.TryGetValue(key, out count);
-					dict[key] = count + 1;
-				}
-#endif
+                compareExchange = InterlockedMethods.CompareExchangeInt32;
+                delegateType = typeof(CompareExchangeInt32);
+            }
+            else if (signatureType == typeof(long))
+            {
+                compareExchange = InterlockedMethods.CompareExchangeInt64;
+                delegateType = typeof(CompareExchangeInt64);
+            }
+            else
+            {
+                compareExchange = InterlockedMethods.CompareExchangeOfT.MakeGenericMethod(field.FieldType);
+                delegateType = typeof(CompareExchangeObject);
             }
 
-            [Conditional("UNSAFE_STATISTICS")]
-            internal static void Log(string key, long offset)
-            {
-#if !FIRST_PASS && UNSAFE_STATISTICS
-				FieldWrapper field = FieldWrapper.FromField(sun.misc.Unsafe.getField(offset));
-				key += field.DeclaringType.Name + "::" + field.Name;
-				Log(key);
+            var dm = new DynamicMethod("CompareExchange", signatureType, new Type[] { typeof(object), signatureType, signatureType }, field.DeclaringType);
+            var ilgen = dm.GetILGenerator();
+            ilgen.Emit(OpCodes.Ldarg_0);
+            ilgen.Emit(OpCodes.Castclass, field.DeclaringType);
+            ilgen.Emit(OpCodes.Ldflda, field);
+            ilgen.Emit(OpCodes.Ldarg_1);
+            if (!primitive)
+                ilgen.Emit(OpCodes.Castclass, field.FieldType);
+            ilgen.Emit(OpCodes.Ldarg_2);
+            if (!primitive)
+                ilgen.Emit(OpCodes.Castclass, field.FieldType);
+            ilgen.Emit(OpCodes.Call, compareExchange);
+            ilgen.Emit(OpCodes.Ret);
+            return dm.CreateDelegate(delegateType);
+        }
+
 #endif
+
+        /// <summary>
+        /// Base class for typed atomic instances. Type-specific instances are maintained in a weak table to allow collection of types.
+        /// </summary>
+        abstract class AtomicArray
+        {
+
+            readonly static ConditionalWeakTable<Type, AtomicArray> cache = new ConditionalWeakTable<Type, AtomicArray>();
+
+            /// <summary>
+            /// Provides a CompareExchange implementation that caches by type.
+            /// </summary>
+            /// <param name="array"></param>
+            /// <param name="index"></param>
+            /// <param name="value"></param>
+            /// <param name="comparand"></param>
+            /// <returns></returns>
+            public static object CompareExchange(object[] array, int index, object value, object comparand)
+            {
+                return GetImpl(array.GetType().GetElementType()).CompareExchangeImpl(array, index, value, comparand);
+            }
+
+            /// <summary>
+            /// Gets the <see cref="AtomicArray"/> instance for the specified <see cref="Type"/>.
+            /// </summary>
+            /// <param name="type"></param>
+            /// <returns></returns>
+            static AtomicArray GetImpl(Type type)
+            {
+                if (cache.TryGetValue(type, out var impl) == false)
+                    cache.Add(type, impl = (AtomicArray)Activator.CreateInstance(typeof(Impl<>).MakeGenericType(type)));
+
+                return impl;
+            }
+
+            protected abstract object CompareExchangeImpl(object[] array, int index, object value, object comparand);
+
+            /// <summary>
+            /// Type-specific implementation of Atomic.
+            /// </summary>
+            /// <typeparam name="T"></typeparam>
+            sealed class Impl<T> : AtomicArray
+                where T : class
+            {
+
+                protected override object CompareExchangeImpl(object[] array, int index, object value, object comparand)
+                {
+                    return Interlocked.CompareExchange(ref ((T[])array)[index], (T)value, (T)comparand);
+                }
+
             }
         }
 
