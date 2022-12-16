@@ -1025,30 +1025,28 @@ namespace IKVM.Internal
 
         internal static TypeWrapper GetWrapperFromType(Type type)
         {
-            try
-            {
 #if IMPORTER
             if (type.__ContainsMissingType)
             {
                 return new UnloadableTypeWrapper(type);
             }
 #endif
-                //Tracer.Info(Tracer.Runtime, "GetWrapperFromType: {0}", type.AssemblyQualifiedName);
+            //Tracer.Info(Tracer.Runtime, "GetWrapperFromType: {0}", type.AssemblyQualifiedName);
 #if !IMPORTER
-                TypeWrapper.AssertFinished(type);
+            TypeWrapper.AssertFinished(type);
 #endif
-                Debug.Assert(!type.IsPointer);
-                Debug.Assert(!type.IsByRef);
-                TypeWrapper wrapper;
-                lock (globalTypeToTypeWrapper)
-                {
-                    globalTypeToTypeWrapper.TryGetValue(type, out wrapper);
-                }
+            Debug.Assert(!type.IsPointer);
+            Debug.Assert(!type.IsByRef);
+            TypeWrapper wrapper;
+            lock (globalTypeToTypeWrapper)
+            {
+                globalTypeToTypeWrapper.TryGetValue(type, out wrapper);
+            }
 
-                if (wrapper != null)
-                {
-                    return wrapper;
-                }
+            if (wrapper != null)
+            {
+                return wrapper;
+            }
 
 #if EXPORTER
 			if(type.__IsMissing || type.__ContainsMissingType)
@@ -1058,26 +1056,26 @@ namespace IKVM.Internal
 				return wrapper;
 			}
 #endif
-                string remapped;
-                if (remappedTypes.TryGetValue(type, out remapped))
+            string remapped;
+            if (remappedTypes.TryGetValue(type, out remapped))
+            {
+                wrapper = LoadClassCritical(remapped);
+            }
+            else if (ReflectUtil.IsVector(type))
+            {
+                // it might be an array of a dynamically compiled Java type
+                int rank = 1;
+                Type elem = type.GetElementType();
+                while (ReflectUtil.IsVector(elem))
                 {
-                    wrapper = LoadClassCritical(remapped);
+                    rank++;
+                    elem = elem.GetElementType();
                 }
-                else if (ReflectUtil.IsVector(type))
-                {
-                    // it might be an array of a dynamically compiled Java type
-                    int rank = 1;
-                    Type elem = type.GetElementType();
-                    while (ReflectUtil.IsVector(elem))
-                    {
-                        rank++;
-                        elem = elem.GetElementType();
-                    }
-                    wrapper = GetWrapperFromType(elem).MakeArrayType(rank);
-                }
-                else
-                {
-                    Assembly asm = type.Assembly;
+                wrapper = GetWrapperFromType(elem).MakeArrayType(rank);
+            }
+            else
+            {
+                Assembly asm = type.Assembly;
 #if CLASSGC
                 ClassLoaderWrapper loader = null;
                 if (dynamicAssemblies != null && dynamicAssemblies.TryGetValue(asm, out loader))
@@ -1095,35 +1093,35 @@ namespace IKVM.Internal
                 }
 #endif
 #if !IMPORTER && !EXPORTER
-                    if (AnonymousTypeWrapper.IsAnonymous(type))
-                    {
-                        Dictionary<Type, TypeWrapper> typeToTypeWrapper;
+                if (AnonymousTypeWrapper.IsAnonymous(type))
+                {
+                    Dictionary<Type, TypeWrapper> typeToTypeWrapper;
 #if CLASSGC
                     typeToTypeWrapper = loader != null ? loader.typeToTypeWrapper : globalTypeToTypeWrapper;
 #else
-                        typeToTypeWrapper = globalTypeToTypeWrapper;
+                    typeToTypeWrapper = globalTypeToTypeWrapper;
 #endif
-                        TypeWrapper tw = new AnonymousTypeWrapper(type);
-                        lock (typeToTypeWrapper)
-                        {
-                            if (!typeToTypeWrapper.TryGetValue(type, out wrapper))
-                            {
-                                typeToTypeWrapper.Add(type, wrapper = tw);
-                            }
-                        }
-                        return wrapper;
-                    }
-                    if (ReflectUtil.IsReflectionOnly(type))
+                    TypeWrapper tw = new AnonymousTypeWrapper(type);
+                    lock (typeToTypeWrapper)
                     {
-                        // historically we've always returned null for types that don't have a corresponding TypeWrapper (or java.lang.Class)
-                        return null;
+                        if (!typeToTypeWrapper.TryGetValue(type, out wrapper))
+                        {
+                            typeToTypeWrapper.Add(type, wrapper = tw);
+                        }
                     }
-#endif
-                    // if the wrapper doesn't already exist, that must mean that the type
-                    // is a .NET type (or a pre-compiled Java class), which means that it
-                    // was "loaded" by an assembly classloader
-                    wrapper = AssemblyClassLoader.FromAssembly(asm).GetWrapperFromAssemblyType(type);
+                    return wrapper;
                 }
+                if (ReflectUtil.IsReflectionOnly(type))
+                {
+                    // historically we've always returned null for types that don't have a corresponding TypeWrapper (or java.lang.Class)
+                    return null;
+                }
+#endif
+                // if the wrapper doesn't already exist, that must mean that the type
+                // is a .NET type (or a pre-compiled Java class), which means that it
+                // was "loaded" by an assembly classloader
+                wrapper = AssemblyClassLoader.FromAssembly(asm).GetWrapperFromAssemblyType(type);
+            }
 #if CLASSGC
             if (type.Assembly.IsDynamic)
             {
@@ -1132,24 +1130,18 @@ namespace IKVM.Internal
                 return wrapper;
             }
 #endif
-                lock (globalTypeToTypeWrapper)
-                {
-                    try
-                    {
-                        // critical code in the finally block to avoid Thread.Abort interrupting the thread
-                    }
-                    finally
-                    {
-                        globalTypeToTypeWrapper[type] = wrapper;
-                    }
-                }
-                return wrapper;
-            }
-            catch (Exception e)
+            lock (globalTypeToTypeWrapper)
             {
-                Console.WriteLine(type);
-                throw;
+                try
+                {
+                    // critical code in the finally block to avoid Thread.Abort interrupting the thread
+                }
+                finally
+                {
+                    globalTypeToTypeWrapper[type] = wrapper;
+                }
             }
+            return wrapper;
         }
 
         internal static ClassLoaderWrapper GetGenericClassLoader(TypeWrapper wrapper)

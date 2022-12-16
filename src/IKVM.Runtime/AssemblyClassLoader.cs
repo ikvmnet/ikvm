@@ -95,45 +95,36 @@ namespace IKVM.Internal
         /// <returns></returns>
         static AssemblyClassLoader Create(Assembly assembly)
         {
-            try
+            // If the assembly is a part of a multi-assembly shared class loader,
+            // it will export the __<MainAssembly> type from the main assembly in the group.
+            var forwarder = assembly.GetType("__<MainAssembly>");
+            if (forwarder != null)
             {
-                // If the assembly is a part of a multi-assembly shared class loader,
-                // it will export the __<MainAssembly> type from the main assembly in the group.
-                var forwarder = assembly.GetType("__<MainAssembly>");
-                if (forwarder != null)
-                {
-                    var mainAssembly = forwarder.Assembly;
-                    if (mainAssembly != assembly)
-                        return FromAssembly(mainAssembly);
-                }
+                var mainAssembly = forwarder.Assembly;
+                if (mainAssembly != assembly)
+                    return FromAssembly(mainAssembly);
+            }
 
 #if IMPORTER
 
-                if (JVM.CoreAssembly == null && CompilerClassLoader.IsCoreAssembly(assembly))
-                {
-                    JVM.CoreAssembly = assembly;
-                    ClassLoaderWrapper.LoadRemappedTypes();
-                }
+            if (JVM.CoreAssembly == null && CompilerClassLoader.IsCoreAssembly(assembly))
+            {
+                JVM.CoreAssembly = assembly;
+                ClassLoaderWrapper.LoadRemappedTypes();
+            }
 
 #endif
 
-                if (assembly == JVM.CoreAssembly)
-                {
-                    // This cast is necessary for ikvmc and a no-op for the runtime.
-                    // Note that the cast cannot fail, because ikvmc will only return a non AssemblyClassLoader
-                    // from GetBootstrapClassLoader() when compiling the core assembly and in that case JVM.CoreAssembly
-                    // will be null.
-                    return (AssemblyClassLoader)GetBootstrapClassLoader();
-                }
-
-                return new AssemblyClassLoader(assembly);
-            }
-            catch (Exception e)
+            if (assembly == JVM.CoreAssembly)
             {
-                Console.WriteLine(assembly);
-                Console.WriteLine(JVM.CoreAssembly);
-                throw;
+                // This cast is necessary for ikvmc and a no-op for the runtime.
+                // Note that the cast cannot fail, because ikvmc will only return a non AssemblyClassLoader
+                // from GetBootstrapClassLoader() when compiling the core assembly and in that case JVM.CoreAssembly
+                // will be null.
+                return (AssemblyClassLoader)GetBootstrapClassLoader();
             }
+
+            return new AssemblyClassLoader(assembly);
         }
 
         AssemblyLoader assemblyLoader;
@@ -533,34 +524,34 @@ namespace IKVM.Internal
 
 #if IMPORTER
 
-		internal static void PreloadExportedAssemblies(Assembly assembly)
-		{
-			if (assembly.GetManifestResourceInfo("ikvm.exports") != null)
-			{
-				using (Stream stream = assembly.GetManifestResourceStream("ikvm.exports"))
-				{
-					BinaryReader rdr = new BinaryReader(stream);
-					int assemblyCount = rdr.ReadInt32();
-					for (int i = 0; i < assemblyCount; i++)
-					{
-						string assemblyName = rdr.ReadString();
-						int typeCount = rdr.ReadInt32();
-						if (typeCount != 0)
-						{
-							for (int j = 0; j < typeCount; j++)
-							{
-								rdr.ReadInt32();
-							}
-							try
-							{
-								StaticCompiler.LoadFile(assembly.Location + "/../" + new AssemblyName(assemblyName).Name + ".dll");
-							}
-							catch { }
-						}
-					}
-				}
-			}
-		}
+        internal static void PreloadExportedAssemblies(Assembly assembly)
+        {
+            if (assembly.GetManifestResourceInfo("ikvm.exports") != null)
+            {
+                using (Stream stream = assembly.GetManifestResourceStream("ikvm.exports"))
+                {
+                    BinaryReader rdr = new BinaryReader(stream);
+                    int assemblyCount = rdr.ReadInt32();
+                    for (int i = 0; i < assemblyCount; i++)
+                    {
+                        string assemblyName = rdr.ReadString();
+                        int typeCount = rdr.ReadInt32();
+                        if (typeCount != 0)
+                        {
+                            for (int j = 0; j < typeCount; j++)
+                            {
+                                rdr.ReadInt32();
+                            }
+                            try
+                            {
+                                StaticCompiler.LoadFile(assembly.Location + "/../" + new AssemblyName(assemblyName).Name + ".dll");
+                            }
+                            catch { }
+                        }
+                    }
+                }
+            }
+        }
 
 #endif
 
@@ -649,7 +640,7 @@ namespace IKVM.Internal
             try
             {
 #if IMPORTER || EXPORTER
-				return StaticCompiler.Load(name);
+                return StaticCompiler.Load(name);
 #else
                 return Assembly.Load(name);
 #endif
@@ -788,7 +779,7 @@ namespace IKVM.Internal
                     // this really shouldn't happen, it means that we have two different types in our assembly that both
                     // have the same Java name
 #if IMPORTER
-					throw new FatalCompilerErrorException(Message.AssemblyContainsDuplicateClassNames, type.FullName, wrapper.TypeAsTBD.FullName, wrapper.Name, type.Assembly.FullName);
+                    throw new FatalCompilerErrorException(Message.AssemblyContainsDuplicateClassNames, type.FullName, wrapper.TypeAsTBD.FullName, wrapper.Name, type.Assembly.FullName);
 #else
                     string msg = $"\nType \"{type.FullName}\" and \"{wrapper.TypeAsTBD.FullName}\" both map to the same name \"{wrapper.Name}\".\n";
                     JVM.CriticalFailure(msg, null);
@@ -1178,7 +1169,7 @@ namespace IKVM.Internal
             if (this == other)
             {
 #if IMPORTER || EXPORTER
-				return true;
+                return true;
 #else
                 // we're OK if the type being accessed (wrapper) is a dynamic type
                 // or if the dynamic assembly has internal access
@@ -1188,12 +1179,12 @@ namespace IKVM.Internal
             }
             AssemblyName otherName;
 #if IMPORTER
-			CompilerClassLoader ccl = other as CompilerClassLoader;
-			if (ccl == null)
-			{
-				return false;
-			}
-			otherName = ccl.GetAssemblyName();
+            CompilerClassLoader ccl = other as CompilerClassLoader;
+            if (ccl == null)
+            {
+                return false;
+            }
+            otherName = ccl.GetAssemblyName();
 #else
             AssemblyClassLoader acl = other as AssemblyClassLoader;
             if (acl == null)
