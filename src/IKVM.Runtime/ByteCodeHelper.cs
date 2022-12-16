@@ -857,17 +857,14 @@ namespace IKVM.Runtime
         [System.Runtime.CompilerServices.MethodImpl(System.Runtime.CompilerServices.MethodImplOptions.NoInlining)]
         public static void InitializeModule(Module module)
         {
-            Assembly asm = Assembly.GetCallingAssembly();
+            var asm = Assembly.GetCallingAssembly();
             if (module.Assembly != asm)
-            {
                 throw new ArgumentOutOfRangeException();
-            }
-            object classLoader = AssemblyClassLoader.FromAssembly(asm).GetJavaClassLoader();
-            Action<Module> init = (Action<Module>)Delegate.CreateDelegate(typeof(Action<Module>), classLoader, "InitializeModule", false, false);
+
+            var classLoader = AssemblyClassLoader.FromAssembly(asm).GetJavaClassLoader();
+            var init = (Action<Module>)Delegate.CreateDelegate(typeof(Action<Module>), classLoader, "InitializeModule", false, false);
             if (init != null)
-            {
                 init(module);
-            }
         }
 
         public static T GetDotNetEnumField<T>(string name)

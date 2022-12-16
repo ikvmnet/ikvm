@@ -58,6 +58,33 @@ namespace IKVM.Tests.Java.sun.misc
             o.longField.Should().Be(1);
         }
 
+        [TestMethod]
+        public static void CanSetShortFieldVolatile()
+        {
+            var o = new TestObject();
+            var f = u.objectFieldOffset(((Class)typeof(TestObject)).getField("shortField"));
+            u.putShortVolatile(o, f, 1);
+            o.shortField.Should().Be(1);
+        }
+
+        [TestMethod]
+        public static void CanSetIntFieldVolatile()
+        {
+            var o = new TestObject();
+            var f = u.objectFieldOffset(((Class)typeof(TestObject)).getField("intField"));
+            u.putIntVolatile(o, f, 1);
+            o.intField.Should().Be(1);
+        }
+
+        [TestMethod]
+        public static void CanSetLongFieldVolatile()
+        {
+            var o = new TestObject();
+            var f = u.objectFieldOffset(((Class)typeof(TestObject)).getField("longField"));
+            u.putLongVolatile(o, f, 1);
+            o.longField.Should().Be(1);
+        }
+
     }
 
 }
