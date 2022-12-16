@@ -202,7 +202,7 @@ namespace IKVM.Internal
 #if IMPORTER
             // this only applies to the core class library, so makes no sense in dynamic mode
             intrinsics.Add(new IntrinsicKey("java.lang.Class", "getPrimitiveClass", "(Ljava.lang.String;)Ljava.lang.Class;"), Class_getPrimitiveClass);
-            intrinsics.Add(new IntrinsicKey("java.lang.Class", "getDeclaredField", "(Ljava.lang.String;)Ljava.lang.reflect.Field;"), Class_getDeclaredField);
+            //intrinsics.Add(new IntrinsicKey("java.lang.Class", "getDeclaredField", "(Ljava.lang.String;)Ljava.lang.reflect.Field;"), Class_getDeclaredField);
 #endif
             intrinsics.Add(new IntrinsicKey("java.lang.ThreadLocal", "<init>", "()V"), ThreadLocal_new);
             intrinsics.Add(new IntrinsicKey("sun.misc.Unsafe", "ensureClassInitialized", "(Ljava.lang.Class;)V"), Unsafe_ensureClassInitialized);
