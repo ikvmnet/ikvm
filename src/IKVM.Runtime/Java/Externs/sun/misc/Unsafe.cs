@@ -89,7 +89,7 @@ namespace IKVM.Java.Externs.sun.misc
         {
             var p = Expression.Parameter(typeof(object));
             var v = Expression.Parameter(typeof(TField));
-            return Expression.Lambda<Action<object, TField>>(Expression.Assign(Expression.Field(Expression.Convert(p, f.DeclaringType), f), v)).Compile();
+            return Expression.Lambda<Action<object, TField>>(Expression.Assign(Expression.Field(Expression.Convert(p, f.DeclaringType), f), v), p, v).Compile();
         }
 
         /// <summary>
