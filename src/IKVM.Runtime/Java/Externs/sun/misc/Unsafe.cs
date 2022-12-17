@@ -51,6 +51,9 @@ namespace IKVM.Java.Externs.sun.misc
         static readonly ConditionalWeakTable<FieldInfo, CompareExchangeInt64> compareExchangeInt64Cache = new ConditionalWeakTable<FieldInfo, CompareExchangeInt64>();
         static readonly ConditionalWeakTable<FieldInfo, CompareExchangeObject> compareExchangeObjectCache = new ConditionalWeakTable<FieldInfo, CompareExchangeObject>();
 
+        /// <summary>
+        /// Implementation of native method 'registerNatives'.
+        /// </summary>
         public static void registerNatives()
         {
 
@@ -103,12 +106,23 @@ namespace IKVM.Java.Externs.sun.misc
             return (Action<object, TField>)putFieldCache.GetValue(f, _ => CreatePutFieldDelegate<TField>(_));
         }
 
+        /// <summary>
+        /// Implementation of native method 'getInt'.
+        /// </summary>
+        /// <param name="self"></param>
+        /// <param name="o"></param>
+        /// <param name="offset"></param>
+        /// <returns></returns>
         public static int getInt(object self, object o, long offset)
         {
 #if FIRST_PASS
             throw new NotImplementedException();
 #else
-            if (o is Array array)
+            if (o is null)
+            {
+                return getInt(self, offset);
+            }
+            else if (o is Array array)
             {
                 return ReadInt32(array, offset);
             }
@@ -126,12 +140,23 @@ namespace IKVM.Java.Externs.sun.misc
 #endif
         }
 
+        /// <summary>
+        /// Implementation of native method 'putInt'.
+        /// </summary>
+        /// <param name="self"></param>
+        /// <param name="o"></param>
+        /// <param name="offset"></param>
+        /// <param name="x"></param>
         public static void putInt(object self, object o, long offset, int x)
         {
 #if FIRST_PASS
             throw new NotImplementedException();
 #else
-            if (o is Array array)
+            if (o is null)
+            {
+                putInt(self, offset, x);
+            }
+            else if (o is Array array)
             {
                 WriteInt32(array, offset, x);
             }
@@ -149,6 +174,13 @@ namespace IKVM.Java.Externs.sun.misc
 #endif
         }
 
+        /// <summary>
+        /// Implementation of native method 'getObject'.
+        /// </summary>
+        /// <param name="self"></param>
+        /// <param name="o"></param>
+        /// <param name="offset"></param>
+        /// <returns></returns>
         public static object getObject(object self, object o, long offset)
         {
 #if FIRST_PASS
@@ -172,6 +204,13 @@ namespace IKVM.Java.Externs.sun.misc
 #endif
         }
 
+        /// <summary>
+        /// Implementation of native method 'putObject'.
+        /// </summary>
+        /// <param name="self"></param>
+        /// <param name="o"></param>
+        /// <param name="offset"></param>
+        /// <param name="x"></param>
         public static void putObject(object self, object o, long offset, object x)
         {
 #if FIRST_PASS
@@ -195,12 +234,23 @@ namespace IKVM.Java.Externs.sun.misc
 #endif
         }
 
+        /// <summary>
+        /// Implementation of native method 'getBoolean'.
+        /// </summary>
+        /// <param name="self"></param>
+        /// <param name="o"></param>
+        /// <param name="offset"></param>
+        /// <returns></returns>
         public static bool getBoolean(object self, object o, long offset)
         {
 #if FIRST_PASS
             throw new NotImplementedException();
 #else
-            if (o is Array array)
+            if (o is null)
+            {
+                return Marshal.ReadByte((IntPtr)offset) != 0;
+            }
+            else if (o is Array array)
             {
                 return Buffer.GetByte(array, (int)offset) != 0;
             }
@@ -218,12 +268,23 @@ namespace IKVM.Java.Externs.sun.misc
 #endif
         }
 
+        /// <summary>
+        /// Implementation of native method 'putBoolean'.
+        /// </summary>
+        /// <param name="self"></param>
+        /// <param name="o"></param>
+        /// <param name="offset"></param>
+        /// <param name="x"></param>
         public static void putBoolean(object self, object o, long offset, bool x)
         {
 #if FIRST_PASS
             throw new NotImplementedException();
 #else
-            if (o is Array array)
+            if (o is null)
+            {
+                Marshal.WriteByte((IntPtr)offset, x ? (byte)1 : (byte)0);
+            }
+            else if (o is Array array)
             {
                 Buffer.SetByte(array, (int)offset, x ? (byte)1 : (byte)0);
             }
@@ -241,12 +302,23 @@ namespace IKVM.Java.Externs.sun.misc
 #endif
         }
 
+        /// <summary>
+        /// Implementation of native method 'getByte'.
+        /// </summary>
+        /// <param name="self"></param>
+        /// <param name="o"></param>
+        /// <param name="offset"></param>
+        /// <returns></returns>
         public static byte getByte(object self, object o, long offset)
         {
 #if FIRST_PASS
             throw new NotImplementedException();
 #else
-            if (o is Array array)
+            if (o is null)
+            {
+                return getByte(self, offset);
+            }
+            else if (o is Array array)
             {
                 return Buffer.GetByte(array, (int)offset);
             }
@@ -264,12 +336,23 @@ namespace IKVM.Java.Externs.sun.misc
 #endif
         }
 
+        /// <summary>
+        /// Implementation of native method 'putByte'.
+        /// </summary>
+        /// <param name="self"></param>
+        /// <param name="o"></param>
+        /// <param name="offset"></param>
+        /// <param name="x"></param>
         public static void putByte(object self, object o, long offset, byte x)
         {
 #if FIRST_PASS
             throw new NotImplementedException();
 #else
-            if (o is Array array)
+            if (o is null)
+            {
+                putByte(self, offset, x);
+            }
+            else if (o is Array array)
             {
                 Buffer.SetByte(array, (int)offset, x);
             }
@@ -287,12 +370,23 @@ namespace IKVM.Java.Externs.sun.misc
 #endif
         }
 
+        /// <summary>
+        /// Implementation of native method 'getShort'.
+        /// </summary>
+        /// <param name="self"></param>
+        /// <param name="o"></param>
+        /// <param name="offset"></param>
+        /// <returns></returns>
         public static short getShort(object self, object o, long offset)
         {
 #if FIRST_PASS
             throw new NotImplementedException();
 #else
-            if (o is Array array)
+            if (o is null)
+            {
+                return getShort(self, offset);
+            }
+            else if (o is Array array)
             {
                 return ReadInt16(array, offset);
             }
@@ -310,12 +404,23 @@ namespace IKVM.Java.Externs.sun.misc
 #endif
         }
 
+        /// <summary>
+        /// Implementation of native method 'putShort'.
+        /// </summary>
+        /// <param name="self"></param>
+        /// <param name="o"></param>
+        /// <param name="offset"></param>
+        /// <param name="x"></param>
         public static void putShort(object self, object o, long offset, short x)
         {
 #if FIRST_PASS
             throw new NotImplementedException();
 #else
-            if (o is Array array)
+            if (o is null)
+            {
+                putShort(self, offset, x);
+            }
+            else if (o is Array array)
             {
                 WriteInt16(array, offset, x);
             }
@@ -333,12 +438,23 @@ namespace IKVM.Java.Externs.sun.misc
 #endif
         }
 
+        /// <summary>
+        /// Implementation of native method 'getChar'.
+        /// </summary>
+        /// <param name="self"></param>
+        /// <param name="o"></param>
+        /// <param name="offset"></param>
+        /// <returns></returns>
         public static char getChar(object self, object o, long offset)
         {
 #if FIRST_PASS
             throw new NotImplementedException();
 #else
-            if (o is Array array)
+            if (o is null)
+            {
+                return getChar(self, offset);
+            }
+            else if (o is Array array)
             {
                 return (char)ReadInt16(array, offset);
             }
@@ -356,12 +472,23 @@ namespace IKVM.Java.Externs.sun.misc
 #endif
         }
 
+        /// <summary>
+        /// Implementation of native method 'putChar'.
+        /// </summary>
+        /// <param name="self"></param>
+        /// <param name="o"></param>
+        /// <param name="offset"></param>
+        /// <param name="x"></param>
         public static void putChar(object self, object o, long offset, char x)
         {
 #if FIRST_PASS
             throw new NotImplementedException();
 #else
-            if (o is Array array)
+            if (o is null)
+            {
+                putChar(self, offset, x);
+            }
+            else if (o is Array array)
             {
                 WriteInt16(array, offset, (short)x);
             }
@@ -379,12 +506,23 @@ namespace IKVM.Java.Externs.sun.misc
 #endif
         }
 
+        /// <summary>
+        /// Implementation of native method 'getLong'.
+        /// </summary>
+        /// <param name="self"></param>
+        /// <param name="o"></param>
+        /// <param name="offset"></param>
+        /// <returns></returns>
         public static long getLong(object self, object o, long offset)
         {
 #if FIRST_PASS
             throw new NotImplementedException();
 #else
-            if (o is Array array)
+            if (o is null)
+            {
+                return getLong(self, offset);
+            }
+            else if (o is Array array)
             {
                 return ReadInt64(array, offset);
             }
@@ -402,12 +540,23 @@ namespace IKVM.Java.Externs.sun.misc
 #endif
         }
 
+        /// <summary>
+        /// Implementation of native method 'putLong'.
+        /// </summary>
+        /// <param name="self"></param>
+        /// <param name="o"></param>
+        /// <param name="offset"></param>
+        /// <param name="x"></param>
         public static void putLong(object self, object o, long offset, long x)
         {
 #if FIRST_PASS
             throw new NotImplementedException();
 #else
-            if (o is Array array)
+            if (o is null)
+            {
+                putLong(self, offset, x);
+            }
+            else if (o is Array array)
             {
                 WriteInt64(array, offset, x);
             }
@@ -425,12 +574,23 @@ namespace IKVM.Java.Externs.sun.misc
 #endif
         }
 
+        /// <summary>
+        /// Implementation of native method 'getFloat'.
+        /// </summary>
+        /// <param name="self"></param>
+        /// <param name="o"></param>
+        /// <param name="offset"></param>
+        /// <returns></returns>
         public static float getFloat(object self, object o, long offset)
         {
 #if FIRST_PASS
             throw new NotImplementedException();
 #else
-            if (o is Array array)
+            if (o is null)
+            {
+                return getFloat(self, offset);
+            }
+            else if (o is Array array)
             {
                 return global::java.lang.Float.intBitsToFloat(ReadInt32(array, offset));
             }
@@ -448,12 +608,23 @@ namespace IKVM.Java.Externs.sun.misc
 #endif
         }
 
+        /// <summary>
+        /// Implementation of native method 'putFloat'.
+        /// </summary>
+        /// <param name="self"></param>
+        /// <param name="o"></param>
+        /// <param name="offset"></param>
+        /// <param name="x"></param>
         public static void putFloat(object self, object o, long offset, float x)
         {
 #if FIRST_PASS
             throw new NotImplementedException();
 #else
-            if (o is Array array)
+            if (o is null)
+            {
+                putFloat(self, offset, x);
+            }
+            else if (o is Array array)
             {
                 WriteInt32(array, offset, global::java.lang.Float.floatToRawIntBits(x));
             }
@@ -471,12 +642,23 @@ namespace IKVM.Java.Externs.sun.misc
 #endif
         }
 
+        /// <summary>
+        /// Implementation of native method 'getDouble'.
+        /// </summary>
+        /// <param name="self"></param>
+        /// <param name="o"></param>
+        /// <param name="offset"></param>
+        /// <returns></returns>
         public static double getDouble(object self, object o, long offset)
         {
 #if FIRST_PASS
             throw new NotImplementedException();
 #else
-            if (o is Array array)
+            if (o is null)
+            {
+                return getDouble(self, offset);
+            }
+            else if (o is Array array)
             {
                 return global::java.lang.Double.longBitsToDouble(ReadInt64(array, offset));
             }
@@ -494,12 +676,23 @@ namespace IKVM.Java.Externs.sun.misc
 #endif
         }
 
+        /// <summary>
+        /// Implementation of native method 'putDouble'.
+        /// </summary>
+        /// <param name="self"></param>
+        /// <param name="o"></param>
+        /// <param name="offset"></param>
+        /// <param name="x"></param>
         public static void putDouble(object self, object o, long offset, double x)
         {
 #if FIRST_PASS
             throw new NotImplementedException();
 #else
-            if (o is Array array)
+            if (o is null)
+            {
+                putDouble(self, offset, x);
+            }
+            else if (o is Array array)
             {
                 WriteInt64(array, offset, global::java.lang.Double.doubleToRawLongBits(x));
             }
@@ -517,56 +710,122 @@ namespace IKVM.Java.Externs.sun.misc
 #endif
         }
 
+        /// <summary>
+        /// Implementation of native method 'getByte'.
+        /// </summary>
+        /// <param name="self"></param>
+        /// <param name="address"></param>
+        /// <returns></returns>
         public static byte getByte(object self, long address)
         {
             return Marshal.ReadByte((IntPtr)address);
         }
 
+        /// <summary>
+        /// Implementation of native method 'putByte'.
+        /// </summary>
+        /// <param name="self"></param>
+        /// <param name="address"></param>
+        /// <param name="x"></param>
         public static void putByte(object self, long address, byte x)
         {
             Marshal.WriteByte((IntPtr)address, x);
         }
 
+        /// <summary>
+        /// Implementation of native method 'getShort'.
+        /// </summary>
+        /// <param name="self"></param>
+        /// <param name="address"></param>
+        /// <returns></returns>
         public static short getShort(object self, long address)
         {
             return Marshal.ReadInt16((IntPtr)address);
         }
 
+        /// <summary>
+        /// Implementation of native method 'putShort'.
+        /// </summary>
+        /// <param name="self"></param>
+        /// <param name="address"></param>
+        /// <param name="x"></param>
         public static void putShort(object self, long address, short x)
         {
             Marshal.WriteInt16((IntPtr)address, x);
         }
 
+        /// <summary>
+        /// Implementation of native method 'getChar'.
+        /// </summary>
+        /// <param name="self"></param>
+        /// <param name="address"></param>
+        /// <returns></returns>
         public static char getChar(object self, long address)
         {
             return (char)Marshal.ReadInt16((IntPtr)address);
         }
 
+        /// <summary>
+        /// Implementation of native method 'putChar'.
+        /// </summary>
+        /// <param name="self"></param>
+        /// <param name="address"></param>
+        /// <param name="x"></param>
         public static void putChar(object self, long address, char x)
         {
             Marshal.WriteInt16((IntPtr)address, (short)x);
         }
 
+        /// <summary>
+        /// Implementation of native method 'getInt'.
+        /// </summary>
+        /// <param name="self"></param>
+        /// <param name="address"></param>
+        /// <returns></returns>
         public static int getInt(object self, long address)
         {
             return Marshal.ReadInt32((IntPtr)address);
         }
 
+        /// <summary>
+        /// Implementation of native method 'putInt'.
+        /// </summary>
+        /// <param name="self"></param>
+        /// <param name="address"></param>
+        /// <param name="x"></param>
         public static void putInt(object self, long address, int x)
         {
             Marshal.WriteInt32((IntPtr)address, x);
         }
 
+        /// <summary>
+        /// Implementation of native method 'getLong'.
+        /// </summary>
+        /// <param name="self"></param>
+        /// <param name="address"></param>
+        /// <returns></returns>
         public static long getLong(object self, long address)
         {
             return Marshal.ReadInt64((IntPtr)address);
         }
 
+        /// <summary>
+        /// Implementation of native method 'putLong'.
+        /// </summary>
+        /// <param name="self"></param>
+        /// <param name="address"></param>
+        /// <param name="x"></param>
         public static void putLong(object self, long address, long x)
         {
             Marshal.WriteInt64((IntPtr)address, x);
         }
 
+        /// <summary>
+        /// Implementation of native method 'getFloat'.
+        /// </summary>
+        /// <param name="self"></param>
+        /// <param name="address"></param>
+        /// <returns></returns>
         public static float getFloat(object self, long address)
         {
 #if FIRST_PASS
@@ -576,6 +835,12 @@ namespace IKVM.Java.Externs.sun.misc
 #endif
         }
 
+        /// <summary>
+        /// Implementation of native method 'putFloat'.
+        /// </summary>
+        /// <param name="self"></param>
+        /// <param name="address"></param>
+        /// <param name="x"></param>
         public static void putFloat(object self, long address, float x)
         {
 #if FIRST_PASS
@@ -585,6 +850,12 @@ namespace IKVM.Java.Externs.sun.misc
 #endif
         }
 
+        /// <summary>
+        /// Implementation of native method 'getDouble'.
+        /// </summary>
+        /// <param name="self"></param>
+        /// <param name="address"></param>
+        /// <returns></returns>
         public static double getDouble(object self, long address)
         {
 #if FIRST_PASS
@@ -594,6 +865,12 @@ namespace IKVM.Java.Externs.sun.misc
 #endif
         }
 
+        /// <summary>
+        /// Implementation of native method 'putDouble'.
+        /// </summary>
+        /// <param name="self"></param>
+        /// <param name="address"></param>
+        /// <param name="x"></param>
         public static void putDouble(object self, long address, double x)
         {
 #if FIRST_PASS
@@ -603,11 +880,23 @@ namespace IKVM.Java.Externs.sun.misc
 #endif
         }
 
+        /// <summary>
+        /// Implementation of native method 'getAddress'.
+        /// </summary>
+        /// <param name="self"></param>
+        /// <param name="address"></param>
+        /// <returns></returns>
         public static long getAddress(object self, long address)
         {
             return Marshal.ReadIntPtr((IntPtr)address).ToInt64();
         }
 
+        /// <summary>
+        /// Implementation of native method 'putAddress'.
+        /// </summary>
+        /// <param name="self"></param>
+        /// <param name="address"></param>
+        /// <param name="x"></param>
         public static void putAddress(object self, long address, long x)
         {
             Marshal.WriteIntPtr((IntPtr)address, (IntPtr)x);

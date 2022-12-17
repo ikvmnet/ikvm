@@ -1,4 +1,4 @@
-﻿using System.Buffers.Binary;
+﻿using System;
 using System.Runtime.InteropServices;
 
 using FluentAssertions;
@@ -281,7 +281,7 @@ namespace IKVM.Tests.Java.sun.misc
         public void CanSetDoubleInArray()
         {
             var a = new double[16];
-            u.putFloat(a, sizeof(double), 1);
+            u.putDouble(a, sizeof(double), 1);
             a[0].Should().Be(0);
             a[1].Should().Be(1);
             a[2].Should().Be(0);
@@ -295,9 +295,22 @@ namespace IKVM.Tests.Java.sun.misc
         }
 
         [TestMethod]
+        public void CanAllocateAndSetAndFreeMemory()
+        {
+            var b = u.allocateMemory(32);
+            u.setMemory(b, 32, 0);
+
+            for (int i = 0; i < 32; i++)
+                Marshal.ReadByte((IntPtr)(b + i)).Should().Be(0);
+
+            u.freeMemory(b);
+        }
+
+        [TestMethod]
         public void CanAllocateSetBoolAndFreeMemory()
         {
             var b = u.allocateMemory(32);
+            u.setMemory(b, 32, 0);
             u.putBoolean(null, b, false);
             u.putBoolean(null, b + sizeof(bool), true);
             u.getBoolean(null, b + sizeof(bool)).Should().Be(true);
@@ -308,6 +321,7 @@ namespace IKVM.Tests.Java.sun.misc
         public void CanAllocateSetByteAndFreeMemory()
         {
             var b = u.allocateMemory(32);
+            u.setMemory(b, 32, 0);
             u.putByte(null, b + sizeof(byte), 1);
             u.getByte(null, b).Should().Be(0);
             u.getByte(null, b + sizeof(byte)).Should().Be(1);
@@ -318,6 +332,7 @@ namespace IKVM.Tests.Java.sun.misc
         public void CanAllocateSetCharAndFreeMemory()
         {
             var b = u.allocateMemory(32);
+            u.setMemory(b, 32, 0);
             u.putChar(null, b + sizeof(char), 'A');
             u.getChar(null, b).Should().Be('\0');
             u.getChar(null, b + sizeof(char)).Should().Be('A');
@@ -328,6 +343,7 @@ namespace IKVM.Tests.Java.sun.misc
         public void CanAllocateSetShortAndFreeMemory()
         {
             var b = u.allocateMemory(32);
+            u.setMemory(b, 32, 0);
             u.putShort(null, b + sizeof(short), 1);
             u.getShort(null, b).Should().Be(0);
             u.getShort(null, b + sizeof(short)).Should().Be(1);
@@ -338,6 +354,7 @@ namespace IKVM.Tests.Java.sun.misc
         public void CanAllocateSetIntAndFreeMemory()
         {
             var b = u.allocateMemory(32);
+            u.setMemory(b, 32, 0);
             u.putInt(null, b + sizeof(int), 1);
             u.getInt(null, b).Should().Be(0);
             u.getInt(null, b + sizeof(int)).Should().Be(1);
@@ -348,6 +365,7 @@ namespace IKVM.Tests.Java.sun.misc
         public void CanAllocateSetLongAndFreeMemory()
         {
             var b = u.allocateMemory(32);
+            u.setMemory(b, 32, 0);
             u.putLong(null, b + sizeof(long), 1);
             u.getLong(null, b).Should().Be(0);
             u.getLong(null, b + sizeof(long)).Should().Be(1);
@@ -358,6 +376,7 @@ namespace IKVM.Tests.Java.sun.misc
         public void CanAllocateSetFloatAndFreeMemory()
         {
             var b = u.allocateMemory(32);
+            u.setMemory(b, 32, 0);
             u.putFloat(null, b + sizeof(float), 1);
             u.getFloat(null, b).Should().Be(0);
             u.getFloat(null, b + sizeof(float)).Should().Be(1);
@@ -368,6 +387,7 @@ namespace IKVM.Tests.Java.sun.misc
         public void CanAllocateSetDoubleAndFreeMemory()
         {
             var b = u.allocateMemory(32);
+            u.setMemory(b, 32, 0);
             u.putDouble(null, b + sizeof(double), 1);
             u.getDouble(null, b).Should().Be(0);
             u.getDouble(null, b + sizeof(double)).Should().Be(1);
