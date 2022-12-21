@@ -1,32 +1,7 @@
-﻿/*
-  Copyright (C) 2007-2015 Jeroen Frijters
-  Copyright (C) 2009 Volker Berlin (i-net software)
-
-  This software is provided 'as-is', without any express or implied
-  warranty.  In no event will the authors be held liable for any damages
-  arising from the use of this software.
-
-  Permission is granted to anyone to use this software for any purpose,
-  including commercial applications, and to alter it and redistribute it
-  freely, subject to the following restrictions:
-
-  1. The origin of this software must not be misrepresented; you must not
-     claim that you wrote the original software. If you use this software
-     in a product, an acknowledgment in the product documentation would be
-     appreciated but is not required.
-  2. Altered source versions must be plainly marked as such, and must not be
-     misrepresented as being the original software.
-  3. This notice may not be removed or altered from any source distribution.
-
-  Jeroen Frijters
-  jeroen@frijters.net
-  
-*/
-
-using System;
+﻿using System;
+using System.Linq;
 using System.Linq.Expressions;
 using System.Reflection;
-using System.Reflection.Emit;
 using System.Runtime.CompilerServices;
 using System.Runtime.InteropServices;
 using System.Runtime.Serialization;
@@ -40,16 +15,75 @@ namespace IKVM.Java.Externs.sun.misc
     static class Unsafe
     {
 
-        static readonly ConditionalWeakTable<FieldInfo, Delegate> getFieldCache = new ConditionalWeakTable<FieldInfo, Delegate>();
-        static readonly ConditionalWeakTable<FieldInfo, Delegate> putFieldCache = new ConditionalWeakTable<FieldInfo, Delegate>();
+        /// <summary>
+        /// Holds a reference to the various delegates that facilitate unsafe operations. References are kept alive and
+        /// associated with a <see cref="FieldInfo"/> by a conditional weak table. When the <see cref="FieldInfo"/>
+        /// becomes eligible for collection, so does the <see cref="FieldDelegateRef"/>. Each instance maintains a
+        /// <see cref="GCHandle"/> that provides a fixed <see cref="IntPtr"/> sized value which can be handed off as an
+        /// offset value.
+        /// </summary>
+        class FieldDelegateRef
+        {
 
-        delegate int CompareExchangeInt32(object obj, int value, int comparand);
-        delegate long CompareExchangeInt64(object obj, long value, long comparand);
-        delegate object CompareExchangeObject(object obj, object value, object comparand);
+            readonly Lazy<Delegate> getter;
+            readonly Lazy<Delegate> putter;
+            readonly Lazy<Delegate> volatileGetter;
+            readonly Lazy<Delegate> volatilePutter;
+            readonly Lazy<Delegate> compareExchange;
+            readonly GCHandle handle;
 
-        static readonly ConditionalWeakTable<FieldInfo, CompareExchangeInt32> compareExchangeInt32Cache = new ConditionalWeakTable<FieldInfo, CompareExchangeInt32>();
-        static readonly ConditionalWeakTable<FieldInfo, CompareExchangeInt64> compareExchangeInt64Cache = new ConditionalWeakTable<FieldInfo, CompareExchangeInt64>();
-        static readonly ConditionalWeakTable<FieldInfo, CompareExchangeObject> compareExchangeObjectCache = new ConditionalWeakTable<FieldInfo, CompareExchangeObject>();
+            /// <summary>
+            /// Initializes a new instance.
+            /// </summary>
+            /// <param name="field"></param>
+            public FieldDelegateRef(FieldInfo field)
+            {
+                getter = new Lazy<Delegate>(() => CreateGetFieldDelegate(field), true);
+                putter = new Lazy<Delegate>(() => CreatePutFieldDelegate(field), true);
+                volatileGetter = new Lazy<Delegate>(() => CreateGetFieldVolatileDelegate(field), true);
+                volatilePutter = new Lazy<Delegate>(() => CreatePutFieldVolatileDelegate(field), true);
+                compareExchange = new Lazy<Delegate>(() => CreateCompareExchangeFieldDelegate(field), true);
+                handle = GCHandle.Alloc(this, GCHandleType.WeakTrackResurrection);
+            }
+
+            /// <summary>
+            /// Gets a delegate capable of implementing the get logic. This value is a <see cref="Func{object, TField}" />
+            /// </summary>
+            public Delegate Getter => getter.Value;
+
+            /// <summary>
+            /// Gets a delegate capable of implementing the put logic. This value is an <see cref="Action{object, TField}" />
+            /// </summary>
+            public Delegate Putter => putter.Value;
+
+            /// <summary>
+            /// Gets a delegate capable of implementing the volatile get logic. This value is a <see cref="Func{object, TField}" />
+            /// </summary>
+            public Delegate VolatileGetter => volatileGetter.Value;
+
+            /// <summary>
+            /// Gets a delegate capable of implemetning the volatile put logic. This value is an <see cref="Action{object, TField}" />
+            /// </summary>
+            public Delegate VolatilePutter => volatilePutter.Value;
+
+            /// <summary>
+            /// Gets a delegate capable of implemetning the volatile put logic. This value is an <see cref="Func{object, TField, TField, TField}" />
+            /// </summary>
+            public Delegate CompareExchange => compareExchange.Value;
+
+            /// <summary>
+            /// Maintains a handle that can serve as the 'offset' value.
+            /// </summary>
+            public GCHandle Handle => handle;
+
+        }
+
+        // TODO: NET6+ replace with DependentHandle
+        static readonly ConditionalWeakTable<FieldInfo, FieldDelegateRef> fieldRefCache = new ConditionalWeakTable<FieldInfo, FieldDelegateRef>();
+
+        static readonly ConditionalWeakTable<FieldInfo, Func<object, object, object, object>> compareExchangeObjectCache = new ConditionalWeakTable<FieldInfo, Func<object, object, object, object>>();
+        static readonly ConditionalWeakTable<FieldInfo, Func<object, int, int, int>> compareExchangeInt32Cache = new ConditionalWeakTable<FieldInfo, Func<object, int, int, int>>();
+        static readonly ConditionalWeakTable<FieldInfo, Func<object, long, long, long>> compareExchangeInt64Cache = new ConditionalWeakTable<FieldInfo, Func<object, long, long, long>>();
 
         /// <summary>
         /// Implementation of native method 'registerNatives'.
@@ -62,48 +96,74 @@ namespace IKVM.Java.Externs.sun.misc
         /// <summary>
         /// Creates a delegate capable of accessing a field of a specific type.
         /// </summary>
-        /// <typeparam name="TField"></typeparam>
         /// <param name="f"></param>
         /// <returns></returns>
-        static Func<object, TField> CreateGetFieldDelegate<TField>(FieldInfo f)
+        static Delegate CreateGetFieldDelegate(FieldInfo f)
         {
             var p = Expression.Parameter(typeof(object));
-            return Expression.Lambda<Func<object, TField>>(Expression.Convert(Expression.Field(Expression.Convert(p, f.DeclaringType), f), typeof(TField)), p).Compile();
+            var l = Expression.Field(f.IsStatic ? null : Expression.Convert(p, f.DeclaringType), f);
+            return Expression.Lambda(typeof(Func<,>).MakeGenericType(typeof(object), f.FieldType), l, p).Compile();
         }
 
         /// <summary>
         /// Creates a delegate capable of accessing a field of a specific type.
         /// </summary>
-        /// <typeparam name="TField"></typeparam>
         /// <param name="f"></param>
         /// <returns></returns>
-        static Func<object, TField> GetOrCreateGetFieldDelegate<TField>(FieldInfo f)
-        {
-            return (Func<object, TField>)getFieldCache.GetValue(f, _ => CreateGetFieldDelegate<TField>(_));
-        }
-
-        /// <summary>
-        /// Creates a delegate capable of accessing a field of a specific type.
-        /// </summary>
-        /// <typeparam name="TField"></typeparam>
-        /// <param name="f"></param>
-        /// <returns></returns>
-        static Action<object, TField> CreatePutFieldDelegate<TField>(FieldInfo f)
+        static Delegate CreatePutFieldDelegate(FieldInfo f)
         {
             var p = Expression.Parameter(typeof(object));
-            var v = Expression.Parameter(typeof(TField));
-            return Expression.Lambda<Action<object, TField>>(Expression.Assign(Expression.Field(Expression.Convert(p, f.DeclaringType), f), v), p, v).Compile();
+            var v = Expression.Parameter(f.FieldType);
+            var l = Expression.Field(f.IsStatic ? null : Expression.Convert(p, f.DeclaringType), f);
+            return Expression.Lambda(typeof(Action<,>).MakeGenericType(typeof(object), f.FieldType), Expression.Assign(l, v), p, v).Compile();
         }
 
         /// <summary>
-        /// Creates a delegate capable of assigning a field of a specific type.
+        /// Implements the logic to get a field by offset.
+        /// </summary>
+        /// <typeparam name="T"></typeparam>
+        /// <param name="o"></param>
+        /// <param name="offset"></param>
+        /// <returns></returns>
+        /// <exception cref="global::java.lang.InternalError"></exception>
+        static T GetField<T>(object o, long offset)
+        {
+#if FIRST_PASS
+            throw new NotImplementedException();
+#else
+            try
+            {
+                return ((Func<object, T>)((FieldDelegateRef)GCHandle.FromIntPtr((IntPtr)offset).Target).Getter)(o);
+            }
+            catch (Exception e)
+            {
+                throw new global::java.lang.InternalError(e);
+            }
+#endif
+        }
+
+        /// <summary>
+        /// Implements the logic to set a field by offset.
         /// </summary>
         /// <typeparam name="TField"></typeparam>
-        /// <param name="f"></param>
-        /// <returns></returns>
-        static Action<object, TField> GetOrCreatePutFieldDelegate<TField>(FieldInfo f)
+        /// <param name="o"></param>
+        /// <param name="offset"></param>
+        /// <param name="value"></param>
+        /// <exception cref="global::java.lang.InternalError"></exception>
+        static void PutField<TField>(object o, long offset, TField value)
         {
-            return (Action<object, TField>)putFieldCache.GetValue(f, _ => CreatePutFieldDelegate<TField>(_));
+#if FIRST_PASS
+            throw new NotImplementedException();
+#else
+            try
+            {
+                ((Action<object, TField>)((FieldDelegateRef)GCHandle.FromIntPtr((IntPtr)offset).Target).Putter)(o, value);
+            }
+            catch (Exception e)
+            {
+                throw new global::java.lang.InternalError(e);
+            }
+#endif
         }
 
         /// <summary>
@@ -118,25 +178,11 @@ namespace IKVM.Java.Externs.sun.misc
 #if FIRST_PASS
             throw new NotImplementedException();
 #else
-            if (o is null)
+            return o switch
             {
-                return getInt(self, offset);
-            }
-            else if (o is Array array)
-            {
-                return ReadInt32(array, offset);
-            }
-            else
-            {
-                try
-                {
-                    return GetOrCreateGetFieldDelegate<int>(GetFieldInfo(offset))(o);
-                }
-                catch (Exception e)
-                {
-                    throw (global::java.lang.InternalError)new global::java.lang.InternalError().initCause(e);
-                }
-            }
+                Array array => ReadInt32(array, offset),
+                _ => GetField<int>(o, offset)
+            };
 #endif
         }
 
@@ -152,24 +198,14 @@ namespace IKVM.Java.Externs.sun.misc
 #if FIRST_PASS
             throw new NotImplementedException();
 #else
-            if (o is null)
+            switch (o)
             {
-                putInt(self, offset, x);
-            }
-            else if (o is Array array)
-            {
-                WriteInt32(array, offset, x);
-            }
-            else
-            {
-                try
-                {
-                    GetOrCreatePutFieldDelegate<int>(GetFieldInfo(offset))(o, x);
-                }
-                catch (Exception e)
-                {
-                    throw (global::java.lang.InternalError)new global::java.lang.InternalError().initCause(e);
-                }
+                case Array array:
+                    WriteInt32(array, offset, x);
+                    break;
+                default:
+                    PutField(o, offset, x);
+                    break;
             }
 #endif
         }
@@ -186,21 +222,11 @@ namespace IKVM.Java.Externs.sun.misc
 #if FIRST_PASS
             throw new NotImplementedException();
 #else
-            if (o is object[] array)
+            return o switch
             {
-                return array[(int)offset];
-            }
-            else
-            {
-                try
-                {
-                    return GetOrCreateGetFieldDelegate<object>(GetFieldInfo(offset))(o);
-                }
-                catch (Exception e)
-                {
-                    throw (global::java.lang.InternalError)new global::java.lang.InternalError().initCause(e);
-                }
-            }
+                object[] array => array[(int)offset],
+                _ => GetField<object>(o, offset)
+            };
 #endif
         }
 
@@ -216,20 +242,14 @@ namespace IKVM.Java.Externs.sun.misc
 #if FIRST_PASS
             throw new NotImplementedException();
 #else
-            if (o is object[] array)
+            switch (o)
             {
-                array[(int)offset] = x;
-            }
-            else
-            {
-                try
-                {
-                    GetOrCreatePutFieldDelegate<object>(GetFieldInfo(offset))(o, x);
-                }
-                catch (Exception e)
-                {
-                    throw (global::java.lang.InternalError)new global::java.lang.InternalError().initCause(e);
-                }
+                case object[] array:
+                    array[(int)offset] = x;
+                    break;
+                default:
+                    PutField(o, offset, x);
+                    break;
             }
 #endif
         }
@@ -246,25 +266,11 @@ namespace IKVM.Java.Externs.sun.misc
 #if FIRST_PASS
             throw new NotImplementedException();
 #else
-            if (o is null)
+            return o switch
             {
-                return Marshal.ReadByte((IntPtr)offset) != 0;
-            }
-            else if (o is Array array)
-            {
-                return Buffer.GetByte(array, (int)offset) != 0;
-            }
-            else
-            {
-                try
-                {
-                    return GetOrCreateGetFieldDelegate<bool>(GetFieldInfo(offset))(o);
-                }
-                catch (Exception e)
-                {
-                    throw (global::java.lang.InternalError)new global::java.lang.InternalError().initCause(e);
-                }
-            }
+                Array array => Buffer.GetByte(array, (int)offset) != 0,
+                _ => GetField<bool>(o, offset)
+            };
 #endif
         }
 
@@ -280,24 +286,14 @@ namespace IKVM.Java.Externs.sun.misc
 #if FIRST_PASS
             throw new NotImplementedException();
 #else
-            if (o is null)
+            switch (o)
             {
-                Marshal.WriteByte((IntPtr)offset, x ? (byte)1 : (byte)0);
-            }
-            else if (o is Array array)
-            {
-                Buffer.SetByte(array, (int)offset, x ? (byte)1 : (byte)0);
-            }
-            else
-            {
-                try
-                {
-                    GetOrCreatePutFieldDelegate<bool>(GetFieldInfo(offset))(o, x);
-                }
-                catch (Exception e)
-                {
-                    throw (global::java.lang.InternalError)new global::java.lang.InternalError().initCause(e);
-                }
+                case Array array:
+                    Buffer.SetByte(array, (int)offset, x ? (byte)1 : (byte)0);
+                    break;
+                default:
+                    PutField(o, offset, x);
+                    break;
             }
 #endif
         }
@@ -314,25 +310,11 @@ namespace IKVM.Java.Externs.sun.misc
 #if FIRST_PASS
             throw new NotImplementedException();
 #else
-            if (o is null)
+            return o switch
             {
-                return getByte(self, offset);
-            }
-            else if (o is Array array)
-            {
-                return Buffer.GetByte(array, (int)offset);
-            }
-            else
-            {
-                try
-                {
-                    return GetOrCreateGetFieldDelegate<byte>(GetFieldInfo(offset))(o);
-                }
-                catch (Exception e)
-                {
-                    throw (global::java.lang.InternalError)new global::java.lang.InternalError().initCause(e);
-                }
-            }
+                Array array => Buffer.GetByte(array, (int)offset),
+                _ => GetField<byte>(o, offset)
+            };
 #endif
         }
 
@@ -348,24 +330,14 @@ namespace IKVM.Java.Externs.sun.misc
 #if FIRST_PASS
             throw new NotImplementedException();
 #else
-            if (o is null)
+            switch (o)
             {
-                putByte(self, offset, x);
-            }
-            else if (o is Array array)
-            {
-                Buffer.SetByte(array, (int)offset, x);
-            }
-            else
-            {
-                try
-                {
-                    GetOrCreatePutFieldDelegate<byte>(GetFieldInfo(offset))(o, x);
-                }
-                catch (Exception e)
-                {
-                    throw (global::java.lang.InternalError)new global::java.lang.InternalError().initCause(e);
-                }
+                case Array array:
+                    Buffer.SetByte(array, (int)offset, x);
+                    break;
+                default:
+                    PutField(o, offset, x);
+                    break;
             }
 #endif
         }
@@ -382,25 +354,11 @@ namespace IKVM.Java.Externs.sun.misc
 #if FIRST_PASS
             throw new NotImplementedException();
 #else
-            if (o is null)
+            return o switch
             {
-                return getShort(self, offset);
-            }
-            else if (o is Array array)
-            {
-                return ReadInt16(array, offset);
-            }
-            else
-            {
-                try
-                {
-                    return GetOrCreateGetFieldDelegate<short>(GetFieldInfo(offset))(o);
-                }
-                catch (Exception e)
-                {
-                    throw (global::java.lang.InternalError)new global::java.lang.InternalError().initCause(e);
-                }
-            }
+                Array array => ReadInt16(array, offset),
+                _ => GetField<short>(o, offset)
+            };
 #endif
         }
 
@@ -416,24 +374,14 @@ namespace IKVM.Java.Externs.sun.misc
 #if FIRST_PASS
             throw new NotImplementedException();
 #else
-            if (o is null)
+            switch (o)
             {
-                putShort(self, offset, x);
-            }
-            else if (o is Array array)
-            {
-                WriteInt16(array, offset, x);
-            }
-            else
-            {
-                try
-                {
-                    GetOrCreatePutFieldDelegate<short>(GetFieldInfo(offset))(o, x);
-                }
-                catch (Exception e)
-                {
-                    throw (global::java.lang.InternalError)new global::java.lang.InternalError().initCause(e);
-                }
+                case Array array:
+                    WriteInt16(array, offset, x);
+                    break;
+                default:
+                    PutField(o, offset, x);
+                    break;
             }
 #endif
         }
@@ -450,25 +398,11 @@ namespace IKVM.Java.Externs.sun.misc
 #if FIRST_PASS
             throw new NotImplementedException();
 #else
-            if (o is null)
+            return o switch
             {
-                return getChar(self, offset);
-            }
-            else if (o is Array array)
-            {
-                return (char)ReadInt16(array, offset);
-            }
-            else
-            {
-                try
-                {
-                    return GetOrCreateGetFieldDelegate<char>(GetFieldInfo(offset))(o);
-                }
-                catch (Exception e)
-                {
-                    throw (global::java.lang.InternalError)new global::java.lang.InternalError().initCause(e);
-                }
-            }
+                Array array => (char)ReadInt16(array, offset),
+                _ => GetField<char>(o, offset)
+            };
 #endif
         }
 
@@ -484,24 +418,14 @@ namespace IKVM.Java.Externs.sun.misc
 #if FIRST_PASS
             throw new NotImplementedException();
 #else
-            if (o is null)
+            switch (o)
             {
-                putChar(self, offset, x);
-            }
-            else if (o is Array array)
-            {
-                WriteInt16(array, offset, (short)x);
-            }
-            else
-            {
-                try
-                {
-                    GetOrCreatePutFieldDelegate<char>(GetFieldInfo(offset))(o, x);
-                }
-                catch (Exception e)
-                {
-                    throw (global::java.lang.InternalError)new global::java.lang.InternalError().initCause(e);
-                }
+                case Array array:
+                    WriteInt16(array, offset, (short)x);
+                    break;
+                default:
+                    PutField(o, offset, x);
+                    break;
             }
 #endif
         }
@@ -518,25 +442,11 @@ namespace IKVM.Java.Externs.sun.misc
 #if FIRST_PASS
             throw new NotImplementedException();
 #else
-            if (o is null)
+            return o switch
             {
-                return getLong(self, offset);
-            }
-            else if (o is Array array)
-            {
-                return ReadInt64(array, offset);
-            }
-            else
-            {
-                try
-                {
-                    return GetOrCreateGetFieldDelegate<long>(GetFieldInfo(offset))(o);
-                }
-                catch (Exception e)
-                {
-                    throw (global::java.lang.InternalError)new global::java.lang.InternalError().initCause(e);
-                }
-            }
+                Array array => ReadInt64(array, offset),
+                _ => GetField<long>(o, offset)
+            };
 #endif
         }
 
@@ -552,24 +462,14 @@ namespace IKVM.Java.Externs.sun.misc
 #if FIRST_PASS
             throw new NotImplementedException();
 #else
-            if (o is null)
+            switch (o)
             {
-                putLong(self, offset, x);
-            }
-            else if (o is Array array)
-            {
-                WriteInt64(array, offset, x);
-            }
-            else
-            {
-                try
-                {
-                    GetOrCreatePutFieldDelegate<long>(GetFieldInfo(offset))(o, x);
-                }
-                catch (Exception e)
-                {
-                    throw (global::java.lang.InternalError)new global::java.lang.InternalError().initCause(e);
-                }
+                case Array array:
+                    WriteInt64(array, offset, x);
+                    break;
+                default:
+                    PutField(o, offset, x);
+                    break;
             }
 #endif
         }
@@ -586,25 +486,11 @@ namespace IKVM.Java.Externs.sun.misc
 #if FIRST_PASS
             throw new NotImplementedException();
 #else
-            if (o is null)
+            return o switch
             {
-                return getFloat(self, offset);
-            }
-            else if (o is Array array)
-            {
-                return global::java.lang.Float.intBitsToFloat(ReadInt32(array, offset));
-            }
-            else
-            {
-                try
-                {
-                    return GetOrCreateGetFieldDelegate<float>(GetFieldInfo(offset))(o);
-                }
-                catch (Exception e)
-                {
-                    throw (global::java.lang.InternalError)new global::java.lang.InternalError().initCause(e);
-                }
-            }
+                Array array => global::java.lang.Float.intBitsToFloat(ReadInt32(array, offset)),
+                _ => GetField<float>(o, offset)
+            };
 #endif
         }
 
@@ -620,24 +506,14 @@ namespace IKVM.Java.Externs.sun.misc
 #if FIRST_PASS
             throw new NotImplementedException();
 #else
-            if (o is null)
+            switch (o)
             {
-                putFloat(self, offset, x);
-            }
-            else if (o is Array array)
-            {
-                WriteInt32(array, offset, global::java.lang.Float.floatToRawIntBits(x));
-            }
-            else
-            {
-                try
-                {
-                    GetOrCreatePutFieldDelegate<float>(GetFieldInfo(offset))(o, x);
-                }
-                catch (Exception e)
-                {
-                    throw (global::java.lang.InternalError)new global::java.lang.InternalError().initCause(e);
-                }
+                case Array array:
+                    WriteInt32(array, offset, global::java.lang.Float.floatToRawIntBits(x));
+                    break;
+                default:
+                    PutField(o, offset, x);
+                    break;
             }
 #endif
         }
@@ -654,25 +530,11 @@ namespace IKVM.Java.Externs.sun.misc
 #if FIRST_PASS
             throw new NotImplementedException();
 #else
-            if (o is null)
+            return o switch
             {
-                return getDouble(self, offset);
-            }
-            else if (o is Array array)
-            {
-                return global::java.lang.Double.longBitsToDouble(ReadInt64(array, offset));
-            }
-            else
-            {
-                try
-                {
-                    return GetOrCreateGetFieldDelegate<double>(GetFieldInfo(offset))(o);
-                }
-                catch (Exception e)
-                {
-                    throw (global::java.lang.InternalError)new global::java.lang.InternalError().initCause(e);
-                }
-            }
+                Array array => global::java.lang.Double.longBitsToDouble(ReadInt64(array, offset)),
+                _ => GetField<double>(o, offset)
+            };
 #endif
         }
 
@@ -688,24 +550,14 @@ namespace IKVM.Java.Externs.sun.misc
 #if FIRST_PASS
             throw new NotImplementedException();
 #else
-            if (o is null)
+            switch (o)
             {
-                putDouble(self, offset, x);
-            }
-            else if (o is Array array)
-            {
-                WriteInt64(array, offset, global::java.lang.Double.doubleToRawLongBits(x));
-            }
-            else
-            {
-                try
-                {
-                    GetOrCreatePutFieldDelegate<double>(GetFieldInfo(offset))(o, x);
-                }
-                catch (Exception e)
-                {
-                    throw (global::java.lang.InternalError)new global::java.lang.InternalError().initCause(e);
-                }
+                case Array array:
+                    WriteInt64(array, offset, global::java.lang.Double.doubleToRawLongBits(x));
+                    break;
+                default:
+                    PutField(o, offset, x);
+                    break;
             }
 #endif
         }
@@ -915,16 +767,15 @@ namespace IKVM.Java.Externs.sun.misc
             throw new NotImplementedException();
 #else
             if (bytes == 0)
-            {
                 return 0;
-            }
+
             try
             {
                 return Marshal.AllocHGlobal((IntPtr)bytes).ToInt64();
             }
             catch (OutOfMemoryException e)
             {
-                throw new global::java.lang.OutOfMemoryError(e.Message);
+                throw new global::java.lang.OutOfMemoryError(e.Message).initCause(e);
             }
 #endif
         }
@@ -947,13 +798,14 @@ namespace IKVM.Java.Externs.sun.misc
                 freeMemory(self, address);
                 return 0;
             }
+
             try
             {
                 return Marshal.ReAllocHGlobal((IntPtr)address, (IntPtr)bytes).ToInt64();
             }
             catch (OutOfMemoryException e)
             {
-                throw new global::java.lang.OutOfMemoryError(e.Message);
+                throw new global::java.lang.OutOfMemoryError(e.Message).initCause(e);
             }
 #endif
         }
@@ -967,19 +819,30 @@ namespace IKVM.Java.Externs.sun.misc
         /// <param name="bytes"></param>
         /// <param name="value"></param>
         /// <exception cref="global::java.lang.IllegalArgumentException"></exception>
-        public static void setMemory(object self, object o, long offset, long bytes, byte value)
+        public static unsafe void setMemory(object self, object o, long offset, long bytes, byte value)
         {
 #if FIRST_PASS
             throw new NotImplementedException();
 #else
             if (o == null)
-                while (bytes-- > 0)
-                    putByte(self, offset++, value);
+                new Span<byte>((void*)(IntPtr)offset, (int)bytes).Fill(value);
             else if (o is byte[] array)
                 ((Span<byte>)array).Slice((int)offset, (int)bytes).Fill(value);
-            else if (o is Array df)
-                for (int i = 0; i < bytes; i++)
-                    Buffer.SetByte(df, (int)(offset + i), value);
+            else if (o is Array array2)
+            {
+                GCHandle h = new();
+
+                try
+                {
+                    h = GCHandle.Alloc(array2, GCHandleType.Pinned);
+                    new Span<byte>((byte*)h.AddrOfPinnedObject(), Buffer.ByteLength(array2)).Slice((int)offset, (int)bytes).Fill(value);
+                }
+                finally
+                {
+                    if (h.IsAllocated)
+                        h.Free();
+                }
+            }
             else
                 throw new global::java.lang.IllegalArgumentException();
 #endif
@@ -995,33 +858,27 @@ namespace IKVM.Java.Externs.sun.misc
         /// <param name="destOffset"></param>
         /// <param name="bytes"></param>
         /// <exception cref="global::java.lang.IllegalArgumentException"></exception>
-        public static void copyMemory(object self, object srcBase, long srcOffset, object destBase, long destOffset, long bytes)
+        public static unsafe void copyMemory(object self, object srcBase, long srcOffset, object destBase, long destOffset, long bytes)
         {
-            void copyMemory2(long srcAddress, long destAddress, long bytes)
-            {
-                while (bytes-- > 0)
-                    putByte(self, destAddress++, getByte(self, srcAddress++));
-            }
-
             if (srcBase == null)
             {
                 if (destBase is byte[] byteArray)
                 {
-                    Marshal.Copy((IntPtr)(srcOffset), byteArray, (int)destOffset, (int)bytes);
+                    Marshal.Copy((IntPtr)srcOffset, byteArray, (int)destOffset, (int)bytes);
                 }
                 else if (destBase is bool[])
                 {
-                    byte[] tmp = new byte[(int)bytes];
+                    var tmp = new byte[(int)bytes];
                     copyMemory(self, srcBase, srcOffset, tmp, 0, bytes);
                     copyMemory(self, tmp, 0, destBase, destOffset, bytes);
                 }
                 else if (destBase is short[] shortArray)
                 {
-                    Marshal.Copy((IntPtr)(srcOffset), shortArray, (int)(destOffset >> 1), (int)(bytes >> 1));
+                    Marshal.Copy((IntPtr)srcOffset, shortArray, (int)(destOffset >> 1), (int)(bytes >> 1));
                 }
                 else if (destBase is char[] charArray)
                 {
-                    Marshal.Copy((IntPtr)(srcOffset), charArray, (int)(destOffset >> 1), (int)(bytes >> 1));
+                    Marshal.Copy((IntPtr)srcOffset, charArray, (int)(destOffset >> 1), (int)(bytes >> 1));
                 }
                 else if (destBase is int[] intArray)
                 {
@@ -1029,19 +886,19 @@ namespace IKVM.Java.Externs.sun.misc
                 }
                 else if (destBase is float[] floatArray)
                 {
-                    Marshal.Copy((IntPtr)(srcOffset), floatArray, (int)(destOffset >> 2), (int)(bytes >> 2));
+                    Marshal.Copy((IntPtr)srcOffset, floatArray, (int)(destOffset >> 2), (int)(bytes >> 2));
                 }
                 else if (destBase is long[] longArray)
                 {
-                    Marshal.Copy((IntPtr)(srcOffset), longArray, (int)(destOffset >> 3), (int)(bytes >> 3));
+                    Marshal.Copy((IntPtr)srcOffset, longArray, (int)(destOffset >> 3), (int)(bytes >> 3));
                 }
                 else if (destBase is double[] doubleArray)
                 {
-                    Marshal.Copy((IntPtr)(srcOffset), doubleArray, (int)(destOffset >> 3), (int)(bytes >> 3));
+                    Marshal.Copy((IntPtr)srcOffset, doubleArray, (int)(destOffset >> 3), (int)(bytes >> 3));
                 }
                 else if (destBase == null)
                 {
-                    copyMemory2(srcOffset, destOffset, bytes);
+                    Buffer.MemoryCopy((void*)(IntPtr)srcOffset, (void*)(IntPtr)destOffset, long.MaxValue, bytes);
                 }
                 else
                 {
@@ -1056,11 +913,11 @@ namespace IKVM.Java.Externs.sun.misc
             {
                 if (srcBase is byte[] byteArray)
                 {
-                    Marshal.Copy(byteArray, (int)srcOffset, (IntPtr)(destOffset), (int)bytes);
+                    Marshal.Copy(byteArray, (int)srcOffset, (IntPtr)destOffset, (int)bytes);
                 }
                 else if (srcBase is bool[])
                 {
-                    byte[] tmp = new byte[(int)bytes];
+                    var tmp = new byte[(int)bytes];
                     copyMemory(self, srcBase, srcOffset, tmp, 0, bytes);
                     copyMemory(self, tmp, 0, destBase, destOffset, bytes);
                 }
@@ -1113,8 +970,8 @@ namespace IKVM.Java.Externs.sun.misc
         /// <returns></returns>
         public static long staticFieldOffset(object self, global::java.lang.reflect.Field f)
         {
-            var fw = FieldWrapper.FromField(f);
-            return (long)fw.Cookie;
+            var fr = fieldRefCache.GetValue(FieldWrapper.FromField(f).GetField(), _ => new FieldDelegateRef(_));
+            return (long)GCHandle.ToIntPtr(fr.Handle);
         }
 
         /// <summary>
@@ -1125,8 +982,8 @@ namespace IKVM.Java.Externs.sun.misc
         /// <returns></returns>
         public static long objectFieldOffset(object self, global::java.lang.reflect.Field f)
         {
-            var fw = FieldWrapper.FromField(f);
-            return (long)fw.Cookie;
+            var fr = fieldRefCache.GetValue(FieldWrapper.FromField(f).GetField(), _ => new FieldDelegateRef(_));
+            return (long)GCHandle.ToIntPtr(fr.Handle);
         }
 
         /// <summary>
@@ -1202,7 +1059,7 @@ namespace IKVM.Java.Externs.sun.misc
             if (ac == typeof(char[]) || ac == typeof(short[]))
                 return 2;
 
-            if (ac == typeof(int[]) || ac == typeof(float[]) || ac == typeof(Object[]))
+            if (ac == typeof(int[]) || ac == typeof(float[]) || ac == typeof(object[]))
                 return 4;
 
             if (ac == typeof(long[]) || ac == typeof(double[]))
@@ -1346,125 +1203,143 @@ namespace IKVM.Java.Externs.sun.misc
         }
 
         /// <summary>
-        /// Implementation of native method 'compareAndSwapObject'.
+        /// Creates a delegate capable of accessing a field of a specific type as a volatile.
         /// </summary>
-        /// <param name="self"></param>
+        /// <returns></returns>
+        static Delegate CreateGetFieldVolatileDelegate(FieldInfo f)
+        {
+            var mi = typeof(Volatile)
+                .GetMethods(BindingFlags.Public | BindingFlags.Static)
+                .Where(i => i.Name == nameof(Volatile.Read))
+                .Where(i => i.GetParameters().Length > 0 && i.GetParameters()[0].ParameterType == f.FieldType.MakeByRefType())
+                .FirstOrDefault();
+            if (mi == null && f.FieldType == typeof(char))
+                mi = typeof(Unsafe)
+                    .GetMethods(BindingFlags.NonPublic | BindingFlags.Static)
+                    .Where(i => i.Name == nameof(VolatileRead))
+                    .Where(i => i.GetParameters().Length > 0 && i.GetParameters()[0].ParameterType == f.FieldType.MakeByRefType())
+                    .FirstOrDefault();
+            if (mi == null)
+                mi = typeof(Volatile)
+                    .GetMethods(BindingFlags.Public | BindingFlags.Static)
+                    .Where(i => i.Name == nameof(Volatile.Read) && i.IsGenericMethodDefinition && i.GetGenericArguments().Length == 1)
+                    .Select(i => i.MakeGenericMethod(f.FieldType))
+                    .FirstOrDefault();
+            if (mi == null)
+                throw new InvalidOperationException("Could not resolve appropriate Volatile.Read method.");
+
+            var p = Expression.Parameter(typeof(object));
+            var l = f.IsStatic ? null : Expression.Convert(p, f.DeclaringType);
+            return Expression.Lambda(
+                typeof(Func<,>).MakeGenericType(typeof(object), f.FieldType),
+                Expression.Call(mi, Expression.Field(l, f)),
+                p)
+                .Compile();
+        }
+
+        /// <summary>
+        /// Implementation of missing 'Volatile.Write(ref char, char)'.
+        /// </summary>
+        /// <param name="location"></param>
+        static char VolatileRead(ref char location)
+        {
+            ref var l = ref System.Runtime.CompilerServices.Unsafe.As<char, short>(ref location);
+            return (char)Volatile.Read(ref l);
+        }
+
+        /// <summary>
+        /// Implements the logic to get a field by offset using volatile.
+        /// </summary>
+        /// <typeparam name="T"></typeparam>
         /// <param name="o"></param>
         /// <param name="offset"></param>
-        /// <param name="expected"></param>
-        /// <param name="x"></param>
         /// <returns></returns>
-        /// <exception cref="InvalidOperationException"></exception>
-        public static bool compareAndSwapObject(object self, object o, long offset, object expected, object x)
+        /// <exception cref="global::java.lang.InternalError"></exception>
+        static T GetFieldVolatile<T>(object o, long offset)
         {
 #if FIRST_PASS
             throw new NotImplementedException();
 #else
-            if (o is object[] array)
+            try
             {
-                return AtomicArray.CompareExchange(array, (int)offset, x, expected) == expected;
+                return ((Func<object, T>)((FieldDelegateRef)GCHandle.FromIntPtr((IntPtr)offset).Target).VolatileGetter)(o);
             }
-            else
+            catch (Exception e)
             {
-                var field = GetFieldInfo(offset);
-                if (field == null)
-                    throw new InvalidOperationException();
-
-                // get or create delegate for field
-                var d = compareExchangeObjectCache.GetValue(field, _ => (CompareExchangeObject)CreateCompareExchangeDelegate(_));
-                return d(o, x, expected) == expected;
+                throw new global::java.lang.InternalError(e);
             }
 #endif
         }
 
         /// <summary>
-        /// Implementation of native method 'compareAndSwapInt'.
+        /// Creates a delegate capable of accessing a field of a specific type.
         /// </summary>
-        /// <param name="self"></param>
-        /// <param name="o"></param>
-        /// <param name="offset"></param>
-        /// <param name="expected"></param>
-        /// <param name="x"></param>
+        /// <param name="f"></param>
         /// <returns></returns>
-        /// <exception cref="InvalidOperationException"></exception>
-        public static bool compareAndSwapInt(object self, object o, long offset, int expected, int x)
+        static Delegate CreatePutFieldVolatileDelegate(FieldInfo f)
         {
-#if FIRST_PASS
-            throw new NotImplementedException();
-#else
-            if (o is int[] array && (offset & 3) == 0)
-            {
-                return Interlocked.CompareExchange(ref array[offset / 4], x, expected) == expected;
-            }
-            else if (o is Array array1)
-            {
-                // unaligned or not the right array type, so we can't be atomic
-                lock (self)
-                {
-                    if (ReadInt32(array1, offset) == expected)
-                    {
-                        WriteInt32(array1, offset, x);
-                        return true;
-                    }
+            var mi = typeof(Volatile)
+                .GetMethods(BindingFlags.Public | BindingFlags.Static)
+                .Where(i => i.Name == nameof(Volatile.Write))
+                .Where(i => i.GetParameters().Length > 0 && i.GetParameters()[0].ParameterType == f.FieldType.MakeByRefType())
+                .FirstOrDefault();
+            if (mi == null && f.FieldType == typeof(char))
+                mi = typeof(Unsafe)
+                    .GetMethods(BindingFlags.NonPublic | BindingFlags.Static)
+                    .Where(i => i.Name == nameof(VolatileWrite))
+                    .Where(i => i.GetParameters().Length > 0 && i.GetParameters()[0].ParameterType == f.FieldType.MakeByRefType())
+                    .FirstOrDefault();
+            if (mi == null)
+                mi = typeof(Volatile)
+                    .GetMethods(BindingFlags.Public | BindingFlags.Static)
+                    .Where(i => i.Name == nameof(Volatile.Write) && i.IsGenericMethodDefinition && i.GetGenericArguments().Length == 1)
+                    .Select(i => i.MakeGenericMethod(f.FieldType))
+                    .FirstOrDefault();
+            if (mi == null)
+                throw new InvalidOperationException("Could not resolve appropriate Volatile.Write method.");
 
-                    return false;
-                }
-            }
-            else
-            {
-                var field = GetFieldInfo(offset);
-                if (field == null)
-                    throw new InvalidOperationException();
-
-                // get or create delegate for field
-                var d = compareExchangeInt32Cache.GetValue(field, _ => (CompareExchangeInt32)CreateCompareExchangeDelegate(_));
-                return d(o, x, expected) == expected;
-            }
-#endif
+            var p = Expression.Parameter(typeof(object));
+            var v = Expression.Parameter(f.FieldType);
+            var l = f.IsStatic ? null : Expression.Convert(p, f.DeclaringType);
+            return Expression.Lambda(
+                typeof(Action<,>).MakeGenericType(typeof(object), f.FieldType),
+                Expression.Call(mi, Expression.Field(l, f), v),
+                p,
+                v)
+                .Compile();
         }
 
         /// <summary>
-        /// Implementation of native method 'compareAndSwapLong'.
+        /// Implementation of missing 'Volatile.Write(ref char, char)'.
         /// </summary>
-        /// <param name="self"></param>
+        /// <param name="location"></param>
+        /// <param name="value"></param>
+        static void VolatileWrite(ref char location, char value)
+        {
+            ref var l = ref System.Runtime.CompilerServices.Unsafe.As<char, short>(ref location);
+            Volatile.Write(ref l, (short)value);
+        }
+
+        /// <summary>
+        /// Implements the logic to set a field by offset using volatile.
+        /// </summary>
+        /// <typeparam name="TField"></typeparam>
         /// <param name="o"></param>
         /// <param name="offset"></param>
-        /// <param name="expected"></param>
-        /// <param name="x"></param>
-        /// <returns></returns>
-        /// <exception cref="InvalidOperationException"></exception>
-        public static bool compareAndSwapLong(object self, object o, long offset, long expected, long x)
+        /// <param name="value"></param>
+        /// <exception cref="global::java.lang.InternalError"></exception>
+        static void PutFieldVolatile<TField>(object o, long offset, TField value)
         {
 #if FIRST_PASS
             throw new NotImplementedException();
 #else
-            if (o is long[] array && (offset & 7) == 0)
+            try
             {
-                return Interlocked.CompareExchange(ref array[offset / 8], x, expected) == expected;
+                ((Action<object, TField>)((FieldDelegateRef)GCHandle.FromIntPtr((IntPtr)offset).Target).VolatilePutter)(o, value);
             }
-            else if (o is Array array1)
+            catch (Exception e)
             {
-                // unaligned or not the right array type, so we can't be atomic
-                lock (self)
-                {
-                    if (ReadInt64(array1, offset) == expected)
-                    {
-                        WriteInt64(array1, offset, x);
-                        return true;
-                    }
-
-                    return false;
-                }
-            }
-            else
-            {
-                var field = GetFieldInfo(offset);
-                if (field == null)
-                    throw new InvalidOperationException();
-
-                // get or create delegate for field
-                var d = compareExchangeInt64Cache.GetValue(field, _ => (CompareExchangeInt64)CreateCompareExchangeDelegate(_));
-                return d(o, x, expected) == expected;
+                throw new global::java.lang.InternalError(e);
             }
 #endif
         }
@@ -1481,14 +1356,12 @@ namespace IKVM.Java.Externs.sun.misc
 #if FIRST_PASS
             throw new NotImplementedException();
 #else
-            if (o is object[] array)
+            switch (o)
             {
-                lock (self)
-                    return array[(int)offset];
-            }
-            else
-            {
-                return getObject(self, o, offset);
+                case object[] array:
+                    return Volatile.Read(ref array[offset]);
+                default:
+                    return GetFieldVolatile<object>(o, offset);
             }
 #endif
         }
@@ -1505,14 +1378,14 @@ namespace IKVM.Java.Externs.sun.misc
 #if FIRST_PASS
             throw new NotImplementedException();
 #else
-            if (o is object[] array)
+            switch (o)
             {
-                lock (self)
-                    array[(int)offset] = x;
-            }
-            else
-            {
-                putObject(self, o, offset, x);
+                case object[] array:
+                    Volatile.Write(ref array[offset], x);
+                    break;
+                default:
+                    PutFieldVolatile(o, offset, x);
+                    break;
             }
 #endif
         }
@@ -1529,15 +1402,11 @@ namespace IKVM.Java.Externs.sun.misc
 #if FIRST_PASS
             throw new NotImplementedException();
 #else
-            if (o is Array array)
+            return o switch
             {
-                lock (self)
-                    return ReadInt32(array, offset);
-            }
-            else
-            {
-                return getInt(self, o, offset);
-            }
+                Array array => ReadInt32Volatile(array, offset),
+                _ => GetFieldVolatile<int>(o, offset)
+            };
 #endif
         }
 
@@ -1553,15 +1422,14 @@ namespace IKVM.Java.Externs.sun.misc
 #if FIRST_PASS
             throw new NotImplementedException();
 #else
-            if (o is Array array)
+            switch (o)
             {
-                lock (self)
-                    putInt(self, array, offset, x);
-            }
-            else
-            {
-                lock (GetFieldInfo(offset))
-                    putInt(self, o, offset, x);
+                case Array array:
+                    WriteInt32Volatile(array, offset, x);
+                    break;
+                default:
+                    PutFieldVolatile(o, offset, x);
+                    break;
             }
 #endif
         }
@@ -1590,15 +1458,14 @@ namespace IKVM.Java.Externs.sun.misc
 #if FIRST_PASS
             throw new NotImplementedException();
 #else
-            if (o is Array array)
+            switch (o)
             {
-                lock (self)
-                    putBoolean(self, array, offset, x);
-            }
-            else
-            {
-                lock (GetFieldInfo(offset))
-                    putBoolean(self, o, offset, x);
+                case Array array:
+                    WriteByteVolatile(array, offset, x ? (byte)1 : (byte)0);
+                    break;
+                default:
+                    PutFieldVolatile(o, offset, x);
+                    break;
             }
 #endif
         }
@@ -1627,15 +1494,14 @@ namespace IKVM.Java.Externs.sun.misc
 #if FIRST_PASS
             throw new NotImplementedException();
 #else
-            if (o is Array array)
+            switch (o)
             {
-                lock (self)
-                    putByte(self, array, offset, x);
-            }
-            else
-            {
-                lock (GetFieldInfo(offset))
-                    putByte(self, o, offset, x);
+                case Array array:
+                    WriteByteVolatile(array, offset, x);
+                    break;
+                default:
+                    PutFieldVolatile(o, offset, x);
+                    break;
             }
 #endif
         }
@@ -1649,7 +1515,11 @@ namespace IKVM.Java.Externs.sun.misc
         /// <returns></returns>
         public static short getShortVolatile(object self, object o, long offset)
         {
-            return getShort(self, o, offset);
+            return o switch
+            {
+                Array array => ReadInt16Volatile(array, offset),
+                _ => GetFieldVolatile<short>(o, offset)
+            };
         }
 
         /// <summary>
@@ -1664,15 +1534,14 @@ namespace IKVM.Java.Externs.sun.misc
 #if FIRST_PASS
             throw new NotImplementedException();
 #else
-            if (o is Array array)
+            switch (o)
             {
-                lock (self)
-                    putShort(self, array, offset, x);
-            }
-            else
-            {
-                lock (GetFieldInfo(offset))
-                    putShort(self, o, offset, x);
+                case Array array:
+                    WriteInt16Volatile(array, offset, x);
+                    break;
+                default:
+                    PutFieldVolatile(o, offset, x);
+                    break;
             }
 #endif
         }
@@ -1686,7 +1555,11 @@ namespace IKVM.Java.Externs.sun.misc
         /// <returns></returns>
         public static char getCharVolatile(object self, object o, long offset)
         {
-            return getChar(self, o, offset);
+            return o switch
+            {
+                Array array => (char)ReadInt16Volatile(array, offset),
+                _ => GetFieldVolatile<char>(o, offset)
+            };
         }
 
         /// <summary>
@@ -1701,15 +1574,14 @@ namespace IKVM.Java.Externs.sun.misc
 #if FIRST_PASS
             throw new NotImplementedException();
 #else
-            if (o is Array array)
+            switch (o)
             {
-                lock (self)
-                    putChar(self, array, offset, x);
-            }
-            else
-            {
-                lock (GetFieldInfo(offset))
-                    putChar(self, o, offset, x);
+                case Array array:
+                    WriteInt16Volatile(array, offset, (short)x);
+                    break;
+                default:
+                    PutFieldVolatile(o, offset, x);
+                    break;
             }
 #endif
         }
@@ -1726,74 +1598,126 @@ namespace IKVM.Java.Externs.sun.misc
 #if FIRST_PASS
             throw new NotImplementedException();
 #else
-            if (o is Array array)
+            return o switch
             {
-                lock (self)
-                    return ReadInt64(array, offset);
-            }
-            else
-            {
-                lock (GetFieldInfo(offset))
-                    return getLong(self, o, offset);
-            }
+                Array array => ReadInt64Volatile(array, offset),
+                _ => GetFieldVolatile<long>(o, offset)
+            };
 #endif
         }
 
+        /// <summary>
+        /// Implementation of native method 'putLongVolatile'.
+        /// </summary>
+        /// <param name="self"></param>
+        /// <param name="o"></param>
+        /// <param name="offset"></param>
+        /// <param name="x"></param>
         public static void putLongVolatile(object self, object o, long offset, long x)
         {
 #if FIRST_PASS
             throw new NotImplementedException();
 #else
-            if (o is Array array)
+            switch (o)
             {
-                lock (self)
-                    WriteInt64(array, offset, x);
-            }
-            else
-            {
-                lock (GetFieldInfo(offset))
-                    putLong(self, o, offset, x);
+                case Array array:
+                    WriteInt64Volatile(array, offset, x);
+                    break;
+                default:
+                    PutFieldVolatile(o, offset, x);
+                    break;
             }
 #endif
         }
 
+        /// <summary>
+        /// Implementation of native method 'getFloatVolatile'.
+        /// </summary>
+        /// <param name="self"></param>
+        /// <param name="o"></param>
+        /// <param name="offset"></param>
+        /// <returns></returns>
+        /// <exception cref="global::java.lang.NullPointerException"></exception>
         public static float getFloatVolatile(object self, object o, long offset)
         {
-            return getFloat(self, o, offset);
+#if FIRST_PASS
+            throw new NotImplementedException();
+#else
+            return o switch
+            {
+                Array array => global::java.lang.Float.intBitsToFloat(ReadInt32Volatile(array, offset)),
+                _ => GetFieldVolatile<float>(o, offset)
+            };
+#endif
         }
 
+        /// <summary>
+        /// Implementation of native method 'putFloatVolatile'.
+        /// </summary>
+        /// <param name="self"></param>
+        /// <param name="o"></param>
+        /// <param name="offset"></param>
+        /// <param name="x"></param>
         public static void putFloatVolatile(object self, object o, long offset, float x)
         {
-            if (o is Array array)
+#if FIRST_PASS
+            throw new NotImplementedException();
+#else
+            switch (o)
             {
-                lock (self)
-                    putFloat(self, array, offset, x);
+                case Array array:
+                    WriteInt32Volatile(array, offset, global::java.lang.Float.floatToRawIntBits(x));
+                    break;
+                default:
+                    PutFieldVolatile(o, offset, x);
+                    break;
             }
-            else
-            {
-                lock (GetFieldInfo(offset))
-                    putFloat(self, o, offset, x);
-            }
+#endif
         }
 
+        /// <summary>
+        /// Implementation of native method 'getDoubleVolatile'.
+        /// </summary>
+        /// <param name="self"></param>
+        /// <param name="o"></param>
+        /// <param name="offset"></param>
+        /// <returns></returns>
+        /// <exception cref="global::java.lang.NullPointerException"></exception>
         public static double getDoubleVolatile(object self, object o, long offset)
         {
-            lock (self)
-                return getDouble(self, o, offset);
+#if FIRST_PASS
+            throw new NotImplementedException();
+#else
+            return o switch
+            {
+                Array array => global::java.lang.Double.longBitsToDouble(ReadInt64Volatile(array, offset)),
+                _ => GetFieldVolatile<double>(o, offset)
+            };
+#endif
         }
 
+        /// <summary>
+        /// Implementation of native method 'putDoubleVolatile'.
+        /// </summary>
+        /// <param name="self"></param>
+        /// <param name="o"></param>
+        /// <param name="offset"></param>
+        /// <param name="x"></param>
         public static void putDoubleVolatile(object self, object o, long offset, double x)
         {
-            if (o is Array array)
+#if FIRST_PASS
+            throw new NotImplementedException();
+#else
+            switch (o)
             {
-                lock (self)
-                    putDouble(self, array, offset, x);
+                case Array array:
+                    WriteInt64Volatile(array, offset, global::java.lang.Double.doubleToRawLongBits(x));
+                    break;
+                default:
+                    PutFieldVolatile(o, offset, x);
+                    break;
             }
-            else
-            {
-                lock (GetFieldInfo(offset))
-                    putDouble(self, o, offset, x);
-            }
+#endif
         }
 
         public static void putOrderedObject(object self, object o, long offset, object x)
@@ -1809,6 +1733,144 @@ namespace IKVM.Java.Externs.sun.misc
         public static void putOrderedLong(object self, object o, long offset, long x)
         {
             putLongVolatile(self, o, offset, x);
+        }
+
+        /// <summary>
+        /// Creates a delegate capable of accessing a field of a specific type as a volatile.
+        /// </summary>
+        /// <param name="f"></param>
+        /// <returns></returns>
+        static Delegate CreateCompareExchangeFieldDelegate(FieldInfo f)
+        {
+            var p = Expression.Parameter(typeof(object));
+            var v = Expression.Parameter(f.FieldType);
+            var e = Expression.Parameter(f.FieldType);
+            var l = f.IsStatic ? null : Expression.Convert(p, f.DeclaringType);
+            return Expression.Lambda(
+                typeof(Func<,,,>).MakeGenericType(typeof(object), f.FieldType, f.FieldType, f.FieldType),
+                Expression.Call(typeof(Interlocked), nameof(Interlocked.CompareExchange), Array.Empty<Type>(), Expression.Field(l, f), v, e),
+                p, v, e)
+                .Compile();
+        }
+
+        /// <summary>
+        /// Implements the logic to compare and swap an object.
+        /// </summary>
+        /// <typeparam name="T"></typeparam>
+        /// <param name="o"></param>
+        /// <param name="offset"></param>
+        /// <param name="expected"></param>
+        /// <param name="x"></param>
+        /// <returns></returns>
+        /// <exception cref="global::java.lang.InternalError"></exception>
+        static T CompareExchangeField<T>(object o, long offset, T expected, T x)
+        {
+#if FIRST_PASS
+            throw new NotImplementedException();
+#else
+            try
+            {
+                return ((Func<object, T, T, T>)((FieldDelegateRef)GCHandle.FromIntPtr((IntPtr)offset).Target).CompareExchange)(o, expected, x);
+            }
+            catch (Exception e)
+            {
+                throw new global::java.lang.InternalError(e);
+            }
+#endif
+        }
+
+        /// <summary>
+        /// Implementation of native method 'compareAndSwapObject'.
+        /// </summary>
+        /// <param name="self"></param>
+        /// <param name="o"></param>
+        /// <param name="offset"></param>
+        /// <param name="expected"></param>
+        /// <param name="x"></param>
+        /// <returns></returns>
+        /// <exception cref="InvalidOperationException"></exception>
+        public static bool compareAndSwapObject(object self, object o, long offset, object expected, object x)
+        {
+#if FIRST_PASS
+            throw new NotImplementedException();
+#else
+            if (o is object[] array)
+            {
+                return Interlocked.CompareExchange(ref array[offset], x, expected) == expected;
+            }
+            else
+            {
+                return CompareExchangeField<object>(o, offset, x, expected) == expected;
+            }
+#endif
+        }
+
+        /// <summary>
+        /// Implementation of native method 'compareAndSwapInt'.
+        /// </summary>
+        /// <param name="self"></param>
+        /// <param name="o"></param>
+        /// <param name="offset"></param>
+        /// <param name="expected"></param>
+        /// <param name="x"></param>
+        /// <returns></returns>
+        /// <exception cref="InvalidOperationException"></exception>
+        public static bool compareAndSwapInt(object self, object o, long offset, int expected, int x)
+        {
+#if FIRST_PASS
+            throw new NotImplementedException();
+#else
+            if (o is int[] array && (offset % sizeof(int)) == 0)
+            {
+                return Interlocked.CompareExchange(ref array[offset / sizeof(int)], x, expected) == expected;
+            }
+            else if (o is Array array1 && (offset % sizeof(int)) == 0)
+            {
+                return CompareExchangeInt32(array1, offset, x, expected) == expected;
+            }
+            else if (o is Array array2)
+            {
+                return CompareExchangeInt32Unaligned(array2, offset, x, expected) == expected;
+            }
+            else
+            {
+                return CompareExchangeField<int>(o, offset, x, expected) == expected;
+            }
+#endif
+        }
+
+        /// <summary>
+        /// Implementation of native method 'compareAndSwapLong'.
+        /// </summary>
+        /// <param name="self"></param>
+        /// <param name="o"></param>
+        /// <param name="offset"></param>
+        /// <param name="expected"></param>
+        /// <param name="x"></param>
+        /// <returns></returns>
+        /// <exception cref="InvalidOperationException"></exception>
+        public static bool compareAndSwapLong(object self, object o, long offset, long expected, long x)
+        {
+#if FIRST_PASS
+            throw new NotImplementedException();
+#else
+            if (o is long[] array && (offset % sizeof(long)) == 0)
+            {
+                return Interlocked.CompareExchange(ref array[offset / sizeof(long)], x, expected) == expected;
+            }
+            else if (o is Array array1 && (offset % sizeof(long)) == 0)
+            {
+                return CompareExchangeInt64(array1, offset, x, expected) == expected;
+            }
+            else if (o is Array array2)
+            {
+                return CompareExchangeInt64Unaligned(array2, offset, x, expected) == expected;
+            }
+            else
+            {
+                return CompareExchangeField<long>(o, offset, x, expected) == expected;
+            }
+#endif
         }
 
         public static void unpark(object self, object thread)
@@ -1846,17 +1908,17 @@ namespace IKVM.Java.Externs.sun.misc
 
         public static void loadFence(object self)
         {
-            System.Threading.Thread.MemoryBarrier();
+            Thread.MemoryBarrier();
         }
 
         public static void storeFence(object self)
         {
-            System.Threading.Thread.MemoryBarrier();
+            Thread.MemoryBarrier();
         }
 
         public static void fullFence(object self)
         {
-            System.Threading.Thread.MemoryBarrier();
+            Thread.MemoryBarrier();
         }
 
         /// <summary>
@@ -1866,183 +1928,476 @@ namespace IKVM.Java.Externs.sun.misc
         /// <returns></returns>
         static FieldInfo GetFieldInfo(long offset)
         {
-            var fw = FieldWrapper.FromCookie((IntPtr)offset);
-            fw.Link();
-            fw.ResolveField();
-            var fi = fw.GetField();
-            return fi;
+#if FIRST_PASS
+            throw new NotImplementedException();
+#else
+            try
+            {
+                var fw = FieldWrapper.FromCookie((IntPtr)offset);
+                fw.Link();
+                fw.ResolveField();
+                var fi = fw.GetField();
+                return fi;
+            }
+            catch (Exception e)
+            {
+                throw new global::java.lang.InternalError(e);
+            }
+#endif
         }
 
         /// <summary>
-        /// Gets the reflective Field instance from the specified offset.
+        /// Throws an exception if the offset is outside the bounds of the array, as calculated given the offset as bytes plus the slot size of the array.
         /// </summary>
+        /// <param name="array"></param>
         /// <param name="offset"></param>
-        /// <returns></returns>
-        static global::java.lang.reflect.Field GetField(long offset)
-        {
-            var fw = FieldWrapper.FromCookie((IntPtr)offset);
-            fw.Link();
-            fw.ResolveField();
-            var fi = (global::java.lang.reflect.Field)fw.ToField(false);
-            return fi;
-        }
-
+        /// <param name="accessLength"></param>
+        /// <exception cref="global::java.lang.ArrayIndexOutOfBoundsException"></exception>
         static void CheckArrayBounds(Array array, long offset, int accessLength)
         {
             var arrayLength = Buffer.ByteLength(array);
             if (offset < 0 || offset > arrayLength - accessLength || accessLength > arrayLength)
-                throw new IndexOutOfRangeException();
+                throw new global::java.lang.ArrayIndexOutOfBoundsException();
         }
-
-        static short ReadInt16(Array obj, long offset)
-        {
-            CheckArrayBounds(obj, offset, 2);
-            var handle = GCHandle.Alloc(obj, GCHandleType.Pinned);
-            var value = Marshal.ReadInt16((IntPtr)(handle.AddrOfPinnedObject().ToInt64() + offset));
-            handle.Free();
-            return value;
-        }
-
-        static int ReadInt32(Array obj, long offset)
-        {
-            CheckArrayBounds(obj, offset, 4);
-            var handle = GCHandle.Alloc(obj, GCHandleType.Pinned);
-            var value = Marshal.ReadInt32((IntPtr)(handle.AddrOfPinnedObject().ToInt64() + offset));
-            handle.Free();
-            return value;
-        }
-
-        static long ReadInt64(Array obj, long offset)
-        {
-            CheckArrayBounds(obj, offset, 8);
-            var handle = GCHandle.Alloc(obj, GCHandleType.Pinned);
-            var value = Marshal.ReadInt64((IntPtr)(handle.AddrOfPinnedObject().ToInt64() + offset));
-            handle.Free();
-            return value;
-        }
-
-        static void WriteInt16(Array obj, long offset, short value)
-        {
-            CheckArrayBounds(obj, offset, 2);
-            var handle = GCHandle.Alloc(obj, GCHandleType.Pinned);
-            Marshal.WriteInt16((IntPtr)(handle.AddrOfPinnedObject().ToInt64() + offset), value);
-            handle.Free();
-        }
-
-        static void WriteInt32(Array obj, long offset, int value)
-        {
-            CheckArrayBounds(obj, offset, 4);
-            var handle = GCHandle.Alloc(obj, GCHandleType.Pinned);
-            Marshal.WriteInt32((IntPtr)(handle.AddrOfPinnedObject().ToInt64() + offset), value);
-            handle.Free();
-        }
-
-        static void WriteInt64(Array obj, long offset, long value)
-        {
-            CheckArrayBounds(obj, offset, 8);
-            var handle = GCHandle.Alloc(obj, GCHandleType.Pinned);
-            Marshal.WriteInt64((IntPtr)(handle.AddrOfPinnedObject().ToInt64() + offset), value);
-            handle.Free();
-        }
-
-#if !FIRST_PASS
 
         /// <summary>
-        /// Creates a dynamic method that implements the compare and exchange logic for a given field.
+        /// Reads an <see cref="short"/> from the array at the specific byte offset.
         /// </summary>
-        /// <param name="field"></param>
+        /// <param name="obj"></param>
+        /// <param name="offset"></param>
         /// <returns></returns>
-        static Delegate CreateCompareExchangeDelegate(FieldInfo field)
+        static unsafe short ReadInt16(Array obj, long offset)
         {
-            var primitive = field.FieldType.IsPrimitive;
-            var signatureType = primitive ? field.FieldType : typeof(object);
+            GCHandle h = new();
 
-            MethodInfo compareExchange;
-            Type delegateType;
-
-            if (signatureType == typeof(int))
+            try
             {
-                compareExchange = InterlockedMethods.CompareExchangeInt32;
-                delegateType = typeof(CompareExchangeInt32);
+                CheckArrayBounds(obj, offset, sizeof(short));
+                h = GCHandle.Alloc(obj, GCHandleType.Pinned);
+                var v = System.Runtime.CompilerServices.Unsafe.ReadUnaligned<short>((byte*)h.AddrOfPinnedObject() + offset);
+                return v;
             }
-            else if (signatureType == typeof(long))
+            finally
             {
-                compareExchange = InterlockedMethods.CompareExchangeInt64;
-                delegateType = typeof(CompareExchangeInt64);
+                if (h.IsAllocated)
+                    h.Free();
             }
-            else
-            {
-                compareExchange = InterlockedMethods.CompareExchangeOfT.MakeGenericMethod(field.FieldType);
-                delegateType = typeof(CompareExchangeObject);
-            }
-
-            var dm = new DynamicMethod("CompareExchange", signatureType, new Type[] { typeof(object), signatureType, signatureType }, field.DeclaringType);
-            var ilgen = dm.GetILGenerator();
-            ilgen.Emit(OpCodes.Ldarg_0);
-            ilgen.Emit(OpCodes.Castclass, field.DeclaringType);
-            ilgen.Emit(OpCodes.Ldflda, field);
-            ilgen.Emit(OpCodes.Ldarg_1);
-            if (!primitive)
-                ilgen.Emit(OpCodes.Castclass, field.FieldType);
-            ilgen.Emit(OpCodes.Ldarg_2);
-            if (!primitive)
-                ilgen.Emit(OpCodes.Castclass, field.FieldType);
-            ilgen.Emit(OpCodes.Call, compareExchange);
-            ilgen.Emit(OpCodes.Ret);
-            return dm.CreateDelegate(delegateType);
         }
 
-#endif
+        /// <summary>
+        /// Reads an <see cref="short"/> from the array at the specific byte offset.
+        /// </summary>
+        /// <param name="obj"></param>
+        /// <param name="offset"></param>
+        /// <returns></returns>
+        static unsafe short ReadInt16Volatile(Array obj, long offset)
+        {
+            GCHandle h = new();
+
+            try
+            {
+                CheckArrayBounds(obj, offset, sizeof(short));
+                h = GCHandle.Alloc(obj, GCHandleType.Pinned);
+                ref var r = ref System.Runtime.CompilerServices.Unsafe.AsRef<short>((byte*)h.AddrOfPinnedObject() + offset);
+                var v = Volatile.Read(ref r);
+                return v;
+            }
+            finally
+            {
+                if (h.IsAllocated)
+                    h.Free();
+            }
+        }
 
         /// <summary>
-        /// Base class for typed atomic instances. Type-specific instances are maintained in a weak table to allow collection of types.
+        /// Reads an <see cref="int"/> from the array at the specific byte offset.
         /// </summary>
-        abstract class AtomicArray
+        /// <param name="obj"></param>
+        /// <param name="offset"></param>
+        /// <returns></returns>
+        static unsafe int ReadInt32(Array obj, long offset)
         {
+            GCHandle h = new();
 
-            readonly static ConditionalWeakTable<Type, AtomicArray> cache = new ConditionalWeakTable<Type, AtomicArray>();
-
-            /// <summary>
-            /// Provides a CompareExchange implementation that caches by type.
-            /// </summary>
-            /// <param name="array"></param>
-            /// <param name="index"></param>
-            /// <param name="value"></param>
-            /// <param name="comparand"></param>
-            /// <returns></returns>
-            public static object CompareExchange(object[] array, int index, object value, object comparand)
+            try
             {
-                return GetImpl(array.GetType().GetElementType()).CompareExchangeImpl(array, index, value, comparand);
+                CheckArrayBounds(obj, offset, sizeof(int));
+                h = GCHandle.Alloc(obj, GCHandleType.Pinned);
+                var v = System.Runtime.CompilerServices.Unsafe.ReadUnaligned<int>((byte*)h.AddrOfPinnedObject() + offset);
+                return v;
             }
-
-            /// <summary>
-            /// Gets the <see cref="AtomicArray"/> instance for the specified <see cref="Type"/>.
-            /// </summary>
-            /// <param name="type"></param>
-            /// <returns></returns>
-            static AtomicArray GetImpl(Type type)
+            finally
             {
-                if (cache.TryGetValue(type, out var impl) == false)
-                    cache.Add(type, impl = (AtomicArray)Activator.CreateInstance(typeof(Impl<>).MakeGenericType(type)));
-
-                return impl;
+                if (h.IsAllocated)
+                    h.Free();
             }
+        }
 
-            protected abstract object CompareExchangeImpl(object[] array, int index, object value, object comparand);
+        /// <summary>
+        /// Reads an <see cref="int"/> from the array at the specific byte offset.
+        /// </summary>
+        /// <param name="obj"></param>
+        /// <param name="offset"></param>
+        /// <returns></returns>
+        static unsafe int ReadInt32Volatile(Array obj, long offset)
+        {
+            GCHandle h = new();
 
-            /// <summary>
-            /// Type-specific implementation of Atomic.
-            /// </summary>
-            /// <typeparam name="T"></typeparam>
-            sealed class Impl<T> : AtomicArray
-                where T : class
+            try
             {
+                CheckArrayBounds(obj, offset, sizeof(int));
+                h = GCHandle.Alloc(obj, GCHandleType.Pinned);
+                ref var r = ref System.Runtime.CompilerServices.Unsafe.AsRef<int>((byte*)h.AddrOfPinnedObject() + offset);
+                var v = Volatile.Read(ref r);
+                return v;
+            }
+            finally
+            {
+                if (h.IsAllocated)
+                    h.Free();
+            }
+        }
 
-                protected override object CompareExchangeImpl(object[] array, int index, object value, object comparand)
+        /// <summary>
+        /// Reads an <see cref="long"/> from the array at the specific byte offset.
+        /// </summary>
+        /// <param name="obj"></param>
+        /// <param name="offset"></param>
+        /// <returns></returns>
+        static unsafe long ReadInt64(Array obj, long offset)
+        {
+            GCHandle h = new();
+
+            try
+            {
+                CheckArrayBounds(obj, offset, sizeof(long));
+                h = GCHandle.Alloc(obj, GCHandleType.Pinned);
+                var v = System.Runtime.CompilerServices.Unsafe.ReadUnaligned<long>((byte*)h.AddrOfPinnedObject() + offset);
+                return v;
+            }
+            finally
+            {
+                if (h.IsAllocated)
+                    h.Free();
+            }
+        }
+
+        /// <summary>
+        /// Reads an <see cref="long"/> from the array at the specific byte offset.
+        /// </summary>
+        /// <param name="obj"></param>
+        /// <param name="offset"></param>
+        /// <returns></returns>
+        static unsafe long ReadInt64Volatile(Array obj, long offset)
+        {
+            GCHandle h = new();
+
+            try
+            {
+                CheckArrayBounds(obj, offset, sizeof(long));
+                h = GCHandle.Alloc(obj, GCHandleType.Pinned);
+                ref var r = ref System.Runtime.CompilerServices.Unsafe.AsRef<long>((byte*)h.AddrOfPinnedObject() + offset);
+                var v = Volatile.Read(ref r);
+                return v;
+            }
+            finally
+            {
+                if (h.IsAllocated)
+                    h.Free();
+            }
+        }
+
+        /// <summary>
+        /// Writes a <see cref="byte"/> to the specified byte offset within the array.
+        /// </summary>
+        /// <param name="obj"></param>
+        /// <param name="offset"></param>
+        /// <param name="value"></param>
+        static unsafe void WriteByte(Array obj, long offset, byte value)
+        {
+            GCHandle h = new();
+
+            try
+            {
+                CheckArrayBounds(obj, offset, sizeof(byte));
+                h = GCHandle.Alloc(obj, GCHandleType.Pinned);
+                System.Runtime.CompilerServices.Unsafe.WriteUnaligned((byte*)h.AddrOfPinnedObject() + offset, value);
+            }
+            finally
+            {
+                if (h.IsAllocated)
+                    h.Free();
+            }
+        }
+
+        /// <summary>
+        /// Writes a <see cref="byte"/> to the specified byte offset within the array.
+        /// </summary>
+        /// <param name="obj"></param>
+        /// <param name="offset"></param>
+        /// <param name="value"></param>
+        static unsafe void WriteByteVolatile(Array obj, long offset, byte value)
+        {
+            GCHandle h = new();
+
+            try
+            {
+                CheckArrayBounds(obj, offset, sizeof(byte));
+                h = GCHandle.Alloc(obj, GCHandleType.Pinned);
+                Volatile.Write(ref System.Runtime.CompilerServices.Unsafe.AsRef<byte>((byte*)h.AddrOfPinnedObject() + offset), value);
+            }
+            finally
+            {
+                if (h.IsAllocated)
+                    h.Free();
+            }
+        }
+
+        /// <summary>
+        /// Writes a <see cref="short"/> to the specified byte offset within the array.
+        /// </summary>
+        /// <param name="obj"></param>
+        /// <param name="offset"></param>
+        /// <param name="value"></param>
+        static unsafe void WriteInt16(Array obj, long offset, short value)
+        {
+            GCHandle h = new();
+
+            try
+            {
+                CheckArrayBounds(obj, offset, sizeof(short));
+                h = GCHandle.Alloc(obj, GCHandleType.Pinned);
+                System.Runtime.CompilerServices.Unsafe.WriteUnaligned((byte*)h.AddrOfPinnedObject() + offset, value);
+            }
+            finally
+            {
+                if (h.IsAllocated)
+                    h.Free();
+            }
+        }
+
+        /// <summary>
+        /// Writes a <see cref="short"/> to the specified byte offset within the array.
+        /// </summary>
+        /// <param name="obj"></param>
+        /// <param name="offset"></param>
+        /// <param name="value"></param>
+        static unsafe void WriteInt16Volatile(Array obj, long offset, short value)
+        {
+            GCHandle h = new();
+
+            try
+            {
+                CheckArrayBounds(obj, offset, sizeof(short));
+                h = GCHandle.Alloc(obj, GCHandleType.Pinned);
+                Volatile.Write(ref System.Runtime.CompilerServices.Unsafe.AsRef<short>((byte*)h.AddrOfPinnedObject() + offset), value);
+            }
+            finally
+            {
+                if (h.IsAllocated)
+                    h.Free();
+            }
+        }
+
+        /// <summary>
+        /// Writes a <see cref="int"/> to the specified byte offset within the array.
+        /// </summary>
+        /// <param name="obj"></param>
+        /// <param name="offset"></param>
+        /// <param name="value"></param>
+        static unsafe void WriteInt32(Array obj, long offset, int value)
+        {
+            GCHandle h = new();
+
+            try
+            {
+                CheckArrayBounds(obj, offset, sizeof(int));
+                h = GCHandle.Alloc(obj, GCHandleType.Pinned);
+                System.Runtime.CompilerServices.Unsafe.WriteUnaligned((byte*)h.AddrOfPinnedObject() + offset, value);
+            }
+            finally
+            {
+                if (h.IsAllocated)
+                    h.Free();
+            }
+        }
+
+        /// <summary>
+        /// Writes a <see cref="int"/> to the specified byte offset within the array.
+        /// </summary>
+        /// <param name="obj"></param>
+        /// <param name="offset"></param>
+        /// <param name="value"></param>
+        static unsafe void WriteInt32Volatile(Array obj, long offset, int value)
+        {
+            GCHandle h = new();
+
+            try
+            {
+                CheckArrayBounds(obj, offset, sizeof(int));
+                h = GCHandle.Alloc(obj, GCHandleType.Pinned);
+                Volatile.Write(ref System.Runtime.CompilerServices.Unsafe.AsRef<int>((byte*)h.AddrOfPinnedObject() + offset), value);
+            }
+            finally
+            {
+                if (h.IsAllocated)
+                    h.Free();
+            }
+        }
+
+        /// <summary>
+        /// Writes a <see cref="long"/> to the specified byte offset within the array.
+        /// </summary>
+        /// <param name="obj"></param>
+        /// <param name="offset"></param>
+        /// <param name="value"></param>
+        static unsafe void WriteInt64(Array obj, long offset, long value)
+        {
+            GCHandle h = new();
+
+            try
+            {
+                CheckArrayBounds(obj, offset, sizeof(long));
+                h = GCHandle.Alloc(obj, GCHandleType.Pinned);
+                System.Runtime.CompilerServices.Unsafe.WriteUnaligned((byte*)h.AddrOfPinnedObject() + offset, value);
+            }
+            finally
+            {
+                if (h.IsAllocated)
+                    h.Free();
+            }
+        }
+
+        /// <summary>
+        /// Writes a <see cref="long"/> to the specified byte offset within the array.
+        /// </summary>
+        /// <param name="obj"></param>
+        /// <param name="offset"></param>
+        /// <param name="value"></param>
+        static unsafe void WriteInt64Volatile(Array obj, long offset, long value)
+        {
+            GCHandle h = new();
+
+            try
+            {
+                CheckArrayBounds(obj, offset, sizeof(long));
+                h = GCHandle.Alloc(obj, GCHandleType.Pinned);
+                Volatile.Write(ref System.Runtime.CompilerServices.Unsafe.AsRef<long>((byte*)h.AddrOfPinnedObject() + offset), value);
+            }
+            finally
+            {
+                if (h.IsAllocated)
+                    h.Free();
+            }
+        }
+
+        /// <summary>
+        /// Executes CompareExchange against the specified byte offset with the array.
+        /// </summary>
+        /// <param name="obj"></param>
+        /// <param name="offset"></param>
+        /// <param name="value"></param>
+        /// <param name="expected"></param>
+        /// <returns></returns>
+        static unsafe int CompareExchangeInt32(Array obj, long offset, int value, int expected)
+        {
+            GCHandle h = new();
+
+            try
+            {
+                CheckArrayBounds(obj, offset, sizeof(int));
+                h = GCHandle.Alloc(obj, GCHandleType.Pinned);
+                var r = Interlocked.CompareExchange(ref System.Runtime.CompilerServices.Unsafe.AsRef<int>((byte*)h.AddrOfPinnedObject() + offset), value, expected);
+                return r;
+            }
+            finally
+            {
+                if (h.IsAllocated)
+                    h.Free();
+            }
+        }
+
+        /// <summary>
+        /// Executes CompareExchange against the specified byte offset with the array.
+        /// </summary>
+        /// <param name="obj"></param>
+        /// <param name="offset"></param>
+        /// <param name="value"></param>
+        /// <param name="expected"></param>
+        /// <returns></returns>
+        static unsafe int CompareExchangeInt32Unaligned(Array obj, long offset, int value, int expected)
+        {
+            GCHandle h = new();
+
+            try
+            {
+                lock (obj)
                 {
-                    return Interlocked.CompareExchange(ref ((T[])array)[index], (T)value, (T)comparand);
+                    CheckArrayBounds(obj, offset, sizeof(int));
+                    h = GCHandle.Alloc(obj, GCHandleType.Pinned);
+                    var r = Interlocked.CompareExchange(ref System.Runtime.CompilerServices.Unsafe.AsRef<int>((byte*)h.AddrOfPinnedObject() + offset), value, expected);
+                    return r;
                 }
+            }
+            finally
+            {
+                if (h.IsAllocated)
+                    h.Free();
+            }
+        }
 
+        /// <summary>
+        /// Executes CompareExchange against the specified byte offset with the array.
+        /// </summary>
+        /// <param name="obj"></param>
+        /// <param name="offset"></param>
+        /// <param name="value"></param>
+        /// <param name="expected"></param>
+        /// <returns></returns>
+        static unsafe long CompareExchangeInt64(Array obj, long offset, long value, long expected)
+        {
+            GCHandle h = new();
+
+            try
+            {
+                CheckArrayBounds(obj, offset, sizeof(long));
+                h = GCHandle.Alloc(obj, GCHandleType.Pinned);
+                var r = Interlocked.CompareExchange(ref System.Runtime.CompilerServices.Unsafe.AsRef<long>((byte*)h.AddrOfPinnedObject() + offset), value, expected);
+                return r;
+            }
+            finally
+            {
+                if (h.IsAllocated)
+                    h.Free();
+            }
+        }
+
+        /// <summary>
+        /// Executes CompareExchange against the specified byte offset with the array.
+        /// </summary>
+        /// <param name="obj"></param>
+        /// <param name="offset"></param>
+        /// <param name="value"></param>
+        /// <param name="expected"></param>
+        /// <returns></returns>
+        static unsafe long CompareExchangeInt64Unaligned(Array obj, long offset, long value, long expected)
+        {
+            GCHandle h = new();
+
+            try
+            {
+                lock (obj)
+                {
+                    CheckArrayBounds(obj, offset, sizeof(long));
+                    h = GCHandle.Alloc(obj, GCHandleType.Pinned);
+                    var r = Interlocked.CompareExchange(ref System.Runtime.CompilerServices.Unsafe.AsRef<long>((byte*)h.AddrOfPinnedObject() + offset), value, expected);
+                    return r;
+                }
+            }
+            finally
+            {
+                if (h.IsAllocated)
+                    h.Free();
             }
         }
 

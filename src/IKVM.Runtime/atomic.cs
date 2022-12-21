@@ -128,6 +128,7 @@ static class AtomicReferenceFieldUpdaterEmitter
 
 static class InterlockedMethods
 {
+
 	internal static readonly MethodInfo AddInt32;
 	internal static readonly MethodInfo CompareExchangeInt32;
 	internal static readonly MethodInfo CompareExchangeInt64;
@@ -155,5 +156,7 @@ static class InterlockedMethods
 				}
 			}
 		}
+
 	}
+
 }
