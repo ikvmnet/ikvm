@@ -78,8 +78,55 @@ namespace IKVM.Java.Externs.sun.misc
 
         }
 
+        class ArrayDelegateRef
+        {
+
+            readonly Lazy<Delegate> volatileObjectGetter;
+            readonly Lazy<Delegate> volatileObjectPutter;
+
+            /// <summary>
+            /// Initializes a new instance.
+            /// </summary>
+            /// <param name="type"></param>
+            public ArrayDelegateRef(Type type)
+            {
+                volatileObjectGetter = new Lazy<Delegate>(() => CreateGetArrayVolatileObjectDelegate(type), true);
+                volatileObjectPutter = new Lazy<Delegate>(() => CreatePutArrayVolatileObjectDelegate(type), true);
+            }
+
+            /// <summary>
+            /// Gets a delegate capable of implementing the volatile get logic. This value is a <see cref="Func{object, long, object}" />
+            /// </summary>
+            public Delegate VolatileObjectGetter => volatileObjectGetter.Value;
+
+            /// <summary>
+            /// Gets a delegate capable of implemetning the volatile put logic. This value is an <see cref="Action{object, long, object}" />
+            /// </summary>
+            public Delegate VolatileObjectPutter => volatileObjectPutter.Value;
+
+        }
+
         // TODO: NET6+ replace with DependentHandle
         static readonly ConditionalWeakTable<FieldInfo, FieldDelegateRef> fieldRefCache = new ConditionalWeakTable<FieldInfo, FieldDelegateRef>();
+
+        /// <summary>
+        /// Cache of delegates for array operations.
+        /// </summary>
+        static readonly ConditionalWeakTable<Type, ArrayDelegateRef> arrayRefCache = new ConditionalWeakTable<Type, ArrayDelegateRef>();
+
+        /// <summary>
+        /// Generic VolatileRead method.
+        /// </summary>
+        static readonly MethodInfo volatileReadMethodInfo = typeof(Unsafe).GetMethods(BindingFlags.NonPublic | BindingFlags.Static)
+            .Where(i => i.Name == nameof(VolatileRead) && i.IsGenericMethodDefinition && i.GetGenericArguments().Length == 1)
+            .FirstOrDefault();
+
+        /// <summary>
+        /// Generic VolatileWrite method.
+        /// </summary>
+        static readonly MethodInfo volatileWriteMethodInfo = typeof(Unsafe).GetMethods(BindingFlags.NonPublic | BindingFlags.Static)
+            .Where(i => i.Name == nameof(VolatileWrite) && i.IsGenericMethodDefinition && i.GetGenericArguments().Length == 1)
+            .FirstOrDefault();
 
         static readonly ConditionalWeakTable<FieldInfo, Func<object, object, object, object>> compareExchangeObjectCache = new ConditionalWeakTable<FieldInfo, Func<object, object, object, object>>();
         static readonly ConditionalWeakTable<FieldInfo, Func<object, int, int, int>> compareExchangeInt32Cache = new ConditionalWeakTable<FieldInfo, Func<object, int, int, int>>();
@@ -167,50 +214,6 @@ namespace IKVM.Java.Externs.sun.misc
         }
 
         /// <summary>
-        /// Implementation of native method 'getInt'.
-        /// </summary>
-        /// <param name="self"></param>
-        /// <param name="o"></param>
-        /// <param name="offset"></param>
-        /// <returns></returns>
-        public static int getInt(object self, object o, long offset)
-        {
-#if FIRST_PASS
-            throw new NotImplementedException();
-#else
-            return o switch
-            {
-                Array array => ReadInt32(array, offset),
-                _ => GetField<int>(o, offset)
-            };
-#endif
-        }
-
-        /// <summary>
-        /// Implementation of native method 'putInt'.
-        /// </summary>
-        /// <param name="self"></param>
-        /// <param name="o"></param>
-        /// <param name="offset"></param>
-        /// <param name="x"></param>
-        public static void putInt(object self, object o, long offset, int x)
-        {
-#if FIRST_PASS
-            throw new NotImplementedException();
-#else
-            switch (o)
-            {
-                case Array array:
-                    WriteInt32(array, offset, x);
-                    break;
-                default:
-                    PutField(o, offset, x);
-                    break;
-            }
-#endif
-        }
-
-        /// <summary>
         /// Implementation of native method 'getObject'.
         /// </summary>
         /// <param name="self"></param>
@@ -224,7 +227,7 @@ namespace IKVM.Java.Externs.sun.misc
 #else
             return o switch
             {
-                object[] array => array[(int)offset],
+                object[] array => array[offset],
                 _ => GetField<object>(o, offset)
             };
 #endif
@@ -245,7 +248,7 @@ namespace IKVM.Java.Externs.sun.misc
             switch (o)
             {
                 case object[] array:
-                    array[(int)offset] = x;
+                    array[offset] = x;
                     break;
                 default:
                     PutField(o, offset, x);
@@ -422,6 +425,50 @@ namespace IKVM.Java.Externs.sun.misc
             {
                 case Array array:
                     WriteInt16(array, offset, (short)x);
+                    break;
+                default:
+                    PutField(o, offset, x);
+                    break;
+            }
+#endif
+        }
+
+        /// <summary>
+        /// Implementation of native method 'getInt'.
+        /// </summary>
+        /// <param name="self"></param>
+        /// <param name="o"></param>
+        /// <param name="offset"></param>
+        /// <returns></returns>
+        public static int getInt(object self, object o, long offset)
+        {
+#if FIRST_PASS
+            throw new NotImplementedException();
+#else
+            return o switch
+            {
+                Array array => ReadInt32(array, offset),
+                _ => GetField<int>(o, offset)
+            };
+#endif
+        }
+
+        /// <summary>
+        /// Implementation of native method 'putInt'.
+        /// </summary>
+        /// <param name="self"></param>
+        /// <param name="o"></param>
+        /// <param name="offset"></param>
+        /// <param name="x"></param>
+        public static void putInt(object self, object o, long offset, int x)
+        {
+#if FIRST_PASS
+            throw new NotImplementedException();
+#else
+            switch (o)
+            {
+                case Array array:
+                    WriteInt32(array, offset, x);
                     break;
                 default:
                     PutField(o, offset, x);
@@ -1345,6 +1392,49 @@ namespace IKVM.Java.Externs.sun.misc
         }
 
         /// <summary>
+        /// Implements Volatile.Write against an array offset.
+        /// </summary>
+        /// <typeparam name="T"></typeparam>
+        /// <param name="o"></param>
+        /// <param name="offset"></param>
+        /// <param name="value"></param>
+        static void VolatileWrite<T>(T[] o, long offset, T value) where T : class => Volatile.Write(ref o[offset], value);
+
+        /// <summary>
+        /// Creates a delegate capable of accessing an index of a specific type.
+        /// </summary>
+        /// <param name="t"></param>
+        /// <returns></returns>
+        static Delegate CreateGetArrayVolatileObjectDelegate(Type t)
+        {
+            var p = Expression.Parameter(typeof(object[]));
+            var i = Expression.Parameter(typeof(long));
+            return Expression.Lambda<Func<object[], long, object>>(Expression.Call(volatileReadMethodInfo.MakeGenericMethod(t), Expression.Convert(p, t.MakeArrayType()), i), p, i).Compile();
+        }
+
+        /// <summary>
+        /// Implements Volatile.Read against an array offset.
+        /// </summary>
+        /// <typeparam name="T"></typeparam>
+        /// <param name="o"></param>
+        /// <param name="offset"></param>
+        /// <returns></returns>
+        static T VolatileRead<T>(T[] o, long offset) where T : class => Volatile.Read(ref o[offset]);
+
+        /// <summary>
+        /// Creates a delegate capable of accessing an index of a specific type.
+        /// </summary>
+        /// <param name="t"></param>
+        /// <returns></returns>
+        static Delegate CreatePutArrayVolatileObjectDelegate(Type t)
+        {
+            var p = Expression.Parameter(typeof(object[]));
+            var i = Expression.Parameter(typeof(long));
+            var v = Expression.Parameter(typeof(object));
+            return Expression.Lambda<Action<object[], long, object>>(Expression.Call(volatileWriteMethodInfo.MakeGenericMethod(t), Expression.Convert(p, t.MakeArrayType()), i, Expression.Convert(v, t)), p, i, v).Compile();
+        }
+
+        /// <summary>
         /// Implementation of native method 'getObjectVolatile'.
         /// </summary>
         /// <param name="self"></param>
@@ -1358,8 +1448,10 @@ namespace IKVM.Java.Externs.sun.misc
 #else
             switch (o)
             {
-                case object[] array:
+                case object[] array when array.GetType().GetElementType() == typeof(object):
                     return Volatile.Read(ref array[offset]);
+                case object[] array:
+                    return ((Func<object[], long, object>)arrayRefCache.GetValue(array.GetType().GetElementType(), _ => new ArrayDelegateRef(_)).VolatileObjectGetter)(array, offset);
                 default:
                     return GetFieldVolatile<object>(o, offset);
             }
@@ -1380,8 +1472,11 @@ namespace IKVM.Java.Externs.sun.misc
 #else
             switch (o)
             {
-                case object[] array:
+                case object[] array when array.GetType().GetElementType() == typeof(object):
                     Volatile.Write(ref array[offset], x);
+                    break;
+                case object[] array:
+                    ((Action<object[], long, object>)arrayRefCache.GetValue(array.GetType().GetElementType(), _ => new ArrayDelegateRef(_)).VolatileObjectPutter)(array, offset, x);
                     break;
                 default:
                     PutFieldVolatile(o, offset, x);

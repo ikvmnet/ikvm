@@ -369,6 +369,77 @@ namespace IKVM.Tests.Java.sun.misc
         }
 
         [TestMethod]
+        public void CanSetObjectInArray()
+        {
+            var o1 = new object();
+            var o2 = new object();
+            var a = new object[16];
+            u.putObject(a, 0L, o1);
+            a[0].Should().BeSameAs(o1);
+            u.putObject(a, 0L, null);
+            a[0].Should().BeNull();
+            u.putObject(a, 1L, o2);
+            a[1].Should().BeSameAs(o2);
+            u.putObject(a, 1L, null);
+            a[1].Should().BeNull();
+        }
+
+        [TestMethod]
+        public void CanSetObjectInArrayVolatile()
+        {
+            var o1 = new object();
+            var o2 = new object();
+            var a = new object[16];
+            u.putObjectVolatile(a, 0L, o1);
+            a[0].Should().BeSameAs(o1);
+            u.putObjectVolatile(a, 0L, null);
+            a[0].Should().BeNull();
+            u.putObjectVolatile(a, 1L, o2);
+            a[1].Should().BeSameAs(o2);
+            u.putObjectVolatile(a, 1L, null);
+            a[1].Should().BeNull();
+        }
+
+        class AnonymousTestObject
+        {
+
+
+
+        }
+
+        [TestMethod]
+        public void CanSetObjectInTypedArray()
+        {
+            var o1 = new AnonymousTestObject();
+            var o2 = new AnonymousTestObject();
+            var a = new AnonymousTestObject[16];
+            u.putObject(a, 0L, o1);
+            a[0].Should().BeSameAs(o1);
+            u.putObject(a, 0L, null);
+            a[0].Should().BeNull();
+            u.putObject(a, 1L, o2);
+            a[1].Should().BeSameAs(o2);
+            u.putObject(a, 1L, null);
+            a[1].Should().BeNull();
+        }
+
+        [TestMethod]
+        public void CanSetObjectInTypedArrayVolatile()
+        {
+            var o1 = new AnonymousTestObject();
+            var o2 = new AnonymousTestObject();
+            var a = new AnonymousTestObject[16];
+            u.putObjectVolatile(a, 0L, o1);
+            a[0].Should().BeSameAs(o1);
+            u.putObjectVolatile(a, 0L, null);
+            a[0].Should().BeNull();
+            u.putObjectVolatile(a, 1L, o2);
+            a[1].Should().BeSameAs(o2);
+            u.putObjectVolatile(a, 1L, null);
+            a[1].Should().BeNull();
+        }
+
+        [TestMethod]
         public void CanSetBoolInArray()
         {
             var a = new bool[16];
