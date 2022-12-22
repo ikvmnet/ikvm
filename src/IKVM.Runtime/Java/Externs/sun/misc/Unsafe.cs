@@ -1872,18 +1872,18 @@ namespace IKVM.Java.Externs.sun.misc
         /// <typeparam name="T"></typeparam>
         /// <param name="o"></param>
         /// <param name="offset"></param>
+        /// <param name="value"></param>
         /// <param name="expected"></param>
-        /// <param name="x"></param>
         /// <returns></returns>
         /// <exception cref="global::java.lang.InternalError"></exception>
-        static T CompareExchangeField<T>(object o, long offset, T expected, T x)
+        static T CompareExchangeField<T>(object o, long offset, T value, T expected)
         {
 #if FIRST_PASS
             throw new NotImplementedException();
 #else
             try
             {
-                return ((Func<object, T, T, T>)((FieldDelegateRef)GCHandle.FromIntPtr((IntPtr)offset).Target).CompareExchange)(o, expected, x);
+                return ((Func<object, T, T, T>)((FieldDelegateRef)GCHandle.FromIntPtr((IntPtr)offset).Target).CompareExchange)(o, value, expected);
             }
             catch (Exception e)
             {
@@ -2505,13 +2505,10 @@ namespace IKVM.Java.Externs.sun.misc
 
             try
             {
-                lock (obj)
-                {
-                    CheckArrayBounds(obj, offset, sizeof(int));
-                    h = GCHandle.Alloc(obj, GCHandleType.Pinned);
-                    var r = Interlocked.CompareExchange(ref System.Runtime.CompilerServices.Unsafe.AsRef<int>((byte*)h.AddrOfPinnedObject() + offset), value, expected);
-                    return r;
-                }
+                CheckArrayBounds(obj, offset, sizeof(int));
+                h = GCHandle.Alloc(obj, GCHandleType.Pinned);
+                var r = Interlocked.CompareExchange(ref System.Runtime.CompilerServices.Unsafe.AsRef<int>((byte*)h.AddrOfPinnedObject() + offset), value, expected);
+                return r;
             }
             finally
             {
@@ -2560,13 +2557,10 @@ namespace IKVM.Java.Externs.sun.misc
 
             try
             {
-                lock (obj)
-                {
-                    CheckArrayBounds(obj, offset, sizeof(long));
-                    h = GCHandle.Alloc(obj, GCHandleType.Pinned);
-                    var r = Interlocked.CompareExchange(ref System.Runtime.CompilerServices.Unsafe.AsRef<long>((byte*)h.AddrOfPinnedObject() + offset), value, expected);
-                    return r;
-                }
+                CheckArrayBounds(obj, offset, sizeof(long));
+                h = GCHandle.Alloc(obj, GCHandleType.Pinned);
+                var r = Interlocked.CompareExchange(ref System.Runtime.CompilerServices.Unsafe.AsRef<long>((byte*)h.AddrOfPinnedObject() + offset), value, expected);
+                return r;
             }
             finally
             {
