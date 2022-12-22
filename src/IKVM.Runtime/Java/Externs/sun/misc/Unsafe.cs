@@ -78,11 +78,16 @@ namespace IKVM.Java.Externs.sun.misc
 
         }
 
+        /// <summary>
+        /// Holds a reference to the various delegates that facilitate unsafe operations for arrays. References are kept
+        /// alive and associated with the element type of the array in a conditional weak table.
+        /// </summary>
         class ArrayDelegateRef
         {
 
             readonly Lazy<Delegate> volatileObjectGetter;
             readonly Lazy<Delegate> volatileObjectPutter;
+            readonly Lazy<Delegate> compareExchange;
 
             /// <summary>
             /// Initializes a new instance.
@@ -92,6 +97,7 @@ namespace IKVM.Java.Externs.sun.misc
             {
                 volatileObjectGetter = new Lazy<Delegate>(() => CreateGetArrayVolatileObjectDelegate(type), true);
                 volatileObjectPutter = new Lazy<Delegate>(() => CreatePutArrayVolatileObjectDelegate(type), true);
+                compareExchange = new Lazy<Delegate>(() => CreateCompareExchangeArrayDelegate(type), true);
             }
 
             /// <summary>
@@ -103,6 +109,11 @@ namespace IKVM.Java.Externs.sun.misc
             /// Gets a delegate capable of implemetning the volatile put logic. This value is an <see cref="Action{object, long, object}" />
             /// </summary>
             public Delegate VolatileObjectPutter => volatileObjectPutter.Value;
+
+            /// <summary>
+            /// Gets a delegate capable of implemetning the compare and exchange logic. This value is an <see cref="Func{object[], long, object, object, object}" />
+            /// </summary>
+            public Delegate CompareExchange => compareExchange.Value;
 
         }
 
@@ -128,9 +139,16 @@ namespace IKVM.Java.Externs.sun.misc
             .Where(i => i.Name == nameof(VolatileWrite) && i.IsGenericMethodDefinition && i.GetGenericArguments().Length == 1)
             .FirstOrDefault();
 
-        static readonly ConditionalWeakTable<FieldInfo, Func<object, object, object, object>> compareExchangeObjectCache = new ConditionalWeakTable<FieldInfo, Func<object, object, object, object>>();
-        static readonly ConditionalWeakTable<FieldInfo, Func<object, int, int, int>> compareExchangeInt32Cache = new ConditionalWeakTable<FieldInfo, Func<object, int, int, int>>();
-        static readonly ConditionalWeakTable<FieldInfo, Func<object, long, long, long>> compareExchangeInt64Cache = new ConditionalWeakTable<FieldInfo, Func<object, long, long, long>>();
+        /// <summary>
+        /// Generic CompareExchange method.
+        /// </summary>
+        static readonly MethodInfo compareExchangeMethodInfo = typeof(Unsafe).GetMethods(BindingFlags.NonPublic | BindingFlags.Static)
+            .Where(i => i.Name == nameof(CompareExchange) && i.IsGenericMethodDefinition && i.GetGenericArguments().Length == 1)
+            .FirstOrDefault();
+
+        static readonly ConditionalWeakTable<FieldInfo, Func<object, object, object, object>> compareExchangeObjectFieldCache = new ConditionalWeakTable<FieldInfo, Func<object, object, object, object>>();
+        static readonly ConditionalWeakTable<FieldInfo, Func<object, int, int, int>> compareExchangeInt32FieldCache = new ConditionalWeakTable<FieldInfo, Func<object, int, int, int>>();
+        static readonly ConditionalWeakTable<FieldInfo, Func<object, long, long, long>> compareExchangeInt64FileCache = new ConditionalWeakTable<FieldInfo, Func<object, long, long, long>>();
 
         /// <summary>
         /// Implementation of native method 'registerNatives'.
@@ -1875,6 +1893,69 @@ namespace IKVM.Java.Externs.sun.misc
         }
 
         /// <summary>
+        /// Creates a delegate capable of accessing an index of a specific type.
+        /// </summary>
+        /// <param name="t"></param>
+        /// <returns></returns>
+        static Delegate CreateCompareExchangeArrayDelegate(Type t)
+        {
+            var p = Expression.Parameter(typeof(object[]));
+            var i = Expression.Parameter(typeof(long));
+            var v = Expression.Parameter(typeof(object));
+            var e = Expression.Parameter(typeof(object));
+            return Expression.Lambda<Func<object[], long, object, object, object>>(
+                Expression.Call(
+                    compareExchangeMethodInfo.MakeGenericMethod(t),
+                    Expression.Convert(p, t.MakeArrayType()),
+                    i,
+                    Expression.Convert(v, t),
+                    Expression.Convert(e, t)),
+                p, i, v, e)
+                .Compile();
+        }
+
+        /// <summary>
+        /// Implements CompareExchange for a typed array.
+        /// </summary>
+        /// <typeparam name="T"></typeparam>
+        /// <param name="o"></param>
+        /// <param name="offset"></param>
+        /// <param name="value"></param>
+        /// <param name="comparand"></param>
+        /// <returns></returns>
+        static object CompareExchange<T>(T[] o, long offset, T value, T comparand)
+            where T : class
+        {
+            return Interlocked.CompareExchange<T>(ref o[offset], value, comparand);
+        }
+
+        /// <summary>
+        /// Implements the logic to compare and swap an object.
+        /// </summary>
+        /// <typeparam name="T"></typeparam>
+        /// <param name="o"></param>
+        /// <param name="offset"></param>
+        /// <param name="expected"></param>
+        /// <param name="x"></param>
+        /// <returns></returns>
+        /// <exception cref="global::java.lang.InternalError"></exception>
+        static object CompareExchangeObject(object[] o, long offset, object expected, object x)
+        {
+#if FIRST_PASS
+            throw new NotImplementedException();
+#else
+            try
+            {
+                return ((Func<object[], long, object, object, object>)arrayRefCache.GetValue(o.GetType().GetElementType(), _ => new ArrayDelegateRef(_)).CompareExchange)(o, offset, x, expected);
+            }
+            catch (Exception e)
+            {
+                throw new global::java.lang.InternalError(e);
+            }
+#endif
+        }
+
+        /// <summary>
         /// Implementation of native method 'compareAndSwapObject'.
         /// </summary>
         /// <param name="self"></param>
@@ -1889,14 +1970,12 @@ namespace IKVM.Java.Externs.sun.misc
 #if FIRST_PASS
             throw new NotImplementedException();
 #else
-            if (o is object[] array)
+            return o switch
             {
-                return Interlocked.CompareExchange(ref array[offset], x, expected) == expected;
-            }
-            else
-            {
-                return CompareExchangeField<object>(o, offset, x, expected) == expected;
-            }
+                object[] array when array.GetType().GetElementType() == typeof(object) => Interlocked.CompareExchange(ref array[offset], x, expected) == expected,
+                object[] array => CompareExchangeObject(array, offset, x, expected) == expected,
+                _ => CompareExchangeField(o, offset, x, expected) == expected
+            };
 #endif
         }
 
