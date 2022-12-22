@@ -1466,7 +1466,7 @@ namespace IKVM.Java.Externs.sun.misc
 #else
             switch (o)
             {
-                case object[] array when array.GetType().GetElementType() == typeof(object):
+                case object[] array when array.GetType() == typeof(object[]):
                     return Volatile.Read(ref array[offset]);
                 case object[] array:
                     return ((Func<object[], long, object>)arrayRefCache.GetValue(array.GetType().GetElementType(), _ => new ArrayDelegateRef(_)).VolatileObjectGetter)(array, offset);
@@ -1935,18 +1935,18 @@ namespace IKVM.Java.Externs.sun.misc
         /// <typeparam name="T"></typeparam>
         /// <param name="o"></param>
         /// <param name="offset"></param>
+        /// <param name="value"></param>
         /// <param name="expected"></param>
-        /// <param name="x"></param>
         /// <returns></returns>
         /// <exception cref="global::java.lang.InternalError"></exception>
-        static object CompareExchangeObject(object[] o, long offset, object expected, object x)
+        static object CompareExchangeObject(object[] o, long offset, object value, object expected)
         {
 #if FIRST_PASS
             throw new NotImplementedException();
 #else
             try
             {
-                return ((Func<object[], long, object, object, object>)arrayRefCache.GetValue(o.GetType().GetElementType(), _ => new ArrayDelegateRef(_)).CompareExchange)(o, offset, x, expected);
+                return ((Func<object[], long, object, object, object>)arrayRefCache.GetValue(o.GetType().GetElementType(), _ => new ArrayDelegateRef(_)).CompareExchange)(o, offset, value, expected);
             }
             catch (Exception e)
             {
@@ -1972,7 +1972,7 @@ namespace IKVM.Java.Externs.sun.misc
 #else
             return o switch
             {
-                object[] array when array.GetType().GetElementType() == typeof(object) => Interlocked.CompareExchange(ref array[offset], x, expected) == expected,
+                object[] array when array.GetType() == typeof(object[]) => Interlocked.CompareExchange(ref array[offset], x, expected) == expected,
                 object[] array => CompareExchangeObject(array, offset, x, expected) == expected,
                 _ => CompareExchangeField(o, offset, x, expected) == expected
             };
