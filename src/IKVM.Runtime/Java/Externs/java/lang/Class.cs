@@ -381,34 +381,29 @@ namespace IKVM.Java.Externs.java.lang
 #endif
         }
 
-        public static global::java.lang.Class getPrimitiveClass(string name)
+        /// <summary>
+        /// Implements the native method for 'getPrimitiveClass'.
+        /// </summary>
+        /// <remarks>
+        /// This method isn't used anymore (because it is an intrinsic (during core class library compilation))
+        /// it still remains for compat because it might be invoked through reflection by evil code
+        /// </remarks>
+        /// <param name="name"></param>
+        /// <returns></returns>
+        /// <exception cref="ArgumentException"></exception>
+        public static global::java.lang.Class getPrimitiveClass(string name) => name switch
         {
-            // note that this method isn't used anymore (because it is an intrinsic (during core class library compilation))
-            // it still remains for compat because it might be invoked through reflection by evil code
-            switch (name)
-            {
-                case "byte":
-                    return PrimitiveTypeWrapper.BYTE.ClassObject;
-                case "char":
-                    return PrimitiveTypeWrapper.CHAR.ClassObject;
-                case "double":
-                    return PrimitiveTypeWrapper.DOUBLE.ClassObject;
-                case "float":
-                    return PrimitiveTypeWrapper.FLOAT.ClassObject;
-                case "int":
-                    return PrimitiveTypeWrapper.INT.ClassObject;
-                case "long":
-                    return PrimitiveTypeWrapper.LONG.ClassObject;
-                case "short":
-                    return PrimitiveTypeWrapper.SHORT.ClassObject;
-                case "boolean":
-                    return PrimitiveTypeWrapper.BOOLEAN.ClassObject;
-                case "void":
-                    return PrimitiveTypeWrapper.VOID.ClassObject;
-                default:
-                    throw new ArgumentException(name);
-            }
-        }
+            "byte" => PrimitiveTypeWrapper.BYTE.ClassObject,
+            "char" => PrimitiveTypeWrapper.CHAR.ClassObject,
+            "double" => PrimitiveTypeWrapper.DOUBLE.ClassObject,
+            "float" => PrimitiveTypeWrapper.FLOAT.ClassObject,
+            "int" => PrimitiveTypeWrapper.INT.ClassObject,
+            "long" => PrimitiveTypeWrapper.LONG.ClassObject,
+            "short" => PrimitiveTypeWrapper.SHORT.ClassObject,
+            "boolean" => PrimitiveTypeWrapper.BOOLEAN.ClassObject,
+            "void" => PrimitiveTypeWrapper.VOID.ClassObject,
+            _ => throw new ArgumentException(name),
+        };
 
         public static string getGenericSignature0(global::java.lang.Class thisClass)
         {

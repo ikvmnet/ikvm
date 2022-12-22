@@ -2752,26 +2752,22 @@ namespace IKVM.Internal
 
         internal MethodWrapper GetMethodWrapper(string name, string sig, bool inherit)
         {
-            // We need to get the methods before calling String.IsInterned, because getting them might cause the strings to be interned
-            MethodWrapper[] methods = GetMethods();
-            // MemberWrapper interns the name and sig so we can use ref equality
-            // profiling has shown this to be more efficient
-            string _name = String.IsInterned(name);
-            string _sig = String.IsInterned(sig);
-            foreach (MethodWrapper mw in methods)
+            // we need to get the methods before calling string.IsInterned, because getting them might cause the strings to be interned
+            var  methods = GetMethods();
+
+            var _name = string.IsInterned(name);
+            var _sig = string.IsInterned(sig);
+            foreach (var mw in methods)
             {
-                // NOTE we can use ref equality, because names and signatures are
-                // always interned by MemberWrapper
+                // NOTE we can use ref equality, because names and signatures are always interned by MemberWrapper
                 if (ReferenceEquals(mw.Name, _name) && ReferenceEquals(mw.Signature, _sig))
-                {
                     return mw;
-                }
             }
-            TypeWrapper baseWrapper = this.BaseTypeWrapper;
+
+            var baseWrapper = BaseTypeWrapper;
             if (inherit && baseWrapper != null)
-            {
                 return baseWrapper.GetMethodWrapper(name, sig, inherit);
-            }
+
             return null;
         }
 
