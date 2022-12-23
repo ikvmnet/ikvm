@@ -2,6 +2,7 @@
 using System.Linq;
 using System.Linq.Expressions;
 using System.Reflection;
+using System.Reflection.Emit;
 using System.Runtime.CompilerServices;
 using System.Runtime.InteropServices;
 using System.Runtime.Serialization;
@@ -25,6 +26,7 @@ namespace IKVM.Java.Externs.sun.misc
         class FieldDelegateRef
         {
 
+            readonly FieldWrapper field;
             readonly Lazy<Delegate> getter;
             readonly Lazy<Delegate> putter;
             readonly Lazy<Delegate> volatileGetter;
@@ -36,8 +38,10 @@ namespace IKVM.Java.Externs.sun.misc
             /// Initializes a new instance.
             /// </summary>
             /// <param name="field"></param>
-            public FieldDelegateRef(FieldInfo field)
+            public FieldDelegateRef(FieldWrapper field)
             {
+                this.field = field ?? throw new ArgumentNullException(nameof(field));
+
                 getter = new Lazy<Delegate>(() => CreateGetFieldDelegate(field), true);
                 putter = new Lazy<Delegate>(() => CreatePutFieldDelegate(field), true);
                 volatileGetter = new Lazy<Delegate>(() => CreateGetFieldVolatileDelegate(field), true);
@@ -93,7 +97,7 @@ namespace IKVM.Java.Externs.sun.misc
             /// Initializes a new instance.
             /// </summary>
             /// <param name="type"></param>
-            public ArrayDelegateRef(Type type)
+            public ArrayDelegateRef(TypeWrapper type)
             {
                 volatileObjectGetter = new Lazy<Delegate>(() => CreateGetArrayVolatileObjectDelegate(type), true);
                 volatileObjectPutter = new Lazy<Delegate>(() => CreatePutArrayVolatileObjectDelegate(type), true);
@@ -118,12 +122,12 @@ namespace IKVM.Java.Externs.sun.misc
         }
 
         // TODO: NET6+ replace with DependentHandle
-        static readonly ConditionalWeakTable<FieldInfo, FieldDelegateRef> fieldRefCache = new ConditionalWeakTable<FieldInfo, FieldDelegateRef>();
+        static readonly ConditionalWeakTable<FieldWrapper, FieldDelegateRef> fieldRefCache = new ConditionalWeakTable<FieldWrapper, FieldDelegateRef>();
 
         /// <summary>
         /// Cache of delegates for array operations.
         /// </summary>
-        static readonly ConditionalWeakTable<Type, ArrayDelegateRef> arrayRefCache = new ConditionalWeakTable<Type, ArrayDelegateRef>();
+        static readonly ConditionalWeakTable<TypeWrapper, ArrayDelegateRef> arrayRefCache = new ConditionalWeakTable<TypeWrapper, ArrayDelegateRef>();
 
         /// <summary>
         /// Generic VolatileRead method.
@@ -151,6 +155,36 @@ namespace IKVM.Java.Externs.sun.misc
         static readonly ConditionalWeakTable<FieldInfo, Func<object, long, long, long>> compareExchangeInt64FileCache = new ConditionalWeakTable<FieldInfo, Func<object, long, long, long>>();
 
         /// <summary>
+        /// Emits the appropriate ldind opcode for the given type.
+        /// </summary>
+        /// <param name="il"></param>
+        /// <param name="t"></param>
+        /// <exception cref="InvalidOperationException"></exception>
+        static void EmitLdind(ILGenerator il, Type t)
+        {
+            if (t == typeof(object))
+                il.Emit(OpCodes.Ldind_Ref);
+            else if (t == typeof(bool))
+                il.Emit(OpCodes.Ldind_U1);
+            else if (t == typeof(byte))
+                il.Emit(OpCodes.Ldind_U1);
+            else if (t == typeof(char))
+                il.Emit(OpCodes.Ldind_U2);
+            else if (t == typeof(short))
+                il.Emit(OpCodes.Ldind_I2);
+            else if (t == typeof(int))
+                il.Emit(OpCodes.Ldind_I4);
+            else if (t == typeof(long))
+                il.Emit(OpCodes.Ldind_I8);
+            else if (t == typeof(float))
+                il.Emit(OpCodes.Ldind_R4);
+            else if (t == typeof(double))
+                il.Emit(OpCodes.Ldind_R8);
+            else
+                throw new InvalidOperationException();
+        }
+
+        /// <summary>
         /// Implementation of native method 'registerNatives'.
         /// </summary>
         public static void registerNatives()
@@ -163,11 +197,29 @@ namespace IKVM.Java.Externs.sun.misc
         /// </summary>
         /// <param name="f"></param>
         /// <returns></returns>
-        static Delegate CreateGetFieldDelegate(FieldInfo f)
+        static Delegate CreateGetFieldDelegate(FieldWrapper fw)
         {
-            var p = Expression.Parameter(typeof(object));
-            var l = Expression.Field(f.IsStatic ? null : Expression.Convert(p, f.DeclaringType), f);
-            return Expression.Lambda(typeof(Func<,>).MakeGenericType(typeof(object), f.FieldType), l, p).Compile();
+            var dm = new DynamicMethod($"UnsafeGetField__{fw.DeclaringType.Name.Replace(".", "_")}__{fw.Name}", fw.FieldTypeWrapper.TypeAsTBD, new[] { typeof(object) }, fw.DeclaringType.TypeAsTBD.Module, true);
+            var il = dm.GetILGenerator();
+
+            if (fw.IsStatic && fw.IsFinal)
+            {
+                // we obtain a reference to the field and do an indirect load here to avoid JIT optimizations that inline static readonly fields
+                il.Emit(OpCodes.Ldsflda, fw.GetField());
+                EmitLdind(il, fw.FieldTypeWrapper.TypeAsTBD);
+            }
+            else if (fw.IsStatic)
+            {
+                il.Emit(OpCodes.Ldsfld, fw.GetField());
+            }
+            else
+            {
+                il.Emit(OpCodes.Ldarg_0);
+                il.Emit(OpCodes.Ldfld, fw.GetField());
+            }
+
+            il.Emit(OpCodes.Ret);
+            return dm.CreateDelegate(typeof(Func<,>).MakeGenericType(typeof(object), fw.FieldTypeWrapper.TypeAsTBD));
         }
 
         /// <summary>
@@ -175,12 +227,25 @@ namespace IKVM.Java.Externs.sun.misc
         /// </summary>
         /// <param name="f"></param>
         /// <returns></returns>
-        static Delegate CreatePutFieldDelegate(FieldInfo f)
+        static Delegate CreatePutFieldDelegate(FieldWrapper fw)
         {
-            var p = Expression.Parameter(typeof(object));
-            var v = Expression.Parameter(f.FieldType);
-            var l = Expression.Field(f.IsStatic ? null : Expression.Convert(p, f.DeclaringType), f);
-            return Expression.Lambda(typeof(Action<,>).MakeGenericType(typeof(object), f.FieldType), Expression.Assign(l, v), p, v).Compile();
+            var dm = new DynamicMethod($"UnsafePutField__{fw.DeclaringType.Name.Replace(".", "_")}__{fw.Name}", typeof(void), new[] { typeof(object), fw.FieldTypeWrapper.TypeAsTBD }, fw.DeclaringType.TypeAsTBD.Module, true);
+            var il = dm.GetILGenerator();
+
+            if (fw.IsStatic)
+            {
+                il.Emit(OpCodes.Ldarg_1);
+                il.Emit(OpCodes.Stsfld, fw.GetField());
+            }
+            else
+            {
+                il.Emit(OpCodes.Ldarg_0);
+                il.Emit(OpCodes.Ldarg_1);
+                il.Emit(OpCodes.Stfld, fw.GetField());
+            }
+
+            il.Emit(OpCodes.Ret);
+            return dm.CreateDelegate(typeof(Action<,>).MakeGenericType(typeof(object), fw.FieldTypeWrapper.TypeAsTBD));
         }
 
         /// <summary>
@@ -1035,7 +1100,7 @@ namespace IKVM.Java.Externs.sun.misc
         /// <returns></returns>
         public static long staticFieldOffset(object self, global::java.lang.reflect.Field f)
         {
-            var fr = fieldRefCache.GetValue(FieldWrapper.FromField(f).GetField(), _ => new FieldDelegateRef(_));
+            var fr = fieldRefCache.GetValue(FieldWrapper.FromField(f), _ => new FieldDelegateRef(_));
             return (long)GCHandle.ToIntPtr(fr.Handle);
         }
 
@@ -1047,7 +1112,7 @@ namespace IKVM.Java.Externs.sun.misc
         /// <returns></returns>
         public static long objectFieldOffset(object self, global::java.lang.reflect.Field f)
         {
-            var fr = fieldRefCache.GetValue(FieldWrapper.FromField(f).GetField(), _ => new FieldDelegateRef(_));
+            var fr = fieldRefCache.GetValue(FieldWrapper.FromField(f), _ => new FieldDelegateRef(_));
             return (long)GCHandle.ToIntPtr(fr.Handle);
         }
 
@@ -1271,35 +1336,32 @@ namespace IKVM.Java.Externs.sun.misc
         /// Creates a delegate capable of accessing a field of a specific type as a volatile.
         /// </summary>
         /// <returns></returns>
-        static Delegate CreateGetFieldVolatileDelegate(FieldInfo f)
+        static Delegate CreateGetFieldVolatileDelegate(FieldWrapper fw)
         {
-            var mi = typeof(Volatile)
-                .GetMethods(BindingFlags.Public | BindingFlags.Static)
-                .Where(i => i.Name == nameof(Volatile.Read))
-                .Where(i => i.GetParameters().Length > 0 && i.GetParameters()[0].ParameterType == f.FieldType.MakeByRefType())
-                .FirstOrDefault();
-            if (mi == null && f.FieldType == typeof(char))
-                mi = typeof(Unsafe)
-                    .GetMethods(BindingFlags.NonPublic | BindingFlags.Static)
-                    .Where(i => i.Name == nameof(VolatileRead))
-                    .Where(i => i.GetParameters().Length > 0 && i.GetParameters()[0].ParameterType == f.FieldType.MakeByRefType())
-                    .FirstOrDefault();
-            if (mi == null)
-                mi = typeof(Volatile)
-                    .GetMethods(BindingFlags.Public | BindingFlags.Static)
-                    .Where(i => i.Name == nameof(Volatile.Read) && i.IsGenericMethodDefinition && i.GetGenericArguments().Length == 1)
-                    .Select(i => i.MakeGenericMethod(f.FieldType))
-                    .FirstOrDefault();
-            if (mi == null)
-                throw new InvalidOperationException("Could not resolve appropriate Volatile.Read method.");
+            var dm = new DynamicMethod($"UnsafeGetFieldVolatile__{fw.DeclaringType.Name.Replace(".", "_")}__{fw.Name}", fw.FieldTypeWrapper.TypeAsTBD, new[] { typeof(object) }, fw.DeclaringType.TypeAsTBD.Module, true);
+            var il = dm.GetILGenerator();
 
-            var p = Expression.Parameter(typeof(object));
-            var l = f.IsStatic ? null : Expression.Convert(p, f.DeclaringType);
-            return Expression.Lambda(
-                typeof(Func<,>).MakeGenericType(typeof(object), f.FieldType),
-                Expression.Call(mi, Expression.Field(l, f)),
-                p)
-                .Compile();
+            if (fw.IsStatic && fw.IsFinal)
+            {
+                // we obtain a reference to the field and do an indirect load here to avoid JIT optimizations that inline static readonly fields
+                il.Emit(OpCodes.Ldsflda, fw.GetField());
+                il.Emit(OpCodes.Volatile);
+                EmitLdind(il, fw.FieldTypeWrapper.TypeAsTBD);
+            }
+            else if (fw.IsStatic)
+            {
+                il.Emit(OpCodes.Volatile);
+                il.Emit(OpCodes.Ldsfld, fw.GetField());
+            }
+            else
+            {
+                il.Emit(OpCodes.Ldarg_0);
+                il.Emit(OpCodes.Volatile);
+                il.Emit(OpCodes.Ldfld, fw.GetField());
+            }
+
+            il.Emit(OpCodes.Ret);
+            return dm.CreateDelegate(typeof(Func<,>).MakeGenericType(typeof(object), fw.FieldTypeWrapper.TypeAsTBD));
         }
 
         /// <summary>
@@ -1341,37 +1403,27 @@ namespace IKVM.Java.Externs.sun.misc
         /// </summary>
         /// <param name="f"></param>
         /// <returns></returns>
-        static Delegate CreatePutFieldVolatileDelegate(FieldInfo f)
+        static Delegate CreatePutFieldVolatileDelegate(FieldWrapper fw)
         {
-            var mi = typeof(Volatile)
-                .GetMethods(BindingFlags.Public | BindingFlags.Static)
-                .Where(i => i.Name == nameof(Volatile.Write))
-                .Where(i => i.GetParameters().Length > 0 && i.GetParameters()[0].ParameterType == f.FieldType.MakeByRefType())
-                .FirstOrDefault();
-            if (mi == null && f.FieldType == typeof(char))
-                mi = typeof(Unsafe)
-                    .GetMethods(BindingFlags.NonPublic | BindingFlags.Static)
-                    .Where(i => i.Name == nameof(VolatileWrite))
-                    .Where(i => i.GetParameters().Length > 0 && i.GetParameters()[0].ParameterType == f.FieldType.MakeByRefType())
-                    .FirstOrDefault();
-            if (mi == null)
-                mi = typeof(Volatile)
-                    .GetMethods(BindingFlags.Public | BindingFlags.Static)
-                    .Where(i => i.Name == nameof(Volatile.Write) && i.IsGenericMethodDefinition && i.GetGenericArguments().Length == 1)
-                    .Select(i => i.MakeGenericMethod(f.FieldType))
-                    .FirstOrDefault();
-            if (mi == null)
-                throw new InvalidOperationException("Could not resolve appropriate Volatile.Write method.");
+            var dm = new DynamicMethod($"UnsafePutFieldVolatile__{fw.DeclaringType.Name.Replace(".", "_")}__{fw.Name}", typeof(void), new[] { typeof(object), fw.FieldTypeWrapper.TypeAsTBD }, fw.DeclaringType.TypeAsTBD.Module, true);
+            var il = dm.GetILGenerator();
 
-            var p = Expression.Parameter(typeof(object));
-            var v = Expression.Parameter(f.FieldType);
-            var l = f.IsStatic ? null : Expression.Convert(p, f.DeclaringType);
-            return Expression.Lambda(
-                typeof(Action<,>).MakeGenericType(typeof(object), f.FieldType),
-                Expression.Call(mi, Expression.Field(l, f), v),
-                p,
-                v)
-                .Compile();
+            if (fw.IsStatic)
+            {
+                il.Emit(OpCodes.Ldarg_1);
+                il.Emit(OpCodes.Volatile);
+                il.Emit(OpCodes.Stsfld, fw.GetField());
+            }
+            else
+            {
+                il.Emit(OpCodes.Ldarg_0);
+                il.Emit(OpCodes.Ldarg_1);
+                il.Emit(OpCodes.Volatile);
+                il.Emit(OpCodes.Stfld, fw.GetField());
+            }
+
+            il.Emit(OpCodes.Ret);
+            return dm.CreateDelegate(typeof(Action<,>).MakeGenericType(typeof(object), fw.FieldTypeWrapper.TypeAsTBD));
         }
 
         /// <summary>
@@ -1423,11 +1475,11 @@ namespace IKVM.Java.Externs.sun.misc
         /// </summary>
         /// <param name="t"></param>
         /// <returns></returns>
-        static Delegate CreateGetArrayVolatileObjectDelegate(Type t)
+        static Delegate CreateGetArrayVolatileObjectDelegate(TypeWrapper tw)
         {
             var p = Expression.Parameter(typeof(object[]));
             var i = Expression.Parameter(typeof(long));
-            return Expression.Lambda<Func<object[], long, object>>(Expression.Call(volatileReadMethodInfo.MakeGenericMethod(t), Expression.Convert(p, t.MakeArrayType()), i), p, i).Compile();
+            return Expression.Lambda<Func<object[], long, object>>(Expression.Call(volatileReadMethodInfo.MakeGenericMethod(tw.TypeAsTBD), Expression.Convert(p, tw.MakeArrayType(1).TypeAsTBD), i), p, i).Compile();
         }
 
         /// <summary>
@@ -1444,12 +1496,12 @@ namespace IKVM.Java.Externs.sun.misc
         /// </summary>
         /// <param name="t"></param>
         /// <returns></returns>
-        static Delegate CreatePutArrayVolatileObjectDelegate(Type t)
+        static Delegate CreatePutArrayVolatileObjectDelegate(TypeWrapper tw)
         {
             var p = Expression.Parameter(typeof(object[]));
             var i = Expression.Parameter(typeof(long));
             var v = Expression.Parameter(typeof(object));
-            return Expression.Lambda<Action<object[], long, object>>(Expression.Call(volatileWriteMethodInfo.MakeGenericMethod(t), Expression.Convert(p, t.MakeArrayType()), i, Expression.Convert(v, t)), p, i, v).Compile();
+            return Expression.Lambda<Action<object[], long, object>>(Expression.Call(volatileWriteMethodInfo.MakeGenericMethod(tw.TypeAsTBD), Expression.Convert(p, tw.MakeArrayType(1).TypeAsTBD), i, Expression.Convert(v, tw.TypeAsTBD)), p, i, v).Compile();
         }
 
         /// <summary>
@@ -1469,7 +1521,7 @@ namespace IKVM.Java.Externs.sun.misc
                 case object[] array when array.GetType() == typeof(object[]):
                     return Volatile.Read(ref array[offset]);
                 case object[] array:
-                    return ((Func<object[], long, object>)arrayRefCache.GetValue(array.GetType().GetElementType(), _ => new ArrayDelegateRef(_)).VolatileObjectGetter)(array, offset);
+                    return ((Func<object[], long, object>)arrayRefCache.GetValue(ClassLoaderWrapper.GetWrapperFromType(array.GetType().GetElementType()), _ => new ArrayDelegateRef(_)).VolatileObjectGetter)(array, offset);
                 default:
                     return GetFieldVolatile<object>(o, offset);
             }
@@ -1494,7 +1546,7 @@ namespace IKVM.Java.Externs.sun.misc
                     Volatile.Write(ref array[offset], x);
                     break;
                 case object[] array:
-                    ((Action<object[], long, object>)arrayRefCache.GetValue(array.GetType().GetElementType(), _ => new ArrayDelegateRef(_)).VolatileObjectPutter)(array, offset, x);
+                    ((Action<object[], long, object>)arrayRefCache.GetValue(ClassLoaderWrapper.GetWrapperFromType(array.GetType().GetElementType()), _ => new ArrayDelegateRef(_)).VolatileObjectPutter)(array, offset, x);
                     break;
                 default:
                     PutFieldVolatile(o, offset, x);
@@ -1851,17 +1903,17 @@ namespace IKVM.Java.Externs.sun.misc
         /// <summary>
         /// Creates a delegate capable of accessing a field of a specific type as a volatile.
         /// </summary>
-        /// <param name="f"></param>
+        /// <param name="fw"></param>
         /// <returns></returns>
-        static Delegate CreateCompareExchangeFieldDelegate(FieldInfo f)
+        static Delegate CreateCompareExchangeFieldDelegate(FieldWrapper fw)
         {
             var p = Expression.Parameter(typeof(object));
-            var v = Expression.Parameter(f.FieldType);
-            var e = Expression.Parameter(f.FieldType);
-            var l = f.IsStatic ? null : Expression.Convert(p, f.DeclaringType);
+            var v = Expression.Parameter(fw.FieldTypeWrapper.TypeAsTBD);
+            var e = Expression.Parameter(fw.FieldTypeWrapper.TypeAsTBD);
+            var l = fw.IsStatic ? null : Expression.Convert(p, fw.DeclaringType.TypeAsTBD);
             return Expression.Lambda(
-                typeof(Func<,,,>).MakeGenericType(typeof(object), f.FieldType, f.FieldType, f.FieldType),
-                Expression.Call(typeof(Interlocked), nameof(Interlocked.CompareExchange), Array.Empty<Type>(), Expression.Field(l, f), v, e),
+                typeof(Func<,,,>).MakeGenericType(typeof(object), fw.FieldTypeWrapper.TypeAsTBD, fw.FieldTypeWrapper.TypeAsTBD, fw.FieldTypeWrapper.TypeAsTBD),
+                Expression.Call(typeof(Interlocked), nameof(Interlocked.CompareExchange), Array.Empty<Type>(), Expression.Field(l, fw.GetField()), v, e),
                 p, v, e)
                 .Compile();
         }
@@ -1897,7 +1949,7 @@ namespace IKVM.Java.Externs.sun.misc
         /// </summary>
         /// <param name="t"></param>
         /// <returns></returns>
-        static Delegate CreateCompareExchangeArrayDelegate(Type t)
+        static Delegate CreateCompareExchangeArrayDelegate(TypeWrapper tw)
         {
             var p = Expression.Parameter(typeof(object[]));
             var i = Expression.Parameter(typeof(long));
@@ -1908,8 +1960,8 @@ namespace IKVM.Java.Externs.sun.misc
                     compareExchangeMethodInfo.MakeGenericMethod(tw.TypeAsTBD),
                     Expression.Convert(p, tw.MakeArrayType(1).TypeAsTBD),
                     i,
-                    Expression.Convert(v, t),
-                    Expression.Convert(e, t)),
+                    Expression.Convert(v, tw.TypeAsTBD),
+                    Expression.Convert(e, tw.TypeAsTBD)),
                 p, i, v, e)
                 .Compile();
         }
@@ -1946,7 +1998,7 @@ namespace IKVM.Java.Externs.sun.misc
 #else
             try
             {
-                return ((Func<object[], long, object, object, object>)arrayRefCache.GetValue(o.GetType().GetElementType(), _ => new ArrayDelegateRef(_)).CompareExchange)(o, offset, value, expected);
+                return ((Func<object[], long, object, object, object>)arrayRefCache.GetValue(ClassLoaderWrapper.GetWrapperFromType(o.GetType().GetElementType()), _ => new ArrayDelegateRef(_)).CompareExchange)(o, offset, value, expected);
             }
             catch (Exception e)
             {
