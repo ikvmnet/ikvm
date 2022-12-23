@@ -1905,8 +1905,8 @@ namespace IKVM.Java.Externs.sun.misc
             var e = Expression.Parameter(typeof(object));
             return Expression.Lambda<Func<object[], long, object, object, object>>(
                 Expression.Call(
-                    compareExchangeMethodInfo.MakeGenericMethod(t),
-                    Expression.Convert(p, t.MakeArrayType()),
+                    compareExchangeMethodInfo.MakeGenericMethod(tw.TypeAsTBD),
+                    Expression.Convert(p, tw.MakeArrayType(1).TypeAsTBD),
                     i,
                     Expression.Convert(v, t),
                     Expression.Convert(e, t)),
