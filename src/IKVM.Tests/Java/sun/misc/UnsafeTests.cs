@@ -32,6 +32,7 @@ namespace IKVM.Tests.Java.sun.misc
         {
 
             public object objectField = null;
+            public string stringField = null;
             public bool booleanField = false;
             public byte byteField = 0;
             public char charField = '\0';
@@ -53,6 +54,18 @@ namespace IKVM.Tests.Java.sun.misc
             u.putObject(o, f, t);
             u.getObject(o, f).Should().BeSameAs(t);
             o.objectField.Should().BeSameAs(t);
+        }
+
+        [TestMethod]
+        public void CanSetStringField()
+        {
+            var o = new TestObject();
+            var t = "TEST";
+            var f = u.objectFieldOffset(((Class)typeof(TestObject)).getField("stringField"));
+            u.getObject(o, f).Should().BeSameAs(null);
+            u.putObject(o, f, t);
+            u.getObject(o, f).Should().BeSameAs(t);
+            o.stringField.Should().BeSameAs(t);
         }
 
         [TestMethod]
@@ -156,6 +169,18 @@ namespace IKVM.Tests.Java.sun.misc
         }
 
         [TestMethod]
+        public void CanSetStringFieldVolatile()
+        {
+            var o = new TestObject();
+            var t = "TEST";
+            var f = u.objectFieldOffset(((Class)typeof(TestObject)).getField("stringField"));
+            u.getObjectVolatile(o, f).Should().BeSameAs(null);
+            u.putObjectVolatile(o, f, t);
+            u.getObjectVolatile(o, f).Should().BeSameAs(t);
+            o.stringField.Should().BeSameAs(t);
+        }
+
+        [TestMethod]
         public void CanSetBooleanFieldVolatile()
         {
             var o = new TestObject();
@@ -247,6 +272,7 @@ namespace IKVM.Tests.Java.sun.misc
         {
 
             public readonly object objectField = null;
+            public readonly string stringField = null;
             public readonly bool booleanField = false;
             public readonly byte byteField = 0;
             public readonly char charField = '\0';
@@ -258,7 +284,6 @@ namespace IKVM.Tests.Java.sun.misc
 
         }
 
-
         [TestMethod]
         public void CanSetReadOnlyObjectField()
         {
@@ -269,6 +294,18 @@ namespace IKVM.Tests.Java.sun.misc
             u.putObject(o, f, t);
             u.getObject(o, f).Should().BeSameAs(t);
             o.objectField.Should().BeSameAs(t);
+        }
+
+        [TestMethod]
+        public void CanSetReadOnlyStringField()
+        {
+            var o = new ReadOnlyTestObject();
+            var t = "TEST";
+            var f = u.objectFieldOffset(((Class)typeof(ReadOnlyTestObject)).getField("stringField"));
+            u.getObject(o, f).Should().BeSameAs(null);
+            u.putObject(o, f, t);
+            u.getObject(o, f).Should().BeSameAs(t);
+            o.stringField.Should().BeSameAs(t);
         }
 
         [TestMethod]
@@ -372,6 +409,18 @@ namespace IKVM.Tests.Java.sun.misc
         }
 
         [TestMethod]
+        public void CanSetReadOnlyStringFieldVolatile()
+        {
+            var o = new ReadOnlyTestObject();
+            var t = "TEST";
+            var f = u.objectFieldOffset(((Class)typeof(ReadOnlyTestObject)).getField("stringField"));
+            u.getObjectVolatile(o, f).Should().BeSameAs(null);
+            u.putObjectVolatile(o, f, t);
+            u.getObjectVolatile(o, f).Should().BeSameAs(t);
+            o.stringField.Should().BeSameAs(t);
+        }
+
+        [TestMethod]
         public void CanSetReadOnlyBooleanFieldVolatile()
         {
             var o = new ReadOnlyTestObject();
@@ -433,7 +482,7 @@ namespace IKVM.Tests.Java.sun.misc
             var f = u.objectFieldOffset(((Class)typeof(ReadOnlyTestObject)).getField("longField"));
             u.getLongVolatile(o, f).Should().Be(0);
             u.putLongVolatile(o, f, 1);
-            u.getLongVolatile(o, f).Should().Be(0);
+            u.getLongVolatile(o, f).Should().Be(1);
             o.longField.Should().Be(1);
         }
 
@@ -463,6 +512,7 @@ namespace IKVM.Tests.Java.sun.misc
         {
 
             public static object objectField = null;
+            public static string stringField = null;
             public static bool booleanField = false;
             public static byte byteField = 0;
             public static char charField = '\0';
@@ -479,6 +529,16 @@ namespace IKVM.Tests.Java.sun.misc
         {
             var t = new object();
             var f = u.objectFieldOffset(((Class)typeof(StaticTestObject)).getField("objectField"));
+            u.getObject(null, f).Should().BeSameAs(null);
+            u.putObject(null, f, t);
+            u.getObject(null, f).Should().BeSameAs(t);
+        }
+
+        [TestMethod]
+        public void CanSetStaticStringField()
+        {
+            var t = "TEST";
+            var f = u.objectFieldOffset(((Class)typeof(StaticTestObject)).getField("stringField"));
             u.getObject(null, f).Should().BeSameAs(null);
             u.putObject(null, f, t);
             u.getObject(null, f).Should().BeSameAs(t);
@@ -560,6 +620,7 @@ namespace IKVM.Tests.Java.sun.misc
         {
 
             public static object objectField = null;
+            public static string stringField = null;
             public static bool booleanField = false;
             public static byte byteField = 0;
             public static char charField = '\0';
@@ -576,6 +637,16 @@ namespace IKVM.Tests.Java.sun.misc
         {
             var t = new object();
             var f = u.staticFieldOffset(((Class)typeof(StaticVolatileTestObject)).getField("objectField"));
+            u.getObjectVolatile(null, f).Should().BeSameAs(null);
+            u.putObjectVolatile(null, f, t);
+            u.getObjectVolatile(null, f).Should().BeSameAs(t);
+        }
+
+        [TestMethod]
+        public void CanSetStaticStringFieldVolatile()
+        {
+            var t = "TEST";
+            var f = u.staticFieldOffset(((Class)typeof(StaticVolatileTestObject)).getField("stringField"));
             u.getObjectVolatile(null, f).Should().BeSameAs(null);
             u.putObjectVolatile(null, f, t);
             u.getObjectVolatile(null, f).Should().BeSameAs(t);
@@ -656,34 +727,16 @@ namespace IKVM.Tests.Java.sun.misc
         class ReadOnlyStaticTestObject
         {
 
-            public readonly static object objectField;
-            public readonly static bool booleanField;
-            public readonly static byte byteField;
-            public readonly static char charField;
-            public readonly static short shortField;
-            public readonly static int intField;
-            public readonly static long longField;
-            public readonly static float floatField;
-            public readonly static double doubleField;
-
-            [System.Runtime.CompilerServices.MethodImpl(System.Runtime.CompilerServices.MethodImplOptions.NoInlining)]
-            static T NewValue<T>(object value) where T : struct
-            {
-                return (T)value;
-            }
-
-            static ReadOnlyStaticTestObject()
-            {
-                objectField = null;
-                booleanField = NewValue<bool>(false);
-                byteField = NewValue<byte>((byte)0);
-                charField = NewValue<char>('\0');
-                shortField = NewValue<short>((short)0);
-                intField = NewValue<int>((int)0);
-                longField = NewValue<long>(0L);
-                floatField = NewValue<float>(0f);
-                doubleField = NewValue<double>(0d);
-            }
+            public readonly static object objectField = null;
+            public readonly static string stringField = null;
+            public readonly static bool booleanField = false;
+            public readonly static byte byteField = 0;
+            public readonly static char charField = '\0';
+            public readonly static short shortField = 0;
+            public readonly static int intField = 0;
+            public readonly static long longField = 0;
+            public readonly static float floatField = 0;
+            public readonly static double doubleField = 0;
 
         }
 
@@ -692,6 +745,16 @@ namespace IKVM.Tests.Java.sun.misc
         {
             var t = new object();
             var f = u.staticFieldOffset(((Class)typeof(ReadOnlyStaticTestObject)).getField("objectField"));
+            u.getObject(null, f).Should().BeSameAs(null);
+            u.putObject(null, f, t);
+            u.getObject(null, f).Should().BeSameAs(t);
+        }
+
+        [TestMethod]
+        public void CanSetReadOnlyStaticStringField()
+        {
+            var t = "TEST";
+            var f = u.staticFieldOffset(((Class)typeof(ReadOnlyStaticTestObject)).getField("stringField"));
             u.getObject(null, f).Should().BeSameAs(null);
             u.putObject(null, f, t);
             u.getObject(null, f).Should().BeSameAs(t);
@@ -772,34 +835,16 @@ namespace IKVM.Tests.Java.sun.misc
         class ReadOnlyStaticVolatileTestObject
         {
 
-            public readonly static object objectField;
-            public readonly static bool booleanField;
-            public readonly static byte byteField;
-            public readonly static char charField;
-            public readonly static short shortField;
-            public readonly static int intField;
-            public readonly static long longField;
-            public readonly static float floatField;
-            public readonly static double doubleField;
-
-            [System.Runtime.CompilerServices.MethodImpl(System.Runtime.CompilerServices.MethodImplOptions.NoInlining)]
-            static T NewValue<T>(object value) where T : struct
-            {
-                return (T)value;
-            }
-
-            static ReadOnlyStaticVolatileTestObject()
-            {
-                objectField = null;
-                booleanField = NewValue<bool>(false);
-                byteField = NewValue<byte>((byte)0);
-                charField = NewValue<char>('\0');
-                shortField = NewValue<short>((short)0);
-                intField = NewValue<int>(0);
-                longField = NewValue<long>(0L);
-                floatField = NewValue<float>(0f);
-                doubleField = NewValue<double>(0d);
-            }
+            public readonly static object objectField = null;
+            public readonly static string stringField = null;
+            public readonly static bool booleanField = false;
+            public readonly static byte byteField = 0;
+            public readonly static char charField = '\0';
+            public readonly static short shortField = 0;
+            public readonly static int intField = 0;
+            public readonly static long longField = 0;
+            public readonly static float floatField = 0;
+            public readonly static double doubleField = 0;
 
         }
 
@@ -808,6 +853,16 @@ namespace IKVM.Tests.Java.sun.misc
         {
             var t = new object();
             var f = u.staticFieldOffset(((Class)typeof(ReadOnlyStaticVolatileTestObject)).getField("objectField"));
+            u.getObjectVolatile(null, f).Should().BeSameAs(null);
+            u.putObjectVolatile(null, f, t);
+            u.getObjectVolatile(null, f).Should().BeSameAs(t);
+        }
+
+        [TestMethod]
+        public void CanSetReadOnlyStaticStringFieldVolatile()
+        {
+            var t = "TEST";
+            var f = u.staticFieldOffset(((Class)typeof(ReadOnlyStaticVolatileTestObject)).getField("stringField"));
             u.getObjectVolatile(null, f).Should().BeSameAs(null);
             u.putObjectVolatile(null, f, t);
             u.getObjectVolatile(null, f).Should().BeSameAs(t);

@@ -199,14 +199,15 @@ namespace IKVM.Java.Externs.sun.misc
         /// <returns></returns>
         static Delegate CreateGetFieldDelegate(FieldWrapper fw)
         {
-            var dm = new DynamicMethod($"UnsafeGetField__{fw.DeclaringType.Name.Replace(".", "_")}__{fw.Name}", fw.FieldTypeWrapper.TypeAsTBD, new[] { typeof(object) }, fw.DeclaringType.TypeAsTBD.Module, true);
+            var ft = fw.FieldTypeWrapper.IsPrimitive ? fw.FieldTypeWrapper.TypeAsTBD : typeof(object);
+            var dm = new DynamicMethod($"UnsafeGetField__{fw.DeclaringType.Name.Replace(".", "_")}__{fw.Name}", ft, new[] { typeof(object) }, fw.DeclaringType.TypeAsTBD.Module, true);
             var il = dm.GetILGenerator();
 
             if (fw.IsStatic && fw.IsFinal)
             {
                 // we obtain a reference to the field and do an indirect load here to avoid JIT optimizations that inline static readonly fields
                 il.Emit(OpCodes.Ldsflda, fw.GetField());
-                EmitLdind(il, fw.FieldTypeWrapper.TypeAsTBD);
+                EmitLdind(il, ft);
             }
             else if (fw.IsStatic)
             {
@@ -219,7 +220,7 @@ namespace IKVM.Java.Externs.sun.misc
             }
 
             il.Emit(OpCodes.Ret);
-            return dm.CreateDelegate(typeof(Func<,>).MakeGenericType(typeof(object), fw.FieldTypeWrapper.TypeAsTBD));
+            return dm.CreateDelegate(typeof(Func<,>).MakeGenericType(typeof(object), ft));
         }
 
         /// <summary>
@@ -229,7 +230,8 @@ namespace IKVM.Java.Externs.sun.misc
         /// <returns></returns>
         static Delegate CreatePutFieldDelegate(FieldWrapper fw)
         {
-            var dm = new DynamicMethod($"UnsafePutField__{fw.DeclaringType.Name.Replace(".", "_")}__{fw.Name}", typeof(void), new[] { typeof(object), fw.FieldTypeWrapper.TypeAsTBD }, fw.DeclaringType.TypeAsTBD.Module, true);
+            var ft = fw.FieldTypeWrapper.IsPrimitive ? fw.FieldTypeWrapper.TypeAsTBD : typeof(object);
+            var dm = new DynamicMethod($"UnsafePutField__{fw.DeclaringType.Name.Replace(".", "_")}__{fw.Name}", typeof(void), new[] { typeof(object), ft }, fw.DeclaringType.TypeAsTBD.Module, true);
             var il = dm.GetILGenerator();
 
             if (fw.IsStatic)
@@ -245,7 +247,7 @@ namespace IKVM.Java.Externs.sun.misc
             }
 
             il.Emit(OpCodes.Ret);
-            return dm.CreateDelegate(typeof(Action<,>).MakeGenericType(typeof(object), fw.FieldTypeWrapper.TypeAsTBD));
+            return dm.CreateDelegate(typeof(Action<,>).MakeGenericType(typeof(object), ft));
         }
 
         /// <summary>
@@ -1338,7 +1340,8 @@ namespace IKVM.Java.Externs.sun.misc
         /// <returns></returns>
         static Delegate CreateGetFieldVolatileDelegate(FieldWrapper fw)
         {
-            var dm = new DynamicMethod($"UnsafeGetFieldVolatile__{fw.DeclaringType.Name.Replace(".", "_")}__{fw.Name}", fw.FieldTypeWrapper.TypeAsTBD, new[] { typeof(object) }, fw.DeclaringType.TypeAsTBD.Module, true);
+            var ft = fw.FieldTypeWrapper.IsPrimitive ? fw.FieldTypeWrapper.TypeAsTBD : typeof(object);
+            var dm = new DynamicMethod($"UnsafeGetFieldVolatile__{fw.DeclaringType.Name.Replace(".", "_")}__{fw.Name}", ft, new[] { typeof(object) }, fw.DeclaringType.TypeAsTBD.Module, true);
             var il = dm.GetILGenerator();
 
             if (fw.IsStatic && fw.IsFinal)
@@ -1346,7 +1349,7 @@ namespace IKVM.Java.Externs.sun.misc
                 // we obtain a reference to the field and do an indirect load here to avoid JIT optimizations that inline static readonly fields
                 il.Emit(OpCodes.Ldsflda, fw.GetField());
                 il.Emit(OpCodes.Volatile);
-                EmitLdind(il, fw.FieldTypeWrapper.TypeAsTBD);
+                EmitLdind(il, ft);
             }
             else if (fw.IsStatic)
             {
@@ -1361,7 +1364,7 @@ namespace IKVM.Java.Externs.sun.misc
             }
 
             il.Emit(OpCodes.Ret);
-            return dm.CreateDelegate(typeof(Func<,>).MakeGenericType(typeof(object), fw.FieldTypeWrapper.TypeAsTBD));
+            return dm.CreateDelegate(typeof(Func<,>).MakeGenericType(typeof(object), ft));
         }
 
         /// <summary>
@@ -1405,7 +1408,8 @@ namespace IKVM.Java.Externs.sun.misc
         /// <returns></returns>
         static Delegate CreatePutFieldVolatileDelegate(FieldWrapper fw)
         {
-            var dm = new DynamicMethod($"UnsafePutFieldVolatile__{fw.DeclaringType.Name.Replace(".", "_")}__{fw.Name}", typeof(void), new[] { typeof(object), fw.FieldTypeWrapper.TypeAsTBD }, fw.DeclaringType.TypeAsTBD.Module, true);
+            var ft = fw.FieldTypeWrapper.IsPrimitive ? fw.FieldTypeWrapper.TypeAsTBD : typeof(object);
+            var dm = new DynamicMethod($"UnsafePutFieldVolatile__{fw.DeclaringType.Name.Replace(".", "_")}__{fw.Name}", typeof(void), new[] { typeof(object), ft }, fw.DeclaringType.TypeAsTBD.Module, true);
             var il = dm.GetILGenerator();
 
             if (fw.IsStatic)
@@ -1423,7 +1427,7 @@ namespace IKVM.Java.Externs.sun.misc
             }
 
             il.Emit(OpCodes.Ret);
-            return dm.CreateDelegate(typeof(Action<,>).MakeGenericType(typeof(object), fw.FieldTypeWrapper.TypeAsTBD));
+            return dm.CreateDelegate(typeof(Action<,>).MakeGenericType(typeof(object), ft));
         }
 
         /// <summary>
