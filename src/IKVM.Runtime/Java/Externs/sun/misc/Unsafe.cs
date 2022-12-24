@@ -89,8 +89,9 @@ namespace IKVM.Java.Externs.sun.misc
         class ArrayDelegateRef
         {
 
-            readonly Lazy<Delegate> volatileObjectGetter;
-            readonly Lazy<Delegate> volatileObjectPutter;
+            readonly TypeWrapper type;
+            readonly Lazy<Delegate> volatileGetter;
+            readonly Lazy<Delegate> volatilePutter;
             readonly Lazy<Delegate> compareExchange;
 
             /// <summary>
@@ -99,20 +100,22 @@ namespace IKVM.Java.Externs.sun.misc
             /// <param name="type"></param>
             public ArrayDelegateRef(TypeWrapper type)
             {
-                volatileObjectGetter = new Lazy<Delegate>(() => CreateGetArrayVolatileObjectDelegate(type), true);
-                volatileObjectPutter = new Lazy<Delegate>(() => CreatePutArrayVolatileObjectDelegate(type), true);
+                this.type = type ?? throw new ArgumentNullException(nameof(type));
+
+                volatileGetter = new Lazy<Delegate>(() => CreateGetArrayVolatileDelegate(type), true);
+                volatilePutter = new Lazy<Delegate>(() => CreatePutArrayVolatileDelegate(type), true);
                 compareExchange = new Lazy<Delegate>(() => CreateCompareExchangeArrayDelegate(type), true);
             }
 
             /// <summary>
             /// Gets a delegate capable of implementing the volatile get logic. This value is a <see cref="Func{object, long, object}" />
             /// </summary>
-            public Delegate VolatileObjectGetter => volatileObjectGetter.Value;
+            public Delegate VolatileGetter => volatileGetter.Value;
 
             /// <summary>
             /// Gets a delegate capable of implemetning the volatile put logic. This value is an <see cref="Action{object, long, object}" />
             /// </summary>
-            public Delegate VolatileObjectPutter => volatileObjectPutter.Value;
+            public Delegate VolatilePutter => volatilePutter.Value;
 
             /// <summary>
             /// Gets a delegate capable of implemetning the compare and exchange logic. This value is an <see cref="Func{object[], long, object, object, object}" />
@@ -130,29 +133,11 @@ namespace IKVM.Java.Externs.sun.misc
         static readonly ConditionalWeakTable<TypeWrapper, ArrayDelegateRef> arrayRefCache = new ConditionalWeakTable<TypeWrapper, ArrayDelegateRef>();
 
         /// <summary>
-        /// Generic VolatileRead method.
-        /// </summary>
-        static readonly MethodInfo volatileReadMethodInfo = typeof(Unsafe).GetMethods(BindingFlags.NonPublic | BindingFlags.Static)
-            .Where(i => i.Name == nameof(VolatileRead) && i.IsGenericMethodDefinition && i.GetGenericArguments().Length == 1)
-            .FirstOrDefault();
-
-        /// <summary>
-        /// Generic VolatileWrite method.
-        /// </summary>
-        static readonly MethodInfo volatileWriteMethodInfo = typeof(Unsafe).GetMethods(BindingFlags.NonPublic | BindingFlags.Static)
-            .Where(i => i.Name == nameof(VolatileWrite) && i.IsGenericMethodDefinition && i.GetGenericArguments().Length == 1)
-            .FirstOrDefault();
-
-        /// <summary>
         /// Generic CompareExchange method.
         /// </summary>
         static readonly MethodInfo compareExchangeMethodInfo = typeof(Unsafe).GetMethods(BindingFlags.NonPublic | BindingFlags.Static)
             .Where(i => i.Name == nameof(CompareExchange) && i.IsGenericMethodDefinition && i.GetGenericArguments().Length == 1)
             .FirstOrDefault();
-
-        static readonly ConditionalWeakTable<FieldInfo, Func<object, object, object, object>> compareExchangeObjectFieldCache = new ConditionalWeakTable<FieldInfo, Func<object, object, object, object>>();
-        static readonly ConditionalWeakTable<FieldInfo, Func<object, int, int, int>> compareExchangeInt32FieldCache = new ConditionalWeakTable<FieldInfo, Func<object, int, int, int>>();
-        static readonly ConditionalWeakTable<FieldInfo, Func<object, long, long, long>> compareExchangeInt64FileCache = new ConditionalWeakTable<FieldInfo, Func<object, long, long, long>>();
 
         /// <summary>
         /// Emits the appropriate ldind opcode for the given type.
@@ -180,6 +165,36 @@ namespace IKVM.Java.Externs.sun.misc
                 il.Emit(OpCodes.Ldind_R4);
             else if (t == typeof(double))
                 il.Emit(OpCodes.Ldind_R8);
+            else
+                throw new InvalidOperationException();
+        }
+
+        /// <summary>
+        /// Emits the appropriate ldind opcode for the given type.
+        /// </summary>
+        /// <param name="il"></param>
+        /// <param name="t"></param>
+        /// <exception cref="InvalidOperationException"></exception>
+        static void EmitStind(ILGenerator il, Type t)
+        {
+            if (t == typeof(object))
+                il.Emit(OpCodes.Stind_Ref);
+            else if (t == typeof(bool))
+                il.Emit(OpCodes.Stind_I1);
+            else if (t == typeof(byte))
+                il.Emit(OpCodes.Stind_I1);
+            else if (t == typeof(char))
+                il.Emit(OpCodes.Stind_I2);
+            else if (t == typeof(short))
+                il.Emit(OpCodes.Stind_I2);
+            else if (t == typeof(int))
+                il.Emit(OpCodes.Stind_I4);
+            else if (t == typeof(long))
+                il.Emit(OpCodes.Stind_I8);
+            else if (t == typeof(float))
+                il.Emit(OpCodes.Stind_R4);
+            else if (t == typeof(double))
+                il.Emit(OpCodes.Stind_R8);
             else
                 throw new InvalidOperationException();
         }
@@ -1368,16 +1383,6 @@ namespace IKVM.Java.Externs.sun.misc
         }
 
         /// <summary>
-        /// Implementation of missing 'Volatile.Write(ref char, char)'.
-        /// </summary>
-        /// <param name="location"></param>
-        static char VolatileRead(ref char location)
-        {
-            ref var l = ref System.Runtime.CompilerServices.Unsafe.As<char, short>(ref location);
-            return (char)Volatile.Read(ref l);
-        }
-
-        /// <summary>
         /// Implements the logic to get a field by offset using volatile.
         /// </summary>
         /// <typeparam name="T"></typeparam>
@@ -1431,17 +1436,6 @@ namespace IKVM.Java.Externs.sun.misc
         }
 
         /// <summary>
-        /// Implementation of missing 'Volatile.Write(ref char, char)'.
-        /// </summary>
-        /// <param name="location"></param>
-        /// <param name="value"></param>
-        static void VolatileWrite(ref char location, char value)
-        {
-            ref var l = ref System.Runtime.CompilerServices.Unsafe.As<char, short>(ref location);
-            Volatile.Write(ref l, (short)value);
-        }
-
-        /// <summary>
         /// Implements the logic to set a field by offset using volatile.
         /// </summary>
         /// <typeparam name="TField"></typeparam>
@@ -1466,46 +1460,89 @@ namespace IKVM.Java.Externs.sun.misc
         }
 
         /// <summary>
-        /// Implements Volatile.Write against an array offset.
-        /// </summary>
-        /// <typeparam name="T"></typeparam>
-        /// <param name="o"></param>
-        /// <param name="offset"></param>
-        /// <param name="value"></param>
-        static void VolatileWrite<T>(T[] o, long offset, T value) where T : class => Volatile.Write(ref o[offset], value);
-
-        /// <summary>
         /// Creates a delegate capable of accessing an index of a specific type.
         /// </summary>
-        /// <param name="t"></param>
+        /// <param name="tw"></param>
         /// <returns></returns>
-        static Delegate CreateGetArrayVolatileObjectDelegate(TypeWrapper tw)
+        static Delegate CreateGetArrayVolatileDelegate(TypeWrapper tw)
         {
-            var p = Expression.Parameter(typeof(object[]));
-            var i = Expression.Parameter(typeof(long));
-            return Expression.Lambda<Func<object[], long, object>>(Expression.Call(volatileReadMethodInfo.MakeGenericMethod(tw.TypeAsTBD), Expression.Convert(p, tw.MakeArrayType(1).TypeAsTBD), i), p, i).Compile();
+            var et = tw.IsPrimitive ? tw.TypeAsTBD : typeof(object);
+            var dm = new DynamicMethod($"UnsafeGetArrayVolatile__{tw.Name.Replace(".", "_")}", et, new[] { typeof(object[]), typeof(long) }, tw.TypeAsTBD.Module, true);
+            var il = dm.GetILGenerator();
+            il.Emit(OpCodes.Ldarg_0);
+            il.Emit(OpCodes.Ldarg_1);
+            il.Emit(OpCodes.Conv_Ovf_I);
+            il.Emit(OpCodes.Ldelema, tw.TypeAsTBD);
+            il.Emit(OpCodes.Volatile);
+            EmitLdind(il, et);
+            il.Emit(OpCodes.Ret);
+            return dm.CreateDelegate(typeof(Func<,,>).MakeGenericType(typeof(object[]), typeof(long), et));
         }
 
         /// <summary>
-        /// Implements Volatile.Read against an array offset.
+        /// Implements the logic to get an object array by offset using volatile.
         /// </summary>
-        /// <typeparam name="T"></typeparam>
-        /// <param name="o"></param>
+        /// <param name="array"></param>
         /// <param name="offset"></param>
-        /// <returns></returns>
-        static T VolatileRead<T>(T[] o, long offset) where T : class => Volatile.Read(ref o[offset]);
+        /// <exception cref="global::java.lang.InternalError"></exception>
+        static object GetArrayObjectVolatile(object[] array, long offset)
+        {
+#if FIRST_PASS
+            throw new NotImplementedException();
+#else
+            try
+            {
+                return ((Func<object[], long, object>)arrayRefCache.GetValue(ClassLoaderWrapper.GetWrapperFromType(array.GetType().GetElementType()), _ => new ArrayDelegateRef(_)).VolatileGetter)(array, offset);
+            }
+            catch (Exception e)
+            {
+                throw new global::java.lang.InternalError(e);
+            }
+#endif
+        }
 
         /// <summary>
         /// Creates a delegate capable of accessing an index of a specific type.
         /// </summary>
-        /// <param name="t"></param>
+        /// <param name="tw"></param>
         /// <returns></returns>
-        static Delegate CreatePutArrayVolatileObjectDelegate(TypeWrapper tw)
+        static Delegate CreatePutArrayVolatileDelegate(TypeWrapper tw)
         {
-            var p = Expression.Parameter(typeof(object[]));
-            var i = Expression.Parameter(typeof(long));
-            var v = Expression.Parameter(typeof(object));
-            return Expression.Lambda<Action<object[], long, object>>(Expression.Call(volatileWriteMethodInfo.MakeGenericMethod(tw.TypeAsTBD), Expression.Convert(p, tw.MakeArrayType(1).TypeAsTBD), i, Expression.Convert(v, tw.TypeAsTBD)), p, i, v).Compile();
+            var et = tw.IsPrimitive ? tw.TypeAsTBD : typeof(object);
+            var dm = new DynamicMethod($"UnsafePutArrayVolatile__{tw.Name.Replace(".", "_")}", typeof(void), new[] { typeof(object[]), typeof(long), et }, tw.TypeAsTBD.Module, true);
+            var il = dm.GetILGenerator();
+            il.Emit(OpCodes.Ldarg_0);
+            il.Emit(OpCodes.Ldarg_1);
+            il.Emit(OpCodes.Conv_Ovf_I);
+            il.Emit(OpCodes.Ldelema, tw.TypeAsTBD);
+            il.Emit(OpCodes.Ldarg_2);
+            il.Emit(OpCodes.Volatile);
+            EmitStind(il, et);
+            il.Emit(OpCodes.Ret);
+            return dm.CreateDelegate(typeof(Action<,,>).MakeGenericType(typeof(object[]), typeof(long), et));
+        }
+
+        /// <summary>
+        /// Implements the logic to set an object array by offset using volatile.
+        /// </summary>
+        /// <param name="array"></param>
+        /// <param name="offset"></param>
+        /// <param name="value"></param>
+        /// <exception cref="global::java.lang.InternalError"></exception>
+        static void PutArrayObjectVolatile(object[] array, long offset, object value)
+        {
+#if FIRST_PASS
+            throw new NotImplementedException();
+#else
+            try
+            {
+                ((Action<object[], long, object>)arrayRefCache.GetValue(ClassLoaderWrapper.GetWrapperFromType(array.GetType().GetElementType()), _ => new ArrayDelegateRef(_)).VolatilePutter)(array, offset, value);
+            }
+            catch (Exception e)
+            {
+                throw new global::java.lang.InternalError(e);
+            }
+#endif
         }
 
         /// <summary>
@@ -1525,7 +1562,7 @@ namespace IKVM.Java.Externs.sun.misc
                 case object[] array when array.GetType() == typeof(object[]):
                     return Volatile.Read(ref array[offset]);
                 case object[] array:
-                    return ((Func<object[], long, object>)arrayRefCache.GetValue(ClassLoaderWrapper.GetWrapperFromType(array.GetType().GetElementType()), _ => new ArrayDelegateRef(_)).VolatileObjectGetter)(array, offset);
+                    return GetArrayObjectVolatile(array, offset);
                 default:
                     return GetFieldVolatile<object>(o, offset);
             }
@@ -1546,11 +1583,11 @@ namespace IKVM.Java.Externs.sun.misc
 #else
             switch (o)
             {
-                case object[] array when array.GetType().GetElementType() == typeof(object):
+                case object[] array when array.GetType() == typeof(object[]):
                     Volatile.Write(ref array[offset], x);
                     break;
                 case object[] array:
-                    ((Action<object[], long, object>)arrayRefCache.GetValue(ClassLoaderWrapper.GetWrapperFromType(array.GetType().GetElementType()), _ => new ArrayDelegateRef(_)).VolatileObjectPutter)(array, offset, x);
+                    PutArrayObjectVolatile(array, offset, x);
                     break;
                 default:
                     PutFieldVolatile(o, offset, x);
@@ -1911,15 +1948,34 @@ namespace IKVM.Java.Externs.sun.misc
         /// <returns></returns>
         static Delegate CreateCompareExchangeFieldDelegate(FieldWrapper fw)
         {
-            var p = Expression.Parameter(typeof(object));
-            var v = Expression.Parameter(fw.FieldTypeWrapper.TypeAsTBD);
-            var e = Expression.Parameter(fw.FieldTypeWrapper.TypeAsTBD);
-            var l = fw.IsStatic ? null : Expression.Convert(p, fw.DeclaringType.TypeAsTBD);
-            return Expression.Lambda(
-                typeof(Func<,,,>).MakeGenericType(typeof(object), fw.FieldTypeWrapper.TypeAsTBD, fw.FieldTypeWrapper.TypeAsTBD, fw.FieldTypeWrapper.TypeAsTBD),
-                Expression.Call(typeof(Interlocked), nameof(Interlocked.CompareExchange), Array.Empty<Type>(), Expression.Field(l, fw.GetField()), v, e),
-                p, v, e)
-                .Compile();
+            var ft = fw.FieldTypeWrapper.IsPrimitive ? fw.FieldTypeWrapper.TypeAsTBD : typeof(object);
+            var mi = typeof(Interlocked)
+                .GetMethods()
+                .Where(i => i.Name == nameof(Interlocked.CompareExchange))
+                .Where(i => i.GetParameters().Length > 0 && i.GetParameters()[0].ParameterType == ft.MakeByRefType())
+                .FirstOrDefault();
+            if (mi == null)
+                throw new InvalidOperationException();
+
+            var dm = new DynamicMethod($"UnsafeCompareExchangeFieldDelegate__{fw.DeclaringType.Name.Replace(".", "_")}__{fw.Name}", ft, new[] { typeof(object), ft, ft }, fw.DeclaringType.TypeAsTBD.Module, true);
+            var il = dm.GetILGenerator();
+
+            if (fw.IsStatic)
+            {
+                il.Emit(OpCodes.Ldsflda, fw.GetField());
+            }
+            else
+            {
+                il.Emit(OpCodes.Ldarg_0);
+                il.Emit(OpCodes.Ldflda, fw.GetField());
+            }
+
+            il.Emit(OpCodes.Ldarg_1);
+            il.Emit(OpCodes.Ldarg_2);
+            il.Emit(OpCodes.Call, mi);
+
+            il.Emit(OpCodes.Ret);
+            return dm.CreateDelegate(typeof(Func<,,,>).MakeGenericType(typeof(object), ft, ft, ft));
         }
 
         /// <summary>
@@ -2177,20 +2233,6 @@ namespace IKVM.Java.Externs.sun.misc
         }
 
         /// <summary>
-        /// Throws an exception if the offset is outside the bounds of the array, as calculated given the offset as bytes plus the slot size of the array.
-        /// </summary>
-        /// <param name="array"></param>
-        /// <param name="offset"></param>
-        /// <param name="accessLength"></param>
-        /// <exception cref="global::java.lang.ArrayIndexOutOfBoundsException"></exception>
-        static void CheckArrayBounds(Array array, long offset, int accessLength)
-        {
-            var arrayLength = Buffer.ByteLength(array);
-            if (offset < 0 || offset > arrayLength - accessLength || accessLength > arrayLength)
-                throw new global::java.lang.ArrayIndexOutOfBoundsException();
-        }
-
-        /// <summary>
         /// Reads an <see cref="short"/> from the array at the specific byte offset.
         /// </summary>
         /// <param name="obj"></param>
@@ -2202,7 +2244,6 @@ namespace IKVM.Java.Externs.sun.misc
 
             try
             {
-                CheckArrayBounds(obj, offset, sizeof(short));
                 h = GCHandle.Alloc(obj, GCHandleType.Pinned);
                 var v = System.Runtime.CompilerServices.Unsafe.ReadUnaligned<short>((byte*)h.AddrOfPinnedObject() + offset);
                 return v;
@@ -2226,7 +2267,6 @@ namespace IKVM.Java.Externs.sun.misc
 
             try
             {
-                CheckArrayBounds(obj, offset, sizeof(short));
                 h = GCHandle.Alloc(obj, GCHandleType.Pinned);
                 ref var r = ref System.Runtime.CompilerServices.Unsafe.AsRef<short>((byte*)h.AddrOfPinnedObject() + offset);
                 var v = Volatile.Read(ref r);
@@ -2251,7 +2291,6 @@ namespace IKVM.Java.Externs.sun.misc
 
             try
             {
-                CheckArrayBounds(obj, offset, sizeof(int));
                 h = GCHandle.Alloc(obj, GCHandleType.Pinned);
                 var v = System.Runtime.CompilerServices.Unsafe.ReadUnaligned<int>((byte*)h.AddrOfPinnedObject() + offset);
                 return v;
@@ -2275,7 +2314,6 @@ namespace IKVM.Java.Externs.sun.misc
 
             try
             {
-                CheckArrayBounds(obj, offset, sizeof(int));
                 h = GCHandle.Alloc(obj, GCHandleType.Pinned);
                 ref var r = ref System.Runtime.CompilerServices.Unsafe.AsRef<int>((byte*)h.AddrOfPinnedObject() + offset);
                 var v = Volatile.Read(ref r);
@@ -2300,7 +2338,6 @@ namespace IKVM.Java.Externs.sun.misc
 
             try
             {
-                CheckArrayBounds(obj, offset, sizeof(long));
                 h = GCHandle.Alloc(obj, GCHandleType.Pinned);
                 var v = System.Runtime.CompilerServices.Unsafe.ReadUnaligned<long>((byte*)h.AddrOfPinnedObject() + offset);
                 return v;
@@ -2324,7 +2361,6 @@ namespace IKVM.Java.Externs.sun.misc
 
             try
             {
-                CheckArrayBounds(obj, offset, sizeof(long));
                 h = GCHandle.Alloc(obj, GCHandleType.Pinned);
                 ref var r = ref System.Runtime.CompilerServices.Unsafe.AsRef<long>((byte*)h.AddrOfPinnedObject() + offset);
                 var v = Volatile.Read(ref r);
@@ -2349,7 +2385,6 @@ namespace IKVM.Java.Externs.sun.misc
 
             try
             {
-                CheckArrayBounds(obj, offset, sizeof(byte));
                 h = GCHandle.Alloc(obj, GCHandleType.Pinned);
                 System.Runtime.CompilerServices.Unsafe.WriteUnaligned((byte*)h.AddrOfPinnedObject() + offset, value);
             }
@@ -2372,7 +2407,6 @@ namespace IKVM.Java.Externs.sun.misc
 
             try
             {
-                CheckArrayBounds(obj, offset, sizeof(byte));
                 h = GCHandle.Alloc(obj, GCHandleType.Pinned);
                 Volatile.Write(ref System.Runtime.CompilerServices.Unsafe.AsRef<byte>((byte*)h.AddrOfPinnedObject() + offset), value);
             }
@@ -2395,7 +2429,6 @@ namespace IKVM.Java.Externs.sun.misc
 
             try
             {
-                CheckArrayBounds(obj, offset, sizeof(short));
                 h = GCHandle.Alloc(obj, GCHandleType.Pinned);
                 System.Runtime.CompilerServices.Unsafe.WriteUnaligned((byte*)h.AddrOfPinnedObject() + offset, value);
             }
@@ -2418,7 +2451,6 @@ namespace IKVM.Java.Externs.sun.misc
 
             try
             {
-                CheckArrayBounds(obj, offset, sizeof(short));
                 h = GCHandle.Alloc(obj, GCHandleType.Pinned);
                 Volatile.Write(ref System.Runtime.CompilerServices.Unsafe.AsRef<short>((byte*)h.AddrOfPinnedObject() + offset), value);
             }
@@ -2441,7 +2473,6 @@ namespace IKVM.Java.Externs.sun.misc
 
             try
             {
-                CheckArrayBounds(obj, offset, sizeof(int));
                 h = GCHandle.Alloc(obj, GCHandleType.Pinned);
                 System.Runtime.CompilerServices.Unsafe.WriteUnaligned((byte*)h.AddrOfPinnedObject() + offset, value);
             }
@@ -2464,7 +2495,6 @@ namespace IKVM.Java.Externs.sun.misc
 
             try
             {
-                CheckArrayBounds(obj, offset, sizeof(int));
                 h = GCHandle.Alloc(obj, GCHandleType.Pinned);
                 Volatile.Write(ref System.Runtime.CompilerServices.Unsafe.AsRef<int>((byte*)h.AddrOfPinnedObject() + offset), value);
             }
@@ -2487,7 +2517,6 @@ namespace IKVM.Java.Externs.sun.misc
 
             try
             {
-                CheckArrayBounds(obj, offset, sizeof(long));
                 h = GCHandle.Alloc(obj, GCHandleType.Pinned);
                 System.Runtime.CompilerServices.Unsafe.WriteUnaligned((byte*)h.AddrOfPinnedObject() + offset, value);
             }
@@ -2510,7 +2539,6 @@ namespace IKVM.Java.Externs.sun.misc
 
             try
             {
-                CheckArrayBounds(obj, offset, sizeof(long));
                 h = GCHandle.Alloc(obj, GCHandleType.Pinned);
                 Volatile.Write(ref System.Runtime.CompilerServices.Unsafe.AsRef<long>((byte*)h.AddrOfPinnedObject() + offset), value);
             }
@@ -2535,7 +2563,6 @@ namespace IKVM.Java.Externs.sun.misc
 
             try
             {
-                CheckArrayBounds(obj, offset, sizeof(int));
                 h = GCHandle.Alloc(obj, GCHandleType.Pinned);
                 var r = Interlocked.CompareExchange(ref System.Runtime.CompilerServices.Unsafe.AsRef<int>((byte*)h.AddrOfPinnedObject() + offset), value, expected);
                 return r;
@@ -2561,7 +2588,6 @@ namespace IKVM.Java.Externs.sun.misc
 
             try
             {
-                CheckArrayBounds(obj, offset, sizeof(int));
                 h = GCHandle.Alloc(obj, GCHandleType.Pinned);
                 var r = Interlocked.CompareExchange(ref System.Runtime.CompilerServices.Unsafe.AsRef<int>((byte*)h.AddrOfPinnedObject() + offset), value, expected);
                 return r;
@@ -2587,7 +2613,6 @@ namespace IKVM.Java.Externs.sun.misc
 
             try
             {
-                CheckArrayBounds(obj, offset, sizeof(long));
                 h = GCHandle.Alloc(obj, GCHandleType.Pinned);
                 var r = Interlocked.CompareExchange(ref System.Runtime.CompilerServices.Unsafe.AsRef<long>((byte*)h.AddrOfPinnedObject() + offset), value, expected);
                 return r;
@@ -2613,7 +2638,6 @@ namespace IKVM.Java.Externs.sun.misc
 
             try
             {
-                CheckArrayBounds(obj, offset, sizeof(long));
                 h = GCHandle.Alloc(obj, GCHandleType.Pinned);
                 var r = Interlocked.CompareExchange(ref System.Runtime.CompilerServices.Unsafe.AsRef<long>((byte*)h.AddrOfPinnedObject() + offset), value, expected);
                 return r;

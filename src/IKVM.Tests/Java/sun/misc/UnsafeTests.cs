@@ -1260,9 +1260,10 @@ namespace IKVM.Tests.Java.sun.misc
         class CompareAndSwapTestObject
         {
 
-            public object objectField;
-            public int intField;
-            public long longField;
+            public object objectField = null;
+            public string stringField = null;
+            public int intField = 0;
+            public long longField = 0;
 
         }
 
@@ -1279,6 +1280,21 @@ namespace IKVM.Tests.Java.sun.misc
             o.objectField.Should().BeSameAs(o2);
             u.compareAndSwapObject(o, f, o1, o2).Should().BeFalse();
             o.objectField.Should().BeSameAs(o2);
+        }
+
+        [TestMethod]
+        public void CanCompareAndSwapStringField()
+        {
+            var o = new CompareAndSwapTestObject();
+            var o1 = "TEST1";
+            var o2 = "TEST2";
+            var f = u.objectFieldOffset(((Class)typeof(CompareAndSwapTestObject)).getField("stringField"));
+            u.compareAndSwapObject(o, f, null, o1).Should().BeTrue();
+            o.stringField.Should().BeSameAs(o1);
+            u.compareAndSwapObject(o, f, o1, o2).Should().BeTrue();
+            o.stringField.Should().BeSameAs(o2);
+            u.compareAndSwapObject(o, f, o1, o2).Should().BeFalse();
+            o.stringField.Should().BeSameAs(o2);
         }
 
         [TestMethod]
@@ -1311,6 +1327,7 @@ namespace IKVM.Tests.Java.sun.misc
         {
 
             public static object objectField;
+            public static string stringField;
             public static int intField;
             public static long longField;
 
@@ -1328,6 +1345,20 @@ namespace IKVM.Tests.Java.sun.misc
             StaticCompareAndSwapTestObject.objectField.Should().BeSameAs(o2);
             u.compareAndSwapObject(null, f, o1, o2).Should().BeFalse();
             StaticCompareAndSwapTestObject.objectField.Should().BeSameAs(o2);
+        }
+
+        [TestMethod]
+        public void CanCompareAndSwapStaticStringField()
+        {
+            var o1 = "TEST1";
+            var o2 = "TEST2";
+            var f = u.staticFieldOffset(((Class)typeof(StaticCompareAndSwapTestObject)).getField("stringField"));
+            u.compareAndSwapObject(null, f, null, o1).Should().BeTrue();
+            StaticCompareAndSwapTestObject.stringField.Should().BeSameAs(o1);
+            u.compareAndSwapObject(null, f, o1, o2).Should().BeTrue();
+            StaticCompareAndSwapTestObject.stringField.Should().BeSameAs(o2);
+            u.compareAndSwapObject(null, f, o1, o2).Should().BeFalse();
+            StaticCompareAndSwapTestObject.stringField.Should().BeSameAs(o2);
         }
 
         [TestMethod]
@@ -1373,6 +1404,24 @@ namespace IKVM.Tests.Java.sun.misc
         }
 
         [TestMethod]
+        public void CanCompareAndSwapStringInArray()
+        {
+            var a = new string[4];
+            for (int i = 0; i < 4; i++)
+            {
+                var o1 = "TEST1";
+                var o2 = "TEST2";
+
+                u.compareAndSwapObject(a, i, null, o1).Should().BeTrue();
+                a[i].Should().BeSameAs(o1);
+                u.compareAndSwapObject(a, i, o1, o2).Should().BeTrue();
+                a[i].Should().BeSameAs(o2);
+                u.compareAndSwapObject(a, i, o1, o2).Should().BeFalse();
+                a[i].Should().BeSameAs(o2);
+            }
+        }
+
+        [TestMethod]
         public void CanCompareAndSwapIntInArray()
         {
             var a = new int[4];
@@ -1388,6 +1437,30 @@ namespace IKVM.Tests.Java.sun.misc
         }
 
         [TestMethod]
+        public void CanCompareAndSwapIntInLongArrayAligned()
+        {
+            var a = new long[4];
+            for (int i = 0; i < 4; i++)
+            {
+                u.compareAndSwapInt(a, i * sizeof(long), 0, 1).Should().BeTrue();
+                u.compareAndSwapInt(a, i * sizeof(long), 1, 2).Should().BeTrue();
+                u.compareAndSwapInt(a, i * sizeof(long), 1, 2).Should().BeFalse();
+            }
+        }
+
+        [TestMethod]
+        public void CanCompareAndSwapIntInLongArrayUnaligned()
+        {
+            var a = new long[4];
+            for (int i = 0; i < 4; i++)
+            {
+                u.compareAndSwapInt(a, i * sizeof(long) + 1, 0, 1).Should().BeTrue();
+                u.compareAndSwapInt(a, i * sizeof(long) + 1, 1, 2).Should().BeTrue();
+                u.compareAndSwapInt(a, i * sizeof(long) + 1, 1, 2).Should().BeFalse();
+            }
+        }
+
+        [TestMethod]
         public void CanCompareAndSwapLongInArray()
         {
             var a = new long[4];
@@ -1399,6 +1472,30 @@ namespace IKVM.Tests.Java.sun.misc
                 a[i].Should().Be(2);
                 u.compareAndSwapLong(a, i * sizeof(long), 1, 2).Should().BeFalse();
                 a[i].Should().Be(2);
+            }
+        }
+
+        [TestMethod]
+        public void CanCompareAndSwapLongInIntArray()
+        {
+            var a = new int[8];
+            for (int i = 0; i < 4; i++)
+            {
+                u.compareAndSwapLong(a, i * sizeof(long), 0, 1).Should().BeTrue();
+                u.compareAndSwapLong(a, i * sizeof(long), 1, 2).Should().BeTrue();
+                u.compareAndSwapLong(a, i * sizeof(long), 1, 2).Should().BeFalse();
+            }
+        }
+
+        [TestMethod]
+        public void CanCompareAndSwapLongInIntArrayUnaligned()
+        {
+            var a = new int[16];
+            for (int i = 0; i < 4; i++)
+            {
+                u.compareAndSwapLong(a, i * sizeof(long) + 1, 0, 1).Should().BeTrue();
+                u.compareAndSwapLong(a, i * sizeof(long) + 1, 1, 2).Should().BeTrue();
+                u.compareAndSwapLong(a, i * sizeof(long) + 1, 1, 2).Should().BeFalse();
             }
         }
 
