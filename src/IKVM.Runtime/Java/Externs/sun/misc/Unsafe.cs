@@ -147,9 +147,7 @@ namespace IKVM.Java.Externs.sun.misc
         /// <exception cref="InvalidOperationException"></exception>
         static void EmitLdind(ILGenerator il, Type t)
         {
-            if (t == typeof(object))
-                il.Emit(OpCodes.Ldind_Ref);
-            else if (t == typeof(bool))
+            if (t == typeof(bool))
                 il.Emit(OpCodes.Ldind_U1);
             else if (t == typeof(byte))
                 il.Emit(OpCodes.Ldind_U1);
@@ -166,7 +164,7 @@ namespace IKVM.Java.Externs.sun.misc
             else if (t == typeof(double))
                 il.Emit(OpCodes.Ldind_R8);
             else
-                throw new InvalidOperationException();
+                il.Emit(OpCodes.Ldind_Ref);
         }
 
         /// <summary>
@@ -177,9 +175,7 @@ namespace IKVM.Java.Externs.sun.misc
         /// <exception cref="InvalidOperationException"></exception>
         static void EmitStind(ILGenerator il, Type t)
         {
-            if (t == typeof(object))
-                il.Emit(OpCodes.Stind_Ref);
-            else if (t == typeof(bool))
+            if (t == typeof(bool))
                 il.Emit(OpCodes.Stind_I1);
             else if (t == typeof(byte))
                 il.Emit(OpCodes.Stind_I1);
@@ -196,7 +192,7 @@ namespace IKVM.Java.Externs.sun.misc
             else if (t == typeof(double))
                 il.Emit(OpCodes.Stind_R8);
             else
-                throw new InvalidOperationException();
+                il.Emit(OpCodes.Stind_Ref);
         }
 
         /// <summary>
@@ -1359,23 +1355,26 @@ namespace IKVM.Java.Externs.sun.misc
             var dm = new DynamicMethod($"UnsafeGetFieldVolatile__{fw.DeclaringType.Name.Replace(".", "_")}__{fw.Name}", ft, new[] { typeof(object) }, fw.DeclaringType.TypeAsTBD.Module, true);
             var il = dm.GetILGenerator();
 
-            if (fw.IsStatic && fw.IsFinal)
+            if (fw.IsStatic)
             {
-                // we obtain a reference to the field and do an indirect load here to avoid JIT optimizations that inline static readonly fields
                 il.Emit(OpCodes.Ldsflda, fw.GetField());
-                il.Emit(OpCodes.Volatile);
-                EmitLdind(il, ft);
-            }
-            else if (fw.IsStatic)
-            {
-                il.Emit(OpCodes.Volatile);
-                il.Emit(OpCodes.Ldsfld, fw.GetField());
             }
             else
             {
                 il.Emit(OpCodes.Ldarg_0);
+                il.Emit(OpCodes.Ldflda, fw.GetField());
+            }
+
+            if (fw.FieldTypeWrapper.IsWidePrimitive == false)
+            {
                 il.Emit(OpCodes.Volatile);
-                il.Emit(OpCodes.Ldfld, fw.GetField());
+                EmitLdind(il, fw.FieldTypeWrapper.TypeAsLocalOrStackType);
+            }
+            else
+            {
+                // Java volatile semantics require atomicity, CLR volatile semantics do not
+                var mi = typeof(Unsafe).GetMethod(nameof(InterlockedRead), BindingFlags.NonPublic | BindingFlags.Static, null, new[] { fw.FieldTypeWrapper.TypeAsTBD.MakeByRefType() }, null);
+                il.Emit(OpCodes.Call, mi);
             }
 
             il.Emit(OpCodes.Ret);
@@ -1417,18 +1416,29 @@ namespace IKVM.Java.Externs.sun.misc
             var dm = new DynamicMethod($"UnsafePutFieldVolatile__{fw.DeclaringType.Name.Replace(".", "_")}__{fw.Name}", typeof(void), new[] { typeof(object), ft }, fw.DeclaringType.TypeAsTBD.Module, true);
             var il = dm.GetILGenerator();
 
+            // load reference to field
             if (fw.IsStatic)
             {
-                il.Emit(OpCodes.Ldarg_1);
-                il.Emit(OpCodes.Volatile);
-                il.Emit(OpCodes.Stsfld, fw.GetField());
+                il.Emit(OpCodes.Ldsflda, fw.GetField());
             }
             else
             {
                 il.Emit(OpCodes.Ldarg_0);
-                il.Emit(OpCodes.Ldarg_1);
+                il.Emit(OpCodes.Ldflda, fw.GetField());
+            }
+
+            il.Emit(OpCodes.Ldarg_1);
+
+            if (fw.FieldTypeWrapper.IsWidePrimitive == false)
+            {
                 il.Emit(OpCodes.Volatile);
-                il.Emit(OpCodes.Stfld, fw.GetField());
+                EmitStind(il, fw.FieldTypeWrapper.TypeAsLocalOrStackType);
+            }
+            else
+            {
+                // Java volatile semantics require atomicity, CLR volatile semantics do not
+                var mi = typeof(Unsafe).GetMethod(nameof(InterlockedWrite), BindingFlags.NonPublic | BindingFlags.Static, null, new[] { fw.FieldTypeWrapper.TypeAsTBD.MakeByRefType(), fw.FieldTypeWrapper.TypeAsTBD }, null);
+                il.Emit(OpCodes.Call, mi);
             }
 
             il.Emit(OpCodes.Ret);
@@ -1469,12 +1479,25 @@ namespace IKVM.Java.Externs.sun.misc
             var et = tw.IsPrimitive ? tw.TypeAsTBD : typeof(object);
             var dm = new DynamicMethod($"UnsafeGetArrayVolatile__{tw.Name.Replace(".", "_")}", et, new[] { typeof(object[]), typeof(long) }, tw.TypeAsTBD.Module, true);
             var il = dm.GetILGenerator();
+
+            // load reference to element
             il.Emit(OpCodes.Ldarg_0);
             il.Emit(OpCodes.Ldarg_1);
             il.Emit(OpCodes.Conv_Ovf_I);
-            il.Emit(OpCodes.Ldelema, tw.TypeAsTBD);
-            il.Emit(OpCodes.Volatile);
-            EmitLdind(il, et);
+            il.Emit(OpCodes.Ldelema, tw.TypeAsLocalOrStackType);
+
+            if (tw.IsWidePrimitive == false)
+            {
+                il.Emit(OpCodes.Volatile);
+                EmitLdind(il, tw.TypeAsLocalOrStackType);
+            }
+            else
+            {
+                // Java volatile semantics require atomicity, CLR volatile semantics do not
+                var mi = typeof(Unsafe).GetMethod(nameof(InterlockedRead), BindingFlags.NonPublic | BindingFlags.Static, null, new[] { tw.TypeAsTBD.MakeByRefType() }, null);
+                il.Emit(OpCodes.Call, mi);
+            }
+
             il.Emit(OpCodes.Ret);
             return dm.CreateDelegate(typeof(Func<,,>).MakeGenericType(typeof(object[]), typeof(long), et));
         }
@@ -1511,13 +1534,27 @@ namespace IKVM.Java.Externs.sun.misc
             var et = tw.IsPrimitive ? tw.TypeAsTBD : typeof(object);
             var dm = new DynamicMethod($"UnsafePutArrayVolatile__{tw.Name.Replace(".", "_")}", typeof(void), new[] { typeof(object[]), typeof(long), et }, tw.TypeAsTBD.Module, true);
             var il = dm.GetILGenerator();
+
+            // load reference to element
             il.Emit(OpCodes.Ldarg_0);
             il.Emit(OpCodes.Ldarg_1);
             il.Emit(OpCodes.Conv_Ovf_I);
-            il.Emit(OpCodes.Ldelema, tw.TypeAsTBD);
+            il.Emit(OpCodes.Ldelema, tw.TypeAsLocalOrStackType);
+
             il.Emit(OpCodes.Ldarg_2);
-            il.Emit(OpCodes.Volatile);
-            EmitStind(il, et);
+
+            if (tw.IsWidePrimitive == false)
+            {
+                il.Emit(OpCodes.Volatile);
+                EmitStind(il, tw.TypeAsLocalOrStackType);
+            }
+            else
+            {
+                // Java volatile semantics require atomicity, CLR volatile semantics do not
+                var mi = typeof(Interlocked).GetMethod(nameof(Interlocked.Exchange), new[] { tw.TypeAsTBD.MakeByRefType() });
+                il.Emit(OpCodes.Call, mi);
+            }
+
             il.Emit(OpCodes.Ret);
             return dm.CreateDelegate(typeof(Action<,,>).MakeGenericType(typeof(object[]), typeof(long), et));
         }
@@ -2363,7 +2400,7 @@ namespace IKVM.Java.Externs.sun.misc
             {
                 h = GCHandle.Alloc(obj, GCHandleType.Pinned);
                 ref var r = ref System.Runtime.CompilerServices.Unsafe.AsRef<long>((byte*)h.AddrOfPinnedObject() + offset);
-                var v = Volatile.Read(ref r);
+                var v = Interlocked.Read(ref r); // java considers volatile to be atomic
                 return v;
             }
             finally
@@ -2540,7 +2577,7 @@ namespace IKVM.Java.Externs.sun.misc
             try
             {
                 h = GCHandle.Alloc(obj, GCHandleType.Pinned);
-                Volatile.Write(ref System.Runtime.CompilerServices.Unsafe.AsRef<long>((byte*)h.AddrOfPinnedObject() + offset), value);
+                Interlocked.Exchange(ref System.Runtime.CompilerServices.Unsafe.AsRef<long>((byte*)h.AddrOfPinnedObject() + offset), value);
             }
             finally
             {
@@ -2619,8 +2656,7 @@ namespace IKVM.Java.Externs.sun.misc
             }
             finally
             {
-                if (h.IsAllocated)
-                    h.Free();
+                h.Free();
             }
         }
 
@@ -2647,6 +2683,46 @@ namespace IKVM.Java.Externs.sun.misc
                 if (h.IsAllocated)
                     h.Free();
             }
+        }
+
+        /// <summary>
+        /// Implements an Interlocked.Read method for long.
+        /// </summary>
+        /// <param name="location"></param>
+        /// <returns></returns>
+        static long InterlockedRead(ref long location)
+        {
+            return Interlocked.Read(ref location);
+        }
+
+        /// <summary>
+        /// Implements an Interlocked.Read method for double.
+        /// </summary>
+        /// <param name="location"></param>
+        /// <returns></returns>
+        static double InterlockedRead(ref double location)
+        {
+            return Interlocked.CompareExchange(ref location, 0, 0);
+        }
+
+        /// <summary>
+        /// Implements an Interlocked.Read method for long.
+        /// </summary>
+        /// <param name="location"></param>
+        /// <returns></returns>
+        static void InterlockedWrite(ref long location, long value)
+        {
+            Interlocked.Exchange(ref location, value);
+        }
+
+        /// <summary>
+        /// Implements an Interlocked.Read method for double.
+        /// </summary>
+        /// <param name="location"></param>
+        /// <returns></returns>
+        static void InterlockedWrite(ref double location, double value)
+        {
+            Interlocked.Exchange(ref location, value);
         }
 
     }
