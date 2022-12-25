@@ -6830,63 +6830,84 @@ namespace IKVM.Internal
         }
 
 #if !IMPORTER
+
         internal override string[] GetEnclosingMethod()
         {
             return impl.GetEnclosingMethod();
         }
 
+        /// <summary>
+        /// Gets the name of the source file that declared this type.
+        /// </summary>
+        /// <returns></returns>
         internal override string GetSourceFileName()
         {
             return sourceFileName;
         }
 
+        /// <summary>
+        /// Gets the metadata token of the specified method.
+        /// </summary>
+        /// <param name="mb"></param>
+        /// <returns></returns>
         int GetMethodBaseToken(MethodBase mb)
         {
-#if NETFRAMEWORK
             if (mb is MethodBuilder mbld)
+#if NETFRAMEWORK
                 return mbld.GetToken().Token;
+#else
+                return mbld.GetMetadataToken();
 #endif
 
+#if NETFRAMEWORK
             return mb.MetadataToken;
+#else
+            return mb.GetMetadataToken();
+#endif
         }
 
+        /// <summary>
+        /// Gets the line number within the original source of the specified method that maps to the specified offset in the IL.
+        /// </summary>
+        /// <param name="mb"></param>
+        /// <param name="ilOffset"></param>
+        /// <returns></returns>
         internal override int GetSourceLineNumber(MethodBase mb, int ilOffset)
         {
             if (lineNumberTables != null)
             {
-                int token = GetMethodBaseToken(mb);
-                MethodWrapper[] methods = GetMethods();
+                var token = GetMethodBaseToken(mb);
+                var methods = GetMethods();
                 for (int i = 0; i < methods.Length; i++)
                 {
                     if (GetMethodBaseToken(methods[i].GetMethod()) == token)
                     {
                         if (lineNumberTables[i] != null)
-                        {
                             return new LineNumberTableAttribute(lineNumberTables[i]).GetLineNumber(ilOffset);
-                        }
+
                         break;
                     }
                 }
             }
+
             return -1;
         }
 
-        private object[] DecodeAnnotations(object[] definitions)
+        object[] DecodeAnnotations(object[] definitions)
         {
             if (definitions == null)
-            {
                 return null;
-            }
-            java.lang.ClassLoader loader = GetClassLoader().GetJavaClassLoader();
-            List<object> annotations = new List<object>();
+
+            var loader = GetClassLoader().GetJavaClassLoader();
+            var annotations = new List<object>();
+
             for (int i = 0; i < definitions.Length; i++)
             {
-                object obj = JVM.NewAnnotation(loader, definitions[i]);
+                var obj = JVM.NewAnnotation(loader, definitions[i]);
                 if (obj != null)
-                {
                     annotations.Add(obj);
-                }
             }
+
             return annotations.ToArray();
         }
 
@@ -6969,6 +6990,7 @@ namespace IKVM.Internal
         {
             return BaseTypeWrapper.TypeAsBaseType;
         }
+
 #endif
 
 #if IMPORTER

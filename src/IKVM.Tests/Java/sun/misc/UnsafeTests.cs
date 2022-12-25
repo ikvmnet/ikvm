@@ -1326,10 +1326,10 @@ namespace IKVM.Tests.Java.sun.misc
         class StaticCompareAndSwapTestObject
         {
 
-            public static object objectField;
-            public static string stringField;
-            public static int intField;
-            public static long longField;
+            public static object objectField = null;
+            public static string stringField = null;
+            public static int intField = 0;
+            public static long longField = 0;
 
         }
 

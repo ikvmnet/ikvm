@@ -767,24 +767,29 @@ namespace IKVM.Internal
             return MethodHandleUtil.CreateMemberWrapperDelegateType(paramTypes, ReturnType);
         }
 
+        /// <summary>
+        /// Resolves the potentially dynamic member into it's final runtime method.
+        /// </summary>
         internal void ResolveMethod()
         {
-#if !FIRST_PASS
+#if FIRST_PASS
+            throw new NotImplementedException();
+#else
             // if we've still got the builder object, we need to replace it with the real thing before we can call it
-            MethodBuilder mb = method as MethodBuilder;
+            var mb = method as MethodBuilder;
             if (mb != null)
             {
 #if NETFRAMEWORK
                 method = mb.Module.ResolveMethod(mb.GetToken().Token);
 #else
-				BindingFlags flags = BindingFlags.DeclaredOnly;
-				flags |= mb.IsPublic ? BindingFlags.Public : BindingFlags.NonPublic;
-				flags |= mb.IsStatic ? BindingFlags.Static : BindingFlags.Instance;
-				method = DeclaringType.TypeAsTBD.GetMethod(mb.Name, flags, null, GetParametersForDefineMethod(), null);
-				if (method == null)
-				{
-					method = DeclaringType.TypeAsTBD.GetConstructor(flags, null, GetParametersForDefineMethod(), null);
-				}
+                // though ResolveMethod exists, Core 3.1 does not provide a stable way to obtain the resulting metadata token
+                // FIXME .NET 6
+                var flags = BindingFlags.DeclaredOnly;
+                flags |= mb.IsPublic ? BindingFlags.Public : BindingFlags.NonPublic;
+                flags |= mb.IsStatic ? BindingFlags.Static : BindingFlags.Instance;
+                method = DeclaringType.TypeAsTBD.GetMethod(mb.Name, flags, null, GetParametersForDefineMethod(), null);
+                if (method == null)
+                    method = DeclaringType.TypeAsTBD.GetConstructor(flags, null, GetParametersForDefineMethod(), null);
 #endif
             }
 #endif
@@ -837,64 +842,53 @@ namespace IKVM.Internal
         }
 #endif // !IMPORTER && !EXPORTER
 
-        internal static OpCode SimpleOpCodeToOpCode(SimpleOpCode opc)
+        internal static OpCode SimpleOpCodeToOpCode(SimpleOpCode opc) => opc switch
         {
-            switch (opc)
-            {
-                case SimpleOpCode.Call:
-                    return OpCodes.Call;
-                case SimpleOpCode.Callvirt:
-                    return OpCodes.Callvirt;
-                case SimpleOpCode.Newobj:
-                    return OpCodes.Newobj;
-                default:
-                    throw new InvalidOperationException();
-            }
-        }
+            SimpleOpCode.Call => OpCodes.Call,
+            SimpleOpCode.Callvirt => OpCodes.Callvirt,
+            SimpleOpCode.Newobj => OpCodes.Newobj,
+            _ => throw new InvalidOperationException(),
+        };
 
-        internal virtual bool IsOptionalAttributeAnnotationValue
-        {
-            get { return false; }
-        }
+        internal virtual bool IsOptionalAttributeAnnotationValue => false;
 
-        internal bool IsConstructor
-        {
-            get { return (object)Name == (object)StringConstants.INIT; }
-        }
+        internal bool IsConstructor => Name == (object)StringConstants.INIT;
 
-        internal bool IsClassInitializer
-        {
-            get { return (object)Name == (object)StringConstants.CLINIT; }
-        }
+        internal bool IsClassInitializer => Name == (object)StringConstants.CLINIT;
 
-        internal bool IsVirtual
-        {
-            get
-            {
-                return (modifiers & (Modifiers.Static | Modifiers.Private)) == 0
-                    && !IsConstructor;
-            }
-        }
+        internal bool IsVirtual => (modifiers & (Modifiers.Static | Modifiers.Private)) == 0 && !IsConstructor;
 
         internal bool IsFinalizeOrClone
         {
             get
             {
-                return IsProtected
-                    && (DeclaringType == CoreClasses.java.lang.Object.Wrapper || DeclaringType == CoreClasses.java.lang.Throwable.Wrapper)
-                    && (Name == StringConstants.CLONE || Name == StringConstants.FINALIZE);
+                return IsProtected && (DeclaringType == CoreClasses.java.lang.Object.Wrapper || DeclaringType == CoreClasses.java.lang.Throwable.Wrapper) && (Name == StringConstants.CLONE || Name == StringConstants.FINALIZE);
             }
         }
     }
 
     abstract class SmartMethodWrapper : MethodWrapper
     {
-        internal SmartMethodWrapper(TypeWrapper declaringType, string name, string sig, MethodBase method, TypeWrapper returnType, TypeWrapper[] parameterTypes, Modifiers modifiers, MemberFlags flags)
-            : base(declaringType, name, sig, method, returnType, parameterTypes, modifiers, flags)
+
+        /// <summary>
+        /// Initializes a new instance.
+        /// </summary>
+        /// <param name="declaringType"></param>
+        /// <param name="name"></param>
+        /// <param name="sig"></param>
+        /// <param name="method"></param>
+        /// <param name="returnType"></param>
+        /// <param name="parameterTypes"></param>
+        /// <param name="modifiers"></param>
+        /// <param name="flags"></param>
+        internal SmartMethodWrapper(TypeWrapper declaringType, string name, string sig, MethodBase method, TypeWrapper returnType, TypeWrapper[] parameterTypes, Modifiers modifiers, MemberFlags flags) :
+            base(declaringType, name, sig, method, returnType, parameterTypes, modifiers, flags)
         {
+
         }
 
 #if EMITTERS
+
         internal sealed override void EmitCall(CodeEmitter ilgen)
         {
             AssertLinked();
@@ -940,7 +934,9 @@ namespace IKVM.Internal
         {
             throw new InvalidOperationException();
         }
+
 #endif // EMITTERS
+
     }
 
     enum SimpleOpCode : byte
@@ -952,8 +948,9 @@ namespace IKVM.Internal
 
     sealed class SimpleCallMethodWrapper : MethodWrapper
     {
-        private readonly SimpleOpCode call;
-        private readonly SimpleOpCode callvirt;
+
+        readonly SimpleOpCode call;
+        readonly SimpleOpCode callvirt;
 
         internal SimpleCallMethodWrapper(TypeWrapper declaringType, string name, string sig, MethodInfo method, TypeWrapper returnType, TypeWrapper[] parameterTypes, Modifiers modifiers, MemberFlags flags, SimpleOpCode call, SimpleOpCode callvirt)
             : base(declaringType, name, sig, method, returnType, parameterTypes, modifiers, flags)
@@ -1481,13 +1478,11 @@ namespace IKVM.Internal
         internal void Link(LoadMode mode)
         {
             lock (this)
-            {
                 if (fieldType != null)
-                {
                     return;
-                }
-            }
-            TypeWrapper fld = this.DeclaringType.GetClassLoader().FieldTypeWrapperFromSig(Signature, mode);
+
+            var fld = DeclaringType.GetClassLoader().FieldTypeWrapperFromSig(Signature, mode);
+
             lock (this)
             {
                 try
@@ -1500,6 +1495,7 @@ namespace IKVM.Internal
                     {
                         fieldType = fld;
                         UpdateNonPublicTypeInSignatureFlag();
+
                         try
                         {
                             field = this.DeclaringType.LinkField(this);
@@ -1543,16 +1539,15 @@ namespace IKVM.Internal
         {
             // volatile long & double field accesses must be made atomic
             if ((modifiers.Modifiers & Modifiers.Volatile) != 0 && (sig == "J" || sig == "D"))
-            {
                 return new VolatileLongDoubleFieldWrapper(declaringType, fieldType, fi, name, sig, modifiers);
-            }
+
             return new SimpleFieldWrapper(declaringType, fieldType, fi, name, sig, modifiers);
         }
 
 #if !IMPORTER && !EXPORTER
         internal virtual void ResolveField()
         {
-            FieldBuilder fb = field as FieldBuilder;
+            var fb = field as FieldBuilder;
             if (fb != null)
             {
 #if NETFRAMEWORK
@@ -1741,47 +1736,49 @@ namespace IKVM.Internal
     }
 
 #if !EXPORTER
-    // this class represents a .NET property defined in Java with the ikvm.lang.Property annotation
+
+    /// <summary>
+    /// Represents a .NET property defined in Java with the <see cref="ikvm.lang.Property"/> annotation.
+    /// </summary>
     sealed class DynamicPropertyFieldWrapper : FieldWrapper
     {
-        private readonly MethodWrapper getter;
-        private readonly MethodWrapper setter;
-        private PropertyBuilder pb;
 
-        private MethodWrapper GetMethod(string name, string sig, bool isstatic)
+        readonly MethodWrapper getter;
+        readonly MethodWrapper setter;
+        PropertyBuilder pb;
+
+        MethodWrapper GetMethod(string name, string sig, bool isstatic)
         {
             if (name != null)
             {
-                MethodWrapper mw = this.DeclaringType.GetMethodWrapper(name, sig, false);
+                var mw = DeclaringType.GetMethodWrapper(name, sig, false);
                 if (mw != null && mw.IsStatic == isstatic)
                 {
                     mw.IsPropertyAccessor = true;
                     return mw;
                 }
+
                 Tracer.Error(Tracer.Compiler, "Property '{0}' accessor '{1}' not found in class '{2}'", this.Name, name, this.DeclaringType.Name);
             }
+
             return null;
         }
 
-        internal DynamicPropertyFieldWrapper(TypeWrapper declaringType, ClassFile.Field fld)
-            : base(declaringType, null, fld.Name, fld.Signature, new ExModifiers(fld.Modifiers, fld.IsInternal), null)
+        internal DynamicPropertyFieldWrapper(TypeWrapper declaringType, ClassFile.Field fld) :
+            base(declaringType, null, fld.Name, fld.Signature, new ExModifiers(fld.Modifiers, fld.IsInternal), null)
         {
             getter = GetMethod(fld.PropertyGetter, "()" + fld.Signature, fld.IsStatic);
             setter = GetMethod(fld.PropertySetter, "(" + fld.Signature + ")V", fld.IsStatic);
         }
 
 #if !IMPORTER && !FIRST_PASS
+
         internal override void ResolveField()
         {
-            if (getter != null)
-            {
-                getter.ResolveMethod();
-            }
-            if (setter != null)
-            {
-                setter.ResolveMethod();
-            }
+            getter?.ResolveMethod();
+            setter?.ResolveMethod();
         }
+
 #endif
 
         internal PropertyBuilder GetPropertyBuilder()

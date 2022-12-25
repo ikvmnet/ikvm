@@ -4,6 +4,7 @@ using FluentAssertions;
 
 using IKVM.Attributes;
 
+using java.lang;
 using java.util.concurrent.atomic;
 
 using Microsoft.VisualStudio.TestTools.UnitTesting;
@@ -42,12 +43,12 @@ namespace IKVM.Tests.Java.java.util.concurrent.atomic
         class TestObject
         {
 
-            public volatile object oo;
-            public volatile string ss;
-            public volatile int ii;
+            public volatile object oo = null;
+            public volatile string ss = null;
+            public volatile int ii = 0;
 
             [Modifiers(Modifiers.Volatile)]
-            public long ll;
+            public long ll = 0;
 
         }
 
@@ -87,6 +88,15 @@ namespace IKVM.Tests.Java.java.util.concurrent.atomic
             var o = new TestObject();
             Task.Run(() => u.lazySet(o, 1)).Wait();
             o.ll.Should().Be(1);
+        }
+
+        [TestMethod]
+        public void CanLazySetReferenceArray()
+        {
+            var t = new object();
+            var a = new AtomicReferenceArray(1);
+            Task.Run(() => a.lazySet(0, t)).Wait();
+            a.get(0).Should().BeSameAs(t);
         }
 
         [TestMethod]

@@ -210,6 +210,7 @@ namespace IKVM.Java.Externs.sun.misc
         /// <returns></returns>
         static Delegate CreateGetFieldDelegate(FieldWrapper fw)
         {
+            fw.ResolveField();
             var ft = fw.FieldTypeWrapper.IsPrimitive ? fw.FieldTypeWrapper.TypeAsTBD : typeof(object);
             var dm = new DynamicMethod($"UnsafeGetField__{fw.DeclaringType.Name.Replace(".", "_")}__{fw.Name}", ft, new[] { typeof(object) }, fw.DeclaringType.TypeAsTBD.Module, true);
             var il = dm.GetILGenerator();
@@ -241,6 +242,7 @@ namespace IKVM.Java.Externs.sun.misc
         /// <returns></returns>
         static Delegate CreatePutFieldDelegate(FieldWrapper fw)
         {
+            fw.ResolveField();
             var ft = fw.FieldTypeWrapper.IsPrimitive ? fw.FieldTypeWrapper.TypeAsTBD : typeof(object);
             var dm = new DynamicMethod($"UnsafePutField__{fw.DeclaringType.Name.Replace(".", "_")}__{fw.Name}", typeof(void), new[] { typeof(object), ft }, fw.DeclaringType.TypeAsTBD.Module, true);
             var il = dm.GetILGenerator();
@@ -1351,6 +1353,7 @@ namespace IKVM.Java.Externs.sun.misc
         /// <returns></returns>
         static Delegate CreateGetFieldVolatileDelegate(FieldWrapper fw)
         {
+            fw.ResolveField();
             var ft = fw.FieldTypeWrapper.IsPrimitive ? fw.FieldTypeWrapper.TypeAsTBD : typeof(object);
             var dm = new DynamicMethod($"UnsafeGetFieldVolatile__{fw.DeclaringType.Name.Replace(".", "_")}__{fw.Name}", ft, new[] { typeof(object) }, fw.DeclaringType.TypeAsTBD.Module, true);
             var il = dm.GetILGenerator();
@@ -1412,6 +1415,7 @@ namespace IKVM.Java.Externs.sun.misc
         /// <returns></returns>
         static Delegate CreatePutFieldVolatileDelegate(FieldWrapper fw)
         {
+            fw.ResolveField();
             var ft = fw.FieldTypeWrapper.IsPrimitive ? fw.FieldTypeWrapper.TypeAsTBD : typeof(object);
             var dm = new DynamicMethod($"UnsafePutFieldVolatile__{fw.DeclaringType.Name.Replace(".", "_")}__{fw.Name}", typeof(void), new[] { typeof(object), ft }, fw.DeclaringType.TypeAsTBD.Module, true);
             var il = dm.GetILGenerator();
