@@ -18,7 +18,7 @@ namespace IKVM.Tests.Java.java.lang.reflect
             public object invoke(object obj, Method meth, object[] args)
             {
                 if (meth.getName() == "Run")
-                    return true;
+                    return "TEST";
 
                 throw new System.Exception();
             }
@@ -28,7 +28,7 @@ namespace IKVM.Tests.Java.java.lang.reflect
         public interface PublicInterface
         {
 
-            bool Run();
+            string Run();
 
         }
 
@@ -37,7 +37,7 @@ namespace IKVM.Tests.Java.java.lang.reflect
         {
             var c = (Class)typeof(PublicInterface);
             var p = (PublicInterface)Proxy.newProxyInstance(c.getClassLoader(), new[] { c }, new PublicInterfaceHandler());
-            p.Run().Should().Be(true);
+            p.Run().Should().Be("TEST");
         }
 
     }
