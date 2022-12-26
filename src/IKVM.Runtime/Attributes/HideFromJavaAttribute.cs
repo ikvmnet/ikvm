@@ -29,26 +29,36 @@ using Type = IKVM.Reflection.Type;
 
 namespace IKVM.Attributes
 {
-    // Whenever the VM or compiler generates a helper class/method/field, it should be marked
-    // with this custom attribute, so that it can be hidden from Java.
+
+    /// <summary>
+    /// Whenever the VM or compiler generates a helper class/method/field, it should be marked with this custom
+	/// attribute, so that it can be hidden from Java.
+    /// </summary>
     [AttributeUsage(AttributeTargets.All)]
 	public sealed class HideFromJavaAttribute : Attribute
 	{
-		private readonly HideFromJavaFlags flags;
 
+		readonly HideFromJavaFlags flags;
+
+		/// <summary>
+		/// Initializes a new instance.
+		/// </summary>
 		public HideFromJavaAttribute()
 		{
 			flags = HideFromJavaFlags.All;
 		}
 
+		/// <summary>
+		/// Initializes a new instance.
+		/// </summary>
+		/// <param name="flags"></param>
 		public HideFromJavaAttribute(HideFromJavaFlags flags)
 		{
 			this.flags = flags;
 		}
 
-		public HideFromJavaFlags Flags
-		{
-			get { return flags; }
-		}
+		public HideFromJavaFlags Flags => flags;
+
 	}
+
 }

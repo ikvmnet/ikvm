@@ -353,16 +353,18 @@ namespace IKVM.Internal
 
     abstract class MethodWrapper : MemberWrapper
     {
+
 #if !IMPORTER && !FIRST_PASS && !EXPORTER
-        private volatile java.lang.reflect.Executable reflectionMethod;
+        volatile java.lang.reflect.Executable reflectionMethod;
 #endif
         internal static readonly MethodWrapper[] EmptyArray = new MethodWrapper[0];
-        private MethodBase method;
-        private string[] declaredExceptions;
-        private TypeWrapper returnTypeWrapper;
-        private TypeWrapper[] parameterTypeWrappers;
+        MethodBase method;
+        string[] declaredExceptions;
+        TypeWrapper returnTypeWrapper;
+        TypeWrapper[] parameterTypeWrappers;
 
 #if EMITTERS
+
         internal virtual void EmitCall(CodeEmitter ilgen)
         {
             throw new InvalidOperationException();
@@ -387,32 +389,38 @@ namespace IKVM.Internal
         {
             return Intrinsics.Emit(context);
         }
+
 #endif // EMITTERS
 
-        internal virtual bool IsDynamicOnly
-        {
-            get
-            {
-                return false;
-            }
-        }
+        internal virtual bool IsDynamicOnly => false;
 
-        internal MethodWrapper(TypeWrapper declaringType, string name, string sig, MethodBase method, TypeWrapper returnType, TypeWrapper[] parameterTypes, Modifiers modifiers, MemberFlags flags)
-            : base(declaringType, name, sig, modifiers, flags)
+        /// <summary>
+        /// Initializes a new instance.
+        /// </summary>
+        /// <param name="declaringType"></param>
+        /// <param name="name"></param>
+        /// <param name="sig"></param>
+        /// <param name="method"></param>
+        /// <param name="returnType"></param>
+        /// <param name="parameterTypes"></param>
+        /// <param name="modifiers"></param>
+        /// <param name="flags"></param>
+        internal MethodWrapper(TypeWrapper declaringType, string name, string sig, MethodBase method, TypeWrapper returnType, TypeWrapper[] parameterTypes, Modifiers modifiers, MemberFlags flags) :
+            base(declaringType, name, sig, modifiers, flags)
         {
             Profiler.Count("MethodWrapper");
+
             this.method = method;
             Debug.Assert(((returnType == null) == (parameterTypes == null)) || (returnType == PrimitiveTypeWrapper.VOID));
             this.returnTypeWrapper = returnType;
             this.parameterTypeWrappers = parameterTypes;
             if (Intrinsics.IsIntrinsic(this))
-            {
                 SetIntrinsicFlag();
-            }
+
             UpdateNonPublicTypeInSignatureFlag();
         }
 
-        private void UpdateNonPublicTypeInSignatureFlag()
+        void UpdateNonPublicTypeInSignatureFlag()
         {
             if ((IsPublic || IsProtected) && (returnTypeWrapper != null && parameterTypeWrappers != null) && !(this is AccessStubMethodWrapper) && !(this is AccessStubConstructorMethodWrapper))
             {
@@ -742,28 +750,26 @@ namespace IKVM.Internal
         }
 
 #if !IMPORTER && !EXPORTER
+
         internal Type GetDelegateType()
         {
-            TypeWrapper[] paramTypes = GetParameters();
+            var paramTypes = GetParameters();
             if (paramTypes.Length > MethodHandleUtil.MaxArity)
             {
-                Type type = DeclaringType.TypeAsBaseType.Assembly.GetType(
-                    ReturnType == PrimitiveTypeWrapper.VOID ? "__<>NVIV`" + paramTypes.Length : "__<>NVI`" + (paramTypes.Length + 1));
+                var type = DeclaringType.TypeAsBaseType.Assembly.GetType(ReturnType == PrimitiveTypeWrapper.VOID ? "__<>NVIV`" + paramTypes.Length : "__<>NVI`" + (paramTypes.Length + 1));
                 if (type == null)
-                {
                     type = DeclaringType.GetClassLoader().GetTypeWrapperFactory().DefineDelegate(paramTypes.Length, ReturnType == PrimitiveTypeWrapper.VOID);
-                }
-                Type[] types = new Type[paramTypes.Length + (ReturnType == PrimitiveTypeWrapper.VOID ? 0 : 1)];
+
+                var types = new Type[paramTypes.Length + (ReturnType == PrimitiveTypeWrapper.VOID ? 0 : 1)];
                 for (int i = 0; i < paramTypes.Length; i++)
-                {
                     types[i] = paramTypes[i].TypeAsSignatureType;
-                }
+
                 if (ReturnType != PrimitiveTypeWrapper.VOID)
-                {
                     types[types.Length - 1] = ReturnType.TypeAsSignatureType;
-                }
+
                 return type.MakeGenericType(types);
             }
+
             return MethodHandleUtil.CreateMemberWrapperDelegateType(paramTypes, ReturnType);
         }
 
@@ -801,23 +807,36 @@ namespace IKVM.Internal
             throw new InvalidOperationException();
         }
 
+        /// <summary>
+        /// Dynamically invokes the method and potentially unwraps any exceptions.
+        /// </summary>
+        /// <param name="mb"></param>
+        /// <param name="obj"></param>
+        /// <param name="args"></param>
+        /// <returns></returns>
         [HideFromJava]
         protected static object InvokeAndUnwrapException(MethodBase mb, object obj, object[] args)
         {
 #if FIRST_PASS
-            return null;
+            throw new NotImplementedException();
 #else
             try
             {
                 return mb.Invoke(obj, args);
             }
-            catch (TargetInvocationException x)
+            catch (TargetInvocationException e)
             {
-                throw ikvm.runtime.Util.mapException(x.InnerException);
+                throw ikvm.runtime.Util.mapException(e.InnerException);
             }
 #endif
         }
 
+        /// <summary>
+        /// Dynamically invokes the method and potentially unwraps any exceptions.
+        /// </summary>
+        /// <param name="obj"></param>
+        /// <param name="args"></param>
+        /// <returns></returns>
         [HideFromJava]
         internal virtual object Invoke(object obj, object[] args)
         {
@@ -828,7 +847,7 @@ namespace IKVM.Internal
         internal virtual object CreateInstance(object[] args)
         {
 #if FIRST_PASS
-            return null;
+            throw new NotImplementedException();
 #else
             try
             {
@@ -840,6 +859,7 @@ namespace IKVM.Internal
             }
 #endif
         }
+
 #endif // !IMPORTER && !EXPORTER
 
         internal static OpCode SimpleOpCodeToOpCode(SimpleOpCode opc) => opc switch

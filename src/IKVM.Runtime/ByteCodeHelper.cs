@@ -1261,6 +1261,9 @@ namespace IKVM.Runtime
 
     public static class LiveObjectHolder<T>
     {
+
         public static object[] values;
+
     }
+
 }

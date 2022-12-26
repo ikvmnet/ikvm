@@ -51,7 +51,7 @@ using IKVM.Tools.Importer;
 namespace IKVM.Internal
 {
 
-    class AssemblyClassLoader : ClassLoaderWrapper
+    internal class AssemblyClassLoader : ClassLoaderWrapper
     {
 
         /// <summary>
@@ -1139,19 +1139,14 @@ namespace IKVM.Internal
 
         internal override java.lang.ClassLoader GetJavaClassLoader()
         {
-            if (javaClassLoader == null)
-            {
-                return WaitInitializeJavaClassLoader(GetCustomClassLoaderType());
-            }
-            return javaClassLoader;
+            return javaClassLoader ?? WaitInitializeJavaClassLoader(GetCustomClassLoaderType());
         }
 
         internal virtual java.security.ProtectionDomain GetProtectionDomain()
         {
             if (protectionDomain == null)
-            {
                 Interlocked.CompareExchange(ref protectionDomain, new java.security.ProtectionDomain(assemblyLoader.Assembly), null);
-            }
+
             return protectionDomain;
         }
 #endif
@@ -1165,7 +1160,7 @@ namespace IKVM.Internal
 
         internal override bool InternalsVisibleToImpl(TypeWrapper wrapper, TypeWrapper friend)
         {
-            ClassLoaderWrapper other = friend.GetClassLoader();
+            var other = friend.GetClassLoader();
             if (this == other)
             {
 #if IMPORTER || EXPORTER

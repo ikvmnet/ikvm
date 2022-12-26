@@ -37,23 +37,23 @@ namespace IKVM.Java.Externs.java.lang
 #if FIRST_PASS
             throw new NotImplementedException();
 #else
+            Console.WriteLine(name);
+            Console.WriteLine(loader);
             if (name == null)
                 throw new global::java.lang.NullPointerException();
 
-            //Console.WriteLine("forName: " + name + ", loader = " + loader);
             TypeWrapper tw = null;
             if (name.IndexOf(',') > 0)
             {
                 // we essentially require full trust before allowing arbitrary types to be loaded,
                 // hence we do the "createClassLoader" permission check
-                global::java.lang.SecurityManager sm = global::java.lang.System.getSecurityManager();
-                if (sm != null)
-                    sm.checkPermission(new global::java.lang.RuntimePermission("createClassLoader"));
-                Type type = Type.GetType(name);
+                var sm = global::java.lang.System.getSecurityManager();
+                sm?.checkPermission(new global::java.lang.RuntimePermission("createClassLoader"));
+
+                var type = Type.GetType(name);
                 if (type != null)
-                {
                     tw = ClassLoaderWrapper.GetWrapperFromType(type);
-                }
+
                 if (tw == null)
                 {
                     global::java.lang.Throwable.suppressFillInStackTrace = true;
@@ -64,29 +64,30 @@ namespace IKVM.Java.Externs.java.lang
             {
                 try
                 {
-                    ClassLoaderWrapper classLoaderWrapper = ClassLoaderWrapper.GetClassLoaderWrapper(loader);
-                    tw = classLoaderWrapper.LoadClassByDottedName(name);
+                    tw = ClassLoaderWrapper.GetClassLoaderWrapper(loader).LoadClassByDottedName(name);
                 }
                 catch (ClassNotFoundException x)
                 {
+                    Console.WriteLine(x);
                     global::java.lang.Throwable.suppressFillInStackTrace = true;
                     throw new global::java.lang.ClassNotFoundException(x.Message);
                 }
                 catch (ClassLoadingException x)
                 {
+                    Console.WriteLine(x);
                     throw x.InnerException;
                 }
                 catch (RetargetableJavaException x)
                 {
+                    Console.WriteLine(x);
                     throw x.ToJava();
                 }
             }
-            global::java.security.ProtectionDomain pd;
-            if (loader != null && caller != null && (pd = getProtectionDomain0(caller)) != null)
-            {
+
+            if (loader != null && caller != null && getProtectionDomain0(caller) is global::java.security.ProtectionDomain pd)
                 loader.checkPackageAccess(tw.ClassObject, pd);
-            }
-            if (initialize && !tw.IsArray)
+
+            if (initialize && tw.IsArray == false)
             {
                 try
                 {
@@ -94,10 +95,13 @@ namespace IKVM.Java.Externs.java.lang
                 }
                 catch (RetargetableJavaException x)
                 {
+                    Console.WriteLine(x);
                     throw x.ToJava();
                 }
+
                 tw.RunClassInit();
             }
+
             return tw.ClassObject;
 #endif
         }
@@ -108,6 +112,7 @@ namespace IKVM.Java.Externs.java.lang
         }
 
 #if !FIRST_PASS
+
         private sealed class ConstantPoolImpl : global::sun.reflect.ConstantPool
         {
             private readonly object[] constantPool;
@@ -142,12 +147,13 @@ namespace IKVM.Java.Externs.java.lang
                 return (double)constantPool[index];
             }
         }
+
 #endif
 
         public static object getConstantPool(global::java.lang.Class thisClass)
         {
 #if FIRST_PASS
-        return null;
+            throw new NotImplementedException();
 #else
             return new ConstantPoolImpl(TypeWrapper.FromClass(thisClass).GetConstantPool());
 #endif
@@ -162,9 +168,7 @@ namespace IKVM.Java.Externs.java.lang
         {
 #if !FIRST_PASS
             if (otherClass == null)
-            {
                 throw new global::java.lang.NullPointerException();
-            }
 #endif
             return TypeWrapper.FromClass(otherClass).IsAssignableTo(TypeWrapper.FromClass(thisClass));
         }
@@ -186,46 +190,29 @@ namespace IKVM.Java.Externs.java.lang
 
         public static string getName0(global::java.lang.Class thisClass)
         {
-            TypeWrapper tw = TypeWrapper.FromClass(thisClass);
+            var tw = TypeWrapper.FromClass(thisClass);
             if (tw.IsPrimitive)
             {
                 if (tw == PrimitiveTypeWrapper.BYTE)
-                {
                     return "byte";
-                }
                 else if (tw == PrimitiveTypeWrapper.CHAR)
-                {
                     return "char";
-                }
                 else if (tw == PrimitiveTypeWrapper.DOUBLE)
-                {
                     return "double";
-                }
                 else if (tw == PrimitiveTypeWrapper.FLOAT)
-                {
                     return "float";
-                }
                 else if (tw == PrimitiveTypeWrapper.INT)
-                {
                     return "int";
-                }
                 else if (tw == PrimitiveTypeWrapper.LONG)
-                {
                     return "long";
-                }
                 else if (tw == PrimitiveTypeWrapper.SHORT)
-                {
                     return "short";
-                }
                 else if (tw == PrimitiveTypeWrapper.BOOLEAN)
-                {
                     return "boolean";
-                }
                 else if (tw == PrimitiveTypeWrapper.VOID)
-                {
                     return "void";
-                }
             }
+
             if (tw.IsUnsafeAnonymous)
             {
 #if !FIRST_PASS
@@ -249,28 +236,27 @@ namespace IKVM.Java.Externs.java.lang
 
         public static global::java.lang.Class getSuperclass(global::java.lang.Class thisClass)
         {
-            TypeWrapper super = TypeWrapper.FromClass(thisClass).BaseTypeWrapper;
+            var super = TypeWrapper.FromClass(thisClass).BaseTypeWrapper;
             return super != null ? super.ClassObject : null;
         }
 
         public static global::java.lang.Class[] getInterfaces0(global::java.lang.Class thisClass)
         {
 #if FIRST_PASS
-        return null;
+            throw new NotImplementedException();
 #else
-            TypeWrapper[] ifaces = TypeWrapper.FromClass(thisClass).Interfaces;
-            global::java.lang.Class[] interfaces = new global::java.lang.Class[ifaces.Length];
+            var ifaces = TypeWrapper.FromClass(thisClass).Interfaces;
+            var interfaces = new global::java.lang.Class[ifaces.Length];
             for (int i = 0; i < ifaces.Length; i++)
-            {
                 interfaces[i] = ifaces[i].ClassObject;
-            }
+
             return interfaces;
 #endif
         }
 
         public static global::java.lang.Class getComponentType(global::java.lang.Class thisClass)
         {
-            TypeWrapper tw = TypeWrapper.FromClass(thisClass);
+            var tw = TypeWrapper.FromClass(thisClass);
             return tw.IsArray ? tw.ElementTypeWrapper.ClassObject : null;
         }
 
@@ -285,7 +271,7 @@ namespace IKVM.Java.Externs.java.lang
         public static object[] getSigners(global::java.lang.Class thisClass)
         {
 #if FIRST_PASS
-        return null;
+            throw new NotImplementedException();
 #else
             return thisClass.signers;
 #endif
@@ -302,13 +288,12 @@ namespace IKVM.Java.Externs.java.lang
         {
             try
             {
-                TypeWrapper tw = TypeWrapper.FromClass(thisClass);
+                var tw = TypeWrapper.FromClass(thisClass);
                 tw.Finish();
-                string[] enc = tw.GetEnclosingMethod();
+                var enc = tw.GetEnclosingMethod();
                 if (enc == null)
-                {
                     return null;
-                }
+
                 return new object[] { tw.GetClassLoader().LoadClassByDottedName(enc[0]).ClassObject, enc[1], enc[2] == null ? null : enc[2].Replace('.', '/') };
             }
             catch (RetargetableJavaException x)
@@ -321,18 +306,16 @@ namespace IKVM.Java.Externs.java.lang
         {
             try
             {
-                TypeWrapper wrapper = TypeWrapper.FromClass(thisClass);
+                var wrapper = TypeWrapper.FromClass(thisClass);
                 wrapper.Finish();
-                TypeWrapper decl = wrapper.DeclaringTypeWrapper;
+                var decl = wrapper.DeclaringTypeWrapper;
                 if (decl == null)
-                {
                     return null;
-                }
+
                 decl = decl.EnsureLoadable(wrapper.GetClassLoader());
                 if (!decl.IsAccessibleFrom(wrapper))
-                {
                     throw new IllegalAccessError(string.Format("tried to access class {0} from class {1}", decl.Name, wrapper.Name));
-                }
+
                 decl.Finish();
                 TypeWrapper[] declInner = decl.InnerClasses;
                 for (int i = 0; i < declInner.Length; i++)
@@ -353,23 +336,20 @@ namespace IKVM.Java.Externs.java.lang
         public static global::java.security.ProtectionDomain getProtectionDomain0(global::java.lang.Class thisClass)
         {
 #if FIRST_PASS
-        return null;
+            throw new NotImplementedException();
 #else
-            TypeWrapper wrapper = TypeWrapper.FromClass(thisClass);
+            var wrapper = TypeWrapper.FromClass(thisClass);
             if (wrapper.IsArray)
-            {
                 return null;
-            }
-            global::java.security.ProtectionDomain pd = wrapper.ClassObject.pd;
+
+            var pd = wrapper.ClassObject.pd;
             if (pd == null)
             {
                 // The protection domain for statically compiled code is created lazily (not at global::java.lang.Class creation time),
                 // to work around boot strap issues.
-                AssemblyClassLoader acl = wrapper.GetClassLoader() as AssemblyClassLoader;
+                var acl = wrapper.GetClassLoader() as AssemblyClassLoader;
                 if (acl != null)
-                {
                     pd = acl.GetProtectionDomain();
-                }
                 else if (wrapper is AnonymousTypeWrapper)
                 {
                     // dynamically compiled intrinsified lamdba anonymous types end up here and should get their

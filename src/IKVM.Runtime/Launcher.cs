@@ -12,6 +12,7 @@ using System.Text.Json;
 using System.Text.Json.Serialization;
 using System.Threading;
 
+using IKVM.Attributes;
 using IKVM.Internal;
 
 namespace IKVM.Runtime
@@ -233,6 +234,7 @@ namespace IKVM.Runtime
         /// <param name="rarg"></param>
         /// <param name="properties"></param>
         /// <returns></returns>
+        [HideFromJava(HideFromJavaFlags.StackTrace)]
         public static int Run(string main, bool jar, string[] args, string rarg, IDictionary<string, string> properties)
         {
             if (args is null)
