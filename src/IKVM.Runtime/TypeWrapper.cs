@@ -2006,7 +2006,7 @@ namespace IKVM.Internal
 
     }
 
-    internal abstract class TypeWrapper
+    internal abstract class TypeWrapper : IEquatable<TypeWrapper>
     {
 
         private static readonly object flagsLock = new object();
@@ -3092,7 +3092,7 @@ namespace IKVM.Internal
                 return true;
             }
             TypeWrapper subType = this;
-            while (subType != baseType)
+            while (!baseType.Equals(subType))
             {
                 subType = subType.BaseTypeWrapper;
                 if (subType == null)
@@ -3606,6 +3606,11 @@ namespace IKVM.Internal
         internal virtual byte[] GetFieldRawTypeAnnotations(FieldWrapper fw)
         {
             return null;
+        }
+
+        public bool Equals(TypeWrapper other)
+        {
+            return string.Equals(Name, other.Name);
         }
 
 #if !STATIC_COMPILER && !STUB_GENERATOR
