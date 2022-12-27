@@ -14,21 +14,23 @@ public final class TestTest {
         }
     }
     
-    @cli.System.Runtime.CompilerServices.MethodImplAttribute.Annotation(value = cli.System.Runtime.CompilerServices.MethodImplOptions.__Enum.NoInlining)
     public static void main(String[] args) throws Exception {
-        TestTest.Handler h = new TestTest.Handler();
+        while (true) {
+            TestTest.Handler h = new TestTest.Handler();
 
-        Class<?> nonPublic = Class.forName(nonPublicIntrfaceName);
-        if (Modifier.isPublic(nonPublic.getModifiers())) {
-            throw new Error("Interface " + nonPublicIntrfaceName + " is public and need to be changed!");
+            Class<?> nonPublic = Class.forName(nonPublicIntrfaceName);
+            if (Modifier.isPublic(nonPublic.getModifiers())) {
+                throw new Error("Interface " + nonPublicIntrfaceName + " is public and need to be changed!");
+            }
+
+            ByteArrayOutputStream bout = new ByteArrayOutputStream();
+            ObjectOutputStream oout = new ObjectOutputStream(bout);
+            oout.writeObject(Proxy.newProxyInstance(nonPublic.getClassLoader(), new Class<?>[]{ nonPublic }, new TestTest.Handler()));
+            oout.close();
+            ObjectInputStream oin = new ObjectInputStream(new ByteArrayInputStream(bout.toByteArray()));
+            oin.readObject();
+            break;
         }
-
-        ByteArrayOutputStream bout = new ByteArrayOutputStream();
-        ObjectOutputStream oout = new ObjectOutputStream(bout);
-        oout.writeObject(Proxy.newProxyInstance(nonPublic.getClassLoader(), new Class<?>[]{ nonPublic }, new TestTest.Handler()));
-        oout.close();
-        ObjectInputStream oin = new ObjectInputStream(new ByteArrayInputStream(bout.toByteArray()));
-        oin.readObject();
     }
 
 }

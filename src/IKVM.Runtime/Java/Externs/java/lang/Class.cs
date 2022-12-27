@@ -37,8 +37,6 @@ namespace IKVM.Java.Externs.java.lang
 #if FIRST_PASS
             throw new NotImplementedException();
 #else
-            Console.WriteLine(name);
-            Console.WriteLine(loader);
             if (name == null)
                 throw new global::java.lang.NullPointerException();
 
@@ -68,18 +66,15 @@ namespace IKVM.Java.Externs.java.lang
                 }
                 catch (ClassNotFoundException x)
                 {
-                    Console.WriteLine(x);
                     global::java.lang.Throwable.suppressFillInStackTrace = true;
                     throw new global::java.lang.ClassNotFoundException(x.Message);
                 }
                 catch (ClassLoadingException x)
                 {
-                    Console.WriteLine(x);
                     throw x.InnerException;
                 }
                 catch (RetargetableJavaException x)
                 {
-                    Console.WriteLine(x);
                     throw x.ToJava();
                 }
             }
@@ -95,7 +90,6 @@ namespace IKVM.Java.Externs.java.lang
                 }
                 catch (RetargetableJavaException x)
                 {
-                    Console.WriteLine(x);
                     throw x.ToJava();
                 }
 

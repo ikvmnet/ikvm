@@ -44,7 +44,6 @@ namespace IKVM.Java.Externs.sun.misc
             throw new NotImplementedException();
 #else
             var trace = new StackTrace(2, false);
-            Console.WriteLine(trace.ToString());
             for (var i = 0; i < trace.FrameCount; i++)
             {
                 var f = trace.GetFrame(i);
@@ -58,7 +57,6 @@ namespace IKVM.Java.Externs.sun.misc
 
                 if (m.DeclaringType != null && ClassLoaderWrapper.GetWrapperFromType(m.DeclaringType) is TypeWrapper tw and not null)
                 {
-
                     // check that the assembly isn't java.base or the IKVM runtime
                     var clw = tw.GetClassLoader();
                     if (clw is AssemblyClassLoader acl)
