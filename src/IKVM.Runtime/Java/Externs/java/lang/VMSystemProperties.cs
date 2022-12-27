@@ -107,6 +107,11 @@ namespace IKVM.Java.Externs.java.lang
             {
                 yield return $"linux-{arch}";
             }
+
+            if (RuntimeInformation.IsOSPlatform(OSPlatform.OSX))
+            {
+                yield return $"osx-{arch}";
+            }
         }
 
         /// <summary>

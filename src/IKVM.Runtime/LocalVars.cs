@@ -27,7 +27,7 @@ using System.Diagnostics;
 
 using IKVM.Internal;
 
-#if STATIC_COMPILER
+#if IMPORTER
 using IKVM.Reflection.Emit;
 using Type = IKVM.Reflection.Type;
 #else

@@ -35,7 +35,7 @@ namespace IKVM.Runtime.JNI
     /// </summary>
     static unsafe class JNINativeLoader
     {
-
+        delegate int OnLoadFunc(nint arg1, nint arg2);
         public static readonly object SyncRoot = new object();
         static List<nint> loaded = new List<nint>();
 
@@ -94,7 +94,7 @@ namespace IKVM.Runtime.JNI
                             var w = f.Enter(loader);
                             try
                             {
-                                v = Marshal.GetDelegateForFunctionPointer<Func<nint, nint, int>>(onload)((nint)JavaVM.pJavaVM, 0);
+                                v = Marshal.GetDelegateForFunctionPointer<OnLoadFunc>(onload)((nint)JavaVM.pJavaVM, 0);
                                 Tracer.Info(Tracer.Jni, "JNI_OnLoad returned: 0x{0:X8}", v);
                             }
                             finally

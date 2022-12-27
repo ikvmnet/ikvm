@@ -21,7 +21,7 @@
   jeroen@frijters.net
   
 */
-#if !STATIC_COMPILER
+#if !IMPORTER
 using System;
 using System.Diagnostics;
 using System.Reflection;

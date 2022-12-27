@@ -73,6 +73,11 @@ namespace IKVM.Tests
             {
                 yield return $"linux-{arch}";
             }
+
+            if (RuntimeInformation.IsOSPlatform(OSPlatform.OSX))
+            {
+                yield return $"osx-{arch}";
+            }
         }
 
         /// <summary>
@@ -87,6 +92,9 @@ namespace IKVM.Tests
 
             if (RuntimeInformation.IsOSPlatform(OSPlatform.Linux))
                 return $"lib{name}.so";
+
+            if (RuntimeInformation.IsOSPlatform(OSPlatform.OSX))
+                return $"lib{name}.dylib";
 
             throw new NotSupportedException();
         }

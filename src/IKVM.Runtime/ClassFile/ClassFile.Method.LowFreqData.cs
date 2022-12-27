@@ -33,7 +33,7 @@ namespace IKVM.Internal
 			{
 				internal object annotationDefault;
 				internal object[][] parameterAnnotations;
-#if STATIC_COMPILER
+#if IMPORTER
 				internal string DllExportName;
 				internal int DllExportOrdinal;
 				internal string InterlockedCompareAndSetField;

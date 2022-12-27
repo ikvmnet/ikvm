@@ -106,6 +106,7 @@
         <IkvmImageRuntimeIdentifiers Include="linux-x64" />
         <IkvmImageRuntimeIdentifiers Include="linux-arm" />
         <IkvmImageRuntimeIdentifiers Include="linux-arm64" />
+        <IkvmImageRuntimeIdentifiers Include="osx-x64" />
     </ItemGroup>
 
     <Target Name="GetIkvmImageItemsForRuntimeIdentifier" Outputs="%(IkvmImageRuntimeIdentifiers.Identity)">

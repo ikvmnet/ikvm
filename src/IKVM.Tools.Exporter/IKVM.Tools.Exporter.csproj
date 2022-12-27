@@ -1,13 +1,13 @@
 ﻿<Project Sdk="Microsoft.NET.Sdk">
-    <Import Project="$(MSBuildThisFileDirectory)..\..\ikvm.deps.props" />
+    <Import Project="$(MSBuildThisFileDirectory)..\..\IKVM.deps.props" />
     
     <PropertyGroup>
         <TargetFrameworks>net461;netcoreapp3.1</TargetFrameworks>
-        <DefineConstants>$(DefineConstants);STUB_GENERATOR</DefineConstants>
+        <DefineConstants>$(DefineConstants);EXPORTER</DefineConstants>
     </PropertyGroup>
 
     <ItemGroup>
-        <PackageReference Include="Newtonsoft.Json" Version="13.0.1" />
+        <PackageReference Include="Newtonsoft.Json" Version="13.0.2" />
         <PackageReference Include="System.CommandLine" Version="2.0.0-beta4.22272.1" />
     </ItemGroup>
 
@@ -16,31 +16,31 @@
     </ItemGroup>
 
     <ItemGroup>
-        <Compile Include="..\IKVM.Runtime\Extensions\**\*.cs" LinkBase="runtime\Extensions" />
-        <Compile Include="..\IKVM.Runtime\Syntax\**\*.cs" LinkBase="runtime\Syntax" />
-        <Compile Include="..\IKVM.Runtime\InternalException.cs" LinkBase="runtime" />
-        <Compile Include="..\IKVM.Runtime\AssemblyClassLoader.cs" LinkBase="runtime" />
-        <Compile Include="..\IKVM.Runtime\Attributes\**\*.cs" LinkBase="runtime\Attributes" />
-        <Compile Include="..\IKVM.Runtime\ClassLoaderWrapper.cs" LinkBase="runtime" />
-        <Compile Include="..\IKVM.Runtime\GenericClassLoaderWrapper.cs" LinkBase="runtime" />
-        <Compile Include="..\IKVM.Runtime\CoreClasses.cs" LinkBase="runtime" />
-        <Compile Include="..\IKVM.Runtime\DotNetTypeWrapper.cs" LinkBase="runtime" />
-        <Compile Include="..\IKVM.Runtime\JavaException.cs" LinkBase="runtime" />
-        <Compile Include="..\IKVM.Runtime\MemberWrapper.cs" LinkBase="runtime" />
-        <Compile Include="..\IKVM.Runtime\profiler.cs" LinkBase="runtime" />
-        <Compile Include="..\IKVM.Runtime\ReflectUtil.cs" LinkBase="runtime" />
-        <Compile Include="..\IKVM.Runtime\tracer.cs" LinkBase="runtime" />
-        <Compile Include="..\IKVM.Runtime\Types.cs" LinkBase="runtime" />
-        <Compile Include="..\IKVM.Runtime\TypeWrapper.cs" LinkBase="runtime" />
-        <Compile Include="..\IKVM.Runtime\TypeWrapperFactory.cs" LinkBase="runtime" />
-        <Compile Include="..\IKVM.Runtime\vm.cs" LinkBase="runtime" />
-        <Compile Include="..\IKVM.Runtime\StubGen\**\*.cs" LinkBase="runtime\SubGen" />
-        <Compile Include="..\IKVM.Runtime\LoadMode.cs" LinkBase="runtime" />
-        <Compile Include="..\IKVM.Runtime\CodeGenOptions.cs" LinkBase="runtime" />
+        <Compile Include="..\IKVM.Runtime\Extensions\**\*.cs" LinkBase="IKVM.Runtime\Extensions" />
+        <Compile Include="..\IKVM.Runtime\Syntax\**\*.cs" LinkBase="IKVM.Runtime\Syntax" />
+        <Compile Include="..\IKVM.Runtime\InternalException.cs" LinkBase="IKVM.Runtime" />
+        <Compile Include="..\IKVM.Runtime\AssemblyClassLoader.cs" LinkBase="IKVM.Runtime" />
+        <Compile Include="..\IKVM.Runtime\Attributes\**\*.cs" LinkBase="IKVM.Runtime\Attributes" />
+        <Compile Include="..\IKVM.Runtime\ClassLoaderWrapper.cs" LinkBase="IKVM.Runtime" />
+        <Compile Include="..\IKVM.Runtime\GenericClassLoaderWrapper.cs" LinkBase="IKVM.Runtime" />
+        <Compile Include="..\IKVM.Runtime\CoreClasses.cs" LinkBase="IKVM.Runtime" />
+        <Compile Include="..\IKVM.Runtime\DotNetTypeWrapper.cs" LinkBase="IKVM.Runtime" />
+        <Compile Include="..\IKVM.Runtime\JavaException.cs" LinkBase="IKVM.Runtime" />
+        <Compile Include="..\IKVM.Runtime\MemberWrapper.cs" LinkBase="IKVM.Runtime" />
+        <Compile Include="..\IKVM.Runtime\profiler.cs" LinkBase="IKVM.Runtime" />
+        <Compile Include="..\IKVM.Runtime\ReflectUtil.cs" LinkBase="IKVM.Runtime" />
+        <Compile Include="..\IKVM.Runtime\tracer.cs" LinkBase="IKVM.Runtime" />
+        <Compile Include="..\IKVM.Runtime\Types.cs" LinkBase="IKVM.Runtime" />
+        <Compile Include="..\IKVM.Runtime\TypeWrapper.cs" LinkBase="IKVM.Runtime" />
+        <Compile Include="..\IKVM.Runtime\TypeWrapperFactory.cs" LinkBase="IKVM.Runtime" />
+        <Compile Include="..\IKVM.Runtime\vm.cs" LinkBase="IKVM.Runtime" />
+        <Compile Include="..\IKVM.Runtime\StubGen\**\*.cs" LinkBase="IKVM.Runtime\StubGen" />
+        <Compile Include="..\IKVM.Runtime\LoadMode.cs" LinkBase="IKVM.Runtime" />
+        <Compile Include="..\IKVM.Runtime\CodeGenOptions.cs" LinkBase="IKVM.Runtime" />
     </ItemGroup>
 
     <ItemGroup>
-        <Compile Include="..\ikvmc\IKVM\Internal\AssemblyResolver.cs" LinkBase="ikvmc\Internal" />
+        <Compile Include="..\IKVM.Tools.Importer\AssemblyResolver.cs" LinkBase="IKVM.Tools.Importer" />
     </ItemGroup>
 
 </Project>

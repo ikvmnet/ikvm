@@ -144,7 +144,7 @@ namespace IKVM.Internal
 								{
 									DecodePropertyAnnotation(classFile, annot);
 								}
-#if STATIC_COMPILER
+#if IMPORTER
 								else if(annot[1].Equals("Likvm/lang/Internal;"))
 								{
 									this.access_flags &= ~Modifiers.AccessMask;

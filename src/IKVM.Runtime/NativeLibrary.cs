@@ -109,7 +109,7 @@ namespace IKVM.Runtime
             else
                 throw new PlatformNotSupportedException();
 #else
-            return System.Runtime.InteropServices.NativeLibrary.TryLoad(path, out var h) ? h : 0;
+            return System.Runtime.InteropServices.NativeLibrary.TryLoad(path, typeof(NativeLibrary).Assembly, null, out var h) ? h : 0;
 #endif
         }
 

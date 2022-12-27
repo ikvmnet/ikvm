@@ -69,7 +69,7 @@ namespace IKVM.Java.Externs.java.io
 
 			public static void WriteFloat(byte[] buf, int offset, float value)
 			{
-#if !FIRST_PASS && !STATIC_COMPILER
+#if !FIRST_PASS && !IMPORTER
 				global::java.io.Bits.putFloat(buf, offset, value);
 #endif
 			}
@@ -82,7 +82,7 @@ namespace IKVM.Java.Externs.java.io
 
 			public static void WriteDouble(byte[] buf, int offset, double value)
 			{
-#if !FIRST_PASS && !STATIC_COMPILER
+#if !FIRST_PASS && !IMPORTER
 				global::java.io.Bits.putDouble(buf, offset, value);
 #endif
 			}
@@ -117,7 +117,7 @@ namespace IKVM.Java.Externs.java.io
 
 			public static float ReadFloat(byte[] buf, int offset)
 			{
-#if FIRST_PASS || STATIC_COMPILER
+#if FIRST_PASS || IMPORTER
 			return 0;
 #else
 				return global::java.lang.Float.intBitsToFloat(ReadInt(buf, offset));
@@ -133,7 +133,7 @@ namespace IKVM.Java.Externs.java.io
 
 			public static double ReadDouble(byte[] buf, int offset)
 			{
-#if FIRST_PASS || STATIC_COMPILER
+#if FIRST_PASS || IMPORTER
 			return 0;
 #else
 				return global::java.lang.Double.longBitsToDouble(ReadLong(buf, offset));

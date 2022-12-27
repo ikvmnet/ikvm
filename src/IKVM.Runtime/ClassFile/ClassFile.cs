@@ -50,7 +50,7 @@ namespace IKVM.Internal
 		private Field[] fields;
 		private Method[] methods;
 		private string sourceFile;
-#if STATIC_COMPILER
+#if IMPORTER
 		private string sourcePath;
 #endif
 		private string ikvmAssembly;
@@ -61,7 +61,7 @@ namespace IKVM.Internal
 		private BootstrapMethod[] bootstrapMethods;
 		private byte[] runtimeVisibleTypeAnnotations;
 
-#if STATIC_COMPILER
+#if IMPORTER
 		// This method parses just enough of the class file to obtain its name and
 		// determine if the class is a possible ikvmstub generated stub, it doesn't
 		// validate the class file structure, but it may throw a ClassFormatError if it
@@ -133,7 +133,7 @@ namespace IKVM.Internal
 				throw new ClassFormatError("{0}: {1}", x.GetType().Name, x.Message);
 			}
 		}
-#endif // STATIC_COMPILER
+#endif // IMPORTER
 
 		internal ClassFile(byte[] buf, int offset, int length, string inputClassName, ClassFileParseOptions options, object[] constantPoolPatches)
 		{
@@ -439,7 +439,7 @@ namespace IKVM.Internal
 							}
 							annotations = ReadAnnotations(br, this, utf8_cp);
 							break;
-#if STATIC_COMPILER
+#if IMPORTER
 						case "RuntimeInvisibleAnnotations":
 							if(majorVersion < 49)
 							{
@@ -562,7 +562,7 @@ namespace IKVM.Internal
 
 		private void PatchConstantPool(object[] constantPoolPatches, string[] utf8_cp, string inputClassName)
 		{
-#if !STATIC_COMPILER && !FIRST_PASS
+#if !IMPORTER && !FIRST_PASS
 			for (int i = 0; i < constantPoolPatches.Length; i++)
 			{
 				if (constantPoolPatches[i] != null)
@@ -1203,7 +1203,7 @@ namespace IKVM.Internal
 
 		internal string SourcePath
 		{
-#if STATIC_COMPILER
+#if IMPORTER
 			get { return sourcePath; }
 			set { sourcePath = value; }
 #else

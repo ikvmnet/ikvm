@@ -25,18 +25,16 @@ using System;
 using System.IO;
 using System.Collections.Generic;
 using System.Diagnostics;
+using System.Linq;
 using System.Threading;
-
-using FormatterServices = System.Runtime.Serialization.FormatterServices;
+using System.Runtime.CompilerServices;
+using System.Runtime.Serialization;
 
 using IKVM.Attributes;
+using IKVM.Runtime;
 using IKVM.Runtime.Syntax;
 
-using System.Runtime.CompilerServices;
-using IKVM.Runtime;
-using System.Linq;
-
-#if STATIC_COMPILER || STUB_GENERATOR
+#if IMPORTER || EXPORTER
 using IKVM.Reflection;
 
 using Type = IKVM.Reflection.Type;
@@ -44,6 +42,10 @@ using Type = IKVM.Reflection.Type;
 using IKVM.Runtime.Vfs;
 
 using System.Reflection;
+#endif
+
+#if IMPORTER
+using IKVM.Tools.Importer;
 #endif
 
 namespace IKVM.Internal
@@ -58,7 +60,7 @@ namespace IKVM.Internal
         /// </summary>
         static readonly ConditionalWeakTable<Assembly, AssemblyClassLoader> assemblyClassLoaders = new();
 
-#if !STATIC_COMPILER && !STUB_GENERATOR && !FIRST_PASS
+#if !IMPORTER && !EXPORTER && !FIRST_PASS
         static Dictionary<string, string> customClassLoaderRedirects;
 #endif
 
@@ -103,7 +105,7 @@ namespace IKVM.Internal
                     return FromAssembly(mainAssembly);
             }
 
-#if STATIC_COMPILER
+#if IMPORTER
 
 			if (JVM.CoreAssembly == null && CompilerClassLoader.IsCoreAssembly(assembly))
 			{
@@ -128,7 +130,7 @@ namespace IKVM.Internal
         AssemblyLoader assemblyLoader;
         List<string> references;
         AssemblyClassLoader[] delegates;
-#if !STATIC_COMPILER && !STUB_GENERATOR && !FIRST_PASS
+#if !IMPORTER && !EXPORTER && !FIRST_PASS
         JavaClassLoaderConstructionInProgress jclcip;
         java.security.ProtectionDomain protectionDomain;
         byte hasCustomClassLoader;  /* 0 = unknown, 1 = yes, 2 = no */
@@ -152,7 +154,7 @@ namespace IKVM.Internal
             bool hasDotNetModule;
             AssemblyName[] internalsVisibleTo;
             string[] jarList;
-#if !STATIC_COMPILER && !STUB_GENERATOR && !FIRST_PASS
+#if !IMPORTER && !EXPORTER && !FIRST_PASS
             sun.misc.URLClassPath urlClassPath;
 #endif
 
@@ -476,7 +478,7 @@ namespace IKVM.Internal
                 return false;
             }
 
-#if !STATIC_COMPILER && !STUB_GENERATOR && !FIRST_PASS
+#if !IMPORTER && !EXPORTER && !FIRST_PASS
 
             internal java.util.Enumeration FindResources(string name)
             {
@@ -519,7 +521,7 @@ namespace IKVM.Internal
             this.references = new(fixedReferences);
         }
 
-#if STATIC_COMPILER
+#if IMPORTER
 
 		internal static void PreloadExportedAssemblies(Assembly assembly)
 		{
@@ -636,7 +638,7 @@ namespace IKVM.Internal
 
             try
             {
-#if STATIC_COMPILER || STUB_GENERATOR
+#if IMPORTER || EXPORTER
 				return StaticCompiler.Load(name);
 #else
                 return Assembly.Load(name);
@@ -781,7 +783,7 @@ namespace IKVM.Internal
                 {
                     // this really shouldn't happen, it means that we have two different types in our assembly that both
                     // have the same Java name
-#if STATIC_COMPILER
+#if IMPORTER
 					throw new FatalCompilerErrorException(Message.AssemblyContainsDuplicateClassNames, type.FullName, wrapper.TypeAsTBD.FullName, wrapper.Name, type.Assembly.FullName);
 #else
                     string msg = $"\nType \"{type.FullName}\" and \"{wrapper.TypeAsTBD.FullName}\" both map to the same name \"{wrapper.Name}\".\n";
@@ -799,7 +801,7 @@ namespace IKVM.Internal
             if (tw != null)
                 return tw;
 
-#if !STATIC_COMPILER && !STUB_GENERATOR && !FIRST_PASS
+#if !IMPORTER && !EXPORTER && !FIRST_PASS
 
             while (hasCustomClassLoader != 2)
             {
@@ -857,7 +859,7 @@ namespace IKVM.Internal
 
         TypeWrapper LoadDynamic(string name)
         {
-#if !STATIC_COMPILER && !STUB_GENERATOR && !FIRST_PASS
+#if !IMPORTER && !EXPORTER && !FIRST_PASS
             var classFile = name.Replace('.', '/') + ".class";
             foreach (var res in GetBootstrapClassLoader().FindDelegateResources(classFile))
                 return res.Loader.DefineDynamic(name, res.URL);
@@ -869,7 +871,7 @@ namespace IKVM.Internal
             return null;
         }
 
-#if !STATIC_COMPILER && !STUB_GENERATOR && !FIRST_PASS
+#if !IMPORTER && !EXPORTER && !FIRST_PASS
 
         TypeWrapper DefineDynamic(string name, java.net.URL url)
         {
@@ -927,7 +929,7 @@ namespace IKVM.Internal
             return null;
         }
 
-#if !STATIC_COMPILER && !STUB_GENERATOR
+#if !IMPORTER && !EXPORTER
 
         static java.net.URL MakeResourceURL(Assembly asm, string name)
         {
@@ -1095,9 +1097,9 @@ namespace IKVM.Internal
                 yield return url;
         }
 
-#endif // !STATIC_COMPILER
+#endif // !IMPORTER
 
-#if !STATIC_COMPILER && !FIRST_PASS && !STUB_GENERATOR
+#if !IMPORTER && !FIRST_PASS && !EXPORTER
 
         private sealed class JavaClassLoaderConstructionInProgress
         {
@@ -1188,7 +1190,7 @@ namespace IKVM.Internal
             ClassLoaderWrapper other = friend.GetClassLoader();
             if (this == other)
             {
-#if STATIC_COMPILER || STUB_GENERATOR
+#if IMPORTER || EXPORTER
 				return true;
 #else
                 // we're OK if the type being accessed (wrapper) is a dynamic type
@@ -1198,7 +1200,7 @@ namespace IKVM.Internal
 #endif
             }
             AssemblyName otherName;
-#if STATIC_COMPILER
+#if IMPORTER
 			CompilerClassLoader ccl = other as CompilerClassLoader;
 			if (ccl == null)
 			{
@@ -1225,7 +1227,7 @@ namespace IKVM.Internal
             }
         }
 
-#if !STATIC_COMPILER && !STUB_GENERATOR
+#if !IMPORTER && !EXPORTER
 
         internal List<KeyValuePair<string, string[]>> GetPackageInfo()
         {
@@ -1242,7 +1244,7 @@ namespace IKVM.Internal
 
 #endif
 
-#if !STATIC_COMPILER && !FIRST_PASS && !STUB_GENERATOR
+#if !IMPORTER && !FIRST_PASS && !EXPORTER
 
         Type GetCustomClassLoaderType()
         {
@@ -1452,7 +1454,7 @@ namespace IKVM.Internal
 
         }
 
-#if !FIRST_PASS && !STATIC_COMPILER && !STUB_GENERATOR
+#if !FIRST_PASS && !IMPORTER && !EXPORTER
 
         internal override java.lang.ClassLoader GetJavaClassLoader()
         {

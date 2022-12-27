@@ -23,7 +23,7 @@
 */
 using System;
 
-#if STATIC_COMPILER || STUB_GENERATOR
+#if IMPORTER || EXPORTER
 using Type = IKVM.Reflection.Type;
 #endif
 
@@ -37,7 +37,7 @@ namespace IKVM.Attributes
 		private string name;
 		private Type remappedType;
 
-#if STUB_GENERATOR
+#if EXPORTER
 		public RemappedClassAttribute(string name, System.Type remappedType)
 		{
 

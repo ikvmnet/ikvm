@@ -24,7 +24,7 @@
 using System;
 using System.IO;
 using System.Collections.Generic;
-#if STUB_GENERATOR
+#if EXPORTER
 using IKVM.Reflection;
 using Type = IKVM.Reflection.Type;
 #else
@@ -269,7 +269,7 @@ namespace IKVM.StubGen
 
 		private static void AddAnnotations(ClassFileWriter writer, IAttributeOwner target, MemberInfo source)
 		{
-#if !FIRST_PASS && !STUB_GENERATOR
+#if !FIRST_PASS && !EXPORTER
 			if (source != null)
 			{
 				RuntimeVisibleAnnotationsAttribute attr = null;
@@ -295,7 +295,7 @@ namespace IKVM.StubGen
 
 		private static void AddParameterAnnotations(ClassFileWriter writer, FieldOrMethod target, MethodBase source)
 		{
-#if !FIRST_PASS && !STUB_GENERATOR
+#if !FIRST_PASS && !EXPORTER
 			if (source != null)
 			{
 				RuntimeVisibleParameterAnnotationsAttribute attr = null;
@@ -338,7 +338,7 @@ namespace IKVM.StubGen
 
 		private static void AddTypeAnnotations(ClassFileWriter writer, IAttributeOwner target, TypeWrapper tw, byte[] typeAnnotations)
 		{
-#if !FIRST_PASS && !STUB_GENERATOR
+#if !FIRST_PASS && !EXPORTER
 			if (typeAnnotations != null)
 			{
 				typeAnnotations = (byte[])typeAnnotations.Clone();
@@ -473,7 +473,7 @@ namespace IKVM.StubGen
 			return s;
 		}
 
-#if !FIRST_PASS && !STUB_GENERATOR
+#if !FIRST_PASS && !EXPORTER
 		private static object[] GetAnnotation(CustomAttributeData cad)
 		{
 			if (cad.ConstructorArguments.Count == 1 && cad.ConstructorArguments[0].ArgumentType == typeof(object[]) &&
@@ -576,7 +576,7 @@ namespace IKVM.StubGen
 
 		private static int GetObsoleteCount(MethodBase mb)
 		{
-#if STUB_GENERATOR
+#if EXPORTER
 			return mb.__GetCustomAttributes(JVM.Import(typeof(ObsoleteAttribute)), false).Count;
 #else
 			return mb.GetCustomAttributes(typeof(ObsoleteAttribute), false).Length;
@@ -585,7 +585,7 @@ namespace IKVM.StubGen
 
 		private static CustomAttributeData GetAnnotationDefault(MethodBase mb)
 		{
-#if STUB_GENERATOR
+#if EXPORTER
 			IList<CustomAttributeData> attr = CustomAttributeData.__GetCustomAttributes(mb, JVM.LoadType(typeof(AnnotationDefaultAttribute)), false);
 			return attr.Count == 1 ? attr[0] : null;
 #else
@@ -887,7 +887,7 @@ namespace IKVM.StubGen
 
 		private static void Warning(string message)
 		{
-#if STUB_GENERATOR
+#if EXPORTER
 			Console.Error.WriteLine(message);
 #endif
 		}

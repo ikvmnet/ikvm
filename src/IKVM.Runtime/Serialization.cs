@@ -25,10 +25,13 @@ using System;
 using System.Runtime.Serialization;
 using System.Security;
 using System.Security.Permissions;
+
 using IKVM.Runtime;
-#if STATIC_COMPILER
+#if IMPORTER
 using IKVM.Reflection;
 using IKVM.Reflection.Emit;
+using IKVM.Tools.Importer;
+
 using Type = IKVM.Reflection.Type;
 #else
 using System.Reflection;
@@ -37,9 +40,11 @@ using System.Reflection.Emit;
 
 namespace IKVM.Internal
 {
+
 	// This class deals with .NET serialization. When a class is Java serializable it will attempt to automagically make it .NET serializable.
 	static class Serialization
 	{
+
 		private static readonly CustomAttributeBuilder serializableAttribute = new CustomAttributeBuilder(JVM.Import(typeof(SerializableAttribute)).GetConstructor(Type.EmptyTypes), new object[0]);
 		private static readonly CustomAttributeBuilder securityCriticalAttribute = new CustomAttributeBuilder(JVM.Import(typeof(SecurityCriticalAttribute)).GetConstructor(Type.EmptyTypes), new object[0]);
 		private static readonly TypeWrapper iserializable = ClassLoaderWrapper.GetWrapperFromType(JVM.Import(typeof(ISerializable)));
@@ -127,7 +132,7 @@ namespace IKVM.Internal
 					{
 						MarkSerializable(typeBuilder);
 						AddGetObjectData(typeBuilder);
-#if STATIC_COMPILER
+#if IMPORTER
 						// because the base type can be a __WorkaroundBaseClass__, we may need to replace the constructor
 						baseCtor = ((AotTypeWrapper)wrapper).ReplaceMethodWrapper(baseCtor);
 #endif

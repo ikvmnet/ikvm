@@ -24,7 +24,7 @@
 #define CHECK_INVARIANTS
 using System;
 using System.Collections.Generic;
-#if STATIC_COMPILER
+#if IMPORTER
 using IKVM.Reflection;
 using IKVM.Reflection.Emit;
 using Type = IKVM.Reflection.Type;
@@ -49,7 +49,7 @@ namespace IKVM.Internal
 		private static readonly bool experimentalOptimizations = JVM.SafeGetEnvironmentVariable("IKVM_EXPERIMENTAL_OPTIMIZATIONS") != null;
 		private static MethodInfo memoryBarrier;
 		private ILGenerator ilgen_real;
-#if !STATIC_COMPILER
+#if !IMPORTER
 		private bool inFinally;
 		private Stack<bool> exceptionStack = new Stack<bool>();
 #endif
@@ -235,7 +235,7 @@ namespace IKVM.Internal
 						case CodeType.BeginFaultBlock:
 						case CodeType.BeginFinallyBlock:
 						case CodeType.EndExceptionBlock:
-#if STATIC_COMPILER
+#if IMPORTER
 							return 0;
 #else
 							if ((flags & CodeTypeFlags.EndFaultOrFinally) != 0)
@@ -401,7 +401,7 @@ namespace IKVM.Internal
 			return new CodeEmitter(mb.GetILGenerator(), mb.DeclaringType);
 		}
 
-#if !STATIC_COMPILER
+#if !IMPORTER
 		internal static CodeEmitter Create(DynamicMethod dm)
 		{
 			return new CodeEmitter(dm.GetILGenerator(), null);
@@ -410,7 +410,7 @@ namespace IKVM.Internal
 
 		private CodeEmitter(ILGenerator ilgen, Type declaringType)
 		{
-#if STATIC_COMPILER
+#if IMPORTER
 			ilgen.__DisableExceptionBlockAssistance();
 #endif
 			this.ilgen_real = ilgen;
@@ -469,7 +469,7 @@ namespace IKVM.Internal
 					break;
 				case CodeType.EndExceptionBlock:
 					ilgen_real.EndExceptionBlock();
-#if !STATIC_COMPILER
+#if !IMPORTER
 					// HACK to keep the verifier happy we need this bogus jump
 					// (because of the bogus Leave that Ref.Emit ends the try block with)
 					ilgen_real.Emit(OpCodes.Br_S, (sbyte)-2);
@@ -2232,7 +2232,7 @@ namespace IKVM.Internal
 				}
 			}
 
-#if STATIC_COMPILER
+#if IMPORTER
 			OptimizeEncodings();
 			OptimizeBranchSizes();
 #endif
@@ -2242,7 +2242,7 @@ namespace IKVM.Internal
 			for (int i = 0; i < code.Count; i++)
 			{
 				code[i].RealEmit(ilOffset, this, ref lineNumber);
-#if STATIC_COMPILER || NET_4_0
+#if IMPORTER || NET_4_0
 				ilOffset = ilgen_real.ILOffset;
 #else
 				ilOffset += code[i].Size;
@@ -2382,7 +2382,7 @@ namespace IKVM.Internal
 
 		internal void BeginExceptionBlock()
 		{
-#if !STATIC_COMPILER
+#if !IMPORTER
 			exceptionStack.Push(inFinally);
 			inFinally = false;
 #endif
@@ -2391,7 +2391,7 @@ namespace IKVM.Internal
 
 		internal void BeginFaultBlock()
 		{
-#if !STATIC_COMPILER
+#if !IMPORTER
 			inFinally = true;
 #endif
 			EmitPseudoOpCode(CodeType.BeginFaultBlock, null);
@@ -2399,7 +2399,7 @@ namespace IKVM.Internal
 
 		internal void BeginFinallyBlock()
 		{
-#if !STATIC_COMPILER
+#if !IMPORTER
 			inFinally = true;
 #endif
 			EmitPseudoOpCode(CodeType.BeginFinallyBlock, null);
@@ -2609,7 +2609,7 @@ namespace IKVM.Internal
 
 		internal void EndExceptionBlock()
 		{
-#if STATIC_COMPILER
+#if IMPORTER
 			EmitPseudoOpCode(CodeType.EndExceptionBlock, null);
 #else
 			EmitPseudoOpCode(CodeType.EndExceptionBlock, inFinally ? CodeTypeFlags.EndFaultOrFinally : CodeTypeFlags.None);
@@ -2652,7 +2652,7 @@ namespace IKVM.Internal
 			return linenums == null ? null : linenums.ToArray();
 		}
 
-#if STATIC_COMPILER
+#if IMPORTER
 		internal void EmitLineNumberTable(MethodBuilder mb)
 		{
 			if(linenums != null)
@@ -2660,7 +2660,7 @@ namespace IKVM.Internal
 				AttributeHelper.SetLineNumberTable(mb, linenums);
 			}
 		}
-#endif // STATIC_COMPILER
+#endif // IMPORTER
 
 		internal void EmitThrow(string dottedClassName)
 		{

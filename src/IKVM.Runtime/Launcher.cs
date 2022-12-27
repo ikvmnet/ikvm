@@ -102,7 +102,7 @@ namespace IKVM.Runtime
         /// <param name="properties"></param>
         static void SetProperties(IDictionary properties)
         {
-#if FIRST_PASS || STATIC_COMPILER
+#if FIRST_PASS || IMPORTER
             throw new NotImplementedException();
 #else
             if (properties is null)
@@ -117,7 +117,7 @@ namespace IKVM.Runtime
         /// </summary>
         static void EnterMainThread()
         {
-#if FIRST_PASS || STATIC_COMPILER
+#if FIRST_PASS || IMPORTER
             throw new NotImplementedException();
 #else
             if (Thread.CurrentThread.Name == null)
@@ -153,7 +153,7 @@ namespace IKVM.Runtime
         /// </summary>
         static void ExitMainThread()
         {
-#if FIRST_PASS || STATIC_COMPILER
+#if FIRST_PASS || IMPORTER
             throw new NotImplementedException();
 #else
             // FXBUG when the main thread ends, it doesn't actually die, it stays around to manage the lifetime
@@ -189,7 +189,7 @@ namespace IKVM.Runtime
         /// </summary>
         static void PrintVersion()
         {
-#if FIRST_PASS || STATIC_COMPILER
+#if FIRST_PASS || IMPORTER
             throw new NotImplementedException();
 #else
             Console.WriteLine(GetVersionAndCopyrightInfo());
@@ -206,7 +206,7 @@ namespace IKVM.Runtime
         /// <param name="asm"></param>
         static void AddBootClassPathAssembly(Assembly assembly)
         {
-#if FIRST_PASS || STATIC_COMPILER
+#if FIRST_PASS || IMPORTER
             throw new NotImplementedException();
 #else
             ClassLoaderWrapper.GetBootstrapClassLoader().AddDelegate(AssemblyClassLoader.FromAssembly(assembly));
@@ -238,7 +238,7 @@ namespace IKVM.Runtime
             if (args is null)
                 throw new ArgumentNullException(nameof(args));
 
-#if FIRST_PASS || STATIC_COMPILER
+#if FIRST_PASS || IMPORTER
             throw new NotImplementedException();
 #else
             HandleDebugTrace();
