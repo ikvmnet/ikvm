@@ -622,24 +622,31 @@ namespace IKVM.Java.Externs.sun.reflect
                     il.MarkLabel(callLabel);
                     il.BeginExceptionBlock();
 
-                    // load either self or null; for value types and ghosts, load reference to instance
+                    // load either a reference to a value type, or the object reference
                     if (self != null && (mw.DeclaringType.IsNonPrimitiveValueType || mw.DeclaringType.IsGhost))
                         il.Emit(OpCodes.Ldloca, self);
                     else if (self != null)
                         il.Emit(OpCodes.Ldloc, self);
 
                     // load the remainder of the arguments
-                    // first argument of non-static method may be 
                     for (var i = 0; i < args.Length; i++)
                         il.Emit(OpCodes.Ldloc, args[i]);
 
                     // method requires caller ID passed as final argument
                     if (mw.HasCallerID)
-                        il.Emit(OpCodes.Ldarg_2);
+                        il.EmitLdarg(2);
 
-                    // replace the self argument with the bound delegate instace
+                    // load either a reference to a value type, or the object reference
+                    if (self != null && (mw.DeclaringType.IsNonPrimitiveValueType || mw.DeclaringType.IsGhost))
+                        il.Emit(OpCodes.Ldloca, self);
+                    else if (self != null)
+                        il.Emit(OpCodes.Ldloc, self);
+
+                    // obtain a method pointer to the method
                     var pt = mw.GetMethod().GetParameters().Select(i => i.ParameterType).ToArray();
-                    il.Emit(OpCodes.Ldftn, mw.GetMethod());
+                    il.Emit(self == null ? OpCodes.Ldftn : OpCodes.Ldvirtftn, mw.GetMethod());
+
+                    // calli instruction to invoke the method
                     il.EmitCalli(OpCodes.Calli, self == null ? CallingConventions.Standard : CallingConventions.HasThis, mw.ReturnType.TypeAsSignatureType, pt, null);
 
                     // convert and store return value
