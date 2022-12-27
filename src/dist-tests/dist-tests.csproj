@@ -1,0 +1,52 @@
+﻿<Project Sdk="Microsoft.Build.NoTargets/3.5.6">
+    <PropertyGroup>
+        <TargetFramework>netstandard2.0</TargetFramework>
+        <AppendTargetFrameworkToOutputPath>false</AppendTargetFrameworkToOutputPath>
+        <AppendRuntimeIdentifierToOutputPath>false</AppendRuntimeIdentifierToOutputPath>
+        <ErrorOnDuplicatePublishOutputFiles>false</ErrorOnDuplicatePublishOutputFiles>
+    </PropertyGroup>
+
+    <ItemGroup>
+        <TestTarget Include="IKVM.Tests|net461" ProjectName="IKVM.Tests" TargetFramework="net461" />
+        <TestTarget Include="IKVM.Tests|netcoreapp3.1" ProjectName="IKVM.Tests" TargetFramework="netcoreapp3.1" />
+        <TestTarget Include="IKVM.Tests|net6.0" ProjectName="IKVM.Tests" TargetFramework="net6.0" />
+        <TestTarget Include="ikvmc.Tests|net461" ProjectName="ikvmc.Tests" TargetFramework="net461" />
+        <TestTarget Include="ikvmc.Tests|netcoreapp3.1" ProjectName="ikvmc.Tests" TargetFramework="netcoreapp3.1" />
+        <TestTarget Include="IKVM.Tools.Tests|net461" ProjectName="IKVM.Tools.Tests" TargetFramework="net461" />
+        <TestTarget Include="IKVM.Tools.Tests|netcoreapp3.1" ProjectName="IKVM.Tools.Tests" TargetFramework="netcoreapp3.1" />
+        <TestTarget Include="IKVM.Tools.Tests|net6.0" ProjectName="IKVM.Tools.Tests" TargetFramework="net6.0" />
+        <TestTarget Include="IKVM.Tools.Exporter.Tests|net461" ProjectName="IKVM.Tools.Exporter.Tests" TargetFramework="net461" />
+        <TestTarget Include="IKVM.Tools.Exporter.Tests|netcoreapp3.1" ProjectName="IKVM.Tools.Exporter.Tests" TargetFramework="netcoreapp3.1" />
+        <TestTarget Include="IKVM.MSBuild.Tasks.Tests|net472" ProjectName="IKVM.MSBuild.Tasks.Tests" TargetFramework="net472" />
+        <TestTarget Include="IKVM.MSBuild.Tasks.Tests|netcoreapp3.1" ProjectName="IKVM.MSBuild.Tasks.Tests" TargetFramework="netcoreapp3.1" />
+        <TestTarget Include="IKVM.MSBuild.Tasks.Tests|net6.0" ProjectName="IKVM.MSBuild.Tasks.Tests" TargetFramework="net6.0" />
+        <TestTarget Include="IKVM.MSBuild.Tests|net6.0" ProjectName="IKVM.MSBuild.Tests" TargetFramework="net6.0" />
+        <TestTarget Include="IKVM.NET.Sdk.Tests|net6.0" ProjectName="IKVM.NET.Sdk.Tests" TargetFramework="net6.0" />
+        <TestTarget Include="IKVM.JTReg.TestAdapter.Tests|net461" ProjectName="IKVM.JTReg.TestAdapter.Tests" TargetFramework="net461" />
+        <TestTarget Include="IKVM.JTReg.TestAdapter.Tests|netcoreapp3.1" ProjectName="IKVM.JTReg.TestAdapter.Tests" TargetFramework="netcoreapp3.1" />
+        <TestTarget Include="IKVM.JTReg.TestAdapter.Tests|net6.0" ProjectName="IKVM.JTReg.TestAdapter.Tests" TargetFramework="net6.0" />
+        <TestTarget Include="IKVM.OpenJDK.Tests|net461" ProjectName="IKVM.OpenJDK.Tests" TargetFramework="net461" />
+        <TestTarget Include="IKVM.OpenJDK.Tests|netcoreapp3.1" ProjectName="IKVM.OpenJDK.Tests" TargetFramework="netcoreapp3.1" />
+    </ItemGroup>
+
+    <!-- Runs once per TFM/RID combination to generate individual output. -->
+    <Target Name="GetCopyToOutputDirectoryItemsByTestTarget" BeforeTargets="BeforeBuild" Inputs="@(TestTarget)" Outputs="%(Identity)\null">
+
+        <!-- batch values to properties -->
+        <PropertyGroup>
+            <_ProjectName>%(TestTarget.ProjectName)</_ProjectName>
+            <_ProjectFile>%(TestTarget.ProjectFile)</_ProjectFile>
+            <_ProjectFile Condition=" '$(_ProjectFile)' == '' ">..\$(_ProjectName)\$(_ProjectName).csproj</_ProjectFile>
+            <_TargetFramework>%(TestTarget.TargetFramework)</_TargetFramework>
+        </PropertyGroup>
+
+        <!-- output for the TFM/RID -->
+        <ItemGroup>
+            <PublishProjectReference Include="$(_ProjectFile)">
+                <SetTargetFramework>TargetFramework=$(_TargetFramework)</SetTargetFramework>
+                <ProjectTargetPath>$(_ProjectName)\$(_TargetFramework)</ProjectTargetPath>
+            </PublishProjectReference>
+        </ItemGroup>
+    </Target>
+
+</Project>

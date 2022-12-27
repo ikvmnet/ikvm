@@ -1374,15 +1374,10 @@ namespace IKVM.Internal
             }
         }
 
-        internal IntPtr[] GetNativeLibraries()
+        internal nint[] GetNativeLibraries()
         {
             lock (this)
-            {
-                if (nativeLibraries == null)
-                    return new IntPtr[0];
-
-                return nativeLibraries.ToArray();
-            }
+                return nativeLibraries == null ? Array.Empty<nint>() : nativeLibraries.ToArray();
         }
 
 #if !STATIC_COMPILER && !FIRST_PASS && !STUB_GENERATOR

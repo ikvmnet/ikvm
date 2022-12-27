@@ -1,10 +1,13 @@
 ﻿<Project>
     <PropertyGroup>
         <OpenJdkDir>$(MSBuildThisFileDirectory)openjdk</OpenJdkDir>
+        <OpenJdkVersion>OpenJDK 8u45 b37</OpenJdkVersion>
+        <OpenJdkFullVersion>1.8.0_45-b37</OpenJdkFullVersion>
+        <OpenJdkVendor>Oracle</OpenJdkVendor>
         <OpenJdkImplementationVersion>1.8.0</OpenJdkImplementationVersion>
+        <OpenJdkImplementationVendor>Oracle Corporation</OpenJdkImplementationVendor>
         <OpenJdkSpecificationVersion>1.8</OpenJdkSpecificationVersion>
-        <OpenJdkFullVersion>1.8.0_45-b14</OpenJdkFullVersion>
-        <OpenJdkVersion>OpenJDK 8u45 b14</OpenJdkVersion>
+        <OpenJdkSpecificationVendor>Oracle Corporation</OpenJdkSpecificationVendor>
     </PropertyGroup>
 
     <ItemDefinitionGroup>
@@ -2305,6 +2308,7 @@
         <OpenJdkSource Include="$(OpenJdkDir)\build\linux-x86_64-normal-server-release\langtools\gensrc\com\sun\tools\jdeps\resources\jdeps_ja.java" />
         <OpenJdkSource Include="$(OpenJdkDir)\build\linux-x86_64-normal-server-release\langtools\gensrc\com\sun\tools\jdeps\resources\jdeps_zh_CN.java" />
         <OpenJdkSource Include="$(OpenJdkDir)\build\linux-x86_64-normal-server-release\langtools\gensrc\com\sun\tools\jdeps\resources\version.java" />
+
         <OpenJdkSource Include="$(OpenJdkDir)\corba\src\share\classes\com\sun\corba\se\impl\activation\CommandHandler.java" />
         <OpenJdkSource Include="$(OpenJdkDir)\corba\src\share\classes\com\sun\corba\se\impl\activation\NameServiceStartThread.java" />
         <OpenJdkSource Include="$(OpenJdkDir)\corba\src\share\classes\com\sun\corba\se\impl\activation\ORBD.java" />
@@ -10091,84 +10095,7 @@
         <OpenJdkSource Include="$(OpenJdkDir)\jdk\src\share\classes\java\math\package-info.java" />
         <OpenJdkSource Include="$(OpenJdkDir)\jdk\src\share\classes\java\math\RoundingMode.java" />
         <OpenJdkSource Include="$(OpenJdkDir)\jdk\src\share\classes\java\math\SignedMutableBigInteger.java" />
-        <OpenJdkSource Include="$(OpenJdkDir)\jdk\src\share\classes\java\net\AbstractPlainDatagramSocketImpl.java" />
-        <OpenJdkSource Include="$(OpenJdkDir)\jdk\src\share\classes\java\net\AbstractPlainSocketImpl.java" />
-        <OpenJdkSource Include="$(OpenJdkDir)\jdk\src\share\classes\java\net\Authenticator.java" />
-        <OpenJdkSource Include="$(OpenJdkDir)\jdk\src\share\classes\java\net\BindException.java" />
-        <OpenJdkSource Include="$(OpenJdkDir)\jdk\src\share\classes\java\net\CacheRequest.java" />
-        <OpenJdkSource Include="$(OpenJdkDir)\jdk\src\share\classes\java\net\CacheResponse.java" />
-        <OpenJdkSource Include="$(OpenJdkDir)\jdk\src\share\classes\java\net\ConnectException.java" />
-        <OpenJdkSource Include="$(OpenJdkDir)\jdk\src\share\classes\java\net\ContentHandler.java" />
-        <OpenJdkSource Include="$(OpenJdkDir)\jdk\src\share\classes\java\net\ContentHandlerFactory.java" />
-        <OpenJdkSource Include="$(OpenJdkDir)\jdk\src\share\classes\java\net\CookieHandler.java" />
-        <OpenJdkSource Include="$(OpenJdkDir)\jdk\src\share\classes\java\net\CookieManager.java" />
-        <OpenJdkSource Include="$(OpenJdkDir)\jdk\src\share\classes\java\net\CookiePolicy.java" />
-        <OpenJdkSource Include="$(OpenJdkDir)\jdk\src\share\classes\java\net\CookieStore.java" />
-        <OpenJdkSource Include="$(OpenJdkDir)\jdk\src\share\classes\java\net\DatagramPacket.java" />
-        <OpenJdkSource Include="$(OpenJdkDir)\jdk\src\share\classes\java\net\DatagramSocket.java" />
-        <OpenJdkSource Include="$(OpenJdkDir)\jdk\src\share\classes\java\net\DatagramSocketImpl.java" />
-        <OpenJdkSource Include="$(OpenJdkDir)\jdk\src\share\classes\java\net\DatagramSocketImplFactory.java" />
-        <OpenJdkSource Include="$(OpenJdkDir)\jdk\src\share\classes\java\net\FileNameMap.java" />
-        <OpenJdkSource Include="$(OpenJdkDir)\jdk\src\share\classes\java\net\HostPortrange.java" />
-        <OpenJdkSource Include="$(OpenJdkDir)\jdk\src\share\classes\java\net\HttpConnectSocketImpl.java" />
-        <OpenJdkSource Include="$(OpenJdkDir)\jdk\src\share\classes\java\net\HttpCookie.java" />
-        <OpenJdkSource Include="$(OpenJdkDir)\jdk\src\share\classes\java\net\HttpRetryException.java" />
-        <OpenJdkSource Include="$(OpenJdkDir)\jdk\src\share\classes\java\net\HttpURLConnection.java" />
-        <OpenJdkSource Include="$(OpenJdkDir)\jdk\src\share\classes\java\net\IDN.java" />
-        <OpenJdkSource Include="$(OpenJdkDir)\jdk\src\share\classes\java\net\Inet4Address.java" />
-        <OpenJdkSource Include="$(OpenJdkDir)\jdk\src\share\classes\java\net\Inet4AddressImpl.java" />
-        <OpenJdkSource Include="$(OpenJdkDir)\jdk\src\share\classes\java\net\Inet6Address.java" />
-        <OpenJdkSource Include="$(OpenJdkDir)\jdk\src\share\classes\java\net\Inet6AddressImpl.java" />
-        <OpenJdkSource Include="$(OpenJdkDir)\jdk\src\share\classes\java\net\InetAddress.java" />
-        <OpenJdkSource Include="$(OpenJdkDir)\jdk\src\share\classes\java\net\InetAddressContainer.java" />
-        <OpenJdkSource Include="$(OpenJdkDir)\jdk\src\share\classes\java\net\InetAddressImpl.java" />
-        <OpenJdkSource Include="$(OpenJdkDir)\jdk\src\share\classes\java\net\InetSocketAddress.java" />
-        <OpenJdkSource Include="$(OpenJdkDir)\jdk\src\share\classes\java\net\InMemoryCookieStore.java" />
-        <OpenJdkSource Include="$(OpenJdkDir)\jdk\src\share\classes\java\net\InterfaceAddress.java" />
-        <OpenJdkSource Include="$(OpenJdkDir)\jdk\src\share\classes\java\net\JarURLConnection.java" />
-        <OpenJdkSource Include="$(OpenJdkDir)\jdk\src\share\classes\java\net\MalformedURLException.java" />
-        <OpenJdkSource Include="$(OpenJdkDir)\jdk\src\share\classes\java\net\MulticastSocket.java" />
-        <OpenJdkSource Include="$(OpenJdkDir)\jdk\src\share\classes\java\net\NetPermission.java" />
-        <OpenJdkSource Include="$(OpenJdkDir)\jdk\src\share\classes\java\net\NetworkInterface.java" />
-        <OpenJdkSource Include="$(OpenJdkDir)\jdk\src\share\classes\java\net\NoRouteToHostException.java" />
-        <OpenJdkSource Include="$(OpenJdkDir)\jdk\src\share\classes\java\net\PasswordAuthentication.java" />
-        <OpenJdkSource Include="$(OpenJdkDir)\jdk\src\share\classes\java\net\PortUnreachableException.java" />
-        <OpenJdkSource Include="$(OpenJdkDir)\jdk\src\share\classes\java\net\ProtocolException.java" />
-        <OpenJdkSource Include="$(OpenJdkDir)\jdk\src\share\classes\java\net\ProtocolFamily.java" />
-        <OpenJdkSource Include="$(OpenJdkDir)\jdk\src\share\classes\java\net\Proxy.java" />
-        <OpenJdkSource Include="$(OpenJdkDir)\jdk\src\share\classes\java\net\ProxySelector.java" />
-        <OpenJdkSource Include="$(OpenJdkDir)\jdk\src\share\classes\java\net\ResponseCache.java" />
-        <OpenJdkSource Include="$(OpenJdkDir)\jdk\src\share\classes\java\net\SdpSocketImpl.java" />
-        <OpenJdkSource Include="$(OpenJdkDir)\jdk\src\share\classes\java\net\SecureCacheResponse.java" />
-        <OpenJdkSource Include="$(OpenJdkDir)\jdk\src\share\classes\java\net\ServerSocket.java" />
-        <OpenJdkSource Include="$(OpenJdkDir)\jdk\src\share\classes\java\net\Socket.java" />
-        <OpenJdkSource Include="$(OpenJdkDir)\jdk\src\share\classes\java\net\SocketAddress.java" />
-        <OpenJdkSource Include="$(OpenJdkDir)\jdk\src\share\classes\java\net\SocketException.java" />
-        <OpenJdkSource Include="$(OpenJdkDir)\jdk\src\share\classes\java\net\SocketImpl.java" />
-        <OpenJdkSource Include="$(OpenJdkDir)\jdk\src\share\classes\java\net\SocketImplFactory.java" />
-        <OpenJdkSource Include="$(OpenJdkDir)\jdk\src\share\classes\java\net\SocketInputStream.java" />
-        <OpenJdkSource Include="$(OpenJdkDir)\jdk\src\share\classes\java\net\SocketOption.java" />
-        <OpenJdkSource Include="$(OpenJdkDir)\jdk\src\share\classes\java\net\SocketOptions.java" />
-        <OpenJdkSource Include="$(OpenJdkDir)\jdk\src\share\classes\java\net\SocketOutputStream.java" />
-        <OpenJdkSource Include="$(OpenJdkDir)\jdk\src\share\classes\java\net\SocketPermission.java" />
-        <OpenJdkSource Include="$(OpenJdkDir)\jdk\src\share\classes\java\net\SocketSecrets.java" />
-        <OpenJdkSource Include="$(OpenJdkDir)\jdk\src\share\classes\java\net\SocketTimeoutException.java" />
-        <OpenJdkSource Include="$(OpenJdkDir)\jdk\src\share\classes\java\net\SocksConsts.java" />
-        <OpenJdkSource Include="$(OpenJdkDir)\jdk\src\share\classes\java\net\SocksSocketImpl.java" />
-        <OpenJdkSource Include="$(OpenJdkDir)\jdk\src\share\classes\java\net\StandardProtocolFamily.java" />
-        <OpenJdkSource Include="$(OpenJdkDir)\jdk\src\share\classes\java\net\StandardSocketOptions.java" />
-        <OpenJdkSource Include="$(OpenJdkDir)\jdk\src\share\classes\java\net\UnknownHostException.java" />
-        <OpenJdkSource Include="$(OpenJdkDir)\jdk\src\share\classes\java\net\UnknownServiceException.java" />
-        <OpenJdkSource Include="$(OpenJdkDir)\jdk\src\share\classes\java\net\URI.java" />
-        <OpenJdkSource Include="$(OpenJdkDir)\jdk\src\share\classes\java\net\URISyntaxException.java" />
-        <OpenJdkSource Include="$(OpenJdkDir)\jdk\src\share\classes\java\net\URL.java" />
-        <OpenJdkSource Include="$(OpenJdkDir)\jdk\src\share\classes\java\net\URLClassLoader.java" />
-        <OpenJdkSource Include="$(OpenJdkDir)\jdk\src\share\classes\java\net\URLConnection.java" />
-        <OpenJdkSource Include="$(OpenJdkDir)\jdk\src\share\classes\java\net\URLDecoder.java" />
-        <OpenJdkSource Include="$(OpenJdkDir)\jdk\src\share\classes\java\net\URLEncoder.java" />
-        <OpenJdkSource Include="$(OpenJdkDir)\jdk\src\share\classes\java\net\URLPermission.java" />
-        <OpenJdkSource Include="$(OpenJdkDir)\jdk\src\share\classes\java\net\URLStreamHandler.java" />
-        <OpenJdkSource Include="$(OpenJdkDir)\jdk\src\share\classes\java\net\URLStreamHandlerFactory.java" />
+        <OpenJdkSource Include="$(OpenJdkDir)\jdk\src\share\classes\java\net\**\*.java" />
         <OpenJdkSource Include="$(OpenJdkDir)\jdk\src\share\classes\java\nio\Buffer.java" />
         <OpenJdkSource Include="$(OpenJdkDir)\jdk\src\share\classes\java\nio\ByteOrder.java" />
         <OpenJdkSource Include="$(OpenJdkDir)\jdk\src\share\classes\java\nio\channels\AsynchronousByteChannel.java" />
@@ -12669,11 +12596,7 @@
         <OpenJdkSource Include="$(OpenJdkDir)\jdk\src\share\classes\jdk\internal\util\xml\SAXParser.java" />
         <OpenJdkSource Include="$(OpenJdkDir)\jdk\src\share\classes\jdk\internal\util\xml\XMLStreamException.java" />
         <OpenJdkSource Include="$(OpenJdkDir)\jdk\src\share\classes\jdk\internal\util\xml\XMLStreamWriter.java" />
-        <OpenJdkSource Include="$(OpenJdkDir)\jdk\src\share\classes\jdk\net\ExtendedSocketOptions.java" />
-        <OpenJdkSource Include="$(OpenJdkDir)\jdk\src\share\classes\jdk\net\NetworkPermission.java" />
-        <OpenJdkSource Include="$(OpenJdkDir)\jdk\src\share\classes\jdk\net\package-info.java" />
-        <OpenJdkSource Include="$(OpenJdkDir)\jdk\src\share\classes\jdk\net\SocketFlow.java" />
-        <OpenJdkSource Include="$(OpenJdkDir)\jdk\src\share\classes\jdk\net\Sockets.java" />
+        <OpenJdkSource Include="$(OpenJdkDir)\jdk\src\share\classes\jdk\net\**\*.java" />
         <OpenJdkSource Include="$(OpenJdkDir)\jdk\src\share\classes\org\ietf\jgss\ChannelBinding.java" />
         <OpenJdkSource Include="$(OpenJdkDir)\jdk\src\share\classes\org\ietf\jgss\GSSContext.java" />
         <OpenJdkSource Include="$(OpenJdkDir)\jdk\src\share\classes\org\ietf\jgss\GSSCredential.java" />
@@ -14691,7 +14614,7 @@
         <OpenJdkSource Include="$(OpenJdkDir)\jdk\src\windows\classes\java\io\WinNTFileSystem.java" />
         <OpenJdkSource Include="$(OpenJdkDir)\jdk\src\windows\classes\java\lang\ProcessEnvironment.java" />
         <OpenJdkSource Include="$(OpenJdkDir)\jdk\src\windows\classes\java\lang\Terminator.java" />
-        <OpenJdkSource Include="$(OpenJdkDir)\jdk\src\windows\classes\java\net\DefaultInterface.java" />
+        <OpenJdkSource Include="$(OpenJdkDir)\jdk\src\solaris\classes\java\net\**\*.java" />
         <OpenJdkSource Include="$(OpenJdkDir)\jdk\src\windows\classes\java\util\prefs\WindowsPreferences.java" />
         <OpenJdkSource Include="$(OpenJdkDir)\jdk\src\windows\classes\java\util\prefs\WindowsPreferencesFactory.java" />
         <OpenJdkSource Include="$(OpenJdkDir)\jdk\src\windows\classes\sun\awt\Win32ColorModel24.java" />
@@ -15951,59 +15874,29 @@
     </ItemGroup>
 
     <ItemGroup>
-        <!-- OpenJDK resolves these from resources at runtime -->
+        <!-- Include standard resources. -->
+        <OpenJdkResource Include="$(OpenJdkDir)\nashorn\src\**\*" Exclude="$(OpenJdkDir)\nashorn\src\**\_*;$(OpenJdkDir)\nashorn\src\**\*.java;$(OpenJdkDir)\nashorn\src\**\*.class" ResourcePath="%(RecursiveDir)%(Filename)%(Extension)" />
+        <OpenJdkResource Include="$(OpenJdkDir)\corba\src\share\classes\**\*" Exclude="$(OpenJdkDir)\corba\src\share\classes\**\_*;$(OpenJdkDir)\corba\src\share\classes\**\*.java;$(OpenJdkDir)\corba\src\share\classes\**\*.class" ResourcePath="%(RecursiveDir)%(Filename)%(Extension)" />
+        <OpenJdkResource Include="$(OpenJdkDir)\jdk\src\share\classes\**\*" Exclude="$(OpenJdkDir)\jdk\src\share\classes\**\_*;$(OpenJdkDir)\jdk\src\share\classes\**\*.java;$(OpenJdkDir)\jdk\src\share\classes\**\*.class" ResourcePath="%(RecursiveDir)%(Filename)%(Extension)" />
+        <OpenJdkResource Include="$(OpenJdkDir)\jaxp\src\**\*" Exclude="$(OpenJdkDir)\jaxp\src\**\_*;$(OpenJdkDir)\jaxp\src\**\*.java;$(OpenJdkDir)\jaxp\src\**\*.class" ResourcePath="%(RecursiveDir)%(Filename)%(Extension)" />
+        <OpenJdkResource Include="$(OpenJdkDir)\jaxws\src\share\jaf_classes\**\*" Exclude="$(OpenJdkDir)\jaxws\src\share\jaf_classes\**\_*;$(OpenJdkDir)\jaxws\src\share\jaf_classes\**\*.java;$(OpenJdkDir)\jaxws\src\share\jaf_classes\**\*.class" ResourcePath="%(RecursiveDir)%(Filename)%(Extension)" />
+        <OpenJdkResource Include="$(OpenJdkDir)\jaxws\src\share\jaxws_classes\**\*" Exclude="$(OpenJdkDir)\jaxws\src\share\jaxws_classes\**\_*;$(OpenJdkDir)\jaxws\src\share\jaxws_classes\**\*.java;$(OpenJdkDir)\jaxws\src\share\jaxws_classes\**\*.class" ResourcePath="%(RecursiveDir)%(Filename)%(Extension)" />
+        <OpenJdkResource Include="$(OpenJdkDir)\langtools\src\share\classes\**\*" Exclude="$(OpenJdkDir)\langtools\src\share\classes\**\_*;$(OpenJdkDir)\langtools\src\share\classes\**\*.java;$(OpenJdkDir)\langtools\src\share\classes\**\*.class" ResourcePath="%(RecursiveDir)%(Filename)%(Extension)" />
+
+        <!-- Resources generated by build. -->
+        <OpenJdkResource Include="$(OpenJdkDir)\build\linux-x86_64-normal-server-release\jdk\classes\**\*" Exclude="$(OpenJdkDir)\build\linux-x86_64-normal-server-release\jdk\classes\**\_*;$(OpenJdkDir)\build\linux-x86_64-normal-server-release\jdk\classes\**\*.java;$(OpenJdkDir)\build\linux-x86_64-normal-server-release\jdk\classes\**\*.class" ResourcePath="%(RecursiveDir)%(Filename)%(Extension)" />
+        <OpenJdkResource Include="$(OpenJdkDir)\build\linux-x86_64-normal-server-release\jdk\gensrc\**\*" Exclude="$(OpenJdkDir)\build\linux-x86_64-normal-server-release\jdk\gensrc\**\_*;$(OpenJdkDir)\build\linux-x86_64-normal-server-release\jdk\gensrc\**\*.java;$(OpenJdkDir)\build\linux-x86_64-normal-server-release\jdk\gensrc\**\*.class" ResourcePath="%(RecursiveDir)%(Filename)%(Extension)" />
+        <OpenJdkResource Include="$(OpenJdkDir)\build\linux-x86_64-normal-server-release\langtools\gensrc\**\*" Exclude="$(OpenJdkDir)\build\linux-x86_64-normal-server-release\langtools\gensrc\**\_*;$(OpenJdkDir)\build\linux-x86_64-normal-server-release\langtools\gensrc\**\*.java;$(OpenJdkDir)\build\linux-x86_64-normal-server-release\langtools\gensrc\**\*.class" ResourcePath="%(RecursiveDir)%(Filename)%(Extension)" />
+
+        <!-- Specific resource files not included by prior expressions. -->
+        <OpenJdkResource Include="$(OpenJdkDir)\jdk\src\share\demo\nio\zipfs\src\META-INF\services\java.nio.file.spi.FileSystemProvider" ResourcePath="META-INF/services/java.nio.file.spi.FileSystemProvider" />
+        <OpenJdkResource Include="$(OpenJdkDir)\jdk\src\windows\classes\sun\print\services\javax.print.PrintServiceLookup" ResourcePath="META-INF/services/javax.print.PrintServiceLookup" />
+        <OpenJdkResource Include="$(OpenJdkDir)\jdk\src\windows\classes\sun\print\services\javax.print.StreamPrintServiceFactory" ResourcePath="META-INF/services/javax.print.StreamPrintServiceFactory" />
+
+        <!-- These classes are loaded as resources at runtime to dynamically generate instances. -->
         <OpenJdkResource Include="$(OpenJdkDir)\build\linux-x86_64-normal-server-release\jdk\classes\sun\reflect\misc\Trampoline.class" ResourcePath="sun\reflect\misc\Trampoline.class" />
         <OpenJdkResource Include="$(OpenJdkDir)\build\linux-x86_64-normal-server-release\jdk\classes\java\lang\invoke\MethodHandleImpl$BindCaller$T.class" ResourcePath="java\lang\invoke\MethodHandleImpl$BindCaller$T.class" />
 
-        <OpenJdkResource Include="$(OpenJdkDir)\build\linux-x86_64-normal-server-release\jdk\classes\java\lang\uniName.dat" ResourcePath="java/lang/uniName.dat" />
-        <OpenJdkResource Include="$(OpenJdkDir)\build\linux-x86_64-normal-server-release\jdk\classes\sun\net\idn\uidna.spp" ResourcePath="sun/net/idn/uidna.spp" />
-        <OpenJdkResource Include="$(OpenJdkDir)\build\linux-x86_64-normal-server-release\jdk\classes\com\sun\corba\se\impl\logging\LogStrings.properties" ResourcePath="com/sun/corba/se/impl/logging/LogStrings.properties" />
-        <OpenJdkResource Include="$(OpenJdkDir)\jdk\src\share\classes\sun\util\xml\META-INF\services\sun.util.spi.XmlPropertiesProvider" ResourcePath="META-INF/services/sun.util.spi.XmlPropertiesProvider" />
-        <OpenJdkResource Include="$(OpenJdkDir)\jdk\src\share\classes\sun\java2d\cmm\lcms\META-INF\services\sun.java2d.cmm.CMMServiceProvider" ResourcePath="META-INF/services/sun.java2d.cmm.CMMServiceProvider" />
-        <OpenJdkResource Include="$(OpenJdkDir)\build\linux-x86_64-normal-server-release\jdk\gensrc\sun\nio\cs\ext\sjis0213.dat" ResourcePath="sun/nio/cs/ext/sjis0213.dat" />
-        <OpenJdkResource Include="$(OpenJdkDir)\jdk\src\share\demo\nio\zipfs\src\META-INF\services\java.nio.file.spi.FileSystemProvider" ResourcePath="META-INF/services/java.nio.file.spi.FileSystemProvider" />
-        <OpenJdkResource Include="$(OpenJdkDir)\jdk\src\share\classes\sun\net\spi\nameservice\dns\META-INF\services\sun.net.spi.nameservice.NameServiceDescriptor" ResourcePath="META-INF/services/sun.net.spi.nameservice.NameServiceDescriptor" />
-        <OpenJdkResource Include="$(OpenJdkDir)\jaxws\src\share\jaf_classes\META-INF\mailcap.default" ResourcePath="META-INF/mailcap.default" />
-        <OpenJdkResource Include="$(OpenJdkDir)\jaxws\src\share\jaf_classes\META-INF\mimetypes.default" ResourcePath="META-INF/mimetypes.default" />
-        <OpenJdkResource Include="$(OpenJdkDir)\jdk\src\windows\classes\sun\print\services\javax.print.PrintServiceLookup" ResourcePath="META-INF/services/javax.print.PrintServiceLookup" />
-        <OpenJdkResource Include="$(OpenJdkDir)\jdk\src\windows\classes\sun\print\services\javax.print.StreamPrintServiceFactory" ResourcePath="META-INF/services/javax.print.StreamPrintServiceFactory" />
-        <OpenJdkResource Include="$(OpenJdkDir)\jdk\src\share\classes\com\sun\media\sound\services\javax.sound.midi.spi.MidiDeviceProvider" ResourcePath="META-INF/services/javax.sound.midi.spi.MidiDeviceProvider" />
-        <OpenJdkResource Include="$(OpenJdkDir)\jdk\src\share\classes\com\sun\media\sound\services\javax.sound.midi.spi.MidiFileReader" ResourcePath="META-INF/services/javax.sound.midi.spi.MidiFileReader" />
-        <OpenJdkResource Include="$(OpenJdkDir)\jdk\src\share\classes\com\sun\media\sound\services\javax.sound.midi.spi.MidiFileWriter" ResourcePath="META-INF/services\javax.sound.midi.spi.MidiFileWriter" />
-        <OpenJdkResource Include="$(OpenJdkDir)\jdk\src\share\classes\com\sun\media\sound\services\javax.sound.midi.spi.SoundbankReader" ResourcePath="META-INF/services/javax.sound.midi.spi.SoundbankReader" />
-        <OpenJdkResource Include="$(OpenJdkDir)\jdk\src\share\classes\com\sun\media\sound\services\javax.sound.sampled.spi.AudioFileReader" ResourcePath="META-INF/services/javax.sound.sampled.spi.AudioFileReader" />
-        <OpenJdkResource Include="$(OpenJdkDir)\jdk\src\share\classes\com\sun\media\sound\services\javax.sound.sampled.spi.AudioFileWriter" ResourcePath="META-INF/services/javax.sound.sampled.spi.AudioFileWriter" />
-        <OpenJdkResource Include="$(OpenJdkDir)\jdk\src\share\classes\com\sun\media\sound\services\javax.sound.sampled.spi.FormatConversionProvider" ResourcePath="META-INF/services/javax.sound.sampled.spi.FormatConversionProvider" />
-        <OpenJdkResource Include="$(OpenJdkDir)\jdk\src\share\classes\com\sun\media\sound\services\javax.sound.sampled.spi.MixerProvider" ResourcePath="META-INF/services/javax.sound.sampled.spi.MixerProvider" />
-        <OpenJdkResource Include="$(OpenJdkDir)\nashorn\src\META-INF\services\javax.script.ScriptEngineFactory" ResourcePath="META-INF/services/javax.script.ScriptEngineFactory" />
-
-        <OpenJdkResource Include="$(OpenJdkDir)\build\linux-x86_64-normal-server-release\jdk\classes\com\sun\corba\se\impl\orbutil\resources\**\*" ResourcePath="com/sun/corba/se/impl/orbutil/resources/%(RecursiveDir)%(Filename)%(Extension)" />
-        <OpenJdkResource Include="$(OpenJdkDir)\build\linux-x86_64-normal-server-release\jdk\classes\com\sun\rowset\*.properties" ResourcePath="com/sun/rowset/%(Filename)%(Extension)" />
-        <OpenJdkResource Include="$(OpenJdkDir)\build\linux-x86_64-normal-server-release\jdk\classes\javax\swing\text\html\parser\html32.bdtd" ResourcePath="javax\swing\text\html\parser\html32.bdtd" />
-        <OpenJdkResource Include="$(OpenJdkDir)\build\linux-x86_64-normal-server-release\jdk\classes\sun\rmi\registry\resources\**\*" ResourcePath="sun\rmi\registry\resources\%(RecursiveDir)%(Filename)%(Extension)" />
-        <OpenJdkResource Include="$(OpenJdkDir)\build\linux-x86_64-normal-server-release\jdk\classes\sun\rmi\server\resources\**\*" ResourcePath="sun\rmi\server\resources\%(RecursiveDir)%(Filename)%(Extension)" />
-        <OpenJdkResource Include="$(OpenJdkDir)\build\linux-x86_64-normal-server-release\jdk\classes\sun\text\resources\**\*" ResourcePath="sun\text\resources\%(RecursiveDir)%(Filename)%(Extension)" />
-        <OpenJdkResource Include="$(OpenJdkDir)\corba\src\share\classes\**\*.properties" ResourcePath="%(RecursiveDir)%(Filename)%(Extension)" />
-        <OpenJdkResource Include="$(OpenJdkDir)\jdk\src\share\classes\**\*.properties" ResourcePath="%(RecursiveDir)%(Filename)%(Extension)" />
-        <OpenJdkResource Include="$(OpenJdkDir)\jdk\src\share\classes\**\*.gif" ResourcePath="%(RecursiveDir)%(Filename)%(Extension)" />
-        <OpenJdkResource Include="$(OpenJdkDir)\jdk\src\share\classes\**\*.png" ResourcePath="%(RecursiveDir)%(Filename)%(Extension)" />
-        <OpenJdkResource Include="$(OpenJdkDir)\jdk\src\share\classes\**\*.wav" ResourcePath="%(RecursiveDir)%(Filename)%(Extension)" />
-        <OpenJdkResource Include="$(OpenJdkDir)\jdk\src\share\classes\**\*.css" ResourcePath="%(RecursiveDir)%(Filename)%(Extension)" />
-        <OpenJdkResource Include="$(OpenJdkDir)\jdk\src\share\classes\**\*.txt" ResourcePath="%(RecursiveDir)%(Filename)%(Extension)" />
-        <OpenJdkResource Include="$(OpenJdkDir)\jdk\src\share\classes\**\*.icu" ResourcePath="%(RecursiveDir)%(Filename)%(Extension)" />
-        <OpenJdkResource Include="$(OpenJdkDir)\jdk\src\share\classes\com\sun\org\apache\xml\internal\security\resource\**\*" ResourcePath="com\sun\org\apache\xml\internal\security\resource\%(RecursiveDir)%(Filename)%(Extension)" />
-        <OpenJdkResource Include="$(OpenJdkDir)\jdk\src\share\classes\com\sun\swing\internal\plaf\**\*" ResourcePath="com\sun\swing\internal\plaf\%(RecursiveDir)%(Filename)%(Extension)" />
-        
-        <OpenJdkResource Include="$(OpenJdkDir)\jaxp\src\**\*.properties" ResourcePath="%(RecursiveDir)%(Filename)%(Extension)" />
-        <OpenJdkResource Include="$(OpenJdkDir)\jaxp\src\**\*.res" ResourcePath="%(RecursiveDir)%(Filename)%(Extension)" />
-        
-        <OpenJdkResource Include="$(OpenJdkDir)\jaxws\src\share\jaf_classes\**\*.default" ResourcePath="%(RecursiveDir)%(Filename)%(Extension)" />
-        <OpenJdkResource Include="$(OpenJdkDir)\jaxws\src\share\jaf_classes\**\*.properties" ResourcePath="%(RecursiveDir)%(Filename)%(Extension)" />
-        <OpenJdkResource Include="$(OpenJdkDir)\jaxws\src\share\jaf_classes\**\*.xml" ResourcePath="%(RecursiveDir)%(Filename)%(Extension)" />
-        
-        <OpenJdkResource Include="$(OpenJdkDir)\jaxws\src\share\jaxws_classes\**\*.default" ResourcePath="%(RecursiveDir)%(Filename)%(Extension)" />
-        <OpenJdkResource Include="$(OpenJdkDir)\jaxws\src\share\jaxws_classes\**\*.properties" ResourcePath="%(RecursiveDir)%(Filename)%(Extension)" />
-        <OpenJdkResource Include="$(OpenJdkDir)\jaxws\src\share\jaxws_classes\**\*.xml" ResourcePath="%(RecursiveDir)%(Filename)%(Extension)" />
     </ItemGroup>
 
     <ItemGroup>
@@ -16034,14 +15927,18 @@
     </ItemGroup>
 
     <ItemGroup>
-        <VfsItem Include="$(OpenJdkDir)\build\linux-x86_64-normal-server-release\jdk\lib\*.properties" VfsPath="lib\%(Filename)%(Extension)" />
-        <VfsItem Include="$(OpenJdkDir)\build\linux-x86_64-normal-server-release\jdk\lib\tzdb.dat" VfsPath="lib\tzdb.dat" />
-        <VfsItem Include="$(OpenJdkDir)\build\linux-x86_64-normal-server-release\jdk\lib\currency.data" VfsPath="lib\currency.data" />
-        <VfsItem Include="$(OpenJdkDir)\build\linux-x86_64-normal-server-release\jdk\lib\cmm\**\*" VfsPath="lib\cmm\%(RecursiveDir)%(Filename)%(Extension)" />
-        <VfsItem Include="$(OpenJdkDir)\build\linux-x86_64-normal-server-release\jdk\lib\images\**\*" VfsPath="lib\images\%(RecursiveDir)%(Filename)%(Extension)" />
-        <VfsItem Include="$(OpenJdkDir)\build\linux-x86_64-normal-server-release\jdk\lib\management\**\*" VfsPath="lib\management\%(RecursiveDir)%(Filename)%(Extension)" />
-        <VfsItem Include="$(OpenJdkDir)\build\linux-x86_64-normal-server-release\jdk\lib\security\**\*" VfsPath="lib\security\%(Filename)%(Extension)" />
-        <VfsItem Include="$(OpenJdkDir)\jdk\src\windows\lib\**\*" VfsPath="lib\%(RecursiveDir)%(Filename)%(Extension)" />
+        <OpenJdkImageContent Include="$(OpenJdkDir)\build\linux-x86_64-normal-server-release\jdk\lib\*.properties" ImagePath="lib\%(Filename)%(Extension)" />
+        <OpenJdkImageContent Remove="$(OpenJdkDir)\build\linux-x86_64-normal-server-release\jdk\lib\content-types.properties" />
+        <OpenJdkImageContent Remove="$(OpenJdkDir)\build\linux-x86_64-normal-server-release\jdk\lib\flavormap.properties" />
+        <OpenJdkImageContent Include="$(OpenJdkDir)\build\linux-x86_64-normal-server-release\jdk\lib\tzdb.dat" ImagePath="lib\tzdb.dat" />
+        <OpenJdkImageContent Include="$(OpenJdkDir)\build\linux-x86_64-normal-server-release\jdk\lib\currency.data" ImagePath="lib\currency.data" />
+        <OpenJdkImageContent Include="$(OpenJdkDir)\build\linux-x86_64-normal-server-release\jdk\lib\cmm\**\*" ImagePath="lib\cmm\%(RecursiveDir)%(Filename)%(Extension)" />
+        <OpenJdkImageContent Include="$(OpenJdkDir)\build\linux-x86_64-normal-server-release\jdk\lib\management\**\*" ImagePath="lib\management\%(RecursiveDir)%(Filename)%(Extension)" />
+        <OpenJdkImageContent Include="$(OpenJdkDir)\build\linux-x86_64-normal-server-release\jdk\lib\security\**\*" ImagePath="lib\security\%(Filename)%(Extension)" />
+        <OpenJdkImageContent Remove="$(OpenJdkDir)\build\linux-x86_64-normal-server-release\jdk\lib\security\cacerts" />
+        <OpenJdkImageContent Remove="$(OpenJdkDir)\build\linux-x86_64-normal-server-release\jdk\lib\security\local_policy.jar" />
+        <OpenJdkImageContent Include="$(OpenJdkDir)\build\linux-x86_64-normal-server-release\jdk\lib\security\US_export_policy.jar" ImagePath="lib\security\local_policy.jar" />
+        <OpenJdkImageContent Include="$(OpenJdkDir)\jdk\src\windows\lib\*" ImagePath="lib\%(Filename)%(Extension)" />
     </ItemGroup>
 
 </Project>

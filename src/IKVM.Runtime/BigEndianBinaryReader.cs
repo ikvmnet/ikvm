@@ -25,6 +25,7 @@ using System;
 
 sealed class BigEndianBinaryReader
 {
+
 	private byte[] buf;
 	private int pos;
 	private int end;

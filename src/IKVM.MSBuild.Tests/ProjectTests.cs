@@ -1,7 +1,8 @@
-﻿using System;
+using System;
 using System.IO;
 using System.Linq;
 using System.Runtime.InteropServices;
+using System.Xml.Linq;
 
 using Buildalyzer;
 using Buildalyzer.Environment;
@@ -39,7 +40,7 @@ namespace IKVM.MSBuild.Tests
 
             public override void Initialize(IEventSource eventSource)
             {
-                eventSource.AnyEventRaised += (sender, evt) => context.WriteLine($"{evt.Message}");
+                eventSource.AnyEventRaised += (sender, evt) => context.WriteLine(evt.Message);
             }
 
         }
@@ -59,74 +60,104 @@ namespace IKVM.MSBuild.Tests
             var ikvmCachePath = Path.Combine(Path.GetTempPath(), "IKVM.MSBuild.Tests", "ikvm", "cache");
             if (Directory.Exists(ikvmCachePath))
                 Directory.Delete(ikvmCachePath, true);
-            Directory.CreateDirectory(ikvmCachePath);
+
+            var ikvmExportCachePath = Path.Combine(Path.GetTempPath(), "IKVM.MSBuild.Tests", "ikvm", "expcache");
+            if (Directory.Exists(ikvmExportCachePath))
+                Directory.Delete(ikvmExportCachePath, true);
+
+            new XDocument(
+                new XElement("configuration",
+                    new XElement("config",
+                        new XElement("add",
+                            new XAttribute("key", "globalPackagesFolder"),
+                            new XAttribute("value", nugetPackageRoot))),
+                    new XElement("packageSources",
+                        new XElement("add",
+                            new XAttribute("key", "dev"),
+                            new XAttribute("value", Path.Combine(Path.GetDirectoryName(typeof(ProjectTests).Assembly.Location), @"nuget"))),
+                        new XElement("add",
+                            new XAttribute("key", "nuget.org"),
+                            new XAttribute("value", "https://api.nuget.org/v3/index.json")))))
+                .Save(Path.Combine(@"Project", "nuget.config"));
+
+            var manager = new AnalyzerManager();
+            var analyzer = manager.GetProject(Path.Combine(@"Project", "Exe", "ProjectExe.csproj"));
+            analyzer.SetGlobalProperty("ImportDirectoryBuildProps", "false");
+            analyzer.SetGlobalProperty("ImportDirectoryBuildTargets", "false");
+            analyzer.SetGlobalProperty("IkvmCacheDir", ikvmCachePath + Path.DirectorySeparatorChar);
+            analyzer.SetGlobalProperty("IkvmExportCacheDir", ikvmExportCachePath + Path.DirectorySeparatorChar);
+            analyzer.SetGlobalProperty("PackageVersion", properties["PackageVersion"]);
+            analyzer.SetGlobalProperty("RestorePackagesPath", nugetPackageRoot + Path.DirectorySeparatorChar);
+            analyzer.SetGlobalProperty("CreateHardLinksForAdditionalFilesIfPossible", "true");
+            analyzer.SetGlobalProperty("CreateHardLinksForCopyAdditionalFilesIfPossible", "true");
+            analyzer.SetGlobalProperty("CreateHardLinksForCopyFilesToOutputDirectoryIfPossible", "true");
+            analyzer.SetGlobalProperty("CreateHardLinksForCopyLocalIfPossible", "true");
+            analyzer.SetGlobalProperty("CreateHardLinksForPublishFilesIfPossible", "true");
+            analyzer.SetGlobalProperty("Configuration", "Release");
+
+            analyzer.AddBuildLogger(new TargetLogger(TestContext) { Verbosity = LoggerVerbosity.Detailed });
+            var o = new EnvironmentOptions();
+            o.TargetsToBuild.Clear();
+            o.TargetsToBuild.Add("Restore");
+            o.TargetsToBuild.Add("Clean");
+            analyzer.Build(o).OverallSuccess.Should().BeTrue();
 
             var targets = new[]
             {
+                ("net461",          "win7-x86"),
+                ("net472",          "win7-x86"),
+                ("net48",           "win7-x86"),
+                ("netcoreapp3.1",   "win7-x86"),
+                ("net6.0",          "win7-x86"),
                 ("net461",          "win7-x64"),
                 ("net472",          "win7-x64"),
                 ("net48",           "win7-x64"),
                 ("netcoreapp3.1",   "win7-x64"),
-                ("net5.0",          "win7-x64"),
                 ("net6.0",          "win7-x64"),
+                ("net461",          "win81-arm"),
+                ("net472",          "win81-arm"),
+                ("net48",           "win81-arm"),
+                ("netcoreapp3.1",   "win81-arm"),
+                ("net6.0",          "win81-arm"),
                 ("netcoreapp3.1",   "linux-x64"),
-                ("net5.0",          "linux-x64"),
                 ("net6.0",          "linux-x64"),
+                ("netcoreapp3.1",   "linux-arm"),
+                ("net6.0",          "linux-arm"),
+                ("netcoreapp3.1",   "linux-arm64"),
+                ("net6.0",          "linux-arm64"),
             };
 
             if (RuntimeInformation.IsOSPlatform(OSPlatform.Linux))
             {
                 targets = new[]
                 {
+                    ("netcoreapp3.1",   "win7-x86"),
+                    ("net6.0",          "win7-x86"),
                     ("netcoreapp3.1",   "win7-x64"),
-                    ("net5.0",          "win7-x64"),
                     ("net6.0",          "win7-x64"),
+                    ("netcoreapp3.1",   "win81-arm"),
+                    ("net6.0",          "win81-arm"),
                     ("netcoreapp3.1",   "linux-x64"),
-                    ("net5.0",          "linux-x64"),
                     ("net6.0",          "linux-x64"),
+                    ("netcoreapp3.1",   "linux-arm"),
+                    ("net6.0",          "linux-arm"),
+                    ("netcoreapp3.1",   "linux-arm64"),
+                    ("net6.0",          "linux-arm64"),
                 };
-            }
-
-            var manager = new AnalyzerManager();
-            var analyzer = manager.GetProject(Path.Combine(@"Project", "Exe", "ProjectExe.csproj"));
-            analyzer.SetGlobalProperty("IkvmCacheDir", ikvmCachePath + Path.DirectorySeparatorChar);
-            analyzer.SetGlobalProperty("PackageVersion", properties["PackageVersion"]);
-            analyzer.SetGlobalProperty("RestoreSources", string.Join("%3B", "https://api.nuget.org/v3/index.json", Path.GetFullPath(@"nuget")));
-            analyzer.SetGlobalProperty("RestorePackagesPath", nugetPackageRoot + Path.DirectorySeparatorChar);
-
-            // allow NuGet to locate packages in existing global packages folder if set
-            // else fallback to standard location
-            if (Environment.GetEnvironmentVariable("NUGET_PACKAGES") is string nugetPackagesDir && Directory.Exists(nugetPackagesDir))
-                analyzer.SetGlobalProperty("RestoreAdditionalProjectFallbackFolders", nugetPackagesDir);
-            else
-                analyzer.SetGlobalProperty("RestoreAdditionalProjectFallbackFolders", Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.UserProfile), ".nuget", "packages"));
-
-            analyzer.AddBuildLogger(new TargetLogger(TestContext));
-
-            {
-                var options = new EnvironmentOptions();
-                options.DesignTime = false;
-                options.TargetsToBuild.Clear();
-                options.TargetsToBuild.Add("Restore");
-                options.TargetsToBuild.Add("Clean");
-                var results = analyzer.Build(options);
-                results.OverallSuccess.Should().Be(true);
             }
 
             foreach (var (tfm, rid) in targets)
             {
                 TestContext.WriteLine("Publishing with TargetFramework {0} and RuntimeIdentifier {1}.", tfm, rid);
-
                 var options = new EnvironmentOptions();
                 options.DesignTime = false;
                 options.Restore = false;
-                options.GlobalProperties.Add("TargetFramework", tfm);
-                options.GlobalProperties.Add("RuntimeIdentifier", rid);
+                options.GlobalProperties["TargetFramework"] = tfm;
+                options.GlobalProperties["RuntimeIdentifier"] = rid;
                 options.TargetsToBuild.Clear();
                 options.TargetsToBuild.Add("Build");
                 options.TargetsToBuild.Add("Publish");
-                var results = analyzer.Build(options);
-                results.OverallSuccess.Should().Be(true);
+                analyzer.Build(o).OverallSuccess.Should().Be(true);
             }
         }
 

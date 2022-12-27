@@ -1,8 +1,8 @@
 ﻿using System;
+using System.IO;
 using System.Threading.Tasks;
 
-using IKVM.Tool;
-
+using IKVM.Tools.Runner;
 
 namespace IKVM.MSBuild.Tasks
 {
@@ -10,19 +10,22 @@ namespace IKVM.MSBuild.Tasks
     /// <summary>
     /// Logs diagnostic events to MSBuild.
     /// </summary>
-    class IkvmToolTaskDiagnosticWriter : IIkvmToolDiagnosticEventListener
+    public class IkvmToolTaskDiagnosticWriter : IIkvmToolDiagnosticEventListener
     {
 
-        readonly Microsoft.Build.Utilities.TaskLoggingHelper log;
+        readonly Microsoft.Build.Utilities.TaskLoggingHelper logger;
+        readonly TextWriter writer;
 
         /// <summary>
         /// Initializes a new instance.
         /// </summary>
-        /// <param name="log"></param>
+        /// <param name="logger"></param>
+        /// <param name="writer"></param>
         /// <exception cref="ArgumentNullException"></exception>
-        public IkvmToolTaskDiagnosticWriter(Microsoft.Build.Utilities.TaskLoggingHelper log)
+        public IkvmToolTaskDiagnosticWriter(Microsoft.Build.Utilities.TaskLoggingHelper logger, TextWriter writer)
         {
-            this.log = log ?? throw new ArgumentNullException(nameof(log));
+            this.logger = logger ?? throw new ArgumentNullException(nameof(logger));
+            this.writer = writer;
         }
 
         /// <summary>
@@ -35,16 +38,24 @@ namespace IKVM.MSBuild.Tasks
             switch (@event.Level)
             {
                 case IkvmToolDiagnosticEventLevel.Debug:
-                    log.LogMessage(Microsoft.Build.Framework.MessageImportance.Low, @event.Message, @event.MessageArgs);
+                    logger.LogMessage(Microsoft.Build.Framework.MessageImportance.Low, @event.Message, @event.MessageArgs);
+                    if (writer != null)
+                        writer.WriteLine("DEBUG: " + @event.Message, @event.MessageArgs);
                     break;
                 case IkvmToolDiagnosticEventLevel.Information:
-                    log.LogMessage(Microsoft.Build.Framework.MessageImportance.Normal, @event.Message, @event.MessageArgs);
+                    logger.LogMessage(Microsoft.Build.Framework.MessageImportance.Normal, @event.Message, @event.MessageArgs);
+                    if (writer != null)
+                        writer.WriteLine("INFO: " + @event.Message, @event.MessageArgs);
                     break;
                 case IkvmToolDiagnosticEventLevel.Warning:
-                    log.LogWarning(@event.Message, @event.MessageArgs);
+                    logger.LogWarning(@event.Message, @event.MessageArgs);
+                    if (writer != null)
+                        writer.WriteLine("WARN: " + @event.Message, @event.MessageArgs);
                     break;
                 case IkvmToolDiagnosticEventLevel.Error:
-                    log.LogWarning(@event.Message, @event.MessageArgs);
+                    logger.LogWarning(@event.Message, @event.MessageArgs);
+                    if (writer != null)
+                        writer.WriteLine("ERROR: " + @event.Message, @event.MessageArgs);
                     break;
             }
 

@@ -1,9 +1,8 @@
-﻿using System;
-using System.Collections.Generic;
+﻿using System.Collections.Generic;
 using System.IO;
 using System.Linq;
 
-using IKVM.Tool.Compiler;
+using IKVM.Tools.Runner.Compiler;
 
 using Microsoft.Build.Framework;
 using Microsoft.Build.Utilities;
@@ -21,13 +20,7 @@ namespace IKVM.MSBuild.Tasks
         /// Root of the tools directory.
         /// </summary>
         [Required]
-        public string ToolsPath { get; set; }
-
-        /// <summary>
-        /// Whether we are generating a NetFramework or NetCore assembly.
-        /// </summary>
-        [Required]
-        public string TargetFramework { get; set; } = "NetCore";
+        public string ToolPath { get; set; }
 
         /// <summary>
         /// Set of input references.
@@ -51,26 +44,12 @@ namespace IKVM.MSBuild.Tasks
         /// <returns></returns>
         IEnumerable<string> GetReferenceAssemblies()
         {
-            var l = new IkvmCompilerLauncher(ToolsPath);
-            var f = ParseTargetFramework(TargetFramework);
+            var l = new IkvmCompilerLauncher(ToolPath);
 
             // gets the reference assemblies
-            foreach (var path in Directory.GetFiles(l.GetReferenceAssemblyDirectory(f), "*.dll"))
+            foreach (var path in Directory.GetFiles(l.GetReferenceAssemblyDirectory(), "*.dll"))
                 yield return path;
         }
-
-        /// <summary>
-        /// Converts a target framework value into an enum.
-        /// </summary>
-        /// <param name="targetFramework"></param>
-        /// <returns></returns>
-        /// <exception cref="NotImplementedException"></exception>
-        IkvmCompilerTargetFramework ParseTargetFramework(string targetFramework) => targetFramework switch
-        {
-            "NetCore" => IkvmCompilerTargetFramework.NetCore,
-            "NetFramework" => IkvmCompilerTargetFramework.NetFramework,
-            _ => throw new NotImplementedException(),
-        };
 
     }
 

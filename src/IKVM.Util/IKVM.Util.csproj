@@ -1,8 +1,6 @@
 <Project Sdk="Microsoft.NET.Sdk">
-
     <PropertyGroup>
         <TargetFrameworks>net461;netcoreapp3.1</TargetFrameworks>
-        <AssemblyTitle>IKVM.NET Utility Library</AssemblyTitle>
     </PropertyGroup>
 
     <ItemGroup>

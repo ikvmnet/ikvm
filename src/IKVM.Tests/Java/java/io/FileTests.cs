@@ -1,12 +1,11 @@
 ﻿using System.IO;
+using System.Runtime.InteropServices;
 
 using FluentAssertions;
 
-using IKVM.Runtime.Vfs;
-
 using Microsoft.VisualStudio.TestTools.UnitTesting;
 
-namespace IKVM.Tests.Java.java.lang
+namespace IKVM.Tests.Java.java.io
 {
 
     [TestClass]
@@ -44,15 +43,21 @@ namespace IKVM.Tests.Java.java.lang
         }
 
         [TestMethod]
-        public void Can_check_if_vfs_file_exists()
+        public void ShouldRemoveDotFromCanonicalizedPath()
         {
-            new global::java.io.File(Path.Combine(VfsTable.HomePath, "lib", "tzdb.dat")).exists().Should().BeTrue();
+            if (RuntimeInformation.IsOSPlatform(OSPlatform.Windows))
+                new global::java.io.File(@"C:\Windows\.\System32").getCanonicalPath().Should().Be(@"C:\Windows\System32");
+            else if (RuntimeInformation.IsOSPlatform(OSPlatform.Linux))
+                new global::java.io.File(@"/usr/./lib").getCanonicalPath().Should().Be(@"/usr/lib");
         }
 
         [TestMethod]
-        public void Can_check_vfs_file_length()
+        public void ShouldRemoveDotDotDotFromCanonicalizedPath()
         {
-            new global::java.io.File(Path.Combine(VfsTable.HomePath, "lib", "tzdb.dat")).length().Should().BeGreaterThan(1);
+            if (RuntimeInformation.IsOSPlatform(OSPlatform.Windows))
+                new global::java.io.File(@"C:\Windows\..\Windows\System32").getCanonicalPath().Should().Be(@"C:\Windows\System32");
+            else if (RuntimeInformation.IsOSPlatform(OSPlatform.Linux))
+                new global::java.io.File(@"/usr/../usr/lib").getCanonicalPath().Should().Be(@"/usr/lib");
         }
 
     }

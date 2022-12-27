@@ -1,13 +1,13 @@
 ﻿using System;
-using System.IO;
 using System.Linq;
 using System.Runtime.InteropServices;
 using System.Threading;
+using System.Threading.Tasks;
 
-using IKVM.Tool.Compiler;
+using IKVM.Tools.Runner;
+using IKVM.Tools.Runner.Compiler;
 
 using Microsoft.Build.Framework;
-using Microsoft.Build.Utilities;
 
 namespace IKVM.MSBuild.Tasks
 {
@@ -15,39 +15,8 @@ namespace IKVM.MSBuild.Tasks
     /// <summary>
     /// Executes the IKVM compiler.
     /// </summary>
-    public class IkvmCompiler : Task
+    public class IkvmCompiler : IkvmToolExecTask
     {
-
-#if NETCOREAPP
-
-        /// <summary>
-        /// Initializes the static instance.
-        /// </summary>
-        static IkvmCompiler()
-        {
-            // preload Mono.Unix native library, MSBuild isn't capable of following dependency context
-            if (RuntimeInformation.IsOSPlatform(OSPlatform.Linux) && Environment.Is64BitProcess)
-                NativeLibrary.Load(Path.Combine(Path.GetDirectoryName(typeof(IkvmCompiler).Assembly.Location), "runtimes", "linux-x64", "native", "libMono.Unix.so"));
-        }
-
-#endif
-
-        /// <summary>
-        /// Root of the tools director.
-        /// </summary>
-        [Required]
-        public string ToolsPath { get; set; }
-
-        /// <summary>
-        /// Whether we are generating a NetFramework or NetCore assembly.
-        /// </summary>
-        [Required]
-        public string TargetFramework { get; set; } = "NetCore";
-
-        /// <summary>
-        /// Number of milliseconds to wait for the command to execute.
-        /// </summary>
-        public int Timeout { get; set; } = System.Threading.Timeout.Infinite;
 
         /// <summary>
         /// Optional path to the response file to generate. If specified, the response file is not cleaned up.
@@ -158,27 +127,24 @@ namespace IKVM.MSBuild.Tasks
 
         public string Runtime { get; set; }
 
-        public int? WarningLevel { get; set; }
+        public string JNI { get; set; }
+
+        public string WarningLevel { get; set; }
 
         public bool NoParameterReflection { get; set; }
 
-        /// <summary>
-        /// Executes the task.
-        /// </summary>
-        /// <returns></returns>
-        /// <exception cref="NullReferenceException"></exception>
-        public override bool Execute()
+        public string Remap { get; set; }
+
+        protected override async Task<bool> ExecuteAsync(IkvmToolTaskDiagnosticWriter writer, CancellationToken cancellationToken)
         {
+            if (Debug && RuntimeInformation.IsOSPlatform(OSPlatform.Windows) == false)
+            {
+                Log.LogWarning("Emitting debug symbols from ikvmc is not supported on platforms other than Windows. Continuing without.");
+                Debug = false;
+            }
+
             var options = new IkvmCompilerOptions();
             options.ResponseFile = ResponseFile;
-
-            options.TargetFramework = TargetFramework switch
-            {
-                "NetCore" => IkvmCompilerTargetFramework.NetCore,
-                "NetFramework" => IkvmCompilerTargetFramework.NetFramework,
-                _ => throw new IkvmTaskException("Invalid TargetFramework."),
-            };
-
             options.Output = Output;
             options.Assembly = Assembly;
             options.Version = Version;
@@ -201,6 +167,7 @@ namespace IKVM.MSBuild.Tasks
                 "x86" => IkvmCompilerPlatform.X86,
                 "x64" => IkvmCompilerPlatform.X64,
                 "arm" => IkvmCompilerPlatform.ARM,
+                "arm64" => IkvmCompilerPlatform.ARM64,
                 _ => throw new NotImplementedException(),
             };
 
@@ -255,9 +222,8 @@ namespace IKVM.MSBuild.Tasks
             options.Apartment = Apartment;
 
             if (SetProperties is not null)
-                foreach (var p in SetProperties.Split(new[] { ';' }, 2).Select(i => i.Split('=')))
-                    if (p.Length == 2)
-                        options.SetProperties[p[0]] = p[1];
+                foreach (var p in SetProperties.Split(new[] { ';' }).Select(i => i.Split(new[] { '=' }, 2)))
+                    options.SetProperties[p[0]] = p.Length == 2 ? p[1] : "";
 
             options.NoStackTraceInfo = NoStackTraceInfo;
 
@@ -292,28 +258,19 @@ namespace IKVM.MSBuild.Tasks
                     options.AssemblyAttributes.Add(i.ItemSpec);
 
             options.Runtime = Runtime;
-            options.WarningLevel = WarningLevel;
+
+            if (options.WarningLevel is not null)
+                options.WarningLevel = int.Parse(WarningLevel);
+
             options.NoParameterReflection = NoParameterReflection;
+            options.Remap = Remap;
 
             if (Input != null)
                 foreach (var i in Input)
                     options.Input.Add(i.ItemSpec);
 
-            // check that the tools exist
-            if (ToolsPath == null || Directory.Exists(ToolsPath) == false)
-                throw new IkvmTaskException("Missing tools path.");
-
             // kick off the launcher with the configured options
-            var launcher = new IkvmCompilerLauncher(ToolsPath, new IkvmToolTaskDiagnosticWriter(Log));
-            var run = System.Threading.Tasks.Task.Run(() => launcher.ExecuteAsync(options, CancellationToken.None));
-
-            // yield and wait for the task to complete
-            BuildEngine3.Yield();
-            var rsl = run.GetAwaiter().GetResult();
-            BuildEngine3.Reacquire();
-
-            // check that we exited successfully
-            return rsl == 0;
+            return await new IkvmCompilerLauncher(ToolPath, writer).ExecuteAsync(options, cancellationToken) == 0;
         }
 
     }

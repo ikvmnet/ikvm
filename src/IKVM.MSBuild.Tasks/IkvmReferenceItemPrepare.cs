@@ -1,20 +1,23 @@
-﻿using System;
-using System.Collections.Generic;
-using System.IO;
-using System.Linq;
-using System.Reflection;
-using System.Security.Cryptography;
-using System.Text;
-
-using IKVM.Util.Jar;
-using IKVM.Util.Modules;
-
-using Microsoft.Build.Framework;
-using Microsoft.Build.Globbing;
-using Microsoft.Build.Utilities;
-
-namespace IKVM.MSBuild.Tasks
+﻿namespace IKVM.MSBuild.Tasks
 {
+
+    using System;
+    using System.Collections.Generic;
+    using System.IO;
+    using System.Linq;
+    using System.Reflection;
+    using System.Reflection.Metadata;
+    using System.Reflection.PortableExecutable;
+    using System.Security.Cryptography;
+    using System.Text;
+    using System.Text.RegularExpressions;
+
+    using IKVM.Util.Jar;
+    using IKVM.Util.Modules;
+
+    using Microsoft.Build.Framework;
+    using Microsoft.Build.Globbing;
+    using Microsoft.Build.Utilities;
 
     /// <summary>
     /// For each <see cref="IkvmReferenceItem"/> passed in, assigns default metadata if required.
@@ -70,6 +73,28 @@ namespace IKVM.MSBuild.Tasks
         readonly static MD5 md5 = MD5.Create();
 
         /// <summary>
+        /// Calculates the hash.
+        /// </summary>
+        /// <param name="buffer"></param>
+        /// <returns></returns>
+        static byte[] ComputeHash(byte[] buffer)
+        {
+            lock (md5)
+                return md5.ComputeHash(buffer);
+        }
+
+        /// <summary>
+        /// Calculates the hash.
+        /// </summary>
+        /// <param name="stream"></param>
+        /// <returns></returns>
+        static byte[] ComputeHash(Stream stream)
+        {
+            lock (md5)
+                return md5.ComputeHash(stream);
+        }
+
+        /// <summary>
         /// Initializes a new instance.
         /// </summary>
         public IkvmReferenceItemPrepare() :
@@ -95,7 +120,7 @@ namespace IKVM.MSBuild.Tasks
         /// IKVM target framework.
         /// </summary>
         [Required]
-        public string TargetFramework { get; set; }
+        public string ToolFramework { get; set; }
 
         /// <summary>
         /// Other references that will be used to generate the assemblies.
@@ -127,7 +152,7 @@ namespace IKVM.MSBuild.Tasks
         /// <returns></returns>
         public override bool Execute()
         {
-            var items = IkvmReferenceItemUtil.Import(Items);
+            var items = IkvmReferenceItem.Import(Items);
 
             // populate and normalize metadata
             AssignMetadata(items);
@@ -182,8 +207,56 @@ namespace IKVM.MSBuild.Tasks
             if (string.IsNullOrWhiteSpace(item.AssemblyFileVersion))
                 item.AssemblyFileVersion = item.AssemblyVersion;
 
+            // clean up values
+            item.AssemblyVersion = NormalizeAssemblyVersion(item.AssemblyVersion);
+            item.AssemblyFileVersion = NormalizeAssemblyFileVersion(item.AssemblyFileVersion);
+
             // save changes to item
             item.Save();
+        }
+
+        /// <summary>
+        /// Normalizes an assembly version.
+        /// </summary>
+        /// <param name="version"></param>
+        /// <returns></returns>
+        static string NormalizeAssemblyVersion(string version)
+        {
+            if (string.IsNullOrWhiteSpace(version))
+                return null;
+
+            if (Version.TryParse(version, out var v))
+            {
+                var major = v.Major;
+                var minor = v.Minor;
+                var build = v.Build;
+                var patch = v.Revision;
+                return new Version(major, minor, build > -1 ? build : 0, patch > -1 ? patch : 0).ToString();
+            }
+
+            return null;
+        }
+
+        /// <summary>
+        /// Normalizes an assembly version.
+        /// </summary>
+        /// <param name="version"></param>
+        /// <returns></returns>
+        static string NormalizeAssemblyFileVersion(string version)
+        {
+            if (string.IsNullOrWhiteSpace(version))
+                return null;
+
+            if (Version.TryParse(version, out var v))
+            {
+                var major = v.Major;
+                var minor = v.Minor;
+                var build = v.Build;
+                var patch = v.Revision;
+                return new Version(major, minor, build >= 0 ? build : 0, patch >= 0 ? patch : 0).ToString();
+            }
+
+            return null;
         }
 
         /// <summary>
@@ -335,14 +408,14 @@ namespace IKVM.MSBuild.Tasks
 
             var manifest = new StringWriter();
             manifest.WriteLine("ToolVersion={0}", ToolVersion);
-            manifest.WriteLine("TargetFramework={0}", TargetFramework);
-            manifest.WriteLine("RuntimeAssembly={0}", GetHashForFile(RuntimeAssembly));
+            manifest.WriteLine("ToolFramework={0}", ToolFramework);
+            manifest.WriteLine("RuntimeAssembly={0}", GetIdentityForFile(RuntimeAssembly));
             manifest.WriteLine("AssemblyName={0}", item.AssemblyName);
             manifest.WriteLine("AssemblyVersion={0}", item.AssemblyVersion);
             manifest.WriteLine("AssemblyFileVersion={0}", item.AssemblyFileVersion);
             manifest.WriteLine("ClassLoader={0}", item.ClassLoader);
             manifest.WriteLine("Debug={0}", item.Debug ? "true" : "false");
-            manifest.WriteLine("KeyFile={0}", string.IsNullOrWhiteSpace(item.KeyFile) == false ? GetHashForFile(item.KeyFile) : "");
+            manifest.WriteLine("KeyFile={0}", string.IsNullOrWhiteSpace(item.KeyFile) == false ? GetIdentityForFile(item.KeyFile) : "");
             manifest.WriteLine("DelaySign={0}", item.DelaySign ? "true" : "false");
 
             // each Compile item should be a jar or class file
@@ -383,7 +456,7 @@ namespace IKVM.MSBuild.Tasks
             if (value is null)
                 throw new ArgumentNullException(nameof(value));
 
-            var hsh = md5.ComputeHash(Encoding.UTF8.GetBytes(value));
+            var hsh = ComputeHash(Encoding.UTF8.GetBytes(value));
             var bld = new StringBuilder(hsh.Length * 2);
             foreach (var b in hsh)
                 bld.Append(b.ToString("x2"));
@@ -396,20 +469,59 @@ namespace IKVM.MSBuild.Tasks
         /// </summary>
         /// <param name="file"></param>
         /// <returns></returns>
-        string GetHashForFile(string file)
+        string GetIdentityForFile(string file)
         {
             if (string.IsNullOrWhiteSpace(file))
                 throw new ArgumentException($"'{nameof(file)}' cannot be null or whitespace.", nameof(file));
             if (File.Exists(file) == false)
                 throw new FileNotFoundException($"Could not find file '{file}'.");
 
+            // file might have a companion SHA1 hash, let's use it, no calculation required
+            var sha1File = file + ".sha1";
+            if (File.Exists(sha1File))
+                if (File.ReadAllText(sha1File) is string h)
+                    return $"SHA1:{Regex.Match(h.Trim(), @"^([\w\-]+)").Value}";
+
+            // file might have a companion MD5 hash, let's use it, no calculation required
+            var md5File = file + ".md5";
+            if (File.Exists(md5File))
+                if (File.ReadAllText(md5File) is string h)
+                    return $"MD5:{Regex.Match(h.Trim(), @"^([\w\-]+)").Value}";
+
+            // if the file is potentially a .NET assembly
+            if (Path.GetExtension(file) == ".dll" || Path.GetExtension(file) == ".exe")
+                if (TryGetIdentityForAssembly(file) is string h)
+                    return h;
+
+            // fallback to a standard full MD5 of the file
             using var stm = File.OpenRead(file);
-            var hsh = md5.ComputeHash(stm);
+            var hsh = ComputeHash(stm);
             var bld = new StringBuilder(hsh.Length * 2);
             foreach (var b in hsh)
                 bld.Append(b.ToString("x2"));
 
             return bld.ToString();
+        }
+
+        /// <summary>
+        /// Attempts to get an identity value for a file that might be an assembly.
+        /// </summary>
+        /// <param name="file"></param>
+        /// <returns></returns>
+        string TryGetIdentityForAssembly(string file)
+        {
+            try
+            {
+                using var fsstm = new FileStream(file, FileMode.Open, FileAccess.Read, FileShare.Read);
+                using var perdr = new PEReader(fsstm);
+                var mrdr = perdr.GetMetadataReader();
+                var mvid = mrdr.GetGuid(mrdr.GetModuleDefinition().Mvid);
+                return $"MVID:{mvid}";
+            }
+            catch
+            {
+                return null;
+            }
         }
 
         /// <summary>
@@ -425,7 +537,7 @@ namespace IKVM.MSBuild.Tasks
             if (File.Exists(path) == false)
                 throw new FileNotFoundException($"Cannot generate hash for missing file '{path}' on '{item.ItemSpec}'.");
 
-            return $"Compile={GetHashForFile(path)}";
+            return $"Compile={GetIdentityForFile(path)}";
         }
 
         /// <summary>
@@ -448,7 +560,7 @@ namespace IKVM.MSBuild.Tasks
             if (File.Exists(reference.ItemSpec) == false)
                 throw new FileNotFoundException($"Could not find reference file '{reference.ItemSpec}'.");
 
-            return $"Reference={GetHashForFile(reference.ItemSpec)}";
+            return $"Reference={GetIdentityForFile(reference.ItemSpec)}";
         }
 
         /// <summary>
@@ -594,8 +706,7 @@ namespace IKVM.MSBuild.Tasks
         /// <param name="items"></param>
         internal void AssignBuildInfo(IEnumerable<IkvmReferenceItem> items)
         {
-            foreach (var item in items)
-                AssignBuildInfo(item);
+            items.AsParallel().ForAll(AssignBuildInfo);
         }
 
         /// <summary>
@@ -606,7 +717,9 @@ namespace IKVM.MSBuild.Tasks
         {
             item.IkvmIdentity = CalculateIkvmIdentity(item);
             item.CachePath = Path.Combine(CacheDir, item.IkvmIdentity, item.AssemblyName + ".dll");
+            item.CacheSymbolsPath = Path.Combine(CacheDir, item.IkvmIdentity, item.AssemblyName + ".pdb");
             item.StagePath = Path.Combine(StageDir, item.IkvmIdentity, item.AssemblyName + ".dll");
+            item.StageSymbolsPath = Path.Combine(StageDir, item.IkvmIdentity, item.AssemblyName + ".pdb");
             item.Save();
         }
 

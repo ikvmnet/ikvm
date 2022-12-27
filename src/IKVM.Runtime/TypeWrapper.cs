@@ -2033,9 +2033,6 @@ namespace IKVM.Internal
         {
             Profiler.Count("TypeWrapper");
 
-            if (name != null && name.IndexOf('/') > -1)
-                throw new InternalException("Class name should be dotted, or null for primitives.");
-
             this.flags = flags;
             this.modifiers = modifiers;
             this.name = name == null ? null : String.Intern(name);
@@ -2260,7 +2257,7 @@ namespace IKVM.Internal
         internal static TypeWrapper FromClass(java.lang.Class clazz)
         {
 #if FIRST_PASS
-            return null;
+            throw new NotImplementedException();
 #else
             // MONOBUG redundant cast to workaround mcs bug
             var tw = (TypeWrapper)(object)clazz.typeWrapper;
@@ -3785,17 +3782,14 @@ namespace IKVM.Internal
         /// </summary>
         /// <param name="type"></param>
         /// <param name="sigName"></param>
-        private PrimitiveTypeWrapper(Type type, string sigName)
-            : base(TypeFlags.None, Modifiers.Public | Modifiers.Abstract | Modifiers.Final, null)
+        private PrimitiveTypeWrapper(Type type, string sigName) :
+            base(TypeFlags.None, Modifiers.Public | Modifiers.Abstract | Modifiers.Final, null)
         {
             this.type = type;
             this.sigName = sigName;
         }
 
-        internal override TypeWrapper BaseTypeWrapper
-        {
-            get { return null; }
-        }
+        internal override TypeWrapper BaseTypeWrapper => null;
 
         internal static bool IsPrimitiveType(Type type)
         {
@@ -3810,31 +3804,14 @@ namespace IKVM.Internal
                 || type == VOID.type;
         }
 
-        internal override string SigName
-        {
-            get
-            {
-                return sigName;
-            }
-        }
+        internal override string SigName => sigName;
 
-        internal override ClassLoaderWrapper GetClassLoader()
-        {
-            return ClassLoaderWrapper.GetBootstrapClassLoader();
-        }
+        internal override ClassLoaderWrapper GetClassLoader() => ClassLoaderWrapper.GetBootstrapClassLoader();
 
-        internal override Type TypeAsTBD
-        {
-            get
-            {
-                return type;
-            }
-        }
+        internal override Type TypeAsTBD => type;
 
-        public override string ToString()
-        {
-            return "PrimitiveTypeWrapper[" + sigName + "]";
-        }
+        public override string ToString() => "PrimitiveTypeWrapper[" + sigName + "]";
+
     }
 
     class CompiledTypeWrapper : TypeWrapper

@@ -128,7 +128,16 @@ namespace IKVM.Reflection.Writer
 					writer.Headers.OptionalHeader.SizeOfStackCommit = 0x4000;
 					writer.Headers.OptionalHeader.SizeOfHeapCommit = 0x2000;
 					break;
-				default:
+				case ImageFileMachine.ARM64:
+					writer.Headers.FileHeader.Machine = IMAGE_FILE_HEADER.IMAGE_FILE_MACHINE_ARM64;
+                    writer.Headers.FileHeader.Characteristics |= IMAGE_FILE_HEADER.IMAGE_FILE_LARGE_ADDRESS_AWARE;
+                    writer.Headers.FileHeader.SizeOfOptionalHeader = 0xF0;
+                    writer.Headers.OptionalHeader.Magic = IMAGE_OPTIONAL_HEADER.IMAGE_NT_OPTIONAL_HDR64_MAGIC;
+                    writer.Headers.OptionalHeader.SizeOfStackReserve = moduleBuilder.GetStackReserve(0x400000);
+                    writer.Headers.OptionalHeader.SizeOfStackCommit = 0x4000;
+                    writer.Headers.OptionalHeader.SizeOfHeapCommit = 0x2000;
+                    break;
+                default:
 					throw new ArgumentOutOfRangeException("imageFileMachine");
 			}
 			if (fileKind == PEFileKinds.Dll)

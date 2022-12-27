@@ -1,0 +1,156 @@
+﻿<Project>
+    <Import Project="$(MSBuildThisFileDirectory)..\IKVM.NET.Sdk\Sdk\Sdk.props" />
+    <Import Project="$(MSBuildThisFileDirectory)..\IKVM.MSBuild\buildTransitive\netstandard2.0\IKVM.MSBuild.props" />
+    <Import Project="$(MSBuildThisFileDirectory)..\..\openjdk.props" />
+    <Import Project="$(MSBuildThisFileDirectory)..\..\ikvm.deps.props" />
+
+    <PropertyGroup>
+        <TargetFrameworks>net461;netcoreapp3.1</TargetFrameworks>
+        <Bootstrap>true</Bootstrap>
+    </PropertyGroup>
+
+    <ItemGroup>
+        <InternalsVisibleTo Include="IKVM.Runtime" />
+        <InternalsVisibleTo Include="IKVM.AWT.WinForms" />
+    </ItemGroup>
+
+    <ItemGroup>
+        <ProjectReference Include="..\IKVM.Runtime-ref\IKVM.Runtime-ref.csproj" Private="False" PrivateAssets="All" />
+        <ProjectReference Include="..\IKVM.Java-ref\IKVM.Java-ref.csproj" Private="False" PrivateAssets="All" HideFromJava="true" />
+    </ItemGroup>
+
+    <ItemGroup>
+        <TransformValues Include="Name" Value="$(ProductName)" />
+        <TransformValues Include="Version" Value="$(Version)" />
+        <TransformValues Include="FileVersion" Value="$(FileVersion)" />
+        <TransformValues Include="VendorUrl" Value="$(PackageProjectUrl)" />
+        <TransformValues Include="VendorUrlBug" Value="$(PackageProjectUrl)/issues/" />
+        <TransformValues Include="OpenJdkVersion" Value="$(OpenJdkVersion)" />
+        <TransformValues Include="OpenJdkFullVersion" Value="$(OpenJdkFullVersion)" />
+        <TransformValues Include="OpenJdkVendor" Value="$(OpenJdkVendor)" />
+        <TransformValues Include="OpenJdkImplementationVendor" Value="$(OpenJdkImplementationVendor)" />
+        <TransformValues Include="OpenJdkImplementationVersion" Value="$(OpenJdkImplementationVersion)" />
+        <TransformValues Include="OpenJdkSpecificationVersion" Value="$(OpenJdkSpecificationVersion)" />
+        <TransformValues Include="OpenJdkSpecificationVendor" Value="$(OpenJdkSpecificationVendor)" />
+    </ItemGroup>
+
+    <ItemGroup>
+        <JavaResource Include="local\**\*" Exclude="local\**\*.java;**\*.tt" ResourcePath="%(RecursiveDir)%(Filename)%(Extension)" />
+    </ItemGroup>
+
+    <ItemGroup>
+        <None Include="classpath\**\*" />
+        <None Include="icedtea_jce\**\*" />
+        <None Include="icedtea_rt\**\*" />
+        <None Include="local\**\*" />
+        <None Include="@(OpenJdkSource)">
+            <LinkBase>openjdk\$([MSBuild]::MakeRelative('$(OpenJdkDir)', '%(RootDir)%(Directory)'))</LinkBase>
+        </None>
+        <Compile Include="@(OpenJdkSource)" />
+        <JavaResource Include="@(OpenJdkResource)" LinkBase="openjdk" />
+        <ExcludeRegex Include="@(OpenJdkExcludeRegex)" />
+    </ItemGroup>
+
+    <ItemGroup>
+        <Transform Include="local\java\lang\PropertyConstants.java.tt" TargetPath="$(IntermediateOutputPath)transform\local\java\lang\PropertyConstants.java" />
+        <Compile Include="$(IntermediateOutputPath)transform\local\java\lang\PropertyConstants.java" Visible="False" Link="local\java\lang\PropertyConstants.java" />
+        <Transform Include="local\META-INF\MANIFEST.MF.tt" TargetPath="$(IntermediateOutputPath)transform\local\META-INF\MANIFEST.MF" />
+        <JavaResource Include="$(IntermediateOutputPath)transform\local\META-INF\MANIFEST.MF" Visible="False" ResourcePath="META-INF/MANIFEST.MF" Link="local\META-INF\MANIFEST.MF" />
+        <Transform Include="local\nashorn\version.properties.tt" TargetPath="$(IntermediateOutputPath)transform\local\nashorn\version.properties" />
+        <JavaResource Include="$(IntermediateOutputPath)transform\local\nashorn\version.properties" Visible="False" ResourcePath="nashorn/version.properties" Link="local\nashorn\version.properties" />
+    </ItemGroup>
+
+    <ItemGroup>
+        <MapFile Include="map.xml" />
+    </ItemGroup>
+
+    <Import Project="$(MSBuildThisFileDirectory)..\IKVM.NET.Sdk\Sdk\Sdk.targets" />
+    <Import Project="$(MSBuildThisFileDirectory)..\IKVM.MSBuild\buildTransitive\netstandard2.0\IKVM.MSBuild.targets" />
+
+    <!-- IKVM.Java uses the javac executable from JAVA_HOME: bootstrap -->
+    <Target Name="ResolveJavaCompiler" Condition=" '$(JAVA_HOME)' != '' And '$(JavaCompilerPath)' == '' ">
+        <PropertyGroup>
+            <JavaCompilerPath Condition=" '$([MSBuild]::IsOSUnixLike())' == 'true' And Exists('$(JAVA_HOME)\bin\javac') ">$([System.IO.Path]::GetFullPath('$(JAVA_HOME)\bin\javac'))</JavaCompilerPath>
+            <JavaCompilerPath Condition=" '$([MSBuild]::IsOSUnixLike())' != 'true' And Exists('$(JAVA_HOME)\bin\javac.exe') ">$([System.IO.Path]::GetFullPath('$(JAVA_HOME)\bin\javac.exe'))</JavaCompilerPath>
+            <JavaCompilerArgs>-J-Xmx1536M</JavaCompilerArgs>
+            <JavaCompilerExec Condition=" '$(JavaCompilerPath)' != '' ">"$(JavaCompilerPath)" $(JavaCompilerArgs)</JavaCompilerExec>
+        </PropertyGroup>
+        <Message Text="Using javac executable found in JAVA_HOME at '$(JavaCompilerPath)'." Importance="high" Condition=" '$(JavaCompilerPath)' != '' " />
+    </Target>
+
+    <Target Name="ResolveRmiStubInputItems" DependsOnTargets="CompileJava">
+        <ItemGroup>
+            <RmiStubInputItem Include="@(Classpath)" />
+            <RmiStubInputItem Include="$(ClassOutputPath)**\*.class" />
+        </ItemGroup>
+    </Target>
+
+    <Target Name="ResolveRmiCompiler" Condition=" '$(JAVA_HOME)' != '' And '$(RmiCompilerPath)' == '' ">
+        <PropertyGroup>
+            <RmiCompilerPath Condition=" '$([MSBuild]::IsOSUnixLike())' == 'true' And Exists('$(JAVA_HOME)\bin\rmic') ">$([System.IO.Path]::GetFullPath('$(JAVA_HOME)\bin\rmic'))</RmiCompilerPath>
+            <RmiCompilerPath Condition=" '$([MSBuild]::IsOSUnixLike())' != 'true' And Exists('$(JAVA_HOME)\bin\rmic.exe') ">$([System.IO.Path]::GetFullPath('$(JAVA_HOME)\bin\rmic.exe'))</RmiCompilerPath>
+            <RmiCompilerArgs>-J-client -J-Xms128m</RmiCompilerArgs>
+            <RmiCompilerExec Condition=" '$(RmiCompilerPath)' != '' ">"$(RmiCompilerPath)" $(RmiCompilerArgs)</RmiCompilerExec>
+        </PropertyGroup>
+        <Message Text="Using rmic executable found in JAVA_HOME at '$(RmiCompilerPath)'." Importance="high" Condition=" '$(RmiCompilerPath)' != '' " />
+    </Target>
+
+    <PropertyGroup>
+        <RmiStubsOutputPath>$(IntermediateOutputPath)rmistubs\</RmiStubsOutputPath>
+        <_BuildRmiStubsCoreStampFile>$(RmiStubsOutputPath)stamp</_BuildRmiStubsCoreStampFile>
+    </PropertyGroup>
+
+    <Target Name="_BuildRmiStubs" DependsOnTargets="ResolveRmiCompiler;ResolveRmiStubInputItems" Inputs="@(RmiStubInputItem)" Outputs="$(_BuildRmiStubsCoreStampFile)">
+        <ItemGroup>
+            <_RmiCompilerClasspath Include="@(Classpath);$(ClassOutputPath)" />
+            <_RmiCompilerArgs Include="@(RmiCompilerArgs)" />
+            <_RmiCompilerArgs Include="-nowarn" />
+            <_RmiCompilerArgs Include="-bootclasspath" />
+            <_RmiCompilerArgs Include="@(_RmiCompilerClasspath, '$([System.IO.Path]::PathSeparator)')" />
+            <_RmiCompilerArgs Include="-d" />
+            <_RmiCompilerArgs Include="$(RmiStubsOutputPath)" />
+        </ItemGroup>
+        <PropertyGroup>
+            <_RmiCompilerArgs>@(_RmiCompilerArgs, ' ')</_RmiCompilerArgs>
+        </PropertyGroup>
+        <Delete Files="$(RmiStubsOutputPath)**\*" />
+        <MakeDir Directories="$(RmiStubsOutputPath)" />
+        <Exec Command="$(RmiCompilerExec) $(_RmiCompilerArgs) %(OpenJdkRmiStub.Flags) %(OpenJdkRmiStub.Identity)" />
+        <Touch Files="$(_BuildRmiStubsCoreStampFile)" AlwaysCreate="true" ForceTouch="true" />
+    </Target>
+
+    <PropertyGroup>
+        <BuildRmiStubsDependsOn>
+            $(BuildRmiStubsDependsOn)
+            CompileJava;
+            ResolveRmiStubInputItems;
+            _BuildRmiStubs;
+        </BuildRmiStubsDependsOn>
+    </PropertyGroup>
+
+    <Target Name="BuildRmiStubs" DependsOnTargets="$(BuildRmiStubsDependsOn)">
+        <ItemGroup>
+            <Class Include="$(RmiStubsOutputPath)**\*.class" />
+        </ItemGroup>
+    </Target>
+
+    <Target Name="CleanRmiStubs">
+        <Delete Files="$(_BuildRmiStubsCoreStampFile)" />
+        <RemoveDir Directories="$(RmiStubsOutputPath)" />
+    </Target>
+
+    <PropertyGroup>
+        <CoreCleanDependsOn>
+            $(CoreCleanDependsOn);
+            CleanRmiStubs;
+        </CoreCleanDependsOn>
+    </PropertyGroup>
+
+    <PropertyGroup>
+        <CoreCompileDependsOn>
+            BuildRmiStubs;
+            $(CoreCompileDependsOn);
+        </CoreCompileDependsOn>
+    </PropertyGroup>
+
+</Project>

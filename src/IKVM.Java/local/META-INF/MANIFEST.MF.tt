@@ -1,0 +1,9 @@
+Manifest-Version: 1.0
+Created-By: #Version# (#Name#)
+Implementation-Vendor: #Name#
+Implementation-Title: Java Runtime Environment
+Implementation-Version: #Version#
+Specification-Vendor: #OpenJdkSpecificationVendor#
+Specification-Title: Java Platform API Specification
+Specification-Version: #OpenJdkSpecificationVersion#
+

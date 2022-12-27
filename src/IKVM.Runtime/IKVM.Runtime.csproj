@@ -1,99 +1,20 @@
-﻿<Project>
-    <Import Project="Sdk.props" Sdk="Microsoft.NET.Sdk" />
-    <Import Project="..\..\openjdk.props" />
+﻿<Project Sdk="Microsoft.NET.Sdk">
+    <Import Project="$(MSBuildThisFileDirectory)..\..\openjdk.props" />
+    <Import Project="$(MSBuildThisFileDirectory)..\..\ikvm.deps.props" />
 
     <PropertyGroup>
         <TargetFrameworks>net461;netcoreapp3.1</TargetFrameworks>
-        <AssemblyName>IKVM.Runtime</AssemblyName>
-        <AssemblyTitle>IKVM.NET Runtime</AssemblyTitle>
-        <Description>JVM for .NET</Description>
         <DefineConstants>$(DefineConstants);EMITTERS</DefineConstants>
+        <AllowUnsafeBlocks>true</AllowUnsafeBlocks>
     </PropertyGroup>
 
     <ItemGroup>
-        <InternalsVisibleTo Include="IKVM.Runtime.JNI" />
         <InternalsVisibleTo Include="IKVM.Java" />
         <InternalsVisibleTo Include="IKVM.Tests" />
     </ItemGroup>
 
     <ItemGroup>
-        <PackageReference Include="SharpZipLib" Version="1.3.3" />
-        <PackageReference Include="System.Memory" Version="4.5.5" />
+        <ProjectReference Include="..\IKVM.Java\IKVM.Java.msbuildproj" />
     </ItemGroup>
-
-    <ItemGroup Condition=" '$(TargetFramework)' == 'net461' ">
-        <Reference Include="System.Configuration" />
-        <Reference Include="System.IO.Compression" />
-        <Reference Include="System.Security" />
-    </ItemGroup>
-
-    <ItemGroup Condition=" '$(TargetFramework)' == 'netcoreapp3.1' ">
-        <PackageReference Include="Microsoft.Extensions.DependencyModel" Version="6.0.0" />
-        <PackageReference Include="Microsoft.Win32.Registry" Version="5.0.0" />
-        <PackageReference Include="System.Configuration.ConfigurationManager" Version="6.0.0" />
-        <PackageReference Include="System.Drawing.Common" Version="6.0.0" />
-        <PackageReference Include="System.Data.Odbc" Version="6.0.0" />
-        <PackageReference Include="System.IO.Compression" Version="4.3.0" />
-        <PackageReference Include="System.IO.FileSystem.AccessControl" Version="5.0.0" />
-        <PackageReference Include="System.Runtime" Version="4.3.1" />
-        <PackageReference Include="System.Runtime.InteropServices" Version="4.3.0" />
-        <PackageReference Include="System.Runtime.Loader" Version="4.3.0" />
-        <PackageReference Include="System.Security.Cryptography.Pkcs" Version="6.0.1" />
-        <PackageReference Include="System.Security.AccessControl" Version="6.0.0" />
-        <PackageReference Include="System.Security.Permissions" Version="6.0.0" />
-        <PackageReference Include="System.Security.Principal.Windows" Version="5.0.0" />
-        <PackageReference Include="System.Threading.AccessControl" Version="6.0.0" />
-    </ItemGroup>
-
-    <ItemGroup>
-        <ProjectReference Include="..\IKVM.Java\IKVM.Java.csproj">
-            <PrivateAssets>All</PrivateAssets>
-        </ProjectReference>
-        <ProjectReference Include="..\IKVM.Runtime.JNI-ref\IKVM.Runtime.JNI-ref.csproj">
-            <PrivateAssets>All</PrivateAssets>
-        </ProjectReference>
-    </ItemGroup>
-
-    <ItemGroup>
-        <LibProjectReference Include="ikvm-native-win-x64">
-            <ProjectFile>..\ikvm-native\ikvm-native-win.vcxproj</ProjectFile>
-            <Platform>x64</Platform>
-            <Configuration>$(Configuration)</Configuration>
-            <OutputDir>runtimes\win-x64\native</OutputDir>
-        </LibProjectReference>
-        <LibProjectReference Include="ikvm-native-linux-x64">
-            <ProjectFile>..\ikvm-native\ikvm-native-linux.vcxproj</ProjectFile>
-            <Platform>x64</Platform>
-            <Configuration>$(Configuration)</Configuration>
-            <OutputDir>runtimes\linux-x64\native</OutputDir>
-        </LibProjectReference>
-    </ItemGroup>
-    
-    <Import Project="Sdk.targets" Sdk="Microsoft.NET.Sdk" />
-
-    <PropertyGroup>
-        <VfsZipTempPath>$(IntermediateOutputPath)vfs_zip</VfsZipTempPath>
-        <VfsZipPath>$(IntermediateOutputPath)vfs.zip</VfsZipPath>
-    </PropertyGroup>
-
-    <Target Name="_BuildVfsZip" BeforeTargets="Compile" Inputs="@(VfsItem)" Outputs="$(VfsZipPath)">
-        <Delete Files="$(VfsZipTempPath)\**\*" />
-        <MakeDir Directories="$(VfsZipTempPath)" />
-        <Copy SourceFiles="@(VfsItem)" DestinationFiles="@(VfsItem->'$(VfsZipTempPath)\%(VfsPath)')" UseHardlinksIfPossible="$(CreateHardLinksForCopyFilesToOutputDirectoryIfPossible)" />
-        <Delete Files="$(VfsZipPath)" />
-        <ZipDirectory SourceDirectory="$(VfsZipTempPath)" DestinationFile="$(VfsZipPath)" />
-        <ItemGroup>
-            <FileWrites Include="$(VfsZipTempPath)\**\*" />
-            <FileWrites Include="$(VfsZipPath)" />
-        </ItemGroup>
-    </Target>
-
-    <Target Name="BuildVfsZip" DependsOnTargets="_BuildVfsZip" BeforeTargets="PrepareForBuild">
-        <ItemGroup>
-            <EmbeddedResource Include="$(VfsZipPath)">
-                <LogicalName>vfs.zip</LogicalName>
-            </EmbeddedResource>
-        </ItemGroup>
-    </Target>
 
 </Project>

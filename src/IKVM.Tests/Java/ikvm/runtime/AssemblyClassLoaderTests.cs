@@ -2,12 +2,13 @@
 using System.Collections.Generic;
 using System.IO;
 using System.Reflection;
+using System.Runtime.InteropServices;
 using System.Threading.Tasks;
 
 using FluentAssertions;
 
-using IKVM.Tool;
-using IKVM.Tool.Compiler;
+using IKVM.Tools.Runner;
+using IKVM.Tools.Runner.Compiler;
 
 using Microsoft.VisualStudio.TestTools.UnitTesting;
 
@@ -29,24 +30,27 @@ namespace IKVM.Tests.Java.ikvm.runtime
         [TestInitialize]
         public async Task Setup()
         {
-#if NETCOREAPP3_1_OR_GREATER
-            var tfm = IkvmCompilerTargetFramework.NetCore;
-            var dir = "netcoreapp3.1";
+#if NETCOREAPP
+            var tfm = "netcoreapp3.1";
 #else
-            var tfm = IkvmCompilerTargetFramework.NetFramework;
-            var dir = "net461";
+            var tfm = "net461";
 #endif
 
             var n = Guid.NewGuid().ToString("n");
             var p = Path.Combine(Path.GetTempPath(), n, $"helloworld_{n}.dll");
             Directory.CreateDirectory(Path.GetDirectoryName(p));
 
+            var rid = "";
+            if (RuntimeInformation.IsOSPlatform(OSPlatform.Windows))
+                rid = "win7-x64";
+            if (RuntimeInformation.IsOSPlatform(OSPlatform.Linux))
+                rid = "linux-x64";
+
             var e = new List<IkvmToolDiagnosticEvent>();
-            var l = new IkvmCompilerLauncher(new IkvmToolDelegateDiagnosticListener(evt => { e.Add(evt); TestContext.WriteLine(evt.Message, evt.MessageArgs); }));
+            var l = new IkvmCompilerLauncher(Path.Combine(Path.GetDirectoryName(typeof(AssemblyClassLoaderTests).Assembly.Location), "ikvmc", tfm, rid), new IkvmToolDelegateDiagnosticListener(evt => { e.Add(evt); TestContext.WriteLine(evt.Message, evt.MessageArgs); }));
             var o = new IkvmCompilerOptions()
             {
-                TargetFramework = tfm,
-                Runtime = Path.Combine("lib", dir, "IKVM.Runtime.dll"),
+                Runtime = Path.Combine("lib", tfm, "IKVM.Runtime.dll"),
                 ResponseFile = $"{n}_ikvmc.rsp",
                 Input = { "helloworld-2.0.jar" },
                 Assembly = $"helloworld_{n}",
@@ -55,10 +59,9 @@ namespace IKVM.Tests.Java.ikvm.runtime
                 Output = p,
             };
 
-            o.References.Add(Path.Combine("lib", dir, "IKVM.Java.dll"));
-            o.References.Add(Path.Combine("lib", dir, "IKVM.Runtime.dll"));
-            o.References.Add(Path.Combine("lib", dir, "IKVM.Runtime.JNI.dll"));
-            foreach (var f in Directory.GetFiles(l.GetReferenceAssemblyDirectory(o.TargetFramework)))
+            o.References.Add(Path.Combine("lib", tfm, "IKVM.Java.dll"));
+            o.References.Add(Path.Combine("lib", tfm, "IKVM.Runtime.dll"));
+            foreach (var f in Directory.GetFiles(l.GetReferenceAssemblyDirectory()))
                 o.References.Add(f);
 
             var exitCode = await l.ExecuteAsync(o);
@@ -68,7 +71,7 @@ namespace IKVM.Tests.Java.ikvm.runtime
         }
 
         [TestMethod]
-        public async Task Can_get_package()
+        public void Can_get_package()
         {
             var t = helloworldDll.GetType("sample.HelloworldImpl");
             var k = ((global::java.lang.Class)t).getPackage();
@@ -76,7 +79,7 @@ namespace IKVM.Tests.Java.ikvm.runtime
         }
 
         [TestMethod]
-        public async Task Can_get_resource()
+        public void Can_get_resource()
         {
             var t = helloworldDll.GetType("sample.HelloworldImpl");
             var k = ((global::java.lang.Class)t).getResource("/helloworld.composite");

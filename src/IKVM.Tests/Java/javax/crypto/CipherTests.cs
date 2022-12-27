@@ -16,6 +16,12 @@ namespace IKVM.Tests.Java.javax.crypto
             global::javax.crypto.Cipher.getInstance("AES/ECB/PKCS5Padding").Should().NotBeNull();
         }
 
+        [TestMethod]
+        public void Should_return_high_max_key_size()
+        {
+            global::javax.crypto.Cipher.getMaxAllowedKeyLength("AES").Should().BeGreaterThan(128);
+        }
+
     }
 
 }

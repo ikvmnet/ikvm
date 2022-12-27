@@ -1,14 +1,10 @@
-mode: Mainline
-assembly-versioning-scheme: MajorMinor
-assembly-file-versioning-scheme: MajorMinorPatchTag
 major-version-bump-message: '\+semver:\s?(major)'
 minor-version-bump-message: '\+semver:\s?(minor)'
 patch-version-bump-message: '\+semver:\s?(patch)'
 branches:
-  main:
-    is-mainline: true
-    increment: Patch
   develop:
-    increment: Patch
+    regex: ^dev(elop)?(ment)?$
+    tag: develop
+  release:
+    regex: ^releases?[/-]
     tag: prerelease
-    source-branches: [ 'main' ]

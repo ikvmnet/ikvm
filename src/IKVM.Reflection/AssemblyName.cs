@@ -211,7 +211,7 @@ namespace IKVM.Reflection
 			get { return (ProcessorArchitecture)(((int)flags & 0x70) >> 4); }
 			set
 			{
-				if (value >= ProcessorArchitecture.None && value <= ProcessorArchitecture.Arm)
+				if (value >= ProcessorArchitecture.None && value <= ProcessorArchitecture.Arm64)
 				{
 					flags = (flags & ~(AssemblyNameFlags)0x70) | (AssemblyNameFlags)((int)value << 4);
 				}

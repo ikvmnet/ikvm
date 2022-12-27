@@ -22,7 +22,7 @@
   
 */
 
-using FileDescriptor = global::java.io.FileDescriptor;
+using System;
 
 namespace IKVM.Java.Externs.sun.nio.ch
 {
@@ -30,10 +30,10 @@ namespace IKVM.Java.Externs.sun.nio.ch
     static class ServerSocketChannelImpl
     {
 
-        public static int accept0(object _this, FileDescriptor ssfd, FileDescriptor newfd, object isaa)
+        public static int accept0(object self, global::java.io.FileDescriptor ssfd, global::java.io.FileDescriptor newfd, object isaa)
         {
 #if FIRST_PASS
-			return 0;
+            throw new NotSupportedException();
 #else
             try
             {

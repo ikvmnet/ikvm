@@ -1,0 +1,92 @@
+﻿<Project>
+    <PropertyGroup>
+        <MSBuildAllProjects>$(MSBuildAllProjects);$(MSBuildThisFileFullPath)</MSBuildAllProjects>
+    </PropertyGroup>
+
+    <!--
+    This file contains targets which invoke the jobs in 'NoTask' mode. The tasks provided by MSBuild are not used.
+    -->
+
+    <PropertyGroup>
+        <___IkvmReferenceItemCs>$([System.IO.File]::ReadAllText('$([System.IO.Path]::Combine('$(MSBuildThisFileDirectory)', '..', '..', '..', 'IKVM.MSBuild.Tasks', 'IkvmReferenceItem.cs'))'))</___IkvmReferenceItemCs>
+        <___IkvmReferenceItemMetadataCs>$([System.IO.File]::ReadAllText('$([System.IO.Path]::Combine('$(MSBuildThisFileDirectory)', '..', '..', '..', 'IKVM.MSBuild.Tasks', 'IkvmReferenceItemMetadata.cs'))'))</___IkvmReferenceItemMetadataCs>
+        <___IkvmReferenceItemPrepareCs>$([System.IO.File]::ReadAllText('$([System.IO.Path]::Combine('$(MSBuildThisFileDirectory)', '..', '..', '..', 'IKVM.MSBuild.Tasks', 'IkvmReferenceItemPrepare.cs'))'))</___IkvmReferenceItemPrepareCs>
+    </PropertyGroup>
+
+    <UsingTask TaskName="IkvmReferenceItemPrepare" TaskFactory="RoslynCodeTaskFactory" AssemblyFile="$(MSBuildToolsPath)\Microsoft.Build.Tasks.Core.dll">
+        <Task>
+            <Reference Include="System.Collections.Immutable" />
+            <Reference Include="System.Reflection.Metadata" />
+            <Code Type="Class" Language="cs">
+                <![CDATA[
+$([MSBuild]::Unescape('$(___IkvmReferenceItemCs)'))
+$([MSBuild]::Unescape('$(___IkvmReferenceItemMetadataCs)'))
+$([MSBuild]::Unescape('$(___IkvmReferenceItemPrepareCs)'))
+            ]]>
+            </Code>
+        </Task>
+    </UsingTask>
+
+    <!-- Builds the IkvmReferenceItem set into their output items within the cache. -->
+    <Target Name="_CompileIkvmReferences" DependsOnTargets="ResolveIkvmCompiler;ResolveIkvmRuntimeAssembly;ResolveIkvmBaseAssembly;ResolveIkvmFrameworkReferences" Inputs="$(IkvmCompilerPath);@(IkvmFrameworkReference);$(IkvmBaseAssembly);$(IkvmRuntimeAssembly);%(IkvmReferenceItem.Compile)" Outputs="%(IkvmReferenceItem.CachePath)">
+        <Error Text="Could not locate IKVM.Runtime assembly." Condition=" '$(IkvmRuntimeAssembly)' == '' " />
+        <Error Text="IKVM.Runtime.dll could not be located at '$(IkvmRuntimeAssembly)'." Condition="!Exists('$(IkvmRuntimeAssembly)')" />
+        <Error Text="Could not locate IKVM.Java assembly." Condition=" '$(IkvmBaseAssembly)' == '' " />
+        <Error Text="IKVM.Java.dll could not be located at '$(IkvmBaseAssembly)'." Condition="!Exists('$(IkvmBaseAssembly)')" />
+        <Error Text="Could not locate ikvmc executable." Condition=" '$(IkvmCompilerPath)' == '' " />
+        <Error Text="ikvmc could not be located at '$(IkvmCompilerPath)'." Condition="!Exists('$(IkvmCompilerPath)')" />
+
+        <!-- Output to stage path then copy to cache path to be atomic. -->
+        <MakeDir Directories="$([System.IO.Path]::GetDirectoryName('%(IkvmReferenceItem.StagePath)'))" />
+        <MakeDir Directories="$([System.IO.Path]::GetDirectoryName('%(IkvmReferenceItem.StageSymbolsPath)'))" />
+        <MakeDir Directories="$([System.IO.Path]::GetDirectoryName('%(IkvmReferenceItem.CachePath)'))" />
+        <MakeDir Directories="$([System.IO.Path]::GetDirectoryName('%(IkvmReferenceItem.CacheSymbolsPath)'))" />
+
+        <ItemGroup>
+            <_IkvmCompilerArgs Remove="@(_IkvmCompilerArgs)" />
+            <_IkvmCompilerArgs Include="-debug" Condition=" '%(IkvmReferenceItem.Debug)' == 'true' " />
+            <_IkvmCompilerArgs Include="-assembly:%(IkvmReferenceItem.AssemblyName)" />
+            <_IkvmCompilerArgs Include="-version:%(IkvmReferenceItem.AssemblyVersion)" Condition=" '%(IkvmReferenceItem.AssemblyVersion)' != '' " />
+            <_IkvmCompilerArgs Include="-fileversion:%(IkvmReferenceItem.AssemblyFileVersion)" Condition=" '%(IkvmReferenceItem.AssemblyFileVersion)' != '' " />
+            <_IkvmCompilerArgs Include="-runtime:$(IkvmRuntimeAssembly)" />
+            <_IkvmCompilerArgs Include="-keyfile:%(IkvmReferenceItem.KeyFile)" Condition=" '%(IkvmReferenceItem.KeyFile)' != '' " />
+            <_IkvmCompilerArgs Include="-delaysign:%(IkvmReferenceItem.DelaySign)" Condition=" '%(IkvmReferenceItem.DelaySign)' == 'true' " />
+            <_IkvmCompilerArgs Include="-compressresources" />
+            <_IkvmCompilerArgs Include="-strictfinalfieldsemantics" Condition=" '$(StrictFinalFieldSemantics)' == 'true' " />
+            <_IkvmCompilerArgs Include="-removeassertions" Condition=" '$(RemoveAssertions)' == 'true' " />
+            <_IkvmCompilerArgs Include="-target:library" />
+            <_IkvmCompilerArgs Include="-nostdlib" />
+            <_IkvmCompilerArgs Include="-classloader:%(IkvmReferenceItem.ClassLoader)" Condition=" '%(IkvmReferenceItem.ClassLoader)' != '' " />
+            <_IkvmCompilerReferencePath Remove="@(_IkvmCompilerReferencePath)" />
+            <_IkvmReferenceItemResolvedReference Remove="@(_IkvmReferenceItemResolvedReference)" />
+            <_IkvmReferenceItemResolvedReference Include="%(IkvmReferenceItem.ResolvedReferences)" />
+            <_IkvmCompilerReferencePath Include="@(IkvmFrameworkReference);$(IkvmBaseAssembly);$(IkvmRuntimeAssembly);$(IkvmRuntimeJNIAssembly);@(_IkvmReferenceItemResolvedReference)" />
+            <_IkvmCompilerArgs Include="@(_IkvmCompilerReferencePath->'-reference:%(FullPath)')" />
+            <_IkvmCompilerArgs Include="-out:%(IkvmReferenceItem.StagePath)" />
+            <_IkvmCompilerArgs Include="%(IkvmReferenceItem.Compile)" />
+        </ItemGroup>
+        <WriteLinesToFile File="%(IkvmReferenceItem.StagePath).rsp" Lines="@(_IkvmCompilerArgs)" Overwrite="true" />
+
+        <Delete Files="%(IkvmReferenceItem.StagePath)" Condition="Exists('%(IkvmReferenceItem.StagePath)')" />
+        <Exec Command="$(IkvmCompilerExec) @%(IkvmReferenceItem.StagePath).rsp" />
+
+        <!-- Copy the compiled assembly to its cache path. -->
+        <Copy
+            SourceFiles="%(IkvmReferenceItem.StagePath)"
+            DestinationFiles="%(IkvmReferenceItem.CachePath)"
+            OverwriteReadOnlyFiles="true" />
+
+        <!-- Copy the compiled assembly symbols to its cache path. -->
+        <Copy
+            SourceFiles="%(IkvmReferenceItem.StageSymbolsPath)"
+            DestinationFiles="%(IkvmReferenceItem.CacheSymbolsPath)"
+            OverwriteReadOnlyFiles="true"
+            Condition="Exists('%(IkvmReferenceItem.StageSymbolsPath)')"/>
+
+        <ItemGroup>
+            <FileWrites Include="%(IkvmReferenceItem.StagePath)" />
+            <FileWrites Include="%(IkvmReferenceItem.StagePath).rsp" />
+        </ItemGroup>
+    </Target>
+
+</Project>

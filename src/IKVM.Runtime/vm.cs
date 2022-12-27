@@ -43,29 +43,6 @@ namespace IKVM.Internal
     public static class Starter
     {
 
-        public static bool ClassUnloading
-        {
-#if CLASSGC
-			get { return JVM.classUnloading; }
-			set { JVM.classUnloading = value; }
-#else
-            get { return false; }
-            set { }
-#endif
-        }
-
-        public static bool RelaxedVerification
-        {
-            get { return JVM.relaxedVerification; }
-            set { JVM.relaxedVerification = value; }
-        }
-
-        public static bool AllowNonVirtualCalls
-        {
-            get { return JVM.AllowNonVirtualCalls; }
-            set { JVM.AllowNonVirtualCalls = value; }
-        }
-
     }
 
 }
