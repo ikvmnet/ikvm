@@ -622,32 +622,11 @@ namespace IKVM.Java.Externs.sun.reflect
                     il.MarkLabel(callLabel);
                     il.BeginExceptionBlock();
 
-                    // create a delegate type to the target method
-                    var pt = mw.GetMethod().GetParameters().Select(i => i.ParameterType).ToArray();
-                    var dt = Expression.GetDelegateType(pt.Append(mw.ReturnType.TypeAsPublicSignatureType).ToArray());
-
                     // first constructor arg for the delegate: null for static, reference for valuetype/ghost, reference for instance
-                    if (self == null)
-                        il.Emit(OpCodes.Ldnull);
-                    else if (mw.DeclaringType.IsNonPrimitiveValueType || mw.DeclaringType.IsGhost)
+                    if (self != null && (mw.DeclaringType.IsNonPrimitiveValueType || mw.DeclaringType.IsGhost))
                         il.Emit(OpCodes.Ldloca, self);
-                    else
+                    else if (self != null)
                         il.Emit(OpCodes.Ldloc, self);
-
-                    if (self == null)
-                    {
-                        // load the static method reference
-                        il.Emit(OpCodes.Ldftn, mw.GetMethod());
-                    }
-                    else
-                    {
-                        // load the instance, as a reference for value types and ghosts, then load the virtual method reference
-                        il.Emit(mw.DeclaringType.IsNonPrimitiveValueType || mw.DeclaringType.IsGhost ? OpCodes.Ldloca : OpCodes.Ldloc, self);
-                        il.Emit(OpCodes.Ldvirtftn, mw.GetMethod());
-                    }
-
-                    // create the delegate
-                    il.Emit(OpCodes.Newobj, MethodHandleUtil.GetDelegateConstructor(dt));
 
                     // load the remainder of the arguments
                     for (var i = 0; i < args.Length; i++)
@@ -657,8 +636,8 @@ namespace IKVM.Java.Externs.sun.reflect
                     if (mw.HasCallerID)
                         il.EmitLdarg(2);
 
-                    // invoke the delegate with the arguments
-                    il.Emit(OpCodes.Callvirt, dt.GetMethod("Invoke"));
+                    // final method call
+                    il.Emit(self == null ? OpCodes.Call : OpCodes.Callvirt, mw.GetMethod());
 
                     // convert and store return value
                     mw.ReturnType.EmitConvSignatureTypeToStackType(il);
