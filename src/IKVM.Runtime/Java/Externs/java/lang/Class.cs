@@ -23,6 +23,7 @@
 */
 using System;
 using System.Collections.Generic;
+using System.Reflection;
 
 using IKVM.Internal;
 
@@ -46,7 +47,12 @@ namespace IKVM.Java.Externs.java.lang
                 global::java.lang.SecurityManager sm = global::java.lang.System.getSecurityManager();
                 if (sm != null)
                     sm.checkPermission(new global::java.lang.RuntimePermission("createClassLoader"));
-                Type type = Type.GetType(name);
+                Type type = null;
+                foreach (Assembly asm in AppDomain.CurrentDomain.GetAssemblies())
+                {
+                    type = asm.GetType(name.Split(',')[0]);
+                    if (type != null) break;
+                }
                 if (type != null)
                 {
                     tw = ClassLoaderWrapper.GetWrapperFromType(type);
