@@ -34,6 +34,7 @@ using IKVM.Runtime.Syntax;
 
 using System.Runtime.CompilerServices;
 using IKVM.Runtime;
+using System.Linq;
 
 #if STATIC_COMPILER || STUB_GENERATOR
 using IKVM.Reflection;
@@ -125,7 +126,7 @@ namespace IKVM.Internal
         }
 
         AssemblyLoader assemblyLoader;
-        string[] references;
+        List<string> references;
         AssemblyClassLoader[] delegates;
 #if !STATIC_COMPILER && !STUB_GENERATOR && !FIRST_PASS
         JavaClassLoaderConstructionInProgress jclcip;
@@ -502,9 +503,9 @@ namespace IKVM.Internal
         /// </summary>
         /// <param name="assembly"></param>
         internal AssemblyClassLoader(Assembly assembly) :
-            this(assembly, null)
+            base(CodeGenOptions.None, null)
         {
-
+            this.assemblyLoader = new AssemblyLoader(assembly);
         }
 
         /// <summary>
@@ -512,11 +513,10 @@ namespace IKVM.Internal
         /// </summary>
         /// <param name="assembly"></param>
         /// <param name="fixedReferences"></param>
-        internal AssemblyClassLoader(Assembly assembly, string[] fixedReferences) :
-            base(CodeGenOptions.None, null)
+        internal AssemblyClassLoader(Assembly assembly, IEnumerable<string> fixedReferences) :
+            this(assembly)
         {
-            this.assemblyLoader = new AssemblyLoader(assembly);
-            this.references = fixedReferences;
+            this.references = new(fixedReferences);
         }
 
 #if STATIC_COMPILER
@@ -560,7 +560,7 @@ namespace IKVM.Internal
                 {
                     if (!ReflectUtil.IsDynamicAssembly(assemblyLoader.Assembly) && assemblyLoader.Assembly.GetManifestResourceInfo("ikvm.exports") != null)
                     {
-                        var wildcardExports = new List<string>();
+                        List<string> wildcardExports = new();
 
                         using (var stream = assemblyLoader.Assembly.GetManifestResourceStream("ikvm.exports"))
                         {
@@ -593,19 +593,19 @@ namespace IKVM.Internal
                         }
 
                         if (references == null)
-                            references = wildcardExports.ToArray();
+                            references = wildcardExports;
                     }
                     else
                     {
                         AssemblyName[] refNames = assemblyLoader.Assembly.GetReferencedAssemblies();
-                        references = new string[refNames.Length];
-                        for (int i = 0; i < references.Length; i++)
+                        references = new(refNames.Length);
+                        for (int i = 0; i < references.Count; i++)
                         {
                             references[i] = refNames[i].FullName;
                         }
                     }
 
-                    Interlocked.Exchange(ref delegates, new AssemblyClassLoader[references.Length]);
+                    Interlocked.Exchange(ref delegates, new AssemblyClassLoader[references.Count]);
                 }
             }
         }
@@ -641,6 +641,12 @@ namespace IKVM.Internal
 #else
                 return Assembly.Load(name);
 #endif
+            }
+            catch (System.IO.FileNotFoundException ex)
+            {
+                references.Remove(name);
+                name = null;
+                return null;
             }
             catch
             {
@@ -814,7 +820,7 @@ namespace IKVM.Internal
 
 #endif
 
-            return LoadBootstrapIfNonJavaAssembly(name)
+            return LoadBootstrapIfNonJavaAssembly(name) ?? LoadBootstrapIfIKVMAssembly(name)
                 ?? LoadDynamic(name)
                 ?? FindOrLoadGenericClass(name, LoadMode.LoadOrNull);
         }
@@ -828,7 +834,7 @@ namespace IKVM.Internal
         internal TypeWrapper LoadClass(string name)
         {
             return FindLoadedClass(name)
-                ?? LoadBootstrapIfNonJavaAssembly(name)
+                ?? LoadBootstrapIfNonJavaAssembly(name) ?? LoadBootstrapIfIKVMAssembly(name)
                 ?? LoadDynamic(name)
                 ?? FindOrLoadGenericClass(name, LoadMode.LoadOrNull);
         }
@@ -837,6 +843,14 @@ namespace IKVM.Internal
         {
             if (!assemblyLoader.HasJavaModule)
                 return GetBootstrapClassLoader().LoadClassByDottedNameFast(name);
+
+            return null;
+        }
+
+        TypeWrapper LoadBootstrapIfIKVMAssembly(string name)
+        {
+            if (this != GetLoadedBootstrapClassLoader())
+                return GetLoadedBootstrapClassLoader().LoadClassByDottedNameFast(name);
 
             return null;
         }
@@ -895,10 +909,13 @@ namespace IKVM.Internal
             {
                 if (delegates[i] == null)
                 {
-                    var asm = LoadAssemblyOrClearName(ref references[i], false);
+                    string @ref = references[i];
+                    var asm = LoadAssemblyOrClearName(ref @ref, false);
+                    references[i] = @ref;
                     if (asm != null)
                         delegates[i] = AssemblyClassLoader.FromAssembly(asm);
                 }
+
                 if (delegates[i] != null)
                 {
                     var tw = delegates[i].DoLoad(name);
@@ -1043,14 +1060,20 @@ namespace IKVM.Internal
             {
                 if (delegates[i] == null)
                 {
-                    var asm = LoadAssemblyOrClearName(ref references[i], false);
+                    string @ref = references[i];
+                    var asm = LoadAssemblyOrClearName(ref @ref, false);
+                    references[i] = @ref;
                     if (asm != null)
                         delegates[i] = AssemblyClassLoader.FromAssembly(asm);
                 }
 
-                if (delegates[i] != null && delegates[i] != GetBootstrapClassLoader())
+                if (delegates[i] != GetBootstrapClassLoader())
+                {
                     foreach (java.net.URL url in delegates[i].FindResources(name))
+                    {
                         yield return new Resource(url, delegates[i]);
+                    }
+                }
             }
         }
 
@@ -1397,6 +1420,71 @@ namespace IKVM.Internal
         /// </summary>
         internal BootstrapClassLoader() :
             base(JVM.CoreAssembly, new string[] { typeof(object).Assembly.FullName, typeof(Uri).Assembly.FullName })
+        {
+
+        }
+
+        internal override TypeWrapper GetWrapperFromAssemblyType(Type type)
+        {
+            // we have to special case the fake types here
+            if (type.IsGenericType && !type.IsGenericTypeDefinition)
+            {
+                var outer = ClassLoaderWrapper.GetWrapperFromType(type.GetGenericArguments()[0]);
+
+                foreach (var inner in outer.InnerClasses)
+                {
+                    if (inner.TypeAsTBD == type)
+                        return inner;
+
+                    foreach (var inner2 in inner.InnerClasses)
+                        if (inner2.TypeAsTBD == type)
+                            return inner2;
+                }
+
+                return null;
+            }
+
+            return base.GetWrapperFromAssemblyType(type);
+        }
+
+        protected override void CheckProhibitedPackage(string className)
+        {
+
+        }
+
+#if !FIRST_PASS && !STATIC_COMPILER && !STUB_GENERATOR
+
+        internal override java.lang.ClassLoader GetJavaClassLoader()
+        {
+            return null;
+        }
+
+        internal override java.security.ProtectionDomain GetProtectionDomain()
+        {
+            return null;
+        }
+
+        internal override IEnumerable<java.net.URL> GetResources(string name)
+        {
+            foreach (java.net.URL url in FindResources(name))
+                yield return url;
+
+            foreach (var res in FindDelegateResources(name))
+                yield return res.URL;
+        }
+
+#endif
+
+    }
+
+        sealed class LoadedBootstrapClassLoader : AssemblyClassLoader
+    {
+
+        /// <summary>
+        /// Initializes a new instance.
+        /// </summary>
+        internal LoadedBootstrapClassLoader() :
+            base(JVM.CoreAssembly, AppDomain.CurrentDomain.GetAssemblies().Select(x => x.FullName).ToArray())
         {
 
         }
