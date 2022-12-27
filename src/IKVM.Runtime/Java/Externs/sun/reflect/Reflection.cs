@@ -72,7 +72,6 @@ namespace IKVM.Java.Externs.sun.reflect
             if (type == null ||
                 type.Assembly == typeof(object).Assembly ||
                 type.Assembly == typeof(Reflection).Assembly ||
-                type.Assembly == IKVM.Java.Externs.java.lang.SecurityManager.jniAssembly ||
                 type == typeof(global::java.lang.reflect.Method) ||
                 type == typeof(global::java.lang.reflect.Constructor) ||
                 (GetHideFromJavaFlags(mb) & HideFromJavaFlags.StackWalk) != 0)

@@ -15,7 +15,6 @@ public final class TestTest {
     }
     
     public static void main(String[] args) throws Exception {
-        while (true) {
             TestTest.Handler h = new TestTest.Handler();
 
             Class<?> nonPublic = Class.forName(nonPublicIntrfaceName);
@@ -29,8 +28,6 @@ public final class TestTest {
             oout.close();
             ObjectInputStream oin = new ObjectInputStream(new ByteArrayInputStream(bout.toByteArray()));
             oin.readObject();
-            break;
-        }
     }
 
 }

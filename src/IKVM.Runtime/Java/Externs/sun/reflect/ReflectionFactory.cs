@@ -622,11 +622,32 @@ namespace IKVM.Java.Externs.sun.reflect
                     il.MarkLabel(callLabel);
                     il.BeginExceptionBlock();
 
-                    // load either a reference to a value type, or the object reference
-                    if (self != null && (mw.DeclaringType.IsNonPrimitiveValueType || mw.DeclaringType.IsGhost))
+                    // create a delegate type to the target method
+                    var pt = mw.GetMethod().GetParameters().Select(i => i.ParameterType).ToArray();
+                    var dt = Expression.GetDelegateType(pt.Append(mw.ReturnType.TypeAsPublicSignatureType).ToArray());
+
+                    // first constructor arg for the delegate: null for static, reference for valuetype/ghost, reference for instance
+                    if (self == null)
+                        il.Emit(OpCodes.Ldnull);
+                    else if (mw.DeclaringType.IsNonPrimitiveValueType || mw.DeclaringType.IsGhost)
                         il.Emit(OpCodes.Ldloca, self);
-                    else if (self != null)
+                    else
                         il.Emit(OpCodes.Ldloc, self);
+
+                    if (self == null)
+                    {
+                        // load the static method reference
+                        il.Emit(OpCodes.Ldftn, mw.GetMethod());
+                    }
+                    else
+                    {
+                        // load the instance, as a reference for value types and ghosts, then load the virtual method reference
+                        il.Emit(mw.DeclaringType.IsNonPrimitiveValueType || mw.DeclaringType.IsGhost ? OpCodes.Ldloca : OpCodes.Ldloc, self);
+                        il.Emit(OpCodes.Ldvirtftn, mw.GetMethod());
+                    }
+
+                    // create the delegate
+                    il.Emit(OpCodes.Newobj, MethodHandleUtil.GetDelegateConstructor(dt));
 
                     // load the remainder of the arguments
                     for (var i = 0; i < args.Length; i++)
@@ -636,18 +657,8 @@ namespace IKVM.Java.Externs.sun.reflect
                     if (mw.HasCallerID)
                         il.EmitLdarg(2);
 
-                    // load either a reference to a value type, or the object reference
-                    if (self != null && (mw.DeclaringType.IsNonPrimitiveValueType || mw.DeclaringType.IsGhost))
-                        il.Emit(OpCodes.Ldloca, self);
-                    else if (self != null)
-                        il.Emit(OpCodes.Ldloc, self);
-
-                    // obtain a method pointer to the method
-                    var pt = mw.GetMethod().GetParameters().Select(i => i.ParameterType).ToArray();
-                    il.Emit(self == null ? OpCodes.Ldftn : OpCodes.Ldvirtftn, mw.GetMethod());
-
-                    // calli instruction to invoke the method
-                    il.EmitCalli(OpCodes.Calli, self == null ? CallingConventions.Standard : CallingConventions.HasThis, mw.ReturnType.TypeAsSignatureType, pt, null);
+                    // invoke the delegate with the arguments
+                    il.Emit(OpCodes.Callvirt, dt.GetMethod("Invoke"));
 
                     // convert and store return value
                     mw.ReturnType.EmitConvSignatureTypeToStackType(il);

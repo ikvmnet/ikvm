@@ -955,13 +955,8 @@ namespace IKVM.Runtime
                 exits.Add(bc);
             }
 
-            internal bool IsNested
-            {
-                get
-                {
-                    return nested;
-                }
-            }
+            internal bool IsNested => nested;
+
         }
 
         private void Compile(Block block, int startIndex)
@@ -1686,13 +1681,13 @@ namespace IKVM.Runtime
                                 CodeEmitterLocal local = null;
                                 if (instr.NormalizedOpCode != NormalizedByteCode.__return)
                                 {
-                                    TypeWrapper retTypeWrapper = mw.ReturnType;
+                                    var retTypeWrapper = mw.ReturnType;
                                     retTypeWrapper.EmitConvStackTypeToSignatureType(ilGenerator, ma.GetStackTypeWrapper(i, 0));
                                     local = ilGenerator.UnsafeAllocTempLocal(retTypeWrapper.TypeAsSignatureType);
                                     ilGenerator.Emit(OpCodes.Stloc, local);
                                 }
-                                CodeEmitterLabel label = ilGenerator.DefineLabel();
-                                // NOTE leave automatically discards any junk that may be on the stack
+
+                                var label = ilGenerator.DefineLabel();
                                 ilGenerator.EmitLeave(label);
                                 block.AddExitHack(new ReturnCookie(label, local));
                             }
@@ -1703,15 +1698,13 @@ namespace IKVM.Runtime
                                 // by inserting some bogus instructions between the call and the return.
                                 // Note that this optimization doesn't appear to happen if the method has exception handlers,
                                 // so in that case we don't do anything.
-                                bool x64hack = false;
-#if !NET_4_0
+                                var x64hack = false;
                                 if (exceptions.Length == 0 && i > 0)
                                 {
                                     int k = i - 1;
-                                    while (k > 0 && code[k].NormalizedOpCode == NormalizedByteCode.__nop)
-                                    {
+                                    while (k > 0 && (code[k].NormalizedOpCode == NormalizedByteCode.__nop || code[k].NormalizedOpCode == NormalizedByteCode.__pop))
                                         k--;
-                                    }
+
                                     switch (code[k].NormalizedOpCode)
                                     {
                                         case NormalizedByteCode.__invokeinterface:
@@ -1722,25 +1715,24 @@ namespace IKVM.Runtime
                                             break;
                                     }
                                 }
-#endif
+
                                 // if there is junk on the stack (other than the return value), we must pop it off
                                 // because in .NET this is invalid (unlike in Java)
-                                int stackHeight = ma.GetStackHeight(i);
+                                var stackHeight = ma.GetStackHeight(i);
                                 if (instr.NormalizedOpCode == NormalizedByteCode.__return)
                                 {
                                     if (stackHeight != 0 || x64hack)
-                                    {
                                         ilGenerator.EmitClearStack();
-                                    }
+
                                     ilGenerator.Emit(OpCodes.Ret);
                                 }
                                 else
                                 {
-                                    TypeWrapper retTypeWrapper = mw.ReturnType;
+                                    var retTypeWrapper = mw.ReturnType;
                                     retTypeWrapper.EmitConvStackTypeToSignatureType(ilGenerator, ma.GetStackTypeWrapper(i, 0));
                                     if (stackHeight != 1)
                                     {
-                                        CodeEmitterLocal local = ilGenerator.AllocTempLocal(retTypeWrapper.TypeAsSignatureType);
+                                        var local = ilGenerator.AllocTempLocal(retTypeWrapper.TypeAsSignatureType);
                                         ilGenerator.Emit(OpCodes.Stloc, local);
                                         ilGenerator.EmitClearStack();
                                         ilGenerator.Emit(OpCodes.Ldloc, local);
@@ -1750,6 +1742,7 @@ namespace IKVM.Runtime
                                     {
                                         ilGenerator.EmitTailCallPrevention();
                                     }
+
                                     ilGenerator.Emit(OpCodes.Ret);
                                 }
                             }
