@@ -1,4 +1,5 @@
 ﻿using FluentAssertions;
+
 using java.lang;
 
 using Microsoft.VisualStudio.TestTools.UnitTesting;
@@ -53,7 +54,7 @@ namespace IKVM.Tests.Java.java.lang
         public void CanInvokeStaticMethodWithIntArgVoidReturnType()
         {
             var m = ((Class)typeof(StaticTestObject)).getDeclaredMethod("TestIntArgVoidReturnType", typeof(int));
-            var r = m.invoke(null, 1);
+            var r = m.invoke(null, new Integer(1));
             r.Should().BeNull();
         }
 
