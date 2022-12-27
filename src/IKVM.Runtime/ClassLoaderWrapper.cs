@@ -54,8 +54,10 @@ namespace IKVM.Internal
         private static readonly Dictionary<Type, TypeWrapper> globalTypeToTypeWrapper = new Dictionary<Type, TypeWrapper>();
 #if STATIC_COMPILER || STUB_GENERATOR
         private static ClassLoaderWrapper bootstrapClassLoader;
+        private static ClassLoaderWrapper loadedBootstrapClassLoader;
 #else
         private static AssemblyClassLoader bootstrapClassLoader;
+        private static AssemblyClassLoader loadedBootstrapClassLoader;
 #endif
         private static List<GenericClassLoaderWrapper> genericClassLoaders;
 
@@ -977,12 +979,26 @@ namespace IKVM.Internal
             }
         }
 
+#if STATIC_COMPILER || STUB_GENERATOR
+        internal static ClassLoaderWrapper GetLoadedBootstrapClassLoader()
+#else
+        internal static AssemblyClassLoader GetLoadedBootstrapClassLoader()
+#endif
+        {
+            lock (wrapperLock)
+            {
+                loadedBootstrapClassLoader ??= new LoadedBootstrapClassLoader();
+
+                return loadedBootstrapClassLoader;
+            }
+        }
+
 #if !STATIC_COMPILER && !STUB_GENERATOR
 
         internal static ClassLoaderWrapper GetClassLoaderWrapper(java.lang.ClassLoader javaClassLoader)
         {
             if (javaClassLoader == null)
-                return GetBootstrapClassLoader();
+                return GetLoadedBootstrapClassLoader();
 
             lock (wrapperLock)
             {
