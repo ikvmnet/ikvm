@@ -29,37 +29,38 @@ using Type = IKVM.Reflection.Type;
 
 namespace IKVM.Attributes
 {
-    [AttributeUsage(AttributeTargets.All)]
+
+	[AttributeUsage(AttributeTargets.All)]
 	public sealed class ModifiersAttribute : Attribute
 	{
-		private Modifiers modifiers;
-		private bool isInternal;
 
+		Modifiers modifiers;
+		bool isInternal;
+
+		/// <summary>
+		/// Initializes a new instance.
+		/// </summary>
+		/// <param name="modifiers"></param>
 		public ModifiersAttribute(Modifiers modifiers)
 		{
 			this.modifiers = modifiers;
 		}
 
+		/// <summary>
+		/// Initializes a new instance.
+		/// </summary>
+		/// <param name="modifiers"></param>
+		/// <param name="isInternal"></param>
 		public ModifiersAttribute(Modifiers modifiers, bool isInternal)
 		{
 			this.modifiers = modifiers;
 			this.isInternal = isInternal;
 		}
 
-		public bool IsInternal
-		{
-			get
-			{
-				return isInternal;
-			}
-		}
+        public bool IsInternal => isInternal;
 
-		public Modifiers Modifiers
-		{
-			get
-			{
-				return modifiers;
-			}
-		}
-	}
+        public Modifiers Modifiers => modifiers;
+
+    }
+
 }

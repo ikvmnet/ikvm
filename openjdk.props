@@ -13029,6 +13029,7 @@
         <OpenJdkSource Include="$(OpenJdkDir)\jdk\src\share\classes\sun\misc\UUEncoder.java" />
         <OpenJdkSource Include="$(OpenJdkDir)\jdk\src\share\classes\sun\misc\VMNotification.java" />
         <OpenJdkSource Include="$(OpenJdkDir)\jdk\src\share\classes\sun\misc\VMSupport.java" />
+        <OpenJdkSource Include="$(OpenJdkDir)\jdk\src\share\classes\sun\misc\Unsafe.java" />
         <OpenJdkSource Include="$(OpenJdkDir)\jdk\src\share\classes\sun\net\ApplicationProxy.java" />
         <OpenJdkSource Include="$(OpenJdkDir)\jdk\src\share\classes\sun\net\ConnectionResetException.java" />
         <OpenJdkSource Include="$(OpenJdkDir)\jdk\src\share\classes\sun\net\dns\ResolverConfiguration.java" />

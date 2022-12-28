@@ -57,6 +57,7 @@ namespace IKVM.Java.Externs.java.io
                 dst[dstpos++] = IKVM.Runtime.DoubleConverter.ToDouble(v, ref converter);
             }
         }
+
     }
 
 }

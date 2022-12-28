@@ -1,0 +1,8 @@
+{
+  "profiles": {
+    "java": {
+      "commandName": "Project",
+      "commandLineArgs": "-cp C:\\dev\\ikvm\\src\\IKVM.Tests.Java\\obj\\Debug\\net461\\classes TestTest"
+    }
+  }
+}

@@ -29,14 +29,18 @@ using Type = IKVM.Reflection.Type;
 
 namespace IKVM.Attributes
 {
+
     [Flags]
-	public enum HideFromJavaFlags : byte
-	{
-		All = Code | Reflection | StackWalk | StackTrace,
-		None = 0,
-		Code = 1,
-		Reflection = 2,
-		StackWalk = 4,		// used for LambdaForm$Compiled
-		StackTrace = 8,		// used for LambdaForm$Hidden
-	}
+    public enum HideFromJavaFlags : byte
+    {
+
+        All = Code | Reflection | StackWalk | StackTrace,
+        None = 0,
+        Code = 1,
+        Reflection = 2,
+        StackWalk = 4,      // used for LambdaForm$Compiled
+        StackTrace = 8,     // used for LambdaForm$Hidden
+
+    }
+
 }

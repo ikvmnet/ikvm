@@ -172,13 +172,14 @@ namespace IKVM.Internal
             return tb.DefineMethod(ConstructorInfo.ConstructorName, attribs | MethodAttributes.SpecialName | MethodAttributes.RTSpecialName, null, parameterTypes);
         }
 
+        /// <summary>
+        /// Returns <c>true</c> if the type can be the owner of a dynamic method.
+        /// </summary>
+        /// <param name="type"></param>
+        /// <returns></returns>
         internal static bool CanOwnDynamicMethod(Type type)
         {
-            return type != null
-                && !type.IsInterface
-                && !type.HasElementType
-                && !type.IsGenericTypeDefinition
-                && !type.IsGenericParameter;
+            return type != null && !type.IsInterface && !type.HasElementType && !type.IsGenericTypeDefinition && !type.IsGenericParameter;
         }
 
         internal static bool MatchParameterInfos(ParameterInfo p1, ParameterInfo p2)
