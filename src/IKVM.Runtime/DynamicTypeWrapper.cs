@@ -27,6 +27,7 @@ using System.Diagnostics;
 
 using IKVM.Attributes;
 using IKVM.Runtime;
+using System.Linq;
 
 #if IMPORTER
 using IKVM.Reflection;
@@ -6853,11 +6854,25 @@ namespace IKVM.Internal
         int GetMethodBaseToken(MethodBase mb)
         {
             if (mb is MethodBuilder mbld)
+            {
 #if NETFRAMEWORK
                 return mbld.GetToken().Token;
 #else
-                return mbld.GetMetadataToken();
+                try
+                {
+                    return mbld.GetMetadataToken();
+                }
+                catch (InvalidOperationException)
+                {
+                    // GetMetadataToken fails on Core 3.1, so we fallback to discovering the method from the type
+                    var flags = BindingFlags.DeclaredOnly;
+                    flags |= mbld.IsPublic ? BindingFlags.Public : BindingFlags.NonPublic;
+                    flags |= mbld.IsStatic ? BindingFlags.Static : BindingFlags.Instance;
+                    var mi = TypeAsTBD.GetMethod(mbld.Name, flags, null, mbld.GetParameters().Select(p => p.ParameterType).ToArray(), null);
+                    return mi.MetadataToken;
+                }
 #endif
+            }
 
 #if NETFRAMEWORK
             return mb.MetadataToken;
