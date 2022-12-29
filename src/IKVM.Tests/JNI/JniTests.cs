@@ -15,7 +15,7 @@ namespace IKVM.Tests.JNI
     {
 
         [TestMethod]
-        public void Can_invoke_native_method()
+        public void CanInvokeNativeMethod()
         {
             var s = new StreamReader(typeof(JniTests).Assembly.GetManifestResourceStream("IKVM.Tests.JNI.JniTests.java")).ReadToEnd();
             s = s.Replace("@@IKVM_TESTS_NATIVE@@", Native.GetLibraryPath().Replace(@"\", @"\\"));
