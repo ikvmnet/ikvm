@@ -30,14 +30,19 @@ using IKVM.Internal;
 namespace IKVM.Runtime.JNI
 {
 
+    using jint = System.Int32;
+
     /// <summary>
     /// Manages the set of loaded native JNI libraries.
     /// </summary>
     static unsafe class JNINativeLoader
     {
-        delegate int OnLoadFunc(nint arg1, nint arg2);
+
+        delegate jint JNI_OnLoadFunc(JavaVM* vm, void* reserved);
+        delegate void JNI_OnUnloadFunc(JavaVM* vm, void* reserved);
+
         public static readonly object SyncRoot = new object();
-        static List<nint> loaded = new List<nint>();
+        static readonly List<nint> loaded = new List<nint>();
 
         /// <summary>
         /// Initiates a load of the given JNI library by the specified class loader.
@@ -94,7 +99,7 @@ namespace IKVM.Runtime.JNI
                             var w = f.Enter(loader);
                             try
                             {
-                                v = Marshal.GetDelegateForFunctionPointer<OnLoadFunc>(onload)((nint)JavaVM.pJavaVM, 0);
+                                v = Marshal.GetDelegateForFunctionPointer<JNI_OnLoadFunc>(onload)(JavaVM.pJavaVM, null);
                                 Tracer.Info(Tracer.Jni, "JNI_OnLoad returned: 0x{0:X8}", v);
                             }
                             finally
@@ -158,7 +163,7 @@ namespace IKVM.Runtime.JNI
                         var w = f.Enter(loader);
                         try
                         {
-                            Marshal.GetDelegateForFunctionPointer<Func<nint, nint, int>>(onunload)((nint)JavaVM.pJavaVM, 0);
+                            Marshal.GetDelegateForFunctionPointer<JNI_OnUnloadFunc>(onunload)(JavaVM.pJavaVM, null);
                         }
                         finally
                         {
