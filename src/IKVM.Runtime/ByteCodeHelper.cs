@@ -24,6 +24,7 @@
 using System;
 using System.Diagnostics;
 using System.Reflection;
+using System.Runtime.CompilerServices;
 using System.Runtime.InteropServices;
 using System.Threading;
 
@@ -37,7 +38,7 @@ namespace IKVM.Runtime
     static class GhostTag
     {
 
-        private static volatile PassiveWeakDictionary<object, TypeWrapper> dict;
+        private static volatile ConditionalWeakTable<object, TypeWrapper> dict;
 
         internal static void SetTag(object obj, RuntimeTypeHandle typeHandle)
         {
@@ -48,13 +49,8 @@ namespace IKVM.Runtime
         {
             if (dict == null)
             {
-                PassiveWeakDictionary<object, TypeWrapper> newDict = new PassiveWeakDictionary<object, TypeWrapper>();
-#pragma warning disable 0420 // don't whine about CompareExchange not respecting 'volatile'
-                if (Interlocked.CompareExchange(ref dict, newDict, null) != null)
-#pragma warning restore
-                {
-                    newDict.Dispose();
-                }
+                ConditionalWeakTable<object, TypeWrapper> newDict = new ConditionalWeakTable<object, TypeWrapper>();
+                Interlocked.CompareExchange(ref dict, newDict, null);
             }
             dict.Add(obj, wrapper);
         }
