@@ -48,6 +48,13 @@
         <Compile Include="..\IKVM.Runtime\TypicalMethodWrapper.cs" LinkBase="IKVM.Runtime" />
         <Compile Include="..\IKVM.Runtime\SimpleCallMethodWrapper.cs" LinkBase="IKVM.Runtime" />
         <Compile Include="..\IKVM.Runtime\DefaultInterfaceMethodWrapper.cs" LinkBase="IKVM.Runtime" />
+        <Compile Include="..\IKVM.Runtime\ExModifiers.cs" LinkBase="IKVM.Runtime" />
+        <Compile Include="..\IKVM.Runtime\MethodParametersEntry.cs" LinkBase="IKVM.Runtime" />
+        <Compile Include="..\IKVM.Runtime\EnumHelper.cs" LinkBase="IKVM.Runtime" />
+        <Compile Include="..\IKVM.Runtime\AttributeHelper.cs" LinkBase="IKVM.Runtime" />
+        <Compile Include="..\IKVM.Runtime\ArrayUtil.cs" LinkBase="IKVM.Runtime" />
+        <Compile Include="..\IKVM.Runtime\TypeNameUtil.cs" LinkBase="IKVM.Runtime" />
+        <Compile Include="..\IKVM.Runtime\StringConstants.cs" LinkBase="IKVM.Runtime" />
     </ItemGroup>
 
     <ItemGroup>

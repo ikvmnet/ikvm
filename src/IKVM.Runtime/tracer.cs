@@ -30,15 +30,16 @@ using System.Configuration;
 
 namespace IKVM.Internal
 {
+
 	public static class Tracer
 	{
+
 		public readonly static TraceSwitch Compiler = new TraceSwitch("compiler", "Static Compiler");
 		public readonly static TraceSwitch FxBug = new TraceSwitch("fxbug", ".NET Framework bug related events");
 		public readonly static TraceSwitch ClassLoading = new TraceSwitch("classloading", "Class loading");
 		public readonly static TraceSwitch Verifier = new TraceSwitch("verifier", "Bytecode Verifier");
 		public readonly static TraceSwitch Runtime = new TraceSwitch("runtime", "Miscellaneous runtime events");
 		public readonly static TraceSwitch Jni = new TraceSwitch("jni", "JNI");
-		//	public readonly static TraceSwitch Methods = new TraceSwitch("methods", "Method Trace");
 		private readonly static Dictionary<string, TraceSwitch> allTraceSwitches = new Dictionary<string, TraceSwitch>();
 
 		private readonly static List<string> methodtraces = new List<string>();
