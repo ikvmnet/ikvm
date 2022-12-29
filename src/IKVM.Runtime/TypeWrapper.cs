@@ -80,7 +80,9 @@ namespace IKVM.Internal
 
     static class AttributeHelper
     {
+
 #if IMPORTER
+
         private static CustomAttributeBuilder ghostInterfaceAttribute;
         private static CustomAttributeBuilder deprecatedAttribute;
         private static CustomAttributeBuilder editorBrowsableNever;
