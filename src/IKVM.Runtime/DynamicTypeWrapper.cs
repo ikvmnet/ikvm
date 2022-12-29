@@ -6865,6 +6865,7 @@ namespace IKVM.Internal
                 catch (InvalidOperationException)
                 {
                     // GetMetadataToken fails on Core 3.1, so we fallback to discovering the method from the type
+                    Finish();
                     var flags = BindingFlags.DeclaredOnly;
                     flags |= mbld.IsPublic ? BindingFlags.Public : BindingFlags.NonPublic;
                     flags |= mbld.IsStatic ? BindingFlags.Static : BindingFlags.Instance;
