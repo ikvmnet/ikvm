@@ -736,6 +736,61 @@ JNIEXPORT jdouble JNICALL Java_ikvm_tests_jni_JniTests_getStaticDoubleField(JNIE
     return ret;
 }
 
+JNIEXPORT jobject JNICALL Java_ikvm_tests_jni_JniTests_newWeakGlobalRef(JNIEnv* env, jobject self, jobject o)
+{
+    jclass exceptionClass = (*env)->FindClass(env, "java/lang/Exception");
+    jobject ret = NULL;
+
+    jweak weak = (*env)->NewWeakGlobalRef(env, o);
+    if (weak == NULL) {
+        (*env)->ThrowNew(env, exceptionClass, "NewWeakGlobalRef returned NULL.");
+        ret = NULL;
+        goto end;
+    }
+    else if ((*env)->IsSameObject(env, weak, NULL)) {
+        (*env)->ThrowNew(env, exceptionClass, "NewWeakGlobalRef is the same object as NULL.");
+        ret = NULL;
+        goto end;
+    }
+    else if ((*env)->IsSameObject(env, weak, o) == JNI_FALSE) {
+        (*env)->ThrowNew(env, exceptionClass, "NewWeakGlobalRef is not the same object as passed.");
+        ret = NULL;
+        goto end;
+    }
+
+    jobject local = (*env)->NewLocalRef(env, weak);
+    if (local == NULL) {
+        (*env)->ThrowNew(env, exceptionClass, "NewLocalRef from weak ref returned NULL.");
+        ret = NULL;
+        goto end;
+    }
+    else if ((*env)->IsSameObject(env, local, NULL)) {
+        (*env)->ThrowNew(env, exceptionClass, "NewLocalRef from weak ref is the same object as NULL.");
+        ret = NULL;
+        goto end;
+    }
+    else if ((*env)->IsSameObject(env, local, weak) == JNI_FALSE) {
+        (*env)->ThrowNew(env, exceptionClass, "NewLocalRef from weak ref is not the same object as weak.");
+        ret = NULL;
+        goto end;
+    }
+    else if ((*env)->IsSameObject(env, local, o) == JNI_FALSE) {
+        (*env)->ThrowNew(env, exceptionClass, "NewLocalRef from weak ref is not the same object as passed.");
+        ret = NULL;
+        goto end;
+    }
+
+    ret = local;
+
+end:
+    if (weak != NULL) {
+        (*env)->DeleteWeakGlobalRef(env, weak);
+        weak = NULL;
+    }
+
+    return ret;
+}
+
 JNIEXPORT jint JNICALL JNI_OnLoad(JavaVM* vm, void* reserved)
 {
     return JNI_VERSION_1_8;

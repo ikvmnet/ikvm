@@ -76,4 +76,6 @@ public class JniTests
 
 	public native double getStaticDoubleField(Class clazz);
 
+	public native Object newWeakGlobalRef(Object o);
+
 }
