@@ -26,6 +26,8 @@ using System.Diagnostics;
 
 using IKVM.Attributes;
 
+using System.Threading;
+
 #if IMPORTER || EXPORTER
 using IKVM.Reflection;
 using IKVM.Reflection.Emit;
@@ -126,6 +128,7 @@ namespace IKVM.Internal
         }
 
 #if !IMPORTER && !EXPORTER
+
         internal static FieldWrapper FromField(java.lang.reflect.Field field)
         {
 #if FIRST_PASS
@@ -189,9 +192,10 @@ namespace IKVM.Internal
                 field = field.copy();
             }
             return field;
-#endif // FIRST_PASS
+#endif
         }
-#endif // !IMPORTER && !EXPORTER
+
+#endif
 
         [System.Security.SecurityCritical]
         internal static FieldWrapper FromCookie(IntPtr cookie)
@@ -209,6 +213,7 @@ namespace IKVM.Internal
         }
 
 #if EMITTERS
+
         internal void EmitGet(CodeEmitter ilgen)
         {
             AssertLinked();
@@ -224,8 +229,8 @@ namespace IKVM.Internal
         }
 
         protected abstract void EmitSetImpl(CodeEmitter ilgen);
-#endif // EMITTERS
 
+#endif
 
 #if IMPORTER
         internal bool IsLinked
@@ -331,17 +336,22 @@ namespace IKVM.Internal
             return null;
 #else
             if (jniAccessor == null)
-            {
                 Interlocked.CompareExchange(ref jniAccessor, IKVM.Java.Externs.sun.reflect.ReflectionFactory.NewFieldAccessorJNI(this), null);
-            }
+
             return jniAccessor;
 #endif
         }
 
 #if !FIRST_PASS
+
         internal abstract object GetValue(object obj);
+
         internal abstract void SetValue(object obj, object value);
+
 #endif
-#endif // !IMPORTER && !EXPORTER
+
+#endif
+
     }
+
 }

@@ -1,7 +1,7 @@
 #include <stddef.h>
 #include <jni.h>
 
-JNIEXPORT void JNICALL Java_ikvm_tests_jni_JniTests_getVersionTest(JNIEnv *env) {
+JNIEXPORT void JNICALL Java_ikvm_tests_jni_JniTests_getVersionTest(JNIEnv* env, jobject self) {
     jclass exceptionClass = (*env)->FindClass(env, "java/lang/Exception");
 
     jint version = (*env)->GetVersion(env);
@@ -11,11 +11,11 @@ JNIEXPORT void JNICALL Java_ikvm_tests_jni_JniTests_getVersionTest(JNIEnv *env) 
     }
 }
 
-JNIEXPORT void JNICALL Java_ikvm_tests_jni_JniTests_defineClassTest(JNIEnv *env) {
+JNIEXPORT void JNICALL Java_ikvm_tests_jni_JniTests_defineClassTest(JNIEnv* env, jobject self) {
     jclass exceptionClass = (*env)->FindClass(env, "java/lang/Exception");
 }
 
-JNIEXPORT void JNICALL Java_ikvm_tests_jni_JniTests_findClassTest(JNIEnv *env) {
+JNIEXPORT void JNICALL Java_ikvm_tests_jni_JniTests_findClassTest(JNIEnv* env, jobject self) {
     jclass exceptionClass = (*env)->FindClass(env, "java/lang/Exception");
 
     jclass objectClass = (*env)->FindClass(env, "java/lang/Object");
@@ -25,7 +25,7 @@ JNIEXPORT void JNICALL Java_ikvm_tests_jni_JniTests_findClassTest(JNIEnv *env) {
     }
 }
 
-JNIEXPORT void JNICALL Java_ikvm_tests_jni_JniTests_getSuperclassTest(JNIEnv *env) {
+JNIEXPORT void JNICALL Java_ikvm_tests_jni_JniTests_getSuperclassTest(JNIEnv* env, jobject self) {
     jclass exceptionClass = (*env)->FindClass(env, "java/lang/Exception");
 
     jclass numberClass = (*env)->FindClass(env, "java/lang/Number");
@@ -52,7 +52,7 @@ JNIEXPORT void JNICALL Java_ikvm_tests_jni_JniTests_getSuperclassTest(JNIEnv *en
     }
 }
 
-JNIEXPORT void JNICALL Java_ikvm_tests_jni_JniTests_throwTest(JNIEnv *env) {
+JNIEXPORT void JNICALL Java_ikvm_tests_jni_JniTests_throwTest(JNIEnv* env, jobject self) {
     jclass exceptionClass = (*env)->FindClass(env, "java/lang/Exception");
 
     jclass runtimeExceptionClass = (*env)->FindClass(env, "java/lang/RuntimeException");
@@ -82,7 +82,7 @@ JNIEXPORT void JNICALL Java_ikvm_tests_jni_JniTests_throwTest(JNIEnv *env) {
     (*env)->Throw(env, runtimeException);
 }
 
-JNIEXPORT void JNICALL Java_ikvm_tests_jni_JniTests_throwNewTest(JNIEnv *env) {
+JNIEXPORT void JNICALL Java_ikvm_tests_jni_JniTests_throwNewTest(JNIEnv* env, jobject self) {
     jclass exceptionClass = (*env)->FindClass(env, "java/lang/Exception");
 
     jclass runtimeExceptionClass = (*env)->FindClass(env, "java/lang/RuntimeException");
@@ -103,7 +103,7 @@ jobject newObject(JNIEnv* pEnv, jclass clazz, jmethodID methodID, ...) {
     return o;
 }
 
-JNIEXPORT void JNICALL Java_ikvm_tests_jni_JniTests_newObjectTest(JNIEnv *env) {
+JNIEXPORT void JNICALL Java_ikvm_tests_jni_JniTests_newObjectTest(JNIEnv* env, jobject self) {
     jclass exceptionClass = (*env)->FindClass(env, "java/lang/Exception");
 
     jclass objectClass = (*env)->FindClass(env, "java/lang/Object");
@@ -125,7 +125,7 @@ JNIEXPORT void JNICALL Java_ikvm_tests_jni_JniTests_newObjectTest(JNIEnv *env) {
     }
 }
 
-JNIEXPORT void JNICALL Java_ikvm_tests_jni_JniTests_newObjectVTest(JNIEnv *env) {
+JNIEXPORT void JNICALL Java_ikvm_tests_jni_JniTests_newObjectVTest(JNIEnv* env, jobject self) {
     jclass exceptionClass = (*env)->FindClass(env, "java/lang/Exception");
 
     jclass objectClass = (*env)->FindClass(env, "java/lang/Object");
@@ -147,7 +147,7 @@ JNIEXPORT void JNICALL Java_ikvm_tests_jni_JniTests_newObjectVTest(JNIEnv *env) 
     }
 }
 
-JNIEXPORT void JNICALL Java_ikvm_tests_jni_JniTests_newObjectATest(JNIEnv *env) {
+JNIEXPORT void JNICALL Java_ikvm_tests_jni_JniTests_newObjectATest(JNIEnv* env, jobject self) {
     jclass exceptionClass = (*env)->FindClass(env, "java/lang/Exception");
 
     jclass objectClass = (*env)->FindClass(env, "java/lang/Object");
@@ -169,7 +169,7 @@ JNIEXPORT void JNICALL Java_ikvm_tests_jni_JniTests_newObjectATest(JNIEnv *env) 
     }
 }
 
-JNIEXPORT void JNICALL Java_ikvm_tests_jni_JniTests_newObjectTestWithArg(JNIEnv *env) {
+JNIEXPORT void JNICALL Java_ikvm_tests_jni_JniTests_newObjectTestWithArg(JNIEnv* env, jobject self) {
     jclass exceptionClass = (*env)->FindClass(env, "java/lang/Exception");
 
     jclass integerClass = (*env)->FindClass(env, "java/lang/Integer");
@@ -203,7 +203,7 @@ JNIEXPORT void JNICALL Java_ikvm_tests_jni_JniTests_newObjectTestWithArg(JNIEnv 
     }
 }
 
-JNIEXPORT void JNICALL Java_ikvm_tests_jni_JniTests_newObjectVTestWithArg(JNIEnv *env) {
+JNIEXPORT void JNICALL Java_ikvm_tests_jni_JniTests_newObjectVTestWithArg(JNIEnv* env, jobject self) {
     jclass exceptionClass = (*env)->FindClass(env, "java/lang/Exception");
 
     jclass integerClass = (*env)->FindClass(env, "java/lang/Integer");
@@ -237,7 +237,7 @@ JNIEXPORT void JNICALL Java_ikvm_tests_jni_JniTests_newObjectVTestWithArg(JNIEnv
     }
 }
 
-JNIEXPORT void JNICALL Java_ikvm_tests_jni_JniTests_newObjectATestWithArg(JNIEnv *env) {
+JNIEXPORT void JNICALL Java_ikvm_tests_jni_JniTests_newObjectATestWithArg(JNIEnv* env, jobject self) {
     jclass exceptionClass = (*env)->FindClass(env, "java/lang/Exception");
 
     jclass integerClass = (*env)->FindClass(env, "java/lang/Integer");
@@ -274,12 +274,474 @@ JNIEXPORT void JNICALL Java_ikvm_tests_jni_JniTests_newObjectATestWithArg(JNIEnv
     }
 }
 
-JNIEXPORT jint JNICALL JNI_OnLoad(JavaVM *vm, void *reserved)
+JNIEXPORT jobject JNICALL Java_ikvm_tests_jni_JniTests_getNullObjectField(JNIEnv* env, jobject self, jclass clazz, jobject object)
 {
-	return JNI_VERSION_1_8;
+    jclass exceptionClass = (*env)->FindClass(env, "java/lang/Exception");
+
+    jfieldID field = (*env)->GetFieldID(env, clazz, "nullObjectField", "Ljava/lang/Object;");
+    if ((*env)->ExceptionCheck(env) == JNI_TRUE) {
+        return NULL;
+    }
+    if (field == NULL) {
+        (*env)->ThrowNew(env, exceptionClass, "failed");
+        return NULL;
+    }
+
+    jobject ret = (*env)->GetObjectField(env, object, field);
+    if ((*env)->ExceptionCheck(env) == JNI_TRUE) {
+        return NULL;
+    }
+
+    return ret;
 }
 
-JNIEXPORT void JNICALL JNI_OnUnload(JavaVM *vm, void *reserved)
+JNIEXPORT jobject JNICALL Java_ikvm_tests_jni_JniTests_getObjectField(JNIEnv* env, jobject self, jclass clazz, jobject object)
+{
+    jclass exceptionClass = (*env)->FindClass(env, "java/lang/Exception");
+
+    jfieldID field = (*env)->GetFieldID(env, clazz, "objectField", "Ljava/lang/Object;");
+    if ((*env)->ExceptionCheck(env) == JNI_TRUE) {
+        return NULL;
+    }
+    if (field == NULL) {
+        (*env)->ThrowNew(env, exceptionClass, "failed");
+        return NULL;
+    }
+
+    jobject ret = (*env)->GetObjectField(env, object, field);
+    if ((*env)->ExceptionCheck(env) == JNI_TRUE) {
+        return NULL;
+    }
+
+    return ret;
+}
+
+JNIEXPORT jstring JNICALL Java_ikvm_tests_jni_JniTests_getStringField(JNIEnv* env, jobject self, jclass clazz, jobject object)
+{
+    jclass exceptionClass = (*env)->FindClass(env, "java/lang/Exception");
+
+    jfieldID field = (*env)->GetFieldID(env, clazz, "stringField", "Ljava/lang/String;");
+    if ((*env)->ExceptionCheck(env) == JNI_TRUE) {
+        return NULL;
+    }
+    if (field == NULL) {
+        (*env)->ThrowNew(env, exceptionClass, "failed");
+        return NULL;
+    }
+
+    jstring ret = (*env)->GetObjectField(env, object, field);
+    if ((*env)->ExceptionCheck(env) == JNI_TRUE) {
+        return NULL;
+    }
+
+    return ret;
+}
+
+JNIEXPORT jboolean JNICALL Java_ikvm_tests_jni_JniTests_getBooleanField(JNIEnv* env, jobject self, jclass clazz, jobject object)
+{
+    jclass exceptionClass = (*env)->FindClass(env, "java/lang/Exception");
+
+    jfieldID field = (*env)->GetFieldID(env, clazz, "booleanField", "Z");
+    if ((*env)->ExceptionCheck(env) == JNI_TRUE) {
+        return JNI_FALSE;
+    }
+    if (field == NULL) {
+        (*env)->ThrowNew(env, exceptionClass, "failed");
+        return JNI_FALSE;
+    }
+
+    jboolean ret = (*env)->GetBooleanField(env, object, field);
+    if ((*env)->ExceptionCheck(env) == JNI_TRUE) {
+        return JNI_FALSE;
+    }
+
+    return ret;
+}
+
+JNIEXPORT jbyte JNICALL Java_ikvm_tests_jni_JniTests_getByteField(JNIEnv* env, jobject self, jclass clazz, jobject object)
+{
+    jclass exceptionClass = (*env)->FindClass(env, "java/lang/Exception");
+
+    jfieldID field = (*env)->GetFieldID(env, clazz, "byteField", "B");
+    if ((*env)->ExceptionCheck(env) == JNI_TRUE) {
+        return 0;
+    }
+    if (field == NULL) {
+        (*env)->ThrowNew(env, exceptionClass, "failed");
+        return 0;
+    }
+
+    jbyte ret = (*env)->GetByteField(env, object, field);
+    if ((*env)->ExceptionCheck(env) == JNI_TRUE) {
+        return 0;
+    }
+
+    return ret;
+}
+
+JNIEXPORT jchar JNICALL Java_ikvm_tests_jni_JniTests_getCharField(JNIEnv* env, jobject self, jclass clazz, jobject object)
+{
+    jclass exceptionClass = (*env)->FindClass(env, "java/lang/Exception");
+
+    jfieldID field = (*env)->GetFieldID(env, clazz, "charField", "C");
+    if ((*env)->ExceptionCheck(env) == JNI_TRUE) {
+        return 0;
+    }
+    if (field == NULL) {
+        (*env)->ThrowNew(env, exceptionClass, "failed");
+        return 0;
+    }
+
+    jchar ret = (*env)->GetCharField(env, object, field);
+    if ((*env)->ExceptionCheck(env) == JNI_TRUE) {
+        return 0;
+    }
+
+    return ret;
+}
+
+JNIEXPORT jshort JNICALL Java_ikvm_tests_jni_JniTests_getShortField(JNIEnv* env, jobject self, jclass clazz, jobject object)
+{
+    jclass exceptionClass = (*env)->FindClass(env, "java/lang/Exception");
+
+    jfieldID field = (*env)->GetFieldID(env, clazz, "shortField", "S");
+    if ((*env)->ExceptionCheck(env) == JNI_TRUE) {
+        return 0;
+    }
+    if (field == NULL) {
+        (*env)->ThrowNew(env, exceptionClass, "failed");
+        return 0;
+    }
+
+    jshort ret = (*env)->GetShortField(env, object, field);
+    if ((*env)->ExceptionCheck(env) == JNI_TRUE) {
+        return 0;
+    }
+
+    return ret;
+}
+
+JNIEXPORT jint JNICALL Java_ikvm_tests_jni_JniTests_getIntField(JNIEnv* env, jobject self, jclass clazz, jobject object)
+{
+    jclass exceptionClass = (*env)->FindClass(env, "java/lang/Exception");
+
+    jfieldID field = (*env)->GetFieldID(env, clazz, "intField", "I");
+    if ((*env)->ExceptionCheck(env) == JNI_TRUE) {
+        return 0;
+    }
+    if (field == NULL) {
+        (*env)->ThrowNew(env, exceptionClass, "failed");
+        return 0;
+    }
+
+    jint ret = (*env)->GetIntField(env, object, field);
+    if ((*env)->ExceptionCheck(env) == JNI_TRUE) {
+        return 0;
+    }
+
+    return ret;
+}
+
+JNIEXPORT jlong JNICALL Java_ikvm_tests_jni_JniTests_getLongField(JNIEnv* env, jobject self, jclass clazz, jobject object)
+{
+    jclass exceptionClass = (*env)->FindClass(env, "java/lang/Exception");
+
+    jfieldID field = (*env)->GetFieldID(env, clazz, "longField", "J");
+    if ((*env)->ExceptionCheck(env) == JNI_TRUE) {
+        return 0;
+    }
+    if (field == NULL) {
+        (*env)->ThrowNew(env, exceptionClass, "failed");
+        return 0;
+    }
+
+    jlong ret = (*env)->GetLongField(env, object, field);
+    if ((*env)->ExceptionCheck(env) == JNI_TRUE) {
+        return 0;
+    }
+
+    return ret;
+}
+
+JNIEXPORT jfloat JNICALL Java_ikvm_tests_jni_JniTests_getFloatField(JNIEnv* env, jobject self, jclass clazz, jobject object)
+{
+    jclass exceptionClass = (*env)->FindClass(env, "java/lang/Exception");
+
+    jfieldID field = (*env)->GetFieldID(env, clazz, "floatField", "F");
+    if ((*env)->ExceptionCheck(env) == JNI_TRUE) {
+        return 0;
+    }
+    if (field == NULL) {
+        (*env)->ThrowNew(env, exceptionClass, "failed");
+        return 0;
+    }
+
+    jfloat ret = (*env)->GetFloatField(env, object, field);
+    if ((*env)->ExceptionCheck(env) == JNI_TRUE) {
+        return 0;
+    }
+
+    return ret;
+}
+
+JNIEXPORT jdouble JNICALL Java_ikvm_tests_jni_JniTests_getDoubleField(JNIEnv* env, jobject self, jclass clazz, jobject object)
+{
+    jclass exceptionClass = (*env)->FindClass(env, "java/lang/Exception");
+
+    jfieldID field = (*env)->GetFieldID(env, clazz, "doubleField", "D");
+    if ((*env)->ExceptionCheck(env) == JNI_TRUE) {
+        return 0;
+    }
+    if (field == NULL) {
+        (*env)->ThrowNew(env, exceptionClass, "failed");
+        return 0;
+    }
+
+    jdouble ret = (*env)->GetDoubleField(env, object, field);
+    if ((*env)->ExceptionCheck(env) == JNI_TRUE) {
+        return 0;
+    }
+
+    return ret;
+}
+
+JNIEXPORT jobject JNICALL Java_ikvm_tests_jni_JniTests_getStaticNullObjectField(JNIEnv* env, jobject self, jclass clazz)
+{
+    jclass exceptionClass = (*env)->FindClass(env, "java/lang/Exception");
+
+    jfieldID field = (*env)->GetStaticFieldID(env, clazz, "nullObjectField", "Ljava/lang/Object;");
+    if ((*env)->ExceptionCheck(env) == JNI_TRUE) {
+        return NULL;
+    }
+    if (field == NULL) {
+        (*env)->ThrowNew(env, exceptionClass, "failed");
+        return NULL;
+    }
+
+    jobject ret = (*env)->GetStaticObjectField(env, clazz, field);
+    if ((*env)->ExceptionCheck(env) == JNI_TRUE) {
+        return NULL;
+    }
+
+    return ret;
+}
+
+JNIEXPORT jobject JNICALL Java_ikvm_tests_jni_JniTests_getStaticObjectField(JNIEnv* env, jobject self, jclass clazz)
+{
+    jclass exceptionClass = (*env)->FindClass(env, "java/lang/Exception");
+
+    jfieldID field = (*env)->GetStaticFieldID(env, clazz, "objectField", "Ljava/lang/Object;");
+    if ((*env)->ExceptionCheck(env) == JNI_TRUE) {
+        return NULL;
+    }
+    if (field == NULL) {
+        (*env)->ThrowNew(env, exceptionClass, "failed");
+        return NULL;
+    }
+
+    jobject ret = (*env)->GetStaticObjectField(env, clazz, field);
+    if ((*env)->ExceptionCheck(env) == JNI_TRUE) {
+        return NULL;
+    }
+
+    return ret;
+}
+
+JNIEXPORT jstring JNICALL Java_ikvm_tests_jni_JniTests_getStaticStringField(JNIEnv* env, jobject self, jclass clazz)
+{
+    jclass exceptionClass = (*env)->FindClass(env, "java/lang/Exception");
+
+    jfieldID field = (*env)->GetStaticFieldID(env, clazz, "stringField", "Ljava/lang/String;");
+    if ((*env)->ExceptionCheck(env) == JNI_TRUE) {
+        return NULL;
+    }
+    if (field == NULL) {
+        (*env)->ThrowNew(env, exceptionClass, "failed");
+        return NULL;
+    }
+
+    jstring ret = (*env)->GetStaticObjectField(env, clazz, field);
+    if ((*env)->ExceptionCheck(env) == JNI_TRUE) {
+        return NULL;
+    }
+
+    return ret;
+}
+
+JNIEXPORT jboolean JNICALL Java_ikvm_tests_jni_JniTests_getStaticBooleanField(JNIEnv* env, jobject self, jclass clazz)
+{
+    jclass exceptionClass = (*env)->FindClass(env, "java/lang/Exception");
+
+    jfieldID field = (*env)->GetStaticFieldID(env, clazz, "booleanField", "Z");
+    if ((*env)->ExceptionCheck(env) == JNI_TRUE) {
+        return JNI_FALSE;
+    }
+    if (field == NULL) {
+        (*env)->ThrowNew(env, exceptionClass, "failed");
+        return JNI_FALSE;
+    }
+
+    jboolean ret = (*env)->GetStaticBooleanField(env, clazz, field);
+    if ((*env)->ExceptionCheck(env) == JNI_TRUE) {
+        return JNI_FALSE;
+    }
+
+    return ret;
+}
+
+JNIEXPORT jbyte JNICALL Java_ikvm_tests_jni_JniTests_getStaticByteField(JNIEnv* env, jobject self, jclass clazz)
+{
+    jclass exceptionClass = (*env)->FindClass(env, "java/lang/Exception");
+
+    jfieldID field = (*env)->GetStaticFieldID(env, clazz, "byteField", "B");
+    if ((*env)->ExceptionCheck(env) == JNI_TRUE) {
+        return 0;
+    }
+    if (field == NULL) {
+        (*env)->ThrowNew(env, exceptionClass, "failed");
+        return 0;
+    }
+
+    jbyte ret = (*env)->GetStaticByteField(env, clazz, field);
+    if ((*env)->ExceptionCheck(env) == JNI_TRUE) {
+        return 0;
+    }
+
+    return ret;
+}
+
+JNIEXPORT jchar JNICALL Java_ikvm_tests_jni_JniTests_getStaticCharField(JNIEnv* env, jobject self, jclass clazz)
+{
+    jclass exceptionClass = (*env)->FindClass(env, "java/lang/Exception");
+
+    jfieldID field = (*env)->GetStaticFieldID(env, clazz, "charField", "C");
+    if ((*env)->ExceptionCheck(env) == JNI_TRUE) {
+        return 0;
+    }
+    if (field == NULL) {
+        (*env)->ThrowNew(env, exceptionClass, "failed");
+        return 0;
+    }
+
+    jchar ret = (*env)->GetStaticCharField(env, clazz, field);
+    if ((*env)->ExceptionCheck(env) == JNI_TRUE) {
+        return 0;
+    }
+
+    return ret;
+}
+
+JNIEXPORT jshort JNICALL Java_ikvm_tests_jni_JniTests_getStaticShortField(JNIEnv* env, jobject self, jclass clazz)
+{
+    jclass exceptionClass = (*env)->FindClass(env, "java/lang/Exception");
+
+    jfieldID field = (*env)->GetStaticFieldID(env, clazz, "shortField", "S");
+    if ((*env)->ExceptionCheck(env) == JNI_TRUE) {
+        return 0;
+    }
+    if (field == NULL) {
+        (*env)->ThrowNew(env, exceptionClass, "failed");
+        return 0;
+    }
+
+    jshort ret = (*env)->GetStaticShortField(env, clazz, field);
+    if ((*env)->ExceptionCheck(env) == JNI_TRUE) {
+        return 0;
+    }
+
+    return ret;
+}
+
+JNIEXPORT jint JNICALL Java_ikvm_tests_jni_JniTests_getStaticIntField(JNIEnv* env, jobject self, jclass clazz)
+{
+    jclass exceptionClass = (*env)->FindClass(env, "java/lang/Exception");
+
+    jfieldID field = (*env)->GetStaticFieldID(env, clazz, "intField", "I");
+    if ((*env)->ExceptionCheck(env) == JNI_TRUE) {
+        return 0;
+    }
+    if (field == NULL) {
+        (*env)->ThrowNew(env, exceptionClass, "failed");
+        return 0;
+    }
+
+    jint ret = (*env)->GetStaticIntField(env, clazz, field);
+    if ((*env)->ExceptionCheck(env) == JNI_TRUE) {
+        return 0;
+    }
+
+    return ret;
+}
+
+JNIEXPORT jlong JNICALL Java_ikvm_tests_jni_JniTests_getStaticLongField(JNIEnv* env, jobject self, jclass clazz)
+{
+    jclass exceptionClass = (*env)->FindClass(env, "java/lang/Exception");
+
+    jfieldID field = (*env)->GetStaticFieldID(env, clazz, "longField", "J");
+    if ((*env)->ExceptionCheck(env) == JNI_TRUE) {
+        return 0;
+    }
+    if (field == NULL) {
+        (*env)->ThrowNew(env, exceptionClass, "failed");
+        return 0;
+    }
+
+    jlong ret = (*env)->GetStaticLongField(env, clazz, field);
+    if ((*env)->ExceptionCheck(env) == JNI_TRUE) {
+        return 0;
+    }
+
+    return ret;
+}
+
+JNIEXPORT jfloat JNICALL Java_ikvm_tests_jni_JniTests_getStaticFloatField(JNIEnv* env, jobject self, jclass clazz)
+{
+    jclass exceptionClass = (*env)->FindClass(env, "java/lang/Exception");
+
+    jfieldID field = (*env)->GetStaticFieldID(env, clazz, "floatField", "F");
+    if ((*env)->ExceptionCheck(env) == JNI_TRUE) {
+        return 0;
+    }
+    if (field == NULL) {
+        (*env)->ThrowNew(env, exceptionClass, "failed");
+        return 0;
+    }
+
+    jfloat ret =  (*env)->GetStaticFloatField(env, clazz, field);
+    if ((*env)->ExceptionCheck(env) == JNI_TRUE) {
+        return 0;
+    }
+
+    return ret;
+}
+
+JNIEXPORT jdouble JNICALL Java_ikvm_tests_jni_JniTests_getStaticDoubleField(JNIEnv* env, jobject self, jclass clazz)
+{
+    jclass exceptionClass = (*env)->FindClass(env, "java/lang/Exception");
+
+    jfieldID field = (*env)->GetStaticFieldID(env, clazz, "doubleField", "D");
+    if ((*env)->ExceptionCheck(env) == JNI_TRUE) {
+        return 0;
+    }
+    if (field == NULL) {
+        (*env)->ThrowNew(env, exceptionClass, "failed");
+        return 0;
+    }
+
+    jdouble ret = (*env)->GetStaticDoubleField(env, clazz, field);
+    if ((*env)->ExceptionCheck(env) == JNI_TRUE) {
+        return 0;
+    }
+
+    return ret;
+}
+
+JNIEXPORT jint JNICALL JNI_OnLoad(JavaVM* vm, void* reserved)
+{
+    return JNI_VERSION_1_8;
+}
+
+JNIEXPORT void JNICALL JNI_OnUnload(JavaVM* vm, void* reserved)
 {
 
 }

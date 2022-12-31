@@ -32,71 +32,71 @@ using Type = IKVM.Reflection.Type;
 namespace IKVM.Attributes
 {
     [AttributeUsage(AttributeTargets.Method)]
-	public sealed class AnnotationDefaultAttribute : Attribute
-	{
-		public const byte TAG_ENUM = (byte)'e';
-		public const byte TAG_CLASS = (byte)'c';
-		public const byte TAG_ANNOTATION = (byte)'@';
-		public const byte TAG_ARRAY = (byte)'[';
-		public const byte TAG_ERROR = (byte)'?';
-		private object defaultValue;
+    public sealed class AnnotationDefaultAttribute : Attribute
+    {
+        public const byte TAG_ENUM = (byte)'e';
+        public const byte TAG_CLASS = (byte)'c';
+        public const byte TAG_ANNOTATION = (byte)'@';
+        public const byte TAG_ARRAY = (byte)'[';
+        public const byte TAG_ERROR = (byte)'?';
+        private object defaultValue;
 
-		// element_value encoding:
-		// primitives:
-		//   boxed values
-		// string:
-		//   string
-		// enum:
-		//   new object[] { (byte)'e', "<EnumType>", "<enumvalue>" }
-		// class:
-		//   new object[] { (byte)'c', "<Type>" }
-		// annotation:
-		//   new object[] { (byte)'@', "<AnnotationType>", ("name", (element_value))* }
-		// array:
-		//   new object[] { (byte)'[', (element_value)* }
-		// error:
-		//   new object[] { (byte)'?', "<exceptionClass>", "<exceptionMessage>" }
-		public AnnotationDefaultAttribute(object defaultValue)
-		{
-			this.defaultValue = Unescape(defaultValue);
-		}
+        // element_value encoding:
+        // primitives:
+        //   boxed values
+        // string:
+        //   string
+        // enum:
+        //   new object[] { (byte)'e', "<EnumType>", "<enumvalue>" }
+        // class:
+        //   new object[] { (byte)'c', "<Type>" }
+        // annotation:
+        //   new object[] { (byte)'@', "<AnnotationType>", ("name", (element_value))* }
+        // array:
+        //   new object[] { (byte)'[', (element_value)* }
+        // error:
+        //   new object[] { (byte)'?', "<exceptionClass>", "<exceptionMessage>" }
+        public AnnotationDefaultAttribute(object defaultValue)
+        {
+            this.defaultValue = Unescape(defaultValue);
+        }
 
-		public object Value
-		{
-			get
-			{
-				return defaultValue;
-			}
-		}
+        public object Value
+        {
+            get
+            {
+                return defaultValue;
+            }
+        }
 
-		internal static object Escape(object obj)
-		{
-			return EscapeOrUnescape(obj, true);
-		}
+        internal static object Escape(object obj)
+        {
+            return EscapeOrUnescape(obj, true);
+        }
 
-		internal static object Unescape(object obj)
-		{
-			return EscapeOrUnescape(obj, false);
-		}
+        internal static object Unescape(object obj)
+        {
+            return EscapeOrUnescape(obj, false);
+        }
 
-		private static object EscapeOrUnescape(object obj, bool escape)
-		{
-			string str = obj as string;
-			if (str != null)
-			{
-				return escape
-					? UnicodeUtil.EscapeInvalidSurrogates(str)
-					: UnicodeUtil.UnescapeInvalidSurrogates(str);
-			}
-			object[] arr = obj as object[];
-			if (arr != null)
-			{
-				for (int i = 0; i < arr.Length; i++)
-				{
-					arr[i] = EscapeOrUnescape(arr[i], escape);
-				}
-			}
-			return obj;
-		}
-	}
+        private static object EscapeOrUnescape(object obj, bool escape)
+        {
+            string str = obj as string;
+            if (str != null)
+            {
+                return escape ? UnicodeUtil.EscapeInvalidSurrogates(str) : UnicodeUtil.UnescapeInvalidSurrogates(str);
+            }
+            object[] arr = obj as object[];
+            if (arr != null)
+            {
+                for (int i = 0; i < arr.Length; i++)
+                {
+                    arr[i] = EscapeOrUnescape(arr[i], escape);
+                }
+            }
+            return obj;
+        }
+
+    }
+
 }

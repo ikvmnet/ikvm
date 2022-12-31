@@ -55,6 +55,7 @@
         <Compile Include="..\IKVM.Runtime\ArrayUtil.cs" LinkBase="IKVM.Runtime" />
         <Compile Include="..\IKVM.Runtime\TypeNameUtil.cs" LinkBase="IKVM.Runtime" />
         <Compile Include="..\IKVM.Runtime\StringConstants.cs" LinkBase="IKVM.Runtime" />
+        <Compile Include="..\IKVM.Runtime\UnicodeUtil.cs" LinkBase="IKVM.Runtime" />
     </ItemGroup>
 
     <ItemGroup>
