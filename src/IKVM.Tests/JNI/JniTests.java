@@ -32,6 +32,8 @@ public class JniTests
 
 	public native void newObjectATestWithArg();
 
+	public native Object getNullObjectField(Class clazz, Object o);
+
 	public native Object getObjectField(Class clazz, Object o);
 
 	public native Object getStringField(Class clazz, Object o);
@@ -52,6 +54,8 @@ public class JniTests
 
 	public native double getDoubleField(Class clazz, Object o);
 
+	public native Object getStaticNullObjectField(Class clazz);
+
 	public native Object getStaticObjectField(Class clazz);
 
 	public native Object getStaticStringField(Class clazz);
@@ -71,6 +75,5 @@ public class JniTests
 	public native float getStaticFloatField(Class clazz);
 
 	public native double getStaticDoubleField(Class clazz);
-
 
 }

@@ -109,6 +109,7 @@ namespace IKVM.Tests.JNI
         {
 
             public object objectField;
+            public object nullObjectField;
             public string stringField;
             public bool booleanField;
             public byte byteField;
@@ -132,12 +133,21 @@ namespace IKVM.Tests.JNI
         }
 
         [TestMethod]
+        public void GetNullObjectField()
+        {
+            var o = new TestObject();
+            o.nullObjectField = null;
+            var v = (object)test.getObjectField(typeof(TestObject), o);
+            v.Should().BeNull();
+        }
+
+        [TestMethod]
         public void GetStringField()
         {
             var t = "TEST";
             var o = new TestObject();
             o.stringField = t;
-            var v = (string)test.getObjectField(typeof(TestObject), o);
+            var v = (string)test.getStringField(typeof(TestObject), o);
             v.Should().Be(t);
         }
 
@@ -216,6 +226,7 @@ namespace IKVM.Tests.JNI
         class StaticTestObject
         {
 
+            public static object nullObjectField;
             public static object objectField;
             public static string stringField;
             public static bool booleanField;
@@ -230,11 +241,19 @@ namespace IKVM.Tests.JNI
         }
 
         [TestMethod]
+        public void GetStaticNullObjectField()
+        {
+            StaticTestObject.objectField = null;
+            var v = (object)test.getStaticNullObjectField(typeof(StaticTestObject));
+            v.Should().BeNull();
+        }
+
+        [TestMethod]
         public void GetStaticObjectField()
         {
             var t = new object();
             StaticTestObject.objectField = t;
-            var v = (object)test.getStaticObjectField(typeof(TestObject));
+            var v = (object)test.getStaticObjectField(typeof(StaticTestObject));
             v.Should().BeSameAs(t);
         }
 
@@ -243,7 +262,7 @@ namespace IKVM.Tests.JNI
         {
             var t = "TEST";
             StaticTestObject.stringField = t;
-            var v = (string)test.getStaticObjectField(typeof(TestObject));
+            var v = (string)test.getStaticStringField(typeof(StaticTestObject));
             v.Should().Be(t);
         }
 
@@ -251,7 +270,7 @@ namespace IKVM.Tests.JNI
         public void GetStaticBooleanField()
         {
             StaticTestObject.booleanField = true;
-            var v = (bool)test.getStaticBooleanField(typeof(TestObject));
+            var v = (bool)test.getStaticBooleanField(typeof(StaticTestObject));
             v.Should().Be(true);
         }
 
@@ -259,7 +278,7 @@ namespace IKVM.Tests.JNI
         public void GetStaticByteField()
         {
             StaticTestObject.byteField = 1;
-            var v = (byte)test.getStaticByteField(typeof(TestObject));
+            var v = (byte)test.getStaticByteField(typeof(StaticTestObject));
             v.Should().Be(1);
         }
 
@@ -267,7 +286,7 @@ namespace IKVM.Tests.JNI
         public void GetStaticCharField()
         {
             StaticTestObject.charField = 'A';
-            var v = (char)test.getStaticCharField(typeof(TestObject));
+            var v = (char)test.getStaticCharField(typeof(StaticTestObject));
             v.Should().Be('A');
         }
 
@@ -275,7 +294,7 @@ namespace IKVM.Tests.JNI
         public void GetStaticShortField()
         {
             StaticTestObject.shortField = 1;
-            var v = (short)test.getStaticShortField(typeof(TestObject));
+            var v = (short)test.getStaticShortField(typeof(StaticTestObject));
             v.Should().Be(1);
         }
 
@@ -283,7 +302,7 @@ namespace IKVM.Tests.JNI
         public void GetStaticIntField()
         {
             StaticTestObject.intField = 1;
-            var v = (int)test.getStaticIntField(typeof(TestObject));
+            var v = (int)test.getStaticIntField(typeof(StaticTestObject));
             v.Should().Be(1);
         }
 
@@ -291,7 +310,7 @@ namespace IKVM.Tests.JNI
         public void GetStaticLongField()
         {
             StaticTestObject.longField = 1L;
-            var v = (long)test.getStaticLongField(typeof(TestObject));
+            var v = (long)test.getStaticLongField(typeof(StaticTestObject));
             v.Should().Be(1L);
         }
 
@@ -299,7 +318,7 @@ namespace IKVM.Tests.JNI
         public void GetStaticFloatField()
         {
             StaticTestObject.floatField = 1f;
-            var v = (float)test.getStaticFloatField(typeof(TestObject));
+            var v = (float)test.getStaticFloatField(typeof(StaticTestObject));
             v.Should().Be(1f);
         }
 
@@ -307,7 +326,7 @@ namespace IKVM.Tests.JNI
         public void GetStaticDoubleField()
         {
             StaticTestObject.doubleField = 1d;
-            var v = (double)test.getStaticDoubleField(typeof(TestObject));
+            var v = (double)test.getStaticDoubleField(typeof(StaticTestObject));
             v.Should().Be(1d);
         }
 
