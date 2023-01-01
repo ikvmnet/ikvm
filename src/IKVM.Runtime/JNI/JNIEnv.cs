@@ -2411,11 +2411,8 @@ namespace IKVM.Runtime.JNI
         /// <returns></returns>
         internal static jweak NewWeakGlobalRef(JNIEnv* pEnv, jobject obj)
         {
-            object o = pEnv->UnwrapRef(obj);
-            if (o == null)
-                return IntPtr.Zero;
-
-            return JNIGlobalRefTable.AddWeakGlobalRef(obj);
+            var o = pEnv->UnwrapRef(obj);
+            return o == null ? IntPtr.Zero : JNIGlobalRefTable.AddWeakGlobalRef(o);
         }
 
         /// <summary>
@@ -2513,7 +2510,7 @@ namespace IKVM.Runtime.JNI
             if (IsLocalRef(o))
                 return GetManagedJNIEnv().UnwrapLocalRef(o);
             else if (IsGlobalRef(o))
-                return JNIGlobalRefTable.Unwrap((int)o);
+                return JNIGlobalRefTable.Unwrap(o);
             return null;
         }
 
@@ -2522,7 +2519,7 @@ namespace IKVM.Runtime.JNI
             if (IsLocalRef(o))
                 return env.UnwrapLocalRef(o);
             else if (IsGlobalRef(o))
-                return JNIGlobalRefTable.Unwrap((int)o);
+                return JNIGlobalRefTable.Unwrap(o);
             else
                 return null;
         }

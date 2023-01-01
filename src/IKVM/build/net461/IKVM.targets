@@ -1,0 +1,14 @@
+<Project>
+    <PropertyGroup>
+        <MSBuildAllProjects>$(MSBuildAllProjects);$(MSBuildThisFileFullPath)</MSBuildAllProjects>
+    </PropertyGroup>
+
+    <ItemGroup>
+        <ContentWithTargetPath Include="$(MSBuildThisFileDirectory)..\..\runtimes\**\*">
+            <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+            <TargetPath>runtimes\%(RecursiveDir)%(FileName)%(Extension)</TargetPath>
+            <Pack>false</Pack>
+        </ContentWithTargetPath>
+    </ItemGroup>
+
+</Project>

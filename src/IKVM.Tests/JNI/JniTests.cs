@@ -330,6 +330,13 @@ namespace IKVM.Tests.JNI
             v.Should().Be(1d);
         }
 
+        [TestMethod]
+        public void NewWeakGlobalRef()
+        {
+            var o = new object();
+            ((object)test.newWeakGlobalRef(o)).Should().BeSameAs(o);
+        }
+
     }
 
 }
