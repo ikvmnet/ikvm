@@ -382,7 +382,7 @@ namespace IKVM.Java.Externs.java.lang.invoke
         public static int getMembers(global::java.lang.Class defc, string matchName, string matchSig, int matchFlags, global::java.lang.Class caller, int skip, global::java.lang.invoke.MemberName[] results)
         {
 #if FIRST_PASS
-		return 0;
+		    return 0;
 #else
             if (matchName != null || matchSig != null || matchFlags != global::java.lang.invoke.MethodHandleNatives.Constants.MN_IS_METHOD)
             {
@@ -403,7 +403,7 @@ namespace IKVM.Java.Externs.java.lang.invoke
         public static long objectFieldOffset(global::java.lang.invoke.MemberName self)
         {
 #if FIRST_PASS
-		return 0;
+		    return 0;
 #else
             global::java.lang.reflect.Field field = (global::java.lang.reflect.Field)TypeWrapper.FromClass(self.getDeclaringClass())
                 .GetFieldWrapper(self.getName(), self.getSignature().Replace('/', '.')).ToField(false);
