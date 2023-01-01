@@ -21,7 +21,6 @@
     </PropertyGroup>
 
     <ItemGroup>
-        <None Include="build\**\*" Pack="true" PackagePath="build\%(RecursiveDir)%(Filename)%(Extension)" />
         <None Include="buildTransitive\**\*" Pack="true" PackagePath="buildTransitive\%(RecursiveDir)%(Filename)%(Extension)" />
     </ItemGroup>
 
@@ -46,13 +45,13 @@
 
     <Target Name="GetProjectReferenceBuildOutputInPackage" DependsOnTargets="ResolveReferences">
         <ItemGroup>
-            <BuildOutputInPackage Include="@(ReferenceCopyLocalPaths->WithMetadataValue('ReferenceSourceTarget', 'ProjectReference')->WithMetadataValue('PrivateAssets', 'all'))" />
+            <BuildOutputInPackage Include="@(ReferenceCopyLocalPaths-&gt;WithMetadataValue('ReferenceSourceTarget', 'ProjectReference')-&gt;WithMetadataValue('PrivateAssets', 'all'))" />
         </ItemGroup>
     </Target>
 
     <Target Name="GetProjectReferenceDebugSymbolsInPackage" DependsOnTargets="ResolveReferences">
         <ItemGroup>
-            <TfmSpecificDebugSymbolsFile Include="@(ReferenceCopyLocalPaths->WithMetadataValue('ReferenceSourceTarget', 'ProjectReference')->WithMetadataValue('PrivateAssets', 'all')->'%(RootDir)%(Directory)%(Filename).pdb')" Condition="Exists('%(RootDir)%(Directory)%(Filename).pdb')">
+            <TfmSpecificDebugSymbolsFile Include="@(ReferenceCopyLocalPaths-&gt;WithMetadataValue('ReferenceSourceTarget', 'ProjectReference')-&gt;WithMetadataValue('PrivateAssets', 'all')-&gt;'%(RootDir)%(Directory)%(Filename).pdb')" Condition="Exists('%(RootDir)%(Directory)%(Filename).pdb')">
                 <TargetFramework>$(TargetFramework)</TargetFramework>
             </TfmSpecificDebugSymbolsFile>
         </ItemGroup>
