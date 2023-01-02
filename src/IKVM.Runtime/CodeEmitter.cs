@@ -2233,11 +2233,7 @@ namespace IKVM.Internal
             for (int i = 0; i < code.Count; i++)
             {
                 code[i].RealEmit(ilOffset, this, ref lineNumber);
-#if IMPORTER || NET_4_0
-				ilOffset = ilgen_real.ILOffset;
-#else
-                ilOffset += code[i].Size;
-#endif
+                ilOffset = ilgen_real.ILOffset;
             }
         }
 
