@@ -29,7 +29,6 @@ using System.Security.Permissions;
 namespace IKVM.Java.Externs.java.nio
 {
 
-    [SecurityPermission(SecurityAction.LinkDemand, UnmanagedCode = true)]
     [SecurityCritical]
     static class Bits
     {

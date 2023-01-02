@@ -34,10 +34,11 @@ namespace IKVM.Java.Externs.sun.security.provider
         {
             try
             {
-                RNGCryptoServiceProvider csp = new RNGCryptoServiceProvider();
-                csp.GetBytes(result);
-#if NET_4_0
-			csp.Dispose();
+#if NETFRAMEWORK
+                using var rng = RandomNumberGenerator.Create();
+                rng.GetBytes(result);
+#else
+                RandomNumberGenerator.Fill(result);
 #endif
                 return true;
             }
