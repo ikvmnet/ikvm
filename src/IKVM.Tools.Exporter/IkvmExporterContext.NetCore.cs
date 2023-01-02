@@ -10,7 +10,7 @@ using System.Threading.Tasks;
 
 using Microsoft.Extensions.DependencyModel.Resolution;
 
-using Newtonsoft.Json;
+using System.Text.Json;
 
 namespace IKVM.Tools.Exporter
 {
@@ -36,7 +36,7 @@ namespace IKVM.Tools.Exporter
                 if (options is null)
                     throw new ArgumentNullException(nameof(options));
 
-                this.options = JsonConvert.DeserializeObject<IkvmExporterOptions>(options);
+                this.options = JsonSerializer.Deserialize<IkvmExporterOptions>(options);
             }
 
             /// <summary>
@@ -87,7 +87,7 @@ namespace IKVM.Tools.Exporter
             context = new IsolatedAssemblyLoadContext("IkvmExporter", true);
             var asm = context.LoadFromAssemblyName(typeof(IkvmExporterDispatcher).Assembly.GetName());
             var typ = asm.GetType(typeof(IkvmExporterDispatcher).FullName);
-            dispatcher = Activator.CreateInstance(typ, new[] { JsonConvert.SerializeObject(options) });
+            dispatcher = Activator.CreateInstance(typ, new[] { JsonSerializer.Serialize(options) });
         }
 
         /// <summary>
