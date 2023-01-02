@@ -1342,10 +1342,6 @@
                 <redirect class="cli.IKVM.Internal.ExceptionHelper" sig="(Ljava.lang.Throwable;)Ljava.lang.String;" type="static" />
             </method>
             <method name="GetObjectData" sig="(Lcli.System.Runtime.Serialization.SerializationInfo;Lcli.System.Runtime.Serialization.StreamingContext;)V" modifiers="public">
-                <attribute type="System.Security.Permissions.SecurityPermissionAttribute" sig="(Lcli.System.Security.Permissions.SecurityAction;)V">
-                    <parameter>Demand</parameter>
-                    <property name="SerializationFormatter" sig="Z">true</property>
-                </attribute>
                 <attribute type="System.Security.SecurityCriticalAttribute" sig="()V" />
                 <attribute type="IKVM.Attributes.HideFromJavaAttribute" sig="()V" />
                 <attribute type="System.ComponentModel.EditorBrowsableAttribute" sig="(Lcli.System.ComponentModel.EditorBrowsableState;)V">

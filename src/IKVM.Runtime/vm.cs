@@ -64,7 +64,7 @@ namespace IKVM.Internal
 #if !EXPORTER
         private static int emitSymbols;
 #if CLASSGC
-		internal static bool classUnloading = true;
+        internal static bool classUnloading = true;
 #endif
 #endif
         private static Assembly coreAssembly;
@@ -122,7 +122,7 @@ namespace IKVM.Internal
                 if (coreAssembly == null)
                 {
 #if FIRST_PASS
-					throw new InvalidOperationException("This version of IKVM.Runtime.dll was compiled with FIRST_PASS defined.");
+                    throw new InvalidOperationException("This version of IKVM.Runtime.dll was compiled with FIRST_PASS defined.");
 #else
                     coreAssembly = typeof(java.lang.Object).Assembly;
 #endif
@@ -144,26 +144,32 @@ namespace IKVM.Internal
             {
                 if (emitSymbols == 0)
                 {
-                    int state;
-                    string debug = System.Configuration.ConfigurationManager.AppSettings["ikvm-emit-symbols"];
-                    if (debug == null)
-                    {
-                        state = Debugger.IsAttached ? 1 : 2;
-                    }
-                    else
-                    {
-                        state = debug.Equals("True", StringComparison.OrdinalIgnoreCase) ? 1 : 2;
-                    }
+                    var state = 2;
+
+#if NETFRAMEWORK
+                    // check app.config on Framework
+                    if (System.Configuration.ConfigurationManager.AppSettings["ikvm-emit-symbols"].Equals("true", StringComparison.OrdinalIgnoreCase))
+                        state = 1;
+#endif
+
+                    // respect the IKVM_EMIT_SYMBOLs environmental variable
+                    if (string.Equals(Environment.GetEnvironmentVariable("IKVM_EMIT_SYMBOLS"), "true", StringComparison.OrdinalIgnoreCase))
+                        state = 1;
+
+                    // by default enable symbols if a debugger is attached
+                    if (state == 2 && Debugger.IsAttached)
+                        state = 1;
 
                     // make sure we only set the value once, because it isn't allowed to changed as that could cause
                     // the compiler to try emitting symbols into a ModuleBuilder that doesn't accept them (and would
                     // throw an InvalidOperationException)
                     Interlocked.CompareExchange(ref emitSymbols, state, 0);
                 }
+
                 return emitSymbols == 1;
             }
         }
-#endif // !IMPORTER && !EXPORTER
+#endif
 
         internal static bool IsUnix
         {
@@ -303,7 +309,7 @@ namespace IKVM.Internal
         internal static object Box(object val)
         {
 #if IMPORTER || FIRST_PASS || EXPORTER
-			return null;
+            return null;
 #else
             if (val is byte)
             {
@@ -347,7 +353,7 @@ namespace IKVM.Internal
         internal static object Unbox(object val)
         {
 #if IMPORTER || FIRST_PASS || EXPORTER
-			return null;
+            return null;
 #else
             java.lang.Byte b = val as java.lang.Byte;
             if (b != null)
@@ -419,7 +425,7 @@ namespace IKVM.Internal
         internal static object NewAnnotationElementValue(java.lang.ClassLoader classLoader, java.lang.Class expectedClass, object definition)
         {
 #if FIRST_PASS
-			return null;
+            return null;
 #else
             try
             {
@@ -439,7 +445,7 @@ namespace IKVM.Internal
         internal static object NewDirectByteBuffer(long address, int capacity)
         {
 #if FIRST_PASS
-			return null;
+            return null;
 #else
             return java.nio.DirectByteBuffer.__new(address, capacity);
 #endif
