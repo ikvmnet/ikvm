@@ -28,6 +28,7 @@ using System.Reflection;
 using System.Reflection.Emit;
 
 using IKVM.Internal;
+using IKVM.Runtime;
 
 static partial class MethodHandleUtil
 {
@@ -623,7 +624,7 @@ static partial class MethodHandleUtil
         }
         catch (Exception x)
         {
-            JVM.CriticalFailure("Delegate failed to JIT", x);
+            throw new InternalException("Delegate failed to JIT", x);
         }
 #endif
         return d;

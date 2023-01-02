@@ -225,68 +225,6 @@ namespace IKVM.Internal
             return (int)key;
         }
 
-#if !IMPORTER
-
-        internal static void CriticalFailure(string message, Exception x)
-        {
-            try
-            {
-                Tracer.Error(Tracer.Runtime, "CRITICAL FAILURE: {0}", message);
-                System.Type messageBox = null;
-#if !EXPORTER
-                // NOTE we use reflection to invoke MessageBox.Show, to make sure we run in environments where WinForms isn't available
-                Assembly winForms = IsUnix ? null : Assembly.Load("System.Windows.Forms, Version=1.0.5000.0, Culture=neutral, PublicKeyToken=b77a5c561934e089");
-                if (winForms != null)
-                {
-                    messageBox = winForms.GetType("System.Windows.Forms.MessageBox");
-                }
-#endif
-                message = String.Format("****** Critical Failure: {1} ******{0}{0}" +
-                    "PLEASE FILE A BUG REPORT FOR IKVM.NET WHEN YOU SEE THIS MESSAGE{0}{0}" +
-                    (messageBox != null ? "(on Windows you can use Ctrl+C to copy the contents of this message to the clipboard){0}{0}" : "") +
-                    "{2}{0}" +
-                    "{3}{0}" +
-                    "{4} {5}-bit{0}{0}" +
-                    "{6}{0}" +
-                    "{7}{0}" +
-                    "{8}",
-                    Environment.NewLine,
-                    message,
-                    System.Reflection.Assembly.GetExecutingAssembly().FullName,
-                    System.Runtime.InteropServices.RuntimeEnvironment.GetRuntimeDirectory(),
-                    Environment.Version,
-                    IntPtr.Size * 8,
-                    x,
-                    x != null ? new StackTrace(x, true).ToString() : "",
-                    new StackTrace(true));
-                if (messageBox != null)
-                {
-                    try
-                    {
-                        Version ver = SafeGetAssemblyVersion(typeof(JVM).Assembly);
-                        messageBox.InvokeMember("Show", System.Reflection.BindingFlags.InvokeMethod | System.Reflection.BindingFlags.Static | System.Reflection.BindingFlags.Public, null, null, new object[] { message, "IKVM.NET " + ver + " Critical Failure" });
-                    }
-                    catch
-                    {
-                        Console.Error.WriteLine(message);
-                    }
-                }
-                else
-                {
-                    Console.Error.WriteLine(message);
-                }
-            }
-            catch (Exception ex)
-            {
-                Console.Error.WriteLine(ex);
-            }
-            finally
-            {
-                Environment.Exit(666);
-            }
-        }
-#endif // !IMPORTER
-
 #if IMPORTER || EXPORTER
 		internal static Type LoadType(System.Type type)
 		{

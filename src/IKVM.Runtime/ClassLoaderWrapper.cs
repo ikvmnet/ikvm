@@ -28,6 +28,8 @@ using System.Diagnostics;
 using System.Threading;
 using System.Runtime.CompilerServices;
 
+using IKVM.Runtime;
+
 #if NETCOREAPP
 using System.Runtime.Loader;
 #endif
@@ -123,7 +125,7 @@ namespace IKVM.Internal
 #if IMPORTER
                     throw new FatalCompilerErrorException(Message.CoreClassesMissing);
 #else
-                    JVM.CriticalFailure("Failed to find core classes in core library", null);
+                    throw new InternalException("Failed to find core classes in core library.");
 #endif
                 }
             }
@@ -1315,10 +1317,9 @@ namespace IKVM.Internal
             {
                 return GetBootstrapClassLoader().LoadClassByDottedName(name);
             }
-            catch (Exception x)
+            catch (Exception e)
             {
-                JVM.CriticalFailure("Loading of critical class failed", x);
-                return null;
+                throw new InternalException("Loading of critical class failed.", e);
             }
 #endif
         }

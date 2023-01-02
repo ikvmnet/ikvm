@@ -48,25 +48,25 @@ namespace IKVM.Internal
 
 #if IMPORTER
 
-         static CustomAttributeBuilder ghostInterfaceAttribute;
-         static CustomAttributeBuilder deprecatedAttribute;
-         static CustomAttributeBuilder editorBrowsableNever;
-         static ConstructorInfo implementsAttribute;
-         static ConstructorInfo throwsAttribute;
-         static ConstructorInfo sourceFileAttribute;
-         static ConstructorInfo lineNumberTableAttribute1;
-         static ConstructorInfo lineNumberTableAttribute2;
-         static ConstructorInfo enclosingMethodAttribute;
-         static ConstructorInfo signatureAttribute;
-         static ConstructorInfo methodParametersAttribute;
-         static ConstructorInfo runtimeVisibleTypeAnnotationsAttribute;
-         static ConstructorInfo constantPoolAttribute;
-         static CustomAttributeBuilder paramArrayAttribute;
-         static ConstructorInfo nonNestedInnerClassAttribute;
-         static ConstructorInfo nonNestedOuterClassAttribute;
-         static readonly Type typeofModifiers = JVM.LoadType(typeof(Modifiers));
-         static readonly Type typeofSourceFileAttribute = JVM.LoadType(typeof(SourceFileAttribute));
-         static readonly Type typeofLineNumberTableAttribute = JVM.LoadType(typeof(LineNumberTableAttribute));
+        static CustomAttributeBuilder ghostInterfaceAttribute;
+        static CustomAttributeBuilder deprecatedAttribute;
+        static CustomAttributeBuilder editorBrowsableNever;
+        static ConstructorInfo implementsAttribute;
+        static ConstructorInfo throwsAttribute;
+        static ConstructorInfo sourceFileAttribute;
+        static ConstructorInfo lineNumberTableAttribute1;
+        static ConstructorInfo lineNumberTableAttribute2;
+        static ConstructorInfo enclosingMethodAttribute;
+        static ConstructorInfo signatureAttribute;
+        static ConstructorInfo methodParametersAttribute;
+        static ConstructorInfo runtimeVisibleTypeAnnotationsAttribute;
+        static ConstructorInfo constantPoolAttribute;
+        static CustomAttributeBuilder paramArrayAttribute;
+        static ConstructorInfo nonNestedInnerClassAttribute;
+        static ConstructorInfo nonNestedOuterClassAttribute;
+        static readonly Type typeofModifiers = JVM.LoadType(typeof(Modifiers));
+        static readonly Type typeofSourceFileAttribute = JVM.LoadType(typeof(SourceFileAttribute));
+        static readonly Type typeofLineNumberTableAttribute = JVM.LoadType(typeof(LineNumberTableAttribute));
 #endif // IMPORTER
         static readonly Type typeofRemappedClassAttribute = JVM.LoadType(typeof(RemappedClassAttribute));
         static readonly Type typeofRemappedTypeAttribute = JVM.LoadType(typeof(RemappedTypeAttribute));
@@ -164,16 +164,7 @@ namespace IKVM.Internal
 
         internal static void SetCustomAttribute(ClassLoaderWrapper loader, TypeBuilder tb, IKVM.Tools.Importer.MapXml.Attribute attr)
         {
-            bool declarativeSecurity;
-            CustomAttributeBuilder cab = CreateCustomAttribute(loader, attr, out declarativeSecurity);
-            if (declarativeSecurity)
-            {
-                tb.__AddDeclarativeSecurity(cab);
-            }
-            else
-            {
-                tb.SetCustomAttribute(cab);
-            }
+            tb.SetCustomAttribute(CreateCustomAttribute(loader, attr));
         }
 
         internal static void SetCustomAttribute(ClassLoaderWrapper loader, FieldBuilder fb, IKVM.Tools.Importer.MapXml.Attribute attr)
@@ -188,16 +179,7 @@ namespace IKVM.Internal
 
         internal static void SetCustomAttribute(ClassLoaderWrapper loader, MethodBuilder mb, IKVM.Tools.Importer.MapXml.Attribute attr)
         {
-            bool declarativeSecurity;
-            CustomAttributeBuilder cab = CreateCustomAttribute(loader, attr, out declarativeSecurity);
-            if (declarativeSecurity)
-            {
-                mb.__AddDeclarativeSecurity(cab);
-            }
-            else
-            {
-                mb.SetCustomAttribute(CreateCustomAttribute(loader, attr));
-            }
+            mb.SetCustomAttribute(CreateCustomAttribute(loader, attr));
         }
 
         internal static void SetCustomAttribute(ClassLoaderWrapper loader, PropertyBuilder pb, IKVM.Tools.Importer.MapXml.Attribute attr)
@@ -240,13 +222,7 @@ namespace IKVM.Internal
             }
         }
 
-        private static CustomAttributeBuilder CreateCustomAttribute(ClassLoaderWrapper loader, IKVM.Tools.Importer.MapXml.Attribute attr)
-        {
-            bool ignore;
-            return CreateCustomAttribute(loader, attr, out ignore);
-        }
-
-        private static CustomAttributeBuilder CreateCustomAttribute(ClassLoaderWrapper loader, IKVM.Tools.Importer.MapXml.Attribute attr, out bool isDeclarativeSecurity)
+        static CustomAttributeBuilder CreateCustomAttribute(ClassLoaderWrapper loader, IKVM.Tools.Importer.MapXml.Attribute attr)
         {
             // TODO add error handling
             Type[] argTypes;
@@ -255,7 +231,6 @@ namespace IKVM.Internal
             if (attr.Type != null)
             {
                 Type t = StaticCompiler.GetTypeForMapXml(loader, attr.Type);
-                isDeclarativeSecurity = t.IsSubclassOf(Types.SecurityAttribute);
                 ConstructorInfo ci = t.GetConstructor(argTypes);
                 if (ci == null)
                 {
@@ -304,7 +279,6 @@ namespace IKVM.Internal
                     throw new NotImplementedException("Setting property values on Java attributes is not implemented");
                 }
                 TypeWrapper t = loader.LoadClassByDottedName(attr.Class);
-                isDeclarativeSecurity = t.TypeAsBaseType.IsSubclassOf(Types.SecurityAttribute);
                 FieldInfo[] namedFields;
                 object[] fieldValues;
                 if (attr.Fields != null)

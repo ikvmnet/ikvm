@@ -1359,10 +1359,6 @@
                 </body>
             </method>
             <constructor sig="(Lcli.System.Runtime.Serialization.SerializationInfo;Lcli.System.Runtime.Serialization.StreamingContext;)V" modifiers="protected">
-                <attribute type="System.Security.Permissions.SecurityPermissionAttribute" sig="(Lcli.System.Security.Permissions.SecurityAction;)V">
-                    <parameter>Demand</parameter>
-                    <property name="SerializationFormatter" sig="Z">true</property>
-                </attribute>
                 <attribute type="IKVM.Attributes.HideFromJavaAttribute" sig="()V" />
                 <body>
                     <ldarg_0 />

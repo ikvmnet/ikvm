@@ -226,7 +226,7 @@ namespace IKVM.Tests.JNI
         class StaticTestObject
         {
 
-            public static object nullObjectField;
+            public static object nullObjectField = null;
             public static object objectField;
             public static string stringField;
             public static bool booleanField;

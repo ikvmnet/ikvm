@@ -753,11 +753,18 @@ namespace IKVM.Internal
             return loader;
         }
 
+        /// <summary>
+        /// Gets the type wrapper for the given type located in this assembly.
+        /// </summary>
+        /// <param name="type"></param>
+        /// <returns></returns>
+        /// <exception cref="InternalException"></exception>
         internal virtual TypeWrapper GetWrapperFromAssemblyType(Type type)
         {
-            //Tracer.Info(Tracer.Runtime, "GetWrapperFromAssemblyType: {0}", type.FullName);
-            Debug.Assert(!type.Name.EndsWith("[]"), "!type.IsArray", type.FullName);
-            Debug.Assert(AssemblyClassLoader.FromAssembly(type.Assembly) == this);
+            if (type.Name.EndsWith("[]"))
+                throw new InternalException();
+            if (AssemblyClassLoader.FromAssembly(type.Assembly) != this)
+                throw new InternalException();
 
             var wrapper = GetLoader(type.Assembly).CreateWrapperForAssemblyType(type);
             if (wrapper != null)
@@ -773,19 +780,20 @@ namespace IKVM.Internal
                     wrapper = RegisterInitiatingLoader(wrapper);
                 }
 
+                // this really shouldn't happen, it means that we have two different types in our assembly that both
+                // have the same Java name
                 if (wrapper.TypeAsTBD != type && (!wrapper.IsRemapped || wrapper.TypeAsBaseType != type))
                 {
-                    // this really shouldn't happen, it means that we have two different types in our assembly that both
-                    // have the same Java name
 #if IMPORTER
                     throw new FatalCompilerErrorException(Message.AssemblyContainsDuplicateClassNames, type.FullName, wrapper.TypeAsTBD.FullName, wrapper.Name, type.Assembly.FullName);
 #else
-                    string msg = $"\nType \"{type.FullName}\" and \"{wrapper.TypeAsTBD.FullName}\" both map to the same name \"{wrapper.Name}\".\n";
-                    JVM.CriticalFailure(msg, null);
+                    throw new InternalException($"\nType \"{type.FullName}\" and \"{wrapper.TypeAsTBD.FullName}\" both map to the same name \"{wrapper.Name}\".");
 #endif
                 }
+
                 return wrapper;
             }
+
             return null;
         }
 

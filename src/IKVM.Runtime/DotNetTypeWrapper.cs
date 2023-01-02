@@ -372,7 +372,7 @@ namespace IKVM.Internal
                 : base(Modifiers.Public | Modifiers.Interface | Modifiers.Abstract, name, null)
             {
 #if IMPORTER || EXPORTER
-				this.fakeType = FakeTypes.GetDelegateType(delegateType);
+                this.fakeType = FakeTypes.GetDelegateType(delegateType);
 #elif !FIRST_PASS
                 this.fakeType = typeof(ikvm.@internal.DelegateInterface<>).MakeGenericType(delegateType);
 #endif
@@ -478,7 +478,7 @@ namespace IKVM.Internal
                 : base(Modifiers.Public | Modifiers.Enum | Modifiers.Final, name, ClassLoaderWrapper.LoadClassCritical("java.lang.Enum"))
             {
 #if IMPORTER || EXPORTER
-				this.fakeType = FakeTypes.GetEnumType(enumType);
+                this.fakeType = FakeTypes.GetEnumType(enumType);
 #elif !FIRST_PASS
                 this.fakeType = typeof(ikvm.@internal.EnumEnum<>).MakeGenericType(enumType);
 #endif
@@ -682,7 +682,7 @@ namespace IKVM.Internal
                 : base(name)
             {
 #if IMPORTER || EXPORTER
-				this.fakeType = FakeTypes.GetAttributeType(attributeType);
+                this.fakeType = FakeTypes.GetAttributeType(attributeType);
 #elif !FIRST_PASS
                 this.fakeType = typeof(ikvm.@internal.AttributeAnnotation<>).MakeGenericType(attributeType);
 #endif
@@ -1009,7 +1009,7 @@ namespace IKVM.Internal
                     : base(declaringType.Name + AttributeAnnotationReturnValueSuffix)
                 {
 #if IMPORTER || EXPORTER
-					this.fakeType = FakeTypes.GetAttributeReturnValueType(declaringType.attributeType);
+                    this.fakeType = FakeTypes.GetAttributeReturnValueType(declaringType.attributeType);
 #elif !FIRST_PASS
                     this.fakeType = typeof(ikvm.@internal.AttributeAnnotationReturnValue<>).MakeGenericType(declaringType.attributeType);
 #endif
@@ -1149,7 +1149,7 @@ namespace IKVM.Internal
                     : base(declaringType.Name + AttributeAnnotationMultipleSuffix)
                 {
 #if IMPORTER || EXPORTER
-					this.fakeType = FakeTypes.GetAttributeMultipleType(declaringType.attributeType);
+                    this.fakeType = FakeTypes.GetAttributeMultipleType(declaringType.attributeType);
 #elif !FIRST_PASS
                     this.fakeType = typeof(ikvm.@internal.AttributeAnnotationMultiple<>).MakeGenericType(declaringType.attributeType);
 #endif
@@ -1540,20 +1540,14 @@ namespace IKVM.Internal
 
                 internal override void Apply(ClassLoaderWrapper loader, PropertyBuilder pb, object annotation)
                 {
-                    if (type.IsSubclassOf(Types.SecurityAttribute))
-                    {
-                        // you can't add declarative security to a property
-                    }
-                    else
-                    {
-                        pb.SetCustomAttribute(MakeCustomAttributeBuilder(loader, annotation));
-                    }
+                    pb.SetCustomAttribute(MakeCustomAttributeBuilder(loader, annotation));
                 }
 
                 internal override bool IsCustomAttribute
                 {
                     get { return true; }
                 }
+
             }
 
             internal override Annotation Annotation
@@ -2323,7 +2317,7 @@ namespace IKVM.Internal
                 type = type.GetElementType();
             }
 #if IMPORTER || EXPORTER
-			return type.__IsFunctionPointer;
+            return type.__IsFunctionPointer;
 #else
             return false;
 #endif

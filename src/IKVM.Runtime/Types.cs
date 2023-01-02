@@ -60,7 +60,6 @@ namespace IKVM.Internal
         internal static readonly Type Double = JVM.Import(typeof(System.Double));
 
         internal static readonly Type IsVolatile = JVM.Import(typeof(System.Runtime.CompilerServices.IsVolatile));
-        internal static readonly Type SecurityAttribute = JVM.Import(typeof(System.Security.Permissions.SecurityAttribute));
 
         static Types()
         {

@@ -999,7 +999,7 @@ namespace IKVM.Internal
 #else
                 catch (Exception x)
                 {
-                    JVM.CriticalFailure("Exception during JavaTypeImpl.CreateStep2", x);
+                    throw new InternalException("Exception during JavaTypeImpl.CreateStep2", x);
                 }
 #endif
             }
@@ -1873,8 +1873,7 @@ namespace IKVM.Internal
 #if !IMPORTER
                 catch (Exception x)
                 {
-                    JVM.CriticalFailure("Exception during finishing of: " + wrapper.Name, x);
-                    return null;
+                    throw new InternalException($"Exception during finishing of: {wrapper.Name}", x);
                 }
 #endif
                 finally
