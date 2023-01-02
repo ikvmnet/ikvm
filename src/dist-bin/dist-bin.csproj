@@ -8,6 +8,7 @@
     <ItemGroup>
         <BinTarget Include="IKVM|net461" ProjectName="IKVM" TargetFramework="net461" />
         <BinTarget Include="IKVM|netcoreapp3.1" ProjectName="IKVM" TargetFramework="netcoreapp3.1" />
+        <BinTarget Include="IKVM|net6.0" ProjectName="IKVM" TargetFramework="net6.0" />
     </ItemGroup>
 
     <!-- Runs once per TFM/RID combination to generate individual output. -->

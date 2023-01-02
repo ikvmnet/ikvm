@@ -24,8 +24,6 @@
 using System;
 using System.Collections.Generic;
 using System.Diagnostics;
-using System.Security;
-using System.Security.Permissions;
 
 using IKVM.Attributes;
 using IKVM.Runtime;
@@ -1463,96 +1461,34 @@ namespace IKVM.Internal
 #endif
                         return;
                     }
-                    if (type.IsSubclassOf(Types.SecurityAttribute))
-                    {
-#if IMPORTER
-						tb.__AddDeclarativeSecurity(MakeCustomAttributeBuilder(loader, annotation));
-#elif EXPORTER
-#else
 
-#if NETFRAMEWORK
-                        SecurityAction action;
-                        PermissionSet permSet;
-                        if (MakeDeclSecurity(type, annotation, out action, out permSet))
-                        {
-                            tb.AddDeclarativeSecurity(action, permSet);
-                        }
-#endif
-
-#endif
-                    }
-                    else
-                    {
-                        tb.SetCustomAttribute(MakeCustomAttributeBuilder(loader, annotation));
-                    }
+                    tb.SetCustomAttribute(MakeCustomAttributeBuilder(loader, annotation));
                 }
 
                 internal override void Apply(ClassLoaderWrapper loader, MethodBuilder mb, object annotation)
                 {
-                    if (type.IsSubclassOf(Types.SecurityAttribute))
-                    {
-#if IMPORTER
-						mb.__AddDeclarativeSecurity(MakeCustomAttributeBuilder(loader, annotation));
-#elif EXPORTER
-#else
-
-#if NETFRAMEWORK
-                        SecurityAction action;
-                        PermissionSet permSet;
-                        if (MakeDeclSecurity(type, annotation, out action, out permSet))
-                        {
-                            mb.AddDeclarativeSecurity(action, permSet);
-                        }
-#endif
-
-#endif
-                    }
-                    else
-                    {
-                        mb.SetCustomAttribute(MakeCustomAttributeBuilder(loader, annotation));
-                    }
+                    mb.SetCustomAttribute(MakeCustomAttributeBuilder(loader, annotation));
                 }
 
                 internal override void Apply(ClassLoaderWrapper loader, FieldBuilder fb, object annotation)
                 {
-                    if (type.IsSubclassOf(Types.SecurityAttribute))
-                    {
-                        // you can't add declarative security to a field
-                    }
-                    else
-                    {
-                        fb.SetCustomAttribute(MakeCustomAttributeBuilder(loader, annotation));
-                    }
+                    fb.SetCustomAttribute(MakeCustomAttributeBuilder(loader, annotation));
                 }
 
                 internal override void Apply(ClassLoaderWrapper loader, ParameterBuilder pb, object annotation)
                 {
-                    if (type.IsSubclassOf(Types.SecurityAttribute))
-                    {
-                        // you can't add declarative security to a parameter
-                    }
-                    else if (type == JVM.Import(typeof(System.Runtime.InteropServices.DefaultParameterValueAttribute)))
-                    {
-                        // TODO with the current custom attribute annotation restrictions it is impossible to use this CA,
-                        // but if we make it possible, we should also implement it here
+                    // TODO with the current custom attribute annotation restrictions it is impossible to use this CA,
+                    // but if we make it possible, we should also implement it here
+                    if (type == JVM.Import(typeof(System.Runtime.InteropServices.DefaultParameterValueAttribute)))
                         throw new NotImplementedException();
-                    }
                     else
-                    {
                         pb.SetCustomAttribute(MakeCustomAttributeBuilder(loader, annotation));
-                    }
                 }
 
                 internal override void Apply(ClassLoaderWrapper loader, AssemblyBuilder ab, object annotation)
                 {
-                    if (type.IsSubclassOf(Types.SecurityAttribute))
-                    {
 #if IMPORTER
-						ab.__AddDeclarativeSecurity(MakeCustomAttributeBuilder(loader, annotation));
-#endif
-                    }
-#if IMPORTER
-					else if (type == JVM.Import(typeof(System.Runtime.CompilerServices.TypeForwardedToAttribute)))
+					if (type == JVM.Import(typeof(System.Runtime.CompilerServices.TypeForwardedToAttribute)))
 					{
 						ab.__AddTypeForwarder((Type)ConvertValue(loader, Types.Type, ((object[])annotation)[3]));
 					}
@@ -1593,11 +1529,13 @@ namespace IKVM.Internal
 						// this attribute is currently not exposed as an annotation and isn't very interesting
 						throw new NotImplementedException();
 					}
-#endif
                     else
                     {
                         ab.SetCustomAttribute(MakeCustomAttributeBuilder(loader, annotation));
                     }
+#else
+                    ab.SetCustomAttribute(MakeCustomAttributeBuilder(loader, annotation));
+#endif
                 }
 
                 internal override void Apply(ClassLoaderWrapper loader, PropertyBuilder pb, object annotation)
@@ -1903,7 +1841,8 @@ namespace IKVM.Internal
 
         internal sealed class EnumValueFieldWrapper : FieldWrapper
         {
-            private readonly Type underlyingType;
+
+            readonly Type underlyingType;
 
             internal EnumValueFieldWrapper(DotNetTypeWrapper tw, TypeWrapper fieldType)
                 : base(tw, fieldType, "Value", fieldType.SigName, new ExModifiers(Modifiers.Public | Modifiers.Final, false), null)
@@ -1912,6 +1851,7 @@ namespace IKVM.Internal
             }
 
 #if EMITTERS
+
             protected override void EmitGetImpl(CodeEmitter ilgen)
             {
                 // NOTE if the reference on the stack is null, we *want* the NullReferenceException, so we don't use TypeWrapper.EmitUnbox
@@ -1929,9 +1869,11 @@ namespace IKVM.Internal
                 ilgen.Emit(OpCodes.Stobj, underlyingType);
                 ilgen.ReleaseTempLocal(temp);
             }
-#endif // EMITTERS
+
+#endif
 
 #if !EXPORTER && !IMPORTER && !FIRST_PASS
+
             internal override object GetValue(object obj)
             {
                 return obj;
@@ -1944,11 +1886,13 @@ namespace IKVM.Internal
 #endif
         }
 
-        private sealed class ValueTypeDefaultCtor : MethodWrapper
+        sealed class ValueTypeDefaultCtor : MethodWrapper
         {
+
             internal ValueTypeDefaultCtor(DotNetTypeWrapper tw)
                 : base(tw, "<init>", "()V", null, PrimitiveTypeWrapper.VOID, TypeWrapper.EmptyArray, Modifiers.Public, MemberFlags.None)
             {
+
             }
 
 #if EMITTERS

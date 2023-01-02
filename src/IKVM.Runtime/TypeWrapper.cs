@@ -24,8 +24,6 @@
 using System;
 using System.Collections.Generic;
 using System.Diagnostics;
-using System.Security;
-using System.Security.Permissions;
 
 using IKVM.Attributes;
 using IKVM.Runtime;
@@ -181,51 +179,6 @@ namespace IKVM.Internal
                 return obj;
             }
         }
-
-#if !IMPORTER && !EXPORTER
-        internal static bool MakeDeclSecurity(Type type, object annotation, out SecurityAction action, out PermissionSet permSet)
-        {
-            ConstructorInfo ci = type.GetConstructor(new Type[] { typeof(SecurityAction) });
-            if (ci == null)
-            {
-                // TODO should we support HostProtectionAttribute? (which has a no-arg constructor)
-                // TODO issue message?
-                action = 0;
-                permSet = null;
-                return false;
-            }
-            SecurityAttribute attr = null;
-            object[] arr = (object[])annotation;
-            for (int i = 2; i < arr.Length; i += 2)
-            {
-                string name = (string)arr[i];
-                if (name == "value")
-                {
-                    attr = (SecurityAttribute)ci.Invoke(new object[] { ConvertValue(null, typeof(SecurityAction), arr[i + 1]) });
-                }
-            }
-            if (attr == null)
-            {
-                // TODO issue message?
-                action = 0;
-                permSet = null;
-                return false;
-            }
-            for (int i = 2; i < arr.Length; i += 2)
-            {
-                string name = (string)arr[i];
-                if (name != "value")
-                {
-                    PropertyInfo pi = type.GetProperty(name);
-                    pi.SetValue(attr, ConvertValue(null, pi.PropertyType, arr[i + 1]), null);
-                }
-            }
-            action = attr.Action;
-            permSet = new PermissionSet(PermissionState.None);
-            permSet.AddPermission(attr.CreatePermission());
-            return true;
-        }
-#endif // !IMPORTER && !EXPORTER
 
         internal static bool HasRetentionPolicyRuntime(object[] annotations)
         {
@@ -1984,7 +1937,7 @@ namespace IKVM.Internal
         internal bool IsDynamic
         {
 #if EXPORTER
-			get { return false; }
+            get { return false; }
 #else
             get { return this is DynamicTypeWrapper; }
 #endif
@@ -2913,7 +2866,7 @@ namespace IKVM.Internal
         private static bool IsCallerID(Type type)
         {
 #if EXPORTER
-			return type.FullName == "ikvm.internal.CallerID";
+            return type.FullName == "ikvm.internal.CallerID";
 #else
             return type == CoreClasses.ikvm.@internal.CallerID.Wrapper.TypeAsSignatureType;
 #endif
@@ -4036,10 +3989,10 @@ namespace IKVM.Internal
 
 #if EXPORTER
 
-		internal class MethodAnalyzer
-		{
-			internal void ClearFaultBlockException(int dummy) { }
-		}
+        internal class MethodAnalyzer
+        {
+            internal void ClearFaultBlockException(int dummy) { }
+        }
 
 #endif
 
