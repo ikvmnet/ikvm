@@ -6,7 +6,7 @@ using System.Runtime.Loader;
 using System.Threading;
 using System.Threading.Tasks;
 
-using Newtonsoft.Json;
+using System.Text.Json;
 
 namespace IKVM.Tools.Importer
 {
@@ -32,7 +32,7 @@ namespace IKVM.Tools.Importer
                 if (args is null)
                     throw new ArgumentNullException(nameof(args));
 
-                this.args = JsonConvert.DeserializeObject<string[]>(args);
+                this.args = JsonSerializer.Deserialize<string[]>(args);
             }
 
             /// <summary>
@@ -86,7 +86,7 @@ namespace IKVM.Tools.Importer
             context = new IsolatedAssemblyLoadContext("IkvmImporter", true);
             var asm = context.LoadFromAssemblyName(typeof(IkvmImporterDispatcher).Assembly.GetName());
             var typ = asm.GetType(typeof(IkvmImporterDispatcher).FullName);
-            dispatcher = Activator.CreateInstance(typ, new[] { JsonConvert.SerializeObject(args) });
+            dispatcher = Activator.CreateInstance(typ, new[] { JsonSerializer.Serialize(args) });
         }
 
         /// <summary>

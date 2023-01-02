@@ -1,10 +1,9 @@
 ﻿using System.Text;
-
 using FluentAssertions;
 
 using Microsoft.VisualStudio.TestTools.UnitTesting;
 
-using Newtonsoft.Json.Linq;
+using System.Text.Json.Nodes;
 
 namespace IKVM.Tests.Java.java.net
 {
@@ -20,8 +19,8 @@ namespace IKVM.Tests.Java.java.net
             var buf = new byte[8192];
             var bytesRead = stm.read(buf, 0, 8192);
             var str = Encoding.UTF8.GetString(buf, 0, bytesRead);
-            var json = JObject.Parse(str);
-            json["args"]["text"].Value<string>().Should().Be("ECHO");
+            var json = JsonNode.Parse(str);
+            json["args"]["text"].GetValue<string>().Should().Be("ECHO");
         }
 
     }
