@@ -92,6 +92,4 @@ namespace IKVM.Internal
 
     }
 
-#endif
-
 }

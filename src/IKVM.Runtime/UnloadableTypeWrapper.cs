@@ -184,6 +184,4 @@ namespace IKVM.Internal
 
     }
 
-#endif
-
 }

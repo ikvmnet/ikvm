@@ -22,18 +22,6 @@
   
 */
 
-#if IMPORTER || EXPORTER
-using IKVM.Reflection;
-using IKVM.Reflection.Emit;
-
-using Type = IKVM.Reflection.Type;
-#else
-#endif
-
-#if IMPORTER
-using IKVM.Tools.Importer;
-#endif
-
 namespace IKVM.Internal
 {
     static class NamePrefix
@@ -48,7 +36,5 @@ namespace IKVM.Internal
         internal const string PrivateInterfaceInstanceMethod = "<piim>";
 
     }
-
-#endif
 
 }

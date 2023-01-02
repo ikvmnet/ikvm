@@ -25,6 +25,7 @@ using System;
 using System.Diagnostics;
 
 using IKVM.Attributes;
+using IKVM.Runtime;
 
 #if IMPORTER || EXPORTER
 using IKVM.Reflection;
@@ -42,6 +43,7 @@ using IKVM.Tools.Importer;
 
 namespace IKVM.Internal
 {
+
     abstract class Annotation
     {
 
@@ -318,11 +320,11 @@ namespace IKVM.Internal
 
         internal virtual void ApplyReturnValue(ClassLoaderWrapper loader, MethodBuilder mb, ref ParameterBuilder pb, object annotation)
         {
+
         }
 
         internal abstract bool IsCustomAttribute { get; }
-    }
 
-#endif
+    }
 
 }

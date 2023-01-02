@@ -199,6 +199,4 @@ namespace IKVM.Internal
         }
     }
 
-#endif
-
 }

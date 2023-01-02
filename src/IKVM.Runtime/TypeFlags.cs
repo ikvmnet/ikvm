@@ -21,22 +21,12 @@
   jeroen@frijters.net
   
 */
+
 using System;
-
-#if IMPORTER || EXPORTER
-using IKVM.Reflection;
-using IKVM.Reflection.Emit;
-
-using Type = IKVM.Reflection.Type;
-#else
-#endif
-
-#if IMPORTER
-using IKVM.Tools.Importer;
-#endif
 
 namespace IKVM.Internal
 {
+
     [Flags]
     enum TypeFlags : ushort
     {
@@ -52,7 +42,5 @@ namespace IKVM.Internal
         Linked = 128,
 
     }
-
-#endif
 
 }

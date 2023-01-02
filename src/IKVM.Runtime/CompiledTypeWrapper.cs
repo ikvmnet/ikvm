@@ -1677,6 +1677,4 @@ namespace IKVM.Internal
         }
     }
 
-#endif
-
 }

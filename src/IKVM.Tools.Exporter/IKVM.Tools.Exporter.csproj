@@ -55,6 +55,15 @@
         <Compile Include="..\IKVM.Runtime\TypeNameUtil.cs" LinkBase="IKVM.Runtime" />
         <Compile Include="..\IKVM.Runtime\StringConstants.cs" LinkBase="IKVM.Runtime" />
         <Compile Include="..\IKVM.Runtime\UnicodeUtil.cs" LinkBase="IKVM.Runtime" />
+        <Compile Include="..\IKVM.Runtime\Annotation.cs" LinkBase="IKVM.Runtime" />
+        <Compile Include="..\IKVM.Runtime\TypeFlags.cs" LinkBase="IKVM.Runtime" />
+        <Compile Include="..\IKVM.Runtime\PrimitiveTypeWrapper.cs" LinkBase="IKVM.Runtime" />
+        <Compile Include="..\IKVM.Runtime\ArrayTypeWrapper.cs" LinkBase="IKVM.Runtime" />
+        <Compile Include="..\IKVM.Runtime\VerifierTypeWrapper.cs" LinkBase="IKVM.Runtime" />
+        <Compile Include="..\IKVM.Runtime\UnloadableTypeWrapper.cs" LinkBase="IKVM.Runtime" />
+        <Compile Include="..\IKVM.Runtime\CompiledTypeWrapper.cs" LinkBase="IKVM.Runtime" />
+        <Compile Include="..\IKVM.Runtime\NamePrefix.cs" LinkBase="IKVM.Runtime" />
+        <Compile Include="..\IKVM.Runtime\NestedTypeName.cs" LinkBase="IKVM.Runtime" />
     </ItemGroup>
 
     <ItemGroup>
