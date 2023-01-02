@@ -20,7 +20,7 @@ namespace IKVM.Tests.Java.java.net
             var bytesRead = stm.read(buf, 0, 8192);
             var str = Encoding.UTF8.GetString(buf, 0, bytesRead);
             var json = JsonNode.Parse(str);
-            json["args"]["text"].As<string>().Should().Be("ECHO");
+            json["args"]["text"].GetValue<string>().Should().Be("ECHO");
         }
 
     }
