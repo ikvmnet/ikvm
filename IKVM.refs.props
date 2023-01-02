@@ -11,17 +11,4 @@
         </ProjectReference>
     </ItemGroup>
 
-    <Target Name="LibProjectReferencesToAdditionalRuntimeNativeAssets" DependsOnTargets="GetLibProjectReferenceItems" BeforeTargets="ResolveBuildDependencyFileExtensions">
-        <ItemGroup>
-            <AdditionalRuntimeNativeAssets Include="@(_LibProjectReferenceItems)" Condition=" '%(_LibProjectReferenceItems.RuntimeIdentifier)' != '' ">
-                <LibraryName>%(ProjectName)</LibraryName>
-                <LibraryVersion>$(Version)</LibraryVersion>
-                <LibraryType>project</LibraryType>
-                <Runtime>%(_LibProjectReferenceItems.RuntimeIdentifier)</Runtime>
-                <AssetPath>$([MSBuild]::MakeRelative('.', '%(_LibProjectReferenceItems.LibTargetPath)%(_LibProjectReferenceItems.TargetPath)'))</AssetPath>
-                <FileVersion>$(FileVersion)</FileVersion>
-            </AdditionalRuntimeNativeAssets>
-        </ItemGroup>
-    </Target>
-
 </Project>
