@@ -24,9 +24,9 @@
 using System;
 using System.Runtime.Serialization;
 using System.Security;
-using System.Security.Permissions;
 
 using IKVM.Runtime;
+
 #if IMPORTER
 using IKVM.Reflection;
 using IKVM.Reflection.Emit;
@@ -41,236 +41,209 @@ using System.Reflection.Emit;
 namespace IKVM.Internal
 {
 
-	// This class deals with .NET serialization. When a class is Java serializable it will attempt to automagically make it .NET serializable.
-	static class Serialization
-	{
+    static class Serialization
+    {
 
-		private static readonly CustomAttributeBuilder serializableAttribute = new CustomAttributeBuilder(JVM.Import(typeof(SerializableAttribute)).GetConstructor(Type.EmptyTypes), new object[0]);
-		private static readonly CustomAttributeBuilder securityCriticalAttribute = new CustomAttributeBuilder(JVM.Import(typeof(SecurityCriticalAttribute)).GetConstructor(Type.EmptyTypes), new object[0]);
-		private static readonly TypeWrapper iserializable = ClassLoaderWrapper.GetWrapperFromType(JVM.Import(typeof(ISerializable)));
-		private static readonly TypeWrapper iobjectreference = ClassLoaderWrapper.GetWrapperFromType(JVM.Import(typeof(IObjectReference)));
-		private static readonly TypeWrapper externalizable = ClassLoaderWrapper.LoadClassCritical("java.io.Externalizable");
-		private static readonly PermissionSet psetSerializationFormatter;
+        static readonly CustomAttributeBuilder serializableAttribute = new CustomAttributeBuilder(JVM.Import(typeof(SerializableAttribute)).GetConstructor(Type.EmptyTypes), new object[0]);
+        static readonly CustomAttributeBuilder securityCriticalAttribute = new CustomAttributeBuilder(JVM.Import(typeof(SecurityCriticalAttribute)).GetConstructor(Type.EmptyTypes), new object[0]);
+        static readonly TypeWrapper iserializable = ClassLoaderWrapper.GetWrapperFromType(JVM.Import(typeof(ISerializable)));
+        static readonly TypeWrapper iobjectreference = ClassLoaderWrapper.GetWrapperFromType(JVM.Import(typeof(IObjectReference)));
+        static readonly TypeWrapper externalizable = ClassLoaderWrapper.LoadClassCritical("java.io.Externalizable");
 
-		static Serialization()
-		{
-			psetSerializationFormatter = new PermissionSet(PermissionState.None);
-			psetSerializationFormatter.AddPermission(new SecurityPermission(SecurityPermissionFlag.SerializationFormatter));
-		}
+        internal static bool IsISerializable(TypeWrapper wrapper)
+        {
+            return wrapper == iserializable;
+        }
 
-		internal static bool IsISerializable(TypeWrapper wrapper)
-		{
-			return wrapper == iserializable;
-		}
+        static bool IsSafeForAutomagicSerialization(TypeWrapper wrapper)
+        {
+            if (wrapper.TypeAsBaseType.IsSerializable)
+                return false;
+            else if (wrapper.IsSubTypeOf(iserializable))
+                return false;
+            else if (wrapper.IsSubTypeOf(iobjectreference))
+                return false;
+            else if (wrapper.GetMethodWrapper("GetObjectData", "(Lcli.System.Runtime.Serialization.SerializationInfo;Lcli.System.Runtime.Serialization.StreamingContext;)V", false) != null)
+                return false;
+            else if (wrapper.GetMethodWrapper("<init>", "(Lcli.System.Runtime.Serialization.SerializationInfo;Lcli.System.Runtime.Serialization.StreamingContext;)V", false) != null)
+                return false;
+            else
+                return true;
+        }
 
-		private static bool IsSafeForAutomagicSerialization(TypeWrapper wrapper)
-		{
-			if (wrapper.TypeAsBaseType.IsSerializable)
-			{
-				return false;
-			}
-			if (wrapper.IsSubTypeOf(iserializable))
-			{
-				return false;
-			}
-			if (wrapper.IsSubTypeOf(iobjectreference))
-			{
-				return false;
-			}
-			if (wrapper.GetMethodWrapper("GetObjectData", "(Lcli.System.Runtime.Serialization.SerializationInfo;Lcli.System.Runtime.Serialization.StreamingContext;)V", false) != null)
-			{
-				return false;
-			}
-			if (wrapper.GetMethodWrapper("<init>", "(Lcli.System.Runtime.Serialization.SerializationInfo;Lcli.System.Runtime.Serialization.StreamingContext;)V", false) != null)
-			{
-				return false;
-			}
-			return true;
-		}
+        internal static MethodBuilder AddAutomagicSerialization(DynamicTypeWrapper wrapper, TypeBuilder typeBuilder)
+        {
+            MethodBuilder serializationCtor = null;
+            if ((wrapper.Modifiers & IKVM.Attributes.Modifiers.Enum) != 0)
+            {
+                MarkSerializable(typeBuilder);
+            }
+            else if (wrapper.IsSubTypeOf(CoreClasses.java.io.Serializable.Wrapper) && IsSafeForAutomagicSerialization(wrapper))
+            {
+                if (wrapper.IsSubTypeOf(externalizable))
+                {
+                    var ctor = wrapper.GetMethodWrapper("<init>", "()V", false);
+                    if (ctor != null && ctor.IsPublic)
+                    {
+                        MarkSerializable(typeBuilder);
+                        ctor.Link();
 
-		internal static MethodBuilder AddAutomagicSerialization(DynamicTypeWrapper wrapper, TypeBuilder typeBuilder)
-		{
-			MethodBuilder serializationCtor = null;
-			if ((wrapper.Modifiers & IKVM.Attributes.Modifiers.Enum) != 0)
-			{
-				MarkSerializable(typeBuilder);
-			}
-			else if (wrapper.IsSubTypeOf(CoreClasses.java.io.Serializable.Wrapper) && IsSafeForAutomagicSerialization(wrapper))
-			{
-				if (wrapper.IsSubTypeOf(externalizable))
-				{
-					MethodWrapper ctor = wrapper.GetMethodWrapper("<init>", "()V", false);
-					if (ctor != null && ctor.IsPublic)
-					{
-						MarkSerializable(typeBuilder);
-						ctor.Link();
-						serializationCtor = AddConstructor(typeBuilder, ctor, null, true);
-						if (!wrapper.BaseTypeWrapper.IsSubTypeOf(CoreClasses.java.io.Serializable.Wrapper))
-						{
-							AddGetObjectData(typeBuilder);
-						}
-						if (wrapper.BaseTypeWrapper.GetMethodWrapper("readResolve", "()Ljava.lang.Object;", true) != null)
-						{
-							RemoveReadResolve(typeBuilder);
-						}
-					}
-				}
-				else if (wrapper.BaseTypeWrapper.IsSubTypeOf(CoreClasses.java.io.Serializable.Wrapper))
-				{
-					MethodBase baseCtor = wrapper.GetBaseSerializationConstructor();
-					if (baseCtor != null && (baseCtor.IsFamily || baseCtor.IsFamilyOrAssembly))
-					{
-						MarkSerializable(typeBuilder);
-						serializationCtor = AddConstructor(typeBuilder, null, baseCtor, false);
-						AddReadResolve(wrapper, typeBuilder);
-					}
-				}
-				else
-				{
-					MethodWrapper baseCtor = wrapper.BaseTypeWrapper.GetMethodWrapper("<init>", "()V", false);
-					if (baseCtor != null && baseCtor.IsAccessibleFrom(wrapper.BaseTypeWrapper, wrapper, wrapper))
-					{
-						MarkSerializable(typeBuilder);
-						AddGetObjectData(typeBuilder);
+                        serializationCtor = AddConstructor(typeBuilder, ctor, null, true);
+                        if (!wrapper.BaseTypeWrapper.IsSubTypeOf(CoreClasses.java.io.Serializable.Wrapper))
+                        {
+                            AddGetObjectData(typeBuilder);
+                        }
+                        if (wrapper.BaseTypeWrapper.GetMethodWrapper("readResolve", "()Ljava.lang.Object;", true) != null)
+                        {
+                            RemoveReadResolve(typeBuilder);
+                        }
+                    }
+                }
+                else if (wrapper.BaseTypeWrapper.IsSubTypeOf(CoreClasses.java.io.Serializable.Wrapper))
+                {
+                    var baseCtor = wrapper.GetBaseSerializationConstructor();
+                    if (baseCtor != null && (baseCtor.IsFamily || baseCtor.IsFamilyOrAssembly))
+                    {
+                        MarkSerializable(typeBuilder);
+                        serializationCtor = AddConstructor(typeBuilder, null, baseCtor, false);
+                        AddReadResolve(wrapper, typeBuilder);
+                    }
+                }
+                else
+                {
+                    var baseCtor = wrapper.BaseTypeWrapper.GetMethodWrapper("<init>", "()V", false);
+                    if (baseCtor != null && baseCtor.IsAccessibleFrom(wrapper.BaseTypeWrapper, wrapper, wrapper))
+                    {
+                        MarkSerializable(typeBuilder);
+                        AddGetObjectData(typeBuilder);
 #if IMPORTER
 						// because the base type can be a __WorkaroundBaseClass__, we may need to replace the constructor
 						baseCtor = ((AotTypeWrapper)wrapper).ReplaceMethodWrapper(baseCtor);
 #endif
-						baseCtor.Link();
-						serializationCtor = AddConstructor(typeBuilder, baseCtor, null, true);
-						AddReadResolve(wrapper, typeBuilder);
-					}
-				}
-			}
-			return serializationCtor;
-		}
+                        baseCtor.Link();
+                        serializationCtor = AddConstructor(typeBuilder, baseCtor, null, true);
+                        AddReadResolve(wrapper, typeBuilder);
+                    }
+                }
+            }
 
-		internal static MethodBuilder AddAutomagicSerializationToWorkaroundBaseClass(TypeBuilder typeBuilderWorkaroundBaseClass, MethodBase baseCtor)
-		{
-			if (typeBuilderWorkaroundBaseClass.BaseType.IsSerializable)
-			{
-				typeBuilderWorkaroundBaseClass.SetCustomAttribute(serializableAttribute);
-				if (baseCtor != null && (baseCtor.IsFamily || baseCtor.IsFamilyOrAssembly))
-				{
-					return AddConstructor(typeBuilderWorkaroundBaseClass, null, baseCtor, false);
-				}
-			}
-			return null;
-		}
+            return serializationCtor;
+        }
 
-		internal static void MarkSerializable(TypeBuilder tb)
-		{
-			tb.SetCustomAttribute(serializableAttribute);
-		}
+        internal static MethodBuilder AddAutomagicSerializationToWorkaroundBaseClass(TypeBuilder typeBuilderWorkaroundBaseClass, MethodBase baseCtor)
+        {
+            if (typeBuilderWorkaroundBaseClass.BaseType.IsSerializable)
+            {
+                typeBuilderWorkaroundBaseClass.SetCustomAttribute(serializableAttribute);
+                if (baseCtor != null && (baseCtor.IsFamily || baseCtor.IsFamilyOrAssembly))
+                    return AddConstructor(typeBuilderWorkaroundBaseClass, null, baseCtor, false);
+            }
 
-		internal static void AddGetObjectData(TypeBuilder tb)
-		{
-			string name = tb.IsSealed
-				? "System.Runtime.Serialization.ISerializable.GetObjectData"
-				: "GetObjectData";
-			MethodAttributes attr = tb.IsSealed
-				? MethodAttributes.Private | MethodAttributes.Virtual | MethodAttributes.NewSlot | MethodAttributes.Final
-				: MethodAttributes.Family | MethodAttributes.Virtual | MethodAttributes.NewSlot | MethodAttributes.CheckAccessOnOverride;
-			tb.AddInterfaceImplementation(JVM.Import(typeof(ISerializable)));
-			MethodBuilder getObjectData = tb.DefineMethod(name, attr, null,
-				new Type[] { JVM.Import(typeof(SerializationInfo)), JVM.Import(typeof(StreamingContext)) });
-			getObjectData.SetCustomAttribute(securityCriticalAttribute);
-			AttributeHelper.HideFromJava(getObjectData);
-			// AddDeclarativeSecurity does not exist in .net core
-#if NETFRAMEWORK
-			getObjectData.AddDeclarativeSecurity(SecurityAction.Demand, psetSerializationFormatter);
-#endif
-			tb.DefineMethodOverride(getObjectData, JVM.Import(typeof(ISerializable)).GetMethod("GetObjectData"));
-			CodeEmitter ilgen = CodeEmitter.Create(getObjectData);
-			ilgen.Emit(OpCodes.Ldarg_0);
-			ilgen.Emit(OpCodes.Ldarg_1);
-			TypeWrapper serializationHelper = ClassLoaderWrapper.LoadClassCritical("ikvm.internal.Serialization");
-			MethodWrapper mw = serializationHelper.GetMethodWrapper("writeObject", "(Ljava.lang.Object;Lcli.System.Runtime.Serialization.SerializationInfo;)V", false);
-			mw.Link();
-			mw.EmitCall(ilgen);
-			ilgen.Emit(OpCodes.Ret);
-			ilgen.DoEmit();
-		}
+            return null;
+        }
 
-		private static MethodBuilder AddConstructor(TypeBuilder tb, MethodWrapper defaultConstructor, MethodBase serializationConstructor, bool callReadObject)
-		{
-			MethodBuilder ctor = ReflectUtil.DefineConstructor(tb, MethodAttributes.Family, new Type[] { JVM.Import(typeof(SerializationInfo)), JVM.Import(typeof(StreamingContext)) });
-			AttributeHelper.HideFromJava(ctor);
-			// AddDeclarativeSecurity does not exist in .net core
-#if NETFRAMEWORK
-			ctor.AddDeclarativeSecurity(SecurityAction.Demand, psetSerializationFormatter);
-#endif
-			CodeEmitter ilgen = CodeEmitter.Create(ctor);
-			ilgen.Emit(OpCodes.Ldarg_0);
-			if (defaultConstructor != null)
-			{
-				defaultConstructor.EmitCall(ilgen);
-			}
-			else
-			{
-				ilgen.Emit(OpCodes.Ldarg_1);
-				ilgen.Emit(OpCodes.Ldarg_2);
-				ilgen.Emit(OpCodes.Call, serializationConstructor);
-			}
-			if (callReadObject)
-			{
-				ilgen.Emit(OpCodes.Ldarg_0);
-				ilgen.Emit(OpCodes.Ldarg_1);
-				TypeWrapper serializationHelper = ClassLoaderWrapper.LoadClassCritical("ikvm.internal.Serialization");
-				MethodWrapper mw = serializationHelper.GetMethodWrapper("readObject", "(Ljava.lang.Object;Lcli.System.Runtime.Serialization.SerializationInfo;)V", false);
-				mw.Link();
-				mw.EmitCall(ilgen);
-			}
-			ilgen.Emit(OpCodes.Ret);
-			ilgen.DoEmit();
-			return ctor;
-		}
+        internal static void MarkSerializable(TypeBuilder tb)
+        {
+            tb.SetCustomAttribute(serializableAttribute);
+        }
 
-		private static void AddReadResolve(DynamicTypeWrapper wrapper, TypeBuilder tb)
-		{
-			MethodWrapper mw = wrapper.GetMethodWrapper("readResolve", "()Ljava.lang.Object;", false);
-			if (mw != null && !wrapper.IsSubTypeOf(iobjectreference))
-			{
-				tb.AddInterfaceImplementation(JVM.Import(typeof(IObjectReference)));
-				MethodBuilder getRealObject = tb.DefineMethod("IObjectReference.GetRealObject", MethodAttributes.Private | MethodAttributes.Virtual | MethodAttributes.NewSlot | MethodAttributes.Final,
-					Types.Object, new Type[] { JVM.Import(typeof(StreamingContext)) });
-				getRealObject.SetCustomAttribute(securityCriticalAttribute);
-				AttributeHelper.HideFromJava(getRealObject);
-				tb.DefineMethodOverride(getRealObject, JVM.Import(typeof(IObjectReference)).GetMethod("GetRealObject"));
-				CodeEmitter ilgen = CodeEmitter.Create(getRealObject);
-				mw.Link();
-				if (!wrapper.IsFinal)
-				{
-					// readResolve is only applicable if it exists on the actual type of the object, so if we're a subclass don't call it
-					ilgen.Emit(OpCodes.Ldarg_0);
-					ilgen.Emit(OpCodes.Callvirt, Compiler.getTypeMethod);
-					ilgen.Emit(OpCodes.Ldtoken, wrapper.TypeAsBaseType);
-					ilgen.Emit(OpCodes.Call, Compiler.getTypeFromHandleMethod);
-					CodeEmitterLabel label = ilgen.DefineLabel();
-					ilgen.EmitBeq(label);
-					ilgen.Emit(OpCodes.Ldarg_0);
-					ilgen.Emit(OpCodes.Ret);
-					ilgen.MarkLabel(label);
-				}
-				ilgen.Emit(OpCodes.Ldarg_0);
-				mw.EmitCall(ilgen);
-				ilgen.Emit(OpCodes.Ret);
-				ilgen.DoEmit();
-			}
-		}
+        internal static void AddGetObjectData(TypeBuilder tb)
+        {
+            var name = tb.IsSealed ? "System.Runtime.Serialization.ISerializable.GetObjectData" : "GetObjectData";
+            var attr = tb.IsSealed
+                ? MethodAttributes.Private | MethodAttributes.Virtual | MethodAttributes.NewSlot | MethodAttributes.Final
+                : MethodAttributes.Family | MethodAttributes.Virtual | MethodAttributes.NewSlot | MethodAttributes.CheckAccessOnOverride;
+            tb.AddInterfaceImplementation(JVM.Import(typeof(ISerializable)));
+            var getObjectData = tb.DefineMethod(name, attr, null, new Type[] { JVM.Import(typeof(SerializationInfo)), JVM.Import(typeof(StreamingContext)) });
+            getObjectData.SetCustomAttribute(securityCriticalAttribute);
+            AttributeHelper.HideFromJava(getObjectData);
+            tb.DefineMethodOverride(getObjectData, JVM.Import(typeof(ISerializable)).GetMethod("GetObjectData"));
+            CodeEmitter ilgen = CodeEmitter.Create(getObjectData);
+            ilgen.Emit(OpCodes.Ldarg_0);
+            ilgen.Emit(OpCodes.Ldarg_1);
+            TypeWrapper serializationHelper = ClassLoaderWrapper.LoadClassCritical("ikvm.internal.Serialization");
+            MethodWrapper mw = serializationHelper.GetMethodWrapper("writeObject", "(Ljava.lang.Object;Lcli.System.Runtime.Serialization.SerializationInfo;)V", false);
+            mw.Link();
+            mw.EmitCall(ilgen);
+            ilgen.Emit(OpCodes.Ret);
+            ilgen.DoEmit();
+        }
 
-		private static void RemoveReadResolve(TypeBuilder tb)
-		{
-			tb.AddInterfaceImplementation(JVM.Import(typeof(IObjectReference)));
-			MethodBuilder getRealObject = tb.DefineMethod("IObjectReference.GetRealObject", MethodAttributes.Private | MethodAttributes.Virtual | MethodAttributes.NewSlot | MethodAttributes.Final,
-				Types.Object, new Type[] { JVM.Import(typeof(StreamingContext)) });
-			getRealObject.SetCustomAttribute(securityCriticalAttribute);
-			AttributeHelper.HideFromJava(getRealObject);
-			tb.DefineMethodOverride(getRealObject, JVM.Import(typeof(IObjectReference)).GetMethod("GetRealObject"));
-			CodeEmitter ilgen = CodeEmitter.Create(getRealObject);
-			ilgen.Emit(OpCodes.Ldarg_0);
-			ilgen.Emit(OpCodes.Ret);
-			ilgen.DoEmit();
-		}
-	}
+        static MethodBuilder AddConstructor(TypeBuilder tb, MethodWrapper defaultConstructor, MethodBase serializationConstructor, bool callReadObject)
+        {
+            MethodBuilder ctor = ReflectUtil.DefineConstructor(tb, MethodAttributes.Family, new Type[] { JVM.Import(typeof(SerializationInfo)), JVM.Import(typeof(StreamingContext)) });
+            AttributeHelper.HideFromJava(ctor);
+            CodeEmitter ilgen = CodeEmitter.Create(ctor);
+            ilgen.Emit(OpCodes.Ldarg_0);
+            if (defaultConstructor != null)
+            {
+                defaultConstructor.EmitCall(ilgen);
+            }
+            else
+            {
+                ilgen.Emit(OpCodes.Ldarg_1);
+                ilgen.Emit(OpCodes.Ldarg_2);
+                ilgen.Emit(OpCodes.Call, serializationConstructor);
+            }
+            if (callReadObject)
+            {
+                ilgen.Emit(OpCodes.Ldarg_0);
+                ilgen.Emit(OpCodes.Ldarg_1);
+                TypeWrapper serializationHelper = ClassLoaderWrapper.LoadClassCritical("ikvm.internal.Serialization");
+                MethodWrapper mw = serializationHelper.GetMethodWrapper("readObject", "(Ljava.lang.Object;Lcli.System.Runtime.Serialization.SerializationInfo;)V", false);
+                mw.Link();
+                mw.EmitCall(ilgen);
+            }
+            ilgen.Emit(OpCodes.Ret);
+            ilgen.DoEmit();
+            return ctor;
+        }
+
+        static void AddReadResolve(DynamicTypeWrapper wrapper, TypeBuilder tb)
+        {
+            var mw = wrapper.GetMethodWrapper("readResolve", "()Ljava.lang.Object;", false);
+            if (mw != null && !wrapper.IsSubTypeOf(iobjectreference))
+            {
+                tb.AddInterfaceImplementation(JVM.Import(typeof(IObjectReference)));
+                var getRealObject = tb.DefineMethod("IObjectReference.GetRealObject", MethodAttributes.Private | MethodAttributes.Virtual | MethodAttributes.NewSlot | MethodAttributes.Final, Types.Object, new Type[] { JVM.Import(typeof(StreamingContext)) });
+                getRealObject.SetCustomAttribute(securityCriticalAttribute);
+                AttributeHelper.HideFromJava(getRealObject);
+                tb.DefineMethodOverride(getRealObject, JVM.Import(typeof(IObjectReference)).GetMethod("GetRealObject"));
+                var ilgen = CodeEmitter.Create(getRealObject);
+                mw.Link();
+                if (!wrapper.IsFinal)
+                {
+                    // readResolve is only applicable if it exists on the actual type of the object, so if we're a subclass don't call it
+                    ilgen.Emit(OpCodes.Ldarg_0);
+                    ilgen.Emit(OpCodes.Callvirt, Compiler.getTypeMethod);
+                    ilgen.Emit(OpCodes.Ldtoken, wrapper.TypeAsBaseType);
+                    ilgen.Emit(OpCodes.Call, Compiler.getTypeFromHandleMethod);
+                    CodeEmitterLabel label = ilgen.DefineLabel();
+                    ilgen.EmitBeq(label);
+                    ilgen.Emit(OpCodes.Ldarg_0);
+                    ilgen.Emit(OpCodes.Ret);
+                    ilgen.MarkLabel(label);
+                }
+                ilgen.Emit(OpCodes.Ldarg_0);
+                mw.EmitCall(ilgen);
+                ilgen.Emit(OpCodes.Ret);
+                ilgen.DoEmit();
+            }
+        }
+
+        static void RemoveReadResolve(TypeBuilder tb)
+        {
+            tb.AddInterfaceImplementation(JVM.Import(typeof(IObjectReference)));
+            MethodBuilder getRealObject = tb.DefineMethod("IObjectReference.GetRealObject", MethodAttributes.Private | MethodAttributes.Virtual | MethodAttributes.NewSlot | MethodAttributes.Final, Types.Object, new Type[] { JVM.Import(typeof(StreamingContext)) });
+            getRealObject.SetCustomAttribute(securityCriticalAttribute);
+            AttributeHelper.HideFromJava(getRealObject);
+            tb.DefineMethodOverride(getRealObject, JVM.Import(typeof(IObjectReference)).GetMethod("GetRealObject"));
+            CodeEmitter ilgen = CodeEmitter.Create(getRealObject);
+            ilgen.Emit(OpCodes.Ldarg_0);
+            ilgen.Emit(OpCodes.Ret);
+            ilgen.DoEmit();
+        }
+
+    }
+
 }
