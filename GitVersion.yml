@@ -6,5 +6,8 @@ branches:
     regex: ^dev(elop)?(ment)?$
     tag: develop
   release:
-    regex: ^releases?[/-]
+    regex: ^release?[/-]
+    tag: prerelease
+  hotfix:
+    regex: ^hotfix?[/-]
     tag: prerelease
