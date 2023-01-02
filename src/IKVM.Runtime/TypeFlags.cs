@@ -1,5 +1,5 @@
 ﻿/*
-  Copyright (C) 2002, 2004, 2005, 2006 Jeroen Frijters
+  Copyright (C) 2002-2015 Jeroen Frijters
 
   This software is provided 'as-is', without any express or implied
   warranty.  In no event will the authors be held liable for any damages
@@ -23,12 +23,36 @@
 */
 using System;
 
-[Flags]
-enum ByteCodeFlags : byte
-{
+#if IMPORTER || EXPORTER
+using IKVM.Reflection;
+using IKVM.Reflection.Emit;
 
-    None = 0,
-    FixedArg = 1,
-    CannotThrow = 2
+using Type = IKVM.Reflection.Type;
+#else
+#endif
+
+#if IMPORTER
+using IKVM.Tools.Importer;
+#endif
+
+namespace IKVM.Internal
+{
+    [Flags]
+    enum TypeFlags : ushort
+    {
+
+        None = 0,
+        HasIncompleteInterfaceImplementation = 1,
+        InternalAccess = 2,
+        HasStaticInitializer = 4,
+        VerifyError = 8,
+        ClassFormatError = 16,
+        HasUnsupportedAbstractMethods = 32,
+        Anonymous = 64,
+        Linked = 128,
+
+    }
+
+#endif
 
 }

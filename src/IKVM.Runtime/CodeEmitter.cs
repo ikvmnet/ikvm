@@ -42,26 +42,26 @@ namespace IKVM.Internal
     sealed class CodeEmitter
     {
 
-        private static readonly MethodInfo objectToString = Types.Object.GetMethod("ToString", BindingFlags.Public | BindingFlags.Instance, null, Type.EmptyTypes, null);
-        private static readonly MethodInfo verboseCastFailure = JVM.SafeGetEnvironmentVariable("IKVM_VERBOSE_CAST") == null ? null : ByteCodeHelperMethods.VerboseCastFailure;
-        private static readonly MethodInfo monitorEnter = JVM.Import(typeof(System.Threading.Monitor)).GetMethod("Enter", BindingFlags.Public | BindingFlags.Static, null, new Type[] { Types.Object }, null);
-        private static readonly MethodInfo monitorExit = JVM.Import(typeof(System.Threading.Monitor)).GetMethod("Exit", BindingFlags.Public | BindingFlags.Static, null, new Type[] { Types.Object }, null);
-        private static readonly bool experimentalOptimizations = JVM.SafeGetEnvironmentVariable("IKVM_EXPERIMENTAL_OPTIMIZATIONS") != null;
-        private static MethodInfo memoryBarrier;
-        private ILGenerator ilgen_real;
+        static readonly MethodInfo objectToString = Types.Object.GetMethod("ToString", BindingFlags.Public | BindingFlags.Instance, null, Type.EmptyTypes, null);
+        static readonly MethodInfo verboseCastFailure = JVM.SafeGetEnvironmentVariable("IKVM_VERBOSE_CAST") == null ? null : ByteCodeHelperMethods.VerboseCastFailure;
+        static readonly MethodInfo monitorEnter = JVM.Import(typeof(System.Threading.Monitor)).GetMethod("Enter", BindingFlags.Public | BindingFlags.Static, null, new Type[] { Types.Object }, null);
+        static readonly MethodInfo monitorExit = JVM.Import(typeof(System.Threading.Monitor)).GetMethod("Exit", BindingFlags.Public | BindingFlags.Static, null, new Type[] { Types.Object }, null);
+        static readonly bool experimentalOptimizations = JVM.SafeGetEnvironmentVariable("IKVM_EXPERIMENTAL_OPTIMIZATIONS") != null;
+        static MethodInfo memoryBarrier;
+        ILGenerator ilgen_real;
 #if !IMPORTER
-        private bool inFinally;
-        private Stack<bool> exceptionStack = new Stack<bool>();
+        bool inFinally;
+        Stack<bool> exceptionStack = new Stack<bool>();
 #endif
-        private IKVM.Attributes.LineNumberTableAttribute.LineNumberWriter linenums;
-        private CodeEmitterLocal[] tempLocals = new CodeEmitterLocal[32];
+        IKVM.Attributes.LineNumberTableAttribute.LineNumberWriter linenums;
+        CodeEmitterLocal[] tempLocals = new CodeEmitterLocal[32];
 #if NETFRAMEWORK
-		private ISymbolDocumentWriter symbols;
+		 ISymbolDocumentWriter symbols;
 #endif
-        private List<OpCodeWrapper> code = new List<OpCodeWrapper>(10);
-        private readonly Type declaringType;
+        List<OpCodeWrapper> code = new List<OpCodeWrapper>(10);
+        readonly Type declaringType;
 #if LABELCHECK
-		private Dictionary<CodeEmitterLabel, System.Diagnostics.StackFrame> labels = new Dictionary<CodeEmitterLabel, System.Diagnostics.StackFrame>();
+		 Dictionary<CodeEmitterLabel, System.Diagnostics.StackFrame> labels = new Dictionary<CodeEmitterLabel, System.Diagnostics.StackFrame>();
 #endif
 
         static CodeEmitter()

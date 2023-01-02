@@ -1,5 +1,5 @@
 ﻿/*
-  Copyright (C) 2002, 2004, 2005, 2006 Jeroen Frijters
+  Copyright (C) 2002-2015 Jeroen Frijters
 
   This software is provided 'as-is', without any express or implied
   warranty.  In no event will the authors be held liable for any damages
@@ -21,14 +21,34 @@
   jeroen@frijters.net
   
 */
-using System;
 
-[Flags]
-enum ByteCodeFlags : byte
+#if IMPORTER || EXPORTER
+using IKVM.Reflection;
+using IKVM.Reflection.Emit;
+
+using Type = IKVM.Reflection.Type;
+#else
+#endif
+
+#if IMPORTER
+using IKVM.Tools.Importer;
+#endif
+
+namespace IKVM.Internal
 {
+    static class NamePrefix
+    {
 
-    None = 0,
-    FixedArg = 1,
-    CannotThrow = 2
+        internal const string Type2AccessStubBackingField = "__<>";
+        internal const string AccessStub = "<accessstub>";
+        internal const string NonVirtual = "<nonvirtual>";
+        internal const string Bridge = "<bridge>";
+        internal const string Incomplete = "<incomplete>";
+        internal const string DefaultMethod = "<default>";
+        internal const string PrivateInterfaceInstanceMethod = "<piim>";
+
+    }
+
+#endif
 
 }
