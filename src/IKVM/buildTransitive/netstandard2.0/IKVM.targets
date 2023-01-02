@@ -3,15 +3,6 @@
         <MSBuildAllProjects>$(MSBuildAllProjects);$(MSBuildThisFileFullPath)</MSBuildAllProjects>
     </PropertyGroup>
 
-    <!-- Ensure runtime items get copied to output on Framework targets. NuGet doesn't do this automatically.  -->
-    <ItemGroup Condition="$([MSBuild]::IsTargetFrameworkCompatible('$(TargetFramework)', 'net461'))"> 
-        <ContentWithTargetPath Include="$(MSBuildThisFileDirectory)..\..\runtimes\**\*">
-            <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
-            <TargetPath>runtimes\%(RecursiveDir)%(FileName)%(Extension)</TargetPath>
-            <Pack>false</Pack>
-        </ContentWithTargetPath>
-    </ItemGroup>
-
     <!-- Transforms the IkvmReference item group into IkvmReferenceItem items. -->
     <Target Name="GetIkvmReferenceItemsFromIkvmReferences">
         <ItemGroup>
