@@ -33,7 +33,6 @@ using IKVM.Attributes;
 using IKVM.Runtime;
 using IKVM.Runtime.Syntax;
 
-
 #if IMPORTER || EXPORTER
 using IKVM.Reflection;
 

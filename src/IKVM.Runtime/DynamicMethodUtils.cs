@@ -2,7 +2,6 @@ using System;
 using System.Reflection;
 using System.Reflection.Emit;
 using System.Security;
-using System.Security.Permissions;
 
 using IKVM.Internal;
 
@@ -34,23 +33,6 @@ static class DynamicMethodUtils
     static readonly Lazy<Module> dynamicModule = new Lazy<Module>(CreateDynamicModule, true);
 
     /// <summary>
-    /// Returns <c>true</c> if the current context has restricted member access.
-    /// </summary>
-    /// <returns></returns>
-    static bool IsRestrictedMemberAccess()
-    {
-        try
-        {
-            new ReflectionPermission(ReflectionPermissionFlag.RestrictedMemberAccess).Demand();
-            return true;
-        }
-        catch (SecurityException)
-        {
-            return false;
-        }
-    }
-
-    /// <summary>
     /// Creates the <see cref="Module"/> used for dynamic methods. This module has to be security critical.
     /// </summary>
     /// <returns></returns>
@@ -77,13 +59,6 @@ static class DynamicMethodUtils
         }
         catch (SecurityException)
         {
-            // we don't have RestrictedMemberAccess, so we stick the dynamic method in our module and hope for the best
-            // (i.e. that we're trying to access something with assembly access in an assembly that lets us)
-            if (nonPublic && IsRestrictedMemberAccess() == false)
-                return new DynamicMethod(name, returnType, paramTypes, typeof(DynamicMethodUtils).Module);
-
-            // apparently we don't have full trust, so we try again with .NET 2.0 SP1 method
-            // and we only request restrictSkipVisibility if it is required
             return new DynamicMethod(name, returnType, paramTypes, nonPublic);
         }
     }

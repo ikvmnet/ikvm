@@ -1909,7 +1909,6 @@ namespace IKVM.Tools.Importer
                             MethodBuilder mb = typeBuilder.DefineMethod(mi.Name, mi.Attributes & (MethodAttributes.MemberAccessMask | MethodAttributes.SpecialName | MethodAttributes.Static), mi.ReturnType, paramTypes);
                             AttributeHelper.HideFromJava(mb);
                             AttributeHelper.SetEditorBrowsableNever(mb);
-                            CopyLinkDemands(mb, mi);
                             CodeEmitter ilgen = CodeEmitter.Create(mb);
                             for (int i = 0; i < paramTypes.Length; i++)
                             {
@@ -1954,17 +1953,6 @@ namespace IKVM.Tools.Importer
                 if (helperTypeBuilder != null)
                 {
                     helperTypeBuilder.CreateType();
-                }
-            }
-
-            private static void CopyLinkDemands(MethodBuilder mb, MethodInfo mi)
-            {
-                foreach (CustomAttributeData cad in CustomAttributeData.__GetDeclarativeSecurity(mi))
-                {
-                    if (cad.ConstructorArguments.Count == 0 || (int)cad.ConstructorArguments[0].Value == (int)SecurityAction.LinkDemand)
-                    {
-                        mb.__AddDeclarativeSecurity(cad.__ToBuilder());
-                    }
                 }
             }
 
