@@ -166,6 +166,7 @@ namespace IKVM.Tools.Importer
             {
                 PrintHeader();
             }
+
             IkvmImporterInternal comp = new IkvmImporterInternal();
             List<CompilerOptions> targets = new List<CompilerOptions>();
             CompilerOptions toplevel = new CompilerOptions();
@@ -288,13 +289,13 @@ namespace IKVM.Tools.Importer
             return $"{desc.Title} ({info.InformationalVersion}){Environment.NewLine}{copy.Copyright}"; // TODO: Add domain once we get one {Environment.NewLine}http://www.ikvm.org/
         }
 
-        private static void PrintHeader()
+        static void PrintHeader()
         {
             Console.Error.WriteLine(GetVersionAndCopyrightInfo());
             Console.Error.WriteLine();
         }
 
-        private static void PrintHelp()
+        static void PrintHelp()
         {
             PrintHeader();
             Console.Error.WriteLine("Usage: ikvmc [-options] <classOrJar1> ... <classOrJarN>");

@@ -244,6 +244,9 @@ namespace IKVM.Tools.Runner.Compiler
             if (options.Remap is not null)
                 w.WriteLine($"-remap:{options.Remap}");
 
+            if (options.NoLogo)
+                w.WriteLine($"-nologo");
+
             if (options.Input != null)
                 foreach (var i in options.Input)
                     w.WriteLine(i);
