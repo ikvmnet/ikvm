@@ -447,7 +447,7 @@ jobs:
         path: ${{ env.IKVMPATH }}/dist/TestResults
   release:
     name: Release
-    if: github.ref == 'refs/heads/main' || github.ref == 'refs/heads/develop' || startsWith(github.ref, 'refs/heads/release/')
+    if: github.ref == 'refs/heads/main' || github.ref == 'refs/heads/develop' || startsWith(github.ref, 'refs/heads/release/') || startsWith(github.ref, 'refs/heads/hotfix/')
     needs:
     - test
     runs-on: ubuntu-latest
