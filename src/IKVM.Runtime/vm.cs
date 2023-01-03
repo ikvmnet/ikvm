@@ -153,7 +153,7 @@ namespace IKVM.Internal
 #endif
 
                     // respect the IKVM_EMIT_SYMBOLs environmental variable
-                    if (string.Equals(Environment.GetEnvironmentVariable("IKVM_EMIT_SYMBOLS"), "true", StringComparison.OrdinalIgnoreCase))
+                    if (string.Equals(Environment.GetEnvironmentVariable("IKVM_EMIT_SYMBOLS") ?? "", "true", StringComparison.OrdinalIgnoreCase))
                         state = 1;
 
                     // by default enable symbols if a debugger is attached
