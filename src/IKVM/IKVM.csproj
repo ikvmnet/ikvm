@@ -3,7 +3,7 @@
     <Import Project="$(MSBuildThisFileDirectory)..\..\IKVM.refs.props" />
 
     <PropertyGroup>
-        <TargetFrameworks>net461;netcoreapp3.1;net6.0</TargetFrameworks>
+        <TargetFrameworks>net461;netcoreapp3.1</TargetFrameworks>
         <PackageLicenseFile>LICENSE.md</PackageLicenseFile>
         <PackageReadmeFile>README.md</PackageReadmeFile>
         <Description>Java SE 8 Virtual Machine for .NET</Description>
