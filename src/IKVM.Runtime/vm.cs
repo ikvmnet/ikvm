@@ -148,7 +148,7 @@ namespace IKVM.Internal
 
 #if NETFRAMEWORK
                     // check app.config on Framework
-                    if (System.Configuration.ConfigurationManager.AppSettings["ikvm-emit-symbols"].Equals("true", StringComparison.OrdinalIgnoreCase))
+                    if (string.Equals(System.Configuration.ConfigurationManager.AppSettings["ikvm-emit-symbols"] ?? "", "true", StringComparison.OrdinalIgnoreCase))
                         state = 1;
 #endif
 
