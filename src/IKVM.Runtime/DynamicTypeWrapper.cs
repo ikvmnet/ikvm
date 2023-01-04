@@ -55,32 +55,36 @@ namespace IKVM.Internal
     sealed class DynamicTypeWrapper : TypeWrapper
 #endif
     {
+
+#if IMPORTER == false && NETCOREAPP
+
+        static readonly PropertyInfo MetadataTokenInternalPropertyInfo = typeof(MethodBuilder).GetProperty("MetadataTokenInternal", BindingFlags.Instance | BindingFlags.NonPublic);
+
+#endif
+
 #if IMPORTER
         protected readonly CompilerClassLoader classLoader;
 #else
         protected readonly ClassLoaderWrapper classLoader;
 #endif
-        private volatile DynamicImpl impl;
-        private readonly TypeWrapper baseTypeWrapper;
-        private readonly TypeWrapper[] interfaces;
-        private readonly string sourceFileName;
+        volatile DynamicImpl impl;
+        readonly TypeWrapper baseTypeWrapper;
+        readonly TypeWrapper[] interfaces;
+        readonly string sourceFileName;
 #if !IMPORTER
-        private byte[][] lineNumberTables;
+        byte[][] lineNumberTables;
 #endif
-        private MethodBase automagicSerializationCtor;
+        MethodBase automagicSerializationCtor;
 
-        private TypeWrapper LoadTypeWrapper(ClassLoaderWrapper classLoader, ProtectionDomain pd, ClassFile.ConstantPoolItemClass clazz)
+        TypeWrapper LoadTypeWrapper(ClassLoaderWrapper classLoader, ProtectionDomain pd, ClassFile.ConstantPoolItemClass clazz)
         {
             // check for patched constant pool items
-            TypeWrapper tw = clazz.GetClassType();
+            var tw = clazz.GetClassType();
             if (tw == null || tw == VerifierTypeWrapper.Null)
-            {
                 tw = classLoader.LoadClassByDottedNameFast(clazz.Name);
-            }
             if (tw == null)
-            {
                 throw new NoClassDefFoundError(clazz.Name);
-            }
+
             CheckMissing(this, tw);
             classLoader.CheckPackageAccess(tw, pd);
             return tw;
@@ -6863,13 +6867,8 @@ namespace IKVM.Internal
                 }
                 catch (InvalidOperationException)
                 {
-                    // GetMetadataToken fails on Core 3.1, so we fallback to discovering the method from the type
-                    Finish();
-                    var flags = BindingFlags.DeclaredOnly;
-                    flags |= mbld.IsPublic ? BindingFlags.Public : BindingFlags.NonPublic;
-                    flags |= mbld.IsStatic ? BindingFlags.Static : BindingFlags.Instance;
-                    var mi = TypeAsTBD.GetMethod(mbld.Name, flags, null, mbld.GetParameters().Select(p => p.ParameterType).ToArray(), null);
-                    return mi.MetadataToken;
+                    if (MetadataTokenInternalPropertyInfo != null)
+                        return (int)MetadataTokenInternalPropertyInfo.GetValue(mbld);
                 }
 #endif
             }
