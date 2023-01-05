@@ -3408,6 +3408,12 @@ vm/verifier/TestStaticIF.java                                                   
 vm/verifier/VerifyProtectedConstructor.java                                                                             generic-all
 vm/verifier/defaultMethods/DefaultMethodRegressionTestsRun.java                                                         generic-all
 
+# these test try to fill up memory but catch an exception that isn't going to happen on .NET
+# the tests should be fixed
+java/beans/Introspector/Test7172865.java                                                                                generic-all
+java/beans/Introspector/Test7195106.java                                                                                generic-all
+java/beans/Introspector/Test8027905.java                                                                                generic-all
+
 # we never implemented memory MX stuff for Linux
 com/sun/management/OperatingSystemMXBean/GetCommittedVirtualMemorySize.java                                             linux-all
 com/sun/management/OperatingSystemMXBean/GetFreePhysicalMemorySize.java                                                 linux-all
