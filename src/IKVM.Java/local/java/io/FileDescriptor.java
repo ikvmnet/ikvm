@@ -74,7 +74,7 @@ public final class FileDescriptor
     @cli.System.Security.SecurityCriticalAttribute.Annotation
     private long get_handle()
     {
-        if (ikvm.internal.Util.WINDOWS)
+        if (cli.IKVM.Runtime.RuntimeUtil.get_IsWindows())
         {
             if (stream instanceof cli.System.IO.FileStream)
             {
@@ -101,7 +101,7 @@ public final class FileDescriptor
     @cli.System.Security.SecurityCriticalAttribute.Annotation
     private int get_fd()
     {
-        if (!ikvm.internal.Util.WINDOWS)
+        if (cli.IKVM.Runtime.RuntimeUtil.get_IsWindows() == false)
         {
             if (stream instanceof cli.System.IO.FileStream)
             {
@@ -226,7 +226,7 @@ public final class FileDescriptor
         if (stream instanceof FileStream)
         {
             FileStream fs = (FileStream)stream;
-            boolean ok = ikvm.internal.Util.WINDOWS ? flushWin32(fs) : flushPosix(fs);
+            boolean ok = cli.IKVM.Runtime.RuntimeUtil.get_IsWindows() ? flushWin32(fs) : flushPosix(fs);
             if (!ok)
             {
                 throw new SyncFailedException("sync failed");

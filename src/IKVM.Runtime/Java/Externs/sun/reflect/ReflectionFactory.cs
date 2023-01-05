@@ -32,6 +32,7 @@ using System.Runtime.Serialization;
 using System.Security;
 
 using IKVM.Internal;
+using IKVM.Runtime;
 using IKVM.Runtime.Extensions;
 
 namespace IKVM.Java.Externs.sun.reflect
@@ -543,7 +544,7 @@ namespace IKVM.Java.Externs.sun.reflect
 
                     // generate new dynamic method
                     var np = !mw.IsPublic || !mw.DeclaringType.IsPublic;
-                    var dm = DynamicMethodUtils.Create($"__<FastMethodAccessor>__{mw.DeclaringType.Name.Replace(".", "_")}__{mw.Name}", mw.DeclaringType.TypeAsBaseType, np, typeof(object), new Type[] { typeof(object), typeof(object[]), typeof(global::ikvm.@internal.CallerID) });
+                    var dm = DynamicMethodUtil.Create($"__<FastMethodAccessor>__{mw.DeclaringType.Name.Replace(".", "_")}__{mw.Name}", mw.DeclaringType.TypeAsBaseType, np, typeof(object), new Type[] { typeof(object), typeof(object[]), typeof(global::ikvm.@internal.CallerID) });
                     var il = CodeEmitter.Create(dm);
                     var rt = il.DeclareLocal(typeof(object));
 
@@ -736,7 +737,7 @@ namespace IKVM.Java.Externs.sun.reflect
                 }
 
                 mw.ResolveMethod();
-                var dm = DynamicMethodUtils.Create("__<Invoker>", mw.DeclaringType.TypeAsTBD, !mw.IsPublic || !mw.DeclaringType.IsPublic, typeof(object), new Type[] { typeof(object[]) });
+                var dm = DynamicMethodUtil.Create("__<Invoker>", mw.DeclaringType.TypeAsTBD, !mw.IsPublic || !mw.DeclaringType.IsPublic, typeof(object), new Type[] { typeof(object[]) });
                 var ilgen = CodeEmitter.Create(dm);
                 var ret = ilgen.DeclareLocal(typeof(object));
 
@@ -855,7 +856,7 @@ namespace IKVM.Java.Externs.sun.reflect
                 {
                     throw x.ToJava();
                 }
-                DynamicMethod dm = DynamicMethodUtils.Create("__<SerializationCtor>", constructor.DeclaringType.TypeAsBaseType, true, typeof(object), null);
+                DynamicMethod dm = DynamicMethodUtil.Create("__<SerializationCtor>", constructor.DeclaringType.TypeAsBaseType, true, typeof(object), null);
                 CodeEmitter ilgen = CodeEmitter.Create(dm);
                 ilgen.Emit(OpCodes.Ldtoken, type);
                 ilgen.Emit(OpCodes.Call, GetTypeFromHandleMethod);
@@ -1908,7 +1909,7 @@ namespace IKVM.Java.Externs.sun.reflect
                     throw x.ToJava();
                 }
                 fw.ResolveField();
-                DynamicMethod dm = DynamicMethodUtils.Create("__<Getter>", fw.DeclaringType.TypeAsBaseType, !fw.IsPublic || !fw.DeclaringType.IsPublic, fieldType, new Type[] { typeof(IReflectionException), typeof(object), typeof(object) });
+                DynamicMethod dm = DynamicMethodUtil.Create("__<Getter>", fw.DeclaringType.TypeAsBaseType, !fw.IsPublic || !fw.DeclaringType.IsPublic, fieldType, new Type[] { typeof(IReflectionException), typeof(object), typeof(object) });
                 CodeEmitter ilgen = CodeEmitter.Create(dm);
                 if (fw.IsStatic)
                 {
@@ -1954,7 +1955,7 @@ namespace IKVM.Java.Externs.sun.reflect
                     throw x.ToJava();
                 }
                 fw.ResolveField();
-                DynamicMethod dm = DynamicMethodUtils.Create("__<Setter>", fw.DeclaringType.TypeAsBaseType, !fw.IsPublic || !fw.DeclaringType.IsPublic, null, new Type[] { typeof(IReflectionException), typeof(object), fieldType, typeof(object) });
+                DynamicMethod dm = DynamicMethodUtil.Create("__<Setter>", fw.DeclaringType.TypeAsBaseType, !fw.IsPublic || !fw.DeclaringType.IsPublic, null, new Type[] { typeof(IReflectionException), typeof(object), fieldType, typeof(object) });
                 CodeEmitter ilgen = CodeEmitter.Create(dm);
                 if (fw.IsStatic)
                 {

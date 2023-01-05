@@ -53,7 +53,6 @@ import sun.security.action.GetPropertyAction;
 public class FileChannelImpl
     extends FileChannel
 {
-    private static final boolean win32 = ikvm.internal.Util.WINDOWS;
 
     // Memory allocation size for mapping buffers
     private static final long allocationGranularity = 64 * 1024;    // HACK we're using a hard coded value here that works on all mainstream platforms
@@ -1018,7 +1017,7 @@ public class FileChannelImpl
     private long map0(int prot, long position, long length) throws IOException
     {
         FileStream fs = (FileStream)fd.getStream();
-        if (win32)
+        if (cli.IKVM.Runtime.RuntimeUtil.get_IsWindows())
             return mapViewOfFileWin32(fs, prot, position, length);
         else
             return mapViewOfFilePosix(fs, prot, position, length);
@@ -1131,7 +1130,7 @@ public class FileChannelImpl
     @cli.System.Security.SecuritySafeCriticalAttribute.Annotation
     static int unmap0(long address, long length)
     {
-        if (win32)
+        if (cli.IKVM.Runtime.RuntimeUtil.get_IsWindows())
             UnmapViewOfFile(IntPtr.op_Explicit(address));
         else
             munmap(IntPtr.op_Explicit(address), (int)length);

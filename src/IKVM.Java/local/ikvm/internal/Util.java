@@ -10,11 +10,6 @@ import cli.System.Runtime.InteropServices.OSPlatform;
 @Internal
 public final class Util {
 
-    public static boolean WINDOWS = RuntimeInformation.IsOSPlatform(OSPlatform.get_Windows());
-    public static boolean LINUX = RuntimeInformation.IsOSPlatform(OSPlatform.get_Linux());
-    public static boolean MACOSX = RuntimeInformation.IsOSPlatform(OSPlatform.get_OSX());
-    public static boolean MONO = Type.GetType("Mono.Runtime") != null;
-
     public static boolean rangeCheck(int arrayLength, int offset, int length) {
         return offset >= 0 && offset <= arrayLength && length >= 0 && length <= arrayLength - offset;
     }

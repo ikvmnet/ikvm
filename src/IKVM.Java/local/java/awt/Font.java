@@ -942,7 +942,7 @@ public class Font implements java.io.Serializable
 
     @cli.System.Security.SecuritySafeCriticalAttribute.Annotation
     private static void RemoveFontResourceEx(String filename) {
-        if( ikvm.internal.Util.WINDOWS ) {
+        if (cli.IKVM.Runtime.RuntimeUtil.get_IsWindows()) {
             RemoveFontResourceEx( filename, 16, IntPtr.Zero );
         }
     }

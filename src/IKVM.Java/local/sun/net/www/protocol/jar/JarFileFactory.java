@@ -83,7 +83,7 @@ class JarFileFactory implements URLJarFile.URLJarFileCloseController {
     }
 
     JarFile get(URL url, boolean useCaches) throws IOException {
-        if (ikvm.internal.Util.WINDOWS && url.getProtocol().equalsIgnoreCase("file")) {
+        if (cli.IKVM.Runtime.RuntimeUtil.get_IsWindows() && url.getProtocol().equalsIgnoreCase("file")) {
             // Deal with UNC pathnames specially. See 4180841
 
             String host = url.getHost();

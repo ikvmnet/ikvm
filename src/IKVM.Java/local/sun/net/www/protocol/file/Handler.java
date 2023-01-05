@@ -79,7 +79,7 @@ public class Handler extends URLStreamHandler {
         String file = url.getFile();
         String host = url.getHost();
 
-        if (ikvm.internal.Util.WINDOWS) {
+        if (cli.IKVM.Runtime.RuntimeUtil.get_IsWindows()) {
             path = ParseUtil.decode(file);
             path = path.replace('/', '\\');
             path = path.replace('|', ':');
@@ -96,7 +96,7 @@ public class Handler extends URLStreamHandler {
         /*
          * attempt to treat this as a UNC path. See 4180841
          */
-        if (ikvm.internal.Util.WINDOWS) {
+        if (cli.IKVM.Runtime.RuntimeUtil.get_IsWindows()) {
             path = "\\\\" + host + path;
             File f = new File(path);
             if (f.exists()) {

@@ -44,7 +44,6 @@ import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
 import java.util.regex.Pattern;
-import static ikvm.internal.Util.WINDOWS;
 
 final class NetFileSystem extends FileSystem
 {
@@ -177,7 +176,7 @@ final class NetFileSystem extends FileSystem
         if (syntaxAndPattern.startsWith("glob:"))
         {
             String pattern = syntaxAndPattern.substring(5);
-            if (WINDOWS)
+            if (cli.IKVM.Runtime.RuntimeUtil.get_IsWindows())
             {
                 regex = Globs.toWindowsRegexPattern(pattern);
             }
@@ -198,7 +197,7 @@ final class NetFileSystem extends FileSystem
         {
             throw new UnsupportedOperationException();
         }
-        final Pattern pattern = Pattern.compile(regex, WINDOWS ? Pattern.CASE_INSENSITIVE | Pattern.UNICODE_CASE : 0);
+        final Pattern pattern = Pattern.compile(regex, cli.IKVM.Runtime.RuntimeUtil.get_IsWindows() ? Pattern.CASE_INSENSITIVE | Pattern.UNICODE_CASE : 0);
         return new PathMatcher() {
             @Override
             public boolean matches(Path path) {

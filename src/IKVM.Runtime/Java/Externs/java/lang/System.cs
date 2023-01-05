@@ -24,6 +24,8 @@
 
 using System;
 
+using IKVM.Runtime;
+
 namespace IKVM.Java.Externs.java.lang
 {
 
@@ -72,14 +74,13 @@ namespace IKVM.Java.Externs.java.lang
             throw new NotImplementedException();
 #else
             if (libname == null)
-            {
                 throw new global::java.lang.NullPointerException();
-            }
-            if (global::ikvm.@internal.Util.WINDOWS)
+
+            if (RuntimeUtil.IsWindows)
             {
                 return libname + ".dll";
             }
-            else if (global::ikvm.@internal.Util.MACOSX)
+            else if (RuntimeUtil.IsOSX)
             {
                 return "lib" + libname + ".jnilib";
             }
@@ -92,7 +93,7 @@ namespace IKVM.Java.Externs.java.lang
 
         public static void arraycopy(object src, int srcPos, object dest, int destPos, int length)
         {
-            IKVM.Runtime.ByteCodeHelper.arraycopy(src, srcPos, dest, destPos, length);
+            ByteCodeHelper.arraycopy(src, srcPos, dest, destPos, length);
         }
 
     }

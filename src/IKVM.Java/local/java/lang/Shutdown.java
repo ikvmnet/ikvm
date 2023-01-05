@@ -82,7 +82,7 @@ class Shutdown {
             // MONOBUG Mono doesn't support starting a new thread during ProcessExit
             // (and application shutdown hooks are based on threads)
             // see https://bugzilla.xamarin.com/show_bug.cgi?id=5650
-            if (!ikvm.internal.Util.MONO) {
+            if (cli.IKVM.Runtime.RuntimeUtil.get_IsMono() == false) {
                 // AppDomain.ProcessExit has a LinkDemand, so we have to have a separate method
                 registerShutdownHook();
                 if (false) throw new cli.System.Security.SecurityException();

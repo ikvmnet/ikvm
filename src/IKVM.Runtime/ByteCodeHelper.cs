@@ -38,7 +38,7 @@ namespace IKVM.Runtime
     static class GhostTag
     {
 
-        private static volatile ConditionalWeakTable<object, TypeWrapper> dict;
+        static volatile ConditionalWeakTable<object, TypeWrapper> dict;
 
         internal static void SetTag(object obj, RuntimeTypeHandle typeHandle)
         {
