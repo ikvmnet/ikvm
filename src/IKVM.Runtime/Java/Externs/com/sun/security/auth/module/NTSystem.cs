@@ -29,6 +29,7 @@ namespace IKVM.Java.Externs.com.sun.security.auth.module
 
     static class NTSystem
     {
+
         public static void getCurrent(object thisObj, bool debug, ref string userName, ref string domain, ref string domainSID, ref string userSID, ref string[] groupIDs, ref string primaryGroupID)
         {
             WindowsIdentity id = WindowsIdentity.GetCurrent();
@@ -51,6 +52,7 @@ namespace IKVM.Java.Externs.com.sun.security.auth.module
         {
             return WindowsIdentity.GetCurrent().Token.ToInt64();
         }
+
     }
 
 }

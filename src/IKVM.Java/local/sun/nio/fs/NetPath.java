@@ -32,8 +32,6 @@ import java.net.URI;
 import java.nio.file.*;
 import java.util.ArrayList;
 import java.util.Iterator;
-import static ikvm.internal.Util.MACOSX;
-import static ikvm.internal.Util.WINDOWS;
 
 final class NetPath extends AbstractPath
 {
@@ -43,7 +41,7 @@ final class NetPath extends AbstractPath
 
     NetPath(NetFileSystem fs, String path)
     {
-        if (WINDOWS)
+        if (cli.IKVM.Runtime.RuntimeUtil.get_IsWindows())
         {
             path = WindowsPathParser.parse(path).path();
         }
@@ -102,8 +100,7 @@ final class NetPath extends AbstractPath
 
     public boolean isAbsolute()
     {
-        return cli.System.IO.Path.IsPathRooted(path)
-            && (!WINDOWS || path.startsWith("\\\\") || (path.length() >= 3 && path.charAt(1) == ':' && path.charAt(2) == '\\'));
+        return cli.System.IO.Path.IsPathRooted(path) && (cli.IKVM.Runtime.RuntimeUtil.get_IsWindows() == false || path.startsWith("\\\\") || (path.length() >= 3 && path.charAt(1) == ':' && path.charAt(2) == '\\'));
     }
 
     public Path getRoot()
@@ -114,7 +111,7 @@ final class NetPath extends AbstractPath
 
     private int getRootLength()
     {
-        if (WINDOWS)
+        if (cli.IKVM.Runtime.RuntimeUtil.get_IsWindows())
         {
             if (path.length() >= 2 && path.charAt(1) == ':')
             {
@@ -241,7 +238,7 @@ final class NetPath extends AbstractPath
         {
             return path.length() == 0;
         }
-        return path.regionMatches(WINDOWS, 0, npath, 0, npath.length())
+        return path.regionMatches(cli.IKVM.Runtime.RuntimeUtil.get_IsWindows(), 0, npath, 0, npath.length())
             && (npath.length() == getRootLength()
                 || (npath.length() > getRootLength()
                     && (path.length() == npath.length()
@@ -271,7 +268,7 @@ final class NetPath extends AbstractPath
         {
             if (otherNameCount != nameCount
                 || getRootLength() != otherRootLength
-                || !path.regionMatches(WINDOWS, 0, npath, 0, otherRootLength))
+                || !path.regionMatches(cli.IKVM.Runtime.RuntimeUtil.get_IsWindows(), 0, npath, 0, otherRootLength))
             {
                 return false;
             }
@@ -281,7 +278,7 @@ final class NetPath extends AbstractPath
         {
             String s1 = getNameImpl(i + skip);
             String s2 = nother.getNameImpl(i);
-            if (s1.length() != s2.length() || !s1.regionMatches(WINDOWS, 0, s2, 0, s1.length()))
+            if (s1.length() != s2.length() || !s1.regionMatches(cli.IKVM.Runtime.RuntimeUtil.get_IsWindows(), 0, s2, 0, s1.length()))
             {
                 return false;
             }
@@ -300,7 +297,7 @@ final class NetPath extends AbstractPath
             {
                 if (list.size() == 0)
                 {
-                    if (rootLength == 0 || (WINDOWS && rootLength == 2))
+                    if (rootLength == 0 || (cli.IKVM.Runtime.RuntimeUtil.get_IsWindows() && rootLength == 2))
                     {
                         list.add("..");
                     }
@@ -344,7 +341,7 @@ final class NetPath extends AbstractPath
         {
             return this;
         }
-        if (WINDOWS)
+        if (cli.IKVM.Runtime.RuntimeUtil.get_IsWindows())
         {
             if (nother.getRootLength() == 2 && getRootLength() == 3 && (path.charAt(0) | 0x20) == (npath.charAt(0) | 0x20))
             {
@@ -402,7 +399,7 @@ final class NetPath extends AbstractPath
 
     public URI toUri()
     {
-        if (WINDOWS)
+        if (cli.IKVM.Runtime.RuntimeUtil.get_IsWindows())
         {
             return WindowsUriSupport.toUri(this);
         }
@@ -553,7 +550,7 @@ final class NetPath extends AbstractPath
 
     boolean isUnc()
     {
-        return WINDOWS && getRootLength() > 3;
+        return cli.IKVM.Runtime.RuntimeUtil.get_IsWindows() && getRootLength() > 3;
     }
 
     static NetPath from(Path path)

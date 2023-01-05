@@ -35,8 +35,8 @@ namespace IKVM.Java.Externs.java.net
 
 #if !FIRST_PASS
 
-        private static NetworkInterfaceInfo cache;
-        private static DateTime cachedSince;
+        static NetworkInterfaceInfo cache;
+        static DateTime cachedSince;
 
 #endif
 
@@ -47,7 +47,7 @@ namespace IKVM.Java.Externs.java.net
 
 #if !FIRST_PASS
 
-        private sealed class NetworkInterfaceInfo
+        sealed class NetworkInterfaceInfo
         {
 
             internal System.Net.NetworkInformation.NetworkInterface[] dotnetInterfaces;
@@ -55,14 +55,14 @@ namespace IKVM.Java.Externs.java.net
 
         }
 
-        private static int Compare(System.Net.NetworkInformation.NetworkInterface ni1, System.Net.NetworkInformation.NetworkInterface ni2)
+        static int Compare(System.Net.NetworkInformation.NetworkInterface ni1, System.Net.NetworkInformation.NetworkInterface ni2)
         {
             int index1 = GetIndex(ni1);
             int index2 = GetIndex(ni2);
             return index1.CompareTo(index2);
         }
 
-        private static IPv4InterfaceProperties GetIPv4Properties(IPInterfaceProperties props)
+        static IPv4InterfaceProperties GetIPv4Properties(IPInterfaceProperties props)
         {
             try
             {
@@ -74,7 +74,7 @@ namespace IKVM.Java.Externs.java.net
             }
         }
 
-        private static IPv6InterfaceProperties GetIPv6Properties(IPInterfaceProperties props)
+        static IPv6InterfaceProperties GetIPv6Properties(IPInterfaceProperties props)
         {
             try
             {
@@ -86,39 +86,37 @@ namespace IKVM.Java.Externs.java.net
             }
         }
 
-        private static int GetIndex(System.Net.NetworkInformation.NetworkInterface ni)
+        static int GetIndex(System.Net.NetworkInformation.NetworkInterface ni)
         {
-            IPInterfaceProperties ipprops = ni.GetIPProperties();
-            IPv4InterfaceProperties ipv4props = GetIPv4Properties(ipprops);
+            var ipprops = ni.GetIPProperties();
+            var ipv4props = GetIPv4Properties(ipprops);
             if (ipv4props != null)
             {
                 return ipv4props.Index;
             }
             else if (InetAddressImplFactory.isIPv6Supported())
             {
-                IPv6InterfaceProperties ipv6props = GetIPv6Properties(ipprops);
+                var ipv6props = GetIPv6Properties(ipprops);
                 if (ipv6props != null)
-                {
                     return ipv6props.Index;
-                }
             }
 
             return -1;
         }
 
-        private static bool IsValid(System.Net.NetworkInformation.NetworkInterface ni)
+        static bool IsValid(System.Net.NetworkInformation.NetworkInterface ni)
         {
             return GetIndex(ni) != -1;
         }
 
-        private static NetworkInterfaceInfo GetInterfaces()
+        static NetworkInterfaceInfo GetInterfaces()
         {
             // Since many of the methods in java.net.NetworkInterface end up calling this method and the underlying stuff this is
             // based on isn't very quick either, we cache the array for a couple of seconds.
             if (cache != null && DateTime.UtcNow - cachedSince < new TimeSpan(0, 0, 5))
                 return cache;
 
-            System.Net.NetworkInformation.NetworkInterface[] ifaces = System.Net.NetworkInformation.NetworkInterface.GetAllNetworkInterfaces();
+            var ifaces = System.Net.NetworkInformation.NetworkInterface.GetAllNetworkInterfaces();
             // on Mono (on Windows) we need to filter out the network interfaces that don't have any IP properties
             ifaces = Array.FindAll(ifaces, IsValid);
             Array.Sort(ifaces, Compare);
@@ -166,15 +164,15 @@ namespace IKVM.Java.Externs.java.net
                         name = "net" + net++;
                         break;
                 }
-                global::java.net.NetworkInterface netif = new global::java.net.NetworkInterface();
+                var netif = new global::java.net.NetworkInterface();
                 ret[i] = netif;
                 netif._set1(name, ifaces[i].Description, GetIndex(ifaces[i]));
-                UnicastIPAddressInformationCollection uipaic = ifaces[i].GetIPProperties().UnicastAddresses;
-                List<global::java.net.InetAddress> addresses = new List<global::java.net.InetAddress>();
-                List<global::java.net.InterfaceAddress> bindings = new List<global::java.net.InterfaceAddress>();
+                var uipaic = ifaces[i].GetIPProperties().UnicastAddresses;
+                var addresses = new List<global::java.net.InetAddress>();
+                var bindings = new List<global::java.net.InterfaceAddress>();
                 for (int j = 0; j < uipaic.Count; j++)
                 {
-                    IPAddress addr = uipaic[j].Address;
+                    var addr = uipaic[j].Address;
                     if (addr.AddressFamily == AddressFamily.InterNetwork)
                     {
                         if (ifaces[i].OperationalStatus != OperationalStatus.Up)
@@ -184,28 +182,18 @@ namespace IKVM.Java.Externs.java.net
                             // Not doing this filtering causes some OpenJDK tests to fail.
                             continue;
                         }
-                        global::java.net.Inet4Address address = new global::java.net.Inet4Address(null, addr.GetAddressBytes());
-                        global::java.net.InterfaceAddress binding = new global::java.net.InterfaceAddress();
+
+                        var address = new global::java.net.Inet4Address(null, addr.GetAddressBytes());
+                        var binding = new global::java.net.InterfaceAddress();
                         short mask = 32;
                         global::java.net.Inet4Address broadcast = null;
-                        IPAddress v4mask;
-                        try
-                        {
-                            v4mask = uipaic[j].IPv4Mask;
-                        }
-                        catch (NotImplementedException)
-                        {
-                            // Mono (as of 2.6.7) doesn't implement the IPv4Mask property
-                            v4mask = null;
-                        }
+                        var v4mask = uipaic[j].IPv4Mask;
                         if (v4mask != null && !v4mask.Equals(IPAddress.Any))
                         {
                             broadcast = new global::java.net.Inet4Address(null, -1);
                             mask = 0;
                             foreach (byte b in v4mask.GetAddressBytes())
-                            {
                                 mask += (short)global::java.lang.Integer.bitCount(b);
-                            }
                         }
                         else if (address.isLoopbackAddress())
                         {
@@ -223,7 +211,7 @@ namespace IKVM.Java.Externs.java.net
                         {
                             scope = (int)addr.ScopeId;
                         }
-                        global::java.net.Inet6Address ia6 = new global::java.net.Inet6Address();
+                        var ia6 = new global::java.net.Inet6Address();
                         ia6._holder().ipaddress = addr.GetAddressBytes();
                         if (scope != 0)
                         {
@@ -232,7 +220,7 @@ namespace IKVM.Java.Externs.java.net
                             ia6._holder().scope_ifname = netif;
                             ia6._holder().scope_ifname_set = true;
                         }
-                        global::java.net.InterfaceAddress binding = new global::java.net.InterfaceAddress();
+                        var binding = new global::java.net.InterfaceAddress();
                         // TODO where do we get the IPv6 subnet prefix length?
                         short mask = 128;
                         binding._set(ia6, null, mask);
@@ -242,28 +230,27 @@ namespace IKVM.Java.Externs.java.net
                 }
                 netif._set2(addresses.ToArray(), bindings.ToArray(), new global::java.net.NetworkInterface[0]);
             }
-            NetworkInterfaceInfo nii = new NetworkInterfaceInfo();
+
+            var nii = new NetworkInterfaceInfo();
             nii.dotnetInterfaces = ifaces;
             nii.javaInterfaces = ret;
             cache = nii;
             cachedSince = DateTime.UtcNow;
             return nii;
         }
+
 #endif
 
-        private static System.Net.NetworkInformation.NetworkInterface GetDotNetNetworkInterfaceByIndex(int index)
+        static System.Net.NetworkInformation.NetworkInterface GetDotNetNetworkInterfaceByIndex(int index)
         {
 #if FIRST_PASS
-		    return null;
+		    throw new NotSupportedException();
 #else
-            NetworkInterfaceInfo nii = GetInterfaces();
+            var nii = GetInterfaces();
             for (int i = 0; i < nii.javaInterfaces.Length; i++)
-            {
                 if (nii.javaInterfaces[i].getIndex() == index)
-                {
                     return nii.dotnetInterfaces[i];
-                }
-            }
+
             throw new global::java.net.SocketException("interface index not found");
 #endif
         }
@@ -271,7 +258,7 @@ namespace IKVM.Java.Externs.java.net
         public static object getAll()
         {
 #if FIRST_PASS
-		    return null;
+		    throw new NotSupportedException();
 #else
             return GetInterfaces().javaInterfaces;
 #endif
@@ -280,15 +267,12 @@ namespace IKVM.Java.Externs.java.net
         public static object getByName0(string name)
         {
 #if FIRST_PASS
-		    return null;
+		    throw new NotSupportedException();
 #else
-            foreach (global::java.net.NetworkInterface iface in GetInterfaces().javaInterfaces)
-            {
+            foreach (var iface in GetInterfaces().javaInterfaces)
                 if (iface.getName() == name)
-                {
                     return iface;
-                }
-            }
+
             return null;
 #endif
         }
@@ -296,15 +280,12 @@ namespace IKVM.Java.Externs.java.net
         public static object getByIndex0(int index)
         {
 #if FIRST_PASS
-		    return null;
+		    throw new NotSupportedException();
 #else
-            foreach (global::java.net.NetworkInterface iface in GetInterfaces().javaInterfaces)
-            {
+            foreach (var iface in GetInterfaces().javaInterfaces)
                 if (iface.getIndex() == index)
-                {
                     return iface;
-                }
-            }
+
             return null;
 #endif
         }
@@ -312,19 +293,16 @@ namespace IKVM.Java.Externs.java.net
         public static object getByInetAddress0(object addr)
         {
 #if FIRST_PASS
-		    return null;
+		    throw new NotSupportedException();
 #else
             foreach (global::java.net.NetworkInterface iface in GetInterfaces().javaInterfaces)
             {
-                global::java.util.Enumeration addresses = iface.getInetAddresses();
+                var addresses = iface.getInetAddresses();
                 while (addresses.hasMoreElements())
-                {
                     if (addresses.nextElement().Equals(addr))
-                    {
                         return iface;
-                    }
-                }
             }
+
             return null;
 #endif
         }
@@ -332,7 +310,7 @@ namespace IKVM.Java.Externs.java.net
         public static bool isUp0(string name, int ind)
         {
 #if FIRST_PASS
-		    return false;
+		    throw new NotSupportedException();
 #else
             return GetDotNetNetworkInterfaceByIndex(ind).OperationalStatus == OperationalStatus.Up;
 #endif
@@ -341,7 +319,7 @@ namespace IKVM.Java.Externs.java.net
         public static bool isLoopback0(string name, int ind)
         {
 #if FIRST_PASS
-		    return false;
+		    throw new NotSupportedException();
 #else
             return GetDotNetNetworkInterfaceByIndex(ind).NetworkInterfaceType == NetworkInterfaceType.Loopback;
 #endif
@@ -350,7 +328,7 @@ namespace IKVM.Java.Externs.java.net
         public static bool supportsMulticast0(string name, int ind)
         {
 #if FIRST_PASS
-		    return false;
+		    throw new NotSupportedException();
 #else
             return GetDotNetNetworkInterfaceByIndex(ind).SupportsMulticast;
 #endif
@@ -359,7 +337,7 @@ namespace IKVM.Java.Externs.java.net
         public static bool isP2P0(string name, int ind)
         {
 #if FIRST_PASS
-		    return false;
+		    throw new NotSupportedException();
 #else
             switch (GetDotNetNetworkInterfaceByIndex(ind).NetworkInterfaceType)
             {
@@ -375,7 +353,7 @@ namespace IKVM.Java.Externs.java.net
         public static byte[] getMacAddr0(byte[] inAddr, string name, int ind)
         {
 #if FIRST_PASS
-		    return null;
+		    throw new NotSupportedException();
 #else
             return GetDotNetNetworkInterfaceByIndex(ind).GetPhysicalAddress().GetAddressBytes();
 #endif
@@ -384,22 +362,20 @@ namespace IKVM.Java.Externs.java.net
         public static int getMTU0(string name, int ind)
         {
 #if FIRST_PASS
-		    return 0;
+		    throw new NotSupportedException();
 #else
-            IPInterfaceProperties ipprops = GetDotNetNetworkInterfaceByIndex(ind).GetIPProperties();
-            IPv4InterfaceProperties v4props = GetIPv4Properties(ipprops);
+            var ipprops = GetDotNetNetworkInterfaceByIndex(ind).GetIPProperties();
+            var v4props = GetIPv4Properties(ipprops);
             if (v4props != null)
-            {
                 return v4props.Mtu;
-            }
+
             if (InetAddressImplFactory.isIPv6Supported())
             {
-                IPv6InterfaceProperties v6props = GetIPv6Properties(ipprops);
+                var v6props = GetIPv6Properties(ipprops);
                 if (v6props != null)
-                {
                     return v6props.Mtu;
-                }
             }
+
             return -1;
 #endif
         }

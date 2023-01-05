@@ -24,18 +24,22 @@
 
 using System;
 using System.Collections.Generic;
-#if STATIC_COMPILER
+
+using IKVM.Runtime;
+
+#if IMPORTER
 using IKVM.Reflection;
 using IKVM.Reflection.Emit;
+using IKVM.Tools.Importer;
+
 using Type = IKVM.Reflection.Type;
 #else
 using System.Reflection;
 using System.Reflection.Emit;
 #endif
-using System.Diagnostics;
+
 using Instruction = IKVM.Internal.ClassFile.Method.Instruction;
 using InstructionFlags = IKVM.Internal.ClassFile.Method.InstructionFlags;
-using IKVM.Runtime;
 
 namespace IKVM.Internal
 {
@@ -170,18 +174,19 @@ namespace IKVM.Internal
                 return methodName.GetHashCode();
             }
         }
-        private static readonly Dictionary<IntrinsicKey, Emitter> intrinsics = Register();
-#if STATIC_COMPILER
-        private static readonly Type typeofFloatConverter = StaticCompiler.GetRuntimeType("IKVM.Runtime.FloatConverter");
-        private static readonly Type typeofDoubleConverter = StaticCompiler.GetRuntimeType("IKVM.Runtime.DoubleConverter");
+
+        static readonly Dictionary<IntrinsicKey, Emitter> intrinsics = Register();
+#if IMPORTER
+        static readonly Type typeofFloatConverter = StaticCompiler.GetRuntimeType("IKVM.Runtime.FloatConverter");
+        static readonly Type typeofDoubleConverter = StaticCompiler.GetRuntimeType("IKVM.Runtime.DoubleConverter");
 #else
-		private static readonly Type typeofFloatConverter = typeof(IKVM.Runtime.FloatConverter);
-		private static readonly Type typeofDoubleConverter = typeof(IKVM.Runtime.DoubleConverter);
+        static readonly Type typeofFloatConverter = typeof(IKVM.Runtime.FloatConverter);
+        static readonly Type typeofDoubleConverter = typeof(IKVM.Runtime.DoubleConverter);
 #endif
 
-        private static Dictionary<IntrinsicKey, Emitter> Register()
+        static Dictionary<IntrinsicKey, Emitter> Register()
         {
-            Dictionary<IntrinsicKey, Emitter> intrinsics = new Dictionary<IntrinsicKey, Emitter>();
+            var intrinsics = new Dictionary<IntrinsicKey, Emitter>();
             intrinsics.Add(new IntrinsicKey("java.lang.Object", "getClass", "()Ljava.lang.Class;"), Object_getClass);
             intrinsics.Add(new IntrinsicKey("java.lang.Class", "desiredAssertionStatus", "()Z"), Class_desiredAssertionStatus);
             intrinsics.Add(new IntrinsicKey("java.lang.Float", "floatToRawIntBits", "(F)I"), Float_floatToRawIntBits);
@@ -190,15 +195,14 @@ namespace IKVM.Internal
             intrinsics.Add(new IntrinsicKey("java.lang.Double", "longBitsToDouble", "(J)D"), Double_longBitsToDouble);
             intrinsics.Add(new IntrinsicKey("java.lang.System", "arraycopy", "(Ljava.lang.Object;ILjava.lang.Object;II)V"), System_arraycopy);
             intrinsics.Add(new IntrinsicKey("java.util.concurrent.atomic.AtomicReferenceFieldUpdater", "newUpdater", "(Ljava.lang.Class;Ljava.lang.Class;Ljava.lang.String;)Ljava.util.concurrent.atomic.AtomicReferenceFieldUpdater;"), AtomicReferenceFieldUpdater_newUpdater);
-#if STATIC_COMPILER
+#if IMPORTER
             intrinsics.Add(new IntrinsicKey("sun.reflect.Reflection", "getCallerClass", "()Ljava.lang.Class;"), Reflection_getCallerClass);
             intrinsics.Add(new IntrinsicKey("ikvm.internal.CallerID", "getCallerID", "()Likvm.internal.CallerID;"), CallerID_getCallerID);
 #endif
             intrinsics.Add(new IntrinsicKey("ikvm.runtime.Util", "getInstanceTypeFromClass", "(Ljava.lang.Class;)Lcli.System.Type;"), Util_getInstanceTypeFromClass);
-#if STATIC_COMPILER
+#if IMPORTER
             // this only applies to the core class library, so makes no sense in dynamic mode
             intrinsics.Add(new IntrinsicKey("java.lang.Class", "getPrimitiveClass", "(Ljava.lang.String;)Ljava.lang.Class;"), Class_getPrimitiveClass);
-            intrinsics.Add(new IntrinsicKey("java.lang.Class", "getDeclaredField", "(Ljava.lang.String;)Ljava.lang.reflect.Field;"), Class_getDeclaredField);
 #endif
             intrinsics.Add(new IntrinsicKey("java.lang.ThreadLocal", "<init>", "()V"), ThreadLocal_new);
             intrinsics.Add(new IntrinsicKey("sun.misc.Unsafe", "ensureClassInitialized", "(Ljava.lang.Class;)V"), Unsafe_ensureClassInitialized);
@@ -287,76 +291,6 @@ namespace IKVM.Internal
             }
             return false;
         }
-
-#if STATIC_COMPILER
-        // this intrinsifies the following two patterns:
-        //   unsafe.objectFieldOffset(XXX.class.getDeclaredField("xxx"));
-        // and
-        //   Class k = XXX.class;
-        //   unsafe.objectFieldOffset(k.getDeclaredField("xxx"));
-        // to avoid initializing the full reflection machinery at this point
-        private static bool Class_getDeclaredField(EmitIntrinsicContext eic)
-        {
-            if (eic.Caller.DeclaringType.GetClassLoader() != CoreClasses.java.lang.Object.Wrapper.GetClassLoader())
-            {
-                // we can only do this optimization when compiling the trusted core classes
-                return false;
-            }
-            TypeWrapper fieldClass;
-            if (eic.MatchRange(-2, 4)
-                && eic.Match(-2, NormalizedByteCode.__ldc)
-                && eic.Match(-1, NormalizedByteCode.__ldc_nothrow)
-                && eic.Match(1, NormalizedByteCode.__invokevirtual))
-            {
-                // unsafe.objectFieldOffset(XXX.class.getDeclaredField("xxx"));
-                fieldClass = eic.GetClassLiteral(-2);
-            }
-            else if (eic.MatchRange(-5, 7)
-                && eic.Match(-5, NormalizedByteCode.__ldc)
-                && eic.Match(-4, NormalizedByteCode.__astore)
-                && eic.Match(-3, NormalizedByteCode.__getstatic)
-                && eic.Match(-2, NormalizedByteCode.__aload, eic.Code[eic.OpcodeIndex - 4].NormalizedArg1)
-                && eic.Match(-1, NormalizedByteCode.__ldc_nothrow)
-                && eic.Match(1, NormalizedByteCode.__invokevirtual))
-            {
-                // Class k = XXX.class;
-                // unsafe.objectFieldOffset(k.getDeclaredField("xxx"));
-                fieldClass = eic.GetClassLiteral(-5);
-            }
-            else
-            {
-                return false;
-            }
-            FieldWrapper field = null;
-            string fieldName = eic.GetStringLiteral(-1);
-            foreach (FieldWrapper fw in fieldClass.GetFields())
-            {
-                if (fw.Name == fieldName)
-                {
-                    if (field != null)
-                    {
-                        return false;
-                    }
-                    field = fw;
-                }
-            }
-            if (field == null || field.IsStatic)
-            {
-                return false;
-            }
-            ClassFile.ConstantPoolItemMI cpi = eic.GetMethodref(1);
-            if (cpi.Class == "sun.misc.Unsafe" && cpi.Name == "objectFieldOffset" && cpi.Signature == "(Ljava.lang.reflect.Field;)J")
-            {
-                MethodWrapper mw = ClassLoaderWrapper.LoadClassCritical("sun.misc.Unsafe")
-                    .GetMethodWrapper("objectFieldOffset", "(Ljava.lang.Class;Ljava.lang.String;)J", false);
-                mw.Link();
-                mw.EmitCallvirt(eic.Emitter);
-                eic.PatchOpCode(1, NormalizedByteCode.__nop);
-                return true;
-            }
-            return false;
-        }
-#endif
 
         private static bool IsSafeForGetClassOptimization(TypeWrapper tw)
         {
@@ -451,7 +385,7 @@ namespace IKVM.Internal
             return AtomicReferenceFieldUpdaterEmitter.Emit(eic.Context, eic.Caller.DeclaringType, eic.Emitter, eic.ClassFile, eic.OpcodeIndex, eic.Code, eic.Flags);
         }
 
-#if STATIC_COMPILER
+#if IMPORTER
 
         private static bool Reflection_getCallerClass(EmitIntrinsicContext eic)
         {
@@ -537,16 +471,18 @@ namespace IKVM.Internal
             return false;
         }
 
-#if STATIC_COMPILER
-        private static bool Class_getPrimitiveClass(EmitIntrinsicContext eic)
+#if IMPORTER
+
+        static bool Class_getPrimitiveClass(EmitIntrinsicContext eic)
         {
             eic.Emitter.Emit(OpCodes.Pop);
             eic.Emitter.Emit(OpCodes.Ldnull);
-            MethodWrapper mw = CoreClasses.java.lang.Class.Wrapper.GetMethodWrapper("<init>", "(Lcli.System.Type;)V", false);
+            var mw = CoreClasses.java.lang.Class.Wrapper.GetMethodWrapper("<init>", "(Lcli.System.Type;)V", false);
             mw.Link();
             mw.EmitNewobj(eic.Emitter);
             return true;
         }
+
 #endif
 
         private static bool ThreadLocal_new(EmitIntrinsicContext eic)
@@ -725,7 +661,7 @@ namespace IKVM.Internal
 
         private static bool Unsafe_compareAndSwapObject(EmitIntrinsicContext eic)
         {
-            TypeWrapper tw = eic.GetStackTypeWrapper(0, 3);
+            var tw = eic.GetStackTypeWrapper(0, 3);
             if (IsSupportedArrayTypeForUnsafeOperation(tw)
                 && eic.GetStackTypeWrapper(0, 0).IsAssignableTo(tw.ElementTypeWrapper)
                 && eic.GetStackTypeWrapper(0, 1).IsAssignableTo(tw.ElementTypeWrapper))
@@ -1058,7 +994,7 @@ namespace IKVM.Internal
 
         private static void EmitConsumeUnsafe(EmitIntrinsicContext eic)
         {
-#if STATIC_COMPILER
+#if IMPORTER
             if (eic.Caller.DeclaringType.GetClassLoader() == CoreClasses.java.lang.Object.Wrapper.GetClassLoader())
             {
                 // we're compiling the core library (which is obviously trusted), so we don't need to check

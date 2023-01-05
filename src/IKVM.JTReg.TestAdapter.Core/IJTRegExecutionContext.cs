@@ -12,11 +12,11 @@ namespace IKVM.JTReg.TestAdapter.Core
         string TestRunDirectory { get; }
 
         /// <summary>
-        /// Filters the given set of test cases based on the test execution.
+        /// Filters the test case based on the test execution.
         /// </summary>
-        /// <param name="tests"></param>
+        /// <param name="test"></param>
         /// <returns></returns>
-        List<JTRegTestCase> FilterTestCases(List<JTRegTestCase> tests);
+        bool FilterTestCase(JTRegTestCase test);
 
         /// <summary>
         /// Returns <c>true</c> if the test host can attach a debugger.

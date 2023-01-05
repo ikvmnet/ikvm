@@ -216,8 +216,10 @@ namespace IKVM.Runtime.Vfs
             if (assembly.ReflectionOnly)
                 return false;
 
+#if NETFRAMEWORK
             if (assembly.GlobalAssemblyCache)
                 return true;
+#endif
 
             if (assembly.IsDynamic || assembly.Location == "")
                 return false;

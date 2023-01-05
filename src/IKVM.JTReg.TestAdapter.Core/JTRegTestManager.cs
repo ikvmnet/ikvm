@@ -32,7 +32,18 @@ namespace IKVM.JTReg.TestAdapter.Core
         internal const string DEFAULT_PARAM_TAG = "regtest";
         internal const string ENV_PREFIX = "JTREG_";
 
-        protected static readonly MD5 MD5 = MD5.Create();
+        static readonly MD5 md5 = MD5.Create();
+
+        /// <summary>
+        /// Computes the hash of the value.
+        /// </summary>
+        /// <param name="buffer"></param>
+        /// <returns></returns>
+        static byte[] ComputeHash(byte[] buffer)
+        {
+            lock (md5)
+                return md5.ComputeHash(buffer);
+        }
 
         /// <summary>
         /// Initializes the static instance.
@@ -44,7 +55,7 @@ namespace IKVM.JTReg.TestAdapter.Core
             if (RuntimeInformation.IsOSPlatform(OSPlatform.Linux))
             {
                 var javaHome = java.lang.System.getProperty("java.home");
-                foreach (var exec in new[] { "java", "javac", "jar", "jarsigner", "javadoc", "javah", "javap", "jdeps", "keytool", "policytool", "rmic", "wsgen", "wsimport" })
+                foreach (var exec in new[] { "java", "javac", "jar", "jarsigner", "javadoc", "javah", "javap", "jdeps", "keytool", "native2ascii", "policytool", "rmic", "wsgen", "wsimport" })
                 {
                     var execPath = Path.Combine(javaHome, "bin", exec);
                     if (File.Exists(execPath))
@@ -73,7 +84,7 @@ namespace IKVM.JTReg.TestAdapter.Core
         /// <returns></returns>
         protected static string GetSourceHash(string source)
         {
-            var b = MD5.ComputeHash(Encoding.UTF8.GetBytes(source));
+            var b = ComputeHash(Encoding.UTF8.GetBytes(source));
             var s = new StringBuilder(32);
             for (int i = 0; i < b.Length; i++)
                 s.Append(b[i].ToString("x2"));
@@ -95,8 +106,7 @@ namespace IKVM.JTReg.TestAdapter.Core
             if (output is null)
                 throw new ArgumentNullException(nameof(output));
 
-            var errorHandler = ErrorHandlerInterceptor.Create(new ErrorHandlerImplementation(logger));
-            var testManager = JTRegTypes.TestManager.New(output, new java.io.File(Environment.CurrentDirectory), errorHandler);
+            var testManager = JTRegTypes.TestManager.New(output, new java.io.File(Environment.CurrentDirectory), ErrorHandlerInterceptor.Create(logger));
 
             var workDirectory = Path.Combine(baseDir, DEFAULT_WORK_DIR_NAME);
             logger.SendMessage(JTRegTestMessageLevel.Informational, $"JTReg: Using work directory: '{workDirectory}'.");
@@ -192,9 +202,14 @@ namespace IKVM.JTReg.TestAdapter.Core
                 testWatch.Start();
 
                 // for each suite, get the results and transform a test case
-                foreach (dynamic testSuite in Util.GetTestSuites(source, testManager))
+                foreach (dynamic testSuite in (IEnumerable<dynamic>)Util.GetTestSuites(source, testManager))
+                {
                     foreach (var testCase in (IEnumerable<JTRegTestCase>)Util.GetTestCases(source, testManager, testSuite))
+                    {
                         context.SendTestCase(testCase);
+                        testCount++;
+                    }
+                }
 
                 testWatch.Stop();
                 context.SendMessage(JTRegTestMessageLevel.Informational, $"JTReg: Discovered {testCount} tests for '{source}' in {testWatch.Elapsed.TotalSeconds} seconds.");
@@ -289,27 +304,18 @@ namespace IKVM.JTReg.TestAdapter.Core
                 var testManager = CreateTestManager(context, baseDir, new java.io.PrintWriter(output));
                 testManager.addTestFiles(testDirs, false);
 
-                // we will need a full list of tests to apply any filters to
-                if (tests == null)
-                {
-                    var l = new List<JTRegTestCase>();
-
-                    // discover the full set of tests
-                    foreach (dynamic testSuite in Util.GetTestSuites(source, testManager))
-                        foreach (var testCase in (IEnumerable<JTRegTestCase>)Util.GetTestCases(source, testManager, testSuite))
-                            l.Add(testCase);
-
-                    tests = l;
-                }
-
-                // filter the tests
-                tests = context.FilterTestCases(tests);
+                // load the set of suites
+                var testSuites = ((IEnumerable<dynamic>)Util.GetTestSuites(source, testManager)).ToList();
 
                 // invoke each test suite
-                foreach (dynamic testSuite in (IEnumerable)testManager.getTestSuites())
+                foreach (dynamic testSuite in testSuites)
                 {
+                    bool FilterByList(dynamic td) => tests == null || tests.Any(i => i.TestPathName == (string)Util.GetTestPathName(source, testSuite, td));
+                    bool FilterByContext(dynamic td) => context.FilterTestCase(Util.ToTestCase(source, testSuite, td));
+                    bool Filter(dynamic td) => FilterByList(td) && FilterByContext(td);
+
                     context.SendMessage(JTRegTestMessageLevel.Informational, $"JTReg: Running test suite: {(string)testSuite.getName()}");
-                    RunTests(source, testManager, testSuite, context, tests, output, CreateParameters(source, testManager, testSuite, tests, debugUri), cancellationToken);
+                    RunTests(source, testManager, testSuite, context, tests, output, CreateParameters(source, testManager, testSuite, (Func<dynamic, bool>)Filter, debugUri), cancellationToken);
                 }
             }
             catch (Exception e)
@@ -324,10 +330,10 @@ namespace IKVM.JTReg.TestAdapter.Core
         /// <param name="source"></param>
         /// <param name="testManager"></param>
         /// <param name="testSuite"></param>
-        /// <param name="tests"></param>
+        /// <param name="filter"></param>
         /// <param name="debugUri"></param>
         /// <returns></returns>
-        dynamic CreateParameters(string source, dynamic testManager, dynamic testSuite, IEnumerable<JTRegTestCase> tests, Uri debugUri)
+        dynamic CreateParameters(string source, dynamic testManager, dynamic testSuite, Func<dynamic, bool> filter, Uri debugUri)
         {
             if (source is null)
                 throw new ArgumentNullException(nameof(source));
@@ -337,7 +343,7 @@ namespace IKVM.JTReg.TestAdapter.Core
                 throw new ArgumentNullException(nameof(testSuite));
 
             // invoke new RegressionParameters(string, RegressionTestSuite)
-            var rp = JTRegTypes.RegressionParameters.New(DEFAULT_PARAM_TAG, testSuite);
+            var rp = RegressionParametersInterceptor.Create(DEFAULT_PARAM_TAG, testSuite, filter);
 
             // configure work directory
             var wd = testManager.getWorkDirectory(testSuite);
@@ -352,24 +358,6 @@ namespace IKVM.JTReg.TestAdapter.Core
 
             // if a IncludeList.txt file exists in the root, add it as include files
             var includeFileList = (List<java.io.File>)GetIncludeListFiles(testSuite);
-
-            // explicit tests specified, replace include list
-            if (tests != null)
-            {
-                includeFileList.Clear();
-
-                // name of the current suite
-                var testSuiteName = Util.GetTestSuiteName(source, testSuite);
-
-                // fill in include list containing tests located within the suite
-                var includeListFile = (java.io.File)wd.getFile("IncludeList.txt");
-                using (var includeList = File.CreateText(includeListFile.toString()))
-                    foreach (var test in tests)
-                        if (string.Equals(test.TestSuiteName, testSuiteName))
-                            includeList.WriteLine(test.TestPathName + " generic-all");
-
-                includeFileList.Add(new java.io.File(includeListFile.getAbsoluteFile().toURI().normalize()));
-            }
 
             rp.setTests((java.util.Set)testManager.getTests(testSuite));
             rp.setExecMode(testSuite.getDefaultExecMode() ?? JTRegTypes.ExecMode.AGENTVM);
@@ -416,7 +404,7 @@ namespace IKVM.JTReg.TestAdapter.Core
         java.util.Map GetEnvVars(Uri debugUri)
         {
             var envVars = new java.util.TreeMap();
-
+            var os = (string)JTRegTypes.OS.Current().family;
             // import existing variables based on the current OS
             foreach (var var in ((string)JTRegTypes.OS.Current().family) == "windows" ? DEFAULT_WINDOWS_ENV_VARS : DEFAULT_UNIX_ENV_VARS)
                 if (Environment.GetEnvironmentVariable(var) is string val)
@@ -469,8 +457,6 @@ namespace IKVM.JTReg.TestAdapter.Core
                 throw new ArgumentNullException(nameof(testSuite));
             if (context is null)
                 throw new ArgumentNullException(nameof(context));
-            if (tests is null)
-                throw new ArgumentNullException(nameof(tests));
             if (parameters is null)
                 throw new ArgumentNullException(nameof(parameters));
 
@@ -501,7 +487,7 @@ namespace IKVM.JTReg.TestAdapter.Core
             {
                 // observe harness for test results
                 var harness = JTRegTypes.Harness.New();
-                var observer = HarnessObserverInterceptor.Create(new HarnessObserverImplementation(source, testSuite, context, tests));
+                var observer = HarnessObserverInterceptor.Create(source, testSuite, context, tests);
                 harness.addObserver(observer);
                 stats.register(harness);
 

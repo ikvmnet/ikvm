@@ -25,36 +25,40 @@ using System;
 
 using IKVM.Internal;
 
-#if STATIC_COMPILER || STUB_GENERATOR
+#if IMPORTER || EXPORTER
 using Type = IKVM.Reflection.Type;
 #endif
 
 namespace IKVM.Attributes
 {
+
     [AttributeUsage(AttributeTargets.Module)]
-	public sealed class JavaModuleAttribute : Attribute
-	{
-		private string[] classMap;
-		private string[] jars;
+    public sealed class JavaModuleAttribute : Attribute
+    {
+        private string[] classMap;
+        private string[] jars;
 
-		public JavaModuleAttribute()
-		{
-		}
+        public JavaModuleAttribute()
+        {
 
-		public JavaModuleAttribute(string[] classMap)
-		{
-			this.classMap = UnicodeUtil.UnescapeInvalidSurrogates(classMap);
-		}
+        }
 
-		public string[] GetClassMap()
-		{
-			return classMap;
-		}
+        public JavaModuleAttribute(string[] classMap)
+        {
+            this.classMap = UnicodeUtil.UnescapeInvalidSurrogates(classMap);
+        }
 
-		public string[] Jars
-		{
-			get { return jars; }
-			set { jars = value; }
-		}
-	}
+        public string[] GetClassMap()
+        {
+            return classMap;
+        }
+
+        public string[] Jars
+        {
+            get { return jars; }
+            set { jars = value; }
+        }
+
+    }
+
 }

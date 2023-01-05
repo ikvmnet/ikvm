@@ -1,23 +1,23 @@
-﻿using System;
-using System.Collections.Generic;
-using System.IO;
-using System.Linq;
-using System.Reflection;
-using System.Reflection.Metadata;
-using System.Reflection.PortableExecutable;
-using System.Security.Cryptography;
-using System.Text;
-using System.Text.RegularExpressions;
-
-using IKVM.Util.Jar;
-using IKVM.Util.Modules;
-
-using Microsoft.Build.Framework;
-using Microsoft.Build.Globbing;
-using Microsoft.Build.Utilities;
-
-namespace IKVM.MSBuild.Tasks
+﻿namespace IKVM.MSBuild.Tasks
 {
+
+    using System;
+    using System.Collections.Generic;
+    using System.IO;
+    using System.Linq;
+    using System.Reflection;
+    using System.Reflection.Metadata;
+    using System.Reflection.PortableExecutable;
+    using System.Security.Cryptography;
+    using System.Text;
+    using System.Text.RegularExpressions;
+
+    using IKVM.Util.Jar;
+    using IKVM.Util.Modules;
+
+    using Microsoft.Build.Framework;
+    using Microsoft.Build.Globbing;
+    using Microsoft.Build.Utilities;
 
     /// <summary>
     /// For each <see cref="IkvmReferenceItem"/> passed in, assigns default metadata if required.
@@ -71,6 +71,28 @@ namespace IKVM.MSBuild.Tasks
         }
 
         readonly static MD5 md5 = MD5.Create();
+
+        /// <summary>
+        /// Calculates the hash.
+        /// </summary>
+        /// <param name="buffer"></param>
+        /// <returns></returns>
+        static byte[] ComputeHash(byte[] buffer)
+        {
+            lock (md5)
+                return md5.ComputeHash(buffer);
+        }
+
+        /// <summary>
+        /// Calculates the hash.
+        /// </summary>
+        /// <param name="stream"></param>
+        /// <returns></returns>
+        static byte[] ComputeHash(Stream stream)
+        {
+            lock (md5)
+                return md5.ComputeHash(stream);
+        }
 
         /// <summary>
         /// Initializes a new instance.
@@ -130,7 +152,7 @@ namespace IKVM.MSBuild.Tasks
         /// <returns></returns>
         public override bool Execute()
         {
-            var items = IkvmReferenceItemUtil.Import(Items);
+            var items = IkvmReferenceItem.Import(Items);
 
             // populate and normalize metadata
             AssignMetadata(items);
@@ -434,7 +456,7 @@ namespace IKVM.MSBuild.Tasks
             if (value is null)
                 throw new ArgumentNullException(nameof(value));
 
-            var hsh = md5.ComputeHash(Encoding.UTF8.GetBytes(value));
+            var hsh = ComputeHash(Encoding.UTF8.GetBytes(value));
             var bld = new StringBuilder(hsh.Length * 2);
             foreach (var b in hsh)
                 bld.Append(b.ToString("x2"));
@@ -473,7 +495,7 @@ namespace IKVM.MSBuild.Tasks
 
             // fallback to a standard full MD5 of the file
             using var stm = File.OpenRead(file);
-            var hsh = md5.ComputeHash(stm);
+            var hsh = ComputeHash(stm);
             var bld = new StringBuilder(hsh.Length * 2);
             foreach (var b in hsh)
                 bld.Append(b.ToString("x2"));
@@ -684,8 +706,7 @@ namespace IKVM.MSBuild.Tasks
         /// <param name="items"></param>
         internal void AssignBuildInfo(IEnumerable<IkvmReferenceItem> items)
         {
-            foreach (var item in items)
-                AssignBuildInfo(item);
+            items.AsParallel().ForAll(AssignBuildInfo);
         }
 
         /// <summary>

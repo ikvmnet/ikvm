@@ -8,7 +8,7 @@
     -->
 
     <!-- Override IKVM.NET.Sdk: invoke exporter through task  -->
-    <Target Name="_ExportReferences" DependsOnTargets="ResolveReferenceExports" Inputs="@(ReferenceExport)" Outputs="%(ReferenceExport.CachePath)">
+    <Target Name="_ExportReference" DependsOnTargets="ResolveReferenceExports" Inputs="@(ReferenceExport)" Outputs="%(ReferenceExport.CachePath)">
         <Error Text="IKVM.NET.Sdk cannot currently build assemblies targeting '$(TargetFramework)'. Either target 'net461' or 'netcoreapp3.1'." Condition=" '$(TargetFramework)' != 'net461' And '$(TargetFramework)' != 'netcoreapp3.1' " />
 
         <ItemGroup>
@@ -21,8 +21,8 @@
         <MakeDir Directories="$([System.IO.Path]::GetDirectoryName('%(ReferenceExport.CachePath)'))" />
 
         <Delete Files="%(ReferenceExport.StagePath)" Condition="Exists('%(ReferenceExport.StagePath)')" />
-        <IkvmExporter ToolPath="$(IkvmExporterToolPath)" ToolFramework="$(IkvmToolFramework)" Input="%(ReferenceExport.Identity)" Bootstrap="$(Bootstrap)" NoStdLib="$(NoCompilerStandardLib)" References="@(_ReferenceExportReference)" Output="%(ReferenceExport.StagePath)" />
-        <Copy SourceFiles="%(ReferenceExport.StagePath)" DestinationFiles="%(ReferenceExport.CachePath)" OverwriteReadOnlyFiles="true" />
+        <IkvmExporter ToolPath="$(IkvmExporterToolPath)" Input="%(ReferenceExport.Identity)" Bootstrap="%(ReferenceExport.Bootstrap)" NoStdLib="%(ReferenceExport.NoStdLib)" References="@(_ReferenceExportReference)" Output="%(ReferenceExport.StagePath)" Condition="!Exists('%(ReferenceExport.CachePath)')" />
+        <Copy SourceFiles="%(ReferenceExport.StagePath)" DestinationFiles="%(ReferenceExport.CachePath)" OverwriteReadOnlyFiles="true" Condition="Exists('%(ReferenceExport.StagePath)') And !Exists('%(ReferenceExport.CachePath)')" />
 
         <ItemGroup>
             <FileWrites Include="%(ReferenceExport.StagePath)" />
@@ -65,7 +65,7 @@
     </Target>
 
     <!-- Override IKVM.NET.Sdk: invoke compiler through task  -->
-    <Target Name="_CoreCompile" DependsOnTargets="ResolveIkvmRuntimeAssembly;ResolveIkvmRuntimeJNIAssembly;CompileJava" Inputs="$(IkvmRuntimeAssembly);$(IkvmRuntimeJNIAssembly);$(KeyOriginatorFile);@(MapFile);@(ReferencePathWithRefAssemblies);@(Class);@(JavaResource);$(_CompileJavaStampFile)" Outputs="@(IntermediateAssembly);@(_DebugSymbolsIntermediatePath)">
+    <Target Name="_CoreCompile" DependsOnTargets="ResolveIkvmRuntimeAssembly;CompileJava" Inputs="$(IkvmRuntimeAssembly);$(KeyOriginatorFile);@(MapFile);@(ReferencePathWithRefAssemblies);@(Class);@(JavaResource);$(_CompileJavaStampFile)" Outputs="@(IntermediateAssembly);@(_DebugSymbolsIntermediatePath)">
         <Error Text="IKVM.NET.Sdk cannot currently build assemblies targeting '$(TargetFramework)'. Either target 'net461' or 'netcoreapp3.1'." Condition=" '$(TargetFramework)' != 'net461' And '$(TargetFramework)' != 'netcoreapp3.1' " />
         <Error Text="Could not locate IKVM.Runtime assembly." Condition=" '$(IkvmRuntimeAssembly)' == '' " />
         <Error Text="IKVM.Runtime.dll could not be located at '$(IkvmRuntimeAssembly)'." Condition="!Exists('$(IkvmRuntimeAssembly)')" />
@@ -87,7 +87,7 @@
             <_IkvmCompilerReferencePath Include="@(ReferencePathWithRefAssemblies)" Condition=" '%(ReferencePathWithRefAssemblies.HideFromJava)' != 'true' " />
             <_IkvmCompilerResource Include="@(JavaResource)" ResourcePath="$([System.String]::new('%(JavaResource.ResourcePath)').Replace('\', '/'))" Condition=" '%(Identity)' != '' " />
         </ItemGroup>
-
+        
         <!-- Build Java assembly into temporary directory. -->
         <RemoveDir Directories="$(_AssemblyTempPath)" />
         <MakeDir Directories="$(_AssemblyTempPath)" />
@@ -95,7 +95,6 @@
         <!-- Compile the reference item. -->
         <IkvmCompiler
             ToolPath="$(IkvmCompilerToolPath)"
-            ToolFramework="$(IkvmToolFramework)"
             ResponseFile="$(_IkvmCompilerResponseFile)"
             Output="$(_AssemblyTempPath)$(TargetName)$(TargetExt)"
             Assembly="$(AssemblyName)"
@@ -104,8 +103,8 @@
             Version="$(AssemblyVersion)"
             FileVersion="$(FileVersion)"
             Runtime="$(IkvmRuntimeAssembly)"
-            JNI="$(IkvmRuntimeJNIAssembly)"
             Target="$(OutputType.ToLowerInvariant())"
+            Platform="$(PlatformTarget.ToLowerInvariant())"
             Main="$(StartupObject)"
             Debug="$(_IkvmCompilerDebug)"
             KeyFile="$(KeyOriginatorFile)"

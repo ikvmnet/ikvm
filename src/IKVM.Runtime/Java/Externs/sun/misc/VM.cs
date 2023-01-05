@@ -24,7 +24,6 @@
 */
 using System;
 using System.Diagnostics;
-using System.Reflection;
 
 using IKVM.Internal;
 
@@ -32,48 +31,49 @@ namespace IKVM.Java.Externs.sun.misc
 {
 
     static class VM
-	{
+    {
 
-		public static void initialize()
-		{
+        public static void initialize()
+        {
 
-		}
+        }
 
-		public static global::java.lang.ClassLoader latestUserDefinedLoader()
-		{
-			// testing shows that it is cheaper the get the full stack trace and then look at a few frames than getting the frames individually
-			StackTrace trace = new StackTrace(2, false);
-			for (int i = 0; i < trace.FrameCount; i++)
-			{
-				StackFrame frame = trace.GetFrame(i);
-				MethodBase method = frame.GetMethod();
-				if (method == null)
-				{
-					continue;
-				}
-				Type type = method.DeclaringType;
-				if (type != null)
-				{
-					TypeWrapper tw = ClassLoaderWrapper.GetWrapperFromType(type);
-					if (tw != null)
-					{
-						ClassLoaderWrapper classLoader = tw.GetClassLoader();
-						AssemblyClassLoader acl = classLoader as AssemblyClassLoader;
-						if (acl == null || acl.GetAssembly(tw) != typeof(object).Assembly)
-						{
-							global::java.lang.ClassLoader javaClassLoader = classLoader.GetJavaClassLoader();
-							if (javaClassLoader != null)
-							{
-								return javaClassLoader;
-							}
-						}
-					}
-				}
-			}
+        public static global::java.lang.ClassLoader latestUserDefinedLoader()
+        {
+#if FIRST_PASS
+            throw new NotImplementedException();
+#else
+            var trace = new StackTrace(2, false);
+            for (var i = 0; i < trace.FrameCount; i++)
+            {
+                var f = trace.GetFrame(i);
+                var m = f.GetMethod();
+                if (m == null)
+                    continue;
 
-			return null;
-		}
+                // not to be considered from Java
+                if (global::IKVM.Java.Externs.sun.reflect.Reflection.IsHideFromStackWalk(m))
+                    continue;
 
-	}
+                if (m.DeclaringType != null && ClassLoaderWrapper.GetWrapperFromType(m.DeclaringType) is TypeWrapper tw and not null)
+                {
+                    // check that the assembly isn't java.base or the IKVM runtime
+                    var clw = tw.GetClassLoader();
+                    if (clw is AssemblyClassLoader acl)
+                        if (acl.GetAssembly(tw) == typeof(object).Assembly || acl.GetAssembly(tw) == typeof(VM).Assembly)
+                            continue;
+
+                    // associated Java class loader is our nearest
+                    var cl = clw.GetJavaClassLoader();
+                    if (cl != null)
+                        return cl;
+                }
+            }
+
+            return null;
+#endif
+        }
+
+    }
 
 }

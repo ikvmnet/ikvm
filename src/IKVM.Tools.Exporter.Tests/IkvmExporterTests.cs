@@ -32,7 +32,7 @@ namespace IKVM.Tools.Exporter.Tests
                 }
             };
 
-#if NET461
+#if NETFRAMEWORK
             options.Libraries.Add(RuntimeEnvironment.GetRuntimeDirectory());
             options.Assembly = typeof(System.Linq.Enumerable).Assembly.Location;
             options.Output = Path.Combine(Path.GetTempPath(), Path.GetFileName(Path.ChangeExtension(options.Assembly, ".jar")));
@@ -42,7 +42,7 @@ namespace IKVM.Tools.Exporter.Tests
             options.Output = Path.Combine(Path.GetTempPath(), Path.GetFileName(Path.ChangeExtension(options.Assembly, ".jar")));
 #endif
 
-            var ret = await new IkvmExporter(options).ExecuteAsync(CancellationToken.None);
+            var ret = await IkvmExporterTool.ExecuteAsync(options, CancellationToken.None);
             ret.Should().Be(0);
             File.Exists(options.Output).Should().BeTrue();
         }

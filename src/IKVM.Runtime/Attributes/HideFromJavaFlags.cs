@@ -23,20 +23,24 @@
 */
 using System;
 
-#if STATIC_COMPILER || STUB_GENERATOR
+#if IMPORTER || EXPORTER
 using Type = IKVM.Reflection.Type;
 #endif
 
 namespace IKVM.Attributes
 {
+
     [Flags]
-	public enum HideFromJavaFlags : byte
-	{
-		All = Code | Reflection | StackWalk | StackTrace,
-		None = 0,
-		Code = 1,
-		Reflection = 2,
-		StackWalk = 4,		// used for LambdaForm$Compiled
-		StackTrace = 8,		// used for LambdaForm$Hidden
-	}
+    public enum HideFromJavaFlags : byte
+    {
+
+        All = Code | Reflection | StackWalk | StackTrace,
+        None = 0,
+        Code = 1,
+        Reflection = 2,
+        StackWalk = 4,      // used for LambdaForm$Compiled
+        StackTrace = 8,     // used for LambdaForm$Hidden
+
+    }
+
 }

@@ -10,7 +10,7 @@ using System.Threading.Tasks;
 
 using Microsoft.Extensions.DependencyModel.Resolution;
 
-using Newtonsoft.Json;
+using System.Text.Json;
 
 namespace IKVM.Tools.Exporter
 {
@@ -36,7 +36,7 @@ namespace IKVM.Tools.Exporter
                 if (options is null)
                     throw new ArgumentNullException(nameof(options));
 
-                this.options = JsonConvert.DeserializeObject<IkvmExporterOptions>(options);
+                this.options = JsonSerializer.Deserialize<IkvmExporterOptions>(options);
             }
 
             /// <summary>
@@ -73,7 +73,8 @@ namespace IKVM.Tools.Exporter
 
         }
 
-        readonly object dispatcher;
+        IsolatedAssemblyLoadContext context;
+        object dispatcher;
 
         /// <summary>
         /// Initializes a new instance.
@@ -83,10 +84,10 @@ namespace IKVM.Tools.Exporter
         public IkvmExporterContext(IkvmExporterOptions options)
         {
             // load the exporter in a nested assembly context
-            var ctx = new IsolatedAssemblyLoadContext("IkvmExporter", true);
-            var asm = ctx.LoadFromAssemblyName(typeof(IkvmExporterDispatcher).Assembly.GetName());
+            context = new IsolatedAssemblyLoadContext("IkvmExporter", true);
+            var asm = context.LoadFromAssemblyName(typeof(IkvmExporterDispatcher).Assembly.GetName());
             var typ = asm.GetType(typeof(IkvmExporterDispatcher).FullName);
-            dispatcher = Activator.CreateInstance(typ, new[] { JsonConvert.SerializeObject(options) });
+            dispatcher = Activator.CreateInstance(typ, new[] { JsonSerializer.Serialize(options) });
         }
 
         /// <summary>
@@ -95,9 +96,9 @@ namespace IKVM.Tools.Exporter
         /// <param name="cancellationToken"></param>
         /// <returns></returns>
         /// <exception cref="NotImplementedException"></exception>
-        public partial Task<int> ExecuteAsync(CancellationToken cancellationToken)
+        public partial async Task<int> ExecuteAsync(CancellationToken cancellationToken)
         {
-            return Task.Run(() => (int)dispatcher.GetType().GetMethod(nameof(IkvmExporterDispatcher.Execute), BindingFlags.Public | BindingFlags.Instance).Invoke(dispatcher, Array.Empty<object>()));
+            return await Task.Run(() => (int)dispatcher.GetType().GetMethod(nameof(IkvmExporterDispatcher.Execute), BindingFlags.Public | BindingFlags.Instance).Invoke(dispatcher, Array.Empty<object>()));
         }
 
         /// <summary>
@@ -105,6 +106,17 @@ namespace IKVM.Tools.Exporter
         /// </summary>
         public void Dispose()
         {
+            try
+            {
+                dispatcher = null;
+                if (context != null)
+                    context.Unload();
+            }
+            finally
+            {
+                context = null;
+            }
+
             GC.SuppressFinalize(this);
         }
 

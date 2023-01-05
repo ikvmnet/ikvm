@@ -58,9 +58,9 @@ public class Reflection {
         fieldFilterMap = map;
 
         methodFilterMap = new HashMap<>();
-        // [IKVM] to avoid initialization order issues, we actually add
-        // Unsafe.getUnsafe() here, instead of in Unsafe's class initializer
-        methodFilterMap.put(sun.misc.Unsafe.class, new String[] {"getUnsafe"});
+        //// [IKVM] to avoid initialization order issues, we actually add
+        //// Unsafe.getUnsafe() here, instead of in Unsafe's class initializer
+        //methodFilterMap.put(sun.misc.Unsafe.class, new String[] {"getUnsafe"});
     }
 
     /** Returns the class of the caller of the method calling this method,

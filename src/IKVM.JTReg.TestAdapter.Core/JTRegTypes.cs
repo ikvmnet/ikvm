@@ -10,7 +10,10 @@ using Type = System.Type;
 namespace IKVM.JTReg.TestAdapter.Core
 {
 
-    static class JTRegTypes
+    /// <summary>
+    /// Provides information and accessors for JTReg types, which are dynamically loaded.
+    /// </summary>
+    internal static class JTRegTypes
     {
 
         static readonly string[] libs = Directory.GetFiles(Path.Combine(Path.GetDirectoryName(typeof(JTRegTestManager).Assembly.Location), "jtreg"), "*.jar");
@@ -25,6 +28,14 @@ namespace IKVM.JTReg.TestAdapter.Core
             public static readonly Method AddDefaultPropTableMethod = Class.getMethod("addDefaultPropTable", typeof(string), typeof(java.util.Properties));
             public static dynamic AddDefaultPropTable(string name, java.util.Properties propTable) => AddDefaultPropTableMethod.invoke(null, name, propTable);
 
+
+        }
+
+        public static class TestDescription
+        {
+
+            public static readonly Class Class = Class.forName("com.sun.javatest.TestDescription", true, ClassLoader);
+            public static readonly Type Type = ikvm.runtime.Util.getInstanceTypeFromClass(Class);
 
         }
 
@@ -114,6 +125,28 @@ namespace IKVM.JTReg.TestAdapter.Core
 
             public static readonly Class Class = Class.forName("com.sun.javatest.TestFilter", true, ClassLoader);
             public static readonly Type Type = ikvm.runtime.Util.getInstanceTypeFromClass(Class);
+
+        }
+
+        public static class CompositeFilter
+        {
+
+            public static readonly Class Class = Class.forName("com.sun.javatest.CompositeFilter", true, ClassLoader);
+            public static readonly Type Type = ikvm.runtime.Util.getInstanceTypeFromClass(Class);
+            public static readonly Constructor Constructor1 = Class.getConstructor(TestFilter.Type.MakeArrayType());
+
+            public static dynamic New(System.Array filters) => Constructor1.newInstance(new[] { filters });
+
+        }
+
+        public static class CachingTestFilter
+        {
+
+            public static readonly Class Class = Class.forName("com.sun.javatest.regtest.config.CachingTestFilter", true, ClassLoader);
+            public static readonly Type Type = ikvm.runtime.Util.getInstanceTypeFromClass(Class);
+            public static readonly Constructor Constructor1 = Class.getConstructor(TestFilter.Type.MakeArrayType());
+
+            public static dynamic New(System.Array filters) => Constructor1.newInstance(new[] { filters });
 
         }
 

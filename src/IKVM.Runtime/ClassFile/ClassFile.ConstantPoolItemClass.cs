@@ -59,7 +59,7 @@ namespace IKVM.Internal
 					// We don't enforce the strict class name rules in the static compiler, since HotSpot doesn't enforce *any* rules on
 					// class names for the system (and boot) class loader. We still need to enforce the 1.5 restrictions, because we
 					// rely on those invariants.
-#if !STATIC_COMPILER
+#if !IMPORTER
 					if(classFile.MajorVersion < 49 && (options & ClassFileParseOptions.RelaxedClassNameValidation) == 0)
 					{
 						char prev = name[0];
@@ -150,7 +150,7 @@ namespace IKVM.Internal
 				if(typeWrapper == VerifierTypeWrapper.Null)
 				{
 					TypeWrapper tw = thisType.GetClassLoader().LoadClass(name, mode | LoadMode.WarnClassNotFound);
-#if !STATIC_COMPILER && !FIRST_PASS
+#if !IMPORTER && !FIRST_PASS
 					if(!tw.IsUnloadable)
 					{
 						try

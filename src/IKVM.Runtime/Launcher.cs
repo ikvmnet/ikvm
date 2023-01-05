@@ -12,6 +12,7 @@ using System.Text.Json;
 using System.Text.Json.Serialization;
 using System.Threading;
 
+using IKVM.Attributes;
 using IKVM.Internal;
 
 namespace IKVM.Runtime
@@ -102,7 +103,7 @@ namespace IKVM.Runtime
         /// <param name="properties"></param>
         static void SetProperties(IDictionary properties)
         {
-#if FIRST_PASS || STATIC_COMPILER
+#if FIRST_PASS || IMPORTER
             throw new NotImplementedException();
 #else
             if (properties is null)
@@ -117,7 +118,7 @@ namespace IKVM.Runtime
         /// </summary>
         static void EnterMainThread()
         {
-#if FIRST_PASS || STATIC_COMPILER
+#if FIRST_PASS || IMPORTER
             throw new NotImplementedException();
 #else
             if (Thread.CurrentThread.Name == null)
@@ -153,7 +154,7 @@ namespace IKVM.Runtime
         /// </summary>
         static void ExitMainThread()
         {
-#if FIRST_PASS || STATIC_COMPILER
+#if FIRST_PASS || IMPORTER
             throw new NotImplementedException();
 #else
             // FXBUG when the main thread ends, it doesn't actually die, it stays around to manage the lifetime
@@ -189,7 +190,7 @@ namespace IKVM.Runtime
         /// </summary>
         static void PrintVersion()
         {
-#if FIRST_PASS || STATIC_COMPILER
+#if FIRST_PASS || IMPORTER
             throw new NotImplementedException();
 #else
             Console.WriteLine(GetVersionAndCopyrightInfo());
@@ -206,7 +207,7 @@ namespace IKVM.Runtime
         /// <param name="asm"></param>
         static void AddBootClassPathAssembly(Assembly assembly)
         {
-#if FIRST_PASS || STATIC_COMPILER
+#if FIRST_PASS || IMPORTER
             throw new NotImplementedException();
 #else
             ClassLoaderWrapper.GetBootstrapClassLoader().AddDelegate(AssemblyClassLoader.FromAssembly(assembly));
@@ -233,12 +234,13 @@ namespace IKVM.Runtime
         /// <param name="rarg"></param>
         /// <param name="properties"></param>
         /// <returns></returns>
+        [HideFromJava(HideFromJavaFlags.StackTrace)]
         public static int Run(string main, bool jar, string[] args, string rarg, IDictionary<string, string> properties)
         {
             if (args is null)
                 throw new ArgumentNullException(nameof(args));
 
-#if FIRST_PASS || STATIC_COMPILER
+#if FIRST_PASS || IMPORTER
             throw new NotImplementedException();
 #else
             HandleDebugTrace();
@@ -255,7 +257,7 @@ namespace IKVM.Runtime
             if (Environment.GetEnvironmentVariable("CLASSPATH") is string cp && !string.IsNullOrEmpty(cp))
                 initialize["java.class.path"] = string.Join(Path.PathSeparator.ToString(), Glob(cp.Split(Path.PathSeparator)));
 
-            // ikvm.home from environmente by default
+            // ikvm.home from environment by default
             initialize["ikvm.home"] = "ikvm";
             if (Environment.GetEnvironmentVariable("IKVM_HOME") is string ih && !string.IsNullOrEmpty(ih))
                 initialize["ikvm.home"] = ih;

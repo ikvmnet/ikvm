@@ -24,24 +24,21 @@
 package ikvm.internal;
 
 import cli.System.Runtime.Serialization.SerializationInfo;
-import cli.System.Security.Permissions.SecurityAction;
-import cli.System.Security.Permissions.SecurityPermissionAttribute;
 import java.io.InteropObjectInputStream;
 import java.io.InteropObjectOutputStream;
 
-public final class Serialization
-{
-    private Serialization() { }
+public final class Serialization {
+
+    private Serialization() {
+
+    }
     
-    @SecurityPermissionAttribute.Annotation(value = SecurityAction.__Enum.Demand, SerializationFormatter = true)
-    public static void writeObject(Object obj, SerializationInfo info)
-    {
+    public static void writeObject(Object obj, SerializationInfo info) {
         InteropObjectOutputStream.writeObject(obj, info);
     }
     
-    @SecurityPermissionAttribute.Annotation(value = SecurityAction.__Enum.Demand, SerializationFormatter = true)
-    public static void readObject(Object obj, SerializationInfo info)
-    {
+    public static void readObject(Object obj, SerializationInfo info) {
         InteropObjectInputStream.readObject(obj, info);
     }
+
 }

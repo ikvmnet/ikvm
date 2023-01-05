@@ -1,12 +1,16 @@
-﻿using java.util;
-using ikvm.runtime;
+﻿using ikvm.runtime;
 
-namespace ikvm.tools.java
+using IKVM.Attributes;
+
+using java.util;
+
+namespace IKVM.Tools.Java
 {
 
     public static class Program
     {
 
+        [HideFromJava]
         public static int Main(string[] args) => Launcher.run(null, args, "", new Properties());
 
     }

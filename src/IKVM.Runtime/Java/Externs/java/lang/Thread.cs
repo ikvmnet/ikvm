@@ -21,6 +21,7 @@
   jeroen@frijters.net
   
 */
+
 using System.Collections.Generic;
 using System.Diagnostics;
 using System.Threading;
@@ -33,13 +34,15 @@ namespace IKVM.Java.Externs.java.lang
     static class Thread
     {
 
-        private static readonly object mainThreadGroup;
+        static readonly object mainThreadGroup;
 
 #if !FIRST_PASS
+
         static Thread()
         {
             mainThreadGroup = new global::java.lang.ThreadGroup(global::java.lang.ThreadGroup.createRootGroup(), "main");
         }
+
 #endif
 
         public static object getMainThreadGroup()
@@ -53,9 +56,7 @@ namespace IKVM.Java.Externs.java.lang
 #if !FIRST_PASS
             int count = global::java.lang.Thread.currentThread().isDaemon() ? 0 : 1;
             while (Interlocked.CompareExchange(ref global::java.lang.Thread.nonDaemonCount[0], 0, 0) > count)
-            {
                 global::System.Threading.Thread.Sleep(1);
-            }
 #endif
         }
 
@@ -64,13 +65,10 @@ namespace IKVM.Java.Externs.java.lang
         {
 #if !FIRST_PASS
             if (threadGroup == null)
-            {
                 threadGroup = mainThreadGroup;
-            }
+
             if (global::java.lang.Thread.current == null)
-            {
                 new global::java.lang.Thread((global::java.lang.ThreadGroup)threadGroup);
-            }
 #endif
         }
 
@@ -79,7 +77,7 @@ namespace IKVM.Java.Externs.java.lang
 #if FIRST_PASS
             return null;
 #else
-            List<global::java.lang.StackTraceElement> stackTrace = new List<global::java.lang.StackTraceElement>();
+            var stackTrace = new List<global::java.lang.StackTraceElement>();
             ExceptionHelper.ExceptionInfoHelper.Append(stackTrace, stack, 0, true);
             return stackTrace.ToArray();
 #endif
@@ -92,14 +90,12 @@ namespace IKVM.Java.Externs.java.lang
 #else
             return global::java.security.AccessController.doPrivileged(global::ikvm.runtime.Delegates.toPrivilegedAction(delegate
             {
-                global::java.lang.ThreadGroup root = (global::java.lang.ThreadGroup)mainThreadGroup;
+                var root = (global::java.lang.ThreadGroup)mainThreadGroup;
                 for (; ; )
                 {
-                    global::java.lang.Thread[] threads = new global::java.lang.Thread[root.activeCount()];
+                    var threads = new global::java.lang.Thread[root.activeCount()];
                     if (root.enumerate(threads) == threads.Length)
-                    {
                         return threads;
-                    }
                 }
             }));
 #endif

@@ -23,7 +23,7 @@
 */
 using System;
 
-#if STATIC_COMPILER || STUB_GENERATOR
+#if IMPORTER || EXPORTER
 using IKVM.Reflection;
 using IKVM.Reflection.Emit;
 using Type = IKVM.Reflection.Type;
@@ -55,7 +55,7 @@ namespace IKVM.Internal
 
         internal static bool IsDynamicAssembly(Assembly asm)
         {
-#if STATIC_COMPILER || STUB_GENERATOR
+#if IMPORTER || EXPORTER
 			return false;
 #else
             return asm.IsDynamic;
@@ -99,7 +99,7 @@ namespace IKVM.Internal
 
         internal static bool IsVector(Type type)
         {
-#if STATIC_COMPILER || STUB_GENERATOR
+#if IMPORTER || EXPORTER
 			return type.__IsVector;
 #else
             // there's no API to distinguish an array of rank 1 from a vector,
@@ -172,13 +172,14 @@ namespace IKVM.Internal
             return tb.DefineMethod(ConstructorInfo.ConstructorName, attribs | MethodAttributes.SpecialName | MethodAttributes.RTSpecialName, null, parameterTypes);
         }
 
+        /// <summary>
+        /// Returns <c>true</c> if the type can be the owner of a dynamic method.
+        /// </summary>
+        /// <param name="type"></param>
+        /// <returns></returns>
         internal static bool CanOwnDynamicMethod(Type type)
         {
-            return type != null
-                && !type.IsInterface
-                && !type.HasElementType
-                && !type.IsGenericTypeDefinition
-                && !type.IsGenericParameter;
+            return type != null && !type.IsInterface && !type.HasElementType && !type.IsGenericTypeDefinition && !type.IsGenericParameter;
         }
 
         internal static bool MatchParameterInfos(ParameterInfo p1, ParameterInfo p2)
@@ -214,7 +215,7 @@ namespace IKVM.Internal
             return false;
         }
 
-#if STATIC_COMPILER
+#if IMPORTER
 
 		internal static Type GetMissingType(Type type)
 		{

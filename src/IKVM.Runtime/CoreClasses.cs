@@ -26,10 +26,13 @@ namespace IKVM.Internal
 {
 	internal static class CoreClasses
 	{
+
 		internal static class cli
 		{
+
 			internal static class System
 			{
+
 				internal static class Object
 				{
 					// NOTE we have a dummy static initializer, to make sure we don't get the beforeFieldInit attribute
@@ -45,13 +48,17 @@ namespace IKVM.Internal
 					static Exception() { }
 					internal static readonly TypeWrapper Wrapper = DotNetTypeWrapper.GetWrapperFromDotNetType(Types.Exception);
 				}
+
 			}
+
 		}
 
 		internal static class ikvm
 		{
+
 			internal static class @internal
 			{
+
 				internal static class CallerID
 				{
 					// NOTE we have a dummy static initializer, to make sure we don't get the beforeFieldInit attribute
@@ -59,7 +66,9 @@ namespace IKVM.Internal
 					static CallerID() { }
 					internal static readonly TypeWrapper Wrapper = ClassLoaderWrapper.LoadClassCritical("ikvm.internal.CallerID");
 				}
+
 			}
+
 		}
 
 		internal static class java

@@ -34,7 +34,6 @@ import cli.System.Runtime.InteropServices.DllImportAttribute;
 import cli.System.Runtime.InteropServices.StructLayoutAttribute;
 import cli.System.Runtime.InteropServices.LayoutKind;
 import cli.System.Runtime.InteropServices.Marshal;
-import static ikvm.internal.Util.WINDOWS;
 
 class FileDispatcherImpl extends FileDispatcher
 {
@@ -162,7 +161,7 @@ class FileDispatcherImpl extends FileDispatcher
              boolean shared) throws IOException
     {
         FileStream fs = (FileStream)fd.getStream();
-        if (WINDOWS)
+        if (cli.IKVM.Runtime.RuntimeUtil.get_IsWindows())
         {
             int LOCKFILE_FAIL_IMMEDIATELY = 1;
             int LOCKFILE_EXCLUSIVE_LOCK = 2;
@@ -229,7 +228,7 @@ class FileDispatcherImpl extends FileDispatcher
     @cli.System.Security.SecuritySafeCriticalAttribute.Annotation
     void release(FileDescriptor fd, long pos, long size) throws IOException {
         FileStream fs = (FileStream)fd.getStream();
-        if (WINDOWS)
+        if (cli.IKVM.Runtime.RuntimeUtil.get_IsWindows())
         {
             int ERROR_NOT_LOCKED = 158;
             OVERLAPPED o = new OVERLAPPED();

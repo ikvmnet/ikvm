@@ -27,7 +27,7 @@ using System;
 using System.Runtime.Loader;
 #endif
 
-#if STATIC_COMPILER || STUB_GENERATOR
+#if IMPORTER || EXPORTER
 using IKVM.Reflection;
 using IKVM.Reflection.Emit;
 using Type = IKVM.Reflection.Type;
@@ -103,7 +103,7 @@ namespace IKVM.Internal
             return sb.ToString();
         }
 
-#if !STATIC_COMPILER && !STUB_GENERATOR
+#if !IMPORTER && !EXPORTER
         internal java.util.Enumeration GetResources(string name)
         {
 #if FIRST_PASS

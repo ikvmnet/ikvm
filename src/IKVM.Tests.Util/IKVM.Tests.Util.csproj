@@ -1,11 +1,9 @@
 ﻿<Project Sdk="Microsoft.NET.Sdk">
-
+    <Import Project="$(MSBuildThisFileDirectory)..\..\IKVM.deps.props" />
+    <Import Project="$(MSBuildThisFileDirectory)..\..\IKVM.refs.props" />
+    
     <PropertyGroup>
         <TargetFrameworks>net461;netcoreapp3.1</TargetFrameworks>
     </PropertyGroup>
-
-    <ItemGroup>
-        <ProjectReference Include="..\IKVM.Java\IKVM.Java.msbuildproj" />
-    </ItemGroup>
 
 </Project>

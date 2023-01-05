@@ -23,7 +23,7 @@
 */
 using System;
 
-#if STATIC_COMPILER || STUB_GENERATOR
+#if IMPORTER || EXPORTER
 using IKVM.Reflection;
 using IKVM.Reflection.Emit;
 using Type = IKVM.Reflection.Type;
@@ -34,9 +34,11 @@ using ProtectionDomain = System.Object;
 
 namespace IKVM.Internal
 {
+
     [Flags]
     enum LoadMode
     {
+
         // These are the modes that should be used
         Find = ReturnNull,
         LoadOrNull = Load | ReturnNull,
@@ -58,5 +60,7 @@ namespace IKVM.Internal
 
         // warnings
         WarnClassNotFound = 0x0020,
+
     }
+
 }

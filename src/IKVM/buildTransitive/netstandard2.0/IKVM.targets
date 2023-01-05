@@ -13,11 +13,9 @@
     </Target>
 
     <!-- Populates the IkvmReferenceItem set with required metadata. -->
-    <Target Name="_UpdateIkvmReferenceItemsMetadata" DependsOnTargets="GetIkvmReferenceItemsFromIkvmReferences;ResolveIkvmRuntimeAssembly;ResolveIkvmRuntimeJNIAssembly;ResolveIkvmBaseAssembly;ResolveIkvmFrameworkReferences" Condition=" '@(IkvmReferenceItem)' != '' ">
+    <Target Name="_UpdateIkvmReferenceItemsMetadata" DependsOnTargets="GetIkvmReferenceItemsFromIkvmReferences;ResolveIkvmRuntimeAssembly;ResolveIkvmBaseAssembly;ResolveIkvmFrameworkReferences" Condition=" '@(IkvmReferenceItem)' != '' ">
         <Error Text="Could not locate IKVM.Runtime assembly." Condition=" '$(IkvmRuntimeAssembly)' == '' " />
         <Error Text="IKVM.Runtime.dll could not be located at '$(IkvmRuntimeAssembly)'." Condition="!Exists('$(IkvmRuntimeAssembly)')" />
-        <Error Text="Could not locate IKVM.Runtime.JNI assembly." Condition=" '$(IkvmRuntimeJNIAssembly)' == '' " />
-        <Error Text="IKVM.Runtime.JNI.dll could not be located at '$(IkvmRuntimeJNIAssembly)'." Condition="!Exists('$(IkvmRuntimeJNIAssembly)')" />
         <Error Text="Could not locate IKVM.Java assembly." Condition=" '$(IkvmBaseAssembly)' == '' " />
         <Error Text="IKVM.Java.dll could not be located at '$(IkvmBaseAssembly)'." Condition="!Exists('$(IkvmBaseAssembly)')" />
 
@@ -53,7 +51,7 @@
     </Target>
 
     <!-- Builds the IkvmReferenceItem set into their output items within the cache. -->
-    <Target Name="_CompileIkvmReferences" DependsOnTargets="ResolveIkvmRuntimeAssembly;ResolveIkvmRuntimeJNIAssembly;ResolveIkvmBaseAssembly;ResolveIkvmFrameworkReferences" Inputs="%(IkvmReferenceItem.Compile)" Outputs="%(IkvmReferenceItem.CachePath)">
+    <Target Name="_CompileIkvmReferences" DependsOnTargets="ResolveIkvmRuntimeAssembly;ResolveIkvmBaseAssembly;ResolveIkvmFrameworkReferences" Inputs="%(IkvmReferenceItem.Compile)" Outputs="%(IkvmReferenceItem.CachePath)">
         <Error Text="_CompileIkvmReferences has no implementation." />
     </Target>
 
@@ -116,7 +114,6 @@
         <ResolveIkvmFrameworkReferencesDependsOn>
             $(ResolveIkvmFrameworkReferencesDependsOn);
             ResolveIkvmRuntimeAssembly;
-            ResolveIkvmRuntimeJNIAssembly;
             ResolveIkvmBaseAssembly;
         </ResolveIkvmFrameworkReferencesDependsOn>
     </PropertyGroup>

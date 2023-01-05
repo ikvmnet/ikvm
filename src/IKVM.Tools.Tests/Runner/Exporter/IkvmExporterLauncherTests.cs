@@ -22,7 +22,7 @@ namespace IKVM.Tools.Tests.Runner.Exporter
 
         public TestContext TestContext { get; set; }
 
-        async Task Can_export_dll(IkvmToolFramework toolFramework, string tfm)
+        async Task Can_export_dll(string tfm)
         {
             var libs = Path.Combine(TESTBASE, "lib", tfm);
 
@@ -30,17 +30,24 @@ namespace IKVM.Tools.Tests.Runner.Exporter
             var p = Path.Combine(Path.GetTempPath(), Guid.NewGuid().ToString(), Path.ChangeExtension(a, ".jar"));
             Directory.CreateDirectory(Path.GetDirectoryName(p));
 
+            var rid = "";
+            if (RuntimeInformation.IsOSPlatform(OSPlatform.Windows))
+                rid = "win7-x64";
+            if (RuntimeInformation.IsOSPlatform(OSPlatform.Linux))
+                rid = "linux-x64";
+            if (RuntimeInformation.IsOSPlatform(OSPlatform.OSX))
+                rid = "osx-x64";
+
             var e = new List<IkvmToolDiagnosticEvent>();
-            var l = new IkvmExporterLauncher(new IkvmToolDelegateDiagnosticListener(evt => { e.Add(evt); TestContext.WriteLine(evt.Message, evt.MessageArgs); }));
+            var l = new IkvmExporterLauncher(Path.Combine(Path.GetDirectoryName(typeof(IkvmExporterLauncherTests).Assembly.Location), "ikvmstub", tfm, rid), new IkvmToolDelegateDiagnosticListener(evt => { e.Add(evt); TestContext.WriteLine(evt.Message, evt.MessageArgs); }));
             var o = new IkvmExporterOptions()
             {
-                ToolFramework = toolFramework,
                 NoStdLib = true,
                 Input = a,
                 Output = p,
             };
 
-            foreach (var dll in Directory.GetFiles(l.GetReferenceAssemblyDirectory(toolFramework)))
+            foreach (var dll in Directory.GetFiles(l.GetReferenceAssemblyDirectory()))
                 o.References.Add(dll);
             foreach (var dll in Directory.GetFiles(libs, "*.dll"))
                 o.References.Add(dll);
@@ -56,13 +63,13 @@ namespace IKVM.Tools.Tests.Runner.Exporter
             if (RuntimeInformation.IsOSPlatform(OSPlatform.Windows) == false)
                 return Task.CompletedTask;
 
-            return Can_export_dll(IkvmToolFramework.NetFramework, "net461");
+            return Can_export_dll("net461");
         }
 
         [TestMethod]
         public Task Can_export_netcore_jar()
         {
-            return Can_export_dll(IkvmToolFramework.NetCore, "netcoreapp3.1");
+            return Can_export_dll("netcoreapp3.1");
         }
 
     }

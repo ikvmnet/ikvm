@@ -25,14 +25,16 @@
 
 package java.io;
 
+import java.util.ArrayList;
+import java.util.List;
+
 import cli.System.IO.FileAccess;
 import cli.System.IO.FileMode;
 import cli.System.IO.FileShare;
 import cli.System.IO.FileStream;
 import cli.System.IO.SeekOrigin;
+import cli.System.Net.Sockets.SocketError;
 import cli.System.Runtime.InteropServices.DllImportAttribute;
-import java.util.ArrayList;
-import java.util.List;
 
 /**
  * Instances of the file descriptor class serve as an opaque handle
@@ -46,7 +48,8 @@ import java.util.List;
  * @author  Pavani Diwanji
  * @since   JDK1.0
  */
-public final class FileDescriptor {
+public final class FileDescriptor
+{
 
     private volatile cli.System.IO.Stream stream;
     private volatile cli.System.Net.Sockets.Socket socket;
@@ -71,7 +74,7 @@ public final class FileDescriptor {
     @cli.System.Security.SecurityCriticalAttribute.Annotation
     private long get_handle()
     {
-        if (ikvm.internal.Util.WINDOWS)
+        if (cli.IKVM.Runtime.RuntimeUtil.get_IsWindows())
         {
             if (stream instanceof cli.System.IO.FileStream)
             {
@@ -91,13 +94,14 @@ public final class FileDescriptor {
                 return GetStdHandle(-12).ToInt64();
             }
         }
+
         return -1;
     }
     
     @cli.System.Security.SecurityCriticalAttribute.Annotation
     private int get_fd()
     {
-        if (!ikvm.internal.Util.WINDOWS)
+        if (cli.IKVM.Runtime.RuntimeUtil.get_IsWindows() == false)
         {
             if (stream instanceof cli.System.IO.FileStream)
             {
@@ -117,6 +121,7 @@ public final class FileDescriptor {
                 return 2;
             }
         }
+
         return -1;
     }
     
@@ -128,6 +133,7 @@ public final class FileDescriptor {
      * object.
      */
     public /**/ FileDescriptor() {
+        
     }
 
     /**
@@ -220,7 +226,7 @@ public final class FileDescriptor {
         if (stream instanceof FileStream)
         {
             FileStream fs = (FileStream)stream;
-            boolean ok = ikvm.internal.Util.WINDOWS ? flushWin32(fs) : flushPosix(fs);
+            boolean ok = cli.IKVM.Runtime.RuntimeUtil.get_IsWindows() ? flushWin32(fs) : flushPosix(fs);
             if (!ok)
             {
                 throw new SyncFailedException("sync failed");
@@ -239,7 +245,8 @@ public final class FileDescriptor {
     @DllImportAttribute.Annotation("kernel32")
     private static native int FlushFileBuffers(cli.Microsoft.Win32.SafeHandles.SafeFileHandle handle);
 
-    private static FileDescriptor standardStream(int fd) {
+    private static FileDescriptor standardStream(int fd)
+    {
         FileDescriptor desc = new FileDescriptor();
         try
         {
@@ -745,19 +752,18 @@ public final class FileDescriptor {
             if (false) throw new cli.System.ObjectDisposedException("");
             socket.set_Blocking(blocking);
         }
-        catch (cli.System.Net.Sockets.SocketException x)
+        catch (cli.System.Net.Sockets.SocketException e)
         {
-            if (x.get_ErrorCode() == java.net.SocketUtil.WSAEINVAL)
-            {
-                // Work around for winsock issue. You can't set a socket to blocking if a connection request is pending,
-                // so we'll have to set the blocking again in SocketChannelImpl.checkConnect().
+            // Work around for winsock issue. You can't set a socket to blocking if a connection request is pending,
+            // so we'll have to set the blocking again in SocketChannelImpl.checkConnect().
+            if (e.get_SocketErrorCode().Value == SocketError.InvalidArgument)
                 return;
-            }
-            throw java.net.SocketUtil.convertSocketExceptionToIOException(x);
+
+            throw java.net.SocketUtil.convertSocketExceptionToIOException(e);
         }
-        catch (cli.System.ObjectDisposedException _)
+        catch (cli.System.ObjectDisposedException e)
         {
-            throw new java.net.SocketException("Socket is closed");
+            throw new java.net.SocketException("Socket is closed.");
         }
     }
     
@@ -778,4 +784,5 @@ public final class FileDescriptor {
     {
         this.asyncResult = asyncResult;
     }
+
 }

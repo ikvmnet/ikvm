@@ -109,7 +109,10 @@ namespace IKVM.Reflection.Reader
 				case ImageFileMachine.ARM:
 					name.ProcessorArchitecture = ProcessorArchitecture.Arm;
 					break;
-			}
+                case ImageFileMachine.ARM64:
+                    name.ProcessorArchitecture = ProcessorArchitecture.Arm64;
+                    break;
+            }
 			name.RawFlags = (AssemblyNameFlags)rec.Flags;
 			return name;
 		}

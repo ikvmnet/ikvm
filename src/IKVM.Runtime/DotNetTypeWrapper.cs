@@ -24,13 +24,11 @@
 using System;
 using System.Collections.Generic;
 using System.Diagnostics;
-using System.Security;
-using System.Security.Permissions;
 
 using IKVM.Attributes;
 using IKVM.Runtime;
 
-#if STATIC_COMPILER || STUB_GENERATOR
+#if IMPORTER || EXPORTER
 using IKVM.Reflection;
 using IKVM.Reflection.Emit;
 
@@ -40,8 +38,8 @@ using System.Reflection;
 using System.Reflection.Emit;
 #endif
 
-#if STATIC_COMPILER
-using ikvmc;
+#if IMPORTER
+using IKVM.Tools.Importer;
 #endif
 
 namespace IKVM.Internal
@@ -277,7 +275,7 @@ namespace IKVM.Internal
             // SECURITY we never expose types from IKVM.Runtime, because doing so would lead to a security hole,
             // since the reflection implementation lives inside this assembly, all internal members would
             // be accessible through Java reflection.
-#if !FIRST_PASS && !STATIC_COMPILER && !STUB_GENERATOR
+#if !FIRST_PASS && !IMPORTER && !EXPORTER
             if (type.Assembly == typeof(DotNetTypeWrapper).Assembly)
             {
                 return false;
@@ -373,8 +371,8 @@ namespace IKVM.Internal
             internal DelegateInnerClassTypeWrapper(string name, Type delegateType)
                 : base(Modifiers.Public | Modifiers.Interface | Modifiers.Abstract, name, null)
             {
-#if STATIC_COMPILER || STUB_GENERATOR
-				this.fakeType = FakeTypes.GetDelegateType(delegateType);
+#if IMPORTER || EXPORTER
+                this.fakeType = FakeTypes.GetDelegateType(delegateType);
 #elif !FIRST_PASS
                 this.fakeType = typeof(ikvm.@internal.DelegateInterface<>).MakeGenericType(delegateType);
 #endif
@@ -448,7 +446,7 @@ namespace IKVM.Internal
                 }
             }
 
-#if !STATIC_COMPILER && !FIRST_PASS && !STUB_GENERATOR
+#if !IMPORTER && !FIRST_PASS && !EXPORTER
 
             [HideFromJava]
             internal sealed override object Invoke(object obj, object[] args)
@@ -468,7 +466,7 @@ namespace IKVM.Internal
                 return mw.Invoke(obj, args);
             }
 
-#endif // !STATIC_COMPILER && !FIRST_PASS && !STUB_GENERATOR
+#endif // !IMPORTER && !FIRST_PASS && !EXPORTER
 
         }
 
@@ -479,14 +477,14 @@ namespace IKVM.Internal
             internal EnumEnumTypeWrapper(string name, Type enumType)
                 : base(Modifiers.Public | Modifiers.Enum | Modifiers.Final, name, ClassLoaderWrapper.LoadClassCritical("java.lang.Enum"))
             {
-#if STATIC_COMPILER || STUB_GENERATOR
-				this.fakeType = FakeTypes.GetEnumType(enumType);
+#if IMPORTER || EXPORTER
+                this.fakeType = FakeTypes.GetEnumType(enumType);
 #elif !FIRST_PASS
                 this.fakeType = typeof(ikvm.@internal.EnumEnum<>).MakeGenericType(enumType);
 #endif
             }
 
-#if !STATIC_COMPILER && !STUB_GENERATOR && !FIRST_PASS
+#if !IMPORTER && !EXPORTER && !FIRST_PASS
             internal object GetUnspecifiedValue()
             {
                 return GetFieldWrapper("__unspecified", this.SigName).GetValue(null);
@@ -495,7 +493,7 @@ namespace IKVM.Internal
 
             private sealed class EnumFieldWrapper : FieldWrapper
             {
-#if !STATIC_COMPILER && !STUB_GENERATOR
+#if !IMPORTER && !EXPORTER
                 private readonly int ordinal;
                 private object val;
 #endif
@@ -503,12 +501,12 @@ namespace IKVM.Internal
                 internal EnumFieldWrapper(TypeWrapper tw, string name, int ordinal)
                     : base(tw, tw, name, tw.SigName, Modifiers.Public | Modifiers.Static | Modifiers.Final | Modifiers.Enum, null, MemberFlags.None)
                 {
-#if !STATIC_COMPILER && !STUB_GENERATOR
+#if !IMPORTER && !EXPORTER
                     this.ordinal = ordinal;
 #endif
                 }
 
-#if !STATIC_COMPILER && !STUB_GENERATOR && !FIRST_PASS
+#if !IMPORTER && !EXPORTER && !FIRST_PASS
                 internal override object GetValue(object obj)
                 {
                     if (val == null)
@@ -526,7 +524,7 @@ namespace IKVM.Internal
 #if EMITTERS
                 protected override void EmitGetImpl(CodeEmitter ilgen)
                 {
-#if STATIC_COMPILER
+#if IMPORTER
 					Type typeofByteCodeHelper = StaticCompiler.GetRuntimeType("IKVM.Runtime.ByteCodeHelper");
 #else
                     Type typeofByteCodeHelper = typeof(IKVM.Runtime.ByteCodeHelper);
@@ -556,7 +554,7 @@ namespace IKVM.Internal
                     }
                 }
 
-#if !STATIC_COMPILER && !FIRST_PASS && !STUB_GENERATOR
+#if !IMPORTER && !FIRST_PASS && !EXPORTER
                 internal override object Invoke(object obj, object[] args)
                 {
                     FieldWrapper[] values = this.DeclaringType.GetFields();
@@ -567,7 +565,7 @@ namespace IKVM.Internal
                     }
                     return array;
                 }
-#endif // !STATIC_COMPILER && !FIRST_PASS && !STUB_GENERATOR
+#endif // !IMPORTER && !FIRST_PASS && !EXPORTER
             }
 
             private sealed class EnumValueOfMethodWrapper : MethodWrapper
@@ -585,7 +583,7 @@ namespace IKVM.Internal
                     }
                 }
 
-#if !STATIC_COMPILER && !FIRST_PASS && !STUB_GENERATOR
+#if !IMPORTER && !FIRST_PASS && !EXPORTER
                 internal override object Invoke(object obj, object[] args)
                 {
                     FieldWrapper[] values = this.DeclaringType.GetFields();
@@ -598,7 +596,7 @@ namespace IKVM.Internal
                     }
                     throw new java.lang.IllegalArgumentException("" + args[0]);
                 }
-#endif // !STATIC_COMPILER && !FIRST_PASS && !STUB_GENERATOR
+#endif // !IMPORTER && !FIRST_PASS && !EXPORTER
             }
 
             protected override void LazyPublishMembers()
@@ -683,8 +681,8 @@ namespace IKVM.Internal
             internal AttributeAnnotationTypeWrapper(string name, Type attributeType)
                 : base(name)
             {
-#if STATIC_COMPILER || STUB_GENERATOR
-				this.fakeType = FakeTypes.GetAttributeType(attributeType);
+#if IMPORTER || EXPORTER
+                this.fakeType = FakeTypes.GetAttributeType(attributeType);
 #elif !FIRST_PASS
                 this.fakeType = typeof(ikvm.@internal.AttributeAnnotation<>).MakeGenericType(attributeType);
 #endif
@@ -927,7 +925,7 @@ namespace IKVM.Internal
                 methods.Add(method);
             }
 
-#if !STATIC_COMPILER && !FIRST_PASS && !STUB_GENERATOR
+#if !IMPORTER && !FIRST_PASS && !EXPORTER
             internal override object GetAnnotationDefault(MethodWrapper mw)
             {
                 if (mw.IsOptionalAttributeAnnotationValue)
@@ -984,7 +982,7 @@ namespace IKVM.Internal
                 }
                 return null;
             }
-#endif // !STATIC_COMPILER && !FIRST_PASS && !STUB_GENERATOR
+#endif // !IMPORTER && !FIRST_PASS && !EXPORTER
 
             internal override TypeWrapper DeclaringTypeWrapper
             {
@@ -1010,8 +1008,8 @@ namespace IKVM.Internal
                 internal ReturnValueAnnotationTypeWrapper(AttributeAnnotationTypeWrapper declaringType)
                     : base(declaringType.Name + AttributeAnnotationReturnValueSuffix)
                 {
-#if STATIC_COMPILER || STUB_GENERATOR
-					this.fakeType = FakeTypes.GetAttributeReturnValueType(declaringType.attributeType);
+#if IMPORTER || EXPORTER
+                    this.fakeType = FakeTypes.GetAttributeReturnValueType(declaringType.attributeType);
 #elif !FIRST_PASS
                     this.fakeType = typeof(ikvm.@internal.AttributeAnnotationReturnValue<>).MakeGenericType(declaringType.attributeType);
 #endif
@@ -1045,7 +1043,7 @@ namespace IKVM.Internal
                     }
                 }
 
-#if !STATIC_COMPILER && !FIRST_PASS && !STUB_GENERATOR
+#if !IMPORTER && !FIRST_PASS && !EXPORTER
                 internal override object[] GetDeclaredAnnotations()
                 {
                     java.util.HashMap targetMap = new java.util.HashMap();
@@ -1150,8 +1148,8 @@ namespace IKVM.Internal
                 internal MultipleAnnotationTypeWrapper(AttributeAnnotationTypeWrapper declaringType)
                     : base(declaringType.Name + AttributeAnnotationMultipleSuffix)
                 {
-#if STATIC_COMPILER || STUB_GENERATOR
-					this.fakeType = FakeTypes.GetAttributeMultipleType(declaringType.attributeType);
+#if IMPORTER || EXPORTER
+                    this.fakeType = FakeTypes.GetAttributeMultipleType(declaringType.attributeType);
 #elif !FIRST_PASS
                     this.fakeType = typeof(ikvm.@internal.AttributeAnnotationMultiple<>).MakeGenericType(declaringType.attributeType);
 #endif
@@ -1181,7 +1179,7 @@ namespace IKVM.Internal
                     }
                 }
 
-#if !STATIC_COMPILER && !STUB_GENERATOR
+#if !IMPORTER && !EXPORTER
                 internal override object[] GetDeclaredAnnotations()
                 {
                     return declaringType.GetDeclaredAnnotations();
@@ -1355,7 +1353,7 @@ namespace IKVM.Internal
                 return attr;
             }
 
-#if !STATIC_COMPILER && !FIRST_PASS && !STUB_GENERATOR
+#if !IMPORTER && !FIRST_PASS && !EXPORTER
             internal override object[] GetDeclaredAnnotations()
             {
                 // note that AttributeUsageAttribute.Inherited does not map to java.lang.annotation.Inherited
@@ -1456,103 +1454,41 @@ namespace IKVM.Internal
                     {
                         // we have to handle this explicitly, because if we apply an illegal StructLayoutAttribute,
                         // TypeBuilder.CreateType() will later on throw an exception.
-#if STATIC_COMPILER
+#if IMPORTER
 						loader.IssueMessage(Message.IgnoredCustomAttribute, type.FullName, "Type '" + tb.FullName + "' does not extend cli.System.Object");
 #else
                         Tracer.Error(Tracer.Runtime, "StructLayoutAttribute cannot be applied to {0}, because it does not directly extend cli.System.Object", tb.FullName);
 #endif
                         return;
                     }
-                    if (type.IsSubclassOf(Types.SecurityAttribute))
-                    {
-#if STATIC_COMPILER
-						tb.__AddDeclarativeSecurity(MakeCustomAttributeBuilder(loader, annotation));
-#elif STUB_GENERATOR
-#else
 
-#if NETFRAMEWORK
-                        SecurityAction action;
-                        PermissionSet permSet;
-                        if (MakeDeclSecurity(type, annotation, out action, out permSet))
-                        {
-                            tb.AddDeclarativeSecurity(action, permSet);
-                        }
-#endif
-
-#endif
-                    }
-                    else
-                    {
-                        tb.SetCustomAttribute(MakeCustomAttributeBuilder(loader, annotation));
-                    }
+                    tb.SetCustomAttribute(MakeCustomAttributeBuilder(loader, annotation));
                 }
 
                 internal override void Apply(ClassLoaderWrapper loader, MethodBuilder mb, object annotation)
                 {
-                    if (type.IsSubclassOf(Types.SecurityAttribute))
-                    {
-#if STATIC_COMPILER
-						mb.__AddDeclarativeSecurity(MakeCustomAttributeBuilder(loader, annotation));
-#elif STUB_GENERATOR
-#else
-
-#if NETFRAMEWORK
-                        SecurityAction action;
-                        PermissionSet permSet;
-                        if (MakeDeclSecurity(type, annotation, out action, out permSet))
-                        {
-                            mb.AddDeclarativeSecurity(action, permSet);
-                        }
-#endif
-
-#endif
-                    }
-                    else
-                    {
-                        mb.SetCustomAttribute(MakeCustomAttributeBuilder(loader, annotation));
-                    }
+                    mb.SetCustomAttribute(MakeCustomAttributeBuilder(loader, annotation));
                 }
 
                 internal override void Apply(ClassLoaderWrapper loader, FieldBuilder fb, object annotation)
                 {
-                    if (type.IsSubclassOf(Types.SecurityAttribute))
-                    {
-                        // you can't add declarative security to a field
-                    }
-                    else
-                    {
-                        fb.SetCustomAttribute(MakeCustomAttributeBuilder(loader, annotation));
-                    }
+                    fb.SetCustomAttribute(MakeCustomAttributeBuilder(loader, annotation));
                 }
 
                 internal override void Apply(ClassLoaderWrapper loader, ParameterBuilder pb, object annotation)
                 {
-                    if (type.IsSubclassOf(Types.SecurityAttribute))
-                    {
-                        // you can't add declarative security to a parameter
-                    }
-                    else if (type == JVM.Import(typeof(System.Runtime.InteropServices.DefaultParameterValueAttribute)))
-                    {
-                        // TODO with the current custom attribute annotation restrictions it is impossible to use this CA,
-                        // but if we make it possible, we should also implement it here
+                    // TODO with the current custom attribute annotation restrictions it is impossible to use this CA,
+                    // but if we make it possible, we should also implement it here
+                    if (type == JVM.Import(typeof(System.Runtime.InteropServices.DefaultParameterValueAttribute)))
                         throw new NotImplementedException();
-                    }
                     else
-                    {
                         pb.SetCustomAttribute(MakeCustomAttributeBuilder(loader, annotation));
-                    }
                 }
 
                 internal override void Apply(ClassLoaderWrapper loader, AssemblyBuilder ab, object annotation)
                 {
-                    if (type.IsSubclassOf(Types.SecurityAttribute))
-                    {
-#if STATIC_COMPILER
-						ab.__AddDeclarativeSecurity(MakeCustomAttributeBuilder(loader, annotation));
-#endif
-                    }
-#if STATIC_COMPILER
-					else if (type == JVM.Import(typeof(System.Runtime.CompilerServices.TypeForwardedToAttribute)))
+#if IMPORTER
+					if (type == JVM.Import(typeof(System.Runtime.CompilerServices.TypeForwardedToAttribute)))
 					{
 						ab.__AddTypeForwarder((Type)ConvertValue(loader, Types.Type, ((object[])annotation)[3]));
 					}
@@ -1560,7 +1496,7 @@ namespace IKVM.Internal
 					{
 						string str = (string)ConvertValue(loader, Types.String, ((object[])annotation)[3]);
 						Version version;
-						if (IkvmcCompiler.TryParseVersion(str, out version))
+						if (IkvmImporterInternal.TryParseVersion(str, out version))
 						{
 							ab.__SetAssemblyVersion(version);
 						}
@@ -1593,29 +1529,25 @@ namespace IKVM.Internal
 						// this attribute is currently not exposed as an annotation and isn't very interesting
 						throw new NotImplementedException();
 					}
-#endif
                     else
                     {
                         ab.SetCustomAttribute(MakeCustomAttributeBuilder(loader, annotation));
                     }
+#else
+                    ab.SetCustomAttribute(MakeCustomAttributeBuilder(loader, annotation));
+#endif
                 }
 
                 internal override void Apply(ClassLoaderWrapper loader, PropertyBuilder pb, object annotation)
                 {
-                    if (type.IsSubclassOf(Types.SecurityAttribute))
-                    {
-                        // you can't add declarative security to a property
-                    }
-                    else
-                    {
-                        pb.SetCustomAttribute(MakeCustomAttributeBuilder(loader, annotation));
-                    }
+                    pb.SetCustomAttribute(MakeCustomAttributeBuilder(loader, annotation));
                 }
 
                 internal override bool IsCustomAttribute
                 {
                     get { return true; }
                 }
+
             }
 
             internal override Annotation Annotation
@@ -1818,7 +1750,7 @@ namespace IKVM.Internal
 
         private sealed class ByRefMethodWrapper : SmartMethodWrapper
         {
-#if !STATIC_COMPILER
+#if !IMPORTER
             private readonly bool[] byrefs;
 #endif
             private readonly Type[] args;
@@ -1827,7 +1759,7 @@ namespace IKVM.Internal
                 : base(declaringType, name, sig, method, returnType, parameterTypes, modifiers, hideFromReflection ? MemberFlags.HideFromReflection : MemberFlags.None)
             {
                 this.args = args;
-#if !STATIC_COMPILER
+#if !IMPORTER
                 this.byrefs = byrefs;
 #endif
             }
@@ -1893,7 +1825,7 @@ namespace IKVM.Internal
             }
 #endif // EMITTERS
 
-#if !STATIC_COMPILER && !STUB_GENERATOR && !FIRST_PASS
+#if !IMPORTER && !EXPORTER && !FIRST_PASS
             internal override object Invoke(object obj, object[] args)
             {
                 return Enum.ToObject(DeclaringType.TypeAsTBD, args[0]);
@@ -1903,7 +1835,8 @@ namespace IKVM.Internal
 
         internal sealed class EnumValueFieldWrapper : FieldWrapper
         {
-            private readonly Type underlyingType;
+
+            readonly Type underlyingType;
 
             internal EnumValueFieldWrapper(DotNetTypeWrapper tw, TypeWrapper fieldType)
                 : base(tw, fieldType, "Value", fieldType.SigName, new ExModifiers(Modifiers.Public | Modifiers.Final, false), null)
@@ -1912,6 +1845,7 @@ namespace IKVM.Internal
             }
 
 #if EMITTERS
+
             protected override void EmitGetImpl(CodeEmitter ilgen)
             {
                 // NOTE if the reference on the stack is null, we *want* the NullReferenceException, so we don't use TypeWrapper.EmitUnbox
@@ -1929,9 +1863,11 @@ namespace IKVM.Internal
                 ilgen.Emit(OpCodes.Stobj, underlyingType);
                 ilgen.ReleaseTempLocal(temp);
             }
-#endif // EMITTERS
 
-#if !STUB_GENERATOR && !STATIC_COMPILER && !FIRST_PASS
+#endif
+
+#if !EXPORTER && !IMPORTER && !FIRST_PASS
+
             internal override object GetValue(object obj)
             {
                 return obj;
@@ -1944,11 +1880,13 @@ namespace IKVM.Internal
 #endif
         }
 
-        private sealed class ValueTypeDefaultCtor : MethodWrapper
+        sealed class ValueTypeDefaultCtor : MethodWrapper
         {
+
             internal ValueTypeDefaultCtor(DotNetTypeWrapper tw)
                 : base(tw, "<init>", "()V", null, PrimitiveTypeWrapper.VOID, TypeWrapper.EmptyArray, Modifiers.Public, MemberFlags.None)
             {
+
             }
 
 #if EMITTERS
@@ -1965,7 +1903,7 @@ namespace IKVM.Internal
             }
 #endif // EMITTERS
 
-#if !STATIC_COMPILER && !STUB_GENERATOR && !FIRST_PASS
+#if !IMPORTER && !EXPORTER && !FIRST_PASS
             internal override object CreateInstance(object[] args)
             {
                 return Activator.CreateInstance(DeclaringType.TypeAsTBD);
@@ -2256,7 +2194,7 @@ namespace IKVM.Internal
                     }
                 }
 
-#if !STATIC_COMPILER && !STUB_GENERATOR && !FIRST_PASS
+#if !IMPORTER && !EXPORTER && !FIRST_PASS
                 // support serializing .NET exceptions (by replacing them with a placeholder exception)
                 if (typeof(Exception).IsAssignableFrom(type)
                     && !typeof(java.io.Serializable.__Interface).IsAssignableFrom(type)
@@ -2264,7 +2202,7 @@ namespace IKVM.Internal
                 {
                     methodsList.Add("writeReplace()Ljava.lang.Object;", new ExceptionWriteReplaceMethodWrapper(this));
                 }
-#endif // !STATIC_COMPILER && !STUB_GENERATOR && !FIRST_PASS
+#endif // !IMPORTER && !EXPORTER && !FIRST_PASS
 
                 MethodWrapper[] methodArray = new MethodWrapper[methodsList.Count];
                 methodsList.Values.CopyTo(methodArray, 0);
@@ -2272,7 +2210,7 @@ namespace IKVM.Internal
             }
         }
 
-#if !STATIC_COMPILER && !STUB_GENERATOR && !FIRST_PASS
+#if !IMPORTER && !EXPORTER && !FIRST_PASS
         private sealed class ExceptionWriteReplaceMethodWrapper : MethodWrapper
         {
             internal ExceptionWriteReplaceMethodWrapper(TypeWrapper declaringType)
@@ -2295,7 +2233,7 @@ namespace IKVM.Internal
                 return sse;
             }
         }
-#endif // !STATIC_COMPILER && !STUB_GENERATOR && !FIRST_PASS
+#endif // !IMPORTER && !EXPORTER && !FIRST_PASS
 
         private void InterfaceMethodStubHelper(Dictionary<string, MethodWrapper> methodsList, MethodBase method, string name, string sig, TypeWrapper[] args, TypeWrapper ret)
         {
@@ -2378,8 +2316,8 @@ namespace IKVM.Internal
                 }
                 type = type.GetElementType();
             }
-#if STATIC_COMPILER || STUB_GENERATOR
-			return type.__IsFunctionPointer;
+#if IMPORTER || EXPORTER
+            return type.__IsFunctionPointer;
 #else
             return false;
 #endif
@@ -2752,7 +2690,7 @@ namespace IKVM.Internal
             return mp;
         }
 
-#if !STATIC_COMPILER && !STUB_GENERATOR
+#if !IMPORTER && !EXPORTER
         internal override object[] GetDeclaredAnnotations()
         {
             return type.GetCustomAttributes(false);
@@ -2800,7 +2738,7 @@ namespace IKVM.Internal
             get { return type != Types.Void && !type.IsPrimitive && !IsRemapped; }
         }
 
-#if !STATIC_COMPILER && !STUB_GENERATOR
+#if !IMPORTER && !EXPORTER
         // this override is only relevant for the runtime, because it handles the scenario
         // where classes are dynamically loaded by the assembly class loader
         // (i.e. injected into the assembly)

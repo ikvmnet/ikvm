@@ -24,7 +24,7 @@
 
 using System;
 
-using FileDescriptor = java.io.FileDescriptor;
+using IKVM.Runtime.Util.Sun.Nio.Ch;
 
 namespace IKVM.Java.Externs.sun.nio.ch
 {
@@ -34,19 +34,20 @@ namespace IKVM.Java.Externs.sun.nio.ch
 
 #if !FIRST_PASS
 
-		sealed class Accept : IKVM.Runtime.Util.Sun.Nio.Ch.OperationBase<System.Net.Sockets.Socket>
-		{
-			protected override IAsyncResult Begin(System.Net.Sockets.Socket listenSocket, System.Net.Sockets.Socket acceptSocket, AsyncCallback callback, object state)
-			{
-				return listenSocket.BeginAccept(acceptSocket, 0, callback, state);
-			}
+        sealed class Accept : OperationBase<System.Net.Sockets.Socket>
+        {
 
-			protected override int End(System.Net.Sockets.Socket socket, IAsyncResult ar)
-			{
-				socket.EndAccept(ar);
-				return 0;
-			}
-		}
+            protected override IAsyncResult Begin(System.Net.Sockets.Socket listenSocket, System.Net.Sockets.Socket acceptSocket, AsyncCallback callback, object state)
+            {
+                return listenSocket.BeginAccept(acceptSocket, 0, callback, state);
+            }
+
+            protected override int End(System.Net.Sockets.Socket socket, IAsyncResult ar)
+            {
+                socket.EndAccept(ar);
+                return 0;
+            }
+        }
 
 #endif
 
@@ -55,23 +56,23 @@ namespace IKVM.Java.Externs.sun.nio.ch
 
         }
 
-        public static int accept0(FileDescriptor listenSocket, FileDescriptor acceptSocket, object handler)
+        public static int accept0(global::java.io.FileDescriptor listenSocket, global::java.io.FileDescriptor acceptSocket, object handler)
         {
 #if FIRST_PASS
-            return 0;
+            throw new NotSupportedException();
 #else
-			return new Accept().Do(listenSocket.getSocket(), acceptSocket.getSocket(), handler);
+            return new Accept().Do(listenSocket.getSocket(), acceptSocket.getSocket(), handler);
 #endif
         }
 
-        public static void updateAcceptContext(FileDescriptor listenSocket, FileDescriptor acceptSocket)
+        public static void updateAcceptContext(global::java.io.FileDescriptor listenSocket, global::java.io.FileDescriptor acceptSocket)
         {
-            // already handled by .NET Framework
+
         }
 
         public static void closesocket0(long socket)
         {
-            // unused
+
         }
 
     }

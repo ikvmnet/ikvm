@@ -181,6 +181,7 @@ com/sun/management/ThreadMXBean/ThreadAllocatedMemoryArray.java                 
 com/sun/management/ThreadMXBean/ThreadCpuTimeArray.java                                                                 generic-all
 com/sun/management/UnixOperatingSystemMXBean/GetMaxFileDescriptorCount.sh                                               generic-all
 com/sun/management/UnixOperatingSystemMXBean/GetOpenFileDescriptorCount.sh                                              generic-all
+com/sun/net/httpserver/bugs/B6886436.java                                                                               generic-all
 com/sun/net/httpserver/SelCacheTest.java                                                                                generic-all
 com/sun/net/httpserver/Test1.java                                                                                       generic-all
 com/sun/net/httpserver/Test12.java                                                                                      generic-all
@@ -1130,6 +1131,7 @@ java/lang/StrictMath/Log10Tests.java                                            
 java/lang/String/StringJoinTest.java                                                                                    generic-all
 java/lang/StringBuffer/TestSynchronization.java                                                                         generic-all
 java/lang/StringCoding/CheckEncodings.sh                                                                                generic-all
+java/lang/System/MacEncoding/MacJNUEncoding.sh                                                                          generic-all
 java/lang/System/MacEncoding/TestFileEncoding.java                                                                      generic-all
 java/lang/System/Versions.java                                                                                          generic-all
 java/lang/System/finalization/FinExit.java                                                                              generic-all
@@ -1589,6 +1591,7 @@ java/security/cert/CertPathBuilder/akiExt/AKISerialNumber.java                  
 java/security/cert/CertPathBuilder/selfIssued/DisableRevocation.java                                                    generic-all
 java/security/cert/CertPathBuilder/selfIssued/KeyUsageMatters.java                                                      generic-all
 java/security/cert/CertPathBuilder/selfIssued/StatusLoopDependency.java                                                 generic-all
+java/security/cert/CertPathBuilder/targetConstraints/BuildEEBasicConstraints.java                                       generic-all
 java/security/cert/CertPathValidator/OCSP/FailoverToCRL.java                                                            generic-all
 java/security/cert/CertPathValidator/indirectCRL/CircularCRLOneLevel.java                                               generic-all
 java/security/cert/CertPathValidator/indirectCRL/CircularCRLOneLevelRevoked.java                                        generic-all
@@ -1603,9 +1606,11 @@ java/security/cert/CertPathValidatorException/Serial.java                       
 java/security/cert/CertificateFactory/openssl/BadFooter.java                                                            generic-all
 java/security/cert/CertificateFactory/slowstream.sh                                                                     generic-all
 java/security/cert/CertificateRevokedException/Basic.java                                                               generic-all
+java/security/cert/pkix/policyChanges/TestPolicy.java                                                                   generic-all
 java/security/cert/PKIXRevocationChecker/OcspUnauthorized.java                                                          generic-all
 java/security/cert/PKIXRevocationChecker/UnitTest.java                                                                  generic-all
 java/security/cert/PolicyNode/GetPolicyQualifiers.java                                                                  generic-all
+java/security/cert/pkix/policyChanges/TestPolicy.java                                                                   generic-all
 java/text/Bidi/BidiConformance.java                                                                                     generic-all
 java/text/Bidi/BidiEmbeddingTest.java                                                                                   generic-all
 java/text/Format/DateFormat/Bug6645292.java                                                                             generic-all
@@ -3001,6 +3006,7 @@ sun/nio/cs/FindDecoderBugs.java                                                 
 sun/nio/cs/FindEncoderBugs.java                                                                                         generic-all
 sun/nio/cs/ISO8859x.java                                                                                                generic-all
 sun/nio/cs/OLD/TestIBMDB.java                                                                                           generic-all
+sun/nio/cs/Test4200310.sh                                                                                               generic-all
 sun/nio/cs/TestEUC_TW.java                                                                                              generic-all
 sun/nio/cs/TestX11CNS.java                                                                                              generic-all
 sun/nio/cs/UkrainianIsNotRussian.java                                                                                   generic-all
@@ -3401,3 +3407,118 @@ tools/pack200/typeannos/TestTypeAnnotations.java                                
 vm/verifier/TestStaticIF.java                                                                                           generic-all
 vm/verifier/VerifyProtectedConstructor.java                                                                             generic-all
 vm/verifier/defaultMethods/DefaultMethodRegressionTestsRun.java                                                         generic-all
+
+# these test try to fill up memory but catch an exception that isn't going to happen on .NET
+# the tests should be fixed
+java/beans/Introspector/Test7172865.java                                                                                generic-all
+java/beans/Introspector/Test7195106.java                                                                                generic-all
+java/beans/Introspector/Test8027905.java                                                                                generic-all
+
+# we never implemented memory MX stuff for Linux
+com/sun/management/OperatingSystemMXBean/GetCommittedVirtualMemorySize.java                                             linux-all
+com/sun/management/OperatingSystemMXBean/GetFreePhysicalMemorySize.java                                                 linux-all
+com/sun/management/OperatingSystemMXBean/GetFreeSwapSpaceSize.java                                                      linux-all
+com/sun/management/OperatingSystemMXBean/GetTotalPhysicalMemorySize.java                                                linux-all
+
+demo/zipfs/ZFSTests.java                                                                                                linux-all
+
+java/io/FileDescriptor/Sharing.java                                                                                     linux-all
+java/io/FileInputStream/LargeFileAvailable.java                                                                         linux-all
+java/io/pathNames/GeneralSolaris.java                                                                                   linux-all
+java/io/RandomAccessFile/ReadWritePrimitives.java                                                                       linux-all
+java/io/FileOutputStream/FileOpen.sh                                                                                    linux-all
+
+java/lang/ProcessBuilder/DestroyTest.java                                                                               linux-all
+java/lang/ProcessBuilder/Zombies.java                                                                                   linux-all
+java/lang/Runtime/exec/ConcurrentRead.java                                                                              linux-all
+java/lang/Runtime/exec/LotsOfDestroys.java                                                                              linux-all
+java/lang/Runtime/exec/LotsOfOutput.java                                                                                linux-all
+java/lang/Runtime/exec/ExecWithInput.java                                                                               linux-all
+java/lang/Runtime/exec/Status.java                                                                                      linux-all
+
+java/net/BindException/Test.java                                                                                        linux-all
+java/net/ipv6tests/B6521014.java                                                                                        linux-all
+java/net/InetAddress/IsReachable.java                                                                                   linux-all
+java/net/Inet4Address/PingThis.java                                                                                     linux-all
+java/net/PortUnreachableException/Concurrent.java                                                                       linux-all
+
+java/net/Socket/InheritHandle.java                                                                                      linux-all
+java/net/Socket/LingerTest.java                                                                                         linux-all
+java/net/Socket/NullHost.java                                                                                           linux-all
+java/net/Socket/asyncClose/AsyncClose.java                                                                              linux-all
+java/net/Socket/setReuseAddress/Basic.java                                                                              linux-all
+
+java/net/URL/B5086147.sh                                                                                                linux-all
+java/net/URL/B5086147.java                                                                                              linux-all
+java/net/URLConnection/DisconnectAfterEOF.java                                                                          linux-all
+java/net/URLConnection/Responses.java                                                                                   linux-all
+java/net/URLConnection/6212146/test.sh                                                                                  linux-all
+
+java/nio/channels/AsynchronousChannelGroup/Unbounded.java                                                               linux-all
+java/nio/channels/AsynchronousServerSocketChannel/Basic.java                                                            linux-all
+java/nio/channels/AsynchronousSocketChannel/DieBeforeComplete.java                                                      linux-all
+java/nio/channels/AsynchronousSocketChannel/StressLoopback.java                                                         linux-all
+java/nio/channels/Channels/Basic2.java                                                                                  linux-all
+java/nio/channels/DatagramChannel/EmptyBuffer.java                                                                      linux-all
+java/nio/channels/DatagramChannel/Promiscuous.java                                                                      linux-all
+java/nio/channels/etc/AdaptorCloseAndInterrupt.java                                                                     linux-all
+java/nio/channels/FileChannel/Release.java                                                                              linux-all
+java/nio/channels/FileChannel/TryLock.java                                                                              linux-all
+java/nio/channels/Selector/Alias.java                                                                                   linux-all
+java/nio/channels/Selector/BasicAccept.java                                                                             linux-all
+java/nio/channels/Selector/BasicConnect.java                                                                            linux-all
+java/nio/channels/Selector/CloseWhenKeyIdle.java                                                                        linux-all
+java/nio/channels/Selector/Connect.java                                                                                 linux-all
+java/nio/channels/SocketChannel/AdaptSocket.java                                                                        linux-all
+java/nio/channels/SocketChannel/AsyncCloseChannel.java                                                                  linux-all
+java/nio/channels/SocketChannel/Basic.java                                                                              linux-all
+java/nio/channels/SocketChannel/CloseDuringWrite.java                                                                   linux-all
+java/nio/channels/SocketChannel/Shutdown.java                                                                           linux-all
+java/nio/channels/SocketChannel/LocalAddress.java                                                                       linux-all
+java/nio/channels/SocketChannel/Connect.java                                                                            linux-all
+
+java/nio/charset/RemovingSunIO/TestCOMP.java                                                                            linux-all
+java/nio/charset/Charset/AvailableCharsetNames.java                                                                     linux-all
+java/nio/charset/Charset/NIOCharsetAvailabilityTest.java                                                                linux-all
+
+java/nio/file/attribute/DosFileAttributeView/Basic.java                                                                 linux-all
+java/nio/file/Files/FileAttributes.java                                                                                 linux-all
+java/nio/file/FileStore/Basic.java                                                                                      linux-all
+# posix isn't supported on IKVM
+java/nio/file/FileSystem/Basic.java                                                                                     linux-all
+java/nio/file/Path/UriImportExport.java                                                                                 linux-all
+
+sun/management/jmxremote/LocalRMIServerSocketFactoryTest.java                                                           linux-all
+sun/management/jmxremote/bootstrap/RmiSslBootstrapTest.sh                                                               linux-all
+sun/net/ftp/FtpGetContent.java                                                                                          linux-all
+
+# likely fails because java.net.preferIPv4Stack isn't implemented
+sun/net/sdp/sanity.sh                                                                                                   linux-all
+
+sun/net/www/protocol/http/RetryUponTimeout.java                                                                         linux-all
+sun/nio/cs/TestCompoundTest.java                                                                                        linux-all
+
+# this is broken on .NET Core 3.1, but seems to work on .NET 6
+sun/nio/cs/FindOneCharEncoderBugs.java                                                                                  linux-all
+sun/nio/cs/DecoderOverflow.java                                                                                         linux-all
+sun/nio/cs/EncodingNothing.java                                                                                         linux-all
+
+sun/nio/ch/SelProvider.java                                                                                             linux-all
+
+sun/rmi/rmic/extraCompilation/run.sh                                                                                    linux-all
+sun/security/krb5/ccache/DefaultFile.java                                                                               linux-all
+sun/security/pkcs11/KeyStore/Basic.sh                                                                                   linux-all
+sun/security/pkcs11/KeyStore/ClientAuth.sh                                                                              linux-all
+sun/security/pkcs11/KeyStore/Solaris.sh                                                                                 linux-all
+
+sun/security/provider/PolicyFile/CanonPath.java                                                                         linux-all
+sun/security/ssl/com/sun/net/ssl/internal/ssl/SSLSocketImpl/AsyncSSLSocketClose.java                                    linux-all
+
+sun/tools/native2ascii/Permission.java                                                                                  linux-all
+tools/jar/UpdateJar.java                                                                                                linux-all
+
+# uses System.Drawing, not available on Linux
+javax/imageio/plugins/png/MergeStdCommentTest.java                                                                      linux-all
+
+# uses Win32 specific stuff, not available on Linux
+javax/print/PrintServiceLookup/CountPrintServices.java                                                                  linux-all

@@ -4,7 +4,6 @@
         <PackageLicenseFile>LICENSE.md</PackageLicenseFile>
         <PackageReadmeFile>README.md</PackageReadmeFile>
         <Description>IKVM JRE Runtime Image</Description>
-        <NoWarn>NU5118;NU5100</NoWarn>
     </PropertyGroup>
 
     <PropertyGroup>
@@ -23,7 +22,7 @@
         <PublishProjectReference Include="..\IKVM.Image.JRE-bin\IKVM.Image.JRE-bin.csproj">
             <SetTargetFramework>TargetFramework=net461</SetTargetFramework>
             <SetRuntimeIdentifier>RuntimeIdentifier=win7-x86</SetRuntimeIdentifier>
-            <ProjectPackagePath>ikvm\netcoreapp3.1\win7-x86\bin</ProjectPackagePath>
+            <ProjectPackagePath>ikvm\net461\win7-x86\bin</ProjectPackagePath>
         </PublishProjectReference>
         <PublishProjectReference Include="..\IKVM.Image.JRE-bin\IKVM.Image.JRE-bin.csproj">
             <SetTargetFramework>TargetFramework=netcoreapp3.1</SetTargetFramework>
@@ -37,6 +36,7 @@
             <SetTargetFramework>TargetFramework=$(TargetFramework)</SetTargetFramework>
             <SetRuntimeIdentifier>RuntimeIdentifier=win7-x86</SetRuntimeIdentifier>
             <ProjectTargetPath>ikvm\win7-x86\bin</ProjectTargetPath>
+            <Pack>false</Pack>
         </PublishProjectReference>
     </ItemGroup>
 

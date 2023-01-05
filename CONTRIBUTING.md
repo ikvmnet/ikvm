@@ -8,8 +8,6 @@ The OpenJDK JDK8u source hierarchy and build results for Linux/x64 is required. 
 
 The GitHub action's generated artifact can simply be extract into the appropriate spot in `openjdk/build` to avoid building it yourself. Navigate to the GitHub Actions, find the latest successfuly build for the branch you're concerned with, and download the `openjdk-build-linux-x86_64-normal-server-release` artifact. Extract this zip file into `openjdk/build`.
 
-IKVM includes a native library named 'ikvm-native' which must be built for the JNI functionality to work. The solution includes `.vcxproj` files that build both the win-x64, linux-x86 and linux-x64 versions of these libraries. However, the linux-* version require WSL to be enabled on your development machine. Within this WSL distribution ensure you have installed the GCC toolset. For Debian based distributions, this should be as simple as typing `apt-get install g++`.
-
 ## Project
 
 + IKVM.sln
@@ -18,8 +16,6 @@ IKVM includes a native library named 'ikvm-native' which must be built for the J
   MSBuild project file that builds the output artifacts, including the NuGet packages.
 + IKVM.Runtime
   The main executable core of IKVM. Provides services used by IKVM.Java.
-+ IKVM.Runtime.JNI
-  Additional support for IKVM to handle the Java Native Interface. Depends on the ikvm-native library.
 + IKVM.Java
   The OpenJDK distribution included with IKVM. This project is heavily customized to compile the OpenJDK Java source files and produce a .NET assembly from them.
 + IKVM.Image

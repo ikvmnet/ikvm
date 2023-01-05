@@ -150,8 +150,9 @@ namespace IKVM.Reflection.Writer
 		public const WORD IMAGE_FILE_MACHINE_ARM = 0x01c4;
 		public const WORD IMAGE_FILE_MACHINE_IA64 = 0x0200;
 		public const WORD IMAGE_FILE_MACHINE_AMD64 = 0x8664;
+		public const WORD IMAGE_FILE_MACHINE_ARM64 = 0xAA64;
 
-		public const WORD IMAGE_FILE_32BIT_MACHINE = 0x0100;
+        public const WORD IMAGE_FILE_32BIT_MACHINE = 0x0100;
 		public const WORD IMAGE_FILE_EXECUTABLE_IMAGE = 0x0002;
 		public const WORD IMAGE_FILE_LARGE_ADDRESS_AWARE = 0x0020;
 		public const WORD IMAGE_FILE_DLL = 0x2000;

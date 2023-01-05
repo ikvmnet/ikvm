@@ -1,0 +1,41 @@
+﻿<Project Sdk="Microsoft.NET.Sdk">
+    <Import Project="$(MSBuildThisFileDirectory)..\..\IKVM.deps.props" />
+    
+    <PropertyGroup>
+        <TargetFrameworks>net461;netcoreapp3.1</TargetFrameworks>
+        <DefineConstants>$(DefineConstants);IMPORTER;EMITTERS</DefineConstants>
+        <AllowUnsafeBlocks>true</AllowUnsafeBlocks>
+    </PropertyGroup>
+
+    <ItemGroup>
+        <InternalsVisibleTo Include="IKVM.Tools.Importer.Tests" />
+        <InternalsVisibleTo Include="ikvmc" />
+    </ItemGroup>
+
+    <ItemGroup>
+        <PackageReference Include="System.CommandLine" Version="2.0.0-beta4.22272.1" />
+    </ItemGroup>
+
+    <ItemGroup>
+        <ProjectReference Include="..\IKVM.Reflection\IKVM.Reflection.csproj" />
+    </ItemGroup>
+
+    <ItemGroup>
+        <ExcludeFromCompile Include="..\IKVM.Runtime\bin\**\*.cs" />
+        <ExcludeFromCompile Include="..\IKVM.Runtime\obj\**\*.cs" />
+        <ExcludeFromCompile Include="..\IKVM.Runtime\Util\**\*.cs" />
+        <ExcludeFromCompile Include="..\IKVM.Runtime\Java\Externs\**\*.cs" />
+        <ExcludeFromCompile Include="..\IKVM.Runtime\stubgen\**\*.cs" />
+        <ExcludeFromCompile Include="..\IKVM.Runtime\Vfs\**\*.cs" />
+        <ExcludeFromCompile Include="..\IKVM.Runtime\Assertions.cs" />
+        <ExcludeFromCompile Include="..\IKVM.Runtime\ByteCodeHelper.cs" />
+        <ExcludeFromCompile Include="..\IKVM.Runtime\common.cs" />
+        <ExcludeFromCompile Include="..\IKVM.Runtime\DynamicMethodUtils.cs" />
+        <ExcludeFromCompile Include="..\IKVM.Runtime\ExceptionHelper.cs" />
+        <ExcludeFromCompile Include="..\IKVM.Runtime\PassiveWeakDictionary.cs" />
+        <ExcludeFromCompile Include="..\IKVM.Runtime\LLIR\**\*.cs" />
+        <ExcludeFromCompile Include="..\IKVM.Runtime\JNI\**\*.cs" />
+        <Compile Include="..\IKVM.Runtime\**\*.cs" LinkBase="IKVM.Runtime" Exclude="@(ExcludeFromCompile)" />
+    </ItemGroup>
+
+</Project>

@@ -21,6 +21,7 @@
   jeroen@frijters.net
   
 */
+
 using System;
 using System.Collections.Generic;
 using System.Net;
@@ -33,10 +34,10 @@ namespace IKVM.Java.Externs.java.net
     static class Inet4AddressImpl
     {
 
-        public static string getLocalHostName(object thisInet4AddressImpl)
+        public static string getLocalHostName(object self)
         {
 #if FIRST_PASS
-		    return null;
+            throw new NotSupportedException();
 #else
             try
             {
@@ -55,27 +56,25 @@ namespace IKVM.Java.Externs.java.net
 #endif
         }
 
-        public static object lookupAllHostAddr(object thisInet4AddressImpl, string hostname)
+        public static object lookupAllHostAddr(object self, string hostname)
         {
 #if FIRST_PASS
-		    return null;
+            throw new NotSupportedException();
 #else
             try
             {
-                IPAddress[] addr = Dns.GetHostAddresses(hostname);
-                List<global::java.net.InetAddress> addresses = new List<global::java.net.InetAddress>();
+                var addr = Dns.GetHostAddresses(hostname);
+                var addresses = new List<global::java.net.InetAddress>();
                 for (int i = 0; i < addr.Length; i++)
                 {
-                    byte[] b = addr[i].GetAddressBytes();
+                    var b = addr[i].GetAddressBytes();
                     if (b.Length == 4)
-                    {
                         addresses.Add(global::java.net.InetAddress.getByAddress(hostname, b));
-                    }
                 }
+
                 if (addresses.Count == 0)
-                {
                     throw new global::java.net.UnknownHostException(hostname);
-                }
+
                 return addresses.ToArray();
             }
             catch (ArgumentException x)
@@ -89,10 +88,10 @@ namespace IKVM.Java.Externs.java.net
 #endif
         }
 
-        public static string getHostByAddr(object thisInet4AddressImpl, byte[] addr)
+        public static string getHostByAddr(object self, byte[] addr)
         {
 #if FIRST_PASS
-		    return null;
+            throw new NotSupportedException();
 #else
             try
             {
@@ -109,40 +108,33 @@ namespace IKVM.Java.Externs.java.net
 #endif
         }
 
-        public static bool isReachable0(object thisInet4AddressImpl, byte[] addr, int timeout, byte[] ifaddr, int ttl)
+        public static bool isReachable0(object self, byte[] addr, int timeout, byte[] ifaddr, int ttl)
         {
             // like the JDK, we don't use Ping, but we try a TCP connection to the echo port
             // (.NET 2.0 has a System.Net.NetworkInformation.Ping class, but that doesn't provide the option of binding to a specific interface)
             try
             {
-                using (Socket sock = new Socket(AddressFamily.InterNetwork, SocketType.Stream, ProtocolType.Tcp))
+                using var sock = new Socket(AddressFamily.InterNetwork, SocketType.Stream, ProtocolType.Tcp);
+
+                if (ifaddr != null)
+                    sock.Bind(new IPEndPoint(((ifaddr[3] << 24) + (ifaddr[2] << 16) + (ifaddr[1] << 8) + ifaddr[0]) & 0xFFFFFFFFL, 0));
+
+                if (ttl > 0)
+                    sock.SetSocketOption(SocketOptionLevel.IP, SocketOptionName.IpTimeToLive, ttl);
+
+                var ep = new IPEndPoint(((addr[3] << 24) + (addr[2] << 16) + (addr[1] << 8) + addr[0]) & 0xFFFFFFFFL, 7);
+                var res = sock.BeginConnect(ep, null, null);
+                if (res.AsyncWaitHandle.WaitOne(timeout, false))
                 {
-                    if (ifaddr != null)
+                    try
                     {
-                        sock.Bind(new IPEndPoint(((ifaddr[3] << 24) + (ifaddr[2] << 16) + (ifaddr[1] << 8) + ifaddr[0]) & 0xFFFFFFFFL, 0));
+                        sock.EndConnect(res);
+                        return true;
                     }
-                    if (ttl > 0)
+                    catch (SocketException x)
                     {
-                        sock.SetSocketOption(SocketOptionLevel.IP, SocketOptionName.IpTimeToLive, ttl);
-                    }
-                    IPEndPoint ep = new IPEndPoint(((addr[3] << 24) + (addr[2] << 16) + (addr[1] << 8) + addr[0]) & 0xFFFFFFFFL, 7);
-                    IAsyncResult res = sock.BeginConnect(ep, null, null);
-                    if (res.AsyncWaitHandle.WaitOne(timeout, false))
-                    {
-                        try
-                        {
-                            sock.EndConnect(res);
+                        if (x.SocketErrorCode == SocketError.ConnectionRefused)
                             return true;
-                        }
-                        catch (SocketException x)
-                        {
-                            const int WSAECONNREFUSED = 10061;
-                            if (x.ErrorCode == WSAECONNREFUSED)
-                            {
-                                // we got back an explicit "connection refused", that means the host was reachable.
-                                return true;
-                            }
-                        }
                     }
                 }
             }

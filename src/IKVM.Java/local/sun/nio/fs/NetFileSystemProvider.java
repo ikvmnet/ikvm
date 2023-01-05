@@ -26,7 +26,6 @@ package sun.nio.fs;
 
 import ikvm.internal.NotYetImplementedError;
 import ikvm.internal.io.FileStreamExtensions;
-import static ikvm.internal.Util.WINDOWS;
 
 import cli.System.IO.Directory;
 import cli.System.IO.DirectoryInfo;
@@ -96,7 +95,7 @@ final class NetFileSystemProvider extends AbstractFileSystemProvider
 
     public Path getPath(URI uri)
     {
-        if (WINDOWS)
+        if (cli.IKVM.Runtime.RuntimeUtil.get_IsWindows())
         {
             return WindowsUriSupport.fromUri(fs, uri);
         }
@@ -645,7 +644,7 @@ final class NetFileSystemProvider extends AbstractFileSystemProvider
             }
             else if (opt == StandardCopyOption.ATOMIC_MOVE)
             {
-                if (WINDOWS)
+                if (cli.IKVM.Runtime.RuntimeUtil.get_IsWindows())
                 {
                     atomicMove = true;
                 }

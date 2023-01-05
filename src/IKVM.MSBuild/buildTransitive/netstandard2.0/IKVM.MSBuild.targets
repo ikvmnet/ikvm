@@ -4,11 +4,14 @@
     </PropertyGroup>
 
     <PropertyGroup Condition=" '$(TargetFramework)' != '' ">
-        <IkvmToolFramework Condition="$([MSBuild]::IsTargetFrameworkCompatible('$(TargetFramework)', 'netstandard1.0'))">NetCore</IkvmToolFramework>
-        <IkvmToolFramework Condition="$([MSBuild]::IsTargetFrameworkCompatible('$(TargetFramework)', 'net461'))">NetFramework</IkvmToolFramework>
-        <IkvmToolFramework Condition="$([MSBuild]::IsTargetFrameworkCompatible('$(TargetFramework)', 'netcoreapp3.1'))">NetCore</IkvmToolFramework>
-        <IkvmToolRuntime Condition="$([MSBuild]::IsOSPlatform('Windows'))">win7-x64</IkvmToolRuntime>
-        <IkvmToolRuntime Condition="$([MSBuild]::IsOSPlatform('Linux'))">linux-x64</IkvmToolRuntime>
+        <IkvmToolFramework Condition="$([MSBuild]::IsTargetFrameworkCompatible('$(TargetFramework)', 'netstandard1.0'))">netcoreapp3.1</IkvmToolFramework>
+        <IkvmToolFramework Condition="$([MSBuild]::IsTargetFrameworkCompatible('$(TargetFramework)', 'net461'))">net461</IkvmToolFramework>
+        <IkvmToolFramework Condition="$([MSBuild]::IsTargetFrameworkCompatible('$(TargetFramework)', 'netcoreapp3.1'))">netcoreapp3.1</IkvmToolFramework>
+        <IkvmToolRuntime Condition="$([MSBuild]::IsOSPlatform('Windows')) And '$([System.Runtime.InteropServices.RuntimeInformation]::OSArchitecture)' == 'X86'">win7-x86</IkvmToolRuntime>
+        <IkvmToolRuntime Condition="$([MSBuild]::IsOSPlatform('Windows')) And '$([System.Runtime.InteropServices.RuntimeInformation]::OSArchitecture)' == 'X64'">win7-x64</IkvmToolRuntime>
+        <IkvmToolRuntime Condition="$([MSBuild]::IsOSPlatform('Linux')) And '$([System.Runtime.InteropServices.RuntimeInformation]::OSArchitecture)' == 'X64'">linux-x64</IkvmToolRuntime>
+        <IkvmToolRuntime Condition="$([MSBuild]::IsOSPlatform('OSX')) And '$([System.Runtime.InteropServices.RuntimeInformation]::OSArchitecture)' == 'X64'">osx-x64</IkvmToolRuntime>
+        <IkvmToolRuntime Condition="$([MSBuild]::IsOSPlatform('OSX')) And '$([System.Runtime.InteropServices.RuntimeInformation]::OSArchitecture)' == 'ARM64'">osx-arm64</IkvmToolRuntime>
     </PropertyGroup>
 
     <!-- Set up default cache information. -->
@@ -39,25 +42,6 @@
     </Target>
 
     <PropertyGroup>
-        <ResolveIkvmRuntimeJNIAssemblyDependsOn>
-            $(ResolveIkvmRuntimeJNIAssemblyDependsOn);
-            ResolvePackageDependenciesForBuild;
-            ResolveProjectReferences;
-        </ResolveIkvmRuntimeJNIAssemblyDependsOn>
-    </PropertyGroup>
-
-    <!-- Locates the IKVM.Runtime.JNI assembly from among the current references of the project. -->
-    <Target Name="ResolveIkvmRuntimeJNIAssembly" DependsOnTargets="$(ResolveIkvmRuntimeJNIAssemblyDependsOn)">
-        <ItemGroup>
-            <_IkvmRuntimeJNIAssembly Include="@(Reference);@(_ResolvedProjectReferencePaths)" Condition=" '%(Filename)%(Extension)' == 'IKVM.Runtime.JNI.dll' " />
-        </ItemGroup>
-        <PropertyGroup>
-            <IkvmRuntimeJNIAssembly>@(_IkvmRuntimeJNIAssembly)</IkvmRuntimeJNIAssembly>
-        </PropertyGroup>
-        <Error Text="Could not locate IKVM.Runtime.JNI.dll." Condition=" '$(IkvmRuntimeJNIAssembly)' == '' " />
-    </Target>
-
-    <PropertyGroup>
         <ResolveIkvmBaseAssemblyDependsOn>
             $(ResolveIkvmBaseAssemblyDependsOn);
             ResolvePackageDependenciesForBuild;
@@ -79,13 +63,13 @@
     <!--
     Optionally disable registration of tasks.
     -->
-    <Import Project="IKVM.MSBuild.Tasks.targets" Condition=" '$(UseIkvmTasks)' != 'false' "/>
-    <Import Project="IKVM.MSBuild.NoTasks.targets" Condition=" '$(UseIkvmTasks)' == 'false' "/>
+    <Import Project="$(MSBuildThisFileDirectory)IKVM.MSBuild.Tasks.targets" Condition=" '$(UseIkvmTasks)' != 'false' "/>
+    <Import Project="$(MSBuildThisFileDirectory)IKVM.MSBuild.NoTasks.targets" Condition=" '$(UseIkvmTasks)' == 'false' "/>
 
     <!--
     PackageReference mode looks for IKVM tools and assemblies from the included IKVM and IKVM.MSBuild packages.
     ProjectReference mode looks for IKVM tools and assemblies from marked ProjectReferences. Used for internal builds.
     -->
-    <Import Project="IKVM.MSBuild.IkvmToolReference.targets" Condition=" '$(UseIkvmToolReferences)' == 'true' "/>
+    <Import Project="$(MSBuildThisFileDirectory)IKVM.MSBuild.IkvmToolReference.targets" Condition=" '$(UseIkvmToolReferences)' == 'true' "/>
 
 </Project>
