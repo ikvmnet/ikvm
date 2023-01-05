@@ -3516,3 +3516,9 @@ sun/security/ssl/com/sun/net/ssl/internal/ssl/SSLSocketImpl/AsyncSSLSocketClose.
 
 sun/tools/native2ascii/Permission.java                                                                                  linux-all
 tools/jar/UpdateJar.java                                                                                                linux-all
+
+# uses System.Drawing, not available on Linux
+javax/imageio/plugins/png/MergeStdCommentTest.java                                                                      linux-all
+
+# uses Win32 specific stuff, not available on Linux
+javax/print/PrintServiceLookup/CountPrintServices.java                                                                  linux-all
