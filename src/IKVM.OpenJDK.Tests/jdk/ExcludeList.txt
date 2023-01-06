@@ -3466,11 +3466,12 @@ tools/jar/UpdateJar.java                                                        
 # uses System.Drawing, not available on Linux
 javax/imageio/plugins/png/MergeStdCommentTest.java                                                                      linux-all
 javax/imageio/EmptyFileTest.java                                                                                        linux-all
+sun/java2d/cmm/ColorConvertOp/InvalidRenderIntentTest.java                                                              linux-all
 
 # uses Win32 specific stuff, not available on Linux
 javax/print/PrintServiceLookup/CountPrintServices.java                                                                  linux-all
 
-# PKCS 11 is disabled because Crypotki isn't built
+# PKCS 11 is disabled because Cryptoki isn't built
 sun/security/pkcs11/Cipher/ReinitCipher.java                                                                            generic-all
 sun/security/pkcs11/Cipher/TestPKCS5PaddingError.java                                                                   generic-all
 sun/security/pkcs11/Cipher/TestRSACipher.java                                                                           generic-all
