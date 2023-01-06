@@ -7,6 +7,7 @@
 
     <ItemGroup>
         <BinTarget Include="IKVM|net461" ProjectName="IKVM" TargetFramework="net461" />
+        <BinTarget Include="IKVM|net47" ProjectName="IKVM" TargetFramework="net47" />
         <BinTarget Include="IKVM|netcoreapp3.1" ProjectName="IKVM" TargetFramework="netcoreapp3.1" />
     </ItemGroup>
 

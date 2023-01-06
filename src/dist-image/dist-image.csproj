@@ -15,6 +15,12 @@
         <ImageTarget Include="net461|linux-x64" TargetFramework="net461" RuntimeIdentifier="linux-x64" />
         <ImageTarget Include="net461|linux-arm" TargetFramework="net461" RuntimeIdentifier="linux-arm" />
         <ImageTarget Include="net461|osx-x64" TargetFramework="net461" RuntimeIdentifier="osx-x64" />
+        <ImageTarget Include="net47|win7-x64" TargetFramework="net47" RuntimeIdentifier="win7-x64" />
+        <ImageTarget Include="net47|win7-x86" TargetFramework="net47" RuntimeIdentifier="win7-x86" />
+        <ImageTarget Include="net47|win81-arm" TargetFramework="net47" RuntimeIdentifier="win81-arm" />
+        <ImageTarget Include="net47|linux-x64" TargetFramework="net47" RuntimeIdentifier="linux-x64" />
+        <ImageTarget Include="net47|linux-arm" TargetFramework="net47" RuntimeIdentifier="linux-arm" />
+        <ImageTarget Include="net47|osx-x64" TargetFramework="net47" RuntimeIdentifier="osx-x64" />
         <ImageTarget Include="netcoreapp3.1|win7-x64" TargetFramework="netcoreapp3.1" RuntimeIdentifier="win7-x64" />
         <ImageTarget Include="netcoreapp3.1|win7-x86" TargetFramework="netcoreapp3.1" RuntimeIdentifier="win7-x86" />
         <ImageTarget Include="netcoreapp3.1|win81-arm" TargetFramework="netcoreapp3.1" RuntimeIdentifier="win81-arm" />
