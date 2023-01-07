@@ -1,4 +1,6 @@
-﻿namespace IKVM.Java.Externs.sun.security.ec
+﻿using System;
+
+namespace IKVM.Java.Externs.sun.security.ec
 {
 
     /// <summary>
@@ -16,7 +18,11 @@
         /// <returns></returns>
         public static object[] generateECKeyPair(int keySize, byte[] encodedParams, byte[] seed)
         {
+#if FIRST_PASS
+            throw new NotImplementedException();
+#else
             return IKVM.Java.Externs.Impl.sun.security.ec.ECKeyPairGenerator.generateECKeyPair(keySize, encodedParams, seed);
+#endif
         }
 
     }

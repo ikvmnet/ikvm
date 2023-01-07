@@ -7,14 +7,14 @@ namespace java.util
     class ListWrapper<T> : CollectionWrapper<T>, IList<T>
     {
 
-        readonly List list;
+        readonly global::java.util.List list;
 
         /// <summary>
         /// Initializes a new instance.
         /// </summary>
         /// <param name="list"></param>
         /// <exception cref="ArgumentNullException"></exception>
-        public ListWrapper(List list) :
+        public ListWrapper(global::java.util.List list) :
             base(list)
         {
             this.list = list ?? throw new ArgumentNullException(nameof(list));

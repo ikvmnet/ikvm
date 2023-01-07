@@ -31,6 +31,11 @@
                 <_IkvmImageTargetFramework>net461</_IkvmImageTargetFramework>
             </PropertyGroup>
         </When>
+        <When Condition="$([MSBuild]::IsTargetFrameworkCompatible('$(TargetFramework)', 'net47'))">
+            <PropertyGroup>
+                <_IkvmImageTargetFramework>net47</_IkvmImageTargetFramework>
+            </PropertyGroup>
+        </When>
         <When Condition="$([MSBuild]::IsTargetFrameworkCompatible('$(TargetFramework)', 'netcoreapp3.1'))">
             <PropertyGroup>
                 <_IkvmImageTargetFramework>netcoreapp3.1</_IkvmImageTargetFramework>

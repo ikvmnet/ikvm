@@ -6,7 +6,9 @@
     <ItemGroup>
         <IkvmCompilerToolPath Include="$(MSBuildThisFileDirectory)..\..\ikvmc\netcoreapp3.1\linux-arm64\" TargetFramework="netcoreapp3.1" RuntimeIdentifier="linux-arm64" />
         <IkvmCompilerToolPath Include="$(MSBuildThisFileDirectory)..\..\ikvmc\net461\linux-arm64\" TargetFramework="net461" RuntimeIdentifier="linux-arm64" />
+        <IkvmCompilerToolPath Include="$(MSBuildThisFileDirectory)..\..\ikvmc\net47\linux-arm64\" TargetFramework="net47" RuntimeIdentifier="linux-arm64" />
         <IkvmExporterToolPath Include="$(MSBuildThisFileDirectory)..\..\ikvmstub\net461\linux-arm64\" TargetFramework="net461" RuntimeIdentifier="linux-arm64" />
+        <IkvmExporterToolPath Include="$(MSBuildThisFileDirectory)..\..\ikvmstub\net47\linux-arm64\" TargetFramework="net47" RuntimeIdentifier="linux-arm64" />
         <IkvmExporterToolPath Include="$(MSBuildThisFileDirectory)..\..\ikvmstub\netcoreapp3.1\linux-arm64\" TargetFramework="netcoreapp3.1" RuntimeIdentifier="linux-arm64" />
     </ItemGroup>
     

@@ -37,6 +37,11 @@
             <ProjectTargetPath>ikvmc\net461\any</ProjectTargetPath>
         </PublishProjectReference>
         <PublishProjectReference Include="..\ikvmc\ikvmc.csproj">
+            <SetTargetFramework>TargetFramework=net47</SetTargetFramework>
+            <SetRuntimeIdentifier></SetRuntimeIdentifier>
+            <ProjectTargetPath>ikvmc\net47\any</ProjectTargetPath>
+        </PublishProjectReference>
+        <PublishProjectReference Include="..\ikvmc\ikvmc.csproj">
             <SetTargetFramework>TargetFramework=netcoreapp3.1</SetTargetFramework>
             <SetRuntimeIdentifier>RuntimeIdentifier=win7-x64</SetRuntimeIdentifier>
             <ProjectTargetPath>ikvmc\netcoreapp3.1\win7-x64</ProjectTargetPath>

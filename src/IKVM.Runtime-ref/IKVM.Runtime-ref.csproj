@@ -15,7 +15,6 @@
 
     <ItemGroup>
         <ProjectReference Include="..\IKVM.Java-ref\IKVM.Java-ref.csproj" Private="False" PrivateAssets="All" />
-        <ProjectReference Include="..\IKVM.Java.Externs.Impl\IKVM.Java.Externs.Impl.csproj" Private="False" PrivateAssets="All" />
     </ItemGroup>
 
     <ItemGroup>
