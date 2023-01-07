@@ -56,9 +56,9 @@ namespace IKVM.Tests.Java.java.security
 
             rnd.nextBoolean();
             rnd.nextInt();
+            rnd.nextLong();
             rnd.nextFloat();
             rnd.nextDouble();
-            rnd.nextLong();
         }
 
     }
