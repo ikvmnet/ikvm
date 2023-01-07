@@ -3133,7 +3133,7 @@ sun/security/provider/PolicyFile/getinstance/getinstance.sh                     
 sun/security/provider/PolicyParser/BogusGrants.java                                                                     generic-all
 sun/security/provider/PolicyParser/EncodeURL.java                                                                       generic-all
 sun/security/provider/PolicyParser/TokenStore.java                                                                      generic-all
-sun/security/provider/SecureRandom/StrongSecureRandom.java                                                              generic-all
+#sun/security/provider/SecureRandom/StrongSecureRandom.java                                                              generic-all
 sun/security/provider/certpath/DisabledAlgorithms/CPValidatorEndEntity.java                                             generic-all
 sun/security/provider/certpath/DisabledAlgorithms/CPValidatorIntermediate.java                                          generic-all
 sun/security/provider/certpath/DisabledAlgorithms/CPValidatorTrustAnchor.java                                           generic-all
@@ -3425,7 +3425,9 @@ java/nio/channels/SocketChannel/Connect.java                                    
 
 java/nio/charset/RemovingSunIO/TestCOMP.java                                                                            linux-all
 java/nio/charset/Charset/AvailableCharsetNames.java                                                                     linux-all
-java/nio/charset/Charset/NIOCharsetAvailabilityTest.java                                                                linux-all
+
+# COMPOUND_TEXT is compiled in all cases, but only available on !Windows, which breaks tests on Windows
+java/nio/charset/Charset/NIOCharsetAvailabilityTest.java                                                                windows-all
 
 java/nio/file/attribute/DosFileAttributeView/Basic.java                                                                 linux-all
 java/nio/file/Files/FileAttributes.java                                                                                 linux-all
