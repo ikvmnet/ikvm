@@ -1,6 +1,6 @@
 ﻿using System.Security.Cryptography;
 
-namespace IKVM.Java.Externs.Impl.sun.security.ec
+namespace IKVM.Java.Externs.sun.security.ec
 {
 
 #if NET47_OR_GREATER || NETCOREAPP

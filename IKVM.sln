@@ -279,8 +279,6 @@ Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "IKVM.Tools.Importer.Tests",
 EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "IKVM.Tests.Java", "src\IKVM.Tests.Java\IKVM.Tests.Java.msbuildproj", "{87CB99AE-16D1-4D58-BEAC-72485E02B321}"
 EndProject
-Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "IKVM.Java.Externs.Impl", "src\IKVM.Java.Externs.Impl\IKVM.Java.Externs.Impl.csproj", "{F159F287-665E-4247-B276-5FA3AC195E6B}"
-EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -591,10 +589,6 @@ Global
 		{87CB99AE-16D1-4D58-BEAC-72485E02B321}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{87CB99AE-16D1-4D58-BEAC-72485E02B321}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{87CB99AE-16D1-4D58-BEAC-72485E02B321}.Release|Any CPU.Build.0 = Release|Any CPU
-		{F159F287-665E-4247-B276-5FA3AC195E6B}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
-		{F159F287-665E-4247-B276-5FA3AC195E6B}.Debug|Any CPU.Build.0 = Debug|Any CPU
-		{F159F287-665E-4247-B276-5FA3AC195E6B}.Release|Any CPU.ActiveCfg = Release|Any CPU
-		{F159F287-665E-4247-B276-5FA3AC195E6B}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE

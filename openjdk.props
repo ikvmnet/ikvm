@@ -13892,8 +13892,8 @@
         <OpenJdkSource Include="$(OpenJdkDir)\jdk\src\windows\classes\sun\print\Win32MediaTray.java" />
         <OpenJdkSource Include="$(OpenJdkDir)\jdk\src\windows\classes\sun\security\krb5\**\*.java" />
         <OpenJdkSource Include="$(OpenJdkDir)\jdk\src\windows\classes\sun\security\provider\**\*.java" />
-        <OpenJdkSource Include="$(OpenJdkDir)\jdk\src\windows\classes\sun\security\provider\NativePRNG.java" />
-        <OpenJdkSource Include="$(OpenJdkDir)\jdk\src\windows\classes\sun\security\provider\NativeSeedGenerator.java" />
+        <OpenJdkSource Remove="$(OpenJdkDir)\jdk\src\windows\classes\sun\security\provider\NativePRNG.java" />
+        <OpenJdkSource Remove="$(OpenJdkDir)\jdk\src\windows\classes\sun\security\provider\NativeSeedGenerator.java" />
         <OpenJdkSource Include="$(OpenJdkDir)\jdk\src\windows\classes\sun\util\locale\provider\HostLocaleProviderAdapterImpl.java" />
         <OpenJdkSource Include="$(OpenJdkDir)\langtools\src\share\classes\com\sun\javadoc\AnnotatedType.java" />
         <OpenJdkSource Include="$(OpenJdkDir)\langtools\src\share\classes\com\sun\javadoc\AnnotationDesc.java" />

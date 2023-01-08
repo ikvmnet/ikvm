@@ -17,5 +17,9 @@
         <ProjectReference Include="..\IKVM.Java\IKVM.Java.msbuildproj" />
     </ItemGroup>
 
+    <ItemGroup>
+      <Folder Include="sun\security\ec\" />
+    </ItemGroup>
+
     <Import Sdk="Microsoft.NET.Sdk" Project="Sdk.targets" />
 </Project>

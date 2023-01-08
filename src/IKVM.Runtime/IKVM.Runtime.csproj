@@ -11,13 +11,11 @@
 
     <ItemGroup>
         <InternalsVisibleTo Include="IKVM.Java" />
-        <InternalsVisibleTo Include="IKVM.Java.Externs.Impl" />
         <InternalsVisibleTo Include="IKVM.Tests" />
     </ItemGroup>
 
     <ItemGroup>
         <ProjectReference Include="..\IKVM.Java\IKVM.Java.msbuildproj" />
-        <ProjectReference Include="..\IKVM.Java.Externs.Impl\IKVM.Java.Externs.Impl.csproj" />
     </ItemGroup>
 
     <Import Sdk="Microsoft.NET.Sdk" Project="Sdk.targets" />
