@@ -4,6 +4,7 @@
 
     <PropertyGroup>
         <TargetFrameworks>net461;net47;netcoreapp3.1</TargetFrameworks>
+        <LangVersion>11</LangVersion>
         <AllowUnsafeBlocks>true</AllowUnsafeBlocks>
     </PropertyGroup>
 

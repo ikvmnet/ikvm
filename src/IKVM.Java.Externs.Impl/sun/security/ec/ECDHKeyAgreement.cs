@@ -2,6 +2,7 @@
 using System.Runtime.InteropServices;
 using System.Security.Cryptography;
 
+using java.lang;
 using java.security;
 
 namespace IKVM.Java.Externs.Impl.sun.security.ec
@@ -13,36 +14,82 @@ namespace IKVM.Java.Externs.Impl.sun.security.ec
     static class ECDHKeyAgreement
     {
 
-#if NET47_OR_GREATER || NETCOREAPP3_1_OR_GREATER
 
         /// <summary>
-        /// Creates a <see cref="ECDiffieHellman"/> instance for the given curve and public key material.
+        /// Creates a <see cref="ECDiffieHellman"/> instance for the given curve and private key material.
         /// </summary>
         /// <param name="curve"></param>
-        /// <param name="d"></param>
+        /// <param name="s"></param>
         /// <returns></returns>
         /// <exception cref="PlatformNotSupportedException"></exception>
-        static ECDiffieHellman CreateECDiffieHellmanForPublicKey(ECCurve curve, byte[] d)
+        static ECDiffieHellman ImportECDiffieHellmanPrivateKey(ECCurve curve, byte[] s)
         {
-#if NETCOREAPP3_1
+#if NET47_OR_GREATER || NETCOREAPP3_1_OR_GREATER
             // NET Core 3.1 does not support an empty Q
             // However, on Windows, a fake Q the length of D works
             if (RuntimeInformation.IsOSPlatform(OSPlatform.Windows))
             {
-                var X = new byte[d.Length];
+                var X = new byte[s.Length];
                 var Y = X;
-                return ECDiffieHellman.Create(new ECParameters() { Curve = curve, D = d, Q = new ECPoint() { X = X, Y = Y } });
+                return ECDiffieHellman.Create(new ECParameters() { Curve = curve, D = s, Q = new ECPoint() { X = X, Y = Y } });
             }
             else
             {
+                // fail on linux and mac os for now
                 throw new PlatformNotSupportedException();
             }
 #else
-            return ECDiffieHellman.Create(new ECParameters() { Curve = curve, D = d });
+            var algorithm = ECUtil.EcdsaCurveNameToAlgorithm(curve.FriendlyName, true);
+            if (algorithm == null)
+                throw new InvalidAlgorithmParameterException();
+
+            // properties of the key
+            var keyLength = s.Length;
+            var magic = ECUtil.EcdsaCurveNameToPrivateMagic(curve.FriendlyName, true);
+
+            // CNG blob: magic + key size + X + Y + D
+            var blob = new byte[sizeof(uint) + sizeof(uint) + keyLength + keyLength + keyLength];
+            var span = blob.AsSpan();
+            MemoryMarshal.Write(span.Slice(0, sizeof(uint)), ref magic);
+            MemoryMarshal.Write(span.Slice(sizeof(uint), sizeof(uint)), ref keyLength);
+            span.Slice(sizeof(uint) + sizeof(uint), keyLength).Fill(0);
+            span.Slice(sizeof(uint) + sizeof(uint) + keyLength, keyLength).Fill(0);
+            s.CopyTo(span.Slice(sizeof(uint) + sizeof(uint) + keyLength + keyLength, keyLength));
+
+            // import blob and wrap with CNG
+            var key = CngKey.Create(algorithm, null, new CngKeyCreationParameters() { Parameters = { new CngProperty(CngKeyBlobFormat.EccPrivateBlob.Format, blob, CngPropertyOptions.None) } });
+            var ech = new ECDiffieHellmanCng(key);
+
+            return ech;
 #endif
         }
 
+        /// <summary>
+        /// Creates a new <see cref="ECDiffieHellmanPublicKey"/> for the given curve and public key material.
+        /// </summary>
+        /// <param name="curve"></param>
+        /// <param name="q"></param>
+        /// <returns></returns>
+        static ECDiffieHellmanPublicKey ImportECDiffieHellmanPublicKey(ECCurve curve, ECPoint q)
+        {
+#if NET47_OR_GREATER || NETCOREAPP3_1_OR_GREATER
+            return ECDiffieHellman.Create(new ECParameters() { Curve = curve, Q = q }).PublicKey;
+#else
+            // properties of the key
+            var keyLength = q.X.Length;
+            var magic = ECUtil.EcdsaCurveNameToPublicMagic(curve.FriendlyName, true);
+
+            // CNG blob: magic + key size + X + Y
+            var blob = new byte[sizeof(uint) + sizeof(uint) + keyLength + keyLength];
+            var span = blob.AsSpan();
+            MemoryMarshal.Write(span.Slice(0, sizeof(uint)), ref magic);
+            MemoryMarshal.Write(span.Slice(sizeof(uint), sizeof(uint)), ref keyLength);
+            q.X.CopyTo(span.Slice(sizeof(uint) + sizeof(uint), keyLength));
+            q.Y.CopyTo(span.Slice(sizeof(uint) + sizeof(uint) + keyLength, keyLength));
+
+            return ECDiffieHellmanCngPublicKey.FromByteArray(blob, CngKeyBlobFormat.EccPublicBlob);
 #endif
+        }
 
         /// <summary>
         /// Implements the native method for 'deriveKey'.
@@ -56,20 +103,36 @@ namespace IKVM.Java.Externs.Impl.sun.security.ec
             if (encodedParams == null)
                 throw new InvalidAlgorithmParameterException();
 
-#if NET461
-            throw new NotImplementedException();
-#elif NET47_OR_GREATER || NETCOREAPP3_1_OR_GREATER
             var curve = ECUtil.DecodeParameters(encodedParams);
             if (curve.IsNamed == false)
                 throw new InvalidAlgorithmParameterException();
 
-            // read in keys
-            using var pub = ECDiffieHellman.Create(new ECParameters() { Curve = curve, Q = ECUtil.ImportECPoint(w) });
-            using var prv = CreateECDiffieHellmanForPublicKey(curve, s.AsSpan().Slice(1).ToArray());
+            try
+            {
+                // array is the result of BigInteger.toByteArray, which may include a sign
+                if (s[0] == 0)
+                {
+                    var t = new byte[s.Length - 1];
+                    s.AsSpan().Slice(1).CopyTo(t);
+                    s = t;
+                }
 
-            // derive material and return
-            return prv.DeriveKeyMaterial(pub.PublicKey);
-#endif
+                // read in keys
+                using var prv = ImportECDiffieHellmanPrivateKey(curve, s);
+                using var pub = ImportECDiffieHellmanPublicKey(curve, ECUtil.ImportECPoint(w));
+
+                // derive material and return
+                var mat = prv.DeriveKeyMaterial(pub);
+                return mat;
+            }
+            catch (CryptographicException e)
+            {
+                throw new KeyException(e);
+            }
+            catch (PlatformNotSupportedException e)
+            {
+                throw new IllegalStateException(e);
+            }
         }
 
     }
