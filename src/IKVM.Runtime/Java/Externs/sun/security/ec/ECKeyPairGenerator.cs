@@ -72,8 +72,7 @@ namespace IKVM.Java.Externs.sun.security.ec
                 var key = CngKey.Create(algorithm, null, new CngKeyCreationParameters() { ExportPolicy = CngExportPolicies.AllowPlaintextExport, Parameters = { new CngProperty("Length", BitConverter.GetBytes(keySize), CngPropertyOptions.None) } });
                 var src = key.Export(CngKeyBlobFormat.EccPrivateBlob).AsSpan();
 
-                // read the key size and validate
-                
+                // read the key magic and validate
                 var magic = MemoryMarshal.Read<uint>(src.Slice(0, sizeof(uint)));
                 if (magic != ECUtil.EcdsaCurveNameToPrivateMagic(curve.FriendlyName))
                     throw new KeyException();

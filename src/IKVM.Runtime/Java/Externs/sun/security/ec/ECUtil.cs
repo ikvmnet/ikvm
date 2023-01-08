@@ -1,8 +1,8 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Globalization;
+using System.Runtime.InteropServices;
 using System.Security.Cryptography;
-using System.Text;
 
 #if FIRST_PASS == false
 
@@ -40,6 +40,168 @@ namespace IKVM.Java.Externs.sun.security.ec
         public const uint BCRYPT_ECDH_PRIVATE_P521_MAGIC = 0x364B4345;
 
 #if FIRST_PASS == false
+
+
+        /// <summary>
+        /// Creates a <see cref="ECDiffieHellman"/> instance for the given curve and private key material.
+        /// </summary>
+        /// <param name="curve"></param>
+        /// <param name="s"></param>
+        /// <returns></returns>
+        /// <exception cref="PlatformNotSupportedException"></exception>
+        public static ECDsa ImportECDsaPrivateKey(ECCurve curve, byte[] s)
+        {
+#if NET47_OR_GREATER || NETCOREAPP3_1_OR_GREATER
+            // NET Core 3.1 does not support an empty Q
+            // However, on Windows, a fake Q the length of D works
+            if (RuntimeInformation.IsOSPlatform(OSPlatform.Windows))
+            {
+                var X = new byte[s.Length];
+                var Y = X;
+                return ECDsa.Create(new ECParameters() { Curve = curve, D = s, Q = new ECPoint() { X = X, Y = Y } });
+            }
+            else
+            {
+                // fail on linux and mac os for now
+                throw new PlatformNotSupportedException();
+            }
+#else
+            var algorithm = EcdsaCurveNameToAlgorithm(curve.FriendlyName, false);
+            if (algorithm == null)
+                throw new InvalidAlgorithmParameterException();
+
+            // properties of the key
+            var keyLength = s.Length;
+            var magic = EcdsaCurveNameToPrivateMagic(curve.FriendlyName, false);
+
+            // CNG blob: magic + key size + X + Y + D
+            var blob = new byte[sizeof(uint) + sizeof(uint) + keyLength + keyLength + keyLength];
+            var span = blob.AsSpan();
+            MemoryMarshal.Write(span.Slice(0, sizeof(uint)), ref magic);
+            MemoryMarshal.Write(span.Slice(sizeof(uint), sizeof(uint)), ref keyLength);
+            span.Slice(sizeof(uint) + sizeof(uint), keyLength).Fill(0);
+            span.Slice(sizeof(uint) + sizeof(uint) + keyLength, keyLength).Fill(0);
+            s.CopyTo(span.Slice(sizeof(uint) + sizeof(uint) + keyLength + keyLength, keyLength));
+
+            // import blob and wrap with CNG
+            var key = CngKey.Create(algorithm, null, new CngKeyCreationParameters() { Parameters = { new CngProperty(CngKeyBlobFormat.EccPrivateBlob.Format, blob, CngPropertyOptions.None) } });
+            var ech = new ECDsaCng(key);
+
+            return ech;
+#endif
+        }
+
+        /// <summary>
+        /// Creates a <see cref="ECDiffieHellman"/> instance for the given curve and private key material.
+        /// </summary>
+        /// <param name="curve"></param>
+        /// <param name="s"></param>
+        /// <returns></returns>
+        /// <exception cref="PlatformNotSupportedException"></exception>
+        public static ECDsa ImportECDsaPublicKey(ECCurve curve, byte[] w)
+        {
+#if NET47_OR_GREATER || NETCOREAPP3_1_OR_GREATER
+            return ECDsa.Create(new ECParameters { Curve = curve, Q = ImportECPoint(w) });
+#else
+            var algorithm = EcdsaCurveNameToAlgorithm(curve.FriendlyName, false);
+            if (algorithm == null)
+                throw new InvalidAlgorithmParameterException();
+
+            // properties of the key
+            var keyLength = w.Length;
+            var magic = EcdsaCurveNameToPublicMagic(curve.FriendlyName, false);
+
+            // CNG blob: magic + key size + X + Y + D
+            var blob = new byte[sizeof(uint) + sizeof(uint) + keyLength + keyLength + keyLength];
+            var span = blob.AsSpan();
+            MemoryMarshal.Write(span.Slice(0, sizeof(uint)), ref magic);
+            MemoryMarshal.Write(span.Slice(sizeof(uint), sizeof(uint)), ref keyLength);
+            span.Slice(sizeof(uint) + sizeof(uint), keyLength).Fill(0);
+            span.Slice(sizeof(uint) + sizeof(uint) + keyLength, keyLength).Fill(0);
+
+            // import blob and wrap with CNG
+            var key = CngKey.Create(algorithm, null, new CngKeyCreationParameters() { Parameters = { new CngProperty(CngKeyBlobFormat.EccPublicBlob.Format, blob, CngPropertyOptions.None) } });
+            var ech = new ECDsaCng(key);
+
+            return ech;
+#endif
+        }
+
+        /// <summary>
+        /// Creates a <see cref="ECDiffieHellman"/> instance for the given curve and private key material.
+        /// </summary>
+        /// <param name="curve"></param>
+        /// <param name="s"></param>
+        /// <returns></returns>
+        /// <exception cref="PlatformNotSupportedException"></exception>
+        public static ECDiffieHellman ImportECDiffieHellmanPrivateKey(ECCurve curve, byte[] s)
+        {
+#if NET47_OR_GREATER || NETCOREAPP3_1_OR_GREATER
+            // NET Core 3.1 does not support an empty Q
+            // However, on Windows, a fake Q the length of D works
+            if (RuntimeInformation.IsOSPlatform(OSPlatform.Windows))
+            {
+                var X = new byte[s.Length];
+                var Y = X;
+                return ECDiffieHellman.Create(new ECParameters() { Curve = curve, D = s, Q = new ECPoint() { X = X, Y = Y } });
+            }
+            else
+            {
+                // fail on linux and mac os for now
+                throw new PlatformNotSupportedException();
+            }
+#else
+            var algorithm = EcdsaCurveNameToAlgorithm(curve.FriendlyName, true);
+            if (algorithm == null)
+                throw new InvalidAlgorithmParameterException();
+
+            // properties of the key
+            var keyLength = s.Length;
+            var magic = EcdsaCurveNameToPrivateMagic(curve.FriendlyName, true);
+
+            // CNG blob: magic + key size + X + Y + D
+            var blob = new byte[sizeof(uint) + sizeof(uint) + keyLength + keyLength + keyLength];
+            var span = blob.AsSpan();
+            MemoryMarshal.Write(span.Slice(0, sizeof(uint)), ref magic);
+            MemoryMarshal.Write(span.Slice(sizeof(uint), sizeof(uint)), ref keyLength);
+            span.Slice(sizeof(uint) + sizeof(uint), keyLength).Fill(0);
+            span.Slice(sizeof(uint) + sizeof(uint) + keyLength, keyLength).Fill(0);
+            s.CopyTo(span.Slice(sizeof(uint) + sizeof(uint) + keyLength + keyLength, keyLength));
+
+            // import blob and wrap with CNG
+            var key = CngKey.Create(algorithm, null, new CngKeyCreationParameters() { Parameters = { new CngProperty(CngKeyBlobFormat.EccPrivateBlob.Format, blob, CngPropertyOptions.None) } });
+            var ech = new ECDiffieHellmanCng(key);
+
+            return ech;
+#endif
+        }
+
+        /// <summary>
+        /// Creates a new <see cref="ECDiffieHellmanPublicKey"/> for the given curve and public key material.
+        /// </summary>
+        /// <param name="curve"></param>
+        /// <param name="q"></param>
+        /// <returns></returns>
+        public static ECDiffieHellmanPublicKey ImportECDiffieHellmanPublicKey(ECCurve curve, ECPoint q)
+        {
+#if NET47_OR_GREATER || NETCOREAPP3_1_OR_GREATER
+            return ECDiffieHellman.Create(new ECParameters() { Curve = curve, Q = q }).PublicKey;
+#else
+            // properties of the key
+            var keyLength = q.X.Length;
+            var magic = EcdsaCurveNameToPublicMagic(curve.FriendlyName, true);
+
+            // CNG blob: magic + key size + X + Y
+            var blob = new byte[sizeof(uint) + sizeof(uint) + keyLength + keyLength];
+            var span = blob.AsSpan();
+            MemoryMarshal.Write(span.Slice(0, sizeof(uint)), ref magic);
+            MemoryMarshal.Write(span.Slice(sizeof(uint), sizeof(uint)), ref keyLength);
+            q.X.CopyTo(span.Slice(sizeof(uint) + sizeof(uint), keyLength));
+            q.Y.CopyTo(span.Slice(sizeof(uint) + sizeof(uint) + keyLength, keyLength));
+
+            return ECDiffieHellmanCngPublicKey.FromByteArray(blob, CngKeyBlobFormat.EccPublicBlob);
+#endif
+        }
 
         /// <summary>
         /// Exports an <see cref="ECPoint"/> in uncompressed form.

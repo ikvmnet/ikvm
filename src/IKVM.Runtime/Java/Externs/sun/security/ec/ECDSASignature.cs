@@ -30,20 +30,13 @@ namespace IKVM.Java.Externs.sun.security.ec
 #if FIRST_PASS
             throw new NotImplementedException();
 #else
-#if NET47_OR_GREATER || NETCOREAPP3_1_OR_GREATER
             var curve = ECUtil.DecodeParameters(encodedParams);
             if (curve.IsNamed == false)
                 throw new InvalidAlgorithmParameterException();
 
             try
             {
-                // import key as private key
-                var p = new ECParameters();
-                p.Curve = curve;
-                p.D = s;
-                using var dsa = ECDsa.Create(p);
-
-                // sign the digest
+                using var dsa = ECUtil.ImportECDsaPrivateKey(curve, s);
                 var r = dsa.SignHash(digest);
                 return r;
             }
@@ -51,9 +44,6 @@ namespace IKVM.Java.Externs.sun.security.ec
             {
                 throw new IllegalStateException(e);
             }
-#else
-            throw new NotImplementedException();
-#endif
 #endif
         }
 
@@ -70,20 +60,13 @@ namespace IKVM.Java.Externs.sun.security.ec
 #if FIRST_PASS
             throw new NotImplementedException();
 #else
-#if NET47_OR_GREATER || NETCOREAPP3_1_OR_GREATER
             var curve = ECUtil.DecodeParameters(encodedParams);
             if (curve.IsNamed == false)
                 throw new InvalidAlgorithmParameterException();
 
             try
             {
-                // import key as private key
-                var p = new ECParameters();
-                p.Curve = curve;
-                p.Q = ECUtil.ImportECPoint(w);
-                using var dsa = ECDsa.Create(p);
-
-                // verify the signature
+                using var dsa = ECUtil.ImportECDsaPublicKey(curve, w);
                 var r = dsa.VerifyHash(digest, signature);
                 return r;
             }
@@ -91,9 +74,6 @@ namespace IKVM.Java.Externs.sun.security.ec
             {
                 throw new IllegalStateException(e);
             }
-#else
-            throw new NotImplementedException();
-#endif
 #endif
         }
 

@@ -20,6 +20,12 @@ namespace IKVM.Tests.Java.java.security
         [DataRow("DSA", 2048, "SHA256withDSA")]
         [DataRow("RSA", 2048, "SHA1withRSA")]
         [DataRow("RSA", 2048, "SHA256withRSA")]
+        [DataRow("EC", 256, "SHA1withECDSA")]
+        [DataRow("EC", 384, "SHA1withECDSA")]
+        [DataRow("EC", 521, "SHA1withECDSA")]
+        [DataRow("EC", 256, "SHA256withECDSA")]
+        [DataRow("EC", 384, "SHA256withECDSA")]
+        [DataRow("EC", 521, "SHA256withECDSA")]
         public void CanCreateKeysAndSignAndVerify(string keyAlgorithm, int keySize, string signatureAlgorithm)
         {
             var text = Encoding.UTF8.GetBytes("TEST");
@@ -47,6 +53,7 @@ namespace IKVM.Tests.Java.java.security
 
         [DataTestMethod]
         [DataRow("RSA", 2048, "RSA")]
+        [DataRow("EC", 256, "ECIES")]
         public void CanEncryptAndDecrypt(string keyAlgorithm, int keySize, string cipherAlgorithm)
         {
             var text = Encoding.UTF8.GetBytes("TEST");
@@ -67,7 +74,7 @@ namespace IKVM.Tests.Java.java.security
             var decrypt = Cipher.getInstance(cipherAlgorithm);
             decrypt.init(Cipher.DECRYPT_MODE, privateKey);
             var decryptText = decrypt.doFinal(encryptData);
-            decryptText.Should().BeSameAs(text);
+            decryptText.Should().BeEquivalentTo(text);
         }
 
     }
