@@ -1116,7 +1116,7 @@ namespace IKVM.Java.Externs.sun.misc
         public static long staticFieldOffset(object self, global::java.lang.reflect.Field f)
         {
             var fr = fieldRefCache.GetValue(FieldWrapper.FromField(f), _ => new FieldDelegateRef(_));
-            return (long)GCHandle.ToIntPtr(fr.Handle);
+            return (long)(IntPtr)fr.Handle;
         }
 
         /// <summary>
@@ -1128,7 +1128,7 @@ namespace IKVM.Java.Externs.sun.misc
         public static long objectFieldOffset(object self, global::java.lang.reflect.Field f)
         {
             var fr = fieldRefCache.GetValue(FieldWrapper.FromField(f), _ => new FieldDelegateRef(_));
-            return (long)GCHandle.ToIntPtr(fr.Handle);
+            return (long)(IntPtr)fr.Handle;
         }
 
         /// <summary>
