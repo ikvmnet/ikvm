@@ -3531,4 +3531,4 @@ sun/security/pkcs11/tls/TestPRF.java                                            
 sun/security/pkcs11/tls/TestPremaster.java                                                                              generic-all
 
 # points NativePRNG at a specific file: our implementations don't support this
-sun/security/provider/SecureRandom.StrongSeedReader                                                                     generic-all
+sun/security/provider/SecureRandom/StrongSeedReader.java                                                                generic-all
