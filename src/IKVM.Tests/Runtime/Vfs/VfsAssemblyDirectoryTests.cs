@@ -76,6 +76,28 @@ namespace IKVM.Tests.Runtime.Vfs
             new BinaryReader(((VfsFile)ent).Open(FileMode.Open, FileAccess.Read)).ReadUInt32().Should().Be(0xBEBAFECA);
         }
 
+        [TestMethod]
+        public void CanFindClassFileForInnerClassOfInterface()
+        {
+            var ctx = VfsRuntimeContext.Instance;
+            var dir = new VfsAssemblyClassDirectory(ctx, typeof(global::java.lang.CharSequence).Assembly, "java.lang");
+            var ent = dir.GetEntry("CharSequence$1CharIterator.class");
+            ent.Should().NotBeNull();
+            ent.Should().BeOfType<VfsAssemblyClassFile>();
+            new BinaryReader(((VfsFile)ent).Open(FileMode.Open, FileAccess.Read)).ReadUInt32().Should().Be(0xBEBAFECA);
+        }
+
+        [TestMethod]
+        public void CanFindClassFileForNestedClassOfInterface()
+        {
+            var ctx = VfsRuntimeContext.Instance;
+            var dir = new VfsAssemblyClassDirectory(ctx, typeof(global::javax.tools.JavaFileObject).Assembly, "javax.tools");
+            var ent = dir.GetEntry("JavaFileObject$Kind.class");
+            ent.Should().NotBeNull();
+            ent.Should().BeOfType<VfsAssemblyClassFile>();
+            new BinaryReader(((VfsFile)ent).Open(FileMode.Open, FileAccess.Read)).ReadUInt32().Should().Be(0xBEBAFECA);
+        }
+
     }
 
 }
