@@ -31,14 +31,6 @@
             <IncludeTargetPath>lib\net461\</IncludeTargetPath>
         </IncludeProjectReference>
         <IncludeProjectReference Include="..\IKVM.Runtime\IKVM.Runtime.csproj">
-            <SetTargetFramework>TargetFramework=net47</SetTargetFramework>
-            <IncludeTargetPath>lib\net47\</IncludeTargetPath>
-        </IncludeProjectReference>
-        <IncludeProjectReference Include="..\IKVM.Java\IKVM.Java.msbuildproj">
-            <SetTargetFramework>TargetFramework=net47</SetTargetFramework>
-            <IncludeTargetPath>lib\net47\</IncludeTargetPath>
-        </IncludeProjectReference>
-        <IncludeProjectReference Include="..\IKVM.Runtime\IKVM.Runtime.csproj">
             <SetTargetFramework>TargetFramework=netcoreapp3.1</SetTargetFramework>
             <IncludeTargetPath>lib\netcoreapp3.1\</IncludeTargetPath>
         </IncludeProjectReference>
@@ -59,17 +51,6 @@
             <SetTargetFramework>TargetFramework=net461</SetTargetFramework>
             <SetRuntimeIdentifier>RuntimeIdentifier=win7-x64</SetRuntimeIdentifier>
             <ProjectTargetPath>ikvmstub\net461\win7-x64</ProjectTargetPath>
-        </PublishProjectReference>
-
-        <PublishProjectReference Include="..\ikvmc\ikvmc.csproj">
-            <SetTargetFramework>TargetFramework=net47</SetTargetFramework>
-            <SetRuntimeIdentifier>RuntimeIdentifier=win7-x64</SetRuntimeIdentifier>
-            <ProjectTargetPath>ikvmc\net47\win7-x64</ProjectTargetPath>
-        </PublishProjectReference>
-        <PublishProjectReference Include="..\ikvmstub\ikvmstub.csproj">
-            <SetTargetFramework>TargetFramework=net47</SetTargetFramework>
-            <SetRuntimeIdentifier>RuntimeIdentifier=win7-x64</SetRuntimeIdentifier>
-            <ProjectTargetPath>ikvmstub\net47\win7-x64</ProjectTargetPath>
         </PublishProjectReference>
 
         <PublishProjectReference Include="..\ikvmc\ikvmc.csproj">

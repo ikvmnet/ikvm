@@ -28,7 +28,6 @@
         <TestTarget Include="IKVM.JTReg.TestAdapter.Tests|netcoreapp3.1" ProjectName="IKVM.JTReg.TestAdapter.Tests" TargetFramework="netcoreapp3.1" />
         <TestTarget Include="IKVM.JTReg.TestAdapter.Tests|net6.0" ProjectName="IKVM.JTReg.TestAdapter.Tests" TargetFramework="net6.0" />
         <TestTarget Include="IKVM.OpenJDK.Tests|net461" ProjectName="IKVM.OpenJDK.Tests" TargetFramework="net461" />
-        <TestTarget Include="IKVM.OpenJDK.Tests|net47" ProjectName="IKVM.OpenJDK.Tests" TargetFramework="net47" />
         <TestTarget Include="IKVM.OpenJDK.Tests|netcoreapp3.1" ProjectName="IKVM.OpenJDK.Tests" TargetFramework="netcoreapp3.1" />
     </ItemGroup>
 

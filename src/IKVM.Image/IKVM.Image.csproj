@@ -3,7 +3,7 @@
     <Import Project="$(MSBuildThisFileDirectory)..\..\openjdk.props" />
 
     <PropertyGroup>
-        <TargetFrameworks>net461;net47;netcoreapp3.1</TargetFrameworks>
+        <TargetFrameworks>net461;netcoreapp3.1</TargetFrameworks>
         <PackageLicenseFile>LICENSE.md</PackageLicenseFile>
         <PackageReadmeFile>README.md</PackageReadmeFile>
         <Description>IKVM Runtime Image</Description>

@@ -13267,6 +13267,9 @@
         <OpenJdkSource Include="$(OpenJdkDir)\jdk\src\share\classes\sun\rmi\transport\TransportConstants.java" />
         <OpenJdkSource Include="$(OpenJdkDir)\jdk\src\share\classes\sun\rmi\transport\WeakRef.java" />
         <OpenJdkSource Include="$(OpenJdkDir)\jdk\src\share\classes\sun\security\**\*.java" />
+        <OpenJdkSource Remove="$(OpenJdkDir)\jdk\src\share\classes\sun\security\ec\ECDHKeyAgreement.java" />
+        <OpenJdkSource Remove="$(OpenJdkDir)\jdk\src\share\classes\sun\security\ec\ECDSASignature.java" />
+        <OpenJdkSource Remove="$(OpenJdkDir)\jdk\src\share\classes\sun\security\ec\ECKeyPairGenerator.java" />
         <OpenJdkSource Remove="$(OpenJdkDir)\jdk\src\share\classes\sun\security\jgss\wrapper\NativeGSSFactory.java" />
         <OpenJdkSource Remove="$(OpenJdkDir)\jdk\src\share\classes\sun\security\jgss\wrapper\SunNativeProvider.java" />
         <OpenJdkSource Remove="$(OpenJdkDir)\jdk\src\share\classes\sun\security\smartcardio\**\*.java" />
