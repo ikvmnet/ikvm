@@ -13,6 +13,9 @@ namespace IKVM.Tests.Java.javax.tools
     public class JavaCompilerTests
     {
 
+        /// <summary>
+        /// We have encounted a few issues with loading resource bundles for javac. This ensures we can.
+        /// </summary>
         [TestMethod]
         public void CanGetJavaCompilerResourceBundle()
         {
@@ -21,6 +24,10 @@ namespace IKVM.Tests.Java.javax.tools
             s.Should().NotBeEmpty();
         }
 
+        /// <summary>
+        /// Checks that the compiler can handle nested lambda instances. These produce odd type names, and we have
+        /// hit issues with various parts of the system not respecting them.
+        /// </summary>
         [TestMethod]
         public void CanCompileLambda()
         {
