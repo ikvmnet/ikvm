@@ -201,7 +201,7 @@ namespace IKVM.Runtime.Vfs
                 // its package 'ssimple name is a directory
                 if (name.Value.IsMemberOf(package))
                 {
-                    lst.Add(name.Value.SimpleName.ToString() + ".class");
+                    lst.Add(name.Value.UnqualifiedName.ToString() + ".class");
                     continue;
                 }
 

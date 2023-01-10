@@ -24,7 +24,6 @@ namespace IKVM.Tests.Java.javax.tools
         [TestMethod]
         public void CanCompileLambda()
         {
-
             var s = """
 public class L1 {
     public static class A {
