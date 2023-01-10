@@ -37,12 +37,6 @@
         </PublishProjectReference>
     </ItemGroup>
 
-    <ItemGroup>
-      <None Update="lib\net47\_._">
-        <PackagePath>lib\%(RecursiveDir)%(Filename)%(Extension)</PackagePath>
-      </None>
-    </ItemGroup>
-
     <Target Name="MakeGeneratedPropsFile" Outputs="$(IntermediateOutputPath)generated.props" BeforeTargets="_GetPackageFiles">
         <ItemGroup>
             <_GeneratedPropsFileLine Include="&lt;Project&gt;&lt;PropertyGroup&gt;&lt;IkvmVersion&gt;$(PackageVersion)&lt;/IkvmVersion&gt;&lt;/PropertyGroup&gt;&lt;/Project&gt;" />
