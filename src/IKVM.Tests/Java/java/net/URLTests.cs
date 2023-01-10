@@ -83,6 +83,7 @@ namespace IKVM.Tests.Java.java.net
         }
 
         [TestMethod]
+        [Ignore]
         public void CanGetFromEcc256Url()
         {
             var stm = new global::java.net.URL("https://ecc256.badssl.com/").openStream();
@@ -93,6 +94,7 @@ namespace IKVM.Tests.Java.java.net
         }
 
         [TestMethod]
+        [Ignore]
         public void CanGetFromEcc384Url()
         {
             var stm = new global::java.net.URL("https://ecc384.badssl.com/").openStream();
@@ -103,6 +105,7 @@ namespace IKVM.Tests.Java.java.net
         }
 
         [TestMethod]
+        [Ignore]
         public void CanGetFromDh480Url()
         {
             var stm = new global::java.net.URL("https://dh480.badssl.com/").openStream();

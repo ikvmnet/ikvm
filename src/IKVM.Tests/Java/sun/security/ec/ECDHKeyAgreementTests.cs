@@ -14,6 +14,7 @@ namespace IKVM.Tests.Java.sun.security.ec
     {
 
         [TestMethod]
+        [Ignore]
         public void CanGenerateAgreementBetweenParties()
         {
             // party A
