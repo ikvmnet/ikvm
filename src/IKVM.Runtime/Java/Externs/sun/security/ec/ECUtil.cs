@@ -17,7 +17,7 @@ namespace IKVM.Java.Externs.sun.security.ec
     /// <summary>
     /// Utilities for working with eliptical curve cryptography.
     /// </summary>
-    static class ECUtil
+    internal static class ECUtil
     {
 
         public const byte SEC_ASN1_OBJECT_ID = 0x06;
@@ -51,7 +51,17 @@ namespace IKVM.Java.Externs.sun.security.ec
         /// <exception cref="PlatformNotSupportedException"></exception>
         public static ECDsa ImportECDsaPrivateKey(ECCurve curve, byte[] s)
         {
+            // lookup key size as we may need to prefix s
+            var keySize = GetCurveKeySize(curve);
+            if (keySize == 0)
+                throw new InvalidAlgorithmParameterException();
+
+            // incoming key needs to be proper length
+            var keyLength = (keySize + 7) >> 3;
+            s = NormalizeLength(s, keyLength);
+
 #if NET47_OR_GREATER || NETCOREAPP3_1_OR_GREATER
+
             // NET Core 3.1 does not support an empty Q
             // However, on Windows, a fake Q the length of D works
             if (RuntimeInformation.IsOSPlatform(OSPlatform.Windows))
@@ -66,13 +76,11 @@ namespace IKVM.Java.Externs.sun.security.ec
                 throw new PlatformNotSupportedException();
             }
 #else
-            var algorithm = EcdsaCurveNameToAlgorithm(curve.FriendlyName, false);
+            var algorithm = GetCurveCngAlgorithm(curve, ECMode.ECDsa);
             if (algorithm == null)
                 throw new InvalidAlgorithmParameterException();
 
-            // properties of the key
-            var keyLength = s.Length;
-            var magic = EcdsaCurveNameToPrivateMagic(curve.FriendlyName, false);
+            var magic = GetCurveBCryptPrivateMagic(curve, ECMode.ECDsa);
 
             // CNG blob: magic + key size + X + Y + D
             var blob = new byte[sizeof(uint) + sizeof(uint) + keyLength + keyLength + keyLength];
@@ -84,7 +92,7 @@ namespace IKVM.Java.Externs.sun.security.ec
             s.CopyTo(span.Slice(sizeof(uint) + sizeof(uint) + keyLength + keyLength, keyLength));
 
             // import blob and wrap with CNG
-            var key = CngKey.Create(algorithm, null, new CngKeyCreationParameters() { Parameters = { new CngProperty(CngKeyBlobFormat.EccPrivateBlob.Format, blob, CngPropertyOptions.None) } });
+            var key = CngKey.Import(blob, CngKeyBlobFormat.EccPrivateBlob);
             var ech = new ECDsaCng(key);
 
             return ech;
@@ -95,34 +103,35 @@ namespace IKVM.Java.Externs.sun.security.ec
         /// Creates a <see cref="ECDiffieHellman"/> instance for the given curve and private key material.
         /// </summary>
         /// <param name="curve"></param>
-        /// <param name="s"></param>
+        /// <param name="w"></param>
         /// <returns></returns>
         /// <exception cref="PlatformNotSupportedException"></exception>
         public static ECDsa ImportECDsaPublicKey(ECCurve curve, byte[] w)
         {
+            // lookup key size
+            var keySize = GetCurveKeySize(curve);
+            if (keySize == 0)
+                throw new InvalidAlgorithmParameterException();
+
 #if NET47_OR_GREATER || NETCOREAPP3_1_OR_GREATER
             return ECDsa.Create(new ECParameters { Curve = curve, Q = ImportECPoint(w) });
 #else
-            var algorithm = EcdsaCurveNameToAlgorithm(curve.FriendlyName, false);
-            if (algorithm == null)
-                throw new InvalidAlgorithmParameterException();
-
             // properties of the key
-            var keyLength = w.Length;
-            var magic = EcdsaCurveNameToPublicMagic(curve.FriendlyName, false);
+            var keyLength = (keySize + 7) >> 3;
+            var magic = GetCurveBCryptPublicMagic(curve, ECMode.ECDsa);
+            var q = ImportECPoint(w);
 
-            // CNG blob: magic + key size + X + Y + D
-            var blob = new byte[sizeof(uint) + sizeof(uint) + keyLength + keyLength + keyLength];
+            // CNG blob: magic + key size + X + Y
+            var blob = new byte[sizeof(uint) + sizeof(uint) + keyLength + keyLength];
             var span = blob.AsSpan();
             MemoryMarshal.Write(span.Slice(0, sizeof(uint)), ref magic);
             MemoryMarshal.Write(span.Slice(sizeof(uint), sizeof(uint)), ref keyLength);
-            span.Slice(sizeof(uint) + sizeof(uint), keyLength).Fill(0);
-            span.Slice(sizeof(uint) + sizeof(uint) + keyLength, keyLength).Fill(0);
+            q.X.CopyTo(span.Slice(sizeof(uint) + sizeof(uint), keyLength));
+            q.Y.CopyTo(span.Slice(sizeof(uint) + sizeof(uint) + keyLength, keyLength));
 
             // import blob and wrap with CNG
-            var key = CngKey.Create(algorithm, null, new CngKeyCreationParameters() { Parameters = { new CngProperty(CngKeyBlobFormat.EccPublicBlob.Format, blob, CngPropertyOptions.None) } });
+            using var key = CngKey.Import(blob, CngKeyBlobFormat.EccPublicBlob);
             var ech = new ECDsaCng(key);
-
             return ech;
 #endif
         }
@@ -136,6 +145,15 @@ namespace IKVM.Java.Externs.sun.security.ec
         /// <exception cref="PlatformNotSupportedException"></exception>
         public static ECDiffieHellman ImportECDiffieHellmanPrivateKey(ECCurve curve, byte[] s)
         {
+            // lookup key size as we may need to prefix s
+            var keySize = GetCurveKeySize(curve);
+            if (keySize == 0)
+                throw new InvalidAlgorithmParameterException();
+
+            // incoming key needs to be proper length
+            var keyLength = (keySize + 7) >> 3;
+            s = NormalizeLength(s, keyLength);
+
 #if NET47_OR_GREATER || NETCOREAPP3_1_OR_GREATER
             // NET Core 3.1 does not support an empty Q
             // However, on Windows, a fake Q the length of D works
@@ -151,13 +169,7 @@ namespace IKVM.Java.Externs.sun.security.ec
                 throw new PlatformNotSupportedException();
             }
 #else
-            var algorithm = EcdsaCurveNameToAlgorithm(curve.FriendlyName, true);
-            if (algorithm == null)
-                throw new InvalidAlgorithmParameterException();
-
-            // properties of the key
-            var keyLength = s.Length;
-            var magic = EcdsaCurveNameToPrivateMagic(curve.FriendlyName, true);
+            var magic = GetCurveBCryptPrivateMagic(curve, ECMode.ECDH);
 
             // CNG blob: magic + key size + X + Y + D
             var blob = new byte[sizeof(uint) + sizeof(uint) + keyLength + keyLength + keyLength];
@@ -169,7 +181,7 @@ namespace IKVM.Java.Externs.sun.security.ec
             s.CopyTo(span.Slice(sizeof(uint) + sizeof(uint) + keyLength + keyLength, keyLength));
 
             // import blob and wrap with CNG
-            var key = CngKey.Create(algorithm, null, new CngKeyCreationParameters() { Parameters = { new CngProperty(CngKeyBlobFormat.EccPrivateBlob.Format, blob, CngPropertyOptions.None) } });
+            var key = CngKey.Import(blob, CngKeyBlobFormat.EccPrivateBlob);
             var ech = new ECDiffieHellmanCng(key);
 
             return ech;
@@ -189,7 +201,7 @@ namespace IKVM.Java.Externs.sun.security.ec
 #else
             // properties of the key
             var keyLength = q.X.Length;
-            var magic = EcdsaCurveNameToPublicMagic(curve.FriendlyName, true);
+            var magic = GetCurveBCryptPublicMagic(curve, ECMode.ECDH);
 
             // CNG blob: magic + key size + X + Y
             var blob = new byte[sizeof(uint) + sizeof(uint) + keyLength + keyLength];
@@ -237,7 +249,7 @@ namespace IKVM.Java.Externs.sun.security.ec
 
             // read X and Y
             var x = W.Slice(0, l).ToArray();
-            var y = W.Slice(l).ToArray();
+            var y = W.Slice(l, l).ToArray();
             return new ECPoint() { X = x, Y = y };
         }
 
@@ -309,31 +321,58 @@ namespace IKVM.Java.Externs.sun.security.ec
 #endif
 
         /// <summary>
-        /// Returns a <see cref="CngAlgorithm"/> value for the specified curve name.
+        /// CNG has different values for ECDSA and ECDH modes.
         /// </summary>
-        /// <param name="name"></param>
-        /// <param name="dh"></param>
+        public enum ECMode
+        {
+
+            ECDsa,
+            ECDH,
+
+        }
+
+        /// <summary>
+        /// Returns a <see cref="CngAlgorithm"/> value for the specified curve.
+        /// </summary>
+        /// <param name="curve"></param>
+        /// <param name="mode"></param>
         /// <returns></returns>
         /// <exception cref="NotImplementedException"></exception>
-        public static CngAlgorithm EcdsaCurveNameToAlgorithm(string name, bool dh = false) => name.ToLowerInvariant() switch
+        public static CngAlgorithm GetCurveCngAlgorithm(ECCurve curve, ECMode mode) => curve.Oid.FriendlyName.ToLowerInvariant() switch
         {
-            "nistp256" or "ecdsa_p256" => dh ? CngAlgorithm.ECDiffieHellmanP256 : CngAlgorithm.ECDsaP256,
-            "nistp384" or "ecdsa_p384" => dh ? CngAlgorithm.ECDiffieHellmanP384 : CngAlgorithm.ECDsaP384,
-            "nistp521" or "ecdsa_p521" => dh ? CngAlgorithm.ECDiffieHellmanP521 : CngAlgorithm.ECDsaP521,
+            "nistp256" or "ecdsa_p256" => mode == ECMode.ECDH ? CngAlgorithm.ECDiffieHellmanP256 : CngAlgorithm.ECDsaP256,
+            "nistp384" or "ecdsa_p384" => mode == ECMode.ECDH ? CngAlgorithm.ECDiffieHellmanP384 : CngAlgorithm.ECDsaP384,
+            "nistp521" or "ecdsa_p521" => mode == ECMode.ECDH ? CngAlgorithm.ECDiffieHellmanP521 : CngAlgorithm.ECDsaP521,
             _ => null,
         };
 
         /// <summary>
-        /// Returns a <see cref="CngAlgorithm"/> value for the specified curve name.
+        /// Returns the BCRYPT magic value for a private key of the specified curve.
         /// </summary>
-        /// <param name="name"></param>
+        /// <param name="curve"></param>
+        /// <param name="mode"></param>
         /// <returns></returns>
         /// <exception cref="NotImplementedException"></exception>
-        public static uint EcdsaCurveNameToPrivateMagic(string name, bool dh = false) => name.ToLowerInvariant() switch
+        public static uint GetCurveBCryptPrivateMagic(ECCurve curve, ECMode mode) => curve.Oid.FriendlyName.ToLowerInvariant() switch
         {
-            "nistp256" or "ecdsa_p256" => dh ? BCRYPT_ECDH_PRIVATE_P256_MAGIC : BCRYPT_ECDSA_PRIVATE_P256_MAGIC,
-            "nistp384" or "ecdsa_p384" => dh ? BCRYPT_ECDH_PRIVATE_P384_MAGIC : BCRYPT_ECDSA_PRIVATE_P384_MAGIC,
-            "nistp521" or "ecdsa_p521" => dh ? BCRYPT_ECDH_PRIVATE_P521_MAGIC : BCRYPT_ECDSA_PRIVATE_P521_MAGIC,
+            "nistp256" or "ecdsa_p256" => mode == ECMode.ECDH ? BCRYPT_ECDH_PRIVATE_P256_MAGIC : BCRYPT_ECDSA_PRIVATE_P256_MAGIC,
+            "nistp384" or "ecdsa_p384" => mode == ECMode.ECDH ? BCRYPT_ECDH_PRIVATE_P384_MAGIC : BCRYPT_ECDSA_PRIVATE_P384_MAGIC,
+            "nistp521" or "ecdsa_p521" => mode == ECMode.ECDH ? BCRYPT_ECDH_PRIVATE_P521_MAGIC : BCRYPT_ECDSA_PRIVATE_P521_MAGIC,
+            _ => 0,
+        };
+
+        /// <summary>
+        /// Returns the BCRYPT magic value for a public key of the specified curve.
+        /// </summary>
+        /// <param name="curve"></param>
+        /// <param name="mode"></param>
+        /// <returns></returns>
+        /// <exception cref="NotImplementedException"></exception>
+        public static uint GetCurveBCryptPublicMagic(ECCurve curve, ECMode mode) => curve.Oid.FriendlyName.ToLowerInvariant() switch
+        {
+            "nistp256" or "ecdsa_p256" => mode == ECMode.ECDH ? BCRYPT_ECDH_PUBLIC_P256_MAGIC : BCRYPT_ECDSA_PUBLIC_P256_MAGIC,
+            "nistp384" or "ecdsa_p384" => mode == ECMode.ECDH ? BCRYPT_ECDH_PUBLIC_P384_MAGIC : BCRYPT_ECDSA_PUBLIC_P384_MAGIC,
+            "nistp521" or "ecdsa_p521" => mode == ECMode.ECDH ? BCRYPT_ECDH_PUBLIC_P521_MAGIC : BCRYPT_ECDSA_PUBLIC_P521_MAGIC,
             _ => 0,
         };
 
@@ -343,13 +382,48 @@ namespace IKVM.Java.Externs.sun.security.ec
         /// <param name="name"></param>
         /// <returns></returns>
         /// <exception cref="NotImplementedException"></exception>
-        public static uint EcdsaCurveNameToPublicMagic(string name, bool dh = false) => name.ToLowerInvariant() switch
+        public static int GetCurveKeySize(ECCurve curve) => curve.Oid.FriendlyName.ToLowerInvariant() switch
         {
-            "nistp256" or "ecdsa_p256" => dh ? BCRYPT_ECDH_PUBLIC_P256_MAGIC : BCRYPT_ECDSA_PUBLIC_P256_MAGIC,
-            "nistp384" or "ecdsa_p384" => dh ? BCRYPT_ECDH_PUBLIC_P384_MAGIC : BCRYPT_ECDSA_PUBLIC_P384_MAGIC,
-            "nistp521" or "ecdsa_p521" => dh ? BCRYPT_ECDH_PUBLIC_P521_MAGIC : BCRYPT_ECDSA_PUBLIC_P521_MAGIC,
+            "nistp256" or "ecdsa_p256" => 256,
+            "nistp384" or "ecdsa_p384" => 384,
+            "nistp521" or "ecdsa_p521" => 521,
             _ => 0,
         };
+
+        /// <summary>
+        /// Trims or expands an array to match the specified length.
+        /// </summary>
+        /// <param name="s"></param>
+        /// <param name="length"></param>
+        /// <returns></returns>
+        internal static byte[] NormalizeLength(byte[] s, int length)
+        {
+            return NormalizeLength(s.AsSpan(), length).ToArray();
+        }
+
+        /// <summary>
+        /// Trims or expands an array to match the specified length.
+        /// </summary>
+        /// <param name="s"></param>
+        /// <param name="length"></param>
+        /// <returns></returns>
+        internal static ReadOnlySpan<byte> NormalizeLength(ReadOnlySpan<byte> s, int length)
+        {
+            if (s.Length > length)
+            {
+                // trim start
+                s = s.Slice(s.Length - length);
+            }
+            else if (s.Length < length)
+            {
+                // rebuild longer
+                var t = new byte[length];
+                s.CopyTo(t.AsSpan().Slice(length - s.Length));
+                s = t;
+            }
+
+            return s;
+        }
 
     }
 

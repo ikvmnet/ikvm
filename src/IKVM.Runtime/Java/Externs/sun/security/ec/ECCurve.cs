@@ -31,8 +31,6 @@ namespace IKVM.Java.Externs.sun.security.ec
 
         public Oid Oid { get; set; }
 
-        public string FriendlyName => Oid.FriendlyName;
-
         public bool IsNamed => CurveType == ECCurve.ECCurveType.Named;
 
     }

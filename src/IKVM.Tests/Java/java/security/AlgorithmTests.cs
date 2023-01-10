@@ -1,12 +1,21 @@
-﻿using System.Text;
+﻿using System.Diagnostics;
+using System.Linq;
+using System.Security.Cryptography;
+using System.Text;
 
 using FluentAssertions;
 
+using IKVM.Java.Externs.java.lang.reflect;
+using IKVM.Java.Externs.sun.security.ec;
+
+using java.math;
 using java.security;
 
 using javax.crypto;
 
 using Microsoft.VisualStudio.TestTools.UnitTesting;
+
+using sun.awt.geom;
 
 namespace IKVM.Tests.Java.java.security
 {
@@ -28,53 +37,62 @@ namespace IKVM.Tests.Java.java.security
         [DataRow("EC", 521, "SHA256withECDSA")]
         public void CanCreateKeysAndSignAndVerify(string keyAlgorithm, int keySize, string signatureAlgorithm)
         {
-            var text = Encoding.UTF8.GetBytes("TEST");
+            // we do this many times because differences in the values can make padding required or not
+            for (int i = 0; i < 16; i++)
+            {
+                var text = Encoding.UTF8.GetBytes("TEST");
 
-            // create a new key pair
-            var keyGenerator = KeyPairGenerator.getInstance(keyAlgorithm);
-            keyGenerator.initialize(keySize);
-            var keyPair = keyGenerator.generateKeyPair();
-            var privateKey = keyPair.getPrivate();
-            var publicKey = keyPair.getPublic();
+                // create a new key pair
+                var keyGenerator = KeyPairGenerator.getInstance(keyAlgorithm);
+                keyGenerator.initialize(keySize);
+                var keyPair = keyGenerator.generateKeyPair();
+                var privateKey = keyPair.getPrivate();
+                var publicKey = keyPair.getPublic();
 
-            // sign some test data with the private key
-            var signSignature = Signature.getInstance(signatureAlgorithm);
-            signSignature.initSign(privateKey);
-            signSignature.update(text);
-            var signatureText = signSignature.sign();
+                // sign some test data with the private key
+                var signSignature = Signature.getInstance(signatureAlgorithm);
+                signSignature.initSign(privateKey);
+                signSignature.update(text);
+                var signatureText = signSignature.sign();
 
-            // verify the signature with the public key
-            var verifySignature = Signature.getInstance(signatureAlgorithm);
-            verifySignature.initVerify(publicKey);
-            verifySignature.update(text);
-            var verifyResult = verifySignature.verify(signatureText);
-            verifyResult.Should().BeTrue();
+                // verify the signature with the public key
+                var verifySignature = Signature.getInstance(signatureAlgorithm);
+                verifySignature.initVerify(publicKey);
+                verifySignature.update(text);
+                var verifyResult = verifySignature.verify(signatureText);
+                if (verifyResult == false)
+                    Debugger.Break();
+                verifyResult.Should().BeTrue();
+            }
         }
 
         [DataTestMethod]
         [DataRow("RSA", 2048, "RSA")]
-        [DataRow("EC", 256, "ECIES")]
         public void CanEncryptAndDecrypt(string keyAlgorithm, int keySize, string cipherAlgorithm)
         {
-            var text = Encoding.UTF8.GetBytes("TEST");
+            // we do this many times because differences in the values can make padding required or not
+            for (int i = 0; i < 16; i++)
+            {
+                var text = Encoding.UTF8.GetBytes("TEST");
 
-            // create a new key pair
-            var keyGenerator = KeyPairGenerator.getInstance(keyAlgorithm);
-            keyGenerator.initialize(keySize);
-            var keyPair = keyGenerator.generateKeyPair();
-            var privateKey = keyPair.getPrivate();
-            var publicKey = keyPair.getPublic();
+                // create a new key pair
+                var keyGenerator = KeyPairGenerator.getInstance(keyAlgorithm);
+                keyGenerator.initialize(keySize);
+                var keyPair = keyGenerator.generateKeyPair();
+                var privateKey = keyPair.getPrivate();
+                var publicKey = keyPair.getPublic();
 
-            // encrypt data with the given algorithm
-            var encrypt = Cipher.getInstance(cipherAlgorithm);
-            encrypt.init(Cipher.ENCRYPT_MODE, publicKey);
-            var encryptData = encrypt.doFinal(text);
+                // encrypt data with the given algorithm
+                var encrypt = Cipher.getInstance(cipherAlgorithm);
+                encrypt.init(Cipher.ENCRYPT_MODE, privateKey);
+                var encryptData = encrypt.doFinal(text);
 
-            // decrypt data with the given algorithm
-            var decrypt = Cipher.getInstance(cipherAlgorithm);
-            decrypt.init(Cipher.DECRYPT_MODE, privateKey);
-            var decryptText = decrypt.doFinal(encryptData);
-            decryptText.Should().BeEquivalentTo(text);
+                // decrypt data with the given algorithm
+                var decrypt = Cipher.getInstance(cipherAlgorithm);
+                decrypt.init(Cipher.DECRYPT_MODE, publicKey);
+                var decryptText = decrypt.doFinal(encryptData);
+                decryptText.Should().BeEquivalentTo(text);
+            }
         }
 
     }

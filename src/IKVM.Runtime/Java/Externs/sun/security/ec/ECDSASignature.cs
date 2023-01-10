@@ -64,11 +64,31 @@ namespace IKVM.Java.Externs.sun.security.ec
             if (curve.IsNamed == false)
                 throw new InvalidAlgorithmParameterException();
 
+            // lookup key size as we may need to pad the signature
+            var keySize = ECUtil.GetCurveKeySize(curve);
+            if (keySize == 0)
+                throw new InvalidAlgorithmParameterException();
+
+            // signature is r and s concatinated
+            var keyLength = (keySize + 7) >> 3;
+            var sigLength = signature.Length / 2;
+            if (sigLength != keyLength)
+            {
+                var r = ECUtil.NormalizeLength((ReadOnlySpan<byte>)signature.AsSpan().Slice(0, sigLength), keyLength);
+                var s = ECUtil.NormalizeLength((ReadOnlySpan<byte>)signature.AsSpan().Slice(sigLength, sigLength), keyLength);
+
+                // copy to appropriately sized new signature
+                var tmp = new byte[r.Length + s.Length];
+                r.CopyTo(tmp);
+                s.CopyTo(tmp.AsSpan().Slice(keyLength));
+                signature = tmp;
+            }
+
             try
             {
                 using var dsa = ECUtil.ImportECDsaPublicKey(curve, w);
-                var r = dsa.VerifyHash(digest, signature);
-                return r;
+                var result = dsa.VerifyHash(digest, signature);
+                return result;
             }
             catch (CryptographicException e)
             {

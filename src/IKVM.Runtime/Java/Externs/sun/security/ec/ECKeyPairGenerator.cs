@@ -30,11 +30,11 @@ namespace IKVM.Java.Externs.sun.security.ec
 #if FIRST_PASS
             throw new NotImplementedException();
 #else
-#if NET47_OR_GREATER || NETCOREAPP3_1_OR_GREATER
             var curve = ECUtil.DecodeParameters(encodedParams);
             if (curve.IsNamed == false)
                 throw new InvalidAlgorithmParameterException();
 
+#if NET47_OR_GREATER || NETCOREAPP3_1_OR_GREATER
             try
             {
                 // create a new ECDsa instance, set parameters, and generate key; then export results
@@ -55,32 +55,23 @@ namespace IKVM.Java.Externs.sun.security.ec
                 throw new IllegalStateException(e);
             }
 #else
-            var curve = ECUtil.DecodeParameters(encodedParams);
-            if (curve.IsNamed == false)
-                throw new InvalidAlgorithmParameterException();
 
             try
             {
-                var algorithm = ECUtil.EcdsaCurveNameToAlgorithm(curve.FriendlyName);
+                var algorithm = ECUtil.GetCurveCngAlgorithm(curve, ECUtil.ECMode.ECDsa);
                 if (algorithm == null)
                     throw new InvalidAlgorithmParameterException();
 
-                // byte size of keys
-                var keyLength = keySize / 8;
-
                 // generate a new CNG key
-                var key = CngKey.Create(algorithm, null, new CngKeyCreationParameters() { ExportPolicy = CngExportPolicies.AllowPlaintextExport, Parameters = { new CngProperty("Length", BitConverter.GetBytes(keySize), CngPropertyOptions.None) } });
+                var key = CngKey.Create(algorithm, null, new CngKeyCreationParameters() { ExportPolicy = CngExportPolicies.AllowPlaintextExport });
                 var src = key.Export(CngKeyBlobFormat.EccPrivateBlob).AsSpan();
 
                 // read the key magic and validate
-                var magic = MemoryMarshal.Read<uint>(src.Slice(0, sizeof(uint)));
-                if (magic != ECUtil.EcdsaCurveNameToPrivateMagic(curve.FriendlyName))
+                if (MemoryMarshal.Read<uint>(src.Slice(0, sizeof(uint))) != ECUtil.GetCurveBCryptPrivateMagic(curve, ECUtil.ECMode.ECDsa))
                     throw new KeyException();
 
-                // read the key size and validate
-                var kzz = MemoryMarshal.Read<uint>(src.Slice(sizeof(uint), sizeof(uint)));
-                if (kzz != keyLength)
-                    throw new KeyException();
+                // read the key length, which is in bytes
+                var keyLength = (int)MemoryMarshal.Read<uint>(src.Slice(sizeof(uint), sizeof(uint)));
 
                 // ECPoint structure is uncompressed, followed by X and Y, which start at the beginning of the BLOB
                 var q = new byte[1 + keyLength + keyLength];

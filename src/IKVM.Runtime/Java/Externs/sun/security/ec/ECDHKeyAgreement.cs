@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Buffers;
 using System.Security.Cryptography;
 
 #if FIRST_PASS == false
@@ -16,6 +17,8 @@ namespace IKVM.Java.Externs.sun.security.ec
     /// </summary>
     static class ECDHKeyAgreement
     {
+
+        readonly static RandomNumberGenerator rng = RandomNumberGenerator.Create();
 
         /// <summary>
         /// Implements the native method for 'deriveKey'.
@@ -38,21 +41,33 @@ namespace IKVM.Java.Externs.sun.security.ec
 
             try
             {
-                // array is the result of BigInteger.toByteArray, which may include a sign
-                if (s[0] == 0)
-                {
-                    var t = new byte[s.Length - 1];
-                    s.AsSpan().Slice(1).CopyTo(t);
-                    s = t;
-                }
-
                 // read in keys
                 using var prv = ECUtil.ImportECDiffieHellmanPrivateKey(curve, s);
                 using var pub = ECUtil.ImportECDiffieHellmanPublicKey(curve, ECUtil.ImportECPoint(w));
 
-                // derive material and return
-                var mat = prv.DeriveKeyMaterial(pub);
-                return mat;
+                // generate new seed
+                var seed = (byte[])null;
+                try
+                {
+                    seed = ArrayPool<byte>.Shared.Rent(64);
+                    rng.GetBytes(seed);
+
+#if NET47_OR_GREATER || NETCOREAPP3_1_OR_GREATER
+                    var secret = prv.DeriveKeyTls(pub, Array.Empty<byte>(), seed);
+#else
+                    ((ECDiffieHellmanCng)prv).Label = Array.Empty<byte>();
+                    ((ECDiffieHellmanCng)prv).Seed = seed;
+                    ((ECDiffieHellmanCng)prv).HashAlgorithm = ECUtil.GetCurveCngAlgorithm(curve, ECUtil.ECMode.ECDH);
+                    ((ECDiffieHellmanCng)prv).KeyDerivationFunction = ECDiffieHellmanKeyDerivationFunction.Tls;
+                    var secret = prv.DeriveKeyMaterial(pub);
+#endif
+                    return secret;
+                }
+                finally
+                {
+                    if (seed != null)
+                        ArrayPool<byte>.Shared.Return(seed);
+                }
             }
             catch (CryptographicException e)
             {
