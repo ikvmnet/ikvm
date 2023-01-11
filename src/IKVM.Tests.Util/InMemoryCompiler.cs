@@ -192,6 +192,7 @@ namespace IKVM.Tests.Util
             if (l.size() > 0)
             {
                 var o = new ArrayList();
+                o.add("-verbose");
                 o.add("-g");
 
                 var d = new javax.tools.DiagnosticCollector();
@@ -200,8 +201,9 @@ namespace IKVM.Tests.Util
                 {
                     var m = new StringBuilder();
                     var a = d.getDiagnostics();
-                    for (int i = 0; i < l.size(); i++)
+                    for (int i = 0; i < a.size(); i++)
                         m.append(((javax.tools.Diagnostic)a.get(i)).getMessage(Locale.US));
+
                     throw new System.Exception(m.toString());
                 }
             }

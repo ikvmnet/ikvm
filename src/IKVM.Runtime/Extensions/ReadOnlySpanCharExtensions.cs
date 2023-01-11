@@ -16,7 +16,7 @@ namespace IKVM.Runtime.Extensions
         /// <returns></returns>
         public static int GetHashCodeExtension(this ReadOnlySpan<char> span)
         {
-#if NET461
+#if NETFRAMEWORK
             return span.ToString().GetHashCode();
 #else
             return string.GetHashCode(span);

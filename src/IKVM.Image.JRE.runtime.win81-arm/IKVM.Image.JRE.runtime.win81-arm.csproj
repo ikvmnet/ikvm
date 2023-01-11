@@ -22,7 +22,7 @@
         <PublishProjectReference Include="..\IKVM.Image.JRE-bin\IKVM.Image.JRE-bin.csproj">
             <SetTargetFramework>TargetFramework=net461</SetTargetFramework>
             <SetRuntimeIdentifier>RuntimeIdentifier=win81-arm</SetRuntimeIdentifier>
-            <ProjectPackagePath>ikvm\netcoreapp3.1\win81-arm\bin</ProjectPackagePath>
+            <ProjectPackagePath>ikvm\net461\win81-arm\bin</ProjectPackagePath>
         </PublishProjectReference>
         <PublishProjectReference Include="..\IKVM.Image.JRE-bin\IKVM.Image.JRE-bin.csproj">
             <SetTargetFramework>TargetFramework=netcoreapp3.1</SetTargetFramework>

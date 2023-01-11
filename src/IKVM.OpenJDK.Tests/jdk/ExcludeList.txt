@@ -615,6 +615,7 @@ java/awt/datatransfer/HTMLDataFlavors/PutAllHtmlFlavorsOnClipboard.java         
 java/awt/datatransfer/HTMLDataFlavors/PutOnlyAllHtmlFlavorOnClipboard.java                                              generic-all
 java/awt/datatransfer/HTMLDataFlavors/PutSelectionAndFragmentHtmlFlavorsOnClipboard.java                                generic-all
 java/awt/datatransfer/MappingGenerationTest/MappingGenerationTest.java                                                  generic-all
+java/awt/datatransfer/ClipboardInterVMTest/ClipboardInterVMTest.java                                                    generic-all
 java/awt/dnd/AcceptDropMultipleTimes/AcceptDropMultipleTimes.java                                                       generic-all
 java/awt/dnd/BadSerializaionTest/BadSerializationTest.java                                                              generic-all
 java/awt/dnd/Button2DragTest/Button2DragTest.html                                                                       generic-all
