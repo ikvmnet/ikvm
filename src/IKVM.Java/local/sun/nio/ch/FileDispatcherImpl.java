@@ -297,6 +297,10 @@ class FileDispatcherImpl extends FileDispatcher
         return new FileDescriptor();
     }
 
+    boolean transferToDirectlyNeedsPositionLock() {
+        return false;
+    }
+
     @DllImportAttribute.Annotation(value="kernel32", SetLastError=true)
     private static native int LockFileEx(SafeFileHandle hFile, int dwFlags, int dwReserved, int nNumberOfBytesToLockLow, int nNumberOfBytesToLockHigh, OVERLAPPED lpOverlapped);
 

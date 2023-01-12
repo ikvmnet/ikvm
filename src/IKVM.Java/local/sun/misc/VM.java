@@ -149,7 +149,7 @@ public class VM {
 
     private static volatile boolean booted = false;
     private static final Object lock = new Object();
-
+    
     static {
         // [IKVM] force System properties initialization ("booting")
         System.lineSeparator();
@@ -274,7 +274,7 @@ public class VM {
     public static void saveAndRemoveProperties(Properties props) {
         if (booted)
             throw new IllegalStateException("System initialization has completed");
-
+            
         Lazy.savedProps.putAll(props);
 
         // Set the maximum amount of direct memory.  This value is controlled
@@ -316,6 +316,9 @@ public class VM {
     // set for the class libraries.
     //
     public static void initializeOSEnvironment() {
+        if (!booted) {
+            OSEnvironment.initialize();
+        }
     }
 
     /* Current count of objects pending for finalization */
