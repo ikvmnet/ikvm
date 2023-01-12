@@ -83,19 +83,19 @@ namespace IKVM.Java.Externs.java.util.zip
             {
                 // For compatibility with real file i/o, we try to read the requested number
                 // of bytes, instead of returning earlier if the underlying InputStream does so.
-                int totalRead = 0;
+                var totalRead = 0;
                 while (count > 0)
                 {
-                    int read = inp.read(buffer, offset, count);
+                    var read = inp.read(buffer, offset, count);
                     if (read <= 0)
-                    {
                         break;
-                    }
+
                     offset += read;
                     count -= read;
                     totalRead += read;
                     position += read;
                 }
+
                 return totalRead;
             }
 
@@ -110,23 +110,22 @@ namespace IKVM.Java.Externs.java.util.zip
                     if (value < position)
                     {
                         if (value < 0)
-                        {
                             throw new System.IO.IOException("Negative seek offset");
-                        }
+
                         position = 0;
                         inp.close();
                         inp = zipFile.getInputStream(entry);
                     }
-                    long skip = value - position;
+
+                    var skip = value - position;
                     while (skip > 0)
                     {
-                        long skipped = inp.skip(skip);
+                        var skipped = inp.skip(skip);
                         if (skipped == 0)
                         {
                             if (position != entry.getSize())
-                            {
                                 throw new System.IO.IOException("skip failed");
-                            }
+
                             // we're actually at EOF in the InputStream, but we set the virtual position beyond EOF
                             position += skip;
                             break;
@@ -156,6 +155,7 @@ namespace IKVM.Java.Externs.java.util.zip
                         Position = entry.getSize() + offset;
                         break;
                 }
+
                 return position;
             }
 
@@ -179,26 +179,35 @@ namespace IKVM.Java.Externs.java.util.zip
 
 #endif
 
+        /// <summary>
+        /// Implements the native method for 'expandIkvmClasses'.
+        /// </summary>
+        /// <param name="_zipFile"></param>
+        /// <param name="_entries"></param>
         public static void expandIkvmClasses(object _zipFile, object _entries)
         {
-#if !FIRST_PASS
-            global::java.util.zip.ZipFile zipFile = (global::java.util.zip.ZipFile)_zipFile;
-            global::java.util.LinkedHashMap entries = (global::java.util.LinkedHashMap)_entries;
+#if FIRST_PASS
+            throw new NotImplementedException();
+#else
+            var zipFile = (global::java.util.zip.ZipFile)_zipFile;
+            var entries = (global::java.util.LinkedHashMap)_entries;
 
             try
             {
-                string path = zipFile.getName();
-                global::java.util.zip.ZipEntry entry = (global::java.util.zip.ZipEntry)entries.get(JVM.JarClassList);
-                if (entry != null && VfsTable.Default.IsPath(path))
+                var path = zipFile.getName();
+                if (VfsTable.Default.IsPath(path))
                 {
-                    using (var stream = new ZipEntryStream(zipFile, entry))
+                    var entry = (global::java.util.zip.ZipEntry)entries.get(JVM.JarClassList);
+                    if (entry != null)
                     {
+                        using var stream = new ZipEntryStream(zipFile, entry);
                         entries.remove(entry.name);
-                        BinaryReader br = new BinaryReader(stream);
-                        int count = br.ReadInt32();
+
+                        var br = new BinaryReader(stream);
+                        var count = br.ReadInt32();
                         for (int i = 0; i < count; i++)
                         {
-                            global::java.util.zip.ClassStubZipEntry classEntry = new global::java.util.zip.ClassStubZipEntry(path, br.ReadString());
+                            var classEntry = new global::java.util.zip.ClassStubZipEntry(path, br.ReadString());
                             classEntry.setMethod(global::java.util.zip.ClassStubZipEntry.STORED);
                             classEntry.setTime(entry.getTime());
                             entries.put(classEntry.name, classEntry);
