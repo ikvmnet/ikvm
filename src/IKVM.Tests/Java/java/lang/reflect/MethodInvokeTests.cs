@@ -1,10 +1,9 @@
 ﻿using FluentAssertions;
-
 using java.lang;
 
 using Microsoft.VisualStudio.TestTools.UnitTesting;
 
-namespace IKVM.Tests.Java.java.lang
+namespace IKVM.Tests.Java.java.lang.reflect
 {
 
     [TestClass]

@@ -297,6 +297,10 @@ class FileDispatcherImpl extends FileDispatcher
         return new FileDescriptor();
     }
 
+    boolean canTransferToDirectly(java.nio.channels.SelectableChannel sc) {
+        return false;
+    }
+
     boolean transferToDirectlyNeedsPositionLock() {
         return false;
     }

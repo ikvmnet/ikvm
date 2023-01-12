@@ -21,6 +21,7 @@
   jeroen@frijters.net
   
 */
+using System;
 using System.Collections.Generic;
 
 namespace IKVM.Java.Externs.java.lang.invoke
@@ -33,44 +34,43 @@ namespace IKVM.Java.Externs.java.lang.invoke
 		public static global::java.lang.invoke.MethodHandle makePairwiseConvert(global::java.lang.invoke.MethodHandle target, global::java.lang.invoke.MethodType srcType, bool strict, bool monobox)
 		{
 #if FIRST_PASS
-		return null;
+			throw new NotImplementedException();
 #else
-			object[] convSpecs = global::java.lang.invoke.MethodHandleImpl.computeValueConversions(srcType, target.type(), strict, monobox);
-			List<global::java.lang.invoke.LambdaForm.Name> names = new List<global::java.lang.invoke.LambdaForm.Name>();
+			var convSpecs = global::java.lang.invoke.MethodHandleImpl.computeValueConversions(srcType, target.type(), strict, monobox);
+			var names = new List<global::java.lang.invoke.LambdaForm.Name>();
 			names.Add(new global::java.lang.invoke.LambdaForm.Name(0, global::java.lang.invoke.LambdaForm.BasicType.L_TYPE));
+
 			for (int i = 0; i < srcType.parameterCount(); i++)
-			{
 				names.Add(new global::java.lang.invoke.LambdaForm.Name(i + 1, global::java.lang.invoke.LambdaForm.BasicType.basicType(srcType.parameterType(i))));
-			}
-			global::java.lang.invoke.LambdaForm.Name[] invokeArgs = new global::java.lang.invoke.LambdaForm.Name[srcType.parameterCount()];
+
+			var invokeArgs = new global::java.lang.invoke.LambdaForm.Name[srcType.parameterCount()];
 			for (int i = 0; i < invokeArgs.Length; i++)
 			{
-				object convSpec = convSpecs[i];
+				var convSpec = convSpecs[i];
 				if (convSpec == null)
 				{
 					invokeArgs[i] = names[i + 1];
 				}
 				else
 				{
-					global::java.lang.invoke.LambdaForm.Name temp = new global::java.lang.invoke.LambdaForm.Name(convSpec as global::java.lang.invoke.MethodHandle ?? global::java.lang.invoke.MethodHandleImpl.Lazy.MH_castReference.bindTo(convSpec), names[i + 1]);
+					var temp = new global::java.lang.invoke.LambdaForm.Name(convSpec as global::java.lang.invoke.MethodHandle ?? global::java.lang.invoke.MethodHandleImpl.Lazy.MH_castReference.bindTo(convSpec), names[i + 1]);
 					names.Add(temp);
 					invokeArgs[i] = temp;
 				}
 			}
+
 			names.Add(new global::java.lang.invoke.LambdaForm.Name(target, invokeArgs));
 			if (convSpecs[convSpecs.Length - 1] != null)
 			{
-				object convSpec = convSpecs[convSpecs.Length - 1];
+				var convSpec = convSpecs[convSpecs.Length - 1];
 				if (convSpec != global::java.lang.Void.TYPE)
-				{
 					names.Add(new global::java.lang.invoke.LambdaForm.Name(convSpec as global::java.lang.invoke.MethodHandle ?? global::java.lang.invoke.MethodHandleImpl.Lazy.MH_castReference.bindTo(convSpec), names[names.Count - 1]));
-				}
 			}
+
 			if (target.type().returnType() == global::java.lang.Void.TYPE && srcType.returnType() != global::java.lang.Void.TYPE)
-			{
 				names.Add(new global::java.lang.invoke.LambdaForm.Name(global::java.lang.invoke.LambdaForm.constantZero(global::java.lang.invoke.LambdaForm.BasicType.basicType(srcType.returnType()))));
-			}
-			global::java.lang.invoke.LambdaForm form = new global::java.lang.invoke.LambdaForm("PairwiseConvert", srcType.parameterCount() + 1, names.ToArray(), srcType.returnType() == global::java.lang.Void.TYPE ? global::java.lang.invoke.LambdaForm.VOID_RESULT : global::java.lang.invoke.LambdaForm.LAST_RESULT, false);
+
+			var form = new global::java.lang.invoke.LambdaForm("PairwiseConvert", srcType.parameterCount() + 1, names.ToArray(), srcType.returnType() == global::java.lang.Void.TYPE ? global::java.lang.invoke.LambdaForm.VOID_RESULT : global::java.lang.invoke.LambdaForm.LAST_RESULT, false, null);
 			return new global::java.lang.invoke.LightWeightMethodHandle(srcType, form);
 #endif
 		}
