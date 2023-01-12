@@ -15,7 +15,7 @@ namespace IKVM.Tests.Runtime.Vfs
     {
 
         [TestMethod]
-        public void Can_get_assembly_dir()
+        public void CanGetAssemblyDirectory()
         {
             var ctx = VfsRuntimeContext.Instance;
             var dir = new VfsAssemblyDirectory(ctx);
@@ -28,7 +28,7 @@ namespace IKVM.Tests.Runtime.Vfs
         }
 
         [TestMethod]
-        public void Can_get_assembly_resource()
+        public void CanGetAssemblyResource()
         {
             var ctx = VfsRuntimeContext.Instance;
             var dir = new VfsAssemblyDirectory(ctx);
@@ -44,11 +44,55 @@ namespace IKVM.Tests.Runtime.Vfs
         }
 
         [TestMethod]
-        public void Can_find_class_file_in_package()
+        public void CanFindClassFileInPackage()
         {
             var ctx = VfsRuntimeContext.Instance;
             var dir = new VfsAssemblyClassDirectory(ctx, typeof(global::java.lang.Object).Assembly, "java.lang");
             var ent = dir.GetEntry("Object.class");
+            ent.Should().NotBeNull();
+            ent.Should().BeOfType<VfsAssemblyClassFile>();
+            new BinaryReader(((VfsFile)ent).Open(FileMode.Open, FileAccess.Read)).ReadUInt32().Should().Be(0xBEBAFECA);
+        }
+
+        [TestMethod]
+        public void CanFindClassFileForNestedClass()
+        {
+            var ctx = VfsRuntimeContext.Instance;
+            var dir = new VfsAssemblyClassDirectory(ctx, typeof(global::java.lang.Character).Assembly, "java.lang");
+            var ent = dir.GetEntry("Character$Subset.class");
+            ent.Should().NotBeNull();
+            ent.Should().BeOfType<VfsAssemblyClassFile>();
+            new BinaryReader(((VfsFile)ent).Open(FileMode.Open, FileAccess.Read)).ReadUInt32().Should().Be(0xBEBAFECA);
+        }
+
+        [TestMethod]
+        public void CanFindClassFileForAnonymousClass()
+        {
+            var ctx = VfsRuntimeContext.Instance;
+            var dir = new VfsAssemblyClassDirectory(ctx, typeof(global::java.lang.ClassLoader).Assembly, "java.lang");
+            var ent = dir.GetEntry("ClassLoader$1.class");
+            ent.Should().NotBeNull();
+            ent.Should().BeOfType<VfsAssemblyClassFile>();
+            new BinaryReader(((VfsFile)ent).Open(FileMode.Open, FileAccess.Read)).ReadUInt32().Should().Be(0xBEBAFECA);
+        }
+
+        [TestMethod]
+        public void CanFindClassFileForInnerClassOfInterface()
+        {
+            var ctx = VfsRuntimeContext.Instance;
+            var dir = new VfsAssemblyClassDirectory(ctx, typeof(global::java.lang.CharSequence).Assembly, "java.lang");
+            var ent = dir.GetEntry("CharSequence$1CharIterator.class");
+            ent.Should().NotBeNull();
+            ent.Should().BeOfType<VfsAssemblyClassFile>();
+            new BinaryReader(((VfsFile)ent).Open(FileMode.Open, FileAccess.Read)).ReadUInt32().Should().Be(0xBEBAFECA);
+        }
+
+        [TestMethod]
+        public void CanFindClassFileForNestedClassOfInterface()
+        {
+            var ctx = VfsRuntimeContext.Instance;
+            var dir = new VfsAssemblyClassDirectory(ctx, typeof(global::javax.tools.JavaFileObject).Assembly, "javax.tools");
+            var ent = dir.GetEntry("JavaFileObject$Kind.class");
             ent.Should().NotBeNull();
             ent.Should().BeOfType<VfsAssemblyClassFile>();
             new BinaryReader(((VfsFile)ent).Open(FileMode.Open, FileAccess.Read)).ReadUInt32().Should().Be(0xBEBAFECA);

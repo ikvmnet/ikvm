@@ -21,21 +21,11 @@
     </ItemGroup>
 
     <ItemGroup Condition=" '$(TargetFramework)' == '' ">
-        <!--<PublishProjectReference Include="..\ikvmc\ikvmc.csproj">
-            <SetTargetFramework>TargetFramework=net461</SetTargetFramework>
-            <SetRuntimeIdentifier>RuntimeIdentifier=linux-arm64</SetRuntimeIdentifier>
-            <ProjectPackagePath>ikvmc\net461\linux-arm64</ProjectPackagePath>
-        </PublishProjectReference>-->
         <PublishProjectReference Include="..\ikvmc\ikvmc.csproj">
             <SetTargetFramework>TargetFramework=netcoreapp3.1</SetTargetFramework>
             <SetRuntimeIdentifier>RuntimeIdentifier=linux-arm64</SetRuntimeIdentifier>
             <ProjectPackagePath>ikvmc\netcoreapp3.1\linux-arm64</ProjectPackagePath>
         </PublishProjectReference>
-        <!--<PublishProjectReference Include="..\ikvmstub\ikvmstub.csproj">
-            <SetTargetFramework>TargetFramework=net461</SetTargetFramework>
-            <SetRuntimeIdentifier>RuntimeIdentifier=linux-arm64</SetRuntimeIdentifier>
-            <ProjectPackagePath>ikvmstub\net461\linux-arm64</ProjectPackagePath>
-        </PublishProjectReference>-->
         <PublishProjectReference Include="..\ikvmstub\ikvmstub.csproj">
             <SetTargetFramework>TargetFramework=netcoreapp3.1</SetTargetFramework>
             <SetRuntimeIdentifier>RuntimeIdentifier=linux-arm64</SetRuntimeIdentifier>
