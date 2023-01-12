@@ -1,8 +1,0 @@
-{
-  "profiles": {
-    "java": {
-        "commandName": "Project",
-        "commandLineArgs": "-jar C:\\Users\\jhaltom\\Downloads\\dice-win-demo\\dice.jar"
-    }
-  }
-}
