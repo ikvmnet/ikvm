@@ -15,6 +15,7 @@ com/sun/java/swing/plaf/gtk/Test6963870.java                                    
 com/sun/java/swing/plaf/windows/8016551/bug8016551.java                                                                 generic-all
 com/sun/java/swing/plaf/windows/Test6824600.java                                                                        generic-all
 com/sun/java/swing/plaf/windows/WindowsRadioButtonUI/7089914/bug7089914.java                                            generic-all
+com/sun/jdi/InvokeVarArgs.java                                                                                          generic-all
 com/sun/jdi/AcceptTimeout.java                                                                                          generic-all
 com/sun/jdi/AccessSpecifierTest.java                                                                                    generic-all
 com/sun/jdi/AfterThreadDeathTest.java                                                                                   generic-all
@@ -257,14 +258,14 @@ java/awt/Focus/8073453/AWTFocusTransitionTest.java                              
 java/awt/Focus/8073453/SwingFocusTransitionTest.java                                                                    generic-all
 java/awt/FontClass/DebugFonts.java                                                                                      generic-all
 java/awt/FullScreen/MultimonFullscreenTest/MultimonDeadlockTest.java                                                    generic-all
-java/awt/GraphicsEnvironment/TestDetectHeadless/TestDetectHeadless.java                                                 generic-all
+java/awt/GraphicsEnvironment/TestDetectHeadless/TestDetectHeadless.sh                                                   generic-all
 java/awt/image/BufferedImage/GetPropertyNames.java                                                                      generic-all
 java/awt/image/DrawImage/IncorrectClipXorModeSurface2Surface.java                                                       generic-all
 java/awt/MenuBar/RemoveHelpMenu/RemoveHelpMenu.java                                                                     generic-all
 java/awt/Mouse/MouseDragEvent/MouseDraggedTest.java                                                                     generic-all
 java/awt/Mouse/RemovedComponentMouseListener/RemovedComponentMouseListener.java                                         generic-all
 java/awt/ScrollPane/bug8077409Test.java                                                                                 generic-all
-java/awt/Toolkit/AutoShutdown/EventQueuePush/EventQueuePushAutoshutdown.java                                            generic-all
+java/awt/Toolkit/AutoShutdown/EventQueuePush/EventQueuePushAutoshutdown.sh                                              generic-all
 java/awt/Toolkit/GetImage/bug8078165.java                                                                               generic-all
 java/awt/TrayIcon/8072769/bug8072769.java                                                                               generic-all
 java/awt/Component/7097771/bug7097771.java                                                                              generic-all
@@ -2108,6 +2109,7 @@ javax/imageio/plugins/shared/BitDepth.java                                      
 javax/imageio/plugins/wbmp/CanDecodeTest.java                                                                           generic-all
 javax/imageio/stream/StreamCloserLeak/run_test.java                                                                     generic-all
 javax/imageio/stream/StreamCloserLeak/run_test.sh                                                                       generic-all
+javax/imageio/plugins/jpeg/JpegImageColorSpaceTest.java                                                                 generic-all
 javax/management/ImplementationVersion/ImplVersionTest.java                                                             generic-all
 javax/management/Introspector/AnnotationSecurityTest.java                                                               generic-all
 javax/management/Introspector/ClassLeakTest.java                                                                        generic-all
@@ -3393,6 +3395,7 @@ tools/pack200/TestExceptions.java                                               
 tools/pack200/TimeStamp.java                                                                                            generic-all
 tools/pack200/UnpackerMemoryTest.java                                                                                   generic-all
 tools/pack200/typeannos/TestTypeAnnotations.java                                                                        generic-all
+tools/pack200/DefaultTimeZoneTest.java                                                                                  generic-all
 vm/verifier/TestStaticIF.java                                                                                           generic-all
 vm/verifier/VerifyProtectedConstructor.java                                                                             generic-all
 vm/verifier/defaultMethods/DefaultMethodRegressionTestsRun.java                                                         generic-all
