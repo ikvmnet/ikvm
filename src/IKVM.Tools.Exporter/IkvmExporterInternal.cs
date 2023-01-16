@@ -19,8 +19,6 @@ namespace IKVM.Tools.Exporter
     /// </summary>
     static class IkvmExporterInternal
     {
-
-        static int zipCount;
         static ZipOutputStream zipFile;
         static Dictionary<string, string> done = new Dictionary<string, string>();
         static Dictionary<string, TypeWrapper> todo = new Dictionary<string, TypeWrapper>();
@@ -207,10 +205,7 @@ namespace IKVM.Tools.Exporter
                 catch (ZipException x)
                 {
                     rc = 1;
-                    if (zipCount == 0)
-                        Console.Error.WriteLine("Error: Assembly contains no public IKVM.NET compatible types");
-                    else
-                        Console.Error.WriteLine("Error: {0}", x.Message);
+                    Console.Error.WriteLine("Error: {0}", x.Message);
                 }
             }
 
@@ -268,7 +263,6 @@ namespace IKVM.Tools.Exporter
 
         private static void WriteClass(TypeWrapper tw)
         {
-            zipCount++;
             MemoryStream mem = new MemoryStream();
             IKVM.StubGen.StubGenerator.WriteClass(mem, tw, includeNonPublicInterfaces, includeNonPublicMembers, includeSerialVersionUID, includeParameterNames);
             ZipEntry entry = new ZipEntry(tw.Name.Replace('.', '/') + ".class");
