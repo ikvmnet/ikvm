@@ -118,6 +118,7 @@ namespace IKVM.Tools.Exporter
             int rc = 0;
             if (assembly == null)
             {
+                rc = 1;
                 Console.Error.WriteLine("Error: Assembly \"{0}\" not found", assemblyNameOrPath);
             }
             else
