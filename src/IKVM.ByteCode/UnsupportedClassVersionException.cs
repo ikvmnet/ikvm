@@ -5,7 +5,7 @@
     /// Describes an attempt to parse an unsupported class file version.
     /// </summary>
     public sealed class UnsupportedClassVersionException :
-        ClassReaderException
+        ByteCodeException
     {
 
         readonly int majorVersion;

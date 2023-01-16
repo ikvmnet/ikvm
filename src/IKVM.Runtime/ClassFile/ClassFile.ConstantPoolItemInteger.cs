@@ -26,34 +26,34 @@ namespace IKVM.Internal
 {
 
     sealed partial class ClassFile
-	{
+    {
         private sealed class ConstantPoolItemInteger : ConstantPoolItem
-		{
-			internal int v;
+        {
+            internal int v;
 
-			internal ConstantPoolItemInteger(BigEndianBinaryReader br)
-			{
-				v = br.ReadInt32();
-			}
+            internal ConstantPoolItemInteger(BigEndianBinaryReader br)
+            {
+                v = br.ReadInt32();
+            }
 
-			internal override ConstantType GetConstantType()
-			{
-				return ConstantType.Integer;
-			}
+            internal override ConstantType GetConstantType()
+            {
+                return ConstantType.Integer;
+            }
 
-			internal int Value
-			{
-				get
-				{
-					return v;
-				}
-			}
+            internal int Value
+            {
+                get
+                {
+                    return v;
+                }
+            }
 
-			internal override object GetRuntimeValue()
-			{
-				return v;
-			}
-		}
-	}
+            internal override object GetRuntimeValue()
+            {
+                return v;
+            }
+        }
+    }
 
 }

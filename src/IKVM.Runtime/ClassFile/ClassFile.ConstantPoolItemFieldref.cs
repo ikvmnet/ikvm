@@ -26,79 +26,79 @@ namespace IKVM.Internal
 {
 
     sealed partial class ClassFile
-	{
+    {
         internal sealed class ConstantPoolItemFieldref : ConstantPoolItemFMI
-		{
-			private FieldWrapper field;
-			private TypeWrapper fieldTypeWrapper;
+        {
+            private FieldWrapper field;
+            private TypeWrapper fieldTypeWrapper;
 
-			internal ConstantPoolItemFieldref(BigEndianBinaryReader br) : base(br)
-			{
-			}
+            internal ConstantPoolItemFieldref(BigEndianBinaryReader br) : base(br)
+            {
+            }
 
-			protected override void Validate(string name, string descriptor, int majorVersion)
-			{
-				if(!IsValidFieldSig(descriptor))
-				{
-					throw new ClassFormatError("Invalid field signature \"{0}\"", descriptor);
-				}
-				if(!IsValidFieldName(name, majorVersion))
-				{
-					throw new ClassFormatError("Invalid field name \"{0}\"", name);
-				}
-			}
+            protected override void Validate(string name, string descriptor, int majorVersion)
+            {
+                if (!IsValidFieldSig(descriptor))
+                {
+                    throw new ClassFormatError("Invalid field signature \"{0}\"", descriptor);
+                }
+                if (!IsValidFieldName(name, majorVersion))
+                {
+                    throw new ClassFormatError("Invalid field name \"{0}\"", name);
+                }
+            }
 
-			internal TypeWrapper GetFieldType()
-			{
-				return fieldTypeWrapper;
-			}
+            internal TypeWrapper GetFieldType()
+            {
+                return fieldTypeWrapper;
+            }
 
-			internal override void Link(TypeWrapper thisType, LoadMode mode)
-			{
-				base.Link(thisType, mode);
-				lock(this)
-				{
-					if(fieldTypeWrapper != null)
-					{
-						return;
-					}
-				}
-				FieldWrapper fw = null;
-				TypeWrapper wrapper = GetClassType();
-				if(wrapper == null)
-				{
-					return;
-				}
-				if(!wrapper.IsUnloadable)
-				{
-					fw = wrapper.GetFieldWrapper(Name, Signature);
-					if(fw != null)
-					{
-						fw.Link(mode);
-					}
-				}
-				ClassLoaderWrapper classLoader = thisType.GetClassLoader();
-				TypeWrapper fld = classLoader.FieldTypeWrapperFromSig(this.Signature, mode);
-				lock(this)
-				{
-					if(fieldTypeWrapper == null)
-					{
-						fieldTypeWrapper = fld;
-						field = fw;
-					}
-				}
-			}
+            internal override void Link(TypeWrapper thisType, LoadMode mode)
+            {
+                base.Link(thisType, mode);
+                lock (this)
+                {
+                    if (fieldTypeWrapper != null)
+                    {
+                        return;
+                    }
+                }
+                FieldWrapper fw = null;
+                TypeWrapper wrapper = GetClassType();
+                if (wrapper == null)
+                {
+                    return;
+                }
+                if (!wrapper.IsUnloadable)
+                {
+                    fw = wrapper.GetFieldWrapper(Name, Signature);
+                    if (fw != null)
+                    {
+                        fw.Link(mode);
+                    }
+                }
+                ClassLoaderWrapper classLoader = thisType.GetClassLoader();
+                TypeWrapper fld = classLoader.FieldTypeWrapperFromSig(this.Signature, mode);
+                lock (this)
+                {
+                    if (fieldTypeWrapper == null)
+                    {
+                        fieldTypeWrapper = fld;
+                        field = fw;
+                    }
+                }
+            }
 
-			internal FieldWrapper GetField()
-			{
-				return field;
-			}
+            internal FieldWrapper GetField()
+            {
+                return field;
+            }
 
-			internal override MemberWrapper GetMember()
-			{
-				return field;
-			}
-		}
-	}
+            internal override MemberWrapper GetMember()
+            {
+                return field;
+            }
+        }
+    }
 
 }

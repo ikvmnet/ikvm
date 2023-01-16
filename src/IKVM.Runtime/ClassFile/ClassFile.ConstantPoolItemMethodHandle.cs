@@ -26,101 +26,101 @@ namespace IKVM.Internal
 {
 
     sealed partial class ClassFile
-	{
+    {
         internal sealed class ConstantPoolItemMethodHandle : ConstantPoolItem
-		{
-			private byte ref_kind;
-			private ushort method_index;
-			private ConstantPoolItemFMI cpi;
+        {
+            private byte ref_kind;
+            private ushort method_index;
+            private ConstantPoolItemFMI cpi;
 
-			internal ConstantPoolItemMethodHandle(BigEndianBinaryReader br)
-			{
-				ref_kind = br.ReadByte();
-				method_index = br.ReadUInt16();
-			}
+            internal ConstantPoolItemMethodHandle(BigEndianBinaryReader br)
+            {
+                ref_kind = br.ReadByte();
+                method_index = br.ReadUInt16();
+            }
 
-			internal override void Resolve(ClassFile classFile, string[] utf8_cp, ClassFileParseOptions options)
-			{
-				switch ((RefKind)ref_kind)
-				{
-					case RefKind.getField:
-					case RefKind.getStatic:
-					case RefKind.putField:
-					case RefKind.putStatic:
-						cpi = classFile.GetConstantPoolItem(method_index) as ConstantPoolItemFieldref;
-						break;
-					case RefKind.invokeSpecial:
-					case RefKind.invokeVirtual:
-					case RefKind.invokeStatic:
-					case RefKind.newInvokeSpecial:
-						cpi = classFile.GetConstantPoolItem(method_index) as ConstantPoolItemMethodref;
-						if (cpi == null && classFile.MajorVersion >= 52 && ((RefKind)ref_kind == RefKind.invokeStatic || (RefKind)ref_kind == RefKind.invokeSpecial))
-							goto case RefKind.invokeInterface;
-						break;
-					case RefKind.invokeInterface:
-						cpi = classFile.GetConstantPoolItem(method_index) as ConstantPoolItemInterfaceMethodref;
-						break;
-				}
-				if (cpi == null)
-				{
-					throw new ClassFormatError("Invalid constant pool item MethodHandle");
-				}
-				if (ReferenceEquals(cpi.Name, StringConstants.INIT) && Kind != RefKind.newInvokeSpecial)
-				{
-					throw new ClassFormatError("Bad method name");
-				}
-			}
+            internal override void Resolve(ClassFile classFile, string[] utf8_cp, ClassFileParseOptions options)
+            {
+                switch ((RefKind)ref_kind)
+                {
+                    case RefKind.getField:
+                    case RefKind.getStatic:
+                    case RefKind.putField:
+                    case RefKind.putStatic:
+                        cpi = classFile.GetConstantPoolItem(method_index) as ConstantPoolItemFieldref;
+                        break;
+                    case RefKind.invokeSpecial:
+                    case RefKind.invokeVirtual:
+                    case RefKind.invokeStatic:
+                    case RefKind.newInvokeSpecial:
+                        cpi = classFile.GetConstantPoolItem(method_index) as ConstantPoolItemMethodref;
+                        if (cpi == null && classFile.MajorVersion >= 52 && ((RefKind)ref_kind == RefKind.invokeStatic || (RefKind)ref_kind == RefKind.invokeSpecial))
+                            goto case RefKind.invokeInterface;
+                        break;
+                    case RefKind.invokeInterface:
+                        cpi = classFile.GetConstantPoolItem(method_index) as ConstantPoolItemInterfaceMethodref;
+                        break;
+                }
+                if (cpi == null)
+                {
+                    throw new ClassFormatError("Invalid constant pool item MethodHandle");
+                }
+                if (ReferenceEquals(cpi.Name, StringConstants.INIT) && Kind != RefKind.newInvokeSpecial)
+                {
+                    throw new ClassFormatError("Bad method name");
+                }
+            }
 
-			internal override void MarkLinkRequired()
-			{
-				cpi.MarkLinkRequired();
-			}
+            internal override void MarkLinkRequired()
+            {
+                cpi.MarkLinkRequired();
+            }
 
-			internal string Class
-			{
-				get { return cpi.Class; }
-			}
+            internal string Class
+            {
+                get { return cpi.Class; }
+            }
 
-			internal string Name
-			{
-				get { return cpi.Name; }
-			}
+            internal string Name
+            {
+                get { return cpi.Name; }
+            }
 
-			internal string Signature
-			{
-				get { return cpi.Signature; }
-			}
+            internal string Signature
+            {
+                get { return cpi.Signature; }
+            }
 
-			internal ConstantPoolItemFMI MemberConstantPoolItem
-			{
-				get { return cpi; }
-			}
+            internal ConstantPoolItemFMI MemberConstantPoolItem
+            {
+                get { return cpi; }
+            }
 
-			internal RefKind Kind
-			{
-				get { return (RefKind)ref_kind; }
-			}
+            internal RefKind Kind
+            {
+                get { return (RefKind)ref_kind; }
+            }
 
-			internal MemberWrapper Member
-			{
-				get { return cpi.GetMember(); }
-			}
+            internal MemberWrapper Member
+            {
+                get { return cpi.GetMember(); }
+            }
 
-			internal TypeWrapper GetClassType()
-			{
-				return cpi.GetClassType();
-			}
+            internal TypeWrapper GetClassType()
+            {
+                return cpi.GetClassType();
+            }
 
-			internal override void Link(TypeWrapper thisType, LoadMode mode)
-			{
-				cpi.Link(thisType, mode);
-			}
+            internal override void Link(TypeWrapper thisType, LoadMode mode)
+            {
+                cpi.Link(thisType, mode);
+            }
 
-			internal override ConstantType GetConstantType()
-			{
-				return ConstantType.MethodHandle;
-			}
-		}
-	}
+            internal override ConstantType GetConstantType()
+            {
+                return ConstantType.MethodHandle;
+            }
+        }
+    }
 
 }

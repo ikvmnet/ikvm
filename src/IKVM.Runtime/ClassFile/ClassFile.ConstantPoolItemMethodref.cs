@@ -27,39 +27,39 @@ namespace IKVM.Internal
 {
 
     sealed partial class ClassFile
-	{
+    {
         internal sealed class ConstantPoolItemMethodref : ConstantPoolItemMI
-		{
-			internal ConstantPoolItemMethodref(BigEndianBinaryReader br) : base(br)
-			{
-			}
+        {
+            internal ConstantPoolItemMethodref(BigEndianBinaryReader br) : base(br)
+            {
+            }
 
-			internal override void Link(TypeWrapper thisType, LoadMode mode)
-			{
-				base.Link(thisType, mode);
-				TypeWrapper wrapper = GetClassType();
-				if(wrapper != null && !wrapper.IsUnloadable)
-				{
-					method = wrapper.GetMethodWrapper(Name, Signature, !ReferenceEquals(Name, StringConstants.INIT));
-					if(method != null)
-					{
-						method.Link(mode);
-					}
-					if(Name != StringConstants.INIT
-						&& !thisType.IsInterface
-						&& (!JVM.AllowNonVirtualCalls || (thisType.Modifiers & Modifiers.Super) == Modifiers.Super)
-						&& thisType != wrapper
-						&& thisType.IsSubTypeOf(wrapper))
-					{
-						invokespecialMethod = thisType.BaseTypeWrapper.GetMethodWrapper(Name, Signature, true);
-						if(invokespecialMethod != null)
-						{
-							invokespecialMethod.Link(mode);
-						}
-					}
-				}
-			}
-		}
-	}
+            internal override void Link(TypeWrapper thisType, LoadMode mode)
+            {
+                base.Link(thisType, mode);
+                TypeWrapper wrapper = GetClassType();
+                if (wrapper != null && !wrapper.IsUnloadable)
+                {
+                    method = wrapper.GetMethodWrapper(Name, Signature, !ReferenceEquals(Name, StringConstants.INIT));
+                    if (method != null)
+                    {
+                        method.Link(mode);
+                    }
+                    if (Name != StringConstants.INIT
+                        && !thisType.IsInterface
+                        && (!JVM.AllowNonVirtualCalls || (thisType.Modifiers & Modifiers.Super) == Modifiers.Super)
+                        && thisType != wrapper
+                        && thisType.IsSubTypeOf(wrapper))
+                    {
+                        invokespecialMethod = thisType.BaseTypeWrapper.GetMethodWrapper(Name, Signature, true);
+                        if (invokespecialMethod != null)
+                        {
+                            invokespecialMethod.Link(mode);
+                        }
+                    }
+                }
+            }
+        }
+    }
 
 }

@@ -1,6 +1,9 @@
-﻿namespace IKVM.ByteCode
+﻿using System;
+
+namespace IKVM.ByteCode
 {
 
+    [Flags]
     public enum ModuleExportsFlag : ushort
     {
 

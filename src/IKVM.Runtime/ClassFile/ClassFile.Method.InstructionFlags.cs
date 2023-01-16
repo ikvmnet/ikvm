@@ -27,17 +27,17 @@ namespace IKVM.Internal
 {
 
     sealed partial class ClassFile
-	{
+    {
         internal sealed partial class Method
         {
             [Flags]
-			internal enum InstructionFlags : byte
-			{
-				Reachable = 1,
-				Processed = 2,
-				BranchTarget = 4,
-			}
-		}
-	}
+            internal enum InstructionFlags : byte
+            {
+                Reachable = 1,
+                Processed = 2,
+                BranchTarget = 4,
+            }
+        }
+    }
 
 }

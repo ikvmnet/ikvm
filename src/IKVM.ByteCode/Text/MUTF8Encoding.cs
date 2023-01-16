@@ -80,7 +80,7 @@ namespace IKVM.ByteCode.Text
             for (int i = 0; i < count; i++)
             {
                 var ch = chars[i];
-                if ((ch != 0) && (ch <= 0x7F))
+                if (ch != 0 && ch <= 0x7F)
                     len++;
                 else if (ch <= 0x7FF)
                     len += 2;
@@ -159,7 +159,7 @@ namespace IKVM.ByteCode.Text
             for (int i = 0; i < charCount; i++)
             {
                 var ch = chars[i];
-                if ((ch != 0) && (ch <= 0x7F))
+                if (ch != 0 && ch <= 0x7F)
                 {
                     if (j + 1 > byteCount)
                         throw new ArgumentException();
@@ -171,17 +171,17 @@ namespace IKVM.ByteCode.Text
                     if (j + 2 > byteCount)
                         throw new ArgumentException();
 
-                    bytes[j++] = (byte)((ch >> 6) | 0xC0);
-                    bytes[j++] = (byte)((ch & 0x3F) | 0x80);
+                    bytes[j++] = (byte)(ch >> 6 | 0xC0);
+                    bytes[j++] = (byte)(ch & 0x3F | 0x80);
                 }
                 else
                 {
                     if (j + 3 > byteCount)
                         throw new ArgumentException();
 
-                    bytes[j++] = (byte)((ch >> 12) | 0xE0);
-                    bytes[j++] = (byte)(((ch >> 6) & 0x3F) | 0x80);
-                    bytes[j++] = (byte)((ch & 0x3F) | 0x80);
+                    bytes[j++] = (byte)(ch >> 12 | 0xE0);
+                    bytes[j++] = (byte)(ch >> 6 & 0x3F | 0x80);
+                    bytes[j++] = (byte)(ch & 0x3F | 0x80);
                 }
             }
 
@@ -332,14 +332,14 @@ namespace IKVM.ByteCode.Text
                     case 13:
                         char2 = *bytes++;
                         i++;
-                        c = ((c & 0x1F) << 6) | (char2 & 0x3F);
+                        c = (c & 0x1F) << 6 | char2 & 0x3F;
                         break;
                     case 14:
                         char2 = *bytes++;
                         char3 = *bytes++;
                         i++;
                         i++;
-                        c = ((c & 0x0F) << 12) | ((char2 & 0x3F) << 6) | (char3 & 0x3F);
+                        c = (c & 0x0F) << 12 | (char2 & 0x3F) << 6 | char3 & 0x3F;
                         break;
                 }
 

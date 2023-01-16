@@ -1,0 +1,35 @@
+﻿using System.Buffers;
+
+using IKVM.ByteCode.Buffers;
+
+namespace IKVM.ByteCode.Parsing
+{
+
+    public record struct FieldRecord(AccessFlag AccessFlags, ushort NameIndex, ushort DescriptorIndex, AttributeInfoRecord[] Attributes)
+    {
+
+        /// <summary>
+        /// Parses a field.
+        /// </summary>
+        /// <param name="reader"></param>
+        /// <param name="field"></param>
+        public static bool TryReadField(ref SequenceReader<byte> reader, out FieldRecord field)
+        {
+            field = default;
+
+            if (reader.TryReadBigEndian(out ushort accessFlags) == false)
+                return false;
+            if (reader.TryReadBigEndian(out ushort nameIndex) == false)
+                return false;
+            if (reader.TryReadBigEndian(out ushort descriptorIndex) == false)
+                return false;
+            if (ClassRecord.TryReadAttributes(ref reader, out var attributes) == false)
+                return false;
+
+            field = new FieldRecord((AccessFlag)accessFlags, nameIndex, descriptorIndex, attributes);
+            return true;
+        }
+
+    }
+
+}

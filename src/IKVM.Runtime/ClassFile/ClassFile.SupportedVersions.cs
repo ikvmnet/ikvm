@@ -26,12 +26,12 @@ namespace IKVM.Internal
 {
 
     sealed partial class ClassFile
-	{
+    {
         private static class SupportedVersions
-		{
-			internal static readonly int Minimum = 45;
-			internal static readonly int Maximum = Experimental.JDK_9 ? 53 : 52;
-		}
-	}
+        {
+            internal static readonly int Minimum = 45;
+            internal static readonly int Maximum = Experimental.JDK_9 ? 53 : 52;
+        }
+    }
 
 }

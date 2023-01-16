@@ -3,6 +3,8 @@ using System.Threading.Tasks;
 
 using FluentAssertions;
 
+using IKVM.ByteCode.Reading;
+
 using Microsoft.VisualStudio.TestTools.UnitTesting;
 
 namespace IKVM.ByteCode.Tests
@@ -13,16 +15,30 @@ namespace IKVM.ByteCode.Tests
     {
 
         [TestMethod]
-        public async Task CanLoadClass()
+        public async Task CanLoadClassAsync()
         {
-            using var f = File.OpenRead(Path.Combine(Path.GetDirectoryName(typeof(ClassReaderTests).Assembly.Location), "0.class"));
-            using var s = new ClassReader(f);
-            var c = await s.ReadAsync();
-            c.Should().NotBeNull();
-            c.Name.Should().Be("0");
-            var a = c.Methods[0].Attributes.Get<CodeAttributeData>();
-            var z = a.Code;
-            var l = a.Attributes;
+            using var file = File.OpenRead(Path.Combine(Path.GetDirectoryName(typeof(ClassReaderTests).Assembly.Location), "0.class"));
+            var clazz = await ClassReader.ReadAsync(file);
+            clazz.Should().NotBeNull();
+            clazz.Name.Should().Be("0");
+            clazz.Methods.Should().HaveCount(2);
+            clazz.Fields.Should().HaveCount(0);
+
+            clazz.Methods[1].Attributes.Get<CodeAttributeReader>().Code.Should().NotBeNull();
+        }
+
+        [TestMethod]
+        public void CanLoadClass()
+        {
+            using var file = File.OpenRead(Path.Combine(Path.GetDirectoryName(typeof(ClassReaderTests).Assembly.Location), "0.class"));
+            var clazz = ClassReader.Read(file);
+            clazz.Should().NotBeNull();
+            clazz.Name.Should().Be("0");
+            clazz.Methods.Should().HaveCount(2);
+            clazz.Fields.Should().HaveCount(0);
+
+            clazz.Methods[0].Attributes.Get<CodeAttributeReader>().Code.Should().NotBeNull();
+            clazz.Methods[1].Attributes.Get<CodeAttributeReader>().Code.Should().NotBeNull();
         }
 
     }

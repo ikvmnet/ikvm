@@ -27,79 +27,79 @@ namespace IKVM.Internal
 {
 
     sealed partial class ClassFile
-	{
+    {
         internal abstract class ConstantPoolItemFMI : ConstantPoolItem
-		{
-			private ushort class_index;
-			private ushort name_and_type_index;
-			private ConstantPoolItemClass clazz;
-			private string name;
-			private string descriptor;
+        {
+            private ushort class_index;
+            private ushort name_and_type_index;
+            private ConstantPoolItemClass clazz;
+            private string name;
+            private string descriptor;
 
-			internal ConstantPoolItemFMI(BigEndianBinaryReader br)
-			{
-				class_index = br.ReadUInt16();
-				name_and_type_index = br.ReadUInt16();
-			}
+            internal ConstantPoolItemFMI(BigEndianBinaryReader br)
+            {
+                class_index = br.ReadUInt16();
+                name_and_type_index = br.ReadUInt16();
+            }
 
-			internal override void Resolve(ClassFile classFile, string[] utf8_cp, ClassFileParseOptions options)
-			{
-				ConstantPoolItemNameAndType name_and_type = (ConstantPoolItemNameAndType)classFile.GetConstantPoolItem(name_and_type_index);
-				clazz = (ConstantPoolItemClass)classFile.GetConstantPoolItem(class_index);
-				// if the constant pool items referred to were strings, GetConstantPoolItem returns null
-				if(name_and_type == null || clazz == null)
-				{
-					throw new ClassFormatError("Bad index in constant pool");
-				}
-				name = String.Intern(classFile.GetConstantPoolUtf8String(utf8_cp, name_and_type.name_index));
-				descriptor = classFile.GetConstantPoolUtf8String(utf8_cp, name_and_type.descriptor_index);
-				Validate(name, descriptor, classFile.MajorVersion);
-				descriptor = String.Intern(descriptor.Replace('/', '.'));
-			}
+            internal override void Resolve(ClassFile classFile, string[] utf8_cp, ClassFileParseOptions options)
+            {
+                ConstantPoolItemNameAndType name_and_type = (ConstantPoolItemNameAndType)classFile.GetConstantPoolItem(name_and_type_index);
+                clazz = (ConstantPoolItemClass)classFile.GetConstantPoolItem(class_index);
+                // if the constant pool items referred to were strings, GetConstantPoolItem returns null
+                if (name_and_type == null || clazz == null)
+                {
+                    throw new ClassFormatError("Bad index in constant pool");
+                }
+                name = String.Intern(classFile.GetConstantPoolUtf8String(utf8_cp, name_and_type.name_index));
+                descriptor = classFile.GetConstantPoolUtf8String(utf8_cp, name_and_type.descriptor_index);
+                Validate(name, descriptor, classFile.MajorVersion);
+                descriptor = String.Intern(descriptor.Replace('/', '.'));
+            }
 
-			protected abstract void Validate(string name, string descriptor, int majorVersion);
+            protected abstract void Validate(string name, string descriptor, int majorVersion);
 
-			internal override void MarkLinkRequired()
-			{
-				clazz.MarkLinkRequired();
-			}
+            internal override void MarkLinkRequired()
+            {
+                clazz.MarkLinkRequired();
+            }
 
-			internal override void Link(TypeWrapper thisType, LoadMode mode)
-			{
-				clazz.Link(thisType, mode);
-			}
+            internal override void Link(TypeWrapper thisType, LoadMode mode)
+            {
+                clazz.Link(thisType, mode);
+            }
 
-			internal string Name
-			{
-				get
-				{
-					return name;
-				}
-			}
+            internal string Name
+            {
+                get
+                {
+                    return name;
+                }
+            }
 
-			internal string Signature
-			{
-				get
-				{
-					return descriptor;
-				}
-			}
+            internal string Signature
+            {
+                get
+                {
+                    return descriptor;
+                }
+            }
 
-			internal string Class
-			{
-				get
-				{
-					return clazz.Name;
-				}
-			}
+            internal string Class
+            {
+                get
+                {
+                    return clazz.Name;
+                }
+            }
 
-			internal TypeWrapper GetClassType()
-			{
-				return clazz.GetClassType();
-			}
+            internal TypeWrapper GetClassType()
+            {
+                return clazz.GetClassType();
+            }
 
-			internal abstract MemberWrapper GetMember();
-		}
-	}
+            internal abstract MemberWrapper GetMember();
+        }
+    }
 
 }

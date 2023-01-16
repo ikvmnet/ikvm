@@ -26,19 +26,19 @@ namespace IKVM.Internal
 {
 
     sealed partial class ClassFile
-	{
+    {
         internal enum RefKind
-		{
-			getField = 1,
-			getStatic = 2,
-			putField = 3,
-			putStatic = 4,
-			invokeVirtual = 5,
-			invokeStatic = 6,
-			invokeSpecial = 7,
-			newInvokeSpecial = 8,
-			invokeInterface = 9
-		}
-	}
+        {
+            getField = 1,
+            getStatic = 2,
+            putField = 3,
+            putStatic = 4,
+            invokeVirtual = 5,
+            invokeStatic = 6,
+            invokeSpecial = 7,
+            newInvokeSpecial = 8,
+            invokeInterface = 9
+        }
+    }
 
 }
