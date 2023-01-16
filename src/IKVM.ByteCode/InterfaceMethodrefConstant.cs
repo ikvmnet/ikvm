@@ -1,26 +1,26 @@
 ﻿namespace IKVM.ByteCode
 {
 
-    public class InterfaceMethodrefConstant : ConstantRecord
+    public sealed class InterfaceMethodrefConstant : Constant<InterfaceMethodrefConstantRecord>
     {
 
-        readonly ushort classIndex;
-        readonly ushort nameAndTypeIndex;
+        ClassConstant clazz;
+        NameAndTypeConstant nameAndType;
 
         /// <summary>
         /// Initializes a new instance.
         /// </summary>
-        /// <param name="classIndex"></param>
-        /// <param name="nameAndTypeIndex"></param>
-        public InterfaceMethodrefConstant(ushort classIndex, ushort nameAndTypeIndex)
+        /// <param name="owner"></param>
+        /// <param name="record"></param>
+        public InterfaceMethodrefConstant(Class owner, InterfaceMethodrefConstantRecord record) :
+            base(owner, record)
         {
-            this.classIndex = classIndex;
-            this.nameAndTypeIndex = nameAndTypeIndex;
+
         }
 
-        public ushort ClassIndex => classIndex;
+        public ClassConstant Class => clazz ??= DeclaringClass.ResolveConstant<ClassConstant>(Record.ClassIndex);
 
-        public ushort NameAndTypeIndex => nameAndTypeIndex;
+        public NameAndTypeConstant NameAndType => nameAndType ??= DeclaringClass.ResolveConstant<NameAndTypeConstant>(Record.NameAndTypeIndex);
 
     }
 

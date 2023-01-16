@@ -1,58 +1,158 @@
-﻿using System.Collections.Generic;
+﻿using System;
+using System.Collections.Generic;
+using System.Threading;
 
 namespace IKVM.ByteCode
 {
 
-    /// <summary>
-    /// Mutable Java class instance.
-    /// </summary>
     public class Class
     {
 
         /// <summary>
-        /// Gets or sets the major version of the class.
+        /// Gets the value at the given location or initializes it if null.
         /// </summary>
-        public int MajorVersion { get; set; }
+        /// <typeparam name="T"></typeparam>
+        /// <param name="location"></param>
+        /// <param name="create"></param>
+        /// <returns></returns>
+        internal static T LazyGet<T>(ref T location, Func<T> create)
+            where T : class
+        {
+            if (location == null)
+                Interlocked.CompareExchange(ref location, create(), null);
+
+            return location;
+        }
+
+        internal int MAX_STACK_ALLOC = 1024;
+
+        readonly ClassRecord record;
+
+        string name;
+        string superName;
+        Constant[] constants;
+        InterfaceInfoCollection interfaces;
+        FieldInfoCollection fields;
+        MethodInfoCollection methods;
+        AttributeDataCollection attributes;
 
         /// <summary>
-        /// Gets or sets the minor version of the class.
+        /// Initializes a new instance.
         /// </summary>
-        public int MinorVersion { get; set; }
+        /// <param name="record"></param>
+        internal Class(ClassRecord record)
+        {
+            this.record = record;
+        }
 
         /// <summary>
-        /// Gets or sets the access flags of the class.
+        /// Reference to the underlying record backing this class.
         /// </summary>
-        public AccessFlag AccessFlags { get; set; }
+        internal ClassRecord Record => record;
 
         /// <summary>
-        /// Gets or sets the name of the class.
+        /// Gets the minor version of the class.
         /// </summary>
-        public string Name { get; set; }
+        public ushort MinorVersion => record.MinorVersion;
 
         /// <summary>
-        /// Gets or sets the name of the super-class of the class.
+        /// Gets the major version of the class.
         /// </summary>
-        public string SuperName { get; set; }
+        public ushort MajorVersion => record.MajorVersion;
 
         /// <summary>
-        /// Gets the set of interfaces implemented by this class.
+        /// Gets the access flags of the class.
         /// </summary>
-        public IList<Interface> Interfaces { get;  } = new List<Interface>();
+        public AccessFlag AccessFlags => record.AccessFlags;
 
         /// <summary>
-        /// Gets the set of fields implemented by this class.
+        /// Gets the name of the class.
         /// </summary>
-        public IList<Field> Fields { get;  } = new List<Field>();
+        public string Name => LazyGet(ref name, () => ResolveConstant<ClassConstant>(record.ThisClassIndex).Name.Value);
 
         /// <summary>
-        /// Gets the set of methods implemented by this class.
+        /// Gets the name of the super class.
         /// </summary>
-        public IList<Method> Methods { get; } = new List<Method>();
+        public string SuperName => LazyGet(ref superName, () => ResolveConstant<ClassConstant>(record.SuperClassIndex).Name.Value);
 
         /// <summary>
-        /// Gets the set of attributes applied to the class.
+        /// Gets the name of the interfaces implemented by this class.
         /// </summary>
-        public IList<Attribute> Attributes { get; } = new List<Attribute>();
+        public InterfaceInfoCollection Interfaces => LazyGet(ref interfaces, () => new InterfaceInfoCollection(this, record.Interfaces));
+
+        /// <summary>
+        /// Gets the set of fields declared by the class.
+        /// </summary>
+        public IReadOnlyList<FieldInfo> Fields => LazyGet(ref fields, () => new FieldInfoCollection(this, record.Fields));
+
+        /// <summary>
+        /// Gets the set of methods declared by the class.
+        /// </summary>
+        public IReadOnlyList<MethodInfo> Methods => LazyGet(ref methods, () => new MethodInfoCollection(this, record.Methods));
+
+        /// <summary>
+        /// Gets the dictionary of attributes declared by the class.
+        /// </summary>
+        public AttributeDataCollection Attributes => LazyGet(ref attributes, () => new AttributeDataCollection(this, record.Attributes));
+
+        /// <summary>
+        /// Resolves the constant of the specified value.
+        /// </summary>
+        /// <typeparam name="TConstant"></typeparam>
+        /// <param name="index"></param>
+        /// <returns></returns>
+        internal TConstant ResolveConstant<TConstant>(ushort index)
+            where TConstant : Constant
+        {
+            return (TConstant)ResolveConstant(index);
+        }
+
+        /// <summary>
+        /// Resolves the constant of the specified value.
+        /// </summary>
+        /// <param name="index"></param>
+        /// <returns></returns>
+        /// <exception cref="ArgumentOutOfRangeException"></exception>
+        internal Constant ResolveConstant(ushort index)
+        {
+            if (index < 1 || index >= record.Constants.Length)
+                throw new ArgumentOutOfRangeException(nameof(index));
+
+            // initialize cache if not initialized
+            if (constants == null)
+                Interlocked.CompareExchange(ref constants, new Constant[record.Constants.Length], null);
+
+            // cache already constants constant
+            if (constants[index] is Constant constant)
+                return constant;
+
+            // generate new constant
+            constant = record.Constants[index] switch
+            {
+                Utf8ConstantRecord c => new Utf8Constant(this, c),
+                IntegerConstantRecord c => new IntegerConstant(this, c),
+                FloatConstantRecord c => new FloatConstant(this, c),
+                LongConstantRecord c => new LongConstant(this, c),
+                DoubleConstantRecord c => new DoubleConstant(this, c),
+                ClassConstantRecord c => new ClassConstant(this, c),
+                StringConstantRecord c => new StringConstant(this, c),
+                FieldrefConstantRecord c => new FieldrefConstant(this, c),
+                MethodrefConstantRecord c => new MethodrefConstant(this, c),
+                InterfaceMethodrefConstantRecord c => new InterfaceMethodrefConstant(this, c),
+                NameAndTypeConstantRecord c => new NameAndTypeConstant(this, c),
+                MethodHandleConstantRecord c => new MethodHandleConstant(this, c),
+                MethodTypeConstantRecord c => new MethodTypeConstant(this, c),
+                DynamicConstantRecord c => new DynamicConstant(this, c),
+                InvokeDynamicConstantRecord c => new InvokeDynamicConstant(this, c),
+                ModuleConstantRecord c => new ModuleConstant(this, c),
+                PackageConstantRecord c => new PackageConstant(this, c),
+                _ => throw new ClassReaderException("Invalid constant type."),
+            };
+
+            // atomic set, only one winner
+            Interlocked.CompareExchange(ref constants[index], constant, null);
+            return constants[index];
+        }
 
     }
 

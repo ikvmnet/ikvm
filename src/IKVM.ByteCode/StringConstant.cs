@@ -1,24 +1,26 @@
 ﻿namespace IKVM.ByteCode
 {
 
-    public class StringConstant : Constant
+    public class StringConstant : Constant<StringConstantRecord>
     {
 
-        readonly ushort utf8Index;
+        Utf8Constant value;
 
         /// <summary>
         /// Initializes a new instance.
         /// </summary>
-        /// <param name="utf8Index"></param>
-        public StringConstant(ushort utf8Index)
+        /// <param name="clazz"></param>
+        /// <param name="record"></param>
+        public StringConstant(Class clazz, StringConstantRecord record) :
+            base(clazz, record)
         {
-            this.utf8Index = utf8Index;
+
         }
 
         /// <summary>
-        /// Gets the index within the constant pool corresponding to the string value.
+        /// Gets the value of the constant.
         /// </summary>
-        public ushort Utf8Index => utf8Index;
+        public Utf8Constant Value => value ??= DeclaringClass.ResolveConstant<Utf8Constant>(Record.ValueIndex);
 
     }
 

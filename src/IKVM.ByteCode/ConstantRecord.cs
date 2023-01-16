@@ -1,11 +1,6 @@
 ﻿namespace IKVM.ByteCode
 {
 
-    public abstract class Constant
-    {
-
-
-
-    }
+    public abstract record ConstantRecord;
 
 }

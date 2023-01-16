@@ -1,26 +1,25 @@
 ﻿namespace IKVM.ByteCode
 {
 
-    public class InvokeDynamicConstant : Constant
+    public sealed class InvokeDynamicConstant : Constant<InvokeDynamicConstantRecord>
     {
 
-        readonly ushort bootstrapMethodAttrIndex;
-        readonly ushort nameAndTypeIndex;
+        NameAndTypeConstant nameAndType;
 
         /// <summary>
         /// Initializes a new instance.
         /// </summary>
-        /// <param name="bootstrapMethodAttrIndex"></param>
-        /// <param name="nameAndTypeIndex"></param>
-        public InvokeDynamicConstant(ushort bootstrapMethodAttrIndex, ushort nameAndTypeIndex)
+        /// <param name="owner"></param>
+        /// <param name="record"></param>
+        public InvokeDynamicConstant(Class owner, InvokeDynamicConstantRecord record) :
+            base(owner, record)
         {
-            this.bootstrapMethodAttrIndex = bootstrapMethodAttrIndex;
-            this.nameAndTypeIndex = nameAndTypeIndex;
+
         }
 
-        public ushort BootstrapMethodAttrIndex => bootstrapMethodAttrIndex;
+        public ushort BootstrapMethodAttributeIndex => Record.BootstrapMethodAttributeIndex;
 
-        public ushort DescriptorIndex => nameAndTypeIndex;
+        public NameAndTypeConstant NameAndType => nameAndType ??= DeclaringClass.ResolveConstant<NameAndTypeConstant>(Record.NameAndTypeIndex);
 
     }
 

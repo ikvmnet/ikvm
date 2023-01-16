@@ -1,15 +1,11 @@
-﻿using System.Buffers;
-
-using IKVM.ByteCode.Buffers;
-
-namespace IKVM.ByteCode
+﻿namespace IKVM.ByteCode
 {
 
     /// <summary>
     /// Describes an attempt to parse an unsupported class file version.
     /// </summary>
-    public class UnsupportedClassVersionException :
-        ClassParserException
+    public sealed class UnsupportedClassVersionException :
+        ClassReaderException
     {
 
         readonly int majorVersion;
@@ -18,11 +14,10 @@ namespace IKVM.ByteCode
         /// <summary>
         /// Initializes a new instance.
         /// </summary>
-        /// <param name="reader"></param>
         /// <param name="majorVersion"></param>
         /// <param name="minorVersion"></param>
-        internal UnsupportedClassVersionException(in SequenceReader<byte> reader, int majorVersion, int minorVersion) :
-            base(reader, $"Unsupported class version {majorVersion}.{minorVersion}.")
+        internal UnsupportedClassVersionException(int majorVersion, int minorVersion) :
+            base($"Unsupported class version {majorVersion}.{minorVersion}.")
         {
             this.majorVersion = majorVersion;
             this.minorVersion = minorVersion;

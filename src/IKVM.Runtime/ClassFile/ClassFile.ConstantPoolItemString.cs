@@ -26,35 +26,35 @@ namespace IKVM.Internal
 {
 
     sealed partial class ClassFile
-	{
+    {
         private sealed class ConstantPoolItemString : ConstantPoolItem
-		{
-			private ushort string_index;
-			private string s;
+        {
+            private ushort string_index;
+            private string s;
 
-			internal ConstantPoolItemString(BigEndianBinaryReader br)
-			{
-				string_index = br.ReadUInt16();
-			}
+            internal ConstantPoolItemString(BigEndianBinaryReader br)
+            {
+                string_index = br.ReadUInt16();
+            }
 
-			internal override void Resolve(ClassFile classFile, string[] utf8_cp, ClassFileParseOptions options)
-			{
-				s = classFile.GetConstantPoolUtf8String(utf8_cp, string_index);
-			}
+            internal override void Resolve(ClassFile classFile, string[] utf8_cp, ClassFileParseOptions options)
+            {
+                s = classFile.GetConstantPoolUtf8String(utf8_cp, string_index);
+            }
 
-			internal override ConstantType GetConstantType()
-			{
-				return ConstantType.String;
-			}
+            internal override ConstantType GetConstantType()
+            {
+                return ConstantType.String;
+            }
 
-			internal string Value
-			{
-				get
-				{
-					return s;
-				}
-			}
-		}
-	}
+            internal string Value
+            {
+                get
+                {
+                    return s;
+                }
+            }
+        }
+    }
 
 }
