@@ -4,7 +4,7 @@ using IKVM.ByteCode.Text;
 namespace IKVM.ByteCode.Reading
 {
 
-    public sealed class Utf8ConstantReader : Constant<Utf8ConstantRecord>
+    public sealed class Utf8ConstantReader : ConstantReader<Utf8ConstantRecord, Utf8ConstantOverride>
     {
 
         string value;
@@ -14,8 +14,9 @@ namespace IKVM.ByteCode.Reading
         /// </summary>
         /// <param name="declaringClass"></param>
         /// <param name="record"></param>
-        public Utf8ConstantReader(ClassReader declaringClass, Utf8ConstantRecord record) :
-            base(declaringClass, record)
+        /// <param name="override"></param>
+        public Utf8ConstantReader(ClassReader declaringClass, Utf8ConstantRecord record, Utf8ConstantOverride @override = null) :
+            base(declaringClass, record, @override)
         {
 
         }
@@ -23,7 +24,7 @@ namespace IKVM.ByteCode.Reading
         /// <summary>
         /// Gets the value of the constant. Result is interned.
         /// </summary>
-        public string Value => value ??= string.Intern(MUTF8Encoding.MUTF8.GetString(Record.Value));
+        public string Value => LazyGet(ref value, () => string.Intern(Override != null && Override.Value is string value ? value : MUTF8Encoding.MUTF8.GetString(Record.Value)));
 
     }
 

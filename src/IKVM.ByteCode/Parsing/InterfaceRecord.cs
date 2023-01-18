@@ -5,7 +5,7 @@ using IKVM.ByteCode.Buffers;
 namespace IKVM.ByteCode.Parsing
 {
 
-    public record struct InterfaceInfoRecord(ushort ClassIndex)
+    public record struct InterfaceRecord(ushort ClassIndex)
     {
 
         /// <summary>
@@ -13,14 +13,14 @@ namespace IKVM.ByteCode.Parsing
         /// </summary>
         /// <param name="reader"></param>
         /// <param name="iface"></param>
-        public static bool TryReadInterface(ref SequenceReader<byte> reader, out InterfaceInfoRecord iface)
+        public static bool TryRead(ref SequenceReader<byte> reader, out InterfaceRecord iface)
         {
             iface = default;
 
             if (reader.TryReadBigEndian(out ushort classIndex) == false)
                 return false;
 
-            iface = new InterfaceInfoRecord(classIndex);
+            iface = new InterfaceRecord(classIndex);
             return true;
         }
 

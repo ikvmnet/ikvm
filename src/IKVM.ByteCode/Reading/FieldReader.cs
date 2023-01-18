@@ -1,4 +1,5 @@
 ﻿using System;
+
 using IKVM.ByteCode.Parsing;
 
 namespace IKVM.ByteCode.Reading
@@ -24,6 +25,11 @@ namespace IKVM.ByteCode.Reading
             this.declaringClass = declaringClass ?? throw new ArgumentNullException(nameof(declaringClass));
             this.record = record;
         }
+
+        /// <summary>
+        /// Gets the underlying record of the field.
+        /// </summary>
+        public FieldRecord Record => record;
 
         /// <summary>
         /// Gets the access flags of the field.

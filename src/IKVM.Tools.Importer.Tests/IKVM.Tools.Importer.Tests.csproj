@@ -17,11 +17,7 @@
     </ItemGroup>
 
     <ItemGroup>
-        <ProjectReference Include="..\IKVM.Runtime\IKVM.Runtime.csproj" />
-        <ProjectReference Include="..\IKVM.Java\IKVM.Java.msbuildproj" />
-        <ProjectReference Include="..\IKVM.Image\IKVM.Image.csproj" />
         <ProjectReference Include="..\IKVM.Tools.Importer\IKVM.Tools.Importer.csproj" />
-        <ProjectReference Include="..\IKVM.Tests.Util\IKVM.Tests.Util.csproj" />
     </ItemGroup>
 
     <ItemGroup>

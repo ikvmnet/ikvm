@@ -3,7 +3,7 @@
 namespace IKVM.ByteCode.Reading
 {
 
-    public class ConstantValueAttributeReader : AttributeData<ConstantValueAttributeRecord>
+    public sealed class ConstantValueAttributeReader : AttributeReader<ConstantValueAttributeRecord>
     {
 
         object value;
@@ -13,16 +13,16 @@ namespace IKVM.ByteCode.Reading
         /// </summary>
         /// <param name="declaringClass"></param>
         /// <param name="info"></param>
-        /// <param name="data"></param>
-        internal ConstantValueAttributeReader(ClassReader declaringClass, AttributeInfoReader info, ConstantValueAttributeRecord data) :
-            base(declaringClass, info, data)
+        /// <param name="record"></param>
+        internal ConstantValueAttributeReader(ClassReader declaringClass, AttributeInfoReader info, ConstantValueAttributeRecord record) :
+            base(declaringClass, info, record)
         {
 
         }
 
         public object Value => value ??= ResolveValue();
 
-        object ResolveValue() => DeclaringClass.ResolveConstant(Data.ValueIndex) switch
+        object ResolveValue() => DeclaringClass.ResolveConstant<IConstantReader>(Record.ValueIndex) switch
         {
             LongConstantReader l => l.Value,
             FloatConstantReader f => f.Value,

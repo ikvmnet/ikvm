@@ -3,7 +3,7 @@
 namespace IKVM.ByteCode.Reading
 {
 
-    public class SyntheticAttributeReader : AttributeData<SyntheticAttributeRecord>
+    public class SyntheticAttributeReader : AttributeReader<SyntheticAttributeRecord>
     {
 
         /// <summary>

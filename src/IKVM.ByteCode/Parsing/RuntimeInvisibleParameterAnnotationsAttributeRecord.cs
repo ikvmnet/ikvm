@@ -5,26 +5,26 @@ using IKVM.ByteCode.Buffers;
 namespace IKVM.ByteCode.Parsing
 {
 
-    public sealed record RuntimeInvisibleParameterAnnotationsAttributeRecord(AnnotationRecord[] Annotations) : AttributeRecord
+    public sealed record RuntimeInvisibleParameterAnnotationsAttributeRecord(ParameterAnnotationRecord[] Parameters) : AttributeRecord
     {
 
         public static bool TryReadRuntimeInvisibleParameterAnnotationsAttribute(ref SequenceReader<byte> reader, out AttributeRecord attribute)
         {
             attribute = null;
 
-            if (reader.TryReadBigEndian(out ushort count) == false)
+            if (reader.TryRead(out byte count) == false)
                 return false;
 
-            var items = new AnnotationRecord[count];
+            var parameters = new ParameterAnnotationRecord[count];
             for (int i = 0; i < count; i++)
             {
-                if (AnnotationRecord.TryReadAnnotation(ref reader, out var annotation) == false)
+                if (ParameterAnnotationRecord.TryReadParameterAnnotation(ref reader, out var parameter) == false)
                     return false;
 
-                items[i] = annotation;
+                parameters[i] = parameter;
             }
 
-            attribute = new RuntimeInvisibleParameterAnnotationsAttributeRecord(items);
+            attribute = new RuntimeInvisibleParameterAnnotationsAttributeRecord(parameters);
             return true;
         }
 

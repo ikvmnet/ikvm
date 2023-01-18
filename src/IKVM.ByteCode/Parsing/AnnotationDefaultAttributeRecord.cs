@@ -12,7 +12,7 @@ namespace IKVM.ByteCode.Parsing
         {
             attribute = null;
 
-            if (ElementValueRecord.TryReadElementValue(ref reader, out var defaultValue) == false)
+            if (ElementValueRecord.TryRead(ref reader, out var defaultValue) == false)
                 return false;
 
             attribute = new AnnotationDefaultAttributeRecord(defaultValue);

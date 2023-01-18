@@ -1,11 +1,12 @@
-﻿using System.Buffers;
+﻿using System;
+using System.Buffers;
 
 using IKVM.ByteCode.Buffers;
 
 namespace IKVM.ByteCode.Parsing
 {
 
-    public sealed record CodeAttributeRecord(ushort MaxStack, ushort MaxLocals, byte[] Code, ExceptionHandlerRecord[] ExceptionTable, AttributeInfoRecord[] Attributes) : AttributeRecord
+    public sealed record CodeAttributeRecord(ushort MaxStack, ushort MaxLocals, ReadOnlyMemory<byte> Code, ExceptionHandlerRecord[] ExceptionTable, AttributeInfoRecord[] Attributes) : AttributeRecord
     {
 
         public static bool TryReadCodeAttribute(ref SequenceReader<byte> reader, out AttributeRecord attribute)
@@ -24,7 +25,7 @@ namespace IKVM.ByteCode.Parsing
             var codeBuffer = new byte[code.Length];
             code.CopyTo(codeBuffer);
 
-            if (reader.TryReadBigEndian(out uint exceptionTableLength) == false)
+            if (reader.TryReadBigEndian(out ushort exceptionTableLength) == false)
                 return false;
 
             var exceptionTable = new ExceptionHandlerRecord[(int)exceptionTableLength];

@@ -5,7 +5,7 @@ using IKVM.ByteCode.Buffers;
 namespace IKVM.ByteCode.Parsing
 {
 
-    public sealed record BootstrapMethodsAttributeRecord(BootstrapMethodRecord[] Methods) : AttributeRecord
+    public sealed record BootstrapMethodsAttributeRecord(BootstrapMethodsAttributeMethodRecord[] Methods) : AttributeRecord
     {
 
         public static bool TryReadBootstrapMethodsAttribute(ref SequenceReader<byte> reader, out AttributeRecord attribute)
@@ -15,10 +15,10 @@ namespace IKVM.ByteCode.Parsing
             if (reader.TryReadBigEndian(out ushort count) == false)
                 return false;
 
-            var methods = new BootstrapMethodRecord[count];
+            var methods = new BootstrapMethodsAttributeMethodRecord[count];
             for (int i = 0; i < count; i++)
             {
-                if (BootstrapMethodRecord.TryReadBootstrapMethod(ref reader, out var method) == false)
+                if (BootstrapMethodsAttributeMethodRecord.TryReadBootstrapMethod(ref reader, out var method) == false)
                     return false;
 
                 methods[i] = method;

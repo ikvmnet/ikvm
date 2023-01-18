@@ -3,7 +3,7 @@
 namespace IKVM.ByteCode.Reading
 {
 
-    public class DeprecatedAttributeReader : AttributeData<DeprecatedAttributeRecord>
+    public class DeprecatedAttributeReader : AttributeReader<DeprecatedAttributeRecord>
     {
 
         /// <summary>

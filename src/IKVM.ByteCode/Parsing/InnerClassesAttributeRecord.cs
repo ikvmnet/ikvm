@@ -5,7 +5,7 @@ using IKVM.ByteCode.Buffers;
 namespace IKVM.ByteCode.Parsing
 {
 
-    public sealed record InnerClassesAttributeRecord(InnerClassRecord[] Entries) : AttributeRecord
+    public sealed record InnerClassesAttributeRecord(InnerClassesAttributeItemRecord[] Items) : AttributeRecord
     {
 
         public static bool TryReadInnerClassesAttribute(ref SequenceReader<byte> reader, out AttributeRecord attribute)
@@ -15,7 +15,7 @@ namespace IKVM.ByteCode.Parsing
             if (reader.TryReadBigEndian(out ushort count) == false)
                 return false;
 
-            var entries = new InnerClassRecord[count];
+            var items = new InnerClassesAttributeItemRecord[count];
             for (int i = 0; i < count; i++)
             {
                 if (reader.TryReadBigEndian(out ushort innerClassInfoIndex) == false)
@@ -27,10 +27,10 @@ namespace IKVM.ByteCode.Parsing
                 if (reader.TryReadBigEndian(out ushort innerClassAccessFlags) == false)
                     return false;
 
-                entries[i] = new InnerClassRecord(innerClassInfoIndex, outerClassInfoIndex, innerNameIndex, (AccessFlag)innerClassAccessFlags);
+                items[i] = new InnerClassesAttributeItemRecord(innerClassInfoIndex, outerClassInfoIndex, innerNameIndex, (AccessFlag)innerClassAccessFlags);
             }
 
-            attribute = new InnerClassesAttributeRecord(entries);
+            attribute = new InnerClassesAttributeRecord(items);
             return true;
         }
 

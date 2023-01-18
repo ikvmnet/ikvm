@@ -3,26 +3,20 @@
 namespace IKVM.ByteCode.Reading
 {
 
-    public sealed class InterfaceMethodrefConstantReader : Constant<InterfaceMethodrefConstantRecord>
+    public sealed class InterfaceMethodrefConstantReader : RefConstantReader<InterfaceMethodrefConstantRecord, InterfaceMethodrefConstantOverride>
     {
-
-        ClassConstantReader declaringClass;
-        NameAndTypeConstantReader nameAndType;
 
         /// <summary>
         /// Initializes a new instance.
         /// </summary>
-        /// <param name="owner"></param>
+        /// <param name="declaringClass"></param>
         /// <param name="record"></param>
-        public InterfaceMethodrefConstantReader(ClassReader owner, InterfaceMethodrefConstantRecord record) :
-            base(owner, record)
+        /// <param name="override"></param>
+        public InterfaceMethodrefConstantReader(ClassReader declaringClass, InterfaceMethodrefConstantRecord record, InterfaceMethodrefConstantOverride @override = null) :
+            base(declaringClass, record, @override)
         {
 
         }
-
-        public ClassConstantReader Class => declaringClass ??= DeclaringClass.ResolveConstant<ClassConstantReader>(Record.ClassIndex);
-
-        public NameAndTypeConstantReader NameAndType => nameAndType ??= DeclaringClass.ResolveConstant<NameAndTypeConstantReader>(Record.NameAndTypeIndex);
 
     }
 

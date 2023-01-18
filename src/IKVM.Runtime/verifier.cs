@@ -25,6 +25,7 @@ using System;
 using System.Collections.Generic;
 using System.Diagnostics;
 
+using IKVM.ByteCode;
 using IKVM.Internal;
 
 #if IMPORTER
@@ -2750,23 +2751,22 @@ sealed class MethodAnalyzer
         {
             SetHardError(wrapper.GetClassLoader(), ref instr, HardError.IllegalAccessError, "tried to access class {0} from class {1}", cpi.Class, wrapper.Name);
         }
-        else if (cpi.Kind == ClassFile.RefKind.invokeVirtual
+        else if (cpi.Kind == ReferenceKind.InvokeVirtual
             && cpi.GetClassType() == CoreClasses.java.lang.invoke.MethodHandle.Wrapper
             && (cpi.Name == "invoke" || cpi.Name == "invokeExact"))
         {
             // it's allowed to use ldc to create a MethodHandle invoker
         }
-        else if (cpi.Member == null
-            || cpi.Member.IsStatic != (cpi.Kind == ClassFile.RefKind.getStatic || cpi.Kind == ClassFile.RefKind.putStatic || cpi.Kind == ClassFile.RefKind.invokeStatic))
+        else if (cpi.Member == null || cpi.Member.IsStatic != (cpi.Kind == ReferenceKind.GetStatic || cpi.Kind == ReferenceKind.PutStatic || cpi.Kind == ReferenceKind.InvokeStatic))
         {
             HardError err;
             string msg;
             switch (cpi.Kind)
             {
-                case ClassFile.RefKind.getField:
-                case ClassFile.RefKind.getStatic:
-                case ClassFile.RefKind.putField:
-                case ClassFile.RefKind.putStatic:
+                case ReferenceKind.GetField:
+                case ReferenceKind.GetStatic:
+                case ReferenceKind.PutField:
+                case ReferenceKind.PutStatic:
                     err = HardError.NoSuchFieldError;
                     msg = cpi.Name;
                     break;

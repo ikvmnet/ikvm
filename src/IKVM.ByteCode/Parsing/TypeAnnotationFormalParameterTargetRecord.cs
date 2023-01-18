@@ -1,6 +1,7 @@
 ﻿using System.Buffers;
 
 using IKVM.ByteCode.Buffers;
+using IKVM.ByteCode.Writing;
 
 namespace IKVM.ByteCode.Parsing
 {
@@ -8,7 +9,7 @@ namespace IKVM.ByteCode.Parsing
     public sealed record TypeAnnotationFormalParameterTargetRecord(byte TargetType, byte ParameterIndex) : TypeAnnotationTargetRecord(TargetType)
     {
 
-        public static bool TryReadTypeAnnotationFormalParameterTarget(ref SequenceReader<byte> reader, byte targetType, out TypeAnnotationTargetRecord targetInfo)
+        public static bool TryRead(ref SequenceReader<byte> reader, byte targetType, out TypeAnnotationTargetRecord targetInfo)
         {
             targetInfo = null;
 
@@ -16,6 +17,29 @@ namespace IKVM.ByteCode.Parsing
                 return false;
 
             targetInfo = new TypeAnnotationFormalParameterTargetRecord(targetType, parameterIndex);
+            return true;
+        }
+
+        public override int GetSize()
+        {
+            var length = base.GetSize();
+            length += sizeof(byte);
+            return length;
+        }
+
+        /// <summary>
+        /// Attempts to write the record to the given <see cref="ClassFormatWriter"/>.
+        /// </summary>
+        /// <param name="writer"></param>
+        /// <returns></returns>
+        public override bool TryWrite(ref ClassFormatWriter writer)
+        {
+            if (base.TryWrite(ref writer) == false)
+                return false;
+
+            if (writer.TryWrite(ParameterIndex) == false)
+                return false;
+
             return true;
         }
 

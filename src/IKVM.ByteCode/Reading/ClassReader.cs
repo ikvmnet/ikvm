@@ -14,7 +14,7 @@ namespace IKVM.ByteCode.Reading
     /// <summary>
     /// Provides stateful operations for reading a class file.
     /// </summary>
-    public sealed class ClassReader
+    public sealed class ClassReader : ReaderBase<ClassRecord>
     {
 
         /// <summary>
@@ -32,12 +32,34 @@ namespace IKVM.ByteCode.Reading
         /// Attempts to read a class from the given buffer.
         /// </summary>
         /// <param name="buffer"></param>
+        /// <returns></returns>
+        /// <exception cref="ByteCodeException"></exception>
+        public static ClassReader Read(ReadOnlyMemory<byte> buffer)
+        {
+            return TryRead(buffer, out var clazz) ? clazz : throw new ByteCodeException("Failed to open ClassReader. Incomplete class data.");
+        }
+
+        /// <summary>
+        /// Attempts to read a class from the given buffer.
+        /// </summary>
+        /// <param name="buffer"></param>
         /// <param name="clazz"></param>
         /// <returns></returns>
         public static bool TryRead(ReadOnlySequence<byte> buffer, out ClassReader clazz)
         {
             var reader = new SequenceReader<byte>(buffer);
             return TryRead(ref reader, out clazz);
+        }
+
+        /// <summary>
+        /// Attempts to read a class from the given buffer.
+        /// </summary>
+        /// <param name="buffer"></param>
+        /// <returns></returns>
+        /// <exception cref="ByteCodeException"></exception>
+        public static ClassReader Read(ReadOnlySequence<byte> buffer)
+        {
+            return TryRead(buffer, out var clazz) ? clazz : throw new ByteCodeException("Failed to open ClassReader. Incomplete class data.");
         }
 
         /// <summary>
@@ -50,7 +72,7 @@ namespace IKVM.ByteCode.Reading
         {
             clazz = null;
 
-            if (ClassRecord.TryReadClass(ref reader, out var record) == false)
+            if (ClassRecord.TryRead(ref reader, out var record) == false)
                 return false;
 
             clazz = new ClassReader(record);
@@ -157,29 +179,11 @@ namespace IKVM.ByteCode.Reading
             }
         }
 
-        /// <summary>
-        /// Gets the value at the given location or initializes it if null.
-        /// </summary>
-        /// <typeparam name="T"></typeparam>
-        /// <param name="location"></param>
-        /// <param name="create"></param>
-        /// <returns></returns>
-        internal static T LazyGet<T>(ref T location, Func<T> create)
-            where T : class
-        {
-            if (location == null)
-                Interlocked.CompareExchange(ref location, create(), null);
-
-            return location;
-        }
-
         internal int MAX_STACK_ALLOC = 1024;
-
-        readonly ClassRecord record;
 
         string name;
         string superName;
-        ConstantReader[] constants;
+        ConstantReaderCollection constants;
         InterfaceReaderCollection interfaces;
         FieldReaderCollection fields;
         MethodReaderCollection methods;
@@ -189,60 +193,61 @@ namespace IKVM.ByteCode.Reading
         /// Initializes a new instance.
         /// </summary>
         /// <param name="record"></param>
-        internal ClassReader(ClassRecord record)
+        internal ClassReader(ClassRecord record) :
+            base(null, record)
         {
-            this.record = record;
-        }
 
-        /// <summary>
-        /// Reference to the underlying record backing this class.
-        /// </summary>
-        internal ClassRecord Record => record;
+        }
 
         /// <summary>
         /// Gets the minor version of the class.
         /// </summary>
-        public ushort MinorVersion => record.MinorVersion;
+        public ushort MinorVersion => Record.MinorVersion;
 
         /// <summary>
         /// Gets the major version of the class.
         /// </summary>
-        public ushort MajorVersion => record.MajorVersion;
+        public ushort MajorVersion => Record.MajorVersion;
+
+        /// <summary>
+        /// Gets the set of constants declared by the class.
+        /// </summary>
+        public ConstantReaderCollection Constants => LazyGet(ref constants, () => new ConstantReaderCollection(this, Record.Constants));
 
         /// <summary>
         /// Gets the access flags of the class.
         /// </summary>
-        public AccessFlag AccessFlags => record.AccessFlags;
+        public AccessFlag AccessFlags => Record.AccessFlags;
 
         /// <summary>
         /// Gets the name of the class.
         /// </summary>
-        public string Name => LazyGet(ref name, () => ResolveConstant<ClassConstantReader>(record.ThisClassIndex).Name.Value);
+        public string Name => LazyGet(ref name, () => ResolveConstant<ClassConstantReader>(Record.ThisClassIndex).Name);
 
         /// <summary>
         /// Gets the name of the super class.
         /// </summary>
-        public string SuperName => LazyGet(ref superName, () => ResolveConstant<ClassConstantReader>(record.SuperClassIndex).Name.Value);
+        public string SuperName => LazyGet(ref superName, () => ResolveConstant<ClassConstantReader>(Record.SuperClassIndex).Name);
 
         /// <summary>
-        /// Gets the name of the interfaces implemented by this class.
+        /// Gets the set of the interfaces implemented by this class.
         /// </summary>
-        public InterfaceReaderCollection Interfaces => LazyGet(ref interfaces, () => new InterfaceReaderCollection(this, record.Interfaces));
+        public InterfaceReaderCollection Interfaces => LazyGet(ref interfaces, () => new InterfaceReaderCollection(this, Record.Interfaces));
 
         /// <summary>
         /// Gets the set of fields declared by the class.
         /// </summary>
-        public FieldReaderCollection Fields => LazyGet(ref fields, () => new FieldReaderCollection(this, record.Fields));
+        public FieldReaderCollection Fields => LazyGet(ref fields, () => new FieldReaderCollection(this, Record.Fields));
 
         /// <summary>
         /// Gets the set of methods declared by the class.
         /// </summary>
-        public MethodReaderCollection Methods => LazyGet(ref methods, () => new MethodReaderCollection(this, record.Methods));
+        public MethodReaderCollection Methods => LazyGet(ref methods, () => new MethodReaderCollection(this, Record.Methods));
 
         /// <summary>
         /// Gets the dictionary of attributes declared by the class.
         /// </summary>
-        public AttributeReaderCollection Attributes => LazyGet(ref attributes, () => new AttributeReaderCollection(this, record.Attributes));
+        public AttributeReaderCollection Attributes => LazyGet(ref attributes, () => new AttributeReaderCollection(this, Record.Attributes));
 
         /// <summary>
         /// Resolves the constant of the specified value.
@@ -251,36 +256,9 @@ namespace IKVM.ByteCode.Reading
         /// <param name="index"></param>
         /// <returns></returns>
         internal TConstant ResolveConstant<TConstant>(ushort index)
-            where TConstant : ConstantReader
+            where TConstant : class, IConstantReader
         {
-            return (TConstant)ResolveConstant(index);
-        }
-
-        /// <summary>
-        /// Resolves the constant of the specified value.
-        /// </summary>
-        /// <param name="index"></param>
-        /// <returns></returns>
-        /// <exception cref="ArgumentOutOfRangeException"></exception>
-        internal ConstantReader ResolveConstant(ushort index)
-        {
-            if (index < 1 || index >= record.Constants.Length)
-                throw new ArgumentOutOfRangeException(nameof(index));
-
-            // initialize cache if not initialized
-            if (constants == null)
-                Interlocked.CompareExchange(ref constants, new ConstantReader[record.Constants.Length], null);
-
-            // cache already constants constant
-            if (constants[index] is ConstantReader constant)
-                return constant;
-
-            // generate new constant
-            constant = ConstantReader.Read(this, record.Constants[index]);
-
-            // atomic set, only one winner
-            Interlocked.CompareExchange(ref constants[index], constant, null);
-            return constants[index];
+            return Constants.TryGet(index, out var value) ? (TConstant)value : null;
         }
 
     }

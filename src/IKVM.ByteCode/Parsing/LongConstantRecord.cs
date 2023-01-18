@@ -13,9 +13,11 @@ namespace IKVM.ByteCode.Parsing
         /// </summary>
         /// <param name="reader"></param>
         /// <param name="constant"></param>
-        public static bool TryReadLongConstant(ref SequenceReader<byte> reader, out ConstantRecord constant)
+        /// <param name="skip"></param>
+        public static bool TryReadLongConstant(ref SequenceReader<byte> reader, out ConstantRecord constant, out int skip)
         {
             constant = null;
+            skip = 1;
 
             if (reader.TryReadBigEndian(out long value) == false)
                 return false;

@@ -1,4 +1,5 @@
 ﻿using System.Buffers;
+
 using IKVM.ByteCode.Buffers;
 using IKVM.ByteCode.Reading;
 
@@ -14,9 +15,9 @@ namespace IKVM.ByteCode.Parsing
         /// <param name="info"></param>
         /// <param name="attribute"></param>
         /// <returns></returns>
-        public static bool TryReadAttribute(AttributeInfoReader info, out AttributeRecord attribute)
+        public static bool TryRead(AttributeInfoReader info, out AttributeRecord attribute)
         {
-            return TryReadAttribute(info.Name, new ReadOnlySequence<byte>(info.Data), out attribute);
+            return TryRead(info.Name, new ReadOnlySequence<byte>(info.Data), out attribute);
         }
 
         /// <summary>
@@ -26,7 +27,7 @@ namespace IKVM.ByteCode.Parsing
         /// <param name="data"></param>
         /// <param name="attribute"></param>
         /// <returns></returns>
-        public static bool TryReadAttribute(string name, ReadOnlySequence<byte> data, out AttributeRecord attribute)
+        public static bool TryRead(string name, ReadOnlySequence<byte> data, out AttributeRecord attribute)
         {
             var reader = new SequenceReader<byte>(data);
             if (TryReadAttribute(name, ref reader, out attribute) == false)
@@ -47,7 +48,7 @@ namespace IKVM.ByteCode.Parsing
         {
             "ConstantValue" => ConstantValueAttributeRecord.TryReadConstantValueAttribute(ref reader, out attribute),
             "Code" => CodeAttributeRecord.TryReadCodeAttribute(ref reader, out attribute),
-            "StackMapTable" => StackMapTableAttributeRecord.TryReadStackMapTableAttribute(ref reader, out attribute),
+            "StackMapTable" => StackMapTableAttributeRecord.TryRead(ref reader, out attribute),
             "Exceptions" => ExceptionsAttributeRecord.TryReadExceptionsAttribute(ref reader, out attribute),
             "InnerClasses" => InnerClassesAttributeRecord.TryReadInnerClassesAttribute(ref reader, out attribute),
             "EnclosingMethod" => EnclosingMethodAttributeRecord.TryReadEnclosingMethodAttribute(ref reader, out attribute),

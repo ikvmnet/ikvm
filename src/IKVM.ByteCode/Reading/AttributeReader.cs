@@ -5,10 +5,9 @@ using IKVM.ByteCode.Parsing;
 namespace IKVM.ByteCode.Reading
 {
 
-    public abstract class AttributeReader
+    public abstract class AttributeReader : ReaderBase
     {
 
-        readonly ClassReader declaringClass;
         readonly AttributeInfoReader info;
         readonly AttributeRecord record;
 
@@ -18,52 +17,52 @@ namespace IKVM.ByteCode.Reading
         /// <param name="declaringClass"></param>
         /// <param name="info"></param>
         /// <param name="record"></param>
-        internal AttributeReader(ClassReader declaringClass, AttributeInfoReader info, AttributeRecord record)
+        internal AttributeReader(ClassReader declaringClass, AttributeInfoReader info, AttributeRecord record) :
+            base(declaringClass)
         {
-            this.declaringClass = declaringClass ?? throw new ArgumentNullException(nameof(declaringClass));
             this.info = info ?? throw new ArgumentNullException(nameof(info));
             this.record = record ?? throw new ArgumentNullException(nameof(record));
         }
 
         /// <summary>
-        /// Gets the owning class of the attribute.
+        /// Gets the information about the attribute.
         /// </summary>
-        protected ClassReader DeclaringClass => declaringClass;
+        public AttributeInfoReader Info => info;
+
+        /// <summary>
+        /// Gets the underlying record of the attribute.
+        /// </summary>
+        public AttributeRecord Record => record;
 
         /// <summary>
         /// Gets the name of the attribute.
         /// </summary>
         public string Name => info.Name;
 
-        /// <summary>
-        /// Gets the underlying data record of the attribute.
-        /// </summary>
-        protected AttributeRecord Data => record;
-
     }
 
-    public abstract class AttributeData<TRecord> : AttributeReader
+    public abstract class AttributeReader<TRecord> : AttributeReader
         where TRecord : AttributeRecord
     {
 
-        readonly TRecord data;
+        readonly TRecord record;
 
         /// <summary>
         /// Initializes a new instance.
         /// </summary>
         /// <param name="declaringClass"></param>
         /// <param name="info"></param>
-        /// <param name="data"></param>
-        internal AttributeData(ClassReader declaringClass, AttributeInfoReader info, TRecord data) :
-            base(declaringClass, info, data)
+        /// <param name="record"></param>
+        internal AttributeReader(ClassReader declaringClass, AttributeInfoReader info, TRecord record) :
+            base(declaringClass, info, record)
         {
-            this.data = data ?? throw new ArgumentNullException(nameof(data));
+            this.record = record ?? throw new ArgumentNullException(nameof(record));
         }
 
         /// <summary>
         /// Gets the underlying data record of the attribute.
         /// </summary>
-        protected new TRecord Data => data;
+        public new TRecord Record => record;
 
     }
 

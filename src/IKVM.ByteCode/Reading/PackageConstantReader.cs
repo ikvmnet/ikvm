@@ -3,23 +3,27 @@
 namespace IKVM.ByteCode.Reading
 {
 
-    public sealed class PackageConstantReader : Constant<PackageConstantRecord>
+    public sealed class PackageConstantReader : ConstantReader<PackageConstantRecord, PackageConstantOverride>
     {
 
-        Utf8ConstantReader name;
+        string name;
 
         /// <summary>
         /// Initializes a new instance.
         /// </summary>
         /// <param name="owner"></param>
         /// <param name="record"></param>
-        public PackageConstantReader(ClassReader owner, PackageConstantRecord record) :
-            base(owner, record)
+        /// <param name="override"></param>
+        public PackageConstantReader(ClassReader owner, PackageConstantRecord record, PackageConstantOverride @override = null) :
+            base(owner, record, @override)
         {
 
         }
 
-        public Utf8ConstantReader Name => name ??= DeclaringClass.ResolveConstant<Utf8ConstantReader>(Record.NameIndex);
+        /// <summary>
+        /// Gest the name of this package.
+        /// </summary>
+        public string Name => LazyGet(ref name, () => DeclaringClass.ResolveConstant<Utf8ConstantReader>(Record.NameIndex).Value);
 
     }
 

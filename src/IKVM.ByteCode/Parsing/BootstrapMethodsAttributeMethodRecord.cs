@@ -5,10 +5,10 @@ using IKVM.ByteCode.Buffers;
 namespace IKVM.ByteCode.Parsing
 {
 
-    public readonly record struct BootstrapMethodRecord(ushort MethodRefIndex, ushort[] Arguments)
+    public readonly record struct BootstrapMethodsAttributeMethodRecord(ushort MethodRefIndex, ushort[] Arguments)
     {
 
-        public static bool TryReadBootstrapMethod(ref SequenceReader<byte> reader, out BootstrapMethodRecord method)
+        public static bool TryReadBootstrapMethod(ref SequenceReader<byte> reader, out BootstrapMethodsAttributeMethodRecord method)
         {
             method = default;
 
@@ -26,7 +26,7 @@ namespace IKVM.ByteCode.Parsing
                 arguments[i] = argumentIndex;
             }
 
-            method = new BootstrapMethodRecord(methodRefIndex, arguments);
+            method = new BootstrapMethodsAttributeMethodRecord(methodRefIndex, arguments);
             return true;
         }
 

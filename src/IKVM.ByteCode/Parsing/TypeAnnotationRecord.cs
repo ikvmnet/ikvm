@@ -1,6 +1,7 @@
 ﻿using System.Buffers;
 
 using IKVM.ByteCode.Buffers;
+using IKVM.ByteCode.Writing;
 
 namespace IKVM.ByteCode.Parsing
 {
@@ -12,11 +13,9 @@ namespace IKVM.ByteCode.Parsing
         {
             annotation = default;
 
-            if (reader.TryRead(out byte targetType) == false)
+            if (TypeAnnotationTargetRecord.TryReadTypeAnnotationTarget(ref reader, out var target) == false)
                 return false;
-            if (TypeAnnotationTargetRecord.TryReadTypeAnnotationTarget(ref reader, targetType, out var target) == false)
-                return false;
-            if (TypePathRecord.TryReadTypePath(ref reader, out var targetPath) == false)
+            if (TypePathRecord.TryRead(ref reader, out var targetPath) == false)
                 return false;
             if (reader.TryReadBigEndian(out ushort typeIndex) == false)
                 return false;
@@ -26,15 +25,54 @@ namespace IKVM.ByteCode.Parsing
             var elements = new ElementValuePairRecord[pairCount];
             for (int i = 0; i < pairCount; i++)
             {
-                if (reader.TryReadBigEndian(out ushort nameIndex) == false)
-                    return false;
-                if (ElementValueRecord.TryReadElementValue(ref reader, out var elementValue) == false)
+                if (ElementValuePairRecord.TryRead(ref reader, out var element) == false)
                     return false;
 
-                elements[i] = new ElementValuePairRecord(nameIndex, elementValue);
+                elements[i] = element;
             }
 
             annotation = new TypeAnnotationRecord(target, targetPath, typeIndex, elements);
+            return true;
+        }
+
+        /// <summary>
+        /// Gets the number of bytes required to write the record.
+        /// </summary>
+        /// <returns></returns>
+        public int GetSize()
+        {
+            var size = 0;
+            size += Target.GetSize();
+            size += TargetPath.GetSize();
+            size += sizeof(ushort);
+            size += sizeof(ushort);
+
+            foreach (var element in Elements)
+                size += element.GetSize();
+
+            return size;
+        }
+
+        /// <summary>
+        /// Attempts to write the record to the given <see cref="ClassFormatWriter"/>.
+        /// </summary>
+        /// <param name="writer"></param>
+        /// <returns></returns>
+        public bool TryWrite(ref ClassFormatWriter writer)
+        {
+            if (Target.TryWrite(ref writer) == false)
+                return false;
+            if (TargetPath.TryWrite(ref writer) == false)
+                return false;
+            if (writer.TryWrite(TypeIndex) == false)
+                return false;
+            if (writer.TryWrite((ushort)Elements.Length) == false)
+                return false;
+
+            foreach (var record in Elements)
+                if (record.TryWrite(ref writer) == false)
+                    return false;
+
             return true;
         }
 

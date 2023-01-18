@@ -27,6 +27,10 @@ using System.Diagnostics;
 
 using IKVM.Attributes;
 using IKVM.Runtime;
+using IKVM.ByteCode.Reading;
+using IKVM.ByteCode.Writing;
+using IKVM.ByteCode.Parsing;
+
 using System.Linq;
 
 #if IMPORTER
@@ -3067,7 +3071,7 @@ namespace IKVM.Internal
                         Modifiers[] modifiers = new Modifiers[m.MethodParameters.Length];
                         for (int i = 0; i < modifiers.Length; i++)
                         {
-                            modifiers[i] = (Modifiers)m.MethodParameters[i].flags;
+                            modifiers[i] = (Modifiers)m.MethodParameters[i].accessFlags;
                         }
                         AttributeHelper.SetMethodParametersAttribute(method, modifiers);
                     }
@@ -3586,16 +3590,24 @@ namespace IKVM.Internal
             }
         }
 
-        private sealed class Metadata
+        sealed class Metadata
         {
-            private readonly string[][] genericMetaData;
-            private readonly object[][] annotations;
-            private readonly MethodParametersEntry[][] methodParameters;
-            private readonly byte[][][] runtimeVisibleTypeAnnotations;
-            private readonly object[] constantPool;
 
-            private Metadata(string[][] genericMetaData, object[][] annotations, MethodParametersEntry[][] methodParameters,
-                byte[][][] runtimeVisibleTypeAnnotations, object[] constantPool)
+            readonly string[][] genericMetaData;
+            readonly object[][] annotations;
+            readonly MethodParametersEntry[][] methodParameters;
+            readonly IReadOnlyList<TypeAnnotationReader>[][] runtimeVisibleTypeAnnotations;
+            readonly object[] constantPool;
+
+            /// <summary>
+            /// Initializes a new instance.
+            /// </summary>
+            /// <param name="genericMetaData"></param>
+            /// <param name="annotations"></param>
+            /// <param name="methodParameters"></param>
+            /// <param name="runtimeVisibleTypeAnnotations"></param>
+            /// <param name="constantPool"></param>
+            Metadata(string[][] genericMetaData, object[][] annotations, MethodParametersEntry[][] methodParameters, IReadOnlyList<TypeAnnotationReader>[][] runtimeVisibleTypeAnnotations, object[] constantPool)
             {
                 this.genericMetaData = genericMetaData;
                 this.annotations = annotations;
@@ -3607,160 +3619,112 @@ namespace IKVM.Internal
             internal static Metadata Create(ClassFile classFile)
             {
                 if (classFile.MajorVersion < 49)
-                {
                     return null;
-                }
+
                 string[][] genericMetaData = null;
                 object[][] annotations = null;
                 MethodParametersEntry[][] methodParameters = null;
-                byte[][][] runtimeVisibleTypeAnnotations = null;
+                IReadOnlyList<TypeAnnotationReader>[][] runtimeVisibleTypeAnnotations = null;
+
+                if (classFile.EnclosingMethod != null)
+                {
+                    genericMetaData ??= new string[4][];
+                    genericMetaData[2] = classFile.EnclosingMethod;
+                }
+
+                if (classFile.GenericSignature != null)
+                {
+                    genericMetaData ??= new string[4][];
+                    genericMetaData[3] = new string[] { classFile.GenericSignature };
+                }
+
+                if (classFile.Annotations != null)
+                {
+                    annotations ??= new object[5][];
+                    annotations[0] = classFile.Annotations;
+                }
+
+                if (classFile.RuntimeVisibleTypeAnnotations != null)
+                {
+                    runtimeVisibleTypeAnnotations ??= new IReadOnlyList<TypeAnnotationReader>[3][];
+                    runtimeVisibleTypeAnnotations[0] ??= new IReadOnlyList<TypeAnnotationReader>[1];
+                    runtimeVisibleTypeAnnotations[0][0] = classFile.RuntimeVisibleTypeAnnotations;
+                }
+
                 for (int i = 0; i < classFile.Methods.Length; i++)
                 {
                     if (classFile.Methods[i].GenericSignature != null)
                     {
-                        if (genericMetaData == null)
-                        {
-                            genericMetaData = new string[4][];
-                        }
-                        if (genericMetaData[0] == null)
-                        {
-                            genericMetaData[0] = new string[classFile.Methods.Length];
-                        }
+                        genericMetaData ??= new string[4][];
+                        genericMetaData[0] ??= new string[classFile.Methods.Length];
                         genericMetaData[0][i] = classFile.Methods[i].GenericSignature;
                     }
+
                     if (classFile.Methods[i].Annotations != null)
                     {
-                        if (annotations == null)
-                        {
-                            annotations = new object[5][];
-                        }
-                        if (annotations[1] == null)
-                        {
-                            annotations[1] = new object[classFile.Methods.Length];
-                        }
+                        annotations ??= new object[5][];
+                        annotations[1] ??= new object[classFile.Methods.Length];
                         annotations[1][i] = classFile.Methods[i].Annotations;
                     }
+
                     if (classFile.Methods[i].ParameterAnnotations != null)
                     {
-                        if (annotations == null)
-                        {
-                            annotations = new object[5][];
-                        }
-                        if (annotations[2] == null)
-                        {
-                            annotations[2] = new object[classFile.Methods.Length];
-                        }
+                        annotations ??= new object[5][];
+                        annotations[2] ??= new object[classFile.Methods.Length];
                         annotations[2][i] = classFile.Methods[i].ParameterAnnotations;
                     }
+
                     if (classFile.Methods[i].AnnotationDefault != null)
                     {
-                        if (annotations == null)
-                        {
-                            annotations = new object[5][];
-                        }
-                        if (annotations[3] == null)
-                        {
-                            annotations[3] = new object[classFile.Methods.Length];
-                        }
+                        annotations ??= new object[5][];
+                        annotations[3] ??= new object[classFile.Methods.Length];
                         annotations[3][i] = classFile.Methods[i].AnnotationDefault;
                     }
+
                     if (classFile.Methods[i].MethodParameters != null)
                     {
-                        if (methodParameters == null)
-                        {
-                            methodParameters = new MethodParametersEntry[classFile.Methods.Length][];
-                        }
+                        methodParameters ??= new MethodParametersEntry[classFile.Methods.Length][];
                         methodParameters[i] = classFile.Methods[i].MethodParameters;
                     }
+
                     if (classFile.Methods[i].RuntimeVisibleTypeAnnotations != null)
                     {
-                        if (runtimeVisibleTypeAnnotations == null)
-                        {
-                            runtimeVisibleTypeAnnotations = new byte[3][][];
-                        }
-                        if (runtimeVisibleTypeAnnotations[1] == null)
-                        {
-                            runtimeVisibleTypeAnnotations[1] = new byte[classFile.Methods.Length][];
-                        }
+                        runtimeVisibleTypeAnnotations ??= new IReadOnlyList<TypeAnnotationReader>[3][];
+                        runtimeVisibleTypeAnnotations[1] ??= new IReadOnlyList<TypeAnnotationReader>[classFile.Methods.Length];
                         runtimeVisibleTypeAnnotations[1][i] = classFile.Methods[i].RuntimeVisibleTypeAnnotations;
                     }
                 }
+
                 for (int i = 0; i < classFile.Fields.Length; i++)
                 {
                     if (classFile.Fields[i].GenericSignature != null)
                     {
-                        if (genericMetaData == null)
-                        {
-                            genericMetaData = new string[4][];
-                        }
-                        if (genericMetaData[1] == null)
-                        {
-                            genericMetaData[1] = new string[classFile.Fields.Length];
-                        }
+                        genericMetaData ??= new string[4][];
+                        genericMetaData[1] ??= new string[classFile.Fields.Length];
                         genericMetaData[1][i] = classFile.Fields[i].GenericSignature;
                     }
+
                     if (classFile.Fields[i].Annotations != null)
                     {
-                        if (annotations == null)
-                        {
-                            annotations = new object[5][];
-                        }
-                        if (annotations[4] == null)
-                        {
-                            annotations[4] = new object[classFile.Fields.Length][];
-                        }
+                        annotations ??= new object[5][];
+                        annotations[4] ??= new object[classFile.Fields.Length][];
                         annotations[4][i] = classFile.Fields[i].Annotations;
                     }
+
                     if (classFile.Fields[i].RuntimeVisibleTypeAnnotations != null)
                     {
-                        if (runtimeVisibleTypeAnnotations == null)
-                        {
-                            runtimeVisibleTypeAnnotations = new byte[3][][];
-                        }
-                        if (runtimeVisibleTypeAnnotations[2] == null)
-                        {
-                            runtimeVisibleTypeAnnotations[2] = new byte[classFile.Fields.Length][];
-                        }
+                        runtimeVisibleTypeAnnotations ??= new IReadOnlyList<TypeAnnotationReader>[3][];
+                        runtimeVisibleTypeAnnotations[2] ??= new IReadOnlyList<TypeAnnotationReader>[classFile.Fields.Length];
                         runtimeVisibleTypeAnnotations[2][i] = classFile.Fields[i].RuntimeVisibleTypeAnnotations;
                     }
                 }
-                if (classFile.EnclosingMethod != null)
-                {
-                    if (genericMetaData == null)
-                    {
-                        genericMetaData = new string[4][];
-                    }
-                    genericMetaData[2] = classFile.EnclosingMethod;
-                }
-                if (classFile.GenericSignature != null)
-                {
-                    if (genericMetaData == null)
-                    {
-                        genericMetaData = new string[4][];
-                    }
-                    genericMetaData[3] = new string[] { classFile.GenericSignature };
-                }
-                if (classFile.Annotations != null)
-                {
-                    if (annotations == null)
-                    {
-                        annotations = new object[5][];
-                    }
-                    annotations[0] = classFile.Annotations;
-                }
-                if (classFile.RuntimeVisibleTypeAnnotations != null)
-                {
-                    if (runtimeVisibleTypeAnnotations == null)
-                    {
-                        runtimeVisibleTypeAnnotations = new byte[3][][];
-                    }
-                    runtimeVisibleTypeAnnotations[0] = new byte[1][] { classFile.RuntimeVisibleTypeAnnotations };
-                }
+
                 if (genericMetaData != null || annotations != null || methodParameters != null || runtimeVisibleTypeAnnotations != null)
                 {
-                    object[] constantPool = runtimeVisibleTypeAnnotations == null ? null : classFile.GetConstantPool();
+                    var constantPool = runtimeVisibleTypeAnnotations == null ? null : classFile.GetConstantPool();
                     return new Metadata(genericMetaData, annotations, methodParameters, runtimeVisibleTypeAnnotations, constantPool);
                 }
+
                 return null;
             }
 
@@ -3863,41 +3827,51 @@ namespace IKVM.Internal
             internal static byte[] GetRawTypeAnnotations(Metadata m)
             {
                 if (m != null && m.runtimeVisibleTypeAnnotations != null && m.runtimeVisibleTypeAnnotations[0] != null)
-                {
-                    return m.runtimeVisibleTypeAnnotations[0][0];
-                }
-                return null;
+                    return SerializeTypeAnnotations(m.runtimeVisibleTypeAnnotations[0][0]);
+                else
+                    return null;
             }
 
             internal static byte[] GetMethodRawTypeAnnotations(Metadata m, int index)
             {
                 if (m != null && m.runtimeVisibleTypeAnnotations != null && m.runtimeVisibleTypeAnnotations[1] != null)
-                {
-                    return m.runtimeVisibleTypeAnnotations[1][index];
-                }
-                return null;
+                    return SerializeTypeAnnotations(m.runtimeVisibleTypeAnnotations[1][index]);
+                else
+                    return null;
             }
 
             internal static byte[] GetFieldRawTypeAnnotations(Metadata m, int index)
             {
                 if (m != null && m.runtimeVisibleTypeAnnotations != null && m.runtimeVisibleTypeAnnotations[2] != null)
-                {
-                    return m.runtimeVisibleTypeAnnotations[2][index];
-                }
-                return null;
+                    return SerializeTypeAnnotations(m.runtimeVisibleTypeAnnotations[2][index]);
+                else
+                    return null;
             }
+
+            static byte[] SerializeTypeAnnotations(IReadOnlyList<TypeAnnotationReader> annotations)
+            {
+                var record = new RuntimeVisibleTypeAnnotationsAttributeRecord(annotations.Select(i => i.Record).ToArray());
+                var buffer = new byte[record.GetSize()];
+                var writer = new ClassFormatWriter(buffer);
+                if (record.TryWrite(ref writer) == false)
+                    throw new InternalException("Failed to serialize raw type annotations.");
+
+                return buffer;
+            }
+
         }
 
-        private sealed class FinishedTypeImpl : DynamicImpl
+        sealed class FinishedTypeImpl : DynamicImpl
         {
-            private readonly Type type;
-            private readonly TypeWrapper[] innerclasses;
-            private readonly TypeWrapper declaringTypeWrapper;
-            private readonly Modifiers reflectiveModifiers;
-            private readonly MethodInfo clinitMethod;
-            private readonly MethodInfo finalizeMethod;
-            private readonly Metadata metadata;
-            private readonly TypeWrapper host;
+
+            readonly Type type;
+            readonly TypeWrapper[] innerclasses;
+            readonly TypeWrapper declaringTypeWrapper;
+            readonly Modifiers reflectiveModifiers;
+            readonly MethodInfo clinitMethod;
+            readonly MethodInfo finalizeMethod;
+            readonly Metadata metadata;
+            readonly TypeWrapper host;
 
             internal FinishedTypeImpl(Type type, TypeWrapper[] innerclasses, TypeWrapper declaringTypeWrapper, Modifiers reflectiveModifiers, Metadata metadata, MethodInfo clinitMethod, MethodInfo finalizeMethod, TypeWrapper host)
             {
@@ -4777,14 +4751,13 @@ namespace IKVM.Internal
                 object[] constantPool = null;
                 bool[] inUse = null;
                 MarkConstantPoolUsage(classFile, classFile.RuntimeVisibleTypeAnnotations, ref constantPool, ref inUse);
-                foreach (ClassFile.Method method in classFile.Methods)
-                {
+
+                foreach (var method in classFile.Methods)
                     MarkConstantPoolUsage(classFile, method.RuntimeVisibleTypeAnnotations, ref constantPool, ref inUse);
-                }
-                foreach (ClassFile.Field field in classFile.Fields)
-                {
+
+                foreach (var field in classFile.Fields)
                     MarkConstantPoolUsage(classFile, field.RuntimeVisibleTypeAnnotations, ref constantPool, ref inUse);
-                }
+
                 if (constantPool != null)
                 {
                     // to save space, we clear out the items that aren't used by the RuntimeVisibleTypeAnnotations and
@@ -4793,7 +4766,7 @@ namespace IKVM.Internal
                 }
             }
 
-            private static void MarkConstantPoolUsage(ClassFile classFile, byte[] runtimeVisibleTypeAnnotations, ref object[] constantPool, ref bool[] inUse)
+            private static void MarkConstantPoolUsage(ClassFile classFile, IReadOnlyList<TypeAnnotationReader> runtimeVisibleTypeAnnotations, ref object[] constantPool, ref bool[] inUse)
             {
                 if (runtimeVisibleTypeAnnotations != null)
                 {
@@ -4804,12 +4777,9 @@ namespace IKVM.Internal
                     }
                     try
                     {
-                        BigEndianBinaryReader br = new BigEndianBinaryReader(runtimeVisibleTypeAnnotations, 0, runtimeVisibleTypeAnnotations.Length);
-                        ushort num_annotations = br.ReadUInt16();
-                        for (int i = 0; i < num_annotations; i++)
-                        {
-                            MarkConstantPoolUsageForTypeAnnotation(br, inUse);
-                        }
+                        foreach (var annotation in runtimeVisibleTypeAnnotations)
+                            MarkConstantPoolUsageForTypeAnnotation(annotation, inUse);
+
                         return;
                     }
                     catch (ClassFormatError)
@@ -4826,90 +4796,51 @@ namespace IKVM.Internal
                 }
             }
 
-            private static void MarkConstantPoolUsageForTypeAnnotation(BigEndianBinaryReader br, bool[] inUse)
+            static void MarkConstantPoolUsageForAnnotation(AnnotationReader annotation, bool[] inUse)
             {
-                switch (br.ReadByte())      // target_type
-                {
-                    case 0x00:
-                    case 0x01:
-                        br.ReadByte();      // type_parameter_index
-                        break;
-                    case 0x10:
-                        br.ReadUInt16();    // supertype_index
-                        break;
-                    case 0x11:
-                    case 0x12:
-                        br.ReadByte();      // type_parameter_index
-                        br.ReadByte();      // bound_index
-                        break;
-                    case 0x13:
-                    case 0x14:
-                    case 0x15:
-                        // empty_target
-                        break;
-                    case 0x16:
-                        br.ReadByte();      // formal_parameter_index
-                        break;
-                    case 0x17:
-                        br.ReadUInt16();    // throws_type_index
-                        break;
-                    default:
-                        throw new ClassFormatError("");
-                }
-                byte path_length = br.ReadByte();
-                for (int i = 0; i < path_length; i++)
-                {
-                    br.ReadByte();          // type_path_kind
-                    br.ReadByte();          // type_argument_index
-                }
-                MarkConstantPoolUsageForAnnotation(br, inUse);
-            }
-
-            private static void MarkConstantPoolUsageForAnnotation(BigEndianBinaryReader br, bool[] inUse)
-            {
-                ushort type_index = br.ReadUInt16();
+                ushort type_index = annotation.Record.TypeIndex;
                 inUse[type_index] = true;
-                ushort num_components = br.ReadUInt16();
-                for (int i = 0; i < num_components; i++)
+
+                for (int i = 0; i < annotation.Record.Elements.Length; i++)
                 {
-                    ushort component_name_index = br.ReadUInt16();
-                    inUse[component_name_index] = true;
-                    MarkConstantPoolUsageForAnnotationComponentValue(br, inUse);
+                    inUse[annotation.Record.Elements[i].NameIndex] = true;
+                    MarkConstantPoolUsageForAnnotationComponentValue(annotation.Elements[i], inUse);
                 }
             }
 
-            private static void MarkConstantPoolUsageForAnnotationComponentValue(BigEndianBinaryReader br, bool[] inUse)
+            static void MarkConstantPoolUsageForTypeAnnotation(TypeAnnotationReader annotation, bool[] inUse)
             {
-                switch ((char)br.ReadByte())    // tag
+                ushort type_index = annotation.Record.TypeIndex;
+                inUse[type_index] = true;
+
+                for (int i = 0; i < annotation.Record.Elements.Length; i++)
                 {
-                    case 'B':
-                    case 'C':
-                    case 'D':
-                    case 'F':
-                    case 'I':
-                    case 'J':
-                    case 'S':
-                    case 'Z':
-                    case 's':
-                    case 'c':
-                        inUse[br.ReadUInt16()] = true;
+                    inUse[annotation.Record.Elements[i].NameIndex] = true;
+                    MarkConstantPoolUsageForAnnotationComponentValue(annotation.Elements[i], inUse);
+                }
+            }
+
+            static void MarkConstantPoolUsageForAnnotationComponentValue(ElementValueReader element, bool[] inUse)
+            {
+                switch (element)
+                {
+                    case ElementConstantValueReader constant:
+                        inUse[constant.Record.ConstantValueIndex] = true;
                         break;
-                    case 'e':
-                        inUse[br.ReadUInt16()] = true;
-                        inUse[br.ReadUInt16()] = true;
+                    case ElementClassInfoValueReader classInfo:
+                        inUse[classInfo.Record.ClassInfoIndex] = true;
                         break;
-                    case '@':
-                        MarkConstantPoolUsageForAnnotation(br, inUse);
+                    case ElementEnumConstantValueReader enumConstant:
+                        inUse[enumConstant.Record.TypeNameIndex] = true;
+                        inUse[enumConstant.Record.ConstantNameIndex] = true;
                         break;
-                    case '[':
-                        ushort num_values = br.ReadUInt16();
-                        for (int i = 0; i < num_values; i++)
-                        {
-                            MarkConstantPoolUsageForAnnotationComponentValue(br, inUse);
-                        }
+                    case ElementAnnotationValueReader annotation:
+                        MarkConstantPoolUsageForAnnotation(annotation.Annotation, inUse);
                         break;
-                    default:
-                        throw new ClassFormatError("");
+                    case ElementArrayValueReader array:
+                        foreach (var i in array.Values)
+                            MarkConstantPoolUsageForAnnotationComponentValue(i, inUse);
+                        break;
                 }
             }
 

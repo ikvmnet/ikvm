@@ -1,22 +1,31 @@
-﻿using IKVM.ByteCode.Parsing;
+﻿using System.Collections.Generic;
+
+using IKVM.ByteCode.Parsing;
 
 namespace IKVM.ByteCode.Reading
 {
 
-    public sealed class InnerClassesAttributeReader : AttributeData<InnerClassesAttributeRecord>
+    public sealed class InnerClassesAttributeReader : AttributeReader<InnerClassesAttributeRecord>
     {
+
+        IReadOnlyList<InnerClassesAttributeItemReader> items;
 
         /// <summary>
         /// Initializes a new instance.
         /// </summary>
         /// <param name="declaringClass"></param>
         /// <param name="info"></param>
-        /// <param name="data"></param>
-        internal InnerClassesAttributeReader(ClassReader declaringClass, AttributeInfoReader info, InnerClassesAttributeRecord data) :
-            base(declaringClass, info, data)
+        /// <param name="record"></param>
+        public InnerClassesAttributeReader(ClassReader declaringClass, AttributeInfoReader info, InnerClassesAttributeRecord record) :
+            base(declaringClass, info, record)
         {
 
         }
+
+        /// <summary>
+        /// Gets the items on the attribute.
+        /// </summary>
+        public IReadOnlyList<InnerClassesAttributeItemReader> Items => ClassReader.LazyGet(ref items, () => new DelegateLazyReaderList<InnerClassesAttributeItemReader, InnerClassesAttributeItemRecord>(DeclaringClass, Record.Items, (_, record) => new InnerClassesAttributeItemReader(DeclaringClass, record)));
 
     }
 

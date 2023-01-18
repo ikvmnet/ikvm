@@ -3,8 +3,10 @@
 namespace IKVM.ByteCode.Reading
 {
 
-    public class RuntimeVisibleTypeAnnotationsAttributeReader : AttributeData<RuntimeVisibleTypeAnnotationsAttributeRecord>
+    public class RuntimeVisibleTypeAnnotationsAttributeReader : AttributeReader<RuntimeVisibleTypeAnnotationsAttributeRecord>
     {
+
+        TypeAnnotationReaderCollection annotations;
 
         /// <summary>
         /// Initializes a new instance.
@@ -17,6 +19,11 @@ namespace IKVM.ByteCode.Reading
         {
 
         }
+
+        /// <summary>
+        /// Gets the set of annotations described by this attribute.
+        /// </summary>
+        public TypeAnnotationReaderCollection Annotations => ClassReader.LazyGet(ref annotations, () => new TypeAnnotationReaderCollection(DeclaringClass, Record.Annotations));
 
     }
 

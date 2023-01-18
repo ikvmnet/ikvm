@@ -27,7 +27,6 @@ using System.Collections.Generic;
 using System.Diagnostics;
 using System.IO;
 using System.Security;
-using System.Security.Permissions;
 using System.Text;
 using System.Text.RegularExpressions;
 using System.Threading;
@@ -36,6 +35,7 @@ using System.Xml.Linq;
 using ICSharpCode.SharpZipLib.Zip;
 
 using IKVM.Attributes;
+using IKVM.ByteCode.Reading;
 using IKVM.Internal;
 using IKVM.Reflection;
 using IKVM.Reflection.Emit;
@@ -284,8 +284,7 @@ namespace IKVM.Tools.Importer
                     ClassFile f;
                     try
                     {
-                        byte[] buf = itemRef.GetData();
-                        f = new ClassFile(buf, 0, buf.Length, name, ClassFileParseOptions, null);
+                        f = new ClassFile(ClassReader.Read(itemRef.GetData()), name, ClassFileParseOptions, null);
                     }
                     catch (ClassFormatError x)
                     {
@@ -293,12 +292,14 @@ namespace IKVM.Tools.Importer
                         StaticCompiler.IssueMessage(options, Message.ClassFormatError, name, x.Message);
                         return null;
                     }
+
                     if (f.Name != name)
                     {
                         StaticCompiler.SuppressWarning(options, Message.ClassNotFound, name);
                         StaticCompiler.IssueMessage(options, Message.WrongClassName, name, f.Name);
                         return null;
                     }
+
                     if (f.IsPublic && options.privatePackages != null)
                     {
                         foreach (string p in options.privatePackages)
@@ -2670,8 +2671,8 @@ namespace IKVM.Tools.Importer
                 {
                     try
                     {
-                        byte[] buf = assemblyType.GetData();
-                        ClassFile f = new ClassFile(buf, 0, buf.Length, null, ClassFileParseOptions.None, null);
+                        var f = new ClassFile(ClassReader.Read(assemblyType.GetData()), null, ClassFileParseOptions.None, null);
+
                         // NOTE the "assembly" type in the unnamed package is a magic type
                         // that acts as the placeholder for assembly attributes
                         if (f.Name == "assembly" && f.Annotations != null)
@@ -2683,7 +2684,10 @@ namespace IKVM.Tools.Importer
                             StaticCompiler.IssueMessage(Message.LegacyAssemblyAttributesFound);
                         }
                     }
-                    catch (ClassFormatError) { }
+                    catch (ClassFormatError)
+                    {
+
+                    }
                 }
             }
 
@@ -2694,11 +2698,10 @@ namespace IKVM.Tools.Importer
                 {
                     try
                     {
-                        byte[] buf = h[className].GetData();
-                        ClassFile f = new ClassFile(buf, 0, buf.Length, null, ClassFileParseOptions.None, null);
+                        var f = new ClassFile(ClassReader.Read(h[className].GetData()), null, ClassFileParseOptions.None, null);
                         if (f.Name == className)
                         {
-                            foreach (ClassFile.Method m in f.Methods)
+                            foreach (var m in f.Methods)
                             {
                                 if (m.IsPublic && m.IsStatic && m.Name == "main" && m.Signature == "([Ljava.lang.String;)V")
                                 {
@@ -2709,7 +2712,9 @@ namespace IKVM.Tools.Importer
                             }
                         }
                     }
-                    catch (ClassFormatError) { }
+                    catch (ClassFormatError)
+                    {
+                    }
                 }
             break_outer:;
             }

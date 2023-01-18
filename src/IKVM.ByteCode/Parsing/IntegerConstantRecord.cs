@@ -12,15 +12,17 @@ namespace IKVM.ByteCode.Parsing
         /// Parses a Integer constant in the constant pool.
         /// </summary>
         /// <param name="reader"></param>
-        /// <param name="constant"></param>
-        public static bool TryReadIntegerConstant(ref SequenceReader<byte> reader, out ConstantRecord constant)
+        /// <param name="record"></param>
+        /// <param name="skip"></param>
+        public static bool TryReadIntegerConstant(ref SequenceReader<byte> reader, out ConstantRecord record, out int skip)
         {
-            constant = null;
+            record = null;
+            skip = 0;
 
             if (reader.TryReadBigEndian(out int value) == false)
                 return false;
 
-            constant = new IntegerConstantRecord(value);
+            record = new IntegerConstantRecord(value);
             return true;
         }
 

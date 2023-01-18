@@ -21,33 +21,39 @@
   jeroen@frijters.net
   
 */
-using System;
+using IKVM.ByteCode.Reading;
 
 namespace IKVM.Internal
 {
 
     sealed partial class ClassFile
     {
+
         internal sealed class ConstantPoolItemMethodType : ConstantPoolItem
         {
-            private ushort signature_index;
-            private string descriptor;
-            private TypeWrapper[] argTypeWrappers;
-            private TypeWrapper retTypeWrapper;
 
-            internal ConstantPoolItemMethodType(BigEndianBinaryReader br)
+            readonly ushort signature_index;
+
+            string descriptor;
+            TypeWrapper[] argTypeWrappers;
+            TypeWrapper retTypeWrapper;
+
+            /// <summary>
+            /// Initializes a new instance.
+            /// </summary>
+            /// <param name="reader"></param>
+            internal ConstantPoolItemMethodType(MethodTypeConstantReader reader)
             {
-                signature_index = br.ReadUInt16();
+                signature_index = reader.Record.DescriptorIndex;
             }
 
             internal override void Resolve(ClassFile classFile, string[] utf8_cp, ClassFileParseOptions options)
             {
-                string descriptor = classFile.GetConstantPoolUtf8String(utf8_cp, signature_index);
+                var descriptor = classFile.GetConstantPoolUtf8String(utf8_cp, signature_index);
                 if (descriptor == null || !IsValidMethodSig(descriptor))
-                {
                     throw new ClassFormatError("Invalid MethodType signature");
-                }
-                this.descriptor = String.Intern(descriptor.Replace('/', '.'));
+
+                this.descriptor = string.Intern(descriptor.Replace('/', '.'));
             }
 
             internal override void Link(TypeWrapper thisType, LoadMode mode)
@@ -59,9 +65,11 @@ namespace IKVM.Internal
                         return;
                     }
                 }
-                ClassLoaderWrapper classLoader = thisType.GetClassLoader();
-                TypeWrapper[] args = classLoader.ArgTypeWrapperListFromSig(descriptor, mode);
-                TypeWrapper ret = classLoader.RetTypeWrapperFromSig(descriptor, mode);
+
+                var classLoader = thisType.GetClassLoader();
+                var args = classLoader.ArgTypeWrapperListFromSig(descriptor, mode);
+                var ret = classLoader.RetTypeWrapperFromSig(descriptor, mode);
+
                 lock (this)
                 {
                     if (argTypeWrappers == null)
@@ -91,7 +99,9 @@ namespace IKVM.Internal
             {
                 return ConstantType.MethodType;
             }
+
         }
+
     }
 
 }

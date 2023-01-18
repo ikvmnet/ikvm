@@ -8,6 +8,7 @@ using System.Runtime.InteropServices;
 using System.Runtime.Serialization;
 using System.Threading;
 
+using IKVM.ByteCode.Reading;
 using IKVM.Internal;
 
 namespace IKVM.Java.Externs.sun.misc
@@ -1268,7 +1269,7 @@ namespace IKVM.Java.Externs.sun.misc
             {
                 var tw = TypeWrapper.FromClass(hostClass);
                 var cl = tw.GetClassLoader();
-                var cf = new ClassFile(data, 0, data.Length, "<Unknown>", cl.ClassFileParseOptions, cpPatches);
+                var cf = new ClassFile(ClassReader.Read(data), "<Unknown>", cl.ClassFileParseOptions, cpPatches);
                 if (cf.IKVMAssemblyAttribute != null)
                 {
                     // if this happens, the OpenJDK is probably trying to load an OpenJDK class file as a resource,

@@ -28,18 +28,26 @@ namespace IKVM.Internal
 
     sealed partial class ClassFile
     {
+
         internal abstract class ConstantPoolItemFMI : ConstantPoolItem
         {
-            private ushort class_index;
-            private ushort name_and_type_index;
-            private ConstantPoolItemClass clazz;
-            private string name;
-            private string descriptor;
 
-            internal ConstantPoolItemFMI(BigEndianBinaryReader br)
+            readonly ushort class_index;
+            readonly ushort name_and_type_index;
+
+            ConstantPoolItemClass clazz;
+            string name;
+            string descriptor;
+
+            /// <summary>
+            /// Initializes a new instance.
+            /// </summary>
+            /// <param name="classIndex"></param>
+            /// <param name="nameAndTypeIndex"></param>
+            internal ConstantPoolItemFMI(ushort classIndex, ushort nameAndTypeIndex)
             {
-                class_index = br.ReadUInt16();
-                name_and_type_index = br.ReadUInt16();
+                class_index = classIndex;
+                name_and_type_index = nameAndTypeIndex;
             }
 
             internal override void Resolve(ClassFile classFile, string[] utf8_cp, ClassFileParseOptions options)
@@ -51,8 +59,8 @@ namespace IKVM.Internal
                 {
                     throw new ClassFormatError("Bad index in constant pool");
                 }
-                name = String.Intern(classFile.GetConstantPoolUtf8String(utf8_cp, name_and_type.name_index));
-                descriptor = classFile.GetConstantPoolUtf8String(utf8_cp, name_and_type.descriptor_index);
+                name = String.Intern(classFile.GetConstantPoolUtf8String(utf8_cp, name_and_type.nameIndex));
+                descriptor = classFile.GetConstantPoolUtf8String(utf8_cp, name_and_type.descriptorIndex);
                 Validate(name, descriptor, classFile.MajorVersion);
                 descriptor = String.Intern(descriptor.Replace('/', '.'));
             }

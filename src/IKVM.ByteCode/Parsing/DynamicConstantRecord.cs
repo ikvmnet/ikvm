@@ -13,9 +13,11 @@ namespace IKVM.ByteCode.Parsing
         /// </summary>
         /// <param name="reader"></param>
         /// <param name="constant"></param>
-        public static bool TryReadDynamicConstant(ref SequenceReader<byte> reader, out ConstantRecord constant)
+        /// <param name="skipIndex"></param>
+        public static bool TryReadDynamicConstant(ref SequenceReader<byte> reader, out ConstantRecord constant, out int skipIndex)
         {
             constant = null;
+            skipIndex = 0;
 
             if (reader.TryReadBigEndian(out ushort bootstrapMethodAttrIndex) == false)
                 return false;

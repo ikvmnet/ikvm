@@ -5,7 +5,7 @@ using IKVM.ByteCode.Buffers;
 namespace IKVM.ByteCode.Parsing
 {
 
-    public sealed record Utf8ConstantRecord(byte[] Value) : ConstantRecord
+    public record class Utf8ConstantRecord(byte[] Value) : ConstantRecord
     {
 
         /// <summary>
@@ -13,9 +13,10 @@ namespace IKVM.ByteCode.Parsing
         /// </summary>
         /// <param name="reader"></param>
         /// <param name="constant"></param>
-        public static bool TryReadUtf8Constant(ref SequenceReader<byte> reader, out ConstantRecord constant)
+        public static bool TryReadUtf8Constant(ref SequenceReader<byte> reader, out ConstantRecord constant, out int skip)
         {
             constant = null;
+            skip = 0;
 
             if (reader.TryReadBigEndian(out ushort length) == false)
                 return false;

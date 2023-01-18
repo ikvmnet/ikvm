@@ -27,15 +27,23 @@ namespace IKVM.Internal
 
     sealed partial class ClassFile
     {
+
         internal class ConstantPoolItemMI : ConstantPoolItemFMI
         {
-            private TypeWrapper[] argTypeWrappers;
-            private TypeWrapper retTypeWrapper;
+
+            TypeWrapper[] argTypeWrappers;
+            TypeWrapper retTypeWrapper;
             protected MethodWrapper method;
             protected MethodWrapper invokespecialMethod;
 
-            internal ConstantPoolItemMI(BigEndianBinaryReader br) : base(br)
+            /// <summary>
+            /// Initializes a new instance.
+            /// </summary>
+            /// <param name="classIndex"></param>
+            /// <param name="nameAndTypeIndex"></param>
+            internal ConstantPoolItemMI(ushort classIndex, ushort nameAndTypeIndex) : base(classIndex, nameAndTypeIndex)
             {
+
             }
 
             protected override void Validate(string name, string descriptor, int majorVersion)

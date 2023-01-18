@@ -1,15 +1,15 @@
 ﻿using System.Buffers;
 
 using IKVM.ByteCode.Buffers;
-using IKVM.ByteCode.Reading;
+using IKVM.ByteCode.Writing;
 
 namespace IKVM.ByteCode.Parsing
 {
 
-    public abstract record class ElementValueRecord
+    public abstract record class ElementValueRecord(char Tag)
     {
 
-        public static bool TryReadElementValue(ref SequenceReader<byte> reader, out ElementValueRecord value)
+        public static bool TryRead(ref SequenceReader<byte> reader, out ElementValueRecord value)
         {
             value = null;
 
@@ -18,13 +18,33 @@ namespace IKVM.ByteCode.Parsing
 
             return (char)tag switch
             {
-                'B' or 'C' or 'D' or 'F' or 'I' or 'J' or 'S' or 'Z' or 's' => ElementConstantValueRecord.TryReadElementConstantValue(ref reader, out value),
-                'e' => ElementEnumConstantValueRecord.TryReadElementEnumConstantValue(ref reader, out value),
-                'c' => ElementClassInfoValueRecord.TryReadElementClassInfoValue(ref reader, out value),
-                '@' => ElementAnnotationValueRecord.TryReadElementAnnotationValue(ref reader, out value),
-                '[' => ElementArrayValueRecord.TryReadElementArrayValue(ref reader, out value),
+                'B' or 'C' or 'D' or 'F' or 'I' or 'J' or 'S' or 'Z' or 's' => ElementConstantValueRecord.TryReadElementConstantValue(ref reader, (char)tag, out value),
+                'e' => ElementEnumConstantValueRecord.TryRead(ref reader, (char)tag, out value),
+                'c' => ElementClassInfoValueRecord.TryReadElementClassInfoValue(ref reader, (char)tag, out value),
+                '@' => ElementAnnotationValueRecord.TryReadElementAnnotationValue(ref reader, (char)tag, out value),
+                '[' => ElementArrayValueRecord.TryReadElementArrayValue(ref reader, (char)tag, out value),
                 _ => throw new ByteCodeException($"Invalid annotation element value tag: '{(char)tag}'."),
             };
+        }
+
+        public virtual int GetSize()
+        {
+            var size = 0;
+            size += sizeof(byte);
+            return size;
+        }
+
+        /// <summary>
+        /// Attempts to write the record to the given <see cref="ClassFormatWriter"/>.
+        /// </summary>
+        /// <param name="writer"></param>
+        /// <returns></returns>
+        public virtual bool TryWrite(ref ClassFormatWriter writer)
+        {
+            if (writer.TryWrite(Tag) == false)
+                return false;
+
+            return true;
         }
 
     }

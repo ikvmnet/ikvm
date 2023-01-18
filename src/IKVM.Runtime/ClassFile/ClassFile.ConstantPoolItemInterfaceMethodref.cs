@@ -22,15 +22,24 @@
   
 */
 
+using IKVM.ByteCode.Reading;
+
 namespace IKVM.Internal
 {
 
     sealed partial class ClassFile
     {
+
         internal sealed class ConstantPoolItemInterfaceMethodref : ConstantPoolItemMI
         {
-            internal ConstantPoolItemInterfaceMethodref(BigEndianBinaryReader br) : base(br)
+
+            /// <summary>
+            /// initializes a new instance.
+            /// </summary>
+            /// <param name="reader"></param>
+            internal ConstantPoolItemInterfaceMethodref(InterfaceMethodrefConstantReader reader) : base(reader.Record.ClassIndex, reader.Record.NameAndTypeIndex)
             {
+
             }
 
             internal override void Link(TypeWrapper thisType, LoadMode mode)
@@ -54,7 +63,9 @@ namespace IKVM.Internal
                     }
                 }
             }
+
         }
+
     }
 
 }

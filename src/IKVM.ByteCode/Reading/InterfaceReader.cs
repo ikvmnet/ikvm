@@ -1,14 +1,10 @@
-﻿using System;
-using IKVM.ByteCode.Parsing;
+﻿using IKVM.ByteCode.Parsing;
 
 namespace IKVM.ByteCode.Reading
 {
 
-    public sealed class InterfaceReader
+    public sealed class InterfaceReader : ReaderBase<InterfaceRecord>
     {
-
-        readonly ClassReader declaringClass;
-        readonly InterfaceInfoRecord record;
 
         string name;
 
@@ -17,17 +13,16 @@ namespace IKVM.ByteCode.Reading
         /// </summary>
         /// <param name="declaringClass"></param>
         /// <param name="record"></param>
-        /// <exception cref="ArgumentNullException"></exception>
-        internal InterfaceReader(ClassReader declaringClass, InterfaceInfoRecord record)
+        internal InterfaceReader(ClassReader declaringClass, InterfaceRecord record) :
+            base(declaringClass, record)
         {
-            this.declaringClass = declaringClass ?? throw new ArgumentNullException(nameof(declaringClass));
-            this.record = record;
+
         }
 
         /// <summary>
         /// Gets the name of the interface.
         /// </summary>
-        public string Name => ClassReader.LazyGet(ref name, () => declaringClass.ResolveConstant<ClassConstantReader>(record.ClassIndex).Name.Value);
+        public string Name => LazyGet(ref name, () => DeclaringClass.ResolveConstant<ClassConstantReader>(Record.ClassIndex).Name);
 
     }
 

@@ -9,20 +9,20 @@ namespace IKVM.ByteCode.Parsing
     public abstract record StackMapFrameRecord(byte FrameType)
     {
 
-        public static bool TryReadStackFrame(ref SequenceReader<byte> reader, out StackMapFrameRecord frame)
+        public static bool TryRead(ref SequenceReader<byte> reader, out StackMapFrameRecord frame)
         {
             frame = null;
 
             if (reader.TryRead(out byte tag) == false)
                 return false;
 
-            if (TryReadStackFrame(ref reader, tag, out frame) == false)
+            if (TryRead(ref reader, tag, out frame) == false)
                 return false;
 
             return true;
         }
 
-        public static bool TryReadStackFrame(ref SequenceReader<byte> reader, byte tag, out StackMapFrameRecord frame)
+        public static bool TryRead(ref SequenceReader<byte> reader, byte tag, out StackMapFrameRecord frame)
         {
             if (tag >= 0 && tag <= 63)
                 return SameStackMapFrameRecord.TryReadSameStackMapFrame(ref reader, tag, out frame);

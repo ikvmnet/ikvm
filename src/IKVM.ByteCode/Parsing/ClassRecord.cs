@@ -1,10 +1,11 @@
 ﻿using System.Buffers;
+
 using IKVM.ByteCode.Buffers;
 
 namespace IKVM.ByteCode.Parsing
 {
 
-    public record struct ClassRecord(ushort MinorVersion, ushort MajorVersion, ConstantRecord[] Constants, AccessFlag AccessFlags, ushort ThisClassIndex, ushort SuperClassIndex, InterfaceInfoRecord[] Interfaces, FieldRecord[] Fields, MethodInfoRecord[] Methods, AttributeInfoRecord[] Attributes)
+    public record struct ClassRecord(ushort MinorVersion, ushort MajorVersion, ConstantRecord[] Constants, AccessFlag AccessFlags, ushort ThisClassIndex, ushort SuperClassIndex, InterfaceRecord[] Interfaces, FieldRecord[] Fields, MethodRecord[] Methods, AttributeInfoRecord[] Attributes)
     {
 
         const uint MAGIC = 0xCAFEBABE;
@@ -15,7 +16,7 @@ namespace IKVM.ByteCode.Parsing
         /// <param name="clazz"></param>
         /// <returns></returns>
         /// <exception cref="ByteCodeException"></exception>
-        public static bool TryReadClass(ref SequenceReader<byte> reader, out ClassRecord clazz)
+        public static bool TryRead(ref SequenceReader<byte> reader, out ClassRecord clazz)
         {
             clazz = default;
 
@@ -70,16 +71,17 @@ namespace IKVM.ByteCode.Parsing
         {
             constants = null;
 
-            if (reader.TryReadBigEndian(out ushort constantCount) == false)
+            if (reader.TryReadBigEndian(out ushort count) == false)
                 return false;
 
-            constants = new ConstantRecord[constantCount];
-            for (int constantPoolIndex = 1; constantPoolIndex < constantCount; constantPoolIndex++)
+            constants = new ConstantRecord[count];
+            for (int i = 1; i < count; i++)
             {
-                if (ConstantRecord.TryReadConstant(ref reader, out ConstantRecord constant) == false)
+                if (ConstantRecord.TryRead(ref reader, out var constant, out var skip) == false)
                     return false;
 
-                constants[constantPoolIndex] = constant;
+                constants[i] = constant;
+                i += skip;
             }
 
             return true;
@@ -91,17 +93,17 @@ namespace IKVM.ByteCode.Parsing
         /// <param name="reader"></param>
         /// <param name="interfaces"></param>
         /// <returns></returns>
-        static bool TryReadInterfaces(ref SequenceReader<byte> reader, out InterfaceInfoRecord[] interfaces)
+        static bool TryReadInterfaces(ref SequenceReader<byte> reader, out InterfaceRecord[] interfaces)
         {
             interfaces = null;
 
             if (reader.TryReadBigEndian(out ushort count) == false)
                 return false;
 
-            interfaces = new InterfaceInfoRecord[count];
+            interfaces = new InterfaceRecord[count];
             for (int i = 0; i < count; i++)
             {
-                if (InterfaceInfoRecord.TryReadInterface(ref reader, out InterfaceInfoRecord iface) == false)
+                if (InterfaceRecord.TryRead(ref reader, out InterfaceRecord iface) == false)
                     return false;
 
                 interfaces[i] = iface;
@@ -126,7 +128,7 @@ namespace IKVM.ByteCode.Parsing
             fields = new FieldRecord[count];
             for (int i = 0; i < count; i++)
             {
-                if (FieldRecord.TryReadField(ref reader, out FieldRecord field) == false)
+                if (FieldRecord.TryRead(ref reader, out FieldRecord field) == false)
                     return false;
 
                 fields[i] = field;
@@ -141,17 +143,17 @@ namespace IKVM.ByteCode.Parsing
         /// <param name="reader"></param>
         /// <param name="methods"></param>
         /// <returns></returns>
-        static bool TryReadMethods(ref SequenceReader<byte> reader, out MethodInfoRecord[] methods)
+        static bool TryReadMethods(ref SequenceReader<byte> reader, out MethodRecord[] methods)
         {
             methods = null;
 
             if (reader.TryReadBigEndian(out ushort count) == false)
                 return false;
 
-            methods = new MethodInfoRecord[count];
+            methods = new MethodRecord[count];
             for (int i = 0; i < count; i++)
             {
-                if (MethodInfoRecord.TryReadMethod(ref reader, out MethodInfoRecord method) == false)
+                if (MethodRecord.TryRead(ref reader, out MethodRecord method) == false)
                     return false;
 
                 methods[i] = method;

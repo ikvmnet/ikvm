@@ -3,7 +3,7 @@
 namespace IKVM.ByteCode.Reading
 {
 
-    public sealed class FloatConstantReader : Constant<FloatConstantRecord>
+    public sealed class FloatConstantReader : ConstantReader<FloatConstantRecord, FloatConstantOverride>
     {
 
         /// <summary>
@@ -11,8 +11,9 @@ namespace IKVM.ByteCode.Reading
         /// </summary>
         /// <param name="declaringClass"></param>
         /// <param name="record"></param>
-        public FloatConstantReader(ClassReader declaringClass, FloatConstantRecord record) :
-            base(declaringClass, record)
+        /// <param name="override"></param>
+        public FloatConstantReader(ClassReader declaringClass, FloatConstantRecord record, FloatConstantOverride @override = null) :
+            base(declaringClass, record, @override)
         {
 
         }
@@ -20,7 +21,12 @@ namespace IKVM.ByteCode.Reading
         /// <summary>
         /// Gets the value of the constant.
         /// </summary>
-        public float Value => Record.Value;
+        public float Value => Override != null ? Override.Value : Record.Value;
+
+        /// <summary>
+        /// Returns <c>true</c> if this constant is loadable.
+        /// </summary>
+        public override bool IsLoadable => DeclaringClass.MajorVersion == 45 && DeclaringClass.MinorVersion >= 3 || DeclaringClass.MajorVersion > 45;
 
     }
 

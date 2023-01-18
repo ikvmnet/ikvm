@@ -3,26 +3,32 @@
 namespace IKVM.ByteCode.Reading
 {
 
-    public sealed class StringConstantReader : Constant<StringConstantRecord>
+    public sealed class StringConstantReader : ConstantReader<StringConstantRecord, StringConstantOverride>
     {
 
-        Utf8ConstantReader value;
+        object value;
 
         /// <summary>
         /// Initializes a new instance.
         /// </summary>
         /// <param name="declaringClass"></param>
         /// <param name="record"></param>
-        public StringConstantReader(ClassReader declaringClass, StringConstantRecord record) :
-            base(declaringClass, record)
+        /// <param name="override"></param>
+        public StringConstantReader(ClassReader declaringClass, StringConstantRecord record, StringConstantOverride @override = null) :
+            base(declaringClass, record, @override)
         {
 
         }
 
         /// <summary>
-        /// Gets the value of the constant.
+        /// Gets the value of the string constant. Result may not actually be a string object as overrides can apply.
         /// </summary>
-        public Utf8ConstantReader Value => value ??= DeclaringClass.ResolveConstant<Utf8ConstantReader>(Record.ValueIndex);
+        public object Value => LazyGet(ref value, () => Override != null ? Override.Value : DeclaringClass.ResolveConstant<Utf8ConstantReader>(Record.ValueIndex));
+
+        /// <summary>
+        /// Returns <c>true</c> if this class is loadable according to the Java specification.
+        /// </summary>
+        public override bool IsLoadable => DeclaringClass.MajorVersion == 45 && DeclaringClass.MinorVersion >= 3 || DeclaringClass.MajorVersion > 45;
 
     }
 

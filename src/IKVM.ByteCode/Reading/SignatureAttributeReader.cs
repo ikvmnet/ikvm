@@ -3,7 +3,7 @@
 namespace IKVM.ByteCode.Reading
 {
 
-    public class SignatureAttributeReader : AttributeData<SignatureAttributeRecord>
+    public class SignatureAttributeReader : AttributeReader<SignatureAttributeRecord>
     {
 
         /// <summary>

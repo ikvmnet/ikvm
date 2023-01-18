@@ -3,23 +3,27 @@
 namespace IKVM.ByteCode.Reading
 {
 
-    public sealed class ModuleConstantReader : Constant<ModuleConstantRecord>
+    public sealed class ModuleConstantReader : ConstantReader<ModuleConstantRecord, ModuleConstantOverride>
     {
 
-        Utf8ConstantReader name;
+        string name;
 
         /// <summary>
         /// Initializes a new instance.
         /// </summary>
         /// <param name="owner"></param>
         /// <param name="record"></param>
-        public ModuleConstantReader(ClassReader owner, ModuleConstantRecord record) :
-            base(owner, record)
+        /// <param name="override"></param>
+        public ModuleConstantReader(ClassReader owner, ModuleConstantRecord record, ModuleConstantOverride @override = null) :
+            base(owner, record, @override)
         {
 
         }
 
-        public Utf8ConstantReader Name => name ??= DeclaringClass.ResolveConstant<Utf8ConstantReader>(Record.NameIndex);
+        /// <summary>
+        /// Gets the name of this module.
+        /// </summary>
+        public string Name => LazyGet(ref name, () => DeclaringClass.ResolveConstant<Utf8ConstantReader>(Record.NameIndex).Value);
 
     }
 

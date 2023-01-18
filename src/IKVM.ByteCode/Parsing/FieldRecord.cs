@@ -13,7 +13,7 @@ namespace IKVM.ByteCode.Parsing
         /// </summary>
         /// <param name="reader"></param>
         /// <param name="field"></param>
-        public static bool TryReadField(ref SequenceReader<byte> reader, out FieldRecord field)
+        public static bool TryRead(ref SequenceReader<byte> reader, out FieldRecord field)
         {
             field = default;
 

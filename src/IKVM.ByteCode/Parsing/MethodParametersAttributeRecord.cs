@@ -12,7 +12,7 @@ namespace IKVM.ByteCode.Parsing
         {
             attribute = null;
 
-            if (reader.TryReadBigEndian(out ushort count) == false)
+            if (reader.TryRead(out byte count) == false)
                 return false;
 
             var arguments = new MethodParametersAttributeParameterRecord[count];

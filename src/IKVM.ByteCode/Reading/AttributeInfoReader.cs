@@ -1,4 +1,5 @@
 ﻿using System;
+
 using IKVM.ByteCode.Parsing;
 
 namespace IKVM.ByteCode.Reading
@@ -22,6 +23,16 @@ namespace IKVM.ByteCode.Reading
             this.declaringClass = declaringClass ?? throw new ArgumentNullException(nameof(declaringClass));
             this.record = record;
         }
+
+        /// <summary>
+        /// Gets the declaring class of the attribute.
+        /// </summary>
+        public ClassReader DeclaringClass => declaringClass;
+
+        /// <summary>
+        /// Gets the underlying record of the attribute info.
+        /// </summary>
+        public AttributeInfoRecord Record => record;
 
         /// <summary>
         /// Gets the name of the attribute.

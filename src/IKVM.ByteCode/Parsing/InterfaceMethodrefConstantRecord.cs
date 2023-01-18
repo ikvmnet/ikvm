@@ -5,7 +5,7 @@ using IKVM.ByteCode.Buffers;
 namespace IKVM.ByteCode.Parsing
 {
 
-    public sealed record InterfaceMethodrefConstantRecord(ushort ClassIndex, ushort NameAndTypeIndex) : ConstantRecord
+    public sealed record InterfaceMethodrefConstantRecord(ushort ClassIndex, ushort NameAndTypeIndex) : RefConstantRecord(ClassIndex, NameAndTypeIndex)
     {
 
         /// <summary>
@@ -13,9 +13,10 @@ namespace IKVM.ByteCode.Parsing
         /// </summary>
         /// <param name="reader"></param>
         /// <param name="constant"></param>
-        public static bool TryReadInterfaceMethodrefConstant(ref SequenceReader<byte> reader, out ConstantRecord constant)
+        public static bool TryReadInterfaceMethodrefConstant(ref SequenceReader<byte> reader, out ConstantRecord constant, out int skip)
         {
             constant = null;
+            skip = 0;
 
             if (reader.TryReadBigEndian(out ushort classIndex) == false)
                 return false;

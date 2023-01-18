@@ -3,7 +3,7 @@
 namespace IKVM.ByteCode.Reading
 {
 
-    public class UnknownAttributeReader : AttributeData<UnknownAttributeRecord>
+    public class UnknownAttributeReader : AttributeReader<UnknownAttributeRecord>
     {
 
         /// <summary>

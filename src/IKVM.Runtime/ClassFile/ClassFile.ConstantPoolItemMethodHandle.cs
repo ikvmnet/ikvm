@@ -22,53 +22,60 @@
   
 */
 
+using System;
+
+using IKVM.ByteCode;
+using IKVM.ByteCode.Reading;
+
 namespace IKVM.Internal
 {
 
     sealed partial class ClassFile
     {
+
         internal sealed class ConstantPoolItemMethodHandle : ConstantPoolItem
         {
-            private byte ref_kind;
-            private ushort method_index;
-            private ConstantPoolItemFMI cpi;
 
-            internal ConstantPoolItemMethodHandle(BigEndianBinaryReader br)
+            readonly MethodHandleConstantReader reader;
+            ConstantPoolItemFMI cpi;
+
+            /// <summary>
+            /// Initializes a new instance.
+            /// </summary>
+            /// <param name="reader"></param>
+            internal ConstantPoolItemMethodHandle(MethodHandleConstantReader reader)
             {
-                ref_kind = br.ReadByte();
-                method_index = br.ReadUInt16();
+                this.reader = reader ?? throw new ArgumentNullException(nameof(reader));
             }
 
             internal override void Resolve(ClassFile classFile, string[] utf8_cp, ClassFileParseOptions options)
             {
-                switch ((RefKind)ref_kind)
+                switch (reader.ReferenceKind)
                 {
-                    case RefKind.getField:
-                    case RefKind.getStatic:
-                    case RefKind.putField:
-                    case RefKind.putStatic:
-                        cpi = classFile.GetConstantPoolItem(method_index) as ConstantPoolItemFieldref;
+                    case ReferenceKind.GetField:
+                    case ReferenceKind.GetStatic:
+                    case ReferenceKind.PutField:
+                    case ReferenceKind.PutStatic:
+                        cpi = classFile.GetConstantPoolItem(reader.Record.Index) as ConstantPoolItemFieldref;
                         break;
-                    case RefKind.invokeSpecial:
-                    case RefKind.invokeVirtual:
-                    case RefKind.invokeStatic:
-                    case RefKind.newInvokeSpecial:
-                        cpi = classFile.GetConstantPoolItem(method_index) as ConstantPoolItemMethodref;
-                        if (cpi == null && classFile.MajorVersion >= 52 && ((RefKind)ref_kind == RefKind.invokeStatic || (RefKind)ref_kind == RefKind.invokeSpecial))
-                            goto case RefKind.invokeInterface;
+                    case ReferenceKind.InvokeSpecial:
+                    case ReferenceKind.InvokeVirtual:
+                    case ReferenceKind.InvokeStatic:
+                    case ReferenceKind.NewInvokeSpecial:
+                        cpi = classFile.GetConstantPoolItem(reader.Record.Index) as ConstantPoolItemMethodref;
+                        if (cpi == null && classFile.MajorVersion >= 52 && (reader.ReferenceKind is ReferenceKind.InvokeStatic or ReferenceKind.InvokeSpecial))
+                            goto case ReferenceKind.InvokeInterface;
                         break;
-                    case RefKind.invokeInterface:
-                        cpi = classFile.GetConstantPoolItem(method_index) as ConstantPoolItemInterfaceMethodref;
+                    case ReferenceKind.InvokeInterface:
+                        cpi = classFile.GetConstantPoolItem(reader.Record.Index) as ConstantPoolItemInterfaceMethodref;
                         break;
                 }
+
                 if (cpi == null)
-                {
                     throw new ClassFormatError("Invalid constant pool item MethodHandle");
-                }
-                if (ReferenceEquals(cpi.Name, StringConstants.INIT) && Kind != RefKind.newInvokeSpecial)
-                {
+
+                if (ReferenceEquals(cpi.Name, StringConstants.INIT) && reader.ReferenceKind != ReferenceKind.NewInvokeSpecial)
                     throw new ClassFormatError("Bad method name");
-                }
             }
 
             internal override void MarkLinkRequired()
@@ -96,9 +103,9 @@ namespace IKVM.Internal
                 get { return cpi; }
             }
 
-            internal RefKind Kind
+            internal ReferenceKind Kind
             {
-                get { return (RefKind)ref_kind; }
+                get { return reader.ReferenceKind; }
             }
 
             internal MemberWrapper Member
@@ -120,7 +127,9 @@ namespace IKVM.Internal
             {
                 return ConstantType.MethodHandle;
             }
+
         }
+
     }
 
 }

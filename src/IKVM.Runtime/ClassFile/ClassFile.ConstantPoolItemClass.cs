@@ -23,23 +23,39 @@
 */
 using System;
 
+using IKVM.ByteCode.Reading;
+
 namespace IKVM.Internal
 {
 
     sealed partial class ClassFile
     {
+
         internal sealed class ConstantPoolItemClass : ConstantPoolItem, IEquatable<ConstantPoolItemClass>
         {
-            private ushort name_index;
-            private string name;
-            private TypeWrapper typeWrapper;
-            private static char[] invalidJava15Characters = { '.', ';', '[', ']' };
 
-            internal ConstantPoolItemClass(BigEndianBinaryReader br)
+            static readonly char[] invalidJava15Characters = { '.', ';', '[', ']' };
+
+            readonly ClassConstantReader reader;
+
+            string name;
+            TypeWrapper typeWrapper;
+
+            /// <summary>
+            /// Initializes a new instance.
+            /// </summary>
+            /// <param name="reader"></param>
+            /// <exception cref="ArgumentNullException"></exception>
+            internal ConstantPoolItemClass(ClassConstantReader reader)
             {
-                name_index = br.ReadUInt16();
+                this.reader = reader ?? throw new ArgumentNullException(nameof(reader));
             }
 
+            /// <summary>
+            /// Initializes a new instance.
+            /// </summary>
+            /// <param name="name"></param>
+            /// <param name="typeWrapper"></param>
             internal ConstantPoolItemClass(string name, TypeWrapper typeWrapper)
             {
                 this.name = name;
@@ -50,10 +66,9 @@ namespace IKVM.Internal
             {
                 // if the item was patched, we already have a name
                 if (name != null)
-                {
                     return;
-                }
-                name = classFile.GetConstantPoolUtf8String(utf8_cp, name_index);
+
+                name = classFile.GetConstantPoolUtf8String(utf8_cp, reader.Record.NameIndex);
                 if (name.Length > 0)
                 {
                     // We don't enforce the strict class name rules in the static compiler, since HotSpot doesn't enforce *any* rules on
@@ -194,7 +209,9 @@ namespace IKVM.Internal
             {
                 return ReferenceEquals(name, other.name);
             }
+
         }
+
     }
 
 }

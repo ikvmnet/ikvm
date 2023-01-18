@@ -5,7 +5,7 @@ using IKVM.ByteCode.Buffers;
 namespace IKVM.ByteCode.Parsing
 {
 
-    public record struct MethodInfoRecord(AccessFlag AccessFlags, ushort NameIndex, ushort DescriptorIndex, AttributeInfoRecord[] Attributes)
+    public record struct MethodRecord(AccessFlag AccessFlags, ushort NameIndex, ushort DescriptorIndex, AttributeInfoRecord[] Attributes)
     {
 
         /// <summary>
@@ -13,7 +13,7 @@ namespace IKVM.ByteCode.Parsing
         /// </summary>
         /// <param name="reader"></param>
         /// <param name="method"></param>
-        public static bool TryReadMethod(ref SequenceReader<byte> reader, out MethodInfoRecord method)
+        public static bool TryRead(ref SequenceReader<byte> reader, out MethodRecord method)
         {
             method = default;
 
@@ -26,7 +26,7 @@ namespace IKVM.ByteCode.Parsing
             if (ClassRecord.TryReadAttributes(ref reader, out var attributes) == false)
                 return false;
 
-            method = new MethodInfoRecord((AccessFlag)accessFlags, nameIndex, descriptorIndex, attributes);
+            method = new MethodRecord((AccessFlag)accessFlags, nameIndex, descriptorIndex, attributes);
             return true;
         }
 

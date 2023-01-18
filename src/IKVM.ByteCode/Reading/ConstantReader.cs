@@ -5,85 +5,106 @@ using IKVM.ByteCode.Parsing;
 namespace IKVM.ByteCode.Reading
 {
 
-    public abstract class ConstantReader
+    /// <summary>
+    /// Provides static methods for reading constants.
+    /// </summary>
+    public static class ConstantReader
     {
 
         /// <summary>
-        /// Initializes a <see cref="ConstantReader"/> from a <see cref="ConstantRecord"/>.
+        /// Initializes a <see cref="IConstantReader"/> from a <see cref="ConstantRecord"/>.
         /// </summary>
         /// <param name="declaringClass"></param>
         /// <param name="record"></param>
         /// <returns></returns>
         /// <exception cref="ByteCodeException"></exception>
-        internal static ConstantReader Read(ClassReader declaringClass, ConstantRecord record) => record switch
+        internal static IConstantReader Read(ClassReader declaringClass, ConstantRecord record, ConstantOverride @override = null) => record switch
         {
-            Utf8ConstantRecord c => new Utf8ConstantReader(declaringClass, c),
-            IntegerConstantRecord c => new IntegerConstantReader(declaringClass, c),
-            FloatConstantRecord c => new FloatConstantReader(declaringClass, c),
-            LongConstantRecord c => new LongConstantReader(declaringClass, c),
-            DoubleConstantRecord c => new DoubleConstantReader(declaringClass, c),
-            ClassConstantRecord c => new ClassConstantReader(declaringClass, c),
-            StringConstantRecord c => new StringConstantReader(declaringClass, c),
-            FieldrefConstantRecord c => new FieldrefConstantReader(declaringClass, c),
-            MethodrefConstantRecord c => new MethodrefConstantReader(declaringClass, c),
-            InterfaceMethodrefConstantRecord c => new InterfaceMethodrefConstantReader(declaringClass, c),
-            NameAndTypeConstantRecord c => new NameAndTypeConstantReader(declaringClass, c),
-            MethodHandleConstantRecord c => new MethodHandleConstantReader(declaringClass, c),
-            MethodTypeConstantRecord c => new MethodTypeConstantReader(declaringClass, c),
-            DynamicConstantRecord c => new DynamicConstantReader(declaringClass, c),
-            InvokeDynamicConstantRecord c => new InvokeDynamicConstantReader(declaringClass, c),
-            ModuleConstantRecord c => new ModuleConstantReader(declaringClass, c),
-            PackageConstantRecord c => new PackageConstantReader(declaringClass, c),
+            Utf8ConstantRecord c => new Utf8ConstantReader(declaringClass, c, (Utf8ConstantOverride)@override),
+            IntegerConstantRecord c => new IntegerConstantReader(declaringClass, c, (IntegerConstantOverride)@override),
+            FloatConstantRecord c => new FloatConstantReader(declaringClass, c, (FloatConstantOverride)@override),
+            LongConstantRecord c => new LongConstantReader(declaringClass, c, (LongConstantOverride)@override),
+            DoubleConstantRecord c => new DoubleConstantReader(declaringClass, c, (DoubleConstantOverride)@override),
+            ClassConstantRecord c => new ClassConstantReader(declaringClass, c, (ClassConstantOverride)@override),
+            StringConstantRecord c => new StringConstantReader(declaringClass, c, (StringConstantOverride)@override),
+            FieldrefConstantRecord c => new FieldrefConstantReader(declaringClass, c, (FieldrefConstantOverride)@override),
+            MethodrefConstantRecord c => new MethodrefConstantReader(declaringClass, c, (MethodrefConstantOverride)@override),
+            InterfaceMethodrefConstantRecord c => new InterfaceMethodrefConstantReader(declaringClass, c, (InterfaceMethodrefConstantOverride)@override),
+            NameAndTypeConstantRecord c => new NameAndTypeConstantReader(declaringClass, c, (NameAndTypeConstantOverride)@override),
+            MethodHandleConstantRecord c => new MethodHandleConstantReader(declaringClass, c, (MethodHandleConstantOverride)@override),
+            MethodTypeConstantRecord c => new MethodTypeConstantReader(declaringClass, c, (MethodTypeConstantOverride)@override),
+            DynamicConstantRecord c => new DynamicConstantReader(declaringClass, c, (DynamicConstantOverride)@override),
+            InvokeDynamicConstantRecord c => new InvokeDynamicConstantReader(declaringClass, c, (InvokeDynamicConstantOverride)@override),
+            ModuleConstantRecord c => new ModuleConstantReader(declaringClass, c, (ModuleConstantOverride)@override),
+            PackageConstantRecord c => new PackageConstantReader(declaringClass, c, (PackageConstantOverride)@override),
             _ => throw new ByteCodeException("Invalid constant type."),
         };
 
-        readonly ClassReader owner;
-        readonly ConstantRecord record;
+    }
+
+    /// <summary>
+    /// Base type for constant readers.
+    /// </summary>
+    /// <typeparam name="TRecord"></typeparam>
+    public abstract class ConstantReader<TRecord> : ReaderBase<TRecord>, IConstantReader<TRecord>
+        where TRecord: ConstantRecord
+    {
 
         /// <summary>
-        /// Initializes a new insance.
+        /// Initializes a new instance.
         /// </summary>
-        /// <param name="owner"></param>
-        /// <exception cref="ArgumentNullException"></exception>
-        protected ConstantReader(ClassReader owner, ConstantRecord record)
+        /// <param name="declaringClass"></param>
+        /// <param name="record"></param>
+        protected ConstantReader(ClassReader declaringClass, TRecord record) :
+            base(declaringClass, record)
         {
-            this.owner = owner ?? throw new ArgumentNullException(nameof(owner));
-            this.record = record ?? throw new ArgumentNullException(nameof(record));
+
         }
 
         /// <summary>
-        /// Gets the class of which this constant is a member.
+        /// Returns <c>true</c> if the constant is considered loadable according to the JVM specification.
         /// </summary>
-        protected ClassReader DeclaringClass => owner;
-
-        /// <summary>
-        /// Gets the underlying record of the constant.
-        /// </summary>
-        protected ConstantRecord Record => record;
+        public virtual bool IsLoadable => false;
 
     }
 
-    public abstract class Constant<TRecord> : ConstantReader
+    /// <summary>
+    /// Base type for constant readers.
+    /// </summary>
+    /// <typeparam name="TRecord"></typeparam>
+    /// <typeparam name="TOverride"></typeparam>
+    public abstract class ConstantReader<TRecord, TOverride> : ConstantReader<TRecord>, IConstantReader<TRecord, TOverride>
         where TRecord : ConstantRecord
+        where TOverride : ConstantOverride
     {
 
-        readonly TRecord record;
+        readonly TOverride @override;
 
         /// <summary>
         /// Initializes a new insance.
         /// </summary>
-        /// <param name="owner"></param>
+        /// <param name="declaringClass"></param>
         /// <exception cref="ArgumentNullException"></exception>
-        protected Constant(ClassReader owner, TRecord record) :
-            base(owner, record)
+        protected ConstantReader(ClassReader declaringClass, TRecord record, TOverride pverride) :
+            base(declaringClass, record)
         {
-            this.record = record ?? throw new ArgumentNullException(nameof(record));
+            this.@override = pverride;
         }
 
         /// <summary>
-        /// Gets the underlying record of the constant.
+        /// Gets the underlying constant being read.
         /// </summary>
-        protected new TRecord Record => record;
+        TRecord IConstantReader<TRecord>.Record => Record;
+
+        /// <summary>
+        /// Gets the applied override.
+        /// </summary>
+        public TOverride Override => @override;
+
+        /// <summary>
+        /// Gets the override applied to this constant.
+        /// </summary>
+        public virtual object OverrideValue => @override.Value;
 
     }
 

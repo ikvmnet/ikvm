@@ -3,23 +3,32 @@
 namespace IKVM.ByteCode.Reading
 {
 
-    public sealed class MethodTypeConstantReader : Constant<MethodTypeConstantRecord>
+    public sealed class MethodTypeConstantReader : ConstantReader<MethodTypeConstantRecord, MethodTypeConstantOverride>
     {
 
-        Utf8ConstantReader descriptor;
+        string type;
 
         /// <summary>
         /// Initializes a new instance.
         /// </summary>
         /// <param name="owner"></param>
         /// <param name="record"></param>
-        public MethodTypeConstantReader(ClassReader owner, MethodTypeConstantRecord record) :
-            base(owner, record)
+        /// <param name="override"></param>
+        public MethodTypeConstantReader(ClassReader owner, MethodTypeConstantRecord record, MethodTypeConstantOverride @override = null) :
+            base(owner, record, @override)
         {
 
         }
 
-        public Utf8ConstantReader Descriptor => descriptor ??= DeclaringClass.ResolveConstant<Utf8ConstantReader>(Record.DescriptorIndex);
+        /// <summary>
+        /// Gets the type of this MethodType constant.
+        /// </summary>
+        public string Type => LazyGet(ref type, () => DeclaringClass.ResolveConstant<Utf8ConstantReader>(Record.DescriptorIndex).Value);
+
+        /// <summary>
+        /// Returns <c>true</c> if this constant is loadable.
+        /// </summary>
+        public override bool IsLoadable => DeclaringClass.MajorVersion >= 51;
 
     }
 

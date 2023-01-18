@@ -1,4 +1,5 @@
 ﻿using System;
+
 using IKVM.ByteCode.Parsing;
 
 namespace IKVM.ByteCode.Reading
@@ -8,7 +9,7 @@ namespace IKVM.ByteCode.Reading
     {
 
         readonly ClassReader declaringClass;
-        readonly MethodInfoRecord record;
+        readonly MethodRecord record;
 
         string name;
         string descriptor;
@@ -19,11 +20,16 @@ namespace IKVM.ByteCode.Reading
         /// </summary>
         /// <param name="declaringClass"></param>
         /// <param name="record"></param>
-        internal MethodReader(ClassReader declaringClass, MethodInfoRecord record)
+        internal MethodReader(ClassReader declaringClass, MethodRecord record)
         {
             this.declaringClass = declaringClass ?? throw new ArgumentNullException(nameof(declaringClass));
             this.record = record;
         }
+
+        /// <summary>
+        /// Gets the underlying record being read.
+        /// </summary>
+        public MethodRecord Record => record;
 
         /// <summary>
         /// Gets the access flags of the method.

@@ -22,198 +22,93 @@
   
 */
 using System;
+using System.Collections.Generic;
 
 using IKVM.Attributes;
+using IKVM.ByteCode;
+using IKVM.ByteCode.Reading;
 
 namespace IKVM.Internal
 {
 
     sealed partial class ClassFile
     {
+
         internal abstract class FieldOrMethod : IEquatable<FieldOrMethod>
         {
-            // Note that Modifiers is a ushort, so it combines nicely with the following ushort field
-            protected Modifiers access_flags;
+
+            protected Modifiers accessFlags;
             protected ushort flags;
-            private string name;
-            private string descriptor;
+            string name;
+            string descriptor;
             protected string signature;
             protected object[] annotations;
-            protected byte[] runtimeVisibleTypeAnnotations;
+            protected IReadOnlyList<TypeAnnotationReader> runtimeVisibleTypeAnnotations;
 
-            internal FieldOrMethod(ClassFile classFile, string[] utf8_cp, BigEndianBinaryReader br)
+            /// <summary>
+            /// Initializes a new instance.
+            /// </summary>
+            /// <param name="classFile"></param>
+            /// <param name="utf8_cp"></param>
+            /// <param name="accessFlags"></param>
+            /// <param name="nameIndex"></param>
+            /// <param name="descriptorIndex"></param>
+            internal FieldOrMethod(ClassFile classFile, string[] utf8_cp, AccessFlag accessFlags, ushort nameIndex, ushort descriptorIndex)
             {
-                access_flags = (Modifiers)br.ReadUInt16();
-                name = String.Intern(classFile.GetConstantPoolUtf8String(utf8_cp, br.ReadUInt16()));
-                descriptor = classFile.GetConstantPoolUtf8String(utf8_cp, br.ReadUInt16());
+                this.accessFlags = (Modifiers)accessFlags;
+                this.name = string.Intern(classFile.GetConstantPoolUtf8String(utf8_cp, nameIndex));
+                this.descriptor = classFile.GetConstantPoolUtf8String(utf8_cp, descriptorIndex);
+
                 ValidateSig(classFile, descriptor);
-                descriptor = String.Intern(descriptor.Replace('/', '.'));
+                this.descriptor = string.Intern(descriptor.Replace('/', '.'));
             }
 
             protected abstract void ValidateSig(ClassFile classFile, string descriptor);
 
-            internal string Name
-            {
-                get
-                {
-                    return name;
-                }
-            }
+            internal string Name => name;
 
-            internal string Signature
-            {
-                get
-                {
-                    return descriptor;
-                }
-            }
+            internal string Signature => descriptor;
 
-            internal object[] Annotations
-            {
-                get
-                {
-                    return annotations;
-                }
-            }
+            internal object[] Annotations => annotations;
 
-            internal string GenericSignature
-            {
-                get
-                {
-                    return signature;
-                }
-            }
+            internal string GenericSignature => signature;
 
-            internal Modifiers Modifiers
-            {
-                get
-                {
-                    return (Modifiers)access_flags;
-                }
-            }
+            internal Modifiers Modifiers => (Modifiers)accessFlags;
 
-            internal bool IsAbstract
-            {
-                get
-                {
-                    return (access_flags & Modifiers.Abstract) != 0;
-                }
-            }
+            internal bool IsAbstract => (accessFlags & Modifiers.Abstract) != 0;
 
-            internal bool IsFinal
-            {
-                get
-                {
-                    return (access_flags & Modifiers.Final) != 0;
-                }
-            }
+            internal bool IsFinal => (accessFlags & Modifiers.Final) != 0;
 
-            internal bool IsPublic
-            {
-                get
-                {
-                    return (access_flags & Modifiers.Public) != 0;
-                }
-            }
+            internal bool IsPublic => (accessFlags & Modifiers.Public) != 0;
 
-            internal bool IsPrivate
-            {
-                get
-                {
-                    return (access_flags & Modifiers.Private) != 0;
-                }
-            }
+            internal bool IsPrivate => (accessFlags & Modifiers.Private) != 0;
 
-            internal bool IsProtected
-            {
-                get
-                {
-                    return (access_flags & Modifiers.Protected) != 0;
-                }
-            }
+            internal bool IsProtected => (accessFlags & Modifiers.Protected) != 0;
 
-            internal bool IsStatic
-            {
-                get
-                {
-                    return (access_flags & Modifiers.Static) != 0;
-                }
-            }
+            internal bool IsStatic => (accessFlags & Modifiers.Static) != 0;
 
-            internal bool IsSynchronized
-            {
-                get
-                {
-                    return (access_flags & Modifiers.Synchronized) != 0;
-                }
-            }
+            internal bool IsSynchronized => (accessFlags & Modifiers.Synchronized) != 0;
 
-            internal bool IsVolatile
-            {
-                get
-                {
-                    return (access_flags & Modifiers.Volatile) != 0;
-                }
-            }
+            internal bool IsVolatile => (accessFlags & Modifiers.Volatile) != 0;
 
-            internal bool IsTransient
-            {
-                get
-                {
-                    return (access_flags & Modifiers.Transient) != 0;
-                }
-            }
+            internal bool IsTransient => (accessFlags & Modifiers.Transient) != 0;
 
-            internal bool IsNative
-            {
-                get
-                {
-                    return (access_flags & Modifiers.Native) != 0;
-                }
-            }
+            internal bool IsNative => (accessFlags & Modifiers.Native) != 0;
 
-            internal bool IsEnum
-            {
-                get
-                {
-                    return (access_flags & Modifiers.Enum) != 0;
-                }
-            }
+            internal bool IsEnum => (accessFlags & Modifiers.Enum) != 0;
 
-            internal bool DeprecatedAttribute
-            {
-                get
-                {
-                    return (flags & FLAG_MASK_DEPRECATED) != 0;
-                }
-            }
+            internal bool DeprecatedAttribute => (flags & FLAG_MASK_DEPRECATED) != 0;
 
-            internal bool IsInternal
-            {
-                get
-                {
-                    return (flags & FLAG_MASK_INTERNAL) != 0;
-                }
-            }
+            internal bool IsInternal => (flags & FLAG_MASK_INTERNAL) != 0;
 
-            internal byte[] RuntimeVisibleTypeAnnotations
-            {
-                get
-                {
-                    return runtimeVisibleTypeAnnotations;
-                }
-            }
+            internal IReadOnlyList<TypeAnnotationReader> RuntimeVisibleTypeAnnotations => runtimeVisibleTypeAnnotations;
 
-            public sealed override int GetHashCode()
-            {
-                return name.GetHashCode() ^ descriptor.GetHashCode();
-            }
+            public sealed override int GetHashCode() => name.GetHashCode() ^ descriptor.GetHashCode();
 
-            public bool Equals(FieldOrMethod other)
-            {
-                return ReferenceEquals(name, other.name) && ReferenceEquals(descriptor, other.descriptor);
-            }
+            public bool Equals(FieldOrMethod other) => ReferenceEquals(name, other.name) && ReferenceEquals(descriptor, other.descriptor);
+
         }
+
     }
 
 }

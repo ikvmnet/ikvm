@@ -22,30 +22,35 @@
   
 */
 
+using IKVM.ByteCode.Reading;
+
 namespace IKVM.Internal
 {
 
     sealed partial class ClassFile
     {
+
         internal sealed class ConstantPoolItemFieldref : ConstantPoolItemFMI
         {
-            private FieldWrapper field;
-            private TypeWrapper fieldTypeWrapper;
 
-            internal ConstantPoolItemFieldref(BigEndianBinaryReader br) : base(br)
+            FieldWrapper field;
+            TypeWrapper fieldTypeWrapper;
+
+            /// <summary>
+            /// Initializes a new instance.
+            /// </summary>
+            /// <param name="reader"></param>
+            internal ConstantPoolItemFieldref(FieldrefConstantReader reader) : base(reader.Record.ClassIndex, reader.Record.NameAndTypeIndex)
             {
+
             }
 
             protected override void Validate(string name, string descriptor, int majorVersion)
             {
                 if (!IsValidFieldSig(descriptor))
-                {
                     throw new ClassFormatError("Invalid field signature \"{0}\"", descriptor);
-                }
                 if (!IsValidFieldName(name, majorVersion))
-                {
                     throw new ClassFormatError("Invalid field name \"{0}\"", name);
-                }
             }
 
             internal TypeWrapper GetFieldType()
@@ -98,7 +103,9 @@ namespace IKVM.Internal
             {
                 return field;
             }
+
         }
+
     }
 
 }

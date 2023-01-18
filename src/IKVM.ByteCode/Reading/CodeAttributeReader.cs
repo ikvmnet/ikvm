@@ -1,10 +1,12 @@
-﻿using System.Collections.Generic;
+﻿using System;
+using System.Collections.Generic;
+
 using IKVM.ByteCode.Parsing;
 
 namespace IKVM.ByteCode.Reading
 {
 
-    public sealed class CodeAttributeReader : AttributeData<CodeAttributeRecord>
+    public sealed class CodeAttributeReader : AttributeReader<CodeAttributeRecord>
     {
 
         AttributeReaderCollection attributes;
@@ -14,28 +16,28 @@ namespace IKVM.ByteCode.Reading
         /// </summary>
         /// <param name="declaringClass"></param>
         /// <param name="info"></param>
-        /// <param name="data"></param>
-        internal CodeAttributeReader(ClassReader declaringClass, AttributeInfoReader info, CodeAttributeRecord data) :
-            base(declaringClass, info, data)
+        /// <param name="record"></param>
+        internal CodeAttributeReader(ClassReader declaringClass, AttributeInfoReader info, CodeAttributeRecord record) :
+            base(declaringClass, info, record)
         {
 
         }
 
-        public ushort MaxStack => Data.MaxStack;
+        public ushort MaxStack => Record.MaxStack;
 
-        public ushort MaxLocals => Data.MaxLocals;
+        public ushort MaxLocals => Record.MaxLocals;
 
         /// <summary>
         /// Gets the byte code.
         /// </summary>
-        public byte[] Code => Data.Code;
+        public ReadOnlyMemory<byte> Code => Record.Code;
 
-        public IReadOnlyList<ExceptionHandlerRecord> ExceptionTable => Data.ExceptionTable;
+        public IReadOnlyList<ExceptionHandlerRecord> ExceptionTable => Record.ExceptionTable;
 
         /// <summary>
         /// Gets the set of attributes applied to this attribute.
         /// </summary>
-        public AttributeReaderCollection Attributes => ClassReader.LazyGet(ref attributes, () => new AttributeReaderCollection(DeclaringClass, Data.Attributes));
+        public AttributeReaderCollection Attributes => ClassReader.LazyGet(ref attributes, () => new AttributeReaderCollection(DeclaringClass, Record.Attributes));
 
     }
 

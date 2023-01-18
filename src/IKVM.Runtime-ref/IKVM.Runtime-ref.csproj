@@ -1,6 +1,6 @@
 ﻿<Project Sdk="Microsoft.NET.Sdk">
     <Import Project="$(MSBuildThisFileDirectory)..\..\IKVM.deps.props" />
-    
+
     <PropertyGroup>
         <PackageId>IKVM.Runtime-ref</PackageId>
         <TargetFrameworks>net461;netcoreapp3.1</TargetFrameworks>
@@ -14,6 +14,7 @@
     </ItemGroup>
 
     <ItemGroup>
+        <ProjectReference Include="..\IKVM.ByteCode\IKVM.ByteCode.csproj" />
         <ProjectReference Include="..\IKVM.Java-ref\IKVM.Java-ref.csproj" Private="False" PrivateAssets="All" />
     </ItemGroup>
 

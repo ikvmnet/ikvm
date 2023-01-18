@@ -1,6 +1,7 @@
 ﻿using System.Buffers;
 
 using IKVM.ByteCode.Buffers;
+using IKVM.ByteCode.Writing;
 
 namespace IKVM.ByteCode.Parsing
 {
@@ -8,25 +9,51 @@ namespace IKVM.ByteCode.Parsing
     public record struct TypePathRecord(TypePathItemRecord[] Path)
     {
 
-        public static bool TryReadTypePath(ref SequenceReader<byte> reader, out TypePathRecord typePath)
+        public static bool TryRead(ref SequenceReader<byte> reader, out TypePathRecord typePath)
         {
             typePath = default;
 
-            if (reader.TryReadBigEndian(out ushort length) == false)
+            if (reader.TryRead(out byte length) == false)
                 return false;
 
             var path = new TypePathItemRecord[length];
             for (int i = 0; i < length; i++)
             {
-                if (reader.TryRead(out byte kind) == false)
-                    return false;
-                if (reader.TryRead(out byte argumentIndex) == false)
+                if (TypePathItemRecord.TryRead(ref reader, out var item) == false)
                     return false;
 
-                path[i] = new TypePathItemRecord((TypePathKind)kind, argumentIndex);
+                path[i] = item;
             }
 
             typePath = new TypePathRecord(path);
+            return true;
+        }
+
+        public int GetSize()
+        {
+            var size = 0;
+            size += sizeof(byte);
+
+            foreach (var item in Path)
+                size += item.GetSize();
+
+            return size;
+        }
+
+        /// <summary>
+        /// Attempts to write the record to the given <see cref="ClassFormatWriter"/>.
+        /// </summary>
+        /// <param name="writer"></param>
+        /// <returns></returns>
+        public bool TryWrite(ref ClassFormatWriter writer)
+        {
+            if (writer.TryWrite((byte)Path.Length) == false)
+                return false;
+
+            foreach (var item in Path)
+                if (item.TryWrite(ref writer) == false)
+                    return false;
+
             return true;
         }
 
