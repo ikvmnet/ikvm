@@ -7,6 +7,10 @@
     </PropertyGroup>
 
     <ItemGroup>
+        <InternalsVisibleTo Include="IKVM.ByteCode.Tests" />
+    </ItemGroup>
+
+    <ItemGroup>
         <PackageReference Include="Microsoft.CSharp" Version="4.7.0" />
         <PackageReference Include="System.IO.Pipelines" Version="6.0.3" />
         <PackageReference Include="System.Memory" Version="4.5.5" />
