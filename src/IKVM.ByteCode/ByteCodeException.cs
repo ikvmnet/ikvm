@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Runtime.Serialization;
 
 namespace IKVM.ByteCode
 {
@@ -6,6 +7,7 @@ namespace IKVM.ByteCode
     /// <summary>
     /// Represents an error that occurred with manipulation of Java byte code or class formats.
     /// </summary>
+    [Serializable]
     internal class ByteCodeException : Exception
     {
 
@@ -44,6 +46,17 @@ namespace IKVM.ByteCode
         /// <param name="innerException"></param>
         internal ByteCodeException(string message, Exception innerException) :
             base(message, innerException)
+        {
+
+        }
+
+        /// <summary>
+        /// Initializes a new instance.
+        /// </summary>
+        /// <param name="info"></param>
+        /// <param name="context"></param>
+        protected ByteCodeException(SerializationInfo info, StreamingContext context) :
+            base(info, context)
         {
 
         }
