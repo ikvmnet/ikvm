@@ -1,6 +1,4 @@
-﻿using IKVM.ByteCode.Reading;
-
-namespace IKVM.ByteCode.Parsing
+﻿namespace IKVM.ByteCode.Parsing
 {
 
     internal sealed record IntegerConstantRecord(int Value) : ConstantRecord

@@ -11,7 +11,7 @@
         /// Initializes a new instance.
         /// </summary>
         /// <param name="value"></param>
-        public IntegerConstantOverride(int value) : 
+        public IntegerConstantOverride(int value) :
             base(value)
         {
 

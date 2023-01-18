@@ -1,9 +1,4 @@
-﻿using System.Buffers;
-
-using IKVM.ByteCode.Buffers;
-using IKVM.ByteCode.Reading;
-
-namespace IKVM.ByteCode.Parsing
+﻿namespace IKVM.ByteCode.Parsing
 {
 
     internal sealed record FieldrefConstantRecord(ushort ClassIndex, ushort NameAndTypeIndex) : RefConstantRecord(ClassIndex, NameAndTypeIndex)
@@ -23,7 +18,7 @@ namespace IKVM.ByteCode.Parsing
                 return false;
             if (reader.TryReadU2(out ushort nameAndTypeIndex) == false)
                 return false;
-            
+
             constant = new FieldrefConstantRecord(classIndex, nameAndTypeIndex);
             return true;
         }

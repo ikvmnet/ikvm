@@ -1,10 +1,4 @@
-﻿using System.Buffers;
-
-using IKVM.ByteCode.Buffers;
-using IKVM.ByteCode.Reading;
-using IKVM.ByteCode.Writing;
-
-namespace IKVM.ByteCode.Parsing
+﻿namespace IKVM.ByteCode.Parsing
 {
 
     internal record struct AnnotationRecord(ushort TypeIndex, ElementValuePairRecord[] Elements)
@@ -51,9 +45,9 @@ namespace IKVM.ByteCode.Parsing
         /// <returns></returns>
         public bool TryWrite(ref ClassFormatWriter writer)
         {
-            if (writer.TryWrite(TypeIndex) == false)
+            if (writer.TryWriteU2(TypeIndex) == false)
                 return false;
-            if (writer.TryWrite((ushort)Elements.Length) == false)
+            if (writer.TryWriteU2((ushort)Elements.Length) == false)
                 return false;
 
             foreach (var element in Elements)

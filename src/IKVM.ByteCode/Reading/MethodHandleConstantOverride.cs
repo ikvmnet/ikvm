@@ -8,7 +8,7 @@
         /// Initializes a new instance.
         /// </summary>
         /// <param name="value"></param>
-        public MethodHandleConstantOverride(object value) : 
+        public MethodHandleConstantOverride(object value) :
             base(value)
         {
 

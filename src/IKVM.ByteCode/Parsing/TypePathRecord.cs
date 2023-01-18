@@ -1,10 +1,4 @@
-﻿using System.Buffers;
-
-using IKVM.ByteCode.Buffers;
-using IKVM.ByteCode.Reading;
-using IKVM.ByteCode.Writing;
-
-namespace IKVM.ByteCode.Parsing
+﻿namespace IKVM.ByteCode.Parsing
 {
 
     internal record struct TypePathRecord(TypePathItemRecord[] Path)
@@ -48,7 +42,7 @@ namespace IKVM.ByteCode.Parsing
         /// <returns></returns>
         public bool TryWrite(ref ClassFormatWriter writer)
         {
-            if (writer.TryWrite((byte)Path.Length) == false)
+            if (writer.TryWriteU1((byte)Path.Length) == false)
                 return false;
 
             foreach (var item in Path)

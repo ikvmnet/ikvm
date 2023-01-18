@@ -14,8 +14,8 @@ namespace IKVM.ByteCode.Reading
         /// </summary>
         /// <param name="declaringClass"></param>
         /// <param name="record"></param>
-        public AnnotationReader(ClassReader declaringClass, AnnotationRecord record) : 
-            base(declaringClass, record) 
+        public AnnotationReader(ClassReader declaringClass, AnnotationRecord record) :
+            base(declaringClass, record)
         {
 
         }

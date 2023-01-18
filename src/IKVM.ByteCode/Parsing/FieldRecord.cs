@@ -1,9 +1,4 @@
-﻿using System.Buffers;
-
-using IKVM.ByteCode.Buffers;
-using IKVM.ByteCode.Reading;
-
-namespace IKVM.ByteCode.Parsing
+﻿namespace IKVM.ByteCode.Parsing
 {
 
     internal record struct FieldRecord(AccessFlag AccessFlags, ushort NameIndex, ushort DescriptorIndex, AttributeInfoRecord[] Attributes)

@@ -1,10 +1,4 @@
-﻿using System.Buffers;
-
-using IKVM.ByteCode.Buffers;
-using IKVM.ByteCode.Reading;
-using IKVM.ByteCode.Writing;
-
-namespace IKVM.ByteCode.Parsing
+﻿namespace IKVM.ByteCode.Parsing
 {
 
     internal sealed record ElementConstantValueRecord(char Tag, ushort ConstantValueIndex) : ElementValueRecord(Tag)
@@ -38,7 +32,7 @@ namespace IKVM.ByteCode.Parsing
             if (base.TryWrite(ref writer) == false)
                 return false;
 
-            if (writer.TryWrite(ConstantValueIndex) == false)
+            if (writer.TryWriteU2(ConstantValueIndex) == false)
                 return false;
 
             return true;

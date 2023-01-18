@@ -28,7 +28,6 @@ using System.Diagnostics;
 using IKVM.Attributes;
 using IKVM.Runtime;
 using IKVM.ByteCode.Reading;
-using IKVM.ByteCode.Writing;
 using IKVM.ByteCode.Parsing;
 
 using System.Linq;

@@ -1,10 +1,4 @@
-﻿using System.Buffers;
-
-using IKVM.ByteCode.Buffers;
-using IKVM.ByteCode.Reading;
-using IKVM.ByteCode.Writing;
-
-namespace IKVM.ByteCode.Parsing
+﻿namespace IKVM.ByteCode.Parsing
 {
 
     internal sealed record TypeAnnotationThrowsTargetRecord(byte TargetType, ushort ThrowsTypeIndex) : TypeAnnotationTargetRecord(TargetType)
@@ -38,7 +32,7 @@ namespace IKVM.ByteCode.Parsing
             if (base.TryWrite(ref writer) == false)
                 return false;
 
-            if (writer.TryWrite(ThrowsTypeIndex) == false)
+            if (writer.TryWriteU2(ThrowsTypeIndex) == false)
                 return false;
 
             return true;

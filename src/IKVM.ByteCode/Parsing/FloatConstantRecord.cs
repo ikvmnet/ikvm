@@ -1,7 +1,6 @@
-﻿using System.Buffers;
+﻿using System;
 
 using IKVM.ByteCode.Buffers;
-using IKVM.ByteCode.Reading;
 
 namespace IKVM.ByteCode.Parsing
 {
@@ -22,7 +21,11 @@ namespace IKVM.ByteCode.Parsing
             if (reader.TryReadU4(out uint value) == false)
                 return false;
 
-            var v = unchecked((float)value);
+#if NETFRAMEWORK || NETCOREAPP3_1
+            var v = RawBitConverter.UInt32BitsToSingle(value);
+#else
+            var v = BitConverter.UInt32BitsToSingle(value);
+#endif
 
             constant = new FloatConstantRecord(v);
             return true;

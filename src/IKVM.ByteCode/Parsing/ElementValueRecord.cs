@@ -1,10 +1,4 @@
-﻿using System.Buffers;
-
-using IKVM.ByteCode.Buffers;
-using IKVM.ByteCode.Reading;
-using IKVM.ByteCode.Writing;
-
-namespace IKVM.ByteCode.Parsing
+﻿namespace IKVM.ByteCode.Parsing
 {
 
     internal abstract record class ElementValueRecord(char Tag)
@@ -42,7 +36,7 @@ namespace IKVM.ByteCode.Parsing
         /// <returns></returns>
         public virtual bool TryWrite(ref ClassFormatWriter writer)
         {
-            if (writer.TryWrite(Tag) == false)
+            if (writer.TryWriteU2(Tag) == false)
                 return false;
 
             return true;

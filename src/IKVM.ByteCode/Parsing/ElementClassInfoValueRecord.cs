@@ -1,10 +1,4 @@
-﻿using System.Buffers;
-
-using IKVM.ByteCode.Buffers;
-using IKVM.ByteCode.Reading;
-using IKVM.ByteCode.Writing;
-
-namespace IKVM.ByteCode.Parsing
+﻿namespace IKVM.ByteCode.Parsing
 {
 
     internal sealed record ElementClassInfoValueRecord(char Tag, ushort ClassInfoIndex) : ElementValueRecord(Tag)
@@ -38,7 +32,7 @@ namespace IKVM.ByteCode.Parsing
             if (base.TryWrite(ref writer) == false)
                 return false;
 
-            if (writer.TryWrite(ClassInfoIndex) == false)
+            if (writer.TryWriteU2(ClassInfoIndex) == false)
                 return false;
 
             return true;

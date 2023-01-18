@@ -1,10 +1,4 @@
-﻿using System.Buffers;
-
-using IKVM.ByteCode.Buffers;
-using IKVM.ByteCode.Reading;
-using IKVM.ByteCode.Writing;
-
-namespace IKVM.ByteCode.Parsing
+﻿namespace IKVM.ByteCode.Parsing
 {
 
     internal sealed record RuntimeVisibleTypeAnnotationsAttributeRecord(TypeAnnotationRecord[] Annotations) : AttributeRecord
@@ -52,7 +46,7 @@ namespace IKVM.ByteCode.Parsing
         /// <returns></returns>
         public bool TryWrite(ref ClassFormatWriter writer)
         {
-            if (writer.TryWrite((ushort)Annotations.Length) == false)
+            if (writer.TryWriteU2((ushort)Annotations.Length) == false)
                 return false;
 
             foreach (var record in Annotations)

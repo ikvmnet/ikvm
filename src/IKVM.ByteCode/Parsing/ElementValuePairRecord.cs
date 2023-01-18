@@ -1,10 +1,4 @@
-﻿using System.Buffers;
-
-using IKVM.ByteCode.Buffers;
-using IKVM.ByteCode.Reading;
-using IKVM.ByteCode.Writing;
-
-namespace IKVM.ByteCode.Parsing
+﻿namespace IKVM.ByteCode.Parsing
 {
 
     internal record struct ElementValuePairRecord(ushort NameIndex, ElementValueRecord Value)
@@ -38,7 +32,7 @@ namespace IKVM.ByteCode.Parsing
         /// <returns></returns>
         public bool TryWrite(ref ClassFormatWriter writer)
         {
-            if (writer.TryWrite(NameIndex) == false)
+            if (writer.TryWriteU2(NameIndex) == false)
                 return false;
             if (Value.TryWrite(ref writer) == false)
                 return false;

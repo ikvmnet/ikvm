@@ -1,10 +1,4 @@
-﻿using System.Buffers;
-
-using IKVM.ByteCode.Buffers;
-using IKVM.ByteCode.Reading;
-using IKVM.ByteCode.Writing;
-
-namespace IKVM.ByteCode.Parsing
+﻿namespace IKVM.ByteCode.Parsing
 {
 
     internal abstract record TypeAnnotationTargetRecord(byte TargetType)
@@ -41,7 +35,7 @@ namespace IKVM.ByteCode.Parsing
         /// <returns></returns>
         public virtual bool TryWrite(ref ClassFormatWriter writer)
         {
-            if (writer.TryWrite(TargetType) == false)
+            if (writer.TryWriteU1(TargetType) == false)
                 return false;
 
             return true;

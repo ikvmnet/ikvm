@@ -47,7 +47,7 @@ namespace IKVM.ByteCode.Reading
     /// </summary>
     /// <typeparam name="TRecord"></typeparam>
     internal abstract class ConstantReader<TRecord> : ReaderBase<TRecord>, IConstantReader<TRecord>
-        where TRecord: ConstantRecord
+        where TRecord : ConstantRecord
     {
 
         /// <summary>
@@ -104,7 +104,7 @@ namespace IKVM.ByteCode.Reading
         /// <summary>
         /// Gets the override applied to this constant.
         /// </summary>
-        public virtual object OverrideValue => @override.Value;
+        public virtual object OverrideValue => @override != null ? @override.Value : null;
 
     }
 

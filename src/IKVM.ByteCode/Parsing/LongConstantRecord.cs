@@ -1,6 +1,4 @@
-﻿using IKVM.ByteCode.Reading;
-
-namespace IKVM.ByteCode.Parsing
+﻿namespace IKVM.ByteCode.Parsing
 {
 
     internal sealed record LongConstantRecord(long Value) : ConstantRecord
@@ -22,11 +20,7 @@ namespace IKVM.ByteCode.Parsing
             if (reader.TryReadU4(out uint b) == false)
                 return false;
 
-            var h = (ulong)a << 4;
-            var l = (ulong)b;
-            var v = h | l;
-
-            constant = new LongConstantRecord(unchecked((long)v));
+            constant = new LongConstantRecord((long)(((ulong)a << 32) | b));
             return true;
         }
 

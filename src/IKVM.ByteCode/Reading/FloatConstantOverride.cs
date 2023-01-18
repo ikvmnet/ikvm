@@ -11,7 +11,7 @@
         /// Initializes a new instance.
         /// </summary>
         /// <param name="value"></param>
-        public FloatConstantOverride(float value) : 
+        public FloatConstantOverride(float value) :
             base(value)
         {
 

@@ -3,7 +3,7 @@ using System.Buffers;
 
 using IKVM.ByteCode.Buffers;
 
-namespace IKVM.ByteCode.Reading
+namespace IKVM.ByteCode.Parsing
 {
 
     /// <summary>
@@ -18,7 +18,7 @@ namespace IKVM.ByteCode.Reading
         /// Initializes a new instance.
         /// </summary>
         /// <param name="buffer"></param>
-        public ClassFormatReader(ReadOnlyMemory<byte> buffer) : 
+        public ClassFormatReader(ReadOnlyMemory<byte> buffer) :
             this(new ReadOnlySequence<byte>(buffer))
         {
 
@@ -30,7 +30,7 @@ namespace IKVM.ByteCode.Reading
         /// <param name="sequence"></param>
         public ClassFormatReader(ReadOnlySequence<byte> sequence)
         {
-            this.reader = new SequenceReader<byte>(sequence);
+            reader = new SequenceReader<byte>(sequence);
         }
 
         /// <summary>

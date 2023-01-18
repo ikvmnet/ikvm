@@ -1,7 +1,7 @@
 ﻿using System;
 using System.Buffers.Binary;
 
-namespace IKVM.ByteCode.Writing
+namespace IKVM.ByteCode.Parsing
 {
 
     /// <summary>
@@ -12,7 +12,7 @@ namespace IKVM.ByteCode.Writing
 
         Span<byte> span;
         Span<byte> next;
-        uint size = 0;
+        long size = 0;
 
         /// <summary>
         /// Initializes a new instance.
@@ -20,7 +20,7 @@ namespace IKVM.ByteCode.Writing
         /// <param name="span"></param>
         public ClassFormatWriter(Span<byte> span)
         {
-            this.span = this.next = span;
+            this.span = next = span;
         }
 
         /// <summary>
@@ -31,15 +31,18 @@ namespace IKVM.ByteCode.Writing
         /// <summary>
         /// Gets the total number of written bytes.
         /// </summary>
-        public uint Size => size;
+        public long Size => size;
 
         /// <summary>
-        /// Writes a <see cref="byte" /> to the writer and advances the position.
+        /// Writes a value defined as a 'u1' in the class format specification.
         /// </summary>
         /// <param name="value"></param>
         /// <returns></returns>
-        public bool TryWrite(byte value)
+        public bool TryWriteU1(byte value)
         {
+            if (next.Length < sizeof(byte))
+                return false;
+
             BinaryPrimitives.WriteUInt16BigEndian(next, value);
             next = next.Slice(sizeof(byte));
             size += sizeof(byte);
@@ -47,12 +50,15 @@ namespace IKVM.ByteCode.Writing
         }
 
         /// <summary>
-        /// Writes a <see cref="ushort" /> to the writer and advances the position.
+        /// Writes a value defined as a 'u2' in the class format specification.
         /// </summary>
         /// <param name="value"></param>
         /// <returns></returns>
-        public bool TryWrite(ushort value)
+        public bool TryWriteU2(ushort value)
         {
+            if (next.Length < sizeof(ushort))
+                return false;
+
             BinaryPrimitives.WriteUInt16BigEndian(next, value);
             next = next.Slice(sizeof(ushort));
             size += sizeof(ushort);
@@ -60,12 +66,15 @@ namespace IKVM.ByteCode.Writing
         }
 
         /// <summary>
-        /// Writes a <see cref="uint" /> to the writer and advances the position.
+        /// Writes a value defined as a 'u4' in the class format specification.
         /// </summary>
         /// <param name="value"></param>
         /// <returns></returns>
-        public bool TryWrite(uint value)
+        public bool TryWriteU4(uint value)
         {
+            if (next.Length < sizeof(uint))
+                return false;
+
             BinaryPrimitives.WriteUInt32BigEndian(next, value);
             next = next.Slice(sizeof(uint));
             size += sizeof(uint);

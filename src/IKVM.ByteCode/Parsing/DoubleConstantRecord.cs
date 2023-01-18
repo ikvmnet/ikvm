@@ -1,6 +1,6 @@
 ﻿using System;
 
-using IKVM.ByteCode.Reading;
+using IKVM.ByteCode.Buffers;
 
 namespace IKVM.ByteCode.Parsing
 {
@@ -23,13 +23,10 @@ namespace IKVM.ByteCode.Parsing
             if (reader.TryReadU4(out uint b) == false)
                 return false;
 
-            var h = (ulong)a << 4;
-            var l = (ulong)b;
-            var z = h | l;
 #if NETFRAMEWORK || NETCOREAPP3_1
-            var v = BitConverter.Int64BitsToDouble(unchecked((long)z));
+            var v = RawBitConverter.UInt64BitsToDouble(((ulong)a << 32) | b);
 #else
-            var v = BitConverter.UInt64BitsToDouble(z);
+            var v = BitConverter.UInt64BitsToDouble(((ulong)a << 32) | b);
 #endif
 
             constant = new DoubleConstantRecord(v);
