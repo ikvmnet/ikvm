@@ -37,13 +37,13 @@ using Type = IKVM.Reflection.Type;
 using System.Reflection;
 using System.Reflection.Emit;
 
-using IKVM.ByteCode;
 #endif
 
 namespace IKVM.Internal
 {
 	sealed class LambdaMetafactory
 	{
+
 		private MethodBuilder ctor;
 
 		internal static bool Emit(DynamicTypeWrapper.FinishContext context, ClassFile classFile, int constantPoolIndex, ClassFile.ConstantPoolItemInvokeDynamic cpi, CodeEmitter ilgen)

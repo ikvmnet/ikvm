@@ -5,17 +5,29 @@ namespace IKVM.ByteCode.Text
 {
 
     /// <summary>
-    /// Implements a <see cref="Encoding"/> for Sun's modified UTF-8.
+    /// Implements an <see cref="Encoding"/> for Sun's modified UTF-8.
     /// </summary>
-    internal class MUTF8Encoding : Encoding
+    public class MUTF8Encoding : Encoding
     {
 
-        static MUTF8Encoding mutf8;
+        readonly static MUTF8Encoding JavaSE_1_0 = new MUTF8Encoding(0);
+        readonly static MUTF8Encoding JavaSE_1_4 = new MUTF8Encoding(48);
 
         /// <summary>
-        /// Gets an instance of the Sun modified UTF8 encoding.
+        /// Gets an instance of the Sun modified UTF8 encoding targeting the specified JavaSE version.
         /// </summary>
-        public static MUTF8Encoding MUTF8 => mutf8 ??= new MUTF8Encoding();
+        public static MUTF8Encoding GetMUTF8(int majorVersion) => majorVersion >= 48 ? JavaSE_1_4 : JavaSE_1_0;
+
+        readonly int majorVersion;
+
+        /// <summary>
+        /// Initializes a new instance.
+        /// </summary>
+        /// <param name="majorVersion"></param>
+        public MUTF8Encoding(int majorVersion = 52)
+        {
+            this.majorVersion = majorVersion;
+        }
 
         /// <summary>
         /// Scans for the position of the first NULL given the specified pointer, up to a maximum offset of <paramref name="max"/>.
@@ -23,7 +35,7 @@ namespace IKVM.ByteCode.Text
         /// <param name="ptr"></param>
         /// <param name="max"></param>
         /// <returns></returns>
-        public static unsafe int IndexOfNull(byte* ptr, int max = int.MaxValue)
+        public unsafe int IndexOfNull(byte* ptr, int max = int.MaxValue)
         {
             if (ptr is null)
                 throw new ArgumentNullException(nameof(ptr));
@@ -71,18 +83,14 @@ namespace IKVM.ByteCode.Text
             if (count < 0)
                 throw new ArgumentOutOfRangeException(nameof(count));
 
-            // avoid problems with empty buffer
-            if (count == 0)
-                return 0;
+            var len = 0;
 
-            int len = 0;
-
-            for (int i = 0; i < count; i++)
+            for (int i = 0, e = count; i < e; i++)
             {
-                var ch = chars[i];
-                if (ch != 0 && ch <= 0x7F)
-                    len++;
-                else if (ch <= 0x7FF)
+                var c = chars[i];
+                if (c > 0 && c <= 0x007F)
+                    len += 1;
+                else if (c <= 0x07FF)
                     len += 2;
                 else
                     len += 3;
@@ -91,6 +99,7 @@ namespace IKVM.ByteCode.Text
             return len;
         }
 
+        /// <inheritdoc />
         public override int GetBytes(string s, int charIndex, int charCount, byte[] bytes, int byteIndex)
         {
             if (s is null)
@@ -150,38 +159,34 @@ namespace IKVM.ByteCode.Text
             if (byteCount < 0)
                 throw new ArgumentOutOfRangeException(nameof(byteCount));
 
-            // avoid problems with empty buffer
-            if (charCount == 0)
-                return 0;
-
             int j = 0;
 
             for (int i = 0; i < charCount; i++)
             {
                 var ch = chars[i];
-                if (ch != 0 && ch <= 0x7F)
+                if ((ch != 0) && (ch <= 0x7F))
                 {
                     if (j + 1 > byteCount)
-                        throw new ArgumentException();
+                        throw new EncoderFallbackException("Out of memory.");
 
                     bytes[j++] = (byte)ch;
                 }
                 else if (ch <= 0x7FF)
                 {
                     if (j + 2 > byteCount)
-                        throw new ArgumentException();
+                        throw new EncoderFallbackException("Out of memory.");
 
-                    bytes[j++] = (byte)(ch >> 6 | 0xC0);
-                    bytes[j++] = (byte)(ch & 0x3F | 0x80);
+                    bytes[j++] = (byte)((ch >> 6) | 0xC0);
+                    bytes[j++] = (byte)((ch & 0x3F) | 0x80);
                 }
                 else
                 {
                     if (j + 3 > byteCount)
-                        throw new ArgumentException();
+                        throw new EncoderFallbackException("Out of memory.");
 
-                    bytes[j++] = (byte)(ch >> 12 | 0xE0);
-                    bytes[j++] = (byte)(ch >> 6 & 0x3F | 0x80);
-                    bytes[j++] = (byte)(ch & 0x3F | 0x80);
+                    bytes[j++] = (byte)((ch >> 12) | 0xE0);
+                    bytes[j++] = (byte)(((ch >> 6) & 0x3F) | 0x80);
+                    bytes[j++] = (byte)((ch & 0x3F) | 0x80);
                 }
             }
 
@@ -202,7 +207,7 @@ namespace IKVM.ByteCode.Text
 #endif
 
         /// <inheritdoc />
-        public unsafe override int GetCharCount(byte[] bytes, int index, int count)
+        public override int GetCharCount(byte[] bytes, int index, int count)
         {
             if (bytes is null)
                 throw new ArgumentNullException(nameof(bytes));
@@ -224,48 +229,68 @@ namespace IKVM.ByteCode.Text
             if (count < 0)
                 throw new ArgumentOutOfRangeException(nameof(count));
 
-            // avoid problems with empty buffer
-            if (count == 0)
-                return 0;
-
-            var hasNonAscii = false;
-            for (int i = 0; i < count; i++)
+            for (int j = 0; j < count; j++)
             {
-                if (bytes[i] >= 128)
+                if (bytes[j] == 0)
+                    throw new DecoderFallbackException("Illegal value in modified UTF8.");
+
+                if (bytes[j] >= 128)
                 {
-                    hasNonAscii = true;
-                    break;
+                    int l = 0;
+                    for (int i = 0; i < count; i++)
+                    {
+                        uint c = bytes[i];
+                        uint char2, char3;
+
+                        if (c == 0)
+                            throw new DecoderFallbackException("Illegal value in modified UTF8.");
+
+                        switch (c >> 4)
+                        {
+                            case 0:
+                            case 1:
+                            case 2:
+                            case 3:
+                            case 4:
+                            case 5:
+                            case 6:
+                            case 7:
+                                // 0xxxxxxx
+                                break;
+                            case 12:
+                            case 13:
+                                // 110x xxxx   10xx xxxx
+                                char2 = bytes[++i];
+                                if ((char2 & 0xc0) != 0x80 || i >= count)
+                                    goto default;
+
+                                c = ((c & 0x1F) << 6) | (char2 & 0x3F);
+                                if (c < 0x80 && c != 0 && majorVersion >= 48)
+                                    goto default;
+                                break;
+                            case 14:
+                                // 1110 xxxx  10xx xxxx  10xx xxxx
+                                char2 = bytes[++i];
+                                char3 = bytes[++i];
+                                if ((char2 & 0xc0) != 0x80 || (char3 & 0xc0) != 0x80 || i >= count)
+                                    goto default;
+                                c = ((c & 0x0F) << 12) | ((char2 & 0x3F) << 6) | ((char3 & 0x3F) << 0);
+                                if (c < 0x800 && majorVersion >= 48)
+                                    goto default;
+                                break;
+                            default:
+                                throw new DecoderFallbackException("Illegal value in modified UTF8.");
+                        }
+
+                        l++;
+                    }
+
+                    return l;
                 }
             }
 
-            // no non-ascii detected, we can just parse as ASCII, where byte count is char count
-            if (hasNonAscii == false)
-                return count;
-
-            int l = 0;
-
-            for (int i = 0; i < count; i++)
-            {
-                int c = *bytes++;
-                switch (c >> 4)
-                {
-                    case 12:
-                    case 13:
-                        (*bytes)++;
-                        i++;
-                        break;
-                    case 14:
-                        (*bytes)++;
-                        (*bytes)++;
-                        i++;
-                        i++;
-                        break;
-                }
-
-                l++;
-            }
-
-            return l;
+            // fallback to ASCII (char count == byte count)
+            return count;
         }
 
         /// <inheritdoc />
@@ -276,6 +301,7 @@ namespace IKVM.ByteCode.Text
 
 #if NETFRAMEWORK
 
+        /// <inheritdoc />
         public unsafe int GetChars(ReadOnlySpan<byte> bytes, Span<char> chars)
         {
             // avoid problems with empty buffer
@@ -301,52 +327,68 @@ namespace IKVM.ByteCode.Text
             if (charCount < 0)
                 throw new ArgumentOutOfRangeException(nameof(byteCount));
 
-            // avoid problems with empty buffer
-            if (byteCount == 0)
-                return 0;
-
-            var hasNonAscii = false;
-            for (int i = 0; i < byteCount; i++)
+            for (int j = 0; j < byteCount; j++)
             {
-                if (bytes[i] >= 128)
+                if (bytes[j] == 0)
+                    throw new DecoderFallbackException("Illegal value in modified UTF8.");
+
+                if (bytes[j] >= 128)
                 {
-                    hasNonAscii = true;
-                    break;
+                    int l = 0;
+                    for (int i = 0; i < byteCount; i++)
+                    {
+                        uint c = bytes[i];
+                        uint char2, char3;
+
+                        if (c == 0)
+                            throw new DecoderFallbackException("Illegal value in modified UTF8.");
+
+                        switch (c >> 4)
+                        {
+                            case 0:
+                            case 1:
+                            case 2:
+                            case 3:
+                            case 4:
+                            case 5:
+                            case 6:
+                            case 7:
+                                // 0xxxxxxx
+                                break;
+                            case 12:
+                            case 13:
+                                // 110x xxxx   10xx xxxx
+                                char2 = bytes[++i];
+                                if ((char2 & 0xc0) != 0x80 || i >= byteCount)
+                                    goto default;
+
+                                c = ((c & 0x1F) << 6) | (char2 & 0x3F);
+                                if (c < 0x80 && c != 0 && majorVersion >= 48)
+                                    goto default;
+                                break;
+                            case 14:
+                                // 1110 xxxx  10xx xxxx  10xx xxxx
+                                char2 = bytes[++i];
+                                char3 = bytes[++i];
+                                if ((char2 & 0xc0) != 0x80 || (char3 & 0xc0) != 0x80 || i >= byteCount)
+                                    goto default;
+                                c = ((c & 0x0F) << 12) | ((char2 & 0x3F) << 6) | ((char3 & 0x3F) << 0);
+                                if (c < 0x800 && majorVersion >= 48)
+                                    goto default;
+                                break;
+                            default:
+                                throw new DecoderFallbackException("Illegal value in modified UTF8.");
+                        }
+
+                        chars[l++] = (char)c;
+                    }
+
+                    return l;
                 }
             }
 
-            // no non-ascii detected, we can just parse as ASCII
-            if (hasNonAscii == false)
-                return ASCII.GetChars(bytes, byteCount, chars, charCount);
-
-            // current output count
-            int o = 0;
-
-            for (int i = 0; i < byteCount && o < charCount; i++)
-            {
-                int c = *bytes++;
-                int char2, char3;
-                switch (c >> 4)
-                {
-                    case 12:
-                    case 13:
-                        char2 = *bytes++;
-                        i++;
-                        c = (c & 0x1F) << 6 | char2 & 0x3F;
-                        break;
-                    case 14:
-                        char2 = *bytes++;
-                        char3 = *bytes++;
-                        i++;
-                        i++;
-                        c = (c & 0x0F) << 12 | (char2 & 0x3F) << 6 | char3 & 0x3F;
-                        break;
-                }
-
-                chars[o++] = (char)c;
-            }
-
-            return o;
+            // fallback to ASCII
+            return ASCII.GetChars(bytes, byteCount, chars, charCount);
         }
 
         /// <inheritdoc />
