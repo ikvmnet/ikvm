@@ -9,7 +9,7 @@ namespace IKVM.ByteCode.Reading
     /// <summary>
     /// Lazy init collection of method data.
     /// </summary>
-    public sealed class InterfaceReaderCollection : LazyReaderList<InterfaceReader, InterfaceRecord>
+    internal sealed class InterfaceReaderCollection : LazyReaderList<InterfaceReader, InterfaceRecord>
     {
 
         /// <summary>

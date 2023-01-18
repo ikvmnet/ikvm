@@ -1,26 +1,27 @@
 ﻿using System.Buffers;
 
 using IKVM.ByteCode.Buffers;
+using IKVM.ByteCode.Reading;
 
 namespace IKVM.ByteCode.Parsing
 {
 
-    public sealed record MethodParametersAttributeRecord(MethodParametersAttributeParameterRecord[] Parameters) : AttributeRecord
+    internal sealed record MethodParametersAttributeRecord(MethodParametersAttributeParameterRecord[] Parameters) : AttributeRecord
     {
 
-        public static bool TryReadMethodParametersAttribute(ref SequenceReader<byte> reader, out AttributeRecord attribute)
+        public static bool TryReadMethodParametersAttribute(ref ClassFormatReader reader, out AttributeRecord attribute)
         {
             attribute = null;
 
-            if (reader.TryRead(out byte count) == false)
+            if (reader.TryReadU1(out byte count) == false)
                 return false;
 
             var arguments = new MethodParametersAttributeParameterRecord[count];
             for (int i = 0; i < count; i++)
             {
-                if (reader.TryReadBigEndian(out ushort nameIndex) == false)
+                if (reader.TryReadU2(out ushort nameIndex) == false)
                     return false;
-                if (reader.TryReadBigEndian(out ushort accessFlags) == false)
+                if (reader.TryReadU2(out ushort accessFlags) == false)
                     return false;
 
                 arguments[i] = new MethodParametersAttributeParameterRecord(nameIndex, (AccessFlag)accessFlags);

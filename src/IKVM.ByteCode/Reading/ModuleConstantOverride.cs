@@ -4,7 +4,7 @@
     /// <summary>
     /// Provides an overload to a Module constant.
     /// </summary>
-    public sealed class ModuleConstantOverride : ConstantOverride
+    internal sealed class ModuleConstantOverride : ConstantOverride
     {
         /// <summary>
         /// Initializes a new instance.

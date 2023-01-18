@@ -1,15 +1,16 @@
 ﻿using System.Buffers;
 
 using IKVM.ByteCode.Buffers;
+using IKVM.ByteCode.Reading;
 using IKVM.ByteCode.Writing;
 
 namespace IKVM.ByteCode.Parsing
 {
 
-    public sealed record ElementAnnotationValueRecord(char Tag, AnnotationRecord Annotation) : ElementValueRecord(Tag)
+    internal sealed record ElementAnnotationValueRecord(char Tag, AnnotationRecord Annotation) : ElementValueRecord(Tag)
     {
 
-        public static bool TryReadElementAnnotationValue(ref SequenceReader<byte> reader, char tag, out ElementValueRecord value)
+        public static bool TryReadElementAnnotationValue(ref ClassFormatReader reader, char tag, out ElementValueRecord value)
         {
             value = null;
 

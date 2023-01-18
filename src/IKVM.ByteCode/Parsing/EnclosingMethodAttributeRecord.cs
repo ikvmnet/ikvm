@@ -1,20 +1,21 @@
 ﻿using System.Buffers;
 
 using IKVM.ByteCode.Buffers;
+using IKVM.ByteCode.Reading;
 
 namespace IKVM.ByteCode.Parsing
 {
 
-    public sealed record EnclosingMethodAttributeRecord(ushort ClassIndex, ushort MethodIndex) : AttributeRecord
+    internal sealed record EnclosingMethodAttributeRecord(ushort ClassIndex, ushort MethodIndex) : AttributeRecord
     {
 
-        public static bool TryReadEnclosingMethodAttribute(ref SequenceReader<byte> reader, out AttributeRecord attribute)
+        public static bool TryReadEnclosingMethodAttribute(ref ClassFormatReader reader, out AttributeRecord attribute)
         {
             attribute = null;
 
-            if (reader.TryReadBigEndian(out ushort classIndex) == false)
+            if (reader.TryReadU2(out ushort classIndex) == false)
                 return false;
-            if (reader.TryReadBigEndian(out ushort methodIndex) == false)
+            if (reader.TryReadU2(out ushort methodIndex) == false)
                 return false;
 
             attribute = new EnclosingMethodAttributeRecord(classIndex, methodIndex);

@@ -5,7 +5,7 @@ using IKVM.ByteCode.Parsing;
 namespace IKVM.ByteCode.Reading
 {
 
-    public class BootstrapMethodsAttributeReader : AttributeReader<BootstrapMethodsAttributeRecord>
+    internal class BootstrapMethodsAttributeReader : AttributeReader<BootstrapMethodsAttributeRecord>
     {
 
         IReadOnlyList<BootstrapMethodsAttributeMethodReader> methods;

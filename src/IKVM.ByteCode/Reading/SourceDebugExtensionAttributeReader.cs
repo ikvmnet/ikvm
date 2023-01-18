@@ -3,7 +3,7 @@
 namespace IKVM.ByteCode.Reading
 {
 
-    public class SourceDebugExtensionAttributeReader : AttributeReader<SourceDebugExtensionAttributeRecord>
+    internal class SourceDebugExtensionAttributeReader : AttributeReader<SourceDebugExtensionAttributeRecord>
     {
 
         /// <summary>

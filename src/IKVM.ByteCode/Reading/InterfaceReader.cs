@@ -3,7 +3,7 @@
 namespace IKVM.ByteCode.Reading
 {
 
-    public sealed class InterfaceReader : ReaderBase<InterfaceRecord>
+    internal sealed class InterfaceReader : ReaderBase<InterfaceRecord>
     {
 
         string name;

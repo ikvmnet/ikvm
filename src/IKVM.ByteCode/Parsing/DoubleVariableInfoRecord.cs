@@ -1,14 +1,15 @@
 ﻿using System.Buffers;
 
 using IKVM.ByteCode.Buffers;
+using IKVM.ByteCode.Reading;
 
 namespace IKVM.ByteCode.Parsing
 {
 
-    public sealed record DoubleVariableInfoRecord : VerificationTypeInfoRecord
+    internal sealed record DoubleVariableInfoRecord : VerificationTypeInfoRecord
     {
 
-        public static bool TryRead(ref SequenceReader<byte> reader, out VerificationTypeInfoRecord record)
+        public static bool TryRead(ref ClassFormatReader reader, out VerificationTypeInfoRecord record)
         {
             record = new DoubleVariableInfoRecord();
             return true;

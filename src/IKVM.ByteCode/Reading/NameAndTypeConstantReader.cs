@@ -3,7 +3,7 @@
 namespace IKVM.ByteCode.Reading
 {
 
-    public sealed class NameAndTypeConstantReader : ConstantReader<NameAndTypeConstantRecord, NameAndTypeConstantOverride>
+    internal sealed class NameAndTypeConstantReader : ConstantReader<NameAndTypeConstantRecord, NameAndTypeConstantOverride>
     {
 
         string name;

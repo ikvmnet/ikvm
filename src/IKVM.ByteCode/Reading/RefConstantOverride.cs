@@ -4,7 +4,7 @@
     /// <summary>
     /// Provides data to override a Fieldref, Methodref or InterfaceMethodref constant.
     /// </summary>
-    public abstract class RefConstantOverride : ConstantOverride
+    internal abstract class RefConstantOverride : ConstantOverride
     {
 
         readonly string className;

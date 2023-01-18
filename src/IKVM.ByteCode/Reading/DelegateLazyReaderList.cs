@@ -8,7 +8,7 @@ namespace IKVM.ByteCode.Reading
     /// </summary>
     /// <typeparam name="TReader"></typeparam>
     /// <typeparam name="TSource"></typeparam>
-    public sealed class DelegateLazyReaderList<TReader, TSource> : LazyReaderList<TReader, TSource>
+    internal sealed class DelegateLazyReaderList<TReader, TSource> : LazyReaderList<TReader, TSource>
         where TReader : class
     {
 

@@ -3,7 +3,7 @@
 namespace IKVM.ByteCode.Reading
 {
 
-    public sealed class LocalVariableTypeTableAttributeReader : AttributeReader<LocalVariableTypeTableAttributeRecord>
+    internal sealed class LocalVariableTypeTableAttributeReader : AttributeReader<LocalVariableTypeTableAttributeRecord>
     {
 
         /// <summary>

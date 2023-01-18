@@ -1,18 +1,19 @@
 ﻿using System.Buffers;
 
 using IKVM.ByteCode.Buffers;
+using IKVM.ByteCode.Reading;
 
 namespace IKVM.ByteCode.Parsing
 {
 
-    public sealed record ModuleMainClassAttributeRecord(ushort MainClassIndex) : AttributeRecord
+    internal sealed record ModuleMainClassAttributeRecord(ushort MainClassIndex) : AttributeRecord
     {
 
-        public static bool TryReadModuleMainClassAttribute(ref SequenceReader<byte> reader, out AttributeRecord attribute)
+        public static bool TryReadModuleMainClassAttribute(ref ClassFormatReader reader, out AttributeRecord attribute)
         {
             attribute = null;
 
-            if (reader.TryReadBigEndian(out ushort mainClassIndex) == false)
+            if (reader.TryReadU2(out ushort mainClassIndex) == false)
                 return false;
 
             attribute = new ModuleMainClassAttributeRecord(mainClassIndex);

@@ -4,7 +4,7 @@
     /// <summary>
     /// Describes an attempt to parse an unsupported class file version.
     /// </summary>
-    public sealed class UnsupportedClassVersionException :
+    internal sealed class UnsupportedClassVersionException :
         ByteCodeException
     {
 

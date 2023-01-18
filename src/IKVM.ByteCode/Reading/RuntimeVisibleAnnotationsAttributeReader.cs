@@ -3,7 +3,7 @@
 namespace IKVM.ByteCode.Reading
 {
 
-    public class RuntimeVisibleAnnotationsAttributeReader : AttributeReader<RuntimeVisibleAnnotationsAttributeRecord>
+    internal class RuntimeVisibleAnnotationsAttributeReader : AttributeReader<RuntimeVisibleAnnotationsAttributeRecord>
     {
 
         AnnotationReaderCollection annotations;

@@ -6,7 +6,7 @@ namespace IKVM.ByteCode.Reading
     /// <summary>
     /// Interface supported by all of the constant readers.
     /// </summary>
-    public interface IConstantReader
+    internal interface IConstantReader
     {
 
         /// <summary>
@@ -19,7 +19,7 @@ namespace IKVM.ByteCode.Reading
     /// <summary>
     /// Interface supported by all of the constant readers.
     /// </summary>
-    public interface IConstantReader<out TRecord> : IConstantReader
+    internal interface IConstantReader<out TRecord> : IConstantReader
         where TRecord : ConstantRecord
     {
 
@@ -33,7 +33,7 @@ namespace IKVM.ByteCode.Reading
     /// <summary>
     /// Interface supported by all of the constant readers.
     /// </summary>
-    public interface IConstantReader<out TRecord, out TOverride> : IConstantReader<TRecord>
+    internal interface IConstantReader<out TRecord, out TOverride> : IConstantReader<TRecord>
         where TRecord : ConstantRecord
         where TOverride : ConstantOverride
     {

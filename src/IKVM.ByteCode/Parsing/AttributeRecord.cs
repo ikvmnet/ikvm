@@ -6,7 +6,7 @@ using IKVM.ByteCode.Reading;
 namespace IKVM.ByteCode.Parsing
 {
 
-    public abstract record AttributeRecord
+    internal abstract record AttributeRecord
     {
 
         /// <summary>
@@ -29,7 +29,7 @@ namespace IKVM.ByteCode.Parsing
         /// <returns></returns>
         public static bool TryRead(string name, ReadOnlySequence<byte> data, out AttributeRecord attribute)
         {
-            var reader = new SequenceReader<byte>(data);
+            var reader = new ClassFormatReader(data);
             if (TryReadAttribute(name, ref reader, out attribute) == false)
                 return false;
 
@@ -44,7 +44,7 @@ namespace IKVM.ByteCode.Parsing
         /// <param name="attribute"></param>
         /// <returns></returns>
         /// <exception cref="ByteCodeException"></exception>
-        public static bool TryReadAttribute(string name, ref SequenceReader<byte> reader, out AttributeRecord attribute) => name switch
+        public static bool TryReadAttribute(string name, ref ClassFormatReader reader, out AttributeRecord attribute) => name switch
         {
             "ConstantValue" => ConstantValueAttributeRecord.TryReadConstantValueAttribute(ref reader, out attribute),
             "Code" => CodeAttributeRecord.TryReadCodeAttribute(ref reader, out attribute),

@@ -2,42 +2,43 @@
 using System.Buffers;
 
 using IKVM.ByteCode.Buffers;
+using IKVM.ByteCode.Reading;
 
 namespace IKVM.ByteCode.Parsing
 {
 
-    public sealed record CodeAttributeRecord(ushort MaxStack, ushort MaxLocals, ReadOnlyMemory<byte> Code, ExceptionHandlerRecord[] ExceptionTable, AttributeInfoRecord[] Attributes) : AttributeRecord
+    internal sealed record CodeAttributeRecord(ushort MaxStack, ushort MaxLocals, ReadOnlyMemory<byte> Code, ExceptionHandlerRecord[] ExceptionTable, AttributeInfoRecord[] Attributes) : AttributeRecord
     {
 
-        public static bool TryReadCodeAttribute(ref SequenceReader<byte> reader, out AttributeRecord attribute)
+        public static bool TryReadCodeAttribute(ref ClassFormatReader reader, out AttributeRecord attribute)
         {
             attribute = null;
 
-            if (reader.TryReadBigEndian(out ushort maxStack) == false)
+            if (reader.TryReadU2(out ushort maxStack) == false)
                 return false;
-            if (reader.TryReadBigEndian(out ushort maxLocals) == false)
+            if (reader.TryReadU2(out ushort maxLocals) == false)
                 return false;
-            if (reader.TryReadBigEndian(out uint codeLength) == false)
+            if (reader.TryReadU4(out uint codeLength) == false)
                 return false;
-            if (reader.TryReadExact((int)codeLength, out ReadOnlySequence<byte> code) == false)
+            if (reader.TryReadManyU1(codeLength, out ReadOnlySequence<byte> code) == false)
                 return false;
 
             var codeBuffer = new byte[code.Length];
             code.CopyTo(codeBuffer);
 
-            if (reader.TryReadBigEndian(out ushort exceptionTableLength) == false)
+            if (reader.TryReadU2(out ushort exceptionTableLength) == false)
                 return false;
 
             var exceptionTable = new ExceptionHandlerRecord[(int)exceptionTableLength];
             for (int i = 0; i < exceptionTableLength; i++)
             {
-                if (reader.TryReadBigEndian(out ushort startOffset) == false)
+                if (reader.TryReadU2(out ushort startOffset) == false)
                     return false;
-                if (reader.TryReadBigEndian(out ushort endOffset) == false)
+                if (reader.TryReadU2(out ushort endOffset) == false)
                     return false;
-                if (reader.TryReadBigEndian(out ushort handlerOffset) == false)
+                if (reader.TryReadU2(out ushort handlerOffset) == false)
                     return false;
-                if (reader.TryReadBigEndian(out ushort catchTypeIndex) == false)
+                if (reader.TryReadU2(out ushort catchTypeIndex) == false)
                     return false;
 
                 exceptionTable[i] = new ExceptionHandlerRecord(startOffset, endOffset, handlerOffset, catchTypeIndex);

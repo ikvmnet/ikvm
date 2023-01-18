@@ -4,7 +4,7 @@
     /// <summary>
     /// Represents an override to a Float constant.
     /// </summary>
-    public sealed class FloatConstantOverride : ConstantOverride
+    internal sealed class FloatConstantOverride : ConstantOverride
     {
 
         /// <summary>

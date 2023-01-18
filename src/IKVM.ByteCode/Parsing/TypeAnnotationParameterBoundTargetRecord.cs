@@ -1,21 +1,22 @@
 ﻿using System.Buffers;
 
 using IKVM.ByteCode.Buffers;
+using IKVM.ByteCode.Reading;
 using IKVM.ByteCode.Writing;
 
 namespace IKVM.ByteCode.Parsing
 {
 
-    public sealed record TypeAnnotationParameterBoundTargetRecord(byte TargetType, byte ParameterIndex, byte BoundIndex) : TypeAnnotationTargetRecord(TargetType)
+    internal sealed record TypeAnnotationParameterBoundTargetRecord(byte TargetType, byte ParameterIndex, byte BoundIndex) : TypeAnnotationTargetRecord(TargetType)
     {
 
-        public static bool TryRead(ref SequenceReader<byte> reader, byte targetType, out TypeAnnotationTargetRecord targetInfo)
+        public static bool TryRead(ref ClassFormatReader reader, byte targetType, out TypeAnnotationTargetRecord targetInfo)
         {
             targetInfo = null;
 
-            if (reader.TryRead(out byte parameterIndex) == false)
+            if (reader.TryReadU1(out byte parameterIndex) == false)
                 return false;
-            if (reader.TryRead(out byte boundIndex) == false)
+            if (reader.TryReadU1(out byte boundIndex) == false)
                 return false;
 
             targetInfo = new TypeAnnotationParameterBoundTargetRecord(targetType, parameterIndex, boundIndex);

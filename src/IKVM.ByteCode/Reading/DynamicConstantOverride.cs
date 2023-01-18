@@ -1,7 +1,7 @@
 ﻿namespace IKVM.ByteCode.Reading
 {
 
-    public sealed class DynamicConstantOverride : ConstantOverride
+    internal sealed class DynamicConstantOverride : ConstantOverride
     {
 
         /// <summary>

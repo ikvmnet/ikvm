@@ -1,18 +1,19 @@
 ﻿using System.Buffers;
 
 using IKVM.ByteCode.Buffers;
+using IKVM.ByteCode.Reading;
 
 namespace IKVM.ByteCode.Parsing
 {
 
-    public sealed record ObjectVariableInfoRecord(ushort ClassIndex) : VerificationTypeInfoRecord
+    internal sealed record ObjectVariableInfoRecord(ushort ClassIndex) : VerificationTypeInfoRecord
     {
 
-        public static bool TryRead(ref SequenceReader<byte> reader, out VerificationTypeInfoRecord record)
+        public static bool TryRead(ref ClassFormatReader reader, out VerificationTypeInfoRecord record)
         {
             record = null;
 
-            if (reader.TryReadBigEndian(out ushort classIndex) == false)
+            if (reader.TryReadU2(out ushort classIndex) == false)
                 return false;
 
             record = new ObjectVariableInfoRecord(classIndex);

@@ -1,18 +1,19 @@
 ﻿using System.Buffers;
 
 using IKVM.ByteCode.Buffers;
+using IKVM.ByteCode.Reading;
 
 namespace IKVM.ByteCode.Parsing
 {
 
-    public record struct ParameterAnnotationRecord(AnnotationRecord[] Annotations)
+    internal record struct ParameterAnnotationRecord(AnnotationRecord[] Annotations)
     {
 
-        public static bool TryReadParameterAnnotation(ref SequenceReader<byte> reader, out ParameterAnnotationRecord record)
+        public static bool TryReadParameterAnnotation(ref ClassFormatReader reader, out ParameterAnnotationRecord record)
         {
             record = default;
 
-            if (reader.TryReadBigEndian(out ushort count) == false)
+            if (reader.TryReadU2(out ushort count) == false)
                 return false;
 
             var annotations = new AnnotationRecord[count];

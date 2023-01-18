@@ -1,19 +1,20 @@
 ﻿using System.Buffers;
 
 using IKVM.ByteCode.Buffers;
+using IKVM.ByteCode.Reading;
 using IKVM.ByteCode.Writing;
 
 namespace IKVM.ByteCode.Parsing
 {
 
-    public abstract record class ElementValueRecord(char Tag)
+    internal abstract record class ElementValueRecord(char Tag)
     {
 
-        public static bool TryRead(ref SequenceReader<byte> reader, out ElementValueRecord value)
+        public static bool TryRead(ref ClassFormatReader reader, out ElementValueRecord value)
         {
             value = null;
 
-            if (reader.TryRead(out byte tag) == false)
+            if (reader.TryReadU1(out byte tag) == false)
                 return false;
 
             return (char)tag switch

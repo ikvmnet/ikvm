@@ -1,6 +1,6 @@
 ﻿namespace IKVM.ByteCode.Parsing
 {
 
-    record TypeAndNameConstantRecord(ushort NameIndex, ushort DescriptorIndex) : ConstantRecord;
+    internal sealed record TypeAndNameConstantRecord(ushort NameIndex, ushort DescriptorIndex) : ConstantRecord;
 
 }

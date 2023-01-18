@@ -5,7 +5,7 @@ using IKVM.ByteCode.Parsing;
 namespace IKVM.ByteCode.Reading
 {
 
-    public sealed class MethodParametersAttributeReader : AttributeReader<MethodParametersAttributeRecord>
+    internal sealed class MethodParametersAttributeReader : AttributeReader<MethodParametersAttributeRecord>
     {
 
         IReadOnlyList<MethodParametersAttributeParameterReader> parameters;

@@ -1,19 +1,20 @@
 ﻿using System.Buffers;
 
 using IKVM.ByteCode.Buffers;
+using IKVM.ByteCode.Reading;
 using IKVM.ByteCode.Writing;
 
 namespace IKVM.ByteCode.Parsing
 {
 
-    public sealed record RuntimeVisibleTypeAnnotationsAttributeRecord(TypeAnnotationRecord[] Annotations) : AttributeRecord
+    internal sealed record RuntimeVisibleTypeAnnotationsAttributeRecord(TypeAnnotationRecord[] Annotations) : AttributeRecord
     {
 
-        public static bool TryReadRuntimeVisibleTypeAnnotationsAttribute(ref SequenceReader<byte> reader, out AttributeRecord attribute)
+        public static bool TryReadRuntimeVisibleTypeAnnotationsAttribute(ref ClassFormatReader reader, out AttributeRecord attribute)
         {
             attribute = null;
 
-            if (reader.TryReadBigEndian(out ushort count) == false)
+            if (reader.TryReadU2(out ushort count) == false)
                 return false;
 
             var annotations = new TypeAnnotationRecord[count];

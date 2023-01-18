@@ -3,7 +3,7 @@
 namespace IKVM.ByteCode.Reading
 {
 
-    public sealed class EnclosingMethodAttributeReader : AttributeReader<EnclosingMethodAttributeRecord>
+    internal sealed class EnclosingMethodAttributeReader : AttributeReader<EnclosingMethodAttributeRecord>
     {
 
         /// <summary>

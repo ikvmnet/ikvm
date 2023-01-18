@@ -4,7 +4,7 @@
     /// <summary>
     /// Provides data to override a Fieldref constant.
     /// </summary>
-    public sealed class FieldrefConstantOverride : RefConstantOverride
+    internal sealed class FieldrefConstantOverride : RefConstantOverride
     {
 
         /// <summary>

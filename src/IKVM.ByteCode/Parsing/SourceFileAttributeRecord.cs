@@ -1,18 +1,19 @@
 ﻿using System.Buffers;
 
 using IKVM.ByteCode.Buffers;
+using IKVM.ByteCode.Reading;
 
 namespace IKVM.ByteCode.Parsing
 {
 
-    public record SourceFileAttributeRecord(ushort SourceFileIndex) : AttributeRecord
+    internal record SourceFileAttributeRecord(ushort SourceFileIndex) : AttributeRecord
     {
 
-        public static bool TryReadSourceFileAttribute(ref SequenceReader<byte> reader, out AttributeRecord attribute)
+        public static bool TryReadSourceFileAttribute(ref ClassFormatReader reader, out AttributeRecord attribute)
         {
             attribute = null;
 
-            if (reader.TryReadBigEndian(out ushort sourceFileIndex) == false)
+            if (reader.TryReadU2(out ushort sourceFileIndex) == false)
                 return false;
 
             attribute = new SourceFileAttributeRecord(sourceFileIndex);

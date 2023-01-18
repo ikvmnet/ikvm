@@ -3,7 +3,7 @@
 namespace IKVM.ByteCode.Reading
 {
 
-    public sealed class AnnotationDefaultAttributeReader : AttributeReader<AnnotationDefaultAttributeRecord>
+    internal sealed class AnnotationDefaultAttributeReader : AttributeReader<AnnotationDefaultAttributeRecord>
     {
 
         ElementValueReader defaultValue;

@@ -1,11 +1,11 @@
 ﻿using System.Buffers;
 
-using IKVM.ByteCode.Buffers;
+using IKVM.ByteCode.Reading;
 
 namespace IKVM.ByteCode.Parsing
 {
 
-    public readonly record struct AttributeInfoRecord(ushort NameIndex, byte[] Data)
+    internal record struct AttributeInfoRecord(ushort NameIndex, byte[] Data)
     {
 
         /// <summary>
@@ -13,15 +13,15 @@ namespace IKVM.ByteCode.Parsing
         /// </summary>
         /// <param name="reader"></param>
         /// <param name="attribute"></param>
-        public static bool TryReadAttribute(ref SequenceReader<byte> reader, out AttributeInfoRecord attribute)
+        public static bool TryReadAttribute(ref ClassFormatReader reader, out AttributeInfoRecord attribute)
         {
             attribute = default;
 
-            if (reader.TryReadBigEndian(out ushort nameIndex) == false)
+            if (reader.TryReadU2(out ushort nameIndex) == false)
                 return false;
-            if (reader.TryReadBigEndian(out uint length) == false)
+            if (reader.TryReadU4(out uint length) == false)
                 return false;
-            if (reader.TryReadExact((int)length, out var info) == false)
+            if (reader.TryReadManyU1(length, out var info) == false)
                 return false;
 
             var infoBuffer = new byte[info.Length];

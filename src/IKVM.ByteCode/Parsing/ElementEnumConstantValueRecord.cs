@@ -1,21 +1,22 @@
 ﻿using System.Buffers;
 
 using IKVM.ByteCode.Buffers;
+using IKVM.ByteCode.Reading;
 using IKVM.ByteCode.Writing;
 
 namespace IKVM.ByteCode.Parsing
 {
 
-    public sealed record ElementEnumConstantValueRecord(char Tag, ushort TypeNameIndex, ushort ConstantNameIndex) : ElementValueRecord(Tag)
+    internal sealed record ElementEnumConstantValueRecord(char Tag, ushort TypeNameIndex, ushort ConstantNameIndex) : ElementValueRecord(Tag)
     {
 
-        public static bool TryRead(ref SequenceReader<byte> reader, char tag, out ElementValueRecord value)
+        public static bool TryRead(ref ClassFormatReader reader, char tag, out ElementValueRecord value)
         {
             value = null;
 
-            if (reader.TryReadBigEndian(out ushort typeNameIndex) == false)
+            if (reader.TryReadU2(out ushort typeNameIndex) == false)
                 return false;
-            if (reader.TryReadBigEndian(out ushort constantNameIndex) == false)
+            if (reader.TryReadU2(out ushort constantNameIndex) == false)
                 return false;
 
             value = new ElementEnumConstantValueRecord(tag, typeNameIndex, constantNameIndex);

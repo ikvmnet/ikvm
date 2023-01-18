@@ -3,7 +3,7 @@
 namespace IKVM.ByteCode.Reading
 {
 
-    public sealed class ElementArrayValueReader : ElementValueReader<ElementArrayValueRecord>
+    internal sealed class ElementArrayValueReader : ElementValueReader<ElementArrayValueRecord>
     {
 
         ElementValueReaderCollection values;

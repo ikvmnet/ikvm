@@ -1,7 +1,7 @@
 ﻿namespace IKVM.ByteCode
 {
 
-    public enum ReferenceKind : byte
+    internal enum ReferenceKind : byte
     {
 
         GetField = 1,

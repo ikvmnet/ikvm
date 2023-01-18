@@ -1,18 +1,18 @@
 ﻿using System.Buffers;
 
-using IKVM.ByteCode.Buffers;
+using IKVM.ByteCode.Reading;
 
 namespace IKVM.ByteCode.Parsing
 {
 
-    public record SourceDebugExtensionAttributeRecord(byte[] Data) : AttributeRecord
+    internal record SourceDebugExtensionAttributeRecord(byte[] Data) : AttributeRecord
     {
 
-        public static bool TryReadSourceDebugExtensionAttribute(ref SequenceReader<byte> reader, out AttributeRecord attribute)
+        public static bool TryReadSourceDebugExtensionAttribute(ref ClassFormatReader reader, out AttributeRecord attribute)
         {
             attribute = null;
 
-            if (reader.TryReadExact((int)reader.Length, out ReadOnlySequence<byte> data) == false)
+            if (reader.TryReadManyU1(reader.Length, out ReadOnlySequence<byte> data) == false)
                 return false;
 
             var dataBuffer = new byte[data.Length];

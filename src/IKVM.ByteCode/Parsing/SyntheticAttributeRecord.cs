@@ -1,14 +1,15 @@
 ﻿using System.Buffers;
 
 using IKVM.ByteCode.Buffers;
+using IKVM.ByteCode.Reading;
 
 namespace IKVM.ByteCode.Parsing
 {
 
-    public record SyntheticAttributeRecord : AttributeRecord
+    internal record SyntheticAttributeRecord : AttributeRecord
     {
 
-        public static bool TryReadSyntheticAttribute(ref SequenceReader<byte> reader, out AttributeRecord attribute)
+        public static bool TryReadSyntheticAttribute(ref ClassFormatReader reader, out AttributeRecord attribute)
         {
             attribute = new SyntheticAttributeRecord();
             return true;

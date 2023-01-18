@@ -1,19 +1,20 @@
 ﻿using System.Buffers;
 
 using IKVM.ByteCode.Buffers;
+using IKVM.ByteCode.Reading;
 using IKVM.ByteCode.Writing;
 
 namespace IKVM.ByteCode.Parsing
 {
 
-    public abstract record TypeAnnotationTargetRecord(byte TargetType)
+    internal abstract record TypeAnnotationTargetRecord(byte TargetType)
     {
 
-        public static bool TryReadTypeAnnotationTarget(ref SequenceReader<byte> reader, out TypeAnnotationTargetRecord targetInfo)
+        public static bool TryReadTypeAnnotationTarget(ref ClassFormatReader reader, out TypeAnnotationTargetRecord targetInfo)
         {
             targetInfo = null;
 
-            if (reader.TryRead(out byte targetType) == false)
+            if (reader.TryReadU1(out byte targetType) == false)
                 return false;
 
             return targetType switch

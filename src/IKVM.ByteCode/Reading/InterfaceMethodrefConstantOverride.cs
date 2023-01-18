@@ -4,7 +4,7 @@
     /// <summary>
     /// Provides data to override an InterfaceMethodref constant.
     /// </summary>
-    public sealed class InterfaceMethodrefConstantOverride : RefConstantOverride
+    internal sealed class InterfaceMethodrefConstantOverride : RefConstantOverride
     {
 
         /// <summary>

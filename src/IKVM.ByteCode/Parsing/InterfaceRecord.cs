@@ -1,11 +1,12 @@
 ﻿using System.Buffers;
 
 using IKVM.ByteCode.Buffers;
+using IKVM.ByteCode.Reading;
 
 namespace IKVM.ByteCode.Parsing
 {
 
-    public record struct InterfaceRecord(ushort ClassIndex)
+    internal record struct InterfaceRecord(ushort ClassIndex)
     {
 
         /// <summary>
@@ -13,11 +14,11 @@ namespace IKVM.ByteCode.Parsing
         /// </summary>
         /// <param name="reader"></param>
         /// <param name="iface"></param>
-        public static bool TryRead(ref SequenceReader<byte> reader, out InterfaceRecord iface)
+        public static bool TryRead(ref ClassFormatReader reader, out InterfaceRecord iface)
         {
             iface = default;
 
-            if (reader.TryReadBigEndian(out ushort classIndex) == false)
+            if (reader.TryReadU2(out ushort classIndex) == false)
                 return false;
 
             iface = new InterfaceRecord(classIndex);

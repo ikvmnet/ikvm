@@ -3,7 +3,7 @@
 namespace IKVM.ByteCode.Reading
 {
 
-    public sealed class ElementConstantValueReader : ElementValueReader<ElementConstantValueRecord>
+    internal sealed class ElementConstantValueReader : ElementValueReader<ElementConstantValueRecord>
     {
 
         /// <summary>

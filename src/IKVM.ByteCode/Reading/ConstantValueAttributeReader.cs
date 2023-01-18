@@ -3,7 +3,7 @@
 namespace IKVM.ByteCode.Reading
 {
 
-    public sealed class ConstantValueAttributeReader : AttributeReader<ConstantValueAttributeRecord>
+    internal sealed class ConstantValueAttributeReader : AttributeReader<ConstantValueAttributeRecord>
     {
 
         object value;

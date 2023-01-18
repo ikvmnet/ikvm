@@ -6,7 +6,7 @@ using IKVM.ByteCode.Parsing;
 namespace IKVM.ByteCode.Reading
 {
 
-    public sealed class ExceptionsAttributeReader : AttributeReader<ExceptionsAttributeRecord>
+    internal sealed class ExceptionsAttributeReader : AttributeReader<ExceptionsAttributeRecord>
     {
 
         string[] exceptions;

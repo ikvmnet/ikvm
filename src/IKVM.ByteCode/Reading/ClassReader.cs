@@ -5,7 +5,6 @@ using System.IO.Pipelines;
 using System.Threading;
 using System.Threading.Tasks;
 
-using IKVM.ByteCode.Buffers;
 using IKVM.ByteCode.Parsing;
 
 namespace IKVM.ByteCode.Reading
@@ -14,7 +13,7 @@ namespace IKVM.ByteCode.Reading
     /// <summary>
     /// Provides stateful operations for reading a class file.
     /// </summary>
-    public sealed class ClassReader : ReaderBase<ClassRecord>
+    internal sealed class ClassReader : ReaderBase<ClassRecord>
     {
 
         /// <summary>
@@ -45,9 +44,9 @@ namespace IKVM.ByteCode.Reading
         /// <param name="buffer"></param>
         /// <param name="clazz"></param>
         /// <returns></returns>
-        public static bool TryRead(ReadOnlySequence<byte> buffer, out ClassReader clazz)
+        public static bool TryRead(in ReadOnlySequence<byte> buffer, out ClassReader clazz)
         {
-            var reader = new SequenceReader<byte>(buffer);
+            var reader = new ClassFormatReader(buffer);
             return TryRead(ref reader, out clazz);
         }
 
@@ -57,9 +56,10 @@ namespace IKVM.ByteCode.Reading
         /// <param name="buffer"></param>
         /// <returns></returns>
         /// <exception cref="ByteCodeException"></exception>
-        public static ClassReader Read(ReadOnlySequence<byte> buffer)
+        public static ClassReader Read(in ReadOnlySequence<byte> buffer)
         {
-            return TryRead(buffer, out var clazz) ? clazz : throw new ByteCodeException("Failed to open ClassReader. Incomplete class data.");
+            var reader = new ClassFormatReader(buffer);
+            return TryRead(ref reader, out var clazz) ? clazz : throw new ByteCodeException("Failed to open ClassReader. Incomplete class data.");
         }
 
         /// <summary>
@@ -68,7 +68,7 @@ namespace IKVM.ByteCode.Reading
         /// <param name="reader"></param>
         /// <param name="clazz"></param>
         /// <returns></returns>
-        public static bool TryRead(ref SequenceReader<byte> reader, out ClassReader clazz)
+        public static bool TryRead(ref ClassFormatReader reader, out ClassReader clazz)
         {
             clazz = null;
 

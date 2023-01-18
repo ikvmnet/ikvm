@@ -3,7 +3,7 @@
 namespace IKVM.ByteCode.Reading
 {
 
-    public sealed class MethodHandleConstantReader : ConstantReader<MethodHandleConstantRecord, MethodHandleConstantOverride>
+    internal sealed class MethodHandleConstantReader : ConstantReader<MethodHandleConstantRecord, MethodHandleConstantOverride>
     {
 
         IRefConstantReader<RefConstantRecord, RefConstantOverride> reference;

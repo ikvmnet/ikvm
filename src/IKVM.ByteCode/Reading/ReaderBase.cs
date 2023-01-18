@@ -7,7 +7,7 @@ namespace IKVM.ByteCode.Reading
     /// <summary>
     /// Base class for a reader.
     /// </summary>
-    public abstract class ReaderBase
+    internal abstract class ReaderBase
     {
 
         /// <summary>
@@ -52,7 +52,7 @@ namespace IKVM.ByteCode.Reading
     /// Base class for a reader of a specific record type.
     /// </summary>
     /// <typeparam name="TRecord"></typeparam>
-    public abstract class ReaderBase<TRecord> : ReaderBase
+    internal abstract class ReaderBase<TRecord> : ReaderBase
     {
 
         readonly TRecord record;

@@ -1,15 +1,16 @@
 ﻿using System.Buffers;
 
 using IKVM.ByteCode.Buffers;
+using IKVM.ByteCode.Reading;
 using IKVM.ByteCode.Writing;
 
 namespace IKVM.ByteCode.Parsing
 {
 
-    public sealed record TypeAnnotationEmptyTargetRecord(byte TargetType) : TypeAnnotationTargetRecord(TargetType)
+    internal sealed record TypeAnnotationEmptyTargetRecord(byte TargetType) : TypeAnnotationTargetRecord(TargetType)
     {
 
-        public static bool TryRead(ref SequenceReader<byte> reader, byte targetType, out TypeAnnotationTargetRecord targetInfo)
+        public static bool TryRead(ref ClassFormatReader reader, byte targetType, out TypeAnnotationTargetRecord targetInfo)
         {
             targetInfo = new TypeAnnotationEmptyTargetRecord(targetType);
             return true;

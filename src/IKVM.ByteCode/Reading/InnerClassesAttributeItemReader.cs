@@ -5,7 +5,7 @@ using IKVM.ByteCode.Parsing;
 namespace IKVM.ByteCode.Reading
 {
 
-    public sealed class InnerClassesAttributeItemReader
+    internal sealed class InnerClassesAttributeItemReader
     {
 
         readonly ClassReader declaringClass;

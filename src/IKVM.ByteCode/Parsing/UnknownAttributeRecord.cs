@@ -1,14 +1,15 @@
 ﻿using System.Buffers;
 
 using IKVM.ByteCode.Buffers;
+using IKVM.ByteCode.Reading;
 
 namespace IKVM.ByteCode.Parsing
 {
 
-    public sealed record UnknownAttributeRecord(byte[] Data) : AttributeRecord
+    internal sealed record UnknownAttributeRecord(byte[] Data) : AttributeRecord
     {
 
-        public static bool TryReadCustomAttribute(ref SequenceReader<byte> reader, out AttributeRecord attribute)
+        public static bool TryReadCustomAttribute(ref ClassFormatReader reader, out AttributeRecord attribute)
         {
             var data = new byte[reader.Length];
             reader.TryCopyTo(data);

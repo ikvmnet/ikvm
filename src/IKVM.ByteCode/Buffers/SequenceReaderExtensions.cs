@@ -24,7 +24,7 @@ namespace IKVM.ByteCode.Buffers
         /// True if successful. <paramref name="value"/> will be default if failed (due to lack of space).
         /// </returns>
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        internal static unsafe bool TryRead<T>(ref this SequenceReader<byte> reader, out T value)
+        public static unsafe bool TryRead<T>(ref this SequenceReader<byte> reader, out T value)
             where T : unmanaged
         {
             var span = reader.UnreadSpan;
@@ -148,7 +148,7 @@ namespace IKVM.ByteCode.Buffers
             return false;
         }
 
-        private static bool TryReadReverseEndianness(ref SequenceReader<byte> reader, out int value)
+        static bool TryReadReverseEndianness(ref SequenceReader<byte> reader, out int value)
         {
             if (reader.TryRead(out value))
             {
@@ -188,7 +188,7 @@ namespace IKVM.ByteCode.Buffers
             return false;
         }
 
-        private static bool TryReadReverseEndianness(ref SequenceReader<byte> reader, out long value)
+        static bool TryReadReverseEndianness(ref SequenceReader<byte> reader, out long value)
         {
             if (reader.TryRead(out value))
             {
@@ -238,6 +238,30 @@ namespace IKVM.ByteCode.Buffers
         /// <param name="sequence">The read data, if successfully read requested <paramref name="count"/> data.</param>
         /// <returns><c>true</c> if remaining items in current <see cref="SequenceReader{byte}" /> is enough for <paramref name="count"/>.</returns>
         public static bool TryReadExact(ref this SequenceReader<byte> reader, int count, out ReadOnlySequence<byte> sequence)
+        {
+            if (count < 0)
+                throw new ArgumentOutOfRangeException(nameof(count));
+
+            if (count > reader.Remaining)
+            {
+                sequence = default;
+                return false;
+            }
+
+            sequence = reader.Sequence.Slice(reader.Position, count);
+            if (count != 0)
+                reader.Advance(count);
+
+            return true;
+        }
+
+        /// <summary>
+        /// Try to read data with given <paramref name="count"/>.
+        /// </summary>
+        /// <param name="count">Read count.</param>
+        /// <param name="sequence">The read data, if successfully read requested <paramref name="count"/> data.</param>
+        /// <returns><c>true</c> if remaining items in current <see cref="SequenceReader{byte}" /> is enough for <paramref name="count"/>.</returns>
+        public static bool TryReadExact(ref this SequenceReader<byte> reader, long count, out ReadOnlySequence<byte> sequence)
         {
             if (count < 0)
                 throw new ArgumentOutOfRangeException(nameof(count));

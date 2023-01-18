@@ -9,7 +9,7 @@ namespace IKVM.ByteCode.Reading
     /// <summary>
     /// Lazy init collection of fields.
     /// </summary>
-    public sealed class FieldReaderCollection : LazyReaderList<FieldReader, FieldRecord>
+    internal sealed class FieldReaderCollection : LazyReaderList<FieldReader, FieldRecord>
     {
 
         /// <summary>

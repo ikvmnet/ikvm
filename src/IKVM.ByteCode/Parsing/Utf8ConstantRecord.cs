@@ -1,11 +1,12 @@
 ﻿using System.Buffers;
 
 using IKVM.ByteCode.Buffers;
+using IKVM.ByteCode.Reading;
 
 namespace IKVM.ByteCode.Parsing
 {
 
-    public record class Utf8ConstantRecord(byte[] Value) : ConstantRecord
+    internal record class Utf8ConstantRecord(byte[] Value) : ConstantRecord
     {
 
         /// <summary>
@@ -13,14 +14,14 @@ namespace IKVM.ByteCode.Parsing
         /// </summary>
         /// <param name="reader"></param>
         /// <param name="constant"></param>
-        public static bool TryReadUtf8Constant(ref SequenceReader<byte> reader, out ConstantRecord constant, out int skip)
+        public static bool TryReadUtf8Constant(ref ClassFormatReader reader, out ConstantRecord constant, out int skip)
         {
             constant = null;
             skip = 0;
 
-            if (reader.TryReadBigEndian(out ushort length) == false)
+            if (reader.TryReadU2(out ushort length) == false)
                 return false;
-            if (reader.TryReadExact(length, out ReadOnlySequence<byte> value) == false)
+            if (reader.TryReadManyU1(length, out ReadOnlySequence<byte> value) == false)
                 return false;
 
             var valueBuffer = new byte[value.Length];

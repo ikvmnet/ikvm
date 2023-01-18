@@ -8,6 +8,9 @@
 
     <ItemGroup>
         <InternalsVisibleTo Include="IKVM.ByteCode.Tests" />
+        <InternalsVisibleTo Include="IKVM.Runtime" />
+        <InternalsVisibleTo Include="IKVM.Tools.Importer" />
+        <InternalsVisibleTo Include="IKVM.Tools.Exporter" />
     </ItemGroup>
 
     <ItemGroup>

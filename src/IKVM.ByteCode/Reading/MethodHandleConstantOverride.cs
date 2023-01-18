@@ -1,7 +1,7 @@
 ﻿namespace IKVM.ByteCode.Reading
 {
 
-    public sealed class MethodHandleConstantOverride : ConstantOverride
+    internal sealed class MethodHandleConstantOverride : ConstantOverride
     {
 
         /// <summary>

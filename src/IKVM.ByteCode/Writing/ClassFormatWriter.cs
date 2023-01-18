@@ -7,7 +7,7 @@ namespace IKVM.ByteCode.Writing
     /// <summary>
     /// Provides a forward-only writer of big-endian values.
     /// </summary>
-    public ref struct ClassFormatWriter
+    internal ref struct ClassFormatWriter
     {
 
         Span<byte> span;

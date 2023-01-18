@@ -1,18 +1,19 @@
 ﻿using System.Buffers;
 
 using IKVM.ByteCode.Buffers;
+using IKVM.ByteCode.Reading;
 
 namespace IKVM.ByteCode.Parsing
 {
 
-    public sealed record RuntimeVisibleParameterAnnotationsAttributeRecord(ParameterAnnotationRecord[] Parameters) : AttributeRecord
+    internal sealed record RuntimeVisibleParameterAnnotationsAttributeRecord(ParameterAnnotationRecord[] Parameters) : AttributeRecord
     {
 
-        public static bool TryReadRuntimeVisibleParameterAnnotationsAttribute(ref SequenceReader<byte> reader, out AttributeRecord attribute)
+        public static bool TryReadRuntimeVisibleParameterAnnotationsAttribute(ref ClassFormatReader reader, out AttributeRecord attribute)
         {
             attribute = null;
 
-            if (reader.TryRead(out byte count) == false)
+            if (reader.TryReadU1(out byte count) == false)
                 return false;
 
             var items = new ParameterAnnotationRecord[count];

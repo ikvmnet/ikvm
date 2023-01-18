@@ -12,7 +12,7 @@ namespace IKVM.ByteCode.Reading
     /// <summary>
     /// Lazy init collection of attribute data.
     /// </summary>
-    public sealed class ElementValuePairReaderCollection : IReadOnlyDictionary<string, ElementValueReader>
+    internal sealed class ElementValuePairReaderCollection : IReadOnlyDictionary<string, ElementValueReader>
     {
 
         readonly ClassReader ownerClass;

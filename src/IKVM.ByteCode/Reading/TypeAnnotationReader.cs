@@ -3,7 +3,7 @@
 namespace IKVM.ByteCode.Reading
 {
 
-    public sealed class TypeAnnotationReader : ReaderBase<TypeAnnotationRecord>
+    internal sealed class TypeAnnotationReader : ReaderBase<TypeAnnotationRecord>
     {
 
         string type;

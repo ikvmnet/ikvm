@@ -6,7 +6,7 @@ namespace IKVM.ByteCode.Reading
     /// <summary>
     /// Interface supported by all of the readers for Ref constants.
     /// </summary>
-    public interface IRefConstantReader : IConstantReader
+    internal interface IRefConstantReader : IConstantReader
     {
 
         /// <summary>
@@ -29,7 +29,7 @@ namespace IKVM.ByteCode.Reading
     /// <summary>
     /// Interface supported by all of the readers for Ref constants.
     /// </summary>
-    public interface IRefConstantReader<out TRecord, out TPatch> : IRefConstantReader, IConstantReader<TRecord, TPatch>
+    internal interface IRefConstantReader<out TRecord, out TPatch> : IRefConstantReader, IConstantReader<TRecord, TPatch>
         where TRecord : ConstantRecord
         where TPatch : ConstantOverride
     {

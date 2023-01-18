@@ -6,14 +6,14 @@ using IKVM.ByteCode.Reading;
 namespace IKVM.ByteCode.Parsing
 {
 
-    public abstract record StackMapFrameRecord(byte FrameType)
+    internal abstract record StackMapFrameRecord(byte FrameType)
     {
 
-        public static bool TryRead(ref SequenceReader<byte> reader, out StackMapFrameRecord frame)
+        public static bool TryRead(ref ClassFormatReader reader, out StackMapFrameRecord frame)
         {
             frame = null;
 
-            if (reader.TryRead(out byte tag) == false)
+            if (reader.TryReadU1(out byte tag) == false)
                 return false;
 
             if (TryRead(ref reader, tag, out frame) == false)
@@ -22,7 +22,7 @@ namespace IKVM.ByteCode.Parsing
             return true;
         }
 
-        public static bool TryRead(ref SequenceReader<byte> reader, byte tag, out StackMapFrameRecord frame)
+        public static bool TryRead(ref ClassFormatReader reader, byte tag, out StackMapFrameRecord frame)
         {
             if (tag >= 0 && tag <= 63)
                 return SameStackMapFrameRecord.TryReadSameStackMapFrame(ref reader, tag, out frame);

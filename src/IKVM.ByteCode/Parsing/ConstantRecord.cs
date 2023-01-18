@@ -1,6 +1,5 @@
-﻿using System.Buffers;
-
-using IKVM.ByteCode.Buffers;
+﻿using IKVM.ByteCode.Buffers;
+using IKVM.ByteCode.Reading;
 
 namespace IKVM.ByteCode.Parsing
 {
@@ -8,7 +7,7 @@ namespace IKVM.ByteCode.Parsing
     /// <summary>
     /// Base type for constant records.
     /// </summary>
-    public abstract record ConstantRecord
+    internal abstract record ConstantRecord
     {
 
         /// <summary>
@@ -18,12 +17,12 @@ namespace IKVM.ByteCode.Parsing
         /// <param name="constant"></param>
         /// <param name="skip"></param>
         /// <returns></returns>
-        public static bool TryRead(ref SequenceReader<byte> reader, out ConstantRecord constant, out int skip)
+        public static bool TryRead(ref ClassFormatReader reader, out ConstantRecord constant, out int skip)
         {
             constant = null;
             skip = 0;
 
-            if (reader.TryRead(out byte tag) == false)
+            if (reader.TryReadU1(out byte tag) == false)
                 return false;
 
             return (ConstantTag)tag switch

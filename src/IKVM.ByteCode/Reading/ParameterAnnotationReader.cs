@@ -5,7 +5,7 @@ using IKVM.ByteCode.Parsing;
 namespace IKVM.ByteCode.Reading
 {
 
-    public sealed class ParameterAnnotationReader
+    internal sealed class ParameterAnnotationReader
     {
 
         readonly ClassReader declaringClass;

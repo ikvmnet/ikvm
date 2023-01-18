@@ -1,19 +1,20 @@
 ﻿using System.Buffers;
 
 using IKVM.ByteCode.Buffers;
+using IKVM.ByteCode.Reading;
 using IKVM.ByteCode.Writing;
 
 namespace IKVM.ByteCode.Parsing
 {
 
-    public sealed record ElementClassInfoValueRecord(char Tag, ushort ClassInfoIndex) : ElementValueRecord(Tag)
+    internal sealed record ElementClassInfoValueRecord(char Tag, ushort ClassInfoIndex) : ElementValueRecord(Tag)
     {
 
-        public static bool TryReadElementClassInfoValue(ref SequenceReader<byte> reader, char tag, out ElementValueRecord value)
+        public static bool TryReadElementClassInfoValue(ref ClassFormatReader reader, char tag, out ElementValueRecord value)
         {
             value = null;
 
-            if (reader.TryReadBigEndian(out ushort classInfoIndex) == false)
+            if (reader.TryReadU2(out ushort classInfoIndex) == false)
                 return false;
 
             value = new ElementClassInfoValueRecord(tag, classInfoIndex);

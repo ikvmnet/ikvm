@@ -1,11 +1,12 @@
 ﻿using System.Buffers;
 
 using IKVM.ByteCode.Buffers;
+using IKVM.ByteCode.Reading;
 
 namespace IKVM.ByteCode.Parsing
 {
 
-    public sealed record FieldrefConstantRecord(ushort ClassIndex, ushort NameAndTypeIndex) : RefConstantRecord(ClassIndex, NameAndTypeIndex)
+    internal sealed record FieldrefConstantRecord(ushort ClassIndex, ushort NameAndTypeIndex) : RefConstantRecord(ClassIndex, NameAndTypeIndex)
     {
 
         /// <summary>
@@ -13,14 +14,14 @@ namespace IKVM.ByteCode.Parsing
         /// </summary>
         /// <param name="reader"></param>
         /// <param name="constant"></param>
-        public static bool TryReadFieldrefConstant(ref SequenceReader<byte> reader, out ConstantRecord constant, out int skip)
+        public static bool TryReadFieldrefConstant(ref ClassFormatReader reader, out ConstantRecord constant, out int skip)
         {
             constant = null;
             skip = 0;
 
-            if (reader.TryReadBigEndian(out ushort classIndex) == false)
+            if (reader.TryReadU2(out ushort classIndex) == false)
                 return false;
-            if (reader.TryReadBigEndian(out ushort nameAndTypeIndex) == false)
+            if (reader.TryReadU2(out ushort nameAndTypeIndex) == false)
                 return false;
             
             constant = new FieldrefConstantRecord(classIndex, nameAndTypeIndex);

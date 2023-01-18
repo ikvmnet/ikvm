@@ -1,26 +1,27 @@
 ﻿using System.Buffers;
 
 using IKVM.ByteCode.Buffers;
+using IKVM.ByteCode.Reading;
 
 namespace IKVM.ByteCode.Parsing
 {
 
-    public sealed record LineNumberTableAttributeRecord(LineNumberTableAttributeItemRecord[] Items) : AttributeRecord
+    internal sealed record LineNumberTableAttributeRecord(LineNumberTableAttributeItemRecord[] Items) : AttributeRecord
     {
 
-        public static bool TryReadLineNumberTableAttribute(ref SequenceReader<byte> reader, out AttributeRecord attribute)
+        public static bool TryReadLineNumberTableAttribute(ref ClassFormatReader reader, out AttributeRecord attribute)
         {
             attribute = null;
 
-            if (reader.TryReadBigEndian(out ushort itemCount) == false)
+            if (reader.TryReadU2(out ushort itemCount) == false)
                 return false;
 
             var items = new LineNumberTableAttributeItemRecord[itemCount];
             for (int i = 0; i < itemCount; i++)
             {
-                if (reader.TryReadBigEndian(out ushort codeOffset) == false)
+                if (reader.TryReadU2(out ushort codeOffset) == false)
                     return false;
-                if (reader.TryReadBigEndian(out ushort lineNumber) == false)
+                if (reader.TryReadU2(out ushort lineNumber) == false)
                     return false;
 
                 items[i] = new LineNumberTableAttributeItemRecord(codeOffset, lineNumber);

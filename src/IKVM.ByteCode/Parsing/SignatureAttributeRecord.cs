@@ -1,18 +1,19 @@
 ﻿using System.Buffers;
 
 using IKVM.ByteCode.Buffers;
+using IKVM.ByteCode.Reading;
 
 namespace IKVM.ByteCode.Parsing
 {
 
-    public record SignatureAttributeRecord(ushort SignatureIndex) : AttributeRecord
+    internal record SignatureAttributeRecord(ushort SignatureIndex) : AttributeRecord
     {
 
-        public static bool TryReadSignatureAttribute(ref SequenceReader<byte> reader, out AttributeRecord attribute)
+        public static bool TryReadSignatureAttribute(ref ClassFormatReader reader, out AttributeRecord attribute)
         {
             attribute = null;
 
-            if (reader.TryReadBigEndian(out ushort signatureIndex) == false)
+            if (reader.TryReadU2(out ushort signatureIndex) == false)
                 return false;
 
             attribute = new SignatureAttributeRecord(signatureIndex);

@@ -4,7 +4,7 @@
     /// <summary>
     /// Represents an override to a Long constant.
     /// </summary>
-    public class LongConstantOverride : ConstantOverride
+    internal class LongConstantOverride : ConstantOverride
     {
 
         /// <summary>

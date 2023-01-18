@@ -3,7 +3,7 @@
 namespace IKVM.ByteCode.Reading
 {
 
-    public class StackMapTableAttributeReader : AttributeReader<StackMapTableAttributeRecord>
+    internal class StackMapTableAttributeReader : AttributeReader<StackMapTableAttributeRecord>
     {
 
         /// <summary>

@@ -5,7 +5,7 @@ using IKVM.ByteCode.Parsing;
 namespace IKVM.ByteCode.Reading
 {
 
-    public class FieldReader
+    internal class FieldReader
     {
 
         readonly ClassReader declaringClass;

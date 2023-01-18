@@ -4,7 +4,7 @@ using IKVM.ByteCode.Text;
 namespace IKVM.ByteCode.Reading
 {
 
-    public sealed class Utf8ConstantReader : ConstantReader<Utf8ConstantRecord, Utf8ConstantOverride>
+    internal sealed class Utf8ConstantReader : ConstantReader<Utf8ConstantRecord, Utf8ConstantOverride>
     {
 
         string value;

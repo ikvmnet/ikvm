@@ -1,19 +1,20 @@
 ﻿using System.Buffers;
 
 using IKVM.ByteCode.Buffers;
+using IKVM.ByteCode.Reading;
 using IKVM.ByteCode.Writing;
 
 namespace IKVM.ByteCode.Parsing
 {
 
-    public sealed record ElementConstantValueRecord(char Tag, ushort ConstantValueIndex) : ElementValueRecord(Tag)
+    internal sealed record ElementConstantValueRecord(char Tag, ushort ConstantValueIndex) : ElementValueRecord(Tag)
     {
 
-        public static bool TryReadElementConstantValue(ref SequenceReader<byte> reader, char tag, out ElementValueRecord value)
+        public static bool TryReadElementConstantValue(ref ClassFormatReader reader, char tag, out ElementValueRecord value)
         {
             value = null;
 
-            if (reader.TryReadBigEndian(out ushort index) == false)
+            if (reader.TryReadU2(out ushort index) == false)
                 return false;
 
             value = new ElementConstantValueRecord(tag, index);

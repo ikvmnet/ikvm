@@ -4,7 +4,7 @@
     /// <summary>
     /// Abstract class for an override applied to a constant.
     /// </summary>
-    public abstract class ConstantOverride
+    internal abstract class ConstantOverride
     {
 
         readonly object value;

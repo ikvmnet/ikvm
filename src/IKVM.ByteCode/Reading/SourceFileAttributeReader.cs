@@ -3,7 +3,7 @@
 namespace IKVM.ByteCode.Reading
 {
 
-    public class SourceFileAttributeReader : AttributeReader<SourceFileAttributeRecord>
+    internal class SourceFileAttributeReader : AttributeReader<SourceFileAttributeRecord>
     {
 
         string sourceFile;

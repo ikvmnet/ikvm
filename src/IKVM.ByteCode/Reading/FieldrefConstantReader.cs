@@ -3,7 +3,7 @@
 namespace IKVM.ByteCode.Reading
 {
 
-    public class FieldrefConstantReader : RefConstantReader<FieldrefConstantRecord, FieldrefConstantOverride>
+    internal class FieldrefConstantReader : RefConstantReader<FieldrefConstantRecord, FieldrefConstantOverride>
     {
 
         /// <summary>

@@ -1,11 +1,12 @@
 ﻿using System.Buffers;
 
 using IKVM.ByteCode.Buffers;
+using IKVM.ByteCode.Reading;
 
 namespace IKVM.ByteCode.Parsing
 {
 
-    public record struct ClassRecord(ushort MinorVersion, ushort MajorVersion, ConstantRecord[] Constants, AccessFlag AccessFlags, ushort ThisClassIndex, ushort SuperClassIndex, InterfaceRecord[] Interfaces, FieldRecord[] Fields, MethodRecord[] Methods, AttributeInfoRecord[] Attributes)
+    internal record struct ClassRecord(ushort MinorVersion, ushort MajorVersion, ConstantRecord[] Constants, AccessFlag AccessFlags, ushort ThisClassIndex, ushort SuperClassIndex, InterfaceRecord[] Interfaces, FieldRecord[] Fields, MethodRecord[] Methods, AttributeInfoRecord[] Attributes)
     {
 
         const uint MAGIC = 0xCAFEBABE;
@@ -16,18 +17,18 @@ namespace IKVM.ByteCode.Parsing
         /// <param name="clazz"></param>
         /// <returns></returns>
         /// <exception cref="ByteCodeException"></exception>
-        public static bool TryRead(ref SequenceReader<byte> reader, out ClassRecord clazz)
+        public static bool TryRead(ref ClassFormatReader reader, out ClassRecord clazz)
         {
             clazz = default;
 
-            if (reader.TryReadBigEndian(out uint magic) == false)
+            if (reader.TryReadU4(out uint magic) == false)
                 return false;
             if (magic != MAGIC)
                 throw new ByteCodeException($"Unexpected magic value '{magic}'.");
 
-            if (reader.TryReadBigEndian(out ushort minorVersion) == false)
+            if (reader.TryReadU2(out ushort minorVersion) == false)
                 return false;
-            if (reader.TryReadBigEndian(out ushort majorVersion) == false)
+            if (reader.TryReadU2(out ushort majorVersion) == false)
                 return false;
 
             if (majorVersion > 63)
@@ -36,13 +37,13 @@ namespace IKVM.ByteCode.Parsing
             if (TryReadConstants(ref reader, out var constants) == false)
                 return false;
 
-            if (reader.TryReadBigEndian(out ushort accessFlags) == false)
+            if (reader.TryReadU2(out ushort accessFlags) == false)
                 return false;
 
-            if (reader.TryReadBigEndian(out ushort thisClass) == false)
+            if (reader.TryReadU2(out ushort thisClass) == false)
                 return false;
 
-            if (reader.TryReadBigEndian(out ushort superClass) == false)
+            if (reader.TryReadU2(out ushort superClass) == false)
                 return false;
 
             if (TryReadInterfaces(ref reader, out var interfaces) == false)
@@ -67,11 +68,11 @@ namespace IKVM.ByteCode.Parsing
         /// <param name="reader"></param>
         /// <param name="constants"></param>
         /// <returns></returns>
-        static bool TryReadConstants(ref SequenceReader<byte> reader, out ConstantRecord[] constants)
+        static bool TryReadConstants(ref ClassFormatReader reader, out ConstantRecord[] constants)
         {
             constants = null;
 
-            if (reader.TryReadBigEndian(out ushort count) == false)
+            if (reader.TryReadU2(out ushort count) == false)
                 return false;
 
             constants = new ConstantRecord[count];
@@ -93,11 +94,11 @@ namespace IKVM.ByteCode.Parsing
         /// <param name="reader"></param>
         /// <param name="interfaces"></param>
         /// <returns></returns>
-        static bool TryReadInterfaces(ref SequenceReader<byte> reader, out InterfaceRecord[] interfaces)
+        static bool TryReadInterfaces(ref ClassFormatReader reader, out InterfaceRecord[] interfaces)
         {
             interfaces = null;
 
-            if (reader.TryReadBigEndian(out ushort count) == false)
+            if (reader.TryReadU2(out ushort count) == false)
                 return false;
 
             interfaces = new InterfaceRecord[count];
@@ -118,11 +119,11 @@ namespace IKVM.ByteCode.Parsing
         /// <param name="reader"></param>
         /// <param name="fields"></param>
         /// <returns></returns>
-        static bool TryReadFields(ref SequenceReader<byte> reader, out FieldRecord[] fields)
+        static bool TryReadFields(ref ClassFormatReader reader, out FieldRecord[] fields)
         {
             fields = null;
 
-            if (reader.TryReadBigEndian(out ushort count) == false)
+            if (reader.TryReadU2(out ushort count) == false)
                 return false;
 
             fields = new FieldRecord[count];
@@ -143,11 +144,11 @@ namespace IKVM.ByteCode.Parsing
         /// <param name="reader"></param>
         /// <param name="methods"></param>
         /// <returns></returns>
-        static bool TryReadMethods(ref SequenceReader<byte> reader, out MethodRecord[] methods)
+        static bool TryReadMethods(ref ClassFormatReader reader, out MethodRecord[] methods)
         {
             methods = null;
 
-            if (reader.TryReadBigEndian(out ushort count) == false)
+            if (reader.TryReadU2(out ushort count) == false)
                 return false;
 
             methods = new MethodRecord[count];
@@ -167,11 +168,11 @@ namespace IKVM.ByteCode.Parsing
         /// </summary>
         /// <param name="reader"></param>
         /// <param name="attributes"></param>
-        internal static bool TryReadAttributes(ref SequenceReader<byte> reader, out AttributeInfoRecord[] attributes)
+        internal static bool TryReadAttributes(ref ClassFormatReader reader, out AttributeInfoRecord[] attributes)
         {
             attributes = null;
 
-            if (reader.TryReadBigEndian(out ushort count) == false)
+            if (reader.TryReadU2(out ushort count) == false)
                 return false;
 
             attributes = new AttributeInfoRecord[count];

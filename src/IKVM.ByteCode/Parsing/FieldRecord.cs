@@ -1,11 +1,12 @@
 ﻿using System.Buffers;
 
 using IKVM.ByteCode.Buffers;
+using IKVM.ByteCode.Reading;
 
 namespace IKVM.ByteCode.Parsing
 {
 
-    public record struct FieldRecord(AccessFlag AccessFlags, ushort NameIndex, ushort DescriptorIndex, AttributeInfoRecord[] Attributes)
+    internal record struct FieldRecord(AccessFlag AccessFlags, ushort NameIndex, ushort DescriptorIndex, AttributeInfoRecord[] Attributes)
     {
 
         /// <summary>
@@ -13,15 +14,15 @@ namespace IKVM.ByteCode.Parsing
         /// </summary>
         /// <param name="reader"></param>
         /// <param name="field"></param>
-        public static bool TryRead(ref SequenceReader<byte> reader, out FieldRecord field)
+        public static bool TryRead(ref ClassFormatReader reader, out FieldRecord field)
         {
             field = default;
 
-            if (reader.TryReadBigEndian(out ushort accessFlags) == false)
+            if (reader.TryReadU2(out ushort accessFlags) == false)
                 return false;
-            if (reader.TryReadBigEndian(out ushort nameIndex) == false)
+            if (reader.TryReadU2(out ushort nameIndex) == false)
                 return false;
-            if (reader.TryReadBigEndian(out ushort descriptorIndex) == false)
+            if (reader.TryReadU2(out ushort descriptorIndex) == false)
                 return false;
             if (ClassRecord.TryReadAttributes(ref reader, out var attributes) == false)
                 return false;

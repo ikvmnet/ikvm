@@ -1,21 +1,22 @@
 ﻿using System.Buffers;
 
 using IKVM.ByteCode.Buffers;
+using IKVM.ByteCode.Reading;
 
 namespace IKVM.ByteCode.Parsing
 {
 
-    public sealed record FullStackMapFrameRecord(byte Tag, ushort OffsetDelta, VerificationTypeInfoRecord[] Locals, VerificationTypeInfoRecord[] Stack) : StackMapFrameRecord(Tag)
+    internal sealed record FullStackMapFrameRecord(byte Tag, ushort OffsetDelta, VerificationTypeInfoRecord[] Locals, VerificationTypeInfoRecord[] Stack) : StackMapFrameRecord(Tag)
     {
 
-        public static bool TryReadFullStackMapFrame(ref SequenceReader<byte> reader, byte tag, out StackMapFrameRecord frame)
+        public static bool TryReadFullStackMapFrame(ref ClassFormatReader reader, byte tag, out StackMapFrameRecord frame)
         {
             frame = null;
 
-            if (reader.TryReadBigEndian(out ushort offsetDelta) == false)
+            if (reader.TryReadU2(out ushort offsetDelta) == false)
                 return false;
 
-            if (reader.TryReadBigEndian(out ushort localsCount) == false)
+            if (reader.TryReadU2(out ushort localsCount) == false)
                 return false;
 
             var locals = new VerificationTypeInfoRecord[localsCount];
@@ -27,7 +28,7 @@ namespace IKVM.ByteCode.Parsing
                 locals[i] = j;
             }
 
-            if (reader.TryReadBigEndian(out ushort stackCount) == false)
+            if (reader.TryReadU2(out ushort stackCount) == false)
                 return false;
 
             var stack = new VerificationTypeInfoRecord[stackCount];

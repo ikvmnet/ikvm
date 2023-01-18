@@ -1,18 +1,19 @@
 ﻿using System.Buffers;
 
 using IKVM.ByteCode.Buffers;
+using IKVM.ByteCode.Reading;
 
 namespace IKVM.ByteCode.Parsing
 {
 
-    public sealed record StackMapTableAttributeRecord(StackMapFrameRecord[] Frames) : AttributeRecord
+    internal sealed record StackMapTableAttributeRecord(StackMapFrameRecord[] Frames) : AttributeRecord
     {
 
-        public static bool TryRead(ref SequenceReader<byte> reader, out AttributeRecord attribute)
+        public static bool TryRead(ref ClassFormatReader reader, out AttributeRecord attribute)
         {
             attribute = null;
 
-            if (reader.TryReadBigEndian(out ushort count) == false)
+            if (reader.TryReadU2(out ushort count) == false)
                 return false;
 
             var frames = new StackMapFrameRecord[count];

@@ -4,7 +4,7 @@
     /// <summary>
     /// Provides data to override a Methodref constant.
     /// </summary>
-    public sealed class MethodrefConstantOverride : RefConstantOverride
+    internal sealed class MethodrefConstantOverride : RefConstantOverride
     {
 
         /// <summary>

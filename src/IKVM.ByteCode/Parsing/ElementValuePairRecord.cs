@@ -1,19 +1,20 @@
 ﻿using System.Buffers;
 
 using IKVM.ByteCode.Buffers;
+using IKVM.ByteCode.Reading;
 using IKVM.ByteCode.Writing;
 
 namespace IKVM.ByteCode.Parsing
 {
 
-    public readonly record struct ElementValuePairRecord(ushort NameIndex, ElementValueRecord Value)
+    internal record struct ElementValuePairRecord(ushort NameIndex, ElementValueRecord Value)
     {
 
-        public static bool TryRead(ref SequenceReader<byte> reader, out ElementValuePairRecord record)
+        public static bool TryRead(ref ClassFormatReader reader, out ElementValuePairRecord record)
         {
             record = default;
 
-            if (reader.TryReadBigEndian(out ushort nameIndex) == false)
+            if (reader.TryReadU2(out ushort nameIndex) == false)
                 return false;
             if (ElementValueRecord.TryRead(ref reader, out var elementValue) == false)
                 return false;

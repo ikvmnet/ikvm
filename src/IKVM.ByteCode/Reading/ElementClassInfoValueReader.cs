@@ -3,7 +3,7 @@
 namespace IKVM.ByteCode.Reading
 {
 
-    public sealed class ElementClassInfoValueReader : ElementValueReader<ElementClassInfoValueRecord>
+    internal sealed class ElementClassInfoValueReader : ElementValueReader<ElementClassInfoValueRecord>
     {
 
         string type;

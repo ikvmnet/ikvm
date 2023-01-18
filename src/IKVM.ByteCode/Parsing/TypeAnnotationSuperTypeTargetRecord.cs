@@ -1,19 +1,20 @@
 ﻿using System.Buffers;
 
 using IKVM.ByteCode.Buffers;
+using IKVM.ByteCode.Reading;
 using IKVM.ByteCode.Writing;
 
 namespace IKVM.ByteCode.Parsing
 {
 
-    public sealed record TypeAnnotationSuperTypeTargetRecord(byte TargetType, ushort SuperTypeIndex) : TypeAnnotationTargetRecord(TargetType)
+    internal sealed record TypeAnnotationSuperTypeTargetRecord(byte TargetType, ushort SuperTypeIndex) : TypeAnnotationTargetRecord(TargetType)
     {
 
-        public static bool TryRead(ref SequenceReader<byte> reader, byte targetType, out TypeAnnotationTargetRecord targetInfo)
+        public static bool TryRead(ref ClassFormatReader reader, byte targetType, out TypeAnnotationTargetRecord targetInfo)
         {
             targetInfo = null;
 
-            if (reader.TryReadBigEndian(out ushort superTypeIndex) == false)
+            if (reader.TryReadU2(out ushort superTypeIndex) == false)
                 return false;
 
             targetInfo = new TypeAnnotationSuperTypeTargetRecord(targetType, superTypeIndex);

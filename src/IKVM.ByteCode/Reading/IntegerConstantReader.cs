@@ -3,7 +3,7 @@
 namespace IKVM.ByteCode.Reading
 {
 
-    public sealed class IntegerConstantReader : ConstantReader<IntegerConstantRecord, IntegerConstantOverride>
+    internal sealed class IntegerConstantReader : ConstantReader<IntegerConstantRecord, IntegerConstantOverride>
     {
 
         /// <summary>

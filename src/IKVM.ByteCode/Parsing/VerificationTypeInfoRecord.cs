@@ -1,18 +1,19 @@
 ﻿using System.Buffers;
 
 using IKVM.ByteCode.Buffers;
+using IKVM.ByteCode.Reading;
 
 namespace IKVM.ByteCode.Parsing
 {
 
-    public abstract record VerificationTypeInfoRecord
+    internal abstract record VerificationTypeInfoRecord
     {
 
-        public static bool TryReadVerificationTypeInfo(ref SequenceReader<byte> reader, out VerificationTypeInfoRecord record)
+        public static bool TryReadVerificationTypeInfo(ref ClassFormatReader reader, out VerificationTypeInfoRecord record)
         {
             record = null;
 
-            if (reader.TryRead(out byte tag) == false)
+            if (reader.TryReadU1(out byte tag) == false)
                 return false;
 
             return tag switch

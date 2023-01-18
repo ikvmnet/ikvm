@@ -6,7 +6,7 @@ namespace IKVM.ByteCode.Reading
     /// <summary>
     /// Lazy init collection of annotation data.
     /// </summary>
-    public sealed class AnnotationReaderCollection : LazyReaderList<AnnotationReader, AnnotationRecord>
+    internal sealed class AnnotationReaderCollection : LazyReaderList<AnnotationReader, AnnotationRecord>
     {
 
         /// <summary>

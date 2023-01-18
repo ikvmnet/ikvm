@@ -1,18 +1,19 @@
 ﻿using System.Buffers;
 
 using IKVM.ByteCode.Buffers;
+using IKVM.ByteCode.Reading;
 
 namespace IKVM.ByteCode.Parsing
 {
 
-    public sealed record BootstrapMethodsAttributeRecord(BootstrapMethodsAttributeMethodRecord[] Methods) : AttributeRecord
+    internal sealed record BootstrapMethodsAttributeRecord(BootstrapMethodsAttributeMethodRecord[] Methods) : AttributeRecord
     {
 
-        public static bool TryReadBootstrapMethodsAttribute(ref SequenceReader<byte> reader, out AttributeRecord attribute)
+        public static bool TryReadBootstrapMethodsAttribute(ref ClassFormatReader reader, out AttributeRecord attribute)
         {
             attribute = null;
 
-            if (reader.TryReadBigEndian(out ushort count) == false)
+            if (reader.TryReadU2(out ushort count) == false)
                 return false;
 
             var methods = new BootstrapMethodsAttributeMethodRecord[count];

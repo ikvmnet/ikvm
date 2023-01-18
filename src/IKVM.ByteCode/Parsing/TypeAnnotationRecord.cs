@@ -1,15 +1,16 @@
 ﻿using System.Buffers;
 
 using IKVM.ByteCode.Buffers;
+using IKVM.ByteCode.Reading;
 using IKVM.ByteCode.Writing;
 
 namespace IKVM.ByteCode.Parsing
 {
 
-    public readonly record struct TypeAnnotationRecord(TypeAnnotationTargetRecord Target, TypePathRecord TargetPath, ushort TypeIndex, ElementValuePairRecord[] Elements)
+    internal record struct TypeAnnotationRecord(TypeAnnotationTargetRecord Target, TypePathRecord TargetPath, ushort TypeIndex, ElementValuePairRecord[] Elements)
     {
 
-        public static bool TryReadTypeAnnotation(ref SequenceReader<byte> reader, out TypeAnnotationRecord annotation)
+        public static bool TryReadTypeAnnotation(ref ClassFormatReader reader, out TypeAnnotationRecord annotation)
         {
             annotation = default;
 
@@ -17,9 +18,9 @@ namespace IKVM.ByteCode.Parsing
                 return false;
             if (TypePathRecord.TryRead(ref reader, out var targetPath) == false)
                 return false;
-            if (reader.TryReadBigEndian(out ushort typeIndex) == false)
+            if (reader.TryReadU2(out ushort typeIndex) == false)
                 return false;
-            if (reader.TryReadBigEndian(out ushort pairCount) == false)
+            if (reader.TryReadU2(out ushort pairCount) == false)
                 return false;
 
             var elements = new ElementValuePairRecord[pairCount];

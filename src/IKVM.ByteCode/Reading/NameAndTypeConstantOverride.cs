@@ -4,7 +4,7 @@
     /// <summary>
     /// Provides an overload to a NameAndType constant.
     /// </summary>
-    public sealed class NameAndTypeConstantOverride : ConstantOverride
+    internal sealed class NameAndTypeConstantOverride : ConstantOverride
     {
         /// <summary>
         /// Initializes a new instance.

@@ -3,7 +3,7 @@
 namespace IKVM.ByteCode.Reading
 {
 
-    public sealed class DynamicConstantReader : ConstantReader<DynamicConstantRecord, DynamicConstantOverride>
+    internal sealed class DynamicConstantReader : ConstantReader<DynamicConstantRecord, DynamicConstantOverride>
     {
 
         string name;

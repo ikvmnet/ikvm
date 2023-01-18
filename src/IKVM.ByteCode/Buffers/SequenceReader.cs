@@ -59,7 +59,7 @@ namespace IKVM.ByteCode.Buffers
         /// over the given <see cref="ReadOnlySequence{T}"/>.
         /// </summary>
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        public SequenceReader(in ReadOnlySequence<T> sequence)
+        public SequenceReader(ReadOnlySequence<T> sequence)
         {
             this.usingSequence = true;
             this.CurrentSpanIndex = 0;

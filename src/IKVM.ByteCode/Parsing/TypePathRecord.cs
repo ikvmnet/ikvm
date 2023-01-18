@@ -1,19 +1,20 @@
 ﻿using System.Buffers;
 
 using IKVM.ByteCode.Buffers;
+using IKVM.ByteCode.Reading;
 using IKVM.ByteCode.Writing;
 
 namespace IKVM.ByteCode.Parsing
 {
 
-    public record struct TypePathRecord(TypePathItemRecord[] Path)
+    internal record struct TypePathRecord(TypePathItemRecord[] Path)
     {
 
-        public static bool TryRead(ref SequenceReader<byte> reader, out TypePathRecord typePath)
+        public static bool TryRead(ref ClassFormatReader reader, out TypePathRecord typePath)
         {
             typePath = default;
 
-            if (reader.TryRead(out byte length) == false)
+            if (reader.TryReadU1(out byte length) == false)
                 return false;
 
             var path = new TypePathItemRecord[length];

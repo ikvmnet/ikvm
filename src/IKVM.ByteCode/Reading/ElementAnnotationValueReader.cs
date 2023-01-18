@@ -3,7 +3,7 @@
 namespace IKVM.ByteCode.Reading
 {
 
-    public sealed class ElementAnnotationValueReader : ElementValueReader<ElementAnnotationValueRecord>
+    internal sealed class ElementAnnotationValueReader : ElementValueReader<ElementAnnotationValueRecord>
     {
 
         AnnotationReader annotation;

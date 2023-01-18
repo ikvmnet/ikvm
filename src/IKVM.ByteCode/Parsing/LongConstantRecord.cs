@@ -1,11 +1,9 @@
-﻿using System.Buffers;
-
-using IKVM.ByteCode.Buffers;
+﻿using IKVM.ByteCode.Reading;
 
 namespace IKVM.ByteCode.Parsing
 {
 
-    public sealed record LongConstantRecord(long Value) : ConstantRecord
+    internal sealed record LongConstantRecord(long Value) : ConstantRecord
     {
 
         /// <summary>
@@ -14,15 +12,21 @@ namespace IKVM.ByteCode.Parsing
         /// <param name="reader"></param>
         /// <param name="constant"></param>
         /// <param name="skip"></param>
-        public static bool TryReadLongConstant(ref SequenceReader<byte> reader, out ConstantRecord constant, out int skip)
+        public static bool TryReadLongConstant(ref ClassFormatReader reader, out ConstantRecord constant, out int skip)
         {
             constant = null;
             skip = 1;
 
-            if (reader.TryReadBigEndian(out long value) == false)
+            if (reader.TryReadU4(out uint a) == false)
+                return false;
+            if (reader.TryReadU4(out uint b) == false)
                 return false;
 
-            constant = new LongConstantRecord(value);
+            var h = (ulong)a << 4;
+            var l = (ulong)b;
+            var v = h | l;
+
+            constant = new LongConstantRecord(unchecked((long)v));
             return true;
         }
 

@@ -4,7 +4,7 @@
     /// <summary>
     /// Provides an overload to a MethodType constant.
     /// </summary>
-    public sealed class MethodTypeConstantOverride : ConstantOverride
+    internal sealed class MethodTypeConstantOverride : ConstantOverride
     {
         /// <summary>
         /// Initializes a new instance.

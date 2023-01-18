@@ -4,7 +4,7 @@
     /// <summary>
     /// Provides data to override an InvokeDynamic constant.
     /// </summary>
-    public class InvokeDynamicConstantOverride : ConstantOverride
+    internal class InvokeDynamicConstantOverride : ConstantOverride
     {
 
         readonly string name;

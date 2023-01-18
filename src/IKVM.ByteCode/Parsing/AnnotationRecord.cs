@@ -1,21 +1,22 @@
 ﻿using System.Buffers;
 
 using IKVM.ByteCode.Buffers;
+using IKVM.ByteCode.Reading;
 using IKVM.ByteCode.Writing;
 
 namespace IKVM.ByteCode.Parsing
 {
 
-    public readonly record struct AnnotationRecord(ushort TypeIndex, ElementValuePairRecord[] Elements)
+    internal record struct AnnotationRecord(ushort TypeIndex, ElementValuePairRecord[] Elements)
     {
 
-        public static bool TryReadAnnotation(ref SequenceReader<byte> reader, out AnnotationRecord annotation)
+        public static bool TryReadAnnotation(ref ClassFormatReader reader, out AnnotationRecord annotation)
         {
             annotation = default;
 
-            if (reader.TryReadBigEndian(out ushort typeIndex) == false)
+            if (reader.TryReadU2(out ushort typeIndex) == false)
                 return false;
-            if (reader.TryReadBigEndian(out ushort pairCount) == false)
+            if (reader.TryReadU2(out ushort pairCount) == false)
                 return false;
 
             var elements = new ElementValuePairRecord[pairCount];

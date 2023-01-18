@@ -4,7 +4,7 @@
     /// <summary>
     /// Represents an override to a Class constant.
     /// </summary>
-    public class ClassConstantOverride : ConstantOverride
+    internal class ClassConstantOverride : ConstantOverride
     {
 
         /// <summary>

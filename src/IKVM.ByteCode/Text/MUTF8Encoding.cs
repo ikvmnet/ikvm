@@ -7,7 +7,7 @@ namespace IKVM.ByteCode.Text
     /// <summary>
     /// Implements an <see cref="Encoding"/> for Sun's modified UTF-8.
     /// </summary>
-    public class MUTF8Encoding : Encoding
+    internal class MUTF8Encoding : Encoding
     {
 
         readonly static MUTF8Encoding JavaSE_1_0 = new MUTF8Encoding(0);

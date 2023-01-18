@@ -12,7 +12,7 @@ namespace IKVM.ByteCode.Reading
     /// <summary>
     /// Lazy init collection of annotation data.
     /// </summary>
-    public sealed class ParameterAnnotationReaderCollection : IReadOnlyList<ParameterAnnotationReader>
+    internal sealed class ParameterAnnotationReaderCollection : IReadOnlyList<ParameterAnnotationReader>
     {
 
         readonly ClassReader ownerClass;

@@ -1,11 +1,12 @@
 ﻿using System.Buffers;
 
 using IKVM.ByteCode.Buffers;
+using IKVM.ByteCode.Reading;
 
 namespace IKVM.ByteCode.Parsing
 {
 
-    public sealed record ModuleConstantRecord(ushort NameIndex) : ConstantRecord
+    internal sealed record ModuleConstantRecord(ushort NameIndex) : ConstantRecord
     {
 
         /// <summary>
@@ -14,12 +15,12 @@ namespace IKVM.ByteCode.Parsing
         /// <param name="reader"></param>
         /// <param name="constant"></param>
         /// <param name="skip"></param>
-        public static bool TryReadModuleConstant(ref SequenceReader<byte> reader, out ConstantRecord constant, out int skip)
+        public static bool TryReadModuleConstant(ref ClassFormatReader reader, out ConstantRecord constant, out int skip)
         {
             constant = null;
             skip = 0;
 
-            if (reader.TryReadBigEndian(out ushort nameIndex) == false)
+            if (reader.TryReadU2(out ushort nameIndex) == false)
                 return false;
 
             constant = new ModuleConstantRecord(nameIndex);

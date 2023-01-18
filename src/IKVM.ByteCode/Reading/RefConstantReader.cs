@@ -8,7 +8,7 @@ namespace IKVM.ByteCode.Reading
     /// </summary>
     /// <typeparam name="TRecord"></typeparam>
     /// <typeparam name="TOverride"></typeparam>
-    public abstract class RefConstantReader<TRecord, TOverride> : ConstantReader<TRecord, TOverride>, IRefConstantReader<TRecord, TOverride>
+    internal abstract class RefConstantReader<TRecord, TOverride> : ConstantReader<TRecord, TOverride>, IRefConstantReader<TRecord, TOverride>
         where TRecord : RefConstantRecord
         where TOverride : RefConstantOverride
     {

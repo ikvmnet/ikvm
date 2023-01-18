@@ -4,7 +4,7 @@
     /// <summary>
     /// Represents an override to an Integer constant.
     /// </summary>
-    public class IntegerConstantOverride : ConstantOverride
+    internal class IntegerConstantOverride : ConstantOverride
     {
 
         /// <summary>

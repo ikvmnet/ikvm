@@ -4,7 +4,7 @@
     /// <summary>
     /// Represents an override to a Double constant.
     /// </summary>
-    public sealed class DoubleConstantOverride : ConstantOverride
+    internal sealed class DoubleConstantOverride : ConstantOverride
     {
 
         /// <summary>
