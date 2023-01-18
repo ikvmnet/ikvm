@@ -21,12 +21,30 @@ namespace IKVM.Tests.Java.java.net
         }
 
         [TestMethod]
-        public void CanCreateFileURL()
+        public void CanCreateHttpsURL()
         {
-            var u = new global::java.net.URL("file:///C:/");
+            var u = new global::java.net.URL("https://www.site.com/");
+            u.getProtocol().Should().Be("https");
+            u.getHost().Should().Be("www.site.com");
+            u.getPath().Should().Be("/");
+        }
+
+        [TestMethod]
+        public void CanCreateWindowsFileURL()
+        {
+            var u = new global::java.net.URL("file:///c:/dir");
             u.getProtocol().Should().Be("file");
             u.getHost().Should().Be("");
-            u.getPath().Should().Be("C/");
+            u.getPath().Should().Be("/c:/dir");
+        }
+
+        [TestMethod]
+        public void CanCreateUnixFileURL()
+        {
+            var u = new global::java.net.URL("file:///tmp/foo");
+            u.getProtocol().Should().Be("file");
+            u.getHost().Should().Be("");
+            u.getPath().Should().Be("/tmp/foo");
         }
 
         [TestMethod]

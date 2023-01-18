@@ -1,4 +1,5 @@
-﻿using System.Linq;
+﻿using System;
+using System.Linq;
 
 using FluentAssertions;
 
@@ -50,6 +51,35 @@ namespace IKVM.ByteCode.Tests.Text
             var s = MUTF8Encoding.GetMUTF8(48).GetChars(new byte[] { 0b11000000, 0b10000000 });
             s.Should().HaveCount(1);
             s[0].Should().Be('\0');
+        }
+
+        [TestMethod]
+        public unsafe void CanFindNullByte()
+        {
+            fixed (byte* ptr = new byte[] { 0x01, 0x00 })
+                MUTF8Encoding.GetMUTF8(48).IndexOfNull(ptr).Should().Be(1);
+            fixed (byte* ptr = new byte[] { 0x00, 0x00 })
+                MUTF8Encoding.GetMUTF8(48).IndexOfNull(ptr).Should().Be(0);
+            fixed (byte* ptr = new byte[] { 0x01, 0x01, 0x00 })
+                MUTF8Encoding.GetMUTF8(48).IndexOfNull(ptr).Should().Be(2);
+        }
+
+        [TestMethod]
+        public void CanEncodeNull()
+        {
+            MUTF8Encoding.GetMUTF8(48).GetBytes("\0").Should().HaveCount(2);
+            MUTF8Encoding.GetMUTF8(48).GetBytes("a\0").Should().HaveCount(3);
+            MUTF8Encoding.GetMUTF8(48).GetBytes("a\0a").Should().HaveCount(4);
+            MUTF8Encoding.GetMUTF8(48).GetBytes("\0\0").Should().HaveCount(4);
+            MUTF8Encoding.GetMUTF8(48).GetBytes("a\0\0").Should().HaveCount(5);
+            MUTF8Encoding.GetMUTF8(48).GetBytes("a\0\0a").Should().HaveCount(6);
+        }
+
+        [TestMethod]
+        public void CanHandleEmptyString()
+        {
+            MUTF8Encoding.GetMUTF8(48).GetBytes("").Should().BeEmpty();
+            MUTF8Encoding.GetMUTF8(48).GetString(Array.Empty<byte>()).Should().Be("");
         }
 
     }
