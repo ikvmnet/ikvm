@@ -1,10 +1,10 @@
 ﻿namespace IKVM.ByteCode.Parsing
 {
 
-    internal sealed record ElementClassInfoValueRecord(char Tag, ushort ClassInfoIndex) : ElementValueRecord(Tag)
+    internal sealed record ElementClassInfoValueRecord(byte Tag, ushort ClassInfoIndex) : ElementValueRecord(Tag)
     {
 
-        public static bool TryReadElementClassInfoValue(ref ClassFormatReader reader, char tag, out ElementValueRecord value)
+        public static bool TryReadElementClassInfoValue(ref ClassFormatReader reader, byte tag, out ElementValueRecord value)
         {
             value = null;
 

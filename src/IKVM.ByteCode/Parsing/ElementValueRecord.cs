@@ -1,7 +1,7 @@
 ﻿namespace IKVM.ByteCode.Parsing
 {
 
-    internal abstract record class ElementValueRecord(char Tag)
+    internal abstract record class ElementValueRecord(byte Tag)
     {
 
         public static bool TryRead(ref ClassFormatReader reader, out ElementValueRecord value)
@@ -13,12 +13,12 @@
 
             return (char)tag switch
             {
-                'B' or 'C' or 'D' or 'F' or 'I' or 'J' or 'S' or 'Z' or 's' => ElementConstantValueRecord.TryReadElementConstantValue(ref reader, (char)tag, out value),
-                'e' => ElementEnumConstantValueRecord.TryRead(ref reader, (char)tag, out value),
-                'c' => ElementClassInfoValueRecord.TryReadElementClassInfoValue(ref reader, (char)tag, out value),
-                '@' => ElementAnnotationValueRecord.TryReadElementAnnotationValue(ref reader, (char)tag, out value),
-                '[' => ElementArrayValueRecord.TryReadElementArrayValue(ref reader, (char)tag, out value),
-                _ => throw new ByteCodeException($"Invalid annotation element value tag: '{(char)tag}'."),
+                'B' or 'C' or 'D' or 'F' or 'I' or 'J' or 'S' or 'Z' or 's' => ElementConstantValueRecord.TryReadElementConstantValue(ref reader, tag, out value),
+                'e' => ElementEnumConstantValueRecord.TryRead(ref reader, tag, out value),
+                'c' => ElementClassInfoValueRecord.TryReadElementClassInfoValue(ref reader, tag, out value),
+                '@' => ElementAnnotationValueRecord.TryReadElementAnnotationValue(ref reader, tag, out value),
+                '[' => ElementArrayValueRecord.TryReadElementArrayValue(ref reader, tag, out value),
+                _ => throw new ByteCodeException($"Invalid annotation element value tag: '{tag}'."),
             };
         }
 
@@ -36,7 +36,7 @@
         /// <returns></returns>
         public virtual bool TryWrite(ref ClassFormatWriter writer)
         {
-            if (writer.TryWriteU2(Tag) == false)
+            if (writer.TryWriteU1(Tag) == false)
                 return false;
 
             return true;

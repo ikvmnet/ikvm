@@ -1,10 +1,10 @@
 ﻿namespace IKVM.ByteCode.Parsing
 {
 
-    internal sealed record ElementArrayValueRecord(char Tag, ElementValueRecord[] Values) : ElementValueRecord(Tag)
+    internal sealed record ElementArrayValueRecord(byte Tag, ElementValueRecord[] Values) : ElementValueRecord(Tag)
     {
 
-        public static bool TryReadElementArrayValue(ref ClassFormatReader reader, char tag, out ElementValueRecord value)
+        public static bool TryReadElementArrayValue(ref ClassFormatReader reader, byte tag, out ElementValueRecord value)
         {
             value = null;
 
