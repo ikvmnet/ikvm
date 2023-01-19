@@ -18,7 +18,7 @@
                 'c' => ElementClassInfoValueRecord.TryReadElementClassInfoValue(ref reader, tag, out value),
                 '@' => ElementAnnotationValueRecord.TryReadElementAnnotationValue(ref reader, tag, out value),
                 '[' => ElementArrayValueRecord.TryReadElementArrayValue(ref reader, tag, out value),
-                _ => throw new ByteCodeException($"Invalid annotation element value tag: '{tag}'."),
+                _ => throw new ByteCodeException($"Invalid annotation element value tag: '{(char)tag}'."),
             };
         }
 
