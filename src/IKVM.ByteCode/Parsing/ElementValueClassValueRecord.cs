@@ -1,23 +1,23 @@
 ﻿namespace IKVM.ByteCode.Parsing
 {
 
-    internal sealed record ElementClassInfoValueRecord(byte Tag, ushort ClassInfoIndex) : ElementValueRecord(Tag)
+    internal sealed record ElementValueClassValueRecord(ushort ClassIndex) : ElementValueValueRecord
     {
 
-        public static bool TryReadElementClassInfoValue(ref ClassFormatReader reader, byte tag, out ElementValueRecord value)
+        public static bool TryRead(ref ClassFormatReader reader, out ElementValueValueRecord value)
         {
             value = null;
 
             if (reader.TryReadU2(out ushort classInfoIndex) == false)
                 return false;
 
-            value = new ElementClassInfoValueRecord(tag, classInfoIndex);
+            value = new ElementValueClassValueRecord(classInfoIndex);
             return true;
         }
 
         public override int GetSize()
         {
-            var size = base.GetSize();
+            var size = 0;
             size += sizeof(ushort);
             return size;
         }
@@ -29,10 +29,7 @@
         /// <returns></returns>
         public override bool TryWrite(ref ClassFormatWriter writer)
         {
-            if (base.TryWrite(ref writer) == false)
-                return false;
-
-            if (writer.TryWriteU2(ClassInfoIndex) == false)
+            if (writer.TryWriteU2(ClassIndex) == false)
                 return false;
 
             return true;

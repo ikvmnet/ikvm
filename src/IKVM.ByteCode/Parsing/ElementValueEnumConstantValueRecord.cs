@@ -1,10 +1,10 @@
 ﻿namespace IKVM.ByteCode.Parsing
 {
 
-    internal sealed record ElementEnumConstantValueRecord(byte Tag, ushort TypeNameIndex, ushort ConstantNameIndex) : ElementValueRecord(Tag)
+    internal sealed record ElementValueEnumConstantValueRecord(ushort TypeNameIndex, ushort ConstantNameIndex) : ElementValueValueRecord
     {
 
-        public static bool TryRead(ref ClassFormatReader reader, byte tag, out ElementValueRecord value)
+        public static bool TryRead(ref ClassFormatReader reader, out ElementValueValueRecord value)
         {
             value = null;
 
@@ -13,13 +13,13 @@
             if (reader.TryReadU2(out ushort constantNameIndex) == false)
                 return false;
 
-            value = new ElementEnumConstantValueRecord(tag, typeNameIndex, constantNameIndex);
+            value = new ElementValueEnumConstantValueRecord(typeNameIndex, constantNameIndex);
             return true;
         }
 
         public override int GetSize()
         {
-            var size = base.GetSize();
+            var size = 0;
             size += sizeof(ushort);
             size += sizeof(ushort);
             return size;
@@ -32,9 +32,6 @@
         /// <returns></returns>
         public override bool TryWrite(ref ClassFormatWriter writer)
         {
-            if (base.TryWrite(ref writer) == false)
-                return false;
-
             if (writer.TryWriteU2(TypeNameIndex) == false)
                 return false;
             if (writer.TryWriteU2(ConstantNameIndex) == false)

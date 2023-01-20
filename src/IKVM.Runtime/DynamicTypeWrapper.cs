@@ -3595,7 +3595,9 @@ namespace IKVM.Internal
             readonly string[][] genericMetaData;
             readonly object[][] annotations;
             readonly MethodParametersEntry[][] methodParameters;
-            readonly IReadOnlyList<TypeAnnotationReader>[][] runtimeVisibleTypeAnnotations;
+            readonly IReadOnlyList<TypeAnnotationReader> runtimeVisibleTypeAnnotations;
+            readonly IReadOnlyList<TypeAnnotationReader>[] fieldRuntimeVisibleTypeAnnotations;
+            readonly IReadOnlyList<TypeAnnotationReader>[] methodRuntimeVisibleTypeAnnotations;
             readonly object[] constantPool;
 
             /// <summary>
@@ -3606,12 +3608,14 @@ namespace IKVM.Internal
             /// <param name="methodParameters"></param>
             /// <param name="runtimeVisibleTypeAnnotations"></param>
             /// <param name="constantPool"></param>
-            Metadata(string[][] genericMetaData, object[][] annotations, MethodParametersEntry[][] methodParameters, IReadOnlyList<TypeAnnotationReader>[][] runtimeVisibleTypeAnnotations, object[] constantPool)
+            Metadata(string[][] genericMetaData, object[][] annotations, MethodParametersEntry[][] methodParameters, IReadOnlyList<TypeAnnotationReader> runtimeVisibleTypeAnnotations, IReadOnlyList<TypeAnnotationReader>[] fieldRuntimeVisibleTypeAnnotations, IReadOnlyList<TypeAnnotationReader>[] methodRuntimeVisibleTypeAnnotations, object[] constantPool)
             {
                 this.genericMetaData = genericMetaData;
                 this.annotations = annotations;
                 this.methodParameters = methodParameters;
                 this.runtimeVisibleTypeAnnotations = runtimeVisibleTypeAnnotations;
+                this.fieldRuntimeVisibleTypeAnnotations = fieldRuntimeVisibleTypeAnnotations;
+                this.methodRuntimeVisibleTypeAnnotations = methodRuntimeVisibleTypeAnnotations;
                 this.constantPool = constantPool;
             }
 
@@ -3623,7 +3627,9 @@ namespace IKVM.Internal
                 string[][] genericMetaData = null;
                 object[][] annotations = null;
                 MethodParametersEntry[][] methodParameters = null;
-                IReadOnlyList<TypeAnnotationReader>[][] runtimeVisibleTypeAnnotations = null;
+                IReadOnlyList<TypeAnnotationReader> runtimeVisibleTypeAnnotations = null;
+                IReadOnlyList<TypeAnnotationReader>[] fieldRuntimeVisibleTypeAnnotations = null;
+                IReadOnlyList<TypeAnnotationReader>[] methodRuntimeVisibleTypeAnnotations = null;
 
                 if (classFile.EnclosingMethod != null)
                 {
@@ -3645,9 +3651,7 @@ namespace IKVM.Internal
 
                 if (classFile.RuntimeVisibleTypeAnnotations != null)
                 {
-                    runtimeVisibleTypeAnnotations ??= new IReadOnlyList<TypeAnnotationReader>[3][];
-                    runtimeVisibleTypeAnnotations[0] ??= new IReadOnlyList<TypeAnnotationReader>[1];
-                    runtimeVisibleTypeAnnotations[0][0] = classFile.RuntimeVisibleTypeAnnotations;
+                    runtimeVisibleTypeAnnotations = classFile.RuntimeVisibleTypeAnnotations;
                 }
 
                 for (int i = 0; i < classFile.Methods.Length; i++)
@@ -3688,9 +3692,8 @@ namespace IKVM.Internal
 
                     if (classFile.Methods[i].RuntimeVisibleTypeAnnotations != null)
                     {
-                        runtimeVisibleTypeAnnotations ??= new IReadOnlyList<TypeAnnotationReader>[3][];
-                        runtimeVisibleTypeAnnotations[1] ??= new IReadOnlyList<TypeAnnotationReader>[classFile.Methods.Length];
-                        runtimeVisibleTypeAnnotations[1][i] = classFile.Methods[i].RuntimeVisibleTypeAnnotations;
+                        methodRuntimeVisibleTypeAnnotations ??= new IReadOnlyList<TypeAnnotationReader>[classFile.Methods.Length];
+                        methodRuntimeVisibleTypeAnnotations[i] = classFile.Methods[i].RuntimeVisibleTypeAnnotations;
                     }
                 }
 
@@ -3712,16 +3715,15 @@ namespace IKVM.Internal
 
                     if (classFile.Fields[i].RuntimeVisibleTypeAnnotations != null)
                     {
-                        runtimeVisibleTypeAnnotations ??= new IReadOnlyList<TypeAnnotationReader>[3][];
-                        runtimeVisibleTypeAnnotations[2] ??= new IReadOnlyList<TypeAnnotationReader>[classFile.Fields.Length];
-                        runtimeVisibleTypeAnnotations[2][i] = classFile.Fields[i].RuntimeVisibleTypeAnnotations;
+                        fieldRuntimeVisibleTypeAnnotations ??= new IReadOnlyList<TypeAnnotationReader>[classFile.Fields.Length];
+                        fieldRuntimeVisibleTypeAnnotations[i] = classFile.Fields[i].RuntimeVisibleTypeAnnotations;
                     }
                 }
 
                 if (genericMetaData != null || annotations != null || methodParameters != null || runtimeVisibleTypeAnnotations != null)
                 {
                     var constantPool = runtimeVisibleTypeAnnotations == null ? null : classFile.GetConstantPool();
-                    return new Metadata(genericMetaData, annotations, methodParameters, runtimeVisibleTypeAnnotations, constantPool);
+                    return new Metadata(genericMetaData, annotations, methodParameters, runtimeVisibleTypeAnnotations, fieldRuntimeVisibleTypeAnnotations, methodRuntimeVisibleTypeAnnotations, constantPool);
                 }
 
                 return null;
@@ -3825,30 +3827,33 @@ namespace IKVM.Internal
 
             internal static byte[] GetRawTypeAnnotations(Metadata m)
             {
-                if (m != null && m.runtimeVisibleTypeAnnotations != null && m.runtimeVisibleTypeAnnotations[0] != null)
-                    return SerializeTypeAnnotations(m.runtimeVisibleTypeAnnotations[0][0]);
+                if (m != null && m.runtimeVisibleTypeAnnotations != null)
+                    return SerializeTypeAnnotations(m.runtimeVisibleTypeAnnotations);
                 else
                     return null;
             }
 
             internal static byte[] GetMethodRawTypeAnnotations(Metadata m, int index)
             {
-                if (m != null && m.runtimeVisibleTypeAnnotations != null && m.runtimeVisibleTypeAnnotations[1] != null)
-                    return SerializeTypeAnnotations(m.runtimeVisibleTypeAnnotations[1][index]);
+                if (m != null && m.methodRuntimeVisibleTypeAnnotations != null)
+                    return SerializeTypeAnnotations(m.methodRuntimeVisibleTypeAnnotations[index]);
                 else
                     return null;
             }
 
             internal static byte[] GetFieldRawTypeAnnotations(Metadata m, int index)
             {
-                if (m != null && m.runtimeVisibleTypeAnnotations != null && m.runtimeVisibleTypeAnnotations[2] != null)
-                    return SerializeTypeAnnotations(m.runtimeVisibleTypeAnnotations[2][index]);
+                if (m != null && m.fieldRuntimeVisibleTypeAnnotations != null)
+                    return SerializeTypeAnnotations(m.fieldRuntimeVisibleTypeAnnotations[index]);
                 else
                     return null;
             }
 
             static byte[] SerializeTypeAnnotations(IReadOnlyList<TypeAnnotationReader> annotations)
             {
+                if (annotations == null)
+                    return null;
+
                 var record = new RuntimeVisibleTypeAnnotationsAttributeRecord(annotations.Select(i => i.Record).ToArray());
                 var buffer = new byte[record.GetSize()];
                 var writer = new ClassFormatWriter(buffer);
@@ -4823,20 +4828,20 @@ namespace IKVM.Internal
             {
                 switch (element)
                 {
-                    case ElementConstantValueReader constant:
-                        inUse[constant.Record.ConstantValueIndex] = true;
+                    case ElementValueConstantReader constant:
+                        inUse[constant.ValueRecord.Index] = true;
                         break;
-                    case ElementClassInfoValueReader classInfo:
-                        inUse[classInfo.Record.ClassInfoIndex] = true;
+                    case ElementValueClassReader classInfo:
+                        inUse[classInfo.ValueRecord.ClassIndex] = true;
                         break;
-                    case ElementEnumConstantValueReader enumConstant:
-                        inUse[enumConstant.Record.TypeNameIndex] = true;
-                        inUse[enumConstant.Record.ConstantNameIndex] = true;
+                    case ElementValueEnumConstantReader enumConstant:
+                        inUse[enumConstant.ValueRecord.TypeNameIndex] = true;
+                        inUse[enumConstant.ValueRecord.ConstantNameIndex] = true;
                         break;
-                    case ElementAnnotationValueReader annotation:
+                    case ElementValueAnnotationReader annotation:
                         MarkConstantPoolUsageForAnnotation(annotation.Annotation, inUse);
                         break;
-                    case ElementArrayValueReader array:
+                    case ElementValueArrayReader array:
                         foreach (var i in array.Values)
                             MarkConstantPoolUsageForAnnotationComponentValue(i, inUse);
                         break;
@@ -7026,21 +7031,25 @@ namespace IKVM.Internal
 
         internal override object[] GetConstantPool()
         {
+            Finish();
             return impl.GetConstantPool();
         }
 
         internal override byte[] GetRawTypeAnnotations()
         {
+            Finish();
             return impl.GetRawTypeAnnotations();
         }
 
         internal override byte[] GetMethodRawTypeAnnotations(MethodWrapper mw)
         {
+            Finish();
             return impl.GetMethodRawTypeAnnotations(Array.IndexOf(GetMethods(), mw));
         }
 
         internal override byte[] GetFieldRawTypeAnnotations(FieldWrapper fw)
         {
+            Finish();
             return impl.GetFieldRawTypeAnnotations(Array.IndexOf(GetFields(), fw));
         }
 

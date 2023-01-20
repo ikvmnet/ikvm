@@ -1,18 +1,18 @@
 ﻿namespace IKVM.ByteCode.Parsing
 {
 
-    internal sealed record TypeAnnotationEmptyTargetRecord(byte TargetType) : TypeAnnotationTargetRecord(TargetType)
+    internal sealed record TypeAnnotationEmptyTargetRecord : TypeAnnotationTargetRecord
     {
 
-        public static bool TryRead(ref ClassFormatReader reader, byte targetType, out TypeAnnotationTargetRecord targetInfo)
+        public static bool TryRead(ref ClassFormatReader reader, out TypeAnnotationTargetRecord targetInfo)
         {
-            targetInfo = new TypeAnnotationEmptyTargetRecord(targetType);
+            targetInfo = new TypeAnnotationEmptyTargetRecord();
             return true;
         }
 
         public override int GetSize()
         {
-            return base.GetSize();
+            return 0;
         }
 
         /// <summary>
@@ -22,9 +22,6 @@
         /// <returns></returns>
         public override bool TryWrite(ref ClassFormatWriter writer)
         {
-            if (base.TryWrite(ref writer) == false)
-                return false;
-
             return true;
         }
 

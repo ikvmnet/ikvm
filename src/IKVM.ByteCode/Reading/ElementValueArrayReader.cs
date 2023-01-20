@@ -3,7 +3,7 @@
 namespace IKVM.ByteCode.Reading
 {
 
-    internal sealed class ElementArrayValueReader : ElementValueReader<ElementArrayValueRecord>
+    internal sealed class ElementValueArrayReader : ElementValueReader<ElementValueArrayValueRecord>
     {
 
         ElementValueReaderCollection values;
@@ -13,13 +13,13 @@ namespace IKVM.ByteCode.Reading
         /// </summary>
         /// <param name="declaringClass"></param>
         /// <param name="record"></param>
-        public ElementArrayValueReader(ClassReader declaringClass, ElementArrayValueRecord record) :
+        public ElementValueArrayReader(ClassReader declaringClass, ElementValueRecord record) :
             base(declaringClass, record)
         {
 
         }
 
-        public ElementValueReaderCollection Values => ClassReader.LazyGet(ref values, () => new ElementValueReaderCollection(DeclaringClass, Record.Values));
+        public ElementValueReaderCollection Values => LazyGet(ref values, () => new ElementValueReaderCollection(DeclaringClass, ValueRecord.Values));
 
     }
 

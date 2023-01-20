@@ -16,24 +16,16 @@
 
             var locals = new VerificationTypeInfoRecord[localsCount];
             for (int i = 0; i < localsCount; i++)
-            {
-                if (VerificationTypeInfoRecord.TryReadVerificationTypeInfo(ref reader, out var j) == false)
+                if (VerificationTypeInfoRecord.TryReadVerificationTypeInfo(ref reader, out locals[i]) == false)
                     return false;
-
-                locals[i] = j;
-            }
 
             if (reader.TryReadU2(out ushort stackCount) == false)
                 return false;
 
             var stack = new VerificationTypeInfoRecord[stackCount];
             for (int i = 0; i < stackCount; i++)
-            {
-                if (VerificationTypeInfoRecord.TryReadVerificationTypeInfo(ref reader, out var j) == false)
+                if (VerificationTypeInfoRecord.TryReadVerificationTypeInfo(ref reader, out stack[i]) == false)
                     return false;
-
-                stack[i] = j;
-            }
 
             frame = new FullStackMapFrameRecord(tag, offsetDelta, locals, stack);
             return true;

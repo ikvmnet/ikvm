@@ -3,7 +3,7 @@
 namespace IKVM.ByteCode.Reading
 {
 
-    internal sealed class ElementEnumConstantValueReader : ElementValueReader<ElementEnumConstantValueRecord>
+    internal sealed class ElementValueEnumConstantReader : ElementValueReader<ElementValueEnumConstantValueRecord>
     {
 
         /// <summary>
@@ -11,7 +11,7 @@ namespace IKVM.ByteCode.Reading
         /// </summary>
         /// <param name="declaringClass"></param>
         /// <param name="record"></param>
-        public ElementEnumConstantValueReader(ClassReader declaringClass, ElementEnumConstantValueRecord record) :
+        public ElementValueEnumConstantReader(ClassReader declaringClass, ElementValueRecord record) :
             base(declaringClass, record)
         {
 

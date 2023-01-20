@@ -43,7 +43,7 @@ namespace IKVM.ByteCode.Parsing
             if (next.Length < sizeof(byte))
                 return false;
 
-            BinaryPrimitives.WriteUInt16BigEndian(next, value);
+            next[0] = value;
             next = next.Slice(sizeof(byte));
             size += sizeof(byte);
             return true;

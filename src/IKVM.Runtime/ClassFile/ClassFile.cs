@@ -643,38 +643,38 @@ namespace IKVM.Internal
             {
                 switch (reader)
                 {
-                    case ElementConstantValueReader r when reader.Record.Tag == 'Z':
-                        return classFile.GetConstantPoolConstantInteger(r.Record.ConstantValueIndex) != 0;
-                    case ElementConstantValueReader r when reader.Record.Tag == 'B':
-                        return (byte)classFile.GetConstantPoolConstantInteger(r.Record.ConstantValueIndex);
-                    case ElementConstantValueReader r when reader.Record.Tag == 'C':
-                        return (char)classFile.GetConstantPoolConstantInteger(r.Record.ConstantValueIndex);
-                    case ElementConstantValueReader r when reader.Record.Tag == 'S':
-                        return (short)classFile.GetConstantPoolConstantInteger(r.Record.ConstantValueIndex);
-                    case ElementConstantValueReader r when reader.Record.Tag == 'I':
-                        return classFile.GetConstantPoolConstantInteger(r.Record.ConstantValueIndex);
-                    case ElementConstantValueReader r when reader.Record.Tag == 'F':
-                        return classFile.GetConstantPoolConstantFloat(r.Record.ConstantValueIndex);
-                    case ElementConstantValueReader r when reader.Record.Tag == 'J':
-                        return classFile.GetConstantPoolConstantLong(r.Record.ConstantValueIndex);
-                    case ElementConstantValueReader r when reader.Record.Tag == 'D':
-                        return classFile.GetConstantPoolConstantDouble(r.Record.ConstantValueIndex);
-                    case ElementConstantValueReader r when reader.Record.Tag == 's':
-                        return classFile.GetConstantPoolUtf8String(utf8_cp, r.Record.ConstantValueIndex);
-                    case ElementEnumConstantValueReader r when reader.Record.Tag == 'e':
+                    case ElementValueConstantReader r when r.Value is bool b:
+                        return classFile.GetConstantPoolConstantInteger(r.ValueRecord.Index) != 0;
+                    case ElementValueConstantReader r when r.Value is byte z:
+                        return (byte)classFile.GetConstantPoolConstantInteger(r.ValueRecord.Index);
+                    case ElementValueConstantReader r when r.Value is char c:
+                        return (char)classFile.GetConstantPoolConstantInteger(r.ValueRecord.Index);
+                    case ElementValueConstantReader r when r.Value is short s:
+                        return (short)classFile.GetConstantPoolConstantInteger(r.ValueRecord.Index);
+                    case ElementValueConstantReader r when r.Value is int i:
+                        return classFile.GetConstantPoolConstantInteger(r.ValueRecord.Index);
+                    case ElementValueConstantReader r when r.Value is float f:
+                        return classFile.GetConstantPoolConstantFloat(r.ValueRecord.Index);
+                    case ElementValueConstantReader r when r.Value is long j:
+                        return classFile.GetConstantPoolConstantLong(r.ValueRecord.Index);
+                    case ElementValueConstantReader r when r.Value is double d:
+                        return classFile.GetConstantPoolConstantDouble(r.ValueRecord.Index);
+                    case ElementValueConstantReader r when r.Value is string ss:
+                        return classFile.GetConstantPoolUtf8String(utf8_cp, r.ValueRecord.Index);
+                    case ElementValueEnumConstantReader r:
                         return new object[] {
                             AnnotationDefaultAttribute.TAG_ENUM,
-                            classFile.GetConstantPoolUtf8String(utf8_cp, r.Record.TypeNameIndex),
-                            classFile.GetConstantPoolUtf8String(utf8_cp, r.Record.ConstantNameIndex)
+                            classFile.GetConstantPoolUtf8String(utf8_cp, r.ValueRecord.TypeNameIndex),
+                            classFile.GetConstantPoolUtf8String(utf8_cp, r.ValueRecord.ConstantNameIndex)
                         };
-                    case ElementClassInfoValueReader r when reader.Record.Tag == 'c':
+                    case ElementValueClassReader r:
                         return new object[] {
                             AnnotationDefaultAttribute.TAG_CLASS,
-                            classFile.GetConstantPoolUtf8String(utf8_cp, r.Record.ClassInfoIndex)
+                            classFile.GetConstantPoolUtf8String(utf8_cp, r.ValueRecord.ClassIndex)
                         };
-                    case ElementAnnotationValueReader r when reader.Record.Tag == '@':
+                    case ElementValueAnnotationReader r:
                         return ReadAnnotation(r.Annotation, classFile, utf8_cp);
-                    case ElementArrayValueReader r when reader.Record.Tag == '[':
+                    case ElementValueArrayReader r:
                         var array = new object[r.Values.Count + 1];
                         array[0] = AnnotationDefaultAttribute.TAG_ARRAY;
                         for (int i = 0; i < r.Values.Count; i++)

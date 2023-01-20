@@ -7,7 +7,7 @@ namespace IKVM.ByteCode.Reading
     {
 
         string type;
-        ElementValuePairReaderCollection elements;
+        ElementValueKeyReaderCollection elements;
 
         /// <summary>
         /// Initializes a new instance.
@@ -28,7 +28,7 @@ namespace IKVM.ByteCode.Reading
         /// <summary>
         /// Gets the element values of the annotation.
         /// </summary>
-        public ElementValuePairReaderCollection Elements => LazyGet(ref elements, () => new ElementValuePairReaderCollection(DeclaringClass, Record.Elements));
+        public ElementValueKeyReaderCollection Elements => LazyGet(ref elements, () => new ElementValueKeyReaderCollection(DeclaringClass, Record.Elements));
 
     }
 

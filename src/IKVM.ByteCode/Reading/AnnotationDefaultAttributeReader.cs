@@ -20,7 +20,7 @@ namespace IKVM.ByteCode.Reading
 
         }
 
-        public ElementValueReader DefaultValue => ClassReader.LazyGet(ref defaultValue, () => ElementValueReader.Resolve(DeclaringClass, Record.DefaultValue));
+        public ElementValueReader DefaultValue => LazyGet(ref defaultValue, () => ElementValueReader.Resolve(DeclaringClass, Record.DefaultValue));
 
     }
 

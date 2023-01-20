@@ -3,17 +3,17 @@
 namespace IKVM.ByteCode.Reading
 {
 
-    internal sealed class ElementClassInfoValueReader : ElementValueReader<ElementClassInfoValueRecord>
+    internal sealed class ElementValueAnnotationReader : ElementValueReader<ElementValueAnnotationValueRecord>
     {
 
-        string type;
+        AnnotationReader annotation;
 
         /// <summary>
         /// Initializes a new instance.
         /// </summary>
         /// <param name="declaringClass"></param>
         /// <param name="record"></param>
-        public ElementClassInfoValueReader(ClassReader declaringClass, ElementClassInfoValueRecord record) :
+        public ElementValueAnnotationReader(ClassReader declaringClass, ElementValueRecord record) :
             base(declaringClass, record)
         {
 
@@ -22,7 +22,7 @@ namespace IKVM.ByteCode.Reading
         /// <summary>
         /// Gets the annotation included with this element value.
         /// </summary>
-        public string Type => LazyGet(ref type, () => DeclaringClass.ResolveConstant<Utf8ConstantReader>(Record.ClassInfoIndex).Value);
+        public AnnotationReader Annotation => LazyGet(ref annotation, () => new AnnotationReader(DeclaringClass, ValueRecord.Annotation));
 
     }
 

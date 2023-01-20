@@ -35,6 +35,11 @@ namespace IKVM.ByteCode.Reading
         }
 
         /// <summary>
+        /// Gets the underlying records that make up the list.
+        /// </summary>
+        protected IReadOnlyList<TRecord> Records => records;
+
+        /// <summary>
         /// Creates the appropriate reader.
         /// </summary>
         /// <param name="index"></param>

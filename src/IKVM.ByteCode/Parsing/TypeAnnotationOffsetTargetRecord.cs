@@ -1,24 +1,28 @@
 ﻿namespace IKVM.ByteCode.Parsing
 {
 
-    internal sealed record TypeAnnotationParameterTargetRecord(byte ParameterIndex) : TypeAnnotationTargetRecord
+    internal sealed record TypeAnnotationOffsetTargetRecord(ushort Offset) : TypeAnnotationTargetRecord
     {
 
-        public static bool TryRead(ref ClassFormatReader reader,  out TypeAnnotationTargetRecord targetInfo)
+        public static bool TryRead(ref ClassFormatReader reader, out TypeAnnotationTargetRecord targetInfo)
         {
             targetInfo = null;
 
-            if (reader.TryReadU1(out byte parameterIndex) == false)
+            if (reader.TryReadU2(out ushort offset) == false)
                 return false;
 
-            targetInfo = new TypeAnnotationParameterTargetRecord( parameterIndex);
+            targetInfo = new TypeAnnotationCatchTargetRecord(offset);
             return true;
         }
 
+        /// <summary>
+        /// Gets the size of the record if written.
+        /// </summary>
+        /// <returns></returns>
         public override int GetSize()
         {
             var length = 0;
-            length += sizeof(byte);
+            length += sizeof(ushort);
             return length;
         }
 
@@ -29,7 +33,7 @@
         /// <returns></returns>
         public override bool TryWrite(ref ClassFormatWriter writer)
         {
-            if (writer.TryWriteU1(ParameterIndex) == false)
+            if (writer.TryWriteU2(Offset) == false)
                 return false;
 
             return true;

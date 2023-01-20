@@ -1,12 +1,10 @@
-﻿using System;
-using System.Collections.Generic;
+﻿using System.Collections.Generic;
 using System.IO;
 using System.Linq;
 using System.Threading.Tasks;
 
 using FluentAssertions;
 
-using IKVM.ByteCode.Parsing;
 using IKVM.ByteCode.Reading;
 
 using Microsoft.VisualStudio.TestTools.UnitTesting;
@@ -189,7 +187,7 @@ namespace IKVM.ByteCode.Tests
             TestElementValuePair(annotation.Elements);
         }
 
-        void TestElementValuePair(ElementValuePairReaderCollection elements)
+        void TestElementValuePair(ElementValueKeyReaderCollection elements)
         {
             elements.Count.Should().BeLessThan(256);
 
@@ -207,25 +205,25 @@ namespace IKVM.ByteCode.Tests
 
         void TestElementValue(ElementValueReader value)
         {
-            if (value is ElementAnnotationValueReader elementAnnotationValueReader)
+            if (value is ElementValueAnnotationReader elementAnnotationValueReader)
                 TestElementValue(elementAnnotationValueReader);
-            if (value is ElementArrayValueReader elementArrayValueReader)
+            if (value is ElementValueArrayReader elementArrayValueReader)
                 TestElementValue(elementArrayValueReader);
-            if (value is ElementClassInfoValueReader elementClassInfoValueReader)
+            if (value is ElementValueClassReader elementClassInfoValueReader)
                 TestElementValue(elementClassInfoValueReader);
         }
 
-        void TestElementValue(ElementClassInfoValueReader elementClassInfoValueReader)
+        void TestElementValue(ElementValueClassReader elementClassInfoValueReader)
         {
-            elementClassInfoValueReader.Type.Should().NotBeEmpty();
+            elementClassInfoValueReader.Class.Should().NotBeEmpty();
         }
 
-        void TestElementValue(ElementAnnotationValueReader elementAnnotationValueReader)
+        void TestElementValue(ElementValueAnnotationReader elementAnnotationValueReader)
         {
             TestAnnotation(elementAnnotationValueReader.Annotation);
         }
 
-        void TestElementValue(ElementArrayValueReader elementArrayValueReader)
+        void TestElementValue(ElementValueArrayReader elementArrayValueReader)
         {
             foreach (var value in elementArrayValueReader.Values)
                 TestElementValue(value);

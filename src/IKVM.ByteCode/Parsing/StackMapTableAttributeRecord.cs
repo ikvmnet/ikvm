@@ -13,12 +13,8 @@
 
             var frames = new StackMapFrameRecord[count];
             for (int i = 0; i < count; i++)
-            {
-                if (StackMapFrameRecord.TryRead(ref reader, out var frame) == false)
+                if (StackMapFrameRecord.TryRead(ref reader, out frames[i]) == false)
                     return false;
-
-                frames[i] = frame;
-            }
 
             attribute = new StackMapTableAttributeRecord(frames);
             return true;
