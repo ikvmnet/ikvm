@@ -112,7 +112,7 @@ namespace IKVM.Internal
                             if (attribute is not SignatureAttributeReader signatureAttribute)
                                 throw new ClassFormatError("Invalid Signature attribute type.");
 
-                            signature = classFile.GetConstantPoolUtf8String(utf8_cp, reader.Record.DescriptorIndex);
+                            signature = classFile.GetConstantPoolUtf8String(utf8_cp, signatureAttribute.Record.SignatureIndex);
                             break;
                         case "RuntimeVisibleAnnotations":
                             if (classFile.MajorVersion < 49)

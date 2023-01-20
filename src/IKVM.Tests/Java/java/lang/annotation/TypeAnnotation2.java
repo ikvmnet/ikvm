@@ -1,4 +1,4 @@
-﻿package ikvm.tests.java.lang.annotation;
+package ikvm.tests.java.lang.annotation;
 
 import java.util.*;
 import java.lang.annotation.*;

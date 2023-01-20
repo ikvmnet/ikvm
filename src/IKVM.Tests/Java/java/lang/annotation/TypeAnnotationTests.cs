@@ -5,6 +5,8 @@ using FluentAssertions;
 
 using IKVM.Tests.Util;
 
+using java.lang.reflect;
+
 using Microsoft.VisualStudio.TestTools.UnitTesting;
 
 namespace IKVM.Tests.Java.java.lang.annotation
@@ -20,6 +22,9 @@ namespace IKVM.Tests.Java.java.lang.annotation
                 "TypeAnnotation2",
                 "TypeAnnotationArrayTest",
                 "TypeAnnotationClassTypeVarAndField",
+                "TypeAnnotationNestedTestOuter",
+                "TypeAnnotationNestedTest",
+                "TypeAnnotationWildcardTest"
         };
 
         static readonly string Package = "ikvm.tests.java.lang.annotation";
@@ -32,7 +37,9 @@ namespace IKVM.Tests.Java.java.lang.annotation
         global::java.lang.reflect.Method TypeAnnotation2ValueMethod;
 
         global::java.lang.Class TypeAnnotationArrayTestClass;
+        global::java.lang.Class TypeAnnotationNestedTestClass;
         global::java.lang.Class TypeAnnotationClassTypeVarAndFieldClass;
+        global::java.lang.Class TypeAnnotationWildcardTestClass;
 
 
         /// <summary>
@@ -50,7 +57,11 @@ namespace IKVM.Tests.Java.java.lang.annotation
             TypeAnnotation2ValueMethod = TypeAnnotation2Class.getDeclaredMethod("value");
 
             TypeAnnotationArrayTestClass = c.GetClass("ikvm.tests.java.lang.annotation.TypeAnnotationArrayTest");
+            TypeAnnotationNestedTestClass = c.GetClass("ikvm.tests.java.lang.annotation.TypeAnnotationNestedTest");
             TypeAnnotationClassTypeVarAndFieldClass = c.GetClass("ikvm.tests.java.lang.annotation.TypeAnnotationClassTypeVarAndField");
+            TypeAnnotationWildcardTestClass = c.GetClass("ikvm.tests.java.lang.annotation.TypeAnnotationWildcardTest");
+
+            c.WriteJar(@"C:\Users\jhaltom\out.jar");
         }
 
         [TestMethod]
@@ -91,6 +102,59 @@ namespace IKVM.Tests.Java.java.lang.annotation
             annos3.Length.Should().Be(1);
             annos3[0].annotationType().Should().Be(TypeAnnotation1Class);
             ((string)TypeAnnotation1ValueMethod.invoke(annos3[0])).Should().Be("Object field");
+        }
+
+        [TestMethod]
+        public void TestNested()
+        {
+            var m = TypeAnnotationNestedTestClass.getDeclaredMethod("foo", null);
+            var annos = m.getAnnotatedReturnType().getAnnotations();
+
+            annos.Length.Should().Be(1);
+            annos[0].annotationType().Should().BeSameAs(TypeAnnotation1Class);
+            ((string)TypeAnnotation1ValueMethod.invoke(annos[0])).Should().Be("array");
+
+            var t = m.getAnnotatedReturnType();
+            t = ((AnnotatedArrayType)t).getAnnotatedGenericComponentType();
+            annos = t.getAnnotations();
+            annos.Length.Should().Be(1);
+            annos[0].annotationType().Should().BeSameAs(TypeAnnotation1Class);
+            ((string)TypeAnnotation1ValueMethod.invoke(annos[0])).Should().Be("Inner");
+        }
+
+        /// <summary>
+        /// Tests that we can retrieve the annotations applied to a wildcard parameterized type declaration on a field type.
+        /// Examples:
+        /// public Class<@TypeAnnotation1("1") ? extends @TypeAnnotation1("2") Annotation> f1;
+        /// public Class<@TypeAnnotation1("3") ? super @TypeAnnotation1("4") Annotation> f2;
+        /// </summary>
+        [TestMethod]
+        public void TestWildcardType()
+        {
+            var m = TypeAnnotationWildcardTestClass.getDeclaredMethod("foo", null);
+            var ret = m.getAnnotatedReturnType();
+
+            var t = ((AnnotatedParameterizedType)ret).getAnnotatedActualTypeArguments();
+            t.Length.Should().Be(1);
+            ret = t[0];
+
+            var f = TypeAnnotationWildcardTestClass.getDeclaredField("f1");
+            var w = (AnnotatedWildcardType)((AnnotatedParameterizedType)f.getAnnotatedType()).getAnnotatedActualTypeArguments()[0];
+            t = w.getAnnotatedLowerBounds();
+            t.Length.Should().Be(0);
+            t = w.getAnnotatedUpperBounds();
+            t.Length.Should().Be(1);
+            var annos = t[0].getAnnotations();
+            annos.Length.Should().Be(1);
+            ((string)TypeAnnotation1ValueMethod.invoke(annos[0])).Should().Be("2");
+
+            f = TypeAnnotationWildcardTestClass.getDeclaredField("f2");
+            w = (AnnotatedWildcardType)((AnnotatedParameterizedType)f.getAnnotatedType()).getAnnotatedActualTypeArguments()[0];
+            t = w.getAnnotatedUpperBounds();
+            t.Length.Should().Be(0);
+            t = w.getAnnotatedLowerBounds();
+            t.Length.Should().Be(1);
+
         }
 
     }

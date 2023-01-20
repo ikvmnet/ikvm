@@ -3720,9 +3720,9 @@ namespace IKVM.Internal
                     }
                 }
 
-                if (genericMetaData != null || annotations != null || methodParameters != null || runtimeVisibleTypeAnnotations != null)
+                if (genericMetaData != null || annotations != null || methodParameters != null || runtimeVisibleTypeAnnotations != null || fieldRuntimeVisibleTypeAnnotations != null || methodRuntimeVisibleTypeAnnotations != null)
                 {
-                    var constantPool = runtimeVisibleTypeAnnotations == null ? null : classFile.GetConstantPool();
+                    var constantPool = runtimeVisibleTypeAnnotations != null || fieldRuntimeVisibleTypeAnnotations != null || methodRuntimeVisibleTypeAnnotations != null ? classFile.GetConstantPool() : null;
                     return new Metadata(genericMetaData, annotations, methodParameters, runtimeVisibleTypeAnnotations, fieldRuntimeVisibleTypeAnnotations, methodRuntimeVisibleTypeAnnotations, constantPool);
                 }
 

@@ -1044,14 +1044,11 @@ namespace IKVM.Internal
 
         internal object[] GetConstantPool()
         {
-            object[] cp = new object[constantpool.Length];
+            var cp = new object[constantpool.Length];
             for (int i = 1; i < cp.Length; i++)
-            {
                 if (constantpool[i] != null)
-                {
                     cp[i] = constantpool[i].GetRuntimeValue();
-                }
-            }
+
             return cp;
         }
 

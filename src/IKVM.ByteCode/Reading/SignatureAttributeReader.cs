@@ -6,6 +6,8 @@ namespace IKVM.ByteCode.Reading
     internal class SignatureAttributeReader : AttributeReader<SignatureAttributeRecord>
     {
 
+        string value;
+
         /// <summary>
         /// Initializes a new instance.
         /// </summary>
@@ -17,6 +19,11 @@ namespace IKVM.ByteCode.Reading
         {
 
         }
+
+        /// <summary>
+        /// Gets the signature value.
+        /// </summary>
+        public string Value => LazyGet(ref value, () => DeclaringClass.ResolveConstant<Utf8ConstantReader>(Record.SignatureIndex).Value);
 
     }
 
