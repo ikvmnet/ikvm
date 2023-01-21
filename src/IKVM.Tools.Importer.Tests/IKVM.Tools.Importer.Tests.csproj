@@ -15,9 +15,13 @@
     <ItemGroup Condition="$([MSBuild]::IsTargetFrameworkCompatible('$(TargetFramework)', 'net461'))">
         <PackageReference Include="System.Runtime.CompilerServices.Unsafe" Version="6.0.0" />
     </ItemGroup>
-
+    
     <ItemGroup>
+        <ProjectReference Include="..\IKVM.Runtime\IKVM.Runtime.csproj" />
+        <ProjectReference Include="..\IKVM.Java\IKVM.Java.msbuildproj" />
+        <ProjectReference Include="..\IKVM.Image\IKVM.Image.csproj" />
         <ProjectReference Include="..\IKVM.Tools.Importer\IKVM.Tools.Importer.csproj" />
+        <ProjectReference Include="..\IKVM.Tests.Util\IKVM.Tests.Util.csproj" />
     </ItemGroup>
 
     <ItemGroup>
