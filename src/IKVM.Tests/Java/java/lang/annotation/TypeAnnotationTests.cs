@@ -60,8 +60,6 @@ namespace IKVM.Tests.Java.java.lang.annotation
             TypeAnnotationNestedTestClass = c.GetClass("ikvm.tests.java.lang.annotation.TypeAnnotationNestedTest");
             TypeAnnotationClassTypeVarAndFieldClass = c.GetClass("ikvm.tests.java.lang.annotation.TypeAnnotationClassTypeVarAndField");
             TypeAnnotationWildcardTestClass = c.GetClass("ikvm.tests.java.lang.annotation.TypeAnnotationWildcardTest");
-
-            c.WriteJar(@"C:\Users\jhaltom\out.jar");
         }
 
         [TestMethod]
