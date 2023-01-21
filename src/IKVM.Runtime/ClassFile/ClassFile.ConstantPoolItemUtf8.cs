@@ -26,23 +26,23 @@ namespace IKVM.Internal
 {
 
     sealed partial class ClassFile
-	{
+    {
         // this is only used to copy strings into "constantpool" when we see a RuntimeVisibleTypeAnnotations attribute,
         // because we need a consistent way of exposing constant pool items to the runtime and that case
         private sealed class ConstantPoolItemUtf8 : ConstantPoolItem
-		{
-			private readonly string str;
+        {
+            private readonly string str;
 
-			internal ConstantPoolItemUtf8(string str)
-			{
-				this.str = str;
-			}
+            internal ConstantPoolItemUtf8(string str)
+            {
+                this.str = str;
+            }
 
-			internal override object GetRuntimeValue()
-			{
-				return str;
-			}
-		}
-	}
+            internal override object GetRuntimeValue()
+            {
+                return str;
+            }
+        }
+    }
 
 }

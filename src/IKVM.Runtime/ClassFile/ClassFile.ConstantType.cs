@@ -26,19 +26,19 @@ namespace IKVM.Internal
 {
 
     sealed partial class ClassFile
-	{
+    {
         internal enum ConstantType
-		{
-			Integer,
-			Long,
-			Float,
-			Double,
-			String,
-			Class,
-			MethodHandle,
-			MethodType,
-			LiveObject,		// used by anonymous class constant pool patching
-		}
-	}
+        {
+            Integer,
+            Long,
+            Float,
+            Double,
+            String,
+            Class,
+            MethodHandle,
+            MethodType,
+            LiveObject,     // used by anonymous class constant pool patching
+        }
+    }
 
 }

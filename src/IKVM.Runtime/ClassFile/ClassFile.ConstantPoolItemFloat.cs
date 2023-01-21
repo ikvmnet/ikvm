@@ -22,38 +22,39 @@
   
 */
 
+using IKVM.ByteCode.Reading;
+
 namespace IKVM.Internal
 {
 
     sealed partial class ClassFile
-	{
-        private sealed class ConstantPoolItemFloat : ConstantPoolItem
-		{
-			internal float v;
+    {
 
-			internal ConstantPoolItemFloat(BigEndianBinaryReader br)
-			{
-				v = br.ReadSingle();
-			}
+        sealed class ConstantPoolItemFloat : ConstantPoolItem
+        {
 
-			internal override ConstantType GetConstantType()
-			{
-				return ConstantType.Float;
-			}
+            internal float v;
 
-			internal float Value
-			{
-				get
-				{
-					return v;
-				}
-			}
+            /// <summary>
+            /// Initializes a new instance.
+            /// </summary>
+            /// <param name="reader"></param>
+            internal ConstantPoolItemFloat(FloatConstantReader reader)
+            {
+                v = reader.Value;
+            }
 
-			internal override object GetRuntimeValue()
-			{
-				return v;
-			}
-		}
-	}
+            internal override ConstantType GetConstantType()
+            {
+                return ConstantType.Float;
+            }
+
+            internal float Value => v;
+
+            internal override object GetRuntimeValue() => v;
+
+        }
+
+    }
 
 }

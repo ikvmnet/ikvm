@@ -26,33 +26,33 @@ namespace IKVM.Internal
 {
 
     sealed partial class ClassFile
-	{
+    {
         internal struct BootstrapMethod
-		{
-			private ushort bsm_index;
-			private ushort[] args;
+        {
+            private ushort bsm_index;
+            private ushort[] args;
 
-			internal BootstrapMethod(ushort bsm_index, ushort[] args)
-			{
-				this.bsm_index = bsm_index;
-				this.args = args;
-			}
+            internal BootstrapMethod(ushort bsm_index, ushort[] args)
+            {
+                this.bsm_index = bsm_index;
+                this.args = args;
+            }
 
-			internal int BootstrapMethodIndex
-			{
-				get { return bsm_index; }
-			}
+            internal int BootstrapMethodIndex
+            {
+                get { return bsm_index; }
+            }
 
-			internal int ArgumentCount
-			{
-				get { return args.Length; }
-			}
+            internal int ArgumentCount
+            {
+                get { return args.Length; }
+            }
 
-			internal int GetArgument(int index)
-			{
-				return args[index];
-			}
-		}
-	}
+            internal int GetArgument(int index)
+            {
+                return args[index];
+            }
+        }
+    }
 
 }

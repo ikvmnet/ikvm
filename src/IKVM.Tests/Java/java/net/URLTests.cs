@@ -1,9 +1,8 @@
 ﻿using System.Text;
+
 using FluentAssertions;
 
 using Microsoft.VisualStudio.TestTools.UnitTesting;
-
-using System.Text.Json.Nodes;
 
 namespace IKVM.Tests.Java.java.net
 {
@@ -11,6 +10,42 @@ namespace IKVM.Tests.Java.java.net
     [TestClass]
     public class URLTests
     {
+
+        [TestMethod]
+        public void CanCreateHttpURL()
+        {
+            var u = new global::java.net.URL("http://www.site.com/");
+            u.getProtocol().Should().Be("http");
+            u.getHost().Should().Be("www.site.com");
+            u.getPath().Should().Be("/");
+        }
+
+        [TestMethod]
+        public void CanCreateHttpsURL()
+        {
+            var u = new global::java.net.URL("https://www.site.com/");
+            u.getProtocol().Should().Be("https");
+            u.getHost().Should().Be("www.site.com");
+            u.getPath().Should().Be("/");
+        }
+
+        [TestMethod]
+        public void CanCreateWindowsFileURL()
+        {
+            var u = new global::java.net.URL("file:///c:/dir");
+            u.getProtocol().Should().Be("file");
+            u.getHost().Should().Be("");
+            u.getPath().Should().Be("/c:/dir");
+        }
+
+        [TestMethod]
+        public void CanCreateUnixFileURL()
+        {
+            var u = new global::java.net.URL("file:///tmp/foo");
+            u.getProtocol().Should().Be("file");
+            u.getHost().Should().Be("");
+            u.getPath().Should().Be("/tmp/foo");
+        }
 
         [TestMethod]
         public void CanGetFromPlainURL()

@@ -29,14 +29,22 @@ using Type = IKVM.Reflection.Type;
 
 namespace IKVM.Attributes
 {
-    [AttributeUsage(AttributeTargets.Method | AttributeTargets.Constructor | AttributeTargets.Field)]
-	public sealed class RuntimeVisibleTypeAnnotationsAttribute : Attribute
-	{
-		internal readonly byte[] data;
 
-		public RuntimeVisibleTypeAnnotationsAttribute(byte[] data)
-		{
-			this.data = data;
-		}
-	}
+    [AttributeUsage(AttributeTargets.Method | AttributeTargets.Constructor | AttributeTargets.Field)]
+    public sealed class RuntimeVisibleTypeAnnotationsAttribute : Attribute
+    {
+
+        internal readonly byte[] data;
+
+        /// <summary>
+        /// Initializes a new instance.
+        /// </summary>
+        /// <param name="data"></param>
+        public RuntimeVisibleTypeAnnotationsAttribute(byte[] data)
+        {
+            this.data = data;
+        }
+
+    }
+
 }

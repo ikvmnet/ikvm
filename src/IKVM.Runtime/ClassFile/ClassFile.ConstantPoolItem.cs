@@ -27,33 +27,33 @@ namespace IKVM.Internal
 {
 
     sealed partial class ClassFile
-	{
+    {
         internal abstract class ConstantPoolItem
-		{
-			internal virtual void Resolve(ClassFile classFile, string[] utf8_cp, ClassFileParseOptions options)
-			{
-			}
+        {
+            internal virtual void Resolve(ClassFile classFile, string[] utf8_cp, ClassFileParseOptions options)
+            {
+            }
 
-			internal virtual void Link(TypeWrapper thisType, LoadMode mode)
-			{
-			}
+            internal virtual void Link(TypeWrapper thisType, LoadMode mode)
+            {
+            }
 
-			internal virtual ConstantType GetConstantType()
-			{
-				throw new InvalidOperationException();
-			}
+            internal virtual ConstantType GetConstantType()
+            {
+                throw new InvalidOperationException();
+            }
 
-			internal virtual void MarkLinkRequired()
-			{
-			}
+            internal virtual void MarkLinkRequired()
+            {
+            }
 
-			// this is used for sun.reflect.ConstantPool
-			// it returns a boxed System.Int32, System.Int64, System.Float, System.Double or a string
-			internal virtual object GetRuntimeValue()
-			{
-				return null;
-			}
-		}
-	}
+            // this is used for sun.reflect.ConstantPool
+            // it returns a boxed System.Int32, System.Int64, System.Float, System.Double or a string
+            internal virtual object GetRuntimeValue()
+            {
+                return null;
+            }
+        }
+    }
 
 }

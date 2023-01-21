@@ -29,6 +29,7 @@ using System.Runtime.InteropServices;
 using System.Threading;
 
 using IKVM.Attributes;
+using IKVM.ByteCode;
 using IKVM.Internal;
 using IKVM.Java.Externs.java.lang.invoke;
 
@@ -349,19 +350,19 @@ namespace IKVM.Runtime
             global::java.lang.Class refc = LoadTypeWrapper(clazz, callerID).ClassObject;
             try
             {
-                switch ((ClassFile.RefKind)kind)
+                switch ((ReferenceKind)kind)
                 {
-                    case ClassFile.RefKind.getStatic:
-                    case ClassFile.RefKind.putStatic:
-                    case ClassFile.RefKind.getField:
-                    case ClassFile.RefKind.putField:
+                    case ReferenceKind.GetStatic:
+                    case ReferenceKind.PutStatic:
+                    case ReferenceKind.GetField:
+                    case ReferenceKind.PutField:
                         global::java.lang.Class type = ClassLoaderWrapper.FromCallerID(callerID).FieldTypeWrapperFromSig(sig, LoadMode.LoadOrThrow).ClassObject;
                         return global::java.lang.invoke.MethodHandleNatives.linkMethodHandleConstant(callerID.getCallerClass(), kind, refc, name, type);
                     default:
                         global::java.lang.invoke.MethodType mt = null;
                         DynamicLoadMethodType(ref mt, sig, callerID);
                         // HACK linkMethodHandleConstant is broken for MethodHandle.invoke[Exact]
-                        if (kind == (int)ClassFile.RefKind.invokeVirtual && refc == CoreClasses.java.lang.invoke.MethodHandle.Wrapper.ClassObject)
+                        if (kind == (int)ReferenceKind.InvokeVirtual && refc == CoreClasses.java.lang.invoke.MethodHandle.Wrapper.ClassObject)
                         {
                             switch (name)
                             {

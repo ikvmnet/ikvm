@@ -2,15 +2,14 @@ using System;
 using System.IO;
 using System.Linq;
 using System.Runtime.InteropServices;
+using System.Threading;
+using System.Threading.Tasks;
 
 using FluentAssertions;
 
 using IKVM.Tests.Util;
 
 using Microsoft.VisualStudio.TestTools.UnitTesting;
-
-using System.Threading;
-using System.Threading.Tasks;
 
 #if NETCOREAPP
 using Microsoft.Extensions.DependencyModel;
@@ -44,7 +43,6 @@ namespace IKVM.Tools.Importer.Tests
             ret.Should().Be(0);
             File.Exists(asm).Should().BeTrue();
         }
-
     }
 
 }

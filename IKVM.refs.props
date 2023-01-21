@@ -1,6 +1,10 @@
 <Project>
 
     <ItemGroup>
+        <ProjectReference Include="$(MSBuildThisFileDirectory)src\IKVM.ByteCode\IKVM.ByteCode.csproj">
+            <ReferenceOutputAssembly>true</ReferenceOutputAssembly>
+            <PrivateAssets>all</PrivateAssets>
+        </ProjectReference>
         <ProjectReference Include="$(MSBuildThisFileDirectory)src\IKVM.Java\IKVM.Java.msbuildproj">
             <ReferenceOutputAssembly>true</ReferenceOutputAssembly>
             <PrivateAssets>all</PrivateAssets>

@@ -27,14 +27,14 @@ namespace IKVM.Internal
 {
 
     sealed partial class ClassFile
-	{
+    {
         internal struct InnerClass
-		{
-			internal ushort innerClass;		// ConstantPoolItemClass
-			internal ushort outerClass;		// ConstantPoolItemClass
-			internal ushort name;			// ConstantPoolItemUtf8
-			internal Modifiers accessFlags;
-		}
-	}
+        {
+            internal ushort innerClass;     // ConstantPoolItemClass
+            internal ushort outerClass;     // ConstantPoolItemClass
+            internal ushort name;           // ConstantPoolItemUtf8
+            internal Modifiers accessFlags;
+        }
+    }
 
 }

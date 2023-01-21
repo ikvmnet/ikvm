@@ -22,39 +22,40 @@
   
 */
 
+using IKVM.ByteCode.Reading;
+
 namespace IKVM.Internal
 {
 
     sealed partial class ClassFile
-	{
-        private sealed class ConstantPoolItemString : ConstantPoolItem
-		{
-			private ushort string_index;
-			private string s;
+    {
 
-			internal ConstantPoolItemString(BigEndianBinaryReader br)
-			{
-				string_index = br.ReadUInt16();
-			}
+        sealed class ConstantPoolItemString : ConstantPoolItem
+        {
 
-			internal override void Resolve(ClassFile classFile, string[] utf8_cp, ClassFileParseOptions options)
-			{
-				s = classFile.GetConstantPoolUtf8String(utf8_cp, string_index);
-			}
+            readonly ushort valueIndex;
+            string s;
 
-			internal override ConstantType GetConstantType()
-			{
-				return ConstantType.String;
-			}
+            /// <summary>
+            /// Initializes a new instance.
+            /// </summary>
+            /// <param name="reader"></param>
+            internal ConstantPoolItemString(StringConstantReader reader)
+            {
+                valueIndex = reader.Record.ValueIndex;
+            }
 
-			internal string Value
-			{
-				get
-				{
-					return s;
-				}
-			}
-		}
-	}
+            internal override void Resolve(ClassFile classFile, string[] utf8_cp, ClassFileParseOptions options)
+            {
+                s = classFile.GetConstantPoolUtf8String(utf8_cp, valueIndex);
+            }
+
+            internal override ConstantType GetConstantType() => ConstantType.String;
+
+            internal string Value => s;
+
+        }
+
+    }
 
 }

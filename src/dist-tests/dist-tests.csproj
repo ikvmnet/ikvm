@@ -7,6 +7,8 @@
     </PropertyGroup>
 
     <ItemGroup>
+        <TestTarget Include="IKVM.ByteCode.Tests|net461" ProjectName="IKVM.ByteCode.Tests" TargetFramework="net461" />
+        <TestTarget Include="IKVM.ByteCode.Tests|netcoreapp3.1" ProjectName="IKVM.ByteCode.Tests" TargetFramework="netcoreapp3.1" />
         <TestTarget Include="IKVM.Tests|net461" ProjectName="IKVM.Tests" TargetFramework="net461" />
         <TestTarget Include="IKVM.Tests|netcoreapp3.1" ProjectName="IKVM.Tests" TargetFramework="netcoreapp3.1" />
         <TestTarget Include="IKVM.Tests|net6.0" ProjectName="IKVM.Tests" TargetFramework="net6.0" />
