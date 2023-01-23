@@ -8,7 +8,7 @@ namespace IKVM.ByteCode.Reading
     internal sealed class TypeAnnotationReader : ReaderBase<TypeAnnotationRecord>
     {
 
-        string type;
+        Utf8ConstantReader type;
         ElementValueKeyReaderCollection elements;
 
         /// <summary>
@@ -25,7 +25,7 @@ namespace IKVM.ByteCode.Reading
         /// <summary>
         /// Gets the type of the annotation.
         /// </summary>
-        public string Type => LazyGet(ref type, () => DeclaringClass.ResolveConstant<Utf8ConstantReader>(Record.TypeIndex).Value);
+        public Utf8ConstantReader Type => LazyGet(ref type, () => DeclaringClass.Constants.Get<Utf8ConstantReader>(Record.TypeIndex));
 
         /// <summary>
         /// Gets the element values of the annotation.

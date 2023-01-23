@@ -1,10 +1,15 @@
 ﻿using IKVM.ByteCode.Parsing;
 
+using static IKVM.ByteCode.Util;
+
 namespace IKVM.ByteCode.Reading
 {
 
     internal sealed class ElementValueEnumConstantReader : ElementValueReader<ElementValueEnumConstantValueRecord>
     {
+
+        Utf8ConstantReader typeName;
+        Utf8ConstantReader constantName;
 
         /// <summary>
         /// Initializes a new instance.
@@ -16,6 +21,10 @@ namespace IKVM.ByteCode.Reading
         {
 
         }
+
+        public Utf8ConstantReader TypeName => LazyGet(ref typeName, () => DeclaringClass.Constants.Get<Utf8ConstantReader>(ValueRecord.TypeNameIndex));
+
+        public Utf8ConstantReader ConstantName => LazyGet(ref constantName, () => DeclaringClass.Constants.Get<Utf8ConstantReader>(ValueRecord.ConstantNameIndex));
 
     }
 

@@ -49,12 +49,12 @@ namespace IKVM.ByteCode.Reading
         protected abstract TReader CreateReader(int index, TRecord record);
 
         /// <summary>
-        /// Gets the key for the given record.
+        /// Gets the name for the given record.
         /// </summary>
         /// <param name="index"></param>
         /// <param name="record"></param>
         /// <returns></returns>
-        protected abstract string GetKey(int index, TRecord record);
+        protected abstract string GetName(int index, TRecord record);
 
         /// <summary>
         /// Resolves the specified reader at the given index.
@@ -98,7 +98,7 @@ namespace IKVM.ByteCode.Reading
                 return name;
 
             // atomic set, only one winner
-            Interlocked.CompareExchange(ref names[index], GetKey(index, records[index]), null);
+            Interlocked.CompareExchange(ref names[index], GetName(index, records[index]), null);
             return names[index];
         }
 
@@ -146,7 +146,7 @@ namespace IKVM.ByteCode.Reading
         /// <summary>
         /// Attempts to get the value at the specified index, or returns the default value if out of range.
         /// </summary>
-        /// <param name="index"></param>
+        /// <param name="name"></param>
         /// <param name="value"></param>
         /// <returns></returns>
         public bool TryGet(string name, out TReader value) => (value = Enumerable.Range(minIndex, records.Length).Where(i => ResolveName(i) == name).Select(ResolveReader).FirstOrDefault()) != null;
@@ -162,13 +162,19 @@ namespace IKVM.ByteCode.Reading
         /// Gets an enumerator over each reader.
         /// </summary>
         /// <returns></returns>
-        public IEnumerator<KeyValuePair<string, TReader>> GetEnumerator() => Enumerable.Range(minIndex, records.Length).Select(i => new KeyValuePair<string, TReader>(ResolveName(i), ResolveReader(i))).GetEnumerator();
+        public IEnumerator<TReader> GetEnumerator() => Enumerable.Range(minIndex, records.Length).Select(i => this[i]).GetEnumerator();
 
         /// <summary>
         /// Gets an enumerator over each reader.
         /// </summary>
         /// <returns></returns>
         IEnumerator IEnumerable.GetEnumerator() => GetEnumerator();
+
+        /// <summary>
+        /// Gets an enumerator over each reader.
+        /// </summary>
+        /// <returns></returns>
+        IEnumerator<KeyValuePair<string, TReader>> IEnumerable<KeyValuePair<string, TReader>>.GetEnumerator() => Enumerable.Range(minIndex, records.Length).Select(i => new KeyValuePair<string, TReader>(ResolveName(i), ResolveReader(i))).GetEnumerator();
 
         /// <summary>
         /// Gets all of the available keys.

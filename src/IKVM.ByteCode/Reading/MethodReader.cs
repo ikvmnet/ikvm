@@ -26,22 +26,22 @@ namespace IKVM.ByteCode.Reading
         /// <summary>
         /// Gets the access flags of the method.
         /// </summary>
-        public AccessFlag AccessFlags => Record.AccessFlags;
+        public override AccessFlag AccessFlags => Record.AccessFlags;
 
         /// <summary>
         /// Gets the name of the method.
         /// </summary>
-        public Utf8ConstantReader Name => LazyGet(ref name, () => DeclaringClass.ResolveConstant<Utf8ConstantReader>(Record.NameIndex));
+        public override Utf8ConstantReader Name => LazyGet(ref name, () => DeclaringClass.Constants.Get<Utf8ConstantReader>(Record.NameIndex));
 
         /// <summary>
         /// Gets the descriptor of the method.
         /// </summary>
-        public Utf8ConstantReader Descriptor => LazyGet(ref descriptor, () => DeclaringClass.ResolveConstant<Utf8ConstantReader>(Record.DescriptorIndex));
+        public override Utf8ConstantReader Descriptor => LazyGet(ref descriptor, () => DeclaringClass.Constants.Get<Utf8ConstantReader>(Record.DescriptorIndex));
 
         /// <summary>
         /// Gets the attributes of the method.
         /// </summary>
-        public AttributeReaderCollection Attributes => LazyGet(ref attributes, () => new AttributeReaderCollection(DeclaringClass, Record.Attributes));
+        public override AttributeReaderCollection Attributes => LazyGet(ref attributes, () => new AttributeReaderCollection(DeclaringClass, Record.Attributes));
 
     }
 

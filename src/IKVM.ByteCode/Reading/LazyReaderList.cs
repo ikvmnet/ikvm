@@ -87,27 +87,10 @@ namespace IKVM.ByteCode.Reading
         public int Count => records.Length;
 
         /// <summary>
-        /// Attempts to get the value at the specified index, or returns the default value if out of range.
-        /// </summary>
-        /// <param name="index"></param>
-        /// <param name="value"></param>
-        /// <returns></returns>
-        public bool TryGet(int index, out TReader value)
-        {
-            value = default;
-
-            if (index < minIndex || index >= records.Length)
-                return false;
-
-            value = this[index];
-            return true;
-        }
-
-        /// <summary>
         /// Gets an enumerator over each reader.
         /// </summary>
         /// <returns></returns>
-        public IEnumerator<TReader> GetEnumerator() => Enumerable.Range(0, records.Length).Select(i => TryGet(i, out var v) ? v : null).GetEnumerator();
+        public IEnumerator<TReader> GetEnumerator() => Enumerable.Range(0, records.Length).Select(i => this[i]).GetEnumerator();
 
         /// <summary>
         /// Gets an enumerator over each reader.

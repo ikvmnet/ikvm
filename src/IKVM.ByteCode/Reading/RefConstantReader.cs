@@ -36,12 +36,12 @@ namespace IKVM.ByteCode.Reading
         /// <summary>
         /// Gets the class name of the reference.
         /// </summary>
-        public ClassConstantReader Class => LazyGet(ref clazz, () => DeclaringClass.ResolveConstant<ClassConstantReader>(Record.ClassIndex));
+        public ClassConstantReader Class => LazyGet(ref clazz, () => DeclaringClass.Constants.Get<ClassConstantReader>(Record.ClassIndex));
 
         /// <summary>
         /// Gets the name and type of the reference.
         /// </summary>
-        public NameAndTypeConstantReader NameAndType => LazyGet(ref name, () => DeclaringClass.ResolveConstant<NameAndTypeConstantReader>(Record.NameAndTypeIndex));
+        public NameAndTypeConstantReader NameAndType => LazyGet(ref name, () => DeclaringClass.Constants.Get<NameAndTypeConstantReader>(Record.NameAndTypeIndex));
 
     }
 

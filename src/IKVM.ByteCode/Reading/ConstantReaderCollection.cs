@@ -18,9 +18,8 @@ namespace IKVM.ByteCode.Reading
         /// </summary>
         /// <param name="declaringClass"></param>
         /// <param name="records"></param>
-        /// <param name="overrides"></param>
         internal ConstantReaderCollection(ClassReader declaringClass, ConstantRecord[] records) :
-            base(declaringClass, records, 1)
+            base(declaringClass, records, 0)
         {
             this.declaringClass = declaringClass ?? throw new ArgumentNullException(nameof(declaringClass));
         }
@@ -43,21 +42,22 @@ namespace IKVM.ByteCode.Reading
         /// <param name="index"></param>
         /// <param name="reader"></param>
         /// <returns></returns>
-        public bool TryGet<TReader>(int index, out TReader reader)
+        public TReader Get<TReader>(int index)
             where TReader : class, IConstantReader
         {
-            if (base.TryGet(index, out var reader2))
+            if (index == 0)
+                return null;
+
+            try
             {
-                if (reader2 is not TReader reader3)
-                    throw new ByteCodeException($"Invalid constant resolution. Reader at index {index} is not a {typeof(TReader).Name}.");
-
-                reader = reader3;
-                return true;
+                return this[index] as TReader ?? throw new ByteCodeException($"Invalid constant resolution. Reader at index {index} is not a {typeof(TReader).Name}.");
             }
-
-            reader = null;
-            return false;
+            catch (ArgumentOutOfRangeException e)
+            {
+                throw new ByteCodeException($"Invalid constant resolution. Reader at index {index} is not valid.", e);
+            }
         }
+
     }
 
 }

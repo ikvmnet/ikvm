@@ -1,10 +1,12 @@
-﻿using System.Collections.Generic;
+﻿using System;
+using System.Collections.Generic;
 using System.IO;
 using System.Linq;
 using System.Threading.Tasks;
 
 using FluentAssertions;
 
+using IKVM.ByteCode.Parsing;
 using IKVM.ByteCode.Reading;
 
 using Microsoft.VisualStudio.TestTools.UnitTesting;
@@ -76,16 +78,17 @@ namespace IKVM.ByteCode.Tests
                 c.Methods.Should().OnlyHaveUniqueItems();
 
                 foreach (var iface in c.Interfaces)
-                    iface.Class.Should().NotBeNull();
+                    iface.Class.Name.Value.Should().NotBeNull();
 
                 foreach (var field in c.Fields)
                 {
-                    field.Name.Should().NotBeNull();
-                    field.Descriptor.Should().NotBeNull();
+                    field.Should().NotBeNull();
+                    field.Name.Value.Should().NotBeNull();
+                    field.Descriptor.Value.Should().NotBeNull();
                     field.Attributes.ToList();
 
                     foreach (var attribute in field.Attributes)
-                        attribute.Name.Should().NotBeNull();
+                        TestAttribute(attribute);
                 }
 
                 foreach (var method in c.Methods)
@@ -95,9 +98,10 @@ namespace IKVM.ByteCode.Tests
                     method.Attributes.ToList();
 
                     foreach (var attribute in method.Attributes)
-                        attribute.Name.Should().NotBeNull();
+                        TestAttribute(attribute);
                 }
 
+                c.Attributes.ToList();
                 foreach (var attribute in c.Attributes)
                     TestAttribute(attribute);
             }
@@ -105,8 +109,22 @@ namespace IKVM.ByteCode.Tests
 
         void TestConstant(IConstantReader constant)
         {
+            if (constant is Utf8ConstantReader utf8)
+                TestConstant(utf8);
+            if (constant is IntegerConstantReader integer)
+                TestConstant(integer);
             if (constant is MethodHandleConstantReader methodHandle)
                 TestConstant(methodHandle);
+        }
+
+        void TestConstant(Utf8ConstantReader utf8)
+        {
+            utf8.Value.Should().NotBeNull();
+        }
+
+        void TestConstant(IntegerConstantReader integer)
+        {
+            integer.Value.GetType().Should().Be(typeof(int));
         }
 
         void TestConstant(MethodHandleConstantReader methodHandle)
@@ -141,25 +159,25 @@ namespace IKVM.ByteCode.Tests
 
         void TestAttribute(RuntimeVisibleAnnotationsAttributeReader attribute)
         {
-            attribute.Name.Should().NotBeEmpty();
+            attribute.Info.Name.Value.Should().NotBeEmpty();
             TestAnnotations(attribute.Annotations);
         }
 
         void TestAttribute(RuntimeInvisibleAnnotationsAttributeReader attribute)
         {
-            attribute.Name.Should().NotBeEmpty();
+            attribute.Info.Name.Value.Should().NotBeEmpty();
             TestAnnotations(attribute.Annotations);
         }
 
         void TestAttribute(RuntimeVisibleTypeAnnotationsAttributeReader attribute)
         {
-            attribute.Name.Should().NotBeEmpty();
+            attribute.Info.Name.Value.Should().NotBeEmpty();
             TestAnnotations(attribute.Annotations);
         }
 
         void TestAttribute(RuntimeInvisibleTypeAnnotationsAttributeReader attribute)
         {
-            attribute.Name.Should().NotBeEmpty();
+            attribute.Info.Name.Value.Should().NotBeEmpty();
             TestAnnotations(attribute.Annotations);
         }
 
@@ -177,13 +195,13 @@ namespace IKVM.ByteCode.Tests
 
         void TestAnnotation(AnnotationReader annotation)
         {
-            annotation.Type.Should().NotBeEmpty();
+            annotation.Type.Value.Should().NotBeEmpty();
             TestElementValuePair(annotation.Elements);
         }
 
         void TestAnnotation(TypeAnnotationReader annotation)
         {
-            annotation.Type.Should().NotBeEmpty();
+            annotation.Type.Value.Should().NotBeEmpty();
             TestElementValuePair(annotation.Elements);
         }
 
@@ -205,6 +223,8 @@ namespace IKVM.ByteCode.Tests
 
         void TestElementValue(ElementValueReader value)
         {
+            if (value is ElementValueConstantReader elementValueConstantReader)
+                TestElementValue(elementValueConstantReader);
             if (value is ElementValueAnnotationReader elementAnnotationValueReader)
                 TestElementValue(elementAnnotationValueReader);
             if (value is ElementValueArrayReader elementArrayValueReader)
@@ -213,9 +233,16 @@ namespace IKVM.ByteCode.Tests
                 TestElementValue(elementClassInfoValueReader);
         }
 
+        void TestElementValue(ElementValueConstantReader elementValueConstantReader)
+        {
+            Enum.GetName(typeof(ElementValueTag), elementValueConstantReader.Tag).Should().NotBeNullOrEmpty();
+            elementValueConstantReader.Value.Should().NotBeNull();
+            TestConstant(elementValueConstantReader.Value);
+        }
+
         void TestElementValue(ElementValueClassReader elementClassInfoValueReader)
         {
-            elementClassInfoValueReader.Class.Should().NotBeEmpty();
+            elementClassInfoValueReader.Class.Value.Should().NotBeEmpty();
         }
 
         void TestElementValue(ElementValueAnnotationReader elementAnnotationValueReader)

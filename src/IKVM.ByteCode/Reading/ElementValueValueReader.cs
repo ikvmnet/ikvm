@@ -17,11 +17,11 @@ namespace IKVM.ByteCode.Reading
         /// <exception cref="ByteCodeException"></exception>
         public static ElementValueReader Resolve(ClassReader declaringClass, ElementValueRecord record) => record.Value switch
         {
-            ElementValueAnnotationValueRecord r => new ElementValueAnnotationReader(declaringClass, record),
-            ElementValueArrayValueRecord r => new ElementValueArrayReader(declaringClass, record),
-            ElementValueClassValueRecord r => new ElementValueClassReader(declaringClass, record),
-            ElementValueConstantValueRecord r => new ElementValueConstantReader(declaringClass, record),
-            ElementValueEnumConstantValueRecord r => new ElementValueEnumConstantReader(declaringClass, record),
+            ElementValueAnnotationValueRecord => new ElementValueAnnotationReader(declaringClass, record),
+            ElementValueArrayValueRecord => new ElementValueArrayReader(declaringClass, record),
+            ElementValueClassValueRecord => new ElementValueClassReader(declaringClass, record),
+            ElementValueConstantValueRecord => new ElementValueConstantReader(declaringClass, record),
+            ElementValueEnumConstantValueRecord => new ElementValueEnumConstantReader(declaringClass, record),
             _ => throw new ByteCodeException("Cannot resolve element value reader."),
         };
 

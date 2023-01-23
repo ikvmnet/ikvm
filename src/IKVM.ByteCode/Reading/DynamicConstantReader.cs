@@ -23,7 +23,7 @@ namespace IKVM.ByteCode.Reading
 
         public ushort BootstrapMethodAttributeIndex => Record.BootstrapMethodAttributeIndex;
 
-        public NameAndTypeConstantReader NameAndType => LazyGet(ref nameAndType, () => DeclaringClass.ResolveConstant<NameAndTypeConstantReader>(Record.NameAndTypeIndex));
+        public NameAndTypeConstantReader NameAndType => LazyGet(ref nameAndType, () => DeclaringClass.Constants.Get<NameAndTypeConstantReader>(Record.NameAndTypeIndex));
 
         public override bool IsLoadable => DeclaringClass.Version >= new ClassFormatVersion(55, 0);
 

@@ -27,7 +27,7 @@ namespace IKVM.ByteCode.Reading
         /// <summary>
         /// Gets the names of the exceptions.
         /// </summary>
-        public IReadOnlyList<ClassConstantReader> Exceptions => LazyGet(ref exceptions, () => new DelegateLazyReaderList<ClassConstantReader, ushort>(DeclaringClass, Record.ExceptionsIndexes, (_, index) => DeclaringClass.ResolveConstant<ClassConstantReader>(index)));
+        public IReadOnlyList<ClassConstantReader> Exceptions => LazyGet(ref exceptions, () => new DelegateLazyReaderList<ClassConstantReader, ushort>(DeclaringClass, Record.ExceptionsIndexes, (_, index) => DeclaringClass.Constants.Get<ClassConstantReader>(index)));
 
     }
 

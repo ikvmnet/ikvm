@@ -220,12 +220,12 @@ namespace IKVM.ByteCode.Reading
         /// <summary>
         /// Gets the name of the class.
         /// </summary>
-        public ClassConstantReader This => LazyGet(ref @this, () => ResolveConstant<ClassConstantReader>(Record.ThisClassIndex));
+        public ClassConstantReader This => LazyGet(ref @this, () => Constants.Get<ClassConstantReader>(Record.ThisClassIndex));
 
         /// <summary>
         /// Gets the name of the super class.
         /// </summary>
-        public ClassConstantReader Super => LazyGet(ref super, () => ResolveConstant<ClassConstantReader>(Record.SuperClassIndex));
+        public ClassConstantReader Super => LazyGet(ref super, () => Constants.Get<ClassConstantReader>(Record.SuperClassIndex));
 
         /// <summary>
         /// Gets the set of the interfaces implemented by this class.
@@ -246,18 +246,6 @@ namespace IKVM.ByteCode.Reading
         /// Gets the dictionary of attributes declared by the class.
         /// </summary>
         public AttributeReaderCollection Attributes => LazyGet(ref attributes, () => new AttributeReaderCollection(this, Record.Attributes));
-
-        /// <summary>
-        /// Resolves the constant of the specified value.
-        /// </summary>
-        /// <typeparam name="TConstant"></typeparam>
-        /// <param name="index"></param>
-        /// <returns></returns>
-        internal TConstant ResolveConstant<TConstant>(ushort index)
-            where TConstant : class, IConstantReader
-        {
-            return Constants.TryGet(index, out var value) ? (TConstant)value : null;
-        }
 
     }
 

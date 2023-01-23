@@ -30,7 +30,7 @@ namespace IKVM.ByteCode.Reading
         /// <summary>
         /// Gets the name of the InvokeDynamic constant.
         /// </summary>
-        public NameAndTypeConstantReader NameAndType => LazyGet(ref nameAndType, () =>  DeclaringClass.ResolveConstant<NameAndTypeConstantReader>(Record.NameAndTypeIndex));
+        public NameAndTypeConstantReader NameAndType => LazyGet(ref nameAndType, () =>  DeclaringClass.Constants.Get<NameAndTypeConstantReader>(Record.NameAndTypeIndex));
 
     }
 

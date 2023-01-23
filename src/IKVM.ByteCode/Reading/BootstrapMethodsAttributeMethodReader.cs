@@ -27,7 +27,7 @@ namespace IKVM.ByteCode.Reading
         /// <summary>
         /// Gets the method being referenced.
         /// </summary>
-        public MethodrefConstantReader Methodref => LazyGet(ref methodref, () => DeclaringClass.ResolveConstant<MethodrefConstantReader>(Record.MethodRefIndex));
+        public MethodrefConstantReader Methodref => LazyGet(ref methodref, () => DeclaringClass.Constants.Get<MethodrefConstantReader>(Record.MethodRefIndex));
 
         /// <summary>
         /// Gets the arguments bound to the method reference.

@@ -25,7 +25,7 @@ namespace IKVM.ByteCode.Reading
         /// <summary>
         /// Gets the value of the string constant. Result may not actually be a string object as overrides can apply.
         /// </summary>
-        public Utf8ConstantReader Value => LazyGet(ref value, () => DeclaringClass.ResolveConstant<Utf8ConstantReader>(Record.ValueIndex));
+        public Utf8ConstantReader Value => LazyGet(ref value, () => DeclaringClass.Constants.Get<Utf8ConstantReader>(Record.ValueIndex));
 
         /// <summary>
         /// Returns <c>true</c> if this class is loadable according to the Java specification.

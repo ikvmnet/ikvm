@@ -30,7 +30,7 @@ namespace IKVM.ByteCode.Reading
         /// <summary>
         /// Gets the constant refered to by this MethodHandle.
         /// </summary>
-        public IRefConstantReader Reference => LazyGet(ref reference, () => DeclaringClass.ResolveConstant<IRefConstantReader>(Record.Index));
+        public IRefConstantReader Reference => LazyGet(ref reference, () => DeclaringClass.Constants.Get<IRefConstantReader>(Record.Index));
 
         /// <summary>
         /// Returns <c>true</c> if this constant type is loadable.

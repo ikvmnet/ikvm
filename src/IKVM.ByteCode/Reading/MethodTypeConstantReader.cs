@@ -25,7 +25,7 @@ namespace IKVM.ByteCode.Reading
         /// <summary>
         /// Gets the type of this MethodType constant.
         /// </summary>
-        public Utf8ConstantReader Type => LazyGet(ref type, () => DeclaringClass.ResolveConstant<Utf8ConstantReader>(Record.DescriptorIndex));
+        public Utf8ConstantReader Type => LazyGet(ref type, () => DeclaringClass.Constants.Get<Utf8ConstantReader>(Record.DescriptorIndex));
 
         /// <summary>
         /// Returns <c>true</c> if this constant is loadable.

@@ -111,14 +111,14 @@ namespace IKVM.ByteCode.Reading
         /// </summary>
         /// <param name="name"></param>
         /// <returns></returns>
-        public AttributeReader this[string name] => this.FirstOrDefault(i => i.Name == name) ?? throw new KeyNotFoundException();
+        public AttributeReader this[string name] => this.FirstOrDefault(i => i.Info.Name.Value == name) ?? throw new KeyNotFoundException();
 
         /// <summary>
         /// Returns <c>true</c> if an attribute with the specified name exists.
         /// </summary>
         /// <param name="name"></param>
         /// <returns></returns>
-        public bool Contains(string name) => this.Any(i => i.Name == name);
+        public bool Contains(string name) => this.Any(i => i.Info.Name.Value == name);
 
         /// <summary>
         /// Attempts to get the attribute with the specified name.

@@ -8,8 +8,8 @@ namespace IKVM.ByteCode.Reading
     internal class FieldReader : FieldOrMethodReader<FieldRecord>
     {
 
-        string name;
-        string descriptor;
+        Utf8ConstantReader name;
+        Utf8ConstantReader descriptor;
         AttributeReaderCollection attributes;
 
         /// <summary>
@@ -26,22 +26,22 @@ namespace IKVM.ByteCode.Reading
         /// <summary>
         /// Gets the access flags of the field.
         /// </summary>
-        public AccessFlag AccessFlags => Record.AccessFlags;
+        public override AccessFlag AccessFlags => Record.AccessFlags;
 
         /// <summary>
         /// Gets the name of the field.
         /// </summary>
-        public string Name => LazyGet(ref name, () => DeclaringClass.ResolveConstant<Utf8ConstantReader>(Record.NameIndex).Value);
+        public override Utf8ConstantReader Name => LazyGet(ref name, () => DeclaringClass.Constants.Get<Utf8ConstantReader>(Record.NameIndex));
 
         /// <summary>
         /// Gets the descriptor of the field.
         /// </summary>
-        public string Descriptor => LazyGet(ref descriptor, () => DeclaringClass.ResolveConstant<Utf8ConstantReader>(Record.DescriptorIndex).Value);
+        public override Utf8ConstantReader Descriptor => LazyGet(ref descriptor, () => DeclaringClass.Constants.Get<Utf8ConstantReader>(Record.DescriptorIndex));
 
         /// <summary>
         /// Gets the attributes of the field.
         /// </summary>
-        public AttributeReaderCollection Attributes => LazyGet(ref attributes, () => new AttributeReaderCollection(DeclaringClass, Record.Attributes));
+        public override AttributeReaderCollection Attributes => LazyGet(ref attributes, () => new AttributeReaderCollection(DeclaringClass, Record.Attributes));
 
     }
 

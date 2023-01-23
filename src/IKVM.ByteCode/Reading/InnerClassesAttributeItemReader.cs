@@ -26,17 +26,17 @@ namespace IKVM.ByteCode.Reading
         /// <summary>
         /// Gets the name of the inner class.
         /// </summary>
-        public ClassConstantReader InnerClass => LazyGet(ref innerClass, () => DeclaringClass.ResolveConstant<ClassConstantReader>(Record.InnerClassIndex));
+        public ClassConstantReader InnerClass => LazyGet(ref innerClass, () => DeclaringClass.Constants.Get<ClassConstantReader>(Record.InnerClassIndex));
 
         /// <summary>
         /// Gets the name of the outer class.
         /// </summary>
-        public ClassConstantReader OuterClass => LazyGet(ref outerClass, () => DeclaringClass.ResolveConstant<ClassConstantReader>(Record.OuterClassIndex));
+        public ClassConstantReader OuterClass => LazyGet(ref outerClass, () => DeclaringClass.Constants.Get<ClassConstantReader>(Record.OuterClassIndex));
 
         /// <summary>
         /// Gets the inner name.
         /// </summary>
-        public Utf8ConstantReader InnerName => LazyGet(ref innerName, () => DeclaringClass.ResolveConstant<Utf8ConstantReader>(Record.InnerNameIndex));
+        public Utf8ConstantReader InnerName => LazyGet(ref innerName, () => DeclaringClass.Constants.Get<Utf8ConstantReader>(Record.InnerNameIndex));
 
         /// <summary>
         /// Gets the access flags of the inner class.

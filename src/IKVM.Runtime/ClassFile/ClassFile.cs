@@ -317,9 +317,9 @@ namespace IKVM.Internal
                             {
                                 var item = innerClassesAttribute.Items[j];
 
-                                innerClasses[j].innerClass = item.InnerClass.Index;
-                                innerClasses[j].outerClass = item.OuterClass.Index;
-                                innerClasses[j].name = item.InnerName.Index;
+                                innerClasses[j].innerClass = item.InnerClass?.Index ?? 0;
+                                innerClasses[j].outerClass = item.OuterClass?.Index ?? 0;
+                                innerClasses[j].name = item.InnerName?.Index ?? 0;
                                 innerClasses[j].accessFlags = (Modifiers)item.InnerClassAccessFlags;
 
                                 if (innerClasses[j].innerClass != 0 && !(GetConstantPoolItem(innerClasses[j].innerClass) is ConstantPoolItemClass))
@@ -639,34 +639,34 @@ namespace IKVM.Internal
             {
                 switch (reader)
                 {
-                    case ElementValueConstantReader r when r.Value is bool b:
-                        return classFile.GetConstantPoolConstantInteger(r.ValueRecord.Index) != 0;
-                    case ElementValueConstantReader r when r.Value is byte z:
-                        return (byte)classFile.GetConstantPoolConstantInteger(r.ValueRecord.Index);
-                    case ElementValueConstantReader r when r.Value is char c:
-                        return (char)classFile.GetConstantPoolConstantInteger(r.ValueRecord.Index);
-                    case ElementValueConstantReader r when r.Value is short s:
-                        return (short)classFile.GetConstantPoolConstantInteger(r.ValueRecord.Index);
-                    case ElementValueConstantReader r when r.Value is int i:
-                        return classFile.GetConstantPoolConstantInteger(r.ValueRecord.Index);
-                    case ElementValueConstantReader r when r.Value is float f:
-                        return classFile.GetConstantPoolConstantFloat(r.ValueRecord.Index);
-                    case ElementValueConstantReader r when r.Value is long j:
-                        return classFile.GetConstantPoolConstantLong(r.ValueRecord.Index);
-                    case ElementValueConstantReader r when r.Value is double d:
-                        return classFile.GetConstantPoolConstantDouble(r.ValueRecord.Index);
-                    case ElementValueConstantReader r when r.Value is string ss:
-                        return classFile.GetConstantPoolUtf8String(utf8_cp, r.ValueRecord.Index);
+                    case ElementValueConstantReader r when r.Tag == ByteCode.Parsing.ElementValueTag.Boolean:
+                        return classFile.GetConstantPoolConstantInteger(r.Value.Index) != 0;
+                    case ElementValueConstantReader r when r.Tag == ByteCode.Parsing.ElementValueTag.Byte:
+                        return (byte)classFile.GetConstantPoolConstantInteger(r.Value.Index);
+                    case ElementValueConstantReader r when r.Tag == ByteCode.Parsing.ElementValueTag.Char:
+                        return (char)classFile.GetConstantPoolConstantInteger(r.Value.Index);
+                    case ElementValueConstantReader r when r.Tag == ByteCode.Parsing.ElementValueTag.Short:
+                        return (short)classFile.GetConstantPoolConstantInteger(r.Value.Index);
+                    case ElementValueConstantReader r when r.Tag == ByteCode.Parsing.ElementValueTag.Integer:
+                        return classFile.GetConstantPoolConstantInteger(r.Value.Index);
+                    case ElementValueConstantReader r when r.Tag == ByteCode.Parsing.ElementValueTag.Float:
+                        return classFile.GetConstantPoolConstantFloat(r.Value.Index);
+                    case ElementValueConstantReader r when r.Tag == ByteCode.Parsing.ElementValueTag.Long:
+                        return classFile.GetConstantPoolConstantLong(r.Value.Index);
+                    case ElementValueConstantReader r when r.Tag == ByteCode.Parsing.ElementValueTag.Double:
+                        return classFile.GetConstantPoolConstantDouble(r.Value.Index);
+                    case ElementValueConstantReader r when r.Tag == ByteCode.Parsing.ElementValueTag.String:
+                        return classFile.GetConstantPoolUtf8String(utf8_cp, r.Value.Index);
                     case ElementValueEnumConstantReader r:
                         return new object[] {
                             AnnotationDefaultAttribute.TAG_ENUM,
-                            classFile.GetConstantPoolUtf8String(utf8_cp, r.ValueRecord.TypeNameIndex),
-                            classFile.GetConstantPoolUtf8String(utf8_cp, r.ValueRecord.ConstantNameIndex)
+                            classFile.GetConstantPoolUtf8String(utf8_cp, r.TypeName.Index),
+                            classFile.GetConstantPoolUtf8String(utf8_cp, r.ConstantName.Index)
                         };
                     case ElementValueClassReader r:
                         return new object[] {
                             AnnotationDefaultAttribute.TAG_CLASS,
-                            classFile.GetConstantPoolUtf8String(utf8_cp, r.ValueRecord.ClassIndex)
+                            classFile.GetConstantPoolUtf8String(utf8_cp, r.Class.Index)
                         };
                     case ElementValueAnnotationReader r:
                         return ReadAnnotation(r.Annotation, classFile, utf8_cp);
@@ -944,7 +944,7 @@ namespace IKVM.Internal
             var s = utf8_cp[index];
             if (s == null)
             {
-                if (reader.Record.ThisClassIndex == 0)
+                if (reader.This.Index == 0)
                 {
                     throw new ClassFormatError("Bad constant pool index #{0}", index);
                 }

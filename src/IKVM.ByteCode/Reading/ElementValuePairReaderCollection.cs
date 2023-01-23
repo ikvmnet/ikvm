@@ -1,4 +1,6 @@
-﻿using IKVM.ByteCode.Parsing;
+﻿using System.Collections.Generic;
+
+using IKVM.ByteCode.Parsing;
 
 namespace IKVM.ByteCode.Reading
 {
@@ -38,10 +40,16 @@ namespace IKVM.ByteCode.Reading
         /// <param name="index"></param>
         /// <param name="record"></param>
         /// <returns></returns>
-        protected override string GetKey(int index, ElementValuePairRecord record)
+        protected override string GetName(int index, ElementValuePairRecord record)
         {
-            return DeclaringClass.ResolveConstant<Utf8ConstantReader>(record.NameIndex).Value;
+            return DeclaringClass.Constants.Get<Utf8ConstantReader>(record.NameIndex).Value;
         }
+
+        /// <summary>
+        /// Gets an enumerator over the items in this collection.
+        /// </summary>
+        /// <returns></returns>
+        public new IEnumerator<KeyValuePair<string, ElementValueReader>> GetEnumerator() => ((IEnumerable<KeyValuePair<string, ElementValueReader>>)this).GetEnumerator();
 
     }
 

@@ -25,7 +25,7 @@ namespace IKVM.ByteCode.Reading
         /// <summary>
         /// Gets the path to the source file.
         /// </summary>
-        public Utf8ConstantReader SourceFile => LazyGet(ref sourceFile, () => DeclaringClass.ResolveConstant<Utf8ConstantReader>(Record.SourceFileIndex));
+        public Utf8ConstantReader SourceFile => LazyGet(ref sourceFile, () => DeclaringClass.Constants.Get<Utf8ConstantReader>(Record.SourceFileIndex));
 
     }
 

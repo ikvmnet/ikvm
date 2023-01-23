@@ -24,7 +24,7 @@ namespace IKVM.ByteCode.Reading
         /// <summary>
         /// Gets the name of the interface.
         /// </summary>
-        public ClassConstantReader Class => LazyGet(ref clazz, () => DeclaringClass.ResolveConstant<ClassConstantReader>(Record.ClassIndex));
+        public ClassConstantReader Class => LazyGet(ref clazz, () => DeclaringClass.Constants.Get<ClassConstantReader>(Record.ClassIndex));
 
     }
 

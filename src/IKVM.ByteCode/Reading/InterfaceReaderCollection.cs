@@ -1,6 +1,4 @@
-﻿using System.Linq;
-
-using IKVM.ByteCode.Parsing;
+﻿using IKVM.ByteCode.Parsing;
 
 namespace IKVM.ByteCode.Reading
 {
@@ -8,7 +6,7 @@ namespace IKVM.ByteCode.Reading
     /// <summary>
     /// Lazy init collection of method data.
     /// </summary>
-    internal sealed class InterfaceReaderCollection : LazyReaderList<InterfaceReader, InterfaceRecord>
+    internal sealed class InterfaceReaderCollection : LazyNamedReaderDictionary<InterfaceReader, InterfaceRecord>
     {
 
         /// <summary>
@@ -33,11 +31,15 @@ namespace IKVM.ByteCode.Reading
         }
 
         /// <summary>
-        /// Returns <c>true</c> if an interface with the specified name exists.
+        /// Gets the name of the interface.
         /// </summary>
-        /// <param name="name"></param>
+        /// <param name="index"></param>
+        /// <param name="record"></param>
         /// <returns></returns>
-        public bool Contains(string name) => Enumerable.Range(0, Count).Any(i => this[i].Class.Name.Value == name);
+        protected override string GetName(int index, InterfaceRecord record)
+        {
+            return DeclaringClass.Constants.Get<ClassConstantReader>(record.ClassIndex).Name.Value;
+        }
 
     }
 
