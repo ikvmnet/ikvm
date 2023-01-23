@@ -8,30 +8,23 @@
         ByteCodeException
     {
 
-        readonly int majorVersion;
-        readonly int minorVersion;
+        readonly ClassFormatVersion version;
 
         /// <summary>
         /// Initializes a new instance.
         /// </summary>
         /// <param name="majorVersion"></param>
         /// <param name="minorVersion"></param>
-        internal UnsupportedClassVersionException(int majorVersion, int minorVersion) :
-            base($"Unsupported class version {majorVersion}.{minorVersion}.")
+        internal UnsupportedClassVersionException(ClassFormatVersion version) :
+            base($"Unsupported class version {version}.")
         {
-            this.majorVersion = majorVersion;
-            this.minorVersion = minorVersion;
+            this.version = version;
         }
 
         /// <summary>
-        /// Gets the major version that was found in the class file.
+        /// Gets the version that was found in the class file.
         /// </summary>
-        public int MajorVersion => majorVersion;
-
-        /// <summary>
-        /// Gets the minor version that was found in the class file.
-        /// </summary>
-        public int MinorVersion => minorVersion;
+        public ClassFormatVersion Version => version;
 
     }
 

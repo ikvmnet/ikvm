@@ -94,15 +94,13 @@ namespace IKVM.Internal
         {
             try
             {
-                int minorVersion = reader.MinorVersion;
-                int majorVersion = reader.MajorVersion;
-                if (majorVersion < SupportedVersions.Minimum || majorVersion > SupportedVersions.Maximum || (majorVersion == SupportedVersions.Minimum && minorVersion < 3) || (majorVersion == SupportedVersions.Maximum && minorVersion != 0))
-                    throw new UnsupportedClassVersionError(majorVersion + "." + minorVersion);
+                if (reader.Version < new ClassFormatVersion(45, 3) || reader.Version > 52)
+                    throw new UnsupportedClassVersionError(reader.Version);
 
                 // this is a terrible way to go about encoding this information
                 isstub = reader.Constants.OfType<Utf8ConstantReader>().Any(i => i.Value == "IKVM.NET.Assembly");
 
-                return string.Intern(reader.Name.Replace('/', '.'));
+                return string.Intern(reader.This.Name.Value.Replace('/', '.'));
             }
             catch (ByteCodeException e)
             {
@@ -128,10 +126,8 @@ namespace IKVM.Internal
 
             try
             {
-                int minorVersion = reader.MinorVersion;
-                int majorVersion = reader.MajorVersion;
-                if (majorVersion < SupportedVersions.Minimum || majorVersion > SupportedVersions.Maximum || (majorVersion == SupportedVersions.Minimum && minorVersion < 3) || (majorVersion == SupportedVersions.Maximum && minorVersion != 0))
-                    throw new UnsupportedClassVersionError(majorVersion + "." + minorVersion);
+                if (reader.Version < new ClassFormatVersion(45, 3) || reader.Version > 52)
+                    throw new UnsupportedClassVersionError(reader.Version);
 
                 constantpool = new ConstantPoolItem[reader.Constants.Count];
                 utf8_cp = new string[reader.Constants.Count];
@@ -170,17 +166,17 @@ namespace IKVM.Internal
                             constantpool[i] = new ConstantPoolItemNameAndType(nameAndType);
                             break;
                         case MethodHandleConstantReader methodHandle:
-                            if (majorVersion < 51)
+                            if (reader.Version < 51)
                                 goto default;
                             constantpool[i] = new ConstantPoolItemMethodHandle(methodHandle);
                             break;
                         case MethodTypeConstantReader methodType:
-                            if (majorVersion < 51)
+                            if (reader.Version < 51)
                                 goto default;
                             constantpool[i] = new ConstantPoolItemMethodType(methodType);
                             break;
                         case InvokeDynamicConstantReader invokeDynamic:
-                            if (majorVersion < 51)
+                            if (reader.Version < 51)
                                 goto default;
                             constantpool[i] = new ConstantPoolItemInvokeDynamic(invokeDynamic);
                             break;
@@ -230,7 +226,7 @@ namespace IKVM.Internal
                 // NOTE although the vmspec implies (in 4.1) that ACC_SUPER is illegal on interfaces, it doesn't enforce this
                 // for older class files.
                 // (See http://bugs.sun.com/bugdatabase/view_bug.do?bug_id=6320322)
-                if ((IsInterface && IsFinal) || (IsAbstract && IsFinal) || (majorVersion >= 49 && IsAnnotation && !IsInterface) || (majorVersion >= 49 && IsInterface && (!IsAbstract || IsSuper || IsEnum)))
+                if ((IsInterface && IsFinal) || (IsAbstract && IsFinal) || (reader.Version >= 49 && IsAnnotation && !IsInterface) || (reader.Version >= 49 && IsInterface && (!IsAbstract || IsSuper || IsEnum)))
                     throw new ClassFormatError("{0} (Illegal class modifiers 0x{1:X})", inputClassName, access_flags);
 
                 ValidateConstantPoolItemClass(inputClassName, reader.Record.ThisClassIndex);
@@ -266,7 +262,7 @@ namespace IKVM.Internal
                     fields[i] = new Field(this, utf8_cp, reader.Fields[i]);
                     var name = fields[i].Name;
 
-                    if (!IsValidFieldName(name, majorVersion))
+                    if (!IsValidFieldName(name, reader.Version))
                         throw new ClassFormatError("{0} (Illegal field name \"{1}\")", Name, name);
                 }
 
@@ -278,7 +274,7 @@ namespace IKVM.Internal
                     methods[i] = new Method(this, utf8_cp, options, reader.Methods[i]);
                     string name = methods[i].Name;
                     string sig = methods[i].Signature;
-                    if (!IsValidMethodName(name, majorVersion))
+                    if (!IsValidMethodName(name, reader.Version))
                     {
                         if (!ReferenceEquals(name, StringConstants.INIT) && !ReferenceEquals(name, StringConstants.CLINIT))
                             throw new ClassFormatError("{0} (Illegal method name \"{1}\")", Name, name);
@@ -321,9 +317,9 @@ namespace IKVM.Internal
                             {
                                 var item = innerClassesAttribute.Items[j];
 
-                                innerClasses[j].innerClass = item.Record.InnerClassInfoIndex;
-                                innerClasses[j].outerClass = item.Record.OuterClassInfoIndex;
-                                innerClasses[j].name = item.Record.InnerNameIndex;
+                                innerClasses[j].innerClass = item.InnerClass.Index;
+                                innerClasses[j].outerClass = item.OuterClass.Index;
+                                innerClasses[j].name = item.InnerName.Index;
                                 innerClasses[j].accessFlags = (Modifiers)item.InnerClassAccessFlags;
 
                                 if (innerClasses[j].innerClass != 0 && !(GetConstantPoolItem(innerClasses[j].innerClass) is ConstantPoolItemClass))
@@ -347,7 +343,7 @@ namespace IKVM.Internal
 
                             break;
                         case "Signature":
-                            if (majorVersion < 49)
+                            if (reader.Version < 49)
                                 goto default;
 
                             if (attribute is not SignatureAttributeReader signatureAttribute)
@@ -356,7 +352,7 @@ namespace IKVM.Internal
                             signature = GetConstantPoolUtf8String(utf8_cp, signatureAttribute.Record.SignatureIndex);
                             break;
                         case "EnclosingMethod":
-                            if (majorVersion < 49)
+                            if (reader.Version < 49)
                                 goto default;
 
                             if (attribute is not EnclosingMethodAttributeReader enclosingMethodAttribute)
@@ -390,7 +386,7 @@ namespace IKVM.Internal
 
                             break;
                         case "RuntimeVisibleAnnotations":
-                            if (majorVersion < 49)
+                            if (reader.Version < 49)
                                 goto default;
 
                             if (attribute is not RuntimeVisibleAnnotationsAttributeReader runtimeVisibleAnnotationsAttribute)
@@ -400,7 +396,7 @@ namespace IKVM.Internal
                             break;
 #if IMPORTER
                         case "RuntimeInvisibleAnnotations":
-                            if (majorVersion < 49)
+                            if (reader.Version < 49)
                                 goto default;
 
                             if (attribute is not RuntimeInvisibleAnnotationsAttributeReader runtimeInvisibleAnnotationsAttribute)
@@ -418,7 +414,7 @@ namespace IKVM.Internal
                             break;
 #endif
                         case "BootstrapMethods":
-                            if (majorVersion < 51)
+                            if (reader.Version < 51)
                                 goto default;
 
                             if (attribute is not BootstrapMethodsAttributeReader bootstrapMethodsAttribute)
@@ -427,7 +423,7 @@ namespace IKVM.Internal
                             bootstrapMethods = ReadBootstrapMethods(bootstrapMethodsAttribute.Methods, this);
                             break;
                         case "RuntimeVisibleTypeAnnotations":
-                            if (majorVersion < 52)
+                            if (reader.Version < 52)
                                 goto default;
 
                             if (attribute is not RuntimeVisibleTypeAnnotationsAttributeReader runtimeVisibleTypeAnnotationsAttribute)
@@ -710,7 +706,7 @@ namespace IKVM.Internal
                 throw new ClassFormatError("{0} (Bad constant pool index #{1})", classFile, index);
         }
 
-        private static bool IsValidMethodName(string name, int majorVersion)
+        private static bool IsValidMethodName(string name, ClassFormatVersion version)
         {
             if (name.Length == 0)
             {
@@ -723,10 +719,10 @@ namespace IKVM.Internal
                     return false;
                 }
             }
-            return majorVersion >= 49 || IsValidPre49Identifier(name);
+            return version >= 49 || IsValidPre49Identifier(name);
         }
 
-        private static bool IsValidFieldName(string name, int majorVersion)
+        private static bool IsValidFieldName(string name, ClassFormatVersion version)
         {
             if (name.Length == 0)
             {
@@ -739,7 +735,7 @@ namespace IKVM.Internal
                     return false;
                 }
             }
-            return majorVersion >= 49 || IsValidPre49Identifier(name);
+            return version >= 49 || IsValidPre49Identifier(name);
         }
 
         private static bool IsValidPre49Identifier(string name)
@@ -853,7 +849,7 @@ namespace IKVM.Internal
             return true;
         }
 
-        internal int MajorVersion => reader.MajorVersion;
+        internal int MajorVersion => reader.Version.Major;
 
         internal void Link(TypeWrapper thisType, LoadMode mode)
         {

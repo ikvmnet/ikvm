@@ -60,14 +60,14 @@ namespace IKVM.ByteCode.Tests.Reading
         public void CanReadClassConstant()
         {
             var c = ReadClass();
-            c.Constants.OfType<ClassConstantReader>().Should().Contain(i => i.Name == "java/lang/Object");
+            c.Constants.OfType<ClassConstantReader>().Should().Contain(i => i.Name.Value == "java/lang/Object");
         }
 
         [TestMethod]
         public void CanReadMethodrefConstant()
         {
             var c = ReadClass();
-            c.Constants.OfType<MethodrefConstantReader>().Should().Contain(i => i.ClassName == "java/lang/Object" && i.Name == "<init>" && i.Type == "()V");
+            c.Constants.OfType<MethodrefConstantReader>().Should().Contain(i => i.Class.Name.Value == "java/lang/Object" && i.NameAndType.Name.Value == "<init>" && i.NameAndType.Type.Value == "()V");
         }
 
     }

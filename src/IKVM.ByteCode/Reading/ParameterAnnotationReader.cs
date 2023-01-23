@@ -1,15 +1,12 @@
-﻿using System;
+﻿using IKVM.ByteCode.Parsing;
 
-using IKVM.ByteCode.Parsing;
+using static IKVM.ByteCode.Util;
 
 namespace IKVM.ByteCode.Reading
 {
 
-    internal sealed class ParameterAnnotationReader
+    internal sealed class ParameterAnnotationReader : ReaderBase<ParameterAnnotationRecord>
     {
-
-        readonly ClassReader declaringClass;
-        readonly ParameterAnnotationRecord record;
 
         AnnotationReaderCollection annotations;
 
@@ -18,26 +15,16 @@ namespace IKVM.ByteCode.Reading
         /// </summary>
         /// <param name="declaringClass"></param>
         /// <param name="record"></param>
-        public ParameterAnnotationReader(ClassReader declaringClass, ParameterAnnotationRecord record)
+        public ParameterAnnotationReader(ClassReader declaringClass, ParameterAnnotationRecord record) :
+            base(declaringClass, record)
         {
-            this.declaringClass = declaringClass ?? throw new ArgumentNullException(nameof(declaringClass));
-            this.record = record;
+
         }
-
-        /// <summary>
-        /// Gets the class that declared this annotation.
-        /// </summary>
-        public ClassReader DeclaringClass => declaringClass;
-
-        /// <summary>
-        /// Gets the underlying record being read.
-        /// </summary>
-        public ParameterAnnotationRecord Record => record;
 
         /// <summary>
         /// Gets the element values of the annotation.
         /// </summary>
-        public AnnotationReaderCollection Annotations => ClassReader.LazyGet(ref annotations, () => new AnnotationReaderCollection(declaringClass, record.Annotations));
+        public AnnotationReaderCollection Annotations => LazyGet(ref annotations, () => new AnnotationReaderCollection(DeclaringClass, Record.Annotations));
 
     }
 

@@ -1,12 +1,14 @@
 ﻿using IKVM.ByteCode.Parsing;
 
+using static IKVM.ByteCode.Util;
+
 namespace IKVM.ByteCode.Reading
 {
 
     internal class SourceFileAttributeReader : AttributeReader<SourceFileAttributeRecord>
     {
 
-        string sourceFile;
+        Utf8ConstantReader sourceFile;
 
         /// <summary>
         /// Initializes a new instance.
@@ -23,7 +25,7 @@ namespace IKVM.ByteCode.Reading
         /// <summary>
         /// Gets the path to the source file.
         /// </summary>
-        public string SourceFile => ClassReader.LazyGet(ref sourceFile, () => DeclaringClass.ResolveConstant<Utf8ConstantReader>(Record.SourceFileIndex).Value);
+        public Utf8ConstantReader SourceFile => LazyGet(ref sourceFile, () => DeclaringClass.ResolveConstant<Utf8ConstantReader>(Record.SourceFileIndex));
 
     }
 

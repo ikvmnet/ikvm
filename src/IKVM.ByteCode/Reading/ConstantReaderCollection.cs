@@ -12,7 +12,6 @@ namespace IKVM.ByteCode.Reading
     {
 
         readonly ClassReader declaringClass;
-        readonly ConstantOverride[] overrides;
 
         /// <summary>
         /// Initializes a new instance.
@@ -20,11 +19,10 @@ namespace IKVM.ByteCode.Reading
         /// <param name="declaringClass"></param>
         /// <param name="records"></param>
         /// <param name="overrides"></param>
-        internal ConstantReaderCollection(ClassReader declaringClass, ConstantRecord[] records, ConstantOverride[] overrides = null) :
+        internal ConstantReaderCollection(ClassReader declaringClass, ConstantRecord[] records) :
             base(declaringClass, records, 1)
         {
             this.declaringClass = declaringClass ?? throw new ArgumentNullException(nameof(declaringClass));
-            this.overrides = overrides;
         }
 
         /// <summary>
@@ -35,9 +33,31 @@ namespace IKVM.ByteCode.Reading
         /// <returns></returns>
         protected override IConstantReader CreateReader(int index, ConstantRecord record)
         {
-            return record is not null ? ConstantReader.Read(declaringClass, record, overrides != null && overrides.Length >= index ? overrides[index] : null) : null;
+            return record is not null ? ConstantReader.Read(declaringClass, (ushort)index, record) : null;
         }
 
+        /// <summary>
+        /// Attempts to get the constant reader at the specified index.
+        /// </summary>
+        /// <typeparam name="TReader"></typeparam>
+        /// <param name="index"></param>
+        /// <param name="reader"></param>
+        /// <returns></returns>
+        public bool TryGet<TReader>(int index, out TReader reader)
+            where TReader : class, IConstantReader
+        {
+            if (base.TryGet(index, out var reader2))
+            {
+                if (reader2 is not TReader reader3)
+                    throw new ByteCodeException($"Invalid constant resolution. Reader at index {index} is not a {typeof(TReader).Name}.");
+
+                reader = reader3;
+                return true;
+            }
+
+            reader = null;
+            return false;
+        }
     }
 
 }

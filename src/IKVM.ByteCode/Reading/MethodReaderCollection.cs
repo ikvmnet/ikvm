@@ -39,19 +39,19 @@ namespace IKVM.ByteCode.Reading
         /// </summary>
         /// <param name="name"></param>
         /// <returns></returns>
-        public MethodReader this[string name] => Enumerable.Range(0, Count).Where(i => this[i].Name == name).Select(i => this[i]).FirstOrDefault() ?? throw new KeyNotFoundException();
+        public MethodReader this[string name] => this.FirstOrDefault(i => i.Name.Value == name) ?? throw new KeyNotFoundException();
 
         /// <summary>
         /// Gets the names of the methods.
         /// </summary>
-        public IEnumerable<string> Names => Enumerable.Range(0, Count).Select(i => this[i]).Select(i => i.Name);
+        public IEnumerable<string> Names => this.Select(i => i.Name.Value);
 
         /// <summary>
         /// Returns <c>true</c> if an method with the specified name exists.
         /// </summary>
-        /// <param name="key"></param>
+        /// <param name="name"></param>
         /// <returns></returns>
-        public bool Contains(string name) => Enumerable.Range(0, Count).Any(i => this[i].Name == name);
+        public bool Contains(string name) => this.Any(i => i.Name.Value == name);
 
         /// <summary>
         /// Attempts to get the method with the specified name.
@@ -61,7 +61,7 @@ namespace IKVM.ByteCode.Reading
         /// <returns></returns>
         public bool TryGet(string name, out MethodReader value)
         {
-            value = Enumerable.Range(0, Count).Where(i => this[i].Name == name).Select(i => this[i]).FirstOrDefault();
+            value = this.FirstOrDefault(i => i.Name.Value == name);
             return value != null;
         }
 

@@ -1,7 +1,8 @@
 ﻿using System.Collections.Generic;
-using System.Linq;
 
 using IKVM.ByteCode.Parsing;
+
+using static IKVM.ByteCode.Util;
 
 namespace IKVM.ByteCode.Reading
 {
@@ -9,7 +10,7 @@ namespace IKVM.ByteCode.Reading
     internal sealed class ExceptionsAttributeReader : AttributeReader<ExceptionsAttributeRecord>
     {
 
-        string[] exceptions;
+        DelegateLazyReaderList<ClassConstantReader, ushort> exceptions;
 
         /// <summary>
         /// Initializes a new instance.
@@ -26,7 +27,7 @@ namespace IKVM.ByteCode.Reading
         /// <summary>
         /// Gets the names of the exceptions.
         /// </summary>
-        public IReadOnlyList<string> Exceptions => LazyGet(ref exceptions, () => Record.ExceptionsIndexes.Select(i => DeclaringClass.ResolveConstant<ClassConstantReader>(i).Name).ToArray());
+        public IReadOnlyList<ClassConstantReader> Exceptions => LazyGet(ref exceptions, () => new DelegateLazyReaderList<ClassConstantReader, ushort>(DeclaringClass, Record.ExceptionsIndexes, (_, index) => DeclaringClass.ResolveConstant<ClassConstantReader>(index)));
 
     }
 

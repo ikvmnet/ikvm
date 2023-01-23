@@ -1,61 +1,47 @@
-﻿using System;
+﻿using IKVM.ByteCode.Parsing;
 
-using IKVM.ByteCode.Parsing;
+using static IKVM.ByteCode.Util;
 
 namespace IKVM.ByteCode.Reading
 {
 
-    internal sealed class InnerClassesAttributeItemReader
+    internal sealed class InnerClassesAttributeItemReader : ReaderBase<InnerClassesAttributeItemRecord>
     {
 
-        readonly ClassReader declaringClass;
-        readonly InnerClassesAttributeItemRecord record;
-
-        string innerClassName;
-        string outerClassName;
-        string innerName;
+        ClassConstantReader innerClass;
+        ClassConstantReader outerClass;
+        Utf8ConstantReader innerName;
 
         /// <summary>
         /// Initializes a new instance.
         /// </summary>
         /// <param name="declaringClass"></param>
         /// <param name="record"></param>
-        /// <exception cref="ArgumentNullException"></exception>
-        public InnerClassesAttributeItemReader(ClassReader declaringClass, InnerClassesAttributeItemRecord record)
+        public InnerClassesAttributeItemReader(ClassReader declaringClass, InnerClassesAttributeItemRecord record) :
+            base(declaringClass, record)
         {
-            this.declaringClass = declaringClass ?? throw new ArgumentNullException(nameof(declaringClass));
-            this.record = record;
+
         }
-
-        /// <summary>
-        /// Gets the class which declared this reader.
-        /// </summary>
-        public ClassReader DeclaringClass => declaringClass;
-
-        /// <summary>
-        /// Gets the underlying record being read.
-        /// </summary>
-        public InnerClassesAttributeItemRecord Record => record;
 
         /// <summary>
         /// Gets the name of the inner class.
         /// </summary>
-        public string InnerClassName => ClassReader.LazyGet(ref innerClassName, () => DeclaringClass.ResolveConstant<ClassConstantReader>(record.InnerClassInfoIndex).Name);
+        public ClassConstantReader InnerClass => LazyGet(ref innerClass, () => DeclaringClass.ResolveConstant<ClassConstantReader>(Record.InnerClassIndex));
 
         /// <summary>
         /// Gets the name of the outer class.
         /// </summary>
-        public string OuterClassName => ClassReader.LazyGet(ref outerClassName, () => DeclaringClass.ResolveConstant<ClassConstantReader>(record.OuterClassInfoIndex).Name);
+        public ClassConstantReader OuterClass => LazyGet(ref outerClass, () => DeclaringClass.ResolveConstant<ClassConstantReader>(Record.OuterClassIndex));
 
         /// <summary>
         /// Gets the inner name.
         /// </summary>
-        public string InnerName => ClassReader.LazyGet(ref innerName, () => DeclaringClass.ResolveConstant<Utf8ConstantReader>(record.InnerNameIndex).Value);
+        public Utf8ConstantReader InnerName => LazyGet(ref innerName, () => DeclaringClass.ResolveConstant<Utf8ConstantReader>(Record.InnerNameIndex));
 
         /// <summary>
         /// Gets the access flags of the inner class.
         /// </summary>
-        public AccessFlag InnerClassAccessFlags => record.InnerClassAccessFlags;
+        public AccessFlag InnerClassAccessFlags => Record.InnerClassAccessFlags;
 
     }
 

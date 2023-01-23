@@ -1,12 +1,14 @@
 ﻿using IKVM.ByteCode.Parsing;
 
+using static IKVM.ByteCode.Util;
+
 namespace IKVM.ByteCode.Reading
 {
 
     internal sealed class InterfaceReader : ReaderBase<InterfaceRecord>
     {
 
-        string name;
+        ClassConstantReader clazz;
 
         /// <summary>
         /// Initializes a new instance.
@@ -22,7 +24,7 @@ namespace IKVM.ByteCode.Reading
         /// <summary>
         /// Gets the name of the interface.
         /// </summary>
-        public string Name => LazyGet(ref name, () => DeclaringClass.ResolveConstant<ClassConstantReader>(Record.ClassIndex).Name);
+        public ClassConstantReader Class => LazyGet(ref clazz, () => DeclaringClass.ResolveConstant<ClassConstantReader>(Record.ClassIndex));
 
     }
 

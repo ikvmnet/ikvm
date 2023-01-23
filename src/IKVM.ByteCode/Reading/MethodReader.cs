@@ -1,18 +1,15 @@
-﻿using System;
+﻿using IKVM.ByteCode.Parsing;
 
-using IKVM.ByteCode.Parsing;
+using static IKVM.ByteCode.Util;
 
 namespace IKVM.ByteCode.Reading
 {
 
-    internal sealed class MethodReader
+    internal sealed class MethodReader : FieldOrMethodReader<MethodRecord>
     {
 
-        readonly ClassReader declaringClass;
-        readonly MethodRecord record;
-
-        string name;
-        string descriptor;
+        Utf8ConstantReader name;
+        Utf8ConstantReader descriptor;
         AttributeReaderCollection attributes;
 
         /// <summary>
@@ -20,36 +17,31 @@ namespace IKVM.ByteCode.Reading
         /// </summary>
         /// <param name="declaringClass"></param>
         /// <param name="record"></param>
-        internal MethodReader(ClassReader declaringClass, MethodRecord record)
+        internal MethodReader(ClassReader declaringClass, MethodRecord record) :
+            base(declaringClass, record)
         {
-            this.declaringClass = declaringClass ?? throw new ArgumentNullException(nameof(declaringClass));
-            this.record = record;
-        }
 
-        /// <summary>
-        /// Gets the underlying record being read.
-        /// </summary>
-        public MethodRecord Record => record;
+        }
 
         /// <summary>
         /// Gets the access flags of the method.
         /// </summary>
-        public AccessFlag AccessFlags => record.AccessFlags;
+        public AccessFlag AccessFlags => Record.AccessFlags;
 
         /// <summary>
         /// Gets the name of the method.
         /// </summary>
-        public string Name => ClassReader.LazyGet(ref name, () => declaringClass.ResolveConstant<Utf8ConstantReader>(record.NameIndex).Value);
+        public Utf8ConstantReader Name => LazyGet(ref name, () => DeclaringClass.ResolveConstant<Utf8ConstantReader>(Record.NameIndex));
 
         /// <summary>
         /// Gets the descriptor of the method.
         /// </summary>
-        public string Descriptor => ClassReader.LazyGet(ref descriptor, () => declaringClass.ResolveConstant<Utf8ConstantReader>(record.DescriptorIndex).Value);
+        public Utf8ConstantReader Descriptor => LazyGet(ref descriptor, () => DeclaringClass.ResolveConstant<Utf8ConstantReader>(Record.DescriptorIndex));
 
         /// <summary>
         /// Gets the attributes of the method.
         /// </summary>
-        public AttributeReaderCollection Attributes => ClassReader.LazyGet(ref attributes, () => new AttributeReaderCollection(declaringClass, record.Attributes));
+        public AttributeReaderCollection Attributes => LazyGet(ref attributes, () => new AttributeReaderCollection(DeclaringClass, Record.Attributes));
 
     }
 

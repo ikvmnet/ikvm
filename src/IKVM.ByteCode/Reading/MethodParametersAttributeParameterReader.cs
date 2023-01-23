@@ -1,40 +1,34 @@
 ﻿using IKVM.ByteCode.Parsing;
 
+using static IKVM.ByteCode.Util;
+
 namespace IKVM.ByteCode.Reading
 {
 
-    internal sealed class MethodParametersAttributeParameterReader
+    internal sealed class MethodParametersAttributeParameterReader : ReaderBase<MethodParametersAttributeParameterRecord>
     {
 
-        readonly ClassReader declaringClass;
-        readonly MethodParametersAttributeParameterRecord record;
-
-        string name;
+        Utf8ConstantReader name;
 
         /// <summary>
         /// Initializes a new instance.
         /// </summary>
         /// <param name="record"></param>
-        public MethodParametersAttributeParameterReader(ClassReader declaringClass, MethodParametersAttributeParameterRecord record)
+        public MethodParametersAttributeParameterReader(ClassReader declaringClass, MethodParametersAttributeParameterRecord record) :
+            base(declaringClass, record)
         {
-            this.declaringClass = declaringClass ?? throw new System.ArgumentNullException(nameof(declaringClass));
-            this.record = record;
+
         }
 
         /// <summary>
         /// Gets the name of the parameters.
         /// </summary>
-        public string Name => ClassReader.LazyGet(ref name, () => declaringClass.ResolveConstant<Utf8ConstantReader>(record.NameIndex).Value);
-
-        /// <summary>
-        /// Gets the underlying record being read.
-        /// </summary>
-        public MethodParametersAttributeParameterRecord Record => record;
+        public Utf8ConstantReader Name => LazyGet(ref name, () => DeclaringClass.ResolveConstant<Utf8ConstantReader>(Record.NameIndex));
 
         /// <summary>
         /// Gets the access flags of the parameter.
         /// </summary>
-        public AccessFlag AccessFlags => record.AccessFlags;
+        public AccessFlag AccessFlags => Record.AccessFlags;
 
     }
 

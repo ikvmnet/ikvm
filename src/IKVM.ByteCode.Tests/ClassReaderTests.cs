@@ -22,7 +22,7 @@ namespace IKVM.ByteCode.Tests
             using var file = File.OpenRead(Path.Combine(Path.GetDirectoryName(typeof(ClassReaderTests).Assembly.Location), "0.class"));
             var clazz = await ClassReader.ReadAsync(file);
             clazz.Should().NotBeNull();
-            clazz.Name.Should().Be("0");
+            clazz.This.Name.Value.Should().Be("0");
             clazz.Constants.ToList();
             clazz.Interfaces.ToList();
             clazz.Fields.Should().HaveCount(0);
@@ -30,8 +30,8 @@ namespace IKVM.ByteCode.Tests
             clazz.Methods.Should().HaveCount(2);
             clazz.Methods.ToList();
 
-            clazz.Methods[0].Attributes.FirstOfType<CodeAttributeReader>().Code.Should().NotBeNull();
-            clazz.Methods[1].Attributes.FirstOfType<CodeAttributeReader>().Code.Should().NotBeNull();
+            clazz.Methods[0].Attributes.Code.Code.Should().NotBeNull();
+            clazz.Methods[1].Attributes.Code.Code.Should().NotBeNull();
         }
 
         [TestMethod]
@@ -40,7 +40,7 @@ namespace IKVM.ByteCode.Tests
             using var file = File.OpenRead(Path.Combine(Path.GetDirectoryName(typeof(ClassReaderTests).Assembly.Location), "0.class"));
             var clazz = ClassReader.Read(file);
             clazz.Should().NotBeNull();
-            clazz.Name.Should().Be("0");
+            clazz.This.Name.Value.Should().Be("0");
             clazz.Constants.ToList();
             clazz.Interfaces.ToList();
             clazz.Fields.Should().HaveCount(0);
@@ -48,8 +48,8 @@ namespace IKVM.ByteCode.Tests
             clazz.Methods.Should().HaveCount(2);
             clazz.Methods.ToList();
 
-            clazz.Methods[0].Attributes.FirstOfType<CodeAttributeReader>().Code.Should().NotBeNull();
-            clazz.Methods[1].Attributes.FirstOfType<CodeAttributeReader>().Code.Should().NotBeNull();
+            clazz.Methods[0].Attributes.Code.Code.Should().NotBeNull();
+            clazz.Methods[1].Attributes.Code.Code.Should().NotBeNull();
         }
 
         [TestMethod]
@@ -62,7 +62,7 @@ namespace IKVM.ByteCode.Tests
             {
                 using var f = File.OpenRead(i);
                 var c = ClassReader.Read(f);
-                c.Name.Should().NotBeNull();
+                c.This.Should().NotBeNull();
                 c.Constants.ToList();
 
                 foreach (var constant in c.Constants)
@@ -76,7 +76,7 @@ namespace IKVM.ByteCode.Tests
                 c.Methods.Should().OnlyHaveUniqueItems();
 
                 foreach (var iface in c.Interfaces)
-                    iface.Name.Should().NotBeNull();
+                    iface.Class.Should().NotBeNull();
 
                 foreach (var field in c.Fields)
                 {
@@ -115,16 +115,16 @@ namespace IKVM.ByteCode.Tests
                 methodHandle.Reference.Should().BeOfType<FieldrefConstantReader>();
             if (methodHandle.ReferenceKind is ReferenceKind.InvokeVirtual or ReferenceKind.NewInvokeSpecial)
                 methodHandle.Reference.Should().BeOfType<MethodrefConstantReader>();
-            if (methodHandle.ReferenceKind is ReferenceKind.InvokeStatic or ReferenceKind.InvokeSpecial && methodHandle.DeclaringClass.MajorVersion < 52)
+            if (methodHandle.ReferenceKind is ReferenceKind.InvokeStatic or ReferenceKind.InvokeSpecial && methodHandle.DeclaringClass.Version < new ClassFormatVersion(52, 0))
                 methodHandle.Reference.Should().BeOfType<MethodrefConstantReader>();
-            if (methodHandle.ReferenceKind is ReferenceKind.InvokeStatic or ReferenceKind.InvokeSpecial && methodHandle.DeclaringClass.MajorVersion >= 52)
+            if (methodHandle.ReferenceKind is ReferenceKind.InvokeStatic or ReferenceKind.InvokeSpecial && methodHandle.DeclaringClass.Version >= new ClassFormatVersion(52, 0))
                 methodHandle.Reference.Should().Match(i => i is MethodrefConstantReader || i is InterfaceMethodrefConstantReader);
             if (methodHandle.ReferenceKind is ReferenceKind.InvokeInterface)
                 methodHandle.Reference.Should().BeOfType<InterfaceMethodrefConstantReader>();
             if (methodHandle.ReferenceKind is ReferenceKind.InvokeVirtual or ReferenceKind.InvokeStatic or ReferenceKind.InvokeSpecial or ReferenceKind.InvokeInterface && methodHandle.Reference is MethodrefConstantReader methodRef)
-                methodRef.Name.Should().NotBe("<init>").And.NotBe("<clinit>");
+                methodRef.NameAndType.Name.Value.Should().NotBe("<init>").And.NotBe("<clinit>");
             if (methodHandle.ReferenceKind is ReferenceKind.InvokeVirtual or ReferenceKind.InvokeStatic or ReferenceKind.InvokeSpecial or ReferenceKind.InvokeInterface && methodHandle.Reference is InterfaceMethodrefConstantReader interfaceMethodRef)
-                interfaceMethodRef.Name.Should().NotBe("<init>").And.NotBe("<clinit>");
+                interfaceMethodRef.Class.Name.Value.Should().NotBe("<init>").And.NotBe("<clinit>");
         }
 
         void TestAttribute(AttributeReader attribute)

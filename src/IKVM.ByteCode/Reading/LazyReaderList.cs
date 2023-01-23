@@ -18,7 +18,7 @@ namespace IKVM.ByteCode.Reading
 
         readonly ClassReader declaringClass;
         readonly TRecord[] records;
-        readonly int minIndex;
+        readonly uint minIndex;
 
         TReader[] readers;
 
@@ -27,7 +27,7 @@ namespace IKVM.ByteCode.Reading
         /// </summary>
         /// <param name="declaringClass"></param>
         /// <param name="records"></param>
-        public LazyReaderList(ClassReader declaringClass, TRecord[] records, int minIndex = 0)
+        public LazyReaderList(ClassReader declaringClass, TRecord[] records, uint minIndex = 0)
         {
             this.declaringClass = declaringClass ?? throw new ArgumentNullException(nameof(declaringClass));
             this.records = records ?? throw new ArgumentNullException(nameof(records));

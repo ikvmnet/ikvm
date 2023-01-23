@@ -7,6 +7,8 @@ using System.Threading.Tasks;
 
 using IKVM.ByteCode.Parsing;
 
+using static IKVM.ByteCode.Util;
+
 namespace IKVM.ByteCode.Reading
 {
 
@@ -68,6 +70,7 @@ namespace IKVM.ByteCode.Reading
         /// <param name="reader"></param>
         /// <param name="clazz"></param>
         /// <returns></returns>
+        /// <exception cref="ByteCodeException"></exception>
         public static bool TryRead(ref ClassFormatReader reader, out ClassReader clazz)
         {
             clazz = null;
@@ -181,8 +184,8 @@ namespace IKVM.ByteCode.Reading
 
         internal int MAX_STACK_ALLOC = 1024;
 
-        string name;
-        string superName;
+        ClassConstantReader @this;
+        ClassConstantReader super;
         ConstantReaderCollection constants;
         InterfaceReaderCollection interfaces;
         FieldReaderCollection fields;
@@ -200,14 +203,9 @@ namespace IKVM.ByteCode.Reading
         }
 
         /// <summary>
-        /// Gets the minor version of the class.
+        /// Gets the version of the class.
         /// </summary>
-        public ushort MinorVersion => Record.MinorVersion;
-
-        /// <summary>
-        /// Gets the major version of the class.
-        /// </summary>
-        public ushort MajorVersion => Record.MajorVersion;
+        public ClassFormatVersion Version => new ClassFormatVersion(Record.MajorVersion, Record.MinorVersion);
 
         /// <summary>
         /// Gets the set of constants declared by the class.
@@ -222,12 +220,12 @@ namespace IKVM.ByteCode.Reading
         /// <summary>
         /// Gets the name of the class.
         /// </summary>
-        public string Name => LazyGet(ref name, () => ResolveConstant<ClassConstantReader>(Record.ThisClassIndex).Name);
+        public ClassConstantReader This => LazyGet(ref @this, () => ResolveConstant<ClassConstantReader>(Record.ThisClassIndex));
 
         /// <summary>
         /// Gets the name of the super class.
         /// </summary>
-        public string SuperName => LazyGet(ref superName, () => ResolveConstant<ClassConstantReader>(Record.SuperClassIndex).Name);
+        public ClassConstantReader Super => LazyGet(ref super, () => ResolveConstant<ClassConstantReader>(Record.SuperClassIndex));
 
         /// <summary>
         /// Gets the set of the interfaces implemented by this class.

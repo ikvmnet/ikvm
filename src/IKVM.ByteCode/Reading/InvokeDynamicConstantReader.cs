@@ -1,22 +1,23 @@
 ﻿using IKVM.ByteCode.Parsing;
 
+using static IKVM.ByteCode.Util;
+
 namespace IKVM.ByteCode.Reading
 {
 
-    internal sealed class InvokeDynamicConstantReader : ConstantReader<InvokeDynamicConstantRecord, InvokeDynamicConstantOverride>
+    internal sealed class InvokeDynamicConstantReader : ConstantReader<InvokeDynamicConstantRecord>
     {
 
-        string name;
-        string type;
+        NameAndTypeConstantReader nameAndType;
 
         /// <summary>
         /// Initializes a new instance.
         /// </summary>
         /// <param name="owner"></param>
+        /// <param name="index"></param>
         /// <param name="record"></param>
-        /// <param name="override"></param>
-        public InvokeDynamicConstantReader(ClassReader owner, InvokeDynamicConstantRecord record, InvokeDynamicConstantOverride @override) :
-            base(owner, record, @override)
+        public InvokeDynamicConstantReader(ClassReader owner, ushort index, InvokeDynamicConstantRecord record) :
+            base(owner, index, record)
         {
 
         }
@@ -29,12 +30,7 @@ namespace IKVM.ByteCode.Reading
         /// <summary>
         /// Gets the name of the InvokeDynamic constant.
         /// </summary>
-        public string Name => LazyGet(ref name, () => Override != null ? Override.Name : DeclaringClass.ResolveConstant<NameAndTypeConstantReader>(Record.NameAndTypeIndex).Name);
-
-        /// <summary>
-        /// Gets the name of the InvokeDynamic constant.
-        /// </summary>
-        public string Type => LazyGet(ref type, () => Override != null ? Override.Type : DeclaringClass.ResolveConstant<NameAndTypeConstantReader>(Record.NameAndTypeIndex).Type);
+        public NameAndTypeConstantReader NameAndType => LazyGet(ref nameAndType, () =>  DeclaringClass.ResolveConstant<NameAndTypeConstantReader>(Record.NameAndTypeIndex));
 
     }
 

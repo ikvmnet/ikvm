@@ -1,5 +1,7 @@
 ﻿using IKVM.ByteCode.Parsing;
 
+using static IKVM.ByteCode.Util;
+
 namespace IKVM.ByteCode.Reading
 {
 
@@ -23,7 +25,7 @@ namespace IKVM.ByteCode.Reading
         /// <summary>
         /// Gets the set of annotations described by this attribute.
         /// </summary>
-        public TypeAnnotationReaderCollection Annotations => ClassReader.LazyGet(ref annotations, () => new TypeAnnotationReaderCollection(DeclaringClass, Record.Annotations));
+        public TypeAnnotationReaderCollection Annotations => LazyGet(ref annotations, () => new TypeAnnotationReaderCollection(DeclaringClass, Record.Annotations));
 
     }
 
