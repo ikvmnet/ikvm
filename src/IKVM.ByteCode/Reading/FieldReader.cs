@@ -1,18 +1,15 @@
-﻿using System;
+﻿using IKVM.ByteCode.Parsing;
 
-using IKVM.ByteCode.Parsing;
+using static IKVM.ByteCode.Util;
 
 namespace IKVM.ByteCode.Reading
 {
 
-    internal class FieldReader
+    internal class FieldReader : FieldOrMethodReader<FieldRecord>
     {
 
-        readonly ClassReader declaringClass;
-        readonly FieldRecord record;
-
-        string name;
-        string descriptor;
+        Utf8ConstantReader name;
+        Utf8ConstantReader descriptor;
         AttributeReaderCollection attributes;
 
         /// <summary>
@@ -20,36 +17,31 @@ namespace IKVM.ByteCode.Reading
         /// </summary>
         /// <param name="declaringClass"></param>
         /// <param name="record"></param>
-        internal FieldReader(ClassReader declaringClass, FieldRecord record)
+        internal FieldReader(ClassReader declaringClass, FieldRecord record) :
+            base(declaringClass, record)
         {
-            this.declaringClass = declaringClass ?? throw new ArgumentNullException(nameof(declaringClass));
-            this.record = record;
-        }
 
-        /// <summary>
-        /// Gets the underlying record of the field.
-        /// </summary>
-        public FieldRecord Record => record;
+        }
 
         /// <summary>
         /// Gets the access flags of the field.
         /// </summary>
-        public AccessFlag AccessFlags => record.AccessFlags;
+        public override AccessFlag AccessFlags => Record.AccessFlags;
 
         /// <summary>
         /// Gets the name of the field.
         /// </summary>
-        public string Name => ClassReader.LazyGet(ref name, () => declaringClass.ResolveConstant<Utf8ConstantReader>(record.NameIndex).Value);
+        public override Utf8ConstantReader Name => LazyGet(ref name, () => DeclaringClass.Constants.Get<Utf8ConstantReader>(Record.NameIndex));
 
         /// <summary>
         /// Gets the descriptor of the field.
         /// </summary>
-        public string Descriptor => ClassReader.LazyGet(ref descriptor, () => declaringClass.ResolveConstant<Utf8ConstantReader>(record.DescriptorIndex).Value);
+        public override Utf8ConstantReader Descriptor => LazyGet(ref descriptor, () => DeclaringClass.Constants.Get<Utf8ConstantReader>(Record.DescriptorIndex));
 
         /// <summary>
         /// Gets the attributes of the field.
         /// </summary>
-        public AttributeReaderCollection Attributes => ClassReader.LazyGet(ref attributes, () => new AttributeReaderCollection(declaringClass, record.Attributes));
+        public override AttributeReaderCollection Attributes => LazyGet(ref attributes, () => new AttributeReaderCollection(DeclaringClass, Record.Attributes));
 
     }
 

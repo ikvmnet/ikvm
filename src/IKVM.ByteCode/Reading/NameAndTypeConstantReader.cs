@@ -1,22 +1,24 @@
 ﻿using IKVM.ByteCode.Parsing;
 
+using static IKVM.ByteCode.Util;
+
 namespace IKVM.ByteCode.Reading
 {
 
-    internal sealed class NameAndTypeConstantReader : ConstantReader<NameAndTypeConstantRecord, NameAndTypeConstantOverride>
+    internal sealed class NameAndTypeConstantReader : ConstantReader<NameAndTypeConstantRecord>
     {
 
-        string name;
-        string type;
+        Utf8ConstantReader name;
+        Utf8ConstantReader type;
 
         /// <summary>
         /// Initializes a new instance.
         /// </summary>
         /// <param name="declaringClass"></param>
+        /// <param name="index"></param>
         /// <param name="record"></param>
-        /// <param name="override"></param>
-        public NameAndTypeConstantReader(ClassReader declaringClass, NameAndTypeConstantRecord record, NameAndTypeConstantOverride @override = null) :
-            base(declaringClass, record, @override)
+        public NameAndTypeConstantReader(ClassReader declaringClass, ushort index, NameAndTypeConstantRecord record) :
+            base(declaringClass, index, record)
         {
 
         }
@@ -24,12 +26,12 @@ namespace IKVM.ByteCode.Reading
         /// <summary>
         /// Gets the name of this name and type constant.
         /// </summary>
-        public string Name => LazyGet(ref name, () => DeclaringClass.ResolveConstant<Utf8ConstantReader>(Record.NameIndex).Value);
+        public Utf8ConstantReader Name => LazyGet(ref name, () => DeclaringClass.Constants.Get<Utf8ConstantReader>(Record.NameIndex));
 
         /// <summary>
         /// Gets the type of this name and type constant.
         /// </summary>
-        public string Type => LazyGet(ref type, () => DeclaringClass.ResolveConstant<Utf8ConstantReader>(Record.DescriptorIndex).Value);
+        public Utf8ConstantReader Type => LazyGet(ref type, () => DeclaringClass.Constants.Get<Utf8ConstantReader>(Record.DescriptorIndex));
 
     }
 

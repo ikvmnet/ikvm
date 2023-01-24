@@ -34,11 +34,6 @@ namespace IKVM.ByteCode.Reading
         /// </summary>
         public AttributeRecord Record => record;
 
-        /// <summary>
-        /// Gets the name of the attribute.
-        /// </summary>
-        public string Name => info.Name;
-
     }
 
     internal abstract class AttributeReader<TRecord> : AttributeReader

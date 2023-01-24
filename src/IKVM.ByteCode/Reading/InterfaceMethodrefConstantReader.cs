@@ -3,17 +3,17 @@
 namespace IKVM.ByteCode.Reading
 {
 
-    internal sealed class InterfaceMethodrefConstantReader : RefConstantReader<InterfaceMethodrefConstantRecord, InterfaceMethodrefConstantOverride>
+    internal sealed class InterfaceMethodrefConstantReader : RefConstantReader<InterfaceMethodrefConstantRecord>
     {
 
         /// <summary>
         /// Initializes a new instance.
         /// </summary>
         /// <param name="declaringClass"></param>
+        /// <param name="index"></param>
         /// <param name="record"></param>
-        /// <param name="override"></param>
-        public InterfaceMethodrefConstantReader(ClassReader declaringClass, InterfaceMethodrefConstantRecord record, InterfaceMethodrefConstantOverride @override = null) :
-            base(declaringClass, record, @override)
+        public InterfaceMethodrefConstantReader(ClassReader declaringClass, ushort index, InterfaceMethodrefConstantRecord record) :
+            base(declaringClass, index, record)
         {
 
         }

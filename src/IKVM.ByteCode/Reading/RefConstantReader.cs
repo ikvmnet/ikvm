@@ -1,5 +1,7 @@
 ﻿using IKVM.ByteCode.Parsing;
 
+using static IKVM.ByteCode.Util;
+
 namespace IKVM.ByteCode.Reading
 {
 
@@ -7,42 +9,39 @@ namespace IKVM.ByteCode.Reading
     /// Base type for a ref constant reader.
     /// </summary>
     /// <typeparam name="TRecord"></typeparam>
-    /// <typeparam name="TOverride"></typeparam>
-    internal abstract class RefConstantReader<TRecord, TOverride> : ConstantReader<TRecord, TOverride>, IRefConstantReader<TRecord, TOverride>
+    internal abstract class RefConstantReader<TRecord> : ConstantReader<TRecord>, IRefConstantReader
         where TRecord : RefConstantRecord
-        where TOverride : RefConstantOverride
     {
 
-        string className;
-        string name;
-        string type;
+        ClassConstantReader clazz;
+        NameAndTypeConstantReader name;
 
         /// <summary>
         /// Initializes a new instance.
         /// </summary>
         /// <param name="declaringClass"></param>
+        /// <param name="index"></param>
         /// <param name="record"></param>
-        /// <param name="override"></param>
-        public RefConstantReader(ClassReader declaringClass, TRecord record, TOverride @override) :
-            base(declaringClass, record, @override)
+        public RefConstantReader(ClassReader declaringClass, ushort index, TRecord record) :
+            base(declaringClass, index, record)
         {
 
         }
 
         /// <summary>
-        /// Gets the class name of the field.
+        /// Gets the underlying record.
         /// </summary>
-        public string ClassName => LazyGet(ref className, () => Override != null ? Override.ClassName : DeclaringClass.ResolveConstant<ClassConstantReader>(Record.ClassIndex).Name);
+        RefConstantRecord IConstantReader<RefConstantRecord>.Record => Record;
 
         /// <summary>
-        /// Gets the name of the field.
+        /// Gets the class name of the reference.
         /// </summary>
-        public string Name => LazyGet(ref name, () => Override != null ? Override.Name : DeclaringClass.ResolveConstant<NameAndTypeConstantReader>(Record.NameAndTypeIndex).Name);
+        public ClassConstantReader Class => LazyGet(ref clazz, () => DeclaringClass.Constants.Get<ClassConstantReader>(Record.ClassIndex));
 
         /// <summary>
-        /// Gets the type of the field.
+        /// Gets the name and type of the reference.
         /// </summary>
-        public string Type => LazyGet(ref type, () => Override != null ? Override.Type : DeclaringClass.ResolveConstant<NameAndTypeConstantReader>(Record.NameAndTypeIndex).Type);
+        public NameAndTypeConstantReader NameAndType => LazyGet(ref name, () => DeclaringClass.Constants.Get<NameAndTypeConstantReader>(Record.NameAndTypeIndex));
 
     }
 

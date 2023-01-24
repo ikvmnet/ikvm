@@ -1,5 +1,7 @@
 ﻿using IKVM.ByteCode.Parsing;
 
+using static IKVM.ByteCode.Util;
+
 namespace IKVM.ByteCode.Reading
 {
 
@@ -23,7 +25,7 @@ namespace IKVM.ByteCode.Reading
         /// <summary>
         /// Gets the signature value.
         /// </summary>
-        public string Value => LazyGet(ref value, () => DeclaringClass.ResolveConstant<Utf8ConstantReader>(Record.SignatureIndex).Value);
+        public string Value => LazyGet(ref value, () => DeclaringClass.Constants.Get<Utf8ConstantReader>(Record.SignatureIndex).Value);
 
     }
 

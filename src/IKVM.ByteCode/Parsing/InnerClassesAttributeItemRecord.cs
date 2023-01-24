@@ -1,6 +1,6 @@
 ﻿namespace IKVM.ByteCode.Parsing
 {
 
-    internal record struct InnerClassesAttributeItemRecord(ushort InnerClassInfoIndex, ushort OuterClassInfoIndex, ushort InnerNameIndex, AccessFlag InnerClassAccessFlags);
+    internal record struct InnerClassesAttributeItemRecord(ushort InnerClassIndex, ushort OuterClassIndex, ushort InnerNameIndex, AccessFlag InnerClassAccessFlags);
 
 }

@@ -9,7 +9,7 @@ namespace IKVM.ByteCode.Reading
     /// <summary>
     /// Lazy init collection of methods.
     /// </summary>
-    internal sealed class MethodReaderCollection : LazyReaderList<MethodReader, MethodRecord>
+    internal sealed class MethodReaderCollection : LazyNamedReaderDictionary<MethodReader, MethodRecord>
     {
 
         /// <summary>
@@ -35,34 +35,14 @@ namespace IKVM.ByteCode.Reading
         }
 
         /// <summary>
-        /// Gets the method with the specified name.
+        /// Gets the name ofr the given record.
         /// </summary>
-        /// <param name="name"></param>
+        /// <param name="index"></param>
+        /// <param name="record"></param>
         /// <returns></returns>
-        public MethodReader this[string name] => Enumerable.Range(0, Count).Where(i => this[i].Name == name).Select(i => this[i]).FirstOrDefault() ?? throw new KeyNotFoundException();
-
-        /// <summary>
-        /// Gets the names of the methods.
-        /// </summary>
-        public IEnumerable<string> Names => Enumerable.Range(0, Count).Select(i => this[i]).Select(i => i.Name);
-
-        /// <summary>
-        /// Returns <c>true</c> if an method with the specified name exists.
-        /// </summary>
-        /// <param name="key"></param>
-        /// <returns></returns>
-        public bool Contains(string name) => Enumerable.Range(0, Count).Any(i => this[i].Name == name);
-
-        /// <summary>
-        /// Attempts to get the method with the specified name.
-        /// </summary>
-        /// <param name="name"></param>
-        /// <param name="value"></param>
-        /// <returns></returns>
-        public bool TryGet(string name, out MethodReader value)
+        protected override string GetName(int index, MethodRecord record)
         {
-            value = Enumerable.Range(0, Count).Where(i => this[i].Name == name).Select(i => this[i]).FirstOrDefault();
-            return value != null;
+            return DeclaringClass.Constants.Get<Utf8ConstantReader>(record.NameIndex).Value;
         }
 
     }

@@ -1,12 +1,14 @@
 ﻿using IKVM.ByteCode.Parsing;
 
+using static IKVM.ByteCode.Util;
+
 namespace IKVM.ByteCode.Reading
 {
 
     internal sealed class ElementValueClassReader : ElementValueReader<ElementValueClassValueRecord>
     {
 
-        string clazz;
+        Utf8ConstantReader clazz;
 
         /// <summary>
         /// Initializes a new instance.
@@ -22,7 +24,7 @@ namespace IKVM.ByteCode.Reading
         /// <summary>
         /// Gets the class included with this element value.
         /// </summary>
-        public string Class => LazyGet(ref clazz, () => DeclaringClass.ResolveConstant<Utf8ConstantReader>(ValueRecord.ClassIndex).Value);
+        public Utf8ConstantReader Class => LazyGet(ref clazz, () => DeclaringClass.Constants.Get<Utf8ConstantReader>(ValueRecord.ClassIndex));
 
     }
 

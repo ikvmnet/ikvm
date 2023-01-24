@@ -1,21 +1,23 @@
 ﻿using IKVM.ByteCode.Parsing;
 
+using static IKVM.ByteCode.Util;
+
 namespace IKVM.ByteCode.Reading
 {
 
-    internal sealed class MethodTypeConstantReader : ConstantReader<MethodTypeConstantRecord, MethodTypeConstantOverride>
+    internal sealed class MethodTypeConstantReader : ConstantReader<MethodTypeConstantRecord>
     {
 
-        string type;
+        Utf8ConstantReader type;
 
         /// <summary>
         /// Initializes a new instance.
         /// </summary>
         /// <param name="owner"></param>
+        /// <param name="index"></param>
         /// <param name="record"></param>
-        /// <param name="override"></param>
-        public MethodTypeConstantReader(ClassReader owner, MethodTypeConstantRecord record, MethodTypeConstantOverride @override = null) :
-            base(owner, record, @override)
+        public MethodTypeConstantReader(ClassReader owner, ushort index, MethodTypeConstantRecord record) :
+            base(owner, index, record)
         {
 
         }
@@ -23,12 +25,12 @@ namespace IKVM.ByteCode.Reading
         /// <summary>
         /// Gets the type of this MethodType constant.
         /// </summary>
-        public string Type => LazyGet(ref type, () => DeclaringClass.ResolveConstant<Utf8ConstantReader>(Record.DescriptorIndex).Value);
+        public Utf8ConstantReader Type => LazyGet(ref type, () => DeclaringClass.Constants.Get<Utf8ConstantReader>(Record.DescriptorIndex));
 
         /// <summary>
         /// Returns <c>true</c> if this constant is loadable.
         /// </summary>
-        public override bool IsLoadable => DeclaringClass.MajorVersion >= 51;
+        public override bool IsLoadable => DeclaringClass.Version >= new ClassFormatVersion(51, 0);
 
     }
 
