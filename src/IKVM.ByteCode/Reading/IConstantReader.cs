@@ -10,6 +10,11 @@ namespace IKVM.ByteCode.Reading
     {
 
         /// <summary>
+        /// Gets the index of this constant.
+        /// </summary>
+        ushort Index { get; }
+
+        /// <summary>
         /// Returns <c>true</c> if this constant is loadable.
         /// </summary>
         bool IsLoadable { get; }
@@ -27,21 +32,6 @@ namespace IKVM.ByteCode.Reading
         /// Gets the record.
         /// </summary>
         TRecord Record { get; }
-
-    }
-
-    /// <summary>
-    /// Interface supported by all of the constant readers.
-    /// </summary>
-    internal interface IConstantReader<out TRecord, out TOverride> : IConstantReader<TRecord>
-        where TRecord : ConstantRecord
-        where TOverride : ConstantOverride
-    {
-
-        /// <summary>
-        /// Gets the override applied to the constant.
-        /// </summary>
-        TOverride Override { get; }
 
     }
 

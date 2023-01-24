@@ -16,7 +16,7 @@ namespace IKVM.ByteCode.Parsing
         /// <returns></returns>
         public static bool TryRead(AttributeInfoReader info, out AttributeRecord attribute)
         {
-            return TryRead(info.Name, new ReadOnlySequence<byte>(info.Data), out attribute);
+            return TryRead(info.Name.Value, new ReadOnlySequence<byte>(info.Data), out attribute);
         }
 
         /// <summary>

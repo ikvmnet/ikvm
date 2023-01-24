@@ -1,7 +1,4 @@
-﻿using System.Collections.Generic;
-using System.Linq;
-
-using IKVM.ByteCode.Parsing;
+﻿using IKVM.ByteCode.Parsing;
 
 namespace IKVM.ByteCode.Reading
 {
@@ -9,7 +6,7 @@ namespace IKVM.ByteCode.Reading
     /// <summary>
     /// Lazy init collection of fields.
     /// </summary>
-    internal sealed class FieldReaderCollection : LazyReaderList<FieldReader, FieldRecord>
+    internal sealed class FieldReaderCollection : LazyNamedReaderDictionary<FieldReader, FieldRecord>
     {
 
         /// <summary>
@@ -35,34 +32,14 @@ namespace IKVM.ByteCode.Reading
         }
 
         /// <summary>
-        /// Gets the field with the specified name.
+        /// Gets the key for the specified record.
         /// </summary>
-        /// <param name="name"></param>
+        /// <param name="index"></param>
+        /// <param name="record"></param>
         /// <returns></returns>
-        public FieldReader this[string name] => Enumerable.Range(0, Count).Where(i => this[i].Name == name).Select(i => this[i]).FirstOrDefault() ?? throw new KeyNotFoundException();
-
-        /// <summary>
-        /// Gets the names of the fields.
-        /// </summary>
-        public IEnumerable<string> Names => Enumerable.Range(0, Count).Select(i => this[i]).Select(i => i.Name);
-
-        /// <summary>
-        /// Returns <c>true</c> if an field with the specified name exists.
-        /// </summary>
-        /// <param name="key"></param>
-        /// <returns></returns>
-        public bool Contains(string name) => Enumerable.Range(0, Count).Any(i => this[i].Name == name);
-
-        /// <summary>
-        /// Attempts to get the field with the specified name.
-        /// </summary>
-        /// <param name="name"></param>
-        /// <param name="value"></param>
-        /// <returns></returns>
-        public bool TryGet(string name, out FieldReader value)
+        protected override string GetName(int index, FieldRecord record)
         {
-            value = Enumerable.Range(0, Count).Where(i => this[i].Name == name).Select(i => this[i]).FirstOrDefault();
-            return value != null;
+            return DeclaringClass.Constants.Get<Utf8ConstantReader>(record.NameIndex).Value;
         }
 
     }

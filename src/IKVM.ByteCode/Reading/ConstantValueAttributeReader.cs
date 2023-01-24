@@ -22,7 +22,7 @@ namespace IKVM.ByteCode.Reading
 
         public object Value => value ??= ResolveValue();
 
-        object ResolveValue() => DeclaringClass.ResolveConstant<IConstantReader>(Record.ValueIndex) switch
+        object ResolveValue() => DeclaringClass.Constants.Get<IConstantReader>(Record.ValueIndex) switch
         {
             LongConstantReader l => l.Value,
             FloatConstantReader f => f.Value,

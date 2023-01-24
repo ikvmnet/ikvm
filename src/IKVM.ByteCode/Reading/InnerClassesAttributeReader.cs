@@ -2,6 +2,8 @@
 
 using IKVM.ByteCode.Parsing;
 
+using static IKVM.ByteCode.Util;
+
 namespace IKVM.ByteCode.Reading
 {
 
@@ -25,7 +27,7 @@ namespace IKVM.ByteCode.Reading
         /// <summary>
         /// Gets the items on the attribute.
         /// </summary>
-        public IReadOnlyList<InnerClassesAttributeItemReader> Items => ClassReader.LazyGet(ref items, () => new DelegateLazyReaderList<InnerClassesAttributeItemReader, InnerClassesAttributeItemRecord>(DeclaringClass, Record.Items, (_, record) => new InnerClassesAttributeItemReader(DeclaringClass, record)));
+        public IReadOnlyList<InnerClassesAttributeItemReader> Items => LazyGet(ref items, () => new DelegateLazyReaderList<InnerClassesAttributeItemReader, InnerClassesAttributeItemRecord>(DeclaringClass, Record.Items, (_, record) => new InnerClassesAttributeItemReader(DeclaringClass, record)));
 
     }
 

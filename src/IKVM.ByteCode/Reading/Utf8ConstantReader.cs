@@ -1,10 +1,12 @@
 ﻿using IKVM.ByteCode.Parsing;
 using IKVM.ByteCode.Text;
 
+using static IKVM.ByteCode.Util;
+
 namespace IKVM.ByteCode.Reading
 {
 
-    internal sealed class Utf8ConstantReader : ConstantReader<Utf8ConstantRecord, Utf8ConstantOverride>
+    internal sealed class Utf8ConstantReader : ConstantReader<Utf8ConstantRecord>
     {
 
         string value;
@@ -13,10 +15,10 @@ namespace IKVM.ByteCode.Reading
         /// Initializes a new instance.
         /// </summary>
         /// <param name="declaringClass"></param>
+        /// <param name="index"></param>
         /// <param name="record"></param>
-        /// <param name="override"></param>
-        public Utf8ConstantReader(ClassReader declaringClass, Utf8ConstantRecord record, Utf8ConstantOverride @override = null) :
-            base(declaringClass, record, @override)
+        public Utf8ConstantReader(ClassReader declaringClass, ushort index, Utf8ConstantRecord record) :
+            base(declaringClass, index, record)
         {
 
         }
@@ -24,7 +26,7 @@ namespace IKVM.ByteCode.Reading
         /// <summary>
         /// Gets the value of the constant. Result is interned.
         /// </summary>
-        public string Value => LazyGet(ref value, () => string.Intern(Override != null && Override.Value is string value ? value : MUTF8Encoding.GetMUTF8(DeclaringClass.MajorVersion).GetString(Record.Value)));
+        public string Value => LazyGet(ref value, () => MUTF8Encoding.GetMUTF8(DeclaringClass.Version.Major).GetString(Record.Value));
 
     }
 

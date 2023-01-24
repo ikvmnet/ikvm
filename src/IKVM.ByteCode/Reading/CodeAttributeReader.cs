@@ -3,6 +3,8 @@ using System.Collections.Generic;
 
 using IKVM.ByteCode.Parsing;
 
+using static IKVM.ByteCode.Util;
+
 namespace IKVM.ByteCode.Reading
 {
 
@@ -37,7 +39,7 @@ namespace IKVM.ByteCode.Reading
         /// <summary>
         /// Gets the set of attributes applied to this attribute.
         /// </summary>
-        public AttributeReaderCollection Attributes => ClassReader.LazyGet(ref attributes, () => new AttributeReaderCollection(DeclaringClass, Record.Attributes));
+        public AttributeReaderCollection Attributes => LazyGet(ref attributes, () => new AttributeReaderCollection(DeclaringClass, Record.Attributes));
 
     }
 

@@ -3,7 +3,7 @@
 namespace IKVM.ByteCode.Reading
 {
 
-    internal sealed class LongConstantReader : ConstantReader<LongConstantRecord, LongConstantOverride>
+    internal sealed class LongConstantReader : ConstantReader<LongConstantRecord>
     {
 
 
@@ -11,10 +11,10 @@ namespace IKVM.ByteCode.Reading
         /// Initializes a new instance.
         /// </summary>
         /// <param name="declaringClass"></param>
+        /// <param name="index"></param>
         /// <param name="record"></param>
-        /// <param name="override"></param>
-        public LongConstantReader(ClassReader declaringClass, LongConstantRecord record, LongConstantOverride @override = null) :
-            base(declaringClass, record, @override)
+        public LongConstantReader(ClassReader declaringClass, ushort index, LongConstantRecord record) :
+            base(declaringClass, index, record)
         {
 
         }
@@ -22,12 +22,12 @@ namespace IKVM.ByteCode.Reading
         /// <summary>
         /// Gets the value of the constant.
         /// </summary>
-        public long Value => Override != null ? Override.Value : Record.Value;
+        public long Value => Record.Value;
 
         /// <summary>
         /// Returns <c>true</c> if this constant is loadable.
         /// </summary>
-        public override bool IsLoadable => DeclaringClass.MajorVersion == 45 && DeclaringClass.MinorVersion >= 3 || DeclaringClass.MajorVersion > 45;
+        public override bool IsLoadable => DeclaringClass.Version >= new ClassFormatVersion(45, 3);
 
     }
 

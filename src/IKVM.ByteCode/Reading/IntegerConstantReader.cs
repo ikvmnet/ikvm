@@ -3,27 +3,28 @@
 namespace IKVM.ByteCode.Reading
 {
 
-    internal sealed class IntegerConstantReader : ConstantReader<IntegerConstantRecord, IntegerConstantOverride>
+    internal sealed class IntegerConstantReader : ConstantReader<IntegerConstantRecord>
     {
 
         /// <summary>
         /// Initializes a new instance.
         /// </summary>
         /// <param name="declaringClass"></param>
+        /// <param name="index"></param>
         /// <param name="record"></param>
-        /// <param name="override"></param>
-        public IntegerConstantReader(ClassReader declaringClass, IntegerConstantRecord record, IntegerConstantOverride @override = null) :
-            base(declaringClass, record, @override)
+        public IntegerConstantReader(ClassReader declaringClass, ushort index, IntegerConstantRecord record) :
+            base(declaringClass, index, record)
         {
 
         }
 
         /// <summary>
-        /// Gets the value of the constant. Result is interned.
+        /// Gets the value of the constant.
         /// </summary>
-        public int Value => Override != null ? Override.Value : Record.Value;
+        public int Value => Record.Value;
 
-        public override bool IsLoadable => DeclaringClass.MajorVersion == 45 && DeclaringClass.MinorVersion >= 3 || DeclaringClass.MajorVersion > 45;
+        /// <inheritdoc />
+        public override bool IsLoadable => DeclaringClass.Version >= new ClassFormatVersion(45, 3);
 
     }
 

@@ -1,32 +1,31 @@
 ﻿using IKVM.ByteCode.Parsing;
 
+using static IKVM.ByteCode.Util;
+
 namespace IKVM.ByteCode.Reading
 {
 
-    internal sealed class DynamicConstantReader : ConstantReader<DynamicConstantRecord, DynamicConstantOverride>
+    internal sealed class DynamicConstantReader : ConstantReader<DynamicConstantRecord>
     {
 
-        string name;
-        string type;
+        NameAndTypeConstantReader nameAndType;
 
         /// <summary>
         /// Initializes a new instance.
         /// </summary>
         /// <param name="declaringClass"></param>
         /// <param name="record"></param>
-        public DynamicConstantReader(ClassReader declaringClass, DynamicConstantRecord record, DynamicConstantOverride @override = null) :
-            base(declaringClass, record, @override)
+        public DynamicConstantReader(ClassReader declaringClass, ushort index,  DynamicConstantRecord record) :
+            base(declaringClass, index, record)
         {
 
         }
 
         public ushort BootstrapMethodAttributeIndex => Record.BootstrapMethodAttributeIndex;
 
-        public string Name => LazyGet(ref name, () => DeclaringClass.ResolveConstant<NameAndTypeConstantReader>(Record.NameAndTypeIndex).Name);
+        public NameAndTypeConstantReader NameAndType => LazyGet(ref nameAndType, () => DeclaringClass.Constants.Get<NameAndTypeConstantReader>(Record.NameAndTypeIndex));
 
-        public string Type => LazyGet(ref type, () => DeclaringClass.ResolveConstant<NameAndTypeConstantReader>(Record.NameAndTypeIndex).Type);
-
-        public override bool IsLoadable => DeclaringClass.MajorVersion >= 55;
+        public override bool IsLoadable => DeclaringClass.Version >= new ClassFormatVersion(55, 0);
 
     }
 

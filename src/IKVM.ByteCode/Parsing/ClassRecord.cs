@@ -27,7 +27,7 @@
                 return false;
 
             if (majorVersion > 63)
-                throw new UnsupportedClassVersionException(majorVersion, minorVersion);
+                throw new UnsupportedClassVersionException(new ClassFormatVersion(majorVersion, minorVersion));
 
             if (TryReadConstants(ref reader, out var constants) == false)
                 return false;

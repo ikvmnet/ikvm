@@ -6,35 +6,18 @@ namespace IKVM.ByteCode.Reading
     /// <summary>
     /// Interface supported by all of the readers for Ref constants.
     /// </summary>
-    internal interface IRefConstantReader : IConstantReader
+    internal interface IRefConstantReader : IConstantReader<RefConstantRecord>
     {
 
         /// <summary>
-        /// Gets the class name of the constant.
+        /// Gets the class name of the reference.
         /// </summary>
-        string ClassName { get; }
+        ClassConstantReader Class { get; }
 
         /// <summary>
-        /// Gets the name of the constant.
+        /// Gets the name and type reference.
         /// </summary>
-        string Name { get; }
-
-        /// <summary>
-        /// Gets the type of the constant.
-        /// </summary>
-        string Type { get; }
-
-    }
-
-    /// <summary>
-    /// Interface supported by all of the readers for Ref constants.
-    /// </summary>
-    internal interface IRefConstantReader<out TRecord, out TPatch> : IRefConstantReader, IConstantReader<TRecord, TPatch>
-        where TRecord : ConstantRecord
-        where TPatch : ConstantOverride
-    {
-
-
+        NameAndTypeConstantReader NameAndType { get; }
 
     }
 
