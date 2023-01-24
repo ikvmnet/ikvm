@@ -49,6 +49,16 @@ namespace IKVM.Util.Jar
         }
 
         /// <summary>
+        /// Returns the entry with the given name.
+        /// </summary>
+        /// <param name="entryName"></param>
+        /// <returns></returns>
+        public ZipArchiveEntry GetEntry(string entryName)
+        {
+            return archive.GetEntry(entryName);
+        }
+
+        /// <summary>
         /// Returns the jar file manifest, or null if none.
         /// </summary>
         public Manifest Manifest => manifest.Value;
