@@ -21,77 +21,87 @@
   jeroen@frijters.net
   
 */
-using System;
+using IKVM.ByteCode.Reading;
 
 namespace IKVM.Internal
 {
 
     sealed partial class ClassFile
-	{
+    {
+
         internal sealed class ConstantPoolItemMethodType : ConstantPoolItem
-		{
-			private ushort signature_index;
-			private string descriptor;
-			private TypeWrapper[] argTypeWrappers;
-			private TypeWrapper retTypeWrapper;
+        {
 
-			internal ConstantPoolItemMethodType(BigEndianBinaryReader br)
-			{
-				signature_index = br.ReadUInt16();
-			}
+            readonly ushort signature_index;
 
-			internal override void Resolve(ClassFile classFile, string[] utf8_cp, ClassFileParseOptions options)
-			{
-				string descriptor = classFile.GetConstantPoolUtf8String(utf8_cp, signature_index);
-				if (descriptor == null || !IsValidMethodSig(descriptor))
-				{
-					throw new ClassFormatError("Invalid MethodType signature");
-				}
-				this.descriptor = String.Intern(descriptor.Replace('/', '.'));
-			}
+            string descriptor;
+            TypeWrapper[] argTypeWrappers;
+            TypeWrapper retTypeWrapper;
 
-			internal override void Link(TypeWrapper thisType, LoadMode mode)
-			{
-				lock (this)
-				{
-					if (argTypeWrappers != null)
-					{
-						return;
-					}
-				}
-				ClassLoaderWrapper classLoader = thisType.GetClassLoader();
-				TypeWrapper[] args = classLoader.ArgTypeWrapperListFromSig(descriptor, mode);
-				TypeWrapper ret = classLoader.RetTypeWrapperFromSig(descriptor, mode);
-				lock (this)
-				{
-					if (argTypeWrappers == null)
-					{
-						argTypeWrappers = args;
-						retTypeWrapper = ret;
-					}
-				}
-			}
+            /// <summary>
+            /// Initializes a new instance.
+            /// </summary>
+            /// <param name="reader"></param>
+            internal ConstantPoolItemMethodType(MethodTypeConstantReader reader)
+            {
+                signature_index = reader.Record.DescriptorIndex;
+            }
 
-			internal string Signature
-			{
-				get { return descriptor; }
-			}
+            internal override void Resolve(ClassFile classFile, string[] utf8_cp, ClassFileParseOptions options)
+            {
+                var descriptor = classFile.GetConstantPoolUtf8String(utf8_cp, signature_index);
+                if (descriptor == null || !IsValidMethodSig(descriptor))
+                    throw new ClassFormatError("Invalid MethodType signature");
 
-			internal TypeWrapper[] GetArgTypes()
-			{
-				return argTypeWrappers;
-			}
+                this.descriptor = string.Intern(descriptor.Replace('/', '.'));
+            }
 
-			internal TypeWrapper GetRetType()
-			{
-				return retTypeWrapper;
-			}
+            internal override void Link(TypeWrapper thisType, LoadMode mode)
+            {
+                lock (this)
+                {
+                    if (argTypeWrappers != null)
+                    {
+                        return;
+                    }
+                }
 
-			internal override ConstantType GetConstantType()
-			{
-				return ConstantType.MethodType;
-			}
-		}
-	}
+                var classLoader = thisType.GetClassLoader();
+                var args = classLoader.ArgTypeWrapperListFromSig(descriptor, mode);
+                var ret = classLoader.RetTypeWrapperFromSig(descriptor, mode);
+
+                lock (this)
+                {
+                    if (argTypeWrappers == null)
+                    {
+                        argTypeWrappers = args;
+                        retTypeWrapper = ret;
+                    }
+                }
+            }
+
+            internal string Signature
+            {
+                get { return descriptor; }
+            }
+
+            internal TypeWrapper[] GetArgTypes()
+            {
+                return argTypeWrappers;
+            }
+
+            internal TypeWrapper GetRetType()
+            {
+                return retTypeWrapper;
+            }
+
+            internal override ConstantType GetConstantType()
+            {
+                return ConstantType.MethodType;
+            }
+
+        }
+
+    }
 
 }

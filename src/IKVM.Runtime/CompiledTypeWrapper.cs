@@ -28,6 +28,7 @@ using System.Diagnostics;
 using IKVM.Attributes;
 using IKVM.Runtime;
 using IKVM.Runtime.Syntax;
+using IKVM.ByteCode;
 
 #if IMPORTER || EXPORTER
 using IKVM.Reflection;
@@ -1465,8 +1466,9 @@ namespace IKVM.Internal
             for (int i = 0; i < mp.Length; i++)
             {
                 mp[i].name = i < parameters.Length ? parameters[i].Name : null;
-                mp[i].flags = (ushort)attr.Modifiers[i];
+                mp[i].accessFlags = (AccessFlag)attr.Modifiers[i];
             }
+
             return mp;
         }
 

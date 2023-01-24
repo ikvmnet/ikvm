@@ -27,8 +27,8 @@ using System.Diagnostics;
 using System.Reflection;
 using System.Runtime.InteropServices;
 
+using IKVM.ByteCode.Text;
 using IKVM.Internal;
-using IKVM.Runtime.Text;
 
 namespace IKVM.Runtime.JNI
 {
@@ -63,6 +63,8 @@ namespace IKVM.Runtime.JNI
     [StructLayout(LayoutKind.Sequential)]
     unsafe partial struct JNIEnv
     {
+
+        static readonly MUTF8Encoding MUTF8 = MUTF8Encoding.GetMUTF8(52);
 
         internal const int JNI_OK = 0;
         internal const int JNI_ERR = -1;
@@ -381,11 +383,11 @@ namespace IKVM.Runtime.JNI
             if (psz is null)
                 return null;
 
-            var l = MUTF8Encoding.IndexOfNull(psz);
+            var l = MUTF8.IndexOfNull(psz);
             if (l < 0)
                 throw new java.lang.IllegalArgumentException(arg);
 
-            var v = MUTF8Encoding.MUTF8.GetString(psz, l);
+            var v = MUTF8.GetString(psz, l);
             return v;
         }
 
@@ -400,11 +402,11 @@ namespace IKVM.Runtime.JNI
             if (psz is null)
                 return null;
 
-            var l = MUTF8Encoding.IndexOfNull(psz);
+            var l = MUTF8.IndexOfNull(psz);
             if (l < 0)
                 throw new java.lang.IllegalArgumentException();
 
-            var v = MUTF8Encoding.MUTF8.GetString(psz, l);
+            var v = MUTF8.GetString(psz, l);
             return v;
         }
 
@@ -1504,13 +1506,13 @@ namespace IKVM.Runtime.JNI
 
         internal static jint GetStringUTFLength(JNIEnv* pEnv, jstring str)
         {
-            return MUTF8Encoding.MUTF8.GetByteCount((string)pEnv->UnwrapRef(str));
+            return MUTF8.GetByteCount((string)pEnv->UnwrapRef(str));
         }
 
         internal static byte* GetStringUTFChars(JNIEnv* pEnv, jstring @string, jboolean* isCopy)
         {
             var s = (string)pEnv->UnwrapRef(@string);
-            var buf = (byte*)JNIMemory.Alloc(MUTF8Encoding.MUTF8.GetByteCount(s) + 1);
+            var buf = (byte*)JNIMemory.Alloc(MUTF8.GetByteCount(s) + 1);
             int j = 0;
 
             for (int i = 0; i < s.Length; i++)

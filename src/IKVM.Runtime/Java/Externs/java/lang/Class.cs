@@ -422,7 +422,7 @@ namespace IKVM.Java.Externs.java.lang
             if (attr != null)
             {
 #if DONT_WRAP_ANNOTATION_ATTRIBUTES
-			attr.freeze();
+			    attr.freeze();
 #else
                 // freeze to make sure the defaults are set
                 attr.freeze();

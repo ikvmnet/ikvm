@@ -26,15 +26,15 @@ namespace IKVM.Internal
 {
 
     sealed partial class ClassFile
-	{
+    {
         internal sealed partial class Method
         {
             internal struct LineNumberTableEntry
-			{
-				internal ushort start_pc;
-				internal ushort line_number;
-			}
-		}
-	}
+            {
+                internal ushort start_pc;
+                internal ushort line_number;
+            }
+        }
+    }
 
 }
