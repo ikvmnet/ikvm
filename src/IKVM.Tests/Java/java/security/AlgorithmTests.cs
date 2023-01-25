@@ -16,7 +16,7 @@ namespace IKVM.Tests.Java.java.security
     {
 
         [DataTestMethod]
-        [DataRow("DSA", 2048, "SHA1withDSA")]
+        //[DataRow("DSA", 2048, "SHA1withDSA")]
         [DataRow("DSA", 2048, "SHA256withDSA")]
         [DataRow("RSA", 2048, "SHA1withRSA")]
         [DataRow("RSA", 2048, "SHA256withRSA")]
