@@ -1244,6 +1244,7 @@ java/lang/instrument/VerifyLocalVariableTableOnRetransformTest.sh               
 java/lang/instrument/appendToClassLoaderSearch/CircularityErrorTest.sh                                                  generic-all
 java/lang/instrument/appendToClassLoaderSearch/ClassUnloadTest.sh                                                       generic-all
 java/lang/instrument/appendToClassLoaderSearch/run_tests.sh                                                             generic-all
+java/lang/instrument/ManyMethodsBenchmarkAgent.sh                                                                       generic-all
 java/lang/invoke/6987555/Test6987555.java                                                                               generic-all
 java/lang/invoke/6991596/Test6991596.java                                                                               generic-all
 java/lang/invoke/6998541/Test6998541.java                                                                               generic-all
@@ -2078,6 +2079,7 @@ java/util/zip/ZipFile/MultiThreadedReadTest.java                                
 java/util/zip/ZipFile/ReadLongZipFileName.java                                                                          generic-all
 java/util/zip/ZipFile/StreamZipEntriesTest.java                                                                         generic-all
 javax/accessibility/6986385/bug6986385.java                                                                             generic-all
+javax/accessibility/8069268/bug8069268.java                                                                             generic-all
 javax/crypto/JceSecurity/SunJCE_BC_LoadOrdering.java                                                                    generic-all
 javax/crypto/SecretKeyFactory/FailOverTest.sh                                                                           generic-all
 javax/crypto/sanity/CheckManifestForRelease.java                                                                        generic-all
