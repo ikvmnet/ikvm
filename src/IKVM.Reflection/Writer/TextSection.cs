@@ -22,10 +22,9 @@
   
 */
 using System;
-using System.Diagnostics;
-using System.IO;
 using System.Collections.Generic;
-using System.Text;
+using System.Diagnostics;
+
 using IKVM.Reflection.Emit;
 using IKVM.Reflection.Impl;
 using IKVM.Reflection.Metadata;

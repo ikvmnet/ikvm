@@ -55,6 +55,7 @@ namespace IKVM.Reflection.Impl
     {
         internal static ISymbolWriterImpl CreateSymbolWriterFor(ModuleBuilder moduleBuilder)
         {
+#if NETFRAMEWORK
             if (Universe.MonoRuntime)
             {
 #if MONO
@@ -67,6 +68,9 @@ namespace IKVM.Reflection.Impl
             {
                 return new PdbWriter(moduleBuilder);
             }
+#else
+            throw new NotSupportedException("IKVM.Reflection cannot emit debug symbols for .NET Core.");
+#endif
         }
 
         internal static byte[] GetDebugInfo(ISymbolWriterImpl writer, ref IMAGE_DEBUG_DIRECTORY idd)

@@ -119,6 +119,11 @@ $([MSBuild]::Unescape('$(___IkvmReferenceExportItemPrepareCs)'))
         <Delete Files="$(_ExcludeFilePath)" />
         <WriteLinesToFile File="$(_ExcludeFilePath)" Lines="@(ExcludeRegex)" Overwrite="true" Condition=" '@(ExcludeRegex)' != '' " />
 
+        <PropertyGroup>
+            <_Debug Condition="$([MSBuild]::IsTargetFrameworkCompatible('$(TargetFramework)', 'netcoreapp3.1'))">false</_Debug>
+            <_Debug Condition=" '$(_Debug)' == '' And '$(DebugType)' != 'none' ">true</_Debug>
+        </PropertyGroup>
+
         <ItemGroup>
             <_ClassToCompile Include="@(Class)" />
             <_AssemblyAttributesClass Include="@(_ClassToCompile)" Condition=" '%(Filename)%(Extension)' == '__AssemblyAttributes.class' " />
@@ -129,7 +134,7 @@ $([MSBuild]::Unescape('$(___IkvmReferenceExportItemPrepareCs)'))
         <ItemGroup>
             <_IkvmCompilerArgs Remove="@(_IkvmCompilerArgs)" />
             <_IkvmCompilerArgs Include="-nologo" />
-            <_IkvmCompilerArgs Include="-debug" Condition=" '$(DebugType)' != 'none' " />
+            <_IkvmCompilerArgs Include="-debug" Condition=" '$(_Debug)' == 'true' " />
             <_IkvmCompilerArgs Include="-assembly:$(AssemblyName)" />
             <_IkvmCompilerArgs Include="-version:$(AssemblyVersion)" />
             <_IkvmCompilerArgs Include="-runtime:$(IkvmRuntimeAssembly)" />
