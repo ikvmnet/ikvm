@@ -26,85 +26,93 @@ namespace IKVM.Internal
 {
 
     sealed partial class ClassFile
-	{
+    {
+
         internal class ConstantPoolItemMI : ConstantPoolItemFMI
-		{
-			private TypeWrapper[] argTypeWrappers;
-			private TypeWrapper retTypeWrapper;
-			protected MethodWrapper method;
-			protected MethodWrapper invokespecialMethod;
+        {
 
-			internal ConstantPoolItemMI(BigEndianBinaryReader br) : base(br)
-			{
-			}
+            TypeWrapper[] argTypeWrappers;
+            TypeWrapper retTypeWrapper;
+            protected MethodWrapper method;
+            protected MethodWrapper invokespecialMethod;
 
-			protected override void Validate(string name, string descriptor, int majorVersion)
-			{
-				if(!IsValidMethodSig(descriptor))
-				{
-					throw new ClassFormatError("Method {0} has invalid signature {1}", name, descriptor);
-				}
-				if(!IsValidMethodName(name, majorVersion))
-				{
-					if(!ReferenceEquals(name, StringConstants.INIT))
-					{
-						throw new ClassFormatError("Invalid method name \"{0}\"", name);
-					}
-					if(!descriptor.EndsWith("V"))
-					{
-						throw new ClassFormatError("Method {0} has invalid signature {1}", name, descriptor);
-					}
-				}
-			}
+            /// <summary>
+            /// Initializes a new instance.
+            /// </summary>
+            /// <param name="classIndex"></param>
+            /// <param name="nameAndTypeIndex"></param>
+            internal ConstantPoolItemMI(ushort classIndex, ushort nameAndTypeIndex) : base(classIndex, nameAndTypeIndex)
+            {
 
-			internal override void Link(TypeWrapper thisType, LoadMode mode)
-			{
-				base.Link(thisType, mode);
-				lock(this)
-				{
-					if(argTypeWrappers != null)
-					{
-						return;
-					}
-				}
-				ClassLoaderWrapper classLoader = thisType.GetClassLoader();
-				TypeWrapper[] args = classLoader.ArgTypeWrapperListFromSig(this.Signature, mode);
-				TypeWrapper ret = classLoader.RetTypeWrapperFromSig(this.Signature, mode);
-				lock(this)
-				{
-					if(argTypeWrappers == null)
-					{
-						argTypeWrappers = args;
-						retTypeWrapper = ret;
-					}
-				}
-			}
+            }
 
-			internal TypeWrapper[] GetArgTypes()
-			{
-				return argTypeWrappers;
-			}
+            protected override void Validate(string name, string descriptor, int majorVersion)
+            {
+                if (!IsValidMethodSig(descriptor))
+                {
+                    throw new ClassFormatError("Method {0} has invalid signature {1}", name, descriptor);
+                }
+                if (!IsValidMethodName(name, majorVersion))
+                {
+                    if (!ReferenceEquals(name, StringConstants.INIT))
+                    {
+                        throw new ClassFormatError("Invalid method name \"{0}\"", name);
+                    }
+                    if (!descriptor.EndsWith("V"))
+                    {
+                        throw new ClassFormatError("Method {0} has invalid signature {1}", name, descriptor);
+                    }
+                }
+            }
 
-			internal TypeWrapper GetRetType()
-			{
-				return retTypeWrapper;
-			}
+            internal override void Link(TypeWrapper thisType, LoadMode mode)
+            {
+                base.Link(thisType, mode);
+                lock (this)
+                {
+                    if (argTypeWrappers != null)
+                    {
+                        return;
+                    }
+                }
+                ClassLoaderWrapper classLoader = thisType.GetClassLoader();
+                TypeWrapper[] args = classLoader.ArgTypeWrapperListFromSig(this.Signature, mode);
+                TypeWrapper ret = classLoader.RetTypeWrapperFromSig(this.Signature, mode);
+                lock (this)
+                {
+                    if (argTypeWrappers == null)
+                    {
+                        argTypeWrappers = args;
+                        retTypeWrapper = ret;
+                    }
+                }
+            }
 
-			internal MethodWrapper GetMethod()
-			{
-				return method;
-			}
+            internal TypeWrapper[] GetArgTypes()
+            {
+                return argTypeWrappers;
+            }
 
-			internal MethodWrapper GetMethodForInvokespecial()
-			{
-				return invokespecialMethod != null ? invokespecialMethod : method;
-			}
+            internal TypeWrapper GetRetType()
+            {
+                return retTypeWrapper;
+            }
 
-			internal override MemberWrapper GetMember()
-			{
-				return method;
-			}
-		}
-	}
+            internal MethodWrapper GetMethod()
+            {
+                return method;
+            }
+
+            internal MethodWrapper GetMethodForInvokespecial()
+            {
+                return invokespecialMethod != null ? invokespecialMethod : method;
+            }
+
+            internal override MemberWrapper GetMember()
+            {
+                return method;
+            }
+        }
+    }
 
 }

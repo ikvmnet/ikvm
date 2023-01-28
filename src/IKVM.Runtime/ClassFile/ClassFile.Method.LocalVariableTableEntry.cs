@@ -26,18 +26,18 @@ namespace IKVM.Internal
 {
 
     sealed partial class ClassFile
-	{
+    {
         internal sealed partial class Method
         {
             internal struct LocalVariableTableEntry
-			{
-				internal ushort start_pc;
-				internal ushort length;
-				internal string name;
-				internal string descriptor;
-				internal ushort index;
-			}
-		}
-	}
+            {
+                internal ushort start_pc;
+                internal ushort length;
+                internal string name;
+                internal string descriptor;
+                internal ushort index;
+            }
+        }
+    }
 
 }

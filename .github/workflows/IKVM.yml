@@ -286,6 +286,7 @@ jobs:
     strategy:
       matrix:
         run:
+        - IKVM.ByteCode.Tests
         - IKVM.Tests
         - IKVM.Tools.Importer.Tests
         - IKVM.Tools.Exporter.Tests

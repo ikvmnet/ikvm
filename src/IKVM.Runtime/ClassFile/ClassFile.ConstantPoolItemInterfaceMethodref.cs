@@ -22,39 +22,50 @@
   
 */
 
+using IKVM.ByteCode.Reading;
+
 namespace IKVM.Internal
 {
 
     sealed partial class ClassFile
-	{
-        internal sealed class ConstantPoolItemInterfaceMethodref : ConstantPoolItemMI
-		{
-			internal ConstantPoolItemInterfaceMethodref(BigEndianBinaryReader br) : base(br)
-			{
-			}
+    {
 
-			internal override void Link(TypeWrapper thisType, LoadMode mode)
-			{
-				base.Link(thisType, mode);
-				TypeWrapper wrapper = GetClassType();
-				if(wrapper != null)
-				{
-					if(!wrapper.IsUnloadable)
-					{
-						method = wrapper.GetInterfaceMethod(Name, Signature);
-					}
-					if(method == null)
-					{
-						// NOTE vmspec 5.4.3.4 clearly states that an interfacemethod may also refer to a method in Object
-						method = CoreClasses.java.lang.Object.Wrapper.GetMethodWrapper(Name, Signature, false);
-					}
-					if(method != null)
-					{
-						method.Link(mode);
-					}
-				}
-			}
-		}
-	}
+        internal sealed class ConstantPoolItemInterfaceMethodref : ConstantPoolItemMI
+        {
+
+            /// <summary>
+            /// initializes a new instance.
+            /// </summary>
+            /// <param name="reader"></param>
+            internal ConstantPoolItemInterfaceMethodref(InterfaceMethodrefConstantReader reader) : base(reader.Record.ClassIndex, reader.Record.NameAndTypeIndex)
+            {
+
+            }
+
+            internal override void Link(TypeWrapper thisType, LoadMode mode)
+            {
+                base.Link(thisType, mode);
+                TypeWrapper wrapper = GetClassType();
+                if (wrapper != null)
+                {
+                    if (!wrapper.IsUnloadable)
+                    {
+                        method = wrapper.GetInterfaceMethod(Name, Signature);
+                    }
+                    if (method == null)
+                    {
+                        // NOTE vmspec 5.4.3.4 clearly states that an interfacemethod may also refer to a method in Object
+                        method = CoreClasses.java.lang.Object.Wrapper.GetMethodWrapper(Name, Signature, false);
+                    }
+                    if (method != null)
+                    {
+                        method.Link(mode);
+                    }
+                }
+            }
+
+        }
+
+    }
 
 }

@@ -94,7 +94,7 @@ final class VMSystemProperties
                     p.load(ikvmPropertiesReader);
                 }
             }
-        } catch (Exception _) {
+        } catch (Exception _) { 
 
         }
 

@@ -21,6 +21,9 @@
   jeroen@frijters.net
   
 */
+using System;
+
+using IKVM.ByteCode.Reading;
 using IKVM.Internal;
 
 namespace IKVM.Java.Externs.java.lang
@@ -59,15 +62,16 @@ namespace IKVM.Java.Externs.java.lang
             {
                 try
                 {
-                    ClassLoaderWrapper classLoaderWrapper = ClassLoaderWrapper.GetClassLoaderWrapper(thisClassLoader);
-                    ClassFile classFile = new ClassFile(b, off, len, name, classLoaderWrapper.ClassFileParseOptions, null);
+                    var classLoaderWrapper = ClassLoaderWrapper.GetClassLoaderWrapper(thisClassLoader);
+                    var classFile = new ClassFile(ClassReader.Read(new ReadOnlyMemory<byte>(b, off, len)), name, classLoaderWrapper.ClassFileParseOptions, null);
                     if (name != null && classFile.Name != name)
                     {
 #if !FIRST_PASS
                         throw new global::java.lang.NoClassDefFoundError(name + " (wrong name: " + classFile.Name + ")");
 #endif
                     }
-                    TypeWrapper type = classLoaderWrapper.DefineClass(classFile, pd);
+
+                    var type = classLoaderWrapper.DefineClass(classFile, pd);
                     return type.ClassObject;
                 }
                 catch (RetargetableJavaException x)

@@ -28,6 +28,7 @@ using System.IO.Compression;
 using System.Text.RegularExpressions;
 using System.Threading;
 
+using IKVM.ByteCode.Reading;
 using IKVM.Internal;
 using IKVM.Reflection;
 using IKVM.Reflection.Emit;
@@ -1163,22 +1164,25 @@ namespace IKVM.Tools.Importer
         private static bool EmitStubWarning(CompilerOptions options, byte[] buf)
         {
             ClassFile cf;
+
             try
             {
-                cf = new ClassFile(buf, 0, buf.Length, "<unknown>", ClassFileParseOptions.None, null);
+                cf = new ClassFile(ClassReader.Read(buf), "<unknown>", ClassFileParseOptions.None, null);
             }
             catch (ClassFormatError)
             {
                 return false;
             }
+
             if (cf.IKVMAssemblyAttribute == null)
             {
                 return false;
             }
+
             if (cf.IKVMAssemblyAttribute.StartsWith("[["))
             {
-                Regex r = new Regex(@"\[([^\[\]]+)\]");
-                MatchCollection mc = r.Matches(cf.IKVMAssemblyAttribute);
+                var r = new Regex(@"\[([^\[\]]+)\]");
+                var mc = r.Matches(cf.IKVMAssemblyAttribute);
                 foreach (Match m in mc)
                 {
                     options.legacyStubReferences[m.Groups[1].Value] = null;
@@ -1190,6 +1194,7 @@ namespace IKVM.Tools.Importer
                 options.legacyStubReferences[cf.IKVMAssemblyAttribute] = null;
                 StaticCompiler.IssueMessage(options, Message.StubsAreDeprecated, cf.IKVMAssemblyAttribute);
             }
+
             return true;
         }
 
@@ -1382,7 +1387,7 @@ namespace IKVM.Tools.Importer
         {
             try
             {
-                List<string> list = classesToExclude == null ? new List<string>() : new List<string>(classesToExclude);
+                var list = classesToExclude == null ? new List<string>() : new List<string>(classesToExclude);
                 using (StreamReader file = new StreamReader(filename))
                 {
                     String line;
@@ -1403,12 +1408,12 @@ namespace IKVM.Tools.Importer
             }
         }
 
-        private static void ProcessAttributeAnnotationsClass(ref object[] annotations, string filename)
+        static void ProcessAttributeAnnotationsClass(ref object[] annotations, string filename)
         {
             try
             {
-                byte[] buf = File.ReadAllBytes(filename);
-                ClassFile cf = new ClassFile(buf, 0, buf.Length, null, ClassFileParseOptions.None, null);
+                using var file = File.OpenRead(filename);
+                var cf = new ClassFile(ClassReader.Read(file), null, ClassFileParseOptions.None, null);
                 ArrayAppend(ref annotations, cf.Annotations);
             }
             catch (Exception x)

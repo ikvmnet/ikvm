@@ -21,87 +21,96 @@
   jeroen@frijters.net
   
 */
-using System;
+using IKVM.ByteCode.Reading;
 
 namespace IKVM.Internal
 {
 
     sealed partial class ClassFile
-	{
+    {
         internal sealed class ConstantPoolItemInvokeDynamic : ConstantPoolItem
-		{
-			private ushort bootstrap_specifier_index;
-			private ushort name_and_type_index;
-			private string name;
-			private string descriptor;
-			private TypeWrapper[] argTypeWrappers;
-			private TypeWrapper retTypeWrapper;
+        {
 
-			internal ConstantPoolItemInvokeDynamic(BigEndianBinaryReader br)
-			{
-				bootstrap_specifier_index = br.ReadUInt16();
-				name_and_type_index = br.ReadUInt16();
-			}
+            readonly ushort bootstrap_specifier_index;
+            readonly ushort name_and_type_index;
 
-			internal override void Resolve(ClassFile classFile, string[] utf8_cp, ClassFileParseOptions options)
-			{
-				ConstantPoolItemNameAndType name_and_type = (ConstantPoolItemNameAndType)classFile.GetConstantPoolItem(name_and_type_index);
-				// if the constant pool items referred to were strings, GetConstantPoolItem returns null
-				if (name_and_type == null)
-				{
-					throw new ClassFormatError("Bad index in constant pool");
-				}
-				name = String.Intern(classFile.GetConstantPoolUtf8String(utf8_cp, name_and_type.name_index));
-				descriptor = String.Intern(classFile.GetConstantPoolUtf8String(utf8_cp, name_and_type.descriptor_index).Replace('/', '.'));
-			}
+            string name;
+            string descriptor;
+            TypeWrapper[] argTypeWrappers;
+            TypeWrapper retTypeWrapper;
 
-			internal override void Link(TypeWrapper thisType, LoadMode mode)
-			{
-				lock (this)
-				{
-					if (argTypeWrappers != null)
-					{
-						return;
-					}
-				}
-				ClassLoaderWrapper classLoader = thisType.GetClassLoader();
-				TypeWrapper[] args = classLoader.ArgTypeWrapperListFromSig(descriptor, mode);
-				TypeWrapper ret = classLoader.RetTypeWrapperFromSig(descriptor, mode);
-				lock (this)
-				{
-					if (argTypeWrappers == null)
-					{
-						argTypeWrappers = args;
-						retTypeWrapper = ret;
-					}
-				}
-			}
+            /// <summary>
+            /// Initializes a new instance.
+            /// </summary>
+            /// <param name="reader"></param>
+            internal ConstantPoolItemInvokeDynamic(InvokeDynamicConstantReader reader)
+            {
+                bootstrap_specifier_index = reader.Record.BootstrapMethodAttributeIndex;
+                name_and_type_index = reader.Record.NameAndTypeIndex;
+            }
 
-			internal TypeWrapper[] GetArgTypes()
-			{
-				return argTypeWrappers;
-			}
+            internal override void Resolve(ClassFile classFile, string[] utf8_cp, ClassFileParseOptions options)
+            {
+                var name_and_type = (ConstantPoolItemNameAndType)classFile.GetConstantPoolItem(name_and_type_index);
+                // if the constant pool items referred to were strings, GetConstantPoolItem returns null
+                if (name_and_type == null)
+                    throw new ClassFormatError("Bad index in constant pool");
 
-			internal TypeWrapper GetRetType()
-			{
-				return retTypeWrapper;
-			}
+                name = string.Intern(classFile.GetConstantPoolUtf8String(utf8_cp, name_and_type.nameIndex));
+                descriptor = string.Intern(classFile.GetConstantPoolUtf8String(utf8_cp, name_and_type.descriptorIndex).Replace('/', '.'));
+            }
 
-			internal string Name
-			{
-				get { return name; }
-			}
+            internal override void Link(TypeWrapper thisType, LoadMode mode)
+            {
+                lock (this)
+                {
+                    if (argTypeWrappers != null)
+                    {
+                        return;
+                    }
+                }
 
-			internal string Signature
-			{
-				get { return descriptor; }
-			}
+                var classLoader = thisType.GetClassLoader();
+                var args = classLoader.ArgTypeWrapperListFromSig(descriptor, mode);
+                var ret = classLoader.RetTypeWrapperFromSig(descriptor, mode);
 
-			internal ushort BootstrapMethod
-			{
-				get { return bootstrap_specifier_index; }
-			}
-		}
-	}
+                lock (this)
+                {
+                    if (argTypeWrappers == null)
+                    {
+                        argTypeWrappers = args;
+                        retTypeWrapper = ret;
+                    }
+                }
+            }
+
+            internal TypeWrapper[] GetArgTypes()
+            {
+                return argTypeWrappers;
+            }
+
+            internal TypeWrapper GetRetType()
+            {
+                return retTypeWrapper;
+            }
+
+            internal string Name
+            {
+                get { return name; }
+            }
+
+            internal string Signature
+            {
+                get { return descriptor; }
+            }
+
+            internal ushort BootstrapMethod
+            {
+                get { return bootstrap_specifier_index; }
+            }
+
+        }
+
+    }
 
 }

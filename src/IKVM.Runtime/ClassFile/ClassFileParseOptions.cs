@@ -27,16 +27,16 @@ namespace IKVM.Internal
 {
 
     [Flags]
-	enum ClassFileParseOptions
-	{
+    enum ClassFileParseOptions
+    {
 
-		None = 0,
-		LocalVariableTable = 1,
-		LineNumberTable = 2,
-		RelaxedClassNameValidation = 4,
-		TrustedAnnotations = 8,
-		RemoveAssertions = 16,
+        None = 0,
+        LocalVariableTable = 1,
+        LineNumberTable = 2,
+        RelaxedClassNameValidation = 4,
+        TrustedAnnotations = 8,
+        RemoveAssertions = 16,
 
-	}
+    }
 
 }

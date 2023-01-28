@@ -22,83 +22,90 @@
   
 */
 
+using IKVM.ByteCode.Reading;
+
 namespace IKVM.Internal
 {
 
     sealed partial class ClassFile
-	{
+    {
+
         internal sealed class ConstantPoolItemFieldref : ConstantPoolItemFMI
-		{
-			private FieldWrapper field;
-			private TypeWrapper fieldTypeWrapper;
+        {
 
-			internal ConstantPoolItemFieldref(BigEndianBinaryReader br) : base(br)
-			{
-			}
+            FieldWrapper field;
+            TypeWrapper fieldTypeWrapper;
 
-			protected override void Validate(string name, string descriptor, int majorVersion)
-			{
-				if(!IsValidFieldSig(descriptor))
-				{
-					throw new ClassFormatError("Invalid field signature \"{0}\"", descriptor);
-				}
-				if(!IsValidFieldName(name, majorVersion))
-				{
-					throw new ClassFormatError("Invalid field name \"{0}\"", name);
-				}
-			}
+            /// <summary>
+            /// Initializes a new instance.
+            /// </summary>
+            /// <param name="reader"></param>
+            internal ConstantPoolItemFieldref(FieldrefConstantReader reader) : base(reader.Record.ClassIndex, reader.Record.NameAndTypeIndex)
+            {
 
-			internal TypeWrapper GetFieldType()
-			{
-				return fieldTypeWrapper;
-			}
+            }
 
-			internal override void Link(TypeWrapper thisType, LoadMode mode)
-			{
-				base.Link(thisType, mode);
-				lock(this)
-				{
-					if(fieldTypeWrapper != null)
-					{
-						return;
-					}
-				}
-				FieldWrapper fw = null;
-				TypeWrapper wrapper = GetClassType();
-				if(wrapper == null)
-				{
-					return;
-				}
-				if(!wrapper.IsUnloadable)
-				{
-					fw = wrapper.GetFieldWrapper(Name, Signature);
-					if(fw != null)
-					{
-						fw.Link(mode);
-					}
-				}
-				ClassLoaderWrapper classLoader = thisType.GetClassLoader();
-				TypeWrapper fld = classLoader.FieldTypeWrapperFromSig(this.Signature, mode);
-				lock(this)
-				{
-					if(fieldTypeWrapper == null)
-					{
-						fieldTypeWrapper = fld;
-						field = fw;
-					}
-				}
-			}
+            protected override void Validate(string name, string descriptor, int majorVersion)
+            {
+                if (!IsValidFieldSig(descriptor))
+                    throw new ClassFormatError("Invalid field signature \"{0}\"", descriptor);
+                if (!IsValidFieldName(name, majorVersion))
+                    throw new ClassFormatError("Invalid field name \"{0}\"", name);
+            }
 
-			internal FieldWrapper GetField()
-			{
-				return field;
-			}
+            internal TypeWrapper GetFieldType()
+            {
+                return fieldTypeWrapper;
+            }
 
-			internal override MemberWrapper GetMember()
-			{
-				return field;
-			}
-		}
-	}
+            internal override void Link(TypeWrapper thisType, LoadMode mode)
+            {
+                base.Link(thisType, mode);
+                lock (this)
+                {
+                    if (fieldTypeWrapper != null)
+                    {
+                        return;
+                    }
+                }
+                FieldWrapper fw = null;
+                TypeWrapper wrapper = GetClassType();
+                if (wrapper == null)
+                {
+                    return;
+                }
+                if (!wrapper.IsUnloadable)
+                {
+                    fw = wrapper.GetFieldWrapper(Name, Signature);
+                    if (fw != null)
+                    {
+                        fw.Link(mode);
+                    }
+                }
+                ClassLoaderWrapper classLoader = thisType.GetClassLoader();
+                TypeWrapper fld = classLoader.FieldTypeWrapperFromSig(this.Signature, mode);
+                lock (this)
+                {
+                    if (fieldTypeWrapper == null)
+                    {
+                        fieldTypeWrapper = fld;
+                        field = fw;
+                    }
+                }
+            }
+
+            internal FieldWrapper GetField()
+            {
+                return field;
+            }
+
+            internal override MemberWrapper GetMember()
+            {
+                return field;
+            }
+
+        }
+
+    }
 
 }
