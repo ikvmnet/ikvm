@@ -1279,11 +1279,11 @@ namespace IKVM.Tools.Importer
                         }
                     }
                 }
-                // include empty zip file if it has a comment
-                //if (!found && !string.IsNullOrEmpty(zf.ZipFileComment))
-                //{
-                //    options.GetJar(file);
-                //}
+                // include empty zip file
+                if (!found)
+                {
+                    options.GetJar(file);
+                }
                 return found;
             }
             catch (InvalidDataException x)
