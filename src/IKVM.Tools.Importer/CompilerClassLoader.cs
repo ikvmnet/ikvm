@@ -26,14 +26,13 @@ using System;
 using System.Collections.Generic;
 using System.Diagnostics;
 using System.IO;
+using System.IO.Compression;
 using System.Security;
 using System.Security.Permissions;
 using System.Text;
 using System.Text.RegularExpressions;
 using System.Threading;
 using System.Xml.Linq;
-
-using ICSharpCode.SharpZipLib.Zip;
 
 using IKVM.Attributes;
 using IKVM.Internal;
@@ -740,13 +739,8 @@ namespace IKVM.Tools.Importer
             {
                 var hasEntries = false;
                 var mem = new MemoryStream();
-                using (ZipOutputStream zip = new ZipOutputStream(mem))
+                using (ZipArchive zip = new ZipArchive(mem, ZipArchiveMode.Create))
                 {
-                    if (!string.IsNullOrEmpty(options.jars[i].Comment))
-                        zip.SetComment(options.jars[i].Comment);
-
-                    zip.SetLevel(9);
-
                     var stubs = new List<string>();
                     foreach (Jar.Item item in options.jars[i])
                     {
@@ -758,31 +752,30 @@ namespace IKVM.Tools.Importer
 
                             continue;
                         }
-                        var zipEntry = item.ZipEntry;
-                        if (options.compressedResources || zipEntry.CompressionMethod != CompressionMethod.Stored)
-                            zipEntry.CompressionMethod = CompressionMethod.Deflated;
-
-                        zip.PutNextEntry(zipEntry);
+                        var zipEntry = zip.CreateEntry(item.Name, options.compressedResources ? CompressionLevel.Optimal : CompressionLevel.NoCompression);
+                        
                         byte[] data = item.GetData();
-                        zip.Write(data, 0, data.Length);
-                        zip.CloseEntry();
+
+                        using Stream stream = zipEntry.Open();
+                        stream.Write(data, 0, data.Length);
+                        
                         hasEntries = true;
                     }
 
                     if (stubs.Count != 0)
                     {
                         // generate the --ikvm-classes-- file in the jar
-                        ZipEntry zipEntry = new ZipEntry(JVM.JarClassList);
-                        zipEntry.CompressionMethod = CompressionMethod.Deflated;
-                        zip.PutNextEntry(zipEntry);
-                        BinaryWriter bw = new BinaryWriter(zip);
+                        ZipArchiveEntry zipEntry = zip.CreateEntry(JVM.JarClassList);
+
+                        using Stream stream = zipEntry.Open();
+                        using BinaryWriter bw = new BinaryWriter(stream);
+
                         bw.Write(stubs.Count);
                         foreach (string classFile in stubs)
                         {
                             bw.Write(classFile);
                         }
-                        bw.Flush();
-                        zip.CloseEntry();
+
                         hasEntries = true;
                     }
                 }
@@ -3251,44 +3244,34 @@ namespace IKVM.Tools.Importer
     sealed class Jar
     {
         internal readonly string Name;
-        internal readonly string Comment;
         private readonly List<JarItem> Items = new List<JarItem>();
 
-        internal Jar(string name, string comment)
+        internal Jar(string name)
         {
             this.Name = name;
-            this.Comment = comment;
         }
 
         internal Jar Copy()
         {
-            Jar newJar = new Jar(Name, Comment);
+            Jar newJar = new Jar(Name);
             newJar.Items.AddRange(Items);
             return newJar;
         }
 
-        internal void Add(ZipEntry ze, byte[] data)
+        internal void Add(string name, byte[] data, FileInfo fileInfo = null)
         {
-            Items.Add(new JarItem(ze, data, null));
+            Items.Add(new JarItem(name, data, fileInfo));
         }
 
-        internal void Add(string name, byte[] data, FileInfo fileInfo)
+        private readonly struct JarItem
         {
-            ZipEntry zipEntry = new ZipEntry(name);
-            zipEntry.DateTime = new DateTime(1980, 01, 01, 0, 00, 0, DateTimeKind.Utc);
-            zipEntry.CompressionMethod = CompressionMethod.Stored;
-            Items.Add(new JarItem(zipEntry, data, fileInfo));
-        }
-
-        private struct JarItem
-        {
-            internal readonly ZipEntry zipEntry;
+            internal readonly string name;
             internal readonly byte[] data;
             internal readonly FileInfo path;            // path of the original file, if it was individual file (used to construct source file path)
 
-            internal JarItem(ZipEntry zipEntry, byte[] data, FileInfo path)
+            internal JarItem(string name, byte[] data, FileInfo path)
             {
-                this.zipEntry = zipEntry;
+                this.name = name;
                 this.data = data;
                 this.path = path;
             }
@@ -3307,7 +3290,7 @@ namespace IKVM.Tools.Importer
 
             internal string Name
             {
-                get { return Jar.Items[Index].zipEntry.Name; }
+                get { return Jar.Items[Index].name; }
             }
 
             internal byte[] GetData()
@@ -3320,19 +3303,6 @@ namespace IKVM.Tools.Importer
                 get { return Jar.Items[Index].path; }
             }
 
-            internal ZipEntry ZipEntry
-            {
-                get
-                {
-                    var org = Jar.Items[Index].zipEntry;
-                    var zipEntry = new ZipEntry(org.Name);
-                    zipEntry.Comment = org.Comment;
-                    zipEntry.CompressionMethod = org.CompressionMethod;
-                    zipEntry.DateTime = org.DateTime;
-                    return zipEntry;
-                }
-            }
-
             internal void Remove()
             {
                 Jar.Items[Index] = new JarItem();
@@ -3340,7 +3310,7 @@ namespace IKVM.Tools.Importer
 
             internal void MarkAsStub()
             {
-                Jar.Items[Index] = new JarItem(Jar.Items[Index].zipEntry, null, null);
+                Jar.Items[Index] = new JarItem(Jar.Items[Index].name, null, null);
             }
 
             internal bool IsStub
@@ -3367,12 +3337,10 @@ namespace IKVM.Tools.Importer
 
             public bool MoveNext()
             {
-                while (index + 1 < jar.Items.Count)
+                if (index + 1 < jar.Items.Count)
                 {
-                    if (jar.Items[++index].zipEntry != null)
-                    {
-                        return true;
-                    }
+                    index++;
+                    return true;
                 }
                 return false;
             }
@@ -3466,18 +3434,18 @@ namespace IKVM.Tools.Importer
             return newJars;
         }
 
-        internal Jar GetJar(ZipFile zf)
+        internal Jar GetJar(string file)
         {
             int existingJar;
-            if (jarMap.TryGetValue(zf.Name, out existingJar))
+            if (jarMap.TryGetValue(file, out existingJar))
             {
                 return jars[existingJar];
             }
-            jarMap.Add(zf.Name, jars.Count);
-            return CreateJar(Path.GetFileName(zf.Name), zf.ZipFileComment);
+            jarMap.Add(file, jars.Count);
+            return CreateJar(Path.GetFileName(file));
         }
 
-        private Jar CreateJar(string jarName, string comment)
+        private Jar CreateJar(string jarName)
         {
             int count = 0;
             string name = jarName;
@@ -3490,7 +3458,7 @@ namespace IKVM.Tools.Importer
                     goto retry;
                 }
             }
-            Jar newJar = new Jar(name, comment);
+            Jar newJar = new Jar(name);
             jars.Add(newJar);
             return newJar;
         }
@@ -3500,7 +3468,7 @@ namespace IKVM.Tools.Importer
             if (classesJar == -1)
             {
                 classesJar = jars.Count;
-                CreateJar("classes.jar", null);
+                CreateJar("classes.jar");
             }
             return jars[classesJar];
         }
@@ -3515,7 +3483,7 @@ namespace IKVM.Tools.Importer
             if (resourcesJar == -1)
             {
                 resourcesJar = jars.Count;
-                CreateJar("resources.jar", null);
+                CreateJar("resources.jar");
             }
 
             return jars[resourcesJar];
