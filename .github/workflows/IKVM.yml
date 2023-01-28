@@ -18,7 +18,7 @@ jobs:
     runs-on: ubuntu-18.04
     steps:
     - name: Checkout Source
-      uses: actions/checkout@v1
+      uses: actions/checkout@v3
       with:
         submodules: recursive
     - name: Cache OpenJDK Build
@@ -151,7 +151,7 @@ jobs:
         dotnet-version: 7.0.x
     - name: Cache LLVM and Clang
       id: cache-llvm
-      uses: actions/cache@v2
+      uses: actions/cache@v3
       with:
         path: C:/Program Files/LLVM
         key: llvm-15.0
