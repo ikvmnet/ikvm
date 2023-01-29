@@ -28,7 +28,7 @@ jobs:
         key: openjdk-build-linux-x86_64-normal-server-release--${{ runner.os }}--${{ hashFiles('openjdk/**', '!openjdk/build') }}-8
     - name: Check OpenJDK Build Stamp
       id: openjdk-build-stamp
-      uses: andstor/file-existence-action@v1
+      uses: andstor/file-existence-action@v2
       with:
         files: openjdk/build/linux-x86_64-normal-server-release/stamp
     - name: Fetch OpenJDK 7
@@ -94,7 +94,7 @@ jobs:
         key: jtreg-build--${{ runner.os }}--${{ hashFiles('jtreg/**', 'openjdk/build/linux-x86_64-normal-server-release/images/j2sdk-image', '!jtreg/build') }}-6
     - name: Check OpenJDK Test Harness Build Stamp
       id: jtreg-build-stamp
-      uses: andstor/file-existence-action@v1
+      uses: andstor/file-existence-action@v2
       with:
         files: jtreg/build/stamp
     - name: Build OpenJDK Test Harness
