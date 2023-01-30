@@ -1,9 +1,8 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.IO;
+using System.IO.Compression;
 using System.Linq;
-
-using ICSharpCode.SharpZipLib.Zip;
 
 using IKVM.Internal;
 using IKVM.Reflection;
@@ -19,9 +18,7 @@ namespace IKVM.Tools.Exporter
     /// </summary>
     static class IkvmExporterInternal
     {
-
-        static int zipCount;
-        static ZipOutputStream zipFile;
+        static ZipArchive zipFile;
         static Dictionary<string, string> done = new Dictionary<string, string>();
         static Dictionary<string, TypeWrapper> todo = new Dictionary<string, TypeWrapper>();
         static FileInfo file;
@@ -120,6 +117,7 @@ namespace IKVM.Tools.Exporter
             int rc = 0;
             if (assembly == null)
             {
+                rc = 1;
                 Console.Error.WriteLine("Error: Assembly \"{0}\" not found", assemblyNameOrPath);
             }
             else
@@ -162,9 +160,8 @@ namespace IKVM.Tools.Exporter
 
                 try
                 {
-                    using (zipFile = new ZipOutputStream(new FileStream(outputFile, FileMode.Create)))
+                    using (zipFile = new ZipArchive(new FileStream(outputFile, FileMode.Create), ZipArchiveMode.Create))
                     {
-                        zipFile.SetComment(GetVersionAndCopyrightInfo());
                         try
                         {
                             List<Assembly> assemblies = new List<Assembly>();
@@ -204,13 +201,10 @@ namespace IKVM.Tools.Exporter
                         }
                     }
                 }
-                catch (ZipException x)
+                catch (InvalidDataException x)
                 {
                     rc = 1;
-                    if (zipCount == 0)
-                        Console.Error.WriteLine("Error: Assembly contains no public IKVM.NET compatible types");
-                    else
-                        Console.Error.WriteLine("Error: {0}", x.Message);
+                    Console.Error.WriteLine("Error: {0}", x.Message);
                 }
             }
 
@@ -223,15 +217,6 @@ namespace IKVM.Tools.Exporter
             {
                 Console.Error.WriteLine("Warning: " + message, parameters);
             }
-        }
-
-        static string GetVersionAndCopyrightInfo()
-        {
-            var asm = typeof(IkvmExporterTool).Assembly;
-            var desc = System.Reflection.CustomAttributeExtensions.GetCustomAttribute<System.Reflection.AssemblyTitleAttribute>(asm);
-            var copy = System.Reflection.CustomAttributeExtensions.GetCustomAttribute<System.Reflection.AssemblyCopyrightAttribute>(asm);
-            var info = System.Reflection.CustomAttributeExtensions.GetCustomAttribute<System.Reflection.AssemblyInformationalVersionAttribute>(asm);
-            return $"{desc.Title} ({info.InformationalVersion}){Environment.NewLine}{copy.Copyright}"; // TODO: Add domain once we get one {Environment.NewLine}http://www.ikvm.org/
         }
 
         private static void LoadSharedClassLoaderAssemblies(Assembly assembly, List<Assembly> assemblies)
@@ -268,14 +253,12 @@ namespace IKVM.Tools.Exporter
 
         private static void WriteClass(TypeWrapper tw)
         {
-            zipCount++;
-            MemoryStream mem = new MemoryStream();
-            IKVM.StubGen.StubGenerator.WriteClass(mem, tw, includeNonPublicInterfaces, includeNonPublicMembers, includeSerialVersionUID, includeParameterNames);
-            ZipEntry entry = new ZipEntry(tw.Name.Replace('.', '/') + ".class");
-            entry.Size = mem.Position;
-            entry.DateTime = new DateTime(1980, 01, 01, 0, 0, 0, DateTimeKind.Utc);
-            zipFile.PutNextEntry(entry);
-            mem.WriteTo(zipFile);
+            ZipArchiveEntry entry = zipFile.CreateEntry(tw.Name.Replace('.', '/') + ".class");
+            entry.LastWriteTime = new DateTime(1980, 01, 01, 0, 0, 0, DateTimeKind.Utc);
+
+            using Stream stream = entry.Open();
+
+            IKVM.StubGen.StubGenerator.WriteClass(stream, tw, includeNonPublicInterfaces, includeNonPublicMembers, includeSerialVersionUID, includeParameterNames);
         }
 
         private static bool ExportNamespace(Type type)
