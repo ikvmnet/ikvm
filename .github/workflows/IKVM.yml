@@ -61,8 +61,8 @@ jobs:
       if: steps.openjdk-build-stamp.outputs.files_exists != 'true'
       run: |
         cd openjdk &&
-        export CC=/usr/lib/llvm-6/bin/clang &&
-        export CXX=/usr/lib/llvm-6/bin/clang++ &&
+        export CC=/usr/lib/llvm-6.0/bin/clang &&
+        export CXX=/usr/lib/llvm-6.0/bin/clang++ &&
         export CXXFLAGS="-Wno-error=reserved-user-defined-literal" &
         bash ./configure \
           --with-boot-jdk=$GITHUB_WORKSPACE/openjdk/build/zulu7.56.0.11-ca-jdk7.0.352-linux_x64 \
