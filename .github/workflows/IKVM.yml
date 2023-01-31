@@ -35,8 +35,8 @@ jobs:
       if: steps.openjdk-build-stamp.outputs.files_exists != 'true'
       run: |
         mkdir -p openjdk/build && 
-        curl -o openjdk/build/openjdk-7u75-b13-linux-x64-18_dec_2014.tar.gz "https://download.java.net/openjdk/jdk7u75/ri/openjdk-7u75-b13-linux-x64-18_dec_2014.tar.gz" &&
-        tar xzvf openjdk/build/openjdk-7u75-b13-linux-x64-18_dec_2014.tar.gz -C openjdk/build
+        curl -o openjdk/build/zulu7.56.0.11-ca-jdk7.0.352-linux_x64.tar.gz "https://cdn.azul.com/zulu/bin/zulu7.56.0.11-ca-jdk7.0.352-linux_x64.tar.gz" &&
+        tar xzvf openjdk/build/zulu7.56.0.11-ca-jdk7.0.352-linux_x64.tar.gz -C openjdk/build
     - name: Install Packages
       if: steps.openjdk-build-stamp.outputs.files_exists != 'true'
       run: |
@@ -46,8 +46,7 @@ jobs:
             unzip \
             zip \
             curl \
-            gcc-11 \
-            g++-11 \
+            clang-14 \
             libx11-dev \
             libxext-dev \
             libxrender-dev \
@@ -64,7 +63,7 @@ jobs:
         cd openjdk &&
         export CXXFLAGS="-Wno-error=reserved-user-defined-literal" &&
         bash ./configure \
-          --with-boot-jdk=$GITHUB_WORKSPACE/openjdk/build/java-se-7u75-ri \
+          --with-boot-jdk=$GITHUB_WORKSPACE/openjdk/build/zulu7.56.0.11-ca-jdk7.0.352-linux_x64 \
           --with-toolchain-type=clang \
           --disable-precompiled-headers &&
         make images &&
@@ -134,8 +133,8 @@ jobs:
       if: steps.openjdk-build-stamp.outputs.files_exists != 'true'
       run: |
         mkdir -p openjdk/build && 
-        curl -o openjdk/build/openjdk-7u75-b13-linux-x64-18_dec_2014.tar.gz "https://download.java.net/openjdk/jdk7u75/ri/openjdk-7u75-b13-linux-x64-18_dec_2014.tar.gz" &&
-        tar xzvf openjdk/build/openjdk-7u75-b13-linux-x64-18_dec_2014.tar.gz -C openjdk/build
+        curl -o openjdk/build/zulu8.68.0.21-ca-jdk8.0.362-linux_aarch64.tar.gz "https://cdn.azul.com/zulu-embedded/bin/zulu8.68.0.21-ca-jdk8.0.362-linux_aarch64.tar.gz" &&
+        tar xzvf openjdk/build/zulu8.68.0.21-ca-jdk8.0.362-linux_aarch64.tar.gz -C openjdk/build
     - name: Install Packages
       if: steps.openjdk-build-stamp.outputs.files_exists != 'true'
       run: |
@@ -145,8 +144,7 @@ jobs:
             unzip \
             zip \
             curl \
-            gcc-11 \
-            g++-11 \
+            clang-14 \
             libx11-dev \
             libxext-dev \
             libxrender-dev \
@@ -163,7 +161,7 @@ jobs:
         cd openjdk &&
         export CXXFLAGS="-Wno-error=reserved-user-defined-literal" &&
         bash ./configure \
-          --with-boot-jdk=$GITHUB_WORKSPACE/openjdk/build/java-se-7u75-ri \
+          --with-boot-jdk=$GITHUB_WORKSPACE/openjdk/build/zulu8.68.0.21-ca-jdk8.0.362-linux_aarch64 \
           --with-toolchain-type=clang \
           --openjdk-target=aarch64-unknown-linux \
           --disable-precompiled-headers &&
