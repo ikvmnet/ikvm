@@ -46,7 +46,7 @@ jobs:
             unzip \
             zip \
             curl \
-            clang-9 \
+            clang-8 \
             libx11-dev \
             libxext-dev \
             libxrender-dev \
@@ -61,8 +61,8 @@ jobs:
       if: steps.openjdk-build-stamp.outputs.files_exists != 'true'
       run: |
         cd openjdk &&
-        export CC=/usr/lib/llvm-9/bin/clang &&
-        export CXX=/usr/lib/llvm-9/bin/clang++ &&
+        export CC=/usr/lib/llvm-8/bin/clang &&
+        export CXX=/usr/lib/llvm-8/bin/clang++ &&
         bash ./configure \
           --with-boot-jdk=$GITHUB_WORKSPACE/openjdk/build/zulu7.56.0.11-ca-jdk7.0.352-linux_x64 \
           --with-toolchain-type=clang \
