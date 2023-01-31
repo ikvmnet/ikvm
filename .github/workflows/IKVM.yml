@@ -61,10 +61,10 @@ jobs:
       if: steps.openjdk-build-stamp.outputs.files_exists != 'true'
       run: |
         cd openjdk &&
-        export CXXFLAGS="-Wno-error=reserved-user-defined-literal" &&
         bash ./configure \
           --with-boot-jdk=$GITHUB_WORKSPACE/openjdk/build/zulu7.56.0.11-ca-jdk7.0.352-linux_x64 \
           --with-toolchain-type=clang \
+          --with-extra-cxxflags="-Wno-error=reserved-user-defined-literal" \
           --disable-precompiled-headers &&
         make images &&
         touch build/linux-x86_64-normal-server-release/stamp
@@ -159,10 +159,10 @@ jobs:
       if: steps.openjdk-build-stamp.outputs.files_exists != 'true'
       run: |
         cd openjdk &&
-        export CXXFLAGS="-Wno-error=reserved-user-defined-literal" &&
         bash ./configure \
           --with-boot-jdk=$GITHUB_WORKSPACE/openjdk/build/zulu8.68.0.21-ca-jdk8.0.362-linux_aarch64 \
           --with-toolchain-type=clang \
+          --with-extra-cxxflags="-Wno-error=reserved-user-defined-literal" \
           --openjdk-target=aarch64-unknown-linux \
           --disable-precompiled-headers &&
         make images &&
