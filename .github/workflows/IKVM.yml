@@ -46,7 +46,7 @@ jobs:
             unzip \
             zip \
             curl \
-            clang-14 \
+            clang-12 \
             libx11-dev \
             libxext-dev \
             libxrender-dev \
@@ -144,7 +144,7 @@ jobs:
             unzip \
             zip \
             curl \
-            clang-14 \
+            clang-12 \
             libx11-dev \
             libxext-dev \
             libxrender-dev \
