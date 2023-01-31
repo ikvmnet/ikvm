@@ -130,16 +130,16 @@ jobs:
       if: steps.openjdk-build-stamp.outputs.files_exists != 'true'
       shell: pwsh
       run: |
-        mkdir openjdk/build
-        Invoke-WebRequest -Uri "https://cdn.azul.com/zulu/bin/zulu7.56.0.11-ca-jdk7.0.352-win_x64.zip" -OutFile openjdk/build/zulu7.56.0.11-ca-jdk7.0.352-win_x64.zip 
-        Expand-Archive -Path openjdk/build/zulu7.56.0.11-ca-jdk7.0.352-win_x64.zip -DestinationPath openjdk/build
+        New-Item -Type Directory -Force openjdk\build
+        Invoke-WebRequest -Uri "https://cdn.azul.com/zulu/bin/zulu7.56.0.11-ca-jdk7.0.352-win_x64.zip" -OutFile openjdk\build\zulu7.56.0.11-ca-jdk7.0.352-win_x64.zip 
+        Expand-Archive -Path openjdk\build\zulu7.56.0.11-ca-jdk7.0.352-win_x64.zip -DestinationPath openjdk\build
     - name: Fetch FreeType
       if: steps.openjdk-build-stamp.outputs.files_exists != 'true'
       shell: pwsh
       run: |
-        mkdir openjdk/build
-        Invoke-WebRequest -Uri "https://download-mirror.savannah.gnu.org/releases/freetype/freetype-old/freetype-2.5.3.tar.gz" -OutFile openjdk/build/freetype-2.5.3.tar.gz
-        tar xzvf openjdk/build/freetype-2.5.3.tar.gz -C openjdk/build
+        New-Item -Type Directory -Force openjdk\build
+        Invoke-WebRequest -Uri "https://download-mirror.savannah.gnu.org/releases/freetype/freetype-old/freetype-2.5.3.tar.gz" -OutFile openjdk\build\freetype-2.5.3.tar.gz
+        tar xzvf openjdk\build\freetype-2.5.3.tar.gz -C openjdk\build
     - name: Install Cygwin
       uses: egor-tensin/setup-cygwin@v4
       with:
@@ -190,16 +190,16 @@ jobs:
       if: steps.openjdk-build-stamp.outputs.files_exists != 'true'
       shell: pwsh
       run: |
-        mkdir openjdk/build
-        Invoke-WebRequest -Uri "https://cdn.azul.com/zulu/bin/zulu7.56.0.11-ca-jdk7.0.352-win_i686.zip" -OutFile openjdk/build/zulu7.56.0.11-ca-jdk7.0.352-win_i686.zip 
-        Expand-Archive -Path openjdk/build/zulu7.56.0.11-ca-jdk7.0.352-win_i686.zip -DestinationPath openjdk/build
+        New-Item -Type Directory -Force openjdk\build
+        Invoke-WebRequest -Uri "https://cdn.azul.com/zulu/bin/zulu7.56.0.11-ca-jdk7.0.352-win_i686.zip" -OutFile openjdk\build\zulu7.56.0.11-ca-jdk7.0.352-win_i686.zip 
+        Expand-Archive -Path openjdk\build\zulu7.56.0.11-ca-jdk7.0.352-win_i686.zip -DestinationPath openjdk\build
     - name: Fetch FreeType
       if: steps.openjdk-build-stamp.outputs.files_exists != 'true'
       shell: pwsh
       run: |
-        mkdir openjdk/build
-        Invoke-WebRequest -Uri "https://download-mirror.savannah.gnu.org/releases/freetype/freetype-old/freetype-2.5.3.tar.gz" -OutFile openjdk/build/freetype-2.5.3.tar.gz
-        tar xzvf openjdk/build/freetype-2.5.3.tar.gz -C openjdk/build
+        New-Item -Type Directory -Force openjdk\build
+        Invoke-WebRequest -Uri "https://download-mirror.savannah.gnu.org/releases/freetype/freetype-old/freetype-2.5.3.tar.gz" -OutFile openjdk\build\freetype-2.5.3.tar.gz
+        tar xzvf openjdk\build\freetype-2.5.3.tar.gz -C openjdk\build
     - name: Install Cygwin
       uses: egor-tensin/setup-cygwin@v4
       with:
