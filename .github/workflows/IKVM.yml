@@ -161,7 +161,7 @@ jobs:
         cd openjdk &&
         bash ./configure \
           --with-boot-jdk=$GITHUB_WORKSPACE/openjdk/build/zulu7.56.0.11-ca-jdk7.0.352-linux_x64 \
-          --openjdk-target=aarch64-linux-gnu \
+          --openjdk-target=aarch64-unknown-linux \
           --disable-precompiled-headers &&
         make images &&
         touch build/linux-aarch64-normal-server-release/stamp
