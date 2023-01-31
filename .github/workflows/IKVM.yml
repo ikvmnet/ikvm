@@ -436,7 +436,7 @@ jobs:
         cd openjdk &&
         bash ./configure \
           --with-boot-jdk=$GITHUB_WORKSPACE/openjdk/build/zulu7.56.0.11-ca-jdk7.0.352-macosx_x64 \
-          --openjdk-target=aarch64-unknown-macosx \
+          --openjdk-target=aarch64-apple-macosx \
           --disable-precompiled-headers &&
         make images &&
         touch build/macosx-aarch64-normal-server-release/stamp
