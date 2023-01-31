@@ -128,6 +128,8 @@ jobs:
         files: openjdk/build/windows-x86_64-normal-server-release/stamp
     - name: Setup MSBuild
       uses: microsoft/setup-msbuild@v1.1
+      with:
+        msbuild-architecture: x64
     - name: Install Visual Studio Components
       shell: cmd
       run: |
