@@ -64,7 +64,7 @@ jobs:
         cd openjdk &&
         export CXXFLAGS="-Wno-error=reserved-user-defined-literal" &&
         bash ./configure \
-          --with-boot-jdk=$GITHUB_WORKSPACE/openjdk/build/build/java-se-7u75-ri \
+          --with-boot-jdk=$GITHUB_WORKSPACE/openjdk/build/java-se-7u75-ri \
           --with-toolchain-type=clang \
           --disable-precompiled-headers &&
         make images &&
