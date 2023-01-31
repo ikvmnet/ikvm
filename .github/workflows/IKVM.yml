@@ -257,8 +257,8 @@ jobs:
     - name: Cache OpenJDK Build
       uses: actions/cache@v3
       with:
-        path: openjdk/build/macos-x86_64-normal-server-release
-        key: openjdk-build-macos-x86_64-normal-server-release--${{ runner.os }}--${{ hashFiles('openjdk/**', '!openjdk/build') }}-10
+        path: openjdk/build/macosx-x86_64-normal-server-release
+        key: openjdk-build-macosx-x86_64-normal-server-release--${{ runner.os }}--${{ hashFiles('openjdk/**', '!openjdk/build') }}-10
     - name: Check OpenJDK Build Stamp
       id: openjdk-build-stamp
       uses: andstor/file-existence-action@v2
@@ -280,28 +280,28 @@ jobs:
         cd openjdk &&
         JAVA_HOME=build/zulu7.56.0.11-ca-jdk7.0.352-macosx_x64 bash ./configure &&
         make DISABLE_HOTSPOT_OS_VERSION_CHECK=ok images &&
-        touch build/macos-x86_64-normal-server-release/stamp"
+        touch build/macosx-x86_64-normal-server-release/stamp
     - name: Update OpenJDK Attributes
       run: |
-        sudo chown -R `id -u`:`id -g` macos-x86_64-normal-server-release && \
-        sudo chmod -R +rwx macos-x86_64-normal-server-release/images/j2sdk-image/bin
+        sudo chown -R `id -u`:`id -g` macosx-x86_64-normal-server-release && \
+        sudo chmod -R +rwx macosx-x86_64-normal-server-release/images/j2sdk-image/bin
       working-directory: openjdk/build
     - name: Package OpenJDK
       run: |
-        zip -r openjdk-build-macos-x86_64-normal-server-release.zip \
-          macos-x86_64-normal-server-release/langtools/gensrc \
-          macos-x86_64-normal-server-release/corba/gensrc \
-          macos-x86_64-normal-server-release/jdk/gensrc \
-          macos-x86_64-normal-server-release/jdk/impsrc \
-          macos-x86_64-normal-server-release/jdk/lib \
-          macos-x86_64-normal-server-release/jdk/classes \
-          macos-x86_64-normal-server-release/images
+        zip -r openjdk-build-macosx-x86_64-normal-server-release.zip \
+          macosx-x86_64-normal-server-release/langtools/gensrc \
+          macosx-x86_64-normal-server-release/corba/gensrc \
+          macosx-x86_64-normal-server-release/jdk/gensrc \
+          macosx-x86_64-normal-server-release/jdk/impsrc \
+          macosx-x86_64-normal-server-release/jdk/lib \
+          macosx-x86_64-normal-server-release/jdk/classes \
+          macosx-x86_64-normal-server-release/images
       working-directory: openjdk/build
     - name: Upload OpenJDK
       uses: actions/upload-artifact@v3
       with:
-        name: openjdk-build-macos-x86_64-normal-server-release
-        path: openjdk/build/openjdk-build-macos-x86_64-normal-server-release.zip
+        name: openjdk-build-macosx-x86_64-normal-server-release
+        path: openjdk/build/openjdk-build-macosx-x86_64-normal-server-release.zip
   build-ikvm:
     name: Build IKVM
     needs:
