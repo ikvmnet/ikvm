@@ -143,8 +143,8 @@ jobs:
             unzip \
             zip \
             curl \
-            gcc-11 \
-            g++-11 \
+            gcc-11-aarch64-linux-gnu \
+            g++-11-aarch64-linux-gnu \
             libx11-dev \
             libxext-dev \
             libxrender-dev \
