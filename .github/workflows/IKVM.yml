@@ -283,10 +283,10 @@ jobs:
     - name: Build OpenJDK
       if: steps.openjdk-build-stamp.outputs.files_exists != 'true'
       run: |
+        export JAVA_HOME=build/zulu7.56.0.11-ca-jdk7.0.352-macosx_x64 &&
         cd openjdk &&
-        JAVA_HOME=build/zulu7.56.0.11-ca-jdk7.0.352-macosx_x64 \
-          bash ./configure \
-            --disable-precompiled-headers &&
+        bash ./configure \
+          --disable-precompiled-headers &&
         make images &&
         touch build/macosx-x86_64-normal-server-release/stamp
     - name: Update OpenJDK Attributes
