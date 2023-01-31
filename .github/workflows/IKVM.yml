@@ -62,10 +62,10 @@ jobs:
       if: steps.openjdk-build-stamp.outputs.files_exists != 'true'
       run: |
         cd openjdk &&
-        JAVA_HOME=build/java-se-7u75-ri \
-          bash ./configure \
-            --with-toolchain-type=clang \
-            --disable-precompiled-headers &&
+        bash ./configure \
+          --with-boot-jdk=$GITHUB_WORKSPACE/openjdk/build/build/java-se-7u75-ri \
+          --with-toolchain-type=clang \
+          --disable-precompiled-headers &&
         CXXFLAGS="-Wno-error=reserved-user-defined-literal" \
           make images &&
         touch build/linux-x86_64-normal-server-release/stamp
@@ -165,12 +165,11 @@ jobs:
       if: steps.openjdk-build-stamp.outputs.files_exists != 'true'
       shell: C:\tools\cygwin\bin\bash.exe --login --norc -eo pipefail -o igncr '{0}'
       run: |
-        cd $GITHUB_WORKSPACE &&
-        cd openjdk &&
-        ./configure \
+        cd $GITHUB_WORKSPACE/openjdk &&
+        bash ./configure \
+          --with-boot-jdk=$GITHUB_WORKSPACE/openjdk/build/zulu7.56.0.11-ca-jdk7.0.352-win_x64 \
           --with-freetype-lib=$GITHUB_WORKSPACE/openjdk/build/freetype-2.5.3/lib64 \
           --with-freetype-include=$GITHUB_WORKSPACE/openjdk/build/freetype-2.5.3/include \
-          --with-boot-jdk=$GITHUB_WORKSPACE/openjdk/build/zulu7.56.0.11-ca-jdk7.0.352-win_x64 \
           --with-toolchain-version=2019 \
           --with-target-bits=64 &&
         make images &&
@@ -283,9 +282,9 @@ jobs:
     - name: Build OpenJDK
       if: steps.openjdk-build-stamp.outputs.files_exists != 'true'
       run: |
-        export JAVA_HOME=build/zulu7.56.0.11-ca-jdk7.0.352-macosx_x64 &&
         cd openjdk &&
         bash ./configure \
+          --with-boot-jdk=$GITHUB_WORKSPACE/openjdk/build/zulu7.56.0.11-ca-jdk7.0.352-macosx_x64 \
           --disable-precompiled-headers &&
         make images &&
         touch build/macosx-x86_64-normal-server-release/stamp
