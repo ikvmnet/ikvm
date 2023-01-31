@@ -138,6 +138,11 @@ jobs:
       shell: cmd
       run: |
           "C:\Program Files (x86)\Microsoft Visual Studio\Installer\vs_installer.exe" modify --channelId VisualStudio.16.Release --productId Microsoft.VisualStudio.Product.Enterprise -q --includeRecommended --add "Microsoft.VisualStudio.Component.VC.14.29.x86.x64"
+    - name: Install Cygwin
+      if: steps.openjdk-build-stamp.outputs.files_exists != 'true'
+      uses: egor-tensin/setup-cygwin@v4
+      with:
+        packages: make unzip zip
     - name: Fetch FreeType
       if: steps.openjdk-build-stamp.outputs.files_exists != 'true'
       shell: pwsh
@@ -149,11 +154,6 @@ jobs:
       shell: pwsh
       run: msbuild builds\windows\vc2010\freetype.sln /p:PlatformToolset=v142 /p:Configuration="Release Multithreaded" /p:Platform=x64 /p:ConfigurationType=StaticLibrary /p:TargetName=freetype /p:OutDir="$env:GITHUB_WORKSPACE\openjdk\build\freetype-2.5.3\lib64\" /p:IntDir="$env:GITHUB_WORKSPACE\openjdk\build\freetype-2.5.3\obj64\"
       working-directory: openjdk/build/freetype-2.5.3
-    - name: Install Cygwin
-      if: steps.openjdk-build-stamp.outputs.files_exists != 'true'
-      uses: egor-tensin/setup-cygwin@v4
-      with:
-        packages: make unzip zip
     - name: Fetch OpenJDK 7
       if: steps.openjdk-build-stamp.outputs.files_exists != 'true'
       shell: pwsh
