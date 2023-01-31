@@ -161,7 +161,12 @@ jobs:
       run: |
         cd $GITHUB_WORKSPACE &&
         cd openjdk &&
-        ./configure --with-freetype-lib=$GITHUB_WORKSPACE/build/freetype-2.5.3/objs/win32/vc2010 --with-freetype-include=$GITHUB_WORKSPACE/build/freetype-2.5.3/include --with-boot-jdk=$GITHUB_WORKSPACE/openjdk/build/zulu7.56.0.11-ca-jdk7.0.352-win_x64 --with-toolchain-version=2019 --with-target-bits=64 &&
+        ./configure \
+          --with-freetype-lib=$GITHUB_WORKSPACE/build/freetype-2.5.3/objs/win32/vc2010 \
+          --with-freetype-include=$GITHUB_WORKSPACE/build/freetype-2.5.3/include \
+          --with-boot-jdk=$GITHUB_WORKSPACE/openjdk/build/zulu7.56.0.11-ca-jdk7.0.352-win_x64 \
+          --with-toolchain-version=2019 \
+          --with-target-bits=64 &&
         make images &&
         touch build/windows-x86_64-normal-server-release/stamp
     - name: Package OpenJDK
