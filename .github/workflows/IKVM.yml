@@ -62,12 +62,12 @@ jobs:
       if: steps.openjdk-build-stamp.outputs.files_exists != 'true'
       run: |
         cd openjdk &&
+        export CXXFLAGS="-Wno-error=reserved-user-defined-literal" &&
         bash ./configure \
           --with-boot-jdk=$GITHUB_WORKSPACE/openjdk/build/build/java-se-7u75-ri \
           --with-toolchain-type=clang \
           --disable-precompiled-headers &&
-        CXXFLAGS="-Wno-error=reserved-user-defined-literal" \
-          make images &&
+        make images &&
         touch build/linux-x86_64-normal-server-release/stamp
     - name: Update OpenJDK Attributes
       run: |
@@ -283,6 +283,7 @@ jobs:
       if: steps.openjdk-build-stamp.outputs.files_exists != 'true'
       run: |
         cd openjdk &&
+        export CXXFLAGS="-Wno-error=reserved-user-defined-literal" &&
         bash ./configure \
           --with-boot-jdk=$GITHUB_WORKSPACE/openjdk/build/zulu7.56.0.11-ca-jdk7.0.352-macosx_x64 \
           --disable-precompiled-headers &&
