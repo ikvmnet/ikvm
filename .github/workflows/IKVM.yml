@@ -143,7 +143,7 @@ jobs:
         tar xzvf openjdk\build\freetype-2.5.3.tar.gz -C openjdk\build
     - name: Build FreeType
       shell: pwsh
-      run: msbuild builds\windows\vc2010\freetype.sln /p:PlatformToolset=v142 /p:Configuration="Release Multithreaded" /p:Platform=x64 /p:ConfigurationType=StaticLibrary /p:TargetName=freetype /p:OutDir="lib64" /p:IntDir="obj64"
+      run: msbuild builds\windows\vc2010\freetype.sln /p:PlatformToolset=v142 /p:Configuration="Release Multithreaded" /p:Platform=x64 /p:ConfigurationType=StaticLibrary /p:TargetName=freetype /p:OutDir="$env:GITHUB_WORKSPACE\openjdk\build\freetype-2.5.3\lib64\" /p:IntDir="$env:GITHUB_WORKSPACE\openjdk\build\freetype-2.5.3\obj64\"
       working-directory: openjdk/build/freetype-2.5.3
     - name: Install Cygwin
       if: steps.openjdk-build-stamp.outputs.files_exists != 'true'
