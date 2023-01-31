@@ -62,8 +62,12 @@ jobs:
       if: steps.openjdk-build-stamp.outputs.files_exists != 'true'
       run: |
         cd openjdk &&
-        JAVA_HOME=build/java-se-7u75-ri bash ./configure --with-toolchain-type=clang --disable-precompiled-headers &&
-        make DISABLE_HOTSPOT_OS_VERSION_CHECK=ok images &&
+        JAVA_HOME=build/java-se-7u75-ri \
+          bash ./configure \
+            --with-toolchain-type=clang \
+            --disable-precompiled-headers &&
+        CXXFLAGS="-Wno-error=reserved-user-defined-literal" \
+          make images &&
         touch build/linux-x86_64-normal-server-release/stamp
     - name: Update OpenJDK Attributes
       run: |
@@ -169,7 +173,7 @@ jobs:
           --with-boot-jdk=$GITHUB_WORKSPACE/openjdk/build/zulu7.56.0.11-ca-jdk7.0.352-win_x64 \
           --with-toolchain-version=2019 \
           --with-target-bits=64 &&
-        CXXFLAGS="-Wno-error=reserved-user-defined-literal" make images &&
+        make images &&
         touch build/windows-x86_64-normal-server-release/stamp
     - name: Package OpenJDK
       run: |
