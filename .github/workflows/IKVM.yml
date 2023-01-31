@@ -15,7 +15,7 @@ on:
 jobs:
   build-openjdk-linux-x64:
     name: Build OpenJDK (Linux x64)
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-20.04
     steps:
     - name: Checkout Source
       uses: actions/checkout@v3
@@ -46,8 +46,8 @@ jobs:
             unzip \
             zip \
             curl \
-            gcc-9 \
-            g++-9 \
+            gcc-11 \
+            g++-11 \
             libx11-dev \
             libxext-dev \
             libxrender-dev \
