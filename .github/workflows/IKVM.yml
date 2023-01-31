@@ -143,7 +143,7 @@ jobs:
     - name: Install Cygwin
       uses: egor-tensin/setup-cygwin@v4
       with:
-        packages: cmake gcc-g++
+        packages: make unzip zip
     - name: Build OpenJDK
       if: steps.openjdk-build-stamp.outputs.files_exists != 'true'
       shell: C:\tools\cygwin\bin\bash.exe --login --norc -eo pipefail -o igncr '{0}'
@@ -203,7 +203,7 @@ jobs:
     - name: Install Cygwin
       uses: egor-tensin/setup-cygwin@v4
       with:
-        packages: cmake gcc-g++
+        packages: make unzip zip
     - name: Build OpenJDK
       if: steps.openjdk-build-stamp.outputs.files_exists != 'true'
       shell: C:\tools\cygwin\bin\bash.exe --login --norc -eo pipefail -o igncr '{0}'
