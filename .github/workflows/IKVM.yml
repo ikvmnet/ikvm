@@ -169,7 +169,7 @@ jobs:
           --with-boot-jdk=$GITHUB_WORKSPACE/openjdk/build/zulu7.56.0.11-ca-jdk7.0.352-win_x64 \
           --with-toolchain-version=2019 \
           --with-target-bits=64 &&
-        make images &&
+        CXXFLAGS="-Wno-error=reserved-user-defined-literal" make images &&
         touch build/windows-x86_64-normal-server-release/stamp
     - name: Package OpenJDK
       run: |
