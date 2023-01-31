@@ -544,15 +544,77 @@ jobs:
         restore-keys: ${{ runner.os }}-nuget-2-
     - name: Add msbuild to PATH
       uses: microsoft/setup-msbuild@v1.1
-    - name: Download OpenJDK 8 Build
+
+    - name: Download OpenJDK 8 Build (Linux x64)
       uses: actions/download-artifact@v3
       with:
         name: openjdk-build-linux-x86_64-normal-server-release
         path: ${{ env.WORKPATH }}/ikvm/openjdk/build
-    - name: Restore OpenJDK 8 Build
+    - name: Restore OpenJDK 8 Build (Linux x64)
       shell: pwsh
       run: Expand-Archive openjdk-build-linux-x86_64-normal-server-release.zip .
       working-directory: ${{ env.WORKPATH }}\ikvm\openjdk\build
+
+    - name: Download OpenJDK 8 Build (Linux arm64)
+      uses: actions/download-artifact@v3
+      with:
+        name: openjdk-build-linux-aarch64-normal-server-release
+        path: ${{ env.WORKPATH }}/ikvm/openjdk/build
+    - name: Restore OpenJDK 8 Build (Linux arm64)
+      shell: pwsh
+      run: Expand-Archive openjdk-build-linux-aarch64-normal-server-release.zip .
+      working-directory: ${{ env.WORKPATH }}\ikvm\openjdk\build
+
+    - name: Download OpenJDK 8 Build (Windows x86)
+      uses: actions/download-artifact@v3
+      with:
+        name: openjdk-build-windows-x86-normal-server-release
+        path: ${{ env.WORKPATH }}/ikvm/openjdk/build
+    - name: Restore OpenJDK 8 Build (Windows x86)
+      shell: pwsh
+      run: Expand-Archive openjdk-build-windows-x86-normal-server-release.zip .
+      working-directory: ${{ env.WORKPATH }}\ikvm\openjdk\build
+
+    - name: Download OpenJDK 8 Build (Windows x64)
+      uses: actions/download-artifact@v3
+      with:
+        name: openjdk-build-windows-x86_64-normal-server-release
+        path: ${{ env.WORKPATH }}/ikvm/openjdk/build
+    - name: Restore OpenJDK 8 Build (Windows x64)
+      shell: pwsh
+      run: Expand-Archive openjdk-build-windows-x86_64-normal-server-release.zip .
+      working-directory: ${{ env.WORKPATH }}\ikvm\openjdk\build
+
+    - name: Download OpenJDK 8 Build (Windows arm64)
+      uses: actions/download-artifact@v3
+      with:
+        name: openjdk-build-windows-aarch64-normal-server-release
+        path: ${{ env.WORKPATH }}/ikvm/openjdk/build
+    - name: Restore OpenJDK 8 Build (Windows arm64)
+      shell: pwsh
+      run: Expand-Archive openjdk-build-windows-aarch64-normal-server-release.zip .
+      working-directory: ${{ env.WORKPATH }}\ikvm\openjdk\build
+
+    - name: Download OpenJDK 8 Build (OSX x64)
+      uses: actions/download-artifact@v3
+      with:
+        name: openjdk-build-macosx-x86_64-normal-server-release
+        path: ${{ env.WORKPATH }}/ikvm/openjdk/build
+    - name: Restore OpenJDK 8 Build (OSX x64)
+      shell: pwsh
+      run: Expand-Archive openjdk-build-macosx-x86_64-normal-server-release.zip .
+      working-directory: ${{ env.WORKPATH }}\ikvm\openjdk\build
+
+    - name: Download OpenJDK 8 Build (OSX arm64)
+      uses: actions/download-artifact@v3
+      with:
+        name: openjdk-build-macosx-aarch64-normal-server-release
+        path: ${{ env.WORKPATH }}/ikvm/openjdk/build
+    - name: Restore OpenJDK 8 Build (OSX arm64)
+      shell: pwsh
+      run: Expand-Archive openjdk-build-macosx-aarch64-normal-server-release.zip .
+      working-directory: ${{ env.WORKPATH }}\ikvm\openjdk\build
+
     - name: Download JTReg Build
       uses: actions/download-artifact@v3
       with:
