@@ -64,7 +64,6 @@ jobs:
         bash ./configure \
           --with-boot-jdk=$GITHUB_WORKSPACE/openjdk/build/zulu7.56.0.11-ca-jdk7.0.352-linux_x64 \
           --with-toolchain-type=clang \
-          --disable-warnings-as-errors \
           --disable-precompiled-headers &&
         make images &&
         touch build/linux-x86_64-normal-server-release/stamp
@@ -163,7 +162,6 @@ jobs:
           --with-boot-jdk=$GITHUB_WORKSPACE/openjdk/build/zulu7.56.0.11-ca-jdk7.0.352-linux_x64 \
           --with-toolchain-type=clang \
           --openjdk-target=aarch64-unknown-linux \
-          --disable-warnings-as-errors \
           --disable-precompiled-headers &&
         make images &&
         touch build/linux-aarch64-normal-server-release/stamp
@@ -378,7 +376,6 @@ jobs:
         cd openjdk &&
         bash ./configure \
           --with-boot-jdk=$GITHUB_WORKSPACE/openjdk/build/zulu7.56.0.11-ca-jdk7.0.352-macosx_x64 \
-          --disable-warnings-as-errors \
           --disable-precompiled-headers &&
         make images &&
         touch build/macosx-x86_64-normal-server-release/stamp
@@ -438,7 +435,6 @@ jobs:
         bash ./configure \
           --with-boot-jdk=$GITHUB_WORKSPACE/openjdk/build/zulu7.56.0.11-ca-jdk7.0.352-macosx_x64 \
           --openjdk-target=aarch64-unknown-macosx \
-          --disable-warnings-as-errors \
           --disable-precompiled-headers &&
         make images &&
         touch build/macosx-aarch64-normal-server-release/stamp
