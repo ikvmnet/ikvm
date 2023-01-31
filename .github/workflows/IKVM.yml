@@ -25,7 +25,7 @@ jobs:
       uses: actions/cache@v3
       with:
         path: openjdk/build/linux-x86_64-normal-server-release
-        key: openjdk-build-linux-x86_64-normal-server-release--${{ runner.os }}--${{ hashFiles('openjdk/**', '!openjdk/build') }}-9
+        key: openjdk-build-linux-x86_64-normal-server-release--${{ runner.os }}--${{ hashFiles('openjdk/**', '!openjdk/build') }}-10
     - name: Check OpenJDK Build Stamp
       id: openjdk-build-stamp
       uses: andstor/file-existence-action@v2
@@ -246,12 +246,69 @@ jobs:
       with:
         name: openjdk-build-windows-x86-normal-server-release
         path: openjdk/build/openjdk-build-windows-x86-normal-server-release.zip
+  build-openjdk-macos-x64:
+    name: Build OpenJDK (MacOS x64)
+    runs-on: macos-latest
+    steps:
+    - name: Checkout Source
+      uses: actions/checkout@v3
+      with:
+        submodules: recursive
+    - name: Cache OpenJDK Build
+      uses: actions/cache@v3
+      with:
+        path: openjdk/build/macos-x86_64-normal-server-release
+        key: openjdk-build-macos-x86_64-normal-server-release--${{ runner.os }}--${{ hashFiles('openjdk/**', '!openjdk/build') }}-10
+    - name: Check OpenJDK Build Stamp
+      id: openjdk-build-stamp
+      uses: andstor/file-existence-action@v2
+      with:
+        files: openjdk/build/macos-x86_64-normal-server-release/stamp
+    - name: Fetch OpenJDK 7
+      if: steps.openjdk-build-stamp.outputs.files_exists != 'true'
+      run: |
+        mkdir -p openjdk/build && 
+        curl -o openjdk/build/zulu7.56.0.11-ca-jdk7.0.352-macosx_x64.tar.gz "https://cdn.azul.com/zulu/bin/zulu7.56.0.11-ca-jdk7.0.352-macosx_x64.tar.gz" &&
+        tar xzvf openjdk/build/zulu7.56.0.11-ca-jdk7.0.352-macosx_x64.tar.gz -C openjdk/build
+    - name: Install Packages
+      if: steps.openjdk-build-stamp.outputs.files_exists != 'true'
+      run: |
+        brew install autoconf
+    - name: Build OpenJDK
+      if: steps.openjdk-build-stamp.outputs.files_exists != 'true'
+      run: |
+        cd openjdk &&
+        JAVA_HOME=build/zulu7.56.0.11-ca-jdk7.0.352-macosx_x64 bash ./configure &&
+        make DISABLE_HOTSPOT_OS_VERSION_CHECK=ok images &&
+        touch build/macos-x86_64-normal-server-release/stamp"
+    - name: Update OpenJDK Attributes
+      run: |
+        sudo chown -R `id -u`:`id -g` macos-x86_64-normal-server-release && \
+        sudo chmod -R +rwx macos-x86_64-normal-server-release/images/j2sdk-image/bin
+      working-directory: openjdk/build
+    - name: Package OpenJDK
+      run: |
+        zip -r openjdk-build-macos-x86_64-normal-server-release.zip \
+          macos-x86_64-normal-server-release/langtools/gensrc \
+          macos-x86_64-normal-server-release/corba/gensrc \
+          macos-x86_64-normal-server-release/jdk/gensrc \
+          macos-x86_64-normal-server-release/jdk/impsrc \
+          macos-x86_64-normal-server-release/jdk/lib \
+          macos-x86_64-normal-server-release/jdk/classes \
+          macos-x86_64-normal-server-release/images
+      working-directory: openjdk/build
+    - name: Upload OpenJDK
+      uses: actions/upload-artifact@v3
+      with:
+        name: openjdk-build-macos-x86_64-normal-server-release
+        path: openjdk/build/openjdk-build-macos-x86_64-normal-server-release.zip
   build-ikvm:
     name: Build IKVM
     needs:
     - build-openjdk-linux-x64
     - build-openjdk-windows-x64
     - build-openjdk-windows-x86
+    - build-openjdk-macos-x64
     timeout-minutes: 240
     runs-on: windows-latest
     steps:
