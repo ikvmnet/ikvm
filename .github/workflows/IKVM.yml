@@ -110,7 +110,7 @@ jobs:
         path: jtreg/jtreg-build.zip
   build-openjdk-windows-x64:
     name: Build OpenJDK (Windows x64)
-    runs-on: windows-latest
+    runs-on: windows-2019
     steps:
     - name: Checkout Source
       uses: actions/checkout@v3
@@ -171,7 +171,7 @@ jobs:
         path: openjdk/build/openjdk-build-windows-x86_64-normal-server-release.zip
   build-openjdk-windows-x86:
     name: Build OpenJDK (Windows x86)
-    runs-on: windows-latest
+    runs-on: windows-2019
     steps:
     - name: Checkout Source
       uses: actions/checkout@v3
