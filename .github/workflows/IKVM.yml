@@ -142,7 +142,7 @@ jobs:
         Invoke-WebRequest -Uri "https://download-mirror.savannah.gnu.org/releases/freetype/freetype-old/freetype-2.5.3.tar.gz" -OutFile openjdk\build\freetype-2.5.3.tar.gz
         tar xzvf openjdk\build\freetype-2.5.3.tar.gz -C openjdk\build
     - name: Build FreeType
-      run: msbuild openjdk\build\freetype-2.5.3\builds\windows\vs2010\freetype.sln /p:PlatformToolset=v142
+      run: msbuild openjdk\build\freetype-2.5.3\builds\windows\vc2010\freetype.sln /p:PlatformToolset=v142
     - name: Install Cygwin
       if: steps.openjdk-build-stamp.outputs.files_exists != 'true'
       uses: egor-tensin/setup-cygwin@v4
