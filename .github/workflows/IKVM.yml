@@ -359,7 +359,7 @@ jobs:
       id: openjdk-build-stamp
       uses: andstor/file-existence-action@v2
       with:
-        files: openjdk/build/macos-x86_64-normal-server-release/stamp
+        files: openjdk/build/macosx-x86_64-normal-server-release/stamp
     - name: Install XCode
       uses: maxim-lobanov/setup-xcode@v1
       with:
@@ -417,7 +417,7 @@ jobs:
       id: openjdk-build-stamp
       uses: andstor/file-existence-action@v2
       with:
-        files: openjdk/build/macos-aarch64-normal-server-release/stamp
+        files: openjdk/build/macosx-aarch64-normal-server-release/stamp
     - name: Install XCode
       uses: maxim-lobanov/setup-xcode@v1
       with:
