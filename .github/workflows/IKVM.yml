@@ -143,7 +143,7 @@ jobs:
     - name: Add Component
       shell: cmd
       run: |
-          "C:\Program Files (x86)\Microsoft Visual Studio\Installer\vs_installer.exe" modify --channelId VisualStudio.16.Release --productId Microsoft.VisualStudio.Product.Enterprise -q --includeRecommended --add "Microsoft.VisualStudio.Component.VC.14.25.x86.x64"
+          "C:\Program Files (x86)\Microsoft Visual Studio\Installer\vs_installer.exe" modify --channelId VisualStudio.16.Release --productId Microsoft.VisualStudio.Product.Enterprise -q --includeRecommended --add "Microsoft.VisualStudio.Component.VC.14.29.x86.x64"
     - name: Install Cygwin
       uses: egor-tensin/setup-cygwin@v4
       with:
