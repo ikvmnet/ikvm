@@ -248,7 +248,7 @@ jobs:
         path: openjdk/build/openjdk-build-windows-x86-normal-server-release.zip
   build-openjdk-macos-x64:
     name: Build OpenJDK (MacOS x64)
-    runs-on: macos-latest
+    runs-on: macos-11
     steps:
     - name: Checkout Source
       uses: actions/checkout@v3
