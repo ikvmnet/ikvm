@@ -264,6 +264,10 @@ jobs:
       uses: andstor/file-existence-action@v2
       with:
         files: openjdk/build/macos-x86_64-normal-server-release/stamp
+    - name: Install XCode
+      uses: maxim-lobanov/setup-xcode@v1
+      with:
+        xcode-version: 12.0
     - name: Fetch OpenJDK 7
       if: steps.openjdk-build-stamp.outputs.files_exists != 'true'
       run: |
