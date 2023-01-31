@@ -133,8 +133,8 @@ jobs:
       if: steps.openjdk-build-stamp.outputs.files_exists != 'true'
       run: |
         mkdir -p openjdk/build && 
-        curl -o openjdk/build/zulu8.68.0.21-ca-jdk8.0.362-linux_aarch64.tar.gz "https://cdn.azul.com/zulu-embedded/bin/zulu8.68.0.21-ca-jdk8.0.362-linux_aarch64.tar.gz" &&
-        tar xzvf openjdk/build/zulu8.68.0.21-ca-jdk8.0.362-linux_aarch64.tar.gz -C openjdk/build
+        curl -o openjdk/build/zulu7.56.0.11-ca-jdk7.0.352-linux_x64.tar.gz "https://cdn.azul.com/zulu/bin/zulu7.56.0.11-ca-jdk7.0.352-linux_x64.tar.gz" &&
+        tar xzvf openjdk/build/zulu7.56.0.11-ca-jdk7.0.352-linux_x64.tar.gz -C openjdk/build
     - name: Install Packages
       if: steps.openjdk-build-stamp.outputs.files_exists != 'true'
       run: |
@@ -160,7 +160,7 @@ jobs:
       run: |
         cd openjdk &&
         bash ./configure \
-          --with-boot-jdk=$GITHUB_WORKSPACE/openjdk/build/zulu8.68.0.21-ca-jdk8.0.362-linux_aarch64 \
+          --with-boot-jdk=$GITHUB_WORKSPACE/openjdk/build/zulu7.56.0.11-ca-jdk7.0.352-linux_x64 \
           --with-toolchain-type=clang \
           --with-extra-cxxflags="-Wno-error=reserved-user-defined-literal" \
           --openjdk-target=aarch64-unknown-linux \
