@@ -140,6 +140,9 @@ jobs:
         New-Item -Type Directory -Force openjdk\build
         Invoke-WebRequest -Uri "https://download-mirror.savannah.gnu.org/releases/freetype/freetype-old/freetype-2.5.3.tar.gz" -OutFile openjdk\build\freetype-2.5.3.tar.gz
         tar xzvf openjdk\build\freetype-2.5.3.tar.gz -C openjdk\build
+    - name: Add Component
+      shell: cmd
+      run: "C:\Program Files (x86)\Microsoft Visual Studio\Installer\vs_installer.exe" modify --channelId VisualStudio.16.Release --productId Microsoft.VisualStudio.Product.Enterprise -q --includeRecommended --add "Microsoft.VisualStudio.Component.VC.14.25.x86.x64"
     - name: Install Cygwin
       uses: egor-tensin/setup-cygwin@v4
       with:
