@@ -39,7 +39,7 @@ jobs:
         tar xzvf openjdk/build/openjdk-7u75-b13-linux-x64-18_dec_2014.tar.gz -C openjdk/build
     - name: Install Packages
       if: steps.openjdk-build-stamp.outputs.files_exists != 'true'
-      run: >
+      run: |
         sudo apt-get update &&
         sudo apt-get install -y \
             build-essential \
@@ -60,11 +60,11 @@ jobs:
             libfontconfig1-dev
     - name: Build OpenJDK
       if: steps.openjdk-build-stamp.outputs.files_exists != 'true'
-      run: >
+      run: |
         cd openjdk &&
         JAVA_HOME=build/java-se-7u75-ri bash ./configure &&
         make DISABLE_HOTSPOT_OS_VERSION_CHECK=ok images &&
-        touch build/linux-x86_64-normal-server-release/stamp"
+        touch build/linux-x86_64-normal-server-release/stamp
     - name: Update OpenJDK Attributes
       run: |
         sudo chown -R `id -u`:`id -g` linux-x86_64-normal-server-release && \
