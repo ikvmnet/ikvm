@@ -145,6 +145,7 @@ jobs:
       run: |
           "C:\Program Files (x86)\Microsoft Visual Studio\Installer\vs_installer.exe" modify --channelId VisualStudio.16.Release --productId Microsoft.VisualStudio.Product.Enterprise -q --includeRecommended --add "Microsoft.VisualStudio.Component.VC.14.29.x86.x64"
     - name: Install Cygwin
+      if: steps.openjdk-build-stamp.outputs.files_exists != 'true'
       uses: egor-tensin/setup-cygwin@v4
       with:
         packages: make unzip zip
@@ -157,6 +158,12 @@ jobs:
         ./configure --with-freetype-src=build/freetype-2.5.3 --with-boot-jdk=$GITHUB_WORKSPACE/openjdk/build/zulu7.56.0.11-ca-jdk7.0.352-win_x64 --with-target-bits=64 --with-toolchain-version=2019 &&
         make images &&
         touch build/windows-x86_64-normal-server-release/stamp
+    - name: Upload FreeType Log
+      if: ${{ steps.openjdk-build-stamp.outputs.files_exists != 'true' && always() }}
+      uses: actions/upload-artifact@v3
+      with:
+        name: freetype.log
+        path: openjdk\freetype.log
     - name: Package OpenJDK
       run: |
         zip -r openjdk-build-windows-x86_64-normal-server-release.zip \
@@ -172,7 +179,7 @@ jobs:
       uses: actions/upload-artifact@v3
       with:
         name: openjdk-build-windows-x86_64-normal-server-release
-        path: openjdk/build/openjdk-build-windows-x86_64-normal-server-release.zip
+        path: openjdk\build\openjdk-build-windows-x86_64-normal-server-release.zip
   build-openjdk-windows-x86:
     name: Build OpenJDK (Windows x86)
     runs-on: windows-2019
