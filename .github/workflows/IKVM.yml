@@ -228,7 +228,7 @@ jobs:
         & "$env:SystemRoot\System32\tar.exe" xzvf openjdk\build\freetype-2.5.3.tar.gz -C openjdk\build
     - name: Build FreeType
       shell: pwsh
-      run: msbuild builds\windows\vc2010\freetype.sln /p:PlatformToolset=v142 /p:Configuration="Release Multithreaded" /p:Platform=x64 /p:ConfigurationType=StaticLibrary /p:TargetName=freetype /p:OutDir="$env:GITHUB_WORKSPACE\openjdk\build\freetype-2.5.3\lib\" /p:IntDir="$env:GITHUB_WORKSPACE\openjdk\build\freetype-2.5.3\obj\"
+      run: msbuild builds\windows\vc2010\freetype.sln /p:PlatformToolset=v142 /p:Configuration="Release Multithreaded" /p:Platform=x64 /p:ConfigurationType=DynamicLibrary /p:TargetName=freetype /p:OutDir="$env:GITHUB_WORKSPACE\openjdk\build\freetype-2.5.3\lib\" /p:IntDir="$env:GITHUB_WORKSPACE\openjdk\build\freetype-2.5.3\obj\"
       working-directory: openjdk/build/freetype-2.5.3
     - name: Fetch OpenJDK 7
       if: steps.openjdk-build-stamp.outputs.files_exists != 'true'
@@ -305,7 +305,7 @@ jobs:
         & "$env:SystemRoot\System32\tar.exe" xzvf openjdk\build\freetype-2.5.3.tar.gz -C openjdk\build
     - name: Build FreeType
       shell: pwsh
-      run: msbuild builds\windows\vc2010\freetype.sln /p:PlatformToolset=v142 /p:Configuration="Release Multithreaded" /p:Platform=x86 /p:ConfigurationType=StaticLibrary /p:TargetName=freetype /p:OutDir="$env:GITHUB_WORKSPACE\openjdk\build\freetype-2.5.3\lib\" /p:IntDir="$env:GITHUB_WORKSPACE\openjdk\build\freetype-2.5.3\objs\"
+      run: msbuild builds\windows\vc2010\freetype.sln /p:PlatformToolset=v142 /p:Configuration="Release Multithreaded" /p:Platform=x86 /p:ConfigurationType=DynamicLibrary /p:TargetName=freetype /p:OutDir="$env:GITHUB_WORKSPACE\openjdk\build\freetype-2.5.3\lib\" /p:IntDir="$env:GITHUB_WORKSPACE\openjdk\build\freetype-2.5.3\objs\"
       working-directory: openjdk/build/freetype-2.5.3
     - name: Fetch OpenJDK 7
       if: steps.openjdk-build-stamp.outputs.files_exists != 'true'
