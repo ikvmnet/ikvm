@@ -243,9 +243,9 @@ jobs:
       run: |
         cd $GITHUB_WORKSPACE/openjdk &&
         bash ./configure \
-          --with-boot-jdk=$GITHUB_WORKSPACE/openjdk/build/zulu7.56.0.11-ca-jdk7.0.352-win_x64 \
-          --with-freetype-lib=$GITHUB_WORKSPACE/openjdk/build/freetype-2.5.3/lib64 \
-          --with-freetype-include=$GITHUB_WORKSPACE/openjdk/build/freetype-2.5.3/include \
+          --with-boot-jdk=`cygpath $GITHUB_WORKSPACE\openjdk\build\zulu7.56.0.11-ca-jdk7.0.352-win_x64` \
+          --with-freetype-lib=`cygpath $GITHUB_WORKSPACE\openjdk\build\freetype-2.5.3\lib64` \
+          --with-freetype-include=`cygpath $GITHUB_WORKSPACE\openjdk\build\freetype-2.5.3\include` \
           --with-toolchain-version=2019 \
           --with-target-bits=64 &&
         make images &&
@@ -321,9 +321,9 @@ jobs:
       run: |
         cd $GITHUB_WORKSPACE/openjdk &&
         bash ./configure \
-          --with-boot-jdk=$GITHUB_WORKSPACE/openjdk/build/zulu7.56.0.11-ca-jdk7.0.352-win_x86 \
-          --with-freetype-lib=$GITHUB_WORKSPACE/openjdk/build/freetype-2.5.3/lib64 \
-          --with-freetype-include=$GITHUB_WORKSPACE/openjdk/build/freetype-2.5.3/include \
+          --with-boot-jdk=`cygpath $GITHUB_WORKSPACE\openjdk\build\zulu7.56.0.11-ca-jdk7.0.352-win_x86` \
+          --with-freetype-lib=`cygpath $GITHUB_WORKSPACE\openjdk\build\freetype-2.5.3\lib64` \
+          --with-freetype-include=`cygpath $GITHUB_WORKSPACE\openjdk\build\freetype-2.5.3\include` \
           --with-toolchain-version=2019 \
           --with-target-bits=32 &&
         make images &&
