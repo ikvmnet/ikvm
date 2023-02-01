@@ -225,7 +225,7 @@ jobs:
       run: |
         New-Item -Type Directory -Force openjdk\build
         Invoke-WebRequest -Uri "https://download-mirror.savannah.gnu.org/releases/freetype/freetype-old/freetype-2.5.3.tar.gz" -OutFile openjdk\build\freetype-2.5.3.tar.gz
-        "$env:SystemRoot\System32\tar.exe" xzvf openjdk\build\freetype-2.5.3.tar.gz -C openjdk\build
+        & "$env:SystemRoot\System32\tar.exe" xzvf openjdk\build\freetype-2.5.3.tar.gz -C openjdk\build
     - name: Build FreeType
       shell: pwsh
       run: msbuild builds\windows\vc2010\freetype.sln /p:PlatformToolset=v142 /p:Configuration="Release Multithreaded" /p:Platform=x64 /p:ConfigurationType=StaticLibrary /p:TargetName=freetype /p:OutDir="$env:GITHUB_WORKSPACE\openjdk\build\freetype-2.5.3\lib64\" /p:IntDir="$env:GITHUB_WORKSPACE\openjdk\build\freetype-2.5.3\obj64\"
@@ -303,7 +303,7 @@ jobs:
       run: |
         New-Item -Type Directory -Force openjdk\build
         Invoke-WebRequest -Uri "https://download-mirror.savannah.gnu.org/releases/freetype/freetype-old/freetype-2.5.3.tar.gz" -OutFile openjdk\build\freetype-2.5.3.tar.gz
-        "$env:SystemRoot\System32\tar.exe" xzvf openjdk\build\freetype-2.5.3.tar.gz -C openjdk\build
+        & "$env:SystemRoot\System32\tar.exe" xzvf openjdk\build\freetype-2.5.3.tar.gz -C openjdk\build
     - name: Build FreeType
       shell: pwsh
       run: msbuild builds\windows\vc2010\freetype.sln /p:PlatformToolset=v142 /p:Configuration="Release Multithreaded" /p:Platform=x86 /p:ConfigurationType=StaticLibrary /p:TargetName=freetype /p:OutDir="$env:GITHUB_WORKSPACE\openjdk\build\freetype-2.5.3\lib32\" /p:IntDir="$env:GITHUB_WORKSPACE\openjdk\build\freetype-2.5.3\obj32\"
