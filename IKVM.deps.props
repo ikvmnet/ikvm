@@ -3,7 +3,6 @@
     <ItemGroup>
         <PackageReference Include="Mono.Unix" Version="7.1.0-final.1.21458.1" GeneratePathProperty="true" />
         <PackageReference Include="Mono.Posix" Version="7.1.0-final.1.21458.1" GeneratePathProperty="true" />
-        <PackageReference Include="SharpZipLib" Version="1.3.3" />
         <PackageReference Include="System.Memory" Version="4.5.5" />
     </ItemGroup>
 

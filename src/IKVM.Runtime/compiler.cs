@@ -44,6 +44,7 @@ using ExceptionTableEntry = IKVM.Internal.ClassFile.Method.ExceptionTableEntry;
 using LocalVariableTableEntry = IKVM.Internal.ClassFile.Method.LocalVariableTableEntry;
 using Instruction = IKVM.Internal.ClassFile.Method.Instruction;
 using InstructionFlags = IKVM.Internal.ClassFile.Method.InstructionFlags;
+using IKVM.ByteCode;
 
 static class ByteCodeHelperMethods
 {
@@ -2953,11 +2954,11 @@ namespace IKVM.Runtime
                 MethodWrapper mw = mh.Member as MethodWrapper;
                 switch (mh.Kind)
                 {
-                    case ClassFile.RefKind.invokeStatic:
+                    case ReferenceKind.InvokeStatic:
                         if (mw != null && !mw.IsStatic)
                             goto default;
                         break;
-                    case ClassFile.RefKind.newInvokeSpecial:
+                    case ReferenceKind.NewInvokeSpecial:
                         if (mw != null && !mw.IsConstructor)
                             goto default;
                         break;
@@ -3445,31 +3446,31 @@ namespace IKVM.Runtime
 
         private void DynamicGetPutField(Instruction instr, int i)
         {
-            ClassFile.RefKind kind;
+            ReferenceKind kind;
             switch (instr.NormalizedOpCode)
             {
                 case NormalizedByteCode.__dynamic_getfield:
                     Profiler.Count("EmitDynamicGetfield");
-                    kind = ClassFile.RefKind.getField;
+                    kind = ReferenceKind.GetField;
                     break;
                 case NormalizedByteCode.__dynamic_putfield:
                     Profiler.Count("EmitDynamicPutfield");
-                    kind = ClassFile.RefKind.putField;
+                    kind = ReferenceKind.PutField;
                     break;
                 case NormalizedByteCode.__dynamic_getstatic:
                     Profiler.Count("EmitDynamicGetstatic");
-                    kind = ClassFile.RefKind.getStatic;
+                    kind = ReferenceKind.GetStatic;
                     break;
                 case NormalizedByteCode.__dynamic_putstatic:
                     Profiler.Count("EmitDynamicPutstatic");
-                    kind = ClassFile.RefKind.putStatic;
+                    kind = ReferenceKind.PutStatic;
                     break;
                 default:
                     throw new InvalidOperationException();
             }
             ClassFile.ConstantPoolItemFieldref cpi = classFile.GetFieldref(instr.Arg1);
             TypeWrapper fieldType = cpi.GetFieldType();
-            if (kind == ClassFile.RefKind.putField || kind == ClassFile.RefKind.putStatic)
+            if (kind == ReferenceKind.PutField || kind == ReferenceKind.PutStatic)
             {
                 fieldType.EmitConvStackTypeToSignatureType(ilGenerator, ma.GetStackTypeWrapper(i, 0));
                 if (strictfp)
@@ -3482,7 +3483,7 @@ namespace IKVM.Runtime
                 }
             }
             context.GetValue<DynamicFieldBinder>(instr.Arg1 | ((byte)kind << 24)).Emit(this, cpi, kind);
-            if (kind == ClassFile.RefKind.getField || kind == ClassFile.RefKind.getStatic)
+            if (kind == ReferenceKind.GetField || kind == ReferenceKind.GetStatic)
             {
                 fieldType.EmitConvSignatureTypeToStackType(ilGenerator);
             }
@@ -3747,7 +3748,7 @@ namespace IKVM.Runtime
         {
             private MethodInfo method;
 
-            internal void Emit(Compiler compiler, ClassFile.ConstantPoolItemFieldref cpi, ClassFile.RefKind kind)
+            internal void Emit(Compiler compiler, ClassFile.ConstantPoolItemFieldref cpi, ReferenceKind kind)
             {
                 if (method == null)
                 {
@@ -3756,25 +3757,25 @@ namespace IKVM.Runtime
                 compiler.ilGenerator.Emit(OpCodes.Call, method);
             }
 
-            private static MethodInfo CreateMethod(Compiler compiler, ClassFile.ConstantPoolItemFieldref cpi, ClassFile.RefKind kind)
+            private static MethodInfo CreateMethod(Compiler compiler, ClassFile.ConstantPoolItemFieldref cpi, ReferenceKind kind)
             {
                 TypeWrapper ret;
                 TypeWrapper[] args;
                 switch (kind)
                 {
-                    case ClassFile.RefKind.getField:
+                    case ReferenceKind.GetField:
                         ret = cpi.GetFieldType();
                         args = new TypeWrapper[] { cpi.GetClassType() };
                         break;
-                    case ClassFile.RefKind.getStatic:
+                    case ReferenceKind.GetStatic:
                         ret = cpi.GetFieldType();
                         args = TypeWrapper.EmptyArray;
                         break;
-                    case ClassFile.RefKind.putField:
+                    case ReferenceKind.PutField:
                         ret = PrimitiveTypeWrapper.VOID;
                         args = new TypeWrapper[] { cpi.GetClassType(), cpi.GetFieldType() };
                         break;
-                    case ClassFile.RefKind.putStatic:
+                    case ReferenceKind.PutStatic:
                         ret = PrimitiveTypeWrapper.VOID;
                         args = new TypeWrapper[] { cpi.GetFieldType() };
                         break;
@@ -3789,21 +3790,21 @@ namespace IKVM.Runtime
         {
             private MethodWrapper mw;
 
-            internal MethodWrapper Get(Compiler compiler, ClassFile.RefKind kind, ClassFile.ConstantPoolItemMI cpi, bool privileged)
+            internal MethodWrapper Get(Compiler compiler, ReferenceKind kind, ClassFile.ConstantPoolItemMI cpi, bool privileged)
             {
                 return mw ?? (mw = new DynamicBinderMethodWrapper(cpi, Emit(compiler, kind, cpi, privileged), kind));
             }
 
-            private static MethodInfo Emit(Compiler compiler, ClassFile.RefKind kind, ClassFile.ConstantPoolItemMI cpi, bool privileged)
+            private static MethodInfo Emit(Compiler compiler, ReferenceKind kind, ClassFile.ConstantPoolItemMI cpi, bool privileged)
             {
                 TypeWrapper ret;
                 TypeWrapper[] args;
-                if (kind == ClassFile.RefKind.invokeStatic)
+                if (kind == ReferenceKind.InvokeStatic)
                 {
                     ret = cpi.GetRetType();
                     args = cpi.GetArgTypes();
                 }
-                else if (kind == ClassFile.RefKind.newInvokeSpecial)
+                else if (kind == ReferenceKind.NewInvokeSpecial)
                 {
                     ret = cpi.GetClassType();
                     args = cpi.GetArgTypes();
@@ -3816,9 +3817,9 @@ namespace IKVM.Runtime
                 return Emit(compiler, kind, cpi, ret, args, privileged);
             }
 
-            internal static MethodInfo Emit(Compiler compiler, ClassFile.RefKind kind, ClassFile.ConstantPoolItemFMI cpi, TypeWrapper ret, TypeWrapper[] args, bool privileged)
+            internal static MethodInfo Emit(Compiler compiler, ReferenceKind kind, ClassFile.ConstantPoolItemFMI cpi, TypeWrapper ret, TypeWrapper[] args, bool privileged)
             {
-                bool ghostTarget = (kind == ClassFile.RefKind.invokeSpecial || kind == ClassFile.RefKind.invokeVirtual || kind == ClassFile.RefKind.invokeInterface) && args[0].IsGhost;
+                bool ghostTarget = (kind == ReferenceKind.InvokeSpecial || kind == ReferenceKind.InvokeVirtual || kind == ReferenceKind.InvokeInterface) && args[0].IsGhost;
                 Type delegateType = MethodHandleUtil.CreateMethodHandleDelegateType(args, ret);
                 FieldBuilder fb = compiler.context.DefineMethodHandleInvokeCacheField(delegateType);
                 Type[] types = new Type[args.Length];
@@ -3870,8 +3871,8 @@ namespace IKVM.Runtime
             {
                 private readonly MethodInfo method;
 
-                internal DynamicBinderMethodWrapper(ClassFile.ConstantPoolItemMI cpi, MethodInfo method, ClassFile.RefKind kind)
-                    : base(cpi.GetClassType(), cpi.Name, cpi.Signature, null, cpi.GetRetType(), cpi.GetArgTypes(), kind == ClassFile.RefKind.invokeStatic ? Modifiers.Public | Modifiers.Static : Modifiers.Public, MemberFlags.None)
+                internal DynamicBinderMethodWrapper(ClassFile.ConstantPoolItemMI cpi, MethodInfo method, ReferenceKind kind)
+                    : base(cpi.GetClassType(), cpi.Name, cpi.Signature, null, cpi.GetRetType(), cpi.GetArgTypes(), kind == ReferenceKind.InvokeStatic ? Modifiers.Public | Modifiers.Static : Modifiers.Public, MemberFlags.None)
                 {
                     this.method = method;
                 }
@@ -3948,32 +3949,32 @@ namespace IKVM.Runtime
 
         private MethodWrapper GetDynamicMethodWrapper(int index, NormalizedByteCode invoke, ClassFile.ConstantPoolItemMI cpi)
         {
-            ClassFile.RefKind kind;
+            ReferenceKind kind;
             switch (invoke)
             {
                 case NormalizedByteCode.__invokeinterface:
                 case NormalizedByteCode.__dynamic_invokeinterface:
-                    kind = ClassFile.RefKind.invokeInterface;
+                    kind = ReferenceKind.InvokeInterface;
                     break;
                 case NormalizedByteCode.__invokestatic:
                 case NormalizedByteCode.__dynamic_invokestatic:
                 case NormalizedByteCode.__privileged_invokestatic:
-                    kind = ClassFile.RefKind.invokeStatic;
+                    kind = ReferenceKind.InvokeStatic;
                     break;
                 case NormalizedByteCode.__invokevirtual:
                 case NormalizedByteCode.__dynamic_invokevirtual:
                 case NormalizedByteCode.__privileged_invokevirtual:
-                    kind = ClassFile.RefKind.invokeVirtual;
+                    kind = ReferenceKind.InvokeVirtual;
                     break;
                 case NormalizedByteCode.__invokespecial:
                 case NormalizedByteCode.__dynamic_invokespecial:
-                    kind = ClassFile.RefKind.newInvokeSpecial;
+                    kind = ReferenceKind.NewInvokeSpecial;
                     break;
                 case NormalizedByteCode.__privileged_invokespecial:
                     // we don't support calling a base class constructor
                     kind = cpi.GetMethod().IsConstructor
-                        ? ClassFile.RefKind.newInvokeSpecial
-                        : ClassFile.RefKind.invokeSpecial;
+                        ? ReferenceKind.NewInvokeSpecial
+                        : ReferenceKind.InvokeSpecial;
                     break;
                 default:
                     throw new InvalidOperationException();

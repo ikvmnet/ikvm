@@ -22,14 +22,18 @@
   
 */
 
+using IKVM.ByteCode;
+
 namespace IKVM.Internal
 {
+
     struct MethodParametersEntry
     {
 
         internal static readonly MethodParametersEntry[] Malformed = new MethodParametersEntry[0];
+
         internal string name;
-        internal ushort flags;
+        internal AccessFlag accessFlags;
 
     }
 

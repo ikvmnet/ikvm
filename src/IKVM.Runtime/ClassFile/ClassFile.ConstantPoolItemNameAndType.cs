@@ -22,31 +22,38 @@
   
 */
 
+using IKVM.ByteCode.Reading;
+
 namespace IKVM.Internal
 {
 
     sealed partial class ClassFile
-	{
-        private sealed class ConstantPoolItemNameAndType : ConstantPoolItem
-		{
-			internal ushort name_index;
-			internal ushort descriptor_index;
+    {
 
-			internal ConstantPoolItemNameAndType(BigEndianBinaryReader br)
-			{
-				name_index = br.ReadUInt16();
-				descriptor_index = br.ReadUInt16();
-			}
+        sealed class ConstantPoolItemNameAndType : ConstantPoolItem
+        {
 
-			internal override void Resolve(ClassFile classFile, string[] utf8_cp, ClassFileParseOptions options)
-			{
-				if(classFile.GetConstantPoolUtf8String(utf8_cp, name_index) == null
-					|| classFile.GetConstantPoolUtf8String(utf8_cp, descriptor_index) == null)
-				{
-					throw new ClassFormatError("Illegal constant pool index");
-				}
-			}
-		}
-	}
+            internal ushort nameIndex;
+            internal ushort descriptorIndex;
+
+            /// <summary>
+            /// Initializes a new instance.
+            /// </summary>
+            /// <param name="reader"></param>
+            internal ConstantPoolItemNameAndType(NameAndTypeConstantReader reader)
+            {
+                nameIndex = reader.Record.NameIndex;
+                descriptorIndex = reader.Record.DescriptorIndex;
+            }
+
+            internal override void Resolve(ClassFile classFile, string[] utf8_cp, ClassFileParseOptions options)
+            {
+                if (classFile.GetConstantPoolUtf8String(utf8_cp, nameIndex) == null || classFile.GetConstantPoolUtf8String(utf8_cp, descriptorIndex) == null)
+                    throw new ClassFormatError("Illegal constant pool index");
+            }
+
+        }
+
+    }
 
 }

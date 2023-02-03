@@ -31,6 +31,8 @@ using IKVM.Reflection;
 using IKVM.Reflection.Emit;
 
 using Type = IKVM.Reflection.Type;
+
+using IKVM.ByteCode.Reading;
 #else
 using System.Reflection;
 using System.Reflection.Emit;
@@ -826,30 +828,22 @@ namespace IKVM.Internal
             mb.SetCustomAttribute(new CustomAttributeBuilder(methodParametersAttribute, new object[] { modifiers }));
         }
 
-        internal static void SetRuntimeVisibleTypeAnnotationsAttribute(TypeBuilder tb, byte[] data)
+        internal static void SetRuntimeVisibleTypeAnnotationsAttribute(TypeBuilder tb, IReadOnlyList<TypeAnnotationReader> data)
         {
-            if (runtimeVisibleTypeAnnotationsAttribute == null)
-            {
-                runtimeVisibleTypeAnnotationsAttribute = typeofRuntimeVisibleTypeAnnotationsAttribute.GetConstructor(new Type[] { Types.Byte.MakeArrayType() });
-            }
+            runtimeVisibleTypeAnnotationsAttribute ??= typeofRuntimeVisibleTypeAnnotationsAttribute.GetConstructor(new Type[] { Types.Byte.MakeArrayType() });
             tb.SetCustomAttribute(new CustomAttributeBuilder(runtimeVisibleTypeAnnotationsAttribute, new object[] { data }));
         }
 
-        internal static void SetRuntimeVisibleTypeAnnotationsAttribute(FieldBuilder fb, byte[] data)
+        internal static void SetRuntimeVisibleTypeAnnotationsAttribute(FieldBuilder fb, IReadOnlyList<TypeAnnotationReader> data)
         {
             if (runtimeVisibleTypeAnnotationsAttribute == null)
-            {
-                runtimeVisibleTypeAnnotationsAttribute = typeofRuntimeVisibleTypeAnnotationsAttribute.GetConstructor(new Type[] { Types.Byte.MakeArrayType() });
-            }
+                runtimeVisibleTypeAnnotationsAttribute ??= typeofRuntimeVisibleTypeAnnotationsAttribute.GetConstructor(new Type[] { Types.Byte.MakeArrayType() });
             fb.SetCustomAttribute(new CustomAttributeBuilder(runtimeVisibleTypeAnnotationsAttribute, new object[] { data }));
         }
 
-        internal static void SetRuntimeVisibleTypeAnnotationsAttribute(MethodBuilder mb, byte[] data)
+        internal static void SetRuntimeVisibleTypeAnnotationsAttribute(MethodBuilder mb, IReadOnlyList<TypeAnnotationReader> data)
         {
-            if (runtimeVisibleTypeAnnotationsAttribute == null)
-            {
-                runtimeVisibleTypeAnnotationsAttribute = typeofRuntimeVisibleTypeAnnotationsAttribute.GetConstructor(new Type[] { Types.Byte.MakeArrayType() });
-            }
+            runtimeVisibleTypeAnnotationsAttribute ??= typeofRuntimeVisibleTypeAnnotationsAttribute.GetConstructor(new Type[] { Types.Byte.MakeArrayType() });
             mb.SetCustomAttribute(new CustomAttributeBuilder(runtimeVisibleTypeAnnotationsAttribute, new object[] { data }));
         }
 

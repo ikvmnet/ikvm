@@ -25,6 +25,8 @@ using System;
 using System.Collections.Generic;
 using System.Diagnostics;
 
+using IKVM.ByteCode;
+
 #if IMPORTER
 using IKVM.Reflection;
 using IKVM.Reflection.Emit;
@@ -34,12 +36,14 @@ using Type = IKVM.Reflection.Type;
 #else
 using System.Reflection;
 using System.Reflection.Emit;
+
 #endif
 
 namespace IKVM.Internal
 {
 	sealed class LambdaMetafactory
 	{
+
 		private MethodBuilder ctor;
 
 		internal static bool Emit(DynamicTypeWrapper.FinishContext context, ClassFile classFile, int constantPoolIndex, ClassFile.ConstantPoolItemInvokeDynamic cpi, CodeEmitter ilgen)
@@ -253,7 +257,7 @@ namespace IKVM.Internal
 
 		private static TypeWrapper GetImplReturnType(ClassFile.ConstantPoolItemMethodHandle implMethod)
 		{
-			return implMethod.Kind == ClassFile.RefKind.newInvokeSpecial
+			return implMethod.Kind == ReferenceKind.NewInvokeSpecial
 				? implMethod.Member.DeclaringType
 				: ((MethodWrapper)implMethod.Member).ReturnType;
 		}
@@ -500,9 +504,9 @@ namespace IKVM.Internal
 				{
 					switch (implMethod.Kind)
 					{
-						case ClassFile.RefKind.invokeInterface:
-						case ClassFile.RefKind.invokeVirtual:
-						case ClassFile.RefKind.invokeSpecial:
+						case ReferenceKind.InvokeInterface:
+						case ReferenceKind.InvokeVirtual:
+						case ReferenceKind.InvokeSpecial:
 							opc = OpCodes.Ldflda;
 							break;
 					}
@@ -565,15 +569,15 @@ namespace IKVM.Internal
 			}
 			switch (implMethod.Kind)
 			{
-				case ClassFile.RefKind.invokeVirtual:
-				case ClassFile.RefKind.invokeInterface:
+				case ReferenceKind.InvokeVirtual:
+				case ReferenceKind.InvokeInterface:
 					((MethodWrapper)implMethod.Member).EmitCallvirt(ilgen);
 					break;
-				case ClassFile.RefKind.newInvokeSpecial:
+				case ReferenceKind.NewInvokeSpecial:
 					((MethodWrapper)implMethod.Member).EmitNewobj(ilgen);
 					break;
-				case ClassFile.RefKind.invokeStatic:
-				case ClassFile.RefKind.invokeSpecial:
+				case ReferenceKind.InvokeStatic:
+				case ReferenceKind.InvokeSpecial:
 					((MethodWrapper)implMethod.Member).EmitCall(ilgen);
 					break;
 				default:
@@ -733,11 +737,11 @@ namespace IKVM.Internal
 		{
 			switch (implMethod.Kind)
 			{
-				case ClassFile.RefKind.invokeVirtual:
-				case ClassFile.RefKind.invokeInterface:
-				case ClassFile.RefKind.newInvokeSpecial:
-				case ClassFile.RefKind.invokeStatic:
-				case ClassFile.RefKind.invokeSpecial:
+				case ReferenceKind.InvokeVirtual:
+				case ReferenceKind.InvokeInterface:
+				case ReferenceKind.NewInvokeSpecial:
+				case ReferenceKind.InvokeStatic:
+				case ReferenceKind.InvokeSpecial:
 					break;
 				default:
 					return false;
@@ -936,7 +940,7 @@ namespace IKVM.Internal
 				&& classFile.GetConstantPoolConstantType(bsm.GetArgument(0)) == ClassFile.ConstantType.MethodType
 				&& classFile.GetConstantPoolConstantType(bsm.GetArgument(1)) == ClassFile.ConstantType.MethodHandle
 				&& classFile.GetConstantPoolConstantType(bsm.GetArgument(2)) == ClassFile.ConstantType.MethodType
-				&& (mh = classFile.GetConstantPoolConstantMethodHandle(bsm.BootstrapMethodIndex)).Kind == ClassFile.RefKind.invokeStatic
+				&& (mh = classFile.GetConstantPoolConstantMethodHandle(bsm.BootstrapMethodIndex)).Kind == ReferenceKind.InvokeStatic
 				&& mh.Member != null
 				&& IsLambdaMetafactory(mh.Member);
 		}
@@ -963,7 +967,7 @@ namespace IKVM.Internal
 			AltFlags flags;
 			int argpos = 4;
 			return bsm.ArgumentCount >= 4
-				&& (mh = classFile.GetConstantPoolConstantMethodHandle(bsm.BootstrapMethodIndex)).Kind == ClassFile.RefKind.invokeStatic
+				&& (mh = classFile.GetConstantPoolConstantMethodHandle(bsm.BootstrapMethodIndex)).Kind == ReferenceKind.InvokeStatic
 				&& mh.Member != null
 				&& IsLambdaAltMetafactory(mh.Member)
 				&& classFile.GetConstantPoolConstantType(bsm.GetArgument(0)) == ClassFile.ConstantType.MethodType

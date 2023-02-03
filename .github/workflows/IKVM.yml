@@ -15,20 +15,20 @@ on:
 jobs:
   build-openjdk:
     name: Build OpenJDK
-    runs-on: ubuntu-18.04
+    runs-on: ubuntu-latest
     steps:
     - name: Checkout Source
-      uses: actions/checkout@v1
+      uses: actions/checkout@v3
       with:
         submodules: recursive
     - name: Cache OpenJDK Build
       uses: actions/cache@v3
       with:
         path: openjdk/build/linux-x86_64-normal-server-release
-        key: openjdk-build-linux-x86_64-normal-server-release--${{ runner.os }}--${{ hashFiles('openjdk/**', '!openjdk/build') }}-8
+        key: openjdk-build-linux-x86_64-normal-server-release--${{ runner.os }}--${{ hashFiles('openjdk/**', '!openjdk/build') }}-9
     - name: Check OpenJDK Build Stamp
       id: openjdk-build-stamp
-      uses: andstor/file-existence-action@v1
+      uses: andstor/file-existence-action@v2
       with:
         files: openjdk/build/linux-x86_64-normal-server-release/stamp
     - name: Fetch OpenJDK 7
@@ -94,7 +94,7 @@ jobs:
         key: jtreg-build--${{ runner.os }}--${{ hashFiles('jtreg/**', 'openjdk/build/linux-x86_64-normal-server-release/images/j2sdk-image', '!jtreg/build') }}-6
     - name: Check OpenJDK Test Harness Build Stamp
       id: jtreg-build-stamp
-      uses: andstor/file-existence-action@v1
+      uses: andstor/file-existence-action@v2
       with:
         files: jtreg/build/stamp
     - name: Build OpenJDK Test Harness
@@ -151,7 +151,7 @@ jobs:
         dotnet-version: 7.0.x
     - name: Cache LLVM and Clang
       id: cache-llvm
-      uses: actions/cache@v2
+      uses: actions/cache@v3
       with:
         path: C:/Program Files/LLVM
         key: llvm-15.0
@@ -161,11 +161,11 @@ jobs:
         version: "15.0"
         cached: ${{ steps.cache-llvm.outputs.cache-hit }}
     - name: Install GitVersion
-      uses: gittools/actions/gitversion/setup@v0.9.13
+      uses: gittools/actions/gitversion/setup@v0.9.15
       with:
         versionSpec: 5.x
     - name: Execute GitVersion
-      uses: gittools/actions/gitversion/execute@v0.9.13
+      uses: gittools/actions/gitversion/execute@v0.9.15
       with:
         targetPath: ${{ env.WORKPATH }}\ikvm
         useConfigFile: true
@@ -286,6 +286,7 @@ jobs:
     strategy:
       matrix:
         run:
+        - IKVM.ByteCode.Tests
         - IKVM.Tests
         - IKVM.Tools.Importer.Tests
         - IKVM.Tools.Exporter.Tests
@@ -479,12 +480,12 @@ jobs:
       with:
         dotnet-version: 7.0.x
     - name: Install GitVersion
-      uses: gittools/actions/gitversion/setup@v0.9.13
+      uses: gittools/actions/gitversion/setup@v0.9.15
       with:
         versionSpec: 5.x
     - name: Execute GitVersion
       id: GitVersion
-      uses: gittools/actions/gitversion/execute@v0.9.13
+      uses: gittools/actions/gitversion/execute@v0.9.15
       with:
         useConfigFile: true
     - name: Download NuGet Packages

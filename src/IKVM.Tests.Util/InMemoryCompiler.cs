@@ -2,8 +2,11 @@
 using System.Collections.Concurrent;
 using System.IO;
 
+using java.io;
 using java.lang;
 using java.util;
+
+using javax.tools;
 
 namespace IKVM.Tests.Util
 {
@@ -14,31 +17,29 @@ namespace IKVM.Tests.Util
     public class InMemoryCompiler
     {
 
-        readonly ConcurrentDictionary<string, java.io.ByteArrayOutputStream> classes = new();
+        readonly ConcurrentDictionary<string, ByteArrayOutputStream> streams = new();
 
         /// <summary>
         /// Captures the output files from the compilation process.
         /// </summary>
-        class InMemoryForwardingJavaFileManager : javax.tools.ForwardingJavaFileManager
+        class InMemoryForwardingJavaFileManager : ForwardingJavaFileManager
         {
-
-            readonly ConcurrentDictionary<string, java.io.ByteArrayOutputStream> classes;
 
             /// <summary>
             /// Class loader which reads from the output class files.
             /// </summary>
-            class InMemoryForwardingJavaFileManagerClassLoader : java.lang.ClassLoader
+            class InMemoryForwardingJavaFileManagerClassLoader : ClassLoader
             {
 
-                readonly ConcurrentDictionary<string, java.io.ByteArrayOutputStream> classes;
+                readonly ConcurrentDictionary<string, ByteArrayOutputStream> streams;
 
                 /// <summary>
                 /// Initializes a new instance.
                 /// </summary>
-                /// <param name="classes"></param>
-                public InMemoryForwardingJavaFileManagerClassLoader(ConcurrentDictionary<string, java.io.ByteArrayOutputStream> classes)
+                /// <param name="streams"></param>
+                public InMemoryForwardingJavaFileManagerClassLoader(ConcurrentDictionary<string, ByteArrayOutputStream> streams)
                 {
-                    this.classes = classes ?? throw new ArgumentNullException(nameof(classes));
+                    this.streams = streams ?? throw new ArgumentNullException(nameof(streams));
                 }
 
                 /// <summary>
@@ -48,10 +49,10 @@ namespace IKVM.Tests.Util
                 /// <returns></returns>
                 protected override Class findClass(string className)
                 {
-                    if (classes.TryGetValue(className, out var bos))
+                    if (streams.TryGetValue(className, out var stream))
                     {
-                        var b = bos.toByteArray();
-                        return base.defineClass(className, b, 0, b.Length);
+                        var b = stream.toByteArray();
+                        return defineClass(className, b, 0, b.Length);
                     }
 
                     return null;
@@ -62,20 +63,20 @@ namespace IKVM.Tests.Util
             /// <summary>
             /// Represents an output file to be written into.
             /// </summary>
-            class InMemoryClassFileObject : javax.tools.SimpleJavaFileObject
+            class InMemoryClassFileObject : SimpleJavaFileObject
             {
 
-                readonly ConcurrentDictionary<string, java.io.ByteArrayOutputStream> classes;
+                readonly ConcurrentDictionary<string, ByteArrayOutputStream> streams;
                 readonly string className;
 
                 /// <summary>
                 /// Initializes a new instance.
                 /// </summary>
-                /// <param name="files"></param>
-                public InMemoryClassFileObject(ConcurrentDictionary<string, java.io.ByteArrayOutputStream> files, string className, javax.tools.JavaFileObject.Kind kind) :
+                /// <param name="streams"></param>
+                public InMemoryClassFileObject(ConcurrentDictionary<string, ByteArrayOutputStream> streams, string className, JavaFileObject.Kind kind) :
                     base(java.net.URI.create("string:///" + className.Replace('.', '/') + kind), kind)
                 {
-                    this.classes = files ?? throw new ArgumentNullException(nameof(files));
+                    this.streams = streams ?? throw new ArgumentNullException(nameof(streams));
                     this.className = className ?? throw new ArgumentNullException(nameof(className));
                 }
 
@@ -83,22 +84,26 @@ namespace IKVM.Tests.Util
                 /// Gets the output stream into which to write the class file.
                 /// </summary>
                 /// <returns></returns>
-                public override java.io.OutputStream openOutputStream()
+                public override OutputStream openOutputStream()
                 {
-                    return classes.GetOrAdd(className, _ => new java.io.ByteArrayOutputStream());
+                    return streams.GetOrAdd(className, _ => new ByteArrayOutputStream());
                 }
 
             }
+
+            readonly ConcurrentDictionary<string, ByteArrayOutputStream> streams;
+            readonly ClassLoader classLoader;
 
             /// <summary>
             /// Initializes a new instance.
             /// </summary>
             /// <param name="manager"></param>
-            /// <param name="classes"></param>
-            public InMemoryForwardingJavaFileManager(javax.tools.JavaFileManager manager, ConcurrentDictionary<string, java.io.ByteArrayOutputStream> classes) :
+            /// <param name="streams"></param>
+            public InMemoryForwardingJavaFileManager(JavaFileManager manager, ConcurrentDictionary<string, ByteArrayOutputStream> streams) :
                 base(manager)
             {
-                this.classes = classes ?? throw new ArgumentNullException(nameof(classes));
+                this.streams = streams ?? throw new ArgumentNullException(nameof(streams));
+                this.classLoader = new InMemoryForwardingJavaFileManagerClassLoader(streams);
             }
 
             /// <summary>
@@ -106,9 +111,9 @@ namespace IKVM.Tests.Util
             /// </summary>
             /// <param name="location"></param>
             /// <returns></returns>
-            public override java.lang.ClassLoader getClassLoader(javax.tools.JavaFileManager.Location location)
+            public override ClassLoader getClassLoader(JavaFileManager.Location location)
             {
-                return new InMemoryForwardingJavaFileManagerClassLoader(classes);
+                return classLoader;
             }
 
             /// <summary>
@@ -119,9 +124,9 @@ namespace IKVM.Tests.Util
             /// <param name="kind"></param>
             /// <param name="sibling"></param>
             /// <returns></returns>
-            public override javax.tools.JavaFileObject getJavaFileForOutput(javax.tools.JavaFileManager.Location location, string className, javax.tools.JavaFileObject.Kind kind, javax.tools.FileObject sibling)
+            public override JavaFileObject getJavaFileForOutput(JavaFileManager.Location location, string className, JavaFileObject.Kind kind, FileObject sibling)
             {
-                return new InMemoryClassFileObject(classes, className, kind);
+                return new InMemoryClassFileObject(streams, className, kind);
             }
 
         }
@@ -129,7 +134,7 @@ namespace IKVM.Tests.Util
         /// <summary>
         /// Represents an input file to be read from.
         /// </summary>
-        class InMemorySourceFileObject : javax.tools.SimpleJavaFileObject
+        class InMemorySourceFileObject : SimpleJavaFileObject
         {
 
             readonly InMemoryCodeUnit unit;
@@ -139,7 +144,7 @@ namespace IKVM.Tests.Util
             /// </summary>
             /// <param name="uri"></param>
             public InMemorySourceFileObject(InMemoryCodeUnit unit, java.net.URI uri) :
-                base(uri, javax.tools.JavaFileObject.Kind.SOURCE)
+                base(uri, JavaFileObject.Kind.SOURCE)
             {
                 this.unit = unit ?? throw new ArgumentNullException(nameof(unit));
             }
@@ -157,8 +162,8 @@ namespace IKVM.Tests.Util
         }
 
         readonly InMemoryCodeUnit[] units;
-        readonly javax.tools.JavaFileManager files;
-        readonly javax.tools.JavaCompiler compiler;
+        readonly JavaFileManager files;
+        readonly JavaCompiler compiler;
 
         /// <summary>
         /// Initializes a new instance.
@@ -168,10 +173,10 @@ namespace IKVM.Tests.Util
         /// <exception cref="Exception"></exception>
         public InMemoryCompiler(InMemoryCodeUnit[] source)
         {
-            this.compiler = javax.tools.ToolProvider.getSystemJavaCompiler() ?? throw new System.Exception();
+            this.compiler = ToolProvider.getSystemJavaCompiler() ?? throw new System.Exception();
 
             this.units = source ?? throw new ArgumentNullException(nameof(source));
-            this.files = new InMemoryForwardingJavaFileManager(compiler.getStandardFileManager(null, null, null), classes);
+            this.files = new InMemoryForwardingJavaFileManager(compiler.getStandardFileManager(null, null, null), streams);
         }
 
         /// <summary>
@@ -183,7 +188,7 @@ namespace IKVM.Tests.Util
             var l = new java.util.ArrayList();
             foreach (var unit in units)
             {
-                var uri = java.net.URI.create("string:///" + unit.Name.Replace('.', '/') + javax.tools.JavaFileObject.Kind.SOURCE.extension);
+                var uri = java.net.URI.create("string:///" + unit.Name.Replace('.', '/') + JavaFileObject.Kind.SOURCE.extension);
                 var src = new InMemorySourceFileObject(unit, uri);
                 l.add(src);
             }
@@ -195,14 +200,14 @@ namespace IKVM.Tests.Util
                 o.add("-verbose");
                 o.add("-g");
 
-                var d = new javax.tools.DiagnosticCollector();
+                var d = new DiagnosticCollector();
                 var s = compiler.getTask(null, files, d, o, null, l).call();
                 if (s.booleanValue() == false)
                 {
                     var m = new StringBuilder();
                     var a = d.getDiagnostics();
                     for (int i = 0; i < a.size(); i++)
-                        m.append(((javax.tools.Diagnostic)a.get(i)).getMessage(Locale.US));
+                        m.append(((Diagnostic)a.get(i)).getMessage(Locale.US));
 
                     throw new System.Exception(m.toString());
                 }
@@ -231,7 +236,7 @@ namespace IKVM.Tests.Util
         /// <param name="path"></param>
         public void WriteJar(string path)
         {
-            using var jar = File.OpenWrite(path);
+            using var jar = System.IO.File.OpenWrite(path);
             WriteJar(jar);
         }
 
@@ -242,7 +247,7 @@ namespace IKVM.Tests.Util
         public void WriteJar(Stream stream)
         {
             // write to temporary stream
-            var buf = new global::java.io.ByteArrayOutputStream();
+            var buf = new ByteArrayOutputStream();
             WriteJar(buf);
             stream.Write(buf.toByteArray(), 0, buf.size());
         }
@@ -251,7 +256,7 @@ namespace IKVM.Tests.Util
         /// Writes the compiled classes to a JAR on the given stream.
         /// </summary>
         /// <param name="stream"></param>
-        public void WriteJar(java.io.OutputStream stream)
+        public void WriteJar(OutputStream stream)
         {
             var man = new java.util.jar.Manifest();
             man.getMainAttributes().put(java.util.jar.Attributes.Name.MANIFEST_VERSION, "1.0");
@@ -266,7 +271,7 @@ namespace IKVM.Tests.Util
         /// <param name="jar"></param>
         public void WriteJar(java.util.jar.JarOutputStream jar)
         {
-            foreach (var i in classes)
+            foreach (var i in streams)
             {
                 var e = new java.util.jar.JarEntry(i.Key.Replace(".", "/") + ".class");
                 jar.putNextEntry(e);

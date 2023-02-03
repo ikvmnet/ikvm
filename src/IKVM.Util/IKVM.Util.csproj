@@ -9,4 +9,8 @@
         <PackageReference Include="System.ValueTuple" Version="4.5.0" />
     </ItemGroup>
 
+    <ItemGroup>
+        <ProjectReference Include="..\IKVM.ByteCode\IKVM.ByteCode.csproj" />
+    </ItemGroup>
+
 </Project>

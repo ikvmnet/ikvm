@@ -24,7 +24,7 @@
 using System;
 using System.Runtime.InteropServices;
 
-using IKVM.Runtime.Text;
+using IKVM.ByteCode.Text;
 
 namespace IKVM.Runtime.JNI
 {
@@ -34,6 +34,8 @@ namespace IKVM.Runtime.JNI
     [StructLayout(LayoutKind.Sequential)]
     unsafe struct JavaVM
     {
+
+        static readonly MUTF8Encoding MUTF8 = MUTF8Encoding.GetMUTF8(52);
 
         internal static JavaVM* pJavaVM;
         void** vtable;
@@ -112,11 +114,11 @@ namespace IKVM.Runtime.JNI
                 {
                     try
                     {
-                        var l = MUTF8Encoding.IndexOfNull(pAttachArgs->name);
+                        var l = MUTF8.IndexOfNull(pAttachArgs->name);
                         if (l < 0)
                             return JNIEnv.JNI_ERR;
 
-                        System.Threading.Thread.CurrentThread.Name = MUTF8Encoding.MUTF8.GetString(pAttachArgs->name, l);
+                        System.Threading.Thread.CurrentThread.Name = MUTF8.GetString(pAttachArgs->name, l);
                     }
                     catch (InvalidOperationException)
                     {

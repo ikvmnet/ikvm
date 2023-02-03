@@ -128,7 +128,7 @@ namespace IKVM.Internal
         /// </summary>
         public static void EnableTraceConsoleListener()
         {
-            Trace.Listeners.Add(new MyTextWriterTraceListener(Console.Error));
+            //Trace.Listeners.Add(new MyTextWriterTraceListener(Console.Error));
         }
 
         public static void HandleMethodTrace(string name)

@@ -320,7 +320,7 @@ namespace IKVM.Internal
             if (fb != null)
             {
 #if NETFRAMEWORK
-                field = fb.Module.ResolveField(fb.GetToken().Token);
+                field = fb.DeclaringType.Module.ResolveField(fb.GetToken().Token);
 #else
                 BindingFlags flags = BindingFlags.DeclaredOnly;
                 flags |= fb.IsPublic ? BindingFlags.Public : BindingFlags.NonPublic;
