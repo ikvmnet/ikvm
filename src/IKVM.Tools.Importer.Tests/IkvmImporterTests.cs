@@ -19,43 +19,27 @@ namespace IKVM.Tools.Importer.Tests
     public class IkvmImporterTests
     {
 
-//        [TestMethod]
-//        public async Task CanImportSampleJar()
-//        {
+        [TestMethod]
+        public async Task CanImportSampleJar()
+        {
 
-//#if NETFRAMEWORK
-//            var a = new[] { $"-lib:{RuntimeEnvironment.GetRuntimeDirectory()}" };
-//#else
-//            var a = DependencyContext.Default.CompileLibraries.SelectMany(i => i.ResolveReferencePaths()).Select(i => $"-r:{i}");
-//#endif
+#if NETFRAMEWORK
+            var a = new[] { $"-lib:{RuntimeEnvironment.GetRuntimeDirectory()}" };
+#else
+            var a = DependencyContext.Default.CompileLibraries.SelectMany(i => i.ResolveReferencePaths()).Select(i => $"-r:{i}");
+#endif
 
-//            var o = Path.Combine(Path.GetTempPath(), "helloworld-2.0.dll");
-//            var j = Path.Combine(Path.GetDirectoryName(typeof(IkvmImporterTests).Assembly.Location), "helloworld-2.0.jar");
-//            var ret = await IkvmImporterTool.Main(a.Concat(new[] { @"-runtime:C:\dev\ikvm\src\IKVM.Runtime\bin\Debug\netcoreapp3.1\IKVM.Runtime.dll", "-nostdlib", "-assembly:IKVM.Tools.Importer.Tests.Java", $"-out:{o}", j }).ToArray(), CancellationToken.None);
-//            ret.Should().Be(0);
-//        }
+            var o = Path.Combine(Path.GetTempPath(), "helloworld-2.0.dll");
+            var j = Path.Combine(Path.GetDirectoryName(typeof(IkvmImporterTests).Assembly.Location), "helloworld-2.0.jar");
+            var ret = await IkvmImporterTool.Main(a.Concat(new[] { @"-runtime:C:\dev\ikvm\src\IKVM.Runtime\bin\Debug\netcoreapp3.1\IKVM.Runtime.dll", "-nostdlib", "-assembly:IKVM.Tools.Importer.Tests.Java", $"-out:{o}", j }).ToArray(), CancellationToken.None);
+            ret.Should().Be(0);
+        }
 
-//        [TestMethod]
-//        public async Task CanConvertCustomJar()
-//        {
-//            var s = new StreamReader(typeof(IkvmImporterTests).Assembly.GetManifestResourceStream("IKVM.Tools.Importer.Tests.IkvmImporterTests.java")).ReadToEnd();
-//            var f = new InMemoryCodeUnit("ikvm.tools.importer.tests.IkvmImporterTests", s);
-//            var c = new InMemoryCompiler(new[] { f });
-//            c.Compile();
-//            var j = Path.Combine(Path.GetTempPath(), Guid.NewGuid().ToString("n") + ".jar");
-//            c.WriteJar(j);
-
-//#if NETFRAMEWORK
-//            var a = new[] { $"-lib:{RuntimeEnvironment.GetRuntimeDirectory()}" };
-//#else
-//            var a = DependencyContext.Default.CompileLibraries.SelectMany(i => i.ResolveReferencePaths()).Select(i => $"-r:{i}");
-//#endif
-
-//            var asm = Path.ChangeExtension(j, ".dll");
-//            var ret = await IkvmImporterTool.Main(a.Concat(new[] { "-nostdlib", "-assembly:IKVM.Tools.Importer.Tests.Java", $"-out:{asm}", j }).ToArray(), CancellationToken.None);
-//            ret.Should().Be(0);
-//            File.Exists(asm).Should().BeTrue();
-//        }
+        [TestMethod]
+        public async Task Test()
+        {
+            await IkvmImporterTool.Main(new[] { @"@C:\Users\jhaltom\AppData\Local\Temp\ikvm\cache\1\54064d56c6a67d58f7bcade6ccdf39f4\com.google.common.dll.rsp" }, CancellationToken.None);
+        }
 
     }
 

@@ -48,7 +48,7 @@ $([MSBuild]::Unescape('$(___IkvmReferenceItemPrepareCs)'))
             <_IkvmCompilerArgs Include="-assembly:%(IkvmReferenceItem.AssemblyName)" />
             <_IkvmCompilerArgs Include="-version:%(IkvmReferenceItem.AssemblyVersion)" Condition=" '%(IkvmReferenceItem.AssemblyVersion)' != '' " />
             <_IkvmCompilerArgs Include="-fileversion:%(IkvmReferenceItem.AssemblyFileVersion)" Condition=" '%(IkvmReferenceItem.AssemblyFileVersion)' != '' " />
-            <_IkvmCompilerArgs Include="-runtime:$(IkvmRuntimeAssembly)" />
+            <_IkvmCompilerArgs Include="-runtime:$([System.IO.Path]::GetFullPath('$(IkvmRuntimeAssembly)'))" />
             <_IkvmCompilerArgs Include="-keyfile:%(IkvmReferenceItem.KeyFile)" Condition=" '%(IkvmReferenceItem.KeyFile)' != '' " />
             <_IkvmCompilerArgs Include="-delaysign:%(IkvmReferenceItem.DelaySign)" Condition=" '%(IkvmReferenceItem.DelaySign)' == 'true' " />
             <_IkvmCompilerArgs Include="-compressresources" />

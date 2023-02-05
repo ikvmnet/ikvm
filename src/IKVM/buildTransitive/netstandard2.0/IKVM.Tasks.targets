@@ -21,8 +21,10 @@
         <MakeDir Directories="$([System.IO.Path]::GetDirectoryName('%(IkvmReferenceItem.CacheSymbolsPath)'))" />
 
         <ItemGroup>
+            <_IkvmCompilerReferencePath Remove="@(_IkvmCompilerReferencePath)" />
             <_IkvmReferenceItemResolvedReference Remove="@(_IkvmReferenceItemResolvedReference)" />
             <_IkvmReferenceItemResolvedReference Include="%(IkvmReferenceItem.ResolvedReferences)" />
+            <_IkvmCompilerReferencePath Include="@(IkvmFrameworkReference);$(IkvmBaseAssembly);$(IkvmRuntimeAssembly);$(IkvmRuntimeJNIAssembly);@(_IkvmReferenceItemResolvedReference)" />
         </ItemGroup>
 
         <Delete Files="%(IkvmReferenceItem.StagePath)" Condition="Exists('%(IkvmReferenceItem.StagePath)')" />
@@ -32,11 +34,11 @@
             ToolPath="$(IkvmCompilerToolPath)"
             LogFile="%(IkvmReferenceItem.StagePath).log"
             ResponseFile="%(IkvmReferenceItem.StagePath).rsp"
-            Output="%(IkvmReferenceItem.StagePath)"
+            Output="%(IkvmReferenceItem.StagePath->'%(FullPath)')"
             Assembly="%(IkvmReferenceItem.AssemblyName)"
             Version="%(IkvmReferenceItem.AssemblyVersion)"
             FileVersion="%(IkvmReferenceItem.AssemblyFileVersion)"
-            Runtime="$(IkvmRuntimeAssembly)"
+            Runtime="$([System.IO.Path]::GetFullPath('$(IkvmRuntimeAssembly)'))"
             Target="library"
             Debug="%(IkvmReferenceItem.Debug)"
             KeyFile="%(IkvmReferenceItem.KeyFile)"
@@ -44,8 +46,8 @@
             CompressResources="true"
             ClassLoader="%(IkvmReferenceItem.ClassLoader)"
             NoStdLib="true"
-            References="@(IkvmFrameworkReference);$(IkvmBaseAssembly);$(IkvmRuntimeAssembly);$(IkvmRuntimeJNIAssembly);@(_IkvmReferenceItemResolvedReference)"
-            Input="%(IkvmReferenceItem.Compile)"
+            References="@(_IkvmCompilerReferencePath->'%(FullPath)')"
+            Input="%(IkvmReferenceItem.Compile->'%(FullPath)')"
             Condition=" '%(IkvmReferenceItem.Compile)' != '' "/>
 
         <!-- Copy the compiled assembly to its cache path. -->
