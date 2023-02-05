@@ -58,7 +58,6 @@ namespace IKVM.Tools.Runner.Compiler
         /// <param name="options"></param>
         /// <param name="cancellationToken"></param>
         /// <returns></returns>
-        /// <exception cref="NullReferenceException"></exception>
         public async Task<int> ExecuteAsync(IkvmCompilerOptions options, CancellationToken cancellationToken = default)
         {
             if (options is null)
@@ -258,10 +257,8 @@ namespace IKVM.Tools.Runner.Compiler
             try
             {
                 // create response file
-                response = options.ResponseFile ?? Path.GetTempFileName();
-                var responseDir = Path.GetDirectoryName(response);
-                if (Directory.Exists(responseDir) == false)
-                    Directory.CreateDirectory(responseDir);
+                response = Path.GetFullPath(options.ResponseFile ?? Path.GetTempFileName());
+                Directory.CreateDirectory(Path.GetDirectoryName(response));
                 File.WriteAllText(response, w.ToString());
 
                 // locate EXE file
