@@ -35,28 +35,34 @@ namespace IKVM.MSBuild.Tasks
         /// <returns></returns>
         public Task ReceiveAsync(IkvmToolDiagnosticEvent @event)
         {
-            switch (@event.Level)
+            if (@event == null)
+                return Task.CompletedTask;
+
+            try
             {
-                case IkvmToolDiagnosticEventLevel.Debug:
-                    logger.LogMessage(Microsoft.Build.Framework.MessageImportance.Low, @event.Message, @event.MessageArgs);
-                    if (writer != null)
-                        writer.WriteLine("DEBUG: " + @event.Message, @event.MessageArgs);
-                    break;
-                case IkvmToolDiagnosticEventLevel.Information:
-                    logger.LogMessage(Microsoft.Build.Framework.MessageImportance.Normal, @event.Message, @event.MessageArgs);
-                    if (writer != null)
-                        writer.WriteLine("INFO: " + @event.Message, @event.MessageArgs);
-                    break;
-                case IkvmToolDiagnosticEventLevel.Warning:
-                    logger.LogWarning(@event.Message, @event.MessageArgs);
-                    if (writer != null)
-                        writer.WriteLine("WARN: " + @event.Message, @event.MessageArgs);
-                    break;
-                case IkvmToolDiagnosticEventLevel.Error:
-                    logger.LogWarning(@event.Message, @event.MessageArgs);
-                    if (writer != null)
-                        writer.WriteLine("ERROR: " + @event.Message, @event.MessageArgs);
-                    break;
+                switch (@event.Level)
+                {
+                    case IkvmToolDiagnosticEventLevel.Debug:
+                        logger.LogMessage(Microsoft.Build.Framework.MessageImportance.Low, @event.Message, @event.MessageArgs);
+                        writer?.WriteLine("DEBUG: " + @event.Message, @event.MessageArgs);
+                        break;
+                    case IkvmToolDiagnosticEventLevel.Information:
+                        logger.LogMessage(Microsoft.Build.Framework.MessageImportance.Normal, @event.Message, @event.MessageArgs);
+                        writer?.WriteLine("INFO: " + @event.Message, @event.MessageArgs);
+                        break;
+                    case IkvmToolDiagnosticEventLevel.Warning:
+                        logger.LogWarning(@event.Message, @event.MessageArgs);
+                        writer?.WriteLine("WARN: " + @event.Message, @event.MessageArgs);
+                        break;
+                    case IkvmToolDiagnosticEventLevel.Error:
+                        logger.LogWarning(@event.Message, @event.MessageArgs);
+                        writer?.WriteLine("ERROR: " + @event.Message, @event.MessageArgs);
+                        break;
+                }
+            }
+            catch (Exception e)
+            {
+                // ignore failure to log, not much we can do
             }
 
             return Task.CompletedTask;

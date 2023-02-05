@@ -58,7 +58,6 @@ namespace IKVM.Tools.Runner.Compiler
         /// <param name="options"></param>
         /// <param name="cancellationToken"></param>
         /// <returns></returns>
-        /// <exception cref="NullReferenceException"></exception>
         public async Task<int> ExecuteAsync(IkvmCompilerOptions options, CancellationToken cancellationToken = default)
         {
             if (options is null)
