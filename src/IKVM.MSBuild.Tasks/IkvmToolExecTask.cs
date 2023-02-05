@@ -72,7 +72,7 @@ namespace IKVM.MSBuild.Tasks
                     log = new StreamWriter(File.OpenWrite(LogFile));
 
                 // kick off the launcher with the configured options
-                var run = System.Threading.Tasks.Task.Run(() => ExecuteAsync(new IkvmToolTaskDiagnosticWriter(Log, log), CancellationToken.None));
+                var run = ExecuteAsync(new IkvmToolTaskDiagnosticWriter(Log, log), CancellationToken.None);
 
                 // yield and wait for the task to complete
                 BuildEngine3.Yield();

@@ -255,7 +255,8 @@ namespace IKVM.Tools.Runner.Compiler
             try
             {
                 // create response file
-                response = options.ResponseFile ?? Path.GetTempFileName();
+                response = Path.GetFullPath(options.ResponseFile ?? Path.GetTempFileName());
+                Directory.CreateDirectory(Path.GetDirectoryName(response));
                 File.WriteAllText(response, w.ToString());
 
                 // locate EXE file

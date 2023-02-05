@@ -1,4 +1,5 @@
 ﻿using System;
+using System.IO;
 using System.Linq;
 using System.Runtime.InteropServices;
 using System.Threading;
@@ -135,6 +136,8 @@ namespace IKVM.MSBuild.Tasks
 
         public string Remap { get; set; }
 
+        string GetAbsolutePathIfNotNull(string path) => path != null ? Path.GetFullPath(path) : null;
+
         protected override async Task<bool> ExecuteAsync(IkvmToolTaskDiagnosticWriter writer, CancellationToken cancellationToken)
         {
             if (Debug && RuntimeInformation.IsOSPlatform(OSPlatform.Windows) == false)
@@ -144,8 +147,8 @@ namespace IKVM.MSBuild.Tasks
             }
 
             var options = new IkvmCompilerOptions();
-            options.ResponseFile = ResponseFile;
-            options.Output = Output;
+            options.ResponseFile = GetAbsolutePathIfNotNull(ResponseFile);
+            options.Output = GetAbsolutePathIfNotNull(Output);
             options.Assembly = Assembly;
             options.Version = Version;
 
@@ -171,14 +174,14 @@ namespace IKVM.MSBuild.Tasks
                 _ => throw new NotImplementedException(),
             };
 
-            options.KeyFile = KeyFile;
+            options.KeyFile = GetAbsolutePathIfNotNull(KeyFile);
             options.Key = Key;
             options.DelaySign = DelaySign;
 
             if (References is not null)
-                foreach (var reference in References)
-                    if (options.References.Contains(reference.ItemSpec) == false)
-                        options.References.Add(reference.ItemSpec);
+                foreach (var reference in References.Select(i => GetAbsolutePathIfNotNull(i.ItemSpec)))
+                    if (options.References.Contains(reference) == false)
+                        options.References.Add(reference);
 
             if (Recurse is not null)
                 foreach (var recurse in Recurse)
@@ -191,11 +194,11 @@ namespace IKVM.MSBuild.Tasks
 
             if (Resources is not null)
                 foreach (var resource in Resources)
-                    options.Resources.Add(new IkvmCompilerResourceItem(resource.ItemSpec, resource.GetMetadata("ResourcePath")));
+                    options.Resources.Add(new IkvmCompilerResourceItem(GetAbsolutePathIfNotNull(resource.ItemSpec), resource.GetMetadata("ResourcePath")));
 
             if (ExternalResources is not null)
                 foreach (var resource in ExternalResources)
-                    options.ExternalResources.Add(new IkvmCompilerExternalResourceItem(resource.ItemSpec, resource.GetMetadata("ResourcePath")));
+                    options.ExternalResources.Add(new IkvmCompilerExternalResourceItem(GetAbsolutePathIfNotNull(resource.ItemSpec), resource.GetMetadata("ResourcePath")));
 
             options.CompressResources = CompressResources;
             options.Debug = Debug;
@@ -248,7 +251,7 @@ namespace IKVM.MSBuild.Tasks
 
             if (Lib is not null)
                 foreach (var i in Lib)
-                    options.Lib.Add(i.ItemSpec);
+                    options.Lib.Add(GetAbsolutePathIfNotNull(i.ItemSpec));
 
             options.HighEntropyVA = HighEntropyVA;
             options.Static = Static;
@@ -257,17 +260,17 @@ namespace IKVM.MSBuild.Tasks
                 foreach (var i in AssemblyAttributes)
                     options.AssemblyAttributes.Add(i.ItemSpec);
 
-            options.Runtime = Runtime;
+            options.Runtime = GetAbsolutePathIfNotNull(Runtime);
 
             if (options.WarningLevel is not null)
                 options.WarningLevel = int.Parse(WarningLevel);
 
             options.NoParameterReflection = NoParameterReflection;
-            options.Remap = Remap;
+            options.Remap = GetAbsolutePathIfNotNull(Remap);
 
             if (Input != null)
                 foreach (var i in Input)
-                    options.Input.Add(i.ItemSpec);
+                    options.Input.Add(GetAbsolutePathIfNotNull(i.ItemSpec));
 
             // kick off the launcher with the configured options
             return await new IkvmCompilerLauncher(ToolPath, writer).ExecuteAsync(options, cancellationToken) == 0;
