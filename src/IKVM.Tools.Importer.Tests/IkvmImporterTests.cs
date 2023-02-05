@@ -35,12 +35,6 @@ namespace IKVM.Tools.Importer.Tests
             ret.Should().Be(0);
         }
 
-        [TestMethod]
-        public async Task Test()
-        {
-            await IkvmImporterTool.Main(new[] { @"@C:\Users\jhaltom\AppData\Local\Temp\ikvm\cache\1\54064d56c6a67d58f7bcade6ccdf39f4\com.google.common.dll.rsp" }, CancellationToken.None);
-        }
-
     }
 
 }
