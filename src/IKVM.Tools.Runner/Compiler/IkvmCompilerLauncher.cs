@@ -285,11 +285,9 @@ namespace IKVM.Tools.Runner.Compiler
 
                 // configure CLI
                 var cli = Cli.Wrap(exe).WithWorkingDirectory(Environment.CurrentDirectory);
-                var args = new List<string>();
 
                 // execute the contents of the response file
-                args.Add($"@{response}");
-                cli = cli.WithArguments(args);
+                cli = cli.WithArguments(new[] { $"@{response}" });
                 cli = cli.WithValidation(CommandResultValidation.None);
                 await LogEvent(IkvmToolDiagnosticEventLevel.Debug, "Executing {0} {1}", cli.TargetFilePath, cli.Arguments);
 
