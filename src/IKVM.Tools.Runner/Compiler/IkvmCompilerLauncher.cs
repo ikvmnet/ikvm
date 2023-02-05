@@ -247,16 +247,17 @@ namespace IKVM.Tools.Runner.Compiler
                 foreach (var i in options.Input)
                     w.WriteLine(i);
 
-            // path to the temporary response file
-            var response = (string)null;
+            // prepare path to response file
+            var response = string.IsNullOrWhiteSpace(options.ResponseFile) == false ? Path.GetFullPath(options.ResponseFile) : Path.GetTempFileName();
+
+            // to cancel the executable
             var cts = CancellationTokenSource.CreateLinkedTokenSource(cancellationToken, new CancellationToken());
 
             try
             {
                 // create response file
-                response = Path.GetFullPath(options.ResponseFile ?? Path.GetTempFileName());
                 Directory.CreateDirectory(Path.GetDirectoryName(response));
-                File.WriteAllText(response, w.ToString());
+                File.WriteAllText(options.ResponseFile, w.ToString());
 
                 // locate EXE file
                 var exe = GetToolExe();
