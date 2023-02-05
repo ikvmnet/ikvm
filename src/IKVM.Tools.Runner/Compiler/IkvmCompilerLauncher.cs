@@ -257,7 +257,7 @@ namespace IKVM.Tools.Runner.Compiler
             try
             {
                 // create response file
-                response = Path.GetFullPath(options.ResponseFile ?? Path.GetTempFileName());
+                response = string.IsNullOrWhiteSpace(response) == false ? Path.GetFullPath(options.ResponseFile) : Path.GetTempFileName();
                 Directory.CreateDirectory(Path.GetDirectoryName(response));
                 File.WriteAllText(response, w.ToString());
 
