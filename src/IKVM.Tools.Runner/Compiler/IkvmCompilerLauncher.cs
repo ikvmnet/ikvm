@@ -251,13 +251,13 @@ namespace IKVM.Tools.Runner.Compiler
                     w.WriteLine(i);
 
             // path to the temporary response file
-            var response = (string)null;
+            var response = options.ResponseFile;
             var cts = CancellationTokenSource.CreateLinkedTokenSource(cancellationToken, new CancellationToken());
 
             try
             {
                 // create response file
-                response = string.IsNullOrWhiteSpace(response) == false ? Path.GetFullPath(options.ResponseFile) : Path.GetTempFileName();
+                response = string.IsNullOrWhiteSpace(response) == false ? Path.GetFullPath(response) : Path.GetTempFileName();
                 Directory.CreateDirectory(Path.GetDirectoryName(response));
                 File.WriteAllText(response, w.ToString());
 
