@@ -27,6 +27,18 @@ namespace IKVM.ByteCode.Parsing
             return true;
         }
 
+        /// <summary>
+        /// Gets the number of bytes required to write the record.
+        /// </summary>
+        /// <returns></returns>
+        public override int GetSize()
+        {
+            var size = 0;
+            size += sizeof(ushort);
+            size += Value.Length * sizeof(byte);
+            return size;
+        }
+
         protected override bool TryWriteConstant(ref ClassFormatWriter writer)
         {
             if (writer.TryWriteU2((ushort)Value.Length) == false)

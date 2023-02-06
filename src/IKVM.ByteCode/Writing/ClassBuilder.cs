@@ -9,20 +9,20 @@ using System.Linq;
 
 namespace IKVM.ByteCode.Writing
 {
-    internal sealed class ClassWriter : WriterBase<ClassRecord>
+    internal sealed class ClassBuilder : BuilderBase<ClassRecord>
     {
         private readonly List<ConstantRecord> constants = new();
         private readonly Dictionary<ConstantRecord, ushort> constantsHashTable = new();
-        private readonly List<FieldWriter> fields = new();
-        private readonly List<MethodWriter> methods = new();
-        private readonly List<InterfaceWriter> interfaces = new();
+        private readonly List<FieldBuilder> fields = new();
+        private readonly List<MethodBuilder> methods = new();
+        private readonly List<InterfaceBuilder> interfaces = new();
         private readonly AccessFlag accessFlags;
         private readonly ushort thisClass;
         private readonly ushort superClass;
         private readonly ushort minorVersion;
         private readonly ushort majorVersion;
 
-        public ClassWriter(AccessFlag accessFlags, string name, string super, ushort minorVersion, ushort majorVersion)
+        public ClassBuilder(AccessFlag accessFlags, string name, string super, ushort minorVersion, ushort majorVersion)
             : base(null)
         {
             if (majorVersion > 63)
@@ -39,7 +39,16 @@ namespace IKVM.ByteCode.Writing
             this.minorVersion = minorVersion;
             this.majorVersion = majorVersion;
 
-            Attributes = new AttributeWriterCollection(this);
+            Attributes = new AttributesBuilder(this);
+        }
+
+        public AttributesBuilder Attributes { get; private set; }
+
+        public ClassBuilder WithAttributes(Action<AttributesBuilder> builderAction)
+        {
+            Attributes = new AttributesBuilder(DeclaringClass);
+            builderAction(Attributes);
+            return this;
         }
 
         private ushort Add(ConstantRecord constant)
@@ -104,17 +113,17 @@ namespace IKVM.ByteCode.Writing
 
         public void AddInterface(string name)
         {
-            interfaces.Add(new InterfaceWriter(name, this));
+            interfaces.Add(new InterfaceBuilder(name, this));
         }
 
-        public MethodWriter AddMethod(AccessFlag accessFlags, string name, string signature)
+        public MethodBuilder AddMethod(AccessFlag accessFlags, string name, string signature)
         {
-            var method = new MethodWriter(accessFlags, name, signature, this);
+            var method = new MethodBuilder(accessFlags, name, signature, this);
             methods.Add(method);
             return method;
         }
 
-        public FieldWriter AddField(AccessFlag accessFlag, string name, string signature, object constantValue)
+        public FieldBuilder AddField(AccessFlag accessFlag, string name, string descriptor, object constantValue)
         {
             //var field = new FieldWriter(accessFlag, AddUtf8(name), AddUtf8(signature));
             //if (constantValue != null)
@@ -163,12 +172,10 @@ namespace IKVM.ByteCode.Writing
             //    //field.AddAttribute(new ConstantValueAttribute(AddUtf8("ConstantValue"), constantValueIndex));
             //}
             //fields.Add(field);
-            return new FieldWriter(this);
+            return new FieldBuilder(accessFlag, name, descriptor, this);
         }
 
-        public AttributeWriterCollection Attributes { get; }
-
-        internal override ClassRecord Record => new
+        public override ClassRecord Build() => new
             (
                 MinorVersion: minorVersion,
                 MajorVersion: majorVersion,
@@ -178,10 +185,10 @@ namespace IKVM.ByteCode.Writing
                 ThisClassIndex: thisClass,
                 SuperClassIndex: superClass,
                 Interfaces: interfaces
-                    .Select(x => x.Record)
+                    .Select(x => x.Build())
                     .ToArray(),
                 Fields: fields
-                    .Select(x => x.Record)
+                    .Select(x => x.Build())
                     .ToArray(),
                 Methods: null,
                 Attributes: null
@@ -189,7 +196,9 @@ namespace IKVM.ByteCode.Writing
 
         public bool TryWrite(ref ClassFormatWriter writer)
         {
-            if (Record.TryWrite(ref writer) == false)
+            var record = Build();
+
+            if (record.TryWrite(ref writer) == false)
                 return false;
 
             return true;
@@ -212,7 +221,14 @@ namespace IKVM.ByteCode.Writing
 
             try
             {
-                Write(writer);
+                var record = Build();
+                var size = record.GetSize();
+
+                var span = writer.GetSpan(size);
+
+                Write(span);
+
+                writer.Advance(size);
             }
             catch (Exception e)
             {
@@ -223,15 +239,6 @@ namespace IKVM.ByteCode.Writing
             {
                 writer.Complete();
             }
-        }
-
-        public void Write(PipeWriter writer)
-        {
-            var span = writer.GetSpan();
-
-            Write(span);
-
-            writer.Advance(Record.GetSize());
         }
     }
 }

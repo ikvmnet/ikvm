@@ -2,7 +2,6 @@
 {
     internal sealed record ClassConstantRecord(ushort NameIndex) : ConstantRecord
     {
-
         /// <summary>
         /// Parses a Class constant in the constant pool.
         /// </summary>
@@ -19,6 +18,13 @@
             constant = new ClassConstantRecord(nameIndex);
             return true;
         }
+
+        /// <summary>
+        /// Gets the number of bytes required to write the record.
+        /// </summary>
+        /// <returns></returns>
+        public override int GetSize() =>
+            sizeof(ushort);
 
         protected override bool TryWriteConstant(ref ClassFormatWriter writer)
         {

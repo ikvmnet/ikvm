@@ -22,6 +22,13 @@
             return true;
         }
 
+        /// <summary>
+        /// Gets the number of bytes required to write the record.
+        /// </summary>
+        /// <returns></returns>
+        public override int GetSize() =>
+            sizeof(uint);
+
         protected override bool TryWriteConstant(ref ClassFormatWriter writer)
         {
             if (writer.TryWriteU4((uint)Value) == false)

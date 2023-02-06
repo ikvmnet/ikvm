@@ -15,7 +15,7 @@ namespace IKVM.ByteCode.Tests
         {
             using var stream = new MemoryStream();
 
-            var writer = new ClassWriter(AccessFlag.ACC_FINAL | AccessFlag.ACC_STATIC, "name", null, 1, 2);
+            var writer = new ClassBuilder(AccessFlag.ACC_FINAL | AccessFlag.ACC_STATIC, "name", null, 1, 2);
 
             writer.Write(stream);
 

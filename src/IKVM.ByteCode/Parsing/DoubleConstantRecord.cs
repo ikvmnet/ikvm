@@ -1,6 +1,5 @@
-﻿using System;
-
-using IKVM.ByteCode.Buffers;
+﻿using IKVM.ByteCode.Buffers;
+using System;
 
 namespace IKVM.ByteCode.Parsing
 {
@@ -31,6 +30,18 @@ namespace IKVM.ByteCode.Parsing
 
             constant = new DoubleConstantRecord(v);
             return true;
+        }
+
+        /// <summary>
+        /// Gets the number of bytes required to write the record.
+        /// </summary>
+        /// <returns></returns>
+        public override int GetSize()
+        {
+            var size = 0;
+            size += sizeof(uint);
+            size += sizeof(uint);
+            return size;
         }
 
         protected override bool TryWriteConstant(ref ClassFormatWriter writer)

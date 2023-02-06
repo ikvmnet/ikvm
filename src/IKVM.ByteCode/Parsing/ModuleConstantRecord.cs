@@ -21,6 +21,13 @@
             return true;
         }
 
+        /// <summary>
+        /// Gets the number of bytes required to write the record.
+        /// </summary>
+        /// <returns></returns>
+        public override int GetSize() =>
+            sizeof(ushort);
+
         protected override bool TryWriteConstant(ref ClassFormatWriter writer)
         {
             if (writer.TryWriteU2(NameIndex) == false)
