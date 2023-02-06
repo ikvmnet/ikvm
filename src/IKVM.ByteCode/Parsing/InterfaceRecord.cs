@@ -1,9 +1,7 @@
 ﻿namespace IKVM.ByteCode.Parsing
 {
-
     internal record struct InterfaceRecord(ushort ClassIndex)
     {
-
         /// <summary>
         /// Parses an interface.
         /// </summary>
@@ -20,6 +18,12 @@
             return true;
         }
 
-    }
+        public bool TryWrite(ref ClassFormatWriter writer)
+        {
+            if (writer.TryWriteU2(ClassIndex) == false)
+                return false;
 
+            return true;
+        }
+    }
 }

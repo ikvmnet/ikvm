@@ -24,6 +24,10 @@
             return true;
         }
 
+        protected override bool TryWriteConstant(ref ClassFormatWriter writer)
+        {
+            throw new System.NotImplementedException();
+        }
     }
 
 }

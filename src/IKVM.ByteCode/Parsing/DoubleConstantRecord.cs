@@ -33,6 +33,10 @@ namespace IKVM.ByteCode.Parsing
             return true;
         }
 
+        protected override bool TryWriteConstant(ref ClassFormatWriter writer)
+        {
+            throw new NotImplementedException();
+        }
     }
 
 }

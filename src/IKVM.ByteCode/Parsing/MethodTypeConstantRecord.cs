@@ -1,9 +1,7 @@
 ﻿namespace IKVM.ByteCode.Parsing
 {
-
     internal sealed record MethodTypeConstantRecord(ushort DescriptorIndex) : ConstantRecord
     {
-
         /// <summary>
         /// Parses a MethodType constant in the constant pool.
         /// </summary>
@@ -22,6 +20,12 @@
             return true;
         }
 
-    }
+        protected override bool TryWriteConstant(ref ClassFormatWriter writer)
+        {
+            if (writer.TryWriteU2(DescriptorIndex) == false)
+                return false;
 
+            return true;
+        }
+    }
 }

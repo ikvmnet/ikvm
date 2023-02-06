@@ -1,9 +1,7 @@
 ﻿namespace IKVM.ByteCode.Parsing
 {
-
     internal record struct MethodRecord(AccessFlag AccessFlags, ushort NameIndex, ushort DescriptorIndex, AttributeInfoRecord[] Attributes)
     {
-
         /// <summary>
         /// Parses a method.
         /// </summary>
@@ -26,6 +24,19 @@
             return true;
         }
 
+        public bool TryWrite(ref ClassFormatWriter writer)
+        {
+            if (writer.TryWriteU2((ushort)AccessFlags) == false)
+                return false;
+            if (writer.TryWriteU2(NameIndex) == false)
+                return false;
+            if (writer.TryWriteU2(DescriptorIndex) == false)
+                return false;
+            if (ClassRecord.TryWriteAttributes(ref writer, Attributes) == false)
+                return false;
+
+            return true;
+        }
     }
 
 }

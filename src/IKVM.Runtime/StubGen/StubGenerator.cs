@@ -36,6 +36,8 @@ using System.Reflection;
 #endif
 using IKVM.Attributes;
 using IKVM.Internal;
+using IKVM.ByteCode.Writing;
+using IKVM.ByteCode;
 
 namespace IKVM.StubGen
 {
@@ -53,7 +55,7 @@ namespace IKVM.StubGen
 			{
 				super = tw.BaseTypeWrapper.Name.Replace('.', '/');
 			}
-			ClassFileWriter writer = new ClassFileWriter(tw.Modifiers, name, super, 0, includeParameterNames ? (ushort)52 : (ushort)49);
+			ClassWriter writer = new ClassWriter((AccessFlag)tw.Modifiers, name, super, 0, includeParameterNames ? (ushort)52 : (ushort)49);
 			foreach (TypeWrapper iface in tw.Interfaces)
 			{
 				if (iface.IsPublic || includeNonPublicInterfaces)
@@ -61,7 +63,7 @@ namespace IKVM.StubGen
 					writer.AddInterface(iface.Name.Replace('.', '/'));
 				}
 			}
-			InnerClassesAttribute innerClassesAttribute = null;
+            InnerClassesAttributeWriter innerClassesAttribute = null;
 			if (tw.DeclaringTypeWrapper != null)
 			{
 				TypeWrapper outer = tw.DeclaringTypeWrapper;
@@ -71,64 +73,57 @@ namespace IKVM.StubGen
 				{
 					innername = innername.Substring(idx + 1);
 				}
-				innerClassesAttribute = new InnerClassesAttribute(writer);
-				innerClassesAttribute.Add(name, outer.Name.Replace('.', '/'), innername, (ushort)tw.ReflectiveModifiers);
+				innerClassesAttribute = writer.Attributes.AddInnerClassesAttribute();
+                innerClassesAttribute.Add(name, outer.Name.Replace('.', '/'), innername, (AccessFlag)tw.ReflectiveModifiers);
 			}
 			foreach (TypeWrapper inner in tw.InnerClasses)
 			{
 				if (inner.IsPublic)
 				{
-					if (innerClassesAttribute == null)
-					{
-						innerClassesAttribute = new InnerClassesAttribute(writer);
-					}
+					innerClassesAttribute ??= writer.Attributes.AddInnerClassesAttribute();
+
 					string namePart = inner.Name;
 					namePart = namePart.Substring(namePart.LastIndexOf('$') + 1);
-					innerClassesAttribute.Add(inner.Name.Replace('.', '/'), name, namePart, (ushort)inner.ReflectiveModifiers);
+					innerClassesAttribute.Add(inner.Name.Replace('.', '/'), name, namePart, (AccessFlag)inner.ReflectiveModifiers);
 				}
-			}
-			if (innerClassesAttribute != null)
-			{
-				writer.AddAttribute(innerClassesAttribute);
 			}
 			string genericTypeSignature = tw.GetGenericSignature();
 			if (genericTypeSignature != null)
 			{
-				writer.AddStringAttribute("Signature", genericTypeSignature);
+				writer.Attributes.AddSignatureAttribute(genericTypeSignature);
 			}
-			AddAnnotations(writer, writer, tw.TypeAsBaseType);
-			AddTypeAnnotations(writer, writer, tw, tw.GetRawTypeAnnotations());
-			writer.AddStringAttribute("IKVM.NET.Assembly", GetAssemblyName(tw));
+			AddAnnotations(writer, writer.Attributes, tw.TypeAsBaseType);
+			AddTypeAnnotations(writer, writer.Attributes, tw, tw.GetRawTypeAnnotations());
+			//writer.AddStringAttribute("IKVM.NET.Assembly", GetAssemblyName(tw));
 			if (tw.TypeAsBaseType.IsDefined(JVM.Import(typeof(ObsoleteAttribute)), false))
 			{
-				writer.AddAttribute(new DeprecatedAttribute(writer));
+				writer.Attributes.DeprecatedAttribute = new DeprecatedAttributeWriter();
 			}
 			foreach (MethodWrapper mw in tw.GetMethods())
 			{
 				if (!mw.IsHideFromReflection && (mw.IsPublic || mw.IsProtected || includeNonPublicMembers))
 				{
-					FieldOrMethod m;
+					MethodWriter m;
 					// HACK javac has a bug in com.sun.tools.javac.code.Types.isSignaturePolymorphic() where it assumes that
 					// MethodHandle doesn't have any native methods with an empty argument list
 					// (or at least it throws a NPE when it examines the signature of a method without any parameters when it
 					// accesses argtypes.tail.tail)
 					if (mw.Name == "<init>" || (tw == CoreClasses.java.lang.invoke.MethodHandle.Wrapper && (mw.Modifiers & Modifiers.Native) == 0))
 					{
-						m = writer.AddMethod(mw.Modifiers, mw.Name, mw.Signature.Replace('.', '/'));
-						CodeAttribute code = new CodeAttribute(writer);
+						m = writer.AddMethod((AccessFlag)mw.Modifiers, mw.Name, mw.Signature.Replace('.', '/'));
+						CodeAttributeWriter code = m.Attributes.AddCodeAttribute();
 						code.MaxLocals = (ushort)(mw.GetParameters().Length * 2 + 1);
 						code.MaxStack = 3;
 						ushort index1 = writer.AddClass("java/lang/UnsatisfiedLinkError");
 						ushort index2 = writer.AddString("ikvmstub generated stubs can only be used on IKVM.NET");
 						ushort index3 = writer.AddMethodRef("java/lang/UnsatisfiedLinkError", "<init>", "(Ljava/lang/String;)V");
-						code.ByteCode = new byte[] {
-						187, (byte)(index1 >> 8), (byte)index1,	// new java/lang/UnsatisfiedLinkError
-						89,										// dup
-						19,	 (byte)(index2 >> 8), (byte)index2,	// ldc_w "..."
-						183, (byte)(index3 >> 8), (byte)index3, // invokespecial java/lang/UnsatisfiedLinkError/init()V
-						191										// athrow
-					};
-						m.AddAttribute(code);
+						code.Code = new byte[] {
+							187, (byte)(index1 >> 8), (byte)index1,	// new java/lang/UnsatisfiedLinkError
+							89,										// dup
+							19,	 (byte)(index2 >> 8), (byte)index2,	// ldc_w "..."
+							183, (byte)(index3 >> 8), (byte)index3, // invokespecial java/lang/UnsatisfiedLinkError/init()V
+							191										// athrow
+						};
 					}
 					else
 					{
@@ -137,10 +132,10 @@ namespace IKVM.StubGen
 						{
 							mods |= Modifiers.Native;
 						}
-						m = writer.AddMethod(mods, mw.Name, mw.Signature.Replace('.', '/'));
+						m = writer.AddMethod((AccessFlag)mods, mw.Name, mw.Signature.Replace('.', '/'));
 						if (mw.IsOptionalAttributeAnnotationValue)
 						{
-							m.AddAttribute(new AnnotationDefaultClassFileAttribute(writer, GetAnnotationDefault(writer, mw.ReturnType)));
+							//m.AddAttribute(new AnnotationDefaultClassFileAttribute(writer, GetAnnotationDefault(writer, mw.ReturnType)));
 						}
 					}
 					MethodBase mb = mw.GetMethod();
@@ -152,18 +147,17 @@ namespace IKVM.StubGen
 							string[] throwsArray = mw.GetDeclaredExceptions();
 							if (throwsArray != null && throwsArray.Length > 0)
 							{
-								ExceptionsAttribute attrib = new ExceptionsAttribute(writer);
+								var attrib = m.Attributes.AddExceptionsAttribute();
 								foreach (string ex in throwsArray)
 								{
 									attrib.Add(ex.Replace('.', '/'));
 								}
-								m.AddAttribute(attrib);
 							}
 						}
 						else
-						{
-							ExceptionsAttribute attrib = new ExceptionsAttribute(writer);
-							if (throws.classes != null)
+                        {
+                            var attrib = m.Attributes.AddExceptionsAttribute();
+                            if (throws.classes != null)
 							{
 								foreach (string ex in throws.classes)
 								{
@@ -177,7 +171,6 @@ namespace IKVM.StubGen
 									attrib.Add(ClassLoaderWrapper.GetWrapperFromType(ex).Name.Replace('.', '/'));
 								}
 							}
-							m.AddAttribute(attrib);
 						}
 						if (mb.IsDefined(JVM.Import(typeof(ObsoleteAttribute)), false)
 							// HACK the instancehelper methods are marked as Obsolete (to direct people toward the ikvm.extensions methods instead)
@@ -187,19 +180,19 @@ namespace IKVM.StubGen
 							// the Java deprecated methods actually have two Obsolete attributes
 								|| GetObsoleteCount(mb) == 2))
 						{
-							m.AddAttribute(new DeprecatedAttribute(writer));
+							m.Attributes.DeprecatedAttribute = new DeprecatedAttributeWriter();
 						}
 						CustomAttributeData attr = GetAnnotationDefault(mb);
 						if (attr != null)
 						{
-							m.AddAttribute(new AnnotationDefaultClassFileAttribute(writer, GetAnnotationDefault(writer, attr.ConstructorArguments[0])));
+							//m.AddAttribute(new AnnotationDefaultClassFileAttribute(writer, GetAnnotationDefault(writer, attr.ConstructorArguments[0])));
 						}
 						if (includeParameterNames)
 						{
 							MethodParametersEntry[] mp = tw.GetMethodParameters(mw);
 							if (mp == MethodParametersEntry.Malformed)
 							{
-								m.AddAttribute(new MethodParametersAttribute(writer, null, null));
+								//m.AddAttribute(new MethodParametersAttribute(writer, null, null));
 							}
 							else if (mp != null)
 							{
@@ -213,18 +206,18 @@ namespace IKVM.StubGen
 									}
 									flags[i] = (ushort)mp[i].accessFlags;
 								}
-								m.AddAttribute(new MethodParametersAttribute(writer, names, flags));
+								//m.AddAttribute(new MethodParametersAttribute(writer, names, flags));
 							}
 						}
 					}
 					string sig = tw.GetGenericMethodSignature(mw);
 					if (sig != null)
 					{
-						m.AddAttribute(writer.MakeStringAttribute("Signature", sig));
+						m.Attributes.AddSignatureAttribute(sig);
 					}
-					AddAnnotations(writer, m, mw.GetMethod());
-					AddParameterAnnotations(writer, m, mw.GetMethod());
-					AddTypeAnnotations(writer, m, tw, tw.GetMethodRawTypeAnnotations(mw));
+					AddAnnotations(writer, m.Attributes, mw.GetMethod());
+					AddParameterAnnotations(writer, m.Attributes, mw.GetMethod());
+					AddTypeAnnotations(writer, m.Attributes, tw, tw.GetMethodRawTypeAnnotations(mw));
 				}
 			}
 			bool hasSerialVersionUID = false;
@@ -245,18 +238,18 @@ namespace IKVM.StubGen
 								constant = EnumHelper.GetPrimitiveValue(EnumHelper.GetUnderlyingType(fw.GetField().FieldType), constant);
 							}
 						}
-						FieldOrMethod f = writer.AddField(fw.Modifiers, fw.Name, fw.Signature.Replace('.', '/'), constant);
+						var f = writer.AddField((AccessFlag)fw.Modifiers, fw.Name, fw.Signature.Replace('.', '/'), constant);
 						string sig = tw.GetGenericFieldSignature(fw);
 						if (sig != null)
 						{
-							f.AddAttribute(writer.MakeStringAttribute("Signature", sig));
+							f.Attributes.AddSignatureAttribute(sig);
 						}
 						if (fw.GetField() != null && fw.GetField().IsDefined(JVM.Import(typeof(ObsoleteAttribute)), false))
 						{
-							f.AddAttribute(new DeprecatedAttribute(writer));
+							f.Attributes.DeprecatedAttribute = new DeprecatedAttributeWriter();
 						}
-						AddAnnotations(writer, f, fw.GetField());
-						AddTypeAnnotations(writer, f, tw, tw.GetFieldRawTypeAnnotations(fw));
+						AddAnnotations(writer, f.Attributes, fw.GetField());
+						AddTypeAnnotations(writer, f.Attributes, tw, tw.GetFieldRawTypeAnnotations(fw));
 					}
 				}
 			}
@@ -264,82 +257,76 @@ namespace IKVM.StubGen
 			{
 				// class is serializable but doesn't have an explicit serialVersionUID, so we add the field to record
 				// the serialVersionUID as we see it (mainly to make the Japi reports more realistic)
-				writer.AddField(Modifiers.Private | Modifiers.Static | Modifiers.Final, "serialVersionUID", "J", SerialVersionUID.Compute(tw));
+				writer.AddField(AccessFlag.ACC_PRIVATE | AccessFlag.ACC_STATIC | AccessFlag.ACC_FINAL, "serialVersionUID", "J", SerialVersionUID.Compute(tw));
 			}
 			AddMetaAnnotations(writer, tw);
 			writer.Write(stream);
 		}
 
-		private static void AddAnnotations(ClassFileWriter writer, IAttributeOwner target, MemberInfo source)
+		private static void AddAnnotations(ClassWriter writer, AttributeWriterCollection target, MemberInfo source)
 		{
 #if !FIRST_PASS && !EXPORTER
 			if (source != null)
 			{
-				RuntimeVisibleAnnotationsAttribute attr = null;
+				RuntimeVisibleAnnotationsAttributeWriter attr = null;
 				foreach (CustomAttributeData cad in CustomAttributeData.GetCustomAttributes(source))
 				{
 					object[] ann = GetAnnotation(cad);
 					if (ann != null)
 					{
-						if (attr == null)
-						{
-							attr = new RuntimeVisibleAnnotationsAttribute(writer);
-						}
-						attr.Add(ann);
+						attr ??= writer.Attributes.AddRuntimeVisibleAnnotationsAttribute();
+
+						//attr.Add(ann);
 					}
-				}
-				if (attr != null)
-				{
-					target.AddAttribute(attr);
 				}
 			}
 #endif
 		}
 
-		private static void AddParameterAnnotations(ClassFileWriter writer, FieldOrMethod target, MethodBase source)
+		private static void AddParameterAnnotations(ClassWriter writer, AttributeWriterCollection target, MethodBase source)
 		{
 #if !FIRST_PASS && !EXPORTER
 			if (source != null)
 			{
-				RuntimeVisibleParameterAnnotationsAttribute attr = null;
-				ParameterInfo[] parameters = source.GetParameters();
-				for (int i = 0; i < parameters.Length; i++)
-				{
-					RuntimeVisibleAnnotationsAttribute param = null;
-					foreach (CustomAttributeData cad in CustomAttributeData.GetCustomAttributes(parameters[i]))
-					{
-						object[] ann = GetAnnotation(cad);
-						if (ann != null)
-						{
-							if (param == null)
-							{
-								if (attr == null)
-								{
-									attr = new RuntimeVisibleParameterAnnotationsAttribute(writer);
-									for (int j = 0; j < i; j++)
-									{
-										attr.Add(new RuntimeVisibleAnnotationsAttribute(writer));
-									}
-								}
-								param = new RuntimeVisibleAnnotationsAttribute(writer);
-							}
-							param.Add(ann);
-						}
-					}
-					if (attr != null)
-					{
-						attr.Add(param ?? new RuntimeVisibleAnnotationsAttribute(writer));
-					}
-				}
-				if (attr != null)
-				{
-					target.AddAttribute(attr);
-				}
+				//RuntimeVisibleParameterAnnotationsAttribute attr = null;
+				//ParameterInfo[] parameters = source.GetParameters();
+				//for (int i = 0; i < parameters.Length; i++)
+				//{
+				//	RuntimeVisibleAnnotationsAttribute param = null;
+				//	foreach (CustomAttributeData cad in CustomAttributeData.GetCustomAttributes(parameters[i]))
+				//	{
+				//		object[] ann = GetAnnotation(cad);
+				//		if (ann != null)
+				//		{
+				//			if (param == null)
+				//			{
+				//				if (attr == null)
+				//				{
+				//					attr = new RuntimeVisibleParameterAnnotationsAttribute(writer);
+				//					for (int j = 0; j < i; j++)
+				//					{
+				//						attr.Add(new RuntimeVisibleAnnotationsAttribute(writer));
+				//					}
+				//				}
+				//				param = new RuntimeVisibleAnnotationsAttribute(writer);
+				//			}
+				//			param.Add(ann);
+				//		}
+				//	}
+				//	if (attr != null)
+				//	{
+				//		attr.Add(param ?? new RuntimeVisibleAnnotationsAttribute(writer));
+				//	}
+				//}
+				//if (attr != null)
+				//{
+				//	target.AddAttribute(attr);
+				//}
 			}
 #endif
 		}
 
-		private static void AddTypeAnnotations(ClassFileWriter writer, IAttributeOwner target, TypeWrapper tw, byte[] typeAnnotations)
+		private static void AddTypeAnnotations(ClassWriter writer, AttributeWriterCollection target, TypeWrapper tw, byte[] typeAnnotations)
 		{
 #if !FIRST_PASS && !EXPORTER
 			if (typeAnnotations != null)
@@ -359,12 +346,12 @@ namespace IKVM.StubGen
 				{
 					// if the attribute is malformed, we add it anyway and hope the Java parser will agree and throw the right error
 				}
-				target.AddAttribute(new RuntimeVisibleTypeAnnotationsAttribute(writer, typeAnnotations));
+				//target.AddAttribute(new RuntimeVisibleTypeAnnotationsAttribute(writer, typeAnnotations));
 			}
 #endif
 		}
 
-		private static void FixupTypeAnnotationConstantPoolIndexes(ClassFileWriter writer, byte[] typeAnnotations, object[] constantPool, ref int pos)
+		private static void FixupTypeAnnotationConstantPoolIndexes(ClassWriter writer, byte[] typeAnnotations, object[] constantPool, ref int pos)
 		{
 			switch (typeAnnotations[pos++])		// target_type
 			{
@@ -391,7 +378,7 @@ namespace IKVM.StubGen
 			FixupAnnotationConstantPoolIndexes(writer, typeAnnotations, constantPool, ref pos);
 		}
 
-		private static void FixupAnnotationConstantPoolIndexes(ClassFileWriter writer, byte[] typeAnnotations, object[] constantPool, ref int pos)
+		private static void FixupAnnotationConstantPoolIndexes(ClassWriter writer, byte[] typeAnnotations, object[] constantPool, ref int pos)
 		{
 			FixupConstantPoolIndex(writer, typeAnnotations, constantPool, ref pos);
 			ushort num_components = ReadUInt16BE(typeAnnotations, ref pos);
@@ -402,7 +389,7 @@ namespace IKVM.StubGen
 			}
 		}
 
-		private static void FixupConstantPoolIndex(ClassFileWriter writer, byte[] typeAnnotations, object[] constantPool, ref int pos)
+		private static void FixupConstantPoolIndex(ClassWriter writer, byte[] typeAnnotations, object[] constantPool, ref int pos)
 		{
 			ushort index = ReadUInt16BE(typeAnnotations, ref pos);
 			object item = constantPool[index];
@@ -434,7 +421,7 @@ namespace IKVM.StubGen
 			typeAnnotations[pos - 1] = (byte)(index >> 0);
 		}
 
-		private static void FixupAnnotationComponentValueConstantPoolIndexes(ClassFileWriter writer, byte[] typeAnnotations, object[] constantPool, ref int pos)
+		private static void FixupAnnotationComponentValueConstantPoolIndexes(ClassWriter writer, byte[] typeAnnotations, object[] constantPool, ref int pos)
 		{
 			switch ((char)typeAnnotations[pos++])	// tag
 			{
@@ -637,58 +624,58 @@ namespace IKVM.StubGen
 			return false;
 		}
 
-		private static void AddMetaAnnotations(ClassFileWriter writer, TypeWrapper tw)
+		private static void AddMetaAnnotations(ClassWriter writer, TypeWrapper tw)
 		{
 			DotNetTypeWrapper.AttributeAnnotationTypeWrapperBase attributeAnnotation = tw as DotNetTypeWrapper.AttributeAnnotationTypeWrapperBase;
 			if (attributeAnnotation != null)
 			{
 				// TODO write the annotation directly, instead of going thru the object[] encoding
-				RuntimeVisibleAnnotationsAttribute annot = new RuntimeVisibleAnnotationsAttribute(writer);
-				annot.Add(new object[] {
-					AnnotationDefaultAttribute.TAG_ANNOTATION,
-					"Ljava/lang/annotation/Retention;",
-					"value",
-					new object[] { AnnotationDefaultAttribute.TAG_ENUM, "Ljava/lang/annotation/RetentionPolicy;", "RUNTIME" }
-				});
-				AttributeTargets validOn = attributeAnnotation.AttributeTargets;
-				List<object> targets = new List<object>();
-				targets.Add(AnnotationDefaultAttribute.TAG_ARRAY);
-				if ((validOn & (AttributeTargets.Class | AttributeTargets.Interface | AttributeTargets.Struct | AttributeTargets.Enum | AttributeTargets.Delegate | AttributeTargets.Assembly)) != 0)
-				{
-					targets.Add(new object[] { AnnotationDefaultAttribute.TAG_ENUM, "Ljava/lang/annotation/ElementType;", "TYPE" });
-				}
-				if ((validOn & AttributeTargets.Constructor) != 0)
-				{
-					targets.Add(new object[] { AnnotationDefaultAttribute.TAG_ENUM, "Ljava/lang/annotation/ElementType;", "CONSTRUCTOR" });
-				}
-				if ((validOn & AttributeTargets.Field) != 0)
-				{
-					targets.Add(new object[] { AnnotationDefaultAttribute.TAG_ENUM, "Ljava/lang/annotation/ElementType;", "FIELD" });
-				}
-				if ((validOn & (AttributeTargets.Method | AttributeTargets.ReturnValue)) != 0)
-				{
-					targets.Add(new object[] { AnnotationDefaultAttribute.TAG_ENUM, "Ljava/lang/annotation/ElementType;", "METHOD" });
-				}
-				if ((validOn & AttributeTargets.Parameter) != 0)
-				{
-					targets.Add(new object[] { AnnotationDefaultAttribute.TAG_ENUM, "Ljava/lang/annotation/ElementType;", "PARAMETER" });
-				}
-				annot.Add(new object[] {
-					AnnotationDefaultAttribute.TAG_ANNOTATION,
-					"Ljava/lang/annotation/Target;",
-					"value",
-					targets.ToArray()
-				});
-				if (IsRepeatableAnnotation(tw))
-				{
-					annot.Add(new object[] {
-						AnnotationDefaultAttribute.TAG_ANNOTATION,
-						"Ljava/lang/annotation/Repeatable;",
-						"value",
-						new object[] { AnnotationDefaultAttribute.TAG_CLASS, "L" + (tw.Name + DotNetTypeWrapper.AttributeAnnotationMultipleSuffix).Replace('.', '/') + ";" }
-					});
-				}
-				writer.AddAttribute(annot);
+				//RuntimeVisibleAnnotationsAttribute annot = new RuntimeVisibleAnnotationsAttribute(writer);
+				//annot.Add(new object[] {
+				//	AnnotationDefaultAttribute.TAG_ANNOTATION,
+				//	"Ljava/lang/annotation/Retention;",
+				//	"value",
+				//	new object[] { AnnotationDefaultAttribute.TAG_ENUM, "Ljava/lang/annotation/RetentionPolicy;", "RUNTIME" }
+				//});
+				//AttributeTargets validOn = attributeAnnotation.AttributeTargets;
+				//List<object> targets = new List<object>();
+				//targets.Add(AnnotationDefaultAttribute.TAG_ARRAY);
+				//if ((validOn & (AttributeTargets.Class | AttributeTargets.Interface | AttributeTargets.Struct | AttributeTargets.Enum | AttributeTargets.Delegate | AttributeTargets.Assembly)) != 0)
+				//{
+				//	targets.Add(new object[] { AnnotationDefaultAttribute.TAG_ENUM, "Ljava/lang/annotation/ElementType;", "TYPE" });
+				//}
+				//if ((validOn & AttributeTargets.Constructor) != 0)
+				//{
+				//	targets.Add(new object[] { AnnotationDefaultAttribute.TAG_ENUM, "Ljava/lang/annotation/ElementType;", "CONSTRUCTOR" });
+				//}
+				//if ((validOn & AttributeTargets.Field) != 0)
+				//{
+				//	targets.Add(new object[] { AnnotationDefaultAttribute.TAG_ENUM, "Ljava/lang/annotation/ElementType;", "FIELD" });
+				//}
+				//if ((validOn & (AttributeTargets.Method | AttributeTargets.ReturnValue)) != 0)
+				//{
+				//	targets.Add(new object[] { AnnotationDefaultAttribute.TAG_ENUM, "Ljava/lang/annotation/ElementType;", "METHOD" });
+				//}
+				//if ((validOn & AttributeTargets.Parameter) != 0)
+				//{
+				//	targets.Add(new object[] { AnnotationDefaultAttribute.TAG_ENUM, "Ljava/lang/annotation/ElementType;", "PARAMETER" });
+				//}
+				//annot.Add(new object[] {
+				//	AnnotationDefaultAttribute.TAG_ANNOTATION,
+				//	"Ljava/lang/annotation/Target;",
+				//	"value",
+				//	targets.ToArray()
+				//});
+				//if (IsRepeatableAnnotation(tw))
+				//{
+				//	annot.Add(new object[] {
+				//		AnnotationDefaultAttribute.TAG_ANNOTATION,
+				//		"Ljava/lang/annotation/Repeatable;",
+				//		"value",
+				//		new object[] { AnnotationDefaultAttribute.TAG_CLASS, "L" + (tw.Name + DotNetTypeWrapper.AttributeAnnotationMultipleSuffix).Replace('.', '/') + ";" }
+				//	});
+				//}
+				//writer.AddAttribute(annot);
 			}
 		}
 
@@ -704,7 +691,7 @@ namespace IKVM.StubGen
 			return false;
 		}
 
-		private static byte[] GetAnnotationDefault(ClassFileWriter classFile, TypeWrapper type)
+		private static byte[] GetAnnotationDefault(ClassWriter classFile, TypeWrapper type)
 		{
 			MemoryStream mem = new MemoryStream();
 			BigEndianStream bes = new BigEndianStream(mem);
@@ -776,7 +763,7 @@ namespace IKVM.StubGen
 			return mem.ToArray();
 		}
 
-		private static byte[] GetAnnotationDefault(ClassFileWriter classFile, CustomAttributeTypedArgument value)
+		private static byte[] GetAnnotationDefault(ClassWriter classFile, CustomAttributeTypedArgument value)
 		{
 			MemoryStream mem = new MemoryStream();
 			BigEndianStream bes = new BigEndianStream(mem);
@@ -795,7 +782,7 @@ namespace IKVM.StubGen
 			return mem.ToArray();
 		}
 
-		private static void WriteAnnotationElementValue(ClassFileWriter classFile, BigEndianStream bes, CustomAttributeTypedArgument value)
+		private static void WriteAnnotationElementValue(ClassWriter classFile, BigEndianStream bes, CustomAttributeTypedArgument value)
 		{
 			if (value.ArgumentType == Types.Boolean)
 			{

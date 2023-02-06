@@ -1,9 +1,7 @@
 ﻿namespace IKVM.ByteCode.Parsing
 {
-
     internal sealed record NameAndTypeConstantRecord(ushort NameIndex, ushort DescriptorIndex) : ConstantRecord
     {
-
         /// <summary>
         /// Parses a NameAndType constant in the constant pool.
         /// </summary>
@@ -24,6 +22,14 @@
             return true;
         }
 
-    }
+        protected override bool TryWriteConstant(ref ClassFormatWriter writer)
+        {
+            if (writer.TryWriteU2(NameIndex) == false)
+                return false;
+            if (writer.TryWriteU2(DescriptorIndex) == false)
+                return false;
 
+            return true;
+        }
+    }
 }

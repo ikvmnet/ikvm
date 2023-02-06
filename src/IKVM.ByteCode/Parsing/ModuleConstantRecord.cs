@@ -1,6 +1,5 @@
 ﻿namespace IKVM.ByteCode.Parsing
 {
-
     internal sealed record ModuleConstantRecord(ushort NameIndex) : ConstantRecord
     {
 
@@ -22,6 +21,12 @@
             return true;
         }
 
-    }
+        protected override bool TryWriteConstant(ref ClassFormatWriter writer)
+        {
+            if (writer.TryWriteU2(NameIndex) == false)
+                return false;
 
+            return true;
+        }
+    }
 }

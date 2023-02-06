@@ -1,6 +1,5 @@
 ﻿namespace IKVM.ByteCode.Parsing
 {
-
     internal sealed record MethodHandleConstantRecord(ReferenceKind Kind, ushort Index) : ConstantRecord
     {
 
@@ -24,6 +23,14 @@
             return true;
         }
 
-    }
+        protected override bool TryWriteConstant(ref ClassFormatWriter writer)
+        {
+            if (writer.TryWriteU1((byte)Kind) == false)
+                return false;
+            if (writer.TryWriteU2(Index) == false)
+                return false;
 
+            return true;
+        }
+    }
 }

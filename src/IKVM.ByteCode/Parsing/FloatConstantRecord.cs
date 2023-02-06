@@ -1,13 +1,10 @@
-﻿using System;
-
-using IKVM.ByteCode.Buffers;
+﻿using IKVM.ByteCode.Buffers;
+using System;
 
 namespace IKVM.ByteCode.Parsing
 {
-
     internal sealed record FloatConstantRecord(float Value) : ConstantRecord
     {
-
         /// <summary>
         /// Parses a Float constant in the constant pool.
         /// </summary>
@@ -31,6 +28,9 @@ namespace IKVM.ByteCode.Parsing
             return true;
         }
 
+        protected override bool TryWriteConstant(ref ClassFormatWriter writer)
+        {
+            throw new NotImplementedException();
+        }
     }
-
 }

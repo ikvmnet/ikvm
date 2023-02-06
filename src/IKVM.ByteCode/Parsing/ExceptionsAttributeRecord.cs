@@ -1,6 +1,7 @@
-﻿namespace IKVM.ByteCode.Parsing
-{
+﻿using System.Buffers;
 
+namespace IKVM.ByteCode.Parsing
+{
     internal sealed record ExceptionsAttributeRecord(ushort[] ExceptionsIndexes) : AttributeRecord
     {
 
@@ -24,6 +25,14 @@
             return true;
         }
 
-    }
+        public bool TryWrite(ref ClassFormatWriter writer)
+        {
+            if (writer.TryWriteU2((ushort)ExceptionsIndexes.Length) == false)
+                return false;
+            if (writer.TryWriteManyU2(ExceptionsIndexes) == false)
+                return false;
 
+            return true;
+        }
+    }
 }

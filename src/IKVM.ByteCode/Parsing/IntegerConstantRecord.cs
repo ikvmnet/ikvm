@@ -1,9 +1,7 @@
 ﻿namespace IKVM.ByteCode.Parsing
 {
-
     internal sealed record IntegerConstantRecord(int Value) : ConstantRecord
     {
-
         /// <summary>
         /// Parses a Integer constant in the constant pool.
         /// </summary>
@@ -24,6 +22,12 @@
             return true;
         }
 
-    }
+        protected override bool TryWriteConstant(ref ClassFormatWriter writer)
+        {
+            if (writer.TryWriteU4((uint)Value) == false)
+                return false;
 
+            return true;
+        }
+    }
 }

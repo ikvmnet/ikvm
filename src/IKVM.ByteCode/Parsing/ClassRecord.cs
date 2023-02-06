@@ -1,9 +1,7 @@
 ﻿namespace IKVM.ByteCode.Parsing
 {
-
     internal record struct ClassRecord(ushort MinorVersion, ushort MajorVersion, ConstantRecord[] Constants, AccessFlag AccessFlags, ushort ThisClassIndex, ushort SuperClassIndex, InterfaceRecord[] Interfaces, FieldRecord[] Fields, MethodRecord[] Methods, AttributeInfoRecord[] Attributes)
     {
-
         const uint MAGIC = 0xCAFEBABE;
 
         /// <summary>
@@ -56,6 +54,91 @@
             clazz = new ClassRecord(minorVersion, majorVersion, constants, (AccessFlag)accessFlags, thisClass, superClass, interfaces, fields, methods, attributes);
             return true;
         }
+
+        /// <summary>
+        /// Gets the number of bytes required to write the record.
+        /// </summary>
+        /// <returns></returns>
+        public int GetSize()
+        {
+            var size = 0;
+            size += sizeof(uint);
+
+            size += sizeof(ushort);
+            size += sizeof(ushort);
+
+            size += sizeof(ushort);
+
+            for (int i = 1; i < Constants.Length; i++)
+                if (Constants[i] is not null)
+                    size += Constants[i].GetSize();
+
+            return size;
+        }
+
+        /// <summary>
+        /// Attempts to write the record to the given <see cref="ClassFormatWriter"/>.
+        /// </summary>
+        /// <param name="writer"></param>
+        /// <returns></returns>
+        public bool TryWrite(ref ClassFormatWriter writer)
+        {
+            if (writer.TryWriteU4(MAGIC) == false)
+                return false;
+
+            if (writer.TryWriteU2(MinorVersion) == false)
+                return false;
+            if (writer.TryWriteU2(MajorVersion) == false)
+                return false;
+
+            if (writer.TryWriteU2((ushort)(Constants?.Length).GetValueOrDefault()) == false)
+                return false;
+
+            if (Constants is not null)
+                foreach (var constant in Constants)
+                    if (constant is not null && constant.TryWrite(ref writer) == false)
+                        return false;
+
+            if (writer.TryWriteU2((ushort)AccessFlags) == false)
+                return false;
+
+            if (writer.TryWriteU2(ThisClassIndex) == false)
+                return false;
+
+            if (writer.TryWriteU2(SuperClassIndex) == false)
+                return false;
+
+            if (writer.TryWriteU2((ushort)(Interfaces?.Length).GetValueOrDefault()) == false)
+                return false;
+
+            if (Interfaces is not null)
+                foreach (var iface in Interfaces)
+                    if (iface.TryWrite(ref writer) == false)
+                        return false;
+
+            if (writer.TryWriteU2((ushort)(Fields?.Length).GetValueOrDefault()) == false)
+                return false;
+
+            if (Fields is not null)
+                foreach (var field in Fields)
+                    if (field.TryWrite(ref writer) == false)
+                        return false;
+
+            if (writer.TryWriteU2((ushort)(Methods?.Length).GetValueOrDefault()) == false)
+                return false;
+
+            if (Methods is not null)
+                foreach (var method in Methods)
+                    if (method.TryWrite(ref writer) == false)
+                        return false;
+
+            if (Attributes is not null)
+                if (TryWriteAttributes(ref writer, Attributes) == false)
+                    return false;
+
+            return true;
+        }
+
 
         /// <summary>
         /// Attempts to read the set of constants at the current position.
@@ -182,6 +265,17 @@
             return true;
         }
 
+        internal static bool TryWriteAttributes(ref ClassFormatWriter writer, AttributeInfoRecord[] attributes)
+        {
+            if (writer.TryWriteU2((ushort)attributes.Length) == false)
+                return false;
+
+            foreach (var attribute in attributes)
+                if (attribute.TryWrite(ref writer) == false)
+                    return false;
+
+            return true;
+        }
     }
 
 }

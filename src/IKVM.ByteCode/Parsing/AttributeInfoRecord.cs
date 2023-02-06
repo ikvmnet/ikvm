@@ -1,11 +1,10 @@
-﻿using System.Buffers;
+﻿using System;
+using System.Buffers;
 
 namespace IKVM.ByteCode.Parsing
 {
-
     internal record struct AttributeInfoRecord(ushort NameIndex, byte[] Data)
     {
-
         /// <summary>
         /// Parses an attribute.
         /// </summary>
@@ -29,6 +28,16 @@ namespace IKVM.ByteCode.Parsing
             return true;
         }
 
-    }
+        public bool TryWrite(ref ClassFormatWriter writer)
+        {
+            if (writer.TryWriteU2(NameIndex) == false)
+                return false;
+            if (writer.TryWriteU4((uint)Data.Length) == false)
+                return false;
+            if (writer.TryWriteManyU1(Data) == false)
+                return false;
 
+            return true;
+        }
+    }
 }

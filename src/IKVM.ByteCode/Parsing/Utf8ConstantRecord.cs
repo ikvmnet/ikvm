@@ -2,7 +2,6 @@
 
 namespace IKVM.ByteCode.Parsing
 {
-
     internal record class Utf8ConstantRecord(byte[] Value) : ConstantRecord
     {
 
@@ -28,6 +27,14 @@ namespace IKVM.ByteCode.Parsing
             return true;
         }
 
-    }
+        protected override bool TryWriteConstant(ref ClassFormatWriter writer)
+        {
+            if (writer.TryWriteU2((ushort)Value.Length) == false)
+                return false;
+            if (writer.TryWriteManyU1(Value) == false)
+                return false;
 
+            return true;
+        }
+    }
 }

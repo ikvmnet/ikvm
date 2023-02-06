@@ -1,9 +1,7 @@
 ﻿namespace IKVM.ByteCode.Parsing
 {
-
     internal sealed record DynamicConstantRecord(ushort BootstrapMethodAttributeIndex, ushort NameAndTypeIndex) : ConstantRecord
     {
-
         /// <summary>
         /// Parses a Dynamic constant in the constant pool.
         /// </summary>
@@ -24,6 +22,14 @@
             return true;
         }
 
-    }
+        protected override bool TryWriteConstant(ref ClassFormatWriter writer)
+        {
+            if (writer.TryWriteU2(BootstrapMethodAttributeIndex) == false)
+                return false;
+            if (writer.TryWriteU2(NameAndTypeIndex) == false)
+                return false;
 
+            return true;
+        }
+    }
 }

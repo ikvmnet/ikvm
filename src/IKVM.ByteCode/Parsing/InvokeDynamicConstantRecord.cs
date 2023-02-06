@@ -1,6 +1,5 @@
 ﻿namespace IKVM.ByteCode.Parsing
 {
-
     internal sealed record InvokeDynamicConstantRecord(ushort BootstrapMethodAttributeIndex, ushort NameAndTypeIndex) : ConstantRecord
     {
 
@@ -23,6 +22,14 @@
             return true;
         }
 
-    }
+        protected override bool TryWriteConstant(ref ClassFormatWriter writer)
+        {
+            if (writer.TryWriteU2(BootstrapMethodAttributeIndex) == false)
+                return false;
+            if (writer.TryWriteU2(NameAndTypeIndex) == false)
+                return false;
 
+            return true;
+        }
+    }
 }

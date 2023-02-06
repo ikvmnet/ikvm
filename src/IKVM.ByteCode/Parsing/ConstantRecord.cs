@@ -1,11 +1,11 @@
 ﻿namespace IKVM.ByteCode.Parsing
 {
-
     /// <summary>
     /// Base type for constant records.
     /// </summary>
     internal abstract record ConstantRecord
     {
+        protected ConstantRecord() { }
 
         /// <summary>
         /// Attempts to read the constant at the current position. Returns the the number of index positions to skip.
@@ -45,6 +45,38 @@
             };
         }
 
-    }
+        public abstract int GetSize();
 
+        public bool TryWrite(ref ClassFormatWriter writer)
+        {
+            ConstantTag tag = this switch
+            {
+                Utf8ConstantRecord => ConstantTag.Utf8,
+                IntegerConstantRecord => ConstantTag.Integer,
+                FloatConstantRecord => ConstantTag.Float,
+                LongConstantRecord => ConstantTag.Long,
+                DoubleConstantRecord => ConstantTag.Double,
+                ClassConstantRecord => ConstantTag.Class,
+                StringConstantRecord => ConstantTag.String,
+                FieldrefConstantRecord => ConstantTag.Fieldref,
+                MethodrefConstantRecord => ConstantTag.Methodref,
+                InterfaceMethodrefConstantRecord => ConstantTag.InterfaceMethodref,
+                NameAndTypeConstantRecord => ConstantTag.NameAndType,
+                MethodHandleConstantRecord => ConstantTag.MethodHandle,
+                MethodTypeConstantRecord => ConstantTag.MethodType,
+                DynamicConstantRecord => ConstantTag.Dynamic,
+                InvokeDynamicConstantRecord => ConstantTag.InvokeDynamic,
+                ModuleConstantRecord => ConstantTag.Module,
+                PackageConstantRecord => ConstantTag.Package,
+                _ => throw new ByteCodeException($"Encountered an unknown constant: '{this.GetType().FullName}'.")
+            };
+
+            if (writer.TryWriteU1((byte)tag) == false)
+                return false;
+
+            return TryWriteConstant(ref writer);
+        }
+
+        protected abstract bool TryWriteConstant(ref ClassFormatWriter writer);
+    }
 }
