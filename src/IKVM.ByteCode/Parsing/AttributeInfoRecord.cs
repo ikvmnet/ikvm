@@ -39,5 +39,20 @@ namespace IKVM.ByteCode.Parsing
 
             return true;
         }
+
+        /// <summary>
+        /// Gets the number of bytes required to write the record.
+        /// </summary>
+        /// <returns></returns>
+        public int GetSize()
+        {
+            var size = 0;
+
+            size += sizeof(ushort);
+            size += sizeof(uint);
+            size += Data.Length * sizeof(byte);
+
+            return size;
+        }
     }
 }

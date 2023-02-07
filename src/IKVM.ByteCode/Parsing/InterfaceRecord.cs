@@ -25,5 +25,12 @@
 
             return true;
         }
+
+        /// <summary>
+        /// Gets the number of bytes required to write the record.
+        /// </summary>
+        /// <returns></returns>
+        public int GetSize() =>
+            sizeof(ushort);
     }
 }

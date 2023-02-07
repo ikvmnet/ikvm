@@ -79,27 +79,23 @@
 
             size += sizeof(ushort);
 
-            //for (int i = 1; i < Interfaces.Length; i++)
-            //    if (Interfaces[i] is not null)
-            //        size += Interfaces[i].GetSize();
+            for (int i = 0; i < Interfaces.Length; i++)
+                size += Interfaces[i].GetSize();
 
             size += sizeof(ushort);
 
-            //for (int i = 1; i < Fields.Length; i++)
-            //    if (Fields[i] is not null)
-            //        size += Fields[i].GetSize();
+            for (int i = 0; i < Fields.Length; i++)
+                size += Fields[i].GetSize();
 
             size += sizeof(ushort);
 
-            //for (int i = 1; i < Methods.Length; i++)
-            //    if (Methods[i] is not null)
-            //        size += Methods[i].GetSize();
+            for (int i = 0; i < Methods.Length; i++)
+                size += Methods[i].GetSize();
 
             size += sizeof(ushort);
 
-            //for (int i = 1; i < Attributes.Length; i++)
-            //    if (Attributes[i] is not null)
-            //        size += Attributes[i].GetSize();
+            for (int i = 0; i < Attributes.Length; i++)
+                size += Attributes[i].GetSize();
 
             return size;
         }

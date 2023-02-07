@@ -45,7 +45,14 @@
             };
         }
 
-        public abstract int GetSize();
+        protected abstract int GetConstantSize();
+
+        /// <summary>
+        /// Gets the number of bytes required to write the record.
+        /// </summary>
+        /// <returns></returns>
+        public int GetSize() =>
+            sizeof(byte) + GetConstantSize();
 
         public bool TryWrite(ref ClassFormatWriter writer)
         {
