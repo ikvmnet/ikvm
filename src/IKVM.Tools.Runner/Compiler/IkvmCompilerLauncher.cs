@@ -58,7 +58,6 @@ namespace IKVM.Tools.Runner.Compiler
         /// <param name="options"></param>
         /// <param name="cancellationToken"></param>
         /// <returns></returns>
-        /// <exception cref="NullReferenceException"></exception>
         public async Task<int> ExecuteAsync(IkvmCompilerOptions options, CancellationToken cancellationToken = default)
         {
             if (options is null)
@@ -248,15 +247,17 @@ namespace IKVM.Tools.Runner.Compiler
                 foreach (var i in options.Input)
                     w.WriteLine(i);
 
-            // path to the temporary response file
-            var response = (string)null;
+            // prepare path to response file
+            var response = string.IsNullOrWhiteSpace(options.ResponseFile) == false ? Path.GetFullPath(options.ResponseFile) : Path.GetTempFileName();
+
+            // to cancel the executable
             var cts = CancellationTokenSource.CreateLinkedTokenSource(cancellationToken, new CancellationToken());
 
             try
             {
                 // create response file
-                response = options.ResponseFile ?? Path.GetTempFileName();
-                File.WriteAllText(response, w.ToString());
+                Directory.CreateDirectory(Path.GetDirectoryName(response));
+                File.WriteAllText(options.ResponseFile, w.ToString());
 
                 // locate EXE file
                 var exe = GetToolExe();
