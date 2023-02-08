@@ -21,7 +21,7 @@ namespace IKVM.Runtime.Vfs
         /// <summary>
         /// Gets the default mount path of the global file system.
         /// </summary>
-        public readonly static string RootPath = JVM.IsUnix ? "/mnt/.ikvm/" : @"\\.ikvm\";
+        public readonly static string RootPath = JVM.IsUnix ? "/mnt/ikvm/" : @"\\ikvm\";
 
         /// <summary>
         /// Gets the default mount table.
