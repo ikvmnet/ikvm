@@ -3,6 +3,11 @@
 namespace IKVM.ByteCode
 {
 
+    /// <summary>
+    /// Describes a Java Class file format version number, consisting of a major and minor pair.
+    /// </summary>
+    /// <param name="Major"></param>
+    /// <param name="Minor"></param>
     internal record struct ClassFormatVersion(int Major, int Minor) : IComparable<ClassFormatVersion>
     {
 

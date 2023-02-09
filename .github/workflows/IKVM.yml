@@ -171,7 +171,7 @@ jobs:
         useConfigFile: true
         configFilePath: ${{ env.WORKPATH }}\ikvm\GitVersion.yml
     - name: Setup WSL
-      uses: Vampire/setup-wsl@v1
+      uses: Vampire/setup-wsl@v2
       with:
         additional-packages:
           zlib1g-dev
@@ -410,7 +410,7 @@ jobs:
         dotnet-version: 7.0.x
     - name: Setup WSL
       if: matrix.sys == 'windows'
-      uses: Vampire/setup-wsl@v1
+      uses: Vampire/setup-wsl@v2
     - name: Download Tests
       uses: actions/download-artifact@v3
       with:
