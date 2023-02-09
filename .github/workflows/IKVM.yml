@@ -38,6 +38,7 @@ jobs:
         curl -o openjdk/build/openjdk-7u75-b13-linux-x64-18_dec_2014.tar.gz "https://download.java.net/openjdk/jdk7u75/ri/openjdk-7u75-b13-linux-x64-18_dec_2014.tar.gz" &&
         tar xzvf openjdk/build/openjdk-7u75-b13-linux-x64-18_dec_2014.tar.gz -C openjdk/build
     - name: Install Packages
+      if: steps.openjdk-build-stamp.outputs.files_exists != 'true'
       run: |
         apt-get update &&
         apt-get install -y \
