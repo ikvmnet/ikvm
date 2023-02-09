@@ -57,7 +57,7 @@ jobs:
           libcups2-dev \
           libasound2-dev \
           libfreetype6-dev \
-          libfontconfig1-dev \
+          libfontconfig1-dev &&
         sudo apt-get remove -y \
           gcc-9 \
           g++-9
