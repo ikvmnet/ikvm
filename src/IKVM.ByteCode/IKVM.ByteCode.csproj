@@ -7,6 +7,12 @@
     </PropertyGroup>
 
     <ItemGroup>
+      <Compile Remove="Writing\**" />
+      <EmbeddedResource Remove="Writing\**" />
+      <None Remove="Writing\**" />
+    </ItemGroup>
+
+    <ItemGroup>
         <InternalsVisibleTo Include="IKVM.ByteCode.Tests" />
         <InternalsVisibleTo Include="IKVM.Runtime" />
         <InternalsVisibleTo Include="IKVM.Tools.Importer" />
@@ -20,10 +26,6 @@
         <PackageReference Include="Microsoft.CSharp" Version="4.7.0" />
         <PackageReference Include="System.IO.Pipelines" Version="6.0.3" />
         <PackageReference Include="System.Memory" Version="4.5.5" />
-    </ItemGroup>
-
-    <ItemGroup>
-      <Folder Include="Writing\" />
     </ItemGroup>
 
 </Project>
