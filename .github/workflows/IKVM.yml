@@ -46,8 +46,8 @@ jobs:
             unzip \
             zip \
             curl \
-            gcc-9 \
-            g++-9 \
+            gcc-8 \
+            g++-8 \
             libx11-dev \
             libxext-dev \
             libxrender-dev \
