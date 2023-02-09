@@ -34,7 +34,7 @@
             ToolPath="$(IkvmCompilerToolPath)"
             LogFile="%(IkvmReferenceItem.StagePath).log"
             ResponseFile="%(IkvmReferenceItem.StagePath).rsp"
-            Output="%(IkvmReferenceItem.StagePath->'%(FullPath)')"
+            Output="%(IkvmReferenceItem.StagePath)"
             Assembly="%(IkvmReferenceItem.AssemblyName)"
             Version="%(IkvmReferenceItem.AssemblyVersion)"
             FileVersion="%(IkvmReferenceItem.AssemblyFileVersion)"
@@ -47,7 +47,7 @@
             ClassLoader="%(IkvmReferenceItem.ClassLoader)"
             NoStdLib="true"
             References="@(_IkvmCompilerReferencePath->'%(FullPath)')"
-            Input="%(IkvmReferenceItem.Compile->'%(FullPath)')"
+            Input="%(IkvmReferenceItem.Compile)"
             Condition=" '%(IkvmReferenceItem.Compile)' != '' "/>
 
         <!-- Copy the compiled assembly to its cache path. -->
