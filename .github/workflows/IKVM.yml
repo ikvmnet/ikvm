@@ -41,23 +41,26 @@ jobs:
       if: steps.openjdk-build-stamp.outputs.files_exists != 'true'
       run: |
         sudo apt-get update &&
+        sudo apt-get remove -y \
+          gcc-9 \
+          g++-9 &&
         sudo apt-get install -y \
-            build-essential \
-            unzip \
-            zip \
-            curl \
-            gcc-8 \
-            g++-8 \
-            libx11-dev \
-            libxext-dev \
-            libxrender-dev \
-            libxtst-dev \
-            libxt-dev \
-            libxi-dev \
-            libcups2-dev \
-            libasound2-dev \
-            libfreetype6-dev \
-            libfontconfig1-dev
+          build-essential \
+          unzip \
+          zip \
+          curl \
+          gcc-8 \
+          g++-8 \
+          libx11-dev \
+          libxext-dev \
+          libxrender-dev \
+          libxtst-dev \
+          libxt-dev \
+          libxi-dev \
+          libcups2-dev \
+          libasound2-dev \
+          libfreetype6-dev \
+          libfontconfig1-dev
     - name: Build OpenJDK
       if: steps.openjdk-build-stamp.outputs.files_exists != 'true'
       run: |
