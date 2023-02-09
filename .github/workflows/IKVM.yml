@@ -25,7 +25,7 @@ jobs:
       uses: actions/cache@v3
       with:
         path: openjdk/build/linux-x86_64-normal-server-release
-        key: openjdk-build-linux-x86_64-normal-server-release--${{ runner.os }}--${{ hashFiles('openjdk/**', '!openjdk/build') }}-9
+        key: openjdk-build-linux-x86_64-normal-server-release--${{ runner.os }}--${{ hashFiles('openjdk/**', '!openjdk/build') }}-10
     - name: Check OpenJDK Build Stamp
       id: openjdk-build-stamp
       uses: andstor/file-existence-action@v2
@@ -37,35 +37,32 @@ jobs:
         mkdir -p openjdk/build && 
         curl -o openjdk/build/openjdk-7u75-b13-linux-x64-18_dec_2014.tar.gz "https://download.java.net/openjdk/jdk7u75/ri/openjdk-7u75-b13-linux-x64-18_dec_2014.tar.gz" &&
         tar xzvf openjdk/build/openjdk-7u75-b13-linux-x64-18_dec_2014.tar.gz -C openjdk/build
+    - name: Install Packages
+      run: |
+        apt-get update &&
+        apt-get install -y \
+            build-essential \
+            unzip \
+            zip \
+            curl \
+            gcc-4.3 \
+            g++-4.3 \
+            libx11-dev \
+            libxext-dev \
+            libxrender-dev \
+            libxtst-dev \
+            libxt-dev \
+            libxi-dev \
+            libcups2-dev \
+            libasound2-dev \
+            libfreetype6-dev \
+            libfontconfig1-dev
     - name: Build OpenJDK
-      if: steps.openjdk-build-stamp.outputs.files_exists != 'true'
-      uses: docker://debian/eol:lenny
-      with:
-        args: >
-          /bin/bash -c "
-            echo 'deb http://archive.debian.org/debian/ lenny main' > /etc/apt/sources.list &&
-            apt-get update &&
-            apt-get install -y \
-              build-essential \
-              unzip \
-              zip \
-              curl \
-              gcc-4.3 \
-              g++-4.3 \
-              libx11-dev \
-              libxext-dev \
-              libxrender-dev \
-              libxtst-dev \
-              libxt-dev \
-              libxi-dev \
-              libcups2-dev \
-              libasound2-dev \
-              libfreetype6-dev \
-              libfontconfig1-dev &&
-            cd openjdk &&
-            JAVA_HOME=build/java-se-7u75-ri bash ./configure &&
-            make DISABLE_HOTSPOT_OS_VERSION_CHECK=ok images &&
-            touch build/linux-x86_64-normal-server-release/stamp"
+      run: |
+        cd openjdk &&
+        JAVA_HOME=build/java-se-7u75-ri bash ./configure &&
+        make DISABLE_HOTSPOT_OS_VERSION_CHECK=ok images &&
+        touch build/linux-x86_64-normal-server-release/stamp"
     - name: Update OpenJDK Attributes
       run: |
         sudo chown -R `id -u`:`id -g` linux-x86_64-normal-server-release && \
