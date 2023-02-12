@@ -1,8 +1,8 @@
 ﻿namespace IKVM.ByteCode.Parsing
 {
-
     internal sealed record BootstrapMethodsAttributeRecord(BootstrapMethodsAttributeMethodRecord[] Methods) : AttributeRecord
     {
+        public const string Name = "BootstrapMethods";
 
         public static bool TryReadBootstrapMethodsAttribute(ref ClassFormatReader reader, out AttributeRecord attribute)
         {

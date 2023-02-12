@@ -1,8 +1,8 @@
 ﻿namespace IKVM.ByteCode.Parsing
 {
-
     internal sealed record MethodParametersAttributeRecord(MethodParametersAttributeParameterRecord[] Parameters) : AttributeRecord
     {
+        public const string Name = "MethodParameters";
 
         public static bool TryReadMethodParametersAttribute(ref ClassFormatReader reader, out AttributeRecord attribute)
         {
@@ -14,12 +14,10 @@
             var arguments = new MethodParametersAttributeParameterRecord[count];
             for (int i = 0; i < count; i++)
             {
-                if (reader.TryReadU2(out ushort nameIndex) == false)
-                    return false;
-                if (reader.TryReadU2(out ushort accessFlags) == false)
+                if (MethodParametersAttributeParameterRecord.TryRead(ref reader, out var j) == false)
                     return false;
 
-                arguments[i] = new MethodParametersAttributeParameterRecord(nameIndex, (AccessFlag)accessFlags);
+                arguments[i] = j;
             }
 
             attribute = new MethodParametersAttributeRecord(arguments);
@@ -28,13 +26,26 @@
 
         public override int GetSize()
         {
-            throw new System.NotImplementedException();
+            var size = 0;
+
+            size += sizeof(byte);
+
+            foreach (var argument in Parameters)
+                size += argument.GetSize();
+
+            return size;
         }
 
         public override bool TryWrite(ref ClassFormatWriter writer)
         {
-            throw new System.NotImplementedException();
+            if (writer.TryWriteU1((byte)Parameters.Length) == false)
+                return false;
+
+            foreach (var argument in Parameters)
+                if (argument.TryWrite(ref writer) == false)
+                    return false;
+
+            return true;
         }
     }
-
 }

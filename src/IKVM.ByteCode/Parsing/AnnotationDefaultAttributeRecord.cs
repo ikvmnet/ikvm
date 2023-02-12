@@ -2,6 +2,8 @@
 {
     internal sealed record AnnotationDefaultAttributeRecord(ElementValueRecord DefaultValue) : AttributeRecord
     {
+        public const string Name = "AnnotationDefault";
+
         public static bool TryReadAnnotationDefaultAttribute(ref ClassFormatReader reader, out AttributeRecord attribute)
         {
             attribute = null;

@@ -138,7 +138,7 @@ namespace IKVM.StubGen
                         m = writer.AddMethod((AccessFlag)mods, mw.Name, mw.Signature.Replace('.', '/'));
                         if (mw.IsOptionalAttributeAnnotationValue)
                         {
-                            //m.AddAttribute(new AnnotationDefaultClassFileAttribute(writer, GetAnnotationDefault(writer, mw.ReturnType)));
+                            //m.Attributes.AddAnnotationDefaultClassFileAttribute(GetAnnotationDefault(writer, mw.ReturnType));
                         }
                     }
                     MethodBase mb = mw.GetMethod();
@@ -193,23 +193,12 @@ namespace IKVM.StubGen
                         if (includeParameterNames)
                         {
                             MethodParametersEntry[] mp = tw.GetMethodParameters(mw);
-                            if (mp == MethodParametersEntry.Malformed)
+                            if (mp != null)
                             {
-                                //m.AddAttribute(new MethodParametersAttribute(writer, null, null));
-                            }
-                            else if (mp != null)
-                            {
-                                ushort[] names = new ushort[mp.Length];
-                                ushort[] flags = new ushort[mp.Length];
-                                for (int i = 0; i < names.Length; i++)
-                                {
-                                    if (mp[i].name != null)
-                                    {
-                                        names[i] = writer.AddUtf8(mp[i].name);
-                                    }
-                                    flags[i] = (ushort)mp[i].accessFlags;
-                                }
-                                //m.AddAttribute(new MethodParametersAttribute(writer, names, flags));
+                                var methodParametersAttribute = m.Attributes.AddMethodParametersAttribute();
+
+                                foreach (var argument in mp)
+                                    methodParametersAttribute.Add(argument.name, argument.accessFlags);
                             }
                         }
                     }
@@ -293,39 +282,39 @@ namespace IKVM.StubGen
             if (source != null)
             {
                 //RuntimeVisibleParameterAnnotationsAttribute attr = null;
-                //ParameterInfo[] parameters = source.GetParameters();
-                //for (int i = 0; i < parameters.Length; i++)
-                //{
-                //	RuntimeVisibleAnnotationsAttribute param = null;
-                //	foreach (CustomAttributeData cad in CustomAttributeData.GetCustomAttributes(parameters[i]))
-                //	{
-                //		object[] ann = GetAnnotation(cad);
-                //		if (ann != null)
-                //		{
-                //			if (param == null)
-                //			{
-                //				if (attr == null)
-                //				{
-                //					attr = new RuntimeVisibleParameterAnnotationsAttribute(writer);
-                //					for (int j = 0; j < i; j++)
-                //					{
-                //						attr.Add(new RuntimeVisibleAnnotationsAttribute(writer));
-                //					}
-                //				}
-                //				param = new RuntimeVisibleAnnotationsAttribute(writer);
-                //			}
-                //			param.Add(ann);
-                //		}
-                //	}
-                //	if (attr != null)
-                //	{
-                //		attr.Add(param ?? new RuntimeVisibleAnnotationsAttribute(writer));
-                //	}
-                //}
-                //if (attr != null)
-                //{
-                //	target.AddAttribute(attr);
-                //}
+                ParameterInfo[] parameters = source.GetParameters();
+                for (int i = 0; i < parameters.Length; i++)
+                {
+                    //	RuntimeVisibleAnnotationsAttribute param = null;
+                    //	foreach (CustomAttributeData cad in CustomAttributeData.GetCustomAttributes(parameters[i]))
+                    //	{
+                    //		object[] ann = GetAnnotation(cad);
+                    //		if (ann != null)
+                    //		{
+                    //			if (param == null)
+                    //			{
+                    //				if (attr == null)
+                    //				{
+                    //					attr = new RuntimeVisibleParameterAnnotationsAttribute(writer);
+                    //					for (int j = 0; j < i; j++)
+                    //					{
+                    //						attr.Add(new RuntimeVisibleAnnotationsAttribute(writer));
+                    //					}
+                    //				}
+                    //				param = new RuntimeVisibleAnnotationsAttribute(writer);
+                    //			}
+                    //			param.Add(ann);
+                    //		}
+                    //	}
+                    //	if (attr != null)
+                    //	{
+                    //		attr.Add(param ?? new RuntimeVisibleAnnotationsAttribute(writer));
+                    //	}
+                    //}
+                    //if (attr != null)
+                    //{
+                    //	target.AddAttribute(attr);
+                }
             }
 #endif
         }
