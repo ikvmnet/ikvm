@@ -10,23 +10,23 @@
 
     <ItemGroup>
         <TargetsForPublish Include="$(SolutionFile)">
-            <Targets>dist\dist-bin:Publish</Targets>
+            <Targets>dist%5Cdist-bin:Publish</Targets>
             <Properties>PublishDir=$(DistDir)\bin</Properties>
         </TargetsForPublish>
         <TargetsForPublish Include="$(SolutionFile)">
-            <Targets>dist\dist-tools:Publish</Targets>
+            <Targets>dist%5Cdist-tools:Publish</Targets>
             <Properties>PublishDir=$(DistDir)\tools</Properties>
         </TargetsForPublish>
         <TargetsForPublish Include="$(SolutionFile)">
-            <Targets>dist\dist-image:Publish</Targets>
+            <Targets>dist%5Cdist-image:Publish</Targets>
             <Properties>PublishDir=$(DistDir)\image</Properties>
         </TargetsForPublish>
         <TargetsForPublish Include="$(SolutionFile)">
-            <Targets>dist\dist-nuget:Publish</Targets>
+            <Targets>dist%5Cdist-nuget:Publish</Targets>
             <Properties>PublishDir=$(DistDir)\nuget</Properties>
         </TargetsForPublish>
         <TargetsForPublish Include="$(SolutionFile)">
-            <Targets>dist\dist-tests:Publish</Targets>
+            <Targets>dist%5Cdist-tests:Publish</Targets>
             <Properties>PublishDir=$(DistDir)\tests</Properties>
         </TargetsForPublish>
     </ItemGroup>

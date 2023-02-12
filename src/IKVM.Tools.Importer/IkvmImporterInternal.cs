@@ -24,10 +24,9 @@
 using System;
 using System.Collections.Generic;
 using System.IO;
+using System.IO.Compression;
 using System.Text.RegularExpressions;
 using System.Threading;
-
-using ICSharpCode.SharpZipLib.Zip;
 
 using IKVM.ByteCode.Reading;
 using IKVM.Internal;
@@ -1082,7 +1081,7 @@ namespace IKVM.Tools.Importer
                         {
                             throw new FatalCompilerErrorException(Message.ReferenceNotFound, reference);
                         }
-                    next_reference:;
+                        next_reference:;
                     }
                 }
             }
@@ -1151,16 +1150,15 @@ namespace IKVM.Tools.Importer
             }
         }
 
-        private static byte[] ReadFromZip(ZipFile zf, ZipEntry ze)
+        private static byte[] ReadFromZip(ZipArchiveEntry ze)
         {
-            byte[] buf = new byte[ze.Size];
-            int pos = 0;
-            Stream s = zf.GetInputStream(ze);
-            while (pos < buf.Length)
-            {
-                pos += s.Read(buf, pos, buf.Length - pos);
-            }
-            return buf;
+            using MemoryStream ms = new MemoryStream();
+
+            using Stream s = ze.Open();
+
+            s.CopyTo(ms);
+
+            return ms.ToArray();
         }
 
         private static bool EmitStubWarning(CompilerOptions options, byte[] buf)
@@ -1200,7 +1198,7 @@ namespace IKVM.Tools.Importer
             return true;
         }
 
-        private static bool IsExcludedOrStubLegacy(CompilerOptions options, ZipEntry ze, byte[] data)
+        private static bool IsExcludedOrStubLegacy(CompilerOptions options, ZipArchiveEntry ze, byte[] data)
         {
             if (ze.Name.EndsWith(".class", StringComparison.OrdinalIgnoreCase))
             {
@@ -1221,13 +1219,14 @@ namespace IKVM.Tools.Importer
             return false;
         }
 
-        private void ProcessManifest(CompilerOptions options, ZipFile zf, ZipEntry ze)
+        private void ProcessManifest(CompilerOptions options, ZipArchiveEntry ze)
         {
             if (manifestMainClass == null)
             {
                 // read main class from manifest
                 // TODO find out if we can use other information from manifest
-                StreamReader rdr = new StreamReader(zf.GetInputStream(ze));
+                using Stream stream = ze.Open();
+                using StreamReader rdr = new StreamReader(stream);
                 string line;
                 while ((line = rdr.ReadLine()) != null)
                 {
@@ -1247,53 +1246,47 @@ namespace IKVM.Tools.Importer
             }
         }
 
-        private bool ProcessZipFile(CompilerOptions options, string file, Predicate<ZipEntry> filter)
+        private bool ProcessZipFile(CompilerOptions options, string file, Predicate<ZipArchiveEntry> filter)
         {
             try
             {
-                ZipFile zf = new ZipFile(file);
-                try
+                using ZipArchive zf = ZipFile.OpenRead(file);
+
+                bool found = false;
+                Jar jar = null;
+                foreach (ZipArchiveEntry ze in zf.Entries)
                 {
-                    bool found = false;
-                    Jar jar = null;
-                    foreach (ZipEntry ze in zf)
+                    if (filter != null && !filter(ze))
                     {
-                        if (filter != null && !filter(ze))
+                        // skip
+                    }
+                    else
+                    {
+                        found = true;
+                        byte[] data = ReadFromZip(ze);
+                        if (IsExcludedOrStubLegacy(options, ze, data))
                         {
-                            // skip
+                            continue;
                         }
-                        else
+                        if (jar == null)
                         {
-                            found = true;
-                            byte[] data = ReadFromZip(zf, ze);
-                            if (IsExcludedOrStubLegacy(options, ze, data))
-                            {
-                                continue;
-                            }
-                            if (jar == null)
-                            {
-                                jar = options.GetJar(zf);
-                            }
-                            jar.Add(ze, data);
-                            if (ze.Name == "META-INF/MANIFEST.MF")
-                            {
-                                ProcessManifest(options, zf, ze);
-                            }
+                            jar = options.GetJar(file);
+                        }
+                        jar.Add(ze.FullName, data);
+                        if (string.Equals(ze.FullName, "META-INF/MANIFEST.MF", StringComparison.OrdinalIgnoreCase))
+                        {
+                            ProcessManifest(options, ze);
                         }
                     }
-                    // include empty zip file if it has a comment
-                    if (!found && !string.IsNullOrEmpty(zf.ZipFileComment))
-                    {
-                        options.GetJar(zf);
-                    }
-                    return found;
                 }
-                finally
+                // include empty zip file
+                if (!found)
                 {
-                    zf.Close();
+                    options.GetJar(file);
                 }
+                return found;
             }
-            catch (ICSharpCode.SharpZipLib.SharpZipBaseException x)
+            catch (InvalidDataException x)
             {
                 throw new FatalCompilerErrorException(Message.ErrorReadingFile, file, x.Message);
             }
@@ -1378,12 +1371,12 @@ namespace IKVM.Tools.Importer
                 {
                     string pathFilter = Path.GetDirectoryName(file) + Path.DirectorySeparatorChar;
                     string fileFilter = "^" + Regex.Escape(Path.GetFileName(file)).Replace("\\*", ".*").Replace("\\?", ".") + "$";
-                    return ProcessZipFile(options, path, delegate (ZipEntry ze)
+                    return ProcessZipFile(options, path, delegate (ZipArchiveEntry ze)
                     {
                         // MONOBUG Path.GetDirectoryName() doesn't normalize / to \ on Windows
-                        string name = ze.Name.Replace('/', Path.DirectorySeparatorChar);
+                        string name = ze.FullName.Replace('/', Path.DirectorySeparatorChar);
                         return (Path.GetDirectoryName(name) + Path.DirectorySeparatorChar).StartsWith(pathFilter)
-                            && Regex.IsMatch(Path.GetFileName(ze.Name), fileFilter);
+                            && Regex.IsMatch(Path.GetFileName(ze.FullName), fileFilter);
                     });
                 }
             }
