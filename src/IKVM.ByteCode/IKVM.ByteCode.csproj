@@ -7,12 +7,6 @@
     </PropertyGroup>
 
     <ItemGroup>
-      <Compile Remove="Writing\**" />
-      <EmbeddedResource Remove="Writing\**" />
-      <None Remove="Writing\**" />
-    </ItemGroup>
-
-    <ItemGroup>
         <InternalsVisibleTo Include="IKVM.ByteCode.Tests" />
         <InternalsVisibleTo Include="IKVM.Runtime" />
         <InternalsVisibleTo Include="IKVM.Tools.Importer" />
