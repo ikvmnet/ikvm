@@ -42,16 +42,9 @@ namespace IKVM.ByteCode.Writing
             Attributes = new AttributesBuilder(this);
         }
 
-        public AttributesBuilder Attributes { get; private set; }
+        public AttributesBuilder Attributes { get; }
 
-        public ClassBuilder WithAttributes(Action<AttributesBuilder> builderAction)
-        {
-            Attributes = new AttributesBuilder(DeclaringClass);
-            builderAction(Attributes);
-            return this;
-        }
-
-        private ushort Add(ConstantRecord constant)
+        private ushort AddConstant(ConstantRecord constant)
         {
             if (!constantsHashTable.TryGetValue(constant, out ushort index))
             {
@@ -66,54 +59,29 @@ namespace IKVM.ByteCode.Writing
             return index;
         }
 
-        public ushort AddUtf8(string str)
+        public ushort AddConstant(int i)
         {
-            return Add(new Utf8ConstantRecord(MUTF8Encoding.GetMUTF8(majorVersion).GetBytes(str)));
+            return AddConstant(new IntegerConstantRecord(i));
         }
 
-        public ushort AddClass(string classname)
+        public ushort AddConstant(long l)
         {
-            return Add(new ClassConstantRecord(AddUtf8(classname)));
+            return AddConstant(new LongConstantRecord(l));
         }
 
-        public ushort AddMethodRef(string classname, string methodname, string signature)
+        public ushort AddConstant(float f)
         {
-            return Add(new MethodrefConstantRecord(AddClass(classname), AddNameAndType(methodname, signature)));
+            return AddConstant(new FloatConstantRecord(f));
         }
 
-        public ushort AddNameAndType(string name, string type)
+        public ushort AddConstant(double d)
         {
-            return Add(new NameAndTypeConstantRecord(AddUtf8(name), AddUtf8(type)));
+            return AddConstant(new DoubleConstantRecord(d));
         }
 
-        public ushort AddInt(int i)
+        public ushort AddConstant(string s)
         {
-            return Add(new IntegerConstantRecord(i));
-        }
-
-        public ushort AddLong(long l)
-        {
-            return Add(new LongConstantRecord(l));
-        }
-
-        public ushort AddFloat(float f)
-        {
-            return Add(new FloatConstantRecord(f));
-        }
-
-        public ushort AddDouble(double d)
-        {
-            return Add(new DoubleConstantRecord(d));
-        }
-
-        public ushort AddString(string s)
-        {
-            return Add(new StringConstantRecord(AddUtf8(s)));
-        }
-
-        public void AddInterface(string name)
-        {
-            interfaces.Add(new InterfaceBuilder(name, this));
+            return AddConstant(new StringConstantRecord(AddUtf8(s)));
         }
 
         public MethodBuilder AddMethod(AccessFlag accessFlags, string name, string signature)
@@ -121,6 +89,33 @@ namespace IKVM.ByteCode.Writing
             var method = new MethodBuilder(accessFlags, name, signature, this);
             methods.Add(method);
             return method;
+        }
+
+        // ============
+
+        public ushort AddUtf8(string str)
+        {
+            return AddConstant(new Utf8ConstantRecord(MUTF8Encoding.GetMUTF8(majorVersion).GetBytes(str)));
+        }
+
+        public ushort AddClass(string classname)
+        {
+            return AddConstant(new ClassConstantRecord(AddUtf8(classname)));
+        }
+
+        public ushort AddMethodRef(string classname, string methodname, string signature)
+        {
+            return AddConstant(new MethodrefConstantRecord(AddClass(classname), AddNameAndType(methodname, signature)));
+        }
+
+        public ushort AddNameAndType(string name, string type)
+        {
+            return AddConstant(new NameAndTypeConstantRecord(AddUtf8(name), AddUtf8(type)));
+        }
+
+        public void AddInterface(string name)
+        {
+            interfaces.Add(new InterfaceBuilder(name, this));
         }
 
         public FieldBuilder AddField(AccessFlag accessFlag, string name, string descriptor, object constantValue)
@@ -190,8 +185,11 @@ namespace IKVM.ByteCode.Writing
                 Fields: fields
                     .Select(x => x.Build())
                     .ToArray(),
-                Methods: null,
-                Attributes: null
+                Methods: methods
+                    .Select(x => x.Build())
+                    .ToArray(),
+                Attributes: Attributes
+                    .Build()
             );
 
         public bool TryWrite(ref ClassFormatWriter writer)

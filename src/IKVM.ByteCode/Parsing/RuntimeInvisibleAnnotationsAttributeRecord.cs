@@ -1,9 +1,7 @@
 ﻿namespace IKVM.ByteCode.Parsing
 {
-
     internal sealed record RuntimeInvisibleAnnotationsAttributeRecord(AnnotationRecord[] Annotations) : AttributeRecord
     {
-
         public static bool TryReadRuntimeInvisibleAnnotationsAttribute(ref ClassFormatReader reader, out AttributeRecord attribute)
         {
             attribute = null;
@@ -24,6 +22,26 @@
             return true;
         }
 
-    }
+        public override int GetSize()
+        {
+            var size = sizeof(ushort);
 
+            foreach (var annotation in Annotations)
+                size += annotation.GetSize();
+
+            return size;
+        }
+
+        public override bool TryWrite(ref ClassFormatWriter writer)
+        {
+            if (writer.TryWriteU2((ushort)Annotations.Length) == false)
+                return false;
+
+            foreach (var annotation in Annotations)
+                if (annotation.TryWrite(ref writer) == false)
+                    return false;
+
+            return true;
+        }
+    }
 }

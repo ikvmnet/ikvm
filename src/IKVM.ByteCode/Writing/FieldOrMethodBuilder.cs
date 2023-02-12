@@ -18,6 +18,6 @@
 
         protected ushort DescriptorIndex { get; }
 
-        protected AttributesBuilder Attributes { get; set; }
+        public AttributesBuilder Attributes { get; }
     }
 }

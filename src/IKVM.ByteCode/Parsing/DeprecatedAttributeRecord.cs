@@ -2,18 +2,16 @@
 {
     internal sealed record DeprecatedAttributeRecord : AttributeRecord
     {
+        public const string Name = "Deprecated";
+
         public static bool TryReadDeprecatedAttribute(ref ClassFormatReader reader, out AttributeRecord attribute)
         {
             attribute = new DeprecatedAttributeRecord();
             return true;
         }
 
-        protected bool TryWrite(ref ClassFormatWriter writer)
-        {
-            if (writer.TryWriteU4(0) == false)
-                return false;
+        public override int GetSize() => 0;
 
-            return true;
-        }
+        public override bool TryWrite(ref ClassFormatWriter writer) => true;
     }
 }

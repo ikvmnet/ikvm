@@ -1,9 +1,8 @@
-﻿using System.Buffers;
-
-namespace IKVM.ByteCode.Parsing
+﻿namespace IKVM.ByteCode.Parsing
 {
     internal sealed record ExceptionsAttributeRecord(ushort[] ExceptionsIndexes) : AttributeRecord
     {
+        public const string Name = "Exceptions";
 
         public static bool TryReadExceptionsAttribute(ref ClassFormatReader reader, out AttributeRecord attribute)
         {
@@ -25,7 +24,10 @@ namespace IKVM.ByteCode.Parsing
             return true;
         }
 
-        public bool TryWrite(ref ClassFormatWriter writer)
+        public override int GetSize() =>
+            sizeof(ushort) + ExceptionsIndexes.Length * sizeof(ushort);
+
+        public override bool TryWrite(ref ClassFormatWriter writer)
         {
             if (writer.TryWriteU2((ushort)ExceptionsIndexes.Length) == false)
                 return false;

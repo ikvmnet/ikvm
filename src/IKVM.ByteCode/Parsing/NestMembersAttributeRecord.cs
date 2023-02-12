@@ -1,9 +1,7 @@
 ﻿namespace IKVM.ByteCode.Parsing
 {
-
     internal sealed record NestMembersAttributeRecord(ushort[] ClassIndexes) : AttributeRecord
     {
-
         public static bool TryReadNestMembersAttribute(ref ClassFormatReader reader, out AttributeRecord attribute)
         {
             attribute = null;
@@ -24,6 +22,14 @@
             return true;
         }
 
-    }
+        public override int GetSize()
+        {
+            throw new System.NotImplementedException();
+        }
 
+        public override bool TryWrite(ref ClassFormatWriter writer)
+        {
+            throw new System.NotImplementedException();
+        }
+    }
 }

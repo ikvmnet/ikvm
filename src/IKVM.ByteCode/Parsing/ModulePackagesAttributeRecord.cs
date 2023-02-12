@@ -1,9 +1,7 @@
 ﻿namespace IKVM.ByteCode.Parsing
 {
-
     internal sealed record ModulePackagesAttributeRecord(ushort[] Packages) : AttributeRecord
     {
-
         public static bool TryReadModulePackagesAttribute(ref ClassFormatReader reader, out AttributeRecord attribute)
         {
             attribute = null;
@@ -24,6 +22,19 @@
             return true;
         }
 
-    }
+        public override int GetSize() =>
+            sizeof(ushort) + Packages.Length * sizeof(ushort);
 
+        public override bool TryWrite(ref ClassFormatWriter writer)
+        {
+            if (writer.TryWriteU2((ushort)Packages.Length) == false)
+                return false;
+
+            foreach (var packageIndex in Packages)
+                if (writer.TryWriteU2(packageIndex) == false)
+                    return false;
+
+            return true;
+        }
+    }
 }

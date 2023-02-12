@@ -1,63 +1,117 @@
 ﻿using IKVM.ByteCode.Parsing;
 using System;
+using System.Collections.Generic;
 
 namespace IKVM.ByteCode.Writing
 {
     internal class AttributesBuilder : RecordsBuilder<AttributeInfoRecord>
     {
-        private CodeAttributeBuilder codeAttribute;
+        private AttributeInfoBuilder<CodeAttributeRecord> codeAttribute;
 
-        private DeprecatedAttributeBuilder deprecatedAttribute;
+        private AttributeInfoBuilder<DeprecatedAttributeRecord> deprecatedAttribute;
 
-        private ExceptionsAttributeBuilder exceptionsAttribute;
+        private AttributeInfoBuilder<ExceptionsAttributeRecord> exceptionsAttribute;
 
-        private InnerClassesAttributeBuilder innerClassesAttribute;
+        private AttributeInfoBuilder<InnerClassesAttributeRecord> innerClassesAttribute;
 
-        private SignatureAttributeBuilder signatureAttribute;
+        private AttributeInfoBuilder<SignatureAttributeRecord> signatureAttribute;
 
-        private RuntimeVisibleAnnotationsAttributeBuilder runtimeVisibleAnnotationsAttribute;
+        private AttributeInfoBuilder<RuntimeVisibleAnnotationsAttributeRecord> runtimeVisibleAnnotationsAttribute;
 
         public AttributesBuilder(ClassBuilder declaringClass)
             : base(declaringClass)
         {
         }
 
-        public AttributesBuilder WithCodeAttribute(ushort maxStack, ushort maxLocals, ReadOnlyMemory<byte> code)
+        public CodeAttributeBuilder AddCodeAttribute(ushort maxStack, ushort maxLocals, byte[] code)
         {
-            codeAttribute = new CodeAttributeBuilder(maxStack, maxLocals, code, DeclaringClass);
-            return this;
+            var attribute = new CodeAttributeBuilder(maxStack, maxLocals, code, DeclaringClass);
+
+            codeAttribute = new AttributeInfoBuilder<CodeAttributeRecord>(attribute, DeclaringClass);
+
+            return attribute;
         }
 
-        public AttributesBuilder WithDeprecatedAttribute()
+        public DeprecatedAttributeBuilder AddDeprecatedAttribute()
         {
-            deprecatedAttribute = new DeprecatedAttributeBuilder(DeclaringClass);
-            return this;
+            var attribute = new DeprecatedAttributeBuilder(DeclaringClass);
+
+            deprecatedAttribute = new AttributeInfoBuilder<DeprecatedAttributeRecord>(attribute, DeclaringClass);
+
+            return attribute;
         }
 
-        public AttributesBuilder WithExceptionsAttribute()
+        public ExceptionsAttributeBuilder AddExceptionsAttribute()
         {
-            exceptionsAttribute = new ExceptionsAttributeBuilder(DeclaringClass);
-            return this;
+            var attribute = new ExceptionsAttributeBuilder(DeclaringClass);
+
+            exceptionsAttribute = new AttributeInfoBuilder<ExceptionsAttributeRecord>(attribute, DeclaringClass);
+
+            return attribute;
         }
 
-        public AttributesBuilder WithInnerClassesAttribute()
+        public InnerClassesAttributeBuilder AddInnerClassesAttribute()
         {
-            innerClassesAttribute = new InnerClassesAttributeBuilder(DeclaringClass);
-            return this;
+            var attribute = new InnerClassesAttributeBuilder(DeclaringClass);
+
+            innerClassesAttribute = new AttributeInfoBuilder<InnerClassesAttributeRecord>(attribute, DeclaringClass);
+
+            return attribute;
         }
 
-        public AttributesBuilder WithSignatureAttribute(string signature)
+        public SignatureAttributeBuilder AddSignatureAttribute(string signature)
         {
-            signatureAttribute = new SignatureAttributeBuilder(signature, DeclaringClass);
-            return this;
+            var attribute = new SignatureAttributeBuilder(signature, DeclaringClass);
+
+            signatureAttribute = new AttributeInfoBuilder<SignatureAttributeRecord>(attribute, DeclaringClass);
+
+            return attribute;
         }
 
-        public AttributesBuilder WithRuntimeVisibleAnnotationsAttribute()
+        public RuntimeVisibleAnnotationsAttributeBuilder AddRuntimeVisibleAnnotationsAttribute()
         {
-            runtimeVisibleAnnotationsAttribute = new RuntimeVisibleAnnotationsAttributeBuilder(DeclaringClass);
-            return this;
+            var attribute = new RuntimeVisibleAnnotationsAttributeBuilder(DeclaringClass);
+
+            runtimeVisibleAnnotationsAttribute = new AttributeInfoBuilder<RuntimeVisibleAnnotationsAttributeRecord>(attribute, DeclaringClass);
+
+            return attribute;
         }
 
-        public override AttributeInfoRecord[] Build() => new AttributeInfoRecord[0]; 
+        public override AttributeInfoRecord[] Build()
+        {
+            var attributes = new List<AttributeInfoRecord>();
+
+            if (codeAttribute is not null)
+            {
+                attributes.Add(codeAttribute.Build());
+            }
+
+            if (deprecatedAttribute is not null)
+            {
+                attributes.Add(deprecatedAttribute.Build());
+            }
+
+            if (exceptionsAttribute is not null)
+            {
+                attributes.Add(exceptionsAttribute.Build());
+            }
+
+            if (innerClassesAttribute is not null)
+            {
+                attributes.Add(innerClassesAttribute.Build());
+            }
+
+            if (signatureAttribute is not null)
+            {
+                attributes.Add(signatureAttribute.Build());
+            }
+
+            if (runtimeVisibleAnnotationsAttribute is not null)
+            {
+                attributes.Add(runtimeVisibleAnnotationsAttribute.Build());
+            }
+
+            return attributes.ToArray();
+        }
     }
 }

@@ -3,9 +3,9 @@ using System;
 
 namespace IKVM.ByteCode.Writing
 {
-    internal class CodeAttributeBuilder : BuilderBase<CodeAttributeRecord>
+    internal class CodeAttributeBuilder : AttributeBuilder<CodeAttributeRecord>
     {
-        public CodeAttributeBuilder(ushort maxStack, ushort maxLocals, ReadOnlyMemory<byte> code, ClassBuilder declaringClass)
+        public CodeAttributeBuilder(ushort maxStack, ushort maxLocals, byte[] code, ClassBuilder declaringClass)
             : base(declaringClass)
         {
             MaxStack = maxStack;
@@ -15,11 +15,13 @@ namespace IKVM.ByteCode.Writing
             Attributes = new AttributesBuilder(declaringClass);
         }
 
+        public override string Name => CodeAttributeRecord.Name;
+
         private ushort MaxStack { get; }
 
         private ushort MaxLocals { get; }
 
-        private ReadOnlyMemory<byte> Code { get; }
+        private byte[] Code { get; }
 
         protected AttributesBuilder Attributes { get; set; }
 

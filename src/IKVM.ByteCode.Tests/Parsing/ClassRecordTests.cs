@@ -21,8 +21,8 @@ namespace IKVM.ByteCode.Tests.Parsing
                 52,
                 new ConstantRecord[]
                 {
-                    //null,
-                    //new ClassConstantRecord(1),
+                    null,
+                    new ClassConstantRecord(1),
                     new Utf8ConstantRecord(new byte[] { 100, 200, 50, 70 })
                 },
                 AccessFlag.ACC_PUBLIC | AccessFlag.ACC_FINAL,

@@ -1,9 +1,7 @@
 ﻿namespace IKVM.ByteCode.Parsing
 {
-
     internal sealed record RuntimeVisibleTypeAnnotationsAttributeRecord(TypeAnnotationRecord[] Annotations) : AttributeRecord
     {
-
         public static bool TryReadRuntimeVisibleTypeAnnotationsAttribute(ref ClassFormatReader reader, out AttributeRecord attribute)
         {
             attribute = null;
@@ -28,13 +26,13 @@
         /// Gets the number of bytes required to write the record.
         /// </summary>
         /// <returns></returns>
-        public int GetSize()
+        public override int GetSize()
         {
             var size = 0;
             size += sizeof(ushort);
 
-            foreach (var element in Annotations)
-                size += element.GetSize();
+            foreach (var annotation in Annotations)
+                size += annotation.GetSize();
 
             return size;
         }
@@ -44,13 +42,13 @@
         /// </summary>
         /// <param name="writer"></param>
         /// <returns></returns>
-        public bool TryWrite(ref ClassFormatWriter writer)
+        public override bool TryWrite(ref ClassFormatWriter writer)
         {
             if (writer.TryWriteU2((ushort)Annotations.Length) == false)
                 return false;
 
-            foreach (var record in Annotations)
-                if (record.TryWrite(ref writer) == false)
+            foreach (var annotation in Annotations)
+                if (annotation.TryWrite(ref writer) == false)
                     return false;
 
             return true;
