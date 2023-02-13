@@ -2821,7 +2821,7 @@ namespace IKVM.Tools.Importer
 
             // If we do not yet have a reference to the core assembly and we are not compiling the core assembly,
             // try to find the core assembly by looking at the assemblies that the runtime references
-            if (JVM.CoreAssembly == null && !compilingCoreAssembly)
+            if (JVM.BaseAssembly == null && !compilingCoreAssembly)
             {
                 foreach (AssemblyName name in StaticCompiler.runtimeAssembly.GetReferencedAssemblies())
                 {
@@ -2838,12 +2838,12 @@ namespace IKVM.Tools.Importer
                     if (asm != null && IsCoreAssembly(asm))
                     {
                         AssemblyClassLoader.PreloadExportedAssemblies(asm);
-                        JVM.CoreAssembly = asm;
+                        JVM.BaseAssembly = asm;
                         break;
                     }
                 }
 
-                if (JVM.CoreAssembly == null)
+                if (JVM.BaseAssembly == null)
                 {
                     throw new FatalCompilerErrorException(Message.BootstrapClassesMissing);
                 }
@@ -2854,8 +2854,8 @@ namespace IKVM.Tools.Importer
 
             if (!compilingCoreAssembly)
             {
-                allReferencesAreStrongNamed &= IsSigned(JVM.CoreAssembly);
-                loader.AddReference(AssemblyClassLoader.FromAssembly(JVM.CoreAssembly));
+                allReferencesAreStrongNamed &= IsSigned(JVM.BaseAssembly);
+                loader.AddReference(AssemblyClassLoader.FromAssembly(JVM.BaseAssembly));
             }
 
             if ((options.keyPair != null || options.publicKey != null) && !allReferencesAreStrongNamed)
@@ -2870,7 +2870,7 @@ namespace IKVM.Tools.Importer
 
             if (!compilingCoreAssembly)
             {
-                FakeTypes.Load(JVM.CoreAssembly);
+                FakeTypes.Load(JVM.BaseAssembly);
             }
             return 0;
         }

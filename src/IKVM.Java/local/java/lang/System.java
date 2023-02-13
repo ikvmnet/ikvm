@@ -67,7 +67,6 @@ final class Props
         // after we've initialized the system properties, we need to fixate certain
         // results that depend on system properties, because we don't want Java code to
         // be able to change the behavior by setting these system properties.
-        ClassLoader.initializeLibraryPaths(props);
         sun.misc.VM.saveAndRemoveProperties(props);
         
         // now that we've initialized the system properties (which are our only

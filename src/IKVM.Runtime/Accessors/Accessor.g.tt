@@ -1,0 +1,53 @@
+﻿<#@ template language="C#" #>
+<#@ assembly name="System.Core" #>
+<#@ import namespace="System" #>
+<#@ import namespace="System.Linq" #>
+<#@ import namespace="System.Text" #>
+<#@ output extension=".cs" #>
+using System;
+
+namespace IKVM.Runtime.Accessors
+{
+
+    internal abstract partial class Accessor
+    {
+
+        protected MethodAccessor<Action<object>> GetVoidMethod(ref MethodAccessor<Action<object>> location, string name)
+        {
+            return MethodAccessor.LazyGetVoid(ref location, type, name);
+        }
+
+<#
+for (int i = 1; i <= 8; i++)
+{
+        var l = string.Join(", ", Enumerable.Range(1, i).Select(i => "TArg" + i));
+#>
+        protected MethodAccessor<Action<object, <#= l #>>> GetVoidMethod<<#= l #>>(ref MethodAccessor<Action<object, <#= l #>>> location, string name)
+        {
+            return MethodAccessor.LazyGetVoid(ref location, type, name);
+        }
+
+<#
+}
+#>
+        protected MethodAccessor<Func<object, TResult>> GetMethod<TResult>(ref MethodAccessor<Func<object, TResult>> location, string name)
+        {
+            return MethodAccessor.LazyGet(ref location, type, name);
+        }
+
+<#
+for (int i = 1; i <= 8; i++)
+{
+        var l = string.Join(", ", Enumerable.Range(1, i).Select(i => "TArg" + i));
+#>
+        protected MethodAccessor<Func<object, <#= l #>, TResult>> GetMethod<<#= l #>, TResult>(ref MethodAccessor<Func<object, <#= l #>, TResult>> location, string name)
+        {
+            return MethodAccessor.LazyGet(ref location, type, name);
+        }
+
+<#
+}
+#>
+    }
+
+}

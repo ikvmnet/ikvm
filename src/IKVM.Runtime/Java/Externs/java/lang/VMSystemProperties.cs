@@ -134,7 +134,7 @@ namespace IKVM.Java.Externs.java.lang
 
         public static string getBootClassPath()
         {
-            return VfsTable.Default.GetAssemblyClassesPath(JVM.CoreAssembly);
+            return VfsTable.Default.GetAssemblyClassesPath(JVM.BaseAssembly);
         }
 
         public static string getStdoutEncoding()

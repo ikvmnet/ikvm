@@ -1,0 +1,56 @@
+﻿<#@ template language="C#" #>
+<#@ assembly name="System.Core" #>
+<#@ import namespace="System" #>
+<#@ import namespace="System.Linq" #>
+<#@ import namespace="System.Text" #>
+<#@ output extension=".cs" #>
+using System;
+
+namespace IKVM.Runtime.Accessors
+{
+
+    /// <summary>
+    /// Defines a method accessor for a method.
+    /// </summary>
+    internal abstract partial class MethodAccessor
+    {
+
+        public static MethodAccessor<Action<object>> LazyGetVoid(ref MethodAccessor<Action<object>> location, Type type, string name)
+        {
+            return AccessorUtil.LazyGet(ref location, () => new MethodAccessor<Action<object>>(type, name));
+        }
+
+<#
+for (int i = 1; i <= 8; i++)
+{
+        var l = string.Join(", ", Enumerable.Range(1, i).Select(i => "TArg" + i));
+#>
+        public static MethodAccessor<Action<object, <#= l #>>> LazyGetVoid<<#= l #>>(ref MethodAccessor<Action<object, <#= l #>>> location, Type type, string name)
+        {
+            return AccessorUtil.LazyGet(ref location, () => new MethodAccessor<Action<object, <#= l #>>>(type, name));
+        }
+
+<#
+}
+#>
+        public static MethodAccessor<Func<object, TResult>> LazyGet<TResult>(ref MethodAccessor<Func<object, TResult>> location, Type type, string name)
+        {
+            return AccessorUtil.LazyGet(ref location, () => new MethodAccessor<Func<object, TResult>>(type, name));
+        }
+
+<#
+for (int i = 1; i <= 8; i++)
+{
+        var l = string.Join(", ", Enumerable.Range(1, i).Select(i => "TArg" + i));
+#>
+        public static MethodAccessor<Func<object, <#= l #>, TResult>> LazyGet<<#= l #>, TResult>(ref MethodAccessor<Func<object, <#= l #>, TResult>> location, Type type, string name)
+        {
+            return AccessorUtil.LazyGet(ref location, () => new MethodAccessor<Func<object, <#= l #>, TResult>>(type, name));
+        }
+
+<#
+}
+#>
+    }
+
+}

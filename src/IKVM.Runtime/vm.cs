@@ -33,6 +33,8 @@ using IKVM.Reflection;
 using Type = IKVM.Reflection.Type;
 #else
 using System.Reflection;
+
+using IKVM.Runtime.Accessors;
 #endif
 
 #if IMPORTER
@@ -62,12 +64,16 @@ namespace IKVM.Internal
         internal const string JarClassList = "--ikvm-classes--/";
 
 #if !EXPORTER
-        private static int emitSymbols;
+        static int emitSymbols;
 #if CLASSGC
         internal static bool classUnloading = true;
 #endif
 #endif
-        private static Assembly coreAssembly;
+
+        /// <summary>
+        /// Reference to the 'java.base' assembly.
+        /// </summary>
+        static Assembly baseAssembly;
 
 #if !EXPORTER
         internal static bool relaxedVerification = true;
@@ -77,10 +83,20 @@ namespace IKVM.Internal
 
 #if !IMPORTER && !EXPORTER && !FIRST_PASS
 
+        /// <summary>
+        /// Reference to the accessors of the types of the 'java.base' assembly.
+        /// </summary>
+        static Accessors baseAccessors;
+
         static JVM()
         {
 
         }
+
+        /// <summary>
+        /// Gets the set of accessors for accessing types of the core assembly.
+        /// </summary>
+        internal static Accessors BaseAccessors => Accessors.Get(ref baseAccessors, BaseAssembly);
 
 #endif
 
@@ -114,25 +130,25 @@ namespace IKVM.Internal
             }
         }
 
-        internal static Assembly CoreAssembly
+        internal static Assembly BaseAssembly
         {
             get
             {
 #if !IMPORTER && !EXPORTER
-                if (coreAssembly == null)
+                if (baseAssembly == null)
                 {
 #if FIRST_PASS
                     throw new InvalidOperationException("This version of IKVM.Runtime.dll was compiled with FIRST_PASS defined.");
 #else
-                    coreAssembly = typeof(java.lang.Object).Assembly;
+                    baseAssembly = typeof(java.lang.Object).Assembly;
 #endif
                 }
 #endif // !IMPORTER
-                return coreAssembly;
+                return baseAssembly;
             }
             set
             {
-                coreAssembly = value;
+                baseAssembly = value;
             }
         }
 

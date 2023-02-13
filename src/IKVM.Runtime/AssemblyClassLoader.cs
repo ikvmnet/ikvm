@@ -106,15 +106,15 @@ namespace IKVM.Internal
 
 #if IMPORTER
 
-            if (JVM.CoreAssembly == null && CompilerClassLoader.IsCoreAssembly(assembly))
+            if (JVM.BaseAssembly == null && CompilerClassLoader.IsCoreAssembly(assembly))
             {
-                JVM.CoreAssembly = assembly;
+                JVM.BaseAssembly = assembly;
                 ClassLoaderWrapper.LoadRemappedTypes();
             }
 
 #endif
 
-            if (assembly == JVM.CoreAssembly)
+            if (assembly == JVM.BaseAssembly)
             {
                 // This cast is necessary for ikvmc and a no-op for the runtime.
                 // Note that the cast cannot fail, because ikvmc will only return a non AssemblyClassLoader
@@ -1401,7 +1401,7 @@ namespace IKVM.Internal
         /// Initializes a new instance.
         /// </summary>
         internal BootstrapClassLoader() :
-            base(JVM.CoreAssembly, new string[] { typeof(object).Assembly.FullName, typeof(Uri).Assembly.FullName })
+            base(JVM.BaseAssembly, new string[] { typeof(object).Assembly.FullName, typeof(Uri).Assembly.FullName })
         {
 
         }

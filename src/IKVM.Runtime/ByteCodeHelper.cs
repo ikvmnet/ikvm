@@ -32,6 +32,7 @@ using IKVM.Attributes;
 using IKVM.ByteCode;
 using IKVM.Internal;
 using IKVM.Java.Externs.java.lang.invoke;
+using IKVM.Runtime.Accessors.Java.Lang;
 
 namespace IKVM.Runtime
 {
@@ -232,7 +233,9 @@ namespace IKVM.Runtime
                 global::java.lang.ClassLoader loader = callerId.getCallerClassLoader();
                 if (loader != null)
                 {
-                    loader.checkPackageAccess(wrapper.ClassObject, callerId.getCallerClass().pd);
+                    ClassLoaderAccessor cla = null;
+                    JVM.BaseAccessors.Get(ref cla);
+                    cla.InvokeCheckPackageAccess(loader, wrapper.ClassObject, callerId.getCallerClass().pd);
                 }
                 if (!wrapper.IsAccessibleFrom(context))
                 {

@@ -57,7 +57,7 @@ import java.util.Map;
 import java.util.NoSuchElementException;
 import java.util.Set;
 
-import sun.nio.ch.WindowsAsynchronousFileChannelImpl;
+import sun.nio.ch.DotNetAsynchronousFileChannelImpl;
 import sun.nio.ch.FileChannelImpl;
 import sun.nio.ch.ThreadPool;
 
@@ -214,7 +214,7 @@ final class NetFileSystemProvider extends AbstractFileSystemProvider
             pool = ThreadPool.wrap(executor, 0);
         }
 
-        return WindowsAsynchronousFileChannelImpl.open(open(npath.path, mode, rights, share, options), read, write, pool);
+        return DotNetAsynchronousFileChannelImpl.open(open(npath.path, mode, rights, share, options), read, write, pool);
     }
 
     public SeekableByteChannel newByteChannel(Path path, Set<? extends OpenOption> opts, FileAttribute<?>... attrs) throws IOException

@@ -6,9 +6,7 @@ using System.Net;
 using System.Net.Sockets;
 using System.Reflection;
 using System.Runtime.InteropServices;
-
-using IKVM.Runtime.Java.Externs.java.net;
-
+using IKVM.Runtime.Util.Java.Net;
 using static IKVM.Java.Externs.java.net.SocketImplUtil;
 
 namespace IKVM.Java.Externs.java.net

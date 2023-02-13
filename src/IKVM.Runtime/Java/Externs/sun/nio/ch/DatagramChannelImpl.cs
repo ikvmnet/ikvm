@@ -24,11 +24,22 @@
 
 using System;
 
+using IKVM.Internal;
+using IKVM.Runtime.Accessors.Sun.Nio.Ch;
+
 namespace IKVM.Java.Externs.sun.nio.ch
 {
 
     static class DatagramChannelImpl
     {
+
+#if FIRST_PASS == false
+
+        static DatagramChannelImplAccessor datagramChannelImplAccessor;
+
+        static DatagramChannelImplAccessor DatagramChannelImplAccessor => JVM.BaseAccessors.Get(ref datagramChannelImplAccessor);
+
+#endif
 
         public static void initIDs()
         {
@@ -117,7 +128,7 @@ namespace IKVM.Java.Externs.sun.nio.ch
             }
             while (remoteAddress != null && !addr.equals(remoteAddress));
 
-            impl.sender = addr;
+            DatagramChannelImplAccessor.SetSender(impl, addr);
             return length;
 #endif
         }

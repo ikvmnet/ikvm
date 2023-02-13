@@ -36,6 +36,66 @@ namespace IKVM.Java.Externs.java.lang
     static partial class ClassLoader
     {
 
+        /// <summary>
+        /// Finds the builtin native library, or returns <c>null</c> if the given name isn't built in.
+        /// </summary>
+        /// <param name="name"></param>
+        /// <returns></returns>
+        public static string findBuiltinLib(string name)
+        {
+            var l = GetUnmappedLibraryName(name);
+            return IsBuiltinLib(l) ? l : null;
+        }
+
+        /// <summary>
+        /// Returns <c>true</c> if the given short library name is a builtin library.
+        /// </summary>
+        /// <param name="name"></param>
+        /// <returns></returns>
+        static bool IsBuiltinLib(string name)
+        {
+            switch (name)
+            {
+                case "net":
+                case "unpack":
+                case "jaas_nt":
+                case "awt":
+                case "splashscreen":
+                case "jit":
+                case "sunec":
+                case "w2k_lsa_auth":
+                case "osxkrb5":
+                case "osx":
+                case "management":
+                    return true;
+                default:
+                    return false;
+            }
+        }
+
+        /// <summary>
+        /// Takes a mapped library name and returns the unmapped verison.
+        /// </summary>
+        /// <param name="name"></param>
+        /// <returns></returns>
+        static string GetUnmappedLibraryName(string name)
+        {
+            if (name == null)
+                return null;
+
+            if (RuntimeInformation.IsOSPlatform(OSPlatform.Windows))
+            {
+                return Path.GetFileNameWithoutExtension(name);
+            }
+            else
+            {
+                if (name.StartsWith("lib"))
+                    return Path.GetFileNameWithoutExtension(name).Substring(3);
+                else
+                    return Path.GetFileNameWithoutExtension(name);
+            }
+        }
+
         internal static class NativeLibrary
         {
 
@@ -88,66 +148,6 @@ namespace IKVM.Java.Externs.java.lang
                         JNINativeLoader.UnloadLibrary(handle, TypeWrapper.FromClass(global::java.lang.ClassLoader.NativeLibrary.getFromClass()).GetClassLoader());
                 }
 #endif
-            }
-
-            /// <summary>
-            /// Finds the builtin native library, or returns <c>null</c> if the given name isn't built in.
-            /// </summary>
-            /// <param name="name"></param>
-            /// <returns></returns>
-            public static string findBuiltinLib(string name)
-            {
-                var l = GetUnmappedLibraryName(name);
-                return IsBuiltinLib(l) ? l : null;
-            }
-
-            /// <summary>
-            /// Returns <c>true</c> if the given short library name is a builtin library.
-            /// </summary>
-            /// <param name="name"></param>
-            /// <returns></returns>
-            static bool IsBuiltinLib(string name)
-            {
-                switch (name)
-                {
-                    case "net":
-                    case "unpack":
-                    case "jaas_nt":
-                    case "awt":
-                    case "splashscreen":
-                    case "jit":
-                    case "sunec":
-                    case "w2k_lsa_auth":
-                    case "osxkrb5":
-                    case "osx":
-                    case "management":
-                        return true;
-                    default:
-                        return false;
-                }
-            }
-
-            /// <summary>
-            /// Takes a mapped library name and returns the unmapped verison.
-            /// </summary>
-            /// <param name="name"></param>
-            /// <returns></returns>
-            static string GetUnmappedLibraryName(string name)
-            {
-                if (name == null)
-                    return null;
-
-                if (RuntimeInformation.IsOSPlatform(OSPlatform.Windows))
-                {
-                    return Path.GetFileNameWithoutExtension(name);
-                }
-                else
-                {
-                    if (name.StartsWith("lib"))
-                        return Path.GetFileNameWithoutExtension(name).Substring(3);
-                    else
-                        return Path.GetFileNameWithoutExtension(name);
-                }
             }
 
         }

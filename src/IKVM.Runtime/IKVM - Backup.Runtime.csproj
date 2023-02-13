@@ -1,0 +1,303 @@
+﻿<Project>
+    <Import Sdk="Microsoft.NET.Sdk" Project="Sdk.props" />
+    <Import Project="$(MSBuildThisFileDirectory)..\..\openjdk.props" />
+    <Import Project="$(MSBuildThisFileDirectory)..\..\IKVM.deps.props" />
+
+    <PropertyGroup>
+        <TargetFrameworks>net461;netcoreapp3.1</TargetFrameworks>
+        <DefineConstants>$(DefineConstants);EMITTERS</DefineConstants>
+        <AllowUnsafeBlocks>true</AllowUnsafeBlocks>
+    </PropertyGroup>
+
+    <ItemGroup>
+        <None Include="Accessors\VoidMethodAccessor.tt">
+            <Generator>TextTemplatingFileGenerator</Generator>
+            <LastGenOutput>VoidMethodAccessor.cs</LastGenOutput>
+        </None>
+    </ItemGroup>
+
+    <ItemGroup>
+        <InternalsVisibleTo Include="IKVM.Java" />
+        <InternalsVisibleTo Include="IKVM.Tests" />
+    </ItemGroup>
+
+    <ItemGroup>
+        <ProjectReference Include="..\IKVM.ByteCode\IKVM.ByteCode.csproj" />
+        <ProjectReference Include="..\IKVM.Java\IKVM.Java.msbuildproj" />
+    </ItemGroup>
+
+    <Import Sdk="Microsoft.NET.Sdk" Project="Sdk.targets" />
+
+    <PropertyGroup>
+        <JNITrampolineSourceDirectory>$(MSBuildThisFileDirectory)JNI\Trampolines\</JNITrampolineSourceDirectory>
+        <JNITrampolineIntermediateDirectory>$(MSBuildThisFileDirectory)$(IntermediateOutputPath)jni-trampolines\</JNITrampolineIntermediateDirectory>
+        <JNIHeaderDirShare>$(OpenJdkDir)jdk\src\share\javavm\export</JNIHeaderDirShare>
+        <JNIHeaderDirWindows>$(OpenJdkDir)jdk\src\windows\javavm\export</JNIHeaderDirWindows>
+        <JNIHeaderDirSolaris>$(OpenJdkDir)jdk\src\solaris\javavm\export</JNIHeaderDirSolaris>
+        <CLangCommand>clang</CLangCommand>
+        <ObjDumpCommand>llvm-objdump</ObjDumpCommand>
+    </PropertyGroup>
+
+    <ItemGroup>
+        <JNITrampolineRuntimeIdentifier Include="win7-x64" TargetName="x86_64-pc-windows-msvc" Includes="$(JNIHeaderDirShare);$(JNIHeaderDirWindows);$(JNITrampolineSourceDirectory)include" Arguments="-O0" />
+        <JNITrampolineRuntimeIdentifier Include="win7-x86" TargetName="i686-pc-windows-msvc" Includes="$(JNIHeaderDirShare);$(JNIHeaderDirWindows);$(JNITrampolineSourceDirectory)include" Arguments="-Wno-ignored-attributes -O0" />
+        <JNITrampolineRuntimeIdentifier Include="win81-arm" TargetName="thumbv7-pc-windows-msvc" Includes="$(JNIHeaderDirShare);$(JNIHeaderDirWindows);$(JNITrampolineSourceDirectory)include" Arguments="-O0" />
+        <JNITrampolineRuntimeIdentifier Include="win10-arm64" TargetName="aarch64-pc-windows-msvc" Includes="$(JNIHeaderDirShare);$(JNIHeaderDirWindows);$(JNITrampolineSourceDirectory)include" Arguments="-O0" />
+        <JNITrampolineRuntimeIdentifier Include="linux-x64" TargetName="x86_64-unknown-linux-gnu" Includes="$(JNIHeaderDirShare);$(JNIHeaderDirSolaris);$(JNITrampolineSourceDirectory)include" Arguments="-O0" />
+        <JNITrampolineRuntimeIdentifier Include="linux-arm" TargetName="armv7-unknown-linux-gnueabihf" Includes="$(JNIHeaderDirShare);$(JNIHeaderDirSolaris);$(JNITrampolineSourceDirectory)include" Arguments="-O0" />
+        <JNITrampolineRuntimeIdentifier Include="linux-arm64" TargetName="aarch64-unknown-linux-gnueabihf" Includes="$(JNIHeaderDirShare);$(JNIHeaderDirSolaris);$(JNITrampolineSourceDirectory)include" Arguments="-O0" />
+        <JNITrampolineRuntimeIdentifier Include="osx-x64" TargetName="x86_64-apple-macosx" Includes="$(JNIHeaderDirShare);$(JNIHeaderDirSolaris);$(JNITrampolineSourceDirectory)include" Arguments="-O0" />
+    </ItemGroup>
+
+    <ItemGroup>
+        <Service Include="{508349b6-6b84-4df5-91f0-309beebad82d}" />
+    </ItemGroup>
+
+    <ItemGroup>
+        <Compile Update="Accessors\VoidMethodAccessor.cs">
+            <DesignTime>True</DesignTime>
+            <AutoGen>True</AutoGen>
+            <DependentUpon>VoidMethodAccessor.tt</DependentUpon>
+        </Compile>
+    </ItemGroup>
+
+    <Target Name="CompileJNITrampolines" Inputs="$(JNITrampolineSourceDirectory)ikvm.c;$(JNITrampolineSourceDirectory)ikvm.h" Outputs="$(JNITrampolineIntermediateDirectory)%(JNITrampolineRuntimeIdentifier.Identity).o;$(JNITrampolineIntermediateDirectory)%(JNITrampolineRuntimeIdentifier.Identity).ll" Condition=" '$(TargetFramework)' != '' ">
+        <ItemGroup>
+            <_JNITrampolinesIncludes Include="%(JNITrampolineRuntimeIdentifier.Includes)" />
+        </ItemGroup>
+
+        <MakeDir Directories="$(JNITrampolineIntermediateDirectory)" />
+        <Exec WorkingDirectory="$(JNITrampolineSourceDirectory)" Command="&quot;$(CLangCommand)&quot; -c &quot;ikvm.c&quot; -o &quot;$(JNITrampolineIntermediateDirectory)%(JNITrampolineRuntimeIdentifier.Identity).o&quot; --target=%(JNITrampolineRuntimeIdentifier.TargetName) @(_JNITrampolinesIncludes->'-I%(FullPath)', ' ') -g %(JNITrampolineRuntimeIdentifier.Arguments)" />
+        <Exec WorkingDirectory="$(JNITrampolineSourceDirectory)" Command="&quot;$(CLangCommand)&quot; -S &quot;ikvm.c&quot; -emit-llvm -o &quot;$(JNITrampolineIntermediateDirectory)%(JNITrampolineRuntimeIdentifier.Identity).ll&quot; --target=%(JNITrampolineRuntimeIdentifier.TargetName) @(_JNITrampolinesIncludes->'-I%(FullPath)', ' ') -g %(JNITrampolineRuntimeIdentifier.Arguments)" />
+        <ItemGroup>
+            <FileWrites Include="$(JNITrampolineIntermediateDirectory)%(JNITrampolineRuntimeIdentifier.Identity).o" />
+            <FileWrites Include="$(JNITrampolineIntermediateDirectory)%(JNITrampolineRuntimeIdentifier.Identity).ll" />
+        </ItemGroup>
+    </Target>
+
+    <Target Name="DisassembleJNITrampolines" DependsOnTargets="CompileJNITrampolines" Inputs="$(JNITrampolineIntermediateDirectory)%(JNITrampolineRuntimeIdentifier.Identity).o" Outputs="$(JNITrampolineIntermediateDirectory)%(JNITrampolineRuntimeIdentifier.Identity).s" Condition=" '$(TargetFramework)' != '' ">
+        <MakeDir Directories="$(JNITrampolineIntermediateDirectory)" />
+        <Exec Command="&quot;$(ObjDumpCommand)&quot; --demangle -d &quot;$(JNITrampolineIntermediateDirectory)%(JNITrampolineRuntimeIdentifier.Identity).o&quot; -M intel &gt; &quot;$(JNITrampolineIntermediateDirectory)%(JNITrampolineRuntimeIdentifier.Identity).s&quot;" />
+        <ItemGroup>
+            <FileWrites Include="$(JNITrampolineIntermediateDirectory)%(JNITrampolineRuntimeIdentifier.Identity).s" />
+        </ItemGroup>
+    </Target>
+
+    <UsingTask TaskName="GenerateJNITrampolinesFunctionTable" TaskFactory="RoslynCodeTaskFactory" AssemblyFile="$(MSBuildToolsPath)\Microsoft.Build.Tasks.Core.dll">
+        <Task>
+            <Code Type="Class" Language="CS">
+                <![CDATA[
+                using System;
+                using System.Linq;
+                using System.IO;
+                using System.Collections.Generic;
+                using System.Text.RegularExpressions;
+                
+                using Microsoft.Build.Framework;
+                using Microsoft.Build.Utilities;
+                
+                public class GenerateJNITrampolinesFunctionTable : Task
+                {
+                
+                    static readonly Regex SymbolLineRegex = new Regex(@"^([0-9a-fA-F]{8,16}).+\<(.+)\>\:\w*$", RegexOptions.IgnoreCase);
+                    static readonly Regex CodeLineRegex = new Regex(@"^([0-9a-fA-F ]{8})\: ([0-9a-fA-F ]+)\t.+$", RegexOptions.IgnoreCase);
+                    
+                    public string Namespace { get; set; }
+                    
+                    public string ClassName { get; set; }
+                
+                    public string AssemblerFile { get; set; }
+                
+                    public string BuildCodeFile { get; set; }
+
+
+                    public override bool Execute()
+                    {
+                        using var o = new StreamWriter(File.Create(BuildCodeFile));
+                        using var s = new StreamReader(File.OpenRead(AssemblerFile));
+
+                        o.Write("namespace ");
+                        o.Write(Namespace);
+                        o.Write(" {");
+                        o.WriteLine();
+                        o.Write("class ");
+                        o.Write(ClassName);
+                        o.Write(" : IKVM.Runtime.JNI.Trampolines.FunctionTable {");
+                        o.WriteLine();
+
+                        var currentName = (string)null;
+                        var currentIndx = (int)-1;
+                        var text = new List<byte>(16384);
+                        var syms = new Dictionary<string, int>();
+
+                        void InsertText(int pos, byte val)
+                        {
+                            // ensure capacity
+                            while (text.Count < pos)
+                                text.Add(0);
+                        
+                            text.Insert(pos, val);
+                        }
+
+                        do
+                        {
+                            var line = s.ReadLine();
+                            if (line == null)
+                                break;
+
+                            if (currentName == null)
+                            {
+                                var m = SymbolLineRegex.Match(line);
+                                if (m.Success == false)
+                                    continue;
+
+                                var z = m.Groups[1].Value.Trim().PadLeft(16, '0');
+                                var i = m.Groups[2].Value.TrimStart('_');
+                                currentName = DemangleName(i);
+                                currentIndx = (int)ParseInt64BigEndian(ParseHex(z));
+                                syms.Add(currentName, currentIndx);
+                                continue;
+                            }
+                            else
+                            {
+                                var m = CodeLineRegex.Match(line);
+                                if (m.Success == false)
+                                {
+                                    currentName = null;
+                                    continue;
+                                }
+
+                                var z = m.Groups[1].Value.Trim().PadLeft(16, '0');
+                                var i = string.Join("", m.Groups[2].Value.Split(' ').Select(j => j.Trim()).Where(j => j != "").ToArray());
+                                currentIndx = (int)ParseInt64BigEndian(ParseHex(z));
+
+                                var b = ParseHex(i);
+                                for (int p = 0; p < b.Length; p++)
+                                    InsertText(currentIndx + p, b[p]);
+                            }
+                        }
+                        while (true);
+
+                        WriteText(o, text);
+                        WriteSyms(o, syms);
+
+                        o.WriteLine("}");
+                        o.WriteLine("}");
+
+                        return true;
+                    }
+                    
+                    string DemangleName(string name)
+                    {
+                        if (name.StartsWith("\\1"))
+                            name = name.Substring(2);
+
+                        var at = name.IndexOf('@');
+                        if (at != -1)
+                            name = name.Substring(0, at);
+                        
+                        return name;
+                    }
+
+                    void WriteText(StreamWriter writer, List<byte> text)
+                    {
+                        writer.WriteLine("static readonly byte[] text = new byte[]");
+                        writer.WriteLine("{");
+                        
+                        for (int i = 0; i < text.Count; i++)
+                        {
+                            writer.Write("0x");
+                            writer.Write(text[i].ToString("X2"));
+                            writer.Write(", ");
+                            
+                            if ((i + 1) % 32 == 0)
+                                writer.WriteLine();
+                        }
+                        
+                        writer.WriteLine();
+                        writer.WriteLine("};");
+                        writer.WriteLine();
+
+                        writer.WriteLine("protected override byte[] Text => text;");
+                    }
+
+                    void WriteSyms(StreamWriter writer, Dictionary<string, int> syms)
+                    {
+                        foreach (var kvp in syms)
+                        {
+                            var name = kvp.Key;
+                            var offs = kvp.Value;
+
+                            if (name.StartsWith("$") || name.StartsWith("."))
+                                continue;
+
+                            writer.Write("static readonly int _idx_");
+                            writer.Write(name);
+                            writer.Write(" = 0x");
+                            writer.Write(offs.ToString("x2"));
+                            writer.WriteLine(";");
+
+                            writer.Write("protected override int idx_");
+                            writer.Write(name);
+                            writer.Write(" => _idx_");
+                            writer.Write(name);
+                            writer.WriteLine(";");
+                        }
+                    }
+
+                    static byte[] ParseHex(string hex)
+                    {
+                        static int GetHexVal(char hex) => hex - (hex < 58 ? 48 : (hex < 97 ? 55 : 87));
+
+                        var arr = new byte[hex.Length >> 1];
+                        for (int i = 0; i < hex.Length >> 1; ++i)
+                            arr[i] = (byte)((GetHexVal(hex[i << 1]) << 4) + GetHexVal(hex[(i << 1) + 1]));
+
+                        return arr;
+                    }
+
+                    static int ParseInt32BigEndian(byte[] bytes, int off = 0)
+                    {
+                        return ((bytes[off + 0] & 0xff) << 24) | ((bytes[off + 1] & 0xff) << 16) | ((bytes[off + 2] & 0xff) << 8) | (bytes[off + 3] & 0xff);
+                    }
+
+                    static long ParseInt64BigEndian(byte[] bytes, int off = 0)
+                    {
+                        var a = (long)ParseInt32BigEndian(bytes, off);
+                        var b = (long)ParseInt32BigEndian(bytes, off + 4);
+                        var i = (a << 32) | b;
+                        return i;
+                    }
+                
+                }
+                
+                ]]>
+            </Code>
+        </Task>
+    </UsingTask>
+
+    <Target Name="GenerateJNITrampolines" DependsOnTargets="DisassembleJNITrampolines" Inputs="$(JNITrampolineIntermediateDirectory)%(JNITrampolineRuntimeIdentifier.Identity).s" Outputs="$(JNITrampolineIntermediateDirectory)%(JNITrampolineRuntimeIdentifier.Identity).cs" Condition=" '$(TargetFramework)' != '' ">
+        <Message Text="$(JNITrampolineIntermediateDirectory)%(JNITrampolineRuntimeIdentifier.Identity).s -&gt; $(JNITrampolineIntermediateDirectory)%(JNITrampolineRuntimeIdentifier.Identity).cs" />
+        <MakeDir Directories="$(JNITrampolineIntermediateDirectory)" />
+        <GenerateJNITrampolinesFunctionTable Namespace="IKVM.Runtime.JNI.Trampolines" ClassName="$([System.String]::Copy('FunctionTable_%(JNITrampolineRuntimeIdentifier.Identity)').Replace('-', '_').Replace('.', '_'))" AssemblerFile="$(JNITrampolineIntermediateDirectory)%(JNITrampolineRuntimeIdentifier.Identity).s" BuildCodeFile="$(JNITrampolineIntermediateDirectory)%(JNITrampolineRuntimeIdentifier.Identity).g.cs" />
+        <ItemGroup>
+            <FileWrites Include="$(JNITrampolineIntermediateDirectory)%(JNITrampolineRuntimeIdentifier.Identity).g.cs" />
+            <Compile Include="$(JNITrampolineIntermediateDirectory)%(JNITrampolineRuntimeIdentifier.Identity).g.cs" />
+        </ItemGroup>
+    </Target>
+
+    <PropertyGroup>
+        <CompileDependsOn>
+            GenerateJNITrampolines;
+            $(CompileDependsOn);
+        </CompileDependsOn>
+    </PropertyGroup>
+
+    <PropertyGroup>
+        <GetCopyToOutputDirectoryItemsDependsOn>
+            GenerateJNITrampolines;
+            $(GetCopyToOutputDirectoryItemsDependsOn);
+        </GetCopyToOutputDirectoryItemsDependsOn>
+    </PropertyGroup>
+
+</Project>

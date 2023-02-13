@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2013, 2015, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -177,6 +177,11 @@ import sun.security.util.SecurityConstants;
  */
 public abstract class ClassLoader {
 
+    private static native void registerNatives();
+    static {
+        registerNatives();
+    }
+
     // If initialization succeed this is set to true and security checks will
     // succeed.  Otherwise the object is not initialized and the object is
     // useless.
@@ -286,14 +291,11 @@ public abstract class ClassLoader {
         }
         return null;
     }
-
+    
     // [IKVM] this normally private constructor is also used by ikvm.runtime.AssemblyClassLoader
     // to construct an assembly class loader without doing a security check
     @ikvm.lang.Internal
     protected ClassLoader(Void unused, ClassLoader parent) {
-        if (parent != null) {
-            parent.check();
-        }
         this.parent = parent;
         if (ParallelLoaders.isRegistered(this.getClass())) {
             parallelLockMap = new ConcurrentHashMap<>();
@@ -308,6 +310,7 @@ public abstract class ClassLoader {
             domains = new HashSet<>();
             assertionLock = this;
         }
+        
         initialized = true;
     }
 
@@ -423,6 +426,7 @@ public abstract class ClassLoader {
             // First, check if the class has already been loaded
             Class<?> c = findLoadedClass(name);
             if (c == null) {
+                long t0 = System.nanoTime();
                 try {
                     if (parent != null) {
                         c = parent.loadClass(name, false);
@@ -437,7 +441,13 @@ public abstract class ClassLoader {
                 if (c == null) {
                     // If still not found, then invoke findClass in order
                     // to find the class.
+                    long t1 = System.nanoTime();
                     c = findClass(name);
+
+                    // this is the defining class loader; record the stats
+                    sun.misc.PerfCounter.getParentDelegationTime().addTime(t1 - t0);
+                    sun.misc.PerfCounter.getFindClassTime().addElapsedTimeFrom(t1);
+                    sun.misc.PerfCounter.getFindClasses().increment();
                 }
             }
             if (resolve) {
@@ -480,7 +490,7 @@ public abstract class ClassLoader {
     }
 
     // This method is invoked by the virtual machine to load a class.
-    final Class<?> loadClassInternal(String name)
+    private Class<?> loadClassInternal(String name)
         throws ClassNotFoundException
     {
         // For backward compatibility, explicitly lock on 'this' when
@@ -495,7 +505,7 @@ public abstract class ClassLoader {
     }
 
     // Invoked by the VM after loading class with this loader.
-    final void checkPackageAccess(Class<?> cls, ProtectionDomain pd) {
+    private void checkPackageAccess(Class<?> cls, ProtectionDomain pd) {
         final SecurityManager sm = System.getSecurityManager();
         if (sm != null) {
             if (ReflectUtil.isNonPublicProxyClass(cls)) {
@@ -766,7 +776,6 @@ public abstract class ClassLoader {
                                          ProtectionDomain protectionDomain)
         throws ClassFormatError
     {
-        check();
         protectionDomain = preDefineClass(name, protectionDomain);
         String source = defineClassSourceLocation(protectionDomain);
         Class<?> c = defineClass1(name, b, off, len, protectionDomain, source);
@@ -840,8 +849,6 @@ public abstract class ClassLoader {
                                          ProtectionDomain protectionDomain)
         throws ClassFormatError
     {
-        check();
-
         int len = b.remaining();
 
         // Use byte[] if not a direct ByteBufer:
@@ -876,7 +883,7 @@ public abstract class ClassLoader {
                                          String source);
 
     // true if the name is null or has the potential to be a valid binary name
-    static boolean checkName(String name) {
+    private boolean checkName(String name) {
         if ((name == null) || (name.length() == 0))
             return true;
         if ((name.indexOf('/') != -1)
@@ -972,7 +979,6 @@ public abstract class ClassLoader {
      * @see  #defineClass(String, byte[], int, int)
      */
     protected final void resolveClass(Class<?> c) {
-        check();
         resolveClass0(c);
     }
 
@@ -1003,7 +1009,6 @@ public abstract class ClassLoader {
     protected final Class<?> findSystemClass(String name)
         throws ClassNotFoundException
     {
-        check();
         ClassLoader system = getSystemClassLoader();
         if (system == null) {
             if (!checkName(name))
@@ -1023,7 +1028,6 @@ public abstract class ClassLoader {
      */
     private Class<?> findBootstrapClassOrNull(String name)
     {
-        check();
         if (!checkName(name)) return null;
 
         return findBootstrapClass(name);
@@ -1031,13 +1035,6 @@ public abstract class ClassLoader {
 
     // return null if not found
     private native Class<?> findBootstrapClass(String name);
-
-    // Check to make sure the class loader has been initialized.
-    private void check() {
-        if (!initialized) {
-            throw new SecurityException("ClassLoader object not initialized");
-        }
-    }
 
     /**
      * Returns the class with the given <a href="#name">binary name</a> if this
@@ -1054,7 +1051,6 @@ public abstract class ClassLoader {
      * @since  1.1
      */
     protected final Class<?> findLoadedClass(String name) {
-        check();
         if (!checkName(name))
             return null;
         return findLoadedClass0(name);
@@ -1075,7 +1071,6 @@ public abstract class ClassLoader {
      * @since  1.1
      */
     protected final void setSigners(Class<?> c, Object[] signers) {
-        check();
         c.setSigners(signers);
     }
 
@@ -1460,7 +1455,8 @@ public abstract class ClassLoader {
                 Throwable oops = null;
                 scl = l.getClassLoader();
                 try {
-                    scl = AccessController.doPrivileged(new SystemClassLoaderAction(scl));
+                    scl = AccessController.doPrivileged(
+                        new SystemClassLoaderAction(scl));
                 } catch (PrivilegedActionException pae) {
                     oops = pae.getCause();
                     if (oops instanceof InvocationTargetException) {
@@ -1733,7 +1729,6 @@ public abstract class ClassLoader {
 
         native long find(String name);
         native void unload(String name, boolean isBuiltin);
-        static native String findBuiltinLib(String name);
 
         public NativeLibrary(Class<?> fromClass, String name, boolean isBuiltin) {
             this.name = name;
@@ -1786,7 +1781,8 @@ public abstract class ClassLoader {
     private static String usr_paths[];
     private static String sys_paths[];
 
-    private static String[] initializePath(String ldpath) {
+    private static String[] initializePath(String propname) {
+        String ldpath = System.getProperty(propname, "");
         String ps = File.pathSeparator;
         int ldlen = ldpath.length();
         int i, j, n;
@@ -1816,15 +1812,6 @@ public abstract class ClassLoader {
         paths[n] = ldpath.substring(i, ldlen);
         return paths;
     }
-    
-    private static String java_library_path;
-    private static String sun_boot_library_path;
-    
-    static void initializeLibraryPaths(java.util.Properties props)
-    {
-        java_library_path = props.getProperty("java.library.path", "");
-        sun_boot_library_path = props.getProperty("sun.boot.library.path", "");
-    }
 
     // Invoked in the java.lang.Runtime class to implement load and loadLibrary.
     static void loadLibrary(Class<?> fromClass, String name,
@@ -1832,8 +1819,8 @@ public abstract class ClassLoader {
         ClassLoader loader =
             (fromClass == null) ? null : fromClass.getClassLoader();
         if (sys_paths == null) {
-            usr_paths = initializePath(java_library_path);
-            sys_paths = initializePath(sun_boot_library_path);
+            usr_paths = initializePath("java.library.path");
+            sys_paths = initializePath("sun.boot.library.path");
         }
         if (isAbsolute) {
             if (loadLibrary0(fromClass, new File(name))) {
@@ -1882,9 +1869,11 @@ public abstract class ClassLoader {
         throw new UnsatisfiedLinkError("no " + name + " in java.library.path");
     }
 
+    private static native String findBuiltinLib(String name);
+
     private static boolean loadLibrary0(Class<?> fromClass, final File file) {
         // Check to see if we're attempting to access a static library
-        String name = NativeLibrary.findBuiltinLib(file.getName());
+        String name = findBuiltinLib(file.getName());
         boolean isBuiltin = (name != null);
         if (!isBuiltin) {
             boolean exists = AccessController.doPrivileged(
@@ -2202,16 +2191,19 @@ public abstract class ClassLoader {
 
     // Retrieves the assertion directives from the VM.
     private static native AssertionStatusDirectives retrieveDirectives();
-
+    
     // [IKVM] equivalent of HotSpot's java_lang_ClassLoader::is_trusted_loader()
     static boolean isTrustedLoader(ClassLoader loader) {
         ClassLoader cl = scl;
         while (cl != null) {
-            if (cl == loader) return true;
-            cl = cl.parent;
+            if (cl == loader)
+                return true;
+            else
+                cl = cl.parent;
         }
         return false;
     }
+
 }
 
 

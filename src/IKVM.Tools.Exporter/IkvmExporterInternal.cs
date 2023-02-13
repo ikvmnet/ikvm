@@ -137,7 +137,7 @@ namespace IKVM.Tools.Exporter
 
                     var coreAssemblyPath = references.FirstOrDefault(i => Path.GetFileNameWithoutExtension(i) == "IKVM.Java");
                     if (coreAssemblyPath != null)
-                        JVM.CoreAssembly = StaticCompiler.LoadFile(coreAssemblyPath);
+                        JVM.BaseAssembly = StaticCompiler.LoadFile(coreAssemblyPath);
 
                     if (StaticCompiler.runtimeAssembly == null || StaticCompiler.runtimeAssembly.__IsMissing)
                     {
@@ -145,7 +145,7 @@ namespace IKVM.Tools.Exporter
                         return 1;
                     }
 
-                    if (JVM.CoreAssembly == null || StaticCompiler.runtimeAssembly.__IsMissing)
+                    if (JVM.BaseAssembly == null || StaticCompiler.runtimeAssembly.__IsMissing)
                     {
                         Console.Error.WriteLine("Error: IKVM.Java not found.");
                         return 1;

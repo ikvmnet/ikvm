@@ -10,6 +10,36 @@
     </PropertyGroup>
 
     <ItemGroup>
+        <None Update="Accessors\Accessor.g.tt">
+          <LastGenOutput>Accessor.g.cs</LastGenOutput>
+          <Generator>TextTemplatingFileGenerator</Generator>
+        </None>
+        <None Update="Accessors\MethodAccessor.g.tt">
+          <LastGenOutput>MethodAccessor.g.cs</LastGenOutput>
+          <Generator>TextTemplatingFileGenerator</Generator>
+        </None>
+        <None Update="Accessors\StaticMethodAccessor.g.tt">
+            <LastGenOutput>StaticMethodAccessor.g.cs</LastGenOutput>
+            <Generator>TextTemplatingFileGenerator</Generator>
+        </None>
+        <Compile Update="Accessors\Accessor.g.cs">
+          <DependentUpon>Accessor.g.tt</DependentUpon>
+          <DesignTime>True</DesignTime>
+          <AutoGen>True</AutoGen>
+        </Compile>
+        <Compile Update="Accessors\MethodAccessor.g.cs">
+          <DependentUpon>MethodAccessor.g.tt</DependentUpon>
+          <DesignTime>True</DesignTime>
+          <AutoGen>True</AutoGen>
+        </Compile>
+        <Compile Update="Accessors\StaticMethodAccessor.g.cs">
+            <DependentUpon>StaticMethodAccessor.g.tt</DependentUpon>
+            <DesignTime>True</DesignTime>
+            <AutoGen>True</AutoGen>
+        </Compile>
+    </ItemGroup>
+
+    <ItemGroup>
         <InternalsVisibleTo Include="IKVM.Java" />
         <InternalsVisibleTo Include="IKVM.Tests" />
     </ItemGroup>
@@ -40,6 +70,10 @@
         <JNITrampolineRuntimeIdentifier Include="linux-arm" TargetName="armv7-unknown-linux-gnueabihf" Includes="$(JNIHeaderDirShare);$(JNIHeaderDirSolaris);$(JNITrampolineSourceDirectory)include" Arguments="-O0" />
         <JNITrampolineRuntimeIdentifier Include="linux-arm64" TargetName="aarch64-unknown-linux-gnueabihf" Includes="$(JNIHeaderDirShare);$(JNIHeaderDirSolaris);$(JNITrampolineSourceDirectory)include" Arguments="-O0" />
         <JNITrampolineRuntimeIdentifier Include="osx-x64" TargetName="x86_64-apple-macosx" Includes="$(JNIHeaderDirShare);$(JNIHeaderDirSolaris);$(JNITrampolineSourceDirectory)include" Arguments="-O0" />
+    </ItemGroup>
+
+    <ItemGroup>
+        <Service Include="{508349b6-6b84-4df5-91f0-309beebad82d}" />
     </ItemGroup>
 
     <Target Name="CompileJNITrampolines" Inputs="$(JNITrampolineSourceDirectory)ikvm.c;$(JNITrampolineSourceDirectory)ikvm.h" Outputs="$(JNITrampolineIntermediateDirectory)%(JNITrampolineRuntimeIdentifier.Identity).o;$(JNITrampolineIntermediateDirectory)%(JNITrampolineRuntimeIdentifier.Identity).ll" Condition=" '$(TargetFramework)' != '' ">

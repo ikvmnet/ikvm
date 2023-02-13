@@ -1,0 +1,56 @@
+﻿<#@ template language="C#" #>
+<#@ assembly name="System.Core" #>
+<#@ import namespace="System" #>
+<#@ import namespace="System.Linq" #>
+<#@ import namespace="System.Text" #>
+<#@ output extension=".cs" #>
+using System;
+
+namespace IKVM.Runtime.Accessors
+{
+
+    /// <summary>
+    /// Defines a method accessor for a static method.
+    /// </summary>
+    internal abstract partial class StaticMethodAccessor
+    {
+
+        public static StaticMethodAccessor<Action> LazyGetVoid(ref StaticMethodAccessor<Action> location, Type type, string name)
+        {
+            return AccessorUtil.LazyGet(ref location, () => new StaticMethodAccessor<Action>(type, name));
+        }
+
+<#
+for (int i = 1; i <= 8; i++)
+{
+        var l = string.Join(", ", Enumerable.Range(1, i).Select(i => "TArg" + i));
+#>
+        public static StaticMethodAccessor<Action<<#= l #>>> LazyGetVoid<<#= l #>>(ref StaticMethodAccessor<Action<<#= l #>>> location, Type type, string name)
+        {
+            return AccessorUtil.LazyGet(ref location, () => new StaticMethodAccessor<Action<<#= l #>>>(type, name));
+        }
+
+<#
+}
+#>
+        public static StaticMethodAccessor<Func<TResult>> LazyGet<TResult>(ref StaticMethodAccessor<Func<TResult>> location, Type type, string name)
+        {
+            return AccessorUtil.LazyGet(ref location, () => new StaticMethodAccessor<Func<TResult>>(type, name));
+        }
+
+<#
+for (int i = 1; i <= 8; i++)
+{
+        var l = string.Join(", ", Enumerable.Range(1, i).Select(i => "TArg" + i));
+#>
+        public static StaticMethodAccessor<Func<<#= l #>, TResult>> LazyGet<<#= l #>, TResult>(ref StaticMethodAccessor<Func<<#= l #>, TResult>> location, Type type, string name)
+        {
+            return AccessorUtil.LazyGet(ref location, () => new StaticMethodAccessor<Func<<#= l #>, TResult>>(type, name));
+        }
+
+<#
+}
+#>
+    }
+
+}

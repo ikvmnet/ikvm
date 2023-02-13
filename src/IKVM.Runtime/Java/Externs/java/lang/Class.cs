@@ -25,12 +25,21 @@ using System;
 using System.Collections.Generic;
 
 using IKVM.Internal;
+using IKVM.Runtime.Accessors.Java.Lang;
 
 namespace IKVM.Java.Externs.java.lang
 {
 
     static class Class
     {
+
+#if FIRST_PASS == false
+
+        static ClassLoaderAccessor classLoaderAccessor;
+
+        static ClassLoaderAccessor ClassLoaderAccessor => JVM.BaseAccessors.Get(ref classLoaderAccessor);
+
+#endif
 
         public static global::java.lang.Class forName0(string name, bool initialize, global::java.lang.ClassLoader loader, global::java.lang.Class caller)
         {
@@ -80,7 +89,7 @@ namespace IKVM.Java.Externs.java.lang
             }
 
             if (loader != null && caller != null && getProtectionDomain0(caller) is global::java.security.ProtectionDomain pd)
-                loader.checkPackageAccess(tw.ClassObject, pd);
+                ClassLoaderAccessor.InvokeCheckPackageAccess(loader, tw.ClassObject, pd);
 
             if (initialize && tw.IsArray == false)
             {
