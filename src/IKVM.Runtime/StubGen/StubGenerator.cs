@@ -188,7 +188,7 @@ namespace IKVM.StubGen
                         CustomAttributeData attr = GetAnnotationDefault(mb);
                         if (attr != null)
                         {
-                            //m.AddAttribute(new AnnotationDefaultClassFileAttribute(writer, GetAnnotationDefault(writer, attr.ConstructorArguments[0])));
+                            //m.Attributes.AddAnnotationDefaultClassFileAttribute(GetAnnotationDefault(writer, attr.ConstructorArguments[0]));
                         }
                         if (includeParameterNames)
                         {
@@ -230,7 +230,13 @@ namespace IKVM.StubGen
                                 constant = EnumHelper.GetPrimitiveValue(EnumHelper.GetUnderlyingType(fw.GetField().FieldType), constant);
                             }
                         }
-                        var f = writer.AddField((AccessFlag)fw.Modifiers, fw.Name, fw.Signature.Replace('.', '/'), constant);
+                        var f = writer.AddField((AccessFlag)fw.Modifiers, fw.Name, fw.Signature.Replace('.', '/'));
+
+                        if (constant is not null)
+                        {
+                            f.Attributes.AddConstantValueAttribute(constant);
+                        }
+
                         string sig = tw.GetGenericFieldSignature(fw);
                         if (sig != null)
                         {
@@ -250,7 +256,8 @@ namespace IKVM.StubGen
             {
                 // class is serializable but doesn't have an explicit serialVersionUID, so we add the field to record
                 // the serialVersionUID as we see it (mainly to make the Japi reports more realistic)
-                writer.AddField(AccessFlag.ACC_PRIVATE | AccessFlag.ACC_STATIC | AccessFlag.ACC_FINAL, "serialVersionUID", "J", SerialVersionUID.Compute(tw));
+                var f = writer.AddField(AccessFlag.ACC_PRIVATE | AccessFlag.ACC_STATIC | AccessFlag.ACC_FINAL, "serialVersionUID", "J");
+                f.Attributes.AddConstantValueAttribute(SerialVersionUID.Compute(tw));
             }
             AddMetaAnnotations(writer, tw);
             writer.Write(stream);

@@ -9,6 +9,8 @@ namespace IKVM.ByteCode.Writing
 
         private AttributeInfoBuilder<CodeAttributeRecord> codeAttribute;
 
+        private AttributeInfoBuilder<ConstantValueAttributeRecord> constantValueAttribute;
+
         private AttributeInfoBuilder<DeprecatedAttributeRecord> deprecatedAttribute;
 
         private AttributeInfoBuilder<ExceptionsAttributeRecord> exceptionsAttribute;
@@ -26,9 +28,9 @@ namespace IKVM.ByteCode.Writing
         {
         }
 
-        public AnnotationDefaultAttributeBuilder AddAnnotationDefaultClassFileAttribute(byte[] data)
+        public AnnotationDefaultAttributeBuilder AddAnnotationDefaultClassFileAttribute(ElementValueValueBuilder value)
         {
-            var attribute = new AnnotationDefaultAttributeBuilder(DeclaringClass);
+            var attribute = new AnnotationDefaultAttributeBuilder(value, DeclaringClass);
 
             annotationDefaultAttribute = new AttributeInfoBuilder<AnnotationDefaultAttributeRecord>(attribute, DeclaringClass);
 
@@ -40,6 +42,15 @@ namespace IKVM.ByteCode.Writing
             var attribute = new CodeAttributeBuilder(maxStack, maxLocals, code, DeclaringClass);
 
             codeAttribute = new AttributeInfoBuilder<CodeAttributeRecord>(attribute, DeclaringClass);
+
+            return attribute;
+        }
+
+        public ConstantValueAttributeBuilder AddConstantValueAttribute(object value)
+        {
+            var attribute = new ConstantValueAttributeBuilder(value, DeclaringClass);
+
+            constantValueAttribute = new AttributeInfoBuilder<ConstantValueAttributeRecord>(attribute, DeclaringClass);
 
             return attribute;
         }
@@ -110,6 +121,11 @@ namespace IKVM.ByteCode.Writing
             if (codeAttribute is not null)
             {
                 attributes.Add(codeAttribute.Build());
+            }
+
+            if (constantValueAttribute is not null)
+            {
+                attributes.Add(constantValueAttribute.Build());
             }
 
             if (deprecatedAttribute is not null)

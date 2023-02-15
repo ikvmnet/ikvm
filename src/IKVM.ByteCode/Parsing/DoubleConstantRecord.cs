@@ -32,17 +32,23 @@ namespace IKVM.ByteCode.Parsing
             return true;
         }
 
-        protected override int GetConstantSize()
-        {
-            var size = 0;
-            size += sizeof(uint);
-            size += sizeof(uint);
-            return size;
-        }
+        protected override int GetConstantSize() =>
+            sizeof(uint) + sizeof(uint);
 
         protected override bool TryWriteConstant(ref ClassFormatWriter writer)
         {
-            throw new NotImplementedException();
+#if NETFRAMEWORK || NETCOREAPP3_1
+            var v = RawBitConverter.DoubleToUInt64Bits(Value);
+#else
+            var v = BitConverter.DoubleToUInt64Bits(Value);
+#endif
+
+            if (writer.TryWriteU4((uint)(v >> 32)) == false)
+                return false;
+            if (writer.TryWriteU4((uint)v) == false)
+                return false;
+
+            return true;
         }
     }
 

@@ -33,7 +33,16 @@ namespace IKVM.ByteCode.Parsing
 
         protected override bool TryWriteConstant(ref ClassFormatWriter writer)
         {
-            throw new NotImplementedException();
+#if NETFRAMEWORK || NETCOREAPP3_1
+            var v = RawBitConverter.SingleToUInt32Bits(Value);
+#else
+            var v = BitConverter.SingleToUInt32Bits(Value);
+#endif
+
+            if (writer.TryWriteU4(v) == false)
+                return false;
+
+            return true;
         }
     }
 }

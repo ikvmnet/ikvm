@@ -4,27 +4,7 @@ namespace IKVM.ByteCode.Writing
 {
     internal class ConstantValueAttributeBuilder : AttributeBuilder<ConstantValueAttributeRecord>
     {
-        public ConstantValueAttributeBuilder(int value, ClassBuilder declaringClass)
-            : this(declaringClass.AddConstant(value), declaringClass)
-        {
-        }
-
-        public ConstantValueAttributeBuilder(long value, ClassBuilder declaringClass)
-            : this(declaringClass.AddConstant(value), declaringClass)
-        {
-        }
-
-        public ConstantValueAttributeBuilder(float value, ClassBuilder declaringClass)
-            : this(declaringClass.AddConstant(value), declaringClass)
-        {
-        }
-
-        public ConstantValueAttributeBuilder(double value, ClassBuilder declaringClass)
-            : this(declaringClass.AddConstant(value), declaringClass)
-        {
-        }
-
-        public ConstantValueAttributeBuilder(string value, ClassBuilder declaringClass)
+        public ConstantValueAttributeBuilder(object value, ClassBuilder declaringClass)
             : this(declaringClass.AddConstant(value), declaringClass)
         {
         }

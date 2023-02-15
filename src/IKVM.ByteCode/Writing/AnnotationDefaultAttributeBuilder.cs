@@ -5,13 +5,19 @@ namespace IKVM.ByteCode.Writing
 {
     internal class AnnotationDefaultAttributeBuilder : AttributeBuilder<AnnotationDefaultAttributeRecord>
     {
-        public AnnotationDefaultAttributeBuilder(ClassBuilder declaringClass)
+        private readonly ElementValueValueBuilder _value;
+
+        public AnnotationDefaultAttributeBuilder(ElementValueValueBuilder value, ClassBuilder declaringClass)
             : base(declaringClass)
         {
+            _value = value;
         }
 
         public override string Name => AnnotationDefaultAttributeRecord.Name;
 
-        public override AnnotationDefaultAttributeRecord Build() => throw new NotImplementedException();
+        public override AnnotationDefaultAttributeRecord Build() => new
+            (
+                DefaultValue: _value.Build()
+            );
     }
 }

@@ -84,6 +84,21 @@ namespace IKVM.ByteCode.Writing
             return AddConstant(new StringConstantRecord(AddUtf8(s)));
         }
 
+        public ushort AddConstant(object value) =>
+            value switch
+            {
+                byte v => AddConstant((sbyte)v),
+                bool v => AddConstant(v ? 1 : 0),
+                short v => AddConstant(v),
+                char v => AddConstant(v),
+                int v => AddConstant(v),
+                long v => AddConstant(v),
+                float v => AddConstant(v),
+                double v => AddConstant(v),
+                string v => AddConstant(v),
+                _ => throw new ByteCodeException("Invalid constant type")
+            };
+
         public MethodBuilder AddMethod(AccessFlag accessFlags, string name, string signature)
         {
             var method = new MethodBuilder(accessFlags, name, signature, this);
@@ -118,52 +133,11 @@ namespace IKVM.ByteCode.Writing
             interfaces.Add(new InterfaceBuilder(name, this));
         }
 
-        public FieldBuilder AddField(AccessFlag accessFlag, string name, string descriptor, object constantValue)
+        public FieldBuilder AddField(AccessFlag accessFlag, string name, string descriptor)
         {
             //var field = new FieldWriter(accessFlag, AddUtf8(name), AddUtf8(signature));
             //if (constantValue != null)
             //{
-            //    ushort constantValueIndex;
-            //    if (constantValue is byte)
-            //    {
-            //        constantValueIndex = AddInt((sbyte)(byte)constantValue);
-            //    }
-            //    else if (constantValue is bool)
-            //    {
-            //        constantValueIndex = AddInt((bool)constantValue ? 1 : 0);
-            //    }
-            //    else if (constantValue is short)
-            //    {
-            //        constantValueIndex = AddInt((short)constantValue);
-            //    }
-            //    else if (constantValue is char)
-            //    {
-            //        constantValueIndex = AddInt((char)constantValue);
-            //    }
-            //    else if (constantValue is int)
-            //    {
-            //        constantValueIndex = AddInt((int)constantValue);
-            //    }
-            //    else if (constantValue is long)
-            //    {
-            //        constantValueIndex = AddLong((long)constantValue);
-            //    }
-            //    else if (constantValue is float)
-            //    {
-            //        constantValueIndex = AddFloat((float)constantValue);
-            //    }
-            //    else if (constantValue is double)
-            //    {
-            //        constantValueIndex = AddDouble((double)constantValue);
-            //    }
-            //    else if (constantValue is string)
-            //    {
-            //        constantValueIndex = AddString((string)constantValue);
-            //    }
-            //    else
-            //    {
-            //        throw new InvalidOperationException(constantValue.GetType().FullName);
-            //    }
             //    //field.AddAttribute(new ConstantValueAttribute(AddUtf8("ConstantValue"), constantValueIndex));
             //}
             //fields.Add(field);

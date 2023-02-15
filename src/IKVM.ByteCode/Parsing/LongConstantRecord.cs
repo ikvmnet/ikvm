@@ -1,9 +1,7 @@
 ﻿namespace IKVM.ByteCode.Parsing
 {
-
     internal sealed record LongConstantRecord(long Value) : ConstantRecord
     {
-
         /// <summary>
         /// Parses a Long constant in the constant pool.
         /// </summary>
@@ -24,18 +22,17 @@
             return true;
         }
 
-        protected override int GetConstantSize()
-        {
-            var size = 0;
-            size += sizeof(uint);
-            size += sizeof(uint);
-            return size;
-        }
+        protected override int GetConstantSize() =>
+            sizeof(uint) + sizeof(uint);
 
         protected override bool TryWriteConstant(ref ClassFormatWriter writer)
         {
-            throw new System.NotImplementedException();
+            if (writer.TryWriteU4((uint)(Value >> 32)) == false)
+                return false;
+            if (writer.TryWriteU4((uint)Value) == false)
+                return false;
+
+            return true;
         }
     }
-
 }
