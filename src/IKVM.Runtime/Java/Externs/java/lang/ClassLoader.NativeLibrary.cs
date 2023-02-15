@@ -57,6 +57,7 @@ namespace IKVM.Java.Externs.java.lang
             switch (name)
             {
                 case "net":
+                case "nio":
                 case "unpack":
                 case "jaas_nt":
                 case "awt":

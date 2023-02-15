@@ -54,7 +54,7 @@ namespace IKVM.Java.Externs.sun.nio.ch
             try
             {
                 fd.getSocket().Connect(new System.Net.IPEndPoint(System.Net.IPAddress.Any, 0));
-                Net.setConnectionReset(fd.getSocket(), false);
+                Net.SetConnectionReset(fd.getSocket(), false);
             }
             catch (System.Net.Sockets.SocketException e)
             {

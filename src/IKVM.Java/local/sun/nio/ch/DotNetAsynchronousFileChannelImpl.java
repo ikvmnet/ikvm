@@ -49,7 +49,6 @@ public class DotNetAsynchronousFileChannelImpl extends AsynchronousFileChannelIm
 
     protected final DotNetAsynchronousChannelGroup group;
     protected final boolean isDefaultGroup;
-    protected static final FileDispatcher nd = new FileDispatcherImpl();
 
     private DotNetAsynchronousFileChannelImpl(FileDescriptor fdObj, boolean reading, boolean writing, DotNetAsynchronousChannelGroup group, boolean isDefaultGroup) throws IOException {
         super(fdObj, reading, writing, group.executor());
@@ -69,40 +68,17 @@ public class DotNetAsynchronousFileChannelImpl extends AsynchronousFileChannelIm
 
     @Override
     public long size() throws IOException {
-        try {
-            begin();
-            return nd.size(fdObj);
-        } finally {
-            end();
-        }
+        return size0();
     }
 
     @Override
     public AsynchronousFileChannel truncate(long size) throws IOException {
-        if (size < 0)
-            throw new IllegalArgumentException("Negative size");
-        if (writing == false)
-            throw new NonWritableChannelException();
-
-        try {
-            begin();
-            if (size <= nd.size(fdObj))
-                nd.truncate(fdObj, size);
-        } finally {
-            end();
-        }
-
-        return this;
+        return truncate0(size);
     }
 
     @Override
     public void force(boolean metaData) throws IOException {
-        try {
-            begin();
-            nd.force(fdObj, metaData);
-        } finally {
-            end();
-        }
+        force0(metaData);
     }
 
     @Override
@@ -131,6 +107,12 @@ public class DotNetAsynchronousFileChannelImpl extends AsynchronousFileChannelIm
     }
 
     private native void close0();
+
+    private native long size0();
+
+    private native AsynchronousFileChannel truncate0(long size);
+
+    private native void force0(boolean metaData);
 
     private native <A> Future<FileLock> implLock0(final long position, final long size, final boolean shared, A attachment, final CompletionHandler<FileLock, ? super A> handler);
             

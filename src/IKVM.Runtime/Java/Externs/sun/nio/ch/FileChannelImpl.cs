@@ -10,6 +10,8 @@ using Microsoft.Win32.SafeHandles;
 
 using Mono.Unix.Native;
 
+using sun.nio.ch;
+
 namespace IKVM.Java.Externs.sun.nio.ch
 {
 
@@ -27,18 +29,17 @@ namespace IKVM.Java.Externs.sun.nio.ch
 
         static FileChannelImplAccessor fileChannelImplAccessor;
 
-        static FileChannelImplAccessor FileChannelImplAccessor => JVM.BaseAccessors.Get<FileChannelImplAccessor>(ref fileChannelImplAccessor);
+        static FileChannelImplAccessor FileChannelImplAccessor => JVM.BaseAccessors.Get(ref fileChannelImplAccessor);
 
 #endif
 
-        [DllImport("kernel32", SetLastError = true)]
-        static extern SafeFileHandle CreateFileMapping(SafeFileHandle hFile, IntPtr lpAttributes, int flProtect, int dwMaximumSizeHigh, int dwMaximumSizeLow, string lpName);
-
-        [DllImport("kernel32", SetLastError = true)]
-        static extern IntPtr MapViewOfFile(SafeFileHandle hFileMapping, int dwDesiredAccess, int dwFileOffsetHigh, int dwFileOffsetLow, IntPtr dwNumberOfBytesToMap);
-
-        [DllImport("kernel32", SetLastError = true)]
-        static extern int UnmapViewOfFile(IntPtr lpBaseAddress);
+        /// <summary>
+        /// Implements the native method 'initIDs'.
+        /// </summary>
+        public static long initIDs()
+        {
+            return Environment.SystemPageSize;
+        }
 
         /// <summary>
         /// Implements the native method for 'map0'.
@@ -49,11 +50,11 @@ namespace IKVM.Java.Externs.sun.nio.ch
             throw new NotImplementedException();
 #else
             if (RuntimeUtil.IsWindows)
-                return MapWindows((global::sun.nio.ch.FileChannelImpl)self, prot, position, length);
+                return MapFileWindows((global::sun.nio.ch.FileChannelImpl)self, prot, position, length);
             else if (RuntimeUtil.IsLinux)
-                return MapLinux((global::sun.nio.ch.FileChannelImpl)self, prot, position, length);
+                return MapFileLinux((global::sun.nio.ch.FileChannelImpl)self, prot, position, length);
             else if (RuntimeUtil.IsOSX)
-                return MapViewOfFileOSX((global::sun.nio.ch.FileChannelImpl)self, prot, position, length);
+                return MapFileOSX((global::sun.nio.ch.FileChannelImpl)self, prot, position, length);
             else
                 throw new global::java.io.IOException("Unsupported operation on platform.");
 #endif
@@ -81,39 +82,228 @@ namespace IKVM.Java.Externs.sun.nio.ch
 #endif
         }
 
+        [StructLayout(LayoutKind.Sequential)]
+        struct OVERLAPPED
+        {
+            public IntPtr Internal;
+            public IntPtr InternalHigh;
+            public int OffsetLow;
+            public int OffsetHigh;
+            public IntPtr hEvent;
+        }
+
         /// <summary>
-        /// Implements the native method for 'unmap0'.
+        /// Invokes the TransmitFile Win32 function.
         /// </summary>
-        /// <param name="address"></param>
-        /// <param name="length"></param>
+        /// <param name="hSocket"></param>
+        /// <param name="hFile"></param>
+        /// <param name="nNumberOfBytesToWrite"></param>
+        /// <param name="nNumberOfBytesPerSend"></param>
+        /// <param name="lpOverlapped"></param>
+        /// <param name=""></param>
+        /// <param name="dwReserved"></param>
         /// <returns></returns>
-        public static int transferTo0(global::java.io.FileDescriptor src, long position, long count, global::java.io.FileDescriptor dst)
+        [DllImport("kernel32", SetLastError = true)]
+        static unsafe extern int TransmitFile(IntPtr hSocket, IntPtr hFile, int nNumberOfBytesToWrite, int nNumberOfBytesPerSend, OVERLAPPED* lpOverlapped, void* lpTransmitBuffers, int dwReserved);
+
+        /// <summary>
+        /// Implements the native method for 'transferTo0'.
+        /// </summary>
+        /// <param name="self"></param>
+        /// <param name="src"></param>
+        /// <param name="position"></param>
+        /// <param name="count"></param>
+        /// <param name="dst"></param>
+        /// <returns></returns>
+        /// <exception cref="NotImplementedException"></exception>
+        public static unsafe long transferTo0(object self, global::java.io.FileDescriptor src, long position, long count, global::java.io.FileDescriptor dst)
         {
 #if FIRST_PASS
             throw new NotImplementedException();
 #else
-            throw new NotImplementedException();
+            var s = (FileStream)src.getStream();
+            if (s == null)
+                throw new global::java.io.IOException("Stream closed.");
+
+            var d = dst.getSocket();
+            if (d == null)
+                throw new global::java.io.IOException("Socket closed.");
+
+            try
+            {
+                if (RuntimeUtil.IsWindows)
+                {
+                    const int WSAEINVAL = 10022;
+                    const int WSAENOTSOCK = 10038;
+                    const int TF_USE_KERNEL_APC = 32;
+                    const int PACKET_SIZE = 524288;
+
+                    // win32 expets 
+                    var chunkSize = (int)Math.Min(count, int.MaxValue);
+
+                    // move file to specified position
+                    if (s.Position != position)
+                    {
+                        if (s.CanSeek == false)
+                            return IOStatus.UNSUPPORTED;
+
+                        s.Seek(position, SeekOrigin.Begin);
+                    }
+
+                    int result = TransmitFile(d.Handle, s.SafeFileHandle.DangerousGetHandle(), chunkSize, PACKET_SIZE, null, null, TF_USE_KERNEL_APC);
+                    if (result == 0)
+                    {
+                        return Marshal.GetLastWin32Error() switch
+                        {
+                            WSAEINVAL when count >= 0 => IOStatus.UNSUPPORTED_CASE,
+                            WSAENOTSOCK => IOStatus.UNSUPPORTED_CASE,
+                            _ => throw new global::java.io.IOException("Transfer failed.")
+                        };
+                    }
+
+                    return chunkSize;
+                }
+                else
+                {
+                    var result = Syscall.sendfile((int)d.Handle, (int)s.SafeFileHandle.DangerousGetHandle(), ref position, (ulong)count);
+                    if (result < 0)
+                    {
+                        return Stdlib.GetLastError() switch
+                        {
+                            Errno.EAGAIN => IOStatus.UNAVAILABLE,
+                            Errno.EINVAL when count >= 0 => IOStatus.UNSUPPORTED_CASE,
+                            Errno.EINTR => (long)IOStatus.INTERRUPTED,
+                            _ => throw new global::java.io.IOException("Transfer failed."),
+                        };
+                    }
+
+                    return result;
+                }
+            }
+            catch (global::java.io.IOException)
+            {
+                throw;
+            }
+            catch (EndOfStreamException)
+            {
+                return IOStatus.EOF;
+            }
+            catch (NotSupportedException)
+            {
+                return IOStatus.UNSUPPORTED;
+            }
+            catch (ObjectDisposedException)
+            {
+                return IOStatus.UNAVAILABLE;
+            }
+            catch (Exception e)
+            {
+                throw new global::java.io.IOException("Transfer failed.", e);
+            }
 #endif
         }
 
         /// <summary>
-        /// Implements the native method for 'unmap0'.
+        /// Implements the native method for 'position0'.
         /// </summary>
-        /// <param name="src"></param>
+        /// <param name="self"></param>
+        /// <param name="fd"></param>
         /// <param name="offset"></param>
         /// <returns></returns>
-        public static int position0(global::java.io.FileDescriptor fd, long offset)
+        public static long position0(object self, global::java.io.FileDescriptor fd, long offset)
         {
 #if FIRST_PASS
             throw new NotImplementedException();
 #else
-            throw new NotImplementedException();
+            var s = (FileStream)fd.getStream();
+            if (s == null)
+                throw new global::java.io.IOException("Stream closed.");
+
+            if (s.CanWrite == false)
+                return IOStatus.UNSUPPORTED;
+
+            try
+            {
+                if (offset >= 0)
+                {
+                    if (s.CanSeek == false)
+                        return IOStatus.UNSUPPORTED;
+                    else
+                        return s.Seek(offset, SeekOrigin.Begin);
+                }
+
+                return s.Position;
+            }
+            catch (global::java.io.IOException)
+            {
+                throw;
+            }
+            catch (EndOfStreamException)
+            {
+                return IOStatus.EOF;
+            }
+            catch (NotSupportedException)
+            {
+                return IOStatus.UNSUPPORTED;
+            }
+            catch (ObjectDisposedException)
+            {
+                return IOStatus.UNAVAILABLE;
+            }
+            catch (Exception e)
+            {
+                throw new global::java.io.IOException("Position failed.", e);
+            }
 #endif
         }
 
 #if FIRST_PASS == false
 
-        static IntPtr MapWindows(global::sun.nio.ch.FileChannelImpl self, int prot, long position, long length)
+        /// <summary>
+        /// Invokes the CreateFileMapping Win32 function.
+        /// </summary>
+        /// <param name="hFile"></param>
+        /// <param name="lpAttributes"></param>
+        /// <param name="flProtect"></param>
+        /// <param name="dwMaximumSizeHigh"></param>
+        /// <param name="dwMaximumSizeLow"></param>
+        /// <param name="lpName"></param>
+        /// <returns></returns>
+        [DllImport("kernel32", SetLastError = true)]
+        static extern SafeFileHandle CreateFileMapping(SafeFileHandle hFile, IntPtr lpAttributes, int flProtect, int dwMaximumSizeHigh, int dwMaximumSizeLow, string lpName);
+
+        /// <summary>
+        /// Invokes the MapViewOfFile Win32 function.
+        /// </summary>
+        /// <param name="hFileMapping"></param>
+        /// <param name="dwDesiredAccess"></param>
+        /// <param name="dwFileOffsetHigh"></param>
+        /// <param name="dwFileOffsetLow"></param>
+        /// <param name="dwNumberOfBytesToMap"></param>
+        /// <returns></returns>
+        [DllImport("kernel32", SetLastError = true)]
+        static extern IntPtr MapViewOfFile(SafeFileHandle hFileMapping, int dwDesiredAccess, int dwFileOffsetHigh, int dwFileOffsetLow, IntPtr dwNumberOfBytesToMap);
+
+        /// <summary>
+        /// Invokes the UnmapViewOfFile Win32 function.
+        /// </summary>
+        /// <param name="lpBaseAddress"></param>
+        /// <returns></returns>
+        [DllImport("kernel32", SetLastError = true)]
+        static extern int UnmapViewOfFile(IntPtr lpBaseAddress);
+
+        /// <summary>
+        /// Implements memory mapped files on Windows.
+        /// </summary>
+        /// <param name="self"></param>
+        /// <param name="prot"></param>
+        /// <param name="position"></param>
+        /// <param name="length"></param>
+        /// <returns></returns>
+        /// <exception cref="global::java.lang.Error"></exception>
+        /// <exception cref="global::java.io.IOException"></exception>
+        /// <exception cref="global::java.lang.OutOfMemoryError"></exception>
+        static IntPtr MapFileWindows(global::sun.nio.ch.FileChannelImpl self, int prot, long position, long length)
         {
             var fs = (FileStream)((global::java.io.FileDescriptor)FileChannelImplAccessor.GetFd(self)).getStream();
 
@@ -175,7 +365,29 @@ namespace IKVM.Java.Externs.sun.nio.ch
             }
         }
 
-        static IntPtr MapLinux(global::sun.nio.ch.FileChannelImpl self, int prot, long position, long length)
+        /// <summary>
+        /// Implements the unmapping of a file on Windows.
+        /// </summary>
+        /// <param name="address"></param>
+        /// <param name="length"></param>
+        /// <returns></returns>
+        static int UnmapWindows(IntPtr address, long length)
+        {
+            UnmapViewOfFile(address);
+            GC.RemoveMemoryPressure(length);
+            return 0;
+        }
+
+        /// <summary>
+        /// Implements memory mapped files on Linux.
+        /// </summary>
+        /// <param name="self"></param>
+        /// <param name="prot"></param>
+        /// <param name="position"></param>
+        /// <param name="length"></param>
+        /// <returns></returns>
+        /// <exception cref="global::java.io.IOException"></exception>
+        static IntPtr MapFileLinux(global::sun.nio.ch.FileChannelImpl self, int prot, long position, long length)
         {
             var fs = (FileStream)((global::java.io.FileDescriptor)FileChannelImplAccessor.GetFd(self)).getStream();
 
@@ -204,18 +416,12 @@ namespace IKVM.Java.Externs.sun.nio.ch
             }
         }
 
-        static IntPtr MapViewOfFileOSX(global::sun.nio.ch.FileChannelImpl self, int prot, long position, long length)
-        {
-            throw new global::java.io.IOException("Unsupported operation on platform.");
-        }
-
-        static int UnmapWindows(IntPtr address, long length)
-        {
-            UnmapViewOfFile(address);
-            GC.RemoveMemoryPressure(length);
-            return 0;
-        }
-
+        /// <summary>
+        /// Implements the unmapping of a mapped file on Linux.
+        /// </summary>
+        /// <param name="address"></param>
+        /// <param name="length"></param>
+        /// <returns></returns>
         static int UnmapLinux(IntPtr address, long length)
         {
             Syscall.munmap(address, (ulong)length);
@@ -223,6 +429,27 @@ namespace IKVM.Java.Externs.sun.nio.ch
             return 0;
         }
 
+        /// <summary>
+        /// Implements memory mapped files on OS X.
+        /// </summary>
+        /// <param name="self"></param>
+        /// <param name="prot"></param>
+        /// <param name="position"></param>
+        /// <param name="length"></param>
+        /// <returns></returns>
+        /// <exception cref="global::java.io.IOException"></exception>
+        static IntPtr MapFileOSX(global::sun.nio.ch.FileChannelImpl self, int prot, long position, long length)
+        {
+            throw new global::java.io.IOException("Unsupported operation on platform.");
+        }
+
+        /// <summary>
+        /// Implements the umapping of a mapped file on OS X.
+        /// </summary>
+        /// <param name="address"></param>
+        /// <param name="length"></param>
+        /// <returns></returns>
+        /// <exception cref="global::java.io.IOException"></exception>
         static int UnmapOSX(IntPtr address, long length)
         {
             throw new global::java.io.IOException("Unsupported operation on platform.");

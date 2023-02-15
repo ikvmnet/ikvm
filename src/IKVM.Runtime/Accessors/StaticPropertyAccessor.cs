@@ -6,14 +6,14 @@ namespace IKVM.Runtime.Accessors
 {
 
     /// <summary>
-    /// Base class for accessors of class fields.
+    /// Base class for accessors of class static properties.
     /// </summary>
-    internal abstract class StaticFieldAccessor
+    internal abstract class StaticPropertyAccessor
     {
 
         readonly Type type;
         readonly string name;
-        FieldInfo field;
+        PropertyInfo property;
 
         /// <summary>
         /// Initializes a new instance.
@@ -21,26 +21,26 @@ namespace IKVM.Runtime.Accessors
         /// <param name="type"></param>
         /// <param name="name"></param>
         /// <exception cref="ArgumentNullException"></exception>
-        protected StaticFieldAccessor(Type type, string name)
+        protected StaticPropertyAccessor(Type type, string name)
         {
             this.type = type ?? throw new ArgumentNullException(nameof(type));
             this.name = name ?? throw new ArgumentNullException(nameof(name));
         }
 
         /// <summary>
-        /// Gets the type which contains the field being accessed.
+        /// Gets the type which contains the property being accessed.
         /// </summary>
         public Type Type => type;
 
         /// <summary>
-        /// Gets the name of the field being accessed.
+        /// Gets the name of the property being accessed.
         /// </summary>
         public string Name => name;
 
         /// <summary>
-        /// Gets the field being accessed.
+        /// Gets the property being accessed.
         /// </summary>
-        public FieldInfo Field => AccessorUtil.LazyGet(ref field, () => type.GetField(name, BindingFlags.Public | BindingFlags.NonPublic | BindingFlags.Static));
+        public PropertyInfo Property => AccessorUtil.LazyGet(ref property, () => type.GetProperty(name, BindingFlags.Public | BindingFlags.NonPublic | BindingFlags.Static));
 
     }
 
@@ -48,19 +48,19 @@ namespace IKVM.Runtime.Accessors
     /// Provides fast access to a field of a given type.
     /// </summary>
     /// <typeparam name="T"></typeparam>
-    internal sealed class StaticFieldAccessor<T> : StaticFieldAccessor
+    internal sealed class StaticPropertyAccessor<T> : StaticPropertyAccessor
     {
 
         /// <summary>
-        /// Gets a <see cref="FieldAccessor"/> for the given field on the given type.
+        /// Gets a <see cref="StaticPropertyAccessor"/> for the given property on the given type.
         /// </summary>
         /// <param name="location"></param>
         /// <param name="type"></param>
-        /// <param name="fieldName"></param>
+        /// <param name="name"></param>
         /// <returns></returns>
-        public static StaticFieldAccessor<T> LazyGet(ref StaticFieldAccessor<T> location, Type type, string fieldName)
+        public static StaticPropertyAccessor<T> LazyGet(ref StaticPropertyAccessor<T> location, Type type, string name)
         {
-            return AccessorUtil.LazyGet(ref location, () => new StaticFieldAccessor<T>(type, fieldName));
+            return AccessorUtil.LazyGet(ref location, () => new StaticPropertyAccessor<T>(type, name));
         }
 
         Func<T> getter;
@@ -71,19 +71,19 @@ namespace IKVM.Runtime.Accessors
         /// </summary>
         /// <param name="type"></param>
         /// <param name="name"></param>
-        public StaticFieldAccessor(Type type, string name) :
+        public StaticPropertyAccessor(Type type, string name) :
             base(type, name)
         {
 
         }
 
         /// <summary>
-        /// Gets the getter for the field.
+        /// Gets the getter for the property.
         /// </summary>
         Func<T> Getter => AccessorUtil.LazyGet(ref getter, MakeGetter);
 
         /// <summary>
-        /// Gets the setter for the field.
+        /// Gets the setter for the property.
         /// </summary>
         Action<T> Setter => AccessorUtil.LazyGet(ref setter, MakeSetter);
 
@@ -91,34 +91,30 @@ namespace IKVM.Runtime.Accessors
         /// Creates a new getter.
         /// </summary>
         /// <returns></returns>
-        /// <exception cref="NotImplementedException"></exception>
         Func<T> MakeGetter()
         {
-            return Expression.Lambda<Func<T>>(Expression.Convert(Expression.Field(null, Field), Field.FieldType)).Compile();
+            return Expression.Lambda<Func<T>>(Expression.Convert(Expression.Property(null, Property), Property.PropertyType)).Compile();
         }
 
         /// <summary>
         /// Creates a new setter.
         /// </summary>
         /// <returns></returns>
-        /// <exception cref="NotImplementedException"></exception>
         Action<T> MakeSetter()
         {
             var v = Expression.Parameter(typeof(T));
-            return Expression.Lambda<Action<T>>(Expression.Assign(Expression.Field(null, Field), Expression.Convert(v, Field.FieldType)), v).Compile();
+            return Expression.Lambda<Action<T>>(Expression.Assign(Expression.Property(null, Property), Expression.Convert(v, Property.PropertyType)), v).Compile();
         }
 
         /// <summary>
-        /// Gets the value of the field.
+        /// Gets the value of the property.
         /// </summary>
-        /// <param name="self"></param>
         /// <returns></returns>
         public T GetValue() => Getter();
 
         /// <summary>
-        /// Sets the value of the field.
+        /// Sets the value of the property.
         /// </summary>
-        /// <param name="self"></param>
         /// <param name="value"></param>
         public void SetValue(T value) => Setter(value);
 

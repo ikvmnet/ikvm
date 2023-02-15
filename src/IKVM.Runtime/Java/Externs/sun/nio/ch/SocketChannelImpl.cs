@@ -35,16 +35,16 @@ namespace IKVM.Java.Externs.sun.nio.ch
         public static int checkConnect(FileDescriptor fd, bool block, bool ready)
         {
 #if FIRST_PASS
-			return 0;
+            throw new NotImplementedException();
 #else
+
             try
             {
-                IAsyncResult asyncConnect = fd.getAsyncResult();
+                var asyncConnect = fd.getAsyncResult();
                 if (block || ready || asyncConnect.IsCompleted)
                 {
                     fd.setAsyncResult(null);
                     fd.getSocket().EndConnect(asyncConnect);
-                    // work around for blocking issue
                     fd.getSocket().Blocking = fd.isSocketBlocking();
                     return 1;
                 }

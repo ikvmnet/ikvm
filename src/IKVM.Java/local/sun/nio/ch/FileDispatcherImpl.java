@@ -97,10 +97,10 @@ class FileDispatcherImpl extends FileDispatcher {
 
     static boolean isFastFileTransferRequested() {
         String fileTransferProp = java.security.AccessController.doPrivileged(new PrivilegedAction<String>() {
-                @Override
-                public String run() {
-                    return System.getProperty("jdk.nio.enableFastFileTransfer");
-                }
+            @Override
+            public String run() {
+                return System.getProperty("jdk.nio.enableFastFileTransfer");
+            }
         });
 
         boolean enable;

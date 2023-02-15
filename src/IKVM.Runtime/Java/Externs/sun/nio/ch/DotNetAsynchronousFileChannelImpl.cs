@@ -9,7 +9,6 @@ using java.nio;
 using java.security;
 using java.lang;
 using java.nio.channels;
-using java.util.concurrent;
 
 using sun.nio.ch;
 
@@ -31,6 +30,45 @@ namespace IKVM.Java.Externs.sun.nio.ch
             throw new NotImplementedException();
 #else
             Close((global::sun.nio.ch.DotNetAsynchronousFileChannelImpl)self);
+#endif
+        }
+
+        /// <summary>
+        /// Implements the native method 'size0'.
+        /// </summary>
+        /// <param name="self"></param>
+        public static long size0(object self)
+        {
+#if FIRST_PASS
+            throw new NotImplementedException();
+#else
+            return Size((global::sun.nio.ch.DotNetAsynchronousFileChannelImpl)self);
+#endif
+        }
+
+        /// <summary>
+        /// Implements the native method 'truncate0'.
+        /// </summary>
+        /// <param name="self"></param>
+        public static object truncate0(object self, long size)
+        {
+#if FIRST_PASS
+            throw new NotImplementedException();
+#else
+            return Truncate((global::sun.nio.ch.DotNetAsynchronousFileChannelImpl)self, size);
+#endif
+        }
+
+        /// <summary>
+        /// Implements the native method 'force0'.
+        /// </summary>
+        /// <param name="self"></param>
+        public static void force0(object self, bool metaData)
+        {
+#if FIRST_PASS
+            throw new NotImplementedException();
+#else
+            Force((global::sun.nio.ch.DotNetAsynchronousFileChannelImpl)self, metaData);
 #endif
         }
 
@@ -126,10 +164,9 @@ namespace IKVM.Java.Externs.sun.nio.ch
         /// <returns></returns>
         static void Close(global::sun.nio.ch.DotNetAsynchronousFileChannelImpl self)
         {
-            self.closeLock.writeLock().@lock();
-
             try
             {
+                self.closeLock.writeLock().@lock();
                 self.closed = true;
             }
             finally
@@ -139,6 +176,68 @@ namespace IKVM.Java.Externs.sun.nio.ch
 
             self.invalidateAllLocks();
             self.fdObj.close();
+        }
+
+        /// <summary>
+        /// 
+        /// </summary>
+        /// <param name="self"></param>
+        /// <returns></returns>
+        static long Size(global::sun.nio.ch.DotNetAsynchronousFileChannelImpl self)
+        {
+            try
+            {
+                self.begin();
+                return self.fdObj.length();
+            }
+            finally
+            {
+                self.end();
+            }
+        }
+
+        /// <summary>
+        /// 
+        /// </summary>
+        /// <param name="self"></param>
+        /// <returns></returns>
+        static AsynchronousFileChannel Truncate(global::sun.nio.ch.DotNetAsynchronousFileChannelImpl self, long size)
+        {
+            if (size < 0)
+                throw new IllegalArgumentException("Negative size");
+            if (self.writing == false)
+                throw new NonWritableChannelException();
+
+            try
+            {
+                self.begin();
+                if (size <= self.fdObj.length())
+                    ((FileStream)self.fdObj.getStream()).SetLength(size);
+            }
+            finally
+            {
+                self.end();
+            }
+
+            return self;
+        }
+
+        /// <summary>
+        /// 
+        /// </summary>
+        /// <param name="self"></param>
+        /// <returns></returns>
+        static void Force(global::sun.nio.ch.DotNetAsynchronousFileChannelImpl self, bool metaData)
+        {
+            try
+            {
+                self.begin();
+                self.fdObj.sync();
+            }
+            finally
+            {
+                self.end();
+            }
         }
 
         /// <summary>

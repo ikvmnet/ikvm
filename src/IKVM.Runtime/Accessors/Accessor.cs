@@ -42,6 +42,22 @@ namespace IKVM.Runtime.Accessors
         /// <returns></returns>
         protected FieldAccessor<TField> GetField<TField>(ref FieldAccessor<TField> accessor, string name) => FieldAccessor<TField>.LazyGet(ref accessor, type, name);
 
+        /// <summary>
+        /// Initializes a static property accessor.
+        /// </summary>
+        /// <param name="accessor"></param>
+        /// <param name="name"></param>
+        /// <returns></returns>
+        protected StaticPropertyAccessor<TProperty> GetStaticProperty<TProperty>(ref StaticPropertyAccessor<TProperty> accessor, string name) => StaticPropertyAccessor<TProperty>.LazyGet(ref accessor, type, name);
+
+        /// <summary>
+        /// Initializes a property accessor.
+        /// </summary>
+        /// <param name="accessor"></param>
+        /// <param name="name"></param>
+        /// <returns></returns>
+        protected PropertyAccessor<TProperty> GetProperty<TProperty>(ref PropertyAccessor<TProperty> accessor, string name) => PropertyAccessor<TProperty>.LazyGet(ref accessor, type, name);
+
     }
 
 }

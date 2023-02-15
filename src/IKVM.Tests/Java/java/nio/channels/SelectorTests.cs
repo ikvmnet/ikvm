@@ -24,10 +24,6 @@ namespace IKVM.Tests.Java.java.nio.channels
         [TestMethod]
         public async Task Can_use_selector_to_answer_client_requests()
         {
-            // NIO currently fails on Linux
-            if (RuntimeInformation.IsOSPlatform(OSPlatform.Linux))
-                return;
-
             var cancellationTokenSource = new CancellationTokenSource();
             var messages = new List<string>();
 

@@ -26,7 +26,7 @@ namespace IKVM.Runtime.Accessors
         protected StaticMethodAccessor(Type type, string name)
         {
             this.type = type ?? throw new ArgumentNullException(nameof(type));
-            this.name = name ?? throw new ArgumentNullException(nameof(type));
+            this.name = name ?? throw new ArgumentNullException(nameof(name));
         }
 
         /// <summary>
@@ -42,7 +42,7 @@ namespace IKVM.Runtime.Accessors
         /// <summary>
         /// Gets the field being accessed.
         /// </summary>
-        public MethodInfo Method => AccessorUtil.LazyGet(ref method, () => type.GetMethod(name));
+        public MethodInfo Method => AccessorUtil.LazyGet(ref method, () => type.GetMethod(name, BindingFlags.Public | BindingFlags.NonPublic | BindingFlags.Static));
 
     }
 
