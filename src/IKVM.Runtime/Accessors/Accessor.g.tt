@@ -48,6 +48,43 @@ for (int i = 1; i <= 8; i++)
 <#
 }
 #>
+
+        protected StaticMethodAccessor<Action> GetStaticVoidMethod(ref StaticMethodAccessor<Action> location, string name)
+        {
+            return StaticMethodAccessor.LazyGetVoid(ref location, type, name);
+        }
+
+<#
+for (int i = 1; i <= 8; i++)
+{
+        var l = string.Join(", ", Enumerable.Range(1, i).Select(i => "TArg" + i));
+#>
+        protected StaticMethodAccessor<Action<<#= l #>>> GetStaticVoidMethod<<#= l #>>(ref StaticMethodAccessor<Action<<#= l #>>> location, string name)
+        {
+            return StaticMethodAccessor.LazyGetVoid(ref location, type, name);
+        }
+
+<#
+}
+#>
+        protected StaticMethodAccessor<Func<TResult>> GetStaticMethod<TResult>(ref StaticMethodAccessor<Func<TResult>> location, string name)
+        {
+            return StaticMethodAccessor.LazyGet(ref location, type, name);
+        }
+
+<#
+for (int i = 1; i <= 8; i++)
+{
+        var l = string.Join(", ", Enumerable.Range(1, i).Select(i => "TArg" + i));
+#>
+        protected StaticMethodAccessor<Func<<#= l #>, TResult>> GetStaticMethod<<#= l #>, TResult>(ref StaticMethodAccessor<Func<<#= l #>, TResult>> location, string name)
+        {
+            return StaticMethodAccessor.LazyGet(ref location, type, name);
+        }
+
+<#
+}
+#>
     }
 
 }

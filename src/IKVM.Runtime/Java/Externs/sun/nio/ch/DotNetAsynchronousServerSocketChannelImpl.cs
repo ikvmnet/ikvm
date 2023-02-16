@@ -5,6 +5,7 @@ using System.Threading.Tasks;
 
 using IKVM.Runtime.Util.Java.Security;
 using IKVM.Runtime.Util.Java.Net;
+using System.Threading;
 
 #if FIRST_PASS == false
 
@@ -90,7 +91,7 @@ namespace IKVM.Java.Externs.sun.nio.ch
         /// Implements the Accept logic as an asynchronous task.
         /// </summary>
         /// <param name="self"></param>
-        /// <param name="future"></param>
+        /// <param name="cancellationToken"></param>
         /// <returns></returns>
         /// <exception cref="ClosedChannelException"></exception>
         /// <exception cref="RuntimeException"></exception>
@@ -99,7 +100,7 @@ namespace IKVM.Java.Externs.sun.nio.ch
         /// <exception cref="InterruptedIOException"></exception>
         /// <exception cref="AsynchronousCloseException"></exception>
         /// <exception cref="IOException"></exception>
-        static async Task<global::sun.nio.ch.DotNetAsynchronousSocketChannelImpl> AcceptAsync(global::sun.nio.ch.DotNetAsynchronousServerSocketChannelImpl self, global::java.security.AccessControlContext accessControlContext, PendingFuture future)
+        static async Task<global::sun.nio.ch.DotNetAsynchronousSocketChannelImpl> AcceptAsync(global::sun.nio.ch.DotNetAsynchronousServerSocketChannelImpl self, global::java.security.AccessControlContext accessControlContext, CancellationToken cancellationToken)
         {
             if (self.isOpen() == false)
                 throw new ClosedChannelException();
@@ -121,12 +122,16 @@ namespace IKVM.Java.Externs.sun.nio.ch
             {
                 try
                 {
+                    // cancel was invoked during the operation
+                    if (self.isAcceptKilled())
+                        throw new RuntimeException("Accept not allowed due to cancellation.");
+
                     // execute asynchronous Accept task
                     var listenSocket = self.fd.getSocket();
                     var clientSocket = await Task.Factory.FromAsync(listenSocket.BeginAccept, listenSocket.EndAccept, client.fd.getSocket(), 0, null);
 
                     // cancel was invoked during the operation
-                    if (future.isCancelled())
+                    if (self.isAcceptKilled())
                         throw new RuntimeException("Accept not allowed due to cancellation.");
 
                     // connection accept completed after group has shutdown

@@ -80,11 +80,7 @@ class FileDispatcherImpl extends FileDispatcher {
     }
 
     FileDescriptor duplicateForMapping(FileDescriptor fd) throws IOException {
-        JavaIOFileDescriptorAccess fdAccess = SharedSecrets.getJavaIOFileDescriptorAccess();
-        FileDescriptor result = new FileDescriptor();
-        long handle = duplicateHandle(fdAccess.getHandle(fd));
-        fdAccess.setHandle(result, handle);
-        return result;
+        return duplicateForMapping0(fd);
     }
 
     boolean canTransferToDirectly(java.nio.channels.SelectableChannel sc) {
@@ -145,5 +141,7 @@ class FileDispatcherImpl extends FileDispatcher {
     static native void closeByHandle(long fd) throws IOException;
 
     static native long duplicateHandle(long fd) throws IOException;
+
+    static native FileDescriptor duplicateForMapping0(FileDescriptor fd) throws IOException;
 
 }

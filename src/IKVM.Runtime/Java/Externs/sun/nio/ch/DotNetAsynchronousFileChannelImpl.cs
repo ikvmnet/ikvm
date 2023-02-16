@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Threading.Tasks;
 using System.IO;
+using System.Threading;
 
 #if FIRST_PASS == false
 
@@ -327,23 +328,112 @@ namespace IKVM.Java.Externs.sun.nio.ch
         }
 
         /// <summary>
+        /// Returns an <see cref="ArraySegment{byte}"/> for the given <see cref="ByteBuffer"/>. May be a memory
+        /// mapping to the original array, or may be a newly allocated temporary buffer. Optionally, copy the
+        /// original data to the temporary location.
+        /// </summary>
+        /// <param name="buf"></param>
+        /// <param name="copy"></param>
+        /// <returns></returns>
+        static unsafe ArraySegment<byte> PrepareArraySegment(ByteBuffer buf, bool copy = false)
+        {
+            int pos = buf.position();
+            int lim = buf.limit();
+            int rem = pos <= lim ? lim - pos : 0;
+
+            if (buf is DirectBuffer dir)
+            {
+                var s = new ArraySegment<byte>(ArrayPool<byte>.Shared.Rent(rem), 0, rem);
+
+                // optionally copy the original buffer data to the new segment
+                if (copy)
+                    new ReadOnlySpan<byte>((byte*)(IntPtr)dir.address() + pos, rem).CopyTo(s);
+
+                return s;
+            }
+            else
+            {
+                return new ArraySegment<byte>(buf.array(), buf.arrayOffset(), rem);
+            }
+        }
+
+        /// <summary>
         /// Implements the Read logic as an asynchronous task.
         /// </summary>
         /// <param name="self"></param>
         /// <param name="position"></param>
         /// <param name="accessControlContext"></param>
-        /// <param name="future"></param>
+        /// <param name="cancellationToken"></param>
         /// <returns></returns>
-        static async Task<Integer> ReadAsync(global::sun.nio.ch.DotNetAsynchronousFileChannelImpl self, ByteBuffer dst, long position, AccessControlContext accessControlContext, PendingFuture future)
+        static async Task<Integer> ReadAsync(global::sun.nio.ch.DotNetAsynchronousFileChannelImpl self, ByteBuffer dst, long position, AccessControlContext accessControlContext, CancellationToken cancellationToken)
         {
-            if (self.reading == false)
+            if (self.reading == true)
                 throw new NonReadableChannelException();
             if (position < 0)
                 throw new IllegalArgumentException("Negative position");
             if (dst.isReadOnly())
                 throw new IllegalArgumentException("Read-only buffer");
 
-            throw new NotImplementedException();
+            var stream = (FileStream)self.fdObj.getStream();
+            if (stream == null)
+                throw new ClosedChannelException();
+
+            try
+            {
+                if (cancellationToken.IsCancellationRequested)
+                    return null;
+
+                // move file to specified position
+                if (stream.Position != position)
+                {
+                    if (stream.CanSeek == false)
+                        throw new IllegalArgumentException("Seek failed.");
+
+                    stream.Seek(position, SeekOrigin.Begin);
+                }
+
+#if NETFRAMEWORK
+                int pos = dst.position();
+                int lim = dst.limit();
+                int rem = pos <= lim ? lim - pos : 0;
+
+                if (dst is DirectBuffer dir)
+                {
+                    var tmp = new byte[rem];
+                    await stream.ReadAsync(tmp, 0, rem, cancellationToken);
+                    dst.put(tmp);
+                }
+                else
+                {
+                    await stream.ReadAsync(dst.array(), dst.arrayOffset() + pos, rem, cancellationToken);
+                }
+#else
+                int pos = dst.position();
+                int lim = dst.limit();
+                int rem = pos <= lim ? lim - pos : 0;
+
+                if (dst is DirectBuffer dir)
+                {
+                    var tmp = new byte[rem];
+                    await stream.ReadAsync(tmp, 0, rem, cancellationToken);
+                    dst.put(tmp);
+                }
+                else
+                {
+                    await stream.ReadAsync(dst.array(), dst.arrayOffset() + pos, rem, cancellationToken);
+                }
+#endif
+
+                throw new NotImplementedException();
+            }
+            catch (ClosedChannelException)
+            {
+                throw new AsynchronousCloseException();
+            }
+            catch (System.Exception e)
+            {
+                throw new global::java.io.IOException(e);
+            }
         }
 
         /// <summary>

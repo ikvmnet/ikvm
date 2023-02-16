@@ -7,7 +7,10 @@ using System.Net;
 using System.Net.Sockets;
 using System.Reflection;
 using System.Runtime.InteropServices;
+
+using IKVM.Runtime;
 using IKVM.Runtime.Util.Java.Net;
+
 using static IKVM.Java.Externs.java.net.SocketImplUtil;
 
 namespace IKVM.Java.Externs.java.net
@@ -132,7 +135,7 @@ namespace IKVM.Java.Externs.java.net
                 return s2;
 
             // for Linux we need to obtain the default scope ID by effectively doing a route lookup
-            if (RuntimeInformation.IsOSPlatform(OSPlatform.Linux) && FindScopeId(address) is int s3 and not 0)
+            if (RuntimeUtil.IsLinux && FindScopeId(address) is int s3 and not 0)
             {
                 Inet6AddressCachedScopeIdSetter(address, s3);
                 return s3;
@@ -194,7 +197,7 @@ namespace IKVM.Java.Externs.java.net
                 // returns connection reset errors on unconnected UDP sockets (as well
                 // as connected sockets). The solution is to only enable this feature
                 // when the socket is connected.
-                if (RuntimeInformation.IsOSPlatform(OSPlatform.Windows))
+                if (RuntimeUtil.IsWindows)
                     socket.IOControl(SIO_UDP_CONNRESET, IOControlFalseBuffer, null);
 
                 impl.fd.setSocket(socket);

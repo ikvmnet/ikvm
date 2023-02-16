@@ -1,28 +1,9 @@
-﻿/*
-  Copyright (C) 2007-2014 Jeroen Frijters
+﻿using System;
+using System.IO;
+using System.Security;
 
-  This software is provided 'as-is', without any express or implied
-  warranty.  In no event will the authors be held liable for any damages
-  arising from the use of this software.
-
-  Permission is granted to anyone to use this software for any purpose,
-  including commercial applications, and to alter it and redistribute it
-  freely, subject to the following restrictions:
-
-  1. The origin of this software must not be misrepresented; you must not
-     claim that you wrote the original software. If you use this software
-     in a product, an acknowledgment in the product documentation would be
-     appreciated but is not required.
-  2. Altered source versions must be plainly marked as such, and must not be
-     misrepresented as being the original software.
-  3. This notice may not be removed or altered from any source distribution.
-
-  Jeroen Frijters
-  jeroen@frijters.net
-  
-*/
-
-using System.Runtime.InteropServices;
+using IKVM.Internal;
+using IKVM.Runtime.Accessors.Java.Io;
 
 namespace IKVM.Java.Externs.java.io
 {
@@ -30,44 +11,182 @@ namespace IKVM.Java.Externs.java.io
     static class FileOutputStream
     {
 
-        public static void open0(object _this, string name, bool append, [In] global::java.io.FileDescriptor fd)
+#if FIRST_PASS == false
+
+        static FileDescriptorAccessor fileDescriptorAccessor;
+        static FileDescriptorAccessor FileDescriptorAccessor => JVM.BaseAccessors.Get(ref fileDescriptorAccessor);
+
+#endif
+
+        /// <summary>
+        /// Implements the native method 'open0'.
+        /// </summary>
+        /// <param name="self"></param>
+        /// <param name="name"></param>
+        /// <param name="append"></param>
+        /// <param name="fd"></param>
+        public static void open0(object self, string name, bool append, object fd)
         {
-#if !FIRST_PASS
-            if (append)
+#if FIRST_PASS 
+            throw new NotImplementedException();
+#else
+            try
             {
-                fd.openAppend(name);
+                if (append)
+                    FileDescriptorAccessor.SetStream(fd, File.Open(name, FileMode.Append, FileAccess.Write));
+                else
+                    FileDescriptorAccessor.SetStream(fd, File.Open(name, FileMode.Create, FileAccess.Write));
             }
-            else
+            catch (ObjectDisposedException e)
             {
-                fd.openWriteOnly(name);
+                throw new global::java.io.IOException(e.Message);
+            }
+            catch (ArgumentException e)
+            {
+                throw new global::java.io.FileNotFoundException(e.Message);
+            }
+            catch (SecurityException e)
+            {
+                throw new global::java.lang.SecurityException(e.Message);
+            }
+            catch (UnauthorizedAccessException)
+            {
+                throw new global::java.io.FileNotFoundException(name + " (Access is denied)");
+            }
+            catch (IOException e)
+            {
+                throw new global::java.io.FileNotFoundException(e.Message);
+            }
+            catch (NotSupportedException e)
+            {
+                throw new global::java.io.FileNotFoundException(e.Message);
             }
 #endif
         }
 
-        public static void write(object _this, int b, bool append, [In] global::java.io.FileDescriptor fd)
+        /// <summary>
+        /// Implements the native method 'write'.
+        /// </summary>
+        /// <param name="self"></param>
+        /// <param name="b"></param>
+        /// <param name="append"></param>
+        /// <param name="fd"></param>
+        public static void write(object self, int b, bool append, object fd)
         {
-#if !FIRST_PASS
-            fd.write(b);
+#if FIRST_PASS
+            throw new NotImplementedException();
+#else
+            try
+            {
+                var stream = FileDescriptorAccessor.GetStream(fd);
+                if (stream == null)
+                    throw new global::java.io.IOException("Stream closed.");
+                if (stream.CanWrite == false)
+                    throw new global::java.io.IOException("Write failed.");
+
+                stream.WriteByte((byte)b);
+                stream.Flush();
+            }
+            catch (ObjectDisposedException e)
+            {
+                throw new global::java.io.IOException(e.Message);
+            }
+            catch (NotSupportedException e)
+            {
+                throw new global::java.io.IOException(e.Message);
+            }
+            catch (IOException e)
+            {
+                throw new global::java.io.IOException(e.Message);
+            }
 #endif
         }
 
-        public static void writeBytes(object _this, byte[] b, int off, int len, bool append, [In] global::java.io.FileDescriptor fd)
+        /// <summary>
+        /// Implements the native method 'writeBytes'.
+        /// </summary>
+        /// <param name="self"></param>
+        /// <param name="b"></param>
+        /// <param name="off"></param>
+        /// <param name="len"></param>
+        /// <param name="append"></param>
+        /// <param name="fd"></param>
+        public static void writeBytes(object self, byte[] b, int off, int len, bool append, object fd)
         {
-#if !FIRST_PASS
-            fd.writeBytes(b, off, len);
+#if FIRST_PASS
+            throw new NotImplementedException();
+#else
+            if ((off < 0) || (off > b.Length) || (len < 0) || (len > (b.Length - off)))
+                throw new global::java.lang.IndexOutOfBoundsException();
+
+            try
+            {
+                var stream = FileDescriptorAccessor.GetStream(fd);
+                if (stream == null)
+                    throw new global::java.io.IOException("Stream closed.");
+                if (stream.CanWrite == false)
+                    throw new global::java.io.IOException("Write failed.");
+
+                stream.Write(b, off, len);
+                stream.Flush();
+            }
+            catch (ObjectDisposedException e)
+            {
+                throw new global::java.io.IOException(e.Message);
+            }
+            catch (NotSupportedException e)
+            {
+                throw new global::java.io.IOException(e.Message);
+            }
+            catch (IOException e)
+            {
+                throw new global::java.io.IOException(e.Message);
+            }
 #endif
         }
 
-        public static void close0(object _this, [In] global::java.io.FileDescriptor fd)
+        /// <summary>
+        /// Implements the native method 'close0'.
+        /// </summary>
+        /// <param name="self"></param>
+        /// <param name="fd"></param>
+        public static void close0(object self, object fd)
         {
-#if !FIRST_PASS
-            fd.close();
+#if FIRST_PASS
+            throw new NotImplementedException();
+#else
+            try
+            {
+                var stream = FileDescriptorAccessor.GetStream(fd);
+                if (stream == null)
+                    return;
+
+                FileDescriptorAccessor.SetStream(fd, null);
+                stream.Close();
+            }
+            catch (ObjectDisposedException e)
+            {
+                throw new global::java.io.IOException(e.Message);
+            }
+            catch (NotSupportedException e)
+            {
+                throw new global::java.io.IOException(e.Message);
+            }
+            catch (IOException e)
+            {
+                throw new global::java.io.IOException(e.Message);
+            }
 #endif
         }
 
+        /// <summary>
+        /// Implements the native method 'initIDs'.
+        /// </summary>
         public static void initIDs()
         {
+
         }
+
     }
 
 }

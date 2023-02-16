@@ -3,8 +3,7 @@ package sun.nio.ch;
 import java.io.*;
 import java.net.*;
 
-class DatagramDispatcher extends NativeDispatcher
-{
+class DatagramDispatcher extends NativeDispatcher {
 
     int read(FileDescriptor fd, long address, int len) throws IOException {
         return read0(fd, address, len);

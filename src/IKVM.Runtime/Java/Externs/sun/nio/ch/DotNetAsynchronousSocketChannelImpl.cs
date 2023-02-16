@@ -1,13 +1,11 @@
 ﻿using System;
-using System.Buffers;
 using System.Collections.Generic;
-using System.Net;
 using System.Net.Sockets;
+using System.Threading;
 using System.Threading.Tasks;
 
 using IKVM.Runtime.Util.Java.Net;
 using IKVM.Runtime.Util.Java.Security;
-
 
 #if FIRST_PASS == false
 
@@ -16,7 +14,6 @@ using java.lang;
 using java.net;
 using java.nio;
 using java.nio.channels;
-using java.rmi;
 using java.security;
 using java.util.concurrent;
 
@@ -117,14 +114,16 @@ namespace IKVM.Java.Externs.sun.nio.ch
 #if FIRST_PASS == false
 
         /// <summary>
-        /// 
+        /// Invoked when the pending future is cancelled.
         /// </summary>
         /// <param name="self"></param>
-        /// <param name="task"></param>
+        /// <param name="future"></param>
         /// <returns></returns>
-        static void OnCancel(global::sun.nio.ch.DotNetAsynchronousSocketChannelImpl self, PendingFuture task)
+        static void OnCancel(global::sun.nio.ch.DotNetAsynchronousSocketChannelImpl self, PendingFuture future)
         {
-            throw new NotImplementedException();
+            // signal cancellation on associated cancellation token source
+            (_, CancellationTokenSource cts) = future.getContext();
+            cts?.Cancel();
         }
 
         /// <summary>
@@ -151,13 +150,13 @@ namespace IKVM.Java.Externs.sun.nio.ch
         /// <exception cref="InterruptedIOException"></exception>
         /// <exception cref="AsynchronousCloseException"></exception>
         /// <exception cref="IOException"></exception>
-        static async Task ConnectAsync(global::sun.nio.ch.DotNetAsynchronousSocketChannelImpl self, global::java.net.SocketAddress remote, global::java.security.AccessControlContext accessControlContext, PendingFuture future)
+        static async Task ConnectAsync(global::sun.nio.ch.DotNetAsynchronousSocketChannelImpl self, global::java.net.SocketAddress remote, global::java.security.AccessControlContext accessControlContext, CancellationToken cancellationToken)
         {
             if (self.isOpen() == false)
                 throw new ClosedChannelException();
 
             // cancel was invoked during the operation
-            if (future.isCancelled())
+            if (cancellationToken.IsCancellationRequested)
                 throw new RuntimeException("Connect not allowed due to cancellation.");
 
             // checks the validity of the socket address
@@ -268,7 +267,7 @@ namespace IKVM.Java.Externs.sun.nio.ch
         /// <param name="buf"></param>
         /// <param name="copy"></param>
         /// <returns></returns>
-        static unsafe ArraySegment<byte> PrepareArraySegment(ByteBuffer buf, bool copy = false)
+        static unsafe ArraySegment<byte> PrepareArray(ByteBuffer buf, bool copy = false)
         {
             int pos = buf.position();
             int lim = buf.limit();
@@ -324,7 +323,7 @@ namespace IKVM.Java.Externs.sun.nio.ch
         /// <param name="dsts"></param>
         /// <param name="timeout"></param>
         /// <param name="unit"></param>
-        /// <param name="future"></param>
+        /// <param name="cancellationToken"></param>
         /// <returns></returns>
         /// <exception cref="ClosedChannelException"></exception>
         /// <exception cref="RuntimeException"></exception>
@@ -333,7 +332,7 @@ namespace IKVM.Java.Externs.sun.nio.ch
         /// <exception cref="InterruptedIOException"></exception>
         /// <exception cref="AsynchronousCloseException"></exception>
         /// <exception cref="IOException"></exception>
-        static async Task<Number> ReadAsync(global::sun.nio.ch.DotNetAsynchronousSocketChannelImpl self, bool isScatteringRead, ByteBuffer dst, ByteBuffer[] dsts, long timeout, TimeUnit unit, AccessControlContext accessControlContext, PendingFuture future)
+        static async Task<Number> ReadAsync(global::sun.nio.ch.DotNetAsynchronousSocketChannelImpl self, bool isScatteringRead, ByteBuffer dst, ByteBuffer[] dsts, long timeout, TimeUnit unit, AccessControlContext accessControlContext, CancellationToken cancellationToken)
         {
             // set of buffers to receive into
             var bufs = new List<ArraySegment<byte>>();
@@ -423,7 +422,7 @@ namespace IKVM.Java.Externs.sun.nio.ch
         /// <param name="timeout"></param>
         /// <param name="unit"></param>
         /// <param name="accessControlContext"></param>
-        /// <param name="future"></param>
+        /// <param name="cancellationToken"></param>
         /// <returns></returns>
         /// <exception cref="ClosedChannelException"></exception>
         /// <exception cref="RuntimeException"></exception>
@@ -432,7 +431,7 @@ namespace IKVM.Java.Externs.sun.nio.ch
         /// <exception cref="InterruptedIOException"></exception>
         /// <exception cref="AsynchronousCloseException"></exception>
         /// <exception cref="IOException"></exception>
-        static async Task<global::java.lang.Number> WriteAsync(global::sun.nio.ch.DotNetAsynchronousSocketChannelImpl self, bool isScatteringRead, ByteBuffer dst, ByteBuffer[] dsts, long timeout, TimeUnit unit, AccessControlContext accessControlContext, PendingFuture future)
+        static async Task<global::java.lang.Number> WriteAsync(global::sun.nio.ch.DotNetAsynchronousSocketChannelImpl self, bool isScatteringRead, ByteBuffer dst, ByteBuffer[] dsts, long timeout, TimeUnit unit, AccessControlContext accessControlContext, CancellationToken cancellationToken)
         {
             throw new NotImplementedException();
         }
