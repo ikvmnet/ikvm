@@ -40,17 +40,18 @@ namespace IKVM.Java.Externs.sun.nio.ch
                 var cts = new CancellationTokenSource();
                 var t = func(channel, global::java.lang.System.getSecurityManager() != null ? AccessController.getContext() : null, cts.Token);
                 f.setContext((t, cts));
-                t.ContinueWith(async a => { try { f.setResult(await a); } catch (Exception e) { f.setFailure(e); } });
+                t.ContinueWith(a => { try { f.setResult(a.GetAwaiter().GetResult()); } catch (Exception e) { f.setFailure(e); }; Invoker.invoke(f); });
             }
             catch (Exception e)
             {
+                f.setFailure(e);
+
                 if (handler != null)
                 {
-                    Invoker.invokeIndirectly(channel, handler, attachment, null, e);
+                    Invoker.invoke(channel, handler, attachment, null, e);
                     return null;
                 }
 
-                f.setFailure(e);
             }
             finally
             {
@@ -84,17 +85,12 @@ namespace IKVM.Java.Externs.sun.nio.ch
                 var cts = new CancellationTokenSource();
                 var t = func(channel, arg, global::java.lang.System.getSecurityManager() != null ? AccessController.getContext() : null, cts.Token);
                 f.setContext((t, cts));
-                t.ContinueWith(async a => { try { f.setResult(await a); } catch (Exception e) { f.setFailure(e); } });
+                t.ContinueWith(a => { try { f.setResult(a.GetAwaiter().GetResult()); } catch (Exception e) { f.setFailure(e); }; Invoker.invoke(f); });
             }
             catch (Exception e)
             {
-                if (handler != null)
-                {
-                    Invoker.invokeIndirectly(channel, handler, attachment, null, e);
-                    return null;
-                }
-
                 f.setFailure(e);
+                Invoker.invoke(f);
             }
             finally
             {
@@ -131,17 +127,12 @@ namespace IKVM.Java.Externs.sun.nio.ch
                 var cts = new CancellationTokenSource();
                 var t = func(channel, arg1, arg2, global::java.lang.System.getSecurityManager() != null ? AccessController.getContext() : null, cts.Token);
                 f.setContext((t, cts));
-                t.ContinueWith(async a => { try { f.setResult(await a); } catch (Exception e) { f.setFailure(e); } });
+                t.ContinueWith(a => { try { f.setResult(a.GetAwaiter().GetResult()); } catch (Exception e) { f.setFailure(e); }; Invoker.invoke(f); });
             }
             catch (Exception e)
             {
-                if (handler != null)
-                {
-                    Invoker.invokeIndirectly(channel, handler, attachment, null, e);
-                    return null;
-                }
-
                 f.setFailure(e);
+                Invoker.invoke(f);
             }
             finally
             {
@@ -181,17 +172,12 @@ namespace IKVM.Java.Externs.sun.nio.ch
                 var cts = new CancellationTokenSource();
                 var t = func(channel, arg1, arg2, arg3, global::java.lang.System.getSecurityManager() != null ? AccessController.getContext() : null, cts.Token);
                 f.setContext((t, cts));
-                t.ContinueWith(async a => { try { f.setResult(await a); } catch (Exception e) { f.setFailure(e); } });
+                t.ContinueWith(a => { try { f.setResult(a.GetAwaiter().GetResult()); } catch (Exception e) { f.setFailure(e); }; Invoker.invoke(f); });
             }
             catch (Exception e)
             {
-                if (handler != null)
-                {
-                    Invoker.invokeIndirectly(channel, handler, attachment, null, e);
-                    return null;
-                }
-
                 f.setFailure(e);
+                Invoker.invoke(f);
             }
             finally
             {
@@ -232,17 +218,12 @@ namespace IKVM.Java.Externs.sun.nio.ch
                 var cts = new CancellationTokenSource();
                 var t = func(channel, arg1, arg2, arg3, arg4, global::java.lang.System.getSecurityManager() != null ? AccessController.getContext() : null, cts.Token);
                 f.setContext((t, cts));
-                t.ContinueWith(async a => { try { f.setResult(await a); } catch (Exception e) { f.setFailure(e); } });
+                t.ContinueWith(a => { try { f.setResult(a.GetAwaiter().GetResult()); } catch (Exception e) { f.setFailure(e); }; Invoker.invoke(f); });
             }
             catch (Exception e)
             {
-                if (handler != null)
-                {
-                    Invoker.invokeIndirectly(channel, handler, attachment, null, e);
-                    return null;
-                }
-
                 f.setFailure(e);
+                Invoker.invoke(f);
             }
             finally
             {
@@ -285,17 +266,12 @@ namespace IKVM.Java.Externs.sun.nio.ch
                 var cts = new CancellationTokenSource();
                 var t = func(channel, arg1, arg2, arg3, arg4, arg5, global::java.lang.System.getSecurityManager() != null ? AccessController.getContext() : null, cts.Token);
                 f.setContext((t, cts));
-                t.ContinueWith(async a => { try { f.setResult(await a); } catch (Exception e) { f.setFailure(e); } });
+                t.ContinueWith(a => { try { f.setResult(a.GetAwaiter().GetResult()); } catch (Exception e) { f.setFailure(e); }; Invoker.invoke(f); });
             }
             catch (Exception e)
             {
-                if (handler != null)
-                {
-                    Invoker.invokeIndirectly(channel, handler, attachment, null, e);
-                    return null;
-                }
-
                 f.setFailure(e);
+                Invoker.invoke(f);
             }
             finally
             {
@@ -329,17 +305,12 @@ namespace IKVM.Java.Externs.sun.nio.ch
                 var cts = new CancellationTokenSource();
                 var t = func(channel, arg, global::java.lang.System.getSecurityManager() != null ? AccessController.getContext() : null, cts.Token);
                 f.setContext((t, cts));
-                t.ContinueWith(async a => { try { await a; f.setResult(null); } catch (Exception e) { f.setFailure(e); } });
+                t.ContinueWith(a => { try { a.GetAwaiter().GetResult(); f.setResult(null); } catch (Exception e) { f.setFailure(e); }; Invoker.invoke(f); });
             }
             catch (Exception e)
             {
-                if (handler != null)
-                {
-                    Invoker.invokeIndirectly(channel, handler, attachment, null, e);
-                    return null;
-                }
-
                 f.setFailure(e);
+                Invoker.invoke(f);
             }
             finally
             {
@@ -355,14 +326,10 @@ namespace IKVM.Java.Externs.sun.nio.ch
         /// <typeparam name="TChannel"></typeparam>
         /// <typeparam name="TArg1"></typeparam>
         /// <typeparam name="TArg2"></typeparam>
-        /// <typeparam name="TResult"></typeparam>
         /// <param name="self"></param>
         /// <param name="channel"></param>
         /// <param name="arg1"></param>
         /// <param name="arg2"></param>
-        /// <param name="arg3"></param>
-        /// <param name="arg4"></param>
-        /// <param name="arg5"></param>
         /// <param name="attachment"></param>
         /// <param name="handler"></param>
         /// <param name="func"></param>
@@ -379,17 +346,12 @@ namespace IKVM.Java.Externs.sun.nio.ch
                 var cts = new CancellationTokenSource();
                 var t = func(channel, arg1, arg2, global::java.lang.System.getSecurityManager() != null ? AccessController.getContext() : null, cts.Token);
                 f.setContext((t, cts));
-                t.ContinueWith(async a => { try { await a; f.setResult(null); } catch (Exception e) { f.setFailure(e); } });
+                t.ContinueWith(a => { try { a.GetAwaiter().GetResult(); f.setResult(null); } catch (Exception e) { f.setFailure(e); }; Invoker.invoke(f); });
             }
             catch (Exception e)
             {
-                if (handler != null)
-                {
-                    Invoker.invokeIndirectly(channel, handler, attachment, null, e);
-                    return null;
-                }
-
                 f.setFailure(e);
+                Invoker.invoke(f);
             }
             finally
             {
@@ -408,7 +370,6 @@ namespace IKVM.Java.Externs.sun.nio.ch
         /// <typeparam name="TArg3"></typeparam>
         /// <typeparam name="TArg4"></typeparam>
         /// <typeparam name="TArg5"></typeparam>
-        /// <typeparam name="TResult"></typeparam>
         /// <param name="self"></param>
         /// <param name="channel"></param>
         /// <param name="arg1"></param>
@@ -432,17 +393,12 @@ namespace IKVM.Java.Externs.sun.nio.ch
                 var cts = new CancellationTokenSource();
                 var t = func(channel, arg1, arg2, arg3, arg4, arg5, global::java.lang.System.getSecurityManager() != null ? AccessController.getContext() : null, cts.Token);
                 f.setContext((t, cts));
-                t.ContinueWith(async a => { try { await a; f.setResult(null); } catch (Exception e) { f.setFailure(e); } });
+                t.ContinueWith(a => { try { a.GetAwaiter().GetResult(); f.setResult(null); } catch (Exception e) { f.setFailure(e); }; Invoker.invoke(f); });
             }
             catch (Exception e)
             {
-                if (handler != null)
-                {
-                    Invoker.invokeIndirectly(channel, handler, attachment, null, e);
-                    return null;
-                }
-
                 f.setFailure(e);
+                Invoker.invoke(f);
             }
             finally
             {

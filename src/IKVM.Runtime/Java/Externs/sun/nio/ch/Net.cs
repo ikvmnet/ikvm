@@ -4,8 +4,11 @@ using System.Net;
 using System.Net.Sockets;
 using System.Runtime.CompilerServices;
 using System.Runtime.InteropServices;
+using System.Threading.Tasks;
 
+using IKVM.Internal;
 using IKVM.Runtime;
+using IKVM.Runtime.Accessors.Java.Io;
 using IKVM.Runtime.Util.Java.Net;
 
 using static IKVM.Java.Externs.java.net.SocketImplUtil;
@@ -19,7 +22,10 @@ namespace IKVM.Java.Externs.sun.nio.ch
     static class Net
     {
 
-#if !FIRST_PASS
+#if FIRST_PASS == false
+
+        static FileDescriptorAccessor fileDescriptorAccessor;
+        static FileDescriptorAccessor FileDescriptorAccessor => JVM.BaseAccessors.Get(ref fileDescriptorAccessor);
 
         [StructLayout(LayoutKind.Explicit)]
         unsafe struct sockaddr_storage
@@ -234,7 +240,7 @@ namespace IKVM.Java.Externs.sun.nio.ch
         /// <param name="reuse"></param>
         /// <param name="fastLoopback"></param>
         /// <returns></returns>
-        public static global::java.io.FileDescriptor socket0(bool preferIPv6, bool stream, bool reuse, bool fastLoopback)
+        public static object socket0(bool preferIPv6, bool stream, bool reuse, bool fastLoopback)
         {
 #if FIRST_PASS
             throw new NotImplementedException();
@@ -253,7 +259,7 @@ namespace IKVM.Java.Externs.sun.nio.ch
                     SetConnectionReset(socket, false);
 
                 var fd = new global::java.io.FileDescriptor();
-                fd.setSocket(socket);
+                FileDescriptorAccessor.SetSocket(fd, socket);
                 return fd;
             });
 #endif
@@ -280,7 +286,7 @@ namespace IKVM.Java.Externs.sun.nio.ch
                     if (useExclBind && (int)socket.GetSocketOption(SocketOptionLevel.Socket, SocketOptionName.ReuseAddress) != 1)
                         socket.ExclusiveAddressUse = true;
 
-                    socket.Bind(new System.Net.IPEndPoint(addr.ToIPAddress(), port));
+                    socket.Bind(new IPEndPoint(addr.ToIPAddress(), port));
                 });
             });
 #endif
@@ -292,7 +298,7 @@ namespace IKVM.Java.Externs.sun.nio.ch
         /// <param name="fd"></param>
         /// <param name="backlog"></param>
         /// <exception cref="global::java.net.SocketException"></exception>
-        public static void listen(global::java.io.FileDescriptor fd, int backlog)
+        public static void listen(object fd, int backlog)
         {
 #if FIRST_PASS
             throw new NotImplementedException();
@@ -315,18 +321,18 @@ namespace IKVM.Java.Externs.sun.nio.ch
         /// <param name="remote"></param>
         /// <param name="remotePort"></param>
         /// <returns></returns>
-        public static int connect0(bool preferIPv6, global::java.io.FileDescriptor fd, global::java.net.InetAddress remote, int remotePort)
+        public static int connect0(bool preferIPv6, object fd, global::java.net.InetAddress remote, int remotePort)
         {
 #if FIRST_PASS
             throw new NotImplementedException();
 #else
             return InvokeFunc<int>(() =>
             {
-                return InvokeWithSocket(fd, socket =>
+                return InvokeWithSocket<int>(fd, socket =>
                 {
                     var ep = new IPEndPoint(remote.ToIPAddress(), remotePort);
                     var datagram = socket.SocketType == SocketType.Dgram;
-                    if (datagram || fd.isSocketBlocking())
+                    if (datagram || socket.Blocking)
                     {
                         socket.Connect(ep);
                         if (datagram)
@@ -336,7 +342,8 @@ namespace IKVM.Java.Externs.sun.nio.ch
                     }
                     else
                     {
-                        fd.setAsyncResult(socket.BeginConnect(ep, null, null));
+                        var task = Task.Factory.FromAsync(socket.BeginConnect, socket.EndConnect, ep, null);
+                        FileDescriptorAccessor.SetTask(fd, task);
                         return global::sun.nio.ch.IOStatus.UNAVAILABLE;
                     }
                 });
@@ -349,7 +356,7 @@ namespace IKVM.Java.Externs.sun.nio.ch
         /// </summary>
         /// <param name="fd"></param>
         /// <param name="how"></param>
-        public static void shutdown(global::java.io.FileDescriptor fd, int how)
+        public static void shutdown(object fd, int how)
         {
 #if FIRST_PASS
             throw new NotImplementedException();
@@ -369,7 +376,7 @@ namespace IKVM.Java.Externs.sun.nio.ch
         /// </summary>
         /// <param name="fd"></param>
         /// <returns></returns>
-        public static int localPort(global::java.io.FileDescriptor fd)
+        public static int localPort(object fd)
         {
 #if FIRST_PASS
             throw new NotImplementedException();
@@ -389,8 +396,7 @@ namespace IKVM.Java.Externs.sun.nio.ch
         /// </summary>
         /// <param name="fd"></param>
         /// <returns></returns>
-        /// <exception cref="global::java.net.SocketException"></exception>
-        public static global::java.net.InetAddress localInetAddress(global::java.io.FileDescriptor fd)
+        public static global::java.net.InetAddress localInetAddress(object fd)
         {
 #if FIRST_PASS
             throw new NotImplementedException();
@@ -411,8 +417,7 @@ namespace IKVM.Java.Externs.sun.nio.ch
         /// </summary>
         /// <param name="fd"></param>
         /// <returns></returns>
-        /// <exception cref="global::java.net.SocketException"></exception>
-        public static int remotePort(global::java.io.FileDescriptor fd)
+        public static int remotePort(object fd)
         {
 #if FIRST_PASS
             throw new NotImplementedException();
@@ -432,7 +437,7 @@ namespace IKVM.Java.Externs.sun.nio.ch
         /// </summary>
         /// <param name="fd"></param>
         /// <returns></returns>
-        public static global::java.net.InetAddress remoteInetAddress(global::java.io.FileDescriptor fd)
+        public static global::java.net.InetAddress remoteInetAddress(object fd)
         {
 #if FIRST_PASS
             throw new NotImplementedException();
@@ -441,7 +446,7 @@ namespace IKVM.Java.Externs.sun.nio.ch
             {
                 return InvokeWithSocket(fd, socket =>
                 {
-                    return global::java.net.SocketUtil.getInetAddressFromIPEndPoint((System.Net.IPEndPoint)socket.RemoteEndPoint);
+                    return ((IPEndPoint)socket.RemoteEndPoint).ToInetAddress();
                 });
             });
 #endif
@@ -455,8 +460,7 @@ namespace IKVM.Java.Externs.sun.nio.ch
         /// <param name="level"></param>
         /// <param name="opt"></param>
         /// <returns></returns>
-        /// <exception cref="global::java.net.SocketException"></exception>
-        public static int getIntOption0(global::java.io.FileDescriptor fd, bool mayNeedConversion, int level, int opt)
+        public static int getIntOption0(object fd, bool mayNeedConversion, int level, int opt)
         {
 #if FIRST_PASS
             throw new NotImplementedException();
@@ -495,7 +499,7 @@ namespace IKVM.Java.Externs.sun.nio.ch
         /// <param name="arg"></param>
         /// <param name="isIPv6"></param>
         /// <exception cref="global::java.net.SocketException"></exception>
-        public static void setIntOption0(global::java.io.FileDescriptor fd, bool mayNeedConversion, int level, int opt, int arg, bool isIPv6)
+        public static void setIntOption0(object fd, bool mayNeedConversion, int level, int opt, int arg, bool isIPv6)
         {
 #if FIRST_PASS
             throw new NotImplementedException();
@@ -543,7 +547,7 @@ namespace IKVM.Java.Externs.sun.nio.ch
         /// <param name="timeout"></param>
         /// <returns></returns>
         /// <exception cref="NotSupportedException"></exception>
-        public static int poll(global::java.io.FileDescriptor fd, int events, long timeout)
+        public static int poll(object fd, int events, long timeout)
         {
 #if FIRST_PASS
             throw new NotImplementedException();
@@ -579,7 +583,7 @@ namespace IKVM.Java.Externs.sun.nio.ch
         /// <param name="source"></param>
         /// <returns></returns>
         /// <exception cref="global::java.net.SocketException"></exception>
-        public unsafe static int joinOrDrop4(bool join, global::java.io.FileDescriptor fd, int group, int interf, int source)
+        public unsafe static int joinOrDrop4(bool join, object fd, int group, int interf, int source)
         {
 #if FIRST_PASS
             throw new NotImplementedException();
@@ -603,7 +607,7 @@ namespace IKVM.Java.Externs.sun.nio.ch
                         optionValue.imr_sourceaddr = Unsafe.As<int, in_addr>(ref imrSourceAddr);
                         optionValue.imr_interface = Unsafe.As<int, in_addr>(ref imrInterface);
 
-                        if (RuntimeInformation.IsOSPlatform(OSPlatform.Windows))
+                        if (RuntimeUtil.IsWindows)
                         {
                             var v = ArrayPool<byte>.Shared.Rent(sizeof(ip_mreq_source));
 
@@ -619,7 +623,7 @@ namespace IKVM.Java.Externs.sun.nio.ch
                                 ArrayPool<byte>.Shared.Return(v);
                             }
                         }
-                        else if (RuntimeInformation.IsOSPlatform(OSPlatform.Linux))
+                        else if (RuntimeUtil.IsLinux)
                         {
 #if NETCOREAPP
                             if (setsockopt(socket.SafeHandle, IPPROTO_IP, join ? IP_ADD_SOURCE_MEMBERSHIP : IP_DROP_SOURCE_MEMBERSHIP, &optionValue, sizeof(ip_mreq_source)) != 0)
@@ -649,8 +653,7 @@ namespace IKVM.Java.Externs.sun.nio.ch
         /// <param name="interf"></param>
         /// <param name="source"></param>
         /// <returns></returns>
-        /// <exception cref="global::java.net.SocketException"></exception>
-        public static unsafe int blockOrUnblock4(bool block, global::java.io.FileDescriptor fd, int group, int interf, int source)
+        public static unsafe int blockOrUnblock4(bool block, object fd, int group, int interf, int source)
         {
 #if FIRST_PASS
             throw new NotImplementedException();
@@ -697,7 +700,7 @@ namespace IKVM.Java.Externs.sun.nio.ch
         /// <param name="source"></param>
         /// <returns></returns>
         /// <exception cref="global::java.net.SocketException"></exception>
-        public static unsafe int joinOrDrop6(bool join, global::java.io.FileDescriptor fd, byte[] group, int index, byte[] source)
+        public static unsafe int joinOrDrop6(bool join, object fd, byte[] group, int index, byte[] source)
         {
 #if FIRST_PASS
             throw new NotImplementedException();
@@ -735,7 +738,7 @@ namespace IKVM.Java.Externs.sun.nio.ch
                         groupSourceReq.gsr_group = Unsafe.As<sockaddr_in6, sockaddr_storage>(ref groupSockAddr);
                         groupSourceReq.gsr_source = Unsafe.As<sockaddr_in6, sockaddr_storage>(ref sourceSockAddr);
 
-                        if (RuntimeInformation.IsOSPlatform(OSPlatform.Windows))
+                        if (RuntimeUtil.IsWindows)
                         {
                             var v = ArrayPool<byte>.Shared.Rent(sizeof(group_source_req));
 
@@ -751,7 +754,7 @@ namespace IKVM.Java.Externs.sun.nio.ch
                                 ArrayPool<byte>.Shared.Return(v);
                             }
                         }
-                        else if (RuntimeInformation.IsOSPlatform(OSPlatform.Linux))
+                        else if (RuntimeUtil.IsLinux)
                         {
 #if NETCOREAPP
                             if (setsockopt(socket.SafeHandle, IPPROTO_IPV6, join ? MCAST_JOIN_SOURCE_GROUP : MCAST_LEAVE_SOURCE_GROUP, &groupSourceReq, sizeof(group_source_req)) != 0)
@@ -782,7 +785,7 @@ namespace IKVM.Java.Externs.sun.nio.ch
         /// <param name="source"></param>
         /// <returns></returns>
         /// <exception cref="global::java.net.SocketException"></exception>
-        public static unsafe int blockOrUnblock6(bool block, global::java.io.FileDescriptor fd, byte[] group, int index, byte[] source)
+        public static unsafe int blockOrUnblock6(bool block, object fd, byte[] group, int index, byte[] source)
         {
 #if FIRST_PASS
             throw new NotImplementedException();
@@ -841,7 +844,7 @@ namespace IKVM.Java.Externs.sun.nio.ch
         /// <param name="fd"></param>
         /// <param name="interf"></param>
         /// <exception cref="global::java.net.SocketException"></exception>
-        public static void setInterface4(global::java.io.FileDescriptor fd, int interf)
+        public static void setInterface4(object fd, int interf)
         {
 #if FIRST_PASS
             throw new NotImplementedException();
@@ -862,7 +865,7 @@ namespace IKVM.Java.Externs.sun.nio.ch
         /// <param name="fd"></param>
         /// <returns></returns>
         /// <exception cref="global::java.net.SocketException"></exception>
-        public static int getInterface4(global::java.io.FileDescriptor fd)
+        public static int getInterface4(object fd)
         {
 #if FIRST_PASS
             throw new NotImplementedException();
@@ -883,7 +886,7 @@ namespace IKVM.Java.Externs.sun.nio.ch
         /// <param name="fd"></param>
         /// <param name="index"></param>
         /// <exception cref="global::java.net.SocketException"></exception>
-        public static void setInterface6(global::java.io.FileDescriptor fd, int index)
+        public static void setInterface6(object fd, int index)
         {
 #if FIRST_PASS
             throw new NotImplementedException();
@@ -904,7 +907,7 @@ namespace IKVM.Java.Externs.sun.nio.ch
         /// <param name="fd"></param>
         /// <returns></returns>
         /// <exception cref="global::java.net.SocketException"></exception>
-        public static int getInterface6(global::java.io.FileDescriptor fd)
+        public static int getInterface6(object fd)
         {
 #if FIRST_PASS
             throw new NotImplementedException();
@@ -993,11 +996,11 @@ namespace IKVM.Java.Externs.sun.nio.ch
         /// <returns></returns>
         /// <exception cref="global::java.lang.NullPointerException"></exception>
         /// <exception cref="global::java.net.SocketException"></exception>
-        static void InvokeWithSocket(global::java.io.FileDescriptor fd, Action<Socket> action)
+        static void InvokeWithSocket(object fd, Action<Socket> action)
         {
-            var socket = fd?.getSocket();
+            var socket = FileDescriptorAccessor.GetSocket(fd);
             if (socket == null)
-                throw new global::java.net.SocketException("Socket closed");
+                throw new global::java.net.SocketException("Socket closed.");
 
             action(socket);
         }
@@ -1011,11 +1014,11 @@ namespace IKVM.Java.Externs.sun.nio.ch
         /// <returns></returns>
         /// <exception cref="global::java.lang.NullPointerException"></exception>
         /// <exception cref="global::java.net.SocketException"></exception>
-        static TResult InvokeWithSocket<TResult>(global::java.io.FileDescriptor fd, Func<Socket, TResult> func)
+        static TResult InvokeWithSocket<TResult>(object fd, Func<Socket, TResult> func)
         {
-            var socket = fd?.getSocket();
+            var socket = FileDescriptorAccessor.GetSocket(fd);
             if (socket == null)
-                throw new global::java.net.SocketException("Socket closed");
+                throw new global::java.net.SocketException("Socket closed.");
 
             return func(socket);
         }

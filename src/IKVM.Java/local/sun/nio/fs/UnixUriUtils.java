@@ -41,7 +41,7 @@ class UnixUriUtils {
     /**
      * Converts URI to Path
      */
-    static Path fromUri(NetFileSystem fs, URI uri) {
+    static Path fromUri(DotNetFileSystem fs, URI uri) {
         if (!uri.isAbsolute())
             throw new IllegalArgumentException("URI is not absolute");
         if (uri.isOpaque())
@@ -68,16 +68,37 @@ class UnixUriUtils {
 
         // transform escaped octets and unescaped characters to bytes
         if (p.endsWith("/") && len > 1)
-            p = p.substring(0, len - 1);
+            len--;
+        byte[] result = new byte[len];
+        int rlen = 0;
+        int pos = 0;
+        while (pos < len) {
+            char c = p.charAt(pos++);
+            byte b;
+            if (c == '%') {
+                assert (pos+2) <= len;
+                char c1 = p.charAt(pos++);
+                char c2 = p.charAt(pos++);
+                b = (byte)((decode(c1) << 4) | decode(c2));
+                if (b == 0)
+                    throw new IllegalArgumentException("Nul character not allowed");
+            } else {
+                assert c < 0x80;
+                b = (byte)c;
+            }
+            result[rlen++] = b;
+        }
+        if (rlen != result.length)
+            result = Arrays.copyOf(result, rlen);
 
-        return new NetPath(fs, p);
+        return new DotNetPath(fs, result);
     }
 
     /**
      * Converts Path to URI
      */
-    static URI toUri(NetPath up) {
-        byte[] path = up.toAbsolutePath().toString().getBytes();
+    static URI toUri(DotNetPath up) {
+        byte[] path = up.toAbsolutePath().asByteArray();
         StringBuilder sb = new StringBuilder("file:///");
         assert path[0] == '/';
         for (int i=1; i<path.length; i++) {
@@ -94,7 +115,7 @@ class UnixUriUtils {
         // trailing slash if directory
         if (sb.charAt(sb.length()-1) != '/') {
             try {
-                 if (cli.System.IO.Directory.Exists(up.path))
+                 if (cli.System.IO.Directory.Exists(up.path) || cli.IKVM.Runtime.Vfs.VfsTable.get_Default().GetPath(path) instanceof cli.IKVM.Runtime.Vfs.VfsDirectory)
                      sb.append('/');
             } catch (Throwable x) {
                 // ignore

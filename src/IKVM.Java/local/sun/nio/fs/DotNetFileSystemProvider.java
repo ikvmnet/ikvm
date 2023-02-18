@@ -61,9 +61,9 @@ import sun.nio.ch.DotNetAsynchronousFileChannelImpl;
 import sun.nio.ch.FileChannelImpl;
 import sun.nio.ch.ThreadPool;
 
-final class NetFileSystemProvider extends AbstractFileSystemProvider
-{
-    private final NetFileSystem fs = new NetFileSystem(this);
+final class DotNetFileSystemProvider extends AbstractFileSystemProvider {
+
+    private final DotNetFileSystem fs = new DotNetFileSystem(this);
     private final HashMap<String, FileStore> stores = new HashMap<String, FileStore>();
 
     final synchronized FileStore getFileStore(DriveInfo drive) throws IOException
@@ -107,7 +107,7 @@ final class NetFileSystemProvider extends AbstractFileSystemProvider
 
     public AsynchronousFileChannel newAsynchronousFileChannel(Path path, Set<? extends OpenOption> opts, ExecutorService executor, FileAttribute<?>... attrs) throws IOException
     {
-        NetPath npath = NetPath.from(path);
+        DotNetPath npath = DotNetPath.from(path);
         for (FileAttribute<?> attr : attrs)
         {
             // null check
@@ -224,7 +224,7 @@ final class NetFileSystemProvider extends AbstractFileSystemProvider
 
     public FileChannel newFileChannel(Path path, Set<? extends OpenOption> opts, FileAttribute<?>... attrs) throws IOException
     {
-        NetPath npath = NetPath.from(path);
+        DotNetPath npath = DotNetPath.from(path);
         for (FileAttribute<?> attr : attrs)
         {
             // null check
@@ -413,7 +413,7 @@ final class NetFileSystemProvider extends AbstractFileSystemProvider
 
     public DirectoryStream<Path> newDirectoryStream(Path dir, final DirectoryStream.Filter<? super Path> filter) throws IOException
     {
-        final String ndir = NetPath.from(dir).path;
+        final String ndir = DotNetPath.from(dir).path;
         // null check
         filter.getClass();
 
@@ -444,7 +444,7 @@ final class NetFileSystemProvider extends AbstractFileSystemProvider
                         public boolean hasNext() {
                             if (filtered == null) {
                                 while (pos != files.length) {
-                                    Path p = new NetPath(fs, cli.System.IO.Path.Combine(ndir, files[pos++]));
+                                    Path p = new DotNetPath(fs, cli.System.IO.Path.Combine(ndir, files[pos++]));
                                     try {
                                         if (filter.accept(p)) {
                                             filtered = p;
@@ -490,7 +490,7 @@ final class NetFileSystemProvider extends AbstractFileSystemProvider
 
     public void createDirectory(Path dir, FileAttribute<?>... attrs) throws IOException
     {
-        NetPath ndir = NetPath.from(dir);
+        DotNetPath ndir = DotNetPath.from(dir);
         for (FileAttribute<?> attr : attrs)
         {
             // null check
@@ -525,8 +525,8 @@ final class NetFileSystemProvider extends AbstractFileSystemProvider
 
     public void copy(Path source, Path target, CopyOption... options) throws IOException
     {
-        NetPath nsource = NetPath.from(source);
-        NetPath ntarget = NetPath.from(target);
+        DotNetPath nsource = DotNetPath.from(source);
+        DotNetPath ntarget = DotNetPath.from(target);
         boolean overwrite = false;
         boolean copyAttribs = false;
         for (CopyOption opt : options)
@@ -632,8 +632,8 @@ final class NetFileSystemProvider extends AbstractFileSystemProvider
     @cli.System.Security.SecuritySafeCriticalAttribute.Annotation
     public void move(Path source, Path target, CopyOption... options) throws IOException
     {
-        NetPath nsource = NetPath.from(source);
-        NetPath ntarget = NetPath.from(target);
+        DotNetPath nsource = DotNetPath.from(source);
+        DotNetPath ntarget = DotNetPath.from(target);
         boolean overwrite = false;
         boolean atomicMove = false;
         for (CopyOption opt : options)
@@ -765,7 +765,7 @@ final class NetFileSystemProvider extends AbstractFileSystemProvider
         {
             return true;
         }
-        if (!(path instanceof NetPath && path2 instanceof NetPath))
+        if (!(path instanceof DotNetPath && path2 instanceof DotNetPath))
         {
             // null check
             path2.getClass();
@@ -776,7 +776,7 @@ final class NetFileSystemProvider extends AbstractFileSystemProvider
 
     public boolean isHidden(Path path) throws IOException
     {
-        String npath = NetPath.from(path).path;
+        String npath = DotNetPath.from(path).path;
         SecurityManager sm = System.getSecurityManager();
         if (sm != null)
         {
@@ -914,7 +914,7 @@ final class NetFileSystemProvider extends AbstractFileSystemProvider
 
     public FileStore getFileStore(Path path) throws IOException
     {
-        NetPath npath = NetPath.from(path.toAbsolutePath());
+        DotNetPath npath = DotNetPath.from(path.toAbsolutePath());
         SecurityManager sm = System.getSecurityManager();
         if (sm != null)
         {
@@ -925,7 +925,7 @@ final class NetFileSystemProvider extends AbstractFileSystemProvider
 
     public void checkAccess(Path path, AccessMode... modes) throws IOException
     {
-        String npath = NetPath.from(path).path;
+        String npath = DotNetPath.from(path).path;
         SecurityManager sm = System.getSecurityManager();
         if (sm != null)
         {
@@ -1335,7 +1335,7 @@ final class NetFileSystemProvider extends AbstractFileSystemProvider
 
     public <V extends FileAttributeView> V getFileAttributeView(Path path, Class<V> type, LinkOption... options)
     {
-        String npath = NetPath.from(path).path;
+        String npath = DotNetPath.from(path).path;
         validateLinkOption(options);
         if (type == BasicFileAttributeView.class)
         {
@@ -1355,7 +1355,7 @@ final class NetFileSystemProvider extends AbstractFileSystemProvider
 
     public <A extends BasicFileAttributes> A readAttributes(Path path, Class<A> type, LinkOption... options) throws IOException
     {
-        String npath = NetPath.from(path).path;
+        String npath = DotNetPath.from(path).path;
         // null check
         type.getClass();
         validateLinkOption(options);
@@ -1376,11 +1376,11 @@ final class NetFileSystemProvider extends AbstractFileSystemProvider
         validateLinkOption(options);
         if (name.equals("basic"))
         {
-            return new BasicFileAttributesViewImpl(NetPath.from(file).path);
+            return new BasicFileAttributesViewImpl(DotNetPath.from(file).path);
         }
         else if (name.equals("dos"))
         {
-            return new DosFileAttributesViewImpl(NetPath.from(file).path);
+            return new DosFileAttributesViewImpl(DotNetPath.from(file).path);
         }
         else
         {
@@ -1390,7 +1390,7 @@ final class NetFileSystemProvider extends AbstractFileSystemProvider
 
     boolean implDelete(Path file, boolean failIfNotExists) throws IOException
     {
-        String path = NetPath.from(file).path;
+        String path = DotNetPath.from(file).path;
         SecurityManager sm = System.getSecurityManager();
         if (sm != null)
         {

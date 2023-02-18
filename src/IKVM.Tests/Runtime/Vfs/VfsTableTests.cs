@@ -15,18 +15,6 @@ namespace IKVM.Tests.Runtime.Vfs
     {
 
         [TestMethod]
-        public void CanGetDirectoryForVfsRoot()
-        {
-            VfsTable.Default.GetPath(VfsTable.RootPath).Should().BeAssignableTo<VfsDirectory>();
-        }
-
-        [TestMethod]
-        public void CanGetAssemblyDirectoryByPath()
-        {
-            VfsTable.Default.GetPath(Path.Combine(VfsTable.RootPath, "assembly")).Should().BeAssignableTo<VfsAssemblyDirectory>();
-        }
-
-        [TestMethod]
         public void CanGetAssemblyDirectory()
         {
             VfsTable.Default.GetPath(VfsTable.Default.GetAssemblyClassesPath(typeof(global::java.lang.Object).Assembly)).Should().BeAssignableTo<VfsDirectory>();

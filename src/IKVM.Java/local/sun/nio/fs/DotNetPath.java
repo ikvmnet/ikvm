@@ -33,13 +33,13 @@ import java.nio.file.*;
 import java.util.ArrayList;
 import java.util.Iterator;
 
-final class NetPath extends AbstractPath
-{
+final class DotDotNetPath extends AbstractPath {
+
     private static final char[] invalid = cli.System.IO.Path.GetInvalidFileNameChars();
-    private final NetFileSystem fs;
+    private final DotNetFileSystem fs;
     final String path;
 
-    NetPath(NetFileSystem fs, String path)
+    DotDotNetPath(DotNetFileSystem fs, String path)
     {
         if (cli.IKVM.Runtime.RuntimeUtil.get_IsWindows())
         {
@@ -93,24 +93,20 @@ final class NetPath extends AbstractPath
         this.path = path;
     }
 
-    public FileSystem getFileSystem()
-    {
+    public FileSystem getFileSystem() {
         return fs;
     }
 
-    public boolean isAbsolute()
-    {
+    public boolean isAbsolute() {
         return cli.System.IO.Path.IsPathRooted(path) && (cli.IKVM.Runtime.RuntimeUtil.get_IsWindows() == false || path.startsWith("\\\\") || (path.length() >= 3 && path.charAt(1) == ':' && path.charAt(2) == '\\'));
     }
 
-    public Path getRoot()
-    {
+    public Path getRoot() {
         int len = getRootLength();
-        return len == 0 ? null : new NetPath(fs, path.substring(0, len));
+        return len == 0 ? null : new DotNetPath(fs, path.substring(0, len));
     }
 
-    private int getRootLength()
-    {
+    private int getRootLength() {
         if (cli.IKVM.Runtime.RuntimeUtil.get_IsWindows())
         {
             if (path.length() >= 2 && path.charAt(1) == ':')
@@ -140,8 +136,7 @@ final class NetPath extends AbstractPath
         }
     }
 
-    public Path getFileName()
-    {
+    public Path getFileName() {
         if (path.length() == 0)
         {
             return this;
@@ -155,7 +150,7 @@ final class NetPath extends AbstractPath
         {
             return null;
         }
-        return new NetPath(fs, name);
+        return new DotNetPath(fs, name);
     }
 
     public Path getParent()
@@ -169,7 +164,7 @@ final class NetPath extends AbstractPath
         {
             return null;
         }
-        return new NetPath(fs, parent);
+        return new DotNetPath(fs, parent);
     }
 
     public int getNameCount()
@@ -192,7 +187,7 @@ final class NetPath extends AbstractPath
 
     public Path getName(int index)
     {
-        return new NetPath(fs, getNameImpl(index));
+        return new DotNetPath(fs, getNameImpl(index));
     }
 
     private String getNameImpl(int index)
@@ -228,12 +223,12 @@ final class NetPath extends AbstractPath
             }
             sb.append(getNameImpl(i));
         }
-        return new NetPath(fs, sb.toString());
+        return new DotNetPath(fs, sb.toString());
     }
 
     public boolean startsWith(Path other)
     {
-        String npath = NetPath.from(other).path;
+        String npath = DotNetPath.from(other).path;
         if (npath.length() == 0)
         {
             return path.length() == 0;
@@ -247,7 +242,7 @@ final class NetPath extends AbstractPath
 
     public boolean endsWith(Path other)
     {
-        NetPath nother = NetPath.from(other);
+        DotNetPath nother = DotNetPath.from(other);
         String npath = nother.path;
         if (npath.length() > path.length())
         {
@@ -326,12 +321,12 @@ final class NetPath extends AbstractPath
             }
             sb.append(list.get(i));
         }
-        return new NetPath(fs, sb.toString());
+        return new DotNetPath(fs, sb.toString());
     }
 
     public Path resolve(Path other)
     {
-        NetPath nother = NetPath.from(other);
+        DotNetPath nother = DotNetPath.from(other);
         String npath = nother.path;
         if (nother.isAbsolute())
         {
@@ -353,18 +348,18 @@ final class NetPath extends AbstractPath
             {
                 // we're in the case where we have a root "\\host\share\" and other "\",
                 // we have to manually handle this because Path.Combine doesn't do the right thing
-                return new NetPath(fs, path.substring(0, getRootLength()) + npath);
+                return new DotNetPath(fs, path.substring(0, getRootLength()) + npath);
             }
         }
-        return new NetPath(fs, cli.System.IO.Path.Combine(path, npath));
+        return new DotNetPath(fs, cli.System.IO.Path.Combine(path, npath));
     }
 
     public Path relativize(Path other)
     {
-        NetPath nother = NetPath.from(other);
+        DotNetPath nother = DotNetPath.from(other);
         if (equals(nother))
         {
-            return new NetPath(fs, "");
+            return new DotNetPath(fs, "");
         }
         int rootLength = getRootLength();
         if (nother.getRootLength() != rootLength || !path.regionMatches(true, 0, nother.path, 0, rootLength))
@@ -394,7 +389,7 @@ final class NetPath extends AbstractPath
             }
             sb.append(nother.getNameImpl(j));
         }
-        return new NetPath(fs, sb.toString());
+        return new DotNetPath(fs, sb.toString());
     }
 
     public URI toUri()
@@ -409,14 +404,14 @@ final class NetPath extends AbstractPath
         }
     }
 
-    public NetPath toAbsolutePath()
+    public DotNetPath toAbsolutePath()
     {
         if (isAbsolute())
         {
             return this;
         }
         // System.getProperty("user.dir") will trigger the specified security check
-        return new NetPath(fs, cli.System.IO.Path.GetFullPath(cli.System.IO.Path.Combine(System.getProperty("user.dir"), path)));
+        return new DotNetPath(fs, cli.System.IO.Path.GetFullPath(cli.System.IO.Path.Combine(System.getProperty("user.dir"), path)));
     }
 
     public Path toRealPath(LinkOption... options) throws IOException
@@ -430,14 +425,14 @@ final class NetPath extends AbstractPath
                 sm.checkPropertyAccess("user.dir");
             }
         }
-        return new NetPath(fs, toRealPathImpl(path));
+        return new DotNetPath(fs, toRealPathImpl(path));
     }
     
     private static native String toRealPathImpl(String path);
 
     public WatchKey register(WatchService watcher, WatchEvent.Kind<?>[] events, WatchEvent.Modifier... modifiers) throws IOException
     {
-        if (!(watcher instanceof NetFileSystem.NetWatchService))
+        if (!(watcher instanceof DotNetFileSystem.NetWatchService))
         {
             // null check
             watcher.getClass();
@@ -503,12 +498,12 @@ final class NetPath extends AbstractPath
                 sm.checkRead(path + cli.System.IO.Path.DirectorySeparatorChar + '-');
             }
         }
-        return ((NetFileSystem.NetWatchService)watcher).register(this, create, delete, modify, overflow, subtree);
+        return ((DotNetFileSystem.NetWatchService)watcher).register(this, create, delete, modify, overflow, subtree);
     }
 
     public int compareTo(Path other)
     {
-        String path2 = ((NetPath)other).path;
+        String path2 = ((DotNetPath)other).path;
         int len1 = path.length();
         int len2 = path2.length();
         int min = Math.min(len1, len2);
@@ -526,11 +521,11 @@ final class NetPath extends AbstractPath
 
     public boolean equals(Object other)
     {
-        if (!(other instanceof NetPath))
+        if (!(other instanceof DotNetPath))
         {
             return false;
         }
-        return compareTo((NetPath)other) == 0;
+        return compareTo((DotNetPath)other) == 0;
     }
 
     public int hashCode()
@@ -553,14 +548,14 @@ final class NetPath extends AbstractPath
         return cli.IKVM.Runtime.RuntimeUtil.get_IsWindows() && getRootLength() > 3;
     }
 
-    static NetPath from(Path path)
+    static DotNetPath from(Path path)
     {
-        if (!(path instanceof NetPath))
+        if (!(path instanceof DotNetPath))
         {
             // null check
             path.getClass();
             throw new ProviderMismatchException();
         }
-        return (NetPath)path;
+        return (DotNetPath)path;
     }
 }

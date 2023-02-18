@@ -13,14 +13,14 @@ namespace IKVM.Tests.Java.java.io
     {
 
         [TestMethod]
-        public void Can_create_file()
+        public void CanCreateFile()
         {
             var f = new global::java.io.File(Path.Combine(Path.GetTempPath(), Path.GetRandomFileName()));
             f.createNewFile().Should().BeTrue();
         }
 
         [TestMethod]
-        public void Can_write_file()
+        public void CanWriteFile()
         {
             var w = new global::java.io.FileWriter("test.txt");
             w.write("TEST");
@@ -28,7 +28,7 @@ namespace IKVM.Tests.Java.java.io
         }
 
         [TestMethod]
-        public void Can_read_file()
+        public void CanReadFile()
         {
             var w = new global::java.io.FileWriter("test.txt");
             w.write("TEST");

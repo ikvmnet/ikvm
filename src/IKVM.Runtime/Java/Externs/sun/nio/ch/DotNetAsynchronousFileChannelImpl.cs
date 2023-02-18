@@ -3,6 +3,17 @@ using System.Threading.Tasks;
 using System.IO;
 using System.Threading;
 
+using System.ComponentModel;
+using System.Runtime.InteropServices;
+
+using IKVM.Runtime.Accessors.Java.Io;
+using IKVM.Internal;
+using IKVM.Runtime.Util.Java.Nio;
+using IKVM.Runtime;
+
+using Microsoft.Win32.SafeHandles;
+
+
 #if FIRST_PASS == false
 
 using java.io;
@@ -20,6 +31,13 @@ namespace IKVM.Java.Externs.sun.nio.ch
 
     static class DotNetAsynchronousFileChannelImpl
     {
+
+#if FIRST_PASS == false
+
+        static FileDescriptorAccessor fileDescriptorAccessor;
+        static FileDescriptorAccessor FileDescriptorAccessor => JVM.BaseAccessors.Get(ref fileDescriptorAccessor);
+
+#endif
 
         /// <summary>
         /// Implements the native method for 'close0'.
@@ -165,10 +183,17 @@ namespace IKVM.Java.Externs.sun.nio.ch
         /// <returns></returns>
         static void Close(global::sun.nio.ch.DotNetAsynchronousFileChannelImpl self)
         {
+            var stream = (FileStream)FileDescriptorAccessor.GetStream(self.fdObj);
+            if (stream == null)
+                return;
+
             try
             {
                 self.closeLock.writeLock().@lock();
+
                 self.closed = true;
+                FileDescriptorAccessor.SetStream(self.fdObj, null);
+                stream.Close();
             }
             finally
             {
@@ -176,7 +201,6 @@ namespace IKVM.Java.Externs.sun.nio.ch
             }
 
             self.invalidateAllLocks();
-            self.fdObj.close();
         }
 
         /// <summary>
@@ -186,10 +210,15 @@ namespace IKVM.Java.Externs.sun.nio.ch
         /// <returns></returns>
         static long Size(global::sun.nio.ch.DotNetAsynchronousFileChannelImpl self)
         {
+            var stream = (FileStream)FileDescriptorAccessor.GetStream(self.fdObj);
+            if (stream == null)
+                throw new ClosedChannelException();
+
             try
             {
                 self.begin();
-                return self.fdObj.length();
+
+                return stream.Length;
             }
             finally
             {
@@ -207,13 +236,18 @@ namespace IKVM.Java.Externs.sun.nio.ch
             if (size < 0)
                 throw new IllegalArgumentException("Negative size");
             if (self.writing == false)
-                throw new NonWritableChannelException();
+                throw new global::java.nio.channels.NonWritableChannelException();
+
+            var stream = (FileStream)FileDescriptorAccessor.GetStream(self.fdObj);
+            if (stream == null)
+                throw new global::java.nio.channels.AsynchronousCloseException();
 
             try
             {
                 self.begin();
-                if (size <= self.fdObj.length())
-                    ((FileStream)self.fdObj.getStream()).SetLength(size);
+
+                if (size < stream.Length)
+                    stream.SetLength(size);
             }
             finally
             {
@@ -230,14 +264,127 @@ namespace IKVM.Java.Externs.sun.nio.ch
         /// <returns></returns>
         static void Force(global::sun.nio.ch.DotNetAsynchronousFileChannelImpl self, bool metaData)
         {
+            var stream = (FileStream)FileDescriptorAccessor.GetStream(self.fdObj);
+            if (stream == null)
+                throw new global::java.nio.channels.AsynchronousCloseException();
+
             try
             {
                 self.begin();
-                self.fdObj.sync();
+                stream.Flush();
             }
             finally
             {
                 self.end();
+            }
+        }
+
+        /// <summary>
+        /// Invokes the LockFileEx Win32 function.
+        /// </summary>
+        /// <param name="hFile"></param>
+        /// <param name="dwFlags"></param>
+        /// <param name="dwReserved"></param>
+        /// <param name="nNumberOfBytesToLockLow"></param>
+        /// <param name="nNumberOfBytesToLockHigh"></param>
+        /// <param name="lpOverlapped"></param>
+        /// <returns></returns>
+        [DllImport("kernel32")]
+        static extern unsafe int LockFileEx(SafeFileHandle hFile, int dwFlags, int dwReserved, int nNumberOfBytesToLockLow, int nNumberOfBytesToLockHigh, NativeOverlapped* lpOverlapped);
+
+        /// <summary>
+        /// Wraps the LockFileEx function as an async operation.
+        /// </summary>
+        /// <returns></returns>
+        static unsafe ValueTask LockFileExAsync(SafeFileHandle hFile, int dwFlags, int dwReserved, int nNumberOfBytesToLockLow, int nNumberOfBytesToLockHigh, Overlapped overlapped)
+        {
+            const int ERROR_IO_PENDING = 997;
+
+            var task = new TaskCompletionSource<object>();
+            var iocb = (IOCompletionCallback)((errorCode, numBytes, nativeOverlapped) =>
+            {
+                try
+                {
+                    if (errorCode == 0)
+                        task.SetResult(null);
+                    else
+                        task.SetException(new Win32Exception((int)errorCode));
+                }
+                finally
+                {
+                    Overlapped.Free(nativeOverlapped);
+                }
+            });
+
+            var ptr = overlapped.Pack(iocb, null);
+            var res = LockFileEx(hFile, dwFlags, dwReserved, nNumberOfBytesToLockLow, nNumberOfBytesToLockHigh, ptr);
+            if (res == ERROR_IO_PENDING)
+            {
+                return new ValueTask(task.Task);
+            }
+            else if (res != 1)
+            {
+                Overlapped.Free(ptr);
+                throw new Win32Exception(Marshal.GetLastWin32Error());
+            }
+            else
+            {
+                Overlapped.Free(ptr);
+                return new ValueTask(Task.CompletedTask);
+            }
+        }
+
+        /// <summary>
+        /// Invokes the UnlockFileEx Win32 function.
+        /// </summary>
+        /// <param name="hFile"></param>
+        /// <param name="dwReserved"></param>
+        /// <param name="nNumberOfBytesToUnlockLow"></param>
+        /// <param name="nNumberOfBytesToUnlockHigh"></param>
+        /// <param name="lpOverlapped"></param>
+        /// <returns></returns>
+        [DllImport("kernel32", SetLastError = true)]
+        static extern unsafe int UnlockFileEx(SafeFileHandle hFile, int dwReserved, int nNumberOfBytesToUnlockLow, int nNumberOfBytesToUnlockHigh, NativeOverlapped* lpOverlapped);
+
+        /// <summary>
+        /// Wraps the UnlockFileEx function as an async operation.
+        /// </summary>
+        /// <returns></returns>
+        static unsafe ValueTask UnlockFileExAsync(SafeFileHandle hFile, int dwReserved, int nNumberOfBytesToUnlockLow, int nNumberOfBytesToUnlockHigh, Overlapped overlapped)
+        {
+            const int ERROR_IO_PENDING = 997;
+
+            var task = new TaskCompletionSource<object>();
+            var iocb = (IOCompletionCallback)((errorCode, numBytes, nativeOverlapped) =>
+            {
+                try
+                {
+                    if (errorCode == 0)
+                        task.SetResult(null);
+                    else
+                        task.SetException(new Win32Exception((int)errorCode));
+                }
+                finally
+                {
+                    Overlapped.Free(nativeOverlapped);
+                }
+            });
+
+            var ptr = overlapped.Pack(iocb, null);
+            var res = UnlockFileEx(hFile, dwReserved, nNumberOfBytesToUnlockLow, nNumberOfBytesToUnlockHigh, ptr);
+            if (res == ERROR_IO_PENDING)
+            {
+                return new ValueTask(task.Task);
+            }
+            else if (res != 1)
+            {
+                Overlapped.Free(ptr);
+                throw new Win32Exception(Marshal.GetLastWin32Error());
+            }
+            else
+            {
+                Overlapped.Free(ptr);
+                return new ValueTask(Task.CompletedTask);
             }
         }
 
@@ -247,14 +394,20 @@ namespace IKVM.Java.Externs.sun.nio.ch
         /// <param name="self"></param>
         /// <param name="position"></param>
         /// <param name="accessControlContext"></param>
-        /// <param name="future"></param>
+        /// <param name="cancellationToken"></param>
         /// <returns></returns>
-        static async Task<FileLock> LockAsync(global::sun.nio.ch.DotNetAsynchronousFileChannelImpl self, long position, long size, bool shared, AccessControlContext accessControlContext, PendingFuture future)
+        static async Task<FileLock> LockAsync(global::sun.nio.ch.DotNetAsynchronousFileChannelImpl self, long position, long size, bool shared, AccessControlContext accessControlContext, CancellationToken cancellationToken)
         {
             if (shared && self.reading == false)
-                throw new NonReadableChannelException();
+                throw new global::java.nio.channels.NonReadableChannelException();
             if (shared == false && self.writing == false)
-                throw new NonWritableChannelException();
+                throw new global::java.nio.channels.NonWritableChannelException();
+            if (self.isOpen() == false)
+                throw new global::java.nio.channels.ClosedChannelException();
+
+            var stream = (FileStream)FileDescriptorAccessor.GetStream(self.fdObj);
+            if (stream == null)
+                throw new global::java.nio.channels.AsynchronousCloseException();
 
             var fli = self.addToFileLockTable(position, size, shared);
             if (fli == null)
@@ -262,37 +415,73 @@ namespace IKVM.Java.Externs.sun.nio.ch
 
             try
             {
-                var stream = (FileStream)self.fdObj.getStream();
-                if (stream == null)
-                    throw new ClosedChannelException();
-
-                while (true)
+                if (RuntimeUtil.IsWindows)
                 {
                     try
                     {
-                        if (future.isCancelled())
-                            return null;
+                        const int LOCKFILE_EXCLUSIVE_LOCK = 2;
 
-                        try
-                        {
-                            stream.Lock(position, fli.size());
-                            return fli;
-                        }
-                        catch (System.IO.IOException)
-                        {
-                            // we failed to acquire the lock, try again next iteration
-                        }
+                        var o = new Overlapped();
+                        o.OffsetLow = (int)position;
+                        o.OffsetHigh = (int)(position >> 32);
 
-                        // try again shortly
-                        await Task.Delay(TimeSpan.FromMilliseconds(100));
+                        var flags = 0;
+                        if (shared == false)
+                            flags |= LOCKFILE_EXCLUSIVE_LOCK;
+
+                        await LockFileExAsync(stream.SafeFileHandle, flags, 0, (int)size, (int)(size >> 32), o);
+
+                        return fli;
                     }
-                    catch (ClosedChannelException)
+                    catch (System.Exception) when (self.isOpen() == false)
                     {
-                        throw new AsynchronousCloseException();
+                        throw new global::java.nio.channels.AsynchronousCloseException();
                     }
                     catch (System.Exception e)
                     {
                         throw new global::java.io.IOException(e);
+                    }
+                }
+                else
+                {
+                    while (true)
+                    {
+                        try
+                        {
+                            if (cancellationToken.IsCancellationRequested)
+                                return null;
+
+                            try
+                            {
+                                self.begin();
+
+                                stream.Lock(position, size);
+                                return fli;
+                            }
+                            catch (System.IO.IOException)
+                            {
+                                // we failed to acquire the lock, try again next iteration
+                            }
+                            finally
+                            {
+                                self.end();
+                            }
+
+                            // try again shortly
+                            await Task.Delay(TimeSpan.FromMilliseconds(100));
+                        }
+                        catch (ObjectDisposedException)
+                        {
+                            throw new global::java.nio.channels.AsynchronousCloseException();
+                        }
+                        catch (System.Exception) when (self.isOpen() == false)
+                        {
+                            throw new global::java.nio.channels.AsynchronousCloseException();
+                        }
+                        catch (System.Exception e)
+                        {
+                            throw new global::java.io.IOException(e);
+                        }
                     }
                 }
             }
@@ -301,59 +490,158 @@ namespace IKVM.Java.Externs.sun.nio.ch
                 self.removeFromFileLockTable(fli);
             }
 
-            // should not be reachable since while() does not exit
-            throw new InvalidOperationException();
+            return null;
         }
 
         /// <summary>
-        /// 
+        /// Attempts to lock a file region.
         /// </summary>
         /// <param name="self"></param>
         /// <param name="position"></param>
         /// <param name="size"></param>
         /// <param name="shared"></param>
         /// <returns></returns>
-        static FileLock TryLock(global::sun.nio.ch.DotNetAsynchronousFileChannelImpl self, long position, long size, bool shared)
+        static unsafe FileLock TryLock(global::sun.nio.ch.DotNetAsynchronousFileChannelImpl self, long position, long size, bool shared)
         {
-            throw new NotImplementedException();
-        }
+            if (shared && self.reading == false)
+                throw new global::java.nio.channels.NonReadableChannelException();
+            if (shared == false && self.writing == false)
+                throw new global::java.nio.channels.NonWritableChannelException();
+            if (self.isOpen() == false)
+                throw new global::java.nio.channels.ClosedChannelException();
 
-        /// <summary>
-        /// Implements the Lock logic as an asynchronous task.
-        /// </summary>
-        /// <returns></returns>
-        static async void Release(global::sun.nio.ch.DotNetAsynchronousFileChannelImpl self, FileLockImpl fli)
-        {
-            throw new NotImplementedException();
-        }
+            var stream = (FileStream)FileDescriptorAccessor.GetStream(self.fdObj);
+            if (stream == null)
+                throw new global::java.nio.channels.AsynchronousCloseException();
 
-        /// <summary>
-        /// Returns an <see cref="ArraySegment{byte}"/> for the given <see cref="ByteBuffer"/>. May be a memory
-        /// mapping to the original array, or may be a newly allocated temporary buffer. Optionally, copy the
-        /// original data to the temporary location.
-        /// </summary>
-        /// <param name="buf"></param>
-        /// <param name="copy"></param>
-        /// <returns></returns>
-        static unsafe ArraySegment<byte> PrepareArraySegment(ByteBuffer buf, bool copy = false)
-        {
-            int pos = buf.position();
-            int lim = buf.limit();
-            int rem = pos <= lim ? lim - pos : 0;
+            var fli = self.addToFileLockTable(position, size, shared);
+            if (fli == null)
+                throw new ClosedChannelException();
 
-            if (buf is DirectBuffer dir)
+            try
             {
-                var s = new ArraySegment<byte>(ArrayPool<byte>.Shared.Rent(rem), 0, rem);
+                try
+                {
+                    self.begin();
 
-                // optionally copy the original buffer data to the new segment
-                if (copy)
-                    new ReadOnlySpan<byte>((byte*)(IntPtr)dir.address() + pos, rem).CopyTo(s);
+                    if (RuntimeUtil.IsWindows)
+                    {
+                        const int LOCKFILE_FAIL_IMMEDIATELY = 1;
+                        const int LOCKFILE_EXCLUSIVE_LOCK = 2;
 
-                return s;
+                        var o = new Overlapped();
+                        o.OffsetLow = (int)position;
+                        o.OffsetHigh = (int)(position >> 32);
+
+                        var flags = LOCKFILE_FAIL_IMMEDIATELY;
+                        if (shared == false)
+                            flags |= LOCKFILE_EXCLUSIVE_LOCK;
+
+                        var t = LockFileExAsync(stream.SafeFileHandle, flags, 0, (int)size, (int)(size >> 32), o);
+                        if (t.IsCompleted == false)
+                            throw new global::java.io.IOException("LockFile did not complete synchronously.");
+
+                        // await task, which should have been synchronous
+                        t.GetAwaiter().GetResult();
+
+                        return fli;
+                    }
+                    else
+                    {
+                        stream.Lock(position, size);
+                    }
+                }
+                catch (ObjectDisposedException)
+                {
+                    throw new global::java.nio.channels.AsynchronousCloseException();
+                }
+                catch (System.Exception) when (self.isOpen() == false)
+                {
+                    throw new global::java.nio.channels.AsynchronousCloseException();
+                }
+                catch (System.Exception e)
+                {
+                    throw new global::java.io.IOException(e);
+                }
+                finally
+                {
+                    self.end();
+                }
             }
-            else
+            catch
             {
-                return new ArraySegment<byte>(buf.array(), buf.arrayOffset(), rem);
+                self.removeFromFileLockTable(fli);
+            }
+
+            return null;
+        }
+
+        /// <summary>
+        /// Implements the Release logic as an asynchronous task.
+        /// </summary>
+        /// <returns></returns>
+        static unsafe void Release(global::sun.nio.ch.DotNetAsynchronousFileChannelImpl self, FileLockImpl fli)
+        {
+            if (self.isOpen() == false)
+                throw new ClosedChannelException();
+
+            var stream = (FileStream)FileDescriptorAccessor.GetStream(self.fdObj);
+            if (stream == null)
+                throw new global::java.nio.channels.AsynchronousCloseException();
+
+            try
+            {
+                self.begin();
+
+                var pos = fli.position();
+                var size = fli.size();
+
+                if (RuntimeUtil.IsWindows)
+                {
+                    const int ERROR_NOT_LOCKED = 158;
+
+                    try
+                    {
+                        var o = new Overlapped();
+                        o.OffsetLow = (int)pos;
+                        o.OffsetHigh = (int)(pos >> 32);
+
+                        var t = UnlockFileExAsync(stream.SafeFileHandle, 0, (int)size, (int)(size >> 32), o);
+                        if (t.IsCompleted == false)
+                            throw new global::java.io.IOException("LockFile did not complete synchronously.");
+
+                        // await task, which should have been synchronous
+                        t.GetAwaiter().GetResult();
+                    }
+                    catch (Win32Exception e) when (e.ErrorCode == ERROR_NOT_LOCKED)
+                    {
+                        return;
+                    }
+                }
+                else
+                {
+                    stream.Unlock(pos, size);
+                }
+            }
+            catch (System.IO.IOException e) when (NotLockedHack.IsErrorNotLocked(e))
+            {
+                return;
+            }
+            catch (ObjectDisposedException)
+            {
+                throw new global::java.nio.channels.AsynchronousCloseException();
+            }
+            catch (System.Exception) when (self.isOpen() == false)
+            {
+                throw new global::java.nio.channels.AsynchronousCloseException();
+            }
+            catch (System.Exception e)
+            {
+                throw new global::java.io.IOException(e);
+            }
+            finally
+            {
+                self.end();
             }
         }
 
@@ -367,22 +655,31 @@ namespace IKVM.Java.Externs.sun.nio.ch
         /// <returns></returns>
         static async Task<Integer> ReadAsync(global::sun.nio.ch.DotNetAsynchronousFileChannelImpl self, ByteBuffer dst, long position, AccessControlContext accessControlContext, CancellationToken cancellationToken)
         {
-            if (self.reading == true)
+            if (self.reading == false)
                 throw new NonReadableChannelException();
             if (position < 0)
                 throw new IllegalArgumentException("Negative position");
             if (dst.isReadOnly())
                 throw new IllegalArgumentException("Read-only buffer");
+            if (self.isOpen() == false)
+                throw new ClosedChannelException();
 
-            var stream = (FileStream)self.fdObj.getStream();
+            // check buffer
+            int pos = dst.position();
+            int lim = dst.limit();
+            int rem = pos <= lim ? lim - pos : 0;
+            if (pos > lim)
+                throw new IllegalArgumentException("Position after limit.");
+
+            var stream = (FileStream)FileDescriptorAccessor.GetStream(self.fdObj);
             if (stream == null)
                 throw new ClosedChannelException();
 
+            if (cancellationToken.IsCancellationRequested)
+                return null;
+
             try
             {
-                if (cancellationToken.IsCancellationRequested)
-                    return null;
-
                 // move file to specified position
                 if (stream.Position != position)
                 {
@@ -393,42 +690,43 @@ namespace IKVM.Java.Externs.sun.nio.ch
                 }
 
 #if NETFRAMEWORK
-                int pos = dst.position();
-                int lim = dst.limit();
-                int rem = pos <= lim ? lim - pos : 0;
-
                 if (dst is DirectBuffer dir)
                 {
                     var tmp = new byte[rem];
-                    await stream.ReadAsync(tmp, 0, rem, cancellationToken);
-                    dst.put(tmp);
+                    var n = await stream.ReadAsync(tmp, 0, rem, cancellationToken);
+                    dst.put(tmp, 0, n);
+                    return new global::java.lang.Integer(n);
                 }
                 else
                 {
-                    await stream.ReadAsync(dst.array(), dst.arrayOffset() + pos, rem, cancellationToken);
+                    var n = await stream.ReadAsync(dst.array(), dst.arrayOffset() + pos, rem, cancellationToken);
+                    dst.position(pos + n);
+                    return new global::java.lang.Integer(n);
                 }
 #else
-                int pos = dst.position();
-                int lim = dst.limit();
-                int rem = pos <= lim ? lim - pos : 0;
-
                 if (dst is DirectBuffer dir)
                 {
-                    var tmp = new byte[rem];
-                    await stream.ReadAsync(tmp, 0, rem, cancellationToken);
-                    dst.put(tmp);
+                    using var mgr = new DirectBufferMemoryManager(dir);
+                    var mem = mgr.Memory.Slice(pos, rem);
+                    var n = await stream.ReadAsync(mem, cancellationToken);
+                    dst.position(pos + n);
+                    return new global::java.lang.Integer(n);
                 }
                 else
                 {
-                    await stream.ReadAsync(dst.array(), dst.arrayOffset() + pos, rem, cancellationToken);
+                    var n = await stream.ReadAsync(dst.array(), dst.arrayOffset() + pos, rem, cancellationToken);
+                    dst.position(pos + n);
+                    return new global::java.lang.Integer(n);
                 }
 #endif
-
-                throw new NotImplementedException();
             }
-            catch (ClosedChannelException)
+            catch (ObjectDisposedException)
             {
-                throw new AsynchronousCloseException();
+                throw new global::java.nio.channels.AsynchronousCloseException();
+            }
+            catch (System.Exception) when (self.isOpen() == false)
+            {
+                throw new global::java.nio.channels.AsynchronousCloseException();
             }
             catch (System.Exception e)
             {
@@ -437,12 +735,12 @@ namespace IKVM.Java.Externs.sun.nio.ch
         }
 
         /// <summary>
-        /// Implements the Accept logic as an asynchronous task.
+        /// Implements the Write logic as an asynchronous task.
         /// </summary>
         /// <param name="self"></param>
         /// <param name="position"></param>
         /// <param name="accessControlContext"></param>
-        /// <param name="future"></param>
+        /// <param name="cancellationToken"></param>
         /// <returns></returns>
         /// <exception cref="ClosedChannelException"></exception>
         /// <exception cref="RuntimeException"></exception>
@@ -451,9 +749,87 @@ namespace IKVM.Java.Externs.sun.nio.ch
         /// <exception cref="InterruptedIOException"></exception>
         /// <exception cref="AsynchronousCloseException"></exception>
         /// <exception cref="IOException"></exception>
-        static async Task<Integer> WriteAsync(global::sun.nio.ch.DotNetAsynchronousFileChannelImpl self, ByteBuffer src, long position, AccessControlContext accessControlContext, PendingFuture future)
+        static async Task<Integer> WriteAsync(global::sun.nio.ch.DotNetAsynchronousFileChannelImpl self, ByteBuffer src, long position, AccessControlContext accessControlContext, CancellationToken cancellationToken)
         {
-            throw new NotImplementedException();
+            if (self.writing == false)
+                throw new global::java.nio.channels.NonWritableChannelException();
+            if (position < 0)
+                throw new global::java.lang.IllegalArgumentException("Negative position");
+            if (self.isOpen() == false)
+                throw new ClosedChannelException();
+
+            // check buffer
+            int pos = src.position();
+            int lim = src.limit();
+            int rem = pos <= lim ? lim - pos : 0;
+            if (pos > lim)
+                throw new IllegalArgumentException("Position after limit.");
+
+            var stream = (FileStream)FileDescriptorAccessor.GetStream(self.fdObj);
+            if (stream == null)
+                throw new ClosedChannelException();
+
+            if (cancellationToken.IsCancellationRequested)
+                return null;
+
+            try
+            {
+                // move file to specified position
+                if (stream.Position != position)
+                {
+                    if (stream.CanSeek == false)
+                        throw new global::java.lang.IllegalArgumentException("Seek failed.");
+
+                    stream.Seek(position, SeekOrigin.Begin);
+                }
+
+#if NETFRAMEWORK
+                if (src is DirectBuffer dir)
+                {
+                    var tmp = new byte[rem];
+                    src.get(tmp, 0, rem);
+                    await stream.WriteAsync(tmp, 0, rem, cancellationToken);
+                    return new global::java.lang.Integer(rem);
+                }
+                else
+                {
+                    await stream.WriteAsync(src.array(), src.arrayOffset() + pos, rem, cancellationToken);
+                    src.position(pos + rem);
+                    return new global::java.lang.Integer(rem);
+                }
+#else
+                if (src is DirectBuffer dir)
+                {
+                    using var mgr = new DirectBufferMemoryManager(dir);
+                    var mem = mgr.Memory.Slice(pos, rem);
+                    await stream.WriteAsync(mem, cancellationToken);
+                    src.position(pos + rem);
+                    return new global::java.lang.Integer(rem);
+                }
+                else
+                {
+                    await stream.WriteAsync(src.array(), src.arrayOffset() + pos, rem, cancellationToken);
+                    src.position(pos + rem);
+                    return new global::java.lang.Integer(rem);
+                }
+#endif
+            }
+            catch (OperationCanceledException)
+            {
+                return null;
+            }
+            catch (ObjectDisposedException)
+            {
+                throw new global::java.nio.channels.AsynchronousCloseException();
+            }
+            catch (System.Exception) when (self.isOpen() == false)
+            {
+                throw new global::java.nio.channels.AsynchronousCloseException();
+            }
+            catch (System.Exception e)
+            {
+                throw new global::java.io.IOException(e);
+            }
         }
 
 #endif

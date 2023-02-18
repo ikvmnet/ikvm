@@ -2,10 +2,12 @@
 using System.Net;
 using System.Net.Sockets;
 using System.Threading.Tasks;
+using System.Threading;
 
 using IKVM.Runtime.Util.Java.Security;
 using IKVM.Runtime.Util.Java.Net;
-using System.Threading;
+using IKVM.Runtime.Accessors.Java.Io;
+using IKVM.Internal;
 
 #if FIRST_PASS == false
 
@@ -26,6 +28,13 @@ namespace IKVM.Java.Externs.sun.nio.ch
     /// </summary>
     static class DotNetAsynchronousServerSocketChannelImpl
     {
+
+#if FIRST_PASS == false
+
+        static FileDescriptorAccessor fileDescriptorAccessor;
+        static FileDescriptorAccessor FileDescriptorAccessor => JVM.BaseAccessors.Get(ref fileDescriptorAccessor);
+
+#endif
 
         /// <summary>
         /// Implements the native method for 'implAccept0'.
@@ -127,7 +136,7 @@ namespace IKVM.Java.Externs.sun.nio.ch
                         throw new RuntimeException("Accept not allowed due to cancellation.");
 
                     // execute asynchronous Accept task
-                    var listenSocket = self.fd.getSocket();
+                    var listenSocket = FileDescriptorAccessor.GetSocket(self.fd);
                     var clientSocket = await Task.Factory.FromAsync(listenSocket.BeginAccept, listenSocket.EndAccept, client.fd.getSocket(), 0, null);
 
                     // cancel was invoked during the operation
@@ -227,8 +236,8 @@ namespace IKVM.Java.Externs.sun.nio.ch
             if (self.fd == null)
                 return;
 
-            var socket = self.fd.getSocket();
-            if (self.fd.getSocket() == null)
+            var socket = FileDescriptorAccessor.GetSocket(self.fd);
+            if (socket == null)
                 return;
 
             // if we're not configured to linger, disable sending, but continue to allow receive
@@ -238,14 +247,14 @@ namespace IKVM.Java.Externs.sun.nio.ch
                 {
                     socket.Shutdown(SocketShutdown.Send);
                 }
-                catch (System.Net.Sockets.SocketException)
+                catch (SocketException)
                 {
                     // ignore
                 }
             }
 
             // null socket before close, as close may take a minute to flush
-            self.fd.setSocket(null);
+            FileDescriptorAccessor.SetSocket(self.fd, null);
             socket.Close();
         }
 

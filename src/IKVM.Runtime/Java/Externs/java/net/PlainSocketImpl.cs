@@ -5,8 +5,12 @@ using System.Linq.Expressions;
 using System.Net;
 using System.Net.Sockets;
 using System.Reflection;
-using System.Runtime.InteropServices;
+
+using IKVM.Internal;
+using IKVM.Runtime;
+using IKVM.Runtime.Accessors.Java.Io;
 using IKVM.Runtime.Util.Java.Net;
+
 using static IKVM.Java.Externs.java.net.SocketImplUtil;
 
 namespace IKVM.Java.Externs.java.net
@@ -18,7 +22,10 @@ namespace IKVM.Java.Externs.java.net
     static class PlainSocketImpl
     {
 
-#if !FIRST_PASS
+#if FIRST_PASS == false
+
+        static FileDescriptorAccessor fileDescriptorAccessor;
+        static FileDescriptorAccessor FileDescriptorAccessor => JVM.BaseAccessors.Get(ref fileDescriptorAccessor);
 
         /// <summary>
         /// Compiles a fast getter for a <see cref="FieldInfo"/>.
@@ -81,7 +88,7 @@ namespace IKVM.Java.Externs.java.net
                 return s2;
 
             // for Linux we need to obtain the default scope ID by effectively doing a route lookup
-            if (RuntimeInformation.IsOSPlatform(OSPlatform.Linux) && FindScopeId(address) is int s3 and not 0)
+            if (RuntimeUtil.IsLinux && FindScopeId(address) is int s3 and not 0)
             {
                 Inet6AddressCachedScopeIdSetter(address, s3);
                 return s3;
@@ -127,12 +134,12 @@ namespace IKVM.Java.Externs.java.net
         /// <summary>
         /// Implements the native method for 'socketCreate'.
         /// </summary>
-        public static void socketCreate(object this_, bool isServer)
+        public static void socketCreate(object self, bool isServer)
         {
 #if FIRST_PASS
             throw new NotImplementedException();
 #else
-            InvokeAction<global::java.net.PlainSocketImpl>(this_, impl =>
+            InvokeAction<global::java.net.PlainSocketImpl>(self, impl =>
             {
                 var socket = new Socket(isServer ? SocketType.Stream : SocketType.Dgram, ProtocolType.Tcp);
 
@@ -140,7 +147,7 @@ namespace IKVM.Java.Externs.java.net
                 if (AbstractPlainSocketImplServerSocketGetter(impl) != null)
                     socket.SetSocketOption(SocketOptionLevel.Socket, SocketOptionName.ReuseAddress, true);
 
-                impl.fd.setSocket(socket);
+                FileDescriptorAccessor.SetSocket(impl.fd, socket);
             });
 #endif
         }
@@ -148,12 +155,12 @@ namespace IKVM.Java.Externs.java.net
         /// <summary>
         /// Implements the native method for 'socketConnect'.
         /// </summary>
-        public static void socketConnect(object this_, object address_, int port, int timeout)
+        public static void socketConnect(object self, object address_, int port, int timeout)
         {
 #if FIRST_PASS
             throw new NotImplementedException();
 #else
-            InvokeAction<global::java.net.PlainSocketImpl, global::java.net.InetAddress>(this_, address_, (impl, address) =>
+            InvokeAction<global::java.net.PlainSocketImpl, global::java.net.InetAddress>(self, address_, (impl, address) =>
             {
                 InvokeActionWithSocket(impl, socket =>
                 {
@@ -235,12 +242,12 @@ namespace IKVM.Java.Externs.java.net
         /// <summary>
         /// Implements the native method for 'socketBind'.
         /// </summary>
-        public static void socketBind(object this_, global::java.net.InetAddress address, int port)
+        public static void socketBind(object self, global::java.net.InetAddress address, int port)
         {
 #if FIRST_PASS
             throw new NotImplementedException();
 #else
-            InvokeAction<global::java.net.PlainSocketImpl>(this_, impl =>
+            InvokeAction<global::java.net.PlainSocketImpl>(self, impl =>
             {
                 InvokeActionWithSocket(impl, socket =>
                 {
@@ -274,12 +281,12 @@ namespace IKVM.Java.Externs.java.net
         /// <summary>
         /// Implements the native method for 'socketListen'.
         /// </summary>
-        public static void socketListen(object this_, int count)
+        public static void socketListen(object self, int count)
         {
 #if FIRST_PASS
             throw new NotImplementedException();
 #else
-            InvokeAction<global::java.net.PlainSocketImpl>(this_, impl =>
+            InvokeAction<global::java.net.PlainSocketImpl>(self, impl =>
             {
                 InvokeActionWithSocket(impl, socket =>
                 {
@@ -292,12 +299,12 @@ namespace IKVM.Java.Externs.java.net
         /// <summary>
         /// Implements the native method for 'socketAccept'.
         /// </summary>
-        public static void socketAccept(object this_, object s_)
+        public static void socketAccept(object self, object s_)
         {
 #if FIRST_PASS
             throw new NotImplementedException();
 #else
-            InvokeAction<global::java.net.PlainSocketImpl, global::java.net.SocketImpl>(this_, s_, (impl, s) =>
+            InvokeAction<global::java.net.PlainSocketImpl, global::java.net.SocketImpl>(self, s_, (impl, s) =>
             {
                 InvokeActionWithSocket(impl, socket =>
                 {
@@ -324,7 +331,7 @@ namespace IKVM.Java.Externs.java.net
 
                         // associate new FileDescriptor with socket
                         var newfd = new global::java.io.FileDescriptor();
-                        newfd.setSocket(newSocket);
+                        FileDescriptorAccessor.SetSocket(newfd, newSocket);
 
                         // populate newly accepted socket
                         var remoteIpEndPoint = (IPEndPoint)newSocket.RemoteEndPoint;
@@ -378,12 +385,12 @@ namespace IKVM.Java.Externs.java.net
         /// <summary>
         /// Implements the native method for 'socketClose0'.
         /// </summary>
-        public static void socketClose0(object this_, bool useDeferredClose)
+        public static void socketClose0(object self, bool useDeferredClose)
         {
 #if FIRST_PASS
             throw new NotImplementedException();
 #else
-            InvokeAction<global::java.net.PlainSocketImpl>(this_, impl =>
+            InvokeAction<global::java.net.PlainSocketImpl>(self, impl =>
             {
                 if (impl.fd == null)
                     throw new global::java.net.SocketException("Socket already closed.");
@@ -408,7 +415,7 @@ namespace IKVM.Java.Externs.java.net
                     }
 
                     // null socket before close, as close may take a minute to flush
-                    impl.fd.setSocket(null);
+                    FileDescriptorAccessor.SetSocket(impl.fd, null);
                     socket.Close();
                 });
             });
@@ -418,12 +425,12 @@ namespace IKVM.Java.Externs.java.net
         /// <summary>
         /// Implements the native method for 'socketShutdown'.
         /// </summary>
-        public static void socketShutdown(object this_, int howto)
+        public static void socketShutdown(object self, int howto)
         {
 #if FIRST_PASS
             throw new NotImplementedException();
 #else
-            InvokeAction<global::java.net.PlainSocketImpl>(this_, impl =>
+            InvokeAction<global::java.net.PlainSocketImpl>(self, impl =>
             {
                 if (impl.fd == null)
                     throw new global::java.net.SocketException("Socket already closed.");
@@ -439,12 +446,12 @@ namespace IKVM.Java.Externs.java.net
         /// <summary>
         /// Implements the native method for 'socketSetOption0'.
         /// </summary>
-        public static void socketSetOption0(object this_, int cmd, bool on, object value)
+        public static void socketSetOption0(object self, int cmd, bool on, object value)
         {
 #if FIRST_PASS
             throw new NotImplementedException();
 #else
-            InvokeAction<global::java.net.PlainSocketImpl>(this_, impl =>
+            InvokeAction<global::java.net.PlainSocketImpl>(self, impl =>
             {
                 InvokeActionWithSocket(impl, socket =>
                 {
@@ -509,12 +516,12 @@ namespace IKVM.Java.Externs.java.net
         /// <summary>
         /// Implements the native method for 'socketGetOption'.
         /// </summary>
-        public static int socketGetOption(object this_, int opt, object iaContainerObj_)
+        public static int socketGetOption(object self, int opt, object iaContainerObj_)
         {
 #if FIRST_PASS
             throw new NotImplementedException();
 #else
-            return InvokeFunc<global::java.net.PlainSocketImpl, global::java.net.InetAddressContainer, int>(this_, iaContainerObj_, (impl, iaContainerObj) =>
+            return InvokeFunc<global::java.net.PlainSocketImpl, global::java.net.InetAddressContainer, int>(self, iaContainerObj_, (impl, iaContainerObj) =>
             {
                 return InvokeFuncWithSocket(impl, socket =>
                 {

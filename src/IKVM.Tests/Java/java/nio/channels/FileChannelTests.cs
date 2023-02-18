@@ -1,4 +1,8 @@
-﻿using System.IO;
+﻿using java.io;
+using java.nio;
+using java.nio.channels;
+using java.nio.file;
+using java.util;
 
 using Microsoft.VisualStudio.TestTools.UnitTesting;
 
@@ -10,14 +14,18 @@ namespace IKVM.Tests.Java.java.nio.channels
     {
 
         [TestMethod]
-        public void Can_open_filechannel_with_write_and_truncate()
+        public void CanTruncateAndWrite()
         {
-            var f = new global::java.io.File(Path.Combine(Path.GetTempPath(), Path.GetRandomFileName()));
+            var f = new File("a.txt");
             f.createNewFile();
-            var o = new global::java.util.HashSet();
-            o.add(global::java.nio.file.StandardOpenOption.WRITE);
-            o.add(global::java.nio.file.StandardOpenOption.TRUNCATE_EXISTING);
-            var c = global::java.nio.channels.FileChannel.open(f.toPath(), o);
+            var o = new HashSet();
+            o.add(StandardOpenOption.WRITE);
+            o.add(StandardOpenOption.TRUNCATE_EXISTING);
+            var c = FileChannel.open(f.toPath(), o);
+            var b = ByteBuffer.allocate(1);
+            b.put(1);
+            b.flip();
+            c.write(b);
             c.close();
         }
 

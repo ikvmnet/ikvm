@@ -1,6 +1,7 @@
 ﻿using System;
 using System.IO;
 using System.Net.Sockets;
+using System.Threading.Tasks;
 
 namespace IKVM.Runtime.Accessors.Java.Io
 {
@@ -18,6 +19,7 @@ namespace IKVM.Runtime.Accessors.Java.Io
         StaticMethodAccessor<Func<Socket, object>> fromSocket;
         PropertyAccessor<int> fd;
         PropertyAccessor<long> handle;
+        FieldAccessor<Task> task;
         FieldAccessor<Stream> stream;
         FieldAccessor<Socket> socket;
 
@@ -69,6 +71,21 @@ namespace IKVM.Runtime.Accessors.Java.Io
         /// Gets the value for the 'handle' property.
         /// </summary>
         public long GetHandle(object self) => GetProperty(ref handle, nameof(handle)).GetValue(self);
+
+        /// <summary>
+        /// Gets the value of the 'task' field.
+        /// </summary>
+        /// <param name="self"></param>
+        /// <returns></returns>
+        public Task GetTask(object self) => GetField(ref task, nameof(task)).GetValue(self);
+
+        /// <summary>
+        /// Sets the value of the 'task' field.
+        /// </summary>
+        /// <param name="self"></param>
+        /// <param name="value"></param>
+        /// <returns></returns>
+        public void SetTask(object self, Task value) => GetField(ref task, nameof(task)).SetValue(self, value);
 
         /// <summary>
         /// Gets the value for the 'stream' property.

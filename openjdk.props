@@ -12840,23 +12840,8 @@
         
         <OpenJdkSource Include="$(OpenJdkDir)\jdk\src\share\classes\sun\nio\cs\**\*.java" />
         <OpenJdkSource Include="$(OpenJdkDir)\jdk\src\solaris\classes\sun\nio\cs\**\*.java" />
-        
-        <OpenJdkSource Include="$(OpenJdkDir)\jdk\src\share\classes\sun\nio\fs\AbstractAclFileAttributeView.java" />
-        <OpenJdkSource Include="$(OpenJdkDir)\jdk\src\share\classes\sun\nio\fs\AbstractBasicFileAttributeView.java" />
-        <OpenJdkSource Include="$(OpenJdkDir)\jdk\src\share\classes\sun\nio\fs\AbstractFileSystemProvider.java" />
-        <OpenJdkSource Include="$(OpenJdkDir)\jdk\src\share\classes\sun\nio\fs\AbstractFileTypeDetector.java" />
-        <OpenJdkSource Include="$(OpenJdkDir)\jdk\src\share\classes\sun\nio\fs\AbstractPath.java" />
-        <OpenJdkSource Include="$(OpenJdkDir)\jdk\src\share\classes\sun\nio\fs\AbstractPoller.java" />
-        <OpenJdkSource Include="$(OpenJdkDir)\jdk\src\share\classes\sun\nio\fs\AbstractUserDefinedFileAttributeView.java" />
-        <OpenJdkSource Include="$(OpenJdkDir)\jdk\src\share\classes\sun\nio\fs\AbstractWatchKey.java" />
-        <OpenJdkSource Include="$(OpenJdkDir)\jdk\src\share\classes\sun\nio\fs\AbstractWatchService.java" />
-        <OpenJdkSource Include="$(OpenJdkDir)\jdk\src\share\classes\sun\nio\fs\BasicFileAttributesHolder.java" />
-        <OpenJdkSource Include="$(OpenJdkDir)\jdk\src\share\classes\sun\nio\fs\DynamicFileAttributeView.java" />
-        <OpenJdkSource Include="$(OpenJdkDir)\jdk\src\share\classes\sun\nio\fs\FileOwnerAttributeViewImpl.java" />
-        <OpenJdkSource Include="$(OpenJdkDir)\jdk\src\share\classes\sun\nio\fs\Globs.java" />
-        <OpenJdkSource Include="$(OpenJdkDir)\jdk\src\share\classes\sun\nio\fs\PollingWatchService.java" />
-        <OpenJdkSource Include="$(OpenJdkDir)\jdk\src\share\classes\sun\nio\fs\Reflect.java" />
-        <OpenJdkSource Include="$(OpenJdkDir)\jdk\src\share\classes\sun\nio\fs\Util.java" />
+
+        <OpenJdkSource Include="$(OpenJdkDir)\jdk\src\share\classes\sun\nio\fs\**\*.java" />
         
         <OpenJdkSource Include="$(OpenJdkDir)\jdk\src\share\classes\sun\print\AttributeUpdater.java" />
         <OpenJdkSource Include="$(OpenJdkDir)\jdk\src\share\classes\sun\print\BackgroundLookupListener.java" />

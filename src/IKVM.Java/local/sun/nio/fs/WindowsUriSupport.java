@@ -95,7 +95,7 @@ class WindowsUriSupport {
     /**
      * Converts given Path to a URI
      */
-    static URI toUri(NetPath path) {
+    static URI toUri(DotNetPath path) {
         path = path.toAbsolutePath();
         String s = path.toString();
 
@@ -104,8 +104,9 @@ class WindowsUriSupport {
         boolean addSlash = false;
         if (!s.endsWith("\\")) {
             try {
-                 addSlash = cli.System.IO.Directory.Exists(s);
+                 addSlash = cli.System.IO.Directory.Exists(path) || cli.IKVM.Runtime.Vfs.VfsTable.get_Default().GetPath(path) instanceof cli.IKVM.Runtime.Vfs.VfsDirectory;
             } catch (Throwable x) {
+                
             }
         }
 
@@ -115,7 +116,7 @@ class WindowsUriSupport {
     /**
      * Converts given URI to a Path
      */
-    static NetPath fromUri(NetFileSystem fs, URI uri) {
+    static DotNetPath fromUri(DotNetFileSystem fs, URI uri) {
         if (!uri.isAbsolute())
             throw new IllegalArgumentException("URI is not absolute");
         if (uri.isOpaque())
@@ -162,6 +163,6 @@ class WindowsUriSupport {
                 path = path.substring(1);
             }
         }
-        return new NetPath(fs, path);
+        return new DotNetPath(fs, path);
     }
 }

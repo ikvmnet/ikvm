@@ -4,6 +4,7 @@ using System.Security;
 
 using IKVM.Internal;
 using IKVM.Runtime.Accessors.Java.Io;
+using IKVM.Runtime.Vfs;
 
 namespace IKVM.Java.Externs.java.io
 {
@@ -19,6 +20,9 @@ namespace IKVM.Java.Externs.java.io
         static FileDescriptorAccessor fileDescriptorAccessor;
         static FileDescriptorAccessor FileDescriptorAccessor => JVM.BaseAccessors.Get(ref fileDescriptorAccessor);
 
+        static FileInputStreamAccessor fileInputStreamAccessor;
+        static FileInputStreamAccessor FileInputStreamAccessor => JVM.BaseAccessors.Get(ref fileInputStreamAccessor);
+
 #endif
 
         /// <summary>
@@ -26,15 +30,27 @@ namespace IKVM.Java.Externs.java.io
         /// </summary>
         /// <param name="self"></param>
         /// <param name="name"></param>
-        /// <param name="fd"></param>
-        public static void open0(object self, string name, object fd)
+        public static void open0(object self, string name)
         {
 #if FIRST_PASS 
             throw new NotImplementedException();
 #else
+            var fd = FileInputStreamAccessor.GetFd(self);
+            if (fd == null)
+                throw new global::java.io.IOException("Stream closed.");
+
             try
             {
-                FileDescriptorAccessor.SetStream(fd, File.OpenRead(name));
+                var fileMode = FileMode.Open;
+                var fileAccess = FileAccess.Read;
+
+                if (VfsTable.Default.IsPath(name))
+                {
+                    FileDescriptorAccessor.SetStream(fd, VfsTable.Default.Open(name, fileMode, fileAccess));
+                    return;
+                }
+
+                FileDescriptorAccessor.SetStream(fd, new FileStream(name, fileMode, fileAccess, FileShare.ReadWrite, 1, false));
             }
             catch (ObjectDisposedException e)
             {
@@ -67,13 +83,16 @@ namespace IKVM.Java.Externs.java.io
         /// Implements the native method 'read0'.
         /// </summary>
         /// <param name="self"></param>
-        /// <param name="fd"></param>
         /// <returns></returns>
-        public static int read0(object self, object fd)
+        public static int read0(object self)
         {
 #if FIRST_PASS 
             throw new NotImplementedException();
 #else
+            var fd = FileInputStreamAccessor.GetFd(self);
+            if (fd == null)
+                throw new global::java.io.IOException("Stream closed.");
+
             try
             {
                 var stream = FileDescriptorAccessor.GetStream(fd);
@@ -106,15 +125,18 @@ namespace IKVM.Java.Externs.java.io
         /// <param name="b"></param>
         /// <param name="off"></param>
         /// <param name="len"></param>
-        /// <param name="fd"></param>
         /// <returns></returns>
-        public static int readBytes(object self, byte[] b, int off, int len, object fd)
+        public static int readBytes(object self, byte[] b, int off, int len)
         {
 #if FIRST_PASS
             throw new NotImplementedException();
 #else
-            if ((off < 0) || (off > b.Length) || (len < 0) || (len > (b.Length - offset)))
+            if ((off < 0) || (off > b.Length) || (len < 0) || (len > (b.Length - off)))
                 throw new global::java.lang.IndexOutOfBoundsException();
+
+            var fd = FileInputStreamAccessor.GetFd(self);
+            if (fd == null)
+                throw new global::java.io.IOException("Stream closed.");
 
             try
             {
@@ -146,13 +168,16 @@ namespace IKVM.Java.Externs.java.io
         /// </summary>
         /// <param name="self"></param>
         /// <param name="n"></param>
-        /// <param name="fd"></param>
         /// <returns></returns>
-        public static long skip(object self, long n, object fd)
+        public static long skip(object self, long n)
         {
 #if FIRST_PASS
             throw new NotImplementedException();
 #else
+            var fd = FileInputStreamAccessor.GetFd(self);
+            if (fd == null)
+                throw new global::java.io.IOException("Stream closed.");
+
             try
             {
                 var stream = FileDescriptorAccessor.GetStream(fd);
@@ -184,13 +209,16 @@ namespace IKVM.Java.Externs.java.io
         /// Implements the native method 'available'.
         /// </summary>
         /// <param name="self"></param>
-        /// <param name="fd"></param>
         /// <returns></returns>
-        public static int available(object self, object fd)
+        public static int available(object self)
         {
 #if FIRST_PASS
             throw new NotImplementedException();
 #else
+            var fd = FileInputStreamAccessor.GetFd(self);
+            if (fd == null)
+                throw new global::java.io.IOException("Stream closed.");
+
             try
             {
                 var stream = FileDescriptorAccessor.GetStream(fd);
@@ -220,12 +248,15 @@ namespace IKVM.Java.Externs.java.io
         /// Implements the native method 'close0'.
         /// </summary>
         /// <param name="self"></param>
-        /// <param name="fd"></param>
-        public static void close0(object self, object fd)
+        public static void close0(object self)
         {
 #if FIRST_PASS
             throw new NotImplementedException();
 #else
+            var fd = FileInputStreamAccessor.GetFd(self);
+            if (fd == null)
+                throw new global::java.io.IOException("Stream closed.");
+
             try
             {
                 var stream = FileDescriptorAccessor.GetStream(fd);

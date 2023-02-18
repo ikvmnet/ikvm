@@ -45,13 +45,14 @@ import java.util.List;
 import java.util.Set;
 import java.util.regex.Pattern;
 
-final class NetFileSystem extends FileSystem
+final class DotNetFileSystem extends FileSystem
 {
+
     private static final Set<String> attributes = Collections.unmodifiableSet(new HashSet<String>(Arrays.asList("basic")));
-    private final NetFileSystemProvider provider;
+    private final DotNetFileSystemProvider provider;
     private final String separator = Character.toString(cli.System.IO.Path.DirectorySeparatorChar);
 
-    NetFileSystem(NetFileSystemProvider provider)
+    DotNetFileSystem(DotNetFileSystemProvider provider)
     {
         this.provider = provider;
     }
@@ -151,7 +152,7 @@ final class NetFileSystem extends FileSystem
     {
         if (more.length == 0)
         {
-            return new NetPath(this, first);
+            return new DotNetPath(this, first);
         }
         else
         {
@@ -166,7 +167,7 @@ final class NetFileSystem extends FileSystem
                     sep = separator;
                 }
             }
-            return new NetPath(this, sb.toString());
+            return new DotNetPath(this, sb.toString());
         }
     }
 
@@ -290,13 +291,13 @@ final class NetFileSystem extends FileSystem
 
         private final class NetWatchKey implements WatchKey
         {
-            private final NetPath path;
+            private final DotNetPath path;
             private FileSystemWatcher fsw;
             private ArrayList<WatchEvent<?>> list = new ArrayList<>();
             private HashSet<String> modified = new HashSet<>();
             private boolean signaled;
             
-            NetWatchKey(NetPath path)
+            NetWatchKey(DotNetPath path)
             {
                 this.path = path;
             }
@@ -363,7 +364,7 @@ final class NetFileSystem extends FileSystem
             {
                 return new WatchEvent<Path>() {
                     public Path context() {
-                        return new NetPath((NetFileSystem)path.getFileSystem(), e.get_Name());
+                        return new DotNetPath((DotNetFileSystem)path.getFileSystem(), e.get_Name());
                     }
                     public int count() {
                         return 1;
@@ -465,7 +466,7 @@ final class NetFileSystem extends FileSystem
             }
         }
 
-        synchronized WatchKey register(NetPath path, boolean create, boolean delete, boolean modify, boolean overflow, boolean subtree)
+        synchronized WatchKey register(DotNetPath path, boolean create, boolean delete, boolean modify, boolean overflow, boolean subtree)
         {
             if (closed)
             {
@@ -494,4 +495,5 @@ final class NetFileSystem extends FileSystem
     {
         return new NetWatchService();
     }
+
 }

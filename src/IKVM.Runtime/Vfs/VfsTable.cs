@@ -19,11 +19,6 @@ namespace IKVM.Runtime.Vfs
     {
 
         /// <summary>
-        /// Gets the default mount path of the global file system.
-        /// </summary>
-        public readonly static string RootPath = JVM.IsUnix ? "/mnt/ikvm/" : @"\\ikvm\";
-
-        /// <summary>
         /// Gets the default mount table.
         /// </summary>
         public readonly static VfsTable Default = BuildDefaultTable(VfsRuntimeContext.Instance);
@@ -34,29 +29,21 @@ namespace IKVM.Runtime.Vfs
         /// <returns></returns>
         static VfsTable BuildDefaultTable(VfsContext context)
         {
+#if FIRST_PASS
+            throw new NotImplementedException();
+#else
             if (context is null)
                 throw new ArgumentNullException(nameof(context));
+
+            var ikvmHome = global::java.lang.System.getProperty("ikvm.home");
+            if (Directory.Exists(ikvmHome) == false)
+                throw new DirectoryNotFoundException("Could not locate ikvm.home when establishing VFS.");
 
             var table = new VfsTable(context);
-            table.AddMount(RootPath, BuildIkvmHomeRoot(context));
+            table.AddMount(Path.Combine(ikvmHome, "assembly"), new VfsAssemblyDirectory(context));
+            table.AddMount(Path.Combine(ikvmHome, "lib", "security", "cacerts"), new VfsCacertsFile(context));
             return table;
-        }
-
-        /// <summary>
-        /// Builds the default mount directory.
-        /// </summary>
-        /// <param name="context"></param>
-        /// <returns></returns>
-        /// <exception cref="ArgumentNullException"></exception>
-        static VfsDirectory BuildIkvmHomeRoot(VfsContext context)
-        {
-            if (context is null)
-                throw new ArgumentNullException(nameof(context));
-
-            var home = new VfsEntryDirectory(context);
-            home.AddEntry("assembly", new VfsAssemblyDirectory(context));
-            home.AddEntry("cacerts", new VfsCacertsFile(context));
-            return home;
+#endif
         }
 
         readonly VfsContext context;
@@ -187,10 +174,18 @@ namespace IKVM.Runtime.Vfs
         /// <returns></returns>
         public string GetAssemblyClassesPath(Assembly assembly)
         {
+#if FIRST_PASS
+            throw new NotImplementedException();
+#else
             if (assembly is null)
                 throw new ArgumentNullException(nameof(assembly));
 
-            return PathExtensions.EnsureEndingDirectorySeparator(Path.Combine(mounts.First.Value.RootPath, "assembly", GetAssemblyDirectoryName(assembly), "classes"));
+            var ikvmHome = global::java.lang.System.getProperty("ikvm.home");
+            if (Directory.Exists(ikvmHome) == false)
+                throw new DirectoryNotFoundException("Could not locate ikvm.home when finding VFS.");
+
+            return PathExtensions.EnsureEndingDirectorySeparator(Path.Combine(ikvmHome, "assembly", GetAssemblyDirectoryName(assembly), "classes"));
+#endif
         }
 
         /// <summary>
@@ -200,10 +195,18 @@ namespace IKVM.Runtime.Vfs
         /// <returns></returns>
         public string GetAssemblyResourcesPath(Assembly assembly)
         {
+#if FIRST_PASS
+            throw new NotImplementedException();
+#else
             if (assembly is null)
                 throw new ArgumentNullException(nameof(assembly));
 
-            return PathExtensions.EnsureEndingDirectorySeparator(Path.Combine(mounts.First.Value.RootPath, "assembly", GetAssemblyDirectoryName(assembly), "resources"));
+            var ikvmHome = global::java.lang.System.getProperty("ikvm.home");
+            if (Directory.Exists(ikvmHome) == false)
+                throw new DirectoryNotFoundException("Could not locate ikvm.home when finding VFS.");
+
+            return PathExtensions.EnsureEndingDirectorySeparator(Path.Combine(ikvmHome, "assembly", GetAssemblyDirectoryName(assembly), "resources"));
+#endif
         }
 
         /// <summary>

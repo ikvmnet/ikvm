@@ -1,9 +1,12 @@
 ﻿using System;
+using System.Buffers;
 using System.Collections.Generic;
 using System.Net.Sockets;
 using System.Threading;
 using System.Threading.Tasks;
 
+using IKVM.Internal;
+using IKVM.Runtime.Accessors.Java.Io;
 using IKVM.Runtime.Util.Java.Net;
 using IKVM.Runtime.Util.Java.Security;
 
@@ -26,6 +29,13 @@ namespace IKVM.Java.Externs.sun.nio.ch
 
     static class DotNetAsynchronousSocketChannelImpl
     {
+
+#if FIRST_PASS == false
+
+        static FileDescriptorAccessor fileDescriptorAccessor;
+        static FileDescriptorAccessor FileDescriptorAccessor => JVM.BaseAccessors.Get(ref fileDescriptorAccessor);
+
+#endif
 
         /// <summary>
         /// Implements the native method for 'onCancel0'.
@@ -122,7 +132,7 @@ namespace IKVM.Java.Externs.sun.nio.ch
         static void OnCancel(global::sun.nio.ch.DotNetAsynchronousSocketChannelImpl self, PendingFuture future)
         {
             // signal cancellation on associated cancellation token source
-            (_, CancellationTokenSource cts) = future.getContext();
+            (Task _, CancellationTokenSource cts) = ((Task, CancellationTokenSource))future.getContext();
             cts?.Cancel();
         }
 
@@ -157,7 +167,7 @@ namespace IKVM.Java.Externs.sun.nio.ch
 
             // cancel was invoked during the operation
             if (cancellationToken.IsCancellationRequested)
-                throw new RuntimeException("Connect not allowed due to cancellation.");
+                throw new IllegalStateException("Connect not allowed due to timeout or cancellation.");
 
             // checks the validity of the socket address
             var remoteAddress = global::sun.nio.ch.Net.checkAddress(remote);
@@ -207,7 +217,7 @@ namespace IKVM.Java.Externs.sun.nio.ch
                 try
                 {
                     // execute asynchronous Connect task
-                    var socket = self.fd.getSocket();
+                    var socket = FileDescriptorAccessor.GetSocket(self.fd);
                     await Task.Factory.FromAsync(socket.BeginConnect, socket.EndConnect, remoteAddress.ToIPEndpoint(), null);
 
                     try
@@ -267,7 +277,7 @@ namespace IKVM.Java.Externs.sun.nio.ch
         /// <param name="buf"></param>
         /// <param name="copy"></param>
         /// <returns></returns>
-        static unsafe ArraySegment<byte> PrepareArray(ByteBuffer buf, bool copy = false)
+        static unsafe ArraySegment<byte> PrepareArraySegment(ByteBuffer buf, bool copy = false)
         {
             int pos = buf.position();
             int lim = buf.limit();
@@ -296,8 +306,7 @@ namespace IKVM.Java.Externs.sun.nio.ch
         /// <param name="seg"></param>
         /// <param name="buf"></param>
         /// <param name="length"></param>
-        /// <exception cref="NotImplementedException"></exception>
-        static unsafe void ReleaseArraySegment(ArraySegment<byte> seg, ByteBuffer buf, ref int length)
+        static unsafe void ReleaseArraySegment(ArraySegment<byte> seg, ByteBuffer buf, ref int length, bool copy = false)
         {
             int pos = buf.position();
             int len = buf.remaining();
@@ -307,7 +316,14 @@ namespace IKVM.Java.Externs.sun.nio.ch
 
             // original buffer is direct, meaning we need to copy to its address
             if (buf is DirectBuffer dir)
-                seg.AsSpan().CopyTo(new Span<byte>((byte*)(IntPtr)dir.address() + pos, rem));
+            {
+
+                // optionally copy the segment back to the buffer data
+                if (copy)
+                    seg.AsSpan().CopyTo(new Span<byte>((byte*)(IntPtr)dir.address() + pos, rem));
+
+                ArrayPool<byte>.Shared.Return(seg.Array);
+            }
 
             // advance buffer by used bytes
             buf.position(pos + rem);
@@ -334,20 +350,18 @@ namespace IKVM.Java.Externs.sun.nio.ch
         /// <exception cref="IOException"></exception>
         static async Task<Number> ReadAsync(global::sun.nio.ch.DotNetAsynchronousSocketChannelImpl self, bool isScatteringRead, ByteBuffer dst, ByteBuffer[] dsts, long timeout, TimeUnit unit, AccessControlContext accessControlContext, CancellationToken cancellationToken)
         {
-            // set of buffers to receive into
-            var bufs = new List<ArraySegment<byte>>();
-
             // scattering read uses multiple buffers
             if (isScatteringRead)
                 dsts = new ByteBuffer[] { dst };
 
-            // replace buffers with array segments, if direct
+            // replace buffers with array segments
+            var bufs = new List<ArraySegment<byte>>();
             for (int i = 0; i < dsts.Length; i++)
                 bufs[i] = PrepareArraySegment(dsts[i]);
 
             try
             {
-                var socket = self.fd.getSocket();
+                var socket = FileDescriptorAccessor.GetSocket(self.fd);
                 var length = 0;
 
                 // timeout was specified, wait for data to be available
@@ -376,17 +390,29 @@ namespace IKVM.Java.Externs.sun.nio.ch
                 }
                 else
                 {
-                    socket.Blocking = false;
-                    length = socket.EndReceive(socket.BeginReceive(bufs, SocketFlags.None, null, null), out var error);
+                    var previousBlocking = socket.Blocking;
+                    var previousReceiveTimeout = socket.ReceiveTimeout;
+
+                    try
+                    {
+                        socket.Blocking = false;
+                        socket.ReceiveTimeout = t;
+                        length = await Task.Factory.FromAsync(socket.BeginReceive, socket.EndReceive, bufs, SocketFlags.None, null);
+                    }
+                    finally
+                    {
+                        socket.Blocking = previousBlocking;
+                        socket.ReceiveTimeout = previousReceiveTimeout;
+                    }
                 }
 
                 // copy any rented buffers back to their original input
                 var l = length;
-                for (int i = 0; i < dsts.Length; i++)
-                    ReleaseArraySegment(bufs[i], dsts[i], ref l);
+                for (int i = 0; i < bufs.Count; i++)
+                    ReleaseArraySegment(bufs[i], dsts[i], ref l, true);
 
                 if (l != 0)
-                    throw new RuntimeException("Bytes remaining after ");
+                    throw new RuntimeException("Bytes remaining after read.");
 
                 return isScatteringRead ? Long.valueOf(length) : Integer.valueOf(length);
             }
@@ -431,9 +457,94 @@ namespace IKVM.Java.Externs.sun.nio.ch
         /// <exception cref="InterruptedIOException"></exception>
         /// <exception cref="AsynchronousCloseException"></exception>
         /// <exception cref="IOException"></exception>
-        static async Task<global::java.lang.Number> WriteAsync(global::sun.nio.ch.DotNetAsynchronousSocketChannelImpl self, bool isScatteringRead, ByteBuffer dst, ByteBuffer[] dsts, long timeout, TimeUnit unit, AccessControlContext accessControlContext, CancellationToken cancellationToken)
+        static async Task<global::java.lang.Number> WriteAsync(global::sun.nio.ch.DotNetAsynchronousSocketChannelImpl self, bool gatheringWrite, ByteBuffer dst, ByteBuffer[] dsts, long timeout, TimeUnit unit, AccessControlContext accessControlContext, CancellationToken cancellationToken)
         {
-            throw new NotImplementedException();
+            // scattering read uses multiple buffers
+            if (gatheringWrite)
+                dsts = new ByteBuffer[] { dst };
+
+            // replace buffers with array segments
+            var bufs = new List<ArraySegment<byte>>(dsts.Length);
+            for (int i = 0; i < dsts.Length; i++)
+                bufs[i] = PrepareArraySegment(dsts[i], true);
+
+            try
+            {
+                var socket = FileDescriptorAccessor.GetSocket(self.fd);
+                var length = 0;
+
+                // timeout was specified, wait for data to be available
+                var t = (int)System.Math.Min(unit.convert(timeout, TimeUnit.MILLISECONDS), int.MaxValue);
+                if (t > 0)
+                {
+                    // non-optimal usage, but we have no way to combine timeout with true async
+                    length = await Task.Run(() =>
+                    {
+                        var previousBlocking = socket.Blocking;
+                        var previousSendTimeout = socket.SendTimeout;
+
+                        try
+                        {
+                            socket.Blocking = true;
+                            socket.SendTimeout = t;
+                            return socket.Send(bufs, SocketFlags.None);
+                        }
+                        finally
+                        {
+                            socket.Blocking = previousBlocking;
+                            socket.SendTimeout = previousSendTimeout;
+                        }
+                    });
+
+                }
+                else
+                {
+                    var previousBlocking = socket.Blocking;
+                    var previousSendTimeout = socket.SendTimeout;
+
+                    try
+                    {
+                        socket.Blocking = false;
+                        socket.SendTimeout = t;
+                        length = await Task.Factory.FromAsync(socket.BeginSend, socket.EndSend, bufs, SocketFlags.None, null);
+                    }
+                    finally
+                    {
+                        socket.Blocking = previousBlocking;
+                        socket.SendTimeout = previousSendTimeout;
+                    }
+                }
+
+                // advance original buffers based on amount written
+                var l = length;
+                for (int i = 0; i < bufs.Count; i++)
+                    ReleaseArraySegment(bufs[i], dsts[i], ref l);
+
+                if (l != 0)
+                    throw new RuntimeException("Bytes remaining after write.");
+
+                return gatheringWrite ? Long.valueOf(length) : Integer.valueOf(length);
+            }
+            catch (System.Net.Sockets.SocketException e) when (e.SocketErrorCode == SocketError.Interrupted)
+            {
+                throw new InterruptedIOException(e.Message);
+            }
+            catch (ClosedChannelException)
+            {
+                throw new AsynchronousCloseException();
+            }
+            catch (IOException)
+            {
+                throw;
+            }
+            catch (System.Exception e)
+            {
+                throw new IOException(e);
+            }
+            finally
+            {
+                self.enableWriting();
+            }
         }
 
 #endif

@@ -1,8 +1,11 @@
 ﻿using System;
 using System.IO;
 using System.Runtime.InteropServices;
+using System.Threading;
 
+using IKVM.Internal;
 using IKVM.Runtime;
+using IKVM.Runtime.Accessors.Java.Io;
 
 using java.io;
 
@@ -16,8 +19,15 @@ namespace IKVM.Java.Externs.sun.nio.ch
     /// <summary>
     /// Implements the native methods for <see cref="global::sun.nio.ch.FileDispatcherImpl"/>.
     /// </summary>
-    static class FileDispatcherImpl
+    static partial class FileDispatcherImpl
     {
+
+#if FIRST_PASS == false
+
+        static FileDescriptorAccessor fileDescriptorAccessor;
+        static FileDescriptorAccessor FileDescriptorAccessor => JVM.BaseAccessors.Get(ref fileDescriptorAccessor);
+
+#endif
 
         /// <summary>
         /// Implements the native method 'read0'.
@@ -491,16 +501,6 @@ namespace IKVM.Java.Externs.sun.nio.ch
 #endif
         }
 
-        [StructLayout(LayoutKind.Sequential)]
-        struct OVERLAPPED
-        {
-            public IntPtr Internal;
-            public IntPtr InternalHigh;
-            public int OffsetLow;
-            public int OffsetHigh;
-            public IntPtr hEvent;
-        }
-
         /// <summary>
         /// Invokes the LOCKFILEEX Win32 function.
         /// </summary>
@@ -512,7 +512,7 @@ namespace IKVM.Java.Externs.sun.nio.ch
         /// <param name="lpOverlapped"></param>
         /// <returns></returns>
         [DllImport("kernel32", SetLastError = true)]
-        static extern int LockFileEx(SafeFileHandle hFile, int dwFlags, int dwReserved, int nNumberOfBytesToLockLow, int nNumberOfBytesToLockHigh, OVERLAPPED lpOverlapped);
+        static extern unsafe int LockFileEx(SafeFileHandle hFile, int dwFlags, int dwReserved, int nNumberOfBytesToLockLow, int nNumberOfBytesToLockHigh, NativeOverlapped* lpOverlapped);
 
         /// <summary>
         /// Invokes the UNLOCKFILEEX Win32 function.
@@ -524,7 +524,7 @@ namespace IKVM.Java.Externs.sun.nio.ch
         /// <param name="lpOverlapped"></param>
         /// <returns></returns>
         [DllImport("kernel32", SetLastError = true)]
-        static extern int UnlockFileEx(SafeFileHandle hFile, int dwReserved, int nNumberOfBytesToUnlockLow, int nNumberOfBytesToUnlockHigh, OVERLAPPED lpOverlapped);
+        static extern unsafe int UnlockFileEx(SafeFileHandle hFile, int dwReserved, int nNumberOfBytesToUnlockLow, int nNumberOfBytesToUnlockHigh, NativeOverlapped* lpOverlapped);
 
         /// <summary>
         /// Implements the native method 'lock0'.
@@ -536,12 +536,12 @@ namespace IKVM.Java.Externs.sun.nio.ch
         /// <param name="shared"></param>
         /// <returns></returns>
         /// <exception cref="NotImplementedException"></exception>
-        public static int lock0(FileDescriptor fd, bool blocking, long pos, long size, bool shared)
+        public static unsafe int lock0(object fd, bool blocking, long pos, long size, bool shared)
         {
 #if FIRST_PASS
             throw new NotImplementedException();
 #else
-            var s = (FileStream)fd.getStream();
+            var s = (FileStream)FileDescriptorAccessor.GetStream(fd);
             if (s == null)
                 throw new global::java.io.IOException("Stream closed.");
 
@@ -549,31 +549,41 @@ namespace IKVM.Java.Externs.sun.nio.ch
             {
                 if (RuntimeUtil.IsWindows)
                 {
-                    const int LOCKFILE_FAIL_IMMEDIATELY = 1;
-                    const int LOCKFILE_EXCLUSIVE_LOCK = 2;
-                    const int ERROR_LOCK_VIOLATION = 33;
+                    NativeOverlapped* optr = null;
 
-                    var o = new OVERLAPPED();
-                    o.OffsetLow = (int)pos;
-                    o.OffsetHigh = (int)(pos >> 32);
-
-                    int flags = 0;
-                    if (blocking == false)
-                        flags |= LOCKFILE_FAIL_IMMEDIATELY;
-                    if (shared == false)
-                        flags |= LOCKFILE_EXCLUSIVE_LOCK;
-
-                    int result = LockFileEx(s.SafeFileHandle, flags, 0, (int)size, (int)(size >> 32), o);
-                    if (result == 0)
+                    try
                     {
-                        var error = Marshal.GetLastWin32Error();
-                        if (!blocking && error == ERROR_LOCK_VIOLATION)
-                            return FileDispatcher.NO_LOCK;
+                        const int LOCKFILE_FAIL_IMMEDIATELY = 1;
+                        const int LOCKFILE_EXCLUSIVE_LOCK = 2;
+                        const int ERROR_LOCK_VIOLATION = 33;
 
-                        throw new global::java.io.IOException("Lock failed.");
+                        var o = new Overlapped();
+                        o.OffsetLow = (int)pos;
+                        o.OffsetHigh = (int)(pos >> 32);
+
+                        int flags = 0;
+                        if (blocking == false)
+                            flags |= LOCKFILE_FAIL_IMMEDIATELY;
+                        if (shared == false)
+                            flags |= LOCKFILE_EXCLUSIVE_LOCK;
+
+                        optr = o.Pack(null, null);
+                        int result = LockFileEx(s.SafeFileHandle, flags, 0, (int)size, (int)(size >> 32), optr);
+                        if (result == 0)
+                        {
+                            var error = Marshal.GetLastWin32Error();
+                            if (blocking == false && error == ERROR_LOCK_VIOLATION)
+                                return FileDispatcher.NO_LOCK;
+
+                            throw new global::java.io.IOException("Lock failed.");
+                        }
+
+                        return FileDispatcher.LOCKED;
                     }
-
-                    return FileDispatcher.LOCKED;
+                    finally
+                    {
+                        Overlapped.Free(optr);
+                    }
                 }
                 else
                 {
@@ -612,31 +622,43 @@ namespace IKVM.Java.Externs.sun.nio.ch
         /// <param name="pos"></param>
         /// <param name="size"></param>
         /// <exception cref="NotImplementedException"></exception>
-        public static void release0(FileDescriptor fd, long pos, long size)
+        public static unsafe void release0(object fd, long pos, long size)
         {
 #if FIRST_PASS
             throw new NotImplementedException();
 #else
-            var s = (FileStream)fd.getStream();
-            if (s == null)
+            var stream = (FileStream)FileDescriptorAccessor.GetStream(fd);
+            if (stream == null)
                 throw new global::java.io.IOException("Stream closed.");
 
             try
             {
                 if (RuntimeUtil.IsWindows)
                 {
-                    const int ERROR_NOT_LOCKED = 158;
+                    NativeOverlapped* optr = null;
 
-                    var o = new OVERLAPPED();
-                    o.OffsetLow = (int)pos;
-                    o.OffsetHigh = (int)(pos >> 32);
-                    int result = UnlockFileEx(s.SafeFileHandle, 0, (int)size, (int)(size >> 32), o);
-                    if (result == 0 && Marshal.GetLastWin32Error() != ERROR_NOT_LOCKED)
-                        throw new global::java.io.IOException("Release failed.");
+                    try
+                    {
+                        const int ERROR_NOT_LOCKED = 158;
+
+                        var o = new Overlapped();
+                        o.OffsetLow = (int)pos;
+                        o.OffsetHigh = (int)(pos >> 32);
+
+                        optr = o.Pack(null, null);
+                        int result = UnlockFileEx(stream.SafeFileHandle, 0, (int)size, (int)(size >> 32), optr);
+                        if (result == 0 && Marshal.GetLastWin32Error() != ERROR_NOT_LOCKED)
+                            throw new global::java.io.IOException("Release failed.");
+                    }
+                    finally
+                    {
+                        if (optr != null)
+                            Overlapped.Free(optr);
+                    }
                 }
                 else
                 {
-                    s.Unlock(pos, size);
+                    stream.Unlock(pos, size);
                 }
             }
             catch (global::java.io.IOException)
@@ -655,72 +677,22 @@ namespace IKVM.Java.Externs.sun.nio.ch
         }
 
         /// <summary>
-        /// Attempts to lock an unlocked file to capture teh error message, since IOException provides no way to know
-        /// whether the reason corresponds to not being locked.
-        /// </summary>
-        static class NotLockedHack
-        {
-
-            static readonly string msg;
-
-            /// <summary>
-            /// Initializes the static instance.
-            /// </summary>
-            static NotLockedHack()
-            {
-                try
-                {
-                    var tmp = Path.GetTempFileName();
-
-                    using (var fs = new FileStream(tmp, FileMode.Create))
-                    {
-                        try
-                        {
-                            fs.Unlock(0, 1);
-                        }
-                        catch (System.IO.IOException e)
-                        {
-                            msg = e.Message;
-                        }
-                    }
-
-                    System.IO.File.Delete(tmp);
-                }
-                catch (Exception)
-                {
-
-                }
-            }
-
-            /// <summary>
-            /// Returns <c>true</c> if the exception represents the file not being locked.
-            /// </summary>
-            /// <param name="e"></param>
-            /// <returns></returns>
-            public static bool IsErrorNotLocked(System.IO.IOException e)
-            {
-                return e.Message == msg;
-            }
-
-        }
-
-        /// <summary>
         /// Implements the native method 'close0'.
         /// </summary>
         /// <param name="fd"></param>
-        /// <exception cref="NotImplementedException"></exception>
-        public static void close0(FileDescriptor fd)
+        public static void close0(object fd)
         {
 #if FIRST_PASS
             throw new NotImplementedException();
 #else
-            var s = (FileStream)fd.getStream();
-            if (s == null)
+            var stream = (FileStream)FileDescriptorAccessor.GetStream(fd);
+            if (stream == null)
                 throw new global::java.io.IOException("Stream closed.");
 
             try
             {
-                fd.close();
+                FileDescriptorAccessor.SetStream(fd, null);
+                stream.Close();
             }
             catch
             {

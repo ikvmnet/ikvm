@@ -43,6 +43,10 @@
         <None Include="icedtea_jce\**\*" />
         <None Include="icedtea_rt\**\*" />
         <None Include="local\**\*" />
+        <Compile Remove="local\sun\nio\fs\DotNetFileSystem.java" />
+        <Compile Remove="local\sun\nio\fs\DotNetFileSystemProvider.java" />
+        <Compile Remove="local\sun\nio\fs\DotNetPath - Copy.java" />
+        <Compile Remove="local\sun\nio\fs\DotNetPath.java" />
         <None Include="@(OpenJdkSource)">
             <LinkBase>openjdk\$([MSBuild]::MakeRelative('$(OpenJdkDir)', '%(RootDir)%(Directory)'))</LinkBase>
         </None>

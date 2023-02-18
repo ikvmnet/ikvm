@@ -59,19 +59,23 @@ namespace IKVM.Java.Externs.sun.nio.ch
         /// <summary>
         /// Implements the native method 'configureBlocking'.
         /// </summary>
-        public static void configureBlocking(global::java.io.FileDescriptor fd, bool blocking)
+        public static void configureBlocking(object fd, bool blocking)
         {
 #if FIRST_PASS
             throw new NotImplementedException();
 #else
-            fd.setSocketBlocking(blocking);
+            var socket = FileDescriptorAccessor.GetSocket(fd);
+            if (socket == null)
+                throw new global::java.io.IOException("Socket closed.");
+
+            socket.Blocking = blocking;
 #endif
         }
 
         /// <summary>
         /// Implements the native method 'fdVal'.
         /// </summary>
-        public static int fdVal(global::java.io.FileDescriptor fd)
+        public static int fdVal(object fd)
         {
 #if FIRST_PASS
             throw new NotImplementedException();

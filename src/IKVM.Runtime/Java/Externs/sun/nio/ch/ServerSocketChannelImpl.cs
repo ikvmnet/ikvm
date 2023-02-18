@@ -1,49 +1,52 @@
-﻿/*
-  Copyright (C) 2011 Jeroen Frijters
+﻿using System;
+using System.Net.Sockets;
 
-  This software is provided 'as-is', without any express or implied
-  warranty.  In no event will the authors be held liable for any damages
-  arising from the use of this software.
-
-  Permission is granted to anyone to use this software for any purpose,
-  including commercial applications, and to alter it and redistribute it
-  freely, subject to the following restrictions:
-
-  1. The origin of this software must not be misrepresented; you must not
-     claim that you wrote the original software. If you use this software
-     in a product, an acknowledgment in the product documentation would be
-     appreciated but is not required.
-  2. Altered source versions must be plainly marked as such, and must not be
-     misrepresented as being the original software.
-  3. This notice may not be removed or altered from any source distribution.
-
-  Jeroen Frijters
-  jeroen@frijters.net
-  
-*/
-
-using System;
+using IKVM.Internal;
+using IKVM.Runtime.Accessors.Java.Io;
+using IKVM.Runtime.Util.Java.Net;
 
 namespace IKVM.Java.Externs.sun.nio.ch
 {
 
+    /// <summary>
+    /// Implements the native methods for 'ServerSocketChannelImpl'.
+    /// </summary>
     static class ServerSocketChannelImpl
     {
 
-        public static int accept0(object self, global::java.io.FileDescriptor ssfd, global::java.io.FileDescriptor newfd, object isaa)
+#if FIRST_PASS == false
+
+        static FileDescriptorAccessor fileDescriptorAccessor;
+        static FileDescriptorAccessor FileDescriptorAccessor => JVM.BaseAccessors.Get(ref fileDescriptorAccessor);
+
+#endif
+
+        /// <summary>
+        /// Implements the native method 'accept0'.
+        /// </summary>
+        /// <param name="self"></param>
+        /// <param name="ssfd"></param>
+        /// <param name="newfd"></param>
+        /// <param name="isaa"></param>
+        /// <returns></returns>
+        /// <exception cref="NotSupportedException"></exception>
+        public static int accept0(object self, object ssfd, object newfd, object isaa)
         {
 #if FIRST_PASS
             throw new NotSupportedException();
 #else
+            var socket = FileDescriptorAccessor.GetSocket(ssfd);
+            if (socket == null)
+                throw new global::java.io.IOException("Socket closed.");
+
             try
             {
-                System.Net.Sockets.Socket netSocket = ssfd.getSocket();
-                if (netSocket.Blocking || netSocket.Poll(0, System.Net.Sockets.SelectMode.SelectRead))
+                if (socket.Blocking || socket.Poll(0, SelectMode.SelectRead))
                 {
-                    System.Net.Sockets.Socket accsock = netSocket.Accept();
-                    newfd.setSocket(accsock);
-                    System.Net.IPEndPoint ep = (System.Net.IPEndPoint)accsock.RemoteEndPoint;
-                    ((global::java.net.InetSocketAddress[])isaa)[0] = new global::java.net.InetSocketAddress(global::java.net.SocketUtil.getInetAddressFromIPEndPoint(ep), ep.Port);
+                    var newSocket = socket.Accept();
+                    FileDescriptorAccessor.SetSocket(newfd, newSocket);
+                    var ep = (System.Net.IPEndPoint)newSocket.RemoteEndPoint;
+                    ((object[])isaa)[0] = ep.ToInetSocketAddress();
                     return 1;
                 }
                 else
@@ -51,17 +54,20 @@ namespace IKVM.Java.Externs.sun.nio.ch
                     return global::sun.nio.ch.IOStatus.UNAVAILABLE;
                 }
             }
-            catch (System.Net.Sockets.SocketException x)
+            catch (SocketException e)
             {
-                throw global::java.net.SocketUtil.convertSocketExceptionToIOException(x);
+                throw e.ToIOException();
             }
-            catch (System.ObjectDisposedException)
+            catch (ObjectDisposedException)
             {
-                throw new global::java.net.SocketException("Socket is closed");
+                throw new global::java.net.SocketException("Socket closed.");
             }
 #endif
         }
 
+        /// <summary>
+        /// Implements the native method 'initIDs'.
+        /// </summary>
         public static void initIDs()
         {
 
