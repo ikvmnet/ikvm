@@ -32,7 +32,7 @@ namespace IKVM.Runtime.Vfs
     /// <summary>
     /// Represents an assembly class file within the virtual file system.
     /// </summary>
-    sealed class VfsAssemblyClassFile : VfsFile
+    internal sealed class VfsAssemblyClassFile : VfsFile
     {
 
         readonly TypeWrapper type;
@@ -61,7 +61,7 @@ namespace IKVM.Runtime.Vfs
 #else
             var stream = new MemoryStream();
             var includeNonPublicInterfaces = bool.TryParse(java.lang.Props.props.getProperty("ikvm.stubgen.skipNonPublicInterfaces"), out var b) && b;
-            IKVM.StubGen.StubGenerator.WriteClass(stream, type, includeNonPublicInterfaces, false, false, true);
+            IKVM.StubGen.StubGenerator.WriteClass(stream, type, false, includeNonPublicInterfaces, false, true, false);
             return stream.ToArray();
 #endif
         }

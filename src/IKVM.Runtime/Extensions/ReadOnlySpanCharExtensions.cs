@@ -6,7 +6,7 @@ namespace IKVM.Runtime.Extensions
     /// <summary>
     /// Provides extension methods for working with <see cref="ReadOnlySpan{Char}"/>.
     /// </summary>
-    public static class ReadOnlySpanCharExtensions
+    static class ReadOnlySpanCharExtensions
     {
 
         /// <summary>

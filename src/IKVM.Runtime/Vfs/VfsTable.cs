@@ -15,7 +15,7 @@ namespace IKVM.Runtime.Vfs
     /// <summary>
     /// Collection of mounted virtual file systems.
     /// </summary>
-    class VfsTable
+    internal class VfsTable
     {
 
         /// <summary>

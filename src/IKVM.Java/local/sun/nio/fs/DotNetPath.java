@@ -33,13 +33,13 @@ import java.nio.file.*;
 import java.util.ArrayList;
 import java.util.Iterator;
 
-final class DotDotNetPath extends AbstractPath {
+final class DotNetPath extends AbstractPath {
 
     private static final char[] invalid = cli.System.IO.Path.GetInvalidFileNameChars();
     private final DotNetFileSystem fs;
     final String path;
 
-    DotDotNetPath(DotNetFileSystem fs, String path)
+    DotNetPath(DotNetFileSystem fs, String path)
     {
         if (cli.IKVM.Runtime.RuntimeUtil.get_IsWindows())
         {

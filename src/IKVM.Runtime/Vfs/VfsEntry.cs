@@ -31,7 +31,7 @@ namespace IKVM.Runtime.Vfs
     /// <summary>
     /// Base type for entries within a virtual file system.
     /// </summary>
-    abstract class VfsEntry
+    internal abstract class VfsEntry
     {
 
         readonly VfsContext context;

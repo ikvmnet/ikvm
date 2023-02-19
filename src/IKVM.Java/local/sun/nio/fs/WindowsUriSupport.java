@@ -104,7 +104,7 @@ class WindowsUriSupport {
         boolean addSlash = false;
         if (!s.endsWith("\\")) {
             try {
-                 addSlash = cli.System.IO.Directory.Exists(path) || cli.IKVM.Runtime.Vfs.VfsTable.get_Default().GetPath(path) instanceof cli.IKVM.Runtime.Vfs.VfsDirectory;
+                 addSlash = cli.System.IO.Directory.Exists(s) || cli.IKVM.Runtime.Vfs.VfsTable.get_Default().GetPath(s) instanceof cli.IKVM.Runtime.Vfs.VfsDirectory;
             } catch (Throwable x) {
                 
             }

@@ -31,7 +31,7 @@ namespace IKVM.Runtime.Vfs
     /// <summary>
     /// Represents a file within the virtual file system.
     /// </summary>
-    abstract class VfsFile : VfsEntry
+    internal abstract class VfsFile : VfsEntry
     {
 
         /// <summary>

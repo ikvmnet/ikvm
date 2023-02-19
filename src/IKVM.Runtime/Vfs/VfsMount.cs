@@ -31,7 +31,7 @@ namespace IKVM.Runtime.Vfs
     /// <summary>
     /// Implements a virtual file system available to Java libraries.
     /// </summary>
-    partial class VfsMount
+    internal partial class VfsMount
     {
 
         readonly string rootPath;

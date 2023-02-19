@@ -115,7 +115,7 @@ class UnixUriUtils {
         // trailing slash if directory
         if (sb.charAt(sb.length()-1) != '/') {
             try {
-                 if (cli.System.IO.Directory.Exists(up.path) || cli.IKVM.Runtime.Vfs.VfsTable.get_Default().GetPath(path) instanceof cli.IKVM.Runtime.Vfs.VfsDirectory)
+                 if (cli.System.IO.Directory.Exists(sb.toString()) || cli.IKVM.Runtime.Vfs.VfsTable.get_Default().GetPath(sb.toString()) instanceof cli.IKVM.Runtime.Vfs.VfsDirectory)
                      sb.append('/');
             } catch (Throwable x) {
                 // ignore

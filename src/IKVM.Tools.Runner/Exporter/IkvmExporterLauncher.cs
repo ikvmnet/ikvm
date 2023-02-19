@@ -78,7 +78,7 @@ namespace IKVM.Tools.Runner.Exporter
                 foreach (var ns in options.Namespaces)
                     args.Add($"-ns:{ns}");
 
-            if (options.SkipError)
+            if (options.ContinueOnError)
                 args.Add("-skiperror");
 
             if (options.Shared)
@@ -90,7 +90,7 @@ namespace IKVM.Tools.Runner.Exporter
             if (options.Forwarders)
                 args.Add("-forwarders");
 
-            if (options.Parameters)
+            if (options.IncludeParameterNames)
                 args.Add("-parameters");
 
             if (options.JApi)

@@ -7,7 +7,7 @@ namespace IKVM.Runtime.Vfs
     /// <summary>
     /// Represents a virtual directory for assembly resources.
     /// </summary>
-    sealed class VfsAssemblyResourceDirectory : VfsDirectory
+    internal sealed class VfsAssemblyResourceDirectory : VfsDirectory
     {
 
         readonly Assembly assembly;

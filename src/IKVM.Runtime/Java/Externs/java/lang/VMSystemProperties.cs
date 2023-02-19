@@ -123,15 +123,6 @@ namespace IKVM.Java.Externs.java.lang
             return GetIkvmHomeArchsEnumerator().ToArray();
         }
 
-        /// <summary>
-        /// Gets the path to the root of the VFS.
-        /// </summary>
-        /// <returns></returns>
-        public static string getVirtualFileSystemRoot()
-        {
-            return VfsTable.RootPath;
-        }
-
         public static string getBootClassPath()
         {
             return VfsTable.Default.GetAssemblyClassesPath(JVM.BaseAssembly);

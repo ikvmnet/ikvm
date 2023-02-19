@@ -33,7 +33,7 @@ namespace IKVM.Runtime.Vfs
     /// <summary>
     /// Represents a fake cacerts file.
     /// </summary>
-    sealed class VfsCacertsFile : VfsFile
+    internal sealed class VfsCacertsFile : VfsFile
     {
 
         readonly Lazy<byte[]> buff;

@@ -37,7 +37,7 @@ namespace IKVM.Tools.Runner.Exporter
         /// <summary>
         /// Continue when errors are encountered.
         /// </summary>
-        public bool SkipError { get; set; }
+        public bool ContinueOnError { get; set; }
 
         /// <summary>
         /// Process all assemblies in shared group.
@@ -55,19 +55,29 @@ namespace IKVM.Tools.Runner.Exporter
         public IList<string> Lib { get; set; } = new List<string>();
 
         /// <summary>
-        /// Export forwarded types too.
+        /// Whether to emit non-public types.
         /// </summary>
-        public bool Forwarders { get; set; }
+        public bool IncludeNonPublicTypes { get; set; }
+
+        /// <summary>
+        /// Whether to emit non-public interface implementations.
+        /// </summary>
+        public bool IncludeNonPublicInterfaces { get; set; }
+
+        /// <summary>
+        /// Whether to emit non-public members.
+        /// </summary>
+        public bool IncludeNonPublicMembers { get; set; }
 
         /// <summary>
         /// Emit Java 8 classes with parameter names.
         /// </summary>
-        public bool Parameters { get; set; }
+        public bool IncludeParameterNames { get; set; }
 
         /// <summary>
-        /// Generate jar suitable for comparison with japitools.
+        /// Export forwarded types too.
         /// </summary>
-        public bool JApi { get; set; }
+        public bool Forwarders { get; set; }
 
         /// <summary>
         /// Run in bootstrap mode.

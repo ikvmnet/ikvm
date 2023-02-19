@@ -39,10 +39,10 @@ namespace IKVM.Java.Externs.gnu.java.net.protocol.ikvmres
 
         public static byte[] GenerateStub(global::java.lang.Class c)
         {
-            MemoryStream mem = new MemoryStream();
-#if !FIRST_PASS
-            bool includeNonPublicInterfaces = !"true".Equals(global::java.lang.Props.props.getProperty("ikvm.stubgen.skipNonPublicInterfaces"), StringComparison.OrdinalIgnoreCase);
-            StubGen.StubGenerator.WriteClass(mem, TypeWrapper.FromClass(c), includeNonPublicInterfaces, false, false, true);
+            using var mem = new MemoryStream();
+#if FIRST_PASS == false
+            var includeNonPublicInterfaces = !"true".Equals(global::java.lang.Props.props.getProperty("ikvm.stubgen.skipNonPublicInterfaces"), StringComparison.OrdinalIgnoreCase);
+            StubGen.StubGenerator.WriteClass(mem, TypeWrapper.FromClass(c), false, includeNonPublicInterfaces, false, true, false);
 #endif
             return mem.ToArray();
         }

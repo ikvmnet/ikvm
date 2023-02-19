@@ -44,10 +44,14 @@ $([MSBuild]::Unescape('$(___IkvmReferenceExportItemPrepareCs)'))
 
         <ItemGroup>
             <_IkvmExporterArgs Remove="@(_IkvmExporterArgs)" />
-            <_IkvmExporterArgs Include="-bootstrap" Condition=" '%(ReferenceExport.Bootstrap)' == 'true' " />
-            <_IkvmExporterArgs Include="@(_ReferenceExportReference->'-r:&quot;%(FullPath)&quot;')" />
-            <_IkvmExporterArgs Include="-nostdlib" Condition=" '%(ReferenceExport.NoStdLib)' == 'true' " />
-            <_IkvmExporterArgs Include="-out:&quot;%(ReferenceExport.StagePath)&quot;" />
+            <_IkvmExporterArgs Include="--out:&quot;%(ReferenceExport.StagePath)&quot;" />
+            <_IkvmExporterArgs Include="@(_ReferenceExportReference->'--reference:&quot;%(FullPath)&quot;')" />
+            <_IkvmExporterArgs Include="--non-public-types" Condition=" '%(ReferenceExport.IncludeNonPublicTypes)' == 'true' " />
+            <_IkvmExporterArgs Include="--non-public-interfaces" Condition=" '%(ReferenceExport.IncludeNonPublicInterfaces)' == 'true' " />
+            <_IkvmExporterArgs Include="--non-public-members" Condition=" '%(ReferenceExport.IncludeNonPublicMembers)' == 'true' " />
+            <_IkvmExporterArgs Include="--parameters" />
+            <_IkvmExporterArgs Include="--nostdlib" Condition=" '%(ReferenceExport.NoStdLib)' == 'true' " />
+            <_IkvmExporterArgs Include="--bootstrap" Condition=" '%(ReferenceExport.Bootstrap)' == 'true' " />
             <_IkvmExporterArgs Include="&quot;%(ReferenceExport.Identity)&quot;" />
         </ItemGroup>
 

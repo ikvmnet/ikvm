@@ -31,7 +31,7 @@ namespace IKVM.Runtime.Vfs
     /// <summary>
     /// Represents an assembly resource file within the virtual file system.
     /// </summary>
-    sealed class VfsAssemblyResourceFile : VfsFile
+    internal sealed class VfsAssemblyResourceFile : VfsFile
     {
 
         readonly Assembly asm;

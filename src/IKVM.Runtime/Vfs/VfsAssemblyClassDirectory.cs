@@ -13,7 +13,7 @@ namespace IKVM.Runtime.Vfs
     /// <summary>
     /// Represents a virtual directory for Java classes form an assembly.
     /// </summary>
-    sealed class VfsAssemblyClassDirectory : VfsDirectory
+    internal sealed class VfsAssemblyClassDirectory : VfsDirectory
     {
 
         readonly Assembly assembly;
