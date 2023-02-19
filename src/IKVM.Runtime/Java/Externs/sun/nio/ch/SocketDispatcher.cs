@@ -40,7 +40,7 @@ namespace IKVM.Java.Externs.sun.nio.ch
         /// <param name="address"></param>
         /// <param name="len"></param>
         /// <returns></returns>
-        public static unsafe long read0(object fd, long address, int len)
+        public static unsafe int read0(object fd, long address, int len)
         {
 #if FIRST_PASS
             throw new NotImplementedException();
