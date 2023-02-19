@@ -1,4 +1,6 @@
-﻿namespace IKVM.Runtime.Accessors.Sun.Nio.Ch
+﻿using System;
+
+namespace IKVM.Runtime.Accessors.Sun.Nio.Ch
 {
 
     /// <summary>
@@ -8,6 +10,7 @@
     {
 
         FieldAccessor<object> sender;
+        MethodAccessor<Func<object, object>> remoteAddress;
 
         /// <summary>
         /// Initializes a new instance.
@@ -20,14 +23,20 @@
         }
 
         /// <summary>
-        /// Gets the value for the 'fd' field.
+        /// Gets the value for the 'sender' field.
         /// </summary>
         public object GetSender(object self) => GetField(ref sender, nameof(sender)).GetValue(self);
 
         /// <summary>
-        /// Sets the value for the 'fd' field.
+        /// Sets the value for the 'sender' field.
         /// </summary>
         public void SetSender(object self, object value) => GetField(ref sender, nameof(sender)).SetValue(self, value);
+
+        /// <summary>
+        /// Invokes the 'remoteAddress' function.
+        /// </summary>
+        /// <param name="self"></param>
+        public object InvokeRemoteAddress(object self) => GetMethod(ref remoteAddress, nameof(remoteAddress)).Invoker(self);
 
     }
 

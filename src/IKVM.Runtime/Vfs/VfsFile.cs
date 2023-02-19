@@ -68,7 +68,7 @@ namespace IKVM.Runtime.Vfs
         /// <returns></returns>
         public virtual Stream Open(FileMode mode, FileAccess access)
         {
-            return CanOpen(mode, access) ? OpenRead() : throw new UnauthorizedAccessException("Access to the file was denied. The IKVM VFS currently only support read operations.");
+            return CanOpen(mode, access) ? OpenRead() : throw new UnauthorizedAccessException("Access to the file was denied. The IKVM VFS currently only supports read operations.");
         }
 
         /// <summary>

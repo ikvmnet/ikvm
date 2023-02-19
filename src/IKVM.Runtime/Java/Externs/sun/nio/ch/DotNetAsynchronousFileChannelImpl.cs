@@ -13,7 +13,6 @@ using IKVM.Runtime;
 
 using Microsoft.Win32.SafeHandles;
 
-
 #if FIRST_PASS == false
 
 using java.io;
@@ -298,8 +297,6 @@ namespace IKVM.Java.Externs.sun.nio.ch
         /// <returns></returns>
         static unsafe ValueTask LockFileExAsync(SafeFileHandle hFile, int dwFlags, int dwReserved, int nNumberOfBytesToLockLow, int nNumberOfBytesToLockHigh, Overlapped overlapped)
         {
-            const int ERROR_IO_PENDING = 997;
-
             var task = new TaskCompletionSource<object>();
             var iocb = (IOCompletionCallback)((errorCode, numBytes, nativeOverlapped) =>
             {
@@ -310,28 +307,24 @@ namespace IKVM.Java.Externs.sun.nio.ch
                     else
                         task.SetException(new Win32Exception((int)errorCode));
                 }
+                catch (System.Exception e)
+                {
+                    task.SetException(e);
+                }
                 finally
                 {
                     Overlapped.Free(nativeOverlapped);
                 }
             });
 
-            var ptr = overlapped.Pack(iocb, null);
-            var res = LockFileEx(hFile, dwFlags, dwReserved, nNumberOfBytesToLockLow, nNumberOfBytesToLockHigh, ptr);
-            if (res == ERROR_IO_PENDING)
+            var optr = overlapped.Pack(iocb, null);
+            if (LockFileEx(hFile, dwFlags, dwReserved, nNumberOfBytesToLockLow, nNumberOfBytesToLockHigh, optr) == 0)
             {
-                return new ValueTask(task.Task);
-            }
-            else if (res != 1)
-            {
-                Overlapped.Free(ptr);
+                Overlapped.Free(optr);
                 throw new Win32Exception(Marshal.GetLastWin32Error());
             }
-            else
-            {
-                Overlapped.Free(ptr);
-                return new ValueTask(Task.CompletedTask);
-            }
+
+            return new ValueTask(task.Task);
         }
 
         /// <summary>
@@ -345,48 +338,6 @@ namespace IKVM.Java.Externs.sun.nio.ch
         /// <returns></returns>
         [DllImport("kernel32", SetLastError = true)]
         static extern unsafe int UnlockFileEx(SafeFileHandle hFile, int dwReserved, int nNumberOfBytesToUnlockLow, int nNumberOfBytesToUnlockHigh, NativeOverlapped* lpOverlapped);
-
-        /// <summary>
-        /// Wraps the UnlockFileEx function as an async operation.
-        /// </summary>
-        /// <returns></returns>
-        static unsafe ValueTask UnlockFileExAsync(SafeFileHandle hFile, int dwReserved, int nNumberOfBytesToUnlockLow, int nNumberOfBytesToUnlockHigh, Overlapped overlapped)
-        {
-            const int ERROR_IO_PENDING = 997;
-
-            var task = new TaskCompletionSource<object>();
-            var iocb = (IOCompletionCallback)((errorCode, numBytes, nativeOverlapped) =>
-            {
-                try
-                {
-                    if (errorCode == 0)
-                        task.SetResult(null);
-                    else
-                        task.SetException(new Win32Exception((int)errorCode));
-                }
-                finally
-                {
-                    Overlapped.Free(nativeOverlapped);
-                }
-            });
-
-            var ptr = overlapped.Pack(iocb, null);
-            var res = UnlockFileEx(hFile, dwReserved, nNumberOfBytesToUnlockLow, nNumberOfBytesToUnlockHigh, ptr);
-            if (res == ERROR_IO_PENDING)
-            {
-                return new ValueTask(task.Task);
-            }
-            else if (res != 1)
-            {
-                Overlapped.Free(ptr);
-                throw new Win32Exception(Marshal.GetLastWin32Error());
-            }
-            else
-            {
-                Overlapped.Free(ptr);
-                return new ValueTask(Task.CompletedTask);
-            }
-        }
 
         /// <summary>
         /// Implements the Lock logic as an asynchronous task.
@@ -417,10 +368,10 @@ namespace IKVM.Java.Externs.sun.nio.ch
             {
                 if (RuntimeUtil.IsWindows)
                 {
+                    const int LOCKFILE_EXCLUSIVE_LOCK = 2;
+
                     try
                     {
-                        const int LOCKFILE_EXCLUSIVE_LOCK = 2;
-
                         var o = new Overlapped();
                         o.OffsetLow = (int)position;
                         o.OffsetHigh = (int)(position >> 32);
@@ -537,11 +488,8 @@ namespace IKVM.Java.Externs.sun.nio.ch
                         if (shared == false)
                             flags |= LOCKFILE_EXCLUSIVE_LOCK;
 
+                        // issue async request but wait for synchronous result
                         var t = LockFileExAsync(stream.SafeFileHandle, flags, 0, (int)size, (int)(size >> 32), o);
-                        if (t.IsCompleted == false)
-                            throw new global::java.io.IOException("LockFile did not complete synchronously.");
-
-                        // await task, which should have been synchronous
                         t.GetAwaiter().GetResult();
 
                         return fli;
@@ -605,13 +553,17 @@ namespace IKVM.Java.Externs.sun.nio.ch
                         var o = new Overlapped();
                         o.OffsetLow = (int)pos;
                         o.OffsetHigh = (int)(pos >> 32);
+                        var p = o.Pack(null, null);
 
-                        var t = UnlockFileExAsync(stream.SafeFileHandle, 0, (int)size, (int)(size >> 32), o);
-                        if (t.IsCompleted == false)
-                            throw new global::java.io.IOException("LockFile did not complete synchronously.");
-
-                        // await task, which should have been synchronous
-                        t.GetAwaiter().GetResult();
+                        try
+                        {
+                            if (UnlockFileEx(stream.SafeFileHandle, 0, (int)size, (int)(size >> 32), p) == 0)
+                                throw new Win32Exception(Marshal.GetLastWin32Error());
+                        }
+                        finally
+                        {
+                            Overlapped.Free(p);
+                        }
                     }
                     catch (Win32Exception e) when (e.ErrorCode == ERROR_NOT_LOCKED)
                     {

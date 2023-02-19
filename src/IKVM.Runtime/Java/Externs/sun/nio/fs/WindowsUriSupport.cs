@@ -1,6 +1,6 @@
 ﻿using IKVM.Runtime.Vfs;
 
-namespace IKVM.Runtime.Java.Externs.sun.nio.fs
+namespace IKVM.Java.Externs.sun.nio.fs
 {
 
     /// <summary>

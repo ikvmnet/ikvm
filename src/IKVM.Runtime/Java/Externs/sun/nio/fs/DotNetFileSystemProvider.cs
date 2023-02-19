@@ -8,7 +8,7 @@ using IKVM.Runtime.Accessors.Java.Io;
 using IKVM.Runtime.Accessors.Java.Lang;
 using IKVM.Runtime.Vfs;
 
-namespace IKVM.Runtime.Java.Externs.sun.nio.fs
+namespace IKVM.Java.Externs.sun.nio.fs
 {
 
     /// <summary>
@@ -37,32 +37,29 @@ namespace IKVM.Runtime.Java.Externs.sun.nio.fs
         /// <param name="options"></param>
         /// <param name="sm"></param>
         /// <returns></returns>
-        public static object open0(string path, FileMode mode, FileSystemRights rights, FileShare share, FileOptions options, object sm)
+        public static object open0(string path, FileMode mode, FileSystemRights rights, FileShare share, int bufferSize, FileOptions options, object sm)
         {
 #if FIRST_PASS
             throw new NotImplementedException();
 #else
-
             if (sm != null)
             {
                 if ((rights & FileSystemRights.Read) != 0)
-                {
                     SecurityManagerAccessor.InvokeCheckRead(sm, path);
-                }
-                if ((rights & (FileSystemRights.Write | FileSystemRights.AppendData)) != 0)
-                {
+                if ((rights & FileSystemRights.Write) != 0)
                     SecurityManagerAccessor.InvokeCheckWrite(sm, path);
-                }
+                if ((rights & FileSystemRights.AppendData) != 0)
+                    SecurityManagerAccessor.InvokeCheckWrite(sm, path);
                 if ((options & FileOptions.DeleteOnClose) != 0)
-                {
                     SecurityManagerAccessor.InvokeCheckDelete(sm, path);
-                }
             }
 
             var access = (FileAccess)0;
             if ((rights & FileSystemRights.Read) != 0)
                 access |= FileAccess.Read;
-            if ((rights & (FileSystemRights.Write | FileSystemRights.AppendData)) != 0)
+            if ((rights & FileSystemRights.Write) != 0)
+                access |= FileAccess.Write;
+            if ((rights & FileSystemRights.AppendData) != 0)
                 access |= FileAccess.Write;
             if (access == 0)
                 access = FileAccess.ReadWrite;
@@ -73,9 +70,9 @@ namespace IKVM.Runtime.Java.Externs.sun.nio.fs
                     return FileDescriptorAccessor.FromStream(vfsFile.Open(mode, access));
                 else
 #if NETFRAMEWORK
-                    return FileDescriptorAccessor.FromStream(new FileStream(path, mode, rights, share, 8, options));
+                    return FileDescriptorAccessor.FromStream(new FileStream(path, mode, rights, share, bufferSize, options));
 #else
-                    return FileDescriptorAccessor.FromStream(new FileStream(path, mode, access, share, 8, options));
+                    return FileDescriptorAccessor.FromStream(new FileStream(path, mode, access, share, bufferSize, options));
 #endif
             }
             catch (ArgumentException e)
