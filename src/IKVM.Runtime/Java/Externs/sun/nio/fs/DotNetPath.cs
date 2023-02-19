@@ -31,7 +31,7 @@ using IKVM.Runtime.Vfs;
 namespace IKVM.Java.Externs.sun.nio.fs
 {
 
-    static class NetPath
+    static class DotNetPath
     {
 
         public static string toRealPathImpl(string path)
@@ -42,7 +42,7 @@ namespace IKVM.Java.Externs.sun.nio.fs
             path = global::java.io.DefaultFileSystem.getFileSystem().canonicalize(path);
             if (VfsTable.Default.IsPath(path))
             {
-                if (VfsTable.Default.GetPath(path) is VfsFile file)
+                if (VfsTable.Default.GetEntry(path) is VfsFile file)
                 {
                     if (file.CanOpen(FileMode.Open, FileAccess.Read) == false)
                         throw new global::java.nio.file.AccessDeniedException(path);

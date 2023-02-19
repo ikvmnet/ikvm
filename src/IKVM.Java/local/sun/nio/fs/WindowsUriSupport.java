@@ -104,7 +104,7 @@ class WindowsUriSupport {
         boolean addSlash = false;
         if (!s.endsWith("\\")) {
             try {
-                 addSlash = cli.System.IO.Directory.Exists(s) || cli.IKVM.Runtime.Vfs.VfsTable.get_Default().GetPath(s) instanceof cli.IKVM.Runtime.Vfs.VfsDirectory;
+                 addSlash = cli.System.IO.Directory.Exists(s) || isVfsDirectory(s);
             } catch (Throwable x) {
                 
             }
@@ -165,4 +165,7 @@ class WindowsUriSupport {
         }
         return new DotNetPath(fs, path);
     }
+
+    static native boolean isVfsDirectory(String path);
+
 }

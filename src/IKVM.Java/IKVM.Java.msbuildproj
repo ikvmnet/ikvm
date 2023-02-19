@@ -39,7 +39,6 @@
     </ItemGroup>
 
     <ItemGroup>
-        <None Include="classpath\**\*" />
         <None Include="icedtea_jce\**\*" />
         <None Include="icedtea_rt\**\*" />
         <None Include="local\**\*" />

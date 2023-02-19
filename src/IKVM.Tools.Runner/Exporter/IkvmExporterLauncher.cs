@@ -68,40 +68,46 @@ namespace IKVM.Tools.Runner.Exporter
             var args = new List<string>();
 
             if (options.Output is not null)
-                args.Add($"-out:{options.Output}");
+                args.Add($"--out:{options.Output}");
 
             if (options.References is not null)
                 foreach (var reference in options.References)
-                    args.Add($"-reference:{reference}");
+                    args.Add($"--reference:{reference}");
 
             if (options.Namespaces is not null)
                 foreach (var ns in options.Namespaces)
-                    args.Add($"-ns:{ns}");
-
-            if (options.ContinueOnError)
-                args.Add("-skiperror");
+                    args.Add($"--ns:{ns}");
 
             if (options.Shared)
-                args.Add("-shared");
+                args.Add("--shared");
 
             if (options.NoStdLib)
-                args.Add("-nostdlib");
+                args.Add("--nostdlib");
 
             if (options.Forwarders)
-                args.Add("-forwarders");
+                args.Add("--forwarders");
+
+            if (options.IncludeNonPublicTypes)
+                args.Add("--non-public-types");
+
+            if (options.IncludeNonPublicInterfaces)
+                args.Add("--non-public-interfaces");
+
+            if (options.IncludeNonPublicMembers)
+                args.Add("--non-public-members");
 
             if (options.IncludeParameterNames)
-                args.Add("-parameters");
-
-            if (options.JApi)
-                args.Add("-japi");
+                args.Add("--parameters");
 
             if (options.Bootstrap)
-                args.Add("-bootstrap");
+                args.Add("--bootstrap");
 
             if (options.Lib is not null)
                 foreach (var i in options.Lib)
-                    args.Add($"-lib:{i}");
+                    args.Add($"--lib:{i}");
+
+            if (options.ContinueOnError)
+                args.Add("--skiperror");
 
             if (options.Input is not null)
                 args.Add(options.Input);

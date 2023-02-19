@@ -17,14 +17,14 @@ namespace IKVM.Tests.Runtime.Vfs
         [TestMethod]
         public void CanGetAssemblyDirectory()
         {
-            VfsTable.Default.GetPath(VfsTable.Default.GetAssemblyClassesPath(typeof(global::java.lang.Object).Assembly)).Should().BeAssignableTo<VfsDirectory>();
-            VfsTable.Default.GetPath(VfsTable.Default.GetAssemblyResourcesPath(typeof(global::java.lang.Object).Assembly)).Should().BeAssignableTo<VfsDirectory>();
+            VfsTable.Default.GetEntry(VfsTable.Default.GetAssemblyClassesPath(typeof(global::java.lang.Object).Assembly)).Should().BeAssignableTo<VfsDirectory>();
+            VfsTable.Default.GetEntry(VfsTable.Default.GetAssemblyResourcesPath(typeof(global::java.lang.Object).Assembly)).Should().BeAssignableTo<VfsDirectory>();
         }
 
         [TestMethod]
         public void CanListAssemblyClassesDirectory()
         {
-            var dir = (VfsDirectory)VfsTable.Default.GetPath(VfsTable.Default.GetAssemblyClassesPath(typeof(global::java.lang.Object).Assembly));
+            var dir = (VfsDirectory)VfsTable.Default.GetEntry(VfsTable.Default.GetAssemblyClassesPath(typeof(global::java.lang.Object).Assembly));
             var lst = dir.List();
             lst.Should().NotContain("");
         }
@@ -32,12 +32,12 @@ namespace IKVM.Tests.Runtime.Vfs
         [TestMethod]
         public void CanGetClassFileForStandardClass()
         {
-            var f1 = VfsTable.Default.GetPath(Path.Combine(VfsTable.Default.GetAssemblyClassesPath(typeof(global::java.lang.Object).Assembly), "java", "lang", "Object.class"));
+            var f1 = VfsTable.Default.GetEntry(Path.Combine(VfsTable.Default.GetAssemblyClassesPath(typeof(global::java.lang.Object).Assembly), "java", "lang", "Object.class"));
             f1.Should().BeAssignableTo<VfsFile>();
             ((VfsFile)f1).Size.Should().BeGreaterThan(1);
             ((VfsFile)f1).Open(FileMode.Open, FileAccess.Read).Length.Should().BeGreaterThan(1);
 
-            var f2 = VfsTable.Default.GetPath(Path.Combine(VfsTable.Default.GetAssemblyClassesPath(typeof(global::java.lang.String).Assembly), "java", "lang", "String.class"));
+            var f2 = VfsTable.Default.GetEntry(Path.Combine(VfsTable.Default.GetAssemblyClassesPath(typeof(global::java.lang.String).Assembly), "java", "lang", "String.class"));
             f2.Should().BeAssignableTo<VfsFile>();
             ((VfsFile)f2).Size.Should().BeGreaterThan(1);
             ((VfsFile)f2).Open(FileMode.Open, FileAccess.Read).Length.Should().BeGreaterThan(1);
@@ -46,7 +46,7 @@ namespace IKVM.Tests.Runtime.Vfs
         [TestMethod]
         public void CanGetResourcesJar()
         {
-            var f1 = VfsTable.Default.GetPath(Path.Combine(VfsTable.Default.GetAssemblyResourcesPath(typeof(global::java.lang.Object).Assembly), "resources.jar"));
+            var f1 = VfsTable.Default.GetEntry(Path.Combine(VfsTable.Default.GetAssemblyResourcesPath(typeof(global::java.lang.Object).Assembly), "resources.jar"));
             f1.Should().BeAssignableTo<VfsFile>();
             ((VfsFile)f1).Size.Should().BeGreaterThan(1);
             ((VfsFile)f1).Open(FileMode.Open, FileAccess.Read).Length.Should().BeGreaterThan(1);
@@ -55,7 +55,7 @@ namespace IKVM.Tests.Runtime.Vfs
         [TestMethod]
         public void CanReadManifestFromResourcesJar()
         {
-            var fil = VfsTable.Default.GetPath(Path.Combine(VfsTable.Default.GetAssemblyResourcesPath(typeof(global::java.lang.Object).Assembly), "resources.jar"));
+            var fil = VfsTable.Default.GetEntry(Path.Combine(VfsTable.Default.GetAssemblyResourcesPath(typeof(global::java.lang.Object).Assembly), "resources.jar"));
             var stm = ((VfsFile)fil).Open(FileMode.Open, FileAccess.Read);
             var zip = new ZipArchive(stm);
             var man = zip.GetEntry("META-INF/MANIFEST.MF");
@@ -66,7 +66,7 @@ namespace IKVM.Tests.Runtime.Vfs
         [TestMethod]
         public void CanGetClassFileForNestedClass()
         {
-            var file = VfsTable.Default.GetPath(Path.Combine(VfsTable.Default.GetAssemblyClassesPath(typeof(global::java.lang.Character).Assembly), "java", "lang", "Character$Subset.class"));
+            var file = VfsTable.Default.GetEntry(Path.Combine(VfsTable.Default.GetAssemblyClassesPath(typeof(global::java.lang.Character).Assembly), "java", "lang", "Character$Subset.class"));
             file.Should().BeAssignableTo<VfsFile>();
             ((VfsFile)file).Size.Should().BeGreaterThan(1);
             new BinaryReader(((VfsFile)file).Open(FileMode.Open, FileAccess.Read)).ReadUInt32().Should().Be(0xBEBAFECA);
@@ -75,7 +75,7 @@ namespace IKVM.Tests.Runtime.Vfs
         [TestMethod]
         public void CanGetClassFileForAnonymousClass()
         {
-            var file = VfsTable.Default.GetPath(Path.Combine(VfsTable.Default.GetAssemblyClassesPath(typeof(global::java.lang.ClassLoader).Assembly), "java", "lang", "ClassLoader$1.class"));
+            var file = VfsTable.Default.GetEntry(Path.Combine(VfsTable.Default.GetAssemblyClassesPath(typeof(global::java.lang.ClassLoader).Assembly), "java", "lang", "ClassLoader$1.class"));
             file.Should().BeAssignableTo<VfsFile>();
             ((VfsFile)file).Size.Should().BeGreaterThan(1);
             new BinaryReader(((VfsFile)file).Open(FileMode.Open, FileAccess.Read)).ReadUInt32().Should().Be(0xBEBAFECA);
@@ -84,7 +84,7 @@ namespace IKVM.Tests.Runtime.Vfs
         [TestMethod]
         public void CanGetClassFileForInnerClassOfInterface()
         {
-            var file = VfsTable.Default.GetPath(Path.Combine(VfsTable.Default.GetAssemblyClassesPath(typeof(global::java.lang.CharSequence).Assembly), "java", "lang", "CharSequence$1CharIterator.class"));
+            var file = VfsTable.Default.GetEntry(Path.Combine(VfsTable.Default.GetAssemblyClassesPath(typeof(global::java.lang.CharSequence).Assembly), "java", "lang", "CharSequence$1CharIterator.class"));
             file.Should().BeAssignableTo<VfsFile>();
             ((VfsFile)file).Size.Should().BeGreaterThan(1);
             new BinaryReader(((VfsFile)file).Open(FileMode.Open, FileAccess.Read)).ReadUInt32().Should().Be(0xBEBAFECA);
@@ -93,7 +93,7 @@ namespace IKVM.Tests.Runtime.Vfs
         [TestMethod]
         public void CanGetClassFileForNestedClassOfInterface()
         {
-            var file = VfsTable.Default.GetPath(Path.Combine(VfsTable.Default.GetAssemblyClassesPath(typeof(global::javax.tools.JavaFileObject).Assembly), "javax", "tools", "JavaFileObject$Kind.class"));
+            var file = VfsTable.Default.GetEntry(Path.Combine(VfsTable.Default.GetAssemblyClassesPath(typeof(global::javax.tools.JavaFileObject).Assembly), "javax", "tools", "JavaFileObject$Kind.class"));
             file.Should().BeAssignableTo<VfsFile>();
             ((VfsFile)file).Size.Should().BeGreaterThan(1);
             new BinaryReader(((VfsFile)file).Open(FileMode.Open, FileAccess.Read)).ReadUInt32().Should().Be(0xBEBAFECA);

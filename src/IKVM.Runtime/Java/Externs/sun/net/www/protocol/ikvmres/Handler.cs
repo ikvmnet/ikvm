@@ -31,7 +31,7 @@ using IKVM.Internal;
 using System.Runtime.Loader;
 #endif
 
-namespace IKVM.Java.Externs.gnu.java.net.protocol.ikvmres
+namespace IKVM.Java.Externs.sun.net.www.protocol.ikvmres
 {
 
     static class Handler

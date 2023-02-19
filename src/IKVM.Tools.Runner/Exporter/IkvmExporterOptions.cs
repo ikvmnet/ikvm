@@ -35,21 +35,6 @@ namespace IKVM.Tools.Runner.Exporter
         public List<string> Namespaces { get; } = new List<string>();
 
         /// <summary>
-        /// Continue when errors are encountered.
-        /// </summary>
-        public bool ContinueOnError { get; set; }
-
-        /// <summary>
-        /// Process all assemblies in shared group.
-        /// </summary>
-        public bool Shared { get; set; }
-
-        /// <summary>
-        /// Do not reference standard libraries.
-        /// </summary>
-        public bool NoStdLib { get; set; }
-
-        /// <summary>
         /// Additional directories to search for references.
         /// </summary>
         public IList<string> Lib { get; set; } = new List<string>();
@@ -75,6 +60,16 @@ namespace IKVM.Tools.Runner.Exporter
         public bool IncludeParameterNames { get; set; }
 
         /// <summary>
+        /// Process all assemblies in shared group.
+        /// </summary>
+        public bool Shared { get; set; }
+
+        /// <summary>
+        /// Do not reference standard libraries.
+        /// </summary>
+        public bool NoStdLib { get; set; }
+
+        /// <summary>
         /// Export forwarded types too.
         /// </summary>
         public bool Forwarders { get; set; }
@@ -83,6 +78,11 @@ namespace IKVM.Tools.Runner.Exporter
         /// Run in bootstrap mode.
         /// </summary>
         public bool Bootstrap { get; set; }
+
+        /// <summary>
+        /// Continue when errors are encountered.
+        /// </summary>
+        public bool ContinueOnError { get; set; }
 
     }
 

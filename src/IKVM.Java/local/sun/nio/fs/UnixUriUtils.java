@@ -69,36 +69,15 @@ class UnixUriUtils {
         // transform escaped octets and unescaped characters to bytes
         if (p.endsWith("/") && len > 1)
             len--;
-        byte[] result = new byte[len];
-        int rlen = 0;
-        int pos = 0;
-        while (pos < len) {
-            char c = p.charAt(pos++);
-            byte b;
-            if (c == '%') {
-                assert (pos+2) <= len;
-                char c1 = p.charAt(pos++);
-                char c2 = p.charAt(pos++);
-                b = (byte)((decode(c1) << 4) | decode(c2));
-                if (b == 0)
-                    throw new IllegalArgumentException("Nul character not allowed");
-            } else {
-                assert c < 0x80;
-                b = (byte)c;
-            }
-            result[rlen++] = b;
-        }
-        if (rlen != result.length)
-            result = Arrays.copyOf(result, rlen);
 
-        return new DotNetPath(fs, result);
+        return new DotNetPath(fs, p);
     }
 
     /**
      * Converts Path to URI
      */
     static URI toUri(DotNetPath up) {
-        byte[] path = up.toAbsolutePath().asByteArray();
+        byte[] path = up.toAbsolutePath().toString().getBytes();
         StringBuilder sb = new StringBuilder("file:///");
         assert path[0] == '/';
         for (int i=1; i<path.length; i++) {
@@ -115,7 +94,7 @@ class UnixUriUtils {
         // trailing slash if directory
         if (sb.charAt(sb.length()-1) != '/') {
             try {
-                 if (cli.System.IO.Directory.Exists(sb.toString()) || cli.IKVM.Runtime.Vfs.VfsTable.get_Default().GetPath(sb.toString()) instanceof cli.IKVM.Runtime.Vfs.VfsDirectory)
+                 if (cli.System.IO.Directory.Exists(sb.toString()) || isVfsDirectory(sb.toString()))
                      sb.append('/');
             } catch (Throwable x) {
                 // ignore
@@ -238,12 +217,15 @@ class UnixUriUtils {
     private static final long H_PCHAR
         = H_UNRESERVED | highMask(":@&=+$,");
 
-   // All valid path characters
-   private static final long L_PATH = L_PCHAR | lowMask(";/");
-   private static final long H_PATH = H_PCHAR | highMask(";/");
+    // All valid path characters
+    private static final long L_PATH = L_PCHAR | lowMask(";/");
+    private static final long H_PATH = H_PCHAR | highMask(";/");
 
-   private final static char[] hexDigits = {
+    private final static char[] hexDigits = {
         '0', '1', '2', '3', '4', '5', '6', '7',
         '8', '9', 'A', 'B', 'C', 'D', 'E', 'F'
     };
+
+    static native boolean isVfsDirectory(String path);
+
 }

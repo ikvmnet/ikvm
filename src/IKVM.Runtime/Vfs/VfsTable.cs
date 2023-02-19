@@ -68,11 +68,11 @@ namespace IKVM.Runtime.Vfs
         /// Adds the a new mount to the table.
         /// </summary>
         /// <param name="path"></param>
-        /// <param name="root"></param>
+        /// <param name="item"></param>
         /// <returns></returns>
-        public VfsMount AddMount(string path, VfsDirectory root)
+        public VfsMount AddMount(string path, VfsEntry item)
         {
-            return mounts.AddFirst(new VfsMount(path, root)).Value;
+            return mounts.AddFirst(new VfsMount(path, item)).Value;
         }
 
         /// <summary>
@@ -81,7 +81,7 @@ namespace IKVM.Runtime.Vfs
         /// <param name="path"></param>
         public void RemoveMount(string path)
         {
-            var mount = mounts.FirstOrDefault(i => i.RootPath == path);
+            var mount = mounts.FirstOrDefault(i => i.Path == path);
             if (mount != null)
                 mounts.Remove(mount);
         }
@@ -105,14 +105,14 @@ namespace IKVM.Runtime.Vfs
         /// </summary>
         /// <param name="path"></param>
         /// <returns></returns>
-        public VfsEntry GetPath(string path) => GetMount(path) is VfsMount mount ? mount.GetPath(path.Substring(mount.RootPath.Length)) : null;
+        public VfsEntry GetEntry(string path) => GetMount(path) is VfsMount mount ? mount.GetEntry(path.Substring(mount.Path.Length)) : null;
 
         /// <summary>
         /// Gets the names of the entries within the directory.
         /// </summary>
         /// <param name="path"></param>
         /// <returns></returns>
-        public string[] List(string path) => GetPath(path) is VfsDirectory directory ? directory.List() : null;
+        public string[] List(string path) => GetEntry(path) is VfsDirectory directory ? directory.List() : null;
 
         /// <summary>
         /// Opens a file at the specified path.
@@ -130,7 +130,7 @@ namespace IKVM.Runtime.Vfs
                 throw new UnauthorizedAccessException("Virtual file system is read-only.");
 
             // search for the entry in the file system and open it
-            return GetPath(path) switch
+            return GetEntry(path) switch
             {
                 VfsFile file => file.Open(mode, access),
                 VfsDirectory => throw new UnauthorizedAccessException($"Access to '{path}' was denied."),
@@ -145,7 +145,7 @@ namespace IKVM.Runtime.Vfs
         /// <returns></returns>
         public long GetLength(string path)
         {
-            return GetPath(path) is VfsFile entry ? entry.Size : 0;
+            return GetEntry(path) is VfsFile entry ? entry.Size : 0;
         }
 
         /// <summary>
@@ -159,7 +159,7 @@ namespace IKVM.Runtime.Vfs
             const int BA_REGULAR = 0x02;
             const int BA_DIRECTORY = 0x04;
 
-            return GetPath(path) switch
+            return GetEntry(path) switch
             {
                 VfsDirectory => BA_EXISTS | BA_DIRECTORY,
                 VfsFile => BA_EXISTS | BA_REGULAR,

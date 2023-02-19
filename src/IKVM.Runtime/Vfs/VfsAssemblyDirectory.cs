@@ -160,7 +160,7 @@ namespace IKVM.Runtime.Vfs
         VfsDirectory CreateAssemblyDirectory(Assembly assembly)
         {
             var d = new VfsEntryDirectory(Context);
-            d.AddEntry("resource", new VfsAssemblyResourceDirectory(Context, assembly));
+            d.AddEntry("resources", new VfsAssemblyResourceDirectory(Context, assembly));
             d.AddEntry("classes", new VfsAssemblyClassDirectory(Context, assembly, ""));
             return d;
         }
