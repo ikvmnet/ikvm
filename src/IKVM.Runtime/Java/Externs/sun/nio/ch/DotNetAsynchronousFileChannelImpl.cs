@@ -182,7 +182,7 @@ namespace IKVM.Java.Externs.sun.nio.ch
         /// <returns></returns>
         static void Close(global::sun.nio.ch.DotNetAsynchronousFileChannelImpl self)
         {
-            var stream = (FileStream)FileDescriptorAccessor.GetStream(self.fdObj);
+            var stream = FileDescriptorAccessor.GetStream(self.fdObj);
             if (stream == null)
                 return;
 
@@ -192,7 +192,15 @@ namespace IKVM.Java.Externs.sun.nio.ch
 
                 self.closed = true;
                 FileDescriptorAccessor.SetStream(self.fdObj, null);
-                stream.Close();
+
+                try
+                {
+                    stream.Close();
+                }
+                catch
+                {
+                    // ignore errors closing the stream
+                }
             }
             finally
             {
@@ -209,7 +217,7 @@ namespace IKVM.Java.Externs.sun.nio.ch
         /// <returns></returns>
         static long Size(global::sun.nio.ch.DotNetAsynchronousFileChannelImpl self)
         {
-            var stream = (FileStream)FileDescriptorAccessor.GetStream(self.fdObj);
+            var stream = FileDescriptorAccessor.GetStream(self.fdObj);
             if (stream == null)
                 throw new ClosedChannelException();
 
@@ -217,7 +225,14 @@ namespace IKVM.Java.Externs.sun.nio.ch
             {
                 self.begin();
 
-                return stream.Length;
+                try
+                {
+                    return stream.Length;
+                }
+                catch (System.Exception e)
+                {
+                    throw new global::java.io.IOException(e);
+                }
             }
             finally
             {
@@ -237,9 +252,13 @@ namespace IKVM.Java.Externs.sun.nio.ch
             if (self.writing == false)
                 throw new global::java.nio.channels.NonWritableChannelException();
 
-            var stream = (FileStream)FileDescriptorAccessor.GetStream(self.fdObj);
+            var stream = FileDescriptorAccessor.GetStream(self.fdObj);
             if (stream == null)
                 throw new global::java.nio.channels.AsynchronousCloseException();
+
+            // matters for VFS files
+            if (stream.CanWrite == false)
+                throw new global::java.nio.channels.NonWritableChannelException();
 
             try
             {
@@ -247,6 +266,10 @@ namespace IKVM.Java.Externs.sun.nio.ch
 
                 if (size < stream.Length)
                     stream.SetLength(size);
+            }
+            catch (System.Exception e)
+            {
+                throw new global::java.io.IOException(e);
             }
             finally
             {
@@ -263,14 +286,22 @@ namespace IKVM.Java.Externs.sun.nio.ch
         /// <returns></returns>
         static void Force(global::sun.nio.ch.DotNetAsynchronousFileChannelImpl self, bool metaData)
         {
-            var stream = (FileStream)FileDescriptorAccessor.GetStream(self.fdObj);
+            var stream = FileDescriptorAccessor.GetStream(self.fdObj);
             if (stream == null)
                 throw new global::java.nio.channels.AsynchronousCloseException();
+
+            // matters for VFS files
+            if (stream.CanWrite == false)
+                throw new global::java.nio.channels.NonWritableChannelException();
 
             try
             {
                 self.begin();
                 stream.Flush();
+            }
+            catch (System.Exception e)
+            {
+                throw new global::java.io.IOException(e);
             }
             finally
             {
@@ -356,9 +387,12 @@ namespace IKVM.Java.Externs.sun.nio.ch
             if (self.isOpen() == false)
                 throw new global::java.nio.channels.ClosedChannelException();
 
-            var stream = (FileStream)FileDescriptorAccessor.GetStream(self.fdObj);
+            var stream = FileDescriptorAccessor.GetStream(self.fdObj);
             if (stream == null)
                 throw new global::java.nio.channels.AsynchronousCloseException();
+
+            if (stream is not FileStream fs)
+                throw new global::java.io.IOException("File does not support locking.");
 
             var fli = self.addToFileLockTable(position, size, shared);
             if (fli == null)
@@ -380,7 +414,7 @@ namespace IKVM.Java.Externs.sun.nio.ch
                         if (shared == false)
                             flags |= LOCKFILE_EXCLUSIVE_LOCK;
 
-                        await LockFileExAsync(stream.SafeFileHandle, flags, 0, (int)size, (int)(size >> 32), o);
+                        await LockFileExAsync(fs.SafeFileHandle, flags, 0, (int)size, (int)(size >> 32), o);
 
                         return fli;
                     }
@@ -406,7 +440,7 @@ namespace IKVM.Java.Externs.sun.nio.ch
                             {
                                 self.begin();
 
-                                stream.Lock(position, size);
+                                fs.Lock(position, size);
                                 return fli;
                             }
                             catch (System.IO.IOException)
@@ -461,9 +495,12 @@ namespace IKVM.Java.Externs.sun.nio.ch
             if (self.isOpen() == false)
                 throw new global::java.nio.channels.ClosedChannelException();
 
-            var stream = (FileStream)FileDescriptorAccessor.GetStream(self.fdObj);
+            var stream = FileDescriptorAccessor.GetStream(self.fdObj);
             if (stream == null)
                 throw new global::java.nio.channels.AsynchronousCloseException();
+
+            if (stream is not FileStream fs)
+                throw new global::java.io.IOException("File does not support locking.");
 
             var fli = self.addToFileLockTable(position, size, shared);
             if (fli == null)
@@ -489,14 +526,14 @@ namespace IKVM.Java.Externs.sun.nio.ch
                             flags |= LOCKFILE_EXCLUSIVE_LOCK;
 
                         // issue async request but wait for synchronous result
-                        var t = LockFileExAsync(stream.SafeFileHandle, flags, 0, (int)size, (int)(size >> 32), o);
+                        var t = LockFileExAsync(fs.SafeFileHandle, flags, 0, (int)size, (int)(size >> 32), o);
                         t.GetAwaiter().GetResult();
 
                         return fli;
                     }
                     else
                     {
-                        stream.Lock(position, size);
+                        fs.Lock(position, size);
                     }
                 }
                 catch (ObjectDisposedException)
@@ -533,9 +570,12 @@ namespace IKVM.Java.Externs.sun.nio.ch
             if (self.isOpen() == false)
                 throw new ClosedChannelException();
 
-            var stream = (FileStream)FileDescriptorAccessor.GetStream(self.fdObj);
+            var stream = FileDescriptorAccessor.GetStream(self.fdObj);
             if (stream == null)
                 throw new global::java.nio.channels.AsynchronousCloseException();
+
+            if (stream is not FileStream fs)
+                throw new global::java.io.IOException("File does not support locking.");
 
             try
             {
@@ -557,7 +597,7 @@ namespace IKVM.Java.Externs.sun.nio.ch
 
                         try
                         {
-                            if (UnlockFileEx(stream.SafeFileHandle, 0, (int)size, (int)(size >> 32), p) == 0)
+                            if (UnlockFileEx(fs.SafeFileHandle, 0, (int)size, (int)(size >> 32), p) == 0)
                                 throw new Win32Exception(Marshal.GetLastWin32Error());
                         }
                         finally
@@ -572,7 +612,7 @@ namespace IKVM.Java.Externs.sun.nio.ch
                 }
                 else
                 {
-                    stream.Unlock(pos, size);
+                    fs.Unlock(pos, size);
                 }
             }
             catch (System.IO.IOException e) when (NotLockedHack.IsErrorNotLocked(e))
@@ -616,16 +656,19 @@ namespace IKVM.Java.Externs.sun.nio.ch
             if (self.isOpen() == false)
                 throw new ClosedChannelException();
 
+            var stream = FileDescriptorAccessor.GetStream(self.fdObj);
+            if (stream == null)
+                throw new ClosedChannelException();
+
+            if (stream.CanRead == false)
+                throw new global::java.io.IOException("File does not support reading.");
+
             // check buffer
             int pos = dst.position();
             int lim = dst.limit();
             int rem = pos <= lim ? lim - pos : 0;
             if (pos > lim)
                 throw new IllegalArgumentException("Position after limit.");
-
-            var stream = (FileStream)FileDescriptorAccessor.GetStream(self.fdObj);
-            if (stream == null)
-                throw new ClosedChannelException();
 
             if (cancellationToken.IsCancellationRequested)
                 return null;
@@ -710,16 +753,19 @@ namespace IKVM.Java.Externs.sun.nio.ch
             if (self.isOpen() == false)
                 throw new ClosedChannelException();
 
+            var stream = FileDescriptorAccessor.GetStream(self.fdObj);
+            if (stream == null)
+                throw new ClosedChannelException();
+
+            if (stream.CanWrite == false)
+                throw new global::java.io.IOException("File does not support writing.");
+
             // check buffer
             int pos = src.position();
             int lim = src.limit();
             int rem = pos <= lim ? lim - pos : 0;
             if (pos > lim)
                 throw new IllegalArgumentException("Position after limit.");
-
-            var stream = (FileStream)FileDescriptorAccessor.GetStream(self.fdObj);
-            if (stream == null)
-                throw new ClosedChannelException();
 
             if (cancellationToken.IsCancellationRequested)
                 return null;

@@ -349,24 +349,25 @@ namespace IKVM.Tests.Java.java.nio.channels
             var f = new File(System.IO.Path.Combine(VfsTable.Default.GetAssemblyClassesPath(typeof(global::java.lang.Object).Assembly), "java", "lang", "Object.class"));
             
             using var c = AsynchronousFileChannel.open(f.toPath(), StandardOpenOption.READ);
-            var b = ByteBuffer.allocate(1024);
-            b.capacity().Should().Be(1024);
+            var b = ByteBuffer.allocate(512);
+            b.capacity().Should().Be(512);
             b.position().Should().Be(0);
-            b.limit().Should().Be(1024);
+            b.limit().Should().Be(512);
 
             var h = new AwaitableCompletionHandler<Integer>();
             c.read(b, 0, null, h);
             var n = await h;
-            n.intValue().Should().Be(1024);
+            n.intValue().Should().Be(512);
             c.close();
 
-            b.position().Should().Be(1024);
+            b.position().Should().Be(512);
             b.flip();
-            b.capacity().Should().Be(1024);
+            b.capacity().Should().Be(512);
             b.position().Should().Be(0);
-            b.limit().Should().Be(1024);
+            b.limit().Should().Be(512);
+            b.order(ByteOrder.BIG_ENDIAN);
             var m = b.getInt();
-            m.Should().Be(unchecked((int)0xBEBAFECA));
+            m.Should().Be(unchecked((int)0xCAFEBABE));
         }
 
     }
