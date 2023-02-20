@@ -299,6 +299,7 @@ namespace IKVM.Java.Externs.sun.nio.ch
 
             try
             {
+                FileDescriptorAccessor.SetSocket(fd, null);
                 socket.Close();
             }
             catch (ObjectDisposedException)

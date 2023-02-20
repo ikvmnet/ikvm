@@ -103,14 +103,14 @@ namespace IKVM.Java.Externs.java.io
             if (fd == null)
                 throw new global::java.io.IOException("Stream closed.");
 
+            var stream = FileDescriptorAccessor.GetStream(fd);
+            if (stream == null)
+                throw new global::java.io.IOException("Stream closed.");
+            if (stream.CanWrite == false)
+                throw new global::java.io.IOException("Write failed.");
+
             try
             {
-                var stream = FileDescriptorAccessor.GetStream(fd);
-                if (stream == null)
-                    throw new global::java.io.IOException("Stream closed.");
-                if (stream.CanWrite == false)
-                    throw new global::java.io.IOException("Write failed.");
-
                 stream.WriteByte((byte)b);
                 stream.Flush();
             }
@@ -149,14 +149,14 @@ namespace IKVM.Java.Externs.java.io
             if (fd == null)
                 throw new global::java.io.IOException("Stream closed.");
 
+            var stream = FileDescriptorAccessor.GetStream(fd);
+            if (stream == null)
+                throw new global::java.io.IOException("Stream closed.");
+            if (stream.CanWrite == false)
+                throw new global::java.io.IOException("Write failed.");
+
             try
             {
-                var stream = FileDescriptorAccessor.GetStream(fd);
-                if (stream == null)
-                    throw new global::java.io.IOException("Stream closed.");
-                if (stream.CanWrite == false)
-                    throw new global::java.io.IOException("Write failed.");
-
                 stream.Write(b, off, len);
                 stream.Flush();
             }
@@ -188,12 +188,12 @@ namespace IKVM.Java.Externs.java.io
             if (fd == null)
                 throw new global::java.io.IOException("Stream closed.");
 
+            var stream = FileDescriptorAccessor.GetStream(fd);
+            if (stream == null)
+                return;
+
             try
             {
-                var stream = FileDescriptorAccessor.GetStream(fd);
-                if (stream == null)
-                    return;
-
                 FileDescriptorAccessor.SetStream(fd, null);
                 stream.Close();
             }
