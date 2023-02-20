@@ -57,7 +57,7 @@ namespace java.nio.channels
         /// <summary>
         /// Gets an awaiter used to await this completion handler.
         /// </summary>
-        public new TaskAwaiter<V> GetAwaiter() => Task.GetAwaiter();
+        public TaskAwaiter<V> GetAwaiter() => Task.GetAwaiter();
 
         /// <summary>
         /// Invoked when the handler is signaled completion.

@@ -101,14 +101,7 @@ namespace IKVM.Java.Externs.sun.nio.ch
         /// </summary>
         /// <param name="self"></param>
         /// <param name="cancellationToken"></param>
-        /// <returns></returns>
-        /// <exception cref="ClosedChannelException"></exception>
-        /// <exception cref="RuntimeException"></exception>
-        /// <exception cref="NotYetBoundException"></exception>
-        /// <exception cref="AcceptPendingException"></exception>
-        /// <exception cref="InterruptedIOException"></exception>
-        /// <exception cref="AsynchronousCloseException"></exception>
-        /// <exception cref="IOException"></exception>
+        /// <returns></returns>s
         static async Task<global::sun.nio.ch.DotNetAsynchronousSocketChannelImpl> AcceptAsync(global::sun.nio.ch.DotNetAsynchronousServerSocketChannelImpl self, global::java.security.AccessControlContext accessControlContext, CancellationToken cancellationToken)
         {
             if (self.isOpen() == false)
@@ -131,17 +124,16 @@ namespace IKVM.Java.Externs.sun.nio.ch
             {
                 try
                 {
-                    // cancel was invoked during the operation
-                    if (self.isAcceptKilled())
-                        throw new RuntimeException("Accept not allowed due to cancellation.");
+                    // get initial clientSocket
+                    var acceptSocket = FileDescriptorAccessor.GetSocket(client.fd);
 
                     // execute asynchronous Accept task
                     var listenSocket = FileDescriptorAccessor.GetSocket(self.fd);
-                    var clientSocket = await Task.Factory.FromAsync(listenSocket.BeginAccept, listenSocket.EndAccept, client.fd.getSocket(), 0, null);
-
-                    // cancel was invoked during the operation
-                    if (self.isAcceptKilled())
-                        throw new RuntimeException("Accept not allowed due to cancellation.");
+#if NETFRAMEWORK
+                    acceptSocket = await Task.Factory.FromAsync(listenSocket.BeginAccept, listenSocket.EndAccept, acceptSocket, 0, null);
+#else
+                    acceptSocket = await listenSocket.AcceptAsync(acceptSocket);
+#endif
 
                     // connection accept completed after group has shutdown
                     if (self.group().isShutdown())
@@ -156,12 +148,16 @@ namespace IKVM.Java.Externs.sun.nio.ch
                             // initialize resulting channel
                             client.begin();
 
+                            // obtain new addresses
+                            var local = ((IPEndPoint)acceptSocket.LocalEndPoint).ToInetSocketAddress();
+                            var remote = ((IPEndPoint)acceptSocket.RemoteEndPoint).ToInetSocketAddress();
+
                             // set the client channel to connected
                             lock (client.stateLock)
                             {
                                 client.state = AsynchronousSocketChannelImpl.ST_CONNECTED;
-                                client.localAddress = ((IPEndPoint)clientSocket.LocalEndPoint).ToInetSocketAddress();
-                                client.remoteAddress = ((IPEndPoint)clientSocket.RemoteEndPoint).ToInetSocketAddress();
+                                client.localAddress = local;
+                                client.remoteAddress = remote;
                             }
 
                             // check access to specified host
@@ -169,8 +165,7 @@ namespace IKVM.Java.Externs.sun.nio.ch
                             {
                                 global::java.security.AccessController.doPrivileged(new ActionPrivilegedAction(() =>
                                 {
-                                    var ep = (IPEndPoint)client.fd.getSocket().RemoteEndPoint;
-                                    global::java.lang.System.getSecurityManager()?.checkAccept(ep.Address.ToString(), ep.Port);
+                                    global::java.lang.System.getSecurityManager()?.checkAccept(remote.getAddress().getHostAddress(), remote.getPort());
                                 }), accessControlContext);
                             }
 
@@ -187,21 +182,17 @@ namespace IKVM.Java.Externs.sun.nio.ch
                         self.end();
                     }
                 }
-                catch (System.Net.Sockets.SocketException e) when (e.SocketErrorCode == SocketError.Interrupted)
-                {
-                    throw new InterruptedIOException(e.Message);
-                }
-                catch (ClosedChannelException)
-                {
-                    throw new AsynchronousCloseException();
-                }
                 catch (SecurityException)
                 {
                     throw;
                 }
-                catch (IOException)
+                catch (System.Net.Sockets.SocketException e)
                 {
-                    throw;
+                    throw e.ToIOException();
+                }
+                catch (ObjectDisposedException)
+                {
+                    throw new AsynchronousCloseException();
                 }
                 catch (System.Exception e)
                 {
@@ -240,22 +231,16 @@ namespace IKVM.Java.Externs.sun.nio.ch
             if (socket == null)
                 return;
 
-            // if we're not configured to linger, disable sending, but continue to allow receive
-            if (socket.LingerState.Enabled == false)
+            try
             {
-                try
-                {
-                    socket.Shutdown(SocketShutdown.Send);
-                }
-                catch (SocketException)
-                {
-                    // ignore
-                }
+                // null socket before close, as close may take a minute to flush
+                FileDescriptorAccessor.SetSocket(self.fd, null);
+                socket.Close();
             }
-
-            // null socket before close, as close may take a minute to flush
-            FileDescriptorAccessor.SetSocket(self.fd, null);
-            socket.Close();
+            catch (SocketException)
+            {
+                // ignore
+            }
         }
 
 #endif
