@@ -272,7 +272,7 @@ namespace IKVM.Tests.Java.java.nio.channels
 
             bb1.limit(bb1.position());
             bb1.flip();
-            bb1.limit(bb1.position());
+            bb2.limit(bb2.position());
             bb2.flip();
 
             var aa1 = new byte[bb1.limit()];

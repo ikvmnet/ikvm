@@ -3,6 +3,7 @@ using System.Net.Sockets;
 
 using IKVM.Internal;
 using IKVM.Runtime.Accessors.Java.Io;
+using IKVM.Runtime.Util.Java.Net;
 
 namespace IKVM.Java.Externs.sun.nio.ch
 {
@@ -58,6 +59,10 @@ namespace IKVM.Java.Externs.sun.nio.ch
             {
                 throw new global::java.net.SocketException("Socket closed.");
             }
+            catch (Exception e)
+            {
+                throw new global::java.io.IOException(e);
+            }
 #endif
         }
 
@@ -83,11 +88,15 @@ namespace IKVM.Java.Externs.sun.nio.ch
             }
             catch (SocketException e)
             {
-                throw new global::java.net.ConnectException(e.Message);
+                throw e.ToIOException();
             }
             catch (ObjectDisposedException)
             {
-                throw new global::java.net.SocketException("Socket closed");
+                throw new global::java.net.SocketException("Socket closed.");
+            }
+            catch (Exception e)
+            {
+                throw new global::java.io.IOException(e);
             }
 #endif
         }

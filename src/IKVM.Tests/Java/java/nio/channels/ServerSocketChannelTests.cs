@@ -1,8 +1,15 @@
 ﻿using System;
+using System.Buffers;
+using System.Buffers.Text;
 using System.Collections.Generic;
+using System.IO.Pipelines;
 using System.Text;
+using System.Text.Json;
 using System.Threading;
 using System.Threading.Tasks;
+
+using com.sun.org.apache.xerces.@internal.impl.io;
+using com.sun.org.apache.xpath.@internal;
 
 using FluentAssertions;
 
@@ -43,7 +50,7 @@ namespace IKVM.Tests.Java.java.nio.channels
             try
             {
                 ss.accept();
-                throw new System.Exception("Expected exception not thrown");
+                throw new Exception("Expected exception not thrown");
             }
             catch (IllegalBlockingModeException)
             {
@@ -63,53 +70,102 @@ namespace IKVM.Tests.Java.java.nio.channels
         /// </summary>
         /// <returns></returns>
         [TestMethod]
-        public async Task BasicServerSocketChannelTest()
+        public async Task CanReceiveBlocking()
         {
             var cancellationTokenSource = new CancellationTokenSource();
-            var messages = new List<string>();
+            var receive = ByteBuffer.allocate(sizeof(int) * 4);
 
-            // server runs and waits for messages from clients
+            // server receives messages until cancelled
             var serverTask = Task.Run(() =>
             {
+                // initialize server
                 using var server = ServerSocketChannel.open();
-                var serverAddr = new InetSocketAddress("0.0.0.0", 42341);
+                var serverAddr = new InetSocketAddress(42341);
+                server.bind(serverAddr);
+                server.configureBlocking(true);
+
+                // accept the first socket
+                var c = server.accept();
+
+                // read into receive buffer
+                while (c.read(receive) != -1 && cancellationTokenSource.Token.IsCancellationRequested == false)
+                    continue;
+            });
+
+            // wait a second and write some messages to the server
+            await Task.Delay(1000);
+            using (var c = SocketChannel.open(new InetSocketAddress("127.0.0.1", 42341)))
+            {
+                foreach (var i in new[] { 1, 2, 3, 4 })
+                {
+                    var b = ByteBuffer.allocate(sizeof(int));
+                    b.putInt(i);
+                    b.flip();
+                    c.write(b);
+
+                    // small delay to allow server to receive as multiple packets
+                    await Task.Delay(100);
+                }
+            }
+
+            // wait for the server to receive them and then exit
+            cancellationTokenSource.Cancel();
+            await serverTask;
+
+            // check that we received 4 ints
+            receive.flip();
+            receive.getInt().Should().Be(1);
+            receive.getInt().Should().Be(2);
+            receive.getInt().Should().Be(3);
+            receive.getInt().Should().Be(4);
+        }
+
+        /// <summary>
+        /// Runs a server socket, spawns a client, and attempts to transfer some data.
+        /// </summary>
+        /// <returns></returns>
+        [TestMethod]
+        public async Task CanReceiveNonBlocking()
+        {
+            var cancellationTokenSource = new CancellationTokenSource();
+            var receive = ByteBuffer.allocate(sizeof(int) * 4);
+
+            // server receives messages until cancelled
+            var serverTask = Task.Run(() =>
+            {
+                // initialize server
+                using var server = ServerSocketChannel.open();
+                var serverAddr = new InetSocketAddress(42342);
                 server.bind(serverAddr);
                 server.configureBlocking(false);
-                var ops = server.validOps();
-                cancellationTokenSource.Token.Register(() => server.close());
 
+                // begin selector
                 var selector = Selector.open();
-                var server1Key = server.register(selector, ops, null);
+                var serverKey = server.register(selector, server.validOps(), null);
 
+                // continue until cancelled
                 while (cancellationTokenSource.Token.IsCancellationRequested == false)
                 {
                     selector.select();
+
                     var keys = selector.selectedKeys();
                     var iter = keys.iterator();
                     while (iter.hasNext())
                     {
                         try
                         {
-                            var key = (SelectionKey)iter.next();
+                            var k = (SelectionKey)iter.next();
 
-                            if (key.isAcceptable())
+                            if (k.isAcceptable())
                             {
-                                var client = server.accept();
-                                client.configureBlocking(false);
-                                client.register(selector, SelectionKey.OP_READ);
+                                var c = server.accept();
+                                c.configureBlocking(false);
+                                c.register(selector, SelectionKey.OP_READ);
                             }
-                            else if (key.isReadable())
+                            else if (k.isReadable())
                             {
-                                var client = (SocketChannel)key.channel();
-                                var buffer = ByteBuffer.allocate(256);
-                                client.read(buffer);
-                                var data = (byte[])buffer.array();
-                                var term = Array.FindIndex(data, i => i == 0x00);
-                                var result = Encoding.UTF8.GetString(data, 0, term);
-                                messages.Add(result);
-
-                                if (result == "BYE")
-                                    client.close();
+                                var c = (SocketChannel)k.channel();
+                                var n = c.read(receive);
                             }
                         }
                         catch (Exception)
@@ -120,44 +176,35 @@ namespace IKVM.Tests.Java.java.nio.channels
                         iter.remove();
                     }
                 }
-
-                server.close();
             });
 
-            await Task.Delay(100);
-
-            // client sends 3 messages and then BYE to the server
-            var clientTask = Task.Run(() =>
+            // wait a second and write some messages to the server
+            await Task.Delay(1000);
+            using (var c = SocketChannel.open(new InetSocketAddress("127.0.0.1", 42342)))
             {
-                using var sock = SocketChannel.open(new InetSocketAddress("127.0.0.1", 42341));
-
-                foreach (var i in new[] { "MESSAGEA", "MESSAGEB", "MESSAGEC", "BYE" })
+                foreach (var i in new[] { 1, 2, 3, 4 })
                 {
-                    var data = new byte[Encoding.UTF8.GetByteCount(i) + 1];
-                    Encoding.UTF8.GetBytes(i).CopyTo(data, 0);
-                    data[data.Length - 1] = 0x00;
-                    var buffer = ByteBuffer.wrap(data);
-                    sock.write(buffer);
-                    buffer.clear();
-                    Thread.Sleep(500);
+                    var b = ByteBuffer.allocate(sizeof(int));
+                    b.putInt(i);
+                    b.flip();
+                    c.write(b);
+
+                    // small delay to allow server to receive as multiple packets
+                    await Task.Delay(100);
                 }
+            }
 
-                sock.close();
-            });
-
-            await Task.Delay(5000);
+            // wait for the server to receive them and then exit
             cancellationTokenSource.Cancel();
-
-            await clientTask;
             await serverTask;
 
-            messages.Should().HaveCount(4);
-            messages[0].Should().Be("MESSAGEA");
-            messages[1].Should().Be("MESSAGEB");
-            messages[2].Should().Be("MESSAGEC");
-            messages[3].Should().Be("BYE");
+            // check that we received 4 ints
+            receive.flip();
+            receive.getInt().Should().Be(1);
+            receive.getInt().Should().Be(2);
+            receive.getInt().Should().Be(3);
+            receive.getInt().Should().Be(4);
         }
-
 
     }
 

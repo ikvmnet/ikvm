@@ -452,11 +452,8 @@ namespace IKVM.Java.Externs.sun.nio.ch
 
                                     // receive data into segments
                                     length = socket.Receive(bufs, SocketFlags.None);
-                                }
-                                finally
-                                {
-                                    var l = length;
 
+                                    var l = length;
                                     for (int i = 0; i < dsts.Length; i++)
                                     {
                                         var dbf = dsts[i];
@@ -467,10 +464,7 @@ namespace IKVM.Java.Externs.sun.nio.ch
                                         int len = System.Math.Min(l, rem);
 
                                         if (dbf is DirectBuffer dir)
-                                        {
                                             Marshal.Copy(buf.Array, 0, (IntPtr)dir.address() + pos, len);
-                                            ArrayPool<byte>.Shared.Return(buf.Array);
-                                        }
 
                                         dbf.position(pos + len);
                                         l -= len;
@@ -479,9 +473,21 @@ namespace IKVM.Java.Externs.sun.nio.ch
                                     // we should have accounted for all of the bytes
                                     if (l != 0)
                                         throw new RuntimeException("Bytes remaining after read.");
-                                }
 
-                                return isScatteringRead ? Long.valueOf(length) : Integer.valueOf(length);
+                                    // return total number of bytes read
+                                    return isScatteringRead ? Long.valueOf(length) : Integer.valueOf(length);
+                                }
+                                finally
+                                {
+                                    for (int i = 0; i < dsts.Length; i++)
+                                    {
+                                        var dbf = dsts[i];
+                                        var buf = bufs[i];
+
+                                        if (dbf is DirectBuffer dir)
+                                            ArrayPool<byte>.Shared.Return(buf.Array);
+                                    }
+                                }
                             }
                         }
                         finally
@@ -553,11 +559,8 @@ namespace IKVM.Java.Externs.sun.nio.ch
 
                                 // receive data into segments
                                 length = await Task.Factory.FromAsync(socket.BeginReceive, socket.EndReceive, bufs, SocketFlags.None, null);
-                            }
-                            finally
-                            {
-                                var l = length;
 
+                                var l = length;
                                 for (int i = 0; i < dsts.Length; i++)
                                 {
                                     var dbf = dsts[i];
@@ -568,10 +571,7 @@ namespace IKVM.Java.Externs.sun.nio.ch
                                     int len = System.Math.Min(l, rem);
 
                                     if (dbf is DirectBuffer dir)
-                                    {
                                         Marshal.Copy(buf.Array, 0, (IntPtr)dir.address() + pos, len);
-                                        ArrayPool<byte>.Shared.Return(buf.Array);
-                                    }
 
                                     dbf.position(pos + len);
                                     l -= len;
@@ -580,9 +580,22 @@ namespace IKVM.Java.Externs.sun.nio.ch
                                 // we should have accounted for all of the bytes
                                 if (l != 0)
                                     throw new RuntimeException("Bytes remaining after read.");
+
+                                // return total number of bytes read
+                                return isScatteringRead ? Long.valueOf(length) : Integer.valueOf(length);
+                            }
+                            finally
+                            {
+                                for (int i = 0; i < dsts.Length; i++)
+                                {
+                                    var dbf = dsts[i];
+                                    var buf = bufs[i];
+
+                                    if (dbf is DirectBuffer dir)
+                                        ArrayPool<byte>.Shared.Return(buf.Array);
+                                }
                             }
 
-                            return isScatteringRead ? Long.valueOf(length) : Integer.valueOf(length);
                         }
                     }
                     finally
@@ -602,7 +615,7 @@ namespace IKVM.Java.Externs.sun.nio.ch
             }
             catch (System.Exception e)
             {
-                throw new IOException(e);
+                throw new global::java.io.IOException(e);
             }
             finally
             {

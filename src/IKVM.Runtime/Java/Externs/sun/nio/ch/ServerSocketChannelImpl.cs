@@ -62,6 +62,10 @@ namespace IKVM.Java.Externs.sun.nio.ch
             {
                 throw new global::java.net.SocketException("Socket closed.");
             }
+            catch (Exception e)
+            {
+                throw new global::java.io.IOException(e);
+            }
 #endif
         }
 

@@ -1,6 +1,5 @@
 ﻿using System;
 using System.Buffers;
-using System.Collections.Generic;
 using System.Net.Sockets;
 using System.Runtime.InteropServices;
 
@@ -55,20 +54,27 @@ namespace IKVM.Java.Externs.sun.nio.ch
             try
             {
 #if NETFRAMEWORK
-                var buf = new byte[len];
-                var rec = socket.Receive(buf);
-                if (rec == 0)
-                    return global::sun.nio.ch.IOStatus.EOF;
+                var buf = ArrayPool<byte>.Shared.Rent(len);
 
-                buf.CopyTo(new Span<byte>((void*)(IntPtr)address, rec));
-                return rec;
+                try
+                {
+                    var n = socket.Receive(buf, 0, len, SocketFlags.None);
+                    if (n == 0)
+                        return global::sun.nio.ch.IOStatus.EOF;
+
+                    Marshal.Copy(buf, 0, (IntPtr)address, n);
+                    return n;
+                }
+                finally
+                {
+                    ArrayPool<byte>.Shared.Return(buf);
+                }
 #else
-                var buf = new Span<byte>((void*)(IntPtr)address, len);
-                var rec = socket.Receive(buf);
-                if (rec == 0)
+                var n = socket.Receive(new Span<byte>((byte*)(IntPtr)address, len));
+                if (n == 0)
                     return global::sun.nio.ch.IOStatus.EOF;
 
-                return rec;
+                return n;
 #endif
             }
             catch (SocketException e) when (e.SocketErrorCode == SocketError.Shutdown)
@@ -86,6 +92,10 @@ namespace IKVM.Java.Externs.sun.nio.ch
             catch (ObjectDisposedException)
             {
                 throw new global::java.net.SocketException("Socket closed.");
+            }
+            catch (Exception e)
+            {
+                throw new global::java.io.IOException(e);
             }
 #endif
         }
@@ -112,7 +122,7 @@ namespace IKVM.Java.Externs.sun.nio.ch
             try
             {
                 // allocate list of array segments to hold received data
-                var iov = new Span<iovec>((void*)(IntPtr)address, len);
+                var iov = new Span<iovec>((byte*)(IntPtr)address, len);
                 var seg = new ArraySegment<byte>[iov.Length];
 
                 try
@@ -126,7 +136,7 @@ namespace IKVM.Java.Externs.sun.nio.ch
 
                     // copy segments into original buffers
                     for (int i = 0; i < seg.Length; i++)
-                        seg[i].AsSpan().CopyTo(new Span<byte>(iov[i].iov_base, iov[i].iov_len));
+                        Marshal.Copy(seg[i].Array, seg[i].Offset, (IntPtr)iov[i].iov_base, n);
 
                     return n;
                 }
@@ -134,8 +144,7 @@ namespace IKVM.Java.Externs.sun.nio.ch
                 {
                     // return allocated arrays
                     for (int i = 0; i < seg.Length; i++)
-                        if (seg[i].Array != null)
-                            ArrayPool<byte>.Shared.Return(seg[i].Array);
+                        ArrayPool<byte>.Shared.Return(seg[i].Array);
                 }
             }
             catch (SocketException e) when (e.SocketErrorCode == SocketError.Shutdown)
@@ -154,6 +163,10 @@ namespace IKVM.Java.Externs.sun.nio.ch
             {
                 throw new global::java.net.SocketException("Socket closed.");
             }
+            catch (Exception e)
+            {
+                throw new global::java.io.IOException(e);
+            }
 #endif
 
         }
@@ -163,9 +176,9 @@ namespace IKVM.Java.Externs.sun.nio.ch
         /// </summary>
         /// <param name="fd"></param>
         /// <param name="address"></param>
-        /// <param name="length"></param>
+        /// <param name="len"></param>
         /// <returns></returns>
-        public static int write0(object fd, long address, int length)
+        public static unsafe int write0(object fd, long address, int len)
         {
 #if FIRST_PASS
             throw new NotSupportedException();
@@ -176,9 +189,21 @@ namespace IKVM.Java.Externs.sun.nio.ch
 
             try
             {
-                var buf = new byte[length];
-                Marshal.Copy((IntPtr)address, buf, 0, length);
-                return socket.Send(buf);
+#if NETFRAMEWORK
+                var buf = ArrayPool<byte>.Shared.Rent(len);
+
+                try
+                {
+                    Marshal.Copy((IntPtr)address, buf, 0, len);
+                    return socket.Send(buf, 0, len, SocketFlags.None);
+                }
+                finally
+                {
+                    ArrayPool<byte>.Shared.Return(buf);
+                }
+#else
+                return socket.Send(new ReadOnlySpan<byte>((byte*)(IntPtr)address, len));
+#endif
             }
             catch (SocketException e) when (e.SocketErrorCode == SocketError.WouldBlock)
             {
@@ -191,6 +216,10 @@ namespace IKVM.Java.Externs.sun.nio.ch
             catch (ObjectDisposedException)
             {
                 throw new global::java.net.SocketException("Socket closed.");
+            }
+            catch (Exception e)
+            {
+                throw new global::java.io.IOException(e);
             }
 #endif
         }
@@ -249,6 +278,10 @@ namespace IKVM.Java.Externs.sun.nio.ch
             {
                 throw new global::java.net.SocketException("Socket closed.");
             }
+            catch (Exception e)
+            {
+                throw new global::java.io.IOException(e);
+            }
 #endif
         }
 
@@ -265,21 +298,19 @@ namespace IKVM.Java.Externs.sun.nio.ch
             if (socket == null)
                 return;
 
-            // if we're not configured to linger, disable sending, but continue to allow receive
-            if (socket.LingerState.Enabled == false)
+            try
             {
-                try
-                {
-                    socket.Disconnect(false);
-                }
-                catch (ObjectDisposedException)
-                {
-                    return;
-                }
-                catch (SocketException)
-                {
-                    // ignore
-                }
+                if (socket.LingerState.Enabled == false)
+                    if (socket.Connected)
+                        socket.Shutdown(SocketShutdown.Send);
+            }
+            catch (ObjectDisposedException)
+            {
+                return;
+            }
+            catch (SocketException)
+            {
+                // ignore
             }
 #endif
         }
@@ -302,13 +333,17 @@ namespace IKVM.Java.Externs.sun.nio.ch
                 FileDescriptorAccessor.SetSocket(fd, null);
                 socket.Close();
             }
+            catch (SocketException e)
+            {
+                return;
+            }
             catch (ObjectDisposedException)
             {
                 return;
             }
-            catch (SocketException e)
+            catch (Exception e)
             {
-                throw e.ToIOException();
+                throw new global::java.io.IOException(e);
             }
 #endif
         }
