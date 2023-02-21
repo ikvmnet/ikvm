@@ -1,9 +1,11 @@
 ﻿using System;
 using System.IO;
 using System.Runtime.InteropServices;
+using System.Threading;
 
 using IKVM.Internal;
 using IKVM.Runtime;
+using IKVM.Runtime.Accessors.Java.Io;
 using IKVM.Runtime.Accessors.Sun.Nio.Ch;
 
 using Microsoft.Win32.SafeHandles;
@@ -16,7 +18,7 @@ namespace IKVM.Java.Externs.sun.nio.ch
 {
 
     /// <summary>
-    /// Implements the external methods for <see cref="global::java.net.PlainSocketImpl"/>.
+    /// Implements the external methods for <see cref="global::sun.nio.ch.FileChannelImpl"/>.
     /// </summary>
     static class FileChannelImpl
     {
@@ -26,6 +28,9 @@ namespace IKVM.Java.Externs.sun.nio.ch
         const int MAP_PV = 2;
 
 #if FIRST_PASS == false
+
+        static FileDescriptorAccessor fileDescriptorAccessor;
+        static FileDescriptorAccessor FileDescriptorAccessor => JVM.BaseAccessors.Get(ref fileDescriptorAccessor);
 
         static FileChannelImplAccessor fileChannelImplAccessor;
 
@@ -82,16 +87,6 @@ namespace IKVM.Java.Externs.sun.nio.ch
 #endif
         }
 
-        [StructLayout(LayoutKind.Sequential)]
-        struct OVERLAPPED
-        {
-            public IntPtr Internal;
-            public IntPtr InternalHigh;
-            public int OffsetLow;
-            public int OffsetHigh;
-            public IntPtr hEvent;
-        }
-
         /// <summary>
         /// Invokes the TransmitFile Win32 function.
         /// </summary>
@@ -100,11 +95,11 @@ namespace IKVM.Java.Externs.sun.nio.ch
         /// <param name="nNumberOfBytesToWrite"></param>
         /// <param name="nNumberOfBytesPerSend"></param>
         /// <param name="lpOverlapped"></param>
-        /// <param name=""></param>
+        /// <param name="lpTransmitBuffers"></param>
         /// <param name="dwReserved"></param>
         /// <returns></returns>
         [DllImport("kernel32", SetLastError = true)]
-        static unsafe extern int TransmitFile(IntPtr hSocket, IntPtr hFile, int nNumberOfBytesToWrite, int nNumberOfBytesPerSend, OVERLAPPED* lpOverlapped, void* lpTransmitBuffers, int dwReserved);
+        static unsafe extern int TransmitFile(IntPtr hSocket, IntPtr hFile, int nNumberOfBytesToWrite, int nNumberOfBytesPerSend, NativeOverlapped* lpOverlapped, void* lpTransmitBuffers, int dwReserved);
 
         /// <summary>
         /// Implements the native method for 'transferTo0'.
@@ -121,11 +116,13 @@ namespace IKVM.Java.Externs.sun.nio.ch
 #if FIRST_PASS
             throw new NotImplementedException();
 #else
-            var s = (FileStream)src.getStream();
+            var s = FileDescriptorAccessor.GetStream(src);
             if (s == null)
                 throw new global::java.io.IOException("Stream closed.");
+            if (s is not FileStream fs)
+                throw new global::java.io.IOException("Transfor not supported.");
 
-            var d = dst.getSocket();
+            var d = FileDescriptorAccessor.GetSocket(dst);
             if (d == null)
                 throw new global::java.io.IOException("Socket closed.");
 
@@ -150,7 +147,7 @@ namespace IKVM.Java.Externs.sun.nio.ch
                         s.Seek(position, SeekOrigin.Begin);
                     }
 
-                    int result = TransmitFile(d.Handle, s.SafeFileHandle.DangerousGetHandle(), chunkSize, PACKET_SIZE, null, null, TF_USE_KERNEL_APC);
+                    int result = TransmitFile(d.Handle, fs.SafeFileHandle.DangerousGetHandle(), chunkSize, PACKET_SIZE, null, null, TF_USE_KERNEL_APC);
                     if (result == 0)
                     {
                         return Marshal.GetLastWin32Error() switch
@@ -165,7 +162,7 @@ namespace IKVM.Java.Externs.sun.nio.ch
                 }
                 else
                 {
-                    var result = Syscall.sendfile((int)d.Handle, (int)s.SafeFileHandle.DangerousGetHandle(), ref position, (ulong)count);
+                    var result = Syscall.sendfile((int)d.Handle, (int)fs.SafeFileHandle.DangerousGetHandle(), ref position, (ulong)count);
                     if (result < 0)
                     {
                         return Stdlib.GetLastError() switch
@@ -215,7 +212,7 @@ namespace IKVM.Java.Externs.sun.nio.ch
 #if FIRST_PASS
             throw new NotImplementedException();
 #else
-            var s = (FileStream)fd.getStream();
+            var s = FileDescriptorAccessor.GetStream(fd);
             if (s == null)
                 throw new global::java.io.IOException("Stream closed.");
 
@@ -305,7 +302,11 @@ namespace IKVM.Java.Externs.sun.nio.ch
         /// <exception cref="global::java.lang.OutOfMemoryError"></exception>
         static IntPtr MapFileWindows(global::sun.nio.ch.FileChannelImpl self, int prot, long position, long length)
         {
-            var fs = (FileStream)((global::java.io.FileDescriptor)FileChannelImplAccessor.GetFd(self)).getStream();
+            var s = FileDescriptorAccessor.GetStream(FileChannelImplAccessor.GetFd(self));
+            if (s == null)
+                throw new global::java.io.IOException("Stream closed.");
+            if (s is not FileStream fs)
+                throw new global::java.io.IOException("Map not supported.");
 
             try
             {
@@ -389,7 +390,11 @@ namespace IKVM.Java.Externs.sun.nio.ch
         /// <exception cref="global::java.io.IOException"></exception>
         static IntPtr MapFileLinux(global::sun.nio.ch.FileChannelImpl self, int prot, long position, long length)
         {
-            var fs = (FileStream)((global::java.io.FileDescriptor)FileChannelImplAccessor.GetFd(self)).getStream();
+            var s = FileDescriptorAccessor.GetStream(FileChannelImplAccessor.GetFd(self));
+            if (s == null)
+                throw new global::java.io.IOException("Stream closed.");
+            if (s is not FileStream fs)
+                throw new global::java.io.IOException("Map not supported.");
 
             try
             {

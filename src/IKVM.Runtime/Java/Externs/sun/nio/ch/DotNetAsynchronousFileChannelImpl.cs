@@ -28,6 +28,9 @@ using sun.nio.ch;
 namespace IKVM.Java.Externs.sun.nio.ch
 {
 
+    /// <summary>
+    /// Implements the native methods for 'DotNetAsynchronousFileChannelImpl'.
+    /// </summary>
     static class DotNetAsynchronousFileChannelImpl
     {
 
@@ -189,9 +192,8 @@ namespace IKVM.Java.Externs.sun.nio.ch
             try
             {
                 self.closeLock.writeLock().@lock();
-
-                self.closed = true;
                 FileDescriptorAccessor.SetStream(self.fdObj, null);
+                self.closed = true;
 
                 try
                 {

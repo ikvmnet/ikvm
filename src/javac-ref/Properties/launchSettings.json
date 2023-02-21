@@ -1,0 +1,8 @@
+{
+  "profiles": {
+    "javac-ref": {
+      "commandName": "Project",
+      "commandLineArgs": "c:\\users\\jhaltom\\Test.java"
+    }
+  }
+}

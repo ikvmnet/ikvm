@@ -42,7 +42,7 @@ namespace IKVM.Java.Externs.sun.nio.ch
 #if FIRST_PASS
             throw new NotImplementedException();
 #else
-            var s = (FileStream)fd.getStream();
+            var s = FileDescriptorAccessor.GetStream(fd);
             if (s == null)
                 throw new global::java.io.IOException("Stream closed.");
 
@@ -53,10 +53,10 @@ namespace IKVM.Java.Externs.sun.nio.ch
             {
 #if NETFRAMEWORK
                 var b = new byte[len];
-                var r = ((FileStream)fd.getStream()).Read(b, 0, len);
-                b.CopyTo(new Span<byte>((void*)(IntPtr)address, len));
+                var r = s.Read(b, 0, len);
+                b.CopyTo(new Span<byte>((byte*)(IntPtr)address, len));
 #else
-                var r = ((FileStream)fd.getStream()).Read(new Span<byte>((void*)(IntPtr)address, len));
+                var r = s.Read(new Span<byte>((byte*)(IntPtr)address, len));
 #endif
 
                 return r == 0 ? IOStatus.EOF : r;
@@ -98,7 +98,7 @@ namespace IKVM.Java.Externs.sun.nio.ch
 #if FIRST_PASS
             throw new NotImplementedException();
 #else
-            var s = (FileStream)fd.getStream();
+            var s = FileDescriptorAccessor.GetStream(fd);
             if (s == null)
                 throw new global::java.io.IOException("Stream closed.");
 
@@ -184,7 +184,7 @@ namespace IKVM.Java.Externs.sun.nio.ch
 #if FIRST_PASS
             throw new NotImplementedException();
 #else
-            var s = (FileStream)fd.getStream();
+            var s = FileDescriptorAccessor.GetStream(fd);
             if (s == null)
                 throw new global::java.io.IOException("Stream closed.");
 
@@ -209,7 +209,7 @@ namespace IKVM.Java.Externs.sun.nio.ch
 #if FIRST_PASS
             throw new NotImplementedException();
 #else
-            var s = (FileStream)fd.getStream();
+            var s = FileDescriptorAccessor.GetStream(fd);
             if (s == null)
                 throw new global::java.io.IOException("Stream closed.");
 
@@ -252,10 +252,10 @@ namespace IKVM.Java.Externs.sun.nio.ch
 
 #if NETFRAMEWORK
                 var b = new byte[len];
-                new ReadOnlySpan<byte>((void*)(IntPtr)address, len).CopyTo(b);
+                new ReadOnlySpan<byte>((byte*)(IntPtr)address, len).CopyTo(b);
                 s.Write(b, 0, len);
 #else
-                s.Write(new Span<byte>((void*)(IntPtr)address, len));
+                s.Write(new Span<byte>((byte*)(IntPtr)address, len));
 #endif
 
                 return len;
@@ -297,7 +297,7 @@ namespace IKVM.Java.Externs.sun.nio.ch
 #if FIRST_PASS
             throw new NotImplementedException();
 #else
-            var s = (FileStream)fd.getStream();
+            var s = FileDescriptorAccessor.GetStream(fd);
             if (s == null)
                 throw new global::java.io.IOException("Stream closed.");
 
@@ -340,10 +340,10 @@ namespace IKVM.Java.Externs.sun.nio.ch
 
 #if NETFRAMEWORK
                 var b = new byte[len];
-                new ReadOnlySpan<byte>((void*)(IntPtr)address, len).CopyTo(b);
+                new ReadOnlySpan<byte>((byte*)(IntPtr)address, len).CopyTo(b);
                 s.Write(b, 0, len);
 #else
-                s.Write(new Span<byte>((void*)(IntPtr)address, len));
+                s.Write(new Span<byte>((byte*)(IntPtr)address, len));
 #endif
 
                 return len;
@@ -385,7 +385,7 @@ namespace IKVM.Java.Externs.sun.nio.ch
 #if FIRST_PASS
             throw new NotImplementedException();
 #else
-            var s = (FileStream)fd.getStream();
+            var s = FileDescriptorAccessor.GetStream(fd);
             if (s == null)
                 throw new global::java.io.IOException("Stream closed.");
 
@@ -424,7 +424,7 @@ namespace IKVM.Java.Externs.sun.nio.ch
 #if FIRST_PASS
             throw new NotImplementedException();
 #else
-            var s = (FileStream)fd.getStream();
+            var s = FileDescriptorAccessor.GetStream(fd);
             if (s == null)
                 throw new global::java.io.IOException("Stream closed.");
 
@@ -470,7 +470,7 @@ namespace IKVM.Java.Externs.sun.nio.ch
 #if FIRST_PASS
             throw new NotImplementedException();
 #else
-            var s = (FileStream)fd.getStream();
+            var s = FileDescriptorAccessor.GetStream(fd);
             if (s == null)
                 throw new global::java.io.IOException("Stream closed.");
 
@@ -541,9 +541,11 @@ namespace IKVM.Java.Externs.sun.nio.ch
 #if FIRST_PASS
             throw new NotImplementedException();
 #else
-            var s = (FileStream)FileDescriptorAccessor.GetStream(fd);
+            var s = FileDescriptorAccessor.GetStream(fd);
             if (s == null)
                 throw new global::java.io.IOException("Stream closed.");
+            if (s is not FileStream fs)
+                throw new global::java.io.IOException("Not supported on non-file.");
 
             try
             {
@@ -568,7 +570,7 @@ namespace IKVM.Java.Externs.sun.nio.ch
                             flags |= LOCKFILE_EXCLUSIVE_LOCK;
 
                         optr = o.Pack(null, null);
-                        int result = LockFileEx(s.SafeFileHandle, flags, 0, (int)size, (int)(size >> 32), optr);
+                        int result = LockFileEx(fs.SafeFileHandle, flags, 0, (int)size, (int)(size >> 32), optr);
                         if (result == 0)
                         {
                             var error = Marshal.GetLastWin32Error();
@@ -588,7 +590,7 @@ namespace IKVM.Java.Externs.sun.nio.ch
                 else
                 {
                     // fallback to .NET version for non-Windows
-                    s.Lock(pos, size);
+                    fs.Lock(pos, size);
                     return shared ? FileDispatcher.RET_EX_LOCK : FileDispatcher.LOCKED;
                 }
             }
@@ -627,9 +629,11 @@ namespace IKVM.Java.Externs.sun.nio.ch
 #if FIRST_PASS
             throw new NotImplementedException();
 #else
-            var stream = (FileStream)FileDescriptorAccessor.GetStream(fd);
-            if (stream == null)
+            var s = FileDescriptorAccessor.GetStream(fd);
+            if (s == null)
                 throw new global::java.io.IOException("Stream closed.");
+            if (s is not FileStream fs)
+                throw new global::java.io.IOException("Not supported on non-file.");
 
             try
             {
@@ -646,7 +650,7 @@ namespace IKVM.Java.Externs.sun.nio.ch
                         o.OffsetHigh = (int)(pos >> 32);
 
                         optr = o.Pack(null, null);
-                        int result = UnlockFileEx(stream.SafeFileHandle, 0, (int)size, (int)(size >> 32), optr);
+                        int result = UnlockFileEx(fs.SafeFileHandle, 0, (int)size, (int)(size >> 32), optr);
                         if (result == 0 && Marshal.GetLastWin32Error() != ERROR_NOT_LOCKED)
                             throw new global::java.io.IOException("Release failed.");
                     }
@@ -658,7 +662,7 @@ namespace IKVM.Java.Externs.sun.nio.ch
                 }
                 else
                 {
-                    stream.Unlock(pos, size);
+                    fs.Unlock(pos, size);
                 }
             }
             catch (global::java.io.IOException)
@@ -685,14 +689,14 @@ namespace IKVM.Java.Externs.sun.nio.ch
 #if FIRST_PASS
             throw new NotImplementedException();
 #else
-            var stream = (FileStream)FileDescriptorAccessor.GetStream(fd);
-            if (stream == null)
+            var s = FileDescriptorAccessor.GetStream(fd);
+            if (s == null)
                 throw new global::java.io.IOException("Stream closed.");
 
             try
             {
                 FileDescriptorAccessor.SetStream(fd, null);
-                stream.Close();
+                s.Close();
             }
             catch
             {

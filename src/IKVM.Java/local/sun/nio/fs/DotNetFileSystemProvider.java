@@ -35,7 +35,6 @@ import cli.System.IO.FileAttributes;
 import cli.System.IO.FileInfo;
 import cli.System.IO.FileMode;
 import cli.System.IO.FileShare;
-import cli.System.IO.FileStream;
 import cli.System.IO.FileOptions;
 import cli.System.Runtime.InteropServices.DllImportAttribute;
 import cli.System.Runtime.InteropServices.Marshal;

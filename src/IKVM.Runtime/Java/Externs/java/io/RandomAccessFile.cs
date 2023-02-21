@@ -110,15 +110,15 @@ namespace IKVM.Java.Externs.java.io
             if (fd == null)
                 throw new global::java.io.IOException("Stream closed.");
 
+            var stream = FileDescriptorAccessor.GetStream(fd);
+            if (stream == null)
+                throw new global::java.io.IOException("Stream closed.");
+            if (stream.CanRead == false)
+                throw new global::java.io.IOException("Read failed.");
+
             try
             {
-                var stream = FileDescriptorAccessor.GetStream(fd);
-                if (stream == null)
-                    throw new global::java.io.IOException("Stream closed.");
-                if (stream.CanRead == false)
-                    throw new global::java.io.IOException("Read failed.");
-
-                return (int)stream.ReadByte();
+                return stream.ReadByte();
             }
             catch (ObjectDisposedException e)
             {
@@ -155,14 +155,14 @@ namespace IKVM.Java.Externs.java.io
             if (fd == null)
                 throw new global::java.io.IOException("Stream closed.");
 
+            var stream = FileDescriptorAccessor.GetStream(fd);
+            if (stream == null)
+                throw new global::java.io.IOException("Stream closed.");
+            if (stream.CanRead == false)
+                throw new global::java.io.IOException("Read failed.");
+
             try
             {
-                var stream = FileDescriptorAccessor.GetStream(fd);
-                if (stream == null)
-                    throw new global::java.io.IOException("Stream closed.");
-                if (stream.CanRead == false)
-                    throw new global::java.io.IOException("Read failed.");
-
                 return stream.Read(b, off, len);
             }
             catch (ObjectDisposedException e)
@@ -194,14 +194,14 @@ namespace IKVM.Java.Externs.java.io
             if (fd == null)
                 throw new global::java.io.IOException("Stream closed.");
 
+            var stream = FileDescriptorAccessor.GetStream(fd);
+            if (stream == null)
+                throw new global::java.io.IOException("Stream closed.");
+            if (stream.CanWrite == false)
+                throw new global::java.io.IOException("Write failed.");
+
             try
             {
-                var stream = FileDescriptorAccessor.GetStream(fd);
-                if (stream == null)
-                    throw new global::java.io.IOException("Stream closed.");
-                if (stream.CanWrite == false)
-                    throw new global::java.io.IOException("Write failed.");
-
                 stream.WriteByte((byte)b);
                 stream.Flush();
             }
@@ -239,14 +239,14 @@ namespace IKVM.Java.Externs.java.io
             if (fd == null)
                 throw new global::java.io.IOException("Stream closed.");
 
+            var stream = FileDescriptorAccessor.GetStream(fd);
+            if (stream == null)
+                throw new global::java.io.IOException("Stream closed.");
+            if (stream.CanWrite == false)
+                throw new global::java.io.IOException("Write failed.");
+
             try
             {
-                var stream = FileDescriptorAccessor.GetStream(fd);
-                if (stream == null)
-                    throw new global::java.io.IOException("Stream closed.");
-                if (stream.CanWrite == false)
-                    throw new global::java.io.IOException("Write failed.");
-
                 stream.Write(b, off, len);
                 stream.Flush();
             }
@@ -280,12 +280,12 @@ namespace IKVM.Java.Externs.java.io
             if (fd == null)
                 throw new global::java.io.IOException("Stream closed.");
 
+            var stream = FileDescriptorAccessor.GetStream(fd);
+            if (stream == null)
+                throw new global::java.io.IOException("Stream closed.");
+
             try
             {
-                var stream = FileDescriptorAccessor.GetStream(fd);
-                if (stream == null)
-                    throw new global::java.io.IOException("Stream closed.");
-
                 return stream.Position;
             }
             catch (ObjectDisposedException e)
@@ -317,12 +317,12 @@ namespace IKVM.Java.Externs.java.io
             if (fd == null)
                 throw new global::java.io.IOException("Stream closed.");
 
+            var stream = FileDescriptorAccessor.GetStream(fd);
+            if (stream == null)
+                throw new global::java.io.IOException("Stream closed.");
+
             try
             {
-                var stream = FileDescriptorAccessor.GetStream(fd);
-                if (stream == null)
-                    throw new global::java.io.IOException("Stream closed.");
-
                 stream.Position = pos;
             }
             catch (ObjectDisposedException e)
@@ -358,12 +358,12 @@ namespace IKVM.Java.Externs.java.io
             if (fd == null)
                 throw new global::java.io.IOException("Stream closed.");
 
+            var stream = FileDescriptorAccessor.GetStream(fd);
+            if (stream == null)
+                throw new global::java.io.IOException("Stream closed.");
+
             try
             {
-                var stream = FileDescriptorAccessor.GetStream(fd);
-                if (stream == null)
-                    throw new global::java.io.IOException("Stream closed.");
-
                 return stream.Length;
             }
             catch (ObjectDisposedException e)
@@ -395,12 +395,12 @@ namespace IKVM.Java.Externs.java.io
             if (fd == null)
                 throw new global::java.io.IOException("Stream closed.");
 
+            var stream = FileDescriptorAccessor.GetStream(fd);
+            if (stream == null)
+                throw new global::java.io.IOException("Stream closed.");
+
             try
             {
-                var stream = FileDescriptorAccessor.GetStream(fd);
-                if (stream == null)
-                    throw new global::java.io.IOException("Stream closed.");
-
                 stream.SetLength(newLength);
             }
             catch (ObjectDisposedException e)
@@ -431,12 +431,12 @@ namespace IKVM.Java.Externs.java.io
             if (fd == null)
                 throw new global::java.io.IOException("Stream closed.");
 
+            var stream = FileDescriptorAccessor.GetStream(fd);
+            if (stream == null)
+                return;
+
             try
             {
-                var stream = FileDescriptorAccessor.GetStream(fd);
-                if (stream == null)
-                    return;
-
                 FileDescriptorAccessor.SetStream(fd, null);
                 stream.Close();
             }
