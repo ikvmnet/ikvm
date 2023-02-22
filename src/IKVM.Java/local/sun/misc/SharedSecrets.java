@@ -44,7 +44,7 @@ import java.security.AccessController;
 public class SharedSecrets {
     private static final Unsafe unsafe = Unsafe.getUnsafe();
     private static JavaUtilJarAccess javaUtilJarAccess;
-    private static JavaLangAccess javaLangAccess = LangHelper.getJavaLangAccess();
+    private static JavaLangAccess javaLangAccess;
     private static JavaIOAccess javaIOAccess;
     private static JavaNetAccess javaNetAccess;
     private static JavaNetHttpCookieAccess javaNetHttpCookieAccess;

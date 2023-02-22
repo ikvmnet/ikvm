@@ -24,6 +24,12 @@
 #define CHECK_INVARIANTS
 using System;
 using System.Collections.Generic;
+using System.Runtime.InteropServices;
+using System.Diagnostics.SymbolStore;
+using System.Diagnostics;
+
+using IKVM.Runtime;
+
 #if IMPORTER
 using IKVM.Reflection;
 using IKVM.Reflection.Emit;
@@ -32,9 +38,7 @@ using Type = IKVM.Reflection.Type;
 using System.Reflection;
 using System.Reflection.Emit;
 #endif
-using System.Runtime.InteropServices;
-using System.Diagnostics.SymbolStore;
-using System.Diagnostics;
+
 
 namespace IKVM.Internal
 {

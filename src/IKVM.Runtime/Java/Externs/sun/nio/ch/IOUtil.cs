@@ -1,7 +1,7 @@
 ﻿using System;
 using System.Security.Cryptography;
 
-using IKVM.Internal;
+using IKVM.Runtime;
 using IKVM.Runtime.Accessors.Java.Io;
 
 namespace IKVM.Java.Externs.sun.nio.ch

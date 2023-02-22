@@ -1,6 +1,6 @@
 ﻿using System;
-using System.Linq.Expressions;
 using System.Reflection;
+using System.Reflection.Emit;
 
 namespace IKVM.Runtime.Accessors
 {
@@ -88,24 +88,72 @@ namespace IKVM.Runtime.Accessors
         Action<T> Setter => AccessorUtil.LazyGet(ref setter, MakeSetter);
 
         /// <summary>
+        /// Emits the appropriate ldind opcode for the given type.
+        /// </summary>
+        /// <param name="il"></param>
+        /// <param name="t"></param>
+        /// <exception cref="InvalidOperationException"></exception>
+        static void EmitLdind(ILGenerator il, Type t)
+        {
+            if (t == typeof(bool))
+                il.Emit(OpCodes.Ldind_U1);
+            else if (t == typeof(byte))
+                il.Emit(OpCodes.Ldind_U1);
+            else if (t == typeof(char))
+                il.Emit(OpCodes.Ldind_U2);
+            else if (t == typeof(short))
+                il.Emit(OpCodes.Ldind_I2);
+            else if (t == typeof(int))
+                il.Emit(OpCodes.Ldind_I4);
+            else if (t == typeof(long))
+                il.Emit(OpCodes.Ldind_I8);
+            else if (t == typeof(float))
+                il.Emit(OpCodes.Ldind_R4);
+            else if (t == typeof(double))
+                il.Emit(OpCodes.Ldind_R8);
+            else
+                il.Emit(OpCodes.Ldind_Ref);
+        }
+
+        /// <summary>
         /// Creates a new getter.
         /// </summary>
         /// <returns></returns>
         /// <exception cref="NotImplementedException"></exception>
         Func<T> MakeGetter()
         {
-            return Expression.Lambda<Func<T>>(Expression.Convert(Expression.Field(null, Field), Field.FieldType)).Compile();
+            var dm = new DynamicMethod($"__<StaticFieldAccessorGet>__{Field.DeclaringType.Name.Replace(".", "_")}__{Field.Name}", typeof(T), Array.Empty<Type>(), Field.DeclaringType.Module, true);
+            var il = dm.GetILGenerator();
+
+            if (Field.IsInitOnly)
+            {
+                // we obtain a reference to the field and do an indirect load here to avoid JIT optimizations that inline static readonly fields
+                il.Emit(OpCodes.Ldsflda, Field);
+                EmitLdind(il, Field.FieldType);
+            }
+            else
+            {
+                il.Emit(OpCodes.Ldsfld, Field);
+            }
+
+            il.Emit(OpCodes.Ret);
+            return (Func<T>)dm.CreateDelegate(typeof(Func<T>));
         }
 
         /// <summary>
         /// Creates a new setter.
         /// </summary>
         /// <returns></returns>
-        /// <exception cref="NotImplementedException"></exception>
         Action<T> MakeSetter()
         {
-            var v = Expression.Parameter(typeof(T));
-            return Expression.Lambda<Action<T>>(Expression.Assign(Expression.Field(null, Field), Expression.Convert(v, Field.FieldType)), v).Compile();
+            var dm = new DynamicMethod($"__<StaticFieldAccessorSet>__{Field.DeclaringType.Name.Replace(".", "_")}__{Field.Name}", typeof(void), new[] { typeof(T) }, Field.DeclaringType.Module, true);
+            var il = dm.GetILGenerator();
+
+            il.Emit(OpCodes.Ldarg_0);
+            il.Emit(OpCodes.Stsfld, Field);
+
+            il.Emit(OpCodes.Ret);
+            return (Action<T>)dm.CreateDelegate(typeof(Action<T>));
         }
 
         /// <summary>

@@ -29,13 +29,13 @@ namespace IKVM.Runtime.Vfs
         /// <returns></returns>
         static VfsTable BuildDefaultTable(VfsContext context)
         {
-#if FIRST_PASS
+#if FIRST_PASS || IMPORTER || EXPORTER
             throw new NotImplementedException();
 #else
             if (context is null)
                 throw new ArgumentNullException(nameof(context));
 
-            var ikvmHome = global::java.lang.System.getProperty("ikvm.home");
+            var ikvmHome = JVM.Properties.HomePath;
             if (Directory.Exists(ikvmHome) == false)
                 throw new DirectoryNotFoundException("Could not locate ikvm.home when establishing VFS.");
 
@@ -174,15 +174,15 @@ namespace IKVM.Runtime.Vfs
         /// <returns></returns>
         public string GetAssemblyClassesPath(Assembly assembly)
         {
-#if FIRST_PASS
+#if FIRST_PASS || IMPORTER || EXPORTER
             throw new NotImplementedException();
 #else
             if (assembly is null)
                 throw new ArgumentNullException(nameof(assembly));
 
-            var ikvmHome = global::java.lang.System.getProperty("ikvm.home");
+            var ikvmHome = JVM.Properties.HomePath;
             if (Directory.Exists(ikvmHome) == false)
-                throw new DirectoryNotFoundException("Could not locate ikvm.home when finding VFS.");
+                throw new DirectoryNotFoundException("Could not locate IkvmHome when finding VFS.");
 
             return PathExtensions.EnsureEndingDirectorySeparator(Path.Combine(ikvmHome, "assembly", GetAssemblyDirectoryName(assembly), "classes"));
 #endif
@@ -195,15 +195,15 @@ namespace IKVM.Runtime.Vfs
         /// <returns></returns>
         public string GetAssemblyResourcesPath(Assembly assembly)
         {
-#if FIRST_PASS
+#if FIRST_PASS || IMPORTER || EXPORTER
             throw new NotImplementedException();
 #else
             if (assembly is null)
                 throw new ArgumentNullException(nameof(assembly));
 
-            var ikvmHome = global::java.lang.System.getProperty("ikvm.home");
+            var ikvmHome = JVM.Properties.HomePath;
             if (Directory.Exists(ikvmHome) == false)
-                throw new DirectoryNotFoundException("Could not locate ikvm.home when finding VFS.");
+                throw new DirectoryNotFoundException("Could not locate IkvmHome when finding VFS.");
 
             return PathExtensions.EnsureEndingDirectorySeparator(Path.Combine(ikvmHome, "assembly", GetAssemblyDirectoryName(assembly), "resources"));
 #endif

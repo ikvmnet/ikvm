@@ -27,7 +27,6 @@
         <ExcludeFromCompile Include="..\IKVM.Runtime\Util\**\*.cs" />
         <ExcludeFromCompile Include="..\IKVM.Runtime\Java\Externs\**\*.cs" />
         <ExcludeFromCompile Include="..\IKVM.Runtime\stubgen\**\*.cs" />
-        <ExcludeFromCompile Include="..\IKVM.Runtime\Vfs\**\*.cs" />
         <ExcludeFromCompile Include="..\IKVM.Runtime\Assertions.cs" />
         <ExcludeFromCompile Include="..\IKVM.Runtime\ByteCodeHelper.cs" />
         <ExcludeFromCompile Include="..\IKVM.Runtime\common.cs" />

@@ -23,6 +23,8 @@
 */
 using System;
 
+using IKVM.Runtime;
+
 #if IMPORTER
 using IKVM.Reflection;
 using IKVM.Reflection.Emit;

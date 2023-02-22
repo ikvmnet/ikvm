@@ -921,7 +921,7 @@ class Thread implements Runnable {
         nativeThread.set_Name(getName());
         nativeThread.set_IsBackground(daemon);
         nativeThread.set_Priority(cli.System.Threading.ThreadPriority.wrap(mapJavaPriorityToClr(priority)));
-        String apartment = Props.props.getProperty("ikvm.apartmentstate", "").toLowerCase();
+        String apartment = System.getProperty("ikvm.apartmentstate", "").toLowerCase();
         if ("mta".equals(apartment)) {
             nativeThread.SetApartmentState(cli.System.Threading.ApartmentState.wrap(cli.System.Threading.ApartmentState.MTA));
         }

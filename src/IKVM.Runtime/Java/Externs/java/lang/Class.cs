@@ -25,11 +25,15 @@ using System;
 using System.Collections.Generic;
 
 using IKVM.Internal;
+using IKVM.Runtime;
 using IKVM.Runtime.Accessors.Java.Lang;
 
 namespace IKVM.Java.Externs.java.lang
 {
 
+    /// <summary>
+    /// Implements the native methods for 'java.lang.Class'.
+    /// </summary>
     static class Class
     {
 
@@ -41,6 +45,16 @@ namespace IKVM.Java.Externs.java.lang
 
 #endif
 
+        /// <summary>
+        /// Implements the native method 'forName0'.
+        /// </summary>
+        /// <param name="name"></param>
+        /// <param name="initialize"></param>
+        /// <param name="loader"></param>
+        /// <param name="caller"></param>
+        /// <returns></returns>
+        /// <exception cref="global::java.lang.NullPointerException"></exception>
+        /// <exception cref="global::java.lang.ClassNotFoundException"></exception>
         public static global::java.lang.Class forName0(string name, bool initialize, global::java.lang.ClassLoader loader, global::java.lang.Class caller)
         {
 #if FIRST_PASS
@@ -109,6 +123,11 @@ namespace IKVM.Java.Externs.java.lang
 #endif
         }
 
+        /// <summary>
+        /// Implements the native method 'getRawTypeAnnotations'.
+        /// </summary>
+        /// <param name="thisClass"></param>
+        /// <returns></returns>
         public static byte[] getRawTypeAnnotations(global::java.lang.Class thisClass)
         {
             return TypeWrapper.FromClass(thisClass).GetRawTypeAnnotations();
@@ -116,9 +135,10 @@ namespace IKVM.Java.Externs.java.lang
 
 #if !FIRST_PASS
 
-        private sealed class ConstantPoolImpl : global::sun.reflect.ConstantPool
+        sealed class ConstantPoolImpl : global::sun.reflect.ConstantPool
         {
-            private readonly object[] constantPool;
+
+            readonly object[] constantPool;
 
             internal ConstantPoolImpl(object[] constantPool)
             {
@@ -153,32 +173,57 @@ namespace IKVM.Java.Externs.java.lang
 
 #endif
 
-        public static object getConstantPool(global::java.lang.Class thisClass)
+        /// <summary>
+        /// Implements the native method 'getConstantPool'.
+        /// </summary>
+        /// <param name="self"></param>
+        /// <returns></returns>
+        public static object getConstantPool(global::java.lang.Class self)
         {
 #if FIRST_PASS
             throw new NotImplementedException();
 #else
-            return new ConstantPoolImpl(TypeWrapper.FromClass(thisClass).GetConstantPool());
+            return new ConstantPoolImpl(TypeWrapper.FromClass(self).GetConstantPool());
 #endif
         }
 
-        public static bool isInstance(global::java.lang.Class thisClass, object obj)
+        /// <summary>
+        /// Implements the native method 'isInstance'.
+        /// </summary>
+        /// <param name="self"></param>
+        /// <param name="obj"></param>
+        /// <returns></returns>
+        public static bool isInstance(global::java.lang.Class self, object obj)
         {
-            return TypeWrapper.FromClass(thisClass).IsInstance(obj);
+            return TypeWrapper.FromClass(self).IsInstance(obj);
         }
 
-        public static bool isAssignableFrom(global::java.lang.Class thisClass, global::java.lang.Class otherClass)
+        /// <summary>
+        /// Implements the native method 'isAssignableFrom'.
+        /// </summary>
+        /// <param name="self"></param>
+        /// <param name="otherClass"></param>
+        /// <returns></returns>
+        /// <exception cref="global::java.lang.NullPointerException"></exception>
+        public static bool isAssignableFrom(global::java.lang.Class self, global::java.lang.Class otherClass)
         {
-#if !FIRST_PASS
+#if FIRST_PASS
+            throw new NotImplementedException();
+#else
             if (otherClass == null)
                 throw new global::java.lang.NullPointerException();
 #endif
-            return TypeWrapper.FromClass(otherClass).IsAssignableTo(TypeWrapper.FromClass(thisClass));
+            return TypeWrapper.FromClass(otherClass).IsAssignableTo(TypeWrapper.FromClass(self));
         }
 
-        public static bool isInterface(global::java.lang.Class thisClass)
+        /// <summary>
+        /// Implements the native method 'isInterface'.
+        /// </summary>
+        /// <param name="self"></param>
+        /// <returns></returns>
+        public static bool isInterface(global::java.lang.Class self)
         {
-            return TypeWrapper.FromClass(thisClass).IsInterface;
+            return TypeWrapper.FromClass(self).IsInterface;
         }
 
         public static bool isArray(global::java.lang.Class thisClass)

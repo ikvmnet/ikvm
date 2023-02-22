@@ -64,6 +64,9 @@ namespace IKVM.Runtime.Vfs
         /// <returns></returns>
         TypeWrapper TryLoadType(JavaTypeName className)
         {
+#if FIRST_PASS || IMPORTER || EXPORTER
+            throw new NotImplementedException();
+#else
             var acl = AssemblyClassLoader.FromAssembly(assembly);
 
             try
@@ -76,6 +79,7 @@ namespace IKVM.Runtime.Vfs
             }
 
             return null;
+#endif
         }
 
         /// <summary>
@@ -117,7 +121,7 @@ namespace IKVM.Runtime.Vfs
         /// <exception cref="NotImplementedException"></exception>
         VfsEntry GetPackageEntry(JavaPackageName packageName)
         {
-#if FIRST_PASS
+#if FIRST_PASS || IMPORTER || EXPORTER
             throw new PlatformNotSupportedException();
 #else
             var acl = AssemblyClassLoader.FromAssembly(assembly);
@@ -153,7 +157,7 @@ namespace IKVM.Runtime.Vfs
         /// <exception cref="InvalidOperationException"></exception>
         public override string[] List()
         {
-#if FIRST_PASS
+#if FIRST_PASS || IMPORTER || EXPORTER
             throw new PlatformNotSupportedException();
 #else
             var lst = new HashSet<string>();

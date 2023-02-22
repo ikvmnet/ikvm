@@ -26,6 +26,7 @@ using System.IO;
 using System.Threading;
 
 using IKVM.Internal;
+using IKVM.Runtime;
 using IKVM.Runtime.Vfs;
 
 namespace IKVM.Java.Externs.java.lang

@@ -54,7 +54,7 @@ namespace IKVM.Runtime.Vfs
         /// <returns></returns>
         byte[] GenerateCacertsFile()
         {
-#if FIRST_PASS
+#if FIRST_PASS || IMPORTER || EXPORTER
             throw new NotImplementedException();
 #else
             var jstore = java.security.KeyStore.getInstance("jks");

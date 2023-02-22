@@ -24,6 +24,8 @@
 using System;
 using System.Diagnostics;
 
+using IKVM.Runtime;
+
 #if IMPORTER || EXPORTER
 using IKVM.Reflection;
 using IKVM.Reflection.Emit;

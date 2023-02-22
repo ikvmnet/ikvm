@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Linq;
 using System.Linq.Expressions;
 using System.Reflection;
 
@@ -14,8 +15,6 @@ namespace IKVM.Runtime.Accessors
 
         readonly Type type;
         readonly string name;
-
-        MethodInfo method;
 
         /// <summary>
         /// Initializes a new instance.
@@ -40,9 +39,9 @@ namespace IKVM.Runtime.Accessors
         public string Name => name;
 
         /// <summary>
-        /// Gets the field being accessed.
+        /// Gets the method being accessed.
         /// </summary>
-        public MethodInfo Method => AccessorUtil.LazyGet(ref method, () => type.GetMethod(name, BindingFlags.Public | BindingFlags.NonPublic | BindingFlags.Static));
+        public abstract MethodInfo Method { get; }
 
     }
 
@@ -53,6 +52,7 @@ namespace IKVM.Runtime.Accessors
         where TDelegate : Delegate
     {
 
+        MethodInfo method;
         TDelegate invoker;
 
         /// <summary>
@@ -66,6 +66,21 @@ namespace IKVM.Runtime.Accessors
         {
 
         }
+
+        /// <summary>
+        /// Gets the method being accessed.
+        /// </summary>
+        public override MethodInfo Method => AccessorUtil.LazyGet(ref method, FindMethod);
+
+        /// <summary>
+        /// Locates the method.
+        /// </summary>
+        /// <returns></returns>
+        MethodInfo FindMethod() => Type
+            .GetMethods(BindingFlags.Public | BindingFlags.NonPublic | BindingFlags.Static | BindingFlags.DeclaredOnly)
+            .Where(i => i.Name == Name)
+            .Where(i => i.GetParameters().Length == typeof(TDelegate).GetMethod("Invoke").GetParameters().Length)
+            .First();
 
         /// <summary>
         /// Gets the setter for the field.

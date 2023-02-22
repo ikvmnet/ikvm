@@ -20,6 +20,18 @@ namespace IKVM.Tests.Java.java.lang
                 global::java.lang.System.getProperty("os.name").Should().StartWith("Linux");
         }
 
+        [TestMethod]
+        public void CanWriteToStdOut()
+        {
+            global::java.lang.System.@out.println("TEST");
+        }
+
+        [TestMethod]
+        public void CanWriteToStdErr()
+        {
+            global::java.lang.System.err.println("TEST");
+        }
+
     }
 
 }

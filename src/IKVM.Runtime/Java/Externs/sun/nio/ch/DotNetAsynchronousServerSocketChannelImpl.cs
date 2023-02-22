@@ -4,10 +4,10 @@ using System.Net.Sockets;
 using System.Threading.Tasks;
 using System.Threading;
 
+using IKVM.Runtime;
 using IKVM.Runtime.Util.Java.Security;
 using IKVM.Runtime.Util.Java.Net;
 using IKVM.Runtime.Accessors.Java.Io;
-using IKVM.Internal;
 
 #if FIRST_PASS == false
 

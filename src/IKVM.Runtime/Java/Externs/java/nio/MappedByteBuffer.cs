@@ -25,7 +25,7 @@ using System;
 using System.Runtime.InteropServices;
 using System.Security;
 
-using IKVM.Internal;
+using IKVM.Runtime;
 
 namespace IKVM.Java.Externs.java.nio
 {

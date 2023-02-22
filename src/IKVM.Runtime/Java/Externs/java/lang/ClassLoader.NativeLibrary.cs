@@ -68,6 +68,7 @@ namespace IKVM.Java.Externs.java.lang
                 case "osxkrb5":
                 case "osx":
                 case "management":
+                case "zip":
                     return true;
                 default:
                     return false;

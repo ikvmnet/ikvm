@@ -27,6 +27,8 @@ using System.Diagnostics;
 using System.Runtime.CompilerServices;
 using System.Runtime.Serialization;
 
+using IKVM.Runtime;
+
 #if IMPORTER
 using IKVM.Reflection;
 using IKVM.Reflection.Emit;

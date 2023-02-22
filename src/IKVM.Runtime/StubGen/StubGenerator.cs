@@ -25,17 +25,17 @@ using System;
 using System.IO;
 using System.Collections.Generic;
 
+using IKVM.Attributes;
+using IKVM.Internal;
+using IKVM.Runtime;
+
 #if EXPORTER
 using IKVM.Reflection;
 
 using Type = IKVM.Reflection.Type;
-
 #else
 using System.Reflection;
-
 #endif
-using IKVM.Attributes;
-using IKVM.Internal;
 
 namespace IKVM.StubGen
 {

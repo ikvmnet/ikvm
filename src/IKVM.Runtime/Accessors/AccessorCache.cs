@@ -8,29 +8,29 @@ namespace IKVM.Runtime.Accessors
     /// <summary>
     /// Provides runtime access to type accessors.
     /// </summary>
-    class Accessors
+    class AccessorCache
     {
 
         /// <summary>
         /// Gets the set of accessors for a given assembly.
         /// </summary>
-        /// <param name="accessors"></param>
+        /// <param name="cache"></param>
         /// <param name="assembly"></param>
         /// <returns></returns>
-        public static Accessors Get(ref Accessors accessors, Assembly assembly)
+        public static AccessorCache Get(ref AccessorCache cache, Assembly assembly)
         {
-            return AccessorUtil.LazyGet(ref accessors, () => new Accessors(assembly));
+            return AccessorUtil.LazyGet(ref cache, () => new AccessorCache(assembly));
         }
 
         readonly Assembly assembly;
-        readonly ConcurrentDictionary<Type, Accessor> accessors = new ConcurrentDictionary<Type, Accessor>();
+        readonly ConcurrentDictionary<Type, Accessor> cache = new ConcurrentDictionary<Type, Accessor>();
 
         /// <summary>
         /// Initializes a new instance.
         /// </summary>
         /// <param name="assembly"></param>
         /// <exception cref="ArgumentNullException"></exception>
-        public Accessors(Assembly assembly)
+        public AccessorCache(Assembly assembly)
         {
             this.assembly = assembly ?? throw new ArgumentNullException(nameof(assembly));
         }
@@ -44,7 +44,7 @@ namespace IKVM.Runtime.Accessors
         public TAccessor Get<TAccessor>(ref TAccessor accessor)
             where TAccessor : Accessor
         {
-            return AccessorUtil.LazyGet(ref accessor, () => (TAccessor)accessors.GetOrAdd(typeof(TAccessor), Make));
+            return AccessorUtil.LazyGet(ref accessor, () => (TAccessor)cache.GetOrAdd(typeof(TAccessor), Make));
         }
 
         /// <summary>

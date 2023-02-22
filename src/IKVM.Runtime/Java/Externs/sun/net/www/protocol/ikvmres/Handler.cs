@@ -21,11 +21,11 @@
   jeroen@frijters.net
   
 */
-using System;
 using System.IO;
 using System.Reflection;
 
 using IKVM.Internal;
+using IKVM.Runtime;
 
 #if NETCOREAPP
 using System.Runtime.Loader;
@@ -41,8 +41,7 @@ namespace IKVM.Java.Externs.sun.net.www.protocol.ikvmres
         {
             using var mem = new MemoryStream();
 #if FIRST_PASS == false
-            var includeNonPublicInterfaces = !"true".Equals(global::java.lang.Props.props.getProperty("ikvm.stubgen.skipNonPublicInterfaces"), StringComparison.OrdinalIgnoreCase);
-            StubGen.StubGenerator.WriteClass(mem, TypeWrapper.FromClass(c), false, includeNonPublicInterfaces, false, true, false);
+            StubGen.StubGenerator.WriteClass(mem, TypeWrapper.FromClass(c), true, true, true, true, false);
 #endif
             return mem.ToArray();
         }

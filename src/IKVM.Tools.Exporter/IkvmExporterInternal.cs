@@ -6,6 +6,7 @@ using System.Linq;
 
 using IKVM.Internal;
 using IKVM.Reflection;
+using IKVM.Runtime;
 using IKVM.Tools.Importer;
 
 using Type = IKVM.Reflection.Type;
@@ -108,9 +109,9 @@ namespace IKVM.Tools.Exporter
                     if (runtimeAssemblyPath != null)
                         StaticCompiler.runtimeAssembly = StaticCompiler.LoadFile(runtimeAssemblyPath);
 
-                    var coreAssemblyPath = references.FirstOrDefault(i => Path.GetFileNameWithoutExtension(i) == "IKVM.Java");
-                    if (coreAssemblyPath != null)
-                        JVM.BaseAssembly = StaticCompiler.LoadFile(coreAssemblyPath);
+                    var baseAssemblyPath = references.FirstOrDefault(i => Path.GetFileNameWithoutExtension(i) == "IKVM.Java");
+                    if (baseAssemblyPath != null)
+                        JVM.BaseAssembly = StaticCompiler.LoadFile(baseAssemblyPath);
 
                     if (StaticCompiler.runtimeAssembly == null || StaticCompiler.runtimeAssembly.__IsMissing)
                     {

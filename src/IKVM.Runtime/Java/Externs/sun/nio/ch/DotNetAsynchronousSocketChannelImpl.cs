@@ -1,16 +1,13 @@
 ﻿using System;
 using System.Buffers;
-using System.Collections.Generic;
 using System.Net.Sockets;
-using System.Runtime.CompilerServices;
 using System.Runtime.InteropServices;
 using System.Threading;
 using System.Threading.Tasks;
 
-using IKVM.Internal;
+using IKVM.Runtime;
 using IKVM.Runtime.Accessors.Java.Io;
 using IKVM.Runtime.Util.Java.Net;
-using IKVM.Runtime.Util.Java.Nio;
 using IKVM.Runtime.Util.Java.Security;
 
 #if FIRST_PASS == false

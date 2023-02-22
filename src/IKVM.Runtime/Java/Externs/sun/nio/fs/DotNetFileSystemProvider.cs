@@ -3,7 +3,7 @@ using System.IO;
 using System.Security;
 using System.Security.AccessControl;
 
-using IKVM.Internal;
+using IKVM.Runtime;
 using IKVM.Runtime.Accessors.Java.Io;
 using IKVM.Runtime.Accessors.Java.Lang;
 using IKVM.Runtime.Vfs;

@@ -3,7 +3,7 @@ using System.Buffers;
 using System.Net.Sockets;
 using System.Runtime.InteropServices;
 
-using IKVM.Internal;
+using IKVM.Runtime;
 using IKVM.Runtime.Accessors.Java.Io;
 using IKVM.Runtime.Util.Java.Net;
 

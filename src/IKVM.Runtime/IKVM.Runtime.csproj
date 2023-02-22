@@ -10,6 +10,21 @@
     </PropertyGroup>
 
     <ItemGroup>
+        <TransformValues Include="Name" Value="$(ProductName)" />
+        <TransformValues Include="Version" Value="$(Version)" />
+        <TransformValues Include="FileVersion" Value="$(FileVersion)" />
+        <TransformValues Include="VendorUrl" Value="$(PackageProjectUrl)" />
+        <TransformValues Include="VendorUrlBug" Value="$(PackageProjectUrl)/issues/" />
+        <TransformValues Include="OpenJdkVersion" Value="$(OpenJdkVersion)" />
+        <TransformValues Include="OpenJdkFullVersion" Value="$(OpenJdkFullVersion)" />
+        <TransformValues Include="OpenJdkVendor" Value="$(OpenJdkVendor)" />
+        <TransformValues Include="OpenJdkImplementationVendor" Value="$(OpenJdkImplementationVendor)" />
+        <TransformValues Include="OpenJdkImplementationVersion" Value="$(OpenJdkImplementationVersion)" />
+        <TransformValues Include="OpenJdkSpecificationVersion" Value="$(OpenJdkSpecificationVersion)" />
+        <TransformValues Include="OpenJdkSpecificationVendor" Value="$(OpenJdkSpecificationVendor)" />
+    </ItemGroup>
+
+    <ItemGroup>
         <None Update="Accessors\Accessor.g.tt">
           <LastGenOutput>Accessor.g.cs</LastGenOutput>
           <Generator>TextTemplatingFileGenerator</Generator>
@@ -37,6 +52,11 @@
             <DesignTime>True</DesignTime>
             <AutoGen>True</AutoGen>
         </Compile>
+    </ItemGroup>
+
+    <ItemGroup>
+        <Transform Include="JVM.Constants.cs.tt" TargetPath="$(IntermediateOutputPath)transform\JVM.Constants.cs" />
+        <Compile Include="$(IntermediateOutputPath)transform\JVM.Constants.cs" Visible="False" Link="JVM.Constants.cs" />
     </ItemGroup>
 
     <ItemGroup>

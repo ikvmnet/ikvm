@@ -27,47 +27,29 @@ using System.Diagnostics;
 using System.Text;
 using System.Security;
 
+using IKVM.Runtime.Accessors;
+
 #if IMPORTER || EXPORTER
 using IKVM.Reflection;
-
 using Type = IKVM.Reflection.Type;
 #else
 using System.Reflection;
-
-using IKVM.Runtime.Accessors;
 #endif
 
 #if IMPORTER
 using IKVM.Tools.Importer;
 #endif
 
-#if !IMPORTER && !EXPORTER
-
-namespace IKVM.Internal
+namespace IKVM.Runtime
 {
 
-    public static class Starter
-    {
-
-    }
-
-}
-
-#endif // !IMPORTER && !EXPORTER
-
-namespace IKVM.Internal
-{
-
-    static class JVM
+    static partial class JVM
     {
 
         internal const string JarClassList = "--ikvm-classes--/";
 
 #if !EXPORTER
         static int emitSymbols;
-#if CLASSGC
-        internal static bool classUnloading = true;
-#endif
 #endif
 
         /// <summary>
@@ -86,17 +68,12 @@ namespace IKVM.Internal
         /// <summary>
         /// Reference to the accessors of the types of the 'java.base' assembly.
         /// </summary>
-        static Accessors baseAccessors;
-
-        static JVM()
-        {
-
-        }
+        static AccessorCache baseAccessors;
 
         /// <summary>
         /// Gets the set of accessors for accessing types of the core assembly.
         /// </summary>
-        internal static Accessors BaseAccessors => Accessors.Get(ref baseAccessors, BaseAssembly);
+        internal static AccessorCache BaseAccessors => AccessorCache.Get(ref baseAccessors, BaseAssembly);
 
 #endif
 
@@ -118,6 +95,11 @@ namespace IKVM.Internal
             return new Version();
         }
 
+        /// <summary>
+        /// Gets an environmental variable.
+        /// </summary>
+        /// <param name="name"></param>
+        /// <returns></returns>
         internal static string SafeGetEnvironmentVariable(string name)
         {
             try
@@ -415,11 +397,6 @@ namespace IKVM.Internal
 #endif
         }
 
-    }
-
-    static class Experimental
-    {
-        internal static readonly bool JDK_9 = JVM.SafeGetEnvironmentVariable("IKVM_EXPERIMENTAL_JDK_9") != null;
     }
 
 }
