@@ -9,9 +9,9 @@ namespace IKVM.Runtime.Accessors.Java.Lang
     internal sealed class SystemAccessor : Accessor
     {
 
-        StaticFieldAccessor<object> @in;
-        StaticFieldAccessor<object> @out;
-        StaticFieldAccessor<object> @err;
+        StaticPropertyAccessor<object> @in;
+        StaticPropertyAccessor<object> @out;
+        StaticPropertyAccessor<object> @err;
         StaticMethodAccessor<Action> initializeSystemClass;
         StaticMethodAccessor<Func<string, string>> getProperty;
         StaticMethodAccessor<Action<string, string>> setProperty;
@@ -27,25 +27,25 @@ namespace IKVM.Runtime.Accessors.Java.Lang
         }
 
         /// <summary>
-        /// Sets the value of the 'in' field.
+        /// Sets the value of the 'in' property.
         /// </summary>
         /// <param name="value"></param>
         /// <returns></returns>
-        public void SetIn(object value) => GetStaticField(ref @in, nameof(@in)).SetValue(value);
+        public void SetIn(object value) => GetStaticProperty(ref @in, nameof(@in)).SetValue(value);
 
         /// <summary>
-        /// Sets the value of the 'out' field.
+        /// Sets the value of the 'out' property.
         /// </summary>
         /// <param name="value"></param>
         /// <returns></returns>
-        public void SetOut(object value) => GetStaticField(ref @out, nameof(@out)).SetValue(value);
+        public void SetOut(object value) => GetStaticProperty(ref @out, nameof(@out)).SetValue(value);
 
         /// <summary>
-        /// Sets the value of the 'err' field.
+        /// Sets the value of the 'err' property.
         /// </summary>
         /// <param name="value"></param>
         /// <returns></returns>
-        public void SetErr(object value) => GetStaticField(ref @err, nameof(@err)).SetValue(value);
+        public void SetErr(object value) => GetStaticProperty(ref @err, nameof(@err)).SetValue(value);
 
         /// <summary>
         /// Sets the value of the 'initializeSystemClass' field.

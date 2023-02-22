@@ -1,12 +1,10 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.IO;
-using System.IO.Compression;
 using System.Linq;
 using System.Reflection;
 using System.Text;
 
-using IKVM.Internal;
 using IKVM.Runtime.Extensions;
 
 namespace IKVM.Runtime.Vfs

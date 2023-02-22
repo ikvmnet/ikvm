@@ -77,6 +77,7 @@ namespace IKVM.Tests.Java.java.nio.file
         }
 
         [TestMethod]
+        [ExpectedException(typeof(global::java.nio.file.AccessDeniedException))]
         public void VfsAssemblyClassCanNotBeWritten()
         {
             var f = System.IO.Path.Combine(VfsTable.Default.GetAssemblyClassesPath(typeof(global::java.lang.Object).Assembly), "java", "lang", "Object.class");
