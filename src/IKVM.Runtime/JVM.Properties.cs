@@ -16,9 +16,8 @@ namespace IKVM.Runtime
     static partial class JVM
     {
 
-
         /// <summary>
-        /// Property values loaded into the JVV from various sources.
+        /// Property values loaded into the JVM from various sources.
         /// </summary>
         public static class Properties
         {

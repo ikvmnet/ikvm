@@ -14,7 +14,6 @@ using System.Threading;
 using IKVM.Attributes;
 using IKVM.Internal;
 using IKVM.Runtime.Accessors.Java.Lang;
-using IKVM.Runtime.Accessors.Java.Util;
 
 namespace IKVM.Runtime
 {
@@ -31,15 +30,12 @@ namespace IKVM.Runtime
         static SystemAccessor systemAccessor;
         static ThreadAccessor threadAccessor;
         static ThreadGroupAccessor threadGroupAccessor;
-        static PropertiesAccessor propertiesAccessor;
 
         static SystemAccessor SystemAccessor => JVM.BaseAccessors.Get(ref systemAccessor);
 
         static ThreadAccessor ThreadAccessor => JVM.BaseAccessors.Get(ref threadAccessor);
 
         static ThreadGroupAccessor ThreadGroupAccessor => JVM.BaseAccessors.Get(ref threadGroupAccessor);
-
-        static PropertiesAccessor PropertiesAccessor => JVM.BaseAccessors.Get(ref propertiesAccessor);
 
 #endif
 

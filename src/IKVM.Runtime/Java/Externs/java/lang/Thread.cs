@@ -44,12 +44,9 @@ namespace IKVM.Java.Externs.java.lang
 #if FIRST_PASS == false
 
         static AccessControllerAccessor accessControllerAccessor;
-        static ThreadGroupAccessor threadGroupAccessor;
         static ThreadAccessor threadAccessor;
 
         static AccessControllerAccessor AccessControllerAccessor => JVM.BaseAccessors.Get(ref accessControllerAccessor);
-
-        static ThreadGroupAccessor ThreadGroupAccessor => JVM.BaseAccessors.Get(ref threadGroupAccessor);
 
         static ThreadAccessor ThreadAccessor => JVM.BaseAccessors.Get(ref threadAccessor);
 
