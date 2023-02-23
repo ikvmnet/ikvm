@@ -6,6 +6,51 @@ namespace IKVM.Runtime.Accessors
     internal abstract partial class Accessor
     {
 
+        protected ConstructorAccessor<Func<TResult>> GetConstructor<TResult>(ref ConstructorAccessor<Func<TResult>> location)
+        {
+            return ConstructorAccessor.LazyGet(ref location, type);
+        }
+
+        protected ConstructorAccessor<Func<TArg1, TResult>> GetConstructor<TArg1, TResult>(ref ConstructorAccessor<Func<TArg1, TResult>> location)
+        {
+            return ConstructorAccessor.LazyGet(ref location, type);
+        }
+
+        protected ConstructorAccessor<Func<TArg1, TArg2, TResult>> GetConstructor<TArg1, TArg2, TResult>(ref ConstructorAccessor<Func<TArg1, TArg2, TResult>> location)
+        {
+            return ConstructorAccessor.LazyGet(ref location, type);
+        }
+
+        protected ConstructorAccessor<Func<TArg1, TArg2, TArg3, TResult>> GetConstructor<TArg1, TArg2, TArg3, TResult>(ref ConstructorAccessor<Func<TArg1, TArg2, TArg3, TResult>> location)
+        {
+            return ConstructorAccessor.LazyGet(ref location, type);
+        }
+
+        protected ConstructorAccessor<Func<TArg1, TArg2, TArg3, TArg4, TResult>> GetConstructor<TArg1, TArg2, TArg3, TArg4, TResult>(ref ConstructorAccessor<Func<TArg1, TArg2, TArg3, TArg4, TResult>> location)
+        {
+            return ConstructorAccessor.LazyGet(ref location, type);
+        }
+
+        protected ConstructorAccessor<Func<TArg1, TArg2, TArg3, TArg4, TArg5, TResult>> GetConstructor<TArg1, TArg2, TArg3, TArg4, TArg5, TResult>(ref ConstructorAccessor<Func<TArg1, TArg2, TArg3, TArg4, TArg5, TResult>> location)
+        {
+            return ConstructorAccessor.LazyGet(ref location, type);
+        }
+
+        protected ConstructorAccessor<Func<TArg1, TArg2, TArg3, TArg4, TArg5, TArg6, TResult>> GetConstructor<TArg1, TArg2, TArg3, TArg4, TArg5, TArg6, TResult>(ref ConstructorAccessor<Func<TArg1, TArg2, TArg3, TArg4, TArg5, TArg6, TResult>> location)
+        {
+            return ConstructorAccessor.LazyGet(ref location, type);
+        }
+
+        protected ConstructorAccessor<Func<TArg1, TArg2, TArg3, TArg4, TArg5, TArg6, TArg7, TResult>> GetConstructor<TArg1, TArg2, TArg3, TArg4, TArg5, TArg6, TArg7, TResult>(ref ConstructorAccessor<Func<TArg1, TArg2, TArg3, TArg4, TArg5, TArg6, TArg7, TResult>> location)
+        {
+            return ConstructorAccessor.LazyGet(ref location, type);
+        }
+
+        protected ConstructorAccessor<Func<TArg1, TArg2, TArg3, TArg4, TArg5, TArg6, TArg7, TArg8, TResult>> GetConstructor<TArg1, TArg2, TArg3, TArg4, TArg5, TArg6, TArg7, TArg8, TResult>(ref ConstructorAccessor<Func<TArg1, TArg2, TArg3, TArg4, TArg5, TArg6, TArg7, TArg8, TResult>> location)
+        {
+            return ConstructorAccessor.LazyGet(ref location, type);
+        }
+
         protected MethodAccessor<Action<object>> GetVoidMethod(ref MethodAccessor<Action<object>> location, string name)
         {
             return MethodAccessor.LazyGetVoid(ref location, type, name);

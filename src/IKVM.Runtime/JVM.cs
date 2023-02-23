@@ -28,6 +28,7 @@ using System.Text;
 using System.Security;
 
 using IKVM.Runtime.Accessors;
+using IKVM.Runtime.Accessors.Java.Lang;
 
 #if IMPORTER || EXPORTER
 using IKVM.Reflection;
@@ -70,10 +71,44 @@ namespace IKVM.Runtime
         /// </summary>
         static AccessorCache baseAccessors;
 
+        static ThreadGroupAccessor threadGroupAccessor;
+        static Lazy<object> systemThreadGroup = new Lazy<object>(MakeSystemThreadGroup);
+        static Lazy<object> mainThreadGroup = new Lazy<object>(MakeMainThreadGroup);
+
         /// <summary>
         /// Gets the set of accessors for accessing types of the core assembly.
         /// </summary>
         internal static AccessorCache BaseAccessors => AccessorCache.Get(ref baseAccessors, BaseAssembly);
+
+        static ThreadGroupAccessor ThreadGroupAccessor => JVM.BaseAccessors.Get(ref threadGroupAccessor);
+
+        /// <summary>
+        /// Gets the 'system' thread group.
+        /// </summary>
+        public static object SystemThreadGroup => systemThreadGroup.Value;
+
+        /// <summary>
+        /// Gets the 'main' thread group.
+        /// </summary>
+        public static object MainThreadGroup => mainThreadGroup.Value;
+
+        /// <summary>
+        /// Creates the 'system' thread group.
+        /// </summary>
+        /// <returns></returns>
+        static object MakeSystemThreadGroup()
+        {
+            return ThreadGroupAccessor.Init();
+        }
+
+        /// <summary>
+        /// Creates the 'main' thread group.
+        /// </summary>
+        /// <returns></returns>
+        static object MakeMainThreadGroup()
+        {
+            return ThreadGroupAccessor.Init(null, SystemThreadGroup, "main");
+        }
 
 #endif
 

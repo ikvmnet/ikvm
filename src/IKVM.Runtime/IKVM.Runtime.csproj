@@ -33,6 +33,10 @@
           <LastGenOutput>MethodAccessor.g.cs</LastGenOutput>
           <Generator>TextTemplatingFileGenerator</Generator>
         </None>
+        <None Update="Accessors\ConstructorAccessor.g.tt">
+          <LastGenOutput>ConstructorAccessor.g.cs</LastGenOutput>
+          <Generator>TextTemplatingFileGenerator</Generator>
+        </None>
         <None Update="Accessors\StaticMethodAccessor.g.tt">
             <LastGenOutput>StaticMethodAccessor.g.cs</LastGenOutput>
             <Generator>TextTemplatingFileGenerator</Generator>
@@ -44,6 +48,11 @@
         </Compile>
         <Compile Update="Accessors\MethodAccessor.g.cs">
           <DependentUpon>MethodAccessor.g.tt</DependentUpon>
+          <DesignTime>True</DesignTime>
+          <AutoGen>True</AutoGen>
+        </Compile>
+        <Compile Update="Accessors\ConstructorAccessor.g.cs">
+          <DependentUpon>ConstructorAccessor.g.tt</DependentUpon>
           <DesignTime>True</DesignTime>
           <AutoGen>True</AutoGen>
         </Compile>

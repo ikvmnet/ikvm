@@ -12,6 +12,24 @@ namespace IKVM.Runtime.Accessors
     internal abstract partial class Accessor
     {
 
+        protected ConstructorAccessor<Func<TResult>> GetConstructor<TResult>(ref ConstructorAccessor<Func<TResult>> location)
+        {
+            return ConstructorAccessor.LazyGet(ref location, type);
+        }
+
+<#
+for (int i = 1; i <= 8; i++)
+{
+        var l = string.Join(", ", Enumerable.Range(1, i).Select(i => "TArg" + i));
+#>
+        protected ConstructorAccessor<Func<<#= l #>, TResult>> GetConstructor<<#= l #>, TResult>(ref ConstructorAccessor<Func<<#= l #>, TResult>> location)
+        {
+            return ConstructorAccessor.LazyGet(ref location, type);
+        }
+
+<#
+}
+#>
         protected MethodAccessor<Action<object>> GetVoidMethod(ref MethodAccessor<Action<object>> location, string name)
         {
             return MethodAccessor.LazyGetVoid(ref location, type, name);

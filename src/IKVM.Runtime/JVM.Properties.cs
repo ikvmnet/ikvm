@@ -31,7 +31,7 @@ namespace IKVM.Runtime
             /// <summary>
             /// Gets the set of properties that are set by the user before initialization.
             /// </summary>
-            internal static IDictionary<string, string> User => user;
+            public static IDictionary<string, string> User => user;
 
             /// <summary>
             /// Gets the set of properties that are set in the 'ikvm.properties' file before initialization.
@@ -91,22 +91,24 @@ namespace IKVM.Runtime
                 if (User.TryGetValue("ikvm.home.root", out var homePathRoot) == false)
                     Ikvm.TryGetValue("ikvm.home.root", out homePathRoot);
 
+                // start search for architecture specific directory from a relative path
+                if (homePathRoot == null)
+                    homePathRoot = "ikvm";
+
                 // calculate ikvm.home from ikvm.home.root
-                if (homePathRoot != null)
+                var ikvmHomeRootPath = Path.Combine(Path.GetDirectoryName(BaseAssembly.Location), homePathRoot);
+                if (Directory.Exists(ikvmHomeRootPath))
                 {
-                    var ikvmHomeRootPath = Path.Combine(Path.GetDirectoryName(BaseAssembly.Location), homePathRoot);
-                    if (Directory.Exists(ikvmHomeRootPath))
+                    foreach (var ikvmHomeArch in GetIkvmHomeArchNames())
                     {
-                        foreach (var ikvmHomeArch in GetIkvmHomeArchNames())
-                        {
-                            var ikvmHomePath = Path.Combine(ikvmHomeRootPath, ikvmHomeArch);
-                            if (Directory.Exists(ikvmHomePath))
-                                return ikvmHomePath;
-                        }
+                        var ikvmHomePath = Path.Combine(ikvmHomeRootPath, ikvmHomeArch);
+                        if (Directory.Exists(ikvmHomePath))
+                            return ikvmHomePath;
                     }
                 }
 
-                return null;
+                // fallback to local 'ikvm' directory next to IKVM.Runtime
+                return Path.Combine(Path.GetDirectoryName(BaseAssembly.Location), "ikvm");
             }
 
             /// <summary>

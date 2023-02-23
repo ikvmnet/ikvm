@@ -14,7 +14,7 @@ namespace IKVM.Runtime.Accessors.Java.Lang
         StaticFieldAccessor<object> _err;
         StaticMethodAccessor<Action> initializeSystemClass;
         StaticMethodAccessor<Func<string, string>> getProperty;
-        StaticMethodAccessor<Action<string, string>> setProperty;
+        StaticMethodAccessor<Func<string, string, string>> setProperty;
         StaticMethodAccessor<Func<object>> getSecurityManager;
 
         /// <summary>
@@ -67,7 +67,7 @@ namespace IKVM.Runtime.Accessors.Java.Lang
         /// <param name="key"></param>
         /// <param name="value"></param>
         /// <returns></returns>
-        public void InvokeSetProperty(string key, string value) => GetStaticVoidMethod(ref setProperty, nameof(setProperty)).Invoker(key, value);
+        public string InvokeSetProperty(string key, string value) => GetStaticMethod(ref setProperty, nameof(setProperty)).Invoker(key, value);
 
         /// <summary>
         /// Invokes the 'getSecurityManager' method.

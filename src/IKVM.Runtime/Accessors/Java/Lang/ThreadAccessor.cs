@@ -9,7 +9,10 @@ namespace IKVM.Runtime.Accessors.Java.Lang
     internal sealed class ThreadAccessor : Accessor
     {
 
+        StaticFieldAccessor<object> current;
         StaticMethodAccessor<Func<object>> currentThread;
+        ConstructorAccessor<Func<object, object>> init;
+        MethodAccessor<Func<object, bool>> isDaemon;
         MethodAccessor<Action<object>> die;
         MethodAccessor<Func<object, object>> getThreadGroup;
 
@@ -24,9 +27,29 @@ namespace IKVM.Runtime.Accessors.Java.Lang
         }
 
         /// <summary>
+        /// Gets the value of the 'current' field.
+        /// </summary>
+        /// <returns></returns>
+        public object GetCurrent() => GetStaticField(ref current, nameof(current)).GetValue();
+
+        /// <summary>
         /// Invokes the 'currentThread' method.
         /// </summary>
         public object InvokeCurrentThread() => GetStaticMethod(ref currentThread, nameof(currentThread)).Invoker();
+
+        /// <summary>
+        /// Invokes the constructor.
+        /// </summary>
+        /// <param name="threadGroup"></param>
+        /// <returns></returns>
+        public object Init(object threadGroup) => GetConstructor(ref init).Invoker(threadGroup);
+
+        /// <summary>
+        /// Invokes the 'isDaemon' method.
+        /// </summary>
+        /// <param name="self"></param>
+        /// <returns></returns>
+        public bool InvokeIsDaemon(object self) => GetMethod(ref isDaemon, nameof(isDaemon)).Invoker(self);
 
         /// <summary>
         /// Invokes the 'die' method.

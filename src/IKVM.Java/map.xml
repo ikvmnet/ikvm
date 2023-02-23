@@ -1461,14 +1461,6 @@
                 </body>
             </method>
         </class>
-        <class name="java.lang.ThreadGroup">
-            <method name="createRootGroup" sig="()Ljava.lang.ThreadGroup;" modifiers="static">
-                <body>
-                    <newobj class="java.lang.ThreadGroup" name="&lt;init&gt;" sig="()V" />
-                    <ret />
-                </body>
-            </method>
-        </class>
         <class name="java.lang.reflect.Constructor">
             <method name="_slot" sig="()I">
                 <body>
