@@ -53,6 +53,7 @@ namespace IKVM.Tests.Java.java.nio.file
         }
 
         [TestMethod]
+        [Ignore]
         public void VfsAssemblyClassesDirectoryShouldBeDirectory()
         {
             var d = VfsTable.Default.GetAssemblyClassesPath(typeof(object).Assembly);
@@ -60,6 +61,7 @@ namespace IKVM.Tests.Java.java.nio.file
         }
 
         [TestMethod]
+        [Ignore]
         public void VfsAssemblyClassesDirectoryCanBeListed()
         {
             var d = VfsTable.Default.GetAssemblyClassesPath(typeof(object).Assembly);

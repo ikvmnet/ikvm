@@ -9,12 +9,13 @@ namespace IKVM.Runtime.Accessors.Java.Lang
     internal sealed class SystemAccessor : Accessor
     {
 
-        StaticPropertyAccessor<object> @in;
-        StaticPropertyAccessor<object> @out;
-        StaticPropertyAccessor<object> @err;
+        StaticFieldAccessor<object> _in;
+        StaticFieldAccessor<object> _out;
+        StaticFieldAccessor<object> _err;
         StaticMethodAccessor<Action> initializeSystemClass;
         StaticMethodAccessor<Func<string, string>> getProperty;
         StaticMethodAccessor<Action<string, string>> setProperty;
+        StaticMethodAccessor<Func<object>> getSecurityManager;
 
         /// <summary>
         /// Initializes a new instance.
@@ -27,25 +28,25 @@ namespace IKVM.Runtime.Accessors.Java.Lang
         }
 
         /// <summary>
-        /// Sets the value of the 'in' property.
+        /// Sets the value of the 'in' field.
         /// </summary>
         /// <param name="value"></param>
         /// <returns></returns>
-        public void SetIn(object value) => GetStaticProperty(ref @in, nameof(@in)).SetValue(value);
+        public void SetIn(object value) => GetStaticField(ref _in, nameof(_in)).SetValue(value);
 
         /// <summary>
-        /// Sets the value of the 'out' property.
+        /// Sets the value of the 'out' field.
         /// </summary>
         /// <param name="value"></param>
         /// <returns></returns>
-        public void SetOut(object value) => GetStaticProperty(ref @out, nameof(@out)).SetValue(value);
+        public void SetOut(object value) => GetStaticField(ref _out, nameof(_out)).SetValue(value);
 
         /// <summary>
-        /// Sets the value of the 'err' property.
+        /// Sets the value of the 'err' field.
         /// </summary>
         /// <param name="value"></param>
         /// <returns></returns>
-        public void SetErr(object value) => GetStaticProperty(ref @err, nameof(@err)).SetValue(value);
+        public void SetErr(object value) => GetStaticField(ref _err, nameof(_err)).SetValue(value);
 
         /// <summary>
         /// Sets the value of the 'initializeSystemClass' field.
@@ -67,6 +68,12 @@ namespace IKVM.Runtime.Accessors.Java.Lang
         /// <param name="value"></param>
         /// <returns></returns>
         public void InvokeSetProperty(string key, string value) => GetStaticVoidMethod(ref setProperty, nameof(setProperty)).Invoker(key, value);
+
+        /// <summary>
+        /// Invokes the 'getSecurityManager' method.
+        /// </summary>
+        /// <returns></returns>
+        public object InvokeGetSecurityManager() => GetStaticMethod(ref getSecurityManager, nameof(getSecurityManager)).Invoker();
 
     }
 

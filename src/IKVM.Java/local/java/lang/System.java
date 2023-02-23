@@ -81,11 +81,12 @@ public final class System {
      * the host environment or user.
      */
     @ikvm.lang.Property(get="get_in")
-    public final static InputStream in = null;
-
+    public static InputStream in;
+    private static InputStream _in;
+    
     private static InputStream get_in()
     {
-        return in;
+        return _in;
     }
 
     /**
@@ -114,11 +115,12 @@ public final class System {
      * @see     java.io.PrintStream#println(java.lang.String)
      */
     @ikvm.lang.Property(get="get_out")
-    public final static PrintStream out = null;
-
+    public static PrintStream out;
+    private static PrintStream _out;
+    
     private static PrintStream get_out()
     {
-        return out;
+        return _out;
     }
 
     /**
@@ -134,11 +136,12 @@ public final class System {
      * destination that is typically not continuously monitored.
      */
     @ikvm.lang.Property(get="get_err")
-    public final static PrintStream err = null;
-
+    public static PrintStream err;
+    private static PrintStream _err;
+    
     private static PrintStream get_err()
     {
-        return err;
+        return _err;
     }
 
     /* The security manager for the system.
