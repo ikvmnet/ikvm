@@ -60,6 +60,15 @@ namespace IKVM.Tests.Java.java.io
                 new global::java.io.File(@"/usr/../usr/lib").getCanonicalPath().Should().Be(@"/usr/lib");
         }
 
+        [TestMethod]
+        public void CanGetPathSeperator()
+        {
+            if (RuntimeInformation.IsOSPlatform(OSPlatform.Windows))
+                global::java.io.File.pathSeparator.Should().Be(";");
+            else if (RuntimeInformation.IsOSPlatform(OSPlatform.Linux))
+                global::java.io.File.pathSeparator.Should().Be(":");
+        }
+
     }
 
 }
