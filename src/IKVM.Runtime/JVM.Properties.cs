@@ -287,7 +287,7 @@ namespace IKVM.Runtime
 
 #endif
 
-                // set the properties that were specified with IKVM.Runtime.Launcher.SetProperties()
+                // set the properties that were specfied
                 if (user != null)
                     foreach (var kvp in user)
                         p[kvp.Key] = kvp.Value;
