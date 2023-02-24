@@ -1,8 +1,0 @@
-{
-  "profiles": {
-    "java": {
-      "commandName": "Project",
-      "commandLineArgs": "-classpath C:\\dev\\ikvm\\src\\IKVM.JTReg.TestAdapter.Tests\\bin\\Debug\\net461\\jtreg\\javatest.jar;C:\\dev\\ikvm\\src\\IKVM.JTReg.TestAdapter.Tests\\bin\\Debug\\net461\\jtreg\\jtreg.jar com.sun.javatest.regtest.agent.GetJDKProperties --system-properties --modules=boot-layer"
-    }
-  }
-}
