@@ -132,7 +132,8 @@ namespace IKVM.Java.Externs.java.lang
             throw new NotImplementedException();
 #else
             foreach (var kvp in JVM.Properties.Init)
-                PropertiesAccessor.InvokeSetProperty(props, kvp.Key, kvp.Value);
+                if (kvp.Value is string v)
+                    PropertiesAccessor.InvokeSetProperty(props, kvp.Key, v);
 
             return props;
 #endif

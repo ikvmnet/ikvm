@@ -78,36 +78,36 @@ namespace IKVM.Runtime
             /// <returns></returns>
             static string GetHomePath()
             {
+                var rootPath = Path.GetDirectoryName(BaseAssembly.Location);
+
                 // user value takes priority
                 if (User.TryGetValue("ikvm.home", out var homePath1))
-                    return homePath1;
+                    return Path.Combine(rootPath, homePath1);
 
                 // ikvm properties value comes next
                 if (Ikvm.TryGetValue("ikvm.home", out var homePath2))
-                    return homePath2;
+                    return Path.Combine(rootPath, homePath2);
 
                 // find first occurance of home root
                 if (User.TryGetValue("ikvm.home.root", out var homePathRoot) == false)
                     Ikvm.TryGetValue("ikvm.home.root", out homePathRoot);
 
-                // start search for architecture specific directory from a relative path
-                if (homePathRoot == null)
-                    homePathRoot = "ikvm";
+                // make root path absolute
+                homePathRoot = Path.Combine(rootPath, homePathRoot ?? "ikvm");
 
                 // calculate ikvm.home from ikvm.home.root
-                var ikvmHomeRootPath = Path.Combine(Path.GetDirectoryName(BaseAssembly.Location), homePathRoot);
-                if (Directory.Exists(ikvmHomeRootPath))
+                if (Directory.Exists(homePathRoot))
                 {
-                    foreach (var ikvmHomeArch in GetIkvmHomeArchNames())
+                    foreach (var rid in GetIkvmHomeRids())
                     {
-                        var ikvmHomePath = Path.Combine(ikvmHomeRootPath, ikvmHomeArch);
+                        var ikvmHomePath = Path.Combine(homePathRoot, rid);
                         if (Directory.Exists(ikvmHomePath))
                             return ikvmHomePath;
                     }
                 }
 
                 // fallback to local 'ikvm' directory next to IKVM.Runtime
-                return Path.Combine(Path.GetDirectoryName(BaseAssembly.Location), "ikvm");
+                return Path.Combine(rootPath, "ikvm");
             }
 
             /// <summary>
@@ -135,6 +135,7 @@ namespace IKVM.Runtime
                 throw new NotImplementedException();
 #else
                 var p = new Dictionary<string, string>();
+                p["openjdk.version"] = Constants.openjdk_version;
                 p["java.version"] = Constants.java_version;
                 p["java.vendor"] = Constants.java_vendor;
                 p["java.vendor.url"] = Constants.java_vendor_url;
@@ -145,49 +146,50 @@ namespace IKVM.Runtime
                 p["java.vm.specification.name"] = "Java Virtual Machine Specification";
                 p["java.vm.specification.version"] = Constants.java_vm_specification_version;
                 p["java.vm.specification.vendor"] = Constants.java_vm_specification_vendor;
+                p["java.vm.info"] = "compiled mode";
                 p["java.runtime.name"] = Constants.java_runtime_name;
                 p["java.runtime.version"] = Constants.java_runtime_version;
                 p["java.specification.name"] = "Java Platform API Specification";
                 p["java.specification.version"] = Constants.java_specification_version;
                 p["java.specification.vendor"] = Constants.java_specification_vendor;
                 p["java.class.version"] = "52.0";
-                p["java.class.path"] = "";
+
+                // various directory paths
+                p["ikvm.home"] = HomePath;
+                p["java.home"] = HomePath;
+                p["java.io.tmpdir"] = GetTempPath();
                 p["java.library.path"] = GetLibraryPath();
+                p["java.ext.dirs"] = Path.Combine(HomePath, "lib", "ext");
+                p["java.endorsed.dirs"] = Path.Combine(HomePath, "lib", "endorsed");
+                p["sun.boot.library.path"] = Path.Combine(HomePath, "bin");
+                p["sun.boot.class.path"] = VfsTable.Default.GetAssemblyClassesPath(BaseAssembly);
 
-                try
-                {
-                    p["java.io.tmpdir"] = Path.GetTempPath();
-                }
-                catch (SecurityException)
-                {
-                    p["java.io.tmpdir"] = ".";
-                }
-
-                p["java.ext.dirs"] = "";
-
+                // various OS information
                 GetOSProperties(out var osname, out var osversion);
                 p["os.name"] = osname;
                 p["os.version"] = osversion;
-
-                var arch = SafeGetEnvironmentVariable("PROCESSOR_ARCHITECTURE");
-                if (arch == null)
-                {
-                    // guess based on OS and bit size
-                    if (IntPtr.Size == 4)
-                        arch = RuntimeUtil.IsWindows ? "x86" : "i386";
-                    else
-                        arch = "amd64";
-                }
-
-                if (arch.Equals("AMD64", StringComparison.OrdinalIgnoreCase))
-                    arch = "amd64";
-
-                p["os.arch"] = arch;
+                p["os.arch"] = GetArch();
+                p["sun.os.patch.level"] = Environment.OSVersion.ServicePack;
                 p["sun.arch.data.model"] = (IntPtr.Size * 8).ToString();
+                p["sun.cpu.endian"] = BitConverter.IsLittleEndian ? "little" : "big";
+
+                // text settings
                 p["file.separator"] = Path.DirectorySeparatorChar.ToString();
                 p["file.encoding"] = Encoding.Default.WebName;
                 p["path.separator"] = Path.PathSeparator.ToString();
                 p["line.separator"] = Environment.NewLine;
+                p["file.encoding.pkg"] = "sun.io";
+                p["sun.jnu.encoding"] = RuntimeUtil.IsOSX ? "UTF-8" : Encoding.Default.WebName;
+                p["sun.stdout.encoding"] = RuntimeUtil.IsWindows && !Console.IsOutputRedirected ? GetWindowsConsoleEncoding() : null;
+                p["sun.stderr.encoding"] = RuntimeUtil.IsWindows && !Console.IsErrorRedirected ? GetWindowsConsoleEncoding() : null;
+
+                // culture/language properties
+                GetCultureProperties(out var language, out var country, out var variant, out var script);
+                p["user.language"] = language;
+                p["user.country"] = country;
+                p["user.variant"] = variant;
+                p["user.script"] = script;
+                p["user.timezone"] = "";
 
                 try
                 {
@@ -227,45 +229,9 @@ namespace IKVM.Runtime
                     p["user.dir"] = ".";
                 }
 
-                GetCultureProperties(out var language, out var country, out var variant, out var script);
-                p["user.language"] = language;
-                p["user.country"] = country;
-                p["user.variant"] = variant;
-                p["user.script"] = script;
-
-                // adjust ikvm.home and java.home to match
-                p["ikvm.home"] = HomePath;
-                p["java.home"] = HomePath;
-
                 // other various properties
-                p["openjdk.version"] = Constants.openjdk_version;
-                p["java.endorsed.dirs"] = Path.Combine(HomePath, "lib", "endorsed");
-                p["sun.boot.library.path"] = Path.Combine(HomePath, "bin");
-                p["sun.boot.class.path"] = VfsTable.Default.GetAssemblyClassesPath(BaseAssembly);
-                p["file.encoding.pkg"] = "sun.io";
-                p["java.vm.info"] = "compiled mode";
                 p["java.awt.headless"] = "true";
-                p["user.timezone"] = "";
-                p["sun.cpu.endian"] = BitConverter.IsLittleEndian ? "little" : "big";
                 p["sun.nio.MaxDirectMemorySize"] = "-1";
-                p["sun.os.patch.level"] = Environment.OSVersion.ServicePack;
-
-                var stdoutEncoding = IsWindowsConsole(true) ? GetConsoleEncoding() : null;
-                if (stdoutEncoding != null)
-                    p.Add("sun.stdout.encoding", stdoutEncoding);
-
-                var stderrEncoding = IsWindowsConsole(false) ? GetConsoleEncoding() : null;
-                if (stderrEncoding != null)
-                    p.Add("sun.stderr.encoding", stderrEncoding);
-
-                if (RuntimeUtil.IsOSX)
-                {
-                    p.Add("sun.jnu.encoding", "UTF-8");
-                }
-                else
-                {
-                    p.Add("sun.jnu.encoding", Encoding.Default.WebName);
-                }
 
                 // cacerts is mounted by the VFS into ikvmHome
                 p.Add("javax.net.ssl.trustStore", Path.Combine(HomePath, "lib", "security", "cacerts"));
@@ -536,6 +502,44 @@ namespace IKVM.Runtime
             }
 
             /// <summary>
+            /// Gets the platform architecture.
+            /// </summary>
+            /// <returns></returns>
+            static string GetArch()
+            {
+                var arch = SafeGetEnvironmentVariable("PROCESSOR_ARCHITECTURE");
+                if (arch == null)
+                {
+                    // guess based on OS and bit size
+                    if (IntPtr.Size == 4)
+                        return RuntimeUtil.IsWindows ? "x86" : "i386";
+                    else
+                        return "amd64";
+                }
+
+                if (arch.Equals("AMD64", StringComparison.OrdinalIgnoreCase))
+                    return "amd64";
+
+                return null;
+            }
+
+            /// <summary>
+            /// Gets the temporary path.
+            /// </summary>
+            /// <returns></returns>
+            static string GetTempPath()
+            {
+                try
+                {
+                    return Path.GetTempPath();
+                }
+                catch (SecurityException)
+                {
+                    return ".";
+                }
+            }
+
+            /// <summary>
             /// Gets the path string for loading native libraries.
             /// </summary>
             /// <returns></returns>
@@ -662,7 +666,7 @@ namespace IKVM.Runtime
             static byte GetWindowsProductType()
             {
 #if FIRST_PASS
-            throw new NotSupportedException();
+                throw new NotSupportedException();
 #else
                 if (RuntimeUtil.IsWindows == false)
                     throw new Exception("Cannot retrieve a Windows product type for this operating system.");
@@ -683,7 +687,7 @@ namespace IKVM.Runtime
             static string[] GetLinuxSysnameAndRelease()
             {
 #if FIRST_PASS
-            throw new NotSupportedException();
+                throw new NotSupportedException();
 #else
                 if (RuntimeUtil.IsLinux == false)
                     throw new Exception("Cannot retrieve sysname information for this operating system.");
@@ -699,7 +703,7 @@ namespace IKVM.Runtime
             /// Returns the possible architecture names of the ikvm.home directory to use for this run.
             /// </summary>
             /// <returns></returns>
-            static IEnumerable<string> GetIkvmHomeArchNames()
+            static IEnumerable<string> GetIkvmHomeRids()
             {
                 var arch = RuntimeInformation.ProcessArchitecture switch
                 {
@@ -742,23 +746,10 @@ namespace IKVM.Runtime
             }
 
             /// <summary>
-            /// Returns whether 
-            /// </summary>
-            /// <param name="stdout"></param>
-            /// <returns></returns>
-            static bool IsWindowsConsole(bool stdout)
-            {
-                if (Environment.OSVersion.Platform != PlatformID.Win32NT)
-                    return false;
-                else
-                    return stdout ? !Console.IsOutputRedirected : !Console.IsErrorRedirected;
-            }
-
-            /// <summary>
             /// Gets the console encoding.
             /// </summary>
             /// <returns></returns>
-            static string GetConsoleEncoding()
+            static string GetWindowsConsoleEncoding()
             {
                 var codepage = Console.InputEncoding.CodePage;
                 return codepage is >= 847 and <= 950 ? $"ms{codepage}" : $"cp{codepage}";
