@@ -82,32 +82,32 @@ namespace IKVM.Runtime
 
                 // user value takes priority
                 if (User.TryGetValue("ikvm.home", out var homePath1))
-                    return Path.Combine(rootPath, homePath1);
+                    return Path.GetFullPath(Path.Combine(rootPath, homePath1));
 
                 // ikvm properties value comes next
                 if (Ikvm.TryGetValue("ikvm.home", out var homePath2))
-                    return Path.Combine(rootPath, homePath2);
+                    return Path.GetFullPath(Path.Combine(rootPath, homePath2));
 
                 // find first occurance of home root
                 if (User.TryGetValue("ikvm.home.root", out var homePathRoot) == false)
                     Ikvm.TryGetValue("ikvm.home.root", out homePathRoot);
 
                 // make root path absolute
-                homePathRoot = Path.Combine(rootPath, homePathRoot ?? "ikvm");
+                homePathRoot = Path.GetFullPath(Path.Combine(rootPath, homePathRoot ?? "ikvm"));
 
                 // calculate ikvm.home from ikvm.home.root
                 if (Directory.Exists(homePathRoot))
                 {
                     foreach (var rid in GetIkvmHomeRids())
                     {
-                        var ikvmHomePath = Path.Combine(homePathRoot, rid);
+                        var ikvmHomePath = Path.GetFullPath(Path.Combine(homePathRoot, rid));
                         if (Directory.Exists(ikvmHomePath))
                             return ikvmHomePath;
                     }
                 }
 
                 // fallback to local 'ikvm' directory next to IKVM.Runtime
-                return Path.Combine(rootPath, "ikvm");
+                return Path.GetFullPath(Path.Combine(rootPath, "ikvm"));
             }
 
             /// <summary>
