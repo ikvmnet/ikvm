@@ -49,7 +49,7 @@ namespace IKVM.Runtime.Accessors.Java.Lang
         /// <summary>
         /// Invokes the 'checkPackageAccess' method.
         /// </summary>
-        public void InvokeCheckPackageAccess(object self, object cls, object pd) => GetMethod(ref checkPackageAccess, nameof(checkPackageAccess), "(Ljava.lang.Class;Ljava.lang.ProtectionDomain;)V").Invoker(self, cls, pd);
+        public void InvokeCheckPackageAccess(object self, object cls, object pd) => GetMethod(ref checkPackageAccess, nameof(checkPackageAccess), "(Ljava.lang.Class;Ljava.security.ProtectionDomain;)V").Invoker(self, cls, pd);
 
         /// <summary>
         /// Invokes the 'checkName' method.
