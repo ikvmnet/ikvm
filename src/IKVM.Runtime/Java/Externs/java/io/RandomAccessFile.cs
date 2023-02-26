@@ -148,8 +148,14 @@ namespace IKVM.Java.Externs.java.io
 #if FIRST_PASS
             throw new NotImplementedException();
 #else
+            if (b == null)
+                throw new global::java.lang.NullPointerException();
+
             if ((off < 0) || (off > b.Length) || (len < 0) || (len > (b.Length - off)))
                 throw new global::java.lang.IndexOutOfBoundsException();
+
+            if (len == 0)
+                return 0;
 
             var fd = RandomAccessFileAccessor.GetFd(self);
             if (fd == null)
@@ -163,7 +169,11 @@ namespace IKVM.Java.Externs.java.io
 
             try
             {
-                return stream.Read(b, off, len);
+                var n = stream.Read(b, off, len);
+                if (n == 0)
+                    n = -1;
+
+                return n;
             }
             catch (ObjectDisposedException e)
             {
