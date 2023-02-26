@@ -4,10 +4,10 @@
     /// <summary>
     /// Provides runtime access to the 'java.io.RandomAccessFile' type.
     /// </summary>
-    internal sealed class RandomAccessFileAccessor : Accessor
+    internal sealed class RandomAccessFileAccessor : Accessor<object>
     {
 
-        FieldAccessor<object> fd;
+        FieldAccessor<object, object> fd;
 
         /// <summary>
         /// Initializes a new instance.
@@ -24,7 +24,7 @@
         /// </summary>
         /// <param name="self"></param>
         /// <returns></returns>
-        public object GetFd(object self) => GetField(ref fd, nameof(fd)).GetValue(self);
+        public object GetFd(object self) => GetField(ref fd, nameof(fd), "Ljava.io.FileDescriptor;").GetValue(self);
 
         /// <summary>
         /// Sets the value of the 'fd' field.
@@ -32,7 +32,7 @@
         /// <param name="self"></param>
         /// <param name="value"></param>
         /// <returns></returns>
-        public void SetFd(object self, object value) => GetField(ref fd, nameof(fd)).SetValue(self, value);
+        public void SetFd(object self, object value) => GetField(ref fd, nameof(fd), "Ljava.io.FileDescriptor;").SetValue(self, value);
 
     }
 

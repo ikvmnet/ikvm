@@ -1,8 +1,8 @@
-﻿using System;
+﻿using IKVM.Internal;
 
 namespace IKVM.Runtime.Accessors
 {
 
-    internal delegate Type AccessorTypeResolver(string name);
+    internal delegate TypeWrapper AccessorTypeResolver(string name);
 
 }

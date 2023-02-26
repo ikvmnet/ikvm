@@ -2,6 +2,8 @@
 using System.Collections.Concurrent;
 using System.Reflection;
 
+using IKVM.Internal;
+
 namespace IKVM.Runtime.Accessors
 {
 
@@ -54,7 +56,11 @@ namespace IKVM.Runtime.Accessors
         /// <returns></returns>
         Accessor Make(Type accessorType)
         {
-            return (Accessor)Activator.CreateInstance(accessorType, (AccessorTypeResolver)(t => assembly.GetType(t)));
+#if FIRST_PASS || IMPORTER || EXPORTER
+            throw new NotImplementedException();
+#else
+            return (Accessor)Activator.CreateInstance(accessorType, (AccessorTypeResolver)(t => AssemblyClassLoader.FromAssembly(assembly).LoadClassByDottedName(t)));
+#endif
         }
 
     }

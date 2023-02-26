@@ -6,10 +6,10 @@ namespace IKVM.Runtime.Accessors.Sun.Nio.Ch
     /// <summary>
     /// Provides runtime access to the 'sun.nio.ch.DatagramChannelImpl' type.
     /// </summary>
-    internal sealed class DatagramChannelImplAccessor : Accessor
+    internal sealed class DatagramChannelImplAccessor : Accessor<object>
     {
 
-        FieldAccessor<object> sender;
+        FieldAccessor<object, object> sender;
         MethodAccessor<Func<object, object>> remoteAddress;
 
         /// <summary>
@@ -25,18 +25,18 @@ namespace IKVM.Runtime.Accessors.Sun.Nio.Ch
         /// <summary>
         /// Gets the value for the 'sender' field.
         /// </summary>
-        public object GetSender(object self) => GetField(ref sender, nameof(sender)).GetValue(self);
+        public object GetSender(object self) => GetField(ref sender, nameof(sender), "Ljava.net.SocketAddress;").GetValue(self);
 
         /// <summary>
         /// Sets the value for the 'sender' field.
         /// </summary>
-        public void SetSender(object self, object value) => GetField(ref sender, nameof(sender)).SetValue(self, value);
+        public void SetSender(object self, object value) => GetField(ref sender, nameof(sender), "Ljava.net.SocketAddress;").SetValue(self, value);
 
         /// <summary>
         /// Invokes the 'remoteAddress' function.
         /// </summary>
         /// <param name="self"></param>
-        public object InvokeRemoteAddress(object self) => GetMethod(ref remoteAddress, nameof(remoteAddress)).Invoker(self);
+        public object InvokeRemoteAddress(object self) => GetMethod(ref remoteAddress, nameof(remoteAddress), "()Ljava.net.SocketAddress;").Invoker(self);
 
     }
 

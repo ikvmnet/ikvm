@@ -1,7 +1,7 @@
 ﻿using System;
-using System.Collections.Generic;
-using System.Linq.Expressions;
-using System.Reflection;
+using System.Reflection.Emit;
+
+using IKVM.Internal;
 
 namespace IKVM.Runtime.Accessors
 {
@@ -12,37 +12,45 @@ namespace IKVM.Runtime.Accessors
     internal abstract partial class MethodAccessor
     {
 
-        readonly Type type;
+        readonly TypeWrapper type;
         readonly string name;
-        MethodInfo method;
+        readonly string signature;
+        MethodWrapper method;
 
         /// <summary>
         /// Initializes a new instance.
         /// </summary>
         /// <param name="type"></param>
         /// <param name="name"></param>
+        /// <param name="signature"></param>
         /// <exception cref="ArgumentNullException"></exception>
-        protected MethodAccessor(Type type, string name)
+        protected MethodAccessor(TypeWrapper type, string name, string signature)
         {
 
             this.type = type ?? throw new ArgumentNullException(nameof(type));
             this.name = name ?? throw new ArgumentNullException(nameof(name));
+            this.signature = signature ?? throw new ArgumentNullException(nameof(signature));
         }
 
         /// <summary>
         /// Gets the type which contains the method being accessed.
         /// </summary>
-        public Type Type => type;
+        protected TypeWrapper Type => type;
 
         /// <summary>
         /// Gets the name of the method being accessed.
         /// </summary>
-        public string Name => name;
+        protected string Name => name;
+
+        /// <summary>
+        /// Gets the signature of the method being accessed.
+        /// </summary>
+        protected string Signature => signature;
 
         /// <summary>
         /// Gets the field being accessed.
         /// </summary>
-        public MethodInfo Method => AccessorUtil.LazyGet(ref method, () => type.GetMethod(name, BindingFlags.Public | BindingFlags.NonPublic | BindingFlags.Instance));
+        protected MethodWrapper Method => AccessorUtil.LazyGet(ref method, () => type.GetMethodWrapper(name, signature, false)) ?? throw new InvalidOperationException();
 
     }
 
@@ -53,6 +61,11 @@ namespace IKVM.Runtime.Accessors
         where TDelegate : Delegate
     {
 
+        public static MethodAccessor<TDelegate> LazyGet(ref MethodAccessor<TDelegate> location, TypeWrapper type, string name, string signature)
+        {
+            return AccessorUtil.LazyGet(ref location, () => new MethodAccessor<TDelegate>(type, name, signature));
+        }
+
         TDelegate invoker;
 
         /// <summary>
@@ -60,9 +73,10 @@ namespace IKVM.Runtime.Accessors
         /// </summary>
         /// <param name="type"></param>
         /// <param name="name"></param>
+        /// <param name="signature"></param>
         /// <exception cref="ArgumentNullException"></exception>
-        public MethodAccessor(Type type, string name) :
-            base(type, name)
+        public MethodAccessor(TypeWrapper type, string name, string signature) :
+            base(type, name, signature)
         {
 
         }
@@ -78,30 +92,89 @@ namespace IKVM.Runtime.Accessors
         /// <returns></returns>
         TDelegate MakeInvoker()
         {
-            // find the types of the delegate
-            var parameterTypes = GetDelegateParameterTypes(typeof(TDelegate));
-            var returnType = GetDelegateReturnType(typeof(TDelegate));
+#if FIRST_PASS || IMPORTER || EXPORTER
+            throw new NotImplementedException();
+#else
+            Type.Finish();
+            var parameters = Method.GetParameters();
 
-            // create expressions for each parameter of the delegate
-            var p = new List<ParameterExpression>();
-            for (int i = 0; i < parameterTypes.Length; i++)
-                p.Add(Expression.Parameter(parameterTypes[i]));
+            for (int i = 0; i < parameters.Length; i++)
+            {
+                parameters[i] = parameters[i].EnsureLoadable(Type.GetClassLoader());
+                parameters[i].Finish();
+            }
 
-            // create expressions to convert parameters of the delegate to the target method type
-            var c = new List<Expression>();
-            var l = Method.GetParameters();
-            for (int i = 0; i < l.Length; i++)
-                c.Add(Expression.Convert(p[i + 1], l[i].ParameterType));
+            // resolve the runtime method info
+            Method.ResolveMethod();
 
-            // invocation of method with converted parameters
-            var e = (Expression)Expression.Call(Expression.Convert(p[0], Type), Method, c);
+            // create new method
+            var delegateReturnType = GetDelegateReturnType(typeof(TDelegate));
+            var delegateParameterTypes = GetDelegateParameterTypes(typeof(TDelegate));
+            var dm = DynamicMethodUtil.Create($"__<MethodAccessor>__{Type.Name.Replace(".", "_")}__{Method.Name}", Type.TypeAsBaseType, false, delegateReturnType, delegateParameterTypes);
+            var il = CodeEmitter.Create(dm);
 
-            // optionally convert return type
-            if (returnType != null)
-                e = Expression.Convert(e, returnType);
+            // advance through each argument
+            var n = 0;
 
-            // compile invoker
-            return Expression.Lambda<TDelegate>(e, p).Compile();
+            // load first argument, which is the instance if non-static
+            if (Method.IsStatic == false && Method.IsConstructor == false)
+            {
+                il.EmitLdarg(n++);
+                il.EmitCastclass(Type.TypeAsTBD);
+            }
+
+            // emit conversion code for the remainder of the arguments
+            for (var i = 0; i < parameters.Length; i++)
+            {
+                il.EmitLdarg(n++);
+                var parameterType = parameters[i];
+                il.EmitCastclass(parameterType.TypeAsTBD);
+            }
+
+            if (Method.IsConstructor)
+            {
+                Method.EmitNewobj(il);
+
+                // convert to delegate value
+                if (delegateReturnType != null)
+                    il.EmitCastclass(delegateReturnType);
+                else
+                    il.Emit(OpCodes.Pop);
+            }
+            else if (Method.IsStatic)
+            {
+                Method.EmitCall(il);
+
+                // handle the return value if it exists
+                if (Method.ReturnType != PrimitiveTypeWrapper.VOID)
+                {
+                    // convert to delegate value
+                    if (delegateReturnType != null)
+                        il.EmitCastclass(delegateReturnType);
+                    else
+                        il.Emit(OpCodes.Pop);
+                }
+            }
+            else
+            {
+                Method.EmitCallvirt(il);
+
+                // handle the return value if it exists
+                if (Method.ReturnType != PrimitiveTypeWrapper.VOID)
+                {
+                    // convert to delegate value
+                    if (delegateReturnType != null)
+                        il.EmitCastclass(delegateReturnType);
+                    else
+                        il.Emit(OpCodes.Pop);
+                }
+            }
+
+            il.Emit(OpCodes.Ret);
+            il.DoEmit();
+
+            return (TDelegate)dm.CreateDelegate(typeof(TDelegate));
+#endif
         }
 
         /// <summary>

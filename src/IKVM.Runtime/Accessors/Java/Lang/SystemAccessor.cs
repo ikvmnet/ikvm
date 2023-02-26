@@ -6,16 +6,16 @@ namespace IKVM.Runtime.Accessors.Java.Lang
     /// <summary>
     /// Provides runtime access to the 'java.lang.System' type.
     /// </summary>
-    internal sealed class SystemAccessor : Accessor
+    internal sealed class SystemAccessor : Accessor<object>
     {
 
-        StaticFieldAccessor<object> _in;
-        StaticFieldAccessor<object> _out;
-        StaticFieldAccessor<object> _err;
-        StaticMethodAccessor<Action> initializeSystemClass;
-        StaticMethodAccessor<Func<string, string>> getProperty;
-        StaticMethodAccessor<Func<string, string, string>> setProperty;
-        StaticMethodAccessor<Func<object>> getSecurityManager;
+        FieldAccessor<object> _in;
+        FieldAccessor<object> _out;
+        FieldAccessor<object> _err;
+        MethodAccessor<Action> initializeSystemClass;
+        MethodAccessor<Func<string, string>> getProperty;
+        MethodAccessor<Func<string, string, string>> setProperty;
+        MethodAccessor<Func<object>> getSecurityManager;
 
         /// <summary>
         /// Initializes a new instance.
@@ -32,34 +32,34 @@ namespace IKVM.Runtime.Accessors.Java.Lang
         /// </summary>
         /// <param name="value"></param>
         /// <returns></returns>
-        public void SetIn(object value) => GetStaticField(ref _in, nameof(_in)).SetValue(value);
+        public void SetIn(object value) => GetField(ref _in, nameof(_in), "Ljava.io.InputStream;").SetValue(value);
 
         /// <summary>
         /// Sets the value of the 'out' field.
         /// </summary>
         /// <param name="value"></param>
         /// <returns></returns>
-        public void SetOut(object value) => GetStaticField(ref _out, nameof(_out)).SetValue(value);
+        public void SetOut(object value) => GetField(ref _out, nameof(_out), "Ljava.io.PrintStream;").SetValue(value);
 
         /// <summary>
         /// Sets the value of the 'err' field.
         /// </summary>
         /// <param name="value"></param>
         /// <returns></returns>
-        public void SetErr(object value) => GetStaticField(ref _err, nameof(_err)).SetValue(value);
+        public void SetErr(object value) => GetField(ref _err, nameof(_err), "Ljava.io.PrintStream;").SetValue(value);
 
         /// <summary>
         /// Sets the value of the 'initializeSystemClass' field.
         /// </summary>
         /// <returns></returns>
-        public void InvokeInitializeSystemClass() => GetStaticVoidMethod(ref initializeSystemClass, nameof(initializeSystemClass)).Invoker();
+        public void InvokeInitializeSystemClass() => GetMethod(ref initializeSystemClass, nameof(initializeSystemClass), "()V").Invoker();
 
         /// <summary>
         /// Sets the value of the 'getProperty' field.
         /// </summary>
         /// <param name="key"></param>
         /// <returns></returns>
-        public string InvokeGetProperty(string key) => GetStaticMethod(ref getProperty, nameof(getProperty)).Invoker(key);
+        public string InvokeGetProperty(string key) => GetMethod(ref getProperty, nameof(getProperty), "(Ljava.lang.String;)Ljava.lang.String;").Invoker(key);
 
         /// <summary>
         /// Sets the value of the 'setProperty' field.
@@ -67,13 +67,13 @@ namespace IKVM.Runtime.Accessors.Java.Lang
         /// <param name="key"></param>
         /// <param name="value"></param>
         /// <returns></returns>
-        public string InvokeSetProperty(string key, string value) => GetStaticMethod(ref setProperty, nameof(setProperty)).Invoker(key, value);
+        public string InvokeSetProperty(string key, string value) => GetMethod(ref setProperty, nameof(setProperty), "(Ljava.lang.String;Ljava.lang.String;)Ljava.lang.String;").Invoker(key, value);
 
         /// <summary>
         /// Invokes the 'getSecurityManager' method.
         /// </summary>
         /// <returns></returns>
-        public object InvokeGetSecurityManager() => GetStaticMethod(ref getSecurityManager, nameof(getSecurityManager)).Invoker();
+        public object InvokeGetSecurityManager() => GetMethod(ref getSecurityManager, nameof(getSecurityManager), "Ljava.lang.SecurityManager;").Invoker();
 
     }
 

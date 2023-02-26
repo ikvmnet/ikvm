@@ -6,7 +6,7 @@ namespace IKVM.Runtime.Accessors.Java.Lang
     /// <summary>
     /// Provides runtime access to the 'java.lang.SecurityManager' type.
     /// </summary>
-    internal sealed class SecurityManagerAccessor : Accessor
+    internal sealed class SecurityManagerAccessor : Accessor<object>
     {
 
         MethodAccessor<Action<object, string>> checkRead;
@@ -26,17 +26,17 @@ namespace IKVM.Runtime.Accessors.Java.Lang
         /// <summary>
         /// Invokes the 'checkRead' method.
         /// </summary>
-        public void InvokeCheckRead(object self, string path) => GetVoidMethod(ref checkRead, nameof(checkRead)).Invoker(self, path);
+        public void InvokeCheckRead(object self, string path) => GetMethod(ref checkRead, nameof(checkRead), "(Ljava.lang.String;)").Invoker(self, path);
 
         /// <summary>
         /// Invokes the 'checkWrite' method.
         /// </summary>
-        public void InvokeCheckWrite(object self, string path) => GetVoidMethod(ref checkWrite, nameof(checkWrite)).Invoker(self, path);
+        public void InvokeCheckWrite(object self, string path) => GetMethod(ref checkWrite, nameof(checkWrite), "(Ljava.lang.String;)").Invoker(self, path);
 
         /// <summary>
         /// Invokes the 'checkDelete' method.
         /// </summary>
-        public void InvokeCheckDelete(object self, string path) => GetVoidMethod(ref checkDelete, nameof(checkDelete)).Invoker(self, path);
+        public void InvokeCheckDelete(object self, string path) => GetMethod(ref checkDelete, nameof(checkDelete), "(Ljava.lang.String;)").Invoker(self, path);
 
     }
 

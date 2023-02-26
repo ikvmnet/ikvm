@@ -1,5 +1,7 @@
 ﻿using System;
 
+using IKVM.Internal;
+
 namespace IKVM.Runtime.Accessors
 {
 
@@ -9,14 +11,14 @@ namespace IKVM.Runtime.Accessors
     internal abstract partial class Accessor
     {
 
-        readonly Type type;
+        readonly TypeWrapper type;
 
         /// <summary>
         /// Initializes a new instance.
         /// </summary>
         /// <param name="type"></param>
         /// <exception cref="ArgumentNullException"></exception>
-        public Accessor(Type type)
+        public Accessor(TypeWrapper type)
         {
             this.type = type ?? throw new ArgumentNullException(nameof(type));
         }
@@ -24,39 +26,61 @@ namespace IKVM.Runtime.Accessors
         /// <summary>
         /// Gets the type being accessed.
         /// </summary>
-        public Type Type => type;
+        protected TypeWrapper Type => type;
+
+    }
+
+    /// <summary>
+    /// Provides a way to access classes at runtime.
+    /// </summary>
+    internal abstract partial class Accessor<TObject> : Accessor
+    {
 
         /// <summary>
-        /// Initializes a static field accessor.
+        /// Initializes a new instance.
         /// </summary>
-        /// <param name="accessor"></param>
-        /// <param name="name"></param>
-        /// <returns></returns>
-        protected StaticFieldAccessor<TField> GetStaticField<TField>(ref StaticFieldAccessor<TField> accessor, string name) => StaticFieldAccessor<TField>.LazyGet(ref accessor, type, name);
+        /// <param name="type"></param>
+        public Accessor(TypeWrapper type) :
+             base(type)
+        {
+
+        }
 
         /// <summary>
         /// Initializes a field accessor.
         /// </summary>
         /// <param name="accessor"></param>
         /// <param name="name"></param>
+        /// <param name="signature"></param>
         /// <returns></returns>
-        protected FieldAccessor<TField> GetField<TField>(ref FieldAccessor<TField> accessor, string name) => FieldAccessor<TField>.LazyGet(ref accessor, type, name);
+        protected FieldAccessor<TField> GetField<TField>(ref FieldAccessor<TField> accessor, string name, string signature) => FieldAccessor<TField>.LazyGet(ref accessor, Type, name, signature);
 
         /// <summary>
-        /// Initializes a static property accessor.
+        /// Initializes a field accessor.
         /// </summary>
         /// <param name="accessor"></param>
         /// <param name="name"></param>
+        /// <param name="signature"></param>
         /// <returns></returns>
-        protected StaticPropertyAccessor<TProperty> GetStaticProperty<TProperty>(ref StaticPropertyAccessor<TProperty> accessor, string name) => StaticPropertyAccessor<TProperty>.LazyGet(ref accessor, type, name);
+        protected FieldAccessor<TObject, TField> GetField<TField>(ref FieldAccessor<TObject, TField> accessor, string name, string signature) => FieldAccessor<TObject, TField>.LazyGet(ref accessor, Type, name, signature);
 
         /// <summary>
-        /// Initializes a property accessor.
+        /// Initializes a field accessor.
         /// </summary>
         /// <param name="accessor"></param>
         /// <param name="name"></param>
+        /// <param name="signature"></param>
         /// <returns></returns>
-        protected PropertyAccessor<TProperty> GetProperty<TProperty>(ref PropertyAccessor<TProperty> accessor, string name) => PropertyAccessor<TProperty>.LazyGet(ref accessor, type, name);
+        protected MethodAccessor<TDelegate> GetConstructor<TDelegate>(ref MethodAccessor<TDelegate> accessor, string signature) where TDelegate : Delegate => MethodAccessor<TDelegate>.LazyGet(ref accessor, Type, "<init>", signature);
+
+        /// <summary>
+        /// Initializes a field accessor.
+        /// </summary>
+        /// <param name="accessor"></param>
+        /// <param name="name"></param>
+        /// <param name="signature"></param>
+        /// <returns></returns>
+        protected MethodAccessor<TDelegate> GetMethod<TDelegate>(ref MethodAccessor<TDelegate> accessor, string name, string signature) where TDelegate : Delegate => MethodAccessor<TDelegate>.LazyGet(ref accessor, Type, name, signature);
 
     }
 

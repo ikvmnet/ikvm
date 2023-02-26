@@ -6,11 +6,11 @@ namespace IKVM.Runtime.Accessors.Java.Util
     /// <summary>
     /// Provides runtime access to the 'java.util.Properties' type.
     /// </summary>
-    internal sealed class PropertiesAccessor : Accessor
+    internal sealed class PropertiesAccessor : Accessor<object>
     {
 
         MethodAccessor<Func<object, string, object>> getProperty;
-        MethodAccessor<Func<object, string, object, object>> setProperty;
+        MethodAccessor<Func<object, string, string, object>> setProperty;
 
         /// <summary>
         /// Initializes a new instance.
@@ -28,7 +28,7 @@ namespace IKVM.Runtime.Accessors.Java.Util
         /// <param name="self"></param>
         /// <param name="key"></param>
         /// <returns></returns>
-        public object InvokeGetProperty(object self, string key) => GetMethod(ref getProperty, nameof(getProperty)).Invoker(self, key);
+        public object InvokeGetProperty(object self, string key) => GetMethod(ref getProperty, nameof(getProperty), "(Ljava.lang.String;)Ljava.lang.Object;").Invoker(self, key);
 
         /// <summary>
         /// Sets the value of the 'setProperty' field.
@@ -37,7 +37,7 @@ namespace IKVM.Runtime.Accessors.Java.Util
         /// <param name="key"></param>
         /// <param name="value"></param>
         /// <returns></returns>
-        public object InvokeSetProperty(object self, string key, object value) => GetMethod(ref setProperty, nameof(setProperty)).Invoker(self, key, value);
+        public object InvokeSetProperty(object self, string key, string value) => GetMethod(ref setProperty, nameof(setProperty), "(Ljava.lang.String;Ljava.lang.String;)Ljava.lang.Object;").Invoker(self, key, value);
 
     }
 
