@@ -12842,6 +12842,9 @@
         <OpenJdkSource Include="$(OpenJdkDir)\jdk\src\solaris\classes\sun\nio\cs\**\*.java" />
 
         <OpenJdkSource Include="$(OpenJdkDir)\jdk\src\share\classes\sun\nio\fs\**\*.java" />
+        <OpenJdkSource Include="$(OpenJdkDir)\jdk\src\windows\classes\sun\nio\fs\WindowsConstants.java" />
+        <OpenJdkSource Include="$(OpenJdkDir)\jdk\src\solaris\classes\sun\nio\fs\UnixFileKey.java" />
+        <OpenJdkSource Include="$(OpenJdkDir)\jdk\src\solaris\classes\sun\nio\fs\UnixFileModeAttribute.java" />
         
         <OpenJdkSource Include="$(OpenJdkDir)\jdk\src\share\classes\sun\print\AttributeUpdater.java" />
         <OpenJdkSource Include="$(OpenJdkDir)\jdk\src\share\classes\sun\print\BackgroundLookupListener.java" />

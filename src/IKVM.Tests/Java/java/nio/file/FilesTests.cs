@@ -4,6 +4,7 @@ using IKVM.Java.Externs.java.io;
 using IKVM.Runtime.Vfs;
 
 using java.nio.file;
+using java.nio.file.attribute;
 
 using Microsoft.VisualStudio.TestTools.UnitTesting;
 
@@ -53,7 +54,6 @@ namespace IKVM.Tests.Java.java.nio.file
         }
 
         [TestMethod]
-        [Ignore]
         public void VfsAssemblyClassesDirectoryShouldBeDirectory()
         {
             var d = VfsTable.Default.GetAssemblyClassesPath(typeof(object).Assembly);
@@ -61,7 +61,6 @@ namespace IKVM.Tests.Java.java.nio.file
         }
 
         [TestMethod]
-        [Ignore]
         public void VfsAssemblyClassesDirectoryCanBeListed()
         {
             var d = VfsTable.Default.GetAssemblyClassesPath(typeof(object).Assembly);
@@ -73,7 +72,7 @@ namespace IKVM.Tests.Java.java.nio.file
         [TestMethod]
         public void VfsAssemblyClassCanBeRead()
         {
-            var f = System.IO.Path.Combine(VfsTable.Default.GetAssemblyClassesPath(typeof(global::java.lang.Object).Assembly), "java", "lang", "Object.class");
+            var f = System.IO.Path.Combine(VfsTable.Default.GetAssemblyClassesPath(typeof(global::java.lang.Object).Assembly), "java", "lang", "Class.class");
             var b = Files.readAllBytes(Paths.get(f));
             b.Length.Should().BeGreaterOrEqualTo(32);
         }
@@ -82,8 +81,16 @@ namespace IKVM.Tests.Java.java.nio.file
         [ExpectedException(typeof(global::java.nio.file.AccessDeniedException))]
         public void VfsAssemblyClassCanNotBeWritten()
         {
-            var f = System.IO.Path.Combine(VfsTable.Default.GetAssemblyClassesPath(typeof(global::java.lang.Object).Assembly), "java", "lang", "Object.class");
+            var f = System.IO.Path.Combine(VfsTable.Default.GetAssemblyClassesPath(typeof(global::java.lang.Object).Assembly), "java", "lang", "Class.class");
             Files.write(Paths.get(f), new byte[] { 1 });
+        }
+
+        [TestMethod]
+        public void VfsAssemblyClassesDirectoryShouldHaveBasicAttributes()
+        {
+            var f = VfsTable.Default.GetAssemblyClassesPath(typeof(global::java.lang.Object).Assembly);
+            var a = (BasicFileAttributes)Files.readAttributes(Paths.get(f), typeof(BasicFileAttributes));
+            a.isDirectory().Should().BeTrue();
         }
 
     }

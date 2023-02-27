@@ -73,7 +73,7 @@ namespace IKVM.Runtime.Accessors.Java.Lang
         /// Invokes the 'getSecurityManager' method.
         /// </summary>
         /// <returns></returns>
-        public object InvokeGetSecurityManager() => GetMethod(ref getSecurityManager, nameof(getSecurityManager), "Ljava.lang.SecurityManager;").Invoker();
+        public object InvokeGetSecurityManager() => GetMethod(ref getSecurityManager, nameof(getSecurityManager), "()Ljava.lang.SecurityManager;").Invoker();
 
     }
 
