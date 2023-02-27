@@ -558,5 +558,4 @@ final class DotNetPath extends AbstractPath {
         }
         return (DotNetPath)path;
     }
-
 }
