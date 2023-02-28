@@ -11,8 +11,6 @@ using IKVM.Runtime.Accessors.Java.Io;
 using IKVM.Runtime.Accessors.Sun.Nio.Ch;
 using IKVM.Runtime.Util.Java.Net;
 
-using sun.nio.ch;
-
 namespace IKVM.Java.Externs.sun.nio.ch
 {
 
@@ -148,7 +146,7 @@ namespace IKVM.Java.Externs.sun.nio.ch
         /// <param name="len"></param>
         /// <param name="connected"></param>
         /// <returns></returns>
-        public static unsafe int receive0(object self, object fd, int address, int len, bool connected)
+        public static unsafe int receive0(object self, object fd, long address, int len, bool connected)
         {
 #if FIRST_PASS
             throw new NotSupportedException();
@@ -168,7 +166,7 @@ namespace IKVM.Java.Externs.sun.nio.ch
             }
             catch (SocketException e) when (e.SocketErrorCode == SocketError.WouldBlock)
             {
-                return IOStatus.UNAVAILABLE;
+                return global::sun.nio.ch.IOStatus.UNAVAILABLE;
             }
             catch (SocketException e) when (e.SocketErrorCode == SocketError.MessageSize)
             {
@@ -242,7 +240,7 @@ namespace IKVM.Java.Externs.sun.nio.ch
             }
             catch (SocketException e) when (e.SocketErrorCode == SocketError.WouldBlock)
             {
-                return IOStatus.UNAVAILABLE;
+                return global::sun.nio.ch.IOStatus.UNAVAILABLE;
             }
             catch (SocketException e)
             {

@@ -96,6 +96,15 @@ namespace IKVM.Java.Externs.sun.nio.fs
 #endif
         }
 
+        /// <summary>
+        /// Implements the native method 'close'.
+        /// </summary>
+        /// <param name="self"></param>
+        public static void close(object self)
+        {
+
+        }
+
     }
 
 }

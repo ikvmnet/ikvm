@@ -69,6 +69,7 @@ com/sun/jdi/InstanceFilter.java                                                 
 com/sun/jdi/InstancesTest.java                                                                                          generic-all
 com/sun/jdi/InterfaceMethodsTest.java                                                                                   generic-all
 com/sun/jdi/InterruptHangTest.java                                                                                      generic-all
+com/sun/jdi/InvokeVarArgs.java                                                                                          generic-all
 com/sun/jdi/InvokeHangTest.java                                                                                         generic-all
 com/sun/jdi/InvokeTest.java                                                                                             generic-all
 com/sun/jdi/JITDebug.sh                                                                                                 generic-all
@@ -234,6 +235,26 @@ demo/jvmti/mtrace/TraceJFrame.java                                              
 demo/jvmti/versionCheck/FailsWhenJvmtiVersionDiffers.java                                                               generic-all
 demo/jvmti/waiters/WaitersTest.java                                                                                     generic-all
 demo/zipfs/basic.sh                                                                                                     generic-all
+java/awt/Checkbox/SetStateExcessEvent/SetStateExcessEvent.java                                                          generic-all
+java/awt/Component/DimensionEncapsulation.DimensionEncapsulation.java                                                   generic-all
+java/awt/Component/InsetsEncapsulation/InsetsEncapsulation.java                                                         generic-all
+java/awt/Component/SetEnabledPerformance/SetEnabledPerformance.java                                                     generic-all
+java/awt/datatransfer/DragImage/MultiResolutionDragImageTest.java                                                       generic-all
+java/awt/Desktop/8064934/bug8064934.java                                                                                generic-all
+java/awt/event/MouseWheelEvent/WheelModifier/WheelModifier.java                                                         generic-all
+java/awt/Focus/8073453/AWTFocusTransitionTest.java                                                                      generic-all
+java/awt/Focus/8073453/SwingFocusTransitionTest.java                                                                    generic-all
+java/awt/FontClass/DebugFonts.java                                                                                      generic-all
+java/awt/FullScreen/MultimonFullscreenTest/MultimonDeadlockTest.java                                                    generic-all
+java/awt/GraphicsEnvironment/TestDetectHeadless/TestDetectHeadless.java                                                 generic-all
+java/awt/image/BufferedImage/GetPropertyNames.java                                                                      generic-all
+java/awt/image/DrawImage/IncorrectClipXorModeSurface2Surface.java                                                       generic-all
+java/awt/MenuBar/RemoveHelpMenu/RemoveHelpMenu.java                                                                     generic-all
+java/awt/Mouse/MouseDragEvent/MouseDraggedTest.java                                                                     generic-all
+java/awt/Mouse/RemovedComponentMouseListener/RemovedComponentMouseListener.java                                         generic-all
+java/awt/ScrollPane/bug8077409Test.java                                                                                 generic-all
+java/awt/Toolkit/GetImage/bug8078165.java                                                                               generic-all
+java/awt/TrayIcon/8072769/bug8072769.java                                                                               generic-all
 java/awt/AlphaComposite/TestAlphaCompositeForNaN.java                                                                   generic-all
 java/awt/Choice/ChoiceKeyEventReaction/ChoiceKeyEventReaction.html                                                      generic-all
 java/awt/Choice/ChoiceLocationTest/ChoiceLocationTest.java                                                              generic-all
@@ -1219,6 +1240,10 @@ java/lang/instrument/VerifyLocalVariableTableOnRetransformTest.sh               
 java/lang/instrument/appendToClassLoaderSearch/CircularityErrorTest.sh                                                  generic-all
 java/lang/instrument/appendToClassLoaderSearch/ClassUnloadTest.sh                                                       generic-all
 java/lang/instrument/appendToClassLoaderSearch/run_tests.sh                                                             generic-all
+
+java/lang/instrument.ManyMethodsBenchmarkAgent
+
+
 java/lang/invoke/6987555/Test6987555.java                                                                               generic-all
 java/lang/invoke/6991596/Test6991596.java                                                                               generic-all
 java/lang/invoke/6998541/Test6998541.java                                                                               generic-all
@@ -1319,6 +1344,7 @@ java/lang/management/ThreadMXBean/ThreadLists.java                              
 java/lang/management/ThreadMXBean/ThreadMXBeanStateTest.java                                                            generic-all
 java/lang/management/ThreadMXBean/ThreadStackTrace.java                                                                 generic-all
 java/lang/management/ThreadMXBean/ThreadUserTime.java                                                                   generic-all
+java/lang/management/ThreadMXBean/ThreadInfoArray.java                                                                  generic-all
 java/lang/ref/EarlyTimeout.java                                                                                         generic-all
 java/lang/ref/FinalizeOverride.java                                                                                     generic-all
 java/lang/ref/NullQueue.java                                                                                            generic-all
