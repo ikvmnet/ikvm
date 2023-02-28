@@ -3,7 +3,6 @@ using System.IO;
 using System.Runtime.InteropServices;
 using System.Threading;
 
-using IKVM.Internal;
 using IKVM.Runtime;
 using IKVM.Runtime.Accessors.Java.Io;
 using IKVM.Runtime.Accessors.Sun.Nio.Ch;
@@ -30,9 +29,9 @@ namespace IKVM.Java.Externs.sun.nio.ch
 #if FIRST_PASS == false
 
         static FileDescriptorAccessor fileDescriptorAccessor;
-        static FileDescriptorAccessor FileDescriptorAccessor => JVM.BaseAccessors.Get(ref fileDescriptorAccessor);
-
         static FileChannelImplAccessor fileChannelImplAccessor;
+
+        static FileDescriptorAccessor FileDescriptorAccessor => JVM.BaseAccessors.Get(ref fileDescriptorAccessor);
 
         static FileChannelImplAccessor FileChannelImplAccessor => JVM.BaseAccessors.Get(ref fileChannelImplAccessor);
 
@@ -110,7 +109,6 @@ namespace IKVM.Java.Externs.sun.nio.ch
         /// <param name="count"></param>
         /// <param name="dst"></param>
         /// <returns></returns>
-        /// <exception cref="NotImplementedException"></exception>
         public static unsafe long transferTo0(object self, global::java.io.FileDescriptor src, long position, long count, global::java.io.FileDescriptor dst)
         {
 #if FIRST_PASS
@@ -142,7 +140,7 @@ namespace IKVM.Java.Externs.sun.nio.ch
                     if (s.Position != position)
                     {
                         if (s.CanSeek == false)
-                            return IOStatus.UNSUPPORTED;
+                            return global::sun.nio.ch.IOStatus.UNSUPPORTED;
 
                         s.Seek(position, SeekOrigin.Begin);
                     }
@@ -152,8 +150,8 @@ namespace IKVM.Java.Externs.sun.nio.ch
                     {
                         return Marshal.GetLastWin32Error() switch
                         {
-                            WSAEINVAL when count >= 0 => IOStatus.UNSUPPORTED_CASE,
-                            WSAENOTSOCK => IOStatus.UNSUPPORTED_CASE,
+                            WSAEINVAL when count >= 0 => global::sun.nio.ch.IOStatus.UNSUPPORTED_CASE,
+                            WSAENOTSOCK => global::sun.nio.ch.IOStatus.UNSUPPORTED_CASE,
                             _ => throw new global::java.io.IOException("Transfer failed.")
                         };
                     }
@@ -167,9 +165,9 @@ namespace IKVM.Java.Externs.sun.nio.ch
                     {
                         return Stdlib.GetLastError() switch
                         {
-                            Errno.EAGAIN => IOStatus.UNAVAILABLE,
-                            Errno.EINVAL when count >= 0 => IOStatus.UNSUPPORTED_CASE,
-                            Errno.EINTR => (long)IOStatus.INTERRUPTED,
+                            Errno.EAGAIN => global::sun.nio.ch.IOStatus.UNAVAILABLE,
+                            Errno.EINVAL when count >= 0 => global::sun.nio.ch.IOStatus.UNSUPPORTED_CASE,
+                            Errno.EINTR => (long)global::sun.nio.ch.IOStatus.INTERRUPTED,
                             _ => throw new global::java.io.IOException("Transfer failed."),
                         };
                     }
@@ -183,15 +181,15 @@ namespace IKVM.Java.Externs.sun.nio.ch
             }
             catch (EndOfStreamException)
             {
-                return IOStatus.EOF;
+                return global::sun.nio.ch.IOStatus.EOF;
             }
             catch (NotSupportedException)
             {
-                return IOStatus.UNSUPPORTED;
+                return global::sun.nio.ch.IOStatus.UNSUPPORTED;
             }
             catch (ObjectDisposedException)
             {
-                return IOStatus.UNAVAILABLE;
+                return global::sun.nio.ch.IOStatus.UNAVAILABLE;
             }
             catch (Exception e)
             {
@@ -217,14 +215,14 @@ namespace IKVM.Java.Externs.sun.nio.ch
                 throw new global::java.io.IOException("Stream closed.");
 
             if (s.CanWrite == false)
-                return IOStatus.UNSUPPORTED;
+                return global::sun.nio.ch.IOStatus.UNSUPPORTED;
 
             try
             {
                 if (offset >= 0)
                 {
                     if (s.CanSeek == false)
-                        return IOStatus.UNSUPPORTED;
+                        return global::sun.nio.ch.IOStatus.UNSUPPORTED;
                     else
                         return s.Seek(offset, SeekOrigin.Begin);
                 }
@@ -237,15 +235,15 @@ namespace IKVM.Java.Externs.sun.nio.ch
             }
             catch (EndOfStreamException)
             {
-                return IOStatus.EOF;
+                return global::sun.nio.ch.IOStatus.EOF;
             }
             catch (NotSupportedException)
             {
-                return IOStatus.UNSUPPORTED;
+                return global::sun.nio.ch.IOStatus.UNSUPPORTED;
             }
             catch (ObjectDisposedException)
             {
-                return IOStatus.UNAVAILABLE;
+                return global::sun.nio.ch.IOStatus.UNAVAILABLE;
             }
             catch (Exception e)
             {

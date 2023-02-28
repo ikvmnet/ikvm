@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Reflection;
 using System.Reflection.Emit;
 
 using IKVM.Internal;
@@ -107,10 +108,30 @@ namespace IKVM.Runtime.Accessors
             // resolve the runtime method info
             Method.ResolveMethod();
 
-            // create new method
+            // validate return type
             var delegateReturnType = GetDelegateReturnType(typeof(TDelegate));
+            if (Method.IsConstructor)
+            {
+                if (delegateReturnType == typeof(void))
+                    throw new InternalException("Delegate has no return type for constructor.");
+            }
+            else
+            {
+                if (delegateReturnType == typeof(void) && Method.ReturnType != PrimitiveTypeWrapper.VOID)
+                    throw new InternalException("Delegate has no return type for method with return type.");
+                if (delegateReturnType != typeof(void) && Method.ReturnType == PrimitiveTypeWrapper.VOID)
+                    throw new InternalException("Delegate has return type for method without return type.");
+            }
+
+            // validate parameter counts
             var delegateParameterTypes = GetDelegateParameterTypes(typeof(TDelegate));
-            var dm = DynamicMethodUtil.Create($"__<MethodAccessor>__{Type.Name.Replace(".", "_")}__{Method.Name}", Type.TypeAsBaseType, false, delegateReturnType, delegateParameterTypes);
+            if ((Method.IsConstructor || Method.IsStatic) && delegateParameterTypes.Length != parameters.Length)
+                throw new InternalException("Delegate has wrong number of parameters for constructor or static method.");
+            else if (Method.IsConstructor == false && Method.IsStatic == false && delegateParameterTypes.Length != parameters.Length + 1)
+                throw new InternalException("Delegate has wrong number of parameters for instance method.");
+
+            // generate new dynamic method
+            var dm = DynamicMethodUtil.Create($"__<MethodAccessor>__{Type.Name.Replace(".", "_")}__{Method.Name}", Type.TypeAsTBD, false, delegateReturnType, delegateParameterTypes);
             var il = CodeEmitter.Create(dm);
 
             // advance through each argument
@@ -127,48 +148,20 @@ namespace IKVM.Runtime.Accessors
             for (var i = 0; i < parameters.Length; i++)
             {
                 il.EmitLdarg(n++);
-                var parameterType = parameters[i];
-                il.EmitCastclass(parameterType.TypeAsTBD);
+                if (parameters[i].TypeAsTBD != delegateParameterTypes[i])
+                    il.EmitCastclass(parameters[i].TypeAsTBD);
             }
 
             if (Method.IsConstructor)
-            {
-                Method.EmitNewobj(il);
-
-                // convert to delegate value
-                if (delegateReturnType != null)
-                    il.EmitCastclass(delegateReturnType);
-                else
-                    il.Emit(OpCodes.Pop);
-            }
+                il.Emit(OpCodes.Newobj, Method.GetMethod());
             else if (Method.IsStatic)
-            {
-                Method.EmitCall(il);
-
-                // handle the return value if it exists
-                if (Method.ReturnType != PrimitiveTypeWrapper.VOID)
-                {
-                    // convert to delegate value
-                    if (delegateReturnType != null)
-                        il.EmitCastclass(delegateReturnType);
-                    else
-                        il.Emit(OpCodes.Pop);
-                }
-            }
+                il.Emit(OpCodes.Call, Method.GetMethod());
             else
-            {
-                Method.EmitCallvirt(il);
+                il.Emit(OpCodes.Callvirt, Method.GetMethod());
 
-                // handle the return value if it exists
-                if (Method.ReturnType != PrimitiveTypeWrapper.VOID)
-                {
-                    // convert to delegate value
-                    if (delegateReturnType != null)
-                        il.EmitCastclass(delegateReturnType);
-                    else
-                        il.Emit(OpCodes.Pop);
-                }
-            }
+            // convert to delegate value
+            if (delegateReturnType != typeof(void))
+                il.EmitCastclass(delegateReturnType);
 
             il.Emit(OpCodes.Ret);
             il.DoEmit();

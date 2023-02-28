@@ -22,12 +22,12 @@
         /// <summary>
         /// Gets the value for the 'fd' field.
         /// </summary>
-        public object GetFd(object self) => GetField(ref fd, nameof(fd), "Ljava/io/FileDescriptor").GetValue(self);
+        public object GetFd(object self) => GetField(ref fd, nameof(fd), "Ljava.io.FileDescriptor;").GetValue(self);
 
         /// <summary>
         /// Sets the value for the 'fd' field.
         /// </summary>
-        public void SetFd(object self, object value) => GetField(ref fd, nameof(fd), "Ljava/io/FileDescriptor").SetValue(self, value);
+        public void SetFd(object self, object value) => GetField(ref fd, nameof(fd), "Ljava.io.FileDescriptor;").SetValue(self, value);
 
     }
 

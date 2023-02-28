@@ -37,6 +37,7 @@ namespace IKVM.Java.Externs.sun.nio.ch
 #if FIRST_PASS == false
 
         static FileDescriptorAccessor fileDescriptorAccessor;
+
         static FileDescriptorAccessor FileDescriptorAccessor => JVM.BaseAccessors.Get(ref fileDescriptorAccessor);
 
 #endif
@@ -107,7 +108,7 @@ namespace IKVM.Java.Externs.sun.nio.ch
 #if FIRST_PASS
             throw new NotImplementedException();
 #else
-            return ((DotNetAsynchronousChannelGroup)((global::sun.nio.ch.DotNetAsynchronousFileChannelImpl)self).group()).Execute((global::sun.nio.ch.DotNetAsynchronousFileChannelImpl)self, position, size, shared, attachment, (CompletionHandler)handler, LockAsync);
+            return ((global::sun.nio.ch.DotNetAsynchronousChannelGroup)((global::sun.nio.ch.DotNetAsynchronousFileChannelImpl)self).group()).Execute((global::sun.nio.ch.DotNetAsynchronousFileChannelImpl)self, position, size, shared, attachment, (global::java.nio.channels.CompletionHandler)handler, LockAsync);
 #endif
         }
 
@@ -154,7 +155,7 @@ namespace IKVM.Java.Externs.sun.nio.ch
 #if FIRST_PASS
             throw new NotImplementedException();
 #else
-            return ((DotNetAsynchronousChannelGroup)((global::sun.nio.ch.DotNetAsynchronousFileChannelImpl)self).group()).Execute((global::sun.nio.ch.DotNetAsynchronousFileChannelImpl)self, (ByteBuffer)dst, position, attachment, (CompletionHandler)handler, ReadAsync);
+            return ((global::sun.nio.ch.DotNetAsynchronousChannelGroup)((global::sun.nio.ch.DotNetAsynchronousFileChannelImpl)self).group()).Execute((global::sun.nio.ch.DotNetAsynchronousFileChannelImpl)self, (global::java.nio.ByteBuffer)dst, position, attachment, (global::java.nio.channels.CompletionHandler)handler, ReadAsync);
 #endif
         }
 
@@ -171,7 +172,7 @@ namespace IKVM.Java.Externs.sun.nio.ch
 #if FIRST_PASS
             throw new NotImplementedException();
 #else      
-            return ((DotNetAsynchronousChannelGroup)((global::sun.nio.ch.DotNetAsynchronousFileChannelImpl)self).group()).Execute((global::sun.nio.ch.DotNetAsynchronousFileChannelImpl)self, (ByteBuffer)src, position, attachment, (CompletionHandler)handler, WriteAsync);
+            return ((global::sun.nio.ch.DotNetAsynchronousChannelGroup)((global::sun.nio.ch.DotNetAsynchronousFileChannelImpl)self).group()).Execute((global::sun.nio.ch.DotNetAsynchronousFileChannelImpl)self, (global::java.nio.ByteBuffer)src, position, attachment, (global::java.nio.channels.CompletionHandler)handler, WriteAsync);
 #endif
         }
 
@@ -221,7 +222,7 @@ namespace IKVM.Java.Externs.sun.nio.ch
         {
             var stream = FileDescriptorAccessor.GetStream(self.fdObj);
             if (stream == null)
-                throw new ClosedChannelException();
+                throw new global::java.nio.channels.ClosedChannelException();
 
             try
             {
@@ -398,7 +399,7 @@ namespace IKVM.Java.Externs.sun.nio.ch
 
             var fli = self.addToFileLockTable(position, size, shared);
             if (fli == null)
-                throw new ClosedChannelException();
+                throw new global::java.nio.channels.ClosedChannelException();
 
             try
             {
@@ -506,7 +507,7 @@ namespace IKVM.Java.Externs.sun.nio.ch
 
             var fli = self.addToFileLockTable(position, size, shared);
             if (fli == null)
-                throw new ClosedChannelException();
+                throw new global::java.nio.channels.ClosedChannelException();
 
             try
             {
@@ -570,7 +571,7 @@ namespace IKVM.Java.Externs.sun.nio.ch
         static unsafe void Release(global::sun.nio.ch.DotNetAsynchronousFileChannelImpl self, FileLockImpl fli)
         {
             if (self.isOpen() == false)
-                throw new ClosedChannelException();
+                throw new global::java.nio.channels.ClosedChannelException();
 
             var stream = FileDescriptorAccessor.GetStream(self.fdObj);
             if (stream == null)
@@ -647,20 +648,20 @@ namespace IKVM.Java.Externs.sun.nio.ch
         /// <param name="accessControlContext"></param>
         /// <param name="cancellationToken"></param>
         /// <returns></returns>
-        static async Task<Integer> ReadAsync(global::sun.nio.ch.DotNetAsynchronousFileChannelImpl self, ByteBuffer dst, long position, AccessControlContext accessControlContext, CancellationToken cancellationToken)
+        static async Task<Integer> ReadAsync(global::sun.nio.ch.DotNetAsynchronousFileChannelImpl self, global::java.nio.ByteBuffer dst, long position, AccessControlContext accessControlContext, CancellationToken cancellationToken)
         {
             if (self.reading == false)
-                throw new NonReadableChannelException();
+                throw new global::java.nio.channels.NonReadableChannelException();
             if (position < 0)
-                throw new IllegalArgumentException("Negative position");
+                throw new global::java.lang.IllegalArgumentException("Negative position");
             if (dst.isReadOnly())
-                throw new IllegalArgumentException("Read-only buffer");
+                throw new global::java.lang.IllegalArgumentException("Read-only buffer");
             if (self.isOpen() == false)
-                throw new ClosedChannelException();
+                throw new global::java.nio.channels.ClosedChannelException();
 
             var stream = FileDescriptorAccessor.GetStream(self.fdObj);
             if (stream == null)
-                throw new ClosedChannelException();
+                throw new global::java.nio.channels.ClosedChannelException();
 
             if (stream.CanRead == false)
                 throw new global::java.io.IOException("File does not support reading.");
@@ -670,7 +671,7 @@ namespace IKVM.Java.Externs.sun.nio.ch
             int lim = dst.limit();
             int rem = pos <= lim ? lim - pos : 0;
             if (pos > lim)
-                throw new IllegalArgumentException("Position after limit.");
+                throw new global::java.lang.IllegalArgumentException("Position after limit.");
 
             if (cancellationToken.IsCancellationRequested)
                 return null;
@@ -681,7 +682,7 @@ namespace IKVM.Java.Externs.sun.nio.ch
                 if (stream.Position != position)
                 {
                     if (stream.CanSeek == false)
-                        throw new IllegalArgumentException("Seek failed.");
+                        throw new global::java.lang.IllegalArgumentException("Seek failed.");
 
                     stream.Seek(position, SeekOrigin.Begin);
                 }
@@ -746,18 +747,18 @@ namespace IKVM.Java.Externs.sun.nio.ch
         /// <exception cref="InterruptedIOException"></exception>
         /// <exception cref="AsynchronousCloseException"></exception>
         /// <exception cref="IOException"></exception>
-        static async Task<Integer> WriteAsync(global::sun.nio.ch.DotNetAsynchronousFileChannelImpl self, ByteBuffer src, long position, AccessControlContext accessControlContext, CancellationToken cancellationToken)
+        static async Task<Integer> WriteAsync(global::sun.nio.ch.DotNetAsynchronousFileChannelImpl self, global::java.nio.ByteBuffer src, long position, AccessControlContext accessControlContext, CancellationToken cancellationToken)
         {
             if (self.writing == false)
                 throw new global::java.nio.channels.NonWritableChannelException();
             if (position < 0)
                 throw new global::java.lang.IllegalArgumentException("Negative position");
             if (self.isOpen() == false)
-                throw new ClosedChannelException();
+                throw new global::java.nio.channels.ClosedChannelException();
 
             var stream = FileDescriptorAccessor.GetStream(self.fdObj);
             if (stream == null)
-                throw new ClosedChannelException();
+                throw new global::java.nio.channels.ClosedChannelException();
 
             if (stream.CanWrite == false)
                 throw new global::java.io.IOException("File does not support writing.");
@@ -767,7 +768,7 @@ namespace IKVM.Java.Externs.sun.nio.ch
             int lim = src.limit();
             int rem = pos <= lim ? lim - pos : 0;
             if (pos > lim)
-                throw new IllegalArgumentException("Position after limit.");
+                throw new global::java.lang.IllegalArgumentException("Position after limit.");
 
             if (cancellationToken.IsCancellationRequested)
                 return null;

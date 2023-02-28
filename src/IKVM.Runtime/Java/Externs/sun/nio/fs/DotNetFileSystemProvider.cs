@@ -6,6 +6,7 @@ using System.Security.AccessControl;
 using IKVM.Runtime;
 using IKVM.Runtime.Accessors.Java.Io;
 using IKVM.Runtime.Accessors.Java.Lang;
+using IKVM.Runtime.Accessors.Sun.Nio.Fs;
 using IKVM.Runtime.Vfs;
 
 namespace IKVM.Java.Externs.sun.nio.fs
@@ -19,11 +20,21 @@ namespace IKVM.Java.Externs.sun.nio.fs
 
 #if FIRST_PASS == false
 
+        static SystemAccessor systemAccessor;
         static SecurityManagerAccessor securityManagerAccessor;
+        static FileDescriptorAccessor fileDescriptorAccessor;
+        static DotNetPathAccessor dotNetPathAccessor;
+        static DotNetDirectoryStreamAccessor dotNetDirectoryStreamAccessor;
+
+        static SystemAccessor SystemAccessor => JVM.BaseAccessors.Get(ref systemAccessor);
+
         static SecurityManagerAccessor SecurityManagerAccessor => JVM.BaseAccessors.Get(ref securityManagerAccessor);
 
-        static FileDescriptorAccessor fileDescriptorAccessor;
         static FileDescriptorAccessor FileDescriptorAccessor => JVM.BaseAccessors.Get(ref fileDescriptorAccessor);
+
+        static DotNetPathAccessor DotNetPathAccessor => JVM.BaseAccessors.Get(ref dotNetPathAccessor);
+
+        static DotNetDirectoryStreamAccessor DotNetDirectoryStreamAccessor => JVM.BaseAccessors.Get(ref dotNetDirectoryStreamAccessor);
 
 #endif
 
@@ -66,13 +77,18 @@ namespace IKVM.Java.Externs.sun.nio.fs
 
             try
             {
-                if (VfsTable.Default.GetEntry(path) is VfsFile vfsFile)
-                    return FileDescriptorAccessor.FromStream(vfsFile.Open(mode, access));
-                else
+                if (VfsTable.Default.IsPath(path))
+                {
+                    if (VfsTable.Default.GetEntry(path) is VfsFile vfsFile)
+                        return FileDescriptorAccessor.FromStream(vfsFile.Open(mode, access));
+
+                    throw new global::java.lang.UnsupportedOperationException();
+                }
+
 #if NETFRAMEWORK
-                    return FileDescriptorAccessor.FromStream(new FileStream(path, mode, rights, share, bufferSize, options));
+                return FileDescriptorAccessor.FromStream(new FileStream(path, mode, rights, share, bufferSize, options));
 #else
-                    return FileDescriptorAccessor.FromStream(new FileStream(path, mode, access, share, bufferSize, options));
+                return FileDescriptorAccessor.FromStream(new FileStream(path, mode, access, share, bufferSize, options));
 #endif
             }
             catch (ArgumentException e)
@@ -106,6 +122,64 @@ namespace IKVM.Java.Externs.sun.nio.fs
             catch (UnauthorizedAccessException)
             {
                 throw new global::java.nio.file.AccessDeniedException(path);
+            }
+#endif
+        }
+
+        /// <summary>
+        /// Implements the native method 'newDirectoryStream'.
+        /// </summary>
+        /// <param name="self"></param>
+        /// <param name="dir"></param>
+        /// <param name="filter"></param>
+        /// <returns></returns>
+        public static object newDirectoryStream(object self, object dir, object filter)
+        {
+#if FIRST_PASS
+            throw new NotImplementedException();
+#else
+            if (dir == null)
+                throw new global::java.lang.NullPointerException();
+            if (filter == null)
+                throw new global::java.lang.NullPointerException();
+
+            var path = DotNetPathAccessor.GetPath(dir);
+            if (path == null)
+                throw new global::java.lang.NullPointerException();
+
+            var sm = SystemAccessor.InvokeGetSecurityManager();
+            if (sm != null)
+                SecurityManagerAccessor.InvokeCheckRead(sm, path);
+
+            try
+            {
+                if (VfsTable.Default.IsPath(path))
+                {
+                    if (VfsTable.Default.GetEntry(path) is not VfsDirectory vfsDirectory)
+                        throw new global::java.nio.file.NotDirectoryException(path);
+
+                    return DotNetDirectoryStreamAccessor.Init(dir, vfsDirectory.List(), filter);
+                }
+
+                if (File.Exists(path))
+                    throw new global::java.nio.file.NotDirectoryException(path);
+
+                if (Directory.Exists(path) == false)
+                    throw new global::java.nio.file.NotDirectoryException(path);
+
+                return DotNetDirectoryStreamAccessor.Init(dir, Directory.EnumerateFileSystemEntries(path), filter);
+            }
+            catch (global::java.lang.Throwable)
+            {
+                throw;
+            }
+            catch (Exception) when (File.Exists(path))
+            {
+                throw new global::java.nio.file.NotDirectoryException(path);
+            }
+            catch (Exception e)
+            {
+                throw new global::java.io.IOException(e.Message);
             }
 #endif
         }

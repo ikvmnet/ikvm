@@ -35,8 +35,8 @@ import java.util.Arrays;
  * Unix specific Path <--> URI conversion
  */
 
-class UnixUriUtils {
-    private UnixUriUtils() { }
+class DotNetUnixUriUtils {
+    private DotNetUnixUriUtils() { }
 
     /**
      * Converts URI to Path

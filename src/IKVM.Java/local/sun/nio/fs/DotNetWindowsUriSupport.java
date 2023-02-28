@@ -32,8 +32,8 @@ import java.net.URISyntaxException;
  * Utility methods to convert between Path and URIs.
  */
 
-class WindowsUriSupport {
-    private WindowsUriSupport() {
+class DotNetWindowsUriSupport {
+    private DotNetWindowsUriSupport() {
     }
 
     // suffix for IPv6 literal address

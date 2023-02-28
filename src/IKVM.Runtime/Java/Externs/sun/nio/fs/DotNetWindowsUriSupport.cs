@@ -4,9 +4,9 @@ namespace IKVM.Java.Externs.sun.nio.fs
 {
 
     /// <summary>
-    /// Implements the native methods for 'WindowsUriSupport'.
+    /// Implements the native methods for 'DotNetWindowsUriSupport'.
     /// </summary>
-    static class WindowsUriSupport
+    static class DotNetWindowsUriSupport
     {
 
         /// <summary>

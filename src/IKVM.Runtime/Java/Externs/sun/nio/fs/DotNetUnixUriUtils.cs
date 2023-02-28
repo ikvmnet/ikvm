@@ -4,9 +4,9 @@ namespace IKVM.Java.Externs.sun.nio.fs
 {
 
     /// <summary>
-    /// Implements the native methods for 'UnixUriUtils'.
+    /// Implements the native methods for 'DotNetUnixUriUtils'.
     /// </summary>
-    static class UnixUriUtils
+    static class DotNetUnixUriUtils
     {
 
         /// <summary>

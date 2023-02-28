@@ -92,7 +92,7 @@ final class DotNetFileSystemProvider extends AbstractFileSystemProvider {
         if (cli.IKVM.Runtime.RuntimeUtil.get_IsWindows()) {
             return DotNetWindowsUriSupport.fromUri(fs, uri);
         } else {
-            return UnixUriUtils.fromUri(fs, uri);
+            return DotNetUnixUriUtils.fromUri(fs, uri);
         }
     }
 
@@ -728,267 +728,6 @@ final class DotNetFileSystemProvider extends AbstractFileSystemProvider {
         }
     }
 
-    private static class BasicFileAttributesViewImpl extends AbstractBasicFileAttributeView {
-
-        protected final String path;
-
-        BasicFileAttributesViewImpl(String path) {
-            this.path = path;
-        }
-
-        public BasicFileAttributes readAttributes() throws IOException {
-            return DosFileAttributesViewImpl.readAttributesImpl(path);
-        }
-
-        public void setTimes(FileTime lastModifiedTime, FileTime lastAccessTime, FileTime createTime) throws IOException {
-            SecurityManager sm = System.getSecurityManager();
-            if (sm != null) {
-                sm.checkWrite(path);
-            }
-
-            try {
-                if (false) throw new cli.System.ArgumentException();
-                if (false) throw new cli.System.IO.IOException();
-                if (false) throw new cli.System.NotSupportedException();
-                if (false) throw new cli.System.Security.SecurityException();
-                if (false) throw new cli.System.UnauthorizedAccessException();
-
-                if (File.Exists(path)) {
-                    if (lastModifiedTime != null) {
-                        File.SetLastWriteTimeUtc(path, toDateTime(lastModifiedTime));
-                    }
-                    if (lastAccessTime != null) {
-                        File.SetLastAccessTimeUtc(path, toDateTime(lastAccessTime));
-                    }
-                    if (createTime != null)
-                    {
-                        File.SetCreationTimeUtc(path, toDateTime(createTime));
-                    }
-                } else if (Directory.Exists(path)) {
-                    if (lastModifiedTime != null) {
-                        Directory.SetLastWriteTimeUtc(path, toDateTime(lastModifiedTime));
-                    }
-                    if (lastAccessTime != null) {
-                        Directory.SetLastAccessTimeUtc(path, toDateTime(lastAccessTime));
-                    }
-                    if (createTime != null) {
-                        Directory.SetCreationTimeUtc(path, toDateTime(createTime));
-                    }
-                } else {
-                    throw new NoSuchFileException(path);
-                }
-            } catch (cli.System.ArgumentException | cli.System.IO.IOException | cli.System.NotSupportedException | cli.System.Security.SecurityException | cli.System.UnauthorizedAccessException x) {
-                throw new IOException(x.getMessage());
-            }
-        }
-
-    }
-
-    private static class DosFileAttributesViewImpl extends BasicFileAttributesViewImpl implements DosFileAttributeView {
-
-        private static final String READONLY_NAME = "readonly";
-        private static final String ARCHIVE_NAME = "archive";
-        private static final String SYSTEM_NAME = "system";
-        private static final String HIDDEN_NAME = "hidden";
-        private static final String ATTRIBUTES_NAME = "attributes";
-        private static final Set<String> dosAttributeNames = Util.newSet(basicAttributeNames, READONLY_NAME, ARCHIVE_NAME, SYSTEM_NAME,  HIDDEN_NAME, ATTRIBUTES_NAME);
-
-        DosFileAttributesViewImpl(String path) {
-            super(path);
-        }
-
-        public String name() {
-            return "dos";
-        }
-
-        public DosFileAttributes readAttributes() throws IOException {
-            return readAttributesImpl(path);
-        }
-
-        private static class DosFileAttributesImpl implements DosFileAttributes {
-
-            private final FileInfo info;
-
-            DosFileAttributesImpl(FileInfo info) {
-                this.info = info;
-            }
-
-            int attributes() {
-                return info.get_Attributes().Value;
-            }
-
-            public FileTime creationTime() {
-                return toFileTime(info.get_CreationTimeUtc());
-            }
-
-            public Object fileKey() {
-                return null;
-            }
-
-            public boolean isDirectory() {
-                return (info.get_Attributes().Value & cli.System.IO.FileAttributes.Directory) != 0;
-            }
-
-            public boolean isOther() {
-                return false;
-            }
-
-            public boolean isRegularFile() {
-                return (info.get_Attributes().Value & cli.System.IO.FileAttributes.Directory) == 0;
-            }
-
-            public boolean isSymbolicLink() {
-                return false;
-            }
-
-            public FileTime lastAccessTime() {
-                return toFileTime(info.get_LastAccessTimeUtc());
-            }
-
-            public FileTime lastModifiedTime() {
-                return toFileTime(info.get_LastWriteTimeUtc());
-            }
-
-            public long size() {
-                return info.get_Exists() ? info.get_Length() : 0;
-            }
-
-            public boolean isArchive() {
-                return (info.get_Attributes().Value & cli.System.IO.FileAttributes.Archive) != 0;
-            }
-
-            public boolean isHidden() {
-                return (info.get_Attributes().Value & cli.System.IO.FileAttributes.Hidden) != 0;
-            }
-
-            public boolean isReadOnly() {
-                return (info.get_Attributes().Value & cli.System.IO.FileAttributes.ReadOnly) != 0;
-            }
-
-            public boolean isSystem() {
-                return (info.get_Attributes().Value & cli.System.IO.FileAttributes.System) != 0;
-            }
-
-        }
-
-        static DosFileAttributesImpl readAttributesImpl(String path) throws IOException {
-            SecurityManager sm = System.getSecurityManager();
-            if (sm != null) {
-                sm.checkRead(path);
-            }
-
-            try {
-                if (false) throw new cli.System.ArgumentException();
-                if (false) throw new cli.System.IO.FileNotFoundException();
-                if (false) throw new cli.System.IO.IOException();
-                if (false) throw new cli.System.UnauthorizedAccessException();
-                FileInfo info = new FileInfo(path);
-                // We have to rely on the (undocumented) fact that FileInfo.Attributes returns -1
-                // when the path does not exist. We need this to work for both files and directories
-                // and this is the only efficient way to do that.
-                if (info.get_Attributes().Value == -1) {
-                    throw new NoSuchFileException(path);
-                }
-
-                return new DosFileAttributesImpl(info);
-            } catch (cli.System.IO.FileNotFoundException _) {
-                throw new NoSuchFileException(path);
-            } catch (cli.System.IO.IOException | cli.System.ArgumentException x) {
-                throw new IOException(x.getMessage());
-            } catch (cli.System.UnauthorizedAccessException _) {
-                throw new AccessDeniedException(path);
-            }
-        }
-
-        public void setArchive(boolean value) throws IOException {
-            setAttribute(cli.System.IO.FileAttributes.Archive, value);
-        }
-
-        public void setHidden(boolean value) throws IOException {
-            setAttribute(cli.System.IO.FileAttributes.Hidden, value);
-        }
-
-        public void setReadOnly(boolean value) throws IOException {
-            setAttribute(cli.System.IO.FileAttributes.ReadOnly, value);
-        }
-
-        public void setSystem(boolean value) throws IOException {
-            setAttribute(cli.System.IO.FileAttributes.System, value);
-        }
-
-        private void setAttribute(int attr, boolean value) throws IOException {
-            SecurityManager sm = System.getSecurityManager();
-            if (sm != null) {
-                sm.checkWrite(path);
-            }
-
-            try {
-                if (false) throw new cli.System.ArgumentException();
-                if (false) throw new cli.System.IO.IOException();
-
-                FileInfo info = new FileInfo(path);
-
-                if (value) {
-                    info.set_Attributes(cli.System.IO.FileAttributes.wrap(info.get_Attributes().Value | attr));
-                } else {
-                    info.set_Attributes(cli.System.IO.FileAttributes.wrap(info.get_Attributes().Value & ~attr));
-                }
-            } catch (cli.System.IO.FileNotFoundException _) {
-                throw new NoSuchFileException(path);
-            } catch (cli.System.ArgumentException| cli.System.IO.IOException x) {
-                throw new IOException(x.getMessage());
-            }
-        }
-
-        public Map<String,Object> readAttributes(String[] attributes) throws IOException {
-            AttributesBuilder builder = AttributesBuilder.create(dosAttributeNames, attributes);
-            DosFileAttributesImpl attrs = readAttributesImpl(path);
-            addRequestedBasicAttributes(attrs, builder);
-
-            if (builder.match(READONLY_NAME)) {
-                builder.add(READONLY_NAME, attrs.isReadOnly());
-            }
-
-            if (builder.match(ARCHIVE_NAME)) {
-                builder.add(ARCHIVE_NAME, attrs.isArchive());
-            }
-
-            if (builder.match(SYSTEM_NAME)) {
-                builder.add(SYSTEM_NAME, attrs.isSystem());
-            }
-
-            if (builder.match(HIDDEN_NAME)) {
-                builder.add(HIDDEN_NAME, attrs.isHidden());
-            }
-
-            if (builder.match(ATTRIBUTES_NAME)) {
-                builder.add(ATTRIBUTES_NAME, attrs.attributes());
-            }
-
-            return builder.unmodifiableMap();
-        }
-
-        public void setAttribute(String attribute, Object value) throws IOException {
-            switch (attribute) {
-                case READONLY_NAME:
-                    setReadOnly((Boolean)value);
-                    break;
-                case ARCHIVE_NAME:
-                    setArchive((Boolean)value);
-                    break;
-                case SYSTEM_NAME:
-                    setSystem((Boolean)value);
-                    break;
-                case HIDDEN_NAME:
-                    setHidden((Boolean)value);
-                    break;
-                default:
-                    super.setAttribute(attribute, value);
-                    break;
-            }
-        }
-
-    }
 
     private static void validateLinkOption(LinkOption... options) {
         for (LinkOption option : options) {
@@ -1006,9 +745,9 @@ final class DotNetFileSystemProvider extends AbstractFileSystemProvider {
         String npath = DotNetPath.from(path).path;
         validateLinkOption(options);
         if (type == BasicFileAttributeView.class) {
-            return (V)new BasicFileAttributesViewImpl(npath);
+            return (V)new DotNetBasicFileAttributeView(npath);
         } else if (type == DosFileAttributeView.class) {
-            return (V)new DosFileAttributesViewImpl(npath);
+            return (V)new DotNetDosFileAttributeView(npath);
         } else {
             // null check
             type.getClass();
@@ -1030,15 +769,15 @@ final class DotNetFileSystemProvider extends AbstractFileSystemProvider {
             sm.checkRead(npath);
         }
 
-        return (A)DosFileAttributesViewImpl.readAttributesImpl(npath);
+        return (A)DotNetDosFileAttributes.read(npath);
     }
 
     DynamicFileAttributeView getFileAttributeView(Path file, String name, LinkOption... options) {
         validateLinkOption(options);
         if (name.equals("basic")) {
-            return new BasicFileAttributesViewImpl(DotNetPath.from(file).path);
+            return new DotNetBasicFileAttributeView(DotNetPath.from(file).path);
         } else if (name.equals("dos")) {
-            return new DosFileAttributesViewImpl(DotNetPath.from(file).path);
+            return new DotNetDosFileAttributeView(DotNetPath.from(file).path);
         } else {
             return null;
         }
@@ -1097,14 +836,6 @@ final class DotNetFileSystemProvider extends AbstractFileSystemProvider {
         } catch (cli.System.UnauthorizedAccessException _) {
             throw new AccessDeniedException(path);
         }
-    }
-
-    static FileTime toFileTime(cli.System.DateTime dateTime) {
-        return FileTime.from((dateTime.get_Ticks() - 621355968000000000L) / 10, java.util.concurrent.TimeUnit.MICROSECONDS);
-    }
-
-    static cli.System.DateTime toDateTime(FileTime fileTime) {
-        return new cli.System.DateTime(fileTime.to(java.util.concurrent.TimeUnit.MICROSECONDS) * 10 + 621355968000000000L);
     }
     
     static native FileDescriptor open0(String path, FileMode mode, FileSystemRights rights, FileShare share, int bufferSize, FileOptions options, SecurityManager sm) throws java.io.IOException;

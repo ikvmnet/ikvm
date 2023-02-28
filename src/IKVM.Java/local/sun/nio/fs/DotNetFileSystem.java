@@ -31,6 +31,7 @@ import cli.System.IO.FileSystemEventArgs;
 import cli.System.IO.FileSystemEventHandler;
 import cli.System.IO.FileSystemWatcher;
 import cli.System.IO.WatcherChangeTypes;
+
 import java.io.IOException;
 import java.nio.file.*;
 import java.nio.file.attribute.*;
@@ -45,45 +46,37 @@ import java.util.List;
 import java.util.Set;
 import java.util.regex.Pattern;
 
-final class DotNetFileSystem extends FileSystem
-{
+final class DotNetFileSystem extends FileSystem {
 
     private static final Set<String> attributes = Collections.unmodifiableSet(new HashSet<String>(Arrays.asList("basic")));
     private final DotNetFileSystemProvider provider;
     private final String separator = Character.toString(cli.System.IO.Path.DirectorySeparatorChar);
 
-    DotNetFileSystem(DotNetFileSystemProvider provider)
-    {
+    DotNetFileSystem(DotNetFileSystemProvider provider) {
         this.provider = provider;
     }
 
-    public FileSystemProvider provider()
-    {
+    public FileSystemProvider provider() {
         return provider;
     }
 
-    public void close() throws IOException
-    {
+    public void close() throws IOException {
         throw new UnsupportedOperationException();
     }
 
-    public boolean isOpen()
-    {
+    public boolean isOpen() {
         return true;
     }
 
-    public boolean isReadOnly()
-    {
+    public boolean isReadOnly() {
         return false;
     }
 
-    public String getSeparator()
-    {
+    public String getSeparator() {
         return separator;
     }
 
-    public Iterable<Path> getRootDirectories()
-    {
+    public Iterable<Path> getRootDirectories() {
         SecurityManager sm = System.getSecurityManager();
         ArrayList<Path> list = new ArrayList<>();
         for (DriveInfo info : DriveInfo.GetDrives())
@@ -99,8 +92,10 @@ final class DotNetFileSystem extends FileSystem
             {
                 continue;
             }
+
             list.add(getPath(info.get_Name()));
         }
+
         return list;
     }
 
@@ -118,6 +113,7 @@ final class DotNetFileSystem extends FileSystem
                 return Collections.emptyList();
             }
         }
+
         ArrayList<FileStore> list = new ArrayList<>();
         for (DriveInfo info : DriveInfo.GetDrives())
         {
@@ -138,8 +134,10 @@ final class DotNetFileSystem extends FileSystem
             }
             catch (IOException _)
             {
+                
             }
         }
+
         return list;
     }
 
@@ -167,6 +165,7 @@ final class DotNetFileSystem extends FileSystem
                     sep = separator;
                 }
             }
+
             return new DotNetPath(this, sb.toString());
         }
     }

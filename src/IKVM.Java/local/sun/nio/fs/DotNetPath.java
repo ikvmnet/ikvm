@@ -396,11 +396,11 @@ final class DotNetPath extends AbstractPath {
     {
         if (cli.IKVM.Runtime.RuntimeUtil.get_IsWindows())
         {
-            return WindowsUriSupport.toUri(this);
+            return DotNetWindowsUriSupport.toUri(this);
         }
         else
         {
-            return UnixUriUtils.toUri(this);
+            return DotNetUnixUriUtils.toUri(this);
         }
     }
 
