@@ -90,7 +90,7 @@ final class DotNetFileSystemProvider extends AbstractFileSystemProvider {
 
     public Path getPath(URI uri) {
         if (cli.IKVM.Runtime.RuntimeUtil.get_IsWindows()) {
-            return WindowsUriSupport.fromUri(fs, uri);
+            return DotNetWindowsUriSupport.fromUri(fs, uri);
         } else {
             return UnixUriUtils.fromUri(fs, uri);
         }
