@@ -48,8 +48,7 @@ namespace IKVM.Java.Externs.sun.nio.fs
 #else
             var epoch = DateTime.UnixEpoch;
 #endif
-            return dateTime != null ? global::java.nio.file.attribute.FileTime.fromMillis((long)((DateTime)dateTime - epoch).TotalMilliseconds) : null;
-            //return dateTime != null ? FileTimeAccessor.InvokeFromMillis((long)((DateTime)dateTime - epoch).TotalMilliseconds) : null;
+            return dateTime != null ? FileTimeAccessor.InvokeFromMillis((long)((DateTime)dateTime - epoch).TotalMilliseconds) : null;
 #endif
         }
 

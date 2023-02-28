@@ -10,6 +10,7 @@ using System.Threading;
 
 using IKVM.ByteCode.Reading;
 using IKVM.Internal;
+using IKVM.Runtime;
 
 namespace IKVM.Java.Externs.sun.misc
 {
@@ -18,21 +19,15 @@ namespace IKVM.Java.Externs.sun.misc
     {
 
         /// <summary>
-        /// Holds a reference to the various delegates that facilitate unsafe operations. References are kept alive and
-        /// associated with a <see cref="FieldInfo"/> by a conditional weak table. When the <see cref="FieldInfo"/>
-        /// becomes eligible for collection, so does the <see cref="FieldDelegateRef"/>. Each instance maintains a
-        /// <see cref="GCHandle"/> that provides a fixed <see cref="IntPtr"/> sized value which can be handed off as an
-        /// offset value.
+        /// Holds a reference to the <see cref="FieldDelegateRefDelegates"/> instance, which is exposd as a <see cref="GCHandle"/>
+        /// masquerading as a field offset. Instances of this class are kept alive by a <see cref="ConditionalWeakTable{TKey, TValue}"/>
+        /// on the <see cref="FieldWrapper"/>. When the <see cref="FieldWrapper"/> goes out of scope, this instance is allowed to die,
+        /// which can clean up the <see cref="GCHandle"/>.
         /// </summary>
         class FieldDelegateRef
         {
 
-            readonly FieldWrapper field;
-            readonly Lazy<Delegate> getter;
-            readonly Lazy<Delegate> putter;
-            readonly Lazy<Delegate> volatileGetter;
-            readonly Lazy<Delegate> volatilePutter;
-            readonly Lazy<Delegate> compareExchange;
+            readonly FieldDelegateRefDelegates instance;
             readonly GCHandle handle;
 
             /// <summary>
@@ -41,14 +36,49 @@ namespace IKVM.Java.Externs.sun.misc
             /// <param name="field"></param>
             public FieldDelegateRef(FieldWrapper field)
             {
-                this.field = field ?? throw new ArgumentNullException(nameof(field));
+                this.instance = new FieldDelegateRefDelegates(field);
+                this.handle = GCHandle.Alloc(instance, GCHandleType.WeakTrackResurrection);
+            }
 
+            /// <summary>
+            /// Maintains a handle that can serve as the 'offset' value.
+            /// </summary>
+            public GCHandle Handle => handle;
+
+            /// <summary>
+            /// Finalizes the instance. The <see cref="GCHandle"/> is released, allowing the delegates to be collected.
+            /// </summary>
+            ~FieldDelegateRef()
+            {
+                if (Handle.IsAllocated)
+                    Handle.Free();
+            }
+
+        }
+
+        /// <summary>
+        /// Holds the set of delegates that implement operations against the field.
+        /// </summary>
+        class FieldDelegateRefDelegates
+        {
+
+            readonly Lazy<Delegate> getter;
+            readonly Lazy<Delegate> putter;
+            readonly Lazy<Delegate> volatileGetter;
+            readonly Lazy<Delegate> volatilePutter;
+            readonly Lazy<Delegate> compareExchange;
+
+            /// <summary>
+            /// Initializes a new instance.
+            /// </summary>
+            /// <param name="field"></param>
+            public FieldDelegateRefDelegates(FieldWrapper field)
+            {
                 getter = new Lazy<Delegate>(() => CreateGetFieldDelegate(field), true);
                 putter = new Lazy<Delegate>(() => CreatePutFieldDelegate(field), true);
                 volatileGetter = new Lazy<Delegate>(() => CreateGetFieldVolatileDelegate(field), true);
                 volatilePutter = new Lazy<Delegate>(() => CreatePutFieldVolatileDelegate(field), true);
                 compareExchange = new Lazy<Delegate>(() => CreateCompareExchangeFieldDelegate(field), true);
-                handle = GCHandle.Alloc(this, GCHandleType.WeakTrackResurrection);
             }
 
             /// <summary>
@@ -76,11 +106,6 @@ namespace IKVM.Java.Externs.sun.misc
             /// </summary>
             public Delegate CompareExchange => compareExchange.Value;
 
-            /// <summary>
-            /// Maintains a handle that can serve as the 'offset' value.
-            /// </summary>
-            public GCHandle Handle => handle;
-
         }
 
         /// <summary>
@@ -90,7 +115,6 @@ namespace IKVM.Java.Externs.sun.misc
         class ArrayDelegateRef
         {
 
-            readonly TypeWrapper type;
             readonly Lazy<Delegate> volatileGetter;
             readonly Lazy<Delegate> volatilePutter;
             readonly Lazy<Delegate> compareExchange;
@@ -101,8 +125,6 @@ namespace IKVM.Java.Externs.sun.misc
             /// <param name="type"></param>
             public ArrayDelegateRef(TypeWrapper type)
             {
-                this.type = type ?? throw new ArgumentNullException(nameof(type));
-
                 volatileGetter = new Lazy<Delegate>(() => CreateGetArrayVolatileDelegate(type), true);
                 volatilePutter = new Lazy<Delegate>(() => CreatePutArrayVolatileDelegate(type), true);
                 compareExchange = new Lazy<Delegate>(() => CreateCompareExchangeArrayDelegate(type), true);
@@ -211,9 +233,12 @@ namespace IKVM.Java.Externs.sun.misc
         /// <returns></returns>
         static Delegate CreateGetFieldDelegate(FieldWrapper fw)
         {
+            fw.DeclaringType.Finish();
+            fw.FieldTypeWrapper.Finish();
             fw.ResolveField();
+
             var ft = fw.FieldTypeWrapper.IsPrimitive ? fw.FieldTypeWrapper.TypeAsTBD : typeof(object);
-            var dm = new DynamicMethod($"__<UnsafeGetField>__{fw.DeclaringType.Name.Replace(".", "_")}__{fw.Name}", ft, new[] { typeof(object) }, fw.DeclaringType.TypeAsTBD.Module, true);
+            var dm = DynamicMethodUtil.Create($"__<UnsafeGetField>__{fw.DeclaringType.Name.Replace(".", "_")}__{fw.Name}", fw.DeclaringType.TypeAsTBD, true, ft, new[] { typeof(object) });
             var il = dm.GetILGenerator();
 
             if (fw.IsStatic && fw.IsFinal)
@@ -243,9 +268,12 @@ namespace IKVM.Java.Externs.sun.misc
         /// <returns></returns>
         static Delegate CreatePutFieldDelegate(FieldWrapper fw)
         {
+            fw.DeclaringType.Finish();
+            fw.FieldTypeWrapper.Finish();
             fw.ResolveField();
+
             var ft = fw.FieldTypeWrapper.IsPrimitive ? fw.FieldTypeWrapper.TypeAsTBD : typeof(object);
-            var dm = new DynamicMethod($"__<UnsafePutField>__{fw.DeclaringType.Name.Replace(".", "_")}__{fw.Name}", typeof(void), new[] { typeof(object), ft }, fw.DeclaringType.TypeAsTBD.Module, true);
+            var dm = DynamicMethodUtil.Create($"__<UnsafePutField>__{fw.DeclaringType.Name.Replace(".", "_")}__{fw.Name}", fw.DeclaringType.TypeAsTBD, true, typeof(void), new[] { typeof(object), ft });
             var il = dm.GetILGenerator();
 
             if (fw.IsStatic)
@@ -279,7 +307,7 @@ namespace IKVM.Java.Externs.sun.misc
 #else
             try
             {
-                return ((Func<object, T>)((FieldDelegateRef)GCHandle.FromIntPtr((IntPtr)offset).Target).Getter)(o);
+                return ((Func<object, T>)((FieldDelegateRefDelegates)GCHandle.FromIntPtr((IntPtr)offset).Target).Getter)(o);
             }
             catch (Exception e)
             {
@@ -303,7 +331,7 @@ namespace IKVM.Java.Externs.sun.misc
 #else
             try
             {
-                ((Action<object, TField>)((FieldDelegateRef)GCHandle.FromIntPtr((IntPtr)offset).Target).Putter)(o, value);
+                ((Action<object, TField>)((FieldDelegateRefDelegates)GCHandle.FromIntPtr((IntPtr)offset).Target).Putter)(o, value);
             }
             catch (Exception e)
             {
@@ -1401,7 +1429,7 @@ namespace IKVM.Java.Externs.sun.misc
 #else
             try
             {
-                return ((Func<object, T>)((FieldDelegateRef)GCHandle.FromIntPtr((IntPtr)offset).Target).VolatileGetter)(o);
+                return ((Func<object, T>)((FieldDelegateRefDelegates)GCHandle.FromIntPtr((IntPtr)offset).Target).VolatileGetter)(o);
             }
             catch (Exception e)
             {
@@ -1419,7 +1447,7 @@ namespace IKVM.Java.Externs.sun.misc
         {
             fw.ResolveField();
             var ft = fw.FieldTypeWrapper.IsPrimitive ? fw.FieldTypeWrapper.TypeAsTBD : typeof(object);
-            var dm = new DynamicMethod($"__<UnsafePutFieldVolatile>__{fw.DeclaringType.Name.Replace(".", "_")}__{fw.Name}", typeof(void), new[] { typeof(object), ft }, fw.DeclaringType.TypeAsTBD.Module, true);
+            var dm = DynamicMethodUtil.Create($"__<UnsafePutFieldVolatile>__{fw.DeclaringType.Name.Replace(".", "_")}__{fw.Name}", fw.DeclaringType.TypeAsTBD, true, typeof(void), new[] { typeof(object), ft });
             var il = dm.GetILGenerator();
 
             // load reference to field
@@ -1466,7 +1494,7 @@ namespace IKVM.Java.Externs.sun.misc
 #else
             try
             {
-                ((Action<object, TField>)((FieldDelegateRef)GCHandle.FromIntPtr((IntPtr)offset).Target).VolatilePutter)(o, value);
+                ((Action<object, TField>)((FieldDelegateRefDelegates)GCHandle.FromIntPtr((IntPtr)offset).Target).VolatilePutter)(o, value);
             }
             catch (Exception e)
             {
@@ -1483,7 +1511,7 @@ namespace IKVM.Java.Externs.sun.misc
         static Delegate CreateGetArrayVolatileDelegate(TypeWrapper tw)
         {
             var et = tw.IsPrimitive ? tw.TypeAsTBD : typeof(object);
-            var dm = new DynamicMethod($"UnsafeGetArrayVolatile__{tw.Name.Replace(".", "_")}", et, new[] { typeof(object[]), typeof(long) }, tw.TypeAsTBD.Module, true);
+            var dm = DynamicMethodUtil.Create($"__<UnsafeGetArrayVolatile>__{tw.Name.Replace(".", "_")}", tw.TypeAsTBD, true, et, new[] { typeof(object[]), typeof(long) });
             var il = dm.GetILGenerator();
 
             // load reference to element
@@ -1538,7 +1566,7 @@ namespace IKVM.Java.Externs.sun.misc
         static Delegate CreatePutArrayVolatileDelegate(TypeWrapper tw)
         {
             var et = tw.IsPrimitive ? tw.TypeAsTBD : typeof(object);
-            var dm = new DynamicMethod($"UnsafePutArrayVolatile__{tw.Name.Replace(".", "_")}", typeof(void), new[] { typeof(object[]), typeof(long), et }, tw.TypeAsTBD.Module, true);
+            var dm = DynamicMethodUtil.Create($"__<UnsafePutArrayVolatile>__{tw.Name.Replace(".", "_")}", tw.TypeAsTBD, true, typeof(void), new[] { typeof(object[]), typeof(long), et });
             var il = dm.GetILGenerator();
 
             // load reference to element
@@ -2038,7 +2066,7 @@ namespace IKVM.Java.Externs.sun.misc
 #else
             try
             {
-                return ((Func<object, T, T, T>)((FieldDelegateRef)GCHandle.FromIntPtr((IntPtr)offset).Target).CompareExchange)(o, value, expected);
+                return ((Func<object, T, T, T>)((FieldDelegateRefDelegates)GCHandle.FromIntPtr((IntPtr)offset).Target).CompareExchange)(o, value, expected);
             }
             catch (Exception e)
             {
