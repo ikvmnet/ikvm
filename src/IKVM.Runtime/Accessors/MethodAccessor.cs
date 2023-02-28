@@ -141,27 +141,30 @@ namespace IKVM.Runtime.Accessors
             if (Method.IsStatic == false && Method.IsConstructor == false)
             {
                 il.EmitLdarg(n++);
-                il.EmitCastclass(Type.TypeAsTBD);
+                if (delegateParameterTypes[0] != Type.TypeAsTBD)
+                    il.EmitCastclass(Type.TypeAsTBD);
             }
 
             // emit conversion code for the remainder of the arguments
             for (var i = 0; i < parameters.Length; i++)
             {
+                var delegateParameterType = delegateParameterTypes[n];
                 il.EmitLdarg(n++);
-                if (parameters[i].TypeAsTBD != delegateParameterTypes[i])
+                if (parameters[i].TypeAsTBD != delegateParameterType)
                     il.EmitCastclass(parameters[i].TypeAsTBD);
             }
 
             if (Method.IsConstructor)
                 il.Emit(OpCodes.Newobj, Method.GetMethod());
-            else if (Method.IsStatic)
+            else if (Method.IsStatic || Method.IsVirtual == false)
                 il.Emit(OpCodes.Call, Method.GetMethod());
             else
                 il.Emit(OpCodes.Callvirt, Method.GetMethod());
 
             // convert to delegate value
             if (delegateReturnType != typeof(void))
-                il.EmitCastclass(delegateReturnType);
+                if (Method.IsConstructor && delegateReturnType != Type.TypeAsTBD || Method.IsConstructor == false && delegateReturnType != Method.ReturnType.TypeAsTBD)
+                    il.EmitCastclass(delegateReturnType);
 
             il.Emit(OpCodes.Ret);
             il.DoEmit();
