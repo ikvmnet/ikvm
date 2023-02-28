@@ -2216,6 +2216,7 @@ javax/security/auth/login/LoginContext/ConfigConstructor.java                   
 javax/security/auth/login/LoginContext/ConfigConstructorNoPerm.java                                                     generic-all
 javax/security/auth/login/LoginContext/DefaultHandler.java                                                              generic-all
 javax/security/auth/login/LoginContext/ResetConfigModule.java                                                           generic-all
+javax/sound/midi/Devices/InitializationHang.java                                                                        generic-all
 javax/sound/midi/File/SMPTESequence.java                                                                                generic-all
 javax/sound/midi/Gervill/AudioFloatConverter/GetFormat.java                                                             generic-all
 javax/sound/midi/Gervill/AudioFloatConverter/ToFloatArray.java                                                          generic-all
