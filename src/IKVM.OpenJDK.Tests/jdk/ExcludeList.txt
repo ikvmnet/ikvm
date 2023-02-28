@@ -236,7 +236,7 @@ demo/jvmti/versionCheck/FailsWhenJvmtiVersionDiffers.java                       
 demo/jvmti/waiters/WaitersTest.java                                                                                     generic-all
 demo/zipfs/basic.sh                                                                                                     generic-all
 java/awt/Checkbox/SetStateExcessEvent/SetStateExcessEvent.java                                                          generic-all
-java/awt/Component/DimensionEncapsulation.DimensionEncapsulation.java                                                   generic-all
+java/awt/Component/DimensionEncapsulation/DimensionEncapsulation.java                                                   generic-all
 java/awt/Component/InsetsEncapsulation/InsetsEncapsulation.java                                                         generic-all
 java/awt/Component/SetEnabledPerformance/SetEnabledPerformance.java                                                     generic-all
 java/awt/datatransfer/DragImage/MultiResolutionDragImageTest.java                                                       generic-all
@@ -246,7 +246,7 @@ java/awt/Focus/8073453/AWTFocusTransitionTest.java                              
 java/awt/Focus/8073453/SwingFocusTransitionTest.java                                                                    generic-all
 java/awt/FontClass/DebugFonts.java                                                                                      generic-all
 java/awt/FullScreen/MultimonFullscreenTest/MultimonDeadlockTest.java                                                    generic-all
-java/awt/GraphicsEnvironment/TestDetectHeadless/TestDetectHeadless.java                                                 generic-all
+java/awt/GraphicsEnvironment/TestDetectHeadless/TestDetectHeadless.sh                                                   generic-all
 java/awt/image/BufferedImage/GetPropertyNames.java                                                                      generic-all
 java/awt/image/DrawImage/IncorrectClipXorModeSurface2Surface.java                                                       generic-all
 java/awt/MenuBar/RemoveHelpMenu/RemoveHelpMenu.java                                                                     generic-all
@@ -2480,6 +2480,7 @@ javax/sound/sampled/DirectAudio/bug6400879.java                                 
 javax/sound/sampled/FileWriter/AlawEncoderSync.java                                                                     generic-all
 javax/sound/sampled/FileWriter/WriterCloseInput.java                                                                    generic-all
 javax/swing/AbstractButton/6711682/bug6711682.java                                                                      generic-all
+javax/swing/AbstractButton/AnimatedIcon/AnimatedIcon.java                                                               generic-all
 javax/swing/AncestorNotifier/7193219/bug7193219.java                                                                    generic-all
 javax/swing/DataTransfer/6456844/bug6456844.java                                                                        generic-all
 javax/swing/DataTransfer/8059739/bug8059739.java                                                                        generic-all
@@ -2523,6 +2524,8 @@ javax/swing/JComboBox/7195179/Test7195179.java                                  
 javax/swing/JComboBox/8015300/Test8015300.java                                                                          generic-all
 javax/swing/JComboBox/8019180/Test8019180.java                                                                          generic-all
 javax/swing/JComboBox/8032878/bug8032878.java                                                                           generic-all
+javax/swing/JComboBox/8033069/bug8033069NoScrollBar.java                                                                generic-all
+javax/swing/JComboBox/8033069/bug8033069ScrollBar.java                                                                  generic-all
 javax/swing/JComboBox/8057893/bug8057893.java                                                                           generic-all
 javax/swing/JComboBox/ConsumedKeyTest/ConsumedKeyTest.java                                                              generic-all
 javax/swing/JComboBox/ShowPopupAfterHidePopupTest/ShowPopupAfterHidePopupTest.java                                      generic-all
@@ -2563,6 +2566,7 @@ javax/swing/JFileChooser/8013442/Test8013442.java                               
 javax/swing/JFileChooser/8021253/bug8021253.java                                                                        generic-all
 javax/swing/JFileChooser/8046391/bug8046391.java                                                                        generic-all
 javax/swing/JFileChooser/8062561/bug8062561.java                                                                        generic-all
+javax/swing/JFileChooser/8080628/bug8080628.java                                                                        generic-all
 javax/swing/JFileChooser/FileFilterDescription/FileFilterDescription.java                                               generic-all
 javax/swing/JFormattedTextField/Test6462562.java                                                                        generic-all
 javax/swing/JFrame/4962534/bug4962534.html                                                                              generic-all
@@ -2593,7 +2597,10 @@ javax/swing/JList/6462008/bug6462008.java                                       
 javax/swing/JList/6823603/bug6823603.java                                                                               generic-all
 javax/swing/JMenu/4515762/bug4515762.java                                                                               generic-all
 javax/swing/JMenu/4692443/bug4692443.java                                                                               generic-all
+javax/swing/JMenu/8071705/bug8071705.java                                                                               generic-all
+javax/swing/JMenu/8072900/WrongSelectionOnMouseOver.java                                                                generic-all
 javax/swing/JMenuBar/4750590/bug4750590.java                                                                            generic-all
+javax/swing/JMenuBar/MisplacedBorder/MisplacedBorder.java                                                               generic-all
 javax/swing/JMenuItem/4171437/bug4171437.java                                                                           generic-all
 javax/swing/JMenuItem/4654927/bug4654927.java                                                                           generic-all
 javax/swing/JMenuItem/6209975/bug6209975.java                                                                           generic-all
@@ -2622,6 +2629,7 @@ javax/swing/JPopupMenu/7160604/bug7160604.java                                  
 javax/swing/JPopupMenu/Separator/6547087/bug6547087.java                                                                generic-all
 javax/swing/JProgressBar/7141573/bug7141573.java                                                                        generic-all
 javax/swing/JRadioButton/8033699/bug8033699.java                                                                        generic-all
+javax/swing/JRadioButton/8075609/bug8075609.kava                                                                        generic-all
 javax/swing/JRootPane/4670486/bug4670486.java                                                                           generic-all
 javax/swing/JScrollBar/4708809/bug4708809.java                                                                          generic-all
 javax/swing/JScrollBar/4865918/bug4865918.java                                                                          generic-all
@@ -2633,6 +2641,7 @@ javax/swing/JScrollBar/bug4202954/bug4202954.java                               
 javax/swing/JScrollPane/6559589/bug6559589.java                                                                         generic-all
 javax/swing/JScrollPane/6612531/bug6612531.java                                                                         generic-all
 javax/swing/JScrollPane/Test6526631.java                                                                                generic-all
+javax/swing/JScrollPane/8033000/bug8033000.java                                                                         generic-all
 javax/swing/JSlider/4252173/bug4252173.java                                                                             generic-all
 javax/swing/JSlider/4987336/bug4987336.java                                                                             generic-all
 javax/swing/JSlider/6278700/bug6278700.java                                                                             generic-all
@@ -2689,6 +2698,7 @@ javax/swing/JTextArea/6925473/bug6925473.java                                   
 javax/swing/JTextArea/6940863/bug6940863.java                                                                           generic-all
 javax/swing/JTextArea/7049024/bug7049024.java                                                                           generic-all
 javax/swing/JTextArea/Test6593649.java                                                                                  generic-all
+javax/swing/JTextArea/TextViewOOM/TextViewOOM.java                                                                      generic-all
 javax/swing/JTextField/8036819/bug8036819.java                                                                          generic-all
 javax/swing/JToolBar/4247996/bug4247996.java                                                                            generic-all
 javax/swing/JToolTip/4846413/bug4846413.java                                                                            generic-all
@@ -2717,6 +2727,7 @@ javax/swing/PopupFactory/8048506/bug8048506.java                                
 javax/swing/RepaintManager/6608456/bug6608456.java                                                                      generic-all
 javax/swing/RepaintManager/7013453/bug7013453.java                                                                      generic-all
 javax/swing/RepaintManager/IconifyTest/IconifyTest.java                                                                 generic-all
+javax/swing/RepaintManager/DisplayListenerLeak/DisplayListenerLeak.java                                                 generic-all
 javax/swing/Security/6657138/ComponentTest.java                                                                         generic-all
 javax/swing/Security/6657138/bug6657138.java                                                                            generic-all
 javax/swing/Security/6938813/bug6938813.java                                                                            generic-all
@@ -2728,6 +2739,7 @@ javax/swing/SwingUtilities/7088744/bug7088744.java                              
 javax/swing/SwingUtilities/7146377/bug7146377.java                                                                      generic-all
 javax/swing/SwingUtilities/7170657/bug7170657.java                                                                      generic-all
 javax/swing/SwingUtilities/8032219/DrawRect.java                                                                        generic-all
+javax/swing/SwingUtilities/TestBadBreak/TestBadBreak.java                                                               generic-all
 javax/swing/SwingWorker/6432565/bug6432565.java                                                                         generic-all
 javax/swing/SwingWorker/6493680/bug6493680.java                                                                         generic-all
 javax/swing/SwingWorker/6880336/NestedWorkers.java                                                                      generic-all
@@ -2738,6 +2750,7 @@ javax/swing/UIDefaults/6622002/bug6622002.java                                  
 javax/swing/UIDefaults/6795356/SwingLazyValueTest.java                                                                  generic-all
 javax/swing/UIDefaults/6795356/TableTest.java                                                                           generic-all
 javax/swing/UIDefaults/6795356/bug6795356.java                                                                          generic-all
+javax/swing/UIDefaults/7180976/Pending.java                                                                             generic-all
 javax/swing/UIManager/Test6657026.java                                                                                  generic-all
 javax/swing/UITest/UITest.java                                                                                          generic-all
 javax/swing/border/Test4120351.java                                                                                     generic-all
@@ -2758,6 +2771,7 @@ javax/swing/border/Test7034614.java                                             
 javax/swing/border/Test7149090.java                                                                                     generic-all
 javax/swing/dnd/7171812/JListWithScroll.java                                                                            generic-all
 javax/swing/dnd/7171812/bug7171812.java                                                                                 generic-all
+javax/swing/plaf/aqua/CustomComboBoxFocusTest.java                                                                      generic-all
 javax/swing/plaf/basic/BasicComboBoxEditor/Test8015336.java                                                             generic-all
 javax/swing/plaf/basic/BasicHTML/4251579/bug4251579.java                                                                generic-all
 javax/swing/plaf/basic/BasicMenuUI/4983388/bug4983388.java                                                              generic-all
@@ -2766,6 +2780,7 @@ javax/swing/plaf/basic/BasicSplitPaneUI/Test6657026.java                        
 javax/swing/plaf/basic/BasicTabbedPaneUI/Test6943780.java                                                               generic-all
 javax/swing/plaf/basic/BasicTreeUI/8023474/bug8023474.java                                                              generic-all
 javax/swing/plaf/basic/Test6984643.java                                                                                 generic-all
+javax/swing/plaf/gtk/crash/RenderBadPictureCrash.java                                                                   generic-all
 javax/swing/plaf/metal/MetalBorders/Test6657026.java                                                                    generic-all
 javax/swing/plaf/metal/MetalBumps/Test6657026.java                                                                      generic-all
 javax/swing/plaf/metal/MetalInternalFrameUI/Test6657026.java                                                            generic-all
@@ -2778,6 +2793,7 @@ javax/swing/plaf/nimbus/Test6741426.java                                        
 javax/swing/plaf/nimbus/Test6849805.java                                                                                generic-all
 javax/swing/plaf/nimbus/Test6919629.java                                                                                generic-all
 javax/swing/plaf/nimbus/Test7048204.java                                                                                generic-all
+javax/swing/plaf/nimbus/8041642/bug8041642.java                                                                         generic-all
 javax/swing/plaf/synth/6771547/SynthTest.java                                                                           generic-all
 javax/swing/plaf/synth/7032791/bug7032791.java                                                                          generic-all
 javax/swing/plaf/synth/7143614/bug7143614.java                                                                          generic-all
