@@ -1183,6 +1183,7 @@ java/lang/annotation/loaderLeak/Main.java                                       
 java/lang/annotation/typeAnnotations/BadCPIndex.java                                                                    generic-all
 java/lang/annotation/typeAnnotations/GetAnnotatedReceiverType.java                                                      generic-all
 java/lang/annotation/typeAnnotations/TestExecutableGetAnnotatedType.java                                                generic-all
+java/lang/instrument/ManyMethodsBenchmarkAgent.java                                                                     generic-all
 java/lang/instrument/AddTransformerTest.java                                                                            generic-all
 java/lang/instrument/AppendToBootstrapClassPathTest.java                                                                generic-all
 java/lang/instrument/AppendToClassPathTest.java                                                                         generic-all
@@ -1240,10 +1241,7 @@ java/lang/instrument/VerifyLocalVariableTableOnRetransformTest.sh               
 java/lang/instrument/appendToClassLoaderSearch/CircularityErrorTest.sh                                                  generic-all
 java/lang/instrument/appendToClassLoaderSearch/ClassUnloadTest.sh                                                       generic-all
 java/lang/instrument/appendToClassLoaderSearch/run_tests.sh                                                             generic-all
-
-java/lang/instrument.ManyMethodsBenchmarkAgent
-
-
+java/lang/instrument/ManyMethodsBenchmarkAgent.sh                                                                       generic-all
 java/lang/invoke/6987555/Test6987555.java                                                                               generic-all
 java/lang/invoke/6991596/Test6991596.java                                                                               generic-all
 java/lang/invoke/6998541/Test6998541.java                                                                               generic-all
@@ -2629,7 +2627,7 @@ javax/swing/JPopupMenu/7160604/bug7160604.java                                  
 javax/swing/JPopupMenu/Separator/6547087/bug6547087.java                                                                generic-all
 javax/swing/JProgressBar/7141573/bug7141573.java                                                                        generic-all
 javax/swing/JRadioButton/8033699/bug8033699.java                                                                        generic-all
-javax/swing/JRadioButton/8075609/bug8075609.kava                                                                        generic-all
+javax/swing/JRadioButton/8075609/bug8075609.java                                                                        generic-all
 javax/swing/JRootPane/4670486/bug4670486.java                                                                           generic-all
 javax/swing/JScrollBar/4708809/bug4708809.java                                                                          generic-all
 javax/swing/JScrollBar/4865918/bug4865918.java                                                                          generic-all

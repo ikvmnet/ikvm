@@ -4,6 +4,7 @@ using System.Linq.Expressions;
 using System.Net;
 using System.Net.Sockets;
 using System.Reflection;
+using System.Runtime.InteropServices;
 
 using IKVM.Runtime;
 using IKVM.Runtime.Accessors.Java.Io;
@@ -161,7 +162,7 @@ namespace IKVM.Java.Externs.sun.nio.ch
             try
             {
                 length = socket.EndReceiveFrom(socket.BeginReceiveFrom(packet, 0, len, SocketFlags.None, ref remoteEndpoint, null, null), ref remoteEndpoint);
-                packet.CopyTo(new Span<byte>((byte**)(IntPtr)address, length));
+                Marshal.Copy(packet, 0, (IntPtr)address, length);
             }
             catch (SocketException e) when (e.SocketErrorCode == SocketError.WouldBlock)
             {
@@ -170,7 +171,7 @@ namespace IKVM.Java.Externs.sun.nio.ch
             catch (SocketException e) when (e.SocketErrorCode == SocketError.MessageSize)
             {
                 length = len;
-                packet.CopyTo(new Span<byte>((byte**)(IntPtr)address, length));
+                Marshal.Copy(packet, 0, (IntPtr)address, length);
             }
             catch (SocketException e) when (e.SocketErrorCode == SocketError.ConnectionReset)
             {

@@ -571,11 +571,11 @@ namespace IKVM.Java.Externs.sun.nio.ch
         static unsafe void Release(global::sun.nio.ch.DotNetAsynchronousFileChannelImpl self, FileLockImpl fli)
         {
             if (self.isOpen() == false)
-                throw new global::java.nio.channels.ClosedChannelException();
+                return;
 
             var stream = FileDescriptorAccessor.GetStream(self.fdObj);
             if (stream == null)
-                throw new global::java.nio.channels.AsynchronousCloseException();
+                return;
 
             if (stream is not FileStream fs)
                 throw new global::java.io.IOException("File does not support locking.");

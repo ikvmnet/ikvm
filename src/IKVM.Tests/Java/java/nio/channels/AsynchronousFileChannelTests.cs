@@ -279,6 +279,78 @@ namespace IKVM.Tests.Java.java.nio.channels
             c.close();
         }
 
+        [TestMethod]
+        public void CanLockWithVariousMethods()
+        {
+            File blah = File.createTempFile("blah", null);
+            blah.deleteOnExit();
+
+            var ch = AsynchronousFileChannel.open(blah.toPath(), StandardOpenOption.READ, StandardOpenOption.WRITE);
+
+            FileLock fl;
+            try
+            {
+                // test 1 - acquire lock and check that tryLock throws
+                // OverlappingFileLockException
+                try
+                {
+                    fl = (FileLock)ch.@lock().get();
+                }
+                catch (ExecutionException x)
+                {
+                    throw new RuntimeException(x);
+                }
+                catch (InterruptedException x)
+                {
+                    throw new RuntimeException("Should not be interrupted");
+                }
+
+                if (!fl.acquiredBy().Equals(ch))
+                    throw new RuntimeException("FileLock#acquiredBy returned incorrect channel");
+
+                try
+                {
+                    ch.tryLock();
+                    throw new RuntimeException("OverlappingFileLockException expected");
+                }
+                catch (OverlappingFileLockException x)
+                {
+
+                }
+
+                fl.release();
+
+                // test 2 - acquire try and check that lock throws OverlappingFileLockException
+                fl = ch.tryLock();
+                if (fl == null)
+                    throw new RuntimeException("Unable to acquire lock");
+
+                try
+                {
+                    var awaiter = new AwaitableCompletionHandler();
+                    ch.@lock(null, awaiter);
+                    awaiter.GetAwaiter().GetResult();
+                    throw new RuntimeException("OverlappingFileLockException expected");
+                }
+                catch (OverlappingFileLockException)
+                {
+
+                }
+                catch (System.Exception e)
+                {
+
+                }
+            }
+            finally
+            {
+                ch.close();
+            }
+
+            // test 3 - channel is closed so FileLock should no longer be valid
+            if (fl.isValid())
+                throw new RuntimeException("FileLock expected to be invalid");
+        }
+
         /// <summary>
         /// Creates threads with the name set.
         /// </summary>
@@ -347,7 +419,7 @@ namespace IKVM.Tests.Java.java.nio.channels
         public async Task CanReadVfsAssemblyClass()
         {
             var f = new File(System.IO.Path.Combine(VfsTable.Default.GetAssemblyClassesPath(typeof(global::java.lang.Object).Assembly), "java", "lang", "Object.class"));
-            
+
             using var c = AsynchronousFileChannel.open(f.toPath(), StandardOpenOption.READ);
             var b = ByteBuffer.allocate(512);
             b.capacity().Should().Be(512);
