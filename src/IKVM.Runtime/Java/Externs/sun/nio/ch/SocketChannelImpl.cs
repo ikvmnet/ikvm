@@ -1,6 +1,6 @@
 using System;
+using System.Buffers;
 using System.Net.Sockets;
-using System.Runtime.ExceptionServices;
 
 using IKVM.Runtime;
 using IKVM.Runtime.Accessors.Java.Io;
@@ -84,8 +84,30 @@ namespace IKVM.Java.Externs.sun.nio.ch
 
             try
             {
-                socket.Send(new byte[] { data }, 1, SocketFlags.OutOfBand);
-                return 1;
+#if NETFRAMEWORK
+                var buf = ArrayPool<byte>.Shared.Rent(1);
+
+                try
+                {
+                    buf[0] = data;
+                    return socket.Send(buf, 1, SocketFlags.OutOfBand);
+                }
+                finally
+                {
+                    ArrayPool<byte>.Shared.Return(buf);
+                }
+#else
+                unsafe
+                {
+                    var buf = (Span<byte>)stackalloc byte[1];
+                    buf[0] = data;
+                    return socket.Send(buf, SocketFlags.OutOfBand);
+                }
+#endif
+            }
+            catch (SocketException e) when (e.SocketErrorCode == SocketError.WouldBlock)
+            {
+                return global::sun.nio.ch.IOStatus.INTERRUPTED;
             }
             catch (SocketException e)
             {
