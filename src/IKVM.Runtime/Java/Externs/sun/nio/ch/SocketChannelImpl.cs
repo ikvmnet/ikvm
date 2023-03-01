@@ -1,5 +1,6 @@
 using System;
 using System.Net.Sockets;
+using System.Runtime.ExceptionServices;
 
 using IKVM.Runtime;
 using IKVM.Runtime.Accessors.Java.Io;
@@ -43,7 +44,7 @@ namespace IKVM.Java.Externs.sun.nio.ch
                 if (block || ready || task.IsCompleted)
                 {
                     FileDescriptorAccessor.SetTask(fd, null);
-                    task.Wait();
+                    task.GetAwaiter().GetResult();
                     return 1;
                 }
                 else

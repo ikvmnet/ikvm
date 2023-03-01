@@ -36,6 +36,7 @@ using IKVM.Runtime;
 using IKVM.Runtime.Accessors.Java.Io;
 using IKVM.Runtime.Accessors.Java.Lang;
 using IKVM.Runtime.Extensions;
+using IKVM.Runtime.Util.Java.Security;
 
 namespace IKVM.Java.Externs.sun.reflect
 {
@@ -944,7 +945,7 @@ namespace IKVM.Java.Externs.sun.reflect
             /// </summary>
             static FieldAccessorImplBase()
             {
-                if (SystemAccessor.InvokeGetProperty("ikvm.reflect.field.inflationThreshold") is string s && ushort.TryParse(s, out var value))
+                if (global::java.security.AccessController.doPrivileged(new FuncPrivilegedAction<string>(() => SystemAccessor.InvokeGetProperty("ikvm.reflect.field.inflationThreshold"))) is string s && ushort.TryParse(s, out var value))
                     inflationThreshold = value;
             }
 

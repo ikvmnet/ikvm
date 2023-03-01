@@ -5,7 +5,6 @@ using System.Net;
 using System.Net.Sockets;
 using System.Reflection;
 
-using IKVM.Internal;
 using IKVM.Runtime;
 using IKVM.Runtime.Accessors.Java.Io;
 using IKVM.Runtime.Accessors.Sun.Nio.Ch;
@@ -70,14 +69,14 @@ namespace IKVM.Java.Externs.sun.nio.ch
 
                 try
                 {
-                    var ep = (EndPoint)new IPEndPoint(IPAddress.IPv6Any, 0);
+                    var ep = (EndPoint)new IPEndPoint(socket.AddressFamily == AddressFamily.InterNetworkV6 ? IPAddress.IPv6Any : IPAddress.Any, 0);
                     socket.EndReceiveFrom(socket.BeginReceiveFrom(TempBuffer, 0, TempBuffer.Length, SocketFlags.Peek, ref ep, null, null), ref ep);
                 }
                 catch (SocketException e) when (e.SocketErrorCode == SocketError.ConnectionReset)
                 {
                     try
                     {
-                        var ep = (EndPoint)new IPEndPoint(IPAddress.IPv6Any, 0);
+                        var ep = (EndPoint)new IPEndPoint(socket.AddressFamily == AddressFamily.InterNetworkV6 ? IPAddress.IPv6Any : IPAddress.Any, 0);
                         socket.EndReceiveFrom(socket.BeginReceiveFrom(TempBuffer, 0, TempBuffer.Length, SocketFlags.Peek, ref ep, null, null), ref ep);
                     }
                     catch (SocketException e2) when (e2.SocketErrorCode == SocketError.ConnectionReset)
@@ -155,7 +154,7 @@ namespace IKVM.Java.Externs.sun.nio.ch
             if (socket == null)
                 throw new global::java.net.SocketException("Socket closed.");
 
-            var remoteEndpoint = (EndPoint)new IPEndPoint(IPAddress.IPv6Any, 0);
+            var remoteEndpoint = (EndPoint)new IPEndPoint(socket.AddressFamily == AddressFamily.InterNetworkV6 ? IPAddress.IPv6Any : IPAddress.Any, 0);
             var length = 0;
             var packet = ArrayPool<byte>.Shared.Rent(len);
 

@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Net.Sockets;
 using System.Security.Cryptography;
 
 using IKVM.Runtime;
@@ -68,7 +69,22 @@ namespace IKVM.Java.Externs.sun.nio.ch
             if (socket == null)
                 throw new global::java.io.IOException("Socket closed.");
 
-            socket.Blocking = blocking;
+            try
+            {
+                socket.Blocking = blocking;
+            }
+            catch (SocketException e)
+            {
+                throw new global::java.net.SocketException(e.Message);
+            }
+            catch (ObjectDisposedException)
+            {
+                throw new global::java.net.SocketException("Socket closed.");
+            }
+            catch (Exception e)
+            {
+                throw new global::java.io.IOException(e);
+            }
 #endif
         }
 
