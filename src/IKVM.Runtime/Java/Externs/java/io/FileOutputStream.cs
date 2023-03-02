@@ -52,14 +52,16 @@ namespace IKVM.Java.Externs.java.io
                 if (append)
                 {
 #if NETFRAMEWORK
-                    new FileStream(name, fileMode, FileSystemRights.AppendData, FileShare.ReadWrite, 1, FileOptions.None);
+                    FileDescriptorAccessor.SetStream(fd, new FileStream(name, fileMode, FileSystemRights.AppendData, FileShare.ReadWrite, 1, FileOptions.None));
 #else
                     // the above constructor does not exist in .NET Core
-                    new FileStream(name, fileMode, fileAccess, FileShare.ReadWrite, 1, false);
+                    FileDescriptorAccessor.SetStream(fd, new FileStream(name, fileMode, fileAccess, FileShare.ReadWrite, 1, false));
 #endif
                 }
-
-                FileDescriptorAccessor.SetStream(fd, new FileStream(name, fileMode, fileAccess, FileShare.ReadWrite, 1, false));
+                else
+                {
+                    FileDescriptorAccessor.SetStream(fd, new FileStream(name, fileMode, fileAccess, FileShare.ReadWrite, 1, false));
+                }
             }
             catch (ObjectDisposedException e)
             {

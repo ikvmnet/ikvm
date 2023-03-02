@@ -24,10 +24,10 @@ namespace IKVM.Java.Externs.sun.nio.ch
 #endif
 
         [StructLayout(LayoutKind.Sequential)]
-        unsafe struct iovec
+        struct iovec
         {
 
-            public void* iov_base;
+            public IntPtr iov_base;
             public int iov_len;
 
         }
@@ -122,29 +122,37 @@ namespace IKVM.Java.Externs.sun.nio.ch
             try
             {
                 // allocate list of array segments to hold received data
-                var iov = new Span<iovec>((byte*)(IntPtr)address, len);
-                var seg = new ArraySegment<byte>[iov.Length];
+                var vecs = new Span<iovec>((byte*)(IntPtr)address, len);
+                var bufs = new ArraySegment<byte>[vecs.Length];
 
                 try
                 {
-                    // allocate temporary segments
-                    for (int i = 0; i < iov.Length; i++)
-                        seg[i] = new ArraySegment<byte>(ArrayPool<byte>.Shared.Rent(iov[i].iov_len), 0, iov[i].iov_len);
+                    // prepare array segments for buffers
+                    for (int i = 0; i < vecs.Length; i++)
+                        bufs[i] = new ArraySegment<byte>(ArrayPool<byte>.Shared.Rent(vecs[i].iov_len), 0, vecs[i].iov_len);
 
                     // receive into segments
-                    var n = socket.Receive(seg);
+                    var length = socket.Receive(bufs);
 
-                    // copy segments into original buffers
-                    for (int i = 0; i < seg.Length; i++)
-                        Marshal.Copy(seg[i].Array, seg[i].Offset, (IntPtr)iov[i].iov_base, n);
+                    // copy segments back into vectors
+                    var l = length;
+                    for (int i = 0; i < vecs.Length; i++)
+                    {
+                        var szz = Math.Min(l, vecs[i].iov_len);
+                        Marshal.Copy(bufs[i].Array, 0, vecs[i].iov_base, szz);
+                        l -= szz;
+                    }
 
-                    return n;
+                    // we should have accounted for all of the bytes
+                    if (l != 0)
+                        throw new global::java.lang.RuntimeException("Bytes remaining after read.");
+
+                    return length;
                 }
                 finally
                 {
-                    // return allocated arrays
-                    for (int i = 0; i < seg.Length; i++)
-                        ArrayPool<byte>.Shared.Return(seg[i].Array);
+                    for (int i = 0; i < bufs.Length; i++)
+                        ArrayPool<byte>.Shared.Return(bufs[i].Array);
                 }
             }
             catch (SocketException e) when (e.SocketErrorCode == SocketError.Shutdown)
@@ -168,7 +176,6 @@ namespace IKVM.Java.Externs.sun.nio.ch
                 throw new global::java.io.IOException(e);
             }
 #endif
-
         }
 
         /// <summary>
@@ -243,27 +250,27 @@ namespace IKVM.Java.Externs.sun.nio.ch
             try
             {
                 // allocate list of array segments to hold incoming buffers
-                var iov = new ReadOnlySpan<iovec>((void*)(IntPtr)address, len);
-                var seg = new ArraySegment<byte>[iov.Length];
+                var vecs = new ReadOnlySpan<iovec>((void*)(IntPtr)address, len);
+                var bufs = new ArraySegment<byte>[vecs.Length];
 
                 try
                 {
                     // copy incoming buffers into segments
-                    for (int i = 0; i < iov.Length; i++)
+                    for (int i = 0; i < vecs.Length; i++)
                     {
-                        seg[i] = new ArraySegment<byte>(ArrayPool<byte>.Shared.Rent(iov[i].iov_len), 0, iov[i].iov_len);
-                        new ReadOnlySpan<byte>(iov[i].iov_base, iov[i].iov_len).CopyTo(seg[i]);
+                        bufs[i] = new ArraySegment<byte>(ArrayPool<byte>.Shared.Rent(vecs[i].iov_len), 0, vecs[i].iov_len);
+                        Marshal.Copy(vecs[i].iov_base, bufs[i].Array, bufs[i].Offset, vecs[i].iov_len);
                     }
 
                     // send segments
-                    return socket.Send(seg);
+                    return socket.Send(bufs);
                 }
                 finally
                 {
                     // return allocated arrays
-                    for (int i = 0; i < seg.Length; i++)
-                        if (seg[i].Array != null)
-                            ArrayPool<byte>.Shared.Return(seg[i].Array);
+                    for (int i = 0; i < bufs.Length; i++)
+                        if (bufs[i].Array != null)
+                            ArrayPool<byte>.Shared.Return(bufs[i].Array);
                 }
             }
             catch (SocketException e) when (e.SocketErrorCode == SocketError.WouldBlock)

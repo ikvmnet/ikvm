@@ -214,9 +214,6 @@ namespace IKVM.Java.Externs.sun.nio.ch
             if (s == null)
                 throw new global::java.io.IOException("Stream closed.");
 
-            if (s.CanWrite == false)
-                return global::sun.nio.ch.IOStatus.UNSUPPORTED;
-
             try
             {
                 if (offset >= 0)

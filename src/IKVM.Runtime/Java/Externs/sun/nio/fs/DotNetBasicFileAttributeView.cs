@@ -4,6 +4,7 @@ using System.Security;
 
 using IKVM.Runtime;
 using IKVM.Runtime.Accessors.Java.Lang;
+using IKVM.Runtime.Accessors.Sun.Nio.Ch;
 using IKVM.Runtime.Vfs;
 
 namespace IKVM.Java.Externs.sun.nio.fs
@@ -20,12 +21,15 @@ namespace IKVM.Java.Externs.sun.nio.fs
         static SystemAccessor systemAccessor;
         static SecurityManagerAccessor securityManagerAccessor;
         static FileTimeAccessor fileTimeAccessor;
+        static DotNetBasicFileAttributeViewAccessor dotNetBasicFileAttributeViewAccessor;
 
         static SystemAccessor SystemAccessor => JVM.BaseAccessors.Get(ref systemAccessor);
 
         static SecurityManagerAccessor SecurityManagerAccessor => JVM.BaseAccessors.Get(ref securityManagerAccessor);
 
         static FileTimeAccessor FileTimeAccessor => JVM.BaseAccessors.Get(ref fileTimeAccessor);
+
+        static DotNetBasicFileAttributeViewAccessor DotNetBasicFileAttributeViewAccessor => JVM.BaseAccessors.Get(ref dotNetBasicFileAttributeViewAccessor);
 
 #endif
 
@@ -49,19 +53,23 @@ namespace IKVM.Java.Externs.sun.nio.fs
         }
 
         /// <summary>
-        /// Implements the native method 'setTimes0'.
+        /// Implements the native method 'setTimes'.
         /// </summary>
-        /// <param name="path"></param>
+        /// <param name="self"></param>
         /// <param name="lastModifiedTime"></param>
         /// <param name="lastAccessTime"></param>
         /// <param name="createdTime"></param>
         /// <exception cref="global::java.nio.file.NoSuchFileException"></exception>
         /// <exception cref="global::java.io.IOException"></exception>
-        public static void setTimes0(string path, object lastModifiedTime, object lastAccessTime, object createdTime)
+        public static void setTimes(object self, object lastModifiedTime, object lastAccessTime, object createdTime)
         {
 #if FIRST_PASS
             throw new NotImplementedException();
 #else
+            var path = DotNetBasicFileAttributeViewAccessor.GetPath(self);
+            if (path == null)
+                throw new global::java.lang.NullPointerException();
+
             var sm = SystemAccessor.InvokeGetSecurityManager();
             if (sm != null)
                 SecurityManagerAccessor.InvokeCheckWrite(sm, path);

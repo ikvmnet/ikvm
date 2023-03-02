@@ -14,17 +14,18 @@ using IKVM.Runtime.Util.Java.Net;
 namespace IKVM.Java.Externs.sun.nio.ch
 {
 
+    /// <summary>
+    /// Implements the native methods of 'sun.nio.ch.DatagramChannelImpl'.
+    /// </summary>
     static class DatagramChannelImpl
     {
 
 #if FIRST_PASS == false
 
         static FileDescriptorAccessor fileDescriptorAccessor;
+        static DatagramChannelImplAccessor datagramChannelImplAccessor;
 
         static FileDescriptorAccessor FileDescriptorAccessor => JVM.BaseAccessors.Get(ref fileDescriptorAccessor);
-
-
-        static DatagramChannelImplAccessor datagramChannelImplAccessor;
 
         static DatagramChannelImplAccessor DatagramChannelImplAccessor => JVM.BaseAccessors.Get(ref datagramChannelImplAccessor);
 
@@ -128,7 +129,7 @@ namespace IKVM.Java.Externs.sun.nio.ch
             }
             catch (SocketException e)
             {
-                throw global::java.net.SocketUtil.convertSocketExceptionToIOException(e);
+                throw e.ToIOException();
             }
             catch (ObjectDisposedException)
             {
@@ -235,7 +236,7 @@ namespace IKVM.Java.Externs.sun.nio.ch
 
             try
             {
-                new ReadOnlySpan<byte>((byte*)(IntPtr)address, len).CopyTo(packet);
+                Marshal.Copy((IntPtr)address, packet, 0, len);
                 return socket.SendTo(packet, 0, len, SocketFlags.None, new IPEndPoint(addr.ToIPAddress(), port));
             }
             catch (SocketException e) when (e.SocketErrorCode == SocketError.WouldBlock)

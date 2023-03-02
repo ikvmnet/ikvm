@@ -1,15 +1,6 @@
 ﻿using System;
-using System.Buffers;
-using System.Buffers.Text;
-using System.Collections.Generic;
-using System.IO.Pipelines;
-using System.Text;
-using System.Text.Json;
 using System.Threading;
 using System.Threading.Tasks;
-
-using com.sun.org.apache.xerces.@internal.impl.io;
-using com.sun.org.apache.xpath.@internal;
 
 using FluentAssertions;
 

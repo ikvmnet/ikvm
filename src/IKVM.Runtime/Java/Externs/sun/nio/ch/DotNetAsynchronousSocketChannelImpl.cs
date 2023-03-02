@@ -450,6 +450,7 @@ namespace IKVM.Java.Externs.sun.nio.ch
                                     // receive data into segments
                                     length = socket.Receive(bufs, SocketFlags.None);
 
+                                    // copy segments back into buffers
                                     var l = length;
                                     for (int i = 0; i < dsts.Length; i++)
                                     {
@@ -469,7 +470,7 @@ namespace IKVM.Java.Externs.sun.nio.ch
 
                                     // we should have accounted for all of the bytes
                                     if (l != 0)
-                                        throw new RuntimeException("Bytes remaining after read.");
+                                        throw new global::java.lang.RuntimeException("Bytes remaining after read.");
 
                                     // return total number of bytes read
                                     return isScatteringRead ? Long.valueOf(length) : Integer.valueOf(length);

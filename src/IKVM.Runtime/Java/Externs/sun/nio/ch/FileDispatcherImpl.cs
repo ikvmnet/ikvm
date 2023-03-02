@@ -1,9 +1,9 @@
 ﻿using System;
+using System.Buffers;
 using System.IO;
 using System.Runtime.InteropServices;
 using System.Threading;
 
-using IKVM.Internal;
 using IKVM.Runtime;
 using IKVM.Runtime.Accessors.Java.Io;
 
@@ -29,6 +29,15 @@ namespace IKVM.Java.Externs.sun.nio.ch
 
 #endif
 
+        [StructLayout(LayoutKind.Sequential)]
+        struct iovec
+        {
+
+            public IntPtr iov_base;
+            public int iov_len;
+
+        }
+
         /// <summary>
         /// Implements the native method 'read0'.
         /// </summary>
@@ -42,21 +51,21 @@ namespace IKVM.Java.Externs.sun.nio.ch
 #if FIRST_PASS
             throw new NotImplementedException();
 #else
-            var s = FileDescriptorAccessor.GetStream(fd);
-            if (s == null)
+            var stream = FileDescriptorAccessor.GetStream(fd);
+            if (stream == null)
                 throw new global::java.io.IOException("Stream closed.");
 
-            if (s.CanRead == false)
+            if (stream.CanRead == false)
                 return IOStatus.UNSUPPORTED;
 
             try
             {
 #if NETFRAMEWORK
                 var b = new byte[len];
-                var r = s.Read(b, 0, len);
+                var r = stream.Read(b, 0, len);
                 b.CopyTo(new Span<byte>((byte*)(IntPtr)address, len));
 #else
-                var r = s.Read(new Span<byte>((byte*)(IntPtr)address, len));
+                var r = stream.Read(new Span<byte>((byte*)(IntPtr)address, len));
 #endif
 
                 return r == 0 ? IOStatus.EOF : r;
@@ -179,19 +188,69 @@ namespace IKVM.Java.Externs.sun.nio.ch
         /// <param name="len"></param>
         /// <returns></returns>
         /// <exception cref="NotImplementedException"></exception>
-        public static long readv0(FileDescriptor fd, long address, int len)
+        public static unsafe long readv0(FileDescriptor fd, long address, int len)
         {
 #if FIRST_PASS
             throw new NotImplementedException();
 #else
-            var s = FileDescriptorAccessor.GetStream(fd);
-            if (s == null)
+            var stream = FileDescriptorAccessor.GetStream(fd);
+            if (stream == null)
                 throw new global::java.io.IOException("Stream closed.");
 
-            if (s.CanRead == false)
+            if (stream.CanRead == false)
                 return IOStatus.UNSUPPORTED;
 
-            throw new NotImplementedException();
+            try
+            {
+                // map io vecors to read into
+                var vecs = new Span<iovec>((byte*)(IntPtr)address, len);
+                var length = 0;
+
+                // issue independent reads for each vector
+                for (int i = 0; i < vecs.Length; i++)
+                {
+#if NETFRAMEWORK
+                    var buf = ArrayPool<byte>.Shared.Rent(vecs[i].iov_len);
+
+                    try
+                    {
+                        var l = stream.Read(buf, 0, vecs[i].iov_len);
+                        Marshal.Copy(buf, 0, vecs[i].iov_base, l);
+                        length += l;
+
+                    }
+                    finally
+                    {
+                        ArrayPool<byte>.Shared.Return(buf);
+                    }
+#else
+                    length += stream.Read(new Span<byte>((byte*)vecs[i].iov_base, vecs[i].iov_len));
+#endif
+
+                    // we failed to read up to the requested amount, so we must be at the end
+                    if (length < vecs[i].iov_len)
+                        break;
+                }
+
+                // if we read a total of zero bytes, we must be at the end of the file
+                return length == 0 ? IOStatus.EOF : length;
+            }
+            catch (EndOfStreamException)
+            {
+                return IOStatus.EOF;
+            }
+            catch (NotSupportedException)
+            {
+                return IOStatus.UNSUPPORTED;
+            }
+            catch (ObjectDisposedException)
+            {
+                return IOStatus.UNAVAILABLE;
+            }
+            catch (Exception e)
+            {
+                throw new global::java.io.IOException("Read failed.", e);
+            }
 #endif
         }
 
@@ -209,21 +268,21 @@ namespace IKVM.Java.Externs.sun.nio.ch
 #if FIRST_PASS
             throw new NotImplementedException();
 #else
-            var s = FileDescriptorAccessor.GetStream(fd);
-            if (s == null)
+            var stream = FileDescriptorAccessor.GetStream(fd);
+            if (stream == null)
                 throw new global::java.io.IOException("Stream closed.");
 
-            if (s.CanWrite == false)
+            if (stream.CanWrite == false)
                 return IOStatus.UNSUPPORTED;
 
             try
             {
                 if (append)
                 {
-                    if (s.CanSeek == false)
+                    if (stream.CanSeek == false)
                         return IOStatus.UNSUPPORTED;
 
-                    s.Seek(0, SeekOrigin.End);
+                    stream.Seek(0, SeekOrigin.End);
                 }
             }
             catch (global::java.io.IOException)
@@ -253,9 +312,9 @@ namespace IKVM.Java.Externs.sun.nio.ch
 #if NETFRAMEWORK
                 var b = new byte[len];
                 new ReadOnlySpan<byte>((byte*)(IntPtr)address, len).CopyTo(b);
-                s.Write(b, 0, len);
+                stream.Write(b, 0, len);
 #else
-                s.Write(new Span<byte>((byte*)(IntPtr)address, len));
+                stream.Write(new Span<byte>((byte*)(IntPtr)address, len));
 #endif
 
                 return len;
@@ -297,21 +356,21 @@ namespace IKVM.Java.Externs.sun.nio.ch
 #if FIRST_PASS
             throw new NotImplementedException();
 #else
-            var s = FileDescriptorAccessor.GetStream(fd);
-            if (s == null)
+            var stream = FileDescriptorAccessor.GetStream(fd);
+            if (stream == null)
                 throw new global::java.io.IOException("Stream closed.");
 
-            if (s.CanWrite == false)
+            if (stream.CanWrite == false)
                 return IOStatus.UNSUPPORTED;
 
             try
             {
-                if (s.Position != position)
+                if (stream.Position != position)
                 {
-                    if (s.CanSeek == false)
+                    if (stream.CanSeek == false)
                         return IOStatus.UNSUPPORTED;
 
-                    s.Seek(position, SeekOrigin.Begin);
+                    stream.Seek(position, SeekOrigin.Begin);
                 }
             }
             catch (global::java.io.IOException)
@@ -341,9 +400,9 @@ namespace IKVM.Java.Externs.sun.nio.ch
 #if NETFRAMEWORK
                 var b = new byte[len];
                 new ReadOnlySpan<byte>((byte*)(IntPtr)address, len).CopyTo(b);
-                s.Write(b, 0, len);
+                stream.Write(b, 0, len);
 #else
-                s.Write(new Span<byte>((byte*)(IntPtr)address, len));
+                stream.Write(new Span<byte>((byte*)(IntPtr)address, len));
 #endif
 
                 return len;
@@ -380,19 +439,103 @@ namespace IKVM.Java.Externs.sun.nio.ch
         /// <param name="append"></param>
         /// <returns></returns>
         /// <exception cref="NotImplementedException"></exception>
-        public static long writev0(FileDescriptor fd, long address, int len, bool append)
+        public static unsafe long writev0(FileDescriptor fd, long address, int len, bool append)
         {
 #if FIRST_PASS
             throw new NotImplementedException();
 #else
-            var s = FileDescriptorAccessor.GetStream(fd);
-            if (s == null)
+            if (len == 0)
+                return 0;
+
+            var stream = FileDescriptorAccessor.GetStream(fd);
+            if (stream == null)
                 throw new global::java.io.IOException("Stream closed.");
 
-            if (s.CanWrite == false)
+            if (stream.CanWrite == false)
                 return IOStatus.UNSUPPORTED;
 
-            throw new NotImplementedException();
+            try
+            {
+                if (append)
+                {
+                    if (stream.CanSeek == false)
+                        return IOStatus.UNSUPPORTED;
+
+                    stream.Seek(0, SeekOrigin.End);
+                }
+            }
+            catch (global::java.io.IOException)
+            {
+                throw;
+            }
+            catch (EndOfStreamException)
+            {
+                return IOStatus.EOF;
+            }
+            catch (NotSupportedException)
+            {
+                return IOStatus.UNSUPPORTED;
+            }
+            catch (ObjectDisposedException)
+            {
+                return IOStatus.UNAVAILABLE;
+            }
+            catch (Exception e)
+            {
+                throw new global::java.io.IOException("Seek failed.", e);
+            }
+
+            try
+            {
+                // map io vecors to read into
+                var vecs = new Span<iovec>((byte*)(IntPtr)address, len);
+                var length = 0;
+
+                // issue independent writes for each vector
+                for (int i = 0; i < vecs.Length; i++)
+                {
+#if NETFRAMEWORK
+                    var buf = ArrayPool<byte>.Shared.Rent(vecs[i].iov_len);
+
+                    try
+                    {
+                        Marshal.Copy(vecs[i].iov_base, buf, 0, vecs[i].iov_len);
+                        stream.Write(buf, 0, vecs[i].iov_len);
+                        length += vecs[i].iov_len;
+
+                    }
+                    finally
+                    {
+                        ArrayPool<byte>.Shared.Return(buf);
+                    }
+#else
+                    stream.Write(new ReadOnlySpan<byte>((byte*)vecs[i].iov_base, vecs[i].iov_len));
+                    length += vecs[i].iov_len;
+#endif
+                }
+
+                return length;
+            }
+            catch (global::java.io.IOException)
+            {
+                throw;
+            }
+            catch (EndOfStreamException)
+            {
+                return IOStatus.EOF;
+            }
+            catch (NotSupportedException)
+            {
+                return IOStatus.UNSUPPORTED;
+            }
+            catch (ObjectDisposedException)
+            {
+                return IOStatus.UNAVAILABLE;
+            }
+            catch (Exception e)
+            {
+                throw new global::java.io.IOException("Write failed.", e);
+            }
 #endif
         }
 
