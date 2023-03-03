@@ -156,6 +156,24 @@ namespace IKVM.Tests.Java.java.nio.channels
             path.delete();
         }
 
+        [TestMethod]
+        public void CanTransferFromFileToFile()
+        {
+            var srcPath = File.createTempFile("src", null);
+            srcPath.deleteOnExit();
+
+            var dstPath = File.createTempFile("dst", null);
+            dstPath.deleteOnExit();
+
+            using var srcStream = new FileInputStream(srcPath);
+            using var srcChannel = srcStream.getChannel();
+
+            using var dstStream = new FileOutputStream(dstPath);
+            using var dstChannel = dstStream.getChannel();
+
+            var n = dstChannel.transferFrom(srcChannel, 0, Integer.MAX_VALUE + 1L);
+        }
+
     }
 
 }

@@ -99,7 +99,7 @@ namespace IKVM.Java.Externs.sun.nio.fs
                         false,
                         false,
                         0,
-                        true,
+                        false,
                         false,
                         false,
                         false);

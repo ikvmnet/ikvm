@@ -114,14 +114,14 @@ namespace IKVM.Java.Externs.sun.nio.ch
 #if FIRST_PASS
             throw new NotImplementedException();
 #else
-            var s = FileDescriptorAccessor.GetStream(src);
-            if (s == null)
+            var stream = FileDescriptorAccessor.GetStream(src);
+            if (stream == null)
                 throw new global::java.io.IOException("Stream closed.");
-            if (s is not FileStream fs)
+            if (stream is not FileStream fs)
                 throw new global::java.io.IOException("Transfor not supported.");
 
-            var d = FileDescriptorAccessor.GetSocket(dst);
-            if (d == null)
+            var socket = FileDescriptorAccessor.GetSocket(dst);
+            if (socket == null)
                 throw new global::java.io.IOException("Socket closed.");
 
             try
@@ -137,15 +137,15 @@ namespace IKVM.Java.Externs.sun.nio.ch
                     var chunkSize = (int)Math.Min(count, int.MaxValue);
 
                     // move file to specified position
-                    if (s.Position != position)
+                    if (stream.Position != position)
                     {
-                        if (s.CanSeek == false)
+                        if (stream.CanSeek == false)
                             return global::sun.nio.ch.IOStatus.UNSUPPORTED;
 
-                        s.Seek(position, SeekOrigin.Begin);
+                        stream.Seek(position, SeekOrigin.Begin);
                     }
 
-                    int result = TransmitFile(d.Handle, fs.SafeFileHandle.DangerousGetHandle(), chunkSize, PACKET_SIZE, null, null, TF_USE_KERNEL_APC);
+                    int result = TransmitFile(socket.Handle, fs.SafeFileHandle.DangerousGetHandle(), chunkSize, PACKET_SIZE, null, null, TF_USE_KERNEL_APC);
                     if (result == 0)
                     {
                         return Marshal.GetLastWin32Error() switch
@@ -160,7 +160,7 @@ namespace IKVM.Java.Externs.sun.nio.ch
                 }
                 else
                 {
-                    var result = Syscall.sendfile((int)d.Handle, (int)fs.SafeFileHandle.DangerousGetHandle(), ref position, (ulong)count);
+                    var result = Syscall.sendfile((int)socket.Handle, (int)fs.SafeFileHandle.DangerousGetHandle(), ref position, (ulong)count);
                     if (result < 0)
                     {
                         return Stdlib.GetLastError() switch
