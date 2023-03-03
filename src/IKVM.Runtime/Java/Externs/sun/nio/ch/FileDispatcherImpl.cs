@@ -60,12 +60,22 @@ namespace IKVM.Java.Externs.sun.nio.ch
 
             try
             {
+                int r = -1;
+
 #if NETFRAMEWORK
-                var b = new byte[len];
-                var r = stream.Read(b, 0, len);
-                b.CopyTo(new Span<byte>((byte*)(IntPtr)address, len));
+                var buf = ArrayPool<byte>.Shared.Rent(len);
+
+                try
+                {
+                    r = stream.Read(buf, 0, len);
+                    Marshal.Copy(buf, 0, (IntPtr)address, r);
+                }
+                finally
+                {
+                    ArrayPool<byte>.Shared.Return(buf);
+                }
 #else
-                var r = stream.Read(new Span<byte>((byte*)(IntPtr)address, len));
+                r = stream.Read(new Span<byte>((byte*)(IntPtr)address, len));
 #endif
 
                 return r == 0 ? IOStatus.EOF : r;
@@ -107,21 +117,22 @@ namespace IKVM.Java.Externs.sun.nio.ch
 #if FIRST_PASS
             throw new NotImplementedException();
 #else
-            var s = FileDescriptorAccessor.GetStream(fd);
-            if (s == null)
+            var stream = FileDescriptorAccessor.GetStream(fd);
+            if (stream == null)
                 throw new global::java.io.IOException("Stream closed.");
 
-            if (s.CanRead == false)
+            if (stream.CanRead == false)
                 return IOStatus.UNSUPPORTED;
+            if (stream.CanSeek == false)
+                return IOStatus.UNSUPPORTED;
+
+            var p = stream.Position;
 
             try
             {
-                if (s.Position != position)
+                if (stream.Position != position)
                 {
-                    if (s.CanSeek == false)
-                        return IOStatus.UNSUPPORTED;
-
-                    s.Seek(position, SeekOrigin.Begin);
+                    stream.Seek(position, SeekOrigin.Begin);
                 }
             }
             catch (global::java.io.IOException)
@@ -147,15 +158,29 @@ namespace IKVM.Java.Externs.sun.nio.ch
 
             try
             {
+                int length = -1;
+
 #if NETFRAMEWORK
-                var b = new byte[len];
-                var r = s.Read(b, 0, len);
-                b.CopyTo(new Span<byte>((void*)(IntPtr)address, len));
+                var buf = ArrayPool<byte>.Shared.Rent(len);
+
+                try
+                {
+                    length = stream.Read(buf, 0, len);
+                    Marshal.Copy(buf, 0, (IntPtr)address, length);
+                }
+                finally
+                {
+                    ArrayPool<byte>.Shared.Return(buf);
+                }
 #else
-                var r = s.Read(new Span<byte>((void*)(IntPtr)address, len));
+                length = stream.Read(new Span<byte>((void*)(IntPtr)address, len));
 #endif
 
-                return r == 0 ? IOStatus.EOF : r;
+                // reset stream position
+                if (stream.Position != p)
+                    stream.Position = p;
+
+                return length == 0 ? IOStatus.EOF : length;
             }
             catch (global::java.io.IOException)
             {
@@ -308,11 +333,18 @@ namespace IKVM.Java.Externs.sun.nio.ch
 
             try
             {
-
 #if NETFRAMEWORK
-                var b = new byte[len];
-                new ReadOnlySpan<byte>((byte*)(IntPtr)address, len).CopyTo(b);
-                stream.Write(b, 0, len);
+                var buf = ArrayPool<byte>.Shared.Rent(len);
+
+                try
+                {
+                    Marshal.Copy((IntPtr)address, buf, 0, len);
+                    stream.Write(buf, 0, len);
+                }
+                finally
+                {
+                    ArrayPool<byte>.Shared.Return(buf);
+                }
 #else
                 stream.Write(new Span<byte>((byte*)(IntPtr)address, len));
 #endif
@@ -362,14 +394,15 @@ namespace IKVM.Java.Externs.sun.nio.ch
 
             if (stream.CanWrite == false)
                 return IOStatus.UNSUPPORTED;
+            if (stream.CanSeek == false)
+                return IOStatus.UNSUPPORTED;
+
+            var p = stream.Position;
 
             try
             {
-                if (stream.Position != position)
+                if (p != position)
                 {
-                    if (stream.CanSeek == false)
-                        return IOStatus.UNSUPPORTED;
-
                     stream.Seek(position, SeekOrigin.Begin);
                 }
             }
@@ -398,12 +431,24 @@ namespace IKVM.Java.Externs.sun.nio.ch
             {
 
 #if NETFRAMEWORK
-                var b = new byte[len];
-                new ReadOnlySpan<byte>((byte*)(IntPtr)address, len).CopyTo(b);
-                stream.Write(b, 0, len);
+                var buf = ArrayPool<byte>.Shared.Rent(len);
+
+                try
+                {
+                    Marshal.Copy((IntPtr)address, buf, 0, len);
+                    stream.Write(buf, 0, len);
+                }
+                finally
+                {
+                    ArrayPool<byte>.Shared.Return(buf);
+                }
 #else
                 stream.Write(new Span<byte>((byte*)(IntPtr)address, len));
 #endif
+
+                // reset stream position
+                if (stream.Position != p)
+                    stream.Position = p;
 
                 return len;
             }

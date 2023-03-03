@@ -1,4 +1,6 @@
-﻿using FluentAssertions;
+﻿using System.Security.Cryptography;
+
+using FluentAssertions;
 
 using java.io;
 using java.lang;
@@ -82,6 +84,76 @@ namespace IKVM.Tests.Java.java.nio.channels
             }
 
             Files.delete(blah);
+        }
+
+        [TestMethod]
+        public void RandomAccessFileShouldRetainPosition()
+        {
+            var rand = new Random();
+
+            // generate temporary file
+            var path = File.createTempFile("blah", null);
+            path.deleteOnExit();
+
+            var buff = new byte[1024];
+            RandomNumberGenerator.Create().GetBytes(buff);
+            System.IO.File.WriteAllBytes(path.toString(), buff);
+
+            using var raf = new RandomAccessFile(path.toString(), "rw");
+            using var channel = raf.getChannel();
+
+            for (int x = 0; x < 100; x++)
+            {
+                var offset = rand.nextInt(1000);
+
+                // write some data from the middle of the file
+                var bb = ByteBuffer.allocate(4);
+
+                // write known sequence out
+                for (byte i = 0; i < 4; i++)
+                    bb.put(i);
+
+                bb.flip();
+
+                var originalPosition = channel.position();
+
+                int totalWritten = 0;
+                while (totalWritten < 4)
+                {
+                    int written = channel.write(bb, offset);
+                    if (written < 0)
+                        throw new Exception("Write failed");
+
+                    totalWritten += written;
+                }
+
+                long newPosition = channel.position();
+                newPosition.Should().Be(originalPosition);
+
+                // attempt to read sequence back in
+                bb = ByteBuffer.allocateDirect(4);
+                originalPosition = channel.position();
+                int totalRead = 0;
+                while (totalRead < 4)
+                {
+                    int read = channel.read(bb, offset);
+                    if (read < 0)
+                        throw new Exception("Read failed");
+
+                    totalRead += read;
+                }
+
+                newPosition = channel.position();
+                newPosition.Should().Be(originalPosition); 
+                
+                for (byte i = 0; i < 4; i++)
+                {
+                    if (bb.get(i) != i)
+                        throw new Exception("Write test failed");
+                }
+            }
+
+            path.delete();
         }
 
     }

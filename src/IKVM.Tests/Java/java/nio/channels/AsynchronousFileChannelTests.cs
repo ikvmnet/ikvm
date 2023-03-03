@@ -296,11 +296,11 @@ namespace IKVM.Tests.Java.java.nio.channels
                 {
                     fl = (FileLock)ch.@lock().get();
                 }
-                catch (ExecutionException x)
+                catch (ExecutionException e)
                 {
-                    throw new RuntimeException(x);
+                    throw new RuntimeException(e);
                 }
-                catch (InterruptedException x)
+                catch (InterruptedException)
                 {
                     throw new RuntimeException("Should not be interrupted");
                 }
@@ -313,7 +313,7 @@ namespace IKVM.Tests.Java.java.nio.channels
                     ch.tryLock();
                     throw new RuntimeException("OverlappingFileLockException expected");
                 }
-                catch (OverlappingFileLockException x)
+                catch (OverlappingFileLockException)
                 {
 
                 }
@@ -336,7 +336,7 @@ namespace IKVM.Tests.Java.java.nio.channels
                 {
 
                 }
-                catch (System.Exception e)
+                catch (System.Exception)
                 {
 
                 }
