@@ -2077,6 +2077,7 @@ java/util/zip/ZipFile/MultiThreadedReadTest.java                                
 java/util/zip/ZipFile/ReadLongZipFileName.java                                                                          generic-all
 java/util/zip/ZipFile/StreamZipEntriesTest.java                                                                         generic-all
 javax/accessibility/6986385/bug6986385.java                                                                             generic-all
+javax/accessibility/8069268/bug8069268.java                                                                             generic-all
 javax/crypto/JceSecurity/SunJCE_BC_LoadOrdering.java                                                                    generic-all
 javax/crypto/SecretKeyFactory/FailOverTest.sh                                                                           generic-all
 javax/crypto/sanity/CheckManifestForRelease.java                                                                        generic-all
@@ -2106,8 +2107,10 @@ javax/imageio/plugins/png/PngOutputTypeTest.java                                
 javax/imageio/plugins/png/ShortHistogramTest.java                                                                       generic-all
 javax/imageio/plugins/shared/BitDepth.java                                                                              generic-all
 javax/imageio/plugins/wbmp/CanDecodeTest.java                                                                           generic-all
+javax/imageio/plugins/shared/WriteAfterAbort.java                                                                       generic-all
 javax/imageio/stream/StreamCloserLeak/run_test.java                                                                     generic-all
 javax/imageio/stream/StreamCloserLeak/run_test.sh                                                                       generic-all
+javax/management/ThreadMXBeanTest.java                                                                                  generic-all
 javax/management/ImplementationVersion/ImplVersionTest.java                                                             generic-all
 javax/management/Introspector/AnnotationSecurityTest.java                                                               generic-all
 javax/management/Introspector/ClassLeakTest.java                                                                        generic-all
@@ -2120,6 +2123,7 @@ javax/management/modelmbean/UnserializableTargetObjectTest.java                 
 javax/management/monitor/CounterMonitorTest.java                                                                        generic-all
 javax/management/monitor/GaugeMonitorDeadlockTest.java                                                                  generic-all
 javax/management/monitor/StartStopTest.java                                                                             generic-all
+javax/management/monitor/DerivedGaugeMonitorTest.java                                                                   generic-all
 javax/management/mxbean/GenericArrayTypeTest.java                                                                       generic-all
 javax/management/mxbean/LeakTest.java                                                                                   generic-all
 javax/management/mxbean/MXBeanTest.java                                                                                 generic-all
@@ -3574,3 +3578,6 @@ sun/security/pkcs11/tls/TestPremaster.java                                      
 
 # points NativePRNG at a specific file: our implementations don't support this
 sun/security/provider/SecureRandom/StrongSeedReader.java                                                                generic-all
+
+# verifies ECC but we don't have ECC yet
+javax/net/ssl/ciphersuites/DisabledAlgorithms.java                                                                      generic-all

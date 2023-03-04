@@ -289,6 +289,16 @@ namespace IKVM.Tests.Java.java.nio.channels
             await s;
         }
 
+        [TestMethod]
+        [ExpectedException(typeof(AcceptPendingException))]
+        public void ShouldThrowAcceptPending()
+        {
+            var l = AsynchronousServerSocketChannel.open().bind(new InetSocketAddress(0));
+            var h = new AwaitableCompletionHandler<AsynchronousSocketChannel>();
+            l.accept(null, h);
+            l.accept();
+        }
+
     }
 
 }

@@ -40,7 +40,7 @@ namespace IKVM.Java.Externs.sun.nio.ch
                 var t = func(channel, global::java.lang.System.getSecurityManager() != null ? AccessController.getContext() : null, cts.Token);
 
                 // throw exceptions early
-                if (t.IsCompleted && ((IAsyncResult)t).CompletedSynchronously && t.IsFaulted)
+                 if (t.IsCompleted && t.IsFaulted)
                     t.GetAwaiter().GetResult();
 
                 var f = new PendingFuture(channel, handler, attachment, null);

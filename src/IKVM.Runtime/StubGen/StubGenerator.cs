@@ -838,13 +838,13 @@ namespace IKVM.StubGen
             }
             else if (value.ArgumentType == Types.Object.MakeArrayType())
             {
-                CustomAttributeTypedArgument[] array = (CustomAttributeTypedArgument[])value.Value;
+                var array = (IReadOnlyList<CustomAttributeTypedArgument>)value.Value;
                 byte type = (byte)array[0].Value;
                 if (type == AnnotationDefaultAttribute.TAG_ARRAY)
                 {
                     bes.WriteByte((byte)'[');
-                    bes.WriteUInt16((ushort)(array.Length - 1));
-                    for (int i = 1; i < array.Length; i++)
+                    bes.WriteUInt16((ushort)(array.Count - 1));
+                    for (int i = 1; i < array.Count; i++)
                     {
                         WriteAnnotationElementValue(classFile, bes, array[i]);
                     }
@@ -864,8 +864,8 @@ namespace IKVM.StubGen
                 {
                     bes.WriteByte((byte)'@');
                     bes.WriteUInt16(classFile.AddUtf8((string)array[1].Value));
-                    bes.WriteUInt16((ushort)((array.Length - 2) / 2));
-                    for (int i = 2; i < array.Length; i += 2)
+                    bes.WriteUInt16((ushort)((array.Count - 2) / 2));
+                    for (int i = 2; i < array.Count; i += 2)
                     {
                         bes.WriteUInt16(classFile.AddUtf8((string)array[i].Value));
                         WriteAnnotationElementValue(classFile, bes, array[i + 1]);
