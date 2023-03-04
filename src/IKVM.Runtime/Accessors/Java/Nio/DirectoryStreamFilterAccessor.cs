@@ -24,7 +24,7 @@ namespace IKVM.Runtime.Accessors.Java.Nio.File
         /// <summary>
         /// Invokes the 'accept' method.
         /// </summary>
-        public bool InvokeAccept(object self, object entry) => GetMethod(ref accept, nameof(accept), "(Ljava.nio.file.Path;)J").Invoker(self, entry);
+        public bool InvokeAccept(object self, object entry) => GetMethod(ref accept, nameof(accept), "(Ljava.lang.Object;)Z").Invoker(self, entry);
 
     }
 

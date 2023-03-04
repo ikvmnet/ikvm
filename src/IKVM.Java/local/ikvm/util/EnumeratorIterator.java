@@ -7,8 +7,8 @@ import cli.System.Collections.IEnumerator;
 public final class EnumeratorIterator<E> implements Iterator<E> {
 
     final IEnumerator enumerator;
-    boolean ready;
-    boolean withNext;
+    boolean didMove;
+    boolean hasNext;
 
     public EnumeratorIterator(IEnumerator enumerator) {
         this.enumerator = enumerator;
@@ -16,12 +16,12 @@ public final class EnumeratorIterator<E> implements Iterator<E> {
 
     @Override
     public boolean hasNext() {
-        if (ready) {
-            withNext = enumerator.MoveNext();
-            ready = false;
+        if (didMove == false) {
+            hasNext = enumerator.MoveNext();
+            didMove = true;
         }
 
-        return withNext;
+        return hasNext;
     }
 
     @Override
@@ -30,7 +30,7 @@ public final class EnumeratorIterator<E> implements Iterator<E> {
             throw new NoSuchElementException();
         }
 
-        ready = true;
+        didMove = false;
         return (E)enumerator.get_Current();
     }
 

@@ -179,7 +179,7 @@ namespace IKVM.Runtime.Vfs
                     continue;
 
                 // found a type that is within the package
-                // its package 'ssimple name is a directory
+                // its package's simple name is a directory
                 if (name.Value.IsMemberOf(package))
                 {
                     lst.Add(name.Value.UnqualifiedName.ToString() + ".class");

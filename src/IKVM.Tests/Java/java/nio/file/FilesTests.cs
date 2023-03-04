@@ -1,6 +1,7 @@
-﻿using FluentAssertions;
+﻿using System.Linq;
 
-using IKVM.Java.Externs.java.io;
+using FluentAssertions;
+
 using IKVM.Runtime.Vfs;
 
 using java.nio.file;
@@ -65,7 +66,7 @@ namespace IKVM.Tests.Java.java.nio.file
         {
             var d = VfsTable.Default.GetAssemblyClassesPath(typeof(object).Assembly);
             var l = Files.list(Paths.get(d)).toArray();
-            foreach (string s in l)
+            foreach (Path s in l)
                 System.Console.WriteLine(s);
         }
 
@@ -91,6 +92,14 @@ namespace IKVM.Tests.Java.java.nio.file
             var f = VfsTable.Default.GetAssemblyClassesPath(typeof(global::java.lang.Object).Assembly);
             var a = (BasicFileAttributes)Files.readAttributes(Paths.get(f), typeof(BasicFileAttributes));
             a.isDirectory().Should().BeTrue();
+        }
+
+        [TestMethod]
+        public void VfsAssemblyClassesDirectoryShouldBeWalkable()
+        {
+            var f = VfsTable.Default.GetAssemblyClassesPath(typeof(global::java.lang.Object).Assembly);
+            var l = Files.walk(Paths.get(f)).toArray();
+            l.Count().Should().BeGreaterOrEqualTo(16);
         }
 
     }

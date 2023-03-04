@@ -3,8 +3,6 @@ using System.Collections.Generic;
 using System.IO;
 using System.Linq;
 
-using com.sun.org.apache.bcel.@internal.classfile;
-
 using IKVM.Tests.Util;
 
 using java.nio.file;
@@ -22,7 +20,7 @@ namespace IKVM.Tests.Java.java.lang
     {
 
         [TestMethod]
-        public void Can_get_method_and_invoke()
+        public void CanGetMethodAndInvoke()
         {
             var s = new StreamReader(typeof(ClassTests).Assembly.GetManifestResourceStream("IKVM.Tests.Java.java.lang.ClassTests.java")).ReadToEnd();
             var f = new InMemoryCodeUnit("ikvm.tests.java.lang.ClassTests", s);
@@ -51,6 +49,8 @@ namespace IKVM.Tests.Java.java.lang
                     continue;
 
                 var c = global::java.lang.Class.forName(file.Replace('/', '.').Substring(0, file.Length - 6), false, null);
+                if (c == null)
+                    throw new Exception("Could not load BCP class by name.");
 
                 foreach (var f in c.getDeclaredFields())
                 {
