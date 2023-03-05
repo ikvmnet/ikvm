@@ -50,8 +50,8 @@ namespace IKVM.Java.Externs.sun.misc
             /// </summary>
             ~FieldDelegateRef()
             {
-                if (Handle.IsAllocated)
-                    Handle.Free();
+                if (handle.IsAllocated)
+                    handle.Free();
             }
 
         }
