@@ -4,6 +4,7 @@
     <PropertyGroup>
         <TargetFrameworks>net461;netcoreapp3.1</TargetFrameworks>
         <DefineConstants>$(DefineConstants);EXPORTER</DefineConstants>
+        <ProduceReferenceAssembly></ProduceReferenceAssembly>
     </PropertyGroup>
 
     <ItemGroup>

@@ -5,6 +5,7 @@
         <TargetFrameworks>net461;netcoreapp3.1</TargetFrameworks>
         <DefineConstants>$(DefineConstants);IMPORTER;EMITTERS</DefineConstants>
         <AllowUnsafeBlocks>true</AllowUnsafeBlocks>
+        <ProduceReferenceAssembly>true</ProduceReferenceAssembly>
     </PropertyGroup>
 
     <ItemGroup>
