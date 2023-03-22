@@ -381,86 +381,46 @@ namespace IKVM.Java.Externs.sun.nio.ch
         /// <param name="accessControlContext"></param>
         /// <param name="cancellationToken"></param>
         /// <returns></returns>
-        static async Task<FileLock> LockAsync(global::sun.nio.ch.DotNetAsynchronousFileChannelImpl self, long position, long size, bool shared, AccessControlContext accessControlContext, CancellationToken cancellationToken)
+        static Task<FileLock> LockAsync(global::sun.nio.ch.DotNetAsynchronousFileChannelImpl self, long position, long size, bool shared, AccessControlContext accessControlContext, CancellationToken cancellationToken)
         {
             if (shared && self.reading == false)
                 throw new global::java.nio.channels.NonReadableChannelException();
             if (shared == false && self.writing == false)
                 throw new global::java.nio.channels.NonWritableChannelException();
-            if (self.isOpen() == false)
-                throw new global::java.nio.channels.ClosedChannelException();
 
             var stream = FileDescriptorAccessor.GetStream(self.fdObj);
             if (stream == null)
-                throw new global::java.nio.channels.AsynchronousCloseException();
-
+                return Task.FromException<FileLock>(new global::java.nio.channels.ClosedChannelException());
             if (stream is not FileStream fs)
-                throw new global::java.io.IOException("File does not support locking.");
+                throw new global::java.io.IOException("Stream does not support locking.");
 
             var fli = self.addToFileLockTable(position, size, shared);
             if (fli == null)
-                throw new global::java.nio.channels.ClosedChannelException();
+                return Task.FromException<FileLock>(new global::java.nio.channels.ClosedChannelException());
 
-            try
+            return ImplAsync();
+
+            async Task<FileLock> ImplAsync()
             {
-                if (RuntimeUtil.IsWindows)
+                try
                 {
-                    const int LOCKFILE_EXCLUSIVE_LOCK = 2;
-
-                    try
+                    if (RuntimeUtil.IsWindows)
                     {
-                        var o = new Overlapped();
-                        o.OffsetLow = (int)position;
-                        o.OffsetHigh = (int)(position >> 32);
+                        const int LOCKFILE_EXCLUSIVE_LOCK = 2;
 
-                        var flags = 0;
-                        if (shared == false)
-                            flags |= LOCKFILE_EXCLUSIVE_LOCK;
-
-                        await LockFileExAsync(fs.SafeFileHandle, flags, 0, (int)size, (int)(size >> 32), o);
-
-                        return fli;
-                    }
-                    catch (System.Exception) when (self.isOpen() == false)
-                    {
-                        throw new global::java.nio.channels.AsynchronousCloseException();
-                    }
-                    catch (System.Exception e)
-                    {
-                        throw new global::java.io.IOException(e);
-                    }
-                }
-                else
-                {
-                    while (true)
-                    {
                         try
                         {
-                            if (cancellationToken.IsCancellationRequested)
-                                return null;
+                            var o = new Overlapped();
+                            o.OffsetLow = (int)position;
+                            o.OffsetHigh = (int)(position >> 32);
 
-                            try
-                            {
-                                self.begin();
+                            var flags = 0;
+                            if (shared == false)
+                                flags |= LOCKFILE_EXCLUSIVE_LOCK;
 
-                                fs.Lock(position, size);
-                                return fli;
-                            }
-                            catch (System.IO.IOException)
-                            {
-                                // we failed to acquire the lock, try again next iteration
-                            }
-                            finally
-                            {
-                                self.end();
-                            }
+                            await LockFileExAsync(fs.SafeFileHandle, flags, 0, (int)size, (int)(size >> 32), o);
 
-                            // try again shortly
-                            await Task.Delay(TimeSpan.FromMilliseconds(100));
-                        }
-                        catch (ObjectDisposedException)
-                        {
-                            throw new global::java.nio.channels.AsynchronousCloseException();
+                            return fli;
                         }
                         catch (System.Exception) when (self.isOpen() == false)
                         {
@@ -471,14 +431,56 @@ namespace IKVM.Java.Externs.sun.nio.ch
                             throw new global::java.io.IOException(e);
                         }
                     }
-                }
-            }
-            catch
-            {
-                self.removeFromFileLockTable(fli);
-            }
+                    else
+                    {
+                        while (true)
+                        {
+                            try
+                            {
+                                if (cancellationToken.IsCancellationRequested)
+                                    return null;
 
-            return null;
+                                try
+                                {
+                                    self.begin();
+
+                                    fs.Lock(position, size);
+                                    return fli;
+                                }
+                                catch (System.IO.IOException)
+                                {
+                                    // we failed to acquire the lock, try again next iteration
+                                }
+                                finally
+                                {
+                                    self.end();
+                                }
+
+                                // try again shortly
+                                await Task.Delay(TimeSpan.FromMilliseconds(100));
+                            }
+                            catch (ObjectDisposedException)
+                            {
+                                throw new global::java.nio.channels.AsynchronousCloseException();
+                            }
+                            catch (System.Exception) when (self.isOpen() == false)
+                            {
+                                throw new global::java.nio.channels.AsynchronousCloseException();
+                            }
+                            catch (System.Exception e)
+                            {
+                                throw new global::java.io.IOException(e);
+                            }
+                        }
+                    }
+                }
+                catch
+                {
+                    self.removeFromFileLockTable(fli);
+                }
+
+                return null;
+            };
         }
 
         /// <summary>
@@ -495,13 +497,13 @@ namespace IKVM.Java.Externs.sun.nio.ch
                 throw new global::java.nio.channels.NonReadableChannelException();
             if (shared == false && self.writing == false)
                 throw new global::java.nio.channels.NonWritableChannelException();
+
             if (self.isOpen() == false)
                 throw new global::java.nio.channels.ClosedChannelException();
 
             var stream = FileDescriptorAccessor.GetStream(self.fdObj);
             if (stream == null)
                 throw new global::java.nio.channels.AsynchronousCloseException();
-
             if (stream is not FileStream fs)
                 throw new global::java.io.IOException("File does not support locking.");
 
@@ -648,7 +650,7 @@ namespace IKVM.Java.Externs.sun.nio.ch
         /// <param name="accessControlContext"></param>
         /// <param name="cancellationToken"></param>
         /// <returns></returns>
-        static async Task<Integer> ReadAsync(global::sun.nio.ch.DotNetAsynchronousFileChannelImpl self, global::java.nio.ByteBuffer dst, long position, AccessControlContext accessControlContext, CancellationToken cancellationToken)
+        static Task<Integer> ReadAsync(global::sun.nio.ch.DotNetAsynchronousFileChannelImpl self, global::java.nio.ByteBuffer dst, long position, AccessControlContext accessControlContext, CancellationToken cancellationToken)
         {
             if (self.reading == false)
                 throw new global::java.nio.channels.NonReadableChannelException();
@@ -656,79 +658,84 @@ namespace IKVM.Java.Externs.sun.nio.ch
                 throw new global::java.lang.IllegalArgumentException("Negative position");
             if (dst.isReadOnly())
                 throw new global::java.lang.IllegalArgumentException("Read-only buffer");
+
             if (self.isOpen() == false)
-                throw new global::java.nio.channels.ClosedChannelException();
+                return Task.FromException<Integer>(new global::java.nio.channels.ClosedChannelException());
 
             var stream = FileDescriptorAccessor.GetStream(self.fdObj);
             if (stream == null)
-                throw new global::java.nio.channels.ClosedChannelException();
-
+                return Task.FromException<Integer>(new global::java.nio.channels.ClosedChannelException());
             if (stream.CanRead == false)
-                throw new global::java.io.IOException("File does not support reading.");
+                return Task.FromException<Integer>(new global::java.io.IOException("Stream does not support reading."));
 
             // check buffer
             int pos = dst.position();
             int lim = dst.limit();
             int rem = pos <= lim ? lim - pos : 0;
             if (pos > lim)
-                throw new global::java.lang.IllegalArgumentException("Position after limit.");
+                return Task.FromException<Integer>(new global::java.lang.IllegalArgumentException("Position after limit."));
 
             if (cancellationToken.IsCancellationRequested)
                 return null;
 
-            try
-            {
-                // move file to specified position
-                if (stream.Position != position)
-                {
-                    if (stream.CanSeek == false)
-                        throw new global::java.lang.IllegalArgumentException("Seek failed.");
+            return ImplAsync();
 
-                    stream.Seek(position, SeekOrigin.Begin);
-                }
+            async Task<Integer> ImplAsync()
+            {
+                try
+                {
+                    // move file to specified position
+                    if (stream.Position != position)
+                    {
+                        if (stream.CanSeek == false)
+                            throw new global::java.lang.IllegalArgumentException("Seek failed.");
+
+                        stream.Seek(position, SeekOrigin.Begin);
+                    }
 
 #if NETFRAMEWORK
-                if (dst is DirectBuffer dir)
-                {
-                    var tmp = new byte[rem];
-                    var n = await stream.ReadAsync(tmp, 0, rem, cancellationToken);
-                    dst.put(tmp, 0, n);
-                    return new global::java.lang.Integer(n);
-                }
-                else
-                {
-                    var n = await stream.ReadAsync(dst.array(), dst.arrayOffset() + pos, rem, cancellationToken);
-                    dst.position(pos + n);
-                    return new global::java.lang.Integer(n);
-                }
+                    if (dst is DirectBuffer dir)
+                    {
+                        var tmp = new byte[rem];
+                        var n = await stream.ReadAsync(tmp, 0, rem, cancellationToken);
+                        dst.put(tmp, 0, n);
+                        return new global::java.lang.Integer(n);
+                    }
+                    else
+                    {
+                        var n = await stream.ReadAsync(dst.array(), dst.arrayOffset() + pos, rem, cancellationToken);
+                        dst.position(pos + n);
+                        return new global::java.lang.Integer(n);
+                    }
 #else
-                if (dst is DirectBuffer dir)
-                {
-                    using var mgr = new DirectBufferMemoryManager(dir);
-                    var mem = mgr.Memory.Slice(pos, rem);
-                    var n = await stream.ReadAsync(mem, cancellationToken);
-                    dst.position(pos + n);
-                    return new global::java.lang.Integer(n);
-                }
-                else
-                {
-                    var n = await stream.ReadAsync(dst.array(), dst.arrayOffset() + pos, rem, cancellationToken);
-                    dst.position(pos + n);
-                    return new global::java.lang.Integer(n);
-                }
+                    if (dst is DirectBuffer dir)
+                    {
+                        using var mgr = new DirectBufferMemoryManager(dir);
+                        var mem = mgr.Memory.Slice(pos, rem);
+                        var n = await stream.ReadAsync(mem, cancellationToken);
+                        dst.position(pos + n);
+                        return new global::java.lang.Integer(n);
+                    }
+                    else
+                    {
+                        var n = await stream.ReadAsync(dst.array(), dst.arrayOffset() + pos, rem, cancellationToken);
+                        dst.position(pos + n);
+                        return new global::java.lang.Integer(n);
+                    }
 #endif
-            }
-            catch (ObjectDisposedException)
-            {
-                throw new global::java.nio.channels.AsynchronousCloseException();
-            }
-            catch (System.Exception) when (self.isOpen() == false)
-            {
-                throw new global::java.nio.channels.AsynchronousCloseException();
-            }
-            catch (System.Exception e)
-            {
-                throw new global::java.io.IOException(e);
+                }
+                catch (ObjectDisposedException)
+                {
+                    throw new global::java.nio.channels.AsynchronousCloseException();
+                }
+                catch (System.Exception) when (self.isOpen() == false)
+                {
+                    throw new global::java.nio.channels.AsynchronousCloseException();
+                }
+                catch (System.Exception e)
+                {
+                    throw new global::java.io.IOException(e);
+                }
             }
         }
 
@@ -747,89 +754,96 @@ namespace IKVM.Java.Externs.sun.nio.ch
         /// <exception cref="InterruptedIOException"></exception>
         /// <exception cref="AsynchronousCloseException"></exception>
         /// <exception cref="IOException"></exception>
-        static async Task<Integer> WriteAsync(global::sun.nio.ch.DotNetAsynchronousFileChannelImpl self, global::java.nio.ByteBuffer src, long position, AccessControlContext accessControlContext, CancellationToken cancellationToken)
+        static Task<global::java.lang.Integer> WriteAsync(global::sun.nio.ch.DotNetAsynchronousFileChannelImpl self, global::java.nio.ByteBuffer src, long position, AccessControlContext accessControlContext, CancellationToken cancellationToken)
         {
             if (self.writing == false)
                 throw new global::java.nio.channels.NonWritableChannelException();
             if (position < 0)
                 throw new global::java.lang.IllegalArgumentException("Negative position");
+
             if (self.isOpen() == false)
-                throw new global::java.nio.channels.ClosedChannelException();
+                return Task.FromException<global::java.lang.Integer>(new global::java.nio.channels.ClosedChannelException());
 
             var stream = FileDescriptorAccessor.GetStream(self.fdObj);
             if (stream == null)
-                throw new global::java.nio.channels.ClosedChannelException();
-
+                return Task.FromException<global::java.lang.Integer>(new global::java.nio.channels.ClosedChannelException());
             if (stream.CanWrite == false)
-                throw new global::java.io.IOException("File does not support writing.");
+                return Task.FromException<global::java.lang.Integer>(new global::java.io.IOException("Stream does not support writing."));
 
             // check buffer
             int pos = src.position();
             int lim = src.limit();
             int rem = pos <= lim ? lim - pos : 0;
+            if (rem == 0)
+                return Task.FromResult<global::java.lang.Integer>(new global::java.lang.Integer(0));
             if (pos > lim)
-                throw new global::java.lang.IllegalArgumentException("Position after limit.");
+                return Task.FromException<global::java.lang.Integer>(new global::java.lang.IllegalArgumentException("Position after limit."));
 
             if (cancellationToken.IsCancellationRequested)
                 return null;
 
-            try
-            {
-                // move file to specified position
-                if (stream.Position != position)
-                {
-                    if (stream.CanSeek == false)
-                        throw new global::java.lang.IllegalArgumentException("Seek failed.");
+            return ImplAsync();
 
-                    stream.Seek(position, SeekOrigin.Begin);
-                }
+            async Task<Integer> ImplAsync()
+            {
+                try
+                {
+                    // move file to specified position
+                    if (stream.Position != position)
+                    {
+                        if (stream.CanSeek == false)
+                            throw new global::java.lang.IllegalArgumentException("Seek failed.");
+
+                        stream.Seek(position, SeekOrigin.Begin);
+                    }
 
 #if NETFRAMEWORK
-                if (src is DirectBuffer dir)
-                {
-                    var tmp = new byte[rem];
-                    src.get(tmp, 0, rem);
-                    await stream.WriteAsync(tmp, 0, rem, cancellationToken);
-                    return new global::java.lang.Integer(rem);
-                }
-                else
-                {
-                    await stream.WriteAsync(src.array(), src.arrayOffset() + pos, rem, cancellationToken);
-                    src.position(pos + rem);
-                    return new global::java.lang.Integer(rem);
-                }
+                    if (src is DirectBuffer dir)
+                    {
+                        var tmp = new byte[rem];
+                        src.get(tmp, 0, rem);
+                        await stream.WriteAsync(tmp, 0, rem, cancellationToken);
+                        return new global::java.lang.Integer(rem);
+                    }
+                    else
+                    {
+                        await stream.WriteAsync(src.array(), src.arrayOffset() + pos, rem, cancellationToken);
+                        src.position(pos + rem);
+                        return new global::java.lang.Integer(rem);
+                    }
 #else
-                if (src is DirectBuffer dir)
-                {
-                    using var mgr = new DirectBufferMemoryManager(dir);
-                    var mem = mgr.Memory.Slice(pos, rem);
-                    await stream.WriteAsync(mem, cancellationToken);
-                    src.position(pos + rem);
-                    return new global::java.lang.Integer(rem);
-                }
-                else
-                {
-                    await stream.WriteAsync(src.array(), src.arrayOffset() + pos, rem, cancellationToken);
-                    src.position(pos + rem);
-                    return new global::java.lang.Integer(rem);
-                }
+                    if (src is DirectBuffer dir)
+                    {
+                        using var mgr = new DirectBufferMemoryManager(dir);
+                        var mem = mgr.Memory.Slice(pos, rem);
+                        await stream.WriteAsync(mem, cancellationToken);
+                        src.position(pos + rem);
+                        return new global::java.lang.Integer(rem);
+                    }
+                    else
+                    {
+                        await stream.WriteAsync(src.array(), src.arrayOffset() + pos, rem, cancellationToken);
+                        src.position(pos + rem);
+                        return new global::java.lang.Integer(rem);
+                    }
 #endif
-            }
-            catch (OperationCanceledException)
-            {
-                return null;
-            }
-            catch (ObjectDisposedException)
-            {
-                throw new global::java.nio.channels.AsynchronousCloseException();
-            }
-            catch (System.Exception) when (self.isOpen() == false)
-            {
-                throw new global::java.nio.channels.AsynchronousCloseException();
-            }
-            catch (System.Exception e)
-            {
-                throw new global::java.io.IOException(e);
+                }
+                catch (OperationCanceledException)
+                {
+                    return null;
+                }
+                catch (ObjectDisposedException)
+                {
+                    throw new global::java.nio.channels.AsynchronousCloseException();
+                }
+                catch (System.Exception) when (self.isOpen() == false)
+                {
+                    throw new global::java.nio.channels.AsynchronousCloseException();
+                }
+                catch (System.Exception e)
+                {
+                    throw new global::java.io.IOException(e);
+                }
             }
         }
 

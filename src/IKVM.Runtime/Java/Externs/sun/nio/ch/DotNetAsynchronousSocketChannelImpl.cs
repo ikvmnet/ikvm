@@ -136,7 +136,7 @@ namespace IKVM.Java.Externs.sun.nio.ch
         static void OnCancel(global::sun.nio.ch.DotNetAsynchronousSocketChannelImpl self, PendingFuture future)
         {
             // signal cancellation on associated cancellation token source
-            (Task _, CancellationTokenSource cts) = ((Task, CancellationTokenSource))future.getContext();
+            var cts = (CancellationTokenSource)future.getContext();
             cts?.Cancel();
         }
 
@@ -170,7 +170,7 @@ namespace IKVM.Java.Externs.sun.nio.ch
             }
             catch (System.Exception e)
             {
-                throw new IOException(e);
+                throw new global::java.io.IOException(e);
             }
         }
 
@@ -181,10 +181,14 @@ namespace IKVM.Java.Externs.sun.nio.ch
         /// <param name="remote"></param>
         /// <param name="accessControlContext"></param>
         /// <returns></returns>
-        static async Task ConnectAsync(global::sun.nio.ch.DotNetAsynchronousSocketChannelImpl self, global::java.net.SocketAddress remote, global::java.security.AccessControlContext accessControlContext, CancellationToken cancellationToken)
+        static Task ConnectAsync(global::sun.nio.ch.DotNetAsynchronousSocketChannelImpl self, global::java.net.SocketAddress remote, global::java.security.AccessControlContext accessControlContext, CancellationToken cancellationToken)
         {
             if (self.isOpen() == false)
-                throw new ClosedChannelException();
+                return Task.FromException(new ClosedChannelException());
+
+            var socket = FileDescriptorAccessor.GetSocket(self.fd);
+            if (socket == null)
+                return Task.FromException(new global::java.nio.channels.ClosedChannelException());
 
             // cancel was invoked during the operation
             if (cancellationToken.IsCancellationRequested)
@@ -216,7 +220,7 @@ namespace IKVM.Java.Externs.sun.nio.ch
                         else
                             AccessController.doPrivileged(new ActionPrivilegedExceptionAction(() => self.bind(any)), accessControlContext);
                     }
-                    catch (global::java.io.IOException)
+                    catch (global::java.io.IOException e)
                     {
                         try
                         {
@@ -228,63 +232,67 @@ namespace IKVM.Java.Externs.sun.nio.ch
                         }
 
                         self.state = AsynchronousSocketChannelImpl.ST_PENDING;
-                        throw;
+                        return Task.FromException(e);
                     }
                 }
             }
 
-            try
+            return ImplAsync();
+
+            async Task ImplAsync()
             {
                 try
                 {
-                    // execute asynchronous Connect task
-                    var socket = FileDescriptorAccessor.GetSocket(self.fd);
-                    await Task.Factory.FromAsync(socket.BeginConnect, socket.EndConnect, remoteAddress.ToIPEndpoint(), null);
-
                     try
                     {
-                        self.begin();
+                        // execute asynchronous Connect task
+                        await Task.Factory.FromAsync(socket.BeginConnect, socket.EndConnect, remoteAddress.ToIPEndpoint(), null);
 
-                        // set the channel to connected
-                        lock (self.stateLock)
+                        try
                         {
-                            self.state = AsynchronousSocketChannelImpl.ST_CONNECTED;
-                            self.remoteAddress = remoteAddress;
+                            self.begin();
+
+                            // set the channel to connected
+                            lock (self.stateLock)
+                            {
+                                self.state = AsynchronousSocketChannelImpl.ST_CONNECTED;
+                                self.remoteAddress = remoteAddress;
+                            }
+
+                            return;
                         }
-
-                        return;
+                        finally
+                        {
+                            self.end();
+                        }
                     }
-                    finally
+                    catch (System.Net.Sockets.SocketException e)
                     {
-                        self.end();
+                        throw e.ToIOException();
+                    }
+                    catch (ObjectDisposedException)
+                    {
+                        throw new AsynchronousCloseException();
+                    }
+                    catch (System.Exception e)
+                    {
+                        throw new global::java.io.IOException(e);
                     }
                 }
-                catch (System.Net.Sockets.SocketException e)
+                catch (System.Exception)
                 {
-                    throw e.ToIOException();
-                }
-                catch (ObjectDisposedException)
-                {
-                    throw new AsynchronousCloseException();
-                }
-                catch (System.Exception e)
-                {
-                    throw new IOException(e);
-                }
-            }
-            catch (System.Exception)
-            {
-                try
-                {
-                    if (self.isOpen())
-                        self.close();
-                }
-                catch
-                {
-                    // ignore
-                }
+                    try
+                    {
+                        if (self.isOpen())
+                            self.close();
+                    }
+                    catch
+                    {
+                        // ignore
+                    }
 
-                throw;
+                    throw;
+                }
             }
         }
 
@@ -363,68 +371,182 @@ namespace IKVM.Java.Externs.sun.nio.ch
         /// <param name="unit"></param>
         /// <param name="cancellationToken"></param>
         /// <returns></returns>
-        static async Task<Number> ReadAsync(global::sun.nio.ch.DotNetAsynchronousSocketChannelImpl self, bool isScatteringRead, ByteBuffer dst, ByteBuffer[] dsts, long timeout, TimeUnit unit, AccessControlContext accessControlContext, CancellationToken cancellationToken)
+        static Task<Number> ReadAsync(global::sun.nio.ch.DotNetAsynchronousSocketChannelImpl self, bool isScatteringRead, ByteBuffer dst, ByteBuffer[] dsts, long timeout, TimeUnit unit, AccessControlContext accessControlContext, CancellationToken cancellationToken)
         {
-            try
+            var socket = FileDescriptorAccessor.GetSocket(self.fd);
+            if (socket == null)
+                throw new global::java.io.IOException("Socket is closed.");
+
+            // we were told to do a scattering read, but only received one buffer, do a regular read
+            if (isScatteringRead && dsts.Length == 1)
+                dst = dsts[0];
+
+            return ImplAsync();
+
+            async Task<Number> ImplAsync()
             {
-                var socket = FileDescriptorAccessor.GetSocket(self.fd);
-
-                // we were told to do a scattering read, but only received one buffer, do a regular read
-                if (isScatteringRead && dsts.Length == 1)
-                    dst = dsts[0];
-
-                // timeout was specified, wait for data to be available
-                var t = (int)System.Math.Min(unit.convert(timeout, TimeUnit.MILLISECONDS), int.MaxValue);
-                if (t > 0)
+                try
                 {
-                    // non-optimal usage, but we have no way to combine timeout with true async
-                    return await Task.Run<Number>(() =>
+                    // timeout was specified, wait for data to be available
+                    var t = (int)System.Math.Min(unit.convert(timeout, TimeUnit.MILLISECONDS), int.MaxValue);
+                    if (t > 0)
                     {
-                        var previousBlocking = socket.Blocking;
-                        var previousReceiveTimeout = socket.ReceiveTimeout;
-
-                        try
+                        // non-optimal usage, but we have no way to combine timeout with true async
+                        return await Task.Run<Number>(() =>
                         {
-                            socket.Blocking = true;
-                            socket.ReceiveTimeout = t;
+                            var previousBlocking = socket.Blocking;
+                            var previousReceiveTimeout = socket.ReceiveTimeout;
 
-                            if (dst != null)
+                            try
                             {
-                                int length = 0;
+                                socket.Blocking = true;
+                                socket.ReceiveTimeout = t;
 
-                                int pos = dst.position();
-                                int lim = dst.limit();
-                                int rem = pos <= lim ? lim - pos : 0;
-
-                                if (dst is DirectBuffer dir)
+                                if (dst != null)
                                 {
-#if NETFRAMEWORK
-                                    var buf = ArrayPool<byte>.Shared.Rent(rem);
+                                    int length = 0;
 
-                                    try
+                                    int pos = dst.position();
+                                    int lim = dst.limit();
+                                    int rem = pos <= lim ? lim - pos : 0;
+
+                                    if (dst is DirectBuffer dir)
                                     {
-                                        length = socket.Receive(buf, rem, SocketFlags.None);
-                                        Marshal.Copy(buf, 0, (IntPtr)dir.address() + pos, length);
-                                    }
-                                    finally
-                                    {
-                                        ArrayPool<byte>.Shared.Return(buf);
-                                    }
+#if NETFRAMEWORK
+                                        var buf = ArrayPool<byte>.Shared.Rent(rem);
+
+                                        try
+                                        {
+                                            length = socket.Receive(buf, rem, SocketFlags.None);
+                                            Marshal.Copy(buf, 0, (IntPtr)dir.address() + pos, length);
+                                        }
+                                        finally
+                                        {
+                                            ArrayPool<byte>.Shared.Return(buf);
+                                        }
 #else
                                     unsafe
                                     {
                                         length = socket.Receive(new Span<byte>((byte*)(IntPtr)dir.address() + pos, rem), SocketFlags.None);
                                     }
 #endif
+                                    }
+                                    else
+                                    {
+                                        // synchronous read (inside of a Task) directly into the underlying array of the buffer
+                                        length = socket.Receive(dst.array(), dst.arrayOffset() + pos, rem, SocketFlags.None);
+                                    }
+
+                                    dst.position(pos + length);
+                                    return isScatteringRead ? Long.valueOf(length) : Integer.valueOf(length);
                                 }
                                 else
                                 {
-                                    // synchronous read (inside of a Task) directly into the underlying array of the buffer
-                                    length = socket.Receive(dst.array(), dst.arrayOffset() + pos, rem, SocketFlags.None);
-                                }
+                                    int length = 0;
+                                    var bufs = new ArraySegment<byte>[dsts.Length];
 
-                                dst.position(pos + length);
-                                return isScatteringRead ? Long.valueOf(length) : Integer.valueOf(length);
+                                    try
+                                    {
+                                        // prepare array segments for buffers
+                                        for (int i = 0; i < dsts.Length; i++)
+                                        {
+                                            var dbf = dsts[i];
+                                            int pos = dbf.position();
+                                            int lim = dbf.limit();
+                                            int rem = pos <= lim ? lim - pos : 0;
+
+                                            if (dbf is DirectBuffer dir)
+                                                bufs[i] = new ArraySegment<byte>(ArrayPool<byte>.Shared.Rent(rem), 0, rem);
+                                            else
+                                                bufs[i] = new ArraySegment<byte>(dbf.array(), dbf.arrayOffset() + pos, rem);
+                                        }
+
+                                        // receive data into segments
+                                        length = socket.Receive(bufs, SocketFlags.None);
+
+                                        // copy segments back into buffers
+                                        var l = length;
+                                        for (int i = 0; i < dsts.Length; i++)
+                                        {
+                                            var dbf = dsts[i];
+                                            var buf = bufs[i];
+                                            int pos = dbf.position();
+                                            int lim = dbf.limit();
+                                            int rem = pos <= lim ? lim - pos : 0;
+                                            int len = System.Math.Min(l, rem);
+
+                                            if (dbf is DirectBuffer dir)
+                                                Marshal.Copy(buf.Array, 0, (IntPtr)dir.address() + pos, len);
+
+                                            dbf.position(pos + len);
+                                            l -= len;
+                                        }
+
+                                        // we should have accounted for all of the bytes
+                                        if (l != 0)
+                                            throw new global::java.lang.RuntimeException("Bytes remaining after read.");
+
+                                        // return total number of bytes read
+                                        return isScatteringRead ? Long.valueOf(length) : Integer.valueOf(length);
+                                    }
+                                    finally
+                                    {
+                                        for (int i = 0; i < dsts.Length; i++)
+                                        {
+                                            var dbf = dsts[i];
+                                            var buf = bufs[i];
+
+                                            if (dbf is DirectBuffer dir)
+                                                ArrayPool<byte>.Shared.Return(buf.Array);
+                                        }
+                                    }
+                                }
+                            }
+                            finally
+                            {
+                                socket.Blocking = previousBlocking;
+                                socket.ReceiveTimeout = previousReceiveTimeout;
+                            }
+                        });
+                    }
+                    else
+                    {
+                        var previousBlocking = socket.Blocking;
+                        var previousReceiveTimeout = socket.ReceiveTimeout;
+
+                        try
+                        {
+                            socket.Blocking = false;
+                            socket.ReceiveTimeout = t;
+
+                            if (dst != null)
+                            {
+                                int pos = dst.position();
+                                int lim = dst.limit();
+                                int rem = pos <= lim ? lim - pos : 0;
+
+                                if (dst is DirectBuffer dir)
+                                {
+                                    var buf = ArrayPool<byte>.Shared.Rent(rem);
+
+                                    try
+                                    {
+                                        var length = await Task.Factory.FromAsync((cb, state) => socket.BeginReceive(buf, 0, rem, SocketFlags.None, cb, state), socket.EndReceive, null);
+                                        Marshal.Copy(buf, 0, (IntPtr)dir.address() + pos, length);
+                                        dst.position(pos + length);
+                                        return isScatteringRead ? Long.valueOf(length) : Integer.valueOf(length);
+                                    }
+                                    finally
+                                    {
+                                        ArrayPool<byte>.Shared.Return(buf);
+                                    }
+                                }
+                                else
+                                {
+                                    var length = await Task.Factory.FromAsync((cb, state) => socket.BeginReceive(dst.array(), dst.arrayOffset() + pos, rem, SocketFlags.None, cb, state), socket.EndReceive, null);
+                                    dst.position(pos + length);
+                                    return isScatteringRead ? Long.valueOf(length) : Integer.valueOf(length);
+                                }
                             }
                             else
                             {
@@ -448,9 +570,8 @@ namespace IKVM.Java.Externs.sun.nio.ch
                                     }
 
                                     // receive data into segments
-                                    length = socket.Receive(bufs, SocketFlags.None);
+                                    length = await Task.Factory.FromAsync(socket.BeginReceive, socket.EndReceive, bufs, SocketFlags.None, null);
 
-                                    // copy segments back into buffers
                                     var l = length;
                                     for (int i = 0; i < dsts.Length; i++)
                                     {
@@ -470,7 +591,7 @@ namespace IKVM.Java.Externs.sun.nio.ch
 
                                     // we should have accounted for all of the bytes
                                     if (l != 0)
-                                        throw new global::java.lang.RuntimeException("Bytes remaining after read.");
+                                        throw new RuntimeException("Bytes remaining after read.");
 
                                     // return total number of bytes read
                                     return isScatteringRead ? Long.valueOf(length) : Integer.valueOf(length);
@@ -486,6 +607,7 @@ namespace IKVM.Java.Externs.sun.nio.ch
                                             ArrayPool<byte>.Shared.Return(buf.Array);
                                     }
                                 }
+
                             }
                         }
                         finally
@@ -493,131 +615,24 @@ namespace IKVM.Java.Externs.sun.nio.ch
                             socket.Blocking = previousBlocking;
                             socket.ReceiveTimeout = previousReceiveTimeout;
                         }
-                    });
+                    }
                 }
-                else
+                catch (System.Net.Sockets.SocketException e)
                 {
-                    var previousBlocking = socket.Blocking;
-                    var previousReceiveTimeout = socket.ReceiveTimeout;
-
-                    try
-                    {
-                        socket.Blocking = false;
-                        socket.ReceiveTimeout = t;
-
-                        if (dst != null)
-                        {
-                            int pos = dst.position();
-                            int lim = dst.limit();
-                            int rem = pos <= lim ? lim - pos : 0;
-
-                            if (dst is DirectBuffer dir)
-                            {
-                                var buf = ArrayPool<byte>.Shared.Rent(rem);
-
-                                try
-                                {
-                                    var length = await Task.Factory.FromAsync((cb, state) => socket.BeginReceive(buf, 0, rem, SocketFlags.None, cb, state), socket.EndReceive, null);
-                                    Marshal.Copy(buf, 0, (IntPtr)dir.address() + pos, length);
-                                    dst.position(pos + length);
-                                    return isScatteringRead ? Long.valueOf(length) : Integer.valueOf(length);
-                                }
-                                finally
-                                {
-                                    ArrayPool<byte>.Shared.Return(buf);
-                                }
-                            }
-                            else
-                            {
-                                var length = await Task.Factory.FromAsync((cb, state) => socket.BeginReceive(dst.array(), dst.arrayOffset() + pos, rem, SocketFlags.None, cb, state), socket.EndReceive, null);
-                                dst.position(pos + length);
-                                return isScatteringRead ? Long.valueOf(length) : Integer.valueOf(length);
-                            }
-                        }
-                        else
-                        {
-                            int length = 0;
-                            var bufs = new ArraySegment<byte>[dsts.Length];
-
-                            try
-                            {
-                                // prepare array segments for buffers
-                                for (int i = 0; i < dsts.Length; i++)
-                                {
-                                    var dbf = dsts[i];
-                                    int pos = dbf.position();
-                                    int lim = dbf.limit();
-                                    int rem = pos <= lim ? lim - pos : 0;
-
-                                    if (dbf is DirectBuffer dir)
-                                        bufs[i] = new ArraySegment<byte>(ArrayPool<byte>.Shared.Rent(rem), 0, rem);
-                                    else
-                                        bufs[i] = new ArraySegment<byte>(dbf.array(), dbf.arrayOffset() + pos, rem);
-                                }
-
-                                // receive data into segments
-                                length = await Task.Factory.FromAsync(socket.BeginReceive, socket.EndReceive, bufs, SocketFlags.None, null);
-
-                                var l = length;
-                                for (int i = 0; i < dsts.Length; i++)
-                                {
-                                    var dbf = dsts[i];
-                                    var buf = bufs[i];
-                                    int pos = dbf.position();
-                                    int lim = dbf.limit();
-                                    int rem = pos <= lim ? lim - pos : 0;
-                                    int len = System.Math.Min(l, rem);
-
-                                    if (dbf is DirectBuffer dir)
-                                        Marshal.Copy(buf.Array, 0, (IntPtr)dir.address() + pos, len);
-
-                                    dbf.position(pos + len);
-                                    l -= len;
-                                }
-
-                                // we should have accounted for all of the bytes
-                                if (l != 0)
-                                    throw new RuntimeException("Bytes remaining after read.");
-
-                                // return total number of bytes read
-                                return isScatteringRead ? Long.valueOf(length) : Integer.valueOf(length);
-                            }
-                            finally
-                            {
-                                for (int i = 0; i < dsts.Length; i++)
-                                {
-                                    var dbf = dsts[i];
-                                    var buf = bufs[i];
-
-                                    if (dbf is DirectBuffer dir)
-                                        ArrayPool<byte>.Shared.Return(buf.Array);
-                                }
-                            }
-
-                        }
-                    }
-                    finally
-                    {
-                        socket.Blocking = previousBlocking;
-                        socket.ReceiveTimeout = previousReceiveTimeout;
-                    }
+                    throw e.ToIOException();
                 }
-            }
-            catch (System.Net.Sockets.SocketException e)
-            {
-                throw e.ToIOException();
-            }
-            catch (ObjectDisposedException)
-            {
-                throw new AsynchronousCloseException();
-            }
-            catch (System.Exception e)
-            {
-                throw new global::java.io.IOException(e);
-            }
-            finally
-            {
-                self.enableReading();
+                catch (ObjectDisposedException)
+                {
+                    throw new AsynchronousCloseException();
+                }
+                catch (System.Exception e)
+                {
+                    throw new global::java.io.IOException(e);
+                }
+                finally
+                {
+                    self.enableReading();
+                }
             }
         }
 
@@ -633,8 +648,12 @@ namespace IKVM.Java.Externs.sun.nio.ch
         /// <param name="accessControlContext"></param>
         /// <param name="cancellationToken"></param>
         /// <returns></returns>
-        static async Task<global::java.lang.Number> WriteAsync(global::sun.nio.ch.DotNetAsynchronousSocketChannelImpl self, bool gatheringWrite, ByteBuffer dst, ByteBuffer[] dsts, long timeout, TimeUnit unit, AccessControlContext accessControlContext, CancellationToken cancellationToken)
+        static Task<global::java.lang.Number> WriteAsync(global::sun.nio.ch.DotNetAsynchronousSocketChannelImpl self, bool gatheringWrite, ByteBuffer dst, ByteBuffer[] dsts, long timeout, TimeUnit unit, AccessControlContext accessControlContext, CancellationToken cancellationToken)
         {
+            var socket = FileDescriptorAccessor.GetSocket(self.fd);
+            if (socket == null)
+                throw new global::java.io.IOException("Socket is closed.");
+
             // scattering read uses multiple buffers
             if (gatheringWrite == false)
                 dsts = new ByteBuffer[] { dst };
@@ -644,78 +663,82 @@ namespace IKVM.Java.Externs.sun.nio.ch
             for (int i = 0; i < dsts.Length; i++)
                 bufs[i] = PrepareArraySegment(dsts[i], true);
 
-            try
-            {
-                var socket = FileDescriptorAccessor.GetSocket(self.fd);
-                var length = 0;
+            return ImplAsync();
 
-                // timeout was specified, wait for data to be available
-                var t = (int)System.Math.Min(unit.convert(timeout, TimeUnit.MILLISECONDS), int.MaxValue);
-                if (t > 0)
+            async Task<Number> ImplAsync()
+            {
+                try
                 {
-                    // non-optimal usage, but we have no way to combine timeout with true async
-                    length = await Task.Run(() =>
+                    var length = 0;
+
+                    // timeout was specified, wait for data to be available
+                    var t = (int)System.Math.Min(unit.convert(timeout, TimeUnit.MILLISECONDS), int.MaxValue);
+                    if (t > 0)
+                    {
+                        // non-optimal usage, but we have no way to combine timeout with true async
+                        length = await Task.Run(() =>
+                        {
+                            var previousBlocking = socket.Blocking;
+                            var previousSendTimeout = socket.SendTimeout;
+
+                            try
+                            {
+                                socket.Blocking = true;
+                                socket.SendTimeout = t;
+                                return socket.Send(bufs, SocketFlags.None);
+                            }
+                            finally
+                            {
+                                socket.Blocking = previousBlocking;
+                                socket.SendTimeout = previousSendTimeout;
+                            }
+                        });
+
+                    }
+                    else
                     {
                         var previousBlocking = socket.Blocking;
                         var previousSendTimeout = socket.SendTimeout;
 
                         try
                         {
-                            socket.Blocking = true;
+                            socket.Blocking = false;
                             socket.SendTimeout = t;
-                            return socket.Send(bufs, SocketFlags.None);
+                            length = await Task.Factory.FromAsync(socket.BeginSend, socket.EndSend, bufs, SocketFlags.None, null);
                         }
                         finally
                         {
                             socket.Blocking = previousBlocking;
                             socket.SendTimeout = previousSendTimeout;
                         }
-                    });
+                    }
 
+                    // advance original buffers based on amount written
+                    var l = length;
+                    for (int i = 0; i < bufs.Length; i++)
+                        ReleaseArraySegment(bufs[i], dsts[i], ref l);
+
+                    if (l != 0)
+                        throw new RuntimeException("Bytes remaining after write.");
+
+                    return gatheringWrite ? Long.valueOf(length) : Integer.valueOf(length);
                 }
-                else
+                catch (System.Net.Sockets.SocketException e)
                 {
-                    var previousBlocking = socket.Blocking;
-                    var previousSendTimeout = socket.SendTimeout;
-
-                    try
-                    {
-                        socket.Blocking = false;
-                        socket.SendTimeout = t;
-                        length = await Task.Factory.FromAsync(socket.BeginSend, socket.EndSend, bufs, SocketFlags.None, null);
-                    }
-                    finally
-                    {
-                        socket.Blocking = previousBlocking;
-                        socket.SendTimeout = previousSendTimeout;
-                    }
+                    throw e.ToIOException();
                 }
-
-                // advance original buffers based on amount written
-                var l = length;
-                for (int i = 0; i < bufs.Length; i++)
-                    ReleaseArraySegment(bufs[i], dsts[i], ref l);
-
-                if (l != 0)
-                    throw new RuntimeException("Bytes remaining after write.");
-
-                return gatheringWrite ? Long.valueOf(length) : Integer.valueOf(length);
-            }
-            catch (System.Net.Sockets.SocketException e)
-            {
-                throw e.ToIOException();
-            }
-            catch (ObjectDisposedException)
-            {
-                throw new AsynchronousCloseException();
-            }
-            catch (System.Exception e)
-            {
-                throw new IOException(e);
-            }
-            finally
-            {
-                self.enableWriting();
+                catch (ObjectDisposedException)
+                {
+                    throw new AsynchronousCloseException();
+                }
+                catch (System.Exception e)
+                {
+                    throw new global::java.io.IOException(e);
+                }
+                finally
+                {
+                    self.enableWriting();
+                }
             }
         }
 

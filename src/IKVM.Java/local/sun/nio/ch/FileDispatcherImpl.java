@@ -31,57 +31,35 @@ class FileDispatcherImpl extends FileDispatcher {
         return true;
     }
 
-    int read(FileDescriptor fd, long address, int len) throws IOException {
-        return read0(fd, address, len);
-    }
+    native int read(FileDescriptor fd, long address, int len) throws IOException;
 
-    int pread(FileDescriptor fd, long address, int len, long position) throws IOException {
-        return pread0(fd, address, len, position);
-    }
+    native int pread(FileDescriptor fd, long address, int len, long position) throws IOException;
 
-    long readv(FileDescriptor fd, long address, int len) throws IOException {
-        return readv0(fd, address, len);
-    }
+    native long readv(FileDescriptor fd, long address, int len) throws IOException;
 
     int write(FileDescriptor fd, long address, int len) throws IOException {
         return write0(fd, address, len, append);
     }
 
-    int pwrite(FileDescriptor fd, long address, int len, long position) throws IOException {
-        return pwrite0(fd, address, len, position);
-    }
+    native int write0(FileDescriptor fd, long address, int len, boolean append) throws IOException;
 
-    long writev(FileDescriptor fd, long address, int len) throws IOException {
-        return writev0(fd, address, len, append);
-    }
+    native int pwrite(FileDescriptor fd, long address, int len, long position) throws IOException;
 
-    int force(FileDescriptor fd, boolean metaData) throws IOException {
-        return force0(fd, metaData);
-    }
+    native long writev(FileDescriptor fd, long address, int len) throws IOException;
 
-    int truncate(FileDescriptor fd, long size) throws IOException {
-        return truncate0(fd, size);
-    }
+    native int force(FileDescriptor fd, boolean metaData) throws IOException;
 
-    long size(FileDescriptor fd) throws IOException {
-        return size0(fd);
-    }
+    native int truncate(FileDescriptor fd, long size) throws IOException;
 
-    int lock(FileDescriptor fd, boolean blocking, long pos, long size, boolean shared) throws IOException {
-        return lock0(fd, blocking, pos, size, shared);
-    }
+    native long size(FileDescriptor fd) throws IOException;
 
-    void release(FileDescriptor fd, long pos, long size) throws IOException {
-        release0(fd, pos, size);
-    }
+    native int lock(FileDescriptor fd, boolean blocking, long pos, long size, boolean shared) throws IOException;
 
-    void close(FileDescriptor fd) throws IOException {
-        close0(fd);
-    }
+    native void release(FileDescriptor fd, long pos, long size) throws IOException;
 
-    FileDescriptor duplicateForMapping(FileDescriptor fd) throws IOException {
-        return duplicateForMapping0(fd);
-    }
+    native void close(FileDescriptor fd) throws IOException;
+
+    native FileDescriptor duplicateForMapping(FileDescriptor fd) throws IOException;
 
     boolean canTransferToDirectly(java.nio.channels.SelectableChannel sc) {
         return fastFileTransfer && sc.isBlocking();
@@ -113,35 +91,5 @@ class FileDispatcherImpl extends FileDispatcher {
         IOUtil.load();
         fastFileTransfer = isFastFileTransferRequested();
     }
-
-    static native int read0(FileDescriptor fd, long address, int len) throws IOException;
-
-    static native int pread0(FileDescriptor fd, long address, int len, long position) throws IOException;
-
-    static native long readv0(FileDescriptor fd, long address, int len) throws IOException;
-
-    static native int write0(FileDescriptor fd, long address, int len, boolean append) throws IOException;
-
-    static native int pwrite0(FileDescriptor fd, long address, int len, long position) throws IOException;
-
-    static native long writev0(FileDescriptor fd, long address, int len, boolean append) throws IOException;
-
-    static native int force0(FileDescriptor fd, boolean metaData) throws IOException;
-
-    static native int truncate0(FileDescriptor fd, long size) throws IOException;
-
-    static native long size0(FileDescriptor fd) throws IOException;
-
-    static native int lock0(FileDescriptor fd, boolean blocking, long pos, long size, boolean shared) throws IOException;
-
-    static native void release0(FileDescriptor fd, long pos, long size) throws IOException;
-
-    static native void close0(FileDescriptor fd) throws IOException;
-
-    static native void closeByHandle(long fd) throws IOException;
-
-    static native long duplicateHandle(long fd) throws IOException;
-
-    static native FileDescriptor duplicateForMapping0(FileDescriptor fd) throws IOException;
 
 }

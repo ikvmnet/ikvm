@@ -18,11 +18,13 @@ namespace IKVM.Runtime.Accessors.Java.Io
         MethodAccessor<Func<Stream, object>> fromStream;
         MethodAccessor<Func<Socket, object>> fromSocket;
 
+        MethodAccessor<Func<object>> init;
         FieldAccessor<object, int> fd;
         FieldAccessor<object, long> handle;
         FieldAccessor<object, Task> task;
         FieldAccessor<object, Stream> stream;
         FieldAccessor<object, Socket> socket;
+        MethodAccessor<Action<object>> sync;
 
         /// <summary>
         /// Initializes a new instance.
@@ -33,6 +35,12 @@ namespace IKVM.Runtime.Accessors.Java.Io
         {
 
         }
+
+        /// <summary>
+        /// Invokes the constructor.
+        /// </summary>
+        /// <returns></returns>
+        public object Init() => GetConstructor(ref init, "()V").Invoker();
 
         /// <summary>
         /// Gets the value for the 'in' field.
@@ -107,6 +115,12 @@ namespace IKVM.Runtime.Accessors.Java.Io
         /// Sets the value for the 'socket' property.
         /// </summary>
         public void SetSocket(object self, Socket value) => GetField(ref socket, nameof(socket), "Lcli.System.Net.Sockets.Socket;").SetValue(self, value);
+
+        /// <summary>
+        /// Invokes the 'sync' method.
+        /// </summary>
+        /// <param name="self"></param>
+        public void InvokeSync(object self) => GetMethod(ref sync, nameof(sync), "()V").Invoker(self);
 
     }
 

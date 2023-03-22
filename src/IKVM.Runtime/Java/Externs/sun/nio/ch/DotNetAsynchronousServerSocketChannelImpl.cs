@@ -102,10 +102,10 @@ namespace IKVM.Java.Externs.sun.nio.ch
         /// <param name="self"></param>
         /// <param name="cancellationToken"></param>
         /// <returns></returns>s
-        static async Task<global::sun.nio.ch.DotNetAsynchronousSocketChannelImpl> AcceptAsync(global::sun.nio.ch.DotNetAsynchronousServerSocketChannelImpl self, global::java.security.AccessControlContext accessControlContext, CancellationToken cancellationToken)
+        static Task<global::sun.nio.ch.DotNetAsynchronousSocketChannelImpl> AcceptAsync(global::sun.nio.ch.DotNetAsynchronousServerSocketChannelImpl self, global::java.security.AccessControlContext accessControlContext, CancellationToken cancellationToken)
         {
             if (self.isOpen() == false)
-                throw new ClosedChannelException();
+                return Task.FromException<global::sun.nio.ch.DotNetAsynchronousSocketChannelImpl>(new ClosedChannelException());
 
             if (self.isAcceptKilled())
                 throw new RuntimeException("Accept not allowed due to cancellation.");
@@ -113,108 +113,120 @@ namespace IKVM.Java.Externs.sun.nio.ch
             if (self.localAddress == null)
                 throw new NotYetBoundException();
 
-            var client = CreateClientChannel(self);
-            if (client == null)
-                throw new RuntimeException("Could not create channel.");
+            global::sun.nio.ch.DotNetAsynchronousSocketChannelImpl client = null;
+
+            try
+            {
+                client = CreateClientChannel(self) ?? throw new RuntimeException("Could not create channel.");
+            }
+            catch (System.Exception e)
+            {
+                return Task.FromException<global::sun.nio.ch.DotNetAsynchronousSocketChannelImpl>(e);
+            }
 
             if (self.accepting.compareAndSet(false, true) == false)
                 throw new AcceptPendingException();
 
-            try
+            return ImplAsync();
+
+            async Task<global::sun.nio.ch.DotNetAsynchronousSocketChannelImpl> ImplAsync()
             {
                 try
                 {
-                    // get initial clientSocket
-                    var acceptSocket = FileDescriptorAccessor.GetSocket(client.fd);
-
-                    // execute asynchronous Accept task
-                    var listenSocket = FileDescriptorAccessor.GetSocket(self.fd);
-#if NETFRAMEWORK
-                    acceptSocket = await Task.Factory.FromAsync(listenSocket.BeginAccept, listenSocket.EndAccept, acceptSocket, 0, null);
-#else
-                    acceptSocket = await listenSocket.AcceptAsync(acceptSocket);
-#endif
-
-                    // connection accept completed after group has shutdown
-                    if (self.group().isShutdown())
-                        throw new ShutdownChannelGroupException();
-
                     try
                     {
-                        self.begin();
+                        // get initial clientSocket
+                        var acceptSocket = FileDescriptorAccessor.GetSocket(client.fd);
+
+                        // execute asynchronous Accept task
+                        var listenSocket = FileDescriptorAccessor.GetSocket(self.fd);
+#if NETFRAMEWORK
+                        acceptSocket = await Task.Factory.FromAsync(listenSocket.BeginAccept, listenSocket.EndAccept, acceptSocket, 0, null);
+#else
+                        acceptSocket = await listenSocket.AcceptAsync(acceptSocket);
+#endif
+
+                        // connection accept completed after group has shutdown
+                        if (self.group().isShutdown())
+                            throw new ShutdownChannelGroupException();
 
                         try
                         {
-                            // initialize resulting channel
-                            client.begin();
+                            self.begin();
 
-                            // obtain new addresses
-                            var local = ((IPEndPoint)acceptSocket.LocalEndPoint).ToInetSocketAddress();
-                            var remote = ((IPEndPoint)acceptSocket.RemoteEndPoint).ToInetSocketAddress();
-
-                            // set the client channel to connected
-                            lock (client.stateLock)
+                            try
                             {
-                                client.state = AsynchronousSocketChannelImpl.ST_CONNECTED;
-                                client.localAddress = local;
-                                client.remoteAddress = remote;
-                            }
+                                // initialize resulting channel
+                                client.begin();
 
-                            // check access to specified host
-                            if (accessControlContext != null)
-                            {
-                                global::java.security.AccessController.doPrivileged(new ActionPrivilegedAction(() =>
+                                // obtain new addresses
+                                var local = ((IPEndPoint)acceptSocket.LocalEndPoint).ToInetSocketAddress();
+                                var remote = ((IPEndPoint)acceptSocket.RemoteEndPoint).ToInetSocketAddress();
+
+                                // set the client channel to connected
+                                lock (client.stateLock)
                                 {
-                                    global::java.lang.System.getSecurityManager()?.checkAccept(remote.getAddress().getHostAddress(), remote.getPort());
-                                }), accessControlContext);
-                            }
+                                    client.state = AsynchronousSocketChannelImpl.ST_CONNECTED;
+                                    client.localAddress = local;
+                                    client.remoteAddress = remote;
+                                }
 
-                            // return resulting channel
-                            return client;
+                                // check access to specified host
+                                if (accessControlContext != null)
+                                {
+                                    global::java.security.AccessController.doPrivileged(new ActionPrivilegedAction(() =>
+                                    {
+                                        global::java.lang.System.getSecurityManager()?.checkAccept(remote.getAddress().getHostAddress(), remote.getPort());
+                                    }), accessControlContext);
+                                }
+
+                                // return resulting channel
+                                return client;
+                            }
+                            finally
+                            {
+                                client.end();
+                            }
                         }
                         finally
                         {
-                            client.end();
+                            self.end();
                         }
                     }
-                    finally
+                    catch (SecurityException)
                     {
-                        self.end();
+                        throw;
                     }
-                }
-                catch (SecurityException)
-                {
-                    throw;
-                }
-                catch (System.Net.Sockets.SocketException e)
-                {
-                    throw e.ToIOException();
-                }
-                catch (ObjectDisposedException)
-                {
-                    throw new AsynchronousCloseException();
-                }
-                catch (System.Exception e)
-                {
-                    throw new IOException(e);
-                }
-            }
-            catch
-            {
-                try
-                {
-                    client?.close();
+                    catch (System.Net.Sockets.SocketException e)
+                    {
+                        throw e.ToIOException();
+                    }
+                    catch (ObjectDisposedException)
+                    {
+                        throw new AsynchronousCloseException();
+                    }
+                    catch (System.Exception e)
+                    {
+                        throw new IOException(e);
+                    }
                 }
                 catch
                 {
-                    // ignore
-                }
+                    try
+                    {
+                        client?.close();
+                    }
+                    catch
+                    {
+                        // ignore
+                    }
 
-                throw;
-            }
-            finally
-            {
-                self.accepting.set(false);
+                    throw;
+                }
+                finally
+                {
+                    self.accepting.set(false);
+                }
             }
         }
 

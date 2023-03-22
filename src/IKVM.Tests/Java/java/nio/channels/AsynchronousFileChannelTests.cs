@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Runtime.ExceptionServices;
 using System.Threading.Tasks;
 
 using FluentAssertions;
@@ -280,75 +281,56 @@ namespace IKVM.Tests.Java.java.nio.channels
         }
 
         [TestMethod]
-        public void CanLockWithVariousMethods()
+        public void TryLockShouldThrowOverlappingFileLockException()
         {
-            File blah = File.createTempFile("blah", null);
-            blah.deleteOnExit();
+            var file = File.createTempFile("lockfile", null);
+            file.deleteOnExit();
+            if (file.exists())
+                file.delete();
 
-            var ch = AsynchronousFileChannel.open(blah.toPath(), StandardOpenOption.READ, StandardOpenOption.WRITE);
+            file.createNewFile();
+            using var s = new FileOutputStream(file);
+            s.write(new byte[] { 1, 2, 3, 4 });
+            s.close();
 
-            FileLock fl;
-            try
-            {
-                // test 1 - acquire lock and check that tryLock throws
-                // OverlappingFileLockException
-                try
-                {
-                    fl = (FileLock)ch.@lock().get();
-                }
-                catch (ExecutionException e)
-                {
-                    throw new RuntimeException(e);
-                }
-                catch (InterruptedException)
-                {
-                    throw new RuntimeException("Should not be interrupted");
-                }
+            var ch = AsynchronousFileChannel.open(file.toPath(), StandardOpenOption.READ, StandardOpenOption.WRITE);
+            ch.Should().NotBeNull();
 
-                if (!fl.acquiredBy().Equals(ch))
-                    throw new RuntimeException("FileLock#acquiredBy returned incorrect channel");
+            var fl = (FileLock)ch.@lock().get();
+            fl.Should().NotBeNull();
+            fl.acquiredBy().Should().BeSameAs(ch);
 
-                try
-                {
-                    ch.tryLock();
-                    throw new RuntimeException("OverlappingFileLockException expected");
-                }
-                catch (OverlappingFileLockException)
-                {
+            ch.Invoking(x => x.tryLock()).Should().Throw<OverlappingFileLockException>();
 
-                }
+            ch.close();
+            fl.isValid().Should().BeFalse();
+        }
 
-                fl.release();
+        [TestMethod]
+        public void LockShouldThrowOverlappingFileLockException()
+        {
+            var file = File.createTempFile("lockfile", null);
+            file.deleteOnExit();
+            if (file.exists())
+                file.delete();
 
-                // test 2 - acquire try and check that lock throws OverlappingFileLockException
-                fl = ch.tryLock();
-                if (fl == null)
-                    throw new RuntimeException("Unable to acquire lock");
+            file.createNewFile();
+            using var s = new FileOutputStream(file);
+            s.write(new byte[] { 1, 2, 3, 4 });
+            s.close();
 
-                try
-                {
-                    var awaiter = new AwaitableCompletionHandler();
-                    ch.@lock(null, awaiter);
-                    awaiter.GetAwaiter().GetResult();
-                    throw new RuntimeException("OverlappingFileLockException expected");
-                }
-                catch (OverlappingFileLockException)
-                {
+            var ch = AsynchronousFileChannel.open(file.toPath(), StandardOpenOption.READ, StandardOpenOption.WRITE);
+            ch.Should().NotBeNull();
 
-                }
-                catch (System.Exception)
-                {
+            var fl = ch.tryLock();
+            fl.Should().NotBeNull();
+            fl.acquiredBy().Should().BeSameAs(ch);
 
-                }
-            }
-            finally
-            {
-                ch.close();
-            }
+            var awaiter = new AwaitableCompletionHandler<FileLock>();
+            ch.Invoking(x => x.@lock(null, awaiter)).Should().Throw<OverlappingFileLockException>();
 
-            // test 3 - channel is closed so FileLock should no longer be valid
-            if (fl.isValid())
-                throw new RuntimeException("FileLock expected to be invalid");
+            ch.close();
+            fl.isValid().Should().BeFalse();
         }
 
         /// <summary>
@@ -440,6 +422,68 @@ namespace IKVM.Tests.Java.java.nio.channels
             b.order(ByteOrder.BIG_ENDIAN);
             var m = b.getInt();
             m.Should().Be(unchecked((int)0xCAFEBABE));
+        }
+
+        [TestMethod]
+        public void ShouldThrowClosedChannelExceptionOnRead()
+        {
+            var file = File.createTempFile("test", null);
+            file.deleteOnExit();
+            if (file.exists())
+                file.delete();
+
+            file.createNewFile();
+            using var s = new FileOutputStream(file);
+            s.write(new byte[] { 1, 2, 3, 4 });
+            s.close();
+
+            using var c = AsynchronousFileChannel.open(file.toPath(), StandardOpenOption.READ);
+            c.close();
+            c.isOpen().Should().BeFalse();
+
+            var buf = ByteBuffer.allocateDirect(4);
+            c.Invoking(x => x.read(buf, 0L).get()).Should().Throw<ExecutionException>().Where(e => e.getCause() is ClosedChannelException);
+        }
+
+        [TestMethod]
+        public void ShouldThrowClosedChannelExceptionOnWrite()
+        {
+            var file = File.createTempFile("test", null);
+            file.deleteOnExit();
+            if (file.exists())
+                file.delete();
+
+            file.createNewFile();
+            using var s = new FileOutputStream(file);
+            s.write(new byte[] { 1, 2, 3, 4 });
+            s.close();
+
+            using var c = AsynchronousFileChannel.open(file.toPath(), StandardOpenOption.WRITE);
+            c.close();
+            c.isOpen().Should().BeFalse();
+
+            var buf = ByteBuffer.allocateDirect(4);
+            c.Invoking(x => x.write(buf, 0L).get()).Should().Throw<ExecutionException>().Where(e => e.getCause() is ClosedChannelException);
+        }
+
+        [TestMethod]
+        public void ShouldThrowClosedChannelExceptionOnLock()
+        {
+            var file = File.createTempFile("test", null);
+            file.deleteOnExit();
+            if (file.exists())
+                file.delete();
+
+            file.createNewFile();
+            using var s = new FileOutputStream(file);
+            s.write(new byte[] { 1, 2, 3, 4 });
+            s.close();
+
+            using var c = AsynchronousFileChannel.open(file.toPath(), StandardOpenOption.READ, StandardOpenOption.WRITE);
+            c.close();
+            c.isOpen().Should().BeFalse();
+
+            c.Invoking(x => x.@lock().get()).Should().Throw<ExecutionException>().Where(e => e.getCause() is ClosedChannelException);
         }
 
     }

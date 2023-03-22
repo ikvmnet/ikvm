@@ -205,8 +205,8 @@ namespace IKVM.Java.Externs.sun.nio.ch
 
             // update remote address if it has changed
             var remoteAddress = DatagramChannelImplAccessor.InvokeRemoteAddress(self);
-            if (remoteAddress == null || ipRemoteEndpoint.ToInetAddress().equals(remoteAddress) == false)
-                DatagramChannelImplAccessor.SetSender(self, ipRemoteEndpoint.ToInetAddress());
+            if (remoteAddress == null || ipRemoteEndpoint.ToInetSocketAddress().equals(remoteAddress) == false)
+                DatagramChannelImplAccessor.SetSender(self, ipRemoteEndpoint.ToInetSocketAddress());
 
             return length;
 #endif

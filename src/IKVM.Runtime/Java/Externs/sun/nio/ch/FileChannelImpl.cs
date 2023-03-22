@@ -48,17 +48,17 @@ namespace IKVM.Java.Externs.sun.nio.ch
         /// <summary>
         /// Implements the native method for 'map0'.
         /// </summary>
-        public static IntPtr map0(object self, int prot, long position, long length)
+        public static long map0(object self, int prot, long position, long length)
         {
 #if FIRST_PASS
             throw new NotImplementedException();
 #else
             if (RuntimeUtil.IsWindows)
-                return MapFileWindows((global::sun.nio.ch.FileChannelImpl)self, prot, position, length);
+                return (long)MapFileWindows((global::sun.nio.ch.FileChannelImpl)self, prot, position, length);
             else if (RuntimeUtil.IsLinux)
-                return MapFileLinux((global::sun.nio.ch.FileChannelImpl)self, prot, position, length);
+                return (long)MapFileLinux((global::sun.nio.ch.FileChannelImpl)self, prot, position, length);
             else if (RuntimeUtil.IsOSX)
-                return MapFileOSX((global::sun.nio.ch.FileChannelImpl)self, prot, position, length);
+                return (long)MapFileOSX((global::sun.nio.ch.FileChannelImpl)self, prot, position, length);
             else
                 throw new global::java.io.IOException("Unsupported operation on platform.");
 #endif

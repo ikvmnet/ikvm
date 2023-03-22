@@ -174,6 +174,24 @@ namespace IKVM.Tests.Java.java.nio.channels
             var n = dstChannel.transferFrom(srcChannel, 0, Integer.MAX_VALUE + 1L);
         }
 
+        [TestMethod]
+        public void CanReadAndWriteMemoryMappedFile()
+        {
+            var file = File.createTempFile("src", null);
+            file.deleteOnExit();
+
+            using var mmap = new RandomAccessFile(file, "rw");
+            var buff = mmap.getChannel().map(FileChannel.MapMode.READ_WRITE, 0, 1024);
+
+            for (int i = 0; i < 1024; i++)
+                buff.put((byte)'A');
+
+            buff.flip();
+
+            for (int i = 0; i < 1024; i++)
+                buff.get(i).Should().Be((byte)'A');
+        }
+
     }
 
 }
