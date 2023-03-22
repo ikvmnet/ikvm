@@ -257,7 +257,7 @@
         </Task>
     </UsingTask>
 
-    <Target Name="GenerateJNITrampolines" DependsOnTargets="DisassembleJNITrampolines" Inputs="$(JNITrampolineIntermediateDirectory)%(JNITrampolineRuntimeIdentifier.Identity).s" Outputs="$(JNITrampolineIntermediateDirectory)%(JNITrampolineRuntimeIdentifier.Identity).cs" Condition=" '$(TargetFramework)' != '' ">
+    <Target Name="GenerateJNITrampolines" DependsOnTargets="DisassembleJNITrampolines" Inputs="$(JNITrampolineIntermediateDirectory)%(JNITrampolineRuntimeIdentifier.Identity).s" Outputs="$(JNITrampolineIntermediateDirectory)%(JNITrampolineRuntimeIdentifier.Identity).g.cs" Condition=" '$(TargetFramework)' != '' ">
         <Message Text="$(JNITrampolineIntermediateDirectory)%(JNITrampolineRuntimeIdentifier.Identity).s -&gt; $(JNITrampolineIntermediateDirectory)%(JNITrampolineRuntimeIdentifier.Identity).cs" />
         <MakeDir Directories="$(JNITrampolineIntermediateDirectory)" />
         <GenerateJNITrampolinesFunctionTable Namespace="IKVM.Runtime.JNI.Trampolines" ClassName="$([System.String]::Copy('FunctionTable_%(JNITrampolineRuntimeIdentifier.Identity)').Replace('-', '_').Replace('.', '_'))" AssemblerFile="$(JNITrampolineIntermediateDirectory)%(JNITrampolineRuntimeIdentifier.Identity).s" BuildCodeFile="$(JNITrampolineIntermediateDirectory)%(JNITrampolineRuntimeIdentifier.Identity).g.cs" />
