@@ -250,8 +250,8 @@
             writer.WriteLine("Bootstrap={0}", item.Bootstrap);
 
             // traverse the reference set for references that are actually referenced
-            foreach (var path in item.References)
-                writer.WriteLine($"Reference={await GetIdentityAsync(item, path, cancellationToken)}");
+            foreach (var reference in item.References)
+                writer.WriteLine($"Reference={await GetIdentityAsync(item, reference, cancellationToken)}");
 
             // gather library lines
             foreach (var library in item.Libraries)

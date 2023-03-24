@@ -44,8 +44,6 @@ $([MSBuild]::Unescape('$(___IkvmReferenceExportItemPrepareCs)'))
         <MakeDir Directories="$([System.IO.Path]::GetDirectoryName('%(ReferenceExport.StagePath)'))" />
         <MakeDir Directories="$([System.IO.Path]::GetDirectoryName('%(ReferenceExport.CachePath)'))" />
 
-        <Message Text="_ReferenceExportReference: @(_ReferenceExportReference)" Importance="high" />
-
         <ItemGroup>
             <_IkvmExporterArgs Remove="@(_IkvmExporterArgs)" />
             <_IkvmExporterArgs Include="-bootstrap" Condition=" '%(ReferenceExport.Bootstrap)' == 'true' " />
