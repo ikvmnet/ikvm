@@ -50,7 +50,9 @@ Items = Items.OrderBy(i => i.ItemSpec).ToArray();
 
         <ItemGroup>
             <_ReferenceExportReference Remove="@(_ReferenceExportReference)" />
-            <_ReferenceExportReference Include="@(ReferencePathWithRefAssemblies)" Condition=" '%(Filename)' != '%(ReferenceExport.Filename)' "/>
+            <_ReferenceExportReference Include="%(ReferenceExport.References)" />
+            <_ReferenceExportLibrary Remove="@(_ReferenceExportLibrary)" />
+            <_ReferenceExportLibrary Include="%(ReferenceExport.Libraries)" />
         </ItemGroup>
 
         <!-- Output to stage path then copy to cache path to be atomic. -->
@@ -59,14 +61,15 @@ Items = Items.OrderBy(i => i.ItemSpec).ToArray();
 
         <ItemGroup>
             <_IkvmExporterArgs Remove="@(_IkvmExporterArgs)" />
-            <_IkvmExporterArgs Include="--out:&quot;%(ReferenceExport.StagePath)&quot;" />
-            <_IkvmExporterArgs Include="@(_ReferenceExportReference->'--reference:&quot;%(FullPath)&quot;')" />
+            <_IkvmExporterArgs Include="-bootstrap" Condition=" '%(ReferenceExport.Bootstrap)' == 'true' " />
+            <_IkvmExporterArgs Include="-nostdlib" Condition=" '%(ReferenceExport.NoStdLib)' == 'true' " />
             <_IkvmExporterArgs Include="--non-public-types" Condition=" '%(ReferenceExport.IncludeNonPublicTypes)' == 'true' " />
             <_IkvmExporterArgs Include="--non-public-interfaces" Condition=" '%(ReferenceExport.IncludeNonPublicInterfaces)' == 'true' " />
             <_IkvmExporterArgs Include="--non-public-members" Condition=" '%(ReferenceExport.IncludeNonPublicMembers)' == 'true' " />
             <_IkvmExporterArgs Include="--parameters" />
-            <_IkvmExporterArgs Include="--nostdlib" Condition=" '%(ReferenceExport.NoStdLib)' == 'true' " />
-            <_IkvmExporterArgs Include="--bootstrap" Condition=" '%(ReferenceExport.Bootstrap)' == 'true' " />
+            <_IkvmExporterArgs Include="@(_ReferenceExportReference->'-r:&quot;%(FullPath)&quot;')" Condition=" '@(_ReferenceExportReference)' != '' " />
+            <_IkvmExporterArgs Include="@(_ReferenceExportLibrary->'-lib:&quot;%(FullPath)&quot;')" Condition=" '@(_ReferenceExportLibrary)' != '' " />
+            <_IkvmExporterArgs Include="-out:&quot;%(ReferenceExport.StagePath)&quot;" />
             <_IkvmExporterArgs Include="&quot;%(ReferenceExport.Identity)&quot;" />
         </ItemGroup>
 
