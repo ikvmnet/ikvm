@@ -8,6 +8,7 @@ using System.Threading.Tasks;
 using IKVM.Runtime;
 using IKVM.Runtime.Accessors.Java.Io;
 using IKVM.Runtime.Util.Java.Net;
+using IKVM.Runtime.Util.Java.Nio;
 using IKVM.Runtime.Util.Java.Security;
 
 #if FIRST_PASS == false
@@ -246,7 +247,11 @@ namespace IKVM.Java.Externs.sun.nio.ch
                     try
                     {
                         // execute asynchronous Connect task
+#if NETFRAMEWORK
                         await Task.Factory.FromAsync(socket.BeginConnect, socket.EndConnect, remoteAddress.ToIPEndpoint(), null);
+#else
+                        await socket.ConnectAsync(remoteAddress.ToIPEndpoint());
+#endif
 
                         try
                         {
@@ -294,67 +299,6 @@ namespace IKVM.Java.Externs.sun.nio.ch
                     throw;
                 }
             }
-        }
-
-        /// <summary>
-        /// Returns an <see cref="ArraySegment{byte}"/> for the given <see cref="ByteBuffer"/>. May be a memory
-        /// mapping to the original array, or may be a newly allocated temporary buffer. Optionally, copy the
-        /// original data to the temporary location.
-        /// </summary>
-        /// <param name="buf"></param>
-        /// <param name="copy"></param>
-        /// <returns></returns>
-        static unsafe ArraySegment<byte> PrepareArraySegment(ByteBuffer buf, bool copy = false)
-        {
-            int pos = buf.position();
-            int lim = buf.limit();
-            int rem = pos <= lim ? lim - pos : 0;
-
-            if (buf is DirectBuffer dir)
-            {
-                var s = new ArraySegment<byte>(ArrayPool<byte>.Shared.Rent(rem), 0, rem);
-
-                // optionally copy the original buffer data to the new segment
-                if (copy)
-                    new ReadOnlySpan<byte>((byte*)(IntPtr)dir.address() + pos, rem).CopyTo(s);
-
-                return s;
-            }
-            else
-            {
-                return new ArraySegment<byte>(buf.array(), buf.arrayOffset(), rem);
-            }
-        }
-
-        /// <summary>
-        /// Accepts an array segment, and it's original buffer. If required copies the segment back into the buffer,
-        /// subtracting the remaining bytes from the total.
-        /// </summary>
-        /// <param name="seg"></param>
-        /// <param name="buf"></param>
-        /// <param name="length"></param>
-        static unsafe void ReleaseArraySegment(ArraySegment<byte> seg, ByteBuffer buf, ref int length, bool copy = false)
-        {
-            int pos = buf.position();
-            int len = buf.remaining();
-
-            // number of bytes used in segment
-            var rem = System.Math.Min(len, length);
-
-            // original buffer is direct, meaning we need to copy to its address
-            if (buf is DirectBuffer dir)
-            {
-
-                // optionally copy the segment back to the buffer data
-                if (copy)
-                    seg.AsSpan().CopyTo(new Span<byte>((byte*)(IntPtr)dir.address() + pos, rem));
-
-                ArrayPool<byte>.Shared.Return(seg.Array);
-            }
-
-            // advance buffer by used bytes
-            buf.position(pos + rem);
-            length -= rem;
         }
 
         /// <summary>
@@ -425,10 +369,10 @@ namespace IKVM.Java.Externs.sun.nio.ch
                                             ArrayPool<byte>.Shared.Return(buf);
                                         }
 #else
-                                    unsafe
-                                    {
-                                        length = socket.Receive(new Span<byte>((byte*)(IntPtr)dir.address() + pos, rem), SocketFlags.None);
-                                    }
+                                        unsafe
+                                        {
+                                            length = socket.Receive(new Span<byte>((byte*)(IntPtr)dir.address() + pos, rem), SocketFlags.None);
+                                        }
 #endif
                                     }
                                     else
@@ -517,36 +461,47 @@ namespace IKVM.Java.Externs.sun.nio.ch
                         try
                         {
                             socket.Blocking = false;
-                            socket.ReceiveTimeout = t;
+                            socket.ReceiveTimeout = 0;
 
                             if (dst != null)
                             {
+                                int length = 0;
+
                                 int pos = dst.position();
                                 int lim = dst.limit();
                                 int rem = pos <= lim ? lim - pos : 0;
 
                                 if (dst is DirectBuffer dir)
                                 {
+#if NETFRAMEWORK
                                     var buf = ArrayPool<byte>.Shared.Rent(rem);
 
                                     try
                                     {
-                                        var length = await Task.Factory.FromAsync((cb, state) => socket.BeginReceive(buf, 0, rem, SocketFlags.None, cb, state), socket.EndReceive, null);
+                                        length = await Task.Factory.FromAsync((cb, state) => socket.BeginReceive(buf, 0, rem, SocketFlags.None, cb, state), socket.EndReceive, null);
                                         Marshal.Copy(buf, 0, (IntPtr)dir.address() + pos, length);
-                                        dst.position(pos + length);
-                                        return isScatteringRead ? Long.valueOf(length) : Integer.valueOf(length);
                                     }
                                     finally
                                     {
                                         ArrayPool<byte>.Shared.Return(buf);
                                     }
+#else
+                                    using var mgr = new DirectBufferMemoryManager(dir);
+                                    var mem = mgr.Memory.Slice(pos, rem);
+                                    length = await socket.ReceiveAsync(mem, SocketFlags.None, cancellationToken);
+#endif
                                 }
                                 else
                                 {
-                                    var length = await Task.Factory.FromAsync((cb, state) => socket.BeginReceive(dst.array(), dst.arrayOffset() + pos, rem, SocketFlags.None, cb, state), socket.EndReceive, null);
-                                    dst.position(pos + length);
-                                    return isScatteringRead ? Long.valueOf(length) : Integer.valueOf(length);
+#if NETFRAMEWORK
+                                    length = await Task.Factory.FromAsync((cb, state) => socket.BeginReceive(dst.array(), dst.arrayOffset() + pos, rem, SocketFlags.None, cb, state), socket.EndReceive, null);
+#else
+                                    length = await socket.ReceiveAsync(new Memory<byte>(dst.array(), dst.arrayOffset() + pos, rem), SocketFlags.None, cancellationToken);
+#endif
                                 }
+
+                                dst.position(pos + length);
+                                return isScatteringRead ? Long.valueOf(length) : Integer.valueOf(length);
                             }
                             else
                             {
@@ -570,7 +525,11 @@ namespace IKVM.Java.Externs.sun.nio.ch
                                     }
 
                                     // receive data into segments
+#if NETFRAMEWORK
                                     length = await Task.Factory.FromAsync(socket.BeginReceive, socket.EndReceive, bufs, SocketFlags.None, null);
+#else
+                                    length = await socket.ReceiveAsync(bufs, SocketFlags.None);
+#endif
 
                                     var l = length;
                                     for (int i = 0; i < dsts.Length; i++)
@@ -641,27 +600,22 @@ namespace IKVM.Java.Externs.sun.nio.ch
         /// </summary>
         /// <param name="self"></param>
         /// <param name="gatheringWrite"></param>
-        /// <param name="dst"></param>
-        /// <param name="dsts"></param>
+        /// <param name="src"></param>
+        /// <param name="srcs"></param>
         /// <param name="timeout"></param>
         /// <param name="unit"></param>
         /// <param name="accessControlContext"></param>
         /// <param name="cancellationToken"></param>
         /// <returns></returns>
-        static Task<global::java.lang.Number> WriteAsync(global::sun.nio.ch.DotNetAsynchronousSocketChannelImpl self, bool gatheringWrite, ByteBuffer dst, ByteBuffer[] dsts, long timeout, TimeUnit unit, AccessControlContext accessControlContext, CancellationToken cancellationToken)
+        static Task<global::java.lang.Number> WriteAsync(global::sun.nio.ch.DotNetAsynchronousSocketChannelImpl self, bool gatheringWrite, ByteBuffer src, ByteBuffer[] srcs, long timeout, TimeUnit unit, AccessControlContext accessControlContext, CancellationToken cancellationToken)
         {
             var socket = FileDescriptorAccessor.GetSocket(self.fd);
             if (socket == null)
                 throw new global::java.io.IOException("Socket is closed.");
 
-            // scattering read uses multiple buffers
-            if (gatheringWrite == false)
-                dsts = new ByteBuffer[] { dst };
-
-            // replace buffers with array segments
-            var bufs = new ArraySegment<byte>[dsts.Length];
-            for (int i = 0; i < dsts.Length; i++)
-                bufs[i] = PrepareArraySegment(dsts[i], true);
+            // we were told to do a scattering read, but only received one buffer, do a regular read
+            if (gatheringWrite && srcs.Length == 1)
+                src = srcs[0];
 
             return ImplAsync();
 
@@ -669,14 +623,12 @@ namespace IKVM.Java.Externs.sun.nio.ch
             {
                 try
                 {
-                    var length = 0;
-
-                    // timeout was specified, wait for data to be available
+                    // timeout was specified, wait for data to be sent
                     var t = (int)System.Math.Min(unit.convert(timeout, TimeUnit.MILLISECONDS), int.MaxValue);
                     if (t > 0)
                     {
                         // non-optimal usage, but we have no way to combine timeout with true async
-                        length = await Task.Run(() =>
+                        return await Task.Run<Number>(() =>
                         {
                             var previousBlocking = socket.Blocking;
                             var previousSendTimeout = socket.SendTimeout;
@@ -685,7 +637,102 @@ namespace IKVM.Java.Externs.sun.nio.ch
                             {
                                 socket.Blocking = true;
                                 socket.SendTimeout = t;
-                                return socket.Send(bufs, SocketFlags.None);
+
+                                if (src != null)
+                                {
+                                    int length = 0;
+
+                                    int pos = src.position();
+                                    int lim = src.limit();
+                                    int rem = pos <= lim ? lim - pos : 0;
+
+                                    if (src is DirectBuffer dir)
+                                    {
+#if NETFRAMEWORK
+                                        var buf = ArrayPool<byte>.Shared.Rent(rem);
+
+                                        try
+                                        {
+                                            Marshal.Copy((IntPtr)dir.address() + pos, buf, 0, rem);
+                                            length = socket.Send(buf, rem, SocketFlags.None);
+                                        }
+                                        finally
+                                        {
+                                            ArrayPool<byte>.Shared.Return(buf);
+                                        }
+#else
+                                        unsafe
+                                        {
+                                            length = socket.Send(new Span<byte>((byte*)(IntPtr)dir.address() + pos, rem), SocketFlags.None);
+                                        }
+#endif
+                                    }
+                                    else
+                                    {
+                                        length = socket.Send(src.array(), src.arrayOffset() + pos, rem, SocketFlags.None);
+                                    }
+
+                                    src.position(pos + length);
+                                    return gatheringWrite ? Long.valueOf(length) : Integer.valueOf(length);
+                                }
+                                else
+                                {
+                                    int length = 0;
+                                    var bufs = new ArraySegment<byte>[srcs.Length];
+
+                                    try
+                                    {
+                                        // prepare array segments for buffers
+                                        for (int i = 0; i < srcs.Length; i++)
+                                        {
+                                            var dbf = srcs[i];
+                                            int pos = dbf.position();
+                                            int lim = dbf.limit();
+                                            int rem = pos <= lim ? lim - pos : 0;
+
+                                            if (dbf is DirectBuffer dir)
+                                            {
+                                                var buf = ArrayPool<byte>.Shared.Rent(rem);
+                                                Marshal.Copy((IntPtr)dir.address() + pos, buf, 0, rem);
+                                                bufs[i] = new ArraySegment<byte>(buf, 0, rem);
+                                            }
+                                            else
+                                                bufs[i] = new ArraySegment<byte>(dbf.array(), dbf.arrayOffset() + pos, rem);
+                                        }
+
+                                        // send data from segments
+                                        length = socket.Send(bufs, SocketFlags.None);
+                                    }
+                                    finally
+                                    {
+                                        for (int i = 0; i < srcs.Length; i++)
+                                        {
+                                            var dbf = srcs[i];
+                                            var buf = bufs[i];
+
+                                            // return temporary buffer
+                                            if (dbf is DirectBuffer dir)
+                                                ArrayPool<byte>.Shared.Return(buf.Array);
+                                        }
+                                    }
+
+                                    // advance buffers by amount sent
+                                    var l = length;
+                                    for (int i = 0; i < srcs.Length; i++)
+                                    {
+                                        var dbf = srcs[i];
+                                        int pos = dbf.position();
+                                        int lim = dbf.limit();
+                                        int rem = pos <= lim ? lim - pos : 0;
+                                        var len = System.Math.Min(l, rem);
+
+                                        dbf.position(pos + len);
+                                        l -= len;
+                                    }
+
+                                    // return total number of bytes written
+                                    return gatheringWrite ? Long.valueOf(length) : Integer.valueOf(length);
+                                }
                             }
                             finally
                             {
@@ -693,7 +740,6 @@ namespace IKVM.Java.Externs.sun.nio.ch
                                 socket.SendTimeout = previousSendTimeout;
                             }
                         });
-
                     }
                     else
                     {
@@ -703,8 +749,110 @@ namespace IKVM.Java.Externs.sun.nio.ch
                         try
                         {
                             socket.Blocking = false;
-                            socket.SendTimeout = t;
-                            length = await Task.Factory.FromAsync(socket.BeginSend, socket.EndSend, bufs, SocketFlags.None, null);
+                            socket.SendTimeout = 0;
+
+                            if (src != null)
+                            {
+                                int length = 0;
+
+                                int pos = src.position();
+                                int lim = src.limit();
+                                int rem = pos <= lim ? lim - pos : 0;
+
+                                if (src is DirectBuffer dir)
+                                {
+#if NETFRAMEWORK
+                                    var buf = ArrayPool<byte>.Shared.Rent(rem);
+
+                                    try
+                                    {
+                                        Marshal.Copy((IntPtr)dir.address() + pos, buf, 0, rem);
+                                        length = await Task.Factory.FromAsync((cb, state) => socket.BeginSend(buf, 0, rem, SocketFlags.None, cb, state), socket.EndSend, null);
+                                    }
+                                    finally
+                                    {
+                                        ArrayPool<byte>.Shared.Return(buf);
+                                    }
+#else
+                                    using var mgr = new DirectBufferMemoryManager(dir);
+                                    var mem = mgr.Memory.Slice(pos, rem);
+                                    length = await socket.SendAsync(mem, SocketFlags.None, cancellationToken);
+#endif
+                                }
+                                else
+                                {
+#if NETFRAMEWORK
+                                    length = await Task.Factory.FromAsync((cb, state) => socket.BeginSend(src.array(), src.arrayOffset() + pos, rem, SocketFlags.None, cb, state), socket.EndSend, null);
+#else
+                                    length = await socket.SendAsync(new Memory<byte>(src.array(), src.arrayOffset() + pos, rem), SocketFlags.None, cancellationToken);
+#endif
+                                }
+
+                                src.position(pos + length);
+                                return gatheringWrite ? Long.valueOf(length) : Integer.valueOf(length);
+                            }
+                            else
+                            {
+                                int length = 0;
+                                var bufs = new ArraySegment<byte>[srcs.Length];
+
+                                try
+                                {
+                                    // prepare array segments for buffers
+                                    for (int i = 0; i < srcs.Length; i++)
+                                    {
+                                        var dbf = srcs[i];
+                                        int pos = dbf.position();
+                                        int lim = dbf.limit();
+                                        int rem = pos <= lim ? lim - pos : 0;
+
+                                        if (dbf is DirectBuffer dir)
+                                        {
+                                            var buf = ArrayPool<byte>.Shared.Rent(rem);
+                                            Marshal.Copy((IntPtr)dir.address() + pos, buf, 0, rem);
+                                            bufs[i] = new ArraySegment<byte>(buf, 0, rem);
+                                        }
+                                        else
+                                            bufs[i] = new ArraySegment<byte>(dbf.array(), dbf.arrayOffset() + pos, rem);
+                                    }
+
+                                    // send data from segments
+#if NETFRAMEWORK
+                                    length = await Task.Factory.FromAsync(socket.BeginSend, socket.EndSend, bufs, SocketFlags.None, null);
+#else
+                                    length = await socket.SendAsync(bufs, SocketFlags.None);
+#endif
+                                }
+                                finally
+                                {
+                                    for (int i = 0; i < srcs.Length; i++)
+                                    {
+                                        var dbf = srcs[i];
+                                        var buf = bufs[i];
+
+                                        // return temporary buffer
+                                        if (dbf is DirectBuffer dir)
+                                            ArrayPool<byte>.Shared.Return(buf.Array);
+                                    }
+                                }
+
+                                // advance buffers by amount sent
+                                var l = length;
+                                for (int i = 0; i < srcs.Length; i++)
+                                {
+                                    var dbf = srcs[i];
+                                    int pos = dbf.position();
+                                    int lim = dbf.limit();
+                                    int rem = pos <= lim ? lim - pos : 0;
+                                    var len = System.Math.Min(l, rem);
+
+                                    dbf.position(pos + len);
+                                    l -= len;
+                                }
+
+                                // return total number of bytes written
+                                return gatheringWrite ? Long.valueOf(length) : Integer.valueOf(length);
+                            }
                         }
                         finally
                         {
@@ -712,16 +860,6 @@ namespace IKVM.Java.Externs.sun.nio.ch
                             socket.SendTimeout = previousSendTimeout;
                         }
                     }
-
-                    // advance original buffers based on amount written
-                    var l = length;
-                    for (int i = 0; i < bufs.Length; i++)
-                        ReleaseArraySegment(bufs[i], dsts[i], ref l);
-
-                    if (l != 0)
-                        throw new RuntimeException("Bytes remaining after write.");
-
-                    return gatheringWrite ? Long.valueOf(length) : Integer.valueOf(length);
                 }
                 catch (System.Net.Sockets.SocketException e)
                 {
@@ -740,10 +878,11 @@ namespace IKVM.Java.Externs.sun.nio.ch
                     self.enableWriting();
                 }
             }
+
         }
 
 #endif
 
-    }
+                    }
 
 }
