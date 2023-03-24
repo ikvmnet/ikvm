@@ -29,7 +29,7 @@
                 <IncludeParameterNames>true</IncludeParameterNames>
             </_ReferenceExport>
         </ItemGroup>
-        <Message Text="ReferencePathWithRefAssemblies: @(ReferencePathWithRefAssemblies)" />
+        
         <IkvmReferenceExportItemPrepare Items="@(_ReferenceExport)" ToolVersion="$(IkvmVersion)" ToolFramework="$(IkvmToolFramework)" References="@(ReferencePathWithRefAssemblies)">
             <Output TaskParameter="Items" ItemName="ReferenceExport" />
         </IkvmReferenceExportItemPrepare>
