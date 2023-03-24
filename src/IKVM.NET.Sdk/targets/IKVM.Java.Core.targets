@@ -16,14 +16,14 @@
     -->
     <Target Name="GetReferenceClasspath" DependsOnTargets="ResolveReferences;FindReferenceAssembliesForReferences" AfterTargets="ExportReferences">
         <ItemGroup>
-            <Classpath Include="%(ReferencePath.JavaClasspath)" Condition=" '%(ReferencePath.HideFromJava)' != 'true' And '%(ReferencePath.JavaClasspath)' != '' And '%(Filename)' != 'IKVM.Java' " />
+            <Classpath Include="%(ReferencePathWithRefAssemblies.JavaClasspath)" Condition=" '%(ReferencePathWithRefAssemblies.HideFromJava)' != 'true' And '%(ReferencePathWithRefAssemblies.JavaClasspath)' != '' And '%(Filename)' != 'IKVM.Java' " />
         </ItemGroup>
     </Target>
 
     <!-- Compiles the set of exports to be made, along with their original assembly file path. -->
     <Target Name="ResolveReferenceExports" DependsOnTargets="ResolveReferences;FindReferenceAssembliesForReferences;ResolveIkvmRuntimeAssembly">
         <ItemGroup>
-            <_ReferenceExport Include="@(ReferencePath)" Condition=" '%(ReferencePath.HideFromJava)' != 'true' And '%(ReferencePath.JavaClasspath)' == '' And '%(Filename)' != 'IKVM.Java' And '%(Filename)' != 'System.Runtime.Serialization' ">
+            <_ReferenceExport Include="@(ReferencePathWithRefAssemblies)" Condition=" '%(ReferencePathWithRefAssemblies.HideFromJava)' != 'true' And '%(ReferencePathWithRefAssemblies.JavaClasspath)' == '' And '%(Filename)' != 'IKVM.Java' And '%(Filename)' != 'System.Runtime.Serialization' ">
                 <Bootstrap>$(Bootstrap)</Bootstrap>
                 <NoStdLib>$(NoCompilerStandardLib)</NoStdLib>
             </_ReferenceExport>
@@ -65,7 +65,7 @@
     </Target>
 
     <Target Name="CleanReferenceExports">
-        <Delete Files="@(ReferenceExport->'%(StagePath)')" />
+        <RemoveDir Directories="$(IkvmExportStageDir)" ContinueOnError="true" />
     </Target>
 
     <PropertyGroup>
