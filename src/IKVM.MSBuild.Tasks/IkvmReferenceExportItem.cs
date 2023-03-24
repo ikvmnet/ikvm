@@ -78,7 +78,7 @@
         /// <summary>
         /// Paths to libraries.
         /// </summary>
-        public List<string> Libraries { get; set; }
+        public List<string> Libraries { get; set; } = new List<string>();
 
         /// <summary>
         /// Namespaces to export.

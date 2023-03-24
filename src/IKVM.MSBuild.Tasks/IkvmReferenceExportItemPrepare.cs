@@ -23,10 +23,40 @@
     public class IkvmReferenceExportItemPrepare : Task
     {
 
+        /// <summary>
+        /// Defines the cached information per assembly.
+        /// </summary>
+        struct AssemblyInfo
+        {
+
+            /// <summary>
+            /// Initializes a new instance.
+            /// </summary>
+            /// <param name="name"></param>
+            /// <param name="references"></param>
+            public AssemblyInfo(string name, List<string> references)
+            {
+                Name = name;
+                References = references;
+            }
+
+            /// <summary>
+            /// Name of the assembly.
+            /// </summary>
+            public string Name { get; set; }
+
+            /// <summary>
+            /// Names of the references of the assembly.
+            /// </summary>
+            public List<string> References { get; set; }
+
+        }
+
         readonly static RandomNumberGenerator rng = RandomNumberGenerator.Create();
 
         readonly static MD5 md5 = MD5.Create();
         readonly static ConcurrentDictionary<(string, DateTime), System.Threading.Tasks.Task<string>> fileIdentityCache = new ConcurrentDictionary<(string, DateTime), System.Threading.Tasks.Task<string>>();
+        readonly static ConcurrentDictionary<string, AssemblyInfo> assemblyInfoCache = new ConcurrentDictionary<string, AssemblyInfo>();
 
         /// <summary>
         /// Calculates the hash of the value.
@@ -149,9 +179,49 @@
         /// <param name="cancellationToken"></param>
         internal async System.Threading.Tasks.Task AssignBuildInfoAsync(IkvmReferenceExportItem item, CancellationToken cancellationToken)
         {
+            item.References = CalculateReferences(item);
+            item.Libraries = CalculateLibraries(item);
             item.IkvmIdentity = await CalculateIkvmIdentityAsync(item, cancellationToken);
             item.RandomIndex ??= GetRandomNumber();
             item.Save();
+        }
+
+        /// <summary>
+        /// Calculates the direct references of the given item.
+        /// </summary>
+        /// <param name="item"></param>
+        /// <returns></returns>
+        List<string> CalculateReferences(IkvmReferenceExportItem item)
+        {
+            // gather candidate references
+            var referencesList = new HashSet<string>();
+            if (References != null)
+                foreach (var reference in References)
+                    referencesList.Add(reference.ItemSpec);
+            if (item.References != null)
+                foreach (var reference in item.References)
+                    referencesList.Add(reference);
+
+            return GetAssemblyReferences(item.ItemSpec, referencesList).OrderBy(i => i).ToList();
+        }
+
+        /// <summary>
+        /// Calculates the direct libraries of the given item.
+        /// </summary>
+        /// <param name="item"></param>
+        /// <returns></returns>
+        List<string> CalculateLibraries(IkvmReferenceExportItem item)
+        {
+            // gather library lines
+            var libraries = new HashSet<string>();
+            if (Libraries != null)
+                foreach (var library in Libraries)
+                    libraries.Add(library.ItemSpec);
+            if (item.Libraries != null)
+                foreach (var library in item.Libraries)
+                    libraries.Add(library);
+
+            return libraries.OrderBy(i => i).ToList();
         }
 
         /// <summary>
@@ -179,39 +249,74 @@
             writer.WriteLine("JApi={0}", item.JApi);
             writer.WriteLine("Bootstrap={0}", item.Bootstrap);
 
-            // gather reference lines
-            var references = new List<string>(16);
-            if (References != null)
-                foreach (var reference in References)
-                    references.Add(await GetIdentityAsync(item, reference.ItemSpec, cancellationToken));
-            if (item.References != null)
-                foreach (var reference in item.References)
-                    references.Add(await GetIdentityAsync(item, reference, cancellationToken));
-
-            // write sorted reference lines
-            foreach (var reference in references.OrderBy(i => i))
-                writer.WriteLine($"Reference={reference}");
+            // traverse the reference set for references that are actually referenced
+            foreach (var path in item.References)
+                writer.WriteLine($"Reference={await GetIdentityAsync(item, path, cancellationToken)}");
 
             // gather library lines
-            var libraries = new List<string>(16);
-            if (Libraries != null)
-                foreach (var library in Libraries)
-                    libraries.Add(await GetIdentityAsync(item, library.ItemSpec, cancellationToken));
-            if (item.Libraries != null)
-                foreach (var library in item.Libraries)
-                    libraries.Add(await GetIdentityAsync(item, library, cancellationToken));
-
-            // write sorted library lines
-            foreach (var library in libraries.OrderBy(i => i))
-                writer.WriteLine($"Library={library}");
+            foreach (var library in item.Libraries)
+                writer.WriteLine($"Library={await GetIdentityAsync(item, library, cancellationToken)}");
 
             // gather namespaces
             if (item.Namespaces != null)
-                foreach (var ns in item.Namespaces.OrderBy(i => i))
-                    libraries.Add($"Namespace={ns}");
+                foreach (var ns in item.Namespaces.Distinct().OrderBy(i => i))
+                    writer.WriteLine($"Namespace={ns}");
 
             // hash the resulting manifest and set the identity
             return GetHashForString(writer.ToString());
+        }
+
+        /// <summary>
+        /// Finds all of the direct and indirect references of the given assembly.
+        /// </summary>
+        /// <param name="path"></param>
+        /// <param name="referencesList"></param>
+        /// <returns></returns>
+        IEnumerable<string> GetAssemblyReferences(string path, IEnumerable<string> referencesList)
+        {
+            var info = GetAssemblyInfo(path);
+
+            // deduplicate results
+            var hs = new HashSet<string>();
+
+            // always output the core libs
+            foreach (var n in new[] { "mscorlib", "netstandard" })
+            {
+                var corlib = referencesList.FirstOrDefault(i => GetAssemblyInfo(i).Name == n);
+                if (corlib != null && hs.Add(corlib))
+                    yield return corlib;
+            }
+
+            // for each referenced assembly name
+            foreach (var reference in info.References)
+                if (referencesList.FirstOrDefault(i => GetAssemblyInfo(i).Name == reference) is string r)
+                    if (hs.Add(r))
+                        yield return r;
+        }
+
+        /// <summary>
+        /// Gets the assembly info for the given assembly path.
+        /// </summary>
+        /// <param name="path"></param>
+        /// <returns></returns>
+        AssemblyInfo GetAssemblyInfo(string path)
+        {
+            return assemblyInfoCache.GetOrAdd(path, p => ReadAssemblyInfo(p));
+        }
+
+        /// <summary>
+        /// Reads the assembly info from the given assembly path.
+        /// </summary>
+        /// <param name="path"></param>
+        /// <returns></returns>
+        /// <exception cref="NotImplementedException"></exception>
+        AssemblyInfo ReadAssemblyInfo(string path)
+        {
+            using var fsstm = new FileStream(path, FileMode.Open, FileAccess.Read, FileShare.Read);
+            using var perdr = new PEReader(fsstm);
+            var mrdr = perdr.GetMetadataReader();
+
+            return new AssemblyInfo(mrdr.GetString(mrdr.GetAssemblyDefinition().Name), mrdr.AssemblyReferences.Select(i => mrdr.GetString(mrdr.GetAssemblyReference(i).Name)).ToList());
         }
 
         /// <summary>

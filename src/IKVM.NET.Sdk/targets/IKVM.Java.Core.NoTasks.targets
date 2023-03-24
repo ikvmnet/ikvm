@@ -32,21 +32,26 @@ $([MSBuild]::Unescape('$(___IkvmReferenceExportItemPrepareCs)'))
     <Target Name="_ExportReference" DependsOnTargets="ResolveIkvmExporter;ResolveReferenceExports" Inputs="@(ReferenceExport)" Outputs="%(ReferenceExport.CachePath)">
         <Error Text="Could not locate ikvmstub executable." Condition=" '$(IkvmExporterPath)' == '' " />
         <Error Text="ikvmstub executable could not be located at '$(IkvmExporterPath)'" Condition="!Exists('$(IkvmExporterPath)')" />
-        
+
         <ItemGroup>
             <_ReferenceExportReference Remove="@(_ReferenceExportReference)" />
-            <_ReferenceExportReference Include="@(ReferencePathWithRefAssemblies)" Condition=" '%(Filename)' != '%(ReferenceExport.Filename)' "/>
+            <_ReferenceExportReference Include="%(ReferenceExport.References)" />
+            <_ReferenceExportLibrary Remove="@(_ReferenceExportLibrary)" />
+            <_ReferenceExportLibrary Include="%(ReferenceExport.Libraries)" />
         </ItemGroup>
 
         <!-- Output to stage path then copy to cache path to be atomic. -->
         <MakeDir Directories="$([System.IO.Path]::GetDirectoryName('%(ReferenceExport.StagePath)'))" />
         <MakeDir Directories="$([System.IO.Path]::GetDirectoryName('%(ReferenceExport.CachePath)'))" />
 
+        <Message Text="_ReferenceExportReference: @(_ReferenceExportReference)" Importance="high" />
+
         <ItemGroup>
             <_IkvmExporterArgs Remove="@(_IkvmExporterArgs)" />
             <_IkvmExporterArgs Include="-bootstrap" Condition=" '%(ReferenceExport.Bootstrap)' == 'true' " />
-            <_IkvmExporterArgs Include="@(_ReferenceExportReference->'-r:&quot;%(FullPath)&quot;')" />
             <_IkvmExporterArgs Include="-nostdlib" Condition=" '%(ReferenceExport.NoStdLib)' == 'true' " />
+            <_IkvmExporterArgs Include="@(_ReferenceExportReference->'-r:&quot;%(FullPath)&quot;')" Condition=" '@(_ReferenceExportReference)' != '' " />
+            <_IkvmExporterArgs Include="@(_ReferenceExportLibrary->'-lib:&quot;%(FullPath)&quot;')" Condition=" '@(_ReferenceExportLibrary)' != '' " />
             <_IkvmExporterArgs Include="-out:&quot;%(ReferenceExport.StagePath)&quot;" />
             <_IkvmExporterArgs Include="&quot;%(ReferenceExport.Identity)&quot;" />
         </ItemGroup>
