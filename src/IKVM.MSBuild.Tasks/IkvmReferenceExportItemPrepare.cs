@@ -195,9 +195,12 @@
         {
             // gather candidate references
             var referencesList = new HashSet<string>();
+            referencesList.Add(item.ItemSpec);
+
             if (References != null)
                 foreach (var reference in References)
                     referencesList.Add(reference.ItemSpec);
+
             if (item.References != null)
                 foreach (var reference in item.References)
                     referencesList.Add(reference);
@@ -274,24 +277,36 @@
         /// <returns></returns>
         IEnumerable<string> GetAssemblyReferences(string path, IEnumerable<string> referencesList)
         {
-            var info = GetAssemblyInfo(path);
-
-            // deduplicate results
             var hs = new HashSet<string>();
 
-            // always output the core libs
+            // ensure the required core libraries are present
             foreach (var n in new[] { "mscorlib", "netstandard" })
             {
                 var corlib = referencesList.FirstOrDefault(i => GetAssemblyInfo(i).Name == n);
-                if (corlib != null && hs.Add(corlib))
-                    yield return corlib;
+                if (corlib != null)
+                    hs.Add(corlib);
             }
 
-            // for each referenced assembly name
-            foreach (var reference in info.References)
-                if (referencesList.FirstOrDefault(i => GetAssemblyInfo(i).Name == reference) is string r)
-                    if (hs.Add(r))
-                        yield return r;
+            // recurse into references of path
+            BuildAssemblyReferences(path, referencesList, hs);
+
+            return hs;
+        }
+
+        /// <summary>
+        /// Finds all of the direct and indirect references of the given assembly.
+        /// </summary>
+        /// <param name="path"></param>
+        /// <param name="referencesList"></param>
+        /// <returns></returns>
+        void BuildAssemblyReferences(string path, IEnumerable<string> referencesList, HashSet<string> hs)
+        {
+            foreach (var reference in GetAssemblyInfo(path).References)
+            {
+                var r = referencesList.FirstOrDefault(i => GetAssemblyInfo(i).Name == reference);
+                if (r != null && hs.Add(r))
+                    BuildAssemblyReferences(r, referencesList, hs);
+            }
         }
 
         /// <summary>
