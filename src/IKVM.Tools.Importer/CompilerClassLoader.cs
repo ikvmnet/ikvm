@@ -2717,11 +2717,6 @@ namespace IKVM.Tools.Importer
                 options.target = PEFileKinds.Dll;
             }
 
-            if (options.target == PEFileKinds.Dll && options.mainClass != null)
-            {
-                throw new FatalCompilerErrorException(Message.MainClassRequiresExe);
-            }
-
             if (options.target != PEFileKinds.Dll && options.mainClass == null)
             {
                 throw new FatalCompilerErrorException(Message.ExeRequiresMainClass);
