@@ -33,6 +33,7 @@
             Bootstrap="%(ReferenceExport.Bootstrap)"
             NoStdLib="%(ReferenceExport.NoStdLib)"
             Condition="!Exists('%(ReferenceExport.CachePath)')" />
+
         <Copy SourceFiles="%(ReferenceExport.StagePath)" DestinationFiles="%(ReferenceExport.CachePath)" OverwriteReadOnlyFiles="true" Condition="Exists('%(ReferenceExport.StagePath)') And !Exists('%(ReferenceExport.CachePath)')" />
         <Touch Files="%(ReferenceExport.CachePath)" />
 

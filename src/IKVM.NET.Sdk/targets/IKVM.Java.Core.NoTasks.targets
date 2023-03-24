@@ -87,11 +87,11 @@ Items = Items.OrderBy(i => i.ItemSpec).ToArray();
     <Target Name="_CompileJavaResponseFile" DependsOnTargets="ResolveJavaCompiler;ExportReferences;GetReferenceClasspath">
         <Error Text="Could not locate javac executable." Condition=" '$(JavaCompilerPath)' == '' " />
         <Error Text="javac could not be located at '$(JavaCompilerPath)'." Condition="!Exists('$(JavaCompilerPath)')" />
-        
+
         <IkvmSortItemGroup Items="@(Classpath)">
             <Output TaskParameter="Items" ItemName="_JavaCompilerArgsClasspath" />
         </IkvmSortItemGroup>
-        
+
         <IkvmSortItemGroup Items="@(Compile)">
             <Output TaskParameter="Items" ItemName="_JavaCompilerArgsCompile" />
         </IkvmSortItemGroup>
@@ -152,7 +152,7 @@ Items = Items.OrderBy(i => i.ItemSpec).ToArray();
         <Error Text="IKVM.Runtime.dll could not be located at '$(IkvmRuntimeAssembly)'." Condition="!Exists('$(IkvmRuntimeAssembly)')" />
         <Error Text="Could not locate ikvmc executable." Condition=" '$(IkvmCompilerPath)' == '' " />
         <Error Text="ikvmc could not be located at '$(IkvmCompilerPath)'." Condition="!Exists('$(IkvmCompilerPath)')" />
-        
+
         <Delete Files="$(_ExcludeFilePath)" Condition=" '@(ExcludeRegex)' == '' And Exists('$(_ExcludeFilePath)')" />
         <WriteLinesToFile File="$(_ExcludeFilePath)" Lines="@(ExcludeRegex)" Overwrite="true" Condition=" '@(ExcludeRegex)' != '' " WriteOnlyWhenDifferent="true" />
 
@@ -167,15 +167,15 @@ Items = Items.OrderBy(i => i.ItemSpec).ToArray();
             <_Target>$(OutputType.ToLowerInvariant())</_Target>
             <_Target Condition="$([MSBuild]::IsTargetFrameworkCompatible('$(TargetFramework)', 'netcoreapp3.1'))">library</_Target>
         </PropertyGroup>
-        
+
         <IkvmSortItemGroup Items="@(JavaResource)">
             <Output TaskParameter="Items" ItemName="_IkvmCompilerJavaResource" />
         </IkvmSortItemGroup>
-        
+
         <IkvmSortItemGroup Items="@(_ClassToCompile)">
             <Output TaskParameter="Items" ItemName="_IkvmCompilerClassToCompile" />
         </IkvmSortItemGroup>
-        
+
         <IkvmSortItemGroup Items="@(ReferencePathWithRefAssemblies)">
             <Output TaskParameter="Items" ItemName="_IkvmCompilerReferencePathWithRefAssemblies" />
         </IkvmSortItemGroup>

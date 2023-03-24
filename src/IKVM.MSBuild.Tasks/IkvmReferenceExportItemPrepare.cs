@@ -56,7 +56,7 @@
 
         readonly static MD5 md5 = MD5.Create();
         readonly static ConcurrentDictionary<(string, DateTime), System.Threading.Tasks.Task<string>> fileIdentityCache = new ConcurrentDictionary<(string, DateTime), System.Threading.Tasks.Task<string>>();
-        readonly static ConcurrentDictionary<string, AssemblyInfo> assemblyInfoCache = new ConcurrentDictionary<string, AssemblyInfo>();
+        readonly static ConcurrentDictionary<string, System.Threading.Tasks.Task<AssemblyInfo>> assemblyInfoCache = new ConcurrentDictionary<string, System.Threading.Tasks.Task<AssemblyInfo>>();
 
         /// <summary>
         /// Calculates the hash of the value.
@@ -121,7 +121,6 @@
         /// Executes the task.
         /// </summary>
         /// <returns></returns>
-        /// <exception cref="NullReferenceException"></exception>
         public override bool Execute()
         {
             // kick off the launcher with the configured options
@@ -179,8 +178,8 @@
         /// <param name="cancellationToken"></param>
         internal async System.Threading.Tasks.Task AssignBuildInfoAsync(IkvmReferenceExportItem item, CancellationToken cancellationToken)
         {
-            item.References = CalculateReferences(item);
-            item.Libraries = CalculateLibraries(item);
+            item.References = await CalculateReferencesAsync(item, cancellationToken);
+            item.Libraries = await CalculateLibrariesAsync(item, cancellationToken);
             item.IkvmIdentity = await CalculateIkvmIdentityAsync(item, cancellationToken);
             item.RandomIndex ??= GetRandomNumber();
             item.Save();
@@ -190,12 +189,11 @@
         /// Calculates the direct references of the given item.
         /// </summary>
         /// <param name="item"></param>
+        /// <param name="cancellationToken"></param>
         /// <returns></returns>
-        List<string> CalculateReferences(IkvmReferenceExportItem item)
+        async System.Threading.Tasks.Task<List<string>> CalculateReferencesAsync(IkvmReferenceExportItem item, CancellationToken cancellationToken)
         {
-            // gather candidate references
-            var referencesList = new HashSet<string>();
-            referencesList.Add(item.ItemSpec);
+            var referencesList = new HashSet<string>() { item.ItemSpec };
 
             if (References != null)
                 foreach (var reference in References)
@@ -205,15 +203,17 @@
                 foreach (var reference in item.References)
                     referencesList.Add(reference);
 
-            return GetAssemblyReferences(item.ItemSpec, referencesList).OrderBy(i => i).ToList();
+            var references = await GetAssemblyReferencesAsync(item.ItemSpec, referencesList, cancellationToken);
+            return references.OrderBy(i => i).ToList();
         }
 
         /// <summary>
         /// Calculates the direct libraries of the given item.
         /// </summary>
         /// <param name="item"></param>
+        /// <param name="cancellationToken"></param>
         /// <returns></returns>
-        List<string> CalculateLibraries(IkvmReferenceExportItem item)
+        System.Threading.Tasks.Task<List<string>> CalculateLibrariesAsync(IkvmReferenceExportItem item, CancellationToken cancellationToken)
         {
             // gather library lines
             var libraries = new HashSet<string>();
@@ -224,7 +224,7 @@
                 foreach (var library in item.Libraries)
                     libraries.Add(library);
 
-            return libraries.OrderBy(i => i).ToList();
+            return System.Threading.Tasks.Task.FromResult(libraries.OrderBy(i => i).ToList());
         }
 
         /// <summary>
@@ -276,21 +276,22 @@
         /// </summary>
         /// <param name="path"></param>
         /// <param name="referencesList"></param>
+        /// <param name="cancellationToken"></param>
         /// <returns></returns>
-        IEnumerable<string> GetAssemblyReferences(string path, IEnumerable<string> referencesList)
+        async System.Threading.Tasks.Task<IEnumerable<string>> GetAssemblyReferencesAsync(string path, IEnumerable<string> referencesList, CancellationToken cancellationToken)
         {
             var hs = new HashSet<string>();
 
-            // ensure the required core libraries are present
-            foreach (var n in new[] { "mscorlib", "netstandard" })
-            {
-                var corlib = referencesList.FirstOrDefault(i => GetAssemblyInfo(i).Name == n);
-                if (corlib != null)
-                    hs.Add(corlib);
-            }
-
             // recurse into references of path
-            BuildAssemblyReferences(path, referencesList, hs);
+            await BuildAssemblyReferencesAsync(path, referencesList, hs, cancellationToken);
+
+            // ensure the required libraries are present
+            foreach (var n in new[] { "mscorlib", "netstandard", "IKVM.Runtime", "IKVM.Java" })
+            {
+                foreach (var i in referencesList)
+                    if ((await GetAssemblyInfoAsync(i)).Name == n)
+                        hs.Add(i);
+            }
 
             return hs;
         }
@@ -300,18 +301,18 @@
         /// </summary>
         /// <param name="path"></param>
         /// <param name="referencesList"></param>
+        /// <param name="hs"></param>
+        /// <param name="cancellationToken"></param>
         /// <returns></returns>
-        void BuildAssemblyReferences(string path, IEnumerable<string> referencesList, HashSet<string> hs)
+        async System.Threading.Tasks.Task BuildAssemblyReferencesAsync(string path, IEnumerable<string> referencesList, HashSet<string> hs, CancellationToken cancellationToken)
         {
-            foreach (var reference in GetAssemblyInfo(path).References)
-            {
-                var r = referencesList.FirstOrDefault(i => GetAssemblyInfo(i).Name == reference);
-                if (r == null)
-                    Log.LogWarning($"Could not find {reference} in {string.Join(";", referencesList)}");
+            cancellationToken.ThrowIfCancellationRequested();
 
-                if (r != null && hs.Add(r))
-                    BuildAssemblyReferences(r, referencesList, hs);
-            }
+            foreach (var reference in (await GetAssemblyInfoAsync(path)).References)
+                foreach (var i in referencesList)
+                    if ((await GetAssemblyInfoAsync(i)).Name == reference)
+                        if (hs.Add(i))
+                            await BuildAssemblyReferencesAsync(i, referencesList, hs, cancellationToken);
         }
 
         /// <summary>
@@ -319,9 +320,9 @@
         /// </summary>
         /// <param name="path"></param>
         /// <returns></returns>
-        AssemblyInfo GetAssemblyInfo(string path)
+        System.Threading.Tasks.Task<AssemblyInfo> GetAssemblyInfoAsync(string path)
         {
-            return assemblyInfoCache.GetOrAdd(path, p => ReadAssemblyInfo(p));
+            return assemblyInfoCache.GetOrAdd(path, p => System.Threading.Tasks.Task.Run(() => ReadAssemblyInfo(p)));
         }
 
         /// <summary>
@@ -424,6 +425,7 @@
         /// Gets the hash value for the given file.
         /// </summary>
         /// <param name="file"></param>
+        /// <param name="cancellationToken"></param>
         /// <returns></returns>
         System.Threading.Tasks.Task<string> GetIdentityForFileAsync(string file, CancellationToken cancellationToken)
         {
