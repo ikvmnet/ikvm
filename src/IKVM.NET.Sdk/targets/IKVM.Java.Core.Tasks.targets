@@ -29,7 +29,7 @@
             IncludeNonPublicTypes="%(ReferenceExport.IncludeNonPublicTypes)"
             IncludeNonPublicInterfaces="%(ReferenceExport.IncludeNonPublicInterfaces)"
             IncludeNonPublicMembers="%(ReferenceExport.IncludeNonPublicMembers)"
-            IncludeParameterNames="true"
+            IncludeParameterNames="%(ReferenceExport.IncludeParameterNames)"
             Bootstrap="%(ReferenceExport.Bootstrap)"
             NoStdLib="%(ReferenceExport.NoStdLib)"
             Condition="!Exists('%(ReferenceExport.CachePath)')" />
