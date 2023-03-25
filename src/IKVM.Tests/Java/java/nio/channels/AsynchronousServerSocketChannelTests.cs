@@ -468,6 +468,59 @@ namespace IKVM.Tests.Java.java.nio.channels
                 throw new RuntimeException("Channels should be closed");
         }
 
+        [TestMethod]
+        [ExpectedException(typeof(AcceptPendingException))]
+        public void ShouldThrowAcceptPendingExceptionOnAccept()
+        {
+            var listener = AsynchronousServerSocketChannel.open().bind(new InetSocketAddress(0));
+            var accept = new AwaitableCompletionHandler();
+            listener.accept(null, accept);
+            listener.accept();
+            listener.close();
+        }
+
+        [TestMethod]
+        [ExpectedException(typeof(AsynchronousCloseException))]
+        public async Task ShouldThrowAsynchronousCloseExceptionForAcceptDuringAccept()
+        {
+            var listener = AsynchronousServerSocketChannel.open().bind(new InetSocketAddress(0));
+
+            // initiate an outstanding accept
+            var accept = new AwaitableCompletionHandler();
+            listener.accept(null, accept);
+            listener.close();
+
+            // complete first acceptance, which should throw nested AsynchronousCloseException
+            try
+            {
+                await accept;
+            }
+            catch (ExecutionException e)
+            {
+                throw e.getCause();
+            }
+        }
+
+        [TestMethod]
+        [ExpectedException(typeof(ClosedChannelException))]
+        public void ShouldThrowClosedChannelExceptionForAcceptAfterClose()
+        {
+            var listener = AsynchronousServerSocketChannel.open().bind(new InetSocketAddress(0));
+
+            // initiate an outstanding accept
+            listener.close();
+
+            // try accept while closed
+            try
+            {
+                listener.accept().get();
+            }
+            catch (ExecutionException e)
+            {
+                throw e.getCause();
+            }
+        }
+
     }
 
 }

@@ -197,6 +197,10 @@ namespace IKVM.Java.Externs.sun.nio.ch
                     {
                         throw;
                     }
+                    catch (System.Net.Sockets.SocketException) when (self.isOpen() == false)
+                    {
+                        throw new AsynchronousCloseException();
+                    }
                     catch (System.Net.Sockets.SocketException e)
                     {
                         throw e.ToIOException();
