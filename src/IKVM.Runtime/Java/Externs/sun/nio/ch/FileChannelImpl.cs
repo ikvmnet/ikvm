@@ -1,4 +1,5 @@
 ﻿using System;
+using System.ComponentModel;
 using System.IO;
 using System.Runtime.InteropServices;
 using System.Threading;
@@ -10,8 +11,6 @@ using IKVM.Runtime.Accessors.Sun.Nio.Ch;
 using Microsoft.Win32.SafeHandles;
 
 using Mono.Unix.Native;
-
-using sun.nio.ch;
 
 namespace IKVM.Java.Externs.sun.nio.ch
 {
@@ -37,12 +36,77 @@ namespace IKVM.Java.Externs.sun.nio.ch
 
 #endif
 
+        [StructLayout(LayoutKind.Sequential)]
+        struct SYSTEM_INFO
+        {
+
+            public ushort wProcessorArchitecture;
+            public ushort wReserved;
+            public uint dwPageSize;
+            public IntPtr lpMinimumApplicationAddress;
+            public IntPtr lpMaximumApplicationAddress;
+            public IntPtr dwActiveProcessorMask;
+            public uint dwNumberOfProcessors;
+            public uint dwProcessorType;
+            public uint dwAllocationGranularity;
+            public ushort wProcessorLevel;
+            public ushort wProcessorRevision;
+
+        }
+
+        /// <summary>
+        /// Invokes the GetSystemInfo Win32 function.
+        /// </summary>
+        /// <param name="Info"></param>
+        [DllImport("kernel32.dll", SetLastError = true)]
+        static extern void GetSystemInfo(ref SYSTEM_INFO Info);
+
+        /// <summary>
+        /// Gets the allocation granularity value for Windows.
+        /// </summary>
+        /// <returns></returns>
+        static long GetAllocationGranularityWindows()
+        {
+            var i = new SYSTEM_INFO();
+            GetSystemInfo(ref i);
+            return (long)i.dwAllocationGranularity;
+        }
+
+        /// <summary>
+        /// Gets the allocation granularity value for Linux.
+        /// </summary>
+        /// <returns></returns>
+        static long GetAllocationGranularityLinux()
+        {
+            return Mono.Unix.Native.Syscall.sysconf(SysconfName._SC_PAGESIZE);
+        }
+
+        /// <summary>
+        /// Gets the allocation granularity value for OSX.
+        /// </summary>
+        /// <returns></returns>
+        static long GetAllocationGranularityOSX()
+        {
+            throw new NotImplementedException();
+        }
+
         /// <summary>
         /// Implements the native method 'initIDs'.
         /// </summary>
         public static long initIDs()
         {
-            return Environment.SystemPageSize;
+#if FIRST_PASS
+            throw new NotImplementedException();
+#else
+            if (RuntimeUtil.IsWindows)
+                return GetAllocationGranularityWindows();
+            else if (RuntimeUtil.IsLinux)
+                return GetAllocationGranularityLinux();
+            else if (RuntimeUtil.IsOSX)
+                return GetAllocationGranularityOSX();
+            else
+                throw new global::java.io.IOException("Unsupported operation on platform.");
+#endif
         }
 
         /// <summary>
@@ -114,38 +178,40 @@ namespace IKVM.Java.Externs.sun.nio.ch
 #if FIRST_PASS
             throw new NotImplementedException();
 #else
-            var stream = FileDescriptorAccessor.GetStream(src);
-            if (stream == null)
+            var source = FileDescriptorAccessor.GetStream(src);
+            if (source == null)
                 throw new global::java.io.IOException("Stream closed.");
-            if (stream is not FileStream fs)
-                throw new global::java.io.IOException("Transfor not supported.");
-
-            var socket = FileDescriptorAccessor.GetSocket(dst);
-            if (socket == null)
-                throw new global::java.io.IOException("Socket closed.");
+            if (source is not FileStream fs)
+                throw new global::java.io.IOException("Transfer failed. Cannot transfer from non-file stream.");
 
             try
             {
                 if (RuntimeUtil.IsWindows)
                 {
+                    var handle = IntPtr.Zero;
+                    if (FileDescriptorAccessor.GetSocket(dst) is System.Net.Sockets.Socket s)
+                        handle = s.Handle;
+                    if (handle == IntPtr.Zero)
+                        return global::sun.nio.ch.IOStatus.UNSUPPORTED_CASE;
+
                     const int WSAEINVAL = 10022;
                     const int WSAENOTSOCK = 10038;
                     const int TF_USE_KERNEL_APC = 32;
                     const int PACKET_SIZE = 524288;
 
-                    // win32 expets 
+                    // win32 expects 
                     var chunkSize = (int)Math.Min(count, int.MaxValue);
 
                     // move file to specified position
-                    if (stream.Position != position)
+                    if (source.Position != position)
                     {
-                        if (stream.CanSeek == false)
+                        if (source.CanSeek == false)
                             return global::sun.nio.ch.IOStatus.UNSUPPORTED;
 
-                        stream.Seek(position, SeekOrigin.Begin);
+                        source.Seek(position, SeekOrigin.Begin);
                     }
 
-                    int result = TransmitFile(socket.Handle, fs.SafeFileHandle.DangerousGetHandle(), chunkSize, PACKET_SIZE, null, null, TF_USE_KERNEL_APC);
+                    int result = TransmitFile(handle, fs.SafeFileHandle.DangerousGetHandle(), chunkSize, PACKET_SIZE, null, null, TF_USE_KERNEL_APC);
                     if (result == 0)
                     {
                         return Marshal.GetLastWin32Error() switch
@@ -160,7 +226,15 @@ namespace IKVM.Java.Externs.sun.nio.ch
                 }
                 else
                 {
-                    var result = Syscall.sendfile((int)socket.Handle, (int)fs.SafeFileHandle.DangerousGetHandle(), ref position, (ulong)count);
+                    int handle = 0;
+                    if (FileDescriptorAccessor.GetSocket(dst) is System.Net.Sockets.Socket s)
+                        handle = (int)s.Handle;
+                    if (FileDescriptorAccessor.GetStream(dst) is FileStream f)
+                        handle = (int)f.SafeFileHandle.DangerousGetHandle();
+                    if (handle == 0)
+                        return global::sun.nio.ch.IOStatus.UNSUPPORTED_CASE;
+
+                    var result = Syscall.sendfile(handle, (int)fs.SafeFileHandle.DangerousGetHandle(), ref position, (ulong)count);
                     if (result < 0)
                     {
                         return Stdlib.GetLastError() switch
@@ -305,6 +379,8 @@ namespace IKVM.Java.Externs.sun.nio.ch
 
             try
             {
+                const int ERROR_NOT_ENOUGH_MEMORY = 8;
+
                 const int PAGE_READONLY = 2;
                 const int PAGE_READWRITE = 4;
                 const int PAGE_WRITECOPY = 8;
@@ -338,18 +414,18 @@ namespace IKVM.Java.Externs.sun.nio.ch
                 var hFileMapping = CreateFileMapping(fs.SafeFileHandle, IntPtr.Zero, fileProtect, (int)(maxSize >> 32), (int)maxSize, null);
                 var err = Marshal.GetLastWin32Error();
                 if (hFileMapping.IsInvalid)
-                    throw new global::java.io.IOException("Win32 error " + err);
+                    throw new global::java.io.IOException("File mapping failed.", new Win32Exception(err));
 
-                var h = MapViewOfFile(hFileMapping, mapAccess, (int)(position >> 32), (int)position, (IntPtr)(length));
+                var h = MapViewOfFile(hFileMapping, mapAccess, (int)(position >> 32), (int)position, (IntPtr)length);
                 err = Marshal.GetLastWin32Error();
                 hFileMapping.Close();
 
                 if (h == IntPtr.Zero)
                 {
-                    if (err == 8 /*ERROR_NOT_ENOUGH_MEMORY*/)
-                        throw new global::java.lang.OutOfMemoryError("file mapping failed");
+                    if (err == ERROR_NOT_ENOUGH_MEMORY)
+                        throw new global::java.lang.OutOfMemoryError("File mapping failed.");
 
-                    throw new global::java.io.IOException("Win32 error " + err);
+                    throw new global::java.io.IOException("File mapping failed.", new Win32Exception(err));
                 }
 
                 GC.AddMemoryPressure(length);
