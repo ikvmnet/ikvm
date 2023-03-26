@@ -39,19 +39,20 @@ jobs:
         tar xzvf openjdk/build/openjdk-7u75-b13-linux-x64-18_dec_2014.tar.gz -C openjdk/build
     - name: Build OpenJDK
       if: steps.openjdk-build-stamp.outputs.files_exists != 'true'
-      uses: docker://debian/eol:lenny
+      uses: docker://debian/eol:jessie
       with:
         args: >
           /bin/bash -c "
-            echo 'deb http://archive.debian.org/debian/ lenny main' > /etc/apt/sources.list &&
+            echo 'deb http://archive.debian.org/debian/ jessie main' > /etc/apt/sources.list &&
             apt-get update &&
             apt-get install -y \
               build-essential \
               unzip \
               zip \
               curl \
-              gcc-4.3 \
-              g++-4.3 \
+              file \
+              gcc \
+              g++ \
               libx11-dev \
               libxext-dev \
               libxrender-dev \
