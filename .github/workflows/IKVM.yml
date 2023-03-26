@@ -73,14 +73,7 @@ jobs:
       working-directory: openjdk/build
     - name: Package OpenJDK
       run: |
-        zip -r openjdk-build-linux-x86_64-normal-server-release.zip \
-          linux-x86_64-normal-server-release/langtools/gensrc \
-          linux-x86_64-normal-server-release/corba/gensrc \
-          linux-x86_64-normal-server-release/jdk/gensrc \
-          linux-x86_64-normal-server-release/jdk/impsrc \
-          linux-x86_64-normal-server-release/jdk/lib \
-          linux-x86_64-normal-server-release/jdk/classes \
-          linux-x86_64-normal-server-release/images
+        zip -r openjdk-build-linux-x86_64-normal-server-release.zip linux-x86_64-normal-server-release/*
       working-directory: openjdk/build
     - name: Upload OpenJDK
       uses: actions/upload-artifact@v3
