@@ -43,7 +43,6 @@ jobs:
       with:
         args: >
           /bin/bash -c "
-            echo 'deb http://archive.debian.org/debian/ jessie main' > /etc/apt/sources.list &&
             apt-get update &&
             apt-get install -y \
               build-essential \
