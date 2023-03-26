@@ -50,6 +50,7 @@ jobs:
               zip \
               curl \
               file \
+              cpio \
               gcc \
               g++ \
               libx11-dev \
