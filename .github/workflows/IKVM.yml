@@ -65,7 +65,8 @@ jobs:
               libfontconfig1-dev \
               openjdk-8-jdk-headless &&
             cd openjdk &&
-            JAVA_HOME=build/java-se-7u75-ri bash ./configure &&
+            #JAVA_HOME=build/java-se-7u75-ri 
+            bash ./configure &&
             make DISABLE_HOTSPOT_OS_VERSION_CHECK=ok images &&
             touch build/linux-x86_64-normal-server-release/stamp"
     - name: Update OpenJDK Attributes
