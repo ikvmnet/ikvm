@@ -1,38 +1,21 @@
 package sun.nio.ch;
 
 import java.io.*;
-import java.net.*;
 
 class DatagramDispatcher extends NativeDispatcher {
 
-    int read(FileDescriptor fd, long address, int len) throws IOException {
-        return read0(fd, address, len);
+    static {
+        IOUtil.load();
     }
 
-    long readv(FileDescriptor fd, long address, int len) throws IOException {
-        return readv0(fd, address, len);
-    }
+    native int read(FileDescriptor fd, long address, int len) throws IOException;
 
-    int write(FileDescriptor fd, long address, int len) throws IOException {
-        return write0(fd, address, len);
-    }
+    native long readv(FileDescriptor fd, long address, int len) throws IOException;
 
-    long writev(FileDescriptor fd, long address, int len) throws IOException {
-        return writev0(fd, address, len);
-    }
+    native int write(FileDescriptor fd, long address, int len) throws IOException;
 
-    void close(FileDescriptor fd) throws IOException {
-        SocketDispatcher.close0(fd);
-    }
+    native long writev(FileDescriptor fd, long address, int len) throws IOException;
 
-    static native int read0(FileDescriptor fd, long address, int len) throws IOException;
-
-    static native long readv0(FileDescriptor fd, long address, int len) throws IOException;
-
-    static native int write0(FileDescriptor fd, long address, int len) throws IOException;
-
-    static native long writev0(FileDescriptor fd, long address, int len) throws IOException;
-
-    static native void close0(FileDescriptor fd) throws IOException;
+    native void close(FileDescriptor fd) throws IOException;
 
 }

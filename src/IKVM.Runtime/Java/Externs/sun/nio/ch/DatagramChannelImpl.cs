@@ -108,7 +108,7 @@ namespace IKVM.Java.Externs.sun.nio.ch
         public static void disconnect0(object fd, bool isIPv6)
         {
 #if FIRST_PASS
-            throw new NotSupportedException();
+            throw new NotImplementedException();
 #else
             var socket = FileDescriptorAccessor.GetSocket(fd);
             if (socket == null)
@@ -150,7 +150,7 @@ namespace IKVM.Java.Externs.sun.nio.ch
         public static unsafe int receive0(object self, object fd, long address, int len, bool connected)
         {
 #if FIRST_PASS
-            throw new NotSupportedException();
+            throw new NotImplementedException();
 #else
             var socket = FileDescriptorAccessor.GetSocket(fd);
             if (socket == null)
@@ -158,12 +158,20 @@ namespace IKVM.Java.Externs.sun.nio.ch
 
             var remoteEndpoint = (EndPoint)new IPEndPoint(socket.AddressFamily == AddressFamily.InterNetworkV6 ? IPAddress.IPv6Any : IPAddress.Any, 0);
             var length = 0;
-            var packet = ArrayPool<byte>.Shared.Rent(len);
 
             try
             {
-                length = socket.EndReceiveFrom(socket.BeginReceiveFrom(packet, 0, len, SocketFlags.None, ref remoteEndpoint, null, null), ref remoteEndpoint);
-                Marshal.Copy(packet, 0, (IntPtr)address, length);
+                var packet = ArrayPool<byte>.Shared.Rent(len);
+
+                try
+                {
+                    length = socket.ReceiveFrom(packet, 0, len, SocketFlags.None, ref remoteEndpoint);
+                    Marshal.Copy(packet, 0, (IntPtr)address, length);
+                }
+                finally
+                {
+                    ArrayPool<byte>.Shared.Return(packet);
+                }
             }
             catch (SocketException e) when (e.SocketErrorCode == SocketError.WouldBlock)
             {
@@ -171,8 +179,8 @@ namespace IKVM.Java.Externs.sun.nio.ch
             }
             catch (SocketException e) when (e.SocketErrorCode == SocketError.MessageSize)
             {
+                // buffer should be filled with as much as possible, and we should indicate that, but the rest is discarded
                 length = len;
-                Marshal.Copy(packet, 0, (IntPtr)address, length);
             }
             catch (SocketException e) when (e.SocketErrorCode == SocketError.ConnectionReset)
             {
@@ -193,10 +201,6 @@ namespace IKVM.Java.Externs.sun.nio.ch
             catch (ObjectDisposedException)
             {
                 throw new global::java.net.SocketException("Socket closed.");
-            }
-            finally
-            {
-                ArrayPool<byte>.Shared.Return(packet);
             }
 
             // check that we received an IP endpoint
@@ -226,18 +230,26 @@ namespace IKVM.Java.Externs.sun.nio.ch
         public static unsafe int send0(object self, bool preferIPv6, object fd, long address, int len, global::java.net.InetAddress addr, int port)
         {
 #if FIRST_PASS
-            throw new NotSupportedException();
+            throw new NotImplementedException();
 #else
             var socket = FileDescriptorAccessor.GetSocket(fd);
             if (socket == null)
                 throw new global::java.net.SocketException("Socket closed.");
 
-            var packet = ArrayPool<byte>.Shared.Rent(len);
 
             try
             {
-                Marshal.Copy((IntPtr)address, packet, 0, len);
-                return socket.SendTo(packet, 0, len, SocketFlags.None, new IPEndPoint(addr.ToIPAddress(), port));
+                var packet = ArrayPool<byte>.Shared.Rent(len);
+
+                try
+                {
+                    Marshal.Copy((IntPtr)address, packet, 0, len);
+                    return socket.SendTo(packet, 0, len, SocketFlags.None, new IPEndPoint(addr.ToIPAddress(), port));
+                }
+                finally
+                {
+                    ArrayPool<byte>.Shared.Return(packet);
+                }
             }
             catch (SocketException e) when (e.SocketErrorCode == SocketError.WouldBlock)
             {
@@ -250,10 +262,6 @@ namespace IKVM.Java.Externs.sun.nio.ch
             catch (ObjectDisposedException)
             {
                 throw new global::java.net.SocketException("Socket closed.");
-            }
-            finally
-            {
-                ArrayPool<byte>.Shared.Return(packet);
             }
 #endif
         }

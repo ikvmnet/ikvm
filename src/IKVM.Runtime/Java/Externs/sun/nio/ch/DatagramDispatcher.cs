@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Buffers;
+using System.Net;
 using System.Net.Sockets;
 using System.Runtime.InteropServices;
 
@@ -11,9 +12,9 @@ namespace IKVM.Java.Externs.sun.nio.ch
 {
 
     /// <summary>
-    /// Implements the native methods for 'SocketDispatcher'.
+    /// Implements the native methods for 'DatagramDispatcher'.
     /// </summary>
-    static class SocketDispatcher
+    static class DatagramDispatcher
     {
 
 #if FIRST_PASS == false
@@ -22,6 +23,44 @@ namespace IKVM.Java.Externs.sun.nio.ch
         static FileDescriptorAccessor FileDescriptorAccessor => JVM.BaseAccessors.Get(ref fileDescriptorAccessor);
 
 #endif
+
+        static readonly byte[] TempBuffer = new byte[1];
+
+        /// <summary>
+        /// Peek at the queue to see if there is an ICMP port unreachable. If there is, then receive it.
+        /// </summary>
+        /// <param name="socket"></param>
+        static void PurgeOutstandingICMP(Socket socket)
+        {
+            while (true)
+            {
+                // check for outstanding packet
+                if (socket.Poll(0, SelectMode.SelectRead) == false)
+                    break;
+
+                try
+                {
+                    var ep = (EndPoint)new IPEndPoint(socket.AddressFamily == AddressFamily.InterNetworkV6 ? IPAddress.IPv6Any : IPAddress.Any, 0);
+                    socket.EndReceiveFrom(socket.BeginReceiveFrom(TempBuffer, 0, TempBuffer.Length, SocketFlags.Peek, ref ep, null, null), ref ep);
+                }
+                catch (SocketException e) when (e.SocketErrorCode == SocketError.ConnectionReset)
+                {
+                    try
+                    {
+                        var ep = (EndPoint)new IPEndPoint(socket.AddressFamily == AddressFamily.InterNetworkV6 ? IPAddress.IPv6Any : IPAddress.Any, 0);
+                        socket.EndReceiveFrom(socket.BeginReceiveFrom(TempBuffer, 0, TempBuffer.Length, SocketFlags.Peek, ref ep, null, null), ref ep);
+                    }
+                    catch (SocketException e2) when (e2.SocketErrorCode == SocketError.ConnectionReset)
+                    {
+
+                    }
+
+                    continue;
+                }
+
+                break;
+            }
+        }
 
         [StructLayout(LayoutKind.Sequential)]
         struct iovec
@@ -78,13 +117,17 @@ namespace IKVM.Java.Externs.sun.nio.ch
                 return n;
 #endif
             }
-            catch (SocketException e) when (e.SocketErrorCode == SocketError.Shutdown)
-            {
-                return global::sun.nio.ch.IOStatus.EOF;
-            }
             catch (SocketException e) when (e.SocketErrorCode == SocketError.WouldBlock)
             {
                 return global::sun.nio.ch.IOStatus.UNAVAILABLE;
+            }
+            catch (SocketException e) when (e.SocketErrorCode == SocketError.ConnectionReset)
+            {
+                // Windows may leave multiple ICMP packets on the socket, purge them
+                if (RuntimeUtil.IsWindows)
+                    PurgeOutstandingICMP(socket);
+
+                throw new global::java.net.PortUnreachableException("ICMP Port Unreachable");
             }
             catch (SocketException e)
             {
@@ -157,13 +200,17 @@ namespace IKVM.Java.Externs.sun.nio.ch
                         ArrayPool<byte>.Shared.Return(bufs[i].Array);
                 }
             }
-            catch (SocketException e) when (e.SocketErrorCode == SocketError.Shutdown)
-            {
-                return global::sun.nio.ch.IOStatus.EOF;
-            }
             catch (SocketException e) when (e.SocketErrorCode == SocketError.WouldBlock)
             {
                 return global::sun.nio.ch.IOStatus.UNAVAILABLE;
+            }
+            catch (SocketException e) when (e.SocketErrorCode == SocketError.ConnectionReset)
+            {
+                // Windows may leave multiple ICMP packets on the socket, purge them
+                if (RuntimeUtil.IsWindows)
+                    PurgeOutstandingICMP(socket);
+
+                throw new global::java.net.PortUnreachableException("ICMP Port Unreachable");
             }
             catch (SocketException e)
             {
@@ -218,6 +265,14 @@ namespace IKVM.Java.Externs.sun.nio.ch
             catch (SocketException e) when (e.SocketErrorCode == SocketError.WouldBlock)
             {
                 return global::sun.nio.ch.IOStatus.UNAVAILABLE;
+            }
+            catch (SocketException e) when (e.SocketErrorCode == SocketError.ConnectionReset)
+            {
+                // Windows may leave multiple ICMP packets on the socket, purge them
+                if (RuntimeUtil.IsWindows)
+                    PurgeOutstandingICMP(socket);
+
+                throw new global::java.net.PortUnreachableException("ICMP Port Unreachable");
             }
             catch (SocketException e)
             {
@@ -281,6 +336,14 @@ namespace IKVM.Java.Externs.sun.nio.ch
             {
                 return global::sun.nio.ch.IOStatus.UNAVAILABLE;
             }
+            catch (SocketException e) when (e.SocketErrorCode == SocketError.ConnectionReset)
+            {
+                // Windows may leave multiple ICMP packets on the socket, purge them
+                if (RuntimeUtil.IsWindows)
+                    PurgeOutstandingICMP(socket);
+
+                throw new global::java.net.PortUnreachableException("ICMP Port Unreachable");
+            }
             catch (SocketException e)
             {
                 throw e.ToIOException();
@@ -292,37 +355,6 @@ namespace IKVM.Java.Externs.sun.nio.ch
             catch (Exception e)
             {
                 throw new global::java.io.IOException(e);
-            }
-#endif
-        }
-
-        /// <summary>
-        /// Implements the native method 'preClose'.
-        /// </summary>
-        /// <param name="self"></param>
-        /// <param name="fd"></param>
-        public static void preClose(object self, object fd)
-        {
-#if FIRST_PASS
-            throw new NotSupportedException();
-#else
-            var socket = FileDescriptorAccessor.GetSocket(fd);
-            if (socket == null)
-                return;
-
-            try
-            {
-                if (socket.LingerState.Enabled == false)
-                    if (socket.Connected)
-                        socket.Shutdown(SocketShutdown.Send);
-            }
-            catch (ObjectDisposedException)
-            {
-                return;
-            }
-            catch (SocketException)
-            {
-                // ignore
             }
 #endif
         }
