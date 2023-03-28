@@ -42,10 +42,10 @@
         <None Include="icedtea_jce\**\*" />
         <None Include="icedtea_rt\**\*" />
         <None Include="local\**\*" />
-        <None Include="@(OpenJdkSource)">
-            <LinkBase>openjdk\$([MSBuild]::MakeRelative('$(OpenJdkDir)', '%(RootDir)%(Directory)'))</LinkBase>
-        </None>
+        <None Include="@(OpenJdkSource)" LinkBase="openjdk" />
         <Compile Include="@(OpenJdkSource)" />
+        <Class Include="@(OpenJdkClass)" />
+        <None Include="@(OpenJdkClass)" LinkBase="openjdk" />
         <JavaResource Include="@(OpenJdkResource)" LinkBase="openjdk" />
         <ExcludeRegex Include="@(OpenJdkExcludeRegex)" />
     </ItemGroup>

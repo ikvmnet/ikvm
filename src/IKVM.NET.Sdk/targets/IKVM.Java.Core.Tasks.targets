@@ -69,7 +69,9 @@
 
         <!-- Remove files that were not modified by this compilation. -->
         <ItemGroup>
+            <_CompileJavaClassFiles Remove="@(_CompileJavaClassFiles)" />
             <_CompileJavaClassFiles Include="$(ClassOutputPath)**\*.class" />
+            <_CompileJavaStaleFiles Remove="@(_CompileJavaStaleFiles)" />
             <_CompileJavaStaleFiles Include="@(_CompileJavaClassFiles)" Condition="$([System.DateTime]::Parse('%(ModifiedTime)').Ticks) &lt; $(_CompileJavaStartTime)" />
         </ItemGroup>
         <Delete Files="@(_CompileJavaStaleFiles)" />
