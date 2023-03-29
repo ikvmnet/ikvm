@@ -86,7 +86,7 @@ namespace IKVM.Java.Externs.java.io
         /// <returns></returns>
         public static int read0(object self)
         {
-#if FIRST_PASS 
+#if FIRST_PASS
             throw new NotImplementedException();
 #else
             var fd = FileInputStreamAccessor.GetFd(self);
@@ -98,7 +98,6 @@ namespace IKVM.Java.Externs.java.io
                 throw new global::java.io.IOException("Stream closed.");
             if (stream.CanRead == false)
                 throw new global::java.io.IOException("Read failed.");
-
 
             try
             {
