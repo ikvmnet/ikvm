@@ -70,6 +70,13 @@
         <Compile Include="..\IKVM.Runtime\Accessors\**\*.cs" LinkBase="IKVM.Runtime\Accessors" />
         <Compile Include="..\IKVM.Runtime\Vfs\**\*.cs" LinkBase="IKVM.Runtime\Vfs" />
         <Compile Include="..\IKVM.Runtime\RuntimeUtil.cs" LinkBase="IKVM.Runtime" />
+        <Compile Include="..\IKVM.Runtime\SimpleFieldWrapper.cs" LinkBase="IKVM.Runtime" />
+        <Compile Include="..\IKVM.Runtime\ConstantFieldWrapper.cs" LinkBase="IKVM.Runtime" />
+        <Compile Include="..\IKVM.Runtime\VolatileLongDoubleFieldWrapper.cs" LinkBase="IKVM.Runtime" />
+        <Compile Include="..\IKVM.Runtime\CompiledAccessStubFieldWrapper.cs" LinkBase="IKVM.Runtime" />
+        <Compile Include="..\IKVM.Runtime\CompiledPropertyFieldWrapper.cs" LinkBase="IKVM.Runtime" />
+        <Compile Include="..\IKVM.Runtime\ByteCodeHelperMethods.cs" LinkBase="IKVM.Runtime" />
+        <Compile Include="..\IKVM.Runtime\ByteCodeHelper.cs" LinkBase="IKVM.Runtime" />
     </ItemGroup>
 
     <ItemGroup>

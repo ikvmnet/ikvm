@@ -23,79 +23,39 @@
 */
 using System;
 using System.Diagnostics;
-using System.Reflection;
-using System.Runtime.CompilerServices;
 using System.Runtime.InteropServices;
 using System.Threading;
 
 using IKVM.Attributes;
 using IKVM.ByteCode;
 using IKVM.Internal;
+
+#if IMPORTER || EXPORTER
+using IKVM.Reflection;
+using IKVM.Reflection.Emit;
+using IKVM.Tools.Importer;
+
+using Type = IKVM.Reflection.Type;
+#else
+using System.Reflection;
+#endif
+
+#if EXPORTER == false
+
 using IKVM.Java.Externs.java.lang.invoke;
 using IKVM.Runtime.Accessors.Java.Lang;
+
+#endif
 
 namespace IKVM.Runtime
 {
 
-    static class GhostTag
-    {
-
-        static volatile ConditionalWeakTable<object, TypeWrapper> dict;
-
-        internal static void SetTag(object obj, RuntimeTypeHandle typeHandle)
-        {
-            SetTag(obj, ClassLoaderWrapper.GetWrapperFromType(Type.GetTypeFromHandle(typeHandle)));
-        }
-
-        internal static void SetTag(object obj, TypeWrapper wrapper)
-        {
-            if (dict == null)
-            {
-                ConditionalWeakTable<object, TypeWrapper> newDict = new ConditionalWeakTable<object, TypeWrapper>();
-                Interlocked.CompareExchange(ref dict, newDict, null);
-            }
-            dict.Add(obj, wrapper);
-        }
-
-        internal static TypeWrapper GetTag(object obj)
-        {
-            if (dict != null)
-            {
-                TypeWrapper tw;
-                dict.TryGetValue(obj, out tw);
-                return tw;
-            }
-            return null;
-        }
-
-        // this method is called from <GhostType>.IsInstanceArray()
-        internal static bool IsGhostArrayInstance(object obj, RuntimeTypeHandle typeHandle, int rank)
-        {
-            TypeWrapper tw1 = GhostTag.GetTag(obj);
-            if (tw1 != null)
-            {
-                TypeWrapper tw2 = ClassLoaderWrapper.GetWrapperFromType(Type.GetTypeFromHandle(typeHandle)).MakeArrayType(rank);
-                return tw1.IsAssignableTo(tw2);
-            }
-            return false;
-        }
-
-        // this method is called from <GhostType>.CastArray()
-        [HideFromJava]
-        internal static void ThrowClassCastException(object obj, RuntimeTypeHandle typeHandle, int rank)
-        {
-#if !FIRST_PASS
-            System.Text.StringBuilder sb = new System.Text.StringBuilder();
-            sb.Append(global::ikvm.runtime.Util.getClassFromObject(obj).getName()).Append(" cannot be cast to ")
-                .Append('[', rank).Append('L').Append(global::ikvm.runtime.Util.getClassFromTypeHandle(typeHandle).getName()).Append(';');
-            throw new global::java.lang.ClassCastException(sb.ToString());
-#endif
-        }
-    }
-
     public static class ByteCodeHelper
     {
-        [DebuggerStepThroughAttribute]
+
+#if EXPORTER == false
+
+        [DebuggerStepThrough]
         public static object multianewarray(RuntimeTypeHandle typeHandle, int[] lengths)
         {
             for (int i = 0; i < lengths.Length; i++)
@@ -107,10 +67,12 @@ namespace IKVM.Runtime
 #endif
                 }
             }
+
             return MultianewarrayHelper(Type.GetTypeFromHandle(typeHandle).GetElementType(), lengths, 0);
         }
 
-        private static object MultianewarrayHelper(Type elemType, int[] lengths, int index)
+
+        static object MultianewarrayHelper(Type elemType, int[] lengths, int index)
         {
             object o = Array.CreateInstance(elemType, lengths[index++]);
             if (index < lengths.Length)
@@ -125,10 +87,10 @@ namespace IKVM.Runtime
             return o;
         }
 
-        [DebuggerStepThroughAttribute]
+        [DebuggerStepThrough]
         public static object multianewarray_ghost(RuntimeTypeHandle typeHandle, int[] lengths)
         {
-            Type type = Type.GetTypeFromHandle(typeHandle);
+            var type = Type.GetTypeFromHandle(typeHandle);
             int rank = 0;
             while (ReflectUtil.IsVector(type))
             {
@@ -140,7 +102,7 @@ namespace IKVM.Runtime
             return obj;
         }
 
-        [DebuggerStepThroughAttribute]
+        [DebuggerStepThrough]
         public static T[] anewarray_ghost<T>(int length, RuntimeTypeHandle typeHandle)
         {
             T[] obj = new T[length];
@@ -148,11 +110,11 @@ namespace IKVM.Runtime
             return obj;
         }
 
-        [DebuggerStepThroughAttribute]
+        [DebuggerStepThrough]
         public static object DynamicMultianewarray(int[] lengths, global::java.lang.Class clazz)
         {
 #if FIRST_PASS
-			return null;
+            throw new NotImplementedException();
 #else
             Profiler.Count("DynamicMultianewarray");
             TypeWrapper wrapper = TypeWrapper.FromClass(clazz);
@@ -165,11 +127,11 @@ namespace IKVM.Runtime
 #endif
         }
 
-        [DebuggerStepThroughAttribute]
+        [DebuggerStepThrough]
         public static object DynamicNewarray(int length, global::java.lang.Class clazz)
         {
 #if FIRST_PASS
-			return null;
+            throw new NotImplementedException();
 #else
             Profiler.Count("DynamicNewarray");
             if (length < 0)
@@ -186,31 +148,39 @@ namespace IKVM.Runtime
 #endif
         }
 
-        [DebuggerStepThroughAttribute]
+#endif
+
+        [DebuggerStepThrough]
         public static void DynamicAastore(object arrayref, int index, object val)
         {
-#if !FIRST_PASS
+#if FIRST_PASS
+            throw new NotImplementedException();
+#else
             Profiler.Count("DynamicAastore");
             ((Array)arrayref).SetValue(val, index);
 #endif
         }
 
-        [DebuggerStepThroughAttribute]
+        [DebuggerStepThrough]
         public static object DynamicAaload(object arrayref, int index)
         {
 #if FIRST_PASS
-			return null;
+            throw new NotImplementedException();
 #else
             Profiler.Count("DynamicAaload");
             return ((Array)arrayref).GetValue(index);
 #endif
         }
 
+#if EXPORTER == false
+
         // the sole purpose of this method is to check whether the clazz can be instantiated (but not to actually do it)
         [DebuggerStepThroughAttribute]
         public static void DynamicNewCheckOnly(global::java.lang.Class clazz)
         {
-#if !FIRST_PASS
+#if FIRST_PASS
+            throw new NotImplementedException();
+#else
             Profiler.Count("DynamicNewCheckOnly");
             TypeWrapper wrapper = TypeWrapper.FromClass(clazz);
             if (wrapper.IsAbstract)
@@ -224,7 +194,7 @@ namespace IKVM.Runtime
         private static TypeWrapper LoadTypeWrapper(string clazz, ikvm.@internal.CallerID callerId)
         {
 #if FIRST_PASS
-			return null;
+            throw new NotImplementedException();
 #else
             try
             {
@@ -255,7 +225,7 @@ namespace IKVM.Runtime
         public static global::java.lang.Class DynamicClassLiteral(string clazz, ikvm.@internal.CallerID callerId)
         {
 #if FIRST_PASS
-			return null;
+            throw new NotImplementedException();
 #else
             Profiler.Count("DynamicClassLiteral");
             return LoadTypeWrapper(clazz, callerId).ClassObject;
@@ -266,7 +236,7 @@ namespace IKVM.Runtime
         public static object DynamicCast(object obj, global::java.lang.Class clazz)
         {
 #if FIRST_PASS
-			return null;
+            throw new NotImplementedException();
 #else
             Debug.Assert(obj != null);
             Profiler.Count("DynamicCast");
@@ -282,7 +252,7 @@ namespace IKVM.Runtime
         public static bool DynamicInstanceOf(object obj, global::java.lang.Class clazz)
         {
 #if FIRST_PASS
-			return false;
+            throw new NotImplementedException();
 #else
             Debug.Assert(obj != null);
             Profiler.Count("DynamicInstanceOf");
@@ -311,12 +281,15 @@ namespace IKVM.Runtime
             {
                 DynamicLoadMethodTypeImpl(ref cache, sig, callerID);
             }
+
             return cache;
         }
 
         private static void DynamicLoadMethodTypeImpl(ref global::java.lang.invoke.MethodType cache, string sig, global::ikvm.@internal.CallerID callerID)
         {
-#if !FIRST_PASS
+#if FIRST_PASS
+            throw new NotImplementedException();
+#else
             try
             {
                 ClassLoaderWrapper loader = ClassLoaderWrapper.FromCallerID(callerID);
@@ -342,13 +315,14 @@ namespace IKVM.Runtime
             {
                 Interlocked.CompareExchange(ref cache, DynamicLoadMethodHandleImpl(kind, clazz, name, sig, callerID), null);
             }
+
             return cache;
         }
 
         private static global::java.lang.invoke.MethodHandle DynamicLoadMethodHandleImpl(int kind, string clazz, string name, string sig, ikvm.@internal.CallerID callerID)
         {
 #if FIRST_PASS
-			return null;
+            throw new NotImplementedException();
 #else
             global::java.lang.Class refc = LoadTypeWrapper(clazz, callerID).ClassObject;
             try
@@ -390,7 +364,7 @@ namespace IKVM.Runtime
             where T : class /* delegate */
         {
 #if FIRST_PASS
-			return null;
+            return null;
 #else
             try
             {
@@ -420,7 +394,7 @@ namespace IKVM.Runtime
         public static Delegate DynamicCreateDelegate(object obj, Type delegateType, string name, string sig)
         {
 #if FIRST_PASS
-			return null;
+            return null;
 #else
             TypeWrapper tw = TypeWrapper.FromClass(global::ikvm.runtime.Util.getClassFromObject(obj));
             MethodWrapper mw = tw.GetMethodWrapper(name, sig, true);
@@ -479,7 +453,7 @@ namespace IKVM.Runtime
         public static global::java.lang.invoke.MethodHandle DynamicEraseInvokeExact(global::java.lang.invoke.MethodHandle mh, global::java.lang.invoke.MethodType expected, global::java.lang.invoke.MethodType target)
         {
 #if FIRST_PASS
-			return null;
+            return null;
 #else
             if (mh.type() != expected)
             {
@@ -489,7 +463,9 @@ namespace IKVM.Runtime
 #endif
         }
 
-        [DebuggerStepThroughAttribute]
+#endif
+
+        [DebuggerStepThrough]
         public static int f2i(float f)
         {
             if (f > int.MinValue && f < int.MaxValue)
@@ -561,14 +537,16 @@ namespace IKVM.Runtime
             return 0;
         }
 
+#if EXPORTER == false
+
         // This is used by static JNI and synchronized methods that need a class object
-        [DebuggerStepThroughAttribute]
+        [DebuggerStepThrough]
         public static object GetClassFromTypeHandle(RuntimeTypeHandle typeHandle)
         {
             return IKVM.Java.Externs.ikvm.runtime.Util.getClassFromTypeHandle(typeHandle);
         }
 
-        [DebuggerStepThroughAttribute]
+        [DebuggerStepThrough]
         public static void arraycopy(object src, int srcStart, object dest, int destStart, int len)
         {
 #if !FIRST_PASS
@@ -660,7 +638,7 @@ namespace IKVM.Runtime
             {
                 throw new global::java.lang.ArrayIndexOutOfBoundsException();
             }
-#endif // !FIRST_PASS
+#endif
         }
 
         [DebuggerStepThroughAttribute]
@@ -800,59 +778,103 @@ namespace IKVM.Runtime
         public static bool SkipFinalizer()
         {
 #if FIRST_PASS
-			return false;
+            return false;
 #else
             return Environment.HasShutdownStarted && !global::java.lang.Shutdown.runFinalizersOnExit;
 #endif
         }
 
-        public static long VolatileRead(ref long v)
-        {
-#if NO_REF_EMIT && !FIRST_PASS
-			lock (VolatileLongDoubleFieldWrapper.lockObject)
-			{
-				return v;
-			}
-#else
-            return Interlocked.Read(ref v);
 #endif
+
+        /// <summary>
+        /// Implements a volatile read against a reference to a long. In Java, a volatile operation is atomic.
+        /// </summary>
+        /// <param name="location"></param>
+        /// <returns></returns>
+        public static long VolatileRead(ref long location)
+        {
+            return Interlocked.CompareExchange(ref location, 0, 0);
         }
 
-        public static void VolatileWrite(ref long v, long newValue)
+        /// <summary>
+        /// Implements a volatile write against a reference to a long. In Java, a volatile operation is atomic.
+        /// </summary>
+        /// <param name="location"></param>
+        /// <param name="value"></param>
+        public static void VolatileWrite(ref long location, long value)
         {
-#if NO_REF_EMIT && !FIRST_PASS
-			lock (VolatileLongDoubleFieldWrapper.lockObject)
-			{
-				v = newValue;
-			}
-#else
-            Interlocked.Exchange(ref v, newValue);
-#endif
+            Interlocked.Exchange(ref location, value);
         }
 
-        public static double VolatileRead(ref double v)
+        /// <summary>
+        /// Implements a volatile read against a reference to a double. In Java, a volatile operation is atomic.
+        /// </summary>
+        /// <param name="location"></param>
+        /// <returns></returns>
+        public static double VolatileRead(ref double location)
         {
-#if NO_REF_EMIT && !FIRST_PASS
-			lock (VolatileLongDoubleFieldWrapper.lockObject)
-			{
-				return v;
-			}
-#else
-            return Interlocked.CompareExchange(ref v, 0.0, 0.0);
-#endif
+            return Interlocked.CompareExchange(ref location, 0, 0);
         }
 
-        public static void VolatileWrite(ref double v, double newValue)
+        /// <summary>
+        /// Implements a volatile write against a reference to a double. In Java, a volatile operation is atomic.
+        /// </summary>
+        /// <param name="location"></param>
+        /// <param name="value"></param>
+        public static void VolatileWrite(ref double location, double value)
         {
-#if NO_REF_EMIT && !FIRST_PASS
-			lock (VolatileLongDoubleFieldWrapper.lockObject)
-			{
-				v = newValue;
-			}
-#else
-            Interlocked.Exchange(ref v, newValue);
-#endif
+            Interlocked.Exchange(ref location, value);
         }
+
+        /// <summary>
+        /// Implements the compare and swap operation against a reference to an object.
+        /// </summary>
+        /// <param name="location"></param>
+        /// <param name="expected"></param>
+        /// <param name="value"></param>
+        /// <returns></returns>
+        public static bool CompareAndSwap(ref object location, object expected, object value)
+        {
+            return Interlocked.CompareExchange(ref location, value, expected) == expected;
+        }
+
+        /// <summary>
+        /// Implements the compare and swap operation against a reference to an int.
+        /// </summary>
+        /// <param name="location"></param>
+        /// <param name="expected"></param>
+        /// <param name="value"></param>
+        /// <returns></returns>
+        public static bool CompareAndSwap(ref int location, int expected, int value)
+        {
+            return Interlocked.CompareExchange(ref location, value, expected) == expected;
+        }
+
+        /// <summary>
+        /// Implements a compare and swap operation against a reference to a long.
+        /// </summary>
+        /// <param name="location"></param>
+        /// <param name="expected"></param>
+        /// <param name="value"></param>
+        /// <returns></returns>
+        public static bool CompareAndSwap(ref long location, long expected, long value)
+        {
+            return Interlocked.CompareExchange(ref location, value, expected) == expected;
+        }
+
+        /// <summary>
+        /// Implements a compare and swap operation against a reference to a double.
+        /// </summary>
+        /// <param name="location"></param>
+        /// <param name="expected"></param>
+        /// <param name="value"></param>
+        /// <returns></returns>
+        public static bool CompareAndSwap(ref double location, double expected, double value)
+        {
+            return Interlocked.CompareExchange(ref location, value, expected) == expected;
+        }
+
+#if EXPORTER == false
 
         [System.Runtime.CompilerServices.MethodImpl(System.Runtime.CompilerServices.MethodImplOptions.NoInlining)]
         public static void InitializeModule(Module module)
@@ -873,7 +895,7 @@ namespace IKVM.Runtime
 #endif
         {
 #if FIRST_PASS
-			return default(T);
+            throw new NotImplementedException();
 #else
             try
             {
@@ -904,7 +926,7 @@ namespace IKVM.Runtime
         public static Exception DynamicMapException(Exception x, MapFlags mode, global::java.lang.Class exceptionClass)
         {
 #if FIRST_PASS
-			return null;
+            return null;
 #else
             TypeWrapper exceptionTypeWrapper = TypeWrapper.FromClass(exceptionClass);
             mode &= ~MapFlags.NoRemapping;
@@ -921,7 +943,7 @@ namespace IKVM.Runtime
             where T : class
         {
 #if FIRST_PASS
-			return null;
+            throw new NotImplementedException();
 #else
             T del = h._invokeExactDelegate as T;
             if (del == null)
@@ -936,7 +958,7 @@ namespace IKVM.Runtime
             where T : class
         {
 #if FIRST_PASS
-			return null;
+            throw new NotImplementedException();
 #else
             T del;
             if (cache.Type == h.type() && (del = (h.isVarargsCollector() ? cache.varArg : cache.fixedArg)) != null)
@@ -978,7 +1000,7 @@ namespace IKVM.Runtime
             where T : class
         {
 #if FIRST_PASS
-			return null;
+            throw new NotImplementedException();
 #else
             T del = h.form.vmentry.vmtarget as T;
             if (del == null)
@@ -993,7 +1015,7 @@ namespace IKVM.Runtime
             where T : class // Delegate
         {
 #if FIRST_PASS
-			return null;
+            throw new NotImplementedException();
 #else
             return MethodHandleUtil.GetDelegateMethodType(typeof(T));
 #endif
@@ -1094,15 +1116,21 @@ namespace IKVM.Runtime
             }
 #endif
         }
+
+#endif
+
     }
+
+#if EXPORTER == false
 
     interface IIndyCallSite
     {
+
         void SetTarget(global::java.lang.invoke.MethodHandle mh);
+
     }
 
-    public sealed class IndyCallSite<T>
-        : IIndyCallSite
+    public sealed class IndyCallSite<T> : IIndyCallSite
         where T : class // Delegate
     {
         internal readonly bool IsBootstrap;
@@ -1134,12 +1162,18 @@ namespace IKVM.Runtime
         {
             return target;
         }
+
     }
 
     public struct InvokeCache<T>
         where T : class
     {
+
+        internal T fixedArg;
+        internal T varArg;
+
 #if CLASSGC
+
 		private WeakReference weakRef;
 
 		internal global::java.lang.invoke.MethodType Type
@@ -1168,10 +1202,12 @@ namespace IKVM.Runtime
             Interlocked.CompareExchange(ref type, newType, null);
             return type == newType;
         }
+
 #endif
-        internal T fixedArg;
-        internal T varArg;
+
     }
+
+#endif
 
     [StructLayout(LayoutKind.Explicit)]
     public struct DoubleConverter

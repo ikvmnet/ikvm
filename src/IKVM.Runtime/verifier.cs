@@ -109,12 +109,14 @@ sealed class InstructionState
             }
         }
     }
-    private TypeWrapper[] stack;
-    private int stackSize;
-    private int stackEnd;
-    private TypeWrapper[] locals;
-    private bool unitializedThis;
+
+    TypeWrapper[] stack;
+    int stackSize;
+    int stackEnd;
+    TypeWrapper[] locals;
+    bool unitializedThis;
     internal bool changed = true;
+
     private enum ShareFlags : byte
     {
         None = 0,
@@ -2594,7 +2596,7 @@ sealed class MethodAnalyzer
                         && instructions[i + 1].TargetIndex > i
                         && (flags[i + 1] & InstructionFlags.BranchTarget) == 0)
                     {
-                        ConstantFieldWrapper field = classFile.GetFieldref(instructions[i].Arg1).GetField() as ConstantFieldWrapper;
+                        var field = classFile.GetFieldref(instructions[i].Arg1).GetField() as ConstantFieldWrapper;
                         if (field != null && field.FieldTypeWrapper == PrimitiveTypeWrapper.BOOLEAN && (bool)field.GetConstantValue())
                         {
                             // We know the branch will always be taken, so we replace the getstatic/ifne by a goto.

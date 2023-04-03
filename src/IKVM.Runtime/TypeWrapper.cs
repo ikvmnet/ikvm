@@ -116,7 +116,8 @@ namespace IKVM.Internal
                 ilgen.Emit(OpCodes.Ldsfld, RuntimeHelperTypes.GetClassLiteralField(type));
             }
         }
-#endif // EMITTERS
+
+#endif
 
         private Type GetClassLiteralType()
         {
@@ -1392,7 +1393,60 @@ namespace IKVM.Internal
                 ilgen.Emit_instanceof(TypeAsTBD);
             }
         }
-#endif // EMITTERS
+
+        /// <summary>
+        /// Emits the appropriate instruction to do an indirect load of a reference to this type.
+        /// </summary>
+        /// <param name="il"></param>
+        internal virtual void EmitLdind(CodeEmitter il)
+        {
+            if (this == PrimitiveTypeWrapper.BOOLEAN)
+                il.Emit(OpCodes.Ldind_U1);
+            else if (this == PrimitiveTypeWrapper.BYTE)
+                il.Emit(OpCodes.Ldind_U1);
+            else if (this == PrimitiveTypeWrapper.CHAR)
+                il.Emit(OpCodes.Ldind_U2);
+            else if (this == PrimitiveTypeWrapper.SHORT)
+                il.Emit(OpCodes.Ldind_I2);
+            else if (this == PrimitiveTypeWrapper.INT)
+                il.Emit(OpCodes.Ldind_I4);
+            else if (this == PrimitiveTypeWrapper.LONG)
+                il.Emit(OpCodes.Ldind_I8);
+            else if (this == PrimitiveTypeWrapper.FLOAT)
+                il.Emit(OpCodes.Ldind_R4);
+            else if (this == PrimitiveTypeWrapper.DOUBLE)
+                il.Emit(OpCodes.Ldind_R8);
+            else
+                il.Emit(OpCodes.Ldind_Ref);
+        }
+
+        /// <summary>
+        /// Emits the appropriate instruction to do an indirect store of a reference to this type.
+        /// </summary>
+        /// <param name="il"></param>
+        internal virtual void EmitStind(CodeEmitter il)
+        {
+            if (this == PrimitiveTypeWrapper.BOOLEAN)
+                il.Emit(OpCodes.Stind_I1);
+            else if (this == PrimitiveTypeWrapper.BYTE)
+                il.Emit(OpCodes.Stind_I1);
+            else if (this == PrimitiveTypeWrapper.CHAR)
+                il.Emit(OpCodes.Stind_I2);
+            else if (this == PrimitiveTypeWrapper.SHORT)
+                il.Emit(OpCodes.Stind_I2);
+            else if (this == PrimitiveTypeWrapper.INT)
+                il.Emit(OpCodes.Stind_I4);
+            else if (this == PrimitiveTypeWrapper.LONG)
+                il.Emit(OpCodes.Stind_I8);
+            else if (this == PrimitiveTypeWrapper.FLOAT)
+                il.Emit(OpCodes.Stind_R4);
+            else if (this == PrimitiveTypeWrapper.DOUBLE)
+                il.Emit(OpCodes.Stind_R8);
+            else
+                il.Emit(OpCodes.Stind_Ref);
+        }
+
+#endif
 
         // NOTE don't call this method, call MethodWrapper.Link instead
         internal virtual MethodBase LinkMethod(MethodWrapper mw)

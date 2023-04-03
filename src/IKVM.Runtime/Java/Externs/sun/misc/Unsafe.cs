@@ -19,96 +19,6 @@ namespace IKVM.Java.Externs.sun.misc
     {
 
         /// <summary>
-        /// Holds a reference to the <see cref="FieldDelegateRefDelegates"/> instance, which is exposd as a <see cref="GCHandle"/>
-        /// masquerading as a field offset. Instances of this class are kept alive by a <see cref="ConditionalWeakTable{TKey, TValue}"/>
-        /// on the <see cref="FieldWrapper"/>. When the <see cref="FieldWrapper"/> goes out of scope, this instance is allowed to die,
-        /// which can clean up the <see cref="GCHandle"/>.
-        /// </summary>
-        class FieldDelegateRef
-        {
-
-            readonly FieldDelegateRefDelegates instance;
-            readonly GCHandle handle;
-
-            /// <summary>
-            /// Initializes a new instance.
-            /// </summary>
-            /// <param name="field"></param>
-            public FieldDelegateRef(FieldWrapper field)
-            {
-                this.instance = new FieldDelegateRefDelegates(field);
-                this.handle = GCHandle.Alloc(instance, GCHandleType.WeakTrackResurrection);
-            }
-
-            /// <summary>
-            /// Maintains a handle that can serve as the 'offset' value.
-            /// </summary>
-            public GCHandle Handle => handle;
-
-            /// <summary>
-            /// Finalizes the instance. The <see cref="GCHandle"/> is released, allowing the delegates to be collected.
-            /// </summary>
-            ~FieldDelegateRef()
-            {
-                if (handle.IsAllocated)
-                    handle.Free();
-            }
-
-        }
-
-        /// <summary>
-        /// Holds the set of delegates that implement operations against the field.
-        /// </summary>
-        class FieldDelegateRefDelegates
-        {
-
-            readonly Lazy<Delegate> getter;
-            readonly Lazy<Delegate> putter;
-            readonly Lazy<Delegate> volatileGetter;
-            readonly Lazy<Delegate> volatilePutter;
-            readonly Lazy<Delegate> compareExchange;
-
-            /// <summary>
-            /// Initializes a new instance.
-            /// </summary>
-            /// <param name="field"></param>
-            public FieldDelegateRefDelegates(FieldWrapper field)
-            {
-                getter = new Lazy<Delegate>(() => CreateGetFieldDelegate(field), true);
-                putter = new Lazy<Delegate>(() => CreatePutFieldDelegate(field), true);
-                volatileGetter = new Lazy<Delegate>(() => CreateGetFieldVolatileDelegate(field), true);
-                volatilePutter = new Lazy<Delegate>(() => CreatePutFieldVolatileDelegate(field), true);
-                compareExchange = new Lazy<Delegate>(() => CreateCompareExchangeFieldDelegate(field), true);
-            }
-
-            /// <summary>
-            /// Gets a delegate capable of implementing the get logic. This value is a <see cref="Func{object, TField}" />
-            /// </summary>
-            public Delegate Getter => getter.Value;
-
-            /// <summary>
-            /// Gets a delegate capable of implementing the put logic. This value is an <see cref="Action{object, TField}" />
-            /// </summary>
-            public Delegate Putter => putter.Value;
-
-            /// <summary>
-            /// Gets a delegate capable of implementing the volatile get logic. This value is a <see cref="Func{object, TField}" />
-            /// </summary>
-            public Delegate VolatileGetter => volatileGetter.Value;
-
-            /// <summary>
-            /// Gets a delegate capable of implemetning the volatile put logic. This value is an <see cref="Action{object, TField}" />
-            /// </summary>
-            public Delegate VolatilePutter => volatilePutter.Value;
-
-            /// <summary>
-            /// Gets a delegate capable of implemetning the volatile put logic. This value is an <see cref="Func{object, TField, TField, TField}" />
-            /// </summary>
-            public Delegate CompareExchange => compareExchange.Value;
-
-        }
-
-        /// <summary>
         /// Holds a reference to the various delegates that facilitate unsafe operations for arrays. References are kept
         /// alive and associated with the element type of the array in a conditional weak table.
         /// </summary>
@@ -147,9 +57,6 @@ namespace IKVM.Java.Externs.sun.misc
 
         }
 
-        // TODO: NET6+ replace with DependentHandle
-        static readonly ConditionalWeakTable<FieldWrapper, FieldDelegateRef> fieldRefCache = new ConditionalWeakTable<FieldWrapper, FieldDelegateRef>();
-
         /// <summary>
         /// Cache of delegates for array operations.
         /// </summary>
@@ -158,8 +65,8 @@ namespace IKVM.Java.Externs.sun.misc
         /// <summary>
         /// Generic CompareExchange method.
         /// </summary>
-        static readonly MethodInfo compareExchangeMethodInfo = typeof(Unsafe).GetMethods(BindingFlags.NonPublic | BindingFlags.Static)
-            .Where(i => i.Name == nameof(CompareExchange) && i.IsGenericMethodDefinition && i.GetGenericArguments().Length == 1)
+        static readonly MethodInfo compareAndSwapArrayMethodInfo = typeof(Unsafe).GetMethods(BindingFlags.NonPublic | BindingFlags.Static)
+            .Where(i => i.Name == nameof(CompareAndSwapArray) && i.IsGenericMethodDefinition && i.GetGenericArguments().Length == 1)
             .FirstOrDefault();
 
         /// <summary>
@@ -227,72 +134,6 @@ namespace IKVM.Java.Externs.sun.misc
         }
 
         /// <summary>
-        /// Creates a delegate capable of accessing a field of a specific type.
-        /// </summary>
-        /// <param name="f"></param>
-        /// <returns></returns>
-        static Delegate CreateGetFieldDelegate(FieldWrapper fw)
-        {
-            fw.DeclaringType.Finish();
-            fw.FieldTypeWrapper.Finish();
-            fw.ResolveField();
-
-            var ft = fw.FieldTypeWrapper.IsPrimitive ? fw.FieldTypeWrapper.TypeAsTBD : typeof(object);
-            var dm = DynamicMethodUtil.Create($"__<UnsafeGetField>__{fw.DeclaringType.Name.Replace(".", "_")}__{fw.Name}", fw.DeclaringType.TypeAsTBD, true, ft, new[] { typeof(object) });
-            var il = dm.GetILGenerator();
-
-            if (fw.IsStatic && fw.IsFinal)
-            {
-                // we obtain a reference to the field and do an indirect load here to avoid JIT optimizations that inline static readonly fields
-                il.Emit(OpCodes.Ldsflda, fw.GetField());
-                EmitLdind(il, ft);
-            }
-            else if (fw.IsStatic)
-            {
-                il.Emit(OpCodes.Ldsfld, fw.GetField());
-            }
-            else
-            {
-                il.Emit(OpCodes.Ldarg_0);
-                il.Emit(OpCodes.Ldfld, fw.GetField());
-            }
-
-            il.Emit(OpCodes.Ret);
-            return dm.CreateDelegate(typeof(Func<,>).MakeGenericType(typeof(object), ft));
-        }
-
-        /// <summary>
-        /// Creates a delegate capable of accessing a field of a specific type.
-        /// </summary>
-        /// <param name="f"></param>
-        /// <returns></returns>
-        static Delegate CreatePutFieldDelegate(FieldWrapper fw)
-        {
-            fw.DeclaringType.Finish();
-            fw.FieldTypeWrapper.Finish();
-            fw.ResolveField();
-
-            var ft = fw.FieldTypeWrapper.IsPrimitive ? fw.FieldTypeWrapper.TypeAsTBD : typeof(object);
-            var dm = DynamicMethodUtil.Create($"__<UnsafePutField>__{fw.DeclaringType.Name.Replace(".", "_")}__{fw.Name}", fw.DeclaringType.TypeAsTBD, true, typeof(void), new[] { typeof(object), ft });
-            var il = dm.GetILGenerator();
-
-            if (fw.IsStatic)
-            {
-                il.Emit(OpCodes.Ldarg_1);
-                il.Emit(OpCodes.Stsfld, fw.GetField());
-            }
-            else
-            {
-                il.Emit(OpCodes.Ldarg_0);
-                il.Emit(OpCodes.Ldarg_1);
-                il.Emit(OpCodes.Stfld, fw.GetField());
-            }
-
-            il.Emit(OpCodes.Ret);
-            return dm.CreateDelegate(typeof(Action<,>).MakeGenericType(typeof(object), ft));
-        }
-
-        /// <summary>
         /// Implements the logic to get a field by offset.
         /// </summary>
         /// <typeparam name="T"></typeparam>
@@ -307,7 +148,7 @@ namespace IKVM.Java.Externs.sun.misc
 #else
             try
             {
-                return ((Func<object, T>)((FieldDelegateRefDelegates)GCHandle.FromIntPtr((IntPtr)offset).Target).Getter)(o);
+                return FieldWrapper.FromCookie((IntPtr)offset).UnsafeGetValue<T>(o);
             }
             catch (Exception e)
             {
@@ -319,19 +160,20 @@ namespace IKVM.Java.Externs.sun.misc
         /// <summary>
         /// Implements the logic to set a field by offset.
         /// </summary>
-        /// <typeparam name="TField"></typeparam>
+        /// <typeparam name="T"></typeparam>
         /// <param name="o"></param>
         /// <param name="offset"></param>
         /// <param name="value"></param>
         /// <exception cref="global::java.lang.InternalError"></exception>
-        static void PutField<TField>(object o, long offset, TField value)
+        static void PutField<T>(object o, long offset, T value)
+
         {
 #if FIRST_PASS
             throw new NotImplementedException();
 #else
             try
             {
-                ((Action<object, TField>)((FieldDelegateRefDelegates)GCHandle.FromIntPtr((IntPtr)offset).Target).Putter)(o, value);
+                FieldWrapper.FromCookie((IntPtr)offset).UnsafeSetValue<T>(o, value);
             }
             catch (Exception e)
             {
@@ -1144,8 +986,7 @@ namespace IKVM.Java.Externs.sun.misc
         /// <returns></returns>
         public static long staticFieldOffset(object self, global::java.lang.reflect.Field f)
         {
-            var fr = fieldRefCache.GetValue(FieldWrapper.FromField(f), _ => new FieldDelegateRef(_));
-            return (long)(IntPtr)fr.Handle;
+            return (long)FieldWrapper.FromField(f).Cookie;
         }
 
         /// <summary>
@@ -1156,8 +997,7 @@ namespace IKVM.Java.Externs.sun.misc
         /// <returns></returns>
         public static long objectFieldOffset(object self, global::java.lang.reflect.Field f)
         {
-            var fr = fieldRefCache.GetValue(FieldWrapper.FromField(f), _ => new FieldDelegateRef(_));
-            return (long)(IntPtr)fr.Handle;
+            return (long)FieldWrapper.FromField(f).Cookie;
         }
 
         /// <summary>
@@ -1377,44 +1217,6 @@ namespace IKVM.Java.Externs.sun.misc
         }
 
         /// <summary>
-        /// Creates a delegate capable of accessing a field of a specific type as a volatile.
-        /// </summary>
-        /// <param name="fw"></param>
-        /// <returns></returns>
-        static Delegate CreateGetFieldVolatileDelegate(FieldWrapper fw)
-        {
-            fw.ResolveField();
-            var ft = fw.FieldTypeWrapper.IsPrimitive ? fw.FieldTypeWrapper.TypeAsTBD : typeof(object);
-            var dm = new DynamicMethod($"__<UnsafeGetFieldVolatile>__{fw.DeclaringType.Name.Replace(".", "_")}__{fw.Name}", ft, new[] { typeof(object) }, fw.DeclaringType.TypeAsTBD.Module, true);
-            var il = dm.GetILGenerator();
-
-            if (fw.IsStatic)
-            {
-                il.Emit(OpCodes.Ldsflda, fw.GetField());
-            }
-            else
-            {
-                il.Emit(OpCodes.Ldarg_0);
-                il.Emit(OpCodes.Ldflda, fw.GetField());
-            }
-
-            if (fw.FieldTypeWrapper.IsWidePrimitive == false)
-            {
-                il.Emit(OpCodes.Volatile);
-                EmitLdind(il, fw.FieldTypeWrapper.TypeAsLocalOrStackType);
-            }
-            else
-            {
-                // Java volatile semantics require atomicity, CLR volatile semantics do not
-                var mi = typeof(Unsafe).GetMethod(nameof(InterlockedRead), BindingFlags.NonPublic | BindingFlags.Static, null, new[] { fw.FieldTypeWrapper.TypeAsTBD.MakeByRefType() }, null);
-                il.Emit(OpCodes.Call, mi);
-            }
-
-            il.Emit(OpCodes.Ret);
-            return dm.CreateDelegate(typeof(Func<,>).MakeGenericType(typeof(object), ft));
-        }
-
-        /// <summary>
         /// Implements the logic to get a field by offset using volatile.
         /// </summary>
         /// <typeparam name="T"></typeparam>
@@ -1429,7 +1231,7 @@ namespace IKVM.Java.Externs.sun.misc
 #else
             try
             {
-                return ((Func<object, T>)((FieldDelegateRefDelegates)GCHandle.FromIntPtr((IntPtr)offset).Target).VolatileGetter)(o);
+                return FieldWrapper.FromCookie((IntPtr)offset).UnsafeVolatileGet<T>(o);
             }
             catch (Exception e)
             {
@@ -1439,62 +1241,21 @@ namespace IKVM.Java.Externs.sun.misc
         }
 
         /// <summary>
-        /// Creates a delegate capable of accessing a field of a specific type.
-        /// </summary>
-        /// <param name="fw"></param>
-        /// <returns></returns>
-        static Delegate CreatePutFieldVolatileDelegate(FieldWrapper fw)
-        {
-            fw.ResolveField();
-            var ft = fw.FieldTypeWrapper.IsPrimitive ? fw.FieldTypeWrapper.TypeAsTBD : typeof(object);
-            var dm = DynamicMethodUtil.Create($"__<UnsafePutFieldVolatile>__{fw.DeclaringType.Name.Replace(".", "_")}__{fw.Name}", fw.DeclaringType.TypeAsTBD, true, typeof(void), new[] { typeof(object), ft });
-            var il = dm.GetILGenerator();
-
-            // load reference to field
-            if (fw.IsStatic)
-            {
-                il.Emit(OpCodes.Ldsflda, fw.GetField());
-            }
-            else
-            {
-                il.Emit(OpCodes.Ldarg_0);
-                il.Emit(OpCodes.Ldflda, fw.GetField());
-            }
-
-            il.Emit(OpCodes.Ldarg_1);
-
-            if (fw.FieldTypeWrapper.IsWidePrimitive == false)
-            {
-                il.Emit(OpCodes.Volatile);
-                EmitStind(il, fw.FieldTypeWrapper.TypeAsLocalOrStackType);
-            }
-            else
-            {
-                // Java volatile semantics require atomicity, CLR volatile semantics do not
-                var mi = typeof(Unsafe).GetMethod(nameof(InterlockedWrite), BindingFlags.NonPublic | BindingFlags.Static, null, new[] { fw.FieldTypeWrapper.TypeAsTBD.MakeByRefType(), fw.FieldTypeWrapper.TypeAsTBD }, null);
-                il.Emit(OpCodes.Call, mi);
-            }
-
-            il.Emit(OpCodes.Ret);
-            return dm.CreateDelegate(typeof(Action<,>).MakeGenericType(typeof(object), ft));
-        }
-
-        /// <summary>
         /// Implements the logic to set a field by offset using volatile.
         /// </summary>
-        /// <typeparam name="TField"></typeparam>
+        /// <typeparam name="T"></typeparam>
         /// <param name="o"></param>
         /// <param name="offset"></param>
         /// <param name="value"></param>
         /// <exception cref="global::java.lang.InternalError"></exception>
-        static void PutFieldVolatile<TField>(object o, long offset, TField value)
+        static void PutFieldVolatile<T>(object o, long offset, T value)
         {
 #if FIRST_PASS
             throw new NotImplementedException();
 #else
             try
             {
-                ((Action<object, TField>)((FieldDelegateRefDelegates)GCHandle.FromIntPtr((IntPtr)offset).Target).VolatilePutter)(o, value);
+                FieldWrapper.FromCookie((IntPtr)offset).UnsafeVolatileSet<T>(o, value);
             }
             catch (Exception e)
             {
@@ -2013,43 +1774,6 @@ namespace IKVM.Java.Externs.sun.misc
         }
 
         /// <summary>
-        /// Creates a delegate capable of accessing a field of a specific type as a volatile.
-        /// </summary>
-        /// <param name="fw"></param>
-        /// <returns></returns>
-        static Delegate CreateCompareExchangeFieldDelegate(FieldWrapper fw)
-        {
-            var ft = fw.FieldTypeWrapper.IsPrimitive ? fw.FieldTypeWrapper.TypeAsTBD : typeof(object);
-            var mi = typeof(Interlocked)
-                .GetMethods()
-                .Where(i => i.Name == nameof(Interlocked.CompareExchange))
-                .Where(i => i.GetParameters().Length > 0 && i.GetParameters()[0].ParameterType == ft.MakeByRefType())
-                .FirstOrDefault();
-            if (mi == null)
-                throw new InvalidOperationException();
-
-            var dm = new DynamicMethod($"UnsafeCompareExchangeFieldDelegate__{fw.DeclaringType.Name.Replace(".", "_")}__{fw.Name}", ft, new[] { typeof(object), ft, ft }, fw.DeclaringType.TypeAsTBD.Module, true);
-            var il = dm.GetILGenerator();
-
-            if (fw.IsStatic)
-            {
-                il.Emit(OpCodes.Ldsflda, fw.GetField());
-            }
-            else
-            {
-                il.Emit(OpCodes.Ldarg_0);
-                il.Emit(OpCodes.Ldflda, fw.GetField());
-            }
-
-            il.Emit(OpCodes.Ldarg_1);
-            il.Emit(OpCodes.Ldarg_2);
-            il.Emit(OpCodes.Call, mi);
-
-            il.Emit(OpCodes.Ret);
-            return dm.CreateDelegate(typeof(Func<,,,>).MakeGenericType(typeof(object), ft, ft, ft));
-        }
-
-        /// <summary>
         /// Implements the logic to compare and swap an object.
         /// </summary>
         /// <typeparam name="T"></typeparam>
@@ -2059,14 +1783,14 @@ namespace IKVM.Java.Externs.sun.misc
         /// <param name="expected"></param>
         /// <returns></returns>
         /// <exception cref="global::java.lang.InternalError"></exception>
-        static T CompareExchangeField<T>(object o, long offset, T value, T expected)
+        static bool CompareAndSwapField<T>(object o, long offset, T expected, T value)
         {
 #if FIRST_PASS
             throw new NotImplementedException();
 #else
             try
             {
-                return ((Func<object, T, T, T>)((FieldDelegateRefDelegates)GCHandle.FromIntPtr((IntPtr)offset).Target).CompareExchange)(o, value, expected);
+                return FieldWrapper.FromCookie((IntPtr)offset).UnsafeCompareAndSwap(o, expected, value);
             }
             catch (Exception e)
             {
@@ -2088,7 +1812,7 @@ namespace IKVM.Java.Externs.sun.misc
             var e = Expression.Parameter(typeof(object));
             return Expression.Lambda<Func<object[], long, object, object, object>>(
                 Expression.Call(
-                    compareExchangeMethodInfo.MakeGenericMethod(tw.TypeAsTBD),
+                    compareAndSwapArrayMethodInfo.MakeGenericMethod(tw.TypeAsTBD),
                     Expression.Convert(p, tw.MakeArrayType(1).TypeAsTBD),
                     i,
                     Expression.Convert(v, tw.TypeAsTBD),
@@ -2098,7 +1822,7 @@ namespace IKVM.Java.Externs.sun.misc
         }
 
         /// <summary>
-        /// Implements CompareExchange for a typed array.
+        /// Implements CompareAndSwap for a typed array.
         /// </summary>
         /// <typeparam name="T"></typeparam>
         /// <param name="o"></param>
@@ -2106,7 +1830,7 @@ namespace IKVM.Java.Externs.sun.misc
         /// <param name="value"></param>
         /// <param name="comparand"></param>
         /// <returns></returns>
-        static object CompareExchange<T>(T[] o, long offset, T value, T comparand)
+        static object CompareAndSwapArray<T>(T[] o, long offset, T value, T comparand)
             where T : class
         {
             return Interlocked.CompareExchange<T>(ref o[offset], value, comparand);
@@ -2122,7 +1846,7 @@ namespace IKVM.Java.Externs.sun.misc
         /// <param name="expected"></param>
         /// <returns></returns>
         /// <exception cref="global::java.lang.InternalError"></exception>
-        static object CompareExchangeObject(object[] o, long offset, object value, object expected)
+        static object CompareAndSwapObjectArray(object[] o, long offset, object value, object expected)
         {
 #if FIRST_PASS
             throw new NotImplementedException();
@@ -2156,8 +1880,8 @@ namespace IKVM.Java.Externs.sun.misc
             return o switch
             {
                 object[] array when array.GetType() == typeof(object[]) => Interlocked.CompareExchange(ref array[offset], x, expected) == expected,
-                object[] array => CompareExchangeObject(array, offset, x, expected) == expected,
-                _ => CompareExchangeField(o, offset, x, expected) == expected
+                object[] array => CompareAndSwapObjectArray(array, offset, x, expected) == expected,
+                _ => CompareAndSwapField(o, offset, expected, x)
             };
 #endif
         }
@@ -2191,7 +1915,7 @@ namespace IKVM.Java.Externs.sun.misc
             }
             else
             {
-                return CompareExchangeField<int>(o, offset, x, expected) == expected;
+                return CompareAndSwapField(o, offset, expected, x);
             }
 #endif
         }
@@ -2225,7 +1949,7 @@ namespace IKVM.Java.Externs.sun.misc
             }
             else
             {
-                return CompareExchangeField<long>(o, offset, x, expected) == expected;
+                return CompareAndSwapField(o, offset, expected, x);
             }
 #endif
         }
@@ -2276,31 +2000,6 @@ namespace IKVM.Java.Externs.sun.misc
         public static void fullFence(object self)
         {
             Thread.MemoryBarrier();
-        }
-
-        /// <summary>
-        /// Gets the reflective Field instance from the specified offset.
-        /// </summary>
-        /// <param name="offset"></param>
-        /// <returns></returns>
-        static FieldInfo GetFieldInfo(long offset)
-        {
-#if FIRST_PASS
-            throw new NotImplementedException();
-#else
-            try
-            {
-                var fw = FieldWrapper.FromCookie((IntPtr)offset);
-                fw.Link();
-                fw.ResolveField();
-                var fi = fw.GetField();
-                return fi;
-            }
-            catch (Exception e)
-            {
-                throw new global::java.lang.InternalError(e);
-            }
-#endif
         }
 
         /// <summary>

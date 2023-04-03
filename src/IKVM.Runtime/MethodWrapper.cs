@@ -481,13 +481,27 @@ namespace IKVM.Internal
                 method = mb.Module.ResolveMethod(mb.GetToken().Token);
 #else
                 // though ResolveMethod exists, Core 3.1 does not provide a stable way to obtain the resulting metadata token
+                // instead we have to scan the methods for the one that matches the signature using the runtime type instances
                 // FIXME .NET 6
+
+                var parameters = GetParameters();
+                var typeLength = parameters.Length;
+                if (HasCallerID)
+                    typeLength++;
+
+                var types = new Type[typeLength];
+                for (int i = 0; i < parameters.Length; i++)
+                    types[i] = parameters[i].TypeAsSignatureType;
+
+                if (HasCallerID)
+                    types[typeLength - 1] = CoreClasses.ikvm.@internal.CallerID.Wrapper.TypeAsSignatureType;
+
                 var flags = BindingFlags.DeclaredOnly;
                 flags |= mb.IsPublic ? BindingFlags.Public : BindingFlags.NonPublic;
                 flags |= mb.IsStatic ? BindingFlags.Static : BindingFlags.Instance;
-                method = DeclaringType.TypeAsTBD.GetMethod(mb.Name, flags, null, GetParametersForDefineMethod(), null);
+                method = DeclaringType.TypeAsTBD.GetMethod(mb.Name, flags, null, types, null);
                 if (method == null)
-                    method = DeclaringType.TypeAsTBD.GetConstructor(flags, null, GetParametersForDefineMethod(), null);
+                    method = DeclaringType.TypeAsTBD.GetConstructor(flags, null, types, null);
 #endif
             }
 #endif

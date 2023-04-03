@@ -39,7 +39,6 @@ using System.Reflection;
 using System.Reflection.Emit;
 #endif
 
-
 namespace IKVM.Internal
 {
 
@@ -60,12 +59,12 @@ namespace IKVM.Internal
         IKVM.Attributes.LineNumberTableAttribute.LineNumberWriter linenums;
         CodeEmitterLocal[] tempLocals = new CodeEmitterLocal[32];
 #if NETFRAMEWORK
-		 ISymbolDocumentWriter symbols;
+        ISymbolDocumentWriter symbols;
 #endif
         List<OpCodeWrapper> code = new List<OpCodeWrapper>(10);
         readonly Type declaringType;
 #if LABELCHECK
-		 Dictionary<CodeEmitterLabel, System.Diagnostics.StackFrame> labels = new Dictionary<CodeEmitterLabel, System.Diagnostics.StackFrame>();
+		Dictionary<CodeEmitterLabel, System.Diagnostics.StackFrame> labels = new Dictionary<CodeEmitterLabel, System.Diagnostics.StackFrame>();
 #endif
 
         static CodeEmitter()
@@ -435,7 +434,7 @@ namespace IKVM.Internal
                 case CodeType.SequencePoint:
                     // MarkSequencePoint does not exist in .net core
 #if NETFRAMEWORK
-					ilgen_real.MarkSequencePoint(symbols, (int)data, 0, (int)data + 1, 0);
+                    ilgen_real.MarkSequencePoint(symbols, (int)data, 0, (int)data + 1, 0);
 #endif
                     // we emit a nop to make sure we always have an instruction associated with the sequence point
                     ilgen_real.Emit(OpCodes.Nop);
@@ -1665,11 +1664,13 @@ namespace IKVM.Internal
         {
             for (int i = 0; i < code.Count; i++)
             {
-                if (code[i].opcode == OpCodes.Ldloc
-                    && code[i + 1].opcode == OpCodes.Stloc
-                    && code[i + 2].pseudo == CodeType.BeginExceptionBlock
-                    && code[i + 3].opcode == OpCodes.Ldloc && code[i + 3].MatchLocal(code[i + 1])
-                    && code[i + 4].pseudo == CodeType.ReleaseTempLocal && code[i + 4].MatchLocal(code[i + 3]))
+                if (code[i].opcode == OpCodes.Ldloc &&
+                    code[i + 1].opcode == OpCodes.Stloc &&
+                    code[i + 2].pseudo == CodeType.BeginExceptionBlock &&
+                    code[i + 3].opcode == OpCodes.Ldloc &&
+                    code[i + 3].MatchLocal(code[i + 1]) &&
+                    code[i + 4].pseudo == CodeType.ReleaseTempLocal &&
+                    code[i + 4].MatchLocal(code[i + 3]))
                 {
                     code[i + 1] = code[i];
                     code[i] = code[i + 2];
@@ -1765,47 +1766,45 @@ namespace IKVM.Internal
             }
         }
 
-        private bool HasBranchTo(int start, int end, CodeEmitterLabel label)
+        /// <summary>
+        /// Returns <c>true</c> if the specified range of instructions contains a branch instruction to the specified label.
+        /// </summary>
+        /// <param name="start"></param>
+        /// <param name="end"></param>
+        /// <param name="label"></param>
+        /// <returns></returns>
+        bool HasBranchTo(int start, int end, CodeEmitterLabel label)
         {
             for (int i = start; i < end; i++)
             {
                 if (code[i].HasLabel)
                 {
                     if (code[i].Label == label)
-                    {
                         return true;
-                    }
                 }
                 else if (code[i].opcode == OpCodes.Switch)
                 {
                     foreach (CodeEmitterLabel swlbl in code[i].Labels)
-                    {
                         if (swlbl == label)
-                        {
                             return true;
-                        }
-                    }
                 }
             }
+
             return false;
         }
 
         private bool MatchHandlers(int beginFault1, int beginFault2, int length)
         {
             for (int i = 0; i < length; i++)
-            {
                 if (!code[beginFault1 + i].Match(code[beginFault2 + i]))
-                {
                     return false;
-                }
-            }
+
             return true;
         }
 
         private bool IsFaultOnlyBlock(int[] extra, int begin)
         {
-            return code[extra[begin]].pseudo == CodeType.BeginFaultBlock
-                && code[extra[extra[begin]]].pseudo == CodeType.EndExceptionBlock;
+            return code[extra[begin]].pseudo == CodeType.BeginFaultBlock && code[extra[extra[begin]]].pseudo == CodeType.EndExceptionBlock;
         }
 
         private void ConvertSynchronizedFaultToFinally()
@@ -2309,7 +2308,7 @@ namespace IKVM.Internal
         internal void DefineSymbolDocument(ModuleBuilder module, string url, Guid language, Guid languageVendor, Guid documentType)
         {
 #if NETFRAMEWORK
-			symbols = module.DefineDocument(url, language, languageVendor, documentType);
+            symbols = module.DefineDocument(url, language, languageVendor, documentType);
 #endif
         }
 
@@ -2635,10 +2634,10 @@ namespace IKVM.Internal
         internal void SetLineNumber(ushort line)
         {
 #if NETFRAMEWORK
-			if (symbols != null)
-			{
-				EmitPseudoOpCode(CodeType.SequencePoint, (int)line);
-			}
+            if (symbols != null)
+            {
+                EmitPseudoOpCode(CodeType.SequencePoint, (int)line);
+            }
 #endif
             EmitPseudoOpCode(CodeType.LineNumber, (int)line);
         }
