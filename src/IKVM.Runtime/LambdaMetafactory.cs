@@ -25,6 +25,7 @@ using System;
 using System.Collections.Generic;
 using System.Diagnostics;
 
+using IKVM.Attributes;
 using IKVM.ByteCode;
 using IKVM.Runtime;
 
@@ -497,6 +498,9 @@ namespace IKVM.Internal
             {
                 tb.DefineMethodOverride(mb, (MethodInfo)interfaceMethod.GetMethod());
             }
+
+            AttributeHelper.HideFromJava(mb);
+
             CodeEmitter ilgen = CodeEmitter.Create(mb);
             for (int i = 0; i < capturedFields.Length; i++)
             {
