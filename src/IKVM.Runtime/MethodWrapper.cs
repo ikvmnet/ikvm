@@ -491,7 +491,10 @@ namespace IKVM.Internal
 
                 var types = new Type[typeLength];
                 for (int i = 0; i < parameters.Length; i++)
+                {
+                    parameters[i].Finish();
                     types[i] = parameters[i].TypeAsSignatureType;
+                }
 
                 if (HasCallerID)
                     types[typeLength - 1] = CoreClasses.ikvm.@internal.CallerID.Wrapper.TypeAsSignatureType;
