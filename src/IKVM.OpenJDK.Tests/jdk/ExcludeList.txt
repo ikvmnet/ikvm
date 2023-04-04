@@ -3584,3 +3584,9 @@ sun/security/provider/SecureRandom/StrongSeedReader.java                        
 
 # verifies ECC but we don't have ECC yet
 javax/net/ssl/ciphersuites/DisabledAlgorithms.java                                                                      generic-all
+
+# requires a specific tools.jar, not going to work on IKVM
+tools/pack200/DefaultTimeZoneTest.java                                                                                  generic-all
+
+# access to sun.util classes from test case directly, TypeAccessException
+sun/util/calendar/zi/TestZoneInfo310.java                                                                               generic-all
