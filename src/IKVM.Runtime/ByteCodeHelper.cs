@@ -25,6 +25,7 @@ using System;
 using System.Diagnostics;
 using System.Runtime.InteropServices;
 using System.Threading;
+using System.Runtime.CompilerServices;
 
 using IKVM.Attributes;
 using IKVM.ByteCode;
@@ -787,6 +788,108 @@ namespace IKVM.Runtime
 #endif
 
         /// <summary>
+        /// Implements a volatile read against a reference to a bool. In Java, a volatile operation is atomic.
+        /// </summary>
+        /// <param name="location"></param>
+        /// <returns></returns>
+        public static bool VolatileRead(ref bool location)
+        {
+            return Volatile.Read(ref location);
+        }
+
+        /// <summary>
+        /// Implements a volatile write against a reference to a bool. In Java, a volatile operation is atomic.
+        /// </summary>
+        /// <param name="location"></param>
+        /// <param name="value"></param>
+        public static void VolatileWrite(ref bool location, bool value)
+        {
+            Volatile.Write(ref location, value);
+        }
+
+        /// <summary>
+        /// Implements a volatile read against a reference to a byte. In Java, a volatile operation is atomic.
+        /// </summary>
+        /// <param name="location"></param>
+        /// <returns></returns>
+        public static byte VolatileRead(ref byte location)
+        {
+            return Volatile.Read(ref location);
+        }
+
+        /// <summary>
+        /// Implements a volatile write against a reference to a byte. In Java, a volatile operation is atomic.
+        /// </summary>
+        /// <param name="location"></param>
+        /// <param name="value"></param>
+        public static void VolatileWrite(ref byte location, byte value)
+        {
+            Volatile.Write(ref location, value);
+        }
+
+        /// <summary>
+        /// Implements a volatile read against a reference to a char. In Java, a volatile operation is atomic.
+        /// </summary>
+        /// <param name="location"></param>
+        /// <returns></returns>
+        public static char VolatileRead(ref char location)
+        {
+            var s = Unsafe.As<char, ushort>(ref location);
+            return (char)Volatile.Read(ref s);
+        }
+
+        /// <summary>
+        /// Implements a volatile write against a reference to a char. In Java, a volatile operation is atomic.
+        /// </summary>
+        /// <param name="location"></param>
+        /// <param name="value"></param>
+        public static void VolatileWrite(ref char location, char value)
+        {
+            var s = Unsafe.As<char, ushort>(ref location);
+            Volatile.Write(ref s, (ushort)value);
+        }
+
+        /// <summary>
+        /// Implements a volatile read against a reference to a short. In Java, a volatile operation is atomic.
+        /// </summary>
+        /// <param name="location"></param>
+        /// <returns></returns>
+        public static short VolatileRead(ref short location)
+        {
+            return Volatile.Read(ref location);
+        }
+
+        /// <summary>
+        /// Implements a volatile write against a reference to a short. In Java, a volatile operation is atomic.
+        /// </summary>
+        /// <param name="location"></param>
+        /// <param name="value"></param>
+        public static void VolatileWrite(ref short location, short value)
+        {
+            Volatile.Write(ref location, value);
+        }
+
+        /// <summary>
+        /// Implements a volatile read against a reference to a int. In Java, a volatile operation is atomic.
+        /// </summary>
+        /// <param name="location"></param>
+        /// <returns></returns>
+        public static int VolatileRead(ref int location)
+        {
+            return Volatile.Read(ref location);
+        }
+
+        /// <summary>
+        /// Implements a volatile write against a reference to a int. In Java, a volatile operation is atomic.
+        /// </summary>
+        /// <param name="location"></param>
+        /// <param name="value"></param>
+        public static void VolatileWrite(ref int location, int value)
+        {
+            Volatile.Write(ref location, value);
+        }
+
+        /// <summary>
         /// Implements a volatile read against a reference to a long. In Java, a volatile operation is atomic.
         /// </summary>
         /// <param name="location"></param>
@@ -804,6 +907,26 @@ namespace IKVM.Runtime
         public static void VolatileWrite(ref long location, long value)
         {
             Interlocked.Exchange(ref location, value);
+        }
+
+        /// <summary>
+        /// Implements a volatile read against a reference to a float. In Java, a volatile operation is atomic.
+        /// </summary>
+        /// <param name="location"></param>
+        /// <returns></returns>
+        public static float VolatileRead(ref float location)
+        {
+            return Volatile.Read(ref location);
+        }
+
+        /// <summary>
+        /// Implements a volatile write against a reference to a float. In Java, a volatile operation is atomic.
+        /// </summary>
+        /// <param name="location"></param>
+        /// <param name="value"></param>
+        public static void VolatileWrite(ref float location, float value)
+        {
+            Volatile.Write(ref location, value);
         }
 
         /// <summary>

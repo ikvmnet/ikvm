@@ -90,7 +90,10 @@ namespace IKVM.Internal
 
             // conduct load operation with volatile tag if field is volatile
             if (IsVolatile)
+            {
+                il.EmitMemoryBarrier();
                 il.Emit(OpCodes.Volatile);
+            }
 
             if (IsStatic)
                 il.Emit(OpCodes.Ldsfld, fi);
@@ -187,19 +190,28 @@ namespace IKVM.Internal
                 il.Emit(OpCodes.Ldflda, fi);
             }
 
-            if (FieldTypeWrapper == PrimitiveTypeWrapper.LONG)
-            {
+
+            if (FieldTypeWrapper == PrimitiveTypeWrapper.BOOLEAN)
+                il.Emit(OpCodes.Call, ByteCodeHelperMethods.VolatileReadBoolean);
+            else if (FieldTypeWrapper == PrimitiveTypeWrapper.BYTE)
+                il.Emit(OpCodes.Call, ByteCodeHelperMethods.VolatileReadByte);
+            else if (FieldTypeWrapper == PrimitiveTypeWrapper.CHAR)
+                il.Emit(OpCodes.Call, ByteCodeHelperMethods.VolatileReadChar);
+            else if (FieldTypeWrapper == PrimitiveTypeWrapper.SHORT)
+                il.Emit(OpCodes.Call, ByteCodeHelperMethods.VolatileReadShort);
+            else if (FieldTypeWrapper == PrimitiveTypeWrapper.INT)
+                il.Emit(OpCodes.Call, ByteCodeHelperMethods.VolatileReadInt);
+            else if (FieldTypeWrapper == PrimitiveTypeWrapper.LONG)
                 il.Emit(OpCodes.Call, ByteCodeHelperMethods.VolatileReadLong);
-            }
+            else if (FieldTypeWrapper == PrimitiveTypeWrapper.FLOAT)
+                il.Emit(OpCodes.Call, ByteCodeHelperMethods.VolatileReadFloat);
             else if (FieldTypeWrapper == PrimitiveTypeWrapper.DOUBLE)
-            {
                 il.Emit(OpCodes.Call, ByteCodeHelperMethods.VolatileReadDouble);
-            }
             else
             {
+                il.EmitMemoryBarrier();
                 il.Emit(OpCodes.Volatile);
                 FieldTypeWrapper.EmitLdind(il);
-                il.EmitMemoryBarrier();
             }
         }
 
@@ -224,14 +236,22 @@ namespace IKVM.Internal
 
             il.Emit(OpCodes.Ldloc, value);
 
-            if (FieldTypeWrapper == PrimitiveTypeWrapper.LONG)
-            {
+            if (FieldTypeWrapper == PrimitiveTypeWrapper.BOOLEAN)
+                il.Emit(OpCodes.Call, ByteCodeHelperMethods.VolatileWriteBoolean);
+            else if (FieldTypeWrapper == PrimitiveTypeWrapper.BYTE)
+                il.Emit(OpCodes.Call, ByteCodeHelperMethods.VolatileWriteByte);
+            else if (FieldTypeWrapper == PrimitiveTypeWrapper.CHAR)
+                il.Emit(OpCodes.Call, ByteCodeHelperMethods.VolatileWriteChar);
+            else if (FieldTypeWrapper == PrimitiveTypeWrapper.SHORT)
+                il.Emit(OpCodes.Call, ByteCodeHelperMethods.VolatileWriteShort);
+            else if (FieldTypeWrapper == PrimitiveTypeWrapper.INT)
+                il.Emit(OpCodes.Call, ByteCodeHelperMethods.VolatileWriteInt);
+            else if (FieldTypeWrapper == PrimitiveTypeWrapper.LONG)
                 il.Emit(OpCodes.Call, ByteCodeHelperMethods.VolatileWriteLong);
-            }
+            else if (FieldTypeWrapper == PrimitiveTypeWrapper.FLOAT)
+                il.Emit(OpCodes.Call, ByteCodeHelperMethods.VolatileWriteFloat);
             else if (FieldTypeWrapper == PrimitiveTypeWrapper.DOUBLE)
-            {
                 il.Emit(OpCodes.Call, ByteCodeHelperMethods.VolatileWriteDouble);
-            }
             else
             {
                 il.Emit(OpCodes.Volatile);

@@ -1,4 +1,6 @@
-﻿using System.Runtime.InteropServices;
+﻿using System;
+using System.Runtime.InteropServices;
+using System.Threading;
 
 using FluentAssertions;
 
@@ -30,6 +32,15 @@ namespace IKVM.Tests.Java.java.lang
         public void CanWriteToStdErr()
         {
             global::java.lang.System.err.println("TEST");
+        }
+
+        [TestMethod]
+        public void NanoTimeShouldReportAtLeastASecond()
+        {
+            var startTime = global::java.lang.System.nanoTime();
+            Thread.Sleep(TimeSpan.FromSeconds(1.1));
+            var totalTime = global::java.lang.System.nanoTime() - startTime;
+            totalTime.Should().BeGreaterOrEqualTo(1000000000L);
         }
 
     }

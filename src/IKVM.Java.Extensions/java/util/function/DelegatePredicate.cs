@@ -1,7 +1,5 @@
 ﻿using System;
 
-using java.util.function;
-
 namespace java.util.function
 {
 

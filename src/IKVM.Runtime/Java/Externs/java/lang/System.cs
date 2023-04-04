@@ -92,10 +92,11 @@ namespace IKVM.Java.Externs.java.lang
         /// <returns></returns>
         public static long nanoTime()
         {
-            var NANOS_PER_SEC = 1000000000;
-            var current = Stopwatch.GetTimestamp();
-            var freq = Stopwatch.Frequency;
-            return (long)(current / freq * NANOS_PER_SEC);
+            const long NANOS_PER_SEC = 1000000000;
+
+            var time = (double)Stopwatch.GetTimestamp();
+            var freq = (double)Stopwatch.Frequency;
+            return (long)(time / freq * NANOS_PER_SEC);
         }
 
         /// <summary>
