@@ -275,7 +275,7 @@ public class VM {
         if (booted)
             throw new IllegalStateException("System initialization has completed");
 
-        Lazy.savedProps.putAll(props);
+        savedProps.putAll(props);
 
         // Set the maximum amount of direct memory.  This value is controlled
         // by the vm option -XX:MaxDirectMemorySize=<size>.
