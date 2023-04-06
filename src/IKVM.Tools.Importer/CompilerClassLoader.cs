@@ -754,12 +754,12 @@ namespace IKVM.Tools.Importer
                             continue;
                         }
                         var zipEntry = zip.CreateEntry(item.Name, options.compressedResources ? CompressionLevel.Optimal : CompressionLevel.NoCompression);
-                        
+
                         byte[] data = item.GetData();
 
                         using Stream stream = zipEntry.Open();
                         stream.Write(data, 0, data.Length);
-                        
+
                         hasEntries = true;
                     }
 
@@ -3030,62 +3030,62 @@ namespace IKVM.Tools.Importer
                     }
                 }
             }
+
             if (options.classLoader != null)
             {
-                TypeWrapper wrapper = null;
+                TypeWrapper classLoaderType = null;
                 try
                 {
-                    wrapper = LoadClassByDottedNameFast(options.classLoader);
+                    classLoaderType = LoadClassByDottedNameFast(options.classLoader);
                 }
                 catch (RetargetableJavaException)
                 {
+
                 }
-                if (wrapper == null)
-                {
+
+                if (classLoaderType == null)
                     throw new FatalCompilerErrorException(Message.ClassLoaderNotFound);
-                }
-                if (!wrapper.IsPublic && !ReflectUtil.IsFromAssembly(wrapper.TypeAsBaseType, assemblyBuilder))
-                {
+
+                if (classLoaderType.IsPublic == false && ReflectUtil.IsFromAssembly(classLoaderType.TypeAsBaseType, assemblyBuilder) == false)
                     throw new FatalCompilerErrorException(Message.ClassLoaderNotAccessible);
-                }
-                if (wrapper.IsAbstract)
-                {
+
+                if (classLoaderType.IsAbstract)
                     throw new FatalCompilerErrorException(Message.ClassLoaderIsAbstract);
-                }
-                if (!wrapper.IsAssignableTo(ClassLoaderWrapper.LoadClassCritical("java.lang.ClassLoader")))
-                {
+
+                if (classLoaderType.IsAssignableTo(ClassLoaderWrapper.LoadClassCritical("java.lang.ClassLoader")) == false)
                     throw new FatalCompilerErrorException(Message.ClassLoaderNotClassLoader);
-                }
-                MethodWrapper mw = wrapper.GetMethodWrapper("<init>", "(Lcli.System.Reflection.Assembly;)V", false);
-                if (mw == null)
-                {
+
+                var classLoaderInitMethod = classLoaderType.GetMethodWrapper("<init>", "(Lcli.System.Reflection.Assembly;)V", false);
+                if (classLoaderInitMethod == null)
                     throw new FatalCompilerErrorException(Message.ClassLoaderConstructorMissing);
-                }
-                ConstructorInfo ci = JVM.LoadType(typeof(CustomAssemblyClassLoaderAttribute)).GetConstructor(BindingFlags.Instance | BindingFlags.Public | BindingFlags.NonPublic, null, new Type[] { Types.Type }, null);
-                assemblyBuilder.SetCustomAttribute(new CustomAttributeBuilder(ci, new object[] { wrapper.TypeAsTBD }));
-                // TODO it would be better to do this for all assemblies in a shared class loader group (because options.classloader is relevant only for the main assembly),
-                // but since it is probably common to specify the custom assembly class loader at the group level, it hopefully won't make much difference in practice.
-                MethodWrapper mwModuleInit = wrapper.GetMethodWrapper("InitializeModule", "(Lcli.System.Reflection.Module;)V", false);
-                if (mwModuleInit != null && !mwModuleInit.IsStatic)
-                {
-                    MethodBuilder moduleInitializer = GetTypeWrapperFactory().ModuleBuilder.DefineGlobalMethod(".cctor", MethodAttributes.Private | MethodAttributes.Static | MethodAttributes.SpecialName | MethodAttributes.RTSpecialName, null, Type.EmptyTypes);
-                    ILGenerator ilgen = moduleInitializer.GetILGenerator();
-                    ilgen.Emit(OpCodes.Ldtoken, moduleInitializer);
-                    ilgen.Emit(OpCodes.Call, JVM.Import(typeof(System.Reflection.MethodBase)).GetMethod("GetMethodFromHandle", new Type[] { JVM.Import(typeof(RuntimeMethodHandle)) }));
-                    ilgen.Emit(OpCodes.Callvirt, JVM.Import(typeof(System.Reflection.MemberInfo)).GetMethod("get_Module"));
-                    ilgen.Emit(OpCodes.Call, StaticCompiler.GetRuntimeType("IKVM.Runtime.ByteCodeHelper").GetMethod("InitializeModule"));
-                    ilgen.Emit(OpCodes.Ret);
-                }
+
+                // apply custom attribute specifying custom class loader
+                var ci = JVM.LoadType(typeof(CustomAssemblyClassLoaderAttribute)).GetConstructor(BindingFlags.Instance | BindingFlags.Public | BindingFlags.NonPublic, null, new Type[] { Types.Type }, null);
+                assemblyBuilder.SetCustomAttribute(new CustomAttributeBuilder(ci, new object[] { classLoaderType.TypeAsTBD }));
             }
+
             if (options.iconfile != null)
             {
                 assemblyBuilder.__DefineIconResource(IkvmImporterInternal.ReadAllBytes(options.iconfile));
             }
+
             if (options.manifestFile != null)
             {
                 assemblyBuilder.__DefineManifestResource(IkvmImporterInternal.ReadAllBytes(options.manifestFile));
             }
+
+            // define a module initialization method
+            // this method invokes on module load and calls into the runtime
+            var moduleInit = GetTypeWrapperFactory().ModuleBuilder.DefineGlobalMethod(".cctor", MethodAttributes.Private | MethodAttributes.Static | MethodAttributes.SpecialName | MethodAttributes.RTSpecialName, null, Type.EmptyTypes);
+            var moduleInitIL = moduleInit.GetILGenerator();
+            moduleInitIL.Emit(OpCodes.Ldtoken, moduleInit);
+            moduleInitIL.Emit(OpCodes.Call, JVM.Import(typeof(System.Reflection.MethodBase)).GetMethod("GetMethodFromHandle", new Type[] { JVM.Import(typeof(RuntimeMethodHandle)) }));
+            moduleInitIL.Emit(OpCodes.Callvirt, JVM.Import(typeof(System.Reflection.MemberInfo)).GetMethod("get_Module"));
+            moduleInitIL.Emit(OpCodes.Call, StaticCompiler.GetRuntimeType("IKVM.Runtime.ByteCodeHelper").GetMethod("InitializeModule"));
+            moduleInitIL.Emit(OpCodes.Ret);
+
             assemblyBuilder.DefineVersionInfoResource();
+
             return 0;
         }
 

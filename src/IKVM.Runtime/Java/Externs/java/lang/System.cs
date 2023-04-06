@@ -33,11 +33,7 @@ namespace IKVM.Java.Externs.java.lang
         /// </summary>
         public static void registerNatives()
         {
-#if FIRST_PASS
-            throw new NotImplementedException();
-#else
-            SystemAccessor.InvokeInitializeSystemClass();
-#endif
+
         }
 
         /// <summary>

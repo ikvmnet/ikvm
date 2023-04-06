@@ -107,7 +107,7 @@ namespace IKVM.Java.Externs.sun.nio.ch
             }
             catch (SocketException e) when (e.SocketErrorCode == SocketError.WouldBlock)
             {
-                return global::sun.nio.ch.IOStatus.INTERRUPTED;
+                return global::sun.nio.ch.IOStatus.UNAVAILABLE;
             }
             catch (SocketException e)
             {

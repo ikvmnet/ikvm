@@ -66,21 +66,21 @@ namespace IKVM.Runtime
 
 #if !IMPORTER && !EXPORTER && !FIRST_PASS
 
-        /// <summary>
-        /// Reference to the accessors of the types of the 'java.base' assembly.
-        /// </summary>
-        static AccessorCache baseAccessors;
+        readonly static object initializedLock = new object();
+        static bool initialized;
 
+        static AccessorCache baseAccessors;
         static ThreadGroupAccessor threadGroupAccessor;
+        static SystemAccessor systemAccessor;
+
         static Lazy<object> systemThreadGroup = new Lazy<object>(MakeSystemThreadGroup);
         static Lazy<object> mainThreadGroup = new Lazy<object>(MakeMainThreadGroup);
 
-        /// <summary>
-        /// Gets the set of accessors for accessing types of the core assembly.
-        /// </summary>
         internal static AccessorCache BaseAccessors => AccessorCache.Get(ref baseAccessors, BaseAssembly);
 
-        static ThreadGroupAccessor ThreadGroupAccessor => JVM.BaseAccessors.Get(ref threadGroupAccessor);
+        static ThreadGroupAccessor ThreadGroupAccessor => BaseAccessors.Get(ref threadGroupAccessor);
+
+        static SystemAccessor SystemAccessor => BaseAccessors.Get(ref systemAccessor);
 
         /// <summary>
         /// Gets the 'system' thread group.
@@ -91,6 +91,25 @@ namespace IKVM.Runtime
         /// Gets the 'main' thread group.
         /// </summary>
         public static object MainThreadGroup => mainThreadGroup.Value;
+
+        /// <summary>
+        /// Ensures the JVM is initialized.
+        /// </summary>
+        public static void EnsureInitialized()
+        {
+            if (initialized == false)
+            {
+                lock (initializedLock)
+                {
+                    if (initialized == false)
+                    {
+                        initialized = true;
+                        SystemAccessor.InvokeInitializeSystemClass();
+                    }
+                }
+            }
+
+        }
 
         /// <summary>
         /// Creates the 'system' thread group.
@@ -160,7 +179,7 @@ namespace IKVM.Runtime
                     baseAssembly = typeof(java.lang.Object).Assembly;
 #endif
                 }
-#endif // !IMPORTER
+#endif
                 return baseAssembly;
             }
             set

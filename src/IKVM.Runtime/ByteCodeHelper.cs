@@ -999,17 +999,33 @@ namespace IKVM.Runtime
 
 #if EXPORTER == false
 
-        [System.Runtime.CompilerServices.MethodImpl(System.Runtime.CompilerServices.MethodImplOptions.NoInlining)]
+        /// <summary>
+        /// Invoked by exported assemblies.
+        /// </summary>
+        /// <param name="module"></param>
+        /// <exception cref="ArgumentOutOfRangeException"></exception>
+        [MethodImpl(MethodImplOptions.NoInlining)]
         public static void InitializeModule(Module module)
         {
+#if FIRST_PASS
+            throw new NotImplementedException();
+#else
             var asm = Assembly.GetCallingAssembly();
             if (module.Assembly != asm)
                 throw new ArgumentOutOfRangeException();
 
+            // ensure the JVM is initialized appropriately
+            JVM.EnsureInitialized();
+
+            // check for InitializeModule method present on classloader
             var classLoader = AssemblyClassLoader.FromAssembly(asm).GetJavaClassLoader();
-            var init = (Action<Module>)Delegate.CreateDelegate(typeof(Action<Module>), classLoader, "InitializeModule", false, false);
-            if (init != null)
-                init(module);
+            if (classLoader != null)
+            {
+                var init = (Action<Module>)Delegate.CreateDelegate(typeof(Action<Module>), classLoader, "InitializeModule", false, false);
+                if (init != null)
+                    init(module);
+            }
+#endif
         }
 
         public static T GetDotNetEnumField<T>(string name)
