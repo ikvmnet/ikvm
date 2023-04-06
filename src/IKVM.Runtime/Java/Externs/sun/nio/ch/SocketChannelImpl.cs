@@ -107,7 +107,12 @@ namespace IKVM.Java.Externs.sun.nio.ch
             }
             catch (SocketException e) when (e.SocketErrorCode == SocketError.WouldBlock)
             {
-                return global::sun.nio.ch.IOStatus.UNAVAILABLE;
+                if (RuntimeUtil.IsWindows)
+                    throw new global::java.net.SocketException("Resource temporarily unavailable");
+                else if (RuntimeUtil.IsOSX)
+                    throw new global::java.net.SocketException("No buffer space available");
+                else
+                    return global::sun.nio.ch.IOStatus.UNAVAILABLE;
             }
             catch (SocketException e)
             {

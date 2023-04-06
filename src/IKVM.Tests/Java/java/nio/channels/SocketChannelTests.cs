@@ -53,6 +53,11 @@ namespace IKVM.Tests.Java.java.nio.channels
             await sst;
         }
 
+        /// <summary>
+        /// Meant to mirror a similar test in OpenJDK which checks for specific error messages.
+        /// java/nio/channels/SocketChannel/SendUrgentData.java
+        /// </summary>
+        /// <exception cref="Exception"></exception>
         [TestMethod]
         public void SendUrgentDataThrowsWhenBlocked()
         {
