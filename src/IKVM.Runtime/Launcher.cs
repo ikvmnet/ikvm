@@ -151,6 +151,7 @@ namespace IKVM.Runtime
                 }
             }
 
+            JVM.EnsureInitialized();
             ThreadAccessor.InvokeCurrentThread();
 
             try

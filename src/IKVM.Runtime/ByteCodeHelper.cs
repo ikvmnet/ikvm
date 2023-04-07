@@ -834,8 +834,7 @@ namespace IKVM.Runtime
         /// <returns></returns>
         public static char VolatileRead(ref char location)
         {
-            var s = Unsafe.As<char, ushort>(ref location);
-            return (char)Volatile.Read(ref s);
+            return (char)Volatile.Read(ref Unsafe.As<char, short>(ref location));
         }
 
         /// <summary>
@@ -845,8 +844,7 @@ namespace IKVM.Runtime
         /// <param name="value"></param>
         public static void VolatileWrite(ref char location, char value)
         {
-            var s = Unsafe.As<char, ushort>(ref location);
-            Volatile.Write(ref s, (ushort)value);
+            Volatile.Write(ref Unsafe.As<char, short>(ref location), (short)value);
         }
 
         /// <summary>
@@ -1013,9 +1011,6 @@ namespace IKVM.Runtime
             var asm = Assembly.GetCallingAssembly();
             if (module.Assembly != asm)
                 throw new ArgumentOutOfRangeException();
-
-            // ensure the JVM is initialized appropriately
-            JVM.EnsureInitialized();
 
             // check for InitializeModule method present on classloader
             var classLoader = AssemblyClassLoader.FromAssembly(asm).GetJavaClassLoader();

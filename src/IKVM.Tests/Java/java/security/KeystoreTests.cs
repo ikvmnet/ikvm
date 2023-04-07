@@ -1,17 +1,23 @@
-﻿using java.io;
+﻿using System;
+
+using java.io;
 using java.security;
 using java.security.cert;
+
 using javax.crypto;
 using javax.security.auth.callback;
+
 using Microsoft.VisualStudio.TestTools.UnitTesting;
-using System;
+
 using static java.security.KeyStore;
 
 namespace IKVM.Tests.Java.java.security
 {
+
     [TestClass]
     public class KeystoreTests
     {
+
         private static readonly char[] PASSWORD = "changeit".ToCharArray();
         private static readonly String DIR = global::java.lang.System.getProperty("test.src", ".");
         // This is an arbitrary X.509 certificate

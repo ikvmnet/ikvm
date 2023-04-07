@@ -26,6 +26,7 @@ using System;
 using System.Diagnostics;
 
 using IKVM.Internal;
+using IKVM.Runtime;
 
 namespace IKVM.Java.Externs.sun.misc
 {
@@ -35,7 +36,11 @@ namespace IKVM.Java.Externs.sun.misc
 
         public static void initialize()
         {
-
+#if FIRST_PASS
+            throw new NotImplementedException();
+#else
+            JVM.EnsureInitialized();
+#endif
         }
 
         public static global::java.lang.ClassLoader latestUserDefinedLoader()
