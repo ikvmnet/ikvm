@@ -3,6 +3,8 @@
 namespace IKVM.Runtime.Accessors.Java.Lang
 {
 
+#if FIRST_PASS == false && EXPORTER == false && IMPORTER == false
+
     /// <summary>
     /// Provides runtime access to the 'java.nio.file.attribute.FileTime' type.
     /// </summary>
@@ -35,5 +37,7 @@ namespace IKVM.Runtime.Accessors.Java.Lang
         public long InvokeToMillis(object self) => GetMethod(ref toMillis, nameof(toMillis), "()J").Invoker(self);
 
     }
+
+#endif
 
 }

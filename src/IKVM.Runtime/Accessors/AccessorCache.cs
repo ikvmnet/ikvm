@@ -7,6 +7,8 @@ using IKVM.Internal;
 namespace IKVM.Runtime.Accessors
 {
 
+#if FIRST_PASS == false && EXPORTER == false && IMPORTER == false
+
     /// <summary>
     /// Provides runtime access to type accessors.
     /// </summary>
@@ -56,13 +58,11 @@ namespace IKVM.Runtime.Accessors
         /// <returns></returns>
         Accessor Make(Type accessorType)
         {
-#if FIRST_PASS || IMPORTER || EXPORTER
-            throw new NotImplementedException();
-#else
             return (Accessor)Activator.CreateInstance(accessorType, (AccessorTypeResolver)(t => AssemblyClassLoader.FromAssembly(assembly).LoadClassByDottedName(t)));
-#endif
         }
 
     }
+
+#endif
 
 }

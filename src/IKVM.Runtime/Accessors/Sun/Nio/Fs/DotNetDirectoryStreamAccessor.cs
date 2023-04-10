@@ -4,6 +4,8 @@ using System.Collections.Generic;
 namespace IKVM.Runtime.Accessors.Sun.Nio.Fs
 {
 
+#if FIRST_PASS == false && EXPORTER == false && IMPORTER == false
+
     internal sealed class DotNetDirectoryStreamAccessor : Accessor<object>
     {
 
@@ -36,22 +38,24 @@ namespace IKVM.Runtime.Accessors.Sun.Nio.Fs
         /// </summary>
         /// <param name="self"></param>
         /// <returns></returns>
-        public object GetPath(object self) => GetField(ref path, nameof(path), "Lsun.nio.fs.DotNetPath;").GetValue(self);
+        public object GetPath(object self) => GetField(ref path, nameof(path)).GetValue(self);
 
         /// <summary>
         /// Gets the value of the 'files' field.
         /// </summary>
         /// <param name="self"></param>
         /// <returns></returns>
-        public IEnumerable<string> GetFiles(object self) => GetField(ref files, nameof(files), "Lcli.System.Collections.IEnumerable;").GetValue(self);
+        public IEnumerable<string> GetFiles(object self) => GetField(ref files, nameof(files)).GetValue(self);
 
         /// <summary>
         /// Gets the value of the 'filter' field.
         /// </summary>
         /// <param name="self"></param>
         /// <returns></returns>
-        public object GetFilter(object self) => GetField(ref filter, nameof(filter), "Ljava.nio.file.DirectoryStream$Filter;").GetValue(self);
+        public object GetFilter(object self) => GetField(ref filter, nameof(filter)).GetValue(self);
 
     }
+
+#endif
 
 }

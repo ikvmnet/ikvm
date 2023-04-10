@@ -3,6 +3,8 @@
 namespace IKVM.Runtime.Accessors.Java.Lang
 {
 
+#if FIRST_PASS == false && EXPORTER == false && IMPORTER == false
+
     /// <summary>
     /// Provides runtime access to the 'java.lang.Thread' type.
     /// </summary>
@@ -31,7 +33,7 @@ namespace IKVM.Runtime.Accessors.Java.Lang
         /// Gets the value of the 'current' field.
         /// </summary>
         /// <returns></returns>
-        public object GetCurrent() => GetField(ref current, nameof(current), "Ljava.lang.Thread;").GetValue();
+        public object GetCurrent() => GetField(ref current, nameof(current)).GetValue();
 
         /// <summary>
         /// Invokes the 'currentThread' method.
@@ -63,5 +65,7 @@ namespace IKVM.Runtime.Accessors.Java.Lang
         public object InvokeGetThreadGroup(object self) => GetMethod(ref getThreadGroup, nameof(getThreadGroup), "()Ljava.lang.ThreadGroup;").Invoker(self);
 
     }
+
+#endif
 
 }

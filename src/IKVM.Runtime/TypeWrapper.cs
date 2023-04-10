@@ -686,41 +686,36 @@ namespace IKVM.Internal
 
         internal abstract ClassLoaderWrapper GetClassLoader();
 
+        /// <summary>
+        /// Searches for the <see cref="FieldWrapper"/> with the specified name and signature.
+        /// </summary>
+        /// <param name="fieldName"></param>
+        /// <param name="fieldSig"></param>
+        /// <returns></returns>
         internal FieldWrapper GetFieldWrapper(string fieldName, string fieldSig)
         {
-            foreach (FieldWrapper fw in GetFields())
-            {
+            foreach (var fw in GetFields())
                 if (fw.Name == fieldName && fw.Signature == fieldSig)
-                {
                     return fw;
-                }
-            }
-            foreach (TypeWrapper iface in this.Interfaces)
+
+            foreach (var iface in Interfaces)
             {
-                FieldWrapper fw = iface.GetFieldWrapper(fieldName, fieldSig);
+                var fw = iface.GetFieldWrapper(fieldName, fieldSig);
                 if (fw != null)
-                {
                     return fw;
-                }
             }
-            TypeWrapper baseWrapper = this.BaseTypeWrapper;
+
+            var baseWrapper = BaseTypeWrapper;
             if (baseWrapper != null)
-            {
                 return baseWrapper.GetFieldWrapper(fieldName, fieldSig);
-            }
+
             return null;
         }
 
         protected virtual void LazyPublishMembers()
         {
-            if (methods == null)
-            {
-                methods = MethodWrapper.EmptyArray;
-            }
-            if (fields == null)
-            {
-                fields = FieldWrapper.EmptyArray;
-            }
+            methods ??= MethodWrapper.EmptyArray;
+            fields ??= FieldWrapper.EmptyArray;
         }
 
         protected virtual void LazyPublishMethods()
@@ -733,6 +728,10 @@ namespace IKVM.Internal
             LazyPublishMembers();
         }
 
+        /// <summary>
+        /// Gets the set of methods defined by this type.
+        /// </summary>
+        /// <returns></returns>
         internal MethodWrapper[] GetMethods()
         {
             if (methods == null)
@@ -743,17 +742,20 @@ namespace IKVM.Internal
                     {
 #if IMPORTER
                         if (IsUnloadable || !CheckMissingBaseTypes(TypeAsBaseType))
-                        {
                             return methods = MethodWrapper.EmptyArray;
-                        }
 #endif
                         LazyPublishMethods();
                     }
                 }
             }
+
             return methods;
         }
 
+        /// <summary>
+        /// Gets the set of fields declared by this type.
+        /// </summary>
+        /// <returns></returns>
         internal FieldWrapper[] GetFields()
         {
             if (fields == null)
@@ -764,14 +766,14 @@ namespace IKVM.Internal
                     {
 #if IMPORTER
                         if (IsUnloadable || !CheckMissingBaseTypes(TypeAsBaseType))
-                        {
                             return fields = FieldWrapper.EmptyArray;
-                        }
 #endif
+
                         LazyPublishFields();
                     }
                 }
             }
+
             return fields;
         }
 

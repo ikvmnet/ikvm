@@ -182,11 +182,6 @@ public abstract class ClassLoader {
         registerNatives();
     }
 
-    // If initialization succeed this is set to true and security checks will
-    // succeed.  Otherwise the object is not initialized and the object is
-    // useless.
-    private final boolean initialized;
-
     // The parent class loader for delegation
     // Note: VM hardcoded the offset of this field, thus all new fields
     // must be added *after* it.
@@ -310,8 +305,6 @@ public abstract class ClassLoader {
             domains = new HashSet<>();
             assertionLock = this;
         }
-        
-        initialized = true;
     }
 
     /**

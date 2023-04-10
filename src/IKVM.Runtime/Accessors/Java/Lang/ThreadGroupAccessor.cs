@@ -3,6 +3,8 @@
 namespace IKVM.Runtime.Accessors.Java.Lang
 {
 
+#if FIRST_PASS == false && EXPORTER == false && IMPORTER == false
+
     /// <summary>
     /// Provides runtime access to the 'java.lang.ThreadGroup' type.
     /// </summary>
@@ -48,5 +50,7 @@ namespace IKVM.Runtime.Accessors.Java.Lang
         public void InvokeUncaughtException(object self, object t, object e) => GetMethod(ref uncaughtException, nameof(uncaughtException), "(Ljava.lang.Thread;Ljava.lang.Throwable;)V").Invoker(self, t, e);
 
     }
+
+#endif
 
 }

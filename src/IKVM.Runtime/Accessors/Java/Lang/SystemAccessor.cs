@@ -3,6 +3,8 @@
 namespace IKVM.Runtime.Accessors.Java.Lang
 {
 
+#if FIRST_PASS == false && EXPORTER == false && IMPORTER == false
+
     /// <summary>
     /// Provides runtime access to the 'java.lang.System' type.
     /// </summary>
@@ -32,21 +34,21 @@ namespace IKVM.Runtime.Accessors.Java.Lang
         /// </summary>
         /// <param name="value"></param>
         /// <returns></returns>
-        public void SetIn(object value) => GetField(ref _in, nameof(_in), "Ljava.io.InputStream;").SetValue(value);
+        public void SetIn(object value) => GetField(ref _in, nameof(_in)).SetValue(value);
 
         /// <summary>
         /// Sets the value of the 'out' field.
         /// </summary>
         /// <param name="value"></param>
         /// <returns></returns>
-        public void SetOut(object value) => GetField(ref _out, nameof(_out), "Ljava.io.PrintStream;").SetValue(value);
+        public void SetOut(object value) => GetField(ref _out, nameof(_out)).SetValue(value);
 
         /// <summary>
         /// Sets the value of the 'err' field.
         /// </summary>
         /// <param name="value"></param>
         /// <returns></returns>
-        public void SetErr(object value) => GetField(ref _err, nameof(_err), "Ljava.io.PrintStream;").SetValue(value);
+        public void SetErr(object value) => GetField(ref _err, nameof(_err)).SetValue(value);
 
         /// <summary>
         /// Sets the value of the 'initializeSystemClass' field.
@@ -76,5 +78,7 @@ namespace IKVM.Runtime.Accessors.Java.Lang
         public object InvokeGetSecurityManager() => GetMethod(ref getSecurityManager, nameof(getSecurityManager), "()Ljava.lang.SecurityManager;").Invoker();
 
     }
+
+#endif
 
 }

@@ -1,6 +1,8 @@
 ﻿namespace IKVM.Runtime.Accessors.Sun.Nio.Ch
 {
 
+#if FIRST_PASS == false && EXPORTER == false && IMPORTER == false
+
     /// <summary>
     /// Provides runtime access to the 'sun.nio.fs.DotNetBasicFileAttributeView' type.
     /// </summary>
@@ -22,8 +24,10 @@
         /// <summary>
         /// Initializes a new instance.
         /// </summary>
-        public string GetPath(object self) => GetField(ref path, nameof(path), "Ljava.lang.String;").GetValue(self);
+        public string GetPath(object self) => GetField(ref path, nameof(path)).GetValue(self);
 
     }
+
+#endif
 
 }

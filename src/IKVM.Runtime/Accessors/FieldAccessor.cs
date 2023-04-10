@@ -1,10 +1,13 @@
 ﻿using System;
+using System.Reflection;
 using System.Reflection.Emit;
 
 using IKVM.Internal;
 
 namespace IKVM.Runtime.Accessors
 {
+
+#if FIRST_PASS == false && EXPORTER == false && IMPORTER == false
 
     /// <summary>
     /// Base class for accessors of class fields.
@@ -14,21 +17,18 @@ namespace IKVM.Runtime.Accessors
 
         readonly TypeWrapper type;
         readonly string name;
-        readonly string signature;
-        FieldWrapper field;
+        FieldInfo field;
 
         /// <summary>
         /// Initializes a new instance.
         /// </summary>
         /// <param name="type"></param>
         /// <param name="name"></param>
-        /// <param name="signature"></param>
         /// <exception cref="ArgumentNullException"></exception>
-        protected FieldAccessor(TypeWrapper type, string name, string signature)
+        protected FieldAccessor(TypeWrapper type, string name)
         {
             this.type = type ?? throw new ArgumentNullException(nameof(type));
             this.name = name ?? throw new ArgumentNullException(nameof(name));
-            this.signature = signature ?? throw new ArgumentNullException(nameof(signature));
         }
 
         /// <summary>
@@ -44,7 +44,7 @@ namespace IKVM.Runtime.Accessors
         /// <summary>
         /// Gets the field being accessed.
         /// </summary>
-        protected FieldWrapper Field => AccessorUtil.LazyGet(ref field, () => type.GetFieldWrapper(name, signature)) ?? throw new InvalidOperationException();
+        protected FieldInfo Field => AccessorUtil.LazyGet(ref field, () => type.TypeAsTBD.GetField(name, BindingFlags.Public | BindingFlags.NonPublic | BindingFlags.Instance | BindingFlags.Static)) ?? throw new InvalidOperationException();
 
     }
 
@@ -63,9 +63,9 @@ namespace IKVM.Runtime.Accessors
         /// <param name="name"></param>
         /// <param name="signature"></param>
         /// <returns></returns>
-        public static FieldAccessor<TField> LazyGet(ref FieldAccessor<TField> location, TypeWrapper type, string name, string signature)
+        public static FieldAccessor<TField> LazyGet(ref FieldAccessor<TField> location, TypeWrapper type, string name)
         {
-            return AccessorUtil.LazyGet(ref location, () => new FieldAccessor<TField>(type, name, signature));
+            return AccessorUtil.LazyGet(ref location, () => new FieldAccessor<TField>(type, name));
         }
 
         Func<TField> getter;
@@ -76,9 +76,8 @@ namespace IKVM.Runtime.Accessors
         /// </summary>
         /// <param name="type"></param>
         /// <param name="name"></param>
-        /// <param name="signature"></param>
-        public FieldAccessor(TypeWrapper type, string name, string signature) :
-            base(type, name, signature)
+        public FieldAccessor(TypeWrapper type, string name) :
+            base(type, name)
         {
 
         }
@@ -100,20 +99,13 @@ namespace IKVM.Runtime.Accessors
         /// <exception cref="NotImplementedException"></exception>
         Func<TField> MakeGetter()
         {
-#if FIRST_PASS || IMPORTER || EXPORTER
+#if FIRST_PASS
             throw new NotImplementedException();
 #else
-            var fieldType = Field.FieldTypeWrapper.EnsureLoadable(Type.GetClassLoader());
-            fieldType.Finish();
-            Type.Finish();
-            Field.ResolveField();
-
             var dm = DynamicMethodUtil.Create($"__<FieldAccessorGet>__{Type.Name.Replace(".", "_")}__{Field.Name}", Type.TypeAsTBD, false, typeof(TField), Array.Empty<Type>());
             var il = CodeEmitter.Create(dm);
 
-            Field.EmitGet(il);
-            fieldType.EmitConvSignatureTypeToStackType(il);
-
+            il.Emit(OpCodes.Ldsfld, Field);
             il.Emit(OpCodes.Ret);
             il.DoEmit();
 
@@ -128,22 +120,14 @@ namespace IKVM.Runtime.Accessors
         /// <exception cref="NotImplementedException"></exception>
         Action<TField> MakeSetter()
         {
-#if FIRST_PASS || IMPORTER || EXPORTER
+#if FIRST_PASS
             throw new NotImplementedException();
 #else
-            var fieldType = Field.FieldTypeWrapper.EnsureLoadable(Type.GetClassLoader());
-            fieldType.Finish();
-            Type.Finish();
-            Field.ResolveField();
-
             var dm = DynamicMethodUtil.Create($"__<FieldAccessorSet>__{Type.Name.Replace(".", "_")}__{Field.Name}", Type.TypeAsTBD, false, typeof(void), new[] { typeof(TField) });
             var il = CodeEmitter.Create(dm);
 
             il.Emit(OpCodes.Ldarg_0);
-            fieldType.EmitCheckcast(il);
-            fieldType.EmitConvStackTypeToSignatureType(il, null);
-            Field.EmitSet(il);
-
+            il.Emit(OpCodes.Stsfld, Field);
             il.Emit(OpCodes.Ret);
             il.DoEmit();
 
@@ -179,11 +163,10 @@ namespace IKVM.Runtime.Accessors
         /// <param name="location"></param>
         /// <param name="type"></param>
         /// <param name="name"></param>
-        /// <param name="signature"></param>
         /// <returns></returns>
-        public static FieldAccessor<TObject, TField> LazyGet(ref FieldAccessor<TObject, TField> location, TypeWrapper type, string name, string signature)
+        public static FieldAccessor<TObject, TField> LazyGet(ref FieldAccessor<TObject, TField> location, TypeWrapper type, string name)
         {
-            return AccessorUtil.LazyGet(ref location, () => new FieldAccessor<TObject, TField>(type, name, signature));
+            return AccessorUtil.LazyGet(ref location, () => new FieldAccessor<TObject, TField>(type, name));
         }
 
         Func<TObject, TField> getter;
@@ -194,9 +177,8 @@ namespace IKVM.Runtime.Accessors
         /// </summary>
         /// <param name="type"></param>
         /// <param name="name"></param>
-        /// <param name="signature"></param>
-        public FieldAccessor(TypeWrapper type, string name, string signature) :
-            base(type, name, signature)
+        public FieldAccessor(TypeWrapper type, string name) :
+            base(type, name)
         {
 
         }
@@ -220,19 +202,12 @@ namespace IKVM.Runtime.Accessors
 #if FIRST_PASS || IMPORTER || EXPORTER
             throw new NotImplementedException();
 #else
-            var fieldType = Field.FieldTypeWrapper.EnsureLoadable(Type.GetClassLoader());
-            fieldType.Finish();
-            Type.Finish();
-            Field.ResolveField();
-
             var dm = DynamicMethodUtil.Create($"__<FieldAccessorGet>__{Field.DeclaringType.Name.Replace(".", "_")}__{Field.Name}", Type.TypeAsTBD, false, typeof(TField), new[] { typeof(TObject) });
             var il = CodeEmitter.Create(dm);
 
             il.Emit(OpCodes.Ldarg_0);
             il.Emit(OpCodes.Castclass, Type.TypeAsBaseType);
-            Field.EmitGet(il);
-            fieldType.EmitConvSignatureTypeToStackType(il);
-
+            il.Emit(OpCodes.Ldfld, Field);
             il.Emit(OpCodes.Ret);
             il.DoEmit();
 
@@ -249,21 +224,13 @@ namespace IKVM.Runtime.Accessors
 #if FIRST_PASS || IMPORTER || EXPORTER
             throw new NotImplementedException();
 #else
-            var fieldType = Field.FieldTypeWrapper.EnsureLoadable(Type.GetClassLoader());
-            fieldType.Finish();
-            Type.Finish();
-            Field.ResolveField();
-
             var dm = DynamicMethodUtil.Create($"__<FieldAccessorSet>__{Field.DeclaringType.Name.Replace(".", "_")}__{Field.Name}", Type.TypeAsTBD, false, typeof(void), new[] { typeof(TObject), typeof(TField) });
             var il = CodeEmitter.Create(dm);
 
             il.Emit(OpCodes.Ldarg_0);
             il.Emit(OpCodes.Castclass, Type.TypeAsBaseType);
             il.Emit(OpCodes.Ldarg_1);
-            fieldType.EmitCheckcast(il);
-            fieldType.EmitConvStackTypeToSignatureType(il, null);
-            Field.EmitSet(il);
-
+            il.Emit(OpCodes.Stfld, Field);
             il.Emit(OpCodes.Ret);
             il.DoEmit();
 
@@ -286,5 +253,7 @@ namespace IKVM.Runtime.Accessors
         public void SetValue(TObject self, TField value) => Setter(self, value);
 
     }
+
+#endif
 
 }

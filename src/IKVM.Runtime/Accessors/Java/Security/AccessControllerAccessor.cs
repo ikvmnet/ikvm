@@ -3,6 +3,8 @@
 namespace IKVM.Runtime.Accessors.Java.Lang
 {
 
+#if FIRST_PASS == false && EXPORTER == false && IMPORTER == false
+
     /// <summary>
     /// Provides runtime access to the 'java.security.AccessController' type.
     /// </summary>
@@ -29,5 +31,7 @@ namespace IKVM.Runtime.Accessors.Java.Lang
         public object InvokeDoPrivledged(object action) => GetMethod(ref doPrivledged, nameof(doPrivledged), "(Ljava.security.PrivilegedAction;)Ljava.lang.Object;").Invoker(action);
 
     }
+
+#endif
 
 }

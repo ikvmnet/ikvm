@@ -3,6 +3,8 @@
 namespace IKVM.Runtime.Accessors.Java.Lang
 {
 
+#if FIRST_PASS == false && EXPORTER == false && IMPORTER == false
+
     /// <summary>
     /// Provides runtime access to the 'java.lang.SecurityManager' type.
     /// </summary>
@@ -39,5 +41,7 @@ namespace IKVM.Runtime.Accessors.Java.Lang
         public void InvokeCheckDelete(object self, string path) => GetMethod(ref checkDelete, nameof(checkDelete), "(Ljava.lang.String;)V").Invoker(self, path);
 
     }
+
+#endif
 
 }

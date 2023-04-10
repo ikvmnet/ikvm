@@ -3,6 +3,8 @@
 namespace IKVM.Runtime.Accessors.Sun.Nio.Fs
 {
 
+#if FIRST_PASS == false && EXPORTER == false && IMPORTER == false
+
     internal sealed class DotNetPathAccessor : Accessor<object>
     {
 
@@ -33,15 +35,17 @@ namespace IKVM.Runtime.Accessors.Sun.Nio.Fs
         /// </summary>
         /// <param name="self"></param>
         /// <returns></returns>
-        public object GetFs(object self) => GetField(ref fs, nameof(fs), "Lsun.nio.fs.DotNetFileSystem;").GetValue(self);
+        public object GetFs(object self) => GetField(ref fs, nameof(fs)).GetValue(self);
 
         /// <summary>
         /// Gets the value of the 'path' field.
         /// </summary>
         /// <param name="self"></param>
         /// <returns></returns>
-        public string GetPath(object self) => GetField(ref path, nameof(path), "Ljava.lang.String;").GetValue(self);
+        public string GetPath(object self) => GetField(ref path, nameof(path)).GetValue(self);
 
     }
+
+#endif
 
 }

@@ -54,6 +54,14 @@ namespace IKVM.Runtime
     public static class ByteCodeHelper
     {
 
+#if FIRST_PASS == false && EXPORTER == FALSE
+
+        static ObjectAccessor objectAccessor;
+
+        static ObjectAccessor ObjectAccessor => JVM.BaseAccessors.Get(ref objectAccessor);
+
+#endif
+
 #if EXPORTER == false
 
         [DebuggerStepThrough]
@@ -776,12 +784,37 @@ namespace IKVM.Runtime
 #endif // !FIRST_PASS
         }
 
+        /// <summary>
+        /// Returns <c>true</c> if the Java finalizer should be skipped.
+        /// </summary>
+        /// <returns></returns>
         public static bool SkipFinalizer()
         {
 #if FIRST_PASS
-            return false;
+            throw new NotImplementedException();
 #else
             return Environment.HasShutdownStarted && !global::java.lang.Shutdown.runFinalizersOnExit;
+#endif
+        }
+
+        /// <summary>
+        /// Returns <c>true</c> if the Java finalizer for the given object should be skipped.
+        /// </summary>
+        /// <param name="o"></param>
+        /// <returns></returns>
+        public static bool SkipFinalizer(object o)
+        {
+#if FIRST_PASS
+            throw new NotImplementedException();
+#else
+            if (SkipFinalizer())
+                return true;
+
+            if (o is global::java.lang.Object jlo)
+                if (ObjectAccessor.GetInit(jlo) == false)
+                    return true;
+
+            return false;
 #endif
         }
 

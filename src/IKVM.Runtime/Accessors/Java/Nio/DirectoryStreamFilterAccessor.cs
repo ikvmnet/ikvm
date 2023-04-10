@@ -3,6 +3,8 @@
 namespace IKVM.Runtime.Accessors.Java.Nio.File
 {
 
+#if FIRST_PASS == false && EXPORTER == false && IMPORTER == false
+
     /// <summary>
     /// Provides runtime access to the 'java.nio.Buffer' type.
     /// </summary>
@@ -27,5 +29,7 @@ namespace IKVM.Runtime.Accessors.Java.Nio.File
         public bool InvokeAccept(object self, object entry) => GetMethod(ref accept, nameof(accept), "(Ljava.lang.Object;)Z").Invoker(self, entry);
 
     }
+
+#endif
 
 }

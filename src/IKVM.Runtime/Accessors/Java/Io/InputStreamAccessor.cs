@@ -1,6 +1,8 @@
 ﻿namespace IKVM.Runtime.Accessors.Java.Io
 {
 
+#if FIRST_PASS == false && EXPORTER == false && IMPORTER == false
+
     /// <summary>
     /// Provides runtime access to the 'java.io.InputStream' type.
     /// </summary>
@@ -18,5 +20,7 @@
         }
 
     }
+
+#endif
 
 }

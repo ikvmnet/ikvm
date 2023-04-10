@@ -3,6 +3,8 @@
 namespace IKVM.Runtime.Accessors.Java.Util
 {
 
+#if FIRST_PASS == false && EXPORTER == false && IMPORTER == false
+
     /// <summary>
     /// Provides runtime access to the 'java.util.Properties' type.
     /// </summary>
@@ -40,5 +42,7 @@ namespace IKVM.Runtime.Accessors.Java.Util
         public object InvokeSetProperty(object self, string key, string value) => GetMethod(ref setProperty, nameof(setProperty), "(Ljava.lang.String;Ljava.lang.String;)Ljava.lang.Object;").Invoker(self, key, value);
 
     }
+
+#endif
 
 }

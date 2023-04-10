@@ -1,6 +1,8 @@
 ﻿namespace IKVM.Runtime.Accessors.Sun.Nio.Ch
 {
 
+#if FIRST_PASS == false && EXPORTER == false && IMPORTER == false
+
     /// <summary>
     /// Provides runtime access to the 'sun.nio.ch.FileChannelImpl' type.
     /// </summary>
@@ -22,13 +24,15 @@
         /// <summary>
         /// Gets the value for the 'fd' field.
         /// </summary>
-        public object GetFd(object self) => GetField(ref fd, nameof(fd), "Ljava.io.FileDescriptor;").GetValue(self);
+        public object GetFd(object self) => GetField(ref fd, nameof(fd)).GetValue(self);
 
         /// <summary>
         /// Sets the value for the 'fd' field.
         /// </summary>
-        public void SetFd(object self, object value) => GetField(ref fd, nameof(fd), "Ljava.io.FileDescriptor;").SetValue(self, value);
+        public void SetFd(object self, object value) => GetField(ref fd, nameof(fd)).SetValue(self, value);
 
     }
+
+#endif
 
 }

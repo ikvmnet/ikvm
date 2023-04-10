@@ -4,6 +4,8 @@ using System.Collections;
 namespace IKVM.Runtime.Accessors.Ikvm.Util
 {
 
+#if FIRST_PASS == false && EXPORTER == false && IMPORTER == false
+
     class EnumeratorIteratorAccessor : Accessor<object>
     {
 
@@ -27,5 +29,7 @@ namespace IKVM.Runtime.Accessors.Ikvm.Util
         public object Init(IEnumerator enumerator) => GetConstructor(ref init, "(Lcli.System.Collections.IEnumerator;)V").Invoker(enumerator);
 
     }
+
+#endif
 
 }

@@ -74,6 +74,7 @@ namespace IKVM.Runtime
         internal static readonly MethodInfo DynamicEraseInvokeExact;
         internal static readonly MethodInfo VerboseCastFailure;
         internal static readonly MethodInfo SkipFinalizer;
+        internal static readonly MethodInfo SkipFinalizerOf;
         internal static readonly MethodInfo DynamicInstanceOf;
         internal static readonly MethodInfo VolatileReadBoolean;
         internal static readonly MethodInfo VolatileReadByte;
@@ -138,7 +139,8 @@ namespace IKVM.Runtime
             DynamicLinkIndyCallSite = GetHelper(typeofByteCodeHelper, "DynamicLinkIndyCallSite");
             DynamicEraseInvokeExact = GetHelper(typeofByteCodeHelper, "DynamicEraseInvokeExact");
             VerboseCastFailure = GetHelper(typeofByteCodeHelper, "VerboseCastFailure");
-            SkipFinalizer = GetHelper(typeofByteCodeHelper, "SkipFinalizer");
+            SkipFinalizer = GetHelper(typeofByteCodeHelper, "SkipFinalizer", new Type[] { });
+            SkipFinalizerOf = GetHelper(typeofByteCodeHelper, "SkipFinalizer", new Type[] { Types.Object });
             DynamicInstanceOf = GetHelper(typeofByteCodeHelper, "DynamicInstanceOf");
             VolatileReadBoolean = GetHelper(typeofByteCodeHelper, "VolatileRead", new Type[] { Types.Boolean.MakeByRefType() });
             VolatileReadByte = GetHelper(typeofByteCodeHelper, "VolatileRead", new Type[] { Types.Byte.MakeByRefType() });
