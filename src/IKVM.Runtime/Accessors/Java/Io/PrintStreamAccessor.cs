@@ -15,7 +15,7 @@
         /// </summary>
         /// <param name="resolver"></param>
         public PrintStreamAccessor(AccessorTypeResolver resolver) :
-            base(resolver("java.io.PrintStream"))
+            base(resolver, "java.io.PrintStream")
         {
 
         }

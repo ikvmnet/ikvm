@@ -15,7 +15,7 @@ namespace IKVM.Runtime.Accessors
     internal abstract class PropertyAccessor
     {
 
-        readonly TypeWrapper type;
+        readonly Type type;
         readonly string name;
         PropertyInfo property;
 
@@ -25,7 +25,7 @@ namespace IKVM.Runtime.Accessors
         /// <param name="type"></param>
         /// <param name="name"></param>
         /// <exception cref="ArgumentNullException"></exception>
-        protected PropertyAccessor(TypeWrapper type, string name)
+        protected PropertyAccessor(Type type, string name)
         {
             this.type = type ?? throw new ArgumentNullException(nameof(type));
             this.name = name ?? throw new ArgumentNullException(nameof(name));
@@ -34,7 +34,7 @@ namespace IKVM.Runtime.Accessors
         /// <summary>
         /// Gets the type which contains the property being accessed.
         /// </summary>
-        protected TypeWrapper Type => type;
+        protected Type Type => type;
 
         /// <summary>
         /// Gets the name of the property being accessed.
@@ -44,7 +44,7 @@ namespace IKVM.Runtime.Accessors
         /// <summary>
         /// Gets the property being accessed.
         /// </summary>
-        protected PropertyInfo Property => AccessorUtil.LazyGet(ref property, () => type.TypeAsTBD.GetProperty(name, BindingFlags.Public | BindingFlags.NonPublic | BindingFlags.Instance | BindingFlags.Static)) ?? throw new InvalidOperationException();
+        protected PropertyInfo Property => AccessorUtil.LazyGet(ref property, () => type.GetProperty(name, BindingFlags.Public | BindingFlags.NonPublic | BindingFlags.Instance | BindingFlags.Static)) ?? throw new InvalidOperationException();
 
     }
 
@@ -63,7 +63,7 @@ namespace IKVM.Runtime.Accessors
         /// <param name="name"></param>
         /// <param name="signature"></param>
         /// <returns></returns>
-        public static PropertyAccessor<TProperty> LazyGet(ref PropertyAccessor<TProperty> location, TypeWrapper type, string name)
+        public static PropertyAccessor<TProperty> LazyGet(ref PropertyAccessor<TProperty> location, Type type, string name)
         {
             return AccessorUtil.LazyGet(ref location, () => new PropertyAccessor<TProperty>(type, name));
         }
@@ -76,7 +76,7 @@ namespace IKVM.Runtime.Accessors
         /// </summary>
         /// <param name="type"></param>
         /// <param name="name"></param>
-        public PropertyAccessor(TypeWrapper type, string name) :
+        public PropertyAccessor(Type type, string name) :
             base(type, name)
         {
 
@@ -102,7 +102,7 @@ namespace IKVM.Runtime.Accessors
 #if FIRST_PASS
             throw new NotImplementedException();
 #else
-            var dm = DynamicMethodUtil.Create($"__<PropertyAccessorGet>__{Type.Name.Replace(".", "_")}__{Property.Name}", Type.TypeAsTBD, false, typeof(TProperty), Array.Empty<Type>());
+            var dm = DynamicMethodUtil.Create($"__<PropertyAccessorGet>__{Type.Name.Replace(".", "_")}__{Property.Name}", Type, false, typeof(TProperty), Array.Empty<Type>());
             var il = CodeEmitter.Create(dm);
 
             il.Emit(Property.GetMethod.IsVirtual ? OpCodes.Callvirt : OpCodes.Call, Property.GetMethod);
@@ -123,7 +123,7 @@ namespace IKVM.Runtime.Accessors
 #if FIRST_PASS
             throw new NotImplementedException();
 #else
-            var dm = DynamicMethodUtil.Create($"__<PropertyAccessorSet>__{Type.Name.Replace(".", "_")}__{Property.Name}", Type.TypeAsTBD, false, typeof(void), new[] { typeof(TProperty) });
+            var dm = DynamicMethodUtil.Create($"__<PropertyAccessorSet>__{Type.Name.Replace(".", "_")}__{Property.Name}", Type, false, typeof(void), new[] { typeof(TProperty) });
             var il = CodeEmitter.Create(dm);
 
             il.Emit(OpCodes.Ldarg_0);
@@ -164,7 +164,7 @@ namespace IKVM.Runtime.Accessors
         /// <param name="type"></param>
         /// <param name="name"></param>
         /// <returns></returns>
-        public static PropertyAccessor<TObject, TProperty> LazyGet(ref PropertyAccessor<TObject, TProperty> location, TypeWrapper type, string name)
+        public static PropertyAccessor<TObject, TProperty> LazyGet(ref PropertyAccessor<TObject, TProperty> location, Type type, string name)
         {
             return AccessorUtil.LazyGet(ref location, () => new PropertyAccessor<TObject, TProperty>(type, name));
         }
@@ -177,7 +177,7 @@ namespace IKVM.Runtime.Accessors
         /// </summary>
         /// <param name="type"></param>
         /// <param name="name"></param>
-        public PropertyAccessor(TypeWrapper type, string name) :
+        public PropertyAccessor(Type type, string name) :
             base(type, name)
         {
 
@@ -205,11 +205,11 @@ namespace IKVM.Runtime.Accessors
             if (Property.CanRead == false)
                 throw new InternalException($"Property {Property.Name} cannot be read.");
 
-            var dm = DynamicMethodUtil.Create($"__<PropertyAccessorGet>__{Property.DeclaringType.Name.Replace(".", "_")}__{Property.Name}", Type.TypeAsTBD, false, typeof(TProperty), new[] { typeof(TObject) });
+            var dm = DynamicMethodUtil.Create($"__<PropertyAccessorGet>__{Property.DeclaringType.Name.Replace(".", "_")}__{Property.Name}", Type, false, typeof(TProperty), new[] { typeof(TObject) });
             var il = CodeEmitter.Create(dm);
 
             il.Emit(OpCodes.Ldarg_0);
-            il.Emit(OpCodes.Castclass, Type.TypeAsTBD);
+            il.Emit(OpCodes.Castclass, Type);
             il.Emit(Property.GetMethod.IsVirtual ? OpCodes.Callvirt : OpCodes.Call, Property.GetMethod);
             il.Emit(OpCodes.Ret);
             il.DoEmit();
@@ -230,11 +230,11 @@ namespace IKVM.Runtime.Accessors
             if (Property.CanWrite == false)
                 throw new InternalException($"Property {Property.Name} cannot be written.");
 
-            var dm = DynamicMethodUtil.Create($"__<PropertyAccessorSet>__{Property.DeclaringType.Name.Replace(".", "_")}__{Property.Name}", Type.TypeAsTBD, false, typeof(void), new[] { typeof(TObject), typeof(TProperty) });
+            var dm = DynamicMethodUtil.Create($"__<PropertyAccessorSet>__{Property.DeclaringType.Name.Replace(".", "_")}__{Property.Name}", Type, false, typeof(void), new[] { typeof(TObject), typeof(TProperty) });
             var il = CodeEmitter.Create(dm);
 
             il.Emit(OpCodes.Ldarg_0);
-            il.Emit(OpCodes.Castclass, Type.TypeAsTBD);
+            il.Emit(OpCodes.Castclass, Type);
             il.Emit(OpCodes.Ldarg_1);
             il.Emit(Property.SetMethod.IsVirtual ? OpCodes.Callvirt : OpCodes.Call, Property.SetMethod);
             il.Emit(OpCodes.Ret);

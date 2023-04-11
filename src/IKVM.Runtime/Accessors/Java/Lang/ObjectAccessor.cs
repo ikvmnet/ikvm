@@ -16,7 +16,7 @@
         /// </summary>
         /// <param name="resolver"></param>
         public ObjectAccessor(AccessorTypeResolver resolver) :
-            base(resolver("java.lang.Object"))
+            base(resolver, "java.lang.Object")
         {
 
         }

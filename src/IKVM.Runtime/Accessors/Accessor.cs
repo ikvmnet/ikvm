@@ -1,7 +1,5 @@
 ﻿using System;
 
-using IKVM.Internal;
-
 namespace IKVM.Runtime.Accessors
 {
 
@@ -13,22 +11,33 @@ namespace IKVM.Runtime.Accessors
     internal abstract partial class Accessor
     {
 
-        readonly TypeWrapper type;
+        readonly string typeName;
+        readonly AccessorTypeResolver resolver;
+        Type type;
 
         /// <summary>
         /// Initializes a new instance.
         /// </summary>
-        /// <param name="type"></param>
+        /// <param name="resolver"></param>
+        /// <param name="typeName"></param>
         /// <exception cref="ArgumentNullException"></exception>
-        public Accessor(TypeWrapper type)
+        public Accessor(AccessorTypeResolver resolver, string typeName)
         {
-            this.type = type ?? throw new ArgumentNullException(nameof(type));
+            this.resolver = resolver ?? throw new ArgumentNullException(nameof(resolver));
+            this.typeName = typeName ?? throw new ArgumentNullException(nameof(typeName));
         }
 
         /// <summary>
         /// Gets the type being accessed.
         /// </summary>
-        protected TypeWrapper Type => type;
+        protected Type Type => AccessorUtil.LazyGet(ref type, () => Resolve(typeName));
+
+        /// <summary>
+        /// Resolves the given type name.
+        /// </summary>
+        /// <param name="typeName"></param>
+        /// <returns></returns>
+        protected Type Resolve(string typeName) => typeName != null ? resolver(typeName) : null;
 
     }
 
@@ -41,9 +50,10 @@ namespace IKVM.Runtime.Accessors
         /// <summary>
         /// Initializes a new instance.
         /// </summary>
-        /// <param name="type"></param>
-        public Accessor(TypeWrapper type) :
-             base(type)
+        /// <param name="resolver"></param>
+        /// <param name="typeName"></param>
+        public Accessor(AccessorTypeResolver resolver, string typeName) :
+             base(resolver, typeName)
         {
 
         }
@@ -84,18 +94,18 @@ namespace IKVM.Runtime.Accessors
         /// Initializes a field accessor.
         /// </summary>
         /// <param name="accessor"></param>
-        /// <param name="signature"></param>
+        /// <param name="parameterTypes"></param>
         /// <returns></returns>
-        protected MethodAccessor<TDelegate> GetConstructor<TDelegate>(ref MethodAccessor<TDelegate> accessor, string signature) where TDelegate : Delegate => MethodAccessor<TDelegate>.LazyGet(ref accessor, Type, "<init>", signature);
+        protected MethodAccessor<TDelegate> GetConstructor<TDelegate>(ref MethodAccessor<TDelegate> accessor, params Type[] parameterTypes) where TDelegate : Delegate => MethodAccessor<TDelegate>.LazyGet(ref accessor, Type, ".ctor", typeof(void), parameterTypes);
 
         /// <summary>
         /// Initializes a field accessor.
         /// </summary>
         /// <param name="accessor"></param>
         /// <param name="name"></param>
-        /// <param name="signature"></param>
+        /// <param name="parameterTypes"></param>
         /// <returns></returns>
-        protected MethodAccessor<TDelegate> GetMethod<TDelegate>(ref MethodAccessor<TDelegate> accessor, string name, string signature) where TDelegate : Delegate => MethodAccessor<TDelegate>.LazyGet(ref accessor, Type, name, signature);
+        protected MethodAccessor<TDelegate> GetMethod<TDelegate>(ref MethodAccessor<TDelegate> accessor, string name, Type returnType, params Type[] parameterTypes) where TDelegate : Delegate => MethodAccessor<TDelegate>.LazyGet(ref accessor, Type, name, returnType, parameterTypes);
 
     }
 

@@ -20,7 +20,7 @@ namespace IKVM.Runtime.Accessors.Java.Lang
         /// </summary>
         /// <param name="resolver"></param>
         public SecurityManagerAccessor(AccessorTypeResolver resolver) :
-            base(resolver("java.lang.SecurityManager"))
+            base(resolver, "java.lang.SecurityManager")
         {
 
         }
@@ -28,17 +28,17 @@ namespace IKVM.Runtime.Accessors.Java.Lang
         /// <summary>
         /// Invokes the 'checkRead' method.
         /// </summary>
-        public void InvokeCheckRead(object self, string path) => GetMethod(ref checkRead, nameof(checkRead), "(Ljava.lang.String;)V").Invoker(self, path);
+        public void InvokeCheckRead(object self, string path) => GetMethod(ref checkRead, nameof(checkRead), typeof(void), typeof(string)).Invoker(self, path);
 
         /// <summary>
         /// Invokes the 'checkWrite' method.
         /// </summary>
-        public void InvokeCheckWrite(object self, string path) => GetMethod(ref checkWrite, nameof(checkWrite), "(Ljava.lang.String;)V").Invoker(self, path);
+        public void InvokeCheckWrite(object self, string path) => GetMethod(ref checkWrite, nameof(checkWrite), typeof(void), typeof(string)).Invoker(self, path);
 
         /// <summary>
         /// Invokes the 'checkDelete' method.
         /// </summary>
-        public void InvokeCheckDelete(object self, string path) => GetMethod(ref checkDelete, nameof(checkDelete), "(Ljava.lang.String;)V").Invoker(self, path);
+        public void InvokeCheckDelete(object self, string path) => GetMethod(ref checkDelete, nameof(checkDelete), typeof(void), typeof(string)).Invoker(self, path);
 
     }
 

@@ -17,7 +17,7 @@ namespace IKVM.Runtime.Accessors.Sun.Nio.Fs
         /// </summary>
         /// <param name="resolver"></param>
         public DotNetPathAccessor(AccessorTypeResolver resolver) :
-            base(resolver("sun.nio.fs.DotNetPath"))
+            base(resolver, "sun.nio.fs.DotNetPath")
         {
 
         }
@@ -28,7 +28,7 @@ namespace IKVM.Runtime.Accessors.Sun.Nio.Fs
         /// <param name="fs"></param>
         /// <param name="path"></param>
         /// <returns></returns>
-        public object Init(object fs, string path) => GetConstructor(ref init, "(Lsun.nio.fs.DotNetFileSystem;Ljava.lang.String;)V").Invoker(fs, path);
+        public object Init(object fs, string path) => GetConstructor(ref init, Resolve("sun.nio.fs.DotNetFileSystem"), typeof(string)).Invoker(fs, path);
 
         /// <summary>
         /// Gets the value of the 'fs' field.

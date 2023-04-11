@@ -24,7 +24,7 @@ namespace IKVM.Runtime.Accessors.Java.Lang
         /// </summary>
         /// <param name="resolver"></param>
         public ThreadAccessor(AccessorTypeResolver resolver) :
-            base(resolver("java.lang.Thread"))
+            base(resolver, "java.lang.Thread")
         {
 
         }
@@ -38,31 +38,31 @@ namespace IKVM.Runtime.Accessors.Java.Lang
         /// <summary>
         /// Invokes the 'currentThread' method.
         /// </summary>
-        public object InvokeCurrentThread() => GetMethod(ref currentThread, nameof(currentThread), "()Ljava.lang.Thread;").Invoker();
+        public object InvokeCurrentThread() => GetMethod(ref currentThread, nameof(currentThread), Resolve("java.lang.Thread")).Invoker();
 
         /// <summary>
         /// Invokes the constructor.
         /// </summary>
         /// <param name="threadGroup"></param>
         /// <returns></returns>
-        public object Init(object threadGroup) => GetConstructor(ref init, "Ljava.lang.ThreadGroup;").Invoker(threadGroup);
+        public object Init(object threadGroup) => GetConstructor(ref init, Resolve("java.lang.ThreadGroup")).Invoker(threadGroup);
 
         /// <summary>
         /// Invokes the 'isDaemon' method.
         /// </summary>
         /// <param name="self"></param>
         /// <returns></returns>
-        public bool InvokeIsDaemon(object self) => GetMethod(ref isDaemon, nameof(isDaemon), "()Z").Invoker(self);
+        public bool InvokeIsDaemon(object self) => GetMethod(ref isDaemon, nameof(isDaemon), typeof(bool)).Invoker(self);
 
         /// <summary>
         /// Invokes the 'die' method.
         /// </summary>
-        public void InvokeDie(object self) => GetMethod(ref die, nameof(die), "()V").Invoker(self);
+        public void InvokeDie(object self) => GetMethod(ref die, nameof(die), typeof(void)).Invoker(self);
 
         /// <summary>
         /// Invokes the 'getThreadGroup' method.
         /// </summary>
-        public object InvokeGetThreadGroup(object self) => GetMethod(ref getThreadGroup, nameof(getThreadGroup), "()Ljava.lang.ThreadGroup;").Invoker(self);
+        public object InvokeGetThreadGroup(object self) => GetMethod(ref getThreadGroup, nameof(getThreadGroup), Resolve("java.lang.ThreadGroup")).Invoker(self);
 
     }
 

@@ -1,5 +1,4 @@
 ﻿using System;
-using System.IO;
 
 namespace IKVM.Runtime.Accessors.Sun.Nio.Ch
 {
@@ -19,7 +18,7 @@ namespace IKVM.Runtime.Accessors.Sun.Nio.Ch
         /// </summary>
         /// <param name="resolver"></param>
         public DotNetDosFileAttributesAccessor(AccessorTypeResolver resolver) :
-            base(resolver("sun.nio.fs.DotNetDosFileAttributes"))
+            base(resolver, "sun.nio.fs.DotNetDosFileAttributes")
         {
 
         }
@@ -27,7 +26,7 @@ namespace IKVM.Runtime.Accessors.Sun.Nio.Ch
         /// <summary>
         /// Initializes a new instance.
         /// </summary>
-        public object Init(object creationTime, object lastAccessTime, object lastModifiedTime, object fileKey, bool isDirectory, bool isOther, bool isRegularFile, bool isSymbolicLink, long size, bool isReadOnly, bool isHidden, bool isArchive, bool isSystem) => GetConstructor(ref init, "(Ljava.nio.file.attribute.FileTime;Ljava.nio.file.attribute.FileTime;Ljava.nio.file.attribute.FileTime;Ljava.lang.Object;ZZZZJZZZZ)V").Invoker(creationTime, lastAccessTime, lastModifiedTime, fileKey, isDirectory, isOther, isRegularFile, isSymbolicLink, size, isReadOnly, isHidden, isArchive, isSystem);
+        public object Init(object creationTime, object lastAccessTime, object lastModifiedTime, object fileKey, bool isDirectory, bool isOther, bool isRegularFile, bool isSymbolicLink, long size, bool isReadOnly, bool isHidden, bool isArchive, bool isSystem) => GetConstructor(ref init, Resolve("java.nio.file.attribute.FileTime"), Resolve("java.nio.file.attribute.FileTime"), Resolve("java.nio.file.attribute.FileTime"), typeof(object), typeof(bool), typeof(bool), typeof(bool), typeof(bool), typeof(long), typeof(bool), typeof(bool), typeof(bool), typeof(bool)).Invoker(creationTime, lastAccessTime, lastModifiedTime, fileKey, isDirectory, isOther, isRegularFile, isSymbolicLink, size, isReadOnly, isHidden, isArchive, isSystem);
 
     }
 

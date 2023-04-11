@@ -16,7 +16,7 @@
         /// </summary>
         /// <param name="resolver"></param>
         public FileInputStreamAccessor(AccessorTypeResolver resolver) :
-            base(resolver("java.io.FileInputStream"))
+            base(resolver, "java.io.FileInputStream")
         {
 
         }

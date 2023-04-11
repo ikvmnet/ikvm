@@ -19,7 +19,7 @@
         /// </summary>
         /// <param name="resolver"></param>
         public BufferAccessor(AccessorTypeResolver resolver) :
-            base(resolver("java.nio.Buffer"))
+            base(resolver, "java.nio.Buffer")
         {
 
         }

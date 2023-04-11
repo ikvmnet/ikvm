@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Linq;
 using System.Reflection;
 using System.Reflection.Emit;
 
@@ -13,30 +14,32 @@ namespace IKVM.Runtime.Accessors
     internal abstract partial class MethodAccessor
     {
 
-        readonly TypeWrapper type;
+        readonly Type type;
         readonly string name;
-        readonly string signature;
-        MethodWrapper method;
+        readonly Type returnType;
+        readonly Type[] parameterTypes;
+        MethodBase method;
 
         /// <summary>
         /// Initializes a new instance.
         /// </summary>
         /// <param name="type"></param>
         /// <param name="name"></param>
-        /// <param name="signature"></param>
+        /// <param name="parameterTypes"></param>
         /// <exception cref="ArgumentNullException"></exception>
-        protected MethodAccessor(TypeWrapper type, string name, string signature)
+        protected MethodAccessor(Type type, string name, Type returnType, Type[] parameterTypes)
         {
 
             this.type = type ?? throw new ArgumentNullException(nameof(type));
             this.name = name ?? throw new ArgumentNullException(nameof(name));
-            this.signature = signature ?? throw new ArgumentNullException(nameof(signature));
+            this.returnType = returnType ?? throw new ArgumentNullException(nameof(returnType));
+            this.parameterTypes = parameterTypes ?? throw new ArgumentNullException(nameof(parameterTypes));
         }
 
         /// <summary>
         /// Gets the type which contains the method being accessed.
         /// </summary>
-        protected TypeWrapper Type => type;
+        protected Type Type => type;
 
         /// <summary>
         /// Gets the name of the method being accessed.
@@ -44,14 +47,30 @@ namespace IKVM.Runtime.Accessors
         protected string Name => name;
 
         /// <summary>
-        /// Gets the signature of the method being accessed.
+        /// Gets the return type of the method being accessed.
         /// </summary>
-        protected string Signature => signature;
+        protected Type ReturnType => returnType;
 
         /// <summary>
-        /// Gets the field being accessed.
+        /// Gets the paremeter types of the method being accessed.
         /// </summary>
-        protected MethodWrapper Method => AccessorUtil.LazyGet(ref method, () => type.GetMethodWrapper(name, signature, false)) ?? throw new InvalidOperationException();
+        protected Type[] ParameterTypes => parameterTypes;
+
+        /// <summary>
+        /// Gets the method being accessed.
+        /// </summary>
+        protected MethodBase Method => AccessorUtil.LazyGet(ref method, FindMethod) ?? throw new InternalException($"Could not locate method {Name}.");
+
+        /// <summary>
+        /// Finds the appropriate method.
+        /// </summary>
+        /// <returns></returns>
+        MethodBase FindMethod() => type.GetMembers(BindingFlags.Public | BindingFlags.NonPublic | BindingFlags.Static | BindingFlags.Instance)
+            .OfType<MethodBase>()
+            .Where(i => i.Name == Name)
+            .Where(i => i.IsConstructor && ReturnType == typeof(void) || i is MethodInfo m && m.ReturnType == ReturnType)
+            .Where(i => i.GetParameters().Select(i => i.ParameterType).SequenceEqual(ParameterTypes))
+            .FirstOrDefault();
 
     }
 
@@ -62,9 +81,9 @@ namespace IKVM.Runtime.Accessors
         where TDelegate : Delegate
     {
 
-        public static MethodAccessor<TDelegate> LazyGet(ref MethodAccessor<TDelegate> location, TypeWrapper type, string name, string signature)
+        public static MethodAccessor<TDelegate> LazyGet(ref MethodAccessor<TDelegate> location, Type type, string name, Type returnType, params Type[] parameterTypes)
         {
-            return AccessorUtil.LazyGet(ref location, () => new MethodAccessor<TDelegate>(type, name, signature));
+            return AccessorUtil.LazyGet(ref location, () => new MethodAccessor<TDelegate>(type, name, returnType, parameterTypes));
         }
 
         TDelegate invoker;
@@ -74,10 +93,10 @@ namespace IKVM.Runtime.Accessors
         /// </summary>
         /// <param name="type"></param>
         /// <param name="name"></param>
-        /// <param name="signature"></param>
+        /// <param name="parameters"></param>
         /// <exception cref="ArgumentNullException"></exception>
-        public MethodAccessor(TypeWrapper type, string name, string signature) :
-            base(type, name, signature)
+        public MethodAccessor(Type type, string name, Type returnType, Type[] parameters) :
+            base(type, name, returnType, parameters)
         {
 
         }
@@ -96,18 +115,6 @@ namespace IKVM.Runtime.Accessors
 #if FIRST_PASS || IMPORTER || EXPORTER
             throw new NotImplementedException();
 #else
-            Type.Finish();
-            var parameters = Method.GetParameters();
-
-            for (int i = 0; i < parameters.Length; i++)
-            {
-                parameters[i] = parameters[i].EnsureLoadable(Type.GetClassLoader());
-                parameters[i].Finish();
-            }
-
-            // resolve the runtime method info
-            Method.ResolveMethod();
-
             // validate return type
             var delegateReturnType = GetDelegateReturnType(typeof(TDelegate));
             if (Method.IsConstructor)
@@ -115,13 +122,15 @@ namespace IKVM.Runtime.Accessors
                 if (delegateReturnType == typeof(void))
                     throw new InternalException("Delegate has no return type for constructor.");
             }
-            else
+            else if (Method is MethodInfo mi)
             {
-                if (delegateReturnType == typeof(void) && Method.ReturnType != PrimitiveTypeWrapper.VOID)
+                if (delegateReturnType == typeof(void) && mi.ReturnType != typeof(void))
                     throw new InternalException("Delegate has no return type for method with return type.");
-                if (delegateReturnType != typeof(void) && Method.ReturnType == PrimitiveTypeWrapper.VOID)
+                if (delegateReturnType != typeof(void) && mi.ReturnType == typeof(void))
                     throw new InternalException("Delegate has return type for method without return type.");
             }
+
+            var parameters = Method.GetParameters();
 
             // validate parameter counts
             var delegateParameterTypes = GetDelegateParameterTypes(typeof(TDelegate));
@@ -131,7 +140,7 @@ namespace IKVM.Runtime.Accessors
                 throw new InternalException("Delegate has wrong number of parameters for instance method.");
 
             // generate new dynamic method
-            var dm = DynamicMethodUtil.Create($"__<MethodAccessor>__{Type.Name.Replace(".", "_")}__{Method.Name}", Type.TypeAsTBD, false, delegateReturnType, delegateParameterTypes);
+            var dm = DynamicMethodUtil.Create($"__<MethodAccessor>__{Type.Name.Replace(".", "_")}__{Method.Name}", Type, false, delegateReturnType, delegateParameterTypes);
             var il = CodeEmitter.Create(dm);
 
             // advance through each argument
@@ -141,8 +150,8 @@ namespace IKVM.Runtime.Accessors
             if (Method.IsStatic == false && Method.IsConstructor == false)
             {
                 il.EmitLdarg(n++);
-                if (delegateParameterTypes[0] != Type.TypeAsTBD)
-                    il.EmitCastclass(Type.TypeAsTBD);
+                if (delegateParameterTypes[0] != Type)
+                    il.EmitCastclass(Type);
             }
 
             // emit conversion code for the remainder of the arguments
@@ -150,20 +159,20 @@ namespace IKVM.Runtime.Accessors
             {
                 var delegateParameterType = delegateParameterTypes[n];
                 il.EmitLdarg(n++);
-                if (parameters[i].TypeAsTBD != delegateParameterType)
-                    il.EmitCastclass(parameters[i].TypeAsTBD);
+                if (parameters[i].ParameterType != delegateParameterType)
+                    il.EmitCastclass(parameters[i].ParameterType);
             }
 
             if (Method.IsConstructor)
-                il.Emit(OpCodes.Newobj, Method.GetMethod());
+                il.Emit(OpCodes.Newobj, Method);
             else if (Method.IsStatic || Method.IsVirtual == false)
-                il.Emit(OpCodes.Call, Method.GetMethod());
+                il.Emit(OpCodes.Call, Method);
             else
-                il.Emit(OpCodes.Callvirt, Method.GetMethod());
+                il.Emit(OpCodes.Callvirt, Method);
 
             // convert to delegate value
             if (delegateReturnType != typeof(void))
-                if (Method.IsConstructor && delegateReturnType != Type.TypeAsTBD || Method.IsConstructor == false && delegateReturnType != Method.ReturnType.TypeAsTBD)
+                if (Method.IsConstructor && delegateReturnType != Type || Method.IsConstructor == false && delegateReturnType != ((MethodInfo)Method).ReturnType)
                     il.EmitCastclass(delegateReturnType);
 
             il.Emit(OpCodes.Ret);

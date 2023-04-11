@@ -18,7 +18,7 @@ namespace IKVM.Runtime.Accessors.Java.Nio.File
         /// </summary>
         /// <param name="resolver"></param>
         public DirectoryStreamFilterAccessor(AccessorTypeResolver resolver) :
-            base(resolver("java.nio.file.DirectoryStream$Filter"))
+            base(resolver, "java.nio.file.DirectoryStream+Filter")
         {
 
         }
@@ -26,7 +26,7 @@ namespace IKVM.Runtime.Accessors.Java.Nio.File
         /// <summary>
         /// Invokes the 'accept' method.
         /// </summary>
-        public bool InvokeAccept(object self, object entry) => GetMethod(ref accept, nameof(accept), "(Ljava.lang.Object;)Z").Invoker(self, entry);
+        public bool InvokeAccept(object self, object entry) => GetMethod(ref accept, nameof(accept), typeof(bool), typeof(object)).Invoker(self, entry);
 
     }
 

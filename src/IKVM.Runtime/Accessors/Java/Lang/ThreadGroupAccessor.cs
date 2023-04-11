@@ -21,7 +21,7 @@ namespace IKVM.Runtime.Accessors.Java.Lang
         /// </summary>
         /// <param name="resolver"></param>
         public ThreadGroupAccessor(AccessorTypeResolver resolver) :
-            base(resolver("java.lang.ThreadGroup"))
+            base(resolver, "java.lang.ThreadGroup")
         {
 
         }
@@ -30,24 +30,24 @@ namespace IKVM.Runtime.Accessors.Java.Lang
         /// Invokes the constructor.
         /// </summary>
         /// <returns></returns>
-        public object Init(object unused, object parent, string name) => GetConstructor(ref init1, "(Ljava.lang.Void;Ljava.lang.ThreadGroup;Ljava.lang.String;)V").Invoker(unused, parent, name);
+        public object Init(object unused, object parent, string name) => GetConstructor(ref init1, Resolve("java.lang.Void"), Resolve("java.lang.ThreadGroup"), typeof(string)).Invoker(unused, parent, name);
 
         /// <summary>
         /// Invokes the constructor.
         /// </summary>
         /// <returns></returns>
-        public object Init(object parent, string name) => GetConstructor(ref init2, "(Ljava.lang.ThreadGroup;Ljava.lang.String;)V").Invoker(parent, name);
+        public object Init(object parent, string name) => GetConstructor(ref init2, Resolve("java.lang.ThreadGroup"), typeof(string)).Invoker(parent, name);
 
         /// <summary>
         /// Invokes the constructor.
         /// </summary>
         /// <returns></returns>
-        public object Init() => GetConstructor(ref init3, "()V").Invoker();
+        public object Init() => GetConstructor(ref init3).Invoker();
 
         /// <summary>
         /// Invokes the 'uncaughtException' method.
         /// </summary>
-        public void InvokeUncaughtException(object self, object t, object e) => GetMethod(ref uncaughtException, nameof(uncaughtException), "(Ljava.lang.Thread;Ljava.lang.Throwable;)V").Invoker(self, t, e);
+        public void InvokeUncaughtException(object self, object t, object e) => GetMethod(ref uncaughtException, nameof(uncaughtException), typeof(void), Resolve("java.lang.Thread"), Resolve("java.lang.Throwable")).Invoker(self, t, e);
 
     }
 

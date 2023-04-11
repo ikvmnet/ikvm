@@ -19,7 +19,7 @@ namespace IKVM.Runtime.Accessors.Java.Lang
         /// </summary>
         /// <param name="resolver"></param>
         public FileTimeAccessor(AccessorTypeResolver resolver) :
-            base(resolver("java.nio.file.attribute.FileTime"))
+            base(resolver, "java.nio.file.attribute.FileTime")
         {
 
         }
@@ -27,14 +27,14 @@ namespace IKVM.Runtime.Accessors.Java.Lang
         /// <summary>
         /// Invokes the 'fromMillis' method.
         /// </summary>
-        public object InvokeFromMillis(long value) => GetMethod(ref fromMillis, nameof(fromMillis), "(J)Ljava.nio.file.attribute.FileTime;").Invoker(value);
+        public object InvokeFromMillis(long value) => GetMethod(ref fromMillis, nameof(fromMillis), Resolve("java.nio.file.attribute.FileTime"), typeof(long)).Invoker(value);
 
         /// <summary>
         /// Invokes the 'toMillis' method.
         /// </summary>
         /// <param name="self"></param>
         /// <returns></returns>
-        public long InvokeToMillis(object self) => GetMethod(ref toMillis, nameof(toMillis), "()J").Invoker(self);
+        public long InvokeToMillis(object self) => GetMethod(ref toMillis, nameof(toMillis), typeof(long)).Invoker(self);
 
     }
 

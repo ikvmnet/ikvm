@@ -24,7 +24,7 @@ namespace IKVM.Runtime.Accessors.Java.Lang
         /// </summary>
         /// <param name="resolver"></param>
         public SystemAccessor(AccessorTypeResolver resolver) :
-            base(resolver("java.lang.System"))
+            base(resolver, "java.lang.System")
         {
 
         }
@@ -54,14 +54,14 @@ namespace IKVM.Runtime.Accessors.Java.Lang
         /// Sets the value of the 'initializeSystemClass' field.
         /// </summary>
         /// <returns></returns>
-        public void InvokeInitializeSystemClass() => GetMethod(ref initializeSystemClass, nameof(initializeSystemClass), "()V").Invoker();
+        public void InvokeInitializeSystemClass() => GetMethod(ref initializeSystemClass, nameof(initializeSystemClass), typeof(void)).Invoker();
 
         /// <summary>
         /// Sets the value of the 'getProperty' field.
         /// </summary>
         /// <param name="key"></param>
         /// <returns></returns>
-        public string InvokeGetProperty(string key) => GetMethod(ref getProperty, nameof(getProperty), "(Ljava.lang.String;)Ljava.lang.String;").Invoker(key);
+        public string InvokeGetProperty(string key) => GetMethod(ref getProperty, nameof(getProperty), typeof(string), typeof(string)).Invoker(key);
 
         /// <summary>
         /// Sets the value of the 'setProperty' field.
@@ -69,13 +69,13 @@ namespace IKVM.Runtime.Accessors.Java.Lang
         /// <param name="key"></param>
         /// <param name="value"></param>
         /// <returns></returns>
-        public string InvokeSetProperty(string key, string value) => GetMethod(ref setProperty, nameof(setProperty), "(Ljava.lang.String;Ljava.lang.String;)Ljava.lang.String;").Invoker(key, value);
+        public string InvokeSetProperty(string key, string value) => GetMethod(ref setProperty, nameof(setProperty), typeof(string), typeof(string), typeof(string)).Invoker(key, value);
 
         /// <summary>
         /// Invokes the 'getSecurityManager' method.
         /// </summary>
         /// <returns></returns>
-        public object InvokeGetSecurityManager() => GetMethod(ref getSecurityManager, nameof(getSecurityManager), "()Ljava.lang.SecurityManager;").Invoker();
+        public object InvokeGetSecurityManager() => GetMethod(ref getSecurityManager, nameof(getSecurityManager), Resolve("java.lang.SecurityManager")).Invoker();
 
     }
 

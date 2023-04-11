@@ -18,7 +18,7 @@ namespace IKVM.Runtime.Accessors.Java.Lang
         /// </summary>
         /// <param name="resolver"></param>
         public AccessControllerAccessor(AccessorTypeResolver resolver) :
-            base(resolver("java.security.AccessController"))
+            base(resolver, "java.security.AccessController")
         {
 
         }
@@ -28,7 +28,7 @@ namespace IKVM.Runtime.Accessors.Java.Lang
         /// </summary>
         /// <param name="action"></param>
         /// <returns></returns>
-        public object InvokeDoPrivledged(object action) => GetMethod(ref doPrivledged, nameof(doPrivledged), "(Ljava.security.PrivilegedAction;)Ljava.lang.Object;").Invoker(action);
+        public object InvokeDoPrivledged(object action) => GetMethod(ref doPrivledged, nameof(doPrivledged), typeof(object), Resolve("java.security.PrivilegedAction")).Invoker(action);
 
     }
 

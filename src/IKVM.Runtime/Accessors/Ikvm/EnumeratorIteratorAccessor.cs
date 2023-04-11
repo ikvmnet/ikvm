@@ -16,7 +16,7 @@ namespace IKVM.Runtime.Accessors.Ikvm.Util
         /// </summary>
         /// <param name="resolver"></param>
         public EnumeratorIteratorAccessor(AccessorTypeResolver resolver) :
-            base(resolver("ikvm.util.EnumeratorIterator"))
+            base(resolver, "ikvm.util.EnumeratorIterator")
         {
 
         }
@@ -26,7 +26,7 @@ namespace IKVM.Runtime.Accessors.Ikvm.Util
         /// </summary>
         /// <param name="enumerator"></param>
         /// <returns></returns>
-        public object Init(IEnumerator enumerator) => GetConstructor(ref init, "(Lcli.System.Collections.IEnumerator;)V").Invoker(enumerator);
+        public object Init(IEnumerator enumerator) => GetConstructor(ref init, typeof(IEnumerator)).Invoker(enumerator);
 
     }
 

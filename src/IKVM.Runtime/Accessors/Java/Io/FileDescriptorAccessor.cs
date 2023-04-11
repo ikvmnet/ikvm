@@ -33,7 +33,7 @@ namespace IKVM.Runtime.Accessors.Java.Io
         /// </summary>
         /// <param name="resolver"></param>
         public FileDescriptorAccessor(AccessorTypeResolver resolver) :
-            base(resolver("java.io.FileDescriptor"))
+            base(resolver, "java.io.FileDescriptor")
         {
 
         }
@@ -42,7 +42,7 @@ namespace IKVM.Runtime.Accessors.Java.Io
         /// Invokes the constructor.
         /// </summary>
         /// <returns></returns>
-        public object Init() => GetConstructor(ref init, "()V").Invoker();
+        public object Init() => GetConstructor(ref init).Invoker();
 
         /// <summary>
         /// Gets the value for the 'in' field.
@@ -64,14 +64,14 @@ namespace IKVM.Runtime.Accessors.Java.Io
         /// </summary>
         /// <param name="stream"></param>
         /// <returns></returns>
-        public object FromStream(Stream stream) => GetMethod(ref fromStream, nameof(fromStream), "(Lcli.System.IO.Stream;)Ljava.io.FileDescriptor;").Invoker(stream);
+        public object FromStream(Stream stream) => GetMethod(ref fromStream, nameof(fromStream), Resolve("java.io.FileDescriptor"), typeof(Stream)).Invoker(stream);
 
         /// <summary>
         /// Invokes the 'fromSocket' static method.
         /// </summary>
         /// <param name="socket"></param>
         /// <returns></returns>
-        public object FromSocket(Socket socket) => GetMethod(ref fromSocket, nameof(fromSocket), "(Lcli.System.Net.Sockets.Socket;)Ljava.io.FileDescriptor;").Invoker(socket);
+        public object FromSocket(Socket socket) => GetMethod(ref fromSocket, nameof(fromSocket), Resolve("java.io.FileDescriptor"), typeof(Socket), Resolve("java.io.FileDescriptor")).Invoker(socket);
 
         /// <summary>
         /// Gets the value for the 'fd' property.
@@ -122,7 +122,7 @@ namespace IKVM.Runtime.Accessors.Java.Io
         /// Invokes the 'sync' method.
         /// </summary>
         /// <param name="self"></param>
-        public void InvokeSync(object self) => GetMethod(ref sync, nameof(sync), "()V").Invoker(self);
+        public void InvokeSync(object self) => GetMethod(ref sync, nameof(sync), typeof(void)).Invoker(self);
 
     }
 

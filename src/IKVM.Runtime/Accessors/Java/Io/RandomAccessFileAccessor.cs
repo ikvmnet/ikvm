@@ -16,7 +16,7 @@
         /// </summary>
         /// <param name="resolver"></param>
         public RandomAccessFileAccessor(AccessorTypeResolver resolver) :
-            base(resolver("java.io.RandomAccessFile"))
+            base(resolver, "java.io.RandomAccessFile")
         {
 
         }

@@ -15,7 +15,7 @@ namespace IKVM.Runtime.Accessors
     internal abstract class FieldAccessor
     {
 
-        readonly TypeWrapper type;
+        readonly Type type;
         readonly string name;
         FieldInfo field;
 
@@ -25,7 +25,7 @@ namespace IKVM.Runtime.Accessors
         /// <param name="type"></param>
         /// <param name="name"></param>
         /// <exception cref="ArgumentNullException"></exception>
-        protected FieldAccessor(TypeWrapper type, string name)
+        protected FieldAccessor(Type type, string name)
         {
             this.type = type ?? throw new ArgumentNullException(nameof(type));
             this.name = name ?? throw new ArgumentNullException(nameof(name));
@@ -34,7 +34,7 @@ namespace IKVM.Runtime.Accessors
         /// <summary>
         /// Gets the type which contains the field being accessed.
         /// </summary>
-        protected TypeWrapper Type => type;
+        protected Type Type => type;
 
         /// <summary>
         /// Gets the name of the field being accessed.
@@ -44,7 +44,7 @@ namespace IKVM.Runtime.Accessors
         /// <summary>
         /// Gets the field being accessed.
         /// </summary>
-        protected FieldInfo Field => AccessorUtil.LazyGet(ref field, () => type.TypeAsTBD.GetField(name, BindingFlags.Public | BindingFlags.NonPublic | BindingFlags.Instance | BindingFlags.Static)) ?? throw new InvalidOperationException();
+        protected FieldInfo Field => AccessorUtil.LazyGet(ref field, () => type.GetField(name, BindingFlags.Public | BindingFlags.NonPublic | BindingFlags.Instance | BindingFlags.Static)) ?? throw new InvalidOperationException();
 
     }
 
@@ -61,9 +61,8 @@ namespace IKVM.Runtime.Accessors
         /// <param name="location"></param>
         /// <param name="type"></param>
         /// <param name="name"></param>
-        /// <param name="signature"></param>
         /// <returns></returns>
-        public static FieldAccessor<TField> LazyGet(ref FieldAccessor<TField> location, TypeWrapper type, string name)
+        public static FieldAccessor<TField> LazyGet(ref FieldAccessor<TField> location, Type type, string name)
         {
             return AccessorUtil.LazyGet(ref location, () => new FieldAccessor<TField>(type, name));
         }
@@ -76,7 +75,7 @@ namespace IKVM.Runtime.Accessors
         /// </summary>
         /// <param name="type"></param>
         /// <param name="name"></param>
-        public FieldAccessor(TypeWrapper type, string name) :
+        public FieldAccessor(Type type, string name) :
             base(type, name)
         {
 
@@ -102,7 +101,7 @@ namespace IKVM.Runtime.Accessors
 #if FIRST_PASS
             throw new NotImplementedException();
 #else
-            var dm = DynamicMethodUtil.Create($"__<FieldAccessorGet>__{Type.Name.Replace(".", "_")}__{Field.Name}", Type.TypeAsTBD, false, typeof(TField), Array.Empty<Type>());
+            var dm = DynamicMethodUtil.Create($"__<FieldAccessorGet>__{Type.Name.Replace(".", "_")}__{Field.Name}", Type, false, typeof(TField), Array.Empty<Type>());
             var il = CodeEmitter.Create(dm);
 
             il.Emit(OpCodes.Ldsfld, Field);
@@ -123,7 +122,7 @@ namespace IKVM.Runtime.Accessors
 #if FIRST_PASS
             throw new NotImplementedException();
 #else
-            var dm = DynamicMethodUtil.Create($"__<FieldAccessorSet>__{Type.Name.Replace(".", "_")}__{Field.Name}", Type.TypeAsTBD, false, typeof(void), new[] { typeof(TField) });
+            var dm = DynamicMethodUtil.Create($"__<FieldAccessorSet>__{Type.Name.Replace(".", "_")}__{Field.Name}", Type, false, typeof(void), new[] { typeof(TField) });
             var il = CodeEmitter.Create(dm);
 
             il.Emit(OpCodes.Ldarg_0);
@@ -164,7 +163,7 @@ namespace IKVM.Runtime.Accessors
         /// <param name="type"></param>
         /// <param name="name"></param>
         /// <returns></returns>
-        public static FieldAccessor<TObject, TField> LazyGet(ref FieldAccessor<TObject, TField> location, TypeWrapper type, string name)
+        public static FieldAccessor<TObject, TField> LazyGet(ref FieldAccessor<TObject, TField> location, Type type, string name)
         {
             return AccessorUtil.LazyGet(ref location, () => new FieldAccessor<TObject, TField>(type, name));
         }
@@ -177,7 +176,7 @@ namespace IKVM.Runtime.Accessors
         /// </summary>
         /// <param name="type"></param>
         /// <param name="name"></param>
-        public FieldAccessor(TypeWrapper type, string name) :
+        public FieldAccessor(Type type, string name) :
             base(type, name)
         {
 
@@ -202,11 +201,11 @@ namespace IKVM.Runtime.Accessors
 #if FIRST_PASS || IMPORTER || EXPORTER
             throw new NotImplementedException();
 #else
-            var dm = DynamicMethodUtil.Create($"__<FieldAccessorGet>__{Field.DeclaringType.Name.Replace(".", "_")}__{Field.Name}", Type.TypeAsTBD, false, typeof(TField), new[] { typeof(TObject) });
+            var dm = DynamicMethodUtil.Create($"__<FieldAccessorGet>__{Field.DeclaringType.Name.Replace(".", "_")}__{Field.Name}", Type, false, typeof(TField), new[] { typeof(TObject) });
             var il = CodeEmitter.Create(dm);
 
             il.Emit(OpCodes.Ldarg_0);
-            il.Emit(OpCodes.Castclass, Type.TypeAsBaseType);
+            il.Emit(OpCodes.Castclass, Type);
             il.Emit(OpCodes.Ldfld, Field);
             il.Emit(OpCodes.Ret);
             il.DoEmit();
@@ -224,11 +223,11 @@ namespace IKVM.Runtime.Accessors
 #if FIRST_PASS || IMPORTER || EXPORTER
             throw new NotImplementedException();
 #else
-            var dm = DynamicMethodUtil.Create($"__<FieldAccessorSet>__{Field.DeclaringType.Name.Replace(".", "_")}__{Field.Name}", Type.TypeAsTBD, false, typeof(void), new[] { typeof(TObject), typeof(TField) });
+            var dm = DynamicMethodUtil.Create($"__<FieldAccessorSet>__{Field.DeclaringType.Name.Replace(".", "_")}__{Field.Name}", Type, false, typeof(void), new[] { typeof(TObject), typeof(TField) });
             var il = CodeEmitter.Create(dm);
 
             il.Emit(OpCodes.Ldarg_0);
-            il.Emit(OpCodes.Castclass, Type.TypeAsBaseType);
+            il.Emit(OpCodes.Castclass, Type);
             il.Emit(OpCodes.Ldarg_1);
             il.Emit(OpCodes.Stfld, Field);
             il.Emit(OpCodes.Ret);

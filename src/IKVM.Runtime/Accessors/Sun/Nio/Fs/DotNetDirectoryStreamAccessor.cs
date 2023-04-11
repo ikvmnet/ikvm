@@ -19,7 +19,7 @@ namespace IKVM.Runtime.Accessors.Sun.Nio.Fs
         /// </summary>
         /// <param name="resolver"></param>
         public DotNetDirectoryStreamAccessor(AccessorTypeResolver resolver) :
-            base(resolver("sun.nio.fs.DotNetDirectoryStream"))
+            base(resolver, "sun.nio.fs.DotNetDirectoryStream")
         {
 
         }
@@ -31,7 +31,7 @@ namespace IKVM.Runtime.Accessors.Sun.Nio.Fs
         /// <param name="files"></param>
         /// <param name="filter"></param>
         /// <returns></returns>
-        public object Init(object path, IEnumerable<string> files, object filter) => GetConstructor(ref init, "(Lsun.nio.fs.DotNetPath;Lcli.System.Collections.IEnumerable;Ljava.nio.file.DirectoryStream$Filter;)V").Invoker(path, files, filter);
+        public object Init(object path, IEnumerable<string> files, object filter) => GetConstructor(ref init, Resolve("sun.nio.fs.DotNetPath"), typeof(System.Collections.IEnumerable), Resolve("java.nio.file.DirectoryStream+Filter")).Invoker(path, files, filter);
 
         /// <summary>
         /// Gets the value of the 'path' field.

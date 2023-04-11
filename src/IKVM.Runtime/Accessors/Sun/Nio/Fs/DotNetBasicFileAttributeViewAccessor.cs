@@ -16,7 +16,7 @@
         /// </summary>
         /// <param name="resolver"></param>
         public DotNetBasicFileAttributeViewAccessor(AccessorTypeResolver resolver) :
-            base(resolver("sun.nio.fs.DotNetBasicFileAttributeView"))
+            base(resolver, "sun.nio.fs.DotNetBasicFileAttributeView")
         {
 
         }

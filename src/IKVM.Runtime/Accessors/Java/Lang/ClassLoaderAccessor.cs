@@ -23,7 +23,7 @@ namespace IKVM.Runtime.Accessors.Java.Lang
         /// </summary>
         /// <param name="resolver"></param>
         public ClassLoaderAccessor(AccessorTypeResolver resolver) :
-            base(resolver("java.lang.ClassLoader"))
+            base(resolver, "java.lang.ClassLoader")
         {
 
         }
@@ -51,17 +51,17 @@ namespace IKVM.Runtime.Accessors.Java.Lang
         /// <summary>
         /// Invokes the 'checkPackageAccess' method.
         /// </summary>
-        public void InvokeCheckPackageAccess(object self, object cls, object pd) => GetMethod(ref checkPackageAccess, nameof(checkPackageAccess), "(Ljava.lang.Class;Ljava.security.ProtectionDomain;)V").Invoker(self, cls, pd);
+        public void InvokeCheckPackageAccess(object self, object cls, object pd) => GetMethod(ref checkPackageAccess, nameof(checkPackageAccess), typeof(void), Resolve("java.lang.Class"), Resolve("java.security.ProtectionDomain")).Invoker(self, cls, pd);
 
         /// <summary>
         /// Invokes the 'checkName' method.
         /// </summary>
-        public bool InvokeCheckName(object self, string name) => GetMethod(ref checkName, nameof(checkName), "(Ljava.lang.String;)Z").Invoker(self, name);
+        public bool InvokeCheckName(object self, string name) => GetMethod(ref checkName, nameof(checkName), typeof(bool), typeof(string)).Invoker(self, name);
 
         /// <summary>
         /// Invokes the 'loadClassInternal' method.
         /// </summary>
-        public object InvokeLoadClassInternal(object self, string name) => GetMethod(ref loadClassInternal, nameof(loadClassInternal), "(Ljava.lang.String;)Ljava.lang.Class;").Invoker(self, name);
+        public object InvokeLoadClassInternal(object self, string name) => GetMethod(ref loadClassInternal, nameof(loadClassInternal), Resolve("java.lang.Class"), typeof(string)).Invoker(self, name);
 
     }
 

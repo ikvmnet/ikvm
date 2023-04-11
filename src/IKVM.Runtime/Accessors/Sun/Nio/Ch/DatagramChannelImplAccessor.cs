@@ -19,7 +19,7 @@ namespace IKVM.Runtime.Accessors.Sun.Nio.Ch
         /// </summary>
         /// <param name="resolver"></param>
         public DatagramChannelImplAccessor(AccessorTypeResolver resolver) :
-            base(resolver("sun.nio.ch.DatagramChannelImpl"))
+            base(resolver, "sun.nio.ch.DatagramChannelImpl")
         {
 
         }
@@ -38,7 +38,7 @@ namespace IKVM.Runtime.Accessors.Sun.Nio.Ch
         /// Invokes the 'remoteAddress' function.
         /// </summary>
         /// <param name="self"></param>
-        public object InvokeRemoteAddress(object self) => GetMethod(ref remoteAddress, nameof(remoteAddress), "()Ljava.net.SocketAddress;").Invoker(self);
+        public object InvokeRemoteAddress(object self) => GetMethod(ref remoteAddress, nameof(remoteAddress), Resolve("java.net.SocketAddress")).Invoker(self);
 
     }
 

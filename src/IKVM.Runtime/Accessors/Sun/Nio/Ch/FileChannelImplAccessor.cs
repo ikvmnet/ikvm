@@ -16,7 +16,7 @@
         /// </summary>
         /// <param name="resolver"></param>
         public FileChannelImplAccessor(AccessorTypeResolver resolver) :
-            base(resolver("sun.nio.ch.FileChannelImpl"))
+            base(resolver, "sun.nio.ch.FileChannelImpl")
         {
 
         }
