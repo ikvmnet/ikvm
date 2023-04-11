@@ -11,6 +11,8 @@ namespace IKVM.Runtime.Accessors.Java.Lang
     internal sealed class AccessControllerAccessor : Accessor<object>
     {
 
+        Type javaSecurityPrivilegedAction;
+
         MethodAccessor<Func<object, object>> doPrivledged;
 
         /// <summary>
@@ -23,12 +25,14 @@ namespace IKVM.Runtime.Accessors.Java.Lang
 
         }
 
+        Type JavaSecurityPrivilegedAction => Resolve(ref javaSecurityPrivilegedAction, "java.security.PrivilegedAction");
+
         /// <summary>
         /// Invokes the 'doPrivledged' method.
         /// </summary>
         /// <param name="action"></param>
         /// <returns></returns>
-        public object InvokeDoPrivledged(object action) => GetMethod(ref doPrivledged, nameof(doPrivledged), typeof(object), Resolve("java.security.PrivilegedAction")).Invoker(action);
+        public object InvokeDoPrivledged(object action) => GetMethod(ref doPrivledged, nameof(doPrivledged), typeof(object), JavaSecurityPrivilegedAction).Invoker(action);
 
     }
 

@@ -11,6 +11,8 @@ namespace IKVM.Runtime.Accessors.Sun.Nio.Ch
     internal sealed class DotNetDosFileAttributesAccessor : Accessor<object>
     {
 
+        Type javaNioFileAttributeFileTime;
+
         MethodAccessor<Func<object, object, object, object, bool, bool, bool, bool, long, bool, bool, bool, bool, object>> init;
 
         /// <summary>
@@ -23,10 +25,12 @@ namespace IKVM.Runtime.Accessors.Sun.Nio.Ch
 
         }
 
+        Type JavaNioFileAttributeFileTime => Resolve(ref javaNioFileAttributeFileTime, "java.nio.file.attribute.FileTime");
+
         /// <summary>
         /// Initializes a new instance.
         /// </summary>
-        public object Init(object creationTime, object lastAccessTime, object lastModifiedTime, object fileKey, bool isDirectory, bool isOther, bool isRegularFile, bool isSymbolicLink, long size, bool isReadOnly, bool isHidden, bool isArchive, bool isSystem) => GetConstructor(ref init, Resolve("java.nio.file.attribute.FileTime"), Resolve("java.nio.file.attribute.FileTime"), Resolve("java.nio.file.attribute.FileTime"), typeof(object), typeof(bool), typeof(bool), typeof(bool), typeof(bool), typeof(long), typeof(bool), typeof(bool), typeof(bool), typeof(bool)).Invoker(creationTime, lastAccessTime, lastModifiedTime, fileKey, isDirectory, isOther, isRegularFile, isSymbolicLink, size, isReadOnly, isHidden, isArchive, isSystem);
+        public object Init(object creationTime, object lastAccessTime, object lastModifiedTime, object fileKey, bool isDirectory, bool isOther, bool isRegularFile, bool isSymbolicLink, long size, bool isReadOnly, bool isHidden, bool isArchive, bool isSystem) => GetConstructor(ref init, JavaNioFileAttributeFileTime, JavaNioFileAttributeFileTime, JavaNioFileAttributeFileTime, typeof(object), typeof(bool), typeof(bool), typeof(bool), typeof(bool), typeof(long), typeof(bool), typeof(bool), typeof(bool), typeof(bool)).Invoker(creationTime, lastAccessTime, lastModifiedTime, fileKey, isDirectory, isOther, isRegularFile, isSymbolicLink, size, isReadOnly, isHidden, isArchive, isSystem);
 
     }
 

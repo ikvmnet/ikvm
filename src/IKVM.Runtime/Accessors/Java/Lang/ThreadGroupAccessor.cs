@@ -11,6 +11,11 @@ namespace IKVM.Runtime.Accessors.Java.Lang
     internal sealed class ThreadGroupAccessor : Accessor<object>
     {
 
+        Type javaLangVoid;
+        Type javaLangThreadGroup;
+        Type javaLangThread;
+        Type javaLangThrowable;
+
         MethodAccessor<Func<object, object, string, object>> init1;
         MethodAccessor<Func<object, string, object>> init2;
         MethodAccessor<Func<object>> init3;
@@ -26,17 +31,25 @@ namespace IKVM.Runtime.Accessors.Java.Lang
 
         }
 
-        /// <summary>
-        /// Invokes the constructor.
-        /// </summary>
-        /// <returns></returns>
-        public object Init(object unused, object parent, string name) => GetConstructor(ref init1, Resolve("java.lang.Void"), Resolve("java.lang.ThreadGroup"), typeof(string)).Invoker(unused, parent, name);
+        Type JavaLangVoid => Resolve(ref javaLangVoid, "java.lang.Void");
+
+        Type JavaLangThread => Resolve(ref javaLangThread, "java.lang.Thread");
+
+        Type JavaLangThreadGroup => Resolve(ref javaLangThreadGroup, "java.lang.ThreadGroup");
+
+        Type JavaLangThrowable => Resolve(ref javaLangThrowable, "java.lang.Throwable");
 
         /// <summary>
         /// Invokes the constructor.
         /// </summary>
         /// <returns></returns>
-        public object Init(object parent, string name) => GetConstructor(ref init2, Resolve("java.lang.ThreadGroup"), typeof(string)).Invoker(parent, name);
+        public object Init(object unused, object parent, string name) => GetConstructor(ref init1, JavaLangVoid, JavaLangThreadGroup, typeof(string)).Invoker(unused, parent, name);
+
+        /// <summary>
+        /// Invokes the constructor.
+        /// </summary>
+        /// <returns></returns>
+        public object Init(object parent, string name) => GetConstructor(ref init2, JavaLangThreadGroup, typeof(string)).Invoker(parent, name);
 
         /// <summary>
         /// Invokes the constructor.
@@ -47,7 +60,7 @@ namespace IKVM.Runtime.Accessors.Java.Lang
         /// <summary>
         /// Invokes the 'uncaughtException' method.
         /// </summary>
-        public void InvokeUncaughtException(object self, object t, object e) => GetMethod(ref uncaughtException, nameof(uncaughtException), typeof(void), Resolve("java.lang.Thread"), Resolve("java.lang.Throwable")).Invoker(self, t, e);
+        public void InvokeUncaughtException(object self, object t, object e) => GetMethod(ref uncaughtException, nameof(uncaughtException), typeof(void), JavaLangThread, JavaLangThrowable).Invoker(self, t, e);
 
     }
 

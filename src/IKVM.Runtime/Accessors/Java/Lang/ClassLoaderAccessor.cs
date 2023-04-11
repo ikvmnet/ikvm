@@ -11,6 +11,9 @@ namespace IKVM.Runtime.Accessors.Java.Lang
     internal sealed class ClassLoaderAccessor : Accessor<object>
     {
 
+        Type javaLangClass;
+        Type javaSecurityProtectionDomain;
+
         FieldAccessor<object> scl;
 
         FieldAccessor<object, object> parent;
@@ -27,6 +30,10 @@ namespace IKVM.Runtime.Accessors.Java.Lang
         {
 
         }
+
+        Type JavaLangClass => Resolve(ref javaLangClass, "java.lang.Class");
+
+        Type JavaSecurityProtectionDomain => Resolve(ref javaSecurityProtectionDomain, "java.security.ProtectionDomain");
 
         /// <summary>
         /// Gets the value for the 'scl' field.
@@ -51,7 +58,7 @@ namespace IKVM.Runtime.Accessors.Java.Lang
         /// <summary>
         /// Invokes the 'checkPackageAccess' method.
         /// </summary>
-        public void InvokeCheckPackageAccess(object self, object cls, object pd) => GetMethod(ref checkPackageAccess, nameof(checkPackageAccess), typeof(void), Resolve("java.lang.Class"), Resolve("java.security.ProtectionDomain")).Invoker(self, cls, pd);
+        public void InvokeCheckPackageAccess(object self, object cls, object pd) => GetMethod(ref checkPackageAccess, nameof(checkPackageAccess), typeof(void), JavaLangClass, JavaSecurityProtectionDomain).Invoker(self, cls, pd);
 
         /// <summary>
         /// Invokes the 'checkName' method.
@@ -61,7 +68,7 @@ namespace IKVM.Runtime.Accessors.Java.Lang
         /// <summary>
         /// Invokes the 'loadClassInternal' method.
         /// </summary>
-        public object InvokeLoadClassInternal(object self, string name) => GetMethod(ref loadClassInternal, nameof(loadClassInternal), Resolve("java.lang.Class"), typeof(string)).Invoker(self, name);
+        public object InvokeLoadClassInternal(object self, string name) => GetMethod(ref loadClassInternal, nameof(loadClassInternal), JavaLangClass, typeof(string)).Invoker(self, name);
 
     }
 

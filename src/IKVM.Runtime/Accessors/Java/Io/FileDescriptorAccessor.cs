@@ -14,6 +14,8 @@ namespace IKVM.Runtime.Accessors.Java.Io
     internal sealed class FileDescriptorAccessor : Accessor<object>
     {
 
+        Type javaIoFileDescriptor;
+
         FieldAccessor<object> @in;
         FieldAccessor<object> @out;
         FieldAccessor<object> @err;
@@ -37,6 +39,8 @@ namespace IKVM.Runtime.Accessors.Java.Io
         {
 
         }
+
+        Type JavaIoFileDescriptor => Resolve(ref javaIoFileDescriptor, "java.io.FileDescriptor");
 
         /// <summary>
         /// Invokes the constructor.
@@ -64,14 +68,14 @@ namespace IKVM.Runtime.Accessors.Java.Io
         /// </summary>
         /// <param name="stream"></param>
         /// <returns></returns>
-        public object FromStream(Stream stream) => GetMethod(ref fromStream, nameof(fromStream), Resolve("java.io.FileDescriptor"), typeof(Stream)).Invoker(stream);
+        public object FromStream(Stream stream) => GetMethod(ref fromStream, nameof(fromStream), JavaIoFileDescriptor, typeof(Stream)).Invoker(stream);
 
         /// <summary>
         /// Invokes the 'fromSocket' static method.
         /// </summary>
         /// <param name="socket"></param>
         /// <returns></returns>
-        public object FromSocket(Socket socket) => GetMethod(ref fromSocket, nameof(fromSocket), Resolve("java.io.FileDescriptor"), typeof(Socket), Resolve("java.io.FileDescriptor")).Invoker(socket);
+        public object FromSocket(Socket socket) => GetMethod(ref fromSocket, nameof(fromSocket), JavaIoFileDescriptor, typeof(Socket), JavaIoFileDescriptor).Invoker(socket);
 
         /// <summary>
         /// Gets the value for the 'fd' property.

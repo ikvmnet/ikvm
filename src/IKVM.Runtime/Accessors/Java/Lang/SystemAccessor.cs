@@ -11,6 +11,8 @@ namespace IKVM.Runtime.Accessors.Java.Lang
     internal sealed class SystemAccessor : Accessor<object>
     {
 
+        Type javaLangSecurityManager;
+
         FieldAccessor<object> _in;
         FieldAccessor<object> _out;
         FieldAccessor<object> _err;
@@ -28,6 +30,8 @@ namespace IKVM.Runtime.Accessors.Java.Lang
         {
 
         }
+
+        Type JavaLangSecurityManager => Resolve(ref javaLangSecurityManager, "java.lang.SecurityManager");
 
         /// <summary>
         /// Sets the value of the 'in' field.
@@ -75,7 +79,7 @@ namespace IKVM.Runtime.Accessors.Java.Lang
         /// Invokes the 'getSecurityManager' method.
         /// </summary>
         /// <returns></returns>
-        public object InvokeGetSecurityManager() => GetMethod(ref getSecurityManager, nameof(getSecurityManager), Resolve("java.lang.SecurityManager")).Invoker();
+        public object InvokeGetSecurityManager() => GetMethod(ref getSecurityManager, nameof(getSecurityManager), JavaLangSecurityManager).Invoker();
 
     }
 

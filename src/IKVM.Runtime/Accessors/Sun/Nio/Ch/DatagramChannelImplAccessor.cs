@@ -11,6 +11,8 @@ namespace IKVM.Runtime.Accessors.Sun.Nio.Ch
     internal sealed class DatagramChannelImplAccessor : Accessor<object>
     {
 
+        Type javaNetSocketAddress;
+
         FieldAccessor<object, object> sender;
         MethodAccessor<Func<object, object>> remoteAddress;
 
@@ -23,6 +25,8 @@ namespace IKVM.Runtime.Accessors.Sun.Nio.Ch
         {
 
         }
+
+        Type JavaNetSocketAddress => Resolve(ref javaNetSocketAddress, "java.net.SocketAddress");
 
         /// <summary>
         /// Gets the value for the 'sender' field.
@@ -38,7 +42,7 @@ namespace IKVM.Runtime.Accessors.Sun.Nio.Ch
         /// Invokes the 'remoteAddress' function.
         /// </summary>
         /// <param name="self"></param>
-        public object InvokeRemoteAddress(object self) => GetMethod(ref remoteAddress, nameof(remoteAddress), Resolve("java.net.SocketAddress")).Invoker(self);
+        public object InvokeRemoteAddress(object self) => GetMethod(ref remoteAddress, nameof(remoteAddress), JavaNetSocketAddress).Invoker(self);
 
     }
 

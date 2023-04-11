@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Threading;
 
 namespace IKVM.Runtime.Accessors
 {
@@ -38,6 +39,14 @@ namespace IKVM.Runtime.Accessors
         /// <param name="typeName"></param>
         /// <returns></returns>
         protected Type Resolve(string typeName) => typeName != null ? resolver(typeName) : null;
+
+        /// <summary>
+        /// Resolves the given type name.
+        /// </summary>
+        /// <param name="type"></param>
+        /// <param name="typeName"></param>
+        /// <returns></returns>
+        protected Type Resolve(ref Type type, string typeName) => AccessorUtil.LazyGet(ref type, () => Resolve(typeName));
 
     }
 

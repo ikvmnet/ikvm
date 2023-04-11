@@ -11,6 +11,9 @@ namespace IKVM.Runtime.Accessors.Java.Lang
     internal sealed class ThreadAccessor : Accessor<object>
     {
 
+        Type javaLangThread;
+        Type javaLangThreadGroup;
+
         FieldAccessor<object> current;
         MethodAccessor<Func<object>> currentThread;
 
@@ -29,6 +32,10 @@ namespace IKVM.Runtime.Accessors.Java.Lang
 
         }
 
+        Type JavaLangThread => Resolve(ref javaLangThread, "java.lang.Thread");
+
+        Type JavaLangThreadGroup => Resolve(ref javaLangThreadGroup, "java.lang.ThreadGroup");
+
         /// <summary>
         /// Gets the value of the 'current' field.
         /// </summary>
@@ -38,14 +45,14 @@ namespace IKVM.Runtime.Accessors.Java.Lang
         /// <summary>
         /// Invokes the 'currentThread' method.
         /// </summary>
-        public object InvokeCurrentThread() => GetMethod(ref currentThread, nameof(currentThread), Resolve("java.lang.Thread")).Invoker();
+        public object InvokeCurrentThread() => GetMethod(ref currentThread, nameof(currentThread), JavaLangThread).Invoker();
 
         /// <summary>
         /// Invokes the constructor.
         /// </summary>
         /// <param name="threadGroup"></param>
         /// <returns></returns>
-        public object Init(object threadGroup) => GetConstructor(ref init, Resolve("java.lang.ThreadGroup")).Invoker(threadGroup);
+        public object Init(object threadGroup) => GetConstructor(ref init, JavaLangThreadGroup).Invoker(threadGroup);
 
         /// <summary>
         /// Invokes the 'isDaemon' method.
@@ -62,7 +69,7 @@ namespace IKVM.Runtime.Accessors.Java.Lang
         /// <summary>
         /// Invokes the 'getThreadGroup' method.
         /// </summary>
-        public object InvokeGetThreadGroup(object self) => GetMethod(ref getThreadGroup, nameof(getThreadGroup), Resolve("java.lang.ThreadGroup")).Invoker(self);
+        public object InvokeGetThreadGroup(object self) => GetMethod(ref getThreadGroup, nameof(getThreadGroup), JavaLangThreadGroup).Invoker(self);
 
     }
 

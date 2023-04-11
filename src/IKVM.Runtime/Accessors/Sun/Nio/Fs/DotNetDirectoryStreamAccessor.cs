@@ -9,6 +9,9 @@ namespace IKVM.Runtime.Accessors.Sun.Nio.Fs
     internal sealed class DotNetDirectoryStreamAccessor : Accessor<object>
     {
 
+        Type sunNioFsDotNetPath;
+        Type javaNioFileDirectoryStreamFilter;
+
         MethodAccessor<Func<object, IEnumerable<string>, object, object>> init;
         FieldAccessor<object, string> path;
         FieldAccessor<object, IEnumerable<string>> files;
@@ -24,6 +27,11 @@ namespace IKVM.Runtime.Accessors.Sun.Nio.Fs
 
         }
 
+        Type SunNioFsDotNetPath => Resolve(ref sunNioFsDotNetPath, "sun.nio.fs.DotNetPath");
+
+
+        Type JavaNioFileDirectoryStreamFilter => Resolve(ref javaNioFileDirectoryStreamFilter, "java.nio.file.DirectoryStream+Filter");
+
         /// <summary>
         /// Initializes a new instance.
         /// </summary>
@@ -31,7 +39,7 @@ namespace IKVM.Runtime.Accessors.Sun.Nio.Fs
         /// <param name="files"></param>
         /// <param name="filter"></param>
         /// <returns></returns>
-        public object Init(object path, IEnumerable<string> files, object filter) => GetConstructor(ref init, Resolve("sun.nio.fs.DotNetPath"), typeof(System.Collections.IEnumerable), Resolve("java.nio.file.DirectoryStream+Filter")).Invoker(path, files, filter);
+        public object Init(object path, IEnumerable<string> files, object filter) => GetConstructor(ref init, SunNioFsDotNetPath, typeof(System.Collections.IEnumerable), JavaNioFileDirectoryStreamFilter).Invoker(path, files, filter);
 
         /// <summary>
         /// Gets the value of the 'path' field.

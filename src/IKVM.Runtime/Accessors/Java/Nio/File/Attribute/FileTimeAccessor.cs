@@ -11,6 +11,8 @@ namespace IKVM.Runtime.Accessors.Java.Lang
     internal sealed class FileTimeAccessor : Accessor<object>
     {
 
+        Type javaNioFileAttributeFileTime;
+
         MethodAccessor<Func<long, object>> fromMillis;
         MethodAccessor<Func<object, long>> toMillis;
 
@@ -24,10 +26,12 @@ namespace IKVM.Runtime.Accessors.Java.Lang
 
         }
 
+        Type JavaNioFileAttributeFileTime => Resolve(ref javaNioFileAttributeFileTime, "java.nio.file.attribute.FileTime");
+
         /// <summary>
         /// Invokes the 'fromMillis' method.
         /// </summary>
-        public object InvokeFromMillis(long value) => GetMethod(ref fromMillis, nameof(fromMillis), Resolve("java.nio.file.attribute.FileTime"), typeof(long)).Invoker(value);
+        public object InvokeFromMillis(long value) => GetMethod(ref fromMillis, nameof(fromMillis), JavaNioFileAttributeFileTime, typeof(long)).Invoker(value);
 
         /// <summary>
         /// Invokes the 'toMillis' method.
