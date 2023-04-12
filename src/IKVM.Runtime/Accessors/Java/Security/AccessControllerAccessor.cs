@@ -13,7 +13,7 @@ namespace IKVM.Runtime.Accessors.Java.Lang
 
         Type javaSecurityPrivilegedAction;
 
-        MethodAccessor<Func<object, object>> doPrivledged;
+        MethodAccessor<Func<object, object>> doPrivileged;
 
         /// <summary>
         /// Initializes a new instance.
@@ -32,7 +32,7 @@ namespace IKVM.Runtime.Accessors.Java.Lang
         /// </summary>
         /// <param name="action"></param>
         /// <returns></returns>
-        public object InvokeDoPrivledged(object action) => GetMethod(ref doPrivledged, nameof(doPrivledged), typeof(object), JavaSecurityPrivilegedAction).Invoker(action);
+        public object InvokeDoPrivledged(object action) => GetMethod(ref doPrivileged, nameof(doPrivileged), typeof(object), JavaSecurityPrivilegedAction).Invoker(action);
 
     }
 
