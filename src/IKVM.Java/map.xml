@@ -34,11 +34,14 @@
                 </attribute>
             </field>
             <constructor sig="()V" modifiers="public">
-                <ldarg_0 />
-                <call type="System.Object" name=".ctor" sig="()V" />
-                <ldc_i4_1 />
-                <stfld class="java.lang.Object" name="__&lt;init&gt;" sig="Z" />
-                <ret />
+                <body>
+                    <ldarg_0 />
+                    <call type="System.Object" name=".ctor" sig="()V" />
+                    <ldarg_0 />
+                    <ldc_i4_1 />
+                    <stfld class="java.lang.Object" name="__&lt;init&gt;" sig="Z" />
+                    <ret />
+                </body>
             </constructor>
             <method name="notifyAll" sig="()V" modifiers="public final">
                 <body>
@@ -122,10 +125,10 @@
                     <isinst class="java.lang.Cloneable" />
                     <brfalse name="not_cloneable" />
                     <!--
-		     This means we're Cloneable, but not derived from java.lang.Object or java.lang.Throwable.
-		     It also means that we must have been invoked thru reflection (or by code in the java.lang package),
-		     so it is OK to use reflection to call Object.MemberwiseClone().
-		     -->
+		              This means we're Cloneable, but not derived from java.lang.Object or java.lang.Throwable.
+		              It also means that we must have been invoked thru reflection (or by code in the java.lang package),
+		              so it is OK to use reflection to call Object.MemberwiseClone().
+		            -->
                     <ldtoken type="System.Object" />
                     <call type="System.Type" name="GetTypeFromHandle" sig="(Lcli.System.RuntimeTypeHandle;)Lcli.System.Type;" />
                     <ldstr value="MemberwiseClone" />
