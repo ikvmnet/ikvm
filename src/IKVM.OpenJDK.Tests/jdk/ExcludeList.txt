@@ -3590,3 +3590,6 @@ tools/pack200/DefaultTimeZoneTest.java                                          
 
 # access to sun.util classes from test case directly, TypeAccessException
 sun/util/calendar/zi/TestZoneInfo310.java                                                                               generic-all
+
+# too slow due to generation of stubs, duplicate in IKVM.Tests
+java/lang/Class/getDeclaredField/FieldSetAccessibleTest.java                                                            generic-all
