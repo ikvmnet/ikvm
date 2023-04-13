@@ -307,6 +307,7 @@ jobs:
         sys:
         - windows
         - linux
+        - osx
         exclude:
         - tfm: net461
           sys: linux
@@ -362,7 +363,7 @@ jobs:
     needs:
     - build-ikvm
     timeout-minutes: 240
-    runs-on: ${{ fromJSON('{"windows":["windows-2022"],"linux":["ubuntu-22.04"]}')[matrix.sys] }}
+    runs-on: ${{ fromJSON('{"windows":["windows-2022"],"linux":["ubuntu-22.04"],"osx":["macos-12"]}')[matrix.sys] }}
     steps:
     - name: Set Paths (Windows)
       if: runner.os == 'Windows'
@@ -380,8 +381,8 @@ jobs:
         Add-Content $env:GITHUB_ENV "`nTMP=$dir\temp`nTEMP=$dir\temp`nTMPDIR=$dir\temp"
         Add-Content $env:GITHUB_ENV "`nDOTNET_INSTALL_DIR=$dir\dotnet"
         Add-Content $env:GITHUB_ENV "`nNUGET_PACKAGES=$dir\nuget\packages"
-    - name: Set Paths (Linux)
-      if: runner.os == 'Linux'
+    - name: Set Paths (Linux/OS X)
+      if: runner.os == 'Linux' || runner.os == 'macOS'
       shell: pwsh
       run: |
         $dir="${{ runner.temp }}/work"
