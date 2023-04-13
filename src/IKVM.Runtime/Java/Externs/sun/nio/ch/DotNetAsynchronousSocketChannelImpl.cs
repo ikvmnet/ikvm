@@ -382,6 +382,11 @@ namespace IKVM.Java.Externs.sun.nio.ch
                                     }
 
                                     dst.position(pos + length);
+
+                                    // no data returned means socket is EOF
+                                    if (length == 0)
+                                        length = global::sun.nio.ch.IOStatus.EOF;
+
                                     return isScatteringRead ? Long.valueOf(length) : Integer.valueOf(length);
                                 }
                                 else
@@ -429,6 +434,10 @@ namespace IKVM.Java.Externs.sun.nio.ch
                                         // we should have accounted for all of the bytes
                                         if (l != 0)
                                             throw new global::java.lang.RuntimeException("Bytes remaining after read.");
+
+                                        // no data returned means socket is EOF
+                                        if (length == 0)
+                                            length = global::sun.nio.ch.IOStatus.EOF;
 
                                         // return total number of bytes read
                                         return isScatteringRead ? Long.valueOf(length) : Integer.valueOf(length);
@@ -501,6 +510,11 @@ namespace IKVM.Java.Externs.sun.nio.ch
                                 }
 
                                 dst.position(pos + length);
+
+                                // no data returned means socket is EOF
+                                if (length == 0)
+                                    length = global::sun.nio.ch.IOStatus.EOF;
+
                                 return isScatteringRead ? Long.valueOf(length) : Integer.valueOf(length);
                             }
                             else
@@ -551,6 +565,10 @@ namespace IKVM.Java.Externs.sun.nio.ch
                                     // we should have accounted for all of the bytes
                                     if (l != 0)
                                         throw new RuntimeException("Bytes remaining after read.");
+
+                                    // no data returned means socket is EOF
+                                    if (length == 0)
+                                        length = global::sun.nio.ch.IOStatus.EOF;
 
                                     // return total number of bytes read
                                     return isScatteringRead ? Long.valueOf(length) : Integer.valueOf(length);
@@ -618,7 +636,7 @@ namespace IKVM.Java.Externs.sun.nio.ch
                 src = srcs[0];
 
             return ImplAsync();
-
+            
             async Task<Number> ImplAsync()
             {
                 try

@@ -3,213 +3,209 @@ using java.lang;
 using java.net;
 using java.nio;
 using java.nio.channels;
-using java.util;
+
 using Microsoft.VisualStudio.TestTools.UnitTesting;
 
-namespace IKVM.Tests.Java.java.nio.channels;
-
-[TestClass]
-public class AsynchronousSocketChannelTests
+namespace IKVM.Tests.Java.java.nio.channels
 {
-    static readonly Random rand = new Random();
 
-    public TestContext TestContext { get; set; }
-
-    [TestMethod]
-    public void TestStressLoopback()
+    [TestClass]
+    public class AsynchronousSocketChannelTests
     {
-        // setup listener
-        AsynchronousServerSocketChannel listener =
-            AsynchronousServerSocketChannel.open().bind(new InetSocketAddress(0));
-        int port = ((InetSocketAddress)(listener.getLocalAddress())).getPort();
-        InetAddress lh = InetAddress.getLocalHost();
-        SocketAddress remote = new InetSocketAddress(lh, port);
 
-        // create sources and sinks
-        int count = 1;// 2 + rand.nextInt(9);
-        Source[] source = new Source[count];
-        Sink[] sink = new Sink[count];
-        for (int i = 0; i < count; i++)
+        /// <summary>
+        /// Copied from similar test in OpenJDK. Should be cleaned up to just be a simple send/receive loop.
+        /// </summary>
+        /// <exception cref="RuntimeException"></exception>
+        [TestMethod]
+        public void TestStressLoopback()
         {
-            AsynchronousSocketChannel ch = AsynchronousSocketChannel.open();
+            // setup listener
+            var listener = AsynchronousServerSocketChannel.open().bind(new InetSocketAddress(0));
+            int port = ((InetSocketAddress)(listener.getLocalAddress())).getPort();
+            var lh = InetAddress.getLocalHost();
+            var remote = new InetSocketAddress(lh, port);
+
+            // create sources and sinks
+            var ch = AsynchronousSocketChannel.open();
             ch.connect(remote).get();
-            source[i] = new Source(ch);
-            sink[i] = new Sink((AsynchronousByteChannel)listener.accept().get());
-        }
+            var src = new Source(ch);
+            var dst = new Sink((AsynchronousByteChannel)listener.accept().get());
 
-        // start the sinks and sources
-        for (int i = 0; i < count; i++)
-        {
-            sink[i].start();
-            source[i].start();
-        }
+            // start the sink and source
+            dst.start();
+            src.Start();
 
-        // let the test run for a while
-        Thread.sleep(20 * 1000);
+            // let the test run for a while
+            Thread.sleep(20 * 1000);
 
-        // wait until everyone is done
-        bool failed = false;
-        long total = 0L;
-        for (int i = 0; i < count; i++)
-        {
-            long nwrote = source[i].finish();
-            long nread = sink[i].finish();
-            if (nread != nwrote)
+            // wait until everyone is done
+            var failed = false;
+
+            var sent = src.Finish();
+            var recv = dst.Finish();
+
+            if (recv != sent)
                 failed = true;
-            TestContext.WriteLine($"{nwrote} -> {nread} ({((failed) ? "FAIL" : "PASS")})");
-            total += nwrote;
-        }
-        if (failed)
-            throw new RuntimeException("Test failed - see log for details");
-        TestContext.WriteLine($"Total sent {total / (1024L * 1024L)} MB");
-    }
 
-    /**
-     * Writes bytes to a channel until "done". When done the channel is closed.
-     */
-    sealed class Source
-    {
-        private readonly AsynchronousByteChannel channel;
-        private readonly ByteBuffer sentBuffer;
-        private long bytesSent;
-        private bool finished;
-
-        internal Source(AsynchronousByteChannel channel)
-        {
-            this.channel = channel;
-            int size = 1024 + rand.nextInt(10000);
-            this.sentBuffer = (rand.nextBoolean()) ?
-                ByteBuffer.allocateDirect(size) : ByteBuffer.allocate(size);
+            if (failed)
+                throw new RuntimeException("Test failed - see log for details");
         }
 
-        internal void start()
+        sealed class Source
         {
-            sentBuffer.position(0);
-            sentBuffer.limit(sentBuffer.capacity());
-            channel.write(sentBuffer, null, new Completion(this));
-        }
 
-        internal long finish()
-        {
-            finished = true;
-            waitUntilClosed(channel);
-            return bytesSent;
-        }
+            readonly AsynchronousByteChannel channel;
+            readonly ByteBuffer sentBuffer;
+            long bytesSent;
+            bool finished;
 
-        private class Completion : CompletionHandler
-        {
-            private readonly Source @this;
-
-            public Completion(Source @this)
+            internal Source(AsynchronousByteChannel channel)
             {
-                this.@this = @this;
+                this.channel = channel;
+                this.sentBuffer = ByteBuffer.allocate(1024);
             }
 
-            public void completed(Integer nwrote, object _)
+            internal void Start()
             {
-                @this.bytesSent += nwrote.intValue();
-                if (@this.finished)
+                sentBuffer.position(0);
+                sentBuffer.limit(sentBuffer.capacity());
+                channel.write(sentBuffer, null, new Completion(this));
+            }
+
+            internal long Finish()
+            {
+                finished = true;
+                WaitUntilClosed(channel);
+                return bytesSent;
+            }
+
+            private class Completion : CompletionHandler
+            {
+
+                private readonly Source source;
+
+                public Completion(Source @this)
                 {
-                    closeUnchecked(@this.channel);
+                    this.source = @this;
                 }
-                else
+
+                public void completed(Integer nwrote, object _)
                 {
-                    @this.sentBuffer.position(0);
-                    @this.sentBuffer.limit(@this.sentBuffer.capacity());
-                    @this.channel.write(@this.sentBuffer, null, this);
+                    source.bytesSent += nwrote.intValue();
+
+                    if (source.finished)
+                    {
+                        CloseUnchecked(source.channel);
+                    }
+                    else
+                    {
+                        source.sentBuffer.position(0);
+                        source.sentBuffer.limit(source.sentBuffer.capacity());
+                        source.channel.write(source.sentBuffer, null, this);
+                    }
                 }
-            }
 
-            void CompletionHandler.completed(object result, object attachment) => completed(result as Integer, attachment);
+                void CompletionHandler.completed(object result, object attachment) => completed(result as Integer, attachment);
 
-            public void failed(System.Exception exc, object attachment)
-            {
-                (exc as Throwable)?.printStackTrace();
-                closeUnchecked(@this.channel);
-            }
-        }
-    }
-
-    /**
-     * Read bytes from a channel until EOF is received.
-     */
-    sealed class Sink
-    {
-        private readonly AsynchronousByteChannel channel;
-        private readonly ByteBuffer readBuffer;
-        private long bytesRead;
-
-        internal Sink(AsynchronousByteChannel channel)
-        {
-            this.channel = channel;
-            int size = 1024 + rand.nextInt(10000);
-            this.readBuffer = (rand.nextBoolean()) ?
-                ByteBuffer.allocateDirect(size) : ByteBuffer.allocate(size);
-        }
-
-        internal void start()
-        {
-            channel.read(readBuffer, null, new Completion(this));
-        }
-
-        internal long finish()
-        {
-            waitUntilClosed(channel);
-            return bytesRead;
-        }
-
-        private class Completion : CompletionHandler
-        {
-            private readonly Sink @this;
-
-            public Completion(Sink @this)
-            {
-                this.@this = @this;
-            }
-
-            public void completed(Integer nread, object _)
-            {
-                if (nread.intValue() < 0)
+                public void failed(System.Exception exc, object attachment)
                 {
-                    closeUnchecked(@this.channel);
-                }
-                else
-                {
-                    @this.bytesRead += nread.intValue();
-                    @this.readBuffer.clear();
-                    @this.channel.read(@this.readBuffer, null, this);
+                    (exc as Throwable)?.printStackTrace();
+                    CloseUnchecked(source.channel);
                 }
             }
+        }
 
-            void CompletionHandler.completed(object result, object attachment) => completed(result as Integer, attachment);
+        /**
+         * Read bytes from a channel until EOF is received.
+         */
+        sealed class Sink
+        {
 
-            public void failed(System.Exception exc, object att)
+            readonly AsynchronousByteChannel channel;
+            readonly ByteBuffer readBuffer;
+            long bytesRead;
+
+            internal Sink(AsynchronousByteChannel channel)
             {
-                (exc as Throwable)?.printStackTrace();
-                closeUnchecked(@this.channel);
+                this.channel = channel;
+                this.readBuffer = ByteBuffer.allocate(1024);
+            }
+
+            internal void start()
+            {
+                channel.read(readBuffer, null, new Completion(this));
+            }
+
+            internal long Finish()
+            {
+                WaitUntilClosed(channel);
+                return bytesRead;
+            }
+
+            class Completion : CompletionHandler
+            {
+
+                readonly Sink sink;
+
+                public Completion(Sink @this)
+                {
+                    this.sink = @this;
+                }
+
+                public void completed(Integer nread, object _)
+                {
+                    if (nread.intValue() < 0)
+                    {
+                        CloseUnchecked(sink.channel);
+                    }
+                    else
+                    {
+                        sink.bytesRead += nread.intValue();
+                        sink.readBuffer.clear();
+                        sink.channel.read(sink.readBuffer, null, this);
+                    }
+                }
+
+                void CompletionHandler.completed(object result, object attachment) => completed(result as Integer, attachment);
+
+                public void failed(System.Exception exc, object att)
+                {
+                    (exc as Throwable)?.printStackTrace();
+                    CloseUnchecked(sink.channel);
+                }
+
+            }
+
+        }
+
+        static void WaitUntilClosed(Channel ch)
+        {
+            while (ch.isOpen())
+            {
+                try
+                {
+                    Thread.sleep(100);
+                }
+                catch (InterruptedException e)
+                {
+
+                }
             }
         }
-    }
 
-    static void waitUntilClosed(Channel c)
-    {
-        while (c.isOpen())
+        static void CloseUnchecked(Channel ch)
         {
             try
             {
-                Thread.sleep(100);
+                ch.close();
             }
-            catch (InterruptedException ignore) { }
+            catch (IOException e)
+            {
+
+            }
         }
+
     }
 
-    static void closeUnchecked(Channel c)
-    {
-        try
-        {
-            c.close();
-        }
-        catch (IOException ignore) { }
-    }
 }
-
