@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Net.Sockets;
+using System.Runtime.InteropServices;
 
 using IKVM.Runtime;
 using IKVM.Runtime.Accessors.Java.Io;
@@ -20,6 +21,42 @@ namespace IKVM.Java.Externs.sun.nio.ch
         static FileDescriptorAccessor FileDescriptorAccessor => JVM.BaseAccessors.Get(ref fileDescriptorAccessor);
 
 #endif
+
+        [Flags]
+        enum HANDLE_FLAGS
+        {
+
+            NONE = 0,
+            INHERIT = 0x00000001,
+            PROTECT_FROM_CLOSE = 0x00000002,
+
+        }
+
+#if NETFRAMEWORK
+
+        /// <summary>
+        /// Invokes the Win32 SetHandleInformation function.
+        /// </summary>
+        /// <param name="hObject"></param>
+        /// <param name="dwMask"></param>
+        /// <param name="dwFlags"></param>
+        /// <returns></returns>
+        [DllImport("kernel32.dll", SetLastError = true)]
+        static extern bool SetHandleInformation(IntPtr hObject, HANDLE_FLAGS dwMask, HANDLE_FLAGS dwFlags);
+#else
+
+        /// <summary>
+        /// Invokes the Win32 SetHandleInformation function.
+        /// </summary>
+        /// <param name="hObject"></param>
+        /// <param name="dwMask"></param>
+        /// <param name="dwFlags"></param>
+        /// <returns></returns>
+        [DllImport("kernel32.dll", SetLastError = true)]
+        static extern bool SetHandleInformation(SafeHandle hObject, HANDLE_FLAGS dwMask, HANDLE_FLAGS dwFlags);
+
+#endif
+
 
         /// <summary>
         /// Implements the native method 'accept0'.
@@ -44,6 +81,17 @@ namespace IKVM.Java.Externs.sun.nio.ch
                 if (socket.Blocking || socket.Poll(0, SelectMode.SelectRead))
                 {
                     var newSocket = socket.Accept();
+                    if (newSocket == null)
+                        throw new global::java.net.SocketException("Invalid socket.");
+
+                    // allow socket handle to be inherited by child processes on Windows
+                    if (RuntimeUtil.IsWindows)
+#if NETFRAMEWORK
+                        SetHandleInformation(newSocket.Handle, HANDLE_FLAGS.INHERIT, HANDLE_FLAGS.NONE);
+#else
+                        SetHandleInformation(newSocket.SafeHandle, HANDLE_FLAGS.INHERIT, HANDLE_FLAGS.NONE);
+#endif
+
                     FileDescriptorAccessor.SetSocket(newfd, newSocket);
                     var ep = (System.Net.IPEndPoint)newSocket.RemoteEndPoint;
                     ((object[])isaa)[0] = ep.ToInetSocketAddress();

@@ -117,7 +117,8 @@ namespace IKVM.JTReg.TestAdapter.Core
                     {
                         // framwork cannot receive directly into Memory, so receive into temporary array
                         bytesRead = await client.ReceiveAsync(new ArraySegment<byte>(netBuffer, 0, memory.Length), SocketFlags.None);
-                        netBuffer.AsSpan(0, bytesRead).CopyTo(memory.Span);
+                        if (bytesRead > 0)
+                            netBuffer.AsSpan(0, bytesRead).CopyTo(memory.Span);
                     }
                     finally
                     {
