@@ -383,6 +383,8 @@ final class VMSystemProperties
             osversion = sysname[1];
         } else if (RuntimeInformation.IsOSPlatform(OSPlatform.get_OSX())) {
             // openjdk calls Foundation libraries here
+	    osname = "Mac OS X";
+	    osversion = "10.15";
         }
 
         if (osname == null) {
