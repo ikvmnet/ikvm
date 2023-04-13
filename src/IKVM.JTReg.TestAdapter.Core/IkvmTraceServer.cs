@@ -124,7 +124,7 @@ namespace IKVM.JTReg.TestAdapter.Core
                         ArrayPool<byte>.Shared.Return(netBuffer);
                     }
 #else
-                    var bytesRead = await client.ReceiveAsync(memory, SocketFlags.None);
+                    bytesRead = await client.ReceiveAsync(memory, SocketFlags.None);
 #endif
                     if (bytesRead == 0)
                         break;
