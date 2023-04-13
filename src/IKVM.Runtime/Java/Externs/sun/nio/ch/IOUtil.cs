@@ -71,7 +71,13 @@ namespace IKVM.Java.Externs.sun.nio.ch
 
             try
             {
-                socket.Blocking = blocking;
+                // defer operation if outstanding task
+                // .NET socket fails to set blocking if outstanding Connect
+                var task = FileDescriptorAccessor.GetTask(fd);
+                if (task != null)
+                    FileDescriptorAccessor.SetTask(fd, task.ContinueWith(_ => socket.Blocking = blocking));
+                else
+                    socket.Blocking = blocking;
             }
             catch (SocketException e)
             {

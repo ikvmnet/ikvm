@@ -326,9 +326,9 @@ namespace IKVM.Java.Externs.sun.nio.ch
 #if FIRST_PASS
             throw new NotImplementedException();
 #else
-            return InvokeFunc<int>(() =>
+            return InvokeFunc(() =>
             {
-                return InvokeWithSocket<int>(fd, socket =>
+                return InvokeWithSocket(fd, socket =>
                 {
                     var ep = new IPEndPoint(remote.ToIPAddress(), remotePort);
                     var datagram = socket.SocketType == SocketType.Dgram;
@@ -342,7 +342,11 @@ namespace IKVM.Java.Externs.sun.nio.ch
                     }
                     else
                     {
-                        var task = Task.Factory.FromAsync(socket.BeginConnect, socket.EndConnect, ep, null);
+                        var task = FileDescriptorAccessor.GetTask(fd);
+                        if (task != null)
+                            throw new global::java.net.SocketException("Outstanding async request.");
+
+                        task = Task.Factory.FromAsync(socket.BeginConnect, socket.EndConnect, ep, null);
                         FileDescriptorAccessor.SetTask(fd, task);
                         return global::sun.nio.ch.IOStatus.UNAVAILABLE;
                     }
