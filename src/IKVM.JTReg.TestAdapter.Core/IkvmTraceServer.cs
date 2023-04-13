@@ -3,6 +3,7 @@ using System.Buffers;
 using System.IO.Pipelines;
 using System.Net;
 using System.Net.Sockets;
+using System.Runtime.InteropServices;
 using System.Text.Json;
 using System.Threading.Tasks;
 
@@ -107,12 +108,21 @@ namespace IKVM.JTReg.TestAdapter.Core
 
                 try
                 {
+                    var bytesRead = 0;
+
 #if NETFRAMEWORK
-                    // framwork cannot receive directly into Memory, so receive into temporary array
                     var netBuffer = ArrayPool<byte>.Shared.Rent(memory.Length);
-                    var bytesRead = await client.ReceiveAsync(new ArraySegment<byte>(netBuffer, 0, memory.Length), SocketFlags.None);
-                    netBuffer.CopyTo(memory);
-                    ArrayPool<byte>.Shared.Return(netBuffer);
+
+                    try
+                    {
+                        // framwork cannot receive directly into Memory, so receive into temporary array
+                        bytesRead = await client.ReceiveAsync(new ArraySegment<byte>(netBuffer, 0, memory.Length), SocketFlags.None);
+                        netBuffer.AsSpan(0, bytesRead).CopyTo(memory.Span);
+                    }
+                    finally
+                    {
+                        ArrayPool<byte>.Shared.Return(netBuffer);
+                    }
 #else
                     var bytesRead = await client.ReceiveAsync(memory, SocketFlags.None);
 #endif
