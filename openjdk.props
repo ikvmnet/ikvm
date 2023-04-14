@@ -11328,21 +11328,21 @@
         <OpenJdkSource Include="$(OpenJdkDir)\jdk\src\share\classes\sun\net\www\URLConnection.java" />
         <OpenJdkSource Include="$(OpenJdkDir)\jdk\src\share\classes\sun\nio\ByteBuffered.java" />
 
-        <OpenJdkSource Include="$(OpenJdkDir)\jdk\src\share\classes\sun\nio\ch\**\*.java" />
+        <OpenJdkSource Include="$(OpenJdkDir)\jdk\src\share\classes\sun\nio\ch\**\*.java" PackagePath="sun\nio\ch" />
         <OpeNJdkSource Remove="$(OpenJdkDir)\jdk\src\share\classes\sun\nio\ch\AbstractPollSelectorImpl.java" />
         <OpeNJdkSource Remove="$(OpenJdkDir)\jdk\src\share\classes\sun\nio\ch\PollSelectorProvider.java" />
         <OpeNJdkSource Remove="$(OpenJdkDir)\jdk\src\share\classes\sun\nio\ch\SimpleAsynchronousFileChannelImpl.java" />
         <OpeNJdkSource Remove="$(OpenJdkDir)\jdk\src\share\classes\sun\nio\ch\Net.java" />
 
-        <OpenJdkSource Include="$(OpenJdkDir)\jdk\src\share\classes\sun\nio\cs\**\*.java" />
-        <OpenJdkSource Include="$(OpenJdkDir)\jdk\src\solaris\classes\sun\nio\cs\**\*.java" />
+        <OpenJdkSource Include="$(OpenJdkDir)\jdk\src\share\classes\sun\nio\cs\**\*.java" PackagePath="sun\nio\cs" />
+        <OpenJdkSource Include="$(OpenJdkDir)\jdk\src\solaris\classes\sun\nio\cs\**\*.java" PackagePath="sun\nio\cs" />
 
-        <OpenJdkSource Include="$(OpenJdkDir)\jdk\src\share\classes\sun\nio\fs\**\*.java" />
-        <!--<OpenJdkSource Include="$(OpenJdkDir)\jdk\src\windows\classes\sun\nio\fs\**\*.java" />
+        <OpenJdkSource Include="$(OpenJdkDir)\jdk\src\share\classes\sun\nio\fs\**\*.java" PackagePath="sun\nio\fs" />
+        <!--<OpenJdkSource Include="$(OpenJdkDir)\jdk\src\windows\classes\sun\nio\fs\**\*.java" PackagePath="sun\nio\fs" />-->
         <OpenJdkSource Remove="$(OpenJdkDir)\jdk\src\windows\classes\sun\nio\fs\DefaultFileSystemProvider.java" />
         <OpenJdkSource Remove="$(OpenJdkDir)\jdk\src\windows\classes\sun\nio\fs\DefaultFileTypeDetector.java" />
-        <OpenJdkSource Remove="$(OpenJdkDir)\jdk\src\windows\classes\sun\nio\fs\WindowsChannelFactory.java" />
-        <OpenJdkSource Include="$(OpenJdkDir)\jdk\src\solaris\classes\sun\nio\fs\**\*.java" />
+        <!--<OpenJdkSource Remove="$(OpenJdkDir)\jdk\src\windows\classes\sun\nio\fs\WindowsChannelFactory.java" />-->
+        <!--<OpenJdkSource Include="$(OpenJdkDir)\jdk\src\solaris\classes\sun\nio\fs\**\*.java" PackagePath="sun\nio\fs" />-->
         <OpenJdkSource Remove="$(OpenJdkDir)\jdk\src\solaris\classes\sun\nio\fs\DefaultFileSystemProvider.java" />
         <OpenJdkSource Remove="$(OpenJdkDir)\jdk\src\solaris\classes\sun\nio\fs\DefaultFileTypeDetector.java" />
         <OpenJdkSource Remove="$(OpenJdkDir)\jdk\src\solaris\classes\sun\nio\fs\SolarisAclFileAttributeView.java" />
@@ -11352,7 +11352,7 @@
         <OpenJdkSource Remove="$(OpenJdkDir)\jdk\src\solaris\classes\sun\nio\fs\SolarisNativeDispatcher.java" />
         <OpenJdkSource Remove="$(OpenJdkDir)\jdk\src\solaris\classes\sun\nio\fs\SolarisUserDefinedFileAttributeView.java" />
         <OpenJdkSource Remove="$(OpenJdkDir)\jdk\src\solaris\classes\sun\nio\fs\SolarisWatchService.java" />
-        <OpenJdkSource Remove="$(OpenJdkDir)\jdk\src\solaris\classes\sun\nio\fs\UnixChannelFactory.java" />-->
+        <!--<OpenJdkSource Remove="$(OpenJdkDir)\jdk\src\solaris\classes\sun\nio\fs\UnixChannelFactory.java" />-->
 
         <OpenJdkSource Include="$(OpenJdkDir)\jdk\src\share\classes\sun\print\AttributeUpdater.java" />
         <OpenJdkSource Include="$(OpenJdkDir)\jdk\src\share\classes\sun\print\BackgroundLookupListener.java" />

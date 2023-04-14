@@ -356,40 +356,121 @@ final class DotNetPath extends AbstractPath {
 
     public Path relativize(Path other)
     {
-        DotNetPath nother = DotNetPath.from(other);
-        if (equals(nother))
-        {
-            return new DotNetPath(fs, "");
-        }
-        int rootLength = getRootLength();
-        if (nother.getRootLength() != rootLength || !path.regionMatches(true, 0, nother.path, 0, rootLength))
-        {
-            throw new IllegalArgumentException("'other' has different root");
-        }
-        int nameCount = getNameCount();
-        int otherNameCount = nother.getNameCount();
-        int count = Math.min(nameCount, otherNameCount);
-        int i = 0;
-        // skip the common parts
-        for (; i < count && getNameImpl(i).equals(nother.getNameImpl(i)); i++)
-        {
-        }
-        // remove the unused parts of our path
-        StringBuilder sb = new StringBuilder();
-        for (int j = i; j < nameCount; j++)
-        {
-            sb.append("..\\");
-        }
-        // append the new parts of other
-        for (int j = i; j < otherNameCount; j++)
-        {
-            if (j != i)
+        if (cli.IKVM.Runtime.RuntimeUtil.get_IsWindows()) {
+            DotNetPath nother = DotNetPath.from(other);
+            if (equals(nother))
             {
-                sb.append("\\");
+                return new DotNetPath(fs, "");
             }
-            sb.append(nother.getNameImpl(j));
+            int rootLength = getRootLength();
+            if (nother.getRootLength() != rootLength || !path.regionMatches(true, 0, nother.path, 0, rootLength))
+            {
+                throw new IllegalArgumentException("'other' has different root");
+            }
+            int nameCount = getNameCount();
+            int otherNameCount = nother.getNameCount();
+            int count = Math.min(nameCount, otherNameCount);
+            int i = 0;
+            // skip the common parts
+            for (; i < count && getNameImpl(i).equals(nother.getNameImpl(i)); i++)
+            {
+            }
+            // remove the unused parts of our path
+            StringBuilder sb = new StringBuilder();
+            for (int j = i; j < nameCount; j++)
+            {
+                sb.append("..\\");
+            }
+            // append the new parts of other
+            for (int j = i; j < otherNameCount; j++)
+            {
+                if (j != i)
+                {
+                    sb.append("\\");
+                }
+                sb.append(nother.getNameImpl(j));
+            }
+            return new DotNetPath(fs, sb.toString());
+        } else {
+            DotNetPath nother = DotNetPath.from(other);
+            if (other.equals(this))
+                return emptyPath();
+
+            // can only relativize paths of the same type
+            if (this.isAbsolute() != other.isAbsolute())
+                throw new IllegalArgumentException("'other' is different type of Path");
+
+            // this path is the empty path
+            if (this.isEmpty())
+                return nother;
+
+            int bn = this.getNameCount();
+            int cn = other.getNameCount();
+
+            // skip matching names
+            int n = (bn > cn) ? cn : bn;
+            int i = 0;
+            while (i < n) {
+                if (!this.getName(i).equals(nother.getName(i)))
+                    break;
+                i++;
+            }
+
+            int dotdots = bn - i;
+            if (i < cn) {
+                // remaining name components in other
+                DotNetPath remainder = DotNetPath.from(nother.subpath(i, cn));
+                if (dotdots == 0)
+                    return remainder;
+
+                // other is the empty path
+                boolean isOtherEmpty = nother.isEmpty();
+
+                // result is a  "../" for each remaining name in base
+                // followed by the remaining names in other. If the remainder is
+                // the empty path then we don't add the final trailing slash.
+                int len = dotdots*3 + remainder.path.length();
+                if (isOtherEmpty) {
+                    assert remainder.isEmpty();
+                    len--;
+                }
+                char[] result = new char[len];
+                int pos = 0;
+                while (dotdots > 0) {
+                    result[pos++] = '.';
+                    result[pos++] = '.';
+                    if (isOtherEmpty) {
+                        if (dotdots > 1) result[pos++] = '/';
+                    } else {
+                        result[pos++] = '/';
+                    }
+                    dotdots--;
+                }
+                System.arraycopy(remainder.path.toCharArray(), 0, result, pos, remainder.path.length());
+                return new DotNetPath(fs, new String(result));
+            } else {
+                // no remaining names in other so result is simply a sequence of ".."
+                char[] result = new char[dotdots*3 - 1];
+                int pos = 0;
+                while (dotdots > 0) {
+                    result[pos++] = '.';
+                    result[pos++] = '.';
+                    // no tailing slash at the end
+                    if (dotdots > 1)
+                        result[pos++] = '/';
+                    dotdots--;
+                }
+                return new DotNetPath(fs, new String(result));
+            }
         }
-        return new DotNetPath(fs, sb.toString());
+    }
+
+    private boolean isEmpty() {
+        return path.length() == 0;
+    }
+
+    private DotNetPath emptyPath() {
+        return new DotNetPath(fs, "");
     }
 
     public URI toUri()
