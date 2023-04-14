@@ -52,7 +52,8 @@ namespace IKVM.JTReg.TestAdapter.Core
         {
 #if NETCOREAPP
             // executable permissions may not have made it onto the JRE binaries so attempt to set them
-            if (RuntimeInformation.IsOSPlatform(OSPlatform.Linux))
+            if (RuntimeInformation.IsOSPlatform(OSPlatform.Linux) ||
+                RuntimeInformation.IsOSPlatform(OSPlatform.OSX))
             {
                 var javaHome = java.lang.System.getProperty("java.home");
                 foreach (var exec in new[] { "java", "javac", "jar", "jarsigner", "javadoc", "javah", "javap", "jdeps", "keytool", "native2ascii", "policytool", "rmic", "wsgen", "wsimport" })
