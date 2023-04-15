@@ -307,10 +307,12 @@ jobs:
         sys:
         - windows
         - linux
-        - osx
+        - osx-x64
         exclude:
         - tfm: net461
           sys: linux
+        - tfm: net461
+          sys: osx-x64
         - run: IKVM.Tools.Exporter.Tests
           tfm: net6.0
         - run: IKVM.Tools.Importer.Tests
@@ -345,25 +347,37 @@ jobs:
           tfm: netcoreapp3.1
           sys: linux
         - run: IKVM.MSBuild.Tasks.Tests
+          tfm: netcoreapp3.1
+          sys: osx-x64
+        - run: IKVM.MSBuild.Tasks.Tests
           tfm: net6.0
           sys: linux
+        - run: IKVM.MSBuild.Tasks.Tests
+          tfm: net6.0
+          sys: osx-x64
         - run: IKVM.MSBuild.Tests
           tfm: net6.0
           sys: windows
         - run: IKVM.MSBuild.Tests
           tfm: net6.0
           sys: linux
+        - run: IKVM.MSBuild.Tests
+          tfm: net6.0
+          sys: osx-x64
         - run: IKVM.NET.Sdk.Tests
           tfm: net6.0
           sys: windows
         - run: IKVM.NET.Sdk.Tests
           tfm: net6.0
           sys: linux
+        - run: IKVM.NET.Sdk.Tests
+          tfm: net6.0
+          sys: osx-x64
     name: Test (${{ matrix.run }}:${{ matrix.tfm }}:${{ matrix.sys }}
     needs:
     - build-ikvm
     timeout-minutes: 240
-    runs-on: ${{ fromJSON('{"windows":["windows-2022"],"linux":["ubuntu-22.04"],"osx":["macos-12"]}')[matrix.sys] }}
+    runs-on: ${{ fromJSON('{"windows":["windows-2022"],"linux":["ubuntu-22.04"],"osx-x64":["macos-12"]}')[matrix.sys] }}
     steps:
     - name: Set Paths (Windows)
       if: runner.os == 'Windows'
