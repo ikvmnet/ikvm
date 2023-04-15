@@ -529,6 +529,7 @@ java/awt/Multiscreen/TranslucencyThrowsExceptionWhenFullScreen/TranslucencyThrow
 java/awt/Multiscreen/UpdateGCTest/UpdateGCTest.java                                                                     generic-all
 java/awt/Multiscreen/WPanelPeerPerf/WPanelPeerPerf.java                                                                 generic-all
 java/awt/Multiscreen/WindowGCChangeTest/WindowGCChangeTest.html                                                         generic-all
+java/awt/Multiscreen/MultiScreenInsetsTest/MultiScreenInsetsTest.java                                                   linux-all
 java/awt/Paint/ButtonRepaint.java                                                                                       generic-all
 java/awt/Paint/CheckboxRepaint.java                                                                                     generic-all
 java/awt/Paint/ExposeOnEDT.java                                                                                         generic-all
