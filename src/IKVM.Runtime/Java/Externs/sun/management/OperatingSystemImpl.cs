@@ -1,30 +1,8 @@
-﻿/*
-  Copyright (C) 2011-2014 Jeroen Frijters
-
-  This software is provided 'as-is', without any express or implied
-  warranty.  In no event will the authors be held liable for any damages
-  arising from the use of this software.
-
-  Permission is granted to anyone to use this software for any purpose,
-  including commercial applications, and to alter it and redistribute it
-  freely, subject to the following restrictions:
-
-  1. The origin of this software must not be misrepresented; you must not
-     claim that you wrote the original software. If you use this software
-     in a product, an acknowledgment in the product documentation would be
-     appreciated but is not required.
-  2. Altered source versions must be plainly marked as such, and must not be
-     misrepresented as being the original software.
-  3. This notice may not be removed or altered from any source distribution.
-
-  Jeroen Frijters
-  jeroen@frijters.net
-  
-*/
-
-using System;
+﻿using System;
 using System.Diagnostics;
 using System.Runtime.InteropServices;
+
+using Mono.Unix.Native;
 
 namespace IKVM.Java.Externs.sun.management
 {
@@ -85,8 +63,6 @@ namespace IKVM.Java.Externs.sun.management
 
         }
 
-        static OSPlatform platform;
-
         [DllImport("psapi", SetLastError = true)]
         [return: MarshalAs(UnmanagedType.Bool)]
         static extern bool GetProcessMemoryInfo(IntPtr Process, out PROCESS_MEMORY_COUNTERS ppsmemCounters, uint cb);
@@ -100,27 +76,114 @@ namespace IKVM.Java.Externs.sun.management
         static extern bool GetPerformanceInfo(ref PERFORMANCE_INFORMATION pPerformanceInformation, uint size);
 
         /// <summary>
+        /// Describes the Linux 'sysinfo' structure.
+        /// </summary>
+        [StructLayout(LayoutKind.Sequential)]
+        unsafe struct sysinfo_t_x64
+        {
+
+            /// <summary>
+            /// Seconds since boot
+            /// </summary>
+            public long uptime;
+
+            /// <summary>
+            /// 1, 5, and 15 minute load averages
+            /// </summary>
+            public fixed ulong loads[3];
+
+            /// <summary>
+            /// Total usable main memory size
+            /// </summary>
+            public ulong totalram;
+
+            /// <summary>
+            /// Available memory size
+            /// </summary>
+            public ulong freeram;
+
+            /// <summary>
+            /// Amount of shared memory
+            /// </summary>
+            public ulong sharedram;
+
+            /// <summary>
+            /// Memory used by buffers
+            /// </summary>
+            public ulong bufferram;
+
+            /// <summary>
+            /// Total swap space size.
+            /// </summary>
+            public uint totalswap;
+
+            /// <summary>
+            /// swap space still available
+            /// </summary>
+            public uint freeswap;
+
+            /// <summary>
+            /// Number of current processes
+            /// </summary>
+            public ushort procs;
+
+            /// <summary>
+            /// Explicit padding for m68k.
+            /// </summary>
+            public ushort pad;
+
+            /// <summary>
+            /// Total high memory size.
+            /// </summary>
+            public ulong totalhigh;
+
+            /// <summary>
+            /// Available high memory size.
+            /// </summary>
+            public ulong freehigh;
+
+            /// <summary>
+            /// Memory unit size in bytes.
+            /// </summary>
+            public uint mem_unit;
+
+        }
+
+        /// <summary>
+        /// Invokes the native linux method 'sysinfo' for a x64 platform.
+        /// </summary>
+        /// <param name="info"></param>
+        /// <returns></returns>
+        [DllImport("lib6", EntryPoint = "sysinfo")]
+        static extern int sysinfo_x64(ref sysinfo_t_x64 info);
+
+        /// <summary>
         /// Initializes the static information.
         /// </summary>
         public static void initialize()
         {
-            // determine OS platform up front
-            if (RuntimeInformation.IsOSPlatform(OSPlatform.Windows))
-                platform = OSPlatform.Windows;
-            else if (RuntimeInformation.IsOSPlatform(OSPlatform.Linux))
-                platform = OSPlatform.Linux;
-            else if (RuntimeInformation.IsOSPlatform(OSPlatform.OSX))
-                platform = OSPlatform.OSX;
+
         }
 
-        public static long getCommittedVirtualMemorySize0(object _this)
+        /// <summary>
+        /// Implements the native method 'getCommittedVirtualMemorySize0'.
+        /// </summary>
+        /// <param name="self"></param>
+        /// <returns></returns>
+        public static long getCommittedVirtualMemorySize0(object self)
         {
             return Process.GetCurrentProcess().PagedMemorySize64;
         }
 
-        public static long getTotalSwapSpaceSize(object _this)
+        /// <summary>
+        /// Implements the native method 'getTotalSwapSpaceSize'.
+        /// </summary>
+        /// <param name="self"></param>
+        /// <returns></returns>
+        /// <exception cref="global::java.lang.InternalError"></exception>
+        public static long getTotalSwapSpaceSize(object self)
         {
-            if (platform == OSPlatform.Windows)
+            if (RuntimeInformation.IsOSPlatform(OSPlatform.Windows))
             {
                 var r = -1L;
                 var p = new MEMORYSTATUSEX();
@@ -130,15 +193,29 @@ namespace IKVM.Java.Externs.sun.management
 
                 return r;
             }
+            else if (RuntimeInformation.IsOSPlatform(OSPlatform.Linux) && IntPtr.Size == 8)
+            {
+                var si = new sysinfo_t_x64();
+                if (sysinfo_x64(ref si) != 0)
+                    throw new global::java.lang.InternalError("sysinfo failed to get swap size");
+
+                return (long)si.totalswap * si.mem_unit;
+            }
             else
             {
                 return -1;
             }
         }
 
-        public static long getFreeSwapSpaceSize(object _this)
+        /// <summary>
+        /// Implements the native method 'getFreeSwapSpaceSize'.
+        /// </summary>
+        /// <param name="self"></param>
+        /// <returns></returns>
+        /// <exception cref="global::java.lang.InternalError"></exception>
+        public static long getFreeSwapSpaceSize(object self)
         {
-            if (platform == OSPlatform.Windows)
+            if (RuntimeInformation.IsOSPlatform(OSPlatform.Windows))
             {
                 var r = -1L;
                 var p = new MEMORYSTATUSEX();
@@ -148,15 +225,28 @@ namespace IKVM.Java.Externs.sun.management
 
                 return r;
             }
+            else if (RuntimeInformation.IsOSPlatform(OSPlatform.Linux) && IntPtr.Size == 8)
+            {
+                var si = new sysinfo_t_x64();
+                if (sysinfo_x64(ref si) != 0)
+                    throw new global::java.lang.InternalError("sysinfo failed to get swap size");
+
+                return (long)si.freeswap * si.mem_unit;
+            }
             else
             {
                 return -1;
             }
         }
 
-        public static long getFreePhysicalMemorySize(object _this)
+        /// <summary>
+        /// Implements the native method 'getFreePhysicalMemorySize'.
+        /// </summary>
+        /// <param name="self"></param>
+        /// <returns></returns>
+        public static long getFreePhysicalMemorySize(object self)
         {
-            if (platform == OSPlatform.Windows)
+            if (RuntimeInformation.IsOSPlatform(OSPlatform.Windows))
             {
                 var m = -1L;
                 var p = new PERFORMANCE_INFORMATION();
@@ -165,15 +255,24 @@ namespace IKVM.Java.Externs.sun.management
 
                 return m;
             }
+            else if (RuntimeInformation.IsOSPlatform(OSPlatform.Linux))
+            {
+                return Syscall.sysconf(SysconfName._SC_AVPHYS_PAGES) * Syscall.sysconf(SysconfName._SC_PAGESIZE);
+            }
             else
             {
                 return -1;
             }
         }
 
-        public static long getTotalPhysicalMemorySize(object _this)
+        /// <summary>
+        /// Implements the native method 'getTotalPhysicalMemorySize'.
+        /// </summary>
+        /// <param name="self"></param>
+        /// <returns></returns>
+        public static long getTotalPhysicalMemorySize(object self)
         {
-            if (platform == OSPlatform.Windows)
+            if (RuntimeInformation.IsOSPlatform(OSPlatform.Windows))
             {
                 var m = -1L;
                 var p = new PERFORMANCE_INFORMATION();
@@ -182,23 +281,42 @@ namespace IKVM.Java.Externs.sun.management
 
                 return m;
             }
+            else if (RuntimeInformation.IsOSPlatform(OSPlatform.Linux))
+            {
+                return Syscall.sysconf(SysconfName._SC_PHYS_PAGES);
+            }
             else
             {
                 return -1;
             }
         }
 
-        public static long getProcessCpuTime(object _this)
+        /// <summary>
+        /// Implements the native method 'getProcessCpuTime'.
+        /// </summary>
+        /// <param name="self"></param>
+        /// <returns></returns>
+        public static long getProcessCpuTime(object self)
         {
             return Process.GetCurrentProcess().TotalProcessorTime.Ticks * 100;
         }
 
-        public static double getSystemCpuLoad(object _this)
+        /// <summary>
+        /// Implements the native method 'getSystemCpuLoad'.
+        /// </summary>
+        /// <param name="self"></param>
+        /// <returns></returns>
+        public static double getSystemCpuLoad(object self)
         {
             return -1;
         }
 
-        public static double getProcessCpuLoad(object _this)
+        /// <summary>
+        /// Implements the native method 'getProcessCpuLoad'.
+        /// </summary>
+        /// <param name="self"></param>
+        /// <returns></returns>
+        public static double getProcessCpuLoad(object self)
         {
             return -1;
         }
