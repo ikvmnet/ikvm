@@ -3,6 +3,7 @@ using System.Diagnostics;
 using System.IO;
 using System.Linq;
 using System.Runtime.InteropServices;
+using System.Text.RegularExpressions;
 
 using Mono.Unix.Native;
 
@@ -216,11 +217,16 @@ namespace IKVM.Java.Externs.sun.management
             {
                 try
                 {
-                    return long.Parse(File.ReadAllText("/proc/self/stat").Split(' ')[22]);
+                    var l = File.ReadLines("/proc/self/stat").FirstOrDefault();
+                    if (l != null && Regex.Match(l, @"\d+ \(.+\) . \d+ \d+ \d+ \d+ \d+ \d+ \d+ \d+ \d+ \d+ \d+ \d+ \d+ \d+ \d+ \d+ \d+ \d+ \d+ (\d+) .+$") is Match m && m.Groups.Count >= 2)
+                        if (long.TryParse(m.Groups[1].Value, out var vsize))
+                            return vsize;
+
+                    throw new global::java.lang.InternalError("Unable to get virtual memory usage");
                 }
                 catch (Exception e)
                 {
-                    throw new global::java.lang.InternalError(e);
+                    throw new global::java.lang.InternalError("Unable to get virtual memory usage", e);
                 }
             }
             else
