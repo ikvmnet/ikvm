@@ -183,6 +183,9 @@ namespace IKVM.Java.Externs.sun.management
         /// <exception cref="global::java.lang.InternalError"></exception>
         public static long getTotalSwapSpaceSize(object self)
         {
+#if FIRST_PASS
+            throw new NotImplementedException();
+#else
             if (RuntimeInformation.IsOSPlatform(OSPlatform.Windows))
             {
                 var r = -1L;
@@ -205,6 +208,7 @@ namespace IKVM.Java.Externs.sun.management
             {
                 return -1;
             }
+#endif
         }
 
         /// <summary>
@@ -215,6 +219,9 @@ namespace IKVM.Java.Externs.sun.management
         /// <exception cref="global::java.lang.InternalError"></exception>
         public static long getFreeSwapSpaceSize(object self)
         {
+#if FIRST_PASS
+            throw new NotImplementedException();
+#else
             if (RuntimeInformation.IsOSPlatform(OSPlatform.Windows))
             {
                 var r = -1L;
@@ -237,6 +244,7 @@ namespace IKVM.Java.Externs.sun.management
             {
                 return -1;
             }
+#endif
         }
 
         /// <summary>
