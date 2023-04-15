@@ -167,7 +167,7 @@ namespace IKVM.Java.Externs.sun.nio.ch
             {
                 AF_UNSPEC = 0;
                 AF_INET = 2;
-                AF_INET6 = 10;
+                AF_INET6 = 30;
                 IPPROTO_IP = 0;
                 IPPROTO_IPV6 = 41;
                 IP_ADD_SOURCE_MEMBERSHIP = 70;
