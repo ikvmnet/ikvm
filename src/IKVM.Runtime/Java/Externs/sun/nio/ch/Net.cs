@@ -471,7 +471,7 @@ namespace IKVM.Java.Externs.sun.nio.ch
                                 ArrayPool<byte>.Shared.Return(v);
                             }
                         }
-                        else if (RuntimeInformation.IsOSPlatform(OSPlatform.Linux))
+                        else if (RuntimeInformation.IsOSPlatform(OSPlatform.Linux) || RuntimeInformation.IsOSPlatform(OSPlatform.OSX))
                         {
 #if NETCOREAPP
                             if (setsockopt(socket.SafeHandle, IPPROTO_IP, join ? IP_ADD_SOURCE_MEMBERSHIP : IP_DROP_SOURCE_MEMBERSHIP, &optionValue, sizeof(ip_mreq_source)) != 0)
