@@ -293,9 +293,33 @@ public class ManagementFactoryHelper {
     }
 
     static void registerInternalMBeans(MBeanServer mbs) {
+        
+    }
+
+    private static void unregisterMBean(MBeanServer mbs, String mbeanName) {
+        try {
+            final ObjectName objName = Util.newObjectName(mbeanName);
+
+            // inner class requires these fields to be final
+            final MBeanServer mbs0 = mbs;
+            AccessController.doPrivileged(new PrivilegedExceptionAction<Void>() {
+                public Void run() throws MBeanRegistrationException,
+                                           RuntimeOperationsException  {
+                    try {
+                        mbs0.unregisterMBean(objName);
+                    } catch (InstanceNotFoundException e) {
+                        // ignore exception if not found
+                    }
+                    return null;
+                }
+            });
+        } catch (PrivilegedActionException e) {
+            throw Util.newException(e.getException());
+        }
     }
 
     static void unregisterInternalMBeans(MBeanServer mbs) {
+        
     }
 
     static {

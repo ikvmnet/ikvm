@@ -1,5 +1,7 @@
 ﻿using System;
 using System.Diagnostics;
+using System.IO;
+using System.Linq;
 using System.Runtime.InteropServices;
 
 using Mono.Unix.Native;
@@ -83,52 +85,52 @@ namespace IKVM.Java.Externs.sun.management
         {
 
             /// <summary>
-            /// Seconds since boot
+            /// Seconds since boot.
             /// </summary>
             public long uptime;
 
             /// <summary>
-            /// 1, 5, and 15 minute load averages
+            /// 1, 5, and 15 minute load averages.
             /// </summary>
             public fixed ulong loads[3];
 
             /// <summary>
-            /// Total usable main memory size
+            /// Total usable main memory size.
             /// </summary>
             public ulong totalram;
 
             /// <summary>
-            /// Available memory size
+            /// Available memory size.
             /// </summary>
             public ulong freeram;
 
             /// <summary>
-            /// Amount of shared memory
+            /// Amount of shared memory.
             /// </summary>
             public ulong sharedram;
 
             /// <summary>
-            /// Memory used by buffers
+            /// Memory used by buffers.
             /// </summary>
             public ulong bufferram;
 
             /// <summary>
             /// Total swap space size.
             /// </summary>
-            public uint totalswap;
+            public ulong totalswap;
 
             /// <summary>
-            /// swap space still available
+            /// swap space still available.
             /// </summary>
-            public uint freeswap;
+            public ulong freeswap;
 
             /// <summary>
-            /// Number of current processes
+            /// Number of current processes.
             /// </summary>
             public ushort procs;
 
             /// <summary>
-            /// Explicit padding for m68k.
+            /// Number of current processes.
             /// </summary>
             public ushort pad;
 
@@ -142,7 +144,7 @@ namespace IKVM.Java.Externs.sun.management
             /// </summary>
             public ulong freehigh;
 
-            /// <summary>
+            /// <summary>po;llokp
             /// Memory unit size in bytes.
             /// </summary>
             public uint mem_unit;
@@ -154,8 +156,39 @@ namespace IKVM.Java.Externs.sun.management
         /// </summary>
         /// <param name="info"></param>
         /// <returns></returns>
-        [DllImport("lib6", EntryPoint = "sysinfo")]
+        [DllImport("libc", EntryPoint = "sysinfo")]
         static extern int sysinfo_x64(ref sysinfo_t_x64 info);
+
+        /// <summary>
+        /// Describes the rlimit structure for a x64 Linux platform.
+        /// </summary>
+        [StructLayout(LayoutKind.Sequential)]
+        struct rlimit_t_x64
+        {
+
+            public ulong rlim_cur;
+            public ulong rlim_max;
+
+        }
+
+        enum RLIMIT
+        {
+            FSIZE = 0,
+            NOFILE = 1,
+            CORE = 2,
+            CPU = 3,
+            DATA = 4,
+            STACK = 5,
+            AS = 6,
+        }
+
+        /// <summary>
+        /// Invokes the native linux method 'getrlimit' for a x64 platform.
+        /// </summary>
+        /// <param name="info"></param>
+        /// <returns></returns>
+        [DllImport("libc", EntryPoint = "getrlimit")]
+        static extern int getrlimit_x64(RLIMIT resource, ref rlimit_t_x64 info);
 
         /// <summary>
         /// Initializes the static information.
@@ -172,7 +205,29 @@ namespace IKVM.Java.Externs.sun.management
         /// <returns></returns>
         public static long getCommittedVirtualMemorySize0(object self)
         {
-            return Process.GetCurrentProcess().PagedMemorySize64;
+#if FIRST_PASS
+            throw new NotImplementedException();
+#else
+            if (RuntimeInformation.IsOSPlatform(OSPlatform.Windows))
+            {
+                return Process.GetCurrentProcess().PagedMemorySize64;
+            }
+            else if (RuntimeInformation.IsOSPlatform(OSPlatform.Linux))
+            {
+                try
+                {
+                    return long.Parse(File.ReadAllText("/proc/self/stat").Split(' ')[22]);
+                }
+                catch (Exception e)
+                {
+                    throw new global::java.lang.InternalError(e);
+                }
+            }
+            else
+            {
+                return -1;
+            }
+#endif
         }
 
         /// <summary>
@@ -327,6 +382,59 @@ namespace IKVM.Java.Externs.sun.management
         public static double getProcessCpuLoad(object self)
         {
             return -1;
+        }
+
+        /// <summary>
+        /// Implements the native method 'getOpenFileDescriptorCount'.
+        /// </summary>
+        /// <param name="self"></param>
+        /// <returns></returns>
+        public static long getOpenFileDescriptorCount(object self)
+        {
+#if FIRST_PASS
+            throw new NotImplementedException();
+#else
+            if (RuntimeInformation.IsOSPlatform(OSPlatform.Linux))
+            {
+                try
+                {
+                    return Directory.GetFiles("/proc/self/fd").Count();
+                }
+                catch (Exception e)
+                {
+                    throw new global::java.lang.InternalError(e);
+                }
+            }
+            else
+            {
+                return -1;
+            }
+#endif
+        }
+
+        /// <summary>
+        /// Implements the native method 'getMaxFileDescriptorCount'.
+        /// </summary>
+        /// <param name="self"></param>
+        /// <returns></returns>
+        public static long getMaxFileDescriptorCount(object self)
+        {
+#if FIRST_PASS
+            throw new NotImplementedException();
+#else
+            if (RuntimeInformation.IsOSPlatform(OSPlatform.Linux) && IntPtr.Size == 8)
+            {
+                var rlp = new rlimit_t_x64();
+                if (getrlimit_x64(RLIMIT.NOFILE, ref rlp) == -1)
+                    throw new global::java.lang.InternalError("getrlimit failed");
+
+                return (long)rlp.rlim_cur;
+            }
+            else
+            {
+                return -1;
+            }
+#endif
         }
 
     }
