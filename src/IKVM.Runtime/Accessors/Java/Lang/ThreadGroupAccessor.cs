@@ -37,8 +37,6 @@ namespace IKVM.Runtime.Accessors.Java.Lang
 
         Type JavaLangThreadGroup => Resolve(ref javaLangThreadGroup, "java.lang.ThreadGroup");
 
-        Type JavaLangThrowable => Resolve(ref javaLangThrowable, "java.lang.Throwable");
-
         /// <summary>
         /// Invokes the constructor.
         /// </summary>
@@ -60,7 +58,7 @@ namespace IKVM.Runtime.Accessors.Java.Lang
         /// <summary>
         /// Invokes the 'uncaughtException' method.
         /// </summary>
-        public void InvokeUncaughtException(object self, object t, object e) => GetMethod(ref uncaughtException, nameof(uncaughtException), typeof(void), JavaLangThread, JavaLangThrowable).Invoker(self, t, e);
+        public void InvokeUncaughtException(object self, object t, object e) => GetMethod(ref uncaughtException, nameof(uncaughtException), typeof(void), JavaLangThread, typeof(Exception)).Invoker(self, t, e);
 
     }
 
