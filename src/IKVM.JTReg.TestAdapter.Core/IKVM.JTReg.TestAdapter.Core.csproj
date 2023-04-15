@@ -10,6 +10,7 @@
         <TargetFrameworks>net461;netcoreapp3.1</TargetFrameworks>
         <ErrorOnDuplicatePublishOutputFiles>false</ErrorOnDuplicatePublishOutputFiles>
         <AllowUnsafeBlocks>true</AllowUnsafeBlocks>
+        <ProduceReferenceAssembly>true</ProduceReferenceAssembly>
     </PropertyGroup>
 
     <ItemGroup>
