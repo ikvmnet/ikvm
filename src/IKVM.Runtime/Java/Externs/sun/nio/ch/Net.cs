@@ -163,6 +163,20 @@ namespace IKVM.Java.Externs.sun.nio.ch
                 MCAST_JOIN_SOURCE_GROUP = 46;
                 MCAST_LEAVE_SOURCE_GROUP = 47;
             }
+            else if (RuntimeInformation.IsOSPlatform(OSPlatform.OSX))
+            {
+                AF_UNSPEC = 0;
+                AF_INET = 2;
+                AF_INET6 = 10;
+                IPPROTO_IP = 0;
+                IPPROTO_IPV6 = 41;
+                IP_ADD_SOURCE_MEMBERSHIP = 70;
+                IP_DROP_SOURCE_MEMBERSHIP = 71;
+                MCAST_BLOCK_SOURCE = 84;
+                MCAST_UNBLOCK_SOURCE = 85;
+                MCAST_JOIN_SOURCE_GROUP = 82;
+                MCAST_LEAVE_SOURCE_GROUP = 83;
+            }
             else
             {
                 throw new PlatformNotSupportedException();
@@ -589,7 +603,7 @@ namespace IKVM.Java.Externs.sun.nio.ch
                                 ArrayPool<byte>.Shared.Return(v);
                             }
                         }
-                        else if (RuntimeInformation.IsOSPlatform(OSPlatform.Linux))
+                        else if (RuntimeInformation.IsOSPlatform(OSPlatform.Linux) || RuntimeInformation.IsOSPlatform(OSPlatform.OSX))
                         {
 #if NETCOREAPP
                             if (setsockopt(socket.SafeHandle, IPPROTO_IPV6, join ? MCAST_JOIN_SOURCE_GROUP : MCAST_LEAVE_SOURCE_GROUP, &groupSourceReq, sizeof(group_source_req)) != 0)
