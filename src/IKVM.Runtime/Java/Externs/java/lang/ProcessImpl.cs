@@ -548,7 +548,7 @@ namespace IKVM.Java.Externs.java.lang
 
             if (env != null)
                 foreach (var kvp in env)
-                    psi.Environment.Add(kvp);
+                    psi.Environment[kvp.Key] = kvp.Value;
 
             // begin new process
             var process = Process.Start(psi);
@@ -637,11 +637,11 @@ namespace IKVM.Java.Externs.java.lang
             int pos;
             int users = 2;
 
-            public override bool CanRead => throw new NotImplementedException();
+            public override bool CanRead => true;
 
-            public override bool CanSeek => throw new NotImplementedException();
+            public override bool CanWrite => true;
 
-            public override bool CanWrite => throw new NotImplementedException();
+            public override bool CanSeek => false;
 
             public override long Length => throw new NotImplementedException();
 
@@ -715,7 +715,7 @@ namespace IKVM.Java.Externs.java.lang
 
             public override void Flush()
             {
-                throw new NotImplementedException();
+
             }
 
             public override long Seek(long offset, SeekOrigin origin)
@@ -760,7 +760,14 @@ namespace IKVM.Java.Externs.java.lang
                 }
             };
 
-            src.BeginRead(buf, 0, buf.Length, cb, null);
+            try
+            {
+                src.BeginRead(buf, 0, buf.Length, cb, null);
+            }
+            catch
+            {
+
+            }
         }
 
         static void WaitForWithInterrupt(Process pid)
