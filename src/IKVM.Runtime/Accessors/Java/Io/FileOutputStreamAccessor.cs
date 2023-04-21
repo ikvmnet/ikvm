@@ -1,4 +1,6 @@
-﻿namespace IKVM.Runtime.Accessors.Java.Io
+﻿using System;
+
+namespace IKVM.Runtime.Accessors.Java.Io
 {
 
 #if FIRST_PASS == false && EXPORTER == false && IMPORTER == false
@@ -9,6 +11,8 @@
     internal sealed class FileOutputStreamAccessor : Accessor<object>
     {
 
+        MethodAccessor<Func<object, object>> init1;
+        MethodAccessor<Func<object, object>> init2;
         FieldAccessor<object, object> fd;
 
         /// <summary>
@@ -20,6 +24,18 @@
         {
 
         }
+
+        /// <summary>
+        /// Initializes a new instance of the object.
+        /// </summary>
+        /// <returns></returns>
+        public object Init1(object fd) => GetConstructor(ref init1, Resolve("java.io.File")).Invoker(fd);
+
+        /// <summary>
+        /// Initializes a new instance of the object.
+        /// </summary>
+        /// <returns></returns>
+        public object Init2(object fd) => GetConstructor(ref init2, Resolve("java.io.FileDescriptor")).Invoker(fd);
 
         /// <summary>
         /// Gets the value of the 'fd' field.

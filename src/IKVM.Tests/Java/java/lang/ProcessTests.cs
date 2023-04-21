@@ -15,13 +15,13 @@ namespace IKVM.Tests.Java.java.lang
     {
 
         [TestMethod]
-        public void CanRedirectStandardOutput()
+        public void CanReadFromInputStream()
         {
-            string c;
+            string[] c;
             if (RuntimeInformation.IsOSPlatform(OSPlatform.Windows))
-                c = "cmd.exe /c echo hello";
+                c = new[] { "cmd.exe", "/c", "echo hello" };
             else
-                c = "echo hello";
+                c = new[] { "/bin/sh", "-c", "echo hello" };
 
             var b = new ProcessBuilder(c);
             var p = b.start();
@@ -29,7 +29,25 @@ namespace IKVM.Tests.Java.java.lang
             var r = new BufferedReader(new InputStreamReader(p.getInputStream()));
             var l = r.readLine();
             p.waitFor();
-            p.destroy();
+
+            l.Should().Be("hello");
+        }
+
+        [TestMethod]
+        public void CanReadFromErrorStream()
+        {
+            string[] c;
+            if (RuntimeInformation.IsOSPlatform(OSPlatform.Windows))
+                c = new[] { "cmd.exe", "/c", "echo hello>&2" };
+            else
+                c = new[] { "/bin/sh", "-c", "echo hello>&2" };
+
+            var b = new ProcessBuilder(c);
+            var p = b.start();
+
+            var r = new BufferedReader(new InputStreamReader(p.getErrorStream()));
+            var l = r.readLine();
+            p.waitFor();
 
             l.Should().Be("hello");
         }

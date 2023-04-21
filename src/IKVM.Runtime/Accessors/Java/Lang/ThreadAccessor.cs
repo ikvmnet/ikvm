@@ -16,9 +16,11 @@ namespace IKVM.Runtime.Accessors.Java.Lang
 
         FieldAccessor<object> current;
         MethodAccessor<Func<object>> currentThread;
+        MethodAccessor<Func<bool>> interrupted;
 
         MethodAccessor<Func<object, object>> init;
         MethodAccessor<Func<object, bool>> isDaemon;
+        MethodAccessor<Func<object, bool>> isInterrupted;
         MethodAccessor<Action<object>> die;
         MethodAccessor<Func<object, object>> getThreadGroup;
 
@@ -48,6 +50,12 @@ namespace IKVM.Runtime.Accessors.Java.Lang
         public object InvokeCurrentThread() => GetMethod(ref currentThread, nameof(currentThread), JavaLangThread).Invoker();
 
         /// <summary>
+        /// Invokes the 'interrupted' method.
+        /// </summary>
+        /// <returns></returns>
+        public bool InvokeIsInterrupted(object self) => GetMethod(ref isInterrupted, nameof(isInterrupted), typeof(bool)).Invoker(self);
+
+        /// <summary>
         /// Invokes the constructor.
         /// </summary>
         /// <param name="threadGroup"></param>
@@ -70,6 +78,12 @@ namespace IKVM.Runtime.Accessors.Java.Lang
         /// Invokes the 'getThreadGroup' method.
         /// </summary>
         public object InvokeGetThreadGroup(object self) => GetMethod(ref getThreadGroup, nameof(getThreadGroup), JavaLangThreadGroup).Invoker(self);
+
+        /// <summary>
+        /// Invokes the 'interrupted' method.
+        /// </summary>
+        /// <returns></returns>
+        public bool InvokeInterrupted() => GetMethod(ref interrupted, nameof(interrupted), typeof(bool)).Invoker();
 
     }
 

@@ -14,6 +14,7 @@ namespace IKVM.Runtime.Accessors.Java.Lang
         MethodAccessor<Action<object, string>> checkRead;
         MethodAccessor<Action<object, string>> checkWrite;
         MethodAccessor<Action<object, string>> checkDelete;
+        MethodAccessor<Action<object, string>> checkExec;
 
         /// <summary>
         /// Initializes a new instance.
@@ -39,6 +40,11 @@ namespace IKVM.Runtime.Accessors.Java.Lang
         /// Invokes the 'checkDelete' method.
         /// </summary>
         public void InvokeCheckDelete(object self, string path) => GetMethod(ref checkDelete, nameof(checkDelete), typeof(void), typeof(string)).Invoker(self, path);
+
+        /// <summary>
+        /// Invokes the 'checkExec' method.
+        /// </summary>
+        public void InvokeCheckExec(object self, string path) => GetMethod(ref checkExec, nameof(checkExec), typeof(void), typeof(string)).Invoker(self, path);
 
     }
 

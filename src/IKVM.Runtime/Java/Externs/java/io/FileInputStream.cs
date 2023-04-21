@@ -191,7 +191,6 @@ namespace IKVM.Java.Externs.java.io
 
             try
             {
-
                 long cur = stream.Position;
                 long end = stream.Seek(n, SeekOrigin.Current);
                 return end - cur;

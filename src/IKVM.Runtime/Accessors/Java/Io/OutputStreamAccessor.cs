@@ -6,9 +6,9 @@ namespace IKVM.Runtime.Accessors.Java.Io
 #if FIRST_PASS == false && EXPORTER == false && IMPORTER == false
 
     /// <summary>
-    /// Provides runtime access to the 'java.io.InputStream' type.
+    /// Provides runtime access to the 'java.io.OutputStream' type.
     /// </summary>
-    internal sealed class InputStreamAccessor : Accessor<object>
+    internal sealed class OutputStreamAccessor : Accessor<object>
     {
 
         MethodAccessor<Action<object>> close;
@@ -17,8 +17,8 @@ namespace IKVM.Runtime.Accessors.Java.Io
         /// Initializes a new instance.
         /// </summary>
         /// <param name="resolver"></param>
-        public InputStreamAccessor(AccessorTypeResolver resolver) :
-            base(resolver, "java.io.InputStream")
+        public OutputStreamAccessor(AccessorTypeResolver resolver) :
+            base(resolver, "java.io.OutputStream")
         {
 
         }
