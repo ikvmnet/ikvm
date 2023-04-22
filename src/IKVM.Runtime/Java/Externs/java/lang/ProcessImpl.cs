@@ -11,6 +11,7 @@ using IKVM.Runtime;
 using IKVM.Runtime.Accessors.Java.Io;
 using IKVM.Runtime.Accessors.Java.Lang;
 using IKVM.Runtime.Accessors.Java.Util;
+using IKVM.Runtime.Util.Java.Security;
 
 namespace IKVM.Java.Externs.java.lang
 {
@@ -378,7 +379,7 @@ namespace IKVM.Java.Externs.java.lang
             var pathIsQuoted = IsQuoted(true, path, "Executable name has embedded quote, split the arguments");
 
             // Win32 CreateProcess requires path to be normalized
-            var fileToRun = FileAccessor.Init(pathIsQuoted ? path.Substring(1, path.Length - 1) : path);
+            var fileToRun = FileAccessor.Init(pathIsQuoted ? path.Substring(1, path.Length - 2) : path);
 
             // From the [CreateProcess] function documentation:
             //
@@ -738,10 +739,16 @@ namespace IKVM.Java.Externs.java.lang
                 h2 = b2;
             }
 
-            // wrap streams for access from Java
-            var s0 = h0 == null ? ProcessBuilderNullOutputStreamAccessor.GetInstance() : BufferedOutputStreamAccessor.Init(FileOutputStreamAccessor.Init2(FileDescriptorAccessor.FromStream(h0)));
-            var s1 = h1 == null ? ProcessBuilderNullInputStreamAccessor.GetInstance() : BufferedInputStreamAccessor.Init(FileInputStreamAccessor.Init2(FileDescriptorAccessor.FromStream(h1)));
-            var s2 = h2 == null ? ProcessBuilderNullInputStreamAccessor.GetInstance() : FileInputStreamAccessor.Init2(FileDescriptorAccessor.FromStream(h2));
+            // wrap CLR streams in Java streams
+            object s0 = null;
+            object s1 = null;
+            object s2 = null;
+            AccessControllerAccessor.InvokeDoPrivledged(new ActionPrivilegedAction(() =>
+            {
+                s0 = h0 == null ? ProcessBuilderNullOutputStreamAccessor.GetInstance() : BufferedOutputStreamAccessor.Init(FileOutputStreamAccessor.Init2(FileDescriptorAccessor.FromStream(h0)));
+                s1 = h1 == null ? ProcessBuilderNullInputStreamAccessor.GetInstance() : BufferedInputStreamAccessor.Init(FileInputStreamAccessor.Init2(FileDescriptorAccessor.FromStream(h1)));
+                s2 = h2 == null ? ProcessBuilderNullInputStreamAccessor.GetInstance() : FileInputStreamAccessor.Init2(FileDescriptorAccessor.FromStream(h2));
+            }));
 
             // return new process
             return ProcessImplAccessor.Init(process, s0, s1, s2);
