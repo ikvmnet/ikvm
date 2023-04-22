@@ -11,7 +11,6 @@ using IKVM.Runtime;
 using IKVM.Runtime.Accessors.Java.Io;
 using IKVM.Runtime.Accessors.Java.Lang;
 using IKVM.Runtime.Accessors.Java.Util;
-using IKVM.Runtime.Util.Java.Security;
 
 namespace IKVM.Java.Externs.java.lang
 {
@@ -326,13 +325,15 @@ namespace IKVM.Java.Externs.java.lang
         /// <param name="verificationType"></param>
         /// <param name="cmd"></param>
         /// <returns></returns>
-        static string CreateWindowsArguments(WindowsVerificationMode verificationType, IEnumerable<string> cmd)
+        static string CreateWindowsCommandLine(WindowsVerificationMode verificationType, String executablePath, string[] cmd)
         {
             var cmdbuf = new global::System.Text.StringBuilder(80);
+            cmdbuf.Append(executablePath);
 
-            foreach (var s in cmd)
+            for (int i = 1; i < cmd.Length; ++i)
             {
                 cmdbuf.Append(' ');
+                var s = cmd[i];
 
                 if (NeedsEscapingOnWindows(verificationType, s))
                 {
@@ -361,7 +362,7 @@ namespace IKVM.Java.Externs.java.lang
                 }
             }
 
-            return cmdbuf.ToString().TrimStart(' ');
+            return cmdbuf.ToString();
         }
 
         /// <summary>
@@ -371,10 +372,13 @@ namespace IKVM.Java.Externs.java.lang
         /// <returns></returns>
         static string GetWindowsExecutablePath(string path)
         {
+#if FIRST_PASS
+            throw new NotImplementedException();
+#else
             var pathIsQuoted = IsQuoted(true, path, "Executable name has embedded quote, split the arguments");
 
             // Win32 CreateProcess requires path to be normalized
-            var fileToRun = pathIsQuoted ? path.Substring(1, path.Length - 1) : path;
+            var fileToRun = FileAccessor.Init(pathIsQuoted ? path.Substring(1, path.Length - 1) : path);
 
             // From the [CreateProcess] function documentation:
             //
@@ -392,7 +396,8 @@ namespace IKVM.Java.Externs.java.lang
             // in the [CreateProcess] funcion with the only exception:
             // the path ends by (.)
 
-            return fileToRun;
+            return FileAccessor.InvokeGetPath(fileToRun);
+#endif
         }
 
         /// <summary>
@@ -425,8 +430,7 @@ namespace IKVM.Java.Externs.java.lang
 #if FIRST_PASS
             throw new NotImplementedException();
 #else
-            string exe;
-            string arg;
+            string cmdstr;
 
             var sm = SystemAccessor.InvokeGetSecurityManager();
             var allowAmbiguousCommands = false;
@@ -440,19 +444,26 @@ namespace IKVM.Java.Externs.java.lang
 
             if (allowAmbiguousCommands)
             {
-                exe = cmd[0];
+                // Legacy mode.
 
-                if (NeedsEscapingOnWindows(WindowsVerificationMode.Legacy, exe))
-                    exe = QuoteString(exe);
+                // Normalize path if possible.
+                var executablePath = FileAccessor.InvokeGetPath(FileAccessor.Init(cmd[0]));
+
+                // No worry about internal, unpaired ["], and redirection/piping.
+                if (NeedsEscapingOnWindows(WindowsVerificationMode.Legacy, executablePath))
+                    executablePath = QuoteString(executablePath);
 
                 // legacy mode doesn't worry about extended verification
-                arg = CreateWindowsArguments(WindowsVerificationMode.Legacy, cmd.Skip(1));
+                cmdstr = CreateWindowsCommandLine(WindowsVerificationMode.Legacy, executablePath, cmd);
             }
             else
             {
+                string executablePath;
+
                 try
                 {
-                    exe = GetWindowsExecutablePath(cmd[0]);
+                    // might be able to obtain it from the first argument
+                    executablePath = GetWindowsExecutablePath(cmd[0]);
                 }
                 catch (ArgumentException)
                 {
@@ -465,34 +476,141 @@ namespace IKVM.Java.Externs.java.lang
                     //    Runtime.getRuntime().exec(String[] cmd [, ...])
                     // calls with internal ["] and escape sequences.
 
-                    // Restore original command line.
-                    var join = new global::System.Text.StringBuilder();
-
-                    // terminal space in command line is ok
-                    foreach (string s in cmd.Skip(1))
-                        join.Append(s).Append(' ');
-
-                    // Parse the command line again.
-                    cmd = GetTokensFromWindowsCommand(join.ToString());
-                    exe = GetWindowsExecutablePath(cmd[0]);
+                    // gets the executable path
+                    cmd = GetTokensFromWindowsCommand(string.Join(" ", cmd));
+                    executablePath = GetWindowsExecutablePath(cmd[0]);
 
                     // Check new executable name once more
                     if (sm != null)
-                        SecurityManagerAccessor.InvokeCheckExec(sm, exe);
+                        SecurityManagerAccessor.InvokeCheckExec(sm, executablePath);
                 }
 
                 // Quotation protects from interpretation of the [path] argument as
                 // start of longer path with spaces. Quotation has no influence to
                 // [.exe] extension heuristic.
-                arg = CreateWindowsArguments(IsWindowsShellFile(exe) ? WindowsVerificationMode.CmdOrBat : WindowsVerificationMode.Win32, cmd);
+                cmdstr = CreateWindowsCommandLine(IsWindowsShellFile(executablePath) ? WindowsVerificationMode.CmdOrBat : WindowsVerificationMode.Win32, QuoteString(executablePath), cmd);
             }
 
-            // on Windows, always use single argument string, since we are responsible for formatting
+            // even though we just combined the string, escaped, etc, we need to split it again for S.D.Process
+            int exeEnd = IndexOfArguments(cmdstr);
+            int argBeg = exeEnd;
+            if (cmdstr.Length > argBeg && cmdstr[argBeg] == ' ')
+                argBeg++;
+
             var psi = new ProcessStartInfo();
-            psi.FileName = exe;
-            psi.Arguments = arg;
+            psi.FileName = cmdstr.Substring(0, exeEnd).Trim('\"');
+            psi.Arguments = cmdstr.Substring(argBeg);
             return Create(psi, env, dir, h0, h1, h2, redirectErrorStream);
 #endif
+        }
+
+        /// <summary>
+        /// Returns the character position of the arguments without the command path.
+        /// </summary>
+        /// <param name="cmdstr"></param>
+        /// <returns></returns>
+        static int IndexOfArguments(string cmdstr)
+        {
+            int pos = cmdstr.IndexOf(' ');
+            if (pos == -1)
+                return cmdstr.Length;
+
+            if (cmdstr[0] == '"')
+            {
+                var close = cmdstr.IndexOf('"', 1);
+                return close == -1 ? cmdstr.Length : close + 1;
+            }
+
+            if (RuntimeUtil.IsWindows == false)
+                return pos;
+
+            IList<string> searchPaths = null;
+            while (true)
+            {
+                var str = cmdstr.Substring(0, pos);
+                if (IsPathRooted(str))
+                {
+                    if (WindowsExecutableExists(str))
+                        return pos;
+                }
+                else
+                {
+                    foreach (var p in searchPaths ??= GetWindowsSearchPath())
+                        if (WindowsExecutableExists(Path.Combine(p, str)))
+                            return pos;
+                }
+
+                if (pos == cmdstr.Length)
+                    return cmdstr.IndexOf(' ');
+
+                pos = cmdstr.IndexOf(' ', pos + 1);
+                if (pos == -1)
+                    pos = cmdstr.Length;
+            }
+        }
+
+        /// <summary>
+        /// Returns the set of paths to search for Windows executables.
+        /// </summary>
+        /// <returns></returns>
+        static List<string> GetWindowsSearchPath()
+        {
+            var list = new List<string>();
+            list.Add(Path.GetDirectoryName(Process.GetCurrentProcess().MainModule.FileName));
+            list.Add(Environment.CurrentDirectory);
+            list.Add(Environment.SystemDirectory);
+
+            var windir = Path.GetDirectoryName(Environment.SystemDirectory);
+            list.Add(Path.Combine(windir, "System"));
+            list.Add(windir);
+
+            var path = Environment.GetEnvironmentVariable("PATH");
+            if (path != null)
+                foreach (var p in path.Split(Path.PathSeparator))
+                    list.Add(p);
+
+            return list;
+        }
+
+        /// <summary>
+        /// Returns <c>true</c> if the path is rooted.
+        /// </summary>
+        /// <param name="path"></param>
+        /// <returns></returns>
+        static bool IsPathRooted(string path)
+        {
+            try
+            {
+                return Path.IsPathRooted(path);
+            }
+            catch (ArgumentException)
+            {
+                return false;
+            }
+        }
+
+        /// <summary>
+        /// Returns <c>true</c> if the specified file can be considered a valid executable.
+        /// </summary>
+        /// <param name="file"></param>
+        /// <returns></returns>
+        static bool WindowsExecutableExists(string file)
+        {
+            try
+            {
+                if (File.Exists(file))
+                    return true;
+                else if (Directory.Exists(file))
+                    return false;
+                else if (file.IndexOf('.') == -1 && File.Exists(file + ".exe"))
+                    return true;
+                else
+                    return false;
+            }
+            catch
+            {
+                return false;
+            }
         }
 
         /// <summary>

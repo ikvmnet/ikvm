@@ -11,6 +11,7 @@ namespace IKVM.Runtime.Accessors.Java.Io
     internal sealed class FileAccessor : Accessor<object>
     {
 
+        MethodAccessor<Func<string, object>> init;
         MethodAccessor<Func<object, string>> getPath;
 
         /// <summary>
@@ -22,6 +23,13 @@ namespace IKVM.Runtime.Accessors.Java.Io
         {
 
         }
+
+        /// <summary>
+        /// Creates a new instance of the object.
+        /// </summary>
+        /// <param name="path"></param>
+        /// <returns></returns>
+        public object Init(string path) => GetConstructor(ref init, typeof(string)).Invoker(path);
 
         /// <summary>
         /// Invokes the 'getPath' method.
