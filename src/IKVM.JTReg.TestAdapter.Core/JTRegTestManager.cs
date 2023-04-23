@@ -377,10 +377,12 @@ namespace IKVM.JTReg.TestAdapter.Core
             rp.setMatchLists(includeFileList.ToArray());
             rp.setIgnoreKind(JTRegTypes.IgnoreKind.QUIET);
             rp.setPriorStatusValues(null);
-            rp.setUseWindowsSubsystemForLinux(true);
             rp.setTestNGPath(JTRegTypes.SearchPath.New(Path.Combine(JTREG_LIB, "testng.jar")));
             rp.setJUnitPath(JTRegTypes.SearchPath.New(Path.Combine(JTREG_LIB, "junit.jar")));
             rp.setAsmToolsPath(JTRegTypes.SearchPath.New(Path.Combine(JTREG_LIB, "asmtools.jar")));
+            
+            if (((string)JTRegTypes.OS.Current().family) == "windows")
+                rp.setUseWindowsSubsystemForLinux(true);
 
             // configure keywords to filter based on
             string keywordsExpr = null;
