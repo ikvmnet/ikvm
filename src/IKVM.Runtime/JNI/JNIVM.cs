@@ -111,8 +111,10 @@ namespace IKVM.Runtime.JNI
                 }
             }
 
-            // initialize the JVM
-            IKVM.Java.Externs.java.lang.VMSystemProperties.ImportProperties = properties;
+            // initialize the JVM properties
+            foreach (var kvp in properties)
+                JVM.Properties.User[kvp.Key] = kvp.Value;
+
             java.lang.Thread.currentThread();
             *(void**)p_vm = JavaVM.pJavaVM;
 

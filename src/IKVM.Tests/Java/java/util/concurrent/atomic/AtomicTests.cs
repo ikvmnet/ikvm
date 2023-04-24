@@ -1,4 +1,5 @@
-﻿using System.Threading.Tasks;
+﻿using System.Linq;
+using System.Threading.Tasks;
 
 using FluentAssertions;
 
@@ -113,6 +114,14 @@ namespace IKVM.Tests.Java.java.util.concurrent.atomic
             var a = new AtomicLongArray(1);
             Task.Run(() => a.lazySet(0, 1)).Wait();
             a.get(0).Should().Be(1);
+        }
+
+        [TestMethod]
+        public void CanStressAtomicInt()
+        {
+            var i = new AtomicInteger(0);
+            Enumerable.Range(0, 1024).AsParallel().WithDegreeOfParallelism(16).ForAll(_ => i.getAndIncrement());
+            i.get().Should().Be(1024);
         }
 
     }

@@ -13,14 +13,14 @@ namespace IKVM.Tests.Java.java.io
     {
 
         [TestMethod]
-        public void Can_create_file()
+        public void CanCreateFile()
         {
             var f = new global::java.io.File(Path.Combine(Path.GetTempPath(), Path.GetRandomFileName()));
             f.createNewFile().Should().BeTrue();
         }
 
         [TestMethod]
-        public void Can_write_file()
+        public void CanWriteFile()
         {
             var w = new global::java.io.FileWriter("test.txt");
             w.write("TEST");
@@ -28,7 +28,7 @@ namespace IKVM.Tests.Java.java.io
         }
 
         [TestMethod]
-        public void Can_read_file()
+        public void CanReadFile()
         {
             var w = new global::java.io.FileWriter("test.txt");
             w.write("TEST");
@@ -58,6 +58,15 @@ namespace IKVM.Tests.Java.java.io
                 new global::java.io.File(@"C:\Windows\..\Windows\System32").getCanonicalPath().Should().Be(@"C:\Windows\System32");
             else if (RuntimeInformation.IsOSPlatform(OSPlatform.Linux))
                 new global::java.io.File(@"/usr/../usr/lib").getCanonicalPath().Should().Be(@"/usr/lib");
+        }
+
+        [TestMethod]
+        public void CanGetPathSeperator()
+        {
+            if (RuntimeInformation.IsOSPlatform(OSPlatform.Windows))
+                global::java.io.File.pathSeparator.Should().Be(";");
+            else if (RuntimeInformation.IsOSPlatform(OSPlatform.Linux))
+                global::java.io.File.pathSeparator.Should().Be(":");
         }
 
     }

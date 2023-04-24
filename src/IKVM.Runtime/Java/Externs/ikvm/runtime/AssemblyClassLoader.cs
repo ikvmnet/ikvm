@@ -26,6 +26,7 @@ using System.Reflection;
 
 using IKVM.Internal;
 using IKVM.Runtime;
+using IKVM.Runtime.Accessors.Java.Lang;
 
 using AssemblyClassLoader_ = IKVM.Internal.AssemblyClassLoader;
 
@@ -34,6 +35,14 @@ namespace IKVM.Java.Externs.ikvm.runtime
 
     static class AssemblyClassLoader
     {
+
+#if FIRST_PASS == false
+
+        static ClassLoaderAccessor classLoaderAccessor;
+
+        static ClassLoaderAccessor ClassLoaderAccessor => JVM.BaseAccessors.Get(ref classLoaderAccessor);
+
+#endif
 
         public static void setWrapper(global::java.lang.ClassLoader _this, Assembly assembly)
         {
@@ -47,10 +56,9 @@ namespace IKVM.Java.Externs.ikvm.runtime
 #else
             try
             {
-                if (!global::java.lang.ClassLoader.checkName(name))
-                {
+                if (ClassLoaderAccessor.InvokeCheckName(_this, name) == false)
                     throw new ClassNotFoundException(name);
-                }
+
                 var wrapper = (AssemblyClassLoader_)ClassLoaderWrapper.GetClassLoaderWrapper(_this);
                 var tw = wrapper.LoadClass(name);
                 if (tw == null)

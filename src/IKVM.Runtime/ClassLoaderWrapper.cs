@@ -45,6 +45,8 @@ using System.Reflection;
 using System.Reflection.Emit;
 
 using ProtectionDomain = java.security.ProtectionDomain;
+
+using IKVM.Runtime.Accessors.Java.Lang;
 #endif
 
 #if IMPORTER
@@ -67,7 +69,12 @@ namespace IKVM.Internal
         private static List<GenericClassLoaderWrapper> genericClassLoaders;
 
 #if !IMPORTER && !FIRST_PASS && !EXPORTER
+
+        ClassLoaderAccessor classLoaderAccessor;
+        ClassLoaderAccessor ClassLoaderAccessor => JVM.BaseAccessors.Get(ref classLoaderAccessor);
+
         protected java.lang.ClassLoader javaClassLoader;
+
 #endif
 
 #if !EXPORTER
@@ -111,7 +118,7 @@ namespace IKVM.Internal
         internal static void LoadRemappedTypes()
         {
             // if we're compiling the core, coreAssembly will be null
-            var coreAssembly = JVM.CoreAssembly;
+            var coreAssembly = JVM.BaseAssembly;
             if (coreAssembly != null && remappedTypes.Count == 0)
             {
                 var remapped = AttributeHelper.GetRemappedClasses(coreAssembly);
@@ -331,6 +338,31 @@ namespace IKVM.Internal
         }
 
 #if !IMPORTER && !EXPORTER
+#if FIRST_PASS == false
+
+        /// <summary>
+        /// Returns <c>true</c> if the class loader is considered trusted.
+        /// </summary>
+        /// <remarks>
+        /// Implementation of Hotspot's java_lang_ClassLoader::is_trusted_loader(). 
+        /// </remarks>
+        internal bool IsTrusted
+        {
+            get
+            {
+                var scl = ClassLoaderAccessor.GetScl();
+
+                // are we within the parent hierarchy of the system class loader?
+                for (var cl = scl; cl != null; cl = ClassLoaderAccessor.GetParent(cl))
+                    if (javaClassLoader == cl)
+                        return true;
+
+                return false;
+            }
+        }
+
+#endif
+
         internal bool RelaxedClassNameValidation
         {
             get
@@ -338,11 +370,12 @@ namespace IKVM.Internal
 #if FIRST_PASS
                 return true;
 #else
-                return JVM.relaxedVerification && (javaClassLoader == null || java.lang.ClassLoader.isTrustedLoader(javaClassLoader));
+                return JVM.relaxedVerification && (javaClassLoader == null || IsTrusted);
 #endif
             }
         }
-#endif 
+
+#endif
 
         protected virtual void CheckProhibitedPackage(string className)
         {
@@ -779,7 +812,7 @@ namespace IKVM.Internal
             Profiler.Enter("ClassLoader.loadClass");
             try
             {
-                var c = GetJavaClassLoader().loadClassInternal(name);
+                var c = (java.lang.Class)ClassLoaderAccessor.InvokeLoadClassInternal(GetJavaClassLoader(), name);
                 if (c == null)
                     return null;
 
@@ -1044,12 +1077,12 @@ namespace IKVM.Internal
             }
 
 #if EXPORTER
-			if(type.__IsMissing || type.__ContainsMissingType)
-			{
-				wrapper = new UnloadableTypeWrapper("Missing/" + type.Assembly.FullName);
-				globalTypeToTypeWrapper.Add(type, wrapper);
-				return wrapper;
-			}
+            if (type.__IsMissing || type.__ContainsMissingType)
+            {
+                wrapper = new UnloadableTypeWrapper("Missing/" + type.Assembly.FullName);
+                globalTypeToTypeWrapper.Add(type, wrapper);
+                return wrapper;
+            }
 #endif
             string remapped;
             if (remappedTypes.TryGetValue(type, out remapped))
@@ -1406,7 +1439,7 @@ namespace IKVM.Internal
         {
 #if !IMPORTER && !FIRST_PASS && !EXPORTER
             if (javaClassLoader != null)
-                javaClassLoader.checkPackageAccess(tw.ClassObject, pd);
+                ClassLoaderAccessor.InvokeCheckPackageAccess(javaClassLoader, tw.ClassObject, pd);
 #endif
         }
 

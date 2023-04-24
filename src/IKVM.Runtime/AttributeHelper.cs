@@ -25,6 +25,7 @@ using System;
 using System.Collections.Generic;
 
 using IKVM.Attributes;
+using IKVM.Runtime;
 
 #if IMPORTER || EXPORTER
 using IKVM.Reflection;

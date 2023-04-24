@@ -8,7 +8,10 @@ using System.Net.Sockets;
 using System.Reflection;
 using System.Runtime.InteropServices;
 
-using IKVM.Runtime.Java.Externs.java.net;
+using IKVM.Internal;
+using IKVM.Runtime;
+using IKVM.Runtime.Accessors.Java.Io;
+using IKVM.Runtime.Util.Java.Net;
 
 using static IKVM.Java.Externs.java.net.SocketImplUtil;
 
@@ -21,7 +24,10 @@ namespace IKVM.Java.Externs.java.net
     static class PlainDatagramSocketImpl
     {
 
-#if !FIRST_PASS
+#if FIRST_PASS == false
+
+        static FileDescriptorAccessor fileDescriptorAccessor;
+        static FileDescriptorAccessor FileDescriptorAccessor => JVM.BaseAccessors.Get(ref fileDescriptorAccessor);
 
         /// <summary>
         /// Compiles a fast getter for a <see cref="FieldInfo"/>.
@@ -134,7 +140,7 @@ namespace IKVM.Java.Externs.java.net
                 return s2;
 
             // for Linux we need to obtain the default scope ID by effectively doing a route lookup
-            if (RuntimeInformation.IsOSPlatform(OSPlatform.Linux) && FindScopeId(address) is int s3 and not 0)
+            if (RuntimeUtil.IsLinux && FindScopeId(address) is int s3 and not 0)
             {
                 Inet6AddressCachedScopeIdSetter(address, s3);
                 return s3;
@@ -196,10 +202,10 @@ namespace IKVM.Java.Externs.java.net
                 // returns connection reset errors on unconnected UDP sockets (as well
                 // as connected sockets). The solution is to only enable this feature
                 // when the socket is connected.
-                if (RuntimeInformation.IsOSPlatform(OSPlatform.Windows))
+                if (RuntimeUtil.IsWindows)
                     socket.IOControl(SIO_UDP_CONNRESET, IOControlFalseBuffer, null);
 
-                impl.fd.setSocket(socket);
+                FileDescriptorAccessor.SetSocket(impl.fd, socket);
             });
 #endif
         }
@@ -217,14 +223,14 @@ namespace IKVM.Java.Externs.java.net
 #else
             InvokeAction<global::java.net.PlainDatagramSocketImpl>(this_, (impl) =>
             {
-                var socket = impl.fd?.getSocket();
+                var socket = FileDescriptorAccessor.GetSocket(impl.fd);
                 if (socket == null)
                     return;
 
                 InvokeWithSocket(impl, socket =>
                 {
+                    FileDescriptorAccessor.SetSocket(impl.fd, null);
                     socket.Close();
-                    impl.fd.setSocket(null);
                 });
             });
 #endif
@@ -257,7 +263,7 @@ namespace IKVM.Java.Externs.java.net
                     socket.EndConnect(socket.BeginConnect(GetEndPointAddress(address), port, null, null));
 
                     // see comment in in socketCreate
-                    if (RuntimeInformation.IsOSPlatform(OSPlatform.Windows))
+                    if (RuntimeUtil.IsWindows)
                         socket.IOControl(SIO_UDP_CONNRESET, IOControlTrueBuffer, null);
                 });
             });
@@ -291,7 +297,7 @@ namespace IKVM.Java.Externs.java.net
                     socket.EndConnect(socket.BeginConnect(new IPEndPoint(IPAddress.IPv6Any, 0), null, null));
 
                     // see comment in in socketCreate
-                    if (RuntimeInformation.IsOSPlatform(OSPlatform.Windows))
+                    if (RuntimeUtil.IsWindows)
                         socket.IOControl(SIO_UDP_CONNRESET, IOControlFalseBuffer, null);
                 });
             }));
@@ -566,7 +572,7 @@ namespace IKVM.Java.Externs.java.net
                             // Windows Poll method reports errors as readable, however, Linux reports it as errored, so
                             // we can use Poll on Windows for both errors, but must use Select on Linux to trap both
                             // read and error states
-                            if (RuntimeInformation.IsOSPlatform(OSPlatform.Windows))
+                            if (RuntimeUtil.IsWindows)
                             {
                                 // wait for data to be available
                                 if (socket.Poll(impl.timeout * 1000L > int.MaxValue ? int.MaxValue : impl.timeout * 1000, SelectMode.SelectRead) == false)
@@ -605,7 +611,7 @@ namespace IKVM.Java.Externs.java.net
                         catch (SocketException e) when (e.SocketErrorCode == SocketError.ConnectionReset)
                         {
                             // Windows may leave multiple ICMP packets on the socket, purge them
-                            if (RuntimeInformation.IsOSPlatform(OSPlatform.Windows))
+                            if (RuntimeUtil.IsWindows)
                                 PurgeOutstandingICMP(socket);
 
                             throw new global::java.net.PortUnreachableException("ICMP Port Unreachable");
@@ -672,7 +678,7 @@ namespace IKVM.Java.Externs.java.net
                             // Windows Poll method reports errors as readable, however, Linux reports it as errored, so
                             // we can use Poll on Windows for both errors, but must use Select on Linux to trap both
                             // read and error states
-                            if (RuntimeInformation.IsOSPlatform(OSPlatform.Windows))
+                            if (RuntimeUtil.IsWindows)
                             {
                                 // wait for data to be available
                                 if (socket.Poll(impl.timeout * 1000L > int.MaxValue ? int.MaxValue : impl.timeout * 1000, SelectMode.SelectRead) == false)
@@ -711,7 +717,7 @@ namespace IKVM.Java.Externs.java.net
                         catch (SocketException e) when (e.SocketErrorCode == SocketError.ConnectionReset)
                         {
                             // Windows may leave multiple ICMP packets on the socket, purge them
-                            if (RuntimeInformation.IsOSPlatform(OSPlatform.Windows))
+                            if (RuntimeUtil.IsWindows)
                                 PurgeOutstandingICMP(socket);
 
                             throw new global::java.net.PortUnreachableException("ICMP Port Unreachable");

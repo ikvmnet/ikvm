@@ -407,7 +407,7 @@ namespace IKVM.JTReg.TestAdapter.Core
         java.util.Map GetEnvVars(Uri debugUri)
         {
             var envVars = new java.util.TreeMap();
-            var os = (string)JTRegTypes.OS.Current().family;
+
             // import existing variables based on the current OS
             foreach (var var in ((string)JTRegTypes.OS.Current().family) == "windows" ? DEFAULT_WINDOWS_ENV_VARS : DEFAULT_UNIX_ENV_VARS)
                 if (Environment.GetEnvironmentVariable(var) is string val)

@@ -5,7 +5,7 @@
         <PackageId>IKVM.Runtime-ref</PackageId>
         <TargetFrameworks>net461;netcoreapp3.1</TargetFrameworks>
         <AssemblyName>IKVM.Runtime</AssemblyName>
-        <DefineConstants>$(DefineConstants);EMITTERS;CLASSGC;FIRST_PASS</DefineConstants>
+        <DefineConstants>$(DefineConstants);EMITTERS;FIRST_PASS</DefineConstants>
         <AllowUnsafeBlocks>true</AllowUnsafeBlocks>
         <ProduceReferenceAssembly>true</ProduceReferenceAssembly>
     </PropertyGroup>

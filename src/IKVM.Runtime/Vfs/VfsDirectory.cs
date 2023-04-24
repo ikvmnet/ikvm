@@ -4,7 +4,7 @@
     /// <summary>
     /// Represents a directory entry in the virtual file system.
     /// </summary>
-    abstract class VfsDirectory : VfsEntry
+    internal abstract class VfsDirectory : VfsEntry
     {
 
         /// <summary>

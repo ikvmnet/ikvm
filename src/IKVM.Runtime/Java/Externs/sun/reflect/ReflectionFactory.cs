@@ -33,13 +33,24 @@ using System.Security;
 
 using IKVM.Internal;
 using IKVM.Runtime;
+using IKVM.Runtime.Accessors.Java.Io;
+using IKVM.Runtime.Accessors.Java.Lang;
 using IKVM.Runtime.Extensions;
+using IKVM.Runtime.Util.Java.Security;
 
 namespace IKVM.Java.Externs.sun.reflect
 {
 
     static class ReflectionFactory
     {
+
+#if FIRST_PASS == false
+
+        static SystemAccessor systemAccessor;
+
+        static SystemAccessor SystemAccessor => JVM.BaseAccessors.Get(ref systemAccessor);
+
+#endif
 
 #if !FIRST_PASS
 
@@ -923,25 +934,27 @@ namespace IKVM.Java.Externs.sun.reflect
 
         private abstract class FieldAccessorImplBase : global::sun.reflect.FieldAccessor, IReflectionException
         {
+
             protected static readonly ushort inflationThreshold = 15;
             protected readonly FieldWrapper fw;
             protected readonly bool isFinal;
             protected ushort numInvocations;
 
+            /// <summary>
+            /// Initializes the static instance.
+            /// </summary>
             static FieldAccessorImplBase()
             {
-                string str = global::java.lang.Props.props.getProperty("ikvm.reflect.field.inflationThreshold");
-                int value;
-                if (str != null && int.TryParse(str, out value))
-                {
-                    if (value >= ushort.MinValue && value <= ushort.MaxValue)
-                    {
-                        inflationThreshold = (ushort)value;
-                    }
-                }
+                if (global::java.security.AccessController.doPrivileged(new FuncPrivilegedAction<string>(() => SystemAccessor.InvokeGetProperty("ikvm.reflect.field.inflationThreshold"))) is string s && ushort.TryParse(s, out var value))
+                    inflationThreshold = value;
             }
 
-            private FieldAccessorImplBase(FieldWrapper fw, bool isFinal)
+            /// <summary>
+            /// Initializes a new instance.
+            /// </summary>
+            /// <param name="fw"></param>
+            /// <param name="isFinal"></param>
+            FieldAccessorImplBase(FieldWrapper fw, bool isFinal)
             {
                 this.fw = fw;
                 this.isFinal = isFinal;

@@ -4,8 +4,12 @@ using System.Net;
 using System.Net.Sockets;
 using System.Runtime.CompilerServices;
 using System.Runtime.InteropServices;
+using System.Threading.Tasks;
 
-using IKVM.Runtime.Java.Externs.java.net;
+using IKVM.Internal;
+using IKVM.Runtime;
+using IKVM.Runtime.Accessors.Java.Io;
+using IKVM.Runtime.Util.Java.Net;
 
 using static IKVM.Java.Externs.java.net.SocketImplUtil;
 
@@ -18,7 +22,10 @@ namespace IKVM.Java.Externs.sun.nio.ch
     static class Net
     {
 
-#if !FIRST_PASS
+#if FIRST_PASS == false
+
+        static FileDescriptorAccessor fileDescriptorAccessor;
+        static FileDescriptorAccessor FileDescriptorAccessor => JVM.BaseAccessors.Get(ref fileDescriptorAccessor);
 
         [StructLayout(LayoutKind.Explicit)]
         unsafe struct sockaddr_storage
@@ -124,9 +131,27 @@ namespace IKVM.Java.Externs.sun.nio.ch
         static readonly int MCAST_JOIN_SOURCE_GROUP;
         static readonly int MCAST_LEAVE_SOURCE_GROUP;
 
+        /// <summary>
+        /// Invokes the 'setsockopt' Posix function.
+        /// </summary>
+        /// <param name="sockfd"></param>
+        /// <param name="level"></param>
+        /// <param name="optname"></param>
+        /// <param name="optval"></param>
+        /// <param name="optlen"></param>
+        /// <returns></returns>
         [DllImport("libc", SetLastError = true)]
         static unsafe extern int setsockopt(SafeHandle sockfd, int level, int optname, void* optval, int optlen);
 
+        /// <summary>
+        /// Invokes the 'getsockopt' Posix function.
+        /// </summary>
+        /// <param name="sockfd"></param>
+        /// <param name="level"></param>
+        /// <param name="optname"></param>
+        /// <param name="optval"></param>
+        /// <param name="optlen"></param>
+        /// <returns></returns>
         [DllImport("libc", SetLastError = true)]
         static unsafe extern int getsockopt(SafeHandle sockfd, int level, int optname, void* optval, int* optlen);
 
@@ -135,7 +160,7 @@ namespace IKVM.Java.Externs.sun.nio.ch
         /// </summary>
         static Net()
         {
-            if (RuntimeInformation.IsOSPlatform(OSPlatform.Windows))
+            if (RuntimeUtil.IsWindows)
             {
                 AF_UNSPEC = 0;
                 AF_INET = 2;
@@ -149,7 +174,7 @@ namespace IKVM.Java.Externs.sun.nio.ch
                 MCAST_JOIN_SOURCE_GROUP = 45;
                 MCAST_LEAVE_SOURCE_GROUP = 46;
             }
-            else if (RuntimeInformation.IsOSPlatform(OSPlatform.Linux))
+            else if (RuntimeUtil.IsLinux)
             {
                 AF_UNSPEC = 0;
                 AF_INET = 2;
@@ -186,15 +211,6 @@ namespace IKVM.Java.Externs.sun.nio.ch
 #endif
 
         /// <summary>
-        /// Implements the native method for 'initIDs'.
-        /// </summary>
-        /// <returns></returns>
-        public static void initIDs()
-        {
-
-        }
-
-        /// <summary>
         /// Implements the native method for 'isIPv6Available0'.
         /// </summary>
         /// <returns></returns>
@@ -209,7 +225,7 @@ namespace IKVM.Java.Externs.sun.nio.ch
         /// <returns></returns>
         public static int isExclusiveBindAvailable()
         {
-            return RuntimeInformation.IsOSPlatform(OSPlatform.Windows) ? 1 : -1;
+            return RuntimeUtil.IsWindows ? 1 : -1;
         }
 
         /// <summary>
@@ -231,11 +247,134 @@ namespace IKVM.Java.Externs.sun.nio.ch
         }
 
         /// <summary>
+        /// Implements the native method for 'socket0'.
+        /// </summary>
+        /// <param name="preferIPv6"></param>
+        /// <param name="stream"></param>
+        /// <param name="reuse"></param>
+        /// <param name="fastLoopback"></param>
+        /// <returns></returns>
+        public static object socket0(bool preferIPv6, bool stream, bool reuse, bool fastLoopback)
+        {
+#if FIRST_PASS
+            throw new NotImplementedException();
+#else
+            return InvokeFunc(() =>
+            {
+                var addressFamily = preferIPv6 ? AddressFamily.InterNetworkV6 : AddressFamily.InterNetwork;
+                var socketType = stream ? SocketType.Stream : SocketType.Dgram;
+                var protocolType = stream ? ProtocolType.Tcp : ProtocolType.Udp;
+                var socket = new Socket(addressFamily, socketType, protocolType);
+
+                if (preferIPv6)
+                    socket.SetSocketOption(SocketOptionLevel.IPv6, SocketOptionName.IPv6Only, 0);
+
+                if (stream == false)
+                    SetConnectionReset(socket, false);
+
+                var fd = new global::java.io.FileDescriptor();
+                FileDescriptorAccessor.SetSocket(fd, socket);
+                return fd;
+            });
+#endif
+        }
+
+        /// <summary>
+        /// Implements the native method for 'bind0'.
+        /// </summary>
+        /// <param name="fd"></param>
+        /// <param name="preferIPv6"></param>
+        /// <param name="useExclBind"></param>
+        /// <param name="addr"></param>
+        /// <param name="port"></param>
+        /// <exception cref="global::java.net.SocketException"></exception>
+        public static void bind0(global::java.io.FileDescriptor fd, bool preferIPv6, bool useExclBind, global::java.net.InetAddress addr, int port)
+        {
+#if FIRST_PASS
+            throw new NotImplementedException();
+#else
+            InvokeAction(() =>
+            {
+                InvokeWithSocket(fd, socket =>
+                {
+                    if (useExclBind && (int)socket.GetSocketOption(SocketOptionLevel.Socket, SocketOptionName.ReuseAddress) != 1)
+                        socket.ExclusiveAddressUse = true;
+
+                    socket.Bind(new IPEndPoint(addr.ToIPAddress(), port));
+                });
+            });
+#endif
+        }
+
+        /// <summary>
+        /// Implements the native method for 'listen'.
+        /// </summary>
+        /// <param name="fd"></param>
+        /// <param name="backlog"></param>
+        /// <exception cref="global::java.net.SocketException"></exception>
+        public static void listen(object fd, int backlog)
+        {
+#if FIRST_PASS
+            throw new NotImplementedException();
+#else
+            InvokeAction(() =>
+            {
+                InvokeWithSocket(fd, socket =>
+                {
+                    socket.Listen(backlog);
+                });
+            });
+#endif
+        }
+
+        /// <summary>
+        /// Implements the native method for 'connect0'.
+        /// </summary>
+        /// <param name="preferIPv6"></param>
+        /// <param name="fd"></param>
+        /// <param name="remote"></param>
+        /// <param name="remotePort"></param>
+        /// <returns></returns>
+        public static int connect0(bool preferIPv6, object fd, global::java.net.InetAddress remote, int remotePort)
+        {
+#if FIRST_PASS
+            throw new NotImplementedException();
+#else
+            return InvokeFunc(() =>
+            {
+                return InvokeWithSocket(fd, socket =>
+                {
+                    var ep = new IPEndPoint(remote.ToIPAddress(), remotePort);
+                    var datagram = socket.SocketType == SocketType.Dgram;
+                    if (datagram || socket.Blocking)
+                    {
+                        socket.Connect(ep);
+                        if (datagram)
+                            SetConnectionReset(socket, true);
+
+                        return 1;
+                    }
+                    else
+                    {
+                        var task = FileDescriptorAccessor.GetTask(fd);
+                        if (task != null)
+                            throw new global::java.net.SocketException("Outstanding async request.");
+
+                        task = Task.Factory.FromAsync(socket.BeginConnect, socket.EndConnect, ep, null);
+                        FileDescriptorAccessor.SetTask(fd, task);
+                        return global::sun.nio.ch.IOStatus.UNAVAILABLE;
+                    }
+                });
+            });
+#endif
+        }
+
+        /// <summary>
         /// Implements the native method for 'shutdown'.
         /// </summary>
         /// <param name="fd"></param>
         /// <param name="how"></param>
-        public static void shutdown(global::java.io.FileDescriptor fd, int how)
+        public static void shutdown(object fd, int how)
         {
 #if FIRST_PASS
             throw new NotImplementedException();
@@ -255,7 +394,7 @@ namespace IKVM.Java.Externs.sun.nio.ch
         /// </summary>
         /// <param name="fd"></param>
         /// <returns></returns>
-        public static int localPort(global::java.io.FileDescriptor fd)
+        public static int localPort(object fd)
         {
 #if FIRST_PASS
             throw new NotImplementedException();
@@ -275,8 +414,7 @@ namespace IKVM.Java.Externs.sun.nio.ch
         /// </summary>
         /// <param name="fd"></param>
         /// <returns></returns>
-        /// <exception cref="global::java.net.SocketException"></exception>
-        public static global::java.net.InetAddress localInetAddress(global::java.io.FileDescriptor fd)
+        public static global::java.net.InetAddress localInetAddress(object fd)
         {
 #if FIRST_PASS
             throw new NotImplementedException();
@@ -297,8 +435,7 @@ namespace IKVM.Java.Externs.sun.nio.ch
         /// </summary>
         /// <param name="fd"></param>
         /// <returns></returns>
-        /// <exception cref="global::java.net.SocketException"></exception>
-        public static int remotePort(global::java.io.FileDescriptor fd)
+        public static int remotePort(object fd)
         {
 #if FIRST_PASS
             throw new NotImplementedException();
@@ -318,7 +455,7 @@ namespace IKVM.Java.Externs.sun.nio.ch
         /// </summary>
         /// <param name="fd"></param>
         /// <returns></returns>
-        public static global::java.net.InetAddress remoteInetAddress(global::java.io.FileDescriptor fd)
+        public static global::java.net.InetAddress remoteInetAddress(object fd)
         {
 #if FIRST_PASS
             throw new NotImplementedException();
@@ -327,7 +464,7 @@ namespace IKVM.Java.Externs.sun.nio.ch
             {
                 return InvokeWithSocket(fd, socket =>
                 {
-                    return global::java.net.SocketUtil.getInetAddressFromIPEndPoint((System.Net.IPEndPoint)socket.RemoteEndPoint);
+                    return ((IPEndPoint)socket.RemoteEndPoint).ToInetAddress();
                 });
             });
 #endif
@@ -341,8 +478,7 @@ namespace IKVM.Java.Externs.sun.nio.ch
         /// <param name="level"></param>
         /// <param name="opt"></param>
         /// <returns></returns>
-        /// <exception cref="global::java.net.SocketException"></exception>
-        public static int getIntOption0(global::java.io.FileDescriptor fd, bool mayNeedConversion, int level, int opt)
+        public static int getIntOption0(object fd, bool mayNeedConversion, int level, int opt)
         {
 #if FIRST_PASS
             throw new NotImplementedException();
@@ -381,7 +517,7 @@ namespace IKVM.Java.Externs.sun.nio.ch
         /// <param name="arg"></param>
         /// <param name="isIPv6"></param>
         /// <exception cref="global::java.net.SocketException"></exception>
-        public static void setIntOption0(global::java.io.FileDescriptor fd, bool mayNeedConversion, int level, int opt, int arg, bool isIPv6)
+        public static void setIntOption0(object fd, bool mayNeedConversion, int level, int opt, int arg, bool isIPv6)
         {
 #if FIRST_PASS
             throw new NotImplementedException();
@@ -422,6 +558,40 @@ namespace IKVM.Java.Externs.sun.nio.ch
         }
 
         /// <summary>
+        /// Implements the native method for 'poll'.
+        /// </summary>
+        /// <param name="fd"></param>
+        /// <param name="events"></param>
+        /// <param name="timeout"></param>
+        /// <returns></returns>
+        /// <exception cref="NotSupportedException"></exception>
+        public static int poll(object fd, int events, long timeout)
+        {
+#if FIRST_PASS
+            throw new NotImplementedException();
+#else
+            return InvokeFunc(() =>
+            {
+                return InvokeWithSocket(fd, socket =>
+                {
+                    var selectMode = events switch
+                    {
+                        int e when e == global::sun.nio.ch.Net.POLLCONN => SelectMode.SelectWrite,
+                        int e when e == global::sun.nio.ch.Net.POLLOUT => SelectMode.SelectWrite,
+                        int e when e == global::sun.nio.ch.Net.POLLIN => SelectMode.SelectRead,
+                        _ => throw new NotSupportedException(),
+                    };
+
+                    if (socket.Poll(timeout * 1000L > int.MaxValue ? int.MaxValue : (int)timeout * 1000, selectMode))
+                        return events;
+
+                    return 0;
+                });
+            });
+#endif
+        }
+
+        /// <summary>
         /// Implements the native method for 'joinOrDrop4'.
         /// </summary>
         /// <param name="join"></param>
@@ -431,7 +601,7 @@ namespace IKVM.Java.Externs.sun.nio.ch
         /// <param name="source"></param>
         /// <returns></returns>
         /// <exception cref="global::java.net.SocketException"></exception>
-        public unsafe static int joinOrDrop4(bool join, global::java.io.FileDescriptor fd, int group, int interf, int source)
+        public unsafe static int joinOrDrop4(bool join, object fd, int group, int interf, int source)
         {
 #if FIRST_PASS
             throw new NotImplementedException();
@@ -455,7 +625,7 @@ namespace IKVM.Java.Externs.sun.nio.ch
                         optionValue.imr_sourceaddr = Unsafe.As<int, in_addr>(ref imrSourceAddr);
                         optionValue.imr_interface = Unsafe.As<int, in_addr>(ref imrInterface);
 
-                        if (RuntimeInformation.IsOSPlatform(OSPlatform.Windows))
+                        if (RuntimeUtil.IsWindows)
                         {
                             var v = ArrayPool<byte>.Shared.Rent(sizeof(ip_mreq_source));
 
@@ -471,7 +641,7 @@ namespace IKVM.Java.Externs.sun.nio.ch
                                 ArrayPool<byte>.Shared.Return(v);
                             }
                         }
-                        else if (RuntimeInformation.IsOSPlatform(OSPlatform.Linux) || RuntimeInformation.IsOSPlatform(OSPlatform.OSX))
+                        else if (RuntimeUtil.IsLinux || RuntimeUtil.IsOSX)
                         {
 #if NETCOREAPP
                             if (setsockopt(socket.SafeHandle, IPPROTO_IP, join ? IP_ADD_SOURCE_MEMBERSHIP : IP_DROP_SOURCE_MEMBERSHIP, &optionValue, sizeof(ip_mreq_source)) != 0)
@@ -501,8 +671,7 @@ namespace IKVM.Java.Externs.sun.nio.ch
         /// <param name="interf"></param>
         /// <param name="source"></param>
         /// <returns></returns>
-        /// <exception cref="global::java.net.SocketException"></exception>
-        public static unsafe int blockOrUnblock4(bool block, global::java.io.FileDescriptor fd, int group, int interf, int source)
+        public static unsafe int blockOrUnblock4(bool block, object fd, int group, int interf, int source)
         {
 #if FIRST_PASS
             throw new NotImplementedException();
@@ -549,7 +718,7 @@ namespace IKVM.Java.Externs.sun.nio.ch
         /// <param name="source"></param>
         /// <returns></returns>
         /// <exception cref="global::java.net.SocketException"></exception>
-        public static unsafe int joinOrDrop6(bool join, global::java.io.FileDescriptor fd, byte[] group, int index, byte[] source)
+        public static unsafe int joinOrDrop6(bool join, object fd, byte[] group, int index, byte[] source)
         {
 #if FIRST_PASS
             throw new NotImplementedException();
@@ -587,7 +756,7 @@ namespace IKVM.Java.Externs.sun.nio.ch
                         groupSourceReq.gsr_group = Unsafe.As<sockaddr_in6, sockaddr_storage>(ref groupSockAddr);
                         groupSourceReq.gsr_source = Unsafe.As<sockaddr_in6, sockaddr_storage>(ref sourceSockAddr);
 
-                        if (RuntimeInformation.IsOSPlatform(OSPlatform.Windows))
+                        if (RuntimeUtil.IsWindows)
                         {
                             var v = ArrayPool<byte>.Shared.Rent(sizeof(group_source_req));
 
@@ -603,7 +772,7 @@ namespace IKVM.Java.Externs.sun.nio.ch
                                 ArrayPool<byte>.Shared.Return(v);
                             }
                         }
-                        else if (RuntimeInformation.IsOSPlatform(OSPlatform.Linux) || RuntimeInformation.IsOSPlatform(OSPlatform.OSX))
+                        else if (RuntimeUtil.IsLinux || RuntimeUtil.IsOSX)
                         {
 #if NETCOREAPP
                             if (setsockopt(socket.SafeHandle, IPPROTO_IPV6, join ? MCAST_JOIN_SOURCE_GROUP : MCAST_LEAVE_SOURCE_GROUP, &groupSourceReq, sizeof(group_source_req)) != 0)
@@ -634,7 +803,7 @@ namespace IKVM.Java.Externs.sun.nio.ch
         /// <param name="source"></param>
         /// <returns></returns>
         /// <exception cref="global::java.net.SocketException"></exception>
-        public static unsafe int blockOrUnblock6(bool block, global::java.io.FileDescriptor fd, byte[] group, int index, byte[] source)
+        public static unsafe int blockOrUnblock6(bool block, object fd, byte[] group, int index, byte[] source)
         {
 #if FIRST_PASS
             throw new NotImplementedException();
@@ -693,7 +862,7 @@ namespace IKVM.Java.Externs.sun.nio.ch
         /// <param name="fd"></param>
         /// <param name="interf"></param>
         /// <exception cref="global::java.net.SocketException"></exception>
-        public static void setInterface4(global::java.io.FileDescriptor fd, int interf)
+        public static void setInterface4(object fd, int interf)
         {
 #if FIRST_PASS
             throw new NotImplementedException();
@@ -714,7 +883,7 @@ namespace IKVM.Java.Externs.sun.nio.ch
         /// <param name="fd"></param>
         /// <returns></returns>
         /// <exception cref="global::java.net.SocketException"></exception>
-        public static int getInterface4(global::java.io.FileDescriptor fd)
+        public static int getInterface4(object fd)
         {
 #if FIRST_PASS
             throw new NotImplementedException();
@@ -735,7 +904,7 @@ namespace IKVM.Java.Externs.sun.nio.ch
         /// <param name="fd"></param>
         /// <param name="index"></param>
         /// <exception cref="global::java.net.SocketException"></exception>
-        public static void setInterface6(global::java.io.FileDescriptor fd, int index)
+        public static void setInterface6(object fd, int index)
         {
 #if FIRST_PASS
             throw new NotImplementedException();
@@ -756,7 +925,7 @@ namespace IKVM.Java.Externs.sun.nio.ch
         /// <param name="fd"></param>
         /// <returns></returns>
         /// <exception cref="global::java.net.SocketException"></exception>
-        public static int getInterface6(global::java.io.FileDescriptor fd)
+        public static int getInterface6(object fd)
         {
 #if FIRST_PASS
             throw new NotImplementedException();
@@ -772,181 +941,67 @@ namespace IKVM.Java.Externs.sun.nio.ch
         }
 
         /// <summary>
-        /// Implements the native method for 'socket0'.
+        /// Implements the native method for 'initIDs'.
         /// </summary>
-        /// <param name="preferIPv6"></param>
-        /// <param name="stream"></param>
-        /// <param name="reuse"></param>
         /// <returns></returns>
-        public static global::java.io.FileDescriptor socket0(bool preferIPv6, bool stream, bool reuse)
+        public static void initIDs()
         {
-#if FIRST_PASS
-            throw new NotImplementedException();
-#else
-            return InvokeFunc(() =>
-            {
-                var addressFamily = preferIPv6 ? AddressFamily.InterNetworkV6 : AddressFamily.InterNetwork;
-                var socketType = stream ? SocketType.Stream : SocketType.Dgram;
-                var protocolType = stream ? ProtocolType.Tcp : ProtocolType.Udp;
-                var socket = new Socket(addressFamily, socketType, protocolType);
 
-                if (preferIPv6)
-                    socket.SetSocketOption(SocketOptionLevel.IPv6, SocketOptionName.IPv6Only, 0);
-
-                if (!stream)
-                    setConnectionReset(socket, false);
-
-                var fd = new global::java.io.FileDescriptor();
-                fd.setSocket(socket);
-                return fd;
-            });
-#endif
         }
 
         /// <summary>
-        /// Implements the native method for 'bind0'.
+        /// Implements the native method 'pollinValue'.
         /// </summary>
-        /// <param name="fd"></param>
-        /// <param name="preferIPv6"></param>
-        /// <param name="useExclBind"></param>
-        /// <param name="addr"></param>
-        /// <param name="port"></param>
-        /// <exception cref="global::java.net.SocketException"></exception>
-        public static void bind0(global::java.io.FileDescriptor fd, bool preferIPv6, bool useExclBind, global::java.net.InetAddress addr, int port)
-        {
-#if FIRST_PASS
-            throw new NotImplementedException();
-#else
-            InvokeAction(() =>
-            {
-                InvokeWithSocket(fd, socket =>
-                {
-                    if (useExclBind && (int)socket.GetSocketOption(SocketOptionLevel.Socket, SocketOptionName.ReuseAddress) != 1)
-                        socket.ExclusiveAddressUse = true;
-
-                    socket.Bind(new System.Net.IPEndPoint(addr.ToIPAddress(), port));
-                });
-            });
-#endif
-        }
+        /// <returns></returns>
+        public static short pollinValue() => 0x0001;
 
         /// <summary>
-        /// Implements the native method for 'listen'.
+        /// Implements the native method 'polloutValue'.
         /// </summary>
-        /// <param name="fd"></param>
-        /// <param name="backlog"></param>
-        /// <exception cref="global::java.net.SocketException"></exception>
-        public static void listen(global::java.io.FileDescriptor fd, int backlog)
-        {
-#if FIRST_PASS
-            throw new NotImplementedException();
-#else
-            InvokeAction(() =>
-            {
-                InvokeWithSocket(fd, socket =>
-                {
-                    socket.Listen(backlog);
-                });
-            });
-#endif
-        }
+        /// <returns></returns>
+        public static short polloutValue() => 0x0004;
 
-        internal static void setConnectionReset(Socket socket, bool enable)
+        /// <summary>
+        /// Implements the native method 'pollerrValue'.
+        /// </summary>
+        /// <returns></returns>
+        public static short pollerrValue() => 0x0008;
+
+        /// <summary>
+        /// Implements the native method 'pollhupValue'.
+        /// </summary>
+        /// <returns></returns>
+        public static short pollhupValue() => 0x0010;
+
+        /// <summary>
+        /// Implements the native method 'pollnvalValue'.
+        /// </summary>
+        /// <returns></returns>
+        public static short pollnvalValue() => 0x0020;
+
+        /// <summary>
+        /// Implements the native method 'pollconnValue'.
+        /// </summary>
+        /// <returns></returns>
+        public static short pollconnValue() => 0x0002;
+
+        /// <summary>
+        /// Windows 2000 introduced a "feature" that causes it to return WSAECONNRESET from receive,
+        /// if a previous send resulted in an ICMP port unreachable. For unconnected datagram sockets,
+        /// we disable this feature by using this ioctl.
+        /// </summary>
+        /// <param name="socket"></param>
+        /// <param name="enable"></param>
+        internal static void SetConnectionReset(Socket socket, bool enable)
         {
-            if (RuntimeInformation.IsOSPlatform(OSPlatform.Windows))
+            if (RuntimeUtil.IsWindows)
             {
-                // Windows 2000 introduced a "feature" that causes it to return WSAECONNRESET from receive,
-                // if a previous send resulted in an ICMP port unreachable. For unconnected datagram sockets,
-                // we disable this feature by using this ioctl.
                 const int IOC_IN = unchecked((int)0x80000000);
                 const int IOC_VENDOR = 0x18000000;
                 const int SIO_UDP_CONNRESET = IOC_IN | IOC_VENDOR | 12;
                 socket.IOControl(SIO_UDP_CONNRESET, new byte[] { enable ? (byte)1 : (byte)0 }, null);
             }
         }
-
-        /// <summary>
-        /// Implements the native method for 'connect0'.
-        /// </summary>
-        /// <param name="preferIPv6"></param>
-        /// <param name="fd"></param>
-        /// <param name="remote"></param>
-        /// <param name="remotePort"></param>
-        /// <returns></returns>
-        public static int connect0(bool preferIPv6, global::java.io.FileDescriptor fd, global::java.net.InetAddress remote, int remotePort)
-        {
-#if FIRST_PASS
-            throw new NotImplementedException();
-#else
-            return InvokeFunc<int>(() =>
-            {
-                return InvokeWithSocket(fd, socket =>
-                {
-                    var ep = new IPEndPoint(remote.ToIPAddress(), remotePort);
-                    var datagram = socket.SocketType == SocketType.Dgram;
-                    if (datagram || fd.isSocketBlocking())
-                    {
-                        socket.Connect(ep);
-                        if (datagram)
-                            setConnectionReset(socket, true);
-
-                        return 1;
-                    }
-                    else
-                    {
-                        fd.setAsyncResult(socket.BeginConnect(ep, null, null));
-                        return global::sun.nio.ch.IOStatus.UNAVAILABLE;
-                    }
-                });
-            });
-#endif
-        }
-
-        /// <summary>
-        /// Implements the native method for 'poll'.
-        /// </summary>
-        /// <param name="fd"></param>
-        /// <param name="events"></param>
-        /// <param name="timeout"></param>
-        /// <returns></returns>
-        /// <exception cref="NotSupportedException"></exception>
-        public static int poll(global::java.io.FileDescriptor fd, int events, long timeout)
-        {
-#if FIRST_PASS
-            throw new NotImplementedException();
-#else
-            return InvokeFunc(() =>
-            {
-                return InvokeWithSocket(fd, socket =>
-                {
-                    var selectMode = events switch
-                    {
-                        int e when e == global::sun.nio.ch.Net.POLLCONN => SelectMode.SelectWrite,
-                        int e when e == global::sun.nio.ch.Net.POLLOUT => SelectMode.SelectWrite,
-                        int e when e == global::sun.nio.ch.Net.POLLIN => SelectMode.SelectRead,
-                        _ => throw new NotSupportedException(),
-                    };
-
-                    if (socket.Poll(timeout * 1000L > int.MaxValue ? int.MaxValue : (int)timeout * 1000, selectMode))
-                        return events;
-
-                    return 0;
-                });
-            });
-#endif
-        }
-
-        public static short pollinValue() => 0x0001;
-
-        public static short polloutValue() => 0x0004;
-
-        public static short pollerrValue() => 0x0008;
-
-        public static short pollhupValue() => 0x0010;
-
-        public static short pollnvalValue() => 0x0020;
-
-        public static short pollconnValue() => 0x0002;
 
 #if !FIRST_PASS
 
@@ -959,11 +1014,11 @@ namespace IKVM.Java.Externs.sun.nio.ch
         /// <returns></returns>
         /// <exception cref="global::java.lang.NullPointerException"></exception>
         /// <exception cref="global::java.net.SocketException"></exception>
-        static void InvokeWithSocket(global::java.io.FileDescriptor fd, Action<Socket> action)
+        static void InvokeWithSocket(object fd, Action<Socket> action)
         {
-            var socket = fd?.getSocket();
+            var socket = FileDescriptorAccessor.GetSocket(fd);
             if (socket == null)
-                throw new global::java.net.SocketException("Socket closed");
+                throw new global::java.net.SocketException("Socket closed.");
 
             action(socket);
         }
@@ -977,11 +1032,11 @@ namespace IKVM.Java.Externs.sun.nio.ch
         /// <returns></returns>
         /// <exception cref="global::java.lang.NullPointerException"></exception>
         /// <exception cref="global::java.net.SocketException"></exception>
-        static TResult InvokeWithSocket<TResult>(global::java.io.FileDescriptor fd, Func<Socket, TResult> func)
+        static TResult InvokeWithSocket<TResult>(object fd, Func<Socket, TResult> func)
         {
-            var socket = fd?.getSocket();
+            var socket = FileDescriptorAccessor.GetSocket(fd);
             if (socket == null)
-                throw new global::java.net.SocketException("Socket closed");
+                throw new global::java.net.SocketException("Socket closed.");
 
             return func(socket);
         }

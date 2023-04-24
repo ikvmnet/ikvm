@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Security.Policy;
 
 namespace IKVM.Tools.Exporter
 {
@@ -26,19 +27,43 @@ namespace IKVM.Tools.Exporter
         /// </summary>
         public List<string> Libraries { get; set; } = new List<string>();
 
-        public bool JApi { get; set; }
+        /// <summary>
+        /// Set of namespaces to export.
+        /// </summary>
+        public List<string> Namespaces { get; set; } = new List<string>();
 
         public bool Shared { get; set; }
 
         public bool NoStdLib { get; set; }
 
-        public List<string> Namespaces { get; set; } = new List<string>(); 
-
         public bool Forwarders { get; set; }
 
-        public bool Parameters { get; set; }
+        /// <summary>
+        /// Whether to export parameter names.
+        /// </summary>
+        public bool IncludeParameterNames { get; set; }
 
-        public bool SkipError { get; set; }
+        /// <summary>
+        /// Whehter to export non-public types.
+        /// </summary>
+        public bool IncludeNonPublicTypes { get; set; }
+
+        /// <summary>
+        /// Whether to export non-public interface implementations.
+        /// </summary>
+        public bool IncludeNonPublicInterfaces { get; set; }
+
+        /// <summary>
+        /// Whether to export non-public members.
+        /// </summary>
+        public bool IncludeNonPublicMembers { get; set; }
+
+        /// <summary>
+        /// Whether to export serialVersionUID fields.
+        /// </summary>
+        public bool SerialVersionUID { get; set; }
+
+        public bool ContinueOnError { get; set; }
 
         public bool Boostrap { get; set; }
 

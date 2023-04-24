@@ -29,6 +29,7 @@ using System.Runtime.Serialization;
 using System.Security;
 
 using IKVM.Attributes;
+using IKVM.Runtime;
 
 using IDictionary = System.Collections.IDictionary;
 using Interlocked = System.Threading.Interlocked;

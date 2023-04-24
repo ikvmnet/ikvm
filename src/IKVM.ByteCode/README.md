@@ -4,13 +4,13 @@ Provides a Java class file parser, reader and writer implementation used by the 
 
 The project is organized into three related sections.
 
-## IKVM.ByteCode.Parser
+## IKVM.ByteCode.Parsing
 
 Contains Record structures and classes that represent the raw values that might appear in a Java class file. These
-types are not blittable, but do contain a TryRead method and TryWrite method, targeting a SequenceReader<byte> and
+types are not blittable, but do contain a TryRead method and TryWrite method, targeting a ClassFormatReader and
 ClassFormatWriter respectively.
 
-## IVKM.ByteCode.Reader
+## IVKM.ByteCode.Reading
 
 Contains Reader classes that wrap Record structures. The main top-level class is ClassReader. ClassReader operates on
 a ClassRecord. ClassReader exposes collections and properties which allow navigation through a parsed class file. An

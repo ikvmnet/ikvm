@@ -116,7 +116,8 @@ namespace IKVM.Internal
                 ilgen.Emit(OpCodes.Ldsfld, RuntimeHelperTypes.GetClassLiteralField(type));
             }
         }
-#endif // EMITTERS
+
+#endif
 
         private Type GetClassLiteralType()
         {
@@ -685,41 +686,36 @@ namespace IKVM.Internal
 
         internal abstract ClassLoaderWrapper GetClassLoader();
 
+        /// <summary>
+        /// Searches for the <see cref="FieldWrapper"/> with the specified name and signature.
+        /// </summary>
+        /// <param name="fieldName"></param>
+        /// <param name="fieldSig"></param>
+        /// <returns></returns>
         internal FieldWrapper GetFieldWrapper(string fieldName, string fieldSig)
         {
-            foreach (FieldWrapper fw in GetFields())
-            {
+            foreach (var fw in GetFields())
                 if (fw.Name == fieldName && fw.Signature == fieldSig)
-                {
                     return fw;
-                }
-            }
-            foreach (TypeWrapper iface in this.Interfaces)
+
+            foreach (var iface in Interfaces)
             {
-                FieldWrapper fw = iface.GetFieldWrapper(fieldName, fieldSig);
+                var fw = iface.GetFieldWrapper(fieldName, fieldSig);
                 if (fw != null)
-                {
                     return fw;
-                }
             }
-            TypeWrapper baseWrapper = this.BaseTypeWrapper;
+
+            var baseWrapper = BaseTypeWrapper;
             if (baseWrapper != null)
-            {
                 return baseWrapper.GetFieldWrapper(fieldName, fieldSig);
-            }
+
             return null;
         }
 
         protected virtual void LazyPublishMembers()
         {
-            if (methods == null)
-            {
-                methods = MethodWrapper.EmptyArray;
-            }
-            if (fields == null)
-            {
-                fields = FieldWrapper.EmptyArray;
-            }
+            methods ??= MethodWrapper.EmptyArray;
+            fields ??= FieldWrapper.EmptyArray;
         }
 
         protected virtual void LazyPublishMethods()
@@ -732,6 +728,10 @@ namespace IKVM.Internal
             LazyPublishMembers();
         }
 
+        /// <summary>
+        /// Gets the set of methods defined by this type.
+        /// </summary>
+        /// <returns></returns>
         internal MethodWrapper[] GetMethods()
         {
             if (methods == null)
@@ -742,17 +742,20 @@ namespace IKVM.Internal
                     {
 #if IMPORTER
                         if (IsUnloadable || !CheckMissingBaseTypes(TypeAsBaseType))
-                        {
                             return methods = MethodWrapper.EmptyArray;
-                        }
 #endif
                         LazyPublishMethods();
                     }
                 }
             }
+
             return methods;
         }
 
+        /// <summary>
+        /// Gets the set of fields declared by this type.
+        /// </summary>
+        /// <returns></returns>
         internal FieldWrapper[] GetFields()
         {
             if (fields == null)
@@ -763,14 +766,14 @@ namespace IKVM.Internal
                     {
 #if IMPORTER
                         if (IsUnloadable || !CheckMissingBaseTypes(TypeAsBaseType))
-                        {
                             return fields = FieldWrapper.EmptyArray;
-                        }
 #endif
+
                         LazyPublishFields();
                     }
                 }
             }
+
             return fields;
         }
 
@@ -1392,7 +1395,60 @@ namespace IKVM.Internal
                 ilgen.Emit_instanceof(TypeAsTBD);
             }
         }
-#endif // EMITTERS
+
+        /// <summary>
+        /// Emits the appropriate instruction to do an indirect load of a reference to this type.
+        /// </summary>
+        /// <param name="il"></param>
+        internal virtual void EmitLdind(CodeEmitter il)
+        {
+            if (this == PrimitiveTypeWrapper.BOOLEAN)
+                il.Emit(OpCodes.Ldind_U1);
+            else if (this == PrimitiveTypeWrapper.BYTE)
+                il.Emit(OpCodes.Ldind_U1);
+            else if (this == PrimitiveTypeWrapper.CHAR)
+                il.Emit(OpCodes.Ldind_U2);
+            else if (this == PrimitiveTypeWrapper.SHORT)
+                il.Emit(OpCodes.Ldind_I2);
+            else if (this == PrimitiveTypeWrapper.INT)
+                il.Emit(OpCodes.Ldind_I4);
+            else if (this == PrimitiveTypeWrapper.LONG)
+                il.Emit(OpCodes.Ldind_I8);
+            else if (this == PrimitiveTypeWrapper.FLOAT)
+                il.Emit(OpCodes.Ldind_R4);
+            else if (this == PrimitiveTypeWrapper.DOUBLE)
+                il.Emit(OpCodes.Ldind_R8);
+            else
+                il.Emit(OpCodes.Ldind_Ref);
+        }
+
+        /// <summary>
+        /// Emits the appropriate instruction to do an indirect store of a reference to this type.
+        /// </summary>
+        /// <param name="il"></param>
+        internal virtual void EmitStind(CodeEmitter il)
+        {
+            if (this == PrimitiveTypeWrapper.BOOLEAN)
+                il.Emit(OpCodes.Stind_I1);
+            else if (this == PrimitiveTypeWrapper.BYTE)
+                il.Emit(OpCodes.Stind_I1);
+            else if (this == PrimitiveTypeWrapper.CHAR)
+                il.Emit(OpCodes.Stind_I2);
+            else if (this == PrimitiveTypeWrapper.SHORT)
+                il.Emit(OpCodes.Stind_I2);
+            else if (this == PrimitiveTypeWrapper.INT)
+                il.Emit(OpCodes.Stind_I4);
+            else if (this == PrimitiveTypeWrapper.LONG)
+                il.Emit(OpCodes.Stind_I8);
+            else if (this == PrimitiveTypeWrapper.FLOAT)
+                il.Emit(OpCodes.Stind_R4);
+            else if (this == PrimitiveTypeWrapper.DOUBLE)
+                il.Emit(OpCodes.Stind_R8);
+            else
+                il.Emit(OpCodes.Stind_Ref);
+        }
+
+#endif
 
         // NOTE don't call this method, call MethodWrapper.Link instead
         internal virtual MethodBase LinkMethod(MethodWrapper mw)

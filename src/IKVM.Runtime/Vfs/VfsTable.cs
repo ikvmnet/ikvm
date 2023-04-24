@@ -1,12 +1,10 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.IO;
-using System.IO.Compression;
 using System.Linq;
 using System.Reflection;
 using System.Text;
 
-using IKVM.Internal;
 using IKVM.Runtime.Extensions;
 
 namespace IKVM.Runtime.Vfs
@@ -15,13 +13,8 @@ namespace IKVM.Runtime.Vfs
     /// <summary>
     /// Collection of mounted virtual file systems.
     /// </summary>
-    class VfsTable
+    internal class VfsTable
     {
-
-        /// <summary>
-        /// Gets the default mount path of the global file system.
-        /// </summary>
-        public readonly static string RootPath = JVM.IsUnix ? "/mnt/ikvm/" : @"\\ikvm\";
 
         /// <summary>
         /// Gets the default mount table.
@@ -34,29 +27,21 @@ namespace IKVM.Runtime.Vfs
         /// <returns></returns>
         static VfsTable BuildDefaultTable(VfsContext context)
         {
+#if FIRST_PASS || IMPORTER || EXPORTER
+            throw new NotImplementedException();
+#else
             if (context is null)
                 throw new ArgumentNullException(nameof(context));
+
+            var ikvmHome = JVM.Properties.HomePath;
+            if (Directory.Exists(ikvmHome) == false)
+                throw new DirectoryNotFoundException("Could not locate ikvm.home when establishing VFS.");
 
             var table = new VfsTable(context);
-            table.AddMount(RootPath, BuildIkvmHomeRoot(context));
+            table.AddMount(Path.Combine(ikvmHome, "assembly"), new VfsAssemblyDirectory(context));
+            table.AddMount(Path.Combine(ikvmHome, "lib", "security", "cacerts"), new VfsCacertsFile(context));
             return table;
-        }
-
-        /// <summary>
-        /// Builds the default mount directory.
-        /// </summary>
-        /// <param name="context"></param>
-        /// <returns></returns>
-        /// <exception cref="ArgumentNullException"></exception>
-        static VfsDirectory BuildIkvmHomeRoot(VfsContext context)
-        {
-            if (context is null)
-                throw new ArgumentNullException(nameof(context));
-
-            var home = new VfsEntryDirectory(context);
-            home.AddEntry("assembly", new VfsAssemblyDirectory(context));
-            home.AddEntry("cacerts", new VfsCacertsFile(context));
-            return home;
+#endif
         }
 
         readonly VfsContext context;
@@ -81,11 +66,11 @@ namespace IKVM.Runtime.Vfs
         /// Adds the a new mount to the table.
         /// </summary>
         /// <param name="path"></param>
-        /// <param name="root"></param>
+        /// <param name="item"></param>
         /// <returns></returns>
-        public VfsMount AddMount(string path, VfsDirectory root)
+        public VfsMount AddMount(string path, VfsEntry item)
         {
-            return mounts.AddFirst(new VfsMount(path, root)).Value;
+            return mounts.AddFirst(new VfsMount(path, item)).Value;
         }
 
         /// <summary>
@@ -94,7 +79,7 @@ namespace IKVM.Runtime.Vfs
         /// <param name="path"></param>
         public void RemoveMount(string path)
         {
-            var mount = mounts.FirstOrDefault(i => i.RootPath == path);
+            var mount = mounts.FirstOrDefault(i => i.Path == path);
             if (mount != null)
                 mounts.Remove(mount);
         }
@@ -118,14 +103,14 @@ namespace IKVM.Runtime.Vfs
         /// </summary>
         /// <param name="path"></param>
         /// <returns></returns>
-        public VfsEntry GetPath(string path) => GetMount(path) is VfsMount mount ? mount.GetPath(path.Substring(mount.RootPath.Length)) : null;
+        public VfsEntry GetEntry(string path) => GetMount(path) is VfsMount mount ? mount.GetEntry(path.Substring(mount.Path.Length)) : null;
 
         /// <summary>
         /// Gets the names of the entries within the directory.
         /// </summary>
         /// <param name="path"></param>
         /// <returns></returns>
-        public string[] List(string path) => GetPath(path) is VfsDirectory directory ? directory.List() : null;
+        public string[] List(string path) => GetEntry(path) is VfsDirectory directory ? directory.List() : null;
 
         /// <summary>
         /// Opens a file at the specified path.
@@ -143,7 +128,7 @@ namespace IKVM.Runtime.Vfs
                 throw new UnauthorizedAccessException("Virtual file system is read-only.");
 
             // search for the entry in the file system and open it
-            return GetPath(path) switch
+            return GetEntry(path) switch
             {
                 VfsFile file => file.Open(mode, access),
                 VfsDirectory => throw new UnauthorizedAccessException($"Access to '{path}' was denied."),
@@ -158,7 +143,7 @@ namespace IKVM.Runtime.Vfs
         /// <returns></returns>
         public long GetLength(string path)
         {
-            return GetPath(path) is VfsFile entry ? entry.Size : 0;
+            return GetEntry(path) is VfsFile entry ? entry.Size : 0;
         }
 
         /// <summary>
@@ -172,7 +157,7 @@ namespace IKVM.Runtime.Vfs
             const int BA_REGULAR = 0x02;
             const int BA_DIRECTORY = 0x04;
 
-            return GetPath(path) switch
+            return GetEntry(path) switch
             {
                 VfsDirectory => BA_EXISTS | BA_DIRECTORY,
                 VfsFile => BA_EXISTS | BA_REGULAR,
@@ -187,10 +172,18 @@ namespace IKVM.Runtime.Vfs
         /// <returns></returns>
         public string GetAssemblyClassesPath(Assembly assembly)
         {
+#if FIRST_PASS || IMPORTER || EXPORTER
+            throw new NotImplementedException();
+#else
             if (assembly is null)
                 throw new ArgumentNullException(nameof(assembly));
 
-            return PathExtensions.EnsureEndingDirectorySeparator(Path.Combine(mounts.First.Value.RootPath, "assembly", GetAssemblyDirectoryName(assembly), "classes"));
+            var ikvmHome = JVM.Properties.HomePath;
+            if (Directory.Exists(ikvmHome) == false)
+                throw new DirectoryNotFoundException("Could not locate IkvmHome when finding VFS.");
+
+            return PathExtensions.EnsureEndingDirectorySeparator(Path.Combine(ikvmHome, "assembly", GetAssemblyDirectoryName(assembly), "classes"));
+#endif
         }
 
         /// <summary>
@@ -200,10 +193,18 @@ namespace IKVM.Runtime.Vfs
         /// <returns></returns>
         public string GetAssemblyResourcesPath(Assembly assembly)
         {
+#if FIRST_PASS || IMPORTER || EXPORTER
+            throw new NotImplementedException();
+#else
             if (assembly is null)
                 throw new ArgumentNullException(nameof(assembly));
 
-            return PathExtensions.EnsureEndingDirectorySeparator(Path.Combine(mounts.First.Value.RootPath, "assembly", GetAssemblyDirectoryName(assembly), "resources"));
+            var ikvmHome = JVM.Properties.HomePath;
+            if (Directory.Exists(ikvmHome) == false)
+                throw new DirectoryNotFoundException("Could not locate IkvmHome when finding VFS.");
+
+            return PathExtensions.EnsureEndingDirectorySeparator(Path.Combine(ikvmHome, "assembly", GetAssemblyDirectoryName(assembly), "resources"));
+#endif
         }
 
         /// <summary>

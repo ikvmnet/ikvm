@@ -25,7 +25,7 @@ jobs:
       uses: actions/cache@v3
       with:
         path: openjdk/build/linux-x86_64-normal-server-release
-        key: openjdk-build-linux-x86_64-normal-server-release--${{ runner.os }}--${{ hashFiles('openjdk/**', '!openjdk/build') }}-9
+        key: openjdk-build-linux-x86_64-normal-server-release--${{ runner.os }}--${{ hashFiles('openjdk/**', '!openjdk/build') }}-10
     - name: Check OpenJDK Build Stamp
       id: openjdk-build-stamp
       uses: andstor/file-existence-action@v2
@@ -74,13 +74,7 @@ jobs:
     - name: Package OpenJDK
       run: |
         zip -r openjdk-build-linux-x86_64-normal-server-release.zip \
-          linux-x86_64-normal-server-release/langtools/gensrc \
-          linux-x86_64-normal-server-release/corba/gensrc \
-          linux-x86_64-normal-server-release/jdk/gensrc \
-          linux-x86_64-normal-server-release/jdk/impsrc \
-          linux-x86_64-normal-server-release/jdk/lib \
-          linux-x86_64-normal-server-release/jdk/classes \
-          linux-x86_64-normal-server-release/images
+          linux-x86_64-normal-server-release/*
       working-directory: openjdk/build
     - name: Upload OpenJDK
       uses: actions/upload-artifact@v3

@@ -290,7 +290,7 @@ public class ZipFile implements ZipConstants, Closeable
         ZipEntry entry = new ZipEntry();
         entry.flag = flags;
         entry.method = method;
-        entry.dostime = inp.readLeUnsignedInt();
+        entry.xdostime = inp.readLeUnsignedInt();
         entry.crc = inp.readLeUnsignedInt();
         entry.csize = inp.readLeUnsignedInt();
         entry.size = inp.readLeUnsignedInt();
