@@ -1,5 +1,8 @@
 ﻿using System;
+using System.Drawing;
 using System.Runtime.ExceptionServices;
+using System.Security.Cryptography;
+using System.Security.Policy;
 using System.Threading.Tasks;
 
 using FluentAssertions;
@@ -484,6 +487,58 @@ namespace IKVM.Tests.Java.java.nio.channels
             c.isOpen().Should().BeFalse();
 
             c.Invoking(x => x.@lock().get()).Should().Throw<ExecutionException>().Where(e => e.getCause() is ClosedChannelException);
+        }
+
+        [TestMethod]
+        public void ShouldThrowAsynchronousCloseExceptionWhenClosedDuringWrite()
+        {
+            var rng = RandomNumberGenerator.Create();
+            var rnd = new System.Random();
+
+            const int size = 65535;
+            const int z = 16;
+
+            var file = File.createTempFile("test", null);
+            file.deleteOnExit();
+
+            // rewrite file with random data
+            var temp = new byte[size];
+            rng.GetBytes(temp);
+            System.IO.File.WriteAllBytes(file.getPath(), temp);
+
+            using var c = AsynchronousFileChannel.open(file.toPath(), StandardOpenOption.WRITE, StandardOpenOption.SYNC);
+
+            // generate N buffers to read data from
+            var buf = new ByteBuffer[z];
+            var pos = new int[z];
+            for (int i = 0; i < z; i++)
+            {
+                var b = new byte[rnd.Next(1, size)];
+                rng.GetBytes(b);
+                buf[i] = ByteBuffer.wrap(b);
+                pos[i] = rnd.Next(1, size);
+            }
+
+            // start N async write requests
+            var result = new Future[z];
+            for (int i = 0; i < z; i++)
+                result[i] = c.write(buf[i], pos[i]);
+
+            // close channel while writing is ongoing
+            c.close();
+
+            // write operations should complete or fail with AsynchronousCloseException
+            for (int i = 0; i < z; i++)
+            {
+                try
+                {
+                    result[i].get().Should().NotBeNull();
+                }
+                catch (ExecutionException e) when (e.getCause() is AsynchronousCloseException)
+                {
+                    // expected
+                }
+            }
         }
 
     }

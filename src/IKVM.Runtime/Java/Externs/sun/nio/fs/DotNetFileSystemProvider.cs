@@ -141,7 +141,7 @@ namespace IKVM.Java.Externs.sun.nio.fs
                         throw new UnixIOException(error);
                     }
 
-                    return FileDescriptorAccessor.FromStream(new FileStream(new SafeFileHandle((IntPtr)r, true), access));
+                    return FileDescriptorAccessor.FromStream(new FileStream(new SafeFileHandle((IntPtr)r, true), access, bufferSize, (options & FileOptions.Asynchronous) != 0));
                 }
 #endif
             }
