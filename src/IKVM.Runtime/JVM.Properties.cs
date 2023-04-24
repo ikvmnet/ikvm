@@ -495,11 +495,10 @@ namespace IKVM.Runtime
                 }
                 else if (RuntimeUtil.IsOSX)
                 {
-                    osname = "Mac OS X";
-                    osversion = "10.15";
-
                     // OpenJDK collects the version from a number of different places
                     // we should do that in the future
+                    osname = "Mac OS X";
+                    osversion = "10.15";
                 }
 
                 osname ??= Environment.OSVersion.ToString();
