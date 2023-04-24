@@ -7,11 +7,13 @@ using System.ComponentModel;
 using System.Runtime.InteropServices;
 
 using IKVM.Runtime.Accessors.Java.Io;
-using IKVM.Internal;
 using IKVM.Runtime.Util.Java.Nio;
 using IKVM.Runtime;
 
 using Microsoft.Win32.SafeHandles;
+
+using Mono.Unix.Native;
+using Mono.Unix;
 
 #if FIRST_PASS == false
 
@@ -431,6 +433,56 @@ namespace IKVM.Java.Externs.sun.nio.ch
                             throw new global::java.io.IOException(e);
                         }
                     }
+                    else if (RuntimeUtil.IsLinux)
+                    {
+                        while (true)
+                        {
+                            try
+                            {
+                                if (cancellationToken.IsCancellationRequested)
+                                    return null;
+
+                                try
+                                {
+                                    self.begin();
+
+                                    var fl = new Flock();
+                                    fl.l_whence = SeekFlags.SEEK_SET;
+                                    fl.l_len = size == long.MaxValue ? 0 : size;
+                                    fl.l_start = position;
+                                    fl.l_type = shared ? LockType.F_RDLCK : LockType.F_WRLCK;
+
+                                    // fails immediately with EAGAIN or EACCES if cannot obtain
+                                    if (Syscall.fcntl((int)fs.SafeFileHandle.DangerousGetHandle(), FcntlCommand.F_SETLK, ref fl) == 0)
+                                        return fli;
+
+                                    var errno = Syscall.GetLastError();
+                                    if (errno == Errno.EAGAIN || errno == Errno.EACCES)
+                                        continue;
+
+                                    UnixMarshal.ThrowExceptionForError(errno);
+                                }
+                                finally
+                                {
+                                    self.end();
+                                }
+                            }
+                            catch (ObjectDisposedException)
+                            {
+                                throw new global::java.nio.channels.AsynchronousCloseException();
+                            }
+                            catch (System.Exception) when (self.isOpen() == false)
+                            {
+                                throw new global::java.nio.channels.AsynchronousCloseException();
+                            }
+                            catch (System.Exception e)
+                            {
+                                throw new global::java.io.IOException(e);
+                            }
+
+                            await Task.Delay(TimeSpan.FromMilliseconds(100));
+                        }
+                    }
                     else
                     {
                         while (true)
@@ -535,6 +587,27 @@ namespace IKVM.Java.Externs.sun.nio.ch
                         t.GetAwaiter().GetResult();
 
                         return fli;
+                    }
+                    else if (RuntimeUtil.IsLinux)
+                    {
+                        var fl = new Flock();
+                        fl.l_whence = SeekFlags.SEEK_SET;
+                        fl.l_len = size == long.MaxValue ? 0 : size;
+                        fl.l_start = position;
+                        fl.l_type = shared ? LockType.F_RDLCK : LockType.F_WRLCK;
+
+                        // fails immediately with EAGAIN or EACCES if cannot obtain
+                        if (Syscall.fcntl((int)fs.SafeFileHandle.DangerousGetHandle(), FcntlCommand.F_SETLK, ref fl) == 0)
+                            return fli;
+
+                        var errno = Syscall.GetLastError();
+                        if (errno == Errno.EAGAIN || errno == Errno.EACCES)
+                        {
+                            self.removeFromFileLockTable(fli);
+                            return null;
+                        }
+
+                        UnixMarshal.ThrowExceptionForError(errno);
                     }
                     else
                     {

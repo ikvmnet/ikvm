@@ -144,8 +144,8 @@ namespace IKVM.Tests.Java.java.nio.channels
                 }
 
                 newPosition = channel.position();
-                newPosition.Should().Be(originalPosition); 
-                
+                newPosition.Should().Be(originalPosition);
+
                 for (byte i = 0; i < 4; i++)
                 {
                     if (bb.get(i) != i)
@@ -171,7 +171,25 @@ namespace IKVM.Tests.Java.java.nio.channels
             using var dstStream = new FileOutputStream(dstPath);
             using var dstChannel = dstStream.getChannel();
 
-            var n = dstChannel.transferFrom(srcChannel, 0, Integer.MAX_VALUE + 1L);
+            var n = dstChannel.transferFrom(srcChannel, 0, Integer.MAX_VALUE);
+        }
+
+        [TestMethod]
+        public void CanTransferToFileFromFile()
+        {
+            var srcPath = File.createTempFile("src", null);
+            srcPath.deleteOnExit();
+
+            var dstPath = File.createTempFile("dst", null);
+            dstPath.deleteOnExit();
+
+            using var srcStream = new FileInputStream(srcPath);
+            using var srcChannel = srcStream.getChannel();
+
+            using var dstStream = new FileOutputStream(dstPath);
+            using var dstChannel = dstStream.getChannel();
+
+            var n = srcChannel.transferTo(0, int.MaxValue, dstChannel);
         }
 
         [TestMethod]

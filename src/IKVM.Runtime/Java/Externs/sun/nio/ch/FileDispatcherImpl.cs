@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Buffers;
+using System.ComponentModel;
 using System.IO;
 using System.Runtime.InteropServices;
 using System.Threading;
@@ -7,9 +8,10 @@ using System.Threading;
 using IKVM.Runtime;
 using IKVM.Runtime.Accessors.Java.Io;
 
-using java.io;
-
 using Microsoft.Win32.SafeHandles;
+
+using Mono.Unix;
+using Mono.Unix.Native;
 
 using sun.nio.ch;
 
@@ -434,7 +436,6 @@ namespace IKVM.Java.Externs.sun.nio.ch
 
             try
             {
-
 #if NETFRAMEWORK
                 var buf = ArrayPool<byte>.Shared.Rent(len);
 
@@ -451,10 +452,7 @@ namespace IKVM.Java.Externs.sun.nio.ch
                 stream.Write(new Span<byte>((byte*)(IntPtr)address, len));
 #endif
 
-                // reset stream position
-                if (stream.Position != p)
-                    stream.Position = p;
-
+                stream.Seek(p, SeekOrigin.Begin);
                 return len;
             }
             catch (global::java.io.IOException)
@@ -768,10 +766,13 @@ namespace IKVM.Java.Externs.sun.nio.ch
                         if (result == 0)
                         {
                             var error = Marshal.GetLastWin32Error();
-                            if (blocking == false && error == ERROR_LOCK_VIOLATION)
+                            if (error != ERROR_LOCK_VIOLATION)
+                                throw new Win32Exception(error);
+
+                            if ((flags & LOCKFILE_FAIL_IMMEDIATELY) != 0)
                                 return FileDispatcher.NO_LOCK;
 
-                            throw new global::java.io.IOException("Lock failed.");
+                            throw new Win32Exception(error);
                         }
 
                         return FileDispatcher.LOCKED;
@@ -780,6 +781,29 @@ namespace IKVM.Java.Externs.sun.nio.ch
                     {
                         Overlapped.Free(optr);
                     }
+                }
+                else if (RuntimeUtil.IsLinux)
+                {
+                    var fl = new Flock();
+                    fl.l_whence = SeekFlags.SEEK_SET;
+                    fl.l_len = size == long.MaxValue ? 0 : size;
+                    fl.l_start = pos;
+                    fl.l_type = shared ? LockType.F_RDLCK : LockType.F_WRLCK;
+                    var cmd = blocking ? FcntlCommand.F_SETLKW : FcntlCommand.F_SETLK;
+
+                    var r = Syscall.fcntl((int)fs.SafeFileHandle.DangerousGetHandle(), cmd, ref fl);
+                    if (r < 0)
+                    {
+                        var errno = Syscall.GetLastError();
+                        if ((cmd == FcntlCommand.F_SETLK) && (errno == Errno.EAGAIN || errno == Errno.EACCES))
+                            return FileDispatcher.NO_LOCK;
+                        if (errno == Errno.EINTR)
+                            return FileDispatcher.INTERRUPTED;
+
+                        UnixMarshal.ThrowExceptionForError(errno);
+                    }
+
+                    return FileDispatcher.LOCKED;
                 }
                 else
                 {
@@ -846,14 +870,30 @@ namespace IKVM.Java.Externs.sun.nio.ch
 
                         optr = o.Pack(null, null);
                         int result = UnlockFileEx(fs.SafeFileHandle, 0, (int)size, (int)(size >> 32), optr);
-                        if (result == 0 && Marshal.GetLastWin32Error() != ERROR_NOT_LOCKED)
-                            throw new global::java.io.IOException("Release failed.");
+                        if (result == 0)
+                        {
+                            var error = Marshal.GetLastWin32Error();
+                            if (error != ERROR_NOT_LOCKED)
+                                throw new Win32Exception(error);
+                        }
                     }
                     finally
                     {
                         if (optr != null)
                             Overlapped.Free(optr);
                     }
+                }
+                else if (RuntimeUtil.IsLinux)
+                {
+                    var fl = new Flock();
+                    fl.l_whence = SeekFlags.SEEK_SET;
+                    fl.l_len = size == long.MaxValue ? 0 : size;
+                    fl.l_start = pos;
+                    fl.l_type = LockType.F_UNLCK;
+
+                    var r = Syscall.fcntl((int)fs.SafeFileHandle.DangerousGetHandle(), FcntlCommand.F_SETLK, ref fl);
+                    if (r < 0)
+                        UnixMarshal.ThrowExceptionForLastErrorIf(r);
                 }
                 else
                 {

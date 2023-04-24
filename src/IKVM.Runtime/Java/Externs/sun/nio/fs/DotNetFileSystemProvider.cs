@@ -9,6 +9,11 @@ using IKVM.Runtime.Accessors.Java.Lang;
 using IKVM.Runtime.Accessors.Sun.Nio.Fs;
 using IKVM.Runtime.Vfs;
 
+using Microsoft.Win32.SafeHandles;
+
+using Mono.Unix;
+using Mono.Unix.Native;
+
 namespace IKVM.Java.Externs.sun.nio.fs
 {
 
@@ -88,7 +93,56 @@ namespace IKVM.Java.Externs.sun.nio.fs
 #if NETFRAMEWORK
                 return FileDescriptorAccessor.FromStream(new FileStream(path, mode, rights, share, bufferSize, options));
 #else
-                return FileDescriptorAccessor.FromStream(new FileStream(path, mode, access, share, bufferSize, options));
+                if (RuntimeUtil.IsWindows)
+                {
+                    return FileDescriptorAccessor.FromStream(new FileStream(path, mode, access, share, bufferSize, options));
+                }
+                else
+                {
+                    var flags = (OpenFlags)0;
+                    if (mode == FileMode.Create)
+                        flags |= OpenFlags.O_CREAT | OpenFlags.O_TRUNC;
+                    if (mode == FileMode.Open)
+                        flags |= OpenFlags.O_EXCL;
+                    if (mode == FileMode.OpenOrCreate)
+                        flags |= OpenFlags.O_CREAT;
+                    if (mode == FileMode.Append)
+                        flags |= OpenFlags.O_APPEND;
+                    if (mode == FileMode.CreateNew)
+                        flags |= OpenFlags.O_CREAT | OpenFlags.O_EXCL;
+
+                    if ((rights & FileSystemRights.Read) != 0 && (rights & FileSystemRights.Write) != 0)
+                        flags |= OpenFlags.O_RDWR;
+                    if ((rights & FileSystemRights.Read) != 0 && (rights & FileSystemRights.Write) == 0)
+                        flags |= OpenFlags.O_RDONLY;
+                    if ((rights & FileSystemRights.Read) == 0 && (rights & FileSystemRights.Write) != 0)
+                        flags |= OpenFlags.O_WRONLY;
+
+                    if ((options & FileOptions.Asynchronous) != 0)
+                        flags |= OpenFlags.O_ASYNC;
+                    if ((options & FileOptions.WriteThrough) != 0)
+                        flags |= OpenFlags.O_DIRECT;
+
+                    var r = Syscall.open(path, flags, FilePermissions.DEFFILEMODE);
+                    if (r == -1)
+                    {
+                        var error = Stdlib.GetLastError();
+                        if (error == Errno.EACCES)
+                            throw new global::java.nio.file.AccessDeniedException(path);
+                        if (error == Errno.EEXIST)
+                            throw new global::java.nio.file.FileAlreadyExistsException(path);
+                        if (error == Errno.ENOENT)
+                            throw new global::java.nio.file.NoSuchFileException(path);
+                        if (error == Errno.ENOTDIR)
+                            throw new global::java.nio.file.NoSuchFileException(path);
+                        if (error == Errno.EROFS)
+                            throw new global::java.nio.file.FileAlreadyExistsException(path);
+
+                        throw new UnixIOException(error);
+                    }
+
+                    return FileDescriptorAccessor.FromStream(new FileStream(new SafeFileHandle((IntPtr)r, true), access));
+                }
 #endif
             }
             catch (ArgumentException e)
