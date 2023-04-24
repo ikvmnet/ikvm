@@ -156,7 +156,8 @@ namespace IKVM.Runtime
 
             try
             {
-                sun.misc.Signal.handle(new sun.misc.Signal("BREAK"), sun.misc.SignalHandler.SIG_DFL);
+                if (RuntimeUtil.IsWindows)
+                    sun.misc.Signal.handle(new sun.misc.Signal("BREAK"), sun.misc.SignalHandler.SIG_DFL);
             }
             catch (java.lang.IllegalArgumentException)
             {

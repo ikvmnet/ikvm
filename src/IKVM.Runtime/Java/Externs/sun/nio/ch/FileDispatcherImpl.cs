@@ -84,10 +84,6 @@ namespace IKVM.Java.Externs.sun.nio.ch
 
                 return r == 0 ? IOStatus.EOF : r;
             }
-            catch (global::java.io.IOException)
-            {
-                throw;
-            }
             catch (EndOfStreamException)
             {
                 return IOStatus.EOF;
@@ -135,14 +131,7 @@ namespace IKVM.Java.Externs.sun.nio.ch
 
             try
             {
-                if (stream.Position != position)
-                {
-                    stream.Seek(position, SeekOrigin.Begin);
-                }
-            }
-            catch (global::java.io.IOException)
-            {
-                throw;
+                stream.Seek(position, SeekOrigin.Begin);
             }
             catch (EndOfStreamException)
             {
@@ -181,15 +170,8 @@ namespace IKVM.Java.Externs.sun.nio.ch
                 length = stream.Read(new Span<byte>((void*)(IntPtr)address, len));
 #endif
 
-                // reset stream position
-                if (stream.Position != p)
-                    stream.Position = p;
-
+                stream.Seek(p, SeekOrigin.Begin);
                 return length == 0 ? IOStatus.EOF : length;
-            }
-            catch (global::java.io.IOException)
-            {
-                throw;
             }
             catch (EndOfStreamException)
             {
@@ -239,12 +221,14 @@ namespace IKVM.Java.Externs.sun.nio.ch
                 // issue independent reads for each vector
                 for (int i = 0; i < vecs.Length; i++)
                 {
+                    int l;
+
 #if NETFRAMEWORK
                     var buf = ArrayPool<byte>.Shared.Rent(vecs[i].iov_len);
 
                     try
                     {
-                        var l = stream.Read(buf, 0, vecs[i].iov_len);
+                        l = stream.Read(buf, 0, vecs[i].iov_len);
                         Marshal.Copy(buf, 0, vecs[i].iov_base, l);
                         length += l;
 
@@ -254,11 +238,12 @@ namespace IKVM.Java.Externs.sun.nio.ch
                         ArrayPool<byte>.Shared.Return(buf);
                     }
 #else
-                    length += stream.Read(new Span<byte>((byte*)vecs[i].iov_base, vecs[i].iov_len));
+                    l = stream.Read(new Span<byte>((byte*)vecs[i].iov_base, vecs[i].iov_len));
+                    length += l;
 #endif
 
                     // we failed to read up to the requested amount, so we must be at the end
-                    if (length < vecs[i].iov_len)
+                    if (l < vecs[i].iov_len)
                         break;
                 }
 
@@ -316,10 +301,6 @@ namespace IKVM.Java.Externs.sun.nio.ch
                     stream.Seek(0, SeekOrigin.End);
                 }
             }
-            catch (global::java.io.IOException)
-            {
-                throw;
-            }
             catch (EndOfStreamException)
             {
                 return IOStatus.EOF;
@@ -356,10 +337,6 @@ namespace IKVM.Java.Externs.sun.nio.ch
 #endif
 
                 return len;
-            }
-            catch (global::java.io.IOException)
-            {
-                throw;
             }
             catch (EndOfStreamException)
             {
@@ -408,14 +385,7 @@ namespace IKVM.Java.Externs.sun.nio.ch
 
             try
             {
-                if (p != position)
-                {
-                    stream.Seek(position, SeekOrigin.Begin);
-                }
-            }
-            catch (global::java.io.IOException)
-            {
-                throw;
+                stream.Seek(position, SeekOrigin.Begin);
             }
             catch (EndOfStreamException)
             {
@@ -454,10 +424,6 @@ namespace IKVM.Java.Externs.sun.nio.ch
 
                 stream.Seek(p, SeekOrigin.Begin);
                 return len;
-            }
-            catch (global::java.io.IOException)
-            {
-                throw;
             }
             catch (EndOfStreamException)
             {
@@ -512,10 +478,6 @@ namespace IKVM.Java.Externs.sun.nio.ch
                     stream.Seek(0, SeekOrigin.End);
                 }
             }
-            catch (global::java.io.IOException)
-            {
-                throw;
-            }
             catch (EndOfStreamException)
             {
                 return IOStatus.EOF;
@@ -563,10 +525,6 @@ namespace IKVM.Java.Externs.sun.nio.ch
                 }
 
                 return length;
-            }
-            catch (global::java.io.IOException)
-            {
-                throw;
             }
             catch (EndOfStreamException)
             {
@@ -628,10 +586,6 @@ namespace IKVM.Java.Externs.sun.nio.ch
                 s.SetLength(size);
                 return 0;
             }
-            catch (global::java.io.IOException)
-            {
-                throw;
-            }
             catch (EndOfStreamException)
             {
                 return IOStatus.EOF;
@@ -670,10 +624,6 @@ namespace IKVM.Java.Externs.sun.nio.ch
             {
                 return s.Length;
             }
-            catch (global::java.io.IOException)
-            {
-                throw;
-            }
             catch (EndOfStreamException)
             {
                 return IOStatus.EOF;
@@ -688,7 +638,7 @@ namespace IKVM.Java.Externs.sun.nio.ch
             }
             catch (Exception e)
             {
-                throw new global::java.io.IOException("Truncate failed.", e);
+                throw new global::java.io.IOException("Size failed.", e);
             }
 #endif
         }
@@ -812,10 +762,6 @@ namespace IKVM.Java.Externs.sun.nio.ch
                     return shared ? FileDispatcher.RET_EX_LOCK : FileDispatcher.LOCKED;
                 }
             }
-            catch (global::java.io.IOException)
-            {
-                throw;
-            }
             catch (EndOfStreamException)
             {
                 return IOStatus.EOF;
@@ -899,10 +845,6 @@ namespace IKVM.Java.Externs.sun.nio.ch
                 {
                     fs.Unlock(pos, size);
                 }
-            }
-            catch (global::java.io.IOException)
-            {
-                throw;
             }
             catch (System.IO.IOException e) when (NotLockedHack.IsErrorNotLocked(e) == false)
             {
