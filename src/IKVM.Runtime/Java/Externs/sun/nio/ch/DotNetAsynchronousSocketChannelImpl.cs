@@ -7,6 +7,7 @@ using System.Threading.Tasks;
 
 using IKVM.Runtime;
 using IKVM.Runtime.Accessors.Java.Io;
+using IKVM.Runtime.Accessors.Sun.Nio.Ch;
 using IKVM.Runtime.Util.Java.Net;
 using IKVM.Runtime.Util.Java.Nio;
 using IKVM.Runtime.Util.Java.Security;
@@ -38,7 +39,10 @@ namespace IKVM.Java.Externs.sun.nio.ch
 #if FIRST_PASS == false
 
         static FileDescriptorAccessor fileDescriptorAccessor;
+        static DotNetAsynchronousSocketChannelImplAccessor dotNetAsynchronousSocketChannelImplAccessor;
         static FileDescriptorAccessor FileDescriptorAccessor => JVM.BaseAccessors.Get(ref fileDescriptorAccessor);
+
+        static DotNetAsynchronousSocketChannelImplAccessor DotNetAsynchronousSocketChannelImplAccessor => JVM.BaseAccessors.Get(ref dotNetAsynchronousSocketChannelImplAccessor);
 
 #endif
 
@@ -332,7 +336,7 @@ namespace IKVM.Java.Externs.sun.nio.ch
                 try
                 {
                     // timeout was specified, wait for data to be available
-                    var t = (int)System.Math.Min(unit.convert(timeout, TimeUnit.MILLISECONDS), int.MaxValue);
+                    var t = (int)System.Math.Min(TimeUnit.MILLISECONDS.convert(timeout, unit), int.MaxValue);
                     if (t > 0)
                     {
                         // non-optimal usage, but we have no way to combine timeout with true async
@@ -594,6 +598,11 @@ namespace IKVM.Java.Externs.sun.nio.ch
                         }
                     }
                 }
+                catch (System.Net.Sockets.SocketException e) when (e.SocketErrorCode == SocketError.TimedOut)
+                {
+                    DotNetAsynchronousSocketChannelImplAccessor.InvokeEnableReading(true);
+                    throw new global::java.nio.channels.InterruptedByTimeoutException();
+                }
                 catch (System.Net.Sockets.SocketException e)
                 {
                     throw e.ToIOException();
@@ -642,7 +651,7 @@ namespace IKVM.Java.Externs.sun.nio.ch
                 try
                 {
                     // timeout was specified, wait for data to be sent
-                    var t = (int)System.Math.Min(unit.convert(timeout, TimeUnit.MILLISECONDS), int.MaxValue);
+                    var t = (int)System.Math.Min(TimeUnit.MILLISECONDS.convert(timeout, unit), int.MaxValue);
                     if (t > 0)
                     {
                         // non-optimal usage, but we have no way to combine timeout with true async
@@ -878,6 +887,11 @@ namespace IKVM.Java.Externs.sun.nio.ch
                             socket.SendTimeout = previousSendTimeout;
                         }
                     }
+                }
+                catch (System.Net.Sockets.SocketException e) when (e.SocketErrorCode == SocketError.TimedOut)
+                {
+                    DotNetAsynchronousSocketChannelImplAccessor.InvokeEnableWriting(true);
+                    throw new global::java.nio.channels.InterruptedByTimeoutException();
                 }
                 catch (System.Net.Sockets.SocketException e)
                 {

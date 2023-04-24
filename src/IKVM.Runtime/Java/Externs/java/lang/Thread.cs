@@ -113,7 +113,7 @@ namespace IKVM.Java.Externs.java.lang
 #if FIRST_PASS
             throw new NotImplementedException();
 #else
-            return AccessControllerAccessor.InvokeDoPrivledged(new FuncPrivilegedAction<object[]>(() =>
+            return AccessControllerAccessor.InvokeDoPrivileged(new FuncPrivilegedAction<object[]>(() =>
             {
                 var root = (global::java.lang.ThreadGroup)JVM.MainThreadGroup;
                 while (true)

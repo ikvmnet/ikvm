@@ -75,7 +75,7 @@ namespace IKVM.Runtime.Accessors.Java.Io
         /// </summary>
         /// <param name="socket"></param>
         /// <returns></returns>
-        public object FromSocket(Socket socket) => GetMethod(ref fromSocket, nameof(fromSocket), JavaIoFileDescriptor, typeof(Socket), JavaIoFileDescriptor).Invoker(socket);
+        public object FromSocket(Socket socket) => GetMethod(ref fromSocket, nameof(fromSocket), JavaIoFileDescriptor, typeof(Socket)).Invoker(socket);
 
         /// <summary>
         /// Gets the value for the 'fd' property.

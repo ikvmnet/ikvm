@@ -1,8 +1,11 @@
-﻿using java.io;
+﻿using FluentAssertions;
+
+using java.io;
 using java.lang;
 using java.net;
 using java.nio;
 using java.nio.channels;
+using java.util.concurrent;
 
 using Microsoft.VisualStudio.TestTools.UnitTesting;
 
@@ -204,6 +207,33 @@ namespace IKVM.Tests.Java.java.nio.channels
             {
 
             }
+        }
+
+        [TestMethod]
+        public void ShouldTimeoutOnRead()
+        {
+            // listen for connection
+            using var listener = AsynchronousServerSocketChannel.open().bind(new InetSocketAddress(0));
+            var port = ((InetSocketAddress)listener.getLocalAddress()).getPort();
+
+            // initiate connection
+            var sendChannel = AsynchronousSocketChannel.open();
+            sendChannel.connect(new InetSocketAddress(InetAddress.getLocalHost(), port)).get();
+
+            // accept connection
+            var recvChannel = (AsynchronousSocketChannel)listener.accept().get();
+
+            // start a read
+            var buf = ByteBuffer.allocate(512);
+            var hnd = new AwaitableCompletionHandler();
+            sendChannel.read(buf, 1, TimeUnit.SECONDS, null, hnd);
+
+            // after 2 seconds should have thrown timeout
+            Thread.sleep(2000);
+            hnd.GetAwaiter().Invoking(a => a.GetResult()).Should().Throw<InterruptedByTimeoutException>();
+
+            // the next attempt should thrown an unspecified runtime exception
+            sendChannel.Invoking(c => c.read(buf)).Should().Throw<RuntimeException>();
         }
 
     }
