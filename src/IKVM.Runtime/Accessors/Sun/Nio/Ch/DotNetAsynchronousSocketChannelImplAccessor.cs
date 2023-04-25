@@ -56,9 +56,9 @@ namespace IKVM.Runtime.Accessors.Sun.Nio.Ch
 
         public void InvokeEnd(object self) => GetMethod(ref end, nameof(end), typeof(void)).Invoker(self);
 
-        public void InvokeEnableReading(object self) => GetMethod(ref enableReading, "enableReading", typeof(void), typeof(bool)).Invoker(self);
+        public void InvokeEnableReading(object self) => GetMethod(ref enableReading, "enableReading", typeof(void)).Invoker(self);
 
-        public void InvokeEnableWriting(object self) => GetMethod(ref enableWriting, "enableWriting", typeof(void), typeof(bool)).Invoker(self);
+        public void InvokeEnableWriting(object self) => GetMethod(ref enableWriting, "enableWriting", typeof(void)).Invoker(self);
 
         public void InvokeEnableReading(object self, bool killed) => GetMethod(ref enableReading2, "enableReading", typeof(void), typeof(bool)).Invoker(self, killed);
 

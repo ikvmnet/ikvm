@@ -600,7 +600,7 @@ namespace IKVM.Java.Externs.sun.nio.ch
                 }
                 catch (System.Net.Sockets.SocketException e) when (e.SocketErrorCode == SocketError.TimedOut)
                 {
-                    DotNetAsynchronousSocketChannelImplAccessor.InvokeEnableReading(true);
+                    DotNetAsynchronousSocketChannelImplAccessor.InvokeEnableReading(self, true);
                     throw new global::java.nio.channels.InterruptedByTimeoutException();
                 }
                 catch (System.Net.Sockets.SocketException e)
@@ -890,7 +890,7 @@ namespace IKVM.Java.Externs.sun.nio.ch
                 }
                 catch (System.Net.Sockets.SocketException e) when (e.SocketErrorCode == SocketError.TimedOut)
                 {
-                    DotNetAsynchronousSocketChannelImplAccessor.InvokeEnableWriting(true);
+                    DotNetAsynchronousSocketChannelImplAccessor.InvokeEnableWriting(self, true);
                     throw new global::java.nio.channels.InterruptedByTimeoutException();
                 }
                 catch (System.Net.Sockets.SocketException e)
