@@ -57,9 +57,9 @@ namespace IKVM.Java.Externs.sun.nio.ch
         /// <summary>
         /// Invokes the GetSystemInfo Win32 function.
         /// </summary>
-        /// <param name="Info"></param>
+        /// <param name="info"></param>
         [DllImport("kernel32.dll", SetLastError = true)]
-        static extern void GetSystemInfo(ref SYSTEM_INFO Info);
+        static extern void GetSystemInfo(ref SYSTEM_INFO info);
 
         /// <summary>
         /// Gets the allocation granularity value for Windows.
@@ -69,7 +69,7 @@ namespace IKVM.Java.Externs.sun.nio.ch
         {
             var i = new SYSTEM_INFO();
             GetSystemInfo(ref i);
-            return (long)i.dwAllocationGranularity;
+            return i.dwAllocationGranularity;
         }
 
         /// <summary>
@@ -78,7 +78,7 @@ namespace IKVM.Java.Externs.sun.nio.ch
         /// <returns></returns>
         static long GetAllocationGranularityLinux()
         {
-            return Mono.Unix.Native.Syscall.sysconf(SysconfName._SC_PAGESIZE);
+            return Syscall.sysconf(SysconfName._SC_PAGESIZE);
         }
 
         /// <summary>
@@ -87,7 +87,7 @@ namespace IKVM.Java.Externs.sun.nio.ch
         /// <returns></returns>
         static long GetAllocationGranularityOSX()
         {
-            throw new NotImplementedException();
+            return Syscall.sysconf(SysconfName._SC_PAGESIZE);
         }
 
         /// <summary>
@@ -118,13 +118,9 @@ namespace IKVM.Java.Externs.sun.nio.ch
             throw new NotImplementedException();
 #else
             if (RuntimeUtil.IsWindows)
-                return (long)MapFileWindows((global::sun.nio.ch.FileChannelImpl)self, prot, position, length);
-            else if (RuntimeUtil.IsLinux)
-                return (long)MapFileLinux((global::sun.nio.ch.FileChannelImpl)self, prot, position, length);
-            else if (RuntimeUtil.IsOSX)
-                return (long)MapFileOSX((global::sun.nio.ch.FileChannelImpl)self, prot, position, length);
+                return MapFileWindows((global::sun.nio.ch.FileChannelImpl)self, prot, position, length);
             else
-                throw new global::java.io.IOException("Unsupported operation on platform.");
+                return MapFileUnix((global::sun.nio.ch.FileChannelImpl)self, prot, position, length);
 #endif
         }
 
@@ -141,12 +137,8 @@ namespace IKVM.Java.Externs.sun.nio.ch
 #else
             if (RuntimeUtil.IsWindows)
                 return UnmapWindows((IntPtr)address, length);
-            else if (RuntimeUtil.IsLinux)
-                return UnmapLinux((IntPtr)address, length);
-            else if (RuntimeUtil.IsOSX)
-                return UnmapOSX((IntPtr)address, length);
             else
-                throw new global::java.io.IOException("Unsupported operation on platform.");
+                return UnmapUnix((IntPtr)address, length);
 #endif
         }
 
@@ -235,7 +227,7 @@ namespace IKVM.Java.Externs.sun.nio.ch
                         return global::sun.nio.ch.IOStatus.UNSUPPORTED_CASE;
 
                     var result = Syscall.sendfile(handle, (int)fs.SafeFileHandle.DangerousGetHandle(), ref position, (ulong)count);
-                    if (result < 0)
+                    if (result == -1)
                     {
                         return Stdlib.GetLastError() switch
                         {
@@ -369,7 +361,7 @@ namespace IKVM.Java.Externs.sun.nio.ch
         /// <exception cref="global::java.lang.Error"></exception>
         /// <exception cref="global::java.io.IOException"></exception>
         /// <exception cref="global::java.lang.OutOfMemoryError"></exception>
-        static IntPtr MapFileWindows(global::sun.nio.ch.FileChannelImpl self, int prot, long position, long length)
+        static long MapFileWindows(global::sun.nio.ch.FileChannelImpl self, int prot, long position, long length)
         {
             var s = FileDescriptorAccessor.GetStream(FileChannelImplAccessor.GetFd(self));
             if (s == null)
@@ -429,11 +421,11 @@ namespace IKVM.Java.Externs.sun.nio.ch
                 }
 
                 GC.AddMemoryPressure(length);
-                return h;
+                return (long)h;
             }
             finally
             {
-                GC.KeepAlive(fs);
+                GC.KeepAlive(self);
             }
         }
 
@@ -451,7 +443,7 @@ namespace IKVM.Java.Externs.sun.nio.ch
         }
 
         /// <summary>
-        /// Implements memory mapped files on Linux.
+        /// Implements memory mapped files on Unix.
         /// </summary>
         /// <param name="self"></param>
         /// <param name="prot"></param>
@@ -459,8 +451,10 @@ namespace IKVM.Java.Externs.sun.nio.ch
         /// <param name="length"></param>
         /// <returns></returns>
         /// <exception cref="global::java.io.IOException"></exception>
-        static IntPtr MapFileLinux(global::sun.nio.ch.FileChannelImpl self, int prot, long position, long length)
+        static long MapFileUnix(global::sun.nio.ch.FileChannelImpl self, int prot, long position, long length)
         {
+            IntPtr MAP_FAILED = (IntPtr)(-1);
+
             var s = FileDescriptorAccessor.GetStream(FileChannelImplAccessor.GetFd(self));
             if (s == null)
                 throw new global::java.io.IOException("Stream closed.");
@@ -474,61 +468,45 @@ namespace IKVM.Java.Externs.sun.nio.ch
                     p |= MmapProts.PROT_READ;
                 if ((prot & MAP_RW) != 0)
                     p |= MmapProts.PROT_READ | MmapProts.PROT_WRITE;
+                if ((prot & MAP_PV) != 0)
+                    p |= MmapProts.PROT_READ | MmapProts.PROT_WRITE;
 
-                var f = MmapFlags.MAP_SHARED;
+                var f = (MmapFlags)0;
                 if ((prot & MAP_PV) != 0)
                     f |= MmapFlags.MAP_PRIVATE;
+                else
+                    f |= MmapFlags.MAP_SHARED;
 
                 var i = Syscall.mmap(IntPtr.Zero, (ulong)length, p, f, (int)fs.SafeFileHandle.DangerousGetHandle(), position);
-                if (i == IntPtr.Zero)
-                    throw new global::java.io.IOException("file mapping failed");
+                if (i == MAP_FAILED)
+                {
+                    var errno = Stdlib.GetLastError();
+                    if (errno == Errno.ENOMEM)
+                        throw new global::java.lang.OutOfMemoryError("File mapping failed.");
+
+                    throw new global::java.io.IOException("File mapping failed.");
+                }
 
                 GC.AddMemoryPressure(length);
-                return i;
+                return (long)i;
             }
             finally
             {
-                GC.KeepAlive(fs);
+                GC.KeepAlive(self);
             }
         }
 
         /// <summary>
-        /// Implements the unmapping of a mapped file on Linux.
+        /// Implements the unmapping of a mapped file on Unix.
         /// </summary>
         /// <param name="address"></param>
         /// <param name="length"></param>
         /// <returns></returns>
-        static int UnmapLinux(IntPtr address, long length)
+        static int UnmapUnix(IntPtr address, long length)
         {
             Syscall.munmap(address, (ulong)length);
             GC.RemoveMemoryPressure(length);
             return 0;
-        }
-
-        /// <summary>
-        /// Implements memory mapped files on OS X.
-        /// </summary>
-        /// <param name="self"></param>
-        /// <param name="prot"></param>
-        /// <param name="position"></param>
-        /// <param name="length"></param>
-        /// <returns></returns>
-        /// <exception cref="global::java.io.IOException"></exception>
-        static IntPtr MapFileOSX(global::sun.nio.ch.FileChannelImpl self, int prot, long position, long length)
-        {
-            throw new global::java.io.IOException("Unsupported operation on platform.");
-        }
-
-        /// <summary>
-        /// Implements the umapping of a mapped file on OS X.
-        /// </summary>
-        /// <param name="address"></param>
-        /// <param name="length"></param>
-        /// <returns></returns>
-        /// <exception cref="global::java.io.IOException"></exception>
-        static int UnmapOSX(IntPtr address, long length)
-        {
-            throw new global::java.io.IOException("Unsupported operation on platform.");
         }
 
 #endif

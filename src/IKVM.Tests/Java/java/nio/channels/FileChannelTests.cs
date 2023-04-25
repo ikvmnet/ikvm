@@ -21,6 +21,16 @@ namespace IKVM.Tests.Java.java.nio.channels
     public class FileChannelTests
     {
 
+        static RandomNumberGenerator rng = RandomNumberGenerator.Create();
+
+        void WriteRandomBytes(File f, int len)
+        {
+            var buf = new byte[len];
+            rng.GetBytes(buf);
+            using var s = new FileOutputStream(f);
+            s.write(buf);
+        }
+
         [TestMethod]
         public void CanTruncateAndWrite()
         {
@@ -157,10 +167,11 @@ namespace IKVM.Tests.Java.java.nio.channels
         }
 
         [TestMethod]
-        public void CanTransferFromFileToFile()
+        public void CanTransferFromFileInputStreamToFileOutputStream()
         {
             var srcPath = File.createTempFile("src", null);
             srcPath.deleteOnExit();
+            WriteRandomBytes(srcPath, 1024);
 
             var dstPath = File.createTempFile("dst", null);
             dstPath.deleteOnExit();
@@ -171,14 +182,19 @@ namespace IKVM.Tests.Java.java.nio.channels
             using var dstStream = new FileOutputStream(dstPath);
             using var dstChannel = dstStream.getChannel();
 
-            var n = dstChannel.transferFrom(srcChannel, 0, Integer.MAX_VALUE);
+            var n = dstChannel.transferFrom(srcChannel, 0, int.MaxValue);
+
+            var f1 = Files.readAllBytes(srcPath.toPath());
+            var f2 = Files.readAllBytes(dstPath.toPath());
+            Arrays.equals(f1, f2).Should().BeTrue();
         }
 
         [TestMethod]
-        public void CanTransferToFileFromFile()
+        public void CanTransferToFileInputStreamFromFileOutputStream()
         {
             var srcPath = File.createTempFile("src", null);
             srcPath.deleteOnExit();
+            WriteRandomBytes(srcPath, 1024);
 
             var dstPath = File.createTempFile("dst", null);
             dstPath.deleteOnExit();
@@ -190,6 +206,79 @@ namespace IKVM.Tests.Java.java.nio.channels
             using var dstChannel = dstStream.getChannel();
 
             var n = srcChannel.transferTo(0, int.MaxValue, dstChannel);
+
+            var f1 = Files.readAllBytes(srcPath.toPath());
+            var f2 = Files.readAllBytes(dstPath.toPath());
+            Arrays.equals(f1, f2).Should().BeTrue();
+        }
+
+        [TestMethod]
+        public void CanTransferToFileOutputStreamFromRandomAccessFile()
+        {
+            var srcPath = File.createTempFile("src", null);
+            srcPath.deleteOnExit();
+            WriteRandomBytes(srcPath, 1024);
+
+            var dstPath = File.createTempFile("dst", null);
+            dstPath.deleteOnExit();
+
+            using var srcFile = new RandomAccessFile(srcPath, "r");
+            using var srcChannel = srcFile.getChannel();
+
+            using var dstStream = new FileOutputStream(dstPath);
+            using var dstChannel = dstStream.getChannel();
+
+            var n = srcChannel.transferTo(0, int.MaxValue, dstChannel);
+
+            var f1 = Files.readAllBytes(srcPath.toPath());
+            var f2 = Files.readAllBytes(dstPath.toPath());
+            Arrays.equals(f1, f2).Should().BeTrue();
+        }
+
+        [TestMethod]
+        public void CanTransferToRandomAccessFileFromFileOutputStream()
+        {
+            var srcPath = File.createTempFile("src", null);
+            srcPath.deleteOnExit();
+            WriteRandomBytes(srcPath, 1024);
+
+            var dstPath = File.createTempFile("dst", null);
+            dstPath.deleteOnExit();
+
+            using var srcStream = new FileInputStream(srcPath);
+            using var srcChannel = srcStream.getChannel();
+
+            using var dstFile = new RandomAccessFile(dstPath, "rw");
+            using var dstChannel = dstFile.getChannel();
+
+            var n = srcChannel.transferTo(0, int.MaxValue, dstChannel);
+
+            var f1 = Files.readAllBytes(srcPath.toPath());
+            var f2 = Files.readAllBytes(dstPath.toPath());
+            Arrays.equals(f1, f2).Should().BeTrue();
+        }
+
+        [TestMethod]
+        public void CanTransferToRandomAccessFileFromRandomAccessFile()
+        {
+            var srcPath = File.createTempFile("src", null);
+            srcPath.deleteOnExit();
+            WriteRandomBytes(srcPath, 1024);
+
+            var dstPath = File.createTempFile("dst", null);
+            dstPath.deleteOnExit();
+
+            using var srcFile = new RandomAccessFile(srcPath, "r");
+            using var srcChannel = srcFile.getChannel();
+
+            using var dstFile = new RandomAccessFile(dstPath, "rw");
+            using var dstChannel = dstFile.getChannel();
+
+            var n = srcChannel.transferTo(0, int.MaxValue, dstChannel);
+
+            var f1 = Files.readAllBytes(srcPath.toPath());
+            var f2 = Files.readAllBytes(dstPath.toPath());
+            Arrays.equals(f1, f2).Should().BeTrue();
         }
 
         [TestMethod]

@@ -690,7 +690,7 @@ namespace IKVM.Java.Externs.sun.nio.ch
 #else
                                         unsafe
                                         {
-                                            length = socket.Send(new Span<byte>((byte*)(IntPtr)dir.address() + pos, rem), SocketFlags.None);
+                                            length = socket.Send(new ReadOnlySpan<byte>((byte*)(IntPtr)dir.address() + pos, rem), SocketFlags.None);
                                         }
 #endif
                                     }

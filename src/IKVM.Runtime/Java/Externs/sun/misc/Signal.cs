@@ -103,11 +103,12 @@ namespace IKVM.Java.Externs.sun.misc
 		}
 
 #if !FIRST_PASS
+
 		private static void DumpAllJavaThreads()
 		{
 			Console.WriteLine(DateTime.Now.ToString("yyyy-MM-dd HH:mm:ss"));
 			global::java.util.Map traces = global::java.lang.Thread.getAllStackTraces();
-			Console.WriteLine("Full thread dump IKVM.NET {0} ({1} bit):", JVM.SafeGetAssemblyVersion(Assembly.GetExecutingAssembly()), IntPtr.Size * 8);
+			Console.WriteLine("Full thread dump IKVM.NET {0} ({1} bit):", Assembly.GetExecutingAssembly().GetName().Version, IntPtr.Size * 8);
 			global::java.util.Iterator entries = traces.entrySet().iterator();
 			while (entries.hasNext())
 			{
@@ -123,6 +124,7 @@ namespace IKVM.Java.Externs.sun.misc
 			}
 			Console.WriteLine();
 		}
+
 #endif
 
 		public static int findSignal(string sigName)
