@@ -188,7 +188,7 @@ namespace IKVM.Java.Externs.sun.nio.ch
                 MCAST_JOIN_SOURCE_GROUP = 46;
                 MCAST_LEAVE_SOURCE_GROUP = 47;
             }
-            else if (RuntimeInformation.IsOSPlatform(OSPlatform.OSX))
+            else if (RuntimeUtil.IsOSX)
             {
                 AF_UNSPEC = 0;
                 AF_INET = 2;
