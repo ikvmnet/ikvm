@@ -446,7 +446,7 @@ namespace IKVM.Java.Externs.sun.nio.ch
                     if (fs.SafeFileHandle.IsInvalid)
                         return IOStatus.UNAVAILABLE;
 
-                    var n = Syscall.pwrite((int)fs.SafeFileHandle.DangerousGetHandle(), (byte*)(IntPtr)address, (ulong)len, position);
+                    var n = Syscall.pwrite((int)fs.SafeFileHandle.DangerousGetHandle(), (void*)(IntPtr)address, (ulong)len, position);
                     if (n == -1)
                     {
                         var errno = Stdlib.GetLastError();

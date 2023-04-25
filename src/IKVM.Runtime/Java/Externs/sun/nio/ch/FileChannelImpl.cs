@@ -10,6 +10,7 @@ using IKVM.Runtime.Accessors.Sun.Nio.Ch;
 
 using Microsoft.Win32.SafeHandles;
 
+using Mono.Unix;
 using Mono.Unix.Native;
 
 namespace IKVM.Java.Externs.sun.nio.ch
@@ -453,8 +454,6 @@ namespace IKVM.Java.Externs.sun.nio.ch
         /// <exception cref="global::java.io.IOException"></exception>
         static long MapFileUnix(global::sun.nio.ch.FileChannelImpl self, int prot, long position, long length)
         {
-            IntPtr MAP_FAILED = (IntPtr)(-1);
-
             var s = FileDescriptorAccessor.GetStream(FileChannelImplAccessor.GetFd(self));
             if (s == null)
                 throw new global::java.io.IOException("Stream closed.");
@@ -463,22 +462,31 @@ namespace IKVM.Java.Externs.sun.nio.ch
 
             try
             {
-                var p = MmapProts.PROT_NONE;
-                if ((prot & MAP_RO) != 0)
-                    p |= MmapProts.PROT_READ;
-                if ((prot & MAP_RW) != 0)
-                    p |= MmapProts.PROT_READ | MmapProts.PROT_WRITE;
-                if ((prot & MAP_PV) != 0)
-                    p |= MmapProts.PROT_READ | MmapProts.PROT_WRITE;
+                MmapProts p = 0;
+                MmapFlags f = 0;
 
-                var f = (MmapFlags)0;
-                if ((prot & MAP_PV) != 0)
-                    f |= MmapFlags.MAP_PRIVATE;
-                else
-                    f |= MmapFlags.MAP_SHARED;
+                switch (prot)
+                {
+                    case MAP_RO:
+                        p = MmapProts.PROT_READ;
+                        f = MmapFlags.MAP_SHARED;
+                        break;
+                    case MAP_RW:
+                        p = MmapProts.PROT_WRITE | MmapProts.PROT_READ;
+                        f = MmapFlags.MAP_SHARED;
+                        break;
+                    case MAP_PV:
+                        p = MmapProts.PROT_WRITE | MmapProts.PROT_READ;
+                        f = MmapFlags.MAP_PRIVATE;
+                        break;
+                }
+
+                // inform the OS we will likely need this data shortly
+                if (Syscall.posix_fadvise((int)fs.SafeFileHandle.DangerousGetHandle(), position, length, PosixFadviseAdvice.POSIX_FADV_WILLNEED) is int e and not 0)
+                        throw new global::java.io.IOException("File mapping failed.", new UnixIOException(e));
 
                 var i = Syscall.mmap(IntPtr.Zero, (ulong)length, p, f, (int)fs.SafeFileHandle.DangerousGetHandle(), position);
-                if (i == MAP_FAILED)
+                if (i == Syscall.MAP_FAILED)
                 {
                     var errno = Stdlib.GetLastError();
                     if (errno == Errno.ENOMEM)
@@ -488,7 +496,7 @@ namespace IKVM.Java.Externs.sun.nio.ch
                 }
 
                 GC.AddMemoryPressure(length);
-                return (long)i;
+                return (long)(ulong)i;
             }
             finally
             {
