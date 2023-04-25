@@ -743,7 +743,7 @@ namespace IKVM.Java.Externs.java.lang
             object s0 = null;
             object s1 = null;
             object s2 = null;
-            AccessControllerAccessor.InvokeDoPrivledged(new ActionPrivilegedAction(() =>
+            AccessControllerAccessor.InvokeDoPrivileged(new ActionPrivilegedAction(() =>
             {
                 s0 = h0 == null ? ProcessBuilderNullOutputStreamAccessor.GetInstance() : BufferedOutputStreamAccessor.Init(FileOutputStreamAccessor.Init2(FileDescriptorAccessor.FromStream(h0)));
                 s1 = h1 == null ? ProcessBuilderNullInputStreamAccessor.GetInstance() : BufferedInputStreamAccessor.Init(FileInputStreamAccessor.Init2(FileDescriptorAccessor.FromStream(h1)));

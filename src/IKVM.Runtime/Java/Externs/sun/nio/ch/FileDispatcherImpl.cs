@@ -55,6 +55,9 @@ namespace IKVM.Java.Externs.sun.nio.ch
 #if FIRST_PASS
             throw new NotImplementedException();
 #else
+            if (len == 0)
+                return 0;
+
             var stream = FileDescriptorAccessor.GetStream(fd);
             if (stream == null)
                 throw new global::java.io.IOException("Stream closed.");
@@ -100,6 +103,10 @@ namespace IKVM.Java.Externs.sun.nio.ch
             {
                 throw new global::java.io.IOException("Read failed.", e);
             }
+            finally
+            {
+                GC.KeepAlive(self);
+            }
 #endif
         }
 
@@ -118,6 +125,9 @@ namespace IKVM.Java.Externs.sun.nio.ch
 #if FIRST_PASS
             throw new NotImplementedException();
 #else
+            if (len == 0)
+                return 0;
+
             var stream = FileDescriptorAccessor.GetStream(fd);
             if (stream == null)
                 throw new global::java.io.IOException("Stream closed.");
@@ -127,67 +137,101 @@ namespace IKVM.Java.Externs.sun.nio.ch
             if (stream.CanSeek == false)
                 return IOStatus.UNSUPPORTED;
 
-            var p = stream.Position;
-
-            try
+            if (RuntimeUtil.IsLinux && stream is FileStream fs)
             {
-                stream.Seek(position, SeekOrigin.Begin);
-            }
-            catch (EndOfStreamException)
-            {
-                return IOStatus.EOF;
-            }
-            catch (NotSupportedException)
-            {
-                return IOStatus.UNSUPPORTED;
-            }
-            catch (ObjectDisposedException)
-            {
-                return IOStatus.UNAVAILABLE;
-            }
-            catch (Exception e)
-            {
-                throw new global::java.io.IOException("Seek failed.", e);
-            }
-
-            try
-            {
-                int length = -1;
-
-#if NETFRAMEWORK
-                var buf = ArrayPool<byte>.Shared.Rent(len);
-
                 try
                 {
-                    length = stream.Read(buf, 0, len);
-                    Marshal.Copy(buf, 0, (IntPtr)address, length);
+                    if (fs.SafeFileHandle.IsInvalid)
+                        return IOStatus.UNAVAILABLE;
+
+                    var n = Syscall.pread((int)fs.SafeFileHandle.DangerousGetHandle(), (IntPtr)address, (ulong)len, position);
+                    if (n == -1)
+                    {
+                        // translate return values
+                        var errno = Stdlib.GetLastError();
+                        if (errno == Errno.EAGAIN)
+                            return IOStatus.UNAVAILABLE;
+                        if (errno == Errno.EINTR)
+                            return IOStatus.INTERRUPTED;
+
+                        throw new global::java.io.IOException("Read failed.", new UnixIOException(errno));
+                    }
+
+                    return n > 0 ? (int)n : IOStatus.EOF;
                 }
                 finally
                 {
-                    ArrayPool<byte>.Shared.Return(buf);
+                    GC.KeepAlive(self);
                 }
+            }
+            else
+            {
+                var p = stream.Position;
+
+                try
+                {
+                    stream.Seek(position, SeekOrigin.Begin);
+                }
+                catch (EndOfStreamException)
+                {
+                    return IOStatus.EOF;
+                }
+                catch (NotSupportedException)
+                {
+                    return IOStatus.UNSUPPORTED;
+                }
+                catch (ObjectDisposedException)
+                {
+                    return IOStatus.UNAVAILABLE;
+                }
+                catch (Exception e)
+                {
+                    throw new global::java.io.IOException("Seek failed.", e);
+                }
+
+                try
+                {
+                    int length = -1;
+
+#if NETFRAMEWORK
+                    var buf = ArrayPool<byte>.Shared.Rent(len);
+
+                    try
+                    {
+                        length = stream.Read(buf, 0, len);
+                        Marshal.Copy(buf, 0, (IntPtr)address, length);
+                    }
+                    finally
+                    {
+                        ArrayPool<byte>.Shared.Return(buf);
+                    }
 #else
-                length = stream.Read(new Span<byte>((void*)(IntPtr)address, len));
+                    length = stream.Read(new Span<byte>((void*)(IntPtr)address, len));
 #endif
 
-                stream.Seek(p, SeekOrigin.Begin);
-                return length == 0 ? IOStatus.EOF : length;
-            }
-            catch (EndOfStreamException)
-            {
-                return IOStatus.EOF;
-            }
-            catch (NotSupportedException)
-            {
-                return IOStatus.UNSUPPORTED;
-            }
-            catch (ObjectDisposedException)
-            {
-                return IOStatus.UNAVAILABLE;
-            }
-            catch (Exception e)
-            {
-                throw new global::java.io.IOException("Read failed.", e);
+                    stream.Seek(p, SeekOrigin.Begin);
+                    return length == 0 ? IOStatus.EOF : length;
+                }
+                catch (EndOfStreamException)
+                {
+                    return IOStatus.EOF;
+                }
+                catch (NotSupportedException)
+                {
+                    return IOStatus.UNSUPPORTED;
+                }
+                catch (ObjectDisposedException)
+                {
+                    return IOStatus.UNAVAILABLE;
+                }
+                catch (Exception e)
+                {
+                    throw new global::java.io.IOException("Read failed.", e);
+                }
+                finally
+                {
+                    GC.KeepAlive(self);
+                }
             }
 #endif
         }
@@ -215,7 +259,7 @@ namespace IKVM.Java.Externs.sun.nio.ch
             try
             {
                 // map io vecors to read into
-                var vecs = new Span<iovec>((byte*)(IntPtr)address, len);
+                var vecs = new ReadOnlySpan<iovec>((byte*)(IntPtr)address, len);
                 var length = 0;
 
                 // issue independent reads for each vector
@@ -266,6 +310,10 @@ namespace IKVM.Java.Externs.sun.nio.ch
             {
                 throw new global::java.io.IOException("Read failed.", e);
             }
+            finally
+            {
+                GC.KeepAlive(self);
+            }
 #endif
         }
 
@@ -284,6 +332,9 @@ namespace IKVM.Java.Externs.sun.nio.ch
 #if FIRST_PASS
             throw new NotImplementedException();
 #else
+            if (len == 0)
+                return 0;
+
             var stream = FileDescriptorAccessor.GetStream(fd);
             if (stream == null)
                 throw new global::java.io.IOException("Stream closed.");
@@ -333,7 +384,7 @@ namespace IKVM.Java.Externs.sun.nio.ch
                     ArrayPool<byte>.Shared.Return(buf);
                 }
 #else
-                stream.Write(new Span<byte>((byte*)(IntPtr)address, len));
+                stream.Write(new ReadOnlySpan<byte>((byte*)(IntPtr)address, len));
 #endif
 
                 return len;
@@ -353,6 +404,10 @@ namespace IKVM.Java.Externs.sun.nio.ch
             catch (Exception e)
             {
                 throw new global::java.io.IOException("Write failed.", e);
+            }
+            finally
+            {
+                GC.KeepAlive(self);
             }
 #endif
         }
@@ -372,6 +427,9 @@ namespace IKVM.Java.Externs.sun.nio.ch
 #if FIRST_PASS
             throw new NotImplementedException();
 #else
+            if (len == 0)
+                return 0;
+
             var stream = FileDescriptorAccessor.GetStream(fd);
             if (stream == null)
                 throw new global::java.io.IOException("Stream closed.");
@@ -381,65 +439,98 @@ namespace IKVM.Java.Externs.sun.nio.ch
             if (stream.CanSeek == false)
                 return IOStatus.UNSUPPORTED;
 
-            var p = stream.Position;
-
-            try
+            if (RuntimeUtil.IsLinux && stream is FileStream fs)
             {
-                stream.Seek(position, SeekOrigin.Begin);
-            }
-            catch (EndOfStreamException)
-            {
-                return IOStatus.EOF;
-            }
-            catch (NotSupportedException)
-            {
-                return IOStatus.UNSUPPORTED;
-            }
-            catch (ObjectDisposedException)
-            {
-                return IOStatus.UNAVAILABLE;
-            }
-            catch (Exception e)
-            {
-                throw new global::java.io.IOException("Seek failed.", e);
-            }
-
-            try
-            {
-#if NETFRAMEWORK
-                var buf = ArrayPool<byte>.Shared.Rent(len);
-
                 try
                 {
-                    Marshal.Copy((IntPtr)address, buf, 0, len);
-                    stream.Write(buf, 0, len);
+                    if (fs.SafeFileHandle.IsInvalid)
+                        return IOStatus.UNAVAILABLE;
+
+                    var n = Syscall.pwrite((int)fs.SafeFileHandle.DangerousGetHandle(), (void*)(IntPtr)address, (ulong)len, position);
+                    if (n == -1)
+                    {
+                        var errno = Stdlib.GetLastError();
+                        if (errno == Errno.EAGAIN)
+                            return IOStatus.UNAVAILABLE;
+                        if (errno == Errno.EINTR)
+                            return IOStatus.INTERRUPTED;
+
+                        throw new global::java.io.IOException("Write failed.", new UnixIOException(errno));
+                    }
+
+                    return (int)n;
                 }
                 finally
                 {
-                    ArrayPool<byte>.Shared.Return(buf);
+                    GC.KeepAlive(self);
                 }
+            }
+            else
+            {
+                var p = stream.Position;
+
+                try
+                {
+                    stream.Seek(position, SeekOrigin.Begin);
+                }
+                catch (EndOfStreamException)
+                {
+                    return 0;
+                }
+                catch (NotSupportedException)
+                {
+                    return IOStatus.UNSUPPORTED;
+                }
+                catch (ObjectDisposedException)
+                {
+                    return IOStatus.UNAVAILABLE;
+                }
+                catch (Exception e)
+                {
+                    throw new global::java.io.IOException("Seek failed.", e);
+                }
+
+                try
+                {
+#if NETFRAMEWORK
+                    var buf = ArrayPool<byte>.Shared.Rent(len);
+
+                    try
+                    {
+                        Marshal.Copy((IntPtr)address, buf, 0, len);
+                        stream.Write(buf, 0, len);
+                    }
+                    finally
+                    {
+                        ArrayPool<byte>.Shared.Return(buf);
+                    }
 #else
-                stream.Write(new Span<byte>((byte*)(IntPtr)address, len));
+                    stream.Write(new ReadOnlySpan<byte>((byte*)(IntPtr)address, len));
 #endif
 
-                stream.Seek(p, SeekOrigin.Begin);
-                return len;
-            }
-            catch (EndOfStreamException)
-            {
-                return IOStatus.EOF;
-            }
-            catch (NotSupportedException)
-            {
-                return IOStatus.UNSUPPORTED;
-            }
-            catch (ObjectDisposedException)
-            {
-                return IOStatus.UNAVAILABLE;
-            }
-            catch (Exception e)
-            {
-                throw new global::java.io.IOException("Write failed.", e);
+                    stream.Seek(p, SeekOrigin.Begin);
+                    return len;
+                }
+                catch (EndOfStreamException)
+                {
+                    return IOStatus.EOF;
+                }
+                catch (NotSupportedException)
+                {
+                    return IOStatus.UNSUPPORTED;
+                }
+                catch (ObjectDisposedException)
+                {
+                    return IOStatus.UNAVAILABLE;
+                }
+                catch (Exception e)
+                {
+                    throw new global::java.io.IOException("Write failed.", e);
+                }
+                finally
+                {
+                    GC.KeepAlive(self);
+                }
             }
 #endif
         }
@@ -498,7 +589,7 @@ namespace IKVM.Java.Externs.sun.nio.ch
             try
             {
                 // map io vecors to read into
-                var vecs = new Span<iovec>((byte*)(IntPtr)address, len);
+                var vecs = new ReadOnlySpan<iovec>((byte*)(IntPtr)address, len);
                 var length = 0;
 
                 // issue independent writes for each vector
@@ -541,6 +632,10 @@ namespace IKVM.Java.Externs.sun.nio.ch
             catch (Exception e)
             {
                 throw new global::java.io.IOException("Write failed.", e);
+            }
+            finally
+            {
+                GC.KeepAlive(self);
             }
 #endif
         }
@@ -742,9 +837,9 @@ namespace IKVM.Java.Externs.sun.nio.ch
                     var cmd = blocking ? FcntlCommand.F_SETLKW : FcntlCommand.F_SETLK;
 
                     var r = Syscall.fcntl((int)fs.SafeFileHandle.DangerousGetHandle(), cmd, ref fl);
-                    if (r < 0)
+                    if (r == -1)
                     {
-                        var errno = Syscall.GetLastError();
+                        var errno = Stdlib.GetLastError();
                         if ((cmd == FcntlCommand.F_SETLK) && (errno == Errno.EAGAIN || errno == Errno.EACCES))
                             return FileDispatcher.NO_LOCK;
                         if (errno == Errno.EINTR)
@@ -838,7 +933,7 @@ namespace IKVM.Java.Externs.sun.nio.ch
                     fl.l_type = LockType.F_UNLCK;
 
                     var r = Syscall.fcntl((int)fs.SafeFileHandle.DangerousGetHandle(), FcntlCommand.F_SETLK, ref fl);
-                    if (r < 0)
+                    if (r == -1)
                         UnixMarshal.ThrowExceptionForLastErrorIf(r);
                 }
                 else

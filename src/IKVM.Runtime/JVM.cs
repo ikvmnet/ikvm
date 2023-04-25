@@ -131,24 +131,6 @@ namespace IKVM.Runtime
 
 #endif
 
-        internal static Version SafeGetAssemblyVersion(System.Reflection.Assembly asm)
-        {
-            // Assembly.GetName().Version requires FileIOPermission,
-            // so we parse the FullName manually :-(
-            string name = asm.FullName;
-            int start = name.IndexOf(", Version=");
-            if (start >= 0)
-            {
-                start += 10;
-                int end = name.IndexOf(',', start);
-                if (end >= 0)
-                {
-                    return new Version(name.Substring(start, end - start));
-                }
-            }
-            return new Version();
-        }
-
         /// <summary>
         /// Gets an environmental variable.
         /// </summary>
@@ -221,15 +203,8 @@ namespace IKVM.Runtime
                 return emitSymbols == 1;
             }
         }
-#endif
 
-        internal static bool IsUnix
-        {
-            get
-            {
-                return Environment.OSVersion.Platform == PlatformID.Unix;
-            }
-        }
+#endif
 
         internal static string MangleResourceName(string name)
         {

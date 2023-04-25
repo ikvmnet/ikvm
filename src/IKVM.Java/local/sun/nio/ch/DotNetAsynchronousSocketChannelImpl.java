@@ -22,6 +22,11 @@ class DotNetAsynchronousSocketChannelImpl extends AsynchronousSocketChannelImpl 
         this(group, true);
     }
 
+    DotNetAsynchronousSocketChannelImpl(DotNetAsynchronousChannelGroup group, FileDescriptor fd, InetSocketAddress remote) throws IOException {
+        super(group, fd, remote);
+        this.group = group;
+    }
+
     @Override
     public AsynchronousChannelGroupImpl group() {
         return group;

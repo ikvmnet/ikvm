@@ -8,6 +8,8 @@ using IKVM.Runtime;
 using IKVM.Runtime.Util.Java.Security;
 using IKVM.Runtime.Util.Java.Net;
 using IKVM.Runtime.Accessors.Java.Io;
+using IKVM.Runtime.Accessors.Sun.Nio.Ch;
+using IKVM.Runtime.Accessors.Java.Lang;
 
 #if FIRST_PASS == false
 
@@ -31,8 +33,24 @@ namespace IKVM.Java.Externs.sun.nio.ch
 
 #if FIRST_PASS == false
 
+        static SystemAccessor systemAccessor;
+        static SecurityManagerAccessor securityManagerAccessor;
+        static AccessControllerAccessor accessControllerAccessor;
         static FileDescriptorAccessor fileDescriptorAccessor;
+        static DotNetAsynchronousServerSocketChannelImplAccessor dotNetAsynchronousServerSocketChannelImplAccessor;
+        static DotNetAsynchronousSocketChannelImplAccessor dotNetAsynchronousSocketChannelImplAccessor;
+
+        static SystemAccessor SystemAccessor => JVM.BaseAccessors.Get(ref systemAccessor);
+
+        static SecurityManagerAccessor SecurityManagerAccessor => JVM.BaseAccessors.Get(ref securityManagerAccessor);
+
+        static AccessControllerAccessor AccessControllerAccessor => JVM.BaseAccessors.Get(ref accessControllerAccessor);
+
         static FileDescriptorAccessor FileDescriptorAccessor => JVM.BaseAccessors.Get(ref fileDescriptorAccessor);
+
+        static DotNetAsynchronousServerSocketChannelImplAccessor DotNetAsynchronousServerSocketChannelImplAccessor => JVM.BaseAccessors.Get(ref dotNetAsynchronousServerSocketChannelImplAccessor);
+
+        static DotNetAsynchronousSocketChannelImplAccessor DotNetAsynchronousSocketChannelImplAccessor => JVM.BaseAccessors.Get(ref dotNetAsynchronousSocketChannelImplAccessor);
 
 #endif
 
@@ -81,18 +99,18 @@ namespace IKVM.Java.Externs.sun.nio.ch
         /// <summary>
         /// Creates a new client channel.
         /// </summary>
-        /// <param name="self"></param>
+        /// <param name="server"></param>
         /// <returns></returns>
-        static global::sun.nio.ch.DotNetAsynchronousSocketChannelImpl CreateClientChannel(global::sun.nio.ch.DotNetAsynchronousServerSocketChannelImpl self)
+        static object CreateClientChannel(object server, object fd, object remote)
         {
             try
             {
-                self.begin();
-                return new global::sun.nio.ch.DotNetAsynchronousSocketChannelImpl((DotNetAsynchronousChannelGroup)self.group(), false);
+                DotNetAsynchronousServerSocketChannelImplAccessor.InvokeBegin(server);
+                return DotNetAsynchronousSocketChannelImplAccessor.Init(DotNetAsynchronousServerSocketChannelImplAccessor.InvokeGroup(server), fd, remote);
             }
             finally
             {
-                self.end();
+                DotNetAsynchronousServerSocketChannelImplAccessor.InvokeEnd(server);
             }
         }
 
@@ -102,10 +120,10 @@ namespace IKVM.Java.Externs.sun.nio.ch
         /// <param name="self"></param>
         /// <param name="cancellationToken"></param>
         /// <returns></returns>s
-        static Task<global::sun.nio.ch.DotNetAsynchronousSocketChannelImpl> AcceptAsync(global::sun.nio.ch.DotNetAsynchronousServerSocketChannelImpl self, global::java.security.AccessControlContext accessControlContext, CancellationToken cancellationToken)
+        static Task<object> AcceptAsync(global::sun.nio.ch.DotNetAsynchronousServerSocketChannelImpl self, object accessControlContext, CancellationToken cancellationToken)
         {
             if (self.isOpen() == false)
-                return Task.FromException<global::sun.nio.ch.DotNetAsynchronousSocketChannelImpl>(new ClosedChannelException());
+                return Task.FromException<object>(new ClosedChannelException());
 
             if (self.isAcceptKilled())
                 throw new RuntimeException("Accept not allowed due to cancellation.");
@@ -113,37 +131,23 @@ namespace IKVM.Java.Externs.sun.nio.ch
             if (self.localAddress == null)
                 throw new NotYetBoundException();
 
-            global::sun.nio.ch.DotNetAsynchronousSocketChannelImpl client = null;
-
-            try
-            {
-                client = CreateClientChannel(self) ?? throw new RuntimeException("Could not create channel.");
-            }
-            catch (System.Exception e)
-            {
-                return Task.FromException<global::sun.nio.ch.DotNetAsynchronousSocketChannelImpl>(e);
-            }
-
             if (self.accepting.compareAndSet(false, true) == false)
                 throw new AcceptPendingException();
 
             return ImplAsync();
 
-            async Task<global::sun.nio.ch.DotNetAsynchronousSocketChannelImpl> ImplAsync()
+            async Task<object> ImplAsync()
             {
                 try
                 {
                     try
                     {
-                        // get initial clientSocket
-                        var acceptSocket = FileDescriptorAccessor.GetSocket(client.fd);
-
                         // execute asynchronous Accept task
                         var listenSocket = FileDescriptorAccessor.GetSocket(self.fd);
 #if NETFRAMEWORK
-                        acceptSocket = await Task.Factory.FromAsync(listenSocket.BeginAccept, listenSocket.EndAccept, acceptSocket, 0, null);
+                        var acceptSocket = await Task.Factory.FromAsync(listenSocket.BeginAccept, listenSocket.EndAccept, 0, null);
 #else
-                        acceptSocket = await listenSocket.AcceptAsync(acceptSocket);
+                        var acceptSocket = await listenSocket.AcceptAsync();
 #endif
 
                         // connection accept completed after group has shutdown
@@ -152,45 +156,24 @@ namespace IKVM.Java.Externs.sun.nio.ch
 
                         try
                         {
-                            self.begin();
+                            DotNetAsynchronousServerSocketChannelImplAccessor.InvokeBegin(self);
 
-                            try
-                            {
-                                // initialize resulting channel
-                                client.begin();
+                            // obtain new addresses
+                            var local = ((IPEndPoint)acceptSocket.LocalEndPoint).ToInetSocketAddress();
+                            var remote = ((IPEndPoint)acceptSocket.RemoteEndPoint).ToInetSocketAddress();
+                            var fd = FileDescriptorAccessor.FromSocket(acceptSocket);
+                            var client = CreateClientChannel(self, fd, remote);
 
-                                // obtain new addresses
-                                var local = ((IPEndPoint)acceptSocket.LocalEndPoint).ToInetSocketAddress();
-                                var remote = ((IPEndPoint)acceptSocket.RemoteEndPoint).ToInetSocketAddress();
+                            // check access to specified host
+                            if (accessControlContext != null)
+                                AccessControllerAccessor.InvokeDoPrivileged(new ActionPrivilegedAction(() => SecurityManagerAccessor.InvokeCheckAccept(SystemAccessor.InvokeGetSecurityManager(), (string)remote.getAddress().getHostAddress(), (int)remote.getPort())), accessControlContext);
 
-                                // set the client channel to connected
-                                lock (client.stateLock)
-                                {
-                                    client.state = AsynchronousSocketChannelImpl.ST_CONNECTED;
-                                    client.localAddress = local;
-                                    client.remoteAddress = remote;
-                                }
-
-                                // check access to specified host
-                                if (accessControlContext != null)
-                                {
-                                    global::java.security.AccessController.doPrivileged(new ActionPrivilegedAction(() =>
-                                    {
-                                        global::java.lang.System.getSecurityManager()?.checkAccept(remote.getAddress().getHostAddress(), remote.getPort());
-                                    }), accessControlContext);
-                                }
-
-                                // return resulting channel
-                                return client;
-                            }
-                            finally
-                            {
-                                client.end();
-                            }
+                            // return resulting channel
+                            return client;
                         }
                         finally
                         {
-                            self.end();
+                            DotNetAsynchronousServerSocketChannelImplAccessor.InvokeEnd(self);
                         }
                     }
                     catch (SecurityException)
@@ -213,19 +196,6 @@ namespace IKVM.Java.Externs.sun.nio.ch
                     {
                         throw new IOException(e);
                     }
-                }
-                catch
-                {
-                    try
-                    {
-                        client?.close();
-                    }
-                    catch
-                    {
-                        // ignore
-                    }
-
-                    throw;
                 }
                 finally
                 {

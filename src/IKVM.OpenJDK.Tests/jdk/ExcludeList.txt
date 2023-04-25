@@ -3592,8 +3592,5 @@ tools/pack200/DefaultTimeZoneTest.java                                          
 # access to sun.util classes from test case directly, TypeAccessException
 sun/util/calendar/zi/TestZoneInfo310.java                                                                               generic-all
 
-# too slow due to generation of stubs, duplicate in IKVM.Tests; stub generation happens because walker gets attributes which get size
-java/lang/Class/getDeclaredField/FieldSetAccessibleTest.java                                                            generic-all
-
 # this never worked, and might not be possible to make work on .NET
 java/net/ServerSocket/AcceptInheritHandle.java                                                                          generic-all
