@@ -590,6 +590,28 @@ namespace IKVM.Runtime
 
                 if (RuntimeUtil.IsOSX)
                 {
+                    var home = SafeGetEnvironmentVariable("HOME");
+                    if (home != null)
+                        libraryPath.Add(Path.Combine(home, "Library/Java/Extensions"));
+
+                    libraryPath.Add("/Library/Java/Extensions");
+                    libraryPath.Add("/Network/Library/Java/Extensions");
+                    libraryPath.Add("/System/Library/Java/Extensions");
+                    libraryPath.Add("/usr/lib/java");
+
+                    // prefix with JAVA_LIBRARY_PATH
+                    var javaLibraryPath = SafeGetEnvironmentVariable("JAVA_LIBRARY_PATH");
+                    if (javaLibraryPath != null)
+                        libraryPath.Add(javaLibraryPath);
+
+                    // prefix with DYLD_LIBRARY_PATH
+                    var dyldLibraryPath = SafeGetEnvironmentVariable("DYLD_LIBRARY_PATH");
+                    if (dyldLibraryPath != null)
+                        libraryPath.Add(dyldLibraryPath);
+
+                    if (home != null)
+                        libraryPath.Add(home);
+
                     libraryPath.Add(".");
                 }
 
