@@ -352,7 +352,7 @@ jobs:
         - run: IKVM.NET.Sdk.Tests
           tfm: net6.0
           sys: linux
-    name: Test (${{ matrix.run }}:${{ matrix.tfm }}:${{ matrix.sys }}
+    name: Test (${{ matrix.run }}:${{ matrix.tfm }}:${{ matrix.sys }})
     needs:
     - build-ikvm
     timeout-minutes: 240
