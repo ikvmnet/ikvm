@@ -19,8 +19,7 @@ namespace IKVM.Tests.Java.java.security
             var ks = KeyStore.getInstance(type);
             ks.load(null, null);
 
-            var dir = new File(System.IO.Path.Combine(System.IO.Path.GetTempPath(), "CanInitKeyStore", type));
-            System.IO.Directory.Delete(dir.getPath());
+            var dir = new File(System.IO.Path.Combine(System.IO.Path.GetTempPath(), "CanInitKeyStore", type));cccccc
             dir.mkdirs();
 
             using (var stream = new FileOutputStream(new File(dir, $"empty.{ext}")))
@@ -34,7 +33,8 @@ namespace IKVM.Tests.Java.java.security
         public void CanLoadKeyStore(string type, string ext)
         {
             var dir = new File(System.IO.Path.Combine(System.IO.Path.GetTempPath(), "CanLoadKeyStore", type));
-            System.IO.Directory.Delete(dir.getPath());
+            if (System.IO.Directory.Exists(dir.getPath()))
+                System.IO.Directory.Delete(dir.getPath(), true);
             dir.mkdirs();
 
             using (var stream = new FileOutputStream(new File(dir, $"empty.{ext}")))
@@ -55,7 +55,8 @@ namespace IKVM.Tests.Java.java.security
         public void CanLoadP12KeyStoreWithJKS()
         {
             var dir = new File(System.IO.Path.Combine(System.IO.Path.GetTempPath(), "CanLoadP12KeyStoreWithJKS"));
-            System.IO.Directory.Delete(dir.getPath());
+            if (System.IO.Directory.Exists(dir.getPath()))
+                System.IO.Directory.Delete(dir.getPath(), true);
             dir.mkdirs();
 
             using (var stream = new FileOutputStream(new File(dir, "empty.p12")))
