@@ -19,7 +19,9 @@ namespace IKVM.Tests.Java.java.security
             var ks = KeyStore.getInstance(type);
             ks.load(null, null);
 
-            var dir = new File(System.IO.Path.Combine(System.IO.Path.GetTempPath(), "CanInitKeyStore", type));cccccc
+            var dir = new File(System.IO.Path.Combine(System.IO.Path.GetTempPath(), "CanInitKeyStore", type));
+            if (System.IO.Directory.Exists(dir.getPath()))
+                System.IO.Directory.Delete(dir.getPath(), true);
             dir.mkdirs();
 
             using (var stream = new FileOutputStream(new File(dir, $"empty.{ext}")))
