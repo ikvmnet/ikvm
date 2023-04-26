@@ -3345,3 +3345,6 @@ sun/util/calendar/zi/TestZoneInfo310.java                                       
 
 # this never worked, and might not be possible to make work on .NET
 java/net/ServerSocket/AcceptInheritHandle.java                                                                          generic-all
+
+# too slow
+java/lang/Class/getDeclaredField/FieldSetAccessibleTest.java                                                            linux-all
