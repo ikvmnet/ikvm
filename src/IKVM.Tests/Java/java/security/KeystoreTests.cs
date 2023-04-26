@@ -22,7 +22,7 @@ namespace IKVM.Tests.Java.java.security
             var ks = KeyStore.getInstance(type);
             ks.load(null, null);
 
-            var dir = Paths.get(TestContext.ResultsDirectory, "CanInitKeyStore", type).toFile();
+            var dir = Paths.get(TestContext.TestRunDirectory, "CanInitKeyStore", type).toFile();
             dir.mkdirs();
 
             using (var stream = new FileOutputStream(new File(dir, $"empty.{ext}")))
@@ -35,7 +35,7 @@ namespace IKVM.Tests.Java.java.security
         [DataRow("PKCS12", "p12")]
         public void CanLoadKeyStore(string type, string ext)
         {
-            var dir = Paths.get(TestContext.ResultsDirectory, "CanLoadKeyStore", type).toFile();
+            var dir = Paths.get(TestContext.TestRunDirectory, "CanLoadKeyStore", type).toFile();
             dir.mkdirs();
 
             using (var stream = new FileOutputStream(new File(dir, $"empty.{ext}")))
@@ -55,7 +55,7 @@ namespace IKVM.Tests.Java.java.security
         [TestMethod]
         public void CanLoadP12KeyStoreWithJKS()
         {
-            var dir = Paths.get(TestContext.ResultsDirectory, "CanLoadP12KeyStoreWithJKS").toFile();
+            var dir = Paths.get(TestContext.TestRunDirectory, "CanLoadP12KeyStoreWithJKS").toFile();
             dir.mkdirs();
 
             using (var stream = new FileOutputStream(new File(dir, "empty.p12")))
