@@ -1575,6 +1575,7 @@ java/text/Format/DateFormat/Bug6645292.java                                     
 java/text/Format/DateFormat/Bug7130335.java                                                                             generic-all
 java/text/Format/DateFormat/WeekDateTest.java                                                                           generic-all
 java/time/test/java/util/TestFormatter.java                                                                             linux-all
+java/time/test/java/time/TestZoneId.java                                                                                linux-all
 java/util/AbstractMap/AbstractMapClone.java                                                                             generic-all
 java/util/AbstractMap/SimpleEntries.java                                                                                generic-all
 java/util/AbstractMap/ToString.java                                                                                     generic-all
