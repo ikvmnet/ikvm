@@ -1384,6 +1384,7 @@ java/nio/channels/DatagramChannel/ChangingAddress.java                          
 java/nio/channels/DatagramChannel/Disconnect.java                                                                       linux-all
 java/nio/channels/DatagramChannel/MulticastSendReceiveTests.java                                                        generic-all
 java/nio/channels/DatagramChannel/SocketOptionTests.java                                                                generic-all
+java/nio/channels/DatagramChannel/SelectWhenRefused.java                                                                generic-all
 java/nio/channels/FileChannel/AtomicAppend.java                                                                         generic-all
 java/nio/channels/FileChannel/Lock.java                                                                                 generic-all
 java/nio/channels/FileChannel/MapOverEnd.java                                                                           linux-all
