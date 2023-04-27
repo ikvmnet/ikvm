@@ -797,6 +797,14 @@ namespace IKVM.Java.Externs.sun.nio.ch
                     }
 #endif
                 }
+                catch (OperationCanceledException)
+                {
+                    return null;
+                }
+                catch (System.Exception) when (cancellationToken.IsCancellationRequested)
+                {
+                    return null;
+                }
                 catch (ObjectDisposedException)
                 {
                     throw new global::java.nio.channels.AsynchronousCloseException();
@@ -902,6 +910,10 @@ namespace IKVM.Java.Externs.sun.nio.ch
 #endif
                 }
                 catch (OperationCanceledException)
+                {
+                    return null;
+                }
+                catch (System.Exception) when (cancellationToken.IsCancellationRequested)
                 {
                     return null;
                 }
