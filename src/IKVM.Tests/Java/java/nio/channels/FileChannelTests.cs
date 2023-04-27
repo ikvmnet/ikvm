@@ -10,8 +10,6 @@ using java.nio.charset;
 using java.nio.file;
 using java.util;
 
-using jdk.nashorn.@internal.ir.debug;
-
 using Microsoft.VisualStudio.TestTools.UnitTesting;
 
 namespace IKVM.Tests.Java.java.nio.channels
@@ -286,6 +284,7 @@ namespace IKVM.Tests.Java.java.nio.channels
         {
             var file = File.createTempFile("src", null);
             file.deleteOnExit();
+            WriteRandomBytes(file, 1024);
 
             using var mmap = new RandomAccessFile(file, "rw");
             var buff = mmap.getChannel().map(FileChannel.MapMode.READ_WRITE, 0, 1024);
