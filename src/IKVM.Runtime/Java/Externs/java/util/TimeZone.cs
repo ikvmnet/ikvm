@@ -1,6 +1,8 @@
 using System;
 using System.IO;
 
+using IKVM.Runtime;
+
 namespace IKVM.Java.Externs.java.util
 {
 
@@ -66,7 +68,10 @@ namespace IKVM.Java.Externs.java.util
         /// <returns></returns>
         public static string getSystemTimeZoneID(string javaHome)
         {
-            return MatchJavaTZ(javaHome, GetCurrentTimeZoneID()) ?? getSystemGMTOffsetID();
+            if (RuntimeUtil.IsWindows)
+                return MatchJavaTZ(javaHome, GetCurrentTimeZoneID()) ?? getSystemGMTOffsetID();
+            else
+                return GetCurrentTimeZoneID() ?? getSystemGMTOffsetID();
         }
 
         /// <summary>
