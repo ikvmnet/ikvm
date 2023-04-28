@@ -17,6 +17,7 @@ tools/javac/T6558476.java                                                       
 tools/javac/T6873845.java                                                                                               generic-all
 tools/javac/T7093325.java                                                                                               generic-all
 tools/javac/T8003967/DetectMutableStaticFields.java                                                                     generic-all
+tools/javac/T8024207/FlowCrashTest.java                                                                                 generic-all
 tools/javac/TryWithResources/InterruptedExceptionTest.java                                                              generic-all
 tools/javac/TryWithResources/UnusedResourcesTest.java                                                                   linux-all
 tools/javac/VarDeclarationWithAssignment.java                                                                           generic-all
