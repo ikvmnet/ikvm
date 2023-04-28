@@ -1372,7 +1372,7 @@ java/net/URLPermission/nstest/lookup.sh                                         
 java/nio/Buffer/Chew.java                                                                                               generic-all
 java/nio/Buffer/LimitDirectMemory.sh                                                                                    generic-all
 java/nio/MappedByteBuffer/Truncate.java                                                                                 linux-all
-java/nio/channels/AsyncCloseAndInterrupt.java                                                                           linux-all
+java/nio/channels/AsyncCloseAndInterrupt.java                                                                           windows-all
 java/nio/channels/AsynchronousChannelGroup/Basic.java                                                                   generic-all
 java/nio/channels/AsynchronousChannelGroup/GroupOfOne.java                                                              generic-all
 java/nio/channels/AsynchronousChannelGroup/Identity.java                                                                generic-all
