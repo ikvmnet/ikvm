@@ -3212,7 +3212,7 @@ java/nio/channels/AsynchronousSocketChannel/StressLoopback.java                 
 java/nio/channels/Channels/Basic2.java                                                                                  linux-all
 java/nio/channels/DatagramChannel/EmptyBuffer.java                                                                      linux-all
 java/nio/channels/DatagramChannel/Promiscuous.java                                                                      linux-all
-java/nio/channels/etc/AdaptorCloseAndInterrupt.java                                                                     linux-all
+java/nio/channels/etc/AdaptorCloseAndInterrupt.java                                                                     generic-all
 java/nio/channels/FileChannel/Release.java                                                                              linux-all
 java/nio/channels/FileChannel/TryLock.java                                                                              linux-all
 java/nio/channels/Selector/Alias.java                                                                                   linux-all
