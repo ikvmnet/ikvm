@@ -47,6 +47,7 @@ tools/javac/generics/inference/7086601/T7086601b.java                           
 tools/javac/generics/rawOverride/7062745/GenericOverrideTest.java                                                       generic-all
 tools/javac/inheritedAccess/MethodReferenceQualification_1.java                                                         generic-all
 tools/javac/jvm/T7024096.java                                                                                           generic-all
+tools/javac/jvm/T8020689.java                                                                                           generic-all
 tools/javac/lambda/LambdaConv08.java                                                                                    generic-all
 tools/javac/lambda/LambdaConv16.java                                                                                    generic-all
 tools/javac/lambda/LambdaParserTest.java                                                                                generic-all
