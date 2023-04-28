@@ -3351,4 +3351,4 @@ sun/util/calendar/zi/TestZoneInfo310.java                                       
 java/net/ServerSocket/AcceptInheritHandle.java                                                                          generic-all
 
 # too slow
-java/lang/Class/getDeclaredField/FieldSetAccessibleTest.java                                                            linux-all
+java/lang/Class/getDeclaredField/FieldSetAccessibleTest.java                                                            generic-all
