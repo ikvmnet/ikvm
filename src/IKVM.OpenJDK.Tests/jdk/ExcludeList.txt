@@ -1133,6 +1133,7 @@ java/lang/ProcessBuilder/InheritIOEHandle.java                                  
 java/lang/ProcessBuilder/SecurityManagerClinit.java                                                                     generic-all
 java/lang/ProcessBuilder/SiblingIOEHandle.java                                                                          generic-all
 java/lang/Runtime/exec/SetCwd.java                                                                                      generic-all
+java/lang/Runtime/exec/ExecCommand.java                                                                                 generic-all
 java/lang/Runtime/shutdown/ShutdownHooks.sh                                                                             generic-all
 java/lang/SecurityManager/CheckPackageAccess.java                                                                       generic-all
 java/lang/StrictMath/HyperbolicTests.java                                                                               generic-all
@@ -1357,7 +1358,7 @@ java/net/InetAddress/ptr/lookup.sh                                              
 java/net/NetworkInterface/IPv4Only.java                                                                                 generic-all
 java/net/NetworkInterface/Test.java                                                                                     generic-all
 java/net/ServerSocket/AcceptCauseFileDescriptorLeak.sh                                                                  generic-all
-java/net/ServerSocket/ThreadStop.java                                                                                   linux-all
+java/net/ServerSocket/ThreadStop.java                                                                                   windows-all
 java/net/Socket/OldSocketImpl.sh                                                                                        generic-all
 java/net/Socket/asyncClose/Race.java                                                                                    generic-all
 java/net/Socks/SocksV4Test.java                                                                                         linux-all
@@ -1379,9 +1380,9 @@ java/nio/channels/AsynchronousChannelGroup/Identity.java                        
 java/nio/channels/AsynchronousChannelGroup/Restart.java                                                                 generic-all
 java/nio/channels/AsynchronousChannelGroup/run_any_task.sh                                                              generic-all
 java/nio/channels/AsynchronousFileChannel/Lock.java                                                                     generic-all
-java/nio/channels/AsynchronousServerSocketChannel/WithSecurityManager.java                                              linux-all
+java/nio/channels/AsynchronousServerSocketChannel/WithSecurityManager.java                                              windows-all
 java/nio/channels/DatagramChannel/ChangingAddress.java                                                                  generic-all
-java/nio/channels/DatagramChannel/Disconnect.java                                                                       linux-all
+java/nio/channels/DatagramChannel/Disconnect.java                                                                       windows-all
 java/nio/channels/DatagramChannel/MulticastSendReceiveTests.java                                                        generic-all
 java/nio/channels/DatagramChannel/SocketOptionTests.java                                                                generic-all
 java/nio/channels/DatagramChannel/SelectWhenRefused.java                                                                generic-all
@@ -1416,6 +1417,7 @@ java/nio/file/Files/SBC.java                                                    
 java/nio/file/Files/delete_on_close.sh                                                                                  generic-all
 java/nio/file/Files/walkFileTree/find.sh                                                                                generic-all
 java/nio/file/Path/Misc.java                                                                                            linux-all
+java/nio/file/Path/PathOps.java                                                                                         windows-all
 java/nio/file/WatchService/Basic.java                                                                                   linux-all
 java/rmi/Naming/DefaultRegistryPort.java                                                                                generic-all
 java/rmi/Naming/LookupIPv6.java                                                                                         generic-all
