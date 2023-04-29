@@ -63,7 +63,7 @@ PM> Install-Package IKVM.Maven.Sdk
 
 ### Tools
 
-The tools are available for download on the [Releases](https://github.com/ikvm-revived/ikvm/releases) page.
+The tools are available for download on the [Releases](https://github.com/ikvmnet/ikvm/releases) page.
 
 ### Runtime Images
 
@@ -74,7 +74,7 @@ PM> Install-Package IKVM.Image.JRE
 PM> Install-Package IKVM.Image.JDK
 ```
 
-A standalone JDK distributable is available for download on the [Releases](https://github.com/ikvm-revived/ikvm/releases) page. This directory structure should suffice as a `JAVA_HOME` path for standard Java applications.
+A standalone JDK distributable is available for download on the [Releases](https://github.com/ikvmnet/ikvm/releases) page. This directory structure should suffice as a `JAVA_HOME` path for standard Java applications.
 
 ## Usage
 
@@ -174,4 +174,4 @@ The `Automatic-Module-Name` is either a specified attribute of the JAR manifest,
 
 ### MavenReference
 
-See the [ikvm-maven Readme](https://github.com/ikvm-revived/ikvm-maven#readme) for usage instructions.
+See the [ikvm-maven Readme](https://github.com/ikvmnet/ikvm-maven#readme) for usage instructions.
