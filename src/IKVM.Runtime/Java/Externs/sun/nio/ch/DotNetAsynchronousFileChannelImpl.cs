@@ -801,10 +801,6 @@ namespace IKVM.Java.Externs.sun.nio.ch
                 {
                     return null;
                 }
-                catch (System.Exception) when (cancellationToken.IsCancellationRequested)
-                {
-                    return null;
-                }
                 catch (ObjectDisposedException)
                 {
                     throw new global::java.nio.channels.AsynchronousCloseException();
@@ -812,6 +808,10 @@ namespace IKVM.Java.Externs.sun.nio.ch
                 catch (System.Exception) when (self.isOpen() == false)
                 {
                     throw new global::java.nio.channels.AsynchronousCloseException();
+                }
+                catch (System.Exception) when (cancellationToken.IsCancellationRequested)
+                {
+                    return null;
                 }
                 catch (System.Exception e)
                 {
@@ -913,10 +913,6 @@ namespace IKVM.Java.Externs.sun.nio.ch
                 {
                     return null;
                 }
-                catch (System.Exception) when (cancellationToken.IsCancellationRequested)
-                {
-                    return null;
-                }
                 catch (ObjectDisposedException)
                 {
                     throw new global::java.nio.channels.AsynchronousCloseException();
@@ -924,6 +920,10 @@ namespace IKVM.Java.Externs.sun.nio.ch
                 catch (System.Exception) when (self.isOpen() == false)
                 {
                     throw new global::java.nio.channels.AsynchronousCloseException();
+                }
+                catch (System.Exception) when (cancellationToken.IsCancellationRequested)
+                {
+                    return null;
                 }
                 catch (System.Exception e)
                 {

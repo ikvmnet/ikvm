@@ -1358,7 +1358,7 @@ java/net/InetAddress/ptr/lookup.sh                                              
 java/net/NetworkInterface/IPv4Only.java                                                                                 generic-all
 java/net/NetworkInterface/Test.java                                                                                     generic-all
 java/net/ServerSocket/AcceptCauseFileDescriptorLeak.sh                                                                  generic-all
-java/net/ServerSocket/ThreadStop.java                                                                                   windows-all
+java/net/ServerSocket/ThreadStop.java                                                                                   generic-all
 java/net/Socket/OldSocketImpl.sh                                                                                        generic-all
 java/net/Socket/asyncClose/Race.java                                                                                    generic-all
 java/net/Socks/SocksV4Test.java                                                                                         linux-all
@@ -1373,7 +1373,7 @@ java/net/URLPermission/nstest/lookup.sh                                         
 java/nio/Buffer/Chew.java                                                                                               generic-all
 java/nio/Buffer/LimitDirectMemory.sh                                                                                    generic-all
 java/nio/MappedByteBuffer/Truncate.java                                                                                 linux-all
-java/nio/channels/AsyncCloseAndInterrupt.java                                                                           windows-all
+java/nio/channels/AsyncCloseAndInterrupt.java                                                                           generic-all
 java/nio/channels/AsynchronousChannelGroup/Basic.java                                                                   generic-all
 java/nio/channels/AsynchronousChannelGroup/GroupOfOne.java                                                              generic-all
 java/nio/channels/AsynchronousChannelGroup/Identity.java                                                                generic-all
