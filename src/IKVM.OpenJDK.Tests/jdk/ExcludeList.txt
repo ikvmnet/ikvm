@@ -1133,7 +1133,6 @@ java/lang/ProcessBuilder/InheritIOEHandle.java                                  
 java/lang/ProcessBuilder/SecurityManagerClinit.java                                                                     generic-all
 java/lang/ProcessBuilder/SiblingIOEHandle.java                                                                          generic-all
 java/lang/Runtime/exec/SetCwd.java                                                                                      generic-all
-java/lang/Runtime/exec/ExecCommand.java                                                                                 generic-all
 java/lang/Runtime/shutdown/ShutdownHooks.sh                                                                             generic-all
 java/lang/SecurityManager/CheckPackageAccess.java                                                                       generic-all
 java/lang/StrictMath/HyperbolicTests.java                                                                               generic-all
@@ -1893,7 +1892,6 @@ javax/management/modelmbean/UnserializableTargetObjectTest.java                 
 javax/management/monitor/CounterMonitorTest.java                                                                        generic-all
 javax/management/monitor/GaugeMonitorDeadlockTest.java                                                                  generic-all
 javax/management/monitor/StartStopTest.java                                                                             generic-all
-javax/management/monitor/DerivedGaugeMonitorTest.java                                                                   generic-all
 javax/management/mxbean/GenericArrayTypeTest.java                                                                       generic-all
 javax/management/mxbean/LeakTest.java                                                                                   generic-all
 javax/management/mxbean/MXBeanTest.java                                                                                 generic-all
@@ -2912,7 +2910,6 @@ sun/security/krb5/tools/ktarg.sh                                                
 sun/security/krb5/tools/ktcheck.sh                                                                                      generic-all
 sun/security/krb5/tools/ktmissing.sh                                                                                    generic-all
 sun/security/krb5/tools/ktzero.sh                                                                                       generic-all
-sun/security/krb5/MicroTime.java                                                                                        generic-all
 sun/security/mscapi/AccessKeyStore.sh                                                                                   generic-all
 sun/security/mscapi/IsSunMSCAPIAvailable.sh                                                                             generic-all
 sun/security/mscapi/KeyStoreCompatibilityMode.sh                                                                        generic-all
@@ -3212,7 +3209,7 @@ java/nio/channels/AsynchronousSocketChannel/StressLoopback.java                 
 java/nio/channels/Channels/Basic2.java                                                                                  linux-all
 java/nio/channels/DatagramChannel/EmptyBuffer.java                                                                      linux-all
 java/nio/channels/DatagramChannel/Promiscuous.java                                                                      linux-all
-java/nio/channels/etc/AdaptorCloseAndInterrupt.java                                                                     generic-all
+java/nio/channels/etc/AdaptorCloseAndInterrupt.java                                                                     linux-all
 java/nio/channels/FileChannel/Release.java                                                                              linux-all
 java/nio/channels/FileChannel/TryLock.java                                                                              linux-all
 java/nio/channels/Selector/Alias.java                                                                                   linux-all
@@ -3343,9 +3340,6 @@ javax/net/ssl/ciphersuites/DisabledAlgorithms.java                              
 
 # requires a specific tools.jar, not going to work on IKVM
 tools/pack200/DefaultTimeZoneTest.java                                                                                  generic-all
-
-# access to sun.util classes from test case directly, TypeAccessException
-sun/util/calendar/zi/TestZoneInfo310.java                                                                               generic-all
 
 # this never worked, and might not be possible to make work on .NET
 java/net/ServerSocket/AcceptInheritHandle.java                                                                          generic-all

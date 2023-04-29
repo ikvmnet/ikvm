@@ -495,8 +495,8 @@ namespace IKVM.Tests.Java.java.nio.channels
             var rng = RandomNumberGenerator.Create();
             var rnd = new System.Random();
 
-            const int size = 65535;
-            const int z = 16;
+            const int size = 1024 * 1024 * 64;
+            const int z = 8;
 
             var file = File.createTempFile("test", null);
             file.deleteOnExit();
