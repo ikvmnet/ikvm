@@ -1,5 +1,7 @@
 ﻿using System;
 using System.IO;
+using System.Linq.Expressions;
+using System.Reflection;
 using System.Security;
 using System.Security.AccessControl;
 
@@ -40,6 +42,28 @@ namespace IKVM.Java.Externs.sun.nio.fs
         static DotNetPathAccessor DotNetPathAccessor => JVM.BaseAccessors.Get(ref dotNetPathAccessor);
 
         static DotNetDirectoryStreamAccessor DotNetDirectoryStreamAccessor => JVM.BaseAccessors.Get(ref dotNetDirectoryStreamAccessor);
+
+#if NETCOREAPP
+
+        /// <summary>
+        /// Compiles a fast setter for a <see cref="FieldInfo"/>.
+        /// </summary>
+        /// <typeparam name="T"></typeparam>
+        /// <typeparam name="V"></typeparam>
+        /// <param name="property"></param>
+        /// <returns></returns>
+        static Action<T, V> MakePropertySetter<T, V>(PropertyInfo property)
+        {
+            var p = Expression.Parameter(typeof(T));
+            var v = Expression.Parameter(typeof(V));
+            var e = Expression.Lambda<Action<T, V>>(Expression.Assign(Expression.Property(property.DeclaringType.IsValueType ? Expression.Unbox(p, property.DeclaringType) : Expression.ConvertChecked(p, property.DeclaringType), property), v), p, v);
+            return e.Compile();
+        }
+
+        static readonly PropertyInfo SafeFileHandleIsAsyncProperty = typeof(SafeFileHandle).GetProperty("IsAsync", BindingFlags.Public | BindingFlags.Instance);
+        static readonly Action<SafeFileHandle, bool> SafeFileHandleIsAsyncPropertySetter = SafeFileHandleIsAsyncProperty != null ? MakePropertySetter<SafeFileHandle, bool>(SafeFileHandleIsAsyncProperty) : null;
+
+#endif
 
 #endif
 
@@ -141,7 +165,15 @@ namespace IKVM.Java.Externs.sun.nio.fs
                         throw new UnixIOException(error);
                     }
 
-                    return FileDescriptorAccessor.FromStream(new FileStream(new SafeFileHandle((IntPtr)r, true), access, bufferSize, (options & FileOptions.Asynchronous) != 0));
+                    var h = new SafeFileHandle((IntPtr)r, true);
+
+                    // .NET Core 5+ maintains an IsAsync property validated by FileStream
+                    // this property isn't set properly on Unix
+                    // https://github.com/dotnet/runtime/issues/85560
+                    if ((options & FileOptions.Asynchronous) != 0)
+                        SafeFileHandleIsAsyncPropertySetter?.Invoke(h, true);
+
+                    return FileDescriptorAccessor.FromStream(new FileStream(h, access, bufferSize, (options & FileOptions.Asynchronous) != 0));
                 }
 #endif
             }

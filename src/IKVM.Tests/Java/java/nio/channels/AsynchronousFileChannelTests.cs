@@ -495,16 +495,14 @@ namespace IKVM.Tests.Java.java.nio.channels
             var rng = RandomNumberGenerator.Create();
             var rnd = new System.Random();
 
-            const int size = 1024 * 1024 * 64;
-            const int z = 8;
+            const int size = 1024 * 1024 * 256;
+            const int z = 32;
 
             var file = File.createTempFile("test", null);
             file.deleteOnExit();
 
             // rewrite file with random data
-            var temp = new byte[size];
-            rng.GetBytes(temp);
-            System.IO.File.WriteAllBytes(file.getPath(), temp);
+            System.IO.File.Create(file.getPath()).Close();
 
             using var c = AsynchronousFileChannel.open(file.toPath(), StandardOpenOption.WRITE, StandardOpenOption.SYNC);
 
@@ -513,9 +511,12 @@ namespace IKVM.Tests.Java.java.nio.channels
             var pos = new int[z];
             for (int i = 0; i < z; i++)
             {
-                var b = new byte[rnd.Next(1, size)];
+                var d = ByteBuffer.allocateDirect(size);
+                var b = new byte[size];
                 rng.GetBytes(b);
-                buf[i] = ByteBuffer.wrap(b);
+                d.put(b);
+                d.flip();
+                buf[i] = d;
                 pos[i] = rnd.Next(1, size);
             }
 

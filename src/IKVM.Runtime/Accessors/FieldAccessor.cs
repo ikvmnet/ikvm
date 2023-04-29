@@ -160,8 +160,8 @@ namespace IKVM.Runtime.Accessors
 
         delegate TField GetterDelegate(TObject self);
         delegate void SetterDelegate(TObject self, TField value);
-        delegate TField ExchangeDelegate(TObject self, ref TField location, TField value);
-        delegate TField CompareExchangeDelegate(TObject self, ref TField location, TField value, TField comparand);
+        delegate TField ExchangeDelegate(TObject self, TField value);
+        delegate TField CompareExchangeDelegate(TObject self, TField value, TField comparand);
 
         static readonly MethodInfo ExchangeOfInt32 = typeof(Interlocked).GetMethod(nameof(Interlocked.Exchange), new[] { typeof(int).MakeByRefType(), typeof(int) });
         static readonly MethodInfo ExchangeOfInt64 = typeof(Interlocked).GetMethod(nameof(Interlocked.Exchange), new[] { typeof(long).MakeByRefType(), typeof(long) });
@@ -277,13 +277,13 @@ namespace IKVM.Runtime.Accessors
 #if FIRST_PASS || IMPORTER || EXPORTER
             throw new NotImplementedException();
 #else
-            var dm = DynamicMethodUtil.Create($"__<FieldAccessorExchange>__{Field.DeclaringType.Name.Replace(".", "_")}__{Field.Name}", Type, false, typeof(TField), new[] { typeof(TObject), typeof(TField).MakeByRefType(), typeof(TField) });
+            var dm = DynamicMethodUtil.Create($"__<FieldAccessorExchange>__{Field.DeclaringType.Name.Replace(".", "_")}__{Field.Name}", Type, false, typeof(TField), new[] { typeof(TObject), typeof(TField) });
             var il = CodeEmitter.Create(dm);
 
             il.EmitLdarg(0);
             il.Emit(OpCodes.Castclass, Type);
+            il.Emit(Field.IsStatic ? OpCodes.Ldsflda: OpCodes.Ldflda, Field);
             il.EmitLdarg(1);
-            il.EmitLdarg(2);
 
             switch (typeof(TField))
             {
@@ -322,14 +322,14 @@ namespace IKVM.Runtime.Accessors
 #if FIRST_PASS || IMPORTER || EXPORTER
             throw new NotImplementedException();
 #else
-            var dm = DynamicMethodUtil.Create($"__<FieldAccessorCompareExchange>__{Field.DeclaringType.Name.Replace(".", "_")}__{Field.Name}", Type, false, typeof(TField), new[] { typeof(TObject), typeof(TField).MakeByRefType(), typeof(TField), typeof(TField) });
+            var dm = DynamicMethodUtil.Create($"__<FieldAccessorCompareExchange>__{Field.DeclaringType.Name.Replace(".", "_")}__{Field.Name}", Type, false, typeof(TField), new[] { typeof(TObject), typeof(TField), typeof(TField) });
             var il = CodeEmitter.Create(dm);
 
             il.EmitLdarg(0);
             il.Emit(OpCodes.Castclass, Type);
+            il.Emit(Field.IsStatic ? OpCodes.Ldsflda : OpCodes.Ldflda, Field);
             il.EmitLdarg(1);
             il.EmitLdarg(2);
-            il.EmitLdarg(3);
 
             switch (typeof(TField))
             {
@@ -377,20 +377,18 @@ namespace IKVM.Runtime.Accessors
         /// Exchanges the value of the field.
         /// </summary>
         /// <param name="self"></param>
-        /// <param name="location"></param>
         /// <param name="value"></param>
         /// <returns></returns>
-        public TField ExchangeValue(TObject self, ref TField location, TField value) => Exchange(self, ref location, value);
+        public TField ExchangeValue(TObject self, TField value) => Exchange(self, value);
         
         /// <summary>
         /// Compares and exchanges the value of the field.
         /// </summary>
         /// <param name="self"></param>
-        /// <param name="location"></param>
         /// <param name="value"></param>
         /// <param name="comparand"></param>
         /// <returns></returns>
-        public TField CompareExchangeValue(TObject self, ref TField location, TField value, TField comparand) => CompareExchange(self, ref location, value, comparand);
+        public TField CompareExchangeValue(TObject self, TField value, TField comparand) => CompareExchange(self, value, comparand);
 
     }
 

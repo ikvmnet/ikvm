@@ -755,6 +755,25 @@ namespace IKVM.Java.Externs.sun.nio.ch
 
             async Task<Integer> ImplAsync()
             {
+                var lck = FileDescriptorAccessor.GetSemaphore(self.fdObj);
+                if (lck == null)
+                {
+                    lck = new SemaphoreSlim(1, 1);
+                    if (FileDescriptorAccessor.CompareExchangeSemaphore(self.fdObj, lck, null) != null)
+                        lck.Dispose();
+
+                    lck = FileDescriptorAccessor.GetSemaphore(self.fdObj);
+                }
+
+                try
+                {
+                    await lck.WaitAsync(cancellationToken);
+                }
+                catch (OperationCanceledException)
+                {
+                    return null;
+                }
+
                 try
                 {
                     // move file to specified position
@@ -817,6 +836,10 @@ namespace IKVM.Java.Externs.sun.nio.ch
                 {
                     throw new global::java.io.IOException(e);
                 }
+                finally
+                {
+                    lck.Release();
+                }
             }
         }
 
@@ -867,6 +890,25 @@ namespace IKVM.Java.Externs.sun.nio.ch
 
             async Task<Integer> ImplAsync()
             {
+                var lck = FileDescriptorAccessor.GetSemaphore(self.fdObj);
+                if (lck == null)
+                {
+                    lck = new SemaphoreSlim(1, 1);
+                    if (FileDescriptorAccessor.CompareExchangeSemaphore(self.fdObj, lck, null) != null)
+                        lck.Dispose();
+
+                    lck = FileDescriptorAccessor.GetSemaphore(self.fdObj);
+                }
+
+                try
+                {
+                    await lck.WaitAsync(cancellationToken);
+                }
+                catch (OperationCanceledException)
+                {
+                    return null;
+                }
+
                 try
                 {
                     // move file to specified position
@@ -928,6 +970,10 @@ namespace IKVM.Java.Externs.sun.nio.ch
                 catch (System.Exception e)
                 {
                     throw new global::java.io.IOException(e);
+                }
+                finally
+                {
+                    lck.Release();
                 }
             }
         }

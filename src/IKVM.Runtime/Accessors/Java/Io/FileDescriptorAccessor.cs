@@ -1,6 +1,7 @@
 ﻿using System;
 using System.IO;
 using System.Net.Sockets;
+using System.Threading;
 using System.Threading.Tasks;
 
 namespace IKVM.Runtime.Accessors.Java.Io
@@ -26,6 +27,7 @@ namespace IKVM.Runtime.Accessors.Java.Io
         PropertyAccessor<object, int> fd;
         FieldAccessor<object, long> handle;
         FieldAccessor<object, Task> task;
+        FieldAccessor<object, SemaphoreSlim> semaphore;
         FieldAccessor<object, Stream> stream;
         FieldAccessor<object, Socket> socket;
         MethodAccessor<Action<object>> sync;
@@ -101,6 +103,23 @@ namespace IKVM.Runtime.Accessors.Java.Io
         /// <param name="value"></param>
         /// <returns></returns>
         public void SetTask(object self, Task value) => GetField(ref task, nameof(task)).SetValue(self, value);
+
+        /// <summary>
+        /// Gets the value of the 'semaphore' field.
+        /// </summary>
+        /// <param name="self"></param>
+        /// <param name="value"></param>
+        /// <returns></returns>
+        public SemaphoreSlim GetSemaphore(object self) => GetField(ref semaphore, nameof(semaphore)).GetValue(self);
+
+        /// <summary>
+        /// Compares and exchanges the value of the 'semaphore' field.
+        /// </summary>
+        /// <param name="self"></param>
+        /// <param name="value"></param>
+        /// <param name="comparand"></param>
+        /// <returns></returns>
+        public SemaphoreSlim CompareExchangeSemaphore(object self, SemaphoreSlim value, SemaphoreSlim comparand) => GetField(ref semaphore, nameof(semaphore)).CompareExchangeValue(self, value, comparand);
 
         /// <summary>
         /// Gets the value for the 'stream' property.
