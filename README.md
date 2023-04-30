@@ -178,7 +178,7 @@ See the [ikvm-maven Readme](https://github.com/ikvmnet/ikvm-maven#readme) for us
 
 ### Notice To Project Owners
 
-The IKVM project recommends that people do not redistribute FOSS Java libraries compiled with IKVM over public systems such as NuGet.org.
+The IKVM project recommends that people do not redistribute FOSS Java libraries compiled with IKVM over public systems such as NuGet.org, unless you are the original owner of that software and have a compelling reason.
 
 Creating copies of FOSS Java libraries and publishing them to distribution mechanisms such as NuGet.org creates eco-system confusion and dependency conflicts downstream. We provide a system so that .NET users of Java libraries can reference those libraries directly out of the standard Java ecosystem mechanisms: Maven Central, etc though IKVM.Maven. Remember, very few libraries exist in a vacuum. Libraries often depend on dozens of other libraries. Two unrelated Java libraries often depend on the same underlying Java library. A complex method of dependency conflict resolution and version unification has to be involved in resolving this hierarchy for any individual downstream project. You are likely going to be introducing duplicate classes into the users of your versions, or causing your users to depend upon the wrong version of other libraries.
 
