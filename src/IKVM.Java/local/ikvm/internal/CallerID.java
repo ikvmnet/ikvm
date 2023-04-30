@@ -78,7 +78,7 @@ public abstract class CallerID {
 				Type type = method.get_DeclaringType();
 				if (type == null) {
 					// TODO we probably should return a class corresponding to <Module>
-					throw new InternalError();
+					throw new InternalError("No declaring type for " + method.get_Name() + ".");
 				}
 
 				return ikvm.runtime.Util.getClassFromTypeHandle(type.get_TypeHandle());

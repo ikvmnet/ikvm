@@ -11,11 +11,13 @@ namespace IKVM.Runtime.Accessors.Java.Lang
     internal sealed class AccessControllerAccessor : Accessor<object>
     {
 
+        Type ikvmInternalCallerID;
         Type javaSecurityPrivilegedAction;
         Type javaSecurityAccessControlContext;
 
         MethodAccessor<Func<object, object>> doPrivileged;
         MethodAccessor<Func<object, object, object>> doPrivileged2;
+        MethodAccessor<Func<object, object, object, object>> doPrivileged3;
 
         /// <summary>
         /// Initializes a new instance.
@@ -26,6 +28,8 @@ namespace IKVM.Runtime.Accessors.Java.Lang
         {
 
         }
+
+        Type IkvmInternalCallerID => Resolve(ref ikvmInternalCallerID, "ikvm.internal.CallerID");
 
         Type JavaSecurityPrivilegedAction => Resolve(ref javaSecurityPrivilegedAction, "java.security.PrivilegedAction");
 
@@ -44,6 +48,13 @@ namespace IKVM.Runtime.Accessors.Java.Lang
         /// <param name="action"></param>
         /// <returns></returns>
         public object InvokeDoPrivileged(object action, object accessControlContext) => GetMethod(ref doPrivileged2, "doPrivileged", typeof(object), JavaSecurityPrivilegedAction, JavaSecurityAccessControlContext).Invoker(action, accessControlContext);
+
+        /// <summary>
+        /// Invokes the 'doPrivileged' method.
+        /// </summary>
+        /// <param name="action"></param>
+        /// <returns></returns>
+        public object InvokeDoPrivileged(object action, object accessControlContext, object callerID) => GetMethod(ref doPrivileged3, "doPrivileged", typeof(object), JavaSecurityPrivilegedAction, JavaSecurityAccessControlContext, IkvmInternalCallerID).Invoker(action, accessControlContext, callerID);
 
     }
 
