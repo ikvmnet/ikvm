@@ -7,7 +7,7 @@
         <AddSyntheticProjectReferencesForSolutionDependencies>false</AddSyntheticProjectReferencesForSolutionDependencies>
         <CopyRetryCount>30</CopyRetryCount>
         <CopyRetryDelayMilliseconds>15000</CopyRetryDelayMilliseconds>
-        <CreateHardLinksForPublishFilesIfPossible>true</CreateHardLinksForPublishFilesIfPossible>
+        <SupportedRuntimeIdentifiers>win7-x64;win7-x86;win81-arm;linux-x64;linux-arm;linux-arm64;osx-x64</SupportedRuntimeIdentifiers>
         <EnabledRuntimeIdentifiers Condition=" '$(EnabledRuntimeIdentifiers)' == '' ">win7-x64;win7-x86;win81-arm;linux-x64;linux-arm;linux-arm64;osx-x64</EnabledRuntimeIdentifiers>
     </PropertyGroup>
 

@@ -2,9 +2,11 @@
 using System.IO;
 using System.Linq.Expressions;
 using System.Reflection;
+using System.Reflection.Emit;
 using System.Security;
 using System.Security.AccessControl;
 
+using IKVM.Internal;
 using IKVM.Runtime;
 using IKVM.Runtime.Accessors.Java.Io;
 using IKVM.Runtime.Accessors.Java.Lang;
@@ -48,16 +50,22 @@ namespace IKVM.Java.Externs.sun.nio.fs
         /// <summary>
         /// Compiles a fast setter for a <see cref="FieldInfo"/>.
         /// </summary>
-        /// <typeparam name="T"></typeparam>
-        /// <typeparam name="V"></typeparam>
+        /// <typeparam name="TObject"></typeparam>
+        /// <typeparam name="TProperty"></typeparam>
         /// <param name="property"></param>
         /// <returns></returns>
-        static Action<T, V> MakePropertySetter<T, V>(PropertyInfo property)
+        static Action<TObject, TProperty> MakePropertySetter<TObject, TProperty>(PropertyInfo property)
         {
-            var p = Expression.Parameter(typeof(T));
-            var v = Expression.Parameter(typeof(V));
-            var e = Expression.Lambda<Action<T, V>>(Expression.Assign(Expression.Property(property.DeclaringType.IsValueType ? Expression.Unbox(p, property.DeclaringType) : Expression.ConvertChecked(p, property.DeclaringType), property), v), p, v);
-            return e.Compile();
+            var dm = DynamicMethodUtil.Create($"__<Setter>__{property.DeclaringType.Name.Replace(".", "_")}__{property.Name}", property.DeclaringType, false, typeof(void), new[] { typeof(TObject), typeof(TProperty) });
+            var il = CodeEmitter.Create(dm);
+
+            il.Emit(OpCodes.Ldarg_0);
+            il.Emit(OpCodes.Ldarg_1);
+            il.Emit(OpCodes.Callvirt, property.GetSetMethod());
+            il.Emit(OpCodes.Ret);
+            il.DoEmit();
+
+            return (Action<TObject, TProperty>)dm.CreateDelegate(typeof(Action<TObject, TProperty>));
         }
 
         static readonly PropertyInfo SafeFileHandleIsAsyncProperty = typeof(SafeFileHandle).GetProperty("IsAsync", BindingFlags.Public | BindingFlags.Instance);
