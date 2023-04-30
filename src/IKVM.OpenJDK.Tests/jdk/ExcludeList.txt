@@ -3346,3 +3346,6 @@ java/net/ServerSocket/AcceptInheritHandle.java                                  
 
 # too slow
 java/lang/Class/getDeclaredField/FieldSetAccessibleTest.java                                                            generic-all
+
+# test tries to access across assemblies (package private)
+sun/util/calendar/zi/TestZoneInfo310.java                                                                               generic-all
