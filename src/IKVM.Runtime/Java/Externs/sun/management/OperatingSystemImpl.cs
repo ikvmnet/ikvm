@@ -415,7 +415,7 @@ namespace IKVM.Java.Externs.sun.management
             {
                 try
                 {
-                    return Directory.GetFiles("/proc/self/fd").Count();
+                    return Directory.GetFiles("/proc/self/fd").Length;
                 }
                 catch (Exception e)
                 {
