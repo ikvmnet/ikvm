@@ -132,7 +132,7 @@ namespace IKVM.Java.Externs.sun.nio.fs
                     if ((options & FileOptions.Asynchronous) != 0)
                         flags |= OpenFlags.O_ASYNC;
                     if ((options & FileOptions.WriteThrough) != 0)
-                        flags |= OpenFlags.O_DIRECT;
+                        flags |= OpenFlags.O_SYNC;
 
                     var r = Syscall.open(path, flags, FilePermissions.DEFFILEMODE);
                     if (r == -1)

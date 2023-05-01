@@ -938,10 +938,6 @@ namespace IKVM.Java.Externs.sun.nio.ch
 
                 try
                 {
-                    // expand the file as required to hold the new data
-                    if (stream.Length < position + rem)
-                        stream.SetLength(position + rem);
-
                     // move file to specified position
                     if (stream.Position != position)
                     {
