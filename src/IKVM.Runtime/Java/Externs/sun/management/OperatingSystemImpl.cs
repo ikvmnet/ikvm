@@ -194,7 +194,7 @@ namespace IKVM.Java.Externs.sun.management
         /// <summary>
         /// Regular expression for the Linux /proc/pid/stat file.
         /// </summary>
-        static Regex LinuxProcStatRegex = new Regex(@"^\d+ \(.+\) [A-Za-z] \d+ \d+ \d+ \d+ \d+ \d+ \d+ \d+ \d+ \d+ \d+ \d+ \d+ \d+ \d+ \d+ \d+ \d+ \d+ (\d+)", RegexOptions.Compiled | RegexOptions.CultureInvariant);
+        static readonly Regex LinuxProcStatRegex = new Regex(@"^\d+ \(.+\) [A-Za-z] \d+ \d+ \d+ \d+ \d+ \d+ \d+ \d+ \d+ \d+ \d+ \d+ \d+ \d+ \d+ \d+ \d+ \d+ \d+ (\d+)", RegexOptions.Compiled | RegexOptions.CultureInvariant);
 
         /// <summary>
         /// Initializes the static information.
@@ -227,7 +227,7 @@ namespace IKVM.Java.Externs.sun.management
 
                     var l = r.ReadLine();
                     if (l != null && LinuxProcStatRegex.Match(l) is Match m && m.Groups.Count >= 2)
-                        return long.Parse(m.Groups[1].Value);
+                        return (long)ulong.Parse(m.Groups[1].Value);
 
                     throw new global::java.lang.InternalError("Unable to get virtual memory usage");
                 }
