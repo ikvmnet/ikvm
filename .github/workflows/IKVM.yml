@@ -429,7 +429,7 @@ jobs:
         }
 
         # extract the tests
-        tar xzvf tests.tar.gz $tst/$tfm
+        tar xzvf tests.tar.gz tests/$tst/$tfm
 
         # scan for test assemblies
         $tests = $(gci .\tests\$tst\$tfm -Recurse -Filter '*.Tests.dll')
