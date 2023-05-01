@@ -224,6 +224,7 @@ namespace IKVM.Java.Externs.sun.nio.ch
                 self.closeLock.writeLock().@lock();
                 FileDescriptorAccessor.SetStream(self.fdObj, null);
                 self.closed = true;
+                Interlocked.MemoryBarrier();
 
                 try
                 {
@@ -451,7 +452,7 @@ namespace IKVM.Java.Externs.sun.nio.ch
 
                             return fli;
                         }
-                        catch (System.Exception) when (self.isOpen() == false)
+                        catch (System.Exception) when (IsOpen(self) == false)
                         {
                             throw new global::java.nio.channels.AsynchronousCloseException();
                         }
@@ -498,7 +499,7 @@ namespace IKVM.Java.Externs.sun.nio.ch
                             {
                                 throw new global::java.nio.channels.AsynchronousCloseException();
                             }
-                            catch (System.Exception) when (self.isOpen() == false)
+                            catch (System.Exception) when (IsOpen(self) == false)
                             {
                                 throw new global::java.nio.channels.AsynchronousCloseException();
                             }
@@ -542,7 +543,7 @@ namespace IKVM.Java.Externs.sun.nio.ch
                             {
                                 throw new global::java.nio.channels.AsynchronousCloseException();
                             }
-                            catch (System.Exception) when (self.isOpen() == false)
+                            catch (System.Exception) when (IsOpen(self) == false)
                             {
                                 throw new global::java.nio.channels.AsynchronousCloseException();
                             }
@@ -577,7 +578,7 @@ namespace IKVM.Java.Externs.sun.nio.ch
             if (shared == false && self.writing == false)
                 throw new global::java.nio.channels.NonWritableChannelException();
 
-            if (self.isOpen() == false)
+            if (IsOpen(self) == false)
                 throw new global::java.nio.channels.ClosedChannelException();
 
             var stream = FileDescriptorAccessor.GetStream(self.fdObj);
@@ -645,7 +646,7 @@ namespace IKVM.Java.Externs.sun.nio.ch
                 {
                     throw new global::java.nio.channels.AsynchronousCloseException();
                 }
-                catch (System.Exception) when (self.isOpen() == false)
+                catch (System.Exception) when (IsOpen(self) == false)
                 {
                     throw new global::java.nio.channels.AsynchronousCloseException();
                 }
@@ -672,7 +673,7 @@ namespace IKVM.Java.Externs.sun.nio.ch
         /// <returns></returns>
         static unsafe void Release(global::sun.nio.ch.DotNetAsynchronousFileChannelImpl self, FileLockImpl fli)
         {
-            if (self.isOpen() == false)
+            if (IsOpen(self) == false)
                 return;
 
             var stream = FileDescriptorAccessor.GetStream(self.fdObj);
@@ -728,7 +729,7 @@ namespace IKVM.Java.Externs.sun.nio.ch
             {
                 throw new global::java.nio.channels.AsynchronousCloseException();
             }
-            catch (System.Exception) when (self.isOpen() == false)
+            catch (System.Exception) when (IsOpen(self) == false)
             {
                 throw new global::java.nio.channels.AsynchronousCloseException();
             }
@@ -759,7 +760,7 @@ namespace IKVM.Java.Externs.sun.nio.ch
             if (dst.isReadOnly())
                 throw new global::java.lang.IllegalArgumentException("Read-only buffer");
 
-            if (self.isOpen() == false)
+            if (IsOpen(self) == false)
                 return Task.FromException<Integer>(new global::java.nio.channels.ClosedChannelException());
 
             var stream = FileDescriptorAccessor.GetStream(self.fdObj);
@@ -851,7 +852,7 @@ namespace IKVM.Java.Externs.sun.nio.ch
                 {
                     throw new global::java.nio.channels.AsynchronousCloseException();
                 }
-                catch (System.Exception) when (self.isOpen() == false)
+                catch (System.Exception) when (IsOpen(self) == false)
                 {
                     throw new global::java.nio.channels.AsynchronousCloseException();
                 }
@@ -892,7 +893,7 @@ namespace IKVM.Java.Externs.sun.nio.ch
             if (position < 0)
                 throw new global::java.lang.IllegalArgumentException("Negative position");
 
-            if (self.isOpen() == false)
+            if (IsOpen(self) == false)
                 return Task.FromException<global::java.lang.Integer>(new global::java.nio.channels.ClosedChannelException());
 
             var stream = FileDescriptorAccessor.GetStream(self.fdObj);
@@ -986,7 +987,7 @@ namespace IKVM.Java.Externs.sun.nio.ch
                 {
                     throw new global::java.nio.channels.AsynchronousCloseException();
                 }
-                catch (System.Exception) when (self.isOpen() == false)
+                catch (System.Exception) when (IsOpen(self) == false)
                 {
                     throw new global::java.nio.channels.AsynchronousCloseException();
                 }
@@ -1003,6 +1004,12 @@ namespace IKVM.Java.Externs.sun.nio.ch
                     lck.Release();
                 }
             }
+        }
+
+        static bool IsOpen(global::sun.nio.ch.DotNetAsynchronousFileChannelImpl ch)
+        {
+            Interlocked.MemoryBarrier();
+            return ch.isOpen();
         }
 
 #endif
