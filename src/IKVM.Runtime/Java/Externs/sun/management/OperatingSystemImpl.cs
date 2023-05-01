@@ -227,8 +227,7 @@ namespace IKVM.Java.Externs.sun.management
 
                     var l = r.ReadLine();
                     if (l != null && LinuxProcStatRegex.Match(l) is Match m && m.Groups.Count >= 2)
-                        if (long.TryParse(m.Groups[1].Value, out var vsize))
-                            return vsize;
+                        return long.Parse(m.Groups[1].Value);
 
                     throw new global::java.lang.InternalError("Unable to get virtual memory usage");
                 }
