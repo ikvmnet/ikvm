@@ -542,6 +542,64 @@ namespace IKVM.Tests.Java.java.nio.channels
             }
         }
 
+        [TestMethod]
+        public void CanCancelDuringWrite()
+        {
+            var rng = RandomNumberGenerator.Create();
+            var rnd = new System.Random();
+
+            const int size = 1024 * 1024 * 64;
+            const int z = 32;
+
+            var file = File.createTempFile("test", null);
+            file.deleteOnExit();
+
+            // rewrite file with random data
+            System.IO.File.Create(file.getPath()).Close();
+
+            using var c = AsynchronousFileChannel.open(file.toPath(), StandardOpenOption.WRITE, StandardOpenOption.SYNC);
+
+            // generate N buffers to read data from
+            var buf = new ByteBuffer[z];
+            var pos = new int[z];
+            for (int i = 0; i < z; i++)
+            {
+                var d = ByteBuffer.allocateDirect(size);
+                var b = new byte[size];
+                rng.GetBytes(b);
+                d.put(b);
+                d.flip();
+                buf[i] = d;
+                pos[i] = rnd.Next(1, size);
+            }
+
+            // start N async write requests
+            var result = new Future[z];
+            for (int i = 0; i < z; i++)
+                result[i] = c.write(buf[i], pos[i]);
+
+            // cancel channel while writing is ongoing
+            var cancelled = new bool[z];
+            for (int i = 0; i < z; i++)
+                cancelled[i] = result[i].cancel(false);
+
+            for (int i = 0; i < z; i++)
+            {
+                result[i].isDone().Should().BeTrue();
+                result[i].isCancelled().Should().Be(cancelled[i]);
+
+                try
+                {
+                    result[i].get();
+                    cancelled[i].Should().BeFalse(); // if we didn't throw, we weren't cancelled
+                }
+                catch (CancellationException)
+                {
+                    cancelled[i].Should().BeTrue(); // we did throw, so we should be cancelled
+                }
+            }
+        }
+
     }
 
 }

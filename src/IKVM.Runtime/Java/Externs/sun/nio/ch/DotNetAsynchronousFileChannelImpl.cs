@@ -45,6 +45,20 @@ namespace IKVM.Java.Externs.sun.nio.ch
 #endif
 
         /// <summary>
+        /// Implements the native method for 'onCancel0'.
+        /// </summary>
+        /// <param name="self"></param>
+        /// <param name="task"></param>
+        public static void onCancel0(object self, object task)
+        {
+#if FIRST_PASS
+            throw new NotImplementedException();
+#else
+            OnCancel((global::sun.nio.ch.DotNetAsynchronousFileChannelImpl)self, (PendingFuture)task);
+#endif
+        }
+
+        /// <summary>
         /// Implements the native method for 'close0'.
         /// </summary>
         /// <param name="self"></param>
@@ -182,7 +196,20 @@ namespace IKVM.Java.Externs.sun.nio.ch
 #if FIRST_PASS == false
 
         /// <summary>
-        /// 
+        /// Invoked when the pending future is cancelled.
+        /// </summary>
+        /// <param name="self"></param>
+        /// <param name="future"></param>
+        /// <returns></returns>
+        static void OnCancel(global::sun.nio.ch.DotNetAsynchronousFileChannelImpl self, PendingFuture future)
+        {
+            // signal cancellation on associated cancellation token source
+            var cts = (CancellationTokenSource)future.getContext();
+            cts?.Cancel();
+        }
+
+        /// <summary>
+        /// Invoked when the channel is closed.
         /// </summary>
         /// <param name="self"></param>
         /// <returns></returns>

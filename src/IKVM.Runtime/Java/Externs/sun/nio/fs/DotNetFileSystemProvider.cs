@@ -47,29 +47,8 @@ namespace IKVM.Java.Externs.sun.nio.fs
 
 #if NETCOREAPP
 
-        /// <summary>
-        /// Compiles a fast setter for a <see cref="FieldInfo"/>.
-        /// </summary>
-        /// <typeparam name="TObject"></typeparam>
-        /// <typeparam name="TProperty"></typeparam>
-        /// <param name="property"></param>
-        /// <returns></returns>
-        static Action<TObject, TProperty> MakePropertySetter<TObject, TProperty>(PropertyInfo property)
-        {
-            var dm = DynamicMethodUtil.Create($"__<Setter>__{property.DeclaringType.Name.Replace(".", "_")}__{property.Name}", property.DeclaringType, false, typeof(void), new[] { typeof(TObject), typeof(TProperty) });
-            var il = CodeEmitter.Create(dm);
-
-            il.Emit(OpCodes.Ldarg_0);
-            il.Emit(OpCodes.Ldarg_1);
-            il.Emit(OpCodes.Callvirt, property.GetSetMethod());
-            il.Emit(OpCodes.Ret);
-            il.DoEmit();
-
-            return (Action<TObject, TProperty>)dm.CreateDelegate(typeof(Action<TObject, TProperty>));
-        }
-
         static readonly PropertyInfo SafeFileHandleIsAsyncProperty = typeof(SafeFileHandle).GetProperty("IsAsync", BindingFlags.Public | BindingFlags.Instance);
-        static readonly Action<SafeFileHandle, bool> SafeFileHandleIsAsyncPropertySetter = SafeFileHandleIsAsyncProperty != null ? MakePropertySetter<SafeFileHandle, bool>(SafeFileHandleIsAsyncProperty) : null;
+        static readonly Action<SafeFileHandle, bool> SafeFileHandleIsAsyncPropertySetter = SafeFileHandleIsAsyncProperty != null ? (o, v) => SafeFileHandleIsAsyncProperty.SetValue(o, v) : null;
 
 #endif
 

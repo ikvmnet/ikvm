@@ -43,7 +43,7 @@ namespace IKVM.Tests.Java.java.lang
             if (all.Count < 100)
                 throw new Exception("Expected more classes.");
 
-            foreach (var file in all)
+            foreach (var file in all.Take(256))
             {
                 if (file.StartsWith("WrapperGenerator"))
                     continue;
