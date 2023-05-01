@@ -224,7 +224,6 @@ namespace IKVM.Java.Externs.sun.nio.ch
                 self.closeLock.writeLock().@lock();
                 FileDescriptorAccessor.SetStream(self.fdObj, null);
                 self.closed = true;
-                Interlocked.MemoryBarrier();
 
                 try
                 {
@@ -939,6 +938,10 @@ namespace IKVM.Java.Externs.sun.nio.ch
 
                 try
                 {
+                    // expand the file as required to hold the new data
+                    if (stream.Length < position + rem)
+                        stream.SetLength(position + rem);
+
                     // move file to specified position
                     if (stream.Position != position)
                     {
