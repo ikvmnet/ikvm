@@ -222,12 +222,19 @@ namespace IKVM.Java.Externs.sun.management
             {
                 try
                 {
-                    var l = File.ReadLines("/proc/self/stat").FirstOrDefault();
+                    using var s = File.OpenRead("/proc/self/stat");
+                    using var r = new StreamReader(s);
+
+                    var l = r.ReadLine();
                     if (l != null && LinuxProcStatRegex.Match(l) is Match m && m.Groups.Count >= 2)
                         if (long.TryParse(m.Groups[1].Value, out var vsize))
                             return vsize;
 
                     throw new global::java.lang.InternalError("Unable to get virtual memory usage");
+                }
+                catch (IOException e)
+                {
+                    throw new global::java.lang.InternalError("Unable to open or read /proc/self/stat", e);
                 }
                 catch (Exception e)
                 {
