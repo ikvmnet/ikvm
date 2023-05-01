@@ -37,10 +37,14 @@ namespace IKVM.Tests.Java.java.nio.channels
         [TestMethod]
         public async Task CanSendAndReceiveData()
         {
+            using var ss = AsynchronousServerSocketChannel.open();
+            ss.bind(new InetSocketAddress(0));
+            int port = ((InetSocketAddress)ss.getLocalAddress()).getPort();
+
             var s = Task.Run(async () =>
             {
                 using var ss = AsynchronousServerSocketChannel.open();
-                ss.bind(new InetSocketAddress(54101));
+                ss.bind(new InetSocketAddress(0));
 
                 // wait for client to connect
                 var sc = (AsynchronousSocketChannel)ss.accept().get();
@@ -57,11 +61,10 @@ namespace IKVM.Tests.Java.java.nio.channels
                 // wait for client to finish
                 await Task.Delay(500);
                 sc.close();
-                ss.close();
             });
 
             var cs = AsynchronousSocketChannel.open();
-            cs.connect(new InetSocketAddress("127.0.0.1", 54101)).get();
+            cs.connect(new InetSocketAddress("127.0.0.1", port)).get();
 
             // wait for client to send data
             var bb = ByteBuffer.allocate(1024);
@@ -84,11 +87,12 @@ namespace IKVM.Tests.Java.java.nio.channels
         [TestMethod]
         public async Task CanSendAndReceiveDataWithDirectBuffers()
         {
+            using var ss = AsynchronousServerSocketChannel.open();
+            ss.bind(new InetSocketAddress(0));
+            int port = ((InetSocketAddress)ss.getLocalAddress()).getPort();
+
             var s = Task.Run(async () =>
             {
-                using var ss = AsynchronousServerSocketChannel.open();
-                ss.bind(new InetSocketAddress(54102));
-
                 // wait for client to connect
                 var sc = (AsynchronousSocketChannel)ss.accept().get();
 
@@ -104,11 +108,10 @@ namespace IKVM.Tests.Java.java.nio.channels
                 // wait for client to finish
                 await Task.Delay(500);
                 sc.close();
-                ss.close();
             });
 
             var cs = AsynchronousSocketChannel.open();
-            cs.connect(new InetSocketAddress("127.0.0.1", 54102)).get();
+            cs.connect(new InetSocketAddress("127.0.0.1", port)).get();
 
             // wait for client to send data
             var bb = ByteBuffer.allocateDirect(1024);
@@ -131,11 +134,12 @@ namespace IKVM.Tests.Java.java.nio.channels
         [TestMethod]
         public async Task CanSendAndReceiveDataWithMultipleBuffers()
         {
+            using var ss = AsynchronousServerSocketChannel.open();
+            ss.bind(new InetSocketAddress(0));
+            int port = ((InetSocketAddress)ss.getLocalAddress()).getPort();
+
             var s = Task.Run(async () =>
             {
-                using var ss = AsynchronousServerSocketChannel.open();
-                ss.bind(new InetSocketAddress(54103));
-
                 // wait for client to connect
                 var sc = (AsynchronousSocketChannel)ss.accept().get();
 
@@ -158,11 +162,10 @@ namespace IKVM.Tests.Java.java.nio.channels
                 // wait for client to finish
                 await Task.Delay(500);
                 sc.close();
-                ss.close();
             });
 
             var cs = AsynchronousSocketChannel.open();
-            cs.connect(new InetSocketAddress("127.0.0.1", 54103)).get();
+            cs.connect(new InetSocketAddress("127.0.0.1", port)).get();
 
             var dat = new byte[1024];
             var rng = RandomNumberGenerator.Create();
@@ -210,11 +213,12 @@ namespace IKVM.Tests.Java.java.nio.channels
         [TestMethod]
         public async Task CanSendAndReceiveDataWithMultipleDirectBuffers()
         {
+            using var ss = AsynchronousServerSocketChannel.open();
+            ss.bind(new InetSocketAddress(0));
+            int port = ((InetSocketAddress)ss.getLocalAddress()).getPort();
+
             var s = Task.Run(async () =>
             {
-                using var ss = AsynchronousServerSocketChannel.open();
-                ss.bind(new InetSocketAddress(54104));
-
                 // wait for client to connect
                 var sc = (AsynchronousSocketChannel)ss.accept().get();
 
@@ -237,11 +241,10 @@ namespace IKVM.Tests.Java.java.nio.channels
                 // wait for client to finish
                 await Task.Delay(500);
                 sc.close();
-                ss.close();
             });
 
             var cs = AsynchronousSocketChannel.open();
-            cs.connect(new InetSocketAddress("127.0.0.1", 54104)).get();
+            cs.connect(new InetSocketAddress("127.0.0.1", port)).get();
 
             var dat = new byte[1024];
             var rng = RandomNumberGenerator.Create();
