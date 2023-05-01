@@ -1,5 +1,4 @@
 ﻿using java.io;
-using java.nio.file;
 using java.security;
 
 using Microsoft.VisualStudio.TestTools.UnitTesting;
@@ -11,8 +10,6 @@ namespace IKVM.Tests.Java.java.security
     public class KeystoreTests
     {
 
-        public TestContext TestContext { get; set; }
-
         [DataTestMethod]
         [DataRow("JKS", "jks")]
         [DataRow("JCEKS", "jceks")]
@@ -22,7 +19,9 @@ namespace IKVM.Tests.Java.java.security
             var ks = KeyStore.getInstance(type);
             ks.load(null, null);
 
-            var dir = Paths.get(TestContext.ResultsDirectory, "CanInitKeyStore", type).toFile();
+            var dir = new File(System.IO.Path.Combine(System.IO.Path.GetTempPath(), "CanInitKeyStore", type));
+            if (System.IO.Directory.Exists(dir.getPath()))
+                System.IO.Directory.Delete(dir.getPath(), true);
             dir.mkdirs();
 
             using (var stream = new FileOutputStream(new File(dir, $"empty.{ext}")))
@@ -35,7 +34,9 @@ namespace IKVM.Tests.Java.java.security
         [DataRow("PKCS12", "p12")]
         public void CanLoadKeyStore(string type, string ext)
         {
-            var dir = Paths.get(TestContext.ResultsDirectory, "CanLoadKeyStore", type).toFile();
+            var dir = new File(System.IO.Path.Combine(System.IO.Path.GetTempPath(), "CanLoadKeyStore", type));
+            if (System.IO.Directory.Exists(dir.getPath()))
+                System.IO.Directory.Delete(dir.getPath(), true);
             dir.mkdirs();
 
             using (var stream = new FileOutputStream(new File(dir, $"empty.{ext}")))
@@ -55,7 +56,9 @@ namespace IKVM.Tests.Java.java.security
         [TestMethod]
         public void CanLoadP12KeyStoreWithJKS()
         {
-            var dir = Paths.get(TestContext.ResultsDirectory, "CanLoadP12KeyStoreWithJKS").toFile();
+            var dir = new File(System.IO.Path.Combine(System.IO.Path.GetTempPath(), "CanLoadP12KeyStoreWithJKS"));
+            if (System.IO.Directory.Exists(dir.getPath()))
+                System.IO.Directory.Delete(dir.getPath(), true);
             dir.mkdirs();
 
             using (var stream = new FileOutputStream(new File(dir, "empty.p12")))

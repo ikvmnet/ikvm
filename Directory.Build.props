@@ -7,6 +7,8 @@
         <AddSyntheticProjectReferencesForSolutionDependencies>false</AddSyntheticProjectReferencesForSolutionDependencies>
         <CopyRetryCount>30</CopyRetryCount>
         <CopyRetryDelayMilliseconds>15000</CopyRetryDelayMilliseconds>
+        <SupportedRuntimeIdentifiers>win7-x64;win7-x86;win81-arm;linux-x64;linux-arm;linux-arm64;osx-x64</SupportedRuntimeIdentifiers>
+        <EnabledRuntimeIdentifiers Condition=" '$(EnabledRuntimeIdentifiers)' == '' ">win7-x64;win7-x86;win81-arm;linux-x64;linux-arm;linux-arm64;osx-x64</EnabledRuntimeIdentifiers>
     </PropertyGroup>
 
     <ItemGroup>
@@ -32,9 +34,9 @@
     </PropertyGroup>
 
     <PropertyGroup Label="Package Info">
-        <RepositoryUrl Condition=" '$(RepositoryUrl)' == '' ">https://github.com/ikvm-revived/ikvm.git</RepositoryUrl>
+        <RepositoryUrl Condition=" '$(RepositoryUrl)' == '' ">https://github.com/ikvmnet/ikvm.git</RepositoryUrl>
         <RepositoryType Condition=" '$(RepositoryType)' == '' ">git</RepositoryType>
-        <PackageProjectUrl  Condition=" '$(PackageProjectUrl)' == '' ">https://github.com/ikvm-revived/ikvm</PackageProjectUrl>
+        <PackageProjectUrl  Condition=" '$(PackageProjectUrl)' == '' ">https://github.com/ikvmnet/ikvm</PackageProjectUrl>
         <PackageVersion Condition=" '$(PackageVersion)' == '' ">$(Version)</PackageVersion>
     </PropertyGroup>
 

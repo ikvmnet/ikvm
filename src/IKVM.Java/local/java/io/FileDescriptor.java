@@ -82,6 +82,7 @@ public final class FileDescriptor {
     private List<Closeable> otherParents;
     private boolean closed;
 
+    private cli.System.Threading.SemaphoreSlim semaphore;
     private cli.System.Threading.Tasks.Task task;
 
     public FileDescriptor() {

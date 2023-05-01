@@ -536,7 +536,7 @@ namespace IKVM.Java.Externs.sun.nio.ch
         }
 
         /// <summary>
-        /// Implements the native method 'writev'.
+        /// Implements the native method 'writev0'.
         /// </summary>
         /// <param name="self"></param>
         /// <param name="fd"></param>
@@ -544,7 +544,7 @@ namespace IKVM.Java.Externs.sun.nio.ch
         /// <param name="len"></param>
         /// <param name="append"></param>
         /// <returns></returns>
-        public static unsafe long writev(object self, object fd, long address, int len, bool append)
+        public static unsafe long writev0(object self, object fd, long address, int len, bool append)
         {
 #if FIRST_PASS
             throw new NotImplementedException();

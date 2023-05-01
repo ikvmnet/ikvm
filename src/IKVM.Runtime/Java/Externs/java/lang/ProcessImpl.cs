@@ -8,6 +8,7 @@ using System.Text.RegularExpressions;
 using System.Threading;
 
 using IKVM.Runtime;
+using IKVM.Runtime.Accessors.Ikvm.Internal;
 using IKVM.Runtime.Accessors.Java.Io;
 using IKVM.Runtime.Accessors.Java.Lang;
 using IKVM.Runtime.Accessors.Java.Util;
@@ -24,6 +25,7 @@ namespace IKVM.Java.Externs.java.lang
 
 #if FIRST_PASS == false
 
+        static CallerIDAccessor callerIDAccessor;
         static SystemAccessor systemAccessor;
         static SecurityManagerAccessor securityManagerAccessor;
         static ThreadAccessor threadAccessor;
@@ -44,6 +46,8 @@ namespace IKVM.Java.Externs.java.lang
         static SetAccessor setAccessor;
         static IteratorAccessor iteratorAccessor;
         static ProcessImplAccessor processImplAccessor;
+
+        static CallerIDAccessor CallerIDAccessor => JVM.BaseAccessors.Get(ref callerIDAccessor);
 
         static SystemAccessor SystemAccessor => JVM.BaseAccessors.Get(ref systemAccessor);
 
@@ -748,7 +752,7 @@ namespace IKVM.Java.Externs.java.lang
                 s0 = h0 == null ? ProcessBuilderNullOutputStreamAccessor.GetInstance() : BufferedOutputStreamAccessor.Init(FileOutputStreamAccessor.Init2(FileDescriptorAccessor.FromStream(h0)));
                 s1 = h1 == null ? ProcessBuilderNullInputStreamAccessor.GetInstance() : BufferedInputStreamAccessor.Init(FileInputStreamAccessor.Init2(FileDescriptorAccessor.FromStream(h1)));
                 s2 = h2 == null ? ProcessBuilderNullInputStreamAccessor.GetInstance() : FileInputStreamAccessor.Init2(FileDescriptorAccessor.FromStream(h2));
-            }));
+            }), null, CallerIDAccessor.InvokeCreate(ProcessImplAccessor.Type.TypeHandle));
 
             // return new process
             return ProcessImplAccessor.Init(process, s0, s1, s2);

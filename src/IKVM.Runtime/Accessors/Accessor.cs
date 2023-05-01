@@ -31,7 +31,7 @@ namespace IKVM.Runtime.Accessors
         /// <summary>
         /// Gets the type being accessed.
         /// </summary>
-        protected Type Type => AccessorUtil.LazyGet(ref type, () => Resolve(typeName));
+        public Type Type => AccessorUtil.LazyGet(ref type, () => Resolve(typeName));
 
         /// <summary>
         /// Resolves the given type name.

@@ -45,7 +45,11 @@ class FileDispatcherImpl extends FileDispatcher {
 
     native int pwrite(FileDescriptor fd, long address, int len, long position) throws IOException;
 
-    native long writev(FileDescriptor fd, long address, int len) throws IOException;
+    long writev(FileDescriptor fd, long address, int len) throws IOException {
+        return writev0(fd, address, len, append);
+    }
+
+    native long writev0(FileDescriptor fd, long address, int len, boolean append) throws IOException;
 
     native int force(FileDescriptor fd, boolean metaData) throws IOException;
 

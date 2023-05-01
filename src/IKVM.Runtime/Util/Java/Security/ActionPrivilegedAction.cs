@@ -11,6 +11,8 @@ namespace IKVM.Runtime.Util.Java.Security
     class ActionPrivilegedAction : global::java.security.PrivilegedAction
     {
 
+        public static implicit operator ActionPrivilegedAction(Action action) => new ActionPrivilegedAction(action);
+
         readonly Action action;
 
         /// <summary>

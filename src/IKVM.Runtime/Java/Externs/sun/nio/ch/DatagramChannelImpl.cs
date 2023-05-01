@@ -44,11 +44,11 @@ namespace IKVM.Java.Externs.sun.nio.ch
             return e.Compile();
         }
 
-#if NETCOREAPP3_1_OR_GREATER
+#if NETCOREAPP
 
         // HACK .NET Core has an explicit check for _isConnected https://github.com/dotnet/runtime/issues/77962
         static readonly FieldInfo SocketIsConnectedField = typeof(Socket).GetField("_isConnected", BindingFlags.NonPublic | BindingFlags.Instance);
-        static readonly Action<Socket, bool> SocketIsConnectedFieldSetter = MakeFieldSetter<Socket, bool>(SocketIsConnectedField);
+        static readonly Action<Socket, bool> SocketIsConnectedFieldSetter = SocketIsConnectedField != null ? MakeFieldSetter<Socket, bool>(SocketIsConnectedField) : null;
 
 #endif
 
@@ -116,14 +116,16 @@ namespace IKVM.Java.Externs.sun.nio.ch
 
             try
             {
-                // NOTE we use async connect to work around the issue that the .NET Socket class disallows sync Connect after the socket has received WSAECONNRESET
-#if NETCOREAPP3_1_OR_GREATER
+#if NETCOREAPP
                 // HACK .NET Core has an explicit check for _isConnected https://github.com/dotnet/runtime/issues/77962
-                SocketIsConnectedFieldSetter(socket, false);
+                if (SocketIsConnectedFieldSetter != null)
+                    SocketIsConnectedFieldSetter(socket, false);
 #endif
+
+                // NOTE we use async connect to work around the issue that the .NET Socket class disallows sync Connect after the socket has received WSAECONNRESET
                 socket.EndConnect(socket.BeginConnect(new IPEndPoint(IPAddress.IPv6Any, 0), null, null));
 
-                // see comment in in socketCreate
+                // disable WSAECONNRESET errors as socket is no longer connected
                 if (RuntimeUtil.IsWindows)
                     socket.IOControl(SIO_UDP_CONNRESET, IOControlFalseBuffer, null);
             }
