@@ -218,7 +218,7 @@ namespace IKVM.Java.Externs.sun.management
                 try
                 {
                     var l = File.ReadLines("/proc/self/stat").FirstOrDefault();
-                    if (l != null && Regex.Match(l, @"\d+ \(.+\) . \d+ \d+ \d+ \d+ \d+ \d+ \d+ \d+ \d+ \d+ \d+ \d+ \d+ \d+ \d+ \d+ \d+ \d+ \d+ (\d+) .+$") is Match m && m.Groups.Count >= 2)
+                    if (l != null && Regex.Match(l, @"^\d+ \(.+\) . \d+ \d+ \d+ \d+ \d+ \d+ \d+ \d+ \d+ \d+ \d+ \d+ \d+ \d+ \d+ \d+ \d+ \d+ \d+ (\d+) .+") is Match m && m.Groups.Count >= 2)
                         if (long.TryParse(m.Groups[1].Value, out var vsize))
                             return vsize;
 
