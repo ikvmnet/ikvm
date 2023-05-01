@@ -194,7 +194,7 @@ namespace IKVM.Java.Externs.sun.management
         /// <summary>
         /// Regular expression for the Linux /proc/pid/stat file.
         /// </summary>
-        static readonly Regex LinuxProcStatRegex = new Regex(@"^\d+ \(.+\) [A-Za-z] \d+ \d+ \d+ \d+ \d+ \d+ \d+ \d+ \d+ \d+ \d+ \d+ \d+ \d+ \d+ \d+ \d+ \d+ \d+ (\d+)", RegexOptions.Compiled | RegexOptions.CultureInvariant);
+        static readonly Regex LinuxProcStatRegex = new Regex(@"^-?\d+ \(.+\) [A-Za-z] -?\d+ -?\d+ -?\d+ -?\d+ -?\d+ -?\d+ -?\d+ -?\d+ -?\d+ -?\d+ -?\d+ -?\d+ -?\d+ -?\d+ -?\d+ -?\d+ -?\d+ -?\d+ -?\d+ (-?\d+)", RegexOptions.Compiled | RegexOptions.CultureInvariant);
 
         /// <summary>
         /// Initializes the static information.
