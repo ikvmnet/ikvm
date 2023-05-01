@@ -43,9 +43,6 @@ namespace IKVM.Tests.Java.java.nio.channels
 
             var s = Task.Run(async () =>
             {
-                using var ss = AsynchronousServerSocketChannel.open();
-                ss.bind(new InetSocketAddress(0));
-
                 // wait for client to connect
                 var sc = (AsynchronousSocketChannel)ss.accept().get();
 
