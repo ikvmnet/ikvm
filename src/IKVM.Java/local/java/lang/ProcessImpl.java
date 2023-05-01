@@ -19,8 +19,6 @@ final class ProcessImpl extends Process {
         this.errorStream = errorStream;
     }
 
-    private native cli.System.Diagnostics.Process create(String cmdarray[], java.util.Map<String, String> environment, String dir, ProcessBuilder.Redirect[] redirects, boolean redirectErrorStream) throws IOException;
-
     @Override
     public OutputStream getOutputStream() {
         return outputStream;

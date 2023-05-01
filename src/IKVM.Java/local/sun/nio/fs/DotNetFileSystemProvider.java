@@ -308,7 +308,7 @@ final class DotNetFileSystemProvider extends AbstractFileSystemProvider {
     }
 
     private static FileDescriptor open(String path, int mode, int rights, int share, int options) throws IOException {
-        return open0(path, FileMode.wrap(mode), FileSystemRights.wrap(rights), FileShare.wrap(share), 8, FileOptions.wrap(options), System.getSecurityManager());
+        return open0(path, FileMode.wrap(mode), FileSystemRights.wrap(rights), FileShare.wrap(share), 1, FileOptions.wrap(options), System.getSecurityManager());
     }
 
     public native DirectoryStream<Path> newDirectoryStream(Path dir, final DirectoryStream.Filter<? super Path> filter) throws IOException;

@@ -1,8 +1,12 @@
 ﻿using System;
 using System.IO;
+using System.Linq.Expressions;
+using System.Reflection;
+using System.Reflection.Emit;
 using System.Security;
 using System.Security.AccessControl;
 
+using IKVM.Internal;
 using IKVM.Runtime;
 using IKVM.Runtime.Accessors.Java.Io;
 using IKVM.Runtime.Accessors.Java.Lang;
@@ -40,6 +44,13 @@ namespace IKVM.Java.Externs.sun.nio.fs
         static DotNetPathAccessor DotNetPathAccessor => JVM.BaseAccessors.Get(ref dotNetPathAccessor);
 
         static DotNetDirectoryStreamAccessor DotNetDirectoryStreamAccessor => JVM.BaseAccessors.Get(ref dotNetDirectoryStreamAccessor);
+
+#if NETCOREAPP
+
+        static readonly PropertyInfo SafeFileHandleIsAsyncProperty = typeof(SafeFileHandle).GetProperty("IsAsync", BindingFlags.Public | BindingFlags.Instance);
+        static readonly Action<SafeFileHandle, bool> SafeFileHandleIsAsyncPropertySetter = SafeFileHandleIsAsyncProperty != null ? (o, v) => SafeFileHandleIsAsyncProperty.SetValue(o, v) : null;
+
+#endif
 
 #endif
 
@@ -121,7 +132,7 @@ namespace IKVM.Java.Externs.sun.nio.fs
                     if ((options & FileOptions.Asynchronous) != 0)
                         flags |= OpenFlags.O_ASYNC;
                     if ((options & FileOptions.WriteThrough) != 0)
-                        flags |= OpenFlags.O_DIRECT;
+                        flags |= OpenFlags.O_SYNC;
 
                     var r = Syscall.open(path, flags, FilePermissions.DEFFILEMODE);
                     if (r == -1)
@@ -141,7 +152,15 @@ namespace IKVM.Java.Externs.sun.nio.fs
                         throw new UnixIOException(error);
                     }
 
-                    return FileDescriptorAccessor.FromStream(new FileStream(new SafeFileHandle((IntPtr)r, true), access, bufferSize, (options & FileOptions.Asynchronous) != 0));
+                    var h = new SafeFileHandle((IntPtr)r, true);
+
+                    // .NET Core 5+ maintains an IsAsync property validated by FileStream
+                    // this property isn't set properly on Unix
+                    // https://github.com/dotnet/runtime/issues/85560
+                    if ((options & FileOptions.Asynchronous) != 0)
+                        SafeFileHandleIsAsyncPropertySetter?.Invoke(h, true);
+
+                    return FileDescriptorAccessor.FromStream(new FileStream(h, access, bufferSize, (options & FileOptions.Asynchronous) != 0));
                 }
 #endif
             }

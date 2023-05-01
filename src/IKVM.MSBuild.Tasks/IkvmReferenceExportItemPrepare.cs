@@ -132,11 +132,20 @@
 
             // yield and wait for the task to complete
             BuildEngine3.Yield();
-            var rsl = run.GetAwaiter().GetResult();
-            BuildEngine3.Reacquire();
+
+            // wait for result, and ensure we reacquire in case of return value or exception
+            var result = false;
+            try
+            {
+                result = run.GetAwaiter().GetResult();
+            }
+            finally
+            {
+                BuildEngine3.Reacquire();
+            }
 
             // check that we exited successfully
-            return rsl;
+            return result;
         }
 
         /// <summary>

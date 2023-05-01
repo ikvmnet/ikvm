@@ -45,6 +45,20 @@ namespace IKVM.Java.Externs.sun.nio.ch
 #endif
 
         /// <summary>
+        /// Implements the native method for 'onCancel0'.
+        /// </summary>
+        /// <param name="self"></param>
+        /// <param name="task"></param>
+        public static void onCancel0(object self, object task)
+        {
+#if FIRST_PASS
+            throw new NotImplementedException();
+#else
+            OnCancel((global::sun.nio.ch.DotNetAsynchronousFileChannelImpl)self, (PendingFuture)task);
+#endif
+        }
+
+        /// <summary>
         /// Implements the native method for 'close0'.
         /// </summary>
         /// <param name="self"></param>
@@ -182,7 +196,20 @@ namespace IKVM.Java.Externs.sun.nio.ch
 #if FIRST_PASS == false
 
         /// <summary>
-        /// 
+        /// Invoked when the pending future is cancelled.
+        /// </summary>
+        /// <param name="self"></param>
+        /// <param name="future"></param>
+        /// <returns></returns>
+        static void OnCancel(global::sun.nio.ch.DotNetAsynchronousFileChannelImpl self, PendingFuture future)
+        {
+            // signal cancellation on associated cancellation token source
+            var cts = (CancellationTokenSource)future.getContext();
+            cts?.Cancel();
+        }
+
+        /// <summary>
+        /// Invoked when the channel is closed.
         /// </summary>
         /// <param name="self"></param>
         /// <returns></returns>
@@ -424,7 +451,7 @@ namespace IKVM.Java.Externs.sun.nio.ch
 
                             return fli;
                         }
-                        catch (System.Exception) when (self.isOpen() == false)
+                        catch (System.Exception) when (IsOpen(self) == false)
                         {
                             throw new global::java.nio.channels.AsynchronousCloseException();
                         }
@@ -471,7 +498,7 @@ namespace IKVM.Java.Externs.sun.nio.ch
                             {
                                 throw new global::java.nio.channels.AsynchronousCloseException();
                             }
-                            catch (System.Exception) when (self.isOpen() == false)
+                            catch (System.Exception) when (IsOpen(self) == false)
                             {
                                 throw new global::java.nio.channels.AsynchronousCloseException();
                             }
@@ -515,7 +542,7 @@ namespace IKVM.Java.Externs.sun.nio.ch
                             {
                                 throw new global::java.nio.channels.AsynchronousCloseException();
                             }
-                            catch (System.Exception) when (self.isOpen() == false)
+                            catch (System.Exception) when (IsOpen(self) == false)
                             {
                                 throw new global::java.nio.channels.AsynchronousCloseException();
                             }
@@ -550,7 +577,7 @@ namespace IKVM.Java.Externs.sun.nio.ch
             if (shared == false && self.writing == false)
                 throw new global::java.nio.channels.NonWritableChannelException();
 
-            if (self.isOpen() == false)
+            if (IsOpen(self) == false)
                 throw new global::java.nio.channels.ClosedChannelException();
 
             var stream = FileDescriptorAccessor.GetStream(self.fdObj);
@@ -618,7 +645,7 @@ namespace IKVM.Java.Externs.sun.nio.ch
                 {
                     throw new global::java.nio.channels.AsynchronousCloseException();
                 }
-                catch (System.Exception) when (self.isOpen() == false)
+                catch (System.Exception) when (IsOpen(self) == false)
                 {
                     throw new global::java.nio.channels.AsynchronousCloseException();
                 }
@@ -645,7 +672,7 @@ namespace IKVM.Java.Externs.sun.nio.ch
         /// <returns></returns>
         static unsafe void Release(global::sun.nio.ch.DotNetAsynchronousFileChannelImpl self, FileLockImpl fli)
         {
-            if (self.isOpen() == false)
+            if (IsOpen(self) == false)
                 return;
 
             var stream = FileDescriptorAccessor.GetStream(self.fdObj);
@@ -701,7 +728,7 @@ namespace IKVM.Java.Externs.sun.nio.ch
             {
                 throw new global::java.nio.channels.AsynchronousCloseException();
             }
-            catch (System.Exception) when (self.isOpen() == false)
+            catch (System.Exception) when (IsOpen(self) == false)
             {
                 throw new global::java.nio.channels.AsynchronousCloseException();
             }
@@ -732,7 +759,7 @@ namespace IKVM.Java.Externs.sun.nio.ch
             if (dst.isReadOnly())
                 throw new global::java.lang.IllegalArgumentException("Read-only buffer");
 
-            if (self.isOpen() == false)
+            if (IsOpen(self) == false)
                 return Task.FromException<Integer>(new global::java.nio.channels.ClosedChannelException());
 
             var stream = FileDescriptorAccessor.GetStream(self.fdObj);
@@ -755,6 +782,25 @@ namespace IKVM.Java.Externs.sun.nio.ch
 
             async Task<Integer> ImplAsync()
             {
+                var lck = FileDescriptorAccessor.GetSemaphore(self.fdObj);
+                if (lck == null)
+                {
+                    lck = new SemaphoreSlim(1, 1);
+                    if (FileDescriptorAccessor.CompareExchangeSemaphore(self.fdObj, lck, null) != null)
+                        lck.Dispose();
+
+                    lck = FileDescriptorAccessor.GetSemaphore(self.fdObj);
+                }
+
+                try
+                {
+                    await lck.WaitAsync(cancellationToken);
+                }
+                catch (OperationCanceledException)
+                {
+                    return null;
+                }
+
                 try
                 {
                     // move file to specified position
@@ -797,17 +843,29 @@ namespace IKVM.Java.Externs.sun.nio.ch
                     }
 #endif
                 }
+                catch (OperationCanceledException)
+                {
+                    return null;
+                }
                 catch (ObjectDisposedException)
                 {
                     throw new global::java.nio.channels.AsynchronousCloseException();
                 }
-                catch (System.Exception) when (self.isOpen() == false)
+                catch (System.Exception) when (IsOpen(self) == false)
                 {
                     throw new global::java.nio.channels.AsynchronousCloseException();
+                }
+                catch (System.Exception) when (cancellationToken.IsCancellationRequested)
+                {
+                    return null;
                 }
                 catch (System.Exception e)
                 {
                     throw new global::java.io.IOException(e);
+                }
+                finally
+                {
+                    lck.Release();
                 }
             }
         }
@@ -834,7 +892,7 @@ namespace IKVM.Java.Externs.sun.nio.ch
             if (position < 0)
                 throw new global::java.lang.IllegalArgumentException("Negative position");
 
-            if (self.isOpen() == false)
+            if (IsOpen(self) == false)
                 return Task.FromException<global::java.lang.Integer>(new global::java.nio.channels.ClosedChannelException());
 
             var stream = FileDescriptorAccessor.GetStream(self.fdObj);
@@ -859,6 +917,25 @@ namespace IKVM.Java.Externs.sun.nio.ch
 
             async Task<Integer> ImplAsync()
             {
+                var lck = FileDescriptorAccessor.GetSemaphore(self.fdObj);
+                if (lck == null)
+                {
+                    lck = new SemaphoreSlim(1, 1);
+                    if (FileDescriptorAccessor.CompareExchangeSemaphore(self.fdObj, lck, null) != null)
+                        lck.Dispose();
+
+                    lck = FileDescriptorAccessor.GetSemaphore(self.fdObj);
+                }
+
+                try
+                {
+                    await lck.WaitAsync(cancellationToken);
+                }
+                catch (OperationCanceledException)
+                {
+                    return null;
+                }
+
                 try
                 {
                     // move file to specified position
@@ -909,15 +986,29 @@ namespace IKVM.Java.Externs.sun.nio.ch
                 {
                     throw new global::java.nio.channels.AsynchronousCloseException();
                 }
-                catch (System.Exception) when (self.isOpen() == false)
+                catch (System.Exception) when (IsOpen(self) == false)
                 {
                     throw new global::java.nio.channels.AsynchronousCloseException();
+                }
+                catch (System.Exception) when (cancellationToken.IsCancellationRequested)
+                {
+                    return null;
                 }
                 catch (System.Exception e)
                 {
                     throw new global::java.io.IOException(e);
                 }
+                finally
+                {
+                    lck.Release();
+                }
             }
+        }
+
+        static bool IsOpen(global::sun.nio.ch.DotNetAsynchronousFileChannelImpl ch)
+        {
+            Interlocked.MemoryBarrier();
+            return ch.isOpen();
         }
 
 #endif

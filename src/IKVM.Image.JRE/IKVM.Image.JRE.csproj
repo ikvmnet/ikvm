@@ -15,25 +15,25 @@
         <ProjectReference Include="..\IKVM.Image\IKVM.Image.csproj">
             <ReferenceOutputAssembly>true</ReferenceOutputAssembly>
         </ProjectReference>
-        <ProjectReference Include="..\IKVM.Image.JRE.runtime.win7-x64\IKVM.Image.JRE.runtime.win7-x64.csproj">
+        <ProjectReference Include="..\IKVM.Image.JRE.runtime.win7-x64\IKVM.Image.JRE.runtime.win7-x64.csproj" Condition="$(EnabledRuntimeIdentifiers.Contains('win7-x64'))">
             <ReferenceOutputAssembly>true</ReferenceOutputAssembly>
         </ProjectReference>
-        <ProjectReference Include="..\IKVM.Image.JRE.runtime.win7-x86\IKVM.Image.JRE.runtime.win7-x86.csproj">
+        <ProjectReference Include="..\IKVM.Image.JRE.runtime.win7-x86\IKVM.Image.JRE.runtime.win7-x86.csproj" Condition="$(EnabledRuntimeIdentifiers.Contains('win7-x86'))">
             <ReferenceOutputAssembly>true</ReferenceOutputAssembly>
         </ProjectReference>
-        <ProjectReference Include="..\IKVM.Image.JRE.runtime.win81-arm\IKVM.Image.JRE.runtime.win81-arm.csproj">
+        <ProjectReference Include="..\IKVM.Image.JRE.runtime.win81-arm\IKVM.Image.JRE.runtime.win81-arm.csproj" Condition="$(EnabledRuntimeIdentifiers.Contains('win81-arm'))">
             <ReferenceOutputAssembly>true</ReferenceOutputAssembly>
         </ProjectReference>
-        <ProjectReference Include="..\IKVM.Image.JRE.runtime.linux-x64\IKVM.Image.JRE.runtime.linux-x64.csproj">
+        <ProjectReference Include="..\IKVM.Image.JRE.runtime.linux-x64\IKVM.Image.JRE.runtime.linux-x64.csproj" Condition="$(EnabledRuntimeIdentifiers.Contains('linux-x64'))">
             <ReferenceOutputAssembly>true</ReferenceOutputAssembly>
         </ProjectReference>
-        <ProjectReference Include="..\IKVM.Image.JRE.runtime.linux-arm\IKVM.Image.JRE.runtime.linux-arm.csproj">
+        <ProjectReference Include="..\IKVM.Image.JRE.runtime.linux-arm\IKVM.Image.JRE.runtime.linux-arm.csproj" Condition="$(EnabledRuntimeIdentifiers.Contains('linux-arm'))">
             <ReferenceOutputAssembly>true</ReferenceOutputAssembly>
         </ProjectReference>
-        <ProjectReference Include="..\IKVM.Image.JRE.runtime.linux-arm64\IKVM.Image.JRE.runtime.linux-arm64.csproj">
+        <ProjectReference Include="..\IKVM.Image.JRE.runtime.linux-arm64\IKVM.Image.JRE.runtime.linux-arm64.csproj" Condition="$(EnabledRuntimeIdentifiers.Contains('linux-arm64'))">
             <ReferenceOutputAssembly>true</ReferenceOutputAssembly>
         </ProjectReference>
-        <ProjectReference Include="..\IKVM.Image.JRE.runtime.osx-x64\IKVM.Image.JRE.runtime.osx-x64.csproj">
+        <ProjectReference Include="..\IKVM.Image.JRE.runtime.osx-x64\IKVM.Image.JRE.runtime.osx-x64.csproj" Condition="$(EnabledRuntimeIdentifiers.Contains('osx-x64'))">
             <ReferenceOutputAssembly>true</ReferenceOutputAssembly>
         </ProjectReference>
     </ItemGroup>

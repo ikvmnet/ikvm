@@ -8,7 +8,7 @@ import java.util.concurrent.*;
 /**
  * .NET implementation of AsynchronousFileChannel.
  */
-public class DotNetAsynchronousFileChannelImpl extends AsynchronousFileChannelImpl implements Groupable {
+public class DotNetAsynchronousFileChannelImpl extends AsynchronousFileChannelImpl implements Cancellable, Groupable {
 
     private static class DefaultGroupHolder {
 
@@ -62,6 +62,11 @@ public class DotNetAsynchronousFileChannelImpl extends AsynchronousFileChannelIm
     }
 
     @Override
+    public void onCancel(PendingFuture<?, ?> task) {
+        onCancel0(task);
+    }
+
+    @Override
     public void close() throws IOException {
         close0();
     }
@@ -105,6 +110,8 @@ public class DotNetAsynchronousFileChannelImpl extends AsynchronousFileChannelIm
     <A> Future<Integer> implWrite(ByteBuffer src, long position, A attachment, CompletionHandler<Integer, ? super A> handler) {
         return implWrite0(src, position, attachment, handler);
     }
+
+    private native void onCancel0(PendingFuture<?, ?> task);
 
     private native void close0();
 
