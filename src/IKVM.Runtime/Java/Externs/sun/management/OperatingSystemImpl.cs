@@ -192,6 +192,11 @@ namespace IKVM.Java.Externs.sun.management
         static extern int getrlimit_x64(RLIMIT resource, ref rlimit_t_x64 info);
 
         /// <summary>
+        /// Regular expression for the Linux /proc/pid/stat file.
+        /// </summary>
+        static Regex LinuxProcStatRegex = new Regex(@"^\d+ \(.+\) [A-Za-z] \d+ \d+ \d+ \d+ \d+ \d+ \d+ \d+ \d+ \d+ \d+ \d+ \d+ \d+ \d+ \d+ \d+ \d+ \d+ (\d+)", RegexOptions.Compiled | RegexOptions.CultureInvariant);
+
+        /// <summary>
         /// Initializes the static information.
         /// </summary>
         public static void initialize()
@@ -218,7 +223,7 @@ namespace IKVM.Java.Externs.sun.management
                 try
                 {
                     var l = File.ReadLines("/proc/self/stat").FirstOrDefault();
-                    if (l != null && Regex.Match(l, @"^\d+ \(.+\) . \d+ \d+ \d+ \d+ \d+ \d+ \d+ \d+ \d+ \d+ \d+ \d+ \d+ \d+ \d+ \d+ \d+ \d+ \d+ (\d+) .+") is Match m && m.Groups.Count >= 2)
+                    if (l != null && LinuxProcStatRegex.Match(l) is Match m && m.Groups.Count >= 2)
                         if (long.TryParse(m.Groups[1].Value, out var vsize))
                             return vsize;
 

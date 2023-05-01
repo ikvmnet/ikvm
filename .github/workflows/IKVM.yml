@@ -410,13 +410,6 @@ jobs:
       with:
         name: tests
         path: ${{ env.IKVMPATH }}/dist
-    - name: Restore Tests
-      run: tar xzvf tests.tar.gz
-      working-directory: ${{ env.IKVMPATH }}/dist
-    - name: Delete Tests
-      shell: pwsh
-      run: ri tests.tar.gz
-      working-directory: ${{ env.IKVMPATH }}/dist
     - name: Execute Tests
       timeout-minutes: 120
       shell: pwsh
@@ -434,6 +427,9 @@ jobs:
         } else {
             $tst = $run
         }
+
+        # extract the tests
+        tar xzvf tests.tar.gz $tst/$tfm
 
         # scan for test assemblies
         $tests = $(gci .\tests\$tst\$tfm -Recurse -Filter '*.Tests.dll')
