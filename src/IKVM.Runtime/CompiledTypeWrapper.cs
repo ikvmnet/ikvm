@@ -46,6 +46,7 @@ using IKVM.Tools.Importer;
 
 namespace IKVM.Internal
 {
+
     class CompiledTypeWrapper : TypeWrapper
     {
 
@@ -77,7 +78,8 @@ namespace IKVM.Internal
 
         private sealed class CompiledRemappedTypeWrapper : CompiledTypeWrapper
         {
-            private readonly Type remappedType;
+
+            readonly Type remappedType;
 
             internal CompiledRemappedTypeWrapper(string name, Type type)
                 : base(name, type)
@@ -207,14 +209,21 @@ namespace IKVM.Internal
             }
         }
 
-        private sealed class CompiledGhostTypeWrapper : CompiledTypeWrapper
+        sealed class CompiledGhostTypeWrapper : CompiledTypeWrapper
         {
-            private volatile FieldInfo ghostRefField;
-            private volatile Type typeAsBaseType;
 
-            internal CompiledGhostTypeWrapper(string name, Type type)
-                : base(name, type)
+            volatile FieldInfo ghostRefField;
+            volatile Type typeAsBaseType;
+
+            /// <summary>
+            /// Initializes a new instance.
+            /// </summary>
+            /// <param name="name"></param>
+            /// <param name="type"></param>
+            internal CompiledGhostTypeWrapper(string name, Type type)                :
+                base(name, type)
             {
+
             }
 
             internal override Type TypeAsBaseType
@@ -222,9 +231,8 @@ namespace IKVM.Internal
                 get
                 {
                     if (typeAsBaseType == null)
-                    {
                         typeAsBaseType = type.GetNestedType("__Interface");
-                    }
+
                     return typeAsBaseType;
                 }
             }
@@ -234,22 +242,16 @@ namespace IKVM.Internal
                 get
                 {
                     if (ghostRefField == null)
-                    {
                         ghostRefField = type.GetField("__<ref>");
-                    }
+
                     return ghostRefField;
                 }
             }
 
-            internal override bool IsGhost
-            {
-                get
-                {
-                    return true;
-                }
-            }
+            internal override bool IsGhost => true;
 
 #if !IMPORTER && !EXPORTER && !FIRST_PASS
+
             internal override object GhostWrap(object obj)
             {
                 return type.GetMethod("Cast").Invoke(null, new object[] { obj });
@@ -259,7 +261,9 @@ namespace IKVM.Internal
             {
                 return type.GetMethod("ToObject").Invoke(obj, new object[0]);
             }
+
 #endif
+
         }
 
         /// <summary>

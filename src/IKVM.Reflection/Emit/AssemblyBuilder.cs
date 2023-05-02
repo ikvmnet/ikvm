@@ -507,9 +507,8 @@ namespace IKVM.Reflection.Emit
         public void DefineVersionInfoResource()
         {
             if (versionInfo != null || win32resources != null)
-            {
                 throw new ArgumentException("Native resource has already been defined.");
-            }
+
             versionInfo = new VersionInfo();
         }
 

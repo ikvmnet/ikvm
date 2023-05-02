@@ -2,6 +2,8 @@
 
 using FluentAssertions;
 
+using javax.net.ssl;
+
 using Microsoft.VisualStudio.TestTools.UnitTesting;
 
 namespace IKVM.Tests.Java.java.net
@@ -151,6 +153,7 @@ namespace IKVM.Tests.Java.java.net
         }
 
         [TestMethod]
+        [ExpectedException(typeof(SSLHandshakeException))]
         public void CanGetFromDh512Url()
         {
             var stm = new global::java.net.URL("https://dh512.badssl.com/").openStream();

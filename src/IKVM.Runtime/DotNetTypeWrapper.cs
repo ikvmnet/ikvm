@@ -472,10 +472,16 @@ namespace IKVM.Internal
 
         private sealed class EnumEnumTypeWrapper : FakeTypeWrapper
         {
-            private readonly Type fakeType;
 
-            internal EnumEnumTypeWrapper(string name, Type enumType)
-                : base(Modifiers.Public | Modifiers.Enum | Modifiers.Final, name, ClassLoaderWrapper.LoadClassCritical("java.lang.Enum"))
+            readonly Type fakeType;
+
+            /// <summary>
+            /// Initializes a new instance.
+            /// </summary>
+            /// <param name="name"></param>
+            /// <param name="enumType"></param>
+            internal EnumEnumTypeWrapper(string name, Type enumType) :
+                base(Modifiers.Public | Modifiers.Enum | Modifiers.Final, name, ClassLoaderWrapper.LoadClassCritical("java.lang.Enum"))
             {
 #if IMPORTER || EXPORTER
                 this.fakeType = FakeTypes.GetEnumType(enumType);
@@ -491,15 +497,24 @@ namespace IKVM.Internal
             }
 #endif
 
-            private sealed class EnumFieldWrapper : FieldWrapper
+            sealed class EnumFieldWrapper : FieldWrapper
             {
+
 #if !IMPORTER && !EXPORTER
-                private readonly int ordinal;
-                private object val;
+
+                readonly int ordinal;
+                object val;
+
 #endif
 
-                internal EnumFieldWrapper(TypeWrapper tw, string name, int ordinal)
-                    : base(tw, tw, name, tw.SigName, Modifiers.Public | Modifiers.Static | Modifiers.Final | Modifiers.Enum, null, MemberFlags.None)
+                /// <summary>
+                /// Initializes a new instance.
+                /// </summary>
+                /// <param name="tw"></param>
+                /// <param name="name"></param>
+                /// <param name="ordinal"></param>
+                internal EnumFieldWrapper(TypeWrapper tw, string name, int ordinal) :
+                    base(tw, tw, name, tw.SigName, Modifiers.Public | Modifiers.Static | Modifiers.Final | Modifiers.Enum, null, MemberFlags.None)
                 {
 #if !IMPORTER && !EXPORTER
                     this.ordinal = ordinal;
@@ -507,6 +522,7 @@ namespace IKVM.Internal
                 }
 
 #if !IMPORTER && !EXPORTER && !FIRST_PASS
+
                 internal override object GetValue(object obj)
                 {
                     if (val == null)
@@ -518,16 +534,18 @@ namespace IKVM.Internal
 
                 internal override void SetValue(object obj, object value)
                 {
+
                 }
+
 #endif
 
 #if EMITTERS
                 protected override void EmitGetImpl(CodeEmitter ilgen)
                 {
 #if IMPORTER
-					Type typeofByteCodeHelper = StaticCompiler.GetRuntimeType("IKVM.Runtime.ByteCodeHelper");
+                    var typeofByteCodeHelper = StaticCompiler.GetRuntimeType("IKVM.Runtime.ByteCodeHelper");
 #else
-                    Type typeofByteCodeHelper = typeof(IKVM.Runtime.ByteCodeHelper);
+                    var typeofByteCodeHelper = typeof(IKVM.Runtime.ByteCodeHelper);
 #endif
                     ilgen.Emit(OpCodes.Ldstr, this.Name);
                     ilgen.Emit(OpCodes.Call, typeofByteCodeHelper.GetMethod("GetDotNetEnumField").MakeGenericMethod(this.DeclaringType.TypeAsBaseType));
@@ -535,26 +553,26 @@ namespace IKVM.Internal
 
                 protected override void EmitSetImpl(CodeEmitter ilgen)
                 {
+                    throw new NotImplementedException();
                 }
-#endif // EMITTERS
+
+#endif
+
             }
 
             private sealed class EnumValuesMethodWrapper : MethodWrapper
             {
-                internal EnumValuesMethodWrapper(TypeWrapper declaringType)
-                    : base(declaringType, "values", "()[" + declaringType.SigName, null, declaringType.MakeArrayType(1), TypeWrapper.EmptyArray, Modifiers.Public | Modifiers.Static, MemberFlags.None)
+
+                internal EnumValuesMethodWrapper(TypeWrapper declaringType) :
+                    base(declaringType, "values", "()[" + declaringType.SigName, null, declaringType.MakeArrayType(1), TypeWrapper.EmptyArray, Modifiers.Public | Modifiers.Static, MemberFlags.None)
                 {
+
                 }
 
-                internal override bool IsDynamicOnly
-                {
-                    get
-                    {
-                        return true;
-                    }
-                }
+                internal override bool IsDynamicOnly => true;
 
 #if !IMPORTER && !FIRST_PASS && !EXPORTER
+
                 internal override object Invoke(object obj, object[] args)
                 {
                     FieldWrapper[] values = this.DeclaringType.GetFields();
@@ -565,25 +583,24 @@ namespace IKVM.Internal
                     }
                     return array;
                 }
-#endif // !IMPORTER && !FIRST_PASS && !EXPORTER
+
+#endif
+
             }
 
             private sealed class EnumValueOfMethodWrapper : MethodWrapper
             {
-                internal EnumValueOfMethodWrapper(TypeWrapper declaringType)
-                    : base(declaringType, "valueOf", "(Ljava.lang.String;)" + declaringType.SigName, null, declaringType, new TypeWrapper[] { CoreClasses.java.lang.String.Wrapper }, Modifiers.Public | Modifiers.Static, MemberFlags.None)
+
+                internal EnumValueOfMethodWrapper(TypeWrapper declaringType) :
+                    base(declaringType, "valueOf", "(Ljava.lang.String;)" + declaringType.SigName, null, declaringType, new TypeWrapper[] { CoreClasses.java.lang.String.Wrapper }, Modifiers.Public | Modifiers.Static, MemberFlags.None)
                 {
+
                 }
 
-                internal override bool IsDynamicOnly
-                {
-                    get
-                    {
-                        return true;
-                    }
-                }
+                internal override bool IsDynamicOnly => true;
 
 #if !IMPORTER && !FIRST_PASS && !EXPORTER
+
                 internal override object Invoke(object obj, object[] args)
                 {
                     FieldWrapper[] values = this.DeclaringType.GetFields();
@@ -596,7 +613,9 @@ namespace IKVM.Internal
                     }
                     throw new java.lang.IllegalArgumentException("" + args[0]);
                 }
-#endif // !IMPORTER && !FIRST_PASS && !EXPORTER
+
+#endif
+
             }
 
             protected override void LazyPublishMembers()
@@ -1455,7 +1474,7 @@ namespace IKVM.Internal
                         // we have to handle this explicitly, because if we apply an illegal StructLayoutAttribute,
                         // TypeBuilder.CreateType() will later on throw an exception.
 #if IMPORTER
-						loader.IssueMessage(Message.IgnoredCustomAttribute, type.FullName, "Type '" + tb.FullName + "' does not extend cli.System.Object");
+                        loader.IssueMessage(Message.IgnoredCustomAttribute, type.FullName, "Type '" + tb.FullName + "' does not extend cli.System.Object");
 #else
                         Tracer.Error(Tracer.Runtime, "StructLayoutAttribute cannot be applied to {0}, because it does not directly extend cli.System.Object", tb.FullName);
 #endif
@@ -1488,47 +1507,47 @@ namespace IKVM.Internal
                 internal override void Apply(ClassLoaderWrapper loader, AssemblyBuilder ab, object annotation)
                 {
 #if IMPORTER
-					if (type == JVM.Import(typeof(System.Runtime.CompilerServices.TypeForwardedToAttribute)))
-					{
-						ab.__AddTypeForwarder((Type)ConvertValue(loader, Types.Type, ((object[])annotation)[3]));
-					}
-					else if (type == JVM.Import(typeof(System.Reflection.AssemblyVersionAttribute)))
-					{
-						string str = (string)ConvertValue(loader, Types.String, ((object[])annotation)[3]);
-						Version version;
-						if (IkvmImporterInternal.TryParseVersion(str, out version))
-						{
-							ab.__SetAssemblyVersion(version);
-						}
-						else
-						{
-							loader.IssueMessage(Message.InvalidCustomAttribute, type.FullName, "The version '" + str + "' is invalid.");
-						}
-					}
-					else if (type == JVM.Import(typeof(System.Reflection.AssemblyCultureAttribute)))
-					{
-						string str = (string)ConvertValue(loader, Types.String, ((object[])annotation)[3]);
-						if (str != "")
-						{
-							ab.__SetAssemblyCulture(str);
-						}
-					}
-					else if (type == JVM.Import(typeof(System.Reflection.AssemblyDelaySignAttribute))
-						|| type == JVM.Import(typeof(System.Reflection.AssemblyKeyFileAttribute))
-						|| type == JVM.Import(typeof(System.Reflection.AssemblyKeyNameAttribute)))
-					{
-						loader.IssueMessage(Message.IgnoredCustomAttribute, type.FullName, "Please use the corresponding compiler switch.");
-					}
-					else if (type == JVM.Import(typeof(System.Reflection.AssemblyAlgorithmIdAttribute)))
-					{
-						// this attribute is currently not exposed as an annotation and isn't very interesting
-						throw new NotImplementedException();
-					}
-					else if (type == JVM.Import(typeof(System.Reflection.AssemblyFlagsAttribute)))
-					{
-						// this attribute is currently not exposed as an annotation and isn't very interesting
-						throw new NotImplementedException();
-					}
+                    if (type == JVM.Import(typeof(System.Runtime.CompilerServices.TypeForwardedToAttribute)))
+                    {
+                        ab.__AddTypeForwarder((Type)ConvertValue(loader, Types.Type, ((object[])annotation)[3]));
+                    }
+                    else if (type == JVM.Import(typeof(System.Reflection.AssemblyVersionAttribute)))
+                    {
+                        string str = (string)ConvertValue(loader, Types.String, ((object[])annotation)[3]);
+                        Version version;
+                        if (IkvmImporterInternal.TryParseVersion(str, out version))
+                        {
+                            ab.__SetAssemblyVersion(version);
+                        }
+                        else
+                        {
+                            loader.IssueMessage(Message.InvalidCustomAttribute, type.FullName, "The version '" + str + "' is invalid.");
+                        }
+                    }
+                    else if (type == JVM.Import(typeof(System.Reflection.AssemblyCultureAttribute)))
+                    {
+                        string str = (string)ConvertValue(loader, Types.String, ((object[])annotation)[3]);
+                        if (str != "")
+                        {
+                            ab.__SetAssemblyCulture(str);
+                        }
+                    }
+                    else if (type == JVM.Import(typeof(System.Reflection.AssemblyDelaySignAttribute))
+                        || type == JVM.Import(typeof(System.Reflection.AssemblyKeyFileAttribute))
+                        || type == JVM.Import(typeof(System.Reflection.AssemblyKeyNameAttribute)))
+                    {
+                        loader.IssueMessage(Message.IgnoredCustomAttribute, type.FullName, "Please use the corresponding compiler switch.");
+                    }
+                    else if (type == JVM.Import(typeof(System.Reflection.AssemblyAlgorithmIdAttribute)))
+                    {
+                        // this attribute is currently not exposed as an annotation and isn't very interesting
+                        throw new NotImplementedException();
+                    }
+                    else if (type == JVM.Import(typeof(System.Reflection.AssemblyFlagsAttribute)))
+                    {
+                        // this attribute is currently not exposed as an annotation and isn't very interesting
+                        throw new NotImplementedException();
+                    }
                     else
                     {
                         ab.SetCustomAttribute(MakeCustomAttributeBuilder(loader, annotation));
@@ -1838,8 +1857,13 @@ namespace IKVM.Internal
 
             readonly Type underlyingType;
 
-            internal EnumValueFieldWrapper(DotNetTypeWrapper tw, TypeWrapper fieldType)
-                : base(tw, fieldType, "Value", fieldType.SigName, new ExModifiers(Modifiers.Public | Modifiers.Final, false), null)
+            /// <summary>
+            /// Initializes a new instance.
+            /// </summary>
+            /// <param name="tw"></param>
+            /// <param name="fieldType"></param>
+            internal EnumValueFieldWrapper(DotNetTypeWrapper tw, TypeWrapper fieldType) :
+                base(tw, fieldType, "Value", fieldType.SigName, new ExModifiers(Modifiers.Public | Modifiers.Final, false), null)
             {
                 underlyingType = EnumHelper.GetUnderlyingType(tw.type);
             }

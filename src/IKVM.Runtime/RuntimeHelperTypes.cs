@@ -23,6 +23,8 @@
 */
 using System;
 
+using IKVM.Runtime;
+
 #if IMPORTER
 using IKVM.Reflection;
 using IKVM.Reflection.Emit;
@@ -52,7 +54,7 @@ namespace IKVM.Internal
 			if (classLiteralType == null)
 			{
 #if IMPORTER
-				classLiteralType = JVM.CoreAssembly.GetType("ikvm.internal.ClassLiteral`1");
+				classLiteralType = JVM.BaseAssembly.GetType("ikvm.internal.ClassLiteral`1");
 #elif !FIRST_PASS
 				classLiteralType = typeof(ikvm.@internal.ClassLiteral<>);
 #endif

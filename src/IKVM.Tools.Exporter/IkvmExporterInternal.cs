@@ -6,6 +6,7 @@ using System.Linq;
 
 using IKVM.Internal;
 using IKVM.Reflection;
+using IKVM.Runtime;
 using IKVM.Tools.Importer;
 
 using Type = IKVM.Reflection.Type;
@@ -18,15 +19,11 @@ namespace IKVM.Tools.Exporter
     /// </summary>
     static class IkvmExporterInternal
     {
+
         static ZipArchive zipFile;
         static Dictionary<string, string> done = new Dictionary<string, string>();
         static Dictionary<string, TypeWrapper> todo = new Dictionary<string, TypeWrapper>();
         static FileInfo file;
-        static bool includeSerialVersionUID;
-        static bool includeNonPublicInterfaces;
-        static bool includeNonPublicMembers;
-        static bool includeParameterNames;
-        static List<string> namespaces = new List<string>();
 
         /// <summary>
         /// Executes the exporter.
@@ -37,53 +34,30 @@ namespace IKVM.Tools.Exporter
             IKVM.Internal.Tracer.EnableTraceConsoleListener();
             IKVM.Internal.Tracer.EnableTraceForDebug();
 
-            string assemblyNameOrPath = null;
-            bool continueOnError = false;
-            bool autoLoadSharedClassLoaderAssemblies = false;
-            List<string> references = new List<string>();
-            List<string> libpaths = new List<string>();
-            bool nostdlib = false;
-            bool bootstrap = false;
-            string outputFile = null;
-            bool forwarders = false;
-
-            if (options.JApi)
-            {
-                includeSerialVersionUID = true;
-                includeNonPublicInterfaces = true;
-                includeNonPublicMembers = true;
-            }
-
-            autoLoadSharedClassLoaderAssemblies = options.Shared;
-            continueOnError = options.SkipError;
-            nostdlib = options.NoStdLib;
-            bootstrap = options.Boostrap;
-            outputFile = options.Output;
-            forwarders = options.Forwarders;
-            includeParameterNames = options.Parameters;
-            assemblyNameOrPath = options.Assembly;
-
+            var references = new List<string>();
             if (options.References != null)
                 foreach (var reference in options.References)
                     references.Add(reference);
 
+            var libpaths = new List<string>();
             if (options.Libraries != null)
                 foreach (var library in options.Libraries)
                     libpaths.Add(library);
 
+            var namespaces = new List<string>();
             if (options.Namespaces != null)
                 foreach (var ns in options.Namespaces)
                     namespaces.Add(ns);
 
-            if (File.Exists(assemblyNameOrPath) && nostdlib)
+            if (File.Exists(options.Assembly) && options.NoStdLib)
             {
                 // Add the target assembly to the references list, to allow it to be considered as "mscorlib".
                 // This allows "ikvmstub -nostdlib \...\mscorlib.dll" to work.
-                references.Add(assemblyNameOrPath);
+                references.Add(options.Assembly);
             }
 
             StaticCompiler.Resolver.Warning += new AssemblyResolver.WarningEvent(Resolver_Warning);
-            StaticCompiler.Resolver.Init(StaticCompiler.Universe, nostdlib, references, libpaths);
+            StaticCompiler.Resolver.Init(StaticCompiler.Universe, options.NoStdLib, references, libpaths);
 
             var cache = new Dictionary<string, Assembly>();
             foreach (var reference in references)
@@ -99,30 +73,30 @@ namespace IKVM.Tools.Exporter
             Assembly assembly = null;
             try
             {
-                file = new FileInfo(assemblyNameOrPath);
+                file = new FileInfo(options.Assembly);
             }
             catch (Exception x)
             {
-                Console.Error.WriteLine("Error: unable to load \"{0}\"\n  {1}", assemblyNameOrPath, x.Message);
+                Console.Error.WriteLine("Error: unable to load \"{0}\"\n  {1}", options.Assembly, x.Message);
                 return 1;
             }
             if (file != null && file.Exists)
             {
-                assembly = StaticCompiler.LoadFile(assemblyNameOrPath);
+                assembly = StaticCompiler.LoadFile(options.Assembly);
             }
             else
             {
-                assembly = StaticCompiler.Resolver.LoadWithPartialName(assemblyNameOrPath);
+                assembly = StaticCompiler.Resolver.LoadWithPartialName(options.Assembly);
             }
             int rc = 0;
             if (assembly == null)
             {
                 rc = 1;
-                Console.Error.WriteLine("Error: Assembly \"{0}\" not found", assemblyNameOrPath);
+                Console.Error.WriteLine("Error: Assembly \"{0}\" not found", options.Assembly);
             }
             else
             {
-                if (bootstrap)
+                if (options.Boostrap)
                 {
                     StaticCompiler.runtimeAssembly = StaticCompiler.LoadFile(typeof(IkvmExporterTool).Assembly.Location);
                     ClassLoaderWrapper.SetBootstrapClassLoader(new BootstrapBootstrapClassLoader());
@@ -135,9 +109,9 @@ namespace IKVM.Tools.Exporter
                     if (runtimeAssemblyPath != null)
                         StaticCompiler.runtimeAssembly = StaticCompiler.LoadFile(runtimeAssemblyPath);
 
-                    var coreAssemblyPath = references.FirstOrDefault(i => Path.GetFileNameWithoutExtension(i) == "IKVM.Java");
-                    if (coreAssemblyPath != null)
-                        JVM.CoreAssembly = StaticCompiler.LoadFile(coreAssemblyPath);
+                    var baseAssemblyPath = references.FirstOrDefault(i => Path.GetFileNameWithoutExtension(i) == "IKVM.Java");
+                    if (baseAssemblyPath != null)
+                        JVM.BaseAssembly = StaticCompiler.LoadFile(baseAssemblyPath);
 
                     if (StaticCompiler.runtimeAssembly == null || StaticCompiler.runtimeAssembly.__IsMissing)
                     {
@@ -145,7 +119,7 @@ namespace IKVM.Tools.Exporter
                         return 1;
                     }
 
-                    if (JVM.CoreAssembly == null || StaticCompiler.runtimeAssembly.__IsMissing)
+                    if (JVM.BaseAssembly == null || StaticCompiler.runtimeAssembly.__IsMissing)
                     {
                         Console.Error.WriteLine("Error: IKVM.Java not found.");
                         return 1;
@@ -155,38 +129,35 @@ namespace IKVM.Tools.Exporter
                 if (AttributeHelper.IsJavaModule(assembly.ManifestModule))
                     Console.Error.WriteLine("Warning: Running ikvmstub on ikvmc compiled assemblies is not supported.");
 
-                if (outputFile == null)
-                    outputFile = assembly.GetName().Name + ".jar";
+                if (options.Output == null)
+                    options.Output = assembly.GetName().Name + ".jar";
 
                 try
                 {
-                    using (zipFile = new ZipArchive(new FileStream(outputFile, FileMode.Create), ZipArchiveMode.Create))
+                    using (zipFile = new ZipArchive(new FileStream(options.Output, FileMode.Create), ZipArchiveMode.Create))
                     {
                         try
                         {
-                            List<Assembly> assemblies = new List<Assembly>();
+                            var assemblies = new List<Assembly>();
                             assemblies.Add(assembly);
-                            if (autoLoadSharedClassLoaderAssemblies)
-                            {
+
+                            if (options.Shared)
                                 LoadSharedClassLoaderAssemblies(assembly, assemblies);
-                            }
-                            foreach (Assembly asm in assemblies)
+
+                            foreach (var asm in assemblies)
                             {
-                                if (ProcessTypes(asm.GetTypes(), continueOnError) != 0)
+                                if (ProcessTypes(options, asm.GetTypes()) != 0)
                                 {
                                     rc = 1;
-                                    if (!continueOnError)
-                                    {
+                                    if (options.ContinueOnError == false)
                                         break;
-                                    }
                                 }
-                                if (forwarders && ProcessTypes(asm.ManifestModule.__GetExportedTypes(), continueOnError) != 0)
+
+                                if (options.Forwarders && ProcessTypes(options, asm.ManifestModule.__GetExportedTypes()) != 0)
                                 {
                                     rc = 1;
-                                    if (!continueOnError)
-                                    {
+                                    if (options.ContinueOnError == false)
                                         break;
-                                    }
                                 }
                             }
                         }
@@ -194,7 +165,7 @@ namespace IKVM.Tools.Exporter
                         {
                             Console.Error.WriteLine(x);
 
-                            if (!continueOnError)
+                            if (options.ContinueOnError == false)
                                 Console.Error.WriteLine("Warning: Assembly reflection encountered an error. Resultant JAR may be incomplete.");
 
                             rc = 1;
@@ -251,57 +222,43 @@ namespace IKVM.Tools.Exporter
             }
         }
 
-        private static void WriteClass(TypeWrapper tw)
+        static void WriteClass(IkvmExporterOptions options, TypeWrapper tw)
         {
-            ZipArchiveEntry entry = zipFile.CreateEntry(tw.Name.Replace('.', '/') + ".class");
+            var entry = zipFile.CreateEntry(tw.Name.Replace('.', '/') + ".class");
             entry.LastWriteTime = new DateTime(1980, 01, 01, 0, 0, 0, DateTimeKind.Utc);
-
             using Stream stream = entry.Open();
 
-            IKVM.StubGen.StubGenerator.WriteClass(stream, tw, includeNonPublicInterfaces, includeNonPublicMembers, includeSerialVersionUID, includeParameterNames);
+            IKVM.StubGen.StubGenerator.WriteClass(stream, tw, options.IncludeNonPublicTypes, options.IncludeNonPublicInterfaces, options.IncludeNonPublicMembers, options.IncludeParameterNames, options.SerialVersionUID);
         }
 
-        private static bool ExportNamespace(Type type)
+        static bool ExportNamespace(IList<string> namespaces, Type type)
         {
             if (namespaces.Count == 0)
-            {
                 return true;
-            }
-            string name = type.FullName;
+
+            var name = type.FullName;
             foreach (string ns in namespaces)
-            {
                 if (name.StartsWith(ns, StringComparison.Ordinal))
-                {
                     return true;
-                }
-            }
+
             return false;
         }
 
-        private static int ProcessTypes(Type[] types, bool continueOnError)
+        private static int ProcessTypes(IkvmExporterOptions options, Type[] types)
         {
             int rc = 0;
-            foreach (Type t in types)
+            foreach (var t in types)
             {
-                if (t.IsPublic
-                    && ExportNamespace(t)
-                    && !t.IsGenericTypeDefinition
-                    && !AttributeHelper.IsHideFromJava(t)
-                    && (!t.IsGenericType || !AttributeHelper.IsJavaModule(t.Module)))
+                if ((t.IsPublic || options.IncludeNonPublicTypes) && ExportNamespace(options.Namespaces, t) && !t.IsGenericTypeDefinition && !AttributeHelper.IsHideFromJava(t) && (!t.IsGenericType || !AttributeHelper.IsJavaModule(t.Module)))
                 {
                     TypeWrapper c;
                     if (ClassLoaderWrapper.IsRemappedType(t) || t.IsPrimitive || t == Types.Void)
-                    {
                         c = DotNetTypeWrapper.GetWrapperFromDotNetType(t);
-                    }
                     else
-                    {
                         c = ClassLoaderWrapper.GetWrapperFromType(t);
-                    }
+
                     if (c != null)
-                    {
                         AddToExportList(c);
-                    }
                 }
             }
 
@@ -309,7 +266,7 @@ namespace IKVM.Tools.Exporter
             do
             {
                 keepGoing = false;
-                foreach (TypeWrapper c in new List<TypeWrapper>(todo.Values).OrderBy(i => i.Name))
+                foreach (var c in new List<TypeWrapper>(todo.Values).OrderBy(i => i.Name))
                 {
                     if (!done.ContainsKey(c.Name))
                     {
@@ -319,11 +276,11 @@ namespace IKVM.Tools.Exporter
                         try
                         {
                             ProcessClass(c);
-                            WriteClass(c);
+                            WriteClass(options, c);
                         }
                         catch (Exception x)
                         {
-                            if (continueOnError)
+                            if (options.ContinueOnError)
                             {
                                 rc = 1;
                                 Console.WriteLine(x);

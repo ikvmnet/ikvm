@@ -121,6 +121,8 @@ Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "rmic", "src\rmic\rmic.msbui
 EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "jar", "src\jar\jar.msbuildproj", "{B240F8BA-6C35-4C19-9035-2821CC6BFEA8}"
 EndProject
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "orbd", "src\orbd\orbd.msbuildproj", "{B240F8BA-6C35-4C19-9035-2821CC6BFFA8}"
+EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "jarsigner", "src\jarsigner\jarsigner.msbuildproj", "{C6C34134-D80C-43CC-A477-32B4172374D2}"
 EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "javadoc", "src\javadoc\javadoc.msbuildproj", "{4371190E-AD8B-4625-A520-B745B05DE005}"
@@ -132,6 +134,8 @@ EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "javah", "src\javah\javah.msbuildproj", "{2B536749-A2CD-4873-803A-5553D25E88EC}"
 EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "javap", "src\javap\javap.msbuildproj", "{03F00630-3625-440D-BE43-51751FCE7806}"
+EndProject
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "schemagen", "src\schemagen\schemagen.msbuildproj", "{03F00630-3625-440D-BE43-51751FCE7802}"
 EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "jdeps", "src\jdeps\jdeps.msbuildproj", "{FB1F02F2-3A18-49CC-A288-EC0834D90EED}"
 EndProject
@@ -281,7 +285,7 @@ Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "IKVM.Tools.Importer.Tests",
 EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "IKVM.Tests.Java", "src\IKVM.Tests.Java\IKVM.Tests.Java.msbuildproj", "{87CB99AE-16D1-4D58-BEAC-72485E02B321}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "IKVM.ByteCode.Tests", "src\IKVM.ByteCode.Tests\IKVM.ByteCode.Tests.csproj", "{60E804E4-B25B-4C9A-A3E6-F83D618CFD26}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "IKVM.ByteCode.Tests", "src\IKVM.ByteCode.Tests\IKVM.ByteCode.Tests.csproj", "{60E804E4-B25B-4C9A-A3E6-F83D618CFD26}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
@@ -413,6 +417,10 @@ Global
 		{B240F8BA-6C35-4C19-9035-2821CC6BFEA8}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{B240F8BA-6C35-4C19-9035-2821CC6BFEA8}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{B240F8BA-6C35-4C19-9035-2821CC6BFEA8}.Release|Any CPU.Build.0 = Release|Any CPU
+		{B240F8BA-6C35-4C19-9035-2821CC6BFFA8}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{B240F8BA-6C35-4C19-9035-2821CC6BFFA8}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{B240F8BA-6C35-4C19-9035-2821CC6BFFA8}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{B240F8BA-6C35-4C19-9035-2821CC6BFFA8}.Release|Any CPU.Build.0 = Release|Any CPU
 		{C6C34134-D80C-43CC-A477-32B4172374D2}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
 		{C6C34134-D80C-43CC-A477-32B4172374D2}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{C6C34134-D80C-43CC-A477-32B4172374D2}.Release|Any CPU.ActiveCfg = Release|Any CPU
@@ -437,6 +445,10 @@ Global
 		{03F00630-3625-440D-BE43-51751FCE7806}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{03F00630-3625-440D-BE43-51751FCE7806}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{03F00630-3625-440D-BE43-51751FCE7806}.Release|Any CPU.Build.0 = Release|Any CPU
+		{03F00630-3625-440D-BE43-51751FCE7802}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{03F00630-3625-440D-BE43-51751FCE7802}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{03F00630-3625-440D-BE43-51751FCE7802}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{03F00630-3625-440D-BE43-51751FCE7802}.Release|Any CPU.Build.0 = Release|Any CPU
 		{FB1F02F2-3A18-49CC-A288-EC0834D90EED}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
 		{FB1F02F2-3A18-49CC-A288-EC0834D90EED}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{FB1F02F2-3A18-49CC-A288-EC0834D90EED}.Release|Any CPU.ActiveCfg = Release|Any CPU

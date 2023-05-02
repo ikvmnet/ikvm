@@ -27,6 +27,7 @@ package sun.misc;
 
 import java.util.jar.JarFile;
 import java.io.Console;
+import java.io.FileDescriptor;
 import java.security.ProtectionDomain;
 
 import java.security.AccessController;
@@ -43,11 +44,12 @@ import java.security.AccessController;
 public class SharedSecrets {
     private static final Unsafe unsafe = Unsafe.getUnsafe();
     private static JavaUtilJarAccess javaUtilJarAccess;
-    private static JavaLangAccess javaLangAccess = LangHelper.getJavaLangAccess();
+    private static JavaLangAccess javaLangAccess;
     private static JavaIOAccess javaIOAccess;
     private static JavaNetAccess javaNetAccess;
     private static JavaNetHttpCookieAccess javaNetHttpCookieAccess;
     private static JavaNioAccess javaNioAccess;
+    private static JavaIOFileDescriptorAccess javaIOFileDescriptorAccess;
     private static JavaSecurityProtectionDomainAccess javaSecurityProtectionDomainAccess;
     private static JavaSecurityAccess javaSecurityAccess;
     private static JavaUtilZipFileAccess javaUtilZipFileAccess;
@@ -64,6 +66,10 @@ public class SharedSecrets {
 
     public static void setJavaUtilJarAccess(JavaUtilJarAccess access) {
         javaUtilJarAccess = access;
+    }
+
+    public static void setJavaLangAccess(JavaLangAccess jla) {
+        javaLangAccess = jla;
     }
 
     public static JavaLangAccess getJavaLangAccess() {
@@ -94,7 +100,10 @@ public class SharedSecrets {
 
     public static JavaNioAccess getJavaNioAccess() {
         if (javaNioAccess == null) {
-            // [IKVM] OpenJDK initializes java.nio.ByteOrder here, but that doesn't work
+            // Ensure java.nio.ByteOrder is initialized; we know that
+            // this class initializes java.nio.Bits that provides the
+            // shared secret.
+            unsafe.ensureClassInitialized(java.nio.ByteOrder.class);
             java.nio.ByteOrder.nativeOrder();
         }
         return javaNioAccess;
@@ -109,6 +118,17 @@ public class SharedSecrets {
             unsafe.ensureClassInitialized(Console.class);
         }
         return javaIOAccess;
+    }
+
+    public static void setJavaIOFileDescriptorAccess(JavaIOFileDescriptorAccess jiofda) {
+        javaIOFileDescriptorAccess = jiofda;
+    }
+
+    public static JavaIOFileDescriptorAccess getJavaIOFileDescriptorAccess() {
+        if (javaIOFileDescriptorAccess == null)
+            unsafe.ensureClassInitialized(FileDescriptor.class);
+
+        return javaIOFileDescriptorAccess;
     }
 
     public static void setJavaSecurityProtectionDomainAccess
@@ -129,8 +149,7 @@ public class SharedSecrets {
 
     public static JavaSecurityAccess getJavaSecurityAccess() {
         if (javaSecurityAccess == null) {
-            // [IKVM] OpenJDK initializes AccessController here, but that's a bug
-            unsafe.ensureClassInitialized(ProtectionDomain.class);
+            unsafe.ensureClassInitialized(AccessController.class);
         }
         return javaSecurityAccess;
     }

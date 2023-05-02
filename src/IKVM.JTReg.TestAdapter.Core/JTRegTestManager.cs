@@ -52,10 +52,10 @@ namespace IKVM.JTReg.TestAdapter.Core
         {
 #if NETCOREAPP
             // executable permissions may not have made it onto the JRE binaries so attempt to set them
-            if (RuntimeInformation.IsOSPlatform(OSPlatform.Linux))
+            if (RuntimeInformation.IsOSPlatform(OSPlatform.Linux) || RuntimeInformation.IsOSPlatform(OSPlatform.OSX))
             {
                 var javaHome = java.lang.System.getProperty("java.home");
-                foreach (var exec in new[] { "java", "javac", "jar", "jarsigner", "javadoc", "javah", "javap", "jdeps", "keytool", "native2ascii", "policytool", "rmic", "wsgen", "wsimport" })
+                foreach (var exec in new[] { "java", "javac", "jar", "jarsigner", "javadoc", "javah", "javap", "jdeps", "keytool", "native2ascii", "orbd", "policytool", "rmic", "schemagen", "wsgen", "wsimport" })
                 {
                     var execPath = Path.Combine(javaHome, "bin", exec);
                     if (File.Exists(execPath))
@@ -370,13 +370,13 @@ namespace IKVM.JTReg.TestAdapter.Core
             rp.setFile((java.io.File)wd.getFile("config.jti"));
             rp.setEnvVars(GetEnvVars(debugUri));
             rp.setConcurrency(Environment.ProcessorCount);
-            rp.setTimeLimit(15000);
+            rp.setTimeoutFactor(5);
             rp.setRetainArgs(java.util.Collections.singletonList("all"));
             rp.setExcludeLists(excludeFileList.ToArray());
             rp.setMatchLists(includeFileList.ToArray());
             rp.setIgnoreKind(JTRegTypes.IgnoreKind.QUIET);
             rp.setPriorStatusValues(null);
-            rp.setUseWindowsSubsystemForLinux(true);
+            rp.setUseWindowsSubsystemForLinux(((string)JTRegTypes.OS.Current().family) == "windows");
             rp.setTestNGPath(JTRegTypes.SearchPath.New(Path.Combine(JTREG_LIB, "testng.jar")));
             rp.setJUnitPath(JTRegTypes.SearchPath.New(Path.Combine(JTREG_LIB, "junit.jar")));
             rp.setAsmToolsPath(JTRegTypes.SearchPath.New(Path.Combine(JTREG_LIB, "asmtools.jar")));
@@ -404,7 +404,7 @@ namespace IKVM.JTReg.TestAdapter.Core
         java.util.Map GetEnvVars(Uri debugUri)
         {
             var envVars = new java.util.TreeMap();
-            var os = (string)JTRegTypes.OS.Current().family;
+
             // import existing variables based on the current OS
             foreach (var var in ((string)JTRegTypes.OS.Current().family) == "windows" ? DEFAULT_WINDOWS_ENV_VARS : DEFAULT_UNIX_ENV_VARS)
                 if (Environment.GetEnvironmentVariable(var) is string val)

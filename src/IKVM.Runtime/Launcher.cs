@@ -1,5 +1,4 @@
 ﻿using System;
-using System.Collections;
 using System.Collections.Generic;
 using System.Diagnostics;
 using System.IO;
@@ -14,6 +13,7 @@ using System.Threading;
 
 using IKVM.Attributes;
 using IKVM.Internal;
+using IKVM.Runtime.Accessors.Java.Lang;
 
 namespace IKVM.Runtime
 {
@@ -24,6 +24,20 @@ namespace IKVM.Runtime
     /// </summary>
     static class Launcher
     {
+
+#if FIRST_PASS == false && IMPORTER == false && EXPORTER == false
+
+        static SystemAccessor systemAccessor;
+        static ThreadAccessor threadAccessor;
+        static ThreadGroupAccessor threadGroupAccessor;
+
+        static SystemAccessor SystemAccessor => JVM.BaseAccessors.Get(ref systemAccessor);
+
+        static ThreadAccessor ThreadAccessor => JVM.BaseAccessors.Get(ref threadAccessor);
+
+        static ThreadGroupAccessor ThreadGroupAccessor => JVM.BaseAccessors.Get(ref threadGroupAccessor);
+
+#endif
 
         /// <summary>
         /// Data sent as part of the debug ping protocol.
@@ -101,7 +115,7 @@ namespace IKVM.Runtime
         /// Sets the startup properties.
         /// </summary>
         /// <param name="properties"></param>
-        static void SetProperties(IDictionary properties)
+        static void SetProperties(IDictionary<string, string> properties)
         {
 #if FIRST_PASS || IMPORTER
             throw new NotImplementedException();
@@ -109,7 +123,8 @@ namespace IKVM.Runtime
             if (properties is null)
                 throw new ArgumentNullException(nameof(properties));
 
-            IKVM.Java.Externs.java.lang.VMSystemProperties.ImportProperties = properties;
+            foreach (var kvp in properties)
+                JVM.Properties.User[kvp.Key] = kvp.Value;
 #endif
         }
 
@@ -136,11 +151,13 @@ namespace IKVM.Runtime
                 }
             }
 
-            java.lang.Thread.currentThread();
+            JVM.EnsureInitialized();
+            ThreadAccessor.InvokeCurrentThread();
 
             try
             {
-                sun.misc.Signal.handle(new sun.misc.Signal("BREAK"), sun.misc.SignalHandler.SIG_DFL);
+                if (RuntimeUtil.IsWindows)
+                    sun.misc.Signal.handle(new sun.misc.Signal("BREAK"), sun.misc.SignalHandler.SIG_DFL);
             }
             catch (java.lang.IllegalArgumentException)
             {
@@ -162,7 +179,7 @@ namespace IKVM.Runtime
             // use the TLS as a hack to track when the thread dies (if the object stored in the TLS is finalized,
             // we know the thread is dead). So to make that work for the main thread, we use jniDetach which
             // explicitly cleans up our thread.
-            java.lang.Thread.currentThread().die();
+            ThreadAccessor.InvokeDie(ThreadAccessor.InvokeCurrentThread());
 #endif
         }
 
@@ -195,7 +212,7 @@ namespace IKVM.Runtime
 #else
             Console.WriteLine(GetVersionAndCopyrightInfo());
             Console.WriteLine("CLR version: {0} ({1} bit)", Environment.Version, IntPtr.Size * 8);
-            var ver = java.lang.System.getProperty("openjdk.version");
+            var ver = SystemAccessor.InvokeGetProperty("openjdk.version");
             if (ver != null)
                 Console.WriteLine("OpenJDK version: {0}", ver);
 #endif
@@ -258,7 +275,6 @@ namespace IKVM.Runtime
                 initialize["java.class.path"] = string.Join(Path.PathSeparator.ToString(), Glob(cp.Split(Path.PathSeparator)));
 
             // ikvm.home from environment by default
-            initialize["ikvm.home"] = "ikvm";
             if (Environment.GetEnvironmentVariable("IKVM_HOME") is string ih && !string.IsNullOrEmpty(ih))
                 initialize["ikvm.home"] = ih;
 
@@ -485,7 +501,7 @@ namespace IKVM.Runtime
 
                 // process the main argument, returning the true value, and resetting the command property to match
                 var clazz = sun.launcher.LauncherHelper.checkAndLoadMain(true, jar ? 2 : 1, main);
-                java.lang.System.setProperty("sun.java.command", initialize["sun.java.command"]);
+                SystemAccessor.InvokeSetProperty("sun.java.command", initialize["sun.java.command"]);
 
                 // find the main method and ensure it is accessible
                 var method = clazz.getMethod("main", typeof(string[]));
@@ -504,8 +520,8 @@ namespace IKVM.Runtime
             }
             catch (Exception e)
             {
-                var thread = java.lang.Thread.currentThread();
-                thread.getThreadGroup().uncaughtException(thread, ikvm.runtime.Util.mapException(e));
+                var thread = ThreadAccessor.InvokeCurrentThread();
+                ThreadGroupAccessor.InvokeUncaughtException(ThreadAccessor.InvokeGetThreadGroup(thread), thread, ikvm.runtime.Util.mapException(e));
             }
             finally
             {
@@ -537,7 +553,7 @@ namespace IKVM.Runtime
             // send a start event to the host
             if (debugUri != null)
             {
-                if (debugUri.Scheme == "tcp" &&  IPAddress.TryParse(debugUri.Host, out var ip) && debugUri.Port > 0)
+                if (debugUri.Scheme == "tcp" && IPAddress.TryParse(debugUri.Host, out var ip) && debugUri.Port > 0)
                 {
                     var message = Encoding.UTF8.GetBytes(JsonSerializer.Serialize(new IkvmStartEvent() { ProcessId = Process.GetCurrentProcess().Id, }));
                     using var c = new TcpClient();

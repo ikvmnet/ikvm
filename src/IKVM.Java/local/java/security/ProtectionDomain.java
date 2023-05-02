@@ -59,35 +59,44 @@ import sun.misc.SharedSecrets;
  */
 
 public class ProtectionDomain {
+    private static class JavaSecurityAccessImpl implements JavaSecurityAccess {
+
+        private JavaSecurityAccessImpl() {
+        }
+
+        @Override
+        public <T> T doIntersectionPrivilege(
+                PrivilegedAction<T> action,
+                final AccessControlContext stack,
+                final AccessControlContext context) {
+            if (action == null) {
+                throw new NullPointerException();
+            }
+
+            return AccessController.doPrivileged(
+                action,
+                getCombinedACC(context, stack)
+            );
+        }
+
+        @Override
+        public <T> T doIntersectionPrivilege(
+                PrivilegedAction<T> action,
+                AccessControlContext context) {
+            return doIntersectionPrivilege(action,
+                AccessController.getContext(), context);
+        }
+
+        private static AccessControlContext getCombinedACC(AccessControlContext context, AccessControlContext stack) {
+            AccessControlContext acc = new AccessControlContext(context, stack.getCombiner(), true);
+
+            return new AccessControlContext(stack.getContext(), acc).optimize();
+        }
+    }
 
     static {
         // Set up JavaSecurityAccess in SharedSecrets
-        SharedSecrets.setJavaSecurityAccess(
-            new JavaSecurityAccess() {
-                public <T> T doIntersectionPrivilege(
-                    PrivilegedAction<T> action,
-                    final AccessControlContext stack,
-                    final AccessControlContext context)
-                {
-                    if (action == null) {
-                        throw new NullPointerException();
-                    }
-                    return AccessController.doPrivileged(
-                        action,
-                        new AccessControlContext(
-                            stack.getContext(), context).optimize()
-                    );
-                }
-
-                public <T> T doIntersectionPrivilege(
-                    PrivilegedAction<T> action,
-                    AccessControlContext context)
-                {
-                    return doIntersectionPrivilege(action,
-                        AccessController.getContext(), context);
-                }
-            }
-       );
+        SharedSecrets.setJavaSecurityAccess(new JavaSecurityAccessImpl());
     }
 
     /* CodeSource */
@@ -116,6 +125,8 @@ public class ProtectionDomain {
      * An object used as a key when the ProtectionDomain is stored in a Map.
      */
     final Key key = new Key();
+
+    private static final Debug debug = Debug.getInstance("domain");
 
     /* [IKVM] constructor for use by the runtime (AssemblyClassLoader) */
     ProtectionDomain(cli.System.Reflection.Assembly assembly) {
@@ -395,7 +406,6 @@ public class ProtectionDomain {
         if (sm == null) {
             return true;
         } else {
-            Debug debug = Debug.getInstance("domain");
             if (debug != null) {
                 if (sm.getClass().getClassLoader() == null &&
                     Policy.getPolicyNoCheck().getClass().getClassLoader()

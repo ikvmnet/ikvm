@@ -11,6 +11,26 @@
     </PropertyGroup>
 
     <ItemGroup>
+        <TransformValues Include="Name" Value="$(ProductName)" />
+        <TransformValues Include="Version" Value="$(Version)" />
+        <TransformValues Include="FileVersion" Value="$(FileVersion)" />
+        <TransformValues Include="VendorUrl" Value="$(PackageProjectUrl)" />
+        <TransformValues Include="VendorUrlBug" Value="$(PackageProjectUrl)/issues/" />
+        <TransformValues Include="OpenJdkVersion" Value="$(OpenJdkVersion)" />
+        <TransformValues Include="OpenJdkFullVersion" Value="$(OpenJdkFullVersion)" />
+        <TransformValues Include="OpenJdkVendor" Value="$(OpenJdkVendor)" />
+        <TransformValues Include="OpenJdkImplementationVendor" Value="$(OpenJdkImplementationVendor)" />
+        <TransformValues Include="OpenJdkImplementationVersion" Value="$(OpenJdkImplementationVersion)" />
+        <TransformValues Include="OpenJdkSpecificationVersion" Value="$(OpenJdkSpecificationVersion)" />
+        <TransformValues Include="OpenJdkSpecificationVendor" Value="$(OpenJdkSpecificationVendor)" />
+    </ItemGroup>
+
+    <ItemGroup>
+        <Transform Include="JVM.Constants.cs.tt" TargetPath="$(IntermediateOutputPath)transform\JVM.Constants.cs" />
+        <Compile Include="$(IntermediateOutputPath)transform\JVM.Constants.cs" Visible="False" Link="JVM.Constants.cs" />
+    </ItemGroup>
+
+    <ItemGroup>
         <InternalsVisibleTo Include="IKVM.Java" />
         <InternalsVisibleTo Include="IKVM.Tests" />
     </ItemGroup>
@@ -259,6 +279,7 @@
     </UsingTask>
 
     <Target Name="GenerateJNITrampolines" DependsOnTargets="DisassembleJNITrampolines" Inputs="$(JNITrampolineIntermediateDirectory)%(JNITrampolineRuntimeIdentifier.Identity).s" Outputs="$(JNITrampolineIntermediateDirectory)%(JNITrampolineRuntimeIdentifier.Identity).g.cs" Condition=" '$(TargetFramework)' != '' ">
+        <Message Text="$(JNITrampolineIntermediateDirectory)%(JNITrampolineRuntimeIdentifier.Identity).s -&gt; $(JNITrampolineIntermediateDirectory)%(JNITrampolineRuntimeIdentifier.Identity).g.cs" />
         <Message Text="$(JNITrampolineIntermediateDirectory)%(JNITrampolineRuntimeIdentifier.Identity).s -&gt; $(JNITrampolineIntermediateDirectory)%(JNITrampolineRuntimeIdentifier.Identity).cs" />
         <MakeDir Directories="$(JNITrampolineIntermediateDirectory)" />
         <GenerateJNITrampolinesFunctionTable Namespace="IKVM.Runtime.JNI.Trampolines" ClassName="$([System.String]::Copy('FunctionTable_%(JNITrampolineRuntimeIdentifier.Identity)').Replace('-', '_').Replace('.', '_'))" AssemblerFile="$(JNITrampolineIntermediateDirectory)%(JNITrampolineRuntimeIdentifier.Identity).s" BuildCodeFile="$(JNITrampolineIntermediateDirectory)%(JNITrampolineRuntimeIdentifier.Identity).g.cs" />

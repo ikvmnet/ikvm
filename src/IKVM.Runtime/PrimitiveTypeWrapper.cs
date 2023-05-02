@@ -24,6 +24,7 @@
 using System;
 
 using IKVM.Attributes;
+using IKVM.Runtime;
 
 #if IMPORTER || EXPORTER
 using IKVM.Reflection;
@@ -31,6 +32,8 @@ using IKVM.Reflection.Emit;
 
 using Type = IKVM.Reflection.Type;
 #else
+using System.Reflection;
+using System.Reflection.Emit;
 #endif
 
 #if IMPORTER
@@ -39,6 +42,7 @@ using IKVM.Tools.Importer;
 
 namespace IKVM.Internal
 {
+
     sealed class PrimitiveTypeWrapper : TypeWrapper
     {
 
@@ -89,6 +93,54 @@ namespace IKVM.Internal
         internal override Type TypeAsTBD => type;
 
         public override string ToString() => "PrimitiveTypeWrapper[" + sigName + "]";
+
+#if EMITTERS
+
+        internal override void EmitLdind(CodeEmitter il)
+        {
+            if (this == BOOLEAN)
+                il.Emit(OpCodes.Ldind_U1);
+            else if (this == BYTE)
+                il.Emit(OpCodes.Ldind_U1);
+            else if (this == CHAR)
+                il.Emit(OpCodes.Ldind_U2);
+            else if (this == SHORT)
+                il.Emit(OpCodes.Ldind_I2);
+            else if (this == INT)
+                il.Emit(OpCodes.Ldind_I4);
+            else if (this == LONG)
+                il.Emit(OpCodes.Ldind_I8);
+            else if (this == FLOAT)
+                il.Emit(OpCodes.Ldind_R4);
+            else if (this == DOUBLE)
+                il.Emit(OpCodes.Ldind_R8);
+            else
+                throw new InternalException();
+        }
+
+        internal override void EmitStind(CodeEmitter il)
+        {
+            if (this == BOOLEAN)
+                il.Emit(OpCodes.Stind_I1);
+            else if (this == BYTE)
+                il.Emit(OpCodes.Stind_I1);
+            else if (this == CHAR)
+                il.Emit(OpCodes.Stind_I2);
+            else if (this == SHORT)
+                il.Emit(OpCodes.Stind_I2);
+            else if (this == INT)
+                il.Emit(OpCodes.Stind_I4);
+            else if (this == LONG)
+                il.Emit(OpCodes.Stind_I8);
+            else if (this == FLOAT)
+                il.Emit(OpCodes.Stind_R4);
+            else if (this == DOUBLE)
+                il.Emit(OpCodes.Stind_R8);
+            else
+                throw new InternalException();
+        }
+
+#endif
 
     }
 

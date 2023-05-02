@@ -61,11 +61,15 @@ Items = Items.OrderBy(i => i.ItemSpec).ToArray();
 
         <ItemGroup>
             <_IkvmExporterArgs Remove="@(_IkvmExporterArgs)" />
-            <_IkvmExporterArgs Include="-bootstrap" Condition=" '%(ReferenceExport.Bootstrap)' == 'true' " />
-            <_IkvmExporterArgs Include="-nostdlib" Condition=" '%(ReferenceExport.NoStdLib)' == 'true' " />
-            <_IkvmExporterArgs Include="@(_ReferenceExportReference->'-r:&quot;%(FullPath)&quot;')" Condition=" '@(_ReferenceExportReference)' != '' " />
-            <_IkvmExporterArgs Include="@(_ReferenceExportLibrary->'-lib:&quot;%(FullPath)&quot;')" Condition=" '@(_ReferenceExportLibrary)' != '' " />
-            <_IkvmExporterArgs Include="-out:&quot;%(ReferenceExport.StagePath)&quot;" />
+            <_IkvmExporterArgs Include="--bootstrap" Condition=" '%(ReferenceExport.Bootstrap)' == 'true' " />
+            <_IkvmExporterArgs Include="--nostdlib" Condition=" '%(ReferenceExport.NoStdLib)' == 'true' " />
+            <_IkvmExporterArgs Include="--non-public-types" Condition=" '%(ReferenceExport.IncludeNonPublicTypes)' == 'true' " />
+            <_IkvmExporterArgs Include="--non-public-interfaces" Condition=" '%(ReferenceExport.IncludeNonPublicInterfaces)' == 'true' " />
+            <_IkvmExporterArgs Include="--non-public-members" Condition=" '%(ReferenceExport.IncludeNonPublicMembers)' == 'true' " />
+            <_IkvmExporterArgs Include="--parameters" Condition=" '%(ReferenceExport.IncludeParameterNames)' == 'true' " />
+            <_IkvmExporterArgs Include="@(_ReferenceExportReference->'--reference:&quot;%(FullPath)&quot;')" Condition=" '@(_ReferenceExportReference)' != '' " />
+            <_IkvmExporterArgs Include="@(_ReferenceExportLibrary->'--library:&quot;%(FullPath)&quot;')" Condition=" '@(_ReferenceExportLibrary)' != '' " />
+            <_IkvmExporterArgs Include="--out:&quot;%(ReferenceExport.StagePath)&quot;" />
             <_IkvmExporterArgs Include="&quot;%(ReferenceExport.Identity)&quot;" />
         </ItemGroup>
 
@@ -81,7 +85,7 @@ Items = Items.OrderBy(i => i.ItemSpec).ToArray();
     </Target>
 
     <!-- Override IKVM.NET.Sdk: directly invoke javac executable  -->
-    <Target Name="_CompileJavaResponseFile" DependsOnTargets="ResolveJavaCompiler;ExportReferences;GetReferenceClasspath">
+    <Target Name="_CompileJavaResponseFile" DependsOnTargets="ResolveJavaCompiler;ExportReferences;GetReferenceClasspath;BeforeCompile">
         <Error Text="Could not locate javac executable." Condition=" '$(JavaCompilerPath)' == '' " />
         <Error Text="javac could not be located at '$(JavaCompilerPath)'." Condition="!Exists('$(JavaCompilerPath)')" />
 

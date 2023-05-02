@@ -150,21 +150,11 @@ public class VM {
     private static volatile boolean booted = false;
     private static final Object lock = new Object();
 
-    static {
-        // [IKVM] force System properties initialization ("booting")
-        System.lineSeparator();
-    }
-
     // Invoked by by System.initializeSystemClass just before returning.
     // Subsystems that are invoked during initialization can check this
     // property in order to avoid doing things that should wait until the
     // application class loader has been set up.
     //
-    // [IKVM] The above isn't applicable. We only use the booted flag
-    // for the system properties (this is required because the system properties
-    // use java.util.Hashtable (via java.util.Properties) and it relies on
-    // the booted flag to determine whether it is safe to query the system
-    // properties).
     public static void booted() {
         synchronized (lock) {
             booted = true;
@@ -187,13 +177,22 @@ public class VM {
         }
     }
 
+    // A user-settable upper limit on the maximum amount of allocatable direct
+    // buffer memory.  This value may be changed during VM initialization if
+    // "java" is launched with "-XX:MaxDirectMemorySize=<size>".
+    //
+    // The initial value of this field is arbitrary; during JRE initialization
+    // it will be reset to the value specified on the command line, if any,
+    // otherwise to Runtime.getRuntime().maxMemory().
+    //
+    private static long directMemory = 64 * 1024 * 1024;
+
     // Returns the maximum amount of allocatable direct buffer memory.
     // The directMemory variable is initialized during system initialization
     // in the saveAndRemoveProperties method.
     //
     public static long maxDirectMemory() {
-        // we don't support -XX:MaxDirectMemorySize
-        return Long.MAX_VALUE;
+        return directMemory;
     }
 
     // User-controllable flag that determines if direct buffers should be page
@@ -254,18 +253,16 @@ public class VM {
      *
      */
     public static String getSavedProperty(String key) {
-        if (Lazy.savedProps.isEmpty())
+        if (savedProps.isEmpty())
             throw new IllegalStateException("Should be non-empty if initialized");
 
-        return Lazy.savedProps.getProperty(key);
+        return savedProps.getProperty(key);
     }
 
     // TODO: the Property Management needs to be refactored and
     // the appropriate prop keys need to be accessible to the
     // calling classes to avoid duplication of keys.
-    static final class Lazy {
-        static final Properties savedProps = new Properties();
-    }
+    private static final Properties savedProps = new Properties();
 
     // Save a private copy of the system properties and remove
     // the system properties that are not intended for public access.
@@ -275,7 +272,7 @@ public class VM {
         if (booted)
             throw new IllegalStateException("System initialization has completed");
 
-        Lazy.savedProps.putAll(props);
+        savedProps.putAll(props);
 
         // Set the maximum amount of direct memory.  This value is controlled
         // by the vm option -XX:MaxDirectMemorySize=<size>.
@@ -283,7 +280,16 @@ public class VM {
         // from the system property sun.nio.MaxDirectMemorySize set by the VM.
         // The system property will be removed.
         String s = (String)props.remove("sun.nio.MaxDirectMemorySize");
-        // [IKVM] we don't support the -XX:MaxDirectMemorySize=<size> option.
+        if (s != null) {
+            if (s.equals("-1")) {
+                // -XX:MaxDirectMemorySize not given, take default
+                directMemory = Runtime.getRuntime().maxMemory();
+            } else {
+                long l = Long.parseLong(s);
+                if (l > -1)
+                    directMemory = l;
+            }
+        }
 
         // Check if direct buffers should be page aligned
         s = (String)props.remove("sun.nio.PageAlignDirectMemory");
@@ -316,6 +322,9 @@ public class VM {
     // set for the class libraries.
     //
     public static void initializeOSEnvironment() {
+        if (!booted) {
+            OSEnvironment.initialize();
+        }
     }
 
     /* Current count of objects pending for finalization */

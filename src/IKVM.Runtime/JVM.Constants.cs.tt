@@ -1,0 +1,36 @@
+
+namespace IKVM.Runtime
+{
+
+    static partial class JVM
+    {
+
+        static class Constants
+        {
+
+            public static string java_runtime_name = "OpenJDK Runtime Environment";
+            public static string java_runtime_version = "#OpenJdkFullVersion#";
+
+            public static string java_vm_name = "#Name#";
+            public static string java_vm_version = "#Version#";
+            public static string java_vm_vendor = "#Name#";
+
+            public static string java_vm_specification_version = "#OpenJdkSpecificationVersion#";
+            public static string java_vm_specification_vendor = "#OpenJdkSpecificationVendor#";
+
+            public static string java_version = "#OpenJdkImplementationVersion#";
+            public static string java_vendor = "#Name#";
+            public static string java_vendor_url = "#VendorUrl#";
+            public static string java_vendor_url_bug = "#VendorUrlBug#";
+
+            public static string java_specification_version = "#OpenJdkSpecificationVersion#";
+            public static string java_specification_vendor = "#OpenJdkSpecificationVendor#";
+
+            public static string openjdk_version = "#OpenJdkVersion#";
+            public static string openjdk_vendor = "#OpenJdkVendor#";
+
+        }
+
+    }
+
+}

@@ -1,51 +1,50 @@
-/*
-  Copyright (C) 2011 Jeroen Frijters
-
-  This software is provided 'as-is', without any express or implied
-  warranty.  In no event will the authors be held liable for any damages
-  arising from the use of this software.
-
-  Permission is granted to anyone to use this software for any purpose,
-  including commercial applications, and to alter it and redistribute it
-  freely, subject to the following restrictions:
-
-  1. The origin of this software must not be misrepresented; you must not
-     claim that you wrote the original software. If you use this software
-     in a product, an acknowledgment in the product documentation would be
-     appreciated but is not required.
-  2. Altered source versions must be plainly marked as such, and must not be
-     misrepresented as being the original software.
-  3. This notice may not be removed or altered from any source distribution.
-
-  Jeroen Frijters
-  jeroen@frijters.net
-  
-*/
-
 using System;
+using System.Buffers;
+using System.Net.Sockets;
 
-using FileDescriptor = java.io.FileDescriptor;
+using IKVM.Runtime;
+using IKVM.Runtime.Accessors.Java.Io;
+using IKVM.Runtime.Util.Java.Net;
 
 namespace IKVM.Java.Externs.sun.nio.ch
 {
 
+    /// <summary>
+    /// Implements the native methods for 'SocketChannelImpl'.
+    /// </summary>
     static class SocketChannelImpl
     {
 
-        public static int checkConnect(FileDescriptor fd, bool block, bool ready)
+#if FIRST_PASS == false
+
+        static FileDescriptorAccessor fileDescriptorAccessor;
+        static FileDescriptorAccessor FileDescriptorAccessor => JVM.BaseAccessors.Get(ref fileDescriptorAccessor);
+
+#endif
+
+        /// <summary>
+        /// Implements the native method 'checkConnect'.
+        /// </summary>
+        /// <param name="fd"></param>
+        /// <param name="block"></param>
+        /// <param name="ready"></param>
+        /// <returns></returns>
+        public static int checkConnect(object fd, bool block, bool ready)
         {
 #if FIRST_PASS
-			return 0;
+            throw new NotImplementedException();
 #else
+            var socket = FileDescriptorAccessor.GetSocket(fd);
+            if (socket == null)
+                throw new global::java.io.IOException("Socket closed.");
+
             try
             {
-                IAsyncResult asyncConnect = fd.getAsyncResult();
-                if (block || ready || asyncConnect.IsCompleted)
+                var task = FileDescriptorAccessor.GetTask(fd);
+                if (block || ready || task.IsCompleted)
                 {
-                    fd.setAsyncResult(null);
-                    fd.getSocket().EndConnect(asyncConnect);
-                    // work around for blocking issue
-                    fd.getSocket().Blocking = fd.isSocketBlocking();
+                    FileDescriptorAccessor.SetTask(fd, null);
+                    task.GetAwaiter().GetResult();
                     return 1;
                 }
                 else
@@ -53,34 +52,79 @@ namespace IKVM.Java.Externs.sun.nio.ch
                     return global::sun.nio.ch.IOStatus.UNAVAILABLE;
                 }
             }
-            catch (System.Net.Sockets.SocketException x)
-            {
-                throw new global::java.net.ConnectException(x.Message);
-            }
-            catch (ObjectDisposedException)
-            {
-                throw new global::java.net.SocketException("Socket is closed");
-            }
-#endif
-        }
-
-        public static int sendOutOfBandData(FileDescriptor fd, byte data)
-        {
-#if FIRST_PASS
-			return 0;
-#else
-            try
-            {
-                fd.getSocket().Send(new byte[] { data }, 1, System.Net.Sockets.SocketFlags.OutOfBand);
-                return 1;
-            }
-            catch (System.Net.Sockets.SocketException e)
+            catch (SocketException e)
             {
                 throw new global::java.net.ConnectException(e.Message);
             }
             catch (ObjectDisposedException)
             {
-                throw new global::java.net.SocketException("Socket is closed");
+                throw new global::java.net.SocketException("Socket closed.");
+            }
+            catch (Exception e)
+            {
+                throw new global::java.io.IOException(e);
+            }
+#endif
+        }
+
+        /// <summary>
+        /// Implements the native method 'sendOutOfBandData'.
+        /// </summary>
+        /// <param name="fd"></param>
+        /// <param name="data"></param>
+        /// <returns></returns>
+        public static int sendOutOfBandData(object fd, byte data)
+        {
+#if FIRST_PASS
+            throw new NotImplementedException();
+#else
+            var socket = FileDescriptorAccessor.GetSocket(fd);
+            if (socket == null)
+                throw new global::java.io.IOException("Socket closed.");
+
+            try
+            {
+#if NETFRAMEWORK
+                var buf = ArrayPool<byte>.Shared.Rent(1);
+
+                try
+                {
+                    buf[0] = data;
+                    return socket.Send(buf, 1, SocketFlags.OutOfBand);
+                }
+                finally
+                {
+                    ArrayPool<byte>.Shared.Return(buf);
+                }
+#else
+                unsafe
+                {
+                    var buf = (Span<byte>)stackalloc byte[1];
+                    buf[0] = data;
+                    return socket.Send(buf, SocketFlags.OutOfBand);
+                }
+#endif
+            }
+            catch (SocketException e) when (e.SocketErrorCode == SocketError.WouldBlock)
+            {
+                if (RuntimeUtil.IsWindows)
+                    throw new global::java.net.SocketException("Resource temporarily unavailable");
+                else if (RuntimeUtil.IsOSX)
+                    throw new global::java.net.SocketException("No buffer space available");
+                else
+                    return global::sun.nio.ch.IOStatus.UNAVAILABLE;
+            }
+            catch (SocketException e)
+            {
+                throw e.ToIOException();
+            }
+            catch (ObjectDisposedException)
+            {
+                throw new global::java.net.SocketException("Socket closed.");
+            }
+            catch (Exception e)
+            {
+                throw new global::java.io.IOException(e);
             }
 #endif
         }

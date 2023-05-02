@@ -33,7 +33,7 @@ namespace IKVM.Runtime.Vfs
     /// <summary>
     /// Represents a fake cacerts file.
     /// </summary>
-    sealed class VfsCacertsFile : VfsFile
+    internal sealed class VfsCacertsFile : VfsFile
     {
 
         readonly Lazy<byte[]> buff;
@@ -54,7 +54,7 @@ namespace IKVM.Runtime.Vfs
         /// <returns></returns>
         byte[] GenerateCacertsFile()
         {
-#if FIRST_PASS
+#if FIRST_PASS || IMPORTER || EXPORTER
             throw new NotImplementedException();
 #else
             var jstore = java.security.KeyStore.getInstance("jks");

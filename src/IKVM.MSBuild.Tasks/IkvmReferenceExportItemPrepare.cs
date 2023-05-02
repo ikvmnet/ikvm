@@ -132,11 +132,20 @@
 
             // yield and wait for the task to complete
             BuildEngine3.Yield();
-            var rsl = run.GetAwaiter().GetResult();
-            BuildEngine3.Reacquire();
+
+            // wait for result, and ensure we reacquire in case of return value or exception
+            var result = false;
+            try
+            {
+                result = run.GetAwaiter().GetResult();
+            }
+            finally
+            {
+                BuildEngine3.Reacquire();
+            }
 
             // check that we exited successfully
-            return rsl;
+            return result;
         }
 
         /// <summary>
@@ -248,8 +257,10 @@
             writer.WriteLine("Shared={0}", item.Shared);
             writer.WriteLine("NoStdLib={0}", item.NoStdLib);
             writer.WriteLine("Forwarders={0}", item.Forwarders);
-            writer.WriteLine("Parameters={0}", item.Parameters);
-            writer.WriteLine("JApi={0}", item.JApi);
+            writer.WriteLine("IncludeNonPublicTypes={0}", item.IncludeNonPublicTypes);
+            writer.WriteLine("IncludeNonPublicInterfaces={0}", item.IncludeNonPublicInterfaces);
+            writer.WriteLine("IncludeNonPublicMembers={0}", item.IncludeNonPublicMembers);
+            writer.WriteLine("IncludeParameterNames={0}", item.IncludeParameterNames);
             writer.WriteLine("Bootstrap={0}", item.Bootstrap);
 
             // traverse the reference set for references that are actually referenced

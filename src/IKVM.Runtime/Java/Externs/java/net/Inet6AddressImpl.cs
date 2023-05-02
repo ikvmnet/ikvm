@@ -24,8 +24,7 @@
 using System;
 using System.Net;
 using System.Net.Sockets;
-
-using IKVM.Runtime.Java.Externs.java.net;
+using IKVM.Runtime.Util.Java.Net;
 
 namespace IKVM.Java.Externs.java.net
 {

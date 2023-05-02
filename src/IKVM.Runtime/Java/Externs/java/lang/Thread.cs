@@ -22,39 +22,56 @@
   
 */
 
+using System;
 using System.Collections.Generic;
 using System.Diagnostics;
 using System.Threading;
 
 using IKVM.Internal;
+using IKVM.Runtime;
+using IKVM.Runtime.Accessors.Java.Lang;
+using IKVM.Runtime.Util.Java.Security;
 
 namespace IKVM.Java.Externs.java.lang
 {
 
+    /// <summary>
+    /// Implements the native mthods of 'java.lang.Thread'.
+    /// </summary>
     static class Thread
     {
 
-        static readonly object mainThreadGroup;
+#if FIRST_PASS == false
 
-#if !FIRST_PASS
+        static AccessControllerAccessor accessControllerAccessor;
+        static ThreadAccessor threadAccessor;
 
-        static Thread()
-        {
-            mainThreadGroup = new global::java.lang.ThreadGroup(global::java.lang.ThreadGroup.createRootGroup(), "main");
-        }
+        static AccessControllerAccessor AccessControllerAccessor => JVM.BaseAccessors.Get(ref accessControllerAccessor);
+
+        static ThreadAccessor ThreadAccessor => JVM.BaseAccessors.Get(ref threadAccessor);
 
 #endif
 
+        /// <summary>
+        /// Implements the native method 'getMainThreadGroup'.
+        /// </summary>
+        /// <returns></returns>
         public static object getMainThreadGroup()
         {
-            return mainThreadGroup;
+#if FIRST_PASS
+            throw new NotImplementedException();
+#else
+            return JVM.MainThreadGroup;
+#endif
         }
 
         // this is called from JniInterface.cs
         internal static void WaitUntilLastJniThread()
         {
-#if !FIRST_PASS
-            int count = global::java.lang.Thread.currentThread().isDaemon() ? 0 : 1;
+#if FIRST_PASS
+            throw new NotImplementedException();
+#else
+            int count = ThreadAccessor.InvokeIsDaemon(ThreadAccessor.InvokeCurrentThread()) ? 0 : 1;
             while (Interlocked.CompareExchange(ref global::java.lang.Thread.nonDaemonCount[0], 0, 0) > count)
                 global::System.Threading.Thread.Sleep(1);
 #endif
@@ -63,19 +80,23 @@ namespace IKVM.Java.Externs.java.lang
         // this is called from JniInterface.cs
         internal static void AttachThreadFromJni(object threadGroup)
         {
-#if !FIRST_PASS
-            if (threadGroup == null)
-                threadGroup = mainThreadGroup;
-
-            if (global::java.lang.Thread.current == null)
-                new global::java.lang.Thread((global::java.lang.ThreadGroup)threadGroup);
+#if FIRST_PASS
+            throw new NotImplementedException();
+#else
+            if (ThreadAccessor.GetCurrent() == null)
+                ThreadAccessor.Init(threadGroup ?? JVM.MainThreadGroup);
 #endif
         }
 
+        /// <summary>
+        /// Implements the native method 'getStackTrace'.
+        /// </summary>
+        /// <param name="stack"></param>
+        /// <returns></returns>
         public static global::java.lang.StackTraceElement[] getStackTrace(StackTrace stack)
         {
 #if FIRST_PASS
-            return null;
+            throw new NotImplementedException();
 #else
             var stackTrace = new List<global::java.lang.StackTraceElement>();
             ExceptionHelper.ExceptionInfoHelper.Append(stackTrace, stack, 0, true);
@@ -83,15 +104,19 @@ namespace IKVM.Java.Externs.java.lang
 #endif
         }
 
+        /// <summary>
+        /// Implements the native method 'getThreads'.
+        /// </summary>
+        /// <returns></returns>
         public static object getThreads()
         {
 #if FIRST_PASS
-            return null;
+            throw new NotImplementedException();
 #else
-            return global::java.security.AccessController.doPrivileged(global::ikvm.runtime.Delegates.toPrivilegedAction(delegate
+            return AccessControllerAccessor.InvokeDoPrivileged(new FuncPrivilegedAction<object[]>(() =>
             {
-                var root = (global::java.lang.ThreadGroup)mainThreadGroup;
-                for (; ; )
+                var root = (global::java.lang.ThreadGroup)JVM.MainThreadGroup;
+                while (true)
                 {
                     var threads = new global::java.lang.Thread[root.activeCount()];
                     if (root.enumerate(threads) == threads.Length)

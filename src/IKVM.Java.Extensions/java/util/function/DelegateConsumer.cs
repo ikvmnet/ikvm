@@ -8,7 +8,7 @@ namespace java.util.function
     /// Implementation of <see cref="Consumer"/> that sends output to a delegate.
     /// </summary>
     /// <typeparam name="T"></typeparam>
-    class DelegateConsumer<T> : Consumer
+    public class DelegateConsumer<T> : Consumer
     {
 
         /// <summary>

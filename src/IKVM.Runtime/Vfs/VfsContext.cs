@@ -7,7 +7,7 @@ namespace IKVM.Runtime.Vfs
     /// <summary>
     /// Provides information to the VFS about the environment.
     /// </summary>
-    abstract class VfsContext
+    internal abstract class VfsContext
     {
 
         /// <summary>
