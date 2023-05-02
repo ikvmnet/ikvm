@@ -31,9 +31,10 @@ namespace IKVM.Tests.Java.java.lang
                 this.onFinalize = onFinalize ?? throw new ArgumentNullException(nameof(onFinalize));
             }
 
-            ~TestClassLoader()
+            protected override void finalize()
             {
                 onFinalize(this);
+                base.finalize();
             }
 
         }
