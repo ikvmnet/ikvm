@@ -1,0 +1,24 @@
+<Project xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+    <PropertyGroup>
+        <MSBuildAllProjects>$(MSBuildAllProjects);$(MSBuildThisFileFullPath)</MSBuildAllProjects>
+    </PropertyGroup>
+
+    <PropertyGroup>
+        <IsCrossTargetingBuild Condition=" '$(TargetMachines)' != '' And '$(TargetMachine)' == '' ">true</IsCrossTargetingBuild>
+    </PropertyGroup>
+
+    <Choose>
+        <When Condition=" '$(IsCrossTargetingBuild)' == 'true' ">
+            <PropertyGroup>
+                <ClangTargetsPath>$(MSBuildThisFileDirectory)IKVM.Clang.CrossTargeting.targets</ClangTargetsPath>
+            </PropertyGroup>
+        </When>
+        <Otherwise>
+            <PropertyGroup>
+                <ClangTargetsPath>$(MSBuildThisFileDirectory)IKVM.Clang.CurrentVersion.targets</ClangTargetsPath>
+            </PropertyGroup>
+        </Otherwise>
+    </Choose>
+
+    <Import Project="$(ClangTargetsPath)" />
+</Project>

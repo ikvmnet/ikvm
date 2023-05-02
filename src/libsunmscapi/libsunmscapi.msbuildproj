@@ -1,0 +1,14 @@
+﻿<Project>
+    <Import Project="$(MSBuildThisFileDirectory)..\IKVM.Clang.Sdk\Sdk\Sdk.props" />
+    <Import Project="$(MSBuildThisFileDirectory)..\..\openjdk.props" />
+
+    <PropertyGroup>
+        <TargetMachines>x86_64-windows-pc-msvc;x86-windows-pc-msvc</TargetMachines>
+    </PropertyGroup>
+
+    <ItemGroup>
+        <Compile Include="$(OpenJdkDir)\jdk\src\windows\native\sun\security\mscapi\**\*.c" />
+    </ItemGroup>
+
+    <Import Project="$(MSBuildThisFileDirectory)..\IKVM.Clang.Sdk\Sdk\Sdk.targets" />
+</Project>
