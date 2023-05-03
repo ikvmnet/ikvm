@@ -35,6 +35,7 @@ using Type = IKVM.Reflection.Type;
 
 using IKVM.ByteCode.Reading;
 using IKVM.ByteCode.Parsing;
+
 using System.Linq;
 using System.IO;
 #else
