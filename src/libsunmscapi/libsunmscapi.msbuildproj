@@ -11,4 +11,11 @@
     </ItemGroup>
 
     <Import Project="$(MSBuildThisFileDirectory)..\IKVM.Clang.Sdk\Sdk\Sdk.targets" />
+
+    <PropertyGroup>
+        <BuildDependsOn>
+            $(BuildDependsOn);
+            Foo
+        </BuildDependsOn>
+    </PropertyGroup>
 </Project>

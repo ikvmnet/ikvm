@@ -1,21 +1,18 @@
 ﻿<Project Sdk="Microsoft.Build.NoTargets/3.7.0">
-    <PropertyGroup>
-        <TargetFramework>netstandard2.0</TargetFramework>
-        <PackageLicenseFile>LICENSE.md</PackageLicenseFile>
-        <PackageReadmeFile>README.md</PackageReadmeFile>
-        <Description>IKVM Clang SDK</Description>
-        <GenerateDocumentationFile>false</GenerateDocumentationFile>
-        <IncludeBuildOutput>false</IncludeBuildOutput>
-    </PropertyGroup>
-
-    <PropertyGroup>
-        <PublishRepositoryUrl>true</PublishRepositoryUrl>
-    </PropertyGroup>
-
-    <ItemGroup>
-        <None Include="Sdk\**\*" Pack="true" PackagePath="Sdk\%(RecursiveDir)%(Filename)%(Extension)" />
-        <None Include="targets\**\*" Pack="true" PackagePath="targets\%(RecursiveDir)%(Filename)%(Extension)" />
-        <None Include="..\..\LICENSE.md" Pack="true" PackagePath="." />
-    </ItemGroup>
-
+  <PropertyGroup>
+    <TargetFramework>netstandard2.0</TargetFramework>
+    <PackageLicenseFile>LICENSE.md</PackageLicenseFile>
+    <PackageReadmeFile>README.md</PackageReadmeFile>
+    <Description>IKVM Clang SDK</Description>
+    <GenerateDocumentationFile>false</GenerateDocumentationFile>
+    <IncludeBuildOutput>false</IncludeBuildOutput>
+  </PropertyGroup>
+  <PropertyGroup>
+    <PublishRepositoryUrl>true</PublishRepositoryUrl>
+  </PropertyGroup>
+  <ItemGroup>
+    <None Include="Sdk\**\*" Pack="true" PackagePath="Sdk\%(RecursiveDir)%(Filename)%(Extension)" />
+    <None Include="targets\**\*" Pack="true" PackagePath="targets\%(RecursiveDir)%(Filename)%(Extension)" />
+    <None Include="..\..\LICENSE.md" Pack="true" PackagePath="." />
+  </ItemGroup>
 </Project>
