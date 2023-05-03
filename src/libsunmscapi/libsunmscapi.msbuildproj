@@ -3,19 +3,32 @@
     <Import Project="$(MSBuildThisFileDirectory)..\..\openjdk.props" />
 
     <PropertyGroup>
-        <TargetMachines>x86_64-windows-pc-msvc;x86-windows-pc-msvc</TargetMachines>
+        <TargetMachines>x86_64-pc-windows-msvc14</TargetMachines>
+        <TargetName>sunmscapi</TargetName>
+        <OutputType>library</OutputType>
+        <Verbose>true</Verbose>
+        <LanguageStandard>c++98</LanguageStandard>
+        <UseLd>lld-link</UseLd>
+        <MsCompatibility>true</MsCompatibility>
+        <AdditionalDependencies>Crypt32;advapi32;ncrypt</AdditionalDependencies>
+        <PreprocessorDefinitions>$(PreprocessorDefinitions);_DEBUG;</PreprocessorDefinitions>
+        
+        <!-- latest Windows SDK produces invalid C without clearing this define, unsure -->
+        <PreprocessorDefinitions>$(PreprocessorDefinitions);_CRT_NOEXCEPT=</PreprocessorDefinitions>
+        
+        <!-- common/autoconf/flags.m4 -->
+        <PreprocessorDefinitions>$(PreprocessorDefinitions);WIN32_LEAN_AND_MEAN;_CRT_SECURE_NO_DEPRECATE;_CRT_NONSTDC_NO_DEPRECATE;WIN32;IAL</PreprocessorDefinitions>
+        <PreprocessorDefinitions>$(PreprocessorDefinitions);_AMD64_;amd64</PreprocessorDefinitions>
+        
+        <!-- jdk/make/lib/SecurityLibraries.gmk -->
+        <PreprocessorDefinitions>$(PreprocessorDefinitions);JDK_FNAME=$(TargetName).dll;JDK_INTERNAL_NAME=$(TargetName);JDK_FTYPE=0x2L</PreprocessorDefinitions>
     </PropertyGroup>
 
     <ItemGroup>
-        <Compile Include="$(OpenJdkDir)\jdk\src\windows\native\sun\security\mscapi\**\*.c" />
+        <Include Include="$(OpenJdkDir)jdk\src\share\javavm\export" />
+        <Include Include="$(OpenJdkDir)jdk\src\windows\javavm\export" />
+        <Compile Include="$(OpenJdkDir)jdk\src\windows\native\sun\security\mscapi\**\*.cpp" />
     </ItemGroup>
 
     <Import Project="$(MSBuildThisFileDirectory)..\IKVM.Clang.Sdk\Sdk\Sdk.targets" />
-
-    <PropertyGroup>
-        <BuildDependsOn>
-            $(BuildDependsOn);
-            Foo
-        </BuildDependsOn>
-    </PropertyGroup>
 </Project>

@@ -4,6 +4,10 @@
     </PropertyGroup>
 
     <PropertyGroup>
+        <OutputType>$(OutputType.ToLower())</OutputType>
+    </PropertyGroup>
+
+    <PropertyGroup>
         <Platform Condition="'$(Platform)' == ''">AnyCPU</Platform>
         <PlatformName Condition="'$(PlatformName)' == ''">$(Platform)</PlatformName>
         <Configuration Condition="'$(Configuration)' == ''">Debug</Configuration>
@@ -36,8 +40,9 @@
         <ProjectFileName Condition=" '$(ProjectFileName)' == '' ">$(MSBuildProjectFile)</ProjectFileName>
         <ProjectExt Condition=" '$(ProjectExt)' == '' ">$(MSBuildProjectExtension)</ProjectExt>
         <TargetFileName Condition=" '$(TargetFileName)' == '' ">$(TargetName)$(TargetExt)</TargetFileName>
+        <TargetPath Condition=" '$(TargetPath)' == '' ">$(IntermediateOutputPath)$(TargetFileName)</TargetPath>
     </PropertyGroup>
-    
+
     <PropertyGroup>
         <GetTargetPathDependsOn>
             $(GetTargetPathDependsOn)
@@ -52,6 +57,7 @@
 
     <PropertyGroup>
         <PreBuildEventDependsOn></PreBuildEventDependsOn>
+        <PostBuildEventDependsOn></PostBuildEventDependsOn>
     </PropertyGroup>
 
     <Target
@@ -60,6 +66,14 @@
         DependsOnTargets="$(PreBuildEventDependsOn)">
 
         <Exec WorkingDirectory="$(OutDir)" Command="$(PreBuildEvent)" />
+    </Target>
+
+    <Target
+        Name="PostBuildEvent"
+        Condition="'$(PostBuildEvent)'!=''"
+        DependsOnTargets="$(PostBuildEventDependsOn)">
+
+        <Exec WorkingDirectory="$(OutDir)" Command="$(PostBuildEvent)" />
     </Target>
 
     <PropertyGroup>
@@ -81,14 +95,12 @@
             PreBuildEvent;
             Compile;
             GetTargetPath;
-            IncrementalClean;
             PostBuildEvent
         </CoreBuildDependsOn>
     </PropertyGroup>
 
     <Target Name="CoreBuild" DependsOnTargets="$(CoreBuildDependsOn)">
         <OnError ExecuteTargets="_TimeStampAfterCompile;PostBuildEvent" Condition="'$(RunPostBuildEvent)'=='Always' or '$(RunPostBuildEvent)'=='OnOutputUpdated'"/>
-        <OnError ExecuteTargets="_CleanRecordFileWrites"/>
     </Target>
 
     <PropertyGroup>
@@ -130,90 +142,34 @@
 
     <Target Name="AfterCompile" />
 
-    <Target Name="CoreCompile" />
+    <Target Name="CoreCompile">
+        <MakeDir Directories="$(IntermediateOutputPath)" />
 
-    <Target Name="IncrementalClean" DependsOnTargets="$(IncrementalCleanDependsOn);_CleanGetCurrentAndPriorFileWrites">
-
-        <!-- Subtract list of files produced in prior builds from list of files produced in this build. -->
         <ItemGroup>
-            <_CleanOrphanFileWrites Include="@(_CleanPriorFileWrites)" Exclude="@(_CleanCurrentFileWrites)"/>
+            <_Args Include="-v" Condition=" '$(Verbose)' == 'true' " />
+            <_Args Include="--target=$(TargetMachine)" />
+            <_Args Include="-shared" Condition=" '$(OutputType)' == 'library' " />
+            <_Args Include="-std=$(LanguageStandard)" Condition=" '$(LanguageStandard)' != '' " />
+            <_Args Include="-fms-compatibility" Condition=" '$(MsCompatibility)' == 'true' " />
+            <_AdditionalIncludeDirectories Include="@(AdditionalIncludeDirectories)" />
+            <_AdditionalIncludeDirectories Include="$(AdditionalIncludeDirectories)" />
+            <_Args Include="@(_AdditionalIncludeDirectories->'-I%(Identity)')" Condition=" '@(_AdditionalIncludeDirectories)' != '' " />
+            <_AdditionalLibraryDirectories Include="@(AdditionalLibraryDirectories)" />
+            <_AdditionalLibraryDirectories Include="$(AdditionalLibraryDirectories)" />
+            <_Args Include="@(_AdditionalLibraryDirectories->'-L%(Identity)')" Condition=" '@(_AdditionalLibraryDirectories)' != '' " />
+            <_AdditionalDependencies Include="@(AdditionalDependencies)" />
+            <_AdditionalDependencies Include="$(AdditionalDependencies)" />
+            <_Args Include="@(_AdditionalDependencies->'-l%(Identity)')" Condition=" '@(_AdditionalDependencies)' != '' " />
+            <_PreprocessorDefinitions Include="$(PreprocessorDefinitions)" />
+            <_Args Include="@(_PreprocessorDefinitions->'-D%(Identity)')" Condition=" '@(_PreprocessorDefinitions)' != '' " />
+            <_Args Include="-fuse-ld=$(UseLd)" Condition=" '$(UseLd)' != '' " />
+            <_Args Include="@(Include->'-I%(Identity)')" />
+            <_Args Include="$(AdditionalOptions)" Condition=" '$(AdditionalOptions)' != '' " />
+            <_Args Include="@(Compile->'%(Identity)')" />
+            <_Args Include="-o $(TargetPath)" />
         </ItemGroup>
-
-        <!-- Find all files in the final output directory. -->
-        <FindUnderPath Path="$(OutDir)" Files="@(_CleanOrphanFileWrites)">
-            <Output TaskParameter="InPath" ItemName="_CleanOrphanFileWritesInOutput"/>
-        </FindUnderPath>
-
-        <!-- Find all files in the intermediate output directory. -->
-        <FindUnderPath Path="$(IntermediateOutputPath)"    Files="@(_CleanOrphanFileWrites)">
-            <Output TaskParameter="InPath" ItemName="_CleanOrphanFileWritesInIntermediate"/>
-        </FindUnderPath>
-
-        <!-- Delete the orphaned files. -->
-        <Delete
-            Files="@(_CleanOrphanFileWritesInIntermediate);@(_CleanOrphanFileWritesInOutput)"
-            TreatErrorsAsWarnings="true">
-
-            <Output TaskParameter="DeletedFiles" ItemName="_CleanOrphanFilesDeleted"/>
-
-        </Delete>
-
-        <!-- Create a list of everything that wasn't deleted or was outside
-             the current final output and intermediate output directories. -->
-        <ItemGroup>
-            <_CleanRemainingFileWritesAfterIncrementalClean Include="@(_CleanPriorFileWrites);@(_CleanCurrentFileWrites)" Exclude="@(_CleanOrphanFilesDeleted)"/>
-        </ItemGroup>
-
-        <!-- Remove duplicates. -->
-        <RemoveDuplicates Inputs="@(_CleanRemainingFileWritesAfterIncrementalClean)">
-            <Output TaskParameter="Filtered" ItemName="_CleanUniqueRemainingFileWritesAfterIncrementalClean"/>
-        </RemoveDuplicates>
-
-        <!-- Write new list of current files back to disk, replacing the existing list.-->
-        <WriteLinesToFile
-            File="$(IntermediateOutputPath)$(CleanFile)"
-            Lines="@(_CleanUniqueRemainingFileWritesAfterIncrementalClean)"
-            Condition="'@(_CleanUnfilteredPriorFileWrites)'!='@(_CleanUniqueRemainingFileWritesAfterIncrementalClean)'"
-            Overwrite="true"/>
-
-    </Target>
-
-    <Target Name="_CleanGetCurrentAndPriorFileWrites" DependsOnTargets="">
-
-        <!-- Read the list of files produced by a prior builds from disk. -->
-        <ReadLinesFromFile File="$(IntermediateOutputPath)$(CleanFile)">
-            <Output TaskParameter="Lines" ItemName="_CleanUnfilteredPriorFileWrites"/>
-        </ReadLinesFromFile>
-
-        <!--
-        Of shareable files, keep only those that are in the project's directory.
-        We never clean shareable files outside of the project directory because
-        the build may be to a common output directory and other projects may need
-        them.
-
-        Only subtract the outputs from ResolveAssemblyReferences target because that's the
-        only "Resolve" target that tries to resolve assemblies directly from the output
-        directory.
-        -->
-        <FindUnderPath Path="$(MSBuildProjectDirectory)" Files="@(FileWritesShareable)" UpdateToAbsolutePaths="true">
-            <Output TaskParameter="InPath" ItemName="FileWrites"/>
-        </FindUnderPath>
-
-        <!-- Find all files in the final output directory. -->
-        <FindUnderPath Path="$(OutDir)" Files="@(FileWrites)" UpdateToAbsolutePaths="true">
-            <Output TaskParameter="InPath" ItemName="_CleanCurrentFileWritesInOutput"/>
-        </FindUnderPath>
-
-        <!-- Find all files in the intermediate output directory. -->
-        <FindUnderPath Path="$(IntermediateOutputPath)" Files="@(FileWrites)" UpdateToAbsolutePaths="true">
-            <Output TaskParameter="InPath" ItemName="_CleanCurrentFileWritesInIntermediate"/>
-        </FindUnderPath>
-
-        <!-- Remove duplicates from files produced in this build. -->
-        <RemoveDuplicates Inputs="@(_CleanCurrentFileWrites)" >
-            <Output TaskParameter="Filtered" ItemName="_CleanCurrentFileWrites"/>
-        </RemoveDuplicates>
-
+        
+        <Exec Command="clang @(_Args, ' ')" />
     </Target>
 
 </Project>
