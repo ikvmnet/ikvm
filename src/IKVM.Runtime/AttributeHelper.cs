@@ -34,6 +34,10 @@ using IKVM.Reflection.Emit;
 using Type = IKVM.Reflection.Type;
 
 using IKVM.ByteCode.Reading;
+using IKVM.ByteCode.Parsing;
+
+using System.Linq;
+using System.IO;
 #else
 using System.Reflection;
 using System.Reflection.Emit;
@@ -792,79 +796,76 @@ namespace IKVM.Internal
 
         internal static void SetSignatureAttribute(TypeBuilder tb, string signature)
         {
-            if (signatureAttribute == null)
-            {
-                signatureAttribute = typeofSignatureAttribute.GetConstructor(new Type[] { Types.String });
-            }
-            tb.SetCustomAttribute(new CustomAttributeBuilder(signatureAttribute,
-                new object[] { UnicodeUtil.EscapeInvalidSurrogates(signature) }));
+            signatureAttribute ??= typeofSignatureAttribute.GetConstructor(new Type[] { Types.String });
+            tb.SetCustomAttribute(new CustomAttributeBuilder(signatureAttribute, new object[] { UnicodeUtil.EscapeInvalidSurrogates(signature) }));
         }
 
         internal static void SetSignatureAttribute(FieldBuilder fb, string signature)
         {
-            if (signatureAttribute == null)
-            {
-                signatureAttribute = typeofSignatureAttribute.GetConstructor(new Type[] { Types.String });
-            }
-            fb.SetCustomAttribute(new CustomAttributeBuilder(signatureAttribute,
-                new object[] { UnicodeUtil.EscapeInvalidSurrogates(signature) }));
+            signatureAttribute ??= typeofSignatureAttribute.GetConstructor(new Type[] { Types.String });
+            fb.SetCustomAttribute(new CustomAttributeBuilder(signatureAttribute, new object[] { UnicodeUtil.EscapeInvalidSurrogates(signature) }));
         }
 
         internal static void SetSignatureAttribute(MethodBuilder mb, string signature)
         {
-            if (signatureAttribute == null)
-            {
-                signatureAttribute = typeofSignatureAttribute.GetConstructor(new Type[] { Types.String });
-            }
-            mb.SetCustomAttribute(new CustomAttributeBuilder(signatureAttribute,
-                new object[] { UnicodeUtil.EscapeInvalidSurrogates(signature) }));
+            signatureAttribute ??= typeofSignatureAttribute.GetConstructor(new Type[] { Types.String });
+            mb.SetCustomAttribute(new CustomAttributeBuilder(signatureAttribute, new object[] { UnicodeUtil.EscapeInvalidSurrogates(signature) }));
         }
 
         internal static void SetMethodParametersAttribute(MethodBuilder mb, Modifiers[] modifiers)
         {
-            if (methodParametersAttribute == null)
-            {
-                methodParametersAttribute = typeofMethodParametersAttribute.GetConstructor(new Type[] { typeofModifiers.MakeArrayType() });
-            }
+            methodParametersAttribute ??= typeofMethodParametersAttribute.GetConstructor(new Type[] { typeofModifiers.MakeArrayType() });
             mb.SetCustomAttribute(new CustomAttributeBuilder(methodParametersAttribute, new object[] { modifiers }));
         }
 
         internal static void SetRuntimeVisibleTypeAnnotationsAttribute(TypeBuilder tb, IReadOnlyList<TypeAnnotationReader> data)
         {
+            var r = new RuntimeVisibleTypeAnnotationsAttributeRecord(data.Select(i => i.Record).ToArray());
+            var m = new byte[r.GetSize()];
+            var w = new ClassFormatWriter(m);
+            if (r.TryWrite(ref w) == false)
+                throw new InternalException();
+
             runtimeVisibleTypeAnnotationsAttribute ??= typeofRuntimeVisibleTypeAnnotationsAttribute.GetConstructor(new Type[] { Types.Byte.MakeArrayType() });
-            tb.SetCustomAttribute(new CustomAttributeBuilder(runtimeVisibleTypeAnnotationsAttribute, new object[] { data }));
+            tb.SetCustomAttribute(new CustomAttributeBuilder(runtimeVisibleTypeAnnotationsAttribute, new object[] { m }));
         }
 
         internal static void SetRuntimeVisibleTypeAnnotationsAttribute(FieldBuilder fb, IReadOnlyList<TypeAnnotationReader> data)
         {
-            if (runtimeVisibleTypeAnnotationsAttribute == null)
-                runtimeVisibleTypeAnnotationsAttribute ??= typeofRuntimeVisibleTypeAnnotationsAttribute.GetConstructor(new Type[] { Types.Byte.MakeArrayType() });
-            fb.SetCustomAttribute(new CustomAttributeBuilder(runtimeVisibleTypeAnnotationsAttribute, new object[] { data }));
+            var r = new RuntimeVisibleTypeAnnotationsAttributeRecord(data.Select(i => i.Record).ToArray());
+            var m = new byte[r.GetSize()];
+            var w = new ClassFormatWriter(m);
+            if (r.TryWrite(ref w) == false)
+                throw new InternalException();
+
+            runtimeVisibleTypeAnnotationsAttribute ??= typeofRuntimeVisibleTypeAnnotationsAttribute.GetConstructor(new Type[] { Types.Byte.MakeArrayType() });
+            fb.SetCustomAttribute(new CustomAttributeBuilder(runtimeVisibleTypeAnnotationsAttribute, new object[] { m }));
         }
 
         internal static void SetRuntimeVisibleTypeAnnotationsAttribute(MethodBuilder mb, IReadOnlyList<TypeAnnotationReader> data)
         {
+            var r = new RuntimeVisibleTypeAnnotationsAttributeRecord(data.Select(i => i.Record).ToArray());
+            var m = new byte[r.GetSize()];
+            var w = new ClassFormatWriter(m);
+            if (r.TryWrite(ref w) == false)
+                throw new InternalException();
+
             runtimeVisibleTypeAnnotationsAttribute ??= typeofRuntimeVisibleTypeAnnotationsAttribute.GetConstructor(new Type[] { Types.Byte.MakeArrayType() });
-            mb.SetCustomAttribute(new CustomAttributeBuilder(runtimeVisibleTypeAnnotationsAttribute, new object[] { data }));
+            mb.SetCustomAttribute(new CustomAttributeBuilder(runtimeVisibleTypeAnnotationsAttribute, new object[] { m }));
         }
 
         internal static void SetConstantPoolAttribute(TypeBuilder tb, object[] constantPool)
         {
-            if (constantPoolAttribute == null)
-            {
-                constantPoolAttribute = typeofConstantPoolAttribute.GetConstructor(new Type[] { Types.Object.MakeArrayType() });
-            }
+            constantPoolAttribute ??= typeofConstantPoolAttribute.GetConstructor(new Type[] { Types.Object.MakeArrayType() });
             tb.SetCustomAttribute(new CustomAttributeBuilder(constantPoolAttribute, new object[] { constantPool }));
         }
 
         internal static void SetParamArrayAttribute(ParameterBuilder pb)
         {
-            if (paramArrayAttribute == null)
-            {
-                paramArrayAttribute = new CustomAttributeBuilder(JVM.Import(typeof(ParamArrayAttribute)).GetConstructor(Type.EmptyTypes), new object[0]);
-            }
+            paramArrayAttribute ??= new CustomAttributeBuilder(JVM.Import(typeof(ParamArrayAttribute)).GetConstructor(Type.EmptyTypes), new object[0]);
             pb.SetCustomAttribute(paramArrayAttribute);
         }
+
 #endif  // IMPORTER
 
         internal static NameSigAttribute GetNameSig(MemberInfo member)
