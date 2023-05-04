@@ -12,18 +12,19 @@
         <MsCompatibility>true</MsCompatibility>
         <Dependencies>crypt32;advapi32;ncrypt</Dependencies>
         <PreprocessorDefinitions>$(PreprocessorDefinitions);_DEBUG;</PreprocessorDefinitions>
-
-        <WinSdkArch Condition="$(TargetMachine.Contains('x86_64'))">x86_64</WinSdkArch>
-        <WinSdkArch Condition="$(TargetMachine.Contains('i686'))">x86</WinSdkArch>
-        <WinSdkArch Condition="$(TargetMachine.Contains('aarch64'))">aarch64</WinSdkArch>
-        <WinSdkArch Condition="$(TargetMachine.Contains('thumbv7'))">aarch</WinSdkArch>
+        
+        <!-- Will need to specify path in SDK lib -->
+        <WinSdkArch Condition="$(TargetMachine.Contains('x86_64-'))">x86_64</WinSdkArch>
+        <WinSdkArch Condition="$(TargetMachine.Contains('i686-'))">x86</WinSdkArch>
+        <WinSdkArch Condition="$(TargetMachine.Contains('aarch64-'))">aarch64</WinSdkArch>
+        <WinSdkArch Condition="$(TargetMachine.Contains('thumbv7-'))">aarch</WinSdkArch>
 
         <!-- common/autoconf/flags.m4 -->
         <PreprocessorDefinitions>$(PreprocessorDefinitions);WIN32_LEAN_AND_MEAN;_CRT_SECURE_NO_DEPRECATE;_CRT_NONSTDC_NO_DEPRECATE;WIN32;IAL</PreprocessorDefinitions>
-        <PreprocessorDefinitions Condition="$(TargetMachine.Contains('x86_64'))">$(PreprocessorDefinitions);_AMD64_;amd64</PreprocessorDefinitions>
-        <PreprocessorDefinitions Condition="$(TargetMachine.Contains('i686'))">$(PreprocessorDefinitions);_X86_;x86</PreprocessorDefinitions>
-        <PreprocessorDefinitions Condition="$(TargetMachine.Contains('aarch64'))">$(PreprocessorDefinitions);_ARM64_;arm64</PreprocessorDefinitions>
-        <PreprocessorDefinitions Condition="$(TargetMachine.Contains('thumbv7'))">$(PreprocessorDefinitions);_ARM_;arm</PreprocessorDefinitions>
+        <PreprocessorDefinitions Condition="$(TargetMachine.Contains('x86_64-'))">$(PreprocessorDefinitions);_AMD64_;amd64</PreprocessorDefinitions>
+        <PreprocessorDefinitions Condition="$(TargetMachine.Contains('i686-'))">$(PreprocessorDefinitions);_X86_;x86</PreprocessorDefinitions>
+        <PreprocessorDefinitions Condition="$(TargetMachine.Contains('aarch64-'))">$(PreprocessorDefinitions);_ARM64_;arm64</PreprocessorDefinitions>
+        <PreprocessorDefinitions Condition="$(TargetMachine.Contains('thumbv7-'))">$(PreprocessorDefinitions);_ARM_;arm</PreprocessorDefinitions>
 
         <!-- jdk/make/lib/SecurityLibraries.gmk -->
         <PreprocessorDefinitions>$(PreprocessorDefinitions);JDK_FNAME=$(TargetName).dll;JDK_INTERNAL_NAME=$(TargetName);JDK_FTYPE=0x2L</PreprocessorDefinitions>
@@ -39,15 +40,16 @@
 
     </PropertyGroup>
 
+    <!-- on Linux and OSX we rely on xwin to deliver SDK -->
     <ItemGroup Condition="$([MSBuild]::IsOSUnixLike())">
-        <SystemIncludeDirectories Include="../../build/xwin/crt/include/" />
-        <SystemIncludeDirectories Include="../../build/xwin/sdk/include/shared/" />
-        <SystemIncludeDirectories Include="../../build/xwin/sdk/include/ucrt/" />
-        <SystemIncludeDirectories Include="../../build/xwin/sdk/include/um/" />
+        <SystemIncludeDirectories Include="..\..\build\xwin\crt\include\" />
+        <SystemIncludeDirectories Include="..\..\build\xwin\sdk\include\shared\" />
+        <SystemIncludeDirectories Include="..\..\build\xwin\sdk\include\ucrt\" />
+        <SystemIncludeDirectories Include="..\..\build\xwin\sdk\include\um\" />
         
-        <DependencyDirectories Include="../../build/xwin/crt/lib/$(WinSdkArch)" />
-        <DependencyDirectories Include="../../build/xwin/sdk/lib/ucrt/$(WinSdkArch)" />
-        <DependencyDirectories Include="../../build/xwin/sdk/lib/um/$(WinSdkArch)" />
+        <DependencyDirectories Include="..\..\build\xwin\crt\lib\$(WinSdkArch)" />
+        <DependencyDirectories Include="..\..\build\xwin\sdk\lib\ucrt\$(WinSdkArch)" />
+        <DependencyDirectories Include="..\..\build\xwin\sdk\lib\um\$(WinSdkArch)" />
     </ItemGroup>
 
     <ItemGroup>
