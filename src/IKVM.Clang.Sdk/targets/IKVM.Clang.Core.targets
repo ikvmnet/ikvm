@@ -4,14 +4,15 @@
     </PropertyGroup>
 
     <PropertyGroup>
+        <OutputType Condition=" '$(OutputType)' == '' ">library</OutputType>
         <OutputType>$(OutputType.ToLower())</OutputType>
     </PropertyGroup>
 
     <PropertyGroup>
-        <Platform Condition="'$(Platform)' == ''">AnyCPU</Platform>
-        <PlatformName Condition="'$(PlatformName)' == ''">$(Platform)</PlatformName>
-        <Configuration Condition="'$(Configuration)' == ''">Debug</Configuration>
-        <ConfigurationName Condition="'$(ConfigurationName)' == ''">$(Configuration)</ConfigurationName>
+        <Platform Condition=" '$(Platform)' == '' ">AnyCPU</Platform>
+        <PlatformName Condition=" '$(PlatformName)' == '' ">$(Platform)</PlatformName>
+        <Configuration Condition=" '$(Configuration)' == '' ">Debug</Configuration>
+        <ConfigurationName Condition=" '$(ConfigurationName)' == '' ">$(Configuration)</ConfigurationName>
 
         <BaseOutputPath Condition=" '$(BaseOutputPath)' == '' ">bin\</BaseOutputPath>
         <BaseOutputPath Condition="!HasTrailingSlash('$(BaseOutputPath)')">$(BaseOutputPath)\</BaseOutputPath>
@@ -29,19 +30,19 @@
     </PropertyGroup>
 
     <PropertyGroup>
-        <TargetPrefix></TargetPrefix>
-        <TargetPrefix Condition=" '$(TargetPrefix)' == '' And '$(OutputType)'=='library' And $(TargetMachine.Contains('-linux-')) ">lib</TargetPrefix>
-        <TargetPrefix Condition=" '$(TargetPrefix)' == '' And '$(OutputType)'=='library' And $(TargetMachine.Contains('-osx-')) ">lib</TargetPrefix>
+        <TargetPrefix Condition=" '$(TargetPrefix)' == '' "></TargetPrefix>
+        <TargetPrefix Condition=" '$(TargetPrefix)' == '' And '$(OutputType)' == 'library' And $(TargetMachine.Contains('-linux-')) ">lib</TargetPrefix>
+        <TargetPrefix Condition=" '$(TargetPrefix)' == '' And '$(OutputType)' == 'library' And $(TargetMachine.Contains('-osx-')) ">lib</TargetPrefix>
 
-        <TargetExt Condition=" '$(TargetExt)' == '' And '$(OutputType)'=='exe'">.exe</TargetExt>
-        <TargetExt Condition=" '$(TargetExt)' == '' And '$(OutputType)'=='winexe'">.exe</TargetExt>
-        <TargetExt Condition=" '$(TargetExt)' == '' And '$(OutputType)'=='library' And $(TargetMachine.Contains('-windows-')) ">.dll</TargetExt>
-        <TargetExt Condition=" '$(TargetExt)' == '' And '$(OutputType)'=='library' And $(TargetMachine.Contains('-linux-')) ">.so</TargetExt>
-        <TargetExt Condition=" '$(TargetExt)' == '' And '$(OutputType)'=='library' And $(TargetMachine.Contains('-osx-')) ">.dylib</TargetExt>
+        <TargetExt Condition=" '$(TargetPrefix)' == '' "></TargetExt>
+        <TargetExt Condition=" '$(TargetExt)' == '' And '$(OutputType)' == 'exe' And $(TargetMachine.Contains('-windows-'))">.exe</TargetExt>
+        <TargetExt Condition=" '$(TargetExt)' == '' And '$(OutputType)' == 'library' And $(TargetMachine.Contains('-windows-')) ">.dll</TargetExt>
+        <TargetExt Condition=" '$(TargetExt)' == '' And '$(OutputType)' == 'library' And $(TargetMachine.Contains('-linux-')) ">.so</TargetExt>
+        <TargetExt Condition=" '$(TargetExt)' == '' And '$(OutputType)' == 'library' And $(TargetMachine.Contains('-osx-')) ">.dylib</TargetExt>
 
         <DebugSymbolsExt Condition=" '$(DebugSymbolsExt)' == '' And $(TargetMachine.Contains('-windows-')) ">.pdb</DebugSymbolsExt>
-        <DebugSymbolsExt Condition=" '$(DebugSymbolsExt)' == '' And $(TargetMachine.Contains('-linux-')) ">.pdb</DebugSymbolsExt>
-        <DebugSymbolsExt Condition=" '$(DebugSymbolsExt)' == '' And $(TargetMachine.Contains('-osx-')) ">.pdb</DebugSymbolsExt>
+        <DebugSymbolsExt Condition=" '$(DebugSymbolsExt)' == '' And $(TargetMachine.Contains('-linux-')) ">.g</DebugSymbolsExt>
+        <DebugSymbolsExt Condition=" '$(DebugSymbolsExt)' == '' And $(TargetMachine.Contains('-osx-')) ">.g</DebugSymbolsExt>
     </PropertyGroup>
 
     <PropertyGroup>
@@ -167,24 +168,35 @@
             <_Args Include="-v" Condition=" '$(Verbose)' == 'true' " />
             <_Args Include="--target=$(TargetMachine)" />
             <_Args Include="-shared" Condition=" '$(OutputType)' == 'library' " />
+            <_Args Include="-fuse-ld=$(UseLd)" Condition=" '$(UseLd)' != '' " />
             <_Args Include="-std=$(LanguageStandard)" Condition=" '$(LanguageStandard)' != '' " />
             <_Args Include="-fms-compatibility" Condition=" '$(MsCompatibility)' == 'true' " />
             <_Args Include="-g" Condition=" '$(DebugSymbols)' == 'true' " />
-            <_AdditionalIncludeDirectories Include="@(AdditionalIncludeDirectories)" />
-            <_AdditionalIncludeDirectories Include="$(AdditionalIncludeDirectories)" />
-            <_Args Include="@(_AdditionalIncludeDirectories->'-I%(Identity)')" Condition=" '@(_AdditionalIncludeDirectories)' != '' " />
-            <_AdditionalLibraryDirectories Include="@(AdditionalLibraryDirectories)" />
-            <_AdditionalLibraryDirectories Include="$(AdditionalLibraryDirectories)" />
-            <_Args Include="@(_AdditionalLibraryDirectories->'-L%(Identity)')" Condition=" '@(_AdditionalLibraryDirectories)' != '' " />
-            <_AdditionalDependencies Include="@(AdditionalDependencies)" />
-            <_AdditionalDependencies Include="$(AdditionalDependencies)" />
-            <_Args Include="@(_AdditionalDependencies->'-l%(Identity)')" Condition=" '@(_AdditionalDependencies)' != '' " />
+            
+            <_SystemIncludeDirectories Include="@(SystemIncludeDirectories)" />
+            <_SystemIncludeDirectories Include="$(SystemIncludeDirectories)" />
+            <_Args Include="@(_SystemIncludeDirectories->'-isystem %(Identity)')" Condition=" '@(_SystemIncludeDirectories)' != '' " />
+
+            <_IncludeDirectories Include="@(IncludeDirectories)" />
+            <_IncludeDirectories Include="$(IncludeDirectories)" />
+            <_Args Include="@(_IncludeDirectories->'-I %(Identity)')" Condition=" '@(_IncludeDirectories)' != '' " />
+
+            <_DependencyDirectories Include="@(DependencyDirectories)" />
+            <_DependencyDirectories Include="$(DependencyDirectories)" />
+            <_Args Include="@(_DependencyDirectories->'-L %(Identity)')" Condition=" '@(_DependencyDirectories)' != '' " />
+
+            <_Dependencies Include="@(Dependencies)" />
+            <_Dependencies Include="$(Dependencies)" />
+            <_Args Include="@(_Dependencies->'-l %(Identity)')" Condition=" '@(_Dependencies)' != '' " />
+
             <_PreprocessorDefinitions Include="$(PreprocessorDefinitions)" />
-            <_Args Include="@(_PreprocessorDefinitions->'-D%(Identity)')" Condition=" '@(_PreprocessorDefinitions)' != '' " />
-            <_Args Include="-fuse-ld=$(UseLd)" Condition=" '$(UseLd)' != '' " />
-            <_Args Include="@(Include->'-I%(Identity)')" />
+            <_Args Include="@(_PreprocessorDefinitions->'-D %(Identity)')" Condition=" '@(_PreprocessorDefinitions)' != '' " />
+            
             <_Args Include="$(AdditionalOptions)" Condition=" '$(AdditionalOptions)' != '' " />
+            <_Args Include="@(AdditionalOptions)" Condition=" '@(AdditionalOptions)' != '' " />
+            
             <_Args Include="@(Compile->'%(Identity)')" />
+            
             <_Args Include="-o $(IntermediateTargetPath)" />
         </ItemGroup>
 

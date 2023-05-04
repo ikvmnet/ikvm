@@ -3,26 +3,26 @@
     <Import Project="$(MSBuildThisFileDirectory)..\..\openjdk.props" />
 
     <PropertyGroup>
-        <TargetMachines>x86_64-pc-windows-msvc14;i686-pc-windows-msvc14;aarch64-pc-windows-msvc14;thumbv7-pc-windows-msvc14</TargetMachines>
+        <TargetMachines>x86_64-pc-windows-msvc14;i686-pc-windows-msvc14;aarch64-pc-windows-msvc14</TargetMachines>
         <TargetName>sunmscapi</TargetName>
-        <OutputType>library</OutputType>
+        <OutputType>Library</OutputType>
         <Verbose>true</Verbose>
         <LanguageStandard>c++11</LanguageStandard>
         <UseLd>lld-link</UseLd>
         <MsCompatibility>true</MsCompatibility>
-        <AdditionalDependencies>Crypt32;advapi32;ncrypt</AdditionalDependencies>
+        <Dependencies>Crypt32;advapi32;ncrypt</Dependencies>
         <PreprocessorDefinitions>$(PreprocessorDefinitions);_DEBUG;</PreprocessorDefinitions>
-        
+
         <!-- common/autoconf/flags.m4 -->
         <PreprocessorDefinitions>$(PreprocessorDefinitions);WIN32_LEAN_AND_MEAN;_CRT_SECURE_NO_DEPRECATE;_CRT_NONSTDC_NO_DEPRECATE;WIN32;IAL</PreprocessorDefinitions>
         <PreprocessorDefinitions Condition=" '$(TargetMachine)' == 'x86_64-pc-windows-msvc14' ">$(PreprocessorDefinitions);_AMD64_;amd64</PreprocessorDefinitions>
         <PreprocessorDefinitions Condition=" '$(TargetMachine)' == 'i686-pc-windows-msvc14' ">$(PreprocessorDefinitions);_X86_;x86</PreprocessorDefinitions>
         <PreprocessorDefinitions Condition=" '$(TargetMachine)' == 'aarch64-pc-windows-msvc14' ">$(PreprocessorDefinitions);_ARM64_;arm64</PreprocessorDefinitions>
         <PreprocessorDefinitions Condition=" '$(TargetMachine)' == 'thumbv7-pc-windows-msvc14' ">$(PreprocessorDefinitions);_ARM_;arm</PreprocessorDefinitions>
-        
+
         <!-- jdk/make/lib/SecurityLibraries.gmk -->
         <PreprocessorDefinitions>$(PreprocessorDefinitions);JDK_FNAME=$(TargetName).dll;JDK_INTERNAL_NAME=$(TargetName);JDK_FTYPE=0x2L</PreprocessorDefinitions>
-        
+
         <!-- common/autoconf/flags.m4 -->
         <ResourceDefinitions>$(ResourceDefinitions);JDK_BUILD_ID=</ResourceDefinitions>
         <ResourceDefinitions>$(ResourceDefinitions);JDK_COMPANY=</ResourceDefinitions>
@@ -31,11 +31,25 @@
         <ResourceDefinitions>$(ResourceDefinitions);JDK_COPYRIGHT=</ResourceDefinitions>
         <ResourceDefinitions>$(ResourceDefinitions);JDK_NAME=</ResourceDefinitions>
         <ResourceDefinitions>$(ResourceDefinitions);JDK_FVER=</ResourceDefinitions>
+
     </PropertyGroup>
 
+    <ItemGroup Condition="$([MSBuild]::IsOSUnixLike())">
+        <SystemIncludeDirectories Include="../../build/xwin/crt/include/" />
+        <SystemIncludeDirectories Include="../../build/xwin/sdk/include/shared/" />
+        <SystemIncludeDirectories Include="../../build/xwin/sdk/include/ucrt/" />
+        <SystemIncludeDirectories Include="../../build/xwin/sdk/include/um/" />
+        <DependencyDirectories Include="../../build/xwin/crt/lib/" />
+        <DependencyDirectories Include="../../build/xwin/sdk/lib/ucrt/" />
+        <DependencyDirectories Include="../../build/xwin/sdk/lib/um/" />
+    </ItemGroup>
+
     <ItemGroup>
-        <Include Include="$(OpenJdkDir)jdk\src\share\javavm\export" />
-        <Include Include="$(OpenJdkDir)jdk\src\windows\javavm\export" />
+        <IncludeDirectories Include="$(OpenJdkDir)jdk\src\share\javavm\export" />
+        <IncludeDirectories Include="$(OpenJdkDir)jdk\src\windows\javavm\export" />
+    </ItemGroup>
+
+    <ItemGroup>
         <Compile Include="$(OpenJdkDir)jdk\src\windows\native\sun\security\mscapi\**\*.cpp" />
     </ItemGroup>
 
