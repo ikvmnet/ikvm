@@ -269,7 +269,7 @@ namespace IKVM.Tools.Runner.Compiler
 
                 // if we're running on Linux, we might need to set the execute bit on the file,
                 // since the NuGet package is built on Windows
-                if (RuntimeInformation.IsOSPlatform(OSPlatform.Linux))
+                if (RuntimeInformation.IsOSPlatform(OSPlatform.Linux) || RuntimeInformation.IsOSPlatform(OSPlatform.OSX))
                 {
                     try
                     {
