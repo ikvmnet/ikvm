@@ -3,7 +3,7 @@
     <Import Project="$(MSBuildThisFileDirectory)..\..\openjdk.props" />
 
     <PropertyGroup>
-        <TargetMachines>x86_64-pc-windows-msvc14;i686-pc-windows-msvc14;aarch64-pc-windows-msvc14</TargetMachines>
+        <TargetMachines>x86_64-pc-windows-msvc14;i686-pc-windows-msvc14;aarch64-pc-windows-msvc14;thumbv7-pc-windows-msvc14</TargetMachines>
         <TargetName>sunmscapi</TargetName>
         <OutputType>library</OutputType>
         <Verbose>true</Verbose>
@@ -18,6 +18,7 @@
         <PreprocessorDefinitions Condition=" '$(TargetMachine)' == 'x86_64-pc-windows-msvc14' ">$(PreprocessorDefinitions);_AMD64_;amd64</PreprocessorDefinitions>
         <PreprocessorDefinitions Condition=" '$(TargetMachine)' == 'i686-pc-windows-msvc14' ">$(PreprocessorDefinitions);_X86_;x86</PreprocessorDefinitions>
         <PreprocessorDefinitions Condition=" '$(TargetMachine)' == 'aarch64-pc-windows-msvc14' ">$(PreprocessorDefinitions);_ARM64_;arm64</PreprocessorDefinitions>
+        <PreprocessorDefinitions Condition=" '$(TargetMachine)' == 'thumbv7-pc-windows-msvc14' ">$(PreprocessorDefinitions);_ARM_;arm</PreprocessorDefinitions>
         
         <!-- jdk/make/lib/SecurityLibraries.gmk -->
         <PreprocessorDefinitions>$(PreprocessorDefinitions);JDK_FNAME=$(TargetName).dll;JDK_INTERNAL_NAME=$(TargetName);JDK_FTYPE=0x2L</PreprocessorDefinitions>

@@ -242,6 +242,8 @@ ModelManifest.xml
 .fake/
 
 # Ignore build output
-/dist/
 /.ikvm/
+/.xwin-cache/
+/dist/
+/build/
 /msbuild.binlog
