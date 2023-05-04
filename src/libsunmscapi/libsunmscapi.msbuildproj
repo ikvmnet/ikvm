@@ -10,7 +10,7 @@
         <LanguageStandard>c++11</LanguageStandard>
         <UseLd>lld-link</UseLd>
         <MsCompatibility>true</MsCompatibility>
-        <Dependencies>Crypt32;advapi32;ncrypt</Dependencies>
+        <Dependencies>crypt32;advapi32;ncrypt</Dependencies>
         <PreprocessorDefinitions>$(PreprocessorDefinitions);_DEBUG;</PreprocessorDefinitions>
 
         <WinSdkArch Condition="$(TargetMachine.Contains('x86_64'))">x86_64</WinSdkArch>
