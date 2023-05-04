@@ -15,8 +15,8 @@
 
         <WinSdkArch Condition="$(TargetMachine.Contains('x86_64'))">x86_64</WinSdkArch>
         <WinSdkArch Condition="$(TargetMachine.Contains('i686'))">x86</WinSdkArch>
-        <WinSdkArch Condition="$(TargetMachine.Contains('aarch64'))'">aarch64</WinSdkArch>
-        <WinSdkArch Condition="$(TargetMachine.Contains('thumbv7'))'">aarch</WinSdkArch>
+        <WinSdkArch Condition="$(TargetMachine.Contains('aarch64'))">aarch64</WinSdkArch>
+        <WinSdkArch Condition="$(TargetMachine.Contains('thumbv7'))">aarch</WinSdkArch>
 
         <!-- common/autoconf/flags.m4 -->
         <PreprocessorDefinitions>$(PreprocessorDefinitions);WIN32_LEAN_AND_MEAN;_CRT_SECURE_NO_DEPRECATE;_CRT_NONSTDC_NO_DEPRECATE;WIN32;IAL</PreprocessorDefinitions>
