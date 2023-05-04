@@ -12,4 +12,4 @@ case "$(uname -s)" in
 esac
 
 curl --fail -L https://github.com/Jake-Shadle/xwin/releases/download/$xwin_version/$xwin_prefix.tar.gz | tar -xzv -C $path/.bin --strip-components=1 $xwin_prefix/xwin
-$path/.bin/xwin --accept-license --cache-dir $path/.cache --arch x86,x86_64,aarch,aarch64 splat --output $path --disable-symlinks
+$path/.bin/xwin --accept-license --cache-dir $path/.cache --arch x86,x86_64,aarch,aarch64 splat --output $path
