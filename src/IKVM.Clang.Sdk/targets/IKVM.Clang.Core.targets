@@ -29,9 +29,19 @@
     </PropertyGroup>
 
     <PropertyGroup>
-        <TargetExt Condition="'$(TargetExt)' == '' and '$(OutputType)'=='exe'">.exe</TargetExt>
-        <TargetExt Condition="'$(TargetExt)' == '' and '$(OutputType)'=='winexe'">.exe</TargetExt>
-        <TargetExt Condition="'$(TargetExt)' == '' and '$(OutputType)'=='library'">.dll</TargetExt>
+        <TargetPrefix></TargetPrefix>
+        <TargetPrefix Condition=" '$(TargetPrefix)' == '' And '$(OutputType)'=='library' And $(TargetMachine.Contains('-linux-')) ">lib</TargetPrefix>
+        <TargetPrefix Condition=" '$(TargetPrefix)' == '' And '$(OutputType)'=='library' And $(TargetMachine.Contains('-osx-')) ">lib</TargetPrefix>
+
+        <TargetExt Condition=" '$(TargetExt)' == '' And '$(OutputType)'=='exe'">.exe</TargetExt>
+        <TargetExt Condition=" '$(TargetExt)' == '' And '$(OutputType)'=='winexe'">.exe</TargetExt>
+        <TargetExt Condition=" '$(TargetExt)' == '' And '$(OutputType)'=='library' And $(TargetMachine.Contains('-windows-')) ">.dll</TargetExt>
+        <TargetExt Condition=" '$(TargetExt)' == '' And '$(OutputType)'=='library' And $(TargetMachine.Contains('-linux-')) ">.so</TargetExt>
+        <TargetExt Condition=" '$(TargetExt)' == '' And '$(OutputType)'=='library' And $(TargetMachine.Contains('-osx-')) ">.dylib</TargetExt>
+
+        <DebugSymbolsExt Condition=" '$(DebugSymbolsExt)' == '' And $(TargetMachine.Contains('-windows-')) ">.pdb</DebugSymbolsExt>
+        <DebugSymbolsExt Condition=" '$(DebugSymbolsExt)' == '' And $(TargetMachine.Contains('-linux-')) ">.pdb</DebugSymbolsExt>
+        <DebugSymbolsExt Condition=" '$(DebugSymbolsExt)' == '' And $(TargetMachine.Contains('-osx-')) ">.pdb</DebugSymbolsExt>
     </PropertyGroup>
 
     <PropertyGroup>
@@ -39,8 +49,15 @@
         <TargetName Condition=" '$(TargetName)' == '' ">$(ProjectName)</TargetName>
         <ProjectFileName Condition=" '$(ProjectFileName)' == '' ">$(MSBuildProjectFile)</ProjectFileName>
         <ProjectExt Condition=" '$(ProjectExt)' == '' ">$(MSBuildProjectExtension)</ProjectExt>
-        <TargetFileName Condition=" '$(TargetFileName)' == '' ">$(TargetName)$(TargetExt)</TargetFileName>
-        <TargetPath Condition=" '$(TargetPath)' == '' ">$(IntermediateOutputPath)$(TargetFileName)</TargetPath>
+
+        <TargetFileName Condition=" '$(TargetFileName)' == '' ">$(TargetPrefix)$(TargetName)$(TargetExt)</TargetFileName>
+        <DebugSymbolsFileName Condition=" '$(DebugSymbolsFileName)' == '' ">$(TargetPrefix)$(TargetName)$(DebugSymbolsExt)</DebugSymbolsFileName>
+
+        <IntermediateTargetPath Condition=" '$(IntermediateTargetPath)' == '' ">$(IntermediateOutputPath)$(TargetFileName)</IntermediateTargetPath>
+        <TargetPath Condition=" '$(TargetPath)' == '' ">$(OutputPath)$(TargetFileName)</TargetPath>
+
+        <IntermediateDebugSymbolsPath Condition=" '$(IntermediateDebugSymbolsPath)' == '' ">$(IntermediateOutputPath)$(DebugSymbolsFileName)</IntermediateDebugSymbolsPath>
+        <DebugSymbolsPath Condition=" '$(DebugSymbolsPath)' == '' ">$(OutputPath)$(DebugSymbolsFileName)</DebugSymbolsPath>
     </PropertyGroup>
 
     <PropertyGroup>
@@ -95,6 +112,7 @@
             PreBuildEvent;
             Compile;
             GetTargetPath;
+            PrepareForRun;
             PostBuildEvent
         </CoreBuildDependsOn>
     </PropertyGroup>
@@ -151,6 +169,7 @@
             <_Args Include="-shared" Condition=" '$(OutputType)' == 'library' " />
             <_Args Include="-std=$(LanguageStandard)" Condition=" '$(LanguageStandard)' != '' " />
             <_Args Include="-fms-compatibility" Condition=" '$(MsCompatibility)' == 'true' " />
+            <_Args Include="-g" Condition=" '$(DebugSymbols)' == 'true' " />
             <_AdditionalIncludeDirectories Include="@(AdditionalIncludeDirectories)" />
             <_AdditionalIncludeDirectories Include="$(AdditionalIncludeDirectories)" />
             <_Args Include="@(_AdditionalIncludeDirectories->'-I%(Identity)')" Condition=" '@(_AdditionalIncludeDirectories)' != '' " />
@@ -166,10 +185,70 @@
             <_Args Include="@(Include->'-I%(Identity)')" />
             <_Args Include="$(AdditionalOptions)" Condition=" '$(AdditionalOptions)' != '' " />
             <_Args Include="@(Compile->'%(Identity)')" />
-            <_Args Include="-o $(TargetPath)" />
+            <_Args Include="-o $(IntermediateTargetPath)" />
         </ItemGroup>
-        
+
         <Exec Command="clang @(_Args, ' ')" />
+    </Target>
+
+    <PropertyGroup>
+        <CopyFilesToOutputDirectoryDependsOn>
+
+        </CopyFilesToOutputDirectoryDependsOn>
+    </PropertyGroup>
+
+    <Target Name="CopyFilesToOutputDirectory" DependsOnTargets="$(CopyFilesToOutputDirectoryDependsOn)">
+        <PropertyGroup>
+            <CreateHardLinksForCopyFilesToOutputDirectoryIfPossible Condition="'$(BuildingInsideVisualStudio)' == 'true' or '$(CreateHardLinksForCopyFilesToOutputDirectoryIfPossible)' == ''">false</CreateHardLinksForCopyFilesToOutputDirectoryIfPossible>
+            <CreateSymbolicLinksForCopyFilesToOutputDirectoryIfPossible Condition="'$(BuildingInsideVisualStudio)' == 'true' or '$(CreateSymbolicLinksForCopyFilesToOutputDirectoryIfPossible)' == ''">false</CreateSymbolicLinksForCopyFilesToOutputDirectoryIfPossible>
+            <ErrorIfLinkFailsForCopyFilesToOutputDirectory Condition="'$(BuildingInsideVisualStudio)' == 'true' or '$(ErrorIfLinkFailsForCopyFilesToOutputDirectory)' == ''">false</ErrorIfLinkFailsForCopyFilesToOutputDirectory>
+        </PropertyGroup>
+
+        <PropertyGroup>
+            <CopyTargetToOutputDirectory Condition="'$(CopyTargetToOutputDirectory)'==''">true</CopyTargetToOutputDirectory>
+            <CopyDebugSymbolsToOutputDirectory Condition="'$(CopyDebugSymbolsToOutputDirectory)'==''">true</CopyDebugSymbolsToOutputDirectory>
+        </PropertyGroup>
+
+        <Copy
+            SourceFiles="$(IntermediateTargetPath)"
+            DestinationFiles="$(TargetPath)"
+            SkipUnchangedFiles="$(SkipCopyUnchangedFiles)"
+            OverwriteReadOnlyFiles="$(OverwriteReadOnlyFiles)"
+            Retries="$(CopyRetryCount)"
+            RetryDelayMilliseconds="$(CopyRetryDelayMilliseconds)"
+            UseHardlinksIfPossible="$(CreateHardLinksForCopyFilesToOutputDirectoryIfPossible)"
+            UseSymboliclinksIfPossible="$(CreateSymbolicLinksForCopyFilesToOutputDirectoryIfPossible)"
+            ErrorIfLinkFails="$(ErrorIfLinkFailsForCopyFilesToOutputDirectory)"
+            Condition="'$(CopyTargetToOutputDirectory)' == 'true' and '$(SkipCopyBuildProduct)' != 'true'">
+            <Output TaskParameter="DestinationFiles" ItemName="MainAssembly"/>
+            <Output TaskParameter="DestinationFiles" ItemName="FileWrites"/>
+        </Copy>
+
+        <Copy
+            SourceFiles="$(IntermediateDebugSymbolsPath)"
+            DestinationFiles="$(DebugSymbolsPath)"
+            SkipUnchangedFiles="$(SkipCopyUnchangedFiles)"
+            OverwriteReadOnlyFiles="$(OverwriteReadOnlyFiles)"
+            Retries="$(CopyRetryCount)"
+            RetryDelayMilliseconds="$(CopyRetryDelayMilliseconds)"
+            UseHardlinksIfPossible="$(CreateHardLinksForCopyFilesToOutputDirectoryIfPossible)"
+            UseSymboliclinksIfPossible="$(CreateSymbolicLinksForCopyFilesToOutputDirectoryIfPossible)"
+            ErrorIfLinkFails="$(ErrorIfLinkFailsForCopyFilesToOutputDirectory)"
+            Condition="'$(CopyDebugSymbolsToOutputDirectory)' == 'true' and '$(SkipCopyBuildProduct)' != 'true'">
+            <Output TaskParameter="DestinationFiles" ItemName="MainAssembly"/>
+            <Output TaskParameter="DestinationFiles" ItemName="FileWrites"/>
+        </Copy>
+
+    </Target>
+
+    <PropertyGroup>
+        <PrepareForRunDependsOn>
+            CopyFilesToOutputDirectory
+        </PrepareForRunDependsOn>
+    </PropertyGroup>
+
+    <Target Name="PrepareForRun" DependsOnTargets="$(PrepareForRunDependsOn)">
+        
     </Target>
 
 </Project>
