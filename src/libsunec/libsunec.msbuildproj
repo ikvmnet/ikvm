@@ -1,0 +1,69 @@
+﻿<Project>
+    <Import Project="$(MSBuildThisFileDirectory)..\IKVM.Clang.Sdk\Sdk\Sdk.props" />
+    <Import Project="$(MSBuildThisFileDirectory)..\..\openjdk.props" />
+
+    <PropertyGroup>
+        <TargetMachines>x86_64-pc-windows-msvc14;i686-pc-windows-msvc14;aarch64-pc-windows-msvc14;x86_64-pc-linux-gnu;aarch64-pc-linux-gnu;</TargetMachines>
+        <TargetName>sunec</TargetName>
+        <OutputType>Library</OutputType>
+        <Verbose>true</Verbose>
+        <LanguageStandard></LanguageStandard>
+        <UseLd>lld-link</UseLd>
+        <MsCompatibility>true</MsCompatibility>
+        <PreprocessorDefinitions>$(PreprocessorDefinitions);_DEBUG;</PreprocessorDefinitions>
+
+        <Dependencies Condition="$(TargetMachine.Contains('-windows-'))"></Dependencies>
+        <Dependencies Condition="$(TargetMachine.Contains('-linux-'))">c</Dependencies>
+
+        <!-- Will need to specify path in SDK lib -->
+        <WinSdkArch Condition="$(TargetMachine.Contains('x86_64-'))">x86_64</WinSdkArch>
+        <WinSdkArch Condition="$(TargetMachine.Contains('i686-'))">x86</WinSdkArch>
+        <WinSdkArch Condition="$(TargetMachine.Contains('aarch64-'))">aarch64</WinSdkArch>
+        <WinSdkArch Condition="$(TargetMachine.Contains('thumbv7-')) Or $(TargetMachine.Contains('aarch-'))">aarch</WinSdkArch>
+
+        <!-- common/autoconf/flags.m4 -->
+        <PreprocessorDefinitions>$(PreprocessorDefinitions);WIN32_LEAN_AND_MEAN;_CRT_SECURE_NO_DEPRECATE;_CRT_NONSTDC_NO_DEPRECATE;WIN32;IAL</PreprocessorDefinitions>
+        <PreprocessorDefinitions Condition="$(TargetMachine.Contains('x86_64-'))">$(PreprocessorDefinitions);_AMD64_;amd64</PreprocessorDefinitions>
+        <PreprocessorDefinitions Condition="$(TargetMachine.Contains('i686-'))">$(PreprocessorDefinitions);_X86_;x86</PreprocessorDefinitions>
+        <PreprocessorDefinitions Condition="$(TargetMachine.Contains('aarch64-'))">$(PreprocessorDefinitions);_ARM64_;arm64</PreprocessorDefinitions>
+        <PreprocessorDefinitions Condition="$(TargetMachine.Contains('thumbv7-')) Or $(TargetMachine.Contains('aarch-'))">$(PreprocessorDefinitions);_ARM_;arm</PreprocessorDefinitions>
+
+        <!-- jdk/make/lib/SecurityLibraries.gmk -->
+        <PreprocessorDefinitions>$(PreprocessorDefinitions);MP_API_COMPATIBLE;NSS_ECC_MORE_THAN_SUITE_B</PreprocessorDefinitions>
+        <PreprocessorDefinitions>$(PreprocessorDefinitions);JDK_FNAME=$(TargetName).dll;JDK_INTERNAL_NAME=$(TargetName);JDK_FTYPE=0x2L</PreprocessorDefinitions>
+
+        <!-- common/autoconf/flags.m4 -->
+        <ResourceDefinitions>$(ResourceDefinitions);JDK_BUILD_ID=</ResourceDefinitions>
+        <ResourceDefinitions>$(ResourceDefinitions);JDK_COMPANY=</ResourceDefinitions>
+        <ResourceDefinitions>$(ResourceDefinitions);JDK_COMPONENT=</ResourceDefinitions>
+        <ResourceDefinitions>$(ResourceDefinitions);JDK_VER=</ResourceDefinitions>
+        <ResourceDefinitions>$(ResourceDefinitions);JDK_COPYRIGHT=</ResourceDefinitions>
+        <ResourceDefinitions>$(ResourceDefinitions);JDK_NAME=</ResourceDefinitions>
+        <ResourceDefinitions>$(ResourceDefinitions);JDK_FVER=</ResourceDefinitions>
+    </PropertyGroup>
+
+    <!-- on Linux and OSX we rely on xwin to deliver SDK -->
+    <ItemGroup Condition="$([MSBuild]::IsOSUnixLike()) And $(TargetMachine.Contains('-windows-'))">
+        <SystemIncludeDirectories Include="..\..\build\xwin\crt\include\" />
+        <SystemIncludeDirectories Include="..\..\build\xwin\sdk\include\shared\" />
+        <SystemIncludeDirectories Include="..\..\build\xwin\sdk\include\ucrt\" />
+        <SystemIncludeDirectories Include="..\..\build\xwin\sdk\include\um\" />
+        
+        <DependencyDirectories Include="..\..\build\xwin\crt\lib\$(WinSdkArch)" />
+        <DependencyDirectories Include="..\..\build\xwin\sdk\lib\ucrt\$(WinSdkArch)" />
+        <DependencyDirectories Include="..\..\build\xwin\sdk\lib\um\$(WinSdkArch)" />
+    </ItemGroup>
+
+    <ItemGroup>
+        <IncludeDirectories Include="$(OpenJdkDir)jdk\src\share\javavm\export" />
+        <IncludeDirectories Include="$(OpenJdkDir)jdk\src\windows\javavm\export" />
+    </ItemGroup>
+
+    <ItemGroup>
+        <IncludeDirectories Include="$(OpenJdkDir)jdk\src\share\native\sun\security\ec\impl" />
+        <Compile Include="$(OpenJdkDir)jdk\src\share\native\sun\security\ec\**\*.cpp" />
+        <Compile Include="$(OpenJdkDir)jdk\src\share\native\sun\security\ec\**\*.c" />
+    </ItemGroup>
+
+    <Import Project="$(MSBuildThisFileDirectory)..\IKVM.Clang.Sdk\Sdk\Sdk.targets" />
+</Project>

@@ -221,7 +221,13 @@
             <_Lines Include="$(AdditionalOptions)" Condition=" '$(AdditionalOptions)' != '' " />
             <_Lines Include="@(AdditionalOptions->'&quot;%(Identity)&quot;')" Condition=" '@(AdditionalOptions)' != '' " />
 
-            <_Lines Include="@(Compile->'&quot;%(FullPath)&quot;'->Replace('\', '\\'))" />
+            <_CCompile Include="@(Compile)" Condition=" '%(Extension)' == '.c' " />
+            <_Lines Include="-x c" Condition=" '@(_CCompile)' != '' " />
+            <_Lines Include="@(_CCompile->'&quot;%(FullPath)&quot;'->Replace('\', '\\'))" Condition=" '@(_CCompile)' != '' " />
+
+            <_CppCompile Include="@(Compile)" Condition=" '%(Extension)' == '.cpp' " />
+            <_Lines Include="-x c++" Condition=" '@(_CppCompile)' != '' " />
+            <_Lines Include="@(_CppCompile->'&quot;%(FullPath)&quot;'->Replace('\', '\\'))" Condition=" '@(_CppCompile)' != '' " />
 
             <_Lines Include="-o &quot;$(IntermediateTargetPath.Replace('\', '\\'))&quot;" />
         </ItemGroup>
