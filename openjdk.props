@@ -4701,6 +4701,7 @@
         <OpenJdkSource Include="$(OpenJdkDir)\jdk\src\windows\classes\sun\security\provider\**\*.java" PackagePath="sun\security\provider" />
         <OpenJdkSource Remove="$(OpenJdkDir)\jdk\src\windows\classes\sun\security\provider\NativePRNG.java" />
         <OpenJdkSource Remove="$(OpenJdkDir)\jdk\src\windows\classes\sun\security\provider\NativeSeedGenerator.java" />
+        <OpenJdkSource Include="$(OpenJdkDir)\jdk\src\windows\classes\sun\security\mscapi\**\*.java" PackagePath="sun\security\mscapi" />
         <OpenJdkSource Include="$(OpenJdkDir)\jdk\src\windows\classes\sun\util\locale\provider\HostLocaleProviderAdapterImpl.java" />
         <OpenJdkSource Include="$(OpenJdkDir)\langtools\src\share\classes\com\sun\javadoc\AnnotatedType.java" />
         <OpenJdkSource Include="$(OpenJdkDir)\langtools\src\share\classes\com\sun\javadoc\AnnotationDesc.java" />

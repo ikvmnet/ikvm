@@ -17,7 +17,7 @@
             </_InnerBuildProjects>
         </ItemGroup>
     </Target>
-
+    
     <Target Name="DispatchToInnerBuilds" DependsOnTargets="_ComputeInnerBuildProjects" Returns="@(InnerOutput)">
         <MSBuild Projects="@(_InnerBuildProjects)" Condition="'@(_InnerBuildProjects)' != '' " Targets="$(InnerTargets)" BuildInParallel="$(BuildInParallel)">
             <Output ItemName="InnerOutput" TaskParameter="TargetOutputs" />

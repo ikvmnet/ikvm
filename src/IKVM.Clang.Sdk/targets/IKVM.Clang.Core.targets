@@ -59,17 +59,33 @@
 
         <IntermediateDebugSymbolsPath Condition=" '$(IntermediateDebugSymbolsPath)' == '' ">$(IntermediateOutputPath)$(DebugSymbolsFileName)</IntermediateDebugSymbolsPath>
         <DebugSymbolsPath Condition=" '$(DebugSymbolsPath)' == '' ">$(OutputPath)$(DebugSymbolsFileName)</DebugSymbolsPath>
+
+        <ClangResponseFileName Condition=" '$(ClangResponseFileName)' == '' ">$(TargetName).clang.rsp</ClangResponseFileName>
+        <ClangResponseFile Condition=" '$(ClangResponseFile)' == '' ">$(IntermediateOutputPath)$(ClangResponseFileName)</ClangResponseFile>
     </PropertyGroup>
+
+    <!--
+    
+    GetTargetItem
+    
+    Externally callable target that returns information about the target being built.
+    
+    -->
 
     <PropertyGroup>
-        <GetTargetPathDependsOn>
-            $(GetTargetPathDependsOn)
-        </GetTargetPathDependsOn>
+        <GetTargetItemDependsOn>
+            $(GetTargetItemDependsOn)
+        </GetTargetItemDependsOn>
     </PropertyGroup>
 
-    <Target Name="GetTargetPath" DependsOnTargets="$(GetTargetPathDependsOn)" Returns="@(TargetPath)">
+    <Target Name="GetTargetItem" DependsOnTargets="$(GetTargetItemDependsOn)" Returns="@(TargetItem)">
         <ItemGroup>
-            <TargetPath Include="$(TargetPath)" />
+            <TargetItem Include="$(IntermediateTargetPath)">
+                <TargetName>$(TargetName)</TargetName>
+                <TargetFileName>$(TargetFileName)</TargetFileName>
+                <DebugSymbolsFileName>$(DebugSymbolsFileName)</DebugSymbolsFileName>
+                <Version>$(Version)</Version>
+            </TargetItem>
         </ItemGroup>
     </Target>
 
@@ -112,7 +128,7 @@
         <CoreBuildDependsOn>
             PreBuildEvent;
             Compile;
-            GetTargetPath;
+            GetTargetItem;
             PrepareForRun;
             PostBuildEvent
         </CoreBuildDependsOn>
@@ -150,6 +166,7 @@
     <PropertyGroup>
         <CompileDependsOn>
             BeforeCompile;
+            BuildClangResponseFile;
             CoreCompile;
             AfterCompile;
         </CompileDependsOn>
@@ -160,52 +177,72 @@
     <Target Name="BeforeCompile" />
 
     <Target Name="AfterCompile" />
+    
+    <!-- 
+    
+    BuildClangResponseFile
+    
+    Assembles a file that contains the arguments to be passed to clang.
+    
+    -->
 
-    <Target Name="CoreCompile">
+    <Target Name="BuildClangResponseFile">
         <MakeDir Directories="$(IntermediateOutputPath)" />
-
+        
         <ItemGroup>
-            <_Args Include="-v" Condition=" '$(Verbose)' == 'true' " />
-            <_Args Include="--target=$(TargetMachine)" />
-            <_Args Include="-shared" Condition=" '$(OutputType)' == 'library' " />
-            <_Args Include="-fuse-ld=$(UseLd)" Condition=" '$(UseLd)' != '' " />
-            <_Args Include="-std=$(LanguageStandard)" Condition=" '$(LanguageStandard)' != '' " />
-            <_Args Include="-fms-compatibility" Condition=" '$(MsCompatibility)' == 'true' " />
-            <_Args Include="-g" Condition=" '$(DebugSymbols)' == 'true' " />
-            
+            <_Lines Remove="@(_Lines)" />
+            <_Lines Include="-v" Condition=" '$(Verbose)' == 'true' " />
+            <_Lines Include="--target=$(TargetMachine)" />
+            <_Lines Include="-shared" Condition=" '$(OutputType)' == 'library' " />
+            <_Lines Include="-fuse-ld=$(UseLd)" Condition=" '$(UseLd)' != '' " />
+            <_Lines Include="-std=$(LanguageStandard)" Condition=" '$(LanguageStandard)' != '' " />
+            <_Lines Include="-fms-compatibility" Condition=" '$(MsCompatibility)' == 'true' " />
+            <_Lines Include="-g" Condition=" '$(DebugSymbols)' == 'true' " />
+
             <_SystemIncludeDirectories Include="@(SystemIncludeDirectories)" />
             <_SystemIncludeDirectories Include="$(SystemIncludeDirectories)" />
-            <_Args Include="@(_SystemIncludeDirectories->'-isystem %(Identity)')" Condition=" '@(_SystemIncludeDirectories)' != '' " />
+            <_Lines Include="@(_SystemIncludeDirectories->'-isystem &quot;%(FullPath)&quot;'->Replace('\', '\\'))" Condition=" '@(_SystemIncludeDirectories)' != '' " />
 
             <_IncludeDirectories Include="@(IncludeDirectories)" />
             <_IncludeDirectories Include="$(IncludeDirectories)" />
-            <_Args Include="@(_IncludeDirectories->'-I %(Identity)')" Condition=" '@(_IncludeDirectories)' != '' " />
+            <_Lines Include="@(_IncludeDirectories->'-I &quot;%(FullPath)&quot;'->Replace('\', '\\'))" Condition=" '@(_IncludeDirectories)' != '' " />
 
             <_DependencyDirectories Include="@(DependencyDirectories)" />
             <_DependencyDirectories Include="$(DependencyDirectories)" />
-            <_Args Include="@(_DependencyDirectories->'-L %(Identity)')" Condition=" '@(_DependencyDirectories)' != '' " />
+            <_Lines Include="@(_DependencyDirectories->'-L &quot;%(FullPath)&quot;'->Replace('\', '\\'))" Condition=" '@(_DependencyDirectories)' != '' " />
 
             <_Dependencies Include="@(Dependencies)" />
             <_Dependencies Include="$(Dependencies)" />
-            <_Args Include="@(_Dependencies->'-l %(Identity)')" Condition=" '@(_Dependencies)' != '' " />
+            <_Lines Include="@(_Dependencies->'-l &quot;%(Identity)&quot;'->Replace('\', '\\'))" Condition=" '@(_Dependencies)' != '' " />
 
             <_PreprocessorDefinitions Include="$(PreprocessorDefinitions)" />
-            <_Args Include="@(_PreprocessorDefinitions->'-D %(Identity)')" Condition=" '@(_PreprocessorDefinitions)' != '' " />
-            
-            <_Args Include="$(AdditionalOptions)" Condition=" '$(AdditionalOptions)' != '' " />
-            <_Args Include="@(AdditionalOptions)" Condition=" '@(AdditionalOptions)' != '' " />
-            
-            <_Args Include="@(Compile->'%(Identity)')" />
-            
-            <_Args Include="-o $(IntermediateTargetPath)" />
-        </ItemGroup>
+            <_Lines Include="@(_PreprocessorDefinitions->'-D &quot;%(Identity)&quot;')" Condition=" '@(_PreprocessorDefinitions)' != '' " />
 
-        <Exec Command="clang @(_Args, ' ')" />
+            <_Lines Include="$(AdditionalOptions)" Condition=" '$(AdditionalOptions)' != '' " />
+            <_Lines Include="@(AdditionalOptions->'&quot;%(Identity)&quot;')" Condition=" '@(AdditionalOptions)' != '' " />
+
+            <_Lines Include="@(Compile->'&quot;%(FullPath)&quot;'->Replace('\', '\\'))" />
+
+            <_Lines Include="-o &quot;$(IntermediateTargetPath.Replace('\', '\\'))&quot;" />
+        </ItemGroup>
+        <WriteLinesToFile File="$(ClangResponseFile)" Lines="@(_Lines)" Overwrite="true" WriteOnlyWhenDifferent="true" />
+    </Target>
+    
+    <!--
+    
+    CoreCompile
+    
+    Executes clang.
+    
+    -->
+
+    <Target Name="CoreCompile" DependsOnTargets="BuildClangResponseFile" Inputs="$(ClangResponseFile)" Outputs="$(IntermediateTargetPath)">
+        <Exec Command="clang @$(ClangResponseFile)" />
     </Target>
 
     <PropertyGroup>
         <CopyFilesToOutputDirectoryDependsOn>
-
+            Compile;
         </CopyFilesToOutputDirectoryDependsOn>
     </PropertyGroup>
 
@@ -217,8 +254,8 @@
         </PropertyGroup>
 
         <PropertyGroup>
-            <CopyTargetToOutputDirectory Condition="'$(CopyTargetToOutputDirectory)'==''">true</CopyTargetToOutputDirectory>
-            <CopyDebugSymbolsToOutputDirectory Condition="'$(CopyDebugSymbolsToOutputDirectory)'==''">true</CopyDebugSymbolsToOutputDirectory>
+            <CopyTargetToOutputDirectory Condition=" '$(CopyTargetToOutputDirectory)' == '' ">true</CopyTargetToOutputDirectory>
+            <CopyDebugSymbolsToOutputDirectory Condition=" '$(CopyDebugSymbolsToOutputDirectory)' == '' ">true</CopyDebugSymbolsToOutputDirectory>
         </PropertyGroup>
 
         <Copy

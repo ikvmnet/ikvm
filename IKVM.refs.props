@@ -15,4 +15,19 @@
         </ProjectReference>
     </ItemGroup>
 
+    <ItemGroup>
+        <ClangProjectReference Include="$(MSBuildThisFileDirectory)src\libsunmscapi\libsunmscapi.msbuildproj">
+            <TargetMachine>x86_64-pc-windows-msvc14</TargetMachine>
+            <RuntimeIdentifier>win7-x64</RuntimeIdentifier>
+        </ClangProjectReference>
+        <ClangProjectReference Include="$(MSBuildThisFileDirectory)src\libsunmscapi\libsunmscapi.msbuildproj">
+            <TargetMachine>i686-pc-windows-msvc14</TargetMachine>
+            <RuntimeIdentifier>win7-x86</RuntimeIdentifier>
+        </ClangProjectReference>
+        <ClangProjectReference Include="$(MSBuildThisFileDirectory)src\libsunmscapi\libsunmscapi.msbuildproj">
+            <TargetMachine>aarch64-pc-windows-msvc14</TargetMachine>
+            <RuntimeIdentifier>win10-arm64</RuntimeIdentifier>
+        </ClangProjectReference>
+    </ItemGroup>
+
 </Project>

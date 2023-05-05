@@ -18,6 +18,7 @@ Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Solution Items", "Solution 
 		.gitattributes = .gitattributes
 		.gitignore = .gitignore
 		.gitmodules = .gitmodules
+		ClangProjectReference.targets = ClangProjectReference.targets
 		CONTRIBUTING.md = CONTRIBUTING.md
 		Directory.Build.props = Directory.Build.props
 		Directory.Build.targets = Directory.Build.targets
@@ -286,8 +287,6 @@ EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "IKVM.Tests.Java", "src\IKVM.Tests.Java\IKVM.Tests.Java.msbuildproj", "{87CB99AE-16D1-4D58-BEAC-72485E02B321}"
 EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "IKVM.ByteCode.Tests", "src\IKVM.ByteCode.Tests\IKVM.ByteCode.Tests.csproj", "{60E804E4-B25B-4C9A-A3E6-F83D618CFD26}"
-EndProject
-Project("{13B669BE-BB05-4DDF-9536-439F39A36129}") = "libsunmscapi", "src\libsunmscapi\libsunmscapi.msbuildproj", "{306119EA-00FD-4590-B21B-834375E55EDF}"
 EndProject
 Project("{13B669BE-BB05-4DDF-9536-439F39A36129}") = "IKVM.Clang.Sdk", "src\IKVM.Clang.Sdk\IKVM.Clang.Sdk.msbuildproj", "{9571995A-BF42-4F93-89FF-5A26AD3A2C92}"
 EndProject
@@ -617,10 +616,6 @@ Global
 		{60E804E4-B25B-4C9A-A3E6-F83D618CFD26}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{60E804E4-B25B-4C9A-A3E6-F83D618CFD26}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{60E804E4-B25B-4C9A-A3E6-F83D618CFD26}.Release|Any CPU.Build.0 = Release|Any CPU
-		{306119EA-00FD-4590-B21B-834375E55EDF}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
-		{306119EA-00FD-4590-B21B-834375E55EDF}.Debug|Any CPU.Build.0 = Debug|Any CPU
-		{306119EA-00FD-4590-B21B-834375E55EDF}.Release|Any CPU.ActiveCfg = Release|Any CPU
-		{306119EA-00FD-4590-B21B-834375E55EDF}.Release|Any CPU.Build.0 = Release|Any CPU
 		{9571995A-BF42-4F93-89FF-5A26AD3A2C92}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
 		{9571995A-BF42-4F93-89FF-5A26AD3A2C92}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{9571995A-BF42-4F93-89FF-5A26AD3A2C92}.Release|Any CPU.ActiveCfg = Release|Any CPU

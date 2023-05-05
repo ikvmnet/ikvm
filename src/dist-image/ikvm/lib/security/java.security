@@ -74,6 +74,7 @@ security.provider.6=sun.security.jgss.SunProvider
 security.provider.7=com.sun.security.sasl.Provider
 security.provider.8=org.jcp.xml.dsig.internal.dom.XMLDSigRI
 security.provider.9=sun.security.smartcardio.SunPCSC
+security.provider.10=sun.security.mscapi.SunMSCAPI
 
 #
 # Sun Provider SecureRandom seed source.

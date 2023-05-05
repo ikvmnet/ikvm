@@ -1,0 +1,112 @@
+﻿<Project>
+    <PropertyGroup>
+        <MSBuildAllProjects>$(MSBuildAllProjects);$(MSBuildThisFileFullPath)</MSBuildAllProjects>
+    </PropertyGroup>
+
+    <!-- 
+    
+        ClangProjectReference
+        
+        These references point to Clang projects and have their produced libraries added to the project output.
+        
+    -->
+
+    <Target Name="AssignClangProjectConfiguration" Condition=" '$(DesignTimeBuild)' != 'true' And '@(ClangProjectReference)' != '' ">
+        <ItemGroup>
+            <_ClangProjectReference Include="@(ClangProjectReference)" />
+        </ItemGroup>
+        <PropertyGroup>
+            <OnlyReferenceAndBuildProjectsEnabledInSolutionConfiguration Condition="'$(OnlyReferenceAndBuildProjectsEnabledInSolutionConfiguration)' == ''">true</OnlyReferenceAndBuildProjectsEnabledInSolutionConfiguration>
+            <ShouldUnsetParentConfigurationAndPlatform Condition="'$(ShouldUnsetParentConfigurationAndPlatform)' == '' and ('$(BuildingInsideVisualStudio)' == 'true' or '$(BuildingSolutionFile)' == 'true')">true</ShouldUnsetParentConfigurationAndPlatform>
+            <ShouldUnsetParentConfigurationAndPlatform Condition="'$(ShouldUnsetParentConfigurationAndPlatform)' == ''">false</ShouldUnsetParentConfigurationAndPlatform>
+        </PropertyGroup>
+        <AssignProjectConfiguration ProjectReferences="@(_ClangProjectReference)" CurrentProject="$(MSBuildProjectFullPath)" CurrentProjectConfiguration="$(Configuration)" CurrentProjectPlatform="$(Platform)" DefaultToVcxPlatformMapping="$(DefaultToVcxPlatformMapping)" VcxToDefaultPlatformMapping="$(VcxToDefaultPlatformMapping)" OutputType="$(OutputType)" ResolveConfigurationPlatformUsingMappings="true" SolutionConfigurationContents="$(CurrentSolutionConfigurationContents)" AddSyntheticProjectReferencesForSolutionDependencies="false" OnlyReferenceAndBuildProjectsEnabledInSolutionConfiguration="$(OnlyReferenceAndBuildProjectsEnabledInSolutionConfiguration)" ShouldUnsetParentConfigurationAndPlatform="$(ShouldUnsetParentConfigurationAndPlatform)">
+            <Output TaskParameter="AssignedProjects" ItemName="__ClangProjectReferenceWithConfiguration"/>
+            <Output TaskParameter="UnassignedProjects" ItemName="__ClangProjectReferenceWithConfiguration"/>
+        </AssignProjectConfiguration>
+        <ItemGroup>
+            <_ClangProjectReferenceWithConfiguration Include="@(__ClangProjectReferenceWithConfiguration)" />
+        </ItemGroup>
+    </Target>
+
+    <Target Name="GetClangProjectReferences" DependsOnTargets="AssignClangProjectConfiguration" Condition=" '@(_ClangProjectReferenceWithConfiguration)' != '' ">
+        <ItemGroup>
+            <__ClangProjectReference Include="@(_ClangProjectReferenceWithConfiguration)">
+                <ProjectName>$([System.IO.Path]::GetFileNameWithoutExtension('%(Identity)'))</ProjectName>
+            </__ClangProjectReference>
+        </ItemGroup>
+        <AddIndexMetadata Items="@(__ClangProjectReference)" MetadataName="_Index">
+            <Output TaskParameter="Items" ItemName="_ClangProjectReference" />
+        </AddIndexMetadata>
+    </Target>
+
+    <Target Name="GetClangProjectReferenceItems" DependsOnTargets="GetClangProjectReferences" Inputs="@(_ClangProjectReference)" Outputs="@(_ClangProjectReference->'%(Identity)\%(_Index)\null')" Condition=" '$(DesignTimeBuild)' != 'true' And '@(_ClangProjectReference)' != '' ">
+        <ItemGroup>
+            <_ClangProjectReferencesToTarget Include="@(_ClangProjectReference)">
+                <Properties>%(_ClangProjectReference.SetConfiguration);%(_ClangProjectReference.SetPlatform);TargetMachine=%(_ClangProjectReference.TargetMachine)</Properties>
+            </_ClangProjectReferencesToTarget>
+        </ItemGroup>
+        <MSBuild Projects="@(_ClangProjectReferencesToTarget)" Targets="Build" BuildInParallel="False" RemoveProperties="$(_GlobalPropertiesToRemoveFromProjectReferences);TargetFramework;RuntimeIdentifier" />
+        <MSBuild Projects="@(_ClangProjectReferencesToTarget)" Targets="GetTargetItem" BuildInParallel="False" RemoveProperties="$(_GlobalPropertiesToRemoveFromProjectReferences);TargetFramework;RuntimeIdentifier" RebaseOutputs="true">
+            <Output TaskParameter="TargetOutputs" ItemName="_ResolvedClangProjectReferenceTargetOutput" />
+        </MSBuild>
+        <ItemGroup>
+            <_ClangProjectReferenceItems Include="@(_ResolvedClangProjectReferenceTargetOutput)" />
+        </ItemGroup>
+    </Target>
+
+    <Target Name="GetClangProjectReferenceCopyToOutputDirectoryItems" BeforeTargets="Build;AssignTargetPaths" DependsOnTargets="GetClangProjectReferenceItems" Condition=" '$(DesignTimeBuild)' != 'true' and '@(_ClangProjectReferenceItems)' != '' ">
+        <ItemGroup>
+            <ContentWithTargetPath Include="@(_ClangProjectReferenceItems)" Condition=" '%(_ClangProjectReferenceItems.RuntimeIdentifier)' != '' ">
+                <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+                <TargetPath>runtimes\%(_ClangProjectReferenceItems.RuntimeIdentifier)\native\%(_ClangProjectReferenceItems.TargetFileName)</TargetPath>
+                <Pack>false</Pack>
+            </ContentWithTargetPath>
+        </ItemGroup>
+    </Target>
+
+    <PropertyGroup>
+        <GetCopyToOutputDirectoryItemsDependsOn>
+            AssignClangProjectConfiguration;
+            GetClangProjectReferences;
+            GetClangProjectReferenceItems;
+            GetClangProjectReferenceCopyToOutputDirectoryItems;
+            $(GetCopyToOutputDirectoryItemsDependsOn);
+        </GetCopyToOutputDirectoryItemsDependsOn>
+    </PropertyGroup>
+
+    <Target Name="GetClangProjectReferencePackageItems" DependsOnTargets="GetClangProjectReferenceItems" Condition=" '$(DesignTimeBuild)' != 'true' And '@(_ClangProjectReferenceItems)' != '' ">
+        <ItemGroup>
+            <_PackageFiles Include="@(_ClangProjectReferenceItems)" Condition=" '%(_ClangProjectReferenceItems.RuntimeIdentifier)' != '' ">
+                <PackagePath>runtimes\%(_ClangProjectReferenceItems.RuntimeIdentifier)\native\%(_ClangProjectReferenceItems.TargetFileName)</PackagePath>
+            </_PackageFiles>
+        </ItemGroup>
+    </Target>
+
+    <PropertyGroup>
+        <GetClangProjectReferenceItemsBeforePackageFilesDependsOn>
+            AssignClangProjectConfiguration;
+            GetClangProjectReferences;
+            GetClangProjectReferenceItems;
+            GetClangProjectReferencePackageItems;
+            $(GetClangProjectReferenceItemsBeforePackageFilesDependsOn);
+        </GetClangProjectReferenceItemsBeforePackageFilesDependsOn>
+    </PropertyGroup>
+
+    <Target Name="GetClangProjectReferencePackageItemsBeforeGetPackageFiles" DependsOnTargets="$(GetClangProjectReferenceItemsBeforePackageFilesDependsOn)" BeforeTargets="_GetPackageFiles" Condition=" '$(DesignTimeBuild)' != 'true' ">
+
+    </Target>
+
+    <Target Name="ResolveClangAdditionalRuntimeNativeAssets" DependsOnTargets="GetClangProjectReferenceItems" BeforeTargets="ResolveBuildDependencyFileExtensions">
+        <ItemGroup>
+            <AdditionalRuntimeNativeAssets Include="@(_ClangProjectReferenceItems->'runtimes\%(RuntimeIdentifier)\native\%(TargetFileName)')" Condition=" '%(_ClangProjectReferenceItems.RuntimeIdentifier)' != '' ">
+                <LibraryName>%(_ClangProjectReferenceItems.TargetName)</LibraryName>
+                <LibraryVersion>%(_ClangProjectReferenceItems.Version)</LibraryVersion>
+                <LibraryType>project</LibraryType>
+                <LibraryPath>%(_ClangProjectReferenceItems.ProjectName)/%(_ClangProjectReferenceItems.Version)</LibraryPath>
+                <Runtime>%(_ClangProjectReferenceItems.RuntimeIdentifier)</Runtime>
+            </AdditionalRuntimeNativeAssets>
+        </ItemGroup>
+    </Target>
+
+</Project>
