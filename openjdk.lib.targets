@@ -1,0 +1,117 @@
+﻿<Project>
+    <PropertyGroup>
+        <MSBuildAllProjects>$(MSBuildAllProjects);$(MSBuildThisFileFullPath)</MSBuildAllProjects>
+    </PropertyGroup>
+
+    <!-- common preprocessor declarations -->
+    <ItemGroup Condition=" '$(TargetMachine)' != '' ">
+        <PreprocessorDefinitions Include="_DEBUG" Condition=" '$(DebugSymbols)' == 'true' " />
+        <PreprocessorDefinitions Include="_AMD64_;amd64" Condition="$(TargetMachine.StartsWith('x86_64-'))" />
+        <PreprocessorDefinitions Include="_X86_;x86" Condition="$(TargetMachine.StartsWith('i686-'))" />
+        <PreprocessorDefinitions Include="_ARM64_;arm64" Condition="$(TargetMachine.StartsWith('aarch64-'))" />
+        <PreprocessorDefinitions Include="_ARM_;arm" Condition="$(TargetMachine.StartsWith('thumbv7-')) or $(TargetMachine.StartsWith('arm-'))" />
+    </ItemGroup>
+
+    <!-- common/autoconf/roolchain.m4 -->
+    <ItemGroup Condition=" '$(TargetMachine)' != '' And $(TargetMachine.Contains('-windows-')) ">
+        <PreprocessorDefinitions Include="_STATIC_CPPLIB" />
+        <PreprocessorDefinitions Include="_DISABLE_DEPRECATE_STATIC_CPPLIB" />
+        <PreprocessorDefinitions Include="WIN32_LEAN_AND_MEAN" />
+        <PreprocessorDefinitions Include="_CRT_SECURE_NO_DEPRECATE" />
+        <PreprocessorDefinitions Include="_CRT_NONSTDC_NO_DEPRECATE" />
+        <PreprocessorDefinitions Include="WIN32" />
+        <PreprocessorDefinitions Include="IAL" />
+
+        <ResourceDefinitions Include="JDK_BUILD_ID=$(InformationalVersion)" />
+        <ResourceDefinitions Include="JDK_COMPANY=$(ProductName)" />
+        <ResourceDefinitions Include="JDK_COMPONENT=$(ProductName)" />
+        <ResourceDefinitions Include="JDK_VER=$(Version)" />
+        <ResourceDefinitions Include="JDK_COPYRIGHT=" />
+        <ResourceDefinitions Include="JDK_NAME=$(ProductName)" />
+        <ResourceDefinitions Include="JDK_FVER=$(FileVersion)" />
+    </ItemGroup>
+
+    <!-- jdk/make/lib/SecurityLibraries.gmk -->
+    <ItemGroup Condition=" '$(TargetMachine)' != '' ">
+        <ResourceDefinitions Include="JDK_FNAME=$(TargetName).dll" />
+        <ResourceDefinitions Include="JDK_INTERNAL_NAME=$(TargetName)" />
+        <ResourceDefinitions Include="JDK_FTYPE=0x2L" />
+    </ItemGroup>
+
+    <!-- standard OpenJDK includes -->
+    <ItemGroup>
+        <IncludeDirectories Include="$(OpenJdkDir)jdk\src\share\javavm\export" />
+        <IncludeDirectories Include="$(OpenJdkDir)jdk\src\windows\javavm\export" Condition="$(TargetMachine.Contains('-windows-'))" />
+        <IncludeDirectories Include="$(OpenJdkDir)jdk\src\solaris\javavm\export" Condition="$(TargetMachine.Contains('-linux-'))" />
+        <IncludeDirectories Include="$(OpenJdkDir)jdk\src\macosx\javavm\export" Condition="$(TargetMachine.Contains('-darwin-'))" />
+    </ItemGroup>
+
+    <!-- relative path within Windows SDK based on arch -->
+    <PropertyGroup Condition=" '$(TargetMachine)' != '' And $(TargetMachine.Contains('-windows-')) ">
+        <WinSdkArch Condition="$(TargetMachine.StartsWith('x86_64-'))">x86_64</WinSdkArch>
+        <WinSdkArch Condition="$(TargetMachine.StartsWith('i686-'))">x86</WinSdkArch>
+        <WinSdkArch Condition="$(TargetMachine.StartsWith('aarch64-'))">aarch64</WinSdkArch>
+        <WinSdkArch Condition="$(TargetMachine.StartsWith('thumbv7-'))">aarch</WinSdkArch>
+    </PropertyGroup>
+
+    <!-- on Linux and OSX we rely on xwin to deliver SDK -->
+    <PropertyGroup Condition="$([MSBuild]::IsOSUnixLike())">
+        <BuildDependsOn>
+            $(BuildDependsOn);
+            InstallXWin;
+        </BuildDependsOn>
+    </PropertyGroup>
+
+    <PropertyGroup Condition="!$([MSBuild]::IsOSPlatform('Windows'))">
+        <BuildDependsOn>
+            $(BuildDependsOn);
+            InstallWindowsSDK;
+        </BuildDependsOn>
+    </PropertyGroup>
+
+    <ItemGroup Condition="!$([MSBuild]::IsOSPlatform('Windows'))">
+        <SystemIncludeDirectories Include="$(MSBuildThisFileDirectory)build\xwin\crt\include\" />
+        <SystemIncludeDirectories Include="$(MSBuildThisFileDirectory)build\xwin\sdk\include\shared\" />
+        <SystemIncludeDirectories Include="$(MSBuildThisFileDirectory)build\xwin\sdk\include\ucrt\" />
+        <SystemIncludeDirectories Include="$(MSBuildThisFileDirectory)build\xwin\sdk\include\um\" />
+
+        <DependencyDirectories Include="$(MSBuildThisFileDirectory)build\xwin\crt\lib\$(WinSdkArch)" />
+        <DependencyDirectories Include="$(MSBuildThisFileDirectory)build\xwin\sdk\lib\ucrt\$(WinSdkArch)" />
+        <DependencyDirectories Include="$(MSBuildThisFileDirectory)build\xwin\sdk\lib\um\$(WinSdkArch)" />
+    </ItemGroup>
+
+    <PropertyGroup Condition="!$([MSBuild]::IsOSPlatform('Linux'))">
+        <BuildDependsOn>
+            $(BuildDependsOn);
+            InstallLinuxSDK;
+        </BuildDependsOn>
+    </PropertyGroup>
+
+    <ItemGroup Condition="!$([MSBuild]::IsOSPlatform('Linux'))">
+        
+    </ItemGroup>
+
+    <PropertyGroup Condition="!$([MSBuild]::IsOSPlatform('OSX'))">
+        <BuildDependsOn>
+            $(BuildDependsOn);
+            InstallOSXSDK;
+        </BuildDependsOn>
+    </PropertyGroup>
+
+    <ItemGroup Condition="!$([MSBuild]::IsOSPlatform('OSX'))">
+        
+    </ItemGroup>
+
+    <Target Name="InstallWindowsSDK">
+        <Exec Command="$(MSBuildThisFileDirectory)xwin.sh" />
+    </Target>
+
+    <Target Name="InstallLinuxSDK">
+        <Message Text="InstallLinuxSDK" />
+    </Target>
+
+    <Target Name="InstallOSXSDK">
+        <Message Text="InstallOSXSDK" />
+    </Target>
+
+</Project>

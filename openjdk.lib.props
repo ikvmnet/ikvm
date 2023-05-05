@@ -1,0 +1,15 @@
+﻿<Project>
+    <PropertyGroup>
+        <MSBuildAllProjects>$(MSBuildAllProjects);$(MSBuildThisFileFullPath)</MSBuildAllProjects>
+    </PropertyGroup>
+
+    <Import Project="$(MSBuildThisFileDirectory)openjdk.props" />
+
+    <PropertyGroup>
+        <OutputType>Library</OutputType>
+        <UseLd>lld</UseLd>
+        <Verbose>true</Verbose>
+        <MsCompatibility Condition=" '$(TargetMachine)' != '' And $(TargetMachine.Contains('-windows-')) ">true</MsCompatibility>
+    </PropertyGroup>
+    
+</Project>
