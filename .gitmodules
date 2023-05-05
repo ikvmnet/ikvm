@@ -6,7 +6,3 @@
 	path = jtreg
 	url = https://github.com/ikvmnet/jtreg.git
 	ignore = dirty
-[submodule "glibc"]
-	path = glibc
-	url = https://sourceware.org/git/glibc.git
-	ignore = dirty

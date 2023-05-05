@@ -54,22 +54,14 @@
         <WinSdkArch Condition="$(TargetMachine.StartsWith('thumbv7-'))">aarch</WinSdkArch>
     </PropertyGroup>
 
-    <!-- on Linux and OSX we rely on xwin to deliver SDK -->
-    <PropertyGroup Condition="$([MSBuild]::IsOSUnixLike())">
-        <BuildDependsOn>
-            $(BuildDependsOn);
-            InstallXWin;
-        </BuildDependsOn>
-    </PropertyGroup>
-
-    <PropertyGroup Condition="!$([MSBuild]::IsOSPlatform('Windows'))">
+    <PropertyGroup Condition="!$([MSBuild]::IsOSPlatform('Windows')) And $(TargetMachine.Contains('-windows-'))">
         <BuildDependsOn>
             $(BuildDependsOn);
             InstallWindowsSDK;
         </BuildDependsOn>
     </PropertyGroup>
 
-    <ItemGroup Condition="!$([MSBuild]::IsOSPlatform('Windows'))">
+    <ItemGroup Condition="!$([MSBuild]::IsOSPlatform('Windows')) And $(TargetMachine.Contains('-windows-'))">
         <SystemIncludeDirectories Include="$(MSBuildThisFileDirectory)build\xwin\crt\include\" />
         <SystemIncludeDirectories Include="$(MSBuildThisFileDirectory)build\xwin\sdk\include\shared\" />
         <SystemIncludeDirectories Include="$(MSBuildThisFileDirectory)build\xwin\sdk\include\ucrt\" />
@@ -80,25 +72,26 @@
         <DependencyDirectories Include="$(MSBuildThisFileDirectory)build\xwin\sdk\lib\um\$(WinSdkArch)" />
     </ItemGroup>
 
-    <PropertyGroup Condition="!$([MSBuild]::IsOSPlatform('Linux'))">
+    <PropertyGroup Condition="!$([MSBuild]::IsOSPlatform('Linux')) And $(TargetMachine.Contains('-linux-'))">
         <BuildDependsOn>
             $(BuildDependsOn);
             InstallLinuxSDK;
         </BuildDependsOn>
     </PropertyGroup>
 
-    <ItemGroup Condition="!$([MSBuild]::IsOSPlatform('Linux'))">
-        
+    <ItemGroup Condition="!$([MSBuild]::IsOSPlatform('Linux')) And $(TargetMachine.Contains('-linux-'))">
+        <!--<SystemIncludeDirectories Include="$(MSBuildThisFileDirectory)glibc\include\" />
+        <SystemIncludeDirectories Include="$(MSBuildThisFileDirectory)glibc\" />-->
     </ItemGroup>
 
-    <PropertyGroup Condition="!$([MSBuild]::IsOSPlatform('OSX'))">
+    <PropertyGroup Condition="!$([MSBuild]::IsOSPlatform('OSX')) And $(TargetMachine.Contains('-darwin-'))">
         <BuildDependsOn>
             $(BuildDependsOn);
             InstallOSXSDK;
         </BuildDependsOn>
     </PropertyGroup>
 
-    <ItemGroup Condition="!$([MSBuild]::IsOSPlatform('OSX'))">
+    <ItemGroup Condition="!$([MSBuild]::IsOSPlatform('OSX')) And $(TargetMachine.Contains('-darwin-'))">
         
     </ItemGroup>
 
