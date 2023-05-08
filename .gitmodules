@@ -23,8 +23,3 @@
 	url = https://gcc.gnu.org/git/gcc.git
 	ignore = dirty
 	shallow = true
-[submodule "ext/glibc"]
-	path = ext/glibc
-	url = https://sourceware.org/git/glibc.git
-	ignore = dirty
-	shallow = true
