@@ -79,10 +79,15 @@
         </BuildDependsOn>
     </PropertyGroup>
 
-    <ItemGroup Condition="!$([MSBuild]::IsOSPlatform('Linux')) And $(TargetMachine.Contains('-linux-'))">
-        <!--<SystemIncludeDirectories Include="$(MSBuildThisFileDirectory)glibc\include\" />
-        <SystemIncludeDirectories Include="$(MSBuildThisFileDirectory)glibc\" />-->
-    </ItemGroup>
+    <PropertyGroup Condition="!$([MSBuild]::IsOSPlatform('Linux')) And $(TargetMachine.EndsWith('-linux-gnu')) And $(TargetMachine.StartsWith('x86_64-'))">
+        <PositionIndependentCode>true</PositionIndependentCode>
+        <SystemRoot>$(MSBuildThisFileDirectory)ext\sysroot-x86_64-unknown-linux-gnu\sysroot</SystemRoot>
+    </PropertyGroup>
+
+    <PropertyGroup Condition="!$([MSBuild]::IsOSPlatform('Linux')) And $(TargetMachine.EndsWith('-linux-gnu')) And $(TargetMachine.StartsWith('aarch64-'))">
+        <PositionIndependentCode>true</PositionIndependentCode>
+        <SystemRoot>$(MSBuildThisFileDirectory)ext\sysroot-aarch64-unknown-linux-gnu\sysroot</SystemRoot>
+    </PropertyGroup>
 
     <PropertyGroup Condition="!$([MSBuild]::IsOSPlatform('OSX')) And $(TargetMachine.Contains('-darwin-'))">
         <BuildDependsOn>

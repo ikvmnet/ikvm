@@ -26,7 +26,7 @@
     </PropertyGroup>
 
     <PropertyGroup>
-        <DebugSymbols Condition=" '$(ConfigurationName)' == 'Debug' and '$(DebugSymbols)' == '' and '$(DebugType)'==''">true</DebugSymbols>
+        <DebugSymbols Condition=" '$(ConfigurationName)' == 'Debug' And '$(DebugSymbols)' == '' ">true</DebugSymbols>
     </PropertyGroup>
 
     <PropertyGroup>
@@ -199,6 +199,8 @@
             <_Lines Include="-fms-compatibility" Condition=" '$(MsCompatibility)' == 'true' " />
             <_Lines Include="-g" Condition=" '$(DebugSymbols)' == 'true' " />
 
+            <_Lines Include="--sysroot=$(SystemRoot.Replace('\', '\\'))" Condition=" '$(SystemRoot)' != '' " />
+
             <_SystemIncludeDirectories Include="@(SystemIncludeDirectories)" />
             <_SystemIncludeDirectories Include="$(SystemIncludeDirectories)" />
             <_Lines Include="@(_SystemIncludeDirectories->'-isystem &quot;%(FullPath)&quot;'->Replace('\', '\\'))" Condition=" '@(_SystemIncludeDirectories)' != '' " />
@@ -217,6 +219,8 @@
 
             <_PreprocessorDefinitions Include="$(PreprocessorDefinitions)" />
             <_Lines Include="@(_PreprocessorDefinitions->'-D &quot;%(Identity)&quot;')" Condition=" '@(_PreprocessorDefinitions)' != '' " />
+
+            <_Lines Include="-fPIC" Condition=" '$(PositionIndependentCode)' == 'true' " />
 
             <_Lines Include="$(AdditionalOptions)" Condition=" '$(AdditionalOptions)' != '' " />
             <_Lines Include="@(AdditionalOptions->'&quot;%(Identity)&quot;')" Condition=" '@(AdditionalOptions)' != '' " />
@@ -289,7 +293,7 @@
             UseHardlinksIfPossible="$(CreateHardLinksForCopyFilesToOutputDirectoryIfPossible)"
             UseSymboliclinksIfPossible="$(CreateSymbolicLinksForCopyFilesToOutputDirectoryIfPossible)"
             ErrorIfLinkFails="$(ErrorIfLinkFailsForCopyFilesToOutputDirectory)"
-            Condition="'$(CopyDebugSymbolsToOutputDirectory)' == 'true' and '$(SkipCopyBuildProduct)' != 'true'">
+            Condition="Exists('$(IntermediateDebugSymbolsPath)') And '$(CopyDebugSymbolsToOutputDirectory)' == 'true' and '$(SkipCopyBuildProduct)' != 'true'">
             <Output TaskParameter="DestinationFiles" ItemName="MainAssembly"/>
             <Output TaskParameter="DestinationFiles" ItemName="FileWrites"/>
         </Copy>
