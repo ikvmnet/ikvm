@@ -2,23 +2,29 @@
 	path = openjdk
 	url = https://github.com/ikvmnet/jdk8u.git
 	ignore = dirty
+	shallow = true
 [submodule "jtreg"]
 	path = jtreg
 	url = https://github.com/ikvmnet/jtreg.git
 	ignore = dirty
+	shallow = true
 [submodule "ext/crosstool-ng"]
 	path = ext/crosstool-ng
 	url = https://github.com/crosstool-ng/crosstool-ng
 	ignore = dirty
+	shallow = true
 [submodule "ext/linux"]
 	path = ext/linux
 	url = https://github.com/torvalds/linux.git
 	ignore = dirty
+	shallow = true
 [submodule "ext/gcc"]
 	path = ext/gcc
 	url = git://gcc.gnu.org/git/gcc.git
 	ignore = dirty
+	shallow = true
 [submodule "ext/glibc"]
 	path = ext/glibc
 	url = https://sourceware.org/git/glibc.git
 	ignore = dirty
+	shallow = true
