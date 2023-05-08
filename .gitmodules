@@ -27,4 +27,3 @@
 	path = ext/glibc
 	url = https://sourceware.org/git/glibc.git
 	ignore = dirty
-	shallow = true
