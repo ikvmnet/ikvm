@@ -6,3 +6,19 @@
 	path = jtreg
 	url = https://github.com/ikvmnet/jtreg.git
 	ignore = dirty
+[submodule "ext/crosstool-ng"]
+	path = ext/crosstool-ng
+	url = https://github.com/crosstool-ng/crosstool-ng
+	ignore = dirty
+[submodule "ext/linux"]
+	path = ext/linux
+	url = https://github.com/torvalds/linux.git
+	ignore = dirty
+[submodule "ext/gcc"]
+	path = ext/gcc
+	url = git://gcc.gnu.org/git/gcc.git
+	ignore = dirty
+[submodule "ext/glibc"]
+	path = ext/glibc
+	url = https://sourceware.org/git/glibc.git
+	ignore = dirty
