@@ -13,6 +13,42 @@ on:
     - develop
 
 jobs:
+  build-sysroot:
+    strategy:
+      matrix:
+        target:
+        - x86_64-unknown-linux-gnu
+        - i686-unknown-linux-gnu
+        - aarch64-unknown-linux-gnu
+        - arm-unknown-linux-gnueabi
+    name: Build Linux sysroot (${{ matrix.target }})
+    runs-on: ubuntu-latest
+    steps:
+    - name: Checkout
+      uses: actions/checkout@v3
+      with:
+        submodules: recursive
+    - name: Cache
+      uses: actions/cache@v3
+      with:
+        path: ext/sysroot.${{ matrix.target }}/dist
+        key: ext-sysroot-${{ matrix.target }}-dist--${{ runner.os }}--${{ hashFiles('ext/**') }}-1
+    - name: Check
+      id: sysroot-dist-stamp
+      uses: andstor/file-existence-action@v2
+      with:
+        files: ext/sysroot.${{ matrix.target }}/dist/stamp
+    - name: Build
+      if: steps.sysroot-dist-stamp.outputs.files_exists != 'true'
+      run: ext/sysroot.sh ${{ matrix.target }}
+    - name: Package
+      run: tar czvf ext-sysroot.${{ matrix.target }}-dist.tar.gz sysroot.${{ matrix.target }}/dist
+      working-directory: ext
+    - name: Upload
+      uses: actions/upload-artifact@v3
+      with:
+        name: ext-sysroot.${{ matrix.target }}-dist
+        path: ext/sysroot.${{ matrix.target }}/ext-sysroot.${{ matrix.target }}-dist.tar.gz
   build-openjdk:
     name: Build OpenJDK
     runs-on: ubuntu-latest
@@ -107,6 +143,7 @@ jobs:
     name: Build IKVM
     needs:
     - build-openjdk
+    - build-sysroot
     timeout-minutes: 240
     runs-on: windows-latest
     steps:
