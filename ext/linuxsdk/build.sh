@@ -97,7 +97,7 @@ then
 	$ext/gcc/configure \
 		--host=$target \
 		--target=$target \
-		--prefix="" \
+		--prefix=/ \
 		--with-sysroot=$dist \
 		--disable-bootstrap --disable-nls --disable-multilib --enable-languages=c,c++
 	make all-gcc all-target-libgcc all-target-libstdc++
