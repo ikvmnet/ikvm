@@ -13,7 +13,7 @@ on:
     - develop
 
 jobs:
-  build-sysroot:
+  build-linuxsdk:
     strategy:
       matrix:
         target:
@@ -21,7 +21,7 @@ jobs:
         - i686-unknown-linux-gnu
         - aarch64-unknown-linux-gnu
         - arm-unknown-linux-gnueabi
-    name: Build Linux sysroot (${{ matrix.target }})
+    name: Build Linux SDK (${{ matrix.target }})
     runs-on: ubuntu-latest
     steps:
     - name: Checkout
