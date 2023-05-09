@@ -228,7 +228,14 @@ jobs:
         restore-keys: ${{ runner.os }}-nuget-2-
     - name: Add msbuild to PATH
       uses: microsoft/setup-msbuild@v1.1
-
+    - name: Download Linux SDK (x86_64-unknown-linux-gnu)
+      uses: actions/download-artifact@v3
+      with:
+        name: ext-linuxsdk-x86_64-unknown-linux-gnu
+        path: ${{ env.WORKPATH }}/ikvm/ext/linuxsdk
+    - name: Restore Linux SDK (x86_64-unknown-linux-gnu)
+      run: tar xzvf x86_64-unknown-linux-gnu.tar.gz
+      working-directory: ${{ env.WORKPATH }}\ikvm\ext\linuxsdk
     - name: Download Linux SDK (aarch64-unknown-linux-gnu)
       uses: actions/download-artifact@v3
       with:
@@ -237,7 +244,6 @@ jobs:
     - name: Restore Linux SDK (aarch64-unknown-linux-gnu)
       run: tar xzvf aarch64-unknown-linux-gnu.tar.gz
       working-directory: ${{ env.WORKPATH }}\ikvm\ext\linuxsdk
-
     - name: Download Linux SDK (arm-unknown-linux-gnueabi)
       uses: actions/download-artifact@v3
       with:
@@ -246,16 +252,6 @@ jobs:
     - name: Restore Linux SDK (arm-unknown-linux-gnueabi)
       run: tar xzvf arm-unknown-linux-gnueabi.tar.gz
       working-directory: ${{ env.WORKPATH }}\ikvm\ext\linuxsdk
-
-    - name: Download Linux SDK (x86_64-unknown-linux-gnu)
-      uses: actions/download-artifact@v3
-      with:
-        name: ext-linuxsdk-aarch-unknown-linux-gnu
-        path: ${{ env.WORKPATH }}/ikvm/ext/linuxsdk
-    - name: Restore Linux SDK (aarch-unknown-linux-gnu)
-      run: tar xzvf aarch-unknown-linux-gnu.tar.gz
-      working-directory: ${{ env.WORKPATH }}\ikvm\ext\linuxsdk
-
     - name: Download OpenJDK 8 Build
       uses: actions/download-artifact@v3
       with:
