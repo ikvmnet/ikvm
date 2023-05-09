@@ -31,15 +31,15 @@ jobs:
     - name: Cache
       uses: actions/cache@v3
       with:
-        path: ext/sysroot.${{ matrix.target }}/dist
-        key: ext-sysroot-${{ matrix.target }}-dist--${{ runner.os }}--${{ hashFiles('ext/sysroot.*') }}-1
+        path: ext/linuxsdk/{{ matrix.target }}
+        key: ext-linuxsdk-${{ matrix.target }}--${{ runner.os }}--${{ hashFiles('ext/linuxsdk/*.dir') }}-1
     - name: Check
-      id: sysroot-dist-stamp
+      id: linuxsdk-stamp
       uses: andstor/file-existence-action@v2
       with:
-        files: ext/sysroot.${{ matrix.target }}/dist/stamp
+        files: ext/linuxsdk/${{ matrix.target }}/stamp
     - name: Install
-      if: steps.sysroot-dist-stamp.outputs.files_exists != 'true'
+      if: steps.linuxsdk-stamp.outputs.files_exists != 'true'
       run: |
         sudo apt-get update &&
         sudo apt-get install -y \
@@ -48,16 +48,16 @@ jobs:
           ninja-build zip unzip curl wget \
           help2man bison flex libtool libtool-bin patch libstdc++6 rsync git meson xz-utils texinfo
     - name: Build
-      if: steps.sysroot-dist-stamp.outputs.files_exists != 'true'
-      run: ext/sysroot.sh ${{ matrix.target }}
+      if: steps.linuxsdk-stamp.outputs.files_exists != 'true'
+      run: ext/linuxsdk/build.sh ${{ matrix.target }}
     - name: Package
-      run: tar czvf ext-sysroot.${{ matrix.target }}-dist.tar.gz sysroot.${{ matrix.target }}/dist
-      working-directory: ext
+      run: tar czvf ${{ matrix.target }}.tar.gz ${{ matrix.target }}
+      working-directory: ext/linuxsdk
     - name: Upload
       uses: actions/upload-artifact@v3
       with:
-        name: ext-sysroot.${{ matrix.target }}-dist
-        path: ext/sysroot.${{ matrix.target }}/ext-sysroot.${{ matrix.target }}-dist.tar.gz
+        name: linuxsdk-${{ matrix.target }}
+        path: ext/linuxsdk/${{ matrix.target }}.tar.gz
   build-openjdk:
     name: Build OpenJDK
     runs-on: ubuntu-latest
