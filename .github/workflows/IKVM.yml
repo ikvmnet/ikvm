@@ -31,7 +31,7 @@ jobs:
       uses: actions/cache@v3
       with:
         path: ext/linuxsdk/{{ matrix.target }}
-        key: ext-linuxsdk-${{ matrix.target }}--${{ runner.os }}--${{ hashFiles('ext/linuxsdk/*.dir') }}-1
+        key: ext-linuxsdk-${{ matrix.target }}--${{ runner.os }}--${{ hashFiles('ext/linuxsdk/*.dir/.config') }}-1
     - name: Check
       id: linuxsdk-stamp
       uses: andstor/file-existence-action@v2
@@ -55,7 +55,7 @@ jobs:
     - name: Upload
       uses: actions/upload-artifact@v3
       with:
-        name: linuxsdk-${{ matrix.target }}
+        name: ext-linuxsdk-${{ matrix.target }}
         path: ext/linuxsdk/${{ matrix.target }}.tar.gz
   build-openjdk:
     name: Build OpenJDK
@@ -197,7 +197,7 @@ jobs:
     - name: Install LLVM and Clang
       uses: KyleMayes/install-llvm-action@v1
       with:
-        version: "15.0"
+        version: "16.0"
         cached: ${{ steps.cache-llvm.outputs.cache-hit }}
     - name: Install GitVersion
       uses: gittools/actions/gitversion/setup@v0.9.15
@@ -228,6 +228,34 @@ jobs:
         restore-keys: ${{ runner.os }}-nuget-2-
     - name: Add msbuild to PATH
       uses: microsoft/setup-msbuild@v1.1
+
+    - name: Download Linux SDK (aarch64-unknown-linux-gnu)
+      uses: actions/download-artifact@v3
+      with:
+        name: ext-linuxsdk-aarch64-unknown-linux-gnu
+        path: ${{ env.WORKPATH }}/ikvm/ext/linuxsdk
+    - name: Restore Linux SDK (aarch64-unknown-linux-gnu)
+      run: tar xzvf aarch64-unknown-linux-gnu.tar.gz
+      working-directory: ${{ env.WORKPATH }}\ikvm\ext\linuxsdk
+
+    - name: Download Linux SDK (arm-unknown-linux-gnueabi)
+      uses: actions/download-artifact@v3
+      with:
+        name: ext-linuxsdk-arm-unknown-linux-gnuebi
+        path: ${{ env.WORKPATH }}/ikvm/ext/linuxsdk
+    - name: Restore Linux SDK (arm-unknown-linux-gnueabi)
+      run: tar xzvf arm-unknown-linux-gnueabi.tar.gz
+      working-directory: ${{ env.WORKPATH }}\ikvm\ext\linuxsdk
+
+    - name: Download Linux SDK (x86_64-unknown-linux-gnu)
+      uses: actions/download-artifact@v3
+      with:
+        name: ext-linuxsdk-aarch-unknown-linux-gnu
+        path: ${{ env.WORKPATH }}/ikvm/ext/linuxsdk
+    - name: Restore Linux SDK (aarch-unknown-linux-gnu)
+      run: tar xzvf aarch-unknown-linux-gnu.tar.gz
+      working-directory: ${{ env.WORKPATH }}\ikvm\ext\linuxsdk
+
     - name: Download OpenJDK 8 Build
       uses: actions/download-artifact@v3
       with:
