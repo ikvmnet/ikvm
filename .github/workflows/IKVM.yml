@@ -40,7 +40,7 @@ jobs:
         files: ext/sysroot.${{ matrix.target }}/dist/stamp
     - name: Install
       if: steps.sysroot-dist-stamp.outputs.files_exists != 'true'
-    - run: |
+      run: |
         apt-get update &&
         apt-get install -y \
           build-essential \
