@@ -152,7 +152,7 @@ jobs:
     name: Build IKVM
     needs:
     - build-openjdk
-    - build-sysroot
+    - build-linuxsdk
     timeout-minutes: 240
     runs-on: windows-latest
     steps:
