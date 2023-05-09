@@ -20,11 +20,10 @@
 	shallow = true
 [submodule "ext/gcc"]
 	path = ext/gcc
-	url = https://gcc.gnu.org/git/gcc.git
+	url = https://github.com/gcc-mirror/gcc.git
 	ignore = dirty
-	branch = master
 [submodule "ext/glibc"]
 	path = ext/glibc
-	url = https://sourceware.org/git/glibc.git
+	url = https://github.com/bminor/glibc.git
 	ignore = dirty
-	branch = master
+	shallow = true
