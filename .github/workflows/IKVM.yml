@@ -44,11 +44,9 @@ jobs:
         apt-get update &&
         apt-get install -y \
           build-essential \
-          unzip \
-          zip \
-          curl \
-          gcc-9 \
-          g++-9
+          gcc g++ \
+          ninja ninja-build zip unzip curl wget \
+          gcc-9 g++-9
     - name: Build
       if: steps.sysroot-dist-stamp.outputs.files_exists != 'true'
       run: ext/sysroot.sh ${{ matrix.target }}
