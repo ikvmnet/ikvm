@@ -32,7 +32,7 @@ jobs:
       uses: actions/cache@v3
       with:
         path: ext/sysroot.${{ matrix.target }}/dist
-        key: ext-sysroot-${{ matrix.target }}-dist--${{ runner.os }}--${{ hashFiles('ext/**') }}-1
+        key: ext-sysroot-${{ matrix.target }}-dist--${{ runner.os }}--${{ hashFiles('ext/sysroot.*') }}-1
     - name: Check
       id: sysroot-dist-stamp
       uses: andstor/file-existence-action@v2
