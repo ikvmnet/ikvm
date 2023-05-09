@@ -22,7 +22,7 @@
 	path = ext/gcc
 	url = https://gcc.gnu.org/git/gcc.git
 	ignore = dirty
-	shallow = true
+	branch = master
 [submodule "ext/glibc"]
 	path = ext/glibc
 	url = https://sourceware.org/git/glibc.git
