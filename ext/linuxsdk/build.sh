@@ -104,8 +104,11 @@ then
 		--with-sysroot=$dist \
 		--with-native-system-header-dir=/include \
 		--disable-bootstrap --disable-nls --disable-multilib --enable-languages=c,c++
-	make all-target-libgcc all-target-libstdc++
-	make DESTDIR=$dist install-target-libgcc install-target-libstdc++
+	make all-target-libgcc all-target-libstdc++-v3
+	make DESTDIR=$dist install-target-libgcc install-target-libstdc++-v3
 	touch stamp
 	popd
 fi
+
+# remove unused directories
+rm -rf $dist/bin $dist/etc $dist/libexec $dist/sbin $dist/share $dist/var
