@@ -45,7 +45,7 @@ jobs:
       uses: actions/upload-artifact@v3
       with:
         name: ext-winsdk-sdk
-        path: ext/winsdk/winsdk.tar.gz
+        path: ext/winsdk/sdk.tar.gz
   build-linuxsdk:
     strategy:
       matrix:
