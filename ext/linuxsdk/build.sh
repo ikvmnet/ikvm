@@ -18,10 +18,12 @@ export PATH=$sdk/crosstool-ng/bin:$PATH
 target=$1
 if [ -z "$target" ]
 then
+	pushd $sdk
 	for i in $(ls *.dir/.config | cut -d'.' -f1);
 	do
-		$0 $i
+		$sdk/build.sh $i
 	done
+	popd
 	exit
 fi
 
@@ -43,6 +45,7 @@ fi
 
 # use tools from root
 export PATH=$root/bin:$PATH
+echo $PATH
 
 # install dist kernel headers
 # translate target into kernel arch name
@@ -97,10 +100,10 @@ then
 	$ext/gcc/configure \
 		--host=$target \
 		--target=$target \
-		--prefix=/ \
+		--prefix="" \
 		--with-sysroot=$dist \
 		--disable-bootstrap --disable-nls --disable-multilib --enable-languages=c,c++
-	make all-gcc all-target-libgcc all-target-libstdc++
+	make all-target-libgcc all-target-libstdc++
 	make DESTDIR=$dist install-target-libgcc install-target-libstdc++
 	touch stamp
 	popd
