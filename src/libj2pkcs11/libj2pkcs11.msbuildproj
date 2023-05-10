@@ -5,25 +5,32 @@
     <PropertyGroup>
         <TargetMachines>x86_64-pc-windows-msvc;i686-pc-windows-msvc;aarch64-pc-windows-msvc;x86_64-unknown-linux-gnu;aarch64-unknown-linux-gnu;arm-unknown-linux-gnueabi;x86_64-apple-macosx;arm64-apple-macosx</TargetMachines>
         <TargetName>j2pkcs11</TargetName>
-        <PreprocessorDefinitions>$(PreprocessorDefinitions)</PreprocessorDefinitions>
-        <AdditionalOptions>-Xlinker --verbose</AdditionalOptions>
     </PropertyGroup>
 
+    <ItemDefinitionGroup>
+        <Compile>
+            <IncludeDirectories>%(IncludeDirectories);$(OpenJdkDir)jdk\src\share\native\sun\security\pkcs11</IncludeDirectories>
+            <IncludeDirectories>%(IncludeDirectories);$(OpenJdkDir)jdk\src\share\native\sun\security\pkcs11\wrapper</IncludeDirectories>
+        </Compile>
+        <Compile Condition="$(TargetMachine.Contains('-windows-'))">
+            <IncludeDirectories>%(IncludeDirectories);$(OpenJdkDir)jdk\src\windows\native\sun\security\pkcs11</IncludeDirectories>
+            <IncludeDirectories>%(IncludeDirectories);$(OpenJdkDir)jdk\src\windows\native\sun\security\pkcs11\wrapper</IncludeDirectories>
+        </Compile>
+        <Compile Condition="$(TargetMachine.Contains('-linux-')) Or $(TargetMachine.Contains('-apple-'))">
+            <IncludeDirectories>%(IncludeDirectories);$(OpenJdkDir)jdk\src\solaris\native\sun\security\pkcs11</IncludeDirectories>
+            <IncludeDirectories>%(IncludeDirectories);$(OpenJdkDir)jdk\src\solaris\native\sun\security\pkcs11\wrapper</IncludeDirectories>
+        </Compile>
+    </ItemDefinitionGroup>
+
     <ItemGroup>
-        <IncludeDirectories Include="$(OpenJdkDir)jdk\src\share\native\sun\security\pkcs11" />
-        <IncludeDirectories Include="$(OpenJdkDir)jdk\src\share\native\sun\security\pkcs11\wrapper" />
         <Compile Include="$(OpenJdkDir)jdk\src\share\native\sun\security\pkcs11\**\*.c" />    
     </ItemGroup>
 
     <ItemGroup Condition="$(TargetMachine.Contains('-windows-'))">
-        <IncludeDirectories Include="$(OpenJdkDir)jdk\src\windows\native\sun\security\pkcs11" />
-        <IncludeDirectories Include="$(OpenJdkDir)jdk\src\windows\native\sun\security\pkcs11\wrapper" />
         <Compile Include="$(OpenJdkDir)jdk\src\windows\native\sun\security\pkcs11\**\*.c" />
     </ItemGroup>
 
     <ItemGroup Condition="$(TargetMachine.Contains('-linux-')) Or $(TargetMachine.Contains('-apple-'))">
-        <IncludeDirectories Include="$(OpenJdkDir)jdk\src\solaris\native\sun\security\pkcs11" />
-        <IncludeDirectories Include="$(OpenJdkDir)jdk\src\solaris\native\sun\security\pkcs11\wrapper" />
         <Compile Include="$(OpenJdkDir)jdk\src\solaris\native\sun\security\pkcs11\**\*.c" />
     </ItemGroup>
 

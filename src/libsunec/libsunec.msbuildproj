@@ -5,12 +5,16 @@
     <PropertyGroup>
         <TargetMachines>x86_64-pc-windows-msvc;i686-pc-windows-msvc;aarch64-pc-windows-msvc;x86_64-unknown-linux-gnu;aarch64-unknown-linux-gnu;arm-unknown-linux-gnueabi;x86_64-apple-macosx;arm64-apple-macosx</TargetMachines>
         <TargetName>sunec</TargetName>
-        <PreprocessorDefinitions>$(PreprocessorDefinitions);MP_API_COMPATIBLE;NSS_ECC_MORE_THAN_SUITE_B</PreprocessorDefinitions>
-        <AdditionalOptions>-Xlinker --verbose</AdditionalOptions>
     </PropertyGroup>
 
+    <ItemDefinitionGroup>
+        <Compile>
+            <IncludeDirectories>%(IncludeDirectories);$(OpenJdkDir)jdk\src\share\native\sun\security\ec\impl"</IncludeDirectories>
+            <PreprocessorDefinitions>%(PreprocessorDefinitions);MP_API_COMPATIBLE;NSS_ECC_MORE_THAN_SUITE_B</PreprocessorDefinitions>
+        </Compile>
+    </ItemDefinitionGroup>
+
     <ItemGroup>
-        <IncludeDirectories Include="$(OpenJdkDir)jdk\src\share\native\sun\security\ec\impl" />
         <Compile Include="$(OpenJdkDir)jdk\src\share\native\sun\security\ec\**\*.cpp" />
         <Compile Include="$(OpenJdkDir)jdk\src\share\native\sun\security\ec\**\*.c" />
     </ItemGroup>

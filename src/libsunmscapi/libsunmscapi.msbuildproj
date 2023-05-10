@@ -5,10 +5,16 @@
     <PropertyGroup>
         <TargetMachines>x86_64-pc-windows-msvc14;i686-pc-windows-msvc14;aarch64-pc-windows-msvc14</TargetMachines>
         <TargetName>sunmscapi</TargetName>
-        <LanguageStandard>c++11</LanguageStandard>
-        <PreprocessorDefinitions>$(PreprocessorDefinitions)</PreprocessorDefinitions>
-        <Dependencies>$(Dependencies);crypt32;advapi32;ncrypt</Dependencies>
     </PropertyGroup>
+
+    <ItemDefinitionGroup>
+        <Compile>
+             <LanguageStandard>c++98</LanguageStandard>
+        </Compile>
+        <Link>
+             <Dependencies>%(Dependencies);crypt32;advapi32;ncrypt</Dependencies>
+        </Link>
+    </ItemDefinitionGroup>
 
     <ItemGroup>
         <Compile Include="$(OpenJdkDir)jdk\src\windows\native\sun\security\mscapi\**\*.cpp" />

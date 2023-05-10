@@ -11,109 +11,11 @@
         <MSBuildAllProjects>$(MSBuildAllProjects);$(MSBuildThisFileFullPath)</MSBuildAllProjects>
     </PropertyGroup>
 
-    <!-- common preprocessor declarations -->
-    <ItemGroup Condition=" '$(TargetMachine)' != '' ">
-        <PreprocessorDefinitions Include="_DEBUG" Condition=" '$(DebugSymbols)' == 'true' " />
-        <PreprocessorDefinitions Include="_AMD64_;amd64" Condition="$(TargetMachine.StartsWith('x86_64-'))" />
-        <PreprocessorDefinitions Include="_X86_;x86" Condition="$(TargetMachine.StartsWith('i686-'))" />
-        <PreprocessorDefinitions Include="_ARM64_;arm64" Condition="$(TargetMachine.StartsWith('aarch64-')) Or $(TargetMachine.StartsWith('arm64-'))" />
-        <PreprocessorDefinitions Include="_ARM_;arm" Condition="$(TargetMachine.StartsWith('thumbv7-')) Or $(TargetMachine.StartsWith('arm-'))" />
-    </ItemGroup>
-
-    <!-- common/autoconf/flags.m4 -->
-    <ItemGroup Condition=" '$(TargetMachine)' != '' And $(TargetMachine.Contains('-windows-')) ">
-        <PreprocessorDefinitions Include="_STATIC_CPPLIB" />
-        <PreprocessorDefinitions Include="_DISABLE_DEPRECATE_STATIC_CPPLIB" />
-        <PreprocessorDefinitions Include="WIN32_LEAN_AND_MEAN" />
-        <PreprocessorDefinitions Include="_CRT_SECURE_NO_DEPRECATE" />
-        <PreprocessorDefinitions Include="_CRT_NONSTDC_NO_DEPRECATE" />
-        <PreprocessorDefinitions Include="WIN32" />
-        <PreprocessorDefinitions Include="IAL" />
-
-        <ResourceDefinitions Include="JDK_BUILD_ID=$(InformationalVersion)" />
-        <ResourceDefinitions Include="JDK_COMPANY=$(ProductName)" />
-        <ResourceDefinitions Include="JDK_COMPONENT=$(ProductName)" />
-        <ResourceDefinitions Include="JDK_VER=$(Version)" />
-        <ResourceDefinitions Include="JDK_COPYRIGHT=" />
-        <ResourceDefinitions Include="JDK_NAME=$(ProductName)" />
-        <ResourceDefinitions Include="JDK_FVER=$(FileVersion)" />
-    </ItemGroup>
-
-    <!-- common/autoconf/flags.m4 -->
-    <ItemGroup Condition=" '$(TargetMachine)' != '' And $(TargetMachine.Contains('-apple-'))">
-        <PreprocessorDefinitions Include="_ALLBSD_SOURCE" />
-        <PreprocessorDefinitions Include="_DARWIN_UNLIMITED_SELECT" />
-    </ItemGroup>
-
-    <!-- jdk/make/lib/SecurityLibraries.gmk -->
-    <ItemGroup Condition=" '$(TargetMachine)' != '' ">
-        <ResourceDefinitions Include="JDK_FNAME=$(TargetName).dll" />
-        <ResourceDefinitions Include="JDK_INTERNAL_NAME=$(TargetName)" />
-        <ResourceDefinitions Include="JDK_FTYPE=0x2L" />
-    </ItemGroup>
-
-    <!-- standard OpenJDK includes -->
     <ItemGroup>
-        <IncludeDirectories Include="$(OpenJdkDir)jdk\src\share\javavm\export" />
-        <IncludeDirectories Include="$(OpenJdkDir)jdk\src\windows\javavm\export" Condition="$(TargetMachine.Contains('-windows-'))" />
-        <IncludeDirectories Include="$(OpenJdkDir)jdk\src\solaris\javavm\export" Condition="$(TargetMachine.Contains('-linux-'))" />
-        <IncludeDirectories Include="$(OpenJdkDir)jdk\src\macosx\javavm\export" Condition="$(TargetMachine.Contains('-apple-'))" />
-    </ItemGroup>
-
-    <!-- relative path within Windows SDK based on arch -->
-    <PropertyGroup Condition=" '$(TargetMachine)' != '' And $(TargetMachine.Contains('-windows-')) ">
-        <WinSdkArch Condition="$(TargetMachine.StartsWith('x86_64-'))">x86_64</WinSdkArch>
-        <WinSdkArch Condition="$(TargetMachine.StartsWith('i686-'))">x86</WinSdkArch>
-        <WinSdkArch Condition="$(TargetMachine.StartsWith('aarch64-'))">aarch64</WinSdkArch>
-        <WinSdkArch Condition="$(TargetMachine.StartsWith('thumbv7-'))">aarch</WinSdkArch>
-    </PropertyGroup>
-
-    <ItemGroup Condition="!$([MSBuild]::IsOSPlatform('Windows')) And $(TargetMachine.Contains('-windows-'))">
-        <SystemIncludeDirectories Include="$(MSBuildThisFileDirectory)build\xwin\crt\include\" />
-        <SystemIncludeDirectories Include="$(MSBuildThisFileDirectory)build\xwin\sdk\include\shared\" />
-        <SystemIncludeDirectories Include="$(MSBuildThisFileDirectory)build\xwin\sdk\include\ucrt\" />
-        <SystemIncludeDirectories Include="$(MSBuildThisFileDirectory)build\xwin\sdk\include\um\" />
-
-        <DependencyDirectories Include="$(MSBuildThisFileDirectory)build\xwin\crt\lib\$(WinSdkArch)" />
-        <DependencyDirectories Include="$(MSBuildThisFileDirectory)build\xwin\sdk\lib\ucrt\$(WinSdkArch)" />
-        <DependencyDirectories Include="$(MSBuildThisFileDirectory)build\xwin\sdk\lib\um\$(WinSdkArch)" />
-    </ItemGroup>
-
-    <PropertyGroup Condition="!$([MSBuild]::IsOSPlatform('Linux')) And $(TargetMachine.EndsWith('-linux-gnu')) And $(TargetMachine.StartsWith('x86_64-'))">
-        <PositionIndependentCode>true</PositionIndependentCode>
-        <SystemRoot>$(MSBuildThisFileDirectory)ext\linuxsdk\x86_64-unknown-linux-gnu</SystemRoot>
-    </PropertyGroup>
-
-    <PropertyGroup Condition="!$([MSBuild]::IsOSPlatform('Linux')) And $(TargetMachine.EndsWith('-linux-gnu')) And $(TargetMachine.StartsWith('aarch64-'))">
-        <PositionIndependentCode>true</PositionIndependentCode>
-        <SystemRoot>$(MSBuildThisFileDirectory)ext\linuxsdk\aarch64-unknown-linux-gnu</SystemRoot>
-    </PropertyGroup>
-
-    <PropertyGroup Condition="!$([MSBuild]::IsOSPlatform('Linux')) And $(TargetMachine.EndsWith('-linux-gnueabi')) And $(TargetMachine.StartsWith('arm-'))">
-        <PositionIndependentCode>true</PositionIndependentCode>
-        <SystemRoot>$(MSBuildThisFileDirectory)ext\linuxsdk\arm-unknown-linux-gnueabi</SystemRoot>
-    </PropertyGroup>
-
-    <PropertyGroup Condition="!$([MSBuild]::IsOSPlatform('OSX')) And $(TargetMachine.Contains('-apple-'))">
-        <AdditionalOptions>$(AdditionalOptions);-Xlinker -v;-Xlinker -t;-mmacosx-version-min=10.15</AdditionalOptions>
-        <PositionIndependentCode>true</PositionIndependentCode>
-        <ISystemRoot>$(MSBuildThisFileDirectory)ext\macosxsdk</ISystemRoot>
-        <Dependencies>$(Dependencies);c++</Dependencies>
-        <DebugSymbols>false</DebugSymbols>
-    </PropertyGroup>
-
-    <ItemGroup Condition="!$([MSBuild]::IsOSPlatform('OSX')) And $(TargetMachine.Contains('-apple-'))">
-        <DependencyDirectories Include="$(MSBuildThisFileDirectory)ext\macosxsdk\usr\lib" />
-    </ItemGroup>
-
-    <ItemGroup>
-        <IncludeDirectories Include="$(OpenJdkDir)jdk\src\share\native\common" />
-        <IncludeDirectories Include="$(OpenJdkDir)build\linux-x86_64-normal-server-release\jdk\gensrc_headers" />
         <Compile Include="$(OpenJdkDir)jdk\src\share\native\common\**\*.c" />
     </ItemGroup>
 
     <ItemGroup Condition="$(TargetMachine.Contains('-windows-'))">
-        <IncludeDirectories Include="$(OpenJdkDir)jdk\src\windows\native\common" />
         <Compile Include="$(OpenJdkDir)jdk\src\windows\native\common\**\*.c" />
     </ItemGroup>
 
