@@ -4,7 +4,7 @@ export sdk=$(dirname $(readlink -f $0))
 export ext=$(dirname $sdk)
 
 # build crosstool-ng if not already built
-if [ ! -d $sdk/crosstool-ng/bin ]
+if [ ! -f $sdk/crosstool-ng/bin/ct-ng ]
 then
 	pushd $ext/crosstool-ng
 	./bootstrap
@@ -62,8 +62,8 @@ then
 	pushd $dist.linux
 	mkdir -p $dist/include
 	cp -rv include/* $dist/include
-	popd
 	touch stamp
+	popd
 fi
 
 # build GLIBC for distribution
@@ -97,7 +97,7 @@ then
 	$ext/gcc/configure \
 		--host=$target \
 		--target=$target \
-		--prefix="" \
+		--prefix=/ \
 		--with-sysroot=$dist \
 		--disable-bootstrap --disable-nls --disable-multilib --enable-languages=c,c++
 	make all-gcc all-target-libgcc all-target-libstdc++
