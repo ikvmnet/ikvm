@@ -102,6 +102,7 @@ then
 		--target=$target \
 		--prefix="" \
 		--with-sysroot=$dist \
+		--with-native-system-header-dir=/include \
 		--disable-bootstrap --disable-nls --disable-multilib --enable-languages=c,c++
 	make all-target-libgcc all-target-libstdc++
 	make DESTDIR=$dist install-target-libgcc install-target-libstdc++
