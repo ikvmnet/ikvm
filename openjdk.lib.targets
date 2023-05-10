@@ -81,12 +81,17 @@
 
     <PropertyGroup Condition="!$([MSBuild]::IsOSPlatform('Linux')) And $(TargetMachine.EndsWith('-linux-gnu')) And $(TargetMachine.StartsWith('x86_64-'))">
         <PositionIndependentCode>true</PositionIndependentCode>
-        <SystemRoot>$(MSBuildThisFileDirectory)ext\sysroot-x86_64-unknown-linux-gnu\sysroot</SystemRoot>
+        <SystemRoot>$(MSBuildThisFileDirectory)ext\linuxsdk\x86_64-unknown-linux-gnu</SystemRoot>
     </PropertyGroup>
 
     <PropertyGroup Condition="!$([MSBuild]::IsOSPlatform('Linux')) And $(TargetMachine.EndsWith('-linux-gnu')) And $(TargetMachine.StartsWith('aarch64-'))">
         <PositionIndependentCode>true</PositionIndependentCode>
-        <SystemRoot>$(MSBuildThisFileDirectory)ext\sysroot-aarch64-unknown-linux-gnu\sysroot</SystemRoot>
+        <SystemRoot>$(MSBuildThisFileDirectory)ext\linuxsdk\aarch64-unknown-linux-gnu</SystemRoot>
+    </PropertyGroup>
+
+    <PropertyGroup Condition="!$([MSBuild]::IsOSPlatform('Linux')) And $(TargetMachine.EndsWith('-linux-gnueabi')) And $(TargetMachine.StartsWith('arm-'))">
+        <PositionIndependentCode>true</PositionIndependentCode>
+        <SystemRoot>$(MSBuildThisFileDirectory)ext\linuxsdk\arm-unknown-linux-gnueabi</SystemRoot>
     </PropertyGroup>
 
     <PropertyGroup Condition="!$([MSBuild]::IsOSPlatform('OSX')) And $(TargetMachine.Contains('-apple-'))">
@@ -99,6 +104,33 @@
 
     <ItemGroup Condition="!$([MSBuild]::IsOSPlatform('OSX')) And $(TargetMachine.Contains('-apple-'))">
         <DependencyDirectories Include="$(MSBuildThisFileDirectory)ext\macosxsdk\usr\lib" />
+    </ItemGroup>
+
+    <ItemGroup>
+        <IncludeDirectories Include="$(OpenJdkDir)jdk\src\share\native\common" />
+        <IncludeDirectories Include="$(OpenJdkDir)build\linux-x86_64-normal-server-release\jdk\gensrc_headers" />
+        <Compile Include="$(OpenJdkDir)jdk\src\share\native\common\**\*.c" />
+    </ItemGroup>
+
+    <ItemGroup Condition="$(TargetMachine.Contains('-windows-'))">
+        <IncludeDirectories Include="$(OpenJdkDir)jdk\src\windows\native\common" />
+        <Compile Include="$(OpenJdkDir)jdk\src\windows\native\common\**\*.c" />
+    </ItemGroup>
+
+    <ItemGroup Condition="$(TargetMachine.Contains('-linux-')) Or $(TargetMachine.Contains('-apple-'))">
+        <IncludeDirectories Include="$(OpenJdkDir)jdk\src\solaris\native\common" />
+        <Dependencies Include="dl" />
+        <Compile Include="$(OpenJdkDir)jdk\src\solaris\native\common\**\*.c" />
+    </ItemGroup>
+
+    <ItemGroup Condition="$(TargetMachine.Contains('-linux-'))">
+        <IncludeDirectories Include="$(OpenJdkDir)jdk\src\linux\native\common" />
+        <Compile Include="$(OpenJdkDir)jdk\src\linux\native\common\**\*.c" />
+    </ItemGroup>
+
+    <ItemGroup Condition="$(TargetMachine.Contains('-apple-'))">
+        <IncludeDirectories Include="$(OpenJdkDir)jdk\src\macosx\native\common" />
+        <Compile Include="$(OpenJdkDir)jdk\src\macosx\native\common\**\*.c" />
     </ItemGroup>
 
 </Project>

@@ -205,10 +205,12 @@
             <_Lines Include="-v" Condition=" '$(Verbose)' == 'true' " />
             <_Lines Include="--target=$(TargetMachine)" />
             <_Lines Include="-shared" Condition=" '$(OutputType)' == 'library' " />
-            <_Lines Include="-fuse-ld=$(UseLd)" Condition=" '$(UseLd)' != '' " />
-            <_Lines Include="-std=$(LanguageStandard)" Condition=" '$(LanguageStandard)' != '' " />
-            <_Lines Include="-fms-compatibility" Condition=" '$(MsCompatibility)' == 'true' " />
             <_Lines Include="-g" Condition=" '$(DebugSymbols)' == 'true' " />
+
+            <_Lines Include="-std=$(LanguageStandard)" Condition=" '$(LanguageStandard)' != '' " />
+            <_Lines Include="-fuse-ld=$(UseLd)" Condition=" '$(UseLd)' != '' " />
+            <_Lines Include="-fPIC" Condition=" '$(PositionIndependentCode)' == 'true' " />
+            <_Lines Include="-fms-compatibility" Condition=" '$(MsCompatibility)' == 'true' " />
 
             <_Lines Include="-isysroot $(ISystemRoot.Replace('\', '\\'))" Condition=" '$(ISystemRoot)' != '' " />
             <_Lines Include="--sysroot=$(SystemRoot.Replace('\', '\\'))" Condition=" '$(SystemRoot)' != '' " />
@@ -232,8 +234,6 @@
             <_PreprocessorDefinitions Include="@(PreprocessorDefinitions)" />
             <_PreprocessorDefinitions Include="$(PreprocessorDefinitions)" />
             <_Lines Include="@(_PreprocessorDefinitions->'-D &quot;%(Identity)&quot;')" Condition=" '@(_PreprocessorDefinitions)' != '' " />
-
-            <_Lines Include="-fPIC" Condition=" '$(PositionIndependentCode)' == 'true' " />
 
             <_Lines Include="$(AdditionalOptions)" Condition=" '$(AdditionalOptions)' != '' " />
             <_Lines Include="@(AdditionalOptions->'&quot;%(Identity)&quot;'->Replace('\', '\\'))" Condition=" '@(AdditionalOptions)' != '' " />

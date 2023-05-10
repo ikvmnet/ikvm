@@ -5,7 +5,6 @@
     <PropertyGroup>
         <TargetMachines>x86_64-pc-windows-msvc;i686-pc-windows-msvc;aarch64-pc-windows-msvc;x86_64-unknown-linux-gnu;aarch64-unknown-linux-gnu;arm-unknown-linux-gnueabi;x86_64-apple-macosx;arm64-apple-macosx</TargetMachines>
         <TargetName>sunec</TargetName>
-        <LanguageStandard></LanguageStandard>
         <PreprocessorDefinitions>$(PreprocessorDefinitions);MP_API_COMPATIBLE;NSS_ECC_MORE_THAN_SUITE_B</PreprocessorDefinitions>
         <AdditionalOptions>-Xlinker --verbose</AdditionalOptions>
     </PropertyGroup>
