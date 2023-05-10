@@ -1,2 +1,6 @@
-*.dir
+*.dir/*
+*.gcc
+*.glibc
+*.linux
+*/*
 crosstool-ng

@@ -13,6 +13,39 @@ on:
     - develop
 
 jobs:
+  build-winsdk:
+    name: Build Windows SDK
+    runs-on: ubuntu-latest
+    timeout-minutes: 240
+    steps:
+    - name: Checkout
+      uses: actions/checkout@v3
+    - name: Cache
+      uses: actions/cache@v3
+      with:
+        path: ext/winsdk/sdk
+        key: ext-winsdk-sdk--${{ runner.os }}--${{ hashFiles('ext/winsdk/build.sh') }}-1
+    - name: Check
+      id: winsdk-stamp
+      uses: andstor/file-existence-action@v2
+      with:
+        files: ext/winsdk/sdk/stamp
+    - name: Install
+      if: steps.winsdk-stamp.outputs.files_exists != 'true'
+      run: |
+        sudo apt-get update &&
+        sudo apt-get install -y zip unzip curl wget
+    - name: Build
+      if: steps.winsdk-stamp.outputs.files_exists != 'true'
+      run: ext/winsdk/build.sh
+    - name: Package
+      run: tar czvf sdk.tar.gz sdk
+      working-directory: ext/winsdk
+    - name: Upload
+      uses: actions/upload-artifact@v3
+      with:
+        name: ext-winsdk-sdk
+        path: ext/winsdk/winsdk.tar.gz
   build-linuxsdk:
     strategy:
       matrix:
@@ -152,6 +185,7 @@ jobs:
     name: Build IKVM
     needs:
     - build-openjdk
+    - build-winsdk
     - build-linuxsdk
     timeout-minutes: 240
     runs-on: windows-latest
@@ -227,6 +261,14 @@ jobs:
         path: ${{ env.NUGET_PACKAGES }}
         key: ${{ runner.os }}-nuget-2-${{ hashFiles('IKVM.sln', 'src\**\*.csproj', 'src\**\*.msbuildproj') }}
         restore-keys: ${{ runner.os }}-nuget-2-
+    - name: Download Windows SDK
+      uses: actions/download-artifact@v3
+      with:
+        name: ext-winsdk-sdk
+        path: ${{ env.WORKPATH }}/ikvm/ext/winsdk
+    - name: Restore Windows SDK
+      run: tar xzvf ext-winsdk-sdk.tar.gz
+      working-directory: ${{ env.WORKPATH }}\ikvm\ext\winsdk
     - name: Add msbuild to PATH
       uses: microsoft/setup-msbuild@v1.1
     - name: Download Linux SDK (x86_64-unknown-linux-gnu)
