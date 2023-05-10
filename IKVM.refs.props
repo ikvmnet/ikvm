@@ -16,40 +16,48 @@
     </ItemGroup>
 
     <ItemGroup>
-        <ClangProjectReference Include="$(MSBuildThisFileDirectory)src\libsunmscapi\libsunmscapi.msbuildproj">
+        <ClangProjectReference Include="$(MSBuildThisFileDirectory)src\libsunmscapi\libsunmscapi.msbuildproj" Condition="$(EnabledRuntimeIdentifiers.Contains(';win7-x64;'))">
             <TargetMachine>x86_64-pc-windows-msvc14</TargetMachine>
             <RuntimeIdentifier>win7-x64</RuntimeIdentifier>
         </ClangProjectReference>
-        <ClangProjectReference Include="$(MSBuildThisFileDirectory)src\libsunmscapi\libsunmscapi.msbuildproj">
+        <ClangProjectReference Include="$(MSBuildThisFileDirectory)src\libsunmscapi\libsunmscapi.msbuildproj" Condition="$(EnabledRuntimeIdentifiers.Contains(';win7-x86;'))">
             <TargetMachine>i686-pc-windows-msvc14</TargetMachine>
             <RuntimeIdentifier>win7-x86</RuntimeIdentifier>
         </ClangProjectReference>
-        <ClangProjectReference Include="$(MSBuildThisFileDirectory)src\libsunmscapi\libsunmscapi.msbuildproj">
+        <ClangProjectReference Include="$(MSBuildThisFileDirectory)src\libsunmscapi\libsunmscapi.msbuildproj" Condition="$(EnabledRuntimeIdentifiers.Contains(';win10-arm64;'))">
             <TargetMachine>aarch64-pc-windows-msvc14</TargetMachine>
             <RuntimeIdentifier>win10-arm64</RuntimeIdentifier>
         </ClangProjectReference>
     </ItemGroup>
 
     <ItemGroup>
-        <ClangProjectReference Include="$(MSBuildThisFileDirectory)src\libsunec\libsunec.msbuildproj">
+        <ClangProjectReference Include="$(MSBuildThisFileDirectory)src\libsunec\libsunec.msbuildproj" Condition="$(EnabledRuntimeIdentifiers.Contains(';win7-x64;'))">
             <TargetMachine>x86_64-pc-windows-msvc</TargetMachine>
             <RuntimeIdentifier>win7-x64</RuntimeIdentifier>
         </ClangProjectReference>
-        <ClangProjectReference Include="$(MSBuildThisFileDirectory)src\libsunec\libsunec.msbuildproj">
+        <ClangProjectReference Include="$(MSBuildThisFileDirectory)src\libsunec\libsunec.msbuildproj" Condition="$(EnabledRuntimeIdentifiers.Contains(';win7-x86;'))">
             <TargetMachine>i686-pc-windows-msvc</TargetMachine>
             <RuntimeIdentifier>win7-x86</RuntimeIdentifier>
         </ClangProjectReference>
-        <ClangProjectReference Include="$(MSBuildThisFileDirectory)src\libsunec\libsunec.msbuildproj">
+        <ClangProjectReference Include="$(MSBuildThisFileDirectory)src\libsunec\libsunec.msbuildproj" Condition="$(EnabledRuntimeIdentifiers.Contains(';win10-arm64;'))">
             <TargetMachine>aarch64-pc-windows-msvc</TargetMachine>
             <RuntimeIdentifier>win10-arm64</RuntimeIdentifier>
         </ClangProjectReference>
-        <!--<ClangProjectReference Include="$(MSBuildThisFileDirectory)src\libsunec\libsunec.msbuildproj">
+        <ClangProjectReference Include="$(MSBuildThisFileDirectory)src\libsunec\libsunec.msbuildproj" Condition="$(EnabledRuntimeIdentifiers.Contains(';linux-x64;'))">
             <TargetMachine>x86_64-pc-linux-gnu</TargetMachine>
             <RuntimeIdentifier>linux-x64</RuntimeIdentifier>
-        </ClangProjectReference>-->
-        <ClangProjectReference Include="$(MSBuildThisFileDirectory)src\libsunec\libsunec.msbuildproj">
+        </ClangProjectReference>
+        <ClangProjectReference Include="$(MSBuildThisFileDirectory)src\libsunec\libsunec.msbuildproj" Condition="$(EnabledRuntimeIdentifiers.Contains(';linux-arm64;'))">
             <TargetMachine>aarch64-unknown-linux-gnu</TargetMachine>
             <RuntimeIdentifier>linux-arm64</RuntimeIdentifier>
+        </ClangProjectReference>
+        <ClangProjectReference Include="$(MSBuildThisFileDirectory)src\libsunec\libsunec.msbuildproj" Condition="$(EnabledRuntimeIdentifiers.Contains(';osx-x64;'))">
+            <TargetMachine>x86_64-apple-macosx</TargetMachine>
+            <RuntimeIdentifier>osx-x64</RuntimeIdentifier>
+        </ClangProjectReference>
+        <ClangProjectReference Include="$(MSBuildThisFileDirectory)src\libsunec\libsunec.msbuildproj" Condition="$(EnabledRuntimeIdentifiers.Contains(';osx-arm64;'))">
+            <TargetMachine>arm64-apple-macosx</TargetMachine>
+            <RuntimeIdentifier>osx-arm64</RuntimeIdentifier>
         </ClangProjectReference>
     </ItemGroup>
 

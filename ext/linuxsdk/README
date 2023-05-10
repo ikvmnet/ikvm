@@ -1,0 +1,5 @@
+# linuxsdk
+
+In order to build the OpenJDK native libraries for Linux on a Windows or OS X operating system, a packaged Linux SDK needs to be be placed in this directory at `linuxsdk`.
+
+This SDK contains headers and libraries for the Linux kernel, libc, libstdc++, libgcc. It is currently generated using the crosstool-ng application, and a number of follow up scripts.

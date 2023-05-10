@@ -53,14 +53,15 @@
     </PropertyGroup>
 
     <ItemGroup>
-        <JNITrampolineRuntimeIdentifier Include="win7-x64" TargetName="x86_64-pc-windows-msvc" Includes="$(JNIHeaderDirShare);$(JNIHeaderDirWindows);$(JNITrampolineSourceDirectory)include" Arguments="-O0" />
-        <JNITrampolineRuntimeIdentifier Include="win7-x86" TargetName="i686-pc-windows-msvc" Includes="$(JNIHeaderDirShare);$(JNIHeaderDirWindows);$(JNITrampolineSourceDirectory)include" Arguments="-Wno-ignored-attributes -O0" />
-        <JNITrampolineRuntimeIdentifier Include="win81-arm" TargetName="thumbv7-pc-windows-msvc" Includes="$(JNIHeaderDirShare);$(JNIHeaderDirWindows);$(JNITrampolineSourceDirectory)include" Arguments="-O0" />
-        <JNITrampolineRuntimeIdentifier Include="win10-arm64" TargetName="aarch64-pc-windows-msvc" Includes="$(JNIHeaderDirShare);$(JNIHeaderDirWindows);$(JNITrampolineSourceDirectory)include" Arguments="-O0" />
-        <JNITrampolineRuntimeIdentifier Include="linux-x64" TargetName="x86_64-unknown-linux-gnu" Includes="$(JNIHeaderDirShare);$(JNIHeaderDirSolaris);$(JNITrampolineSourceDirectory)include" Arguments="-O0" />
-        <JNITrampolineRuntimeIdentifier Include="linux-arm" TargetName="armv7-unknown-linux-gnueabihf" Includes="$(JNIHeaderDirShare);$(JNIHeaderDirSolaris);$(JNITrampolineSourceDirectory)include" Arguments="-O0" />
-        <JNITrampolineRuntimeIdentifier Include="linux-arm64" TargetName="aarch64-unknown-linux-gnueabihf" Includes="$(JNIHeaderDirShare);$(JNIHeaderDirSolaris);$(JNITrampolineSourceDirectory)include" Arguments="-O0" />
-        <JNITrampolineRuntimeIdentifier Include="osx-x64" TargetName="x86_64-apple-macosx" Includes="$(JNIHeaderDirShare);$(JNIHeaderDirSolaris);$(JNITrampolineSourceDirectory)include" Arguments="-O0" />
+        <JNITrampolineRuntimeIdentifier Include="win7-x64" TargetName="x86_64-pc-windows-msvc" Includes="$(JNIHeaderDirShare);$(JNIHeaderDirWindows);$(JNITrampolineSourceDirectory)include" Arguments="-O0"  Condition="$(EnabledRuntimeIdentifiers.Contains(';win7-x64;'))"/>
+        <JNITrampolineRuntimeIdentifier Include="win7-x86" TargetName="i686-pc-windows-msvc" Includes="$(JNIHeaderDirShare);$(JNIHeaderDirWindows);$(JNITrampolineSourceDirectory)include" Arguments="-Wno-ignored-attributes -O0"  Condition="$(EnabledRuntimeIdentifiers.Contains(';win7-x86;'))"/>
+        <JNITrampolineRuntimeIdentifier Include="win81-arm" TargetName="thumbv7-pc-windows-msvc" Includes="$(JNIHeaderDirShare);$(JNIHeaderDirWindows);$(JNITrampolineSourceDirectory)include" Arguments="-O0" Condition="$(EnabledRuntimeIdentifiers.Contains(';win81-arm;'))"/>
+        <JNITrampolineRuntimeIdentifier Include="win10-arm64" TargetName="aarch64-pc-windows-msvc" Includes="$(JNIHeaderDirShare);$(JNIHeaderDirWindows);$(JNITrampolineSourceDirectory)include" Arguments="-O0" Condition="$(EnabledRuntimeIdentifiers.Contains(';win10-arm64;'))"/>
+        <JNITrampolineRuntimeIdentifier Include="linux-x64" TargetName="x86_64-unknown-linux-gnu" Includes="$(JNIHeaderDirShare);$(JNIHeaderDirSolaris);$(JNITrampolineSourceDirectory)include" Arguments="-O0"  Condition="$(EnabledRuntimeIdentifiers.Contains(';linux-x64;'))"/>
+        <JNITrampolineRuntimeIdentifier Include="linux-arm" TargetName="armv7-unknown-linux-gnueabihf" Includes="$(JNIHeaderDirShare);$(JNIHeaderDirSolaris);$(JNITrampolineSourceDirectory)include" Arguments="-O0"  Condition="$(EnabledRuntimeIdentifiers.Contains(';linux-arm;'))"/>
+        <JNITrampolineRuntimeIdentifier Include="linux-arm64" TargetName="aarch64-unknown-linux-gnueabihf" Includes="$(JNIHeaderDirShare);$(JNIHeaderDirSolaris);$(JNITrampolineSourceDirectory)include" Arguments="-O0"  Condition="$(EnabledRuntimeIdentifiers.Contains(';linux-arm64;'))"/>
+        <JNITrampolineRuntimeIdentifier Include="osx-x64" TargetName="x86_64-apple-macosx" Includes="$(JNIHeaderDirShare);$(JNIHeaderDirSolaris);$(JNITrampolineSourceDirectory)include" Arguments="-O0"  Condition="$(EnabledRuntimeIdentifiers.Contains(';osx-x64;'))"/>
+        <JNITrampolineRuntimeIdentifier Include="osx-arm64" TargetName="aarch64-apple-macosx" Includes="$(JNIHeaderDirShare);$(JNIHeaderDirSolaris);$(JNITrampolineSourceDirectory)include" Arguments="-O0"  Condition="$(EnabledRuntimeIdentifiers.Contains(';osx-arm64;'))"/>
     </ItemGroup>
 
     <Target Name="CompileJNITrampolines" Inputs="$(JNITrampolineSourceDirectory)ikvm.c;$(JNITrampolineSourceDirectory)ikvm.h" Outputs="$(JNITrampolineIntermediateDirectory)%(JNITrampolineRuntimeIdentifier.Identity).o;$(JNITrampolineIntermediateDirectory)%(JNITrampolineRuntimeIdentifier.Identity).ll" Condition=" '$(TargetFramework)' != '' ">

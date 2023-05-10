@@ -1,4 +1,12 @@
-﻿<Project>
+﻿<!--
+
+    openjdk.lib.props
+    
+    Applies at the top of any OpenJDK derived native library project.
+
+-->
+
+<Project>
     <PropertyGroup>
         <MSBuildAllProjects>$(MSBuildAllProjects);$(MSBuildThisFileFullPath)</MSBuildAllProjects>
     </PropertyGroup>
