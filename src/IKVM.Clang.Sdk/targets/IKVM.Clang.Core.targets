@@ -185,8 +185,8 @@
         <!-- ensure members of the Compile group have a Language set -->
         <ItemGroup>
             <Compile Update="@(Compile)">
-                <Language Condition=" '%(Language)' == '' And '%(Extension)' == '.c' ">C</Language>
-                <Language Condition=" '%(Language)' == '' And '%(Extension)' == '.cpp' ">C++</Language>
+                <Language Condition=" '%(Compile.Language)' == '' And '%(Extension)' == '.c' ">C</Language>
+                <Language Condition=" '%(Compile.Language)' == '' And '%(Extension)' == '.cpp' ">C++</Language>
             </Compile>
         </ItemGroup>
     </Target>
@@ -200,7 +200,6 @@
     -->
 
     <Target Name="BuildClangResponseFile" DependsOnTargets="PrepareCompile">
-        
         <ItemGroup>
             <_Lines Remove="@(_Lines)" />
             <_Lines Include="-v" Condition=" '$(Verbose)' == 'true' " />
@@ -261,7 +260,7 @@
     
     -->
 
-    <Target Name="CoreCompile" DependsOnTargets="BuildClangResponseFile" Inputs="$(ClangResponseFile)" Outputs="$(IntermediateTargetPath)">
+    <Target Name="CoreCompile" DependsOnTargets="BuildClangResponseFile" Inputs="$(ClangResponseFile);@(Compile)" Outputs="$(IntermediateTargetPath)">
         <Exec Command="clang @$(ClangResponseFile)" />
     </Target>
 

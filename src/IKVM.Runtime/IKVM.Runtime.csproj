@@ -52,6 +52,18 @@
         <ObjDumpCommand>llvm-objdump</ObjDumpCommand>
     </PropertyGroup>
 
+    <PropertyGroup>
+        <DefineConstants Condition="$(EnabledRuntimeIdentifiers.Contains(';win7-x64;'))">$(DefineConstants);ENABLE_WIN7_X64</DefineConstants>
+        <DefineConstants Condition="$(EnabledRuntimeIdentifiers.Contains(';win7-x86;'))">$(DefineConstants);ENABLE_WIN7_X86</DefineConstants>
+        <DefineConstants Condition="$(EnabledRuntimeIdentifiers.Contains(';win81-arm;'))">$(DefineConstants);ENABLE_WIN81_ARM</DefineConstants>
+        <DefineConstants Condition="$(EnabledRuntimeIdentifiers.Contains(';win10-arm64;'))">$(DefineConstants);ENABLE_WIN10_ARM64</DefineConstants>
+        <DefineConstants Condition="$(EnabledRuntimeIdentifiers.Contains(';linux-x64;'))">$(DefineConstants);ENABLE_LINUX_X64</DefineConstants>
+        <DefineConstants Condition="$(EnabledRuntimeIdentifiers.Contains(';linux-arm;'))">$(DefineConstants);ENABLE_LINUX_ARM</DefineConstants>
+        <DefineConstants Condition="$(EnabledRuntimeIdentifiers.Contains(';linux-arm64;'))">$(DefineConstants);ENABLE_LINUX_ARM64</DefineConstants>
+        <DefineConstants Condition="$(EnabledRuntimeIdentifiers.Contains(';osx-x64;'))">$(DefineConstants);ENABLE_OSX_X64</DefineConstants>
+        <DefineConstants Condition="$(EnabledRuntimeIdentifiers.Contains(';osx-arm64;'))">$(DefineConstants);ENABLE_OSX_ARM64</DefineConstants>
+    </PropertyGroup>
+
     <ItemGroup>
         <JNITrampolineRuntimeIdentifier Include="win7-x64" TargetName="x86_64-pc-windows-msvc" Includes="$(JNIHeaderDirShare);$(JNIHeaderDirWindows);$(JNITrampolineSourceDirectory)include" Arguments="-O0"  Condition="$(EnabledRuntimeIdentifiers.Contains(';win7-x64;'))"/>
         <JNITrampolineRuntimeIdentifier Include="win7-x86" TargetName="i686-pc-windows-msvc" Includes="$(JNIHeaderDirShare);$(JNIHeaderDirWindows);$(JNITrampolineSourceDirectory)include" Arguments="-Wno-ignored-attributes -O0"  Condition="$(EnabledRuntimeIdentifiers.Contains(';win7-x86;'))"/>
@@ -231,7 +243,7 @@
                             var name = kvp.Key;
                             var offs = kvp.Value;
 
-                            if (name.StartsWith("$") || name.StartsWith("."))
+                            if (name == "NOOP" || name.StartsWith("$") || name.StartsWith(".") || name.StartsWith("ltmp"))
                                 continue;
 
                             writer.Write("static readonly int _idx_");
