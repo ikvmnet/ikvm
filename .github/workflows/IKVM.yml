@@ -344,7 +344,7 @@ jobs:
       uses: actions/download-artifact@v3
       with:
         name: openjdk-build-linux-x86_64-normal-server-release
-        path: ${{ env.WORKPATH }}\ikvm\openjdk\build
+        path: ${{ env.WORKPATH }}
     - name: Restore OpenJDK 8 Build
       shell: pwsh
       run: Expand-Archive ${{ env.WORKPATH }}\openjdk-build-linux-x86_64-normal-server-release.zip .
