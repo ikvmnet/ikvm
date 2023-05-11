@@ -1,0 +1,27 @@
+﻿<Project>
+    <Import Project="$(MSBuildThisFileDirectory)..\IKVM.Clang.Sdk\Sdk\Sdk.props" />
+    <Import Project="$(MSBuildThisFileDirectory)..\..\openjdk.lib.props" />
+
+    <PropertyGroup>
+        <TargetMachines>x86_64-pc-windows-msvc;i686-pc-windows-msvc;aarch64-pc-windows-msvc;x86_64-unknown-linux-gnu;aarch64-unknown-linux-gnu;arm-unknown-linux-gnueabi;x86_64-apple-macosx;arm64-apple-macosx</TargetMachines>
+        <TargetName>j2pkcs11</TargetName>
+    </PropertyGroup>
+
+    <ItemDefinitionGroup>
+        <Compile>
+            <IncludeDirectories>%(IncludeDirectories);$(OpenJdkDir)jdk\src\share\native\sun\security\pkcs11</IncludeDirectories>
+            <IncludeDirectories>%(IncludeDirectories);$(OpenJdkDir)jdk\src\share\native\sun\security\pkcs11\wrapper</IncludeDirectories>
+            <IncludeDirectories>%(IncludeDirectories);$(OpenJdkDir)jdk\src\$(OpenJdkTargetOsApiDir)\native\sun\security\pkcs11</IncludeDirectories>
+            <IncludeDirectories>%(IncludeDirectories);$(OpenJdkDir)jdk\src\$(OpenJdkTargetOsApiDir)\native\sun\security\pkcs11\wrapper</IncludeDirectories>
+        </Compile>
+    </ItemDefinitionGroup>
+
+    <ItemGroup>
+        <Compile Include="$(OpenJdkDir)jdk\src\share\native\sun\security\pkcs11\**\*.c;$(OpenJdkDir)jdk\src\$(OpenJdkTargetOsApiDir)\native\sun\security\pkcs11\**\*.c">
+            <LanguageStandard>c89</LanguageStandard>
+        </Compile>
+    </ItemGroup>
+
+    <Import Project="$(MSBuildThisFileDirectory)..\IKVM.Clang.Sdk\Sdk\Sdk.targets" />
+    <Import Project="$(MSBuildThisFileDirectory)..\..\openjdk.lib.targets" />
+</Project>

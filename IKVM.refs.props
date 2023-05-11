@@ -15,17 +15,52 @@
         </ProjectReference>
     </ItemGroup>
 
+    <!--<ItemGroup>
+        <ClangProjectReference Include="$(MSBuildThisFileDirectory)src\libikvm\libikvm.msbuildproj" Condition="$(EnabledRuntimeIdentifiers.Contains(';win7-x64;'))">
+            <TargetMachine>x86_64-pc-windows-msvc</TargetMachine>
+            <RuntimeIdentifier>win7-x64</RuntimeIdentifier>
+        </ClangProjectReference>
+        <ClangProjectReference Include="$(MSBuildThisFileDirectory)src\libikvm\libikvm.msbuildproj" Condition="$(EnabledRuntimeIdentifiers.Contains(';win7-x86;'))">
+            <TargetMachine>i686-pc-windows-msvc</TargetMachine>
+            <RuntimeIdentifier>win7-x86</RuntimeIdentifier>
+        </ClangProjectReference>
+        <ClangProjectReference Include="$(MSBuildThisFileDirectory)src\libikvm\libikvm.msbuildproj" Condition="$(EnabledRuntimeIdentifiers.Contains(';win10-arm64;'))">
+            <TargetMachine>aarch64-pc-windows-msvc</TargetMachine>
+            <RuntimeIdentifier>win10-arm64</RuntimeIdentifier>
+        </ClangProjectReference>
+        <ClangProjectReference Include="$(MSBuildThisFileDirectory)src\libikvm\libikvm.msbuildproj" Condition="$(EnabledRuntimeIdentifiers.Contains(';linux-x64;'))">
+            <TargetMachine>x86_64-unknown-linux-gnu</TargetMachine>
+            <RuntimeIdentifier>linux-x64</RuntimeIdentifier>
+        </ClangProjectReference>
+        <ClangProjectReference Include="$(MSBuildThisFileDirectory)src\libikvm\libikvm.msbuildproj" Condition="$(EnabledRuntimeIdentifiers.Contains(';linux-arm64;'))">
+            <TargetMachine>aarch64-unknown-linux-gnu</TargetMachine>
+            <RuntimeIdentifier>linux-arm64</RuntimeIdentifier>
+        </ClangProjectReference>
+        <ClangProjectReference Include="$(MSBuildThisFileDirectory)src\libikvm\libikvm.msbuildproj" Condition="$(EnabledRuntimeIdentifiers.Contains(';linux-arm;'))">
+            <TargetMachine>arm-unknown-linux-gnueabi</TargetMachine>
+            <RuntimeIdentifier>linux-arm</RuntimeIdentifier>
+        </ClangProjectReference>
+        <ClangProjectReference Include="$(MSBuildThisFileDirectory)src\libikvm\libikvm.msbuildproj" Condition="$(EnabledRuntimeIdentifiers.Contains(';osx-x64;'))">
+            <TargetMachine>x86_64-apple-macosx</TargetMachine>
+            <RuntimeIdentifier>osx-x64</RuntimeIdentifier>
+        </ClangProjectReference>
+        <ClangProjectReference Include="$(MSBuildThisFileDirectory)src\libikvm\libikvm.msbuildproj" Condition="$(EnabledRuntimeIdentifiers.Contains(';osx-arm64;'))">
+            <TargetMachine>arm64-apple-macosx</TargetMachine>
+            <RuntimeIdentifier>osx-arm64</RuntimeIdentifier>
+        </ClangProjectReference>
+    </ItemGroup>-->
+
     <ItemGroup>
         <ClangProjectReference Include="$(MSBuildThisFileDirectory)src\libsunmscapi\libsunmscapi.msbuildproj" Condition="$(EnabledRuntimeIdentifiers.Contains(';win7-x64;'))">
-            <TargetMachine>x86_64-pc-windows-msvc14</TargetMachine>
+            <TargetMachine>x86_64-pc-windows-msvc</TargetMachine>
             <RuntimeIdentifier>win7-x64</RuntimeIdentifier>
         </ClangProjectReference>
         <ClangProjectReference Include="$(MSBuildThisFileDirectory)src\libsunmscapi\libsunmscapi.msbuildproj" Condition="$(EnabledRuntimeIdentifiers.Contains(';win7-x86;'))">
-            <TargetMachine>i686-pc-windows-msvc14</TargetMachine>
+            <TargetMachine>i686-pc-windows-msvc</TargetMachine>
             <RuntimeIdentifier>win7-x86</RuntimeIdentifier>
         </ClangProjectReference>
         <ClangProjectReference Include="$(MSBuildThisFileDirectory)src\libsunmscapi\libsunmscapi.msbuildproj" Condition="$(EnabledRuntimeIdentifiers.Contains(';win10-arm64;'))">
-            <TargetMachine>aarch64-pc-windows-msvc14</TargetMachine>
+            <TargetMachine>aarch64-pc-windows-msvc</TargetMachine>
             <RuntimeIdentifier>win10-arm64</RuntimeIdentifier>
         </ClangProjectReference>
     </ItemGroup>
@@ -60,6 +95,41 @@
             <RuntimeIdentifier>osx-x64</RuntimeIdentifier>
         </ClangProjectReference>
         <ClangProjectReference Include="$(MSBuildThisFileDirectory)src\libsunec\libsunec.msbuildproj" Condition="$(EnabledRuntimeIdentifiers.Contains(';osx-arm64;'))">
+            <TargetMachine>arm64-apple-macosx</TargetMachine>
+            <RuntimeIdentifier>osx-arm64</RuntimeIdentifier>
+        </ClangProjectReference>
+    </ItemGroup>
+
+    <ItemGroup>
+        <ClangProjectReference Include="$(MSBuildThisFileDirectory)src\libj2pkcs11\libj2pkcs11.msbuildproj" Condition="$(EnabledRuntimeIdentifiers.Contains(';win7-x64;'))">
+            <TargetMachine>x86_64-pc-windows-msvc</TargetMachine>
+            <RuntimeIdentifier>win7-x64</RuntimeIdentifier>
+        </ClangProjectReference>
+        <ClangProjectReference Include="$(MSBuildThisFileDirectory)src\libj2pkcs11\libj2pkcs11.msbuildproj" Condition="$(EnabledRuntimeIdentifiers.Contains(';win7-x86;'))">
+            <TargetMachine>i686-pc-windows-msvc</TargetMachine>
+            <RuntimeIdentifier>win7-x86</RuntimeIdentifier>
+        </ClangProjectReference>
+        <ClangProjectReference Include="$(MSBuildThisFileDirectory)src\libj2pkcs11\libj2pkcs11.msbuildproj" Condition="$(EnabledRuntimeIdentifiers.Contains(';win10-arm64;'))">
+            <TargetMachine>aarch64-pc-windows-msvc</TargetMachine>
+            <RuntimeIdentifier>win10-arm64</RuntimeIdentifier>
+        </ClangProjectReference>
+        <ClangProjectReference Include="$(MSBuildThisFileDirectory)src\libj2pkcs11\libj2pkcs11.msbuildproj" Condition="$(EnabledRuntimeIdentifiers.Contains(';linux-x64;'))">
+            <TargetMachine>x86_64-unknown-linux-gnu</TargetMachine>
+            <RuntimeIdentifier>linux-x64</RuntimeIdentifier>
+        </ClangProjectReference>
+        <ClangProjectReference Include="$(MSBuildThisFileDirectory)src\libj2pkcs11\libj2pkcs11.msbuildproj" Condition="$(EnabledRuntimeIdentifiers.Contains(';linux-arm64;'))">
+            <TargetMachine>aarch64-unknown-linux-gnu</TargetMachine>
+            <RuntimeIdentifier>linux-arm64</RuntimeIdentifier>
+        </ClangProjectReference>
+        <ClangProjectReference Include="$(MSBuildThisFileDirectory)src\libj2pkcs11\libj2pkcs11.msbuildproj" Condition="$(EnabledRuntimeIdentifiers.Contains(';linux-arm;'))">
+            <TargetMachine>arm-unknown-linux-gnueabi</TargetMachine>
+            <RuntimeIdentifier>linux-arm</RuntimeIdentifier>
+        </ClangProjectReference>
+        <ClangProjectReference Include="$(MSBuildThisFileDirectory)src\libj2pkcs11\libj2pkcs11.msbuildproj" Condition="$(EnabledRuntimeIdentifiers.Contains(';osx-x64;'))">
+            <TargetMachine>x86_64-apple-macosx</TargetMachine>
+            <RuntimeIdentifier>osx-x64</RuntimeIdentifier>
+        </ClangProjectReference>
+        <ClangProjectReference Include="$(MSBuildThisFileDirectory)src\libj2pkcs11\libj2pkcs11.msbuildproj" Condition="$(EnabledRuntimeIdentifiers.Contains(';osx-arm64;'))">
             <TargetMachine>arm64-apple-macosx</TargetMachine>
             <RuntimeIdentifier>osx-arm64</RuntimeIdentifier>
         </ClangProjectReference>

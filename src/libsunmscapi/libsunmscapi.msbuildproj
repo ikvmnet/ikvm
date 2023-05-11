@@ -3,12 +3,18 @@
     <Import Project="$(MSBuildThisFileDirectory)..\..\openjdk.lib.props" />
 
     <PropertyGroup>
-        <TargetMachines>x86_64-pc-windows-msvc14;i686-pc-windows-msvc14;aarch64-pc-windows-msvc14</TargetMachines>
+        <TargetMachines>x86_64-pc-windows-msvc;i686-pc-windows-msvc;aarch64-pc-windows-msvc</TargetMachines>
         <TargetName>sunmscapi</TargetName>
-        <LanguageStandard>c++11</LanguageStandard>
-        <PreprocessorDefinitions>$(PreprocessorDefinitions)</PreprocessorDefinitions>
-        <Dependencies>$(Dependencies);crypt32;advapi32;ncrypt</Dependencies>
     </PropertyGroup>
+
+    <ItemDefinitionGroup>
+        <Compile>
+             <LanguageStandard Condition=" '%(Language)' == 'C++' ">c++11</LanguageStandard>
+        </Compile>
+        <Link>
+             <Dependencies>%(Dependencies);crypt32;advapi32;ncrypt</Dependencies>
+        </Link>
+    </ItemDefinitionGroup>
 
     <ItemGroup>
         <Compile Include="$(OpenJdkDir)jdk\src\windows\native\sun\security\mscapi\**\*.cpp" />

@@ -4,8 +4,9 @@
     </PropertyGroup>
 
     <PropertyGroup>
-        <OutputType Condition=" '$(OutputType)' == '' ">library</OutputType>
+        <OutputType Condition=" '$(OutputType)' == '' ">SharedLibrary</OutputType>
         <OutputType>$(OutputType.ToLower())</OutputType>
+        <UseLld Condition=" '$(UseLld)' == '' ">true</UseLld>
     </PropertyGroup>
 
     <PropertyGroup>
@@ -31,18 +32,18 @@
 
     <PropertyGroup>
         <TargetPrefix Condition=" '$(TargetPrefix)' == '' "></TargetPrefix>
-        <TargetPrefix Condition=" '$(TargetPrefix)' == '' And '$(OutputType)' == 'library' And $(TargetMachine.Contains('-linux-')) ">lib</TargetPrefix>
-        <TargetPrefix Condition=" '$(TargetPrefix)' == '' And '$(OutputType)' == 'library' And $(TargetMachine.Contains('-apple-')) ">lib</TargetPrefix>
+        <TargetPrefix Condition=" '$(TargetPrefix)' == '' And '$(OutputType)' == 'sharedlibrary' And $(TargetMachine.Contains('-linux-')) ">lib</TargetPrefix>
+        <TargetPrefix Condition=" '$(TargetPrefix)' == '' And '$(OutputType)' == 'sharedlibrary' And $(TargetMachine.Contains('-apple-')) ">lib</TargetPrefix>
 
         <TargetExt Condition=" '$(TargetPrefix)' == '' "></TargetExt>
         <TargetExt Condition=" '$(TargetExt)' == '' And '$(OutputType)' == 'exe' And $(TargetMachine.Contains('-windows-'))">.exe</TargetExt>
-        <TargetExt Condition=" '$(TargetExt)' == '' And '$(OutputType)' == 'library' And $(TargetMachine.Contains('-windows-')) ">.dll</TargetExt>
-        <TargetExt Condition=" '$(TargetExt)' == '' And '$(OutputType)' == 'library' And $(TargetMachine.Contains('-linux-')) ">.so</TargetExt>
-        <TargetExt Condition=" '$(TargetExt)' == '' And '$(OutputType)' == 'library' And $(TargetMachine.Contains('-apple-')) ">.dylib</TargetExt>
+        <TargetExt Condition=" '$(TargetExt)' == '' And '$(OutputType)' == 'sharedlibrary' And $(TargetMachine.Contains('-windows-')) ">.dll</TargetExt>
+        <TargetExt Condition=" '$(TargetExt)' == '' And '$(OutputType)' == 'sharedlibrary' And $(TargetMachine.Contains('-linux-')) ">.so</TargetExt>
+        <TargetExt Condition=" '$(TargetExt)' == '' And '$(OutputType)' == 'sharedlibrary' And $(TargetMachine.Contains('-apple-')) ">.dylib</TargetExt>
 
         <DebugSymbolsExt Condition=" '$(DebugSymbolsExt)' == '' And $(TargetMachine.Contains('-windows-')) ">.pdb</DebugSymbolsExt>
         <DebugSymbolsExt Condition=" '$(DebugSymbolsExt)' == '' And $(TargetMachine.Contains('-linux-')) ">.g</DebugSymbolsExt>
-        <DebugSymbolsExt Condition=" '$(DebugSymbolsExt)' == '' And $(TargetMachine.Contains('-apple-')) ">.g</DebugSymbolsExt>
+        <DebugSymbolsExt Condition=" '$(DebugSymbolsExt)' == '' And $(TargetMachine.Contains('-apple-')) ">.dsym</DebugSymbolsExt>
     </PropertyGroup>
 
     <PropertyGroup>
@@ -167,7 +168,6 @@
         <CompileDependsOn>
             BeforeCompile;
             PrepareCompile;
-            BuildClangResponseFile;
             CoreCompile;
             AfterCompile;
         </CompileDependsOn>
@@ -179,94 +179,187 @@
 
     <Target Name="AfterCompile" />
 
+    <UsingTask TaskName="IkvmClangSdkGenerateUniqueFileName" TaskFactory="RoslynCodeTaskFactory" AssemblyFile="$(MSBuildToolsPath)\Microsoft.Build.Tasks.Core.dll">
+        <ParameterGroup>
+            <MetadataName ParameterType="System.String" Required="true" />
+            <Extension ParameterType="System.String" Required="true" />
+            <Directory ParameterType="System.String" />
+            <Items ParameterType="Microsoft.Build.Framework.ITaskItem[]" Required="true" Output="true" />
+        </ParameterGroup>
+        <Task>
+            <Using Namespace="System" />
+            <Using Namespace="System.Collections.Generic" />
+            <Using Namespace="System.IO" />
+            <Code Language="cs" Type="Fragment">
+                <![CDATA[
+                var hs = new HashSet<string>();
+                
+                foreach (var item in Items)
+                {
+                    var i = 0;
+                    var n = item.GetMetadata("FileName") ?? Path.ChangeExtension(Path.GetRandomFileName(), "");
+                    var s = n;
+                    while (hs.Add(s) == false)
+                        s = n + "_" + (++i);
+                    
+                    item.SetMetadata(MetadataName, Path.Combine(Directory ?? "", s + Extension ?? item.GetMetadata("Extension")));
+                }
+            ]]>
+            </Code>
+        </Task>
+    </UsingTask>
+
     <Target Name="PrepareCompile">
         <MakeDir Directories="$(IntermediateOutputPath)" />
 
-        <!-- ensure members of the Compile group have a Language set -->
+        <!-- ensure members of the Compile group have necessary metadata -->
         <ItemGroup>
-            <Compile Update="@(Compile)">
+            <_Compile Include="@(Compile)">
                 <Language Condition=" '%(Compile.Language)' == '' And '%(Extension)' == '.c' ">C</Language>
                 <Language Condition=" '%(Compile.Language)' == '' And '%(Extension)' == '.cpp' ">C++</Language>
-            </Compile>
+                <LanguageStandard Condition=" '%(Compile.LanguageStandard)' == '' "></LanguageStandard>
+            </_Compile>
         </ItemGroup>
-    </Target>
-    
-    <!-- 
-    
-    BuildClangResponseFile
-    
-    Assembles a file that contains the arguments to be passed to clang.
-    
-    -->
 
-    <Target Name="BuildClangResponseFile" DependsOnTargets="PrepareCompile">
         <ItemGroup>
-            <_Lines Remove="@(_Lines)" />
-            <_Lines Include="-v" Condition=" '$(Verbose)' == 'true' " />
-            <_Lines Include="--target=$(TargetMachine)" />
-            <_Lines Include="-shared" Condition=" '$(OutputType)' == 'library' " />
-            <_Lines Include="-fuse-ld=$(UseLd)" Condition=" '$(UseLd)' != '' " />
-            <_Lines Include="-std=$(LanguageStandard)" Condition=" '$(LanguageStandard)' != '' " />
-            <_Lines Include="-fms-compatibility" Condition=" '$(MsCompatibility)' == 'true' " />
-            <_Lines Include="-g" Condition=" '$(DebugSymbols)' == 'true' " />
-
-            <_Lines Include="-isysroot $(ISystemRoot.Replace('\', '\\'))" Condition=" '$(ISystemRoot)' != '' " />
-            <_Lines Include="--sysroot=$(SystemRoot.Replace('\', '\\'))" Condition=" '$(SystemRoot)' != '' " />
-
-            <_SystemIncludeDirectories Include="@(SystemIncludeDirectories)" />
-            <_SystemIncludeDirectories Include="$(SystemIncludeDirectories)" />
-            <_Lines Include="@(_SystemIncludeDirectories->'-isystem &quot;%(FullPath)&quot;'->Replace('\', '\\'))" Condition=" '@(_SystemIncludeDirectories)' != '' " />
-
-            <_IncludeDirectories Include="@(IncludeDirectories)" />
-            <_IncludeDirectories Include="$(IncludeDirectories)" />
-            <_Lines Include="@(_IncludeDirectories->'-I&quot;%(FullPath)&quot;'->Replace('\', '\\'))" Condition=" '@(_IncludeDirectories)' != '' " />
-
-            <_DependencyDirectories Include="@(DependencyDirectories)" />
-            <_DependencyDirectories Include="$(DependencyDirectories)" />
-            <_Lines Include="@(_DependencyDirectories->'-L&quot;%(FullPath)&quot;'->Replace('\', '\\'))" Condition=" '@(_DependencyDirectories)' != '' " />
-
-            <_Dependencies Include="@(Dependencies)" />
-            <_Dependencies Include="$(Dependencies)" />
-            <_Lines Include="@(_Dependencies->'-l&quot;%(Identity)&quot;'->Replace('\', '\\'))" Condition=" '@(_Dependencies)' != '' " />
-
-            <_PreprocessorDefinitions Include="@(PreprocessorDefinitions)" />
-            <_PreprocessorDefinitions Include="$(PreprocessorDefinitions)" />
-            <_Lines Include="@(_PreprocessorDefinitions->'-D &quot;%(Identity)&quot;')" Condition=" '@(_PreprocessorDefinitions)' != '' " />
-
-            <_Lines Include="-fPIC" Condition=" '$(PositionIndependentCode)' == 'true' " />
-
-            <_Lines Include="$(AdditionalOptions)" Condition=" '$(AdditionalOptions)' != '' " />
-            <_Lines Include="@(AdditionalOptions->'&quot;%(Identity)&quot;'->Replace('\', '\\'))" Condition=" '@(AdditionalOptions)' != '' " />
-
-            <_CCompile Include="@(Compile)" Condition=" '%(Language)' == 'C' " />
-            <_Lines Include="-x c" Condition=" '@(_CCompile)' != '' " />
-            <_Lines Include="@(_CCompile->'&quot;%(FullPath)&quot;'->Replace('\', '\\'))" Condition=" '@(_CCompile)' != '' " />
-
-            <_CppCompile Include="@(Compile)" Condition=" '%(Language)' == 'C++' " />
-            <_Lines Include="-x c++" Condition=" '@(_CppCompile)' != '' " />
-            <_Lines Include="@(_CppCompile->'&quot;%(FullPath)&quot;'->Replace('\', '\\'))" Condition=" '@(_CppCompile)' != '' " />
-
-            <_Lines Include="-o &quot;$(IntermediateTargetPath.Replace('\', '\\'))&quot;" />
+            <Compile Remove="@(Compile)" />
         </ItemGroup>
-        <WriteLinesToFile File="$(ClangResponseFile)" Lines="@(_Lines)" Overwrite="true" WriteOnlyWhenDifferent="true" />
-        <Message Text="@(_Lines, ' ')" />
-    </Target>
-    
-    <!--
-    
-    CoreCompile
-    
-    Executes clang.
-    
-    -->
 
-    <Target Name="CoreCompile" DependsOnTargets="BuildClangResponseFile" Inputs="$(ClangResponseFile);@(Compile)" Outputs="$(IntermediateTargetPath)">
-        <Exec Command="clang @$(ClangResponseFile)" />
+        <IkvmClangSdkGenerateUniqueFileName Items="@(_Compile)" MetadataName="ObjectFilePath" Extension=".obj" Directory="$(IntermediateOutputPath)">
+            <Output TaskParameter="Items" ItemName="Compile" />
+        </IkvmClangSdkGenerateUniqueFileName>
+    </Target>
+
+    <PropertyGroup>
+        <CoreCompileDependsOn>
+            PrepareCompile;
+            $(CoreCompileDependsOn);
+        </CoreCompileDependsOn>
+    </PropertyGroup>
+
+    <Target Name="CoreCompile" DependsOnTargets="PrepareCompile" Inputs="@(Compile)" Outputs="%(ObjectFilePath)">
+        <PropertyGroup>
+            <_ObjectFilePath>%(Compile.ObjectFilePath)</_ObjectFilePath>
+        </PropertyGroup>
+
+        <ItemGroup>
+            <_Args Remove="@(_Args)" />
+            <_Args Include="-c" />
+            <_Args Include="-v" Condition=" '$(Verbose)' == 'true' " />
+            <_Args Include="--target=$(TargetMachine)" />
+            <_Args Include="-g" Condition=" '%(Compile.DebugSymbols)' == 'true' " />
+
+            <_Args Include="-std=%(Compile.LanguageStandard)" Condition=" '%(Compile.LanguageStandard)' != '' " />
+            <_Args Include="-fPIC" Condition=" '%(Compile.PositionIndependentCode)' == 'true' " />
+            <_Args Include="-fms-compatibility" Condition=" '%(Compile.MsCompatibility)' == 'true' " />
+            <_Args Include="-fms-compatibility-version=%(Compile.MsCompatibilityVersion)" Condition=" '%(Compile.MsCompatibilityVersion)' != '' " />
+
+            <_SystemRootDirectories Include="%(Compile.SystemRootDirectories)" />
+            <_Args Include="@(_SystemRootDirectories->'--sysroot &quot;%(Identity)&quot;')" Condition=" '@(_SystemRootDirectories)' != '' " />
+
+            <_IncludeSystemRootDirectories Include="%(Compile.IncludeSystemRootDirectories)" />
+            <_Args Include="@(_IncludeSystemRootDirectories->'-isysroot &quot;%(Identity)&quot;')" Condition=" '@(_IncludeSystemRootDirectories)' != '' " />
+
+            <_SystemIncludeDirectories Include="%(Compile.SystemIncludeDirectories)" />
+            <_Args Include="@(_SystemIncludeDirectories->'-isystem &quot;%(Identity)&quot;')" Condition=" '@(_SystemIncludeDirectories)' != '' " />
+
+            <_IncludeDirectories Include="%(Compile.IncludeDirectories)" />
+            <_Args Include="@(_IncludeDirectories->'-I &quot;%(Identity)&quot;'->Replace('\', '\\'))" Condition=" '@(_IncludeDirectories)' != '' " />
+
+            <_PreprocessorDefinitions Include="%(Compile.PreprocessorDefinitions)" />
+            <_Args Include="@(_PreprocessorDefinitions->'-D &quot;%(Identity)&quot;')" Condition=" '@(_PreprocessorDefinitions)' != '' " />
+
+            <_AdditionalOptions Include="%(Compile.AdditionalOptions)" />
+            <_Args Include="@(_AdditionalOptions)" />
+
+            <_Args Include="-x;c" Condition=" '%(Compile.Language)' == 'C' " />
+            <_Args Include="-x;c++" Condition=" '%(Compile.Language)' == 'C++' " />
+
+            <_Args Include="&quot;%(Compile.Identity)&quot;" />
+
+            <_Args Include="-o;&quot;$(_ObjectFilePath)&quot;" />
+        </ItemGroup>
+
+        <Exec Command="clang @(_Args, ' ')" />
+    </Target>
+
+    <PropertyGroup>
+        <LinkDependsOn>
+            Compile;
+            BeforeLink;
+            PrepareLink;
+            CoreLink;
+            AfterLink;
+        </LinkDependsOn>
+    </PropertyGroup>
+
+    <Target Name="Link" DependsOnTargets="$(LinkDependsOn)"/>
+
+    <Target Name="BeforeLink" />
+
+    <Target Name="AfterLink" />
+
+    <Target Name="PrepareLink">
+        <MakeDir Directories="$(IntermediateOutputPath)" />
+
+        <ItemGroup>
+            <Link Include="@(Compile->'%(ObjectFilePath)')">
+                <OutputType>$(OutputType)</OutputType>
+                <IntermediateTargetPath>$(IntermediateTargetPath)</IntermediateTargetPath>
+                <TargetFilePath>$(TargetPath)</TargetFilePath>
+            </Link>
+        </ItemGroup>
+    </Target>
+
+    <PropertyGroup>
+        <CoreLinkDependsOn>
+            PrepareLink;
+            $(CoreLinkDependsOn);
+        </CoreLinkDependsOn>
+    </PropertyGroup>
+
+    <Target Name="CoreLink" DependsOnTargets="Compile;$(CoreLinkDependsOn)" Inputs="@(Link)" Outputs="%(TargetFilePath)">
+        <PropertyGroup>
+            <_TargetFilePath>%(Link.TargetFilePath)</_TargetFilePath>
+            <_IntermediateTargetPath>%(Link.IntermediateTargetPath)</_IntermediateTargetPath>
+        </PropertyGroup>
+
+        <ItemGroup>
+            <_Args Remove="@(_Args)" />
+            <_Args Include="-shared" Condition=" '%(Link.OutputType)' == 'sharedlibrary' " />
+            <_Args Include="-static" Condition=" '%(Link.OutputType)' == 'staticlibrary' " />
+            <_Args Include="-v" Condition=" '$(Verbose)' == 'true' " />
+            <_Args Include="--target=$(TargetMachine)" />
+            <_Args Include="-fuse-ld=lld" Condition=" '$(UseLld)' == 'true' " />
+            <_Args Include="-g" Condition=" '%(Link.DebugSymbols)' == 'true' " />
+
+            <_SystemRootDirectories Include="%(Link.SystemRootDirectories)" />
+            <_Args Include="@(_SystemRootDirectories->'--sysroot &quot;%(Identity)&quot;')" Condition=" '@(_SystemRootDirectories)' != '' " />
+
+            <_IncludeSystemRootDirectories Include="%(Link.IncludeSystemRootDirectories)" />
+            <_Args Include="@(_IncludeSystemRootDirectories->'-isysroot &quot;%(Identity)&quot;')" Condition=" '@(_IncludeSystemRootDirectories)' != '' " />
+
+            <_LibraryDirectories Include="%(Link.LibraryDirectories)" />
+            <_Args Include="@(_LibraryDirectories->'-L &quot;%(Identity)&quot;')" Condition=" '@(_LibraryDirectories)' != '' " />
+
+            <_Dependencies Include="%(Link.Dependencies)" />
+            <_Args Include="@(_Dependencies->'-l &quot;%(Identity)&quot;')" Condition=" '@(_Dependencies)' != '' " />
+
+            <_AdditionalOptions Include="%(Link.AdditionalOptions)" />
+            <_Args Include="@(_AdditionalOptions)" />
+
+            <_Args Include="&quot;%(Link.Identity)&quot;" />
+
+            <_Args Include="-o;&quot;$(_IntermediateTargetPath)&quot;" />
+        </ItemGroup>
+
+        <Exec Command="clang @(_Args, ' ')" />
     </Target>
 
     <PropertyGroup>
         <CopyFilesToOutputDirectoryDependsOn>
             Compile;
+            Link;
         </CopyFilesToOutputDirectoryDependsOn>
     </PropertyGroup>
 
@@ -321,7 +414,7 @@
     </PropertyGroup>
 
     <Target Name="PrepareForRun" DependsOnTargets="$(PrepareForRunDependsOn)">
-        
+
     </Target>
 
 </Project>
