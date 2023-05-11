@@ -74,7 +74,8 @@ if [ ! -f $dist.glibc/stamp ]
 then
 	mkdir -p $dist.glibc
 	pushd $dist.glibc
-	$ext/glibc/configure \
+	$ext/glibc/configure
+		CFLAGS="-O2" \
 		--host=$target \
 		--target=$target \
 		--prefix="" \
@@ -97,7 +98,7 @@ then
 
 	mkdir -p $dist.gcc
 	pushd $dist.gcc
-	$ext/gcc/configure \
+	LDFLAGS=-s $ext/gcc/configure \
 		--host=$target \
 		--target=$target \
 		--prefix="" \
