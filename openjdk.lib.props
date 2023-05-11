@@ -16,6 +16,7 @@
     <PropertyGroup>
         <OutputType>SharedLibrary</OutputType>
         <Verbose>true</Verbose>
+        <DebugSymbols>true</DebugSymbols>
     </PropertyGroup>
 
     <PropertyGroup Condition="$(TargetMachine.Contains('-windows-'))">
