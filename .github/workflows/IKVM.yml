@@ -347,7 +347,7 @@ jobs:
         path: ${{ env.WORKPATH }}
     - name: Restore OpenJDK 8 Build
       shell: pwsh
-      run: Expand-Archive ${{ env.WORKPATH }}\openjdk-build-linux-x86_64-normal-server-release.zip --DestinationPath ${{ env.WORKPATH }}\ikvm\openjdk\build
+      run: mkdir ${{ env.WORKPATH }}\ikvm\openjdk\build; Expand-Archive ${{ env.WORKPATH }}\openjdk-build-linux-x86_64-normal-server-release.zip --DestinationPath ${{ env.WORKPATH }}\ikvm\openjdk\build
     - name: Download JTReg Build
       uses: actions/download-artifact@v3
       with:
