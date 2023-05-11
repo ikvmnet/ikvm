@@ -327,7 +327,7 @@ jobs:
     - name: Download Linux SDK (arm-unknown-linux-gnueabi)
       uses: actions/download-artifact@v3
       with:
-        name: ext-linuxsdk-arm-unknown-linux-gnuebi
+        name: ext-linuxsdk-arm-unknown-linux-gnueabi
         path: ${{ env.WORKPATH }}
     - name: Restore Linux SDK (arm-unknown-linux-gnueabi)
       run: tar xzvf ${{ env.WORKPATH }}\ext-linuxsdk-arm-unknown-linux-gnueabi.tar.gz
