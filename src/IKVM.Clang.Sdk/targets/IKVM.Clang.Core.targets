@@ -6,6 +6,7 @@
     <PropertyGroup>
         <OutputType Condition=" '$(OutputType)' == '' ">SharedLibrary</OutputType>
         <OutputType>$(OutputType.ToLower())</OutputType>
+        <UseLld Condition=" '$(UseLld)' == '' ">true</UseLld>
     </PropertyGroup>
 
     <PropertyGroup>
@@ -178,7 +179,7 @@
 
     <Target Name="AfterCompile" />
 
-    <UsingTask TaskName="IkvmClangSdkGenerateTempFileName" TaskFactory="RoslynCodeTaskFactory" AssemblyFile="$(MSBuildToolsPath)\Microsoft.Build.Tasks.Core.dll">
+    <UsingTask TaskName="IkvmClangSdkGenerateUniqueFileName" TaskFactory="RoslynCodeTaskFactory" AssemblyFile="$(MSBuildToolsPath)\Microsoft.Build.Tasks.Core.dll">
         <ParameterGroup>
             <MetadataName ParameterType="System.String" Required="true" />
             <Extension ParameterType="System.String" Required="true" />
@@ -191,8 +192,18 @@
             <Using Namespace="System.IO" />
             <Code Language="cs" Type="Fragment">
                 <![CDATA[
-                foreach (var i in Items)
-                    i.SetMetadata(MetadataName, Path.Combine(Directory ?? "", Path.ChangeExtension(Path.GetRandomFileName(), Extension)));
+                var hs = new HashSet<string>();
+                
+                foreach (var item in Items)
+                {
+                    var i = 0;
+                    var n = item.GetMetadata("FileName") ?? Path.ChangeExtension(Path.GetRandomFileName(), "");
+                    var s = n;
+                    while (hs.Add(s) == false)
+                        s = n + "_" + (++i);
+                    
+                    item.SetMetadata(MetadataName, Path.Combine(Directory ?? "", s + Extension ?? item.GetMetadata("Extension")));
+                }
             ]]>
             </Code>
         </Task>
@@ -206,17 +217,17 @@
             <_Compile Include="@(Compile)">
                 <Language Condition=" '%(Compile.Language)' == '' And '%(Extension)' == '.c' ">C</Language>
                 <Language Condition=" '%(Compile.Language)' == '' And '%(Extension)' == '.cpp' ">C++</Language>
-                <LanguageStandard Condition=" '%(Compile.Standard)' == '' "></LanguageStandard>
+                <LanguageStandard Condition=" '%(Compile.LanguageStandard)' == '' "></LanguageStandard>
             </_Compile>
         </ItemGroup>
 
         <ItemGroup>
             <Compile Remove="@(Compile)" />
         </ItemGroup>
-        
-        <IkvmClangSdkGenerateTempFileName Items="@(_Compile)" MetadataName="ObjectFilePath" Extension=".obj" Directory="$(IntermediateOutputPath)">
+
+        <IkvmClangSdkGenerateUniqueFileName Items="@(_Compile)" MetadataName="ObjectFilePath" Extension=".obj" Directory="$(IntermediateOutputPath)">
             <Output TaskParameter="Items" ItemName="Compile" />
-        </IkvmClangSdkGenerateTempFileName>
+        </IkvmClangSdkGenerateUniqueFileName>
     </Target>
 
     <PropertyGroup>
@@ -241,9 +252,10 @@
             <_Args Include="-std=%(Compile.LanguageStandard)" Condition=" '%(Compile.LanguageStandard)' != '' " />
             <_Args Include="-fPIC" Condition=" '%(Compile.PositionIndependentCode)' == 'true' " />
             <_Args Include="-fms-compatibility" Condition=" '%(Compile.MsCompatibility)' == 'true' " />
+            <_Args Include="-fms-compatibility-version=%(Compile.MsCompatibilityVersion)" Condition=" '%(Compile.MsCompatibilityVersion)' != '' " />
 
             <_SystemRootDirectories Include="%(Compile.SystemRootDirectories)" />
-            <_Args Include="@(_SystemRootDirectories->'-sysroot &quot;%(Identity)&quot;')" Condition=" '@(_SystemRootDirectories)' != '' " />
+            <_Args Include="@(_SystemRootDirectories->'--sysroot &quot;%(Identity)&quot;')" Condition=" '@(_SystemRootDirectories)' != '' " />
 
             <_IncludeSystemRootDirectories Include="%(Compile.IncludeSystemRootDirectories)" />
             <_Args Include="@(_IncludeSystemRootDirectories->'-isysroot &quot;%(Identity)&quot;')" Condition=" '@(_IncludeSystemRootDirectories)' != '' " />
@@ -252,7 +264,7 @@
             <_Args Include="@(_SystemIncludeDirectories->'-isystem &quot;%(Identity)&quot;')" Condition=" '@(_SystemIncludeDirectories)' != '' " />
 
             <_IncludeDirectories Include="%(Compile.IncludeDirectories)" />
-            <_Args Include="@(_IncludeDirectories->'-I&quot;%(Identity)&quot;')" Condition=" '@(_IncludeDirectories)' != '' " />
+            <_Args Include="@(_IncludeDirectories->'-I &quot;%(Identity)&quot;'->Replace('\', '\\'))" Condition=" '@(_IncludeDirectories)' != '' " />
 
             <_PreprocessorDefinitions Include="%(Compile.PreprocessorDefinitions)" />
             <_Args Include="@(_PreprocessorDefinitions->'-D &quot;%(Identity)&quot;')" Condition=" '@(_PreprocessorDefinitions)' != '' " />
@@ -291,8 +303,10 @@
         <MakeDir Directories="$(IntermediateOutputPath)" />
 
         <ItemGroup>
-            <Link Include="@(Compile->'%(ObjectFileName)')">
-                <OutputFile>$(TargetPath)</OutputFile>
+            <Link Include="@(Compile->'%(ObjectFilePath)')">
+                <OutputType>$(OutputType)</OutputType>
+                <IntermediateTargetPath>$(IntermediateTargetPath)</IntermediateTargetPath>
+                <TargetFilePath>$(TargetPath)</TargetFilePath>
             </Link>
         </ItemGroup>
     </Target>
@@ -304,8 +318,42 @@
         </CoreLinkDependsOn>
     </PropertyGroup>
 
-    <Target Name="CoreLink" DependsOnTargets="$(CoreLinkDependsOn)">
+    <Target Name="CoreLink" DependsOnTargets="Compile;$(CoreLinkDependsOn)" Inputs="@(Link)" Outputs="%(TargetFilePath)">
+        <PropertyGroup>
+            <_TargetFilePath>%(Link.TargetFilePath)</_TargetFilePath>
+            <_IntermediateTargetPath>%(Link.IntermediateTargetPath)</_IntermediateTargetPath>
+        </PropertyGroup>
 
+        <ItemGroup>
+            <_Args Remove="@(_Args)" />
+            <_Args Include="-shared" Condition=" '%(Link.OutputType)' == 'sharedlibrary' " />
+            <_Args Include="-static" Condition=" '%(Link.OutputType)' == 'staticlibrary' " />
+            <_Args Include="-v" Condition=" '$(Verbose)' == 'true' " />
+            <_Args Include="--target=$(TargetMachine)" />
+            <_Args Include="-fuse-ld=lld" Condition=" '$(UseLld)' == 'true' " />
+            <_Args Include="-g" Condition=" '%(Link.DebugSymbols)' == 'true' " />
+
+            <_SystemRootDirectories Include="%(Link.SystemRootDirectories)" />
+            <_Args Include="@(_SystemRootDirectories->'--sysroot &quot;%(Identity)&quot;')" Condition=" '@(_SystemRootDirectories)' != '' " />
+
+            <_IncludeSystemRootDirectories Include="%(Link.IncludeSystemRootDirectories)" />
+            <_Args Include="@(_IncludeSystemRootDirectories->'-isysroot &quot;%(Identity)&quot;')" Condition=" '@(_IncludeSystemRootDirectories)' != '' " />
+
+            <_LibraryDirectories Include="%(Link.LibraryDirectories)" />
+            <_Args Include="@(_LibraryDirectories->'-L &quot;%(Identity)&quot;')" Condition=" '@(_LibraryDirectories)' != '' " />
+
+            <_Dependencies Include="%(Link.Dependencies)" />
+            <_Args Include="@(_Dependencies->'-l &quot;%(Identity)&quot;')" Condition=" '@(_Dependencies)' != '' " />
+
+            <_AdditionalOptions Include="%(Link.AdditionalOptions)" />
+            <_Args Include="@(_AdditionalOptions)" />
+
+            <_Args Include="&quot;%(Link.Identity)&quot;" />
+
+            <_Args Include="-o;&quot;$(_IntermediateTargetPath)&quot;" />
+        </ItemGroup>
+
+        <Exec Command="clang @(_Args, ' ')" />
     </Target>
 
     <PropertyGroup>

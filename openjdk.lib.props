@@ -15,18 +15,25 @@
 
     <PropertyGroup>
         <OutputType>SharedLibrary</OutputType>
-        <UseLd>lld</UseLd>
         <Verbose>true</Verbose>
+    </PropertyGroup>
+
+    <PropertyGroup Condition="$(TargetMachine.Contains('-windows-'))">
+        <OpenJdkTargetOsApiDir>windows</OpenJdkTargetOsApiDir>
+    </PropertyGroup>
+
+    <PropertyGroup Condition="$(TargetMachine.Contains('-linux-')) Or $(TargetMachine.Contains('-apple-'))">
+        <OpenJdkTargetOsApiDir>solaris</OpenJdkTargetOsApiDir>
     </PropertyGroup>
 
     <!-- common preprocessor declarations -->
     <ItemDefinitionGroup Condition=" '$(TargetMachine)' != '' ">
         <Compile>
-            <PreprocessorDefinitions>%(PreprocessorDefinitions);JDK_MAJOR_VERSION=$(JDK_MAJOR_VERSION)</PreprocessorDefinitions>
-            <PreprocessorDefinitions>%(PreprocessorDefinitions);JDK_MINOR_VERSION=$(JDK_MINOR_VERSION)</PreprocessorDefinitions>
-            <PreprocessorDefinitions>%(PreprocessorDefinitions);JDK_MICRO_VERSION=$(JDK_MICRO_VERSION)</PreprocessorDefinitions>
-            <PreprocessorDefinitions>%(PreprocessorDefinitions);JDK_UPDATE_VERSION=$(JDK_UPDATE_VERSION)</PreprocessorDefinitions>
-            <PreprocessorDefinitions>%(PreprocessorDefinitions);JDK_BUILD_NUMBER=$(JDK_BUILD_NUMBER)</PreprocessorDefinitions>
+            <PreprocessorDefinitions>%(PreprocessorDefinitions);JDK_MAJOR_VERSION=&quot;&quot;$(OpenJdkMajorVersion)&quot;&quot;</PreprocessorDefinitions>
+            <PreprocessorDefinitions>%(PreprocessorDefinitions);JDK_MINOR_VERSION=&quot;&quot;$(OpenJdkMinorVersion)&quot;&quot;</PreprocessorDefinitions>
+            <PreprocessorDefinitions>%(PreprocessorDefinitions);JDK_MICRO_VERSION=&quot;&quot;$(OpenJdkMicroVersion)&quot;&quot;</PreprocessorDefinitions>
+            <PreprocessorDefinitions>%(PreprocessorDefinitions);JDK_UPDATE_VERSION=&quot;&quot;$(OpenJdkUpdateVersion)&quot;&quot;</PreprocessorDefinitions>
+            <PreprocessorDefinitions>%(PreprocessorDefinitions);JDK_BUILD_NUMBER=&quot;&quot;$(OpenJdkBuildNumber)&quot;&quot;</PreprocessorDefinitions>
             
             <PreprocessorDefinitions Condition=" '$(DebugSymbols)' == 'true' ">%(Compile.PreprocessorDefinitions);_DEBUG</PreprocessorDefinitions>
             <PreprocessorDefinitions Condition="$(TargetMachine.StartsWith('x86_64-'))">%(Compile.PreprocessorDefinitions);_AMD64_;amd64</PreprocessorDefinitions>
@@ -37,15 +44,16 @@
     </ItemDefinitionGroup>
 
     <!-- common/autoconf/flags.m4 -->
-    <ItemDefinitionGroup Condition=" '$(TargetMachine)' != '' And $(TargetMachine.Contains('-windows-')) ">
+    <ItemDefinitionGroup Condition="$(TargetMachine.Contains('-windows-')) ">
         <Compile>
-            <MsCompatibility Condition=" '$(TargetMachine)' != '' And $(TargetMachine.Contains('-windows-')) ">true</MsCompatibility>
+            <MsCompatibility Condition="$(TargetMachine.Contains('-windows-')) ">true</MsCompatibility>
+            <MsCompatibilityVersion Condition="$(TargetMachine.Contains('-windows-')) ">14</MsCompatibilityVersion>
             <PreprocessorDefinitions>%(Compile.PreprocessorDefinitions);_STATIC_CPPLIB;_DISABLE_DEPRECATE_STATIC_CPPLIB;WIN32_LEAN_AND_MEAN;_CRT_SECURE_NO_DEPRECATE;_CRT_NONSTDC_NO_DEPRECATE;WIN32;IAL</PreprocessorDefinitions>
         </Compile>
     </ItemDefinitionGroup>
 
     <!-- common/autoconf/flags.m4 -->
-    <ItemDefinitionGroup Condition=" '$(TargetMachine)' != '' And $(TargetMachine.Contains('-linux-'))">
+    <ItemDefinitionGroup Condition="$(TargetMachine.Contains('-linux-'))">
         <Compile>
             <PositionIndependentCode>true</PositionIndependentCode>
             <PreprocessorDefinitions>%(Compile.PreprocessorDefinitions);_GNU_SOURCE;_REENTRANT;_LARGEFILE64_SOURCE</PreprocessorDefinitions>
@@ -53,7 +61,7 @@
     </ItemDefinitionGroup>
 
     <!-- common/autoconf/flags.m4 -->
-    <ItemDefinitionGroup Condition=" '$(TargetMachine)' != '' And $(TargetMachine.Contains('-apple-'))">
+    <ItemDefinitionGroup Condition="$(TargetMachine.Contains('-apple-'))">
         <Compile>
             <PreprocessorDefinitions>%(Compile.PreprocessorDefinitions);_ALLBSD_SOURCE;_DARWIN_UNLIMITED_SELECT</PreprocessorDefinitions>
         </Compile>
@@ -65,6 +73,9 @@
             <IncludeDirectories>%(Compile.IncludeDirectories);$(OpenJdkDir)jdk\src\share\native\common</IncludeDirectories>
             <IncludeDirectories>%(Compile.IncludeDirectories);$(OpenJdkDir)jdk\src\share\javavm\export</IncludeDirectories>
             <IncludeDirectories>%(Compile.IncludeDirectories);$(OpenJdkDir)build\linux-x86_64-normal-server-release\jdk\gensrc_headers</IncludeDirectories>
+
+            <IncludeDirectories>%(Compile.IncludeDirectories);$(OpenJdkDir)jdk\src\$(OpenJdkTargetOsApiDir)\native\common</IncludeDirectories>
+            <IncludeDirectories>%(Compile.IncludeDirectories);$(OpenJdkDir)jdk\src\$(OpenJdkTargetOsApiDir)\javavm\export</IncludeDirectories>
         </Compile>
     </ItemDefinitionGroup>
 
@@ -79,52 +90,39 @@
     <!-- known global values -->
     <ItemDefinitionGroup Condition="!$([MSBuild]::IsOSPlatform('Windows')) And $(TargetMachine.Contains('-windows-'))">
         <Compile>
-            <SystemIncludeDirectories>%(Compile.SystemIncludeDirectories);$(MSBuildThisFileDirectory)build\winsdk\sdk\crt\include\</SystemIncludeDirectories>
-            <SystemIncludeDirectories>%(Compile.SystemIncludeDirectories);$(MSBuildThisFileDirectory)build\winsdk\sdk\sdk\include\shared\</SystemIncludeDirectories>
-            <SystemIncludeDirectories>%(Compile.SystemIncludeDirectories);$(MSBuildThisFileDirectory)build\winsdk\sdk\sdk\include\ucrt\</SystemIncludeDirectories>
-            <SystemIncludeDirectories>%(Compile.SystemIncludeDirectories);$(MSBuildThisFileDirectory)build\winsdk\sdk\sdk\include\um\</SystemIncludeDirectories>
+            <SystemIncludeDirectories>%(Compile.SystemIncludeDirectories);$(MSBuildThisFileDirectory)ext\winsdk\sdk\crt\include\</SystemIncludeDirectories>
+            <SystemIncludeDirectories>%(Compile.SystemIncludeDirectories);$(MSBuildThisFileDirectory)ext\winsdk\sdk\sdk\include\shared\</SystemIncludeDirectories>
+            <SystemIncludeDirectories>%(Compile.SystemIncludeDirectories);$(MSBuildThisFileDirectory)ext\winsdk\sdk\sdk\include\ucrt\</SystemIncludeDirectories>
+            <SystemIncludeDirectories>%(Compile.SystemIncludeDirectories);$(MSBuildThisFileDirectory)ext\winsdk\sdk\sdk\include\um\</SystemIncludeDirectories>
         </Compile>
         <Link>
-            <LibraryDirectories>%(Compile.LibraryDirectories);$(MSBuildThisFileDirectory)build\winsdk\sdk\crt\lib\$(WinSdkArch)</LibraryDirectories>
-            <LibraryDirectories>%(Compile.LibraryDirectories);$(MSBuildThisFileDirectory)build\winsdk\sdk\sdk\lib\ucrt\$(WinSdkArch)</LibraryDirectories>
-            <LibraryDirectories>%(Compile.LibraryDirectories);$(MSBuildThisFileDirectory)build\winsdk\sdk\sdk\lib\um\$(WinSdkArch)</LibraryDirectories>
+            <LibraryDirectories>%(Compile.LibraryDirectories);$(MSBuildThisFileDirectory)ext\winsdk\sdk\crt\lib\$(WinSdkArch)</LibraryDirectories>
+            <LibraryDirectories>%(Compile.LibraryDirectories);$(MSBuildThisFileDirectory)ext\winsdk\sdk\sdk\lib\ucrt\$(WinSdkArch)</LibraryDirectories>
+            <LibraryDirectories>%(Compile.LibraryDirectories);$(MSBuildThisFileDirectory)ext\winsdk\sdk\sdk\lib\um\$(WinSdkArch)</LibraryDirectories>
         </Link>
-    </ItemDefinitionGroup>
-    <ItemDefinitionGroup Condition="$(TargetMachine.Contains('-windows-'))">
-        <Compile>
-            <IncludeDirectories>%(Compile.IncludeDirectories);$(OpenJdkDir)jdk\src\windows\native\common</IncludeDirectories>
-            <IncludeDirectories>%(Compile.IncludeDirectories);$(OpenJdkDir)jdk\src\windows\javavm\export</IncludeDirectories>
-        </Compile>
-    </ItemDefinitionGroup>
-
-    <ItemDefinitionGroup Condition="$(TargetMachine.Contains('-linux-'))">
-        <Compile>
-            <IncludeDirectories>%(Compile.IncludeDirectories);$(OpenJdkDir)jdk\src\solaris\native\common</IncludeDirectories>
-            <IncludeDirectories>%(Compile.IncludeDirectories);$(OpenJdkDir)jdk\src\solaris\javavm\export"</IncludeDirectories>
-        </Compile>
     </ItemDefinitionGroup>
     
     <ItemDefinitionGroup Condition="!$([MSBuild]::IsOSPlatform('Linux')) And $(TargetMachine.EndsWith('-linux-gnu')) And $(TargetMachine.StartsWith('x86_64-'))">
         <Compile>
-            <SystemRoot>%(Compile.SystemRoot);$(MSBuildThisFileDirectory)ext\linuxsdk\x86_64-unknown-linux-gnu</SystemRoot>
+            <SystemRootDirectories>%(Compile.SystemRootDirectories);$(MSBuildThisFileDirectory)ext\linuxsdk\x86_64-unknown-linux-gnu</SystemRootDirectories>
         </Compile>
     </ItemDefinitionGroup>
 
     <ItemDefinitionGroup Condition="!$([MSBuild]::IsOSPlatform('Linux')) And $(TargetMachine.EndsWith('-linux-gnu')) And $(TargetMachine.StartsWith('aarch64-'))">
         <Compile>
-            <SystemRoot>%(Compile.SystemRoot);$(MSBuildThisFileDirectory)ext\linuxsdk\aarch64-unknown-linux-gnu</SystemRoot>
+            <SystemRootDirectories>%(Compile.SystemRootDirectories);$(MSBuildThisFileDirectory)ext\linuxsdk\aarch64-unknown-linux-gnu</SystemRootDirectories>
         </Compile>
     </ItemDefinitionGroup>
 
     <ItemDefinitionGroup Condition="!$([MSBuild]::IsOSPlatform('Linux')) And $(TargetMachine.EndsWith('-linux-gnueabi')) And $(TargetMachine.StartsWith('arm-'))">
         <Compile>
-            <SystemRoot>%(Compile.SystemRoot);$(MSBuildThisFileDirectory)ext\linuxsdk\arm-unknown-linux-gnueabi</SystemRoot>
+            <SystemRootDirectories>%(Compile.SystemRootDirectories);$(MSBuildThisFileDirectory)ext\linuxsdk\arm-unknown-linux-gnueabi</SystemRootDirectories>
         </Compile>
     </ItemDefinitionGroup>
 
     <ItemDefinitionGroup Condition="!$([MSBuild]::IsOSPlatform('OSX')) And $(TargetMachine.Contains('-apple-'))">
         <Compile>
-            <IncludeSystemRootDirectories>%(Compile.ISystemRootDirectories);$(MSBuildThisFileDirectory)ext\macosxsdk</IncludeSystemRootDirectories>
+            <IncludeSystemRootDirectories>%(Compile.IncludeSystemRootDirectories);$(MSBuildThisFileDirectory)ext\macosxsdk</IncludeSystemRootDirectories>
         </Compile>
         <Link>
             <LibraryDirectories>%(Link.LibraryDirectories);$(MSBuildThisFileDirectory)ext\macosxsdk\usr\lib</LibraryDirectories>
@@ -134,8 +132,6 @@
     <ItemDefinitionGroup Condition="$(TargetMachine.Contains('-apple-'))">
         <Compile>
             <DebugSymbols>false</DebugSymbols>
-            <IncludeDirectories>%(Compile.IncludeDirectories);$(OpenJdkDir)jdk\src\solaris\native\common</IncludeDirectories>
-            <IncludeDirectories>%(Compile.IncludeDirectories);$(OpenJdkDir)jdk\src\macosx\javavm\export"</IncludeDirectories>
         </Compile>
         <Link>
             <Dependencies>%(Link.Dependencies);c++</Dependencies>

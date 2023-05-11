@@ -12,27 +12,17 @@
     </PropertyGroup>
 
     <ItemGroup>
-        <Compile Include="$(OpenJdkDir)jdk\src\share\native\common\**\*.c" />
+        <!-- embed libikvm into every library for now -->
+        <Compile Include="$(MSBuildThisFileDirectory)src\libikvm\*.c" />
+        <Compile Include="$(MSBuildThisFileDirectory)src\libikvm\*.cpp" />
+        
+        <!-- this code is included in various libraries and the JVM -->
+        <Compile Include="$(OpenJdkDir)jdk\src\$(OpenJdkTargetOsApiDir)\native\java\io\canonicalize_md.c" />
     </ItemGroup>
-
-    <ItemGroup Condition="$(TargetMachine.Contains('-windows-'))">
-        <Compile Include="$(OpenJdkDir)jdk\src\windows\native\common\**\*.c" />
-    </ItemGroup>
-
-    <ItemGroup Condition="$(TargetMachine.Contains('-linux-')) Or $(TargetMachine.Contains('-apple-'))">
-        <IncludeDirectories Include="$(OpenJdkDir)jdk\src\solaris\native\common" />
-        <Dependencies Include="dl" />
-        <Compile Include="$(OpenJdkDir)jdk\src\solaris\native\common\**\*.c" />
-    </ItemGroup>
-
-    <ItemGroup Condition="$(TargetMachine.Contains('-linux-'))">
-        <IncludeDirectories Include="$(OpenJdkDir)jdk\src\linux\native\common" />
-        <Compile Include="$(OpenJdkDir)jdk\src\linux\native\common\**\*.c" />
-    </ItemGroup>
-
-    <ItemGroup Condition="$(TargetMachine.Contains('-apple-'))">
-        <IncludeDirectories Include="$(OpenJdkDir)jdk\src\macosx\native\common" />
-        <Compile Include="$(OpenJdkDir)jdk\src\macosx\native\common\**\*.c" />
+    
+    <ItemGroup>
+        <Compile Include="$(OpenJdkDir)jdk\src\share\native\common\jni_util.c" />
+        <Compile Include="$(OpenJdkDir)jdk\src\$(OpenJdkTargetOsApiDir)\native\common\jni_util_md.c" />
     </ItemGroup>
 
 </Project>

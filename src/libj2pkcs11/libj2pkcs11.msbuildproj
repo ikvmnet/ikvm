@@ -11,27 +11,15 @@
         <Compile>
             <IncludeDirectories>%(IncludeDirectories);$(OpenJdkDir)jdk\src\share\native\sun\security\pkcs11</IncludeDirectories>
             <IncludeDirectories>%(IncludeDirectories);$(OpenJdkDir)jdk\src\share\native\sun\security\pkcs11\wrapper</IncludeDirectories>
-        </Compile>
-        <Compile Condition="$(TargetMachine.Contains('-windows-'))">
-            <IncludeDirectories>%(IncludeDirectories);$(OpenJdkDir)jdk\src\windows\native\sun\security\pkcs11</IncludeDirectories>
-            <IncludeDirectories>%(IncludeDirectories);$(OpenJdkDir)jdk\src\windows\native\sun\security\pkcs11\wrapper</IncludeDirectories>
-        </Compile>
-        <Compile Condition="$(TargetMachine.Contains('-linux-')) Or $(TargetMachine.Contains('-apple-'))">
-            <IncludeDirectories>%(IncludeDirectories);$(OpenJdkDir)jdk\src\solaris\native\sun\security\pkcs11</IncludeDirectories>
-            <IncludeDirectories>%(IncludeDirectories);$(OpenJdkDir)jdk\src\solaris\native\sun\security\pkcs11\wrapper</IncludeDirectories>
+            <IncludeDirectories>%(IncludeDirectories);$(OpenJdkDir)jdk\src\$(OpenJdkTargetOsApiDir)\native\sun\security\pkcs11</IncludeDirectories>
+            <IncludeDirectories>%(IncludeDirectories);$(OpenJdkDir)jdk\src\$(OpenJdkTargetOsApiDir)\native\sun\security\pkcs11\wrapper</IncludeDirectories>
         </Compile>
     </ItemDefinitionGroup>
 
     <ItemGroup>
-        <Compile Include="$(OpenJdkDir)jdk\src\share\native\sun\security\pkcs11\**\*.c" />    
-    </ItemGroup>
-
-    <ItemGroup Condition="$(TargetMachine.Contains('-windows-'))">
-        <Compile Include="$(OpenJdkDir)jdk\src\windows\native\sun\security\pkcs11\**\*.c" />
-    </ItemGroup>
-
-    <ItemGroup Condition="$(TargetMachine.Contains('-linux-')) Or $(TargetMachine.Contains('-apple-'))">
-        <Compile Include="$(OpenJdkDir)jdk\src\solaris\native\sun\security\pkcs11\**\*.c" />
+        <Compile Include="$(OpenJdkDir)jdk\src\share\native\sun\security\pkcs11\**\*.c;$(OpenJdkDir)jdk\src\$(OpenJdkTargetOsApiDir)\native\sun\security\pkcs11\**\*.c">
+            <LanguageStandard>c89</LanguageStandard>
+        </Compile>
     </ItemGroup>
 
     <Import Project="$(MSBuildThisFileDirectory)..\IKVM.Clang.Sdk\Sdk\Sdk.targets" />
