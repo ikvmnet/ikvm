@@ -37,7 +37,7 @@ jobs:
         sudo apt-get install -y zip unzip curl wget
     - name: Build
       if: steps.winsdk-stamp.outputs.files_exists != 'true'
-      run: ext/winsdk/build.sh
+      run: ext/winsdk/build.sh && touch ext/winsdk/sdk/stamp
     - name: Package
       run: tar czvf sdk.tar.gz sdk
       working-directory: ext/winsdk
@@ -115,7 +115,7 @@ jobs:
         sudo apt-get install -y zip unzip curl
     - name: Build
       if: steps.macosxsdk-stamp.outputs.files_exists != 'true'
-      run: ext/macosxsdk/build.sh
+      run: ext/macosxsdk/build.sh && touch ext/macosxsdk/sdk/stamp
     - name: Package
       run: tar czvf sdk.tar.gz sdk
       working-directory: ext/macosxsdk
