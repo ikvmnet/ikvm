@@ -298,14 +298,14 @@ jobs:
         path: ${{ env.NUGET_PACKAGES }}
         key: ${{ runner.os }}-nuget-2-${{ hashFiles('IKVM.sln', 'src\**\*.csproj', 'src\**\*.msbuildproj') }}
         restore-keys: ${{ runner.os }}-nuget-2-
-    - name: Download Windows SDK
-      uses: actions/download-artifact@v3
-      with:
-        name: ext-winsdk-sdk
-        path: ${{ env.WORKPATH }}
-    - name: Restore Windows SDK
-      run: tar xzvf ${{ env.WORKPATH }}\ext-winsdk-sdk.tar.gz
-      working-directory: ${{ env.WORKPATH }}\ikvm\ext\winsdk
+    #- name: Download Windows SDK
+    #  uses: actions/download-artifact@v3
+    #  with:
+    #    name: ext-winsdk-sdk
+    #    path: ${{ env.WORKPATH }}
+    #- name: Restore Windows SDK
+    #  run: tar xzvf ${{ env.WORKPATH }}\ext-winsdk-sdk.tar.gz
+    #  working-directory: ${{ env.WORKPATH }}\ikvm\ext\winsdk
     - name: Add msbuild to PATH
       uses: microsoft/setup-msbuild@v1.1
     - name: Download Linux SDK (x86_64-unknown-linux-gnu)
