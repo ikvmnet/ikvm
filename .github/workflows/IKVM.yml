@@ -91,6 +91,39 @@ jobs:
       with:
         name: ext-linuxsdk-${{ matrix.target }}
         path: ext/linuxsdk/${{ matrix.target }}.tar.gz
+  build-macosxsdk:
+    name: Build Mac OS X SDK
+    runs-on: ubuntu-latest
+    timeout-minutes: 240
+    steps:
+    - name: Checkout
+      uses: actions/checkout@v3
+    - name: Cache
+      uses: actions/cache@v3
+      with:
+        path: ext/macosxsdk/sdk
+        key: ext-macosxsdk-sdk--${{ runner.os }}--${{ hashFiles('ext/macosxsdk/build.sh') }}-1
+    - name: Check
+      id: macosxsdk-stamp
+      uses: andstor/file-existence-action@v2
+      with:
+        files: ext/macosxsdk/sdk/stamp
+    - name: Install
+      if: steps.macosxsdk-stamp.outputs.files_exists != 'true'
+      run: |
+        sudo apt-get update &&
+        sudo apt-get install -y zip unzip curl
+    - name: Build
+      if: steps.macosxsdk-stamp.outputs.files_exists != 'true'
+      run: ext/macosxsdk/build.sh
+    - name: Package
+      run: tar czvf sdk.tar.gz sdk
+      working-directory: ext/macosxsdk
+    - name: Upload
+      uses: actions/upload-artifact@v3
+      with:
+        name: ext-macosxsdk-sdk
+        path: ext/macosxsdk/sdk.tar.gz
   build-openjdk:
     name: Build OpenJDK
     runs-on: ubuntu-latest
@@ -187,6 +220,7 @@ jobs:
     - build-openjdk
     - build-winsdk
     - build-linuxsdk
+    - build-macosxsdk
     timeout-minutes: 240
     runs-on: windows-latest
     steps:
@@ -295,6 +329,14 @@ jobs:
     - name: Restore Linux SDK (arm-unknown-linux-gnueabi)
       run: tar xzvf arm-unknown-linux-gnueabi.tar.gz
       working-directory: ${{ env.WORKPATH }}\ikvm\ext\linuxsdk
+    - name: Download Mac OS X SDK
+      uses: actions/download-artifact@v3
+      with:
+        name: ext-macosxsdk-sdk
+        path: ${{ env.WORKPATH }}/ikvm/ext/macosxsdk
+    - name: Restore Mac OS X SDK
+      run: tar xzvf ext-macosxsdk-sdk.tar.gz
+      working-directory: ${{ env.WORKPATH }}\ikvm\ext\macosxsdk
     - name: Download OpenJDK 8 Build
       uses: actions/download-artifact@v3
       with:
