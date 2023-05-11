@@ -117,13 +117,13 @@ jobs:
       if: steps.macosxsdk-stamp.outputs.files_exists != 'true'
       run: ext/macosxsdk/build.sh && touch ext/macosxsdk/sdk/stamp
     - name: Package
-      run: tar czvf sdk.tar.gz sdk
+      run: tar czvf /tmp/ext-macosxsdk-sdk.tar.gz sdk
       working-directory: ext/macosxsdk
     - name: Upload
       uses: actions/upload-artifact@v3
       with:
         name: ext-macosxsdk-sdk
-        path: ext/macosxsdk/sdk.tar.gz
+        path: /tmp/ext-macosxsdk-sdk.tar.gz
   build-openjdk:
     name: Build OpenJDK
     runs-on: ubuntu-latest
