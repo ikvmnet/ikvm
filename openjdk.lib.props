@@ -122,10 +122,10 @@
 
     <ItemDefinitionGroup Condition="!$([MSBuild]::IsOSPlatform('OSX')) And $(TargetMachine.Contains('-apple-'))">
         <Compile>
-            <IncludeSystemRootDirectories>%(Compile.IncludeSystemRootDirectories);$(MSBuildThisFileDirectory)ext\macosxsdk</IncludeSystemRootDirectories>
+            <IncludeSystemRootDirectories>%(Compile.IncludeSystemRootDirectories);$(MSBuildThisFileDirectory)ext\macosxsdk\sdk</IncludeSystemRootDirectories>
         </Compile>
         <Link>
-            <LibraryDirectories>%(Link.LibraryDirectories);$(MSBuildThisFileDirectory)ext\macosxsdk\usr\lib</LibraryDirectories>
+            <LibraryDirectories>%(Link.LibraryDirectories);$(MSBuildThisFileDirectory)ext\macosxsdk\sdk\usr\lib</LibraryDirectories>
         </Link>
     </ItemDefinitionGroup>
 
