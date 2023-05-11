@@ -82,7 +82,7 @@ jobs:
           help2man bison flex libtool libtool-bin patch libstdc++6 rsync git meson xz-utils texinfo
     - name: Build
       if: steps.linuxsdk-stamp.outputs.files_exists != 'true'
-      run: ext/linuxsdk/build.sh ${{ matrix.target }} && ext/linuxsdk/${{ matrix.target }}/stamp
+      run: ext/linuxsdk/build.sh ${{ matrix.target }} && touch ext/linuxsdk/${{ matrix.target }}/stamp
     - name: Package
       run: tar czvf ${{ matrix.target }}.tar.gz ${{ matrix.target }}
       working-directory: ext/linuxsdk
