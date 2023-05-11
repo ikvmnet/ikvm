@@ -338,7 +338,7 @@ jobs:
         name: ext-macosxsdk-sdk
         path: ${{ env.WORKPATH }}
     - name: Restore Mac OS X SDK
-      run: tar xzvf ${{ env.WORKPATH }\ext-macosxsdk-sdk.tar.gz
+      run: tar xzvf ${{ env.WORKPATH }}\ext-macosxsdk-sdk.tar.gz
       working-directory: ${{ env.WORKPATH }}\ikvm\ext\macosxsdk
     - name: Download OpenJDK 8 Build
       uses: actions/download-artifact@v3
