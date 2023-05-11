@@ -39,13 +39,13 @@ jobs:
       if: steps.winsdk-stamp.outputs.files_exists != 'true'
       run: ext/winsdk/build.sh && touch ext/winsdk/sdk/stamp
     - name: Package
-      run: tar czvf sdk.tar.gz sdk
+      run: tar czvf /tmp/ext-winsdk-sdk.tar.gz sdk
       working-directory: ext/winsdk
     - name: Upload
       uses: actions/upload-artifact@v3
       with:
         name: ext-winsdk-sdk
-        path: ext/winsdk/sdk.tar.gz
+        path: /tmp/ext-winsdk-sdk.tar.gz
   build-linuxsdk:
     strategy:
       matrix:
@@ -84,13 +84,13 @@ jobs:
       if: steps.linuxsdk-stamp.outputs.files_exists != 'true'
       run: ext/linuxsdk/build.sh ${{ matrix.target }} && touch ext/linuxsdk/${{ matrix.target }}/stamp
     - name: Package
-      run: tar czvf ${{ matrix.target }}.tar.gz ${{ matrix.target }}
+      run: tar czvf /tmp/ext-linuxsdk-${{ matrix.target }}.tar.gz ${{ matrix.target }}
       working-directory: ext/linuxsdk
     - name: Upload
       uses: actions/upload-artifact@v3
       with:
         name: ext-linuxsdk-${{ matrix.target }}
-        path: ext/linuxsdk/${{ matrix.target }}.tar.gz
+        path: /tmp/ext-linuxsdk-${{ matrix.target }}.tar.gz
   build-macosxsdk:
     name: Build Mac OS X SDK
     runs-on: ubuntu-latest
@@ -183,15 +183,13 @@ jobs:
         sudo chmod -R +rwx linux-x86_64-normal-server-release/images/j2sdk-image/bin
       working-directory: openjdk/build
     - name: Package OpenJDK
-      run: |
-        zip -r openjdk-build-linux-x86_64-normal-server-release.zip \
-          linux-x86_64-normal-server-release/*
+      run: zip -r /tmp/openjdk-build-linux-x86_64-normal-server-release.zip linux-x86_64-normal-server-release/*
       working-directory: openjdk/build
     - name: Upload OpenJDK
       uses: actions/upload-artifact@v3
       with:
         name: openjdk-build-linux-x86_64-normal-server-release
-        path: openjdk/build/openjdk-build-linux-x86_64-normal-server-release.zip
+        path: /tmp/openjdk-build-linux-x86_64-normal-server-release.zip
     - name: Cache OpenJDK Test Harness Build
       uses: actions/cache@v3
       with:
@@ -207,13 +205,13 @@ jobs:
       run: bash make/build-all.sh `realpath ../openjdk/build/linux-x86_64-normal-server-release/images/j2sdk-image` && touch build/stamp
       working-directory: jtreg
     - name: Package OpenJDK Test Harness
-      run: zip -r jtreg-build.zip build
+      run: zip -r /tmp/jtreg-build.zip build
       working-directory: jtreg
     - name: Upload OpenJDK Test Harness 
       uses: actions/upload-artifact@v3
       with:
         name: jtreg-build
-        path: jtreg/jtreg-build.zip
+        path: /tmp/jtreg-build.zip
   build-ikvm:
     name: Build IKVM
     needs:
@@ -304,9 +302,9 @@ jobs:
       uses: actions/download-artifact@v3
       with:
         name: ext-winsdk-sdk
-        path: ${{ env.WORKPATH }}/ikvm/ext/winsdk
+        path: ${{ env.WORKPATH }}
     - name: Restore Windows SDK
-      run: tar xzvf ext-winsdk-sdk.tar.gz
+      run: tar xzvf ${{ env.WORKPATH }}\ext-winsdk-sdk.tar.gz
       working-directory: ${{ env.WORKPATH }}\ikvm\ext\winsdk
     - name: Add msbuild to PATH
       uses: microsoft/setup-msbuild@v1.1
@@ -314,51 +312,51 @@ jobs:
       uses: actions/download-artifact@v3
       with:
         name: ext-linuxsdk-x86_64-unknown-linux-gnu
-        path: ${{ env.WORKPATH }}/ikvm/ext/linuxsdk
+        path: ${{ env.WORKPATH }}
     - name: Restore Linux SDK (x86_64-unknown-linux-gnu)
-      run: tar xzvf x86_64-unknown-linux-gnu.tar.gz
+      run: tar xzvf ${{ env.WORKPATH }}\ext-linuxsdk-x86_64-unknown-linux-gnu.tar.gz
       working-directory: ${{ env.WORKPATH }}\ikvm\ext\linuxsdk
     - name: Download Linux SDK (aarch64-unknown-linux-gnu)
       uses: actions/download-artifact@v3
       with:
         name: ext-linuxsdk-aarch64-unknown-linux-gnu
-        path: ${{ env.WORKPATH }}/ikvm/ext/linuxsdk
+        path: ${{ env.WORKPATH }}
     - name: Restore Linux SDK (aarch64-unknown-linux-gnu)
-      run: tar xzvf aarch64-unknown-linux-gnu.tar.gz
+      run: tar xzvf ${{ env.WORKPATH }}\ext-linuxsdk-aarch64-unknown-linux-gnu.tar.gz
       working-directory: ${{ env.WORKPATH }}\ikvm\ext\linuxsdk
     - name: Download Linux SDK (arm-unknown-linux-gnueabi)
       uses: actions/download-artifact@v3
       with:
         name: ext-linuxsdk-arm-unknown-linux-gnuebi
-        path: ${{ env.WORKPATH }}/ikvm/ext/linuxsdk
+        path: ${{ env.WORKPATH }}
     - name: Restore Linux SDK (arm-unknown-linux-gnueabi)
-      run: tar xzvf arm-unknown-linux-gnueabi.tar.gz
+      run: tar xzvf ${{ env.WORKPATH }}\ext-linuxsdk-arm-unknown-linux-gnueabi.tar.gz
       working-directory: ${{ env.WORKPATH }}\ikvm\ext\linuxsdk
     - name: Download Mac OS X SDK
       uses: actions/download-artifact@v3
       with:
         name: ext-macosxsdk-sdk
-        path: ${{ env.WORKPATH }}/ikvm/ext/macosxsdk
+        path: ${{ env.WORKPATH }}
     - name: Restore Mac OS X SDK
-      run: tar xzvf ext-macosxsdk-sdk.tar.gz
+      run: tar xzvf ${{ env.WORKPATH }\ext-macosxsdk-sdk.tar.gz
       working-directory: ${{ env.WORKPATH }}\ikvm\ext\macosxsdk
     - name: Download OpenJDK 8 Build
       uses: actions/download-artifact@v3
       with:
         name: openjdk-build-linux-x86_64-normal-server-release
-        path: ${{ env.WORKPATH }}/ikvm/openjdk/build
+        path: ${{ env.WORKPATH }}\ikvm\openjdk\build
     - name: Restore OpenJDK 8 Build
       shell: pwsh
-      run: Expand-Archive openjdk-build-linux-x86_64-normal-server-release.zip .
+      run: Expand-Archive ${{ env.WORKPATH }}\openjdk-build-linux-x86_64-normal-server-release.zip .
       working-directory: ${{ env.WORKPATH }}\ikvm\openjdk\build
     - name: Download JTReg Build
       uses: actions/download-artifact@v3
       with:
         name: jtreg-build
-        path: ${{ env.WORKPATH }}/ikvm/jtreg
+        path: ${{ env.WORKPATH }}
     - name: Restore JTReg Build
       shell: pwsh
-      run: Expand-Archive jtreg-build.zip .
+      run: Expand-Archive ${{ env.WORKPATH }}\jtreg-build.zip .
       working-directory: ${{ env.WORKPATH }}\ikvm\jtreg
     - name: NuGet Restore
       run: dotnet restore IKVM.sln
