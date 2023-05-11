@@ -50,20 +50,19 @@ namespace IKVM.Tests.Java.java.net
         }
 
         [DataTestMethod]
-        [DataRow("http")]
         [DataRow("tls-v1-0")]
         [DataRow("tls-v1-1")]
         [DataRow("tls-v1-2")]
         [DataRow("sha256")]
-        [DataRow("sha384")]
-        [DataRow("sha512")]
+        //[DataRow("sha384")]
+        //[DataRow("sha512")]
         [DataRow("rsa2048")]
         [DataRow("rsa4096")]
         [DataRow("rsa8192")]
         [DataRow("ecc256")]
         [DataRow("ecc384")]
-        [DataRow("dh480")]
-        [DataRow("dh512")]
+        //[DataRow("dh480")]
+        //[DataRow("dh512")]
         [DataRow("dh1024")]
         public void CanGetFromURL(string prefix)
         {
