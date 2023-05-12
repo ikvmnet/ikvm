@@ -290,8 +290,6 @@ Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "IKVM.Tests.Java", "src\IKVM
 EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "IKVM.ByteCode.Tests", "src\IKVM.ByteCode.Tests\IKVM.ByteCode.Tests.csproj", "{60E804E4-B25B-4C9A-A3E6-F83D618CFD26}"
 EndProject
-Project("{13B669BE-BB05-4DDF-9536-439F39A36129}") = "IKVM.Clang.Sdk", "src\IKVM.Clang.Sdk\IKVM.Clang.Sdk.msbuildproj", "{9571995A-BF42-4F93-89FF-5A26AD3A2C92}"
-EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -618,10 +616,6 @@ Global
 		{60E804E4-B25B-4C9A-A3E6-F83D618CFD26}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{60E804E4-B25B-4C9A-A3E6-F83D618CFD26}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{60E804E4-B25B-4C9A-A3E6-F83D618CFD26}.Release|Any CPU.Build.0 = Release|Any CPU
-		{9571995A-BF42-4F93-89FF-5A26AD3A2C92}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
-		{9571995A-BF42-4F93-89FF-5A26AD3A2C92}.Debug|Any CPU.Build.0 = Debug|Any CPU
-		{9571995A-BF42-4F93-89FF-5A26AD3A2C92}.Release|Any CPU.ActiveCfg = Release|Any CPU
-		{9571995A-BF42-4F93-89FF-5A26AD3A2C92}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE

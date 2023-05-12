@@ -1,5 +1,5 @@
 ﻿<Project>
-    <Import Project="$(MSBuildThisFileDirectory)..\IKVM.Clang.Sdk\Sdk\Sdk.props" />
+    <Import Sdk="IKVM.Clang.Sdk" Version="0.2.0-alpha0018" Project="Sdk.props" />
     <Import Project="$(MSBuildThisFileDirectory)..\..\openjdk.lib.props" />
 
     <PropertyGroup>
@@ -19,6 +19,6 @@
         <Compile Include="$(OpenJdkDir)jdk\src\share\native\sun\security\ec\**\*.c" />
     </ItemGroup>
 
-    <Import Project="$(MSBuildThisFileDirectory)..\IKVM.Clang.Sdk\Sdk\Sdk.targets" />
+    <Import Sdk="IKVM.Clang.Sdk" Version="0.2.0-alpha0018" Project="Sdk.targets" />
     <Import Project="$(MSBuildThisFileDirectory)..\..\openjdk.lib.targets" />
 </Project>
