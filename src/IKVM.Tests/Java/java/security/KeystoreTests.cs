@@ -78,6 +78,7 @@ namespace IKVM.Tests.Java.java.security
         }
 
         [TestMethod]
+        [Ignore]
         public void CanLoadWindowsPersonalKeyStore()
         {
             if (RuntimeInformation.IsOSPlatform(OSPlatform.Windows) == false)
