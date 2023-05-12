@@ -7,10 +7,10 @@
     </PropertyGroup>
 
     <ItemGroup>
-        <None Include="..\..\ext\helloworld-2.0.jar" Link="ext\helloworld-2.0-1\helloworld-2.0.jar">
+        <None Include="..\..\ext\helloworld-2.0.jar" Link="helloworld\helloworld-2.0-1\helloworld-2.0.jar">
             <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
         </None>
-        <None Include="..\..\ext\helloworld-2.0.jar" Link="ext\helloworld-2.0-2\helloworld-2.0.jar">
+        <None Include="..\..\ext\helloworld-2.0.jar" Link="helloworld\helloworld-2.0-2\helloworld-2.0.jar">
             <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
         </None>
     </ItemGroup>

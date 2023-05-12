@@ -25,7 +25,7 @@ namespace IKVM.Tools.Runner.Test.Compiler
         {
             var libs = Path.Combine(TESTBASE, "lib", tfm);
 
-            var p = Path.Combine(Path.GetTempPath(), Guid.NewGuid().ToString(), "ext", tfm, "helloworld-2.0.dll");
+            var p = Path.Combine(Path.GetTempPath(), Guid.NewGuid().ToString(), "helloworld", tfm, "helloworld-2.0.dll");
             Directory.CreateDirectory(Path.GetDirectoryName(p));
 
             var rid = "";
