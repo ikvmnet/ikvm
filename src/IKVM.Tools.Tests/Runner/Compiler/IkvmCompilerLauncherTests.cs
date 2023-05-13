@@ -42,7 +42,7 @@ namespace IKVM.Tools.Runner.Test.Compiler
             {
                 Runtime = Path.Combine(TESTBASE, "lib", tfm, "IKVM.Runtime.dll"),
                 ResponseFile = $"CompileJar_{tfm}_ikvmc.rsp",
-                Input = { Path.Combine(TESTBASE, "ext", "helloworld-2.0.jar") },
+                Input = { Path.Combine(TESTBASE, "helloworld", "helloworld-2.0.jar") },
                 Assembly = "helloworld-2.0",
                 Version = "1.0.0.0",
                 NoStdLib = true,

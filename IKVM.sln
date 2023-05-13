@@ -290,6 +290,14 @@ Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "IKVM.Tests.Java", "src\IKVM
 EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "IKVM.ByteCode.Tests", "src\IKVM.ByteCode.Tests\IKVM.ByteCode.Tests.csproj", "{60E804E4-B25B-4C9A-A3E6-F83D618CFD26}"
 EndProject
+Project("{6DE1C62B-E8D7-451A-8734-87EAEB46E35B}") = "libikvm", "src\libikvm\libikvm.clangproj", "{55CBF630-905A-4B2B-A812-B4CB9FF19AF5}"
+EndProject
+Project("{6DE1C62B-E8D7-451A-8734-87EAEB46E35B}") = "libj2pkcs11", "src\libj2pkcs11\libj2pkcs11.clangproj", "{8AFAE23F-DE5F-4B71-B9C3-C5B0E7705B96}"
+EndProject
+Project("{6DE1C62B-E8D7-451A-8734-87EAEB46E35B}") = "libsunec", "src\libsunec\libsunec.clangproj", "{0714956B-BCE5-43DB-87A6-B58B57E0765B}"
+EndProject
+Project("{6DE1C62B-E8D7-451A-8734-87EAEB46E35B}") = "libsunmscapi", "src\libsunmscapi\libsunmscapi.clangproj", "{1658E7AC-0FC7-4527-A7CF-9E0FF752B368}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -616,6 +624,22 @@ Global
 		{60E804E4-B25B-4C9A-A3E6-F83D618CFD26}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{60E804E4-B25B-4C9A-A3E6-F83D618CFD26}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{60E804E4-B25B-4C9A-A3E6-F83D618CFD26}.Release|Any CPU.Build.0 = Release|Any CPU
+		{55CBF630-905A-4B2B-A812-B4CB9FF19AF5}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{55CBF630-905A-4B2B-A812-B4CB9FF19AF5}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{55CBF630-905A-4B2B-A812-B4CB9FF19AF5}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{55CBF630-905A-4B2B-A812-B4CB9FF19AF5}.Release|Any CPU.Build.0 = Release|Any CPU
+		{8AFAE23F-DE5F-4B71-B9C3-C5B0E7705B96}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{8AFAE23F-DE5F-4B71-B9C3-C5B0E7705B96}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{8AFAE23F-DE5F-4B71-B9C3-C5B0E7705B96}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{8AFAE23F-DE5F-4B71-B9C3-C5B0E7705B96}.Release|Any CPU.Build.0 = Release|Any CPU
+		{0714956B-BCE5-43DB-87A6-B58B57E0765B}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{0714956B-BCE5-43DB-87A6-B58B57E0765B}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{0714956B-BCE5-43DB-87A6-B58B57E0765B}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{0714956B-BCE5-43DB-87A6-B58B57E0765B}.Release|Any CPU.Build.0 = Release|Any CPU
+		{1658E7AC-0FC7-4527-A7CF-9E0FF752B368}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{1658E7AC-0FC7-4527-A7CF-9E0FF752B368}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{1658E7AC-0FC7-4527-A7CF-9E0FF752B368}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{1658E7AC-0FC7-4527-A7CF-9E0FF752B368}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE

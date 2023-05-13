@@ -1,25 +1,24 @@
 ﻿<Project>
-    <Import Sdk="IKVM.Clang.Sdk" Version="0.2.0-alpha0018" Project="Sdk.props" />
+    <Import Sdk="IKVM.Clang.Sdk" Project="Sdk.props" />
     <Import Project="$(MSBuildThisFileDirectory)..\..\openjdk.lib.props" />
-
+    <PropertyGroup Label="Globals">
+        <ProjectGuid>1658e7ac-0fc7-4527-a7cf-9e0ff752b368</ProjectGuid>
+    </PropertyGroup>
     <PropertyGroup>
         <TargetMachines>x86_64-pc-windows-msvc;i686-pc-windows-msvc;aarch64-pc-windows-msvc</TargetMachines>
         <TargetName>sunmscapi</TargetName>
     </PropertyGroup>
-
     <ItemDefinitionGroup>
         <Compile>
-             <LanguageStandard Condition=" '%(Language)' == 'C++' ">c++11</LanguageStandard>
+            <LanguageStandard Condition=" '%(Language)' == 'C++' ">c++11</LanguageStandard>
         </Compile>
         <Link>
-             <Dependencies>%(Dependencies);crypt32;advapi32;ncrypt</Dependencies>
+            <Dependencies>%(Dependencies);crypt32;advapi32;ncrypt</Dependencies>
         </Link>
     </ItemDefinitionGroup>
-
     <ItemGroup>
         <Compile Include="$(OpenJdkDir)jdk\src\windows\native\sun\security\mscapi\**\*.cpp" />
     </ItemGroup>
-
-    <Import Sdk="IKVM.Clang.Sdk" Version="0.2.0-alpha0018" Project="Sdk.targets" />
+    <Import Sdk="IKVM.Clang.Sdk" Project="Sdk.targets" />
     <Import Project="$(MSBuildThisFileDirectory)..\..\openjdk.lib.targets" />
 </Project>

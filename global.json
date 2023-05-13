@@ -2,5 +2,8 @@
     "sdk": {
         "version": "7.0.100",
         "rollForward": "latestFeature"
+    },
+    "msbuild-sdks": {
+        "IKVM.Clang.Sdk": "0.2.0-alpha0018"
     }
 }
