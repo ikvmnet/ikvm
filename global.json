@@ -4,6 +4,7 @@
         "rollForward": "latestFeature"
     },
     "msbuild-sdks": {
+        "Microsoft.Build.NoTargets": "3.7.0",
         "IKVM.Clang.Sdk": "0.2.0-alpha0018"
     }
 }
