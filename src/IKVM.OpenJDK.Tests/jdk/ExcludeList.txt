@@ -3286,7 +3286,7 @@ sun/security/pkcs11/Secmod/JksSetPrivateKey.java                                
 sun/security/pkcs11/rsa/TestKeyPairGenerator.java                                                                       linux-all
 sun/security/pkcs11/ec/TestECGenSpec.java                                                                               linux-all
 sun/security/pkcs11/ec/TestECDSA.java                                                                                   linux-all
-sun/security/pkcs11/ec/TestECDS.java                                                                                    linux-all
+sun/security/pkcs11/ec/TestECDH.java                                                                                    linux-all
 
 # points NativePRNG at a specific file: our implementations don't support this
 sun/security/provider/SecureRandom/StrongSeedReader.java                                                                generic-all
