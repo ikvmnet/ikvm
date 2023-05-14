@@ -29,70 +29,69 @@ using System.Text;
 
 namespace IKVM.Reflection
 {
-    struct ParsedAssemblyName
-    {
-        internal string Name;
-        internal string Version;
-        internal string Culture;
-        internal string PublicKeyToken;
-        internal bool? Retargetable;
-        internal ProcessorArchitecture ProcessorArchitecture;
-        internal bool HasPublicKey;
-        internal bool WindowsRuntime;
-    }
-
-    enum ParseAssemblyResult
-    {
-        OK,
-        GenericError,
-        DuplicateKey,
-    }
 
     static class Fusion
     {
+
         static readonly Version FrameworkVersion = new Version(4, 0, 0, 0);
         static readonly Version FrameworkVersionNext = new Version(5, 0, 0, 0);
         static readonly Version SilverlightVersion = new Version(2, 0, 5, 0);
         static readonly Version SilverlightVersionMinimum = new Version(2, 0, 0, 0);
         static readonly Version SilverlightVersionMaximum = new Version(5, 9, 0, 0);
+
         const string PublicKeyTokenEcma = "b77a5c561934e089";
         const string PublicKeyTokenMicrosoft = "b03f5f7f11d50a3a";
         const string PublicKeyTokenSilverlight = "7cec85d7bea7798e";
         const string PublicKeyTokenWinFX = "31bf3856ad364e35";
 
+        /// <summary>
+        /// Native implementation of CompareAssemblyIdentity.
+        /// </summary>
+        /// <param name="assemblyIdentity1"></param>
+        /// <param name="unified1"></param>
+        /// <param name="assemblyIdentity2"></param>
+        /// <param name="unified2"></param>
+        /// <param name="result"></param>
+        /// <returns></returns>
 		internal static bool CompareAssemblyIdentityNative(string assemblyIdentity1, bool unified1, string assemblyIdentity2, bool unified2, out AssemblyComparisonResult result)
-		{
-			bool equivalent;
-			Marshal.ThrowExceptionForHR(CompareAssemblyIdentity(assemblyIdentity1, unified1, assemblyIdentity2, unified2, out equivalent, out result));
-			return equivalent;
-		}
+        {
+            Marshal.ThrowExceptionForHR(CompareAssemblyIdentity(assemblyIdentity1, unified1, assemblyIdentity2, unified2, out var equivalent, out result));
+            return equivalent;
+        }
 
-		[DllImport("fusion", CharSet = CharSet.Unicode)]
-		private static extern int CompareAssemblyIdentity(string pwzAssemblyIdentity1, bool fUnified1, string pwzAssemblyIdentity2, bool fUnified2, out bool pfEquivalent, out AssemblyComparisonResult pResult);
+        [DllImport("fusion", CharSet = CharSet.Unicode)]
+        static extern int CompareAssemblyIdentity(string pwzAssemblyIdentity1, bool fUnified1, string pwzAssemblyIdentity2, bool fUnified2, out bool pfEquivalent, out AssemblyComparisonResult pResult);
 
-        // internal for use by mcs
+        /// <summary>
+        /// Managed implementation of CompareAssemblyIdentity.
+        /// </summary>
+        /// <param name="assemblyIdentity1"></param>
+        /// <param name="unified1"></param>
+        /// <param name="assemblyIdentity2"></param>
+        /// <param name="unified2"></param>
+        /// <param name="result"></param>
+        /// <returns></returns>
+        /// <exception cref="ArgumentException"></exception>
+        /// <exception cref="System.IO.FileLoadException"></exception>
         internal static bool CompareAssemblyIdentityPure(string assemblyIdentity1, bool unified1, string assemblyIdentity2, bool unified2, out AssemblyComparisonResult result)
         {
             ParsedAssemblyName name1;
             ParsedAssemblyName name2;
 
-            ParseAssemblyResult r1 = ParseAssemblyName(assemblyIdentity1, out name1);
-            ParseAssemblyResult r2 = ParseAssemblyName(assemblyIdentity2, out name2);
+            var r1 = ParseAssemblyName(assemblyIdentity1, out name1);
+            var r2 = ParseAssemblyName(assemblyIdentity2, out name2);
 
             Version version1;
             if (unified1)
             {
-                if (name1.Name == null || !ParseVersion(name1.Version, out version1) || version1 == null || version1.Revision == -1
-                    || name1.Culture == null || name1.PublicKeyToken == null || name1.PublicKeyToken.Length < 2)
+                if (name1.Name == null || !ParseVersion(name1.Version, out version1) || version1 == null || version1.Revision == -1 || name1.Culture == null || name1.PublicKeyToken == null || name1.PublicKeyToken.Length < 2)
                 {
                     result = AssemblyComparisonResult.NonEquivalent;
                     throw new ArgumentException();
                 }
             }
 
-            Version version2 = null;
-            if (!ParseVersion(name2.Version, out version2) || version2 == null || version2.Revision == -1
-                || name2.Culture == null || name2.PublicKeyToken == null || name2.PublicKeyToken.Length < 2)
+            if (!ParseVersion(name2.Version, out var version2) || version2 == null || version2.Revision == -1 || name2.Culture == null || name2.PublicKeyToken == null || name2.PublicKeyToken.Length < 2)
             {
                 result = AssemblyComparisonResult.NonEquivalent;
                 throw new ArgumentException();
@@ -115,27 +114,21 @@ namespace IKVM.Reflection
             if (r1 != ParseAssemblyResult.OK)
             {
                 result = AssemblyComparisonResult.NonEquivalent;
-                switch (r1)
+                throw r1 switch
                 {
-                    case ParseAssemblyResult.DuplicateKey:
-                        throw new System.IO.FileLoadException();
-                    case ParseAssemblyResult.GenericError:
-                    default:
-                        throw new ArgumentException();
-                }
+                    ParseAssemblyResult.DuplicateKey => new System.IO.FileLoadException(),
+                    _ => new ArgumentException(),
+                };
             }
 
             if (r2 != ParseAssemblyResult.OK)
             {
                 result = AssemblyComparisonResult.NonEquivalent;
-                switch (r2)
+                throw r2 switch
                 {
-                    case ParseAssemblyResult.DuplicateKey:
-                        throw new System.IO.FileLoadException();
-                    case ParseAssemblyResult.GenericError:
-                    default:
-                        throw new ArgumentException();
-                }
+                    ParseAssemblyResult.DuplicateKey => new System.IO.FileLoadException(),
+                    _ => new ArgumentException(),
+                };
             }
 
             if (!ParseVersion(name1.Version, out version1))
@@ -339,7 +332,6 @@ namespace IKVM.Reflection
                 case "System.Xml.Linq":
                 case "System.Xml.Serialization":
                     return name.PublicKeyToken == PublicKeyTokenEcma;
-
                 case "Microsoft.CSharp":
                 case "Microsoft.VisualBasic":
                 case "System.Collections":
@@ -409,7 +401,6 @@ namespace IKVM.Reflection
                 case "System.Xml.XDocument":
                 case "System.Xml.XmlSerializer":
                     return name.PublicKeyToken == PublicKeyTokenMicrosoft;
-
                 case "System.ComponentModel.DataAnnotations":
                 case "System.ServiceModel.Web":
                 case "System.Web.Abstractions":
@@ -426,13 +417,11 @@ namespace IKVM.Reflection
         static string GetRemappedPublicKeyToken(ref ParsedAssemblyName name, Version version)
         {
             if (name.Retargetable.GetValueOrDefault() && version < SilverlightVersion)
-            {
                 return null;
-            }
+
             if (name.PublicKeyToken == "ddd0da4d3e678217" && name.Name == "System.ComponentModel.DataAnnotations" && name.Retargetable.GetValueOrDefault())
-            {
                 return PublicKeyTokenWinFX;
-            }
+
             if (SilverlightVersionMinimum <= version && version <= SilverlightVersionMaximum)
             {
                 switch (name.PublicKeyToken)
@@ -481,6 +470,7 @@ namespace IKVM.Reflection
                         break;
                 }
             }
+
             return null;
         }
 
@@ -488,43 +478,37 @@ namespace IKVM.Reflection
         {
             pos = 0;
             if (!TryParse(fullName, ref pos, out simpleName) || simpleName.Length == 0)
-            {
                 return ParseAssemblyResult.GenericError;
-            }
+
             if (pos == fullName.Length && fullName[fullName.Length - 1] == ',')
-            {
                 return ParseAssemblyResult.GenericError;
-            }
+
             return ParseAssemblyResult.OK;
         }
 
-        private static bool TryParse(string fullName, ref int pos, out string value)
+        static bool TryParse(string fullName, ref int pos, out string value)
         {
             value = null;
-            StringBuilder sb = new StringBuilder();
+
+            var sb = new StringBuilder();
             while (pos < fullName.Length && char.IsWhiteSpace(fullName[pos]))
-            {
                 pos++;
-            }
+
             int quote = -1;
             if (pos < fullName.Length && (fullName[pos] == '"' || fullName[pos] == '\''))
-            {
                 quote = fullName[pos++];
-            }
+
             for (; pos < fullName.Length; pos++)
             {
-                char ch = fullName[pos];
+                var ch = fullName[pos];
                 if (ch == '\\')
                 {
                     if (++pos == fullName.Length)
-                    {
                         return false;
-                    }
+
                     ch = fullName[pos];
                     if (ch == '\\')
-                    {
                         return false;
-                    }
                 }
                 else if (ch == quote)
                 {
@@ -532,13 +516,9 @@ namespace IKVM.Reflection
                     {
                         ch = fullName[pos];
                         if (ch == ',' || ch == '=')
-                        {
                             break;
-                        }
                         if (!char.IsWhiteSpace(ch))
-                        {
                             return false;
-                        }
                     }
                     break;
                 }
@@ -550,8 +530,10 @@ namespace IKVM.Reflection
                 {
                     break;
                 }
+
                 sb.Append(ch);
             }
+
             value = sb.ToString().Trim();
             return value.Length != 0 || quote != -1;
         }
@@ -563,6 +545,7 @@ namespace IKVM.Reflection
                 pos++;
                 return true;
             }
+
             return false;
         }
 
@@ -577,158 +560,154 @@ namespace IKVM.Reflection
         internal static ParseAssemblyResult ParseAssemblyName(string fullName, out ParsedAssemblyName parsedName)
         {
             parsedName = new ParsedAssemblyName();
-            int pos;
-            ParseAssemblyResult res = ParseAssemblySimpleName(fullName, out pos, out parsedName.Name);
+            var res = ParseAssemblySimpleName(fullName, out var pos, out parsedName.Name);
             if (res != ParseAssemblyResult.OK)
-            {
                 return res;
-            }
-            else
+
+            const int ERROR_SXS_IDENTITIES_DIFFERENT = unchecked((int)0x80073716);
+            System.Collections.Generic.Dictionary<string, string> unknownAttributes = null;
+            bool hasProcessorArchitecture = false;
+            bool hasContentType = false;
+            bool hasPublicKeyToken = false;
+            string publicKeyToken;
+            while (pos != fullName.Length)
             {
-                const int ERROR_SXS_IDENTITIES_DIFFERENT = unchecked((int)0x80073716);
-                System.Collections.Generic.Dictionary<string, string> unknownAttributes = null;
-                bool hasProcessorArchitecture = false;
-                bool hasContentType = false;
-                bool hasPublicKeyToken = false;
-                string publicKeyToken;
-                while (pos != fullName.Length)
+                string key = null;
+                string value = null;
+                if (!TryParseAssemblyAttribute(fullName, ref pos, ref key, ref value))
                 {
-                    string key = null;
-                    string value = null;
-                    if (!TryParseAssemblyAttribute(fullName, ref pos, ref key, ref value))
-                    {
-                        return ParseAssemblyResult.GenericError;
-                    }
-                    key = key.ToLowerInvariant();
-                    switch (key)
-                    {
-                        case "version":
-                            if (parsedName.Version != null)
-                            {
-                                return ParseAssemblyResult.DuplicateKey;
-                            }
-                            parsedName.Version = value;
-                            break;
-                        case "culture":
-                            if (parsedName.Culture != null)
-                            {
-                                return ParseAssemblyResult.DuplicateKey;
-                            }
-                            if (!ParseCulture(value, out parsedName.Culture))
-                            {
-                                return ParseAssemblyResult.GenericError;
-                            }
-                            break;
-                        case "publickeytoken":
-                            if (hasPublicKeyToken)
-                            {
-                                return ParseAssemblyResult.DuplicateKey;
-                            }
-                            if (!ParsePublicKeyToken(value, out publicKeyToken))
-                            {
-                                return ParseAssemblyResult.GenericError;
-                            }
-                            if (parsedName.HasPublicKey && parsedName.PublicKeyToken != publicKeyToken)
-                            {
-                                Marshal.ThrowExceptionForHR(ERROR_SXS_IDENTITIES_DIFFERENT);
-                            }
-                            parsedName.PublicKeyToken = publicKeyToken;
-                            hasPublicKeyToken = true;
-                            break;
-                        case "publickey":
-                            if (parsedName.HasPublicKey)
-                            {
-                                return ParseAssemblyResult.DuplicateKey;
-                            }
-                            if (!ParsePublicKey(value, out publicKeyToken))
-                            {
-                                return ParseAssemblyResult.GenericError;
-                            }
-                            if (hasPublicKeyToken && parsedName.PublicKeyToken != publicKeyToken)
-                            {
-                                Marshal.ThrowExceptionForHR(ERROR_SXS_IDENTITIES_DIFFERENT);
-                            }
-                            parsedName.PublicKeyToken = publicKeyToken;
-                            parsedName.HasPublicKey = true;
-                            break;
-                        case "retargetable":
-                            if (parsedName.Retargetable.HasValue)
-                            {
-                                return ParseAssemblyResult.DuplicateKey;
-                            }
-                            switch (value.ToLowerInvariant())
-                            {
-                                case "yes":
-                                    parsedName.Retargetable = true;
-                                    break;
-                                case "no":
-                                    parsedName.Retargetable = false;
-                                    break;
-                                default:
-                                    return ParseAssemblyResult.GenericError;
-                            }
-                            break;
-                        case "processorarchitecture":
-                            if (hasProcessorArchitecture)
-                            {
-                                return ParseAssemblyResult.DuplicateKey;
-                            }
-                            hasProcessorArchitecture = true;
-                            switch (value.ToLowerInvariant())
-                            {
-                                case "none":
-                                    parsedName.ProcessorArchitecture = ProcessorArchitecture.None;
-                                    break;
-                                case "msil":
-                                    parsedName.ProcessorArchitecture = ProcessorArchitecture.MSIL;
-                                    break;
-                                case "x86":
-                                    parsedName.ProcessorArchitecture = ProcessorArchitecture.X86;
-                                    break;
-                                case "ia64":
-                                    parsedName.ProcessorArchitecture = ProcessorArchitecture.IA64;
-                                    break;
-                                case "amd64":
-                                    parsedName.ProcessorArchitecture = ProcessorArchitecture.Amd64;
-                                    break;
-                                case "arm":
-                                    parsedName.ProcessorArchitecture = ProcessorArchitecture.Arm;
-                                    break;
-                                default:
-                                    return ParseAssemblyResult.GenericError;
-                            }
-                            break;
-                        case "contenttype":
-                            if (hasContentType)
-                            {
-                                return ParseAssemblyResult.DuplicateKey;
-                            }
-                            hasContentType = true;
-                            if (!value.Equals("windowsruntime", StringComparison.OrdinalIgnoreCase))
-                            {
-                                return ParseAssemblyResult.GenericError;
-                            }
-                            parsedName.WindowsRuntime = true;
-                            break;
-                        default:
-                            if (key.Length == 0)
-                            {
-                                return ParseAssemblyResult.GenericError;
-                            }
-                            if (unknownAttributes == null)
-                            {
-                                unknownAttributes = new System.Collections.Generic.Dictionary<string, string>();
-                            }
-                            if (unknownAttributes.ContainsKey(key))
-                            {
-                                return ParseAssemblyResult.DuplicateKey;
-                            }
-                            unknownAttributes.Add(key, null);
-                            break;
-                    }
+                    return ParseAssemblyResult.GenericError;
                 }
-                return ParseAssemblyResult.OK;
+                key = key.ToLowerInvariant();
+                switch (key)
+                {
+                    case "version":
+                        if (parsedName.Version != null)
+                        {
+                            return ParseAssemblyResult.DuplicateKey;
+                        }
+                        parsedName.Version = value;
+                        break;
+                    case "culture":
+                        if (parsedName.Culture != null)
+                        {
+                            return ParseAssemblyResult.DuplicateKey;
+                        }
+                        if (!ParseCulture(value, out parsedName.Culture))
+                        {
+                            return ParseAssemblyResult.GenericError;
+                        }
+                        break;
+                    case "publickeytoken":
+                        if (hasPublicKeyToken)
+                        {
+                            return ParseAssemblyResult.DuplicateKey;
+                        }
+                        if (!ParsePublicKeyToken(value, out publicKeyToken))
+                        {
+                            return ParseAssemblyResult.GenericError;
+                        }
+                        if (parsedName.HasPublicKey && parsedName.PublicKeyToken != publicKeyToken)
+                        {
+                            Marshal.ThrowExceptionForHR(ERROR_SXS_IDENTITIES_DIFFERENT);
+                        }
+                        parsedName.PublicKeyToken = publicKeyToken;
+                        hasPublicKeyToken = true;
+                        break;
+                    case "publickey":
+                        if (parsedName.HasPublicKey)
+                        {
+                            return ParseAssemblyResult.DuplicateKey;
+                        }
+                        if (!ParsePublicKey(value, out publicKeyToken))
+                        {
+                            return ParseAssemblyResult.GenericError;
+                        }
+                        if (hasPublicKeyToken && parsedName.PublicKeyToken != publicKeyToken)
+                        {
+                            Marshal.ThrowExceptionForHR(ERROR_SXS_IDENTITIES_DIFFERENT);
+                        }
+                        parsedName.PublicKeyToken = publicKeyToken;
+                        parsedName.HasPublicKey = true;
+                        break;
+                    case "retargetable":
+                        if (parsedName.Retargetable.HasValue)
+                        {
+                            return ParseAssemblyResult.DuplicateKey;
+                        }
+                        switch (value.ToLowerInvariant())
+                        {
+                            case "yes":
+                                parsedName.Retargetable = true;
+                                break;
+                            case "no":
+                                parsedName.Retargetable = false;
+                                break;
+                            default:
+                                return ParseAssemblyResult.GenericError;
+                        }
+                        break;
+                    case "processorarchitecture":
+                        if (hasProcessorArchitecture)
+                        {
+                            return ParseAssemblyResult.DuplicateKey;
+                        }
+                        hasProcessorArchitecture = true;
+                        switch (value.ToLowerInvariant())
+                        {
+                            case "none":
+                                parsedName.ProcessorArchitecture = ProcessorArchitecture.None;
+                                break;
+                            case "msil":
+                                parsedName.ProcessorArchitecture = ProcessorArchitecture.MSIL;
+                                break;
+                            case "x86":
+                                parsedName.ProcessorArchitecture = ProcessorArchitecture.X86;
+                                break;
+                            case "ia64":
+                                parsedName.ProcessorArchitecture = ProcessorArchitecture.IA64;
+                                break;
+                            case "amd64":
+                                parsedName.ProcessorArchitecture = ProcessorArchitecture.Amd64;
+                                break;
+                            case "arm":
+                                parsedName.ProcessorArchitecture = ProcessorArchitecture.Arm;
+                                break;
+                            default:
+                                return ParseAssemblyResult.GenericError;
+                        }
+                        break;
+                    case "contenttype":
+                        if (hasContentType)
+                        {
+                            return ParseAssemblyResult.DuplicateKey;
+                        }
+                        hasContentType = true;
+                        if (!value.Equals("windowsruntime", StringComparison.OrdinalIgnoreCase))
+                        {
+                            return ParseAssemblyResult.GenericError;
+                        }
+                        parsedName.WindowsRuntime = true;
+                        break;
+                    default:
+                        if (key.Length == 0)
+                        {
+                            return ParseAssemblyResult.GenericError;
+                        }
+                        if (unknownAttributes == null)
+                        {
+                            unknownAttributes = new System.Collections.Generic.Dictionary<string, string>();
+                        }
+                        if (unknownAttributes.ContainsKey(key))
+                        {
+                            return ParseAssemblyResult.DuplicateKey;
+                        }
+                        unknownAttributes.Add(key, null);
+                        break;
+                }
             }
+
+            return ParseAssemblyResult.OK;
         }
 
         private static bool ParseVersion(string str, out Version version)
@@ -738,20 +717,23 @@ namespace IKVM.Reflection
                 version = null;
                 return true;
             }
-            string[] parts = str.Split('.');
+
+            var parts = str.Split('.');
             if (parts.Length < 2 || parts.Length > 4)
             {
                 version = null;
-                ushort dummy;
+
                 // if the version consists of a single integer, it is invalid, but not invalid enough to fail the parse of the whole assembly name
-                return parts.Length == 1 && ushort.TryParse(parts[0], System.Globalization.NumberStyles.Integer, null, out dummy);
+                return parts.Length == 1 && ushort.TryParse(parts[0], System.Globalization.NumberStyles.Integer, null, out _);
             }
+
             if (parts[0] == "" || parts[1] == "")
             {
                 // this is a strange scenario, the version is invalid, but not invalid enough to fail the parse of the whole assembly name
                 version = null;
                 return true;
             }
+
             ushort major, minor, build = 65535, revision = 65535;
             if (ushort.TryParse(parts[0], System.Globalization.NumberStyles.Integer, null, out major)
                 && ushort.TryParse(parts[1], System.Globalization.NumberStyles.Integer, null, out minor)
@@ -759,41 +741,39 @@ namespace IKVM.Reflection
                 && (parts.Length <= 3 || parts[3] == "" || (parts[2] != "" && ushort.TryParse(parts[3], System.Globalization.NumberStyles.Integer, null, out revision))))
             {
                 if (parts.Length == 4 && parts[3] != "" && parts[2] != "")
-                {
                     version = new Version(major, minor, build, revision);
-                }
                 else if (parts.Length == 3 && parts[2] != "")
-                {
                     version = new Version(major, minor, build);
-                }
                 else
-                {
                     version = new Version(major, minor);
-                }
+
                 return true;
             }
+
             version = null;
             return false;
         }
 
-        private static bool ParseCulture(string str, out string culture)
+        static bool ParseCulture(string str, out string culture)
         {
             if (str == null)
             {
                 culture = null;
                 return false;
             }
+
             culture = str;
             return true;
         }
 
-        private static bool ParsePublicKeyToken(string str, out string publicKeyToken)
+        static bool ParsePublicKeyToken(string str, out string publicKeyToken)
         {
             if (str == null)
             {
                 publicKeyToken = null;
                 return false;
             }
+
             publicKeyToken = str.ToLowerInvariant();
             return true;
         }
@@ -805,6 +785,7 @@ namespace IKVM.Reflection
                 publicKeyToken = null;
                 return false;
             }
+
             publicKeyToken = AssemblyName.ComputePublicKeyToken(str);
             return true;
         }
@@ -818,5 +799,7 @@ namespace IKVM.Reflection
         {
             return name.PublicKeyToken != null && name.PublicKeyToken != "null";
         }
+
     }
+
 }

@@ -18,7 +18,7 @@ namespace IKVM.Runtime.Extensions
         /// <returns></returns>
         public static string TrimEndingDirectorySeparator(string path)
         {
-#if NET461
+#if NETFRAMEWORK
             return path.TrimEnd(DirectorySeparatorChars);
 #else
             return Path.TrimEndingDirectorySeparator(path);

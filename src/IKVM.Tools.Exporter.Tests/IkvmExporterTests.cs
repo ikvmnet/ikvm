@@ -42,7 +42,7 @@ namespace IKVM.Tools.Exporter.Tests
             options.Output = Path.Combine(Path.GetTempPath(), Path.GetFileName(Path.ChangeExtension(options.Assembly, ".jar")));
 #endif
 
-            var ret = await new IkvmExporter(options).ExecuteAsync(CancellationToken.None);
+            var ret = await IkvmExporterTool.ExecuteAsync(options, CancellationToken.None);
             ret.Should().Be(0);
             File.Exists(options.Output).Should().BeTrue();
         }

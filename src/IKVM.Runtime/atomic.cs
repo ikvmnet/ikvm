@@ -23,16 +23,17 @@
 */
 
 using System;
-#if STATIC_COMPILER
+using IKVM.Internal;
+using IKVM.Runtime;
+
+#if IMPORTER
 using IKVM.Reflection;
 using IKVM.Reflection.Emit;
 using Type = IKVM.Reflection.Type;
 #else
 using System.Reflection;
 using System.Reflection.Emit;
-
 #endif
-using IKVM.Internal;
 
 using InstructionFlags = IKVM.Internal.ClassFile.Method.InstructionFlags;
 
@@ -128,6 +129,7 @@ static class AtomicReferenceFieldUpdaterEmitter
 
 static class InterlockedMethods
 {
+
 	internal static readonly MethodInfo AddInt32;
 	internal static readonly MethodInfo CompareExchangeInt32;
 	internal static readonly MethodInfo CompareExchangeInt64;
@@ -155,5 +157,7 @@ static class InterlockedMethods
 				}
 			}
 		}
+
 	}
+
 }

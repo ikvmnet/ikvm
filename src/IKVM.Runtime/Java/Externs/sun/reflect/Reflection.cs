@@ -23,7 +23,6 @@
 */
 
 using System;
-using System.Collections.Generic;
 using System.Diagnostics;
 using System.Reflection;
 using System.Runtime.CompilerServices;
@@ -34,93 +33,57 @@ using IKVM.Internal;
 namespace IKVM.Java.Externs.sun.reflect
 {
 
+    /// <summary>
+    /// Provides the implementations of the native methods in <see cref="global::sun.reflect.Reflection"/>.
+    /// </summary>
     static class Reflection
     {
 
-#if CLASSGC
+        static readonly ConditionalWeakTable<MethodBase, Lazy<HideFromJavaFlags>> hideFromJavaFlagCache = new ConditionalWeakTable<MethodBase, Lazy<HideFromJavaFlags>>();
 
-	    sealed class State
-	    {
-		    internal HideFromJavaFlags Value;
-		    internal volatile bool HasValue;
-	    }
-
-	    private static readonly ConditionalWeakTable<MethodBase, State> isHideFromJavaCache = new ConditionalWeakTable<MethodBase, State>();
-
-	    internal static HideFromJavaFlags GetHideFromJavaFlags(MethodBase mb)
-	    {
-		    if (mb.Name.StartsWith("__<", StringComparison.Ordinal))
-		    {
-			    return HideFromJavaFlags.All;
-		    }
-		    State state = isHideFromJavaCache.GetValue(mb, delegate { return new State(); });
-		    if (!state.HasValue)
-		    {
-			    state.Value = AttributeHelper.GetHideFromJavaFlags(mb);
-			    state.HasValue = true;
-		    }
-		    return state.Value;
-	    }
-
-#else
-
-        private static readonly Dictionary<RuntimeMethodHandle, HideFromJavaFlags> isHideFromJavaCache = new Dictionary<RuntimeMethodHandle, HideFromJavaFlags>();
-
+        /// <summary>
+        /// Gets the <see cref="HideFromJavaFlags"/> that should be considered applied to the given method.
+        /// </summary>
+        /// <param name="mb"></param>
+        /// <returns></returns>
         internal static HideFromJavaFlags GetHideFromJavaFlags(MethodBase mb)
         {
-            if (mb.Name.StartsWith("__<", StringComparison.Ordinal))
-            {
-                return HideFromJavaFlags.All;
-            }
-            RuntimeMethodHandle handle;
-            try
-            {
-                handle = mb.MethodHandle;
-            }
-            catch (InvalidOperationException)
-            {
-                // DynamicMethods don't have a RuntimeMethodHandle and we always want to hide them anyway
-                return HideFromJavaFlags.All;
-            }
-            catch (NotSupportedException)
-            {
-                // DynamicMethods don't have a RuntimeMethodHandle and we always want to hide them anyway
-                return HideFromJavaFlags.All;
-            }
-            lock (isHideFromJavaCache)
-            {
-                HideFromJavaFlags cached;
-                if (isHideFromJavaCache.TryGetValue(handle, out cached))
-                {
-                    return cached;
-                }
-            }
-            HideFromJavaFlags flags = AttributeHelper.GetHideFromJavaFlags(mb);
-            lock (isHideFromJavaCache)
-            {
-                isHideFromJavaCache[handle] = flags;
-            }
-            return flags;
+            return hideFromJavaFlagCache.GetValue(mb, _ => new Lazy<HideFromJavaFlags>(() => GetHideFromJavaFlagsImpl(_), true)).Value;
         }
-#endif
 
+        /// <summary>
+        /// Gets the <see cref="HideFromJavaFlags"/> that should be considered applied to the given method.
+        /// </summary>
+        /// <param name="mb"></param>
+        /// <returns></returns>
+        static HideFromJavaFlags GetHideFromJavaFlagsImpl(MethodBase mb)
+        {
+            return mb.Name.StartsWith("__<", StringComparison.Ordinal) ? HideFromJavaFlags.All : AttributeHelper.GetHideFromJavaFlags(mb);
+        }
+
+        /// <summary>
+        /// Returns <c>true</c> if the given method should not be considered in walks of the stack from the point of view of Java.
+        /// </summary>
+        /// <param name="mb"></param>
+        /// <returns></returns>
         internal static bool IsHideFromStackWalk(MethodBase mb)
         {
-            Type type = mb.DeclaringType;
-            return type == null
-                || type.Assembly == typeof(object).Assembly
-                || type.Assembly == typeof(Reflection).Assembly
-                || type.Assembly == IKVM.Java.Externs.java.lang.SecurityManager.jniAssembly
-                || type == typeof(global::java.lang.reflect.Method)
-                || type == typeof(global::java.lang.reflect.Constructor)
-                || (GetHideFromJavaFlags(mb) & HideFromJavaFlags.StackWalk) != 0
-                ;
+            var type = mb.DeclaringType;
+            if (type == null ||
+                type.Assembly == typeof(object).Assembly ||
+                type.Assembly == typeof(Reflection).Assembly ||
+                type == typeof(global::java.lang.reflect.Method) ||
+                type == typeof(global::java.lang.reflect.Constructor) ||
+                (GetHideFromJavaFlags(mb) & HideFromJavaFlags.StackWalk) != 0)
+                return true;
+
+            return false;
         }
 
         public static global::java.lang.Class getCallerClass()
         {
 #if FIRST_PASS
-		return null;
+            throw new NotImplementedException();
 #else
             throw new global::java.lang.InternalError("CallerSensitive annotation expected at frame 1");
 #endif
@@ -131,33 +94,27 @@ namespace IKVM.Java.Externs.sun.reflect
         public static global::java.lang.Class getCallerClass(int realFramesToSkip)
         {
 #if FIRST_PASS
-		return null;
+            throw new NotImplementedException();
 #else
             if (realFramesToSkip <= 0)
-            {
                 return global::ikvm.@internal.ClassLiteral<global::sun.reflect.Reflection>.Value;
-            }
+
             for (int i = 2; ;)
             {
-                MethodBase method = new StackFrame(i++, false).GetMethod();
+                var method = new StackFrame(i++, false).GetMethod();
                 if (method == null)
-                {
                     return null;
-                }
+
                 if (IsHideFromStackWalk(method))
-                {
                     continue;
-                }
+
                 // HACK we skip HideFromJavaFlags.StackTrace too because we want to skip the LambdaForm methods
                 // that are used by late binding
                 if ((GetHideFromJavaFlags(method) & HideFromJavaFlags.StackTrace) != 0)
-                {
                     continue;
-                }
+
                 if (--realFramesToSkip == 0)
-                {
                     return ClassLoaderWrapper.GetWrapperFromType(method.DeclaringType).ClassObject;
-                }
             }
 #endif
         }
@@ -173,8 +130,8 @@ namespace IKVM.Java.Externs.sun.reflect
 
         public static bool checkInternalAccess(global::java.lang.Class currentClass, global::java.lang.Class memberClass)
         {
-            TypeWrapper current = TypeWrapper.FromClass(currentClass);
-            TypeWrapper member = TypeWrapper.FromClass(memberClass);
+            var current = TypeWrapper.FromClass(currentClass);
+            var member = TypeWrapper.FromClass(memberClass);
             return member.IsInternal && member.InternalsVisibleTo(current);
         }
 

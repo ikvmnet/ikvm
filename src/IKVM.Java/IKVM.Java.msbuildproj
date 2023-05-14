@@ -2,7 +2,7 @@
     <Import Project="$(MSBuildThisFileDirectory)..\IKVM.NET.Sdk\Sdk\Sdk.props" />
     <Import Project="$(MSBuildThisFileDirectory)..\IKVM.MSBuild\buildTransitive\netstandard2.0\IKVM.MSBuild.props" />
     <Import Project="$(MSBuildThisFileDirectory)..\..\openjdk.props" />
-    <Import Project="$(MSBuildThisFileDirectory)..\..\ikvm.deps.props" />
+    <Import Project="$(MSBuildThisFileDirectory)..\..\IKVM.deps.props" />
 
     <PropertyGroup>
         <TargetFrameworks>net461;netcoreapp3.1</TargetFrameworks>
@@ -15,7 +15,7 @@
     </ItemGroup>
 
     <ItemGroup>
-        <ProjectReference Include="..\IKVM.Runtime-ref\IKVM.Runtime-ref.csproj" Private="False" PrivateAssets="All" />
+        <ProjectReference Include="..\IKVM.Runtime-ref\IKVM.Runtime-ref.csproj" Private="False" PrivateAssets="All" IncludeNonPublicTypes="true" />
         <ProjectReference Include="..\IKVM.Java-ref\IKVM.Java-ref.csproj" Private="False" PrivateAssets="All" HideFromJava="true" />
     </ItemGroup>
 
@@ -39,21 +39,18 @@
     </ItemGroup>
 
     <ItemGroup>
-        <None Include="classpath\**\*" />
         <None Include="icedtea_jce\**\*" />
         <None Include="icedtea_rt\**\*" />
         <None Include="local\**\*" />
-        <None Include="@(OpenJdkSource)">
-            <LinkBase>openjdk\$([MSBuild]::MakeRelative('$(OpenJdkDir)', '%(RootDir)%(Directory)'))</LinkBase>
-        </None>
-        <Compile Include="@(OpenJdkSource)" />
-        <JavaResource Include="@(OpenJdkResource)" LinkBase="openjdk" />
+        <None Include="@(OpenJdkSource)" LinkBase="openjdk\%(PackagePath)" />
+        <Compile Include="@(OpenJdkSource)" LinkBase="openjdk\%(PackagePath)" />
+        <Class Include="@(OpenJdkClass)" LinkBase="openjdk\%(PackagePath)" />
+        <None Include="@(OpenJdkClass)" LinkBase="openjdk\%(PackagePath)" />
+        <JavaResource Include="@(OpenJdkResource)" LinkBase="openjdk\%(PackagePath)" />
         <ExcludeRegex Include="@(OpenJdkExcludeRegex)" />
     </ItemGroup>
 
     <ItemGroup>
-        <Transform Include="local\java\lang\PropertyConstants.java.tt" TargetPath="$(IntermediateOutputPath)transform\local\java\lang\PropertyConstants.java" />
-        <Compile Include="$(IntermediateOutputPath)transform\local\java\lang\PropertyConstants.java" Visible="False" Link="local\java\lang\PropertyConstants.java" />
         <Transform Include="local\META-INF\MANIFEST.MF.tt" TargetPath="$(IntermediateOutputPath)transform\local\META-INF\MANIFEST.MF" />
         <JavaResource Include="$(IntermediateOutputPath)transform\local\META-INF\MANIFEST.MF" Visible="False" ResourcePath="META-INF/MANIFEST.MF" Link="local\META-INF\MANIFEST.MF" />
         <Transform Include="local\nashorn\version.properties.tt" TargetPath="$(IntermediateOutputPath)transform\local\nashorn\version.properties" />

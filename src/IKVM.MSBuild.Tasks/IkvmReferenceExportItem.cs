@@ -38,8 +38,10 @@
                 item.Shared = string.Equals(item.Item.GetMetadata(IkvmReferenceExportItemMetadata.Shared), "true", StringComparison.OrdinalIgnoreCase);
                 item.NoStdLib = string.Equals(item.Item.GetMetadata(IkvmReferenceExportItemMetadata.NoStdLib), "true", StringComparison.OrdinalIgnoreCase);
                 item.Forwarders = string.Equals(item.Item.GetMetadata(IkvmReferenceExportItemMetadata.Forwarders), "true", StringComparison.OrdinalIgnoreCase);
-                item.Parameters = string.Equals(item.Item.GetMetadata(IkvmReferenceExportItemMetadata.Parameters), "true", StringComparison.OrdinalIgnoreCase);
-                item.JApi = string.Equals(item.Item.GetMetadata(IkvmReferenceExportItemMetadata.JApi), "true", StringComparison.OrdinalIgnoreCase);
+                item.IncludeNonPublicTypes = string.Equals(item.Item.GetMetadata(IkvmReferenceExportItemMetadata.IncludeNonPublicTypes), "true", StringComparison.OrdinalIgnoreCase);
+                item.IncludeNonPublicInterfaces = string.Equals(item.Item.GetMetadata(IkvmReferenceExportItemMetadata.IncludeNonPublicInterfaces), "true", StringComparison.OrdinalIgnoreCase);
+                item.IncludeNonPublicMembers = string.Equals(item.Item.GetMetadata(IkvmReferenceExportItemMetadata.IncludeNonPublicMembers), "true", StringComparison.OrdinalIgnoreCase);
+                item.IncludeParameterNames = string.Equals(item.Item.GetMetadata(IkvmReferenceExportItemMetadata.IncludeParameterNames), "true", StringComparison.OrdinalIgnoreCase);
                 item.Bootstrap = string.Equals(item.Item.GetMetadata(IkvmReferenceExportItemMetadata.Bootstrap), "true", StringComparison.OrdinalIgnoreCase);
                 item.IkvmIdentity = item.Item.GetMetadata(IkvmReferenceExportItemMetadata.IkvmIdentity);
                 item.RandomIndex = item.Item.GetMetadata(IkvmReferenceExportItemMetadata.RandomIndex) is string s && int.TryParse(s, out var i) ? i : null;
@@ -78,7 +80,7 @@
         /// <summary>
         /// Paths to libraries.
         /// </summary>
-        public List<string> Libraries { get; set; }
+        public List<string> Libraries { get; set; } = new List<string>();
 
         /// <summary>
         /// Namespaces to export.
@@ -91,9 +93,11 @@
 
         public bool Forwarders { get; set; }
 
-        public bool Parameters { get; set; }
+        public bool IncludeNonPublicTypes { get; set; }
+        public bool IncludeNonPublicInterfaces { get; set; }
+        public bool IncludeNonPublicMembers { get; set; }
 
-        public bool JApi { get; set; }
+        public bool IncludeParameterNames { get; set; }
 
         public bool Bootstrap { get; set; }
 
@@ -116,8 +120,10 @@
             Item.SetMetadata(IkvmReferenceExportItemMetadata.Shared, Shared ? "true" : "false");
             Item.SetMetadata(IkvmReferenceExportItemMetadata.NoStdLib, NoStdLib ? "true" : "false");
             Item.SetMetadata(IkvmReferenceExportItemMetadata.Forwarders, Forwarders ? "true" : "false");
-            Item.SetMetadata(IkvmReferenceExportItemMetadata.Parameters, Parameters ? "true" : "false");
-            Item.SetMetadata(IkvmReferenceExportItemMetadata.JApi, JApi ? "true" : "false");
+            Item.SetMetadata(IkvmReferenceExportItemMetadata.IncludeNonPublicTypes, IncludeNonPublicTypes ? "true" : "false");
+            Item.SetMetadata(IkvmReferenceExportItemMetadata.IncludeNonPublicInterfaces, IncludeNonPublicInterfaces ? "true" : "false");
+            Item.SetMetadata(IkvmReferenceExportItemMetadata.IncludeNonPublicMembers, IncludeNonPublicMembers ? "true" : "false");
+            Item.SetMetadata(IkvmReferenceExportItemMetadata.IncludeParameterNames, IncludeParameterNames ? "true" : "false");
             Item.SetMetadata(IkvmReferenceExportItemMetadata.Bootstrap, Bootstrap ? "true" : "false");
             Item.SetMetadata(IkvmReferenceExportItemMetadata.IkvmIdentity, IkvmIdentity);
             Item.SetMetadata(IkvmReferenceExportItemMetadata.RandomIndex, RandomIndex?.ToString());

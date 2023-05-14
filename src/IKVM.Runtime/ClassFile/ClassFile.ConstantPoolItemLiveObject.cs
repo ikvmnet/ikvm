@@ -26,21 +26,21 @@ namespace IKVM.Internal
 {
 
     sealed partial class ClassFile
-	{
+    {
         private sealed class ConstantPoolItemLiveObject : ConstantPoolItem
-		{
-			internal readonly object Value;
+        {
+            internal readonly object Value;
 
-			internal ConstantPoolItemLiveObject(object value)
-			{
-				this.Value = value;
-			}
+            internal ConstantPoolItemLiveObject(object value)
+            {
+                this.Value = value;
+            }
 
-			internal override ConstantType GetConstantType()
-			{
-				return ConstantType.LiveObject;
-			}
-		}
-	}
+            internal override ConstantType GetConstantType()
+            {
+                return ConstantType.LiveObject;
+            }
+        }
+    }
 
 }

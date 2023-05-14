@@ -33,7 +33,7 @@ namespace IKVM.Runtime.Vfs
     /// <summary>
     /// Represents a directory containing all of the known assembies.
     /// </summary>
-    sealed class VfsAssemblyDirectory : VfsDirectory
+    internal sealed class VfsAssemblyDirectory : VfsDirectory
     {
 
         readonly ConcurrentDictionary<Assembly, VfsDirectory> directories = new ConcurrentDictionary<Assembly, VfsDirectory>();

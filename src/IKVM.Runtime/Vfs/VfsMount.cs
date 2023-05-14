@@ -31,58 +31,58 @@ namespace IKVM.Runtime.Vfs
     /// <summary>
     /// Implements a virtual file system available to Java libraries.
     /// </summary>
-    partial class VfsMount
+    internal partial class VfsMount
     {
 
-        readonly string rootPath;
-        readonly VfsDirectory root;
+        readonly string path;
+        readonly VfsEntry item;
 
         /// <summary>
         /// Initializes a new instance.
         /// </summary>
-        /// <param name="rootPath"></param>
-        /// <param name="root"></param>
-        public VfsMount(string rootPath, VfsDirectory root)
+        /// <param name="path"></param>
+        /// <param name="item"></param>
+        public VfsMount(string path, VfsEntry item)
         {
-            if (rootPath is null)
-                throw new ArgumentNullException(nameof(rootPath));
-            if (root is null)
-                throw new ArgumentNullException(nameof(root));
+            if (path is null)
+                throw new ArgumentNullException(nameof(path));
+            if (item is null)
+                throw new ArgumentNullException(nameof(item));
 
-            this.rootPath = PathExtensions.EnsureEndingDirectorySeparator(rootPath);
-            this.root = root;
+            this.path = item is VfsDirectory ? PathExtensions.EnsureEndingDirectorySeparator(path) : path.TrimEnd(System.IO.Path.DirectorySeparatorChar);
+            this.item = item;
         }
 
         /// <summary>
         /// Gets the path of this virtual file system.
         /// </summary>
-        public string RootPath => rootPath;
+        public string Path => path;
 
         /// <summary>
-        /// Gets the root directory of this virtual file system.
+        /// Gets the root item of this virtual file system.
         /// </summary>
-        public VfsDirectory Root => root;
+        public VfsEntry Item => item;
 
         /// <summary>
         /// Returns <c>true</c> if the given path is within the virtual file system mount.
         /// </summary>
         /// <param name="path"></param>
         /// <returns></returns>
-        public bool IsPath(string path) => path.StartsWith(rootPath, StringComparison.Ordinal);
+        public bool IsPath(string path) => path.StartsWith(this.path, StringComparison.Ordinal);
 
         /// <summary>
-        /// Gets the entry for he given path.
+        /// Gets the entry for the given path.
         /// </summary>
         /// <param name="path"></param>
         /// <returns></returns>
         /// <exception cref="NotImplementedException"></exception>
-        public VfsEntry GetPath(string path)
+        public VfsEntry GetEntry(string path)
         {
             if (path is null)
                 throw new ArgumentNullException(nameof(path));
 
             var p = path.Split(PathExtensions.DirectorySeparatorChars, StringSplitOptions.RemoveEmptyEntries);
-            var c = (VfsEntry)Root;
+            var c = Item;
             for (int i = 0; i < p.Length; i++)
             {
                 // can only recurse into directory

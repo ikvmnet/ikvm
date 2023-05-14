@@ -19,24 +19,34 @@ namespace IKVM.Runtime.JNI
     [StructLayout(LayoutKind.Explicit)]
     struct jvalue
     {
+
         [FieldOffset(0)]
         public jboolean z;
+
         [FieldOffset(0)]
         public jbyte b;
+
         [FieldOffset(0)]
         public jchar c;
+
         [FieldOffset(0)]
         public jshort s;
+
         [FieldOffset(0)]
         public jint i;
+
         [FieldOffset(0)]
         public jlong j;
+
         [FieldOffset(0)]
         public jfloat f;
+
         [FieldOffset(0)]
         public jdouble d;
+
         [FieldOffset(0)]
         public jobject l;
+
     }
 
 }

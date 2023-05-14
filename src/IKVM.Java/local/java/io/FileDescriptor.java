@@ -1,40 +1,7 @@
-/*
- * Copyright (c) 2003, 2011, Oracle and/or its affiliates. All rights reserved.
- * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
- *
- * This code is free software; you can redistribute it and/or modify it
- * under the terms of the GNU General Public License version 2 only, as
- * published by the Free Software Foundation.  Oracle designates this
- * particular file as subject to the "Classpath" exception as provided
- * by Oracle in the LICENSE file that accompanied this code.
- *
- * This code is distributed in the hope that it will be useful, but WITHOUT
- * ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or
- * FITNESS FOR A PARTICULAR PURPOSE.  See the GNU General Public License
- * version 2 for more details (a copy is included in the LICENSE file that
- * accompanied this code).
- *
- * You should have received a copy of the GNU General Public License version
- * 2 along with this work; if not, write to the Free Software Foundation,
- * Inc., 51 Franklin St, Fifth Floor, Boston, MA 02110-1301 USA.
- *
- * Please contact Oracle, 500 Oracle Parkway, Redwood Shores, CA 94065 USA
- * or visit www.oracle.com if you need additional information or have any
- * questions.
- */
-
 package java.io;
 
 import java.util.ArrayList;
 import java.util.List;
-
-import cli.System.IO.FileAccess;
-import cli.System.IO.FileMode;
-import cli.System.IO.FileShare;
-import cli.System.IO.FileStream;
-import cli.System.IO.SeekOrigin;
-import cli.System.Net.Sockets.SocketError;
-import cli.System.Runtime.InteropServices.DllImportAttribute;
 
 /**
  * Instances of the file descriptor class serve as an opaque handle
@@ -48,91 +15,77 @@ import cli.System.Runtime.InteropServices.DllImportAttribute;
  * @author  Pavani Diwanji
  * @since   JDK1.0
  */
-public final class FileDescriptor
-{
+public final class FileDescriptor {
+
+    // set up JavaIOFileDescriptorAccess in SharedSecrets
+    static {
+        sun.misc.SharedSecrets.setJavaIOFileDescriptorAccess(
+            new sun.misc.JavaIOFileDescriptorAccess() {
+                public void set(FileDescriptor obj, int fd) {
+
+                }
+
+                public int get(FileDescriptor obj) {
+                    return obj.fd;
+                }
+
+                public void setHandle(FileDescriptor obj, long handle) {
+
+                }
+
+                public long getHandle(FileDescriptor obj) {
+                    return obj.handle;
+                }
+            }
+        );
+    }
+
+    @ikvm.lang.Internal
+    public static FileDescriptor fromStream(cli.System.IO.Stream stream) {
+        FileDescriptor desc = new FileDescriptor();
+        desc.stream = stream;
+        return desc;
+    }
+
+    @ikvm.lang.Internal
+    public static FileDescriptor fromSocket(cli.System.Net.Sockets.Socket socket) {
+        FileDescriptor desc = new FileDescriptor();
+        desc.socket = socket;
+        return desc;
+    }
 
     private volatile cli.System.IO.Stream stream;
-    private volatile cli.System.Net.Sockets.Socket socket;
-    private volatile boolean nonBlockingSocket;
-    private volatile cli.System.IAsyncResult asyncResult;
+    
+    @ikvm.lang.Internal
+    public cli.System.IO.Stream getStream() {
+        return stream;
+    }
 
-    /**
-     * HACK
-     *   JRuby uses reflection to get at the handle (on Windows) and fd (on non-Windows)
-     *   fields to convert it into a native handle and query if it is a tty.
-     */
-    @ikvm.lang.Property(get = "get_fd")
+    private volatile cli.System.Net.Sockets.Socket socket;
+    
+    @ikvm.lang.Internal
+    public cli.System.Net.Sockets.Socket getSocket() {
+        return socket;
+    }
+    
+    @ikvm.lang.Property(get = "getFd")
     private int fd;
 
-    @ikvm.lang.Property(get = "get_handle")
+    private native int getFd();
+
+    @ikvm.lang.Property(get = "getHandle")
     private long handle;
+
+    private native long getHandle();
 
     private Closeable parent;
     private List<Closeable> otherParents;
     private boolean closed;
-    
-    @cli.System.Security.SecurityCriticalAttribute.Annotation
-    private long get_handle()
-    {
-        if (ikvm.internal.Util.WINDOWS)
-        {
-            if (stream instanceof cli.System.IO.FileStream)
-            {
-                cli.System.IO.FileStream fs = (cli.System.IO.FileStream)stream;
-                return fs.get_Handle().ToInt64();
-            }
-            else if (this == in)
-            {
-                return GetStdHandle(-10).ToInt64();
-            }
-            else if (this == out)
-            {
-                return GetStdHandle(-11).ToInt64();
-            }
-            else if (this == err)
-            {
-                return GetStdHandle(-12).ToInt64();
-            }
-        }
 
-        return -1;
-    }
-    
-    @cli.System.Security.SecurityCriticalAttribute.Annotation
-    private int get_fd()
-    {
-        if (!ikvm.internal.Util.WINDOWS)
-        {
-            if (stream instanceof cli.System.IO.FileStream)
-            {
-                cli.System.IO.FileStream fs = (cli.System.IO.FileStream)stream;
-                return fs.get_Handle().ToInt32();
-            }
-            else if (this == in)
-            {
-                return 0;
-            }
-            else if (this == out)
-            {
-                return 1;
-            }
-            else if (this == err)
-            {
-                return 2;
-            }
-        }
+    private cli.System.Threading.SemaphoreSlim semaphore;
+    private cli.System.Threading.Tasks.Task task;
 
-        return -1;
-    }
-    
-    @DllImportAttribute.Annotation("kernel32")
-    private static native cli.System.IntPtr GetStdHandle(int nStdHandle);
-
-    /**
-     * Constructs an (invalid) FileDescriptor
-     * object.
-     */
-    public /**/ FileDescriptor() {
+    public FileDescriptor() {
         
     }
 
@@ -201,78 +154,9 @@ public final class FileDescriptor
      *        buffers have been synchronized with physical media.
      * @since     JDK1.1
      */
-    public void sync() throws SyncFailedException
-    {
-        if (stream == null)
-        {
-            throw new SyncFailedException("sync failed");
-        }
+    public native void sync() throws SyncFailedException;
 
-        if (!stream.get_CanWrite())
-        {
-            return;
-        }
-
-        try
-        {
-            if (false) throw new cli.System.IO.IOException();
-            stream.Flush();
-        }
-        catch (cli.System.IO.IOException x)
-        {
-            throw new SyncFailedException(x.getMessage());
-        }
-
-        if (stream instanceof FileStream)
-        {
-            FileStream fs = (FileStream)stream;
-            boolean ok = ikvm.internal.Util.WINDOWS ? flushWin32(fs) : flushPosix(fs);
-            if (!ok)
-            {
-                throw new SyncFailedException("sync failed");
-            }
-        }
-    }
-
-    private static native boolean flushPosix(FileStream fs);
-
-    @cli.System.Security.SecuritySafeCriticalAttribute.Annotation
-    private static boolean flushWin32(FileStream fs)
-    {
-        return FlushFileBuffers(fs.get_SafeFileHandle()) != 0;
-    }
-
-    @DllImportAttribute.Annotation("kernel32")
-    private static native int FlushFileBuffers(cli.Microsoft.Win32.SafeHandles.SafeFileHandle handle);
-
-    private static FileDescriptor standardStream(int fd)
-    {
-        FileDescriptor desc = new FileDescriptor();
-        try
-        {
-            desc.stream = getStandardStream(fd);
-        }
-        catch (cli.System.MissingMethodException _)
-        {
-            desc.stream = cli.System.IO.Stream.Null;
-        }
-        return desc;
-    }
-
-    private static cli.System.IO.Stream getStandardStream(int fd) throws cli.System.MissingMethodException
-    {
-        switch (fd)
-        {
-            case 0:
-                return cli.System.Console.OpenStandardInput();
-            case 1:
-                return cli.System.Console.OpenStandardOutput();
-            case 2:
-                return cli.System.Console.OpenStandardError();
-            default:
-                throw new Error();
-        }
-    }
+    private static native FileDescriptor standardStream(int fd);
 
     /*
      * Package private methods to track referents.
@@ -323,7 +207,7 @@ public final class FileDescriptor
                         }
                     }
                 }
-            } catch(IOException ex) {
+            } catch (IOException ex) {
                 /*
                  * If releaser close() throws IOException
                  * add other exceptions as suppressed.
@@ -336,453 +220,6 @@ public final class FileDescriptor
                     throw ioe;
             }
         }
-    }
-
-    void openReadOnly(String name) throws FileNotFoundException
-    {
-        open(name, FileMode.Open, FileAccess.Read);
-    }
-
-    void openWriteOnly(String name) throws FileNotFoundException
-    {
-        open(name, FileMode.Create, FileAccess.Write);
-    }
-
-    void openReadWrite(String name) throws FileNotFoundException
-    {
-        open(name, FileMode.OpenOrCreate, FileAccess.ReadWrite);
-    }
-
-    void openAppend(String name) throws FileNotFoundException
-    {
-        open(name, FileMode.Append, FileAccess.Write);
-    }
-
-    private static native cli.System.IO.Stream open(String name, FileMode fileMode, FileAccess fileAccess)
-        throws cli.System.IO.IOException,
-            cli.System.Security.SecurityException,
-            cli.System.UnauthorizedAccessException,
-            cli.System.ArgumentException,
-            cli.System.NotSupportedException;
-    
-    private void open(String name, int fileMode, int fileAccess) throws FileNotFoundException
-    {
-        try
-        {
-            stream = open(name, FileMode.wrap(fileMode), FileAccess.wrap(fileAccess));
-        }
-        catch (cli.System.Security.SecurityException x1)
-        {
-            throw new SecurityException(x1.getMessage());
-        }
-        catch (cli.System.IO.IOException x2)
-        {
-            throw new FileNotFoundException(x2.getMessage());
-        }
-        catch (cli.System.UnauthorizedAccessException x3)
-        {
-            // this is caused by "name" being a directory instead of a file
-            // or by name being a read-only file
-            throw new FileNotFoundException(name + " (Access is denied)");
-        }
-        catch (cli.System.ArgumentException x4)
-        {
-            throw new FileNotFoundException(x4.getMessage());
-        }
-        catch (cli.System.NotSupportedException x5)
-        {
-            throw new FileNotFoundException(x5.getMessage());
-        }
-    }
-
-    private void checkOpen() throws IOException
-    {
-        if (stream == null)
-        {
-            throw new IOException("Stream Closed");
-        }
-    }
-
-    int read() throws IOException
-    {
-        checkOpen();
-        try
-        {
-            if (false) throw new cli.System.NotSupportedException();
-            if (false) throw new cli.System.IO.IOException();
-            if (false) throw new cli.System.ObjectDisposedException(null);
-            return stream.ReadByte();
-        }
-        catch (cli.System.NotSupportedException x)
-        {
-            throw new IOException(x.getMessage());
-        }
-        catch (cli.System.IO.IOException x)
-        {
-            throw new IOException(x.getMessage());
-        }
-        catch (cli.System.ObjectDisposedException x)
-        {
-            throw new java.nio.channels.ClosedChannelException();
-        }
-    }
-
-    @ikvm.lang.Internal
-    public int readBytes(byte buf[], int offset, int len) throws IOException
-    {
-        // NOTE we start by dereferencing buf, to make sure you get a NullPointerException first if you pass a null reference.
-        int bufLen = buf.length;
-        if ((offset < 0) || (offset > bufLen) || (len < 0) || (len > (bufLen - offset)))
-        {
-            throw new IndexOutOfBoundsException();
-        }
-
-        if (len == 0)
-        {
-            return 0;
-        }
-
-        checkOpen();
-
-        try
-        {
-            if (false) throw new cli.System.NotSupportedException();
-            if (false) throw new cli.System.IO.IOException();
-            if (false) throw new cli.System.ObjectDisposedException(null);
-            int count = stream.Read(buf, offset, len);
-            if (count == 0)
-            {
-                count = -1;
-            }
-            return count;
-        }
-        catch (cli.System.NotSupportedException x)
-        {
-            throw new IOException(x.getMessage());
-        }
-        catch (cli.System.IO.IOException x)
-        {
-            throw new IOException(x.getMessage());
-        }
-        catch (cli.System.ObjectDisposedException x)
-        {
-            throw new java.nio.channels.ClosedChannelException();
-        }
-    }
-
-    long skip(long n) throws IOException
-    {
-        checkOpen();
-        if (!stream.get_CanSeek())
-        {
-            // in a somewhat bizar twist, for non-seekable streams the JDK throws an exception
-            throw new IOException("The handle is invalid");
-        }
-        try
-        {
-            if (false) throw new cli.System.IO.IOException();
-            if (false) throw new cli.System.NotSupportedException();
-            if (false) throw new cli.System.ObjectDisposedException(null);
-            long cur = stream.get_Position();
-            long end = stream.Seek(n, SeekOrigin.wrap(SeekOrigin.Current));
-            return end - cur;
-        }
-        catch (cli.System.IO.IOException x)
-        {
-            throw new IOException(x.getMessage());
-        }
-        catch (cli.System.NotSupportedException x1)
-        {
-            // this means we have a broken Stream, because if CanSeek returns true, it must
-            // support Length and Position
-            throw new IOException(x1);
-        }
-        catch (cli.System.ObjectDisposedException x)
-        {
-            throw new java.nio.channels.ClosedChannelException();
-        }
-    }
-
-    @ikvm.lang.Internal
-    public int available() throws IOException
-    {
-        checkOpen();
-        try
-        {
-            if (false) throw new cli.System.IO.IOException();
-            if (false) throw new cli.System.NotSupportedException();
-            if (false) throw new cli.System.ObjectDisposedException(null);
-            if (stream.get_CanSeek())
-            {
-                return (int)Math.min(Integer.MAX_VALUE, Math.max(0, stream.get_Length() - stream.get_Position()));
-            }
-            return 0;
-        }
-        catch (cli.System.IO.IOException x)
-        {
-            throw new IOException(x.getMessage());
-        }
-        catch (cli.System.NotSupportedException x1)
-        {
-            // this means we have a broken Stream, because if CanSeek returns true, it must
-            // support Length and Position
-            throw new IOException(x1);
-        }
-        catch (cli.System.ObjectDisposedException x)
-        {
-            throw new java.nio.channels.ClosedChannelException();
-        }
-    }
-
-    void write(int b) throws IOException
-    {
-        checkOpen();
-        try
-        {
-            if (false) throw new cli.System.NotSupportedException();
-            if (false) throw new cli.System.IO.IOException();
-            if (false) throw new cli.System.ObjectDisposedException(null);
-            stream.WriteByte((byte)b);
-            // NOTE FileStream buffers the output, so we have to flush explicitly
-            stream.Flush();
-        }
-        catch (cli.System.NotSupportedException x)
-        {
-            throw new IOException(x.getMessage());
-        }
-        catch (cli.System.IO.IOException x)
-        {
-            throw new IOException(x.getMessage());
-        }
-        catch (cli.System.ObjectDisposedException x)
-        {
-            throw new java.nio.channels.ClosedChannelException();
-        }
-    }
-
-    @ikvm.lang.Internal
-    public void writeBytes(byte buf[], int offset, int len) throws IOException
-    {
-        // NOTE we start by dereferencing buf, to make sure you get a NullPointerException first if you pass a null reference.
-        int bufLen = buf.length;
-        if ((offset < 0) || (offset > bufLen) || (len < 0) || (len > (bufLen - offset)))
-        {
-            throw new IndexOutOfBoundsException();
-        }
-
-        if (len == 0)
-        {
-            return;
-        }
-
-        checkOpen();
-
-        try
-        {
-            if (false) throw new cli.System.NotSupportedException();
-            if (false) throw new cli.System.IO.IOException();
-            if (false) throw new cli.System.ObjectDisposedException(null);
-            stream.Write(buf, offset, len);
-            // NOTE FileStream buffers the output, so we have to flush explicitly
-            stream.Flush();
-        }
-        catch (cli.System.NotSupportedException x)
-        {
-            throw new IOException(x.getMessage());
-        }
-        catch (cli.System.IO.IOException x)
-        {
-            throw new IOException(x.getMessage());
-        }
-        catch (cli.System.ObjectDisposedException x)
-        {
-            throw new java.nio.channels.ClosedChannelException();
-        }
-    }
-
-    @ikvm.lang.Internal
-    public long getFilePointer() throws IOException
-    {
-        checkOpen();
-        try
-        {
-            if (false) throw new cli.System.IO.IOException();
-            if (false) throw new cli.System.NotSupportedException();
-            if (false) throw new cli.System.ObjectDisposedException(null);
-            return stream.get_Position();
-        }
-        catch (cli.System.IO.IOException x)
-        {
-            throw new IOException(x.getMessage());
-        }
-        catch (cli.System.NotSupportedException x1)
-        {
-            throw new IOException(x1);
-        }
-        catch (cli.System.ObjectDisposedException x)
-        {
-            throw new java.nio.channels.ClosedChannelException();
-        }
-    }
-
-    @ikvm.lang.Internal
-    public void seek(long newPosition) throws IOException
-    {
-        checkOpen();
-        try
-        {
-            if (false) throw new cli.System.IO.IOException();
-            if (false) throw new cli.System.NotSupportedException();
-            if (false) throw new cli.System.ObjectDisposedException(null);
-            if (false) throw new cli.System.ArgumentOutOfRangeException();
-            stream.set_Position(newPosition);
-        }
-        catch (cli.System.IO.IOException x)
-        {
-            throw new IOException(x.getMessage());
-        }
-        catch (cli.System.NotSupportedException x1)
-        {
-            throw new IOException(x1);
-        }
-        catch (cli.System.ObjectDisposedException x)
-        {
-            throw new java.nio.channels.ClosedChannelException();
-        }
-        catch (cli.System.ArgumentOutOfRangeException _)
-        {
-            throw new IOException("Negative seek offset");
-        }
-    }
-
-    @ikvm.lang.Internal
-    public long length() throws IOException
-    {
-        checkOpen();
-        try
-        {
-            if (false) throw new cli.System.IO.IOException();
-            if (false) throw new cli.System.NotSupportedException();
-            if (false) throw new cli.System.ObjectDisposedException(null);
-            return stream.get_Length();
-        }
-        catch (cli.System.IO.IOException x)
-        {
-            throw new IOException(x.getMessage());
-        }
-        catch (cli.System.NotSupportedException x1)
-        {
-            throw new IOException(x1);
-        }
-        catch (cli.System.ObjectDisposedException x)
-        {
-            throw new java.nio.channels.ClosedChannelException();
-        }
-    }
-
-    @ikvm.lang.Internal
-    public void setLength(long newLength) throws IOException
-    {
-        checkOpen();
-        try
-        {
-            if (false) throw new cli.System.IO.IOException();
-            if (false) throw new cli.System.NotSupportedException();
-            if (false) throw new cli.System.ObjectDisposedException(null);
-            stream.SetLength(newLength);
-        }
-        catch (cli.System.IO.IOException x)
-        {
-            throw new IOException(x.getMessage());
-        }
-        catch (cli.System.NotSupportedException x1)
-        {
-            throw new IOException(x1);
-        }
-        catch (cli.System.ObjectDisposedException x)
-        {
-            throw new java.nio.channels.ClosedChannelException();
-        }
-    }
-
-    @ikvm.lang.Internal
-    public void close() throws IOException
-    {
-        cli.System.IO.Stream s = stream;
-        stream = null;
-        if (s != null)
-        {
-            s.Close();
-        }
-    }
-
-    @ikvm.lang.Internal
-    public cli.System.IO.Stream getStream()
-    {
-        return stream;
-    }
-
-    @ikvm.lang.Internal
-    public static FileDescriptor fromStream(cli.System.IO.Stream stream)
-    {
-        FileDescriptor desc = new FileDescriptor();
-        desc.stream = stream;
-        return desc;
-    }
-
-    @ikvm.lang.Internal
-    public cli.System.Net.Sockets.Socket getSocket()
-    {
-        return socket;
-    }
-
-    @ikvm.lang.Internal
-    public void setSocket(cli.System.Net.Sockets.Socket socket)
-    {
-        this.socket = socket;
-    }
-
-    @ikvm.lang.Internal
-    public void setSocketBlocking(boolean blocking) throws IOException
-    {
-        this.nonBlockingSocket = !blocking;
-        try
-        {
-            if (false) throw new cli.System.Net.Sockets.SocketException();
-            if (false) throw new cli.System.ObjectDisposedException("");
-            socket.set_Blocking(blocking);
-        }
-        catch (cli.System.Net.Sockets.SocketException e)
-        {
-            // Work around for winsock issue. You can't set a socket to blocking if a connection request is pending,
-            // so we'll have to set the blocking again in SocketChannelImpl.checkConnect().
-            if (e.get_SocketErrorCode().Value == SocketError.InvalidArgument)
-                return;
-
-            throw java.net.SocketUtil.convertSocketExceptionToIOException(e);
-        }
-        catch (cli.System.ObjectDisposedException e)
-        {
-            throw new java.net.SocketException("Socket is closed.");
-        }
-    }
-    
-    @ikvm.lang.Internal
-    public boolean isSocketBlocking()
-    {
-        return !nonBlockingSocket;
-    }
-
-    @ikvm.lang.Internal
-    public cli.System.IAsyncResult getAsyncResult()
-    {
-        return asyncResult;
-    }
-
-    @ikvm.lang.Internal
-    public void setAsyncResult(cli.System.IAsyncResult asyncResult)
-    {
-        this.asyncResult = asyncResult;
     }
 
 }

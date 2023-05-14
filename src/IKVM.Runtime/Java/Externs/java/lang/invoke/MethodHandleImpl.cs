@@ -70,7 +70,7 @@ namespace IKVM.Java.Externs.java.lang.invoke
 			{
 				names.Add(new global::java.lang.invoke.LambdaForm.Name(global::java.lang.invoke.LambdaForm.constantZero(global::java.lang.invoke.LambdaForm.BasicType.basicType(srcType.returnType()))));
 			}
-			global::java.lang.invoke.LambdaForm form = new global::java.lang.invoke.LambdaForm("PairwiseConvert", srcType.parameterCount() + 1, names.ToArray(), srcType.returnType() == global::java.lang.Void.TYPE ? global::java.lang.invoke.LambdaForm.VOID_RESULT : global::java.lang.invoke.LambdaForm.LAST_RESULT, false);
+			global::java.lang.invoke.LambdaForm form = new global::java.lang.invoke.LambdaForm("PairwiseConvert", srcType.parameterCount() + 1, names.ToArray(), srcType.returnType() == global::java.lang.Void.TYPE ? global::java.lang.invoke.LambdaForm.VOID_RESULT : global::java.lang.invoke.LambdaForm.LAST_RESULT, false, null);
 			return new global::java.lang.invoke.LightWeightMethodHandle(srcType, form);
 #endif
 		}

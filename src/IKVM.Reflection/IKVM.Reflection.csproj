@@ -4,6 +4,7 @@
         <TargetFrameworks>net461;netcoreapp3.1</TargetFrameworks>
         <Description>IKVM implementation of System.Reflection[.Emit]</Description>
         <DefineConstants>$(DefineConstants);EMITTERS</DefineConstants>
+        <ProduceReferenceAssembly>true</ProduceReferenceAssembly>
     </PropertyGroup>
 
     <ItemGroup>

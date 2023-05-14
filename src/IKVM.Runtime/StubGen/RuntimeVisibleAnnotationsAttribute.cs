@@ -56,7 +56,7 @@ namespace IKVM.StubGen
 
 		private static string DecodeTypeName(string typeName)
 		{
-#if !FIRST_PASS && !STUB_GENERATOR
+#if !FIRST_PASS && !EXPORTER
 			int index = typeName.IndexOf(',');
 			if (index > 0)
 			{

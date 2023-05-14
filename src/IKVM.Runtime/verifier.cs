@@ -25,15 +25,22 @@ using System;
 using System.Collections.Generic;
 using System.Diagnostics;
 
+using IKVM.ByteCode;
 using IKVM.Internal;
+
+#if IMPORTER
+using IKVM.Tools.Importer;
+#endif
 
 using ExceptionTableEntry = IKVM.Internal.ClassFile.Method.ExceptionTableEntry;
 using InstructionFlags = IKVM.Internal.ClassFile.Method.InstructionFlags;
 
 sealed class InstructionState
 {
+
     private struct LocalStoreSites
     {
+
         private int[] data;
         private int count;
         private bool shared;
@@ -102,12 +109,14 @@ sealed class InstructionState
             }
         }
     }
-    private TypeWrapper[] stack;
-    private int stackSize;
-    private int stackEnd;
-    private TypeWrapper[] locals;
-    private bool unitializedThis;
+
+    TypeWrapper[] stack;
+    int stackSize;
+    int stackEnd;
+    TypeWrapper[] locals;
+    bool unitializedThis;
     internal bool changed = true;
+
     private enum ShareFlags : byte
     {
         None = 0,
@@ -409,7 +418,7 @@ sealed class InstructionState
 
     private static bool HasMissingBaseType(Stack<TypeWrapper> st)
     {
-#if STATIC_COMPILER
+#if IMPORTER
         if (st.Pop().IsUnloadable)
         {
             // we have a missing type in base class hierarchy
@@ -801,7 +810,7 @@ sealed class InstructionState
 
     private static bool HasMissingBaseType(TypeWrapper tw)
     {
-#if STATIC_COMPILER
+#if IMPORTER
         for (TypeWrapper baseTypeWrapper; (baseTypeWrapper = tw.BaseTypeWrapper) != null; tw = baseTypeWrapper)
         {
             if (baseTypeWrapper.IsUnloadable)
@@ -2587,7 +2596,7 @@ sealed class MethodAnalyzer
                         && instructions[i + 1].TargetIndex > i
                         && (flags[i + 1] & InstructionFlags.BranchTarget) == 0)
                     {
-                        ConstantFieldWrapper field = classFile.GetFieldref(instructions[i].Arg1).GetField() as ConstantFieldWrapper;
+                        var field = classFile.GetFieldref(instructions[i].Arg1).GetField() as ConstantFieldWrapper;
                         if (field != null && field.FieldTypeWrapper == PrimitiveTypeWrapper.BOOLEAN && (bool)field.GetConstantValue())
                         {
                             // We know the branch will always be taken, so we replace the getstatic/ifne by a goto.
@@ -2744,23 +2753,22 @@ sealed class MethodAnalyzer
         {
             SetHardError(wrapper.GetClassLoader(), ref instr, HardError.IllegalAccessError, "tried to access class {0} from class {1}", cpi.Class, wrapper.Name);
         }
-        else if (cpi.Kind == ClassFile.RefKind.invokeVirtual
+        else if (cpi.Kind == ReferenceKind.InvokeVirtual
             && cpi.GetClassType() == CoreClasses.java.lang.invoke.MethodHandle.Wrapper
             && (cpi.Name == "invoke" || cpi.Name == "invokeExact"))
         {
             // it's allowed to use ldc to create a MethodHandle invoker
         }
-        else if (cpi.Member == null
-            || cpi.Member.IsStatic != (cpi.Kind == ClassFile.RefKind.getStatic || cpi.Kind == ClassFile.RefKind.putStatic || cpi.Kind == ClassFile.RefKind.invokeStatic))
+        else if (cpi.Member == null || cpi.Member.IsStatic != (cpi.Kind == ReferenceKind.GetStatic || cpi.Kind == ReferenceKind.PutStatic || cpi.Kind == ReferenceKind.InvokeStatic))
         {
             HardError err;
             string msg;
             switch (cpi.Kind)
             {
-                case ClassFile.RefKind.getField:
-                case ClassFile.RefKind.getStatic:
-                case ClassFile.RefKind.putField:
-                case ClassFile.RefKind.putStatic:
+                case ReferenceKind.GetField:
+                case ReferenceKind.GetStatic:
+                case ReferenceKind.PutField:
+                case ReferenceKind.PutStatic:
                     err = HardError.NoSuchFieldError;
                     msg = cpi.Name;
                     break;
@@ -3542,7 +3550,7 @@ sealed class MethodAnalyzer
     private void SetHardError(ClassLoaderWrapper classLoader, ref ClassFile.Method.Instruction instruction, HardError hardError, string message, params object[] args)
     {
         string text = string.Format(message, args);
-#if STATIC_COMPILER
+#if IMPORTER
         Message msg;
         switch (hardError)
         {
@@ -3864,7 +3872,7 @@ sealed class MethodAnalyzer
             }
             if (false && cpi.GetFieldType() != field.FieldTypeWrapper && !cpi.GetFieldType().IsUnloadable & !field.FieldTypeWrapper.IsUnloadable)
             {
-#if STATIC_COMPILER
+#if IMPORTER
                 StaticCompiler.LinkageError("Field \"{2}.{3}\" is of type \"{0}\" instead of type \"{1}\" as expected by \"{4}\"", field.FieldTypeWrapper, cpi.GetFieldType(), cpi.GetClassType().Name, cpi.Name, wrapper.Name);
 #endif
                 SetHardError(wrapper.GetClassLoader(), ref instr, HardError.LinkageError, "Loader constraints violated: {0}.{1}", field.DeclaringType.Name, field.Name);
@@ -3930,7 +3938,7 @@ sealed class MethodAnalyzer
         if (cpi.GetRetType() != mw.ReturnType && cpi.GetRetType().Name != mw.ReturnType.Name && !cpi.GetRetType().IsUnloadable && !mw.ReturnType.IsUnloadable)
 #endif
         {
-#if STATIC_COMPILER
+#if IMPORTER
             StaticCompiler.LinkageError("Method \"{2}.{3}{4}\" has a return type \"{0}\" instead of type \"{1}\" as expected by \"{5}\"", mw.ReturnType, cpi.GetRetType(), cpi.GetClassType().Name, cpi.Name, cpi.Signature, classFile.Name);
 #endif
             return "Loader constraints violated (return type): " + mw.DeclaringType.Name + "." + mw.Name + mw.Signature;
@@ -3945,7 +3953,7 @@ sealed class MethodAnalyzer
             if (here[i] != there[i] && here[i].Name != there[i].Name && !here[i].IsUnloadable && !there[i].IsUnloadable)
 #endif
             {
-#if STATIC_COMPILER
+#if IMPORTER
                 StaticCompiler.LinkageError("Method \"{2}.{3}{4}\" has a argument type \"{0}\" instead of type \"{1}\" as expected by \"{5}\"", there[i], here[i], cpi.GetClassType().Name, cpi.Name, cpi.Signature, classFile.Name);
 #endif
                 return "Loader constraints violated (arg " + i + "): " + mw.DeclaringType.Name + "." + mw.Name + mw.Signature;

@@ -25,7 +25,9 @@ using System;
 using System.Runtime.InteropServices;
 using System.Security;
 
-using IKVM.Internal;
+using IKVM.Runtime;
+
+using Mono.Unix.Native;
 
 namespace IKVM.Java.Externs.java.nio
 {
@@ -33,16 +35,16 @@ namespace IKVM.Java.Externs.java.nio
     static class MappedByteBuffer
     {
 
-        private static volatile int bogusField;
+        static volatile int bogusField;
 
-        public static bool isLoaded0(object thisMappedByteBuffer, long address, long length, int pageCount)
+        public static bool isLoaded0(object self, long address, long length, int pageCount)
         {
             // on Windows, JDK simply returns false, so we can get away with that too.
             return false;
         }
 
         [SecuritySafeCritical]
-        public static void load0(object thisMappedByteBuffer, long address, long length)
+        public static void load0(object self, long address, long length)
         {
             int bogus = bogusField;
             while (length > 0)
@@ -52,18 +54,22 @@ namespace IKVM.Java.Externs.java.nio
                 length -= 4096;
                 address += 4096;
             }
+
             // do a volatile store of the sum of the bytes to make sure the reads don't get optimized out
             bogusField = bogus;
-            GC.KeepAlive(thisMappedByteBuffer);
+            GC.KeepAlive(self);
         }
 
         [SecuritySafeCritical]
-        public static void force0(object thisMappedByteBuffer, object fd, long address, long length)
+        public static void force0(object self, object fd, long address, long length)
         {
-            if (JVM.IsUnix)
+#if FIRST_PASS
+            throw new NotImplementedException();
+#else
+            if (RuntimeUtil.IsLinux || RuntimeUtil.IsOSX)
             {
-                ikvm_msync((IntPtr)address, (int)length);
-                GC.KeepAlive(thisMappedByteBuffer);
+                Syscall.msync((IntPtr)address, (ulong)length, MsyncFlags.MS_SYNC);
+                GC.KeepAlive(self);
             }
             else
             {
@@ -73,29 +79,22 @@ namespace IKVM.Java.Externs.java.nio
                 {
                     if (FlushViewOfFile((IntPtr)address, (IntPtr)length) != 0)
                     {
-                        GC.KeepAlive(thisMappedByteBuffer);
+                        GC.KeepAlive(self);
                         return;
                     }
+
                     const int ERROR_LOCK_VIOLATION = 33;
                     if (Marshal.GetLastWin32Error() != ERROR_LOCK_VIOLATION)
-                    {
                         break;
-                    }
                 }
 
-#if !FIRST_PASS
                 throw new global::java.io.IOException("Flush failed");
-#endif
             }
+#endif
         }
 
         [DllImport("kernel32", SetLastError = true)]
-        private static extern int FlushViewOfFile(IntPtr lpBaseAddress, IntPtr dwNumberOfBytesToFlush);
-
-        private static int ikvm_msync(IntPtr address, int size) => msync(address, size, 0x4);
-
-        [DllImport("libc", EntryPoint = "msync")]
-        private static extern int msync(IntPtr address, int size, int flags);
+        static extern int FlushViewOfFile(IntPtr lpBaseAddress, IntPtr dwNumberOfBytesToFlush);
 
     }
 

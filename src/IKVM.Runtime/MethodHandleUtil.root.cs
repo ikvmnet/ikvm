@@ -25,9 +25,11 @@ using System;
 
 using IKVM.Internal;
 
-#if STATIC_COMPILER
+#if IMPORTER
 using IKVM.Reflection;
 using IKVM.Reflection.Emit;
+using IKVM.Tools.Importer;
+
 using Type = IKVM.Reflection.Type;
 #else
 using System.Reflection;
@@ -36,14 +38,16 @@ using System.Reflection.Emit;
 
 static partial class MethodHandleUtil
 {
+
     internal const int MaxArity = 8;
-    private static readonly Type typeofMHA;
-    private static readonly Type[] typeofMHV;
-    private static readonly Type[] typeofMH;
+
+    static readonly Type typeofMHA;
+    static readonly Type[] typeofMHV;
+    static readonly Type[] typeofMH;
 
     static MethodHandleUtil()
     {
-#if STATIC_COMPILER
+#if IMPORTER
 		typeofMHA = StaticCompiler.GetRuntimeType("IKVM.Runtime.MHA`8");
 		typeofMHV = new Type[] {
 			StaticCompiler.GetRuntimeType("IKVM.Runtime.MHV"),
@@ -121,7 +125,7 @@ static partial class MethodHandleUtil
         return CreateDelegateType(typeArgs, AsBasicType(ret));
     }
 
-    private static Type CreateDelegateType(Type[] types, Type retType)
+    static Type CreateDelegateType(Type[] types, Type retType)
     {
         if (types.Length == 0 && retType == Types.Void)
         {
@@ -137,16 +141,19 @@ static partial class MethodHandleUtil
                 remainder = 7;
                 count--;
             }
-            Type last = typeofMHA.MakeGenericType(SubArray(types, types.Length - 8, 8));
+
+            var last = typeofMHA.MakeGenericType(SubArray(types, types.Length - 8, 8));
             for (int i = 0; i < count; i++)
             {
-                Type[] temp = SubArray(types, types.Length - 8 - 7 * (i + 1), 8);
+                var temp = SubArray(types, types.Length - 8 - 7 * (i + 1), 8);
                 temp[7] = last;
                 last = typeofMHA.MakeGenericType(temp);
             }
+
             types = SubArray(types, 0, remainder + 1);
             types[remainder] = last;
         }
+
         if (retType == Types.Void)
         {
             return typeofMHV[types.Length].MakeGenericType(types);
@@ -158,9 +165,9 @@ static partial class MethodHandleUtil
         }
     }
 
-    private static Type[] SubArray(Type[] inArray, int start, int length)
+    static Type[] SubArray(Type[] inArray, int start, int length)
     {
-        Type[] outArray = new Type[length];
+        var outArray = new Type[length];
         Array.Copy(inArray, start, outArray, 0, length);
         return outArray;
     }
@@ -168,32 +175,23 @@ static partial class MethodHandleUtil
     internal static Type AsBasicType(TypeWrapper tw)
     {
         if (tw == PrimitiveTypeWrapper.BOOLEAN || tw == PrimitiveTypeWrapper.BYTE || tw == PrimitiveTypeWrapper.CHAR || tw == PrimitiveTypeWrapper.SHORT || tw == PrimitiveTypeWrapper.INT)
-        {
             return Types.Int32;
-        }
         else if (tw == PrimitiveTypeWrapper.LONG || tw == PrimitiveTypeWrapper.FLOAT || tw == PrimitiveTypeWrapper.DOUBLE || tw == PrimitiveTypeWrapper.VOID)
-        {
             return tw.TypeAsSignatureType;
-        }
         else
-        {
             return Types.Object;
-        }
     }
 
     internal static bool HasOnlyBasicTypes(TypeWrapper[] args, TypeWrapper ret)
     {
-        foreach (TypeWrapper tw in args)
-        {
+        foreach (var tw in args)
             if (!IsBasicType(tw))
-            {
                 return false;
-            }
-        }
+
         return IsBasicType(ret);
     }
 
-    private static bool IsBasicType(TypeWrapper tw)
+    static bool IsBasicType(TypeWrapper tw)
     {
         return tw == PrimitiveTypeWrapper.INT
             || tw == PrimitiveTypeWrapper.LONG

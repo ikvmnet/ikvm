@@ -26,16 +26,14 @@ using System.IO;
 using System.Collections.Generic;
 using System.Diagnostics;
 using System.Threading;
-
-using FormatterServices = System.Runtime.Serialization.FormatterServices;
+using System.Runtime.CompilerServices;
+using System.Runtime.Serialization;
 
 using IKVM.Attributes;
+using IKVM.Runtime;
 using IKVM.Runtime.Syntax;
 
-using System.Runtime.CompilerServices;
-using IKVM.Runtime;
-
-#if STATIC_COMPILER || STUB_GENERATOR
+#if IMPORTER || EXPORTER
 using IKVM.Reflection;
 
 using Type = IKVM.Reflection.Type;
@@ -45,10 +43,14 @@ using IKVM.Runtime.Vfs;
 using System.Reflection;
 #endif
 
+#if IMPORTER
+using IKVM.Tools.Importer;
+#endif
+
 namespace IKVM.Internal
 {
 
-    class AssemblyClassLoader : ClassLoaderWrapper
+    internal class AssemblyClassLoader : ClassLoaderWrapper
     {
 
         /// <summary>
@@ -57,7 +59,7 @@ namespace IKVM.Internal
         /// </summary>
         static readonly ConditionalWeakTable<Assembly, AssemblyClassLoader> assemblyClassLoaders = new();
 
-#if !STATIC_COMPILER && !STUB_GENERATOR && !FIRST_PASS
+#if !IMPORTER && !EXPORTER && !FIRST_PASS
         static Dictionary<string, string> customClassLoaderRedirects;
 #endif
 
@@ -102,17 +104,17 @@ namespace IKVM.Internal
                     return FromAssembly(mainAssembly);
             }
 
-#if STATIC_COMPILER
+#if IMPORTER
 
-			if (JVM.CoreAssembly == null && CompilerClassLoader.IsCoreAssembly(assembly))
-			{
-				JVM.CoreAssembly = assembly;
-				ClassLoaderWrapper.LoadRemappedTypes();
-			}
+            if (JVM.BaseAssembly == null && CompilerClassLoader.IsCoreAssembly(assembly))
+            {
+                JVM.BaseAssembly = assembly;
+                ClassLoaderWrapper.LoadRemappedTypes();
+            }
 
 #endif
 
-            if (assembly == JVM.CoreAssembly)
+            if (assembly == JVM.BaseAssembly)
             {
                 // This cast is necessary for ikvmc and a no-op for the runtime.
                 // Note that the cast cannot fail, because ikvmc will only return a non AssemblyClassLoader
@@ -127,7 +129,7 @@ namespace IKVM.Internal
         AssemblyLoader assemblyLoader;
         string[] references;
         AssemblyClassLoader[] delegates;
-#if !STATIC_COMPILER && !STUB_GENERATOR && !FIRST_PASS
+#if !IMPORTER && !EXPORTER && !FIRST_PASS
         JavaClassLoaderConstructionInProgress jclcip;
         java.security.ProtectionDomain protectionDomain;
         byte hasCustomClassLoader;  /* 0 = unknown, 1 = yes, 2 = no */
@@ -151,7 +153,7 @@ namespace IKVM.Internal
             bool hasDotNetModule;
             AssemblyName[] internalsVisibleTo;
             string[] jarList;
-#if !STATIC_COMPILER && !STUB_GENERATOR && !FIRST_PASS
+#if !IMPORTER && !EXPORTER && !FIRST_PASS
             sun.misc.URLClassPath urlClassPath;
 #endif
 
@@ -475,7 +477,7 @@ namespace IKVM.Internal
                 return false;
             }
 
-#if !STATIC_COMPILER && !STUB_GENERATOR && !FIRST_PASS
+#if !IMPORTER && !EXPORTER && !FIRST_PASS
 
             internal java.util.Enumeration FindResources(string name)
             {
@@ -519,36 +521,36 @@ namespace IKVM.Internal
             this.references = fixedReferences;
         }
 
-#if STATIC_COMPILER
+#if IMPORTER
 
-		internal static void PreloadExportedAssemblies(Assembly assembly)
-		{
-			if (assembly.GetManifestResourceInfo("ikvm.exports") != null)
-			{
-				using (Stream stream = assembly.GetManifestResourceStream("ikvm.exports"))
-				{
-					BinaryReader rdr = new BinaryReader(stream);
-					int assemblyCount = rdr.ReadInt32();
-					for (int i = 0; i < assemblyCount; i++)
-					{
-						string assemblyName = rdr.ReadString();
-						int typeCount = rdr.ReadInt32();
-						if (typeCount != 0)
-						{
-							for (int j = 0; j < typeCount; j++)
-							{
-								rdr.ReadInt32();
-							}
-							try
-							{
-								StaticCompiler.LoadFile(assembly.Location + "/../" + new AssemblyName(assemblyName).Name + ".dll");
-							}
-							catch { }
-						}
-					}
-				}
-			}
-		}
+        internal static void PreloadExportedAssemblies(Assembly assembly)
+        {
+            if (assembly.GetManifestResourceInfo("ikvm.exports") != null)
+            {
+                using (Stream stream = assembly.GetManifestResourceStream("ikvm.exports"))
+                {
+                    BinaryReader rdr = new BinaryReader(stream);
+                    int assemblyCount = rdr.ReadInt32();
+                    for (int i = 0; i < assemblyCount; i++)
+                    {
+                        string assemblyName = rdr.ReadString();
+                        int typeCount = rdr.ReadInt32();
+                        if (typeCount != 0)
+                        {
+                            for (int j = 0; j < typeCount; j++)
+                            {
+                                rdr.ReadInt32();
+                            }
+                            try
+                            {
+                                StaticCompiler.LoadFile(assembly.Location + "/../" + new AssemblyName(assemblyName).Name + ".dll");
+                            }
+                            catch { }
+                        }
+                    }
+                }
+            }
+        }
 
 #endif
 
@@ -636,8 +638,8 @@ namespace IKVM.Internal
 
             try
             {
-#if STATIC_COMPILER || STUB_GENERATOR
-				return StaticCompiler.Load(name);
+#if IMPORTER || EXPORTER
+                return StaticCompiler.Load(name);
 #else
                 return Assembly.Load(name);
 #endif
@@ -751,11 +753,18 @@ namespace IKVM.Internal
             return loader;
         }
 
+        /// <summary>
+        /// Gets the type wrapper for the given type located in this assembly.
+        /// </summary>
+        /// <param name="type"></param>
+        /// <returns></returns>
+        /// <exception cref="InternalException"></exception>
         internal virtual TypeWrapper GetWrapperFromAssemblyType(Type type)
         {
-            //Tracer.Info(Tracer.Runtime, "GetWrapperFromAssemblyType: {0}", type.FullName);
-            Debug.Assert(!type.Name.EndsWith("[]"), "!type.IsArray", type.FullName);
-            Debug.Assert(AssemblyClassLoader.FromAssembly(type.Assembly) == this);
+            if (type.Name.EndsWith("[]"))
+                throw new InternalException();
+            if (AssemblyClassLoader.FromAssembly(type.Assembly) != this)
+                throw new InternalException();
 
             var wrapper = GetLoader(type.Assembly).CreateWrapperForAssemblyType(type);
             if (wrapper != null)
@@ -771,19 +780,20 @@ namespace IKVM.Internal
                     wrapper = RegisterInitiatingLoader(wrapper);
                 }
 
+                // this really shouldn't happen, it means that we have two different types in our assembly that both
+                // have the same Java name
                 if (wrapper.TypeAsTBD != type && (!wrapper.IsRemapped || wrapper.TypeAsBaseType != type))
                 {
-                    // this really shouldn't happen, it means that we have two different types in our assembly that both
-                    // have the same Java name
-#if STATIC_COMPILER
-					throw new FatalCompilerErrorException(Message.AssemblyContainsDuplicateClassNames, type.FullName, wrapper.TypeAsTBD.FullName, wrapper.Name, type.Assembly.FullName);
+#if IMPORTER
+                    throw new FatalCompilerErrorException(Message.AssemblyContainsDuplicateClassNames, type.FullName, wrapper.TypeAsTBD.FullName, wrapper.Name, type.Assembly.FullName);
 #else
-                    string msg = $"\nType \"{type.FullName}\" and \"{wrapper.TypeAsTBD.FullName}\" both map to the same name \"{wrapper.Name}\".\n";
-                    JVM.CriticalFailure(msg, null);
+                    throw new InternalException($"\nType \"{type.FullName}\" and \"{wrapper.TypeAsTBD.FullName}\" both map to the same name \"{wrapper.Name}\".");
 #endif
                 }
+
                 return wrapper;
             }
+
             return null;
         }
 
@@ -793,7 +803,7 @@ namespace IKVM.Internal
             if (tw != null)
                 return tw;
 
-#if !STATIC_COMPILER && !STUB_GENERATOR && !FIRST_PASS
+#if !IMPORTER && !EXPORTER && !FIRST_PASS
 
             while (hasCustomClassLoader != 2)
             {
@@ -843,7 +853,7 @@ namespace IKVM.Internal
 
         TypeWrapper LoadDynamic(string name)
         {
-#if !STATIC_COMPILER && !STUB_GENERATOR && !FIRST_PASS
+#if !IMPORTER && !EXPORTER && !FIRST_PASS
             var classFile = name.Replace('.', '/') + ".class";
             foreach (var res in GetBootstrapClassLoader().FindDelegateResources(classFile))
                 return res.Loader.DefineDynamic(name, res.URL);
@@ -855,7 +865,7 @@ namespace IKVM.Internal
             return null;
         }
 
-#if !STATIC_COMPILER && !STUB_GENERATOR && !FIRST_PASS
+#if !IMPORTER && !EXPORTER && !FIRST_PASS
 
         TypeWrapper DefineDynamic(string name, java.net.URL url)
         {
@@ -910,7 +920,7 @@ namespace IKVM.Internal
             return null;
         }
 
-#if !STATIC_COMPILER && !STUB_GENERATOR
+#if !IMPORTER && !EXPORTER
 
         static java.net.URL MakeResourceURL(Assembly asm, string name)
         {
@@ -1072,9 +1082,9 @@ namespace IKVM.Internal
                 yield return url;
         }
 
-#endif // !STATIC_COMPILER
+#endif // !IMPORTER
 
-#if !STATIC_COMPILER && !FIRST_PASS && !STUB_GENERATOR
+#if !IMPORTER && !FIRST_PASS && !EXPORTER
 
         private sealed class JavaClassLoaderConstructionInProgress
         {
@@ -1136,19 +1146,14 @@ namespace IKVM.Internal
 
         internal override java.lang.ClassLoader GetJavaClassLoader()
         {
-            if (javaClassLoader == null)
-            {
-                return WaitInitializeJavaClassLoader(GetCustomClassLoaderType());
-            }
-            return javaClassLoader;
+            return javaClassLoader ?? WaitInitializeJavaClassLoader(GetCustomClassLoaderType());
         }
 
         internal virtual java.security.ProtectionDomain GetProtectionDomain()
         {
             if (protectionDomain == null)
-            {
                 Interlocked.CompareExchange(ref protectionDomain, new java.security.ProtectionDomain(assemblyLoader.Assembly), null);
-            }
+
             return protectionDomain;
         }
 #endif
@@ -1162,11 +1167,11 @@ namespace IKVM.Internal
 
         internal override bool InternalsVisibleToImpl(TypeWrapper wrapper, TypeWrapper friend)
         {
-            ClassLoaderWrapper other = friend.GetClassLoader();
+            var other = friend.GetClassLoader();
             if (this == other)
             {
-#if STATIC_COMPILER || STUB_GENERATOR
-				return true;
+#if IMPORTER || EXPORTER
+                return true;
 #else
                 // we're OK if the type being accessed (wrapper) is a dynamic type
                 // or if the dynamic assembly has internal access
@@ -1175,13 +1180,13 @@ namespace IKVM.Internal
 #endif
             }
             AssemblyName otherName;
-#if STATIC_COMPILER
-			CompilerClassLoader ccl = other as CompilerClassLoader;
-			if (ccl == null)
-			{
-				return false;
-			}
-			otherName = ccl.GetAssemblyName();
+#if IMPORTER
+            CompilerClassLoader ccl = other as CompilerClassLoader;
+            if (ccl == null)
+            {
+                return false;
+            }
+            otherName = ccl.GetAssemblyName();
 #else
             AssemblyClassLoader acl = other as AssemblyClassLoader;
             if (acl == null)
@@ -1202,7 +1207,7 @@ namespace IKVM.Internal
             }
         }
 
-#if !STATIC_COMPILER && !STUB_GENERATOR
+#if !IMPORTER && !EXPORTER
 
         internal List<KeyValuePair<string, string[]>> GetPackageInfo()
         {
@@ -1219,7 +1224,7 @@ namespace IKVM.Internal
 
 #endif
 
-#if !STATIC_COMPILER && !FIRST_PASS && !STUB_GENERATOR
+#if !IMPORTER && !FIRST_PASS && !EXPORTER
 
         Type GetCustomClassLoaderType()
         {
@@ -1396,7 +1401,7 @@ namespace IKVM.Internal
         /// Initializes a new instance.
         /// </summary>
         internal BootstrapClassLoader() :
-            base(JVM.CoreAssembly, new string[] { typeof(object).Assembly.FullName, typeof(Uri).Assembly.FullName })
+            base(JVM.BaseAssembly, new string[] { typeof(object).Assembly.FullName, typeof(Uri).Assembly.FullName })
         {
 
         }
@@ -1429,7 +1434,7 @@ namespace IKVM.Internal
 
         }
 
-#if !FIRST_PASS && !STATIC_COMPILER && !STUB_GENERATOR
+#if !FIRST_PASS && !IMPORTER && !EXPORTER
 
         internal override java.lang.ClassLoader GetJavaClassLoader()
         {

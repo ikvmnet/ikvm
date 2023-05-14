@@ -25,11 +25,13 @@ using System;
 
 using IKVM.Attributes;
 using IKVM.Internal;
+using IKVM.Runtime;
 
 sealed class BootstrapBootstrapClassLoader : ClassLoaderWrapper
 {
-    internal BootstrapBootstrapClassLoader()
-        : base(CodeGenOptions.None, null)
+
+    internal BootstrapBootstrapClassLoader() :
+        base(CodeGenOptions.None, null)
     {
         TypeWrapper javaLangObject = new StubTypeWrapper(Modifiers.Public, "java.lang.Object", null, true);
         SetRemappedType(JVM.Import(typeof(object)), javaLangObject);
@@ -45,4 +47,5 @@ sealed class BootstrapBootstrapClassLoader : ClassLoaderWrapper
         RegisterInitiatingLoader(new StubTypeWrapper(Modifiers.Public | Modifiers.Final, "java.lang.Class", javaLangObject, false));
         RegisterInitiatingLoader(new StubTypeWrapper(Modifiers.Public | Modifiers.Abstract, "java.lang.invoke.MethodHandle", javaLangObject, false));
     }
+
 }

@@ -169,6 +169,8 @@ namespace IKVM.Tools.Runner.Compiler
 
         public string Remap { get; set; }
 
+        public bool NoLogo { get; set; }
+
     }
 
 }

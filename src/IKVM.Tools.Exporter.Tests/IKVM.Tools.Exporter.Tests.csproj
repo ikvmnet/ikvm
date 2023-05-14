@@ -1,8 +1,6 @@
 ﻿<Project Sdk="Microsoft.NET.Sdk">
     <PropertyGroup>
         <TargetFrameworks>net461;netcoreapp3.1</TargetFrameworks>
-        <AutoGenerateBindingRedirects Condition="$([MSBuild]::IsTargetFrameworkCompatible('$(TargetFramework)', 'net461'))">true</AutoGenerateBindingRedirects>
-        <GenerateBindingRedirectsOutputType Condition="$([MSBuild]::IsTargetFrameworkCompatible('$(TargetFramework)', 'net461'))">true</GenerateBindingRedirectsOutputType>
         <PreserveCompilationContext>true</PreserveCompilationContext>
     </PropertyGroup>
 

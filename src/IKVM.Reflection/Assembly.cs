@@ -161,30 +161,22 @@ namespace IKVM.Reflection
 
         public Type GetType(string name, bool throwOnError, bool ignoreCase)
         {
-            TypeNameParser parser = TypeNameParser.Parse(name, throwOnError);
+            var parser = TypeNameParser.Parse(name, throwOnError);
             if (parser.Error)
-            {
                 return null;
-            }
+
             if (parser.AssemblyName != null)
             {
                 if (throwOnError)
-                {
                     throw new ArgumentException("Type names passed to Assembly.GetType() must not specify an assembly.");
-                }
                 else
-                {
                     return null;
-                }
             }
-            TypeName typeName = TypeName.Split(TypeNameParser.Unescape(parser.FirstNamePart));
-            Type type = ignoreCase
-                ? FindTypeIgnoreCase(typeName.ToLowerInvariant())
-                : FindType(typeName);
+            var typeName = TypeName.Split(TypeNameParser.Unescape(parser.FirstNamePart));
+            var type = ignoreCase ? FindTypeIgnoreCase(typeName.ToLowerInvariant()) : FindType(typeName);
             if (type == null && __IsMissing)
-            {
                 throw new MissingAssemblyException((MissingAssembly)this);
-            }
+
             return parser.Expand(type, this.ManifestModule, throwOnError, name, false, ignoreCase);
         }
 
@@ -241,20 +233,11 @@ namespace IKVM.Reflection
             }
         }
 
-        public virtual bool IsDynamic
-        {
-            get { return false; }
-        }
+        public virtual bool IsDynamic => false;
 
-        public virtual bool __IsMissing
-        {
-            get { return false; }
-        }
+        public virtual bool __IsMissing => false;
 
-        public AssemblyNameFlags __AssemblyFlags
-        {
-            get { return GetAssemblyFlags(); }
-        }
+        public AssemblyNameFlags __AssemblyFlags => GetAssemblyFlags();
 
         protected virtual AssemblyNameFlags GetAssemblyFlags()
         {
@@ -262,5 +245,7 @@ namespace IKVM.Reflection
         }
 
         internal abstract IList<CustomAttributeData> GetCustomAttributesData(Type attributeType);
+
     }
+
 }

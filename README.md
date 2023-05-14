@@ -40,8 +40,8 @@ These tasks can be done **without porting source code** to .NET.
 - .NET Core 3.1 and higher
 - .NET 5 and higher
 - Java SE 8
-- Windows x86/x64
-- Linux x64
+- Windows x86/x64/ARM/ARM64
+- Linux x64/ARM/ARM64
 
 ## Documentation
 
@@ -63,7 +63,7 @@ PM> Install-Package IKVM.Maven.Sdk
 
 ### Tools
 
-The tools are available for download on the [Releases](https://github.com/ikvm-revived/ikvm/releases) page.
+The tools are available for download on the [Releases](https://github.com/ikvmnet/ikvm/releases) page.
 
 ### Runtime Images
 
@@ -74,7 +74,7 @@ PM> Install-Package IKVM.Image.JRE
 PM> Install-Package IKVM.Image.JDK
 ```
 
-A standalone JDK distributable is available for download on the [Releases](https://github.com/ikvm-revived/ikvm/releases) page. This directory structure should suffice as a `JAVA_HOME` path for standard Java applications.
+A standalone JDK distributable is available for download on the [Releases](https://github.com/ikvmnet/ikvm/releases) page. This directory structure should suffice as a `JAVA_HOME` path for standard Java applications.
 
 ## Usage
 
@@ -174,4 +174,14 @@ The `Automatic-Module-Name` is either a specified attribute of the JAR manifest,
 
 ### MavenReference
 
-See the [ikvm-maven Readme](https://github.com/ikvm-revived/ikvm-maven#readme) for usage instructions.
+See the [ikvm-maven Readme](https://github.com/ikvmnet/ikvm-maven#readme) for usage instructions.
+
+### Notice To Project Owners
+
+The IKVM project recommends that people do not redistribute FOSS Java libraries compiled with IKVM over public systems such as NuGet.org, unless you are the original owner of that software and have a compelling reason.
+
+Creating copies of FOSS Java libraries and publishing them to distribution mechanisms such as NuGet.org creates eco-system confusion and dependency conflicts downstream. We provide a system so that .NET users of Java libraries can reference those libraries directly out of the standard Java ecosystem mechanisms: Maven Central, etc though IKVM.Maven. Remember, very few libraries exist in a vacuum. Libraries often depend on dozens of other libraries. Two unrelated Java libraries often depend on the same underlying Java library. A complex method of dependency conflict resolution and version unification has to be involved in resolving this hierarchy for any individual downstream project. You are likely going to be introducing duplicate classes into the users of your versions, or causing your users to depend upon the wrong version of other libraries.
+
+There are exceptions to this advice, such as the library not being published to Maven. In that case, guidance would be to advocate that the original Java library in fact be published to Maven, or do the work yourself, as that is the appropriate place for Java libraries.
+
+We cannot force you to conform to this advice. But for the health of the ecosystem, we urge you to take it under consideration yourself.

@@ -9,7 +9,7 @@ namespace IKVM.Java.Externs.ikvm.@internal.io
 
         public static FileStream createInternal(string path, FileMode mode, FileSystemRights rights, FileShare share, int bufferSize, FileOptions options)
         {
-#if NET461
+#if NETFRAMEWORK
             return new FileStream(path, mode, rights, share, bufferSize, options);
 #else
             var access = 0;
@@ -20,7 +20,7 @@ namespace IKVM.Java.Externs.ikvm.@internal.io
             if (access == 0)
                 access = (int)FileAccess.ReadWrite;
 
-        return new FileStream(path, mode, (FileAccess)access, share, bufferSize, options);
+            return new FileStream(path, mode, (FileAccess)access, share, bufferSize, options);
 #endif
         }
 

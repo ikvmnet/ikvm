@@ -93,11 +93,11 @@ namespace IKVM.Tests.Java.java.net
                         serverSocket.receive(packet);
                         received.Add(Encoding.UTF8.GetString(b, packet.getOffset(), packet.getLength()));
                     }
-                    catch (InterruptedIOException e)
+                    catch (InterruptedIOException)
                     {
 
                     }
-                    catch (SocketException e)
+                    catch (SocketException)
                     {
 
                     }

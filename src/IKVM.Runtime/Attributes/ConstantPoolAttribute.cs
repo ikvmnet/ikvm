@@ -26,7 +26,7 @@ using System.Collections.Generic;
 
 using IKVM.Internal;
 
-#if STATIC_COMPILER || STUB_GENERATOR
+#if IMPORTER || EXPORTER
 using Type = IKVM.Reflection.Type;
 #endif
 

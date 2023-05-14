@@ -42,36 +42,35 @@ namespace IKVM.Java.Externs.java.lang
         public static global::java.lang.Class[] getClassContext(object thisSecurityManager)
         {
 #if FIRST_PASS
-            return null;
+            throw new NotImplementedException();
 #else
-            List<global::java.lang.Class> stack = new List<global::java.lang.Class>();
-            StackTrace trace = new StackTrace();
+            var stack = new List<global::java.lang.Class>();
+            var trace = new StackTrace();
             for (int i = 0; i < trace.FrameCount; i++)
             {
-                StackFrame frame = trace.GetFrame(i);
-                MethodBase method = frame.GetMethod();
+                var frame = trace.GetFrame(i);
+                var method = frame.GetMethod();
+
                 if (IKVM.Java.Externs.sun.reflect.Reflection.IsHideFromStackWalk(method))
-                {
                     continue;
-                }
-                Type type = method.DeclaringType;
+
+                var type = method.DeclaringType;
                 if (type == typeof(global::java.lang.SecurityManager))
-                {
                     continue;
-                }
+
                 stack.Add(ClassLoaderWrapper.GetWrapperFromType(type).ClassObject);
             }
+
             return stack.ToArray();
 #endif
         }
 
         public static object currentClassLoader0(object thisSecurityManager)
         {
-            global::java.lang.Class currentClass = currentLoadedClass0(thisSecurityManager);
+            var currentClass = currentLoadedClass0(thisSecurityManager);
             if (currentClass != null)
-            {
                 return TypeWrapper.FromClass(currentClass).GetClassLoader().GetJavaClassLoader();
-            }
+
             return null;
         }
 

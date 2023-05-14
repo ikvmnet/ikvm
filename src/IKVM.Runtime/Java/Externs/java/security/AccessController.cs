@@ -24,7 +24,6 @@
 using System;
 using System.Collections.Generic;
 using System.Diagnostics;
-using System.Reflection;
 
 using IKVM.Internal;
 
@@ -34,26 +33,30 @@ namespace IKVM.Java.Externs.java.security
     static class AccessController
     {
 
+        /// <summary>
+        /// Implements the native method 'getStackAccessControlContext'.
+        /// </summary>
+        /// <param name="context"></param>
+        /// <param name="callerID"></param>
+        /// <returns></returns>
         public static object getStackAccessControlContext(global::java.security.AccessControlContext context, global::ikvm.@internal.CallerID callerID)
         {
 #if FIRST_PASS
-		    return null;
+		    throw new NotImplementedException();
 #else
-            List<global::java.security.ProtectionDomain> array = new List<global::java.security.ProtectionDomain>();
-            bool is_privileged = GetProtectionDomains(array, callerID, new StackTrace(1));
+            var array = new List<global::java.security.ProtectionDomain>();
+            var is_privileged = GetProtectionDomains(array, callerID, new StackTrace(1));
             if (array.Count == 0)
-            {
                 if (is_privileged && context == null)
-                {
                     return null;
-                }
-            }
+
             return CreateAccessControlContext(array, is_privileged, context);
 #endif
         }
 
 #if !FIRST_PASS
-        private static bool GetProtectionDomains(List<global::java.security.ProtectionDomain> array, global::ikvm.@internal.CallerID callerID, StackTrace stack)
+
+        static bool GetProtectionDomains(List<global::java.security.ProtectionDomain> array, global::ikvm.@internal.CallerID callerID, StackTrace stack)
         {
             // first we have to skip all AccessController related frames, because we can be called from a doPrivileged implementation (not the privileged action)
             // in which case we should ignore the doPrivileged frame
@@ -71,9 +74,8 @@ namespace IKVM.Java.Externs.java.security
             {
                 bool is_privileged = false;
                 global::java.security.ProtectionDomain protection_domain;
-                MethodBase method = stack.GetFrame(i).GetMethod();
-                if (method.DeclaringType == typeof(global::java.security.AccessController)
-                    && method.Name == "doPrivileged")
+                var method = stack.GetFrame(i).GetMethod();
+                if (method.DeclaringType == typeof(global::java.security.AccessController) && method.Name == "doPrivileged")
                 {
                     is_privileged = true;
                     global::java.lang.Class caller = callerID.getCallerClass();
@@ -99,60 +101,55 @@ namespace IKVM.Java.Externs.java.security
                     return true;
                 }
             }
+
             return false;
         }
 
-        private static object CreateAccessControlContext(List<global::java.security.ProtectionDomain> context, bool is_privileged, global::java.security.AccessControlContext privileged_context)
+        static object CreateAccessControlContext(List<global::java.security.ProtectionDomain> context, bool is_privileged, global::java.security.AccessControlContext privileged_context)
         {
-            global::java.security.AccessControlContext acc = new global::java.security.AccessControlContext(context == null || context.Count == 0 ? null : context.ToArray(), is_privileged);
+            var acc = new global::java.security.AccessControlContext(context == null || context.Count == 0 ? null : context.ToArray(), is_privileged);
             acc._privilegedContext(privileged_context);
             return acc;
         }
 
-        private static global::java.security.ProtectionDomain GetProtectionDomainFromType(Type type)
+        static global::java.security.ProtectionDomain GetProtectionDomainFromType(Type type)
         {
-            if (type == null
-                || type.Assembly == typeof(object).Assembly
-                || type.Assembly == typeof(AccessController).Assembly
-                || type.Assembly == IKVM.Java.Externs.java.lang.SecurityManager.jniAssembly
-                || type.Assembly == typeof(global::java.lang.Thread).Assembly)
-            {
+            if (type == null || type.Assembly == typeof(object).Assembly || type.Assembly == typeof(AccessController).Assembly || type.Assembly == IKVM.Java.Externs.java.lang.SecurityManager.jniAssembly || type.Assembly == typeof(global::java.lang.Thread).Assembly)
                 return null;
-            }
-            TypeWrapper tw = ClassLoaderWrapper.GetWrapperFromType(type);
+
+            var tw = ClassLoaderWrapper.GetWrapperFromType(type);
             if (tw != null)
-            {
                 return IKVM.Java.Externs.java.lang.Class.getProtectionDomain0(tw.ClassObject);
-            }
+
             return null;
         }
+
 #endif
 
+        /// <summary>
+        /// Implements the native method 'getInheritedAccessControlContext'.
+        /// </summary>
+        /// <returns></returns>
         public static object getInheritedAccessControlContext()
         {
 #if FIRST_PASS
-		return null;
+		    throw new NotImplementedException();
 #else
-            object inheritedAccessControlContext = global::java.lang.Thread.currentThread().inheritedAccessControlContext;
-            global::java.security.AccessControlContext acc = inheritedAccessControlContext as global::java.security.AccessControlContext;
+            var inheritedAccessControlContext = global::java.lang.Thread.currentThread().inheritedAccessControlContext;
+            var acc = inheritedAccessControlContext as global::java.security.AccessControlContext;
             if (acc != null)
-            {
                 return acc;
-            }
 
-            global::java.security.AccessController.LazyContext lc = inheritedAccessControlContext as global::java.security.AccessController.LazyContext;
+            var lc = inheritedAccessControlContext as global::java.security.AccessController.LazyContext;
             if (lc == null)
-            {
                 return null;
-            }
 
-            List<global::java.security.ProtectionDomain> list = new List<global::java.security.ProtectionDomain>();
+            var list = new List<global::java.security.ProtectionDomain>();
             while (lc != null)
             {
                 if (GetProtectionDomains(list, lc.callerID, lc.stackTrace))
-                {
                     return CreateAccessControlContext(list, true, lc.context);
-                }
+
                 lc = lc.parent;
             }
 

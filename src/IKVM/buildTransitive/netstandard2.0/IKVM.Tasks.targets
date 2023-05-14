@@ -21,8 +21,10 @@
         <MakeDir Directories="$([System.IO.Path]::GetDirectoryName('%(IkvmReferenceItem.CacheSymbolsPath)'))" />
 
         <ItemGroup>
+            <_IkvmCompilerReferencePath Remove="@(_IkvmCompilerReferencePath)" />
             <_IkvmReferenceItemResolvedReference Remove="@(_IkvmReferenceItemResolvedReference)" />
             <_IkvmReferenceItemResolvedReference Include="%(IkvmReferenceItem.ResolvedReferences)" />
+            <_IkvmCompilerReferencePath Include="@(IkvmFrameworkReference);$(IkvmBaseAssembly);$(IkvmRuntimeAssembly);$(IkvmRuntimeJNIAssembly);@(_IkvmReferenceItemResolvedReference)" />
         </ItemGroup>
 
         <Delete Files="%(IkvmReferenceItem.StagePath)" Condition="Exists('%(IkvmReferenceItem.StagePath)')" />
@@ -36,7 +38,7 @@
             Assembly="%(IkvmReferenceItem.AssemblyName)"
             Version="%(IkvmReferenceItem.AssemblyVersion)"
             FileVersion="%(IkvmReferenceItem.AssemblyFileVersion)"
-            Runtime="$(IkvmRuntimeAssembly)"
+            Runtime="$([System.IO.Path]::GetFullPath('$(IkvmRuntimeAssembly)'))"
             Target="library"
             Debug="%(IkvmReferenceItem.Debug)"
             KeyFile="%(IkvmReferenceItem.KeyFile)"
@@ -44,7 +46,7 @@
             CompressResources="true"
             ClassLoader="%(IkvmReferenceItem.ClassLoader)"
             NoStdLib="true"
-            References="@(IkvmFrameworkReference);$(IkvmBaseAssembly);$(IkvmRuntimeAssembly);$(IkvmRuntimeJNIAssembly);@(_IkvmReferenceItemResolvedReference)"
+            References="@(_IkvmCompilerReferencePath->'%(FullPath)')"
             Input="%(IkvmReferenceItem.Compile)"
             Condition=" '%(IkvmReferenceItem.Compile)' != '' "/>
 

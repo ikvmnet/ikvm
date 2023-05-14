@@ -227,4 +227,5 @@ enum ByteCode : byte
     __ifnonnull = 199,
     __goto_w = 200,
     __jsr_w = 201
+
 }

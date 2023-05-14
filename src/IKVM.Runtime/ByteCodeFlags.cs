@@ -26,7 +26,9 @@ using System;
 [Flags]
 enum ByteCodeFlags : byte
 {
-	None = 0,
-	FixedArg = 1,
-	CannotThrow = 2
+
+    None = 0,
+    FixedArg = 1,
+    CannotThrow = 2
+
 }

@@ -12,6 +12,7 @@
     using System.Security.Cryptography;
     using System.Text;
     using System.Text.RegularExpressions;
+    using System.Threading;
 
     using Microsoft.Build.Framework;
     using Microsoft.Build.Utilities;
@@ -22,9 +23,40 @@
     public class IkvmReferenceExportItemPrepare : Task
     {
 
+        /// <summary>
+        /// Defines the cached information per assembly.
+        /// </summary>
+        struct AssemblyInfo
+        {
+
+            /// <summary>
+            /// Initializes a new instance.
+            /// </summary>
+            /// <param name="name"></param>
+            /// <param name="references"></param>
+            public AssemblyInfo(string name, List<string> references)
+            {
+                Name = name;
+                References = references;
+            }
+
+            /// <summary>
+            /// Name of the assembly.
+            /// </summary>
+            public string Name { get; set; }
+
+            /// <summary>
+            /// Names of the references of the assembly.
+            /// </summary>
+            public List<string> References { get; set; }
+
+        }
+
         readonly static RandomNumberGenerator rng = RandomNumberGenerator.Create();
+
         readonly static MD5 md5 = MD5.Create();
-        readonly static ConcurrentDictionary<(string, DateTime), string> fileIdentityCache = new ConcurrentDictionary<(string, DateTime), string>();
+        readonly static ConcurrentDictionary<(string, DateTime), System.Threading.Tasks.Task<string>> fileIdentityCache = new ConcurrentDictionary<(string, DateTime), System.Threading.Tasks.Task<string>>();
+        readonly static ConcurrentDictionary<string, System.Threading.Tasks.Task<AssemblyInfo>> assemblyInfoCache = new ConcurrentDictionary<string, System.Threading.Tasks.Task<AssemblyInfo>>();
 
         /// <summary>
         /// Calculates the hash of the value.
@@ -91,8 +123,39 @@
         /// <returns></returns>
         public override bool Execute()
         {
+            // kick off the launcher with the configured options
+            var run = ExecuteAsync(CancellationToken.None);
+
+            // return immediately if finished
+            if (run.IsCompleted)
+                return run.GetAwaiter().GetResult();
+
+            // yield and wait for the task to complete
+            BuildEngine3.Yield();
+
+            // wait for result, and ensure we reacquire in case of return value or exception
+            var result = false;
+            try
+            {
+                result = run.GetAwaiter().GetResult();
+            }
+            finally
+            {
+                BuildEngine3.Reacquire();
+            }
+
+            // check that we exited successfully
+            return result;
+        }
+
+        /// <summary>
+        /// Executes the task.
+        /// </summary>
+        /// <returns></returns>
+        async System.Threading.Tasks.Task<bool> ExecuteAsync(CancellationToken cancellationToken)
+        {
             var items = IkvmReferenceExportItem.Import(Items);
-            AssignBuildInfo(items);
+            await AssignBuildInfoAsync(items, cancellationToken);
             Items = items.OrderBy(i => i.RandomIndex).Select(i => i.Item).ToArray(); // randomize order to allow multiple processes to interleave
             return true;
         }
@@ -101,9 +164,9 @@
         /// Assigns build information to the items.
         /// </summary>
         /// <param name="items"></param>
-        internal void AssignBuildInfo(IEnumerable<IkvmReferenceExportItem> items)
+        internal System.Threading.Tasks.Task AssignBuildInfoAsync(IEnumerable<IkvmReferenceExportItem> items, CancellationToken cancellationToken)
         {
-            items.AsParallel().ForAll(AssignBuildInfo);
+            return System.Threading.Tasks.Task.WhenAll(items.Select(i => AssignBuildInfoAsync(i, cancellationToken)));
         }
 
         /// <summary>
@@ -121,11 +184,56 @@
         /// Assigns build information to the item.
         /// </summary>
         /// <param name="item"></param>
-        internal void AssignBuildInfo(IkvmReferenceExportItem item)
+        /// <param name="cancellationToken"></param>
+        internal async System.Threading.Tasks.Task AssignBuildInfoAsync(IkvmReferenceExportItem item, CancellationToken cancellationToken)
         {
-            item.IkvmIdentity = CalculateIkvmIdentity(item);
+            item.References = await CalculateReferencesAsync(item, cancellationToken);
+            item.Libraries = await CalculateLibrariesAsync(item, cancellationToken);
+            item.IkvmIdentity = await CalculateIkvmIdentityAsync(item, cancellationToken);
             item.RandomIndex ??= GetRandomNumber();
             item.Save();
+        }
+
+        /// <summary>
+        /// Calculates the direct references of the given item.
+        /// </summary>
+        /// <param name="item"></param>
+        /// <param name="cancellationToken"></param>
+        /// <returns></returns>
+        async System.Threading.Tasks.Task<List<string>> CalculateReferencesAsync(IkvmReferenceExportItem item, CancellationToken cancellationToken)
+        {
+            var referencesList = new HashSet<string>() { item.ItemSpec };
+
+            if (References != null)
+                foreach (var reference in References)
+                    referencesList.Add(reference.ItemSpec);
+
+            if (item.References != null)
+                foreach (var reference in item.References)
+                    referencesList.Add(reference);
+
+            var references = await GetAssemblyReferencesAsync(item.ItemSpec, referencesList, cancellationToken);
+            return references.OrderBy(i => i).ToList();
+        }
+
+        /// <summary>
+        /// Calculates the direct libraries of the given item.
+        /// </summary>
+        /// <param name="item"></param>
+        /// <param name="cancellationToken"></param>
+        /// <returns></returns>
+        System.Threading.Tasks.Task<List<string>> CalculateLibrariesAsync(IkvmReferenceExportItem item, CancellationToken cancellationToken)
+        {
+            // gather library lines
+            var libraries = new HashSet<string>();
+            if (Libraries != null)
+                foreach (var library in Libraries)
+                    libraries.Add(library.ItemSpec);
+            if (item.Libraries != null)
+                foreach (var library in item.Libraries)
+                    libraries.Add(library);
+
+            return System.Threading.Tasks.Task.FromResult(libraries.OrderBy(i => i).ToList());
         }
 
         /// <summary>
@@ -133,7 +241,7 @@
         /// </summary>
         /// <param name="item"></param>
         /// <returns></returns>
-        internal string CalculateIkvmIdentity(IkvmReferenceExportItem item)
+        internal async System.Threading.Tasks.Task<string> CalculateIkvmIdentityAsync(IkvmReferenceExportItem item, CancellationToken cancellationToken)
         {
             if (item is null)
                 throw new ArgumentNullException(nameof(item));
@@ -149,43 +257,96 @@
             writer.WriteLine("Shared={0}", item.Shared);
             writer.WriteLine("NoStdLib={0}", item.NoStdLib);
             writer.WriteLine("Forwarders={0}", item.Forwarders);
-            writer.WriteLine("Parameters={0}", item.Parameters);
-            writer.WriteLine("JApi={0}", item.JApi);
+            writer.WriteLine("IncludeNonPublicTypes={0}", item.IncludeNonPublicTypes);
+            writer.WriteLine("IncludeNonPublicInterfaces={0}", item.IncludeNonPublicInterfaces);
+            writer.WriteLine("IncludeNonPublicMembers={0}", item.IncludeNonPublicMembers);
+            writer.WriteLine("IncludeParameterNames={0}", item.IncludeParameterNames);
             writer.WriteLine("Bootstrap={0}", item.Bootstrap);
 
-            // gather reference lines
-            var references = new List<string>(16);
-            if (References != null)
-                foreach (var reference in References)
-                    references.Add(GetIdentity(item, reference.ItemSpec));
-            if (item.References != null)
-                foreach (var reference in item.References)
-                    references.Add(GetIdentity(item, reference));
-
-            // write sorted reference lines
-            foreach (var reference in references.OrderBy(i => i))
-                writer.WriteLine($"Reference={reference}");
+            // traverse the reference set for references that are actually referenced
+            foreach (var reference in item.References)
+                writer.WriteLine($"Reference={await GetIdentityAsync(item, reference, cancellationToken)}");
 
             // gather library lines
-            var libraries = new List<string>(16);
-            if (Libraries != null)
-                foreach (var library in Libraries)
-                    libraries.Add(GetIdentity(item, library.ItemSpec));
-            if (item.Libraries != null)
-                foreach (var library in item.Libraries)
-                    libraries.Add(GetIdentity(item, library));
-
-            // write sorted library lines
-            foreach (var library in libraries.OrderBy(i => i))
-                writer.WriteLine($"Library={library}");
+            foreach (var library in item.Libraries)
+                writer.WriteLine($"Library={await GetIdentityAsync(item, library, cancellationToken)}");
 
             // gather namespaces
             if (item.Namespaces != null)
-                foreach (var ns in item.Namespaces.OrderBy(i => i))
-                    libraries.Add($"Namespace={ns}");
+                foreach (var ns in item.Namespaces.Distinct().OrderBy(i => i))
+                    writer.WriteLine($"Namespace={ns}");
 
             // hash the resulting manifest and set the identity
             return GetHashForString(writer.ToString());
+        }
+
+        /// <summary>
+        /// Finds all of the direct and indirect references of the given assembly.
+        /// </summary>
+        /// <param name="path"></param>
+        /// <param name="referencesList"></param>
+        /// <param name="cancellationToken"></param>
+        /// <returns></returns>
+        async System.Threading.Tasks.Task<IEnumerable<string>> GetAssemblyReferencesAsync(string path, IEnumerable<string> referencesList, CancellationToken cancellationToken)
+        {
+            var hs = new HashSet<string>();
+
+            // recurse into references of path
+            await BuildAssemblyReferencesAsync(path, referencesList, hs, cancellationToken);
+
+            // ensure the required libraries are present
+            foreach (var n in new[] { "mscorlib", "netstandard", "IKVM.Runtime", "IKVM.Java" })
+            {
+                foreach (var i in referencesList)
+                    if ((await GetAssemblyInfoAsync(i)).Name == n)
+                        hs.Add(i);
+            }
+
+            return hs;
+        }
+
+        /// <summary>
+        /// Finds all of the direct and indirect references of the given assembly.
+        /// </summary>
+        /// <param name="path"></param>
+        /// <param name="referencesList"></param>
+        /// <param name="hs"></param>
+        /// <param name="cancellationToken"></param>
+        /// <returns></returns>
+        async System.Threading.Tasks.Task BuildAssemblyReferencesAsync(string path, IEnumerable<string> referencesList, HashSet<string> hs, CancellationToken cancellationToken)
+        {
+            cancellationToken.ThrowIfCancellationRequested();
+
+            foreach (var reference in (await GetAssemblyInfoAsync(path)).References)
+                foreach (var i in referencesList)
+                    if ((await GetAssemblyInfoAsync(i)).Name == reference)
+                        if (hs.Add(i))
+                            await BuildAssemblyReferencesAsync(i, referencesList, hs, cancellationToken);
+        }
+
+        /// <summary>
+        /// Gets the assembly info for the given assembly path.
+        /// </summary>
+        /// <param name="path"></param>
+        /// <returns></returns>
+        System.Threading.Tasks.Task<AssemblyInfo> GetAssemblyInfoAsync(string path)
+        {
+            return assemblyInfoCache.GetOrAdd(path, p => System.Threading.Tasks.Task.Run(() => ReadAssemblyInfo(p)));
+        }
+
+        /// <summary>
+        /// Reads the assembly info from the given assembly path.
+        /// </summary>
+        /// <param name="path"></param>
+        /// <returns></returns>
+        /// <exception cref="NotImplementedException"></exception>
+        AssemblyInfo ReadAssemblyInfo(string path)
+        {
+            using var fsstm = new FileStream(path, FileMode.Open, FileAccess.Read, FileShare.Read);
+            using var perdr = new PEReader(fsstm);
+            var mrdr = perdr.GetMetadataReader();
+
+            return new AssemblyInfo(mrdr.GetString(mrdr.GetAssemblyDefinition().Name), mrdr.AssemblyReferences.Select(i => mrdr.GetString(mrdr.GetAssemblyReference(i).Name)).ToList());
         }
 
         /// <summary>
@@ -211,7 +372,7 @@
         /// </summary>
         /// <param name="file"></param>
         /// <returns></returns>
-        string CreateIdentityForFile(string file)
+        async System.Threading.Tasks.Task<string> CreateIdentityForFileAsync(string file)
         {
             if (string.IsNullOrWhiteSpace(file))
                 throw new ArgumentException($"'{nameof(file)}' cannot be null or whitespace.", nameof(file));
@@ -232,7 +393,7 @@
 
             // if the file is potentially a .NET assembly
             if (Path.GetExtension(file) == ".dll" || Path.GetExtension(file) == ".exe")
-                if (TryGetIdentityForAssembly(file) is string h)
+                if (await TryGetIdentityForAssemblyAsync(file) is string h)
                     return h;
 
             // fallback to a standard full MD5 of the file
@@ -250,35 +411,39 @@
         /// </summary>
         /// <param name="file"></param>
         /// <returns></returns>
-        string TryGetIdentityForAssembly(string file)
+        System.Threading.Tasks.Task<string> TryGetIdentityForAssemblyAsync(string file)
         {
-            try
+            return System.Threading.Tasks.Task.Run(() =>
             {
-                using var fsstm = new FileStream(file, FileMode.Open, FileAccess.Read, FileShare.Read);
-                using var perdr = new PEReader(fsstm);
-                var mrdr = perdr.GetMetadataReader();
-                var mvid = mrdr.GetGuid(mrdr.GetModuleDefinition().Mvid);
-                return $"MVID:{mvid}";
-            }
-            catch
-            {
-                return null;
-            }
+                try
+                {
+                    using var fsstm = new FileStream(file, FileMode.Open, FileAccess.Read, FileShare.Read);
+                    using var perdr = new PEReader(fsstm);
+                    var mrdr = perdr.GetMetadataReader();
+                    var mvid = mrdr.GetGuid(mrdr.GetModuleDefinition().Mvid);
+                    return $"MVID:{mvid}";
+                }
+                catch
+                {
+                    return null;
+                }
+            });
         }
 
         /// <summary>
         /// Gets the hash value for the given file.
         /// </summary>
         /// <param name="file"></param>
+        /// <param name="cancellationToken"></param>
         /// <returns></returns>
-        string GetIdentityForFile(string file)
+        System.Threading.Tasks.Task<string> GetIdentityForFileAsync(string file, CancellationToken cancellationToken)
         {
             if (string.IsNullOrWhiteSpace(file))
                 throw new ArgumentException($"'{nameof(file)}' cannot be null or whitespace.", nameof(file));
             if (File.Exists(file) == false)
                 throw new FileNotFoundException($"Could not find file '{file}'.");
 
-            return fileIdentityCache.GetOrAdd((file, File.GetLastWriteTimeUtc(file)), _ => CreateIdentityForFile(_.Item1));
+            return fileIdentityCache.GetOrAdd((file, File.GetLastWriteTimeUtc(file)), _ => CreateIdentityForFileAsync(_.Item1));
         }
 
         /// <summary>
@@ -286,7 +451,8 @@
         /// </summary>
         /// <param name="item"></param>
         /// <param name="value"></param>
-        string GetIdentity(IkvmReferenceExportItem item, string value)
+        /// <param name="cancellationToken"></param>
+        async System.Threading.Tasks.Task<string> GetIdentityAsync(IkvmReferenceExportItem item, string value, CancellationToken cancellationToken)
         {
             if (item is null)
                 throw new ArgumentNullException(nameof(item));
@@ -303,7 +469,7 @@
 
             // others should exist
             if (File.Exists(value))
-                return GetIdentityForFile(value);
+                return await GetIdentityForFileAsync(value, cancellationToken);
 
             throw new Exception($"Could not resolve identity for '{value}'.");
         }

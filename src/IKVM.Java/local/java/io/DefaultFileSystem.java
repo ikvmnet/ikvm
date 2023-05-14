@@ -27,7 +27,7 @@ package java.io;
 class DefaultFileSystem {
 
     static FileSystem getFileSystem() {
-        return ikvm.internal.Util.WINDOWS ? new WinNTFileSystem() : new UnixFileSystem();
+        return cli.IKVM.Runtime.RuntimeUtil.get_IsWindows() ? new WinNTFileSystem() : new UnixFileSystem();
     }
 
 }

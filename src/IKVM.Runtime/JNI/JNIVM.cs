@@ -25,13 +25,15 @@
 using System.Collections.Generic;
 using System.Text;
 
-using IKVM.Runtime.Text;
+using IKVM.ByteCode.Text;
 
 namespace IKVM.Runtime.JNI
 {
 
     public sealed unsafe class JNIVM
     {
+
+        static readonly MUTF8Encoding MUTF8 = MUTF8Encoding.GetMUTF8(52);
 
         internal static volatile bool jvmCreated;
         internal static volatile bool jvmDestroyed;
@@ -60,7 +62,7 @@ namespace IKVM.Runtime.JNI
         /// <returns></returns>
         static string DecodePlatformString(byte* psz)
         {
-            var p = psz is not null ? MUTF8Encoding.IndexOfNull(psz) : -1;
+            var p = psz is not null ? MUTF8.IndexOfNull(psz) : -1;
             return p < 0 ? null : platformEncoding.GetString(psz, p);
         }
 
@@ -109,8 +111,10 @@ namespace IKVM.Runtime.JNI
                 }
             }
 
-            // initialize the JVM
-            IKVM.Java.Externs.java.lang.VMSystemProperties.ImportProperties = properties;
+            // initialize the JVM properties
+            foreach (var kvp in properties)
+                JVM.Properties.User[kvp.Key] = kvp.Value;
+
             java.lang.Thread.currentThread();
             *(void**)p_vm = JavaVM.pJavaVM;
 

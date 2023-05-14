@@ -1,7 +1,7 @@
 ﻿<Project Sdk="Microsoft.NET.Sdk">
-    <Import Project="$(MSBuildThisFileDirectory)..\..\ikvm.deps.props" />
-    <Import Project="$(MSBuildThisFileDirectory)..\..\ikvm.refs.props" />
-    
+    <Import Project="$(MSBuildThisFileDirectory)..\..\IKVM.deps.props" />
+    <Import Project="$(MSBuildThisFileDirectory)..\..\IKVM.refs.props" />
+
     <PropertyGroup>
         <TargetFrameworks>net472;netcoreapp3.1;net6.0</TargetFrameworks>
     </PropertyGroup>
@@ -45,6 +45,11 @@
             <SetTargetFramework>TargetFramework=netcoreapp3.1</SetTargetFramework>
             <SetRuntimeIdentifier>RuntimeIdentifier=linux-x64</SetRuntimeIdentifier>
             <ProjectTargetPath>ikvmc\netcoreapp3.1\linux-x64</ProjectTargetPath>
+        </PublishProjectReference>
+        <PublishProjectReference Include="..\ikvmc\ikvmc.csproj">
+            <SetTargetFramework>TargetFramework=netcoreapp3.1</SetTargetFramework>
+            <SetRuntimeIdentifier>RuntimeIdentifier=osx-x64</SetRuntimeIdentifier>
+            <ProjectTargetPath>ikvmc\netcoreapp3.1\osx-x64</ProjectTargetPath>
         </PublishProjectReference>
     </ItemGroup>
 

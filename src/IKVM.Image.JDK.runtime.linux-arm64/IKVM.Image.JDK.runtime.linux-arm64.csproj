@@ -19,11 +19,6 @@
     </ItemGroup>
 
     <ItemGroup Condition=" '$(TargetFramework)' == '' ">
-        <!--<PublishProjectReference Include="..\IKVM.Image.JDK-bin\IKVM.Image.JDK-bin.csproj">
-            <SetTargetFramework>TargetFramework=net461</SetTargetFramework>
-            <SetRuntimeIdentifier>RuntimeIdentifier=linux-arm64</SetRuntimeIdentifier>
-            <ProjectPackagePath>ikvm\net461\linux-arm64\bin</ProjectPackagePath>
-        </PublishProjectReference>-->
         <PublishProjectReference Include="..\IKVM.Image.JDK-bin\IKVM.Image.JDK-bin.csproj">
             <SetTargetFramework>TargetFramework=netcoreapp3.1</SetTargetFramework>
             <SetRuntimeIdentifier>RuntimeIdentifier=linux-arm64</SetRuntimeIdentifier>

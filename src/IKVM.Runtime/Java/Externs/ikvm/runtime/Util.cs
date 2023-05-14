@@ -152,8 +152,8 @@ namespace IKVM.Java.Externs.ikvm.runtime
             var wrapper = TypeWrapper.FromClass(classObject);
             if (wrapper.IsRemapped && wrapper.IsFinal)
                 return wrapper.TypeAsTBD;
-
-            return wrapper.TypeAsBaseType;
+            else
+                return wrapper.TypeAsBaseType;
         }
 
         /// <summary>
@@ -164,13 +164,12 @@ namespace IKVM.Java.Externs.ikvm.runtime
         public static Type getRuntimeTypeFromClass(global::java.lang.Class classObject)
         {
             var wrapper = TypeWrapper.FromClass(classObject);
-            if (wrapper.IsRemapped && wrapper.IsFinal)
-            {
-                wrapper.Finish();
-                return wrapper.TypeAsTBD;
-            }
+            wrapper.Finish();
 
-            return wrapper.TypeAsBaseType;
+            if (wrapper.IsRemapped && wrapper.IsFinal)
+                return wrapper.TypeAsTBD;
+            else
+                return wrapper.TypeAsBaseType;
         }
 
         [HideFromJava]

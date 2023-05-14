@@ -24,6 +24,7 @@
 using System.Collections.Generic;
 
 using IKVM.Internal;
+using IKVM.Runtime;
 
 namespace IKVM.Java.Externs.java.lang.reflect
 {
@@ -49,7 +50,7 @@ namespace IKVM.Java.Externs.java.lang.reflect
             global::java.lang.reflect.Parameter[] parameters = new global::java.lang.reflect.Parameter[methodParameters.Length];
             for (int i = 0; i < parameters.Length; i++)
             {
-                parameters[i] = new global::java.lang.reflect.Parameter(methodParameters[i].name ?? "", methodParameters[i].flags, _this, i);
+                parameters[i] = new global::java.lang.reflect.Parameter(methodParameters[i].name ?? "", (int)(ushort)methodParameters[i].accessFlags, _this, i);
             }
             return parameters;
 #endif

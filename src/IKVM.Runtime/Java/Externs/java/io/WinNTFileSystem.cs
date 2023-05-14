@@ -226,7 +226,7 @@ namespace IKVM.Java.Externs.java.io
             // check the VFS for the file
             if (VfsTable.Default.IsPath(path))
             {
-                return VfsTable.Default.GetPath(path) switch
+                return VfsTable.Default.GetEntry(path) switch
                 {
                     VfsFile file => access == ACCESS_READ && file.CanOpen(FileMode.Open, FileAccess.Read),
                     VfsDirectory => true,
@@ -358,7 +358,7 @@ namespace IKVM.Java.Externs.java.io
             {
                 var path = GetPathFromFile(f);
                 if (VfsTable.Default.IsPath(path))
-                    return VfsTable.Default.GetPath(path) is VfsFile file ? file.Size : 0;
+                    return VfsTable.Default.GetEntry(path) is VfsFile file ? file.Size : 0;
 
                 return new FileInfo(path).Length;
             }
@@ -515,7 +515,7 @@ namespace IKVM.Java.Externs.java.io
                 var path = GetPathFromFile(f);
                 if (VfsTable.Default.IsPath(path))
                 {
-                    if (VfsTable.Default.GetPath(path) is VfsDirectory vfs)
+                    if (VfsTable.Default.GetEntry(path) is VfsDirectory vfs)
                         return vfs.List();
 
                     throw new DirectoryNotFoundException();

@@ -23,7 +23,7 @@
 */
 using System;
 
-#if STATIC_COMPILER
+#if IMPORTER
 using IKVM.Reflection;
 using IKVM.Reflection.Emit;
 using Type = IKVM.Reflection.Type;
@@ -76,7 +76,7 @@ namespace IKVM.Internal
 			local = ilgen.DeclareLocal(type);
 			if (name != null)
 			{
-#if NET461_OR_GREATER
+#if NETFRAMEWORK
 				// SetLocalSymInfo does not exist in .net core
 				local.SetLocalSymInfo(name);
 #endif

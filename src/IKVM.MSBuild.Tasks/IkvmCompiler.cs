@@ -267,6 +267,7 @@ namespace IKVM.MSBuild.Tasks
 
             options.NoParameterReflection = NoParameterReflection;
             options.Remap = GetAbsolutePathIfNotNull(Remap);
+            options.NoLogo = true;
 
             if (Input != null)
                 foreach (var i in Input)

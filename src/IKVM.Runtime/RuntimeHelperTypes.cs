@@ -22,20 +22,29 @@
   
 */
 using System;
-#if STATIC_COMPILER
+
+using IKVM.Runtime;
+
+#if IMPORTER
 using IKVM.Reflection;
 using IKVM.Reflection.Emit;
+using IKVM.Tools.Importer;
+
 using Type = IKVM.Reflection.Type;
+
 #else
 using System.Reflection;
 using System.Reflection.Emit;
 #endif
+
 using System.Diagnostics;
 
 namespace IKVM.Internal
 {
+
 	static class RuntimeHelperTypes
 	{
+
 		private static Type classLiteralType;
 		private static FieldInfo classLiteralField;
 
@@ -44,13 +53,13 @@ namespace IKVM.Internal
 			Debug.Assert(type != Types.Void);
 			if (classLiteralType == null)
 			{
-#if STATIC_COMPILER
-				classLiteralType = JVM.CoreAssembly.GetType("ikvm.internal.ClassLiteral`1");
+#if IMPORTER
+				classLiteralType = JVM.BaseAssembly.GetType("ikvm.internal.ClassLiteral`1");
 #elif !FIRST_PASS
 				classLiteralType = typeof(ikvm.@internal.ClassLiteral<>);
 #endif
 			}
-#if !STATIC_COMPILER
+#if !IMPORTER
 			if (!IsTypeBuilder(type))
 			{
 				return classLiteralType.MakeGenericType(type).GetField("Value", BindingFlags.Public | BindingFlags.Static);
@@ -68,7 +77,7 @@ namespace IKVM.Internal
 			return type is TypeBuilder || (type.HasElementType && IsTypeBuilder(type.GetElementType()));
 		}
 
-#if STATIC_COMPILER
+#if IMPORTER
 		internal static void Create(CompilerClassLoader ccl)
 		{
 			EmitClassLiteral(ccl);

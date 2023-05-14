@@ -1,7 +1,7 @@
 ﻿using System;
 using System.Net.Sockets;
 
-namespace IKVM.Java.Externs.java.net
+namespace IKVM.Runtime.Util.Java.Net
 {
 
     /// <summary>

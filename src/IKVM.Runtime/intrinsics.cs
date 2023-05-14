@@ -24,27 +24,33 @@
 
 using System;
 using System.Collections.Generic;
-#if STATIC_COMPILER
+
+using IKVM.Runtime;
+
+#if IMPORTER
 using IKVM.Reflection;
 using IKVM.Reflection.Emit;
+using IKVM.Tools.Importer;
+
 using Type = IKVM.Reflection.Type;
 #else
 using System.Reflection;
 using System.Reflection.Emit;
 #endif
-using System.Diagnostics;
+
 using Instruction = IKVM.Internal.ClassFile.Method.Instruction;
 using InstructionFlags = IKVM.Internal.ClassFile.Method.InstructionFlags;
-using IKVM.Runtime;
 
 namespace IKVM.Internal
 {
+
     sealed class EmitIntrinsicContext
     {
+
         internal readonly MethodWrapper Method;
         internal readonly DynamicTypeWrapper.FinishContext Context;
         internal readonly CodeEmitter Emitter;
-        private readonly CodeInfo ma;
+        readonly CodeInfo ma;
         internal readonly int OpcodeIndex;
         internal readonly MethodWrapper Caller;
         internal readonly ClassFile ClassFile;
@@ -68,21 +74,16 @@ namespace IKVM.Internal
         internal bool MatchRange(int offset, int length)
         {
             if (OpcodeIndex + offset < 0)
-            {
                 return false;
-            }
+
             if (OpcodeIndex + offset + length > Code.Length)
-            {
                 return false;
-            }
+
             // we check for branches *into* the range, the start of the range may be a branch target
             for (int i = OpcodeIndex + offset + 1, end = OpcodeIndex + offset + length; i < end; i++)
-            {
                 if ((Flags[i] & InstructionFlags.BranchTarget) != 0)
-                {
                     return false;
-                }
-            }
+
             return true;
         }
 
@@ -130,6 +131,7 @@ namespace IKVM.Internal
         {
             Code[OpcodeIndex + offset].PatchOpCode(opc);
         }
+
     }
 
     static class Intrinsics
@@ -170,18 +172,19 @@ namespace IKVM.Internal
                 return methodName.GetHashCode();
             }
         }
-        private static readonly Dictionary<IntrinsicKey, Emitter> intrinsics = Register();
-#if STATIC_COMPILER
-        private static readonly Type typeofFloatConverter = StaticCompiler.GetRuntimeType("IKVM.Runtime.FloatConverter");
-        private static readonly Type typeofDoubleConverter = StaticCompiler.GetRuntimeType("IKVM.Runtime.DoubleConverter");
+
+        static readonly Dictionary<IntrinsicKey, Emitter> intrinsics = Register();
+#if IMPORTER
+        static readonly Type typeofFloatConverter = StaticCompiler.GetRuntimeType("IKVM.Runtime.FloatConverter");
+        static readonly Type typeofDoubleConverter = StaticCompiler.GetRuntimeType("IKVM.Runtime.DoubleConverter");
 #else
-		private static readonly Type typeofFloatConverter = typeof(IKVM.Runtime.FloatConverter);
-		private static readonly Type typeofDoubleConverter = typeof(IKVM.Runtime.DoubleConverter);
+        static readonly Type typeofFloatConverter = typeof(IKVM.Runtime.FloatConverter);
+        static readonly Type typeofDoubleConverter = typeof(IKVM.Runtime.DoubleConverter);
 #endif
 
-        private static Dictionary<IntrinsicKey, Emitter> Register()
+        static Dictionary<IntrinsicKey, Emitter> Register()
         {
-            Dictionary<IntrinsicKey, Emitter> intrinsics = new Dictionary<IntrinsicKey, Emitter>();
+            var intrinsics = new Dictionary<IntrinsicKey, Emitter>();
             intrinsics.Add(new IntrinsicKey("java.lang.Object", "getClass", "()Ljava.lang.Class;"), Object_getClass);
             intrinsics.Add(new IntrinsicKey("java.lang.Class", "desiredAssertionStatus", "()Z"), Class_desiredAssertionStatus);
             intrinsics.Add(new IntrinsicKey("java.lang.Float", "floatToRawIntBits", "(F)I"), Float_floatToRawIntBits);
@@ -190,15 +193,14 @@ namespace IKVM.Internal
             intrinsics.Add(new IntrinsicKey("java.lang.Double", "longBitsToDouble", "(J)D"), Double_longBitsToDouble);
             intrinsics.Add(new IntrinsicKey("java.lang.System", "arraycopy", "(Ljava.lang.Object;ILjava.lang.Object;II)V"), System_arraycopy);
             intrinsics.Add(new IntrinsicKey("java.util.concurrent.atomic.AtomicReferenceFieldUpdater", "newUpdater", "(Ljava.lang.Class;Ljava.lang.Class;Ljava.lang.String;)Ljava.util.concurrent.atomic.AtomicReferenceFieldUpdater;"), AtomicReferenceFieldUpdater_newUpdater);
-#if STATIC_COMPILER
+#if IMPORTER
             intrinsics.Add(new IntrinsicKey("sun.reflect.Reflection", "getCallerClass", "()Ljava.lang.Class;"), Reflection_getCallerClass);
             intrinsics.Add(new IntrinsicKey("ikvm.internal.CallerID", "getCallerID", "()Likvm.internal.CallerID;"), CallerID_getCallerID);
 #endif
             intrinsics.Add(new IntrinsicKey("ikvm.runtime.Util", "getInstanceTypeFromClass", "(Ljava.lang.Class;)Lcli.System.Type;"), Util_getInstanceTypeFromClass);
-#if STATIC_COMPILER
+#if IMPORTER
             // this only applies to the core class library, so makes no sense in dynamic mode
             intrinsics.Add(new IntrinsicKey("java.lang.Class", "getPrimitiveClass", "(Ljava.lang.String;)Ljava.lang.Class;"), Class_getPrimitiveClass);
-            intrinsics.Add(new IntrinsicKey("java.lang.Class", "getDeclaredField", "(Ljava.lang.String;)Ljava.lang.reflect.Field;"), Class_getDeclaredField);
 #endif
             intrinsics.Add(new IntrinsicKey("java.lang.ThreadLocal", "<init>", "()V"), ThreadLocal_new);
             intrinsics.Add(new IntrinsicKey("sun.misc.Unsafe", "ensureClassInitialized", "(Ljava.lang.Class;)V"), Unsafe_ensureClassInitialized);
@@ -288,76 +290,6 @@ namespace IKVM.Internal
             return false;
         }
 
-#if STATIC_COMPILER
-        // this intrinsifies the following two patterns:
-        //   unsafe.objectFieldOffset(XXX.class.getDeclaredField("xxx"));
-        // and
-        //   Class k = XXX.class;
-        //   unsafe.objectFieldOffset(k.getDeclaredField("xxx"));
-        // to avoid initializing the full reflection machinery at this point
-        private static bool Class_getDeclaredField(EmitIntrinsicContext eic)
-        {
-            if (eic.Caller.DeclaringType.GetClassLoader() != CoreClasses.java.lang.Object.Wrapper.GetClassLoader())
-            {
-                // we can only do this optimization when compiling the trusted core classes
-                return false;
-            }
-            TypeWrapper fieldClass;
-            if (eic.MatchRange(-2, 4)
-                && eic.Match(-2, NormalizedByteCode.__ldc)
-                && eic.Match(-1, NormalizedByteCode.__ldc_nothrow)
-                && eic.Match(1, NormalizedByteCode.__invokevirtual))
-            {
-                // unsafe.objectFieldOffset(XXX.class.getDeclaredField("xxx"));
-                fieldClass = eic.GetClassLiteral(-2);
-            }
-            else if (eic.MatchRange(-5, 7)
-                && eic.Match(-5, NormalizedByteCode.__ldc)
-                && eic.Match(-4, NormalizedByteCode.__astore)
-                && eic.Match(-3, NormalizedByteCode.__getstatic)
-                && eic.Match(-2, NormalizedByteCode.__aload, eic.Code[eic.OpcodeIndex - 4].NormalizedArg1)
-                && eic.Match(-1, NormalizedByteCode.__ldc_nothrow)
-                && eic.Match(1, NormalizedByteCode.__invokevirtual))
-            {
-                // Class k = XXX.class;
-                // unsafe.objectFieldOffset(k.getDeclaredField("xxx"));
-                fieldClass = eic.GetClassLiteral(-5);
-            }
-            else
-            {
-                return false;
-            }
-            FieldWrapper field = null;
-            string fieldName = eic.GetStringLiteral(-1);
-            foreach (FieldWrapper fw in fieldClass.GetFields())
-            {
-                if (fw.Name == fieldName)
-                {
-                    if (field != null)
-                    {
-                        return false;
-                    }
-                    field = fw;
-                }
-            }
-            if (field == null || field.IsStatic)
-            {
-                return false;
-            }
-            ClassFile.ConstantPoolItemMI cpi = eic.GetMethodref(1);
-            if (cpi.Class == "sun.misc.Unsafe" && cpi.Name == "objectFieldOffset" && cpi.Signature == "(Ljava.lang.reflect.Field;)J")
-            {
-                MethodWrapper mw = ClassLoaderWrapper.LoadClassCritical("sun.misc.Unsafe")
-                    .GetMethodWrapper("objectFieldOffset", "(Ljava.lang.Class;Ljava.lang.String;)J", false);
-                mw.Link();
-                mw.EmitCallvirt(eic.Emitter);
-                eic.PatchOpCode(1, NormalizedByteCode.__nop);
-                return true;
-            }
-            return false;
-        }
-#endif
-
         private static bool IsSafeForGetClassOptimization(TypeWrapper tw)
         {
             // because of ghost arrays, we don't optimize if both types are either java.lang.Object or an array
@@ -382,24 +314,29 @@ namespace IKVM.Internal
             return true;
         }
 
-        private static bool Double_longBitsToDouble(EmitIntrinsicContext eic)
+        static bool Double_longBitsToDouble(EmitIntrinsicContext eic)
         {
             EmitConversion(eic.Emitter, typeofDoubleConverter, "ToDouble");
             return true;
         }
 
-        private static void EmitConversion(CodeEmitter ilgen, Type converterType, string method)
+        static void EmitConversion(CodeEmitter ilgen, Type converterType, string method)
         {
-            CodeEmitterLocal converter = ilgen.UnsafeAllocTempLocal(converterType);
+            var converter = ilgen.UnsafeAllocTempLocal(converterType);
             ilgen.Emit(OpCodes.Ldloca, converter);
             ilgen.Emit(OpCodes.Call, converterType.GetMethod(method));
         }
 
-        private static bool System_arraycopy(EmitIntrinsicContext eic)
+        /// <summary>
+        /// Calls to System.arraycopy can be replaced with directly optimized versions.
+        /// </summary>
+        /// <param name="eic"></param>
+        /// <returns></returns>
+        static bool System_arraycopy(EmitIntrinsicContext eic)
         {
             // if the array arguments on the stack are of a known array type, we can redirect to an optimized version of arraycopy.
-            TypeWrapper dst_type = eic.GetStackTypeWrapper(0, 2);
-            TypeWrapper src_type = eic.GetStackTypeWrapper(0, 4);
+            var dst_type = eic.GetStackTypeWrapper(0, 2);
+            var src_type = eic.GetStackTypeWrapper(0, 4);
             if (!dst_type.IsUnloadable && dst_type.IsArray && dst_type == src_type)
             {
                 switch (dst_type.Name[1])
@@ -426,9 +363,9 @@ namespace IKVM.Internal
                         // use the fast version if the exact destination type is known
                         // (in that case the "dst_type == src_type" above should
                         // be changed to "src_type.IsAssignableTo(dst_type)".
-                        TypeWrapper elemtw = dst_type.ElementTypeWrapper;
+                        var elemtw = dst_type.ElementTypeWrapper;
                         // note that IsFinal returns true for array types, so we have to be careful!
-                        if (!elemtw.IsArray && elemtw.IsFinal)
+                        if (elemtw.IsArray == false && elemtw.IsFinal)
                         {
                             eic.Emitter.Emit(OpCodes.Call, ByteCodeHelperMethods.arraycopy_fast);
                         }
@@ -446,14 +383,14 @@ namespace IKVM.Internal
             }
         }
 
-        private static bool AtomicReferenceFieldUpdater_newUpdater(EmitIntrinsicContext eic)
+        static bool AtomicReferenceFieldUpdater_newUpdater(EmitIntrinsicContext eic)
         {
             return AtomicReferenceFieldUpdaterEmitter.Emit(eic.Context, eic.Caller.DeclaringType, eic.Emitter, eic.ClassFile, eic.OpcodeIndex, eic.Code, eic.Flags);
         }
 
-#if STATIC_COMPILER
+#if IMPORTER
 
-        private static bool Reflection_getCallerClass(EmitIntrinsicContext eic)
+        static bool Reflection_getCallerClass(EmitIntrinsicContext eic)
         {
             if (eic.Caller.HasCallerID)
             {
@@ -513,50 +450,52 @@ namespace IKVM.Internal
 
 #endif
 
-        private static bool Util_getInstanceTypeFromClass(EmitIntrinsicContext eic)
+        static bool Util_getInstanceTypeFromClass(EmitIntrinsicContext eic)
         {
-            if (eic.MatchRange(-1, 2)
-                && eic.Match(-1, NormalizedByteCode.__ldc))
+            if (eic.MatchRange(-1, 2) && eic.Match(-1, NormalizedByteCode.__ldc))
             {
-                TypeWrapper tw = eic.GetClassLiteral(-1);
-                if (!tw.IsUnloadable)
+                var tw = eic.GetClassLiteral(-1);
+                if (tw.IsUnloadable == false)
                 {
                     eic.Emitter.Emit(OpCodes.Pop);
                     if (tw.IsRemapped && tw.IsFinal)
-                    {
                         eic.Emitter.Emit(OpCodes.Ldtoken, tw.TypeAsTBD);
-                    }
                     else
-                    {
                         eic.Emitter.Emit(OpCodes.Ldtoken, tw.TypeAsBaseType);
-                    }
+
                     eic.Emitter.Emit(OpCodes.Call, Compiler.getTypeFromHandleMethod);
                     return true;
                 }
             }
+
             return false;
         }
 
-#if STATIC_COMPILER
-        private static bool Class_getPrimitiveClass(EmitIntrinsicContext eic)
+#if IMPORTER
+
+        static bool Class_getPrimitiveClass(EmitIntrinsicContext eic)
         {
             eic.Emitter.Emit(OpCodes.Pop);
             eic.Emitter.Emit(OpCodes.Ldnull);
-            MethodWrapper mw = CoreClasses.java.lang.Class.Wrapper.GetMethodWrapper("<init>", "(Lcli.System.Type;)V", false);
+            var mw = CoreClasses.java.lang.Class.Wrapper.GetMethodWrapper("<init>", "(Lcli.System.Type;)V", false);
             mw.Link();
             mw.EmitNewobj(eic.Emitter);
             return true;
         }
+
 #endif
 
-        private static bool ThreadLocal_new(EmitIntrinsicContext eic)
+        /// <summary>
+        /// Replaces calls to ThreadLocal.new with the direct initialization of the ThreadLocal.
+        /// </summary>
+        /// <param name="eic"></param>
+        /// <returns></returns>
+        static bool ThreadLocal_new(EmitIntrinsicContext eic)
         {
             // it is only valid to replace a ThreadLocal instantiation by our ThreadStatic based version, if we can prove that the instantiation only happens once
             // (which is the case when we're in <clinit> and there aren't any branches that lead to the current position)
-            if (!eic.Caller.IsClassInitializer)
-            {
+            if (eic.Caller.IsClassInitializer == false)
                 return false;
-            }
 #if CLASSGC
 			if (JVM.classUnloading)
 			{
@@ -565,23 +504,24 @@ namespace IKVM.Internal
 			}
 #endif
             for (int i = 0; i <= eic.OpcodeIndex; i++)
-            {
                 if ((eic.Flags[i] & InstructionFlags.BranchTarget) != 0)
-                {
                     return false;
-                }
-            }
+
             eic.Emitter.Emit(OpCodes.Newobj, eic.Context.DefineThreadLocalType());
             return true;
         }
 
-        private static bool Unsafe_ensureClassInitialized(EmitIntrinsicContext eic)
+        /// <summary>
+        /// Replaces calls to Unsafe.ensureClassInitialized with direct calls to run the class constructor.
+        /// </summary>
+        /// <param name="eic"></param>
+        /// <returns></returns>
+        static bool Unsafe_ensureClassInitialized(EmitIntrinsicContext eic)
         {
-            if (eic.MatchRange(-1, 2)
-                && eic.Match(-1, NormalizedByteCode.__ldc))
+            if (eic.MatchRange(-1, 2) && eic.Match(-1, NormalizedByteCode.__ldc))
             {
-                TypeWrapper classLiteral = eic.GetClassLiteral(-1);
-                if (!classLiteral.IsUnloadable)
+                var classLiteral = eic.GetClassLiteral(-1);
+                if (classLiteral.IsUnloadable == false)
                 {
                     eic.Emitter.Emit(OpCodes.Pop);
                     eic.Emitter.EmitNullCheck();
@@ -589,76 +529,81 @@ namespace IKVM.Internal
                     return true;
                 }
             }
+
             return false;
         }
 
+        /// <summary>
+        /// Returns true if the given <see cref="TypeWrapper"/> specifies an array type suitable for an unsafe operation.
+        /// </summary>
+        /// <param name="tw"></param>
+        /// <returns></returns>
         internal static bool IsSupportedArrayTypeForUnsafeOperation(TypeWrapper tw)
         {
-            return tw.IsArray
-                && !tw.IsGhostArray
-                && !tw.ElementTypeWrapper.IsPrimitive
-                && !tw.ElementTypeWrapper.IsNonPrimitiveValueType;
+            return tw.IsArray && !tw.IsGhostArray && !tw.ElementTypeWrapper.IsPrimitive && !tw.ElementTypeWrapper.IsNonPrimitiveValueType;
         }
 
-        private static bool Unsafe_putObject(EmitIntrinsicContext eic)
+        static bool Unsafe_putObject(EmitIntrinsicContext eic)
         {
             return Unsafe_putObjectImpl(eic, false);
         }
 
-        private static bool Unsafe_putOrderedObject(EmitIntrinsicContext eic)
+        static bool Unsafe_putOrderedObject(EmitIntrinsicContext eic)
         {
             return Unsafe_putObjectImpl(eic, false);
         }
 
-        private static bool Unsafe_putObjectVolatile(EmitIntrinsicContext eic)
+        static bool Unsafe_putObjectVolatile(EmitIntrinsicContext eic)
         {
             return Unsafe_putObjectImpl(eic, true);
         }
 
-        private static bool Unsafe_putObjectImpl(EmitIntrinsicContext eic, bool membarrier)
+        static bool Unsafe_putObjectImpl(EmitIntrinsicContext eic, bool isVolatile)
         {
-            TypeWrapper tw = eic.GetStackTypeWrapper(0, 2);
-            if (IsSupportedArrayTypeForUnsafeOperation(tw)
-                && eic.GetStackTypeWrapper(0, 0).IsAssignableTo(tw.ElementTypeWrapper))
+            var tw = eic.GetStackTypeWrapper(0, 2);
+
+            // check for non-primitive array case
+            if (IsSupportedArrayTypeForUnsafeOperation(tw) && eic.GetStackTypeWrapper(0, 0).IsAssignableTo(tw.ElementTypeWrapper))
             {
-                CodeEmitterLocal value = eic.Emitter.AllocTempLocal(tw.ElementTypeWrapper.TypeAsLocalOrStackType);
-                CodeEmitterLocal index = eic.Emitter.AllocTempLocal(Types.Int32);
-                CodeEmitterLocal array = eic.Emitter.AllocTempLocal(tw.TypeAsLocalOrStackType);
+                var value = eic.Emitter.AllocTempLocal(tw.ElementTypeWrapper.TypeAsLocalOrStackType);
+                var index = eic.Emitter.AllocTempLocal(Types.Int32);
+                var array = eic.Emitter.AllocTempLocal(tw.TypeAsLocalOrStackType);
+
+                // consume existing call site
                 eic.Emitter.Emit(OpCodes.Stloc, value);
                 eic.Emitter.Emit(OpCodes.Conv_Ovf_I4);
                 eic.Emitter.Emit(OpCodes.Stloc, index);
                 eic.Emitter.Emit(OpCodes.Stloc, array);
                 EmitConsumeUnsafe(eic);
+
                 eic.Emitter.Emit(OpCodes.Ldloc, array);
                 eic.Emitter.Emit(OpCodes.Ldloc, index);
                 eic.Emitter.Emit(OpCodes.Ldloc, value);
+                eic.Emitter.Emit(OpCodes.Stelem_Ref);
+
+                if (isVolatile)
+                    eic.Emitter.EmitMemoryBarrier();
+
                 eic.Emitter.ReleaseTempLocal(array);
                 eic.Emitter.ReleaseTempLocal(index);
                 eic.Emitter.ReleaseTempLocal(value);
-                eic.Emitter.Emit(OpCodes.Stelem_Ref);
-                if (membarrier)
-                {
-                    eic.Emitter.EmitMemoryBarrier();
-                }
                 eic.NonLeaf = false;
                 return true;
             }
-            if ((eic.Flags[eic.OpcodeIndex] & InstructionFlags.BranchTarget) != 0
-                || (eic.Flags[eic.OpcodeIndex - 1] & InstructionFlags.BranchTarget) != 0)
-            {
+
+            if ((eic.Flags[eic.OpcodeIndex] & InstructionFlags.BranchTarget) != 0 || (eic.Flags[eic.OpcodeIndex - 1] & InstructionFlags.BranchTarget) != 0)
                 return false;
-            }
-            if ((eic.Match(-1, NormalizedByteCode.__aload) || eic.Match(-1, NormalizedByteCode.__aconst_null))
-                && eic.Match(-2, NormalizedByteCode.__getstatic))
+
+            if ((eic.Match(-1, NormalizedByteCode.__aload) || eic.Match(-1, NormalizedByteCode.__aconst_null)) && eic.Match(-2, NormalizedByteCode.__getstatic))
             {
-                FieldWrapper fw = GetUnsafeField(eic, eic.GetFieldref(-2));
-                if (fw != null
-                    && (!fw.IsFinal || (!fw.IsStatic && eic.Caller.Name == "<init>") || (fw.IsStatic && eic.Caller.Name == "<clinit>"))
-                    && fw.IsAccessibleFrom(fw.DeclaringType, eic.Caller.DeclaringType, fw.DeclaringType)
-                    && eic.GetStackTypeWrapper(0, 0).IsAssignableTo(fw.FieldTypeWrapper)
-                    && (fw.IsStatic || fw.DeclaringType == eic.GetStackTypeWrapper(0, 2)))
+                var fw = GetUnsafeField(eic, eic.GetFieldref(-2));
+                if (fw != null &&
+                    (!fw.IsFinal || (!fw.IsStatic && eic.Caller.Name == "<init>") || (fw.IsStatic && eic.Caller.Name == "<clinit>")) &&
+                    fw.IsAccessibleFrom(fw.DeclaringType, eic.Caller.DeclaringType, fw.DeclaringType) &&
+                    eic.GetStackTypeWrapper(0, 0).IsAssignableTo(fw.FieldTypeWrapper) &&
+                    (fw.IsStatic || fw.DeclaringType == eic.GetStackTypeWrapper(0, 2)))
                 {
-                    CodeEmitterLocal value = eic.Emitter.AllocTempLocal(fw.FieldTypeWrapper.TypeAsLocalOrStackType);
+                    var value = eic.Emitter.AllocTempLocal(fw.FieldTypeWrapper.TypeAsLocalOrStackType);
                     eic.Emitter.Emit(OpCodes.Stloc, value);
                     eic.Emitter.Emit(OpCodes.Pop);      // discard offset field
                     if (fw.IsStatic)
@@ -668,114 +613,138 @@ namespace IKVM.Internal
                     }
                     else
                     {
-                        CodeEmitterLocal obj = eic.Emitter.AllocTempLocal(fw.DeclaringType.TypeAsLocalOrStackType);
-                        eic.Emitter.Emit(OpCodes.Stloc, obj);
+                        var target = eic.Emitter.AllocTempLocal(fw.DeclaringType.TypeAsLocalOrStackType);
+                        eic.Emitter.Emit(OpCodes.Stloc, target);
                         EmitConsumeUnsafe(eic);
-                        eic.Emitter.Emit(OpCodes.Ldloc, obj);
-                        eic.Emitter.ReleaseTempLocal(obj);
+                        eic.Emitter.Emit(OpCodes.Ldloc, target);
+                        eic.Emitter.ReleaseTempLocal(target);
                     }
+
                     eic.Emitter.Emit(OpCodes.Ldloc, value);
                     eic.Emitter.ReleaseTempLocal(value);
+
                     // note that we assume the CLR memory model where all writes are ordered,
                     // so we don't need a volatile store or a memory barrier and putOrderedObject
                     // is typically used with a volatile field, so to avoid the memory barrier,
                     // we don't use FieldWrapper.EmitSet(), but emit the store directly
                     eic.Emitter.Emit(fw.IsStatic ? OpCodes.Stsfld : OpCodes.Stfld, fw.GetField());
-                    if (membarrier)
-                    {
+                    if (isVolatile)
                         eic.Emitter.EmitMemoryBarrier();
-                    }
+
                     eic.NonLeaf = false;
                     return true;
                 }
             }
+
             return false;
         }
 
-        private static bool Unsafe_getObjectVolatile(EmitIntrinsicContext eic)
+        /// <summary>
+        /// Replaces calls to Unsafe.getObjectVolatile against an array with inline code.
+        /// </summary>
+        /// <param name="eic"></param>
+        /// <returns></returns>
+        static bool Unsafe_getObjectVolatile(EmitIntrinsicContext eic)
         {
             // the check here must be kept in sync with the hack in MethodAnalyzer.AnalyzeTypeFlow()
-            TypeWrapper tw = eic.GetStackTypeWrapper(0, 1);
+            var tw = eic.GetStackTypeWrapper(0, 1);
             if (IsSupportedArrayTypeForUnsafeOperation(tw))
             {
-                CodeEmitterLocal index = eic.Emitter.AllocTempLocal(Types.Int32);
-                CodeEmitterLocal obj = eic.Emitter.AllocTempLocal(tw.TypeAsLocalOrStackType);
+                var offset = eic.Emitter.AllocTempLocal(Types.Int32);
+                var target = eic.Emitter.AllocTempLocal(tw.TypeAsLocalOrStackType);
+
+                // consume existing call site
                 eic.Emitter.Emit(OpCodes.Conv_Ovf_I4);
-                eic.Emitter.Emit(OpCodes.Stloc, index);
-                eic.Emitter.Emit(OpCodes.Stloc, obj);
+                eic.Emitter.Emit(OpCodes.Stloc, offset);
+                eic.Emitter.Emit(OpCodes.Stloc, target);
                 EmitConsumeUnsafe(eic);
-                eic.Emitter.Emit(OpCodes.Ldloc, obj);
-                eic.Emitter.Emit(OpCodes.Ldloc, index);
-                eic.Emitter.ReleaseTempLocal(obj);
-                eic.Emitter.ReleaseTempLocal(index);
+
+                eic.Emitter.Emit(OpCodes.Ldloc, target);
+                eic.Emitter.Emit(OpCodes.Ldloc, offset);
                 eic.Emitter.Emit(OpCodes.Ldelema, tw.TypeAsLocalOrStackType.GetElementType());
                 eic.Emitter.Emit(OpCodes.Volatile);
                 eic.Emitter.Emit(OpCodes.Ldind_Ref);
+
                 // remove the redundant checkcast that usually follows
-                if (eic.Code[eic.OpcodeIndex + 1].NormalizedOpCode == NormalizedByteCode.__checkcast
-                    && tw.ElementTypeWrapper.IsAssignableTo(eic.ClassFile.GetConstantPoolClassType(eic.Code[eic.OpcodeIndex + 1].Arg1)))
-                {
+                if (eic.Code[eic.OpcodeIndex + 1].NormalizedOpCode == NormalizedByteCode.__checkcast && tw.ElementTypeWrapper.IsAssignableTo(eic.ClassFile.GetConstantPoolClassType(eic.Code[eic.OpcodeIndex + 1].Arg1)))
                     eic.PatchOpCode(1, NormalizedByteCode.__nop);
-                }
+
+                eic.Emitter.ReleaseTempLocal(target);
+                eic.Emitter.ReleaseTempLocal(offset);
                 eic.NonLeaf = false;
                 return true;
             }
+
             return false;
         }
 
-        private static bool Unsafe_compareAndSwapObject(EmitIntrinsicContext eic)
+        /// <summary>
+        /// Replaces a call to Unsafe.compareAndSwapObject with IL that directly conducts the operation.
+        /// </summary>
+        /// <param name="eic"></param>
+        /// <returns></returns>
+        static bool Unsafe_compareAndSwapObject(EmitIntrinsicContext eic)
         {
-            TypeWrapper tw = eic.GetStackTypeWrapper(0, 3);
-            if (IsSupportedArrayTypeForUnsafeOperation(tw)
-                && eic.GetStackTypeWrapper(0, 0).IsAssignableTo(tw.ElementTypeWrapper)
-                && eic.GetStackTypeWrapper(0, 1).IsAssignableTo(tw.ElementTypeWrapper))
+            var tw = eic.GetStackTypeWrapper(0, 3);
+
+            // target object is an array type
+            // convert offset to int32 index
+            // directly compare/exchange value
+            if (IsSupportedArrayTypeForUnsafeOperation(tw) &&
+                eic.GetStackTypeWrapper(0, 0).IsAssignableTo(tw.ElementTypeWrapper) &&
+                eic.GetStackTypeWrapper(0, 1).IsAssignableTo(tw.ElementTypeWrapper))
             {
-                Type type = tw.TypeAsLocalOrStackType.GetElementType();
-                CodeEmitterLocal update = eic.Emitter.AllocTempLocal(type);
-                CodeEmitterLocal expect = eic.Emitter.AllocTempLocal(type);
-                CodeEmitterLocal index = eic.Emitter.AllocTempLocal(Types.Int32);
-                CodeEmitterLocal obj = eic.Emitter.AllocTempLocal(tw.TypeAsLocalOrStackType);
+                var type = tw.TypeAsLocalOrStackType.GetElementType();
+                var update = eic.Emitter.AllocTempLocal(type);
+                var expect = eic.Emitter.AllocTempLocal(type);
+                var offset = eic.Emitter.AllocTempLocal(Types.Int32);
+                var target = eic.Emitter.AllocTempLocal(tw.TypeAsLocalOrStackType);
+
+                // consume existing call site
                 eic.Emitter.Emit(OpCodes.Stloc, update);
                 eic.Emitter.Emit(OpCodes.Stloc, expect);
                 eic.Emitter.Emit(OpCodes.Conv_Ovf_I4);
-                eic.Emitter.Emit(OpCodes.Stloc, index);
-                eic.Emitter.Emit(OpCodes.Stloc, obj);
+                eic.Emitter.Emit(OpCodes.Stloc, offset);
+                eic.Emitter.Emit(OpCodes.Stloc, target);
                 EmitConsumeUnsafe(eic);
-                eic.Emitter.Emit(OpCodes.Ldloc, obj);
-                eic.Emitter.Emit(OpCodes.Ldloc, index);
+
+                // emit new call site
+                eic.Emitter.Emit(OpCodes.Ldloc, target);
+                eic.Emitter.Emit(OpCodes.Ldloc, offset);
                 eic.Emitter.Emit(OpCodes.Ldelema, type);
                 eic.Emitter.Emit(OpCodes.Ldloc, update);
                 eic.Emitter.Emit(OpCodes.Ldloc, expect);
                 eic.Emitter.Emit(OpCodes.Call, AtomicReferenceFieldUpdaterEmitter.MakeCompareExchange(type));
                 eic.Emitter.Emit(OpCodes.Ldloc, expect);
                 eic.Emitter.Emit(OpCodes.Ceq);
-                eic.Emitter.ReleaseTempLocal(obj);
-                eic.Emitter.ReleaseTempLocal(index);
+
+                eic.Emitter.ReleaseTempLocal(target);
+                eic.Emitter.ReleaseTempLocal(offset);
                 eic.Emitter.ReleaseTempLocal(expect);
                 eic.Emitter.ReleaseTempLocal(update);
                 eic.NonLeaf = false;
                 return true;
             }
-            if ((eic.Flags[eic.OpcodeIndex] & InstructionFlags.BranchTarget) != 0
-                || (eic.Flags[eic.OpcodeIndex - 1] & InstructionFlags.BranchTarget) != 0
-                || (eic.Flags[eic.OpcodeIndex - 2] & InstructionFlags.BranchTarget) != 0)
-            {
+
+            if ((eic.Flags[eic.OpcodeIndex] & InstructionFlags.BranchTarget) != 0 ||
+                (eic.Flags[eic.OpcodeIndex - 1] & InstructionFlags.BranchTarget) != 0 ||
+                (eic.Flags[eic.OpcodeIndex - 2] & InstructionFlags.BranchTarget) != 0)
                 return false;
-            }
-            if ((eic.Match(-1, NormalizedByteCode.__aload) || eic.Match(-1, NormalizedByteCode.__aconst_null))
-                && (eic.Match(-2, NormalizedByteCode.__aload) || eic.Match(-2, NormalizedByteCode.__aconst_null))
-                && eic.Match(-3, NormalizedByteCode.__getstatic))
+
+            if ((eic.Match(-1, NormalizedByteCode.__aload) || eic.Match(-1, NormalizedByteCode.__aconst_null)) &&
+                (eic.Match(-2, NormalizedByteCode.__aload) || eic.Match(-2, NormalizedByteCode.__aconst_null)) &&
+                eic.Match(-3, NormalizedByteCode.__getstatic))
             {
-                FieldWrapper fw = GetUnsafeField(eic, eic.GetFieldref(-3));
-                if (fw != null
-                    && fw.IsAccessibleFrom(fw.DeclaringType, eic.Caller.DeclaringType, fw.DeclaringType)
-                    && eic.GetStackTypeWrapper(0, 0).IsAssignableTo(fw.FieldTypeWrapper)
-                    && eic.GetStackTypeWrapper(0, 1).IsAssignableTo(fw.FieldTypeWrapper)
-                    && (fw.IsStatic || fw.DeclaringType == eic.GetStackTypeWrapper(0, 3)))
+                var fw = GetUnsafeField(eic, eic.GetFieldref(-3));
+                if (fw != null &&
+                    fw.IsAccessibleFrom(fw.DeclaringType, eic.Caller.DeclaringType, fw.DeclaringType) &&
+                    eic.GetStackTypeWrapper(0, 0).IsAssignableTo(fw.FieldTypeWrapper) &&
+                    eic.GetStackTypeWrapper(0, 1).IsAssignableTo(fw.FieldTypeWrapper) &&
+                    (fw.IsStatic || fw.DeclaringType == eic.GetStackTypeWrapper(0, 3)))
                 {
-                    Type type = fw.FieldTypeWrapper.TypeAsLocalOrStackType;
-                    CodeEmitterLocal update = eic.Emitter.AllocTempLocal(type);
-                    CodeEmitterLocal expect = eic.Emitter.AllocTempLocal(type);
+                    var type = fw.FieldTypeWrapper.TypeAsLocalOrStackType;
+                    var update = eic.Emitter.AllocTempLocal(type);
+                    var expect = eic.Emitter.AllocTempLocal(type);
                     eic.Emitter.Emit(OpCodes.Stloc, update);
                     eic.Emitter.Emit(OpCodes.Stloc, expect);
                     eic.Emitter.Emit(OpCodes.Pop);          // discard index
@@ -787,13 +756,14 @@ namespace IKVM.Internal
                     }
                     else
                     {
-                        CodeEmitterLocal obj = eic.Emitter.AllocTempLocal(eic.Caller.DeclaringType.TypeAsLocalOrStackType);
+                        var obj = eic.Emitter.AllocTempLocal(eic.Caller.DeclaringType.TypeAsLocalOrStackType);
                         eic.Emitter.Emit(OpCodes.Stloc, obj);
                         EmitConsumeUnsafe(eic);
                         eic.Emitter.Emit(OpCodes.Ldloc, obj);
                         eic.Emitter.ReleaseTempLocal(obj);
                         eic.Emitter.Emit(OpCodes.Ldflda, fw.GetField());
                     }
+
                     eic.Emitter.Emit(OpCodes.Ldloc, update);
                     eic.Emitter.Emit(OpCodes.Ldloc, expect);
                     eic.Emitter.Emit(OpCodes.Call, AtomicReferenceFieldUpdaterEmitter.MakeCompareExchange(type));
@@ -805,91 +775,108 @@ namespace IKVM.Internal
                     return true;
                 }
             }
+
             // stack layout at call site:
             // 4 Unsafe (receiver)
-            // 3 Object (obj)
+            // 3 Object (target)
             // 2 long (offset)
             // 1 Object (expect)
             // 0 Object (update)
-            TypeWrapper twUnsafe = eic.GetStackTypeWrapper(0, 4);
+            var twUnsafe = eic.GetStackTypeWrapper(0, 4);
             if (twUnsafe == VerifierTypeWrapper.Null)
-            {
                 return false;
-            }
+
             for (int i = 0; ; i--)
             {
                 if ((eic.Flags[eic.OpcodeIndex + i] & InstructionFlags.BranchTarget) != 0)
-                {
                     return false;
-                }
+
                 if (eic.GetStackTypeWrapper(i, 0) == twUnsafe)
                 {
                     // the pattern we recognize is:
                     // aload
                     // getstatic <offset field>
-                    if (eic.Match(i, NormalizedByteCode.__aload) && eic.GetStackTypeWrapper(i + 1, 0) == eic.Caller.DeclaringType
-                        && eic.Match(i + 1, NormalizedByteCode.__getstatic))
+                    if (eic.Match(i, NormalizedByteCode.__aload) &&
+                        eic.GetStackTypeWrapper(i + 1, 0) == eic.Caller.DeclaringType &&
+                        eic.Match(i + 1, NormalizedByteCode.__getstatic))
                     {
-                        FieldWrapper fw = GetUnsafeField(eic, eic.GetFieldref(i + 1));
+                        var fw = GetUnsafeField(eic, eic.GetFieldref(i + 1));
                         if (fw != null && !fw.IsStatic && fw.DeclaringType == eic.Caller.DeclaringType)
                         {
-                            Type type = fw.FieldTypeWrapper.TypeAsLocalOrStackType;
-                            CodeEmitterLocal update = eic.Emitter.AllocTempLocal(type);
-                            CodeEmitterLocal expect = eic.Emitter.AllocTempLocal(type);
-                            CodeEmitterLocal obj = eic.Emitter.AllocTempLocal(eic.Caller.DeclaringType.TypeAsLocalOrStackType);
+                            var update = eic.Emitter.AllocTempLocal(fw.FieldTypeWrapper.TypeAsLocalOrStackType);
+                            var expect = eic.Emitter.AllocTempLocal(fw.FieldTypeWrapper.TypeAsLocalOrStackType);
+                            var target = eic.Emitter.AllocTempLocal(eic.Caller.DeclaringType.TypeAsLocalOrStackType);
+
+                            // consume existing call site
                             eic.Emitter.Emit(OpCodes.Stloc, update);
                             eic.Emitter.Emit(OpCodes.Stloc, expect);
                             eic.Emitter.Emit(OpCodes.Pop);          // discard offset
-                            eic.Emitter.Emit(OpCodes.Stloc, obj);
+                            eic.Emitter.Emit(OpCodes.Stloc, target);
                             EmitConsumeUnsafe(eic);
-                            eic.Emitter.Emit(OpCodes.Ldloc, obj);
-                            eic.Emitter.Emit(OpCodes.Ldflda, fw.GetField());
+
+                            // emit new call site
+                            eic.Emitter.Emit(OpCodes.Ldloc, target);
+                            eic.Emitter.Emit(OpCodes.Ldloc, expect);
                             eic.Emitter.Emit(OpCodes.Ldloc, update);
-                            eic.Emitter.Emit(OpCodes.Ldloc, expect);
-                            eic.Emitter.Emit(OpCodes.Call, AtomicReferenceFieldUpdaterEmitter.MakeCompareExchange(type));
-                            eic.Emitter.Emit(OpCodes.Ldloc, expect);
-                            eic.Emitter.Emit(OpCodes.Ceq);
+                            fw.EmitUnsafeCompareAndSwap(eic.Emitter);
+
                             eic.Emitter.ReleaseTempLocal(expect);
                             eic.Emitter.ReleaseTempLocal(update);
                             eic.NonLeaf = false;
                             return true;
                         }
                     }
+
                     return false;
                 }
             }
         }
 
-        private static bool Unsafe_getAndSetObject(EmitIntrinsicContext eic)
+        /// <summary>
+        /// Replaces calls to Unsafe.getAndSetObject against an array with inline code.
+        /// </summary>
+        /// <param name="eic"></param>
+        /// <returns></returns>
+        static bool Unsafe_getAndSetObject(EmitIntrinsicContext eic)
         {
-            TypeWrapper tw = eic.GetStackTypeWrapper(0, 2);
-            if (IsSupportedArrayTypeForUnsafeOperation(tw)
-                && eic.GetStackTypeWrapper(0, 0).IsAssignableTo(tw.ElementTypeWrapper))
+            var tw = eic.GetStackTypeWrapper(0, 2);
+            if (IsSupportedArrayTypeForUnsafeOperation(tw) && eic.GetStackTypeWrapper(0, 0).IsAssignableTo(tw.ElementTypeWrapper))
             {
-                Type type = tw.TypeAsLocalOrStackType.GetElementType();
-                CodeEmitterLocal newValue = eic.Emitter.AllocTempLocal(type);
-                CodeEmitterLocal index = eic.Emitter.AllocTempLocal(Types.Int32);
-                CodeEmitterLocal obj = eic.Emitter.AllocTempLocal(tw.TypeAsLocalOrStackType);
+                var type = tw.TypeAsLocalOrStackType.GetElementType();
+                var newValue = eic.Emitter.AllocTempLocal(type);
+                var offset = eic.Emitter.AllocTempLocal(Types.Int32);
+                var target = eic.Emitter.AllocTempLocal(tw.TypeAsLocalOrStackType);
+
+                // consume existing call site
                 eic.Emitter.Emit(OpCodes.Stloc, newValue);
                 eic.Emitter.Emit(OpCodes.Conv_Ovf_I4);
-                eic.Emitter.Emit(OpCodes.Stloc, index);
-                eic.Emitter.Emit(OpCodes.Stloc, obj);
+                eic.Emitter.Emit(OpCodes.Stloc, offset);
+                eic.Emitter.Emit(OpCodes.Stloc, target);
                 EmitConsumeUnsafe(eic);
-                eic.Emitter.Emit(OpCodes.Ldloc, obj);
-                eic.Emitter.Emit(OpCodes.Ldloc, index);
+
+                // emit new call
+                eic.Emitter.Emit(OpCodes.Ldloc, target);
+                eic.Emitter.Emit(OpCodes.Ldloc, offset);
                 eic.Emitter.Emit(OpCodes.Ldelema, type);
                 eic.Emitter.Emit(OpCodes.Ldloc, newValue);
                 eic.Emitter.Emit(OpCodes.Call, MakeExchange(type));
-                eic.Emitter.ReleaseTempLocal(obj);
-                eic.Emitter.ReleaseTempLocal(index);
+
+                eic.Emitter.ReleaseTempLocal(target);
+                eic.Emitter.ReleaseTempLocal(offset);
                 eic.Emitter.ReleaseTempLocal(newValue);
                 eic.NonLeaf = false;
                 return true;
             }
+
             return false;
         }
 
-        private static bool Unsafe_compareAndSwapInt(EmitIntrinsicContext eic)
+        /// <summary>
+        /// Replaces a call to Unsafe.compareAndSwapInt with IL that directly conducts the operation.
+        /// </summary>
+        /// <param name="eic"></param>
+        /// <returns></returns>
+        static bool Unsafe_compareAndSwapInt(EmitIntrinsicContext eic)
         {
             // stack layout at call site:
             // 4 Unsafe (receiver)
@@ -897,49 +884,49 @@ namespace IKVM.Internal
             // 2 long (offset)
             // 1 int (expect)
             // 0 int (update)
-            TypeWrapper twUnsafe = eic.GetStackTypeWrapper(0, 4);
+
+            var twUnsafe = eic.GetStackTypeWrapper(0, 4);
             if (twUnsafe == VerifierTypeWrapper.Null)
-            {
                 return false;
-            }
+
             for (int i = 0; ; i--)
             {
                 if ((eic.Flags[eic.OpcodeIndex + i] & InstructionFlags.BranchTarget) != 0)
-                {
                     return false;
-                }
+
                 if (eic.GetStackTypeWrapper(i, 0) == twUnsafe)
                 {
                     // the pattern we recognize is:
                     // aload
                     // getstatic <offset field>
-                    if (eic.Match(i, NormalizedByteCode.__aload) && eic.GetStackTypeWrapper(i + 1, 0) == eic.Caller.DeclaringType
-                        && eic.Match(i + 1, NormalizedByteCode.__getstatic))
+                    if (eic.Match(i, NormalizedByteCode.__aload) &&
+                        eic.GetStackTypeWrapper(i + 1, 0) == eic.Caller.DeclaringType &&
+                        eic.Match(i + 1, NormalizedByteCode.__getstatic))
                     {
-                        FieldWrapper fw = GetUnsafeField(eic, eic.GetFieldref(i + 1));
+                        var fw = GetUnsafeField(eic, eic.GetFieldref(i + 1));
                         if (fw != null && !fw.IsStatic && fw.DeclaringType == eic.Caller.DeclaringType)
                         {
-                            CodeEmitterLocal update = eic.Emitter.AllocTempLocal(Types.Int32);
-                            CodeEmitterLocal expect = eic.Emitter.AllocTempLocal(Types.Int32);
-                            CodeEmitterLocal obj = eic.Emitter.AllocTempLocal(eic.Caller.DeclaringType.TypeAsLocalOrStackType);
+                            var update = eic.Emitter.AllocTempLocal(Types.Int32);
+                            var expect = eic.Emitter.AllocTempLocal(Types.Int32);
+                            var target = eic.Emitter.AllocTempLocal(eic.Caller.DeclaringType.TypeAsLocalOrStackType);
+
                             eic.Emitter.Emit(OpCodes.Stloc, update);
                             eic.Emitter.Emit(OpCodes.Stloc, expect);
                             eic.Emitter.Emit(OpCodes.Pop);          // discard offset
-                            eic.Emitter.Emit(OpCodes.Stloc, obj);
+                            eic.Emitter.Emit(OpCodes.Stloc, target);
                             EmitConsumeUnsafe(eic);
-                            eic.Emitter.Emit(OpCodes.Ldloc, obj);
-                            eic.Emitter.Emit(OpCodes.Ldflda, fw.GetField());
+                            eic.Emitter.Emit(OpCodes.Ldloc, target);
+                            eic.Emitter.Emit(OpCodes.Ldloc, expect);
                             eic.Emitter.Emit(OpCodes.Ldloc, update);
-                            eic.Emitter.Emit(OpCodes.Ldloc, expect);
-                            eic.Emitter.Emit(OpCodes.Call, InterlockedMethods.CompareExchangeInt32);
-                            eic.Emitter.Emit(OpCodes.Ldloc, expect);
-                            eic.Emitter.Emit(OpCodes.Ceq);
+                            fw.EmitUnsafeCompareAndSwap(eic.Emitter);
+
                             eic.Emitter.ReleaseTempLocal(expect);
                             eic.Emitter.ReleaseTempLocal(update);
                             eic.NonLeaf = false;
                             return true;
                         }
                     }
+
                     return false;
                 }
             }
@@ -995,7 +982,12 @@ namespace IKVM.Internal
             }
         }
 
-        private static bool Unsafe_compareAndSwapLong(EmitIntrinsicContext eic)
+        /// <summary>
+        /// Replaces a call to Unsafe.compareAndSwapLong with IL that directly conducts the operation.
+        /// </summary>
+        /// <param name="eic"></param>
+        /// <returns></returns>
+        static bool Unsafe_compareAndSwapLong(EmitIntrinsicContext eic)
         {
             // stack layout at call site:
             // 4 Unsafe (receiver)
@@ -1003,49 +995,52 @@ namespace IKVM.Internal
             // 2 long (offset)
             // 1 long (expect)
             // 0 long (update)
-            TypeWrapper twUnsafe = eic.GetStackTypeWrapper(0, 4);
+
+            var twUnsafe = eic.GetStackTypeWrapper(0, 4);
             if (twUnsafe == VerifierTypeWrapper.Null)
-            {
                 return false;
-            }
+
             for (int i = 0; ; i--)
             {
                 if ((eic.Flags[eic.OpcodeIndex + i] & InstructionFlags.BranchTarget) != 0)
-                {
                     return false;
-                }
+
                 if (eic.GetStackTypeWrapper(i, 0) == twUnsafe)
                 {
                     // the pattern we recognize is:
                     // aload
                     // getstatic <offset field>
-                    if (eic.Match(i, NormalizedByteCode.__aload) && eic.GetStackTypeWrapper(i + 1, 0) == eic.Caller.DeclaringType
-                        && eic.Match(i + 1, NormalizedByteCode.__getstatic))
+                    if (eic.Match(i, NormalizedByteCode.__aload) &&
+                        eic.GetStackTypeWrapper(i + 1, 0) == eic.Caller.DeclaringType &&
+                        eic.Match(i + 1, NormalizedByteCode.__getstatic))
                     {
-                        FieldWrapper fw = GetUnsafeField(eic, eic.GetFieldref(i + 1));
+                        var fw = GetUnsafeField(eic, eic.GetFieldref(i + 1));
                         if (fw != null && !fw.IsStatic && fw.DeclaringType == eic.Caller.DeclaringType)
                         {
-                            CodeEmitterLocal update = eic.Emitter.AllocTempLocal(Types.Int64);
-                            CodeEmitterLocal expect = eic.Emitter.AllocTempLocal(Types.Int64);
-                            CodeEmitterLocal obj = eic.Emitter.AllocTempLocal(eic.Caller.DeclaringType.TypeAsLocalOrStackType);
+                            var update = eic.Emitter.AllocTempLocal(Types.Int64);
+                            var expect = eic.Emitter.AllocTempLocal(Types.Int64);
+                            var target = eic.Emitter.AllocTempLocal(eic.Caller.DeclaringType.TypeAsLocalOrStackType);
+
+                            // consume existing call site
                             eic.Emitter.Emit(OpCodes.Stloc, update);
                             eic.Emitter.Emit(OpCodes.Stloc, expect);
                             eic.Emitter.Emit(OpCodes.Pop);          // discard offset
-                            eic.Emitter.Emit(OpCodes.Stloc, obj);
+                            eic.Emitter.Emit(OpCodes.Stloc, target);
                             EmitConsumeUnsafe(eic);
-                            eic.Emitter.Emit(OpCodes.Ldloc, obj);
-                            eic.Emitter.Emit(OpCodes.Ldflda, fw.GetField());
+
+                            // emit new call site
+                            eic.Emitter.Emit(OpCodes.Ldloc, target);
+                            eic.Emitter.Emit(OpCodes.Ldloc, expect);
                             eic.Emitter.Emit(OpCodes.Ldloc, update);
-                            eic.Emitter.Emit(OpCodes.Ldloc, expect);
-                            eic.Emitter.Emit(OpCodes.Call, InterlockedMethods.CompareExchangeInt64);
-                            eic.Emitter.Emit(OpCodes.Ldloc, expect);
-                            eic.Emitter.Emit(OpCodes.Ceq);
+                            fw.EmitUnsafeCompareAndSwap(eic.Emitter);
+
                             eic.Emitter.ReleaseTempLocal(expect);
                             eic.Emitter.ReleaseTempLocal(update);
                             eic.NonLeaf = false;
                             return true;
                         }
                     }
+
                     return false;
                 }
             }
@@ -1056,9 +1051,9 @@ namespace IKVM.Internal
             return InterlockedMethods.ExchangeOfT.MakeGenericMethod(type);
         }
 
-        private static void EmitConsumeUnsafe(EmitIntrinsicContext eic)
+        static void EmitConsumeUnsafe(EmitIntrinsicContext eic)
         {
-#if STATIC_COMPILER
+#if IMPORTER
             if (eic.Caller.DeclaringType.GetClassLoader() == CoreClasses.java.lang.Object.Wrapper.GetClassLoader())
             {
                 // we're compiling the core library (which is obviously trusted), so we don't need to check
@@ -1072,7 +1067,7 @@ namespace IKVM.Internal
             }
         }
 
-        private static FieldWrapper GetUnsafeField(EmitIntrinsicContext eic, ClassFile.ConstantPoolItemFieldref field)
+        static FieldWrapper GetUnsafeField(EmitIntrinsicContext eic, ClassFile.ConstantPoolItemFieldref field)
         {
             if (eic.Caller.DeclaringType.GetClassLoader() != CoreClasses.java.lang.Object.Wrapper.GetClassLoader())
             {
@@ -1086,7 +1081,7 @@ namespace IKVM.Internal
             if (field.GetField().DeclaringType == eic.Caller.DeclaringType)
             {
                 // now look inside the static initializer to see if we can found out what field it refers to
-                foreach (ClassFile.Method method in eic.ClassFile.Methods)
+                foreach (var method in eic.ClassFile.Methods)
                 {
                     if (method.IsClassInitializer)
                     {
@@ -1111,22 +1106,22 @@ namespace IKVM.Internal
 						 */
                         for (int i = 0; i < method.Instructions.Length; i++)
                         {
-                            if (method.Instructions[i].NormalizedOpCode == NormalizedByteCode.__putstatic
-                                && eic.ClassFile.GetFieldref(method.Instructions[i].Arg1) == field)
+                            if (method.Instructions[i].NormalizedOpCode == NormalizedByteCode.__putstatic &&
+                                eic.ClassFile.GetFieldref(method.Instructions[i].Arg1) == field)
                             {
-                                if (MatchInvokeVirtual(eic, ref method.Instructions[i - 1], "sun.misc.Unsafe", "objectFieldOffset", "(Ljava.lang.reflect.Field;)J")
-                                    && MatchInvokeVirtual(eic, ref method.Instructions[i - 2], "java.lang.Class", "getDeclaredField", "(Ljava.lang.String;)Ljava.lang.reflect.Field;")
-                                    && MatchLdc(eic, ref method.Instructions[i - 3], ClassFile.ConstantType.String)
-                                    && (method.Instructions[i - 4].NormalizedOpCode == NormalizedByteCode.__aload || method.Instructions[i - 4].NormalizedOpCode == NormalizedByteCode.__ldc)
-                                    && method.Instructions[i - 5].NormalizedOpCode == NormalizedByteCode.__getstatic && eic.ClassFile.GetFieldref(method.Instructions[i - 5].Arg1).Signature == "Lsun.misc.Unsafe;")
+                                if (MatchInvokeVirtual(eic, ref method.Instructions[i - 1], "sun.misc.Unsafe", "objectFieldOffset", "(Ljava.lang.reflect.Field;)J") &&
+                                    MatchInvokeVirtual(eic, ref method.Instructions[i - 2], "java.lang.Class", "getDeclaredField", "(Ljava.lang.String;)Ljava.lang.reflect.Field;") &&
+                                    MatchLdc(eic, ref method.Instructions[i - 3], ClassFile.ConstantType.String) &&
+                                    (method.Instructions[i - 4].NormalizedOpCode == NormalizedByteCode.__aload || method.Instructions[i - 4].NormalizedOpCode == NormalizedByteCode.__ldc) &&
+                                    method.Instructions[i - 5].NormalizedOpCode == NormalizedByteCode.__getstatic && eic.ClassFile.GetFieldref(method.Instructions[i - 5].Arg1).Signature == "Lsun.misc.Unsafe;")
                                 {
                                     if (method.Instructions[i - 4].NormalizedOpCode == NormalizedByteCode.__ldc)
                                     {
                                         if (eic.ClassFile.GetConstantPoolClassType(method.Instructions[i - 4].Arg1) == eic.Caller.DeclaringType)
                                         {
-                                            string fieldName = eic.ClassFile.GetConstantPoolConstantString(method.Instructions[i - 3].Arg1);
+                                            var fieldName = eic.ClassFile.GetConstantPoolConstantString(method.Instructions[i - 3].Arg1);
                                             FieldWrapper fw = null;
-                                            foreach (FieldWrapper fw1 in eic.Caller.DeclaringType.GetFields())
+                                            foreach (var fw1 in eic.Caller.DeclaringType.GetFields())
                                             {
                                                 if (fw1.Name == fieldName)
                                                 {
@@ -1141,21 +1136,24 @@ namespace IKVM.Internal
                                                     }
                                                 }
                                             }
+
                                             return fw;
                                         }
+
                                         return null;
                                     }
+
                                     // search backward for the astore that corresponds to the aload (of the class object)
                                     for (int j = i - 6; j > 0; j--)
                                     {
-                                        if (method.Instructions[j].NormalizedOpCode == NormalizedByteCode.__astore
-                                            && method.Instructions[j].Arg1 == method.Instructions[i - 4].Arg1
-                                            && MatchLdc(eic, ref method.Instructions[j - 1], ClassFile.ConstantType.Class)
-                                            && eic.ClassFile.GetConstantPoolClassType(method.Instructions[j - 1].Arg1) == eic.Caller.DeclaringType)
+                                        if (method.Instructions[j].NormalizedOpCode == NormalizedByteCode.__astore &&
+                                            method.Instructions[j].Arg1 == method.Instructions[i - 4].Arg1 &&
+                                            MatchLdc(eic, ref method.Instructions[j - 1], ClassFile.ConstantType.Class) &&
+                                            eic.ClassFile.GetConstantPoolClassType(method.Instructions[j - 1].Arg1) == eic.Caller.DeclaringType)
                                         {
-                                            string fieldName = eic.ClassFile.GetConstantPoolConstantString(method.Instructions[i - 3].Arg1);
+                                            var fieldName = eic.ClassFile.GetConstantPoolConstantString(method.Instructions[i - 3].Arg1);
                                             FieldWrapper fw = null;
-                                            foreach (FieldWrapper fw1 in eic.Caller.DeclaringType.GetFields())
+                                            foreach (var fw1 in eic.Caller.DeclaringType.GetFields())
                                             {
                                                 if (fw1.Name == fieldName)
                                                 {
@@ -1170,46 +1168,50 @@ namespace IKVM.Internal
                                                     }
                                                 }
                                             }
+
                                             return fw;
                                         }
                                     }
+
                                     break;
                                 }
                             }
                         }
+
                         break;
                     }
                 }
             }
+
             return null;
         }
 
-        private static bool MatchInvokeVirtual(EmitIntrinsicContext eic, ref Instruction instr, string clazz, string name, string sig)
+        static bool MatchInvokeVirtual(EmitIntrinsicContext eic, ref Instruction instr, string clazz, string name, string sig)
         {
             return MatchInvoke(eic, ref instr, NormalizedByteCode.__invokevirtual, clazz, name, sig);
         }
 
-        private static bool MatchInvokeStatic(EmitIntrinsicContext eic, int offset, string clazz, string name, string sig)
+        static bool MatchInvokeStatic(EmitIntrinsicContext eic, int offset, string clazz, string name, string sig)
         {
             return MatchInvoke(eic, ref eic.Code[eic.OpcodeIndex + offset], NormalizedByteCode.__invokestatic, clazz, name, sig);
         }
 
-        private static bool MatchInvoke(EmitIntrinsicContext eic, ref Instruction instr, NormalizedByteCode opcode, string clazz, string name, string sig)
+        static bool MatchInvoke(EmitIntrinsicContext eic, ref Instruction instr, NormalizedByteCode opcode, string clazz, string name, string sig)
         {
             if (instr.NormalizedOpCode == opcode)
             {
-                ClassFile.ConstantPoolItemMI method = eic.ClassFile.GetMethodref(instr.Arg1);
-                return method.Class == clazz
-                    && method.Name == name
-                    && method.Signature == sig;
+                var method = eic.ClassFile.GetMethodref(instr.Arg1);
+                return method.Class == clazz && method.Name == name && method.Signature == sig;
             }
+
             return false;
         }
 
-        private static bool MatchLdc(EmitIntrinsicContext eic, ref Instruction instr, ClassFile.ConstantType constantType)
+        static bool MatchLdc(EmitIntrinsicContext eic, ref Instruction instr, ClassFile.ConstantType constantType)
         {
-            return (instr.NormalizedOpCode == NormalizedByteCode.__ldc || instr.NormalizedOpCode == NormalizedByteCode.__ldc_nothrow)
-                && eic.ClassFile.GetConstantPoolConstantType(instr.NormalizedArg1) == constantType;
+            return (instr.NormalizedOpCode == NormalizedByteCode.__ldc || instr.NormalizedOpCode == NormalizedByteCode.__ldc_nothrow) && eic.ClassFile.GetConstantPoolConstantType(instr.NormalizedArg1) == constantType;
         }
+
     }
+
 }

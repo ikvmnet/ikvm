@@ -135,7 +135,7 @@ namespace IKVM.Tests.Java.java.net
                     ow.write("123456789");
                     ow.flush();
                 }
-                catch (global::java.lang.Exception e)
+                catch (global::java.lang.Exception)
                 {
 
                 }
@@ -143,10 +143,9 @@ namespace IKVM.Tests.Java.java.net
                 {
                     try
                     {
-                        if (ost != null)
-                            ost.close();
+                        ost?.close();
                     }
-                    catch (global::java.io.IOException e)
+                    catch (global::java.io.IOException)
                     {
 
                     }

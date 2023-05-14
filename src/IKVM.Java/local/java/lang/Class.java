@@ -144,9 +144,6 @@ public final class Class<T> implements java.io.Serializable,
      * generated.
      */
     private Class(ClassLoader loader) {
-        // Initialize final field for classLoader.  The initialization value of non-null
-        // prevents future JIT optimizations from assuming this final field is null.
-        //classLoader = loader;
         throw new InternalError();
     }
 

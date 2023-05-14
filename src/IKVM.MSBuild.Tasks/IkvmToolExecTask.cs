@@ -32,6 +32,13 @@ namespace IKVM.MSBuild.Tasks
                 else if (RuntimeInformation.ProcessArchitecture == Architecture.Arm64)
                     NativeLibrary.Load(Path.Combine(Path.GetDirectoryName(typeof(IkvmToolExecTask).Assembly.Location), "runtimes", "linux-arm64", "native", "libMono.Unix.so"));
             }
+            else if (RuntimeInformation.IsOSPlatform(OSPlatform.OSX))
+            {
+                if (RuntimeInformation.ProcessArchitecture == Architecture.X64)
+                    NativeLibrary.Load(Path.Combine(Path.GetDirectoryName(typeof(IkvmToolExecTask).Assembly.Location), "runtimes", "osx-x64", "native", "libMono.Unix.dylib"));
+                else if (RuntimeInformation.ProcessArchitecture == Architecture.Arm64)
+                    NativeLibrary.Load(Path.Combine(Path.GetDirectoryName(typeof(IkvmToolExecTask).Assembly.Location), "runtimes", "osx-arm64", "native", "libMono.Unix.dylib"));
+            }
         }
 
 #endif

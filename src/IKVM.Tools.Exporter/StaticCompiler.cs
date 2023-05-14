@@ -21,8 +21,8 @@
   jeroen@frijters.net
   
 */
-using IKVM.Internal;
 using IKVM.Reflection;
+using IKVM.Tools.Importer;
 
 using Type = IKVM.Reflection.Type;
 

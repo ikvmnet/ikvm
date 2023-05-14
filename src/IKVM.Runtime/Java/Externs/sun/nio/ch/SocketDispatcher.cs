@@ -1,152 +1,363 @@
-﻿/*
-  Copyright (C) 2011 Jeroen Frijters
-
-  This software is provided 'as-is', without any express or implied
-  warranty.  In no event will the authors be held liable for any damages
-  arising from the use of this software.
-
-  Permission is granted to anyone to use this software for any purpose,
-  including commercial applications, and to alter it and redistribute it
-  freely, subject to the following restrictions:
-
-  1. The origin of this software must not be misrepresented; you must not
-     claim that you wrote the original software. If you use this software
-     in a product, an acknowledgment in the product documentation would be
-     appreciated but is not required.
-  2. Altered source versions must be plainly marked as such, and must not be
-     misrepresented as being the original software.
-  3. This notice may not be removed or altered from any source distribution.
-
-  Jeroen Frijters
-  jeroen@frijters.net
-  
-*/
-
-using System;
-using System.Collections.Generic;
+﻿using System;
+using System.Buffers;
 using System.Net.Sockets;
+using System.Runtime.InteropServices;
 
-using IKVM.Java.Externs.java.net;
+using IKVM.Runtime;
+using IKVM.Runtime.Accessors.Java.Io;
+using IKVM.Runtime.Util.Java.Net;
 
 namespace IKVM.Java.Externs.sun.nio.ch
 {
 
+    /// <summary>
+    /// Implements the native methods for 'SocketDispatcher'.
+    /// </summary>
     static class SocketDispatcher
     {
 
-        public static long read(object nd, global::java.io.FileDescriptor fd, global::java.nio.ByteBuffer[] bufs, int offset, int length)
-        {
-#if FIRST_PASS
-            throw new NotSupportedException();
-#else
-            global::java.nio.ByteBuffer[] altBufs = null;
-            var list = new List<ArraySegment<byte>>(length);
-            for (int i = 0; i < length; i++)
-            {
-                var bb = bufs[i + offset];
-                if (!bb.hasArray())
-                {
-                    if (altBufs == null)
-                    {
-                        altBufs = new global::java.nio.ByteBuffer[bufs.Length];
-                    }
-                    bb = altBufs[i + offset] = global::java.nio.ByteBuffer.allocate(bb.remaining());
-                }
-                list.Add(new ArraySegment<byte>(bb.array(), bb.arrayOffset() + bb.position(), bb.remaining()));
-            }
-            int count;
-            try
-            {
-                count = fd.getSocket().Receive(list);
-            }
-            catch (SocketException x)
-            {
-                if (x.SocketErrorCode == SocketError.WouldBlock)
-                {
-                    count = 0;
-                }
-                else
-                {
-                    throw x.ToIOException();
-                }
-            }
-            catch (ObjectDisposedException)
-            {
-                throw new global::java.net.SocketException("Socket is closed");
-            }
-            int total = count;
-            for (int i = 0; total > 0 && i < length; i++)
-            {
-                global::java.nio.ByteBuffer bb = bufs[i + offset];
-                global::java.nio.ByteBuffer abb;
-                int consumed = Math.Min(total, bb.remaining());
-                if (altBufs != null && (abb = altBufs[i + offset]) != null)
-                {
-                    abb.position(consumed);
-                    abb.flip();
-                    bb.put(abb);
-                }
-                else
-                {
-                    bb.position(bb.position() + consumed);
-                }
-                total -= consumed;
-            }
-            return count;
+#if FIRST_PASS == false
+
+        static FileDescriptorAccessor fileDescriptorAccessor;
+        static FileDescriptorAccessor FileDescriptorAccessor => JVM.BaseAccessors.Get(ref fileDescriptorAccessor);
+
 #endif
+
+        [StructLayout(LayoutKind.Sequential)]
+        struct iovec
+        {
+
+            public IntPtr iov_base;
+            public int iov_len;
+
         }
 
-        public static long write(object nd, global::java.io.FileDescriptor fd, global::java.nio.ByteBuffer[] bufs, int offset, int length)
+        /// <summary>
+        /// Implements the native method 'read'.
+        /// </summary>
+        /// <param name="self"></param>
+        /// <param name="fd"></param>
+        /// <param name="address"></param>
+        /// <param name="len"></param>
+        /// <returns></returns>
+        public static unsafe int read(object self, object fd, long address, int len)
         {
 #if FIRST_PASS
-            throw new NotSupportedException();
+            throw new NotImplementedException();
 #else
-            global::java.nio.ByteBuffer[] altBufs = null;
-            var list = new List<ArraySegment<byte>>(length);
-            for (int i = 0; i < length; i++)
-            {
-                var bb = bufs[i + offset];
-                if (!bb.hasArray())
-                {
-                    if (altBufs == null)
-                    {
-                        altBufs = new global::java.nio.ByteBuffer[bufs.Length];
-                    }
-                    var abb = global::java.nio.ByteBuffer.allocate(bb.remaining());
-                    int pos = bb.position();
-                    abb.put(bb);
-                    bb.position(pos);
-                    abb.flip();
-                    bb = altBufs[i + offset] = abb;
-                }
-                list.Add(new ArraySegment<byte>(bb.array(), bb.arrayOffset() + bb.position(), bb.remaining()));
-            }
-            int count;
+            if (len == 0)
+                return 0;
+
+            var socket = FileDescriptorAccessor.GetSocket(fd);
+            if (socket == null)
+                throw new global::java.net.SocketException("Socket closed.");
+
             try
             {
-                count = fd.getSocket().Send(list);
+#if NETFRAMEWORK
+                var buf = ArrayPool<byte>.Shared.Rent(len);
+
+                try
+                {
+                    var n = socket.Receive(buf, 0, len, SocketFlags.None);
+                    if (n == 0)
+                        return global::sun.nio.ch.IOStatus.EOF;
+
+                    Marshal.Copy(buf, 0, (IntPtr)address, n);
+                    return n;
+                }
+                finally
+                {
+                    ArrayPool<byte>.Shared.Return(buf);
+                }
+#else
+                var n = socket.Receive(new Span<byte>((byte*)(IntPtr)address, len));
+                if (n == 0)
+                    return global::sun.nio.ch.IOStatus.EOF;
+
+                return n;
+#endif
+            }
+            catch (SocketException e) when (e.SocketErrorCode == SocketError.Shutdown)
+            {
+                return global::sun.nio.ch.IOStatus.EOF;
+            }
+            catch (SocketException e) when (e.SocketErrorCode == SocketError.WouldBlock)
+            {
+                return global::sun.nio.ch.IOStatus.UNAVAILABLE;
             }
             catch (SocketException e)
             {
-                if (e.SocketErrorCode == SocketError.WouldBlock)
-                    count = 0;
-                else
-                    throw e.ToIOException();
+                throw e.ToIOException();
             }
-            catch (ObjectDisposedException e)
+            catch (ObjectDisposedException)
             {
-                throw new global::java.net.SocketException("Socket is closed");
+                throw new global::java.net.SocketException("Socket closed.");
             }
-            int total = count;
-            for (int i = 0; total > 0 && i < length; i++)
+            catch (Exception e)
             {
-                var bb = bufs[i + offset];
-                int consumed = Math.Min(total, bb.remaining());
-                bb.position(bb.position() + consumed);
-                total -= consumed;
+                throw new global::java.io.IOException(e);
             }
+#endif
+        }
 
-            return count;
+        /// <summary>
+        /// Implements the native method 'readv'.
+        /// </summary>
+        /// <param name="self"></param>
+        /// <param name="fd"></param>
+        /// <param name="address"></param>
+        /// <param name="len"></param>
+        /// <returns></returns>
+        public static unsafe long readv(object self, object fd, long address, int len)
+        {
+#if FIRST_PASS
+            throw new NotSupportedException();
+#else
+            if (len == 0)
+                return 0;
+
+            var socket = FileDescriptorAccessor.GetSocket(fd);
+            if (socket == null)
+                throw new global::java.net.SocketException("Socket closed.");
+
+            try
+            {
+                // allocate list of array segments to hold received data
+                var vecs = new Span<iovec>((byte*)(IntPtr)address, len);
+                var bufs = new ArraySegment<byte>[vecs.Length];
+
+                try
+                {
+                    // prepare array segments for buffers
+                    for (int i = 0; i < vecs.Length; i++)
+                        bufs[i] = new ArraySegment<byte>(ArrayPool<byte>.Shared.Rent(vecs[i].iov_len), 0, vecs[i].iov_len);
+
+                    // receive into segments
+                    var length = socket.Receive(bufs);
+
+                    // copy segments back into vectors
+                    var l = length;
+                    for (int i = 0; i < vecs.Length; i++)
+                    {
+                        var szz = Math.Min(l, vecs[i].iov_len);
+                        Marshal.Copy(bufs[i].Array, 0, vecs[i].iov_base, szz);
+                        l -= szz;
+                    }
+
+                    // we should have accounted for all of the bytes
+                    if (l != 0)
+                        throw new global::java.lang.RuntimeException("Bytes remaining after read.");
+
+                    return length;
+                }
+                finally
+                {
+                    for (int i = 0; i < bufs.Length; i++)
+                        ArrayPool<byte>.Shared.Return(bufs[i].Array);
+                }
+            }
+            catch (SocketException e) when (e.SocketErrorCode == SocketError.Shutdown)
+            {
+                return global::sun.nio.ch.IOStatus.EOF;
+            }
+            catch (SocketException e) when (e.SocketErrorCode == SocketError.WouldBlock)
+            {
+                return global::sun.nio.ch.IOStatus.UNAVAILABLE;
+            }
+            catch (SocketException e)
+            {
+                throw e.ToIOException();
+            }
+            catch (ObjectDisposedException)
+            {
+                throw new global::java.net.SocketException("Socket closed.");
+            }
+            catch (Exception e)
+            {
+                throw new global::java.io.IOException(e);
+            }
+#endif
+        }
+
+        /// <summary>
+        /// Implements the native method 'write'.
+        /// </summary>
+        /// <param name="self"></param>
+        /// <param name="fd"></param>
+        /// <param name="address"></param>
+        /// <param name="len"></param>
+        /// <returns></returns>
+        public static unsafe int write(object self, object fd, long address, int len)
+        {
+#if FIRST_PASS
+            throw new NotSupportedException();
+#else
+            var socket = FileDescriptorAccessor.GetSocket(fd);
+            if (socket == null)
+                throw new global::java.net.SocketException("Socket closed.");
+
+            try
+            {
+#if NETFRAMEWORK
+                var buf = ArrayPool<byte>.Shared.Rent(len);
+
+                try
+                {
+                    Marshal.Copy((IntPtr)address, buf, 0, len);
+                    return socket.Send(buf, 0, len, SocketFlags.None);
+                }
+                finally
+                {
+                    ArrayPool<byte>.Shared.Return(buf);
+                }
+#else
+                return socket.Send(new ReadOnlySpan<byte>((byte*)(IntPtr)address, len));
+#endif
+            }
+            catch (SocketException e) when (e.SocketErrorCode == SocketError.WouldBlock)
+            {
+                return global::sun.nio.ch.IOStatus.UNAVAILABLE;
+            }
+            catch (SocketException e)
+            {
+                throw e.ToIOException();
+            }
+            catch (ObjectDisposedException)
+            {
+                throw new global::java.net.SocketException("Socket closed.");
+            }
+            catch (Exception e)
+            {
+                throw new global::java.io.IOException(e);
+            }
+#endif
+        }
+
+        /// <summary>
+        /// Implements the native method 'writev'.
+        /// </summary>
+        /// <param name="self"></param>
+        /// <param name="fd"></param>
+        /// <param name="address"></param>
+        /// <param name="len"></param>
+        /// <returns></returns>
+        public static unsafe long writev(object self, object fd, long address, int len)
+        {
+#if FIRST_PASS
+            throw new NotSupportedException();
+#else
+            var socket = FileDescriptorAccessor.GetSocket(fd);
+            if (socket == null)
+                throw new global::java.net.SocketException("Socket closed.");
+
+            try
+            {
+                // allocate list of array segments to hold incoming buffers
+                var vecs = new ReadOnlySpan<iovec>((void*)(IntPtr)address, len);
+                var bufs = new ArraySegment<byte>[vecs.Length];
+
+                try
+                {
+                    // copy incoming buffers into segments
+                    for (int i = 0; i < vecs.Length; i++)
+                    {
+                        bufs[i] = new ArraySegment<byte>(ArrayPool<byte>.Shared.Rent(vecs[i].iov_len), 0, vecs[i].iov_len);
+                        Marshal.Copy(vecs[i].iov_base, bufs[i].Array, bufs[i].Offset, vecs[i].iov_len);
+                    }
+
+                    // send segments
+                    return socket.Send(bufs);
+                }
+                finally
+                {
+                    // return allocated arrays
+                    for (int i = 0; i < bufs.Length; i++)
+                        if (bufs[i].Array != null)
+                            ArrayPool<byte>.Shared.Return(bufs[i].Array);
+                }
+            }
+            catch (SocketException e) when (e.SocketErrorCode == SocketError.WouldBlock)
+            {
+                return global::sun.nio.ch.IOStatus.UNAVAILABLE;
+            }
+            catch (SocketException e)
+            {
+                throw e.ToIOException();
+            }
+            catch (ObjectDisposedException)
+            {
+                throw new global::java.net.SocketException("Socket closed.");
+            }
+            catch (Exception e)
+            {
+                throw new global::java.io.IOException(e);
+            }
+#endif
+        }
+
+        /// <summary>
+        /// Implements the native method 'preClose'.
+        /// </summary>
+        /// <param name="self"></param>
+        /// <param name="fd"></param>
+        public static void preClose(object self, object fd)
+        {
+#if FIRST_PASS
+            throw new NotSupportedException();
+#else
+            var socket = FileDescriptorAccessor.GetSocket(fd);
+            if (socket == null)
+                return;
+
+            try
+            {
+                if (socket.LingerState.Enabled == false)
+                    if (socket.Connected)
+                        socket.Shutdown(SocketShutdown.Send);
+            }
+            catch (ObjectDisposedException)
+            {
+                return;
+            }
+            catch (SocketException)
+            {
+                // ignore
+            }
+#endif
+        }
+
+        /// <summary>
+        /// Implements the native method 'close'.
+        /// </summary>
+        /// <param name="self"></param>
+        /// <param name="fd"></param>
+        public static void close(object self, object fd)
+        {
+#if FIRST_PASS
+            throw new NotSupportedException();
+#else
+            var socket = FileDescriptorAccessor.GetSocket(fd);
+            if (socket == null)
+                return;
+
+            try
+            {
+                FileDescriptorAccessor.SetSocket(fd, null);
+                socket.Close();
+            }
+            catch (SocketException)
+            {
+                return;
+            }
+            catch (ObjectDisposedException)
+            {
+                return;
+            }
+            catch (Exception e)
+            {
+                throw new global::java.io.IOException(e);
+            }
 #endif
         }
 

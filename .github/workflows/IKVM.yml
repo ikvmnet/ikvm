@@ -15,20 +15,20 @@ on:
 jobs:
   build-openjdk:
     name: Build OpenJDK
-    runs-on: ubuntu-18.04
+    runs-on: ubuntu-latest
     steps:
     - name: Checkout Source
-      uses: actions/checkout@v1
+      uses: actions/checkout@v3
       with:
         submodules: recursive
     - name: Cache OpenJDK Build
       uses: actions/cache@v3
       with:
         path: openjdk/build/linux-x86_64-normal-server-release
-        key: openjdk-build-linux-x86_64-normal-server-release--${{ runner.os }}--${{ hashFiles('openjdk/**', '!openjdk/build') }}-8
+        key: openjdk-build-linux-x86_64-normal-server-release--${{ runner.os }}--${{ hashFiles('openjdk/**', '!openjdk/build') }}-10
     - name: Check OpenJDK Build Stamp
       id: openjdk-build-stamp
-      uses: andstor/file-existence-action@v1
+      uses: andstor/file-existence-action@v2
       with:
         files: openjdk/build/linux-x86_64-normal-server-release/stamp
     - name: Fetch OpenJDK 7
@@ -74,13 +74,7 @@ jobs:
     - name: Package OpenJDK
       run: |
         zip -r openjdk-build-linux-x86_64-normal-server-release.zip \
-          linux-x86_64-normal-server-release/langtools/gensrc \
-          linux-x86_64-normal-server-release/corba/gensrc \
-          linux-x86_64-normal-server-release/jdk/gensrc \
-          linux-x86_64-normal-server-release/jdk/impsrc \
-          linux-x86_64-normal-server-release/jdk/lib \
-          linux-x86_64-normal-server-release/jdk/classes \
-          linux-x86_64-normal-server-release/images
+          linux-x86_64-normal-server-release/*
       working-directory: openjdk/build
     - name: Upload OpenJDK
       uses: actions/upload-artifact@v3
@@ -94,7 +88,7 @@ jobs:
         key: jtreg-build--${{ runner.os }}--${{ hashFiles('jtreg/**', 'openjdk/build/linux-x86_64-normal-server-release/images/j2sdk-image', '!jtreg/build') }}-6
     - name: Check OpenJDK Test Harness Build Stamp
       id: jtreg-build-stamp
-      uses: andstor/file-existence-action@v1
+      uses: andstor/file-existence-action@v2
       with:
         files: jtreg/build/stamp
     - name: Build OpenJDK Test Harness
@@ -113,20 +107,30 @@ jobs:
     name: Build IKVM
     needs:
     - build-openjdk
-    timeout-minutes: 120
+    timeout-minutes: 240
     runs-on: windows-latest
     steps:
+    - name: Set Paths (Windows)
+      shell: pwsh
+      run: |
+        $WORKPATH="C:\work"
+        mkdir $WORKPATH
+        mkdir $WORKPATH\temp
+        mkdir $WORKPATH\dotnet
+        mkdir $WORKPATH\nuget
+        mkdir $WORKPATH\nuget\packages
+        mkdir $WORKPATH\ikvm
+        Add-Content $env:GITHUB_ENV "`nWORKPATH=$WORKPATH"
+        Add-Content $env:GITHUB_ENV "`nTMP=$WORKPATH\temp`nTEMP=$WORKPATH\temp`nTMPDIR=$WORKPATH\temp"
+        Add-Content $env:GITHUB_ENV "`nDOTNET_INSTALL_DIR=$WORKPATH\dotnet"
+        Add-Content $env:GITHUB_ENV "`nNUGET_PACKAGES=$WORKPATH\nuget\packages"
+        New-Item -Path "$env:GITHUB_WORKSPACE\work" -ItemType SymbolicLink -Value "$WORKPATH\ikvm"
     - name: Checkout Source
       uses: actions/checkout@v3
       with:
+        path: work
         fetch-depth: 0
         submodules: recursive
-    - name: Move Temporary Directory
-      shell: pwsh
-      run: Add-Content $env:GITHUB_ENV "`nTMP=${{ runner.temp }}`nTEMP=${{ runner.temp }}`nTMPDIR=${{ runner.temp }}"
-    - name: Setup .NET
-      shell: pwsh
-      run: Add-Content $env:GITHUB_ENV "`nDOTNET_INSTALL_DIR=${{ runner.temp }}\dotnet"
     - name: Setup .NET 3.1
       uses: actions/setup-dotnet@v3
       with:
@@ -139,64 +143,67 @@ jobs:
       uses: actions/setup-dotnet@v3
       with:
         dotnet-version: 7.0.x
+    - name: Cache LLVM and Clang
+      id: cache-llvm
+      uses: actions/cache@v3
+      with:
+        path: C:/Program Files/LLVM
+        key: llvm-15.0
+    - name: Install LLVM and Clang
+      uses: KyleMayes/install-llvm-action@v1
+      with:
+        version: "15.0"
+        cached: ${{ steps.cache-llvm.outputs.cache-hit }}
     - name: Install GitVersion
-      uses: gittools/actions/gitversion/setup@v0.9.13
+      uses: gittools/actions/gitversion/setup@v0.9.15
       with:
         versionSpec: 5.x
     - name: Execute GitVersion
-      uses: gittools/actions/gitversion/execute@v0.9.13
+      uses: gittools/actions/gitversion/execute@v0.9.15
       with:
+        targetPath: ${{ env.WORKPATH }}\ikvm
         useConfigFile: true
+        configFilePath: ${{ env.WORKPATH }}\ikvm\GitVersion.yml
     - name: Setup WSL
-      uses: Vampire/setup-wsl@v1
+      uses: Vampire/setup-wsl@v2
       with:
         additional-packages:
           zlib1g-dev
           libmpc-dev
           libmpfr-dev
           libgmp-dev
-          clang
-          llvm
-          llvm-dev
+          libxml2
           gcc
           g++
-          g++-arm-linux-gnueabihf
-          gcc-arm-linux-gnueabihf
-          libc6-armhf-cross
-          gcc-aarch64-linux-gnu
-          g++-aarch64-linux-gnu
-          libc6-arm64-cross
-    - name: Move NuGet Directory
-      shell: pwsh
-      run: Add-Content $env:GITHUB_ENV "`nNUGET_PACKAGES=${{ runner.temp }}\nuget\packages"
     - name: Cache NuGet
       uses: actions/cache@v3
       with:
-        path: ${{ runner.temp }}\nuget\packages
-        key: ${{ runner.os }}-nuget-${{ hashFiles('IKVM.sln', 'src\**\*.csproj', 'src\**\*.msbuildproj') }}
-        restore-keys: ${{ runner.os }}-nuget-
+        path: ${{ env.NUGET_PACKAGES }}
+        key: ${{ runner.os }}-nuget-2-${{ hashFiles('IKVM.sln', 'src\**\*.csproj', 'src\**\*.msbuildproj') }}
+        restore-keys: ${{ runner.os }}-nuget-2-
     - name: Add msbuild to PATH
       uses: microsoft/setup-msbuild@v1.1
     - name: Download OpenJDK 8 Build
       uses: actions/download-artifact@v3
       with:
         name: openjdk-build-linux-x86_64-normal-server-release
-        path: openjdk/build
+        path: ${{ env.WORKPATH }}/ikvm/openjdk/build
     - name: Restore OpenJDK 8 Build
       shell: pwsh
       run: Expand-Archive openjdk-build-linux-x86_64-normal-server-release.zip .
-      working-directory: openjdk/build
+      working-directory: ${{ env.WORKPATH }}\ikvm\openjdk\build
     - name: Download JTReg Build
       uses: actions/download-artifact@v3
       with:
         name: jtreg-build
-        path: jtreg
+        path: ${{ env.WORKPATH }}/ikvm/jtreg
     - name: Restore JTReg Build
       shell: pwsh
       run: Expand-Archive jtreg-build.zip .
-      working-directory: jtreg
+      working-directory: ${{ env.WORKPATH }}\ikvm\jtreg
     - name: NuGet Restore
       run: dotnet restore IKVM.sln
+      working-directory: ${{ env.WORKPATH }}\ikvm
     - name: Build Artifacts
       run: |
         msbuild /m /bl `
@@ -217,15 +224,16 @@ jobs:
           /p:CreateHardLinksForPublishFilesIfPossible=true `
           /p:ContinuousIntegrationBuild=true `
           IKVM.dist.msbuildproj
+      working-directory: ${{ env.WORKPATH }}\ikvm
     - name: Upload MSBuild Log
       if: ${{ always() }}
       uses: actions/upload-artifact@v3
       with:
         name: msbuild.binlog
-        path: msbuild.binlog
+        path: ${{ env.WORKPATH }}\ikvm\msbuild.binlog
     - name: Package NuGet Packages
       run: tar czvf C:\nuget.tar.gz nuget
-      working-directory: dist
+      working-directory: ${{ env.WORKPATH }}\ikvm\dist
     - name: Upload NuGet Packages
       uses: actions/upload-artifact@v3
       with:
@@ -233,7 +241,7 @@ jobs:
         path: C:\nuget.tar.gz
     - name: Package Binaries
       run: tar czvf C:\bin.tar.gz bin
-      working-directory: dist
+      working-directory: ${{ env.WORKPATH }}\ikvm\dist
     - name: Upload Binaries
       uses: actions/upload-artifact@v3
       with:
@@ -241,7 +249,7 @@ jobs:
         path: C:\bin.tar.gz
     - name: Package Tools
       run: tar czvf C:\tools.tar.gz tools
-      working-directory: dist
+      working-directory: ${{ env.WORKPATH }}\ikvm\dist
     - name: Upload Tools
       uses: actions/upload-artifact@v3
       with:
@@ -249,7 +257,7 @@ jobs:
         path: C:\tools.tar.gz
     - name: Package Image
       run: tar czvf C:\image.tar.gz image
-      working-directory: dist
+      working-directory: ${{ env.WORKPATH }}\ikvm\dist
     - name: Upload Image
       uses: actions/upload-artifact@v3
       with:
@@ -257,7 +265,7 @@ jobs:
         path: C:\image.tar.gz
     - name: Package Tests
       run: tar czvf C:\tests.tar.gz tests
-      working-directory: dist
+      working-directory: ${{ env.WORKPATH }}\ikvm\dist
     - name: Upload Tests
       uses: actions/upload-artifact@v3
       with:
@@ -267,12 +275,14 @@ jobs:
       run: |
         git reset --hard
         git clean -qfdx
+      working-directory: ${{ env.WORKPATH }}\ikvm
   test:
     strategy:
       matrix:
         run:
+        - IKVM.ByteCode.Tests
         - IKVM.Tests
-        - ikvmc.Tests
+        - IKVM.Tools.Importer.Tests
         - IKVM.Tools.Exporter.Tests
         - IKVM.Tools.Tests
         - IKVM.JTReg.TestAdapter.Tests
@@ -296,7 +306,7 @@ jobs:
           sys: linux
         - run: IKVM.Tools.Exporter.Tests
           tfm: net6.0
-        - run: ikvmc.Tests
+        - run: IKVM.Tools.Importer.Tests
           tfm: net6.0
         - run: IKVM.OpenJDK.Tests?TestPartition=0
           tfm: net6.0
@@ -342,7 +352,7 @@ jobs:
         - run: IKVM.NET.Sdk.Tests
           tfm: net6.0
           sys: linux
-    name: Test (${{ matrix.run }}:${{ matrix.tfm }}:${{ matrix.sys }}
+    name: Test (${{ matrix.run }}:${{ matrix.tfm }}:${{ matrix.sys }})
     needs:
     - build-ikvm
     timeout-minutes: 240
@@ -352,7 +362,7 @@ jobs:
       if: runner.os == 'Windows'
       shell: pwsh
       run: |
-        $dir="C:\run"
+        $dir="C:\work"
         mkdir $dir
         mkdir $dir\temp
         mkdir $dir\dotnet
@@ -368,7 +378,7 @@ jobs:
       if: runner.os == 'Linux'
       shell: pwsh
       run: |
-        $dir="${{ runner.temp }}/run"
+        $dir="${{ runner.temp }}/work"
         mkdir $dir
         mkdir $dir/temp
         mkdir $dir/dotnet
@@ -394,7 +404,7 @@ jobs:
         dotnet-version: 7.0.x
     - name: Setup WSL
       if: matrix.sys == 'windows'
-      uses: Vampire/setup-wsl@v1
+      uses: Vampire/setup-wsl@v2
     - name: Download Tests
       uses: actions/download-artifact@v3
       with:
@@ -464,12 +474,12 @@ jobs:
       with:
         dotnet-version: 7.0.x
     - name: Install GitVersion
-      uses: gittools/actions/gitversion/setup@v0.9.13
+      uses: gittools/actions/gitversion/setup@v0.9.15
       with:
         versionSpec: 5.x
     - name: Execute GitVersion
       id: GitVersion
-      uses: gittools/actions/gitversion/execute@v0.9.13
+      uses: gittools/actions/gitversion/execute@v0.9.15
       with:
         useConfigFile: true
     - name: Download NuGet Packages

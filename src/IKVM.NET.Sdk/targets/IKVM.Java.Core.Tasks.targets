@@ -21,8 +21,21 @@
         <MakeDir Directories="$([System.IO.Path]::GetDirectoryName('%(ReferenceExport.CachePath)'))" />
 
         <Delete Files="%(ReferenceExport.StagePath)" Condition="Exists('%(ReferenceExport.StagePath)')" />
-        <IkvmExporter ToolPath="$(IkvmExporterToolPath)" Input="%(ReferenceExport.Identity)" Bootstrap="%(ReferenceExport.Bootstrap)" NoStdLib="%(ReferenceExport.NoStdLib)" References="@(_ReferenceExportReference)" Output="%(ReferenceExport.StagePath)" Condition="!Exists('%(ReferenceExport.CachePath)')" />
+        <IkvmExporter
+            ToolPath="$(IkvmExporterToolPath)"
+            Input="%(ReferenceExport.Identity)"
+            Output="%(ReferenceExport.StagePath)"
+            References="@(_ReferenceExportReference)"
+            IncludeNonPublicTypes="%(ReferenceExport.IncludeNonPublicTypes)"
+            IncludeNonPublicInterfaces="%(ReferenceExport.IncludeNonPublicInterfaces)"
+            IncludeNonPublicMembers="%(ReferenceExport.IncludeNonPublicMembers)"
+            IncludeParameterNames="%(ReferenceExport.IncludeParameterNames)"
+            Bootstrap="%(ReferenceExport.Bootstrap)"
+            NoStdLib="%(ReferenceExport.NoStdLib)"
+            Condition="!Exists('%(ReferenceExport.CachePath)')" />
+
         <Copy SourceFiles="%(ReferenceExport.StagePath)" DestinationFiles="%(ReferenceExport.CachePath)" OverwriteReadOnlyFiles="true" Condition="Exists('%(ReferenceExport.StagePath)') And !Exists('%(ReferenceExport.CachePath)')" />
+        <Touch Files="%(ReferenceExport.CachePath)" />
 
         <ItemGroup>
             <FileWrites Include="%(ReferenceExport.StagePath)" />
@@ -56,7 +69,9 @@
 
         <!-- Remove files that were not modified by this compilation. -->
         <ItemGroup>
+            <_CompileJavaClassFiles Remove="@(_CompileJavaClassFiles)" />
             <_CompileJavaClassFiles Include="$(ClassOutputPath)**\*.class" />
+            <_CompileJavaStaleFiles Remove="@(_CompileJavaStaleFiles)" />
             <_CompileJavaStaleFiles Include="@(_CompileJavaClassFiles)" Condition="$([System.DateTime]::Parse('%(ModifiedTime)').Ticks) &lt; $(_CompileJavaStartTime)" />
         </ItemGroup>
         <Delete Files="@(_CompileJavaStaleFiles)" />
@@ -70,6 +85,7 @@
         <Error Text="Could not locate IKVM.Runtime assembly." Condition=" '$(IkvmRuntimeAssembly)' == '' " />
         <Error Text="IKVM.Runtime.dll could not be located at '$(IkvmRuntimeAssembly)'." Condition="!Exists('$(IkvmRuntimeAssembly)')" />
 
+        <Delete Files="$(_ExcludeFilePath)" Condition=" '@(ExcludeRegex)' == '' And Exists('$(_ExcludeFilePath)')" />
         <WriteLinesToFile File="$(_ExcludeFilePath)" Lines="@(ExcludeRegex)" Overwrite="true" Condition=" '@(ExcludeRegex)' != '' " />
 
         <ItemGroup>
@@ -77,17 +93,17 @@
             <_AssemblyAttributesClass Include="@(_ClassToCompile)" Condition=" '%(Filename)%(Extension)' == '__AssemblyAttributes.class' " />
             <_AssemblyAttributesClass Include="@(_ClassToCompile)" Condition=" '%(Filename)%(Extension)' == '__AssemblyInfo.class' " />
             <_ClassToCompile Remove="@(_AssemblyAttributesClass)" />
+            <_IkvmCompilerReferencePath Include="@(ReferencePathWithRefAssemblies)" Condition=" '%(ReferencePathWithRefAssemblies.HideFromJava)' != 'true' " />
+            <_IkvmCompilerResource Include="@(JavaResource)" ResourcePath="$([System.String]::new('%(JavaResource.ResourcePath)').Replace('\', '/'))" Condition=" '%(Identity)' != '' " />
         </ItemGroup>
 
         <PropertyGroup>
             <_IkvmCompilerDebug Condition=" '$(DebugType)' != 'none' ">true</_IkvmCompilerDebug>
             <_IkvmCompilerExclude Condition="Exists('$(_ExcludeFilePath)')">$(_ExcludeFilePath)</_IkvmCompilerExclude>
+            <_Target>$(OutputType.ToLowerInvariant())</_Target>
+            <_Target Condition="$([MSBuild]::IsTargetFrameworkCompatible('$(TargetFramework)', 'netcoreapp3.1'))">library</_Target>
         </PropertyGroup>
-        <ItemGroup>
-            <_IkvmCompilerReferencePath Include="@(ReferencePathWithRefAssemblies)" Condition=" '%(ReferencePathWithRefAssemblies.HideFromJava)' != 'true' " />
-            <_IkvmCompilerResource Include="@(JavaResource)" ResourcePath="$([System.String]::new('%(JavaResource.ResourcePath)').Replace('\', '/'))" Condition=" '%(Identity)' != '' " />
-        </ItemGroup>
-        
+
         <!-- Build Java assembly into temporary directory. -->
         <RemoveDir Directories="$(_AssemblyTempPath)" />
         <MakeDir Directories="$(_AssemblyTempPath)" />
@@ -103,7 +119,7 @@
             Version="$(AssemblyVersion)"
             FileVersion="$(FileVersion)"
             Runtime="$(IkvmRuntimeAssembly)"
-            Target="$(OutputType.ToLowerInvariant())"
+            Target="$(_Target)"
             Platform="$(PlatformTarget.ToLowerInvariant())"
             Main="$(StartupObject)"
             Debug="$(_IkvmCompilerDebug)"
