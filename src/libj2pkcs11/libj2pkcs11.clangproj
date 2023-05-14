@@ -10,6 +10,7 @@
     </PropertyGroup>
     <ItemDefinitionGroup>
         <Compile>
+            <PreprocessorDefinitions Condition=" '$(Configuration)' == 'Debug' ">%(PreprocessorDefinitions);P11_DEBUG;SECMOD_DEBUG</PreprocessorDefinitions>
             <IncludeDirectories>%(IncludeDirectories);$(OpenJdkDir)jdk\src\share\native\sun\security\pkcs11</IncludeDirectories>
             <IncludeDirectories>%(IncludeDirectories);$(OpenJdkDir)jdk\src\share\native\sun\security\pkcs11\wrapper</IncludeDirectories>
             <IncludeDirectories>%(IncludeDirectories);$(OpenJdkDir)jdk\src\$(OpenJdkTargetOsApiDir)\native\sun\security\pkcs11</IncludeDirectories>

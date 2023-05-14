@@ -3279,6 +3279,14 @@ sun/security/pkcs11/Provider/Login.sh                                           
 sun/security/pkcs11/KeyStore/Basic.sh                                                                                   generic-all
 sun/security/pkcs11/KeyStore/ClientAuth.sh                                                                              generic-all
 sun/security/pkcs11/KeyStore/Solaris.sh                                                                                 generic-all
+sun/security/pkcs11/tls/TestKeyMaterial.java                                                                            linux-all
+sun/security/pkcs11/sslecc/ClientJSSEServerJSSE.java                                                                    linux-all
+sun/security/pkcs11/Signature/TestDSAKeyLength.java                                                                     linux-all
+sun/security/pkcs11/Secmod/JksSetPrivateKey.java                                                                        linux-all
+sun/security/pkcs11/rsa/TestKeyPairGenerator.java                                                                       linux-all
+sun/security/pkcs11/ec/TestECGenSpec.java                                                                               linux-all
+sun/security/pkcs11/ec/TestECDSA.java                                                                                   linux-all
+sun/security/pkcs11/ec/TestECDS.java                                                                                    linux-all
 
 # points NativePRNG at a specific file: our implementations don't support this
 sun/security/provider/SecureRandom/StrongSeedReader.java                                                                generic-all
