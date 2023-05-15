@@ -14,6 +14,11 @@
             <RuntimeIdentifier>linux-arm64</RuntimeIdentifier>
             <TargetPath>%(RecursiveDir)%(FileName)%(Extension)</TargetPath>
         </IkvmImageItem>
+        <IkvmImageItem Include="$(MSBuildThisFileDirectory)..\ikvm\any\linux-arm64\**\*">
+            <TargetFramework>any</TargetFramework>
+            <RuntimeIdentifier>linux-arm64</RuntimeIdentifier>
+            <TargetPath>%(RecursiveDir)%(FileName)%(Extension)</TargetPath>
+        </IkvmImageItem>
     </ItemGroup>
 
 </Project>

@@ -9,6 +9,11 @@
             <RuntimeIdentifier>osx-x64</RuntimeIdentifier>
             <TargetPath>%(RecursiveDir)%(FileName)%(Extension)</TargetPath>
         </IkvmImageItem>
+        <IkvmImageItem Include="$(MSBuildThisFileDirectory)..\ikvm\any\osx-x64\**\*">
+            <TargetFramework>any</TargetFramework>
+            <RuntimeIdentifier>osx-x64</RuntimeIdentifier>
+            <TargetPath>%(RecursiveDir)%(FileName)%(Extension)</TargetPath>
+        </IkvmImageItem>
     </ItemGroup>
 
 </Project>
