@@ -103,19 +103,19 @@
         </Link>
     </ItemDefinitionGroup>
     
-    <ItemDefinitionGroup Condition="!$([MSBuild]::IsOSPlatform('Linux')) And $(TargetMachine.EndsWith('-linux-gnu')) And $(TargetMachine.StartsWith('x86_64-'))">
+    <ItemDefinitionGroup Condition="$(TargetMachine.EndsWith('-linux-gnu')) And $(TargetMachine.StartsWith('x86_64-'))">
         <Compile>
             <SystemRootDirectories>%(Compile.SystemRootDirectories);$(MSBuildThisFileDirectory)ext\linuxsdk\x86_64-unknown-linux-gnu</SystemRootDirectories>
         </Compile>
     </ItemDefinitionGroup>
 
-    <ItemDefinitionGroup Condition="!$([MSBuild]::IsOSPlatform('Linux')) And $(TargetMachine.EndsWith('-linux-gnu')) And $(TargetMachine.StartsWith('aarch64-'))">
+    <ItemDefinitionGroup Condition="$(TargetMachine.EndsWith('-linux-gnu')) And $(TargetMachine.StartsWith('aarch64-'))">
         <Compile>
             <SystemRootDirectories>%(Compile.SystemRootDirectories);$(MSBuildThisFileDirectory)ext\linuxsdk\aarch64-unknown-linux-gnu</SystemRootDirectories>
         </Compile>
     </ItemDefinitionGroup>
 
-    <ItemDefinitionGroup Condition="!$([MSBuild]::IsOSPlatform('Linux')) And $(TargetMachine.EndsWith('-linux-gnueabi')) And $(TargetMachine.StartsWith('arm-'))">
+    <ItemDefinitionGroup Condition="$(TargetMachine.EndsWith('-linux-gnueabi')) And $(TargetMachine.StartsWith('arm-'))">
         <Compile>
             <SystemRootDirectories>%(Compile.SystemRootDirectories);$(MSBuildThisFileDirectory)ext\linuxsdk\arm-unknown-linux-gnueabi</SystemRootDirectories>
         </Compile>
