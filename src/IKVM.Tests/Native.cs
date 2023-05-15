@@ -12,7 +12,7 @@ namespace IKVM.Tests
     static unsafe class Native
     {
 
-        public const string LIB_NAME = "ikvm-tests-native";
+        public const string LIB_NAME = "ikvm-tests";
 
         /// <summary>
         /// Ensures the native library is loaded.
