@@ -43,10 +43,6 @@ These tasks can be done **without porting source code** to .NET.
 - Windows x86/x64/ARM/ARM64
 - Linux x64/ARM/ARM64
 
-## Documentation
-
-See the [tutorial](https://sourceforge.net/p/ikvm/wiki/Tutorial/) to get started or [IKVM.NET In Details](https://www.c-sharpcorner.com/UploadFile/abhijmk/ikvm-net-in-details/) for a more in-depth look.
-
 ## Installation
 
 ### NuGet
