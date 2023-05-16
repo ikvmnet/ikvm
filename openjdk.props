@@ -4088,6 +4088,7 @@
         <OpenJdkSource Include="$(OpenJdkDir)\jdk\src\share\classes\sun\security\**\*.java" PackagePath="sun\security" />
         <OpenJdkSource Remove="$(OpenJdkDir)\jdk\src\share\classes\sun\security\jgss\wrapper\NativeGSSFactory.java" />
         <OpenJdkSource Remove="$(OpenJdkDir)\jdk\src\share\classes\sun\security\jgss\wrapper\SunNativeProvider.java" />
+        <OpenJdkSource Remove="$(OpenJdkDir)\jdk\src\share\classes\sun\security\pkcs11\**\*.java" />
         <OpenJdkSource Remove="$(OpenJdkDir)\jdk\src\share\classes\sun\security\smartcardio\**\*.java" />
         <OpenJdkSource Include="$(OpenJdkDir)\jdk\src\share\classes\sun\swing\AccumulativeRunnable.java" />
         <OpenJdkSource Include="$(OpenJdkDir)\jdk\src\share\classes\sun\swing\BakedArrayList.java" />
