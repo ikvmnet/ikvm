@@ -16,7 +16,6 @@
         <None Include="README.md" Pack="true" PackagePath="." />
         <None Include="buildTransitive\**\*" Pack="true" PackagePath="buildTransitive\%(RecursiveDir)%(Filename)%(Extension)" />
         <None Include="lib\**\*" Pack="true" PackagePath="lib\%(RecursiveDir)%(Filename)%(Extension)" />
-        <None Include="ikvm\**\*" Pack="true" PackagePath="ikvm\%(RecursiveDir)%(Filename)%(Extension)" />
     </ItemGroup>
 
     <ItemGroup Condition=" '$(TargetFramework)' == '' ">

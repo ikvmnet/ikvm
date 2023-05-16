@@ -15,7 +15,7 @@
         </ProjectReference>
     </ItemGroup>
 
-    <!--<ItemGroup>
+    <ItemGroup>
         <ClangProjectReference Include="$(MSBuildThisFileDirectory)src\libikvm\libikvm.clangproj" Condition="$(EnabledRuntimeIdentifiers.Contains(';win7-x64;'))">
             <TargetMachine>x86_64-pc-windows-msvc</TargetMachine>
             <RuntimeIdentifier>win7-x64</RuntimeIdentifier>
@@ -48,7 +48,7 @@
             <TargetMachine>arm64-apple-macosx</TargetMachine>
             <RuntimeIdentifier>osx-arm64</RuntimeIdentifier>
         </ClangProjectReference>
-    </ItemGroup>-->
+    </ItemGroup>
 
     <ItemGroup>
         <ClangProjectReference Include="$(MSBuildThisFileDirectory)src\libsunmscapi\libsunmscapi.clangproj" Condition="$(EnabledRuntimeIdentifiers.Contains(';win7-x64;'))">

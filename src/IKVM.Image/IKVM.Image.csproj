@@ -1,4 +1,4 @@
-﻿<Project >
+﻿<Project>
     <Import Sdk="Microsoft.Build.NoTargets" Project="Sdk.props" />
     <Import Project="$(MSBuildThisFileDirectory)..\..\openjdk.props" />
 
@@ -73,6 +73,48 @@
         <IkvmImageItem Include="ikvm\any\any\**\*">
             <TargetFramework>any</TargetFramework>
             <RuntimeIdentifier>any</RuntimeIdentifier>
+            <TargetPath>%(RecursiveDir)%(FileName)%(Extension)</TargetPath>
+        </IkvmImageItem>
+
+        <!-- files directly part of this project -->
+        <IkvmImageItem Include="ikvm\any\win7-x64\**\*">
+            <TargetFramework>any</TargetFramework>
+            <RuntimeIdentifier>win7-x64</RuntimeIdentifier>
+            <TargetPath>%(RecursiveDir)%(FileName)%(Extension)</TargetPath>
+        </IkvmImageItem>
+
+        <!-- files directly part of this project -->
+        <IkvmImageItem Include="ikvm\any\win7-x86\**\*">
+            <TargetFramework>any</TargetFramework>
+            <RuntimeIdentifier>win7-x86</RuntimeIdentifier>
+            <TargetPath>%(RecursiveDir)%(FileName)%(Extension)</TargetPath>
+        </IkvmImageItem>
+
+        <!-- files directly part of this project -->
+        <IkvmImageItem Include="ikvm\any\win81-arm\**\*">
+            <TargetFramework>any</TargetFramework>
+            <RuntimeIdentifier>win81-arm</RuntimeIdentifier>
+            <TargetPath>%(RecursiveDir)%(FileName)%(Extension)</TargetPath>
+        </IkvmImageItem>
+
+        <!-- files directly part of this project -->
+        <IkvmImageItem Include="ikvm\any\linux-x64\**\*">
+            <TargetFramework>any</TargetFramework>
+            <RuntimeIdentifier>linux-x64</RuntimeIdentifier>
+            <TargetPath>%(RecursiveDir)%(FileName)%(Extension)</TargetPath>
+        </IkvmImageItem>
+
+        <!-- files directly part of this project -->
+        <IkvmImageItem Include="ikvm\any\linux-arm\**\*">
+            <TargetFramework>any</TargetFramework>
+            <RuntimeIdentifier>linux-arm</RuntimeIdentifier>
+            <TargetPath>%(RecursiveDir)%(FileName)%(Extension)</TargetPath>
+        </IkvmImageItem>
+
+        <!-- files directly part of this project -->
+        <IkvmImageItem Include="ikvm\any\linux-arm64\**\*">
+            <TargetFramework>any</TargetFramework>
+            <RuntimeIdentifier>linux-arm64</RuntimeIdentifier>
             <TargetPath>%(RecursiveDir)%(FileName)%(Extension)</TargetPath>
         </IkvmImageItem>
         
