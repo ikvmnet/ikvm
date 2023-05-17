@@ -1859,7 +1859,6 @@
         <OpenJdkSource Include="$(OpenJdkDir)\jdk\src\share\classes\com\sun\imageio\stream\StreamFinalizer.java" />
         <OpenJdkSource Include="$(OpenJdkDir)\jdk\src\share\classes\com\sun\jarsigner\ContentSigner.java" />
         <OpenJdkSource Include="$(OpenJdkDir)\jdk\src\share\classes\com\sun\jarsigner\ContentSignerParameters.java" />
-        <OpenJdkSource Include="$(OpenJdkDir)\jdk\src\share\classes\com\sun\jarsigner\JarSignerParameters.java" />
         <OpenJdkSource Include="$(OpenJdkDir)\jdk\src\share\classes\com\sun\jarsigner\package-info.java" />
         <OpenJdkSource Include="$(OpenJdkDir)\jdk\src\share\classes\com\sun\java\browser\dom\DOMAccessException.java" />
         <OpenJdkSource Include="$(OpenJdkDir)\jdk\src\share\classes\com\sun\java\browser\dom\DOMAccessor.java" />
