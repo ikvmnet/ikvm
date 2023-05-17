@@ -66,9 +66,8 @@ namespace IKVM.Internal
 			}
 #endif
 			if (classLiteralField == null)
-			{
 				classLiteralField = classLiteralType.GetField("Value", BindingFlags.Public | BindingFlags.Static);
-			}
+
 			return TypeBuilder.GetField(classLiteralType.MakeGenericType(type), classLiteralField);
 		}
 
@@ -78,28 +77,38 @@ namespace IKVM.Internal
 		}
 
 #if IMPORTER
+
 		internal static void Create(CompilerClassLoader ccl)
 		{
 			EmitClassLiteral(ccl);
 		}
 
-		private static void EmitClassLiteral(CompilerClassLoader ccl)
+		static void EmitClassLiteral(CompilerClassLoader ccl)
 		{
-			TypeBuilder tb = ccl.GetTypeWrapperFactory().ModuleBuilder.DefineType("ikvm.internal.ClassLiteral`1", TypeAttributes.Public | TypeAttributes.Sealed | TypeAttributes.Abstract | TypeAttributes.Class | TypeAttributes.BeforeFieldInit);
-			GenericTypeParameterBuilder typeParam = tb.DefineGenericParameters("T")[0];
-			Type classType = CoreClasses.java.lang.Class.Wrapper.TypeAsSignatureType;
+			var tb = ccl.GetTypeWrapperFactory().ModuleBuilder.DefineType("ikvm.internal.ClassLiteral`1", TypeAttributes.Public | TypeAttributes.Sealed | TypeAttributes.Abstract | TypeAttributes.Class | TypeAttributes.BeforeFieldInit);
+			var typeParam = tb.DefineGenericParameters("T")[0];
+
+			AttributeHelper.SetCompilerGenerated(tb);
+
+			var classType = CoreClasses.java.lang.Class.Wrapper.TypeAsSignatureType;
 			classLiteralField = tb.DefineField("Value", classType, FieldAttributes.Public | FieldAttributes.Static | FieldAttributes.InitOnly);
-			CodeEmitter ilgen = CodeEmitter.Create(ReflectUtil.DefineTypeInitializer(tb, ccl));
+
+			var ilgen = CodeEmitter.Create(ReflectUtil.DefineTypeInitializer(tb, ccl));
 			ilgen.Emit(OpCodes.Ldtoken, typeParam);
 			ilgen.Emit(OpCodes.Call, Types.Type.GetMethod("GetTypeFromHandle", new Type[] { Types.RuntimeTypeHandle }));
-			MethodWrapper mw = CoreClasses.java.lang.Class.Wrapper.GetMethodWrapper("<init>", "(Lcli.System.Type;)V", false);
+
+			var mw = CoreClasses.java.lang.Class.Wrapper.GetMethodWrapper("<init>", "(Lcli.System.Type;)V", false);
 			mw.Link();
 			mw.EmitNewobj(ilgen);
 			ilgen.Emit(OpCodes.Stsfld, classLiteralField);
 			ilgen.Emit(OpCodes.Ret);
 			ilgen.DoEmit();
+
 			classLiteralType = tb.CreateType();
 		}
+
 #endif
+
 	}
+
 }
