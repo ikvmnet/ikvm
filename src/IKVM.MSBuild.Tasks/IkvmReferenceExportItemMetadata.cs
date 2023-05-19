@@ -13,8 +13,10 @@
         public static readonly string NoStdLib = "NoStdLib";
         public static readonly string Libraries = "Libraries";
         public static readonly string Forwarders = "Forwarders";
-        public static readonly string Parameters = "Parameters";
-        public static readonly string JApi = "JApi";
+        public static readonly string IncludeNonPublicTypes = "IncludeNonPublicTypes";
+        public static readonly string IncludeNonPublicInterfaces = "IncludeNonPublicInterfaces";
+        public static readonly string IncludeNonPublicMembers = "IncludeNonPublicMembers";
+        public static readonly string IncludeParameterNames = "IncludeParameterNames";
         public static readonly string Bootstrap = "Bootstrap";
         public static readonly string IkvmIdentity = "IkvmIdentity";
         public static readonly string RandomIndex = "RandomIndex";

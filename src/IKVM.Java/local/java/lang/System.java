@@ -43,39 +43,6 @@ import sun.reflect.Reflection;
 import sun.security.util.SecurityConstants;
 import sun.reflect.annotation.AnnotationType;
 
-final class StdIO
-{
-    private StdIO() { }
-    static InputStream in = new BufferedInputStream(new FileInputStream(FileDescriptor.in));
-    static PrintStream out = System.newPrintStream(new FileOutputStream(FileDescriptor.out), Props.props.getProperty("sun.stdout.encoding"));
-    static PrintStream err = System.newPrintStream(new FileOutputStream(FileDescriptor.err), Props.props.getProperty("sun.stderr.encoding"));
-}
-
-final class Props
-{
-    private Props() { }
-
-    static Properties props;
-    static String lineSeparator;
-    
-    static
-    {
-        props = new Properties();
-        VMSystemProperties.initProperties(props);
-        lineSeparator = props.getProperty("line.separator");
-
-        // after we've initialized the system properties, we need to fixate certain
-        // results that depend on system properties, because we don't want Java code to
-        // be able to change the behavior by setting these system properties.
-        ClassLoader.initializeLibraryPaths(props);
-        sun.misc.VM.saveAndRemoveProperties(props);
-        
-        // now that we've initialized the system properties (which are our only
-        // notion of "booting" the VM) we set the booted flag.
-        sun.misc.VM.booted();
-    }
-}
-
 /**
  * The <code>System</code> class contains several useful class fields
  * and methods. It cannot be instantiated.
@@ -100,7 +67,7 @@ public final class System {
      */
     private static native void registerNatives();
     static {
-        //registerNatives();
+        registerNatives();
     }
 
     /** Don't let anyone instantiate this class */
@@ -114,11 +81,12 @@ public final class System {
      * the host environment or user.
      */
     @ikvm.lang.Property(get="get_in")
-    public final static InputStream in = null;
-
+    public static InputStream in;
+    private static InputStream _in;
+    
     private static InputStream get_in()
     {
-        return StdIO.in;
+        return _in;
     }
 
     /**
@@ -147,11 +115,12 @@ public final class System {
      * @see     java.io.PrintStream#println(java.lang.String)
      */
     @ikvm.lang.Property(get="get_out")
-    public final static PrintStream out = null;
-
+    public static PrintStream out;
+    private static PrintStream _out;
+    
     private static PrintStream get_out()
     {
-        return StdIO.out;
+        return _out;
     }
 
     /**
@@ -167,11 +136,12 @@ public final class System {
      * destination that is typically not continuously monitored.
      */
     @ikvm.lang.Property(get="get_err")
-    public final static PrintStream err = null;
-
+    public static PrintStream err;
+    private static PrintStream _err;
+    
     private static PrintStream get_err()
     {
-        return StdIO.err;
+        return _err;
     }
 
     /* The security manager for the system.
@@ -344,9 +314,6 @@ public final class System {
 
     private static synchronized
     void setSecurityManager0(final SecurityManager s) {
-        // [IKVM] force sun.misc.Launcher to initialize, because it assumes that it runs without a SecurityManager
-        sun.misc.Launcher.getLauncher();
-
         SecurityManager sm = getSecurityManager();
         if (sm != null) {
             // ask the currently installed security manager if we
@@ -404,10 +371,7 @@ public final class System {
      *          the current time and midnight, January 1, 1970 UTC.
      * @see     java.util.Date
      */
-    public static long currentTimeMillis() {
-        long january_1st_1970 = 62135596800000L;
-        return cli.System.DateTime.get_UtcNow().get_Ticks() / 10000L - january_1st_1970;
-    }
+    public static native long currentTimeMillis();
 
     /**
      * Returns the current value of the running Java Virtual Machine's
@@ -453,12 +417,7 @@ public final class System {
      *         high-resolution time source, in nanoseconds
      * @since 1.5
      */
-    public static long nanoTime() {
-        long NANOS_PER_SEC = 1000000000;
-        double current = cli.System.Diagnostics.Stopwatch.GetTimestamp();
-        double freq = cli.System.Diagnostics.Stopwatch.Frequency;
-        return (long)((current / freq) * NANOS_PER_SEC);
-    }
+    public static native long nanoTime();
 
     /**
      * Copies an array from the specified source array, beginning at the
@@ -567,9 +526,7 @@ public final class System {
      * @return  the hashCode
      * @since   JDK1.1
      */
-    public static int identityHashCode(Object x) {
-        return cli.System.Runtime.CompilerServices.RuntimeHelpers.GetHashCode(x);
-    }
+    public static native int identityHashCode(Object x);
 
     /**
      * System properties. The following properties are guaranteed to be defined:
@@ -592,12 +549,8 @@ public final class System {
      * </dl>
      */
 
-    @ikvm.lang.Property(get="get_props", set="set_props")
     private static Properties props;
     private static native Properties initProperties(Properties props);
-
-    private static Properties get_props() { return Props.props; }
-    private static void set_props(Properties value) { Props.props = value; }
 
     /**
      * Determines the current system properties.
@@ -716,11 +669,7 @@ public final class System {
         return lineSeparator;
     }
 
-    @ikvm.lang.Property(get="get_lineSeparator", set="set_lineSeparator")
     private static String lineSeparator;
-
-    private static String get_lineSeparator() { return Props.lineSeparator; }
-    private static void set_lineSeparator(String value) { Props.lineSeparator = value; }
 
     /**
      * Sets the system properties to the <code>Properties</code>
@@ -777,7 +726,7 @@ public final class System {
      * @exception  NullPointerException if <code>key</code> is
      *             <code>null</code>.
      * @exception  IllegalArgumentException if <code>key</code> is empty.
-     * @see        #setProperty
+     * @see        #setPropertycheckKey
      * @see        java.lang.SecurityException
      * @see        java.lang.SecurityManager#checkPropertyAccess(java.lang.String)
      * @see        java.lang.System#getProperties()
@@ -1211,12 +1160,136 @@ public final class System {
     /**
      * Create PrintStream for stdout/err based on encoding.
      */
-    /*private*/ static PrintStream newPrintStream(FileOutputStream fos, String enc) {
+    private static PrintStream newPrintStream(FileOutputStream fos, String enc) {
        if (enc != null) {
             try {
                 return new PrintStream(new BufferedOutputStream(fos, 128), true, enc);
             } catch (UnsupportedEncodingException uee) {}
         }
         return new PrintStream(new BufferedOutputStream(fos, 128), true);
+    }
+
+
+    /**
+     * Initialize the system class.  Called after thread initialization.
+     */
+    private static void initializeSystemClass() {
+
+        // VM might invoke JNU_NewStringPlatform() to set those encoding
+        // sensitive properties (user.home, user.name, boot.class.path, etc.)
+        // during "props" initialization, in which it may need access, via
+        // System.getProperty(), to the related system encoding property that
+        // have been initialized (put into "props") at early stage of the
+        // initialization. So make sure the "props" is available at the
+        // very beginning of the initialization and all system properties to
+        // be put into it directly.
+        props = new Properties();
+        initProperties(props);  // initialized by the VM
+
+        // There are certain system configurations that may be controlled by
+        // VM options such as the maximum amount of direct memory and
+        // Integer cache size used to support the object identity semantics
+        // of autoboxing.  Typically, the library will obtain these values
+        // from the properties set by the VM.  If the properties are for
+        // internal implementation use only, these properties should be
+        // removed from the system properties.
+        //
+        // See java.lang.Integer.IntegerCache and the
+        // sun.misc.VM.saveAndRemoveProperties method for example.
+        //
+        // Save a private copy of the system properties object that
+        // can only be accessed by the internal implementation.  Remove
+        // certain system properties that are not intended for public access.
+        sun.misc.VM.saveAndRemoveProperties(props);
+
+
+        lineSeparator = props.getProperty("line.separator");
+        sun.misc.Version.init();
+
+        FileInputStream fdIn = new FileInputStream(FileDescriptor.in);
+        FileOutputStream fdOut = new FileOutputStream(FileDescriptor.out);
+        FileOutputStream fdErr = new FileOutputStream(FileDescriptor.err);
+        setIn0(new BufferedInputStream(fdIn));
+        setOut0(newPrintStream(fdOut, props.getProperty("sun.stdout.encoding")));
+        setErr0(newPrintStream(fdErr, props.getProperty("sun.stderr.encoding")));
+
+        // Load the zip library now in order to keep java.util.zip.ZipFile
+        // from trying to use itself to load this library later.
+        // loadLibrary("zip");
+
+        // Setup Java signal handlers for HUP, TERM, and INT (where available).
+        Terminator.setup();
+
+        // Initialize any miscellenous operating system settings that need to be
+        // set for the class libraries. Currently this is no-op everywhere except
+        // for Windows where the process-wide error mode is set before the java.io
+        // classes are used.
+        sun.misc.VM.initializeOSEnvironment();
+
+        // The main thread is not added to its thread group in the same
+        // way as other threads; we must do it ourselves here.
+        Thread current = Thread.currentThread();
+        current.getThreadGroup().add(current);
+
+        // register shared secrets
+        setJavaLangAccess();
+
+        // Subsystems that are invoked during initialization can invoke
+        // sun.misc.VM.isBooted() in order to avoid doing things that should
+        // wait until the application class loader has been set up.
+        // IMPORTANT: Ensure that this remains the last initialization action!
+        sun.misc.VM.booted();
+    }
+
+    private static void setJavaLangAccess() {
+        // Allow privileged classes outside of java.lang
+        sun.misc.SharedSecrets.setJavaLangAccess(new sun.misc.JavaLangAccess(){
+            public sun.reflect.ConstantPool getConstantPool(Class<?> klass) {
+                return klass.getConstantPool();
+            }
+            public boolean casAnnotationType(Class<?> klass, AnnotationType oldType, AnnotationType newType) {
+                return klass.casAnnotationType(oldType, newType);
+            }
+            public AnnotationType getAnnotationType(Class<?> klass) {
+                return klass.getAnnotationType();
+            }
+            public Map<Class<? extends Annotation>, Annotation> getDeclaredAnnotationMap(Class<?> klass) {
+                return klass.getDeclaredAnnotationMap();
+            }
+            public byte[] getRawClassAnnotations(Class<?> klass) {
+                throw new Error("IKVM: disabled");
+            }
+            public byte[] getRawClassTypeAnnotations(Class<?> klass) {
+                return klass.getRawTypeAnnotations();
+            }
+            public byte[] getRawExecutableTypeAnnotations(Executable executable) {
+                return Class.getExecutableTypeAnnotationBytes(executable);
+            }
+            public <E extends Enum<E>>
+                    E[] getEnumConstantsShared(Class<E> klass) {
+                return klass.getEnumConstantsShared();
+            }
+            public void blockedOn(Thread t, Interruptible b) {
+                t.blockedOn(b);
+            }
+            public void registerShutdownHook(int slot, boolean registerShutdownInProgress, Runnable hook) {
+                Shutdown.add(slot, registerShutdownInProgress, hook);
+            }
+            public int getStackTraceDepth(Throwable t) {
+                return t.getStackTraceDepth();
+            }
+            public StackTraceElement getStackTraceElement(Throwable t, int i) {
+                return t.getStackTraceElement(i);
+            }
+            public String newStringUnsafe(char[] chars) {
+                return new String(chars, true);
+            }
+            public Thread newThreadWithAcc(Runnable target, AccessControlContext acc) {
+                return new Thread(target, acc);
+            }
+            public void invokeFinalize(Object o) throws Throwable {
+                o.finalize();
+            }
+        });
     }
 }

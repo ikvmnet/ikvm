@@ -1,93 +1,163 @@
-﻿/*
-  Copyright (C) 2007-2014 Jeroen Frijters
-
-  This software is provided 'as-is', without any express or implied
-  warranty.  In no event will the authors be held liable for any damages
-  arising from the use of this software.
-
-  Permission is granted to anyone to use this software for any purpose,
-  including commercial applications, and to alter it and redistribute it
-  freely, subject to the following restrictions:
-
-  1. The origin of this software must not be misrepresented; you must not
-     claim that you wrote the original software. If you use this software
-     in a product, an acknowledgment in the product documentation would be
-     appreciated but is not required.
-  2. Altered source versions must be plainly marked as such, and must not be
-     misrepresented as being the original software.
-  3. This notice may not be removed or altered from any source distribution.
-
-  Jeroen Frijters
-  jeroen@frijters.net
-  
-*/
-
+﻿using System;
 using System.IO;
-using System.Runtime.CompilerServices;
 using System.Runtime.InteropServices;
-using System.Security;
-using System.Security.AccessControl;
 
-using IKVM.Runtime.Vfs;
+using IKVM.Internal;
+using IKVM.Runtime;
+using IKVM.Runtime.Accessors.Java.Io;
 
 namespace IKVM.Java.Externs.java.io
 {
 
+    /// <summary>
+    /// Implements the native methods for 'FileDescriptor'.
+    /// </summary>
     static class FileDescriptor
     {
 
-        public static Stream open(string name, FileMode mode, FileAccess access)
-        {
-            if (VfsTable.Default.IsPath(name))
-            {
-                return VfsTable.Default.Open(name, mode, access);
-            }
-            else if (mode == FileMode.Append)
-            {
-#if NETFRAMEWORK
-                // this is the way to get atomic append behavior for all writes
-                return new FileStream(name, mode, FileSystemRights.AppendData, FileShare.ReadWrite, 1, FileOptions.None);
-#else
-                // the above constructor does not exist in .net core
-                // since the buffer size is 1 byte, it's always atomic
-                // if the buffer size needs to be bigger, find a way for the atomic append
-                return new FileStream(name, mode, access, FileShare.ReadWrite, 1, false);
+#if FIRST_PASS == false
+
+        static FileDescriptorAccessor fileDescriptorAccessor;
+        static FileDescriptorAccessor FileDescriptorAccessor => JVM.BaseAccessors.Get(ref fileDescriptorAccessor);
+
 #endif
+
+        [DllImport("kernel32")]
+        static extern IntPtr GetStdHandle(int nStdHandle);
+
+        /// <summary>
+        /// Implements the native method 'getHandle0'.
+        /// </summary>
+        /// <param name="self"></param>
+        /// <returns></returns>
+        public static int getFd(object self)
+        {
+#if FIRST_PASS
+            throw new NotImplementedException();
+#else
+            if (RuntimeUtil.IsWindows)
+            {
+                if (FileDescriptorAccessor.GetStream(self) is FileStream fs)
+                {
+                    return fs.SafeFileHandle.DangerousGetHandle().ToInt32();
+                }
+                else if (self == FileDescriptorAccessor.GetIn())
+                {
+                    return GetStdHandle(-10).ToInt32();
+                }
+                else if (self == FileDescriptorAccessor.GetOut())
+                {
+                    return GetStdHandle(-11).ToInt32();
+                }
+                else if (self == FileDescriptorAccessor.GetErr())
+                {
+                    return GetStdHandle(-12).ToInt32();
+                }
             }
             else
             {
-                return new FileStream(name, mode, access, FileShare.ReadWrite, 1, false);
+
+                if (FileDescriptorAccessor.GetStream(self) is FileStream fs)
+                {
+                    return fs.SafeFileHandle.DangerousGetHandle().ToInt32();
+                }
+                else if (self == FileDescriptorAccessor.GetIn())
+                {
+                    return 0;
+                }
+                else if (self == FileDescriptorAccessor.GetOut())
+                {
+                    return 1;
+                }
+                else if (self == FileDescriptorAccessor.GetErr())
+                {
+                    return 2;
+                }
             }
+
+            return -1;
+#endif
         }
 
-        [SecuritySafeCritical]
-        public static bool flushPosix(FileStream fs)
+        /// <summary>
+        /// Implements the native method 'getHandle0'.
+        /// </summary>
+        /// <param name="self"></param>
+        /// <returns></returns>
+        public static long getHandle(object self)
         {
-            // this whole method is a bit wonky, shouldn't exist, flush should be handled in .NET
-            // and not have separate POSIX and Win32 calls
+#if FIRST_PASS
+            throw new NotImplementedException();
+#else
+            if (RuntimeUtil.IsWindows)
+            {
+                if (FileDescriptorAccessor.GetStream(self) is FileStream fs)
+                {
+                    return fs.SafeFileHandle.DangerousGetHandle().ToInt64();
+                }
+                else if (self == FileDescriptorAccessor.GetIn())
+                {
+                    return GetStdHandle(-10).ToInt64();
+                }
+                else if (self == FileDescriptorAccessor.GetOut())
+                {
+                    return GetStdHandle(-11).ToInt64();
+                }
+                else if (self == FileDescriptorAccessor.GetErr())
+                {
+                    return GetStdHandle(-12).ToInt64();
+                }
+            }
 
-            var success = false;
-            var handle = fs.SafeFileHandle;
-            RuntimeHelpers.PrepareConstrainedRegions();
+            return -1;
+#endif
+        }
+
+            /// <summary>
+            /// Implements the native method 'standardStream'.
+            /// </summary>
+            /// <param name="fd"></param>
+            /// <returns></returns>
+            public static object standardStream(int fd)
+        {
+#if FIRST_PASS
+            throw new NotImplementedException();
+#else
+            return FileDescriptorAccessor.FromStream(fd switch
+            {
+                0 => System.Console.OpenStandardInput(),
+                1 => System.Console.OpenStandardOutput(),
+                2 => System.Console.OpenStandardError(),
+                _ => throw new NotImplementedException(),
+            });
+#endif
+        }
+
+        /// <summary>
+        /// Implements the native method 'sync'.
+        /// </summary>
+        /// <param name="self"></param>
+        /// <exception cref="global::java.io.SyncFailedException"></exception>
+        public static void sync(object self)
+        {
+#if FIRST_PASS
+            throw new NotImplementedException();
+#else
+            var stream = FileDescriptorAccessor.GetStream(self);
+            if (stream == null)
+                throw new global::java.io.SyncFailedException("Sync failed.");
+            if (stream.CanWrite == false)
+                return;
 
             try
             {
-                handle.DangerousAddRef(ref success);
-#if NETCOREAPP
-                if (RuntimeInformation.IsOSPlatform(OSPlatform.Linux))
-                    return Mono.Unix.Native.Syscall.fsync(handle.DangerousGetHandle().ToInt32()) == 0;
-                else
-                    // TODO OS X
-                    return true;
-#else
-                return true;
-#endif
+                stream.Flush();
             }
-            finally
+            catch (IOException e)
             {
-                if (success)
-                    handle.DangerousRelease();
+                throw new global::java.io.SyncFailedException(e.Message);
             }
+#endif
         }
 
     }

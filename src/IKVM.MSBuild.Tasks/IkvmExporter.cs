@@ -39,19 +39,23 @@ namespace IKVM.MSBuild.Tasks
         /// <summary>
         /// Whether errors should be skipped during export.
         /// </summary>
-        public bool SkipError { get; set; }
+        public bool ContinueOnError { get; set; }
+
+        public ITaskItem[] Lib { get; set; }
+
+        public bool IncludeNonPublicTypes { get; set; }
+
+        public bool IncludeNonPublicInterfaces { get; set; }
+
+        public bool IncludeNonPublicMembers { get; set; }
+
+        public bool IncludeParameterNames { get; set; }
 
         public bool Shared { get; set; }
 
         public bool NoStdLib { get; set; }
 
-        public ITaskItem[] Lib { get; set; }
-
         public bool Forwarders { get; set; }
-
-        public bool Parameters { get; set; }
-
-        public bool JApi { get; set; }
 
         public bool Bootstrap { get; set; }
 
@@ -70,17 +74,20 @@ namespace IKVM.MSBuild.Tasks
                 foreach (var resource in Namespaces)
                     options.Namespaces.Add(resource.ItemSpec);
 
-            options.SkipError = SkipError;
-            options.Shared = Shared;
-            options.NoStdLib = NoStdLib;
+            options.ContinueOnError = ContinueOnError;
 
             if (Lib is not null)
                 foreach (var i in Lib)
                     options.Lib.Add(i.ItemSpec);
 
+            options.IncludeNonPublicTypes = IncludeNonPublicTypes;
+            options.IncludeNonPublicInterfaces = IncludeNonPublicInterfaces;
+            options.IncludeNonPublicMembers = IncludeNonPublicMembers;
+            options.IncludeParameterNames = IncludeParameterNames;
+
+            options.Shared = Shared;
+            options.NoStdLib = NoStdLib;
             options.Forwarders = Forwarders;
-            options.Parameters = Parameters;
-            options.JApi = JApi;
             options.Bootstrap = Bootstrap;
 
             // kick off the launcher with the configured options

@@ -52,7 +52,7 @@
             TypeAnnotationTargetType.MethodInvocationTypeArgument => TypeAnnotationTypeArgumentTargetRecord.TryRead(ref reader, out targetInfo),
             TypeAnnotationTargetType.ConstructorReferenceTypeArgument => TypeAnnotationTypeArgumentTargetRecord.TryRead(ref reader, out targetInfo),
             TypeAnnotationTargetType.MethodReferenceTypeArgument => TypeAnnotationTypeArgumentTargetRecord.TryRead(ref reader, out targetInfo),
-            _ => throw new ByteCodeException($"Invalid type annotation target type: '0x{targetType:XX}'."),
+            _ => throw new ByteCodeException($"Invalid type annotation target type: '0x{targetType:X}'."),
         };
 
         /// <summary>

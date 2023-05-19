@@ -15,7 +15,7 @@ namespace IKVM.Runtime.Vfs
     /// <summary>
     /// Provides information to the VFS based on the current runtime environment.
     /// </summary>
-    class VfsRuntimeContext : VfsContext
+    internal class VfsRuntimeContext : VfsContext
     {
 
         /// <summary>

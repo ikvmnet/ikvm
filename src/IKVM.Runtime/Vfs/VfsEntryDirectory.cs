@@ -8,7 +8,7 @@ namespace IKVM.Runtime.Vfs
     /// <summary>
     /// Describes a directory that has entries added to it statically.
     /// </summary>
-    sealed class VfsEntryDirectory : VfsDirectory
+    internal sealed class VfsEntryDirectory : VfsDirectory
     {
 
         readonly ConcurrentDictionary<string, VfsEntry> entries = new();

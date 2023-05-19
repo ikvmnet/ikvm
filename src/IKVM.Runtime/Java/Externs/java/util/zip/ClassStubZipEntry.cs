@@ -25,7 +25,7 @@
 using System;
 using System.IO;
 
-using IKVM.Internal;
+using IKVM.Runtime;
 using IKVM.Runtime.Vfs;
 
 namespace IKVM.Java.Externs.java.util.zip

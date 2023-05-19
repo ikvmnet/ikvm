@@ -26,7 +26,23 @@
     <assembly>
         <class name="java.lang.Object" shadows="System.Object" modifiers="public">
             <attribute type="System.SerializableAttribute" sig="()V" />
-            <constructor sig="()V" modifiers="public" />
+            <field name="__&lt;init&gt;" sig="Z" modifiers="private final">
+                <attribute type="IKVM.Attributes.HideFromJavaAttribute" sig="()V" />
+                <attribute type="System.Runtime.CompilerServices.SpecialNameAttribute" sig="()V" />
+                <attribute type="System.ComponentModel.EditorBrowsableAttribute" sig="(Lcli.System.ComponentModel.EditorBrowsableState;)V">
+                    <parameter>Never</parameter>
+                </attribute>
+            </field>
+            <constructor sig="()V" modifiers="public">
+                <body>
+                    <ldarg_0 />
+                    <call type="System.Object" name=".ctor" sig="()V" />
+                    <ldarg_0 />
+                    <ldc_i4_1 />
+                    <stfld class="java.lang.Object" name="__&lt;init&gt;" sig="Z" />
+                    <ret />
+                </body>
+            </constructor>
             <method name="notifyAll" sig="()V" modifiers="public final">
                 <body>
                     <ldarg_0 />
@@ -109,10 +125,10 @@
                     <isinst class="java.lang.Cloneable" />
                     <brfalse name="not_cloneable" />
                     <!--
-		     This means we're Cloneable, but not derived from java.lang.Object or java.lang.Throwable.
-		     It also means that we must have been invoked thru reflection (or by code in the java.lang package),
-		     so it is OK to use reflection to call Object.MemberwiseClone().
-		     -->
+		              This means we're Cloneable, but not derived from java.lang.Object or java.lang.Throwable.
+		              It also means that we must have been invoked thru reflection (or by code in the java.lang package),
+		              so it is OK to use reflection to call Object.MemberwiseClone().
+		            -->
                     <ldtoken type="System.Object" />
                     <call type="System.Type" name="GetTypeFromHandle" sig="(Lcli.System.RuntimeTypeHandle;)Lcli.System.Type;" />
                     <ldstr value="MemberwiseClone" />
@@ -202,13 +218,13 @@
             <method name="finalize" sig="()V" modifiers="protected">
                 <throws class="java.lang.Throwable" />
                 <!-- NOTE we don't override Finalize, because that would be bad for performance,
-		     instead, the compiler contains a hack to lazily override Finalize when a class
-		     overrides our finalize
-		     TODO consider adding code to constructor (in debug builds) to detect that someone
-		     has overriden our finalize from another .NET language (if no intermediate Java base class
-		     has overriden finalize, the lazy override of Object.Finalize hasn't kicked in and finalize
-		     will never be called)
-		-->
+		             instead, the compiler contains a hack to lazily override Finalize when a class
+		             overrides our finalize
+		             TODO consider adding code to constructor (in debug builds) to detect that someone
+		             has overriden our finalize from another .NET language (if no intermediate Java base class
+		             has overriden finalize, the lazy override of Object.Finalize hasn't kicked in and finalize
+		             will never be called)
+		        -->
                 <body>
                     <ldarg_0 />
                     <call type="System.Object" name="Finalize" sig="()V" />
@@ -216,7 +232,7 @@
                 </body>
                 <alternateBody>
                     <!-- if code in the java.lang package explicitly invokes finalize on a non java.lang.Object
-			 derived object	we just ignore it -->
+			             derived object	we just ignore it -->
                     <ret />
                 </alternateBody>
             </method>
@@ -537,20 +553,20 @@
                 <parameter name="toffset" />
                 <body>
                     <!--
-		        if (toffset >= 0
-                            && toffset <= this.Length
-                            && this.Length - toffset >= prefix.Length)
-		        {
-		            for (int i = 0; i < prefix.Length; i++)
-		            {
-	                        if (this[i + toffset] != prefix[i])
-	                        {
-		                        return false;
-	                        }
-		            }
-		            return true;
-		        }
-		        return false;
+		                if (toffset >= 0
+                                    && toffset <= this.Length
+                                    && this.Length - toffset >= prefix.Length)
+		                {
+		                    for (int i = 0; i < prefix.Length; i++)
+		                    {
+	                                if (this[i + toffset] != prefix[i])
+	                                {
+		                                return false;
+	                                }
+		                    }
+		                    return true;
+		                }
+		                return false;
                     -->
                     <ldarg_0 />
                     <callvirt type="System.String" name="get_Length" sig="()I" />
@@ -1457,14 +1473,6 @@
                     <and />
                     <ldc_i4_0 />
                     <ceq />
-                    <ret />
-                </body>
-            </method>
-        </class>
-        <class name="java.lang.ThreadGroup">
-            <method name="createRootGroup" sig="()Ljava.lang.ThreadGroup;" modifiers="static">
-                <body>
-                    <newobj class="java.lang.ThreadGroup" name="&lt;init&gt;" sig="()V" />
                     <ret />
                 </body>
             </method>

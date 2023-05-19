@@ -27,6 +27,9 @@ using System.Diagnostics;
 using IKVM.Attributes;
 
 using System.Threading;
+using System.CodeDom;
+using System.Linq;
+using IKVM.Runtime;
 
 #if IMPORTER || EXPORTER
 using IKVM.Reflection;
@@ -65,10 +68,14 @@ namespace IKVM.Internal
         internal FieldWrapper(TypeWrapper declaringType, TypeWrapper fieldType, string name, string sig, Modifiers modifiers, FieldInfo field, MemberFlags flags) :
             base(declaringType, name, sig, modifiers, flags)
         {
-            Debug.Assert(name != null);
-            Debug.Assert(sig != null);
+            if (name == null)
+                throw new ArgumentNullException();
+            if (sig == null)
+                throw new ArgumentNullException();
+
             this.fieldType = fieldType;
             this.field = field;
+
             UpdateNonPublicTypeInSignatureFlag();
 #if IMPORTER
             if (IsFinal
@@ -100,7 +107,7 @@ namespace IKVM.Internal
 
         }
 
-        private void UpdateNonPublicTypeInSignatureFlag()
+        void UpdateNonPublicTypeInSignatureFlag()
         {
             if ((IsPublic || IsProtected) && fieldType != null && !IsAccessStub)
             {
@@ -111,41 +118,49 @@ namespace IKVM.Internal
             }
         }
 
+        /// <summary>
+        /// Gets the CLR <see cref="FieldInfo"/> that forms the implementation of the field.
+        /// </summary>
+        /// <returns></returns>
         internal FieldInfo GetField()
         {
             AssertLinked();
             return field;
         }
 
+        /// <summary>
+        /// Fails if the field has not yet been linked.
+        /// </summary>
         [Conditional("DEBUG")]
         internal void AssertLinked()
         {
             if (fieldType == null)
-            {
-                Tracer.Error(Tracer.Runtime, "AssertLinked failed: " + this.DeclaringType.Name + "::" + this.Name + " (" + this.Signature + ")");
-            }
+                throw new InternalException($"Field is not linked: {DeclaringType.Name}::{Name} ({Signature})");
+
             Debug.Assert(fieldType != null, this.DeclaringType.Name + "::" + this.Name + " (" + this.Signature + ")");
         }
 
 #if !IMPORTER && !EXPORTER
 
+        /// <summary>
+        /// Gets the <see cref="FieldWrapper"/> for the given <see cref="java.lang.reflect.Field"/>.
+        /// </summary>
+        /// <param name="field"></param>
+        /// <returns></returns>
         internal static FieldWrapper FromField(java.lang.reflect.Field field)
         {
 #if FIRST_PASS
-            return null;
+            throw new NotImplementedException();
 #else
             int slot = field._slot();
             if (slot == -1)
             {
                 // it's a Field created by Unsafe.objectFieldOffset(Class,String) so we must resolve based on the name
-                foreach (FieldWrapper fw in TypeWrapper.FromClass(field.getDeclaringClass()).GetFields())
-                {
+                foreach (var fw in TypeWrapper.FromClass(field.getDeclaringClass()).GetFields())
                     if (fw.Name == field.getName())
-                    {
                         return fw;
-                    }
-                }
             }
+
             return TypeWrapper.FromClass(field.getDeclaringClass()).GetFields()[slot];
 #endif
         }
@@ -163,40 +178,41 @@ namespace IKVM.Internal
             java.lang.reflect.Field field = reflectionField;
             if (field == null)
             {
-                const Modifiers ReflectionFieldModifiersMask = Modifiers.Public | Modifiers.Private | Modifiers.Protected | Modifiers.Static
-                    | Modifiers.Final | Modifiers.Volatile | Modifiers.Transient | Modifiers.Synthetic | Modifiers.Enum;
+                const Modifiers ReflectionFieldModifiersMask = Modifiers.Public | Modifiers.Private | Modifiers.Protected | Modifiers.Static | Modifiers.Final | Modifiers.Volatile | Modifiers.Transient | Modifiers.Synthetic | Modifiers.Enum;
                 Link();
                 field = new java.lang.reflect.Field(
-                    this.DeclaringType.ClassObject,
-                    this.Name,
-                    this.FieldTypeWrapper.EnsureLoadable(this.DeclaringType.GetClassLoader()).ClassObject,
-                    (int)(this.Modifiers & ReflectionFieldModifiersMask) | (this.IsInternal ? 0x40000000 : 0),
-                    fieldIndex ?? Array.IndexOf(this.DeclaringType.GetFields(), this),
-                    this.DeclaringType.GetGenericFieldSignature(this),
+                    DeclaringType.ClassObject,
+                    Name,
+                    FieldTypeWrapper.EnsureLoadable(DeclaringType.GetClassLoader()).ClassObject,
+                    (int)(Modifiers & ReflectionFieldModifiersMask) | (IsInternal ? 0x40000000 : 0),
+                    fieldIndex ?? Array.IndexOf(DeclaringType.GetFields(), this),
+                    DeclaringType.GetGenericFieldSignature(this),
                     null
                 );
             }
+
             lock (this)
             {
                 if (reflectionField == null)
-                {
                     reflectionField = field;
-                }
                 else
-                {
                     field = reflectionField;
-                }
             }
+
             if (copy)
-            {
                 field = field.copy();
-            }
+
             return field;
 #endif
         }
 
 #endif
 
+        /// <summary>
+        /// Resolves the <see cref="FieldWrapper"/> instance referenced by the specified cookie.
+        /// </summary>
+        /// <param name="cookie"></param>
+        /// <returns></returns>
         [System.Security.SecurityCritical]
         internal static FieldWrapper FromCookie(IntPtr cookie)
         {
@@ -214,29 +230,144 @@ namespace IKVM.Internal
 
 #if EMITTERS
 
-        internal void EmitGet(CodeEmitter ilgen)
+        /// <summary>
+        /// Emits the IL code to set the value of the field.
+        /// </summary>
+        /// <param name="il"></param>
+        internal void EmitGet(CodeEmitter il)
         {
             AssertLinked();
-            EmitGetImpl(ilgen);
+            EmitGetImpl(il);
         }
 
-        protected abstract void EmitGetImpl(CodeEmitter ilgen);
+        /// <summary>
+        /// Emits the IL code to set the value of the field.
+        /// </summary>
+        /// <param name="il"></param>
+        protected abstract void EmitGetImpl(CodeEmitter il);
 
-        internal void EmitSet(CodeEmitter ilgen)
+        /// <summary>
+        /// Emits the IL code to implement the unsafe get operation.
+        /// </summary>
+        /// <param name="il"></param>
+        internal void EmitUnsafeGet(CodeEmitter il)
         {
             AssertLinked();
-            EmitSetImpl(ilgen);
+            EmitUnsafeGetImpl(il);
         }
 
-        protected abstract void EmitSetImpl(CodeEmitter ilgen);
+        /// <summary>
+        /// Emits the IL code to implement the unsafe get operation.
+        /// </summary>
+        /// <param name="il"></param>
+        protected virtual void EmitUnsafeGetImpl(CodeEmitter il)
+        {
+            EmitGetImpl(il);
+        }
+
+        /// <summary>
+        /// Emits the IL code to implement the unsafe volatile get operation.
+        /// </summary>
+        /// <param name="il"></param>
+        internal void EmitUnsafeVolatileGet(CodeEmitter il)
+        {
+            AssertLinked();
+            EmitUnsafeVolatileGetImpl(il);
+        }
+
+        /// <summary>
+        /// Emits the IL code to implement the unsafe volatile get operation.
+        /// </summary>
+        /// <param name="il"></param>
+        protected virtual void EmitUnsafeVolatileGetImpl(CodeEmitter il)
+        {
+            throw new NotSupportedException();
+        }
+
+        /// <summary>
+        /// Emits the IL code to implement the set operation.
+        /// </summary>
+        /// <param name="il"></param>
+        internal void EmitSet(CodeEmitter il)
+        {
+            AssertLinked();
+            EmitSetImpl(il);
+        }
+
+        /// <summary>
+        /// Emits the IL code to implement the set operation.
+        /// </summary>
+        /// <param name="il"></param>
+        protected abstract void EmitSetImpl(CodeEmitter il);
+
+        /// <summary>
+        /// Emits the IL code to implement the unsafe set operation.
+        /// </summary>
+        /// <param name="il"></param>
+        internal void EmitUnsafeSet(CodeEmitter il)
+        {
+            AssertLinked();
+            EmitSetImpl(il);
+        }
+
+        /// <summary>
+        /// Emits the IL code to implement the unsafe set operation.
+        /// </summary>
+        /// <param name="il"></param>
+        protected virtual void EmitUnsafeSetImpl(CodeEmitter il)
+        {
+            EmitSetImpl(il);
+        }
+
+        /// <summary>
+        /// Emits the IL code to implement the unsafe volatile set operation.
+        /// </summary>
+        /// <param name="il"></param>
+        internal void EmitUnsafeVolatileSet(CodeEmitter il)
+        {
+            AssertLinked();
+            EmitUnsafeVolatileSetImpl(il);
+        }
+
+        /// <summary>
+        /// Emits the IL code to implement the unsafe volatile set operation.
+        /// </summary>
+        /// <param name="il"></param>
+        protected virtual void EmitUnsafeVolatileSetImpl(CodeEmitter il)
+        {
+            throw new NotSupportedException();
+        }
+
+        /// <summary>
+        /// Emits the IL code to implement an unsafe compare/exchange operation. The stack is expected to contain the object,
+        /// the comparand and the value. The applied value is placed on the stack after execution.
+        /// </summary>
+        /// <param name="il"></param>
+        internal void EmitUnsafeCompareAndSwap(CodeEmitter il)
+        {
+            AssertLinked();
+            EmitUnsafeCompareAndSwapImpl(il);
+        }
+
+        /// <summary>
+        /// Emits the IL code to implement an unsafe compare/exchange operation. The stack is expected to contain the object,
+        /// the comparand and the value. The applied value is placed on the stack after execution.
+        /// </summary>
+        /// <param name="il"></param>
+        protected virtual void EmitUnsafeCompareAndSwapImpl(CodeEmitter il)
+        {
+            throw new NotSupportedException();
+        }
 
 #endif
 
 #if IMPORTER
+
         internal bool IsLinked
         {
             get { return fieldType != null; }
         }
+
 #endif
 
         internal void Link()
@@ -344,9 +475,257 @@ namespace IKVM.Internal
 
 #if !FIRST_PASS
 
+        /// <summary>
+        /// Gets the value of the field.
+        /// </summary>
+        /// <param name="obj"></param>
+        /// <returns></returns>
         internal abstract object GetValue(object obj);
 
+        /// <summary>
+        /// Sets the value of the field.
+        /// </summary>
+        /// <param name="obj"></param>
+        /// <param name="value"></param>
         internal abstract void SetValue(object obj, object value);
+
+        Delegate unsafeGetValueDelegate;
+        Delegate unsafeSetValueDelegate;
+        Delegate unsafeVolatileGetDelegate;
+        Delegate unsafeVolatileSetDelegate;
+        Delegate unsafeCompareExchangeDelegate;
+
+        /// <summary>
+        /// Performs an unsafe get operation on the field.
+        /// </summary>
+        /// <param name="obj"></param>
+        /// <returns></returns>
+        internal virtual TField UnsafeGetValue<TField>(object obj)
+        {
+            return ((Func<object, TField>)GetUnsafeGetDelegate())(obj);
+        }
+
+        /// <summary>
+        /// Gets a delegate capable of performing an unsafe get operation on the field.
+        /// </summary>
+        /// <returns></returns>
+        Delegate GetUnsafeGetDelegate()
+        {
+            if (unsafeGetValueDelegate == null)
+                Interlocked.CompareExchange(ref unsafeGetValueDelegate, CreateUnsafeGetDelegate(), null);
+
+            return unsafeGetValueDelegate;
+        }
+
+        /// <summary>
+        /// Creates a delegate capable of performing an unsafe get operation on the field.
+        /// </summary>
+        /// <returns></returns>
+        Delegate CreateUnsafeGetDelegate()
+        {
+            DeclaringType.Finish();
+            FieldTypeWrapper.Finish();
+            ResolveField();
+
+            var ft = FieldTypeWrapper.IsPrimitive ? FieldTypeWrapper.TypeAsSignatureType : typeof(object);
+            var dm = DynamicMethodUtil.Create($"__<UnsafeGet>__{DeclaringType.Name.Replace(".", "_")}__{Name}", DeclaringType.TypeAsTBD, true, ft, new[] { typeof(object) });
+            var il = CodeEmitter.Create(dm);
+
+            if (IsStatic == false)
+                il.Emit(OpCodes.Ldarg_0);
+
+            EmitUnsafeGet(il);
+
+            il.Emit(OpCodes.Ret);
+            il.DoEmit();
+            return dm.CreateDelegate(typeof(Func<,>).MakeGenericType(typeof(object), ft));
+        }
+
+        /// <summary>
+        /// Performs an unsafe set operation on the field.
+        /// </summary>
+        /// <typeparam name="TField"></typeparam>
+        /// <param name="obj"></param>
+        /// <param name="value"></param>
+        internal virtual void UnsafeSetValue<TField>(object obj, TField value)
+        {
+            ((Action<object, TField>)GetUnsafeSetDelegate())(obj, value);
+        }
+
+        /// <summary>
+        /// Gets a delegate capable of performing an unsafe set operation on the field.
+        /// </summary>
+        /// <returns></returns>
+        Delegate GetUnsafeSetDelegate()
+        {
+            if (unsafeSetValueDelegate == null)
+                Interlocked.CompareExchange(ref unsafeSetValueDelegate, CreateUnsafeSetDelegate(), null);
+
+            return unsafeSetValueDelegate;
+        }
+
+        /// <summary>
+        /// Creates a delegate capable of performing an unsafe set operation on the field.
+        /// </summary>
+        /// <returns></returns>
+        Delegate CreateUnsafeSetDelegate()
+        {
+            DeclaringType.Finish();
+            FieldTypeWrapper.Finish();
+            ResolveField();
+
+            var ft = FieldTypeWrapper.IsPrimitive ? FieldTypeWrapper.TypeAsSignatureType : typeof(object);
+            var dm = DynamicMethodUtil.Create($"__<UnsafeSet>__{DeclaringType.Name.Replace(".", "_")}__{Name}", DeclaringType.TypeAsTBD, true, typeof(void), new[] { typeof(object), ft });
+            var il = CodeEmitter.Create(dm);
+
+            if (IsStatic == false)
+                il.Emit(OpCodes.Ldarg_0);
+
+            il.Emit(OpCodes.Ldarg_1);
+            EmitUnsafeSet(il);
+
+            il.Emit(OpCodes.Ret);
+            il.DoEmit();
+            return dm.CreateDelegate(typeof(Action<,>).MakeGenericType(typeof(object), ft));
+        }
+
+        /// <summary>
+        /// Performs an unsafe volatile get operation on the field.
+        /// </summary>
+        /// <typeparam name="TField"></typeparam>
+        /// <param name="obj"></param>
+        /// <returns></returns>
+        internal virtual TField UnsafeVolatileGet<TField>(object obj)
+        {
+            return ((Func<object, TField>)GetUnsafeVolatileGetDelegate())(obj);
+        }
+
+        /// <summary>
+        /// Gets a delegate capable of performing an unsafe volatile get operation on the field.
+        /// </summary>
+        /// <returns></returns>
+        Delegate GetUnsafeVolatileGetDelegate()
+        {
+            if (unsafeVolatileGetDelegate == null)
+                Interlocked.CompareExchange(ref unsafeVolatileGetDelegate, CreateUnsafeVolatileGetDelegate(), null);
+
+            return unsafeVolatileGetDelegate;
+        }
+
+        /// <summary>
+        /// Creates a delegate capable of performing an unsafe volatile get operation on the field.
+        /// </summary>
+        /// <returns></returns>
+        Delegate CreateUnsafeVolatileGetDelegate()
+        {
+            ResolveField();
+            var ft = FieldTypeWrapper.IsPrimitive ? FieldTypeWrapper.TypeAsSignatureType : typeof(object);
+            var dm = new DynamicMethod($"__<UnsafeVolatileGet>__{DeclaringType.Name.Replace(".", "_")}__{Name}", ft, new[] { typeof(object) }, DeclaringType.TypeAsTBD.Module, true);
+            var il = CodeEmitter.Create(dm);
+
+            if (IsStatic == false)
+                il.Emit(OpCodes.Ldarg_0);
+
+            EmitUnsafeVolatileGet(il);
+
+            il.Emit(OpCodes.Ret);
+            il.DoEmit();
+            return dm.CreateDelegate(typeof(Func<,>).MakeGenericType(typeof(object), ft));
+        }
+
+        /// <summary>
+        /// Performs an unsafe volatile set operation on the field.
+        /// </summary>
+        /// <typeparam name="TField"></typeparam>
+        /// <param name="obj"></param>
+        /// <param name="value"></param>
+        /// <returns></returns>
+        internal virtual void UnsafeVolatileSet<TField>(object obj, TField value)
+        {
+            ((Action<object, TField>)GetUnsafeVolatileSetDelegate())(obj, value);
+        }
+
+        /// <summary>
+        /// Gets a delegate capable of performing an unsafe volatile set operation on the field.
+        /// </summary>
+        /// <returns></returns>
+        Delegate GetUnsafeVolatileSetDelegate()
+        {
+            if (unsafeVolatileSetDelegate == null)
+                Interlocked.CompareExchange(ref unsafeVolatileSetDelegate, CreateUnsafeVolatileSetDelegate(), null);
+
+            return unsafeVolatileSetDelegate;
+        }
+
+        /// <summary>
+        /// Creates a delegate capable of performing an unsafe volatile set operation on the field.
+        /// </summary>
+        /// <returns></returns>
+        Delegate CreateUnsafeVolatileSetDelegate()
+        {
+            ResolveField();
+            var ft = FieldTypeWrapper.IsPrimitive ? FieldTypeWrapper.TypeAsSignatureType : typeof(object);
+            var dm = DynamicMethodUtil.Create($"__<UnsafeVolatileSet>__{DeclaringType.Name.Replace(".", "_")}__{Name}", DeclaringType.TypeAsTBD, true, typeof(void), new[] { typeof(object), ft });
+            var il = CodeEmitter.Create(dm);
+
+            if (IsStatic == false)
+                il.Emit(OpCodes.Ldarg_0);
+
+            il.Emit(OpCodes.Ldarg_1);
+            EmitUnsafeVolatileSet(il);
+
+            il.Emit(OpCodes.Ret);
+            il.DoEmit();
+            return dm.CreateDelegate(typeof(Action<,>).MakeGenericType(typeof(object), ft));
+        }
+
+        /// <summary>
+        /// Unsafe compare and swap implementation for the field.
+        /// </summary>
+        /// <typeparam name="TField"></typeparam>
+        /// <param name="obj"></param>
+        /// <param name="expected"></param>
+        /// <param name="value"></param>
+        /// <returns></returns>
+        internal virtual bool UnsafeCompareAndSwap<TField>(object obj, TField expected, TField value)
+        {
+            return ((Func<object, TField, TField, bool>)GetUnsafeCompareAndSwapDelegate())(obj, expected, value);
+        }
+
+
+        /// <summary>
+        /// Gets a delegate implementing the unsafe compare and swap operation on the field.
+        /// </summary>
+        /// <returns></returns>
+        Delegate GetUnsafeCompareAndSwapDelegate()
+        {
+            if (unsafeCompareExchangeDelegate == null)
+                Interlocked.CompareExchange(ref unsafeCompareExchangeDelegate, CreateUnsafeCompareAndSwapDelegate(), null);
+
+            return unsafeCompareExchangeDelegate;
+        }
+
+        /// <summary>
+        /// Creates a delegate implementing the unsafe compare and swap operation on the field.
+        /// </summary>
+        /// <returns></returns>
+        Delegate CreateUnsafeCompareAndSwapDelegate()
+        {
+            var ft = FieldTypeWrapper.IsPrimitive ? FieldTypeWrapper.TypeAsSignatureType : typeof(object);
+            var dm = DynamicMethodUtil.Create($"__<UnsafeCompareAndSwap>__{DeclaringType.Name.Replace(".", "_")}__{Name}", DeclaringType.TypeAsTBD, true, typeof(bool), new[] { typeof(object), ft, ft });
+            var il = CodeEmitter.Create(dm);
+
+            if (IsStatic == false)
+                il.Emit(OpCodes.Ldarg_0);
+
+            il.Emit(OpCodes.Ldarg_1);
+            il.Emit(OpCodes.Ldarg_2);
+            EmitUnsafeCompareAndSwap(il);
+
+            il.Emit(OpCodes.Ret);
+            il.DoEmit();
+            return dm.CreateDelegate(typeof(Func<,,,>).MakeGenericType(typeof(object), ft, ft, typeof(bool)));
+        }
 
 #endif
 

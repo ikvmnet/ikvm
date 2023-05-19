@@ -23,78 +23,48 @@
 */
 using System;
 using System.Diagnostics;
-using System.Reflection;
-using System.Runtime.CompilerServices;
 using System.Runtime.InteropServices;
 using System.Threading;
+using System.Runtime.CompilerServices;
 
 using IKVM.Attributes;
 using IKVM.ByteCode;
 using IKVM.Internal;
+
+#if IMPORTER || EXPORTER
+using IKVM.Reflection;
+using IKVM.Reflection.Emit;
+using IKVM.Tools.Importer;
+
+using Type = IKVM.Reflection.Type;
+#else
+using System.Reflection;
+#endif
+
+#if EXPORTER == false
+
 using IKVM.Java.Externs.java.lang.invoke;
+using IKVM.Runtime.Accessors.Java.Lang;
+
+#endif
 
 namespace IKVM.Runtime
 {
 
-    static class GhostTag
-    {
-
-        static volatile ConditionalWeakTable<object, TypeWrapper> dict;
-
-        internal static void SetTag(object obj, RuntimeTypeHandle typeHandle)
-        {
-            SetTag(obj, ClassLoaderWrapper.GetWrapperFromType(Type.GetTypeFromHandle(typeHandle)));
-        }
-
-        internal static void SetTag(object obj, TypeWrapper wrapper)
-        {
-            if (dict == null)
-            {
-                ConditionalWeakTable<object, TypeWrapper> newDict = new ConditionalWeakTable<object, TypeWrapper>();
-                Interlocked.CompareExchange(ref dict, newDict, null);
-            }
-            dict.Add(obj, wrapper);
-        }
-
-        internal static TypeWrapper GetTag(object obj)
-        {
-            if (dict != null)
-            {
-                TypeWrapper tw;
-                dict.TryGetValue(obj, out tw);
-                return tw;
-            }
-            return null;
-        }
-
-        // this method is called from <GhostType>.IsInstanceArray()
-        internal static bool IsGhostArrayInstance(object obj, RuntimeTypeHandle typeHandle, int rank)
-        {
-            TypeWrapper tw1 = GhostTag.GetTag(obj);
-            if (tw1 != null)
-            {
-                TypeWrapper tw2 = ClassLoaderWrapper.GetWrapperFromType(Type.GetTypeFromHandle(typeHandle)).MakeArrayType(rank);
-                return tw1.IsAssignableTo(tw2);
-            }
-            return false;
-        }
-
-        // this method is called from <GhostType>.CastArray()
-        [HideFromJava]
-        internal static void ThrowClassCastException(object obj, RuntimeTypeHandle typeHandle, int rank)
-        {
-#if !FIRST_PASS
-            System.Text.StringBuilder sb = new System.Text.StringBuilder();
-            sb.Append(global::ikvm.runtime.Util.getClassFromObject(obj).getName()).Append(" cannot be cast to ")
-                .Append('[', rank).Append('L').Append(global::ikvm.runtime.Util.getClassFromTypeHandle(typeHandle).getName()).Append(';');
-            throw new global::java.lang.ClassCastException(sb.ToString());
-#endif
-        }
-    }
-
     public static class ByteCodeHelper
     {
-        [DebuggerStepThroughAttribute]
+
+#if FIRST_PASS == false && EXPORTER == FALSE
+
+        static ObjectAccessor objectAccessor;
+
+        static ObjectAccessor ObjectAccessor => JVM.BaseAccessors.Get(ref objectAccessor);
+
+#endif
+
+#if EXPORTER == false
+
+        [DebuggerStepThrough]
         public static object multianewarray(RuntimeTypeHandle typeHandle, int[] lengths)
         {
             for (int i = 0; i < lengths.Length; i++)
@@ -106,10 +76,12 @@ namespace IKVM.Runtime
 #endif
                 }
             }
+
             return MultianewarrayHelper(Type.GetTypeFromHandle(typeHandle).GetElementType(), lengths, 0);
         }
 
-        private static object MultianewarrayHelper(Type elemType, int[] lengths, int index)
+
+        static object MultianewarrayHelper(Type elemType, int[] lengths, int index)
         {
             object o = Array.CreateInstance(elemType, lengths[index++]);
             if (index < lengths.Length)
@@ -124,10 +96,10 @@ namespace IKVM.Runtime
             return o;
         }
 
-        [DebuggerStepThroughAttribute]
+        [DebuggerStepThrough]
         public static object multianewarray_ghost(RuntimeTypeHandle typeHandle, int[] lengths)
         {
-            Type type = Type.GetTypeFromHandle(typeHandle);
+            var type = Type.GetTypeFromHandle(typeHandle);
             int rank = 0;
             while (ReflectUtil.IsVector(type))
             {
@@ -139,7 +111,7 @@ namespace IKVM.Runtime
             return obj;
         }
 
-        [DebuggerStepThroughAttribute]
+        [DebuggerStepThrough]
         public static T[] anewarray_ghost<T>(int length, RuntimeTypeHandle typeHandle)
         {
             T[] obj = new T[length];
@@ -147,11 +119,11 @@ namespace IKVM.Runtime
             return obj;
         }
 
-        [DebuggerStepThroughAttribute]
+        [DebuggerStepThrough]
         public static object DynamicMultianewarray(int[] lengths, global::java.lang.Class clazz)
         {
 #if FIRST_PASS
-			return null;
+            throw new NotImplementedException();
 #else
             Profiler.Count("DynamicMultianewarray");
             TypeWrapper wrapper = TypeWrapper.FromClass(clazz);
@@ -164,11 +136,11 @@ namespace IKVM.Runtime
 #endif
         }
 
-        [DebuggerStepThroughAttribute]
+        [DebuggerStepThrough]
         public static object DynamicNewarray(int length, global::java.lang.Class clazz)
         {
 #if FIRST_PASS
-			return null;
+            throw new NotImplementedException();
 #else
             Profiler.Count("DynamicNewarray");
             if (length < 0)
@@ -185,31 +157,39 @@ namespace IKVM.Runtime
 #endif
         }
 
-        [DebuggerStepThroughAttribute]
+#endif
+
+        [DebuggerStepThrough]
         public static void DynamicAastore(object arrayref, int index, object val)
         {
-#if !FIRST_PASS
+#if FIRST_PASS
+            throw new NotImplementedException();
+#else
             Profiler.Count("DynamicAastore");
             ((Array)arrayref).SetValue(val, index);
 #endif
         }
 
-        [DebuggerStepThroughAttribute]
+        [DebuggerStepThrough]
         public static object DynamicAaload(object arrayref, int index)
         {
 #if FIRST_PASS
-			return null;
+            throw new NotImplementedException();
 #else
             Profiler.Count("DynamicAaload");
             return ((Array)arrayref).GetValue(index);
 #endif
         }
 
+#if EXPORTER == false
+
         // the sole purpose of this method is to check whether the clazz can be instantiated (but not to actually do it)
         [DebuggerStepThroughAttribute]
         public static void DynamicNewCheckOnly(global::java.lang.Class clazz)
         {
-#if !FIRST_PASS
+#if FIRST_PASS
+            throw new NotImplementedException();
+#else
             Profiler.Count("DynamicNewCheckOnly");
             TypeWrapper wrapper = TypeWrapper.FromClass(clazz);
             if (wrapper.IsAbstract)
@@ -223,7 +203,7 @@ namespace IKVM.Runtime
         private static TypeWrapper LoadTypeWrapper(string clazz, ikvm.@internal.CallerID callerId)
         {
 #if FIRST_PASS
-			return null;
+            throw new NotImplementedException();
 #else
             try
             {
@@ -232,7 +212,9 @@ namespace IKVM.Runtime
                 global::java.lang.ClassLoader loader = callerId.getCallerClassLoader();
                 if (loader != null)
                 {
-                    loader.checkPackageAccess(wrapper.ClassObject, callerId.getCallerClass().pd);
+                    ClassLoaderAccessor cla = null;
+                    JVM.BaseAccessors.Get(ref cla);
+                    cla.InvokeCheckPackageAccess(loader, wrapper.ClassObject, callerId.getCallerClass().pd);
                 }
                 if (!wrapper.IsAccessibleFrom(context))
                 {
@@ -252,7 +234,7 @@ namespace IKVM.Runtime
         public static global::java.lang.Class DynamicClassLiteral(string clazz, ikvm.@internal.CallerID callerId)
         {
 #if FIRST_PASS
-			return null;
+            throw new NotImplementedException();
 #else
             Profiler.Count("DynamicClassLiteral");
             return LoadTypeWrapper(clazz, callerId).ClassObject;
@@ -263,7 +245,7 @@ namespace IKVM.Runtime
         public static object DynamicCast(object obj, global::java.lang.Class clazz)
         {
 #if FIRST_PASS
-			return null;
+            throw new NotImplementedException();
 #else
             Debug.Assert(obj != null);
             Profiler.Count("DynamicCast");
@@ -279,7 +261,7 @@ namespace IKVM.Runtime
         public static bool DynamicInstanceOf(object obj, global::java.lang.Class clazz)
         {
 #if FIRST_PASS
-			return false;
+            throw new NotImplementedException();
 #else
             Debug.Assert(obj != null);
             Profiler.Count("DynamicInstanceOf");
@@ -308,12 +290,15 @@ namespace IKVM.Runtime
             {
                 DynamicLoadMethodTypeImpl(ref cache, sig, callerID);
             }
+
             return cache;
         }
 
         private static void DynamicLoadMethodTypeImpl(ref global::java.lang.invoke.MethodType cache, string sig, global::ikvm.@internal.CallerID callerID)
         {
-#if !FIRST_PASS
+#if FIRST_PASS
+            throw new NotImplementedException();
+#else
             try
             {
                 ClassLoaderWrapper loader = ClassLoaderWrapper.FromCallerID(callerID);
@@ -339,13 +324,14 @@ namespace IKVM.Runtime
             {
                 Interlocked.CompareExchange(ref cache, DynamicLoadMethodHandleImpl(kind, clazz, name, sig, callerID), null);
             }
+
             return cache;
         }
 
         private static global::java.lang.invoke.MethodHandle DynamicLoadMethodHandleImpl(int kind, string clazz, string name, string sig, ikvm.@internal.CallerID callerID)
         {
 #if FIRST_PASS
-			return null;
+            throw new NotImplementedException();
 #else
             global::java.lang.Class refc = LoadTypeWrapper(clazz, callerID).ClassObject;
             try
@@ -387,7 +373,7 @@ namespace IKVM.Runtime
             where T : class /* delegate */
         {
 #if FIRST_PASS
-			return null;
+            return null;
 #else
             try
             {
@@ -417,7 +403,7 @@ namespace IKVM.Runtime
         public static Delegate DynamicCreateDelegate(object obj, Type delegateType, string name, string sig)
         {
 #if FIRST_PASS
-			return null;
+            return null;
 #else
             TypeWrapper tw = TypeWrapper.FromClass(global::ikvm.runtime.Util.getClassFromObject(obj));
             MethodWrapper mw = tw.GetMethodWrapper(name, sig, true);
@@ -476,7 +462,7 @@ namespace IKVM.Runtime
         public static global::java.lang.invoke.MethodHandle DynamicEraseInvokeExact(global::java.lang.invoke.MethodHandle mh, global::java.lang.invoke.MethodType expected, global::java.lang.invoke.MethodType target)
         {
 #if FIRST_PASS
-			return null;
+            return null;
 #else
             if (mh.type() != expected)
             {
@@ -486,7 +472,9 @@ namespace IKVM.Runtime
 #endif
         }
 
-        [DebuggerStepThroughAttribute]
+#endif
+
+        [DebuggerStepThrough]
         public static int f2i(float f)
         {
             if (f > int.MinValue && f < int.MaxValue)
@@ -558,14 +546,16 @@ namespace IKVM.Runtime
             return 0;
         }
 
+#if EXPORTER == false
+
         // This is used by static JNI and synchronized methods that need a class object
-        [DebuggerStepThroughAttribute]
+        [DebuggerStepThrough]
         public static object GetClassFromTypeHandle(RuntimeTypeHandle typeHandle)
         {
             return IKVM.Java.Externs.ikvm.runtime.Util.getClassFromTypeHandle(typeHandle);
         }
 
-        [DebuggerStepThroughAttribute]
+        [DebuggerStepThrough]
         public static void arraycopy(object src, int srcStart, object dest, int destStart, int len)
         {
 #if !FIRST_PASS
@@ -657,7 +647,7 @@ namespace IKVM.Runtime
             {
                 throw new global::java.lang.ArrayIndexOutOfBoundsException();
             }
-#endif // !FIRST_PASS
+#endif
         }
 
         [DebuggerStepThroughAttribute]
@@ -794,74 +784,276 @@ namespace IKVM.Runtime
 #endif // !FIRST_PASS
         }
 
+        /// <summary>
+        /// Returns <c>true</c> if the Java finalizer should be skipped.
+        /// </summary>
+        /// <returns></returns>
         public static bool SkipFinalizer()
         {
 #if FIRST_PASS
-			return false;
+            throw new NotImplementedException();
 #else
             return Environment.HasShutdownStarted && !global::java.lang.Shutdown.runFinalizersOnExit;
 #endif
         }
 
-        public static long VolatileRead(ref long v)
+        /// <summary>
+        /// Returns <c>true</c> if the Java finalizer for the given object should be skipped.
+        /// </summary>
+        /// <param name="o"></param>
+        /// <returns></returns>
+        public static bool SkipFinalizer(object o)
         {
-#if NO_REF_EMIT && !FIRST_PASS
-			lock (VolatileLongDoubleFieldWrapper.lockObject)
-			{
-				return v;
-			}
+#if FIRST_PASS
+            throw new NotImplementedException();
 #else
-            return Interlocked.Read(ref v);
+            if (SkipFinalizer())
+                return true;
+
+            if (o is global::java.lang.Object jlo)
+                if (ObjectAccessor.GetInit(jlo) == false)
+                    return true;
+
+            return false;
 #endif
         }
 
-        public static void VolatileWrite(ref long v, long newValue)
-        {
-#if NO_REF_EMIT && !FIRST_PASS
-			lock (VolatileLongDoubleFieldWrapper.lockObject)
-			{
-				v = newValue;
-			}
-#else
-            Interlocked.Exchange(ref v, newValue);
 #endif
+
+        /// <summary>
+        /// Implements a volatile read against a reference to a bool. In Java, a volatile operation is atomic.
+        /// </summary>
+        /// <param name="location"></param>
+        /// <returns></returns>
+        public static bool VolatileRead(ref bool location)
+        {
+            return Volatile.Read(ref location);
         }
 
-        public static double VolatileRead(ref double v)
+        /// <summary>
+        /// Implements a volatile write against a reference to a bool. In Java, a volatile operation is atomic.
+        /// </summary>
+        /// <param name="location"></param>
+        /// <param name="value"></param>
+        public static void VolatileWrite(ref bool location, bool value)
         {
-#if NO_REF_EMIT && !FIRST_PASS
-			lock (VolatileLongDoubleFieldWrapper.lockObject)
-			{
-				return v;
-			}
-#else
-            return Interlocked.CompareExchange(ref v, 0.0, 0.0);
-#endif
+            Volatile.Write(ref location, value);
         }
 
-        public static void VolatileWrite(ref double v, double newValue)
+        /// <summary>
+        /// Implements a volatile read against a reference to a byte. In Java, a volatile operation is atomic.
+        /// </summary>
+        /// <param name="location"></param>
+        /// <returns></returns>
+        public static byte VolatileRead(ref byte location)
         {
-#if NO_REF_EMIT && !FIRST_PASS
-			lock (VolatileLongDoubleFieldWrapper.lockObject)
-			{
-				v = newValue;
-			}
-#else
-            Interlocked.Exchange(ref v, newValue);
-#endif
+            return Volatile.Read(ref location);
         }
 
-        [System.Runtime.CompilerServices.MethodImpl(System.Runtime.CompilerServices.MethodImplOptions.NoInlining)]
+        /// <summary>
+        /// Implements a volatile write against a reference to a byte. In Java, a volatile operation is atomic.
+        /// </summary>
+        /// <param name="location"></param>
+        /// <param name="value"></param>
+        public static void VolatileWrite(ref byte location, byte value)
+        {
+            Volatile.Write(ref location, value);
+        }
+
+        /// <summary>
+        /// Implements a volatile read against a reference to a char. In Java, a volatile operation is atomic.
+        /// </summary>
+        /// <param name="location"></param>
+        /// <returns></returns>
+        public static char VolatileRead(ref char location)
+        {
+            return (char)Volatile.Read(ref Unsafe.As<char, short>(ref location));
+        }
+
+        /// <summary>
+        /// Implements a volatile write against a reference to a char. In Java, a volatile operation is atomic.
+        /// </summary>
+        /// <param name="location"></param>
+        /// <param name="value"></param>
+        public static void VolatileWrite(ref char location, char value)
+        {
+            Volatile.Write(ref Unsafe.As<char, short>(ref location), (short)value);
+        }
+
+        /// <summary>
+        /// Implements a volatile read against a reference to a short. In Java, a volatile operation is atomic.
+        /// </summary>
+        /// <param name="location"></param>
+        /// <returns></returns>
+        public static short VolatileRead(ref short location)
+        {
+            return Volatile.Read(ref location);
+        }
+
+        /// <summary>
+        /// Implements a volatile write against a reference to a short. In Java, a volatile operation is atomic.
+        /// </summary>
+        /// <param name="location"></param>
+        /// <param name="value"></param>
+        public static void VolatileWrite(ref short location, short value)
+        {
+            Volatile.Write(ref location, value);
+        }
+
+        /// <summary>
+        /// Implements a volatile read against a reference to a int. In Java, a volatile operation is atomic.
+        /// </summary>
+        /// <param name="location"></param>
+        /// <returns></returns>
+        public static int VolatileRead(ref int location)
+        {
+            return Volatile.Read(ref location);
+        }
+
+        /// <summary>
+        /// Implements a volatile write against a reference to a int. In Java, a volatile operation is atomic.
+        /// </summary>
+        /// <param name="location"></param>
+        /// <param name="value"></param>
+        public static void VolatileWrite(ref int location, int value)
+        {
+            Volatile.Write(ref location, value);
+        }
+
+        /// <summary>
+        /// Implements a volatile read against a reference to a long. In Java, a volatile operation is atomic.
+        /// </summary>
+        /// <param name="location"></param>
+        /// <returns></returns>
+        public static long VolatileRead(ref long location)
+        {
+            return Interlocked.CompareExchange(ref location, 0, 0);
+        }
+
+        /// <summary>
+        /// Implements a volatile write against a reference to a long. In Java, a volatile operation is atomic.
+        /// </summary>
+        /// <param name="location"></param>
+        /// <param name="value"></param>
+        public static void VolatileWrite(ref long location, long value)
+        {
+            Interlocked.Exchange(ref location, value);
+        }
+
+        /// <summary>
+        /// Implements a volatile read against a reference to a float. In Java, a volatile operation is atomic.
+        /// </summary>
+        /// <param name="location"></param>
+        /// <returns></returns>
+        public static float VolatileRead(ref float location)
+        {
+            return Volatile.Read(ref location);
+        }
+
+        /// <summary>
+        /// Implements a volatile write against a reference to a float. In Java, a volatile operation is atomic.
+        /// </summary>
+        /// <param name="location"></param>
+        /// <param name="value"></param>
+        public static void VolatileWrite(ref float location, float value)
+        {
+            Volatile.Write(ref location, value);
+        }
+
+        /// <summary>
+        /// Implements a volatile read against a reference to a double. In Java, a volatile operation is atomic.
+        /// </summary>
+        /// <param name="location"></param>
+        /// <returns></returns>
+        public static double VolatileRead(ref double location)
+        {
+            return Interlocked.CompareExchange(ref location, 0, 0);
+        }
+
+        /// <summary>
+        /// Implements a volatile write against a reference to a double. In Java, a volatile operation is atomic.
+        /// </summary>
+        /// <param name="location"></param>
+        /// <param name="value"></param>
+        public static void VolatileWrite(ref double location, double value)
+        {
+            Interlocked.Exchange(ref location, value);
+        }
+
+        /// <summary>
+        /// Implements the compare and swap operation against a reference to an object.
+        /// </summary>
+        /// <param name="location"></param>
+        /// <param name="expected"></param>
+        /// <param name="value"></param>
+        /// <returns></returns>
+        public static bool CompareAndSwap(ref object location, object expected, object value)
+        {
+            return Interlocked.CompareExchange(ref location, value, expected) == expected;
+        }
+
+        /// <summary>
+        /// Implements the compare and swap operation against a reference to an int.
+        /// </summary>
+        /// <param name="location"></param>
+        /// <param name="expected"></param>
+        /// <param name="value"></param>
+        /// <returns></returns>
+        public static bool CompareAndSwap(ref int location, int expected, int value)
+        {
+            return Interlocked.CompareExchange(ref location, value, expected) == expected;
+        }
+
+        /// <summary>
+        /// Implements a compare and swap operation against a reference to a long.
+        /// </summary>
+        /// <param name="location"></param>
+        /// <param name="expected"></param>
+        /// <param name="value"></param>
+        /// <returns></returns>
+        public static bool CompareAndSwap(ref long location, long expected, long value)
+        {
+            return Interlocked.CompareExchange(ref location, value, expected) == expected;
+        }
+
+        /// <summary>
+        /// Implements a compare and swap operation against a reference to a double.
+        /// </summary>
+        /// <param name="location"></param>
+        /// <param name="expected"></param>
+        /// <param name="value"></param>
+        /// <returns></returns>
+        public static bool CompareAndSwap(ref double location, double expected, double value)
+        {
+            return Interlocked.CompareExchange(ref location, value, expected) == expected;
+        }
+
+#if EXPORTER == false
+
+        /// <summary>
+        /// Invoked by exported assemblies.
+        /// </summary>
+        /// <param name="module"></param>
+        /// <exception cref="ArgumentOutOfRangeException"></exception>
+        [MethodImpl(MethodImplOptions.NoInlining)]
         public static void InitializeModule(Module module)
         {
+#if FIRST_PASS
+            throw new NotImplementedException();
+#else
             var asm = Assembly.GetCallingAssembly();
             if (module.Assembly != asm)
                 throw new ArgumentOutOfRangeException();
 
+            // check for InitializeModule method present on classloader
             var classLoader = AssemblyClassLoader.FromAssembly(asm).GetJavaClassLoader();
-            var init = (Action<Module>)Delegate.CreateDelegate(typeof(Action<Module>), classLoader, "InitializeModule", false, false);
-            if (init != null)
-                init(module);
+            if (classLoader != null)
+            {
+                var init = (Action<Module>)Delegate.CreateDelegate(typeof(Action<Module>), classLoader, "InitializeModule", false, false);
+                if (init != null)
+                    init(module);
+            }
+#endif
         }
 
         public static T GetDotNetEnumField<T>(string name)
@@ -870,7 +1062,7 @@ namespace IKVM.Runtime
 #endif
         {
 #if FIRST_PASS
-			return default(T);
+            throw new NotImplementedException();
 #else
             try
             {
@@ -901,7 +1093,7 @@ namespace IKVM.Runtime
         public static Exception DynamicMapException(Exception x, MapFlags mode, global::java.lang.Class exceptionClass)
         {
 #if FIRST_PASS
-			return null;
+            return null;
 #else
             TypeWrapper exceptionTypeWrapper = TypeWrapper.FromClass(exceptionClass);
             mode &= ~MapFlags.NoRemapping;
@@ -918,7 +1110,7 @@ namespace IKVM.Runtime
             where T : class
         {
 #if FIRST_PASS
-			return null;
+            throw new NotImplementedException();
 #else
             T del = h._invokeExactDelegate as T;
             if (del == null)
@@ -933,7 +1125,7 @@ namespace IKVM.Runtime
             where T : class
         {
 #if FIRST_PASS
-			return null;
+            throw new NotImplementedException();
 #else
             T del;
             if (cache.Type == h.type() && (del = (h.isVarargsCollector() ? cache.varArg : cache.fixedArg)) != null)
@@ -975,7 +1167,7 @@ namespace IKVM.Runtime
             where T : class
         {
 #if FIRST_PASS
-			return null;
+            throw new NotImplementedException();
 #else
             T del = h.form.vmentry.vmtarget as T;
             if (del == null)
@@ -990,7 +1182,7 @@ namespace IKVM.Runtime
             where T : class // Delegate
         {
 #if FIRST_PASS
-			return null;
+            throw new NotImplementedException();
 #else
             return MethodHandleUtil.GetDelegateMethodType(typeof(T));
 #endif
@@ -1091,15 +1283,21 @@ namespace IKVM.Runtime
             }
 #endif
         }
+
+#endif
+
     }
+
+#if EXPORTER == false
 
     interface IIndyCallSite
     {
+
         void SetTarget(global::java.lang.invoke.MethodHandle mh);
+
     }
 
-    public sealed class IndyCallSite<T>
-        : IIndyCallSite
+    public sealed class IndyCallSite<T> : IIndyCallSite
         where T : class // Delegate
     {
         internal readonly bool IsBootstrap;
@@ -1131,12 +1329,18 @@ namespace IKVM.Runtime
         {
             return target;
         }
+
     }
 
     public struct InvokeCache<T>
         where T : class
     {
+
+        internal T fixedArg;
+        internal T varArg;
+
 #if CLASSGC
+
 		private WeakReference weakRef;
 
 		internal global::java.lang.invoke.MethodType Type
@@ -1165,10 +1369,12 @@ namespace IKVM.Runtime
             Interlocked.CompareExchange(ref type, newType, null);
             return type == newType;
         }
+
 #endif
-        internal T fixedArg;
-        internal T varArg;
+
     }
+
+#endif
 
     [StructLayout(LayoutKind.Explicit)]
     public struct DoubleConverter

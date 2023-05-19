@@ -3348,6 +3348,7 @@ namespace IKVM.Internal
                             {
                                 typeBuilder.DefineMethodOverride(mb, (MethodInfo)baseMethod.GetMethod());
                             }
+
                             // the non-primary base methods always need an explicit method override
                             subsequent = true;
                         }
@@ -3356,29 +3357,28 @@ namespace IKVM.Internal
                     // or if we're subclassing a non-Java class that has a Finalize method, we need a new Finalize override
                     if (needFinalize)
                     {
-                        string finalizeName = baseFinalize.Name;
-                        MethodWrapper mwClash = wrapper.GetMethodWrapper(finalizeName, StringConstants.SIG_VOID, true);
+                        var finalizeName = baseFinalize.Name;
+                        var mwClash = wrapper.GetMethodWrapper(finalizeName, StringConstants.SIG_VOID, true);
                         if (mwClash != null && mwClash.GetMethod() != baseFinalize)
-                        {
                             finalizeName = "__<Finalize>";
-                        }
-                        MethodAttributes attr = MethodAttributes.HideBySig | MethodAttributes.Virtual;
-                        // make sure we don't reduce accessibility
+
+                        var attr = MethodAttributes.HideBySig | MethodAttributes.Virtual;
                         attr |= baseFinalize.IsPublic ? MethodAttributes.Public : MethodAttributes.Family;
                         if (m.IsFinal)
-                        {
                             attr |= MethodAttributes.Final;
-                        }
+
                         finalizeMethod = typeBuilder.DefineMethod(finalizeName, attr, CallingConventions.Standard, Types.Void, Type.EmptyTypes);
                         if (finalizeName != baseFinalize.Name)
-                        {
                             typeBuilder.DefineMethodOverride(finalizeMethod, baseFinalize);
-                        }
+
                         AttributeHelper.HideFromJava(finalizeMethod);
-                        CodeEmitter ilgen = CodeEmitter.Create(finalizeMethod);
-                        ilgen.Emit(OpCodes.Call, ByteCodeHelperMethods.SkipFinalizer);
-                        CodeEmitterLabel skip = ilgen.DefineLabel();
+
+                        var ilgen = CodeEmitter.Create(finalizeMethod);
+                        ilgen.EmitLdarg(0);
+                        ilgen.Emit(OpCodes.Call, ByteCodeHelperMethods.SkipFinalizerOf);
+                        var skip = ilgen.DefineLabel();
                         ilgen.EmitBrtrue(skip);
+
                         if (needDispatch)
                         {
                             ilgen.BeginExceptionBlock();
@@ -3394,6 +3394,7 @@ namespace IKVM.Internal
                             ilgen.Emit(OpCodes.Ldarg_0);
                             ilgen.Emit(OpCodes.Call, baseFinalize);
                         }
+
                         ilgen.MarkLabel(skip);
                         ilgen.Emit(OpCodes.Ret);
                         ilgen.DoEmit();
@@ -3401,11 +3402,10 @@ namespace IKVM.Internal
 #if IMPORTER
                     if (classFile.Methods[index].AnnotationDefault != null)
                     {
-                        CustomAttributeBuilder cab = new CustomAttributeBuilder(StaticCompiler.GetRuntimeType("IKVM.Attributes.AnnotationDefaultAttribute").GetConstructor(new Type[] { Types.Object }),
-                            new object[] { AnnotationDefaultAttribute.Escape(classFile.Methods[index].AnnotationDefault) });
+                        CustomAttributeBuilder cab = new CustomAttributeBuilder(StaticCompiler.GetRuntimeType("IKVM.Attributes.AnnotationDefaultAttribute").GetConstructor(new Type[] { Types.Object }), new object[] { AnnotationDefaultAttribute.Escape(classFile.Methods[index].AnnotationDefault) });
                         mb.SetCustomAttribute(cab);
                     }
-#endif // IMPORTER
+#endif 
                 }
 
                 // method is a synchronized method
