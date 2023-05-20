@@ -78,7 +78,7 @@ namespace IKVM.Java.Externs.sun.nio.fs
                     }
                 }
 
-                return EnumeratorIteratorAccessor.Init(files.Select(i => DotNetPathAccessor.Init(fileSystem, Path.Combine(directoryPath, i))).Where(ApplyFilter).GetEnumerator());
+                return EnumeratorIteratorAccessor.Init(files.Select(i => DotNetPathAccessor.Init(fileSystem, i)).Where(ApplyFilter).GetEnumerator());
             }
             catch (global::java.lang.Throwable)
             {
