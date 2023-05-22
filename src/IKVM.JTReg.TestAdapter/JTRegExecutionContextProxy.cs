@@ -31,7 +31,6 @@ namespace IKVM.JTReg.TestAdapter
             properties.Add(JTRegTestProperties.TestSuiteNameProperty.Label, JTRegTestProperties.TestSuiteNameProperty);
             properties.Add(JTRegTestProperties.TestPathNameProperty.Label, JTRegTestProperties.TestPathNameProperty);
             properties.Add(JTRegTestProperties.TestIdProperty.Label, JTRegTestProperties.TestIdProperty);
-            properties.Add(JTRegTestProperties.TestNameProperty.Label, JTRegTestProperties.TestNameProperty);
             properties.Add(JTRegTestProperties.TestTitleProperty.Label, JTRegTestProperties.TestTitleProperty);
             properties.Add(JTRegTestProperties.TestAuthorProperty.Label, JTRegTestProperties.TestAuthorProperty);
             properties.Add(JTRegTestProperties.TestPartitionProperty.Label, JTRegTestProperties.TestPartitionProperty);
