@@ -3361,5 +3361,7 @@ javax/swing/JEditorPane/8158734/bug8158734.java                                 
 javax/swing/JScrollPane/HorizontalMouseWheelOnShiftPressed/HorizontalMouseWheelOnShiftPressed.java                      generic-all
 javax/swing/plaf/nimbus/8041642/ScrollBarThumbVisibleTest.java                                                          generic-all
 
-# mscapi
+# mscapi / Windows-MY Keystore usage
 sun/security/mscapi/IterateWindowsRootStore.java                                                                        generic-all
+sun/security/mscapi/CastError.java                                                                                      generic-all
+
