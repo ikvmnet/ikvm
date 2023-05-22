@@ -756,7 +756,7 @@ namespace IKVM.Runtime
             static string GetWindowsConsoleEncoding()
             {
                 var codepage = Console.InputEncoding.CodePage;
-                return codepage is >= 847 and <= 950 ? $"ms{codepage}" : $"cp{codepage}";
+                return codepage is >= 874 and <= 950 ? $"ms{codepage}" : $"cp{codepage}";
             }
 
         }
