@@ -1,12 +1,10 @@
 ﻿using System;
 using System.IO;
-using System.Linq.Expressions;
+using System.Linq;
 using System.Reflection;
-using System.Reflection.Emit;
 using System.Security;
 using System.Security.AccessControl;
 
-using IKVM.Internal;
 using IKVM.Runtime;
 using IKVM.Runtime.Accessors.Java.Io;
 using IKVM.Runtime.Accessors.Java.Lang;
@@ -231,7 +229,7 @@ namespace IKVM.Java.Externs.sun.nio.fs
                     if (VfsTable.Default.GetEntry(path) is not VfsDirectory vfsDirectory)
                         throw new global::java.nio.file.NotDirectoryException(path);
 
-                    return DotNetDirectoryStreamAccessor.Init(dir, vfsDirectory.List(), filter);
+                    return DotNetDirectoryStreamAccessor.Init(dir, vfsDirectory.List().Select(i => Path.Combine(path, i)), filter);
                 }
 
                 if (File.Exists(path))

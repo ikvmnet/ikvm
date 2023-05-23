@@ -7,7 +7,6 @@ using IKVM.Runtime.Accessors.Ikvm.Util;
 using IKVM.Runtime.Accessors.Java.Nio.File;
 using IKVM.Runtime.Accessors.Sun.Nio.Fs;
 
-
 namespace IKVM.Java.Externs.sun.nio.fs
 {
 
@@ -84,13 +83,16 @@ namespace IKVM.Java.Externs.sun.nio.fs
             {
                 throw;
             }
+            catch (Exception e) when (File.Exists(directoryPath))
+            {
+                throw new global::java.nio.file.NotDirectoryException(directoryPath);
+            }
+            catch (Exception e) when (Directory.Exists(directoryPath) == false)
+            {
+                throw new global::java.nio.file.NotDirectoryException(directoryPath);
+            }
             catch (Exception e)
             {
-                if (File.Exists(directoryPath))
-                    throw new global::java.nio.file.NotDirectoryException(directoryPath);
-                if (Directory.Exists(directoryPath) == false)
-                    throw new global::java.nio.file.NotDirectoryException(directoryPath);
-
                 throw new global::java.io.IOException(e.Message);
             }
 #endif
