@@ -78,7 +78,7 @@ namespace IKVM.Runtime
             /// <returns></returns>
             static string GetHomePath()
             {
-                var rootPath = Path.GetDirectoryName(BaseAssembly.Location);
+                var rootPath = Path.GetDirectoryName(typeof(JVM).Assembly.Location);
 
                 // user value takes priority
                 if (User.TryGetValue("ikvm.home", out var homePath1))
