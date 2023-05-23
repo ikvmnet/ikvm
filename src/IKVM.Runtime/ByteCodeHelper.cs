@@ -1045,6 +1045,9 @@ namespace IKVM.Runtime
             if (module.Assembly != asm)
                 throw new ArgumentOutOfRangeException();
 
+            // ensure the JVM is initialized before any code in the assembly runs
+            JVM.EnsureInitialized();
+
             // check for InitializeModule method present on classloader
             var classLoader = AssemblyClassLoader.FromAssembly(asm).GetJavaClassLoader();
             if (classLoader != null)
