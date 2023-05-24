@@ -158,10 +158,10 @@ Items = Items.OrderBy(i => i.ItemSpec).ToArray();
         <WriteLinesToFile File="$(_ExcludeFilePath)" Lines="@(ExcludeRegex)" Overwrite="true" Condition=" '@(ExcludeRegex)' != '' " WriteOnlyWhenDifferent="true" />
 
         <ItemGroup>
-            <_ClassToCompile Include="@(Class)" />
-            <_AssemblyAttributesClass Include="@(_ClassToCompile)" Condition=" '%(Filename)%(Extension)' == '__AssemblyAttributes.class' " />
-            <_AssemblyAttributesClass Include="@(_ClassToCompile)" Condition=" '%(Filename)%(Extension)' == '__AssemblyInfo.class' " />
-            <_ClassToCompile Remove="@(_AssemblyAttributesClass)" />
+            <_Convert Include="@(Convert)" />
+            <_AssemblyAttributesClass Include="@(_Convert)" Condition=" '%(Filename)%(Extension)' == '__AssemblyAttributes.class' " />
+            <_AssemblyAttributesClass Include="@(_Convert)" Condition=" '%(Filename)%(Extension)' == '__AssemblyInfo.class' " />
+            <_Convert Remove="@(_AssemblyAttributesClass)" />
         </ItemGroup>
 
         <PropertyGroup>
@@ -173,8 +173,8 @@ Items = Items.OrderBy(i => i.ItemSpec).ToArray();
             <Output TaskParameter="Items" ItemName="_IkvmCompilerJavaResource" />
         </IkvmSortItemGroup>
 
-        <IkvmSortItemGroup Items="@(_ClassToCompile)">
-            <Output TaskParameter="Items" ItemName="_IkvmCompilerClassToCompile" />
+        <IkvmSortItemGroup Items="@(_Convert)">
+            <Output TaskParameter="Items" ItemName="_IkvmCompilerConvert" />
         </IkvmSortItemGroup>
 
         <IkvmSortItemGroup Items="@(ReferencePathWithRefAssemblies)">
@@ -210,7 +210,7 @@ Items = Items.OrderBy(i => i.ItemSpec).ToArray();
             <_IkvmCompilerResourceItem Include="@(_IkvmCompilerJavaResource)" ResourcePath="$([System.String]::new('%(_IkvmCompilerJavaResource.ResourcePath)').Replace('\', '/'))" Condition=" '%(Identity)' != '' " />
             <_IkvmCompilerArgs Include="@(_IkvmCompilerResourceItem->'-resource:%(ResourcePath)=%(FullPath)')" />
             <_IkvmCompilerArgs Include="-out:$(_AssemblyTempPath)$(TargetName)$(TargetExt)" />
-            <_IkvmCompilerArgs Include="@(_IkvmCompilerClassToCompile->'%(FullPath)')" />
+            <_IkvmCompilerArgs Include="@(_IkvmCompilerConvert->'%(FullPath)')" />
         </ItemGroup>
         <WriteLinesToFile File="$(_IkvmCompilerResponseFile)" Lines="@(_IkvmCompilerArgs)" Overwrite="true" WriteOnlyWhenDifferent="true" />
     </Target>
@@ -222,7 +222,7 @@ Items = Items.OrderBy(i => i.ItemSpec).ToArray();
         </CoreCompileDependsOn>
     </PropertyGroup>
 
-    <Target Name="_CoreCompile" DependsOnTargets="_CoreCompileResponseFile" Inputs="$(_IkvmCompilerResponseFile);$(_ExcludeFilePath);$(IkvmRuntimeAssembly);$(KeyOriginatorFile);@(MapFile);@(ReferencePathWithRefAssemblies);@(Class);@(JavaResource);$(_CompileJavaStampFile)" Outputs="@(IntermediateAssembly);@(_DebugSymbolsIntermediatePath)">
+    <Target Name="_CoreCompile" DependsOnTargets="_CoreCompileResponseFile" Inputs="$(_IkvmCompilerResponseFile);$(_ExcludeFilePath);$(IkvmRuntimeAssembly);$(KeyOriginatorFile);@(MapFile);@(ReferencePathWithRefAssemblies);@(Convert);@(JavaResource);$(_CompileJavaStampFile)" Outputs="@(IntermediateAssembly);@(_DebugSymbolsIntermediatePath)">
         <!-- Build Java assembly into temporary directory. -->
         <RemoveDir Directories="$(_AssemblyTempPath)" Condition="Exists('$(_AssemblyTempPath)')" />
         <MakeDir Directories="$(_AssemblyTempPath)" />

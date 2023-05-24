@@ -44,7 +44,7 @@
         <None Include="local\**\*" />
         <None Include="@(OpenJdkSource)" LinkBase="openjdk\%(PackagePath)" />
         <Compile Include="@(OpenJdkSource)" LinkBase="openjdk\%(PackagePath)" />
-        <Class Include="@(OpenJdkClass)" LinkBase="openjdk\%(PackagePath)" />
+        <Convert Include="@(OpenJdkClass)" LinkBase="openjdk\%(PackagePath)" />
         <None Include="@(OpenJdkClass)" LinkBase="openjdk\%(PackagePath)" />
         <JavaResource Include="@(OpenJdkResource)" LinkBase="openjdk\%(PackagePath)" />
         <ExcludeRegex Include="@(OpenJdkExcludeRegex)" />
@@ -127,7 +127,7 @@
 
     <Target Name="BuildRmiStubs" DependsOnTargets="$(BuildRmiStubsDependsOn)">
         <ItemGroup>
-            <Class Include="$(RmiStubsOutputPath)**\*.class" />
+            <Convert Include="$(RmiStubsOutputPath)**\*.class" />
         </ItemGroup>
     </Target>
 
