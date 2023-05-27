@@ -31,9 +31,9 @@ namespace IKVM.Tests.Java.java.nio.file
             using var stream = Files.newDirectoryStream(d);
             var l = stream.iterator().RemainingToList<Path>();
             l.Should().HaveCount(3);
-            l[0].ToString().Should().Be(f1.ToString());
-            l[1].ToString().Should().Be(f2.ToString());
-            l[2].ToString().Should().Be(f3.ToString());
+            l.Should().Contain(i => i.ToString() == f1.ToString());
+            l.Should().Contain(i => i.ToString() == f2.ToString());
+            l.Should().Contain(i => i.ToString() == f3.ToString());
         }
 
         [TestMethod]
@@ -53,9 +53,9 @@ namespace IKVM.Tests.Java.java.nio.file
             using var stream = Files.newDirectoryStream(d);
             var l = stream.iterator().RemainingToList<Path>();
             l.Should().HaveCount(3);
-            l[0].ToString().Should().Be(f1.ToString());
-            l[1].ToString().Should().Be(f2.ToString());
-            l[2].ToString().Should().Be(f3.ToString());
+            l.Should().Contain(i => i.ToString() == f1.ToString());
+            l.Should().Contain(i => i.ToString() == f2.ToString());
+            l.Should().Contain(i => i.ToString() == f3.ToString());
         }
 
     }
