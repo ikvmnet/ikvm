@@ -827,7 +827,7 @@ namespace IKVM.Java.Externs.sun.nio.ch
                         Overlapped.Free(optr);
                     }
                 }
-                else if (RuntimeUtil.IsLinux)
+                else if (RuntimeUtil.IsLinux || RuntimeUtil.IsOSX)
                 {
                     var fl = new Flock();
                     fl.l_whence = SeekFlags.SEEK_SET;
@@ -924,7 +924,7 @@ namespace IKVM.Java.Externs.sun.nio.ch
                             Overlapped.Free(optr);
                     }
                 }
-                else if (RuntimeUtil.IsLinux)
+                else if (RuntimeUtil.IsLinux || RuntimeUtil.IsOSX)
                 {
                     var fl = new Flock();
                     fl.l_whence = SeekFlags.SEEK_SET;
