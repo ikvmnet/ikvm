@@ -40,6 +40,7 @@ using System.Reflection.Emit;
 
 using Instruction = IKVM.Internal.ClassFile.Method.Instruction;
 using InstructionFlags = IKVM.Internal.ClassFile.Method.InstructionFlags;
+using System.Runtime.InteropServices;
 
 namespace IKVM.Internal
 {
@@ -216,6 +217,29 @@ namespace IKVM.Internal
             intrinsics.Add(new IntrinsicKey("sun.misc.Unsafe", "getAndAddInt", "(Ljava.lang.Object;JI)I"), Unsafe_getAndAddInt);
             intrinsics.Add(new IntrinsicKey("sun.misc.Unsafe", "compareAndSwapLong", "(Ljava.lang.Object;JJJ)Z"), Unsafe_compareAndSwapLong);
             return intrinsics;
+        }
+
+        /// <summary>
+        /// Determines the index scale for the specified array type.
+        /// </summary>
+        /// <param name="tw"></param>
+        /// <returns></returns>
+        static int ArrayIndexScale(TypeWrapper tw)
+        {
+            if (tw.ElementTypeWrapper == PrimitiveTypeWrapper.BYTE || tw.ElementTypeWrapper == PrimitiveTypeWrapper.BOOLEAN)
+                return 1;
+            else if (tw.ElementTypeWrapper == PrimitiveTypeWrapper.CHAR || tw.ElementTypeWrapper == PrimitiveTypeWrapper.SHORT)
+                return 2;
+            else if (tw.ElementTypeWrapper == PrimitiveTypeWrapper.INT || tw.ElementTypeWrapper == PrimitiveTypeWrapper.FLOAT)
+                return 4;
+            else if (tw.ElementTypeWrapper == PrimitiveTypeWrapper.LONG || tw.ElementTypeWrapper == PrimitiveTypeWrapper.DOUBLE)
+                return 8;
+            else if (tw.ElementTypeWrapper.IsPrimitive == false && tw.ElementTypeWrapper.IsNonPrimitiveValueType)
+                return Marshal.SizeOf(tw.ElementTypeWrapper.TypeAsTBD);
+            else if (tw.ElementTypeWrapper.IsPrimitive == false && tw.ElementTypeWrapper.IsNonPrimitiveValueType == false)
+                return IntPtr.Size;
+            else
+                return 1;
         }
 
         internal static bool IsIntrinsic(MethodWrapper mw)
@@ -543,21 +567,42 @@ namespace IKVM.Internal
             return tw.IsArray && !tw.IsGhostArray && !tw.ElementTypeWrapper.IsPrimitive && !tw.ElementTypeWrapper.IsNonPrimitiveValueType;
         }
 
+        /// <summary>
+        /// Attempts to replace an invocation of Unsafe.putObject with an intrinsic implementation.
+        /// </summary>
+        /// <param name="eic"></param>
+        /// <returns></returns>
         static bool Unsafe_putObject(EmitIntrinsicContext eic)
         {
             return Unsafe_putObjectImpl(eic, false);
         }
 
+        /// <summary>
+        /// Attempts to replace an invocation of Unsafe.putOrderedObject with an intrinsic implementation.
+        /// </summary>
+        /// <param name="eic"></param>
+        /// <returns></returns>
         static bool Unsafe_putOrderedObject(EmitIntrinsicContext eic)
         {
             return Unsafe_putObjectImpl(eic, false);
         }
 
+        /// <summary>
+        /// Attempts to replace an invocation of Unsafe.putObjectVolatile with an intrinsic implementation.
+        /// </summary>
+        /// <param name="eic"></param>
+        /// <returns></returns>
         static bool Unsafe_putObjectVolatile(EmitIntrinsicContext eic)
         {
             return Unsafe_putObjectImpl(eic, true);
         }
 
+        /// <summary>
+        /// Attempts to replace an invocation of an Unsafe put operation with an intrinsic implementation.
+        /// </summary>
+        /// <param name="eic"></param>
+        /// <param name="isVolatile"></param>
+        /// <returns></returns>
         static bool Unsafe_putObjectImpl(EmitIntrinsicContext eic, bool isVolatile)
         {
             var tw = eic.GetStackTypeWrapper(0, 2);
@@ -576,8 +621,11 @@ namespace IKVM.Internal
                 eic.Emitter.Emit(OpCodes.Stloc, array);
                 EmitConsumeUnsafe(eic);
 
+                // emit new call that sets the element by index
                 eic.Emitter.Emit(OpCodes.Ldloc, array);
                 eic.Emitter.Emit(OpCodes.Ldloc, index);
+                eic.Emitter.EmitLdc_I4(ArrayIndexScale(tw));
+                eic.Emitter.Emit(OpCodes.Div);
                 eic.Emitter.Emit(OpCodes.Ldloc, value);
                 eic.Emitter.Emit(OpCodes.Stelem_Ref);
 
@@ -659,8 +707,11 @@ namespace IKVM.Internal
                 eic.Emitter.Emit(OpCodes.Stloc, target);
                 EmitConsumeUnsafe(eic);
 
+                // emit new call that gets the element by index
                 eic.Emitter.Emit(OpCodes.Ldloc, target);
                 eic.Emitter.Emit(OpCodes.Ldloc, offset);
+                eic.Emitter.EmitLdc_I4(ArrayIndexScale(tw));
+                eic.Emitter.Emit(OpCodes.Div);
                 eic.Emitter.Emit(OpCodes.Ldelema, tw.TypeAsLocalOrStackType.GetElementType());
                 eic.Emitter.Emit(OpCodes.Volatile);
                 eic.Emitter.Emit(OpCodes.Ldind_Ref);
@@ -711,6 +762,8 @@ namespace IKVM.Internal
                 // emit new call site
                 eic.Emitter.Emit(OpCodes.Ldloc, target);
                 eic.Emitter.Emit(OpCodes.Ldloc, offset);
+                eic.Emitter.EmitLdc_I4(ArrayIndexScale(tw));
+                eic.Emitter.Emit(OpCodes.Div);
                 eic.Emitter.Emit(OpCodes.Ldelema, type);
                 eic.Emitter.Emit(OpCodes.Ldloc, update);
                 eic.Emitter.Emit(OpCodes.Ldloc, expect);
