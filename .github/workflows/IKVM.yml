@@ -449,12 +449,16 @@ jobs:
             }
         }
       working-directory: ${{ env.IKVMPATH }}/dist
-    - name: Upload Test Results
+    - name: Package Test Results
+      if: always() && startsWith(env.RET, 'TestResults--')
+      run: tar czvf C:\${{ env.RET }}.tar.gz ${{ env.RET }}
+      working-directory: ${{ env.IKVMPATH }}/dist
+    - name: Publish Test Results
       if: always() && startsWith(env.RET, 'TestResults--')
       uses: actions/upload-artifact@v3
       with:
         name: ${{ env.RET }}
-        path: ${{ env.IKVMPATH }}/dist/TestResults
+        path: C:\${{ env.RET }}.tar.gz
   release:
     name: Release
     if: github.ref == 'refs/heads/main' || github.ref == 'refs/heads/develop' || startsWith(github.ref, 'refs/heads/release/') || startsWith(github.ref, 'refs/heads/hotfix/')
