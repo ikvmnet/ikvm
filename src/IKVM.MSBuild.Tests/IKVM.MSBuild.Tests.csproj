@@ -11,10 +11,10 @@
     </ItemGroup>
 
     <ItemGroup>
-        <None Include="..\..\ext\helloworld-2.0.jar" Link="Project\Lib\helloworld-2.0-1\helloworld-2.0.jar">
+        <None Include="..\..\ext\helloworld\helloworld-2.0.jar" Link="Project\Lib\helloworld-2.0-1\helloworld-2.0.jar">
             <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
         </None>
-        <None Include="..\..\ext\helloworld-2.0.jar" Link="Project\Lib\helloworld-2.0-2\helloworld-2.0.jar">
+        <None Include="..\..\ext\helloworld\helloworld-2.0.jar" Link="Project\Lib\helloworld-2.0-2\helloworld-2.0.jar">
             <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
         </None>
     </ItemGroup>
