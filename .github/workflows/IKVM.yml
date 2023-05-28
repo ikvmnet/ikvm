@@ -449,16 +449,24 @@ jobs:
             }
         }
       working-directory: ${{ env.IKVMPATH }}/dist
-    - name: Package Test Results
+    - name: Archive Test Results
       if: always() && startsWith(env.RET, 'TestResults--')
       run: tar czvf ${{ env.TMPDIR }}/TestResults.tar.gz TestResults
       working-directory: ${{ env.IKVMPATH }}/dist
-    - name: Publish Test Results
+    - name: Upload Test Results
       if: always() && startsWith(env.RET, 'TestResults--')
       uses: actions/upload-artifact@v3
       with:
         name: ${{ env.RET }}
         path: ${{ env.TMPDIR }}/TestResults.tar.gz
+    - name: Report Test Results
+      if: always() && startsWith(env.RET, 'TestResults--')
+      uses: dorny/test-reporter@v1
+      with:
+        name: Tests
+        path: ${{ env.IKVMPATH }}/dist/TestResults/**/*.trx
+        reporter: dotnet-trx
+        fail-on-error: true
   release:
     name: Release
     if: github.ref == 'refs/heads/main' || github.ref == 'refs/heads/develop' || startsWith(github.ref, 'refs/heads/release/') || startsWith(github.ref, 'refs/heads/hotfix/')
