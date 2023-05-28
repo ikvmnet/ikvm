@@ -463,7 +463,7 @@ jobs:
       if: always() && startsWith(env.RET, 'TestResults--')
       uses: dorny/test-reporter@v1
       with:
-        name: Tests
+        name: ${{ env.RET }}
         path: ${{ env.IKVMPATH }}/dist/TestResults/**/*.trx
         reporter: dotnet-trx
         fail-on-error: true
