@@ -617,7 +617,7 @@ namespace IKVM.Runtime
         /// <summary>
         /// Prints out the standard launcher help information.
         /// </summary>
-        public static void PrintHelp()
+        static void PrintHelp()
         {
             var exe = Process.GetCurrentProcess().ProcessName;
             Console.Error.WriteLine("Usage: {0} [-options] class [args...]", exe);
@@ -662,7 +662,7 @@ namespace IKVM.Runtime
         /// <summary>
         /// Prints out the extended launcher help information.
         /// </summary>
-        public static void PrintXHelp()
+        static void PrintXHelp()
         {
             Console.Error.WriteLine("    -Xnoclassgc    disable class garbage collection");
             Console.Error.WriteLine("    -Xtime         time the execution");
