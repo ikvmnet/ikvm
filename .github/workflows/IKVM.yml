@@ -459,14 +459,6 @@ jobs:
       with:
         name: ${{ env.RET }}
         path: ${{ env.TMPDIR }}/TestResults.tar.gz
-    - name: Report Test Results
-      if: always() && startsWith(env.RET, 'TestResults--')
-      uses: dorny/test-reporter@v1
-      with:
-        name: ${{ env.RET }}
-        path: ${{ env.IKVMPATH }}/dist/TestResults/**/*.trx
-        reporter: dotnet-trx
-        fail-on-error: true
   release:
     name: Release
     if: github.ref == 'refs/heads/main' || github.ref == 'refs/heads/develop' || startsWith(github.ref, 'refs/heads/release/') || startsWith(github.ref, 'refs/heads/hotfix/')

@@ -62,7 +62,7 @@ namespace IKVM.Runtime.Accessors
         /// <returns></returns>
         public object[] InitArray(params object[] source)
         {
-            var a = (object[])Array.CreateInstance(Type, source.Length);
+            var a = InitArray(source.Length);
             Array.Copy(source, a, source.Length);
             return a;
         }

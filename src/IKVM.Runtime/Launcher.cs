@@ -521,12 +521,8 @@ namespace IKVM.Runtime
                 var clazz = LauncherHelperAccessor.InvokeCheckAndLoadMain(true, jar ? 2 : 1, main);
                 SystemAccessor.InvokeSetProperty("sun.java.command", initialize["sun.java.command"]);
 
-                // dynamically create an array of class instances
-                var methodArgTypes = ClassAccessor.InitArray(1);
-                methodArgTypes[0] = ClassLoaderWrapper.GetWrapperFromType(typeof(string[])).ClassObject;
-
                 // find the main method and ensure it is accessible
-                var method = ClassAccessor.InvokeGetMethod(clazz, "main", methodArgTypes, CallerIDAccessor.InvokeCreate(typeof(Launcher).TypeHandle));
+                var method = ClassAccessor.InvokeGetMethod(clazz, "main", ClassAccessor.InitArray(ClassLoaderWrapper.GetWrapperFromType(typeof(string[])).ClassObject), CallerIDAccessor.InvokeCreate(typeof(Launcher).TypeHandle));
                 MethodAccessor.InvokeSetAccessible(method, true);
 
                 try
