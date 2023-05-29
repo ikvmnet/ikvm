@@ -517,7 +517,8 @@ namespace IKVM.Tools.Importer
                     if (kvp.Value.IndexOf('%') < kvp.Value.LastIndexOf('%'))
                         ilgen.Emit(OpCodes.Call, JVM.Import(typeof(Environment)).GetMethod(nameof(Environment.ExpandEnvironmentVariables), new[] { Types.String }));
 
-                    ilgen.Emit(OpCodes.Callvirt, propertiesType.GetMethod("setProperty", new Type[] { Types.Object, Types.Object }));
+                    ilgen.Emit(OpCodes.Callvirt, propertiesType.GetMethod("setProperty", new Type[] { Types.String, Types.String }));
+                    ilgen.Emit(OpCodes.Pop); // setProperty returns previous value
                 }
             }
 
