@@ -517,11 +517,6 @@ namespace IKVM.Runtime
                     return 1;
                 }
 
-                // check that we can access the home path
-                var ikvmHome = JVM.Properties.HomePath;
-                if (Directory.Exists(ikvmHome) == false)
-                    throw new DirectoryNotFoundException("Could not locate ikvm.home.");
-
                 // process the main argument, returning the true value, and resetting the command property to match
                 var clazz = LauncherHelperAccessor.InvokeCheckAndLoadMain(true, jar ? 2 : 1, main);
                 SystemAccessor.InvokeSetProperty("sun.java.command", initialize["sun.java.command"]);
