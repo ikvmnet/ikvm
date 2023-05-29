@@ -489,24 +489,30 @@ namespace IKVM.Tools.Importer
                 mainMethodProxy.SetCustomAttribute(new CustomAttributeBuilder(apartmentAttributeType.GetConstructor(Type.EmptyTypes), new object[0]));
 
             var ilgen = CodeEmitter.Create(mainMethodProxy);
-            var propertiesType = LoadClassByDottedName("java.util.Properties").TypeAsTBD;
-            var launcherType = LoadClassByDottedName("ikvm.runtime.Launcher").TypeAsTBD;
-            var launchMethod = launcherType.GetMethod("run", new Type[] { Types.Type, Types.String.MakeArrayType(), Types.String, propertiesType });
+            var environmentType = JVM.Import(typeof(Environment));
+            var environmentExpandMethod = environmentType.GetMethod(nameof(Environment.ExpandEnvironmentVariables), new[] { Types.String });
+            var dictionaryType = JVM.Import(typeof(Dictionary<,>).MakeGenericType(typeof(string), typeof(string)));
+            var dictionaryAddMethod = dictionaryType.GetMethod("Add", new Type[] { Types.String, Types.String });
+            var launchMethod = StaticCompiler.GetRuntimeType("IKVM.Runtime.Launcher").GetMethod("Run");
 
-            // first argument to Launch (Class)
-            ilgen.Emit(OpCodes.Ldtoken, type.TypeAsTBD);
-            ilgen.Emit(OpCodes.Call, Types.Type.GetMethod("GetTypeFromHandle"));
+            // first argument to Launch (type name)
+            ilgen.Emit(OpCodes.Ldstr, type.Name);
 
-            // second argument: args
+            // second argument: is this a jar
+            ilgen.Emit(OpCodes.Ldc_I4_0);
+
+            // third argument: args
             ilgen.Emit(OpCodes.Ldarg_0);
 
-            // third argument, runtime prefix
+            // fourth argument, runtime prefix
             ilgen.Emit(OpCodes.Ldstr, DEFAULT_RUNTIME_ARGS_PREFIX);
 
-            // fourth argument, property set to initialize JVM with
-            ilgen.Emit(OpCodes.Newobj, propertiesType.GetConstructor(Type.EmptyTypes));
+            // fifth argument, property set to initialize JVM with
             if (properties.Count > 0)
             {
+                ilgen.EmitLdc_I4(properties.Count);
+                ilgen.Emit(OpCodes.Newobj, dictionaryType.GetConstructor(new[] { Types.Int32 }));
+
                 foreach (var kvp in properties)
                 {
                     ilgen.Emit(OpCodes.Dup);
@@ -515,10 +521,15 @@ namespace IKVM.Tools.Importer
 
                     // property value can reference an environmental variable (reassess the requirment for this)
                     if (kvp.Value.IndexOf('%') < kvp.Value.LastIndexOf('%'))
-                        ilgen.Emit(OpCodes.Call, JVM.Import(typeof(Environment)).GetMethod(nameof(Environment.ExpandEnvironmentVariables), new[] { Types.String }));
+                        ilgen.Emit(OpCodes.Call, environmentExpandMethod);
 
-                    ilgen.Emit(OpCodes.Callvirt, propertiesType.GetMethod("setProperty", new Type[] { Types.Object, Types.Object }));
+                    // add to properties dictionary
+                    ilgen.Emit(OpCodes.Callvirt, dictionaryAddMethod);
                 }
+            }
+            else
+            {
+                ilgen.Emit(OpCodes.Ldnull);
             }
 
             // invoke the launcher main method
@@ -3060,8 +3071,21 @@ namespace IKVM.Tools.Importer
                     throw new FatalCompilerErrorException(Message.ClassLoaderConstructorMissing);
 
                 // apply custom attribute specifying custom class loader
-                var ci = JVM.LoadType(typeof(CustomAssemblyClassLoaderAttribute)).GetConstructor(BindingFlags.Instance | BindingFlags.Public | BindingFlags.NonPublic, null, new Type[] { Types.Type }, null);
+                var ci = JVM.LoadType(typeof(CustomAssemblyClassLoaderAttribute)).GetConstructor(BindingFlags.Instance | BindingFlags.Public | BindingFlags.NonPublic, null, new [] { Types.Type }, null);
                 assemblyBuilder.SetCustomAttribute(new CustomAttributeBuilder(ci, new object[] { classLoaderType.TypeAsTBD }));
+
+                // the class loader type defines a module initialize method, ensure we call it upon module load
+                var mwModuleInit = classLoaderType.GetMethodWrapper("InitializeModule", "(Lcli.System.Reflection.Module;)V", false);
+                if (mwModuleInit != null && mwModuleInit.IsStatic == false)
+                {
+                    var moduleInit = GetTypeWrapperFactory().ModuleBuilder.DefineGlobalMethod(".cctor", MethodAttributes.Private | MethodAttributes.Static | MethodAttributes.SpecialName | MethodAttributes.RTSpecialName, null, Type.EmptyTypes);
+                    var moduleInitIL = moduleInit.GetILGenerator();
+                    moduleInitIL.Emit(OpCodes.Ldtoken, moduleInit);
+                    moduleInitIL.Emit(OpCodes.Call, JVM.Import(typeof(System.Reflection.MethodBase)).GetMethod("GetMethodFromHandle", new[] { JVM.Import(typeof(RuntimeMethodHandle)) }));
+                    moduleInitIL.Emit(OpCodes.Callvirt, JVM.Import(typeof(System.Reflection.MemberInfo)).GetProperty("Module").GetGetMethod());
+                    moduleInitIL.Emit(OpCodes.Call, StaticCompiler.GetRuntimeType("IKVM.Runtime.ByteCodeHelper").GetMethod("InitializeModule"));
+                    moduleInitIL.Emit(OpCodes.Ret);
+                }
             }
 
             if (options.iconfile != null)
@@ -3073,16 +3097,6 @@ namespace IKVM.Tools.Importer
             {
                 assemblyBuilder.__DefineManifestResource(IkvmImporterInternal.ReadAllBytes(options.manifestFile));
             }
-
-            // define a module initialization method
-            // this method invokes on module load and calls into the runtime
-            var moduleInit = GetTypeWrapperFactory().ModuleBuilder.DefineGlobalMethod(".cctor", MethodAttributes.Private | MethodAttributes.Static | MethodAttributes.SpecialName | MethodAttributes.RTSpecialName, null, Type.EmptyTypes);
-            var moduleInitIL = moduleInit.GetILGenerator();
-            moduleInitIL.Emit(OpCodes.Ldtoken, moduleInit);
-            moduleInitIL.Emit(OpCodes.Call, JVM.Import(typeof(System.Reflection.MethodBase)).GetMethod("GetMethodFromHandle", new Type[] { JVM.Import(typeof(RuntimeMethodHandle)) }));
-            moduleInitIL.Emit(OpCodes.Callvirt, JVM.Import(typeof(System.Reflection.MemberInfo)).GetMethod("get_Module"));
-            moduleInitIL.Emit(OpCodes.Call, StaticCompiler.GetRuntimeType("IKVM.Runtime.ByteCodeHelper").GetMethod("InitializeModule"));
-            moduleInitIL.Emit(OpCodes.Ret);
 
             assemblyBuilder.DefineVersionInfoResource();
 

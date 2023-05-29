@@ -464,12 +464,16 @@ jobs:
             }
         }
       working-directory: ${{ env.IKVMPATH }}/dist
+    - name: Archive Test Results
+      if: always() && startsWith(env.RET, 'TestResults--')
+      run: tar czvf ${{ env.TMPDIR }}/TestResults.tar.gz TestResults
+      working-directory: ${{ env.IKVMPATH }}/dist
     - name: Upload Test Results
       if: always() && startsWith(env.RET, 'TestResults--')
       uses: actions/upload-artifact@v3
       with:
         name: ${{ env.RET }}
-        path: ${{ env.IKVMPATH }}/dist/TestResults
+        path: ${{ env.TMPDIR }}/TestResults.tar.gz
   release:
     name: Release
     if: github.ref == 'refs/heads/main' || github.ref == 'refs/heads/develop' || startsWith(github.ref, 'refs/heads/release/') || startsWith(github.ref, 'refs/heads/hotfix/')
@@ -553,14 +557,6 @@ jobs:
       env:
         GITHUB_REPOS: https://nuget.pkg.github.com/${{ github.repository_owner }}/index.json
         GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-    - name: Push NuGet (Azure DevOps)
-      shell: pwsh
-      run: |
-        dotnet nuget add source $env:AZUREDEVOPS_REPOS --name az --username az --password $env:AZUREDEVOPS_TOKEN --store-password-in-clear-text
-        dotnet nuget push dist/nuget/*.nupkg --source az --api-key az --skip-duplicate --no-symbols
-      env:
-        AZUREDEVOPS_REPOS: https://pkgs.dev.azure.com/ikvm-revived/ikvm/_packaging/ikvm-ci/nuget/v3/index.json
-        AZUREDEVOPS_TOKEN: ${{ secrets.AZUREDEVOPS_PAT }}
     - name: Push NuGet
       if: github.ref == 'refs/heads/main' || github.event.head_commit.message == '+push'
       shell: pwsh
