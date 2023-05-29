@@ -492,7 +492,7 @@ namespace IKVM.Tools.Importer
             var environmentType = JVM.Import(typeof(Environment));
             var environmentExpandMethod = environmentType.GetMethod(nameof(Environment.ExpandEnvironmentVariables), new[] { Types.String });
             var dictionaryType = JVM.Import(typeof(Dictionary<,>).MakeGenericType(typeof(string), typeof(string)));
-            var dictionaryAddMethod = dictionaryType.GetMethod("Add", new Type[] { Types.Object, Types.Object });
+            var dictionaryAddMethod = dictionaryType.GetMethod("Add", new Type[] { Types.String, Types.String });
             var launchMethod = StaticCompiler.GetRuntimeType("IKVM.Runtime.Launcher").GetMethod("Run");
 
             // first argument to Launch (type name)
