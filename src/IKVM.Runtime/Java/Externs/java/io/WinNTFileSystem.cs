@@ -27,12 +27,12 @@ using System.IO;
 using System.Linq;
 using System.Runtime.InteropServices;
 using System.Security;
-using System.Text;
 
 using IKVM.Runtime.Vfs;
 
 namespace IKVM.Java.Externs.java.io
 {
+
     static class WinNTFileSystem
     {
 
@@ -49,13 +49,17 @@ namespace IKVM.Java.Externs.java.io
             }
             catch (ArgumentException)
             {
+
             }
             catch (SecurityException)
             {
+
             }
             catch (PathTooLongException)
             {
+
             }
+
             return "\\";
         }
 
@@ -125,29 +129,18 @@ namespace IKVM.Java.Externs.java.io
             return path;
         }
 
-        public static string canonicalize0(object _this, string path)
+        public static string canonicalize0(object self, string path)
         {
 #if FIRST_PASS
-            return null;
+            throw new NotImplementedException();
 #else
             try
             {
-                // TODO there is still a known bug here. A dotted path component right after the root component
-                // are not removed as they should be. E.g. "c:\..." => "C:\..." or "\\server\..." => IOException
-                // Another know issue is that when running under Mono on Windows, the case names aren't converted
-                // to the correct (on file system) casing.
-                //
-                // FXBUG we're appending the directory separator to work around an apparent .NET bug.
-                // If we don't do this, "c:\j\." would be canonicalized to "C:\"
-                int colon = path.IndexOf(':', 2);
-                if (colon != -1)
-                    return CanonicalizePath(path.Substring(0, colon) + Path.DirectorySeparatorChar) + path.Substring(colon);
-
-                return CanonicalizePath(path + Path.DirectorySeparatorChar);
+                return CanonicalizePath(Path.GetFullPath(path));
             }
-            catch (ArgumentException x)
+            catch (ArgumentException e)
             {
-                throw new global::java.io.IOException(x.Message);
+                throw new global::java.io.IOException(e.Message);
             }
 #endif
         }
@@ -160,7 +153,7 @@ namespace IKVM.Java.Externs.java.io
         private static string GetPathFromFile(global::java.io.File file)
         {
 #if FIRST_PASS
-            return null;
+            throw new NotImplementedException();
 #else
             return file.getPath();
 #endif
@@ -196,19 +189,25 @@ namespace IKVM.Java.Externs.java.io
             }
             catch (ArgumentException)
             {
+
             }
             catch (UnauthorizedAccessException)
             {
+
             }
             catch (SecurityException)
             {
+
             }
             catch (NotSupportedException)
             {
+
             }
             catch (IOException)
             {
+
             }
+
             return 0;
         }
 
@@ -288,20 +287,26 @@ namespace IKVM.Java.Externs.java.io
                 }
                 catch (SecurityException)
                 {
+
                 }
                 catch (ArgumentException)
                 {
+
                 }
                 catch (UnauthorizedAccessException)
                 {
+
                 }
                 catch (IOException)
                 {
+
                 }
                 catch (NotSupportedException)
                 {
+
                 }
             }
+
             return ok;
         }
 
@@ -567,19 +572,25 @@ namespace IKVM.Java.Externs.java.io
             }
             catch (SecurityException)
             {
+
             }
             catch (ArgumentException)
             {
+
             }
             catch (UnauthorizedAccessException)
             {
+
             }
             catch (IOException)
             {
+
             }
             catch (NotSupportedException)
             {
+
             }
+
             return false;
         }
 
@@ -690,9 +701,8 @@ namespace IKVM.Java.Externs.java.io
             long freeAvailable;
             long total;
             long totalFree;
-            StringBuilder volname = new StringBuilder(256);
-            if (GetVolumePathName(GetPathFromFile(f), volname, volname.Capacity) != 0
-                && GetDiskFreeSpaceEx(volname.ToString(), out freeAvailable, out total, out totalFree) != 0)
+            var volname = new System.Text.StringBuilder(256);
+            if (GetVolumePathName(GetPathFromFile(f), volname, volname.Capacity) != 0 && GetDiskFreeSpaceEx(volname.ToString(), out freeAvailable, out total, out totalFree) != 0)
             {
                 switch (t)
                 {
@@ -705,6 +715,7 @@ namespace IKVM.Java.Externs.java.io
                 }
             }
 #endif
+
             return 0;
         }
 
@@ -712,11 +723,13 @@ namespace IKVM.Java.Externs.java.io
         private static extern int GetDiskFreeSpaceEx(string directory, out long freeAvailable, out long total, out long totalFree);
 
         [DllImport("kernel32")]
-        private static extern int GetVolumePathName(string lpszFileName, [In, Out] StringBuilder lpszVolumePathName, int cchBufferLength);
+        private static extern int GetVolumePathName(string lpszFileName, [In, Out] System.Text.StringBuilder lpszVolumePathName, int cchBufferLength);
 
         public static void initIDs()
         {
+
         }
+
     }
 
 }

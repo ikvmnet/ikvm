@@ -35,17 +35,6 @@ namespace IKVM.JTReg.TestAdapter.Core
         static readonly MD5 md5 = MD5.Create();
 
         /// <summary>
-        /// Computes the hash of the value.
-        /// </summary>
-        /// <param name="buffer"></param>
-        /// <returns></returns>
-        static byte[] ComputeHash(byte[] buffer)
-        {
-            lock (md5)
-                return md5.ComputeHash(buffer);
-        }
-
-        /// <summary>
         /// Initializes the static instance.
         /// </summary>
         static JTRegTestManager()
@@ -82,10 +71,22 @@ namespace IKVM.JTReg.TestAdapter.Core
         /// </summary>
         /// <param name="source"></param>
         /// <returns></returns>
-        protected static string GetSourceHash(string source)
+        protected static string GetSourceId(string source)
         {
+            // allows a lock around the MD5 instance
+            byte[] ComputeHash(byte[] buffer)
+            {
+                lock (md5)
+                {
+                    var b = new byte[8];
+                    var h = md5.ComputeHash(buffer);
+                    Array.Copy(h, b, 8);
+                    return b;
+                }
+            }
+
             var b = ComputeHash(Encoding.UTF8.GetBytes(source));
-            var s = new StringBuilder(32);
+            var s = new StringBuilder(16);
             for (int i = 0; i < b.Length; i++)
                 s.Append(b[i].ToString("x2"));
             return s.ToString();
@@ -182,11 +183,11 @@ namespace IKVM.JTReg.TestAdapter.Core
                     return;
 
                 // output path for jtreg state
-                var id = GetSourceHash(source);
+                var id = GetSourceId(source);
                 var baseDir = Path.Combine(Path.GetTempPath(), BASEDIR_PREFIX + id);
 
                 // attempt to create a temporary directory as scratch space for this test
-                context.SendMessage(JTRegTestMessageLevel.Informational, $"JTReg: Using run directory: {baseDir}");
+                context.SendMessage(JTRegTestMessageLevel.Informational, $"JTReg: Using discover directory: {baseDir}");
                 Directory.CreateDirectory(baseDir);
 
                 // output to framework
@@ -293,8 +294,11 @@ namespace IKVM.JTReg.TestAdapter.Core
                     return;
 
                 // output path for jtreg state
-                var id = GetSourceHash(source);
+                var id = GetSourceId(source);
                 var baseDir = Path.Combine(context.TestRunDirectory, BASEDIR_PREFIX + id);
+
+                // attempt to create a temporary directory as scratch space for this test
+                context.SendMessage(JTRegTestMessageLevel.Informational, $"JTReg: Using run directory: {baseDir}");
                 Directory.CreateDirectory(baseDir);
 
                 // output to framework

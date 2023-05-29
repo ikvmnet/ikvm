@@ -947,17 +947,18 @@ namespace IKVM.Tests.Java.sun.misc
             var o1 = new object();
             var o2 = new object();
             var a = new object[16];
-            u.putObject(a, 0L, o1);
-            u.getObject(a, 0L).Should().BeSameAs(o1);
+            var s = u.arrayIndexScale(typeof(object[]));
+            u.putObject(a, s * 0L, o1);
+            u.getObject(a, s * 0L).Should().BeSameAs(o1);
             a[0].Should().BeSameAs(o1);
-            u.putObject(a, 0L, null);
-            u.getObject(a, 0L).Should().BeSameAs(null);
+            u.putObject(a, s * 0L, null);
+            u.getObject(a, s * 0L).Should().BeSameAs(null);
             a[0].Should().BeNull();
-            u.putObject(a, 1L, o2);
-            u.getObject(a, 1L).Should().BeSameAs(o2);
+            u.putObject(a, s * 1L, o2);
+            u.getObject(a, s * 1L).Should().BeSameAs(o2);
             a[1].Should().BeSameAs(o2);
-            u.putObject(a, 1L, null);
-            u.getObject(a, 1L).Should().BeSameAs(null);
+            u.putObject(a, s * 1L, null);
+            u.getObject(a, s * 1L).Should().BeSameAs(null);
             a[1].Should().BeNull();
         }
 
@@ -967,17 +968,18 @@ namespace IKVM.Tests.Java.sun.misc
             var o1 = new object();
             var o2 = new object();
             var a = new object[16];
-            u.putObjectVolatile(a, 0L, o1);
-            u.getObjectVolatile(a, 0L).Should().BeSameAs(o1);
+            var s = u.arrayIndexScale(typeof(object[]));
+            u.putObjectVolatile(a, s * 0L, o1);
+            u.getObjectVolatile(a, s * 0L).Should().BeSameAs(o1);
             a[0].Should().BeSameAs(o1);
-            u.putObjectVolatile(a, 0L, null);
-            u.getObjectVolatile(a, 0L).Should().BeSameAs(null);
+            u.putObjectVolatile(a, s * 0L, null);
+            u.getObjectVolatile(a, s * 0L).Should().BeSameAs(null);
             a[0].Should().BeNull();
-            u.putObjectVolatile(a, 1L, o2);
-            u.getObjectVolatile(a, 1L).Should().BeSameAs(o2);
+            u.putObjectVolatile(a, s * 1L, o2);
+            u.getObjectVolatile(a, s * 1L).Should().BeSameAs(o2);
             a[1].Should().BeSameAs(o2);
-            u.putObjectVolatile(a, 1L, null);
-            u.getObjectVolatile(a, 1L).Should().BeSameAs(null);
+            u.putObjectVolatile(a, s * 1L, null);
+            u.getObjectVolatile(a, s * 1L).Should().BeSameAs(null);
             a[1].Should().BeNull();
         }
 
@@ -994,17 +996,18 @@ namespace IKVM.Tests.Java.sun.misc
             var o1 = new AnonymousTestObject();
             var o2 = new AnonymousTestObject();
             var a = new AnonymousTestObject[16];
-            u.putObject(a, 0L, o1);
-            u.getObject(a, 0L).Should().BeSameAs(o1);
+            var s = u.arrayIndexScale(typeof(AnonymousTestObject[]));
+            u.putObject(a, s * 0L, o1);
+            u.getObject(a, s * 0L).Should().BeSameAs(o1);
             a[0].Should().BeSameAs(o1);
-            u.putObject(a, 0L, null);
-            u.getObject(a, 0L).Should().BeSameAs(null);
+            u.putObject(a, s * 0L, null);
+            u.getObject(a, s * 0L).Should().BeSameAs(null);
             a[0].Should().BeNull();
-            u.putObject(a, 1L, o2);
-            u.getObject(a, 1L).Should().BeSameAs(o2);
+            u.putObject(a, s * 1L, o2);
+            u.getObject(a, s * 1L).Should().BeSameAs(o2);
             a[1].Should().BeSameAs(o2);
-            u.putObject(a, 1L, null);
-            u.getObject(a, 1L).Should().BeSameAs(null);
+            u.putObject(a, s * 1L, null);
+            u.getObject(a, s * 1L).Should().BeSameAs(null);
             a[1].Should().BeNull();
         }
 
@@ -1014,17 +1017,18 @@ namespace IKVM.Tests.Java.sun.misc
             var o1 = new AnonymousTestObject();
             var o2 = new AnonymousTestObject();
             var a = new AnonymousTestObject[16];
-            u.putObjectVolatile(a, 0L, o1);
-            u.getObjectVolatile(a, 0L).Should().BeSameAs(o1);
+            var s = u.arrayIndexScale(typeof(AnonymousTestObject[]));
+            u.putObjectVolatile(a, s * 0L, o1);
+            u.getObjectVolatile(a, s * 0L).Should().BeSameAs(o1);
             a[0].Should().BeSameAs(o1);
-            u.putObjectVolatile(a, 0L, null);
-            u.getObjectVolatile(a, 0L).Should().BeSameAs(null);
+            u.putObjectVolatile(a, s * 0L, null);
+            u.getObjectVolatile(a, s * 0L).Should().BeSameAs(null);
             a[0].Should().BeNull();
-            u.putObjectVolatile(a, 1L, o2);
-            u.getObjectVolatile(a, 1L).Should().BeSameAs(o2);
+            u.putObjectVolatile(a, s * 1L, o2);
+            u.getObjectVolatile(a, s * 1L).Should().BeSameAs(o2);
             a[1].Should().BeSameAs(o2);
-            u.putObjectVolatile(a, 1L, null);
-            u.getObjectVolatile(a, 1L).Should().BeSameAs(null);
+            u.putObjectVolatile(a, s * 1L, null);
+            u.getObjectVolatile(a, s * 1L).Should().BeSameAs(null);
             a[1].Should().BeNull();
         }
 
