@@ -13,6 +13,12 @@ namespace IKVM.Tests.Java.java.io
     {
 
         [TestMethod]
+        public void CanConvertRelativePathToRealPath()
+        {
+            (new global::java.io.File(".")).toPath().toRealPath();
+        }
+
+        [TestMethod]
         public void CanCreateFile()
         {
             var f = new global::java.io.File(Path.Combine(Path.GetTempPath(), Path.GetRandomFileName()));

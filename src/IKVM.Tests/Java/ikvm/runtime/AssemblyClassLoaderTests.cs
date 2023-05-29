@@ -52,7 +52,7 @@ namespace IKVM.Tests.Java.ikvm.runtime
             {
                 Runtime = Path.Combine("lib", tfm, "IKVM.Runtime.dll"),
                 ResponseFile = $"{n}_ikvmc.rsp",
-                Input = { Path.Combine("ext", "helloworld-2.0.jar") },
+                Input = { Path.Combine("helloworld", "helloworld-2.0.jar") },
                 Assembly = $"helloworld_{n}",
                 Version = "1.0.0.0",
                 NoStdLib = true,

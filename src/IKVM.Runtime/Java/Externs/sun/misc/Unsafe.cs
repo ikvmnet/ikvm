@@ -196,7 +196,7 @@ namespace IKVM.Java.Externs.sun.misc
 #else
             return o switch
             {
-                object[] array => array[offset],
+                object[] array => array[offset / ArrayIndexScale(ClassLoaderWrapper.GetWrapperFromType(typeof(object[])))],
                 _ => GetField<object>(o, offset)
             };
 #endif
@@ -217,7 +217,7 @@ namespace IKVM.Java.Externs.sun.misc
             switch (o)
             {
                 case object[] array:
-                    array[offset] = x;
+                    array[offset / ArrayIndexScale(ClassLoaderWrapper.GetWrapperFromType(typeof(object[])))] = x;
                     break;
                 default:
                     PutField(o, offset, x);
@@ -1057,6 +1057,30 @@ namespace IKVM.Java.Externs.sun.misc
         }
 
         /// <summary>
+        /// Determines the index scale for the specified array type.
+        /// </summary>
+        /// <param name="tw"></param>
+        /// <returns></returns>
+        static int ArrayIndexScale(TypeWrapper tw)
+        {
+            var et = tw.ElementTypeWrapper;
+            if (et == PrimitiveTypeWrapper.BYTE || et == PrimitiveTypeWrapper.BOOLEAN)
+                return 1;
+            else if (et == PrimitiveTypeWrapper.CHAR || et == PrimitiveTypeWrapper.SHORT)
+                return 2;
+            else if (et == PrimitiveTypeWrapper.INT || et == PrimitiveTypeWrapper.FLOAT)
+                return 4;
+            else if (et == PrimitiveTypeWrapper.LONG || et == PrimitiveTypeWrapper.DOUBLE)
+                return 8;
+            else if (et.IsPrimitive == false && et.IsNonPrimitiveValueType)
+                return Marshal.SizeOf(et.TypeAsTBD);
+            else if (et.IsPrimitive == false && et.IsNonPrimitiveValueType == false)
+                return IntPtr.Size;
+            else
+                return 1;
+        }
+
+        /// <summary>
         /// Implementation of native method 'arrayIndexScale'.
         /// </summary>
         /// <param name="self"></param>
@@ -1064,23 +1088,7 @@ namespace IKVM.Java.Externs.sun.misc
         /// <returns></returns>
         public static int arrayIndexScale(object self, global::java.lang.Class arrayClass)
         {
-            var tw = TypeWrapper.FromClass(arrayClass);
-            var ac = tw.TypeAsTBD;
-
-            if (ac == typeof(byte[]) || ac == typeof(bool[]))
-                return 1;
-
-            if (ac == typeof(char[]) || ac == typeof(short[]))
-                return 2;
-
-            if (ac == typeof(int[]) || ac == typeof(float[]) || ac == typeof(object[]))
-                return 4;
-
-            if (ac == typeof(long[]) || ac == typeof(double[]))
-                return 8;
-
-            // don't change this, the Unsafe intrinsics depend on this value
-            return 1;
+            return ArrayIndexScale(TypeWrapper.FromClass(arrayClass));
         }
 
         /// <summary>
@@ -1279,6 +1287,9 @@ namespace IKVM.Java.Externs.sun.misc
             il.Emit(OpCodes.Ldarg_0);
             il.Emit(OpCodes.Ldarg_1);
             il.Emit(OpCodes.Conv_Ovf_I);
+            il.Emit(OpCodes.Ldc_I4, ArrayIndexScale(tw.MakeArrayType(1)));
+            il.Emit(OpCodes.Div);
+            il.Emit(OpCodes.Conv_Ovf_I);
             il.Emit(OpCodes.Ldelema, tw.TypeAsLocalOrStackType);
 
             if (tw.IsWidePrimitive == false)
@@ -1333,6 +1344,9 @@ namespace IKVM.Java.Externs.sun.misc
             // load reference to element
             il.Emit(OpCodes.Ldarg_0);
             il.Emit(OpCodes.Ldarg_1);
+            il.Emit(OpCodes.Conv_Ovf_I);
+            il.Emit(OpCodes.Ldc_I4, ArrayIndexScale(tw.MakeArrayType(1)));
+            il.Emit(OpCodes.Div);
             il.Emit(OpCodes.Conv_Ovf_I);
             il.Emit(OpCodes.Ldelema, tw.TypeAsLocalOrStackType);
 
@@ -1392,7 +1406,7 @@ namespace IKVM.Java.Externs.sun.misc
             switch (o)
             {
                 case object[] array when array.GetType() == typeof(object[]):
-                    return Volatile.Read(ref array[offset]);
+                    return Volatile.Read(ref array[offset / ArrayIndexScale(ClassLoaderWrapper.GetWrapperFromType(typeof(object[])))]);
                 case object[] array:
                     return GetArrayObjectVolatile(array, offset);
                 default:
@@ -1416,7 +1430,7 @@ namespace IKVM.Java.Externs.sun.misc
             switch (o)
             {
                 case object[] array when array.GetType() == typeof(object[]):
-                    Volatile.Write(ref array[offset], x);
+                    Volatile.Write(ref array[offset / ArrayIndexScale(ClassLoaderWrapper.GetWrapperFromType(typeof(object[])))], x);
                     break;
                 case object[] array:
                     PutArrayObjectVolatile(array, offset, x);
@@ -2389,7 +2403,8 @@ namespace IKVM.Java.Externs.sun.misc
             }
             finally
             {
-                h.Free();
+                if (h.IsAllocated)
+                    h.Free();
             }
         }
 

@@ -1,8 +1,5 @@
-﻿using ikvm.runtime;
-
-using IKVM.Attributes;
-
-using java.util;
+﻿using IKVM.Attributes;
+using IKVM.Runtime;
 
 namespace IKVM.Tools.Java
 {
@@ -11,7 +8,7 @@ namespace IKVM.Tools.Java
     {
 
         [HideFromJava]
-        public static int Main(string[] args) => Launcher.run(null, args, "", new Properties());
+        public static int Main(string[] args) => Launcher.Run(null, false, args, "", null);
 
     }
 
