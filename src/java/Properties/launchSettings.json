@@ -1,8 +1,0 @@
-{
-  "profiles": {
-    "java": {
-      "commandName": "Project",
-      "commandLineArgs": "-cp foo"
-    }
-  }
-}

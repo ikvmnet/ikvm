@@ -168,6 +168,7 @@ namespace IKVM.Internal
             get
             {
                 Debug.Assert(!IsUnloadable && !IsVerifierType);
+
                 if (classObject == null)
                     LazyInitClass();
 

@@ -36,6 +36,18 @@ namespace java.util
             return l;
         }
 
+        /// <summary>
+        /// Returns an enumerable that iterators over the items in an iterator.
+        /// </summary>
+        /// <typeparam name="T"></typeparam>
+        /// <param name="iterator"></param>
+        /// <returns></returns>
+        public static IEnumerable<T> RemainingToEnumerable<T>(this Iterator iterator)
+        {
+            while (iterator.hasNext())
+                yield return (T)iterator.next();
+        }
+
     }
 
 }

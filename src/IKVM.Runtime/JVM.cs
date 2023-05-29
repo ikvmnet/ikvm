@@ -30,6 +30,8 @@ using System.Security;
 using IKVM.Runtime.Accessors;
 using IKVM.Runtime.Accessors.Java.Lang;
 
+using System.Runtime.CompilerServices;
+
 #if IMPORTER || EXPORTER
 using IKVM.Reflection;
 using Type = IKVM.Reflection.Type;
@@ -44,12 +46,12 @@ using IKVM.Tools.Importer;
 namespace IKVM.Runtime
 {
 
-    static partial class JVM
+    internal static partial class JVM
     {
 
         internal const string JarClassList = "--ikvm-classes--/";
 
-#if !EXPORTER
+#if EXPORTER == false
         static int emitSymbols;
 #endif
 
@@ -58,13 +60,14 @@ namespace IKVM.Runtime
         /// </summary>
         static Assembly baseAssembly;
 
-#if !EXPORTER
+#if EXPORTER == false
         internal static bool relaxedVerification = true;
         internal static bool AllowNonVirtualCalls;
         internal static readonly bool DisableEagerClassLoading = SafeGetEnvironmentVariable("IKVM_DISABLE_EAGER_CLASS_LOADING") != null;
 #endif
 
-#if !IMPORTER && !EXPORTER && !FIRST_PASS
+
+#if FIRST_PASS == false && IMPORTER == false && EXPORTER == false
 
         readonly static object initializedLock = new object();
         static bool initialized;
@@ -92,11 +95,16 @@ namespace IKVM.Runtime
         /// </summary>
         public static object MainThreadGroup => mainThreadGroup.Value;
 
+#endif
+
         /// <summary>
         /// Ensures the JVM is initialized.
         /// </summary>
         public static void EnsureInitialized()
         {
+#if FIRST_PASS || IMPORTER || EXPORTER
+            throw new NotImplementedException();
+#else
             if (initialized == false)
             {
                 lock (initializedLock)
@@ -104,11 +112,52 @@ namespace IKVM.Runtime
                     if (initialized == false)
                     {
                         initialized = true;
+
+                        // always required
+                        RuntimeHelpers.RunClassConstructor(typeof(java.lang.String).TypeHandle);
+
+                        // initialize java_lang.System (needed before creating the thread)
+                        RuntimeHelpers.RunClassConstructor(typeof(java.lang.System).TypeHandle);
+
+                        // initialize thread groups
+                        RuntimeHelpers.RunClassConstructor(typeof(java.lang.ThreadGroup).TypeHandle);
+                        RuntimeHelpers.RunClassConstructor(typeof(java.lang.Thread).TypeHandle);
+                        GC.KeepAlive(SystemThreadGroup);
+                        GC.KeepAlive(MainThreadGroup);
+
+                        // the VM creates & returns objects of this class
+                        RuntimeHelpers.RunClassConstructor(typeof(java.lang.Class).TypeHandle);
+
+                        // the VM preresolves methods to these classes
+                        RuntimeHelpers.RunClassConstructor(typeof(java.lang.reflect.Method).TypeHandle);
+
+                        // ensure the System class is initialized
                         SystemAccessor.InvokeInitializeSystemClass();
+
+                        // should be done before System, but that fails for now
+                        RuntimeHelpers.RunClassConstructor(typeof(java.lang.@ref.Finalizer).TypeHandle);
+
+                        // initialize certain classes after System properties are available
+                        RuntimeHelpers.RunClassConstructor(typeof(java.lang.OutOfMemoryError).TypeHandle);
+                        RuntimeHelpers.RunClassConstructor(typeof(java.lang.NullPointerException).TypeHandle);
+                        RuntimeHelpers.RunClassConstructor(typeof(java.lang.ClassCastException).TypeHandle);
+                        RuntimeHelpers.RunClassConstructor(typeof(java.lang.ArrayStoreException).TypeHandle);
+                        RuntimeHelpers.RunClassConstructor(typeof(java.lang.ArithmeticException).TypeHandle);
+                        RuntimeHelpers.RunClassConstructor(typeof(java.lang.StackOverflowError).TypeHandle);
+                        RuntimeHelpers.RunClassConstructor(typeof(java.lang.IllegalMonitorStateException).TypeHandle);
+                        RuntimeHelpers.RunClassConstructor(typeof(java.lang.IllegalArgumentException).TypeHandle);
+
+                        // the static initializer of java.lang.Compiler tries to read property "java.compiler" and read & write property "java.vm.info"
+                        RuntimeHelpers.RunClassConstructor(typeof(java.lang.Compiler).TypeHandle);
+
+                        // initialize some JSR292 core classes to avoid deadlock during class loading
+                        RuntimeHelpers.RunClassConstructor(typeof(java.lang.invoke.MethodHandle).TypeHandle);
+                        RuntimeHelpers.RunClassConstructor(typeof(java.lang.invoke.MemberName).TypeHandle);
+                        RuntimeHelpers.RunClassConstructor(typeof(java.lang.invoke.MethodHandleNatives).TypeHandle);
                     }
                 }
             }
-
+#endif
         }
 
         /// <summary>
@@ -117,7 +166,11 @@ namespace IKVM.Runtime
         /// <returns></returns>
         static object MakeSystemThreadGroup()
         {
+#if FIRST_PASS || IMPORTER || EXPORTER
+            throw new NotImplementedException();
+#else
             return ThreadGroupAccessor.Init();
+#endif
         }
 
         /// <summary>
@@ -126,10 +179,12 @@ namespace IKVM.Runtime
         /// <returns></returns>
         static object MakeMainThreadGroup()
         {
+#if FIRST_PASS || IMPORTER || EXPORTER
+            throw new NotImplementedException();
+#else
             return ThreadGroupAccessor.Init(null, SystemThreadGroup, "main");
-        }
-
 #endif
+        }
 
         /// <summary>
         /// Gets an environmental variable.

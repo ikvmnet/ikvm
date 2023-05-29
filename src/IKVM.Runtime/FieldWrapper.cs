@@ -711,6 +711,7 @@ namespace IKVM.Internal
         /// <returns></returns>
         Delegate CreateUnsafeCompareAndSwapDelegate()
         {
+            ResolveField();
             var ft = FieldTypeWrapper.IsPrimitive ? FieldTypeWrapper.TypeAsSignatureType : typeof(object);
             var dm = DynamicMethodUtil.Create($"__<UnsafeCompareAndSwap>__{DeclaringType.Name.Replace(".", "_")}__{Name}", DeclaringType.TypeAsTBD, true, typeof(bool), new[] { typeof(object), ft, ft });
             var il = CodeEmitter.Create(dm);
