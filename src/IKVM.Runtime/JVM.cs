@@ -46,12 +46,12 @@ using IKVM.Tools.Importer;
 namespace IKVM.Runtime
 {
 
-    static partial class JVM
+    internal static partial class JVM
     {
 
         internal const string JarClassList = "--ikvm-classes--/";
 
-#if !EXPORTER
+#if EXPORTER == false
         static int emitSymbols;
 #endif
 
@@ -60,13 +60,14 @@ namespace IKVM.Runtime
         /// </summary>
         static Assembly baseAssembly;
 
-#if !EXPORTER
+#if EXPORTER == false
         internal static bool relaxedVerification = true;
         internal static bool AllowNonVirtualCalls;
         internal static readonly bool DisableEagerClassLoading = SafeGetEnvironmentVariable("IKVM_DISABLE_EAGER_CLASS_LOADING") != null;
 #endif
 
-#if !IMPORTER && !EXPORTER && !FIRST_PASS
+
+#if FIRST_PASS == false && IMPORTER == false && EXPORTER == false
 
         readonly static object initializedLock = new object();
         static bool initialized;
@@ -94,11 +95,16 @@ namespace IKVM.Runtime
         /// </summary>
         public static object MainThreadGroup => mainThreadGroup.Value;
 
+#endif
+
         /// <summary>
         /// Ensures the JVM is initialized.
         /// </summary>
         public static void EnsureInitialized()
         {
+#if FIRST_PASS || IMPORTER || EXPORTER
+            throw new NotImplementedException();
+#else
             if (initialized == false)
             {
                 lock (initializedLock)
@@ -151,7 +157,7 @@ namespace IKVM.Runtime
                     }
                 }
             }
-
+#endif
         }
 
         /// <summary>
@@ -160,7 +166,11 @@ namespace IKVM.Runtime
         /// <returns></returns>
         static object MakeSystemThreadGroup()
         {
+#if FIRST_PASS || IMPORTER || EXPORTER
+            throw new NotImplementedException();
+#else
             return ThreadGroupAccessor.Init();
+#endif
         }
 
         /// <summary>
@@ -169,10 +179,12 @@ namespace IKVM.Runtime
         /// <returns></returns>
         static object MakeMainThreadGroup()
         {
+#if FIRST_PASS || IMPORTER || EXPORTER
+            throw new NotImplementedException();
+#else
             return ThreadGroupAccessor.Init(null, SystemThreadGroup, "main");
-        }
-
 #endif
+        }
 
         /// <summary>
         /// Gets an environmental variable.

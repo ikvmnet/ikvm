@@ -48,6 +48,25 @@ namespace IKVM.Runtime.Accessors
         /// <returns></returns>
         protected Type Resolve(ref Type type, string typeName) => AccessorUtil.LazyGet(ref type, () => Resolve(typeName));
 
+        /// <summary>
+        /// Creates a new array of the accessed type.
+        /// </summary>
+        /// <param name="length"></param>
+        /// <returns></returns>
+        public object[] InitArray(int length) => (object[])Array.CreateInstance(Type, length);
+
+        /// <summary>
+        /// Creates a new array of the accessed type from the elements in the given array.
+        /// </summary>
+        /// <param name="source"></param>
+        /// <returns></returns>
+        public object[] InitArray(params object[] source)
+        {
+            var a = (object[])Array.CreateInstance(Type, source.Length);
+            Array.Copy(source, a, source.Length);
+            return a;
+        }
+
     }
 
     /// <summary>

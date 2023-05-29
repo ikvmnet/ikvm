@@ -6,6 +6,7 @@ using System.Linq;
 using System.Net;
 using System.Net.Sockets;
 using System.Reflection;
+using System.Runtime.ExceptionServices;
 using System.Text;
 using System.Text.Json;
 using System.Text.Json.Serialization;
@@ -13,7 +14,10 @@ using System.Threading;
 
 using IKVM.Attributes;
 using IKVM.Internal;
+using IKVM.Runtime.Accessors.Ikvm.Internal;
 using IKVM.Runtime.Accessors.Java.Lang;
+using IKVM.Runtime.Accessors.Java.Lang.Reflect;
+using IKVM.Runtime.Accessors.Sun.Launcher;
 
 namespace IKVM.Runtime
 {
@@ -22,20 +26,32 @@ namespace IKVM.Runtime
     /// Utility for launching a Java class from a main entry point. Parses JVM command line options, then passes the
     /// remainder through to the underlying Java main method.
     /// </summary>
-    static class Launcher
+    public static class Launcher
     {
 
 #if FIRST_PASS == false && IMPORTER == false && EXPORTER == false
 
+        static CallerIDAccessor callerIDAccessor;
+        static ClassAccessor classAccessor;
+        static MethodAccessor methodAccessor;
         static SystemAccessor systemAccessor;
         static ThreadAccessor threadAccessor;
         static ThreadGroupAccessor threadGroupAccessor;
+        static LauncherHelperAccessor launcherHelperAccessor;
+
+        static CallerIDAccessor CallerIDAccessor => JVM.BaseAccessors.Get(ref callerIDAccessor);
+
+        static ClassAccessor ClassAccessor => JVM.BaseAccessors.Get(ref classAccessor);
+
+        static MethodAccessor MethodAccessor => JVM.BaseAccessors.Get(ref methodAccessor);
 
         static SystemAccessor SystemAccessor => JVM.BaseAccessors.Get(ref systemAccessor);
 
         static ThreadAccessor ThreadAccessor => JVM.BaseAccessors.Get(ref threadAccessor);
 
         static ThreadGroupAccessor ThreadGroupAccessor => JVM.BaseAccessors.Get(ref threadGroupAccessor);
+
+        static LauncherHelperAccessor LauncherHelperAccessor => JVM.BaseAccessors.Get(ref launcherHelperAccessor);
 
 #endif
 
@@ -115,7 +131,7 @@ namespace IKVM.Runtime
         /// Sets the startup properties.
         /// </summary>
         /// <param name="properties"></param>
-        static void SetProperties(IDictionary<string, string> properties)
+        static void SetUserProperties(IDictionary<string, string> properties)
         {
 #if FIRST_PASS || IMPORTER
             throw new NotImplementedException();
@@ -140,9 +156,6 @@ namespace IKVM.Runtime
             {
                 try
                 {
-                    if (false)
-                        throw new InvalidOperationException();
-
                     Thread.CurrentThread.Name = "main";
                 }
                 catch (InvalidOperationException)
@@ -151,7 +164,7 @@ namespace IKVM.Runtime
                 }
             }
 
-            JVM.EnsureInitialized();
+            // first invocation of a type in the base assembly
             ThreadAccessor.InvokeCurrentThread();
 
             try
@@ -161,7 +174,7 @@ namespace IKVM.Runtime
             }
             catch (java.lang.IllegalArgumentException)
             {
-                // ignore it;
+                // ignore
             }
 #endif
         }
@@ -485,7 +498,12 @@ namespace IKVM.Runtime
                 initialize["sun.java.launcher"] = "SUN_STANDARD";
 
                 // apply the loaded VM properties
-                SetProperties(initialize);
+                SetUserProperties(initialize);
+
+                // VM initialization, configures system properties, done before any static initializers
+                JVM.EnsureInitialized();
+
+                // first entry into base assembly
                 EnterMainThread();
 
                 // we were instructed to show the version
@@ -499,23 +517,34 @@ namespace IKVM.Runtime
                     return 1;
                 }
 
+                // check that we can access the home path
+                var ikvmHome = JVM.Properties.HomePath;
+                if (Directory.Exists(ikvmHome) == false)
+                    throw new DirectoryNotFoundException("Could not locate ikvm.home.");
+
                 // process the main argument, returning the true value, and resetting the command property to match
-                var clazz = sun.launcher.LauncherHelper.checkAndLoadMain(true, jar ? 2 : 1, main);
+                var clazz = LauncherHelperAccessor.InvokeCheckAndLoadMain(true, jar ? 2 : 1, main);
                 SystemAccessor.InvokeSetProperty("sun.java.command", initialize["sun.java.command"]);
 
+                // dynamically create an array of class instances
+                var methodArgTypes = ClassAccessor.InitArray(1);
+                methodArgTypes[0] = ClassLoaderWrapper.GetWrapperFromType(typeof(string[])).ClassObject;
+
                 // find the main method and ensure it is accessible
-                var method = clazz.getMethod("main", typeof(string[]));
-                method.setAccessible(true);
+                var method = ClassAccessor.InvokeGetMethod(clazz, "main", methodArgTypes, CallerIDAccessor.InvokeCreate(typeof(Launcher).TypeHandle));
+                MethodAccessor.InvokeSetAccessible(method, true);
 
                 try
                 {
                     // invoke main method, which is responsible for exit
-                    method.invoke(null, new object[] { appArgs.ToArray() });
+                    MethodAccessor.InvokeInvoke(method, null, new[] { appArgs.ToArray() });
                     return 0;
                 }
                 catch (java.lang.reflect.InvocationTargetException e)
                 {
-                    throw e.getCause();
+                    // we want to unwrap the cause to report to the user
+                    ExceptionDispatchInfo.Capture(e.getCause()).Throw();
+                    throw null;
                 }
             }
             catch (Exception e)
