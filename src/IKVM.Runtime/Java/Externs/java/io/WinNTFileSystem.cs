@@ -136,7 +136,7 @@ namespace IKVM.Java.Externs.java.io
 #else
             try
             {
-                return CanonicalizePath(Path.GetFullPath(path));
+                return CanonicalizePath(Path.IsPathRooted(path) == false ? Path.GetFullPath(path) : path);
             }
             catch (Exception e)
             {
