@@ -138,9 +138,9 @@ namespace IKVM.Java.Externs.java.io
             {
                 return CanonicalizePath(Path.GetFullPath(path));
             }
-            catch (ArgumentException e)
+            catch (Exception e)
             {
-                throw new global::java.io.IOException(e.Message);
+                throw new global::java.io.IOException(e);
             }
 #endif
         }
