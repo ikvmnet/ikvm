@@ -26,7 +26,7 @@ namespace IKVM.Tools.Tests.Runner.Exporter
         {
             var libs = Path.Combine(TESTBASE, "lib", tfm);
 
-            var a = Path.Combine(TESTBASE, "ext", tfm, "HelloWorldDotNet.dll");
+            var a = Path.Combine(TESTBASE, "helloworld", tfm, "HelloWorldDotNet.dll");
             var p = Path.Combine(Path.GetTempPath(), Guid.NewGuid().ToString(), Path.ChangeExtension(a, ".jar"));
             Directory.CreateDirectory(Path.GetDirectoryName(p));
 

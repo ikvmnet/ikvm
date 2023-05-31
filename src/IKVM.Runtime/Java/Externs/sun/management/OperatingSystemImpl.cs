@@ -192,6 +192,11 @@ namespace IKVM.Java.Externs.sun.management
         static extern int getrlimit_x64(RLIMIT resource, ref rlimit_t_x64 info);
 
         /// <summary>
+        /// Regular expression for the Linux /proc/pid/stat file.
+        /// </summary>
+        static readonly Regex LinuxProcStatRegex = new Regex(@"^-?\d+ \(.+\) [A-Za-z] -?\d+ -?\d+ -?\d+ -?\d+ -?\d+ -?\d+ -?\d+ -?\d+ -?\d+ -?\d+ -?\d+ -?\d+ -?\d+ -?\d+ -?\d+ -?\d+ -?\d+ -?\d+ -?\d+ (-?\d+)", RegexOptions.Compiled | RegexOptions.CultureInvariant);
+
+        /// <summary>
         /// Initializes the static information.
         /// </summary>
         public static void initialize()
@@ -217,12 +222,18 @@ namespace IKVM.Java.Externs.sun.management
             {
                 try
                 {
-                    var l = File.ReadLines("/proc/self/stat").FirstOrDefault();
-                    if (l != null && Regex.Match(l, @"^\d+ \(.+\) . \d+ \d+ \d+ \d+ \d+ \d+ \d+ \d+ \d+ \d+ \d+ \d+ \d+ \d+ \d+ \d+ \d+ \d+ \d+ (\d+) .+") is Match m && m.Groups.Count >= 2)
-                        if (long.TryParse(m.Groups[1].Value, out var vsize))
-                            return vsize;
+                    using var s = File.OpenRead("/proc/self/stat");
+                    using var r = new StreamReader(s);
+
+                    var l = r.ReadLine();
+                    if (l != null && LinuxProcStatRegex.Match(l) is Match m && m.Groups.Count >= 2)
+                        return (long)ulong.Parse(m.Groups[1].Value);
 
                     throw new global::java.lang.InternalError("Unable to get virtual memory usage");
+                }
+                catch (IOException e)
+                {
+                    throw new global::java.lang.InternalError("Unable to open or read /proc/self/stat", e);
                 }
                 catch (Exception e)
                 {
@@ -404,7 +415,7 @@ namespace IKVM.Java.Externs.sun.management
             {
                 try
                 {
-                    return Directory.GetFiles("/proc/self/fd").Count();
+                    return Directory.GetFiles("/proc/self/fd").Length;
                 }
                 catch (Exception e)
                 {

@@ -19,10 +19,6 @@
     <ItemGroup>
         <ProjectReference Include="..\IKVM.Image\IKVM.Image.csproj" />
     </ItemGroup>
-
-    <ItemGroup>
-      <Folder Include="java\lang\" />
-    </ItemGroup>
     
     <Import Project="$(MSBuildThisFileDirectory)..\IKVM.NET.Sdk\Sdk\Sdk.targets" />
     <Import Project="$(MSBuildThisFileDirectory)..\IKVM\buildTransitive\netstandard2.0\IKVM.targets" />

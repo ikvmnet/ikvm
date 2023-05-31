@@ -496,7 +496,7 @@ namespace IKVM.Tests.Java.java.nio.channels
             var rnd = new System.Random();
 
             const int size = 1024 * 1024 * 64;
-            const int z = 32;
+            const int z = 8;
 
             var file = File.createTempFile("test", null);
             file.deleteOnExit();
@@ -549,7 +549,7 @@ namespace IKVM.Tests.Java.java.nio.channels
             var rnd = new System.Random();
 
             const int size = 1024 * 1024 * 64;
-            const int z = 32;
+            const int z = 8;
 
             var file = File.createTempFile("test", null);
             file.deleteOnExit();

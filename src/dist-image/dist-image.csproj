@@ -24,30 +24,33 @@
         <ImageTarget Include="netcoreapp3.1|osx-x64" TargetFramework="netcoreapp3.1" RuntimeIdentifier="osx-x64" />
     </ItemGroup>
 
+    <ItemGroup>
+        <_ContentFromProject Include="ikvm\**\*" />
+        <_ContentFromSolution Include="..\..\README.md;..\..\LICENSE.md;..\..\THIRD_PARTY_README;..\..\TRADEMARK" />
+    </ItemGroup>
+
     <!-- Runs once per TFM/RID combination to generate individual output. -->
     <Target Name="GetCopyToOutputDirectoryItemsByImageTarget" BeforeTargets="BeforeBuild" Inputs="@(ImageTarget)" Outputs="%(Identity)\null">
-        
+
         <!-- batch values to properties -->
         <PropertyGroup>
             <_TargetFramework>%(ImageTarget.TargetFramework)</_TargetFramework>
             <_RuntimeIdentifier>%(ImageTarget.RuntimeIdentifier)</_RuntimeIdentifier>
         </PropertyGroup>
-        
+
         <!-- output for the TFM/RID -->
         <ItemGroup>
 
             <!-- files directly part of this project -->
-            <_ContentFromProject Include="content\**\*" />
             <ContentWithTargetPath Include="@(_ContentFromProject)">
                 <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
-                <TargetPath>$(_TargetFramework)\$(_RuntimeIdentifier)\%(RecursiveDir)%(Filename)%(Extension)</TargetPath>
+                <TargetPath>$(_TargetFramework)\$(_RuntimeIdentifier)\%(_ContentFromProject.RecursiveDir)%(_ContentFromProject.Filename)%(_ContentFromProject.Extension)</TargetPath>
             </ContentWithTargetPath>
 
             <!-- solution level files -->
-            <_ContentFromSolution Include="..\..\README.md;..\..\LICENSE.md;..\..\THIRD_PARTY_README;..\..\TRADEMARK" />
             <ContentWithTargetPath Include="@(_ContentFromSolution)">
                 <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
-                <TargetPath>$(_TargetFramework)\$(_RuntimeIdentifier)\%(RecursiveDir)%(Filename)%(Extension)</TargetPath>
+                <TargetPath>$(_TargetFramework)\$(_RuntimeIdentifier)\%(_ContentFromSolution.RecursiveDir)%(_ContentFromSolution.Filename)%(_ContentFromSolution.Extension)</TargetPath>
             </ContentWithTargetPath>
 
             <!-- openjdk contents -->

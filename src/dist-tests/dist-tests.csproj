@@ -9,9 +9,12 @@
     <ItemGroup>
         <TestTarget Include="IKVM.ByteCode.Tests|net461" ProjectName="IKVM.ByteCode.Tests" TargetFramework="net461" />
         <TestTarget Include="IKVM.ByteCode.Tests|netcoreapp3.1" ProjectName="IKVM.ByteCode.Tests" TargetFramework="netcoreapp3.1" />
+        <TestTarget Include="IKVM.ByteCode.Tests|net6.0" ProjectName="IKVM.ByteCode.Tests" TargetFramework="net6.0" />
         <TestTarget Include="IKVM.Tests|net461" ProjectName="IKVM.Tests" TargetFramework="net461" />
         <TestTarget Include="IKVM.Tests|netcoreapp3.1" ProjectName="IKVM.Tests" TargetFramework="netcoreapp3.1" />
         <TestTarget Include="IKVM.Tests|net6.0" ProjectName="IKVM.Tests" TargetFramework="net6.0" />
+        <TestTarget Include="IKVM.Tests.Java|net461" ProjectName="IKVM.Tests.Java" TargetFramework="net461" />
+        <TestTarget Include="IKVM.Tests.Java|netcoreapp3.1" ProjectName="IKVM.Tests.Java" TargetFramework="netcoreapp3.1" />
         <TestTarget Include="IKVM.Tools.Tests|net461" ProjectName="IKVM.Tools.Tests" TargetFramework="net461" />
         <TestTarget Include="IKVM.Tools.Tests|netcoreapp3.1" ProjectName="IKVM.Tools.Tests" TargetFramework="netcoreapp3.1" />
         <TestTarget Include="IKVM.Tools.Tests|net6.0" ProjectName="IKVM.Tools.Tests" TargetFramework="net6.0" />

@@ -14,7 +14,6 @@ namespace IKVM.Runtime.Accessors.Java.Lang
         Type javaLangVoid;
         Type javaLangThreadGroup;
         Type javaLangThread;
-        Type javaLangThrowable;
 
         MethodAccessor<Func<object, object, string, object>> init1;
         MethodAccessor<Func<object, string, object>> init2;
