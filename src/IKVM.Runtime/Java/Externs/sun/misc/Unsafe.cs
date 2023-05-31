@@ -196,7 +196,7 @@ namespace IKVM.Java.Externs.sun.misc
 #else
             return o switch
             {
-                object[] array => array[offset / ArrayIndexScale(ClassLoaderWrapper.GetWrapperFromType(typeof(object[])))],
+                object[] array => array[offset / IntPtr.Size],
                 _ => GetField<object>(o, offset)
             };
 #endif
@@ -217,7 +217,7 @@ namespace IKVM.Java.Externs.sun.misc
             switch (o)
             {
                 case object[] array:
-                    array[offset / ArrayIndexScale(ClassLoaderWrapper.GetWrapperFromType(typeof(object[])))] = x;
+                    array[offset / IntPtr.Size] = x;
                     break;
                 default:
                     PutField(o, offset, x);
@@ -1406,7 +1406,7 @@ namespace IKVM.Java.Externs.sun.misc
             switch (o)
             {
                 case object[] array when array.GetType() == typeof(object[]):
-                    return Volatile.Read(ref array[offset / ArrayIndexScale(ClassLoaderWrapper.GetWrapperFromType(typeof(object[])))]);
+                    return Volatile.Read(ref array[offset / IntPtr.Size]);
                 case object[] array:
                     return GetArrayObjectVolatile(array, offset);
                 default:
@@ -1430,7 +1430,7 @@ namespace IKVM.Java.Externs.sun.misc
             switch (o)
             {
                 case object[] array when array.GetType() == typeof(object[]):
-                    Volatile.Write(ref array[offset / ArrayIndexScale(ClassLoaderWrapper.GetWrapperFromType(typeof(object[])))], x);
+                    Volatile.Write(ref array[offset / IntPtr.Size], x);
                     break;
                 case object[] array:
                     PutArrayObjectVolatile(array, offset, x);
@@ -1847,7 +1847,7 @@ namespace IKVM.Java.Externs.sun.misc
         static object CompareAndSwapArray<T>(T[] o, long offset, T value, T comparand)
             where T : class
         {
-            return Interlocked.CompareExchange<T>(ref o[offset], value, comparand);
+            return Interlocked.CompareExchange<T>(ref o[offset / ArrayIndexScale(ClassLoaderWrapper.GetWrapperFromType(o.GetType()))], value, comparand);
         }
 
         /// <summary>
@@ -1893,7 +1893,7 @@ namespace IKVM.Java.Externs.sun.misc
 #else
             return o switch
             {
-                object[] array when array.GetType() == typeof(object[]) => Interlocked.CompareExchange(ref array[offset], x, expected) == expected,
+                object[] array when array.GetType() == typeof(object[]) => Interlocked.CompareExchange(ref array[offset / IntPtr.Size], x, expected) == expected,
                 object[] array => CompareAndSwapObjectArray(array, offset, x, expected) == expected,
                 _ => CompareAndSwapField(o, offset, expected, x)
             };
@@ -1968,30 +1968,91 @@ namespace IKVM.Java.Externs.sun.misc
 #endif
         }
 
+        const int PARK_STATE_RUNNING = 0;
+        const int PARK_STATE_PERMIT = 1;
+        const int PARK_STATE_PARKED = 2;
+
+        /// <summary>
+        /// Implements the native method 'unpark'.
+        /// </summary>
+        /// <param name="self"></param>
+        /// <param name="thread"></param>
         public static void unpark(object self, object thread)
         {
 #if FIRST_PASS
             throw new NotImplementedException();
 #else
-            global::java.util.concurrent.locks.LockSupport.unpark((global::java.lang.Thread)thread);
+            var currentThread = (global::java.lang.Thread)thread;
+            if (currentThread == null)
+                throw new global::java.lang.IllegalStateException();
+
+            if (currentThread != null)
+            {
+                if (Interlocked.CompareExchange(ref currentThread.parkState, PARK_STATE_PERMIT, PARK_STATE_RUNNING) == PARK_STATE_PARKED)
+                {
+                    if (Interlocked.CompareExchange(ref currentThread.parkState, PARK_STATE_RUNNING, PARK_STATE_PARKED) == PARK_STATE_PARKED)
+                    {
+                        // initialize lock
+                        Interlocked.CompareExchange(ref currentThread.parkLock, new global::java.lang.Object(), null);
+
+                        // thread is currently blocking, so we have to release it
+                        lock (currentThread.parkLock)
+                            Monitor.Pulse(currentThread.parkLock);
+                    }
+                }
+            }
 #endif
         }
 
+        /// <summary>
+        /// Implements the native method 'park'.
+        /// </summary>
+        /// <param name="self"></param>
+        /// <param name="isAbsolute"></param>
+        /// <param name="time"></param>
         public static void park(object self, bool isAbsolute, long time)
         {
 #if FIRST_PASS
             throw new NotImplementedException();
 #else
-            if (isAbsolute)
-            {
-                global::java.util.concurrent.locks.LockSupport.parkUntil(time);
-            }
-            else
-            {
-                if (time == 0)
-                    time = global::java.lang.Long.MAX_VALUE;
+            var currentThread = global::java.lang.Thread.currentThread();
+            if (currentThread == null)
+                throw new global::java.lang.IllegalStateException();
 
-                global::java.util.concurrent.locks.LockSupport.parkNanos(time);
+            if (Interlocked.CompareExchange(ref currentThread.parkState, PARK_STATE_RUNNING, PARK_STATE_PERMIT) == PARK_STATE_PERMIT)
+                return;
+
+            // initialize lock
+            Interlocked.CompareExchange(ref currentThread.parkLock, new global::java.lang.Object(), null);
+
+            // lock thread
+            lock (currentThread.parkLock)
+            {
+                if (Interlocked.CompareExchange(ref currentThread.parkState, PARK_STATE_PARKED, PARK_STATE_RUNNING) == PARK_STATE_PERMIT)
+                {
+                    Interlocked.CompareExchange(ref currentThread.parkState, PARK_STATE_RUNNING, PARK_STATE_PERMIT);
+                    return;
+                }
+
+                if (isAbsolute)
+                {
+                    time *= 1000000;
+                    time -= global::java.lang.System.currentTimeMillis() * 1000000;
+                }
+
+                if (time >= 0)
+                {
+                    try
+                    {
+                        ((global::java.lang.Object)currentThread.parkLock).wait(time / 1000000, (int)(time % 1000000));
+                    }
+                    catch (global::java.lang.InterruptedException _)
+                    {
+                        currentThread.interrupt();
+                    }
+                }
+
+                Interlocked.CompareExchange(ref currentThread.parkState, PARK_STATE_RUNNING, PARK_STATE_PARKED);
             }
 #endif
         }

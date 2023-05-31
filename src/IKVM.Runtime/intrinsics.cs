@@ -41,6 +41,7 @@ using System.Reflection.Emit;
 using Instruction = IKVM.Internal.ClassFile.Method.Instruction;
 using InstructionFlags = IKVM.Internal.ClassFile.Method.InstructionFlags;
 using System.Runtime.InteropServices;
+using System.Runtime.CompilerServices;
 
 namespace IKVM.Internal
 {

@@ -282,6 +282,7 @@ jobs:
         run:
         - IKVM.ByteCode.Tests
         - IKVM.Tests
+        - IKVM.Tests.Java
         - IKVM.Tools.Importer.Tests
         - IKVM.Tools.Exporter.Tests
         - IKVM.Tools.Tests
@@ -304,6 +305,8 @@ jobs:
         exclude:
         - tfm: net461
           sys: linux
+        - run: IKVM.Tests.Java
+          tfm: net6.0
         - run: IKVM.Tools.Exporter.Tests
           tfm: net6.0
         - run: IKVM.Tools.Importer.Tests
