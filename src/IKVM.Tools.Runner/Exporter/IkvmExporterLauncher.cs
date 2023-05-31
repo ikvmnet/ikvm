@@ -122,9 +122,9 @@ namespace IKVM.Tools.Runner.Exporter
                 if (File.Exists(exe) == false)
                     throw new FileNotFoundException($"Could not locate tool at '{exe}'.");
 
-                // if we're running on Linux, we might need to set the execute bit on the file,
+                // if we're running on Unix, we might need to set the execute bit on the file,
                 // since the NuGet package is built on Windows
-                if (RuntimeInformation.IsOSPlatform(OSPlatform.Linux))
+                if (RuntimeInformation.IsOSPlatform(OSPlatform.Linux) || RuntimeInformation.IsOSPlatform(OSPlatform.OSX))
                 {
                     try
                     {
