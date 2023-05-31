@@ -460,7 +460,7 @@ namespace IKVM.Java.Externs.sun.nio.ch
                             throw new global::java.io.IOException(e);
                         }
                     }
-                    else if (RuntimeUtil.IsLinux)
+                    else if (RuntimeUtil.IsLinux || RuntimeUtil.IsOSX)
                     {
                         while (true)
                         {
@@ -615,7 +615,7 @@ namespace IKVM.Java.Externs.sun.nio.ch
 
                         return fli;
                     }
-                    else if (RuntimeUtil.IsLinux)
+                    else if (RuntimeUtil.IsLinux || RuntimeUtil.IsOSX)
                     {
                         var fl = new Flock();
                         fl.l_whence = SeekFlags.SEEK_SET;
@@ -714,6 +714,18 @@ namespace IKVM.Java.Externs.sun.nio.ch
                     {
                         return;
                     }
+                }
+                else if (RuntimeUtil.IsLinux || RuntimeUtil.IsOSX)
+                {
+                    var fl = new Flock();
+                    fl.l_whence = SeekFlags.SEEK_SET;
+                    fl.l_len = size == long.MaxValue ? 0 : size;
+                    fl.l_start = pos;
+                    fl.l_type = LockType.F_UNLCK;
+
+                    var r = Syscall.fcntl((int)fs.SafeFileHandle.DangerousGetHandle(), FcntlCommand.F_SETLK, ref fl);
+                    if (r == -1)
+                        UnixMarshal.ThrowExceptionForLastErrorIf(r);
                 }
                 else
                 {
