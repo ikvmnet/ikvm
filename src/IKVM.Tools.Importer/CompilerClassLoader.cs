@@ -484,16 +484,11 @@ namespace IKVM.Tools.Importer
                 throw new ArgumentNullException(nameof(properties));
 
             // global main method decorated with appropriate apartment type
-            var mainMethodProxy = GetTypeWrapperFactory().ModuleBuilder.DefineGlobalMethod("Main", MethodAttributes.Public | MethodAttributes.Static, Types.Int32, new Type[] { Types.String.MakeArrayType() });
+            var mainMethodProxy = GetTypeWrapperFactory().ModuleBuilder.DefineGlobalMethod("Main", MethodAttributes.Public | MethodAttributes.Static, Types.Int32, new[] { Types.String.MakeArrayType() });
             if (apartmentAttributeType != null)
-                mainMethodProxy.SetCustomAttribute(new CustomAttributeBuilder(apartmentAttributeType.GetConstructor(Type.EmptyTypes), new object[0]));
+                mainMethodProxy.SetCustomAttribute(new CustomAttributeBuilder(apartmentAttributeType.GetConstructor(Type.EmptyTypes), Array.Empty<object>()));
 
             var ilgen = CodeEmitter.Create(mainMethodProxy);
-            var environmentType = JVM.Import(typeof(Environment));
-            var environmentExpandMethod = environmentType.GetMethod(nameof(Environment.ExpandEnvironmentVariables), new[] { Types.String });
-            var dictionaryType = JVM.Import(typeof(Dictionary<,>).MakeGenericType(typeof(string), typeof(string)));
-            var dictionaryAddMethod = dictionaryType.GetMethod("Add", new Type[] { Types.String, Types.String });
-            var launchMethod = StaticCompiler.GetRuntimeType("IKVM.Runtime.Launcher").GetMethod("Run");
 
             // first argument to Launch (type name)
             ilgen.Emit(OpCodes.Ldstr, type.Name);
@@ -507,9 +502,14 @@ namespace IKVM.Tools.Importer
             // fourth argument, runtime prefix
             ilgen.Emit(OpCodes.Ldstr, DEFAULT_RUNTIME_ARGS_PREFIX);
 
-            // fifth argument, property set to initialize JVM with
+            // fifth argument, property set to initialize JVM
             if (properties.Count > 0)
             {
+                var environmentType = JVM.Import(typeof(Environment));
+                var environmentExpandMethod = environmentType.GetMethod(nameof(Environment.ExpandEnvironmentVariables), new[] { Types.String });
+                var dictionaryType = JVM.Import(typeof(Dictionary<string, string>));
+                var dictionaryAddMethod = dictionaryType.GetMethod("Add", new[] { Types.String, Types.String });
+
                 ilgen.EmitLdc_I4(properties.Count);
                 ilgen.Emit(OpCodes.Newobj, dictionaryType.GetConstructor(new[] { Types.Int32 }));
 
@@ -533,6 +533,7 @@ namespace IKVM.Tools.Importer
             }
 
             // invoke the launcher main method
+            var launchMethod = StaticCompiler.GetRuntimeType("IKVM.Runtime.Launcher").GetMethod("Run");
             ilgen.Emit(OpCodes.Call, launchMethod);
             ilgen.Emit(OpCodes.Ret);
 
@@ -3071,7 +3072,7 @@ namespace IKVM.Tools.Importer
                     throw new FatalCompilerErrorException(Message.ClassLoaderConstructorMissing);
 
                 // apply custom attribute specifying custom class loader
-                var ci = JVM.LoadType(typeof(CustomAssemblyClassLoaderAttribute)).GetConstructor(BindingFlags.Instance | BindingFlags.Public | BindingFlags.NonPublic, null, new [] { Types.Type }, null);
+                var ci = JVM.LoadType(typeof(CustomAssemblyClassLoaderAttribute)).GetConstructor(BindingFlags.Instance | BindingFlags.Public | BindingFlags.NonPublic, null, new[] { Types.Type }, null);
                 assemblyBuilder.SetCustomAttribute(new CustomAttributeBuilder(ci, new object[] { classLoaderType.TypeAsTBD }));
 
                 // the class loader type defines a module initialize method, ensure we call it upon module load
