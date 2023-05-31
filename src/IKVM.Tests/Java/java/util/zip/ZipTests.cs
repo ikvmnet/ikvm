@@ -12,7 +12,6 @@ namespace IKVM.Tests.Java.java.util.zip
         [TestMethod]
         public void TotalInOut()
         {
-
             const int BUF_SIZE = 1 * 1024 * 1024;
             long dataSize = 128L * 1024L * 1024L;      // 128MB
 
