@@ -41,7 +41,8 @@
         <PropertyGroup>
             <_ProjectName>%(TestTarget.ProjectName)</_ProjectName>
             <_ProjectFile>%(TestTarget.ProjectFile)</_ProjectFile>
-            <_ProjectFile Condition=" '$(_ProjectFile)' == '' ">..\$(_ProjectName)\$(_ProjectName).csproj</_ProjectFile>
+            <_ProjectFile Condition=" '$(_ProjectFile)' == '' And Exists('..\$(_ProjectName)\$(_ProjectName).csproj') ">..\$(_ProjectName)\$(_ProjectName).csproj</_ProjectFile>
+            <_ProjectFile Condition=" '$(_ProjectFile)' == '' And Exists('..\$(_ProjectName)\$(_ProjectName).msbuildproj') ">..\$(_ProjectName)\$(_ProjectName).msbuildproj</_ProjectFile>
             <_TargetFramework>%(TestTarget.TargetFramework)</_TargetFramework>
         </PropertyGroup>
 
