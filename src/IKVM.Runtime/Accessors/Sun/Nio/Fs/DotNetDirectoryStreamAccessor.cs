@@ -29,7 +29,6 @@ namespace IKVM.Runtime.Accessors.Sun.Nio.Fs
 
         Type SunNioFsDotNetPath => Resolve(ref sunNioFsDotNetPath, "sun.nio.fs.DotNetPath");
 
-
         Type JavaNioFileDirectoryStreamFilter => Resolve(ref javaNioFileDirectoryStreamFilter, "java.nio.file.DirectoryStream+Filter");
 
         /// <summary>

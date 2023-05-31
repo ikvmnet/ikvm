@@ -88,7 +88,7 @@ IKVM includes build-time support for translating Java libraries to .NET assembli
 </ItemGroup>
 
 <ItemGroup>
-  <IkvmReference Include="..\..\ext\helloworld-2.0.jar" />
+  <IkvmReference Include="..\..\ext\helloworld\helloworld-2.0.jar" />
 </ItemGroup>
 ```
 
@@ -98,7 +98,7 @@ The output assembly will be generated as part of your project's build process an
 
 ```xml
 <ItemGroup>
-   <IkvmReference Include="..\..\ext\helloworld-2.0.jar">
+   <IkvmReference Include="..\..\ext\helloworld\helloworld-2.0.jar">
       <AssemblyName>MyAssembly</AssemblyName>
       <AssemblyVersion>3.2.1.0</AssemblyVersion>
       <AssemblyFileVersion>3.0.0.0</AssemblyFileVersion>
@@ -177,6 +177,8 @@ See the [ikvm-maven Readme](https://github.com/ikvmnet/ikvm-maven#readme) for us
 The IKVM project recommends that people do not redistribute FOSS Java libraries compiled with IKVM over public systems such as NuGet.org, unless you are the original owner of that software and have a compelling reason.
 
 Creating copies of FOSS Java libraries and publishing them to distribution mechanisms such as NuGet.org creates eco-system confusion and dependency conflicts downstream. We provide a system so that .NET users of Java libraries can reference those libraries directly out of the standard Java ecosystem mechanisms: Maven Central, etc though IKVM.Maven. Remember, very few libraries exist in a vacuum. Libraries often depend on dozens of other libraries. Two unrelated Java libraries often depend on the same underlying Java library. A complex method of dependency conflict resolution and version unification has to be involved in resolving this hierarchy for any individual downstream project. You are likely going to be introducing duplicate classes into the users of your versions, or causing your users to depend upon the wrong version of other libraries.
+
+In addition to the above, we presently do not guarentee that API between statically compiled assemblies and the IKVM.Java and IKVM.Runtime libraries remains stable. A statically compiled assembly built against one version of IKVM is not guarenteed to run against a higher version of IKVM, even at the patch level. We would like to advertise better support for this in the future, but at present there is a lot of work planned for the IKVM.Runtime and IKVM.Java APIs that we don't want to inhibit. Since we also provide build tools to make the process of recompiling assemblies from the build machine easy, if recommendations are followed, this should be of limited impact.
 
 There are exceptions to this advice, such as the library not being published to Maven. In that case, guidance would be to advocate that the original Java library in fact be published to Maven, or do the work yourself, as that is the appropriate place for Java libraries.
 

@@ -38,7 +38,7 @@ import java.util.concurrent.TimeUnit;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Date;
-import java.util.concurrent.atomic.AtomicReferenceFieldUpdater;
+import sun.misc.Unsafe;
 
 /**
  * Provides a framework for implementing blocking locks and related
@@ -378,7 +378,6 @@ public abstract class AbstractQueuedSynchronizer
      * on the design of this class.
      */
     static final class Node {
-        static final AtomicReferenceFieldUpdater<Node, Node> nextUpdater = AtomicReferenceFieldUpdater.newUpdater(Node.class, Node.class, "next");
         /** Marker to indicate a node is waiting in shared mode */
         static final Node SHARED = new Node();
         /** Marker to indicate a node is waiting in exclusive mode */
@@ -544,7 +543,7 @@ public abstract class AbstractQueuedSynchronizer
 
     /**
      * Sets the value of synchronization state.
-     * This operation has memory semantics of a {@code volatile} read.
+     * This operation has memory semantics of a {@code volatile} write.
      * @param newState the new state value
      */
     protected final void setState(int newState) {
@@ -562,7 +561,10 @@ public abstract class AbstractQueuedSynchronizer
      * @return {@code true} if successful. False return indicates that the actual
      *         value was not equal to the expected value.
      */
-    protected final native boolean compareAndSetState(int expect, int update); // implemented in map.xml
+    protected final boolean compareAndSetState(int expect, int update) {
+        // See below for intrinsics setup to support this
+        return unsafe.compareAndSwapInt(this, stateOffset, expect, update);
+    }
 
     // Queuing utilities
 
@@ -661,7 +663,7 @@ public abstract class AbstractQueuedSynchronizer
     }
 
     /**
-     * Release action for shared mode -- signals successor and ensure
+     * Release action for shared mode -- signals successor and ensures
      * propagation. (Note: For exclusive mode, release just amounts
      * to calling unparkSuccessor of head if it needs signal.)
      */
@@ -2247,39 +2249,67 @@ public abstract class AbstractQueuedSynchronizer
     }
 
     /**
-     * IKVM specific. We use AtomicReferenceFieldUpdater instead of Unsafe primitives.
+     * Setup to support compareAndSet. We need to natively implement
+     * this here: For the sake of permitting future enhancements, we
+     * cannot explicitly subclass AtomicInteger, which would be
+     * efficient and useful otherwise. So, as the lesser of evils, we
+     * natively implement using hotspot intrinsics API. And while we
+     * are at it, we do the same for other CASable fields (which could
+     * otherwise be done with atomic field updaters).
      */
-    private static final AtomicReferenceFieldUpdater<AbstractQueuedSynchronizer, Node> headUpdater = 
-        AtomicReferenceFieldUpdater.newUpdater(AbstractQueuedSynchronizer.class, Node.class, "head");
-    private static final AtomicReferenceFieldUpdater<AbstractQueuedSynchronizer, Node> tailUpdater = 
-        AtomicReferenceFieldUpdater.newUpdater(AbstractQueuedSynchronizer.class, Node.class, "tail");
+    private static final Unsafe unsafe = Unsafe.getUnsafe();
+    private static final long stateOffset;
+    private static final long headOffset;
+    private static final long tailOffset;
+    private static final long waitStatusOffset;
+    private static final long nextOffset;
+
+    static {
+        try {
+            stateOffset = unsafe.objectFieldOffset
+                (AbstractQueuedSynchronizer.class.getDeclaredField("state"));
+            headOffset = unsafe.objectFieldOffset
+                (AbstractQueuedSynchronizer.class.getDeclaredField("head"));
+            tailOffset = unsafe.objectFieldOffset
+                (AbstractQueuedSynchronizer.class.getDeclaredField("tail"));
+            waitStatusOffset = unsafe.objectFieldOffset
+                (Node.class.getDeclaredField("waitStatus"));
+            nextOffset = unsafe.objectFieldOffset
+                (Node.class.getDeclaredField("next"));
+
+        } catch (Exception ex) { throw new Error(ex); }
+    }
 
     /**
      * CAS head field. Used only by enq.
      */
     private final boolean compareAndSetHead(Node update) {
-        return headUpdater.compareAndSet(this, null, update);
+        return unsafe.compareAndSwapObject(this, headOffset, null, update);
     }
 
     /**
      * CAS tail field. Used only by enq.
      */
     private final boolean compareAndSetTail(Node expect, Node update) {
-        return tailUpdater.compareAndSet(this, expect, update);
+        return unsafe.compareAndSwapObject(this, tailOffset, expect, update);
     }
 
     /**
      * CAS waitStatus field of a node.
      */
-    private static final native boolean compareAndSetWaitStatus(Node node,
+    private static final boolean compareAndSetWaitStatus(Node node,
                                                          int expect,
-                                                         int update); // implemented in map.xml
+                                                         int update) {
+        return unsafe.compareAndSwapInt(node, waitStatusOffset,
+                                        expect, update);
+    }
+
     /**
      * CAS next field of a node.
      */
     private static final boolean compareAndSetNext(Node node,
                                                    Node expect,
                                                    Node update) {
-        return Node.nextUpdater.compareAndSet(node, expect, update);
+        return unsafe.compareAndSwapObject(node, nextOffset, expect, update);
     }
 }
