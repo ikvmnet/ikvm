@@ -3,6 +3,7 @@
     <ItemGroup>
         <PackageReference Include="Mono.Unix" Version="7.1.0-final.1.21458.1" GeneratePathProperty="true" />
         <PackageReference Include="Mono.Posix" Version="7.1.0-final.1.21458.1" GeneratePathProperty="true" />
+        <PackageReference Include="System.IO.Pipelines" Version="6.0.3" />
         <PackageReference Include="System.Memory" Version="4.5.5" />
     </ItemGroup>
 
@@ -11,7 +12,6 @@
         <Reference Include="System.IO.Compression" />
         <Reference Include="System.Security" />
         <PackageReference Include="System.Buffers" Version="4.5.1" />
-        <PackageReference Include="System.IO.Pipelines" Version="6.0.3" />
         <PackageReference Include="System.Runtime.CompilerServices.Unsafe" Version="6.0.0" />
         <PackageReference Include="System.Runtime.InteropServices.RuntimeInformation" Version="4.3.0" />
         <PackageReference Include="System.ValueTuple" Version="4.5.0" />
@@ -26,7 +26,6 @@
         <PackageReference Include="System.Data.Odbc" Version="6.0.0" />
         <PackageReference Include="System.IO.Compression" Version="4.3.0" />
         <PackageReference Include="System.IO.FileSystem.AccessControl" Version="5.0.0" />
-        <PackageReference Include="System.IO.Pipelines" Version="6.0.3" />
         <PackageReference Include="System.Runtime" Version="4.3.1" />
         <PackageReference Include="System.Runtime.InteropServices" Version="4.3.0" />
         <PackageReference Include="System.Runtime.Loader" Version="4.3.0" />
