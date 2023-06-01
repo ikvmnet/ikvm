@@ -791,6 +791,27 @@ end:
     return ret;
 }
 
+JNIEXPORT void JNICALL Java_ikvm_tests_jni_JniTests_canPassShortToCallback(JNIEnv* env, jobject self, jobject cb, jshort value)
+{
+    jclass cls = (*env)->GetObjectClass(env, cb);
+    jmethodID mth = (*env)->GetMethodID(env, cls, "Cb", "(S)V");
+    (*env)->CallVoidMethod(env, cb, mth, value);
+}
+
+JNIEXPORT void JNICALL Java_ikvm_tests_jni_JniTests_canPassIntToCallback(JNIEnv* env, jobject self, jobject cb, jint value)
+{
+    jclass cls = (*env)->GetObjectClass(env, cb);
+    jmethodID mth = (*env)->GetMethodID(env, cls, "Cb", "(I)V");
+    (*env)->CallVoidMethod(env, cb, mth, value);
+}
+
+JNIEXPORT void JNICALL Java_ikvm_tests_jni_JniTests_canPassLongToCallback(JNIEnv* env, jobject self, jobject cb, jlong value)
+{
+    jclass cls = (*env)->GetObjectClass(env, cb);
+    jmethodID mth = (*env)->GetMethodID(env, cls, "Cb", "(J)V");
+    (*env)->CallVoidMethod(env, cb, mth, value);
+}
+
 JNIEXPORT jint JNICALL JNI_OnLoad(JavaVM* vm, void* reserved)
 {
     return JNI_VERSION_1_8;

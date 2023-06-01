@@ -1,4 +1,5 @@
-﻿using System.IO;
+﻿using System;
+using System.IO;
 
 using FluentAssertions;
 
@@ -335,6 +336,66 @@ namespace IKVM.Tests.JNI
         {
             var o = new object();
             ((object)test.newWeakGlobalRef(o)).Should().BeSameAs(o);
+        }
+
+        class ShortCallbackObject
+        {
+
+            readonly Action<short> cb;
+
+            public ShortCallbackObject(Action<short> cb) => this.cb = cb;
+
+            public void Cb(short value) => cb(value);
+
+        }
+
+        [TestMethod]
+        public void CanPassShortToCallback()
+        {
+            short l = 0;
+            var cb = new ShortCallbackObject(v => l = v);
+            test.canPassShortToCallback(cb, (short)7631);
+            l.Should().Be(7631);
+        }
+
+        class IntCallbackObject
+        {
+
+            readonly Action<int> cb;
+
+            public IntCallbackObject(Action<int> cb) => this.cb = cb;
+
+            public void Cb(int value) => cb(value);
+
+        }
+
+        [TestMethod]
+        public void CanPassIntToCallback()
+        {
+            int l = 0;
+            var cb = new IntCallbackObject(v => l = v);
+            test.canPassIntToCallback(cb, 39876542);
+            l.Should().Be(39876542);
+        }
+
+        class LongCallbackObject
+        {
+
+            readonly Action<long> cb;
+
+            public LongCallbackObject(Action<long> cb) => this.cb = cb;
+
+            public void Cb(long value) => cb(value);
+
+        }
+
+        [TestMethod]
+        public void CanPassLongToCallback()
+        {
+            long l = 0;
+            var cb = new LongCallbackObject(v => l = v);
+            test.canPassLongToCallback(cb, 398765412122321);
+            l.Should().Be(398765412122321);
         }
 
     }
