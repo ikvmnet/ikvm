@@ -431,7 +431,7 @@ jobs:
         }
 
         # scan for test assemblies
-        $tests = $(gci .\tests\$tst\$tfm -Recurse -Filter '*.Tests.dll')
+        $tests = $(gci .\tests\$tst\$tfm -Recurse -Filter '*Tests*.dll')
 
         # if a query was specified, add to test command
         if ($tests) {
