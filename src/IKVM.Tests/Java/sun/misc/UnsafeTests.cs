@@ -1395,14 +1395,16 @@ namespace IKVM.Tests.Java.sun.misc
             var a = new object[4];
             for (int i = 0; i < 4; i++)
             {
+                var of = i * u.arrayIndexScale(typeof(object[]));
+
                 var o1 = new object();
                 var o2 = new object();
 
-                u.compareAndSwapObject(a, i, null, o1).Should().BeTrue();
+                u.compareAndSwapObject(a, of, null, o1).Should().BeTrue();
                 a[i].Should().BeSameAs(o1);
-                u.compareAndSwapObject(a, i, o1, o2).Should().BeTrue();
+                u.compareAndSwapObject(a, of, o1, o2).Should().BeTrue();
                 a[i].Should().BeSameAs(o2);
-                u.compareAndSwapObject(a, i, o1, o2).Should().BeFalse();
+                u.compareAndSwapObject(a, of, o1, o2).Should().BeFalse();
                 a[i].Should().BeSameAs(o2);
             }
         }
@@ -1413,14 +1415,16 @@ namespace IKVM.Tests.Java.sun.misc
             var a = new string[4];
             for (int i = 0; i < 4; i++)
             {
+                var of = i * u.arrayIndexScale(typeof(string[]));
+
                 var o1 = "TEST1";
                 var o2 = "TEST2";
 
-                u.compareAndSwapObject(a, i, null, o1).Should().BeTrue();
+                u.compareAndSwapObject(a, of, null, o1).Should().BeTrue();
                 a[i].Should().BeSameAs(o1);
-                u.compareAndSwapObject(a, i, o1, o2).Should().BeTrue();
+                u.compareAndSwapObject(a, of, o1, o2).Should().BeTrue();
                 a[i].Should().BeSameAs(o2);
-                u.compareAndSwapObject(a, i, o1, o2).Should().BeFalse();
+                u.compareAndSwapObject(a, of, o1, o2).Should().BeFalse();
                 a[i].Should().BeSameAs(o2);
             }
         }
