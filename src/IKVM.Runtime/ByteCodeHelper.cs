@@ -1066,11 +1066,11 @@ namespace IKVM.Runtime
 #else
             try
             {
-                return (T)global::java.lang.Enum.valueOf(global::ikvm.@internal.ClassLiteral<T>.Value, name);
+                return (T)global::java.lang.Enum.valueOf((global::java.lang.Class)ClassLiteral<T>.Value, name);
             }
             catch (global::java.lang.IllegalArgumentException)
             {
-                throw new global::java.lang.NoSuchFieldError(global::ikvm.@internal.ClassLiteral<T>.Value.getName() + "." + name);
+                throw new global::java.lang.NoSuchFieldError(((global::java.lang.Class)ClassLiteral<T>.Value).getName() + "." + name);
             }
 #endif
         }
@@ -1143,7 +1143,7 @@ namespace IKVM.Runtime
                 // if realType is set, the delegate contains erased unloadable types
                 if (realType != null)
                 {
-                    adapter = adapter.asType(realType.insertParameterTypes(0, global::ikvm.@internal.ClassLiteral<global::java.lang.invoke.MethodHandle>.Value)).asFixedArity();
+                    adapter = adapter.asType(realType.insertParameterTypes(0, (global::java.lang.Class)ClassLiteral<global::java.lang.invoke.MethodHandle>.Value)).asFixedArity();
                 }
                 adapter = adapter.asType(MethodHandleUtil.GetDelegateMethodType(typeof(T)));
                 del = GetDelegateForInvokeExact<T>(adapter);

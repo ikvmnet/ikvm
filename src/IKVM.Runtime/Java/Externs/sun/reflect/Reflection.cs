@@ -29,6 +29,7 @@ using System.Runtime.CompilerServices;
 
 using IKVM.Attributes;
 using IKVM.Internal;
+using IKVM.Runtime;
 
 namespace IKVM.Java.Externs.sun.reflect
 {
@@ -97,7 +98,7 @@ namespace IKVM.Java.Externs.sun.reflect
             throw new NotImplementedException();
 #else
             if (realFramesToSkip <= 0)
-                return global::ikvm.@internal.ClassLiteral<global::sun.reflect.Reflection>.Value;
+                return (global::java.lang.Class)ClassLiteral<global::sun.reflect.Reflection>.Value;
 
             for (int i = 2; ;)
             {
