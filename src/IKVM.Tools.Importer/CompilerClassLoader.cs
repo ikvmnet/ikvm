@@ -2556,18 +2556,16 @@ namespace IKVM.Tools.Importer
                 }
                 compiler.CompilePass1();
             }
+
             foreach (CompilerClassLoader compiler in compilers)
             {
                 compiler.CompilePass2();
             }
+
             if (compilingCoreAssembly)
-            {
-                RuntimeHelperTypes.Create(compilers[0]);
                 foreach (CompilerClassLoader compiler in compilers)
-                {
                     compiler.EmitRemappedTypes2ndPass();
-                }
-            }
+
             foreach (CompilerClassLoader compiler in compilers)
             {
                 int rc = compiler.CompilePass3();
@@ -2576,6 +2574,7 @@ namespace IKVM.Tools.Importer
                     return rc;
                 }
             }
+
             Tracer.Info(Tracer.Compiler, "CompilerClassLoader.Save...");
             foreach (CompilerClassLoader compiler in compilers)
             {

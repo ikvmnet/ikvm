@@ -282,7 +282,7 @@ jobs:
         run:
         - IKVM.ByteCode.Tests
         - IKVM.Tests
-        - IKVM.Tests.Java
+        - IKVM.Java.Tests
         - IKVM.Tools.Importer.Tests
         - IKVM.Tools.Exporter.Tests
         - IKVM.Tools.Tests
