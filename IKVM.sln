@@ -283,9 +283,9 @@ Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "IKVM.Tools.Importer", "src\
 EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "IKVM.Tools.Importer.Tests", "src\IKVM.Tools.Importer.Tests\IKVM.Tools.Importer.Tests.csproj", "{6C942D7C-654A-4CBE-B3A9-887A37D2FA4C}"
 EndProject
-Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "IKVM.Tests.Java", "src\IKVM.Tests.Java\IKVM.Tests.Java.msbuildproj", "{87CB99AE-16D1-4D58-BEAC-72485E02B321}"
-EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "IKVM.ByteCode.Tests", "src\IKVM.ByteCode.Tests\IKVM.ByteCode.Tests.csproj", "{60E804E4-B25B-4C9A-A3E6-F83D618CFD26}"
+EndProject
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "IKVM.Java.Tests", "src\IKVM.Java.Tests\IKVM.Java.Tests.msbuildproj", "{B1B3F6B2-8A32-4C49-A9D2-154CD084CD9D}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
@@ -605,14 +605,14 @@ Global
 		{6C942D7C-654A-4CBE-B3A9-887A37D2FA4C}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{6C942D7C-654A-4CBE-B3A9-887A37D2FA4C}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{6C942D7C-654A-4CBE-B3A9-887A37D2FA4C}.Release|Any CPU.Build.0 = Release|Any CPU
-		{87CB99AE-16D1-4D58-BEAC-72485E02B321}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
-		{87CB99AE-16D1-4D58-BEAC-72485E02B321}.Debug|Any CPU.Build.0 = Debug|Any CPU
-		{87CB99AE-16D1-4D58-BEAC-72485E02B321}.Release|Any CPU.ActiveCfg = Release|Any CPU
-		{87CB99AE-16D1-4D58-BEAC-72485E02B321}.Release|Any CPU.Build.0 = Release|Any CPU
 		{60E804E4-B25B-4C9A-A3E6-F83D618CFD26}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
 		{60E804E4-B25B-4C9A-A3E6-F83D618CFD26}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{60E804E4-B25B-4C9A-A3E6-F83D618CFD26}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{60E804E4-B25B-4C9A-A3E6-F83D618CFD26}.Release|Any CPU.Build.0 = Release|Any CPU
+		{B1B3F6B2-8A32-4C49-A9D2-154CD084CD9D}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{B1B3F6B2-8A32-4C49-A9D2-154CD084CD9D}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{B1B3F6B2-8A32-4C49-A9D2-154CD084CD9D}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{B1B3F6B2-8A32-4C49-A9D2-154CD084CD9D}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
