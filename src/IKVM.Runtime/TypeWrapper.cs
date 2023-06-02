@@ -113,7 +113,13 @@ namespace IKVM.Internal
             }
             else
             {
-                ilgen.Emit(OpCodes.Ldsfld, RuntimeHelperTypes.GetClassLiteralField(type));
+#if IMPORTER
+				var classLiteralType = StaticCompiler.GetRuntimeType("IKVM.Runtime.ClassLiteral`1").MakeGenericType(type);
+#else
+                var classLiteralType = typeof(ClassLiteral<>).MakeGenericType(type);
+#endif
+
+                ilgen.Emit(OpCodes.Call, classLiteralType.GetProperty("Value").GetMethod);
             }
         }
 
@@ -168,6 +174,7 @@ namespace IKVM.Internal
             get
             {
                 Debug.Assert(!IsUnloadable && !IsVerifierType);
+
                 if (classObject == null)
                     LazyInitClass();
 
@@ -253,7 +260,7 @@ namespace IKVM.Internal
                         }
                         else
                         {
-                            clazz = (java.lang.Class)typeof(ikvm.@internal.ClassLiteral<>).MakeGenericType(type).GetField("Value").GetValue(null);
+                            clazz = (java.lang.Class)typeof(ClassLiteral<>).MakeGenericType(type).GetProperty("Value").GetGetMethod().Invoke(null, Array.Empty<object>());
                         }
                     }
 #if __MonoCS__

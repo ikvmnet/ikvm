@@ -218,6 +218,31 @@ namespace IKVM.Internal
             return intrinsics;
         }
 
+        /// <summary>
+        /// Emits IL that pushes the index scale for the specified array type onto the stack.
+        /// </summary>
+        /// <param name="eic"></param>
+        /// <param name="tw"></param>
+        /// <returns></returns>
+        static void EmitArrayIndexScale(EmitIntrinsicContext eic, TypeWrapper tw)
+        {
+            var et = tw.ElementTypeWrapper;
+            if (et == PrimitiveTypeWrapper.BYTE || et == PrimitiveTypeWrapper.BOOLEAN)
+                eic.Emitter.EmitLdc_I4(1);
+            else if (et == PrimitiveTypeWrapper.CHAR || et == PrimitiveTypeWrapper.SHORT)
+                eic.Emitter.EmitLdc_I4(2);
+            else if (et == PrimitiveTypeWrapper.INT || et == PrimitiveTypeWrapper.FLOAT)
+                eic.Emitter.EmitLdc_I4(4);
+            else if (et == PrimitiveTypeWrapper.LONG || et == PrimitiveTypeWrapper.DOUBLE)
+                eic.Emitter.EmitLdc_I4(8);
+            else if (et.IsPrimitive == false && et.IsNonPrimitiveValueType)
+                eic.Emitter.Emit(OpCodes.Sizeof, et.TypeAsArrayType);
+            else if (et.IsPrimitive == false && et.IsNonPrimitiveValueType == false)
+                eic.Emitter.Emit(OpCodes.Sizeof, Types.IntPtr);
+            else
+                eic.Emitter.EmitLdc_I4(1);
+        }
+
         internal static bool IsIntrinsic(MethodWrapper mw)
         {
             return intrinsics.ContainsKey(new IntrinsicKey(mw)) && mw.DeclaringType.GetClassLoader() == CoreClasses.java.lang.Object.Wrapper.GetClassLoader();
@@ -543,21 +568,42 @@ namespace IKVM.Internal
             return tw.IsArray && !tw.IsGhostArray && !tw.ElementTypeWrapper.IsPrimitive && !tw.ElementTypeWrapper.IsNonPrimitiveValueType;
         }
 
+        /// <summary>
+        /// Attempts to replace an invocation of Unsafe.putObject with an intrinsic implementation.
+        /// </summary>
+        /// <param name="eic"></param>
+        /// <returns></returns>
         static bool Unsafe_putObject(EmitIntrinsicContext eic)
         {
             return Unsafe_putObjectImpl(eic, false);
         }
 
+        /// <summary>
+        /// Attempts to replace an invocation of Unsafe.putOrderedObject with an intrinsic implementation.
+        /// </summary>
+        /// <param name="eic"></param>
+        /// <returns></returns>
         static bool Unsafe_putOrderedObject(EmitIntrinsicContext eic)
         {
             return Unsafe_putObjectImpl(eic, false);
         }
 
+        /// <summary>
+        /// Attempts to replace an invocation of Unsafe.putObjectVolatile with an intrinsic implementation.
+        /// </summary>
+        /// <param name="eic"></param>
+        /// <returns></returns>
         static bool Unsafe_putObjectVolatile(EmitIntrinsicContext eic)
         {
             return Unsafe_putObjectImpl(eic, true);
         }
 
+        /// <summary>
+        /// Attempts to replace an invocation of an Unsafe put operation with an intrinsic implementation.
+        /// </summary>
+        /// <param name="eic"></param>
+        /// <param name="isVolatile"></param>
+        /// <returns></returns>
         static bool Unsafe_putObjectImpl(EmitIntrinsicContext eic, bool isVolatile)
         {
             var tw = eic.GetStackTypeWrapper(0, 2);
@@ -576,8 +622,11 @@ namespace IKVM.Internal
                 eic.Emitter.Emit(OpCodes.Stloc, array);
                 EmitConsumeUnsafe(eic);
 
+                // emit new call that sets the element by index
                 eic.Emitter.Emit(OpCodes.Ldloc, array);
                 eic.Emitter.Emit(OpCodes.Ldloc, index);
+                EmitArrayIndexScale(eic, tw);
+                eic.Emitter.Emit(OpCodes.Div);
                 eic.Emitter.Emit(OpCodes.Ldloc, value);
                 eic.Emitter.Emit(OpCodes.Stelem_Ref);
 
@@ -659,8 +708,11 @@ namespace IKVM.Internal
                 eic.Emitter.Emit(OpCodes.Stloc, target);
                 EmitConsumeUnsafe(eic);
 
+                // emit new call that gets the element by index
                 eic.Emitter.Emit(OpCodes.Ldloc, target);
                 eic.Emitter.Emit(OpCodes.Ldloc, offset);
+                EmitArrayIndexScale(eic, tw);
+                eic.Emitter.Emit(OpCodes.Div);
                 eic.Emitter.Emit(OpCodes.Ldelema, tw.TypeAsLocalOrStackType.GetElementType());
                 eic.Emitter.Emit(OpCodes.Volatile);
                 eic.Emitter.Emit(OpCodes.Ldind_Ref);
@@ -711,6 +763,8 @@ namespace IKVM.Internal
                 // emit new call site
                 eic.Emitter.Emit(OpCodes.Ldloc, target);
                 eic.Emitter.Emit(OpCodes.Ldloc, offset);
+                EmitArrayIndexScale(eic, tw);
+                eic.Emitter.Emit(OpCodes.Div);
                 eic.Emitter.Emit(OpCodes.Ldelema, type);
                 eic.Emitter.Emit(OpCodes.Ldloc, update);
                 eic.Emitter.Emit(OpCodes.Ldloc, expect);
@@ -769,6 +823,7 @@ namespace IKVM.Internal
                     eic.Emitter.Emit(OpCodes.Call, AtomicReferenceFieldUpdaterEmitter.MakeCompareExchange(type));
                     eic.Emitter.Emit(OpCodes.Ldloc, expect);
                     eic.Emitter.Emit(OpCodes.Ceq);
+
                     eic.Emitter.ReleaseTempLocal(expect);
                     eic.Emitter.ReleaseTempLocal(update);
                     eic.NonLeaf = false;
@@ -820,6 +875,7 @@ namespace IKVM.Internal
                             eic.Emitter.Emit(OpCodes.Ldloc, update);
                             fw.EmitUnsafeCompareAndSwap(eic.Emitter);
 
+                            eic.Emitter.ReleaseTempLocal(target);
                             eic.Emitter.ReleaseTempLocal(expect);
                             eic.Emitter.ReleaseTempLocal(update);
                             eic.NonLeaf = false;
@@ -857,6 +913,8 @@ namespace IKVM.Internal
                 // emit new call
                 eic.Emitter.Emit(OpCodes.Ldloc, target);
                 eic.Emitter.Emit(OpCodes.Ldloc, offset);
+                EmitArrayIndexScale(eic, tw);
+                eic.Emitter.Emit(OpCodes.Div);
                 eic.Emitter.Emit(OpCodes.Ldelema, type);
                 eic.Emitter.Emit(OpCodes.Ldloc, newValue);
                 eic.Emitter.Emit(OpCodes.Call, MakeExchange(type));
@@ -920,6 +978,7 @@ namespace IKVM.Internal
                             eic.Emitter.Emit(OpCodes.Ldloc, update);
                             fw.EmitUnsafeCompareAndSwap(eic.Emitter);
 
+                            eic.Emitter.ReleaseTempLocal(target);
                             eic.Emitter.ReleaseTempLocal(expect);
                             eic.Emitter.ReleaseTempLocal(update);
                             eic.NonLeaf = false;

@@ -34,6 +34,7 @@
  */
 
 package java.util.concurrent.locks;
+import sun.misc.Unsafe;
 
 /**
  * Basic thread blocking primitives for creating locks and other
@@ -120,17 +121,9 @@ public class LockSupport {
     private LockSupport() {} // Cannot be instantiated.
 
     private static void setBlocker(Thread t, Object arg) {
-        t.parkBlocker = arg;
+        // Even though volatile, hotspot doesn't need a write barrier here.
+        UNSAFE.putObject(t, parkBlockerOffset, arg);
     }
-
-    private static final int PARK_STATE_RUNNING = 0;
-    private static final int PARK_STATE_PERMIT = 1;
-    private static final int PARK_STATE_PARKED = 2;
-
-    // these native methods are all implemented in map.xml
-    private static native int cmpxchgParkState(Thread t, int newValue, int comparand);
-    private static native Object getParkLock(Thread t);
-    private static native void setParkLock(Thread t, Object obj);
 
     /**
      * Makes available the permit for the given thread, if it
@@ -145,63 +138,7 @@ public class LockSupport {
      */
     public static void unpark(Thread thread) {
         if (thread != null)
-        {
-            if (cmpxchgParkState(thread, PARK_STATE_PERMIT, PARK_STATE_RUNNING) == PARK_STATE_PARKED)
-            {
-                if (cmpxchgParkState(thread, PARK_STATE_RUNNING, PARK_STATE_PARKED) == PARK_STATE_PARKED)
-                {
-                    // thread is currently blocking, so we have to release it
-                    Object lock = getParkLock(thread);
-                    synchronized (lock)
-                    {
-                        lock.notify();
-                    }
-                }
-            }
-        }
-    }
-
-    private static void parkImpl(Thread currentThread, boolean deadline, long nanos)
-    {
-        if (cmpxchgParkState(currentThread, PARK_STATE_RUNNING, PARK_STATE_PERMIT) == PARK_STATE_PERMIT)
-        {
-            // we consumed a permit
-            return;
-        }
-
-        Object lock = getParkLock(currentThread);
-        if (lock == null)
-        {
-            // we lazily allocate the lock object
-            lock = new Object();
-            setParkLock(currentThread, lock);
-        }
-        synchronized (lock)
-        {
-            if (cmpxchgParkState(currentThread, PARK_STATE_PARKED, PARK_STATE_RUNNING) == PARK_STATE_PERMIT)
-            {
-                // entering the parked state failed because we got a permit after the previous permit test
-                // release the permit and return
-                cmpxchgParkState(currentThread, PARK_STATE_RUNNING, PARK_STATE_PERMIT);
-                return;
-            }
-            if (deadline)
-            {
-                nanos -= System.currentTimeMillis() * 1000000;
-            }
-            if (nanos >= 0)
-            {
-                try
-                {
-                    lock.wait(nanos / 1000000, (int)(nanos % 1000000));
-                }
-                catch (InterruptedException _)
-                {
-                    currentThread.interrupt();
-                }
-            }
-            cmpxchgParkState(currentThread, PARK_STATE_RUNNING, PARK_STATE_PARKED);
-        }
+            UNSAFE.unpark(thread);
     }
 
     /**
@@ -235,7 +172,7 @@ public class LockSupport {
     public static void park(Object blocker) {
         Thread t = Thread.currentThread();
         setBlocker(t, blocker);
-        parkImpl(t, false, 0L);
+        UNSAFE.park(false, 0L);
         setBlocker(t, null);
     }
 
@@ -275,7 +212,7 @@ public class LockSupport {
         if (nanos > 0) {
             Thread t = Thread.currentThread();
             setBlocker(t, blocker);
-            parkImpl(t, false, nanos);
+            UNSAFE.park(false, nanos);
             setBlocker(t, null);
         }
     }
@@ -316,7 +253,7 @@ public class LockSupport {
     public static void parkUntil(Object blocker, long deadline) {
         Thread t = Thread.currentThread();
         setBlocker(t, blocker);
-        parkImpl(t, true, deadline * 1000000);
+        UNSAFE.park(true, deadline);
         setBlocker(t, null);
     }
 
@@ -335,7 +272,7 @@ public class LockSupport {
     public static Object getBlocker(Thread t) {
         if (t == null)
             throw new NullPointerException();
-        return t.parkBlocker;
+        return UNSAFE.getObjectVolatile(t, parkBlockerOffset);
     }
 
     /**
@@ -364,7 +301,7 @@ public class LockSupport {
      * for example, the interrupt status of the thread upon return.
      */
     public static void park() {
-        parkImpl(Thread.currentThread(), false, 0L);
+        UNSAFE.park(false, 0L);
     }
 
     /**
@@ -398,7 +335,7 @@ public class LockSupport {
      */
     public static void parkNanos(long nanos) {
         if (nanos > 0)
-            parkImpl(Thread.currentThread(), false, nanos);
+            UNSAFE.park(false, nanos);
     }
 
     /**
@@ -432,7 +369,7 @@ public class LockSupport {
      *        to wait until
      */
     public static void parkUntil(long deadline) {
-        parkImpl(Thread.currentThread(), true, deadline * 1000000);
+        UNSAFE.park(true, deadline);
     }
 
     /**
@@ -442,15 +379,36 @@ public class LockSupport {
     static final int nextSecondarySeed() {
         int r;
         Thread t = Thread.currentThread();
-        if ((r = t.threadLocalRandomSecondarySeed) != 0) {
+        if ((r = UNSAFE.getInt(t, SECONDARY)) != 0) {
             r ^= r << 13;   // xorshift
             r ^= r >>> 17;
             r ^= r << 5;
         }
         else if ((r = java.util.concurrent.ThreadLocalRandom.current().nextInt()) == 0)
             r = 1; // avoid zero
-        t.threadLocalRandomSecondarySeed = r;
+        UNSAFE.putInt(t, SECONDARY, r);
         return r;
+    }
+
+    // Hotspot implementation via intrinsics API
+    private static final sun.misc.Unsafe UNSAFE;
+    private static final long parkBlockerOffset;
+    private static final long SEED;
+    private static final long PROBE;
+    private static final long SECONDARY;
+    static {
+        try {
+            UNSAFE = sun.misc.Unsafe.getUnsafe();
+            Class<?> tk = Thread.class;
+            parkBlockerOffset = UNSAFE.objectFieldOffset
+                (tk.getDeclaredField("parkBlocker"));
+            SEED = UNSAFE.objectFieldOffset
+                (tk.getDeclaredField("threadLocalRandomSeed"));
+            PROBE = UNSAFE.objectFieldOffset
+                (tk.getDeclaredField("threadLocalRandomProbe"));
+            SECONDARY = UNSAFE.objectFieldOffset
+                (tk.getDeclaredField("threadLocalRandomSecondarySeed"));
+        } catch (Exception ex) { throw new Error(ex); }
     }
 
 }

@@ -92,7 +92,7 @@ IKVM includes build-time support for translating Java libraries to .NET assembli
 </ItemGroup>
 
 <ItemGroup>
-  <IkvmReference Include="..\..\ext\helloworld-2.0.jar" />
+  <IkvmReference Include="..\..\ext\helloworld\helloworld-2.0.jar" />
 </ItemGroup>
 ```
 
@@ -102,7 +102,7 @@ The output assembly will be generated as part of your project's build process an
 
 ```xml
 <ItemGroup>
-   <IkvmReference Include="..\..\ext\helloworld-2.0.jar">
+   <IkvmReference Include="..\..\ext\helloworld\helloworld-2.0.jar">
       <AssemblyName>MyAssembly</AssemblyName>
       <AssemblyVersion>3.2.1.0</AssemblyVersion>
       <AssemblyFileVersion>3.0.0.0</AssemblyFileVersion>

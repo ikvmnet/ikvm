@@ -24,7 +24,7 @@ typedef int (*GetMethodArgs_t)(JNIEnv* pEnv, jmethodID method, char* sig);
 		else if (sig[i] == 'I')\
 			argv[i].i = (jint)va_arg(args, int);\
 		else if (sig[i] == 'J')\
-			argv[i].j = (jlong)va_arg(args, long);\
+			argv[i].j = (jlong)va_arg(args, jlong);\
 		else if (sig[i] == 'F')\
 			argv[i].f = (jfloat)va_arg(args, double);\
 		else if (sig[i] == 'D')\

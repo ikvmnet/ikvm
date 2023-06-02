@@ -16,7 +16,7 @@
     </ItemGroup>
 
     <ItemGroup>
-        <None Include="..\..\ext\**\*" LinkBase="ext">
+        <None Include="..\..\ext\helloworld\**\*" LinkBase="helloworld">
             <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
         </None>
     </ItemGroup>

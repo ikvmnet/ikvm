@@ -13,6 +13,8 @@
         <TestTarget Include="IKVM.Tests|net461" ProjectName="IKVM.Tests" TargetFramework="net461" />
         <TestTarget Include="IKVM.Tests|netcoreapp3.1" ProjectName="IKVM.Tests" TargetFramework="netcoreapp3.1" />
         <TestTarget Include="IKVM.Tests|net6.0" ProjectName="IKVM.Tests" TargetFramework="net6.0" />
+        <TestTarget Include="IKVM.Java.Tests|net461" ProjectName="IKVM.Java.Tests" TargetFramework="net461" />
+        <TestTarget Include="IKVM.Java.Tests|netcoreapp3.1" ProjectName="IKVM.Java.Tests" TargetFramework="netcoreapp3.1" />
         <TestTarget Include="IKVM.Tools.Tests|net461" ProjectName="IKVM.Tools.Tests" TargetFramework="net461" />
         <TestTarget Include="IKVM.Tools.Tests|netcoreapp3.1" ProjectName="IKVM.Tools.Tests" TargetFramework="netcoreapp3.1" />
         <TestTarget Include="IKVM.Tools.Tests|net6.0" ProjectName="IKVM.Tools.Tests" TargetFramework="net6.0" />
@@ -39,7 +41,8 @@
         <PropertyGroup>
             <_ProjectName>%(TestTarget.ProjectName)</_ProjectName>
             <_ProjectFile>%(TestTarget.ProjectFile)</_ProjectFile>
-            <_ProjectFile Condition=" '$(_ProjectFile)' == '' ">..\$(_ProjectName)\$(_ProjectName).csproj</_ProjectFile>
+            <_ProjectFile Condition=" '$(_ProjectFile)' == '' And Exists('..\$(_ProjectName)\$(_ProjectName).csproj') ">..\$(_ProjectName)\$(_ProjectName).csproj</_ProjectFile>
+            <_ProjectFile Condition=" '$(_ProjectFile)' == '' And Exists('..\$(_ProjectName)\$(_ProjectName).msbuildproj') ">..\$(_ProjectName)\$(_ProjectName).msbuildproj</_ProjectFile>
             <_TargetFramework>%(TestTarget.TargetFramework)</_TargetFramework>
         </PropertyGroup>
 

@@ -78,7 +78,7 @@ namespace IKVM.Runtime
             /// <returns></returns>
             static string GetHomePath()
             {
-                var rootPath = Path.GetDirectoryName(BaseAssembly.Location);
+                var rootPath = Path.GetDirectoryName(typeof(JVM).Assembly.Location);
 
                 // user value takes priority
                 if (User.TryGetValue("ikvm.home", out var homePath1))
@@ -756,7 +756,7 @@ namespace IKVM.Runtime
             static string GetWindowsConsoleEncoding()
             {
                 var codepage = Console.InputEncoding.CodePage;
-                return codepage is >= 847 and <= 950 ? $"ms{codepage}" : $"cp{codepage}";
+                return codepage is >= 874 and <= 950 ? $"ms{codepage}" : $"cp{codepage}";
             }
 
         }
