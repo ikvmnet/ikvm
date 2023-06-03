@@ -240,7 +240,6 @@ namespace IKVM.Java.Externs.sun.misc
 #else
             return o switch
             {
-                null => throw new global::java.lang.NullPointerException(),
                 Array array => Buffer.GetByte(array, (int)offset) != 0,
                 _ => GetField<bool>(o, offset)
             };
@@ -261,8 +260,6 @@ namespace IKVM.Java.Externs.sun.misc
 #else
             switch (o)
             {
-                case null:
-                    throw new global::java.lang.NullPointerException();
                 case Array array:
                     Buffer.SetByte(array, (int)offset, x ? (byte)1 : (byte)0);
                     break;
@@ -287,7 +284,6 @@ namespace IKVM.Java.Externs.sun.misc
 #else
             return o switch
             {
-                null => getByte(self, offset),
                 Array array => Buffer.GetByte(array, (int)offset),
                 _ => GetField<byte>(o, offset)
             };
@@ -308,9 +304,6 @@ namespace IKVM.Java.Externs.sun.misc
 #else
             switch (o)
             {
-                case null:
-                    putByte(self, offset, x);
-                    break;
                 case Array array:
                     Buffer.SetByte(array, (int)offset, x);
                     break;
@@ -335,7 +328,6 @@ namespace IKVM.Java.Externs.sun.misc
 #else
             return o switch
             {
-                null => getShort(self, offset),
                 Array array => ReadInt16(array, offset),
                 _ => GetField<short>(o, offset)
             };
@@ -356,9 +348,6 @@ namespace IKVM.Java.Externs.sun.misc
 #else
             switch (o)
             {
-                case null:
-                    putShort(self, offset, x);
-                    break;
                 case Array array:
                     WriteInt16(array, offset, x);
                     break;
@@ -383,7 +372,6 @@ namespace IKVM.Java.Externs.sun.misc
 #else
             return o switch
             {
-                null => getChar(self, offset),
                 Array array => (char)ReadInt16(array, offset),
                 _ => GetField<char>(o, offset)
             };
@@ -404,9 +392,6 @@ namespace IKVM.Java.Externs.sun.misc
 #else
             switch (o)
             {
-                case null:
-                    putChar(self, offset, x);
-                    break;
                 case Array array:
                     WriteInt16(array, offset, (short)x);
                     break;
@@ -431,7 +416,6 @@ namespace IKVM.Java.Externs.sun.misc
 #else
             return o switch
             {
-                null => getInt(self, offset),
                 Array array => ReadInt32(array, offset),
                 _ => GetField<int>(o, offset)
             };
@@ -452,9 +436,6 @@ namespace IKVM.Java.Externs.sun.misc
 #else
             switch (o)
             {
-                case null:
-                    putInt(self, offset, x);
-                    break;
                 case Array array:
                     WriteInt32(array, offset, x);
                     break;
@@ -479,7 +460,6 @@ namespace IKVM.Java.Externs.sun.misc
 #else
             return o switch
             {
-                null => getLong(self, offset),
                 Array array => ReadInt64(array, offset),
                 _ => GetField<long>(o, offset)
             };
@@ -500,9 +480,6 @@ namespace IKVM.Java.Externs.sun.misc
 #else
             switch (o)
             {
-                case null:
-                    putLong(self, offset, x);
-                    break;
                 case Array array:
                     WriteInt64(array, offset, x);
                     break;
@@ -527,7 +504,6 @@ namespace IKVM.Java.Externs.sun.misc
 #else
             return o switch
             {
-                null => getFloat(self, offset),
                 Array array => global::java.lang.Float.intBitsToFloat(ReadInt32(array, offset)),
                 _ => GetField<float>(o, offset)
             };
@@ -548,9 +524,6 @@ namespace IKVM.Java.Externs.sun.misc
 #else
             switch (o)
             {
-                case null:
-                    putFloat(self, offset, x);
-                    break;
                 case Array array:
                     WriteInt32(array, offset, global::java.lang.Float.floatToRawIntBits(x));
                     break;
@@ -575,7 +548,6 @@ namespace IKVM.Java.Externs.sun.misc
 #else
             return o switch
             {
-                null => getDouble(self, offset),
                 Array array => global::java.lang.Double.longBitsToDouble(ReadInt64(array, offset)),
                 _ => GetField<double>(o, offset)
             };
@@ -596,9 +568,6 @@ namespace IKVM.Java.Externs.sun.misc
 #else
             switch (o)
             {
-                case null:
-                    putDouble(self, offset, x);
-                    break;
                 case Array array:
                     WriteInt64(array, offset, global::java.lang.Double.doubleToRawLongBits(x));
                     break;
