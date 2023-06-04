@@ -1,8 +1,8 @@
 ﻿<Project>
     <PropertyGroup>
         <OpenJdkDir>$(MSBuildThisFileDirectory)openjdk\</OpenJdkDir>
-        <OpenJdkVersion>OpenJDK 8u60 b32</OpenJdkVersion>
-        <OpenJdkFullVersion>1.8.0_60-b32</OpenJdkFullVersion>
+        <OpenJdkVersion>OpenJDK 8u92 b34</OpenJdkVersion>
+        <OpenJdkFullVersion>1.8.0_92-b34</OpenJdkFullVersion>
         <OpenJdkVendor>Oracle</OpenJdkVendor>
         <OpenJdkImplementationVersion>1.8.0</OpenJdkImplementationVersion>
         <OpenJdkImplementationVendor>Oracle Corporation</OpenJdkImplementationVendor>
@@ -3613,9 +3613,11 @@
         <OpenJdkSource Include="$(OpenJdkDir)\jdk\src\share\classes\sun\misc\JavaIOAccess.java" />
         <OpenJdkSource Include="$(OpenJdkDir)\jdk\src\share\classes\sun\misc\JavaIOFileDescriptorAccess.java" />
         <OpenJdkSource Include="$(OpenJdkDir)\jdk\src\share\classes\sun\misc\JavaLangAccess.java" />
+        <OpenJdkSource Include="$(OpenJdkDir)\jdk\src\share\classes\sun\misc\JavaLangRefAccess.java" />
         <OpenJdkSource Include="$(OpenJdkDir)\jdk\src\share\classes\sun\misc\JavaNetAccess.java" />
         <OpenJdkSource Include="$(OpenJdkDir)\jdk\src\share\classes\sun\misc\JavaNetHttpCookieAccess.java" />
         <OpenJdkSource Include="$(OpenJdkDir)\jdk\src\share\classes\sun\misc\JavaNioAccess.java" />
+        <OpenJdkSource Include="$(OpenJdkDir)\jdk\src\share\classes\sun\misc\JavaObjectInputStreamAccess.java" />
         <OpenJdkSource Include="$(OpenJdkDir)\jdk\src\share\classes\sun\misc\JavaSecurityAccess.java" />
         <OpenJdkSource Include="$(OpenJdkDir)\jdk\src\share\classes\sun\misc\JavaSecurityProtectionDomainAccess.java" />
         <OpenJdkSource Include="$(OpenJdkDir)\jdk\src\share\classes\sun\misc\JavaUtilJarAccess.java" />
@@ -3626,6 +3628,7 @@
         <OpenJdkSource Include="$(OpenJdkDir)\jdk\src\share\classes\sun\misc\MessageUtils.java" />
         <OpenJdkSource Include="$(OpenJdkDir)\jdk\src\share\classes\sun\misc\MetaIndex.java" />
         <OpenJdkSource Include="$(OpenJdkDir)\jdk\src\share\classes\sun\misc\NativeSignalHandler.java" />
+        <OpenJdkSource Include="$(OpenJdkDir)\jdk\src\share\classes\sun\misc\ObjectStreamClassValidator.java" />
         <OpenJdkSource Include="$(OpenJdkDir)\jdk\src\share\classes\sun\misc\Perf.java" />
         <OpenJdkSource Include="$(OpenJdkDir)\jdk\src\share\classes\sun\misc\PerfCounter.java" />
         <OpenJdkSource Include="$(OpenJdkDir)\jdk\src\share\classes\sun\misc\PerformanceLogger.java" />
@@ -3964,6 +3967,7 @@
         <OpenJdkSource Include="$(OpenJdkDir)\jdk\src\share\classes\sun\rmi\server\ActivationGroupImpl.java" />
         <OpenJdkSource Include="$(OpenJdkDir)\jdk\src\share\classes\sun\rmi\server\ActivationGroupInit.java" />
         <OpenJdkSource Include="$(OpenJdkDir)\jdk\src\share\classes\sun\rmi\server\Dispatcher.java" />
+        <OpenJdkSource Include="$(OpenJdkDir)\jdk\src\share\classes\sun\rmi\server\DeserializationChecker.java" />
         <OpenJdkSource Include="$(OpenJdkDir)\jdk\src\share\classes\sun\rmi\server\InactiveGroupException.java" />
         <OpenJdkSource Include="$(OpenJdkDir)\jdk\src\share\classes\sun\rmi\server\LoaderHandler.java" />
         <OpenJdkSource Include="$(OpenJdkDir)\jdk\src\share\classes\sun\rmi\server\MarshalInputStream.java" />

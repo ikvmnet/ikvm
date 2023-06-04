@@ -3349,3 +3349,21 @@ java/lang/Class/getDeclaredField/FieldSetAccessibleTest.java                    
 
 # test tries to access across assemblies (package private)
 sun/util/calendar/zi/TestZoneInfo310.java                                                                               generic-all
+
+# awt/swing
+java/awt/Component/TreeLockDeadlock/TreeLockDeadlock.java                                                               generic-all
+java/awt/dnd/ImageTransferTest/ImageTransferTest.java                                                                   generic-all
+java/awt/dnd/MissingEventsOnModalDialog/MissingEventsOnModalDialogTest.java                                             generic-all
+java/awt/Toolkit/AutoShutdown/EventQueuePush/EventQueuePushAutoshutdown.sh                                              generic-all
+javax/imageio/plugins/jpeg/JpegImageColorSpaceTest.java                                                                 generic-all
+javax/swing/JEditorPane/6882559/bug6882559.java                                                                         generic-all
+javax/swing/JEditorPane/8158734/bug8158734.java                                                                         generic-all
+javax/swing/JScrollPane/HorizontalMouseWheelOnShiftPressed/HorizontalMouseWheelOnShiftPressed.java                      generic-all
+javax/swing/plaf/nimbus/8041642/ScrollBarThumbVisibleTest.java                                                          generic-all
+
+# mscapi / Windows-MY Keystore usage
+sun/security/mscapi/IterateWindowsRootStore.java                                                                        generic-all
+sun/security/mscapi/CastError.java                                                                                      generic-all
+
+# TODO: Reenable after 8u112 is integrated
+java/lang/invoke/CustomizedLambdaFormTest.java                                                                          generic-all
