@@ -1221,99 +1221,171 @@ namespace IKVM.Runtime.JNI
             return FindFieldID(pEnv, clazz, name, sig, false);
         }
 
-        static global::sun.reflect.FieldAccessor GetFieldAccessor(jfieldID cookie)
+        static FieldWrapper GetFieldWrapper(jfieldID cookie)
         {
-            return (sun.reflect.FieldAccessor)FieldWrapper.FromCookie(cookie).GetFieldAccessorJNI();
+            return FieldWrapper.FromCookie(cookie);
         }
 
         internal static jobject GetObjectField(JNIEnv* pEnv, jobject obj, jfieldID fieldID)
         {
-            return pEnv->MakeLocalRef(GetFieldAccessor(fieldID).get(pEnv->UnwrapRef(obj)));
+#if FIRST_PASS
+            throw new NotImplementedException();
+#else
+            return pEnv->MakeLocalRef(GetFieldWrapper(fieldID).UnsafeGetValue<object>(pEnv->UnwrapRef(obj)));
+#endif
         }
 
         internal static jboolean GetBooleanField(JNIEnv* pEnv, jobject obj, jfieldID fieldID)
         {
-            return GetFieldAccessor(fieldID).getBoolean(pEnv->UnwrapRef(obj)) ? JNI_TRUE : JNI_FALSE;
+#if FIRST_PASS
+            throw new NotImplementedException();
+#else
+            return GetFieldWrapper(fieldID).UnsafeGetValue<bool>(pEnv->UnwrapRef(obj)) ? JNI_TRUE : JNI_FALSE;
+#endif
         }
 
         internal static jbyte GetByteField(JNIEnv* pEnv, jobject obj, jfieldID fieldID)
         {
-            return (jbyte)GetFieldAccessor(fieldID).getByte(pEnv->UnwrapRef(obj));
+#if FIRST_PASS
+            throw new NotImplementedException();
+#else
+            return (jbyte)GetFieldWrapper(fieldID).UnsafeGetValue<byte>(pEnv->UnwrapRef(obj));
+#endif
         }
 
         internal static jchar GetCharField(JNIEnv* pEnv, jobject obj, jfieldID fieldID)
         {
-            return (jchar)GetFieldAccessor(fieldID).getChar(pEnv->UnwrapRef(obj));
+#if FIRST_PASS
+            throw new NotImplementedException();
+#else
+            return GetFieldWrapper(fieldID).UnsafeGetValue<char>(pEnv->UnwrapRef(obj));
+#endif
         }
 
         internal static jshort GetShortField(JNIEnv* pEnv, jobject obj, jfieldID fieldID)
         {
-            return (jshort)GetFieldAccessor(fieldID).getShort(pEnv->UnwrapRef(obj));
+#if FIRST_PASS
+            throw new NotImplementedException();
+#else
+            return GetFieldWrapper(fieldID).UnsafeGetValue<short>(pEnv->UnwrapRef(obj));
+#endif
         }
 
         internal static jint GetIntField(JNIEnv* pEnv, jobject obj, jfieldID fieldID)
         {
-            return (jint)GetFieldAccessor(fieldID).getInt(pEnv->UnwrapRef(obj));
+#if FIRST_PASS
+            throw new NotImplementedException();
+#else
+            return GetFieldWrapper(fieldID).UnsafeGetValue<int>(pEnv->UnwrapRef(obj));
+#endif
         }
 
         internal static jlong GetLongField(JNIEnv* pEnv, jobject obj, jfieldID fieldID)
         {
-            return (jlong)GetFieldAccessor(fieldID).getLong(pEnv->UnwrapRef(obj));
+#if FIRST_PASS
+            throw new NotImplementedException();
+#else
+            return GetFieldWrapper(fieldID).UnsafeGetValue<long>(pEnv->UnwrapRef(obj));
+#endif
         }
 
         internal static jfloat GetFloatField(JNIEnv* pEnv, jobject obj, jfieldID fieldID)
         {
-            return (jfloat)GetFieldAccessor(fieldID).getFloat(pEnv->UnwrapRef(obj));
+#if FIRST_PASS
+            throw new NotImplementedException();
+#else
+            return GetFieldWrapper(fieldID).UnsafeGetValue<float>(pEnv->UnwrapRef(obj));
+#endif
         }
 
         internal static jdouble GetDoubleField(JNIEnv* pEnv, jobject obj, jfieldID fieldID)
         {
-            return (jdouble)GetFieldAccessor(fieldID).getDouble(pEnv->UnwrapRef(obj));
+#if FIRST_PASS
+            throw new NotImplementedException();
+#else
+            return GetFieldWrapper(fieldID).UnsafeGetValue<double>(pEnv->UnwrapRef(obj));
+#endif
         }
 
         internal static void SetObjectField(JNIEnv* pEnv, jobject obj, jfieldID fieldID, jobject val)
         {
-            GetFieldAccessor(fieldID).set(pEnv->UnwrapRef(obj), pEnv->UnwrapRef(val));
+#if FIRST_PASS
+            throw new NotImplementedException();
+#else
+            GetFieldWrapper(fieldID).UnsafeSetValue<object>(pEnv->UnwrapRef(obj), pEnv->UnwrapRef(val));
+#endif
         }
 
         internal static void SetBooleanField(JNIEnv* pEnv, jobject obj, jfieldID fieldID, jboolean val)
         {
-            GetFieldAccessor(fieldID).setBoolean(pEnv->UnwrapRef(obj), val != JNI_FALSE);
+#if FIRST_PASS
+            throw new NotImplementedException();
+#else
+            GetFieldWrapper(fieldID).UnsafeSetValue<bool>(pEnv->UnwrapRef(obj), val != JNI_FALSE);
+#endif
         }
 
         internal static void SetByteField(JNIEnv* pEnv, jobject obj, jfieldID fieldID, jbyte val)
         {
-            GetFieldAccessor(fieldID).setByte(pEnv->UnwrapRef(obj), (byte)val);
+#if FIRST_PASS
+            throw new NotImplementedException();
+#else
+            GetFieldWrapper(fieldID).UnsafeSetValue<byte>(pEnv->UnwrapRef(obj), (byte)val);
+#endif
         }
 
         internal static void SetCharField(JNIEnv* pEnv, jobject obj, jfieldID fieldID, jchar val)
         {
-            GetFieldAccessor(fieldID).setChar(pEnv->UnwrapRef(obj), (char)val);
+#if FIRST_PASS
+            throw new NotImplementedException();
+#else
+            GetFieldWrapper(fieldID).UnsafeSetValue<char>(pEnv->UnwrapRef(obj), (char)val);
+#endif
         }
 
         internal static void SetShortField(JNIEnv* pEnv, jobject obj, jfieldID fieldID, jshort val)
         {
-            GetFieldAccessor(fieldID).setShort(pEnv->UnwrapRef(obj), (short)val);
+#if FIRST_PASS
+            throw new NotImplementedException();
+#else
+            GetFieldWrapper(fieldID).UnsafeSetValue<short>(pEnv->UnwrapRef(obj), val);
+#endif
         }
 
         internal static void SetIntField(JNIEnv* pEnv, jobject obj, jfieldID fieldID, jint val)
         {
-            GetFieldAccessor(fieldID).setInt(pEnv->UnwrapRef(obj), (int)val);
+#if FIRST_PASS
+            throw new NotImplementedException();
+#else
+            GetFieldWrapper(fieldID).UnsafeSetValue<int>(pEnv->UnwrapRef(obj), val);
+#endif
         }
 
         internal static void SetLongField(JNIEnv* pEnv, jobject obj, jfieldID fieldID, jlong val)
         {
-            GetFieldAccessor(fieldID).setLong(pEnv->UnwrapRef(obj), (long)val);
+#if FIRST_PASS
+            throw new NotImplementedException();
+#else
+            GetFieldWrapper(fieldID).UnsafeSetValue<long>(pEnv->UnwrapRef(obj), val);
+#endif
         }
 
         internal static void SetFloatField(JNIEnv* pEnv, jobject obj, jfieldID fieldID, jfloat val)
         {
-            GetFieldAccessor(fieldID).setFloat(pEnv->UnwrapRef(obj), (float)val);
+#if FIRST_PASS
+            throw new NotImplementedException();
+#else
+            GetFieldWrapper(fieldID).UnsafeSetValue<float>(pEnv->UnwrapRef(obj), val);
+#endif
         }
 
         internal static void SetDoubleField(JNIEnv* pEnv, jobject obj, jfieldID fieldID, jdouble val)
         {
-            GetFieldAccessor(fieldID).setDouble(pEnv->UnwrapRef(obj), (double)val);
+#if FIRST_PASS
+            throw new NotImplementedException();
+#else
+            GetFieldWrapper(fieldID).UnsafeSetValue<double>(pEnv->UnwrapRef(obj), val);
+#endif
         }
 
         internal static jmethodID GetStaticMethodID(JNIEnv* pEnv, jclass clazz, byte* name, byte* sig)
@@ -1386,92 +1458,164 @@ namespace IKVM.Runtime.JNI
 
         internal static jobject GetStaticObjectField(JNIEnv* pEnv, jclass clazz, jfieldID fieldID)
         {
-            return pEnv->MakeLocalRef(GetFieldAccessor(fieldID).get(null));
+#if FIRST_PASS
+            throw new NotImplementedException();
+#else
+            return pEnv->MakeLocalRef(GetFieldWrapper(fieldID).UnsafeGetValue<object>(null));
+#endif
         }
 
         internal static jboolean GetStaticBooleanField(JNIEnv* pEnv, jclass clazz, jfieldID fieldID)
         {
-            return GetFieldAccessor(fieldID).getBoolean(null) ? JNI_TRUE : JNI_FALSE;
+#if FIRST_PASS
+            throw new NotImplementedException();
+#else
+            return GetFieldWrapper(fieldID).UnsafeGetValue<bool>(null) ? JNI_TRUE : JNI_FALSE;
+#endif
         }
 
         internal static jbyte GetStaticByteField(JNIEnv* pEnv, jclass clazz, jfieldID fieldID)
         {
-            return (jbyte)GetFieldAccessor(fieldID).getByte(null);
+#if FIRST_PASS
+            throw new NotImplementedException();
+#else
+            return (jbyte)GetFieldWrapper(fieldID).UnsafeGetValue<byte>(null);
+#endif
         }
 
         internal static jchar GetStaticCharField(JNIEnv* pEnv, jclass clazz, jfieldID fieldID)
         {
-            return (jchar)GetFieldAccessor(fieldID).getChar(null);
+#if FIRST_PASS
+            throw new NotImplementedException();
+#else
+            return GetFieldWrapper(fieldID).UnsafeGetValue<char>(null);
+#endif
         }
 
         internal static jshort GetStaticShortField(JNIEnv* pEnv, jclass clazz, jfieldID fieldID)
         {
-            return (jshort)GetFieldAccessor(fieldID).getShort(null);
+#if FIRST_PASS
+            throw new NotImplementedException();
+#else
+            return GetFieldWrapper(fieldID).UnsafeGetValue<short>(null);
+#endif
         }
 
         internal static jint GetStaticIntField(JNIEnv* pEnv, jclass clazz, jfieldID fieldID)
         {
-            return (jint)GetFieldAccessor(fieldID).getInt(null);
+#if FIRST_PASS
+            throw new NotImplementedException();
+#else
+            return GetFieldWrapper(fieldID).UnsafeGetValue<int>(null);
+#endif
         }
 
         internal static jlong GetStaticLongField(JNIEnv* pEnv, jclass clazz, jfieldID fieldID)
         {
-            return (jlong)GetFieldAccessor(fieldID).getLong(null);
+#if FIRST_PASS
+            throw new NotImplementedException();
+#else
+            return GetFieldWrapper(fieldID).UnsafeGetValue<long>(null);
+#endif
         }
 
         internal static jfloat GetStaticFloatField(JNIEnv* pEnv, jclass clazz, jfieldID fieldID)
         {
-            return (jfloat)GetFieldAccessor(fieldID).getFloat(null);
+#if FIRST_PASS
+            throw new NotImplementedException();
+#else
+            return GetFieldWrapper(fieldID).UnsafeGetValue<float>(null);
+#endif
         }
 
         internal static jdouble GetStaticDoubleField(JNIEnv* pEnv, jclass clazz, jfieldID fieldID)
         {
-            return (jdouble)GetFieldAccessor(fieldID).getDouble(null);
+#if FIRST_PASS
+            throw new NotImplementedException();
+#else
+            return GetFieldWrapper(fieldID).UnsafeGetValue<double>(null);
+#endif
         }
 
         internal static void SetStaticObjectField(JNIEnv* pEnv, jclass clazz, jfieldID fieldID, jobject val)
         {
-            GetFieldAccessor(fieldID).set(null, pEnv->UnwrapRef(val));
+#if FIRST_PASS
+            throw new NotImplementedException();
+#else
+            GetFieldWrapper(fieldID).UnsafeSetValue<object>(null, pEnv->UnwrapRef(val));
+#endif
         }
 
         internal static void SetStaticBooleanField(JNIEnv* pEnv, jclass clazz, jfieldID fieldID, jboolean val)
         {
-            GetFieldAccessor(fieldID).setBoolean(null, val != JNI_FALSE);
+#if FIRST_PASS
+            throw new NotImplementedException();
+#else
+            GetFieldWrapper(fieldID).UnsafeSetValue<bool>(null, val != JNI_TRUE);
+#endif
         }
 
         internal static void SetStaticByteField(JNIEnv* pEnv, jclass clazz, jfieldID fieldID, jbyte val)
         {
-            GetFieldAccessor(fieldID).setByte(null, (byte)val);
+#if FIRST_PASS
+            throw new NotImplementedException();
+#else
+            GetFieldWrapper(fieldID).UnsafeSetValue<byte>(null, (byte)val);
+#endif
         }
 
         internal static void SetStaticCharField(JNIEnv* pEnv, jclass clazz, jfieldID fieldID, jchar val)
         {
-            GetFieldAccessor(fieldID).setChar(null, (char)val);
+#if FIRST_PASS
+            throw new NotImplementedException();
+#else
+            GetFieldWrapper(fieldID).UnsafeSetValue<char>(null, (char)val);
+#endif
         }
 
         internal static void SetStaticShortField(JNIEnv* pEnv, jclass clazz, jfieldID fieldID, jshort val)
         {
-            GetFieldAccessor(fieldID).setShort(null, (short)val);
+#if FIRST_PASS
+            throw new NotImplementedException();
+#else
+            GetFieldWrapper(fieldID).UnsafeSetValue<short>(null, val);
+#endif
         }
 
         internal static void SetStaticIntField(JNIEnv* pEnv, jclass clazz, jfieldID fieldID, jint val)
         {
-            GetFieldAccessor(fieldID).setInt(null, (int)val);
+#if FIRST_PASS
+            throw new NotImplementedException();
+#else
+            GetFieldWrapper(fieldID).UnsafeSetValue<int>(null, val);
+#endif
         }
 
         internal static void SetStaticLongField(JNIEnv* pEnv, jclass clazz, jfieldID fieldID, jlong val)
         {
-            GetFieldAccessor(fieldID).setLong(null, (long)val);
+#if FIRST_PASS
+            throw new NotImplementedException();
+#else
+            GetFieldWrapper(fieldID).UnsafeSetValue<long>(null, val);
+#endif
         }
 
         internal static void SetStaticFloatField(JNIEnv* pEnv, jclass clazz, jfieldID fieldID, jfloat val)
         {
-            GetFieldAccessor(fieldID).setFloat(null, (float)val);
+#if FIRST_PASS
+            throw new NotImplementedException();
+#else
+            GetFieldWrapper(fieldID).UnsafeSetValue<float>(null, val);
+#endif
         }
 
         internal static void SetStaticDoubleField(JNIEnv* pEnv, jclass clazz, jfieldID fieldID, jdouble val)
         {
-            GetFieldAccessor(fieldID).setDouble(null, (double)val);
+#if FIRST_PASS
+            throw new NotImplementedException();
+#else
+            GetFieldWrapper(fieldID).UnsafeSetValue<double>(null, val);
+#endif
         }
 
         internal static jstring NewString(JNIEnv* pEnv, jchar* unicode, int len)
