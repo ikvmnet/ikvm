@@ -201,6 +201,7 @@ namespace IKVM.Java.Externs.sun.misc
             {
                 return o switch
                 {
+                    TypeWrapper w => GetField<bool>(null, offset),
                     object[] array => array[offset / IntPtr.Size],
                     object obj => GetField<object>(obj, offset),
                     _ => throw new global::java.lang.IllegalArgumentException(),
@@ -233,6 +234,9 @@ namespace IKVM.Java.Externs.sun.misc
             {
                 switch (o)
                 {
+                    case TypeWrapper w:
+                        PutField(w, offset, x);
+                        break;
                     case object[] array:
                         array[offset / IntPtr.Size] = x;
                         break;
@@ -1924,6 +1928,7 @@ namespace IKVM.Java.Externs.sun.misc
 #else
             return o switch
             {
+                TypeWrapper w => GetField<bool>(null, offset),
                 object[] array when array.GetType() == typeof(object[]) => Volatile.Read(ref array[offset / IntPtr.Size]),
                 object[] array => GetArrayObjectVolatile(array, offset),
                 object obj => GetFieldVolatile<object>(obj, offset),
@@ -1946,6 +1951,9 @@ namespace IKVM.Java.Externs.sun.misc
 #else
             switch (o)
             {
+                case TypeWrapper w:
+                    PutField(w, offset, x);
+                    break;
                 case object[] array when array.GetType() == typeof(object[]):
                     Volatile.Write(ref array[offset / IntPtr.Size], x);
                     break;
