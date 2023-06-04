@@ -198,7 +198,7 @@ namespace IKVM.Java.Externs.sun.misc
             {
                 return o switch
                 {
-                    TypeWrapper w => GetField<bool>(null, offset),
+                    TypeWrapper w => GetField<object>(null, offset),
                     object[] array => array[offset / IntPtr.Size],
                     object obj => GetField<object>(obj, offset),
                     _ => throw new global::java.lang.IllegalArgumentException(),
