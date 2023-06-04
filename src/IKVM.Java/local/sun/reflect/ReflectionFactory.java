@@ -23,12 +23,6 @@
  * questions.
  */
 
-/*IKVM*/
-/*
- * May 29, 2007       Modified for IKVM.NET by Jeroen Frijters
- * 
- */
-
 package sun.reflect;
 
 import java.lang.reflect.Field;
@@ -55,11 +49,29 @@ import sun.reflect.misc.ReflectUtil;
 
 public class ReflectionFactory {
 
+    private static boolean initted = false;
     private static final Permission reflectionFactoryAccessPerm
         = new RuntimePermission("reflectionFactoryAccess");
     private static final ReflectionFactory soleInstance = new ReflectionFactory();
     // Provides access to package-private mechanisms in java.lang.reflect
     private static volatile LangReflectAccess langReflectAccess;
+
+    //
+    // "Inflation" mechanism. Loading bytecodes to implement
+    // Method.invoke() and Constructor.newInstance() currently costs
+    // 3-4x more than an invocation via native code for the first
+    // invocation (though subsequent invocations have been benchmarked
+    // to be over 20x faster). Unfortunately this cost increases
+    // startup time for certain applications that use reflection
+    // intensively (but only once per class) to bootstrap themselves.
+    // To avoid this penalty we reuse the existing JVM entry points
+    // for the first few invocations of Methods and Constructors and
+    // then switch to the bytecode-based implementations.
+    //
+    // Package-private to be accessible to NativeMethodAccessorImpl
+    // and NativeConstructorAccessorImpl
+    private static boolean noInflation        = false;
+    private static int     inflationThreshold = 15;
 
     private ReflectionFactory() {
     }
@@ -125,13 +137,35 @@ public class ReflectionFactory {
      * @param field the field
      * @param override true if caller has overridden aaccessibility
      */
-    public native FieldAccessor newFieldAccessor(Field field, boolean override);
+    public FieldAccessor newFieldAccessor(Field field, boolean override) {
+        checkInitted();
+        return UnsafeFieldAccessorFactory.newFieldAccessor(field, override);
+    }
 
-    public native MethodAccessor newMethodAccessor(Method method);
+    public MethodAccessor newMethodAccessor(Method method) {
+        checkInitted();
 
-    private native ConstructorAccessor newConstructorAccessor0(Constructor c);
+        if (noInflation && !ReflectUtil.isVMAnonymousClass(method.getDeclaringClass())) {
+            return new MethodAccessorGenerator().
+                generateMethod(method.getDeclaringClass(),
+                               method.getName(),
+                               method.getParameterTypes(),
+                               method.getReturnType(),
+                               method.getExceptionTypes(),
+                               method.getModifiers());
+        } else {
+            NativeMethodAccessorImpl acc =
+                new NativeMethodAccessorImpl(method);
+            DelegatingMethodAccessorImpl res =
+                new DelegatingMethodAccessorImpl(acc);
+            acc.setParent(res);
+            return res;
+        }
+    }
 
     public ConstructorAccessor newConstructorAccessor(Constructor<?> c) {
+        checkInitted();
+
         Class<?> declaringClass = c.getDeclaringClass();
         if (Modifier.isAbstract(declaringClass.getModifiers())) {
             return new InstantiationExceptionConstructorAccessorImpl(null);
@@ -140,7 +174,28 @@ public class ReflectionFactory {
             return new InstantiationExceptionConstructorAccessorImpl
                 ("Can not instantiate java.lang.Class");
         }
-        return newConstructorAccessor0(c);
+        // Bootstrapping issue: since we use Class.newInstance() in
+        // the ConstructorAccessor generation process, we have to
+        // break the cycle here.
+        if (Reflection.isSubclassOf(declaringClass,
+                                    ConstructorAccessorImpl.class)) {
+            return new BootstrapConstructorAccessorImpl(c);
+        }
+
+        if (noInflation && !ReflectUtil.isVMAnonymousClass(c.getDeclaringClass())) {
+            return new MethodAccessorGenerator().
+                generateConstructor(c.getDeclaringClass(),
+                                    c.getParameterTypes(),
+                                    c.getExceptionTypes(),
+                                    c.getModifiers());
+        } else {
+            NativeConstructorAccessorImpl acc =
+                new NativeConstructorAccessorImpl(c);
+            DelegatingConstructorAccessorImpl res =
+                new DelegatingConstructorAccessorImpl(acc);
+            acc.setParent(res);
+            return res;
+        }
     }
 
     //--------------------------------------------------------------------------
@@ -273,8 +328,6 @@ public class ReflectionFactory {
     //
     //
 
-    private static native ConstructorAccessor newConstructorAccessorForSerialization(Class classToInstantiate, Constructor constructorToCall);
-
     public Constructor<?> newConstructorForSerialization
         (Class<?> classToInstantiate, Constructor<?> constructorToCall)
     {
@@ -283,7 +336,12 @@ public class ReflectionFactory {
             return constructorToCall;
         }
 
-        ConstructorAccessor acc = newConstructorAccessorForSerialization(classToInstantiate, constructorToCall);
+        ConstructorAccessor acc = new MethodAccessorGenerator().
+            generateSerializationConstructor(classToInstantiate,
+                                             constructorToCall.getParameterTypes(),
+                                             constructorToCall.getExceptionTypes(),
+                                             constructorToCall.getModifiers(),
+                                             constructorToCall.getDeclaringClass());
         Constructor<?> c = newConstructor(constructorToCall.getDeclaringClass(),
                                           constructorToCall.getParameterTypes(),
                                           constructorToCall.getExceptionTypes(),
@@ -304,6 +362,54 @@ public class ReflectionFactory {
     //
     // Internals only below this point
     //
+
+    static int inflationThreshold() {
+        return inflationThreshold;
+    }
+
+    /** We have to defer full initialization of this class until after
+        the static initializer is run since java.lang.reflect.Method's
+        static initializer (more properly, that for
+        java.lang.reflect.AccessibleObject) causes this class's to be
+        run, before the system properties are set up. */
+    private static void checkInitted() {
+        if (initted) return;
+        AccessController.doPrivileged(
+            new PrivilegedAction<Void>() {
+                public Void run() {
+                    // Tests to ensure the system properties table is fully
+                    // initialized. This is needed because reflection code is
+                    // called very early in the initialization process (before
+                    // command-line arguments have been parsed and therefore
+                    // these user-settable properties installed.) We assume that
+                    // if System.out is non-null then the System class has been
+                    // fully initialized and that the bulk of the startup code
+                    // has been run.
+
+                    if (System.out == null) {
+                        // java.lang.System not yet fully initialized
+                        return null;
+                    }
+
+                    String val = System.getProperty("sun.reflect.noInflation");
+                    if (val != null && val.equals("true")) {
+                        noInflation = true;
+                    }
+
+                    val = System.getProperty("sun.reflect.inflationThreshold");
+                    if (val != null) {
+                        try {
+                            inflationThreshold = Integer.parseInt(val);
+                        } catch (NumberFormatException e) {
+                            throw new RuntimeException("Unable to parse property sun.reflect.inflationThreshold", e);
+                        }
+                    }
+
+                    initted = true;
+                    return null;
+                }
+            });
+    }
 
     private static LangReflectAccess langReflectAccess() {
         if (langReflectAccess == null) {

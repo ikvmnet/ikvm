@@ -23,14 +23,6 @@
  * questions.
  */
 
-/*IKVM*/
-/* Modified for IKVM by Jeroen Frijters
- * 
- * May 27, 2007     Added support for @ikvm.lang.Internal access modifier
- * 
- */
-/*IKVM*/
-
 package sun.reflect;
 
 import java.lang.reflect.*;
@@ -58,9 +50,6 @@ public class Reflection {
         fieldFilterMap = map;
 
         methodFilterMap = new HashMap<>();
-        //// [IKVM] to avoid initialization order issues, we actually add
-        //// Unsafe.getUnsafe() here, instead of in Unsafe's class initializer
-        //methodFilterMap.put(sun.misc.Unsafe.class, new String[] {"getUnsafe"});
     }
 
     /** Returns the class of the caller of the method calling this method,
@@ -115,9 +104,6 @@ public class Reflection {
         }
     }
 
-    /*IKVM*/
-    private static native boolean checkInternalAccess(Class currentClass, Class memberClass);
-
     public static boolean verifyMemberAccess(Class<?> currentClass,
                                              // Declaring class of field
                                              // or method
@@ -141,8 +127,7 @@ public class Reflection {
         if (!Modifier.isPublic(getClassAccessFlags(memberClass))) {
             isSameClassPackage = isSameClassPackage(currentClass, memberClass);
             gotIsSameClassPackage = true;
-            /*IKVM*/
-            if (!isSameClassPackage && !checkInternalAccess(currentClass, memberClass)) {
+            if (!isSameClassPackage) {
                 return false;
             }
         }
@@ -151,12 +136,6 @@ public class Reflection {
 
         if (Modifier.isPublic(modifiers)) {
             return true;
-        }
-
-        /*IKVM*/
-        // Is the member @ikvm.lang.Internal accessible?
-        if ((modifiers & 0x40000000) != 0) {
-            return currentClass.getClassLoader() == memberClass.getClassLoader();
         }
 
         boolean successSoFar = false;

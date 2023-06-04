@@ -72,6 +72,9 @@ public final class Method extends Executable {
     private transient String              signature;
     // generic info repository; lazily initialized
     private transient MethodRepository genericInfo;
+    private byte[]              annotations;
+    private byte[]              parameterAnnotations;
+    private byte[]              annotationDefault;
     private volatile MethodAccessor methodAccessor;
     // For sharing of MethodAccessors. This branching structure is
     // currently only two levels deep (i.e., one root Method and
@@ -115,9 +118,9 @@ public final class Method extends Executable {
            int modifiers,
            int slot,
            String signature,
-           byte[] unused1,
-           byte[] unused2,
-           byte[] unused3) {
+           byte[] annotations,
+           byte[] parameterAnnotations,
+           byte[] annotationDefault) {
         this.clazz = declaringClass;
         this.name = name;
         this.parameterTypes = parameterTypes;
@@ -126,6 +129,9 @@ public final class Method extends Executable {
         this.modifiers = modifiers;
         this.slot = slot;
         this.signature = signature;
+        this.annotations = annotations;
+        this.parameterAnnotations = parameterAnnotations;
+        this.annotationDefault = annotationDefault;
     }
 
     /**
@@ -146,7 +152,7 @@ public final class Method extends Executable {
 
         Method res = new Method(clazz, name, parameterTypes, returnType,
                                 exceptionTypes, modifiers, slot, signature,
-                                null, null, null);
+                                annotations, parameterAnnotations, annotationDefault);
         res.root = this;
         // Might as well eagerly propagate this if already present
         res.methodAccessor = methodAccessor;
@@ -164,6 +170,11 @@ public final class Method extends Executable {
     @Override
     boolean hasGenericInformation() {
         return (getGenericSignature() != null);
+    }
+
+    @Override
+    byte[] getAnnotationBytes() {
+        return annotations;
     }
 
     /**
@@ -255,6 +266,7 @@ public final class Method extends Executable {
 
     /**
      * {@inheritDoc}
+     * @since 1.8
      */
     public int getParameterCount() { return parameterTypes.length; }
 
@@ -483,7 +495,7 @@ public final class Method extends Executable {
         if (ma == null) {
             ma = acquireMethodAccessor();
         }
-        return ma.invoke(obj, args, ikvm.internal.CallerID.getCallerID());
+        return ma.invoke(obj, args);
     }
 
     /**
@@ -611,7 +623,7 @@ public final class Method extends Executable {
      */
     @Override
     public Annotation[][] getParameterAnnotations() {
-        return sharedGetParameterAnnotations(parameterTypes);
+        return sharedGetParameterAnnotations(parameterTypes, parameterAnnotations);
     }
 
     /**

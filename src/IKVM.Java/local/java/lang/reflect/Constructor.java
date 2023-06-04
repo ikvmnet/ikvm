@@ -67,6 +67,8 @@ public final class Constructor<T> extends Executable {
     private transient String    signature;
     // generic info repository; lazily initialized
     private transient ConstructorRepository genericInfo;
+    private byte[]              annotations;
+    private byte[]              parameterAnnotations;
 
     // Generics infrastructure
     // Accessor for factory
@@ -116,14 +118,16 @@ public final class Constructor<T> extends Executable {
                 int modifiers,
                 int slot,
                 String signature,
-                byte[] unused1,
-                byte[] unused2) {
+                byte[] annotations,
+                byte[] parameterAnnotations) {
         this.clazz = declaringClass;
         this.parameterTypes = parameterTypes;
         this.exceptionTypes = checkedExceptions;
         this.modifiers = modifiers;
         this.slot = slot;
         this.signature = signature;
+        this.annotations = annotations;
+        this.parameterAnnotations = parameterAnnotations;
     }
 
     /**
@@ -146,8 +150,8 @@ public final class Constructor<T> extends Executable {
                                                parameterTypes,
                                                exceptionTypes, modifiers, slot,
                                                signature,
-                                               null,
-                                               null);
+                                               annotations,
+                                               parameterAnnotations);
         res.root = this;
         // Might as well eagerly propagate this if already present
         res.constructorAccessor = constructorAccessor;
@@ -157,6 +161,11 @@ public final class Constructor<T> extends Executable {
     @Override
     boolean hasGenericInformation() {
         return (getSignature() != null);
+    }
+
+    @Override
+    byte[] getAnnotationBytes() {
+        return annotations;
     }
 
     /**
@@ -209,6 +218,7 @@ public final class Constructor<T> extends Executable {
 
     /**
      * {@inheritDoc}
+     * @since 1.8
      */
     public int getParameterCount() { return parameterTypes.length; }
 
@@ -479,11 +489,11 @@ public final class Constructor<T> extends Executable {
     }
 
     byte[] getRawAnnotations() {
-        return null;
+        return annotations;
     }
 
     byte[] getRawParameterAnnotations() {
-        return null;
+        return parameterAnnotations;
     }
 
 
@@ -510,7 +520,7 @@ public final class Constructor<T> extends Executable {
      */
     @Override
     public Annotation[][] getParameterAnnotations() {
-        return sharedGetParameterAnnotations(parameterTypes);
+        return sharedGetParameterAnnotations(parameterTypes, parameterAnnotations);
     }
 
     @Override

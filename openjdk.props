@@ -3859,12 +3859,8 @@
         <OpenJdkSource Include="$(OpenJdkDir)\jdk\src\share\classes\sun\print\SunPrinterJobService.java" />
         <OpenJdkSource Include="$(OpenJdkDir)\jdk\src\share\classes\sun\reflect\**\*.java" PackagePath="sun\reflect" />
         <OpenJdkSource Remove="$(OpenJdkDir)\jdk\src\share\classes\sun\reflect\annotation\AnnotationType.java" />
-        <OpenJdkSource Remove="$(OpenJdkDir)\jdk\src\share\classes\sun\reflect\MethodAccessor.java" />
         <OpenJdkSource Remove="$(OpenJdkDir)\jdk\src\share\classes\sun\reflect\Reflection.java" />
         <OpenJdkSource Remove="$(OpenJdkDir)\jdk\src\share\classes\sun\reflect\ReflectionFactory.java" />
-        <OpenJdkSource Remove="$(OpenJdkDir)\jdk\src\share\classes\sun\reflect\DelegatingMethodAccessorImpl.java" />
-        <OpenJdkSource Remove="$(OpenJdkDir)\jdk\src\share\classes\sun\reflect\NativeMethodAccessorImpl.java" />
-        <OpenJdkSource Remove="$(OpenJdkDir)\jdk\src\share\classes\sun\reflect\NativeConstructorAccessorImpl.java" />
         <OpenJdkSource Include="$(OpenJdkDir)\jdk\src\share\classes\sun\rmi\**\*.java" PackagePath="sun\rmi" />
         <OpenJdkSource Include="$(OpenJdkDir)\jdk\src\share\classes\sun\security\**\*.java" PackagePath="sun\security" />
         <OpenJdkSource Remove="$(OpenJdkDir)\jdk\src\share\classes\sun\security\ec\ECDHKeyAgreement.java" />

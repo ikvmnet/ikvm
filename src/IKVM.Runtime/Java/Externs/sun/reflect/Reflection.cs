@@ -81,6 +81,11 @@ namespace IKVM.Java.Externs.sun.reflect
             return false;
         }
 
+        /// <summary>
+        /// Implements the native method 'getCallerClass'.
+        /// </summary>
+        /// <returns></returns>
+        /// <exception cref="global::java.lang.InternalError"></exception>
         public static global::java.lang.Class getCallerClass()
         {
 #if FIRST_PASS
@@ -90,13 +95,19 @@ namespace IKVM.Java.Externs.sun.reflect
 #endif
         }
 
-        // NOTE this method is hooked up explicitly through map.xml to prevent inlining of the native stub
-        // and tail-call optimization in the native stub.
+        /// <summary>
+        /// Implements the native method 'getCallerClass'.
+        /// </summary>
+        /// <param name="realFramesToSkip"></param>
+        /// <returns></returns>
         public static global::java.lang.Class getCallerClass(int realFramesToSkip)
         {
 #if FIRST_PASS
             throw new NotImplementedException();
 #else
+            // NOTE this method is hooked up explicitly through map.xml to prevent inlining of the native stub
+            // and tail-call optimization in the native stub.
+
             if (realFramesToSkip <= 0)
                 return (global::java.lang.Class)ClassLiteral<global::sun.reflect.Reflection>.Value;
 
@@ -109,8 +120,7 @@ namespace IKVM.Java.Externs.sun.reflect
                 if (IsHideFromStackWalk(method))
                     continue;
 
-                // HACK we skip HideFromJavaFlags.StackTrace too because we want to skip the LambdaForm methods
-                // that are used by late binding
+                // HACK we skip HideFromJavaFlags.StackTrace too because we want to skip the LambdaForm methods that are used by late binding
                 if ((GetHideFromJavaFlags(method) & HideFromJavaFlags.StackTrace) != 0)
                     continue;
 
@@ -120,6 +130,11 @@ namespace IKVM.Java.Externs.sun.reflect
 #endif
         }
 
+        /// <summary>
+        /// Implements the native method 'getClassAccessFlags'.
+        /// </summary>
+        /// <param name="clazz"></param>
+        /// <returns></returns>
         public static int getClassAccessFlags(global::java.lang.Class clazz)
         {
             // the mask comes from JVM_RECOGNIZED_CLASS_MODIFIERS in src/hotspot/share/vm/prims/jvm.h
@@ -127,13 +142,6 @@ namespace IKVM.Java.Externs.sun.reflect
             // interface implies abstract
             mods |= (mods & 0x0200) << 1;
             return mods;
-        }
-
-        public static bool checkInternalAccess(global::java.lang.Class currentClass, global::java.lang.Class memberClass)
-        {
-            var current = TypeWrapper.FromClass(currentClass);
-            var member = TypeWrapper.FromClass(memberClass);
-            return member.IsInternal && member.InternalsVisibleTo(current);
         }
 
     }
