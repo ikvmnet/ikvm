@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Reflection;
 using System.Runtime.InteropServices;
 
 using FluentAssertions;
@@ -528,92 +529,112 @@ namespace IKVM.Tests.Java.sun.misc
         public void CanSetStaticObjectField()
         {
             var t = new object();
-            var f = u.objectFieldOffset(((Class)typeof(StaticTestObject)).getField("objectField"));
-            u.getObject(null, f).Should().BeSameAs(null);
-            u.putObject(null, f, t);
-            u.getObject(null, f).Should().BeSameAs(t);
+            var f = ((Class)typeof(StaticTestObject)).getField("objectField");
+            var b = u.staticFieldBase(f);
+            var o = u.staticFieldOffset(f);
+            u.getObject(b, o).Should().BeSameAs(null);
+            u.putObject(b, o, t);
+            u.getObject(b, o).Should().BeSameAs(t);
         }
 
         [TestMethod]
         public void CanSetStaticStringField()
         {
             var t = "TEST";
-            var f = u.objectFieldOffset(((Class)typeof(StaticTestObject)).getField("stringField"));
-            u.getObject(null, f).Should().BeSameAs(null);
-            u.putObject(null, f, t);
-            u.getObject(null, f).Should().BeSameAs(t);
+            var f = ((Class)typeof(StaticTestObject)).getField("stringField");
+            var b = u.staticFieldBase(f);
+            var o = u.staticFieldOffset(f);
+            u.getObject(b, o).Should().BeSameAs(null);
+            u.putObject(b, o, t);
+            u.getObject(b, o).Should().BeSameAs(t);
         }
 
         [TestMethod]
         public void CanSetStaticBooleanField()
         {
-            var f = u.staticFieldOffset(((Class)typeof(StaticTestObject)).getField("booleanField"));
-            u.getBoolean(null, f).Should().Be(false);
-            u.putBoolean(null, f, true);
-            u.getBoolean(null, f).Should().Be(true);
+            var f = ((Class)typeof(StaticTestObject)).getField("booleanField");
+            var b = u.staticFieldBase(f);
+            var o = u.staticFieldOffset(f);
+            u.getBoolean(b, o).Should().Be(false);
+            u.putBoolean(b, o, true);
+            u.getBoolean(b, o).Should().Be(true);
         }
 
         [TestMethod]
         public void CanSetStaticByteField()
         {
-            var f = u.staticFieldOffset(((Class)typeof(StaticTestObject)).getField("byteField"));
-            u.getByte(null, f).Should().Be(0);
-            u.putByte(null, f, 1);
-            u.getByte(null, f).Should().Be(1);
+            var f = ((Class)typeof(StaticTestObject)).getField("byteField");
+            var b = u.staticFieldBase(f);
+            var o = u.staticFieldOffset(f);
+            u.getByte(b, o).Should().Be(0);
+            u.putByte(b, o, 1);
+            u.getByte(b, o).Should().Be(1);
         }
 
         [TestMethod]
         public void CanSetStaticCharField()
         {
-            var f = u.staticFieldOffset(((Class)typeof(StaticTestObject)).getField("charField"));
-            u.getChar(null, f).Should().Be('\0');
-            u.putChar(null, f, 'A');
-            u.getChar(null, f).Should().Be('A');
+            var f = ((Class)typeof(StaticTestObject)).getField("charField");
+            var b = u.staticFieldBase(f);
+            var o = u.staticFieldOffset(f);
+            u.getChar(b, o).Should().Be('\0');
+            u.putChar(b, o, 'A');
+            u.getChar(b, o).Should().Be('A');
         }
 
         [TestMethod]
         public void CanSetStaticShortField()
         {
-            var f = u.staticFieldOffset(((Class)typeof(StaticTestObject)).getField("shortField"));
-            u.getShort(null, f).Should().Be(0);
-            u.putShort(null, f, 1);
-            u.getShort(null, f).Should().Be(1);
+            var f = ((Class)typeof(StaticTestObject)).getField("shortField");
+            var b = u.staticFieldBase(f);
+            var o = u.staticFieldOffset(f);
+            u.getShort(b, o).Should().Be(0);
+            u.putShort(b, o, 1);
+            u.getShort(b, o).Should().Be(1);
         }
 
         [TestMethod]
         public void CanSetStaticIntField()
         {
-            var f = u.staticFieldOffset(((Class)typeof(StaticTestObject)).getField("intField"));
-            u.getInt(null, f).Should().Be(0);
-            u.putInt(null, f, 1);
-            u.getInt(null, f).Should().Be(1);
+            var f = ((Class)typeof(StaticTestObject)).getField("intField");
+            var b = u.staticFieldBase(f);
+            var o = u.staticFieldOffset(f);
+            u.getInt(b, o).Should().Be(0);
+            u.putInt(b, o, 1);
+            u.getInt(b, o).Should().Be(1);
         }
 
         [TestMethod]
         public void CanSetStaticLongField()
         {
-            var f = u.staticFieldOffset(((Class)typeof(StaticTestObject)).getField("longField"));
-            u.getLong(null, f).Should().Be(0);
-            u.putLong(null, f, 1);
-            u.getLong(null, f).Should().Be(1);
+            var f = ((Class)typeof(StaticTestObject)).getField("longField");
+            var b = u.staticFieldBase(f);
+            var o = u.staticFieldOffset(f);
+            u.getLong(b, o).Should().Be(0);
+            u.putLong(b, o, 1);
+            u.getLong(b, o).Should().Be(1);
         }
 
         [TestMethod]
         public void CanSetStaticFloatField()
         {
-            var f = u.staticFieldOffset(((Class)typeof(StaticTestObject)).getField("floatField"));
-            u.getFloat(null, f).Should().Be(0);
-            u.putFloat(null, f, 1);
-            u.getFloat(null, f).Should().Be(1);
+            var f = ((Class)typeof(StaticTestObject)).getField("floatField");
+            var b = u.staticFieldBase(f);
+            var o = u.staticFieldOffset(f);
+            u.getFloat(b, o).Should().Be(0);
+            u.putFloat(b, o, 1);
+            u.getFloat(b, o).Should().Be(1);
         }
 
         [TestMethod]
         public void CanSetStaticDoubleField()
         {
-            var f = u.staticFieldOffset(((Class)typeof(StaticTestObject)).getField("doubleField"));
-            u.getDouble(null, f).Should().Be(0);
-            u.putDouble(null, f, 1);
-            u.getDouble(null, f).Should().Be(1);
+            var f = ((Class)typeof(StaticTestObject)).getField("doubleField");
+            var b = u.staticFieldBase(f);
+            var o = u.staticFieldOffset(f);
+            u.getDouble(b, o).Should().Be(0);
+            u.putDouble(b, o, 1);
+            u.getDouble(b, o).Should().Be(1);
         }
 
         class StaticVolatileTestObject
@@ -636,92 +657,112 @@ namespace IKVM.Tests.Java.sun.misc
         public void CanSetStaticObjectFieldVolatile()
         {
             var t = new object();
-            var f = u.staticFieldOffset(((Class)typeof(StaticVolatileTestObject)).getField("objectField"));
-            u.getObjectVolatile(null, f).Should().BeSameAs(null);
-            u.putObjectVolatile(null, f, t);
-            u.getObjectVolatile(null, f).Should().BeSameAs(t);
+            var f = ((Class)typeof(StaticVolatileTestObject)).getField("objectField");
+            var b = u.staticFieldBase(f);
+            var o = u.staticFieldOffset(f);
+            u.getObjectVolatile(b, o).Should().BeSameAs(null);
+            u.putObjectVolatile(b, o, t);
+            u.getObjectVolatile(b, o).Should().BeSameAs(t);
         }
 
         [TestMethod]
         public void CanSetStaticStringFieldVolatile()
         {
             var t = "TEST";
-            var f = u.staticFieldOffset(((Class)typeof(StaticVolatileTestObject)).getField("stringField"));
-            u.getObjectVolatile(null, f).Should().BeSameAs(null);
-            u.putObjectVolatile(null, f, t);
-            u.getObjectVolatile(null, f).Should().BeSameAs(t);
+            var f = ((Class)typeof(StaticVolatileTestObject)).getField("stringField");
+            var b = u.staticFieldBase(f);
+            var o = u.staticFieldOffset(f);
+            u.getObjectVolatile(b, o).Should().BeSameAs(null);
+            u.putObjectVolatile(b, o, t);
+            u.getObjectVolatile(b, o).Should().BeSameAs(t);
         }
 
         [TestMethod]
         public void CanSetStaticBooleanFieldVolatile()
         {
-            var f = u.staticFieldOffset(((Class)typeof(StaticVolatileTestObject)).getField("booleanField"));
-            u.getBooleanVolatile(null, f).Should().Be(false);
-            u.putBooleanVolatile(null, f, true);
-            u.getBooleanVolatile(null, f).Should().Be(true);
+            var f = ((Class)typeof(StaticVolatileTestObject)).getField("booleanField");
+            var b = u.staticFieldBase(f);
+            var o = u.staticFieldOffset(f);
+            u.getBooleanVolatile(b, o).Should().Be(false);
+            u.putBooleanVolatile(b, o, true);
+            u.getBooleanVolatile(b, o).Should().Be(true);
         }
 
         [TestMethod]
         public void CanSetStaticByteFieldVolatile()
         {
-            var f = u.staticFieldOffset(((Class)typeof(StaticVolatileTestObject)).getField("byteField"));
-            u.getByteVolatile(null, f).Should().Be(0);
-            u.putByteVolatile(null, f, 1);
-            u.getByteVolatile(null, f).Should().Be(1);
+            var f = ((Class)typeof(StaticVolatileTestObject)).getField("byteField");
+            var b = u.staticFieldBase(f);
+            var o = u.staticFieldOffset(f);
+            u.getByteVolatile(b, o).Should().Be(0);
+            u.putByteVolatile(b, o, 1);
+            u.getByteVolatile(b, o).Should().Be(1);
         }
 
         [TestMethod]
         public void CanSetStaticCharFieldVolatile()
         {
-            var f = u.staticFieldOffset(((Class)typeof(StaticVolatileTestObject)).getField("charField"));
-            u.getCharVolatile(null, f).Should().Be('\0');
-            u.putCharVolatile(null, f, 'A');
-            u.getCharVolatile(null, f).Should().Be('A');
+            var f = ((Class)typeof(StaticVolatileTestObject)).getField("charField");
+            var b = u.staticFieldBase(f);
+            var o = u.staticFieldOffset(f);
+            u.getCharVolatile(b, o).Should().Be('\0');
+            u.putCharVolatile(b, o, 'A');
+            u.getCharVolatile(b, o).Should().Be('A');
         }
 
         [TestMethod]
         public void CanSetStaticShortFieldVolatile()
         {
-            var f = u.staticFieldOffset(((Class)typeof(StaticVolatileTestObject)).getField("shortField"));
-            u.getShortVolatile(null, f).Should().Be(0);
-            u.putShortVolatile(null, f, 1);
-            u.getShortVolatile(null, f).Should().Be(1);
+            var f = ((Class)typeof(StaticVolatileTestObject)).getField("shortField");
+            var b = u.staticFieldBase(f);
+            var o = u.staticFieldOffset(f);
+            u.getShortVolatile(b, o).Should().Be(0);
+            u.putShortVolatile(b, o, 1);
+            u.getShortVolatile(b, o).Should().Be(1);
         }
 
         [TestMethod]
         public void CanSetStaticIntFieldVolatile()
         {
-            var f = u.staticFieldOffset(((Class)typeof(StaticVolatileTestObject)).getField("intField"));
-            u.getIntVolatile(null, f).Should().Be(0);
-            u.putIntVolatile(null, f, 1);
-            u.getIntVolatile(null, f).Should().Be(1);
+            var f = ((Class)typeof(StaticVolatileTestObject)).getField("intField");
+            var b = u.staticFieldBase(f);
+            var o = u.staticFieldOffset(f);
+            u.getIntVolatile(b, o).Should().Be(0);
+            u.putIntVolatile(b, o, 1);
+            u.getIntVolatile(b, o).Should().Be(1);
         }
 
         [TestMethod]
         public void CanSetStaticLongFieldVolatile()
         {
-            var f = u.staticFieldOffset(((Class)typeof(StaticVolatileTestObject)).getField("longField"));
-            u.getLongVolatile(null, f).Should().Be(0);
-            u.putLongVolatile(null, f, 1);
-            u.getLongVolatile(null, f).Should().Be(1);
+            var f = ((Class)typeof(StaticVolatileTestObject)).getField("longField");
+            var b = u.staticFieldBase(f);
+            var o = u.staticFieldOffset(f);
+            u.getLongVolatile(b, o).Should().Be(0);
+            u.putLongVolatile(b, o, 1);
+            u.getLongVolatile(b, o).Should().Be(1);
         }
 
         [TestMethod]
         public void CanSetStaticFloatFieldVolatile()
         {
-            var f = u.staticFieldOffset(((Class)typeof(StaticVolatileTestObject)).getField("floatField"));
-            u.getFloatVolatile(null, f).Should().Be(0);
-            u.putFloatVolatile(null, f, 1);
-            u.getFloatVolatile(null, f).Should().Be(1);
+            var f = ((Class)typeof(StaticVolatileTestObject)).getField("floatField");
+            var b = u.staticFieldBase(f);
+            var o = u.staticFieldOffset(f);
+            u.getFloatVolatile(b, o).Should().Be(0);
+            u.putFloatVolatile(b, o, 1);
+            u.getFloatVolatile(b, o).Should().Be(1);
         }
 
         [TestMethod]
         public void CanSetStaticDoubleFieldVolatile()
         {
-            var f = u.staticFieldOffset(((Class)typeof(StaticVolatileTestObject)).getField("doubleField"));
-            u.getDoubleVolatile(null, f).Should().Be(0);
-            u.putDoubleVolatile(null, f, 1);
-            u.getDoubleVolatile(null, f).Should().Be(1);
+            var f = ((Class)typeof(StaticVolatileTestObject)).getField("doubleField");
+            var b = u.staticFieldBase(f);
+            var o = u.staticFieldOffset(f);
+            u.getDoubleVolatile(b, o).Should().Be(0);
+            u.putDoubleVolatile(b, o, 1);
+            u.getDoubleVolatile(b, o).Should().Be(1);
         }
 
         class ReadOnlyStaticTestObject
@@ -744,92 +785,112 @@ namespace IKVM.Tests.Java.sun.misc
         public void CanSetReadOnlyStaticObjectField()
         {
             var t = new object();
-            var f = u.staticFieldOffset(((Class)typeof(ReadOnlyStaticTestObject)).getField("objectField"));
-            u.getObject(null, f).Should().BeSameAs(null);
-            u.putObject(null, f, t);
-            u.getObject(null, f).Should().BeSameAs(t);
+            var f = ((Class)typeof(ReadOnlyStaticTestObject)).getField("objectField");
+            var b = u.staticFieldBase(f);
+            var o = u.staticFieldOffset(f);
+            u.getObject(b, o).Should().BeSameAs(null);
+            u.putObject(b, o, t);
+            u.getObject(b, o).Should().BeSameAs(t);
         }
 
         [TestMethod]
         public void CanSetReadOnlyStaticStringField()
         {
             var t = "TEST";
-            var f = u.staticFieldOffset(((Class)typeof(ReadOnlyStaticTestObject)).getField("stringField"));
-            u.getObject(null, f).Should().BeSameAs(null);
-            u.putObject(null, f, t);
-            u.getObject(null, f).Should().BeSameAs(t);
+            var f = ((Class)typeof(ReadOnlyStaticTestObject)).getField("stringField");
+            var b = u.staticFieldBase(f);
+            var o = u.staticFieldOffset(f);
+            u.getObject(b, o).Should().BeSameAs(null);
+            u.putObject(b, o, t);
+            u.getObject(b, o).Should().BeSameAs(t);
         }
 
         [TestMethod]
         public void CanSetReadOnlyStaticBooleanField()
         {
-            var f = u.staticFieldOffset(((Class)typeof(ReadOnlyStaticTestObject)).getField("booleanField"));
-            u.getBoolean(null, f).Should().Be(false);
-            u.putBoolean(null, f, true);
-            u.getBoolean(null, f).Should().Be(true);
+            var f = ((Class)typeof(ReadOnlyStaticTestObject)).getField("booleanField");
+            var b = u.staticFieldBase(f);
+            var o = u.staticFieldOffset(f);
+            u.getBoolean(b, o).Should().Be(false);
+            u.putBoolean(b, o, true);
+            u.getBoolean(b, o).Should().Be(true);
         }
 
         [TestMethod]
         public void CanSetReadOnlyStaticByteField()
         {
-            var f = u.staticFieldOffset(((Class)typeof(ReadOnlyStaticTestObject)).getField("byteField"));
-            u.getByte(null, f).Should().Be(0);
-            u.putByte(null, f, 1);
-            u.getByte(null, f).Should().Be(1);
+            var f = ((Class)typeof(ReadOnlyStaticTestObject)).getField("byteField");
+            var b = u.staticFieldBase(f);
+            var o = u.staticFieldOffset(f);
+            u.getByte(b, o).Should().Be(0);
+            u.putByte(b, o, 1);
+            u.getByte(b, o).Should().Be(1);
         }
 
         [TestMethod]
         public void CanSetReadOnlyStaticCharField()
         {
-            var f = u.staticFieldOffset(((Class)typeof(ReadOnlyStaticTestObject)).getField("charField"));
-            u.getChar(null, f).Should().Be('\0');
-            u.putChar(null, f, 'A');
-            u.getChar(null, f).Should().Be('A');
+            var f = ((Class)typeof(ReadOnlyStaticTestObject)).getField("charField");
+            var b = u.staticFieldBase(f);
+            var o = u.staticFieldOffset(f);
+            u.getChar(b, o).Should().Be('\0');
+            u.putChar(b, o, 'A');
+            u.getChar(b, o).Should().Be('A');
         }
 
         [TestMethod]
         public void CanSetReadOnlyStaticShortField()
         {
-            var f = u.staticFieldOffset(((Class)typeof(ReadOnlyStaticTestObject)).getField("shortField"));
-            u.getShort(null, f).Should().Be(0);
-            u.putShort(null, f, 1);
-            u.getShort(null, f).Should().Be(1);
+            var f = ((Class)typeof(ReadOnlyStaticTestObject)).getField("shortField");
+            var b = u.staticFieldBase(f);
+            var o = u.staticFieldOffset(f);
+            u.getShort(b, o).Should().Be(0);
+            u.putShort(b, o, 1);
+            u.getShort(b, o).Should().Be(1);
         }
 
         [TestMethod]
         public void CanSetReadOnlyStaticIntField()
         {
-            var f = u.staticFieldOffset(((Class)typeof(ReadOnlyStaticTestObject)).getField("intField"));
-            u.getInt(null, f).Should().Be(0);
-            u.putInt(null, f, 1);
-            u.getInt(null, f).Should().Be(1);
+            var f = ((Class)typeof(ReadOnlyStaticTestObject)).getField("intField");
+            var b = u.staticFieldBase(f);
+            var o = u.staticFieldOffset(f);
+            u.getInt(b, o).Should().Be(0);
+            u.putInt(b, o, 1);
+            u.getInt(b, o).Should().Be(1);
         }
 
         [TestMethod]
         public void CanSetReadOnlyStaticLongField()
         {
-            var f = u.staticFieldOffset(((Class)typeof(ReadOnlyStaticTestObject)).getField("longField"));
-            u.getLong(null, f).Should().Be(0);
-            u.putLong(null, f, 1);
-            u.getLong(null, f).Should().Be(1);
+            var f = ((Class)typeof(ReadOnlyStaticTestObject)).getField("longField");
+            var b = u.staticFieldBase(f);
+            var o = u.staticFieldOffset(f);
+            u.getLong(b, o).Should().Be(0);
+            u.putLong(b, o, 1);
+            u.getLong(b, o).Should().Be(1);
         }
 
         [TestMethod]
         public void CanSetReadOnlyStaticFloatField()
         {
-            var f = u.staticFieldOffset(((Class)typeof(ReadOnlyStaticTestObject)).getField("floatField"));
-            u.getFloat(null, f).Should().Be(0);
-            u.putFloat(null, f, 1);
-            u.getFloat(null, f).Should().Be(1);
+            var f = ((Class)typeof(ReadOnlyStaticTestObject)).getField("floatField");
+            var b = u.staticFieldBase(f);
+            var o = u.staticFieldOffset(f);
+            u.getFloat(b, o).Should().Be(0);
+            u.putFloat(b, o, 1);
+            u.getFloat(b, o).Should().Be(1);
         }
 
         [TestMethod]
         public void CanSetReadOnlyStaticDoubleField()
         {
-            var f = u.staticFieldOffset(((Class)typeof(ReadOnlyStaticTestObject)).getField("doubleField"));
-            u.getDouble(null, f).Should().Be(0);
-            u.putDouble(null, f, 1);
-            u.getDouble(null, f).Should().Be(1);
+            var f = ((Class)typeof(ReadOnlyStaticTestObject)).getField("doubleField");
+            var b = u.staticFieldBase(f);
+            var o = u.staticFieldOffset(f);
+            u.getDouble(b, o).Should().Be(0);
+            u.putDouble(b, o, 1);
+            u.getDouble(b, o).Should().Be(1);
         }
 
         class ReadOnlyStaticVolatileTestObject
@@ -852,92 +913,112 @@ namespace IKVM.Tests.Java.sun.misc
         public void CanSetReadOnlyStaticObjectFieldVolatile()
         {
             var t = new object();
-            var f = u.staticFieldOffset(((Class)typeof(ReadOnlyStaticVolatileTestObject)).getField("objectField"));
-            u.getObjectVolatile(null, f).Should().BeSameAs(null);
-            u.putObjectVolatile(null, f, t);
-            u.getObjectVolatile(null, f).Should().BeSameAs(t);
+            var f = ((Class)typeof(ReadOnlyStaticVolatileTestObject)).getField("objectField");
+            var b = u.staticFieldBase(f);
+            var o = u.staticFieldOffset(f);
+            u.getObjectVolatile(b, o).Should().BeSameAs(null);
+            u.putObjectVolatile(b, o, t);
+            u.getObjectVolatile(b, o).Should().BeSameAs(t);
         }
 
         [TestMethod]
         public void CanSetReadOnlyStaticStringFieldVolatile()
         {
             var t = "TEST";
-            var f = u.staticFieldOffset(((Class)typeof(ReadOnlyStaticVolatileTestObject)).getField("stringField"));
-            u.getObjectVolatile(null, f).Should().BeSameAs(null);
-            u.putObjectVolatile(null, f, t);
-            u.getObjectVolatile(null, f).Should().BeSameAs(t);
+            var f = ((Class)typeof(ReadOnlyStaticVolatileTestObject)).getField("stringField");
+            var b = u.staticFieldBase(f);
+            var o = u.staticFieldOffset(f);
+            u.getObjectVolatile(b, o).Should().BeSameAs(null);
+            u.putObjectVolatile(b, o, t);
+            u.getObjectVolatile(b, o).Should().BeSameAs(t);
         }
 
         [TestMethod]
         public void CanSetReadOnlyStaticBooleanFieldVolatile()
         {
-            var f = u.staticFieldOffset(((Class)typeof(ReadOnlyStaticVolatileTestObject)).getField("booleanField"));
-            u.getBooleanVolatile(null, f).Should().Be(false);
-            u.putBooleanVolatile(null, f, true);
-            u.getBooleanVolatile(null, f).Should().Be(true);
+            var f = ((Class)typeof(ReadOnlyStaticVolatileTestObject)).getField("booleanField");
+            var b = u.staticFieldBase(f);
+            var o = u.staticFieldOffset(f);
+            u.getBooleanVolatile(b, o).Should().Be(false);
+            u.putBooleanVolatile(b, o, true);
+            u.getBooleanVolatile(b, o).Should().Be(true);
         }
 
         [TestMethod]
         public void CanSetReadOnlyStaticByteFieldVolatile()
         {
-            var f = u.staticFieldOffset(((Class)typeof(ReadOnlyStaticVolatileTestObject)).getField("byteField"));
-            u.getByteVolatile(null, f).Should().Be(0);
-            u.putByteVolatile(null, f, 1);
-            u.getByteVolatile(null, f).Should().Be(1);
+            var f = ((Class)typeof(ReadOnlyStaticVolatileTestObject)).getField("byteField");
+            var b = u.staticFieldBase(f);
+            var o = u.staticFieldOffset(f);
+            u.getByteVolatile(b, o).Should().Be(0);
+            u.putByteVolatile(b, o, 1);
+            u.getByteVolatile(b, o).Should().Be(1);
         }
 
         [TestMethod]
         public void CanSetReadOnlyStaticCharFieldVolatile()
         {
-            var f = u.staticFieldOffset(((Class)typeof(ReadOnlyStaticVolatileTestObject)).getField("charField"));
-            u.getCharVolatile(null, f).Should().Be('\0');
-            u.putCharVolatile(null, f, 'A');
-            u.getCharVolatile(null, f).Should().Be('A');
+            var f = ((Class)typeof(ReadOnlyStaticVolatileTestObject)).getField("charField");
+            var b = u.staticFieldBase(f);
+            var o = u.staticFieldOffset(f);
+            u.getCharVolatile(b, o).Should().Be('\0');
+            u.putCharVolatile(b, o, 'A');
+            u.getCharVolatile(b, o).Should().Be('A');
         }
 
         [TestMethod]
         public void CanSetReadOnlyStaticShortFieldVolatile()
         {
-            var f = u.staticFieldOffset(((Class)typeof(ReadOnlyStaticVolatileTestObject)).getField("shortField"));
-            u.getShortVolatile(null, f).Should().Be(0);
-            u.putShortVolatile(null, f, 1);
-            u.getShortVolatile(null, f).Should().Be(1);
+            var f = ((Class)typeof(ReadOnlyStaticVolatileTestObject)).getField("shortField");
+            var b = u.staticFieldBase(f);
+            var o = u.staticFieldOffset(f);
+            u.getShortVolatile(b, o).Should().Be(0);
+            u.putShortVolatile(b, o, 1);
+            u.getShortVolatile(b, o).Should().Be(1);
         }
 
         [TestMethod]
         public void CanSetReadOnlyStaticIntFieldVolatile()
         {
-            var f = u.staticFieldOffset(((Class)typeof(ReadOnlyStaticVolatileTestObject)).getField("intField"));
-            u.getIntVolatile(null, f).Should().Be(0);
-            u.putIntVolatile(null, f, 1);
-            u.getIntVolatile(null, f).Should().Be(1);
+            var f = ((Class)typeof(ReadOnlyStaticVolatileTestObject)).getField("intField");
+            var b = u.staticFieldBase(f);
+            var o = u.staticFieldOffset(f);
+            u.getIntVolatile(b, o).Should().Be(0);
+            u.putIntVolatile(b, o, 1);
+            u.getIntVolatile(b, o).Should().Be(1);
         }
 
         [TestMethod]
         public void CanSetReadOnlyStaticLongFieldVolatile()
         {
-            var f = u.staticFieldOffset(((Class)typeof(ReadOnlyStaticVolatileTestObject)).getField("longField"));
-            u.getLongVolatile(null, f).Should().Be(0);
-            u.putLongVolatile(null, f, 1);
-            u.getLongVolatile(null, f).Should().Be(1);
+            var f = ((Class)typeof(ReadOnlyStaticVolatileTestObject)).getField("longField");
+            var b = u.staticFieldBase(f);
+            var o = u.staticFieldOffset(f);
+            u.getLongVolatile(b, o).Should().Be(0);
+            u.putLongVolatile(b, o, 1);
+            u.getLongVolatile(b, o).Should().Be(1);
         }
 
         [TestMethod]
         public void CanSetReadOnlyStaticFloatFieldVolatile()
         {
-            var f = u.staticFieldOffset(((Class)typeof(ReadOnlyStaticVolatileTestObject)).getField("floatField"));
-            u.getFloatVolatile(null, f).Should().Be(0);
-            u.putFloatVolatile(null, f, 1);
-            u.getFloatVolatile(null, f).Should().Be(1);
+            var f = ((Class)typeof(ReadOnlyStaticVolatileTestObject)).getField("floatField");
+            var b = u.staticFieldBase(f);
+            var o = u.staticFieldOffset(f);
+            u.getFloatVolatile(b, o).Should().Be(0);
+            u.putFloatVolatile(b, o, 1);
+            u.getFloatVolatile(b, o).Should().Be(1);
         }
 
         [TestMethod]
         public void CanSetReadOnlyStaticDoubleFieldVolatile()
         {
-            var f = u.staticFieldOffset(((Class)typeof(ReadOnlyStaticVolatileTestObject)).getField("doubleField"));
-            u.getDoubleVolatile(null, f).Should().Be(0);
-            u.putDoubleVolatile(null, f, 1);
-            u.getDoubleVolatile(null, f).Should().Be(1);
+            var f = ((Class)typeof(ReadOnlyStaticVolatileTestObject)).getField("doubleField");
+            var b = u.staticFieldBase(f);
+            var o = u.staticFieldOffset(f);
+            u.getDoubleVolatile(b, o).Should().Be(0);
+            u.putDoubleVolatile(b, o, 1);
+            u.getDoubleVolatile(b, o).Should().Be(1);
         }
 
 
@@ -1258,6 +1339,83 @@ namespace IKVM.Tests.Java.sun.misc
             u.putDouble(b + sizeof(double), 1);
             u.getDouble(b).Should().Be(0);
             u.getDouble(b + sizeof(double)).Should().Be(1);
+            u.freeMemory(b);
+        }
+
+        [TestMethod]
+        public void CanAllocateSetByteAndFreeMemory1()
+        {
+            var b = u.allocateMemory(32);
+            u.setMemory(b, 32, 0);
+            u.putByte(null, b + sizeof(byte), 1);
+            u.getByte(null, b).Should().Be(0);
+            u.getByte(null, b + sizeof(byte)).Should().Be(1);
+            u.freeMemory(b);
+        }
+
+        [TestMethod]
+        public void CanAllocateSetCharAndFreeMemory1()
+        {
+            var b = u.allocateMemory(32);
+            u.setMemory(b, 32, 0);
+            u.putChar(null, b + sizeof(char), 'A');
+            u.getChar(null, b).Should().Be('\0');
+            u.getChar(null, b + sizeof(char)).Should().Be('A');
+            u.freeMemory(b);
+        }
+
+        [TestMethod]
+        public void CanAllocateSetShortAndFreeMemory1()
+        {
+            var b = u.allocateMemory(32);
+            u.setMemory(b, 32, 0);
+            u.putShort(null, b + sizeof(short), 1);
+            u.getShort(null, b).Should().Be(0);
+            u.getShort(null, b + sizeof(short)).Should().Be(1);
+            u.freeMemory(b);
+        }
+
+        [TestMethod]
+        public void CanAllocateSetIntAndFreeMemory1()
+        {
+            var b = u.allocateMemory(32);
+            u.setMemory(b, 32, 0);
+            u.putInt(null, b + sizeof(int), 1);
+            u.getInt(null, b).Should().Be(0);
+            u.getInt(null, b + sizeof(int)).Should().Be(1);
+            u.freeMemory(b);
+        }
+
+        [TestMethod]
+        public void CanAllocateSetLongAndFreeMemory1()
+        {
+            var b = u.allocateMemory(32);
+            u.setMemory(b, 32, 0);
+            u.putLong(null, b + sizeof(long), 1);
+            u.getLong(null, b).Should().Be(0);
+            u.getLong(null, b + sizeof(long)).Should().Be(1);
+            u.freeMemory(b);
+        }
+
+        [TestMethod]
+        public void CanAllocateSetFloatAndFreeMemory1()
+        {
+            var b = u.allocateMemory(32);
+            u.setMemory(b, 32, 0);
+            u.putFloat(null, b + sizeof(float), 1);
+            u.getFloat(null, b).Should().Be(0);
+            u.getFloat(null, b + sizeof(float)).Should().Be(1);
+            u.freeMemory(b);
+        }
+
+        [TestMethod]
+        public void CanAllocateSetDoubleAndFreeMemory1()
+        {
+            var b = u.allocateMemory(32);
+            u.setMemory(b, 32, 0);
+            u.putDouble(null, b + sizeof(double), 1);
+            u.getDouble(null, b).Should().Be(0);
+            u.getDouble(null, b + sizeof(double)).Should().Be(1);
             u.freeMemory(b);
         }
 
