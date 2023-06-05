@@ -1434,7 +1434,7 @@ namespace IKVM.Java.Externs.sun.misc
 #else
             switch (o)
             {
-                TypeWrapper w => GetField<bool>(null, offset),
+                TypeWrapper w => GetField<object>(null, offset),
                 object[] array when array.GetType() == typeof(object[]) => Volatile.Read(ref array[offset / IntPtr.Size]),
                 object[] array => GetArrayObjectVolatile(array, offset),
                 object obj => GetFieldVolatile<object>(obj, offset),
