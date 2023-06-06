@@ -528,7 +528,9 @@ jobs:
       uses: ncipollo/release-action@v1.10.0
       with:
         tag: ${{ github.ref_name }}
+        allowUpdates: true
         artifacts: dist/nuget/*.nupkg,dist/bin/*.zip,dist/bin/*.tar.gz,dist/image/*.zip,dist/image/*.tar.gz,dist/tools/*.zip,dist/tools/*.tar.gz
+        draft: false
         token: ${{ secrets.GITHUB_TOKEN }}
     - name: Push NuGet (GitHub)
       shell: pwsh
