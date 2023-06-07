@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Buffers.Binary;
 using System.Linq;
 using System.Linq.Expressions;
 using System.Reflection;
@@ -1251,18 +1252,21 @@ namespace IKVM.Java.Externs.sun.misc
         /// <param name="bytes"></param>
         /// <returns></returns>
         /// <exception cref="global::java.lang.OutOfMemoryError"></exception>
-        public static long allocateMemory(object self, long bytes)
+        public static unsafe long allocateMemory(object self, long bytes)
         {
 #if FIRST_PASS
             throw new NotImplementedException();
 #else
-
             try
             {
                 if (bytes == 0)
                     return 0;
-                else
-                    return Marshal.AllocHGlobal((IntPtr)bytes).ToInt64();
+
+                var len = (IntPtr)bytes + sizeof(IntPtr);
+                var ptr = Marshal.AllocHGlobal(len);
+                Marshal.WriteIntPtr(ptr, len);
+                System.GC.AddMemoryPressure((long)len);
+                return (long)ptr + sizeof(IntPtr);
             }
             catch (global::java.lang.Exception)
             {
@@ -1287,7 +1291,7 @@ namespace IKVM.Java.Externs.sun.misc
         /// <param name="bytes"></param>
         /// <returns></returns>
         /// <exception cref="global::java.lang.OutOfMemoryError"></exception>
-        public static long reallocateMemory(object self, long address, long bytes)
+        public static unsafe long reallocateMemory(object self, long address, long bytes)
         {
 #if FIRST_PASS
             throw new NotImplementedException();
@@ -1301,7 +1305,17 @@ namespace IKVM.Java.Externs.sun.misc
                 }
                 else
                 {
-                    return Marshal.ReAllocHGlobal((IntPtr)address, (IntPtr)bytes).ToInt64();
+                    // remove memory pressure
+                    var ptr = (IntPtr)address - sizeof(IntPtr);
+                    var len = Marshal.ReadIntPtr(ptr);
+                    System.GC.RemoveMemoryPressure((long)len);
+
+                    // reallocate and add memory pressure
+                    len = (IntPtr)bytes + sizeof(IntPtr);
+                    ptr = Marshal.ReAllocHGlobal(ptr, len);
+                    Marshal.WriteIntPtr(ptr, len);
+                    System.GC.AddMemoryPressure((long)len);
+                    return (long)ptr + sizeof(IntPtr);
                 }
             }
             catch (global::java.lang.Exception)
@@ -1466,9 +1480,12 @@ namespace IKVM.Java.Externs.sun.misc
         /// </summary>
         /// <param name="self"></param>
         /// <param name="address"></param>
-        public static void freeMemory(object self, long address)
+        public static unsafe void freeMemory(object self, long address)
         {
-            Marshal.FreeHGlobal((IntPtr)address);
+            var ptr = (IntPtr)address - sizeof(IntPtr);
+            var len = Marshal.ReadIntPtr(ptr);
+            Marshal.FreeHGlobal(ptr);
+            System.GC.RemoveMemoryPressure((long)len);
         }
 
         /// <summary>
