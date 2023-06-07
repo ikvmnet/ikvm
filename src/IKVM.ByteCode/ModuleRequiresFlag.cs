@@ -4,7 +4,7 @@ namespace IKVM.ByteCode
 {
 
     [Flags]
-    internal enum ModuleRequiresFlag : ushort
+    public enum ModuleRequiresFlag : ushort
     {
 
         Transitive = 0x0020,

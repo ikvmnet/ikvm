@@ -8,7 +8,7 @@ using static IKVM.ByteCode.Util;
 namespace IKVM.ByteCode.Reading
 {
 
-    internal sealed class CodeAttributeReader : AttributeReader<CodeAttributeRecord>
+    public sealed class CodeAttributeReader : AttributeReader<CodeAttributeRecord>
     {
 
         AttributeReaderCollection attributes;

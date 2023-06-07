@@ -5,7 +5,7 @@ using IKVM.ByteCode.Parsing;
 namespace IKVM.ByteCode.Reading
 {
 
-    internal abstract class ElementValueReader : ReaderBase<ElementValueRecord>
+    public abstract class ElementValueReader : ReaderBase<ElementValueRecord>
     {
 
         /// <summary>

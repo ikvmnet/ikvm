@@ -1,6 +1,6 @@
 ﻿namespace IKVM.ByteCode.Parsing
 {
 
-    internal record struct MethodParametersAttributeParameterRecord(ushort NameIndex, AccessFlag AccessFlags);
+    public record struct MethodParametersAttributeParameterRecord(ushort NameIndex, AccessFlag AccessFlags);
 
 }

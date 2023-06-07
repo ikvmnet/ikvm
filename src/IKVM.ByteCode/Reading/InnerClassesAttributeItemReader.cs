@@ -5,7 +5,7 @@ using static IKVM.ByteCode.Util;
 namespace IKVM.ByteCode.Reading
 {
 
-    internal sealed class InnerClassesAttributeItemReader : ReaderBase<InnerClassesAttributeItemRecord>
+    public sealed class InnerClassesAttributeItemReader : ReaderBase<InnerClassesAttributeItemRecord>
     {
 
         ClassConstantReader innerClass;

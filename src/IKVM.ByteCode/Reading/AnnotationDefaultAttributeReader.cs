@@ -5,7 +5,7 @@ using static IKVM.ByteCode.Util;
 namespace IKVM.ByteCode.Reading
 {
 
-    internal sealed class AnnotationDefaultAttributeReader : AttributeReader<AnnotationDefaultAttributeRecord>
+    public sealed class AnnotationDefaultAttributeReader : AttributeReader<AnnotationDefaultAttributeRecord>
     {
 
         ElementValueReader defaultValue;

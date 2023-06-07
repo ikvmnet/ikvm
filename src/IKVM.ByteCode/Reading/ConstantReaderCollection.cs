@@ -8,7 +8,7 @@ namespace IKVM.ByteCode.Reading
     /// <summary>
     /// Lazy init collection of constants.
     /// </summary>
-    internal sealed class ConstantReaderCollection : LazyReaderList<IConstantReader, ConstantRecord>
+    public sealed class ConstantReaderCollection : LazyReaderList<IConstantReader, ConstantRecord>
     {
 
         readonly ClassReader declaringClass;

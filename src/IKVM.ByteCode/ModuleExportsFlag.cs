@@ -4,7 +4,7 @@ namespace IKVM.ByteCode
 {
 
     [Flags]
-    internal enum ModuleExportsFlag : ushort
+    public enum ModuleExportsFlag : ushort
     {
 
         Synthetic = 0x1000,

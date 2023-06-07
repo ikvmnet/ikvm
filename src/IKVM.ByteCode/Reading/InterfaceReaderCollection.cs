@@ -6,7 +6,7 @@ namespace IKVM.ByteCode.Reading
     /// <summary>
     /// Lazy init collection of method data.
     /// </summary>
-    internal sealed class InterfaceReaderCollection : LazyNamedReaderDictionary<InterfaceReader, InterfaceRecord>
+    public sealed class InterfaceReaderCollection : LazyNamedReaderDictionary<InterfaceReader, InterfaceRecord>
     {
 
         /// <summary>

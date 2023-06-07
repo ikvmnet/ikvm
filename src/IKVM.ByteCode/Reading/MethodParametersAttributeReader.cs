@@ -7,7 +7,7 @@ using static IKVM.ByteCode.Util;
 namespace IKVM.ByteCode.Reading
 {
 
-    internal sealed class MethodParametersAttributeReader : AttributeReader<MethodParametersAttributeRecord>
+    public sealed class MethodParametersAttributeReader : AttributeReader<MethodParametersAttributeRecord>
     {
 
         IReadOnlyList<MethodParametersAttributeParameterReader> parameters;

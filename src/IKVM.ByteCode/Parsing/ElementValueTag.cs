@@ -1,7 +1,7 @@
 ﻿namespace IKVM.ByteCode.Parsing
 {
 
-    internal enum ElementValueTag : byte
+    public enum ElementValueTag : byte
     {
 
         Byte = (byte)'B',

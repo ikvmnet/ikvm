@@ -1,7 +1,7 @@
 ﻿namespace IKVM.ByteCode.Parsing
 {
 
-    internal sealed record RecordAttributeRecord(RecordAttributeComponentRecord[] Components) : AttributeRecord
+    public sealed record RecordAttributeRecord(RecordAttributeComponentRecord[] Components) : AttributeRecord
     {
 
         public static bool TryReadRecordAttribute(ref ClassFormatReader reader, out AttributeRecord attribute)

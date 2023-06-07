@@ -1,27 +1,26 @@
 ﻿using System;
 
-using IKVM.Runtime.Extensions;
+using IKVM.ByteCode.Extensions;
 
-namespace IKVM.Runtime.Syntax
+namespace IKVM.ByteCode.Syntax
 {
 
     /// <summary>
     /// Provides methods to parse a Java class simple name.
     /// </summary>
-    readonly struct JavaSimpleTypeName
+    public readonly struct JavaSimpleClassName
     {
 
-        public static JavaSimpleTypeName Empty => new(ReadOnlyMemory<char>.Empty);
+        public static JavaSimpleClassName Empty => new(ReadOnlyMemory<char>.Empty);
 
-        public static implicit operator string(JavaSimpleTypeName typeName) => typeName.ToString();
-        public static implicit operator JavaSimpleTypeName(string typeName) => new(typeName);
+        public static implicit operator string(JavaSimpleClassName typeName) => typeName.ToString();
+        public static implicit operator JavaSimpleClassName(string typeName) => new(typeName);
 
-        public static implicit operator ReadOnlyMemory<char>(JavaSimpleTypeName typeName) => typeName.value;
-        public static implicit operator JavaSimpleTypeName(ReadOnlyMemory<char> typeName) => new(typeName);
+        public static implicit operator ReadOnlyMemory<char>(JavaSimpleClassName typeName) => typeName.value;
+        public static implicit operator JavaSimpleClassName(ReadOnlyMemory<char> typeName) => new(typeName);
 
-        public static bool operator ==(JavaSimpleTypeName a, JavaSimpleTypeName b) => a.value.Span.Equals(b.value.Span, StringComparison.Ordinal);
-        public static bool operator !=(JavaSimpleTypeName a, JavaSimpleTypeName b) => a.value.Span.Equals(b.value.Span, StringComparison.Ordinal) == false;
-
+        public static bool operator ==(JavaSimpleClassName a, JavaSimpleClassName b) => a.value.Span.Equals(b.value.Span, StringComparison.Ordinal);
+        public static bool operator !=(JavaSimpleClassName a, JavaSimpleClassName b) => a.value.Span.Equals(b.value.Span, StringComparison.Ordinal) == false;
 
         readonly ReadOnlyMemory<char> value;
 
@@ -29,7 +28,7 @@ namespace IKVM.Runtime.Syntax
         /// Initializes a new instance.
         /// </summary>
         /// <param name="value"></param>
-        public JavaSimpleTypeName(string value) :
+        public JavaSimpleClassName(string value) :
             this(value.AsMemory())
         {
             if (value is null)
@@ -40,7 +39,7 @@ namespace IKVM.Runtime.Syntax
         /// Initializes a new instance.
         /// </summary>
         /// <param name="value"></param>
-        public JavaSimpleTypeName(ReadOnlyMemory<char> value)
+        public JavaSimpleClassName(ReadOnlyMemory<char> value)
         {
             this.value = value;
         }
@@ -60,7 +59,7 @@ namespace IKVM.Runtime.Syntax
         /// </summary>
         /// <param name="other"></param>
         /// <returns></returns>
-        public bool Equals(JavaSimpleTypeName other) => value.Span.Equals(other.value.Span, StringComparison.Ordinal);
+        public bool Equals(JavaSimpleClassName other) => value.Span.Equals(other.value.Span, StringComparison.Ordinal);
 
         /// <summary>
         /// Returns <c>true</c> if the two objects are equal.

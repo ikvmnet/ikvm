@@ -1,6 +1,6 @@
 ﻿using System;
 
-namespace IKVM.Runtime.Syntax
+namespace IKVM.ByteCode.Syntax
 {
 
     /// <summary>

@@ -5,7 +5,7 @@ using IKVM.ByteCode.Parsing;
 namespace IKVM.ByteCode.Reading
 {
 
-    internal sealed class AttributeInfoReader : ReaderBase<AttributeInfoRecord>
+    public sealed class AttributeInfoReader : ReaderBase<AttributeInfoRecord>
     {
 
         Utf8ConstantReader name;

@@ -1,7 +1,7 @@
 ﻿namespace IKVM.ByteCode.Parsing
 {
 
-    internal record struct AnnotationRecord(ushort TypeIndex, ElementValuePairRecord[] Elements)
+    public record struct AnnotationRecord(ushort TypeIndex, ElementValuePairRecord[] Elements)
     {
 
         public static bool TryReadAnnotation(ref ClassFormatReader reader, out AnnotationRecord annotation)

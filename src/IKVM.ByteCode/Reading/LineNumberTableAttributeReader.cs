@@ -3,7 +3,7 @@
 namespace IKVM.ByteCode.Reading
 {
 
-    internal sealed class LineNumberTableAttributeReader : AttributeReader<LineNumberTableAttributeRecord>
+    public sealed class LineNumberTableAttributeReader : AttributeReader<LineNumberTableAttributeRecord>
     {
 
         /// <summary>

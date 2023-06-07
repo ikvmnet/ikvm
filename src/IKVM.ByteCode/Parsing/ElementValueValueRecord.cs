@@ -1,7 +1,7 @@
 ﻿namespace IKVM.ByteCode.Parsing
 {
 
-    internal abstract record ElementValueValueRecord
+    public abstract record ElementValueValueRecord
     {
 
         /// <summary>

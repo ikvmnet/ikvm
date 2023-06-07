@@ -31,7 +31,7 @@ using System.Runtime.Serialization;
 
 using IKVM.Attributes;
 using IKVM.Runtime;
-using IKVM.Runtime.Syntax;
+using IKVM.ByteCode.Syntax;
 
 #if IMPORTER || EXPORTER
 using IKVM.Reflection;
@@ -402,7 +402,7 @@ namespace IKVM.Internal
             /// <param name="type"></param>
             /// <param name="isJavaType"></param>
             /// <returns></returns>
-            internal JavaTypeName? GetTypeNameAndType(Type type, out bool isJavaType)
+            internal JavaClassName? GetTypeNameAndType(Type type, out bool isJavaType)
             {
                 // find the module index of the type's module
                 var module = type.Module;
@@ -678,7 +678,7 @@ namespace IKVM.Internal
             return null;
         }
 
-        internal JavaTypeName? GetTypeNameAndType(Type type, out bool isJavaType)
+        internal JavaClassName? GetTypeNameAndType(Type type, out bool isJavaType)
         {
             return GetLoader(type.Assembly).GetTypeNameAndType(type, out isJavaType);
         }

@@ -1,11 +1,13 @@
-﻿using IKVM.ByteCode.Parsing;
+﻿using System.Collections.Generic;
+
+using IKVM.ByteCode.Parsing;
 
 using static IKVM.ByteCode.Util;
 
 namespace IKVM.ByteCode.Reading
 {
 
-    internal sealed class ParameterAnnotationReader : ReaderBase<ParameterAnnotationRecord>
+    public sealed class ParameterAnnotationReader : ReaderBase<ParameterAnnotationRecord>
     {
 
         AnnotationReaderCollection annotations;

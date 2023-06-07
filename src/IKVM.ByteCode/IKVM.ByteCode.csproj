@@ -15,12 +15,8 @@
 
     <ItemGroup>
         <InternalsVisibleTo Include="IKVM.ByteCode.Tests" />
-        <InternalsVisibleTo Include="IKVM.Runtime" />
-        <InternalsVisibleTo Include="IKVM.Tools.Importer" />
         <InternalsVisibleTo Include="IKVM.Tools.Importer.Tests" />
-        <InternalsVisibleTo Include="IKVM.Tools.Exporter" />
         <InternalsVisibleTo Include="IKVM.Tools.Exporter.Tests" />
-        <InternalsVisibleTo Include="IKVM.Util" />
     </ItemGroup>
 
     <ItemGroup>

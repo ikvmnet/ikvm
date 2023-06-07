@@ -3,7 +3,7 @@
 namespace IKVM.ByteCode.Parsing
 {
 
-    internal record SourceDebugExtensionAttributeRecord(byte[] Data) : AttributeRecord
+    public record SourceDebugExtensionAttributeRecord(byte[] Data) : AttributeRecord
     {
 
         public static bool TryReadSourceDebugExtensionAttribute(ref ClassFormatReader reader, out AttributeRecord attribute)

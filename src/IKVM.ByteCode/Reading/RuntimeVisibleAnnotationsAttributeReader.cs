@@ -1,11 +1,13 @@
-﻿using IKVM.ByteCode.Parsing;
+﻿using System.Collections.Generic;
+
+using IKVM.ByteCode.Parsing;
 
 using static IKVM.ByteCode.Util;
 
 namespace IKVM.ByteCode.Reading
 {
 
-    internal class RuntimeVisibleAnnotationsAttributeReader : AttributeReader<RuntimeVisibleAnnotationsAttributeRecord>
+    public class RuntimeVisibleAnnotationsAttributeReader : AttributeReader<RuntimeVisibleAnnotationsAttributeRecord>
     {
 
         AnnotationReaderCollection annotations;

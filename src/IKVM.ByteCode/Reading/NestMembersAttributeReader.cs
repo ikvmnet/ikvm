@@ -3,7 +3,7 @@
 namespace IKVM.ByteCode.Reading
 {
 
-    internal sealed class NestMembersAttributeReader : AttributeReader<NestMembersAttributeRecord>
+    public sealed class NestMembersAttributeReader : AttributeReader<NestMembersAttributeRecord>
     {
 
         /// <summary>

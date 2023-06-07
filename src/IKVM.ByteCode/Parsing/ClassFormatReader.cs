@@ -9,7 +9,7 @@ namespace IKVM.ByteCode.Parsing
     /// <summary>
     /// Provides common methods to read through memory of a Class file.
     /// </summary>
-    internal ref struct ClassFormatReader
+    public ref struct ClassFormatReader
     {
 
         SequenceReader<byte> reader;

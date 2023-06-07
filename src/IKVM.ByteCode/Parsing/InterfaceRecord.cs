@@ -1,7 +1,7 @@
 ﻿namespace IKVM.ByteCode.Parsing
 {
 
-    internal record struct InterfaceRecord(ushort ClassIndex)
+    public record struct InterfaceRecord(ushort ClassIndex)
     {
 
         /// <summary>

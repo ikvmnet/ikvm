@@ -12,7 +12,7 @@ namespace IKVM.ByteCode.Reading
     /// <summary>
     /// Lazy init collection of annotation data.
     /// </summary>
-    internal sealed class TypeAnnotationReaderCollection : IReadOnlyList<TypeAnnotationReader>
+    public sealed class TypeAnnotationReaderCollection : IReadOnlyList<TypeAnnotationReader>
     {
 
         readonly ClassReader ownerClass;

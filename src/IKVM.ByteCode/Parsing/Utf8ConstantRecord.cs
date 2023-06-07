@@ -3,7 +3,7 @@
 namespace IKVM.ByteCode.Parsing
 {
 
-    internal record class Utf8ConstantRecord(byte[] Value) : ConstantRecord
+    public record class Utf8ConstantRecord(byte[] Value) : ConstantRecord
     {
 
         /// <summary>

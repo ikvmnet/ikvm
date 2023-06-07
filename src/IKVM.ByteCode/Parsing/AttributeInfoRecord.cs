@@ -3,7 +3,7 @@
 namespace IKVM.ByteCode.Parsing
 {
 
-    internal record struct AttributeInfoRecord(ushort NameIndex, byte[] Data)
+    public record struct AttributeInfoRecord(ushort NameIndex, byte[] Data)
     {
 
         /// <summary>

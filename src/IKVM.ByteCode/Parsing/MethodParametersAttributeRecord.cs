@@ -1,7 +1,7 @@
 ﻿namespace IKVM.ByteCode.Parsing
 {
 
-    internal sealed record MethodParametersAttributeRecord(MethodParametersAttributeParameterRecord[] Parameters) : AttributeRecord
+    public sealed record MethodParametersAttributeRecord(MethodParametersAttributeParameterRecord[] Parameters) : AttributeRecord
     {
 
         public static bool TryReadMethodParametersAttribute(ref ClassFormatReader reader, out AttributeRecord attribute)

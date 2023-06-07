@@ -1,14 +1,14 @@
 ﻿using System;
 
-using IKVM.Runtime.Extensions;
+using IKVM.ByteCode.Extensions;
 
-namespace IKVM.Runtime.Syntax
+namespace IKVM.ByteCode.Syntax
 {
 
     /// <summary>
     /// Provides methods to parse a Java package name.
     /// </summary>
-    readonly struct JavaPackageName
+    public readonly struct JavaPackageName
     {
 
         public static JavaPackageName Empty => new(ReadOnlyMemory<char>.Empty);

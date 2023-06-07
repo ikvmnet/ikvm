@@ -11,7 +11,7 @@ namespace IKVM.ByteCode.Reading
     /// <summary>
     /// Lazy init collection of attribute data.
     /// </summary>
-    internal sealed class AttributeReaderCollection : LazyReaderList<AttributeReader, AttributeInfoRecord>
+    public sealed class AttributeReaderCollection : LazyReaderList<AttributeReader, AttributeInfoRecord>
     {
 
         ConstantValueAttributeReader constantValueAttribute;

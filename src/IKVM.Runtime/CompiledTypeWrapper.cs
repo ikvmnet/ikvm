@@ -27,8 +27,8 @@ using System.Diagnostics;
 
 using IKVM.Attributes;
 using IKVM.Runtime;
-using IKVM.Runtime.Syntax;
 using IKVM.ByteCode;
+using IKVM.ByteCode.Syntax;
 
 #if IMPORTER || EXPORTER
 using IKVM.Reflection;
@@ -272,7 +272,7 @@ namespace IKVM.Internal
         /// <param name="type"></param>
         /// <returns></returns>
         /// <exception cref="InternalException"></exception>
-        internal static JavaTypeName? GetName(Type type)
+        internal static JavaClassName? GetName(Type type)
         {
             if (type.HasElementType)
                 return null;

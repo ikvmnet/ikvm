@@ -15,7 +15,7 @@ namespace IKVM.ByteCode.Reading
     /// <summary>
     /// Provides stateful operations for reading a class file.
     /// </summary>
-    internal sealed class ClassReader : ReaderBase<ClassRecord>
+    public class ClassReader : ReaderBase<ClassRecord>
     {
 
         /// <summary>

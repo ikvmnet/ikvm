@@ -5,7 +5,7 @@ using static IKVM.ByteCode.Util;
 namespace IKVM.ByteCode.Reading
 {
 
-    internal class RuntimeVisibleTypeAnnotationsAttributeReader : AttributeReader<RuntimeVisibleTypeAnnotationsAttributeRecord>
+    public class RuntimeVisibleTypeAnnotationsAttributeReader : AttributeReader<RuntimeVisibleTypeAnnotationsAttributeRecord>
     {
 
         TypeAnnotationReaderCollection annotations;

@@ -4,7 +4,7 @@ using System.Buffers;
 namespace IKVM.ByteCode.Parsing
 {
 
-    internal sealed record CodeAttributeRecord(ushort MaxStack, ushort MaxLocals, ReadOnlyMemory<byte> Code, ExceptionHandlerRecord[] ExceptionTable, AttributeInfoRecord[] Attributes) : AttributeRecord
+    public sealed record CodeAttributeRecord(ushort MaxStack, ushort MaxLocals, ReadOnlyMemory<byte> Code, ExceptionHandlerRecord[] ExceptionTable, AttributeInfoRecord[] Attributes) : AttributeRecord
     {
 
         public static bool TryReadCodeAttribute(ref ClassFormatReader reader, out AttributeRecord attribute)

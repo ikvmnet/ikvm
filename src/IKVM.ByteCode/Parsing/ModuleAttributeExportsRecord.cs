@@ -1,6 +1,6 @@
 ﻿namespace IKVM.ByteCode.Parsing
 {
 
-    internal record struct ModuleAttributeExportsRecord(ushort Index, ModuleExportsFlag Flags, ushort[] Modules);
+    public record struct ModuleAttributeExportsRecord(ushort Index, ModuleExportsFlag Flags, ushort[] Modules);
 
 }

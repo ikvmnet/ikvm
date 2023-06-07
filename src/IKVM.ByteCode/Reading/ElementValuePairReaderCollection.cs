@@ -8,7 +8,7 @@ namespace IKVM.ByteCode.Reading
     /// <summary>
     /// Lazy init collection of element value data.
     /// </summary>
-    internal sealed class ElementValueKeyReaderCollection : LazyNamedReaderDictionary<ElementValueReader, ElementValuePairRecord>
+    public sealed class ElementValueKeyReaderCollection : LazyNamedReaderDictionary<ElementValueReader, ElementValuePairRecord>
     {
 
         /// <summary>

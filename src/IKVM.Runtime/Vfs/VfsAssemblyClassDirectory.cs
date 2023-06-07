@@ -4,8 +4,8 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Reflection;
 
+using IKVM.ByteCode.Syntax;
 using IKVM.Internal;
-using IKVM.Runtime.Syntax;
 
 namespace IKVM.Runtime.Vfs
 {
@@ -52,7 +52,7 @@ namespace IKVM.Runtime.Vfs
         VfsEntry CreateEntry(string name)
         {
             if (name.EndsWith(".class", StringComparison.Ordinal))
-                return GetClassEntry(new JavaTypeName(package, new JavaUnqualifiedTypeName(name.Substring(0, name.Length - ".class".Length))));
+                return GetClassEntry(new JavaClassName(package, new JavaUnqualifiedClassName(name.Substring(0, name.Length - ".class".Length))));
             else
                 return GetPackageEntry(new JavaPackageName(package, name));
         }
@@ -62,7 +62,7 @@ namespace IKVM.Runtime.Vfs
         /// </summary>
         /// <param name="className"></param>
         /// <returns></returns>
-        TypeWrapper TryLoadType(JavaTypeName className)
+        TypeWrapper TryLoadType(JavaClassName className)
         {
 #if FIRST_PASS || IMPORTER || EXPORTER
             throw new NotImplementedException();
@@ -88,7 +88,7 @@ namespace IKVM.Runtime.Vfs
         /// <param name="className"></param>
         /// <returns></returns>
         /// <exception cref="NotImplementedException"></exception>
-        VfsEntry GetClassEntry(JavaTypeName className)
+        VfsEntry GetClassEntry(JavaClassName className)
         {
             return TryLoadType(className) is TypeWrapper tw && !tw.IsArray ? new VfsAssemblyClassFile(Context, tw) : null;
         }

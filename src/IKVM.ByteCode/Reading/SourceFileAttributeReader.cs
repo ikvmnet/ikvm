@@ -5,7 +5,7 @@ using static IKVM.ByteCode.Util;
 namespace IKVM.ByteCode.Reading
 {
 
-    internal class SourceFileAttributeReader : AttributeReader<SourceFileAttributeRecord>
+    public class SourceFileAttributeReader : AttributeReader<SourceFileAttributeRecord>
     {
 
         Utf8ConstantReader sourceFile;

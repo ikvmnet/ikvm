@@ -1,7 +1,4 @@
-﻿using System.Collections.Generic;
-using System.Linq;
-
-using IKVM.ByteCode.Parsing;
+﻿using IKVM.ByteCode.Parsing;
 
 namespace IKVM.ByteCode.Reading
 {
@@ -9,7 +6,7 @@ namespace IKVM.ByteCode.Reading
     /// <summary>
     /// Lazy init collection of methods.
     /// </summary>
-    internal sealed class MethodReaderCollection : LazyNamedReaderDictionary<MethodReader, MethodRecord>
+    public sealed class MethodReaderCollection : LazyNamedReaderDictionary<MethodReader, MethodRecord>
     {
 
         /// <summary>

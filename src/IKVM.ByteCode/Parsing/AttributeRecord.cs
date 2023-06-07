@@ -5,7 +5,7 @@ using IKVM.ByteCode.Reading;
 namespace IKVM.ByteCode.Parsing
 {
 
-    internal abstract record AttributeRecord
+    public abstract record AttributeRecord
     {
 
         /// <summary>

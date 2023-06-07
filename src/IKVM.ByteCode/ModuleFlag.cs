@@ -4,7 +4,7 @@ namespace IKVM.ByteCode
 {
 
     [Flags]
-    internal enum ModuleFlag : ushort
+    public enum ModuleFlag : ushort
     {
 
         Open = 0x0020,

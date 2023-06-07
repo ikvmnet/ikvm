@@ -1,7 +1,7 @@
 ﻿namespace IKVM.ByteCode
 {
 
-    internal enum TypePathKind : byte
+    public enum TypePathKind : byte
     {
 
         ArrayType = 0,

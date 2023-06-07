@@ -9,7 +9,7 @@ namespace IKVM.ByteCode.Reading
     /// Base type for a ref constant reader.
     /// </summary>
     /// <typeparam name="TRecord"></typeparam>
-    internal abstract class RefConstantReader<TRecord> : ConstantReader<TRecord>, IRefConstantReader
+    public abstract class RefConstantReader<TRecord> : ConstantReader<TRecord>, IRefConstantReader
         where TRecord : RefConstantRecord
     {
 

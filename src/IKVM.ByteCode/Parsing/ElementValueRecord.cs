@@ -1,7 +1,7 @@
 ﻿namespace IKVM.ByteCode.Parsing
 {
 
-    internal record struct ElementValueRecord(ElementValueTag Tag, ElementValueValueRecord Value)
+    public record struct ElementValueRecord(ElementValueTag Tag, ElementValueValueRecord Value)
     {
 
         public static bool TryRead(ref ClassFormatReader reader, out ElementValueRecord record)

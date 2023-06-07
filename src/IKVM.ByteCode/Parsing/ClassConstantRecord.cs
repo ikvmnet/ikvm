@@ -1,7 +1,7 @@
 ﻿namespace IKVM.ByteCode.Parsing
 {
 
-    internal sealed record ClassConstantRecord(ushort NameIndex) : ConstantRecord
+    public sealed record ClassConstantRecord(ushort NameIndex) : ConstantRecord
     {
 
         /// <summary>

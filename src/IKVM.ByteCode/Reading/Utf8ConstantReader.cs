@@ -6,7 +6,7 @@ using static IKVM.ByteCode.Util;
 namespace IKVM.ByteCode.Reading
 {
 
-    internal sealed class Utf8ConstantReader : ConstantReader<Utf8ConstantRecord>
+    public sealed class Utf8ConstantReader : ConstantReader<Utf8ConstantRecord>
     {
 
         string value;

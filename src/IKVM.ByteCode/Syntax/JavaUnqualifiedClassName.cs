@@ -1,26 +1,26 @@
 ﻿using System;
 
-using IKVM.Runtime.Extensions;
+using IKVM.ByteCode.Extensions;
 
-namespace IKVM.Runtime.Syntax
+namespace IKVM.ByteCode.Syntax
 {
 
     /// <summary>
     /// Provides methods to parse a Java class name without package.
     /// </summary>
-    readonly struct JavaUnqualifiedTypeName
+    public readonly struct JavaUnqualifiedClassName
     {
 
-        public static JavaUnqualifiedTypeName Empty => new(ReadOnlyMemory<char>.Empty);
+        public static JavaUnqualifiedClassName Empty => new(ReadOnlyMemory<char>.Empty);
 
-        public static implicit operator string(JavaUnqualifiedTypeName typeName) => typeName.ToString();
-        public static implicit operator JavaUnqualifiedTypeName(string typeName) => new(typeName);
+        public static implicit operator string(JavaUnqualifiedClassName typeName) => typeName.ToString();
+        public static implicit operator JavaUnqualifiedClassName(string typeName) => new(typeName);
 
-        public static implicit operator ReadOnlyMemory<char>(JavaUnqualifiedTypeName typeName) => typeName.value;
-        public static implicit operator JavaUnqualifiedTypeName(ReadOnlyMemory<char> typeName) => new(typeName);
+        public static implicit operator ReadOnlyMemory<char>(JavaUnqualifiedClassName typeName) => typeName.value;
+        public static implicit operator JavaUnqualifiedClassName(ReadOnlyMemory<char> typeName) => new(typeName);
 
-        public static bool operator ==(JavaUnqualifiedTypeName a, JavaUnqualifiedTypeName b) => a.value.Span.Equals(b.value.Span, StringComparison.Ordinal);
-        public static bool operator !=(JavaUnqualifiedTypeName a, JavaUnqualifiedTypeName b) => a.value.Span.Equals(b.value.Span, StringComparison.Ordinal) == false;
+        public static bool operator ==(JavaUnqualifiedClassName a, JavaUnqualifiedClassName b) => a.value.Span.Equals(b.value.Span, StringComparison.Ordinal);
+        public static bool operator !=(JavaUnqualifiedClassName a, JavaUnqualifiedClassName b) => a.value.Span.Equals(b.value.Span, StringComparison.Ordinal) == false;
 
         readonly ReadOnlyMemory<char> value;
 
@@ -28,7 +28,7 @@ namespace IKVM.Runtime.Syntax
         /// Initializes a new instance.
         /// </summary>
         /// <param name="value"></param>
-        public JavaUnqualifiedTypeName(string value) :
+        public JavaUnqualifiedClassName(string value) :
             this(value.AsMemory())
         {
             if (value is null)
@@ -39,7 +39,7 @@ namespace IKVM.Runtime.Syntax
         /// Initializes a new instance.
         /// </summary>
         /// <param name="value"></param>
-        public JavaUnqualifiedTypeName(ReadOnlyMemory<char> value)
+        public JavaUnqualifiedClassName(ReadOnlyMemory<char> value)
         {
             this.value = value;
         }
@@ -79,7 +79,7 @@ namespace IKVM.Runtime.Syntax
         /// </summary>
         /// <param name="other"></param>
         /// <returns></returns>
-        public bool Equals(JavaUnqualifiedTypeName other) => value.Span.Equals(other.value.Span, StringComparison.Ordinal);
+        public bool Equals(JavaUnqualifiedClassName other) => value.Span.Equals(other.value.Span, StringComparison.Ordinal);
 
         /// <summary>
         /// Returns <c>true</c> if the two objects are equal.

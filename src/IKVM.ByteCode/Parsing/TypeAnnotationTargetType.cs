@@ -1,7 +1,7 @@
 ﻿namespace IKVM.ByteCode.Parsing
 {
 
-    internal enum TypeAnnotationTargetType : byte
+    public enum TypeAnnotationTargetType : byte
     {
 
         ClassTypeParameter = 0x00,

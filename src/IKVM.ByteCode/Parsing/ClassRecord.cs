@@ -1,7 +1,7 @@
 ﻿namespace IKVM.ByteCode.Parsing
 {
 
-    internal record struct ClassRecord(ushort MinorVersion, ushort MajorVersion, ConstantRecord[] Constants, AccessFlag AccessFlags, ushort ThisClassIndex, ushort SuperClassIndex, InterfaceRecord[] Interfaces, FieldRecord[] Fields, MethodRecord[] Methods, AttributeInfoRecord[] Attributes)
+    public record struct ClassRecord(ushort MinorVersion, ushort MajorVersion, ConstantRecord[] Constants, AccessFlag AccessFlags, ushort ThisClassIndex, ushort SuperClassIndex, InterfaceRecord[] Interfaces, FieldRecord[] Fields, MethodRecord[] Methods, AttributeInfoRecord[] Attributes)
     {
 
         const uint MAGIC = 0xCAFEBABE;

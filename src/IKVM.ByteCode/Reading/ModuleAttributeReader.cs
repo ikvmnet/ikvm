@@ -5,7 +5,7 @@ using static IKVM.ByteCode.Util;
 namespace IKVM.ByteCode.Reading
 {
 
-    internal sealed class ModuleAttributeReader : AttributeReader<ModuleAttributeRecord>
+    public sealed class ModuleAttributeReader : AttributeReader<ModuleAttributeRecord>
     {
 
         ModuleConstantReader name;

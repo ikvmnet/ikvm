@@ -1,7 +1,7 @@
 ﻿namespace IKVM.ByteCode.Parsing
 {
 
-    internal sealed record AnnotationDefaultAttributeRecord(ElementValueRecord DefaultValue) : AttributeRecord
+    public sealed record AnnotationDefaultAttributeRecord(ElementValueRecord DefaultValue) : AttributeRecord
     {
 
         public static bool TryReadAnnotationDefaultAttribute(ref ClassFormatReader reader, out AttributeRecord attribute)

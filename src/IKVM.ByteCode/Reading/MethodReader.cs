@@ -5,7 +5,7 @@ using static IKVM.ByteCode.Util;
 namespace IKVM.ByteCode.Reading
 {
 
-    internal sealed class MethodReader : FieldOrMethodReader<MethodRecord>
+    public sealed class MethodReader : FieldOrMethodReader<MethodRecord>
     {
 
         Utf8ConstantReader name;

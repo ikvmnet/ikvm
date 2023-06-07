@@ -3,7 +3,7 @@
 namespace IKVM.ByteCode.Reading
 {
 
-    internal sealed class MethodrefConstantReader : RefConstantReader<MethodrefConstantRecord>
+    public sealed class MethodrefConstantReader : RefConstantReader<MethodrefConstantRecord>
     {
 
         /// <summary>

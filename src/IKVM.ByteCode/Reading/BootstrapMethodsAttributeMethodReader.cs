@@ -7,7 +7,7 @@ using static IKVM.ByteCode.Util;
 namespace IKVM.ByteCode.Reading
 {
 
-    internal sealed class BootstrapMethodsAttributeMethodReader : ReaderBase<BootstrapMethodsAttributeMethodRecord>
+    public sealed class BootstrapMethodsAttributeMethodReader : ReaderBase<BootstrapMethodsAttributeMethodRecord>
     {
 
         MethodrefConstantReader methodref;

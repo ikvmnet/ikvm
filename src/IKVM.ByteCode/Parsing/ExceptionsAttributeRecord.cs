@@ -1,7 +1,7 @@
 ﻿namespace IKVM.ByteCode.Parsing
 {
 
-    internal sealed record ExceptionsAttributeRecord(ushort[] ExceptionsIndexes) : AttributeRecord
+    public sealed record ExceptionsAttributeRecord(ushort[] ExceptionsIndexes) : AttributeRecord
     {
 
         public static bool TryReadExceptionsAttribute(ref ClassFormatReader reader, out AttributeRecord attribute)

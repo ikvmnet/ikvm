@@ -1,7 +1,7 @@
 ﻿namespace IKVM.ByteCode.Parsing
 {
 
-    internal sealed record LineNumberTableAttributeRecord(LineNumberTableAttributeItemRecord[] Items) : AttributeRecord
+    public sealed record LineNumberTableAttributeRecord(LineNumberTableAttributeItemRecord[] Items) : AttributeRecord
     {
 
         public static bool TryReadLineNumberTableAttribute(ref ClassFormatReader reader, out AttributeRecord attribute)

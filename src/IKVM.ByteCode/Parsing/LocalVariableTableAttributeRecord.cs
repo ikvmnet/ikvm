@@ -1,7 +1,7 @@
 ﻿namespace IKVM.ByteCode.Parsing
 {
 
-    internal sealed record LocalVariableTableAttributeRecord(LocalVariableTableAttributeItemRecord[] Items) : AttributeRecord
+    public sealed record LocalVariableTableAttributeRecord(LocalVariableTableAttributeItemRecord[] Items) : AttributeRecord
     {
 
         public static bool TryReadLocalVariableTableAttribute(ref ClassFormatReader reader, out AttributeRecord attribute)

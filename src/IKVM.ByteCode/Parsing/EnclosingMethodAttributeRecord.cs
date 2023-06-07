@@ -1,7 +1,7 @@
 ﻿namespace IKVM.ByteCode.Parsing
 {
 
-    internal sealed record EnclosingMethodAttributeRecord(ushort ClassIndex, ushort MethodIndex) : AttributeRecord
+    public sealed record EnclosingMethodAttributeRecord(ushort ClassIndex, ushort MethodIndex) : AttributeRecord
     {
 
         public static bool TryReadEnclosingMethodAttribute(ref ClassFormatReader reader, out AttributeRecord attribute)

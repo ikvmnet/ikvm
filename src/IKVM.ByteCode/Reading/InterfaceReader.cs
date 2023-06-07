@@ -5,7 +5,7 @@ using static IKVM.ByteCode.Util;
 namespace IKVM.ByteCode.Reading
 {
 
-    internal sealed class InterfaceReader : ReaderBase<InterfaceRecord>
+    public sealed class InterfaceReader : ReaderBase<InterfaceRecord>
     {
 
         ClassConstantReader clazz;

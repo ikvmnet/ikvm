@@ -1,11 +1,13 @@
-﻿using IKVM.ByteCode.Parsing;
+﻿using System.Collections.Generic;
+
+using IKVM.ByteCode.Parsing;
 
 using static IKVM.ByteCode.Util;
 
 namespace IKVM.ByteCode.Reading
 {
 
-    internal sealed class RuntimeInvisibleParameterAnnotationsAttributeReader : AttributeReader<RuntimeInvisibleParameterAnnotationsAttributeRecord>
+    public sealed class RuntimeInvisibleParameterAnnotationsAttributeReader : AttributeReader<RuntimeInvisibleParameterAnnotationsAttributeRecord>
     {
 
         ParameterAnnotationReaderCollection annotations;
@@ -25,7 +27,7 @@ namespace IKVM.ByteCode.Reading
         /// <summary>
         /// Gets the set of annotations described by this attribute.
         /// </summary>
-        public ParameterAnnotationReaderCollection Annotations => LazyGet(ref annotations, () => new ParameterAnnotationReaderCollection(DeclaringClass, Record.Parameters));
+        public IReadOnlyList<ParameterAnnotationReader> Annotations => LazyGet(ref annotations, () => new ParameterAnnotationReaderCollection(DeclaringClass, Record.Parameters));
 
     }
 

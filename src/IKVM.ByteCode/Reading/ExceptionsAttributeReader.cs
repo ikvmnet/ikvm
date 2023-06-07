@@ -7,7 +7,7 @@ using static IKVM.ByteCode.Util;
 namespace IKVM.ByteCode.Reading
 {
 
-    internal sealed class ExceptionsAttributeReader : AttributeReader<ExceptionsAttributeRecord>
+    public sealed class ExceptionsAttributeReader : AttributeReader<ExceptionsAttributeRecord>
     {
 
         DelegateLazyReaderList<ClassConstantReader, ushort> exceptions;

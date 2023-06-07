@@ -1,7 +1,7 @@
 ﻿namespace IKVM.ByteCode.Parsing
 {
 
-    internal sealed record DeprecatedAttributeRecord : AttributeRecord
+    public sealed record DeprecatedAttributeRecord : AttributeRecord
     {
 
         public static bool TryReadDeprecatedAttribute(ref ClassFormatReader reader, out AttributeRecord attribute)

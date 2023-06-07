@@ -1,7 +1,7 @@
 ﻿namespace IKVM.ByteCode.Parsing
 {
 
-    internal record struct TypePathRecord(params TypePathItemRecord[] Path)
+    public record struct TypePathRecord(params TypePathItemRecord[] Path)
     {
 
         public static bool TryRead(ref ClassFormatReader reader, out TypePathRecord typePath)

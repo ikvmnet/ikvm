@@ -1,7 +1,7 @@
 ﻿namespace IKVM.ByteCode.Reading
 {
 
-    internal abstract class FieldOrMethodReader<TRecord> : ReaderBase<TRecord>
+    public abstract class FieldOrMethodReader<TRecord> : ReaderBase<TRecord>
     {
 
         /// <summary>

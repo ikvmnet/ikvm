@@ -1,7 +1,7 @@
 ﻿namespace IKVM.ByteCode.Parsing
 {
 
-    internal sealed record RuntimeVisibleAnnotationsAttributeRecord(AnnotationRecord[] Annotations) : AttributeRecord
+    public sealed record RuntimeVisibleAnnotationsAttributeRecord(AnnotationRecord[] Annotations) : AttributeRecord
     {
 
         public static bool TryReadRuntimeVisibleAnnotationsAttribute(ref ClassFormatReader reader, out AttributeRecord attribute)

@@ -5,7 +5,7 @@ using static IKVM.ByteCode.Util;
 namespace IKVM.ByteCode.Reading
 {
 
-    internal class SignatureAttributeReader : AttributeReader<SignatureAttributeRecord>
+    public class SignatureAttributeReader : AttributeReader<SignatureAttributeRecord>
     {
 
         string value;

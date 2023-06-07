@@ -1,7 +1,7 @@
 ﻿namespace IKVM.ByteCode.Parsing
 {
 
-    internal sealed record NestHostAttributeRecord(ushort HostClassIndex) : AttributeRecord
+    public sealed record NestHostAttributeRecord(ushort HostClassIndex) : AttributeRecord
     {
 
         public static bool TryReadNestHostAttribute(ref ClassFormatReader reader, out AttributeRecord attribute)

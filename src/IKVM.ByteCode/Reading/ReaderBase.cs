@@ -1,5 +1,4 @@
 ﻿using System;
-using System.Threading;
 
 namespace IKVM.ByteCode.Reading
 {
@@ -7,7 +6,7 @@ namespace IKVM.ByteCode.Reading
     /// <summary>
     /// Base class for a reader.
     /// </summary>
-    internal abstract class ReaderBase
+    public abstract class ReaderBase
     {
 
         readonly ClassReader declaringClass;
@@ -33,7 +32,7 @@ namespace IKVM.ByteCode.Reading
     /// Base class for a reader of a specific record type.
     /// </summary>
     /// <typeparam name="TRecord"></typeparam>
-    internal abstract class ReaderBase<TRecord> : ReaderBase
+    public abstract class ReaderBase<TRecord> : ReaderBase
     {
 
         readonly TRecord record;

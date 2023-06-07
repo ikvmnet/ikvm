@@ -12,7 +12,7 @@ namespace IKVM.ByteCode.Reading
     /// </summary>
     /// <typeparam name="TReader"></typeparam>
     /// <typeparam name="TRecord"></typeparam>
-    internal abstract class LazyNamedReaderDictionary<TReader, TRecord> : IReadOnlyDictionary<string, TReader>
+    public abstract class LazyNamedReaderDictionary<TReader, TRecord> : IReadOnlyDictionary<string, TReader>
         where TReader : class
     {
 
@@ -28,7 +28,7 @@ namespace IKVM.ByteCode.Reading
         /// </summary>
         /// <param name="declaringClass"></param>
         /// <param name="records"></param>
-        public LazyNamedReaderDictionary(ClassReader declaringClass, TRecord[] records, int minIndex = 0)
+        protected LazyNamedReaderDictionary(ClassReader declaringClass, TRecord[] records, int minIndex = 0)
         {
             this.declaringClass = declaringClass ?? throw new ArgumentNullException(nameof(declaringClass));
             this.records = records ?? throw new ArgumentNullException(nameof(records));

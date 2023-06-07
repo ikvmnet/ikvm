@@ -1,7 +1,7 @@
 ﻿namespace IKVM.ByteCode.Parsing
 {
 
-    internal abstract record StackMapFrameRecord(byte FrameType)
+    public abstract record StackMapFrameRecord(byte FrameType)
     {
 
         public static bool TryRead(ref ClassFormatReader reader, out StackMapFrameRecord frame)

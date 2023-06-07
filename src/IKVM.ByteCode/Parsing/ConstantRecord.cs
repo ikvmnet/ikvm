@@ -4,7 +4,7 @@
     /// <summary>
     /// Base type for constant records.
     /// </summary>
-    internal abstract record ConstantRecord
+    public abstract record ConstantRecord
     {
 
         /// <summary>

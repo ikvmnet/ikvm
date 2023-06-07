@@ -1,7 +1,7 @@
 ﻿namespace IKVM.ByteCode.Parsing
 {
 
-    internal sealed record StackMapTableAttributeRecord(StackMapFrameRecord[] Frames) : AttributeRecord
+    public sealed record StackMapTableAttributeRecord(StackMapFrameRecord[] Frames) : AttributeRecord
     {
 
         public static bool TryRead(ref ClassFormatReader reader, out AttributeRecord attribute)

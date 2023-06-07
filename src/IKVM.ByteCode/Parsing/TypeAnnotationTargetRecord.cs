@@ -1,7 +1,7 @@
 ﻿namespace IKVM.ByteCode.Parsing
 {
 
-    internal abstract record TypeAnnotationTargetRecord
+    public abstract record TypeAnnotationTargetRecord
     {
 
         /// <summary>

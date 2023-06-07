@@ -1,7 +1,7 @@
 ﻿namespace IKVM.ByteCode.Parsing
 {
 
-    internal record struct BootstrapMethodsAttributeMethodRecord(ushort MethodRefIndex, ushort[] Arguments)
+    public record struct BootstrapMethodsAttributeMethodRecord(ushort MethodRefIndex, ushort[] Arguments)
     {
 
         public static bool TryReadBootstrapMethod(ref ClassFormatReader reader, out BootstrapMethodsAttributeMethodRecord method)

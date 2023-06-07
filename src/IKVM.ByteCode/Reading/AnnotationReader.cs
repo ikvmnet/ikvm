@@ -1,11 +1,13 @@
-﻿using IKVM.ByteCode.Parsing;
+﻿using System.Collections.Generic;
+
+using IKVM.ByteCode.Parsing;
 
 using static IKVM.ByteCode.Util;
 
 namespace IKVM.ByteCode.Reading
 {
 
-    internal sealed class AnnotationReader : ReaderBase<AnnotationRecord>
+    public sealed class AnnotationReader : ReaderBase<AnnotationRecord>
     {
 
         Utf8ConstantReader type;
@@ -30,7 +32,7 @@ namespace IKVM.ByteCode.Reading
         /// <summary>
         /// Gets the element values of the annotation.
         /// </summary>
-        public ElementValueKeyReaderCollection Elements => LazyGet(ref elements, () => new ElementValueKeyReaderCollection(DeclaringClass, Record.Elements));
+        public IReadOnlyDictionary<string, ElementValueReader> Elements => LazyGet(ref elements, () => new ElementValueKeyReaderCollection(DeclaringClass, Record.Elements));
 
     }
 

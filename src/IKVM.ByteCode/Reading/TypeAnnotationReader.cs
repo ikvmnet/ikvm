@@ -1,11 +1,13 @@
-﻿using IKVM.ByteCode.Parsing;
+﻿using System.Collections.Generic;
+
+using IKVM.ByteCode.Parsing;
 
 using static IKVM.ByteCode.Util;
 
 namespace IKVM.ByteCode.Reading
 {
 
-    internal sealed class TypeAnnotationReader : ReaderBase<TypeAnnotationRecord>
+    public sealed class TypeAnnotationReader : ReaderBase<TypeAnnotationRecord>
     {
 
         Utf8ConstantReader type;

@@ -3,7 +3,7 @@
 namespace IKVM.ByteCode.Reading
 {
 
-    internal sealed class ModuleMainClassAttributeReader : AttributeReader<ModuleMainClassAttributeRecord>
+    public sealed class ModuleMainClassAttributeReader : AttributeReader<ModuleMainClassAttributeRecord>
     {
 
         /// <summary>

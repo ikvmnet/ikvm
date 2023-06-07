@@ -6,7 +6,7 @@ namespace IKVM.ByteCode.Reading
     /// <summary>
     /// Provides static methods for reading constants.
     /// </summary>
-    internal static class ConstantReader
+    public static class ConstantReader
     {
 
         /// <summary>
@@ -45,7 +45,7 @@ namespace IKVM.ByteCode.Reading
     /// Base type for constant readers.
     /// </summary>
     /// <typeparam name="TRecord"></typeparam>
-    internal abstract class ConstantReader<TRecord> : ReaderBase<TRecord>, IConstantReader<TRecord>
+    public abstract class ConstantReader<TRecord> : ReaderBase<TRecord>, IConstantReader<TRecord>
         where TRecord : ConstantRecord
     {
 

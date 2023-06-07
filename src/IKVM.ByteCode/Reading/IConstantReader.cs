@@ -6,7 +6,7 @@ namespace IKVM.ByteCode.Reading
     /// <summary>
     /// Interface supported by all of the constant readers.
     /// </summary>
-    internal interface IConstantReader
+    public interface IConstantReader
     {
 
         /// <summary>
@@ -24,7 +24,7 @@ namespace IKVM.ByteCode.Reading
     /// <summary>
     /// Interface supported by all of the constant readers.
     /// </summary>
-    internal interface IConstantReader<out TRecord> : IConstantReader
+    public interface IConstantReader<out TRecord> : IConstantReader
         where TRecord : ConstantRecord
     {
 

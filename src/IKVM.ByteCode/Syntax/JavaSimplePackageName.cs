@@ -1,14 +1,14 @@
 ﻿using System;
 
-using IKVM.Runtime.Extensions;
+using IKVM.ByteCode.Extensions;
 
-namespace IKVM.Runtime.Syntax
+namespace IKVM.ByteCode.Syntax
 {
 
     /// <summary>
     /// Provides methods to parse a Java class simple name.
     /// </summary>
-    readonly struct JavaSimplePackageName
+    public readonly struct JavaSimplePackageName
     {
 
         public static JavaSimplePackageName Empty => new(ReadOnlyMemory<char>.Empty);

@@ -1,7 +1,7 @@
 ﻿namespace IKVM.ByteCode.Parsing
 {
 
-    internal record SignatureAttributeRecord(ushort SignatureIndex) : AttributeRecord
+    public record SignatureAttributeRecord(ushort SignatureIndex) : AttributeRecord
     {
 
         public static bool TryReadSignatureAttribute(ref ClassFormatReader reader, out AttributeRecord attribute)

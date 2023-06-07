@@ -1,26 +1,40 @@
 ﻿using System;
 
-using IKVM.Runtime.Extensions;
+using IKVM.ByteCode.Extensions;
 
-namespace IKVM.Runtime.Syntax
+namespace IKVM.ByteCode.Syntax
 {
 
     /// <summary>
     /// Provides methods to parse a Java class name.
     /// </summary>
-    readonly struct JavaTypeName
+    public readonly struct JavaClassName
     {
 
-        public static JavaTypeName Empty => new(ReadOnlyMemory<char>.Empty);
+        public static JavaClassName Empty => new(ReadOnlyMemory<char>.Empty);
 
-        public static implicit operator string(JavaTypeName typeName) => typeName.ToString();
-        public static implicit operator JavaTypeName(string typeName) => new(typeName);
+        public static implicit operator string(JavaClassName typeName) => typeName.ToString();
+        public static implicit operator JavaClassName(string typeName) => Parse(typeName.AsMemory());
 
-        public static implicit operator ReadOnlyMemory<char>(JavaTypeName typeName) => typeName.value;
-        public static implicit operator JavaTypeName(ReadOnlyMemory<char> typeName) => new(typeName);
+        public static implicit operator ReadOnlyMemory<char>(JavaClassName typeName) => typeName.value;
+        public static implicit operator JavaClassName(ReadOnlyMemory<char> typeName) => Parse(typeName);
 
-        public static bool operator ==(JavaTypeName a, JavaTypeName b) => a.value.Span.Equals(b.value.Span, StringComparison.Ordinal);
-        public static bool operator !=(JavaTypeName a, JavaTypeName b) => a.value.Span.Equals(b.value.Span, StringComparison.Ordinal) == false;
+        public static bool operator ==(JavaClassName a, JavaClassName b) => a.value.Span.Equals(b.value.Span, StringComparison.Ordinal);
+        public static bool operator !=(JavaClassName a, JavaClassName b) => a.value.Span.Equals(b.value.Span, StringComparison.Ordinal) == false;
+
+        /// <summary>
+        /// Parses the given buffer.
+        /// </summary>
+        /// <param name="buffer"></param>
+        /// <returns></returns>
+        public static JavaClassName Parse(ReadOnlyMemory<char> buffer) => new JavaClassName(buffer);
+
+        /// <summary>
+        /// Parses the given binary name buffer.
+        /// </summary>
+        /// <param name="buffer"></param>
+        /// <returns></returns>
+        public static JavaClassName ParseBinaryName(ReadOnlyMemory<char> buffer) => Parse(buffer.ToString().Replace('/', '.').AsMemory());
 
         readonly ReadOnlyMemory<char> value;
 
@@ -28,7 +42,7 @@ namespace IKVM.Runtime.Syntax
         /// Initializes a new instance.
         /// </summary>
         /// <param name="value"></param>
-        public JavaTypeName(string value) :
+        public JavaClassName(string value) :
             this(value.AsMemory())
         {
             if (value is null)
@@ -39,7 +53,7 @@ namespace IKVM.Runtime.Syntax
         /// Initializes a new instance.
         /// </summary>
         /// <param name="value"></param>
-        public JavaTypeName(ReadOnlyMemory<char> value)
+        JavaClassName(ReadOnlyMemory<char> value)
         {
             this.value = value;
         }
@@ -49,7 +63,7 @@ namespace IKVM.Runtime.Syntax
         /// </summary>
         /// <param name="package"></param>
         /// <param name="name"></param>
-        public JavaTypeName(JavaPackageName package, JavaUnqualifiedTypeName name) :
+        public JavaClassName(JavaPackageName package, JavaUnqualifiedClassName name) :
             this(package.IsEmpty ? name.Value : (package + '.' + name).AsMemory())
         {
 
@@ -86,37 +100,37 @@ namespace IKVM.Runtime.Syntax
         /// <summary>
         /// Gets the unqualified type name.
         /// </summary>
-        public JavaUnqualifiedTypeName UnqualifiedName => GetUnqualifiedName();
+        public JavaUnqualifiedClassName UnqualifiedName => GetUnqualifiedName();
 
         /// <summary>
         /// Gets the unqualified type name.
         /// </summary>
         /// <returns></returns>
         /// <exception cref="NotImplementedException"></exception>
-        JavaUnqualifiedTypeName GetUnqualifiedName()
+        JavaUnqualifiedClassName GetUnqualifiedName()
         {
             var index = value.Span.LastIndexOf('.');
-            return index != -1 ? new JavaUnqualifiedTypeName(value.Slice(index + 1)) : new JavaUnqualifiedTypeName(value);
+            return index != -1 ? new JavaUnqualifiedClassName(value.Slice(index + 1)) : new JavaUnqualifiedClassName(value);
         }
 
         /// <summary>
         /// Gets the simple name.
         /// </summary>
-        public JavaSimpleTypeName SimpleName => GetSimpleName();
+        public JavaSimpleClassName SimpleName => GetSimpleName();
 
         /// <summary>
         /// Gets the simple name.
         /// </summary>
         /// <returns></returns>
-        JavaSimpleTypeName GetSimpleName()
+        JavaSimpleClassName GetSimpleName()
         {
             if (IsEmpty)
-                return JavaSimpleTypeName.Empty;
+                return JavaSimpleClassName.Empty;
             if (IsAnonymousClass)
-                return JavaSimpleTypeName.Empty;
+                return JavaSimpleClassName.Empty;
 
             var index = value.Span.LastIndexOfAny('.', '$');
-            return index != -1 ? new JavaSimpleTypeName(value.Slice(index + 1)) : new JavaSimpleTypeName(value);
+            return index != -1 ? new JavaSimpleClassName(value.Slice(index + 1)) : new JavaSimpleClassName(value);
         }
 
         /// <summary>
@@ -149,12 +163,12 @@ namespace IKVM.Runtime.Syntax
         /// <summary>
         /// If this class name is a nested, inner or anonymous class, returns the parent class name, else returns empty.
         /// </summary>
-        public JavaTypeName Parent => GetParent();
+        public JavaClassName? Parent => GetParent();
 
-        JavaTypeName GetParent()
+        JavaClassName? GetParent()
         {
             var b = value.Span.LastIndexOf('$');
-            return b != -1 ? new JavaTypeName(value.Slice(0, b)) : Empty;
+            return b != -1 ? new JavaClassName(value.Slice(0, b)) : null;
         }
 
         /// <summary>
@@ -162,7 +176,7 @@ namespace IKVM.Runtime.Syntax
         /// </summary>
         /// <param name="other"></param>
         /// <returns></returns>
-        public bool Equals(JavaTypeName other) => value.Span.Equals(other.value.Span, StringComparison.Ordinal);
+        public bool Equals(JavaClassName other) => value.Span.Equals(other.value.Span, StringComparison.Ordinal);
 
         /// <summary>
         /// Returns <c>true</c> if the two objects are equal.
