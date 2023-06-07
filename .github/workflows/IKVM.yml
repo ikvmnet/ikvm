@@ -3,14 +3,16 @@ name: IKVM
 on:
   push:
     branches:
-    - main
-    - hotfix/*
     - develop
+    - hotfix/*
     - release/*
   pull_request:
     branches:
     - main
     - develop
+  release:
+    types:
+    - created
 
 jobs:
   build-openjdk:
@@ -155,11 +157,11 @@ jobs:
         version: "15.0"
         cached: ${{ steps.cache-llvm.outputs.cache-hit }}
     - name: Install GitVersion
-      uses: gittools/actions/gitversion/setup@v0.9.15
+      uses: gittools/actions/gitversion/setup@v0
       with:
         versionSpec: 5.x
     - name: Execute GitVersion
-      uses: gittools/actions/gitversion/execute@v0.9.15
+      uses: gittools/actions/gitversion/execute@v0
       with:
         targetPath: ${{ env.WORKPATH }}\ikvm
         useConfigFile: true
@@ -213,7 +215,7 @@ jobs:
           /p:AssemblyVersion=${env:GitVersion_AssemblySemVer} `
           /p:InformationalVersion=${env:GitVersion_InformationalVersion} `
           /p:FileVersion=${env:GitVersion_AssemblySemFileVer} `
-          /p:PackageVersion=${env:GitVersion_NuGetVersionV2} `
+          /p:PackageVersion=${env:GitVersion_FullSemVer} `
           /p:RepositoryUrl="${env:GITHUB_SERVER_URL}/${env:GITHUB_REPOSITORY}.git" `
           /p:PackageProjectUrl="${env:GITHUB_SERVER_URL}/${env:GITHUB_REPOSITORY}" `
           /p:BuildInParallel=true `
@@ -456,7 +458,6 @@ jobs:
         path: ${{ env.TMPDIR }}/TestResults.tar.gz
   release:
     name: Release
-    if: github.ref == 'refs/heads/main' || github.ref == 'refs/heads/develop' || startsWith(github.ref, 'refs/heads/release/') || startsWith(github.ref, 'refs/heads/hotfix/')
     needs:
     - test
     runs-on: ubuntu-latest
@@ -473,12 +474,12 @@ jobs:
       with:
         dotnet-version: 7.0.x
     - name: Install GitVersion
-      uses: gittools/actions/gitversion/setup@v0.9.15
+      uses: gittools/actions/gitversion/setup@v0
       with:
         versionSpec: 5.x
     - name: Execute GitVersion
       id: GitVersion
-      uses: gittools/actions/gitversion/execute@v0.9.15
+      uses: gittools/actions/gitversion/execute@v0
       with:
         useConfigFile: true
     - name: Download NuGet Packages
@@ -523,13 +524,13 @@ jobs:
       shell: pwsh
       run: cd dist && gi image/*/* | %{ $tfm = $_.Parent.Name; $rid = $_.Name; Push-Location "image/$tfm/$rid"; zip -r "../../IKVM-${env:GitVersion_SemVer}-image-$tfm-$rid.zip" .; tar czvf "../../IKVM-${env:GitVersion_SemVer}-image-$tfm-$rid.tar.gz" .; Pop-Location }
     - name: Create Release
-      if: github.ref == 'refs/heads/main' || github.event.head_commit.message == '+push'
+      if: github.ref_type == 'tag'
       uses: ncipollo/release-action@v1.10.0
       with:
-        tag: ${{ steps.GitVersion.outputs.semVer }}
+        tag: ${{ github.ref_name }}
+        allowUpdates: true
         artifacts: dist/nuget/*.nupkg,dist/bin/*.zip,dist/bin/*.tar.gz,dist/image/*.zip,dist/image/*.tar.gz,dist/tools/*.zip,dist/tools/*.tar.gz
-        generateReleaseNotes: true
-        prerelease: ${{ github.ref == 'refs/heads/develop' }}
+        draft: false
         token: ${{ secrets.GITHUB_TOKEN }}
     - name: Push NuGet (GitHub)
       shell: pwsh
@@ -538,7 +539,7 @@ jobs:
         GITHUB_REPOS: https://nuget.pkg.github.com/${{ github.repository_owner }}/index.json
         GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
     - name: Push NuGet
-      if: github.ref == 'refs/heads/main' || github.event.head_commit.message == '+push'
+      if: github.ref_type == 'tag'
       shell: pwsh
       run: dotnet nuget push dist/nuget/*.nupkg --source $env:NUGET_REPOS --api-key $env:NUGET_TOKEN --skip-duplicate
       env:
