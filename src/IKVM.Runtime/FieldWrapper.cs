@@ -461,18 +461,6 @@ namespace IKVM.Internal
             }
         }
 
-        internal object GetFieldAccessorJNI()
-        {
-#if FIRST_PASS
-            return null;
-#else
-            if (jniAccessor == null)
-                Interlocked.CompareExchange(ref jniAccessor, IKVM.Java.Externs.sun.reflect.ReflectionFactory.NewFieldAccessorJNI(this), null);
-
-            return jniAccessor;
-#endif
-        }
-
 #if !FIRST_PASS
 
         /// <summary>

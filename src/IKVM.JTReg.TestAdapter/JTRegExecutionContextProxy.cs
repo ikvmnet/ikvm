@@ -27,11 +27,15 @@ namespace IKVM.JTReg.TestAdapter
         /// </summary>
         static JTRegExecutionContextProxy()
         {
+            properties.Add(TestCaseProperties.FullyQualifiedName.Label, TestCaseProperties.FullyQualifiedName);
+            properties.Add(TestCaseProperties.DisplayName.Label, TestCaseProperties.DisplayName);
+            properties.Add(TestCaseProperties.ExecutorUri.Label, TestCaseProperties.ExecutorUri);
+            properties.Add(TestCaseProperties.Source.Label, TestCaseProperties.Source);
+            properties.Add(TestCaseProperties.CodeFilePath.Label, TestCaseProperties.CodeFilePath);
             properties.Add(JTRegTestProperties.TestSuiteRootProperty.Label, JTRegTestProperties.TestSuiteRootProperty);
             properties.Add(JTRegTestProperties.TestSuiteNameProperty.Label, JTRegTestProperties.TestSuiteNameProperty);
             properties.Add(JTRegTestProperties.TestPathNameProperty.Label, JTRegTestProperties.TestPathNameProperty);
             properties.Add(JTRegTestProperties.TestIdProperty.Label, JTRegTestProperties.TestIdProperty);
-            properties.Add(JTRegTestProperties.TestNameProperty.Label, JTRegTestProperties.TestNameProperty);
             properties.Add(JTRegTestProperties.TestTitleProperty.Label, JTRegTestProperties.TestTitleProperty);
             properties.Add(JTRegTestProperties.TestAuthorProperty.Label, JTRegTestProperties.TestAuthorProperty);
             properties.Add(JTRegTestProperties.TestPartitionProperty.Label, JTRegTestProperties.TestPartitionProperty);
