@@ -1302,20 +1302,18 @@ namespace IKVM.Java.Externs.sun.misc
                     freeMemory(self, address);
                     return 0;
                 }
-                else
-                {
-                    // remove memory pressure
-                    var ptr = (IntPtr)address - sizeof(IntPtr);
-                    var len = Marshal.ReadIntPtr(ptr);
-                    System.GC.RemoveMemoryPressure((long)len);
 
-                    // reallocate and add memory pressure
-                    len = (IntPtr)bytes + sizeof(IntPtr);
-                    ptr = Marshal.ReAllocHGlobal(ptr, len);
-                    Marshal.WriteIntPtr(ptr, len);
-                    System.GC.AddMemoryPressure((long)len);
-                    return (long)ptr + sizeof(IntPtr);
-                }
+                // remove memory pressure
+                var ptr = (IntPtr)address - sizeof(IntPtr);
+                var len = Marshal.ReadIntPtr(ptr);
+                System.GC.RemoveMemoryPressure((long)len);
+
+                // reallocate and add memory pressure
+                len = (IntPtr)bytes + sizeof(IntPtr);
+                ptr = Marshal.ReAllocHGlobal(ptr, len);
+                Marshal.WriteIntPtr(ptr, len);
+                System.GC.AddMemoryPressure((long)len);
+                return (long)ptr + sizeof(IntPtr);
             }
             catch (global::java.lang.Exception)
             {
