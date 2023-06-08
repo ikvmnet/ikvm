@@ -15,7 +15,7 @@ on:
     - created
 
 jobs:
-  build-winsdk:
+  build-sdk-windows:
     name: Build Windows SDK
     runs-on: ubuntu-latest
     timeout-minutes: 240
@@ -25,30 +25,30 @@ jobs:
     - name: Cache
       uses: actions/cache@v3
       with:
-        path: ext/winsdk/sdk
-        key: ext-winsdk-sdk--${{ runner.os }}--${{ hashFiles('ext/winsdk/build.sh') }}-2
+        path: sdk/windows
+        key: sdk-windows--${{ runner.os }}--${{ hashFiles('sdk/windows/build.sh') }}-2
     - name: Check
-      id: winsdk-stamp
+      id: dist-stamp
       uses: andstor/file-existence-action@v2
       with:
-        files: ext/winsdk/sdk/stamp
+        files: sdk/windows/dist/stamp
     - name: Install
-      if: steps.winsdk-stamp.outputs.files_exists != 'true'
+      if: steps.dist-stamp.outputs.files_exists != 'true'
       run: |
         sudo apt-get update &&
         sudo apt-get install -y zip unzip curl wget
     - name: Build
-      if: steps.winsdk-stamp.outputs.files_exists != 'true'
-      run: ext/winsdk/build.sh && touch ext/winsdk/sdk/stamp
+      if: steps.dist-stamp.outputs.files_exists != 'true'
+      run: sdk/windows/build.sh && touch sdk/windows/dist/stamp
     - name: Package
-      run: tar czvf /tmp/ext-winsdk-sdk.tar.gz sdk
-      working-directory: ext/winsdk
+      run: tar czvf /tmp/sdk-windows-dist.tar.gz dist
+      working-directory: sdk/windows
     - name: Upload
       uses: actions/upload-artifact@v3
       with:
-        name: ext-winsdk-sdk
-        path: /tmp/ext-winsdk-sdk.tar.gz
-  build-linuxsdk:
+        name: sdk-windows-dist
+        path: /tmp/sdk-windows-dist.tar.gz
+  build-sdk-linux:
     strategy:
       matrix:
         target:
@@ -66,15 +66,15 @@ jobs:
     - name: Cache
       uses: actions/cache@v3
       with:
-        path: ext/linuxsdk/${{ matrix.target }}
-        key: ext-linuxsdk-${{ matrix.target }}--${{ runner.os }}--${{ hashFiles('ext/linuxsdk/build.sh', 'ext/linuxsdk/*.dir/.config') }}-1
+        path: sdk/linux/${{ matrix.target }}
+        key: sdk-linux-${{ matrix.target }}--${{ runner.os }}--${{ hashFiles('sdk/linux/build.sh', 'sdk/linux/*.dir/.config') }}-1
     - name: Check
       id: linuxsdk-stamp
       uses: andstor/file-existence-action@v2
       with:
-        files: ext/linuxsdk/${{ matrix.target }}/stamp
+        files: sdk/linux/${{ matrix.target }}/stamp
     - name: Install
-      if: steps.linuxsdk-stamp.outputs.files_exists != 'true'
+      if: steps.sdk-stamp.outputs.files_exists != 'true'
       run: |
         sudo apt-get update &&
         sudo apt-get install -y \
@@ -83,17 +83,17 @@ jobs:
           ninja-build zip unzip curl wget \
           help2man bison flex libtool libtool-bin patch libstdc++6 rsync git meson xz-utils texinfo
     - name: Build
-      if: steps.linuxsdk-stamp.outputs.files_exists != 'true'
-      run: ext/linuxsdk/build.sh ${{ matrix.target }} && touch ext/linuxsdk/${{ matrix.target }}/stamp
+      if: steps.sdk-stamp.outputs.files_exists != 'true'
+      run: sdk/linux/build.sh ${{ matrix.target }} && touch sdk/linux/${{ matrix.target }}/stamp
     - name: Package
-      run: tar czvf /tmp/ext-linuxsdk-${{ matrix.target }}.tar.gz ${{ matrix.target }}
-      working-directory: ext/linuxsdk
+      run: tar czvf /tmp/sdk-linux-${{ matrix.target }}.tar.gz ${{ matrix.target }}
+      working-directory: sdk/linux
     - name: Upload
       uses: actions/upload-artifact@v3
       with:
-        name: ext-linuxsdk-${{ matrix.target }}
-        path: /tmp/ext-linuxsdk-${{ matrix.target }}.tar.gz
-  build-macosxsdk:
+        name: sdk-linux-${{ matrix.target }}
+        path: /tmp/sdk-linux-${{ matrix.target }}.tar.gz
+  build-sdk-macosx:
     name: Build Mac OS X SDK
     runs-on: ubuntu-latest
     timeout-minutes: 240
@@ -103,29 +103,29 @@ jobs:
     - name: Cache
       uses: actions/cache@v3
       with:
-        path: ext/macosxsdk/sdk
-        key: ext-macosxsdk-sdk--${{ runner.os }}--${{ hashFiles('ext/macosxsdk/build.sh') }}-1
+        path: sdk/macosx/sdk
+        key: sdk-macosx-sdk--${{ runner.os }}--${{ hashFiles('sdk/macosx/build.sh') }}-1
     - name: Check
-      id: macosxsdk-stamp
+      id: dist-stamp
       uses: andstor/file-existence-action@v2
       with:
-        files: ext/macosxsdk/sdk/stamp
+        files: sdk/macosx/sdk/stamp
     - name: Install
-      if: steps.macosxsdk-stamp.outputs.files_exists != 'true'
+      if: steps.dist-stamp.outputs.files_exists != 'true'
       run: |
         sudo apt-get update &&
         sudo apt-get install -y zip unzip curl
     - name: Build
       if: steps.macosxsdk-stamp.outputs.files_exists != 'true'
-      run: ext/macosxsdk/build.sh && touch ext/macosxsdk/sdk/stamp
+      run: sdk/macosx/build.sh && touch sdk/macosx/dist/stamp
     - name: Package
-      run: tar czvf /tmp/ext-macosxsdk-sdk.tar.gz sdk
-      working-directory: ext/macosxsdk
+      run: tar czvf /tmp/sdk-macosx-dist.tar.gz sdk
+      working-directory: sdk/macosx
     - name: Upload
       uses: actions/upload-artifact@v3
       with:
-        name: ext-macosxsdk-sdk
-        path: /tmp/ext-macosxsdk-sdk.tar.gz
+        name: sdk-macosx-dist
+        path: /tmp/sdk-macosx-dist.tar.gz
   build-openjdk:
     name: Build OpenJDK
     runs-on: ubuntu-latest
@@ -218,9 +218,9 @@ jobs:
     name: Build IKVM
     needs:
     - build-openjdk
-    - build-winsdk
-    - build-linuxsdk
-    - build-macosxsdk
+    - build-sdk-windows
+    - build-sdk-linux
+    - build-sdk-macosx
     timeout-minutes: 240
     runs-on: windows-latest
     steps:

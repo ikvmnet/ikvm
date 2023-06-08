@@ -91,42 +91,42 @@
     <!-- known global values -->
     <ItemDefinitionGroup Condition="!$([MSBuild]::IsOSPlatform('Windows')) And $(TargetMachine.Contains('-windows-'))">
         <Compile>
-            <SystemIncludeDirectories>%(Compile.SystemIncludeDirectories);$(MSBuildThisFileDirectory)ext\winsdk\sdk\crt\include\</SystemIncludeDirectories>
-            <SystemIncludeDirectories>%(Compile.SystemIncludeDirectories);$(MSBuildThisFileDirectory)ext\winsdk\sdk\sdk\include\shared\</SystemIncludeDirectories>
-            <SystemIncludeDirectories>%(Compile.SystemIncludeDirectories);$(MSBuildThisFileDirectory)ext\winsdk\sdk\sdk\include\ucrt\</SystemIncludeDirectories>
-            <SystemIncludeDirectories>%(Compile.SystemIncludeDirectories);$(MSBuildThisFileDirectory)ext\winsdk\sdk\sdk\include\um\</SystemIncludeDirectories>
+            <SystemIncludeDirectories>%(Compile.SystemIncludeDirectories);$(MSBuildThisFileDirectory)sdk\windows\dist\crt\include\</SystemIncludeDirectories>
+            <SystemIncludeDirectories>%(Compile.SystemIncludeDirectories);$(MSBuildThisFileDirectory)sdk\windows\dist\sdk\include\shared\</SystemIncludeDirectories>
+            <SystemIncludeDirectories>%(Compile.SystemIncludeDirectories);$(MSBuildThisFileDirectory)sdk\windows\dist\sdk\include\ucrt\</SystemIncludeDirectories>
+            <SystemIncludeDirectories>%(Compile.SystemIncludeDirectories);$(MSBuildThisFileDirectory)sdk\windows\dist\sdk\include\um\</SystemIncludeDirectories>
         </Compile>
         <Link>
-            <LibraryDirectories>%(Compile.LibraryDirectories);$(MSBuildThisFileDirectory)ext\winsdk\sdk\crt\lib\$(WinSdkArch)</LibraryDirectories>
-            <LibraryDirectories>%(Compile.LibraryDirectories);$(MSBuildThisFileDirectory)ext\winsdk\sdk\sdk\lib\ucrt\$(WinSdkArch)</LibraryDirectories>
-            <LibraryDirectories>%(Compile.LibraryDirectories);$(MSBuildThisFileDirectory)ext\winsdk\sdk\sdk\lib\um\$(WinSdkArch)</LibraryDirectories>
+            <LibraryDirectories>%(Compile.LibraryDirectories);$(MSBuildThisFileDirectory)sdk\windows\dist\crt\lib\$(WinSdkArch)</LibraryDirectories>
+            <LibraryDirectories>%(Compile.LibraryDirectories);$(MSBuildThisFileDirectory)sdk\windows\dist\sdk\lib\ucrt\$(WinSdkArch)</LibraryDirectories>
+            <LibraryDirectories>%(Compile.LibraryDirectories);$(MSBuildThisFileDirectory)sdk\windows\dist\sdk\lib\um\$(WinSdkArch)</LibraryDirectories>
         </Link>
     </ItemDefinitionGroup>
     
     <ItemDefinitionGroup Condition="$(TargetMachine.EndsWith('-linux-gnu')) And $(TargetMachine.StartsWith('x86_64-'))">
         <Compile>
-            <SystemRootDirectories>%(Compile.SystemRootDirectories);$(MSBuildThisFileDirectory)ext\linuxsdk\x86_64-unknown-linux-gnu</SystemRootDirectories>
+            <SystemRootDirectories>%(Compile.SystemRootDirectories);$(MSBuildThisFileDirectory)sdk\linux\x86_64-unknown-linux-gnu</SystemRootDirectories>
         </Compile>
     </ItemDefinitionGroup>
 
     <ItemDefinitionGroup Condition="$(TargetMachine.EndsWith('-linux-gnu')) And $(TargetMachine.StartsWith('aarch64-'))">
         <Compile>
-            <SystemRootDirectories>%(Compile.SystemRootDirectories);$(MSBuildThisFileDirectory)ext\linuxsdk\aarch64-unknown-linux-gnu</SystemRootDirectories>
+            <SystemRootDirectories>%(Compile.SystemRootDirectories);$(MSBuildThisFileDirectory)sdk\linux\aarch64-unknown-linux-gnu</SystemRootDirectories>
         </Compile>
     </ItemDefinitionGroup>
 
     <ItemDefinitionGroup Condition="$(TargetMachine.EndsWith('-linux-gnueabi')) And $(TargetMachine.StartsWith('arm-'))">
         <Compile>
-            <SystemRootDirectories>%(Compile.SystemRootDirectories);$(MSBuildThisFileDirectory)ext\linuxsdk\arm-unknown-linux-gnueabi</SystemRootDirectories>
+            <SystemRootDirectories>%(Compile.SystemRootDirectories);$(MSBuildThisFileDirectory)sdk\linux\arm-unknown-linux-gnueabi</SystemRootDirectories>
         </Compile>
     </ItemDefinitionGroup>
 
     <ItemDefinitionGroup Condition="!$([MSBuild]::IsOSPlatform('OSX')) And $(TargetMachine.Contains('-apple-'))">
         <Compile>
-            <IncludeSystemRootDirectories>%(Compile.IncludeSystemRootDirectories);$(MSBuildThisFileDirectory)ext\macosxsdk\sdk</IncludeSystemRootDirectories>
+            <IncludeSystemRootDirectories>%(Compile.IncludeSystemRootDirectories);$(MSBuildThisFileDirectory)sdk\macosx\dist</IncludeSystemRootDirectories>
         </Compile>
         <Link>
-            <LibraryDirectories>%(Link.LibraryDirectories);$(MSBuildThisFileDirectory)ext\macosxsdk\sdk\usr\lib</LibraryDirectories>
+            <LibraryDirectories>%(Link.LibraryDirectories);$(MSBuildThisFileDirectory)sdk\macosx\dist\usr\lib</LibraryDirectories>
         </Link>
     </ItemDefinitionGroup>
 
