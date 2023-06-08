@@ -57,6 +57,8 @@
         <OpenJdkSource Include="$(OpenJdkDir)\jdk\src\share\classes\com\sun\beans\**\*.java" PackagePath="com\sun\beans" />
         <OpenJdkSource Include="$(OpenJdkDir)\jdk\src\share\classes\com\sun\crypto\**\*.java" PackagePath="com\sun\crypto" />
         <OpenJdkSource Include="$(OpenJdkDir)\jdk\src\share\classes\com\sun\imageio\**\*.java" PackagePath="com\sun\imageio" />
+        <OpenJdkSource Remove="$(OpenJdkDir)\jdk\src\share\classes\com\sun\imageio\plugins\jpeg\JPEGImageReader.java" />
+        <OpenJdkSource Remove="$(OpenJdkDir)\jdk\src\share\classes\com\sun\imageio\plugins\jpeg\JPEGImageWriter.java" />
         <OpenJdkSource Include="$(OpenJdkDir)\jdk\src\share\classes\com\sun\jarsigner\ContentSigner.java" />
         <OpenJdkSource Include="$(OpenJdkDir)\jdk\src\share\classes\com\sun\jarsigner\ContentSignerParameters.java" />
         <OpenJdkSource Include="$(OpenJdkDir)\jdk\src\share\classes\com\sun\jarsigner\package-info.java" />
