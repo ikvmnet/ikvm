@@ -103,13 +103,13 @@ jobs:
     - name: Cache
       uses: actions/cache@v3
       with:
-        path: sdk/macosx/sdk
-        key: sdk-macosx-sdk--${{ runner.os }}--${{ hashFiles('sdk/macosx/build.sh') }}-1
+        path: sdk/macosx/dist
+        key: sdk-macosx-dist--${{ runner.os }}--${{ hashFiles('sdk/macosx/build.sh') }}-1
     - name: Check
       id: dist-stamp
       uses: andstor/file-existence-action@v2
       with:
-        files: sdk/macosx/sdk/stamp
+        files: sdk/macosx/dist/stamp
     - name: Install
       if: steps.dist-stamp.outputs.files_exists != 'true'
       run: |
