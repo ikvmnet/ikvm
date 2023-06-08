@@ -83,33 +83,34 @@ namespace IKVM.Runtime
 
     sealed class Compiler
     {
+
         internal static readonly MethodInfo unmapExceptionMethod;
-        private static readonly MethodInfo fixateExceptionMethod;
-        private static readonly MethodInfo suppressFillInStackTraceMethod;
+        static readonly MethodInfo fixateExceptionMethod;
+        static readonly MethodInfo suppressFillInStackTraceMethod;
         internal static readonly MethodInfo getTypeFromHandleMethod;
         internal static readonly MethodInfo getTypeMethod;
-        private static readonly MethodInfo keepAliveMethod;
+        static readonly MethodInfo keepAliveMethod;
         internal static readonly MethodWrapper getClassFromTypeHandle;
         internal static readonly MethodWrapper getClassFromTypeHandle2;
-        private readonly DynamicTypeWrapper.FinishContext context;
-        private readonly DynamicTypeWrapper clazz;
-        private readonly MethodWrapper mw;
-        private readonly ClassFile classFile;
-        private readonly ClassFile.Method m;
-        private readonly CodeEmitter ilGenerator;
-        private readonly CodeInfo ma;
-        private readonly UntangledExceptionTable exceptions;
-        private readonly List<string> harderrors;
-        private readonly LocalVarInfo localVars;
-        private bool nonleaf;
-        private readonly bool debug;
-        private readonly bool keepAlive;
-        private readonly bool strictfp;
-        private readonly bool emitLineNumbers;
-        private int[] scopeBegin;
-        private int[] scopeClose;
+        readonly DynamicTypeWrapper.FinishContext context;
+        readonly DynamicTypeWrapper clazz;
+        readonly MethodWrapper mw;
+        readonly ClassFile classFile;
+        readonly ClassFile.Method m;
+        readonly CodeEmitter ilGenerator;
+        readonly CodeInfo ma;
+        readonly UntangledExceptionTable exceptions;
+        readonly List<string> harderrors;
+        readonly LocalVarInfo localVars;
+        bool nonleaf;
+        readonly bool debug;
+        readonly bool keepAlive;
+        readonly bool strictfp;
+        readonly bool emitLineNumbers;
+        int[] scopeBegin;
+        int[] scopeClose;
 #if IMPORTER
-	private readonly MethodWrapper[] replacedMethodWrappers;
+        readonly MethodWrapper[] replacedMethodWrappers;
 #endif
 
         static Compiler()
@@ -159,7 +160,7 @@ namespace IKVM.Runtime
                 keepAlive = finalize != null && finalize.DeclaringType != CoreClasses.java.lang.Object.Wrapper && finalize.DeclaringType != CoreClasses.cli.System.Object.Wrapper && finalize.DeclaringType != CoreClasses.java.lang.Throwable.Wrapper && finalize.DeclaringType != CoreClasses.cli.System.Exception.Wrapper;
             }
 #if IMPORTER
-		replacedMethodWrappers = clazz.GetReplacedMethodsFor(mw);
+            replacedMethodWrappers = clazz.GetReplacedMethodsFor(mw);
 #endif
 
             TypeWrapper[] args = mw.GetParameters();
@@ -205,23 +206,19 @@ namespace IKVM.Runtime
                         {
                             // skip unreachable instructions
                         }
-                        else if (m.Instructions[i].NormalizedOpCode == NormalizedByteCode.__getfield
-                            && VerifierTypeWrapper.IsThis(ma.GetRawStackTypeWrapper(i, 0)))
+                        else if (m.Instructions[i].NormalizedOpCode == NormalizedByteCode.__getfield && VerifierTypeWrapper.IsThis(ma.GetRawStackTypeWrapper(i, 0)))
                         {
                             // loading a field from the current object cannot throw
                         }
-                        else if (m.Instructions[i].NormalizedOpCode == NormalizedByteCode.__putfield
-                            && VerifierTypeWrapper.IsThis(ma.GetRawStackTypeWrapper(i, 1)))
+                        else if (m.Instructions[i].NormalizedOpCode == NormalizedByteCode.__putfield && VerifierTypeWrapper.IsThis(ma.GetRawStackTypeWrapper(i, 1)))
                         {
                             // storing a field in the current object cannot throw
                         }
-                        else if (m.Instructions[i].NormalizedOpCode == NormalizedByteCode.__getstatic
-                            && classFile.GetFieldref(m.Instructions[i].Arg1).GetClassType() == clazz)
+                        else if (m.Instructions[i].NormalizedOpCode == NormalizedByteCode.__getstatic && classFile.GetFieldref(m.Instructions[i].Arg1).GetClassType() == clazz)
                         {
                             // loading a field from the current class cannot throw
                         }
-                        else if (m.Instructions[i].NormalizedOpCode == NormalizedByteCode.__putstatic
-                            && classFile.GetFieldref(m.Instructions[i].Arg1).GetClassType() == clazz)
+                        else if (m.Instructions[i].NormalizedOpCode == NormalizedByteCode.__putstatic && classFile.GetFieldref(m.Instructions[i].Arg1).GetClassType() == clazz)
                         {
                             // storing a field to the current class cannot throw
                         }
@@ -253,8 +250,7 @@ namespace IKVM.Runtime
                     {
                         tw = args[arg - 1];
                     }
-                    if (!tw.IsUnloadable &&
-                        (v.type != tw || tw.TypeAsLocalOrStackType != tw.TypeAsSignatureType))
+                    if (!tw.IsUnloadable && (v.type != tw || tw.TypeAsLocalOrStackType != tw.TypeAsSignatureType))
                     {
                         v.builder = ilGenerator.DeclareLocal(GetLocalBuilderType(v.type));
                         if (debug && v.name != null)
@@ -590,7 +586,7 @@ namespace IKVM.Runtime
             catch (VerifyError x)
             {
 #if IMPORTER
-				classLoader.IssueMessage(Message.EmittedVerificationError, classFile.Name + "." + m.Name + m.Signature, x.Message);
+                classLoader.IssueMessage(Message.EmittedVerificationError, classFile.Name + "." + m.Name + m.Signature, x.Message);
 #endif
                 Tracer.Error(Tracer.Verifier, x.ToString());
                 clazz.SetHasVerifyError();
@@ -602,7 +598,7 @@ namespace IKVM.Runtime
             catch (ClassFormatError x)
             {
 #if IMPORTER
-				classLoader.IssueMessage(Message.EmittedClassFormatError, classFile.Name + "." + m.Name + m.Signature, x.Message);
+                classLoader.IssueMessage(Message.EmittedClassFormatError, classFile.Name + "." + m.Name + m.Signature, x.Message);
 #endif
                 Tracer.Error(Tracer.Verifier, x.ToString());
                 clazz.SetHasClassFormatError();
@@ -2737,8 +2733,8 @@ namespace IKVM.Runtime
             static InvokeDynamicBuilder()
             {
 #if IMPORTER
-			typeofOpenIndyCallSite = StaticCompiler.GetRuntimeType("IKVM.Runtime.IndyCallSite`1");
-			typeofCallSite = ClassLoaderWrapper.LoadClassCritical("java.lang.invoke.CallSite").TypeAsSignatureType;
+                typeofOpenIndyCallSite = StaticCompiler.GetRuntimeType("IKVM.Runtime.IndyCallSite`1");
+                typeofCallSite = ClassLoaderWrapper.LoadClassCritical("java.lang.invoke.CallSite").TypeAsSignatureType;
 #elif !FIRST_PASS
 				typeofOpenIndyCallSite = typeof(IKVM.Runtime.IndyCallSite<>);
 				typeofCallSite = typeof(java.lang.invoke.CallSite);
@@ -3555,7 +3551,7 @@ namespace IKVM.Runtime
                 MethodInfo mi = ByteCodeHelperMethods.GetDelegateForInvoke.MakeGenericMethod(delegateType);
                 Type typeofInvokeCache;
 #if IMPORTER
-			typeofInvokeCache = StaticCompiler.GetRuntimeType("IKVM.Runtime.InvokeCache`1");
+                typeofInvokeCache = StaticCompiler.GetRuntimeType("IKVM.Runtime.InvokeCache`1");
 #else
                 typeofInvokeCache = typeof(IKVM.Runtime.InvokeCache<>);
 #endif
@@ -3793,20 +3789,20 @@ namespace IKVM.Runtime
         {
             ClassFile.ConstantPoolItemMI cpi = classFile.GetMethodref(constantPoolIndex);
 #if IMPORTER
-		if(replacedMethodWrappers != null)
-		{
-			for(int i = 0; i < replacedMethodWrappers.Length; i++)
-			{
-				if(replacedMethodWrappers[i].DeclaringType == cpi.GetClassType()
-					&& replacedMethodWrappers[i].Name == cpi.Name
-					&& replacedMethodWrappers[i].Signature == cpi.Signature)
-				{
-					MethodWrapper rmw = replacedMethodWrappers[i];
-					rmw.Link();
-					return rmw;
-				}
-			}
-		}
+            if (replacedMethodWrappers != null)
+            {
+                for (int i = 0; i < replacedMethodWrappers.Length; i++)
+                {
+                    if (replacedMethodWrappers[i].DeclaringType == cpi.GetClassType()
+                        && replacedMethodWrappers[i].Name == cpi.Name
+                        && replacedMethodWrappers[i].Signature == cpi.Signature)
+                    {
+                        MethodWrapper rmw = replacedMethodWrappers[i];
+                        rmw.Link();
+                        return rmw;
+                    }
+                }
+            }
 #endif
             MethodWrapper mw = null;
             switch (invoke)

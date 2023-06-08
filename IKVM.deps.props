@@ -3,6 +3,7 @@
     <ItemGroup>
         <PackageReference Include="Mono.Unix" Version="7.1.0-final.1.21458.1" GeneratePathProperty="true" />
         <PackageReference Include="Mono.Posix" Version="7.1.0-final.1.21458.1" GeneratePathProperty="true" />
+        <PackageReference Include="System.IO.Pipelines" Version="6.0.3" />
         <PackageReference Include="System.Memory" Version="4.5.5" />
     </ItemGroup>
 

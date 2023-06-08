@@ -9,12 +9,19 @@
     <ContentType
         Name="JavaClassFile"
         DisplayName="Java class file"
-        ItemType="Class">
+        ItemType="Convert">
+    </ContentType>
+
+    <ContentType
+        Name="JavaArchiveFile"
+        DisplayName="Java archive file"
+        ItemType="Convert">
     </ContentType>
 
     <ItemType Name="Compile" UpToDateCheckInput="true" DisplayName="Compile" />
-    <ItemType Name="Class" UpToDateCheckInput="true" DisplayName="Class" />
+    <ItemType Name="Convert" UpToDateCheckInput="true" DisplayName="Convert" />
 
+    <FileExtension Name=".jar" ContentType="JavaArchiveFile"/>
     <FileExtension Name=".java" ContentType="JavaSourceFile"/>
     <FileExtension Name=".class" ContentType="JavaClassFile"/>
 </ProjectSchemaDefinitions>

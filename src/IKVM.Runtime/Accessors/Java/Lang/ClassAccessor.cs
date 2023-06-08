@@ -15,6 +15,7 @@ namespace IKVM.Runtime.Accessors.Java.Lang
         Type javaLangClass;
         Type javaLangReflectMethod;
 
+        MethodAccessor<Func<Type, object>> init;
         MethodAccessor<Func<string, object, object>> forName;
         MethodAccessor<Func<object, string, object[], object, object>> getMethod;
 
@@ -33,6 +34,13 @@ namespace IKVM.Runtime.Accessors.Java.Lang
         Type JavaLangClass => Resolve(ref javaLangClass, "java.lang.Class");
 
         Type JavaLangReflectMethod => Resolve(ref javaLangReflectMethod, "java.lang.reflect.Method");
+
+        /// <summary>
+        /// Creates a new instance.
+        /// </summary>
+        /// <param name="type"></param>
+        /// <returns></returns>
+        public object Init(Type type) => GetConstructor(ref init, typeof(Type)).Invoker(type);
 
         /// <summary>
         /// Invokes the 'forName' method.

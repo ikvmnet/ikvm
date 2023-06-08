@@ -80,7 +80,7 @@
     </Target>
 
     <!-- Override IKVM.NET.Sdk: invoke compiler through task  -->
-    <Target Name="_CoreCompile" DependsOnTargets="ResolveIkvmRuntimeAssembly;CompileJava" Inputs="$(IkvmRuntimeAssembly);$(KeyOriginatorFile);@(MapFile);@(ReferencePathWithRefAssemblies);@(Class);@(JavaResource);$(_CompileJavaStampFile)" Outputs="@(IntermediateAssembly);@(_DebugSymbolsIntermediatePath)">
+    <Target Name="_CoreCompile" DependsOnTargets="ResolveIkvmRuntimeAssembly;CompileJava" Inputs="$(IkvmRuntimeAssembly);$(KeyOriginatorFile);@(MapFile);@(ReferencePathWithRefAssemblies);@(Convert);@(JavaResource);$(_CompileJavaStampFile)" Outputs="@(IntermediateAssembly);@(_DebugSymbolsIntermediatePath)">
         <Error Text="IKVM.NET.Sdk cannot currently build assemblies targeting '$(TargetFramework)'. Either target 'net461' or 'netcoreapp3.1'." Condition=" '$(TargetFramework)' != 'net461' And '$(TargetFramework)' != 'netcoreapp3.1' " />
         <Error Text="Could not locate IKVM.Runtime assembly." Condition=" '$(IkvmRuntimeAssembly)' == '' " />
         <Error Text="IKVM.Runtime.dll could not be located at '$(IkvmRuntimeAssembly)'." Condition="!Exists('$(IkvmRuntimeAssembly)')" />
@@ -89,10 +89,10 @@
         <WriteLinesToFile File="$(_ExcludeFilePath)" Lines="@(ExcludeRegex)" Overwrite="true" Condition=" '@(ExcludeRegex)' != '' " />
 
         <ItemGroup>
-            <_ClassToCompile Include="@(Class)" />
-            <_AssemblyAttributesClass Include="@(_ClassToCompile)" Condition=" '%(Filename)%(Extension)' == '__AssemblyAttributes.class' " />
-            <_AssemblyAttributesClass Include="@(_ClassToCompile)" Condition=" '%(Filename)%(Extension)' == '__AssemblyInfo.class' " />
-            <_ClassToCompile Remove="@(_AssemblyAttributesClass)" />
+            <_Convert Include="@(Convert)" />
+            <_AssemblyAttributesClass Include="@(_Convert)" Condition=" '%(Filename)%(Extension)' == '__AssemblyAttributes.class' " />
+            <_AssemblyAttributesClass Include="@(_Convert)" Condition=" '%(Filename)%(Extension)' == '__AssemblyInfo.class' " />
+            <_Convert Remove="@(_AssemblyAttributesClass)" />
             <_IkvmCompilerReferencePath Include="@(ReferencePathWithRefAssemblies)" Condition=" '%(ReferencePathWithRefAssemblies.HideFromJava)' != 'true' " />
             <_IkvmCompilerResource Include="@(JavaResource)" ResourcePath="$([System.String]::new('%(JavaResource.ResourcePath)').Replace('\', '/'))" Condition=" '%(Identity)' != '' " />
         </ItemGroup>
@@ -136,7 +136,7 @@
             RemoveAssertions="$(RemoveAssertions)"
             Resources="@(_IkvmCompilerResource)"
             Remap="@(MapFile)"
-            Input="@(_ClassToCompile)" />
+            Input="@(_Convert)" />
 
         <!-- Move temporary files in place of permanent files. -->
         <Move SourceFiles="$(_AssemblyTempPath)$(TargetName)$(TargetExt)" DestinationFiles="@(IntermediateAssembly)" OverwriteReadOnlyFiles="true" />

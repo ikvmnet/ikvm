@@ -23,6 +23,7 @@
 */
 using System;
 using System.Reflection;
+using System.Threading;
 
 using IKVM.Internal;
 
@@ -402,38 +403,72 @@ namespace IKVM.Java.Externs.java.lang.invoke
 #endif
         }
 
+        /// <summary>
+        /// Implements the native method 'objectFieldOffset'.
+        /// </summary>
+        /// <param name="self"></param>
+        /// <returns></returns>
+        /// <exception cref="global::java.lang.IllegalArgumentException"></exception>
         public static long objectFieldOffset(global::java.lang.invoke.MemberName self)
         {
 #if FIRST_PASS
             throw new NotImplementedException();
 #else
             var fw = TypeWrapper.FromClass(self.getDeclaringClass()).GetFieldWrapper(self.getName(), self.getSignature().Replace('/', '.'));
+            if (fw.IsStatic)
+                throw new global::java.lang.IllegalArgumentException();
+
             return (long)fw.Cookie;
 #endif
         }
 
+        /// <summary>
+        /// Implements the native method 'staticFieldOffset'.
+        /// </summary>
+        /// <param name="self"></param>
+        /// <returns></returns>
+        /// <exception cref="global::java.lang.IllegalArgumentException"></exception>
         public static long staticFieldOffset(global::java.lang.invoke.MemberName self)
         {
 #if FIRST_PASS
             throw new NotImplementedException();
 #else
             var fw = TypeWrapper.FromClass(self.getDeclaringClass()).GetFieldWrapper(self.getName(), self.getSignature().Replace('/', '.'));
+            if (fw.IsStatic == false)
+                throw new global::java.lang.IllegalArgumentException();
+
             return (long)fw.Cookie;
 #endif
         }
 
+        /// <summary>
+        /// Implements the native method 'staticFieldBase'.
+        /// </summary>
+        /// <param name="self"></param>
+        /// <returns></returns>
+        /// <exception cref="global::java.lang.IllegalArgumentException"></exception>
         public static object staticFieldBase(global::java.lang.invoke.MemberName self)
         {
-            return null;
+#if FIRST_PASS
+            throw new NotImplementedException();
+#else
+            var fw = TypeWrapper.FromClass(self.getDeclaringClass()).GetFieldWrapper(self.getName(), self.getSignature().Replace('/', '.'));
+            if (fw.IsStatic == false)
+                throw new global::java.lang.IllegalArgumentException();
+
+            return fw.DeclaringType;
+#endif
         }
 
-#if !FIRST_PASS
+#if FIRST_PASS == false
+
         internal static void InitializeCallSite(global::java.lang.invoke.CallSite site)
         {
-            Type type = typeof(IKVM.Runtime.IndyCallSite<>).MakeGenericType(MethodHandleUtil.GetDelegateTypeForInvokeExact(site.type()));
-            IKVM.Runtime.IIndyCallSite ics = (IKVM.Runtime.IIndyCallSite)Activator.CreateInstance(type, true);
-            global::System.Threading.Interlocked.CompareExchange(ref site.ics, ics, null);
+            var type = typeof(IKVM.Runtime.IndyCallSite<>).MakeGenericType(MethodHandleUtil.GetDelegateTypeForInvokeExact(site.type()));
+            var ics = (IKVM.Runtime.IIndyCallSite)Activator.CreateInstance(type, true);
+            Interlocked.CompareExchange(ref site.ics, ics, null);
         }
+
 #endif
 
         public static void setCallSiteTargetNormal(global::java.lang.invoke.CallSite site, global::java.lang.invoke.MethodHandle target)
