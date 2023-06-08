@@ -2,7 +2,7 @@
 
 xwin_version="0.2.12"
 
-sdk="$(dirname "$0")/sdk"
+dist="$(dirname "$0")/dist"
 bin="$(dirname "$0")/bin"
 mkdir -p $sdk $bin
 
@@ -13,4 +13,4 @@ case "$(uname -s)" in
 esac
 
 curl --fail -L https://github.com/Jake-Shadle/xwin/releases/download/$xwin_version/$xwin_prefix.tar.gz | tar -xzv -C $bin --strip-components=1 $xwin_prefix/xwin
-$bin/xwin --accept-license --cache-dir /tmp/xwincache --arch x86,x86_64,aarch,aarch64 splat --output $sdk
+$bin/xwin --accept-license --cache-dir /tmp/xwincache --arch x86,x86_64,aarch,aarch64 splat --output $dist
