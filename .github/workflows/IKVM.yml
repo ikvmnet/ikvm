@@ -300,14 +300,6 @@ jobs:
         path: ${{ env.NUGET_PACKAGES }}
         key: ${{ runner.os }}-nuget-2-${{ hashFiles('IKVM.sln', 'src\**\*.csproj', 'src\**\*.msbuildproj') }}
         restore-keys: ${{ runner.os }}-nuget-2-
-    #- name: Download Windows SDK
-    #  uses: actions/download-artifact@v3
-    #  with:
-    #    name: ext-winsdk-sdk
-    #    path: ${{ env.WORKPATH }}
-    #- name: Restore Windows SDK
-    #  run: tar xzvf ${{ env.WORKPATH }}\ext-winsdk-sdk.tar.gz
-    #  working-directory: ${{ env.WORKPATH }}\ikvm\ext\winsdk
     - name: Add msbuild to PATH
       uses: microsoft/setup-msbuild@v1.1
     - name: Download Linux SDK (x86_64-unknown-linux-gnu)
@@ -316,32 +308,32 @@ jobs:
         name: ext-linuxsdk-x86_64-unknown-linux-gnu
         path: ${{ env.WORKPATH }}
     - name: Restore Linux SDK (x86_64-unknown-linux-gnu)
-      run: tar xzvf ${{ env.WORKPATH }}\ext-linuxsdk-x86_64-unknown-linux-gnu.tar.gz
-      working-directory: ${{ env.WORKPATH }}\ikvm\ext\linuxsdk
+      run: tar xzvf ${{ env.WORKPATH }}\sdk-linux-x86_64-unknown-linux-gnu.tar.gz
+      working-directory: ${{ env.WORKPATH }}\ikvm\sdk\linux
     - name: Download Linux SDK (aarch64-unknown-linux-gnu)
       uses: actions/download-artifact@v3
       with:
-        name: ext-linuxsdk-aarch64-unknown-linux-gnu
+        name: sdk-linux-aarch64-unknown-linux-gnu
         path: ${{ env.WORKPATH }}
     - name: Restore Linux SDK (aarch64-unknown-linux-gnu)
-      run: tar xzvf ${{ env.WORKPATH }}\ext-linuxsdk-aarch64-unknown-linux-gnu.tar.gz
-      working-directory: ${{ env.WORKPATH }}\ikvm\ext\linuxsdk
+      run: tar xzvf ${{ env.WORKPATH }}\sdk-linux-aarch64-unknown-linux-gnu.tar.gz
+      working-directory: ${{ env.WORKPATH }}\ikvm\sdk\linux
     - name: Download Linux SDK (arm-unknown-linux-gnueabi)
       uses: actions/download-artifact@v3
       with:
-        name: ext-linuxsdk-arm-unknown-linux-gnueabi
+        name: sdk-linux-arm-unknown-linux-gnueabi
         path: ${{ env.WORKPATH }}
     - name: Restore Linux SDK (arm-unknown-linux-gnueabi)
-      run: tar xzvf ${{ env.WORKPATH }}\ext-linuxsdk-arm-unknown-linux-gnueabi.tar.gz
-      working-directory: ${{ env.WORKPATH }}\ikvm\ext\linuxsdk
+      run: tar xzvf ${{ env.WORKPATH }}\sdk-linux-arm-unknown-linux-gnueabi.tar.gz
+      working-directory: ${{ env.WORKPATH }}\ikvm\sdk\linux
     - name: Download Mac OS X SDK
       uses: actions/download-artifact@v3
       with:
-        name: ext-macosxsdk-sdk
+        name: sdk-macosx-dist
         path: ${{ env.WORKPATH }}
     - name: Restore Mac OS X SDK
-      run: tar xzvf ${{ env.WORKPATH }}\ext-macosxsdk-sdk.tar.gz
-      working-directory: ${{ env.WORKPATH }}\ikvm\ext\macosxsdk
+      run: tar xzvf ${{ env.WORKPATH }}\sdk-macosx-dist.tar.gz
+      working-directory: ${{ env.WORKPATH }}\ikvm\sdk\macosx
     - name: Download OpenJDK 8 Build
       uses: actions/download-artifact@v3
       with:
