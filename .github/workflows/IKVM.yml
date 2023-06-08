@@ -119,7 +119,7 @@ jobs:
       if: steps.macosxsdk-stamp.outputs.files_exists != 'true'
       run: sdk/macosx/build.sh && touch sdk/macosx/dist/stamp
     - name: Package
-      run: tar czvf /tmp/sdk-macosx-dist.tar.gz sdk
+      run: tar czvf /tmp/sdk-macosx-dist.tar.gz dist
       working-directory: sdk/macosx
     - name: Upload
       uses: actions/upload-artifact@v3
