@@ -26,7 +26,7 @@ jobs:
       uses: actions/cache@v3
       with:
         path: sdk/windows
-        key: sdk-windows--${{ runner.os }}--${{ hashFiles('sdk/windows/build.sh') }}-2
+        key: sdk--windows--${{ runner.os }}--${{ hashFiles('sdk/windows/build.sh') }}-2
     - name: Check
       id: dist-stamp
       uses: andstor/file-existence-action@v2
@@ -41,13 +41,13 @@ jobs:
       if: steps.dist-stamp.outputs.files_exists != 'true'
       run: sdk/windows/build.sh && touch sdk/windows/dist/stamp
     - name: Package
-      run: tar czvf /tmp/sdk-windows-dist.tar.gz dist
+      run: tar czvf /tmp/sdk--windows--dist.tar.gz dist
       working-directory: sdk/windows
     - name: Upload
       uses: actions/upload-artifact@v3
       with:
-        name: sdk-windows-dist
-        path: /tmp/sdk-windows-dist.tar.gz
+        name: sdk--windows--dist
+        path: /tmp/sdk--windows--dist.tar.gz
   build-sdk-linux:
     strategy:
       matrix:
@@ -67,12 +67,12 @@ jobs:
       uses: actions/cache@v3
       with:
         path: sdk/linux/${{ matrix.target }}
-        key: sdk-linux-${{ matrix.target }}--${{ runner.os }}--${{ hashFiles('sdk/linux/build.sh', 'sdk/linux/*.dir/.config') }}-1
+        key: sdk--linux--${{ matrix.target }}--dist--${{ runner.os }}--${{ hashFiles('sdk/linux/build.sh', 'sdk/linux/*.dir/.config') }}-1
     - name: Check
       id: linuxsdk-stamp
       uses: andstor/file-existence-action@v2
       with:
-        files: sdk/linux/${{ matrix.target }}/stamp
+        files: sdk/linux/${{ matrix.target }}/dist/stamp
     - name: Install
       if: steps.sdk-stamp.outputs.files_exists != 'true'
       run: |
@@ -84,15 +84,15 @@ jobs:
           help2man bison flex libtool libtool-bin patch libstdc++6 rsync git meson xz-utils texinfo
     - name: Build
       if: steps.sdk-stamp.outputs.files_exists != 'true'
-      run: sdk/linux/build.sh ${{ matrix.target }} && touch sdk/linux/${{ matrix.target }}/stamp
+      run: sdk/linux/build.sh ${{ matrix.target }} && touch sdk/linux/${{ matrix.target }}/dist/stamp
     - name: Package
-      run: tar czvf /tmp/sdk-linux-${{ matrix.target }}.tar.gz ${{ matrix.target }}
-      working-directory: sdk/linux
+      run: tar czvf /tmp/sdk--linux--${{ matrix.target }}--dist.tar.gz dist
+      working-directory: sdk/linux/${{ matrix.target }}
     - name: Upload
       uses: actions/upload-artifact@v3
       with:
-        name: sdk-linux-${{ matrix.target }}
-        path: /tmp/sdk-linux-${{ matrix.target }}.tar.gz
+        name: sdk--linux--${{ matrix.target }}--dist
+        path: /tmp/sdk--linux--${{ matrix.target }}--dist.tar.gz
   build-sdk-macosx:
     name: Build Mac OS X SDK
     runs-on: ubuntu-latest
@@ -104,7 +104,7 @@ jobs:
       uses: actions/cache@v3
       with:
         path: sdk/macosx/dist
-        key: sdk-macosx-dist--${{ runner.os }}--${{ hashFiles('sdk/macosx/build.sh') }}-1
+        key: sdk--macosx--dist--${{ runner.os }}--${{ hashFiles('sdk/macosx/build.sh') }}-1
     - name: Check
       id: dist-stamp
       uses: andstor/file-existence-action@v2
@@ -119,7 +119,7 @@ jobs:
       if: steps.macosxsdk-stamp.outputs.files_exists != 'true'
       run: sdk/macosx/build.sh && touch sdk/macosx/dist/stamp
     - name: Package
-      run: tar czvf /tmp/sdk-macosx-dist.tar.gz dist
+      run: tar czvf /tmp/sdk--macosx--dist.tar.gz dist
       working-directory: sdk/macosx
     - name: Upload
       uses: actions/upload-artifact@v3

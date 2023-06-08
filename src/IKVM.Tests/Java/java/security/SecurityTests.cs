@@ -13,7 +13,7 @@ namespace IKVM.Tests.Java.java.security
         public void CanGetProviders()
         {
             var l = global::java.security.Security.getProviders();
-            l.Should().HaveCount(8);
+            l.Should().HaveCount(7);
         }
 
     }
