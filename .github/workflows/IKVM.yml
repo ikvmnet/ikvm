@@ -3,13 +3,16 @@ name: IKVM
 on:
   push:
     branches:
+    - main
     - develop
     - hotfix/*
     - release/*
   pull_request:
     branches:
     - main
+    - hotfix/*
     - develop
+    - release/*
   release:
     types:
     - created
@@ -69,12 +72,12 @@ jobs:
         path: sdk/linux/${{ matrix.target }}
         key: sdk--linux--${{ matrix.target }}--dist--${{ runner.os }}--${{ hashFiles('sdk/linux/build.sh', 'sdk/linux/*.dir/.config') }}-1
     - name: Check
-      id: linuxsdk-stamp
+      id: dist-stamp
       uses: andstor/file-existence-action@v2
       with:
         files: sdk/linux/${{ matrix.target }}/dist/stamp
     - name: Install
-      if: steps.sdk-stamp.outputs.files_exists != 'true'
+      if: steps.dist-stamp.outputs.files_exists != 'true'
       run: |
         sudo apt-get update &&
         sudo apt-get install -y \
@@ -83,7 +86,7 @@ jobs:
           ninja-build zip unzip curl wget \
           help2man bison flex libtool libtool-bin patch libstdc++6 rsync git meson xz-utils texinfo
     - name: Build
-      if: steps.sdk-stamp.outputs.files_exists != 'true'
+      if: steps.dist-stamp.outputs.files_exists != 'true'
       run: sdk/linux/build.sh ${{ matrix.target }} && touch sdk/linux/${{ matrix.target }}/dist/stamp
     - name: Package
       run: tar czvf /tmp/sdk--linux--${{ matrix.target }}--dist.tar.gz dist
@@ -116,7 +119,7 @@ jobs:
         sudo apt-get update &&
         sudo apt-get install -y zip unzip curl
     - name: Build
-      if: steps.macosxsdk-stamp.outputs.files_exists != 'true'
+      if: steps.dist-stamp.outputs.files_exists != 'true'
       run: sdk/macosx/build.sh && touch sdk/macosx/dist/stamp
     - name: Package
       run: tar czvf /tmp/sdk--macosx--dist.tar.gz dist
