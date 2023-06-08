@@ -59,6 +59,27 @@
         <OpenJdkSource Include="$(OpenJdkDir)\jdk\src\share\classes\com\sun\imageio\**\*.java" PackagePath="com\sun\imageio" />
         <OpenJdkSource Remove="$(OpenJdkDir)\jdk\src\share\classes\com\sun\imageio\plugins\jpeg\JPEGImageReader.java" />
         <OpenJdkSource Remove="$(OpenJdkDir)\jdk\src\share\classes\com\sun\imageio\plugins\jpeg\JPEGImageWriter.java" />
+        <OpenJdkSource Remove="$(OpenJdkDir)\jdk\src\share\classes\com\sun\imageio\plugins\jpeg\AdobeMarkerSegment.java" />
+        <OpenJdkSource Remove="$(OpenJdkDir)\jdk\src\share\classes\com\sun\imageio\plugins\jpeg\COMMarkerSegment.java" />
+        <OpenJdkSource Remove="$(OpenJdkDir)\jdk\src\share\classes\com\sun\imageio\plugins\jpeg\DHTMarkerSegment.java" />
+        <OpenJdkSource Remove="$(OpenJdkDir)\jdk\src\share\classes\com\sun\imageio\plugins\jpeg\DQTMarkerSegment.java" />
+        <OpenJdkSource Remove="$(OpenJdkDir)\jdk\src\share\classes\com\sun\imageio\plugins\jpeg\DRIMarkerSegment.java" />
+        <OpenJdkSource Remove="$(OpenJdkDir)\jdk\src\share\classes\com\sun\imageio\plugins\jpeg\JFIFMarkerSegment.java" />
+        <OpenJdkSource Remove="$(OpenJdkDir)\jdk\src\share\classes\com\sun\imageio\plugins\jpeg\JPEGBuffer.java" />
+        <OpenJdkSource Remove="$(OpenJdkDir)\jdk\src\share\classes\com\sun\imageio\plugins\jpeg\JPEGImageMetadataFormat.java" />
+        <OpenJdkSource Remove="$(OpenJdkDir)\jdk\src\share\classes\com\sun\imageio\plugins\jpeg\JPEGImageMetadataFormatResources.java" />
+        <OpenJdkSource Remove="$(OpenJdkDir)\jdk\src\share\classes\com\sun\imageio\plugins\jpeg\JPEGImageReader.java" />
+        <OpenJdkSource Remove="$(OpenJdkDir)\jdk\src\share\classes\com\sun\imageio\plugins\jpeg\JPEGImageReaderResources.java" />
+        <OpenJdkSource Remove="$(OpenJdkDir)\jdk\src\share\classes\com\sun\imageio\plugins\jpeg\JPEGImageWriter.java" />
+        <OpenJdkSource Remove="$(OpenJdkDir)\jdk\src\share\classes\com\sun\imageio\plugins\jpeg\JPEGImageWriterResources.java" />
+        <OpenJdkSource Remove="$(OpenJdkDir)\jdk\src\share\classes\com\sun\imageio\plugins\jpeg\JPEGMetadata.java" />
+        <OpenJdkSource Remove="$(OpenJdkDir)\jdk\src\share\classes\com\sun\imageio\plugins\jpeg\JPEGMetadataFormat.java" />
+        <OpenJdkSource Remove="$(OpenJdkDir)\jdk\src\share\classes\com\sun\imageio\plugins\jpeg\JPEGMetadataFormatResources.java" />
+        <OpenJdkSource Remove="$(OpenJdkDir)\jdk\src\share\classes\com\sun\imageio\plugins\jpeg\JPEGStreamMetadataFormat.java" />
+        <OpenJdkSource Remove="$(OpenJdkDir)\jdk\src\share\classes\com\sun\imageio\plugins\jpeg\JPEGStreamMetadataFormatResources.java" />
+        <OpenJdkSource Remove="$(OpenJdkDir)\jdk\src\share\classes\com\sun\imageio\plugins\jpeg\MarkerSegment.java" />
+        <OpenJdkSource Remove="$(OpenJdkDir)\jdk\src\share\classes\com\sun\imageio\plugins\jpeg\SOFMarkerSegment.java" />
+        <OpenJdkSource Remove="$(OpenJdkDir)\jdk\src\share\classes\com\sun\imageio\plugins\jpeg\SOSMarkerSegment.java" />
         <OpenJdkSource Include="$(OpenJdkDir)\jdk\src\share\classes\com\sun\jarsigner\ContentSigner.java" />
         <OpenJdkSource Include="$(OpenJdkDir)\jdk\src\share\classes\com\sun\jarsigner\ContentSignerParameters.java" />
         <OpenJdkSource Include="$(OpenJdkDir)\jdk\src\share\classes\com\sun\jarsigner\package-info.java" />
