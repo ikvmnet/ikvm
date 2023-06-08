@@ -305,31 +305,31 @@ jobs:
     - name: Download Linux SDK (x86_64-unknown-linux-gnu)
       uses: actions/download-artifact@v3
       with:
-        name: ext-linuxsdk-x86_64-unknown-linux-gnu
+        name: sdk--linux--x86_64-unknown-linux-gnu--dist
         path: ${{ env.WORKPATH }}
     - name: Restore Linux SDK (x86_64-unknown-linux-gnu)
-      run: tar xzvf ${{ env.WORKPATH }}\sdk-linux-x86_64-unknown-linux-gnu.tar.gz
-      working-directory: ${{ env.WORKPATH }}\ikvm\sdk\linux
+      run: tar xzvf ${{ env.WORKPATH }}\sdk--linux--x86_64-unknown-linux-gnu--dist.tar.gz
+      working-directory: ${{ env.WORKPATH }}\ikvm\sdk\linux\x86_64-unknown-linux-gnu
     - name: Download Linux SDK (aarch64-unknown-linux-gnu)
       uses: actions/download-artifact@v3
       with:
-        name: sdk-linux-aarch64-unknown-linux-gnu
+        name: sdk--linux--aarch64-unknown-linux-gnu--dist
         path: ${{ env.WORKPATH }}
     - name: Restore Linux SDK (aarch64-unknown-linux-gnu)
-      run: tar xzvf ${{ env.WORKPATH }}\sdk-linux-aarch64-unknown-linux-gnu.tar.gz
-      working-directory: ${{ env.WORKPATH }}\ikvm\sdk\linux
+      run: tar xzvf ${{ env.WORKPATH }}\sdk--linux--aarch64-unknown-linux-gnu--dist.tar.gz
+      working-directory: ${{ env.WORKPATH }}\ikvm\sdk\linux\aarch64-unknown-linux-gnu
     - name: Download Linux SDK (arm-unknown-linux-gnueabi)
       uses: actions/download-artifact@v3
       with:
-        name: sdk-linux-arm-unknown-linux-gnueabi
+        name: sdk--linux--arm-unknown-linux-gnueabi--dist
         path: ${{ env.WORKPATH }}
     - name: Restore Linux SDK (arm-unknown-linux-gnueabi)
-      run: tar xzvf ${{ env.WORKPATH }}\sdk-linux-arm-unknown-linux-gnueabi.tar.gz
-      working-directory: ${{ env.WORKPATH }}\ikvm\sdk\linux
+      run: tar xzvf ${{ env.WORKPATH }}\sdk--linux--arm-unknown-linux-gnueabi--dist.tar.gz
+      working-directory: ${{ env.WORKPATH }}\ikvm\sdk\linux\arm-unknown-linux-gnueabi
     - name: Download Mac OS X SDK
       uses: actions/download-artifact@v3
       with:
-        name: sdk-macosx-dist
+        name: sdk--macosx--dist
         path: ${{ env.WORKPATH }}
     - name: Restore Mac OS X SDK
       run: tar xzvf ${{ env.WORKPATH }}\sdk-macosx-dist.tar.gz
