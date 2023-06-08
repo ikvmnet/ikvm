@@ -32,6 +32,9 @@ home=$sdk/$target
 dist=$home/dist
 root=$home/root
 
+# include ct-nt variable
+eval `grep ^CT_LIBC= $home/.config`
+
 # build cross compiler
 if [ ! -f $home/stamp ]
 then
@@ -70,46 +73,49 @@ then
 fi
 
 # build GLIBC for distribution
-if [ ! -f $dist.glibc/stamp ]
+if [ $CT_LIBC == "glibc" ]
 then
-	mkdir -p $home/glibc
-	pushd $home/glibc
-	$ext/glibc/configure \
-		CFLAGS="-O2" \
-		--host=$target \
-		--target=$target \
-		--prefix="" \
-		--with-sysroot=$root \
-		--with-headers=$dist/include \
-		--disable-nls --disable-multilib --disable-selinux --disable-profile --disable-tunables
-	make
-	make DESTDIR=$dist install
-	touch stamp
-	popd
-fi
+	if [ ! -f $home/glibc/stamp ]
+	then
+		mkdir -p $home/glibc
+		pushd $home/glibc
+		$ext/glibc/configure \
+			CFLAGS="-O2" \
+			--host=$target \
+			--target=$target \
+			--prefix="" \
+			--with-sysroot=$root \
+			--with-headers=$dist/include \
+			--disable-nls --disable-multilib --disable-selinux --disable-profile --disable-tunables
+		make
+		make DESTDIR=$dist install
+		touch stamp
+		popd
+	fi
 
-# build GCC for distribution
-if [ ! -f $dist/gcc/stamp ]
-then
-	# rely on built in versions of libraries
-	pushd $ext/gcc
-	./contrib/download_prerequisites
-	popd
-
-	mkdir -p $home/gcc
-	pushd $home/gcc
-	$ext/gcc/configure \
-		CFLAGS="-O2" \
-		--host=$target \
-		--target=$target \
-		--prefix="" \
-		--with-sysroot=$dist \
-		--with-native-system-header-dir=/include \
-		--disable-bootstrap --disable-nls --disable-multilib --enable-languages=c,c++
-	make all-target-libgcc all-target-libstdc++-v3
-	make DESTDIR=$dist install-target-libgcc install-target-libstdc++-v3
-	touch stamp
-	popd
+	# build GCC for distribution
+	if [ ! -f $home/gcc/stamp ]
+	then
+		# rely on built in versions of libraries
+		pushd $ext/gcc
+		./contrib/download_prerequisites
+		popd
+	
+		mkdir -p $home/gcc
+		pushd $home/gcc
+		$ext/gcc/configure \
+			CFLAGS="-O2" \
+			--host=$target \
+			--target=$target \
+			--prefix="" \
+			--with-sysroot=$dist \
+			--with-native-system-header-dir=/include \
+			--disable-bootstrap --disable-nls --disable-multilib --enable-languages=c,c++
+		make all-target-libgcc all-target-libstdc++-v3
+		make DESTDIR=$dist install-target-libgcc install-target-libstdc++-v3
+		touch stamp
+		popd
+	fi
 fi
 
 # remove unused directories
