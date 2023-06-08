@@ -57,7 +57,7 @@
     <ItemDefinitionGroup Condition="$(TargetMachine.Contains('-linux-'))">
         <Compile>
             <PositionIndependentCode>true</PositionIndependentCode>
-            <PreprocessorDefinitions>%(Compile.PreprocessorDefinitions);_GNU_SOURCE;_REENTRANT;_LARGEFILE64_SOURCE</PreprocessorDefinitions>
+            <PreprocessorDefinitions>%(Compile.PreprocessorDefinitions);_GNU_SOURCE;_REENTRANT;_LARGEFILE64_SOURCE;LINUX</PreprocessorDefinitions>
         </Compile>
     </ItemDefinitionGroup>
 
