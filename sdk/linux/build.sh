@@ -36,13 +36,13 @@ root=$home/root
 eval `grep ^CT_LIBC= $home/.config`
 
 # build cross compiler
-if [ ! -f $home/stamp ]
+if [ ! -f $home/ct-ng-stamp ]
 then
 	mkdir -p /tmp/ctngsrc
 	pushd $home
 	ct-ng upgradeconfig
 	ct-ng build
-	touch stamp
+	touch ct-ng-stamp
 	popd
 fi
 
@@ -113,6 +113,23 @@ then
 			--disable-bootstrap --disable-nls --disable-multilib --enable-languages=c,c++
 		make all-target-libgcc all-target-libstdc++-v3
 		make DESTDIR=$dist install-target-libgcc install-target-libstdc++-v3
+		touch stamp
+		popd
+	fi
+else
+	# build musl for distribution
+	if [ ! -f $home/musl/stamp ]
+	then
+		mkdir -p $home/musl
+		pushd $home/musl
+		$ext/musl/configure \
+			CFLAGS="-O2" \
+			--host=$target \
+			--target=$target \
+			--prefix="" \
+			--with-sysroot=$dist
+		make
+		make DESTDIR=$dist install
 		touch stamp
 		popd
 	fi
