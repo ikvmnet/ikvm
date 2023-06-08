@@ -128,7 +128,7 @@ jobs:
       uses: actions/upload-artifact@v3
       with:
         name: sdk-macosx-dist
-        path: /tmp/sdk-macosx-dist.tar.gz
+        path: /tmp/sdk--macosx--dist.tar.gz
   build-openjdk:
     name: Build OpenJDK
     runs-on: ubuntu-latest
