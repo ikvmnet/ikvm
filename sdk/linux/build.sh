@@ -1,7 +1,7 @@
 #!/bin/bash -ex
 
 export sdk=$(dirname $(readlink -f $0))
-export ext=$(dirname $sdk/../ext)
+export ext=$(dirname $sdk)/../ext
 
 # build crosstool-ng if not already built
 if [ ! -f $sdk/crosstool-ng/bin/ct-ng ]
