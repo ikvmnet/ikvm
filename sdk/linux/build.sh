@@ -19,7 +19,7 @@ target=$1
 if [ -z "$target" ]
 then
 	pushd $sdk
-	for i in $(ls *.dir/.config | cut -d'.' -f1);
+	for i in $(ls */.config | cut -d'/' -f1);
 	do
 		$sdk/build.sh $i
 	done
@@ -28,8 +28,8 @@ then
 fi
 
 # common directories
-dist=$sdk/dist/$target
-home=$sdk/$target.dir
+home=$sdk/$target
+dist=$home/dist
 root=$home/root
 
 # build cross compiler
@@ -57,12 +57,12 @@ case "${target%%-*}" in
 esac
 
 # copy Linux headers for distribution
-if [ ! -f $dist.linux/stamp ]
+if [ ! -f $home/linux/stamp ]
 then
 	pushd $ext/linux
-	make headers_install ARCH=$kernel_arch INSTALL_HDR_PATH=$dist.linux
+	make headers_install ARCH=$kernel_arch INSTALL_HDR_PATH=$home/linux
 	popd
-	pushd $dist.linux
+	pushd $home/linux
 	mkdir -p $dist/include
 	cp -rv include/* $dist/include
 	touch stamp
@@ -72,8 +72,8 @@ fi
 # build GLIBC for distribution
 if [ ! -f $dist.glibc/stamp ]
 then
-	mkdir -p $dist.glibc
-	pushd $dist.glibc
+	mkdir -p $home/glibc
+	pushd $home/glibc
 	$ext/glibc/configure \
 		CFLAGS="-O2" \
 		--host=$target \
@@ -89,15 +89,15 @@ then
 fi
 
 # build GCC for distribution
-if [ ! -f $dist.gcc/stamp ]
+if [ ! -f $dist/gcc/stamp ]
 then
 	# rely on built in versions of libraries
 	pushd $ext/gcc
 	./contrib/download_prerequisites
 	popd
 
-	mkdir -p $dist.gcc
-	pushd $dist.gcc
+	mkdir -p $home/gcc
+	pushd $home/gcc
 	$ext/gcc/configure \
 		CFLAGS="-O2" \
 		--host=$target \
