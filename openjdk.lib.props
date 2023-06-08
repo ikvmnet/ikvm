@@ -105,19 +105,19 @@
     
     <ItemDefinitionGroup Condition="$(TargetMachine.EndsWith('-linux-gnu')) And $(TargetMachine.StartsWith('x86_64-'))">
         <Compile>
-            <SystemRootDirectories>%(Compile.SystemRootDirectories);$(MSBuildThisFileDirectory)sdk\linux\x86_64-unknown-linux-gnu</SystemRootDirectories>
+            <SystemRootDirectories>%(Compile.SystemRootDirectories);$(MSBuildThisFileDirectory)sdk\linux\x86_64-unknown-linux-gnu\dist</SystemRootDirectories>
         </Compile>
     </ItemDefinitionGroup>
 
     <ItemDefinitionGroup Condition="$(TargetMachine.EndsWith('-linux-gnu')) And $(TargetMachine.StartsWith('aarch64-'))">
         <Compile>
-            <SystemRootDirectories>%(Compile.SystemRootDirectories);$(MSBuildThisFileDirectory)sdk\linux\aarch64-unknown-linux-gnu</SystemRootDirectories>
+            <SystemRootDirectories>%(Compile.SystemRootDirectories);$(MSBuildThisFileDirectory)sdk\linux\aarch64-unknown-linux-gnu\dist</SystemRootDirectories>
         </Compile>
     </ItemDefinitionGroup>
 
     <ItemDefinitionGroup Condition="$(TargetMachine.EndsWith('-linux-gnueabi')) And $(TargetMachine.StartsWith('arm-'))">
         <Compile>
-            <SystemRootDirectories>%(Compile.SystemRootDirectories);$(MSBuildThisFileDirectory)sdk\linux\arm-unknown-linux-gnueabi</SystemRootDirectories>
+            <SystemRootDirectories>%(Compile.SystemRootDirectories);$(MSBuildThisFileDirectory)sdk\linux\arm-unknown-linux-gnueabi\dist</SystemRootDirectories>
         </Compile>
     </ItemDefinitionGroup>
 
