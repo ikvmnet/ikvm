@@ -3364,6 +3364,3 @@ javax/swing/plaf/nimbus/8041642/ScrollBarThumbVisibleTest.java                  
 # mscapi / Windows-MY Keystore usage
 sun/security/mscapi/IterateWindowsRootStore.java                                                                        generic-all
 sun/security/mscapi/CastError.java                                                                                      generic-all
-
-# TODO: Reenable after 8u112 is integrated
-java/lang/invoke/CustomizedLambdaFormTest.java                                                                          generic-all
