@@ -1427,11 +1427,6 @@
         <OpenJdkSource Include="$(OpenJdkDir)\jdk\src\share\classes\sun\font\TextSource.java" />
         <OpenJdkSource Include="$(OpenJdkDir)\jdk\src\share\classes\sun\font\TextSourceLabel.java" />
         <OpenJdkSource Include="$(OpenJdkDir)\jdk\src\share\classes\sun\font\Underline.java" />
-        <OpenJdkSource Include="$(OpenJdkDir)\jdk\src\share\classes\sun\invoke\anon\AnonymousClassLoader.java" />
-        <OpenJdkSource Include="$(OpenJdkDir)\jdk\src\share\classes\sun\invoke\anon\ConstantPoolParser.java" />
-        <OpenJdkSource Include="$(OpenJdkDir)\jdk\src\share\classes\sun\invoke\anon\ConstantPoolPatch.java" />
-        <OpenJdkSource Include="$(OpenJdkDir)\jdk\src\share\classes\sun\invoke\anon\ConstantPoolVisitor.java" />
-        <OpenJdkSource Include="$(OpenJdkDir)\jdk\src\share\classes\sun\invoke\anon\InvalidConstantPoolFormatException.java" />
         <OpenJdkSource Include="$(OpenJdkDir)\jdk\src\share\classes\sun\invoke\empty\Empty.java" />
         <OpenJdkSource Include="$(OpenJdkDir)\jdk\src\share\classes\sun\invoke\package-info.java" />
         <OpenJdkSource Include="$(OpenJdkDir)\jdk\src\share\classes\sun\invoke\util\BytecodeDescriptor.java" />
@@ -1604,6 +1599,7 @@
         <OpenJdkSource Include="$(OpenJdkDir)\jdk\src\share\classes\sun\misc\JavaNetHttpCookieAccess.java" />
         <OpenJdkSource Include="$(OpenJdkDir)\jdk\src\share\classes\sun\misc\JavaNioAccess.java" />
         <OpenJdkSource Include="$(OpenJdkDir)\jdk\src\share\classes\sun\misc\JavaObjectInputStreamAccess.java" />
+        <OpenJdkSource Include="$(OpenJdkDir)\jdk\src\share\classes\sun\misc\JavaOISAccess.java" />
         <OpenJdkSource Include="$(OpenJdkDir)\jdk\src\share\classes\sun\misc\JavaSecurityAccess.java" />
         <OpenJdkSource Include="$(OpenJdkDir)\jdk\src\share\classes\sun\misc\JavaSecurityProtectionDomainAccess.java" />
         <OpenJdkSource Include="$(OpenJdkDir)\jdk\src\share\classes\sun\misc\JavaUtilJarAccess.java" />
@@ -1614,6 +1610,7 @@
         <OpenJdkSource Include="$(OpenJdkDir)\jdk\src\share\classes\sun\misc\MessageUtils.java" />
         <OpenJdkSource Include="$(OpenJdkDir)\jdk\src\share\classes\sun\misc\MetaIndex.java" />
         <OpenJdkSource Include="$(OpenJdkDir)\jdk\src\share\classes\sun\misc\NativeSignalHandler.java" />
+        <OpenJdkSource Include="$(OpenJdkDir)\jdk\src\share\classes\sun\misc\ObjectInputFilter.java" />
         <OpenJdkSource Include="$(OpenJdkDir)\jdk\src\share\classes\sun\misc\ObjectStreamClassValidator.java" />
         <OpenJdkSource Include="$(OpenJdkDir)\jdk\src\share\classes\sun\misc\Perf.java" />
         <OpenJdkSource Include="$(OpenJdkDir)\jdk\src\share\classes\sun\misc\PerfCounter.java" />
