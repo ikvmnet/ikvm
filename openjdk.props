@@ -1,8 +1,8 @@
 ﻿<Project>
     <PropertyGroup>
         <OpenJdkDir>$(MSBuildThisFileDirectory)openjdk\</OpenJdkDir>
-        <OpenJdkVersion>OpenJDK 8u92 b34</OpenJdkVersion>
-        <OpenJdkFullVersion>1.8.0_92-b34</OpenJdkFullVersion>
+        <OpenJdkVersion>OpenJDK 8u152 b16</OpenJdkVersion>
+        <OpenJdkFullVersion>1.8.0_152-b16</OpenJdkFullVersion>
         <OpenJdkVendor>Oracle</OpenJdkVendor>
         <OpenJdkImplementationVersion>1.8.0</OpenJdkImplementationVersion>
         <OpenJdkImplementationVendor>Oracle Corporation</OpenJdkImplementationVendor>
