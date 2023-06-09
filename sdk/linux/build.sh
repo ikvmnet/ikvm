@@ -124,12 +124,11 @@ then
 		mkdir -p $home/musl
 		pushd $home/musl
 		$ext/musl/configure \
-			CROSS_COMPILE=$target \
+			CROSS_COMPILE=$target- \
 			CFLAGS="-O2" \
 			--host=$target \
 			--target=$target \
-			--prefix="" \
-			--with-sysroot=$dist
+			--prefix=""
 		make
 		make DESTDIR=$dist install
 		touch stamp
