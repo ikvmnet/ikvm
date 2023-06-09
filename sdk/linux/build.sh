@@ -3,23 +3,12 @@
 export sdk=$(dirname $(readlink -f $0))
 export ext=$(dirname $sdk)/../ext
 
-# build crosstool-ng if not already built
-if [ ! -f $sdk/crosstool-ng/bin/ct-ng ]
-then
-	pushd $ext/crosstool-ng
-	./bootstrap
-	./configure --prefix=$sdk/crosstool-ng
-	make install
-	popd
-fi
-export PATH=$sdk/crosstool-ng/bin:$PATH
-
 # if not passed a target, recurse into available targets
 target=$1
 if [ -z "$target" ]
 then
 	pushd $sdk
-	for i in $(ls */.config | cut -d'/' -f1);
+	for i in $(ls */sdk.config | cut -d'/' -f1);
 	do
 		$sdk/build.sh $i
 	done
@@ -33,22 +22,7 @@ dist=$home/dist
 root=$home/root
 
 # include ct-nt variable
-eval `grep ^CT_LIBC= $home/.config`
-
-# build cross compiler
-if [ ! -f $home/ct-ng-stamp ]
-then
-	mkdir -p /tmp/ctngsrc
-	pushd $home
-	ct-ng upgradeconfig
-	ct-ng build
-	touch ct-ng-stamp
-	popd
-fi
-
-# use tools from root
-export PATH=$root/bin:$PATH
-echo $PATH
+libc=`cat $home/sdk.config`
 
 # install dist kernel headers
 # translate target into kernel arch name
@@ -72,8 +46,34 @@ then
 	popd
 fi
 
+# build crosstool-ng if not already built
+if [ ! -f $sdk/crosstool-ng/bin/ct-ng ]
+then
+	pushd $ext/crosstool-ng
+	./bootstrap
+	./configure --prefix=$sdk/crosstool-ng
+	make install
+	popd
+fi
+export PATH=$sdk/crosstool-ng/bin:$PATH
+
+# build cross compiler
+if [ ! -f $home/ct-ng-stamp ]
+then
+	mkdir -p /tmp/ctngsrc
+	pushd $home
+	ct-ng upgradeconfig
+	ct-ng build
+	touch ct-ng-stamp
+	popd
+fi
+
+# use tools from root
+export PATH=$root/bin:$PATH
+echo $PATH
+
 # build GLIBC for distribution
-if [ $CT_LIBC == "glibc" ]
+if [ $libc == "glibc" ]
 then
 	if [ ! -f $home/glibc/stamp ]
 	then
@@ -100,7 +100,7 @@ then
 		pushd $ext/gcc
 		./contrib/download_prerequisites
 		popd
-	
+
 		mkdir -p $home/gcc
 		pushd $home/gcc
 		$ext/gcc/configure \
@@ -116,7 +116,8 @@ then
 		touch stamp
 		popd
 	fi
-else
+elif [ $libc == "musl" ]
+then
 	# build musl for distribution
 	if [ ! -f $home/musl/stamp ]
 	then
