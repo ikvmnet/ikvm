@@ -124,6 +124,8 @@ then
 		mkdir -p $home/musl
 		pushd $home/musl
 		$ext/musl/configure \
+			CC=$root/bin/arm-unknown-linux-gnueabi-cc \
+			CROSS_COMPILE=$target \
 			CFLAGS="-O2" \
 			--host=$target \
 			--target=$target \

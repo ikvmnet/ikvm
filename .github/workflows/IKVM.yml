@@ -59,8 +59,8 @@ jobs:
         - x86_64-unknown-linux-musl
         - aarch64-unknown-linux-gnu
         - aarch64-unknown-linux-musl
-        - arm-unknown-linux-gnueabi
-        - arm-unknown-linux-musl
+        - arm-unknown-linux-gnueabihf
+        - arm-unknown-linux-musleabihf
     name: Build Linux SDK (${{ matrix.target }})
     runs-on: ubuntu-latest
     timeout-minutes: 240
@@ -340,22 +340,22 @@ jobs:
     - name: Restore Linux SDK (aarch64-unknown-linux-musl)
       run: tar xzvf ${{ env.WORKPATH }}\sdk--linux--aarch64-unknown-linux-gnu--musl.tar.gz
       working-directory: ${{ env.WORKPATH }}\ikvm\sdk\linux\aarch64-unknown-linux-musl
-    - name: Download Linux SDK (arm-unknown-linux-gnueabi)
+    - name: Download Linux SDK (arm-unknown-linux-gnueabihf)
       uses: actions/download-artifact@v3
       with:
-        name: sdk--linux--arm-unknown-linux-gnueabi--dist
+        name: sdk--linux--arm-unknown-linux-gnueabihf--dist
         path: ${{ env.WORKPATH }}
-    - name: Restore Linux SDK (arm-unknown-linux-gnueabi)
-      run: tar xzvf ${{ env.WORKPATH }}\sdk--linux--arm-unknown-linux-gnueabi--dist.tar.gz
-      working-directory: ${{ env.WORKPATH }}\ikvm\sdk\linux\arm-unknown-linux-gnueabi
-    - name: Download Linux SDK (arm-unknown-linux-musl)
+    - name: Restore Linux SDK (arm-unknown-linux-gnueabihf)
+      run: tar xzvf ${{ env.WORKPATH }}\sdk--linux--arm-unknown-linux-gnueabihf--dist.tar.gz
+      working-directory: ${{ env.WORKPATH }}\ikvm\sdk\linux\arm-unknown-linux-gnueabihf
+    - name: Download Linux SDK (arm-unknown-linux-musleabihf)
       uses: actions/download-artifact@v3
       with:
-        name: sdk--linux--arm-unknown-linux-musl--dist
+        name: sdk--linux--arm-unknown-linux-musleabihf--dist
         path: ${{ env.WORKPATH }}
-    - name: Restore Linux SDK (arm-unknown-linux-musl)
-      run: tar xzvf ${{ env.WORKPATH }}\sdk--linux--arm-unknown-linux-musl--dist.tar.gz
-      working-directory: ${{ env.WORKPATH }}\ikvm\sdk\linux\arm-unknown-linux-musl
+    - name: Restore Linux SDK (arm-unknown-linux-musleabihf)
+      run: tar xzvf ${{ env.WORKPATH }}\sdk--linux--arm-unknown-linux-musleabihf--dist.tar.gz
+      working-directory: ${{ env.WORKPATH }}\ikvm\sdk\linux\arm-unknown-linux-musleabihf
     - name: Download Mac OS X SDK
       uses: actions/download-artifact@v3
       with:

@@ -1,3 +1,14 @@
 crosstool-ng
 */dist
 */root
+*/.build
+*/.config.old
+*/.config.before-olddefconfig
+*/.config.before-upgrade
+*/linux
+*/gcc
+*/glibc
+*/musl
+*/include
+*/stamp
+*/ct-ng-stamp
