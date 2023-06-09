@@ -106,16 +106,37 @@
         </IkvmImageItem>
 
         <!-- files directly part of this project -->
-        <IkvmImageItem Include="ikvm\any\linux-arm\**\*">
+        <IkvmImageItem Include="ikvm\any\linux-musl-arm\**\*">
             <TargetFramework>any</TargetFramework>
             <RuntimeIdentifier>linux-arm</RuntimeIdentifier>
             <ImagePath>%(RecursiveDir)%(FileName)%(Extension)</ImagePath>
         </IkvmImageItem>
 
         <!-- files directly part of this project -->
-        <IkvmImageItem Include="ikvm\any\linux-arm64\**\*">
+        <IkvmImageItem Include="ikvm\any\linux-musl-arm64\**\*">
             <TargetFramework>any</TargetFramework>
             <RuntimeIdentifier>linux-arm64</RuntimeIdentifier>
+            <ImagePath>%(RecursiveDir)%(FileName)%(Extension)</ImagePath>
+        </IkvmImageItem>
+
+        <!-- files directly part of this project -->
+        <IkvmImageItem Include="ikvm\any\linux-musl-x64\**\*">
+            <TargetFramework>any</TargetFramework>
+            <RuntimeIdentifier>linux-musl-x64</RuntimeIdentifier>
+            <ImagePath>%(RecursiveDir)%(FileName)%(Extension)</ImagePath>
+        </IkvmImageItem>
+
+        <!-- files directly part of this project -->
+        <IkvmImageItem Include="ikvm\any\linux-musl-arm\**\*">
+            <TargetFramework>any</TargetFramework>
+            <RuntimeIdentifier>linux-musl-arm</RuntimeIdentifier>
+            <ImagePath>%(RecursiveDir)%(FileName)%(Extension)</ImagePath>
+        </IkvmImageItem>
+
+        <!-- files directly part of this project -->
+        <IkvmImageItem Include="ikvm\any\linux-musl-arm64\**\*">
+            <TargetFramework>any</TargetFramework>
+            <RuntimeIdentifier>linux-musl-arm64</RuntimeIdentifier>
             <ImagePath>%(RecursiveDir)%(FileName)%(Extension)</ImagePath>
         </IkvmImageItem>
         

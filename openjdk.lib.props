@@ -121,6 +121,24 @@
         </Compile>
     </ItemDefinitionGroup>
 
+    <ItemDefinitionGroup Condition="$(TargetMachine.EndsWith('-linux-musl')) And $(TargetMachine.StartsWith('x86_64-'))">
+        <Compile>
+            <SystemRootDirectories>%(Compile.SystemRootDirectories);$(MSBuildThisFileDirectory)sdk\linux\x86_64-unknown-linux-musl\dist</SystemRootDirectories>
+        </Compile>
+    </ItemDefinitionGroup>
+
+    <ItemDefinitionGroup Condition="$(TargetMachine.EndsWith('-linux-musl')) And $(TargetMachine.StartsWith('aarch64-'))">
+        <Compile>
+            <SystemRootDirectories>%(Compile.SystemRootDirectories);$(MSBuildThisFileDirectory)sdk\linux\aarch64-unknown-linux-musl\dist</SystemRootDirectories>
+        </Compile>
+    </ItemDefinitionGroup>
+
+    <ItemDefinitionGroup Condition="$(TargetMachine.EndsWith('-linux-musleabihf')) And $(TargetMachine.StartsWith('arm-'))">
+        <Compile>
+            <SystemRootDirectories>%(Compile.SystemRootDirectories);$(MSBuildThisFileDirectory)sdk\linux\arm-unknown-linux-musleabihf\dist</SystemRootDirectories>
+        </Compile>
+    </ItemDefinitionGroup>
+
     <ItemDefinitionGroup Condition="!$([MSBuild]::IsOSPlatform('OSX')) And $(TargetMachine.Contains('-apple-'))">
         <Compile>
             <IncludeSystemRootDirectories>%(Compile.IncludeSystemRootDirectories);$(MSBuildThisFileDirectory)sdk\macosx\dist</IncludeSystemRootDirectories>
