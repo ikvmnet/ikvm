@@ -338,7 +338,7 @@ jobs:
         name: sdk--linux--aarch64-unknown-linux-musl--dist
         path: ${{ env.WORKPATH }}
     - name: Restore Linux SDK (aarch64-unknown-linux-musl)
-      run: tar xzvf ${{ env.WORKPATH }}\sdk--linux--aarch64-unknown-linux-gnu--musl.tar.gz
+      run: tar xzvf ${{ env.WORKPATH }}\sdk--linux--aarch64-unknown-linux-musl--dist.tar.gz
       working-directory: ${{ env.WORKPATH }}\ikvm\sdk\linux\aarch64-unknown-linux-musl
     - name: Download Linux SDK (arm-unknown-linux-gnueabi)
       uses: actions/download-artifact@v3
