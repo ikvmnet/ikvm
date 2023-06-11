@@ -22,7 +22,7 @@ dist=$home/dist
 root=$home/root
 
 # include ct-nt variable
-libc=`cat $home/sdk.config`
+source $home/sdk.config
 
 # install dist kernel headers
 # translate target into kernel arch name
@@ -72,8 +72,8 @@ fi
 export PATH=$root/bin:$PATH
 echo $PATH
 
-# build GLIBC for distribution
-if [ $libc == "glibc" ]
+# SDK requires GLIBC
+if [ $SDK_LIBC == "glibc" ]
 then
 	if [ ! -f $home/glibc/stamp ]
 	then
@@ -110,13 +110,17 @@ then
 			--prefix="" \
 			--with-sysroot=$dist \
 			--with-native-system-header-dir=/include \
-			--disable-bootstrap --disable-nls --disable-multilib --enable-languages=c,c++
+			--disable-bootstrap --disable-nls --disable-multilib --enable-languages=c,c++ \
+			$SDK_GCC_ARGS
 		make all-target-libgcc all-target-libstdc++-v3
 		make DESTDIR=$dist install-target-libgcc install-target-libstdc++-v3
 		touch stamp
 		popd
 	fi
-elif [ $libc == "musl" ]
+fi
+
+# SDk requires musl
+if [ $SDK_LIBC == "musl" ]
 then
 	# build musl for distribution
 	if [ ! -f $home/musl/stamp ]
@@ -128,7 +132,8 @@ then
 			CFLAGS="-O2" \
 			--host=$target \
 			--target=$target \
-			--prefix=""
+			--prefix="" \
+			$SDK_MUSL_ARGS
 		make
 		make DESTDIR=$dist install
 		touch stamp
