@@ -80,6 +80,25 @@ namespace IKVM.Runtime
             {
                 var rootPath = Path.GetDirectoryName(typeof(JVM).Assembly.Location);
 
+#if NETFRAMEWORK
+                // attempt to find settings in legacy app.config
+                try
+                {
+                    // specified home directory
+                    if (ConfigurationManager.AppSettings["ikvm:ikvm.home"] is string confHome)
+                        return Path.GetFullPath(Path.Combine(rootPath, confHome));
+
+                    // specified home root directory
+                    if (ConfigurationManager.AppSettings["ikvm:ikvm.home.root"] is string confHomeRoot)
+                        if (ResolveHomePathFromRoot(Path.Combine(rootPath, confHomeRoot)) is string confHomePath)
+                            return confHomePath;
+                }
+                catch (ConfigurationException)
+                {
+                    // app.config is invalid, ignore
+                }
+#endif
+
                 // user value takes priority
                 if (User.TryGetValue("ikvm.home", out var homePath1))
                     return Path.GetFullPath(Path.Combine(rootPath, homePath1));
@@ -92,13 +111,25 @@ namespace IKVM.Runtime
                 if (User.TryGetValue("ikvm.home.root", out var homePathRoot) == false)
                     Ikvm.TryGetValue("ikvm.home.root", out homePathRoot);
 
-                // make root path absolute
-                homePathRoot = Path.GetFullPath(Path.Combine(rootPath, homePathRoot ?? "ikvm"));
+                // attempt to resolve the path from the given root
+                if (ResolveHomePathFromRoot(Path.GetFullPath(Path.Combine(rootPath, homePathRoot ?? "ikvm"))) is string resolvedHomePath)
+                    return resolvedHomePath;
 
+                // fallback to local 'ikvm' directory next to IKVM.Runtime
+                return Path.GetFullPath(Path.Combine(rootPath, "ikvm"));
+            }
+
+            /// <summary>
+            /// Scans the given root path for the home for the currently executing runtime.
+            /// </summary>
+            /// <param name="homePathRoot"></param>
+            /// <returns></returns>
+            static string ResolveHomePathFromRoot(string homePathRoot)
+            {
                 // calculate ikvm.home from ikvm.home.root
                 if (Directory.Exists(homePathRoot))
                 {
-                    foreach (var rid in GetIkvmHomeRids())
+                    foreach (var rid in RuntimeUtil.GetSupportedRuntimeIdentifiers())
                     {
                         var ikvmHomePath = Path.GetFullPath(Path.Combine(homePathRoot, rid));
                         if (Directory.Exists(ikvmHomePath))
@@ -106,8 +137,7 @@ namespace IKVM.Runtime
                     }
                 }
 
-                // fallback to local 'ikvm' directory next to IKVM.Runtime
-                return Path.GetFullPath(Path.Combine(rootPath, "ikvm"));
+                return null;
             }
 
             /// <summary>
