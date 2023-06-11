@@ -7,12 +7,12 @@
         <IkvmImageItem Include="$(MSBuildThisFileDirectory)..\ikvm\net461\linux-arm\**\*">
             <TargetFramework>net461</TargetFramework>
             <RuntimeIdentifier>linux-arm</RuntimeIdentifier>
-            <TargetPath>%(RecursiveDir)%(FileName)%(Extension)</TargetPath>
+            <ImagePath>%(RecursiveDir)%(FileName)%(Extension)</ImagePath>
         </IkvmImageItem>
         <IkvmImageItem Include="$(MSBuildThisFileDirectory)..\ikvm\netcoreapp3.1\linux-arm\**\*">
             <TargetFramework>netcoreapp3.1</TargetFramework>
             <RuntimeIdentifier>linux-arm</RuntimeIdentifier>
-            <TargetPath>%(RecursiveDir)%(FileName)%(Extension)</TargetPath>
+            <ImagePath>%(RecursiveDir)%(FileName)%(Extension)</ImagePath>
         </IkvmImageItem>
     </ItemGroup>
 

@@ -137,10 +137,10 @@
                 <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
                 <CopyToPublishDirectory>Never</CopyToPublishDirectory>
                 <CopyToPublishDirectory Condition=" '$(_IkvmImageRuntimeIdentifier)' == '' Or '$(_IkvmImageRuntimeIdentifier)' == '%(_IkvmImageItem.RuntimeIdentifier)' ">PreserveNewest</CopyToPublishDirectory>
-                <TargetPath>ikvm\%(_IkvmImageItem.RuntimeIdentifier)\%(_IkvmImageItem.TargetPath)</TargetPath>
-                <DestinationSubDirectory>$([System.IO.Path]::GetDirectoryName('ikvm\%(_IkvmImageItem.RuntimeIdentifier)\%(_IkvmImageItem.TargetPath)'))</DestinationSubDirectory>
+                <TargetPath>ikvm\%(_IkvmImageItem.RuntimeIdentifier)\%(_IkvmImageItem.ImagePath)</TargetPath>
+                <DestinationSubDirectory>$([System.IO.Path]::GetDirectoryName('ikvm\%(_IkvmImageItem.RuntimeIdentifier)\%(_IkvmImageItem.ImagePath)'))</DestinationSubDirectory>
                 <Private>true</Private>
-                <Link>ikvm\%(_IkvmImageItem.RuntimeIdentifier)\%(_IkvmImageItem.TargetPath)</Link>
+                <Link>ikvm\%(_IkvmImageItem.RuntimeIdentifier)\%(_IkvmImageItem.ImagePath)</Link>
             </__IkvmImageItem>
         </ItemGroup>
         <_IkvmImageItemDistinct Items="@(__IkvmImageItem)">

@@ -36,6 +36,15 @@
         <ProjectReference Include="..\IKVM.Image.JDK.runtime.linux-arm64\IKVM.Image.JDK.runtime.linux-arm64.csproj" Condition="$(EnabledRuntimeIdentifiers.Contains(';linux-arm64;'))">
             <ReferenceOutputAssembly>true</ReferenceOutputAssembly>
         </ProjectReference>
+        <ProjectReference Include="..\IKVM.Image.JDK.runtime.linux-musl-x64\IKVM.Image.JDK.runtime.linux-musl-x64.csproj" Condition="$(EnabledRuntimeIdentifiers.Contains(';linux-musl-x64;'))">
+            <ReferenceOutputAssembly>true</ReferenceOutputAssembly>
+        </ProjectReference>
+        <ProjectReference Include="..\IKVM.Image.JDK.runtime.linux-musl-arm\IKVM.Image.JDK.runtime.linux-musl-arm.csproj" Condition="$(EnabledRuntimeIdentifiers.Contains(';linux-musl-arm;'))">
+            <ReferenceOutputAssembly>true</ReferenceOutputAssembly>
+        </ProjectReference>
+        <ProjectReference Include="..\IKVM.Image.JDK.runtime.linux-musl-arm64\IKVM.Image.JDK.runtime.linux-musl-arm64.csproj" Condition="$(EnabledRuntimeIdentifiers.Contains(';linux-musl-arm64;'))">
+            <ReferenceOutputAssembly>true</ReferenceOutputAssembly>
+        </ProjectReference>
         <ProjectReference Include="..\IKVM.Image.JDK.runtime.osx-x64\IKVM.Image.JDK.runtime.osx-x64.csproj" Condition="$(EnabledRuntimeIdentifiers.Contains(';osx-x64;'))">
             <ReferenceOutputAssembly>true</ReferenceOutputAssembly>
         </ProjectReference>

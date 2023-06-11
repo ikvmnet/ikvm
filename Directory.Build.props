@@ -7,6 +7,7 @@
         <AddSyntheticProjectReferencesForSolutionDependencies>false</AddSyntheticProjectReferencesForSolutionDependencies>
         <CopyRetryCount>30</CopyRetryCount>
         <CopyRetryDelayMilliseconds>15000</CopyRetryDelayMilliseconds>
+        <SupportedRuntimeIdentifiers>win7-x64;win7-x86;win81-arm;win10-arm64;linux-x64;linux-arm;linux-arm64;linux-musl-x64;linux-musl-arm;linux-musl-arm64;osx-x64</SupportedRuntimeIdentifiers>
         <SupportedRuntimeIdentifiers>win7-x64;win7-x86;win81-arm;win10-arm64;linux-x64;linux-arm;linux-arm64;osx-x64</SupportedRuntimeIdentifiers>
         <EnabledRuntimeIdentifiers Condition=" '$(EnabledRuntimeIdentifiers)' == '' ">$(SupportedRuntimeIdentifiers)</EnabledRuntimeIdentifiers>
         <EnabledRuntimeIdentifiers>;$(EnabledRuntimeIdentifiers);</EnabledRuntimeIdentifiers>

@@ -294,6 +294,18 @@ Project("{6DE1C62B-E8D7-451A-8734-87EAEB46E35B}") = "libikvm-tests", "src\libikv
 EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "IKVM.Java.Tests", "src\IKVM.Java.Tests\IKVM.Java.Tests.msbuildproj", "{6DD98E75-EDE7-43C6-9EE6-304ACDB51ADE}"
 EndProject
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "IKVM.Image.JDK.runtime.linux-musl-arm", "src\IKVM.Image.JDK.runtime.linux-musl-arm\IKVM.Image.JDK.runtime.linux-musl-arm.csproj", "{3BB8F526-DF1A-4B16-9CB3-E854D0ABC53F}"
+EndProject
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "IKVM.Image.JDK.runtime.linux-musl-arm64", "src\IKVM.Image.JDK.runtime.linux-musl-arm64\IKVM.Image.JDK.runtime.linux-musl-arm64.csproj", "{1071D30D-D429-471A-8C7E-67CE3E14906B}"
+EndProject
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "IKVM.Image.JDK.runtime.linux-musl-x64", "src\IKVM.Image.JDK.runtime.linux-musl-x64\IKVM.Image.JDK.runtime.linux-musl-x64.csproj", "{A8C172A1-BBF5-43B7-8F39-2B13F876904C}"
+EndProject
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "IKVM.Image.JRE.runtime.linux-musl-arm", "src\IKVM.Image.JRE.runtime.linux-musl-arm\IKVM.Image.JRE.runtime.linux-musl-arm.csproj", "{515DFF43-4145-4ECF-AA04-51C1793DF8A4}"
+EndProject
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "IKVM.Image.JRE.runtime.linux-musl-arm64", "src\IKVM.Image.JRE.runtime.linux-musl-arm64\IKVM.Image.JRE.runtime.linux-musl-arm64.csproj", "{405F453A-4801-44DF-AD4A-59D0D4391D2D}"
+EndProject
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "IKVM.Image.JRE.runtime.linux-musl-x64", "src\IKVM.Image.JRE.runtime.linux-musl-x64\IKVM.Image.JRE.runtime.linux-musl-x64.csproj", "{4AC61233-8347-4AC6-9E01-5C5BC48D5A8F}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -632,6 +644,30 @@ Global
 		{6DD98E75-EDE7-43C6-9EE6-304ACDB51ADE}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{6DD98E75-EDE7-43C6-9EE6-304ACDB51ADE}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{6DD98E75-EDE7-43C6-9EE6-304ACDB51ADE}.Release|Any CPU.Build.0 = Release|Any CPU
+		{3BB8F526-DF1A-4B16-9CB3-E854D0ABC53F}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{3BB8F526-DF1A-4B16-9CB3-E854D0ABC53F}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{3BB8F526-DF1A-4B16-9CB3-E854D0ABC53F}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{3BB8F526-DF1A-4B16-9CB3-E854D0ABC53F}.Release|Any CPU.Build.0 = Release|Any CPU
+		{1071D30D-D429-471A-8C7E-67CE3E14906B}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{1071D30D-D429-471A-8C7E-67CE3E14906B}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{1071D30D-D429-471A-8C7E-67CE3E14906B}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{1071D30D-D429-471A-8C7E-67CE3E14906B}.Release|Any CPU.Build.0 = Release|Any CPU
+		{A8C172A1-BBF5-43B7-8F39-2B13F876904C}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{A8C172A1-BBF5-43B7-8F39-2B13F876904C}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{A8C172A1-BBF5-43B7-8F39-2B13F876904C}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{A8C172A1-BBF5-43B7-8F39-2B13F876904C}.Release|Any CPU.Build.0 = Release|Any CPU
+		{515DFF43-4145-4ECF-AA04-51C1793DF8A4}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{515DFF43-4145-4ECF-AA04-51C1793DF8A4}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{515DFF43-4145-4ECF-AA04-51C1793DF8A4}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{515DFF43-4145-4ECF-AA04-51C1793DF8A4}.Release|Any CPU.Build.0 = Release|Any CPU
+		{405F453A-4801-44DF-AD4A-59D0D4391D2D}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{405F453A-4801-44DF-AD4A-59D0D4391D2D}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{405F453A-4801-44DF-AD4A-59D0D4391D2D}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{405F453A-4801-44DF-AD4A-59D0D4391D2D}.Release|Any CPU.Build.0 = Release|Any CPU
+		{4AC61233-8347-4AC6-9E01-5C5BC48D5A8F}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{4AC61233-8347-4AC6-9E01-5C5BC48D5A8F}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{4AC61233-8347-4AC6-9E01-5C5BC48D5A8F}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{4AC61233-8347-4AC6-9E01-5C5BC48D5A8F}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE

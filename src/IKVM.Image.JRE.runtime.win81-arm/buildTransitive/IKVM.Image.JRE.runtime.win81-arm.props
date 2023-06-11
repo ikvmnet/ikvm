@@ -7,17 +7,17 @@
         <IkvmImageItem Include="$(MSBuildThisFileDirectory)..\ikvm\net461\win81-arm\**\*">
             <TargetFramework>net461</TargetFramework>
             <RuntimeIdentifier>win81-arm</RuntimeIdentifier>
-            <TargetPath>%(RecursiveDir)%(FileName)%(Extension)</TargetPath>
+            <ImagePath>%(RecursiveDir)%(FileName)%(Extension)</ImagePath>
         </IkvmImageItem>
         <IkvmImageItem Include="$(MSBuildThisFileDirectory)..\ikvm\netcoreapp3.1\win81-arm\**\*">
             <TargetFramework>netcoreapp3.1</TargetFramework>
             <RuntimeIdentifier>win81-arm</RuntimeIdentifier>
-            <TargetPath>%(RecursiveDir)%(FileName)%(Extension)</TargetPath>
-        </IkvmImageItem>
+            <ImagePath>%(RecursiveDir)%(FileName)%(Extension)</ImagePath>
+            </IkvmImageItem>
         <IkvmImageItem Include="$(MSBuildThisFileDirectory)..\ikvm\any\win81-arm\**\*">
             <TargetFramework>any</TargetFramework>
             <RuntimeIdentifier>win81-arm</RuntimeIdentifier>
-            <TargetPath>%(RecursiveDir)%(FileName)%(Extension)</TargetPath>
+            <ImagePath>%(RecursiveDir)%(FileName)%(Extension)</ImagePath>
         </IkvmImageItem>
     </ItemGroup>
 
