@@ -2,8 +2,6 @@
     <Import Project="$(MSBuildThisFileDirectory)..\IKVM.NET.Sdk\Sdk\Sdk.props" />
     <Import Project="$(MSBuildThisFileDirectory)..\IKVM\buildTransitive\netstandard2.0\IKVM.props" />
     <Import Project="$(MSBuildThisFileDirectory)..\IKVM.MSBuild\buildTransitive\netstandard2.0\IKVM.MSBuild.props" />
-    <Import Project="$(MSBuildThisFileDirectory)..\..\IKVM.deps.props" />
-    <Import Project="$(MSBuildThisFileDirectory)..\..\IKVM.refs.props" />
 
     <PropertyGroup>
         <OutputType>Exe</OutputType>
@@ -32,5 +30,8 @@
         </PropertyGroup>
         <Message Text="Using javac executable found in JAVA_HOME at '$(JavaCompilerPath)'." Importance="high" Condition=" '$(JavaCompilerPath)' != '' " />
     </Target>
+    
+    <Import Project="$(MSBuildThisFileDirectory)..\..\IKVM.deps.targets" />
+    <Import Project="$(MSBuildThisFileDirectory)..\..\IKVM.refs.targets" />
 </Project>
 

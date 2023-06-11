@@ -115,9 +115,9 @@
         </Compile>
     </ItemDefinitionGroup>
 
-    <ItemDefinitionGroup Condition="$(TargetMachine.EndsWith('-linux-gnueabi')) And $(TargetMachine.StartsWith('arm-'))">
+    <ItemDefinitionGroup Condition="$(TargetMachine.EndsWith('-linux-gnueabihf')) And $(TargetMachine.StartsWith('arm-'))">
         <Compile>
-            <SystemRootDirectories>%(Compile.SystemRootDirectories);$(MSBuildThisFileDirectory)sdk\linux\arm-unknown-linux-gnueabi\dist</SystemRootDirectories>
+            <SystemRootDirectories>%(Compile.SystemRootDirectories);$(MSBuildThisFileDirectory)sdk\linux\arm-unknown-linux-gnueabihf\dist</SystemRootDirectories>
         </Compile>
     </ItemDefinitionGroup>
 

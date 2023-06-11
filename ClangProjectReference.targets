@@ -29,7 +29,7 @@
         </ItemGroup>
     </Target>
 
-    <Target Name="GetClangProjectReferences" DependsOnTargets="AssignClangProjectConfiguration" Condition=" '@(_ClangProjectReferenceWithConfiguration)' != '' ">
+    <Target Name="_GetClangProjectReferences" DependsOnTargets="AssignClangProjectConfiguration" Condition=" '@(_ClangProjectReferenceWithConfiguration)' != '' ">
         <ItemGroup>
             <__ClangProjectReference Include="@(_ClangProjectReferenceWithConfiguration)">
                 <ProjectName>$([System.IO.Path]::GetFileNameWithoutExtension('%(Identity)'))</ProjectName>
@@ -38,6 +38,18 @@
         <AddIndexMetadata Items="@(__ClangProjectReference)" MetadataName="_Index">
             <Output TaskParameter="Items" ItemName="_ClangProjectReference" />
         </AddIndexMetadata>
+    </Target>
+
+    <PropertyGroup>
+        <GetClangProjectReferencesDependsOn>
+            $(GetClangProjectReferencesDependsOn);
+            AssignClangProjectConfiguration;
+            _GetClangProjectReferences;
+        </GetClangProjectReferencesDependsOn>
+    </PropertyGroup>
+
+    <Target Name="GetClangProjectReferences" DependsOnTargets="$(GetClangProjectReferencesDependsOn)">
+        
     </Target>
 
     <Target Name="GetClangProjectReferenceItems" DependsOnTargets="GetClangProjectReferences" Inputs="@(_ClangProjectReference)" Outputs="@(_ClangProjectReference->'%(Identity)\%(_Index)\null')" Condition=" '$(DesignTimeBuild)' != 'true' And '@(_ClangProjectReference)' != '' ">
