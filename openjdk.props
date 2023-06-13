@@ -1763,8 +1763,6 @@
     </ItemGroup>
 
     <ItemGroup>
-        <OpenJdkRmiStub Include="sun.rmi.registry.RegistryImpl" Flags="-v1.1" />
-        <OpenJdkRmiStub Include="sun.rmi.transport.DGCImpl" Flags="-v1.1" />
         <OpenJdkRmiStub Include="sun.rmi.server.Activation$ActivationSystemImpl" Flags="-v1.2" />
         <OpenJdkRmiStub Include="java.rmi.activation.ActivationGroup" Flags="-v1.2" />
         <OpenJdkRmiStub Include="com.sun.jndi.rmi.registry.ReferenceWrapper" Flags="-v1.2" />
