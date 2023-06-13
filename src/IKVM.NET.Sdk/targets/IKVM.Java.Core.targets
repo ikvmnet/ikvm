@@ -128,7 +128,7 @@ Files = files.ToArray();
         </CompileJavaDependsOn>
     </PropertyGroup>
 
-    <Target Name="CompileJava" Inputs="@(Compile)" Outputs="@(Convert)" DependsOnTargets="$(CompileJavaDependsOn)">
+    <Target Name="CompileJava" DependsOnTargets="$(CompileJavaDependsOn)">
         <ItemGroup>
             <Convert Include="$(ClassOutputPath)**\*.class" />
         </ItemGroup>
