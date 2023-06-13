@@ -1508,6 +1508,7 @@
         <OpenJdkSource Include="$(OpenJdkDir)\jdk\src\share\classes\sun\print\BackgroundServiceLookup.java" />
         <OpenJdkSource Include="$(OpenJdkDir)\jdk\src\share\classes\sun\print\CustomMediaSizeName.java" />
         <OpenJdkSource Include="$(OpenJdkDir)\jdk\src\share\classes\sun\print\CustomMediaTray.java" />
+        <OpenJdkSource Include="$(OpenJdkDir)\jdk\src\share\classes\sun\print\DialogOnTop.java" />
         <OpenJdkSource Include="$(OpenJdkDir)\jdk\src\share\classes\sun\print\DialogOwner.java" />
         <OpenJdkSource Include="$(OpenJdkDir)\jdk\src\share\classes\sun\print\DocumentPropertiesUI.java" />
         <OpenJdkSource Include="$(OpenJdkDir)\jdk\src\share\classes\sun\print\ImagePrinter.java" />
