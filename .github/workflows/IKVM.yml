@@ -18,120 +18,6 @@ on:
     - created
 
 jobs:
-  build-sdk-windows:
-    name: Build Windows SDK
-    runs-on: ubuntu-latest
-    timeout-minutes: 240
-    steps:
-    - name: Checkout
-      uses: actions/checkout@v3
-    - name: Cache
-      uses: actions/cache@v3
-      with:
-        path: sdk/windows
-        key: sdk--windows--${{ runner.os }}--${{ hashFiles('sdk/windows/build.sh') }}-2
-    - name: Check
-      id: dist-stamp
-      uses: andstor/file-existence-action@v2
-      with:
-        files: sdk/windows/dist/stamp
-    - name: Install
-      if: steps.dist-stamp.outputs.files_exists != 'true'
-      run: |
-        sudo apt-get update &&
-        sudo apt-get install -y zip unzip curl wget
-    - name: Build
-      if: steps.dist-stamp.outputs.files_exists != 'true'
-      run: sdk/windows/build.sh && touch sdk/windows/dist/stamp
-    - name: Package
-      run: tar czvf /tmp/sdk--windows--dist.tar.gz dist
-      working-directory: sdk/windows
-    - name: Upload
-      uses: actions/upload-artifact@v3
-      with:
-        name: sdk--windows--dist
-        path: /tmp/sdk--windows--dist.tar.gz
-  build-sdk-linux:
-    strategy:
-      matrix:
-        target:
-        - x86_64-unknown-linux-gnu
-        - x86_64-unknown-linux-musl
-        - aarch64-unknown-linux-gnu
-        - aarch64-unknown-linux-musl
-        - arm-unknown-linux-gnueabihf
-        - arm-unknown-linux-musleabihf
-    name: Build Linux SDK (${{ matrix.target }})
-    runs-on: ubuntu-latest
-    timeout-minutes: 240
-    steps:
-    - name: Checkout
-      uses: actions/checkout@v3
-      with:
-        submodules: recursive
-    - name: Cache
-      uses: actions/cache@v3
-      with:
-        path: sdk/linux/${{ matrix.target }}
-        key: sdk--linux--${{ matrix.target }}--dist--${{ runner.os }}--${{ hashFiles('sdk/linux/build.sh', 'sdk/linux/*.dir/.config') }}-1
-    - name: Check
-      id: dist-stamp
-      uses: andstor/file-existence-action@v2
-      with:
-        files: sdk/linux/${{ matrix.target }}/dist/stamp
-    - name: Install
-      if: steps.dist-stamp.outputs.files_exists != 'true'
-      run: |
-        sudo apt-get update &&
-        sudo apt-get install -y \
-          build-essential \
-          gcc g++ \
-          ninja-build zip unzip curl wget \
-          help2man bison flex libtool libtool-bin patch libstdc++6 rsync git meson xz-utils texinfo
-    - name: Build
-      if: steps.dist-stamp.outputs.files_exists != 'true'
-      run: sdk/linux/build.sh ${{ matrix.target }} && touch sdk/linux/${{ matrix.target }}/dist/stamp
-    - name: Package
-      run: tar czvf /tmp/sdk--linux--${{ matrix.target }}--dist.tar.gz dist
-      working-directory: sdk/linux/${{ matrix.target }}
-    - name: Upload
-      uses: actions/upload-artifact@v3
-      with:
-        name: sdk--linux--${{ matrix.target }}--dist
-        path: /tmp/sdk--linux--${{ matrix.target }}--dist.tar.gz
-  build-sdk-macosx:
-    name: Build Mac OS X SDK
-    runs-on: ubuntu-latest
-    timeout-minutes: 240
-    steps:
-    - name: Checkout
-      uses: actions/checkout@v3
-    - name: Cache
-      uses: actions/cache@v3
-      with:
-        path: sdk/macosx/dist
-        key: sdk--macosx--dist--${{ runner.os }}--${{ hashFiles('sdk/macosx/build.sh') }}-1
-    - name: Check
-      id: dist-stamp
-      uses: andstor/file-existence-action@v2
-      with:
-        files: sdk/macosx/dist/stamp
-    - name: Install
-      if: steps.dist-stamp.outputs.files_exists != 'true'
-      run: |
-        sudo apt-get update &&
-        sudo apt-get install -y zip unzip curl
-    - name: Build
-      if: steps.dist-stamp.outputs.files_exists != 'true'
-      run: sdk/macosx/build.sh && touch sdk/macosx/dist/stamp
-    - name: Package
-      run: tar czvf /tmp/sdk--macosx--dist.tar.gz dist
-      working-directory: sdk/macosx
-    - name: Upload
-      uses: actions/upload-artifact@v3
-      with:
-        name: sdk--macosx--dist
-        path: /tmp/sdk--macosx--dist.tar.gz
   build-openjdk:
     name: Build OpenJDK
     runs-on: ubuntu-latest
@@ -224,9 +110,6 @@ jobs:
     name: Build IKVM
     needs:
     - build-openjdk
-    - build-sdk-windows
-    - build-sdk-linux
-    - build-sdk-macosx
     timeout-minutes: 240
     runs-on: windows-latest
     steps:
@@ -308,62 +191,95 @@ jobs:
         restore-keys: ${{ runner.os }}-nuget-2-
     - name: Add msbuild to PATH
       uses: microsoft/setup-msbuild@v1.1
-    - name: Download Linux SDK (x86_64-unknown-linux-gnu)
-      uses: actions/download-artifact@v3
+        
+    - name: Download Windows SDK
+      uses: dsaltares/fetch-gh-release-asset@master
       with:
-        name: sdk--linux--x86_64-unknown-linux-gnu--dist
-        path: ${{ env.WORKPATH }}
-    - name: Restore Linux SDK (x86_64-unknown-linux-gnu)
-      run: tar xzvf ${{ env.WORKPATH }}\sdk--linux--x86_64-unknown-linux-gnu--dist.tar.gz
-      working-directory: ${{ env.WORKPATH }}\ikvm\sdk\linux\x86_64-unknown-linux-gnu
-    - name: Download Linux SDK (x86_64-unknown-linux-musl)
-      uses: actions/download-artifact@v3
-      with:
-        name: sdk--linux--x86_64-unknown-linux-musl--dist
-        path: ${{ env.WORKPATH }}
-    - name: Restore Linux SDK (x86_64-unknown-linux-musl)
-      run: tar xzvf ${{ env.WORKPATH }}\sdk--linux--x86_64-unknown-linux-musl--dist.tar.gz
-      working-directory: ${{ env.WORKPATH }}\ikvm\sdk\linux\x86_64-unknown-linux-musl
-    - name: Download Linux SDK (aarch64-unknown-linux-gnu)
-      uses: actions/download-artifact@v3
-      with:
-        name: sdk--linux--aarch64-unknown-linux-gnu--dist
-        path: ${{ env.WORKPATH }}
-    - name: Restore Linux SDK (aarch64-unknown-linux-gnu)
-      run: tar xzvf ${{ env.WORKPATH }}\sdk--linux--aarch64-unknown-linux-gnu--dist.tar.gz
-      working-directory: ${{ env.WORKPATH }}\ikvm\sdk\linux\aarch64-unknown-linux-gnu
-    - name: Download Linux SDK (aarch64-unknown-linux-musl)
-      uses: actions/download-artifact@v3
-      with:
-        name: sdk--linux--aarch64-unknown-linux-musl--dist
-        path: ${{ env.WORKPATH }}
-    - name: Restore Linux SDK (aarch64-unknown-linux-musl)
-      run: tar xzvf ${{ env.WORKPATH }}\sdk--linux--aarch64-unknown-linux-musl--dist.tar.gz
-      working-directory: ${{ env.WORKPATH }}\ikvm\sdk\linux\aarch64-unknown-linux-musl
-    - name: Download Linux SDK (arm-unknown-linux-gnueabihf)
-      uses: actions/download-artifact@v3
-      with:
-        name: sdk--linux--arm-unknown-linux-gnueabihf--dist
-        path: ${{ env.WORKPATH }}
-    - name: Restore Linux SDK (arm-unknown-linux-gnueabihf)
-      run: tar xzvf ${{ env.WORKPATH }}\sdk--linux--arm-unknown-linux-gnueabihf--dist.tar.gz
-      working-directory: ${{ env.WORKPATH }}\ikvm\sdk\linux\arm-unknown-linux-gnueabihf
-    - name: Download Linux SDK (arm-unknown-linux-musleabihf)
-      uses: actions/download-artifact@v3
-      with:
-        name: sdk--linux--arm-unknown-linux-musleabihf--dist
-        path: ${{ env.WORKPATH }}
-    - name: Restore Linux SDK (arm-unknown-linux-musleabihf)
-      run: tar xzvf ${{ env.WORKPATH }}\sdk--linux--arm-unknown-linux-musleabihf--dist.tar.gz
-      working-directory: ${{ env.WORKPATH }}\ikvm\sdk\linux\arm-unknown-linux-musleabihf
-    - name: Download Mac OS X SDK
-      uses: actions/download-artifact@v3
-      with:
-        name: sdk--macosx--dist
-        path: ${{ env.WORKPATH }}
+        version: tags/20230613.1
+        file: windows.tar.gz
+        target: ${{ env.WORKPATH }}/temp/windows.tar.gz
+        token: ${{ secrets.DEPLOY_TOKEN }}
     - name: Restore Mac OS X SDK
-      run: tar xzvf ${{ env.WORKPATH }}\sdk--macosx--dist.tar.gz
-      working-directory: ${{ env.WORKPATH }}\ikvm\sdk\macosx
+      run: tar xzvf ${{ env.WORKPATH }}/temp/windows.tar.gz
+      working-directory: ${{ env.WORKPATH }}/ikvm/ext/sdk
+        
+    - name: Download Linux SDK (x86_64-unknown-linux-gnu)
+      uses: dsaltares/fetch-gh-release-asset@master
+      with:
+        version: tags/20230613.1
+        file: linux--x86_64-unknown-linux-gnu.tar.gz
+        target: ${{ env.WORKPATH }}/temp/linux--x86_64-unknown-linux-gnu.tar.gz
+        token: ${{ secrets.DEPLOY_TOKEN }}
+    - name: Restore Linux SDK (x86_64-unknown-linux-gnu)
+      run: tar xzvf ${{ env.WORKPATH }}/temp/linux--x86_64-unknown-linux-gnu.tar.gz
+      working-directory: ${{ env.WORKPATH }}/ikvm/ext/sdk
+        
+    - name: Download Linux SDK (x86_64-unknown-linux-musl)
+      uses: dsaltares/fetch-gh-release-asset@master
+      with:
+        version: tags/20230613.1
+        file: linux--x86_64-unknown-linux-musl.tar.gz
+        target: ${{ env.WORKPATH }}/temp/linux--x86_64-unknown-linux-musl.tar.gz
+        token: ${{ secrets.DEPLOY_TOKEN }}
+    - name: Restore Linux SDK (x86_64-unknown-linux-musl)
+      run: tar xzvf ${{ env.WORKPATH }}/temp/linux--x86_64-unknown-linux-musl.tar.gz
+      working-directory: ${{ env.WORKPATH }}/ikvm/ext/sdk
+        
+    - name: Download Linux SDK (aarch64-unknown-linux-gnu)
+      uses: dsaltares/fetch-gh-release-asset@master
+      with:
+        version: tags/20230613.1
+        file: linux--aarch64-unknown-linux-gnu.tar.gz
+        target: ${{ env.WORKPATH }}/temp/linux--aarch64-unknown-linux-gnu.tar.gz
+        token: ${{ secrets.DEPLOY_TOKEN }}
+    - name: Restore Linux SDK (aarch64-unknown-linux-gnu)
+      run: tar xzvf ${{ env.WORKPATH }}/temp/linux--aarch64-unknown-linux-gnu.tar.gz
+      working-directory: ${{ env.WORKPATH }}/ikvm/ext/sdk
+        
+    - name: Download Linux SDK (aarch64-unknown-linux-musl)
+      uses: dsaltares/fetch-gh-release-asset@master
+      with:
+        version: tags/20230613.1
+        file: linux--aarch64-unknown-linux-musl.tar.gz
+        target: ${{ env.WORKPATH }}/temp/linux--aarch64-unknown-linux-musl.tar.gz
+        token: ${{ secrets.DEPLOY_TOKEN }}
+    - name: Restore Linux SDK (aarch64-unknown-linux-musl)
+      run: tar xzvf ${{ env.WORKPATH }}/temp/linux--aarch64-unknown-linux-musl.tar.gz
+      working-directory: ${{ env.WORKPATH }}/ikvm/ext/sdk
+        
+    - name: Download Linux SDK (arm-unknown-linux-gnuabihf)
+      uses: dsaltares/fetch-gh-release-asset@master
+      with:
+        version: tags/20230613.1
+        file: linux--arm-unknown-linux-gnuabihf.tar.gz
+        target: ${{ env.WORKPATH }}/temp/linux--arm-unknown-linux-gnuabihf.tar.gz
+        token: ${{ secrets.DEPLOY_TOKEN }}
+    - name: Restore Linux SDK (arm-unknown-linux-gnuabihf)
+      run: tar xzvf ${{ env.WORKPATH }}/temp/linux--arm-unknown-linux-gnuabihf.tar.gz
+      working-directory: ${{ env.WORKPATH }}/ikvm/ext/sdk
+        
+    - name: Download Linux SDK (arm-unknown-linux-gnuabihf)
+      uses: dsaltares/fetch-gh-release-asset@master
+      with:
+        version: tags/20230613.1
+        file: linux--arm-unknown-linux-musleabihf.tar.gz
+        target: ${{ env.WORKPATH }}/temp/linux--arm-unknown-linux-musleabihf.tar.gz
+        token: ${{ secrets.DEPLOY_TOKEN }}
+    - name: Restore Linux SDK (arm-unknown-linux-musleabihf)
+      run: tar xzvf ${{ env.WORKPATH }}/temp/linux--arm-unknown-linux-musleabihf.tar.gz
+      working-directory: ${{ env.WORKPATH }}/ikvm/ext/sdk
+        
+    - name: Download Mac OS X SDK
+      uses: dsaltares/fetch-gh-release-asset@master
+      with:
+        version: tags/20230613.1
+        file: macosx.tar.gz
+        target: ${{ env.WORKPATH }}/temp/macosx.tar.gz
+        token: ${{ secrets.DEPLOY_TOKEN }}
+    - name: Restore Mac OS X SDK
+      run: tar xzvf ${{ env.WORKPATH }}/temp/macosx.tar.gz
+      working-directory: ${{ env.WORKPATH }}/ikvm/ext/sdk
+
     - name: Download OpenJDK 8 Build
       uses: actions/download-artifact@v3
       with:
