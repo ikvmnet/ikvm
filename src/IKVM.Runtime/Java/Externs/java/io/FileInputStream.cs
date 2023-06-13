@@ -169,12 +169,12 @@ namespace IKVM.Java.Externs.java.io
         }
 
         /// <summary>
-        /// Implements the native method 'skip'.
+        /// Implements the native method 'skip0'.
         /// </summary>
         /// <param name="self"></param>
         /// <param name="n"></param>
         /// <returns></returns>
-        public static long skip(object self, long n)
+        public static long skip0(object self, long n)
         {
 #if FIRST_PASS
             throw new NotImplementedException();
@@ -211,11 +211,11 @@ namespace IKVM.Java.Externs.java.io
         }
 
         /// <summary>
-        /// Implements the native method 'available'.
+        /// Implements the native method 'available0'.
         /// </summary>
         /// <param name="self"></param>
         /// <returns></returns>
-        public static int available(object self)
+        public static int available0(object self)
         {
 #if FIRST_PASS
             throw new NotImplementedException();
