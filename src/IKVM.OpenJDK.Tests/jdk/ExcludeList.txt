@@ -3364,3 +3364,55 @@ javax/swing/plaf/nimbus/8041642/ScrollBarThumbVisibleTest.java                  
 # mscapi / Windows-MY Keystore usage
 sun/security/mscapi/IterateWindowsRootStore.java                                                                        generic-all
 sun/security/mscapi/CastError.java                                                                                      generic-all
+
+## JDK8u152-b16
+# awt/swing
+com/sun/java/swing/plaf/windows/Test8173145.java                                                                        generic-all
+java/awt/Container/MoveToOtherScreenTest/MoveToOtherScreenTest.java                                                     generic-all
+java/awt/Dialog/DialogAboveFrame/DialogAboveFrameTest.java                                                              generic-all
+java/awt/EventQueue/6980209/bug6980209.java                                                                             generic-all
+java/awt/Focus/ModalDialogActivationTest/ModalDialogActivationTest.java                                                 generic-all
+java/awt/font/TextLayout/DiacriticsDrawingTest.java                                                                     generic-all
+java/awt/Frame/FrameResize/ShowChildWhileResizingTest.java                                                              generic-all
+java/awt/Frame/NormalToIconified/NormalToIconifiedTest.java                                                             generic-all
+java/awt/Frame/ObscuredFrame/ObscuredFrameTest.java                                                                     generic-all
+java/awt/geom/AffineTransform/InvalidTransformParameterTest.java                                                        generic-all
+java/awt/image/VolatileImage/VolatileImageBug.java                                                                      generic-all
+java/awt/Mouse/EnterExitEvents/ModalDialogEnterExitEventsTest.java                                                      generic-all
+java/awt/MouseInfo/GetPointerInfoTest.java                                                                              generic-all
+java/awt/MouseInfo/MultiscreenPointerInfo.java                                                                          generic-all
+java/awt/Paint/ComponentIsNotDrawnAfterRemoveAddTest/ComponentIsNotDrawnAfterRemoveAddTest.java                         generic-all
+java/awt/print/PrinterJob/PrintCrashTest.java                                                                           generic-all
+java/awt/TextArea/TextAreaEditing/TextAreaEditing.java                                                                  generic-all
+java/awt/Window/WindowDeadlockTest/WindowDeadlockTest.java                                                              generic-all
+java/awt/Window/WindowJumpingTest/WindowJumpingTest.java                                                                generic-all
+javax/swing/JComboBox/8136998/bug8136998.java                                                                           generic-all
+javax/swing/JMenuItem/8152981/MenuItemIconTest.java                                                                     generic-all
+javax/swing/JProgressBar/8161664/ProgressBarMemoryLeakTest.java                                                         generic-all
+javax/swing/plaf/basic/BasicComboPopup/8154069/Bug8154069.java                                                          generic-all
+javax/swing/plaf/basic/BasicLabelUI/bug7172652.java                                                                     generic-all
+javax/swing/plaf/nimbus/8057791/bug8057791.java                                                                         generic-all
+javax/swing/text/FlowView/LayoutTest.java                                                                               generic-all
+javax/swing/text/html/parser/Parser/HtmlCommentTagParseTest/HtmlCommentTagParseTest.java                                generic-all
+sun/java2d/ClassCastExceptionForInvalidSurface.java                                                                     generic-all
+
+# mscapi/sunec/Windows-PRNG SecureRandom
+java/security/SecureRandom/DefaultProvider.java                                                                         generic-all
+java/security/Signature/SignatureLength.java                                                                            generic-all
+sun/security/ec/NSASuiteB/TestSHAwithECDSASignatureOids.java                                                            generic-all
+sun/security/ec/SignatureOffsets.java                                                                                   generic-all
+sun/security/tools/jarsigner/DefaultSigalg.java                                                                         generic-all
+sun/security/x509/X509CertImpl/V3Certificate.java                                                                       generic-all
+
+# pkcs11
+sun/security/pkcs11/Mac/MacKAT.java                                                                                     generic-all
+sun/security/pkcs11/Mac/MacSameTest.java                                                                                generic-all
+sun/security/pkcs11/Secmod/LoadKeystore.java                                                                            generic-all
+
+# JPS
+sun/tools/jps/TestJpsClass.java                                                                                         generic-all
+sun/tools/jps/TestJpsJar.java                                                                                           generic-all
+sun/tools/jps/TestJpsSanity.java                                                                                        generic-all
+
+# jcmd
+sun/tools/jcmd/TestJcmdDefaults.java                                                                                    generic-all
