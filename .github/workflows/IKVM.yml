@@ -198,7 +198,7 @@ jobs:
       uses: robinraju/release-downloader@v1.8
       with:
         repository: ikvmnet/ikvm-native-sdk
-        releaseId: ${{ env.NATIVE_SDK_VERSION }}
+        tag: ${{ env.NATIVE_SDK_VERSION }}
         fileName: "*"
         out-file-path: ext/ikvm-native-sdk
         extract: true
