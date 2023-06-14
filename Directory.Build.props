@@ -16,7 +16,7 @@
         <EnabledToolRuntimes Condition=" '$(EnabledToolRuntimes)' == '' ">$(SupportedToolRuntimes)</EnabledToolRuntimes>
         <EnabledToolRuntimes>;$(EnabledToolRuntimes);</EnabledToolRuntimes>
         
-        <SupportedImageRuntimes>win7-x64;win7-x86;win81-arm;win10-arm64;linux-x64;linux-arm;linux-arm64;linux-musl-x64;linux-musl-arm;linux-musl-arm64;osx-x64</SupportedImageRuntimes>
+        <SupportedImageRuntimes>win7-x64;win7-x86;win81-arm;linux-x64;linux-arm;linux-musl-x64;linux-musl-arm;osx-x64</SupportedImageRuntimes>
         <EnabledImageRuntimes Condition=" '$(EnabledImageRuntimes)' == '' ">$(SupportedImageRuntimes)</EnabledImageRuntimes>
         <EnabledImageRuntimes>;$(EnabledImageRuntimes);</EnabledImageRuntimes>
     </PropertyGroup>
