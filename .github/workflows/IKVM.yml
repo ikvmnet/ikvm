@@ -199,10 +199,10 @@ jobs:
       with:
         repository: ikvmnet/ikvm-native-sdk
         tag: ${{ env.NATIVE_SDK_VERSION }}
-        fileName: "*"
+        fileName: "*.tar.gz"
         out-file-path: ext/ikvm-native-sdk
         extract: true
-    - run: gci ext/ikvm-native-sdk
+    - run: gci ext/ikvm-native-sdk -Recurse
       shell: pwsh
     - name: Download OpenJDK 8 Build
       uses: actions/download-artifact@v3
