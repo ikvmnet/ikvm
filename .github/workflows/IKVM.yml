@@ -200,15 +200,8 @@ jobs:
         repository: ikvmnet/ikvm-native-sdk
         tag: ${{ env.NATIVE_SDK_VERSION }}
         fileName: "*.tar.gz"
-        out-file-path: ext/ikvm-native-sdk
+        out-file-path: ${{ env.WORKPATH }}/ikvm/ext/ikvm-native-sdk
         extract: true
-    - run: gci ext/ikvm-native-sdk -Recurse
-      shell: pwsh
-    - name: Download OpenJDK 8 Build
-      uses: actions/download-artifact@v3
-      with:
-        name: openjdk-build-linux-x86_64-normal-server-release
-        path: ${{ env.WORKPATH }}
     - name: Restore OpenJDK 8 Build
       shell: pwsh
       run: New-Item -Type Directory -Force ${{ env.WORKPATH }}\ikvm\openjdk\build; Expand-Archive ${{ env.WORKPATH }}\openjdk-build-linux-x86_64-normal-server-release.zip -DestinationPath ${{ env.WORKPATH }}\ikvm\openjdk\build
