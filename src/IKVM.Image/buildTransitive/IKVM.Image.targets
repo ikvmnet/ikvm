@@ -63,7 +63,7 @@
                 </When>
             </Choose>
         </When>
-        <When Condition="$(RuntimeIdentifier.StartsWith('linux'))">
+        <When Condition="$(RuntimeIdentifier.StartsWith('linux-'))">
             <Choose>
                 <When Condition="$(RuntimeIdentifier.EndsWith('-x64'))">
                     <PropertyGroup>
@@ -82,7 +82,26 @@
                 </When>
             </Choose>
         </When>
-        <When Condition="$(RuntimeIdentifier.StartsWith('osx'))">
+        <When Condition="$(RuntimeIdentifier.StartsWith('linux-musl-'))">
+            <Choose>
+                <When Condition="$(RuntimeIdentifier.EndsWith('-x64'))">
+                    <PropertyGroup>
+                        <_IkvmImageRuntimeIdentifier>linux-musl-x64</_IkvmImageRuntimeIdentifier>
+                    </PropertyGroup>
+                </When>
+                <When Condition="$(RuntimeIdentifier.EndsWith('-arm'))">
+                    <PropertyGroup>
+                        <_IkvmImageRuntimeIdentifier>linux-musl-arm</_IkvmImageRuntimeIdentifier>
+                    </PropertyGroup>
+                </When>
+                <When Condition="$(RuntimeIdentifier.EndsWith('-arm64'))">
+                    <PropertyGroup>
+                        <_IkvmImageRuntimeIdentifier>linux-musl-arm64</_IkvmImageRuntimeIdentifier>
+                    </PropertyGroup>
+                </When>
+            </Choose>
+        </When>
+        <When Condition="$(RuntimeIdentifier.StartsWith('osx-'))">
             <Choose>
                 <When Condition="$(RuntimeIdentifier.EndsWith('-x64'))">
                     <PropertyGroup>
@@ -106,6 +125,9 @@
         <IkvmImageRuntimeIdentifiers Include="linux-x64" />
         <IkvmImageRuntimeIdentifiers Include="linux-arm" />
         <IkvmImageRuntimeIdentifiers Include="linux-arm64" />
+        <IkvmImageRuntimeIdentifiers Include="linux-musl-x64" />
+        <IkvmImageRuntimeIdentifiers Include="linux-musl-arm" />
+        <IkvmImageRuntimeIdentifiers Include="linux-musl-arm64" />
         <IkvmImageRuntimeIdentifiers Include="osx-x64" />
     </ItemGroup>
 
@@ -116,6 +138,10 @@
 
         <ItemGroup>
             <_IkvmImageItem Include="@(IkvmImageItem)" Condition=" '%(IkvmImageItem.TargetFramework)' == 'any' And '%(IkvmImageItem.RuntimeIdentifier)' == 'any' ">
+                <TargetFramework>$(_IkvmImageTargetFramework)</TargetFramework>
+                <RuntimeIdentifier>$(_IkvmImageRuntimeIdentifiers)</RuntimeIdentifier>
+            </_IkvmImageItem>
+            <_IkvmImageItem Include="@(IkvmImageItem)" Condition=" '%(IkvmImageItem.TargetFramework)' == 'any' And '%(IkvmImageItem.RuntimeIdentifier)' == '$(_IkvmImageRuntimeIdentifiers)' ">
                 <TargetFramework>$(_IkvmImageTargetFramework)</TargetFramework>
                 <RuntimeIdentifier>$(_IkvmImageRuntimeIdentifiers)</RuntimeIdentifier>
             </_IkvmImageItem>
