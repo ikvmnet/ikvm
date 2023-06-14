@@ -243,7 +243,6 @@ ModelManifest.xml
 
 # Ignore build output
 /.ikvm/
-/.xwin-cache/
 /dist/
 /build/
 /msbuild.binlog

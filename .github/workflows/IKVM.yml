@@ -136,12 +136,7 @@ jobs:
       with:
         path: work
         fetch-depth: 0
-    - name: Checkout OpenJDK
-      run: git submodule update --init openjdk
-      working-directory: ${{ env.WORKPATH }}\ikvm
-    - name: Checkout JTReg
-      run: git submodule update --init jtreg
-      working-directory: ${{ env.WORKPATH }}\ikvm
+        submodules: recursive
     - name: Setup .NET 3.1
       uses: actions/setup-dotnet@v3
       with:

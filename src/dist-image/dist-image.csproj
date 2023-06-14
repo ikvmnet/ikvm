@@ -14,13 +14,20 @@
         <ImageTarget Include="net461|win81-arm" TargetFramework="net461" RuntimeIdentifier="win81-arm" />
         <ImageTarget Include="net461|linux-x64" TargetFramework="net461" RuntimeIdentifier="linux-x64" />
         <ImageTarget Include="net461|linux-arm" TargetFramework="net461" RuntimeIdentifier="linux-arm" />
+        <!--<ImageTarget Include="net461|linux-arm64" TargetFramework="net461" RuntimeIdentifier="linux-arm64" />-->
+        <ImageTarget Include="net461|linux-musl-x64" TargetFramework="net461" RuntimeIdentifier="linux-musl-x64" />
+        <ImageTarget Include="net461|linux-musl-arm" TargetFramework="net461" RuntimeIdentifier="linux-musl-arm" />
+        <!--<ImageTarget Include="net461|linux-musl-arm64" TargetFramework="net461" RuntimeIdentifier="linux-musl-arm64" />-->
         <ImageTarget Include="net461|osx-x64" TargetFramework="net461" RuntimeIdentifier="osx-x64" />
         <ImageTarget Include="netcoreapp3.1|win7-x64" TargetFramework="netcoreapp3.1" RuntimeIdentifier="win7-x64" />
         <ImageTarget Include="netcoreapp3.1|win7-x86" TargetFramework="netcoreapp3.1" RuntimeIdentifier="win7-x86" />
         <ImageTarget Include="netcoreapp3.1|win81-arm" TargetFramework="netcoreapp3.1" RuntimeIdentifier="win81-arm" />
         <ImageTarget Include="netcoreapp3.1|linux-x64" TargetFramework="netcoreapp3.1" RuntimeIdentifier="linux-x64" />
         <ImageTarget Include="netcoreapp3.1|linux-arm" TargetFramework="netcoreapp3.1" RuntimeIdentifier="linux-arm" />
-        <ImageTarget Include="netcoreapp3.1|linux-arm64" TargetFramework="netcoreapp3.1" RuntimeIdentifier="linux-arm64" />
+        <!--<ImageTarget Include="netcoreapp3.1|linux-arm64" TargetFramework="netcoreapp3.1" RuntimeIdentifier="linux-arm64" />-->
+        <ImageTarget Include="netcoreapp3.1|linux-musl-x64" TargetFramework="netcoreapp3.1" RuntimeIdentifier="linux-musl-x64" />
+        <ImageTarget Include="netcoreapp3.1|linux-musl-arm" TargetFramework="netcoreapp3.1" RuntimeIdentifier="linux-musl-arm" />
+        <!--<ImageTarget Include="netcoreapp3.1|linux-musl-arm64" TargetFramework="netcoreapp3.1" RuntimeIdentifier="linux-musl-arm64" />-->
         <ImageTarget Include="netcoreapp3.1|osx-x64" TargetFramework="netcoreapp3.1" RuntimeIdentifier="osx-x64" />
     </ItemGroup>
 
@@ -30,7 +37,7 @@
     </ItemGroup>
 
     <!-- Runs once per TFM/RID combination to generate individual output. -->
-    <Target Name="GetCopyToOutputDirectoryItemsByImageTarget" BeforeTargets="BeforeBuild" Inputs="@(ImageTarget)" Outputs="%(Identity)\null">
+    <Target Name="GetCopyToOutputDirectoryItemsByImageTarget" BeforeTargets="BeforeBuild" Inputs="@(ImageTarget)" Outputs="%(Identity)\null" Condition="$(EnabledImageRuntimes.Contains('%(ImageTarget.RuntimeIdentifier)'))">
 
         <!-- batch values to properties -->
         <PropertyGroup>

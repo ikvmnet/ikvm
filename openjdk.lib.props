@@ -36,7 +36,7 @@
             <PreprocessorDefinitions>%(PreprocessorDefinitions);JDK_MICRO_VERSION=&quot;&quot;$(OpenJdkMicroVersion)&quot;&quot;</PreprocessorDefinitions>
             <PreprocessorDefinitions>%(PreprocessorDefinitions);JDK_UPDATE_VERSION=&quot;&quot;$(OpenJdkUpdateVersion)&quot;&quot;</PreprocessorDefinitions>
             <PreprocessorDefinitions>%(PreprocessorDefinitions);JDK_BUILD_NUMBER=&quot;&quot;$(OpenJdkBuildNumber)&quot;&quot;</PreprocessorDefinitions>
-            
+
             <PreprocessorDefinitions Condition=" '$(DebugSymbols)' == 'true' ">%(Compile.PreprocessorDefinitions);_DEBUG</PreprocessorDefinitions>
             <PreprocessorDefinitions Condition="$(TargetMachine.StartsWith('x86_64-'))">%(Compile.PreprocessorDefinitions);_AMD64_;amd64</PreprocessorDefinitions>
             <PreprocessorDefinitions Condition="$(TargetMachine.StartsWith('i686-'))">%(Compile.PreprocessorDefinitions);_X86_;x86</PreprocessorDefinitions>
@@ -44,6 +44,7 @@
             <PreprocessorDefinitions Condition="$(TargetMachine.StartsWith('thumbv7-')) Or $(TargetMachine.StartsWith('arm-'))">%(Compile.PreprocessorDefinitions);_ARM_;arm</PreprocessorDefinitions>
         </Compile>
     </ItemDefinitionGroup>
+
 
     <!-- common/autoconf/flags.m4 -->
     <ItemDefinitionGroup Condition="$(TargetMachine.Contains('-windows-')) ">
@@ -59,7 +60,11 @@
         <Compile>
             <PositionIndependentCode>true</PositionIndependentCode>
             <PreprocessorDefinitions>%(Compile.PreprocessorDefinitions);_GNU_SOURCE;_REENTRANT;_LARGEFILE64_SOURCE;LINUX</PreprocessorDefinitions>
+            <AdditionalOptions>%(Compile.AdditionalOptions);-nostdlib</AdditionalOptions>
         </Compile>
+        <Link>
+            <AdditionalOptions>%(Link.AdditionalOptions);-nostdinc</AdditionalOptions>
+        </Link>
     </ItemDefinitionGroup>
 
     <!-- common/autoconf/flags.m4 -->
@@ -103,7 +108,7 @@
             <LibraryDirectories>%(Compile.LibraryDirectories);$(MSBuildThisFileDirectory)ext\ikvm-native-sdk\windows\sdk\lib\um\$(WinSdkArch)</LibraryDirectories>
         </Link>
     </ItemDefinitionGroup>
-    
+
     <ItemDefinitionGroup Condition="$(TargetMachine.EndsWith('-linux-gnu')) And $(TargetMachine.StartsWith('x86_64-'))">
         <Compile>
             <SystemRootDirectories>%(Compile.SystemRootDirectories);$(MSBuildThisFileDirectory)ext\ikvm-native-sdk\linux\x86_64-unknown-linux-gnu</SystemRootDirectories>
@@ -143,7 +148,7 @@
     <ItemDefinitionGroup Condition="!$([MSBuild]::IsOSPlatform('OSX')) And $(TargetMachine.Contains('-apple-'))">
         <Compile>
             <IncludeSystemRootDirectories>%(Compile.IncludeSystemRootDirectories);$(MSBuildThisFileDirectory)ext\ikvm-native-sdk\macosx</IncludeSystemRootDirectories>
-        </Compile>  
+        </Compile>
         <Link>
             <LibraryDirectories>%(Link.LibraryDirectories);$(MSBuildThisFileDirectory)ext\ikvm-native-sdk\macosx\usr\lib</LibraryDirectories>
         </Link>
