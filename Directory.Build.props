@@ -12,7 +12,7 @@
         <EnabledRuntimes Condition=" '$(EnabledRuntimes)' == '' ">$(SupportedRuntimes)</EnabledRuntimes>
         <EnabledRuntimes>;$(EnabledRuntimes);</EnabledRuntimes>
 
-        <SupportedToolRuntimes>win7-x64;linux-x64;linux-arm;linux-arm64;osx-x64</SupportedToolRuntimes>
+        <SupportedToolRuntimes>win7-x64;linux-x64;linux-arm;linux-arm64;linux-musl-x64;linux-musl-arm;linux-musl-arm64;osx-x64</SupportedToolRuntimes>
         <EnabledToolRuntimes Condition=" '$(EnabledToolRuntimes)' == '' ">$(SupportedToolRuntimes)</EnabledToolRuntimes>
         <EnabledToolRuntimes>;$(EnabledToolRuntimes);</EnabledToolRuntimes>
         
