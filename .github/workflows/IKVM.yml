@@ -202,6 +202,8 @@ jobs:
         fileName: "*"
         out-file-path: ext/ikvm-native-sdk
         extract: true
+    - run: gci ext/ikvm-native-sdk
+      shell: pwsh
     - name: Download OpenJDK 8 Build
       uses: actions/download-artifact@v3
       with:
