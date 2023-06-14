@@ -136,7 +136,7 @@ jobs:
       with:
         path: work
         fetch-depth: 0
-    - name: Checkout Open JDK
+    - name: Checkout OpenJDK
       run: git submodule update --init openjdk
       working-directory: ${{ env.WORKPATH }}\ikvm
     - name: Checkout JTReg
@@ -194,14 +194,11 @@ jobs:
         restore-keys: ${{ runner.os }}-nuget-2-
     - name: Add msbuild to PATH
       uses: microsoft/setup-msbuild@v1.1
-    - name: Download Native SDKs
-      uses: robinraju/release-downloader@v1.8
+    - name: Download OpenJDK 8 Build
+      uses: actions/download-artifact@v3
       with:
-        repository: ikvmnet/ikvm-native-sdk
-        tag: ${{ env.NATIVE_SDK_VERSION }}
-        fileName: "*.tar.gz"
-        out-file-path: ${{ env.WORKPATH }}/ikvm/ext/ikvm-native-sdk
-        extract: true
+        name: openjdk-build-linux-x86_64-normal-server-release
+        path: ${{ env.WORKPATH }}/ikvm/openjdk/build
     - name: Restore OpenJDK 8 Build
       shell: pwsh
       run: New-Item -Type Directory -Force ${{ env.WORKPATH }}\ikvm\openjdk\build; Expand-Archive ${{ env.WORKPATH }}\openjdk-build-linux-x86_64-normal-server-release.zip -DestinationPath ${{ env.WORKPATH }}\ikvm\openjdk\build
@@ -213,6 +210,14 @@ jobs:
     - name: Restore JTReg Build
       shell: pwsh
       run: New-Item -Type Directory -Force ${{ env.WORKPATH }}\ikvm\jtreg; Expand-Archive ${{ env.WORKPATH }}\jtreg-build.zip -DestinationPath ${{ env.WORKPATH }}\ikvm\jtreg
+    - name: Download Native SDKs
+      uses: robinraju/release-downloader@v1.8
+      with:
+        repository: ikvmnet/ikvm-native-sdk
+        tag: ${{ env.NATIVE_SDK_VERSION }}
+        fileName: "*.tar.gz"
+        out-file-path: ${{ env.WORKPATH }}/ikvm/ext/ikvm-native-sdk
+        extract: true
     - name: NuGet Restore
       run: dotnet restore IKVM.sln
       working-directory: ${{ env.WORKPATH }}\ikvm
