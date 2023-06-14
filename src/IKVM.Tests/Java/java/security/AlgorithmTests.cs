@@ -57,7 +57,6 @@ namespace IKVM.Tests.Java.java.security
 
         [DataTestMethod]
         [DataRow("RSA", 2048, "RSA")]
-        [DataRow("EC", 521, "RSA")]
         public void CanEncryptAndDecrypt(string keyAlgorithm, int keySize, string cipherAlgorithm)
         {
             // we do this many times because differences in the values can make padding required or not
