@@ -8,27 +8,4 @@
 	url = https://github.com/ikvmnet/jtreg.git
 	ignore = dirty
 	shallow = true
-[submodule "ext/crosstool-ng"]
-	path = ext/crosstool-ng
-	url = https://github.com/crosstool-ng/crosstool-ng
-	ignore = dirty
-	shallow = true
-[submodule "ext/linux"]
-	path = ext/linux
-	url = https://github.com/torvalds/linux.git
-	ignore = dirty
-	shallow = true
-[submodule "ext/gcc"]
-	path = ext/gcc
-	url = https://github.com/gcc-mirror/gcc.git
-	ignore = dirty
-[submodule "ext/glibc"]
-	path = ext/glibc
-	url = https://github.com/bminor/glibc.git
-	ignore = dirty
-	shallow = true
-[submodule "ext/musl"]
-	path = ext/musl
-	url = git://git.musl-libc.org/musl
-	ignore = dirty
-	shallow = true
+
