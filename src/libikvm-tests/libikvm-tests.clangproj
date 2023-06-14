@@ -5,7 +5,6 @@
         <ProjectGuid>e1f10a75-cb47-46a0-86cf-7a6492921878</ProjectGuid>
     </PropertyGroup>
     <PropertyGroup>
-        <TargetMachines>x86_64-pc-windows-msvc;i686-pc-windows-msvc;aarch64-pc-windows-msvc;x86_64-unknown-linux-gnu;aarch64-unknown-linux-gnu;arm-unknown-linux-gnueabihf;x86_64-unknown-linux-musl;aarch64-unknown-linux-musl;arm-unknown-linux-musleabihf;x86_64-apple-macosx;arm64-apple-macosx</TargetMachines>
         <TargetName>ikvm-tests</TargetName>
     </PropertyGroup>
     <ItemDefinitionGroup>

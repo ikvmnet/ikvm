@@ -5,7 +5,6 @@
         <ProjectGuid>8afae23f-de5f-4b71-b9c3-c5b0e7705b96</ProjectGuid>
     </PropertyGroup>
     <PropertyGroup>
-        <TargetMachines>x86_64-pc-windows-msvc;i686-pc-windows-msvc;aarch64-pc-windows-msvc;x86_64-unknown-linux-gnu;aarch64-unknown-linux-gnu;arm-unknown-linux-gnueabihf;x86_64-unknown-linux-musl;aarch64-unknown-linux-musl;arm-unknown-linux-musleabihf;x86_64-apple-macosx;arm64-apple-macosx</TargetMachines>
         <TargetName>j2pkcs11</TargetName>
     </PropertyGroup>
     <ItemDefinitionGroup>

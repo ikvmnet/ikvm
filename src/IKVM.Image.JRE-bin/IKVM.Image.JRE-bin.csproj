@@ -3,7 +3,7 @@
     
     <PropertyGroup>
         <TargetFrameworks>net461;netcoreapp3.1</TargetFrameworks>
-        <RuntimeIdentifiers>$(SupportedRuntimeIdentifiers)</RuntimeIdentifiers>
+        <RuntimeIdentifiers>$(SupportedImageRuntimes)</RuntimeIdentifiers>
         <ErrorOnDuplicatePublishOutputFiles>false</ErrorOnDuplicatePublishOutputFiles>
     </PropertyGroup>
 

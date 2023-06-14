@@ -17,6 +17,7 @@
         <OutputType>SharedLibrary</OutputType>
         <Verbose>true</Verbose>
         <DebugSymbols>true</DebugSymbols>
+        <TargetMachines>x86_64-pc-windows-msvc;i686-pc-windows-msvc;aarch64-pc-windows-msvc;x86_64-unknown-linux-gnu;aarch64-unknown-linux-gnu;arm-unknown-linux-gnueabihf;x86_64-unknown-linux-musl;aarch64-unknown-linux-musl;arm-unknown-linux-musleabihf;x86_64-apple-macosx;arm64-apple-macosx</TargetMachines>
     </PropertyGroup>
 
     <PropertyGroup Condition="$(TargetMachine.Contains('-windows-'))">
@@ -40,7 +41,7 @@
             <PreprocessorDefinitions Condition="$(TargetMachine.StartsWith('x86_64-'))">%(Compile.PreprocessorDefinitions);_AMD64_;amd64</PreprocessorDefinitions>
             <PreprocessorDefinitions Condition="$(TargetMachine.StartsWith('i686-'))">%(Compile.PreprocessorDefinitions);_X86_;x86</PreprocessorDefinitions>
             <PreprocessorDefinitions Condition="$(TargetMachine.StartsWith('aarch64-')) Or $(TargetMachine.StartsWith('arm64-'))">%(Compile.PreprocessorDefinitions);_ARM64_;arm64</PreprocessorDefinitions>
-            <PreprocessorDefinitions Condition="$(TargetMachine.StartsWith('thumbv7-')) Or $(TargetMachine.StartsWith('arm-'))" >%(Compile.PreprocessorDefinitions);_ARM_;arm</PreprocessorDefinitions>
+            <PreprocessorDefinitions Condition="$(TargetMachine.StartsWith('thumbv7-')) Or $(TargetMachine.StartsWith('arm-'))">%(Compile.PreprocessorDefinitions);_ARM_;arm</PreprocessorDefinitions>
         </Compile>
     </ItemDefinitionGroup>
 
@@ -142,7 +143,7 @@
     <ItemDefinitionGroup Condition="!$([MSBuild]::IsOSPlatform('OSX')) And $(TargetMachine.Contains('-apple-'))">
         <Compile>
             <IncludeSystemRootDirectories>%(Compile.IncludeSystemRootDirectories);$(MSBuildThisFileDirectory)ext\ikvm-native-sdk\macosx</IncludeSystemRootDirectories>
-        </Compile>
+        </Compile>  
         <Link>
             <LibraryDirectories>%(Link.LibraryDirectories);$(MSBuildThisFileDirectory)ext\ikvm-native-sdk\macosx\usr\lib</LibraryDirectories>
         </Link>
