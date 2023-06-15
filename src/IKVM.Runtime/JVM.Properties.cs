@@ -129,7 +129,7 @@ namespace IKVM.Runtime
                 // calculate ikvm.home from ikvm.home.root
                 if (Directory.Exists(homePathRoot))
                 {
-                    foreach (var rid in RuntimeUtil.GetSupportedRuntimeIdentifiers())
+                    foreach (var rid in RuntimeUtil.SupportedRuntimeIdentifiers)
                     {
                         var ikvmHomePath = Path.GetFullPath(Path.Combine(homePathRoot, rid));
                         if (Directory.Exists(ikvmHomePath))
@@ -650,7 +650,7 @@ namespace IKVM.Runtime
                     yield break;
 
                 // search in runtime specific directories
-                foreach (var rid in RuntimeUtil.GetSupportedRuntimeIdentifiers())
+                foreach (var rid in RuntimeUtil.SupportedRuntimeIdentifiers)
                     yield return Path.Combine(self, "runtimes", rid, "native");
             }
 
