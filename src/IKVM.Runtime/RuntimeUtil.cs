@@ -67,7 +67,7 @@ namespace IKVM.Runtime
 
 #if NETCOREAPP
             // TODO this is available under RuntimeInformation in .NET 5
-            if (AppContext.GetData("RUNTIME_IDENTIFIER") is string rid)
+            if (AppContext.GetData("RUNTIME_IDENTIFIER") is string rid && string.IsNullOrWhiteSpace(rid) == false)
                 return rid;
 #endif
 
