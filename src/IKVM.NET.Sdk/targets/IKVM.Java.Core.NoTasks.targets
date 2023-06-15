@@ -7,13 +7,37 @@
     This file contains targets which invoke the jobs in 'NoTask' mode.
     -->
 
+     <ItemGroup Condition=" '$(MSBuildRuntimeType)' == 'Core' ">
+         <PackageReference Include="System.Collections.Immutable" Version="6.0.0" Exclude="@(PackageReference)" ExcludeAssets="All" />
+         <PackageReference Include="System.Memory" Version="4.5.5" Exclude="@(PackageReference)" ExcludeAssets="All" />
+         <PackageReference Include="System.Reflection.Metadata" Version="6.0.1" Exclude="@(PackageReference)" ExcludeAssets="All" />
+         <PackageReference Update="System.Collections.Immutable" GeneratePathProperty="true" />
+         <PackageReference Update="System.Memory" GeneratePathProperty="true" />
+         <PackageReference Update="System.Reflection.Metadata" GeneratePathProperty="true" />
+     </ItemGroup>
+
     <PropertyGroup>
         <___IkvmReferenceExportItemCs>$([System.IO.File]::ReadAllText('$([System.IO.Path]::Combine('$(MSBuildThisFileDirectory)', '..', '..', 'IKVM.MSBuild.Tasks', 'IkvmReferenceExportItem.cs'))'))</___IkvmReferenceExportItemCs>
         <___IkvmReferenceExportItemMetadataCs>$([System.IO.File]::ReadAllText('$([System.IO.Path]::Combine('$(MSBuildThisFileDirectory)', '..', '..', 'IKVM.MSBuild.Tasks', 'IkvmReferenceExportItemMetadata.cs'))'))</___IkvmReferenceExportItemMetadataCs>
         <___IkvmReferenceExportItemPrepareCs>$([System.IO.File]::ReadAllText('$([System.IO.Path]::Combine('$(MSBuildThisFileDirectory)', '..', '..', 'IKVM.MSBuild.Tasks', 'IkvmReferenceExportItemPrepare.cs'))'))</___IkvmReferenceExportItemPrepareCs>
     </PropertyGroup>
 
-    <UsingTask TaskName="IkvmReferenceExportItemPrepare" TaskFactory="RoslynCodeTaskFactory" AssemblyFile="$(MSBuildToolsPath)\Microsoft.Build.Tasks.Core.dll">
+    <UsingTask TaskName="IkvmReferenceExportItemPrepare" TaskFactory="RoslynCodeTaskFactory" AssemblyFile="$(MSBuildToolsPath)\Microsoft.Build.Tasks.Core.dll" Condition=" '$(MSBuildRuntimeType)' == 'Core' ">
+        <Task>
+            <Reference Include="$(PkgSystem_Collections_Immutable)\lib\netstandard2.0\System.Collections.Immutable.dll" />
+            <Reference Include="$(PkgSystem_Memory)\lib\netstandard2.0\System.Memory.dll" />
+            <Reference Include="$(PkgSystem_Reflection_Metadata)\lib\netstandard2.0\System.Reflection.Metadata.dll" />
+            <Code Type="Class" Language="cs">
+                <![CDATA[
+$([MSBuild]::Unescape('$(___IkvmReferenceExportItemCs)'))
+$([MSBuild]::Unescape('$(___IkvmReferenceExportItemMetadataCs)'))
+$([MSBuild]::Unescape('$(___IkvmReferenceExportItemPrepareCs)'))
+            ]]>
+            </Code>
+        </Task>
+    </UsingTask>
+
+    <UsingTask TaskName="IkvmReferenceExportItemPrepare" TaskFactory="RoslynCodeTaskFactory" AssemblyFile="$(MSBuildToolsPath)\Microsoft.Build.Tasks.Core.dll" Condition=" '$(MSBuildRuntimeType)' != 'Core' ">
         <Task>
             <Reference Include="System.Collections.Immutable" />
             <Reference Include="System.Memory" />
