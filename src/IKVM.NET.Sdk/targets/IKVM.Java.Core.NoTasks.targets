@@ -1,4 +1,4 @@
- <Project xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+<Project xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
     <PropertyGroup>
         <MSBuildAllProjects>$(MSBuildAllProjects);$(MSBuildThisFileFullPath)</MSBuildAllProjects>
     </PropertyGroup>
@@ -13,11 +13,23 @@
         <___IkvmReferenceExportItemPrepareCs>$([System.IO.File]::ReadAllText('$([System.IO.Path]::Combine('$(MSBuildThisFileDirectory)', '..', '..', 'IKVM.MSBuild.Tasks', 'IkvmReferenceExportItemPrepare.cs'))'))</___IkvmReferenceExportItemPrepareCs>
     </PropertyGroup>
 
+    <PropertyGroup Condition=" '$(MSBuildRuntimeType)' == 'Core' ">
+        <___System_Collections_Immutable>$(PkgSystem_Collections_Immutable)\lib\netstandard2.0\System.Collections.Immutable.dll</___System_Collections_Immutable>
+        <___System_Memory>$(PkgSystem_Memory)\lib\netstandard2.0\System.Memory.dll</___System_Memory>
+        <___System_Reflection_Metadata>$(PkgSystem_Reflection_Metadata)\lib\netstandard2.0\System.Reflection.Metadata.dll</___System_Reflection_Metadata>
+    </PropertyGroup>
+
+    <PropertyGroup Condition=" '$(MSBuildRuntimeType)' != 'Core' ">
+        <___System_Collections_Immutable>System.Collections.Immutable</___System_Collections_Immutable>
+        <___System_Memory>System.Memory</___System_Memory>
+        <___System_Reflection_Metadata>System.Reflection.Metadata</___System_Reflection_Metadata>
+    </PropertyGroup>
+
     <UsingTask TaskName="IkvmReferenceExportItemPrepare" TaskFactory="RoslynCodeTaskFactory" AssemblyFile="$(MSBuildToolsPath)\Microsoft.Build.Tasks.Core.dll">
         <Task>
-            <Reference Include="System.Collections.Immutable" />
-            <Reference Include="System.Memory" />
-            <Reference Include="System.Reflection.Metadata" />
+            <Reference Include="$(___System_Collections_Immutable)" />
+            <Reference Include="$(___System_Memory)" />
+            <Reference Include="$(___System_Reflection_Metadata)" />
             <Code Type="Class" Language="cs">
                 <![CDATA[
 $([MSBuild]::Unescape('$(___IkvmReferenceExportItemCs)'))

@@ -1,12 +1,17 @@
 ﻿<Project>
     <PropertyGroup>
         <OpenJdkDir>$(MSBuildThisFileDirectory)openjdk\</OpenJdkDir>
-        <OpenJdkVersion>OpenJDK 8u92 b34</OpenJdkVersion>
-        <OpenJdkFullVersion>1.8.0_92-b34</OpenJdkFullVersion>
+        <OpenJdkMajorVersion>1</OpenJdkMajorVersion>
+        <OpenJdkMinorVersion>8</OpenJdkMinorVersion>
+        <OpenJdkMicroVersion>0</OpenJdkMicroVersion>
+        <OpenJdkUpdateVersion>92</OpenJdkUpdateVersion>
+        <OpenJdkBuildNumber>b34</OpenJdkBuildNumber>
+        <OpenJdkVersion>OpenJDK $(OpenJdkMinorVersion)u$(OpenJdkUpdateVersion) $(OpenJdkBuildNumber)</OpenJdkVersion>
+        <OpenJdkFullVersion>$(OpenJdkMajorVersion).$(OpenJdkMinorVersion).$(OpenJdkMicroVersion)_$(OpenJdkUpdateVersion)-$(OpenJdkBuildNumber)</OpenJdkFullVersion>
         <OpenJdkVendor>Oracle</OpenJdkVendor>
-        <OpenJdkImplementationVersion>1.8.0</OpenJdkImplementationVersion>
+        <OpenJdkImplementationVersion>$(OpenJdkMajorVersion).$(OpenJdkMinorVersion).$(OpenJdkMicroVersion)</OpenJdkImplementationVersion>
         <OpenJdkImplementationVendor>Oracle Corporation</OpenJdkImplementationVendor>
-        <OpenJdkSpecificationVersion>1.8</OpenJdkSpecificationVersion>
+        <OpenJdkSpecificationVersion>$(OpenJdkMajorVersion).$(OpenJdkMinorVersion)</OpenJdkSpecificationVersion>
         <OpenJdkSpecificationVendor>Oracle Corporation</OpenJdkSpecificationVendor>
     </PropertyGroup>
 
@@ -1545,9 +1550,6 @@
         <OpenJdkSource Remove="$(OpenJdkDir)\jdk\src\share\classes\sun\reflect\NativeConstructorAccessorImpl.java" />
         <OpenJdkSource Include="$(OpenJdkDir)\jdk\src\share\classes\sun\rmi\**\*.java" PackagePath="sun\rmi" />
         <OpenJdkSource Include="$(OpenJdkDir)\jdk\src\share\classes\sun\security\**\*.java" PackagePath="sun\security" />
-        <OpenJdkSource Remove="$(OpenJdkDir)\jdk\src\share\classes\sun\security\ec\ECDHKeyAgreement.java" />
-        <OpenJdkSource Remove="$(OpenJdkDir)\jdk\src\share\classes\sun\security\ec\ECDSASignature.java" />
-        <OpenJdkSource Remove="$(OpenJdkDir)\jdk\src\share\classes\sun\security\ec\ECKeyPairGenerator.java" />
         <OpenJdkSource Remove="$(OpenJdkDir)\jdk\src\share\classes\sun\security\jgss\wrapper\NativeGSSFactory.java" />
         <OpenJdkSource Remove="$(OpenJdkDir)\jdk\src\share\classes\sun\security\jgss\wrapper\SunNativeProvider.java" />
         <OpenJdkSource Remove="$(OpenJdkDir)\jdk\src\share\classes\sun\security\pkcs11\**\*.java" />
@@ -1722,6 +1724,7 @@
         <OpenJdkSource Include="$(OpenJdkDir)\jdk\src\windows\classes\sun\security\provider\**\*.java" PackagePath="sun\security\provider" />
         <OpenJdkSource Remove="$(OpenJdkDir)\jdk\src\windows\classes\sun\security\provider\NativePRNG.java" />
         <OpenJdkSource Remove="$(OpenJdkDir)\jdk\src\windows\classes\sun\security\provider\NativeSeedGenerator.java" />
+        <!--<OpenJdkSource Include="$(OpenJdkDir)\jdk\src\windows\classes\sun\security\mscapi\**\*.java" PackagePath="sun\security\mscapi" />-->
         <OpenJdkSource Include="$(OpenJdkDir)\jdk\src\windows\classes\sun\util\locale\provider\HostLocaleProviderAdapterImpl.java" />
         <OpenJdkSource Include="$(OpenJdkDir)\langtools\src\share\classes\**\*.java" PackagePath="" />
     </ItemGroup>

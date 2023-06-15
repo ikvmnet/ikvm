@@ -1,7 +1,4 @@
 ﻿<Project Sdk="Microsoft.NET.Sdk">
-    <Import Project="$(MSBuildThisFileDirectory)..\..\IKVM.deps.props" />
-    <Import Project="$(MSBuildThisFileDirectory)..\..\IKVM.refs.props" />
-
     <PropertyGroup>
         <TargetFrameworks>net472;netcoreapp3.1;net6.0</TargetFrameworks>
     </PropertyGroup>
@@ -59,4 +56,6 @@
         </None>
     </ItemGroup>
 
+    <Import Project="$(MSBuildThisFileDirectory)..\..\IKVM.deps.targets" />
+    <Import Project="$(MSBuildThisFileDirectory)..\..\IKVM.refs.targets" />
 </Project>
