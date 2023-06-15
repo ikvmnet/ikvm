@@ -11,10 +11,10 @@
         <RootNamespace>ikvm.tools.javah</RootNamespace>
     </PropertyGroup>
 
+    <Import Project="$(MSBuildThisFileDirectory)..\..\IKVM.deps.targets" />
+    <Import Project="$(MSBuildThisFileDirectory)..\..\IKVM.refs.targets" />
     <Import Project="$(MSBuildThisFileDirectory)..\IKVM.NET.Sdk\Sdk\Sdk.targets" />
     <Import Project="$(MSBuildThisFileDirectory)..\IKVM\buildTransitive\netstandard2.0\IKVM.targets" />
     <Import Project="$(MSBuildThisFileDirectory)..\IKVM.MSBuild\buildTransitive\netstandard2.0\IKVM.MSBuild.targets" />
-    <Import Project="$(MSBuildThisFileDirectory)..\..\IKVM.deps.targets" />
-    <Import Project="$(MSBuildThisFileDirectory)..\..\IKVM.refs.targets" />
 </Project>
 

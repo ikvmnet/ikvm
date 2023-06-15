@@ -60,6 +60,7 @@
         <MapFile Include="map.xml" />
     </ItemGroup>
 
+    <Import Project="$(MSBuildThisFileDirectory)..\..\IKVM.deps.targets" />
     <Import Project="$(MSBuildThisFileDirectory)..\IKVM.NET.Sdk\Sdk\Sdk.targets" />
     <Import Project="$(MSBuildThisFileDirectory)..\IKVM.MSBuild\buildTransitive\netstandard2.0\IKVM.MSBuild.targets" />
 
@@ -149,5 +150,4 @@
         </CoreCompileDependsOn>
     </PropertyGroup>
 
-    <Import Project="$(MSBuildThisFileDirectory)..\..\IKVM.deps.targets" />
 </Project>
