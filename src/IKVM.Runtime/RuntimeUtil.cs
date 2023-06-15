@@ -61,9 +61,9 @@ namespace IKVM.Runtime
         /// <returns></returns>
         static string GetRuntimeIdentifierImpl()
         {
-            // allow overrides
-            if (Environment.GetEnvironmentVariable("DOTNET_RUNTIME_ID") is string o)
-                return o;
+            // allow overrides with environment
+            if (Environment.GetEnvironmentVariable("DOTNET_RUNTIME_ID") is string env && string.IsNullOrWhiteSpace(env) == false)
+                return env;
 
 #if NETCOREAPP
             // TODO this is available under RuntimeInformation in .NET 5
@@ -108,16 +108,16 @@ namespace IKVM.Runtime
             {
                 GetLinuxDistroInfo(out var id, out var versionId);
 
-                // no distro information available, fallback to generic Linux
-                if (id == null)
-                    return $"linux-{arch}";
-
                 // no version avaiable, plain distro
-                if (versionId == null)
+                if (id != null && versionId == null && RuntimeJson.TryGetProperty($"{id}-{arch}", out _))
                     return $"{id}-{arch}";
 
                 // all available
-                return $"{id}.${versionId}-{arch}";
+                if (id != null && versionId != null && RuntimeJson.TryGetProperty($"{id}.{versionId}-{arch}", out _))
+                    return $"{id}.{versionId}-{arch}";
+
+                // fall back to plain linux
+                return $"linux-{arch}";
             }
 
             if (IsOSX)
@@ -182,7 +182,7 @@ namespace IKVM.Runtime
             // check whether this runtime imports any others
             if (n.TryGetProperty("#import", out var import))
                 foreach (var i in import.EnumerateArray())
-                    if (i.GetString() is string s)
+                    if (i.GetString() is string s && string.IsNullOrWhiteSpace(s) == false)
                         foreach (var r in GetRuntimeIdentifierIterator(s))
                             yield return r;
         }
