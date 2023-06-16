@@ -4,7 +4,7 @@
     /// <summary>
     /// Describes a manged module.
     /// </summary>
-    public interface IManagedModuleInfo
+    public interface IManagedModuleDefinition
     {
 
         /// <summary>

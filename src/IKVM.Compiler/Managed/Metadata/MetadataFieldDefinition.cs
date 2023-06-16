@@ -4,7 +4,7 @@ using System.Reflection.Metadata;
 namespace IKVM.Compiler.Managed.Metadata
 {
 
-    internal sealed class MetadataFieldInfo : MetadataMemberInfo, IManagedFieldInfo
+    internal sealed class MetadataFieldDefinition : MetadataMemberDefinition, IManagedFieldDefinition
     {
 
         readonly MetadataTypeDefinition declaringType;
@@ -17,10 +17,10 @@ namespace IKVM.Compiler.Managed.Metadata
         /// <param name="declaringType"></param>
         /// <param name="field"></param>
         /// <exception cref="ArgumentNullException"></exception>
-        internal MetadataFieldInfo(MetadataTypeDefinition declaringType, FieldDefinition field) :
+        internal MetadataFieldDefinition(MetadataTypeDefinition declaringType, FieldDefinition field) :
             base(declaringType)
         {
-            this.declaringType = this.declaringType ?? throw new ArgumentNullException(nameof(MetadataFieldInfo.declaringType));
+            this.declaringType = this.declaringType ?? throw new ArgumentNullException(nameof(MetadataFieldDefinition.declaringType));
             this.field = field;
         }
 

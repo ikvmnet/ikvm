@@ -5,12 +5,12 @@ namespace IKVM.Compiler.Managed
 {
 
     /// <summary>
-    /// Provides a handle to a Java class described by a <see cref="IManagedTypeInfo"/>.
+    /// Provides a handle to a Java class described by a <see cref="IManagedTypeDefinition"/>.
     /// </summary>
-    sealed class ManagedJavaClassHandle : JavaClassInfo
+    sealed class ManagedJavaClassInfo : JavaClassInfo
     {
 
-        readonly IManagedTypeInfo info;
+        readonly IManagedTypeDefinition info;
 
         /// <summary>
         /// Initializes a new instance.
@@ -18,7 +18,7 @@ namespace IKVM.Compiler.Managed
         /// <param name="context"></param>
         /// <param name="info"></param>
         /// <exception cref="ArgumentNullException"></exception>
-        public ManagedJavaClassHandle(ManagedJavaClassContext context, IManagedTypeInfo info) :
+        public ManagedJavaClassInfo(ManagedJavaClassContext context, IManagedTypeDefinition info) :
             base(context)
         {
             this.info = info ?? throw new ArgumentNullException(nameof(info));

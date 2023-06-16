@@ -4,13 +4,13 @@
     /// <summary>
     /// Represents a managed method.
     /// </summary>
-    public interface IManagedMethodInfo : IManagedMemberInfo
+    public interface IManagedMethodDefinition : IManagedMemberDefinition
     {
 
         /// <summary>
         /// Gets the return type of the method.
         /// </summary>
-        IManagedTypeInfo ReturnType { get; }
+        IManagedTypeDefinition ReturnType { get; }
 
     }
 

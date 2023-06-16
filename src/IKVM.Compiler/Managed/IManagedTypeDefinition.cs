@@ -6,13 +6,13 @@ namespace IKVM.Compiler.Managed
     /// <summary>
     /// Represents a managed type.
     /// </summary>
-    public interface IManagedTypeInfo
+    public interface IManagedTypeDefinition
     {
 
         /// <summary>
         /// Gets the module of the managed type.
         /// </summary>
-        IManagedModuleInfo Module { get; }
+        IManagedModuleDefinition Module { get; }
 
         /// <summary>
         /// Gets the name of the managed type.
@@ -22,12 +22,12 @@ namespace IKVM.Compiler.Managed
         /// <summary>
         /// Gets the set of fields declared on the managed type.
         /// </summary>
-        IReadOnlyList<IManagedFieldInfo> Fields { get; }
+        IReadOnlyList<IManagedFieldDefinition> Fields { get; }
 
         /// <summary>
         /// Gets the set of methods declard on the managed type.
         /// </summary>
-        IReadOnlyList<IManagedMethodInfo> Methods { get; }
+        IReadOnlyList<IManagedMethodDefinition> Methods { get; }
 
     }
 

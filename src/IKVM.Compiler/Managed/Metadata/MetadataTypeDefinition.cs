@@ -38,7 +38,7 @@ namespace IKVM.Compiler.Managed.Metadata
         /// <summary>
         /// Gets the module of the type.
         /// </summary>
-        public IManagedModuleInfo Module => module;
+        public IManagedModuleDefinition Module => module;
 
         /// <summary>
         /// Gets the name of the type.
@@ -48,12 +48,12 @@ namespace IKVM.Compiler.Managed.Metadata
         /// <summary>
         /// Gets the set of fields.
         /// </summary>
-        public IReadOnlyList<IManagedFieldInfo> Fields => fields;
+        public IReadOnlyList<IManagedFieldDefinition> Fields => fields;
 
         /// <summary>
         /// Gets the set of methods.
         /// </summary>
-        public IReadOnlyList<IManagedMethodInfo> Methods => methods;
+        public IReadOnlyList<IManagedMethodDefinition> Methods => methods;
     }
 
 }

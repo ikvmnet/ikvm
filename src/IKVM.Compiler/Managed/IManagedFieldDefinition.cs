@@ -4,13 +4,13 @@
     /// <summary>
     /// Represents a managed field.
     /// </summary>
-    public interface IManagedFieldInfo : IManagedMemberInfo
+    public interface IManagedFieldDefinition : IManagedMemberDefinition
     {
 
         /// <summary>
         /// Gets the type of the field.
         /// </summary>
-        IManagedTypeInfo FieldType { get; }
+        IManagedTypeDefinition FieldType { get; }
 
     }
 

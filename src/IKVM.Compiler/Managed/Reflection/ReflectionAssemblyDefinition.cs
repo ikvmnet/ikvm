@@ -7,7 +7,7 @@ using IKVM.Compiler.Collections;
 namespace IKVM.Compiler.Managed.Reflection
 {
 
-    internal class ReflectionAssemblyInfo : ReflectionEntityInfo, IManagedAssemblyDefinition
+    internal class ReflectionAssemblyDefinition : ReflectionEntityInfo, IManagedAssemblyDefinition
     {
 
         readonly Assembly assembly;
@@ -18,7 +18,7 @@ namespace IKVM.Compiler.Managed.Reflection
         /// </summary>
         /// <param name="assembly"></param>
         /// <exception cref="ArgumentNullException"></exception>
-        internal ReflectionAssemblyInfo(ReflectionContext context, Assembly assembly) :
+        internal ReflectionAssemblyDefinition(ReflectionContext context, Assembly assembly) :
             base(context)
         {
             this.assembly = assembly ?? throw new ArgumentNullException(nameof(assembly));
