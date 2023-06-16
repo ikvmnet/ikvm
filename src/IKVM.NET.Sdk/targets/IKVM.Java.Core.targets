@@ -128,7 +128,7 @@ Files = files.ToArray();
         </CompileJavaDependsOn>
     </PropertyGroup>
 
-    <Target Name="CompileJava" Inputs="@(Compile)" Outputs="@(Convert)" DependsOnTargets="$(CompileJavaDependsOn)">
+    <Target Name="CompileJava" DependsOnTargets="$(CompileJavaDependsOn)">
         <ItemGroup>
             <Convert Include="$(ClassOutputPath)**\*.class" />
         </ItemGroup>
@@ -137,6 +137,7 @@ Files = files.ToArray();
     <Target Name="CleanCompileJava">
         <Delete Files="$(_CompileJavaCoreStampFile)" />
         <Delete Files="$(_CompileJavaCoreJavacArgFile)" />
+        <Delete Files="$(ClassOutputPath)\**\*.class" />
         <RemoveDir Directories="$(ClassOutputPath)" />
     </Target>
 
@@ -185,6 +186,6 @@ Files = files.ToArray();
 
     <!-- Include Task or Command implementation of targets. -->
     <Import Project="IKVM.Java.Core.Tasks.targets" Condition=" '$(UseIkvmTasks)' != 'false' "/>
-    <Import Project="IKVM.Java.Core.NoTasks.targets" Condition=" '$(UseIkvmTasks)' == 'false' "/>
+    <Import Project="IKVM.Java.Core.NoTasks.targets" Condition=" '$(UseIkvmTasks)' == 'false' " />
 
 </Project>

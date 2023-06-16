@@ -41,7 +41,10 @@ These tasks can be done **without porting source code** to .NET.
 - .NET 5 and higher
 - Java SE 8
 - Windows x86/x64/ARM/ARM64
-- Linux x64/ARM/ARM64
+- Linux x64/ARM/ARM64 (GLIBC and MUSL)
+- Mac OS X x64/arm64 (with bugs)
+ 
+Various differences exist between support for all of our different artifacts. For instance, there are some platforms we cannot distribute images for, and some platforms we cannot distribute tools for.
 
 ## Installation
 

@@ -1,0 +1,22 @@
+﻿<Project>
+    <Import Sdk="IKVM.Clang.Sdk" Project="Sdk.props" />
+    <Import Project="$(MSBuildThisFileDirectory)..\..\openjdk.lib.props" />
+    <PropertyGroup Label="Globals">
+        <ProjectGuid>0714956b-bce5-43db-87a6-b58b57e0765b</ProjectGuid>
+    </PropertyGroup>
+    <PropertyGroup>
+        <TargetName>sunec</TargetName>
+    </PropertyGroup>
+    <ItemDefinitionGroup>
+        <Compile>
+            <IncludeDirectories>%(IncludeDirectories);$(OpenJdkDir)jdk\src\share\native\sun\security\ec\impl</IncludeDirectories>
+            <PreprocessorDefinitions>%(PreprocessorDefinitions);MP_API_COMPATIBLE;NSS_ECC_MORE_THAN_SUITE_B</PreprocessorDefinitions>
+        </Compile>
+    </ItemDefinitionGroup>
+    <ItemGroup>
+        <Compile Include="$(OpenJdkDir)jdk\src\share\native\sun\security\ec\**\*.cpp" />
+        <Compile Include="$(OpenJdkDir)jdk\src\share\native\sun\security\ec\**\*.c" />
+    </ItemGroup>
+    <Import Sdk="IKVM.Clang.Sdk" Project="Sdk.targets" />
+    <Import Project="$(MSBuildThisFileDirectory)..\..\openjdk.lib.targets" />
+</Project>

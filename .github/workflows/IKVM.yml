@@ -3,16 +3,22 @@ name: IKVM
 on:
   push:
     branches:
+    - main
     - develop
     - hotfix/*
     - release/*
   pull_request:
     branches:
     - main
+    - hotfix/*
     - develop
+    - release/*
   release:
     types:
     - created
+
+env:
+  NATIVE_SDK_VERSION: "20230615.1"
 
 jobs:
   build-openjdk:
@@ -74,15 +80,13 @@ jobs:
         sudo chmod -R +rwx linux-x86_64-normal-server-release/images/j2sdk-image/bin
       working-directory: openjdk/build
     - name: Package OpenJDK
-      run: |
-        zip -r openjdk-build-linux-x86_64-normal-server-release.zip \
-          linux-x86_64-normal-server-release/*
+      run: zip -r /tmp/openjdk-build-linux-x86_64-normal-server-release.zip linux-x86_64-normal-server-release/*
       working-directory: openjdk/build
     - name: Upload OpenJDK
       uses: actions/upload-artifact@v3
       with:
         name: openjdk-build-linux-x86_64-normal-server-release
-        path: openjdk/build/openjdk-build-linux-x86_64-normal-server-release.zip
+        path: /tmp/openjdk-build-linux-x86_64-normal-server-release.zip
     - name: Cache OpenJDK Test Harness Build
       uses: actions/cache@v3
       with:
@@ -98,13 +102,13 @@ jobs:
       run: bash make/build-all.sh `realpath ../openjdk/build/linux-x86_64-normal-server-release/images/j2sdk-image` && touch build/stamp
       working-directory: jtreg
     - name: Package OpenJDK Test Harness
-      run: zip -r jtreg-build.zip build
+      run: zip -r /tmp/jtreg-build.zip build
       working-directory: jtreg
     - name: Upload OpenJDK Test Harness 
       uses: actions/upload-artifact@v3
       with:
         name: jtreg-build
-        path: jtreg/jtreg-build.zip
+        path: /tmp/jtreg-build.zip
   build-ikvm:
     name: Build IKVM
     needs:
@@ -154,7 +158,7 @@ jobs:
     - name: Install LLVM and Clang
       uses: KyleMayes/install-llvm-action@v1
       with:
-        version: "15.0"
+        version: "16.0"
         cached: ${{ steps.cache-llvm.outputs.cache-hit }}
     - name: Install GitVersion
       uses: gittools/actions/gitversion/setup@v0
@@ -189,20 +193,26 @@ jobs:
       uses: actions/download-artifact@v3
       with:
         name: openjdk-build-linux-x86_64-normal-server-release
-        path: ${{ env.WORKPATH }}/ikvm/openjdk/build
+        path: ${{ env.WORKPATH }}/temp
     - name: Restore OpenJDK 8 Build
       shell: pwsh
-      run: Expand-Archive openjdk-build-linux-x86_64-normal-server-release.zip .
-      working-directory: ${{ env.WORKPATH }}\ikvm\openjdk\build
+      run: New-Item -Type Directory -Force ${{ env.WORKPATH }}/ikvm/openjdk/build; Expand-Archive ${{ env.WORKPATH }}/temp/openjdk-build-linux-x86_64-normal-server-release.zip -DestinationPath ${{ env.WORKPATH }}/ikvm/openjdk/build
     - name: Download JTReg Build
       uses: actions/download-artifact@v3
       with:
         name: jtreg-build
-        path: ${{ env.WORKPATH }}/ikvm/jtreg
+        path: ${{ env.WORKPATH }}/temp
     - name: Restore JTReg Build
       shell: pwsh
-      run: Expand-Archive jtreg-build.zip .
-      working-directory: ${{ env.WORKPATH }}\ikvm\jtreg
+      run: New-Item -Type Directory -Force ${{ env.WORKPATH }}/ikvm/jtreg; Expand-Archive ${{ env.WORKPATH }}/temp/jtreg-build.zip -DestinationPath ${{ env.WORKPATH }}/ikvm/jtreg
+    - name: Download Native SDKs
+      uses: robinraju/release-downloader@v1.8
+      with:
+        repository: ikvmnet/ikvm-native-sdk
+        tag: ${{ env.NATIVE_SDK_VERSION }}
+        fileName: "*.tar.gz"
+        out-file-path: ${{ env.WORKPATH }}/ikvm/ext/ikvm-native-sdk
+        extract: true
     - name: NuGet Restore
       run: dotnet restore IKVM.sln
       working-directory: ${{ env.WORKPATH }}\ikvm
