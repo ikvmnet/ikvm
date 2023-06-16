@@ -267,7 +267,10 @@ namespace IKVM.Runtime
         /// <returns></returns>
         static string GetDarwinVersion()
         {
-            return Environment.OSVersion.Version.Minor < 10 ? "10.10" : $"10.{Environment.OSVersion.Version.Minor}";
+            if (Environment.OSVersion.Version.Major <= 10 && Environment.OSVersion.Version.Minor <= 10)
+                return "10.10";
+            else
+                return Environment.OSVersion.Version.Major + "." + Environment.OSVersion.Version.Minor;
         }
 
     }
