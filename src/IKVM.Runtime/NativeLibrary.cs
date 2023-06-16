@@ -102,12 +102,10 @@ namespace IKVM.Runtime
         public static nint Load(string path)
         {
 #if NETFRAMEWORK
-            if (RuntimeInformation.IsOSPlatform(OSPlatform.Windows))
+            if (RuntimeUtil.IsWindows)
                 return LoadLibrary(path);
-            else if (RuntimeInformation.IsOSPlatform(OSPlatform.Linux))
-                return dlopen(path, RTLD_NOW | RTLD_GLOBAL);
             else
-                throw new PlatformNotSupportedException();
+                return dlopen(path, RTLD_NOW | RTLD_GLOBAL);
 #else
             return System.Runtime.InteropServices.NativeLibrary.TryLoad(path, typeof(NativeLibrary).Assembly, null, out var h) ? h : 0;
 #endif
@@ -122,12 +120,10 @@ namespace IKVM.Runtime
         public static void Free(nint handle)
         {
 #if NETFRAMEWORK
-            if (RuntimeInformation.IsOSPlatform(OSPlatform.Windows))
+            if (RuntimeUtil.IsWindows)
                 FreeLibrary(handle);
-            else if (RuntimeInformation.IsOSPlatform(OSPlatform.Linux))
-                dlclose(handle);
             else
-                throw new PlatformNotSupportedException();
+                dlclose(handle);
 #else
             System.Runtime.InteropServices.NativeLibrary.Free(handle);
 #endif
@@ -148,14 +144,12 @@ namespace IKVM.Runtime
                 nint h = 0;
 
 #if NETFRAMEWORK
-                if (RuntimeInformation.IsOSPlatform(OSPlatform.Windows))
+                if (RuntimeUtil.IsWindows)
                     h = Environment.Is64BitProcess == false ? GetProcAddress32(handle, name, argl) : GetProcAddress(handle, name);
-                else if (RuntimeInformation.IsOSPlatform(OSPlatform.Linux))
-                    h = dlsym(handle, name);
                 else
-                    throw new PlatformNotSupportedException();
+                    h = dlsym(handle, name);
 #else
-                if (RuntimeInformation.IsOSPlatform(OSPlatform.Windows))
+                if (RuntimeUtil.IsWindows)
                     if (Environment.Is64BitProcess == false && GetWin32ExportName(name, argl) is string n)
                         System.Runtime.InteropServices.NativeLibrary.TryGetExport(handle, n, out h);
 

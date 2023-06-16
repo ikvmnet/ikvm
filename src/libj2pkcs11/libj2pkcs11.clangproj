@@ -1,0 +1,26 @@
+﻿<Project>
+    <Import Sdk="IKVM.Clang.Sdk" Project="Sdk.props" />
+    <Import Project="$(MSBuildThisFileDirectory)..\..\openjdk.lib.props" />
+    <PropertyGroup Label="Globals">
+        <ProjectGuid>8afae23f-de5f-4b71-b9c3-c5b0e7705b96</ProjectGuid>
+    </PropertyGroup>
+    <PropertyGroup>
+        <TargetName>j2pkcs11</TargetName>
+    </PropertyGroup>
+    <ItemDefinitionGroup>
+        <Compile>
+            <PreprocessorDefinitions Condition=" '$(Configuration)' == 'Debug' ">%(PreprocessorDefinitions);P11_DEBUG;SECMOD_DEBUG</PreprocessorDefinitions>
+            <IncludeDirectories>%(IncludeDirectories);$(OpenJdkDir)jdk\src\share\native\sun\security\pkcs11</IncludeDirectories>
+            <IncludeDirectories>%(IncludeDirectories);$(OpenJdkDir)jdk\src\share\native\sun\security\pkcs11\wrapper</IncludeDirectories>
+            <IncludeDirectories>%(IncludeDirectories);$(OpenJdkDir)jdk\src\$(OpenJdkTargetOsApiDir)\native\sun\security\pkcs11</IncludeDirectories>
+            <IncludeDirectories>%(IncludeDirectories);$(OpenJdkDir)jdk\src\$(OpenJdkTargetOsApiDir)\native\sun\security\pkcs11\wrapper</IncludeDirectories>
+        </Compile>
+    </ItemDefinitionGroup>
+    <ItemGroup>
+        <Compile Include="$(OpenJdkDir)jdk\src\share\native\sun\security\pkcs11\**\*.c;$(OpenJdkDir)jdk\src\$(OpenJdkTargetOsApiDir)\native\sun\security\pkcs11\**\*.c">
+            <LanguageStandard>c89</LanguageStandard>
+        </Compile>
+    </ItemGroup>
+    <Import Sdk="IKVM.Clang.Sdk" Project="Sdk.targets" />
+    <Import Project="$(MSBuildThisFileDirectory)..\..\openjdk.lib.targets" />
+</Project>

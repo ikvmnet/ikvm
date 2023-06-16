@@ -7,9 +7,28 @@
         <AddSyntheticProjectReferencesForSolutionDependencies>false</AddSyntheticProjectReferencesForSolutionDependencies>
         <CopyRetryCount>30</CopyRetryCount>
         <CopyRetryDelayMilliseconds>15000</CopyRetryDelayMilliseconds>
-        <SupportedRuntimeIdentifiers>win7-x64;win7-x86;win81-arm;linux-x64;linux-arm;linux-arm64;osx-x64</SupportedRuntimeIdentifiers>
-        <EnabledRuntimeIdentifiers Condition=" '$(EnabledRuntimeIdentifiers)' == '' ">win7-x64;win7-x86;win81-arm;linux-x64;linux-arm;linux-arm64;osx-x64</EnabledRuntimeIdentifiers>
+        
+        <SupportedRuntimes>win7-x64;win7-x86;win81-arm;win10-arm64;linux-x64;linux-arm;linux-arm64;linux-musl-x64;linux-musl-arm;linux-musl-arm64;osx-x64;osx-arm64</SupportedRuntimes>
+        <EnabledRuntimes Condition=" '$(EnabledRuntimes)' == '' ">$(SupportedRuntimes)</EnabledRuntimes>
+        <EnabledRuntimes>;$(EnabledRuntimes);</EnabledRuntimes>
+
+        <SupportedToolRuntimes>win7-x64;linux-x64;linux-arm;linux-arm64;linux-musl-x64;linux-musl-arm;linux-musl-arm64;osx-x64</SupportedToolRuntimes>
+        <EnabledToolRuntimes Condition=" '$(EnabledToolRuntimes)' == '' ">$(SupportedToolRuntimes)</EnabledToolRuntimes>
+        <EnabledToolRuntimes>;$(EnabledToolRuntimes);</EnabledToolRuntimes>
+        
+        <SupportedImageRuntimes>win7-x64;win7-x86;win81-arm;linux-x64;linux-arm;linux-arm64;linux-musl-x64;linux-musl-arm;linux-musl-arm64;osx-x64</SupportedImageRuntimes>
+        <EnabledImageRuntimes Condition=" '$(EnabledImageRuntimes)' == '' ">$(SupportedImageRuntimes)</EnabledImageRuntimes>
+        <EnabledImageRuntimes>;$(EnabledImageRuntimes);</EnabledImageRuntimes>
     </PropertyGroup>
+
+    <ItemGroup>
+        <SupportedRuntimes Include="$(SupportedRuntimes)" />
+        <EnabledRuntimes Include="$(EnabledRuntimes)" />
+        <SupportedToolRuntimes Include="$(SupportedToolRuntimes)" />
+        <EnabledToolRuntimes Include="$(EnabledToolRuntimes)" />
+        <SupportedImageRuntimes Include="$(SupportedImageRuntimes)" />
+        <EnabledImageRuntimes Include="$(EnabledImageRuntimes)" />
+    </ItemGroup>
 
     <ItemGroup>
         <Authors Include="Jeroen Frijters" />

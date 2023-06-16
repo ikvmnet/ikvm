@@ -1,5 +1,10 @@
 #include "ikvm.h"
 
+JNIEXPORT void JNICALL NOOP(JNIEnv* pEnv)
+{
+
+}
+
 MAKE_METHOD(Object, jobject)
 MAKE_METHOD(Boolean, jboolean)
 MAKE_METHOD(Byte, jbyte)

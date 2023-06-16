@@ -1,7 +1,4 @@
 ﻿<Project Sdk="Microsoft.NET.Sdk">
-    <Import Project="$(MSBuildThisFileDirectory)..\..\IKVM.deps.props" />
-    <Import Project="$(MSBuildThisFileDirectory)..\..\IKVM.refs.props" />
-    
     <PropertyGroup>
         <TargetFrameworks>net461;netcoreapp3.1</TargetFrameworks>
         <ErrorOnDuplicatePublishOutputFiles>false</ErrorOnDuplicatePublishOutputFiles>
@@ -14,5 +11,7 @@
     <ItemGroup>
         <ProjectReference Include="..\IKVM.JTReg.TestAdapter.Core\IKVM.JTReg.TestAdapter.Core.csproj" />
     </ItemGroup>
-    
+
+    <Import Project="$(MSBuildThisFileDirectory)..\..\IKVM.deps.targets" />
+    <Import Project="$(MSBuildThisFileDirectory)..\..\IKVM.refs.targets" />
 </Project>

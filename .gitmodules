@@ -2,7 +2,10 @@
 	path = openjdk
 	url = https://github.com/ikvmnet/jdk8u.git
 	ignore = dirty
+	shallow = true
 [submodule "jtreg"]
 	path = jtreg
 	url = https://github.com/ikvmnet/jtreg.git
 	ignore = dirty
+	shallow = true
+
