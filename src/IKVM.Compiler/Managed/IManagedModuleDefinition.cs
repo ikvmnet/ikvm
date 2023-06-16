@@ -7,6 +7,9 @@
     public interface IManagedModuleInfo
     {
 
+        /// <summary>
+        /// Gets the name of the managed module.
+        /// </summary>
         string Name { get; }
 
     }

@@ -24,6 +24,11 @@ namespace IKVM.Compiler.Managed
         /// </summary>
         IReadOnlyList<IManagedFieldInfo> Fields { get; }
 
+        /// <summary>
+        /// Gets the set of methods declard on the managed type.
+        /// </summary>
+        IReadOnlyList<IManagedMethodInfo> Methods { get; }
+
     }
 
 }

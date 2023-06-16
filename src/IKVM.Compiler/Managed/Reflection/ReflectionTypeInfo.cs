@@ -8,9 +8,9 @@ namespace IKVM.Compiler.Managed.Reflection
 {
 
     /// <summary>
-    /// Implements <see cref="IManagedTypeInfo"/> by reflecting against an existing .NET type.
+    /// Implements <see cref="IManagedTypeDefinition"/> by reflecting against an existing .NET type.
     /// </summary>
-    internal sealed class ReflectionTypeInfo : ReflectionEntityInfo, IManagedTypeInfo
+    internal sealed class ReflectionTypeInfo : ReflectionEntityInfo, IManagedTypeDefinition
     {
 
         readonly ReflectionModuleInfo module;
@@ -34,13 +34,13 @@ namespace IKVM.Compiler.Managed.Reflection
             methods = new ReadOnlyListMap<ReflectionMethodInfo, MethodInfo>(type.GetMethods(), (m, i) => new ReflectionMethodInfo(this, m));
         }
 
-        public IManagedModuleInfo Module => module;
+        public IManagedModuleDefinition Module => module;
 
         public string Name => type.FullName;
 
-        public IReadOnlyList<IManagedFieldInfo> Fields => fields;
+        public IReadOnlyList<IManagedFieldDefinition> Fields => fields;
 
-        public IReadOnlyList<IManagedMethodInfo> Methods => methods;
+        public IReadOnlyList<IManagedMethodDefinition> Methods => methods;
 
     }
 

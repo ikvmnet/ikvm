@@ -3,23 +3,23 @@
 namespace IKVM.Compiler.Managed.Metadata
 {
 
-    internal abstract class MetadataMemberInfo : MetadataEntityInfo, IManagedMemberInfo
+    internal abstract class MetadataMemberDefinition : MetadataEntityDefinition, IManagedMemberDefinition
     {
 
-        readonly MetadataTypeInfo declaringType;
+        readonly MetadataTypeDefinition declaringType;
 
         /// <summary>
         /// Initializes a new instance.
         /// </summary>
         /// <param name="declaringType"></param>
         /// <exception cref="ArgumentNullException"></exception>
-        internal MetadataMemberInfo(MetadataTypeInfo declaringType) :
+        internal MetadataMemberDefinition(MetadataTypeDefinition declaringType) :
             base(declaringType.Context)
         {
             this.declaringType = declaringType ?? throw new ArgumentNullException(nameof(declaringType));
         }
 
-        public IManagedTypeInfo DeclaringType => declaringType;
+        public IManagedTypeDefinition DeclaringType => declaringType;
 
         public abstract string Name { get; }
 

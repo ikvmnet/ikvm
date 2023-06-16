@@ -4,10 +4,10 @@ using System.Reflection.Metadata;
 namespace IKVM.Compiler.Managed.Metadata
 {
 
-    internal sealed class MetadataMethodInfo : MetadataMemberInfo, IManagedMethodInfo
+    internal sealed class MetadataMethodDefinition : MetadataMemberDefinition, IManagedMethodDefinition
     {
 
-        readonly MetadataTypeInfo declaringType;
+        readonly MetadataTypeDefinition declaringType;
         readonly MethodDefinition method;
 
         /// <summary>
@@ -16,7 +16,7 @@ namespace IKVM.Compiler.Managed.Metadata
         /// <param name="declaringType"></param>
         /// <param name="method"></param>
         /// <exception cref="ArgumentNullException"></exception>
-        internal MetadataMethodInfo(MetadataTypeInfo declaringType, MethodDefinition method) :
+        internal MetadataMethodDefinition(MetadataTypeDefinition declaringType, MethodDefinition method) :
             base(declaringType)
         {
             this.declaringType = this.declaringType ?? throw new ArgumentNullException(nameof(declaringType));

@@ -1,7 +1,5 @@
 ﻿using System;
 using System.Collections.Generic;
-using System.Linq;
-using System.Reflection;
 using System.Reflection.Metadata;
 
 using IKVM.Compiler.Collections;
@@ -10,15 +8,15 @@ namespace IKVM.Compiler.Managed.Metadata
 {
 
     /// <summary>
-    /// Implements <see cref="IManagedTypeInfo"/> by accessing a <see cref="TypeDefinition"/>.
+    /// Implements <see cref="IManagedTypeDefinition"/> by accessing a <see cref="TypeDefinition"/>.
     /// </summary>
-    internal sealed class MetadataTypeInfo : MetadataEntityInfo, IManagedTypeInfo
+    internal sealed class MetadataTypeDefinition : MetadataEntityDefinition, IManagedTypeDefinition
     {
 
-        readonly MetadataModuleInfo module;
+        readonly MetadataModuleDefinition module;
         readonly TypeDefinition type;
-        readonly ReadOnlyListMap<MetadataFieldInfo, FieldDefinitionHandle> fields;
-        readonly ReadOnlyListMap<MetadataMethodInfo, MethodDefinitionHandle> methods;
+        readonly ReadOnlyListMap<MetadataFieldDefinition, FieldDefinitionHandle> fields;
+        readonly ReadOnlyListMap<MetadataMethodDefinition, MethodDefinitionHandle> methods;
 
         /// <summary>
         /// Initializes a new instance.
@@ -27,14 +25,14 @@ namespace IKVM.Compiler.Managed.Metadata
         /// <param name="module"></param>
         /// <param name="type"></param>
         /// <exception cref="ArgumentNullException"></exception>
-        internal MetadataTypeInfo(MetadataContext context, MetadataModuleInfo module, TypeDefinition type) :
+        internal MetadataTypeDefinition(MetadataContext context, MetadataModuleDefinition module, TypeDefinition type) :
             base(context)
         {
             this.module = module ?? throw new ArgumentNullException(nameof(module));
             this.type = type;
 
-            fields = new ReadOnlyListMap<MetadataFieldInfo, FieldDefinitionHandle>(new ReadOnlyCollectionList<FieldDefinitionHandle>(type.GetFields()), (f, i) => new MetadataFieldInfo(this, Context.Reader.GetFieldDefinition(f)));
-            methods = new ReadOnlyListMap<MetadataMethodInfo, MethodDefinitionHandle>(new ReadOnlyCollectionList<MethodDefinitionHandle>(type.GetMethods()), (f, i) => new MetadataMethodInfo(this, Context.Reader.GetMethodDefinition(f)));
+            fields = new ReadOnlyListMap<MetadataFieldDefinition, FieldDefinitionHandle>(new ReadOnlyCollectionList<FieldDefinitionHandle>(type.GetFields()), (f, i) => new MetadataFieldDefinition(this, Context.Reader.GetFieldDefinition(f)));
+            methods = new ReadOnlyListMap<MetadataMethodDefinition, MethodDefinitionHandle>(new ReadOnlyCollectionList<MethodDefinitionHandle>(type.GetMethods()), (f, i) => new MetadataMethodDefinition(this, Context.Reader.GetMethodDefinition(f)));
         }
 
         /// <summary>

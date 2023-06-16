@@ -11,7 +11,7 @@ namespace IKVM.Compiler.Managed.Reflection
     {
 
         readonly ReflectionContextResolver resolver;
-        readonly ReflectionAssemblyInfo assembly;
+        readonly ReflectionAssemblyDefinition assembly;
 
         /// <summary>
         /// Initializes a new instance.
@@ -22,13 +22,13 @@ namespace IKVM.Compiler.Managed.Reflection
         public ReflectionContext(ReflectionContextResolver resolver, Assembly assembly)
         {
             this.resolver = resolver ?? throw new ArgumentNullException(nameof(resolver));
-            this.assembly = new ReflectionAssemblyInfo(this, assembly);
+            this.assembly = new ReflectionAssemblyDefinition(this, assembly);
         }
 
         /// <summary>
         /// Gets the assembly that defines this context.
         /// </summary>
-        public ReflectionAssemblyInfo Assembly => assembly;
+        public ReflectionAssemblyDefinition Assembly => assembly;
 
         /// <summary>
         /// Resolves a context based on the specified assembly name.

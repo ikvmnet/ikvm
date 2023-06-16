@@ -7,10 +7,10 @@ namespace IKVM.Compiler.Managed.Reflection
     /// <summary>
     /// Descrines a module derived from .NET reflection information.
     /// </summary>
-    internal sealed class ReflectionModuleInfo : ReflectionEntityInfo, IManagedModuleInfo
+    internal sealed class ReflectionModuleInfo : ReflectionEntityInfo, IManagedModuleDefinition
     {
 
-        readonly ReflectionAssemblyInfo assembly;
+        readonly ReflectionAssemblyDefinition assembly;
         readonly Module module;
 
         /// <summary>
@@ -19,7 +19,7 @@ namespace IKVM.Compiler.Managed.Reflection
         /// <param name="assembly"></param>
         /// <param name="module"></param>
         /// <exception cref="ArgumentNullException"></exception>
-        internal ReflectionModuleInfo(ReflectionAssemblyInfo assembly, Module module) :
+        internal ReflectionModuleInfo(ReflectionAssemblyDefinition assembly, Module module) :
             base(assembly.Context)
         {
             this.assembly = assembly ?? throw new ArgumentNullException(nameof(assembly));

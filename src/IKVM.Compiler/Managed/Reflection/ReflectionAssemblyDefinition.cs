@@ -7,7 +7,7 @@ using IKVM.Compiler.Collections;
 namespace IKVM.Compiler.Managed.Reflection
 {
 
-    internal class ReflectionAssemblyInfo : ReflectionEntityInfo, IManagedAssemblyInfo
+    internal class ReflectionAssemblyInfo : ReflectionEntityInfo, IManagedAssemblyDefinition
     {
 
         readonly Assembly assembly;
@@ -34,7 +34,7 @@ namespace IKVM.Compiler.Managed.Reflection
         /// <summary>
         /// Gets the modules of the assembly.
         /// </summary>
-        public IReadOnlyList<IManagedModuleInfo> Modules => modules;
+        public IReadOnlyList<IManagedModuleDefinition> Modules => modules;
 
     }
 

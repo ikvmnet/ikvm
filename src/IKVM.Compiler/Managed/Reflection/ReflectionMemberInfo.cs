@@ -7,7 +7,7 @@ namespace IKVM.Compiler.Managed.Reflection
     /// <summary>
     /// Implements <see cref="ReflectionMemberInfo"/> by reflecting against an existing .NET member.
     /// </summary>
-    internal abstract class ReflectionMemberInfo : ReflectionEntityInfo, IManagedMemberInfo
+    internal abstract class ReflectionMemberInfo : ReflectionEntityInfo, IManagedMemberDefinition
     {
 
         readonly ReflectionTypeInfo declaringType;
@@ -26,7 +26,7 @@ namespace IKVM.Compiler.Managed.Reflection
             this.member = member ?? throw new ArgumentNullException(nameof(member));
         }
 
-        public IManagedTypeInfo DeclaringType => declaringType;
+        public IManagedTypeDefinition DeclaringType => declaringType;
 
         public string Name => member.Name;
 

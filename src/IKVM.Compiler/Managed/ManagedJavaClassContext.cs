@@ -14,14 +14,14 @@ namespace IKVM.Compiler.Managed
         /// </summary>
         /// <param name="className"></param>
         /// <returns></returns>
-        protected override JavaClassInfo ResolveCore(JavaClassName className) => new ManagedJavaClassHandle(this,Resolve(className));
+        protected override JavaClassInfo ResolveCore(JavaClassName className) => new ManagedJavaClassInfo(this,Resolve(className));
 
         /// <summary>
         /// Override to implement resolution of types.
         /// </summary>
         /// <param name="className"></param>
         /// <returns></returns>
-        protected abstract new IManagedTypeInfo Resolve(JavaClassName className);
+        protected abstract new IManagedTypeDefinition Resolve(JavaClassName className);
 
     }
 

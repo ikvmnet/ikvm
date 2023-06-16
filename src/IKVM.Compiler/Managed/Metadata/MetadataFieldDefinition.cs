@@ -7,7 +7,7 @@ namespace IKVM.Compiler.Managed.Metadata
     internal sealed class MetadataFieldInfo : MetadataMemberInfo, IManagedFieldInfo
     {
 
-        readonly MetadataTypeInfo declaringType;
+        readonly MetadataTypeDefinition declaringType;
         readonly FieldDefinition field;
 
         /// <summary>
@@ -17,7 +17,7 @@ namespace IKVM.Compiler.Managed.Metadata
         /// <param name="declaringType"></param>
         /// <param name="field"></param>
         /// <exception cref="ArgumentNullException"></exception>
-        internal MetadataFieldInfo(MetadataTypeInfo declaringType, FieldDefinition field) :
+        internal MetadataFieldInfo(MetadataTypeDefinition declaringType, FieldDefinition field) :
             base(declaringType)
         {
             this.declaringType = this.declaringType ?? throw new ArgumentNullException(nameof(MetadataFieldInfo.declaringType));

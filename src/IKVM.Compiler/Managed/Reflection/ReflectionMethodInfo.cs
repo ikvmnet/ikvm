@@ -5,9 +5,9 @@ namespace IKVM.Compiler.Managed.Reflection
 {
 
     /// <summary>
-    /// Implements <see cref="IManagedMethodInfo"/> by reflecting against an existing .NET method.
+    /// Implements <see cref="IManagedMethodDefinition"/> by reflecting against an existing .NET method.
     /// </summary>
-    internal sealed class ReflectionMethodInfo : ReflectionMemberInfo, IManagedMethodInfo
+    internal sealed class ReflectionMethodInfo : ReflectionMemberInfo, IManagedMethodDefinition
     {
 
         readonly MethodInfo method;

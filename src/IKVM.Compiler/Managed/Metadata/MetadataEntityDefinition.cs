@@ -3,7 +3,7 @@
 namespace IKVM.Compiler.Managed.Metadata
 {
 
-    internal abstract class MetadataEntityInfo
+    internal abstract class MetadataEntityDefinition
     {
 
         readonly MetadataContext context;
@@ -13,7 +13,7 @@ namespace IKVM.Compiler.Managed.Metadata
         /// </summary>
         /// <param name="context"></param>
         /// <exception cref="ArgumentNullException"></exception>
-        internal MetadataEntityInfo(MetadataContext context)
+        internal MetadataEntityDefinition(MetadataContext context)
         {
             this.context = context ?? throw new ArgumentNullException(nameof(context));
         }

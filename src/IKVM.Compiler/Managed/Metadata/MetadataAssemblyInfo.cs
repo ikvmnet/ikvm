@@ -5,7 +5,7 @@ using System.Reflection.Metadata;
 namespace IKVM.Compiler.Managed.Metadata
 {
 
-    internal sealed class MetadataAssemblyInfo : MetadataEntityInfo, IManagedAssemblyInfo
+    internal sealed class MetadataAssemblyInfo : MetadataEntityDefinition, IManagedAssemblyDefinition
     {
 
         readonly AssemblyDefinition assembly;

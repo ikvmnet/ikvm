@@ -4,7 +4,7 @@ using System.Reflection.Metadata;
 namespace IKVM.Compiler.Managed.Metadata
 {
 
-    internal sealed class MetadataModuleInfo : MetadataEntityInfo, IManagedModuleInfo
+    internal sealed class MetadataModuleDefinition : MetadataEntityDefinition, IManagedModuleDefinition
     {
 
         readonly MetadataAssemblyInfo assembly;
@@ -16,7 +16,7 @@ namespace IKVM.Compiler.Managed.Metadata
         /// <param name="assembly"></param>
         /// <param name="module"></param>
         /// <exception cref="ArgumentNullException"></exception>
-        internal MetadataModuleInfo(MetadataContext context, MetadataAssemblyInfo assembly, ModuleDefinition module) :
+        internal MetadataModuleDefinition(MetadataContext context, MetadataAssemblyInfo assembly, ModuleDefinition module) :
             base(context)
         {
             this.assembly = assembly ?? throw new ArgumentNullException(nameof(assembly));
