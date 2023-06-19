@@ -63,7 +63,6 @@ namespace IKVM.Java.Externs.java.lang
                 case "awt":
                 case "splashscreen":
                 case "jit":
-                case "sunec":
                 case "w2k_lsa_auth":
                 case "osxkrb5":
                 case "osx":

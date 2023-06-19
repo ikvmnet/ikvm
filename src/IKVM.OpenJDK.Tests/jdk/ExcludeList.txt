@@ -3256,11 +3256,8 @@ sun/nio/cs/EncodingNothing.java                                                 
 sun/nio/ch/SelProvider.java                                                                                             linux-all
 
 sun/rmi/rmic/extraCompilation/run.sh                                                                                    linux-all
-sun/security/krb5/ccache/DefaultFile.java                                                                               linux-all
-sun/security/pkcs11/KeyStore/Basic.sh                                                                                   linux-all
-sun/security/pkcs11/KeyStore/ClientAuth.sh                                                                              linux-all
-sun/security/pkcs11/KeyStore/Solaris.sh                                                                                 linux-all
 
+sun/security/krb5/ccache/DefaultFile.java                                                                               linux-all
 sun/security/provider/PolicyFile/CanonPath.java                                                                         linux-all
 sun/security/ssl/com/sun/net/ssl/internal/ssl/SSLSocketImpl/AsyncSSLSocketClose.java                                    linux-all
 
@@ -3275,7 +3272,7 @@ sun/java2d/cmm/ColorConvertOp/InvalidRenderIntentTest.java                      
 # uses Win32 specific stuff, not available on Linux
 javax/print/PrintServiceLookup/CountPrintServices.java                                                                  linux-all
 
-# PKCS 11 is disabled because Cryptoki isn't built
+# PKCS 11 has a few broken tests still
 sun/security/pkcs11/Cipher/ReinitCipher.java                                                                            generic-all
 sun/security/pkcs11/Cipher/TestPKCS5PaddingError.java                                                                   generic-all
 sun/security/pkcs11/Cipher/TestRSACipher.java                                                                           generic-all

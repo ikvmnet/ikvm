@@ -1,6 +1,4 @@
 ﻿<Project Sdk="Microsoft.NET.Sdk">
-    <Import Project="$(MSBuildThisFileDirectory)..\..\IKVM.deps.props" />
-    
     <PropertyGroup>
         <TargetFrameworks>net461;netcoreapp3.1</TargetFrameworks>
         <DefineConstants>$(DefineConstants);IMPORTER;EMITTERS</DefineConstants>
@@ -38,4 +36,5 @@
         <Compile Include="..\IKVM.Runtime\**\*.cs" LinkBase="IKVM.Runtime" Exclude="@(ExcludeFromCompile)" />
     </ItemGroup>
 
+    <Import Project="$(MSBuildThisFileDirectory)..\..\IKVM.deps.targets" />
 </Project>

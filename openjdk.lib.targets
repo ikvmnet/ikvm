@@ -1,0 +1,28 @@
+﻿<!--
+
+    openjdk.lib.targets
+    
+    Applies at the bottom of any OpenJDK derived native library project.
+
+-->
+
+<Project>
+    <PropertyGroup>
+        <MSBuildAllProjects>$(MSBuildAllProjects);$(MSBuildThisFileFullPath)</MSBuildAllProjects>
+    </PropertyGroup>
+
+    <ItemGroup>
+        <!-- embed libikvm into every library for now -->
+        <Compile Include="$(MSBuildThisFileDirectory)src\libikvm\*.c" />
+        <Compile Include="$(MSBuildThisFileDirectory)src\libikvm\*.cpp" />
+        
+        <!-- this code is included in various libraries and the JVM -->
+        <Compile Include="$(OpenJdkDir)jdk\src\$(OpenJdkTargetOsApiDir)\native\java\io\canonicalize_md.c" />
+    </ItemGroup>
+    
+    <ItemGroup>
+        <Compile Include="$(OpenJdkDir)jdk\src\share\native\common\jni_util.c" />
+        <Compile Include="$(OpenJdkDir)jdk\src\$(OpenJdkTargetOsApiDir)\native\common\jni_util_md.c" />
+    </ItemGroup>
+
+</Project>

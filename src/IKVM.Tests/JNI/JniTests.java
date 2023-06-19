@@ -78,4 +78,10 @@ public class JniTests
 
 	public native Object newWeakGlobalRef(Object o);
 
+	public native void canPassIntToCallback(Object o, int value);
+
+	public native void canPassShortToCallback(Object o, short value);
+
+	public native void canPassLongToCallback(Object o, long value);
+
 }

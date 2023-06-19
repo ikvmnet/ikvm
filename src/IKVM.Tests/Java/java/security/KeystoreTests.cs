@@ -1,4 +1,6 @@
-﻿using java.io;
+﻿using System.Runtime.InteropServices;
+
+using java.io;
 using java.security;
 
 using Microsoft.VisualStudio.TestTools.UnitTesting;
@@ -73,6 +75,17 @@ namespace IKVM.Tests.Java.java.security
                 var ks = KeyStore.getInstance("JKS");
                 ks.load(stream, "changeit".ToCharArray());
             }
+        }
+
+        [TestMethod]
+        [Ignore]
+        public void CanLoadWindowsPersonalKeyStore()
+        {
+            if (RuntimeInformation.IsOSPlatform(OSPlatform.Windows) == false)
+                return;
+
+            var keyStore = KeyStore.getInstance("Windows-MY");
+            keyStore.load(null, null);
         }
 
     }
