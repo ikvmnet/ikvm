@@ -25,6 +25,8 @@ using System;
 using System.Diagnostics;
 
 using IKVM.Attributes;
+using System.Linq;
+using IKVM.Runtime;
 
 #if IMPORTER || EXPORTER
 using IKVM.Reflection;
@@ -502,9 +504,11 @@ namespace IKVM.Internal
                 var flags = BindingFlags.DeclaredOnly;
                 flags |= mb.IsPublic ? BindingFlags.Public : BindingFlags.NonPublic;
                 flags |= mb.IsStatic ? BindingFlags.Static : BindingFlags.Instance;
-                method = DeclaringType.TypeAsTBD.GetMethod(mb.Name, flags, null, types, null);
+                method = DeclaringType.TypeAsTBD.GetMethods(flags).FirstOrDefault(i => i.Name == mb.Name && i.GetParameters().Select(j => j.ParameterType).SequenceEqual(types) && i.ReturnType == ReturnType.TypeAsSignatureType);
                 if (method == null)
                     method = DeclaringType.TypeAsTBD.GetConstructor(flags, null, types, null);
+                if (method == null)
+                    throw new InternalException("Could not resolve method against runtime type.");
 #endif
             }
 #endif
