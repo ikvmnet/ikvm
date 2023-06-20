@@ -23,7 +23,7 @@
         <_EnabledRuntimes>;$(EnabledRuntimes);</_EnabledRuntimes>
         <_SupportedToolRuntimes>;$(SupportedToolRuntimes);</_SupportedToolRuntimes>
         <_EnabledToolRuntimes>;$(EnabledToolRuntimes);</_EnabledToolRuntimes>
-        <_SupportedImageRuntimes>;$(SupportedImageRuntimes, ';');</_SupportedImageRuntimes>
+        <_SupportedImageRuntimes>;$(SupportedImageRuntimes);</_SupportedImageRuntimes>
         <_EnabledImageRuntimes>;$(EnabledImageRuntimes);</_EnabledImageRuntimes>
     </PropertyGroup>
 
