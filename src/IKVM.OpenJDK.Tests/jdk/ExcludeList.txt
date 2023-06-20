@@ -3393,13 +3393,8 @@ javax/swing/text/FlowView/LayoutTest.java                                       
 javax/swing/text/html/parser/Parser/HtmlCommentTagParseTest/HtmlCommentTagParseTest.java                                generic-all
 sun/java2d/ClassCastExceptionForInvalidSurface.java                                                                     generic-all
 
-# mscapi/sunec/Windows-PRNG SecureRandom
+# Windows-PRNG SecureRandom
 java/security/SecureRandom/DefaultProvider.java                                                                         generic-all
-java/security/Signature/SignatureLength.java                                                                            generic-all
-sun/security/ec/NSASuiteB/TestSHAwithECDSASignatureOids.java                                                            generic-all
-sun/security/ec/SignatureOffsets.java                                                                                   generic-all
-sun/security/tools/jarsigner/DefaultSigalg.java                                                                         generic-all
-sun/security/x509/X509CertImpl/V3Certificate.java                                                                       generic-all
 
 # pkcs11
 sun/security/pkcs11/Mac/MacKAT.java                                                                                     generic-all
