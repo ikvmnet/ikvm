@@ -501,10 +501,13 @@ namespace IKVM.Internal
                 if (HasCallerID)
                     types[typeLength - 1] = CoreClasses.ikvm.@internal.CallerID.Wrapper.TypeAsSignatureType;
 
+                if (ReturnType != null)
+                    ReturnType.Finish();
+
                 var flags = BindingFlags.DeclaredOnly;
                 flags |= mb.IsPublic ? BindingFlags.Public : BindingFlags.NonPublic;
                 flags |= mb.IsStatic ? BindingFlags.Static : BindingFlags.Instance;
-                method = DeclaringType.TypeAsTBD.GetMethods(flags).FirstOrDefault(i => i.Name == mb.Name && i.GetParameters().Select(j => j.ParameterType).SequenceEqual(types) && i.ReturnType == ReturnType.TypeAsSignatureType);
+                method = DeclaringType.TypeAsTBD.GetMethods(flags).FirstOrDefault(i => i.Name == mb.Name && i.GetParameters().Select(j => j.ParameterType).SequenceEqual(types) && i.ReturnType.Equals(ReturnType.TypeAsSignatureType));
                 if (method == null)
                     method = DeclaringType.TypeAsTBD.GetConstructor(flags, null, types, null);
                 if (method == null)
