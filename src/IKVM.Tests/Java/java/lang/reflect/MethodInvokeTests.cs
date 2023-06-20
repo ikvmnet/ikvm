@@ -1,10 +1,14 @@
-﻿using FluentAssertions;
+﻿using System.IO;
+
+using FluentAssertions;
+
+using IKVM.Tests.Util;
 
 using java.lang;
 
 using Microsoft.VisualStudio.TestTools.UnitTesting;
 
-namespace IKVM.Tests.Java.java.lang
+namespace IKVM.Tests.Java.java.lang.reflect
 {
 
     [TestClass]
@@ -146,6 +150,27 @@ namespace IKVM.Tests.Java.java.lang
             var o = new TestValue();
             var r = (Boolean)m.invoke(o);
             r.booleanValue().Should().BeTrue();
+        }
+
+        /// <summary>
+        /// Failures have been indicated with invoking methods in dynamic code with covariant return types.
+        /// </summary>
+        /// <exception cref="Exception"></exception>
+        [TestMethod]
+        public void CanInvokenCovariantReturnTypeMethodDynamic()
+        {
+            var s = new StreamReader(typeof(ClassTests).Assembly.GetManifestResourceStream("IKVM.Tests.Java.java.lang.reflect.MethodInvokeTests.java")).ReadToEnd();
+            var f = new InMemoryCodeUnit("ikvm.java.tests.java.lang.reflect.MethodInvokeTests", s);
+            var c = new InMemoryCompiler(new[] { f });
+            c.Compile();
+
+            var z = c.GetClass("ikvm.java.tests.java.lang.reflect.MethodInvokeTests$CovariantReturn");
+            if (z == null)
+                throw new Exception();
+
+            var m = z.getMethod("method", global::System.Array.Empty<global::java.lang.Class>());
+            var o = z.newInstance();
+            m.invoke(o, global::System.Array.Empty<object>());
         }
 
     }
