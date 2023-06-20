@@ -21,8 +21,12 @@
     </ItemGroup>
     
     <ItemGroup>
+        <Compile Include="$(OpenJdkDir)jdk\src\share\native\common\jio.c" />
         <Compile Include="$(OpenJdkDir)jdk\src\share\native\common\jni_util.c" />
+        <Compile Include="$(OpenJdkDir)jdk\src\share\native\java\io\io_util.c" />
         <Compile Include="$(OpenJdkDir)jdk\src\$(OpenJdkTargetOsApiDir)\native\common\jni_util_md.c" />
+        <Compile Include="$(OpenJdkDir)jdk\src\$(OpenJdkTargetOsApiDir)\native\java\io\FileDescriptor_md.c" />
+        <Compile Include="$(OpenJdkDir)jdk\src\$(OpenJdkTargetOsApiDir)\native\java\io\io_util_md.c" />
     </ItemGroup>
 
 </Project>

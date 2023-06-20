@@ -78,10 +78,12 @@
     <ItemDefinitionGroup>
         <Compile>
             <IncludeDirectories>%(Compile.IncludeDirectories);$(OpenJdkDir)jdk\src\share\native\common</IncludeDirectories>
+            <IncludeDirectories>%(Compile.IncludeDirectories);$(OpenJdkDir)jdk\src\share\native\java\io</IncludeDirectories>
             <IncludeDirectories>%(Compile.IncludeDirectories);$(OpenJdkDir)jdk\src\share\javavm\export</IncludeDirectories>
             <IncludeDirectories>%(Compile.IncludeDirectories);$(OpenJdkDir)build\linux-x86_64-normal-server-release\jdk\gensrc_headers</IncludeDirectories>
 
             <IncludeDirectories>%(Compile.IncludeDirectories);$(OpenJdkDir)jdk\src\$(OpenJdkTargetOsApiDir)\native\common</IncludeDirectories>
+            <IncludeDirectories>%(Compile.IncludeDirectories);$(OpenJdkDir)jdk\src\$(OpenJdkTargetOsApiDir)\native\java\io</IncludeDirectories>
             <IncludeDirectories>%(Compile.IncludeDirectories);$(OpenJdkDir)jdk\src\$(OpenJdkTargetOsApiDir)\javavm\export</IncludeDirectories>
         </Compile>
     </ItemDefinitionGroup>
