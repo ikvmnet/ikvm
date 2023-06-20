@@ -223,7 +223,7 @@ package.access=sun.,\
                jdk.nashorn.internal.,\
                jdk.nashorn.tools.,\
                com.sun.activation.registries.,\
-               com.sun.java.accessibility.
+               apple.
 
 #
 # List of comma-separated packages that start with or equal this string
@@ -273,7 +273,7 @@ package.definition=sun.,\
                    jdk.nashorn.internal.,\
                    jdk.nashorn.tools.,\
                    com.sun.activation.registries.,\
-                   com.sun.java.accessibility.
+                   apple.
 
 #
 # Determines whether this properties file can be appended to
