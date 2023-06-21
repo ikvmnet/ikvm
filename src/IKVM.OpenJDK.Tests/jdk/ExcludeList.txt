@@ -3408,3 +3408,6 @@ sun/tools/jps/TestJpsSanity.java                                                
 
 # jcmd
 sun/tools/jcmd/TestJcmdDefaults.java                                                                                    generic-all
+
+# jdi
+com/sun/jdi/oom/OomDebugTest.java                                                                                       generic-all
