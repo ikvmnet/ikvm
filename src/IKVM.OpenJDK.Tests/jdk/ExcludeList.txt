@@ -3415,3 +3415,6 @@ com/sun/jdi/EvalArraysAsList.sh                                                 
 
 # not implemented/not applicable
 javax/management/mxbean/MXBeanInteropTest1.java                                                                         generic-all
+
+# accessibility
+javax/accessibility/JList/AccessibleJListChildNPETest.java                                                              generic-all

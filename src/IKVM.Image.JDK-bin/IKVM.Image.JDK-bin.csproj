@@ -13,7 +13,6 @@
         <BinProject Include="..\javah\javah.msbuildproj" />
         <BinProject Include="..\javap\javap.msbuildproj" />
         <BinProject Include="..\jdeps\jdeps.msbuildproj" />
-        <BinProject Include="..\jxc\jxc.msbuildproj" />
         <BinProject Include="..\native2ascii\native2ascii.msbuildproj" />
         <BinProject Include="..\rmic\rmic.msbuildproj" />
         <BinProject Include="..\schemagen\schemagen.msbuildproj" />
