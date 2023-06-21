@@ -3411,3 +3411,7 @@ sun/tools/jcmd/TestJcmdDefaults.java                                            
 
 # jdi
 com/sun/jdi/oom/OomDebugTest.java                                                                                       generic-all
+com/sun/jdi/EvalArraysAsList.sh                                                                                         generic-all
+
+# not implemented/not applicable
+javax/management/mxbean/MXBeanInteropTest1.java                                                                         generic-all
