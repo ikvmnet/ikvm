@@ -112,7 +112,7 @@
         </PropertyGroup>
         <Delete Files="$(RmiStubsOutputPath)**\*" />
         <MakeDir Directories="$(RmiStubsOutputPath)" />
-        <Exec Command="$(RmiCompilerExec) $(_RmiCompilerArgs) %(OpenJdkRmiStub.Flags) %(OpenJdkRmiStub.Identity)" />
+        <Exec Command="$(RmiCompilerExec) $(_RmiCompilerArgs) %(OpenJdkRmiStub.Flags) $([System.String]::Copy('%(OpenJdkRmiStub.Identity)').Replace('$', '\$'))" />
         <Touch Files="$(_BuildRmiStubsCoreStampFile)" AlwaysCreate="true" ForceTouch="true" />
     </Target>
 
