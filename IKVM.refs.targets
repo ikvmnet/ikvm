@@ -37,6 +37,12 @@
             </ClangProjectReference>
         </ItemGroup>
         <ItemGroup>
+            <ClangProjectReference Include="@(RidToTargetMachineMap->'$(MSBuildThisFileDirectory)src\libjvm\libjvm.clangproj')" Condition="$(_EnabledRuntimes.Contains(';%(Identity);'))">
+                <TargetMachine>%(TargetMachine)</TargetMachine>
+                <RuntimeIdentifier>%(Identity)</RuntimeIdentifier>
+            </ClangProjectReference>
+        </ItemGroup>
+        <ItemGroup>
             <ClangProjectReference Include="@(RidToTargetMachineMap->'$(MSBuildThisFileDirectory)src\libsunec\libsunec.clangproj')" Condition="$(_EnabledRuntimes.Contains(';%(Identity);'))">
                 <TargetMachine>%(TargetMachine)</TargetMachine>
                 <RuntimeIdentifier>%(Identity)</RuntimeIdentifier>
@@ -60,6 +66,12 @@
             <ClangProjectReference Include="$(MSBuildThisFileDirectory)src\libsunmscapi\libsunmscapi.clangproj" Condition="$(_EnabledRuntimes.Contains(';win10-arm64;'))">
                 <TargetMachine>aarch64-pc-windows-msvc</TargetMachine>
                 <RuntimeIdentifier>win10-arm64</RuntimeIdentifier>
+            </ClangProjectReference>
+        </ItemGroup>
+        <ItemGroup>
+            <ClangProjectReference Include="@(RidToTargetMachineMap->'$(MSBuildThisFileDirectory)src\libunpack\libunpack.clangproj')" Condition="$(_EnabledRuntimes.Contains(';%(Identity);'))">
+                <TargetMachine>%(TargetMachine)</TargetMachine>
+                <RuntimeIdentifier>%(Identity)</RuntimeIdentifier>
             </ClangProjectReference>
         </ItemGroup>
     </Target>

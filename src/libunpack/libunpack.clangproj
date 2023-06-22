@@ -17,6 +17,9 @@
         <Compile>
             <PreprocessorDefinitions>%(PreprocessorDefinitions);PRODUCT</PreprocessorDefinitions>
         </Compile>
+        <Link>
+            <Dependencies>%(Dependencies);jni</Dependencies>
+        </Link>
     </ItemDefinitionGroup>
     <ItemGroup>
         <Compile Include="$(OpenJdkDir)jdk\src\share\native\com\sun\java\util\jar\pack\**\*.cpp" Exclude="$(OpenJdkDir)jdk\src\share\native\com\sun\java\util\jar\pack\main.cpp">

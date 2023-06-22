@@ -308,6 +308,8 @@ Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "IKVM.Image.JRE.runtime.linu
 EndProject
 Project("{6DE1C62B-E8D7-451A-8734-87EAEB46E35B}") = "libunpack", "src\libunpack\libunpack.clangproj", "{1E74B9F3-AF8C-4ADB-90EA-0E1696C7886C}"
 EndProject
+Project("{6DE1C62B-E8D7-451A-8734-87EAEB46E35B}") = "libjvm", "src\libjvm\libjvm.clangproj", "{FE90DDCB-06F3-4470-A9A7-7640B04EA9E4}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -674,6 +676,10 @@ Global
 		{1E74B9F3-AF8C-4ADB-90EA-0E1696C7886C}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{1E74B9F3-AF8C-4ADB-90EA-0E1696C7886C}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{1E74B9F3-AF8C-4ADB-90EA-0E1696C7886C}.Release|Any CPU.Build.0 = Release|Any CPU
+		{FE90DDCB-06F3-4470-A9A7-7640B04EA9E4}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{FE90DDCB-06F3-4470-A9A7-7640B04EA9E4}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{FE90DDCB-06F3-4470-A9A7-7640B04EA9E4}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{FE90DDCB-06F3-4470-A9A7-7640B04EA9E4}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE

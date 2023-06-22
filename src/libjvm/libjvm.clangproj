@@ -2,13 +2,15 @@
     <Import Sdk="IKVM.Clang.Sdk" Project="Sdk.props" />
     <Import Project="$(MSBuildThisFileDirectory)..\..\openjdk.lib.props" />
     <PropertyGroup Label="Globals">
-        <ProjectGuid>55cbf630-905a-4b2b-a812-b4cb9ff19af5</ProjectGuid>
+        <ProjectGuid>fe90ddcb-06f3-4470-a9a7-7640b04ea9e4</ProjectGuid>
     </PropertyGroup>
     <PropertyGroup>
-        <TargetName>ikvm</TargetName>
+        <TargetName>jvm</TargetName>
     </PropertyGroup>
     <ItemGroup>
-        <Compile Include="ikvm.c" />
+        <Compile Include="jvm.c">
+            <LanguageStandard>c89</LanguageStandard>
+        </Compile>
     </ItemGroup>
     <Import Sdk="IKVM.Clang.Sdk" Project="Sdk.targets" />
     <Import Project="$(MSBuildThisFileDirectory)..\..\openjdk.lib.targets" />
