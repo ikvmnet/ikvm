@@ -1,0 +1,14 @@
+﻿<!--
+
+    lib.targets
+    
+    Applies at the bottom of any native library project.
+
+-->
+
+<Project>
+    <PropertyGroup>
+        <MSBuildAllProjects>$(MSBuildAllProjects);$(MSBuildThisFileFullPath)</MSBuildAllProjects>
+    </PropertyGroup>
+    
+</Project>

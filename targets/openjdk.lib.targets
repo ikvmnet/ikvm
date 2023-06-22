@@ -11,6 +11,8 @@
         <MSBuildAllProjects>$(MSBuildAllProjects);$(MSBuildThisFileFullPath)</MSBuildAllProjects>
     </PropertyGroup>
 
+    <Import Project="$(MSBuildThisFileDirectory)lib.targets" />
+
     <ItemGroup>
         <!-- embed libikvm into every library for now -->
         <Compile Include="$(MSBuildThisFileDirectory)src\libikvm\*.c" />

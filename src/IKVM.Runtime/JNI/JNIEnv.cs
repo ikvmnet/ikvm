@@ -52,13 +52,13 @@ namespace IKVM.Runtime.JNI
     using jlongArray = System.IntPtr;
     using jmethodID = System.IntPtr;
     using jobject = System.IntPtr;
+    using jobjectArray = System.IntPtr;
     using jshort = System.Int16;
     using jshortArray = System.IntPtr;
     using jsize = System.Int32;
     using jstring = System.IntPtr;
     using jthrowable = System.IntPtr;
     using jweak = System.IntPtr;
-    using jobjectArray = System.IntPtr;
 
     [StructLayout(LayoutKind.Sequential)]
     unsafe partial struct JNIEnv

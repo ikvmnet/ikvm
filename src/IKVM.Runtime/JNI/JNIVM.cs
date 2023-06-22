@@ -23,6 +23,7 @@
 */
 
 using System.Collections.Generic;
+using System.Runtime.InteropServices;
 using System.Text;
 
 using IKVM.ByteCode.Text;
@@ -30,8 +31,14 @@ using IKVM.ByteCode.Text;
 namespace IKVM.Runtime.JNI
 {
 
+    using jsize = System.Int32;
+
     public sealed unsafe class JNIVM
     {
+
+        delegate int JNI_GetDefaultJavaVMInitArgs(void* vm_args);
+        delegate int JNI_GetCreatedJavaVMs(JavaVM** vmBuf, jsize bufLen, jsize* nVMs);
+        delegate int JNI_CreateJavaVM(JavaVM** p_vm, void** p_env, void* vm_args);
 
         static readonly MUTF8Encoding MUTF8 = MUTF8Encoding.GetMUTF8(52);
 
@@ -44,6 +51,25 @@ namespace IKVM.Runtime.JNI
 #else
         static readonly Encoding platformEncoding = CodePagesEncodingProvider.Instance.GetEncoding(0);
 #endif
+
+        /// <summary>
+        /// Initializes the static instance.
+        /// </summary>
+        static JNIVM()
+        {
+            Set_JNI_GetDefaultJavaVMInitArgs(GetDefaultJavaVMInitArgs);
+            Set_JNI_GetCreatedJavaVMs(GetCreatedJavaVMs);
+            Set_JNI_CreateJavaVM(CreateJavaVM);
+        }
+
+        [DllImport("jvm")]
+        static extern int Set_JNI_GetDefaultJavaVMInitArgs(JNI_GetDefaultJavaVMInitArgs func);
+
+        [DllImport("jvm")]
+        static extern int Set_JNI_GetCreatedJavaVMs(JNI_GetCreatedJavaVMs func);
+
+        [DllImport("jvm")]
+        static extern int Set_JNI_CreateJavaVM(JNI_CreateJavaVM func);
 
         internal static bool IsSupportedJniVersion(int version)
         {
@@ -73,7 +99,7 @@ namespace IKVM.Runtime.JNI
         /// <param name="p_env"></param>
         /// <param name="vm_args"></param>
         /// <returns></returns>
-        public static int CreateJavaVM(void* p_vm, void* p_env, void* vm_args)
+        static int CreateJavaVM(JavaVM** p_vm, void** p_env, void* vm_args)
         {
             var pInitArgs = (JavaVMInitArgs*)vm_args;
 
@@ -116,23 +142,35 @@ namespace IKVM.Runtime.JNI
                 JVM.Properties.User[kvp.Key] = kvp.Value;
 
             java.lang.Thread.currentThread();
-            *(void**)p_vm = JavaVM.pJavaVM;
+            *p_vm = JavaVM.pJavaVM;
 
-            return JavaVM.AttachCurrentThread(JavaVM.pJavaVM, (void**)p_env, null);
+            return JavaVM.AttachCurrentThread(JavaVM.pJavaVM, p_env, null);
         }
 
-        public static int GetDefaultJavaVMInitArgs(void* vm_args)
+        /// <summary>
+        /// Implements the JNI_GetDefaultJavaVMInitArgs native function.
+        /// </summary>
+        /// <param name="vm_args"></param>
+        /// <returns></returns>
+        static int GetDefaultJavaVMInitArgs(void* vm_args)
         {
             // This is only used for JDK 1.1 JavaVMInitArgs, and we don't support those.
             return JNIEnv.JNI_ERR;
         }
 
-        public static int GetCreatedJavaVMs(void* ppvmBuf, int bufLen, int* nVMs)
+        /// <summary>
+        /// Implements the JNI_GetCreatedJavaVMs native function.
+        /// </summary>
+        /// <param name="ppvmBuf"></param>
+        /// <param name="bufLen"></param>
+        /// <param name="nVMs"></param>
+        /// <returns></returns>
+        static int GetCreatedJavaVMs(JavaVM** ppvmBuf, jsize bufLen, jsize* nVMs)
         {
             if (jvmCreated)
             {
                 if (bufLen >= 1)
-                    *((void**)ppvmBuf) = JavaVM.pJavaVM;
+                    *ppvmBuf = JavaVM.pJavaVM;
 
                 if (nVMs != null)
                     *nVMs = 1;

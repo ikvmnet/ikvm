@@ -1,6 +1,6 @@
 ﻿<Project>
     <Import Sdk="IKVM.Clang.Sdk" Project="Sdk.props" />
-    <Import Project="$(MSBuildThisFileDirectory)..\..\openjdk.lib.props" />
+    <Import Project="$(MSBuildThisFileDirectory)..\..\targets\lib.props" />
     <PropertyGroup Label="Globals">
         <ProjectGuid>e1f10a75-cb47-46a0-86cf-7a6492921878</ProjectGuid>
     </PropertyGroup>
@@ -18,5 +18,5 @@
         </Compile>
     </ItemGroup>
     <Import Sdk="IKVM.Clang.Sdk" Project="Sdk.targets" />
-    <Import Project="$(MSBuildThisFileDirectory)..\..\openjdk.lib.targets" />
+    <Import Project="$(MSBuildThisFileDirectory)..\..\targets\lib.targets" />
 </Project>

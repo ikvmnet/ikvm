@@ -1,6 +1,6 @@
 #include <jni.h>
 
-typedef jint JNI_GetDefaultJavaVMInitArgs_Func();
+typedef jint JNI_GetDefaultJavaVMInitArgs_Func(void* vm_args);
 typedef jint JNI_GetCreatedJavaVMs_Func(JavaVM** vmBuf, jsize bufLen, jsize* nVMs);
 typedef jint JNI_CreateJavaVM_Func(JavaVM** p_vm, void** p_env, void* vm_args);
 
