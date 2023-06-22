@@ -15,7 +15,7 @@ namespace IKVM.Compiler.Managed
         /// </summary>
         /// <param name="info"></param>
         /// <returns></returns>
-        public static bool IsJavaType(IManagedTypeDefinition info)
+        public static bool IsJavaType(IManagedType info)
         {
             throw new NotImplementedException();
         }
@@ -25,7 +25,7 @@ namespace IKVM.Compiler.Managed
         /// </summary>
         /// <param name="info"></param>
         /// <returns></returns>
-        public static JavaClassName GetName(IManagedTypeDefinition info)
+        public static JavaClassName GetName(IManagedType info)
         {
             throw new NotImplementedException();
         }

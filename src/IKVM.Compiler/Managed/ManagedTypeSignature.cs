@@ -4,7 +4,7 @@
     /// <summary>
     /// Describes a type including any modifiers.
     /// </summary>
-    abstract class ManagedTypeSignature
+    public abstract class ManagedTypeSignature
     {
 
         /// <summary>

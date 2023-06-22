@@ -21,7 +21,7 @@ namespace IKVM.Compiler.Managed
         /// </summary>
         /// <param name="className"></param>
         /// <returns></returns>
-        protected abstract new IManagedTypeDefinition Resolve(JavaClassName className);
+        protected abstract new IManagedType Resolve(JavaClassName className);
 
     }
 

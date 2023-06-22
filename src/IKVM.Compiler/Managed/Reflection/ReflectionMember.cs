@@ -1,16 +1,17 @@
 ﻿using System;
+using System.Collections.Generic;
 using System.Reflection;
 
 namespace IKVM.Compiler.Managed.Reflection
 {
 
     /// <summary>
-    /// Implements <see cref="ReflectionMemberInfo"/> by reflecting against an existing .NET member.
+    /// Implements <see cref="ReflectionMember"/> by reflecting against an existing .NET member.
     /// </summary>
-    internal abstract class ReflectionMemberInfo : ReflectionEntityInfo, IManagedMemberDefinition
+    internal abstract class ReflectionMember : ReflectionBase, IManagedMember
     {
 
-        readonly ReflectionTypeInfo declaringType;
+        readonly ReflectionType declaringType;
         readonly MemberInfo member;
 
         /// <summary>
@@ -19,16 +20,18 @@ namespace IKVM.Compiler.Managed.Reflection
         /// <param name="declaringType"></param>
         /// <param name="member"></param>
         /// <exception cref="ArgumentNullException"></exception>
-        internal ReflectionMemberInfo(ReflectionTypeInfo declaringType, MemberInfo member) :
+        internal ReflectionMember(ReflectionType declaringType, MemberInfo member) :
             base(declaringType.Context)
         {
             this.declaringType = declaringType ?? throw new ArgumentNullException(nameof(declaringType));
             this.member = member ?? throw new ArgumentNullException(nameof(member));
         }
 
-        public IManagedTypeDefinition DeclaringType => declaringType;
+        public IManagedType DeclaringType => declaringType;
 
         public string Name => member.Name;
+
+        public IReadOnlyList<IManagedCustomAttribute> CustomAttributes => throw new NotImplementedException();
 
     }
 

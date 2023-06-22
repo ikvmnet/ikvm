@@ -5,9 +5,9 @@ namespace IKVM.Compiler.Managed.Reflection
 {
 
     /// <summary>
-    /// Implements <see cref="IManagedFieldDefinition"/> by reflecting against an existing .NET field.
+    /// Implements <see cref="IManagedField"/> by reflecting against an existing .NET field.
     /// </summary>
-    internal sealed class ReflectionFieldInfo : ReflectionMemberInfo, IManagedFieldDefinition
+    internal sealed class ReflectionFieldInfo : ReflectionMemberInfo, IManagedField
     {
 
         readonly FieldInfo field;

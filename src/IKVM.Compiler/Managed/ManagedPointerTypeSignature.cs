@@ -4,16 +4,16 @@
     /// <summary>
     /// Describes a reference of a type signature.
     /// </summary>
-    class ManagedPointerTypeSignature : ManagedTypeSignature
+    public class ManagedPointerTypeSignature : ManagedTypeSignature
     {
 
-        readonly ManagedArrayTypeSignature pointerType;
+        readonly ManagedTypeSignature pointerType;
 
         /// <summary>
         /// Initializes a new instance.
         /// </summary>
         /// <param name="pointerType"></param>
-        public ManagedPointerTypeSignature(ManagedArrayTypeSignature pointerType)
+        public ManagedPointerTypeSignature(ManagedTypeSignature pointerType)
         {
             this.pointerType = pointerType;
         }

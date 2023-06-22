@@ -1,5 +1,7 @@
 ﻿using System;
 using System.Reflection;
+using System.Runtime.CompilerServices;
+
 
 namespace IKVM.Compiler.Managed.Reflection
 {
@@ -11,7 +13,8 @@ namespace IKVM.Compiler.Managed.Reflection
     {
 
         readonly ReflectionContextResolver resolver;
-        readonly ReflectionAssemblyDefinition assembly;
+        readonly ReflectionAssembly assembly;
+        readonly ConditionalWeakTable<Type, ReflectionType> typeCache = new ConditionalWeakTable<Type, ReflectionType>();
 
         /// <summary>
         /// Initializes a new instance.
@@ -22,13 +25,13 @@ namespace IKVM.Compiler.Managed.Reflection
         public ReflectionContext(ReflectionContextResolver resolver, Assembly assembly)
         {
             this.resolver = resolver ?? throw new ArgumentNullException(nameof(resolver));
-            this.assembly = new ReflectionAssemblyDefinition(this, assembly);
+            this.assembly = new ReflectionAssembly(this, assembly);
         }
 
         /// <summary>
         /// Gets the assembly that defines this context.
         /// </summary>
-        public ReflectionAssemblyDefinition Assembly => assembly;
+        public ReflectionAssembly Assembly => assembly;
 
         /// <summary>
         /// Resolves a context based on the specified assembly name.

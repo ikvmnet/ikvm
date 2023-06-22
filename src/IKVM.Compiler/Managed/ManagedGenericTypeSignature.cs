@@ -6,7 +6,7 @@ namespace IKVM.Compiler.Managed
     /// <summary>
     /// Describes a reference of a type signature.
     /// </summary>
-    class ManagedGenericTypeSignature : ManagedTypeSignature
+    public class ManagedGenericTypeSignature : ManagedTypeSignature
     {
 
         readonly ManagedTypeSignature genericType;

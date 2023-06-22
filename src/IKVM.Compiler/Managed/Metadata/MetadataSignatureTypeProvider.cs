@@ -4,22 +4,31 @@ using System.Reflection.Metadata;
 namespace IKVM.Compiler.Managed.Metadata
 {
 
-    class MetadataSignatureTypeProvider : ISignatureTypeProvider<ManagedTypeSignature, object>
+    /// <summary>
+    /// Decodes signature information given the specified context.
+    /// </summary>
+    class MetadataSignatureTypeProvider : ISignatureTypeProvider<ManagedTypeSignature, IMetadataGenericTypeContext>
     {
 
-        public ManagedTypeSignature GetPrimitiveType(PrimitiveTypeCode typeCode)
+        readonly MetadataContext context;
+
+        /// <summary>
+        /// Initializes a new instance.
+        /// </summary>
+        /// <param name="context"></param>
+        public MetadataSignatureTypeProvider(MetadataContext context)
         {
-            throw new System.NotImplementedException();
+            this.context = context;
         }
 
         public ManagedTypeSignature GetArrayType(ManagedTypeSignature elementType, ArrayShape shape)
         {
-            throw new System.NotImplementedException();
+            return new ManagedArrayTypeSignature(elementType, shape.Rank);
         }
 
         public ManagedTypeSignature GetByReferenceType(ManagedTypeSignature elementType)
         {
-            throw new System.NotImplementedException();
+            return new ManagedByRefTypeSignature(elementType);
         }
 
         public ManagedTypeSignature GetFunctionPointerType(MethodSignature<ManagedTypeSignature> signature)
@@ -32,12 +41,12 @@ namespace IKVM.Compiler.Managed.Metadata
             throw new System.NotImplementedException();
         }
 
-        public ManagedTypeSignature GetGenericMethodParameter(object genericContext, int index)
+        public ManagedTypeSignature GetGenericMethodParameter(IMetadataGenericTypeContext genericContext, int index)
         {
             throw new System.NotImplementedException();
         }
 
-        public ManagedTypeSignature GetGenericTypeParameter(object genericContext, int index)
+        public ManagedTypeSignature GetGenericTypeParameter(IMetadataGenericTypeContext genericContext, int index)
         {
             throw new System.NotImplementedException();
         }
@@ -54,7 +63,33 @@ namespace IKVM.Compiler.Managed.Metadata
 
         public ManagedTypeSignature GetPointerType(ManagedTypeSignature elementType)
         {
-            throw new System.NotImplementedException();
+            return new ManagedPointerTypeSignature(elementType);
+        }
+
+        public ManagedTypeSignature GetPrimitiveType(PrimitiveTypeCode typeCode)
+        {
+            return typeCode switch
+            {
+                PrimitiveTypeCode.Boolean => throw new System.NotImplementedException(),
+                PrimitiveTypeCode.Byte => throw new System.NotImplementedException(),
+                PrimitiveTypeCode.SByte => throw new System.NotImplementedException(),
+                PrimitiveTypeCode.Char => throw new System.NotImplementedException(),
+                PrimitiveTypeCode.Int16 => throw new System.NotImplementedException(),
+                PrimitiveTypeCode.UInt16 => throw new System.NotImplementedException(),
+                PrimitiveTypeCode.Int32 => throw new System.NotImplementedException(),
+                PrimitiveTypeCode.UInt32 => throw new System.NotImplementedException(),
+                PrimitiveTypeCode.Int64 => throw new System.NotImplementedException(),
+                PrimitiveTypeCode.UInt64 => throw new System.NotImplementedException(),
+                PrimitiveTypeCode.Single => throw new System.NotImplementedException(),
+                PrimitiveTypeCode.Double => throw new System.NotImplementedException(),
+                PrimitiveTypeCode.IntPtr => throw new System.NotImplementedException(),
+                PrimitiveTypeCode.UIntPtr => throw new System.NotImplementedException(),
+                PrimitiveTypeCode.Object => throw new System.NotImplementedException(),
+                PrimitiveTypeCode.String => throw new System.NotImplementedException(),
+                PrimitiveTypeCode.TypedReference => throw new System.NotImplementedException(),
+                PrimitiveTypeCode.Void => throw new System.NotImplementedException(),
+                _ => throw new System.NotImplementedException(),
+            };
         }
 
         public ManagedTypeSignature GetSZArrayType(ManagedTypeSignature elementType)
@@ -64,17 +99,17 @@ namespace IKVM.Compiler.Managed.Metadata
 
         public ManagedTypeSignature GetTypeFromDefinition(MetadataReader reader, TypeDefinitionHandle handle, byte rawTypeKind)
         {
-            throw new System.NotImplementedException();
+            return new ManagedTypeSignature(context.Resolve(handle));
         }
 
         public ManagedTypeSignature GetTypeFromReference(MetadataReader reader, TypeReferenceHandle handle, byte rawTypeKind)
         {
-            throw new System.NotImplementedException();
+            return new ManagedTypeSignature(context.Resolve(handle));
         }
 
-        public ManagedTypeSignature GetTypeFromSpecification(MetadataReader reader, object genericContext, TypeSpecificationHandle handle, byte rawTypeKind)
+        public ManagedTypeSignature GetTypeFromSpecification(MetadataReader reader, IMetadataGenericTypeContext genericContext, TypeSpecificationHandle handle, byte rawTypeKind)
         {
-            throw new System.NotImplementedException();
+            return new ManagedTypeSignature(context.Resolve(handle));
         }
 
     }

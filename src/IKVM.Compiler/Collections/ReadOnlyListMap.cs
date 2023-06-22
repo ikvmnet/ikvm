@@ -10,9 +10,9 @@ namespace IKVM.Compiler.Collections
     /// <summary>
     /// Base implementation of a list that maps items from a source list on demand.
     /// </summary>
-    /// <typeparam name="TElement"></typeparam>
     /// <typeparam name="TSource"></typeparam>
-    internal class ReadOnlyListMap<TElement, TSource> : IReadOnlyList<TElement>
+    /// <typeparam name="TElement"></typeparam>
+    internal class ReadOnlyListMap<TSource, TElement> : IReadOnlyList<TElement>
         where TElement : class
     {
 
