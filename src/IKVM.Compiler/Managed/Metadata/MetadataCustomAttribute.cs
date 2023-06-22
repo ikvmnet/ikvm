@@ -24,8 +24,6 @@ namespace IKVM.Compiler.Managed.Metadata
 
         CustomAttribute Data => Context.Reader.GetCustomAttribute(handle);
 
-        public IManagedType AttributeType => Context.ResolveType(Data.Constructor);
-
         public IManagedMethod Constructor => throw new System.NotImplementedException();
 
         public IReadOnlyList<IManagedCustomAttributeTypedArgument> ConstructorArguments => throw new System.NotImplementedException();
