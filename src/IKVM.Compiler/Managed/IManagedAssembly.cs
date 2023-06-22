@@ -7,7 +7,7 @@ namespace IKVM.Compiler.Managed
     /// <summary>
     /// Describes a manged assembly.
     /// </summary>
-    public interface IManagedAssembly
+    internal interface IManagedAssembly
     {
 
         /// <summary>

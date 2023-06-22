@@ -3,7 +3,7 @@
 namespace IKVM.Compiler.Managed.Reflection
 {
 
-    internal abstract class ReflectionEntityInfo
+    internal abstract class ReflectionBase
     {
 
         readonly ReflectionContext context;
@@ -13,7 +13,7 @@ namespace IKVM.Compiler.Managed.Reflection
         /// </summary>
         /// <param name="context"></param>
         /// <exception cref="System.ArgumentNullException"></exception>
-        protected ReflectionEntityInfo(ReflectionContext context)
+        protected ReflectionBase(ReflectionContext context)
         {
             this.context = context ?? throw new ArgumentNullException(nameof(context));
         }

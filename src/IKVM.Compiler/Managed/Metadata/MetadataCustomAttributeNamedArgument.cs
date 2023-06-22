@@ -1,13 +1,13 @@
 ﻿using System;
 using System.Reflection;
 
-namespace IKVM.Compiler.Managed.Reflection
+namespace IKVM.Compiler.Managed.Metadata
 {
 
     /// <summary>
     /// Represents a named argument on a custom attribute.
     /// </summary>
-    internal sealed class ReflectionCustomAttributeNamedArgument : ReflectionBase, IManagedCustomAttributeNamedArgument
+    internal sealed class MetadataCustomAttributeNamedArgument : MetadataBase, IManagedCustomAttributeNamedArgument
     {
 
         readonly CustomAttributeNamedArgument argument;

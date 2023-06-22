@@ -1,8 +1,10 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Reflection;
+using System.Reflection.Metadata;
 
 using IKVM.Compiler.Collections;
+using IKVM.Compiler.Managed.Metadata;
 
 namespace IKVM.Compiler.Managed.Reflection
 {
@@ -34,6 +36,7 @@ namespace IKVM.Compiler.Managed.Reflection
             customAttributes = new ReadOnlyListMap<ReflectionCustomAttribute, CustomAttributeData>( type.GetCustomAttributesData().AsReadOnly(), (a, i) => new ReflectionCustomAttribute(this, a));
             fields = new ReadOnlyListMap<ReflectionField, FieldInfo>(type.GetFields(), (f, i) => new ReflectionField(this, f));
             methods = new ReadOnlyListMap<ReflectionMethod, MethodInfo>(type.GetMethods(), (m, i) => new ReflectionMethod(this, m));
+            nestedTypes = new ReadOnlyListMap<ReflectionType, Type>(type.GetNestedTypes(), (t, i) => new ReflectionType(Context, t));
         }
 
         public string Name => type.FullName!;
@@ -43,7 +46,7 @@ namespace IKVM.Compiler.Managed.Reflection
 
         public IReadOnlyList<IManagedCustomAttribute> CustomAttributes => customAttributes;
 
-        public IReadOnlyList<IManagedField> Fields => fields;
+        public IReadOnlyList<ManagedField> Fields => fields;
 
         public IReadOnlyList<IManagedMethod> Methods => methods;
 
