@@ -7,6 +7,9 @@
     <PropertyGroup>
         <TargetName>unpack</TargetName>
     </PropertyGroup>
+    <ItemGroup>
+        <ProjectReference Include="..\libjvm\libjvm.clangproj" />
+    </ItemGroup>
     <ItemDefinitionGroup>
         <Compile>
             <IncludeDirectories>%(IncludeDirectories);$(OpenJdkDir)jdk\src\share\native\com\sun\java\util\jar\pack</IncludeDirectories>

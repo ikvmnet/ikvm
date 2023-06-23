@@ -14,7 +14,7 @@
             <PrivateAssets>all</PrivateAssets>
         </ProjectReference>
     </ItemGroup>
-    
+
     <ItemGroup>
         <RidToTargetMachineMap Include="win7-x64" TargetMachine="x86_64-pc-windows-msvc" />
         <RidToTargetMachineMap Include="win7-x86" TargetMachine="i686-pc-windows-msvc" />
@@ -68,12 +68,12 @@
                 <RuntimeIdentifier>win10-arm64</RuntimeIdentifier>
             </ClangProjectReference>
         </ItemGroup>
-        <ItemGroup>
+        <!--<ItemGroup>
             <ClangProjectReference Include="@(RidToTargetMachineMap->'$(MSBuildThisFileDirectory)src\libunpack\libunpack.clangproj')" Condition="$(_EnabledRuntimes.Contains(';%(Identity);'))">
                 <TargetMachine>%(TargetMachine)</TargetMachine>
                 <RuntimeIdentifier>%(Identity)</RuntimeIdentifier>
             </ClangProjectReference>
-        </ItemGroup>
+        </ItemGroup>-->
     </Target>
 
     <PropertyGroup>
