@@ -16,64 +16,31 @@
     </ItemGroup>
 
     <ItemGroup>
-        <RidToTargetMachineMap Include="win7-x64" TargetIdentifier="x86_64-pc-windows-msvc" />
-        <RidToTargetMachineMap Include="win7-x86" TargetIdentifier="i686-pc-windows-msvc" />
-        <RidToTargetMachineMap Include="win10-arm64" TargetIdentifier="aarch64-pc-windows-msvc" />
-        <RidToTargetMachineMap Include="linux-x64" TargetIdentifier="x86_64-unknown-linux-gnu" />
-        <RidToTargetMachineMap Include="linux-arm64" TargetIdentifier="aarch64-unknown-linux-gnu" />
-        <RidToTargetMachineMap Include="linux-arm" TargetIdentifier="arm-unknown-linux-gnueabihf" />
-        <RidToTargetMachineMap Include="linux-musl-x64" TargetIdentifier="x86_64-unknown-linux-musl" />
-        <RidToTargetMachineMap Include="linux-musl-arm64" TargetIdentifier="aarch64-unknown-linux-musl" />
-        <RidToTargetMachineMap Include="linux-musl-arm" TargetIdentifier="arm-unknown-linux-musleabihf" />
-        <RidToTargetMachineMap Include="osx-x64" TargetIdentifier="x86_64-apple-macosx" />
-        <RidToTargetMachineMap Include="osx-arm64" TargetIdentifier="arm64-apple-macosx" />
+        <__ClangProjects Include="$(MSBuildThisFileDirectory)src\libjvm\libjvm.clangproj " />
+        <__ClangProjects Include="$(MSBuildThisFileDirectory)src\libverify\libverify.clangproj" />
+        <__ClangProjects Include="$(MSBuildThisFileDirectory)src\libjava\libjava.clangproj" />
+        <__ClangProjects Include="$(MSBuildThisFileDirectory)src\libunpack\libunpack.clangproj" />
+        <__ClangProjects Include="$(MSBuildThisFileDirectory)src\libsunec\libsunec.clangproj" />
+        <__ClangProjects Include="$(MSBuildThisFileDirectory)src\libj2pkcs11\libj2pkcs11.clangproj" />
+        <__ClangProjects Include="$(MSBuildThisFileDirectory)src\libsunmscapi\libsunmscapi.clangproj" SupportedRuntimes="win7-x64;win7-x86;win10-arm64" />
     </ItemGroup>
 
-    <Target Name="GetClangProjectReferencesByRuntime" BeforeTargets="AssignClangProjectConfiguration">
+    <Target Name="GetClangProjectReferencesByRuntime" Inputs="@(__ClangProjects)" Outputs="%(__ClangProjects.Identity)\null" BeforeTargets="AssignClangProjectConfiguration">
+        <PropertyGroup>
+            <__SupportedRuntimes>%(__ClangProjects.SupportedRuntimes)</__SupportedRuntimes>
+            <__SupportedRuntimes Condition=" '$(__SupportedRuntimes)' == '' ">$(SupportedRuntimes)</__SupportedRuntimes>
+        </PropertyGroup>
         <ItemGroup>
-            <ClangProjectReference Include="@(RidToTargetMachineMap->'$(MSBuildThisFileDirectory)src\libikvm\libikvm.clangproj')" Condition="$(_EnabledRuntimes.Contains(';%(Identity);'))">
-                <TargetIdentifier>%(TargetIdentifier)</TargetIdentifier>
-                <RuntimeIdentifier>%(Identity)</RuntimeIdentifier>
-            </ClangProjectReference>
+            <__SupportedRuntimes Include="$(__SupportedRuntimes)" />
         </ItemGroup>
         <ItemGroup>
-            <ClangProjectReference Include="@(RidToTargetMachineMap->'$(MSBuildThisFileDirectory)src\libjvm\libjvm.clangproj')" Condition="$(_EnabledRuntimes.Contains(';%(Identity);'))">
-                <TargetIdentifier>%(TargetIdentifier)</TargetIdentifier>
-                <RuntimeIdentifier>%(Identity)</RuntimeIdentifier>
+            <__ClangProjectReference Include="@(__ClangProjects)">
+                <RuntimeIdentifier>%(__SupportedRuntimes.Identity)</RuntimeIdentifier>
+            </__ClangProjectReference>
+            <ClangProjectReference Include="@(__ClangProjectReference)" Condition="$(_EnabledRuntimes.Contains(';%(RuntimeIdentifier);'))">
+                <RuntimeIdentifier>%(RuntimeIdentifier)</RuntimeIdentifier>
             </ClangProjectReference>
         </ItemGroup>
-        <ItemGroup>
-            <ClangProjectReference Include="@(RidToTargetMachineMap->'$(MSBuildThisFileDirectory)src\libsunec\libsunec.clangproj')" Condition="$(_EnabledRuntimes.Contains(';%(Identity);'))">
-                <TargetIdentifier>%(TargetIdentifier)</TargetIdentifier>
-                <RuntimeIdentifier>%(Identity)</RuntimeIdentifier>
-            </ClangProjectReference>
-        </ItemGroup>
-        <ItemGroup>
-            <ClangProjectReference Include="@(RidToTargetMachineMap->'$(MSBuildThisFileDirectory)src\libj2pkcs11\libj2pkcs11.clangproj')" Condition="$(_EnabledRuntimes.Contains(';%(Identity);'))">
-                <TargetIdentifier>%(TargetIdentifier)</TargetIdentifier>
-                <RuntimeIdentifier>%(Identity)</RuntimeIdentifier>
-            </ClangProjectReference>
-        </ItemGroup>
-        <ItemGroup>
-            <ClangProjectReference Include="$(MSBuildThisFileDirectory)src\libsunmscapi\libsunmscapi.clangproj" Condition="$(_EnabledRuntimes.Contains(';win7-x64;'))">
-                <TargetIdentifier>x86_64-pc-windows-msvc</TargetIdentifier>
-                <RuntimeIdentifier>win7-x64</RuntimeIdentifier>
-            </ClangProjectReference>
-            <ClangProjectReference Include="$(MSBuildThisFileDirectory)src\libsunmscapi\libsunmscapi.clangproj" Condition="$(_EnabledRuntimes.Contains(';win7-x86;'))">
-                <TargetIdentifier>i686-pc-windows-msvc</TargetIdentifier>
-                <RuntimeIdentifier>win7-x86</RuntimeIdentifier>
-            </ClangProjectReference>
-            <ClangProjectReference Include="$(MSBuildThisFileDirectory)src\libsunmscapi\libsunmscapi.clangproj" Condition="$(_EnabledRuntimes.Contains(';win10-arm64;'))">
-                <TargetIdentifier>aarch64-pc-windows-msvc</TargetIdentifier>
-                <RuntimeIdentifier>win10-arm64</RuntimeIdentifier>
-            </ClangProjectReference>
-        </ItemGroup>
-        <!--<ItemGroup>
-            <ClangProjectReference Include="@(RidToTargetMachineMap->'$(MSBuildThisFileDirectory)src\libunpack\libunpack.clangproj')" Condition="$(_EnabledRuntimes.Contains(';%(Identity);'))">
-                <TargetIdentifier>%(TargetIdentifier)</TargetIdentifier>
-                <RuntimeIdentifier>%(Identity)</RuntimeIdentifier>
-            </ClangProjectReference>
-        </ItemGroup>-->
     </Target>
 
     <PropertyGroup>

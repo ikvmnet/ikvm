@@ -42,51 +42,33 @@
     </ItemGroup>
 
     <ItemGroup>
-        <ClangProjectReference Include="..\libikvm-tests\libikvm-tests.clangproj" Condition="$(_EnabledRuntimes.Contains(';win7-x64;'))">
-            <TargetMachine>x86_64-pc-windows-msvc</TargetMachine>
-            <RuntimeIdentifier>win7-x64</RuntimeIdentifier>
-        </ClangProjectReference>
-        <ClangProjectReference Include="..\libikvm-tests\libikvm-tests.clangproj" Condition="$(_EnabledRuntimes.Contains(';win7-x86;'))">
-            <TargetMachine>i686-pc-windows-msvc</TargetMachine>
-            <RuntimeIdentifier>win7-x86</RuntimeIdentifier>
-        </ClangProjectReference>
-        <ClangProjectReference Include="..\libikvm-tests\libikvm-tests.clangproj" Condition="$(_EnabledRuntimes.Contains(';win10-arm64;'))">
-            <TargetMachine>aarch64-pc-windows-msvc</TargetMachine>
-            <RuntimeIdentifier>win10-arm64</RuntimeIdentifier>
-        </ClangProjectReference>
-        <ClangProjectReference Include="..\libikvm-tests\libikvm-tests.clangproj" Condition="$(_EnabledRuntimes.Contains(';linux-x64;'))">
-            <TargetMachine>x86_64-unknown-linux-gnu</TargetMachine>
-            <RuntimeIdentifier>linux-x64</RuntimeIdentifier>
-        </ClangProjectReference>
-        <ClangProjectReference Include="..\libikvm-tests\libikvm-tests.clangproj" Condition="$(_EnabledRuntimes.Contains(';linux-arm64;'))">
-            <TargetMachine>aarch64-unknown-linux-gnu</TargetMachine>
-            <RuntimeIdentifier>linux-arm64</RuntimeIdentifier>
-        </ClangProjectReference>
-        <ClangProjectReference Include="..\libikvm-tests\libikvm-tests.clangproj" Condition="$(_EnabledRuntimes.Contains(';linux-arm;'))">
-            <TargetMachine>arm-unknown-linux-gnueabihf</TargetMachine>
-            <RuntimeIdentifier>linux-arm</RuntimeIdentifier>
-        </ClangProjectReference>
-        <ClangProjectReference Include="..\libikvm-tests\libikvm-tests.clangproj" Condition="$(_EnabledRuntimes.Contains(';linux-musl-x64;'))">
-            <TargetMachine>x86_64-unknown-linux-gnu</TargetMachine>
-            <RuntimeIdentifier>linux-musl-x64</RuntimeIdentifier>
-        </ClangProjectReference>
-        <ClangProjectReference Include="..\libikvm-tests\libikvm-tests.clangproj" Condition="$(_EnabledRuntimes.Contains(';linux-musl-arm64;'))">
-            <TargetMachine>aarch64-unknown-linux-gnu</TargetMachine>
-            <RuntimeIdentifier>linux-musl-arm64</RuntimeIdentifier>
-        </ClangProjectReference>
-        <ClangProjectReference Include="..\libikvm-tests\libikvm-tests.clangproj" Condition="$(_EnabledRuntimes.Contains(';linux-musl-arm;'))">
-            <TargetMachine>arm-unknown-linux-musleabihf</TargetMachine>
-            <RuntimeIdentifier>linux-musl-arm</RuntimeIdentifier>
-        </ClangProjectReference>
-        <ClangProjectReference Include="..\libikvm-tests\libikvm-tests.clangproj" Condition="$(_EnabledRuntimes.Contains(';osx-x64;'))">
-            <TargetMachine>x86_64-apple-macosx</TargetMachine>
-            <RuntimeIdentifier>osx-x64</RuntimeIdentifier>
-        </ClangProjectReference>
-        <ClangProjectReference Include="..\libikvm-tests\libikvm-tests.clangproj" Condition="$(_EnabledRuntimes.Contains(';osx-arm64;'))">
-            <TargetMachine>arm64-apple-macosx</TargetMachine>
-            <RuntimeIdentifier>osx-arm64</RuntimeIdentifier>
-        </ClangProjectReference>
+        <__ClangProjects Include="$(MSBuildThisFileDirectory)src\libikvm-tests\libikvm-tests.clangproj " />
     </ItemGroup>
+
+    <Target Name="GetClangProjectReferencesByRuntime" Inputs="@(__ClangProjects)" Outputs="%(__ClangProjects.Identity)\null" BeforeTargets="AssignClangProjectConfiguration">
+        <PropertyGroup>
+            <__SupportedRuntimes>%(__ClangProjects.SupportedRuntimes)</__SupportedRuntimes>
+            <__SupportedRuntimes Condition=" '$(__SupportedRuntimes)' == '' ">$(SupportedRuntimes)</__SupportedRuntimes>
+        </PropertyGroup>
+        <ItemGroup>
+            <__SupportedRuntimes Include="$(__SupportedRuntimes)" />
+        </ItemGroup>
+        <ItemGroup>
+            <__ClangProjectReference Include="@(__ClangProjects)">
+                <RuntimeIdentifier>%(__SupportedRuntimes.Identity)</RuntimeIdentifier>
+            </__ClangProjectReference>
+            <ClangProjectReference Include="@(__ClangProjectReference)" Condition="$(_EnabledRuntimes.Contains(';%(RuntimeIdentifier);'))">
+                <RuntimeIdentifier>%(RuntimeIdentifier)</RuntimeIdentifier>
+            </ClangProjectReference>
+        </ItemGroup>
+    </Target>
+
+    <PropertyGroup>
+        <GetClangProjectReferencesDependsOn>
+            $(GetClangProjectReferencesDependsOn);
+            GetClangProjectReferencesByRuntime;
+        </GetClangProjectReferencesDependsOn>
+    </PropertyGroup>
 
     <ItemGroup Condition=" '$(TargetFramework)' != '' ">
         <IncludeProjectReference Include="..\IKVM.Runtime\IKVM.Runtime.csproj">

@@ -6,13 +6,12 @@
     </PropertyGroup>
     <PropertyGroup>
         <TargetName>jvm</TargetName>
-        <LanguageVersion>c99</LanguageVersion>
         <IncludeDirectories>$(IncludeDirectories);$(OpenJdkDir)jdk\src\share\javavm\export</IncludeDirectories>
         <IncludeDirectories>$(IncludeDirectories);$(OpenJdkDir)jdk\src\$(OpenJdkTargetOsApiDir)\javavm\export</IncludeDirectories>
     </PropertyGroup>
     <ItemGroup>
-        <Compile Include="**\*.c" />
-        <Compile Include="**\*.cpp" />
+        <Compile Include="**\*.c" LanguageStandard="c99" />
+        <Compile Include="**\*.cpp" LanguageStandard="c++98" />
     </ItemGroup>
     <ItemGroup>
         <Header Include="$(OpenJdkDir)jdk\src\share\javavm\export\**\*.h">

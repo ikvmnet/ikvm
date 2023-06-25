@@ -7,15 +7,11 @@
     <PropertyGroup>
         <TargetName>ikvm-tests</TargetName>
     </PropertyGroup>
-    <ItemDefinitionGroup>
-        <Compile>
-            <IncludeDirectories>%(IncludeDirectories);$(MSBuildThisFileDirectory)</IncludeDirectories>
-        </Compile>
-    </ItemDefinitionGroup>
     <ItemGroup>
-        <Compile Include="*.c">
-            <DebugSymbols>true</DebugSymbols>
-        </Compile>
+        <ProjectReference Include="..\libjvm\libjvm.clangproj" />
+    </ItemGroup>
+    <ItemGroup>
+        <Compile Include="**\*.c" />
     </ItemGroup>
     <Import Sdk="IKVM.Clang.Sdk" Project="Sdk.targets" />
     <Import Project="$(MSBuildThisFileDirectory)..\..\targets\lib.targets" />

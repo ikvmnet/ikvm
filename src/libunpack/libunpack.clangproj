@@ -6,9 +6,9 @@
     </PropertyGroup>
     <PropertyGroup>
         <TargetName>unpack</TargetName>
+        <LanguageStandard>c++11</LanguageStandard>
         <IncludeDirectories>$(IncludeDirectories);$(OpenJdkDir)jdk\src\share\native\com\sun\java\util\jar\pack</IncludeDirectories>
         <PreprocessorDefinitions>$(PreprocessorDefinitions);NO_ZLIB;UNPACK_JNI;FULL</PreprocessorDefinitions>
-        <LanguageStandard>c++11</LanguageStandard>
     </PropertyGroup>
     <PropertyGroup Condition=" '$(Configuration)' == 'Release' ">
         <PreprocessorDefinitions>$(PreprocessorDefinitions);PRODUCT</PreprocessorDefinitions>

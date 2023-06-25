@@ -5,17 +5,14 @@
         <ProjectGuid>1658e7ac-0fc7-4527-a7cf-9e0ff752b368</ProjectGuid>
     </PropertyGroup>
     <PropertyGroup>
-        <TargetMachines>x86_64-pc-windows-msvc;i686-pc-windows-msvc;aarch64-pc-windows-msvc</TargetMachines>
+        <TargetIdentifiers>win7-x64;win7-x86;win10-arm64</TargetIdentifiers>
         <TargetName>sunmscapi</TargetName>
+        <LanguageStandard>c++98</LanguageStandard>
+        <Dependencies>$(Dependencies);crypt32;advapi32;ncrypt</Dependencies>
     </PropertyGroup>
-    <ItemDefinitionGroup>
-        <Compile>
-            <LanguageStandard Condition=" '%(Language)' == 'C++' ">c++11</LanguageStandard>
-        </Compile>
-        <Link>
-            <Dependencies>%(Dependencies);crypt32;advapi32;ncrypt</Dependencies>
-        </Link>
-    </ItemDefinitionGroup>
+    <ItemGroup>
+        <ProjectReference Include="..\libjvm\libjvm.clangproj" />
+    </ItemGroup>
     <ItemGroup>
         <Compile Include="$(OpenJdkDir)jdk\src\windows\native\sun\security\mscapi\**\*.cpp" />
     </ItemGroup>

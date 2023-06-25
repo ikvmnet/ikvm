@@ -6,16 +6,15 @@
     </PropertyGroup>
     <PropertyGroup>
         <TargetName>sunec</TargetName>
+        <IncludeDirectories>$(IncludeDirectories);$(OpenJdkDir)jdk\src\share\native\sun\security\ec\impl</IncludeDirectories>
+        <PreprocessorDefinitions>$(PreprocessorDefinitions);MP_API_COMPATIBLE;NSS_ECC_MORE_THAN_SUITE_B</PreprocessorDefinitions>
     </PropertyGroup>
-    <ItemDefinitionGroup>
-        <Compile>
-            <IncludeDirectories>%(IncludeDirectories);$(OpenJdkDir)jdk\src\share\native\sun\security\ec\impl</IncludeDirectories>
-            <PreprocessorDefinitions>%(PreprocessorDefinitions);MP_API_COMPATIBLE;NSS_ECC_MORE_THAN_SUITE_B</PreprocessorDefinitions>
-        </Compile>
-    </ItemDefinitionGroup>
     <ItemGroup>
-        <Compile Include="$(OpenJdkDir)jdk\src\share\native\sun\security\ec\**\*.cpp" />
-        <Compile Include="$(OpenJdkDir)jdk\src\share\native\sun\security\ec\**\*.c" />
+        <ProjectReference Include="..\libjvm\libjvm.clangproj" />
+    </ItemGroup>
+    <ItemGroup>
+        <Compile Include="$(OpenJdkDir)jdk\src\share\native\sun\security\ec\**\*.cpp" LanguageStandard="c++11" />
+        <Compile Include="$(OpenJdkDir)jdk\src\share\native\sun\security\ec\**\*.c" LanguageStandard="c99" />
     </ItemGroup>
     <Import Sdk="IKVM.Clang.Sdk" Project="Sdk.targets" />
     <Import Project="$(MSBuildThisFileDirectory)..\..\targets\openjdk.lib.targets" />
