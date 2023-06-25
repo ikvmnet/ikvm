@@ -42,7 +42,7 @@
     </ItemGroup>
 
     <ItemGroup>
-        <__ClangProjects Include="$(MSBuildThisFileDirectory)src\libikvm-tests\libikvm-tests.clangproj " />
+        <__ClangProjects Include="$(MSBuildThisFileDirectory)..\libikvm-tests\libikvm-tests.clangproj " />
     </ItemGroup>
 
     <Target Name="GetClangProjectReferencesByRuntime" Inputs="@(__ClangProjects)" Outputs="%(__ClangProjects.Identity)\null" BeforeTargets="AssignClangProjectConfiguration">

@@ -43,8 +43,15 @@ namespace IKVM.Java.Externs.java.lang
         /// <returns></returns>
         public static string findBuiltinLib(string name)
         {
+#if FIRST_PASS
+            throw new NotImplementedException();
+#else
+            if (name == null)
+                throw new global::java.lang.InternalError("NULL filename for native library.");
+
             var l = GetUnmappedLibraryName(name);
             return IsBuiltinLib(l) ? l : null;
+#endif
         }
 
         /// <summary>
@@ -58,7 +65,6 @@ namespace IKVM.Java.Externs.java.lang
             {
                 case "net":
                 case "nio":
-                case "unpack":
                 case "jaas_nt":
                 case "awt":
                 case "splashscreen":
