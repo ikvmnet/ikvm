@@ -14,54 +14,35 @@
     <Import Project="$(MSBuildThisFileDirectory)lib.props" />
 
     <!-- common preprocessor declarations -->
-    <ItemDefinitionGroup Condition=" '$(TargetMachine)' != '' ">
-        <Compile>
-            <PreprocessorDefinitions>%(PreprocessorDefinitions);JDK_MAJOR_VERSION=&quot;&quot;$(OpenJdkMajorVersion)&quot;&quot;</PreprocessorDefinitions>
-            <PreprocessorDefinitions>%(PreprocessorDefinitions);JDK_MINOR_VERSION=&quot;&quot;$(OpenJdkMinorVersion)&quot;&quot;</PreprocessorDefinitions>
-            <PreprocessorDefinitions>%(PreprocessorDefinitions);JDK_MICRO_VERSION=&quot;&quot;$(OpenJdkMicroVersion)&quot;&quot;</PreprocessorDefinitions>
-            <PreprocessorDefinitions>%(PreprocessorDefinitions);JDK_UPDATE_VERSION=&quot;&quot;$(OpenJdkUpdateVersion)&quot;&quot;</PreprocessorDefinitions>
-            <PreprocessorDefinitions>%(PreprocessorDefinitions);JDK_BUILD_NUMBER=&quot;&quot;$(OpenJdkBuildNumber)&quot;&quot;</PreprocessorDefinitions>
-
-            <PreprocessorDefinitions Condition=" '$(DebugSymbols)' == 'true' ">%(Compile.PreprocessorDefinitions);_DEBUG</PreprocessorDefinitions>
-            <PreprocessorDefinitions Condition="$(TargetMachine.StartsWith('x86_64-'))">%(Compile.PreprocessorDefinitions);_AMD64_;amd64</PreprocessorDefinitions>
-            <PreprocessorDefinitions Condition="$(TargetMachine.StartsWith('i686-'))">%(Compile.PreprocessorDefinitions);_X86_;x86</PreprocessorDefinitions>
-            <PreprocessorDefinitions Condition="$(TargetMachine.StartsWith('aarch64-')) Or $(TargetMachine.StartsWith('arm64-'))">%(Compile.PreprocessorDefinitions);_ARM64_;arm64</PreprocessorDefinitions>
-            <PreprocessorDefinitions Condition="$(TargetMachine.StartsWith('thumbv7-')) Or $(TargetMachine.StartsWith('arm-'))">%(Compile.PreprocessorDefinitions);_ARM_;arm</PreprocessorDefinitions>
-        </Compile>
-    </ItemDefinitionGroup>
-
+    <PropertyGroup Condition=" '$(TargetTriple)' != '' ">
+        <PreprocessorDefinitions>$(PreprocessorDefinitions);JDK_MAJOR_VERSION=&quot;&quot;$(OpenJdkMajorVersion)&quot;&quot;</PreprocessorDefinitions>
+        <PreprocessorDefinitions>$(PreprocessorDefinitions);JDK_MINOR_VERSION=&quot;&quot;$(OpenJdkMinorVersion)&quot;&quot;</PreprocessorDefinitions>
+        <PreprocessorDefinitions>$(PreprocessorDefinitions);JDK_MICRO_VERSION=&quot;&quot;$(OpenJdkMicroVersion)&quot;&quot;</PreprocessorDefinitions>
+        <PreprocessorDefinitions>$(PreprocessorDefinitions);JDK_UPDATE_VERSION=&quot;&quot;$(OpenJdkUpdateVersion)&quot;&quot;</PreprocessorDefinitions>
+        <PreprocessorDefinitions>$(PreprocessorDefinitions);JDK_BUILD_NUMBER=&quot;&quot;$(OpenJdkBuildNumber)&quot;&quot;</PreprocessorDefinitions>
+    </PropertyGroup>
 
     <!-- common/autoconf/flags.m4 -->
-    <ItemDefinitionGroup Condition="$(TargetMachine.Contains('-windows-')) ">
-        <Compile>
-            <MsCompatibility Condition="$(TargetMachine.Contains('-windows-')) ">true</MsCompatibility>
-            <MsCompatibilityVersion Condition="$(TargetMachine.Contains('-windows-')) ">14</MsCompatibilityVersion>
-            <PreprocessorDefinitions>%(Compile.PreprocessorDefinitions);_STATIC_CPPLIB;_DISABLE_DEPRECATE_STATIC_CPPLIB;WIN32_LEAN_AND_MEAN;_CRT_SECURE_NO_DEPRECATE;_CRT_NONSTDC_NO_DEPRECATE;WIN32;IAL</PreprocessorDefinitions>
-        </Compile>
-    </ItemDefinitionGroup>
+    <PropertyGroup Condition="$(TargetTriple.Contains('-windows-')) ">
+        <PreprocessorDefinitions>$(PreprocessorDefinitions);_STATIC_CPPLIB;_DISABLE_DEPRECATE_STATIC_CPPLIB;WIN32_LEAN_AND_MEAN;IAL</PreprocessorDefinitions>
+    </PropertyGroup>
 
     <!-- common/autoconf/flags.m4 -->
-    <ItemDefinitionGroup Condition="$(TargetMachine.Contains('-linux-'))">
-        <Compile>
-            <PositionIndependentCode>true</PositionIndependentCode>
-            <PreprocessorDefinitions>%(Compile.PreprocessorDefinitions);_GNU_SOURCE;_REENTRANT;_LARGEFILE64_SOURCE;LINUX</PreprocessorDefinitions>
-        </Compile>
-    </ItemDefinitionGroup>
+    <PropertyGroup Condition="$(TargetTriple.Contains('-linux-'))">
+        <PositionIndependentCode>true</PositionIndependentCode>
+        <PreprocessorDefinitions>$(PreprocessorDefinitions);_GNU_SOURCE;_REENTRANT;_LARGEFILE64_SOURCE</PreprocessorDefinitions>
+    </PropertyGroup>
 
     <!-- common/autoconf/flags.m4 -->
-    <ItemDefinitionGroup Condition="$(TargetMachine.Contains('-apple-'))">
-        <Compile>
-            <PreprocessorDefinitions>%(Compile.PreprocessorDefinitions);_ALLBSD_SOURCE;_DARWIN_UNLIMITED_SELECT</PreprocessorDefinitions>
-        </Compile>
-    </ItemDefinitionGroup>
+    <PropertyGroup Condition="$(TargetTriple.Contains('-apple-'))">
+        <PreprocessorDefinitions>$(PreprocessorDefinitions);_ALLBSD_SOURCE;_DARWIN_UNLIMITED_SELECT</PreprocessorDefinitions>
+    </PropertyGroup>
 
     <!-- standard OpenJDK includes -->
-    <ItemDefinitionGroup>
-        <Compile>
-            <IncludeDirectories>%(Compile.IncludeDirectories);$(OpenJdkDir)jdk\src\share\native\common</IncludeDirectories>
-            <IncludeDirectories>%(Compile.IncludeDirectories);$(OpenJdkDir)build\linux-x86_64-normal-server-release\jdk\gensrc_headers</IncludeDirectories>
-            <IncludeDirectories>%(Compile.IncludeDirectories);$(OpenJdkDir)jdk\src\$(OpenJdkTargetOsApiDir)\native\common</IncludeDirectories>
-        </Compile>
-    </ItemDefinitionGroup>
+    <PropertyGroup>
+        <IncludeDirectories>$(IncludeDirectories);$(OpenJdkDir)jdk\src\share\native\common</IncludeDirectories>
+        <IncludeDirectories>$(IncludeDirectories);$(OpenJdkDir)build\linux-x86_64-normal-server-release\jdk\gensrc_headers</IncludeDirectories>
+        <IncludeDirectories>$(IncludeDirectories);$(OpenJdkDir)jdk\src\$(OpenJdkTargetOsApiDir)\native\common</IncludeDirectories>
+    </PropertyGroup>
 
 </Project>

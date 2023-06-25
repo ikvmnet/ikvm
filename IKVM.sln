@@ -30,8 +30,6 @@ Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Solution Items", "Solution 
 		jtreg.props = jtreg.props
 		LICENSE.md = LICENSE.md
 		nuget.config = nuget.config
-		targets\openjdk.lib.props = targets\openjdk.lib.props
-		targets\openjdk.lib.targets = targets\openjdk.lib.targets
 		openjdk.props = openjdk.props
 		README.md = README.md
 	EndProjectSection
@@ -282,8 +280,6 @@ Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "IKVM.Tools.Importer.Tests",
 EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "IKVM.ByteCode.Tests", "src\IKVM.ByteCode.Tests\IKVM.ByteCode.Tests.csproj", "{60E804E4-B25B-4C9A-A3E6-F83D618CFD26}"
 EndProject
-Project("{6DE1C62B-E8D7-451A-8734-87EAEB46E35B}") = "libikvm", "src\libikvm\libikvm.clangproj", "{55CBF630-905A-4B2B-A812-B4CB9FF19AF5}"
-EndProject
 Project("{6DE1C62B-E8D7-451A-8734-87EAEB46E35B}") = "libj2pkcs11", "src\libj2pkcs11\libj2pkcs11.clangproj", "{8AFAE23F-DE5F-4B71-B9C3-C5B0E7705B96}"
 EndProject
 Project("{6DE1C62B-E8D7-451A-8734-87EAEB46E35B}") = "libsunec", "src\libsunec\libsunec.clangproj", "{0714956B-BCE5-43DB-87A6-B58B57E0765B}"
@@ -312,11 +308,18 @@ Project("{6DE1C62B-E8D7-451A-8734-87EAEB46E35B}") = "libjvm", "src\libjvm\libjvm
 EndProject
 Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "targets", "targets", "{F63A2815-ABCA-442F-BE92-CD2802F3EA0A}"
 	ProjectSection(SolutionItems) = preProject
+		targets\ClangProjectReference.targets = targets\ClangProjectReference.targets
 		targets\lib.props = targets\lib.props
 		targets\lib.targets = targets\lib.targets
 		targets\openjdk.lib.props = targets\openjdk.lib.props
 		targets\openjdk.lib.targets = targets\openjdk.lib.targets
 	EndProjectSection
+EndProject
+Project("{6DE1C62B-E8D7-451A-8734-87EAEB46E35B}") = "libjava", "src\libjava\libjava.clangproj", "{55CBF630-905A-4B2B-A812-B4CB9FF19AF5}"
+EndProject
+Project("{6DE1C62B-E8D7-451A-8734-87EAEB46E35B}") = "libfdlibm", "src\libfdlibm\libfdlibm.clangproj", "{4941997B-ACD9-4A29-88C3-36CEB5ED9C6D}"
+EndProject
+Project("{6DE1C62B-E8D7-451A-8734-87EAEB46E35B}") = "libverify", "src\libverify\libverify.clangproj", "{61AD88EF-3D77-4BBE-94F9-6506428263D7}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
@@ -632,10 +635,6 @@ Global
 		{60E804E4-B25B-4C9A-A3E6-F83D618CFD26}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{60E804E4-B25B-4C9A-A3E6-F83D618CFD26}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{60E804E4-B25B-4C9A-A3E6-F83D618CFD26}.Release|Any CPU.Build.0 = Release|Any CPU
-		{55CBF630-905A-4B2B-A812-B4CB9FF19AF5}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
-		{55CBF630-905A-4B2B-A812-B4CB9FF19AF5}.Debug|Any CPU.Build.0 = Debug|Any CPU
-		{55CBF630-905A-4B2B-A812-B4CB9FF19AF5}.Release|Any CPU.ActiveCfg = Release|Any CPU
-		{55CBF630-905A-4B2B-A812-B4CB9FF19AF5}.Release|Any CPU.Build.0 = Release|Any CPU
 		{8AFAE23F-DE5F-4B71-B9C3-C5B0E7705B96}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
 		{8AFAE23F-DE5F-4B71-B9C3-C5B0E7705B96}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{8AFAE23F-DE5F-4B71-B9C3-C5B0E7705B96}.Release|Any CPU.ActiveCfg = Release|Any CPU
@@ -688,6 +687,18 @@ Global
 		{FE90DDCB-06F3-4470-A9A7-7640B04EA9E4}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{FE90DDCB-06F3-4470-A9A7-7640B04EA9E4}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{FE90DDCB-06F3-4470-A9A7-7640B04EA9E4}.Release|Any CPU.Build.0 = Release|Any CPU
+		{55CBF630-905A-4B2B-A812-B4CB9FF19AF5}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{55CBF630-905A-4B2B-A812-B4CB9FF19AF5}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{55CBF630-905A-4B2B-A812-B4CB9FF19AF5}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{55CBF630-905A-4B2B-A812-B4CB9FF19AF5}.Release|Any CPU.Build.0 = Release|Any CPU
+		{4941997B-ACD9-4A29-88C3-36CEB5ED9C6D}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{4941997B-ACD9-4A29-88C3-36CEB5ED9C6D}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{4941997B-ACD9-4A29-88C3-36CEB5ED9C6D}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{4941997B-ACD9-4A29-88C3-36CEB5ED9C6D}.Release|Any CPU.Build.0 = Release|Any CPU
+		{61AD88EF-3D77-4BBE-94F9-6506428263D7}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{61AD88EF-3D77-4BBE-94F9-6506428263D7}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{61AD88EF-3D77-4BBE-94F9-6506428263D7}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{61AD88EF-3D77-4BBE-94F9-6506428263D7}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE

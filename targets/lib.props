@@ -10,118 +10,109 @@
     <PropertyGroup>
         <MSBuildAllProjects>$(MSBuildAllProjects);$(MSBuildThisFileFullPath)</MSBuildAllProjects>
     </PropertyGroup>
-    
+
     <Import Project="$(MSBuildThisFileDirectory)..\openjdk.props" />
 
     <PropertyGroup>
-        <OutputType>SharedLibrary</OutputType>
+        <OutputType>library</OutputType>
         <Verbose>true</Verbose>
         <DebugSymbols>true</DebugSymbols>
-        <TargetMachines>x86_64-pc-windows-msvc;i686-pc-windows-msvc;aarch64-pc-windows-msvc;x86_64-unknown-linux-gnu;aarch64-unknown-linux-gnu;arm-unknown-linux-gnueabihf;x86_64-unknown-linux-musl;aarch64-unknown-linux-musl;arm-unknown-linux-musleabihf;x86_64-apple-macosx;arm64-apple-macosx</TargetMachines>
+        <TargetIdentifiers>$(_SupportedRuntimes)</TargetIdentifiers>
+        <TargetTriple Condition=" '$(TargetIdentifier)' == 'win7-x64' ">x86_64-pc-windows-msvc</TargetTriple>
+        <TargetTriple Condition=" '$(TargetIdentifier)' == 'win7-x86' ">i686-pc-windows-msvc</TargetTriple>
+        <TargetTriple Condition=" '$(TargetIdentifier)' == 'win81-arm' ">thumbv7-pc-windows-msvc</TargetTriple>
+        <TargetTriple Condition=" '$(TargetIdentifier)' == 'win10-arm64' ">aarch64-pc-windows-msvc</TargetTriple>
+        <TargetTriple Condition=" '$(TargetIdentifier)' == 'linux-x64' ">x86_64-unknown-linux-gnu</TargetTriple>
+        <TargetTriple Condition=" '$(TargetIdentifier)' == 'linux-arm64' ">aarch64-unknown-linux-gnu</TargetTriple>
+        <TargetTriple Condition=" '$(TargetIdentifier)' == 'linux-arm' " >arm-unknown-linux-gnueabihf</TargetTriple>
+        <TargetTriple Condition=" '$(TargetIdentifier)' == 'linux-musl-x64' " >x86_64-unknown-linux-musl</TargetTriple>
+        <TargetTriple Condition=" '$(TargetIdentifier)' == 'linux-musl-arm64' ">aarch64-unknown-linux-musl</TargetTriple>
+        <TargetTriple Condition=" '$(TargetIdentifier)' == 'linux-musl-arm' ">arm-unknown-linux-musleabihf</TargetTriple>
+        <TargetTriple Condition=" '$(TargetIdentifier)' == 'osx-x64' ">x86_64-apple-macosx</TargetTriple>
+        <TargetTriple Condition=" '$(TargetIdentifier)' == 'osx-arm64' ">arm64-apple-macosx</TargetTriple>
     </PropertyGroup>
 
-    <PropertyGroup Condition="$(TargetMachine.Contains('-windows-'))">
+    <PropertyGroup Condition="$(TargetTriple.Contains('-windows-'))">
         <OpenJdkTargetOsApiDir>windows</OpenJdkTargetOsApiDir>
+        <PreprocessorDefinitions>$(PreprocessorDefinitions);_CRT_SECURE_NO_DEPRECATE;_CRT_NONSTDC_NO_DEPRECATE;WIN32</PreprocessorDefinitions>
+        <MsCompatibility>true</MsCompatibility>
+        <MsCompatibilityVersion>14</MsCompatibilityVersion>
+        <WinSdkArch Condition="$(TargetTriple.StartsWith('x86_64-'))">x86_64</WinSdkArch>
+        <WinSdkArch Condition="$(TargetTriple.StartsWith('i686-'))">x86</WinSdkArch>
+        <WinSdkArch Condition="$(TargetTriple.StartsWith('aarch64-'))">aarch64</WinSdkArch>
+        <WinSdkArch Condition="$(TargetTriple.StartsWith('thumbv7-'))">aarch</WinSdkArch>
     </PropertyGroup>
 
-    <PropertyGroup Condition="$(TargetMachine.Contains('-linux-')) Or $(TargetMachine.Contains('-apple-'))">
+    <PropertyGroup Condition="$(TargetTriple.Contains('-linux-')) Or $(TargetTriple.Contains('-apple-'))">
         <OpenJdkTargetOsApiDir>solaris</OpenJdkTargetOsApiDir>
     </PropertyGroup>
 
-    <!-- relative path within Windows SDK based on arch -->
-    <PropertyGroup Condition=" '$(TargetMachine)' != '' And $(TargetMachine.Contains('-windows-')) ">
-        <WinSdkArch Condition="$(TargetMachine.StartsWith('x86_64-'))">x86_64</WinSdkArch>
-        <WinSdkArch Condition="$(TargetMachine.StartsWith('i686-'))">x86</WinSdkArch>
-        <WinSdkArch Condition="$(TargetMachine.StartsWith('aarch64-'))">aarch64</WinSdkArch>
-        <WinSdkArch Condition="$(TargetMachine.StartsWith('thumbv7-'))">aarch</WinSdkArch>
+    <!-- known global values -->
+    <PropertyGroup Condition="!$([MSBuild]::IsOSPlatform('Windows')) And $(TargetTriple.Contains('-windows-'))">
+        <SystemIncludeDirectories>$(SystemIncludeDirectories);$(MSBuildThisFileDirectory)..\ext\ikvm-native-sdk\windows\crt\include\</SystemIncludeDirectories>
+        <SystemIncludeDirectories>$(SystemIncludeDirectories);$(MSBuildThisFileDirectory)..\ext\ikvm-native-sdk\windows\sdk\include\shared\</SystemIncludeDirectories>
+        <SystemIncludeDirectories>$(SystemIncludeDirectories);$(MSBuildThisFileDirectory)..\ext\ikvm-native-sdk\windows\sdk\include\ucrt\</SystemIncludeDirectories>
+        <SystemIncludeDirectories>$(SystemIncludeDirectories);$(MSBuildThisFileDirectory)..\ext\ikvm-native-sdk\windows\sdk\include\um\</SystemIncludeDirectories>
     </PropertyGroup>
 
-    <!-- known global values -->
-    <ItemDefinitionGroup Condition="!$([MSBuild]::IsOSPlatform('Windows')) And $(TargetMachine.Contains('-windows-'))">
-        <Compile>
-            <SystemIncludeDirectories>%(Compile.SystemIncludeDirectories);$(MSBuildThisFileDirectory)..\ext\ikvm-native-sdk\windows\crt\include\</SystemIncludeDirectories>
-            <SystemIncludeDirectories>%(Compile.SystemIncludeDirectories);$(MSBuildThisFileDirectory)..\ext\ikvm-native-sdk\windows\sdk\include\shared\</SystemIncludeDirectories>
-            <SystemIncludeDirectories>%(Compile.SystemIncludeDirectories);$(MSBuildThisFileDirectory)..\ext\ikvm-native-sdk\windows\sdk\include\ucrt\</SystemIncludeDirectories>
-            <SystemIncludeDirectories>%(Compile.SystemIncludeDirectories);$(MSBuildThisFileDirectory)..\ext\ikvm-native-sdk\windows\sdk\include\um\</SystemIncludeDirectories>
-        </Compile>
-        <Link>
-            <LibraryDirectories>%(Compile.LibraryDirectories);$(MSBuildThisFileDirectory)..\ext\ikvm-native-sdk\windows\crt\lib\$(WinSdkArch)</LibraryDirectories>
-            <LibraryDirectories>%(Compile.LibraryDirectories);$(MSBuildThisFileDirectory)..\ext\ikvm-native-sdk\windows\sdk\lib\ucrt\$(WinSdkArch)</LibraryDirectories>
-            <LibraryDirectories>%(Compile.LibraryDirectories);$(MSBuildThisFileDirectory)..\ext\ikvm-native-sdk\windows\sdk\lib\um\$(WinSdkArch)</LibraryDirectories>
-        </Link>
-    </ItemDefinitionGroup>
+    <PropertyGroup Condition="!$([MSBuild]::IsOSPlatform('Windows')) And $(TargetTriple.Contains('-windows-'))">
+        <LibraryDirectories>$(LibraryDirectories);$(MSBuildThisFileDirectory)..\ext\ikvm-native-sdk\windows\crt\lib\$(WinSdkArch)</LibraryDirectories>
+        <LibraryDirectories>$(LibraryDirectories);$(MSBuildThisFileDirectory)..\ext\ikvm-native-sdk\windows\sdk\lib\ucrt\$(WinSdkArch)</LibraryDirectories>
+        <LibraryDirectories>$(LibraryDirectories);$(MSBuildThisFileDirectory)..\ext\ikvm-native-sdk\windows\sdk\lib\um\$(WinSdkArch)</LibraryDirectories>
+    </PropertyGroup>
 
-    <ItemDefinitionGroup Condition="$(TargetMachine.EndsWith('-linux-gnu')) And $(TargetMachine.StartsWith('x86_64-'))">
-        <Compile>
-            <SystemRootDirectories>%(Compile.SystemRootDirectories);$(MSBuildThisFileDirectory)..\ext\ikvm-native-sdk\linux\x86_64-unknown-linux-gnu</SystemRootDirectories>
-        </Compile>
-    </ItemDefinitionGroup>
+    <PropertyGroup Condition="$(TargetTriple.EndsWith('-linux-gnu')) And $(TargetTriple.StartsWith('x86_64-'))">
+        <SystemRootDirectories>$(SystemRootDirectories);$(MSBuildThisFileDirectory)..\ext\ikvm-native-sdk\linux\x86_64-unknown-linux-gnu</SystemRootDirectories>
+    </PropertyGroup>
 
-    <ItemDefinitionGroup Condition="$(TargetMachine.EndsWith('-linux-gnu')) And $(TargetMachine.StartsWith('aarch64-'))">
-        <Compile>
-            <SystemRootDirectories>%(Compile.SystemRootDirectories);$(MSBuildThisFileDirectory)..\ext\ikvm-native-sdk\linux\aarch64-unknown-linux-gnu</SystemRootDirectories>
-        </Compile>
-    </ItemDefinitionGroup>
+    <PropertyGroup Condition="$(TargetTriple.EndsWith('-linux-gnu')) And $(TargetTriple.StartsWith('aarch64-'))">
+        <SystemRootDirectories>$(SystemRootDirectories);$(MSBuildThisFileDirectory)..\ext\ikvm-native-sdk\linux\aarch64-unknown-linux-gnu</SystemRootDirectories>
+    </PropertyGroup>
 
-    <ItemDefinitionGroup Condition="$(TargetMachine.EndsWith('-linux-gnueabihf')) And $(TargetMachine.StartsWith('arm-'))">
-        <Compile>
-            <SystemRootDirectories>%(Compile.SystemRootDirectories);$(MSBuildThisFileDirectory)..\ext\ikvm-native-sdk\linux\arm-unknown-linux-gnueabihf</SystemRootDirectories>
-        </Compile>
-    </ItemDefinitionGroup>
+    <PropertyGroup Condition="$(TargetTriple.EndsWith('-linux-gnueabihf')) And $(TargetTriple.StartsWith('arm-'))">
+        <SystemRootDirectories>$(SystemRootDirectories);$(MSBuildThisFileDirectory)..\ext\ikvm-native-sdk\linux\arm-unknown-linux-gnueabihf</SystemRootDirectories>
+    </PropertyGroup>
 
-    <ItemDefinitionGroup Condition="$(TargetMachine.EndsWith('-linux-musl')) And $(TargetMachine.StartsWith('x86_64-'))">
-        <Compile>
-            <SystemRootDirectories>%(Compile.SystemRootDirectories);$(MSBuildThisFileDirectory)..\ext\ikvm-native-sdk\linux\x86_64-unknown-linux-musl</SystemRootDirectories>
-        </Compile>
-    </ItemDefinitionGroup>
+    <PropertyGroup Condition="$(TargetTriple.EndsWith('-linux-musl')) And $(TargetTriple.StartsWith('x86_64-'))">
+        <SystemRootDirectories>$(SystemRootDirectories);$(MSBuildThisFileDirectory)..\ext\ikvm-native-sdk\linux\x86_64-unknown-linux-musl</SystemRootDirectories>
+    </PropertyGroup>
 
-    <ItemDefinitionGroup Condition="$(TargetMachine.EndsWith('-linux-musl')) And $(TargetMachine.StartsWith('aarch64-'))">
-        <Compile>
-            <SystemRootDirectories>%(Compile.SystemRootDirectories);$(MSBuildThisFileDirectory)..\ext\ikvm-native-sdk\linux\aarch64-unknown-linux-musl</SystemRootDirectories>
-        </Compile>
-    </ItemDefinitionGroup>
+    <PropertyGroup Condition="$(TargetTriple.EndsWith('-linux-musl')) And $(TargetTriple.StartsWith('aarch64-'))">
+        <SystemRootDirectories>$(SystemRootDirectories);$(MSBuildThisFileDirectory)..\ext\ikvm-native-sdk\linux\aarch64-unknown-linux-musl</SystemRootDirectories>
+    </PropertyGroup>
 
-    <ItemDefinitionGroup Condition="$(TargetMachine.EndsWith('-linux-musleabihf')) And $(TargetMachine.StartsWith('arm-'))">
-        <Compile>
-            <SystemRootDirectories>%(Compile.SystemRootDirectories);$(MSBuildThisFileDirectory)..\ext\ikvm-native-sdk\linux\arm-unknown-linux-musleabihf</SystemRootDirectories>
-        </Compile>
-    </ItemDefinitionGroup>
+    <PropertyGroup Condition="$(TargetTriple.EndsWith('-linux-musleabihf')) And $(TargetTriple.StartsWith('arm-'))">
+        <SystemRootDirectories>$(SystemRootDirectories);$(MSBuildThisFileDirectory)..\ext\ikvm-native-sdk\linux\arm-unknown-linux-musleabihf</SystemRootDirectories>
+    </PropertyGroup>
 
-    <ItemDefinitionGroup Condition="!$([MSBuild]::IsOSPlatform('OSX')) And $(TargetMachine.Contains('-apple-'))">
-        <Compile>
-            <IncludeSystemRootDirectories>%(Compile.IncludeSystemRootDirectories);$(MSBuildThisFileDirectory)..\ext\ikvm-native-sdk\macosx</IncludeSystemRootDirectories>
-        </Compile>
-        <Link>
-            <LibraryDirectories>%(Link.LibraryDirectories);$(MSBuildThisFileDirectory)..\ext\ikvm-native-sdk\macosx\usr\lib</LibraryDirectories>
-        </Link>
-    </ItemDefinitionGroup>
-    
-    <ItemDefinitionGroup Condition="$(TargetMachine.Contains('-linux-'))">
-        <Compile>
-            <PositionIndependentCode>true</PositionIndependentCode>
-            <AdditionalOptions>%(Compile.AdditionalOptions);-nostdlib</AdditionalOptions>
-        </Compile>
-        <Link>
-            <AdditionalOptions>%(Link.AdditionalOptions);-nostdinc</AdditionalOptions>
-        </Link>
-    </ItemDefinitionGroup>
+    <PropertyGroup Condition="!$([MSBuild]::IsOSPlatform('OSX')) And $(TargetTriple.Contains('-apple-'))">
+        <IncludeSystemRootDirectories>$(IncludeSystemRootDirectories);$(MSBuildThisFileDirectory)..\ext\ikvm-native-sdk\macosx</IncludeSystemRootDirectories>
+    </PropertyGroup>
 
-    <ItemDefinitionGroup Condition="$(TargetMachine.Contains('-apple-'))">
-        <Compile>
-            <DebugSymbols>false</DebugSymbols>
-        </Compile>
-        <Link>
-            <Dependencies>%(Link.Dependencies);c++</Dependencies>
-            <AdditionalOptions>%(Link.AdditionalOptions);-t;-mmacosx-version-min=10.15</AdditionalOptions>
-        </Link>
-    </ItemDefinitionGroup>
+    <PropertyGroup Condition="!$([MSBuild]::IsOSPlatform('OSX')) And $(TargetTriple.Contains('-apple-'))">
+        <LibraryDirectories>$(LibraryDirectories);$(MSBuildThisFileDirectory)..\ext\ikvm-native-sdk\macosx\usr\lib</LibraryDirectories>
+    </PropertyGroup>
 
-    <!-- standard OpenJDK headers -->
-    <ItemDefinitionGroup>
-        <Compile>
-            <IncludeDirectories>%(Compile.IncludeDirectories);$(OpenJdkDir)jdk\src\share\javavm\export</IncludeDirectories>
-            <IncludeDirectories>%(Compile.IncludeDirectories);$(OpenJdkDir)jdk\src\$(OpenJdkTargetOsApiDir)\javavm\export</IncludeDirectories>
-        </Compile>
-    </ItemDefinitionGroup>
+    <PropertyGroup Condition="$(TargetTriple.Contains('-linux-'))">
+        <PreprocessorDefinitions>$(PreprocessorDefinitions);LINUX;__linux__</PreprocessorDefinitions>
+        <PositionIndependentCode>true</PositionIndependentCode>
+        <AdditionalCompileOptions>$(AdditionalCompileOptions);-nostdlib</AdditionalCompileOptions>
+    </PropertyGroup>
+
+    <PropertyGroup Condition="$(TargetTriple.Contains('-apple-'))">
+        <PreprocessorDefinitions>$(PreprocessorDefinitions);MACOSX;</PreprocessorDefinitions>
+        <DebugSymbols>false</DebugSymbols>
+        <Dependencies>$(Dependencies);c++</Dependencies>
+        <AdditionalLinkOptions>$(AdditionalLinkOptions);-t;-mmacosx-version-min=10.15</AdditionalLinkOptions>
+    </PropertyGroup>
+
+    <!-- common preprocessor declarations -->
+    <PropertyGroup Condition=" '$(TargetTriple)' != '' ">
+        <PreprocessorDefinitions Condition=" '$(DebugSymbols)' == 'true' ">$(PreprocessorDefinitions);_DEBUG</PreprocessorDefinitions>
+        <PreprocessorDefinitions Condition="$(TargetTriple.StartsWith('x86_64-'))">$(PreprocessorDefinitions);_AMD64_;amd64</PreprocessorDefinitions>
+        <PreprocessorDefinitions Condition="$(TargetTriple.StartsWith('i686-'))">$(PreprocessorDefinitions);_X86_;x86</PreprocessorDefinitions>
+        <PreprocessorDefinitions Condition="$(TargetTriple.StartsWith('aarch64-')) Or $(TargetTriple.StartsWith('arm64-'))">$(PreprocessorDefinitions);_ARM64_;arm64</PreprocessorDefinitions>
+        <PreprocessorDefinitions Condition="$(TargetTriple.StartsWith('thumbv7-')) Or $(TargetTriple.StartsWith('arm-'))">$(PreprocessorDefinitions);_ARM_;arm</PreprocessorDefinitions>
+    </PropertyGroup>
 
 </Project>

@@ -55,7 +55,7 @@
     <Target Name="GetClangProjectReferenceItems" DependsOnTargets="GetClangProjectReferences" Inputs="@(_ClangProjectReference)" Outputs="@(_ClangProjectReference->'%(Identity)\%(_Index)\null')" Condition=" '$(DesignTimeBuild)' != 'true' And '@(_ClangProjectReference)' != '' ">
         <ItemGroup>
             <_ClangProjectReferencesToTarget Include="@(_ClangProjectReference)">
-                <Properties>%(_ClangProjectReference.SetConfiguration);%(_ClangProjectReference.SetPlatform);TargetMachine=%(_ClangProjectReference.TargetMachine)</Properties>
+                <Properties>%(_ClangProjectReference.SetConfiguration);%(_ClangProjectReference.SetPlatform);TargetIdentifier=%(_ClangProjectReference.TargetIdentifier)</Properties>
             </_ClangProjectReferencesToTarget>
         </ItemGroup>
         <MSBuild Projects="@(_ClangProjectReferencesToTarget)" Targets="Build" BuildInParallel="False" RemoveProperties="$(_GlobalPropertiesToRemoveFromProjectReferences);TargetFramework;RuntimeIdentifier" />

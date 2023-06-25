@@ -16,61 +16,61 @@
     </ItemGroup>
 
     <ItemGroup>
-        <RidToTargetMachineMap Include="win7-x64" TargetMachine="x86_64-pc-windows-msvc" />
-        <RidToTargetMachineMap Include="win7-x86" TargetMachine="i686-pc-windows-msvc" />
-        <RidToTargetMachineMap Include="win10-arm64" TargetMachine="aarch64-pc-windows-msvc" />
-        <RidToTargetMachineMap Include="linux-x64" TargetMachine="x86_64-unknown-linux-gnu" />
-        <RidToTargetMachineMap Include="linux-arm64" TargetMachine="aarch64-unknown-linux-gnu" />
-        <RidToTargetMachineMap Include="linux-arm" TargetMachine="arm-unknown-linux-gnueabihf" />
-        <RidToTargetMachineMap Include="linux-musl-x64" TargetMachine="x86_64-unknown-linux-musl" />
-        <RidToTargetMachineMap Include="linux-musl-arm64" TargetMachine="aarch64-unknown-linux-musl" />
-        <RidToTargetMachineMap Include="linux-musl-arm" TargetMachine="arm-unknown-linux-musleabihf" />
-        <RidToTargetMachineMap Include="osx-x64" TargetMachine="x86_64-apple-macosx" />
-        <RidToTargetMachineMap Include="osx-arm64" TargetMachine="arm64-apple-macosx" />
+        <RidToTargetMachineMap Include="win7-x64" TargetIdentifier="x86_64-pc-windows-msvc" />
+        <RidToTargetMachineMap Include="win7-x86" TargetIdentifier="i686-pc-windows-msvc" />
+        <RidToTargetMachineMap Include="win10-arm64" TargetIdentifier="aarch64-pc-windows-msvc" />
+        <RidToTargetMachineMap Include="linux-x64" TargetIdentifier="x86_64-unknown-linux-gnu" />
+        <RidToTargetMachineMap Include="linux-arm64" TargetIdentifier="aarch64-unknown-linux-gnu" />
+        <RidToTargetMachineMap Include="linux-arm" TargetIdentifier="arm-unknown-linux-gnueabihf" />
+        <RidToTargetMachineMap Include="linux-musl-x64" TargetIdentifier="x86_64-unknown-linux-musl" />
+        <RidToTargetMachineMap Include="linux-musl-arm64" TargetIdentifier="aarch64-unknown-linux-musl" />
+        <RidToTargetMachineMap Include="linux-musl-arm" TargetIdentifier="arm-unknown-linux-musleabihf" />
+        <RidToTargetMachineMap Include="osx-x64" TargetIdentifier="x86_64-apple-macosx" />
+        <RidToTargetMachineMap Include="osx-arm64" TargetIdentifier="arm64-apple-macosx" />
     </ItemGroup>
 
     <Target Name="GetClangProjectReferencesByRuntime" BeforeTargets="AssignClangProjectConfiguration">
         <ItemGroup>
             <ClangProjectReference Include="@(RidToTargetMachineMap->'$(MSBuildThisFileDirectory)src\libikvm\libikvm.clangproj')" Condition="$(_EnabledRuntimes.Contains(';%(Identity);'))">
-                <TargetMachine>%(TargetMachine)</TargetMachine>
+                <TargetIdentifier>%(TargetIdentifier)</TargetIdentifier>
                 <RuntimeIdentifier>%(Identity)</RuntimeIdentifier>
             </ClangProjectReference>
         </ItemGroup>
         <ItemGroup>
             <ClangProjectReference Include="@(RidToTargetMachineMap->'$(MSBuildThisFileDirectory)src\libjvm\libjvm.clangproj')" Condition="$(_EnabledRuntimes.Contains(';%(Identity);'))">
-                <TargetMachine>%(TargetMachine)</TargetMachine>
+                <TargetIdentifier>%(TargetIdentifier)</TargetIdentifier>
                 <RuntimeIdentifier>%(Identity)</RuntimeIdentifier>
             </ClangProjectReference>
         </ItemGroup>
         <ItemGroup>
             <ClangProjectReference Include="@(RidToTargetMachineMap->'$(MSBuildThisFileDirectory)src\libsunec\libsunec.clangproj')" Condition="$(_EnabledRuntimes.Contains(';%(Identity);'))">
-                <TargetMachine>%(TargetMachine)</TargetMachine>
+                <TargetIdentifier>%(TargetIdentifier)</TargetIdentifier>
                 <RuntimeIdentifier>%(Identity)</RuntimeIdentifier>
             </ClangProjectReference>
         </ItemGroup>
         <ItemGroup>
             <ClangProjectReference Include="@(RidToTargetMachineMap->'$(MSBuildThisFileDirectory)src\libj2pkcs11\libj2pkcs11.clangproj')" Condition="$(_EnabledRuntimes.Contains(';%(Identity);'))">
-                <TargetMachine>%(TargetMachine)</TargetMachine>
+                <TargetIdentifier>%(TargetIdentifier)</TargetIdentifier>
                 <RuntimeIdentifier>%(Identity)</RuntimeIdentifier>
             </ClangProjectReference>
         </ItemGroup>
         <ItemGroup>
             <ClangProjectReference Include="$(MSBuildThisFileDirectory)src\libsunmscapi\libsunmscapi.clangproj" Condition="$(_EnabledRuntimes.Contains(';win7-x64;'))">
-                <TargetMachine>x86_64-pc-windows-msvc</TargetMachine>
+                <TargetIdentifier>x86_64-pc-windows-msvc</TargetIdentifier>
                 <RuntimeIdentifier>win7-x64</RuntimeIdentifier>
             </ClangProjectReference>
             <ClangProjectReference Include="$(MSBuildThisFileDirectory)src\libsunmscapi\libsunmscapi.clangproj" Condition="$(_EnabledRuntimes.Contains(';win7-x86;'))">
-                <TargetMachine>i686-pc-windows-msvc</TargetMachine>
+                <TargetIdentifier>i686-pc-windows-msvc</TargetIdentifier>
                 <RuntimeIdentifier>win7-x86</RuntimeIdentifier>
             </ClangProjectReference>
             <ClangProjectReference Include="$(MSBuildThisFileDirectory)src\libsunmscapi\libsunmscapi.clangproj" Condition="$(_EnabledRuntimes.Contains(';win10-arm64;'))">
-                <TargetMachine>aarch64-pc-windows-msvc</TargetMachine>
+                <TargetIdentifier>aarch64-pc-windows-msvc</TargetIdentifier>
                 <RuntimeIdentifier>win10-arm64</RuntimeIdentifier>
             </ClangProjectReference>
         </ItemGroup>
         <!--<ItemGroup>
             <ClangProjectReference Include="@(RidToTargetMachineMap->'$(MSBuildThisFileDirectory)src\libunpack\libunpack.clangproj')" Condition="$(_EnabledRuntimes.Contains(';%(Identity);'))">
-                <TargetMachine>%(TargetMachine)</TargetMachine>
+                <TargetIdentifier>%(TargetIdentifier)</TargetIdentifier>
                 <RuntimeIdentifier>%(Identity)</RuntimeIdentifier>
             </ClangProjectReference>
         </ItemGroup>-->
