@@ -23,10 +23,13 @@
 */
 
 using System.Collections.Generic;
+using System.Reflection;
 using System.Runtime.InteropServices;
 using System.Text;
 
 using IKVM.ByteCode.Text;
+using IKVM.Runtime.Accessors.Ikvm.Internal;
+using IKVM.Runtime.Accessors.Java.Lang;
 
 namespace IKVM.Runtime.JNI
 {
@@ -40,11 +43,27 @@ namespace IKVM.Runtime.JNI
         delegate int JNI_GetCreatedJavaVMs(JavaVM** vmBuf, jsize bufLen, jsize* nVMs);
         delegate int JNI_CreateJavaVM(JavaVM** p_vm, void** p_env, void* vm_args);
 
+        /// <summary>
+        /// Native methods available in libjvm.
+        /// </summary>
+        static class Native
+        {
+
+            [DllImport("jvm")]
+            public static extern int Set_JNI_GetDefaultJavaVMInitArgs(JNI_GetDefaultJavaVMInitArgs func);
+
+            [DllImport("jvm")]
+            public static extern int Set_JNI_GetCreatedJavaVMs(JNI_GetCreatedJavaVMs func);
+
+            [DllImport("jvm")]
+            public static extern int Set_JNI_CreateJavaVM(JNI_CreateJavaVM func);
+
+        }
+
         static readonly MUTF8Encoding MUTF8 = MUTF8Encoding.GetMUTF8(52);
 
         internal static volatile bool jvmCreated;
         internal static volatile bool jvmDestroyed;
-        internal const string METHOD_PTR_FIELD_PREFIX = "__<jniptr>";
 
 #if NETFRAMEWORK
         static readonly Encoding platformEncoding = Encoding.Default;
@@ -52,24 +71,27 @@ namespace IKVM.Runtime.JNI
         static readonly Encoding platformEncoding = CodePagesEncodingProvider.Instance.GetEncoding(0);
 #endif
 
+#if FIRST_PASS == false
+
+        static CallerIDAccessor callerIDAccessor;
+        static SystemAccessor systemAccessor;
+
+        static CallerIDAccessor CallerIDAccessor => JVM.BaseAccessors.Get(ref callerIDAccessor);
+
+        static SystemAccessor SystemAccessor => JVM.BaseAccessors.Get(ref systemAccessor);
+
         /// <summary>
         /// Initializes the static instance.
         /// </summary>
         static JNIVM()
         {
-            Set_JNI_GetDefaultJavaVMInitArgs(GetDefaultJavaVMInitArgs);
-            Set_JNI_GetCreatedJavaVMs(GetCreatedJavaVMs);
-            Set_JNI_CreateJavaVM(CreateJavaVM);
+            SystemAccessor.InvokeLoadLibrary("jvm", CallerIDAccessor.InvokeCreate(SystemAccessor.Type.TypeHandle));
+            Native.Set_JNI_GetDefaultJavaVMInitArgs(GetDefaultJavaVMInitArgs);
+            Native.Set_JNI_GetCreatedJavaVMs(GetCreatedJavaVMs);
+            Native.Set_JNI_CreateJavaVM(CreateJavaVM);
         }
 
-        [DllImport("jvm")]
-        static extern int Set_JNI_GetDefaultJavaVMInitArgs(JNI_GetDefaultJavaVMInitArgs func);
-
-        [DllImport("jvm")]
-        static extern int Set_JNI_GetCreatedJavaVMs(JNI_GetCreatedJavaVMs func);
-
-        [DllImport("jvm")]
-        static extern int Set_JNI_CreateJavaVM(JNI_CreateJavaVM func);
+#endif
 
         internal static bool IsSupportedJniVersion(int version)
         {

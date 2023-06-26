@@ -25,6 +25,7 @@ using System;
 using System.Collections.Generic;
 using System.Diagnostics;
 using System.Reflection;
+using System.Runtime.CompilerServices;
 using System.Runtime.InteropServices;
 
 using IKVM.ByteCode.Text;
@@ -64,6 +65,8 @@ namespace IKVM.Runtime.JNI
     unsafe partial struct JNIEnv
     {
 
+        internal const string METHOD_PTR_FIELD_PREFIX = "__<jniptr>";
+
         static readonly MUTF8Encoding MUTF8 = MUTF8Encoding.GetMUTF8(52);
 
         internal const int JNI_OK = 0;
@@ -95,8 +98,7 @@ namespace IKVM.Runtime.JNI
         /// </summary>
         static JNIEnv()
         {
-            // we set the field here so that IKVM.Runtime.dll doesn't have to load us if we're not otherwise needed
-            IKVM.Java.Externs.java.lang.SecurityManager.jniAssembly = typeof(JNIEnv).Assembly;
+            RuntimeHelpers.RunClassConstructor(typeof(JNIVM).TypeHandle);
         }
 
         internal ManagedJNIEnv GetManagedJNIEnv()
@@ -2312,7 +2314,7 @@ namespace IKVM.Runtime.JNI
 
                     // don't allow dotted names!
                     if (methodSig.IndexOf('.') < 0)
-                        fi = wrapper.TypeAsTBD.GetField(JNIVM.METHOD_PTR_FIELD_PREFIX + methodName + methodSig, BindingFlags.Static | BindingFlags.NonPublic);
+                        fi = wrapper.TypeAsTBD.GetField(METHOD_PTR_FIELD_PREFIX + methodName + methodSig, BindingFlags.Static | BindingFlags.NonPublic);
 
                     if (fi == null)
                     {
@@ -2346,9 +2348,9 @@ namespace IKVM.Runtime.JNI
                 foreach (FieldInfo fi in wrapper.TypeAsTBD.GetFields(BindingFlags.Static | BindingFlags.NonPublic))
                 {
                     string name = fi.Name;
-                    if (name.StartsWith(JNIVM.METHOD_PTR_FIELD_PREFIX))
+                    if (name.StartsWith(METHOD_PTR_FIELD_PREFIX))
                     {
-                        Tracer.Info(Tracer.Jni, "Unregistering native method: {0}.{1}", wrapper.Name, name.Substring(JNIVM.METHOD_PTR_FIELD_PREFIX.Length));
+                        Tracer.Info(Tracer.Jni, "Unregistering native method: {0}.{1}", wrapper.Name, name.Substring(METHOD_PTR_FIELD_PREFIX.Length));
                         fi.SetValue(null, IntPtr.Zero);
                     }
                 }
