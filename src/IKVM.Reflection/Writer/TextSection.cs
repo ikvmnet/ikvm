@@ -180,6 +180,7 @@ namespace IKVM.Reflection.Writer
 					IMAGE_DEBUG_DIRECTORY idd = new IMAGE_DEBUG_DIRECTORY();
 					return (uint)SymbolSupport.GetDebugInfo(moduleBuilder.symbolWriter, ref idd).Length;
 				}
+
 				return 0;
 			}
 		}

@@ -262,12 +262,17 @@ namespace IKVM.Reflection.Emit
             this.asm = asm;
             this.moduleName = moduleName;
             this.fileName = fileName;
+
+#if NETFRAMEWORK
+
             if (emitSymbolInfo)
             {
                 symbolWriter = SymbolSupport.CreateSymbolWriterFor(this);
                 if (universe.Deterministic && !symbolWriter.IsDeterministic)
                     throw new NotSupportedException();
             }
+
+#endif
 
             if (!universe.Deterministic)
             {
