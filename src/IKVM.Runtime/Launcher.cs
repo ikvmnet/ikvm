@@ -448,6 +448,9 @@ namespace IKVM.Runtime
                         arg.StartsWith("-Xmn".AsSpan()) ||
                         arg.StartsWith("-Xss".AsSpan()) ||
                         arg.StartsWith("-XX:".AsSpan()) ||
+                        arg.StartsWith("-mn".AsSpan()) ||
+                        arg.StartsWith("-ms".AsSpan()) ||
+                        arg.StartsWith("-mx".AsSpan()) ||
                         ArgEquals(arg, "-Xmixed") ||
                         ArgEquals(arg, "-Xint") ||
                         ArgEquals(arg, "-Xincgc") ||
