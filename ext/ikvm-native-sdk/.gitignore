@@ -1,3 +1,4 @@
+*.tar.gz
 windows/
 linux/
 macosx/
