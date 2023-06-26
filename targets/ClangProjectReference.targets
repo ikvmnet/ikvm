@@ -97,7 +97,6 @@
 
     <PropertyGroup>
         <GetClangProjectReferenceItemsBeforePackageFilesDependsOn>
-            TargetIdentifier
             AssignClangProjectConfiguration;
             GetClangProjectReferences;
             GetClangProjectReferenceItems;
