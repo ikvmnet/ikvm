@@ -7,7 +7,7 @@
     <PropertyGroup>
         <TargetIdentifiers>win7-x64;win7-x86;win10-arm64</TargetIdentifiers>
         <TargetName>sunmscapi</TargetName>
-        <LanguageStandard>c++98</LanguageStandard>
+        <LanguageStandard>c++11</LanguageStandard>
         <Dependencies>$(Dependencies);crypt32;advapi32;ncrypt</Dependencies>
     </PropertyGroup>
     <ItemGroup>
