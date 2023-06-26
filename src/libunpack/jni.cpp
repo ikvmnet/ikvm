@@ -1,3 +1,6 @@
+// This file was forked for IKVM, due to the 'return false' implicit conversion being broken on C++11, and MSCRT requiring C++11.
+
+
 /*
  * Copyright (c) 2003, 2014, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
