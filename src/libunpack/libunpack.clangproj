@@ -9,13 +9,15 @@
         <LanguageStandard>c++11</LanguageStandard>
         <IncludeDirectories>$(IncludeDirectories);$(OpenJdkDir)jdk\src\share\native\com\sun\java\util\jar\pack</IncludeDirectories>
         <PreprocessorDefinitions>$(PreprocessorDefinitions);NO_ZLIB;UNPACK_JNI;FULL</PreprocessorDefinitions>
+        <AdditionalCompileOptions>$(AdditionalCompileOptions);-Wbool-conversion</AdditionalCompileOptions>
     </PropertyGroup>
     <ItemGroup>
         <ProjectReference Include="..\libjvm\libjvm.clangproj" />
         <ProjectReference Include="..\libjava\libjava.clangproj" />
     </ItemGroup>
     <ItemGroup>
-        <Compile Include="$(OpenJdkDir)jdk\src\share\native\com\sun\java\util\jar\pack\**\*.cpp" Exclude="$(OpenJdkDir)jdk\src\share\native\com\sun\java\util\jar\pack\main.cpp" />
+        <Compile Include="$(OpenJdkDir)jdk\src\share\native\com\sun\java\util\jar\pack\**\*.cpp" Exclude="$(OpenJdkDir)jdk\src\share\native\com\sun\java\util\jar\pack\main.cpp;$(OpenJdkDir)jdk\src\share\native\com\sun\java\util\jar\pack\jni.cpp" />
+        <Compile Include="**\*.cpp" />
     </ItemGroup>
     <Import Sdk="IKVM.Clang.Sdk" Project="Sdk.targets" />
     <Import Project="$(MSBuildThisFileDirectory)..\..\targets\openjdk.lib.targets" />

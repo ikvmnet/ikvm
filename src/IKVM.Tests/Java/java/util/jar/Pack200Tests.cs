@@ -16,7 +16,7 @@ namespace IKVM.Tests.Java.java.util.jar
     {
 
         [TestMethod]
-        public void CanPackJar()
+        public void CanPackAndUnpack()
         {
             var dir = Paths.get(System.IO.Path.GetTempPath(), Guid.NewGuid().ToString());
             Files.createDirectory(dir);
