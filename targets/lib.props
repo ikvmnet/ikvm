@@ -97,6 +97,7 @@
         <PreprocessorDefinitions>$(PreprocessorDefinitions);LINUX;__linux__</PreprocessorDefinitions>
         <PositionIndependentCode>true</PositionIndependentCode>
         <AdditionalCompileOptions>$(AdditionalCompileOptions);-nostdlib</AdditionalCompileOptions>
+        <AdditionalLinkOptions>$(AdditionalLinkOptions);-Wl,-rpath,'$ORIGIN';-Wl,--disable-new-dtags</AdditionalLinkOptions>
     </PropertyGroup>
 
     <PropertyGroup Condition="$(TargetTriple.Contains('-apple-'))">

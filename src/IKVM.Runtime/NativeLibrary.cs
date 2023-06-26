@@ -12,13 +12,15 @@ namespace IKVM.Runtime
 
 #if NETFRAMEWORK
 
+        const int LOAD_LIBRARY_SEARCH_DLL_LOAD_DIR = 0x00000100;
+
         /// <summary>
         /// Invokes the Windows LoadLibrary function.
         /// </summary>
         /// <param name="path"></param>
         /// <returns></returns>
-        [DllImport("kernel32.dll", EntryPoint = "LoadLibrary", SetLastError = true)]
-        static extern nint LoadLibrary(string path);
+        [DllImport("kernel32.dll", EntryPoint = "LoadLibraryEx", SetLastError = true)]
+        static extern nint LoadLibraryEx(string path, nint hFile, int dwFlags);
 
         /// <summary>
         /// Invokes the Windows FreeLibrary function.
@@ -103,11 +105,11 @@ namespace IKVM.Runtime
         {
 #if NETFRAMEWORK
             if (RuntimeUtil.IsWindows)
-                return LoadLibrary(path);
+                return LoadLibraryEx(path, 0, LOAD_LIBRARY_SEARCH_DLL_LOAD_DIR);
             else
                 return dlopen(path, RTLD_NOW | RTLD_GLOBAL);
 #else
-            return System.Runtime.InteropServices.NativeLibrary.TryLoad(path, typeof(NativeLibrary).Assembly, null, out var h) ? h : 0;
+            return System.Runtime.InteropServices.NativeLibrary.TryLoad(path, typeof(NativeLibrary).Assembly, DllImportSearchPath.UseDllDirectoryForDependencies, out var h) ? h : 0;
 #endif
         }
 

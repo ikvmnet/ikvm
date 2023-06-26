@@ -11,7 +11,7 @@
     </PropertyGroup>
     <ItemGroup>
         <Compile Include="**\*.c" LanguageStandard="c99" />
-        <Compile Include="**\*.cpp" LanguageStandard="c++98" />
+        <Compile Include="**\*.cpp" LanguageStandard="c++11" />
     </ItemGroup>
     <ItemGroup>
         <Header Include="$(OpenJdkDir)jdk\src\share\javavm\export\**\*.h">
