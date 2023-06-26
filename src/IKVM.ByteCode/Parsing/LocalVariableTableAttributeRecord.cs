@@ -1,9 +1,7 @@
 ﻿namespace IKVM.ByteCode.Parsing
 {
-
     internal sealed record LocalVariableTableAttributeRecord(LocalVariableTableAttributeItemRecord[] Items) : AttributeRecord
     {
-
         public static bool TryReadLocalVariableTableAttribute(ref ClassFormatReader reader, out AttributeRecord attribute)
         {
             attribute = null;
@@ -14,24 +12,36 @@
             var items = new LocalVariableTableAttributeItemRecord[length];
             for (int i = 0; i < length; i++)
             {
-                if (reader.TryReadU2(out ushort codeOffset) == false)
-                    return false;
-                if (reader.TryReadU2(out ushort codeLength) == false)
-                    return false;
-                if (reader.TryReadU2(out ushort nameIndex) == false)
-                    return false;
-                if (reader.TryReadU2(out ushort descriptorIndex) == false)
-                    return false;
-                if (reader.TryReadU2(out ushort index) == false)
+                if (LocalVariableTableAttributeItemRecord.TryRead(ref reader, out var j) == false)
                     return false;
 
-                items[i] = new LocalVariableTableAttributeItemRecord(codeOffset, codeLength, nameIndex, descriptorIndex, index);
+                items[i] = j;
             }
 
             attribute = new LocalVariableTableAttributeRecord(items);
             return true;
         }
 
-    }
+        public override int GetSize()
+        {
+            var size = sizeof(ushort);
 
+            foreach (var item in Items)
+                size += item.GetSize();
+
+            return size;
+        }
+
+        public override bool TryWrite(ref ClassFormatWriter writer)
+        {
+            if (writer.TryWriteU2((ushort)Items.Length) == false)
+                return false;
+
+            foreach (var item in Items)
+                if (item.TryWrite(ref writer) == false)
+                    return false;
+
+            return true;
+        }
+    }
 }

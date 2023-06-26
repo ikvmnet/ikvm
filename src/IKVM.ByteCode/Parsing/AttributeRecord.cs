@@ -1,6 +1,5 @@
-﻿using System.Buffers;
-
-using IKVM.ByteCode.Reading;
+﻿using IKVM.ByteCode.Reading;
+using System.Buffers;
 
 namespace IKVM.ByteCode.Parsing
 {
@@ -45,29 +44,29 @@ namespace IKVM.ByteCode.Parsing
         /// <exception cref="ByteCodeException"></exception>
         public static bool TryReadAttribute(string name, ref ClassFormatReader reader, out AttributeRecord attribute) => name switch
         {
-            "ConstantValue" => ConstantValueAttributeRecord.TryReadConstantValueAttribute(ref reader, out attribute),
-            "Code" => CodeAttributeRecord.TryReadCodeAttribute(ref reader, out attribute),
+            ConstantValueAttributeRecord.Name => ConstantValueAttributeRecord.TryReadConstantValueAttribute(ref reader, out attribute),
+            CodeAttributeRecord.Name => CodeAttributeRecord.TryReadCodeAttribute(ref reader, out attribute),
             "StackMapTable" => StackMapTableAttributeRecord.TryRead(ref reader, out attribute),
-            "Exceptions" => ExceptionsAttributeRecord.TryReadExceptionsAttribute(ref reader, out attribute),
-            "InnerClasses" => InnerClassesAttributeRecord.TryReadInnerClassesAttribute(ref reader, out attribute),
+            ExceptionsAttributeRecord.Name => ExceptionsAttributeRecord.TryReadExceptionsAttribute(ref reader, out attribute),
+            InnerClassesAttributeRecord.Name => InnerClassesAttributeRecord.TryReadInnerClassesAttribute(ref reader, out attribute),
             "EnclosingMethod" => EnclosingMethodAttributeRecord.TryReadEnclosingMethodAttribute(ref reader, out attribute),
             "Synthetic" => SyntheticAttributeRecord.TryReadSyntheticAttribute(ref reader, out attribute),
-            "Signature" => SignatureAttributeRecord.TryReadSignatureAttribute(ref reader, out attribute),
+            SignatureAttributeRecord.Name => SignatureAttributeRecord.TryReadSignatureAttribute(ref reader, out attribute),
             "SourceFile" => SourceFileAttributeRecord.TryReadSourceFileAttribute(ref reader, out attribute),
             "SourceDebugExtension" => SourceDebugExtensionAttributeRecord.TryReadSourceDebugExtensionAttribute(ref reader, out attribute),
             "LineNumberTable" => LineNumberTableAttributeRecord.TryReadLineNumberTableAttribute(ref reader, out attribute),
             "LocalVariableTable" => LocalVariableTableAttributeRecord.TryReadLocalVariableTableAttribute(ref reader, out attribute),
             "LocalVariableTypeTable" => LocalVariableTypeTableAttributeRecord.TryReadLocalVariableTypeTableAttribute(ref reader, out attribute),
-            "Deprecated" => DeprecatedAttributeRecord.TryReadDeprecatedAttribute(ref reader, out attribute),
-            "RuntimeVisibleAnnotations" => RuntimeVisibleAnnotationsAttributeRecord.TryReadRuntimeVisibleAnnotationsAttribute(ref reader, out attribute),
+            DeprecatedAttributeRecord.Name => DeprecatedAttributeRecord.TryReadDeprecatedAttribute(ref reader, out attribute),
+            RuntimeVisibleAnnotationsAttributeRecord.Name => RuntimeVisibleAnnotationsAttributeRecord.TryReadRuntimeVisibleAnnotationsAttribute(ref reader, out attribute),
             "RuntimeInvisibleAnnotations" => RuntimeInvisibleAnnotationsAttributeRecord.TryReadRuntimeInvisibleAnnotationsAttribute(ref reader, out attribute),
             "RuntimeVisibleParameterAnnotations" => RuntimeVisibleParameterAnnotationsAttributeRecord.TryReadRuntimeVisibleParameterAnnotationsAttribute(ref reader, out attribute),
             "RuntimeInvisibleParameterAnnotations" => RuntimeInvisibleParameterAnnotationsAttributeRecord.TryReadRuntimeInvisibleParameterAnnotationsAttribute(ref reader, out attribute),
             "RuntimeVisibleTypeAnnotations" => RuntimeVisibleTypeAnnotationsAttributeRecord.TryReadRuntimeVisibleTypeAnnotationsAttribute(ref reader, out attribute),
             "RuntimeInvisibleTypeAnnotations" => RuntimeInvisibleTypeAnnotationsAttributeRecord.TryReadRuntimeInvisibleTypeAnnotationsAttribute(ref reader, out attribute),
-            "AnnotationDefault" => AnnotationDefaultAttributeRecord.TryReadAnnotationDefaultAttribute(ref reader, out attribute),
-            "BootstrapMethods" => BootstrapMethodsAttributeRecord.TryReadBootstrapMethodsAttribute(ref reader, out attribute),
-            "MethodParameters" => MethodParametersAttributeRecord.TryReadMethodParametersAttribute(ref reader, out attribute),
+            AnnotationDefaultAttributeRecord.Name => AnnotationDefaultAttributeRecord.TryReadAnnotationDefaultAttribute(ref reader, out attribute),
+            BootstrapMethodsAttributeRecord.Name => BootstrapMethodsAttributeRecord.TryReadBootstrapMethodsAttribute(ref reader, out attribute),
+            MethodParametersAttributeRecord.Name => MethodParametersAttributeRecord.TryReadMethodParametersAttribute(ref reader, out attribute),
             "Module" => ModuleAttributeRecord.TryReadModuleAttribute(ref reader, out attribute),
             "ModulePackages" => ModulePackagesAttributeRecord.TryReadModulePackagesAttribute(ref reader, out attribute),
             "ModuleMainClass" => ModuleMainClassAttributeRecord.TryReadModuleMainClassAttribute(ref reader, out attribute),
@@ -78,6 +77,9 @@ namespace IKVM.ByteCode.Parsing
             _ => UnknownAttributeRecord.TryReadCustomAttribute(ref reader, out attribute),
         };
 
+        public abstract bool TryWrite(ref ClassFormatWriter writer);
+
+        public abstract int GetSize();
     }
 
 }

@@ -1,4 +1,5 @@
-﻿using System.Runtime.CompilerServices;
+﻿using System;
+using System.Runtime.CompilerServices;
 
 #if NETCOREAPP3_1
 using System.Runtime.Intrinsics;
@@ -72,6 +73,20 @@ namespace IKVM.ByteCode.Buffers
         /// <returns>A single-precision floating point number whose bits are identical to <paramref name="value"/>.</returns>
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public static unsafe double UInt64BitsToDouble(ulong value) => Int64BitsToDouble((long)value);
+
+        /// <summary>
+        /// Converts the specified single-precision floating point number to a 32-bit unsigned integer.
+        /// </summary>
+        /// <param name="value">The number to convert.</param>
+        /// <returns>A 32-bit unsigned integer whose bits are identical to <paramref name="value"/>.</returns>
+        public static unsafe uint SingleToUInt32Bits(float value) => *((uint*)&value);
+
+        /// <summary>
+        /// Converts the specified double-precision floating point number to a 64-bit unsigned integer.
+        /// </summary>
+        /// <param name="value">The number to convert.</param>
+        /// <returns>A 64-bit unsigned integer whose bits are identical to <paramref name="value"/>.</returns>
+        public static unsafe ulong DoubleToUInt64Bits(double value) => *((ulong*)&value);
 
 #endif
 

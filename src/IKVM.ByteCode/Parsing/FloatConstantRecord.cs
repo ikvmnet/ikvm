@@ -1,13 +1,10 @@
-﻿using System;
-
-using IKVM.ByteCode.Buffers;
+﻿using IKVM.ByteCode.Buffers;
+using System;
 
 namespace IKVM.ByteCode.Parsing
 {
-
     internal sealed record FloatConstantRecord(float Value) : ConstantRecord
     {
-
         /// <summary>
         /// Parses a Float constant in the constant pool.
         /// </summary>
@@ -31,6 +28,21 @@ namespace IKVM.ByteCode.Parsing
             return true;
         }
 
-    }
+        protected override int GetConstantSize() =>
+            sizeof(uint);
 
+        protected override bool TryWriteConstant(ref ClassFormatWriter writer)
+        {
+#if NETFRAMEWORK || NETCOREAPP3_1
+            var v = RawBitConverter.SingleToUInt32Bits(Value);
+#else
+            var v = BitConverter.SingleToUInt32Bits(Value);
+#endif
+
+            if (writer.TryWriteU4(v) == false)
+                return false;
+
+            return true;
+        }
+    }
 }

@@ -3,6 +3,7 @@
 
     internal sealed record RuntimeVisibleAnnotationsAttributeRecord(AnnotationRecord[] Annotations) : AttributeRecord
     {
+        public const string Name = "RuntimeVisibleAnnotations";
 
         public static bool TryReadRuntimeVisibleAnnotationsAttribute(ref ClassFormatReader reader, out AttributeRecord attribute)
         {
@@ -24,6 +25,15 @@
             return true;
         }
 
+        public override int GetSize()
+        {
+            throw new System.NotImplementedException();
+        }
+
+        public override bool TryWrite(ref ClassFormatWriter writer)
+        {
+            throw new System.NotImplementedException();
+        }
     }
 
 }

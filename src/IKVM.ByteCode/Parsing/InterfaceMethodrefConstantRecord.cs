@@ -1,9 +1,7 @@
 ﻿namespace IKVM.ByteCode.Parsing
 {
-
     internal sealed record InterfaceMethodrefConstantRecord(ushort ClassIndex, ushort NameAndTypeIndex) : RefConstantRecord(ClassIndex, NameAndTypeIndex)
     {
-
         /// <summary>
         /// Parses a InterfaceMethodref constant in the constant pool.
         /// </summary>
@@ -23,6 +21,22 @@
             return true;
         }
 
-    }
+        protected override int GetConstantSize()
+        {
+            var size = 0;
+            size += sizeof(ushort);
+            size += sizeof(ushort);
+            return size;
+        }
 
+        protected override bool TryWriteConstant(ref ClassFormatWriter writer)
+        {
+            if (writer.TryWriteU2(ClassIndex) == false)
+                return false;
+            if (writer.TryWriteU2(NameAndTypeIndex) == false)
+                return false;
+
+            return true;
+        }
+    }
 }

@@ -1,16 +1,13 @@
 ﻿using System;
-using System.Threading;
 
 namespace IKVM.ByteCode.Reading
 {
-
     /// <summary>
     /// Base class for a reader.
     /// </summary>
     internal abstract class ReaderBase
     {
-
-        readonly ClassReader declaringClass;
+        private readonly ClassReader declaringClass;
 
         /// <summary>
         /// Initializes a new instance.
@@ -26,7 +23,6 @@ namespace IKVM.ByteCode.Reading
         /// Gets the class reader from which this entity is being read.
         /// </summary>
         public ClassReader DeclaringClass => declaringClass;
-
     }
 
     /// <summary>
@@ -35,8 +31,7 @@ namespace IKVM.ByteCode.Reading
     /// <typeparam name="TRecord"></typeparam>
     internal abstract class ReaderBase<TRecord> : ReaderBase
     {
-
-        readonly TRecord record;
+        private readonly TRecord record;
 
         /// <summary>
         /// Initializes a new instance.
@@ -44,7 +39,7 @@ namespace IKVM.ByteCode.Reading
         /// <param name="declaringClass"></param>
         /// <param name="record"></param>
         /// <exception cref="ArgumentNullException"></exception>
-        public ReaderBase(ClassReader declaringClass, TRecord record) :
+        protected ReaderBase(ClassReader declaringClass, TRecord record) :
             base(declaringClass)
         {
             this.record = record;
@@ -54,6 +49,5 @@ namespace IKVM.ByteCode.Reading
         /// Gets the underlying method being read.
         /// </summary>
         public TRecord Record => record;
-
     }
 }

@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Buffers;
 using System.Buffers.Binary;
 
 namespace IKVM.ByteCode.Parsing
@@ -81,6 +82,23 @@ namespace IKVM.ByteCode.Parsing
             return true;
         }
 
+        public bool TryWriteManyU1(ReadOnlySpan<byte> sequence)
+        {
+            foreach (var v in sequence)
+                if (TryWriteU1(v) == false)
+                    return false;
+
+            return true;
+        }
+
+        public bool TryWriteManyU2(ReadOnlySpan<ushort> sequence)
+        {
+            foreach (var v in sequence)
+                if (TryWriteU2(v) == false)
+                    return false;
+
+            return true;
+        }
     }
 
 }

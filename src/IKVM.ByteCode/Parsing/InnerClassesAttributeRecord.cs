@@ -1,8 +1,8 @@
 ﻿namespace IKVM.ByteCode.Parsing
 {
-
     internal sealed record InnerClassesAttributeRecord(InnerClassesAttributeItemRecord[] Items) : AttributeRecord
     {
+        public const string Name = "InnerClasses";
 
         public static bool TryReadInnerClassesAttribute(ref ClassFormatReader reader, out AttributeRecord attribute)
         {
@@ -14,22 +14,36 @@
             var items = new InnerClassesAttributeItemRecord[count];
             for (int i = 0; i < count; i++)
             {
-                if (reader.TryReadU2(out ushort innerClassInfoIndex) == false)
-                    return false;
-                if (reader.TryReadU2(out ushort outerClassInfoIndex) == false)
-                    return false;
-                if (reader.TryReadU2(out ushort innerNameIndex) == false)
-                    return false;
-                if (reader.TryReadU2(out ushort innerClassAccessFlags) == false)
+                if (InnerClassesAttributeItemRecord.TryRead(ref reader, out var j) == false)
                     return false;
 
-                items[i] = new InnerClassesAttributeItemRecord(innerClassInfoIndex, outerClassInfoIndex, innerNameIndex, (AccessFlag)innerClassAccessFlags);
+                items[i] = j;
             }
 
             attribute = new InnerClassesAttributeRecord(items);
             return true;
         }
 
-    }
+        public override int GetSize()
+        {
+            var size = sizeof(ushort);
 
+            foreach (var item in Items)
+                size += item.GetSize();
+
+            return size;
+        }
+
+        public override bool TryWrite(ref ClassFormatWriter writer)
+        {
+            if (writer.TryWriteU2((ushort)Items.Length) == false)
+                return false;
+
+            foreach (var item in Items)
+                if (item.TryWrite(ref writer) == false)
+                    return false;
+
+            return true;
+        }
+    }
 }

@@ -1,9 +1,7 @@
 ﻿namespace IKVM.ByteCode.Parsing
 {
-
     internal sealed record ModuleAttributeRecord(ushort NameIndex, ModuleFlag Flags, ushort VersionIndex, ModuleAttributeRequiresRecord[] Requires, ModuleAttributeExportsRecord[] Exports, ModuleAttributeOpensRecord[] Opens, ushort[] Uses, ModuleAttributeProvidesRecord[] Provides) : AttributeRecord
     {
-
         public static bool TryReadModuleAttribute(ref ClassFormatReader reader, out AttributeRecord attribute)
         {
             attribute = null;
@@ -123,6 +121,15 @@
             return true;
         }
 
+        public override int GetSize()
+        {
+            throw new System.NotImplementedException();
+        }
+
+        public override bool TryWrite(ref ClassFormatWriter writer)
+        {
+            throw new System.NotImplementedException();
+        }
     }
 
 }

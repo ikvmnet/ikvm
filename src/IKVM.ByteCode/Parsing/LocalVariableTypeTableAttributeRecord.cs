@@ -32,6 +32,15 @@
             return true;
         }
 
+        public override int GetSize()
+        {
+            throw new System.NotImplementedException();
+        }
+
+        public override bool TryWrite(ref ClassFormatWriter writer)
+        {
+            throw new System.NotImplementedException();
+        }
     }
 
 }

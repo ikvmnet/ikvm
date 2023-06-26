@@ -1,9 +1,7 @@
 ﻿namespace IKVM.ByteCode.Parsing
 {
-
     internal sealed record RecordAttributeRecord(RecordAttributeComponentRecord[] Components) : AttributeRecord
     {
-
         public static bool TryReadRecordAttribute(ref ClassFormatReader reader, out AttributeRecord attribute)
         {
             attribute = null;
@@ -14,20 +12,36 @@
             var components = new RecordAttributeComponentRecord[componentsCount];
             for (int i = 0; i < componentsCount; i++)
             {
-                if (reader.TryReadU2(out ushort nameIndex) == false)
-                    return false;
-                if (reader.TryReadU2(out ushort descriptorIndex) == false)
-                    return false;
-                if (ClassRecord.TryReadAttributes(ref reader, out var attributes) == false)
+                if (RecordAttributeComponentRecord.TryRead(ref reader, out var j) == false)
                     return false;
 
-                components[i] = new RecordAttributeComponentRecord(nameIndex, descriptorIndex, attributes);
+                components[i] = j;
             }
 
             attribute = new RecordAttributeRecord(components);
             return true;
         }
 
-    }
+        public override int GetSize()
+        {
+            var size = sizeof(ushort);
 
+            foreach (var component in Components)
+                size += component.GetSize();
+
+            return size;
+        }
+
+        public override bool TryWrite(ref ClassFormatWriter writer)
+        {
+            if (writer.TryWriteU2((ushort)Components.Length) == false)
+                return false;
+
+            foreach (var component in Components)
+                if (component.TryWrite(ref writer) == false)
+                    return false;
+
+            return true;
+        }
+    }
 }
