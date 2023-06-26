@@ -105,6 +105,7 @@
         <DebugSymbols>false</DebugSymbols>
         <Dependencies>$(Dependencies);c++</Dependencies>
         <AdditionalLinkOptions>$(AdditionalLinkOptions);-t;-mmacosx-version-min=10.15</AdditionalLinkOptions>
+        <AdditionalLinkOptions>$(AdditionalLinkOptions);-Wl,-rpath,'@loader_path'</AdditionalLinkOptions>
     </PropertyGroup>
 
     <!-- common preprocessor declarations -->
