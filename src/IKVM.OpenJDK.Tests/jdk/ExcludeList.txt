@@ -3323,6 +3323,17 @@ javax/net/ssl/ciphersuites/DisabledAlgorithms.java                              
 tools/pack200/DefaultTimeZoneTest.java                                                                                  generic-all
 tools/pack200/Pack200Props.java                                                                                         generic-all
 tools/pack200/Pack200Test.java                                                                                          generic-all
+tools/pack200/UnpackerMemoryTest.java                                                                                   generic-all
+tools/pack200/TimeStamp.java                                                                                            generic-all
+tools/pack200/TestExceptions.java                                                                                       generic-all
+tools/pack200/T7007157.java                                                                                             generic-all
+tools/pack200/RepackTest.java                                                                                           generic-all
+tools/pack200/PackTestZip64.java                                                                                        generic-all
+tools/pack200/PackageVersionTest.java                                                                                   generic-all
+tools/pack200/InstructionTests.java                                                                                     generic-all
+tools/pack200/CommandLineTests.java                                                                                     generic-all
+tools/pack200/BandIntegrity.java                                                                                        generic-all
+tools/pack200/AttributeTests.java                                                                                       generic-all
 
 # this never worked, and might not be possible to make work on .NET
 java/net/ServerSocket/AcceptInheritHandle.java                                                                          generic-all
