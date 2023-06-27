@@ -30,6 +30,12 @@
         <TargetTriple Condition=" '$(TargetIdentifier)' == 'linux-musl-arm' ">arm-unknown-linux-musleabihf</TargetTriple>
         <TargetTriple Condition=" '$(TargetIdentifier)' == 'osx-x64' ">x86_64-apple-macosx</TargetTriple>
         <TargetTriple Condition=" '$(TargetIdentifier)' == 'osx-arm64' ">arm64-apple-macosx</TargetTriple>
+        <PreprocessorDefinitions Condition=" '$(DebugSymbols)' == 'true' ">$(PreprocessorDefinitions);_DEBUG</PreprocessorDefinitions>
+        <PreprocessorDefinitions Condition="$(TargetTriple.StartsWith('x86_64-'))">$(PreprocessorDefinitions);_AMD64_;amd64</PreprocessorDefinitions>
+        <PreprocessorDefinitions Condition="$(TargetTriple.StartsWith('i686-'))">$(PreprocessorDefinitions);_X86_;x86</PreprocessorDefinitions>
+        <PreprocessorDefinitions Condition="$(TargetTriple.StartsWith('aarch64-')) Or $(TargetTriple.StartsWith('arm64-'))">$(PreprocessorDefinitions);_ARM64_;arm64</PreprocessorDefinitions>
+        <PreprocessorDefinitions Condition="$(TargetTriple.StartsWith('thumbv7-')) Or $(TargetTriple.StartsWith('arm-'))">$(PreprocessorDefinitions);_ARM_;arm</PreprocessorDefinitions>
+        <AdditionalCompileOptions>$(AdditionalCompileOptions);-Wno-ignored-attributes;-Wno-format;-Wno-format-security;-Wno-macro-redefined</AdditionalCompileOptions>
     </PropertyGroup>
 
     <PropertyGroup Condition="$(TargetTriple.Contains('-windows-')) And $(TargetTriple.StartsWith('thumbv7-'))">
@@ -127,14 +133,4 @@
         <AdditionalLinkOptions>$(AdditionalLinkOptions);-t;-mmacosx-version-min=10.15</AdditionalLinkOptions>
         <AdditionalLinkOptions>$(AdditionalLinkOptions);-Wl,-rpath,'@loader_path'</AdditionalLinkOptions>
     </PropertyGroup>
-
-    <!-- common preprocessor declarations -->
-    <PropertyGroup Condition=" '$(TargetTriple)' != '' ">
-        <PreprocessorDefinitions Condition=" '$(DebugSymbols)' == 'true' ">$(PreprocessorDefinitions);_DEBUG</PreprocessorDefinitions>
-        <PreprocessorDefinitions Condition="$(TargetTriple.StartsWith('x86_64-'))">$(PreprocessorDefinitions);_AMD64_;amd64</PreprocessorDefinitions>
-        <PreprocessorDefinitions Condition="$(TargetTriple.StartsWith('i686-'))">$(PreprocessorDefinitions);_X86_;x86</PreprocessorDefinitions>
-        <PreprocessorDefinitions Condition="$(TargetTriple.StartsWith('aarch64-')) Or $(TargetTriple.StartsWith('arm64-'))">$(PreprocessorDefinitions);_ARM64_;arm64</PreprocessorDefinitions>
-        <PreprocessorDefinitions Condition="$(TargetTriple.StartsWith('thumbv7-')) Or $(TargetTriple.StartsWith('arm-'))">$(PreprocessorDefinitions);_ARM_;arm</PreprocessorDefinitions>
-    </PropertyGroup>
-
 </Project>
