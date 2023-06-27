@@ -23,13 +23,10 @@
 */
 
 using System.Collections.Generic;
-using System.Reflection;
 using System.Runtime.InteropServices;
 using System.Text;
 
 using IKVM.ByteCode.Text;
-using IKVM.Runtime.Accessors.Ikvm.Internal;
-using IKVM.Runtime.Accessors.Java.Lang;
 
 namespace IKVM.Runtime.JNI
 {
@@ -73,19 +70,12 @@ namespace IKVM.Runtime.JNI
 
 #if FIRST_PASS == false
 
-        static CallerIDAccessor callerIDAccessor;
-        static SystemAccessor systemAccessor;
-
-        static CallerIDAccessor CallerIDAccessor => JVM.BaseAccessors.Get(ref callerIDAccessor);
-
-        static SystemAccessor SystemAccessor => JVM.BaseAccessors.Get(ref systemAccessor);
-
         /// <summary>
         /// Initializes the static instance.
         /// </summary>
         static JNIVM()
         {
-            SystemAccessor.InvokeLoadLibrary("jvm", CallerIDAccessor.InvokeCreate(SystemAccessor.Type.TypeHandle));
+            NativeLibrary.Load("jvm");
             Native.Set_JNI_GetDefaultJavaVMInitArgs(GetDefaultJavaVMInitArgs);
             Native.Set_JNI_GetCreatedJavaVMs(GetCreatedJavaVMs);
             Native.Set_JNI_CreateJavaVM(CreateJavaVM);
