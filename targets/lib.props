@@ -71,29 +71,38 @@
 
     <PropertyGroup Condition="$(TargetTriple.EndsWith('-linux-gnu')) And $(TargetTriple.StartsWith('x86_64-'))">
         <SystemRootDirectories>$(SystemRootDirectories);$(MSBuildThisFileDirectory)..\ext\ikvm-native-sdk\linux\x86_64-unknown-linux-gnu</SystemRootDirectories>
+        <SystemIncludeDirectories>$(SystemIncludeDirectories);$(MSBuildThisFileDirectory)..\ext\ikvm-native-sdk\linux\x86_64-unknown-linux-gnu\include</SystemIncludeDirectories>
+        <LibraryDirectories>$(LibraryDirectories);$(MSBuildThisFileDirectory)..\ext\ikvm-native-sdk\linux\x86_64-unknown-linux-gnu\lib</LibraryDirectories>
     </PropertyGroup>
 
     <PropertyGroup Condition="$(TargetTriple.EndsWith('-linux-gnu')) And $(TargetTriple.StartsWith('aarch64-'))">
         <SystemRootDirectories>$(SystemRootDirectories);$(MSBuildThisFileDirectory)..\ext\ikvm-native-sdk\linux\aarch64-unknown-linux-gnu</SystemRootDirectories>
+        <SystemIncludeDirectories>$(SystemIncludeDirectories);$(MSBuildThisFileDirectory)..\ext\ikvm-native-sdk\linux\aarch64-unknown-linux-gnu\include</SystemIncludeDirectories>
+        <LibraryDirectories>$(LibraryDirectories);$(MSBuildThisFileDirectory)..\ext\ikvm-native-sdk\linux\aarch64-unknown-linux-gnu\lib</LibraryDirectories>
     </PropertyGroup>
 
     <PropertyGroup Condition="$(TargetTriple.EndsWith('-linux-gnueabihf')) And $(TargetTriple.StartsWith('arm-'))">
         <SystemRootDirectories>$(SystemRootDirectories);$(MSBuildThisFileDirectory)..\ext\ikvm-native-sdk\linux\arm-unknown-linux-gnueabihf</SystemRootDirectories>
+        <SystemIncludeDirectories>$(SystemIncludeDirectories);$(MSBuildThisFileDirectory)..\ext\ikvm-native-sdk\linux\arm-unknown-linux-gnueabihf\include</SystemIncludeDirectories>
+        <LibraryDirectories>$(LibraryDirectories);$(MSBuildThisFileDirectory)..\ext\ikvm-native-sdk\linux\arm-unknown-linux-gnueabihf\lib</LibraryDirectories>
     </PropertyGroup>
 
     <PropertyGroup Condition="$(TargetTriple.EndsWith('-linux-musl')) And $(TargetTriple.StartsWith('x86_64-'))">
         <SystemRootDirectories>$(SystemRootDirectories);$(MSBuildThisFileDirectory)..\ext\ikvm-native-sdk\linux\x86_64-unknown-linux-musl</SystemRootDirectories>
         <SystemIncludeDirectories>$(SystemIncludeDirectories);$(MSBuildThisFileDirectory)..\ext\ikvm-native-sdk\linux\x86_64-unknown-linux-musl\include</SystemIncludeDirectories>
+        <LibraryDirectories>$(LibraryDirectories);$(MSBuildThisFileDirectory)..\ext\ikvm-native-sdk\linux\x86_64-unknown-linux-musl\lib</LibraryDirectories>
     </PropertyGroup>
 
     <PropertyGroup Condition="$(TargetTriple.EndsWith('-linux-musl')) And $(TargetTriple.StartsWith('aarch64-'))">
         <SystemRootDirectories>$(SystemRootDirectories);$(MSBuildThisFileDirectory)..\ext\ikvm-native-sdk\linux\aarch64-unknown-linux-musl</SystemRootDirectories>
         <SystemIncludeDirectories>$(SystemIncludeDirectories);$(MSBuildThisFileDirectory)..\ext\ikvm-native-sdk\linux\aarch64-unknown-linux-musl\include</SystemIncludeDirectories>
+        <LibraryDirectories>$(LibraryDirectories);$(MSBuildThisFileDirectory)..\ext\ikvm-native-sdk\linux\aarch64-unknown-linux-musl\lib</LibraryDirectories>
     </PropertyGroup>
 
     <PropertyGroup Condition="$(TargetTriple.EndsWith('-linux-musleabihf')) And $(TargetTriple.StartsWith('arm-'))">
         <SystemRootDirectories>$(SystemRootDirectories);$(MSBuildThisFileDirectory)..\ext\ikvm-native-sdk\linux\arm-unknown-linux-musleabihf</SystemRootDirectories>
         <SystemIncludeDirectories>$(SystemIncludeDirectories);$(MSBuildThisFileDirectory)..\ext\ikvm-native-sdk\linux\arm-unknown-linux-musleabihf\include</SystemIncludeDirectories>
+        <LibraryDirectories>$(LibraryDirectories);$(MSBuildThisFileDirectory)..\ext\ikvm-native-sdk\linux\arm-unknown-linux-musleabihf\lib</LibraryDirectories>
     </PropertyGroup>
 
     <PropertyGroup Condition="!$([MSBuild]::IsOSPlatform('OSX')) And $(TargetTriple.Contains('-apple-'))">
@@ -108,7 +117,7 @@
         <PreprocessorDefinitions>$(PreprocessorDefinitions);LINUX;__linux__</PreprocessorDefinitions>
         <PositionIndependentCode>true</PositionIndependentCode>
         <AdditionalCompileOptions>$(AdditionalCompileOptions);-nostdinc;-nostdinc++</AdditionalCompileOptions>
-        <AdditionalLinkOptions>$(AdditionalLinkOptions);-Wl,-rpath,'$ORIGIN';-Wl,--disable-new-dtags</AdditionalLinkOptions>
+        <AdditionalLinkOptions>$(AdditionalLinkOptions);-nostdlib;-Wl,-rpath,'$ORIGIN';-Wl,--disable-new-dtags</AdditionalLinkOptions>
     </PropertyGroup>
 
     <PropertyGroup Condition="$(TargetTriple.Contains('-apple-'))">
