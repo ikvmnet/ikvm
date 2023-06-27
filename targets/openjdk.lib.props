@@ -15,11 +15,11 @@
 
     <!-- common preprocessor declarations -->
     <PropertyGroup Condition=" '$(TargetTriple)' != '' ">
-        <PreprocessorDefinitions>$(PreprocessorDefinitions);JDK_MAJOR_VERSION=&quot;&quot;$(OpenJdkMajorVersion)&quot;&quot;</PreprocessorDefinitions>
-        <PreprocessorDefinitions>$(PreprocessorDefinitions);JDK_MINOR_VERSION=&quot;&quot;$(OpenJdkMinorVersion)&quot;&quot;</PreprocessorDefinitions>
-        <PreprocessorDefinitions>$(PreprocessorDefinitions);JDK_MICRO_VERSION=&quot;&quot;$(OpenJdkMicroVersion)&quot;&quot;</PreprocessorDefinitions>
-        <PreprocessorDefinitions>$(PreprocessorDefinitions);JDK_UPDATE_VERSION=&quot;&quot;$(OpenJdkUpdateVersion)&quot;&quot;</PreprocessorDefinitions>
-        <PreprocessorDefinitions>$(PreprocessorDefinitions);JDK_BUILD_NUMBER=&quot;&quot;$(OpenJdkBuildNumber)&quot;&quot;</PreprocessorDefinitions>
+        <PreprocessorDefinitions>$(PreprocessorDefinitions);JDK_MAJOR_VERSION=%5c&quot;$(OpenJdkMajorVersion)%5c&quot;</PreprocessorDefinitions>
+        <PreprocessorDefinitions>$(PreprocessorDefinitions);JDK_MINOR_VERSION=%5c&quot;$(OpenJdkMinorVersion)%5c&quot;</PreprocessorDefinitions>
+        <PreprocessorDefinitions>$(PreprocessorDefinitions);JDK_MICRO_VERSION=%5c&quot;$(OpenJdkMicroVersion)%5c&quot;</PreprocessorDefinitions>
+        <PreprocessorDefinitions>$(PreprocessorDefinitions);JDK_UPDATE_VERSION=%5c&quot;$(OpenJdkUpdateVersion)%5c&quot;</PreprocessorDefinitions>
+        <PreprocessorDefinitions>$(PreprocessorDefinitions);JDK_BUILD_NUMBER=%5c&quot;$(OpenJdkBuildNumber)%5c&quot;</PreprocessorDefinitions>
     </PropertyGroup>
 
     <!-- common/autoconf/flags.m4 -->
