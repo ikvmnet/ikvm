@@ -116,7 +116,7 @@
     <PropertyGroup Condition="$(TargetTriple.Contains('-linux-'))">
         <PreprocessorDefinitions>$(PreprocessorDefinitions);LINUX;__linux__</PreprocessorDefinitions>
         <PositionIndependentCode>true</PositionIndependentCode>
-        <AdditionalCompileOptions>$(AdditionalCompileOptions);-nostdinc;-nostdinc++</AdditionalCompileOptions>
+        <AdditionalCompileOptions>$(AdditionalCompileOptions)</AdditionalCompileOptions>
         <AdditionalLinkOptions>$(AdditionalLinkOptions);-nostdlib;-Wl,-rpath,'$ORIGIN';-Wl,--disable-new-dtags</AdditionalLinkOptions>
     </PropertyGroup>
 
