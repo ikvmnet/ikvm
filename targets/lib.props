@@ -32,6 +32,14 @@
         <TargetTriple Condition=" '$(TargetIdentifier)' == 'osx-arm64' ">arm64-apple-macosx</TargetTriple>
     </PropertyGroup>
 
+    <PropertyGroup Condition="$(TargetTriple.Contains('-windows-')) And $(TargetTriple.StartsWith('thumbv7-'))">
+        <PreprocessorDefinitions>$(PreprocessorDefinitions);_ARM_WINAPI_PARTITION_DESKTOP_SDK_AVAILABLE</PreprocessorDefinitions>
+    </PropertyGroup>
+
+    <PropertyGroup Condition="$(TargetTriple.Contains('-windows-')) And $(TargetTriple.StartsWith('aarch64-'))">
+        <PreprocessorDefinitions>$(PreprocessorDefinitions);_ARM_WINAPI_PARTITION_DESKTOP_SDK_AVAILABLE</PreprocessorDefinitions>
+    </PropertyGroup>
+
     <PropertyGroup Condition="$(TargetTriple.Contains('-windows-'))">
         <OpenJdkTargetOsApiDir>windows</OpenJdkTargetOsApiDir>
         <PreprocessorDefinitions>$(PreprocessorDefinitions);_CRT_SECURE_NO_DEPRECATE;_CRT_NONSTDC_NO_DEPRECATE;WIN32</PreprocessorDefinitions>
