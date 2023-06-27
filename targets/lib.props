@@ -83,14 +83,17 @@
 
     <PropertyGroup Condition="$(TargetTriple.EndsWith('-linux-musl')) And $(TargetTriple.StartsWith('x86_64-'))">
         <SystemRootDirectories>$(SystemRootDirectories);$(MSBuildThisFileDirectory)..\ext\ikvm-native-sdk\linux\x86_64-unknown-linux-musl</SystemRootDirectories>
+        <SystemIncludeDirectories>$(SystemRootDirectories);$(MSBuildThisFileDirectory)..\ext\ikvm-native-sdk\linux\x86_64-unknown-linux-musl\include</SystemIncludeDirectories>
     </PropertyGroup>
 
     <PropertyGroup Condition="$(TargetTriple.EndsWith('-linux-musl')) And $(TargetTriple.StartsWith('aarch64-'))">
         <SystemRootDirectories>$(SystemRootDirectories);$(MSBuildThisFileDirectory)..\ext\ikvm-native-sdk\linux\aarch64-unknown-linux-musl</SystemRootDirectories>
+        <SystemIncludeDirectories>$(SystemRootDirectories);$(MSBuildThisFileDirectory)..\ext\ikvm-native-sdk\linux\aarch64-unknown-linux-musl\include</SystemIncludeDirectories>
     </PropertyGroup>
 
     <PropertyGroup Condition="$(TargetTriple.EndsWith('-linux-musleabihf')) And $(TargetTriple.StartsWith('arm-'))">
         <SystemRootDirectories>$(SystemRootDirectories);$(MSBuildThisFileDirectory)..\ext\ikvm-native-sdk\linux\arm-unknown-linux-musleabihf</SystemRootDirectories>
+        <SystemIncludeDirectories>$(SystemRootDirectories);$(MSBuildThisFileDirectory)..\ext\ikvm-native-sdk\linux\arm-unknown-linux-musleabihf\include</SystemIncludeDirectories>
     </PropertyGroup>
 
     <PropertyGroup Condition="!$([MSBuild]::IsOSPlatform('OSX')) And $(TargetTriple.Contains('-apple-'))">
@@ -104,7 +107,7 @@
     <PropertyGroup Condition="$(TargetTriple.Contains('-linux-'))">
         <PreprocessorDefinitions>$(PreprocessorDefinitions);LINUX;__linux__</PreprocessorDefinitions>
         <PositionIndependentCode>true</PositionIndependentCode>
-        <AdditionalCompileOptions>$(AdditionalCompileOptions);-nostdlib</AdditionalCompileOptions>
+        <AdditionalCompileOptions>$(AdditionalCompileOptions);-nostdinc;-nostdinc++</AdditionalCompileOptions>
         <AdditionalLinkOptions>$(AdditionalLinkOptions);-Wl,-rpath,'$ORIGIN';-Wl,--disable-new-dtags</AdditionalLinkOptions>
     </PropertyGroup>
 
