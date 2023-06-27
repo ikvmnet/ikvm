@@ -123,7 +123,7 @@
         <PreprocessorDefinitions>$(PreprocessorDefinitions);LINUX;__linux__</PreprocessorDefinitions>
         <PositionIndependentCode>true</PositionIndependentCode>
         <AdditionalCompileOptions>$(AdditionalCompileOptions)</AdditionalCompileOptions>
-        <AdditionalLinkOptions>$(AdditionalLinkOptions);-nostdlib;-Wl,-rpath,'$ORIGIN';-Wl,--disable-new-dtags</AdditionalLinkOptions>
+        <AdditionalLinkOptions>$(AdditionalLinkOptions);-nostdlib;-Wl,-rpath,$ORIGIN;-Wl</AdditionalLinkOptions>
     </PropertyGroup>
 
     <PropertyGroup Condition="$(TargetTriple.Contains('-apple-'))">
@@ -131,6 +131,6 @@
         <DebugSymbols>false</DebugSymbols>
         <Dependencies>$(Dependencies);c++</Dependencies>
         <AdditionalLinkOptions>$(AdditionalLinkOptions);-t;-mmacosx-version-min=10.15</AdditionalLinkOptions>
-        <AdditionalLinkOptions>$(AdditionalLinkOptions);-Wl,-rpath,'@loader_path'</AdditionalLinkOptions>
+        <AdditionalLinkOptions>$(AdditionalLinkOptions);-Wl,-rpath,@loader_path</AdditionalLinkOptions>
     </PropertyGroup>
 </Project>

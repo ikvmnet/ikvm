@@ -15,6 +15,7 @@
     <ItemGroup>
         <Compile Include="$(OpenJdkDir)jdk\src\share\native\sun\security\ec\**\*.cpp" LanguageStandard="c++11" />
         <Compile Include="$(OpenJdkDir)jdk\src\share\native\sun\security\ec\**\*.c" LanguageStandard="c99" />
+        <Compile Include="**\*.c" LanguageStandard="c99" />
     </ItemGroup>
     <Import Sdk="IKVM.Clang.Sdk" Project="Sdk.targets" />
     <Import Project="$(MSBuildThisFileDirectory)..\..\targets\openjdk.lib.targets" />

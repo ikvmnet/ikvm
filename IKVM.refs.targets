@@ -17,6 +17,7 @@
 
     <ItemGroup>
         <__ClangProjects Include="$(MSBuildThisFileDirectory)src\libjvm\libjvm.clangproj " />
+        <__ClangProjects Include="$(MSBuildThisFileDirectory)src\libfdlibm\libfdlibm.clangproj " />
         <__ClangProjects Include="$(MSBuildThisFileDirectory)src\libverify\libverify.clangproj" />
         <__ClangProjects Include="$(MSBuildThisFileDirectory)src\libjava\libjava.clangproj" />
         <__ClangProjects Include="$(MSBuildThisFileDirectory)src\libunpack\libunpack.clangproj" />

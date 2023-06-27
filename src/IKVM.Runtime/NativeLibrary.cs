@@ -206,28 +206,29 @@ namespace IKVM.Runtime
         {
             try
             {
-                nint h = 0;
-
 #if NETFRAMEWORK
                 if (RuntimeUtil.IsWindows)
-                    h = Environment.Is64BitProcess == false ? GetProcAddress32(handle, name, argl) : GetProcAddress(handle, name);
+                    return Environment.Is64BitProcess == false ? GetProcAddress32(handle, name, argl) : GetProcAddress(handle, name);
                 else
-                    h = dlsym(handle, name);
+                    return dlsym(handle, name);
 #else
+                nint h = 0;
+
                 if (RuntimeUtil.IsWindows)
                     if (Environment.Is64BitProcess == false && GetWin32ExportName(name, argl) is string n)
-                        System.Runtime.InteropServices.NativeLibrary.TryGetExport(handle, n, out h);
+                        if (System.Runtime.InteropServices.NativeLibrary.TryGetExport(handle, n, out h))
+                            return h;
 
-                if (h == 0)
-                    System.Runtime.InteropServices.NativeLibrary.TryGetExport(handle, name, out h);
+                if (System.Runtime.InteropServices.NativeLibrary.TryGetExport(handle, name, out h))
+                    return h;
 #endif
-
-                return h;
             }
             catch (EntryPointNotFoundException)
             {
-                return 0;
+                // symbol not found, default to 0
             }
+
+            return 0;
         }
 
     }
