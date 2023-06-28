@@ -7,7 +7,7 @@
         <IkvmImageItem Include="$(MSBuildThisFileDirectory)..\ikvm\any\any\**\*">
             <TargetFramework>any</TargetFramework>
             <RuntimeIdentifier>any</RuntimeIdentifier>
-            <TargetPath>%(RecursiveDir)%(Filename)%(Extension)</TargetPath>
+            <ImagePath>%(RecursiveDir)%(Filename)%(Extension)</ImagePath>
         </IkvmImageItem>
     </ItemGroup>
 
