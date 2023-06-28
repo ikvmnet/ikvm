@@ -605,7 +605,7 @@ namespace IKVM.Java.Externs.java.lang
             {
                 if (File.Exists(file))
                     return true;
-                else if (Path.Exists(file))
+                else if (Directory.Exists(file))
                     return false;
                 if (Path.GetFilename(file) is not string filename)
                     return false;
