@@ -605,12 +605,13 @@ namespace IKVM.Java.Externs.java.lang
             {
                 if (File.Exists(file))
                     return true;
-                else if (Directory.Exists(file))
+                else if (Path.Exists(file))
                     return false;
-                else if (file.IndexOf('.') == -1 && File.Exists(file + ".exe"))
-                    return true;
-                else
+                if (Path.GetFilename(file) is not string filename)
                     return false;
+                if (filename.IndexOf('.') != -1)
+                    return false;
+                return File.Exists(file + ".exe");
             }
             catch
             {
