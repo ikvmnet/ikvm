@@ -22,7 +22,9 @@
   
 */
 
+using System;
 using System.Collections.Generic;
+using System.Runtime.CompilerServices;
 using System.Runtime.InteropServices;
 using System.Text;
 
@@ -36,24 +38,40 @@ namespace IKVM.Runtime.JNI
     public sealed unsafe class JNIVM
     {
 
-        delegate int JNI_GetDefaultJavaVMInitArgs(void* vm_args);
-        delegate int JNI_GetCreatedJavaVMs(JavaVM** vmBuf, jsize bufLen, jsize* nVMs);
-        delegate int JNI_CreateJavaVM(JavaVM** p_vm, void** p_env, void* vm_args);
-
         /// <summary>
         /// Native methods available in libjvm.
         /// </summary>
-        static class Native
+        static class LibJvm
         {
 
-            [DllImport("jvm")]
-            public static extern int Set_JNI_GetDefaultJavaVMInitArgs(JNI_GetDefaultJavaVMInitArgs func);
+            public delegate int JNI_GetDefaultJavaVMInitArgsDelegate(void* vm_args);
+            public delegate int JNI_GetCreatedJavaVMs(JavaVM** vmBuf, jsize bufLen, jsize* nVMs);
+            public delegate int JNI_CreateJavaVM(JavaVM** p_vm, void** p_env, void* vm_args);
 
-            [DllImport("jvm")]
-            public static extern int Set_JNI_GetCreatedJavaVMs(JNI_GetCreatedJavaVMs func);
+            delegate void Set_JNI_GetDefaultJavaVMInitArgsDelegate(JNI_GetDefaultJavaVMInitArgsDelegate func);
+            delegate void Set_JNI_GetCreatedJavaVMsDelegate(JNI_GetCreatedJavaVMs func);
+            delegate void Set_JNI_CreateJavaVMDelegate(JNI_CreateJavaVM func);
 
-            [DllImport("jvm")]
-            public static extern int Set_JNI_CreateJavaVM(JNI_CreateJavaVM func);
+            readonly static Set_JNI_GetDefaultJavaVMInitArgsDelegate set_JNI_GetDefaultJavaVMInitArgs;
+            readonly static Set_JNI_GetCreatedJavaVMsDelegate set_JNI_GetCreatedJavaVMs;
+            readonly static Set_JNI_CreateJavaVMDelegate set_JNI_CreateJavaVM;
+
+            /// <summary>
+            /// Initializes the static instance.
+            /// </summary>
+            static LibJvm()
+            {
+                var p = NativeLibrary.Load("jvm");
+                set_JNI_GetDefaultJavaVMInitArgs = Marshal.GetDelegateForFunctionPointer<Set_JNI_GetDefaultJavaVMInitArgsDelegate>(NativeLibrary.GetExport(p, "Set_JNI_GetDefaultJavaVMInitArgs", 1));
+                set_JNI_GetCreatedJavaVMs = Marshal.GetDelegateForFunctionPointer<Set_JNI_GetCreatedJavaVMsDelegate>(NativeLibrary.GetExport(p, "Set_JNI_GetCreatedJavaVMs", 1));
+                set_JNI_CreateJavaVM = Marshal.GetDelegateForFunctionPointer<Set_JNI_CreateJavaVMDelegate>(NativeLibrary.GetExport(p, "Set_JNI_CreateJavaVM", 1));
+            }
+
+            public static void Set_JNI_GetDefaultJavaVMInitArgs(JNI_GetDefaultJavaVMInitArgsDelegate func) => set_JNI_GetDefaultJavaVMInitArgs(func);
+
+            public static void Set_JNI_GetCreatedJavaVMs(JNI_GetCreatedJavaVMs func) => set_JNI_GetCreatedJavaVMs(func);
+
+            public static void Set_JNI_CreateJavaVM(JNI_CreateJavaVM func) => set_JNI_CreateJavaVM(func);
 
         }
 
@@ -73,12 +91,12 @@ namespace IKVM.Runtime.JNI
         /// <summary>
         /// Initializes the static instance.
         /// </summary>
+        [MethodImpl(MethodImplOptions.NoInlining)]
         static JNIVM()
         {
-            NativeLibrary.Load("jvm");
-            Native.Set_JNI_GetDefaultJavaVMInitArgs(GetDefaultJavaVMInitArgs);
-            Native.Set_JNI_GetCreatedJavaVMs(GetCreatedJavaVMs);
-            Native.Set_JNI_CreateJavaVM(CreateJavaVM);
+            LibJvm.Set_JNI_GetDefaultJavaVMInitArgs(GetDefaultJavaVMInitArgs);
+            LibJvm.Set_JNI_GetCreatedJavaVMs(GetCreatedJavaVMs);
+            LibJvm.Set_JNI_CreateJavaVM(CreateJavaVM);
         }
 
 #endif
