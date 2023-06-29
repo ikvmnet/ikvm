@@ -17,6 +17,10 @@
     </ItemGroup>
     <ItemGroup>
         <Compile Include="$(OpenJdkDir)jdk\src\share\native\common\*.c" />
+        <Compile Update="$(OpenJdkDir)jdk\src\share\native\common\jni_util.c">
+            <!-- Remove with u232 -->
+            <LanguageStandard>c90</LanguageStandard>
+        </Compile>
         <Compile Include="$(OpenJdkDir)jdk\src\share\native\java\io\io_util.c" />
         <Compile Remove="$(OpenJdkDir)jdk\src\share\native\common\check_code.c" />
         <Compile Remove="$(OpenJdkDir)jdk\src\share\native\common\check_format.c" />
