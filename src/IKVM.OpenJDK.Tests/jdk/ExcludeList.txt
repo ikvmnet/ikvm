@@ -3334,6 +3334,7 @@ tools/pack200/InstructionTests.java                                             
 tools/pack200/CommandLineTests.java                                                                                     generic-all
 tools/pack200/BandIntegrity.java                                                                                        generic-all
 tools/pack200/AttributeTests.java                                                                                       generic-all
+tools/pack200/typeannos/TestTypeAnnotations.java                                                                        generic-all
 
 # this never worked, and might not be possible to make work on .NET
 java/net/ServerSocket/AcceptInheritHandle.java                                                                          generic-all
