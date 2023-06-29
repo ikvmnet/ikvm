@@ -1,5 +1,6 @@
 #include <jni.h>
 #include <jvm.h>
+#include "jvm.h"
 
 jint JNICALL JVM_GetInterfaceVersion()
 {
@@ -2281,8 +2282,6 @@ jboolean JNICALL JVM_IsSameClassPackage(JNIEnv* env, jclass class1, jclass class
     return 0;
 }
 
-
-
 //
 //
 //// IO functions ////////////////////////////////////////////////////////////////////////////////////////
@@ -2357,66 +2356,57 @@ jboolean JNICALL JVM_IsSameClassPackage(JNIEnv* env, jclass class1, jclass class
 //
 //
 //// Printing support //////////////////////////////////////////////////
-//extern "C" {
-//
+extern "C" {
 
 int jio_vsnprintf(char* str, size_t count, const char* fmt, va_list args)
 {
-    return 0;
+    // Reject count values that are negative signed values converted to
+    // unsigned; see bug 4399518, 4417214
+    if ((intptr_t)count <= 0) return -1;
+
+    int result = vsnprintf(str, count, fmt, args);
+    if (result > 0 && (size_t)result >= count) {
+        result = -1;
+    }
+
+    return result;
 }
 
-//
-//    ATTRIBUTE_PRINTF(3, 0)
-//        int jio_snprintf(char* str, size_t count, const char* fmt, ...) {
-//        va_list args;
-//        int len;
-//        va_start(args, fmt);
-//        len = jio_vsnprintf(str, count, fmt, args);
-//        va_end(args);
-//        return len;
-//    }
-//
-//    ATTRIBUTE_PRINTF(2, 3)
-//        int jio_fprintf(FILE* f, const char* fmt, ...) {
-//        int len;
-//        va_list args;
-//        va_start(args, fmt);
-//        len = jio_vfprintf(f, fmt, args);
-//        va_end(args);
-//        return len;
-//    }
-// 
+int jio_snprintf(char* str, size_t count, const char* fmt, ...) {
+    va_list args;
+    int len;
+    va_start(args, fmt);
+    len = jio_vsnprintf(str, count, fmt, args);
+    va_end(args);
+    return len;
+}
+
+int jio_fprintf(FILE* f, const char* fmt, ...) {
+    int len;
+    va_list args;
+    va_start(args, fmt);
+    len = jio_vfprintf(f, fmt, args);
+    va_end(args);
+    return len;
+}
+ 
 
 int jio_vfprintf(FILE* f, const char* fmt, va_list args)
 {
-    return 0;
+    return vfprintf(f, fmt, args);
 }
 
-//
-//    ATTRIBUTE_PRINTF(1, 2)
-//        JNIEXPORT int jio_printf(const char* fmt, ...) {
-//        int len;
-//        va_list args;
-//        va_start(args, fmt);
-//        len = jio_vfprintf(defaultStream::output_stream(), fmt, args);
-//        va_end(args);
-//        return len;
-//    }
-//
-//
-//    // HotSpot specific jio method
-//    void jio_print(const char* s) {
-//        // Try to make this function as atomic as possible.
-//        if (Arguments::vfprintf_hook() != NULL) {
-//            jio_fprintf(defaultStream::output_stream(), "%s", s);
-//        }
-//        else {
-//            // Make an unused local variable to avoid warning from gcc 4.x compiler.
-//            size_t count = ::write(defaultStream::output_fd(), s, (int)strlen(s));
-//        }
-//    }
-//
-//} // Extern C
+int jio_printf(const char* fmt, ...) {
+    int len;
+    va_list args;
+    va_start(args, fmt);
+    len = jio_vfprintf(stdout, fmt, args);
+    va_end(args);
+    return len;
+}
+
+} // Extern C
+
 //
 //// java.lang.Thread //////////////////////////////////////////////////////////////////////////////
 //

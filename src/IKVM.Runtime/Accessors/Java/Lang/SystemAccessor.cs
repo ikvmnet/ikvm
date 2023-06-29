@@ -11,6 +11,7 @@ namespace IKVM.Runtime.Accessors.Java.Lang
     internal sealed class SystemAccessor : Accessor<object>
     {
 
+        Type ikvmInternalCallerID;
         Type javaLangSecurityManager;
 
         FieldAccessor<object> _in;
@@ -20,6 +21,7 @@ namespace IKVM.Runtime.Accessors.Java.Lang
         MethodAccessor<Func<string, string>> getProperty;
         MethodAccessor<Func<string, string, string>> setProperty;
         MethodAccessor<Func<object>> getSecurityManager;
+        MethodAccessor<Action<string, object>> loadLibrary;
 
         /// <summary>
         /// Initializes a new instance.
@@ -30,6 +32,8 @@ namespace IKVM.Runtime.Accessors.Java.Lang
         {
 
         }
+
+        Type IkvmInternalCallerID => Resolve(ref ikvmInternalCallerID, "ikvm.internal.CallerID");
 
         Type JavaLangSecurityManager => Resolve(ref javaLangSecurityManager, "java.lang.SecurityManager");
 
@@ -80,6 +84,13 @@ namespace IKVM.Runtime.Accessors.Java.Lang
         /// </summary>
         /// <returns></returns>
         public object InvokeGetSecurityManager() => GetMethod(ref getSecurityManager, nameof(getSecurityManager), JavaLangSecurityManager).Invoker();
+
+        /// <summary>
+        /// Invokes the 'loadLibrary' method.
+        /// </summary>
+        /// <param name="libname"></param>
+        /// <param name="callerID"></param>
+        public void InvokeLoadLibrary(string libname, object callerID) => GetMethod(ref loadLibrary, nameof(loadLibrary), typeof(void), typeof(string), IkvmInternalCallerID).Invoker(libname, callerID);
 
     }
 

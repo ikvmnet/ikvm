@@ -88,15 +88,18 @@ namespace IKVM.Reflection.Emit
         {
             if (ilgen != null)
             {
-                if (this.ModuleBuilder.symbolWriter != null)
-                {
-                    this.ModuleBuilder.symbolWriter.OpenMethod(new SymbolToken(-pseudoToken | 0x06000000), this);
-                }
+#if NETFRAMEWORK
+                if (ModuleBuilder.symbolWriter != null)
+                    ModuleBuilder.symbolWriter.OpenMethod(new SymbolToken(-pseudoToken | 0x06000000), this);
+#endif
+
                 rva = ilgen.WriteBody(initLocals);
-                if (this.ModuleBuilder.symbolWriter != null)
-                {
-                    this.ModuleBuilder.symbolWriter.CloseMethod();
-                }
+
+#if NETFRAMEWORK
+                if (ModuleBuilder.symbolWriter != null)
+                    ModuleBuilder.symbolWriter.CloseMethod();
+#endif
+
                 ilgen = null;
             }
         }
