@@ -74,7 +74,7 @@ namespace IKVM.Tests.Java.java.net
         }
 
         [TestMethod]
-        public void CanGetFromWhateverUrl()
+        public void CanGetFromSecureUrl()
         {
             var stm = new global::java.net.URL("https://repository.jboss.org/nexus/content/repositories/thirdparty-releases/").openStream();
             var buf = new byte[8192];
