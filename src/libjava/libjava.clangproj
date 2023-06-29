@@ -7,6 +7,8 @@
     <PropertyGroup>
         <TargetName>java</TargetName>
         <LanguageStandard>c99</LanguageStandard>
+        <IncludeDirectories>$(IncludeDirectories);$(OpenJdkDir)jdk\src\share\native\java\io</IncludeDirectories>
+        <IncludeDirectories>$(IncludeDirectories);$(OpenJdkDir)jdk\src\$(OpenJdkTargetOsApiDir)\native\java\io</IncludeDirectories>
     </PropertyGroup>
     <ItemGroup>
         <ProjectReference Include="..\libfdlibm\libfdlibm.clangproj" />
@@ -15,10 +17,13 @@
     </ItemGroup>
     <ItemGroup>
         <Compile Include="$(OpenJdkDir)jdk\src\share\native\common\*.c" />
+        <Compile Include="$(OpenJdkDir)jdk\src\share\native\java\io\io_util.c" />
         <Compile Remove="$(OpenJdkDir)jdk\src\share\native\common\check_code.c" />
         <Compile Remove="$(OpenJdkDir)jdk\src\share\native\common\check_format.c" />
         <Compile Include="$(OpenJdkDir)jdk\src\$(OpenJdkTargetOsApiDir)\native\common\*.c" />
         <Compile Include="$(OpenJdkDir)jdk\src\$(OpenJdkTargetOsApiDir)\native\java\io\canonicalize_md.c" />
+        <Compile Include="$(OpenJdkDir)jdk\src\$(OpenJdkTargetOsApiDir)\native\java\io\FileDescriptor_md.c" />
+        <Compile Include="$(OpenJdkDir)jdk\src\$(OpenJdkTargetOsApiDir)\native\java\io\io_util_md.c" />
     </ItemGroup>
     <Import Sdk="IKVM.Clang.Sdk" Project="Sdk.targets" />
     <Import Project="$(MSBuildThisFileDirectory)..\..\targets\openjdk.lib.targets" />
