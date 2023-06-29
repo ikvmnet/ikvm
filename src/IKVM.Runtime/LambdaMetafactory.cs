@@ -47,7 +47,8 @@ namespace IKVM.Internal
     sealed class LambdaMetafactory
     {
 
-        private MethodBuilder ctor;
+        private MethodBuilder getInstance;
+        private OpCode getOpCode;
 
         internal static bool Emit(DynamicTypeWrapper.FinishContext context, ClassFile classFile, int constantPoolIndex, ClassFile.ConstantPoolItemInvokeDynamic cpi, CodeEmitter ilgen)
         {
@@ -57,7 +58,7 @@ namespace IKVM.Internal
                 return false;
             }
             LambdaMetafactory lmf = context.GetValue<LambdaMetafactory>(constantPoolIndex);
-            if (lmf.ctor == null && !lmf.EmitImpl(context, classFile, cpi, bsm, ilgen))
+            if (lmf.getInstance == null && !lmf.EmitImpl(context, classFile, cpi, bsm, ilgen))
             {
 #if IMPORTER
 				if (context.TypeWrapper.GetClassLoader().DisableDynamicBinding)
@@ -67,7 +68,7 @@ namespace IKVM.Internal
 #endif
                 return false;
             }
-            ilgen.Emit(OpCodes.Newobj, lmf.ctor);
+            ilgen.Emit(lmf.getOpCode, lmf.getInstance);
             // the CLR verification rules about type merging mean we have to explicitly cast to the interface type here
             ilgen.Emit(OpCodes.Castclass, cpi.GetRetType().TypeAsBaseType);
             return true;
@@ -201,7 +202,8 @@ namespace IKVM.Internal
             {
                 tb.AddInterfaceImplementation(marker.TypeAsBaseType);
             }
-            ctor = CreateConstructorAndDispatch(context, cpi, tb, methods, implParameters, samMethodType, implMethod, instantiatedMethodType, serializable);
+            getInstance = CreateConstructorAndDispatch(context, cpi, tb, methods, implParameters, samMethodType, implMethod, instantiatedMethodType, serializable);
+            getOpCode = ReflectUtil.IsConstructor(getInstance) ? OpCodes.Newobj : OpCodes.Call;
             AddDefaultInterfaceMethods(context, methodList, tb);
             return true;
         }
@@ -433,6 +435,29 @@ namespace IKVM.Internal
             }
             ilgen.Emit(OpCodes.Ret);
             ilgen.DoEmit();
+
+            // use singleton for lambdas with no captures
+            if (capturedTypes.Length == 0)
+            {
+                FieldBuilder instField = tb.DefineField("inst", tb, FieldAttributes.Private | FieldAttributes.Static);
+
+                // static constructor
+                MethodBuilder cctor = ReflectUtil.DefineTypeInitializer(tb, context.TypeWrapper.GetClassLoader());
+                CodeEmitter ilgenCCtor = CodeEmitter.Create(cctor);
+                ilgenCCtor.Emit(OpCodes.Newobj, ctor);
+                ilgenCCtor.Emit(OpCodes.Stsfld, instField);
+                ilgenCCtor.Emit(OpCodes.Ret);
+                ilgenCCtor.DoEmit();
+
+                // singleton
+                MethodBuilder getInstance = tb.DefineMethod("__<GetInstance>", MethodAttributes.Assembly | MethodAttributes.Static, tb, Type.EmptyTypes);
+                CodeEmitter ilgenGet = CodeEmitter.Create(getInstance);
+                ilgenGet.Emit(OpCodes.Ldsfld, instField);
+                ilgenGet.Emit(OpCodes.Ret);
+                ilgenGet.DoEmit();
+
+                ctor = getInstance;
+            }
 
             // dispatch methods
             foreach (MethodWrapper mw in methods)
