@@ -3392,6 +3392,7 @@ javax/swing/plaf/nimbus/8057791/bug8057791.java                                 
 javax/swing/text/FlowView/LayoutTest.java                                                                               generic-all
 javax/swing/text/html/parser/Parser/HtmlCommentTagParseTest/HtmlCommentTagParseTest.java                                generic-all
 sun/java2d/ClassCastExceptionForInvalidSurface.java                                                                     generic-all
+javax/accessibility/JList/AccessibleJListChildNPETest.java                                                              generic-all
 
 # Windows-PRNG SecureRandom
 java/security/SecureRandom/DefaultProvider.java                                                                         generic-all
@@ -3417,5 +3418,14 @@ com/sun/jdi/RedefineAddPrivateMethod.sh                                         
 # not implemented/not applicable
 javax/management/mxbean/MXBeanInteropTest1.java                                                                         generic-all
 
-# accessibility
-javax/accessibility/JList/AccessibleJListChildNPETest.java                                                              generic-all
+# not distributing limited policy
+javax/crypto/CryptoPermission/TestUnlimited.java                                                                        generic-all
+
+# rogue.
+java/beans/Introspector/8159696/UnloadClassBeanInfo.java                                                                generic-all
+
+# fails with -Xbootclasspath/a (needs implement)
+java/lang/invoke/CustomizedLambdaFormTest.java                                                                          generic-all
+
+# Shell fails on Windows
+sun/security/tools/keytool/keyalg.sh                                                                                    windows-all
