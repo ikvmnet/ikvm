@@ -172,7 +172,7 @@ namespace IKVM.Runtime
             else
                 return dlopen(nameOrPath, RTLD_NOW | RTLD_GLOBAL);
 #else
-            return System.Runtime.InteropServices.NativeLibrary.TryLoad(nameOrPath, typeof(NativeLibrary).Assembly, DllImportSearchPath.UseDllDirectoryForDependencies, out var h) ? h : 0;
+            return System.Runtime.InteropServices.NativeLibrary.TryLoad(nameOrPath, typeof(NativeLibrary).Assembly, DllImportSearchPath.SafeDirectories | DllImportSearchPath.UseDllDirectoryForDependencies, out var h) ? h : 0;
 #endif
         }
 
