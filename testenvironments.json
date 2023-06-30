@@ -5,6 +5,11 @@
             "name": "Ubuntu",
             "type": "wsl",
             "wslDistribution": "Ubuntu"
+        },
+        {
+            "name": "Debian",
+            "type": "wsl",
+            "wslDistribution": "Debian"
         }
     ]
 }

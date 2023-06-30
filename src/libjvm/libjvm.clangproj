@@ -1,0 +1,26 @@
+﻿<Project>
+    <Import Sdk="IKVM.Clang.Sdk" Project="Sdk.props" />
+    <Import Project="$(MSBuildThisFileDirectory)..\..\targets\openjdk.lib.props" />
+    <PropertyGroup Label="Globals">
+        <ProjectGuid>fe90ddcb-06f3-4470-a9a7-7640b04ea9e4</ProjectGuid>
+    </PropertyGroup>
+    <PropertyGroup>
+        <TargetName>jvm</TargetName>
+        <IncludeDirectories>$(IncludeDirectories);$(OpenJdkDir)jdk\src\share\javavm\export</IncludeDirectories>
+        <IncludeDirectories>$(IncludeDirectories);$(OpenJdkDir)jdk\src\$(OpenJdkTargetOsApiDir)\javavm\export</IncludeDirectories>
+    </PropertyGroup>
+    <ItemGroup>
+        <Compile Include="**\*.c" LanguageStandard="c99" />
+        <Compile Include="**\*.cpp" LanguageStandard="c++11" />
+    </ItemGroup>
+    <ItemGroup>
+        <Header Include="$(OpenJdkDir)jdk\src\share\javavm\export\**\*.h">
+            <IncludePath>%(RecursiveDir)%(Filename)%(Extension)</IncludePath>
+        </Header>
+        <Header Include="$(OpenJdkDir)jdk\src\$(OpenJdkTargetOsApiDir)\javavm\export\**\*.h">
+            <IncludePath>%(RecursiveDir)%(Filename)%(Extension)</IncludePath>
+        </Header>
+    </ItemGroup>
+    <Import Sdk="IKVM.Clang.Sdk" Project="Sdk.targets" />
+    <Import Project="$(MSBuildThisFileDirectory)..\..\targets\openjdk.lib.targets" />
+</Project>

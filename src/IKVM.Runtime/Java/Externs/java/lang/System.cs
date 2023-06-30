@@ -152,7 +152,7 @@ namespace IKVM.Java.Externs.java.lang
             if (RuntimeUtil.IsWindows)
                 return libname + ".dll";
             else if (RuntimeUtil.IsOSX)
-                return "lib" + libname + ".jnilib";
+                return "lib" + libname + ".dylib";
             else
                 return "lib" + libname + ".so";
 #endif

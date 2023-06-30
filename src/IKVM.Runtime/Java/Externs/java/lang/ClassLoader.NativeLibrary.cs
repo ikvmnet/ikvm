@@ -23,6 +23,7 @@
 */
 using System;
 using System.IO;
+using System.Runtime.CompilerServices;
 using System.Runtime.InteropServices;
 using System.Security;
 using System.Threading;
@@ -43,8 +44,15 @@ namespace IKVM.Java.Externs.java.lang
         /// <returns></returns>
         public static string findBuiltinLib(string name)
         {
+#if FIRST_PASS
+            throw new NotImplementedException();
+#else
+            if (name == null)
+                throw new global::java.lang.InternalError("NULL filename for native library.");
+
             var l = GetUnmappedLibraryName(name);
             return IsBuiltinLib(l) ? l : null;
+#endif
         }
 
         /// <summary>
@@ -56,9 +64,9 @@ namespace IKVM.Java.Externs.java.lang
         {
             switch (name)
             {
+                case "jvm":
                 case "net":
                 case "nio":
-                case "unpack":
                 case "jaas_nt":
                 case "awt":
                 case "splashscreen":
@@ -99,6 +107,14 @@ namespace IKVM.Java.Externs.java.lang
 
         internal static class NativeLibrary
         {
+
+            /// <summary>
+            /// Initializes the static instance.
+            /// </summary>
+            static NativeLibrary()
+            {
+                RuntimeHelpers.RunClassConstructor(typeof(JNIVM).TypeHandle);
+            }
 
             /// <summary>
             /// Implements the backing for the native 'load' method.

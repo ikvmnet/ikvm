@@ -213,10 +213,11 @@ namespace IKVM.Reflection.Emit
             this.code = new ByteBuffer(initialCapacity);
             this.moduleBuilder = moduleBuilder;
             this.locals = SignatureHelper.GetLocalVarSigHelper(moduleBuilder);
+
+#if NETFRAMEWORK
             if (moduleBuilder.symbolWriter != null)
-            {
                 scope = new Scope(null);
-            }
+#endif
         }
 
         // non-standard API
@@ -398,7 +399,7 @@ namespace IKVM.Reflection.Emit
         public void BeginScope()
         {
             Scope newScope = new Scope(scope);
-            scope.children.Add(newScope);
+            scope?.children.Add(newScope);
             scope = newScope;
             scope.startOffset = code.Position;
         }
@@ -906,11 +907,13 @@ namespace IKVM.Reflection.Emit
 
         internal int WriteBody(bool initLocals)
         {
+#if NETFRAMEWORK
             if (moduleBuilder.symbolWriter != null)
             {
                 Debug.Assert(scope != null && scope.parent == null);
                 scope.endOffset = code.Position;
             }
+#endif
 
             ResolveBranches();
 
@@ -929,8 +932,11 @@ namespace IKVM.Reflection.Emit
                 {
                     localVarSigTok = moduleBuilder.GetSignatureToken(locals).Token;
                 }
+
                 rva = WriteFatHeaderAndCode(bb, localVarSigTok, initLocals);
             }
+
+#if NETFRAMEWORK
 
             if (moduleBuilder.symbolWriter != null)
             {
@@ -954,11 +960,15 @@ namespace IKVM.Reflection.Emit
                         endLines[i] = sequencePoints[i].endLine;
                         endColumns[i] = sequencePoints[i].endColumn;
                     }
+
                     moduleBuilder.symbolWriter.DefineSequencePoints(document, offsets, lines, columns, endLines, endColumns);
                 }
 
                 WriteScope(scope, localVarSigTok);
             }
+
+#endif
+
             return rva;
         }
 
@@ -1115,9 +1125,11 @@ namespace IKVM.Reflection.Emit
             }
         }
 
-        private void WriteScope(Scope scope, int localVarSigTok)
+        void WriteScope(Scope scope, int localVarSigTok)
         {
+#if NETFRAMEWORK
             moduleBuilder.symbolWriter.OpenScope(scope.startOffset);
+
             foreach (LocalBuilder local in scope.locals)
             {
                 if (local.name != null)
@@ -1129,18 +1141,27 @@ namespace IKVM.Reflection.Emit
                         startOffset = scope.startOffset;
                         endOffset = scope.endOffset;
                     }
+
                     moduleBuilder.symbolWriter.DefineLocalVariable2(local.name, 0, localVarSigTok, SymAddressKind.ILOffset, local.LocalIndex, 0, 0, startOffset, endOffset);
                 }
             }
+
             foreach (string ns in scope.namespaces)
             {
                 moduleBuilder.symbolWriter.UsingNamespace(ns);
             }
+
             foreach (Scope child in scope.children)
             {
                 WriteScope(child, localVarSigTok);
             }
+
             moduleBuilder.symbolWriter.CloseScope(scope.endOffset);
+#else
+            throw new NotSupportedException();
+#endif
         }
+
     }
+
 }
