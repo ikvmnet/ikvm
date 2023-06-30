@@ -287,6 +287,10 @@ namespace IKVM.Runtime
             if (Environment.GetEnvironmentVariable("CLASSPATH") is string cp && !string.IsNullOrEmpty(cp))
                 initialize["java.class.path"] = string.Join(Path.PathSeparator.ToString(), Glob(cp.Split(Path.PathSeparator)));
 
+            // ikvm.home.root from environment by default
+            if (Environment.GetEnvironmentVariable("IKVM_HOME_ROOT") is string ihr && !string.IsNullOrEmpty(ihr))
+                initialize["ikvm.home.root"] = ihr;
+
             // ikvm.home from environment by default
             if (Environment.GetEnvironmentVariable("IKVM_HOME") is string ih && !string.IsNullOrEmpty(ih))
                 initialize["ikvm.home"] = ih;
