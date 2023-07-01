@@ -188,7 +188,9 @@ jobs:
         key: ${{ runner.os }}-nuget-2-${{ hashFiles('IKVM.sln', 'src\**\*.csproj', 'src\**\*.msbuildproj') }}
         restore-keys: ${{ runner.os }}-nuget-2-
     - name: Add msbuild to PATH
-      uses: microsoft/setup-msbuild@v1.1
+      uses: microsoft/setup-msbuild@v1
+      with:
+        msbuild-architecture: x64
     - name: Download OpenJDK 8 Build
       uses: actions/download-artifact@v3
       with:
