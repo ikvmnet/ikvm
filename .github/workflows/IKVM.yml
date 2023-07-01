@@ -18,7 +18,7 @@ on:
     - created
 
 env:
-  NATIVE_SDK_VERSION: "20230615.1"
+  NATIVE_SDK_VERSION: "20230701.1"
 
 jobs:
   build-openjdk:
@@ -113,7 +113,7 @@ jobs:
     name: Build IKVM
     needs:
     - build-openjdk
-    timeout-minutes: 240
+    timeout-minutes: 480
     runs-on: windows-latest
     steps:
     - name: Set Paths (Windows)
@@ -154,7 +154,7 @@ jobs:
       uses: actions/cache@v3
       with:
         path: C:/Program Files/LLVM
-        key: llvm-15.0
+        key: llvm-16.0
     - name: Install LLVM and Clang
       uses: KyleMayes/install-llvm-action@v1
       with:
@@ -188,7 +188,9 @@ jobs:
         key: ${{ runner.os }}-nuget-2-${{ hashFiles('IKVM.sln', 'src\**\*.csproj', 'src\**\*.msbuildproj') }}
         restore-keys: ${{ runner.os }}-nuget-2-
     - name: Add msbuild to PATH
-      uses: microsoft/setup-msbuild@v1.1
+      uses: microsoft/setup-msbuild@v1
+      with:
+        msbuild-architecture: x64
     - name: Download OpenJDK 8 Build
       uses: actions/download-artifact@v3
       with:
@@ -213,9 +215,13 @@ jobs:
         fileName: "*.tar.gz"
         out-file-path: ${{ env.WORKPATH }}/ikvm/ext/ikvm-native-sdk
         extract: true
+    - name: Fix Symbolic Links
+      shell: pwsh
+      run: ri win win.tar win.tar.gz; .\Fix-SymbolicLinks.ps1
+      working-directory: ${{ env.WORKPATH }}/ikvm/ext/ikvm-native-sdk
     - name: NuGet Restore
       run: dotnet restore IKVM.sln
-      working-directory: ${{ env.WORKPATH }}\ikvm
+      working-directory: ${{ env.WORKPATH }}/ikvm
     - name: Build Artifacts
       run: |
         msbuild /m /bl `
@@ -283,11 +289,6 @@ jobs:
       with:
         name: tests
         path: C:\tests.tar.gz
-    - name: Clean Solution
-      run: |
-        git reset --hard
-        git clean -qfdx
-      working-directory: ${{ env.WORKPATH }}\ikvm
   test:
     strategy:
       matrix:

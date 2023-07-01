@@ -6,7 +6,7 @@
     <PropertyGroup>
         <OutputType>Exe</OutputType>
         <TargetFrameworks>net461;netcoreapp3.1</TargetFrameworks>
-        <RuntimeIdentifiers>$(SupportedImageRuntimes)</RuntimeIdentifiers>
+        <RuntimeIdentifiers>$(_SupportedImageRuntimes)</RuntimeIdentifiers>
         <StartupObject>sun.rmi.rmic.Main</StartupObject>
         <RootNamespace>ikvm.tools.rmic</RootNamespace>
     </PropertyGroup>

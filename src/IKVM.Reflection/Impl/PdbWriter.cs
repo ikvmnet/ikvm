@@ -1,3 +1,5 @@
+#if NETFRAMEWORK
+
 /*
   Copyright (C) 2008-2010 Jeroen Frijters
 
@@ -1192,3 +1194,5 @@ namespace IKVM.Reflection.Impl
         }
     }
 }
+
+#endif

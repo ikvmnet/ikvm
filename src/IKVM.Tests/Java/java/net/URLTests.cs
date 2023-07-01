@@ -73,6 +73,15 @@ namespace IKVM.Tests.Java.java.net
             str.Should().Contain($"{prefix}.badssl.com");
         }
 
+        [TestMethod]
+        public void CanGetFromSecureUrl()
+        {
+            var stm = new global::java.net.URL("https://repository.jboss.org/nexus/content/repositories/thirdparty-releases/javax/media/jai-core/1.1.3/jai-core-1.1.3.pom").openStream();
+            var buf = new byte[8192];
+            var bytesRead = stm.read(buf, 0, buf.Length);
+            var str = Encoding.UTF8.GetString(buf, 0, bytesRead);
+        }
+
     }
 
 }

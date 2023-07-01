@@ -547,7 +547,7 @@ namespace IKVM.Runtime
                     if (IntPtr.Size == 4)
                         return RuntimeUtil.IsWindows ? "x86" : "i386";
                     else
-                        return "amd64";
+                        return "amd64"; 
                 }
 
                 if (arch.Equals("AMD64", StringComparison.OrdinalIgnoreCase))

@@ -5,30 +5,27 @@
         <AutoGenerateBindingRedirects Condition="$([MSBuild]::IsTargetFrameworkCompatible('$(TargetFramework)', 'net461'))">true</AutoGenerateBindingRedirects>
         <GenerateBindingRedirectsOutputType Condition="$([MSBuild]::IsTargetFrameworkCompatible('$(TargetFramework)', 'net461'))">true</GenerateBindingRedirectsOutputType>
         <AddSyntheticProjectReferencesForSolutionDependencies>false</AddSyntheticProjectReferencesForSolutionDependencies>
-        <CopyRetryCount>30</CopyRetryCount>
+        <CopyRetryCount>60</CopyRetryCount>
         <CopyRetryDelayMilliseconds>15000</CopyRetryDelayMilliseconds>
         
         <SupportedRuntimes>win7-x64;win7-x86;win81-arm;win10-arm64;linux-x64;linux-arm;linux-arm64;linux-musl-x64;linux-musl-arm;linux-musl-arm64;osx-x64;osx-arm64</SupportedRuntimes>
         <EnabledRuntimes Condition=" '$(EnabledRuntimes)' == '' ">$(SupportedRuntimes)</EnabledRuntimes>
-        <EnabledRuntimes>;$(EnabledRuntimes);</EnabledRuntimes>
 
         <SupportedToolRuntimes>win7-x64;linux-x64;linux-arm;linux-arm64;linux-musl-x64;linux-musl-arm;linux-musl-arm64;osx-x64</SupportedToolRuntimes>
         <EnabledToolRuntimes Condition=" '$(EnabledToolRuntimes)' == '' ">$(SupportedToolRuntimes)</EnabledToolRuntimes>
-        <EnabledToolRuntimes>;$(EnabledToolRuntimes);</EnabledToolRuntimes>
         
         <SupportedImageRuntimes>win7-x64;win7-x86;win81-arm;linux-x64;linux-arm;linux-arm64;linux-musl-x64;linux-musl-arm;linux-musl-arm64;osx-x64</SupportedImageRuntimes>
         <EnabledImageRuntimes Condition=" '$(EnabledImageRuntimes)' == '' ">$(SupportedImageRuntimes)</EnabledImageRuntimes>
-        <EnabledImageRuntimes>;$(EnabledImageRuntimes);</EnabledImageRuntimes>
     </PropertyGroup>
 
-    <ItemGroup>
-        <SupportedRuntimes Include="$(SupportedRuntimes)" />
-        <EnabledRuntimes Include="$(EnabledRuntimes)" />
-        <SupportedToolRuntimes Include="$(SupportedToolRuntimes)" />
-        <EnabledToolRuntimes Include="$(EnabledToolRuntimes)" />
-        <SupportedImageRuntimes Include="$(SupportedImageRuntimes)" />
-        <EnabledImageRuntimes Include="$(EnabledImageRuntimes)" />
-    </ItemGroup>
+    <PropertyGroup>
+        <_SupportedRuntimes>;$(SupportedRuntimes);</_SupportedRuntimes>
+        <_EnabledRuntimes>;$(EnabledRuntimes);</_EnabledRuntimes>
+        <_SupportedToolRuntimes>;$(SupportedToolRuntimes);</_SupportedToolRuntimes>
+        <_EnabledToolRuntimes>;$(EnabledToolRuntimes);</_EnabledToolRuntimes>
+        <_SupportedImageRuntimes>;$(SupportedImageRuntimes);</_SupportedImageRuntimes>
+        <_EnabledImageRuntimes>;$(EnabledImageRuntimes);</_EnabledImageRuntimes>
+    </PropertyGroup>
 
     <ItemGroup>
         <Authors Include="Jeroen Frijters" />

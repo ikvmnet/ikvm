@@ -1763,12 +1763,12 @@
     </ItemGroup>
 
     <ItemGroup>
-        <OpenJdkExcludeRegex Include="^java\.lang\.AutoCloseable$" />
-        <OpenJdkExcludeRegex Include="^java\.lang\.Comparable$" />
-        <OpenJdkExcludeRegex Include="^java\.lang\.Object$" />
-        <OpenJdkExcludeRegex Include="^java\.lang\.String$" />
-        <OpenJdkExcludeRegex Include="^java\.lang\.Throwable$" />
-        <OpenJdkExcludeRegex Include="^sun\.reflect\.misc\.Trampoline$" />
+        <OpenJdkExcludeRegex Include="^java%5c.lang%5c.AutoCloseable$" />
+        <OpenJdkExcludeRegex Include="^java%5c.lang%5c.Comparable$" />
+        <OpenJdkExcludeRegex Include="^java%5c.lang%5c.Object$" />
+        <OpenJdkExcludeRegex Include="^java%5c.lang%5c.String$" />
+        <OpenJdkExcludeRegex Include="^java%5c.lang%5c.Throwable$" />
+        <OpenJdkExcludeRegex Include="^sun%5c.reflect%5c.misc%5c.Trampoline$" />
     </ItemGroup>
 
     <ItemGroup>
