@@ -217,7 +217,7 @@ jobs:
         extract: true
     - name: Fix Symbolic Links
       shell: pwsh
-      run: Remove-Item win; .\Fix-SymbolicLinks.ps1
+      run: .\Fix-SymbolicLinks.ps1
       working-directory: ${{ env.WORKPATH }}/ikvm/ext/ikvm-native-sdk
     - name: NuGet Restore
       run: dotnet restore IKVM.sln
