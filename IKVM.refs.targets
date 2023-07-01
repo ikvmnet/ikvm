@@ -16,29 +16,30 @@
     </ItemGroup>
 
     <ItemGroup>
-        <__ClangProjects Include="$(MSBuildThisFileDirectory)src\libjvm\libjvm.clangproj " />
-        <__ClangProjects Include="$(MSBuildThisFileDirectory)src\libfdlibm\libfdlibm.clangproj " />
-        <__ClangProjects Include="$(MSBuildThisFileDirectory)src\libverify\libverify.clangproj" />
-        <__ClangProjects Include="$(MSBuildThisFileDirectory)src\libjava\libjava.clangproj" />
-        <__ClangProjects Include="$(MSBuildThisFileDirectory)src\libunpack\libunpack.clangproj" />
-        <__ClangProjects Include="$(MSBuildThisFileDirectory)src\libsunec\libsunec.clangproj" />
-        <__ClangProjects Include="$(MSBuildThisFileDirectory)src\libj2pkcs11\libj2pkcs11.clangproj" />
-        <__ClangProjects Include="$(MSBuildThisFileDirectory)src\libsunmscapi\libsunmscapi.clangproj" SupportedRuntimes="win7-x64;win7-x86;win10-arm64" />
+        <_ReferencedClangProjects Include="$(MSBuildThisFileDirectory)src\libjvm\libjvm.clangproj " />
+        <_ReferencedClangProjects Include="$(MSBuildThisFileDirectory)src\libfdlibm\libfdlibm.clangproj " />
+        <_ReferencedClangProjects Include="$(MSBuildThisFileDirectory)src\libverify\libverify.clangproj" />
+        <_ReferencedClangProjects Include="$(MSBuildThisFileDirectory)src\libjava\libjava.clangproj" />
+        <_ReferencedClangProjects Include="$(MSBuildThisFileDirectory)src\libunpack\libunpack.clangproj" />
+        <_ReferencedClangProjects Include="$(MSBuildThisFileDirectory)src\libsunec\libsunec.clangproj" />
+        <_ReferencedClangProjects Include="$(MSBuildThisFileDirectory)src\libj2pkcs11\libj2pkcs11.clangproj" />
+        <_ReferencedClangProjects Include="$(MSBuildThisFileDirectory)src\libsunmscapi\libsunmscapi.clangproj" SupportedRuntimes="win7-x64;win7-x86;win10-arm64" />
     </ItemGroup>
 
-    <Target Name="GetClangProjectReferencesByRuntime" Inputs="@(__ClangProjects)" Outputs="%(__ClangProjects.Identity)\null" BeforeTargets="AssignClangProjectConfiguration">
+    <Target Name="GetClangProjectReferencesByRuntime" Inputs="@(_ReferencedClangProjects)" Outputs="%(_ReferencedClangProjects.Identity)\null" BeforeTargets="AssignClangProjectConfiguration">
         <PropertyGroup>
-            <__SupportedRuntimes>%(__ClangProjects.SupportedRuntimes)</__SupportedRuntimes>
+            <__SupportedRuntimes>%(_ReferencedClangProjects.SupportedRuntimes)</__SupportedRuntimes>
             <__SupportedRuntimes Condition=" '$(__SupportedRuntimes)' == '' ">$(SupportedRuntimes)</__SupportedRuntimes>
         </PropertyGroup>
         <ItemGroup>
             <__SupportedRuntimes Include="$(__SupportedRuntimes)" />
         </ItemGroup>
         <ItemGroup>
-            <__ClangProjectReference Include="@(__ClangProjects)">
+            <_ReferencedClangProjectReference Remove="@(_ReferencedClangProjectReference)" />
+            <_ReferencedClangProjectReference Include="@(_ReferencedClangProjects)">
                 <RuntimeIdentifier>%(__SupportedRuntimes.Identity)</RuntimeIdentifier>
-            </__ClangProjectReference>
-            <ClangProjectReference Include="@(__ClangProjectReference)" Condition="$(_EnabledRuntimes.Contains(';%(RuntimeIdentifier);'))">
+            </_ReferencedClangProjectReference>
+            <ClangProjectReference Include="@(_ReferencedClangProjectReference)" Condition="$(_EnabledRuntimes.Contains(';%(RuntimeIdentifier);'))">
                 <RuntimeIdentifier>%(RuntimeIdentifier)</RuntimeIdentifier>
             </ClangProjectReference>
         </ItemGroup>
