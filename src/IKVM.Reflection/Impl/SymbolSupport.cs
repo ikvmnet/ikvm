@@ -29,6 +29,7 @@ using IKVM.Reflection.Emit;
 
 namespace IKVM.Reflection.Impl
 {
+
     [StructLayout(LayoutKind.Sequential)]
     struct IMAGE_DEBUG_DIRECTORY
     {
@@ -53,20 +54,14 @@ namespace IKVM.Reflection.Impl
 
     static class SymbolSupport
     {
+
         internal static ISymbolWriterImpl CreateSymbolWriterFor(ModuleBuilder moduleBuilder)
         {
-            if (Universe.MonoRuntime)
-            {
-#if MONO
-				return new MdbWriter(moduleBuilder);
+#if NETFRAMEWORK
+            return new PdbWriter(moduleBuilder);
 #else
-                throw new NotSupportedException("IKVM.Reflection must be compiled with MONO defined to support writing Mono debugging symbols.");
+            throw new NotSupportedException("IKVM.Reflection must be compiled with MONO defined to support writing Mono debugging symbols.");
 #endif
-            }
-            else
-            {
-                return new PdbWriter(moduleBuilder);
-            }
         }
 
         internal static byte[] GetDebugInfo(ISymbolWriterImpl writer, ref IMAGE_DEBUG_DIRECTORY idd)
@@ -78,5 +73,7 @@ namespace IKVM.Reflection.Impl
         {
             writer.RemapToken(oldToken, newToken);
         }
+
     }
+
 }

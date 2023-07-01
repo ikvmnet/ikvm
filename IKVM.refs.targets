@@ -14,52 +14,33 @@
             <PrivateAssets>all</PrivateAssets>
         </ProjectReference>
     </ItemGroup>
-    
+
     <ItemGroup>
-        <RidToTargetMachineMap Include="win7-x64" TargetMachine="x86_64-pc-windows-msvc" />
-        <RidToTargetMachineMap Include="win7-x86" TargetMachine="i686-pc-windows-msvc" />
-        <RidToTargetMachineMap Include="win10-arm64" TargetMachine="aarch64-pc-windows-msvc" />
-        <RidToTargetMachineMap Include="linux-x64" TargetMachine="x86_64-unknown-linux-gnu" />
-        <RidToTargetMachineMap Include="linux-arm64" TargetMachine="aarch64-unknown-linux-gnu" />
-        <RidToTargetMachineMap Include="linux-arm" TargetMachine="arm-unknown-linux-gnueabihf" />
-        <RidToTargetMachineMap Include="linux-musl-x64" TargetMachine="x86_64-unknown-linux-musl" />
-        <RidToTargetMachineMap Include="linux-musl-arm64" TargetMachine="aarch64-unknown-linux-musl" />
-        <RidToTargetMachineMap Include="linux-musl-arm" TargetMachine="arm-unknown-linux-musleabihf" />
-        <RidToTargetMachineMap Include="osx-x64" TargetMachine="x86_64-apple-macosx" />
-        <RidToTargetMachineMap Include="osx-arm64" TargetMachine="arm64-apple-macosx" />
+        <_ReferencedClangProjects Include="$(MSBuildThisFileDirectory)src\libjvm\libjvm.clangproj " />
+        <_ReferencedClangProjects Include="$(MSBuildThisFileDirectory)src\libfdlibm\libfdlibm.clangproj " />
+        <_ReferencedClangProjects Include="$(MSBuildThisFileDirectory)src\libverify\libverify.clangproj" />
+        <_ReferencedClangProjects Include="$(MSBuildThisFileDirectory)src\libjava\libjava.clangproj" />
+        <_ReferencedClangProjects Include="$(MSBuildThisFileDirectory)src\libunpack\libunpack.clangproj" />
+        <_ReferencedClangProjects Include="$(MSBuildThisFileDirectory)src\libsunec\libsunec.clangproj" />
+        <_ReferencedClangProjects Include="$(MSBuildThisFileDirectory)src\libj2pkcs11\libj2pkcs11.clangproj" />
+        <_ReferencedClangProjects Include="$(MSBuildThisFileDirectory)src\libsunmscapi\libsunmscapi.clangproj" SupportedRuntimes="win7-x64;win7-x86;win10-arm64" />
     </ItemGroup>
 
-    <Target Name="GetClangProjectReferencesByRuntime" BeforeTargets="AssignClangProjectConfiguration">
+    <Target Name="GetClangProjectReferencesByRuntime" Inputs="@(_ReferencedClangProjects)" Outputs="%(_ReferencedClangProjects.Identity)\null" BeforeTargets="AssignClangProjectConfiguration">
+        <PropertyGroup>
+            <__SupportedRuntimes>%(_ReferencedClangProjects.SupportedRuntimes)</__SupportedRuntimes>
+            <__SupportedRuntimes Condition=" '$(__SupportedRuntimes)' == '' ">$(SupportedRuntimes)</__SupportedRuntimes>
+        </PropertyGroup>
         <ItemGroup>
-            <ClangProjectReference Include="@(RidToTargetMachineMap->'$(MSBuildThisFileDirectory)src\libikvm\libikvm.clangproj')" Condition="$(_EnabledRuntimes.Contains(';%(Identity);'))">
-                <TargetMachine>%(TargetMachine)</TargetMachine>
-                <RuntimeIdentifier>%(Identity)</RuntimeIdentifier>
-            </ClangProjectReference>
+            <__SupportedRuntimes Include="$(__SupportedRuntimes)" />
         </ItemGroup>
         <ItemGroup>
-            <ClangProjectReference Include="@(RidToTargetMachineMap->'$(MSBuildThisFileDirectory)src\libsunec\libsunec.clangproj')" Condition="$(_EnabledRuntimes.Contains(';%(Identity);'))">
-                <TargetMachine>%(TargetMachine)</TargetMachine>
-                <RuntimeIdentifier>%(Identity)</RuntimeIdentifier>
-            </ClangProjectReference>
-        </ItemGroup>
-        <ItemGroup>
-            <ClangProjectReference Include="@(RidToTargetMachineMap->'$(MSBuildThisFileDirectory)src\libj2pkcs11\libj2pkcs11.clangproj')" Condition="$(_EnabledRuntimes.Contains(';%(Identity);'))">
-                <TargetMachine>%(TargetMachine)</TargetMachine>
-                <RuntimeIdentifier>%(Identity)</RuntimeIdentifier>
-            </ClangProjectReference>
-        </ItemGroup>
-        <ItemGroup>
-            <ClangProjectReference Include="$(MSBuildThisFileDirectory)src\libsunmscapi\libsunmscapi.clangproj" Condition="$(_EnabledRuntimes.Contains(';win7-x64;'))">
-                <TargetMachine>x86_64-pc-windows-msvc</TargetMachine>
-                <RuntimeIdentifier>win7-x64</RuntimeIdentifier>
-            </ClangProjectReference>
-            <ClangProjectReference Include="$(MSBuildThisFileDirectory)src\libsunmscapi\libsunmscapi.clangproj" Condition="$(_EnabledRuntimes.Contains(';win7-x86;'))">
-                <TargetMachine>i686-pc-windows-msvc</TargetMachine>
-                <RuntimeIdentifier>win7-x86</RuntimeIdentifier>
-            </ClangProjectReference>
-            <ClangProjectReference Include="$(MSBuildThisFileDirectory)src\libsunmscapi\libsunmscapi.clangproj" Condition="$(_EnabledRuntimes.Contains(';win10-arm64;'))">
-                <TargetMachine>aarch64-pc-windows-msvc</TargetMachine>
-                <RuntimeIdentifier>win10-arm64</RuntimeIdentifier>
+            <_ReferencedClangProjectReference Remove="@(_ReferencedClangProjectReference)" />
+            <_ReferencedClangProjectReference Include="@(_ReferencedClangProjects)">
+                <RuntimeIdentifier>%(__SupportedRuntimes.Identity)</RuntimeIdentifier>
+            </_ReferencedClangProjectReference>
+            <ClangProjectReference Include="@(_ReferencedClangProjectReference)" Condition="$(_EnabledRuntimes.Contains(';%(RuntimeIdentifier);'))">
+                <RuntimeIdentifier>%(RuntimeIdentifier)</RuntimeIdentifier>
             </ClangProjectReference>
         </ItemGroup>
     </Target>
