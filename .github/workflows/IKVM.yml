@@ -113,7 +113,7 @@ jobs:
     name: Build IKVM
     needs:
     - build-openjdk
-    timeout-minutes: 240
+    timeout-minutes: 480
     runs-on: windows-latest
     steps:
     - name: Set Paths (Windows)
