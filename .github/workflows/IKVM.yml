@@ -170,17 +170,6 @@ jobs:
         targetPath: ${{ env.WORKPATH }}\ikvm
         useConfigFile: true
         configFilePath: ${{ env.WORKPATH }}\ikvm\GitVersion.yml
-    - name: Setup WSL
-      uses: Vampire/setup-wsl@v2
-      with:
-        additional-packages:
-          zlib1g-dev
-          libmpc-dev
-          libmpfr-dev
-          libgmp-dev
-          libxml2
-          gcc
-          g++
     - name: Cache NuGet
       uses: actions/cache@v3
       with:
