@@ -9,7 +9,7 @@ namespace IKVM.Compiler.Managed.Reflection
     /// <summary>
     /// Maintains a context for a specific assembly file.
     /// </summary>
-    internal class ReflectionContext
+    internal class ReflectionAssemblyContext
     {
 
         readonly ReflectionContextResolver resolver;
@@ -22,7 +22,7 @@ namespace IKVM.Compiler.Managed.Reflection
         /// <param name="resolver"></param>
         /// <param name="assembly"></param>
         /// <exception cref="ArgumentNullException"></exception>
-        public ReflectionContext(ReflectionContextResolver resolver, Assembly assembly)
+        public ReflectionAssemblyContext(ReflectionContextResolver resolver, Assembly assembly)
         {
             this.resolver = resolver ?? throw new ArgumentNullException(nameof(resolver));
             this.assembly = new ReflectionAssembly(this, assembly);
@@ -38,7 +38,7 @@ namespace IKVM.Compiler.Managed.Reflection
         /// </summary>
         /// <param name="name"></param>
         /// <returns></returns>
-        public ReflectionContext Resolve(AssemblyName name) => assembly.Name == name ? this : resolver.Resolve(name);
+        public ReflectionAssemblyContext Resolve(AssemblyName name) => assembly.Name == name ? this : resolver.Resolve(name);
 
     }
 

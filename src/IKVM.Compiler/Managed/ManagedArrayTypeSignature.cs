@@ -6,7 +6,7 @@ namespace IKVM.Compiler.Managed
     /// <summary>
     /// Describes an array of a type signature.
     /// </summary>
-    public class ManagedArrayTypeSignature : ManagedTypeSignature
+    public sealed class ManagedArrayTypeSignature : ManagedTypeSignature
     {
 
         readonly ManagedTypeSignature elementType;

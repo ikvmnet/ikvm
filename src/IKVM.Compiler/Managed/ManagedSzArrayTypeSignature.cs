@@ -4,7 +4,7 @@
     /// <summary>
     /// Describes an array of a type signature.
     /// </summary>
-    public class ManagedSzArrayTypeSignature : ManagedTypeSignature
+    public sealed class ManagedSzArrayTypeSignature : ManagedTypeSignature
     {
 
         readonly ManagedTypeSignature elementType;

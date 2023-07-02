@@ -19,7 +19,7 @@ namespace IKVM.Compiler.Managed.Metadata
     {
 
         readonly IManagedAssemblyResolver resolver;
-        readonly IMetadataAssemblyFileResolver? files;
+        readonly IMetadataReaderAssemblyFileLoader? files;
         readonly MetadataReader primary;
         readonly ManagedAssembly assembly;
         readonly MetadataSignatureTypeProvider signatureTypeProvider;
@@ -34,7 +34,7 @@ namespace IKVM.Compiler.Managed.Metadata
         /// <param name="resolver"></param>
         /// <param name="files"></param>
         /// <exception cref="ArgumentNullException"></exception>
-        public MetadataAssemblyContext(IManagedAssemblyResolver resolver, MetadataReader primary, IMetadataAssemblyFileResolver? files = null)
+        public MetadataAssemblyContext(MetadataAssemblyResolver resolver, MetadataReader primary, IMetadataReaderAssemblyFileLoader? files = null)
         {
             this.resolver = resolver;
             this.primary = primary;
