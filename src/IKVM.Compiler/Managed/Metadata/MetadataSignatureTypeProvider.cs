@@ -10,13 +10,13 @@ namespace IKVM.Compiler.Managed.Metadata
     class MetadataSignatureTypeProvider : ISignatureTypeProvider<ManagedTypeSignature, IMetadataGenericTypeContext>
     {
 
-        readonly MetadataContext context;
+        readonly MetadataAssemblyContext context;
 
         /// <summary>
         /// Initializes a new instance.
         /// </summary>
         /// <param name="context"></param>
-        public MetadataSignatureTypeProvider(MetadataContext context)
+        public MetadataSignatureTypeProvider(MetadataAssemblyContext context)
         {
             this.context = context;
         }

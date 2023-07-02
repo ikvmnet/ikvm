@@ -4,18 +4,18 @@
     /// <summary>
     /// Represents a managed method parameter.
     /// </summary>
-    public interface IManagedParameter
+    public class ManagedParameter
     {
 
         /// <summary>
         /// Gets the name of the parameter.
         /// </summary>
-        string Name { get; }
+        public string Name { get; }
 
         /// <summary>
         /// Gets the type of the parameter.
         /// </summary>
-        ManagedTypeSignature ParameterType { get; }
+        public ManagedTypeSignature ParameterType { get; }
 
     }
 

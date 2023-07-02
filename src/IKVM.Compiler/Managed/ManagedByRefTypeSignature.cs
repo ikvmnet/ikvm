@@ -4,7 +4,7 @@
     /// <summary>
     /// Describes a reference of a type signature.
     /// </summary>
-    public class ManagedByRefTypeSignature : ManagedTypeSignature
+    public sealed class ManagedByRefTypeSignature : ManagedTypeSignature
     {
 
         readonly ManagedTypeSignature refType;

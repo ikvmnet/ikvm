@@ -10,7 +10,7 @@
         /// <summary>
         /// Type of the argument.
         /// </summary>
-        IManagedType ArgumentType { get; }
+        ManagedTypeReference ArgumentType { get; }
 
         /// <summary>
         /// Value of the argument.

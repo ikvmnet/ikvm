@@ -4,7 +4,7 @@
     /// <summary>
     /// Describes a reference of a type signature.
     /// </summary>
-    public class ManagedPointerTypeSignature : ManagedTypeSignature
+    public sealed class ManagedPointerTypeSignature : ManagedTypeSignature
     {
 
         readonly ManagedTypeSignature pointerType;

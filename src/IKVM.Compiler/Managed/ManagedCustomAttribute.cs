@@ -6,18 +6,18 @@ namespace IKVM.Compiler.Managed
     /// <summary>
     /// Describes a managed custom attribute type.
     /// </summary>
-    internal interface IManagedCustomAttribute
+    internal readonly struct ManagedCustomAttribute
     {
 
         /// <summary>
         /// Gets the type of the attribute.
         /// </summary>
-        IManagedType AttributeType { get; }
+        ManagedTypeReference AttributeType { get; }
 
         /// <summary>
         /// Gets the constructor method that represents the constructor that should be invoked to initialize the attribute.
         /// </summary>
-        IManagedMethod Constructor { get; }
+        ManagedMethod Constructor { get; }
 
         /// <summary>
         /// Gets the list of positional arguments specified for the attribute.

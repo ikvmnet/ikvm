@@ -6,18 +6,18 @@ namespace IKVM.Compiler.Managed
     /// <summary>
     /// Represents a managed field.
     /// </summary>
-    internal interface IManagedField : IManagedMember
+    internal sealed class ManagedField : ManagedMember
     {
 
         /// <summary>
         /// Gets the type of the field.
         /// </summary>
-        ManagedTypeSignature FieldType { get; }
+        public ManagedTypeSignature FieldType { get; }
 
         /// <summary>
         /// Gets the attributes of the field.
         /// </summary>
-        FieldAttributes Attributes { get; }
+        public FieldAttributes Attributes { get; }
 
     }
 

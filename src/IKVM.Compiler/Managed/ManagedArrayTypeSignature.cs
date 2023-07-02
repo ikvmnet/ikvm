@@ -1,4 +1,6 @@
-﻿namespace IKVM.Compiler.Managed
+﻿using System;
+
+namespace IKVM.Compiler.Managed
 {
 
     /// <summary>
@@ -8,16 +10,40 @@
     {
 
         readonly ManagedTypeSignature elementType;
-        readonly int rank;
+        readonly ManagedArrayShape shape;
 
         /// <summary>
         /// Initializes a new instance.
         /// </summary>
         /// <param name="elementType"></param>
-        public ManagedArrayTypeSignature(ManagedTypeSignature elementType, int rank = 1)
+        /// <param name="shape"></param>
+        ManagedArrayTypeSignature(ManagedTypeSignature elementType, ManagedArrayShape shape)
         {
             this.elementType = elementType;
-            this.rank = rank;
+            this.shape = shape;
+        }
+
+        /// <summary>
+        /// Initializes a new instance.
+        /// </summary>
+        /// <param name="elementType"></param>
+        /// <param name="lowerBound0"></param>
+        /// <param name="lowerBound1"></param>
+        public ManagedArrayTypeSignature(ManagedTypeSignature elementType, int lowerBound0 = 0, int lowerBound1 = 0) :
+            this(elementType, new ManagedArrayShape(2, lowerBound0, lowerBound1))
+        {
+
+        }
+
+        /// <summary>
+        /// Initializes a new instance.
+        /// </summary>
+        /// <param name="elementType"></param>
+        /// <param name="lowerBounds"></param>
+        public ManagedArrayTypeSignature(ManagedTypeSignature elementType, ReadOnlySpan<int> lowerBounds) :
+            this(elementType, new ManagedArrayShape(lowerBounds))
+        {
+
         }
 
         /// <summary>
@@ -26,9 +52,9 @@
         public ManagedTypeSignature ElementType => elementType;
 
         /// <summary>
-        /// Gets the rank of the array.
+        /// Gets the number of dimensions in the array.
         /// </summary>
-        public int Rank => rank;
+        public int Rank => shape.Rank;
 
     }
 

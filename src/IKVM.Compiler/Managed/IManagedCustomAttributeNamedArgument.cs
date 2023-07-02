@@ -12,7 +12,7 @@
         /// <summary>
         /// Gets the attribute member that would be used to set the named argument.
         /// </summary>
-        IManagedMember Member { get; }
+        ManagedMember Member { get; }
 
         /// <summary>
         /// Gets the name of the attribute member that would be used to set the named argument.

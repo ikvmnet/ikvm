@@ -6,18 +6,18 @@ namespace IKVM.Compiler.Managed
     /// <summary>
     /// Represents a managed method.
     /// </summary>
-    public interface IManagedMethod : IManagedMember
+    public class ManagedMethod : ManagedMember
     {
 
         /// <summary>
         /// Gets the return type of the method.
         /// </summary>
-        ManagedTypeSignature ReturnType { get; }
+        public ManagedTypeSignature ReturnType { get; }
 
         /// <summary>
         /// Gets the parameters of the method.
         /// </summary>
-        IReadOnlyList<IManagedParameter> Parameters { get; }
+        public IReadOnlyList<ManagedParameter> Parameters { get; }
 
     }
 

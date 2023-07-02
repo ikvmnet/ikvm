@@ -6,23 +6,23 @@ namespace IKVM.Compiler.Managed
     /// <summary>
     /// Represents a managed member.
     /// </summary>
-    public interface IManagedMember
+    public class ManagedMember
     {
 
         /// <summary>
         /// Gets the module of the managed field.
         /// </summary>
-        IManagedType DeclaringType { get; }
+        ManagedType DeclaringType { get; }
 
         /// <summary>
         /// Gets the set of custom attributes applied to the type.
         /// </summary>
-        IReadOnlyList<IManagedCustomAttribute> CustomAttributes { get; }
+        IReadOnlyList<ManagedCustomAttribute> CustomAttributes { get; }
 
         /// <summary>
         /// Gets the name of the managed member.
         /// </summary>
-        string Name { get; }
+        public string Name { get; }
 
     }
 
