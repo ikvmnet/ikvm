@@ -15,6 +15,9 @@
         <ProjectReference Include="..\libverify\libverify.clangproj" />
         <ProjectReference Include="..\libjvm\libjvm.clangproj" />
     </ItemGroup>
+    <ItemGroup Condition="$(TargetTriple.Contains('-apple-'))">
+        <AdditionalLinkOptions Include="-framework CoreFoundation" />
+    </ItemGroup>
     <ItemGroup>
         <Compile Include="$(OpenJdkDir)jdk\src\share\native\common\*.c" />
         <Compile Update="$(OpenJdkDir)jdk\src\share\native\common\jni_util.c">
