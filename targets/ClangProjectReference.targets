@@ -25,12 +25,14 @@
             <Output TaskParameter="UnassignedProjects" ItemName="__ClangProjectReferenceWithConfiguration"/>
         </AssignProjectConfiguration>
         <ItemGroup>
+            <_ClangProjectReferenceWithConfiguration Remove="@(_ClangProjectReferenceWithConfiguration)" />
             <_ClangProjectReferenceWithConfiguration Include="@(__ClangProjectReferenceWithConfiguration)" />
         </ItemGroup>
     </Target>
 
     <Target Name="_GetClangProjectReferences" DependsOnTargets="AssignClangProjectConfiguration" Condition=" '@(_ClangProjectReferenceWithConfiguration)' != '' ">
         <ItemGroup>
+            <__ClangProjectReference Remove="@(__ClangProjectReference)" />
             <__ClangProjectReference Include="@(_ClangProjectReferenceWithConfiguration)">
                 <ProjectName>$([System.IO.Path]::GetFileNameWithoutExtension('%(Identity)'))</ProjectName>
             </__ClangProjectReference>
@@ -54,6 +56,7 @@
 
     <Target Name="GetClangProjectReferenceItems" DependsOnTargets="GetClangProjectReferences" Inputs="@(_ClangProjectReference)" Outputs="@(_ClangProjectReference->'%(Identity)\%(_Index)\null')" Condition=" '$(DesignTimeBuild)' != 'true' And '@(_ClangProjectReference)' != '' ">
         <ItemGroup>
+            <_ClangProjectReferencesToTarget Remove="@(_ClangProjectReferencesToTarget)" />
             <_ClangProjectReferencesToTarget Include="@(_ClangProjectReference)">
                 <Properties>%(_ClangProjectReference.SetConfiguration);%(_ClangProjectReference.SetPlatform);TargetIdentifier=%(_ClangProjectReference.RuntimeIdentifier)</Properties>
             </_ClangProjectReferencesToTarget>

@@ -22,9 +22,7 @@
   
 */
 
-using System;
 using System.Collections.Generic;
-using System.Runtime.CompilerServices;
 using System.Runtime.InteropServices;
 using System.Text;
 
@@ -88,15 +86,18 @@ namespace IKVM.Runtime.JNI
 
 #if FIRST_PASS == false
 
+        static readonly LibJvm.JNI_GetDefaultJavaVMInitArgsDelegate jni_GetDefaultJavaVMInitArgsDelegate = GetDefaultJavaVMInitArgs;
+        static readonly LibJvm.JNI_GetCreatedJavaVMs jni_GetCreatedJavaVMs = GetCreatedJavaVMs;
+        static readonly LibJvm.JNI_CreateJavaVM jni_CreateJavaVM = CreateJavaVM;
+
         /// <summary>
         /// Initializes the static instance.
         /// </summary>
-        [MethodImpl(MethodImplOptions.NoInlining)]
         static JNIVM()
         {
-            LibJvm.Set_JNI_GetDefaultJavaVMInitArgs(GetDefaultJavaVMInitArgs);
-            LibJvm.Set_JNI_GetCreatedJavaVMs(GetCreatedJavaVMs);
-            LibJvm.Set_JNI_CreateJavaVM(CreateJavaVM);
+            LibJvm.Set_JNI_GetDefaultJavaVMInitArgs(jni_GetDefaultJavaVMInitArgsDelegate);
+            LibJvm.Set_JNI_GetCreatedJavaVMs(jni_GetCreatedJavaVMs);
+            LibJvm.Set_JNI_CreateJavaVM(jni_CreateJavaVM);
         }
 
 #endif
