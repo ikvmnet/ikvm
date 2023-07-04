@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Collections.Generic;
 
 namespace IKVM.Compiler.Managed
 {
@@ -10,77 +11,109 @@ namespace IKVM.Compiler.Managed
     {
 
         readonly int rank;
+        readonly int size0;
         readonly int lowerBound0;
+        readonly int size1;
         readonly int lowerBound1;
+        readonly int size2;
         readonly int lowerBound2;
+        readonly int size3;
         readonly int lowerBound3;
-        readonly object? next;
+        readonly int[]? moreSizes;
+        readonly int[]? moreLowerBounds;
 
         /// <summary>
         /// Initializes a new instance.
         /// </summary>
-        /// <param name="rank"></param>
-        /// <param name="lowerBound0"></param>
-        /// <param name="lowerBound1"></param>
-        /// <param name="lowerBound2"></param>
-        /// <param name="lowerBound3"></param>
-        /// <param name="next"></param>
-        public ManagedArrayShape(int rank, int lowerBound0, int lowerBound1, int lowerBound2, int lowerBound3, ManagedArrayShape? next)
+        /// <param name="lowerBounds"></param>
+        public ManagedArrayShape(int rank, ReadOnlySpan<int> sizes, ReadOnlySpan<int> lowerBounds)
         {
-            if (rank < 1)
-                throw new ArgumentOutOfRangeException(nameof(rank));
-            if (rank > 4 && next is null)
-                throw new ArgumentOutOfRangeException(nameof(rank));
-
             this.rank = rank;
-            this.lowerBound0 = lowerBound0;
-            this.lowerBound1 = lowerBound1;
-            this.lowerBound2 = lowerBound2;
-            this.lowerBound3 = lowerBound3;
-            this.next = next;
+
+            for (int i = 0; i < sizes.Length; i++)
+            {
+                if (i == 0)
+                    size0 = sizes[i];
+                if (i == 1)
+                    size0 = sizes[i];
+                if (i == 2)
+                    size0 = sizes[i];
+                if (i == 3)
+                    size0 = sizes[i];
+
+                var p = i - 4;
+                if (p > 0)
+                {
+                    moreSizes ??= new int[p];
+                    moreSizes[p] = sizes[i];
+                }
+            }
+
+            for (int i = 0; i < lowerBounds.Length; i++)
+            {
+                if (i == 0)
+                    lowerBound0 = lowerBounds[i];
+                if (i == 1)
+                    lowerBound1 = lowerBounds[i];
+                if (i == 2)
+                    lowerBound2 = lowerBounds[i];
+                if (i == 3)
+                    lowerBound3 = lowerBounds[i];
+
+                var p = i - 4;
+                if (p > 0)
+                {
+                    moreLowerBounds ??= new int[p];
+                    moreLowerBounds[p] = lowerBounds[i];
+                }
+            }
         }
 
         /// <summary>
         /// Initializes a new instance.
         /// </summary>
         /// <param name="lowerBounds"></param>
-        public ManagedArrayShape(ReadOnlySpan<int> lowerBounds)
+        public ManagedArrayShape(int rank, IList<int> sizes, IList<int> lowerBounds)
         {
-            // TODO loop lowerbounds, setting bounds and next each time
-            throw new NotImplementedException();
-        }
+            this.rank = rank;
 
-        /// <summary>
-        /// Initializes a new instance.
-        /// </summary>
-        /// <param name="size"></param>
-        /// <param name="lowerBound0"></param>
-        public ManagedArrayShape(int size, int lowerBound0, int lowerBound1, int lowerBound2, int lowerBound3) :
-            this(size, lowerBound0, lowerBound1, lowerBound2, lowerBound3, null)
-        {
+            for (int i = 0; i < sizes.Count; i++)
+            {
+                if (i == 0)
+                    size0 = sizes[i];
+                if (i == 1)
+                    size0 = sizes[i];
+                if (i == 2)
+                    size0 = sizes[i];
+                if (i == 3)
+                    size0 = sizes[i];
 
-        }
+                var p = i - 4;
+                if (p > 0)
+                {
+                    moreSizes ??= new int[p];
+                    moreSizes[p] = sizes[i];
+                }
+            }
 
-        /// <summary>
-        /// Initializes a new instance.
-        /// </summary>
-        /// <param name="size"></param>
-        /// <param name="lowerBound0"></param>
-        public ManagedArrayShape(int size, int lowerBound0, int lowerBound1, int lowerBound2) :
-            this(size, lowerBound0, lowerBound1, lowerBound2, 0, null)
-        {
+            for (int i = 0; i < lowerBounds.Count; i++)
+            {
+                if (i == 0)
+                    lowerBound0 = lowerBounds[i];
+                if (i == 1)
+                    lowerBound1 = lowerBounds[i];
+                if (i == 2)
+                    lowerBound2 = lowerBounds[i];
+                if (i == 3)
+                    lowerBound3 = lowerBounds[i];
 
-        }
-
-        /// <summary>
-        /// Initializes a new instance.
-        /// </summary>
-        /// <param name="size"></param>
-        /// <param name="lowerBound0"></param>
-        public ManagedArrayShape(int size, int lowerBound0, int lowerBound1) :
-            this(size, lowerBound0, lowerBound1, 0, 0, null)
-        {
-
+                var p = i - 4;
+                if (p > 0)
+                {
+                    moreLowerBounds ??= new int[p];
+                    moreLowerBounds[p] = lowerBounds[i];
+                }
+            }
         }
 
         /// <summary>
@@ -93,28 +126,51 @@ namespace IKVM.Compiler.Managed
         /// </summary>
         /// <param name="rank"></param>
         /// <returns></returns>
+        public int GetSize(int rank)
+        {
+            if (rank < this.rank)
+                throw new ArgumentOutOfRangeException(nameof(rank));
+
+            if (rank == 0)
+                return size0;
+            if (rank == 1)
+                return size1;
+            if (rank == 2)
+                return size2;
+            if (rank == 3)
+                return size3;
+
+            var p = rank - 4;
+            if (moreSizes == null || moreSizes.Length < p)
+                return -1;
+
+            return moreSizes[p];
+        }
+
+        /// <summary>
+        /// Gets the lower bound of the given rank.
+        /// </summary>
+        /// <param name="rank"></param>
+        /// <returns></returns>
         public int GetLowerBound(int rank)
         {
             if (rank < this.rank)
                 throw new ArgumentOutOfRangeException(nameof(rank));
 
-            // advance to the shape that describes the specified rank
-            var p = (rank - 1) / 4;
-            var s = (ManagedArrayShape?)this;
-            for (int i = 0; i < p; i++)
-                s = (ManagedArrayShape?)s.Value.next ?? throw new InvalidOperationException();
+            if (rank == 0)
+                return lowerBound0;
+            if (rank == 1)
+                return lowerBound1;
+            if (rank == 2)
+                return lowerBound2;
+            if (rank == 3)
+                return lowerBound3;
 
-            var o = (rank - 1) % 4;
-            if (o == 0)
-                return s.Value.lowerBound0;
-            if (o == 1)
-                return s.Value.lowerBound1;
-            if (o == 2)
-                return s.Value.lowerBound2;
-            if (o == 3)
-                return s.Value.lowerBound3;
+            var p = rank - 4;
+            if (moreLowerBounds == null || moreLowerBounds.Length < p)
+                return -1;
 
-            throw new InvalidOperationException();
+            return moreLowerBounds[p];
         }
 
     }

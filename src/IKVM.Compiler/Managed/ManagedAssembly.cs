@@ -1,5 +1,5 @@
-﻿using System;
-using System.Collections.Generic;
+﻿using System.Collections.Generic;
+using System.Reflection;
 
 using IKVM.Compiler.Collections;
 
@@ -9,7 +9,7 @@ namespace IKVM.Compiler.Managed
     /// <summary>
     /// Describes a manged assembly.
     /// </summary>
-    internal class ManagedAssembly
+    public class ManagedAssembly
     {
 
         /// <summary>
@@ -17,18 +17,12 @@ namespace IKVM.Compiler.Managed
         /// </summary>
         /// <param name="context"></param>
         /// <param name="name"></param>
-        /// <param name="publicKey"></param>
-        /// <param name="version"></param>
-        /// <param name="culture"></param>
-        /// <param name="getTypes"></param>
-        public ManagedAssembly(IManagedAssemblyContext context, string name, ReadOnlyValueList<ManagedCustomAttribute> customAttributes, IReadOnlyList<byte>? publicKey, Version version, string? culture)
+        /// <param name="customAttributes"></param>
+        public ManagedAssembly(IManagedAssemblyContext context, AssemblyName name, ReadOnlyFixedValueList<ManagedCustomAttribute> customAttributes)
         {
             Context = context;
             Name = name;
             CustomAttributes = customAttributes;
-            PublicKey = publicKey;
-            Version = version;
-            Culture = culture;
         }
 
         /// <summary>
@@ -39,7 +33,7 @@ namespace IKVM.Compiler.Managed
         /// <summary>
         /// Gets the name of the assembly.
         /// </summary>
-        public string Name { get; }
+        public AssemblyName Name { get; }
 
         /// <summary>
         /// Gets the set of custom attributes applied to the assembly.
@@ -47,31 +41,16 @@ namespace IKVM.Compiler.Managed
         public IReadOnlyList<ManagedCustomAttribute> CustomAttributes { get; }
 
         /// <summary>
-        /// Gets the public key of the assembly.
-        /// </summary>
-        public IReadOnlyList<byte>? PublicKey { get; }
-
-        /// <summary>
-        /// Gets the version of the assembly.
-        /// </summary>
-        public Version Version { get; }
-
-        /// <summary>
-        /// Gets the culture of the assembly.
-        /// </summary>
-        public string? Culture { get; }
-
-        /// <summary>
         /// Attempts to resolve a type with the specified name from the managed assembly.
         /// </summary>
         /// <param name="typeName"></param>
         /// <returns></returns>
-        public ManagedType? ResolveType(string typeName) => Context.ResolveType(typeName);
+        public ManagedType? ResolveType(string typeName) => Context.ResolveType(this, typeName);
 
         /// <summary>
         /// Provides resolution of types within the assembly.
         /// </summary>
-        public IEnumerable<ManagedType> ResolveTypes => Context.ResolveTypes();
+        public IEnumerable<ManagedType> ResolveTypes() => Context.ResolveTypes(this);
 
     }
 

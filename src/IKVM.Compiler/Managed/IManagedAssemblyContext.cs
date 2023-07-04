@@ -4,22 +4,24 @@ namespace IKVM.Compiler.Managed
 {
 
     /// <summary>
-    /// Describes a context in which one or more managed assemblies are loaded.
+    /// Provides an interface for a managed assembly to call back into its loader.
     /// </summary>
-    internal interface IManagedAssemblyContext
+    public interface IManagedAssemblyContext
     {
 
         /// <summary>
-        /// Resolves the given type.
+        /// Gets a the set of types available within the assembly.
         /// </summary>
-        /// <param name="typeName"></param>
+        /// <param name="assembly"></param>
         /// <returns></returns>
-        ManagedType? ResolveType(string typeName);
+        ManagedType? ResolveType(ManagedAssembly assembly, string typeName);
 
         /// <summary>
-        /// Gets a the set of types available within the managed assembly.
+        /// Gets a the set of types available within the assembly.
         /// </summary>
-        IEnumerable<ManagedType> ResolveTypes();
+        /// <param name="assembly"></param>
+        /// <returns></returns>
+        IEnumerable<ManagedType> ResolveTypes(ManagedAssembly assembly);
 
     }
 

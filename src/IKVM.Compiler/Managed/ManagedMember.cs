@@ -1,4 +1,4 @@
-﻿using System.Collections.Generic;
+﻿using IKVM.Compiler.Collections;
 
 namespace IKVM.Compiler.Managed
 {
@@ -6,23 +6,32 @@ namespace IKVM.Compiler.Managed
     /// <summary>
     /// Represents a managed member.
     /// </summary>
-    public class ManagedMember
+    public abstract class ManagedMember
     {
 
-        /// <summary>
-        /// Gets the module of the managed field.
-        /// </summary>
-        ManagedType DeclaringType { get; }
+        readonly string name;
+        readonly ReadOnlyFixedValueList<ManagedCustomAttribute> customAttributes;
 
         /// <summary>
-        /// Gets the set of custom attributes applied to the type.
+        /// Initializes a new instance.
         /// </summary>
-        IReadOnlyList<ManagedCustomAttribute> CustomAttributes { get; }
+        /// <param name="name"></param>
+        /// <param name="customAttributes"></param>
+        public ManagedMember(string name, in ReadOnlyFixedValueList<ManagedCustomAttribute> customAttributes)
+        {
+            this.name = name;
+            this.customAttributes = customAttributes;
+        }
 
         /// <summary>
         /// Gets the name of the managed member.
         /// </summary>
-        public string Name { get; }
+        public string Name => name;
+
+        /// <summary>
+        /// Gets the set of custom attributes applied to the type.
+        /// </summary>
+        public ref readonly ReadOnlyFixedValueList<ManagedCustomAttribute> CustomAttributes => ref customAttributes;
 
     }
 

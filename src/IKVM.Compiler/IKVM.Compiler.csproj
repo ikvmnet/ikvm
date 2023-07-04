@@ -4,6 +4,7 @@
         <LangVersion>11</LangVersion>
         <ProduceReferenceAssembly>true</ProduceReferenceAssembly>
         <Nullable>enable</Nullable>
+        <InternalsVisibleTo>IKVM.Compiler.Tests</InternalsVisibleTo>
     </PropertyGroup>
     
     <ItemGroup>

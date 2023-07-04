@@ -1,4 +1,5 @@
 ﻿using System;
+
 using IKVM.ByteCode.Syntax;
 
 namespace IKVM.Compiler.Managed
@@ -15,7 +16,7 @@ namespace IKVM.Compiler.Managed
         /// </summary>
         /// <param name="info"></param>
         /// <returns></returns>
-        public static bool IsJavaType(IManagedType info)
+        public static bool IsJavaType(ManagedType info)
         {
             throw new NotImplementedException();
         }
@@ -25,7 +26,7 @@ namespace IKVM.Compiler.Managed
         /// </summary>
         /// <param name="info"></param>
         /// <returns></returns>
-        public static JavaClassName GetName(IManagedType info)
+        public static JavaClassName GetJavaClassName(ManagedType info)
         {
             throw new NotImplementedException();
         }

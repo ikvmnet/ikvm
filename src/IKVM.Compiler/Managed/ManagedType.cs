@@ -1,4 +1,4 @@
-﻿using System;
+﻿using System.Collections.Generic;
 using System.Reflection;
 
 using IKVM.Compiler.Collections;
@@ -9,68 +9,96 @@ namespace IKVM.Compiler.Managed
     /// <summary>
     /// Describes a managed type.
     /// </summary>
-    internal class ManagedType
+    public sealed class ManagedType
     {
 
-        readonly Func<ReadOnlyValueList<ManagedType>> getNestedTypes;
-        ReadOnlyValueList<ManagedType>? nestedTypes;
+        readonly IManagedTypeContext context;
+        readonly ManagedAssembly assembly;
+        readonly ManagedType? declaringType;
+        readonly string name;
+        readonly TypeAttributes attributes;
+        readonly ReadOnlyFixedValueList<ManagedCustomAttribute> customAttributes;
+        readonly ReadOnlyFixedValueList<ManagedGenericParameter> genericParameters;
+        readonly ManagedTypeRef? baseType;
+        readonly ReadOnlyFixedValueList<ManagedInterface> interfaces;
+        readonly ReadOnlyFixedValueList<ManagedField> fields;
+        readonly ReadOnlyFixedValueList<ManagedMethod> methods;
+
+        IEnumerable<ManagedType>? nestedTypes;
 
         /// <summary>
         /// Initializes a new instance.
         /// </summary>
-        /// <param name="declaringType"></param>
-        /// <param name="name"></param>
-        /// <param name="attributes"></param>
-        /// <param name="customAttributes"></param>
-        /// <param name="fields"></param>
-        /// <param name="methods"></param>
-        /// <param name="nestedTypes"></param>
-        public ManagedType(ManagedType? declaringType, string name, TypeAttributes attributes, ReadOnlyValueList<ManagedCustomAttribute> customAttributes, ReadOnlyValueList<ManagedField> fields, ReadOnlyValueList<ManagedMethod> methods, Func<ReadOnlyValueList<ManagedType>> getNestedTypes)
+        /// <param name="context"></param>
+        /// <param name="assembly"></param>
+        public ManagedType(IManagedTypeContext context, ManagedAssembly assembly)
         {
-            DeclaringType = declaringType;
-            Name = name;
-            Attributes = attributes;
-            CustomAttributes = customAttributes;
-            Fields = fields;
-            Methods = methods;
-
-            this.getNestedTypes = getNestedTypes;
+            this.context = context;
+            this.assembly = assembly;
         }
+
+        /// <summary>
+        /// Provides the context responsible for loading this type.
+        /// </summary>
+        public IManagedTypeContext Context => context;
+
+        /// <summary>
+        /// Gets the parent assembly of this type.
+        /// </summary>
+        public ManagedAssembly Assembly => assembly;
 
         /// <summary>
         /// Gets the parent type of this type.
         /// </summary>
-        public ManagedTypeReference? DeclaringType { get; }
+        public ManagedType? DeclaringType => declaringType;
 
         /// <summary>
         /// Gets the name of the managed type.
         /// </summary>
-        public string Name { get; }
+        public string Name => name;
 
         /// <summary>
         /// Gets the attributes for the type.
         /// </summary>
-        public TypeAttributes Attributes { get; }
+        public TypeAttributes Attributes => attributes;
 
         /// <summary>
         /// Gets the set of custom attributes applied to the type.
         /// </summary>
-        public ReadOnlyValueList<ManagedCustomAttribute> CustomAttributes { get; }
+        public ref readonly ReadOnlyFixedValueList<ManagedCustomAttribute> CustomAttributes => ref customAttributes;
+
+        /// <summary>
+        /// Gets the generic parameters on the managed type.
+        /// </summary>
+        public ref readonly ReadOnlyFixedValueList<ManagedGenericParameter> GenericParameters => ref genericParameters;
+
+        /// <summary>
+        /// Gets a reference to the base type.
+        /// </summary>
+        public ManagedTypeRef? BaseType => baseType;
+
+        /// <summary>
+        /// Gets the set of interfaces implemented on the managed type.
+        /// </summary>
+        public ref readonly ReadOnlyFixedValueList<ManagedInterface> Interfaces => ref interfaces;
 
         /// <summary>
         /// Gets the set of fields declared on the managed type.
         /// </summary>
-        public ReadOnlyValueList<ManagedField> Fields { get; }
+        public ref readonly ReadOnlyFixedValueList<ManagedField> Fields => ref fields;
 
         /// <summary>
         /// Gets the set of methods declared on the managed type.
         /// </summary>
-        public ReadOnlyValueList<ManagedMethod> Methods { get; }
+        public ref readonly ReadOnlyFixedValueList<ManagedMethod> Methods => ref methods;
 
         /// <summary>
         /// Gets the set of nested types within the managed type.
         /// </summary>
-        public ReadOnlyValueList<ManagedType> NestedTypes => nestedTypes ??= getNestedTypes();
+        public ref readonly ReadOnlyFixedValueList<ManagedType> NestedTypes => nestedTypes;
+
+        /// <inhericdoc />
+        public override string ToString() => name;
 
     }
 

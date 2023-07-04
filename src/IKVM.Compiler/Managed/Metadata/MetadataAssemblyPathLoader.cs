@@ -12,7 +12,7 @@ namespace IKVM.Compiler.Managed.Metadata
     /// <summary>
     /// Provides a <see cref="IMetadataReaderLoader"/> capable of resolving assemblies from a directory structure.
     /// </summary>
-    internal class MetadataAssemblyPathLoader : IMetadataReaderLoader
+    public class MetadataAssemblyPathLoader : IMetadataReaderLoader
     {
 
         readonly IEnumerable<string> paths;
@@ -52,15 +52,8 @@ namespace IKVM.Compiler.Managed.Metadata
         {
             reader = null;
 
-            var d = Path.GetDirectoryName(path)!;
-            if (Directory.Exists(d) == false)
-                return new ValueTask<bool>(false);
-
             var n = assemblyName.Name + ".dll";
-            if (n == null)
-                return new ValueTask<bool>(false);
-
-            var p = Path.Combine(d, n);
+            var p = Path.Combine(path, n);
             if (File.Exists(p) == false)
                 return new ValueTask<bool>(false);
 

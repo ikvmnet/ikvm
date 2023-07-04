@@ -1,5 +1,7 @@
 ﻿using System.Collections.Generic;
 
+using IKVM.Compiler.Collections;
+
 namespace IKVM.Compiler.Managed
 {
 
@@ -10,13 +12,13 @@ namespace IKVM.Compiler.Managed
     {
 
         readonly ManagedTypeSignature genericType;
-        readonly IReadOnlyList<ManagedTypeSignature> genericParameters;
+        readonly ReadOnlyFixedValueList<ManagedTypeSignature> genericParameters;
 
         /// <summary>
         /// Initializes a new instance.
         /// </summary>
         /// <param name="genericType"></param>
-        public ManagedGenericTypeSignature(ManagedTypeSignature genericType, IReadOnlyList<ManagedTypeSignature> genericParameters)
+        public ManagedGenericTypeSignature(ManagedTypeSignature genericType, in ReadOnlyFixedValueList<ManagedTypeSignature> genericParameters)
         {
             this.genericType = genericType;
             this.genericParameters = genericParameters;
@@ -30,7 +32,7 @@ namespace IKVM.Compiler.Managed
         /// <summary>
         /// Gets the signatures of the generic parameters.
         /// </summary>
-        public IReadOnlyList<ManagedTypeSignature> GenericParameters => genericParameters;
+        public ref readonly ReadOnlyFixedValueList<ManagedTypeSignature> GenericParameters => ref genericParameters;
 
     }
 

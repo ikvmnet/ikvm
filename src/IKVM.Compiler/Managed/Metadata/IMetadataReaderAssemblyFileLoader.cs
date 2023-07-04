@@ -7,7 +7,7 @@ namespace IKVM.Compiler.Managed.Metadata
     /// <summary>
     /// Provides the capability of resolver a <see cref="MetadataReader"/>.
     /// </summary>
-    internal interface IMetadataReaderAssemblyFileLoader
+    public interface IMetadataReaderAssemblyFileLoader
     {
 
         /// <summary>

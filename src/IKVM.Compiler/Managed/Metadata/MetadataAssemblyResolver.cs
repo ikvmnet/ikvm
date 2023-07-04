@@ -8,11 +8,11 @@ namespace IKVM.Compiler.Managed.Metadata
     /// <summary>
     /// Provides the ability to load assemblies using System.Reflection.Metdata.
     /// </summary>
-    internal class MetadataAssemblyResolver : IManagedAssemblyResolver
+    public class MetadataAssemblyResolver : IManagedAssemblyResolver
     {
 
         readonly IMetadataReaderLoader loader;
-        readonly ConcurrentDictionary<AssemblyName, ManagedAssembly> assemblies = new ConcurrentDictionary<AssemblyName, ManagedAssembly>();
+        readonly ConcurrentDictionary<AssemblyName, ValueTask<ManagedAssembly?>> cache = new();
 
         /// <summary>
         /// Initializes a new instance.
@@ -28,14 +28,20 @@ namespace IKVM.Compiler.Managed.Metadata
         /// </summary>
         /// <param name="assemblyName"></param>
         /// <returns></returns>
-        public ValueTask<ManagedAssembly?> ResolveAsync(AssemblyName assemblyName)
-        {
-            return assemblies.GetOrAdd(assemblyName, LoadAsync);
-        }
+        public ValueTask<ManagedAssembly?> ResolveAsync(AssemblyName assemblyName) => cache.GetOrAdd(assemblyName, LoadAsync);
 
-        ValueTask<ManagedAssembly> LoadAsync(AssemblyName name)
+        /// <summary>
+        /// Implements the loading of the specified assembly name.
+        /// </summary>
+        /// <param name="name"></param>
+        /// <returns></returns>
+        ValueTask<ManagedAssembly?> LoadAsync(AssemblyName name)
         {
-
+            var primary = loader.LoadAsync(name);
+            if (primary.IsCompleted)
+                return new ValueTask<ManagedAssembly?>(primary.Result != null ? new MetadataAssemblyContext(primary.Result, loader).Assembly : null);
+            else
+                return new ValueTask<ManagedAssembly?>(primary.AsTask().ContinueWith(p => p.Result != null ? new MetadataAssemblyContext(p.Result, loader).Assembly : null));
         }
 
     }

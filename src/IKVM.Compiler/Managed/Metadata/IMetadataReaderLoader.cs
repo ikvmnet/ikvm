@@ -8,7 +8,7 @@ namespace IKVM.Compiler.Managed.Metadata
     /// <summary>
     /// Loader capable of resolving metadata readers.
     /// </summary>
-    internal interface IMetadataReaderLoader : IMetadataReaderAssemblyFileLoader
+    public interface IMetadataReaderLoader : IMetadataReaderAssemblyFileLoader
     {
 
         /// <summary>
