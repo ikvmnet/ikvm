@@ -4,7 +4,7 @@
     /// <summary>
     /// Describes a type including any modifiers.
     /// </summary>
-    internal sealed class ManagedTypeReferenceSignature : ManagedTypeSignature
+    internal sealed class ManagedTypeRefSignature : ManagedTypeSignature
     {
 
         readonly ManagedTypeRef reference;
@@ -12,7 +12,7 @@
         /// <summary>
         /// Initializes a new instance.
         /// </summary>
-        public ManagedTypeReferenceSignature(ManagedTypeRef reference)
+        public ManagedTypeRefSignature(ManagedTypeRef reference)
         {
             this.reference = reference;
         }

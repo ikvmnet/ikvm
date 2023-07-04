@@ -133,9 +133,9 @@ namespace IKVM.Compiler.Managed.Reflection
         /// </summary>
         /// <param name="reflectionType"></param>
         /// <returns></returns>
-        ManagedTypeReference ResolveTypeReference(Type reflectionType)
+        ManagedTypeRef ResolveTypeReference(Type reflectionType)
         {
-            return new ManagedTypeReference(this, reflectionType.Assembly.GetName(), reflectionType.FullName!, ResolveType(reflectionType));
+            return new ManagedTypeRef(this, reflectionType.Assembly.GetName(), reflectionType.FullName!, ResolveType(reflectionType));
         }
 
         /// <summary>
@@ -204,7 +204,7 @@ namespace IKVM.Compiler.Managed.Reflection
                 return ResolveTypeSignature(reflectionType.GetGenericTypeDefinition()).Generic(l.AsReadOnly());
             }
             else
-                return new ManagedTypeReferenceSignature(ResolveTypeReference(reflectionType));
+                return new ManagedTypeRefSignature(ResolveTypeReference(reflectionType));
         }
 
         /// <summary>
@@ -253,7 +253,7 @@ namespace IKVM.Compiler.Managed.Reflection
             if (reflectionType.IsGenericType)
                 throw new ManagedTypeException("Cannot load a generic type.");
 
-            var customAttributes = LoadCustomAttribute(reflectionType.GetCustomAttributesData());
+            var customAttributes = LoadCustomAttributes(reflectionType.GetCustomAttributesData());
             var genericParameters = LoadGenericParameters(reflectionType.GetGenericArguments());
 
             return new ManagedType(

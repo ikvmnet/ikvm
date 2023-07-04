@@ -519,7 +519,7 @@ namespace IKVM.Compiler.Managed.Metadata
         /// <param name="handle"></param>
         /// <param name="genericContext"></param>
         /// <returns></returns>
-        ManagedMethod LoadMethod(MetadataReader reader, ManagedTypeRef typeRef, MethodDefinitionHandle handle, MetadataGenericContext genericContext)
+        ManagedMethod LoadMethod(MetadataReader reader, ManagedTypeRef typeRef, int methodIndex, MethodDefinitionHandle handle, MetadataGenericContext genericContext)
         {
             var method = reader.GetMethodDefinition(handle);
             var signature = method.DecodeSignature(signatureTypeProvider, genericContext);
