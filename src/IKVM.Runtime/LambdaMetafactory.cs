@@ -48,7 +48,6 @@ namespace IKVM.Internal
     {
 
         private MethodBuilder getInstance;
-        private OpCode getOpCode;
 
         internal static bool Emit(DynamicTypeWrapper.FinishContext context, ClassFile classFile, int constantPoolIndex, ClassFile.ConstantPoolItemInvokeDynamic cpi, CodeEmitter ilgen)
         {
@@ -68,9 +67,7 @@ namespace IKVM.Internal
 #endif
                 return false;
             }
-            ilgen.Emit(lmf.getOpCode, lmf.getInstance);
-            // the CLR verification rules about type merging mean we have to explicitly cast to the interface type here
-            ilgen.Emit(OpCodes.Castclass, cpi.GetRetType().TypeAsBaseType);
+            ilgen.Emit(OpCodes.Call, lmf.getInstance);
             return true;
         }
 
@@ -203,7 +200,6 @@ namespace IKVM.Internal
                 tb.AddInterfaceImplementation(marker.TypeAsBaseType);
             }
             getInstance = CreateConstructorAndDispatch(context, cpi, tb, methods, implParameters, samMethodType, implMethod, instantiatedMethodType, serializable);
-            getOpCode = ReflectUtil.IsConstructor(getInstance) ? OpCodes.Newobj : OpCodes.Call;
             AddDefaultInterfaceMethods(context, methodList, tb);
             return true;
         }
@@ -436,9 +432,13 @@ namespace IKVM.Internal
             ilgen.Emit(OpCodes.Ret);
             ilgen.DoEmit();
 
-            // use singleton for lambdas with no captures
+            // instance getter
+            MethodBuilder getInstance = tb.DefineMethod("__<GetInstance>", MethodAttributes.Assembly | MethodAttributes.Static, cpi.GetRetType().TypeAsBaseType, capturedTypes);
+            CodeEmitter ilgenGet = CodeEmitter.Create(getInstance);
+
             if (capturedTypes.Length == 0)
             {
+                // use singleton for lambdas with no captures
                 FieldBuilder instField = tb.DefineField("inst", tb, FieldAttributes.Private | FieldAttributes.Static);
 
                 // static constructor
@@ -449,15 +449,21 @@ namespace IKVM.Internal
                 ilgenCCtor.Emit(OpCodes.Ret);
                 ilgenCCtor.DoEmit();
 
-                // singleton
-                MethodBuilder getInstance = tb.DefineMethod("__<GetInstance>", MethodAttributes.Assembly | MethodAttributes.Static, tb, Type.EmptyTypes);
-                CodeEmitter ilgenGet = CodeEmitter.Create(getInstance);
+                // singleton instance
                 ilgenGet.Emit(OpCodes.Ldsfld, instField);
-                ilgenGet.Emit(OpCodes.Ret);
-                ilgenGet.DoEmit();
-
-                ctor = getInstance;
             }
+            else
+            {
+                // new instance
+                for (int i = 0; i < capturedTypes.Length; i++)
+                    ilgenGet.EmitLdarg(i);
+                ilgenGet.Emit(OpCodes.Newobj, ctor);
+            }
+
+            // the CLR verification rules about type merging mean we have to explicitly cast to the interface type here
+            ilgenGet.Emit(OpCodes.Castclass, cpi.GetRetType().TypeAsBaseType);
+            ilgenGet.Emit(OpCodes.Ret);
+            ilgenGet.DoEmit();
 
             // dispatch methods
             foreach (MethodWrapper mw in methods)
@@ -512,7 +518,7 @@ namespace IKVM.Internal
                 }
             }
 
-            return ctor;
+            return getInstance;
         }
 
         private static void EmitDispatch(DynamicTypeWrapper.FinishContext context, TypeWrapper[] args, TypeBuilder tb, MethodWrapper interfaceMethod, TypeWrapper[] implParameters,
