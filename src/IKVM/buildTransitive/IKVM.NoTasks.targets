@@ -8,9 +8,9 @@
     -->
 
     <PropertyGroup>
-        <___IkvmReferenceItemCs>$([System.IO.File]::ReadAllText('$([System.IO.Path]::Combine('$(MSBuildThisFileDirectory)', '..', '..', '..', 'IKVM.MSBuild.Tasks', 'IkvmReferenceItem.cs'))'))</___IkvmReferenceItemCs>
-        <___IkvmReferenceItemMetadataCs>$([System.IO.File]::ReadAllText('$([System.IO.Path]::Combine('$(MSBuildThisFileDirectory)', '..', '..', '..', 'IKVM.MSBuild.Tasks', 'IkvmReferenceItemMetadata.cs'))'))</___IkvmReferenceItemMetadataCs>
-        <___IkvmReferenceItemPrepareCs>$([System.IO.File]::ReadAllText('$([System.IO.Path]::Combine('$(MSBuildThisFileDirectory)', '..', '..', '..', 'IKVM.MSBuild.Tasks', 'IkvmReferenceItemPrepare.cs'))'))</___IkvmReferenceItemPrepareCs>
+        <___IkvmReferenceItemCs>$([System.IO.File]::ReadAllText('$([System.IO.Path]::Combine('$(MSBuildThisFileDirectory)', '..', '..', 'IKVM.MSBuild.Tasks', 'IkvmReferenceItem.cs'))'))</___IkvmReferenceItemCs>
+        <___IkvmReferenceItemMetadataCs>$([System.IO.File]::ReadAllText('$([System.IO.Path]::Combine('$(MSBuildThisFileDirectory)', '..', '..', 'IKVM.MSBuild.Tasks', 'IkvmReferenceItemMetadata.cs'))'))</___IkvmReferenceItemMetadataCs>
+        <___IkvmReferenceItemPrepareCs>$([System.IO.File]::ReadAllText('$([System.IO.Path]::Combine('$(MSBuildThisFileDirectory)', '..', '..', 'IKVM.MSBuild.Tasks', 'IkvmReferenceItemPrepare.cs'))'))</___IkvmReferenceItemPrepareCs>
     </PropertyGroup>
 
     <UsingTask TaskName="IkvmReferenceItemPrepare" TaskFactory="RoslynCodeTaskFactory" AssemblyFile="$(MSBuildToolsPath)\Microsoft.Build.Tasks.Core.dll">

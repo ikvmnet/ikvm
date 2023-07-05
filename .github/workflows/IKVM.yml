@@ -5,14 +5,10 @@ on:
     branches:
     - main
     - develop
-    - hotfix/*
-    - release/*
   pull_request:
     branches:
     - main
-    - hotfix/*
     - develop
-    - release/*
   release:
     types:
     - created
@@ -531,6 +527,7 @@ jobs:
         draft: false
         token: ${{ secrets.GITHUB_TOKEN }}
     - name: Push NuGet (GitHub)
+      if: github.event_name != 'pull_request'
       shell: pwsh
       run: dotnet nuget push dist/nuget/*.nupkg --source $env:GITHUB_REPOS --api-key $env:GITHUB_TOKEN --skip-duplicate --no-symbols
       env:
