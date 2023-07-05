@@ -8,9 +8,7 @@ on:
   pull_request:
     branches:
     - main
-    - hotfix/*
     - develop
-    - release/*
   release:
     types:
     - created
