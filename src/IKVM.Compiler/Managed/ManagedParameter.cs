@@ -11,7 +11,7 @@ namespace IKVM.Compiler.Managed
     public readonly struct ManagedParameter
     {
 
-        readonly string name;
+        readonly string? name;
         readonly ParameterAttributes attributes;
         readonly ReadOnlyFixedValueList<ManagedCustomAttribute> customAttributes;
         readonly ManagedTypeSignature parameterType;
@@ -21,7 +21,7 @@ namespace IKVM.Compiler.Managed
         /// </summary>
         /// <param name="name"></param>
         /// <param name="parameterType"></param>
-        public ManagedParameter(string name, ParameterAttributes attributes, in ReadOnlyFixedValueList<ManagedCustomAttribute> customAttributes, ManagedTypeSignature parameterType)
+        public ManagedParameter(string? name, ParameterAttributes attributes, in ReadOnlyFixedValueList<ManagedCustomAttribute> customAttributes, ManagedTypeSignature parameterType)
         {
             this.name = name;
             this.attributes = attributes;
@@ -32,7 +32,7 @@ namespace IKVM.Compiler.Managed
         /// <summary>
         /// Gets the name of the parameter.
         /// </summary>
-        public readonly string Name => name;
+        public readonly string? Name => name;
 
         /// <summary>
         /// Gets the attributes for the parameter.

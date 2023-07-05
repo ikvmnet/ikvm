@@ -6,7 +6,7 @@ namespace IKVM.Compiler.Managed
     public readonly struct ManagedGenericParameterConstraint
     {
 
-        readonly ManagedTypeRef type;
+        readonly ManagedTypeSignature type;
         readonly ReadOnlyFixedValueList<ManagedCustomAttribute> customAttributes;
 
         /// <summary>
@@ -14,7 +14,7 @@ namespace IKVM.Compiler.Managed
         /// </summary>
         /// <param name="type"></param>
         /// <param name="customAttributes"></param>
-        public ManagedGenericParameterConstraint(ManagedTypeRef type, in ReadOnlyFixedValueList<ManagedCustomAttribute> customAttributes)
+        public ManagedGenericParameterConstraint(ManagedTypeSignature type, in ReadOnlyFixedValueList<ManagedCustomAttribute> customAttributes)
         {
             this.type = type;
             this.customAttributes = customAttributes;
@@ -23,7 +23,7 @@ namespace IKVM.Compiler.Managed
         /// <summary>
         /// Gets the type which the generic parameter is constrained to.
         /// </summary>
-        public readonly ManagedTypeRef Type => type;
+        public readonly ManagedTypeSignature Type => type;
 
         /// <summary>
         /// Gets the custom attributes applied to this constraint.

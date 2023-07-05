@@ -64,13 +64,6 @@ namespace IKVM.Compiler.Managed.Reflection
         /// <summary>
         /// Lodas the types from the specified assembly.
         /// </summary>
-        /// <param name="reflectionType"></param>
-        /// <returns></returns>
-        internal IEnumerable<ManagedType> ResolveNestedTypes(Type reflectionType) => ResolveTypes(reflectionType.GetNestedTypes());
-
-        /// <summary>
-        /// Lodas the types from the specified assembly.
-        /// </summary>
         /// <param name="assembly"></param>
         /// <returns></returns>
         IEnumerable<ManagedType> ResolveTypes(ManagedAssembly assembly)
@@ -119,13 +112,9 @@ namespace IKVM.Compiler.Managed.Reflection
         /// </summary>
         /// <param name="reflectionType"></param>
         /// <returns></returns>
-        ManagedType? ResolveType(Type reflectionType)
+        ManagedType ResolveType(Type reflectionType)
         {
-            var managedType = typeCache.GetOrAdd(reflectionType, LoadType);
-            if (managedType == null)
-                return null;
-
-            return managedType;
+            return typeCache.GetOrAdd(reflectionType, _ => new ManagedType(new ReflectionTypeContext(this, _)));
         }
 
         /// <summary>
@@ -248,26 +237,23 @@ namespace IKVM.Compiler.Managed.Reflection
         /// </summary>
         /// <param name="reflectionType"></param>
         /// <returns></returns>
-        ManagedType LoadType(Type reflectionType)
+        internal ManagedTypeData LoadType(ManagedType type, Type reflectionType)
         {
             if (reflectionType.IsGenericType)
                 throw new ManagedTypeException("Cannot load a generic type.");
 
-            var customAttributes = LoadCustomAttributes(reflectionType.GetCustomAttributesData());
-            var genericParameters = LoadGenericParameters(reflectionType.GetGenericArguments());
-
-            return new ManagedType(
-                new ReflectionTypeContext(this, reflectionType),
+            return new ManagedTypeData(
                 assembly,
                 reflectionType.DeclaringType != null ? ResolveType(reflectionType.DeclaringType) : null,
                 reflectionType.FullName!,
                 reflectionType.Attributes,
-                customAttributes,
-                genericParameters,
-                reflectionType.BaseType != null ? ResolveTypeReference(reflectionType.BaseType) : null,
+                LoadGenericParameters(reflectionType.GetGenericArguments()),
+                LoadCustomAttributes(reflectionType.GetCustomAttributesData()),
+                reflectionType.BaseType != null ? ResolveTypeSignature(reflectionType.BaseType) : null,
                 LoadInterfaces(reflectionType.GetInterfaces()),
                 LoadFields(reflectionType.GetFields()),
-                LoadMethods(reflectionType.GetMethods()));
+                LoadMethods(reflectionType.GetMethods()),
+                LoadNestedTypes(reflectionType.GetNestedTypes()));
         }
 
         /// <summary>
@@ -292,7 +278,33 @@ namespace IKVM.Compiler.Managed.Reflection
         /// <returns></returns>
         ManagedGenericParameter LoadGenericParameter(Type reflectionGenericParameter)
         {
-            return new ManagedGenericParameter(reflectionGenericParameter.Name);
+            return new ManagedGenericParameter(reflectionGenericParameter.Name, LoadGenericParameterConstraints(reflectionGenericParameter.GetGenericParameterConstraints()));
+        }
+
+        /// <summary>
+        /// Loads the generic parameter constraints from the given collection.
+        /// </summary>
+        /// <param name="reflectionGenericParameterConstraints"></param>
+        /// <returns></returns>
+        ReadOnlyFixedValueList<ManagedGenericParameterConstraint> LoadGenericParameterConstraints(Type[] reflectionGenericParameterConstraints)
+        {
+            var l = new FixedValueList<ManagedGenericParameterConstraint>(reflectionGenericParameterConstraints.Length);
+
+            var i = 0;
+            foreach (var constraint in reflectionGenericParameterConstraints)
+                l[i++] = LoadGenericParameterConstraint(constraint);
+
+            return l.AsReadOnly();
+        }
+
+        /// <summary>
+        /// Loads the given interface.
+        /// </summary>
+        /// <param name="reflectionGenericParameterConstraint"></param>
+        /// <returns></returns>
+        ManagedGenericParameterConstraint LoadGenericParameterConstraint(Type reflectionGenericParameterConstraint)
+        {
+            return new ManagedGenericParameterConstraint(ResolveTypeSignature(reflectionGenericParameterConstraint), LoadCustomAttributes(reflectionGenericParameterConstraint.GetCustomAttributesData()));
         }
 
         /// <summary>
@@ -304,8 +316,9 @@ namespace IKVM.Compiler.Managed.Reflection
         {
             var l = new FixedValueList<ManagedInterface>(reflectionInterfaces.Length);
 
-            for (int i = 0; i < reflectionInterfaces.Length; i++)
-                l[i] = LoadInterface(reflectionInterfaces[i]);
+            var i = 0;
+            foreach (var iface in reflectionInterfaces)
+                l[i++] = LoadInterface(iface);
 
             return l.AsReadOnly();
         }
@@ -317,7 +330,7 @@ namespace IKVM.Compiler.Managed.Reflection
         /// <returns></returns>
         ManagedInterface LoadInterface(Type reflectionInterface)
         {
-            return new ManagedInterface(new FixedValueList<ManagedCustomAttribute>(0).AsReadOnly(), ResolveTypeReference(reflectionInterface));
+            return new ManagedInterface(LoadCustomAttributes(reflectionInterface.GetCustomAttributesData()), ResolveTypeSignature(reflectionInterface));
         }
 
         /// <summary>
@@ -329,8 +342,9 @@ namespace IKVM.Compiler.Managed.Reflection
         {
             var l = new FixedValueList<ManagedField>(reflectionFields.Length);
 
-            for (int i = 0; i < reflectionFields.Length; i++)
-                l[i] = LoadField(reflectionFields[i]);
+            var i = 0;
+            foreach (var field in reflectionFields)
+                l[i++] = LoadField(field);
 
             return l.AsReadOnly();
         }
@@ -358,8 +372,9 @@ namespace IKVM.Compiler.Managed.Reflection
         {
             var l = new FixedValueList<ManagedMethod>(reflectionMethods.Length);
 
-            for (int i = 0; i < reflectionMethods.Length; i++)
-                l[i] = LoadMethod(reflectionMethods[i]);
+            var i = 0;
+            foreach (var method in reflectionMethods)
+                l[i++] = LoadMethod(method);
 
             return l.AsReadOnly();
         }
@@ -374,17 +389,19 @@ namespace IKVM.Compiler.Managed.Reflection
             if (reflectionMethod is ConstructorInfo ctor)
                 return new ManagedMethod(
                     ctor.Name,
-                    LoadCustomAttributes(reflectionMethod.GetCustomAttributesData()),
                     ctor.Attributes,
                     ctor.MethodImplementationFlags,
+                    ReadOnlyFixedValueList<ManagedGenericParameter>.Empty,
+                    LoadCustomAttributes(reflectionMethod.GetCustomAttributesData()),
                     ManagedTypeSignature.Void,
                     LoadParameters(ctor.GetParameters()));
             else if (reflectionMethod is MethodInfo method)
                 return new ManagedMethod(
                     method.Name,
-                    LoadCustomAttributes(reflectionMethod.GetCustomAttributesData()),
                     method.Attributes,
                     method.MethodImplementationFlags,
+                    LoadGenericParameters(method.GetGenericArguments()),
+                    LoadCustomAttributes(reflectionMethod.GetCustomAttributesData()),
                     ResolveTypeSignature(method.ReturnType),
                     LoadParameters(method.GetParameters()));
             else
@@ -400,8 +417,9 @@ namespace IKVM.Compiler.Managed.Reflection
         {
             var l = new FixedValueList<ManagedParameter>(reflectionParameters.Length);
 
-            for (int i = 0; i < reflectionParameters.Length; i++)
-                l[i] = LoadParameter(reflectionParameters[i]);
+            var i = 0;
+            foreach (var parameter in reflectionParameters)
+                l[i++] = LoadParameter(parameter);
 
             return l.AsReadOnly();
         }
@@ -418,7 +436,31 @@ namespace IKVM.Compiler.Managed.Reflection
                 reflectionParameter.Attributes,
                 LoadCustomAttributes(reflectionParameter.GetCustomAttributesData()),
                 ResolveTypeSignature(reflectionParameter.ParameterType));
+        }
 
+        /// <summary>
+        /// Loads the nested types from the given collection.
+        /// </summary>
+        /// <param name="reflectionMethods"></param>
+        /// <returns></returns>
+        ReadOnlyFixedValueList<ManagedType> LoadNestedTypes(Type[] reflectionTypes)
+        {
+            var l = new FixedValueList<ManagedType>(reflectionTypes.Length);
+
+            for (int i = 0; i < reflectionTypes.Length; i++)
+                l[i] = LoadNestedType(reflectionTypes[i]);
+
+            return l.AsReadOnly();
+        }
+
+        /// <summary>
+        /// Loads the given nested type.
+        /// </summary>
+        /// <param name="reflectionType"></param>
+        /// <returns></returns>
+        ManagedType LoadNestedType(Type reflectionType)
+        {
+            return ResolveType(reflectionType);
         }
 
     }

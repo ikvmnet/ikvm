@@ -1,6 +1,4 @@
-﻿using System.Collections.Generic;
-
-namespace IKVM.Compiler.Managed
+﻿namespace IKVM.Compiler.Managed
 {
 
     /// <summary>
@@ -10,9 +8,11 @@ namespace IKVM.Compiler.Managed
     {
 
         /// <summary>
-        /// Gets a the set of nested types for the given declaring type.
+        /// Invoked when the first access to a managed type occurs.
         /// </summary>
-        IEnumerable<ManagedType> ResolveNestedTypes(ManagedType type);
+        /// <param name="type"></param>
+        /// <returns></returns>
+        ManagedTypeData LoadType(ManagedType type);
 
     }
 

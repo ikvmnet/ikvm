@@ -27,11 +27,12 @@ namespace IKVM.Compiler.Managed.Metadata
         }
 
         /// <summary>
-        /// Resolves the nested types for the given managed type.
+        /// Loads the managed type data.
         /// </summary>
         /// <param name="type"></param>
         /// <returns></returns>
-        public IEnumerable<ManagedType> ResolveNestedTypes(ManagedType type) => assemblyContext.ResolveNestedTypes(reader, handle);
+        /// <exception cref="System.NotImplementedException"></exception>
+        public ManagedTypeData LoadType(ManagedType type) => assemblyContext.LoadType(reader, handle);
 
     }
 

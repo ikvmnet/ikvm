@@ -7,14 +7,14 @@ namespace IKVM.Compiler.Managed
     {
 
         readonly ReadOnlyFixedValueList<ManagedCustomAttribute> customAttributes;
-        readonly ManagedTypeRef type;
+        readonly ManagedTypeSignature type;
 
         /// <summary>
         /// Initializes a new instance.
         /// </summary>
         /// <param name="customAttributes"></param>
         /// <param name="type"></param>
-        public ManagedInterface(in ReadOnlyFixedValueList<ManagedCustomAttribute> customAttributes, ManagedTypeRef type)
+        public ManagedInterface(in ReadOnlyFixedValueList<ManagedCustomAttribute> customAttributes, ManagedTypeSignature type)
         {
             this.customAttributes = customAttributes;
             this.type = type;
@@ -28,7 +28,7 @@ namespace IKVM.Compiler.Managed
         /// <summary>
         /// Gets the type of the implemented interface.
         /// </summary>
-        public ManagedTypeRef Type => type;
+        public ManagedTypeSignature Type => type;
 
     }
 

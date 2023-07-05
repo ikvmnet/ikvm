@@ -14,8 +14,8 @@ namespace IKVM.Compiler.Managed
         readonly string name;
         readonly MethodAttributes attributes;
         readonly MethodImplAttributes implAttributes;
-        readonly ReadOnlyFixedValueList<ManagedCustomAttribute> customAttributes;
         readonly ReadOnlyFixedValueList<ManagedGenericParameter> genericParameters;
+        readonly ReadOnlyFixedValueList<ManagedCustomAttribute> customAttributes;
         readonly ManagedTypeSignature returnType;
         readonly ReadOnlyFixedValueList<ManagedParameter> parameters;
 
@@ -25,11 +25,11 @@ namespace IKVM.Compiler.Managed
         /// <param name="name"></param>
         /// <param name="attributes"></param>
         /// <param name="implAttributes"></param>
-        /// <param name="customAttributes"></param>
         /// <param name="genericParameters"></param>
+        /// <param name="customAttributes"></param>
         /// <param name="returnType"></param>
         /// <param name="parameters"></param>
-        public ManagedMethod(string name, MethodAttributes attributes, MethodImplAttributes implAttributes, in ReadOnlyFixedValueList<ManagedCustomAttribute> customAttributes, in ReadOnlyFixedValueList<ManagedGenericParameter> genericParameters, ManagedTypeSignature returnType, in ReadOnlyFixedValueList<ManagedParameter> parameters)
+        public ManagedMethod(string name, MethodAttributes attributes, MethodImplAttributes implAttributes, in ReadOnlyFixedValueList<ManagedGenericParameter> genericParameters, in ReadOnlyFixedValueList<ManagedCustomAttribute> customAttributes, ManagedTypeSignature returnType, in ReadOnlyFixedValueList<ManagedParameter> parameters)
         {
             this.name = name;
             this.attributes = attributes;
@@ -56,14 +56,14 @@ namespace IKVM.Compiler.Managed
         public readonly MethodImplAttributes ImplAttributes => implAttributes;
 
         /// <summary>
-        /// Gets the set of custom attributes applied to the method.
-        /// </summary>
-        public readonly ReadOnlyFixedValueList<ManagedCustomAttribute> CustomAttributes => customAttributes;
-
-        /// <summary>
         /// Gets the set of generic parameters on the method.
         /// </summary>
         public readonly ReadOnlyFixedValueList<ManagedGenericParameter> GenericParameters => genericParameters;
+
+        /// <summary>
+        /// Gets the set of custom attributes applied to the method.
+        /// </summary>
+        public readonly ReadOnlyFixedValueList<ManagedCustomAttribute> CustomAttributes => customAttributes;
 
         /// <summary>
         /// Gets the return type of the method.

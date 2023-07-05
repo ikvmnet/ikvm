@@ -1,5 +1,4 @@
-﻿using System.Collections.Generic;
-using System.Reflection;
+﻿using System.Reflection;
 
 using IKVM.Compiler.Collections;
 
@@ -13,92 +12,166 @@ namespace IKVM.Compiler.Managed
     {
 
         readonly IManagedTypeContext context;
-        readonly ManagedAssembly assembly;
-        readonly ManagedType? declaringType;
-        readonly string name;
-        readonly TypeAttributes attributes;
-        readonly ReadOnlyFixedValueList<ManagedCustomAttribute> customAttributes;
-        readonly ReadOnlyFixedValueList<ManagedGenericParameter> genericParameters;
-        readonly ManagedTypeRef? baseType;
-        readonly ReadOnlyFixedValueList<ManagedInterface> interfaces;
-        readonly ReadOnlyFixedValueList<ManagedField> fields;
-        readonly ReadOnlyFixedValueList<ManagedMethod> methods;
 
-        IEnumerable<ManagedType>? nestedTypes;
+        bool load = true;
+        ManagedTypeData data;
 
         /// <summary>
         /// Initializes a new instance.
         /// </summary>
         /// <param name="context"></param>
-        /// <param name="assembly"></param>
-        public ManagedType(IManagedTypeContext context, ManagedAssembly assembly)
+        public ManagedType(IManagedTypeContext context)
         {
             this.context = context;
-            this.assembly = assembly;
         }
 
         /// <summary>
-        /// Provides the context responsible for loading this type.
+        /// If necessary, loads the type.
         /// </summary>
-        public IManagedTypeContext Context => context;
+        void LazyLoad()
+        {
+            // multiple threads may enter load at the same time, but this should be safe
+            if (load)
+            {
+                data = context.LoadType(this);
+                load = false;
+            }
+        }
 
         /// <summary>
         /// Gets the parent assembly of this type.
         /// </summary>
-        public ManagedAssembly Assembly => assembly;
+        public ManagedAssembly Assembly
+        {
+            get
+            {
+                LazyLoad();
+                return data.Assembly;
+            }
+        }
 
         /// <summary>
         /// Gets the parent type of this type.
         /// </summary>
-        public ManagedType? DeclaringType => declaringType;
+        public ManagedType? DeclaringType
+        {
+            get
+            {
+                LazyLoad();
+                return data.DeclaringType;
+            }
+        }
 
         /// <summary>
         /// Gets the name of the managed type.
         /// </summary>
-        public string Name => name;
+        public string Name
+        {
+            get
+            {
+                LazyLoad();
+                return data.Name;
+            }
+        }
 
         /// <summary>
         /// Gets the attributes for the type.
         /// </summary>
-        public TypeAttributes Attributes => attributes;
+        public TypeAttributes Attributes
+        {
+            get
+            {
+                LazyLoad();
+                return data.Attributes;
+            }
+        }
 
         /// <summary>
         /// Gets the set of custom attributes applied to the type.
         /// </summary>
-        public ref readonly ReadOnlyFixedValueList<ManagedCustomAttribute> CustomAttributes => ref customAttributes;
+        public ReadOnlyFixedValueList<ManagedCustomAttribute> CustomAttributes
+        {
+            get
+            {
+                LazyLoad();
+                return data.CustomAttributes;
+            }
+        }
 
         /// <summary>
         /// Gets the generic parameters on the managed type.
         /// </summary>
-        public ref readonly ReadOnlyFixedValueList<ManagedGenericParameter> GenericParameters => ref genericParameters;
+        public ReadOnlyFixedValueList<ManagedGenericParameter> GenericParameters
+        {
+            get
+            {
+                LazyLoad();
+                return data.GenericParameters;
+            }
+        }
 
         /// <summary>
         /// Gets a reference to the base type.
         /// </summary>
-        public ManagedTypeRef? BaseType => baseType;
+        public ManagedTypeSignature? BaseType
+        {
+            get
+            {
+                LazyLoad();
+                return data.BaseType;
+            }
+        }
 
         /// <summary>
         /// Gets the set of interfaces implemented on the managed type.
         /// </summary>
-        public ref readonly ReadOnlyFixedValueList<ManagedInterface> Interfaces => ref interfaces;
+        public ReadOnlyFixedValueList<ManagedInterface> Interfaces
+        {
+            get
+            {
+                LazyLoad();
+                return data.Interfaces;
+            }
+        }
 
         /// <summary>
         /// Gets the set of fields declared on the managed type.
         /// </summary>
-        public ref readonly ReadOnlyFixedValueList<ManagedField> Fields => ref fields;
+        public ReadOnlyFixedValueList<ManagedField> Fields
+        {
+            get
+            {
+                LazyLoad();
+                return data.Fields;
+            }
+        }
 
         /// <summary>
         /// Gets the set of methods declared on the managed type.
         /// </summary>
-        public ref readonly ReadOnlyFixedValueList<ManagedMethod> Methods => ref methods;
+        public ReadOnlyFixedValueList<ManagedMethod> Methods
+        {
+            get
+            {
+                LazyLoad();
+                return data.Methods;
+            }
+        }
 
         /// <summary>
         /// Gets the set of nested types within the managed type.
         /// </summary>
-        public ref readonly ReadOnlyFixedValueList<ManagedType> NestedTypes => nestedTypes;
+        public ReadOnlyFixedValueList<ManagedType> NestedTypes
+        {
+            get
+            {
+                LazyLoad();
+                return data.NestedTypes;
+            }
+        }
 
         /// <inhericdoc />
-        public override string ToString() => name;
+        public override string ToString() => Name;
 
     }
 

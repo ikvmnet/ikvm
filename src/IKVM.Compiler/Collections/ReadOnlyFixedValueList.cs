@@ -14,6 +14,11 @@ namespace IKVM.Compiler.Collections
     public readonly struct ReadOnlyFixedValueList<T> : IReadOnlyList<T>
     {
 
+        /// <summary>
+        /// Returns an empty list.
+        /// </summary>
+        public static readonly ReadOnlyFixedValueList<T> Empty = new ReadOnlyFixedValueList<T>();
+
         readonly FixedValueList<T> list;
 
         /// <summary>

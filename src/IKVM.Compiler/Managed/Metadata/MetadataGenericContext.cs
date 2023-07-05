@@ -9,19 +9,21 @@ namespace IKVM.Compiler.Managed.Metadata
     readonly struct MetadataGenericContext
     {
 
-        readonly ManagedTypeRef type;
+        /// <summary>
+        /// Gets an empty generic context.
+        /// </summary>
+        public static readonly MetadataGenericContext Empty = new MetadataGenericContext ();
+
         readonly ReadOnlyFixedValueList<ManagedGenericTypeParameterRef> typeParameters;
         readonly ReadOnlyFixedValueList<ManagedGenericMethodParameterRef>? methodParameters;
 
         /// <summary>
         /// Initializes a new instance.
         /// </summary>
-        /// <param name="type"></param>
         /// <param name="typeParameters"></param>
         /// <param name="methodParameters"></param>
-        public MetadataGenericContext(ManagedTypeRef type, in ReadOnlyFixedValueList<ManagedGenericTypeParameterRef> typeParameters, in ReadOnlyFixedValueList<ManagedGenericMethodParameterRef>? methodParameters)
+        public MetadataGenericContext(in ReadOnlyFixedValueList<ManagedGenericTypeParameterRef> typeParameters, in ReadOnlyFixedValueList<ManagedGenericMethodParameterRef>? methodParameters)
         {
-            this.type = type;
             this.typeParameters = typeParameters;
             this.methodParameters = methodParameters;
         }

@@ -12,11 +12,11 @@
         /// <summary>
         /// Initializes a new instance.
         /// </summary>
-        /// <param name="elementType"></param>
+        /// <param name="baseType"></param>
         /// <param name="lowerBound"></param>
-        public ManagedSzArrayTypeSignature(ManagedTypeSignature elementType)
+        public ManagedSzArrayTypeSignature(ManagedTypeSignature baseType)
         {
-            this.elementType = elementType;
+            this.elementType = baseType;
         }
 
         /// <summary>

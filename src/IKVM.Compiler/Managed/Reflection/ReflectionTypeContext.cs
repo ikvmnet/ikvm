@@ -26,11 +26,11 @@ namespace IKVM.Compiler.Managed.Reflection
         }
 
         /// <summary>
-        /// Resolves the nested types for the given managed type.
+        /// Loads the specified type.
         /// </summary>
         /// <param name="type"></param>
         /// <returns></returns>
-        public IEnumerable<ManagedType> ResolveNestedTypes(ManagedType type) => assembly.ResolveNestedTypes(reflectionType);
+        public ManagedTypeData LoadType(ManagedType type) => assembly.LoadType(type, reflectionType);
 
     }
 
