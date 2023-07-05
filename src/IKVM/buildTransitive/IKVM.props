@@ -3,10 +3,10 @@
         <MSBuildAllProjects>$(MSBuildAllProjects);$(MSBuildThisFileFullPath)</MSBuildAllProjects>
     </PropertyGroup>
 
-    <Import Project="$(MSBuildThisFileDirectory)..\..\targets\generated.props" Condition="Exists('$(MSBuildThisFileDirectory)..\..\targets\generated.props')" />
+    <Import Project="$(MSBuildThisFileDirectory)..\targets\generated.props" Condition="Exists('$(MSBuildThisFileDirectory)..\targets\generated.props')" />
 
     <PropertyGroup>
-        <IkvmKeyFile Condition=" '$(IkvmKeyFile)' == '' And Exists('$(MSBuildThisFileDirectory)..\..\ikvm.snk') ">$(MSBuildThisFileDirectory)..\..\ikvm.snk</IkvmKeyFile>
+        <IkvmKeyFile Condition=" '$(IkvmKeyFile)' == '' And Exists('$(MSBuildThisFileDirectory)..\ikvm.snk') ">$(MSBuildThisFileDirectory)..\ikvm.snk</IkvmKeyFile>
     </PropertyGroup>
 
     <ItemDefinitionGroup>
@@ -30,5 +30,12 @@
             <ReferenceOutputAssembly>true</ReferenceOutputAssembly>
         </IkvmReference>
     </ItemDefinitionGroup>
+
+    <ItemGroup>
+        <None Include="$(MSBuildThisFileDirectory)..\runtimes\**\*" Condition="$([MSBuild]::IsTargetFrameworkCompatible('$(TargetFramework)', 'net461'))">
+            <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+            <TargetPath>runtimes\%(RecursiveDir)%(Filename)%(Extension)</TargetPath>
+        </None>
+    </ItemGroup>
 
 </Project>
