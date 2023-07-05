@@ -2,7 +2,6 @@
     <Import Project="$(MSBuildThisFileDirectory)..\IKVM.NET.Sdk\Sdk\Sdk.props" />
     <Import Project="$(MSBuildThisFileDirectory)..\IKVM.MSBuild\buildTransitive\netstandard2.0\IKVM.MSBuild.props" />
     <Import Project="$(MSBuildThisFileDirectory)..\..\openjdk.props" />
-    <Import Project="$(MSBuildThisFileDirectory)..\..\IKVM.deps.props" />
 
     <PropertyGroup>
         <TargetFrameworks>net461;netcoreapp3.1</TargetFrameworks>
@@ -44,7 +43,7 @@
         <None Include="local\**\*" />
         <None Include="@(OpenJdkSource)" LinkBase="openjdk\%(PackagePath)" />
         <Compile Include="@(OpenJdkSource)" LinkBase="openjdk\%(PackagePath)" />
-        <Class Include="@(OpenJdkClass)" LinkBase="openjdk\%(PackagePath)" />
+        <Convert Include="@(OpenJdkClass)" LinkBase="openjdk\%(PackagePath)" />
         <None Include="@(OpenJdkClass)" LinkBase="openjdk\%(PackagePath)" />
         <JavaResource Include="@(OpenJdkResource)" LinkBase="openjdk\%(PackagePath)" />
         <ExcludeRegex Include="@(OpenJdkExcludeRegex)" />
@@ -61,6 +60,7 @@
         <MapFile Include="map.xml" />
     </ItemGroup>
 
+    <Import Project="$(MSBuildThisFileDirectory)..\..\IKVM.deps.targets" />
     <Import Project="$(MSBuildThisFileDirectory)..\IKVM.NET.Sdk\Sdk\Sdk.targets" />
     <Import Project="$(MSBuildThisFileDirectory)..\IKVM.MSBuild\buildTransitive\netstandard2.0\IKVM.MSBuild.targets" />
 
@@ -112,7 +112,8 @@
         </PropertyGroup>
         <Delete Files="$(RmiStubsOutputPath)**\*" />
         <MakeDir Directories="$(RmiStubsOutputPath)" />
-        <Exec Command="$(RmiCompilerExec) $(_RmiCompilerArgs) %(OpenJdkRmiStub.Flags) %(OpenJdkRmiStub.Identity)" />
+        <Exec Command="$(RmiCompilerExec) $(_RmiCompilerArgs) %(OpenJdkRmiStub.Flags) $([System.String]::Copy('%(OpenJdkRmiStub.Identity)').Replace('$', '\$'))" Condition=" '$([MSBuild]::IsOSUnixLike())' == 'true' " />
+        <Exec Command="$(RmiCompilerExec) $(_RmiCompilerArgs) %(OpenJdkRmiStub.Flags) $([System.String]::Copy('%(OpenJdkRmiStub.Identity)'))" Condition=" '$([MSBuild]::IsOSUnixLike())' == 'false' " />
         <Touch Files="$(_BuildRmiStubsCoreStampFile)" AlwaysCreate="true" ForceTouch="true" />
     </Target>
 
@@ -127,7 +128,7 @@
 
     <Target Name="BuildRmiStubs" DependsOnTargets="$(BuildRmiStubsDependsOn)">
         <ItemGroup>
-            <Class Include="$(RmiStubsOutputPath)**\*.class" />
+            <Convert Include="$(RmiStubsOutputPath)**\*.class" />
         </ItemGroup>
     </Target>
 

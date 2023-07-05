@@ -3136,22 +3136,6 @@ tools/launcher/ToolsOpts.java                                                   
 tools/launcher/UnicodeTest.java                                                                                         generic-all
 tools/launcher/UnresolvedExceptions.java                                                                                generic-all
 tools/launcher/VersionCheck.java                                                                                        generic-all
-tools/pack200/AttributeTests.java                                                                                       generic-all
-tools/pack200/BandIntegrity.java                                                                                        generic-all
-tools/pack200/CommandLineTests.java                                                                                     generic-all
-tools/pack200/InstructionTests.java                                                                                     generic-all
-tools/pack200/NoBeans.java                                                                                              generic-all
-tools/pack200/Pack200Props.java                                                                                         generic-all
-tools/pack200/Pack200Test.java                                                                                          generic-all
-tools/pack200/PackTestZip64.java                                                                                        generic-all
-tools/pack200/PackageVersionTest.java                                                                                   generic-all
-tools/pack200/Reflect.java                                                                                              generic-all
-tools/pack200/RepackTest.java                                                                                           generic-all
-tools/pack200/T7007157.java                                                                                             generic-all
-tools/pack200/TestExceptions.java                                                                                       generic-all
-tools/pack200/TimeStamp.java                                                                                            generic-all
-tools/pack200/UnpackerMemoryTest.java                                                                                   generic-all
-tools/pack200/typeannos/TestTypeAnnotations.java                                                                        generic-all
 vm/verifier/TestStaticIF.java                                                                                           generic-all
 vm/verifier/VerifyProtectedConstructor.java                                                                             generic-all
 vm/verifier/defaultMethods/DefaultMethodRegressionTestsRun.java                                                         generic-all
@@ -3256,11 +3240,8 @@ sun/nio/cs/EncodingNothing.java                                                 
 sun/nio/ch/SelProvider.java                                                                                             linux-all
 
 sun/rmi/rmic/extraCompilation/run.sh                                                                                    linux-all
-sun/security/krb5/ccache/DefaultFile.java                                                                               linux-all
-sun/security/pkcs11/KeyStore/Basic.sh                                                                                   linux-all
-sun/security/pkcs11/KeyStore/ClientAuth.sh                                                                              linux-all
-sun/security/pkcs11/KeyStore/Solaris.sh                                                                                 linux-all
 
+sun/security/krb5/ccache/DefaultFile.java                                                                               linux-all
 sun/security/provider/PolicyFile/CanonPath.java                                                                         linux-all
 sun/security/ssl/com/sun/net/ssl/internal/ssl/SSLSocketImpl/AsyncSSLSocketClose.java                                    linux-all
 
@@ -3275,7 +3256,7 @@ sun/java2d/cmm/ColorConvertOp/InvalidRenderIntentTest.java                      
 # uses Win32 specific stuff, not available on Linux
 javax/print/PrintServiceLookup/CountPrintServices.java                                                                  linux-all
 
-# PKCS 11 is disabled because Cryptoki isn't built
+# PKCS 11 has a few broken tests still
 sun/security/pkcs11/Cipher/ReinitCipher.java                                                                            generic-all
 sun/security/pkcs11/Cipher/TestPKCS5PaddingError.java                                                                   generic-all
 sun/security/pkcs11/Cipher/TestRSACipher.java                                                                           generic-all
@@ -3340,6 +3321,20 @@ javax/net/ssl/ciphersuites/DisabledAlgorithms.java                              
 
 # requires a specific tools.jar, not going to work on IKVM
 tools/pack200/DefaultTimeZoneTest.java                                                                                  generic-all
+tools/pack200/Pack200Props.java                                                                                         generic-all
+tools/pack200/Pack200Test.java                                                                                          generic-all
+tools/pack200/UnpackerMemoryTest.java                                                                                   generic-all
+tools/pack200/TimeStamp.java                                                                                            generic-all
+tools/pack200/TestExceptions.java                                                                                       generic-all
+tools/pack200/T7007157.java                                                                                             generic-all
+tools/pack200/RepackTest.java                                                                                           generic-all
+tools/pack200/PackTestZip64.java                                                                                        generic-all
+tools/pack200/PackageVersionTest.java                                                                                   generic-all
+tools/pack200/InstructionTests.java                                                                                     generic-all
+tools/pack200/CommandLineTests.java                                                                                     generic-all
+tools/pack200/BandIntegrity.java                                                                                        generic-all
+tools/pack200/AttributeTests.java                                                                                       generic-all
+tools/pack200/typeannos/TestTypeAnnotations.java                                                                        generic-all
 
 # this never worked, and might not be possible to make work on .NET
 java/net/ServerSocket/AcceptInheritHandle.java                                                                          generic-all
@@ -3349,3 +3344,21 @@ java/lang/Class/getDeclaredField/FieldSetAccessibleTest.java                    
 
 # test tries to access across assemblies (package private)
 sun/util/calendar/zi/TestZoneInfo310.java                                                                               generic-all
+
+# awt/swing
+java/awt/Component/TreeLockDeadlock/TreeLockDeadlock.java                                                               generic-all
+java/awt/dnd/ImageTransferTest/ImageTransferTest.java                                                                   generic-all
+java/awt/dnd/MissingEventsOnModalDialog/MissingEventsOnModalDialogTest.java                                             generic-all
+java/awt/Toolkit/AutoShutdown/EventQueuePush/EventQueuePushAutoshutdown.sh                                              generic-all
+javax/imageio/plugins/jpeg/JpegImageColorSpaceTest.java                                                                 generic-all
+javax/swing/JEditorPane/6882559/bug6882559.java                                                                         generic-all
+javax/swing/JEditorPane/8158734/bug8158734.java                                                                         generic-all
+javax/swing/JScrollPane/HorizontalMouseWheelOnShiftPressed/HorizontalMouseWheelOnShiftPressed.java                      generic-all
+javax/swing/plaf/nimbus/8041642/ScrollBarThumbVisibleTest.java                                                          generic-all
+
+# mscapi / Windows-MY Keystore usage
+sun/security/mscapi/IterateWindowsRootStore.java                                                                        generic-all
+sun/security/mscapi/CastError.java                                                                                      generic-all
+
+# TODO: Reenable after 8u112 is integrated
+java/lang/invoke/CustomizedLambdaFormTest.java                                                                          generic-all

@@ -1,6 +1,4 @@
 ﻿<Project Sdk="Microsoft.NET.Sdk">
-    <Import Project="$(MSBuildThisFileDirectory)..\..\IKVM.deps.props" />
-    
     <PropertyGroup>
         <TargetFrameworks>net461;netcoreapp3.1</TargetFrameworks>
         <DefineConstants>$(DefineConstants);IMPORTER;EMITTERS</DefineConstants>
@@ -27,7 +25,7 @@
         <ExcludeFromCompile Include="..\IKVM.Runtime\obj\**\*.cs" />
         <ExcludeFromCompile Include="..\IKVM.Runtime\Util\**\*.cs" />
         <ExcludeFromCompile Include="..\IKVM.Runtime\Java\Externs\**\*.cs" />
-        <ExcludeFromCompile Include="..\IKVM.Runtime\stubgen\**\*.cs" />
+        <ExcludeFromCompile Include="..\IKVM.Runtime\StubGen\**\*.cs" />
         <ExcludeFromCompile Include="..\IKVM.Runtime\Assertions.cs" />
         <ExcludeFromCompile Include="..\IKVM.Runtime\ByteCodeHelper.cs" />
         <ExcludeFromCompile Include="..\IKVM.Runtime\common.cs" />
@@ -38,4 +36,5 @@
         <Compile Include="..\IKVM.Runtime\**\*.cs" LinkBase="IKVM.Runtime" Exclude="@(ExcludeFromCompile)" />
     </ItemGroup>
 
+    <Import Project="$(MSBuildThisFileDirectory)..\..\IKVM.deps.targets" />
 </Project>

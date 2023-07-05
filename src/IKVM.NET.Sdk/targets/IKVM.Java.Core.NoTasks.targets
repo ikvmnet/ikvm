@@ -1,4 +1,4 @@
- <Project xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+<Project xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
     <PropertyGroup>
         <MSBuildAllProjects>$(MSBuildAllProjects);$(MSBuildThisFileFullPath)</MSBuildAllProjects>
     </PropertyGroup>
@@ -13,11 +13,23 @@
         <___IkvmReferenceExportItemPrepareCs>$([System.IO.File]::ReadAllText('$([System.IO.Path]::Combine('$(MSBuildThisFileDirectory)', '..', '..', 'IKVM.MSBuild.Tasks', 'IkvmReferenceExportItemPrepare.cs'))'))</___IkvmReferenceExportItemPrepareCs>
     </PropertyGroup>
 
+    <PropertyGroup Condition=" '$(MSBuildRuntimeType)' == 'Core' ">
+        <___System_Collections_Immutable>$(PkgSystem_Collections_Immutable)\lib\netstandard2.0\System.Collections.Immutable.dll</___System_Collections_Immutable>
+        <___System_Memory>$(PkgSystem_Memory)\lib\netstandard2.0\System.Memory.dll</___System_Memory>
+        <___System_Reflection_Metadata>$(PkgSystem_Reflection_Metadata)\lib\netstandard2.0\System.Reflection.Metadata.dll</___System_Reflection_Metadata>
+    </PropertyGroup>
+
+    <PropertyGroup Condition=" '$(MSBuildRuntimeType)' != 'Core' ">
+        <___System_Collections_Immutable>System.Collections.Immutable</___System_Collections_Immutable>
+        <___System_Memory>System.Memory</___System_Memory>
+        <___System_Reflection_Metadata>System.Reflection.Metadata</___System_Reflection_Metadata>
+    </PropertyGroup>
+
     <UsingTask TaskName="IkvmReferenceExportItemPrepare" TaskFactory="RoslynCodeTaskFactory" AssemblyFile="$(MSBuildToolsPath)\Microsoft.Build.Tasks.Core.dll">
         <Task>
-            <Reference Include="System.Collections.Immutable" />
-            <Reference Include="System.Memory" />
-            <Reference Include="System.Reflection.Metadata" />
+            <Reference Include="$(___System_Collections_Immutable)" />
+            <Reference Include="$(___System_Memory)" />
+            <Reference Include="$(___System_Reflection_Metadata)" />
             <Code Type="Class" Language="cs">
                 <![CDATA[
 $([MSBuild]::Unescape('$(___IkvmReferenceExportItemCs)'))
@@ -47,6 +59,7 @@ Items = Items.OrderBy(i => i.ItemSpec).ToArray();
     <Target Name="_ExportReference" DependsOnTargets="ResolveIkvmExporter;ResolveReferenceExports" Inputs="@(ReferenceExport)" Outputs="%(ReferenceExport.CachePath)">
         <Error Text="Could not locate ikvmstub executable." Condition=" '$(IkvmExporterPath)' == '' " />
         <Error Text="ikvmstub executable could not be located at '$(IkvmExporterPath)'" Condition="!Exists('$(IkvmExporterPath)')" />
+        <Exec Command="chmod +x $(IkvmExporterPath)" ContinueOnError="true" Condition="$([MSBuild]::IsOSUnixLike())" />
 
         <ItemGroup>
             <_ReferenceExportReference Remove="@(_ReferenceExportReference)" />
@@ -88,6 +101,7 @@ Items = Items.OrderBy(i => i.ItemSpec).ToArray();
     <Target Name="_CompileJavaResponseFile" DependsOnTargets="ResolveJavaCompiler;ExportReferences;GetReferenceClasspath;BeforeCompile">
         <Error Text="Could not locate javac executable." Condition=" '$(JavaCompilerPath)' == '' " />
         <Error Text="javac could not be located at '$(JavaCompilerPath)'." Condition="!Exists('$(JavaCompilerPath)')" />
+        <Exec Command="chmod +x $(JavaCompilerPath)" ContinueOnError="true" Condition="$([MSBuild]::IsOSUnixLike())" />
 
         <IkvmSortItemGroup Items="@(Classpath)">
             <Output TaskParameter="Items" ItemName="_JavaCompilerArgsClasspath" />
@@ -151,17 +165,15 @@ Items = Items.OrderBy(i => i.ItemSpec).ToArray();
     <Target Name="_CoreCompileResponseFile" DependsOnTargets="ResolveIkvmCompiler;ResolveIkvmRuntimeAssembly;CompileJava">
         <Error Text="Could not locate IKVM.Runtime assembly." Condition=" '$(IkvmRuntimeAssembly)' == '' " />
         <Error Text="IKVM.Runtime.dll could not be located at '$(IkvmRuntimeAssembly)'." Condition="!Exists('$(IkvmRuntimeAssembly)')" />
-        <Error Text="Could not locate ikvmc executable." Condition=" '$(IkvmCompilerPath)' == '' " />
-        <Error Text="ikvmc could not be located at '$(IkvmCompilerPath)'." Condition="!Exists('$(IkvmCompilerPath)')" />
 
         <Delete Files="$(_ExcludeFilePath)" Condition=" '@(ExcludeRegex)' == '' And Exists('$(_ExcludeFilePath)')" />
         <WriteLinesToFile File="$(_ExcludeFilePath)" Lines="@(ExcludeRegex)" Overwrite="true" Condition=" '@(ExcludeRegex)' != '' " WriteOnlyWhenDifferent="true" />
 
         <ItemGroup>
-            <_ClassToCompile Include="@(Class)" />
-            <_AssemblyAttributesClass Include="@(_ClassToCompile)" Condition=" '%(Filename)%(Extension)' == '__AssemblyAttributes.class' " />
-            <_AssemblyAttributesClass Include="@(_ClassToCompile)" Condition=" '%(Filename)%(Extension)' == '__AssemblyInfo.class' " />
-            <_ClassToCompile Remove="@(_AssemblyAttributesClass)" />
+            <_Convert Include="@(Convert)" />
+            <_AssemblyAttributesClass Include="@(_Convert)" Condition=" '%(Filename)%(Extension)' == '__AssemblyAttributes.class' " />
+            <_AssemblyAttributesClass Include="@(_Convert)" Condition=" '%(Filename)%(Extension)' == '__AssemblyInfo.class' " />
+            <_Convert Remove="@(_AssemblyAttributesClass)" />
         </ItemGroup>
 
         <PropertyGroup>
@@ -173,8 +185,8 @@ Items = Items.OrderBy(i => i.ItemSpec).ToArray();
             <Output TaskParameter="Items" ItemName="_IkvmCompilerJavaResource" />
         </IkvmSortItemGroup>
 
-        <IkvmSortItemGroup Items="@(_ClassToCompile)">
-            <Output TaskParameter="Items" ItemName="_IkvmCompilerClassToCompile" />
+        <IkvmSortItemGroup Items="@(_Convert)">
+            <Output TaskParameter="Items" ItemName="_IkvmCompilerConvert" />
         </IkvmSortItemGroup>
 
         <IkvmSortItemGroup Items="@(ReferencePathWithRefAssemblies)">
@@ -210,7 +222,7 @@ Items = Items.OrderBy(i => i.ItemSpec).ToArray();
             <_IkvmCompilerResourceItem Include="@(_IkvmCompilerJavaResource)" ResourcePath="$([System.String]::new('%(_IkvmCompilerJavaResource.ResourcePath)').Replace('\', '/'))" Condition=" '%(Identity)' != '' " />
             <_IkvmCompilerArgs Include="@(_IkvmCompilerResourceItem->'-resource:%(ResourcePath)=%(FullPath)')" />
             <_IkvmCompilerArgs Include="-out:$(_AssemblyTempPath)$(TargetName)$(TargetExt)" />
-            <_IkvmCompilerArgs Include="@(_IkvmCompilerClassToCompile->'%(FullPath)')" />
+            <_IkvmCompilerArgs Include="@(_IkvmCompilerConvert->'%(FullPath)')" />
         </ItemGroup>
         <WriteLinesToFile File="$(_IkvmCompilerResponseFile)" Lines="@(_IkvmCompilerArgs)" Overwrite="true" WriteOnlyWhenDifferent="true" />
     </Target>
@@ -222,7 +234,11 @@ Items = Items.OrderBy(i => i.ItemSpec).ToArray();
         </CoreCompileDependsOn>
     </PropertyGroup>
 
-    <Target Name="_CoreCompile" DependsOnTargets="_CoreCompileResponseFile" Inputs="$(_IkvmCompilerResponseFile);$(_ExcludeFilePath);$(IkvmRuntimeAssembly);$(KeyOriginatorFile);@(MapFile);@(ReferencePathWithRefAssemblies);@(Class);@(JavaResource);$(_CompileJavaStampFile)" Outputs="@(IntermediateAssembly);@(_DebugSymbolsIntermediatePath)">
+    <Target Name="_CoreCompile" DependsOnTargets="_CoreCompileResponseFile" Inputs="$(_IkvmCompilerResponseFile);$(_ExcludeFilePath);$(IkvmRuntimeAssembly);$(KeyOriginatorFile);@(MapFile);@(ReferencePathWithRefAssemblies);@(Convert);@(JavaResource);$(_CompileJavaStampFile)" Outputs="@(IntermediateAssembly);@(_DebugSymbolsIntermediatePath)">
+        <Error Text="Could not locate ikvmc executable." Condition=" '$(IkvmCompilerPath)' == '' " />
+        <Error Text="ikvmc could not be located at '$(IkvmCompilerPath)'." Condition="!Exists('$(IkvmCompilerPath)')" />
+        <Exec Command="chmod +x $(IkvmCompilerPath)" ContinueOnError="true" Condition="$([MSBuild]::IsOSUnixLike())" />
+        
         <!-- Build Java assembly into temporary directory. -->
         <RemoveDir Directories="$(_AssemblyTempPath)" Condition="Exists('$(_AssemblyTempPath)')" />
         <MakeDir Directories="$(_AssemblyTempPath)" />

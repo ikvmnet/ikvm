@@ -16,16 +16,16 @@ namespace IKVM.Tests.Java.java.security
     {
 
         [DataTestMethod]
-        [DataRow("DSA", 2048, "SHA1withDSA")]
+        [DataRow("DSA", 1024, "SHA1withDSA")]
         [DataRow("DSA", 2048, "SHA256withDSA")]
         [DataRow("RSA", 2048, "SHA1withRSA")]
         [DataRow("RSA", 2048, "SHA256withRSA")]
-        //[DataRow("EC", 256, "SHA1withECDSA")]
-        //[DataRow("EC", 384, "SHA1withECDSA")]
-        //[DataRow("EC", 521, "SHA1withECDSA")]
-        //[DataRow("EC", 256, "SHA256withECDSA")]
-        //[DataRow("EC", 384, "SHA256withECDSA")]
-        //[DataRow("EC", 521, "SHA256withECDSA")]
+        [DataRow("EC", 256, "SHA1withECDSA")]
+        [DataRow("EC", 384, "SHA1withECDSA")]
+        [DataRow("EC", 521, "SHA1withECDSA")]
+        [DataRow("EC", 256, "SHA256withECDSA")]
+        [DataRow("EC", 384, "SHA256withECDSA")]
+        [DataRow("EC", 521, "SHA256withECDSA")]
         public void CanCreateKeysAndSignAndVerify(string keyAlgorithm, int keySize, string signatureAlgorithm)
         {
             // we do this many times because differences in the values can make padding required or not

@@ -38,6 +38,7 @@ using IKVM.ByteCode.Parsing;
 
 using System.Linq;
 using System.IO;
+using System.Runtime.CompilerServices;
 #else
 using System.Reflection;
 using System.Reflection.Emit;
@@ -55,6 +56,7 @@ namespace IKVM.Internal
 
 #if IMPORTER
 
+        static CustomAttributeBuilder compilerGeneratedAttribute;
         static CustomAttributeBuilder ghostInterfaceAttribute;
         static CustomAttributeBuilder deprecatedAttribute;
         static CustomAttributeBuilder editorBrowsableNever;
@@ -336,6 +338,14 @@ namespace IKVM.Internal
             return editorBrowsableNever;
         }
 
+        internal static void SetCompilerGenerated(TypeBuilder tb)
+        {
+            if (compilerGeneratedAttribute == null)
+                compilerGeneratedAttribute = new CustomAttributeBuilder(JVM.Import(typeof(CompilerGeneratedAttribute)).GetConstructor(Type.EmptyTypes), Array.Empty<object>());
+
+            tb.SetCustomAttribute(compilerGeneratedAttribute);
+        }
+
         internal static void SetEditorBrowsableNever(TypeBuilder tb)
         {
             tb.SetCustomAttribute(GetEditorBrowsableNever());
@@ -354,9 +364,8 @@ namespace IKVM.Internal
         internal static void SetDeprecatedAttribute(MethodBuilder mb)
         {
             if (deprecatedAttribute == null)
-            {
                 deprecatedAttribute = new CustomAttributeBuilder(JVM.Import(typeof(ObsoleteAttribute)).GetConstructor(Type.EmptyTypes), new object[0]);
-            }
+
             mb.SetCustomAttribute(deprecatedAttribute);
         }
 
@@ -366,15 +375,15 @@ namespace IKVM.Internal
             {
                 deprecatedAttribute = new CustomAttributeBuilder(JVM.Import(typeof(ObsoleteAttribute)).GetConstructor(Type.EmptyTypes), new object[0]);
             }
+
             tb.SetCustomAttribute(deprecatedAttribute);
         }
 
         internal static void SetDeprecatedAttribute(FieldBuilder fb)
         {
             if (deprecatedAttribute == null)
-            {
                 deprecatedAttribute = new CustomAttributeBuilder(JVM.Import(typeof(ObsoleteAttribute)).GetConstructor(Type.EmptyTypes), new object[0]);
-            }
+
             fb.SetCustomAttribute(deprecatedAttribute);
         }
 
@@ -428,6 +437,7 @@ namespace IKVM.Internal
             typeBuilder.SetCustomAttribute(new CustomAttributeBuilder(nonNestedOuterClassAttribute,
                 new object[] { UnicodeUtil.EscapeInvalidSurrogates(className) }));
         }
+
 #endif // IMPORTER
 
         internal static void HideFromReflection(MethodBuilder mb)

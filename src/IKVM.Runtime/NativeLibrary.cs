@@ -1,4 +1,6 @@
 ﻿using System;
+using System.Collections.Generic;
+using System.IO;
 using System.Runtime.InteropServices;
 
 namespace IKVM.Runtime
@@ -12,13 +14,15 @@ namespace IKVM.Runtime
 
 #if NETFRAMEWORK
 
+        const int LOAD_LIBRARY_SEARCH_DLL_LOAD_DIR = 0x00000100;
+
         /// <summary>
         /// Invokes the Windows LoadLibrary function.
         /// </summary>
         /// <param name="path"></param>
         /// <returns></returns>
-        [DllImport("kernel32.dll", EntryPoint = "LoadLibrary", SetLastError = true)]
-        static extern nint LoadLibrary(string path);
+        [DllImport("kernel32.dll", EntryPoint = "LoadLibraryEx", SetLastError = true)]
+        static extern nint LoadLibraryEx(string path, nint hFile, int dwFlags);
 
         /// <summary>
         /// Invokes the Windows FreeLibrary function.
@@ -96,20 +100,79 @@ namespace IKVM.Runtime
         /// <summary>
         /// Loads the given library in a platform dependent manner.
         /// </summary>
-        /// <param name="path"></param>
+        /// <param name="nameOrPath"></param>
         /// <returns></returns>
         /// <exception cref="PlatformNotSupportedException"></exception>
-        public static nint Load(string path)
+        public static nint Load(string nameOrPath)
+        {
+            // always resolve full paths without modification
+            if (Path.IsPathRooted(nameOrPath))
+                return LoadImpl(nameOrPath);
+
+            // let default loader have a chance at it
+            var h = LoadImpl(nameOrPath);
+            if (h != 0)
+                return h;
+
+            // not a path, map the name to local OS convention
+            if (nameOrPath.Contains(Path.PathSeparator.ToString()) == false)
+                nameOrPath = MapLibraryName(nameOrPath);
+
+            // manually scan known paths
+            foreach (var i in GetPaths())
+            {
+                h = LoadImpl(Path.Combine(i, nameOrPath));
+                if (h != 0)
+                    return h;
+            }
+
+            return 0;
+        }
+
+        /// <summary>
+        /// Implements the native method 'mapLibraryName'.
+        /// </summary>
+        /// <returns></returns>
+        static string MapLibraryName(string libname)
+        {
+            if (RuntimeUtil.IsWindows)
+                return libname + ".dll";
+            else if (RuntimeUtil.IsOSX)
+                return "lib" + libname + ".dylib";
+            else
+                return "lib" + libname + ".so";
+        }
+
+        /// <summary>
+        /// Gets the boot library paths.
+        /// </summary>
+        /// <returns></returns>
+        static IEnumerable<string> GetPaths()
+        {
+            var self = Directory.GetParent(typeof(NativeLibrary).Assembly.Location)?.FullName;
+            if (self == null)
+                yield break;
+
+            // search in runtime specific directories
+            foreach (var rid in RuntimeUtil.SupportedRuntimeIdentifiers)
+                yield return Path.Combine(self, "runtimes", rid, "native");
+        }
+
+        /// <summary>
+        /// Loads the given library in a platform dependent manner.
+        /// </summary>
+        /// <param name="nameOrPath"></param>
+        /// <returns></returns>
+        /// <exception cref="PlatformNotSupportedException"></exception>
+        static nint LoadImpl(string nameOrPath)
         {
 #if NETFRAMEWORK
-            if (RuntimeInformation.IsOSPlatform(OSPlatform.Windows))
-                return LoadLibrary(path);
-            else if (RuntimeInformation.IsOSPlatform(OSPlatform.Linux))
-                return dlopen(path, RTLD_NOW | RTLD_GLOBAL);
+            if (RuntimeUtil.IsWindows)
+                return LoadLibraryEx(nameOrPath, 0, LOAD_LIBRARY_SEARCH_DLL_LOAD_DIR);
             else
-                throw new PlatformNotSupportedException();
+                return dlopen(nameOrPath, RTLD_NOW | RTLD_GLOBAL);
 #else
-            return System.Runtime.InteropServices.NativeLibrary.TryLoad(path, typeof(NativeLibrary).Assembly, null, out var h) ? h : 0;
+            return System.Runtime.InteropServices.NativeLibrary.TryLoad(nameOrPath, typeof(NativeLibrary).Assembly, DllImportSearchPath.SafeDirectories | DllImportSearchPath.UseDllDirectoryForDependencies, out var h) ? h : 0;
 #endif
         }
 
@@ -122,12 +185,10 @@ namespace IKVM.Runtime
         public static void Free(nint handle)
         {
 #if NETFRAMEWORK
-            if (RuntimeInformation.IsOSPlatform(OSPlatform.Windows))
+            if (RuntimeUtil.IsWindows)
                 FreeLibrary(handle);
-            else if (RuntimeInformation.IsOSPlatform(OSPlatform.Linux))
-                dlclose(handle);
             else
-                throw new PlatformNotSupportedException();
+                dlclose(handle);
 #else
             System.Runtime.InteropServices.NativeLibrary.Free(handle);
 #endif
@@ -145,30 +206,29 @@ namespace IKVM.Runtime
         {
             try
             {
+#if NETFRAMEWORK
+                if (RuntimeUtil.IsWindows)
+                    return Environment.Is64BitProcess == false ? GetProcAddress32(handle, name, argl) : GetProcAddress(handle, name);
+                else
+                    return dlsym(handle, name);
+#else
                 nint h = 0;
 
-#if NETFRAMEWORK
-                if (RuntimeInformation.IsOSPlatform(OSPlatform.Windows))
-                    h = Environment.Is64BitProcess == false ? GetProcAddress32(handle, name, argl) : GetProcAddress(handle, name);
-                else if (RuntimeInformation.IsOSPlatform(OSPlatform.Linux))
-                    h = dlsym(handle, name);
-                else
-                    throw new PlatformNotSupportedException();
-#else
-                if (RuntimeInformation.IsOSPlatform(OSPlatform.Windows))
+                if (RuntimeUtil.IsWindows)
                     if (Environment.Is64BitProcess == false && GetWin32ExportName(name, argl) is string n)
-                        System.Runtime.InteropServices.NativeLibrary.TryGetExport(handle, n, out h);
+                        if (System.Runtime.InteropServices.NativeLibrary.TryGetExport(handle, n, out h))
+                            return h;
 
-                if (h == 0)
-                    System.Runtime.InteropServices.NativeLibrary.TryGetExport(handle, name, out h);
+                if (System.Runtime.InteropServices.NativeLibrary.TryGetExport(handle, name, out h))
+                    return h;
 #endif
-
-                return h;
             }
             catch (EntryPointNotFoundException)
             {
-                return 0;
+                // symbol not found, default to 0
             }
+
+            return 0;
         }
 
     }

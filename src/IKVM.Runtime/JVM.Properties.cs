@@ -80,6 +80,25 @@ namespace IKVM.Runtime
             {
                 var rootPath = Path.GetDirectoryName(typeof(JVM).Assembly.Location);
 
+#if NETFRAMEWORK
+                // attempt to find settings in legacy app.config
+                try
+                {
+                    // specified home directory
+                    if (ConfigurationManager.AppSettings["ikvm:ikvm.home"] is string confHome)
+                        return Path.GetFullPath(Path.Combine(rootPath, confHome));
+
+                    // specified home root directory
+                    if (ConfigurationManager.AppSettings["ikvm:ikvm.home.root"] is string confHomeRoot)
+                        if (ResolveHomePathFromRoot(Path.Combine(rootPath, confHomeRoot)) is string confHomePath)
+                            return confHomePath;
+                }
+                catch (ConfigurationException)
+                {
+                    // app.config is invalid, ignore
+                }
+#endif
+
                 // user value takes priority
                 if (User.TryGetValue("ikvm.home", out var homePath1))
                     return Path.GetFullPath(Path.Combine(rootPath, homePath1));
@@ -92,13 +111,25 @@ namespace IKVM.Runtime
                 if (User.TryGetValue("ikvm.home.root", out var homePathRoot) == false)
                     Ikvm.TryGetValue("ikvm.home.root", out homePathRoot);
 
-                // make root path absolute
-                homePathRoot = Path.GetFullPath(Path.Combine(rootPath, homePathRoot ?? "ikvm"));
+                // attempt to resolve the path from the given root
+                if (ResolveHomePathFromRoot(Path.GetFullPath(Path.Combine(rootPath, homePathRoot ?? "ikvm"))) is string resolvedHomePath)
+                    return resolvedHomePath;
 
+                // fallback to local 'ikvm' directory next to IKVM.Runtime
+                return Path.GetFullPath(Path.Combine(rootPath, "ikvm"));
+            }
+
+            /// <summary>
+            /// Scans the given root path for the home for the currently executing runtime.
+            /// </summary>
+            /// <param name="homePathRoot"></param>
+            /// <returns></returns>
+            static string ResolveHomePathFromRoot(string homePathRoot)
+            {
                 // calculate ikvm.home from ikvm.home.root
                 if (Directory.Exists(homePathRoot))
                 {
-                    foreach (var rid in GetIkvmHomeRids())
+                    foreach (var rid in RuntimeUtil.SupportedRuntimeIdentifiers)
                     {
                         var ikvmHomePath = Path.GetFullPath(Path.Combine(homePathRoot, rid));
                         if (Directory.Exists(ikvmHomePath))
@@ -106,8 +137,7 @@ namespace IKVM.Runtime
                     }
                 }
 
-                // fallback to local 'ikvm' directory next to IKVM.Runtime
-                return Path.GetFullPath(Path.Combine(rootPath, "ikvm"));
+                return null;
             }
 
             /// <summary>
@@ -161,7 +191,7 @@ namespace IKVM.Runtime
                 p["java.library.path"] = GetLibraryPath();
                 p["java.ext.dirs"] = Path.Combine(HomePath, "lib", "ext");
                 p["java.endorsed.dirs"] = Path.Combine(HomePath, "lib", "endorsed");
-                p["sun.boot.library.path"] = Path.Combine(HomePath, "bin");
+                p["sun.boot.library.path"] = GetBootLibraryPath();
                 p["sun.boot.class.path"] = VfsTable.Default.GetAssemblyClassesPath(BaseAssembly);
 
                 // various OS information
@@ -518,7 +548,7 @@ namespace IKVM.Runtime
                     if (IntPtr.Size == 4)
                         return RuntimeUtil.IsWindows ? "x86" : "i386";
                     else
-                        return "amd64";
+                        return "amd64"; 
                 }
 
                 if (arch.Equals("AMD64", StringComparison.OrdinalIgnoreCase))
@@ -607,6 +637,30 @@ namespace IKVM.Runtime
                     libraryPath.Add(".");
 
                 return string.Join(Path.PathSeparator.ToString(), libraryPath);
+            }
+
+            /// <summary>
+            /// Gets the boot library paths.
+            /// </summary>
+            /// <returns></returns>
+            static IEnumerable<string> GetBootLibraryPathsIter()
+            {
+                var self = Directory.GetParent(typeof(JVM).Assembly.Location)?.FullName;
+                if (self == null)
+                    yield break;
+
+                // search in runtime specific directories
+                foreach (var rid in RuntimeUtil.SupportedRuntimeIdentifiers)
+                    yield return Path.Combine(self, "runtimes", rid, "native");
+            }
+
+            /// <summary>
+            /// Gets the boot library paths 
+            /// </summary>
+            /// <returns></returns>
+            static string GetBootLibraryPath()
+            {
+                return string.Join(Path.PathSeparator.ToString(), GetBootLibraryPathsIter());
             }
 
             /// <summary>
@@ -701,52 +755,6 @@ namespace IKVM.Runtime
 
                 return new[] { utsname.sysname, utsname.release };
 #endif
-            }
-
-            /// <summary>
-            /// Returns the possible architecture names of the ikvm.home directory to use for this run.
-            /// </summary>
-            /// <returns></returns>
-            static IEnumerable<string> GetIkvmHomeRids()
-            {
-                var arch = RuntimeInformation.ProcessArchitecture switch
-                {
-                    Architecture.X86 => "x86",
-                    Architecture.X64 => "x64",
-                    Architecture.Arm => "arm",
-                    Architecture.Arm64 => "arm64",
-                    _ => throw new NotSupportedException(),
-                };
-
-                if (RuntimeUtil.IsWindows)
-                {
-                    var v = Environment.OSVersion.Version;
-
-                    // Windows 10
-                    if (v.Major > 10 || (v.Major == 10 && v.Minor >= 0))
-                        yield return $"win10-{arch}";
-
-                    // Windows 8.1
-                    if (v.Major > 6 || (v.Major == 6 && v.Minor >= 3))
-                        yield return $"win81-{arch}";
-
-                    // Windows 7
-                    if (v.Major > 6 || (v.Major == 6 && v.Minor >= 1))
-                        yield return $"win7-{arch}";
-
-                    // fallback
-                    yield return $"win-{arch}";
-                }
-
-                if (RuntimeUtil.IsLinux)
-                {
-                    yield return $"linux-{arch}";
-                }
-
-                if (RuntimeUtil.IsOSX)
-                {
-                    yield return $"osx-{arch}";
-                }
             }
 
             /// <summary>

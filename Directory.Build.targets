@@ -6,4 +6,6 @@
         </PackageReference>
     </ItemGroup>
 
+    <Import Project="targets\ClangProjectReference.targets" />
+
 </Project>

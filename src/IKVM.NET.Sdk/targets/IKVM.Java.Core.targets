@@ -113,10 +113,6 @@ Files = files.ToArray();
         </ClasspathToClasspathFiles>
     </Target>
 
-    <ItemGroup>
-        <Compile Include="$(MSBuildThisFileDirectory)_.java" />
-    </ItemGroup>
-
     <!-- Abstract target to conduct actual Java compilation. Overridden either by Command or Task implementation. -->
     <Target Name="_CompileJava" DependsOnTargets="ExportReferences;_ResolveClasspathFiles" Inputs="@(Compile);@(ClasspathFiles)" Outputs="$(_CompileJavaStampFile)">
         <Error Text="_CompileJava not implemented." />
@@ -134,13 +130,14 @@ Files = files.ToArray();
 
     <Target Name="CompileJava" DependsOnTargets="$(CompileJavaDependsOn)">
         <ItemGroup>
-            <Class Include="$(ClassOutputPath)**\*.class" />
+            <Convert Include="$(ClassOutputPath)**\*.class" />
         </ItemGroup>
     </Target>
 
     <Target Name="CleanCompileJava">
         <Delete Files="$(_CompileJavaCoreStampFile)" />
         <Delete Files="$(_CompileJavaCoreJavacArgFile)" />
+        <Delete Files="$(ClassOutputPath)\**\*.class" />
         <RemoveDir Directories="$(ClassOutputPath)" />
     </Target>
 
@@ -158,7 +155,7 @@ Files = files.ToArray();
     </PropertyGroup>
 
     <!-- Abstract target to conduct compilation. Overridden either by Command or Task implementation. -->
-    <Target Name="_CoreCompile" DependsOnTargets="CompileJava" Inputs="$(IkvmRuntimeAssembly);$(KeyOriginatorFile);@(MapFile);@(ReferencePathWithRefAssemblies);@(Class);@(JavaResource);$(_CompileJavaStampFile)" Outputs="@(IntermediateAssembly);@(_DebugSymbolsIntermediatePath)">
+    <Target Name="_CoreCompile" DependsOnTargets="CompileJava" Inputs="$(IkvmRuntimeAssembly);$(KeyOriginatorFile);@(MapFile);@(ReferencePathWithRefAssemblies);@(Convert);@(JavaResource);$(_CompileJavaStampFile)" Outputs="@(IntermediateAssembly);@(_DebugSymbolsIntermediatePath)">
         <Error Text="_CoreCompile not implemented." />
     </Target>
 
@@ -189,6 +186,6 @@ Files = files.ToArray();
 
     <!-- Include Task or Command implementation of targets. -->
     <Import Project="IKVM.Java.Core.Tasks.targets" Condition=" '$(UseIkvmTasks)' != 'false' "/>
-    <Import Project="IKVM.Java.Core.NoTasks.targets" Condition=" '$(UseIkvmTasks)' == 'false' "/>
+    <Import Project="IKVM.Java.Core.NoTasks.targets" Condition=" '$(UseIkvmTasks)' == 'false' " />
 
 </Project>

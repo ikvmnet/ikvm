@@ -29,31 +29,51 @@ namespace IKVM.Runtime.JNI.Trampolines
 #if FIRST_PASS
             return null;
 #else
-            if (RuntimeInformation.IsOSPlatform(OSPlatform.Windows))
-            {
-                if (RuntimeInformation.ProcessArchitecture == Architecture.X86)
-                    return new FunctionTable_win7_x86();
-                else if (RuntimeInformation.ProcessArchitecture == Architecture.X64)
-                    return new FunctionTable_win7_x64();
-                else if (RuntimeInformation.ProcessArchitecture == Architecture.Arm)
-                    return new FunctionTable_win81_arm();
-                else if (RuntimeInformation.ProcessArchitecture == Architecture.Arm64)
-                    return new FunctionTable_win10_arm64();
-            }
-            else if (RuntimeInformation.IsOSPlatform(OSPlatform.Linux))
-            {
-                if (RuntimeInformation.ProcessArchitecture == Architecture.X64)
-                    return new FunctionTable_linux_x64();
-                else if (RuntimeInformation.ProcessArchitecture == Architecture.Arm)
-                    return new FunctionTable_linux_arm();
-                else if (RuntimeInformation.ProcessArchitecture == Architecture.Arm64)
-                    return new FunctionTable_linux_arm64();
-            }
-            else if (RuntimeInformation.IsOSPlatform(OSPlatform.OSX))
-            {
-                if (RuntimeInformation.ProcessArchitecture == Architecture.X64)
-                    return new FunctionTable_osx_x64();
-            }
+
+#if ENABLE_WIN7_X86
+            if (RuntimeInformation.IsOSPlatform(OSPlatform.Windows) && RuntimeInformation.ProcessArchitecture == Architecture.X86)
+                return new FunctionTable_win7_x86();
+#endif
+
+#if ENABLE_WIN7_X64
+            if (RuntimeInformation.IsOSPlatform(OSPlatform.Windows) && RuntimeInformation.ProcessArchitecture == Architecture.X64)
+                return new FunctionTable_win7_x64();
+#endif
+
+#if ENABLE_WIN81_ARM
+            if (RuntimeInformation.IsOSPlatform(OSPlatform.Windows) && RuntimeInformation.ProcessArchitecture == Architecture.Arm)
+                return new FunctionTable_win81_arm();
+#endif
+
+#if ENABLE_WIN10_ARM64
+            if (RuntimeInformation.IsOSPlatform(OSPlatform.Windows) && RuntimeInformation.ProcessArchitecture == Architecture.Arm64)
+                return new FunctionTable_win10_arm64();
+#endif
+
+#if ENABLE_LINUX_X64
+            if (RuntimeInformation.IsOSPlatform(OSPlatform.Linux) && RuntimeInformation.ProcessArchitecture == Architecture.X64)
+                return new FunctionTable_linux_x64();
+#endif
+
+#if ENABLE_LINUX_ARM
+            if (RuntimeInformation.IsOSPlatform(OSPlatform.Linux) && RuntimeInformation.ProcessArchitecture == Architecture.X64)
+                return new FunctionTable_linux_arm();
+#endif
+
+#if ENABLE_LINUX_ARM64
+            if (RuntimeInformation.IsOSPlatform(OSPlatform.Linux) && RuntimeInformation.ProcessArchitecture == Architecture.X64)
+                return new FunctionTable_linux_arm64();
+#endif
+
+#if ENABLE_OSX_X64
+            if (RuntimeInformation.IsOSPlatform(OSPlatform.OSX) && RuntimeInformation.ProcessArchitecture == Architecture.X64)
+                return new FunctionTable_osx_x64();
+#endif
+
+#if ENABLE_OSX_ARM64
+            if (RuntimeInformation.IsOSPlatform(OSPlatform.OSX) && RuntimeInformation.ProcessArchitecture == Architecture.Arm64)
+                return new FunctionTable_osx_arm64();
+#endif
 
             throw new PlatformNotSupportedException();
 #endif
