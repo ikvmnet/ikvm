@@ -1,6 +1,1 @@
-*.zip
-*.tar
-*.tar.gz
-win/
-linux-*/
-osx/
+*
