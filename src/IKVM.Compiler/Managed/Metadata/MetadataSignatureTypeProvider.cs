@@ -26,12 +26,12 @@ namespace IKVM.Compiler.Managed.Metadata
 
         public ManagedTypeSignature GetArrayType(ManagedTypeSignature elementType, ArrayShape shape)
         {
-            return elementType.Array(shape.Rank, shape.Sizes, shape.LowerBounds);
+            return elementType.CreateArray(shape.Rank, shape.Sizes, shape.LowerBounds);
         }
 
         public ManagedTypeSignature GetByReferenceType(ManagedTypeSignature elementType)
         {
-            return elementType.ByRef();
+            return elementType.CreateByRef();
         }
 
         public ManagedTypeSignature GetFunctionPointerType(MethodSignature<ManagedTypeSignature> signature)
@@ -45,7 +45,7 @@ namespace IKVM.Compiler.Managed.Metadata
 
         public ManagedTypeSignature GetGenericInstantiation(ManagedTypeSignature genericType, ImmutableArray<ManagedTypeSignature> typeArguments)
         {
-            return genericType.Generic(typeArguments);
+            return genericType.CreateGeneric(typeArguments);
         }
 
         public ManagedTypeSignature GetGenericTypeParameter(MetadataGenericContext genericContext, int index)
@@ -101,7 +101,7 @@ namespace IKVM.Compiler.Managed.Metadata
 
         public ManagedTypeSignature GetSZArrayType(ManagedTypeSignature elementType)
         {
-            return elementType.Array();
+            return elementType.CreateArray();
         }
 
         public ManagedTypeSignature GetTypeFromDefinition(MetadataReader reader, TypeDefinitionHandle handle, byte rawTypeKind)

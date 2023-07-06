@@ -175,13 +175,13 @@ namespace IKVM.Compiler.Managed.Reflection
 #else
             else if (reflectionType.IsSZArray)
 #endif
-                return ResolveTypeSignature(reflectionType.GetElementType()!).Array();
+                return ResolveTypeSignature(reflectionType.GetElementType()!).CreateArray();
             else if (reflectionType.IsArray)
                 throw new ManagedTypeException("Unsupported multidimensional array type.");
             else if (reflectionType.IsByRef)
-                return ResolveTypeSignature(reflectionType.GetElementType()!).ByRef();
+                return ResolveTypeSignature(reflectionType.GetElementType()!).CreateByRef();
             else if (reflectionType.IsPointer)
-                return ResolveTypeSignature(reflectionType.GetElementType()!).Pointer();
+                return ResolveTypeSignature(reflectionType.GetElementType()!).CreatePointer();
             else if (reflectionType.IsGenericType)
             {
                 var a = reflectionType.GetGenericArguments();
@@ -190,7 +190,7 @@ namespace IKVM.Compiler.Managed.Reflection
                 for (int i = 0; i < a.Length; i++)
                     l[i] = ResolveTypeSignature(a[i]);
 
-                return ResolveTypeSignature(reflectionType.GetGenericTypeDefinition()).Generic(l.AsReadOnly());
+                return ResolveTypeSignature(reflectionType.GetGenericTypeDefinition()).CreateGeneric(l.AsReadOnly());
             }
             else
                 return new ManagedTypeRefSignature(ResolveTypeReference(reflectionType));

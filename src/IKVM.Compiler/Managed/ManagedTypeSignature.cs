@@ -32,6 +32,10 @@ namespace IKVM.Compiler.Managed
         public static readonly ManagedPrimitiveTypeSignature String = new(ManagedPrimitiveType.String);
         public static readonly ManagedPrimitiveTypeSignature TypedReference = new(ManagedPrimitiveType.TypedReference);
 
+        ManagedSZArrayTypeSignature? szArray;
+        ManagedByRefTypeSignature? byRef;
+        ManagedPointerTypeSignature? pointer;
+
         /// <summary>
         /// Initializes a new instance.
         /// </summary>
@@ -44,7 +48,7 @@ namespace IKVM.Compiler.Managed
         /// Creates a new fixed size, zero-indexed array. This is a standard .NET array type.
         /// </summary>
         /// <returns></returns>
-        public ManagedTypeSignature Array() => new ManagedSzArrayTypeSignature(this);
+        public ManagedTypeSignature CreateArray() => szArray ??= new ManagedSZArrayTypeSignature(this);
 
         /// <summary>
         /// Creates a new multidimensional array.
@@ -53,7 +57,7 @@ namespace IKVM.Compiler.Managed
         /// <param name="sizes"></param>
         /// <param name="lowerBounds"></param>
         /// <returns></returns>
-        public ManagedTypeSignature Array(int rank, ReadOnlySpan<int> sizes, ReadOnlySpan<int> lowerBounds) => new ManagedArrayTypeSignature(this, new ManagedArrayShape(rank, sizes, lowerBounds));
+        public ManagedTypeSignature CreateArray(int rank, ReadOnlySpan<int> sizes, ReadOnlySpan<int> lowerBounds) => new ManagedArrayTypeSignature(this, new ManagedArrayShape(rank, sizes, lowerBounds));
 
         /// <summary>
         /// Creates a new multidimensional array.
@@ -62,47 +66,47 @@ namespace IKVM.Compiler.Managed
         /// <param name="sizes"></param>
         /// <param name="lowerBounds"></param>
         /// <returns></returns>
-        public ManagedTypeSignature Array(int rank, IList<int> sizes, IList<int> lowerBounds) => new ManagedArrayTypeSignature(this, new ManagedArrayShape(rank, sizes, lowerBounds));
+        public ManagedTypeSignature CreateArray(int rank, IList<int> sizes, IList<int> lowerBounds) => new ManagedArrayTypeSignature(this, new ManagedArrayShape(rank, sizes, lowerBounds));
 
         /// <summary>
         /// Creates a new by-ref type.
         /// </summary>
         /// <returns></returns>
-        public ManagedTypeSignature ByRef() => new ManagedByRefTypeSignature(this);
+        public ManagedTypeSignature CreateByRef() => byRef ??= new ManagedByRefTypeSignature(this);
 
         /// <summary>
         /// Creates a new pointer type.
         /// </summary>
         /// <returns></returns>
-        public ManagedTypeSignature Pointer() => new ManagedPointerTypeSignature(this);
+        public ManagedTypeSignature CreatePointer() => pointer ??= new ManagedPointerTypeSignature(this);
 
         /// <summary>
         /// Creates a new generic type.
         /// </summary>
         /// <param name="parameters"></param>
         /// <returns></returns>
-        public ManagedTypeSignature Generic(in ReadOnlyFixedValueList<ManagedTypeSignature> parameters) => new ManagedGenericTypeSignature(this, parameters);
+        public ManagedTypeSignature CreateGeneric(in ReadOnlyFixedValueList<ManagedTypeSignature> parameters) => new ManagedGenericTypeSignature(this, parameters);
 
         /// <summary>
         /// Creates a new generic type.
         /// </summary>
         /// <param name="parameters"></param>
         /// <returns></returns>
-        public ManagedTypeSignature Generic(ReadOnlySpan<ManagedTypeSignature> parameters) => Generic(new ReadOnlyFixedValueList<ManagedTypeSignature>(parameters));
+        public ManagedTypeSignature CreateGeneric(ReadOnlySpan<ManagedTypeSignature> parameters) => CreateGeneric(new ReadOnlyFixedValueList<ManagedTypeSignature>(parameters));
 
         /// <summary>
         /// Creates a new generic type.
         /// </summary>
         /// <param name="parameters"></param>
         /// <returns></returns>
-        public ManagedTypeSignature Generic(params ManagedTypeSignature[] parameters) => Generic(parameters.AsSpan());
+        public ManagedTypeSignature CreateGeneric(params ManagedTypeSignature[] parameters) => CreateGeneric(parameters.AsSpan());
 
         /// <summary>
         /// Creates a new generic type.
         /// </summary>
         /// <param name="parameters"></param>
         /// <returns></returns>
-        public ManagedTypeSignature Generic(IEnumerable<ManagedTypeSignature> parameters) => Generic(parameters.ToArray().AsSpan());
+        public ManagedTypeSignature CreateGeneric(IEnumerable<ManagedTypeSignature> parameters) => CreateGeneric(parameters.ToArray().AsSpan());
 
     }
 

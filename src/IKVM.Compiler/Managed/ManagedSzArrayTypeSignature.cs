@@ -4,7 +4,7 @@
     /// <summary>
     /// Describes an array of a type signature.
     /// </summary>
-    public sealed class ManagedSzArrayTypeSignature : ManagedTypeSignature
+    public sealed class ManagedSZArrayTypeSignature : ManagedTypeSignature
     {
 
         readonly ManagedTypeSignature elementType;
@@ -12,11 +12,10 @@
         /// <summary>
         /// Initializes a new instance.
         /// </summary>
-        /// <param name="baseType"></param>
-        /// <param name="lowerBound"></param>
-        public ManagedSzArrayTypeSignature(ManagedTypeSignature baseType)
+        /// <param name="elementType"></param>
+        public ManagedSZArrayTypeSignature(ManagedTypeSignature elementType)
         {
-            this.elementType = baseType;
+            this.elementType = elementType;
         }
 
         /// <summary>
