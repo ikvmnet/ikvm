@@ -53,6 +53,11 @@ namespace IKVM.Compiler.Collections
         public readonly int Count => list.Count;
 
         /// <summary>
+        /// Gets whether or not this list is empty.
+        /// </summary>
+        public readonly bool IsEmpty => list.Count == 0;
+
+        /// <summary>
         /// Gets an enumerator for the list.
         /// </summary>
         /// <returns></returns>
