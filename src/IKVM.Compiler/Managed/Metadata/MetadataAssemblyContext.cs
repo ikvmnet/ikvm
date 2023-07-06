@@ -372,10 +372,12 @@ namespace IKVM.Compiler.Managed.Metadata
             var interfaces = LoadInterfaces(reader, type.GetInterfaceImplementations(), genericContext);
             var fields = LoadFields(reader, type.GetFields(), genericContext);
             var methods = LoadMethods(reader, type.GetMethods(), genericContext);
+            var properties = LoadProperties(reader, type.GetProperties(), genericContext);
+            var events = LoadEvents(reader, type.GetEvents(), genericContext);
             var nestedTypes = LoadNestedTypes(reader, type.GetNestedTypes());
 
             // return type data
-            return new ManagedTypeData(assembly, declaringType, typeName, type.Attributes, genericParameters, customAttributes, baseType, interfaces, fields, methods, nestedTypes);
+            return new ManagedTypeData(assembly, declaringType, typeName, type.Attributes, genericParameters, customAttributes, baseType, interfaces, fields, methods, properties, events, nestedTypes);
         }
 
         /// <summary>
@@ -531,7 +533,7 @@ namespace IKVM.Compiler.Managed.Metadata
         }
 
         /// <summary>
-        /// Loads the fields from the given collection.
+        /// Loads the methods from the given collection.
         /// </summary>
         /// <param name="reader"></param>
         /// <param name="handles"></param>
@@ -552,6 +554,7 @@ namespace IKVM.Compiler.Managed.Metadata
         /// </summary>
         /// <param name="reader"></param>
         /// <param name="handle"></param>
+        /// <param name="index"></param>
         /// <param name="genericContext"></param>
         /// <returns></returns>
         ManagedMethod LoadMethod(MetadataReader reader, MethodDefinitionHandle handle, int index, MetadataGenericContext genericContext)
@@ -573,6 +576,74 @@ namespace IKVM.Compiler.Managed.Metadata
 
             // return method data
             return new ManagedMethod(name, method.Attributes, method.ImplAttributes, genericParameters, customAttributes, signature.ReturnType, parameters);
+        }
+
+        /// <summary>
+        /// Loads the properties from the given collection.
+        /// </summary>
+        /// <param name="reader"></param>
+        /// <param name="handles"></param>
+        /// <returns></returns>
+        ReadOnlyFixedValueList<ManagedProperty> LoadProperties(MetadataReader reader, PropertyDefinitionHandleCollection handles, MetadataGenericContext genericContext)
+        {
+            var l = new FixedValueList<ManagedProperty>(handles.Count);
+
+            var i = 0;
+            foreach (var handle in handles)
+                l[i++] = LoadProperty(reader, handle, i, genericContext);
+
+            return l.AsReadOnly();
+        }
+
+        /// <summary>
+        /// Loads the given property.
+        /// </summary>
+        /// <param name="reader"></param>
+        /// <param name="handle"></param>
+        /// <param name="index"></param>
+        /// <param name="genericContext"></param>
+        /// <returns></returns>
+        ManagedProperty LoadProperty(MetadataReader reader, PropertyDefinitionHandle handle, int index, MetadataGenericContext genericContext)
+        {
+            var property = reader.GetPropertyDefinition(handle);
+            var name = reader.GetString(property.Name);
+            var signature = property.DecodeSignature(signatureTypeProvider, genericContext);
+            var customAttributes = LoadCustomAttributes(reader, property.GetCustomAttributes(), genericContext);
+            return new ManagedProperty(name, property.Attributes, customAttributes, signature.ReturnType);
+        }
+
+        /// <summary>
+        /// Loads the properties from the given collection.
+        /// </summary>
+        /// <param name="reader"></param>
+        /// <param name="handles"></param>
+        /// <returns></returns>
+        ReadOnlyFixedValueList<ManagedEvent> LoadEvents(MetadataReader reader, EventDefinitionHandleCollection handles, MetadataGenericContext genericContext)
+        {
+            var l = new FixedValueList<ManagedEvent>(handles.Count);
+
+            var i = 0;
+            foreach (var handle in handles)
+                l[i++] = LoadEvent(reader, handle, i, genericContext);
+
+            return l.AsReadOnly();
+        }
+
+        /// <summary>
+        /// Loads the given property.
+        /// </summary>
+        /// <param name="reader"></param>
+        /// <param name="handle"></param>
+        /// <param name="index"></param>
+        /// <param name="genericContext"></param>
+        /// <returns></returns>
+        ManagedEvent LoadEvent(MetadataReader reader, EventDefinitionHandle handle, int index, MetadataGenericContext genericContext)
+        {
+            var evt = reader.GetEventDefinition(handle);
+            var name = reader.GetString(evt.Name);
+            var type = ResolveTypeSignature(reader, evt.Type, genericContext);
+            var customAttributes = LoadCustomAttributes(reader, evt.GetCustomAttributes(), genericContext);
+            return new ManagedEvent(name, evt.Attributes, customAttributes, type);
         }
 
         /// <summary>

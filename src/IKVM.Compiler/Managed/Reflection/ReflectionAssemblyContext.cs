@@ -251,8 +251,10 @@ namespace IKVM.Compiler.Managed.Reflection
                 LoadCustomAttributes(reflectionType.GetCustomAttributesData()),
                 reflectionType.BaseType != null ? ResolveTypeSignature(reflectionType.BaseType) : null,
                 LoadInterfaces(reflectionType.GetInterfaces()),
-                LoadFields(reflectionType.GetFields()),
-                LoadMethods(reflectionType.GetMethods()),
+                LoadFields(reflectionType.GetFields(BindingFlags.Public | BindingFlags.NonPublic | BindingFlags.Static | BindingFlags.Instance | BindingFlags.DeclaredOnly)),
+                LoadMethods(reflectionType.GetMethods(BindingFlags.Public | BindingFlags.NonPublic | BindingFlags.Static | BindingFlags.Instance | BindingFlags.DeclaredOnly)),
+                LoadProperties(reflectionType.GetProperties(BindingFlags.Public | BindingFlags.NonPublic | BindingFlags.Static | BindingFlags.Instance | BindingFlags.DeclaredOnly)),
+                LoadEvents(reflectionType.GetEvents(BindingFlags.Public | BindingFlags.NonPublic | BindingFlags.Static | BindingFlags.Instance | BindingFlags.DeclaredOnly)),
                 LoadNestedTypes(reflectionType.GetNestedTypes()));
         }
 
@@ -406,6 +408,66 @@ namespace IKVM.Compiler.Managed.Reflection
                     LoadParameters(method.GetParameters()));
             else
                 throw new ManagedTypeException();
+        }
+
+        /// <summary>
+        /// Loads the properties from the given collection.
+        /// </summary>
+        /// <param name="reflectionProperties"></param>
+        /// <returns></returns>
+        ReadOnlyFixedValueList<ManagedProperty> LoadProperties(PropertyInfo[] reflectionProperties)
+        {
+            var l = new FixedValueList<ManagedProperty>(reflectionProperties.Length);
+
+            var i = 0;
+            foreach (var property in reflectionProperties)
+                l[i++] = LoadProperty(property);
+
+            return l.AsReadOnly();
+        }
+
+        /// <summary>
+        /// Loads the given property.
+        /// </summary>
+        /// <param name="reflectionMethod"></param>
+        /// <returns></returns>
+        ManagedProperty LoadProperty(PropertyInfo reflectionMethod)
+        {
+            return new ManagedProperty(
+                reflectionMethod.Name,
+                reflectionMethod.Attributes,
+                LoadCustomAttributes(reflectionMethod.GetCustomAttributesData()),
+                ResolveTypeSignature(reflectionMethod.PropertyType));
+        }
+
+        /// <summary>
+        /// Loads the properties from the given collection.
+        /// </summary>
+        /// <param name="reflectionEvents"></param>
+        /// <returns></returns>
+        ReadOnlyFixedValueList<ManagedEvent> LoadEvents(EventInfo[] reflectionEvents)
+        {
+            var l = new FixedValueList<ManagedEvent>(reflectionEvents.Length);
+
+            var i = 0;
+            foreach (var method in reflectionEvents)
+                l[i++] = LoadEvent(method);
+
+            return l.AsReadOnly();
+        }
+
+        /// <summary>
+        /// Loads the given property.
+        /// </summary>
+        /// <param name="reflectionEvent"></param>
+        /// <returns></returns>
+        ManagedEvent LoadEvent(EventInfo reflectionEvent)
+        {
+            return new ManagedEvent(
+                reflectionEvent.Name,
+                reflectionEvent.Attributes,
+                LoadCustomAttributes(reflectionEvent.GetCustomAttributesData()),
+                ResolveTypeSignature(reflectionEvent.EventHandlerType));
         }
 
         /// <summary>

@@ -159,6 +159,30 @@ namespace IKVM.Compiler.Managed
         }
 
         /// <summary>
+        /// Gets the set of properties declared on the managed type.
+        /// </summary>
+        public ReadOnlyFixedValueList<ManagedProperty> Properties
+        {
+            get
+            {
+                LazyLoad();
+                return data.Properties;
+            }
+        }
+
+        /// <summary>
+        /// Gets the set of properties declared on the managed type.
+        /// </summary>
+        public ReadOnlyFixedValueList<ManagedEvent> Events
+        {
+            get
+            {
+                LazyLoad();
+                return data.Events;
+            }
+        }
+
+        /// <summary>
         /// Gets the set of nested types within the managed type.
         /// </summary>
         public ReadOnlyFixedValueList<ManagedType> NestedTypes

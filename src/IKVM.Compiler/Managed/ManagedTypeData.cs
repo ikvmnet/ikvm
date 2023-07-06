@@ -21,6 +21,8 @@ namespace IKVM.Compiler.Managed
         readonly ReadOnlyFixedValueList<ManagedInterface> interfaces;
         readonly ReadOnlyFixedValueList<ManagedField> fields;
         readonly ReadOnlyFixedValueList<ManagedMethod> methods;
+        readonly ReadOnlyFixedValueList<ManagedProperty> properties;
+        readonly ReadOnlyFixedValueList<ManagedEvent> events;
         readonly ReadOnlyFixedValueList<ManagedType> nestedTypes;
 
         /// <summary>
@@ -36,8 +38,10 @@ namespace IKVM.Compiler.Managed
         /// <param name="interfaces"></param>
         /// <param name="fields"></param>
         /// <param name="methods"></param>
+        /// <param name="properties"></param>
+        /// <param name="events"></param>
         /// <param name="nestedTypes"></param>
-        public ManagedTypeData(ManagedAssembly assembly, ManagedType? declaringType, string name, TypeAttributes attributes, in ReadOnlyFixedValueList<ManagedGenericParameter> genericParameters, in ReadOnlyFixedValueList<ManagedCustomAttribute> customAttributes, in ManagedTypeSignature? baseType, in ReadOnlyFixedValueList<ManagedInterface> interfaces, in ReadOnlyFixedValueList<ManagedField> fields, in ReadOnlyFixedValueList<ManagedMethod> methods, in ReadOnlyFixedValueList<ManagedType> nestedTypes)
+        public ManagedTypeData(ManagedAssembly assembly, ManagedType? declaringType, string name, TypeAttributes attributes, in ReadOnlyFixedValueList<ManagedGenericParameter> genericParameters, in ReadOnlyFixedValueList<ManagedCustomAttribute> customAttributes, in ManagedTypeSignature? baseType, in ReadOnlyFixedValueList<ManagedInterface> interfaces, in ReadOnlyFixedValueList<ManagedField> fields, in ReadOnlyFixedValueList<ManagedMethod> methods, in ReadOnlyFixedValueList<ManagedProperty> properties, in ReadOnlyFixedValueList<ManagedEvent> events,in ReadOnlyFixedValueList<ManagedType> nestedTypes)
         {
             this.assembly = assembly;
             this.declaringType = declaringType;
@@ -49,6 +53,8 @@ namespace IKVM.Compiler.Managed
             this.interfaces = interfaces;
             this.fields = fields;
             this.methods = methods;
+            this.properties = properties;
+            this.events = events;
             this.nestedTypes = nestedTypes;
         }
 
@@ -102,6 +108,16 @@ namespace IKVM.Compiler.Managed
         /// Gets the set of methods declared on the managed type.
         /// </summary>
         public readonly ReadOnlyFixedValueList<ManagedMethod> Methods => methods;
+
+        /// <summary>
+        /// Gets the set of properties declared on the managed type.
+        /// </summary>
+        public readonly ReadOnlyFixedValueList<ManagedProperty> Properties => properties;
+
+        /// <summary>
+        /// Gets the set of fields declared on the managed type.
+        /// </summary>
+        public readonly ReadOnlyFixedValueList<ManagedEvent> Events => events;
 
         /// <summary>
         /// Gets the set of nested types within the managed type.
