@@ -511,33 +511,37 @@ namespace IKVM.Java.Externs.java.net
         /// <param name="socket"></param>
         static void PurgeOutstandingICMP(Socket socket)
         {
-            while (true)
+            // check for outstanding packet
+            while (socket.Poll(0, SelectMode.SelectRead))
             {
-                // check for outstanding packet
-                if (socket.Poll(0, SelectMode.SelectRead) == false)
-                    break;
+                var ep = (EndPoint)new IPEndPoint(IPAddress.IPv6Any, 0);
 
+                // Peek for real data
                 try
                 {
-                    var ep = (EndPoint)new IPEndPoint(IPAddress.IPv6Any, 0);
                     socket.EndReceiveFrom(socket.BeginReceiveFrom(TempBuffer, 0, TempBuffer.Length, SocketFlags.Peek, ref ep, null, null), ref ep);
+                    // read data successfully, escape
+                    return;
+                }
+                catch
+                {
+                    // Swallow everything on Peek
+                }
+
+                // Consume packet
+                try
+                {
+                    socket.EndReceiveFrom(socket.BeginReceiveFrom(TempBuffer, 0, TempBuffer.Length, SocketFlags.None, ref ep, null, null), ref ep);
                 }
                 catch (SocketException e) when (e.SocketErrorCode == SocketError.ConnectionReset)
                 {
-                    try
-                    {
-                        var ep = (EndPoint)new IPEndPoint(IPAddress.IPv6Any, 0);
-                        socket.EndReceiveFrom(socket.BeginReceiveFrom(TempBuffer, 0, TempBuffer.Length, SocketFlags.Peek, ref ep, null, null), ref ep);
-                    }
-                    catch (SocketException e2) when (e2.SocketErrorCode == SocketError.ConnectionReset)
-                    {
-
-                    }
-
-                    continue;
+                    // Continue on receiving ConnectionReset
                 }
-
-                break;
+                catch
+                {
+                    // Exception is anything different than ConnectionReset, finished
+                    return;
+                }
             }
         }
 
