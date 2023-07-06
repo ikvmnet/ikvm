@@ -485,7 +485,15 @@ final class DotNetFileSystem extends FileSystem {
                 existing = new NetWatchKey(path);
                 keys.add(existing);
             }
-            existing.init(create, delete, modify, overflow, subtree);
+            try
+            {
+                existing.init(create, delete, modify, overflow, subtree);
+            }
+            catch (cli.System.IO.FileNotFoundException _)
+            {
+                // Ignore dotnet FileNotFoundException on EnableRaisingEvents=true
+            }
+
             return existing;
         }
     }
