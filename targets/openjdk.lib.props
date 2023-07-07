@@ -24,22 +24,25 @@
 
     <!-- common/autoconf/flags.m4 -->
     <PropertyGroup Condition="$(TargetTriple.Contains('-windows-')) ">
+        <OpenJdkTargetOsApiDir>windows</OpenJdkTargetOsApiDir>
         <PreprocessorDefinitions>$(PreprocessorDefinitions);_STATIC_CPPLIB;_DISABLE_DEPRECATE_STATIC_CPPLIB;WIN32_LEAN_AND_MEAN;IAL</PreprocessorDefinitions>
     </PropertyGroup>
 
     <!-- common/autoconf/flags.m4 -->
     <PropertyGroup Condition="$(TargetTriple.Contains('-linux-'))">
+        <OpenJdkTargetOsApiDir>solaris</OpenJdkTargetOsApiDir>
         <PositionIndependentCode>true</PositionIndependentCode>
         <PreprocessorDefinitions>$(PreprocessorDefinitions);_GNU_SOURCE;_REENTRANT;_LARGEFILE64_SOURCE</PreprocessorDefinitions>
     </PropertyGroup>
 
     <!-- common/autoconf/flags.m4 -->
     <PropertyGroup Condition="$(TargetTriple.Contains('-apple-'))">
+        <OpenJdkTargetOsApiDir>solaris</OpenJdkTargetOsApiDir>
         <PreprocessorDefinitions>$(PreprocessorDefinitions);_ALLBSD_SOURCE;_DARWIN_UNLIMITED_SELECT</PreprocessorDefinitions>
     </PropertyGroup>
 
     <!-- standard OpenJDK includes -->
-    <PropertyGroup>
+    <PropertyGroup Condition=" '$(TargetTriple)' != '' ">
         <IncludeDirectories>$(IncludeDirectories);$(OpenJdkDir)jdk\src\share\native\common</IncludeDirectories>
         <IncludeDirectories>$(IncludeDirectories);$(OpenJdkDir)build\linux-x86_64-normal-server-release\jdk\gensrc_headers</IncludeDirectories>
         <IncludeDirectories>$(IncludeDirectories);$(OpenJdkDir)jdk\src\$(OpenJdkTargetOsApiDir)\native\common</IncludeDirectories>

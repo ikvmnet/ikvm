@@ -5,14 +5,10 @@ on:
     branches:
     - main
     - develop
-    - hotfix/*
-    - release/*
   pull_request:
     branches:
     - main
-    - hotfix/*
     - develop
-    - release/*
   release:
     types:
     - created
@@ -170,17 +166,6 @@ jobs:
         targetPath: ${{ env.WORKPATH }}\ikvm
         useConfigFile: true
         configFilePath: ${{ env.WORKPATH }}\ikvm\GitVersion.yml
-    - name: Setup WSL
-      uses: Vampire/setup-wsl@v2
-      with:
-        additional-packages:
-          zlib1g-dev
-          libmpc-dev
-          libmpfr-dev
-          libgmp-dev
-          libxml2
-          gcc
-          g++
     - name: Cache NuGet
       uses: actions/cache@v3
       with:
@@ -189,8 +174,6 @@ jobs:
         restore-keys: ${{ runner.os }}-nuget-2-
     - name: Add msbuild to PATH
       uses: microsoft/setup-msbuild@v1
-      with:
-        msbuild-architecture: x64
     - name: Download OpenJDK 8 Build
       uses: actions/download-artifact@v3
       with:
@@ -217,7 +200,7 @@ jobs:
         extract: true
     - name: Fix Symbolic Links
       shell: pwsh
-      run: ri win, win.tar, win.tar.gz; .\Fix-SymbolicLinks.ps1
+      run: ri win -Recurse; .\Fix-SymbolicLinks.ps1
       working-directory: ${{ env.WORKPATH }}/ikvm/ext/ikvm-native-sdk
     - name: NuGet Restore
       run: dotnet restore IKVM.sln
@@ -312,6 +295,7 @@ jobs:
         - net461
         - netcoreapp3.1
         - net6.0
+        - net7.0
         sys:
         - windows
         - linux
@@ -321,7 +305,7 @@ jobs:
           sys: linux
         - tfm: net461
           sys: osx-x64
-        - run: IKVM.Tests.Java
+        - run: IKVM.Java.Tests
           tfm: net6.0
         - run: IKVM.Tools.Exporter.Tests
           tfm: net6.0
@@ -343,6 +327,28 @@ jobs:
           tfm: net6.0
         - run: IKVM.OpenJDK.Tests?TestPartition=7
           tfm: net6.0
+        - run: IKVM.Java.Tests
+          tfm: net7.0
+        - run: IKVM.Tools.Exporter.Tests
+          tfm: net7.0
+        - run: IKVM.Tools.Importer.Tests
+          tfm: net7.0
+        - run: IKVM.OpenJDK.Tests?TestPartition=0
+          tfm: net7.0
+        - run: IKVM.OpenJDK.Tests?TestPartition=1
+          tfm: net7.0
+        - run: IKVM.OpenJDK.Tests?TestPartition=2
+          tfm: net7.0
+        - run: IKVM.OpenJDK.Tests?TestPartition=3
+          tfm: net7.0
+        - run: IKVM.OpenJDK.Tests?TestPartition=4
+          tfm: net7.0
+        - run: IKVM.OpenJDK.Tests?TestPartition=5
+          tfm: net7.0
+        - run: IKVM.OpenJDK.Tests?TestPartition=6
+          tfm: net7.0
+        - run: IKVM.OpenJDK.Tests?TestPartition=7
+          tfm: net7.0
         include:
         - run: IKVM.MSBuild.Tasks.Tests
           tfm: net472
@@ -354,6 +360,9 @@ jobs:
           tfm: net6.0
           sys: windows
         - run: IKVM.MSBuild.Tasks.Tests
+          tfm: net7.0
+          sys: windows
+        - run: IKVM.MSBuild.Tasks.Tests
           tfm: netcoreapp3.1
           sys: linux
         - run: IKVM.MSBuild.Tasks.Tests
@@ -366,19 +375,19 @@ jobs:
           tfm: net6.0
           sys: osx-x64
         - run: IKVM.MSBuild.Tests
-          tfm: net6.0
+          tfm: net7.0
           sys: windows
         - run: IKVM.MSBuild.Tests
-          tfm: net6.0
+          tfm: net7.0
           sys: linux
         - run: IKVM.MSBuild.Tests
           tfm: net6.0
           sys: osx-x64
         - run: IKVM.NET.Sdk.Tests
-          tfm: net6.0
+          tfm: net7.0
           sys: windows
         - run: IKVM.NET.Sdk.Tests
-          tfm: net6.0
+          tfm: net7.0
           sys: linux
         - run: IKVM.NET.Sdk.Tests
           tfm: net6.0
@@ -559,6 +568,7 @@ jobs:
         draft: false
         token: ${{ secrets.GITHUB_TOKEN }}
     - name: Push NuGet (GitHub)
+      if: github.event_name != 'pull_request'
       shell: pwsh
       run: dotnet nuget push dist/nuget/*.nupkg --source $env:GITHUB_REPOS --api-key $env:GITHUB_TOKEN --skip-duplicate --no-symbols
       env:

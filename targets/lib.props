@@ -11,8 +11,6 @@
         <MSBuildAllProjects>$(MSBuildAllProjects);$(MSBuildThisFileFullPath)</MSBuildAllProjects>
     </PropertyGroup>
 
-    <Import Project="$(MSBuildThisFileDirectory)..\openjdk.props" />
-
     <PropertyGroup>
         <OutputType>library</OutputType>
         <Verbose>true</Verbose>
@@ -47,7 +45,6 @@
     </PropertyGroup>
 
     <PropertyGroup Condition="$(TargetTriple.Contains('-windows-'))">
-        <OpenJdkTargetOsApiDir>windows</OpenJdkTargetOsApiDir>
         <PreprocessorDefinitions>$(PreprocessorDefinitions);_CRT_SECURE_NO_DEPRECATE;_CRT_NONSTDC_NO_DEPRECATE;WIN32</PreprocessorDefinitions>
         <MsCompatibility>true</MsCompatibility>
         <MsCompatibilityVersion>14</MsCompatibilityVersion>
@@ -55,10 +52,6 @@
         <WinSdkArch Condition="$(TargetTriple.StartsWith('i686-'))">x86</WinSdkArch>
         <WinSdkArch Condition="$(TargetTriple.StartsWith('aarch64-'))">aarch64</WinSdkArch>
         <WinSdkArch Condition="$(TargetTriple.StartsWith('thumbv7-'))">aarch</WinSdkArch>
-    </PropertyGroup>
-
-    <PropertyGroup Condition="$(TargetTriple.Contains('-linux-')) Or $(TargetTriple.Contains('-apple-'))">
-        <OpenJdkTargetOsApiDir>solaris</OpenJdkTargetOsApiDir>
     </PropertyGroup>
 
     <!-- known global values -->

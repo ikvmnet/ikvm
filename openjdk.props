@@ -1,20 +1,4 @@
 ﻿<Project>
-    <PropertyGroup>
-        <OpenJdkDir>$(MSBuildThisFileDirectory)openjdk\</OpenJdkDir>
-        <OpenJdkMajorVersion>1</OpenJdkMajorVersion>
-        <OpenJdkMinorVersion>8</OpenJdkMinorVersion>
-        <OpenJdkMicroVersion>0</OpenJdkMicroVersion>
-        <OpenJdkUpdateVersion>92</OpenJdkUpdateVersion>
-        <OpenJdkBuildNumber>b34</OpenJdkBuildNumber>
-        <OpenJdkVersion>OpenJDK $(OpenJdkMinorVersion)u$(OpenJdkUpdateVersion) $(OpenJdkBuildNumber)</OpenJdkVersion>
-        <OpenJdkFullVersion>$(OpenJdkMajorVersion).$(OpenJdkMinorVersion).$(OpenJdkMicroVersion)_$(OpenJdkUpdateVersion)-$(OpenJdkBuildNumber)</OpenJdkFullVersion>
-        <OpenJdkVendor>Oracle</OpenJdkVendor>
-        <OpenJdkImplementationVersion>$(OpenJdkMajorVersion).$(OpenJdkMinorVersion).$(OpenJdkMicroVersion)</OpenJdkImplementationVersion>
-        <OpenJdkImplementationVendor>Oracle Corporation</OpenJdkImplementationVendor>
-        <OpenJdkSpecificationVersion>$(OpenJdkMajorVersion).$(OpenJdkMinorVersion)</OpenJdkSpecificationVersion>
-        <OpenJdkSpecificationVendor>Oracle Corporation</OpenJdkSpecificationVendor>
-    </PropertyGroup>
-
     <ItemDefinitionGroup>
         <OpenJdkSource>
             <SourcePath>%(Identity)</SourcePath>
