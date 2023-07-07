@@ -32,9 +32,10 @@
     </ItemDefinitionGroup>
 
     <ItemGroup>
-        <None Include="$(MSBuildThisFileDirectory)..\runtimes\**\*" Condition="$([MSBuild]::IsTargetFrameworkCompatible('$(TargetFramework)', 'net461'))">
+        <None Include="$(MSBuildThisFileDirectory)..\runtimes\**\*" Condition="$([MSBuild]::IsTargetFrameworkCompatible('$(TargetFramework)', 'net461'))" LinkBase="runtimes">
             <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
             <TargetPath>runtimes\%(RecursiveDir)%(Filename)%(Extension)</TargetPath>
+            <Visible>false</Visible>
         </None>
     </ItemGroup>
 
