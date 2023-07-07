@@ -302,7 +302,7 @@ jobs:
         exclude:
         - tfm: net461
           sys: linux
-        - run: IKVM.Tests.Java
+        - run: IKVM.Java.Tests
           tfm: net6.0
         - run: IKVM.Tools.Exporter.Tests
           tfm: net6.0
@@ -324,7 +324,7 @@ jobs:
           tfm: net6.0
         - run: IKVM.OpenJDK.Tests?TestPartition=7
           tfm: net6.0
-        - run: IKVM.Tests.Java
+        - run: IKVM.Java.Tests
           tfm: net7.0
         - run: IKVM.Tools.Exporter.Tests
           tfm: net7.0
