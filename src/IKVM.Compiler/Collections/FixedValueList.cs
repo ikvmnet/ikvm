@@ -3,6 +3,7 @@
 using System;
 using System.Collections;
 using System.Collections.Generic;
+using System.Linq;
 
 namespace IKVM.Compiler.Collections
 {
@@ -97,35 +98,46 @@ namespace IKVM.Compiler.Collections
         /// </summary>
         /// <param name="source"></param>
         public FixedValueList(ReadOnlySpan<T> source) :
-            this(source.Length)
+            this(source.Length, source)
         {
-            if (count > 0)
+
+        }
+
+        /// <summary>
+        /// Initializes a new instance.
+        /// </summary>
+        /// <param name="count"></param>
+        /// <param name="source"></param>
+        public FixedValueList(int count, ReadOnlySpan<T> source) :
+            this(count)
+        {
+            if (this.count > 0)
             {
                 item0 = source[0];
-                if (count > 1)
+                if (this.count > 1)
                 {
                     item1 = source[1];
-                    if (count > 2)
+                    if (this.count > 2)
                     {
                         item2 = source[2];
-                        if (count > 3)
+                        if (this.count > 3)
                         {
                             item3 = source[3];
-                            if (count > 4)
+                            if (this.count > 4)
                             {
                                 item4 = source[4];
-                                if (count > 5)
+                                if (this.count > 5)
                                 {
                                     item5 = source[5];
-                                    if (count > 6)
+                                    if (this.count > 6)
                                     {
                                         item6 = source[6];
-                                        if (count > 7)
+                                        if (this.count > 7)
                                         {
                                             item7 = source[7];
-                                            if (count > 8)
+                                            if (this.count > 8)
                                             {
-                                                var s = count - 8;
+                                                var s = this.count - 8;
                                                 for (int i = 0; i < s; i++)
                                                     more[i] = source[i + 8];
                                             }
@@ -137,6 +149,64 @@ namespace IKVM.Compiler.Collections
                     }
                 }
             }
+        }
+
+        /// <summary>
+        /// Initializes a new instance.
+        /// </summary>
+        /// <param name="source"></param>
+        public FixedValueList(FixedValueList<T> source) :
+            this(source.Count, source)
+        {
+
+        }
+
+        /// <summary>
+        /// Initializes a new instance.
+        /// </summary>
+        /// <param name="count"></param>
+        /// <param name="source"></param>
+        public FixedValueList(int count, FixedValueList<T> source) :
+            this(count)
+        {
+            item0 = source.item0;
+            item1 = source.item1;
+            item2 = source.item2;
+            item3 = source.item3;
+            item4 = source.item4;
+            item5 = source.item5;
+            item6 = source.item6;
+            item7 = source.item7;
+            source.more.AsSpan(0, Math.Min(source.more.Length, more.Length)).CopyTo(more);
+        }
+
+        /// <summary>
+        /// Initializes a new instance.
+        /// </summary>
+        /// <param name="source"></param>
+        public FixedValueList(ReadOnlyFixedValueList<T> source) :
+            this(source.Count, source)
+        {
+
+        }
+
+        /// <summary>
+        /// Initializes a new instance.
+        /// </summary>
+        /// <param name="count"></param>
+        /// <param name="source"></param>
+        public FixedValueList(int count, ReadOnlyFixedValueList<T> source) :
+            this(count)
+        {
+            item0 = source.list.item0;
+            item1 = source.list.item1;
+            item2 = source.list.item2;
+            item3 = source.list.item3;
+            item4 = source.list.item4;
+            item5 = source.list.item5;
+            item6 = source.list.item6;
+            item7 = source.list.item7;
+            source.list.more.AsSpan(0, Math.Min(source.list.more.Length, more.Length)).CopyTo(more);
         }
 
         /// <summary>

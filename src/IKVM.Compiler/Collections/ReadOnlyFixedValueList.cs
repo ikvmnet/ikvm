@@ -19,7 +19,7 @@ namespace IKVM.Compiler.Collections
         /// </summary>
         public static readonly ReadOnlyFixedValueList<T> Empty = new ReadOnlyFixedValueList<T>();
 
-        readonly FixedValueList<T> list;
+        internal readonly FixedValueList<T> list;
 
         /// <summary>
         /// Initializes a new instance.

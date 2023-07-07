@@ -1,6 +1,6 @@
 ﻿using System;
+using System.Buffers;
 using System.Diagnostics;
-using System.Net;
 
 using IKVM.Compiler.Collections;
 
@@ -16,20 +16,12 @@ namespace IKVM.Compiler.Managed
     readonly struct ManagedSignatureData
     {
 
-        readonly int localN;
+        readonly int length;
         readonly ManagedSignatureCode local0;
         readonly ManagedSignatureCode local1;
         readonly ManagedSignatureCode local2;
         readonly ManagedSignatureCode local3;
-        readonly ReadOnlyFixedValueList<Memory<ManagedSignatureCode>> memory;
-
-        /// <summary>
-        /// Initializes a new instance from a single new zero argument code.
-        /// </summary>
-        /// <param name="code"></param>
-        internal ManagedSignatureData(ManagedSignatureCodeData data)
-        {
-        }
+        readonly ReadOnlyFixedValueList<ReadOnlyMemory<ManagedSignatureCode>> memory;
 
         /// <summary>
         /// Initializes a new code, with one or two optional arguments, and an optional dynamic argument.
@@ -38,84 +30,318 @@ namespace IKVM.Compiler.Managed
         /// <param name="arg0"></param>
         /// <param name="arg1"></param>
         /// <param name="argv0"></param>
-        internal ManagedSignatureData(in ManagedSignatureData? arg0, in ManagedSignatureData? arg1, in ReadOnlyFixedValueList<ManagedSignatureData>? argv0, ManagedSignatureCodeData data)
+        internal ManagedSignatureData(ManagedSignatureCodeData data, in ManagedSignatureData? arg0, in ManagedSignatureData? arg1, in ReadOnlyFixedValueList<ManagedSignatureData>? argv0)
         {
             switch (data.Kind)
             {
                 case ManagedSignatureCodeKind.Type:
-                    Debug.Assert(data.Type_Context != null);
-                    Debug.Assert(data.Type_AssemblyName != null);
-                    Debug.Assert(data.Type_TypeName != null);
-                    Debug.Assert(arg0 == null);
-                    Debug.Assert(arg1 == null);
-                    Debug.Assert(argv0 == null);
-                    localN = 1;
-                    local0 = new ManagedSignatureCode(data, 0, ReadOnlyFixedValueList<int>.Empty);
+                    WriteType(data, ref length, ref local0, ref local1, ref local2, ref local3, ref memory);
                     break;
                 case ManagedSignatureCodeKind.PrimitiveType:
-                    Debug.Assert(data.Primitive_Type != null);
-                    Debug.Assert(arg0 == null);
-                    Debug.Assert(arg1 == null);
-                    Debug.Assert(argv0 == null);
-                    localN = 1;
-                    local0 = new ManagedSignatureCode(data, 0, ReadOnlyFixedValueList<int>.Empty);
+                    WritePrimitiveType(data, ref length, ref local0, ref local1, ref local2, ref local3, ref memory);
                     break;
                 case ManagedSignatureCodeKind.SZArray:
-                    Debug.Assert(arg0 != null);
-                    Debug.Assert(arg1 == null);
-                    Debug.Assert(argv0 == null);
-                    var arg0P = WriteArg(arg0);
+                    WriteSZArray(data, arg0!.Value, ref length, ref local0, ref local1, ref local2, ref local3, ref memory);
                     break;
                 case ManagedSignatureCodeKind.Array:
-                    Debug.Assert(data.Array_Shape != null);
-                    Debug.Assert(arg0 != null);
-                    Debug.Assert(arg1 == null);
-                    Debug.Assert(argv0 == null);
+                    WriteArray(data, arg0!.Value, ref length, ref local0, ref local1, ref local2, ref local3, ref memory);
                     break;
                 case ManagedSignatureCodeKind.ByRef:
-                    Debug.Assert(arg0 != null);
-                    Debug.Assert(arg1 == null);
-                    Debug.Assert(argv0 == null);
+                    WriteByRef(data, arg0!.Value, ref length, ref local0, ref local1, ref local2, ref local3, ref memory);
                     break;
                 case ManagedSignatureCodeKind.Generic:
-                    Debug.Assert(arg0 != null);
-                    Debug.Assert(arg1 == null);
-                    Debug.Assert(argv0 != null);
+                    WriteGeneric(data, arg0!.Value, ref length, ref local0, ref local1, ref local2, ref local3, ref memory);
                     break;
                 case ManagedSignatureCodeKind.GenericConstraint:
-                    Debug.Assert(arg0 == null);
-                    Debug.Assert(arg1 == null);
-                    Debug.Assert(argv0 != null);
+                    WriteGenericConstraint(data, argv0!.Value, ref length, ref local0, ref local1, ref local2, ref local3, ref memory);
                     break;
                 case ManagedSignatureCodeKind.GenericTypeParameter:
-                    Debug.Assert(data.GenericTypeParameter_Parameter != null);
-                    Debug.Assert(arg0 == null);
-                    Debug.Assert(arg1 == null);
-                    Debug.Assert(argv0 == null);
+                    WriteGenericTypeParameter(data, ref length, ref local0, ref local1, ref local2, ref local3, ref memory);
                     break;
                 case ManagedSignatureCodeKind.GenericMethodParameter:
-                    Debug.Assert(data.GenericMethodParameter_Parameter != null);
-                    Debug.Assert(arg0 == null);
-                    Debug.Assert(arg1 == null);
-                    Debug.Assert(argv0 == null);
+                    WriteGenericMethodParameter(data, ref length, ref local0, ref local1, ref local2, ref local3, ref memory);
                     break;
                 case ManagedSignatureCodeKind.Modified:
-                    Debug.Assert(data.Modified_Required != null);
-                    Debug.Assert(arg0 != null);
-                    Debug.Assert(arg1 != null);
-                    Debug.Assert(argv0 == null);
+                    WriteModified(data, arg0!.Value, arg1!.Value, ref length, ref local0, ref local1, ref local2, ref local3, ref memory);
                     break;
                 case ManagedSignatureCodeKind.Pointer:
-                    Debug.Assert(arg0 != null);
-                    Debug.Assert(arg1 == null);
-                    Debug.Assert(argv0 == null);
+                    WritePointer(data, arg0!.Value, ref length, ref local0, ref local1, ref local2, ref local3, ref memory);
                     break;
                 case ManagedSignatureCodeKind.FunctionPointer:
-                    Debug.Assert(arg0 != null);
-                    Debug.Assert(arg1 == null);
-                    Debug.Assert(argv0 != null);
+                    WriteFunctionPointer(data, arg0!.Value, argv0!.Value, ref length, ref local0, ref local1, ref local2, ref local3, ref memory);
                     break;
+                default:
+                    throw new ManagedTypeException("Invalid signature kind.");
             }
+        }
+
+        /// <summary>
+        /// Writes a new type to the sequence.
+        /// </summary>
+        /// <param name="data"></param>
+        /// <param name="length"></param>
+        /// <param name="local0"></param>
+        /// <param name="local1"></param>
+        /// <param name="local2"></param>
+        /// <param name="local3"></param>
+        /// <param name="memory"></param>
+        static void WriteType(in ManagedSignatureCodeData data, ref int length, ref ManagedSignatureCode local0, ref ManagedSignatureCode local1, ref ManagedSignatureCode local2, ref ManagedSignatureCode local3, ref ReadOnlyFixedValueList<ReadOnlyMemory<ManagedSignatureCode>> memory)
+        {
+            WriteCode(new ManagedSignatureCode(data, 0, ReadOnlyFixedValueList<int>.Empty), ref length, ref local0, ref local1, ref local2, ref local3, ref memory);
+        }
+
+        /// <summary>
+        /// Writes a new primitive type to the sequence.
+        /// </summary>
+        /// <param name="data"></param>
+        /// <param name="length"></param>
+        /// <param name="local0"></param>
+        /// <param name="local1"></param>
+        /// <param name="local2"></param>
+        /// <param name="local3"></param>
+        /// <param name="memory"></param>
+        static void WritePrimitiveType(in ManagedSignatureCodeData data, ref int length, ref ManagedSignatureCode local0, ref ManagedSignatureCode local1, ref ManagedSignatureCode local2, ref ManagedSignatureCode local3, ref ReadOnlyFixedValueList<ReadOnlyMemory<ManagedSignatureCode>> memory)
+        {
+            WriteCode(new ManagedSignatureCode(data, 0, ReadOnlyFixedValueList<int>.Empty), ref length, ref local0, ref local1, ref local2, ref local3, ref memory);
+        }
+
+        /// <summary>
+        /// Writes a new szarray type to the sequence.
+        /// </summary>
+        /// <param name="data"></param>
+        /// <param name="elementType"></param>
+        /// <param name="length"></param>
+        /// <param name="local0"></param>
+        /// <param name="local1"></param>
+        /// <param name="local2"></param>
+        /// <param name="local3"></param>
+        /// <param name="memory"></param>
+        static void WriteSZArray(in ManagedSignatureCodeData data, in ManagedSignatureData elementType, ref int length, ref ManagedSignatureCode local0, ref ManagedSignatureCode local1, ref ManagedSignatureCode local2, ref ManagedSignatureCode local3, ref ReadOnlyFixedValueList<ReadOnlyMemory<ManagedSignatureCode>> memory)
+        {
+            var elementType_ = WriteSignature(elementType, ref length, ref local0, ref local1, ref local2, ref local3, ref memory);
+            WriteCode(new ManagedSignatureCode(data, elementType_, ReadOnlyFixedValueList<int>.Empty), ref length, ref local0, ref local1, ref local2, ref local3, ref memory);
+        }
+
+        /// <summary>
+        /// Writes a new array type to the sequence.
+        /// </summary>
+        /// <param name="data"></param>
+        /// <param name="elementType"></param>
+        /// <param name="length"></param>
+        /// <param name="local0"></param>
+        /// <param name="local1"></param>
+        /// <param name="local2"></param>
+        /// <param name="local3"></param>
+        /// <param name="memory"></param>
+        static void WriteArray(in ManagedSignatureCodeData data, in ManagedSignatureData elementType, ref int length, ref ManagedSignatureCode local0, ref ManagedSignatureCode local1, ref ManagedSignatureCode local2, ref ManagedSignatureCode local3, ref ReadOnlyFixedValueList<ReadOnlyMemory<ManagedSignatureCode>> memory)
+        {
+            var elementType_ = WriteSignature(elementType, ref length, ref local0, ref local1, ref local2, ref local3, ref memory);
+            WriteCode(new ManagedSignatureCode(data, elementType_, ReadOnlyFixedValueList<int>.Empty), ref length, ref local0, ref local1, ref local2, ref local3, ref memory);
+        }
+
+        /// <summary>
+        /// Writes a new byref type to the sequence.
+        /// </summary>
+        /// <param name="data"></param>
+        /// <param name="baseType"></param>
+        /// <param name="length"></param>
+        /// <param name="local0"></param>
+        /// <param name="local1"></param>
+        /// <param name="local2"></param>
+        /// <param name="local3"></param>
+        /// <param name="memory"></param>
+        static void WriteByRef(in ManagedSignatureCodeData data, in ManagedSignatureData baseType, ref int length, ref ManagedSignatureCode local0, ref ManagedSignatureCode local1, ref ManagedSignatureCode local2, ref ManagedSignatureCode local3, ref ReadOnlyFixedValueList<ReadOnlyMemory<ManagedSignatureCode>> memory)
+        {
+            var baseType_ = WriteSignature(baseType, ref length, ref local0, ref local1, ref local2, ref local3, ref memory);
+            WriteCode(new ManagedSignatureCode(data, baseType_, ReadOnlyFixedValueList<int>.Empty), ref length, ref local0, ref local1, ref local2, ref local3, ref memory);
+        }
+
+        /// <summary>
+        /// Writes a generic type to the sequence.
+        /// </summary>
+        /// <param name="data"></param>
+        /// <param name="definition"></param>
+        /// <param name="length"></param>
+        /// <param name="local0"></param>
+        /// <param name="local1"></param>
+        /// <param name="local2"></param>
+        /// <param name="local3"></param>
+        /// <param name="memory"></param>
+        static void WriteGeneric(in ManagedSignatureCodeData data, in ManagedSignatureData definition, ref int length, ref ManagedSignatureCode local0, ref ManagedSignatureCode local1, ref ManagedSignatureCode local2, ref ManagedSignatureCode local3, ref ReadOnlyFixedValueList<ReadOnlyMemory<ManagedSignatureCode>> memory)
+        {
+            var definition_ = WriteSignature(definition, ref length, ref local0, ref local1, ref local2, ref local3, ref memory);
+            WriteCode(new ManagedSignatureCode(data, definition_, ReadOnlyFixedValueList<int>.Empty), ref length, ref local0, ref local1, ref local2, ref local3, ref memory);
+        }
+
+        /// <summary>
+        /// Writes a generic constraint to the sequence.
+        /// </summary>
+        /// <param name="data"></param>
+        /// <param name="constraints"></param>
+        /// <param name="length"></param>
+        /// <param name="local0"></param>
+        /// <param name="local1"></param>
+        /// <param name="local2"></param>
+        /// <param name="local3"></param>
+        /// <param name="memory"></param>
+        static void WriteGenericConstraint(in ManagedSignatureCodeData data, in ReadOnlyFixedValueList<ManagedSignatureData> constraints, ref int length, ref ManagedSignatureCode local0, ref ManagedSignatureCode local1, ref ManagedSignatureCode local2, ref ManagedSignatureCode local3, ref ReadOnlyFixedValueList<ReadOnlyMemory<ManagedSignatureCode>> memory)
+        {
+            var constraints_ = WriteSignatureList(constraints, ref length, ref local0, ref local1, ref local2, ref local3, ref memory);
+            WriteCode(new ManagedSignatureCode(data, 0, constraints_), ref length, ref local0, ref local1, ref local2, ref local3, ref memory);
+        }
+
+        /// <summary>
+        /// Writes a generic type parameter to the sequence.
+        /// </summary>
+        /// <param name="data"></param>
+        /// <param name="length"></param>
+        /// <param name="local0"></param>
+        /// <param name="local1"></param>
+        /// <param name="local2"></param>
+        /// <param name="local3"></param>
+        /// <param name="memory"></param>
+        static void WriteGenericTypeParameter(in ManagedSignatureCodeData data, ref int length, ref ManagedSignatureCode local0, ref ManagedSignatureCode local1, ref ManagedSignatureCode local2, ref ManagedSignatureCode local3, ref ReadOnlyFixedValueList<ReadOnlyMemory<ManagedSignatureCode>> memory)
+        {
+            WriteCode(new ManagedSignatureCode(data, 0, ReadOnlyFixedValueList<int>.Empty), ref length, ref local0, ref local1, ref local2, ref local3, ref memory);
+        }
+
+        /// <summary>
+        /// Writes a generic method parameter to the sequence.
+        /// </summary>
+        /// <param name="data"></param>
+        /// <param name="length"></param>
+        /// <param name="local0"></param>
+        /// <param name="local1"></param>
+        /// <param name="local2"></param>
+        /// <param name="local3"></param>
+        /// <param name="memory"></param>
+        static void WriteGenericMethodParameter(in ManagedSignatureCodeData data, ref int length, ref ManagedSignatureCode local0, ref ManagedSignatureCode local1, ref ManagedSignatureCode local2, ref ManagedSignatureCode local3, ref ReadOnlyFixedValueList<ReadOnlyMemory<ManagedSignatureCode>> memory)
+        {
+            WriteCode(new ManagedSignatureCode(data, 0, ReadOnlyFixedValueList<int>.Empty), ref length, ref local0, ref local1, ref local2, ref local3, ref memory);
+        }
+
+        /// <summary>
+        /// Writes a modified type to the sequence.
+        /// </summary>
+        /// <param name="data"></param>
+        /// <param name="baseType"></param>
+        /// <param name="modifierType"></param>
+        /// <param name="length"></param>
+        /// <param name="local0"></param>
+        /// <param name="local1"></param>
+        /// <param name="local2"></param>
+        /// <param name="local3"></param>
+        /// <param name="memory"></param>
+        static void WriteModified(in ManagedSignatureCodeData data, in ManagedSignatureData baseType, in ManagedSignatureData modifierType, ref int length, ref ManagedSignatureCode local0, ref ManagedSignatureCode local1, ref ManagedSignatureCode local2, ref ManagedSignatureCode local3, ref ReadOnlyFixedValueList<ReadOnlyMemory<ManagedSignatureCode>> memory)
+        {
+            var baseType_ = WriteSignature(baseType, ref length, ref local0, ref local1, ref local2, ref local3, ref memory);
+            var modifierType_ = WriteSignature(modifierType, ref length, ref local0, ref local1, ref local2, ref local3, ref memory);
+            WriteCode(new ManagedSignatureCode(data, baseType_, ReadOnlyFixedValueList<int>.Empty), ref length, ref local0, ref local1, ref local2, ref local3, ref memory);
+        }
+
+        /// <summary>
+        /// Writes a pointer to the sequence.
+        /// </summary>
+        /// <param name="data"></param>
+        /// <param name="baseType"></param>
+        /// <param name="length"></param>
+        /// <param name="local0"></param>
+        /// <param name="local1"></param>
+        /// <param name="local2"></param>
+        /// <param name="local3"></param>
+        /// <param name="memory"></param>
+        static void WritePointer(in ManagedSignatureCodeData data, in ManagedSignatureData baseType, ref int length, ref ManagedSignatureCode local0, ref ManagedSignatureCode local1, ref ManagedSignatureCode local2, ref ManagedSignatureCode local3, ref ReadOnlyFixedValueList<ReadOnlyMemory<ManagedSignatureCode>> memory)
+        {
+            var baseType_ = WriteSignature(baseType, ref length, ref local0, ref local1, ref local2, ref local3, ref memory);
+            WriteCode(new ManagedSignatureCode(data, baseType_, ReadOnlyFixedValueList<int>.Empty), ref length, ref local0, ref local1, ref local2, ref local3, ref memory);
+        }
+
+        /// <summary>
+        /// Writes a function pointer to the sequence.
+        /// </summary>
+        /// <param name="data"></param>
+        /// <param name="returnType"></param>
+        /// <param name="parameterTypes"></param>
+        /// <param name="length"></param>
+        /// <param name="local0"></param>
+        /// <param name="local1"></param>
+        /// <param name="local2"></param>
+        /// <param name="local3"></param>
+        /// <param name="memory"></param>
+        static void WriteFunctionPointer(in ManagedSignatureCodeData data, in ManagedSignatureData returnType, in ReadOnlyFixedValueList<ManagedSignatureData> parameterTypes, ref int length, ref ManagedSignatureCode local0, ref ManagedSignatureCode local1, ref ManagedSignatureCode local2, ref ManagedSignatureCode local3, ref ReadOnlyFixedValueList<ReadOnlyMemory<ManagedSignatureCode>> memory)
+        {
+            var returnType_ = WriteSignature(returnType, ref length, ref local0, ref local1, ref local2, ref local3, ref memory);
+            var parameterTypes_ = WriteSignatureList(parameterTypes, ref length, ref local0, ref local1, ref local2, ref local3, ref memory);
+            WriteCode(new ManagedSignatureCode(data, returnType_, parameterTypes_), ref length, ref local0, ref local1, ref local2, ref local3, ref memory);
+        }
+
+        /// <summary>
+        /// Encodes an existing signature into the passed structure fields.
+        /// </summary>
+        /// <param name="sig"></param>
+        /// <param name="length"></param>
+        /// <param name="local0"></param>
+        /// <param name="local1"></param>
+        /// <param name="local2"></param>
+        /// <param name="local3"></param>
+        /// <param name="memory"></param>
+        /// <returns></returns>
+        static int WriteSignature(in ManagedSignatureData sig, ref int length, ref ManagedSignatureCode local0, ref ManagedSignatureCode local1, ref ManagedSignatureCode local2, ref ManagedSignatureCode local3, ref ReadOnlyFixedValueList<ReadOnlyMemory<ManagedSignatureCode>> memory)
+        {
+            var r = 4 - Math.Min(length, 4);
+            if (r > 3)
+            {
+
+            }
+
+            return length - 1;
+        }
+
+        /// <summary>
+        /// Encodes an existing signature into the passed structure fields.
+        /// </summary>
+        /// <param name="sig"></param>
+        /// <param name="length"></param>
+        /// <param name="local0"></param>
+        /// <param name="local1"></param>
+        /// <param name="local2"></param>
+        /// <param name="local3"></param>
+        /// <param name="memory"></param>
+        /// <returns></returns>
+        static ReadOnlyFixedValueList<int> WriteSignatureList(in ReadOnlyFixedValueList<ManagedSignatureData> sigs, ref int length, ref ManagedSignatureCode local0, ref ManagedSignatureCode local1, ref ManagedSignatureCode local2, ref ManagedSignatureCode local3, ref ReadOnlyFixedValueList<ReadOnlyMemory<ManagedSignatureCode>> memory)
+        {
+            var l = new FixedValueList<int>(sigs.Count);
+
+            for (int i = 0; i < sigs.Count; i++)
+            {
+
+            }
+        }
+
+        /// <summary>
+        /// Appends a block of codes into the passed structure fields.
+        /// </summary>
+        /// <param name="length"></param>
+        /// <param name="block"></param>
+        static void WriteCodeBlock(ReadOnlyMemory<ManagedSignatureCode> block, ref int length, ref ManagedSignatureCode local0, ref ManagedSignatureCode local1, ref ManagedSignatureCode local2, ref ManagedSignatureCode local3, ref ReadOnlyFixedValueList<ReadOnlyMemory<ManagedSignatureCode>> memory)
+        {
+
+        }
+
+        /// <summary>
+        /// Appends a new code into the passed structure fields.
+        /// </summary>
+        /// <param name="code"></param>
+        /// <param name="length"></param>
+        /// <param name="local0"></param>
+        /// <param name="local1"></param>
+        /// <param name="local2"></param>
+        /// <param name="local3"></param>
+        /// <param name="memory"></param>
+        /// <returns></returns>
+        static int WriteCode(in ManagedSignatureCode code, ref int length, ref ManagedSignatureCode local0, ref ManagedSignatureCode local1, ref ManagedSignatureCode local2, ref ManagedSignatureCode local3, ref ReadOnlyFixedValueList<ReadOnlyMemory<ManagedSignatureCode>> memory)
+        {
+
         }
 
     }
