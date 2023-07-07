@@ -295,13 +295,14 @@ jobs:
         - net461
         - netcoreapp3.1
         - net6.0
+        - net7.0
         sys:
         - windows
         - linux
         exclude:
         - tfm: net461
           sys: linux
-        - run: IKVM.Tests.Java
+        - run: IKVM.Java.Tests
           tfm: net6.0
         - run: IKVM.Tools.Exporter.Tests
           tfm: net6.0
@@ -323,6 +324,28 @@ jobs:
           tfm: net6.0
         - run: IKVM.OpenJDK.Tests?TestPartition=7
           tfm: net6.0
+        - run: IKVM.Java.Tests
+          tfm: net7.0
+        - run: IKVM.Tools.Exporter.Tests
+          tfm: net7.0
+        - run: IKVM.Tools.Importer.Tests
+          tfm: net7.0
+        - run: IKVM.OpenJDK.Tests?TestPartition=0
+          tfm: net7.0
+        - run: IKVM.OpenJDK.Tests?TestPartition=1
+          tfm: net7.0
+        - run: IKVM.OpenJDK.Tests?TestPartition=2
+          tfm: net7.0
+        - run: IKVM.OpenJDK.Tests?TestPartition=3
+          tfm: net7.0
+        - run: IKVM.OpenJDK.Tests?TestPartition=4
+          tfm: net7.0
+        - run: IKVM.OpenJDK.Tests?TestPartition=5
+          tfm: net7.0
+        - run: IKVM.OpenJDK.Tests?TestPartition=6
+          tfm: net7.0
+        - run: IKVM.OpenJDK.Tests?TestPartition=7
+          tfm: net7.0
         include:
         - run: IKVM.MSBuild.Tasks.Tests
           tfm: net472
@@ -334,22 +357,28 @@ jobs:
           tfm: net6.0
           sys: windows
         - run: IKVM.MSBuild.Tasks.Tests
+          tfm: net7.0
+          sys: windows
+        - run: IKVM.MSBuild.Tasks.Tests
           tfm: netcoreapp3.1
           sys: linux
         - run: IKVM.MSBuild.Tasks.Tests
           tfm: net6.0
           sys: linux
+        - run: IKVM.MSBuild.Tasks.Tests
+          tfm: net7.0
+          sys: linux
         - run: IKVM.MSBuild.Tests
-          tfm: net6.0
+          tfm: net7.0
           sys: windows
         - run: IKVM.MSBuild.Tests
-          tfm: net6.0
+          tfm: net7.0
           sys: linux
         - run: IKVM.NET.Sdk.Tests
-          tfm: net6.0
+          tfm: net7.0
           sys: windows
         - run: IKVM.NET.Sdk.Tests
-          tfm: net6.0
+          tfm: net7.0
           sys: linux
     name: Test (${{ matrix.run }}:${{ matrix.tfm }}:${{ matrix.sys }})
     needs:
