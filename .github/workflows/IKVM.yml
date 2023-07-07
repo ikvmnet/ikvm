@@ -366,13 +366,16 @@ jobs:
           tfm: netcoreapp3.1
           sys: linux
         - run: IKVM.MSBuild.Tasks.Tests
+          tfm: net6.0
+          sys: linux
+        - run: IKVM.MSBuild.Tasks.Tests
           tfm: netcoreapp3.1
           sys: osx-x64
         - run: IKVM.MSBuild.Tasks.Tests
           tfm: net6.0
-          sys: linux
+          sys: osx-x64
         - run: IKVM.MSBuild.Tasks.Tests
-          tfm: net6.0
+          tfm: net7.0
           sys: osx-x64
         - run: IKVM.MSBuild.Tests
           tfm: net7.0
@@ -381,7 +384,7 @@ jobs:
           tfm: net7.0
           sys: linux
         - run: IKVM.MSBuild.Tests
-          tfm: net6.0
+          tfm: net7.0
           sys: osx-x64
         - run: IKVM.NET.Sdk.Tests
           tfm: net7.0
@@ -390,7 +393,7 @@ jobs:
           tfm: net7.0
           sys: linux
         - run: IKVM.NET.Sdk.Tests
-          tfm: net6.0
+          tfm: net7.0
           sys: osx-x64
     name: Test (${{ matrix.run }}:${{ matrix.tfm }}:${{ matrix.sys }})
     needs:
