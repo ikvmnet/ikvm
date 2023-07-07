@@ -288,11 +288,83 @@ namespace IKVM.Compiler.Managed
         /// <returns></returns>
         static int WriteSignature(in ManagedSignatureData sig, ref int length, ref ManagedSignatureCode local0, ref ManagedSignatureCode local1, ref ManagedSignatureCode local2, ref ManagedSignatureCode local3, ref ReadOnlyFixedValueList<ReadOnlyMemory<ManagedSignatureCode>> memory)
         {
-            var r = 4 - Math.Min(length, 4);
-            if (r == 1)
-                local0 = sig.local0;
+            var p = 0;
 
+            if (length >= 4)
+            {
+                // we use all 4 slots, write block
 
+                if (sig.length == 1)
+                {
+                    // sig uses exactly 1 slot
+                    WriteMemory(new ManagedSignatureCode[1] { sig.local0 }, ref length, ref local0, ref local1, ref local2, ref local3, ref memory);
+                    p += 1;
+                }
+                else if (sig.length == 2)
+                {
+                    // sig uses exactly 2 slots
+                    WriteMemory(new ManagedSignatureCode[2] { sig.local0, sig.local1 }, ref length, ref local0, ref local1, ref local2, ref local3, ref memory);
+                    p += 2;
+                }
+                else if (sig.length == 3)
+                {
+                    // sig uses exactly 3 slots
+                    WriteMemory(new ManagedSignatureCode[3] { sig.local0, sig.local1, sig.local2 }, ref length, ref local0, ref local1, ref local2, ref local3, ref memory);
+                    p += 3;
+                }
+                else if (sig.length == 4)
+                {
+                    // sig uses exactly 4 slots
+                    WriteMemory(new ManagedSignatureCode[4] { sig.local0, sig.local1, sig.local2, sig.local3 }, ref length, ref local0, ref local1, ref local2, ref local3, ref memory);
+                    p += 4;
+                }
+                else
+                {
+                    // write local block
+                    WriteMemory(new ManagedSignatureCode[4] { sig.local0, sig.local1, sig.local2, sig.local3 }, ref length, ref local0, ref local1, ref local2, ref local3, ref memory);
+                    p += 4;
+                }
+            }
+            else if (length == 3)
+            {
+                // copy 1 slot
+                local3 = sig.local0;
+                p += 1;
+
+                // copy 3 slots to block
+                WriteMemory(new ManagedSignatureCode[3] { sig.local1, sig.local2, sig.local3 }, ref length, ref local0, ref local1, ref local2, ref local3, ref memory);
+                p += 3;
+            }
+            else if (length == 2)
+            {
+                // copy 2 slots
+                local2 = sig.local0;
+                local3 = sig.local1;
+                p += 2;
+
+                // copy 2 slots to block
+                WriteMemory(new ManagedSignatureCode[2] { sig.local2, sig.local3 }, ref length, ref local0, ref local1, ref local2, ref local3, ref memory);
+                p += 2;
+            }
+            else if (length == 1)
+            {
+                // copy 3 slots
+                local1 = sig.local0;
+                local2 = sig.local1;
+                local3 = sig.local2;
+                p += 3;
+
+                // copy 1 slot to block
+                WriteMemory(new ManagedSignatureCode[1] {sig.local3 }, ref length, ref local0, ref local1, ref local2, ref local3, ref memory);
+                p += 1;
+            }
+
+            // sig uses more than 4 slots, copy remainder
+            foreach (var m in sig.memory)
+            {
+                WriteMemory(m, ref length, ref local0, ref local1, ref local2, ref local3, ref memory);
+                p += m.Length;
+            }
 
             return length - 1;
         }
@@ -323,9 +395,14 @@ namespace IKVM.Compiler.Managed
         /// </summary>
         /// <param name="length"></param>
         /// <param name="block"></param>
-        static void WriteCodeBlock(ReadOnlyMemory<ManagedSignatureCode> block, ref int length, ref ManagedSignatureCode local0, ref ManagedSignatureCode local1, ref ManagedSignatureCode local2, ref ManagedSignatureCode local3, ref ReadOnlyFixedValueList<ReadOnlyMemory<ManagedSignatureCode>> memory)
+        static void WriteMemory(ReadOnlyMemory<ManagedSignatureCode> block, ref int length, ref ManagedSignatureCode local0, ref ManagedSignatureCode local1, ref ManagedSignatureCode local2, ref ManagedSignatureCode local3, ref ReadOnlyFixedValueList<ReadOnlyMemory<ManagedSignatureCode>> memory)
         {
+            var l = 0;
+            foreach (var m in memory)
+                l += m.Length;
 
+            memory = new FixedValueList<ReadOnlyMemory<ManagedSignatureCode>>(memory.Count + 1, memory).AsReadOnly();
+            length += l;
         }
 
         /// <summary>
