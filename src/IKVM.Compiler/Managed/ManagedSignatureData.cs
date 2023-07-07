@@ -289,10 +289,10 @@ namespace IKVM.Compiler.Managed
         static int WriteSignature(in ManagedSignatureData sig, ref int length, ref ManagedSignatureCode local0, ref ManagedSignatureCode local1, ref ManagedSignatureCode local2, ref ManagedSignatureCode local3, ref ReadOnlyFixedValueList<ReadOnlyMemory<ManagedSignatureCode>> memory)
         {
             var r = 4 - Math.Min(length, 4);
-            if (r > 3)
-            {
+            if (r == 1)
+                local0 = sig.local0;
 
-            }
+
 
             return length - 1;
         }
