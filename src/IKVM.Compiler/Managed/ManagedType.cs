@@ -13,14 +13,14 @@ namespace IKVM.Compiler.Managed
 
         readonly IManagedTypeContext context;
 
+        internal ManagedTypeData data;
         bool load = true;
-        ManagedTypeData data;
 
         /// <summary>
         /// Initializes a new instance.
         /// </summary>
         /// <param name="context"></param>
-        public ManagedType(IManagedTypeContext context)
+        internal ManagedType(IManagedTypeContext context)
         {
             this.context = context;
         }
@@ -89,31 +89,31 @@ namespace IKVM.Compiler.Managed
         /// <summary>
         /// Gets the set of custom attributes applied to the type.
         /// </summary>
-        public ReadOnlyFixedValueList<ManagedCustomAttribute> CustomAttributes
+        public ManagedTypeCustomAttributeList CustomAttributes
         {
             get
             {
                 LazyLoad();
-                return data.CustomAttributes;
+                return new ManagedTypeCustomAttributeList(this);
             }
         }
 
         /// <summary>
         /// Gets the generic parameters on the managed type.
         /// </summary>
-        public ReadOnlyFixedValueList<ManagedGenericParameter> GenericParameters
+        public ManagedTypeGenericParameterList GenericParameters
         {
             get
             {
                 LazyLoad();
-                return data.GenericParameters;
+                return new ManagedTypeGenericParameterList(this);
             }
         }
 
         /// <summary>
         /// Gets a reference to the base type.
         /// </summary>
-        public ManagedTypeSignature? BaseType
+        public ManagedSignature? BaseType
         {
             get
             {
@@ -125,67 +125,67 @@ namespace IKVM.Compiler.Managed
         /// <summary>
         /// Gets the set of interfaces implemented on the managed type.
         /// </summary>
-        public ReadOnlyFixedValueList<ManagedInterface> Interfaces
+        public ManagedInterfaceList Interfaces
         {
             get
             {
                 LazyLoad();
-                return data.Interfaces;
+                return new ManagedInterfaceList(this);
             }
         }
 
         /// <summary>
         /// Gets the set of fields declared on the managed type.
         /// </summary>
-        public ReadOnlyFixedValueList<ManagedField> Fields
+        public ManagedTypeFieldList Fields
         {
             get
             {
                 LazyLoad();
-                return data.Fields;
+                return new ManagedTypeFieldList(this);
             }
         }
 
         /// <summary>
         /// Gets the set of methods declared on the managed type.
         /// </summary>
-        public ReadOnlyFixedValueList<ManagedMethod> Methods
+        public ManagedTypeMethodList Methods
         {
             get
             {
                 LazyLoad();
-                return data.Methods;
+                return new ManagedTypeMethodList(this);
             }
         }
 
         /// <summary>
         /// Gets the set of properties declared on the managed type.
         /// </summary>
-        public ReadOnlyFixedValueList<ManagedProperty> Properties
+        public ManagedTypePropertyList Properties
         {
             get
             {
                 LazyLoad();
-                return data.Properties;
+                return new ManagedTypePropertyList(this);
             }
         }
 
         /// <summary>
         /// Gets the set of properties declared on the managed type.
         /// </summary>
-        public ReadOnlyFixedValueList<ManagedEvent> Events
+        public ManagedTypeEventList Events
         {
             get
             {
                 LazyLoad();
-                return data.Events;
+                return new ManagedTypeEventList(this);
             }
         }
 
         /// <summary>
         /// Gets the set of nested types within the managed type.
         /// </summary>
-        public ReadOnlyFixedValueList<ManagedType> NestedTypes
+        public ReadOnlyFixedValueList1<ManagedType> NestedTypes
         {
             get
             {

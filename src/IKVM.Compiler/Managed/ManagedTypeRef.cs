@@ -1,4 +1,5 @@
-﻿using System.Reflection;
+﻿using System;
+using System.Reflection;
 
 namespace IKVM.Compiler.Managed
 {
@@ -6,8 +7,24 @@ namespace IKVM.Compiler.Managed
     /// <summary>
     /// Describes a reference to a managed type.
     /// </summary>
-    public readonly struct ManagedTypeRef
+    public readonly struct ManagedTypeRef : IEquatable<ManagedTypeRef>
     {
+
+        /// <summary>
+        /// Returns <c>true</c> if the two types are equal.
+        /// </summary>
+        /// <param name="x"></param>
+        /// <param name="y"></param>
+        /// <returns></returns>
+        public static bool operator ==(ManagedTypeRef x, ManagedTypeRef y) => x.Equals(y);
+
+        /// <summary>
+        /// Returns <c>false</c> if the two types are equal.
+        /// </summary>
+        /// <param name="x"></param>
+        /// <param name="y"></param>
+        /// <returns></returns>
+        public static bool operator !=(ManagedTypeRef x, ManagedTypeRef y) => x.Equals(y) == false;
 
         readonly IManagedAssemblyContext context;
         readonly AssemblyName assemblyName;
@@ -50,6 +67,19 @@ namespace IKVM.Compiler.Managed
         /// reference was generated from the same assembly as the referenced type itself.
         /// </summary>
         public ManagedType? ManagedType => managedType;
+
+        /// <inheritdoc />
+        public override bool Equals(object? obj) => obj is ManagedTypeRef r && Equals(r);
+
+        /// <summary>
+        /// Returns <c>true</c> if the specified instance is equal to the current instance.
+        /// </summary>
+        /// <param name="obj"></param>
+        /// <returns></returns>
+        public bool Equals(ManagedTypeRef obj) => obj.assemblyName == assemblyName && obj.typeName == typeName;
+
+        /// <inheritdoc />
+        public override int GetHashCode() => -334489951 ^ assemblyName.GetHashCode() ^ typeName.GetHashCode();
 
     }
 

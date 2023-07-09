@@ -1,0 +1,135 @@
+﻿<#@ template debug="false" hostspecific="false" language="C#" #>
+<#@ assembly name="System.Core" #>
+<#@ import namespace="System.Linq" #>
+<#@ import namespace="System.Text" #>
+<#@ import namespace="System.Collections.Generic" #>
+<#@ output extension=".cs" #>
+using System;
+
+namespace IKVM.Compiler.Managed
+{
+<#
+foreach (var type in new[]
+{
+    "Type",
+    "PrimitiveType",
+    "SZArray",
+    "Array",
+    "ByRef",
+    "Generic",
+    "GenericConstraint",
+    "GenericTypeParameter",
+    "GenericMethodParameter",
+    "Modified",
+    "Pointer",
+    "FunctionPointer",
+})
+{
+#>
+
+    public readonly partial struct ManagedSignature
+    {
+
+        /// <summary>
+        /// Casts the given signature to a <see cref="ManagedSignature"/>.
+        /// </summary>
+        /// <param name="value"></param>
+        public static implicit operator ManagedSignature(in Managed<#= type #>Signature value) => new ManagedSignature(value.data);
+
+        /// <summary>
+        /// Casts the given signature to a <see cref="Managed<#= type #>Signature"/>.
+        /// </summary>
+        /// <param name="value"></param>
+        public static explicit operator Managed<#= type #>Signature(in ManagedSignature value) => new Managed<#= type #>Signature(value.data);
+
+        /// <summary>
+        /// Returns <c>true</c> if this signature is equal to the specified signature.
+        /// </summary>
+        /// <param name="obj"></param>
+        /// <returns></returns>
+        public readonly bool Equals(in Managed<#= type #>Signature obj) => obj.Equals(this);
+        
+        /// <summary>
+        /// Returns <c>true</c> if this signature is equal to the specified signature.
+        /// </summary>
+        /// <param name="obj"></param>
+        /// <returns></returns>
+        /// <inheritdoc />
+        bool IEquatable<Managed<#= type #>Signature>.Equals(Managed<#= type #>Signature other) => Equals(other);
+
+    }
+
+    public readonly partial struct Managed<#= type #>Signature : IEquatable<ManagedSignature>, IEquatable<Managed<#= type #>Signature>
+    {
+    
+        /// <summary>
+        /// Returns <c>true</c> if the two signatures are equal to each other.
+        /// </summary>
+        /// <param name="value"></param>
+        public static bool operator ==(in Managed<#= type #>Signature x, in Managed<#= type #>Signature y) => x.Equals(y);
+        
+        /// <summary>
+        /// Returns <c>false</c> if the two signatures are equal to each other.
+        /// </summary>
+        /// <param name="value"></param>
+        public static bool operator !=(in Managed<#= type #>Signature x, in Managed<#= type #>Signature y) => x.Equals(y) == false;
+
+        internal readonly ManagedSignatureData data;
+
+        /// <summary>
+        /// Initializes a new instance.
+        /// </summary>
+        /// <param name="data"></param>
+        internal Managed<#= type #>Signature(in ManagedSignatureData data)
+        {
+            var c = data.GetLastCode();
+            if (c.Data.Kind != ManagedSignatureKind.<#= type #>)
+                throw new InvalidCastException($"Signature of type {c.Data.Kind} is not of kind <#= type #>.");
+
+            this.data = data;
+        }
+
+        /// <summary>
+        /// Returns <c>true</c> if this signature is equal to the specified signature.
+        /// </summary>
+        /// <param name="obj"></param>
+        /// <returns></returns>
+        public override readonly bool Equals(object obj) => obj switch
+        {
+            ManagedSignature s => Equals(s),
+            Managed<#= type #>Signature s => Equals(s),
+            _ => false,
+        };
+
+        /// <summary>
+        /// Returns <c>true</c> if this signature is equal to the specified signature.
+        /// </summary>
+        /// <param name="obj"></param>
+        /// <returns></returns>
+        public readonly bool Equals(in ManagedSignature obj) => data.Equals(obj.data);
+
+        /// <summary>
+        /// Returns <c>true</c> if this signature is equal to the specified signature.
+        /// </summary>
+        /// <param name="obj"></param>
+        /// <returns></returns>
+        public readonly bool Equals(in Managed<#= type #>Signature obj) => data.Equals(obj.data);
+
+        /// <summary>
+        /// Gets a unique hash code for this signature.
+        /// </summary>
+        /// <returns></returns>
+        public override readonly int GetHashCode() => data.GetHashCode();
+
+        /// <inheritdoc />
+        readonly bool IEquatable<Managed<#= type #>Signature>.Equals(Managed<#= type #>Signature other) => Equals(other);
+
+        /// <inheritdoc />
+        readonly bool IEquatable<ManagedSignature>.Equals(ManagedSignature other) => Equals(other);
+
+    }
+<#
+}
+#>
+
+}

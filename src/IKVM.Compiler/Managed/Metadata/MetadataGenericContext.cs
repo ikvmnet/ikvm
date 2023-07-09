@@ -14,15 +14,15 @@ namespace IKVM.Compiler.Managed.Metadata
         /// </summary>
         public static readonly MetadataGenericContext Empty = new MetadataGenericContext ();
 
-        readonly ReadOnlyFixedValueList<ManagedGenericTypeParameterRef> typeParameters;
-        readonly ReadOnlyFixedValueList<ManagedGenericMethodParameterRef>? methodParameters;
+        readonly ReadOnlyFixedValueList1<ManagedGenericTypeParameterRef> typeParameters;
+        readonly ReadOnlyFixedValueList1<ManagedGenericMethodParameterRef>? methodParameters;
 
         /// <summary>
         /// Initializes a new instance.
         /// </summary>
         /// <param name="typeParameters"></param>
         /// <param name="methodParameters"></param>
-        public MetadataGenericContext(in ReadOnlyFixedValueList<ManagedGenericTypeParameterRef> typeParameters, in ReadOnlyFixedValueList<ManagedGenericMethodParameterRef>? methodParameters)
+        public MetadataGenericContext(in ReadOnlyFixedValueList1<ManagedGenericTypeParameterRef> typeParameters, in ReadOnlyFixedValueList1<ManagedGenericMethodParameterRef>? methodParameters)
         {
             this.typeParameters = typeParameters;
             this.methodParameters = methodParameters;
@@ -31,12 +31,12 @@ namespace IKVM.Compiler.Managed.Metadata
         /// <summary>
         /// Gets the set of known type parameters.
         /// </summary>
-        public readonly ReadOnlyFixedValueList<ManagedGenericTypeParameterRef> TypeParameters => typeParameters;
+        public readonly ReadOnlyFixedValueList1<ManagedGenericTypeParameterRef> TypeParameters => typeParameters;
 
         /// <summary>
         /// gets the set of known method parameters.
         /// </summary>
-        public readonly ReadOnlyFixedValueList<ManagedGenericMethodParameterRef>? MethodParameters => methodParameters;
+        public readonly ReadOnlyFixedValueList1<ManagedGenericMethodParameterRef>? MethodParameters => methodParameters;
 
     }
 

@@ -1,0 +1,192 @@
+﻿<#@ template debug="false" hostspecific="false" language="C#" #>
+<#@ assembly name="System.Core" #>
+<#@ import namespace="System.Linq" #>
+<#@ import namespace="System.Text" #>
+<#@ import namespace="System.Collections.Generic" #>
+<#@ output extension=".cs" #>
+using System;
+using System.Collections.Generic;
+
+using IKVM.Compiler.Collections;
+
+namespace IKVM.Compiler.Managed
+{
+
+    public static partial class ManagedSignatureExtensions
+    {
+<#
+foreach (var size in new[]
+{
+    1,
+    2,
+    3,
+    4
+})
+{
+#>
+        /// <summary>
+        /// Unpacks the data structures from multiple signatures.
+        /// </summary>
+        /// <param name="sigs"></param>
+        /// <returns></returns>
+        internal static ReadOnlyFixedValueList<#= size #><ManagedSignatureData> ToDataList<#= size #>(this in ReadOnlyFixedValueList<#= size #><ManagedSignature> sigs)
+        {
+            var l = new FixedValueList<#= size #><ManagedSignatureData>(sigs.Count);
+            for (int i = 0; i < sigs.Count; i++)
+                l[i] = sigs[i].data;
+
+            return l.AsReadOnly();
+        }
+
+        /// <summary>
+        /// Unpacks the data structures from multiple signatures.
+        /// </summary>
+        /// <param name="sigs"></param>
+        /// <returns></returns>
+        internal static ReadOnlyFixedValueList<#= size #><ManagedSignatureData> ToDataList<#= size #>(this ReadOnlySpan<ManagedSignature> sigs)
+        {
+            var l = new FixedValueList<#= size #><ManagedSignatureData>(sigs.Length);
+            for (int i = 0; i < sigs.Length; i++)
+                l[i] = sigs[i].data;
+
+            return l.AsReadOnly();
+        }
+
+        /// <summary>
+        /// Unpacks the data structures from multiple signatures.
+        /// </summary>
+        /// <param name="sigs"></param>
+        /// <returns></returns>
+        internal static ReadOnlyFixedValueList<#= size #><ManagedSignatureData> ToDataList<#= size #>(this IReadOnlyList<ManagedSignature> sigs)
+        {
+            var l = new FixedValueList<#= size #><ManagedSignatureData>(sigs.Count);
+            for (int i = 0; i < sigs.Count; i++)
+                l[i] = sigs[i].data;
+
+            return l.AsReadOnly();
+        }
+
+        /// <summary>
+        /// Unpacks the data structures from multiple signatures.
+        /// </summary>
+        /// <param name="sigs"></param>
+        /// <returns></returns>
+        internal static ReadOnlyFixedValueList<#= size #><ManagedSignatureData> ToDataList<#= size #>(this ManagedSignature[] sigs)
+        {
+            var l = new FixedValueList<#= size #><ManagedSignatureData>(sigs.Length);
+            for (int i = 0; i < sigs.Length; i++)
+                l[i] = sigs[i].data;
+
+            return l.AsReadOnly();
+        }
+<#
+}
+#>
+
+<#
+foreach (var type in new[]
+{
+    "ManagedSignature",
+    "ManagedTypeSignature",
+    "ManagedPrimitiveTypeSignature",
+    "ManagedSZArraySignature",
+    "ManagedArraySignature",
+    "ManagedByRefSignature",
+    "ManagedGenericSignature",
+    "ManagedGenericConstraintSignature",
+    "ManagedGenericTypeParameterSignature",
+    "ManagedGenericMethodParameterSignature",
+    "ManagedModifiedSignature",
+    "ManagedPointerSignature",
+    "ManagedFunctionPointerSignature",
+})
+{
+#>
+
+        /// <summary>
+        /// Creates a new array type with this type as the element type.
+        /// </summary>
+        /// <returns></returns>
+        public static ManagedSZArraySignature CreateArray(this in <#= type #> self) => ManagedSZArraySignature.Create(self.data);
+
+        /// <summary>
+        /// Creates a new array type with this type as the element type.
+        /// </summary>
+        /// <param name="rank"></param>
+        /// <param name="sizes"></param>
+        /// <param name="lowerBounds"></param>
+        /// <returns></returns>
+        public static ManagedArraySignature CreateArray(this in <#= type #> self, int rank, ReadOnlyFixedValueList2<int> sizes, ReadOnlyFixedValueList2<int> lowerBounds) => ManagedArraySignature.Create(self.data, rank, sizes, lowerBounds);
+
+        /// <summary>
+        /// Creates a new array type with this type as the element type.
+        /// </summary>
+        /// <param name="rank"></param>
+        /// <param name="sizes"></param>
+        /// <param name="lowerBounds"></param>
+        /// <returns></returns>
+        public static ManagedArraySignature CreateArray(this in <#= type #> self, int rank, ReadOnlySpan<int> sizes, ReadOnlySpan<int> lowerBounds) => ManagedArraySignature.Create(self.data, rank, new ReadOnlyFixedValueList2<int>(new FixedValueList2<int>(sizes)), new ReadOnlyFixedValueList2<int>(new FixedValueList2<int>(lowerBounds)));
+
+        /// <summary>
+        /// Creates a new array type with this type as the element type.
+        /// </summary>
+        /// <param name="rank"></param>
+        /// <param name="sizes"></param>
+        /// <param name="lowerBounds"></param>
+        /// <returns></returns>
+        public static ManagedArraySignature CreateArray(this in <#= type #> self, int rank, IReadOnlyList<int> sizes, IReadOnlyList<int> lowerBounds) => ManagedArraySignature.Create(self.data, rank, new ReadOnlyFixedValueList2<int>(new FixedValueList2<int>(sizes)), new ReadOnlyFixedValueList2<int>(new FixedValueList2<int>(lowerBounds)));
+
+        /// <summary>
+        /// Creates a new array type with this type as the element type.
+        /// </summary>
+        /// <param name="rank"></param>
+        /// <param name="sizes"></param>
+        /// <param name="lowerBounds"></param>
+        /// <returns></returns>
+        public static ManagedArraySignature CreateArray(this in <#= type #> self, int rank, int[] sizes, int[] lowerBounds) => ManagedArraySignature.Create(self.data, rank, new ReadOnlyFixedValueList2<int>(new FixedValueList2<int>(sizes)), new ReadOnlyFixedValueList2<int>(new FixedValueList2<int>(lowerBounds)));
+
+        /// <summary>
+        /// Creates a new by-ref type with this type as the base type.
+        /// </summary>
+        /// <returns></returns>
+        public static ManagedByRefSignature CreateByRef(this in <#= type #> self) => ManagedByRefSignature.Create(self.data);
+
+        /// <summary>
+        /// Creates a new generic type with this type as the base type.
+        /// </summary>
+        /// <param name="genericParameters"></param>
+        /// <returns></returns>
+        public static ManagedGenericSignature CreateGeneric(this in <#= type #> self, ReadOnlyFixedValueList4<ManagedSignature> genericParameters) => ManagedGenericSignature.Create(self.data, ToDataList4(genericParameters));
+
+        /// <summary>
+        /// Creates a new generic type with this type as the base type.
+        /// </summary>
+        /// <param name="genericParameters"></param>
+        /// <returns></returns>
+        public static ManagedGenericSignature CreateGeneric(this in <#= type #> self, IReadOnlyList<ManagedSignature> genericParameters) => ManagedGenericSignature.Create(self.data, ToDataList4(genericParameters));
+
+        /// <summary>
+        /// Creates a new generic type with this type as the base type.
+        /// </summary>
+        /// <param name="genericParameters"></param>
+        /// <returns></returns>
+        public static ManagedGenericSignature CreateGeneric(this in <#= type #> self, params ManagedSignature[] genericParameters) => ManagedGenericSignature.Create(self.data, ToDataList4(genericParameters));
+
+        /// <summary>
+        /// Creates a new modified type with this type as the base type.
+        /// </summary>
+        /// <returns></returns>
+        public static ManagedModifiedSignature CreateModified(this in <#= type #> self, in ManagedSignature modifier, bool required) => ManagedModifiedSignature.Create(self.data, modifier.data, required);
+
+        /// <summary>
+        /// Creates a new pointer type with this type as the base type.
+        /// </summary>
+        /// <returns></returns>
+        public static ManagedPointerSignature CreatePointer(this in <#= type #> self) => ManagedPointerSignature.Create(self.data);
+<#
+}
+#>
+
+    }
+
+}

@@ -4,7 +4,7 @@
     /// <summary>
     /// Provides an interface for a managed type to call back into its loader.
     /// </summary>
-    public interface IManagedTypeContext
+    internal interface IManagedTypeContext
     {
 
         /// <summary>

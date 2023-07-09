@@ -2,26 +2,22 @@
 {
 
     /// <summary>
-    /// Describes a primitive type.
+    /// Describes a primtive type.
     /// </summary>
-    public sealed class ManagedPrimitiveTypeSignature : ManagedTypeSignature
+    public readonly partial struct ManagedPrimitiveTypeSignature
     {
 
-        readonly ManagedPrimitiveType primitiveType;
+        /// <summary>
+        /// Creates a new primitive type signature.
+        /// </summary>
+        /// <param name="code"></param>
+        /// <returns></returns>
+        internal static ManagedPrimitiveTypeSignature Create(ManagedPrimitiveTypeCode code) => new ManagedPrimitiveTypeSignature(new ManagedSignatureData(new ManagedSignatureCodeData(ManagedSignatureKind.PrimitiveType, code), null, null, null));
 
         /// <summary>
-        /// Initializes a new instance.
+        /// Gets the underlying primitive type code.
         /// </summary>
-        /// <param name="primitiveType"></param>
-        public ManagedPrimitiveTypeSignature(ManagedPrimitiveType primitiveType)
-        {
-            this.primitiveType = primitiveType;
-        }
-
-        /// <summary>
-        /// Gets the type refered to by the pointer.
-        /// </summary>
-        public ManagedPrimitiveType PrimitiveType => primitiveType;
+        public readonly ManagedPrimitiveTypeCode TypeCode => (ManagedPrimitiveTypeCode)data.GetLastCode().Data.Primitive_TypeCode!;
 
     }
 

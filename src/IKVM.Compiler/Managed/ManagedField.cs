@@ -11,10 +11,35 @@ namespace IKVM.Compiler.Managed
     public readonly struct ManagedField
     {
 
-        readonly string name;
-        readonly ReadOnlyFixedValueList<ManagedCustomAttribute> customAttributes;
-        readonly FieldAttributes attributes;
-        readonly ManagedTypeSignature fieldType;
+        /// <summary>
+        /// Gets the null value of a managed field.
+        /// </summary>
+        public static readonly ManagedField Nil = new ManagedField();
+
+        /// <summary>
+        /// If set the value is null.
+        /// </summary>
+        public readonly bool IsNil = true;
+
+        /// <summary>
+        /// Gets the name of the managed field.
+        /// </summary>
+        public readonly string Name;
+
+        /// <summary>
+        /// Gets the set of custom attributes applied to the field.
+        /// </summary>
+        public readonly ReadOnlyFixedValueList1<ManagedCustomAttribute> CustomAttributes;
+
+        /// <summary>
+        /// Gets the attributes of the field.
+        /// </summary>
+        public readonly FieldAttributes Attributes;
+
+        /// <summary>
+        /// Gets the type of the field.
+        /// </summary>
+        public readonly ManagedSignature FieldType;
 
         /// <summary>
         /// Initializes a new instance.
@@ -23,36 +48,17 @@ namespace IKVM.Compiler.Managed
         /// <param name="customAttributes"></param>
         /// <param name="attributes"></param>
         /// <param name="fieldType"></param>
-        public ManagedField(string name, in ReadOnlyFixedValueList<ManagedCustomAttribute> customAttributes, FieldAttributes attributes, ManagedTypeSignature fieldType)
+        public ManagedField(string name, in ReadOnlyFixedValueList1<ManagedCustomAttribute> customAttributes, FieldAttributes attributes, in ManagedSignature fieldType)
         {
-            this.name = name;
-            this.customAttributes = customAttributes;
-            this.attributes = attributes;
-            this.fieldType = fieldType;
+            IsNil = false;
+            Name = name;
+            CustomAttributes = customAttributes;
+            Attributes = attributes;
+            FieldType = fieldType;
         }
 
-        /// <summary>
-        /// Gets the name of the managed field.
-        /// </summary>
-        public readonly string Name => name;
-
-        /// <summary>
-        /// Gets the set of custom attributes applied to the field.
-        /// </summary>
-        public readonly ReadOnlyFixedValueList<ManagedCustomAttribute> CustomAttributes => customAttributes;
-
-        /// <summary>
-        /// Gets the attributes of the field.
-        /// </summary>
-        public readonly FieldAttributes Attributes => attributes;
-
-        /// <summary>
-        /// Gets the type of the field.
-        /// </summary>
-        public readonly ManagedTypeSignature FieldType => fieldType;
-
         /// <inhericdoc />
-        public override readonly string ToString() => name;
+        public override readonly string ToString() => Name;
 
     }
 

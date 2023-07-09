@@ -8,22 +8,73 @@ namespace IKVM.Compiler.Managed
     /// <summary>
     /// Holds the data of a managed type.
     /// </summary>
-    public readonly struct ManagedTypeData
+    internal readonly struct ManagedTypeData
     {
 
-        readonly ManagedAssembly assembly;
-        readonly ManagedType? declaringType;
-        readonly string name;
-        readonly TypeAttributes attributes;
-        readonly ReadOnlyFixedValueList<ManagedGenericParameter> genericParameters;
-        readonly ReadOnlyFixedValueList<ManagedCustomAttribute> customAttributes;
-        readonly ManagedTypeSignature? baseType;
-        readonly ReadOnlyFixedValueList<ManagedInterface> interfaces;
-        readonly ReadOnlyFixedValueList<ManagedField> fields;
-        readonly ReadOnlyFixedValueList<ManagedMethod> methods;
-        readonly ReadOnlyFixedValueList<ManagedProperty> properties;
-        readonly ReadOnlyFixedValueList<ManagedEvent> events;
-        readonly ReadOnlyFixedValueList<ManagedType> nestedTypes;
+        /// <summary>
+        /// Gets the parent assembly of this type.
+        /// </summary>
+        public readonly ManagedAssembly Assembly;
+
+        /// <summary>
+        /// Gets the parent type of this type.
+        /// </summary>
+        public readonly ManagedType? DeclaringType;
+
+        /// <summary>
+        /// Gets the name of the managed type.
+        /// </summary>
+        public readonly string Name;
+
+        /// <summary>
+        /// Gets the attributes for the type.
+        /// </summary>
+        public readonly TypeAttributes Attributes;
+
+        /// <summary>
+        /// Gets the generic parameters on the managed type.
+        /// </summary>
+        public readonly ReadOnlyFixedValueList1<ManagedGenericParameter> GenericParameters;
+
+        /// <summary>
+        /// Gets the set of custom attributes applied to the type.
+        /// </summary>
+        public readonly ReadOnlyFixedValueList1<ManagedCustomAttribute> CustomAttributes;
+
+        /// <summary>
+        /// Gets a reference to the base type.
+        /// </summary>
+        public readonly ManagedSignature? BaseType;
+
+        /// <summary>
+        /// Gets the set of interfaces implemented on the managed type.
+        /// </summary>
+        public readonly ReadOnlyFixedValueList2<ManagedInterface> Interfaces;
+
+        /// <summary>
+        /// Gets the set of fields declared on the managed type.
+        /// </summary>
+        public readonly ReadOnlyFixedValueList4<ManagedField> Fields;
+
+        /// <summary>
+        /// Gets the set of methods declared on the managed type.
+        /// </summary>
+        public readonly ReadOnlyFixedValueList4<ManagedMethod> Methods;
+
+        /// <summary>
+        /// Gets the set of properties declared on the managed type.
+        /// </summary>
+        public readonly ReadOnlyFixedValueList4<ManagedProperty> Properties;
+
+        /// <summary>
+        /// Gets the set of fields declared on the managed type.
+        /// </summary>
+        public readonly ReadOnlyFixedValueList1<ManagedEvent> Events;
+
+        /// <summary>
+        /// Gets the set of nested types within the managed type.
+        /// </summary>
+        public readonly ReadOnlyFixedValueList1<ManagedType> NestedTypes;
 
         /// <summary>
         /// Initializes a new instance.
@@ -41,88 +92,22 @@ namespace IKVM.Compiler.Managed
         /// <param name="properties"></param>
         /// <param name="events"></param>
         /// <param name="nestedTypes"></param>
-        public ManagedTypeData(ManagedAssembly assembly, ManagedType? declaringType, string name, TypeAttributes attributes, in ReadOnlyFixedValueList<ManagedGenericParameter> genericParameters, in ReadOnlyFixedValueList<ManagedCustomAttribute> customAttributes, in ManagedTypeSignature? baseType, in ReadOnlyFixedValueList<ManagedInterface> interfaces, in ReadOnlyFixedValueList<ManagedField> fields, in ReadOnlyFixedValueList<ManagedMethod> methods, in ReadOnlyFixedValueList<ManagedProperty> properties, in ReadOnlyFixedValueList<ManagedEvent> events,in ReadOnlyFixedValueList<ManagedType> nestedTypes)
+        public ManagedTypeData(ManagedAssembly assembly, ManagedType? declaringType, string name, TypeAttributes attributes, in ReadOnlyFixedValueList1<ManagedGenericParameter> genericParameters, in ReadOnlyFixedValueList1<ManagedCustomAttribute> customAttributes, in ManagedSignature? baseType, in ReadOnlyFixedValueList2<ManagedInterface> interfaces, in ReadOnlyFixedValueList4<ManagedField> fields, in ReadOnlyFixedValueList4<ManagedMethod> methods, in ReadOnlyFixedValueList4<ManagedProperty> properties, in ReadOnlyFixedValueList1<ManagedEvent> events, in ReadOnlyFixedValueList1<ManagedType> nestedTypes)
         {
-            this.assembly = assembly;
-            this.declaringType = declaringType;
-            this.name = name;
-            this.attributes = attributes;
-            this.genericParameters = genericParameters;
-            this.customAttributes = customAttributes;
-            this.baseType = baseType;
-            this.interfaces = interfaces;
-            this.fields = fields;
-            this.methods = methods;
-            this.properties = properties;
-            this.events = events;
-            this.nestedTypes = nestedTypes;
+            Assembly = assembly;
+            DeclaringType = declaringType;
+            Name = name;
+            Attributes = attributes;
+            GenericParameters = genericParameters;
+            CustomAttributes = customAttributes;
+            BaseType = baseType;
+            Interfaces = interfaces;
+            Fields = fields;
+            Methods = methods;
+            Properties = properties;
+            Events = events;
+            NestedTypes = nestedTypes;
         }
-
-
-        /// <summary>
-        /// Gets the parent assembly of this type.
-        /// </summary>
-        public ManagedAssembly Assembly => assembly;
-
-        /// <summary>
-        /// Gets the parent type of this type.
-        /// </summary>
-        public ManagedType? DeclaringType => declaringType;
-
-        /// <summary>
-        /// Gets the name of the managed type.
-        /// </summary>
-        public string Name => name;
-
-        /// <summary>
-        /// Gets the attributes for the type.
-        /// </summary>
-        public TypeAttributes Attributes => attributes;
-
-        /// <summary>
-        /// Gets the generic parameters on the managed type.
-        /// </summary>
-        public readonly ReadOnlyFixedValueList<ManagedGenericParameter> GenericParameters => genericParameters;
-
-        /// <summary>
-        /// Gets the set of custom attributes applied to the type.
-        /// </summary>
-        public readonly ReadOnlyFixedValueList<ManagedCustomAttribute> CustomAttributes => customAttributes;
-
-        /// <summary>
-        /// Gets a reference to the base type.
-        /// </summary>
-        public readonly ManagedTypeSignature? BaseType => baseType;
-
-        /// <summary>
-        /// Gets the set of interfaces implemented on the managed type.
-        /// </summary>
-        public readonly ReadOnlyFixedValueList<ManagedInterface> Interfaces => interfaces;
-
-        /// <summary>
-        /// Gets the set of fields declared on the managed type.
-        /// </summary>
-        public readonly ReadOnlyFixedValueList<ManagedField> Fields => fields;
-
-        /// <summary>
-        /// Gets the set of methods declared on the managed type.
-        /// </summary>
-        public readonly ReadOnlyFixedValueList<ManagedMethod> Methods => methods;
-
-        /// <summary>
-        /// Gets the set of properties declared on the managed type.
-        /// </summary>
-        public readonly ReadOnlyFixedValueList<ManagedProperty> Properties => properties;
-
-        /// <summary>
-        /// Gets the set of fields declared on the managed type.
-        /// </summary>
-        public readonly ReadOnlyFixedValueList<ManagedEvent> Events => events;
-
-        /// <summary>
-        /// Gets the set of nested types within the managed type.
-        /// </summary>
-        public readonly ReadOnlyFixedValueList<ManagedType> NestedTypes => nestedTypes;
 
     }
 

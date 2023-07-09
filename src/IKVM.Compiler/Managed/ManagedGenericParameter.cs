@@ -10,13 +10,13 @@ namespace IKVM.Compiler.Managed
     {
 
         readonly string name;
-        readonly ReadOnlyFixedValueList<ManagedGenericParameterConstraint> constraints;
+        readonly ReadOnlyFixedValueList1<ManagedGenericParameterConstraint> constraints;
 
         /// <summary>
         /// Initailizes a new instance.
         /// </summary>
         /// <param name="name"></param>
-        public ManagedGenericParameter(string name, in ReadOnlyFixedValueList<ManagedGenericParameterConstraint> constraints)
+        public ManagedGenericParameter(string name, in ReadOnlyFixedValueList1<ManagedGenericParameterConstraint> constraints)
         {
             this.name = name;
             this.constraints = constraints;
@@ -30,7 +30,7 @@ namespace IKVM.Compiler.Managed
         /// <summary>
         /// Gets the constraints applied to this generic parameter.
         /// </summary>
-        public readonly ReadOnlyFixedValueList<ManagedGenericParameterConstraint> Constraints => constraints;
+        public readonly ReadOnlyFixedValueList1<ManagedGenericParameterConstraint> Constraints => constraints;
 
     }
 

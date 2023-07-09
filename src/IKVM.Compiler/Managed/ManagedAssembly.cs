@@ -13,8 +13,9 @@ namespace IKVM.Compiler.Managed
     {
 
         readonly IManagedAssemblyContext context;
-        readonly AssemblyName name;
-        readonly ReadOnlyFixedValueList<ManagedCustomAttribute> customAttributes;
+
+        internal readonly AssemblyName name;
+        internal readonly ReadOnlyFixedValueList1<ManagedCustomAttribute> customAttributes;
 
         /// <summary>
         /// Initializes a new instance.
@@ -22,9 +23,10 @@ namespace IKVM.Compiler.Managed
         /// <param name="context"></param>
         /// <param name="name"></param>
         /// <param name="customAttributes"></param>
-        public ManagedAssembly(IManagedAssemblyContext context, AssemblyName name, ReadOnlyFixedValueList<ManagedCustomAttribute> customAttributes)
+        public ManagedAssembly(IManagedAssemblyContext context, AssemblyName name, ReadOnlyFixedValueList1<ManagedCustomAttribute> customAttributes)
         {
             this.context = context;
+
             this.name = name;
             this.customAttributes = customAttributes;
         }
@@ -42,7 +44,7 @@ namespace IKVM.Compiler.Managed
         /// <summary>
         /// Gets the set of custom attributes applied to the assembly.
         /// </summary>
-        public IReadOnlyList<ManagedCustomAttribute> CustomAttributes => customAttributes;
+        public ManagedAssemblyCustomAttributeList CustomAttributes => new ManagedAssemblyCustomAttributeList(this);
 
         /// <summary>
         /// Attempts to resolve a type with the specified name from the managed assembly.

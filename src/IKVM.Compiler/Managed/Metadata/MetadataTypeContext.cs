@@ -31,8 +31,7 @@ namespace IKVM.Compiler.Managed.Metadata
         /// </summary>
         /// <param name="type"></param>
         /// <returns></returns>
-        /// <exception cref="System.NotImplementedException"></exception>
-        public ManagedTypeData LoadType(ManagedType type) => assemblyContext.LoadType(reader, handle);
+        public ManagedTypeData LoadType(ManagedType type) => assemblyContext.LoadType(type, reader, handle);
 
     }
 

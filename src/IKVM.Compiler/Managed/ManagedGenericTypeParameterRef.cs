@@ -14,7 +14,6 @@ namespace IKVM.Compiler.Managed
         /// <summary>
         /// Initializes a new instance.
         /// </summary>
-        /// <param name="type"></param>
         /// <param name="index"></param>
         public ManagedGenericTypeParameterRef(int index)
         {

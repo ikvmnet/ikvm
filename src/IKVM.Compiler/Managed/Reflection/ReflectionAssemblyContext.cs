@@ -81,12 +81,8 @@ namespace IKVM.Compiler.Managed.Reflection
         /// <returns></returns>
         IEnumerable<ManagedType> ResolveTypes(Type[] reflectionTypes)
         {
-            var l = new ManagedType[reflectionTypes.Length];
-
             for (int i = 0; i < reflectionTypes.Length; i++)
-                l[i] = ResolveType(reflectionTypes[i]) ?? throw new InvalidOperationException();
-
-            return new ReadOnlyFixedValueList<ManagedType>(l);
+                yield return ResolveType(reflectionTypes[i]) ?? throw new InvalidOperationException();
         }
 
         /// <summary>
@@ -132,44 +128,44 @@ namespace IKVM.Compiler.Managed.Reflection
         /// </summary>
         /// <param name="reflectionType"></param>
         /// <returns></returns>
-        ManagedTypeSignature ResolveTypeSignature(Type reflectionType)
+        ManagedSignature ResolveTypeSignature(Type reflectionType)
         {
             if (reflectionType.IsPrimitive && reflectionType.FullName == "System.Void")
-                return ManagedTypeSignature.Void;
+                return ManagedSignature.Void;
             else if (reflectionType.IsPrimitive && reflectionType.FullName == "System.Boolean")
-                return ManagedTypeSignature.Boolean;
+                return ManagedSignature.Boolean;
             else if (reflectionType.IsPrimitive && reflectionType.FullName == "System.Byte")
-                return ManagedTypeSignature.Byte;
+                return ManagedSignature.Byte;
             else if (reflectionType.IsPrimitive && reflectionType.FullName == "System.SByte")
-                return ManagedTypeSignature.SByte;
+                return ManagedSignature.SByte;
             else if (reflectionType.IsPrimitive && reflectionType.FullName == "System.Char")
-                return ManagedTypeSignature.Char;
+                return ManagedSignature.Char;
             else if (reflectionType.IsPrimitive && reflectionType.FullName == "System.Int16")
-                return ManagedTypeSignature.Int16;
+                return ManagedSignature.Int16;
             else if (reflectionType.IsPrimitive && reflectionType.FullName == "System.UInt16")
-                return ManagedTypeSignature.UInt16;
+                return ManagedSignature.UInt16;
             else if (reflectionType.IsPrimitive && reflectionType.FullName == "System.Int32")
-                return ManagedTypeSignature.Int32;
+                return ManagedSignature.Int32;
             else if (reflectionType.IsPrimitive && reflectionType.FullName == "System.UInt32")
-                return ManagedTypeSignature.UInt32;
+                return ManagedSignature.UInt32;
             else if (reflectionType.IsPrimitive && reflectionType.FullName == "System.Int64")
-                return ManagedTypeSignature.Int64;
+                return ManagedSignature.Int64;
             else if (reflectionType.IsPrimitive && reflectionType.FullName == "System.UInt64")
-                return ManagedTypeSignature.UInt64;
+                return ManagedSignature.UInt64;
             else if (reflectionType.IsPrimitive && reflectionType.FullName == "System.Single")
-                return ManagedTypeSignature.Single;
+                return ManagedSignature.Single;
             else if (reflectionType.IsPrimitive && reflectionType.FullName == "System.Double")
-                return ManagedTypeSignature.Double;
+                return ManagedSignature.Double;
             else if (reflectionType.IsPrimitive && reflectionType.FullName == "System.IntPtr")
-                return ManagedTypeSignature.IntPtr;
+                return ManagedSignature.IntPtr;
             else if (reflectionType.IsPrimitive && reflectionType.FullName == "System.UIntPtr")
-                return ManagedTypeSignature.UIntPtr;
+                return ManagedSignature.UIntPtr;
             else if (reflectionType.IsPrimitive && reflectionType.FullName == "System.Object")
-                return ManagedTypeSignature.Object;
+                return ManagedSignature.Object;
             else if (reflectionType.IsPrimitive && reflectionType.FullName == "System.String")
-                return ManagedTypeSignature.String;
+                return ManagedSignature.String;
             else if (reflectionType.IsPrimitive && reflectionType.FullName == "System.TypedReference")
-                return ManagedTypeSignature.TypedReference;
+                return ManagedSignature.TypedReference;
 #if NETFRAMEWORK
             else if (reflectionType.IsArray && reflectionType.GetArrayRank() == 1 && reflectionType == reflectionType.GetElementType().MakeArrayType())
 #else
@@ -185,7 +181,7 @@ namespace IKVM.Compiler.Managed.Reflection
             else if (reflectionType.IsGenericType)
             {
                 var a = reflectionType.GetGenericArguments();
-                var l = new FixedValueList<ManagedTypeSignature>(a.Length);
+                var l = new FixedValueList4<ManagedSignature>(a.Length);
 
                 for (int i = 0; i < a.Length; i++)
                     l[i] = ResolveTypeSignature(a[i]);
@@ -193,7 +189,7 @@ namespace IKVM.Compiler.Managed.Reflection
                 return ResolveTypeSignature(reflectionType.GetGenericTypeDefinition()).CreateGeneric(l.AsReadOnly());
             }
             else
-                return new ManagedTypeRefSignature(ResolveTypeReference(reflectionType));
+                return ManagedTypeSignature.Create(ResolveTypeReference(reflectionType));
         }
 
         /// <summary>
@@ -212,14 +208,15 @@ namespace IKVM.Compiler.Managed.Reflection
         /// <param name="reflectionAttributes"></param>
         /// <param name="handles"></param>
         /// <returns></returns>
-        ReadOnlyFixedValueList<ManagedCustomAttribute> LoadCustomAttributes(IList<CustomAttributeData> reflectionAttributes)
+        ReadOnlyFixedValueList1<ManagedCustomAttribute> LoadCustomAttributes(IList<CustomAttributeData> reflectionAttributes)
         {
-            var l = new ManagedCustomAttribute[reflectionAttributes.Count];
+            var l = new FixedValueList1<ManagedCustomAttribute>(reflectionAttributes.Count);
 
-            for (int i = 0; i < reflectionAttributes.Count; i++)
-                l[i] = LoadCustomAttribute(reflectionAttributes[i]);
+            var i = 0;
+            foreach (var attribute in reflectionAttributes)
+                l[i++] = LoadCustomAttribute(attribute);
 
-            return new ReadOnlyFixedValueList<ManagedCustomAttribute>(l);
+            return l.AsReadOnly();
         }
 
         /// <summary>
@@ -263,9 +260,9 @@ namespace IKVM.Compiler.Managed.Reflection
         /// </summary>
         /// <param name="reflectionFields"></param>
         /// <returns></returns>
-        ReadOnlyFixedValueList<ManagedGenericParameter> LoadGenericParameters(Type[] reflectionInterfaces)
+        ReadOnlyFixedValueList1<ManagedGenericParameter> LoadGenericParameters(Type[] reflectionInterfaces)
         {
-            var l = new FixedValueList<ManagedGenericParameter>(reflectionInterfaces.Length);
+            var l = new FixedValueList1<ManagedGenericParameter>(reflectionInterfaces.Length);
 
             for (int i = 0; i < reflectionInterfaces.Length; i++)
                 l[i] = LoadGenericParameter(reflectionInterfaces[i]);
@@ -288,9 +285,9 @@ namespace IKVM.Compiler.Managed.Reflection
         /// </summary>
         /// <param name="reflectionGenericParameterConstraints"></param>
         /// <returns></returns>
-        ReadOnlyFixedValueList<ManagedGenericParameterConstraint> LoadGenericParameterConstraints(Type[] reflectionGenericParameterConstraints)
+        ReadOnlyFixedValueList1<ManagedGenericParameterConstraint> LoadGenericParameterConstraints(Type[] reflectionGenericParameterConstraints)
         {
-            var l = new FixedValueList<ManagedGenericParameterConstraint>(reflectionGenericParameterConstraints.Length);
+            var l = new FixedValueList1<ManagedGenericParameterConstraint>(reflectionGenericParameterConstraints.Length);
 
             var i = 0;
             foreach (var constraint in reflectionGenericParameterConstraints)
@@ -314,9 +311,9 @@ namespace IKVM.Compiler.Managed.Reflection
         /// </summary>
         /// <param name="reflectionFields"></param>
         /// <returns></returns>
-        ReadOnlyFixedValueList<ManagedInterface> LoadInterfaces(Type[] reflectionInterfaces)
+        ReadOnlyFixedValueList2<ManagedInterface> LoadInterfaces(Type[] reflectionInterfaces)
         {
-            var l = new FixedValueList<ManagedInterface>(reflectionInterfaces.Length);
+            var l = new FixedValueList2<ManagedInterface>(reflectionInterfaces.Length);
 
             var i = 0;
             foreach (var iface in reflectionInterfaces)
@@ -332,7 +329,7 @@ namespace IKVM.Compiler.Managed.Reflection
         /// <returns></returns>
         ManagedInterface LoadInterface(Type reflectionInterface)
         {
-            return new ManagedInterface(LoadCustomAttributes(reflectionInterface.GetCustomAttributesData()), ResolveTypeSignature(reflectionInterface));
+            return new ManagedInterface(ResolveTypeSignature(reflectionInterface), LoadCustomAttributes(reflectionInterface.GetCustomAttributesData()));
         }
 
         /// <summary>
@@ -340,9 +337,9 @@ namespace IKVM.Compiler.Managed.Reflection
         /// </summary>
         /// <param name="reflectionFields"></param>
         /// <returns></returns>
-        ReadOnlyFixedValueList<ManagedField> LoadFields(FieldInfo[] reflectionFields)
+        ReadOnlyFixedValueList4<ManagedField> LoadFields(FieldInfo[] reflectionFields)
         {
-            var l = new FixedValueList<ManagedField>(reflectionFields.Length);
+            var l = new FixedValueList4<ManagedField>(reflectionFields.Length);
 
             var i = 0;
             foreach (var field in reflectionFields)
@@ -370,9 +367,9 @@ namespace IKVM.Compiler.Managed.Reflection
         /// </summary>
         /// <param name="reflectionMethods"></param>
         /// <returns></returns>
-        ReadOnlyFixedValueList<ManagedMethod> LoadMethods(MethodBase[] reflectionMethods)
+        ReadOnlyFixedValueList4<ManagedMethod> LoadMethods(MethodBase[] reflectionMethods)
         {
-            var l = new FixedValueList<ManagedMethod>(reflectionMethods.Length);
+            var l = new FixedValueList4<ManagedMethod>(reflectionMethods.Length);
 
             var i = 0;
             foreach (var method in reflectionMethods)
@@ -393,9 +390,9 @@ namespace IKVM.Compiler.Managed.Reflection
                     ctor.Name,
                     ctor.Attributes,
                     ctor.MethodImplementationFlags,
-                    ReadOnlyFixedValueList<ManagedGenericParameter>.Empty,
+                    ReadOnlyFixedValueList1<ManagedGenericParameter>.Empty,
                     LoadCustomAttributes(reflectionMethod.GetCustomAttributesData()),
-                    ManagedTypeSignature.Void,
+                    ManagedSignature.Void,
                     LoadParameters(ctor.GetParameters()));
             else if (reflectionMethod is MethodInfo method)
                 return new ManagedMethod(
@@ -415,9 +412,9 @@ namespace IKVM.Compiler.Managed.Reflection
         /// </summary>
         /// <param name="reflectionProperties"></param>
         /// <returns></returns>
-        ReadOnlyFixedValueList<ManagedProperty> LoadProperties(PropertyInfo[] reflectionProperties)
+        ReadOnlyFixedValueList4<ManagedProperty> LoadProperties(PropertyInfo[] reflectionProperties)
         {
-            var l = new FixedValueList<ManagedProperty>(reflectionProperties.Length);
+            var l = new FixedValueList4<ManagedProperty>(reflectionProperties.Length);
 
             var i = 0;
             foreach (var property in reflectionProperties)
@@ -445,9 +442,9 @@ namespace IKVM.Compiler.Managed.Reflection
         /// </summary>
         /// <param name="reflectionEvents"></param>
         /// <returns></returns>
-        ReadOnlyFixedValueList<ManagedEvent> LoadEvents(EventInfo[] reflectionEvents)
+        ReadOnlyFixedValueList1<ManagedEvent> LoadEvents(EventInfo[] reflectionEvents)
         {
-            var l = new FixedValueList<ManagedEvent>(reflectionEvents.Length);
+            var l = new FixedValueList1<ManagedEvent>(reflectionEvents.Length);
 
             var i = 0;
             foreach (var method in reflectionEvents)
@@ -473,11 +470,11 @@ namespace IKVM.Compiler.Managed.Reflection
         /// <summary>
         /// Loads the methods from the given collection.
         /// </summary>
-        /// <param name="reflectionMethods"></param>
+        /// <param name="reflectionParameters"></param>
         /// <returns></returns>
-        ReadOnlyFixedValueList<ManagedParameter> LoadParameters(ParameterInfo[] reflectionParameters)
+        ReadOnlyFixedValueList4<ManagedParameter> LoadParameters(ParameterInfo[] reflectionParameters)
         {
-            var l = new FixedValueList<ManagedParameter>(reflectionParameters.Length);
+            var l = new FixedValueList4<ManagedParameter>(reflectionParameters.Length);
 
             var i = 0;
             foreach (var parameter in reflectionParameters)
@@ -505,9 +502,9 @@ namespace IKVM.Compiler.Managed.Reflection
         /// </summary>
         /// <param name="reflectionMethods"></param>
         /// <returns></returns>
-        ReadOnlyFixedValueList<ManagedType> LoadNestedTypes(Type[] reflectionTypes)
+        ReadOnlyFixedValueList1<ManagedType> LoadNestedTypes(Type[] reflectionTypes)
         {
-            var l = new FixedValueList<ManagedType>(reflectionTypes.Length);
+            var l = new FixedValueList1<ManagedType>(reflectionTypes.Length);
 
             for (int i = 0; i < reflectionTypes.Length; i++)
                 l[i] = LoadNestedType(reflectionTypes[i]);

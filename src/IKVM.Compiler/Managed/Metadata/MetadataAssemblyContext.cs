@@ -172,8 +172,8 @@ namespace IKVM.Compiler.Managed.Metadata
         internal ManagedTypeRef ResolveTypeReference(MetadataReader reader, TypeSpecificationHandle handle, MetadataGenericContext genericContext)
         {
             var signature = ResolveTypeSignature(reader, handle, genericContext);
-            if (signature is ManagedTypeRefSignature s)
-                return s.Reference;
+            if (signature.Kind == ManagedSignatureKind.Type)
+                return ((ManagedTypeSignature)signature).TypeRef;
 
             throw new ManagedTypeException("Could not decode a type reference from type specification.");
         }
@@ -186,7 +186,7 @@ namespace IKVM.Compiler.Managed.Metadata
         /// <param name="genericContext"></param>
         /// <returns></returns>
         /// <exception cref="InvalidOperationException"></exception>
-        internal ManagedTypeSignature ResolveTypeSignature(MetadataReader reader, EntityHandle handle, MetadataGenericContext genericContext) => handle.Kind switch
+        internal ManagedSignature ResolveTypeSignature(MetadataReader reader, EntityHandle handle, MetadataGenericContext genericContext) => handle.Kind switch
         {
             HandleKind.TypeReference => ResolveTypeSignature(reader, (TypeReferenceHandle)handle, genericContext),
             HandleKind.TypeDefinition => ResolveTypeSignature(reader, (TypeDefinitionHandle)handle, genericContext),
@@ -201,9 +201,9 @@ namespace IKVM.Compiler.Managed.Metadata
         /// <param name="handle"></param>
         /// <param name="genericContext"></param>
         /// <returns></returns>
-        internal ManagedTypeSignature ResolveTypeSignature(MetadataReader reader, TypeDefinitionHandle handle, MetadataGenericContext genericContext)
+        internal ManagedSignature ResolveTypeSignature(MetadataReader reader, TypeDefinitionHandle handle, MetadataGenericContext genericContext)
         {
-            return new ManagedTypeRefSignature(ResolveTypeReference(reader, handle, genericContext));
+            return ManagedTypeSignature.Create(ResolveTypeReference(reader, handle, genericContext));
         }
 
         /// <summary>
@@ -213,9 +213,9 @@ namespace IKVM.Compiler.Managed.Metadata
         /// <param name="handle"></param>
         /// <param name="genericContext"></param>
         /// <returns></returns>
-        internal ManagedTypeSignature ResolveTypeSignature(MetadataReader reader, TypeReferenceHandle handle, MetadataGenericContext genericContext)
+        internal ManagedSignature ResolveTypeSignature(MetadataReader reader, TypeReferenceHandle handle, MetadataGenericContext genericContext)
         {
-            return new ManagedTypeRefSignature(ResolveTypeReference(reader, handle, genericContext));
+            return ManagedTypeSignature.Create(ResolveTypeReference(reader, handle, genericContext));
         }
 
         /// <summary>
@@ -225,7 +225,7 @@ namespace IKVM.Compiler.Managed.Metadata
         /// <param name="handle"></param>
         /// <param name="genericContext"></param>
         /// <returns></returns>
-        internal ManagedTypeSignature ResolveTypeSignature(MetadataReader reader, TypeSpecificationHandle handle, MetadataGenericContext genericContext)
+        internal ManagedSignature ResolveTypeSignature(MetadataReader reader, TypeSpecificationHandle handle, MetadataGenericContext genericContext)
         {
             var spec = reader.GetTypeSpecification(handle);
             return spec.DecodeSignature(signatureTypeProvider, genericContext);
@@ -278,7 +278,7 @@ namespace IKVM.Compiler.Managed.Metadata
         /// Lodas the types from the specified assembly.
         /// </summary>
         /// <returns></returns>
-        ReadOnlyFixedValueList<ManagedType> ResolveTypes()
+        IEnumerable<ManagedType> ResolveTypes()
         {
             return ResolveTypes(primary, primary.TypeDefinitions);
         }
@@ -287,19 +287,12 @@ namespace IKVM.Compiler.Managed.Metadata
         /// Loads the types from the given collection.
         /// </summary>
         /// <param name="reader"></param>
+        /// <param name="handles"></param>
         /// <returns></returns>
-        ReadOnlyFixedValueList<ManagedType> ResolveTypes(MetadataReader reader, TypeDefinitionHandleCollection handles)
+        IEnumerable<ManagedType> ResolveTypes(MetadataReader reader, TypeDefinitionHandleCollection handles)
         {
-            var l = new FixedValueList<ManagedType>(handles.Count);
-            var e = handles.GetEnumerator();
-
-            for (int i = 0; i < handles.Count; i++)
-            {
-                e.MoveNext();
-                l[i] = ResolveType(reader, e.Current) ?? throw new InvalidOperationException();
-            }
-
-            return l.AsReadOnly();
+            foreach (var handle in handles)
+                yield return ResolveType(reader, handle) ?? throw new InvalidOperationException();
         }
 
         /// <summary>
@@ -308,9 +301,9 @@ namespace IKVM.Compiler.Managed.Metadata
         /// <param name="reader"></param>
         /// <param name="handles"></param>
         /// <returns></returns>
-        ReadOnlyFixedValueList<ManagedType> ResolveTypes(MetadataReader reader, ImmutableArray<TypeDefinitionHandle> handles)
+        ReadOnlyFixedValueList1<ManagedType> ResolveTypes(MetadataReader reader, ImmutableArray<TypeDefinitionHandle> handles)
         {
-            var l = new FixedValueList<ManagedType>(handles.Length);
+            var l = new FixedValueList1<ManagedType>(handles.Length);
 
             var i = 0;
             foreach (var handle in handles)
@@ -325,9 +318,9 @@ namespace IKVM.Compiler.Managed.Metadata
         /// <param name="reader"></param>
         /// <param name="handles"></param>
         /// <returns></returns>
-        ReadOnlyFixedValueList<ManagedCustomAttribute> LoadCustomAttributes(MetadataReader reader, CustomAttributeHandleCollection handles, MetadataGenericContext genericContext)
+        ReadOnlyFixedValueList1<ManagedCustomAttribute> LoadCustomAttributes(MetadataReader reader, CustomAttributeHandleCollection handles, MetadataGenericContext genericContext)
         {
-            var l = new FixedValueList<ManagedCustomAttribute>(handles.Count);
+            var l = new FixedValueList1<ManagedCustomAttribute>(handles.Count);
 
             var i = 0;
             foreach (var handle in handles)
@@ -351,14 +344,16 @@ namespace IKVM.Compiler.Managed.Metadata
         /// <summary>
         /// Loads a <see cref="ManagedType"/> from the given <see cref="TypeDefinitionHandle"/>.
         /// </summary>
+        /// <param name="managedType"></param>
+        /// <param name="reader"></param>
         /// <param name="handle"></param>
         /// <returns></returns>
-        internal ManagedTypeData LoadType(MetadataReader reader, TypeDefinitionHandle handle)
+        internal ManagedTypeData LoadType(ManagedType managedType, MetadataReader reader, TypeDefinitionHandle handle)
         {
             var type = reader.GetTypeDefinition(handle);
 
             // build generic context for type
-            var genericTypeParametersRef = new FixedValueList<ManagedGenericTypeParameterRef>(type.GetGenericParameters().Count);
+            var genericTypeParametersRef = new FixedValueList1<ManagedGenericTypeParameterRef>(type.GetGenericParameters().Count);
             for (int i = 0; i < genericTypeParametersRef.Count; i++)
                 genericTypeParametersRef[i] = new ManagedGenericTypeParameterRef(i);
             var genericContext = new MetadataGenericContext(genericTypeParametersRef.AsReadOnly(), null);
@@ -368,7 +363,7 @@ namespace IKVM.Compiler.Managed.Metadata
             var typeName = GetTypeName(reader, type);
             var genericParameters = LoadGenericParameters(reader, type.GetGenericParameters(), genericContext);
             var customAttributes = LoadCustomAttributes(reader, type.GetCustomAttributes(), genericContext);
-            var baseType = type.BaseType.IsNil == false ? ResolveTypeSignature(reader, type.BaseType, genericContext) : null;
+            var baseType = type.BaseType.IsNil == false ? ResolveTypeSignature(reader, type.BaseType, genericContext) : (ManagedSignature?)null;
             var interfaces = LoadInterfaces(reader, type.GetInterfaceImplementations(), genericContext);
             var fields = LoadFields(reader, type.GetFields(), genericContext);
             var methods = LoadMethods(reader, type.GetMethods(), genericContext);
@@ -401,9 +396,9 @@ namespace IKVM.Compiler.Managed.Metadata
         /// <param name="reader"></param>
         /// <param name="handles"></param>
         /// <returns></returns>
-        ReadOnlyFixedValueList<ManagedGenericParameter> LoadGenericParameters(MetadataReader reader, GenericParameterHandleCollection handles, MetadataGenericContext genericContext)
+        ReadOnlyFixedValueList1<ManagedGenericParameter> LoadGenericParameters(MetadataReader reader, GenericParameterHandleCollection handles, MetadataGenericContext genericContext)
         {
-            var l = new FixedValueList<ManagedGenericParameter>(handles.Count);
+            var l = new FixedValueList1<ManagedGenericParameter>(handles.Count);
 
             var i = 0;
             foreach (var handle in handles)
@@ -433,9 +428,9 @@ namespace IKVM.Compiler.Managed.Metadata
         /// <param name="reader"></param>
         /// <param name="handles"></param>
         /// <returns></returns>
-        ReadOnlyFixedValueList<ManagedGenericParameterConstraint> LoadGenericParameterConstraints(MetadataReader reader, GenericParameterConstraintHandleCollection handles, MetadataGenericContext genericContext)
+        ReadOnlyFixedValueList1<ManagedGenericParameterConstraint> LoadGenericParameterConstraints(MetadataReader reader, GenericParameterConstraintHandleCollection handles, MetadataGenericContext genericContext)
         {
-            var l = new FixedValueList<ManagedGenericParameterConstraint>(handles.Count);
+            var l = new FixedValueList1<ManagedGenericParameterConstraint>(handles.Count);
 
             var i = 0;
             foreach (var handle in handles)
@@ -465,9 +460,9 @@ namespace IKVM.Compiler.Managed.Metadata
         /// <param name="reader"></param>
         /// <param name="handles"></param>
         /// <returns></returns>
-        ReadOnlyFixedValueList<ManagedInterface> LoadInterfaces(MetadataReader reader, InterfaceImplementationHandleCollection handles, MetadataGenericContext genericContext)
+        ReadOnlyFixedValueList2<ManagedInterface> LoadInterfaces(MetadataReader reader, InterfaceImplementationHandleCollection handles, MetadataGenericContext genericContext)
         {
-            var l = new FixedValueList<ManagedInterface>(handles.Count);
+            var l = new FixedValueList2<ManagedInterface>(handles.Count);
 
             var i = 0;
             foreach (var handle in handles)
@@ -487,8 +482,8 @@ namespace IKVM.Compiler.Managed.Metadata
             var iface = reader.GetInterfaceImplementation(handle);
 
             return new ManagedInterface(
-                LoadCustomAttributes(reader, iface.GetCustomAttributes(), genericContext),
-                ResolveTypeSignature(reader, iface.Interface, genericContext));
+                ResolveTypeSignature(reader, iface.Interface, genericContext),
+                LoadCustomAttributes(reader, iface.GetCustomAttributes(), genericContext));
         }
 
         /// <summary>
@@ -498,9 +493,9 @@ namespace IKVM.Compiler.Managed.Metadata
         /// <param name="handles"></param>
         /// <param name="genericContext"></param>
         /// <returns></returns>
-        ReadOnlyFixedValueList<ManagedField> LoadFields(MetadataReader reader, FieldDefinitionHandleCollection handles, MetadataGenericContext genericContext)
+        ReadOnlyFixedValueList4<ManagedField> LoadFields(MetadataReader reader, FieldDefinitionHandleCollection handles, MetadataGenericContext genericContext)
         {
-            var l = new FixedValueList<ManagedField>(handles.Count);
+            var l = new FixedValueList4<ManagedField>(handles.Count);
             var e = handles.GetEnumerator();
 
             for (int i = 0; i < handles.Count; i++)
@@ -538,9 +533,9 @@ namespace IKVM.Compiler.Managed.Metadata
         /// <param name="reader"></param>
         /// <param name="handles"></param>
         /// <returns></returns>
-        ReadOnlyFixedValueList<ManagedMethod> LoadMethods(MetadataReader reader, MethodDefinitionHandleCollection handles, MetadataGenericContext genericContext)
+        ReadOnlyFixedValueList4<ManagedMethod> LoadMethods(MetadataReader reader, MethodDefinitionHandleCollection handles, MetadataGenericContext genericContext)
         {
-            var l = new FixedValueList<ManagedMethod>(handles.Count);
+            var l = new FixedValueList4<ManagedMethod>(handles.Count);
 
             var i = 0;
             foreach (var handle in handles)
@@ -562,7 +557,7 @@ namespace IKVM.Compiler.Managed.Metadata
             var method = reader.GetMethodDefinition(handle);
 
             // create a generic context including the method parameters
-            var genericMethodParametersRef = new FixedValueList<ManagedGenericMethodParameterRef>(method.GetGenericParameters().Count);
+            var genericMethodParametersRef = new FixedValueList1<ManagedGenericMethodParameterRef>(method.GetGenericParameters().Count);
             for (int i = 0; i < genericMethodParametersRef.Count; i++)
                 genericMethodParametersRef[i] = new ManagedGenericMethodParameterRef(index, i);
             genericContext = new MetadataGenericContext(genericContext.TypeParameters, genericMethodParametersRef.AsReadOnly());
@@ -584,9 +579,9 @@ namespace IKVM.Compiler.Managed.Metadata
         /// <param name="reader"></param>
         /// <param name="handles"></param>
         /// <returns></returns>
-        ReadOnlyFixedValueList<ManagedProperty> LoadProperties(MetadataReader reader, PropertyDefinitionHandleCollection handles, MetadataGenericContext genericContext)
+        ReadOnlyFixedValueList4<ManagedProperty> LoadProperties(MetadataReader reader, PropertyDefinitionHandleCollection handles, MetadataGenericContext genericContext)
         {
-            var l = new FixedValueList<ManagedProperty>(handles.Count);
+            var l = new FixedValueList4<ManagedProperty>(handles.Count);
 
             var i = 0;
             foreach (var handle in handles)
@@ -618,9 +613,9 @@ namespace IKVM.Compiler.Managed.Metadata
         /// <param name="reader"></param>
         /// <param name="handles"></param>
         /// <returns></returns>
-        ReadOnlyFixedValueList<ManagedEvent> LoadEvents(MetadataReader reader, EventDefinitionHandleCollection handles, MetadataGenericContext genericContext)
+        ReadOnlyFixedValueList1<ManagedEvent> LoadEvents(MetadataReader reader, EventDefinitionHandleCollection handles, MetadataGenericContext genericContext)
         {
-            var l = new FixedValueList<ManagedEvent>(handles.Count);
+            var l = new FixedValueList1<ManagedEvent>(handles.Count);
 
             var i = 0;
             foreach (var handle in handles)
@@ -652,12 +647,12 @@ namespace IKVM.Compiler.Managed.Metadata
         /// <param name="reader"></param>
         /// <param name="handles"></param>
         /// <returns></returns>
-        ReadOnlyFixedValueList<ManagedParameter> LoadParameters(MetadataReader reader, IReadOnlyList<ManagedTypeSignature> parameterTypes, ParameterHandleCollection handles, MetadataGenericContext genericContext)
+        ReadOnlyFixedValueList4<ManagedParameter> LoadParameters(MetadataReader reader, ImmutableArray<ManagedSignature> parameterTypes, ParameterHandleCollection handles, MetadataGenericContext genericContext)
         {
-            var l = new FixedValueList<ManagedParameter>(parameterTypes.Count);
+            var l = new FixedValueList4<ManagedParameter>(parameterTypes.Length);
             var e = handles.GetEnumerator();
 
-            for (int i = 0; i < parameterTypes.Count; i++)
+            for (int i = 0; i < parameterTypes.Length; i++)
                 l[i] = LoadParameter(reader, parameterTypes[i], e.MoveNext() ? e.Current : new ParameterHandle(), genericContext);
 
             return l.AsReadOnly();
@@ -670,7 +665,7 @@ namespace IKVM.Compiler.Managed.Metadata
         /// <param name="parameterType"></param>
         /// <param name="handle"></param>
         /// <returns></returns>
-        ManagedParameter LoadParameter(MetadataReader reader, ManagedTypeSignature parameterType, ParameterHandle handle, MetadataGenericContext genericContext)
+        ManagedParameter LoadParameter(MetadataReader reader, ManagedSignature parameterType, ParameterHandle handle, MetadataGenericContext genericContext)
         {
             // handle might be null, but signature might specify
             if (handle.IsNil == false)
@@ -686,7 +681,7 @@ namespace IKVM.Compiler.Managed.Metadata
                 return new ManagedParameter(
                     null,
                     ParameterAttributes.None,
-                    new ReadOnlyFixedValueList<ManagedCustomAttribute>(),
+                    new ReadOnlyFixedValueList1<ManagedCustomAttribute>(),
                     parameterType);
         }
 
@@ -696,9 +691,9 @@ namespace IKVM.Compiler.Managed.Metadata
         /// <param name="reader"></param>
         /// <param name="handles"></param>
         /// <returns></returns>
-        ReadOnlyFixedValueList<ManagedType> LoadNestedTypes(MetadataReader reader, IList<TypeDefinitionHandle> handles)
+        ReadOnlyFixedValueList1<ManagedType> LoadNestedTypes(MetadataReader reader, IList<TypeDefinitionHandle> handles)
         {
-            var l = new FixedValueList<ManagedType>(handles.Count);
+            var l = new FixedValueList1<ManagedType>(handles.Count);
 
             var i = 0;
             foreach (var handle in handles)

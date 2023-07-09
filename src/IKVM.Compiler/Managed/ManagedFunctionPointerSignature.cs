@@ -4,34 +4,18 @@ namespace IKVM.Compiler.Managed
 {
 
     /// <summary>
-    /// Describes a primitive type.
+    /// Describes a function pointer type.
     /// </summary>
-    public sealed class ManagedFunctionPointerSignature : ManagedTypeSignature
+    public readonly partial struct ManagedFunctionPointerSignature
     {
 
-        readonly ReadOnlyFixedValueList<ManagedTypeSignature> parameterTypes;
-        readonly ManagedTypeSignature returnType;
-
         /// <summary>
-        /// Initializes a new instance.
+        /// Creates a new function pointer signature.
         /// </summary>
         /// <param name="parameterTypes"></param>
         /// <param name="returnType"></param>
-        public ManagedFunctionPointerSignature(in ReadOnlyFixedValueList<ManagedTypeSignature> parameterTypes, ManagedTypeSignature returnType)
-        {
-            this.parameterTypes = parameterTypes;
-            this.returnType = returnType;
-        }
-
-        /// <summary>
-        /// Gets the types of the method parameters.
-        /// </summary>
-        public ReadOnlyFixedValueList<ManagedTypeSignature> ParameterTypes => parameterTypes;
-
-        /// <summary>
-        /// Gets the type of the return value.
-        /// </summary>
-        public ManagedTypeSignature ReturnType => returnType;
+        /// <returns></returns>
+        internal static ManagedFunctionPointerSignature Create(ReadOnlyFixedValueList4<ManagedSignatureData> parameterTypes, ManagedSignatureData returnType) => new ManagedFunctionPointerSignature(new ManagedSignatureData(new ManagedSignatureCodeData(ManagedSignatureKind.FunctionPointer), returnType, null, parameterTypes));
 
     }
 

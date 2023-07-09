@@ -3,32 +3,32 @@
 namespace IKVM.Compiler.Managed
 {
 
-    public sealed class ManagedInterface
+    /// <summary>
+    /// Describes an interface of a managed type.
+    /// </summary>
+    public readonly struct ManagedInterface
     {
 
-        readonly ReadOnlyFixedValueList<ManagedCustomAttribute> customAttributes;
-        readonly ManagedTypeSignature type;
-
         /// <summary>
-        /// Initializes a new instance.
+        /// Type of the implemented interface.
         /// </summary>
-        /// <param name="customAttributes"></param>
-        /// <param name="type"></param>
-        public ManagedInterface(in ReadOnlyFixedValueList<ManagedCustomAttribute> customAttributes, ManagedTypeSignature type)
-        {
-            this.customAttributes = customAttributes;
-            this.type = type;
-        }
+        public readonly ManagedSignature Type;
 
         /// <summary>
         /// Gets the set of custom attributes applied to the interface.
         /// </summary>
-        public ref readonly ReadOnlyFixedValueList<ManagedCustomAttribute> CustomAttributes => ref customAttributes;
+        public readonly ReadOnlyFixedValueList1<ManagedCustomAttribute> CustomAttributes;
 
         /// <summary>
-        /// Gets the type of the implemented interface.
+        /// Initializes a new instance.
         /// </summary>
-        public ManagedTypeSignature Type => type;
+        /// <param name="type"></param>
+        /// <param name="customAttributes"></param>
+        public ManagedInterface(in ManagedSignature type, in ReadOnlyFixedValueList1<ManagedCustomAttribute> customAttributes)
+        {
+            Type = type;
+            CustomAttributes = customAttributes;
+        }
 
     }
 

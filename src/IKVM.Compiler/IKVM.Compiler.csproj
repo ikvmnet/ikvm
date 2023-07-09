@@ -1,18 +1,66 @@
 ﻿<Project Sdk="Microsoft.NET.Sdk">
     <PropertyGroup>
-        <TargetFrameworks>net461;netcoreapp3.1;net6.0</TargetFrameworks>
+        <TargetFrameworks>net461;netcoreapp3.1;net6.0;net7.0</TargetFrameworks>
         <LangVersion>11</LangVersion>
         <ProduceReferenceAssembly>true</ProduceReferenceAssembly>
         <Nullable>enable</Nullable>
-        <InternalsVisibleTo>IKVM.Compiler.Tests</InternalsVisibleTo>
     </PropertyGroup>
-    
+
+    <ItemGroup>
+        <InternalsVisibleTo Include="IKVM.Compiler.Tests" />
+    </ItemGroup>
+
+    <ItemGroup>
+      <None Include="Collections\FixedValueList.g.cs">
+        <DesignTime>True</DesignTime>
+        <AutoGen>True</AutoGen>
+        <DependentUpon>FixedValueList.tt</DependentUpon>
+      </None>
+    </ItemGroup>
+
     <ItemGroup>
         <PackageReference Include="System.Reflection.Metadata" Version="6.0.1" />
     </ItemGroup>
-    
+
     <ItemGroup>
         <ProjectReference Include="..\IKVM.ByteCode\IKVM.ByteCode.csproj" />
+    </ItemGroup>
+
+    <ItemGroup>
+        <Service Include="{508349b6-6b84-4df5-91f0-309beebad82d}" />
+    </ItemGroup>
+
+    <ItemGroup>
+        <None Update="Collections\FixedValueList.tt">
+          <Generator>TextTemplatingFileGenerator</Generator>
+          <LastGenOutput>FixedValueList.g.cs</LastGenOutput>
+        </None>
+        <None Update="Managed\ManagedSignature.g.tt">
+            <LastGenOutput>ManagedSignature.g.cs</LastGenOutput>
+            <Generator>TextTemplatingFileGenerator</Generator>
+        </None>
+        <None Update="Managed\ManagedSignatureExtensions.g.tt">
+            <Generator>TextTemplatingFileGenerator</Generator>
+            <LastGenOutput>ManagedSignatureExtensions.g.cs</LastGenOutput>
+        </None>
+    </ItemGroup>
+
+    <ItemGroup>
+        <Compile Update="Collections\FixedValueList.g.cs">
+          <DesignTime>True</DesignTime>
+          <AutoGen>True</AutoGen>
+          <DependentUpon>FixedValueList.tt</DependentUpon>
+        </Compile>
+        <Compile Update="Managed\ManagedSignature.g.cs">
+            <DependentUpon>ManagedSignature.g.tt</DependentUpon>
+            <DesignTime>True</DesignTime>
+            <AutoGen>True</AutoGen>
+        </Compile>
+        <Compile Update="Managed\ManagedSignatureExtensions.g.cs">
+            <DesignTime>True</DesignTime>
+            <AutoGen>True</AutoGen>
+            <DependentUpon>ManagedSignatureExtensions.g.tt</DependentUpon>
+        </Compile>
     </ItemGroup>
 
 </Project>

@@ -11,10 +11,25 @@ namespace IKVM.Compiler.Managed
     public readonly struct ManagedEvent
     {
 
-        readonly string name;
-        readonly EventAttributes attributes;
-        readonly ReadOnlyFixedValueList<ManagedCustomAttribute> customAttributes;
-        readonly ManagedTypeSignature eventType;
+        /// <summary>
+        /// Gets the name of the managed event.
+        /// </summary>
+        public readonly string Name;
+
+        /// <summary>
+        /// Gets the attributes of the event.
+        /// </summary>
+        public readonly EventAttributes Attributes;
+
+        /// <summary>
+        /// Gets the set of custom attributes applied to the event.
+        /// </summary>
+        public readonly ReadOnlyFixedValueList1<ManagedCustomAttribute> CustomAttributes;
+
+        /// <summary>
+        /// Gets the type of the event.
+        /// </summary>
+        public readonly ManagedSignature EventType;
 
         /// <summary>
         /// Initializes a new instance.
@@ -23,36 +38,16 @@ namespace IKVM.Compiler.Managed
         /// <param name="customAttributes"></param>
         /// <param name="attributes"></param>
         /// <param name="eventType"></param>
-        public ManagedEvent(string name, EventAttributes attributes, in ReadOnlyFixedValueList<ManagedCustomAttribute> customAttributes, ManagedTypeSignature eventType)
+        public ManagedEvent(string name, EventAttributes attributes, in ReadOnlyFixedValueList1<ManagedCustomAttribute> customAttributes, ManagedSignature eventType)
         {
-            this.name = name;
-            this.customAttributes = customAttributes;
-            this.attributes = attributes;
-            this.eventType = eventType;
+            Name = name;
+            CustomAttributes = customAttributes;
+            Attributes = attributes;
+            EventType = eventType;
         }
 
-        /// <summary>
-        /// Gets the name of the managed event.
-        /// </summary>
-        public readonly string Name => name;
-
-        /// <summary>
-        /// Gets the attributes of the event.
-        /// </summary>
-        public readonly EventAttributes Attributes => attributes;
-
-        /// <summary>
-        /// Gets the set of custom attributes applied to the event.
-        /// </summary>
-        public readonly ReadOnlyFixedValueList<ManagedCustomAttribute> CustomAttributes => customAttributes;
-
-        /// <summary>
-        /// Gets the type of the event.
-        /// </summary>
-        public readonly ManagedTypeSignature EventType => eventType;
-
         /// <inhericdoc />
-        public override readonly string ToString() => name;
+        public override readonly string ToString() => Name;
 
     }
 

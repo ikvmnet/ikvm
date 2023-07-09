@@ -2,15 +2,13 @@
 using System.Collections.Immutable;
 using System.Reflection.Metadata;
 
-using IKVM.Compiler.Collections;
-
 namespace IKVM.Compiler.Managed.Metadata
 {
 
     /// <summary>
     /// Decodes signature information given the specified context.
     /// </summary>
-    class MetadataSignatureTypeProvider : ISignatureTypeProvider<ManagedTypeSignature, MetadataGenericContext>
+    class MetadataSignatureTypeProvider : ISignatureTypeProvider<ManagedSignature, MetadataGenericContext>
     {
 
         readonly MetadataAssemblyContext context;
@@ -24,99 +22,95 @@ namespace IKVM.Compiler.Managed.Metadata
             this.context = context;
         }
 
-        public ManagedTypeSignature GetArrayType(ManagedTypeSignature elementType, ArrayShape shape)
+        public ManagedSignature GetArrayType(ManagedSignature elementType, ArrayShape shape)
         {
             return elementType.CreateArray(shape.Rank, shape.Sizes, shape.LowerBounds);
         }
 
-        public ManagedTypeSignature GetByReferenceType(ManagedTypeSignature elementType)
+        public ManagedSignature GetByReferenceType(ManagedSignature elementType)
         {
             return elementType.CreateByRef();
         }
 
-        public ManagedTypeSignature GetFunctionPointerType(MethodSignature<ManagedTypeSignature> signature)
+        public ManagedSignature GetFunctionPointerType(MethodSignature<ManagedSignature> signature)
         {
-            var parameterTypes = new FixedValueList<ManagedTypeSignature>(signature.ParameterTypes.Length);
-            for (int i = 0; i < signature.ParameterTypes.Length; i++)
-                parameterTypes[i] = signature.ParameterTypes[i];
-
-            return new ManagedFunctionPointerSignature(parameterTypes.AsReadOnly(), signature.ReturnType);
+            return ManagedSignature.FunctionPointer(signature.ParameterTypes, signature.ReturnType);
         }
 
-        public ManagedTypeSignature GetGenericInstantiation(ManagedTypeSignature genericType, ImmutableArray<ManagedTypeSignature> typeArguments)
+        public ManagedSignature GetGenericInstantiation(ManagedSignature genericType, ImmutableArray<ManagedSignature> typeArguments)
         {
             return genericType.CreateGeneric(typeArguments);
         }
 
-        public ManagedTypeSignature GetGenericTypeParameter(MetadataGenericContext genericContext, int index)
+        public ManagedSignature GetGenericTypeParameter(MetadataGenericContext genericContext, int index)
         {
-            return new ManagedGenericTypeParameterTypeSignature(genericContext.TypeParameters[index]);
+            return ManagedGenericTypeParameterSignature.Create(genericContext.TypeParameters[index]);
         }
 
-        public ManagedTypeSignature GetGenericMethodParameter(MetadataGenericContext genericContext, int index)
+        public ManagedSignature GetGenericMethodParameter(MetadataGenericContext genericContext, int index)
         {
             if (genericContext.MethodParameters == null)
                 throw new ManagedTypeException("No generic method context.");
 
-            return new ManagedGenericMethodParameterTypeSignature(genericContext.MethodParameters.Value[index]);
+            return ManagedGenericMethodParameterSignature.Create(genericContext.MethodParameters.Value[index]);
         }
 
-        public ManagedTypeSignature GetModifiedType(ManagedTypeSignature modifier, ManagedTypeSignature unmodifiedType, bool isRequired)
+        public ManagedSignature GetModifiedType(ManagedSignature modifier, ManagedSignature unmodifiedType, bool isRequired)
         {
-            return new ManagedModifiedTypeSignature(unmodifiedType, modifier, isRequired);
+            return unmodifiedType.CreateModified(modifier, isRequired);
         }
 
-        public ManagedTypeSignature GetPinnedType(ManagedTypeSignature elementType)
+        public ManagedSignature GetPinnedType(ManagedSignature elementType)
         {
             throw new System.NotImplementedException();
         }
 
-        public ManagedTypeSignature GetPointerType(ManagedTypeSignature elementType)
+        public ManagedSignature GetPointerType(ManagedSignature elementType)
         {
-            return new ManagedPointerTypeSignature(elementType);
+            return elementType.CreatePointer();
         }
 
-        public ManagedTypeSignature GetPrimitiveType(PrimitiveTypeCode typeCode) => typeCode switch
+        public ManagedSignature GetPrimitiveType(PrimitiveTypeCode typeCode) => typeCode switch
         {
-            PrimitiveTypeCode.Boolean => ManagedTypeSignature.Boolean,
-            PrimitiveTypeCode.Byte => ManagedTypeSignature.Byte,
-            PrimitiveTypeCode.SByte => ManagedTypeSignature.SByte,
-            PrimitiveTypeCode.Char => ManagedTypeSignature.Char,
-            PrimitiveTypeCode.Int16 => ManagedTypeSignature.Int16,
-            PrimitiveTypeCode.UInt16 => ManagedTypeSignature.UInt16,
-            PrimitiveTypeCode.Int32 => ManagedTypeSignature.Int32,
-            PrimitiveTypeCode.UInt32 => ManagedTypeSignature.UInt32,
-            PrimitiveTypeCode.Int64 => ManagedTypeSignature.Int64,
-            PrimitiveTypeCode.UInt64 => ManagedTypeSignature.UInt64,
-            PrimitiveTypeCode.Single => ManagedTypeSignature.Single,
-            PrimitiveTypeCode.Double => ManagedTypeSignature.Double,
-            PrimitiveTypeCode.IntPtr => ManagedTypeSignature.IntPtr,
-            PrimitiveTypeCode.UIntPtr => ManagedTypeSignature.UIntPtr,
-            PrimitiveTypeCode.Object => ManagedTypeSignature.Object,
-            PrimitiveTypeCode.String => ManagedTypeSignature.String,
-            PrimitiveTypeCode.TypedReference => ManagedTypeSignature.TypedReference,
-            PrimitiveTypeCode.Void => ManagedTypeSignature.Void,
+            PrimitiveTypeCode.Boolean => ManagedSignature.Boolean,
+            PrimitiveTypeCode.Byte => ManagedSignature.Byte,
+            PrimitiveTypeCode.SByte => ManagedSignature.SByte,
+            PrimitiveTypeCode.Char => ManagedSignature.Char,
+            PrimitiveTypeCode.Int16 => ManagedSignature.Int16,
+            PrimitiveTypeCode.UInt16 => ManagedSignature.UInt16,
+            PrimitiveTypeCode.Int32 => ManagedSignature.Int32,
+            PrimitiveTypeCode.UInt32 => ManagedSignature.UInt32,
+            PrimitiveTypeCode.Int64 => ManagedSignature.Int64,
+            PrimitiveTypeCode.UInt64 => ManagedSignature.UInt64,
+            PrimitiveTypeCode.Single => ManagedSignature.Single,
+            PrimitiveTypeCode.Double => ManagedSignature.Double,
+            PrimitiveTypeCode.IntPtr => ManagedSignature.IntPtr,
+            PrimitiveTypeCode.UIntPtr => ManagedSignature.UIntPtr,
+            PrimitiveTypeCode.Object => ManagedSignature.Object,
+            PrimitiveTypeCode.String => ManagedSignature.String,
+            PrimitiveTypeCode.TypedReference => ManagedSignature.TypedReference,
+            PrimitiveTypeCode.Void => ManagedSignature.Void,
             _ => throw new ManagedTypeException(),
         };
 
-        public ManagedTypeSignature GetSZArrayType(ManagedTypeSignature elementType)
+        public ManagedSignature GetSZArrayType(ManagedSignature elementType)
         {
             return elementType.CreateArray();
         }
 
-        public ManagedTypeSignature GetTypeFromDefinition(MetadataReader reader, TypeDefinitionHandle handle, byte rawTypeKind)
+        public ManagedSignature GetTypeFromDefinition(MetadataReader reader, TypeDefinitionHandle handle, byte rawTypeKind)
         {
             var typeReference = context.ResolveTypeReference(reader, handle, MetadataGenericContext.Empty);
-            return new ManagedTypeRefSignature(typeReference);
+            return ManagedTypeSignature.Create(typeReference);
         }
 
-        public ManagedTypeSignature GetTypeFromReference(MetadataReader reader, TypeReferenceHandle handle, byte rawTypeKind)
+        public ManagedSignature GetTypeFromReference(MetadataReader reader, TypeReferenceHandle handle, byte rawTypeKind)
         {
             var typeReference = context.ResolveTypeReference(reader, handle, MetadataGenericContext.Empty);
-            return new ManagedTypeRefSignature(typeReference);
+            return ManagedTypeSignature.Create(typeReference);
         }
 
-        public ManagedTypeSignature GetTypeFromSpecification(MetadataReader reader, MetadataGenericContext genericContext, TypeSpecificationHandle handle, byte rawTypeKind)
+        public ManagedSignature GetTypeFromSpecification(MetadataReader reader, MetadataGenericContext genericContext, TypeSpecificationHandle handle, byte rawTypeKind)
         {
             throw new NotImplementedException();
         }

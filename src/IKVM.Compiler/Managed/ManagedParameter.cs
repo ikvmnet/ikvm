@@ -11,43 +11,37 @@ namespace IKVM.Compiler.Managed
     public readonly struct ManagedParameter
     {
 
-        readonly string? name;
-        readonly ParameterAttributes attributes;
-        readonly ReadOnlyFixedValueList<ManagedCustomAttribute> customAttributes;
-        readonly ManagedTypeSignature parameterType;
+        /// <summary>
+        /// Gets the name of the parameter.
+        /// </summary>
+        public readonly string? Name;
+
+        /// <summary>
+        /// Gets the attributes for the parameter.
+        /// </summary>
+        public readonly ParameterAttributes Attributes;
+
+        /// <summary>
+        /// Gets the custom attributes on the parameter.
+        /// </summary>
+        public readonly ReadOnlyFixedValueList1<ManagedCustomAttribute> CustomAttributes;
+        /// <summary>
+        /// Gets the type of the parameter.
+        /// </summary>
+        public readonly ManagedSignature ParameterType;
 
         /// <summary>
         /// Initializes a new instance.
         /// </summary>
         /// <param name="name"></param>
         /// <param name="parameterType"></param>
-        public ManagedParameter(string? name, ParameterAttributes attributes, in ReadOnlyFixedValueList<ManagedCustomAttribute> customAttributes, ManagedTypeSignature parameterType)
+        public ManagedParameter(string? name, ParameterAttributes attributes, in ReadOnlyFixedValueList1<ManagedCustomAttribute> customAttributes, in ManagedSignature parameterType)
         {
-            this.name = name;
-            this.attributes = attributes;
-            this.customAttributes = customAttributes;
-            this.parameterType = parameterType;
+            Name = name;
+            Attributes = attributes;
+            CustomAttributes = customAttributes;
+            ParameterType = parameterType;
         }
-
-        /// <summary>
-        /// Gets the name of the parameter.
-        /// </summary>
-        public readonly string? Name => name;
-
-        /// <summary>
-        /// Gets the attributes for the parameter.
-        /// </summary>
-        public readonly ParameterAttributes Attributes => attributes;
-
-        /// <summary>
-        /// Gets the custom attributes on the parameter.
-        /// </summary>
-        public readonly ReadOnlyFixedValueList<ManagedCustomAttribute> CustomAttributes => customAttributes;
-
-        /// <summary>
-        /// Gets the type of the parameter.
-        /// </summary>
-        public readonly ManagedTypeSignature ParameterType => parameterType;
 
     }
 

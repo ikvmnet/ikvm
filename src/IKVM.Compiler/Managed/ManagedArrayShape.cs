@@ -1,5 +1,4 @@
 ﻿using System;
-using System.Collections.Generic;
 
 using IKVM.Compiler.Collections;
 
@@ -13,8 +12,8 @@ namespace IKVM.Compiler.Managed
     {
 
         readonly int rank;
-        readonly ReadOnlyFixedValueList<int> sizes;
-        readonly ReadOnlyFixedValueList<int> lowerBounds;
+        readonly ReadOnlyFixedValueList2<int> sizes;
+        readonly ReadOnlyFixedValueList2<int> lowerBounds;
 
         /// <summary>
         /// Initializes a new instance.
@@ -22,8 +21,13 @@ namespace IKVM.Compiler.Managed
         /// <param name="rank"></param>
         /// <param name="sizes"></param>
         /// <param name="lowerBounds"></param>
-        public ManagedArrayShape(int rank, in ReadOnlyFixedValueList<int> sizes, in ReadOnlyFixedValueList<int> lowerBounds)
+        public ManagedArrayShape(int rank, in ReadOnlyFixedValueList2<int> sizes, in ReadOnlyFixedValueList2<int> lowerBounds)
         {
+            if (sizes.Count > rank)
+                throw new ArgumentOutOfRangeException(nameof(sizes), null, "sizes may be shorter than rank but not longer");
+            if (lowerBounds.Count > rank)
+                throw new ArgumentOutOfRangeException(nameof(lowerBounds), null, "sizes may be shorter than rank but not longer");
+
             this.rank = rank;
             this.sizes = sizes;
             this.lowerBounds = lowerBounds;
@@ -35,44 +39,10 @@ namespace IKVM.Compiler.Managed
         /// <param name="rank"></param>
         /// <param name="sizes"></param>
         /// <param name="lowerBounds"></param>
-        public ManagedArrayShape(int rank, ReadOnlySpan<int> sizes, ReadOnlySpan<int> lowerBounds)
+        public ManagedArrayShape(int rank, int[] sizes, int[] lowerBounds) :
+            this(rank, new ReadOnlyFixedValueList2<int>(new FixedValueList2<int>(sizes)), new ReadOnlyFixedValueList2<int>(new FixedValueList2<int>(lowerBounds)))
         {
-            this.rank = rank;
 
-            var s = new FixedValueList<int>(sizes.Length);
-            var b = new FixedValueList<int>(lowerBounds.Length);
-
-            for (int i = 0; i < sizes.Length; i++)
-                s[i] = sizes[i];
-
-            for (int i = 0; i < lowerBounds.Length; i++)
-                b[i] = lowerBounds[i];
-
-            this.sizes = s.AsReadOnly();
-            this.lowerBounds = b.AsReadOnly();
-        }
-
-        /// <summary>
-        /// Initializes a new instance.
-        /// </summary>
-        /// <param name="rank"></param>
-        /// <param name="sizes"></param>
-        /// <param name="lowerBounds"></param>
-        public ManagedArrayShape(int rank, IList<int> sizes, IList<int> lowerBounds)
-        {
-            this.rank = rank;
-
-            var s = new FixedValueList<int>(sizes.Count);
-            var b = new FixedValueList<int>(lowerBounds.Count);
-
-            for (int i = 0; i < sizes.Count; i++)
-                s[i] = sizes[i];
-
-            for (int i = 0; i < lowerBounds.Count; i++)
-                b[i] = lowerBounds[i];
-
-            this.sizes = s.AsReadOnly();
-            this.lowerBounds = b.AsReadOnly();
         }
 
         /// <summary>
@@ -85,14 +55,14 @@ namespace IKVM.Compiler.Managed
         /// </summary>
         /// <param name="rank"></param>
         /// <returns></returns>
-        public readonly int GetSize(int rank) => sizes[rank];
+        public readonly int? GetSize(int rank) => rank < sizes.Count ? sizes[rank] : null;
 
         /// <summary>
         /// Gets the lower bound of the given rank.
         /// </summary>
         /// <param name="rank"></param>
         /// <returns></returns>
-        public readonly int GetLowerBound(int rank) => lowerBounds[rank];
+        public readonly int? GetLowerBound(int rank) => rank < lowerBounds.Count ? lowerBounds[rank] : null;
 
     }
 

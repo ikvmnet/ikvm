@@ -1,112 +1,23 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Linq;
-
-using IKVM.Compiler.Collections;
-
-namespace IKVM.Compiler.Managed
+﻿namespace IKVM.Compiler.Managed
 {
 
     /// <summary>
-    /// Describes a type including any modifiers.
+    /// Describes a type.
     /// </summary>
-    public abstract class ManagedTypeSignature
+    public readonly partial struct ManagedTypeSignature
     {
 
-        public static readonly ManagedPrimitiveTypeSignature Void = new(ManagedPrimitiveType.Void);
-        public static readonly ManagedPrimitiveTypeSignature Boolean = new(ManagedPrimitiveType.Boolean);
-        public static readonly ManagedPrimitiveTypeSignature Byte = new(ManagedPrimitiveType.Byte);
-        public static readonly ManagedPrimitiveTypeSignature SByte = new(ManagedPrimitiveType.SByte);
-        public static readonly ManagedPrimitiveTypeSignature Char = new(ManagedPrimitiveType.Char);
-        public static readonly ManagedPrimitiveTypeSignature Int16 = new(ManagedPrimitiveType.Int16);
-        public static readonly ManagedPrimitiveTypeSignature UInt16 = new(ManagedPrimitiveType.UInt16);
-        public static readonly ManagedPrimitiveTypeSignature Int32 = new(ManagedPrimitiveType.Int32);
-        public static readonly ManagedPrimitiveTypeSignature UInt32 = new(ManagedPrimitiveType.UInt32);
-        public static readonly ManagedPrimitiveTypeSignature Int64 = new(ManagedPrimitiveType.Int64);
-        public static readonly ManagedPrimitiveTypeSignature UInt64 = new(ManagedPrimitiveType.UInt64);
-        public static readonly ManagedPrimitiveTypeSignature Single = new(ManagedPrimitiveType.Single);
-        public static readonly ManagedPrimitiveTypeSignature Double = new(ManagedPrimitiveType.Double);
-        public static readonly ManagedPrimitiveTypeSignature IntPtr = new(ManagedPrimitiveType.IntPtr);
-        public static readonly ManagedPrimitiveTypeSignature UIntPtr = new(ManagedPrimitiveType.UIntPtr);
-        public static readonly ManagedPrimitiveTypeSignature Object = new(ManagedPrimitiveType.Object);
-        public static readonly ManagedPrimitiveTypeSignature String = new(ManagedPrimitiveType.String);
-        public static readonly ManagedPrimitiveTypeSignature TypedReference = new(ManagedPrimitiveType.TypedReference);
-
-        ManagedSZArrayTypeSignature? szArray;
-        ManagedByRefTypeSignature? byRef;
-        ManagedPointerTypeSignature? pointer;
-
         /// <summary>
-        /// Initializes a new instance.
+        /// Creates a new <see cref="ManagedTypeSignature"/>.
         /// </summary>
-        protected ManagedTypeSignature()
-        {
-
-        }
-
-        /// <summary>
-        /// Creates a new fixed size, zero-indexed array. This is a standard .NET array type.
-        /// </summary>
+        /// <param name="typeRef"></param>
         /// <returns></returns>
-        public ManagedTypeSignature CreateArray() => szArray ??= new ManagedSZArrayTypeSignature(this);
+        internal static ManagedTypeSignature Create(in ManagedTypeRef typeRef) => new ManagedTypeSignature(new ManagedSignatureData(new ManagedSignatureCodeData(ManagedSignatureKind.Type, typeRef), null, null, null));
 
         /// <summary>
-        /// Creates a new multidimensional array.
+        /// Gets the type reference refered to by this signature.
         /// </summary>
-        /// <param name="rank"></param>
-        /// <param name="sizes"></param>
-        /// <param name="lowerBounds"></param>
-        /// <returns></returns>
-        public ManagedTypeSignature CreateArray(int rank, ReadOnlySpan<int> sizes, ReadOnlySpan<int> lowerBounds) => new ManagedArrayTypeSignature(this, new ManagedArrayShape(rank, sizes, lowerBounds));
-
-        /// <summary>
-        /// Creates a new multidimensional array.
-        /// </summary>
-        /// <param name="rank"></param>
-        /// <param name="sizes"></param>
-        /// <param name="lowerBounds"></param>
-        /// <returns></returns>
-        public ManagedTypeSignature CreateArray(int rank, IList<int> sizes, IList<int> lowerBounds) => new ManagedArrayTypeSignature(this, new ManagedArrayShape(rank, sizes, lowerBounds));
-
-        /// <summary>
-        /// Creates a new by-ref type.
-        /// </summary>
-        /// <returns></returns>
-        public ManagedTypeSignature CreateByRef() => byRef ??= new ManagedByRefTypeSignature(this);
-
-        /// <summary>
-        /// Creates a new pointer type.
-        /// </summary>
-        /// <returns></returns>
-        public ManagedTypeSignature CreatePointer() => pointer ??= new ManagedPointerTypeSignature(this);
-
-        /// <summary>
-        /// Creates a new generic type.
-        /// </summary>
-        /// <param name="parameters"></param>
-        /// <returns></returns>
-        public ManagedTypeSignature CreateGeneric(in ReadOnlyFixedValueList<ManagedTypeSignature> parameters) => new ManagedGenericTypeSignature(this, parameters);
-
-        /// <summary>
-        /// Creates a new generic type.
-        /// </summary>
-        /// <param name="parameters"></param>
-        /// <returns></returns>
-        public ManagedTypeSignature CreateGeneric(ReadOnlySpan<ManagedTypeSignature> parameters) => CreateGeneric(new ReadOnlyFixedValueList<ManagedTypeSignature>(parameters));
-
-        /// <summary>
-        /// Creates a new generic type.
-        /// </summary>
-        /// <param name="parameters"></param>
-        /// <returns></returns>
-        public ManagedTypeSignature CreateGeneric(params ManagedTypeSignature[] parameters) => CreateGeneric(parameters.AsSpan());
-
-        /// <summary>
-        /// Creates a new generic type.
-        /// </summary>
-        /// <param name="parameters"></param>
-        /// <returns></returns>
-        public ManagedTypeSignature CreateGeneric(IEnumerable<ManagedTypeSignature> parameters) => CreateGeneric(parameters.ToArray().AsSpan());
+        public readonly ManagedTypeRef TypeRef => data.GetLastCode().Data.Type_Type!.Value;
 
     }
 

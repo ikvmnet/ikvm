@@ -1,6 +1,4 @@
-﻿using System.Collections.Generic;
-
-namespace IKVM.Compiler.Managed
+﻿namespace IKVM.Compiler.Managed
 {
 
     /// <summary>
