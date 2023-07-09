@@ -649,6 +649,9 @@ namespace IKVM.Runtime
                 if (self == null)
                     yield break;
 
+                // implicitly include native libraries along side application (publish)
+                yield return self;
+
                 // search in runtime specific directories
                 foreach (var rid in RuntimeUtil.SupportedRuntimeIdentifiers)
                     yield return Path.Combine(self, "runtimes", rid, "native");
